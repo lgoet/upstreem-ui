@@ -1,0 +1,157 @@
+<!--
+  UPSTREEM — ADS (Beta, V1, Praefix uad), 05.10.2026
+
+  WOHIN: ein HTML-Element in der Ansicht "ads" (#view-ads, eine Gruppe/ein Reusable wie view-shopping).
+  Das Element ist LEER bis auf das Wurzel-Div; die Komponente baut Seitenkopf (Krume "Ads" mit
+  Beta-Marke, Reiter Overview / Advertisers / Ad Library), Kalender, Filterleiste, alle Unterseiten
+  samt Advertiser Detail und den Ad-Detail-Drawer selbst. Kalender und Filter sind LOKAL: sie
+  gehoeren der Seite und schreiben nichts in die globalen Filter der App ("Apply everywhere" im
+  Kalender geht weiterhin). Der Drawer braucht KEIN Bubble-Element: jedes Ad-Objekt traegt alle
+  Felder, er haengt sich selbst an die Seite.
+  Massgeblich fuer alle Felder: ADS_V1_RPCS.md (Lese-RPCs, Uebergabe 05.10.).
+  Alle Workflows mit Bodies und Run-JS-Schritten: bubble/ads_runjs.md.
+
+  ── Die Ansicht in Bubble (WICHTIG, 05.10. bei Shopping/Events gefunden) ──────
+  Die Bedingung, die #view-ads einblendet, wie bei den anderen Ansichten auf den STATE stellen
+  ("Current View is ads"), NICHT auf "Get data from page URL: view". Bubble liest die Adresse nur
+  beim Laden neu; mit der Adress-Bedingung ging Shopping/Events beim ersten Leistenklick erst nach
+  einem Anstoss aus core auf (der ist da, kostet aber beim allerersten Klick 250ms).
+
+  ── Zustaende in der Adresse (schreibt die Komponente selbst) ─────────────────
+    ?view=ads                                       Overview
+    ?view=ads&ads=advertisers                       Advertisers (ebenso library)
+    ?view=ads&ads=advertisers&advertiser=<Name>     Advertiser Detail (der Name ist p_advertiser_name)
+  Zurueck/Vor im Browser wechselt die Unterseite. In Bubble ist dafuer nichts zu tun.
+
+  ── Navigation ────────────────────────────────────────────────────────────────
+  Die Seitenleiste fuehrt "Ads" direkt nach "Shopping" (Schluessel "ads", Beta-Marke, Zeichen
+  MarketingIcon). Ein Klick feuert wie jeder Eintrag usnNav mit {"key":"ads"} UND zeigt die Ansicht
+  selbst (showView), sobald #view-ads auf der Seite steht. Ein Zweig im usnNav-Workflow, der
+  dasselbe tut, schadet nicht. Optional ein Element "view_first_ads" (JavaScript to Bubble, ohne
+  Workflow): ohne es steht beim ersten Oeffnen eine Warnung in der Konsole, sonst nichts.
+  "Prompt Detail" (Prompt-Zeilen, Drawer, aufgeklappte Prompts) oeffnet openDrawer("prompt",
+  prompt_id) -- der Prompt-Drawer, den es schon gibt.
+
+  ── Attribute am Wurzel-Div ──────────────────────────────────────────────────
+  | Attribut             | Pflicht | Bedeutung                                                 |
+  |----------------------|---------|-----------------------------------------------------------|
+  | data-instance        | JA      | "ads_page" -- so heissen alle Schritte in ads_runjs.md     |
+  | data-cdn-pin         | JA      | derselbe Commit wie alle Elemente der Seite               |
+  | data-isdark          | nein    | "yes"/"no"; kennt core ein Thema, gewinnt core            |
+  | data-overview-fn     | JA      | bubble_fn_adsOverview                                     |
+  | data-advertisers-fn  | JA      | bubble_fn_adsAdvertisers                                  |
+  | data-advertiser-fn   | JA      | bubble_fn_adsAdvertiserDetail                             |
+  | data-library-fn      | JA      | bubble_fn_adsLibrary                                      |
+  | data-prompts-fn      | JA      | bubble_fn_adsPrompts                                      |
+  | data-options-fn      | JA      | bubble_fn_adsFilterOptions                                |
+
+  ── Ereignisse an Bubble: der Wert IST der RPC-Body ───────────────────────────
+  Jedes Ereignis traegt den fertigen JSON-Body der RPC als Text, p_team_id und alle Filter schon
+  drin, nicht gesetzte Werte als null. Im API Connector ist der Body jedes Calls genau <body>
+  (ein Parameter mit dem Schluessel "body"). Im Workflow:
+    1. API Connector: die RPC, Feld body = This JavascriptToBubble's value (unveraendert).
+       "Include errors in response and allow workflow actions to continue" anhaken.
+    2. Run JS mit dem Setter: Antwort UND Fehler-Body in einem Schritt, ohne "Only when".
+
+  | Ereignis (JS-to-Bubble) | Attribut            | RPC (Schema app)              | Setter danach          |
+  |-------------------------|---------------------|-------------------------------|------------------------|
+  | adsOverview             | data-overview-fn    | get_ads_overview_v1           | setAdsOverview         |
+  | adsAdvertisers          | data-advertisers-fn | list_ads_advertisers_v1       | setAdsAdvertisers      |
+  | adsAdvertiserDetail     | data-advertiser-fn  | get_ads_advertiser_detail_v1  | setAdsAdvertiserDetail |
+  | adsLibrary              | data-library-fn     | list_ads_library_v1           | setAdsLibrary          |
+  | adsPrompts              | data-prompts-fn     | list_ads_prompts_v1           | setAdsPrompts          |
+  | adsFilterOptions        | data-options-fn     | get_ads_filter_options_v1     | setAdsFilterOptions    |
+
+  Die Komponente schickt je RPC hoechstens EINE Anfrage gleichzeitig, merkt sich die letzten 16
+  Antworten je RPC (Reiter- und Filterwechsel zurueck zeigen sofort) und wartet 25s; danach steht
+  "This is taking longer than expected" mit "Try again" statt eines endlosen Skeletts.
+
+  ── Die Setter ────────────────────────────────────────────────────────────────
+    setAdsOverview("ads_page", `<json>`, `<error body>`)          ebenso die fuenf anderen
+    resetAds("ads_page")        verwirft alle gemerkten Antworten und laedt neu
+  <json> ist das Feld json der Antwort. Die RPCs liefern eine Zeile mit einer Spalte "json"
+  (PostgREST: [{"json": "..."}]), in Bubble also "Result of step 1:first item's json". Der dritte
+  Wert ist "Result of step 1's error body"; eine lesbare Antwort gewinnt immer, der Fehler zaehlt
+  nur ohne sie. Die Schritte nach einem Ereignis kommen nie zu frueh (das Ereignis kommt von ads.js).
+  Die STATISCHEN Testfassungen aus ads_runjs.md erst ausfuehren, wenn die Ads-Ansicht offen ist --
+  vor dem Laden von ads.js gibt es die Setter noch nicht.
+
+  Run-JS-Form (CLAUDE.md 2a):
+      (function () {
+        var ROH = `[Result of step 1:first item's json]`
+          .replace(/:\s*([,}\]])/g, ": null$1")
+          .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+        var FEHLER = `[Result of step 1's error body]`;
+        try { if (window.setAdsOverview) window.setAdsOverview("ads_page", ROH, FEHLER); } catch (e) {}
+      })();
+
+  ── Was die Seite sonst braucht (steht auf jeder Seite schon) ─────────────────
+  setUpstreemTeam (p_team_id), setUpstreemModels, setUpstreemMarkets, setUpstreemTopics fuer die
+  Filter, setUpstreemBrands fuer You/Competitor und Logos in Karten und Drawer (die Ad-Objekte
+  tragen nur company_id).
+-->
+
+<div class="up-root uad-root"
+     data-instance="ads_page"
+     data-cdn-pin="CDN_PIN"
+     data-isdark="IS_DARK"
+     data-overview-fn="bubble_fn_adsOverview"
+     data-advertisers-fn="bubble_fn_adsAdvertisers"
+     data-advertiser-fn="bubble_fn_adsAdvertiserDetail"
+     data-library-fn="bubble_fn_adsLibrary"
+     data-prompts-fn="bubble_fn_adsPrompts"
+     data-options-fn="bubble_fn_adsFilterOptions"></div>
+
+<script>
+(function(){
+  /* Loader nach STYLEGUIDE §26 -- wortgleich mit shopping_bubble.html, nur Klasse und Dateien
+     anders. Kalender und Filter stehen als LOKALE Instanzen in der Komponente, ihre Dateien
+     laedt dieses Element mit. */
+  function echterPin(p){
+    p = String(p == null ? "" : p).trim();
+    return (p && p !== "CDN_" + "PIN") ? p : "";
+  }
+  function readPin(cls){
+    var i, p, els = document.getElementsByClassName(cls);
+    for (i = 0; i < els.length; i++){
+      p = echterPin(els[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    if (echterPin(window.__upPin)) return window.__upPin;
+    var alle = document.querySelectorAll ? document.querySelectorAll("[data-cdn-pin]") : [];
+    for (i = 0; i < alle.length; i++){
+      p = echterPin(alle[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    var L0 = window.__upAssetsLoaded, k, m;
+    for (k in L0){
+      if (!Object.prototype.hasOwnProperty.call(L0, k)) continue;
+      m = String(L0[k] || "").match(/upstreem-ui@([^/]+)\//);
+      if (m && m[1] && m[1] !== "main") return (window.__upPin = m[1]);
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uad-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  css("core.css");                        js("core.js");
+  css("filters/date-range.css");          js("filters/date-range.js");
+  css("filters/topics-filter.css");       js("filters/topics-filter.js");
+  css("filters/models-filter.css");       js("filters/models-filter.js");
+  css("filters/markets-filter.css");      js("filters/markets-filter.js");
+  css("filters/filter-bar.css");          js("filters/filter-bar.js");
+  css("ads.css");                         js("ads.js");
+})();
+</script>

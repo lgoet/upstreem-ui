@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261087;
+  var BUILD = 20261089;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1886,6 +1886,8 @@
     "Institutional": "Institutionell",
     "Competition": "Wettbewerb",
     "You": "Du",
+    /* Die Ad Card (adCardHtml, 05.10.): Format und Beziehung des Advertisers. */
+    "Competitor": "Wettbewerber", "Image Ad": "Bildanzeige", "Product Ad": "Produktanzeige",
     "Your Content": "Deine Inhalte",
     "Homepage": "Startseite",
     "Product / Service": "Produkt / Leistung",
@@ -3891,6 +3893,64 @@
            '</span>';
   }
 
+  /* ---- DIE AD CARD (05.10., Ads V1) ---------------------------------------------------------
+     Eine beobachtete Anzeige als Karte: Recent Ads der Overview, Ad Library (Raster) und die Ads im
+     Advertiser Detail -- dreimal dieselbe Karte, darum hier (CLAUDE.md 1b.2). Gebaut auf der
+     Produktkarte des Response Detail (.urd-pc): Polster 8, Radius 16 -- innen also 8 am Bild
+     (konzentrisch) --, Text 14/6/6, Fuss mit margin-top auto, damit jede Karte unten buendig endet.
+     Anders als dort: das Bild 16:10 statt quadratisch (ein Werbemittel ist ein Banner, kein
+     freigestelltes Produkt -- darum ohne Polster und ohne multiply), oben links das Format.
+     ad   ein Ad-Objekt der Ads-RPCs (recent_ads, ads, items -- dieselben 29 Felder)
+     opts { logo, beziehung ("you" | "competitor"), q (Suchtreffer markieren), klasse }
+     Die Karte ist ein Knopf mit data-ad-id; was ein Klick oeffnet, entscheidet der Aufrufer. */
+  var AD_FORMAT = { image_card_v2: "Image Ad", product_card_v2: "Product Ad" };
+  var AD_FORMAT_ZEICHEN = { image_card_v2: "image", product_card_v2: "shoppingBag" };
+  /* Unbekannte Formate behalten den Rohwert (Uebergabe: "Unbekannte Formate behalten den Rohwert
+     als Label"). */
+  function adFormatLabel(f){ f = String(f == null ? "" : f).trim(); return AD_FORMAT[f] ? t_(AD_FORMAT[f]) : f; }
+  function adSichereUrl(u){
+    var x = String(u == null ? "" : u).trim();
+    if (x.indexOf("//") === 0) x = "https:" + x;
+    return /^https?:\/\/[^\s"'<>]+$/i.test(x) ? x : "";
+  }
+  function adText(v){ return v == null || typeof v === "object" ? "" : String(v).trim(); }
+  function adCardHtml(ad, opts){
+    ad = ad && typeof ad === "object" ? ad : {};
+    opts = opts || {};
+    var id = adText(ad.id), titel = adText(ad.title), desc = adText(ad.description);
+    var adv = adText(ad.advertiser_name), fmt = adText(ad.ad_format), dom = adText(ad.landing_domain);
+    var bild = adSichereUrl(ad.image_url), q = opts.q || "";
+    function mark(x){ return q && typeof highlight === "function" ? highlight(x, q) : esc(x); }
+    var preis = fmtGeld(ad.price, ad.currency) || adText(ad.price_str).slice(0, 40);
+    var modell = adText(ad.model), markt = adText(ad.market).toUpperCase();
+    if (!/^[A-Z0-9_-]{1,12}$/.test(markt)) markt = "";
+    var mName = modell ? modelLabelOf(modelInfoOf(modell), modell, null) : "";
+    var wann = ad.observed_at ? fmtDate(ad.observed_at) : "";
+    var marke = opts.beziehung === "you" ? '<span class="up-marke up-you">' + esc(t_("You")) + '</span>'
+      : opts.beziehung === "competitor" ? '<span class="up-marke is-leise">' + esc(t_("Competitor")) + '</span>' : '';
+    return '<button type="button" class="up-adcard' + (opts.klasse ? " " + esc(opts.klasse) : "") + '"' + (id ? ' data-ad-id="' + esc(id) + '"' : '') + '>' +
+      '<span class="up-adcard-media' + (bild ? " has-img" : "") + '">' +
+        '<span class="up-adcard-ph">' + icon(AD_FORMAT_ZEICHEN[fmt] || "image", 1.5) + '</span>' +
+        (bild ? '<img src="' + esc(bild) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/>' : '') +
+        (fmt ? '<span class="up-adcard-fmt">' + esc(adFormatLabel(fmt)) + '</span>' : '') +
+      '</span>' +
+      '<span class="up-adcard-body">' +
+        '<span class="up-adcard-top">' + markenChip({ name: adv || "–", logo_url: opts.logo || "" }, { cls: "up-adcard-adv", nameHtml: adv ? mark(adv) : esc("–"), nach: marke }) + '</span>' +
+        '<span class="up-adcard-title">' + (titel ? mark(titel) : '<span class="is-empty">–</span>') + '</span>' +
+        (desc ? '<span class="up-adcard-desc">' + mark(desc) + '</span>' : '') +
+        '<span class="up-adcard-foot">' +
+          (preis ? '<span class="up-adcard-price">' + esc(preis) + '</span>' : '') +
+          (dom ? '<span class="up-adcard-domain">' + icon("link", 2) + '<span>' + mark(dom) + '</span></span>' : '') +
+          '<span class="up-adcard-meta">' +
+            (mName ? '<span class="up-adcard-model">' + esc(mName) + '</span>' : '') +
+            (markt ? '<span class="up-marke is-leise">' + esc(markt) + '</span>' : '') +
+            (wann ? '<span class="up-adcard-date">' + esc(wann) + '</span>' : '') +
+          '</span>' +
+        '</span>' +
+      '</span>' +
+    '</button>';
+  }
+
   /* Market-Chip: Flagge als liegende Kachel plus Laendercode. Rund wuerde jede Flagge auf ihre
      Mitte beschneiden, und genau da tragen DE, FR und IT nichts Unterscheidbares. */
   /* Das Markup des Marken-Schalters. Dreistufig: aus, ja, nein -- dieselbe Reihenfolge wie in
@@ -5822,6 +5882,106 @@
       document.body.removeChild(ta);
       return true;
     } catch(e){ return false; }
+  }
+
+  /* ---- DER SEITEN-DRAWER (05.10., Ads: Ad Detail) ------------------------------------------
+     Ein Drawer von rechts, den eine Komponente selbst oeffnet -- ohne Bubble-Element, wenn alles,
+     was er zeigt, schon in den Daten der Komponente steckt (Ads: "der Drawer laesst sich ohne
+     weiteren Request fuellen"). Bisher gab es das nur lokal in Opportunities; der zweite Nutzer
+     macht es zum Baustein.
+     Wie dort und aus demselben Grund haengt er in einem Kasten am <body>: position:fixed bezieht
+     sich sonst auf den naechsten Vorfahren mit transform, und Bubble-Gruppen tragen oft einen.
+     Der Kasten ist eine .up-root mit display: contents -- er traegt die Farbmarken (und data-theme),
+     erzeugt aber keine Box.
+     Bewegung und Ebene wie die Drawer der App: zu bei translateX(110%), hinaus 180ms ease-in,
+     herein 220ms cubic-bezier(.32,.72,0,1); Schleier 160/200ms mit 1,5px Unschaerfe. Ebene
+     9904/9903 wie der Opportunities-Drawer: ueber allem Eigenen, unter den Drawern der App
+     (9905-9930) -- ein Prompt-Drawer, der aus diesem heraus aufgeht, liegt darueber.
+     Die Kopfzeile hat die Masse der Leiste ueber den Drawern (drawer-topbar.css): 32 hoch, 7px
+     Polster, Zurueck links, Krume 12/600, Schliessen rechts. drawer-topbar selbst ist ein eigenes
+     Element mit eigener Datei und hier nicht geladen -- darum die Masse, nicht die Klassen.
+     cfg: { owner (Wurzel der Komponente), klasse, isDark(), onClose(), label }
+     Rueckgabe: { open(krumeHtml, inhaltHtml), setInhalt(html), setKrume(html), close(), isOpen(),
+                  body (Element des Inhalts) } */
+  function makeSeitenDrawer(cfg){
+    cfg = cfg || {};
+    var host = null, offen = false, zuUhr = null, vorherFokus = null;
+    function wegraeumen(){
+      [].forEach.call(document.querySelectorAll(".up-sdrawer-host"), function(h){
+        if (h.__upOwner && !document.contains(h.__upOwner)){ try { h.remove(); } catch(e){} }
+      });
+    }
+    function bauen(){
+      if (host && document.contains(host)) return;
+      wegraeumen();
+      host = document.createElement("div");
+      host.className = "up-root up-sdrawer-host" + (cfg.klasse ? " " + cfg.klasse : "");
+      /* Ohne core.css (oder bevor sie da ist) waere der Kasten ein Block am Ende der Seite: fest
+         und 0x0 kann keine Hoehe beitragen (wie der Portal-Kasten in opportunities.js). */
+      host.style.cssText = "position:fixed;top:0;left:0;width:0;height:0;overflow:visible";
+      host.__upOwner = cfg.owner || null;
+      host.innerHTML = '<div class="up-sdrawer-scrim"></div>' +
+        '<aside class="up-sdrawer" role="dialog" aria-modal="true"' + (cfg.label ? ' aria-label="' + esc(t_(cfg.label)) + '"' : '') + '>' +
+          '<div class="up-sdrawer-top">' +
+            '<button type="button" class="up-iconbtn up-sdrawer-back" aria-label="' + esc(t_("Back")) + '">' + icon("arrowLeft", 2) + '</button>' +
+            '<div class="up-sdrawer-crumb"></div>' +
+            '<button type="button" class="up-iconbtn up-sdrawer-close" aria-label="' + esc(t_("Close")) + '">' + icon("x", 2) + '</button>' +
+          '</div>' +
+          '<div class="up-sdrawer-body"></div>' +
+        '</aside>';
+      document.body.appendChild(host);
+      host.querySelector(".up-sdrawer-scrim").addEventListener("click", function(){ zu(); });
+      host.querySelector(".up-sdrawer-back").addEventListener("click", function(){ zu(); });
+      host.querySelector(".up-sdrawer-close").addEventListener("click", function(){ zu(); });
+      api.body = host.querySelector(".up-sdrawer-body");
+    }
+    /* Beim Anlegen schon aufraeumen: baut Bubble die Komponente neu (Themenwechsel), waehrend ihr
+       Drawer offen ist, haengt der alte sonst offen am <body>, bis der neue zum ersten Mal aufgeht. */
+    wegraeumen();
+    function themaSetzen(){
+      var d = false;
+      try { d = typeof cfg.isDark === "function" ? !!cfg.isDark() : false; } catch(e){}
+      if (d) host.setAttribute("data-theme", "dark"); else host.removeAttribute("data-theme");
+    }
+    function taste(e){ if (e.key === "Escape" && offen){ e.stopPropagation(); zu(); } }
+    function auf(krume, inhalt){
+      bauen();
+      themaSetzen();
+      if (krume != null) host.querySelector(".up-sdrawer-crumb").innerHTML = krume;
+      if (inhalt != null){ api.body.innerHTML = inhalt; api.body.scrollTop = 0; }
+      if (zuUhr){ clearTimeout(zuUhr); zuUhr = null; }
+      if (!offen){
+        vorherFokus = document.activeElement;
+        document.addEventListener("keydown", taste, true);
+      }
+      offen = true;
+      host.classList.add("is-open");
+      /* Erst sichtbar, DANN herein -- sonst springt die Schublade ohne Fahrt. Die Uhr ist der
+         Rueckfall fuer einen verdeckten Tab, in dem kein Bild gemalt wird. */
+      var rein = function(){ if (offen) host.classList.add("is-in"); };
+      try { requestAnimationFrame(function(){ requestAnimationFrame(rein); }); } catch(e){}
+      setTimeout(rein, 40);
+      try { host.querySelector(".up-sdrawer-close").focus({ preventScroll: true }); } catch(e2){}
+    }
+    function zu(){
+      if (!offen || !host) return;
+      offen = false;
+      host.classList.remove("is-in");
+      document.removeEventListener("keydown", taste, true);
+      zuUhr = setTimeout(function(){ zuUhr = null; if (!offen && host) host.classList.remove("is-open"); }, 200);
+      try { if (vorherFokus && vorherFokus.focus && document.contains(vorherFokus)) vorherFokus.focus({ preventScroll: true }); } catch(e){}
+      if (typeof cfg.onClose === "function"){ try { cfg.onClose(); } catch(e2){} }
+    }
+    var api = {
+      body: null,
+      open: auf,
+      close: zu,
+      isOpen: function(){ return offen; },
+      setInhalt: function(html){ if (host) api.body.innerHTML = html; },
+      setKrume: function(html){ if (host) host.querySelector(".up-sdrawer-crumb").innerHTML = html; },
+      thema: function(){ if (host) themaSetzen(); }
+    };
+    return api;
   }
 
   /* ---------- makeSearch ----------
@@ -13616,6 +13776,18 @@
     return { labels: labels, datasets: datasets, globalMax: globalMax };
   }
 
+  /* DIE GRAURAMPE DER BALKEN (05.10. aus shopping.js nach core, seit Ads sie auch braucht): dunkel
+     nach hell nach Rang, aus den Graustufen von core (--vc-text, -muted, -third, -fourth und ihre
+     Zwischenstufen). Im Dunkeln GEGENLAEUFIG, hell nach dunkel -- sonst verschwaende der erste
+     Balken im Grund der Spur (#1f1f1b auf #232326). Keine Stufe liegt in der Luminanz 0,30 bis
+     0,40: dort waehlt die Balkenliste weisse Schrift mit unter 3:1 (gemessen am 04.10.: #9a9ea5
+     trug Weiss mit 2,69:1, in beiden Themen). i jenseits der Rampe: die letzte Stufe. */
+  var BALKEN_GRAU_HELL = ["#1f1f1b", "#3e4146", "#585c63", "#6b6f78", "#80858e", "#adb0b5", "#c2c4c8", "#cfd0d3", "#dcdbdd"];
+  var BALKEN_GRAU_DUNKEL = ["#e0e0e0", "#c9cbd0", "#adb0b5", "#80858e", "#6c717a", "#5b5f66", "#4c4f55", "#414449", "#393b40"];
+  function balkenGrau(i, dunkel){
+    var g = dunkel ? BALKEN_GRAU_DUNKEL : BALKEN_GRAU_HELL;
+    return g[Math.max(0, Math.min(Number(i) || 0, g.length - 1))];
+  }
   /* ---------- makeBarList ---------------------------------------------------------------------
      Die Balkenliste als eigenstaendiges Bauteil. Markup und CSS sind DIESELBEN wie im Balkenmodus
      von makeTypeChart (.up-bars/.up-bar-row/.up-bar-track/.up-bar-fill/.up-bar-outside) -- es ist
@@ -14832,6 +15004,13 @@
          wie bisher. */
       var ohneDeckel = typeof cfg.yOhneDeckel === "function" ? !!cfg.yOhneDeckel() : !!cfg.yOhneDeckel;
       var yMax = visMax * Y_PAD; if (yMax <= 0) yMax = 1; if (yMax > 100 && !ohneDeckel) yMax = 100;
+      /* cfg.yGanz (05.10., Ads: Auftritte je Tag): eine Achse aus ganzen Zahlen. Das Raster teilt
+         den Hoechstwert in RASTER_N gleiche Schritte, die Beschriftung rundet -- bei kleinen Zahlen
+         stand dort "0, 1, 1, 1" (Hoechstwert 1,2 in vier Schritten). Hier wird der Hoechstwert auf
+         das naechste Vielfache von RASTER_N gehoben, jeder Schritt ist dann ganz. Ohne die Angabe
+         wie bisher. */
+      var ganz = typeof cfg.yGanz === "function" ? !!cfg.yGanz() : !!cfg.yGanz;
+      if (ganz) yMax = Math.max(RASTER_N, Math.ceil(yMax / RASTER_N) * RASTER_N);
       try {
         chart = new window.Chart(ctx, {
           type: "line",
@@ -18554,6 +18733,22 @@
     image: '<circle cx="7.5" cy="7.5" r="1.5"/>' +
            '<path d="M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z"/>' +
            '<path d="M5 21C9.37246 15.775 14.2741 8.88406 21.4975 13.5424"/>',
+    /* DIE ZEICHEN DER ADS-SEITE (05.10. angefordert, jeweils mit Namen): woertlich aus
+       @hugeicons/core-free-icons@4.3.5 (dist/esm/<Name>.js), wie die Shopping-Zeichen darueber.
+         marketing  MarketingIcon  die Seite selbst (Seitenleiste, Krume)
+         album      Album01Icon    Reiter "Ad Library"
+         brochure   BrochureIcon   Reiter "Advertisers" */
+    marketing: '<ellipse cx="18" cy="10" rx="4" ry="8"/>' +
+               '<path d="M18 2C14.8969 2 8.46512 4.37761 4.77105 5.85372C3.07942 6.52968 2 8.17832 2 10C2 11.8217 3.07942 13.4703 4.77105 14.1463C8.46512 15.6224 14.8969 18 18 18"/>' +
+               '<path d="M11 22L9.05674 20.9303C6.94097 19.7657 5.74654 17.4134 6.04547 15"/>',
+    album: '<path d="M2 13C2 10.1716 2 8.75736 2.87868 7.87868C3.75736 7 5.17157 7 8 7H11C13.8284 7 15.2426 7 16.1213 7.87868C17 8.75736 17 10.1717 17 13.0004C17 14.009 17 14.991 17 15.9996C17 18.8283 17 20.2426 16.1213 21.1213C15.2426 22 13.8284 22 11 22H6C5.07003 22 4.60504 22 4.22354 21.8978C3.18827 21.6204 2.37962 20.8117 2.10222 19.7765C2 19.395 2 18.93 2 18V13Z"/>' +
+           '<path d="M15.5 21.5L9.2658 14.5858C8.5452 13.8652 7.398 13.8016 6.6022 14.4383L2 17.5"/>' +
+           '<path d="M12.5 11.25V11.75M12.25 11.5H12.75M13 11.5C13 11.7761 12.7761 12 12.5 12C12.2239 12 12 11.7761 12 11.5C12 11.2239 12.2239 11 12.5 11C12.7761 11 13 11.2239 13 11.5Z"/>' +
+           '<path d="M19.9933 17C21.1382 16.7676 22 15.7553 22 14.5418V8.02007C22 5.18218 22 3.76324 21.1184 2.88162C20.2368 2 18.8178 2 15.9799 2H9.45819C8.24466 2 7.23241 2.86175 7 4.00669"/>',
+    brochure: '<path d="M18.5 17V7C18.5 5.11438 18.5 4.17157 17.9142 3.58579C17.3284 3 16.3856 3 14.5 3H9.5C7.61438 3 6.67157 3 6.08579 3.58579C5.5 4.17157 5.5 5.11438 5.5 7V17C5.5 18.8856 5.5 19.8284 6.08579 20.4142C6.67157 21 7.61438 21 9.5 21H14.5C16.3856 21 17.3284 21 17.9142 20.4142C18.5 19.8284 18.5 18.8856 18.5 17Z"/>' +
+              '<path d="M18.5 6H19C20.4142 6 21.1213 6 21.5607 6.43934C22 6.87868 22 7.58579 22 9V16C22 17.4142 22 18.1213 21.5607 18.5607C21.1213 19 20.4142 19 19 19H18.5"/>' +
+              '<path d="M5.5 6H5C3.58579 6 2.87868 6 2.43934 6.43934C2 6.87868 2 7.58579 2 9V16C2 17.4142 2 18.1213 2.43934 18.5607C2.87868 19 3.58579 19 5 19H5.5"/>' +
+              '<path d="M14.5 8L9.5 8M14.5 12L9.5 12M14.5 16H9.5"/>',
     /* Lucide mail (lucide-static 0.460.0) -- das zwanzigste Zeichen im Event-Popup: ein Newsletter
        ist ein haeufiges Event, und mit 20 stehen zwei volle Reihen zu zehn (03.10. angefordert). */
     mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
@@ -18988,7 +19183,10 @@
      logo (05.10., Shopping: "im Selected Brands Dropdown fehlen die Logos"): ein Eintrag mit
      logo (URL, auch leer) bekommt das 18px-Logo der Marken-Menues (.up-ment-logo, wie im Filter
      "Mentioned brands" der Tabellen), ohne Bild den Anfangsbuchstaben. icon bleibt fuer
-     Eintraege ohne Bild, die ein Zeichen tragen (Haendler: store). */
+     Eintraege ohne Bild, die ein Zeichen tragen (Haendler: store).
+     zahl (05.10., Ads: die Anzahl je Advertiser und Format aus get_ads_filter_options_v1) steht
+     rechtsbuendig hinter dem Namen, leise und in Tabellenziffern -- wie die Zaehler im Menue
+     "More Filters" des Entwurfs. */
   function auswahlLogo(x){
     var lg = String(x.logo || "").trim();
     if (lg.indexOf("//") === 0) lg = "https:" + lg;
@@ -19040,7 +19238,8 @@
               '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
               (x.logo != null ? auswahlLogo(x) : '') +
               (x.icon ? '<span class="up-ment-zeichen">' + icon(x.icon, 2) + '</span>' : '') +
-              '<span class="up-ment-name">' + esc(t_(x.label)) + '</span></div>';
+              '<span class="up-ment-name">' + esc(t_(x.label)) + '</span>' +
+              (x.zahl != null && x.zahl !== "" ? '<span class="up-ment-zahl">' + esc(String(x.zahl)) + '</span>' : '') + '</div>';
           }).join("");
       menu.innerHTML = kopfHtml() +
         (l.length ? '<div class="up-ment-searchwrap">' +
@@ -20801,6 +21000,7 @@
     brandStack: brandStack,
     relativeTime: relativeTime,
     modelChip: modelChip, modelLogoUrl: modelLogoUrl, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,
+    adCardHtml: adCardHtml, adFormatLabel: adFormatLabel, makeSeitenDrawer: makeSeitenDrawer, balkenGrau: balkenGrau,
     marketChip: marketChip,
     aufResize: aufResize,
     beobachteGroesse: beobachteGroesse,

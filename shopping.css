@@ -72,16 +72,8 @@
    kompakt 55 -- die Vorschauen der Uebersicht und des Details sind fest kompakt
    (.ush-vorschau.is-dense im Markup). Product Movement ist keine Tabelle mit Spalten, sondern
    eine Liste in diesem Raster: 55. */
-.ush-scrollx { overflow-x: auto; overscroll-behavior-x: contain; }
-.ush-innen { min-width: var(--up-cols-min, 0px); }
+/* Der Scroll-Kasten mit stehender erster Spalte kommt seit dem 05.10. aus core (.up-colscroll). */
 .ush-root .ush-bewegung .up-row { height: var(--up-h-row); flex: 0 0 var(--up-h-row); }
-/* Die erste Spalte bleibt beim Scrollen stehen. Der Trenner als Schatten: die Linie der naechsten
-   Zelle scrollt mit weg. Grund wie die Zeile darunter, sonst scheint der Inhalt durch. */
-.ush-scrollx .up-thead > .up-th:first-child, .ush-scrollx .up-row > .up-td:first-child {
-  position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--vc-border); }
-.ush-scrollx .up-thead > .up-th:first-child { background: var(--vt-head-bg); }
-.ush-scrollx .up-row > .up-td:first-child { background: var(--vc-bg); }
-.ush-scrollx .up-row:hover > .up-td:first-child { background: var(--vt-row-hover); }
 .ush-root .ush-box .up-row.is-angepinnt > .up-td:first-child { background: var(--vc-heading-bg); }
 /* Kompakt im Zahnrad: die Produktzeile zeigt nur den Titel, das Bild in der kleinen Stufe -- wie
    urls-table, deren Unterzeile kompakt ebenfalls entfaellt. */

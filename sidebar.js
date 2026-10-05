@@ -85,7 +85,10 @@
       /* Shopping (04.10. angefordert: nach Brands, mit "Beta" hinter dem Namen). ShoppingBag01 aus
          Hugeicons, dasselbe Zeichen wie in der Krume der Komponente. Schluessel "shopping" =
          ?view=shopping. beta: das Kennzeichen aus core in der Akzentfarbe (.up-marke.is-akzent). */
-      { key: "shopping",   label: "Shopping",        icon: "shoppingBag", beta: true }
+      { key: "shopping",   label: "Shopping",        icon: "shoppingBag", beta: true },
+      /* Ads (05.10. angefordert: direkt unter Shopping, mit Beta). MarketingIcon aus Hugeicons,
+         dasselbe Zeichen wie in der Krume der Komponente. Schluessel "ads" = ?view=ads. */
+      { key: "ads",        label: "Ads",             icon: "marketing", beta: true }
     ]},
     { head: "Workspace", items: [
       { key: "performance",   label: "Performance",     icon: "chartColumnUp" },

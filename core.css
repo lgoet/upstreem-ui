@@ -1419,6 +1419,9 @@
     .up-ment-logo { width: 18px; height: 18px; border-radius: 5px; flex: 0 0 auto; background: var(--vt-logo-bg); padding: 1px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; }
     .up-ment-logo img { width: 16px; height: 16px; border-radius: 4px; object-fit: cover; display: block; }
     .up-ment-name { font-size: 13px; font-weight: 500; color: var(--vc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    /* Die Anzahl eines Eintrags im Auswahl-Filter (makeAuswahlFilter, item.zahl): rechts aussen,
+       leise, Tabellenziffern -- sie ordnet ein, sie ist nicht der Eintrag. */
+    .up-ment-zahl { margin-left: auto; padding-left: 8px; flex: 0 0 auto; font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; }
     .up-ment-empty { padding: 12px; font-size: 12px; color: var(--vc-muted); text-align: center; }
     .up-portal { display: contents; }   /* carries the theme + CSS vars to the portaled menus */
     /* Brand search inside the dropdown, plus a capped list so ~10.5 rows show and the 11th peeks. */
@@ -3542,6 +3545,107 @@
    #1c1c1f ergibt #28282b (war #28282c). Eine volle Akzentflaeche war die erste Fassung -- zu laut. */
 .up-marke.is-akzent { background: color-mix(in srgb, var(--up-accent-ink) 5%, var(--vc-bg)); color: var(--up-accent-ink); }
 .up-root[data-theme="dark"] .up-marke.is-akzent { background: color-mix(in srgb, var(--up-accent-ink) 6%, var(--vc-bg)); }
+
+/* DIE TABELLE, DIE WAAGERECHT SCROLLT (05.10. aus shopping.css nach core, seit Ads sie auch
+   braucht): UC.makeColumns setzt im Scrollmodus (cfg.scrollen) --up-cols-min, die Summe der
+   Mindestbreiten. Darunter scrollt der Kasten waagerecht, statt dass Spalten wegfallen ("ich will
+   beides", ziehbare erste Spalte UND die ganze Tabelle). Die erste Spalte bleibt dabei stehen; der
+   Trenner als Schatten, weil die Linie der naechsten Zelle mit wegscrollt, und der Grund wie die
+   Zeile darunter, sonst scheint der Inhalt durch.
+   Markup: .up-colscroll > .up-colscroll-innen > .up-thead + .up-tbody */
+.up-colscroll { overflow-x: auto; overscroll-behavior-x: contain; }
+.up-colscroll-innen { min-width: var(--up-cols-min, 0px); }
+.up-colscroll .up-thead > .up-th:first-child, .up-colscroll .up-row > .up-td:first-child {
+  position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--vc-border); }
+.up-colscroll .up-thead > .up-th:first-child { background: var(--vt-head-bg); }
+.up-colscroll .up-row > .up-td:first-child { background: var(--vc-bg); }
+.up-colscroll .up-row:hover > .up-td:first-child { background: var(--vt-row-hover); }
+
+/* DIE AD CARD (05.10., Ads V1, core.js adCardHtml): die Produktkarte des Response Detail (.urd-pc)
+   als Baustein fuer Anzeigen. Polster 8, Radius 16, innen 8 am Bild (konzentrisch); Text 14/6/6,
+   Fuss unten buendig (margin-top auto). Anheben mit dem kleinen Schatten --up-e-chip wie die
+   Produktkarte: der Entwurf nennt --up-e-2, der lag dort am 05.10. "wie eine Wolke" unter den
+   Kacheln und wurde ersetzt. Das Raster (.up-adgrid) fuellt, was da ist, ab 240px je Karte. */
+.up-adgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.up-adcard { display: flex; flex-direction: column; min-width: 0; padding: 8px; border-radius: var(--up-r-2xl);
+  border: 1px solid var(--vc-border); background: var(--vc-bg); box-sizing: border-box; text-align: left;
+  font: inherit; color: inherit; cursor: pointer;
+  transition: box-shadow var(--up-t-2) var(--up-ease), transform var(--up-t-2) var(--up-ease); }
+.up-adcard:hover { transform: translateY(-2px); box-shadow: var(--up-e-chip); }
+@media (prefers-reduced-motion: reduce) { .up-adcard:hover { transform: none; } }
+.up-adcard:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: 2px; }
+/* Das Werbemittel: 16:10 auf der Kopfflaeche, contain -- ein Banner wird nie beschnitten. Ohne
+   Polster und ohne multiply (anders als ein Produktfoto steht ein Banner nicht auf Weiss frei). */
+.up-adcard-media { position: relative; aspect-ratio: 16 / 10; border-radius: var(--up-r-m); background: var(--vc-heading-bg);
+  overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.up-adcard-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+.up-adcard-ph { display: inline-flex; color: var(--vc-fourth); }
+.up-adcard-ph svg { width: 22px; height: 22px; }
+.up-adcard-media.has-img .up-adcard-ph { display: none; }
+/* Das Format oben links: 22 hoch, Radius 6 wie die Position auf der Produktkarte (.urd-pc-pos). */
+.up-adcard-fmt { position: absolute; top: 10px; left: 10px; height: 22px; padding: 0 7px; border-radius: var(--up-r-s);
+  background: var(--vc-bg); color: var(--vc-text); font-size: var(--up-fs-xs); font-weight: 600; line-height: 22px;
+  white-space: nowrap; box-shadow: var(--up-e-1); }
+.up-adcard-body { display: flex; flex-direction: column; gap: 8px; padding: 14px 6px 6px; flex: 1 1 auto; min-width: 0; }
+/* Der Advertiser als Marken-Chip (UC.markenChip), der Name eine Stufe kleiner und gedaempft wie
+   der Absender auf der Produktkarte; die Marke (You / Competitor) dahinter. */
+.up-adcard-top { display: flex; align-items: center; min-width: 0; min-height: 20px; }
+.up-adcard-top .up-marken-chip { min-width: 0; max-width: 100%; }
+.up-adcard-top .up-ment-name { font-size: var(--up-fs-s); font-weight: 500; color: var(--vc-muted); }
+.up-adcard-title { font-size: var(--up-fs-l); font-weight: 500; line-height: 1.4; letter-spacing: -0.01em; color: var(--vc-text);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: calc(2 * 1.4em);
+  overflow-wrap: anywhere; }
+.up-adcard-title .is-empty { color: var(--vc-third); }
+.up-adcard-desc { font-size: var(--up-fs-m); line-height: 1.45; color: var(--vc-muted); overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.up-adcard-foot { margin-top: auto; padding-top: 6px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.up-adcard-price { font-size: var(--up-fs-xl); font-weight: 600; letter-spacing: -0.01em; color: var(--vc-text);
+  font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.up-adcard-domain { display: flex; align-items: center; gap: 5px; min-width: 0; font-size: var(--up-fs-s); color: var(--vc-third); }
+.up-adcard-domain svg { width: 12px; height: 12px; flex: 0 0 12px; display: block; }
+.up-adcard-domain span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.up-adcard-meta { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--up-fs-s); color: var(--vc-muted); white-space: nowrap; }
+.up-adcard-model { font-weight: 500; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.up-adcard-meta .up-marke { flex: 0 0 auto; }
+.up-adcard-date { margin-left: auto; flex: 0 0 auto; color: var(--vc-third); font-variant-numeric: tabular-nums; }
+
+/* DER SEITEN-DRAWER (05.10., core.js makeSeitenDrawer). Der Kasten am <body> erzeugt keine Box
+   (display: contents), traegt aber die Farbmarken. Zwei Klassen gegen die eine von .up-root.
+   DIE DAUERN SIND DIE DER APP, NICHT DER SKALA: 180ms hinaus, 220ms herein, Schleier 160/200ms --
+   die Drawer des Kopf-Skripts (project-host-app-layout) und der Opportunities-Drawer fahren genau
+   so. Ein Drawer, der anders faehrt als jeder andere der App, faellt auf; darum die benannte
+   Ausnahme wie --up-dd-radius. */
+.up-root.up-sdrawer-host { display: contents; }
+/* Der Schleier wie im Entwurf ("with a scrim"): 18 % der Schrift im Hellen, im Dunkeln 45 % der
+   dunklen Gegenfarbe -- dieselben Werte wie dort (rgba 17,17,20 / .18 und 0,0,0 / .45), aus den
+   Marken statt als feste Farbe. */
+.up-sdrawer-scrim { position: fixed; inset: 0; z-index: 9903; display: none; opacity: 0;
+  background: color-mix(in srgb, var(--vc-text) 18%, transparent);
+  -webkit-backdrop-filter: blur(1.5px); backdrop-filter: blur(1.5px);
+  transition: opacity 160ms ease; }
+.up-sdrawer-host[data-theme="dark"] .up-sdrawer-scrim { background: color-mix(in srgb, var(--vc-text-invert) 45%, transparent); }
+.up-sdrawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 9904; width: min(560px, 100vw); display: none;
+  flex-direction: column; box-sizing: border-box; background: var(--vc-bg); border-left: 1px solid var(--vc-border);
+  box-shadow: var(--up-e-drawer); color: var(--vc-text);
+  font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; -webkit-font-smoothing: antialiased;
+  transform: translateX(110%); transition: transform 180ms ease-in; will-change: transform; backface-visibility: hidden; }
+.up-sdrawer-host.is-open .up-sdrawer-scrim { display: block; }
+.up-sdrawer-host.is-open .up-sdrawer { display: flex; }
+.up-sdrawer-host.is-in .up-sdrawer-scrim { opacity: 1; transition: opacity 200ms ease; }
+.up-sdrawer-host.is-in .up-sdrawer { transform: translateX(0); transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1); }
+@media (prefers-reduced-motion: reduce) { .up-sdrawer, .up-sdrawer-scrim { transition: none; } }
+/* Die Kopfzeile in den Massen von drawer-topbar.css: 32 hoch, 7px Polster, 12px darueber, 8
+   darunter; Krume 12/600 mit Zeilenhoehe 1, Typ und Trenner in der dritten Stufe, Logo 18/r6. */
+.up-sdrawer-top { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 7px; margin: 12px 0 8px; min-width: 0; }
+.up-sdrawer-top .up-iconbtn { flex: 0 0 auto; }
+.up-sdrawer-crumb { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px;
+  font-size: var(--up-fs-s); font-weight: 600; line-height: 1; }
+.up-sdrawer-typ, .up-sdrawer-sep { flex: 0 0 auto; color: var(--vc-third); white-space: nowrap; }
+/* Das Logo in der Krume ist das 18px-Logo der Marken-Chips (.up-ment-logo) -- dieselbe Groesse
+   wie .utb-logo, ohne eigene Regel. */
+.up-sdrawer-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.up-sdrawer-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 4px 24px 40px;
+  display: flex; flex-direction: column; gap: 28px; }
 /* Der Tarif als Pille (UC.planPilleHtml, 28.09. aus teams.css hierher, seit settings-billing sie
    auch zeigt). Der Grundton des Punktes steht HIER und nicht im JS: .up-sent-dot bringt keine
    Farbe mit (die Sentiment-Zelle setzt sie immer inline), und ein Tarif ohne Farbeintrag hatte
@@ -4638,21 +4742,21 @@
   margin-left: calc(-1 * var(--up-ph-zug-l, 0px)); margin-right: calc(-1 * var(--up-ph-zug-r, 0px));
   width: calc(100% + var(--up-ph-zug-l, 0px) + var(--up-ph-zug-r, 0px)); }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-desc,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead) .up-ph-desc { display: none; }
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead) .up-ph-desc { display: none; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-top {
   align-items: center; min-height: var(--up-h-btn); padding-bottom: 8px; position: relative; }
 /* Die Linie laeuft bis an die Kante der Bubble-Gruppe um den Kopf, also so weit UEBER das Element
    hinaus, wie die Gruppe Polster hat -- 16 oder 0, je nachdem, ob es in Bubble schon raus ist.
    UC.makePageCrumbs misst das (--up-ph-rand-l/-r); ohne Messung liegt sie unter dem Element. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-top::after,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead)::after {
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead)::after {
   content: ""; position: absolute; bottom: 0; height: 1px; pointer-events: none;
   left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px));
   background: var(--vc-border); }
 /* Die Ueberschrift als Krumenzeile: 14px, auf der Mitte der 32px-Zeile. Vor dem JS steht hier der
    Seitenname aus der Vorlage -- in derselben Groesse, also ohne Sprung. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-heading,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead) .up-ph-heading {
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead) .up-ph-heading {
   display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0;
   font-size: var(--up-fs-l); font-weight: 500; line-height: var(--up-h-btn); letter-spacing: 0;
   color: var(--vc-third); white-space: nowrap; }
@@ -4678,16 +4782,20 @@
    hinaus. Die Luecke wird dafuer 25 -- vom Textende bis zum naechsten Zeichen bleiben es
    3 + 25 = 28, kein Reiter rueckt. ::before links 13, rechts 12: zusammen genau die Luecke,
    ohne halbe Pixel und ohne dass sich zwei Reiter ueberlappen. */
+.up-root.uad-root .up-ph-nav,
 .up-root.ush-root .up-ph-nav,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav { margin-top: 0; gap: 25px; }
+.up-root.uad-root .up-ph-navitem,
 .up-root.ush-root .up-ph-navitem,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem {
   height: calc(var(--up-h-btn) + 16px); padding: 0 3px 0 0; position: relative; }
+.up-root.uad-root .up-ph-navitem::before,
 .up-root.ush-root .up-ph-navitem::before,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem::before {
   content: ""; position: absolute; top: 0; bottom: 0; left: -13px; right: -12px; }
 /* Der ERSTE Reiter reicht nach links hoechstens bis an die Kante der Gruppe -- bei einem Einzug
    unter 13 laege sonst ein Teil der Klickflaeche ueber dem Rand der Seitenleiste. */
+.up-root.uad-root .up-ph-navitem:first-child::before,
 .up-root.ush-root .up-ph-navitem:first-child::before,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem:first-child::before { left: calc(-1 * min(13px, var(--up-ph-rand-l, 0px))); }
 /* Im SCHMALEN Kopf (is-narrow, unter 768) teilen sich die Reiter die Breite (flex 1 1 0, Inhalt
@@ -4695,12 +4803,16 @@
    alte Geometrie: 4px Luecke und 12px Seitenpolster, sonst laegen die gestreckten Reiter 28px
    auseinander. Und keine verlaengerte Klickflaeche: bei 4px Luecke griffe sie 10px in den
    Nachbarn, und der spaetere Nachbar liegt oben -- ein Klick rechts in Reiter 1 waehlte Reiter 2. */
+.up-root.uad-root.is-narrow .up-ph-nav,
 .up-root.ush-root.is-narrow .up-ph-nav,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav { gap: 4px; }
+.up-root.uad-root.is-narrow .up-ph-navitem,
 .up-root.ush-root.is-narrow .up-ph-navitem,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem { padding: 0 15px 0 12px; }
+.up-root.uad-root.is-narrow .up-ph-navitem::before,
 .up-root.ush-root.is-narrow .up-ph-navitem::before,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem::before { content: none; }
+.up-root.uad-root .up-ph-nav::after,
 .up-root.ush-root .up-ph-nav::after,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav::after {
   left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px)); }
@@ -4737,14 +4849,14 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    Beschreibung, Linie und Ueberschrift teilen sich die Regeln des kompakten Kopfs oben. Hoehe
    und Luft der Zeile stehen in der Komponente (teams.css, prompt-research.css), weil dort ihr
    Regler data-head-top sitzt; hier nur, was keinen Regler braucht. */
-.up-root:is(.uts-root, .upr-root, .uev-root, .ush-root).has-crumbs {
+.up-root:is(.uts-root, .upr-root, .uev-root, .ush-root, .uad-root).has-crumbs {
   padding-left: var(--up-ph-innen-l, 0px); padding-right: var(--up-ph-innen-r, 0px);
   margin-left: calc(-1 * var(--up-ph-zug-l, 0px)); margin-right: calc(-1 * var(--up-ph-zug-r, 0px));
   width: calc(100% + var(--up-ph-zug-l, 0px) + var(--up-ph-zug-r, 0px)); }
 /* Die Kopfzeile steht rechts bei 8 wie in jedem Seitenkopf, der Inhalt der Komponente darunter
    bei 16: also zieht sie sich um die Differenz nach aussen (--up-ph-kopfzug-l/-r aus
    UC.makePageCrumbs, ohne JS 0; links ist die Differenz heute 0). */
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead) { align-items: center; min-height: var(--up-h-btn); position: relative;
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead) { align-items: center; min-height: var(--up-h-btn); position: relative;
   margin-left: calc(-1 * var(--up-ph-kopfzug-l, 0px)); margin-right: calc(-1 * var(--up-ph-kopfzug-r, 0px)); }
 
 /* ---------- DIE KOMPONENTEN TRAGEN IHR SEITENPOLSTER SELBST (29.09. angefordert) ----------

@@ -1,0 +1,210 @@
+/* upstreem ads.css -- Ads (Beta, V1), 05.10. Praefix uad.
+
+   Werte aus dem Entwurf (design_handoff_ads/README.md, Ads.dc.html), gemessen gegen die Skalen in
+   core.css (CLAUDE.md 1c) -- wo beide sich widersprechen, gilt die Skala. Was der Entwurf als
+   core-Teil benennt, kommt aus core und steht hier nicht:
+     Seitenkopf, Reiter      der kompakte Kopf in einer Komponente (core.css: .uad-pagehead,
+                             .up-root.uad-root .up-ph-nav, wie Shopping)
+     Abschnittskopf          .up-head / .up-heading.has-count / .up-head-tools
+     Kennzahlen              .up-kpiband.is-4 + UC.kpiKarte
+     Tabellen, Pager         .up-thead/.up-row mit --up-cols (UC.makeColumns), .up-colscroll, UC.makePager
+     Balken                  UC.makeBarList (.up-bars), Graurampe UC.balkenGrau
+     Ring                    UC.variationRing (.up-var-sov)
+     Ad Card, Raster         UC.adCardHtml (.up-adcard, .up-adgrid)
+     Drawer                  UC.makeSeitenDrawer (.up-sdrawer)
+     Auswahl-Filter          UC.makeAuswahlFilter (.up-ment) mit item.zahl
+   Abstaende des Entwurfs: 48 zwischen Bloecken, 24 innerhalb einer Gruppe, 16 zwischen Kopf und
+   Filterzeile. Farben nur aus Marken. */
+
+.uad-root { display: block; }
+.uad-root .uad-pagehead { padding: 8px 0; }
+.uad-filterzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 16px; }
+/* Kalender fest, die Filterleiste nimmt den Rest (ihre Chips brauchen den Platz), wie Shopping. */
+.uad-filterzeile > .udr-root { flex: 0 0 auto; }
+.uad-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
+.uad-main { padding: 24px 0 64px; }
+
+.uad-seite { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
+.uad-gruppe { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.uad-sek { display: flex; flex-direction: column; min-width: 0; }
+/* hidden muss gegen die eigenen display-Regeln gewinnen (.uad-sek, .up-kpiband und .up-foot setzen
+   display, und jede Autorenregel schlaegt das hidden des Browsers). */
+.uad-root [data-sek][hidden], .uad-root .uad-foot[hidden] { display: none; }
+
+/* ---- Abschnittskoepfe (.up-head aus core) ---------------------------------------------------------
+   Das Erklaer-Zeichen (.up-th-info) zeigt sich in core nur im Tabellenkopf; hier wie in Shopping
+   beim Ueberfahren des Kopfs bzw. der Kachel, dicht hinter dem Wort. */
+.uad-heading { gap: 6px; }
+.uad-head .up-head-tools { flex-wrap: wrap; justify-content: flex-end; }
+.uad-root .uad-kpi .up-th-info, .uad-root .uad-head .up-th-info { margin-left: 0; }
+.uad-root .uad-kpi:hover .up-th-info, .uad-root .uad-head:hover .up-th-info { opacity: 1; }
+.uad-root.is-narrow .uad-head { height: auto; flex-wrap: wrap; row-gap: 8px; }
+.uad-root.is-narrow .uad-head .up-head-tools { margin-left: 0; }
+/* Telefon: die Werkzeuge der Ad Library (zwei Auswahlen, zwei Umschalter, Suche -- zusammen gut
+   440px) passen nicht in 343. Dort nehmen sie eine eigene volle Zeile und brechen darin um;
+   gemessen standen sie vorher 116px ueber den Rand. */
+.uad-root.is-vnarrow .uad-head .up-head-tools { flex: 1 1 100%; min-width: 0; justify-content: flex-start; }
+
+/* ---- Kennzahlen --------------------------------------------------------------------------------- */
+.uad-kpi .up-kpi-label { display: inline-flex; align-items: center; gap: 6px; }
+.uad-kpifehler { grid-column: 1 / -1; }
+.uad-kpi .up-kpi-foot { min-width: 0; }
+.uad-kpi-fusstext { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- Diagramme ---------------------------------------------------------------------------------- */
+.uad-chartbox { padding: 16px; }
+.uad-linewrap { position: relative; height: 280px; }
+.uad-seite[data-seite="advertiser"] .uad-linewrap { height: 220px; }
+
+/* ---- Overview: zwei Spalten gleicher Hoehe (Entwurf: align-items stretch, die Balken duerfen
+   unten Luft behalten). Unter 420 + 420 + 16 eine Spalte. min(), damit ein Telefon nicht 420px
+   erzwingt und waagerecht scrollt. */
+.uad-zwei { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 48px 16px; align-items: stretch; }
+.uad-zwei > .uad-sek > .up-box, .uad-zwei .uad-vorschauplatz { flex: 1 1 auto; }
+.uad-zwei .uad-vorschauplatz, .uad-zwei .uad-vorschau, .uad-zwei .uad-vorschau > .uad-tabelle { display: flex; flex-direction: column; }
+.uad-zwei .uad-vorschau, .uad-zwei .uad-vorschau > .uad-tabelle, .uad-zwei .uad-vorschau > .uad-tabelle > .up-box { flex: 1 1 auto; }
+.uad-balkenbox { padding: 16px 20px; }
+.uad-balkenbox .up-bar-row[data-bar-key] { cursor: pointer; }
+.uad-balkenbox .up-bar-row[data-bar-key]:hover .up-bar-fill { filter: brightness(1.12); }
+
+/* ---- Tabellen ------------------------------------------------------------------------------------
+   Raster und Spalten aus core (UC.makeColumns, .up-colscroll); Zeilenhoehe 72 / kompakt 55. */
+.uad-tabwurzel { width: 100%; }
+.uad-root .uad-box .up-row.is-statisch { cursor: default; }
+.uad-root .uad-box .up-row:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: -2px; }
+.uad-titel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
+.uad-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); }
+.uad-zweizeilig { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+/* Zwei Angaben in einer Unterzeile: durch Abstand getrennt, nicht durch einen Punkt
+   (feedback keine Mittelpunkte). */
+.uad-unter { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; font-size: var(--up-fs-s); color: var(--vc-third); }
+.uad-unter > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.uad-topics { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.uad-root .up-td-model { gap: 8px; }
+.uad-prompt-ic { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
+.uad-prompt-ic svg { width: 14px; height: 14px; display: block; }
+
+/* Das Vorschaubild einer Ad in der Liste und in der aufgeklappten Prompt-Zeile: 48 x 32 auf der
+   Kopfflaeche, das Bild ganz drin (contain); ohne Bild das Zeichen. */
+.uad-bild { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 48px; height: 32px; border: 1px solid var(--vc-border); border-radius: var(--up-r-s); overflow: hidden;
+  background: var(--vc-heading-bg); box-sizing: border-box; }
+.uad-bild img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+.uad-bild-ph { display: inline-flex; color: var(--vc-fourth); }
+.uad-bild-ph svg { width: 15px; height: 15px; display: block; }
+.uad-bild.has-img .uad-bild-ph { display: none; }
+
+/* Organic Context: Zeichen und Text, kein Punkt (feedback keine Punkt-Pillen -- der Entwurf zeigt
+   einen 6px-Punkt, die App traegt Angaben mit Zeichen oder Text). */
+.uad-organisch { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: var(--up-fs-m); color: var(--vc-muted); }
+.uad-organisch span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.uad-organisch svg { width: 14px; height: 14px; flex: 0 0 14px; display: block; color: var(--vc-fourth); }
+.uad-organisch.is-ja { color: var(--vc-text); }
+.uad-organisch.is-ja svg { color: var(--vt-up); }
+
+/* ---- Skelette ----------------------------------------------------------------------------------- */
+.uad-sk-flaeche { background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .uad-sk-flaeche { animation: none; } }
+.uad-karte-sk { cursor: default; }
+.uad-karte-sk:hover { transform: none; box-shadow: none; }
+.uad-karte-sk .up-tsk-bar { display: block; }
+
+/* ---- Advertiser Detail: der Kopf (Entwurf: Logo 44, Name 22/500, Marke, Domain) ----------------
+   Das Logo ist .up-logo-box aus core, nur groesser: Radius 12, das Bild darin 11 (konzentrisch). */
+.uad-held { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; min-width: 0; }
+.uad-held-logo.up-logo-box { width: 44px; height: 44px; flex: 0 0 44px; border-radius: var(--up-r-xl); }
+.uad-held-logo.up-logo-box img { width: 42px; height: 42px; border-radius: 11px; }
+.uad-held-logo .up-logo-ltr { font-size: var(--up-fs-xl); }
+.uad-held-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.uad-held-text > .up-tsk-bar { display: block; }
+.uad-held-zeile { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; min-width: 0; }
+.uad-held-name { margin: 0; font-size: var(--up-fs-2xl); font-weight: var(--up-fw-m); line-height: 1.2; letter-spacing: -0.4px;
+  color: var(--vc-text); overflow-wrap: anywhere; }
+.uad-held-dom { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: var(--up-fs-m); color: var(--vc-third); overflow-wrap: anywhere; }
+.uad-held-dom svg { width: 14px; height: 14px; flex: 0 0 14px; display: block; }
+
+/* Die Gruppen nach Kampagne (Entwurf: Ordner-Kachel, UTM Campaign, Campaign ID, Anzahl rechts). Die
+   Monoschrift wie in core (.up-planpill-prompt): Geist Mono ist nicht geladen, ui-monospace ist auf
+   jedem System da. */
+.uad-kampagne + .uad-kampagne { margin-top: 32px; }
+.uad-kamp-kopf { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; min-height: 32px; margin-bottom: 12px; }
+.uad-kamp-ic { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 24px; width: 24px; height: 24px;
+  border-radius: var(--up-r-s); background: var(--up-sel-bg); color: var(--vc-muted); }
+.uad-kamp-ic svg { width: 14px; height: 14px; display: block; }
+.uad-kamp-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.uad-kamp-name { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); overflow-wrap: anywhere; }
+.uad-kamp-name.is-ohne { color: var(--vc-third); }
+.uad-kamp-name.is-mono, .uad-kamp-id { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+.uad-kamp-id { font-size: var(--up-fs-s); color: var(--vc-third); overflow-wrap: anywhere; }
+.uad-kamp-zahl { margin-left: auto; font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-third); white-space: nowrap; }
+.uad-hinweis { margin: 12px 0 0; font-size: var(--up-fs-s); color: var(--vc-third); }
+
+/* ---- Ad Library ---------------------------------------------------------------------------------
+   Raster und Liste als Ansicht: das Segment aus core mit Zeichen (.up-seg-btn svg ist dort 14px). */
+/* Die aufklappbare Prompt-Zeile. Der Pfeil wechselt das Zeichen statt sich zu drehen (feedback:
+   Chevrons drehen sich nie). */
+.uad-auf-ic { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
+.uad-auf-ic svg { width: 14px; height: 14px; display: block; }
+.uad-root .uad-box .up-row.uad-pzeile.is-offen, .uad-root .uad-box .up-row.uad-pzeile.is-offen > .up-td:first-child { background: var(--vc-heading-bg); }
+.uad-auf { display: flex; flex-direction: column; gap: 12px; padding: 4px 16px 16px 40px; background: var(--vc-heading-bg);
+  border-bottom: 1px solid var(--vc-border); }
+.uad-auf-kopf { display: flex; align-items: center; gap: 12px; padding-top: 8px; min-width: 0; }
+.uad-auf-titel { font-size: var(--up-fs-s); font-weight: 600; color: var(--vc-third); white-space: nowrap; }
+.uad-auf-kopf .up-quietbtn { margin-left: auto; }
+.uad-auf-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 8px; }
+.uad-auf-ad { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 8px; border: 1px solid var(--vc-border);
+  border-radius: var(--up-r-xl); background: var(--vc-bg); text-align: left; font: inherit; color: inherit; cursor: pointer;
+  transition: border-color var(--up-t-1) var(--up-ease); }
+.uad-auf-ad:hover { border-color: var(--vc-hover-border); }
+.uad-auf-ad:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: 2px; }
+.uad-auf-ad.is-sk { cursor: default; }
+.uad-auf-ad .uad-zweizeilig { flex: 1 1 auto; }
+.uad-auf-ad .up-tsk-bar { display: block; }
+
+/* ---- Telefon: drei Reiter mit Zeichen passen nicht in 343px -- dort nur der Name, wie Shopping. */
+.up-root.uad-root.is-narrow.is-vnarrow .up-ph-navicon { display: none; }
+.up-root.uad-root.is-narrow.is-vnarrow .up-ph-navitem { padding: 0 8px; }
+
+/* ============================================================================================
+   DER AD-DETAIL-DRAWER (UC.makeSeitenDrawer, Klasse uad-drawer). Er haengt am <body>, also ohne
+   .uad-root davor.
+   ============================================================================================ */
+.uad-drawer .up-sdrawer-name { padding: 0; border: 0; background: none; font: inherit; color: var(--vc-text); cursor: pointer; }
+.uad-drawer button.up-sdrawer-name:hover { text-decoration: underline; text-underline-offset: 3px; }
+.uad-dr-motiv { display: flex; flex-direction: column; gap: 16px; }
+/* Das Werbemittel 16:9, wie die Karte ohne Polster und contain; das Format oben links ist dasselbe
+   Kennzeichen wie auf der Karte (.up-adcard-fmt), 12 vom Rand (Entwurf). */
+.uad-dr-media { position: relative; aspect-ratio: 16 / 9; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-xl); background: var(--vc-heading-bg); }
+.uad-dr-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+.uad-dr-media.has-img .up-adcard-ph { display: none; }
+.uad-dr-media .up-adcard-ph svg { width: 28px; height: 28px; }
+.uad-dr-media .up-adcard-fmt { top: 12px; left: 12px; }
+.uad-dr-text { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.uad-dr-absender { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); }
+.uad-dr-h { margin: 0; font-size: var(--up-fs-2xl); font-weight: var(--up-fw-m); line-height: 1.25; letter-spacing: -0.4px; color: var(--vc-text);
+  text-wrap: pretty; overflow-wrap: anywhere; }
+.uad-dr-desc { margin: 0; font-size: var(--up-fs-l); line-height: 1.55; color: var(--vc-muted); overflow-wrap: anywhere; }
+.uad-dr-preis { font-size: var(--up-fs-xl); font-weight: 600; color: var(--vc-text); font-variant-numeric: tabular-nums; }
+.uad-dr-gruppe { display: flex; flex-direction: column; }
+.uad-dr-titel { padding-bottom: 8px; font-size: var(--up-fs-s); font-weight: 600; color: var(--vc-third); }
+.uad-dr-box { border: 1px solid var(--vc-border); border-radius: var(--up-r-xl); overflow: hidden; }
+.uad-dr-zeile { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 12px; align-items: center; min-height: 40px;
+  padding: 8px 12px; box-sizing: border-box; }
+.uad-dr-zeile + .uad-dr-zeile { border-top: 1px solid var(--vc-border); }
+.uad-dr-k { font-size: var(--up-fs-s); color: var(--vc-third); }
+.uad-dr-v { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--up-fs-m); font-weight: var(--up-fw-m);
+  line-height: 1.45; color: var(--vc-text); overflow-wrap: anywhere; }
+.uad-dr-v > span, .uad-dr-v > a, .uad-dr-v > button { min-width: 0; }
+.uad-dr-v.is-mono > span, .uad-dr-v.is-mono > a { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: var(--up-fs-s); }
+.uad-dr-url { color: inherit; text-decoration: none; }
+.uad-dr-url:hover { text-decoration: underline; text-underline-offset: 3px; }
+.uad-dr-link { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: 0; background: none; font: inherit; color: inherit;
+  text-align: left; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--vc-fourth); overflow-wrap: anywhere; }
+.uad-dr-link svg { width: 14px; height: 14px; flex: 0 0 14px; display: block; color: var(--vc-third); }
+.uad-kopie { margin-left: auto; flex: 0 0 auto; color: var(--vc-third); }
+.uad-kopie.is-kopiert { color: var(--vt-up); }
+/* Telefon: der Schluessel ueber dem Wert, sonst bleiben fuer eine URL keine 150px. */
+@media (max-width: 480px) {
+  .uad-dr-zeile { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+}

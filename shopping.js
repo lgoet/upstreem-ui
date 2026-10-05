@@ -359,15 +359,8 @@
                  products: ["products:desc"], avg_position: ["avg_position:asc"], first_seen: ["first_seen:asc"],
                  last_seen: ["last_seen:desc"], name: ["name:asc"] }
   };
-  /* Graustufen der Haendler-Balken nach Rang (Entwurf, Merchant Share). Die Balkenliste waehlt die
-     Schrift nach der Helligkeit der Flaeche selbst (barIsLight). */
-  /* Die Graurampe der Balken (Haendler, "Wo"-Spalten), dunkel nach hell wie im Entwurf, aus den
-     Graustufen von core (--vc-text, -muted, -third, -fourth und ihre Zwischenstufen). Im Dunkeln
-     GEGENLAEUFIG, hell nach dunkel -- sonst verschwaende der erste Balken im Grund der Spur (#1f1f1b
-     auf #232326). Keine Stufe liegt in der Luminanz 0,30 bis 0,40: dort waehlt barIsLight weisse
-     Schrift mit unter 3:1 (gemessen am 04.10.: #9a9ea5 trug Weiss mit 2,69:1, in beiden Themen). */
-  var GRAU_HELL = ["#1f1f1b", "#3e4146", "#585c63", "#6b6f78", "#80858e", "#adb0b5", "#c2c4c8", "#cfd0d3", "#dcdbdd"];
-  var GRAU_DUNKEL = ["#e0e0e0", "#c9cbd0", "#adb0b5", "#80858e", "#6c717a", "#5b5f66", "#4c4f55", "#414449", "#393b40"];
+  /* Die Graurampe der Balken (Haendler, "Wo"-Spalten) kommt seit dem 05.10. aus core
+     (UC.balkenGrau) -- Ads braucht dieselbe. Dort steht auch, warum sie im Dunkeln gegenlaeufig ist. */
   var WARTE_MS = 25000;
   var CACHE_MAX = 16;
 
@@ -406,7 +399,7 @@
         cache: state.cache, reihe: state.reihe };
     }
     function isDark() { return (UC.themeParam && UC.themeParam(root.getAttribute("data-isdark"))) || root.getAttribute("data-theme") === "dark"; }
-    function grau(i) { var g = isDark() ? GRAU_DUNKEL : GRAU_HELL; return g[Math.max(0, Math.min(i, g.length - 1))]; }
+    function grau(i) { return UC.balkenGrau ? UC.balkenGrau(i, isDark()) : (isDark() ? "#e0e0e0" : "#1f1f1b"); }
     if (isDark()) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
     if (UC.makeTooltips) UC.makeTooltips(root, isDark);
 
@@ -1208,10 +1201,10 @@
         '</div>';
     }
     /* Das Raster setzt UC.makeColumns als --up-cols an der Wurzel der Tabelle (spaltenFuer), die
-       Mindestbreite als --up-cols-min: darunter scrollt der Kasten waagerecht (.ush-scrollx). */
+       Mindestbreite als --up-cols-min: darunter scrollt der Kasten waagerecht (.up-colscroll aus core). */
     function tabelleHtml(kopf, zeilen, klasse) {
       return '<div class="up-box ush-box' + (klasse ? " " + klasse : "") + '">' +
-        '<div class="ush-scrollx"><div class="ush-innen">' +
+        '<div class="up-colscroll"><div class="up-colscroll-innen">' +
           '<div class="up-thead">' + kopf + '</div>' +
           '<div class="up-tbody">' + zeilen + '</div>' +
         '</div></div></div>';
