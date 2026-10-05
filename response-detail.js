@@ -1369,7 +1369,59 @@
       if (!state.data) return;
       renderHead();
       renderAbsender();
+      /* Der Name in der Leiste traegt den Modellnamen -- der kommt erst mit dem Store. */
+      topbarFuellen();
     }, root);
+
+    /* ---- DIE LEISTE UEBER DEM DRAWER (05.10.) ------------------------------------------------
+       Gemeldet: "der selbe Step soll automatisch noch die Topbar fuellen, ich kann ja jetzt nicht
+       mehr einzelne Dinger referenzieren" -- get_mention_detail_v8 kommt als EIN Text, Bubble hat
+       keine Felder mehr fuer "name" oder "item_id". Diese Komponente hat sie aber, also fuellt sie
+       die Leiste selbst: Typ response, Name "<Modell>, <Datum>" (wie in der Vorlage der Leiste),
+       Kennung prompt_run_id.
+       WELCHE Leiste: data-topbar am Element nennt ihre Instanz; ohne Angabe die drawer-topbar
+       (.utb-root) im selben Drawer. Gefuellt wird ueber ihren oeffentlichen Setter -- die Leiste
+       bleibt Herrin ihres Zustands. Steht sie noch nicht im Dokument (Bubble baut sie spaeter),
+       wird ein paar Mal nachgesehen. */
+    function topbarInstanz() {
+      var eigen = (root.getAttribute("data-topbar") || "").trim();
+      if (eigen) return document.querySelector('.utb-root[data-instance="' + eigen.replace(/"/g, "") + '"]') ? eigen : "";
+      var drawer = root.closest ? root.closest('[id^="drawer-"], [id^="content-"]') : null;
+      var leiste = drawer ? drawer.querySelector(".utb-root[data-instance]") : null;
+      if (!leiste && drawer && drawer.id.indexOf("content-") === 0) {
+        var aussen = document.getElementById("drawer-" + drawer.id.slice(8));
+        leiste = aussen ? aussen.querySelector(".utb-root[data-instance]") : null;
+      }
+      return leiste ? leiste.getAttribute("data-instance") : "";
+    }
+    function modellName(key) {
+      var chip = document.createElement("div");
+      chip.innerHTML = UC.modelChip(key, { full: true });
+      var n = chip.querySelector(".up-ment-name");
+      return n ? n.textContent : String(key || "");
+    }
+    var topbarUhr = null;
+    function topbarFuellen(versuch) {
+      if (topbarUhr) { clearTimeout(topbarUhr); topbarUhr = null; }
+      if (root.isConnected === false || typeof window.setDrawerTopbar !== "function") return;
+      var id = topbarInstanz();
+      if (!id) {
+        /* Zehnmal im Abstand von 200ms: die Leiste kann nach den Daten erst entstehen. */
+        if ((versuch || 0) < 10) topbarUhr = setTimeout(function () { topbarFuellen((versuch || 0) + 1); }, 200);
+        return;
+      }
+      if (istLaden()) { if (window.resetDrawerTopbar) window.resetDrawerTopbar(id); return; }
+      var d = state.data;
+      if (!d) {
+        /* Fehler: die Leiste soll nicht im Skelett haengen bleiben -- ein Strich statt eines Namens. */
+        window.setDrawerTopbar(id, { type: "response", name: "\u2013" });
+        return;
+      }
+      var name = [d.model ? modellName(d.model) : "", d.run_at && UC.fmtDate ? UC.fmtDate(d.run_at) : ""]
+        .filter(Boolean).join(", ");
+      window.setDrawerTopbar(id, { type: "response", name: name || "\u2013",
+        item_id: String(d.prompt_run_id || d.id || ""), market: String(d.market || "") });
+    }
 
     /* Die Spaltenzahl haengt an der Breite der eigenen Box. */
     if (UC.onResize) UC.onResize(root, function () {
@@ -1411,6 +1463,7 @@
         warteBeenden();
         render();
         if (neu) einblenden();
+        topbarFuellen();
         persist();
         return true;
       },
@@ -1422,6 +1475,9 @@
         if (state.loading) {
           state.data = null; state.hasData = false; state.fehler = null;
           warteStarten();
+          /* Mit dem Inhalt geht auch die Leiste ins Skelett -- sonst stuende dort der Name der
+             vorigen Antwort ueber dem Skelett der neuen. */
+          topbarFuellen();
         } else warteBeenden();
         render();
         /* Auch im Speicher weggeworfen -- ein Neuaufbau ist genau so ein spaeteres Neuzeichnen. */

@@ -31,6 +31,7 @@
   | data-view-fn    | nein    | Toolbox-Funktion fuer den Wechsel Kacheln/Liste             |
   | data-domain-fn  | nein    | Toolbox-Funktion fuer den Klick auf eine Domain             |
   | data-product-fn | nein    | Toolbox-Funktion fuer den Klick auf eine Produktkarte (siehe urdProduct) |
+  | data-topbar     | nein    | Instanz der drawer-topbar, die diese Komponente fuellt. Ohne: die im selben Drawer |
 
   ── Die Ereignisse und ihre Werte ────────────────────────────────────────────
   Die ersten drei tragen einen BLANKEN Wert, kein JSON -- Bubble liest sie ohne Umweg:
@@ -171,6 +172,11 @@
         var FEHLER = `[Result of step 1's error body]`;
         try { if (window.setResponseDetail) window.setResponseDetail("INSTANCE_ID", ROH, FEHLER); } catch (e) {}
       })();
+
+  DIE LEISTE UEBER DEM DRAWER fuellt die Komponente selbst (05.10.): Typ response, Name
+  "<Modell>, <Datum>", item_id = prompt_run_id. Ein eigener setDrawerTopbar-Schritt ist nicht mehr
+  noetig (und mit v8 auch nicht mehr moeglich, es gibt keine einzelnen Felder). Beim Laden geht die
+  Leiste ins Skelett, bei einem Fehler steht dort ein Strich.
 
   Statisch zum Ausprobieren: derselbe Schritt, im Backtick statt des Ausdrucks das Beispiel aus der
   v8-Uebergabe (ausgepackt) -- im Pruefstand urd06/_v8.js unveraendert gegen die Komponente gelaufen.
