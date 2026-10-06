@@ -1194,7 +1194,7 @@
       hochzaehlen(el);
     }
     function linieZeichnen(labels, werte, label) {
-      var tinte = UC.accentInk ? UC.accentInk(root) : "#1f1f1b";
+      var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : "#1f1f1b";
       linie.render({ labels: labels, datasets: [{ label: label, __id: "ads", __baseColor: tinte, borderColor: tinte, data: werte }] });
     }
     function zeichneOvChart(d) {

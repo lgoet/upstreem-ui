@@ -640,6 +640,10 @@
        Coral mit dunkler Schrift -- das ist dort der uebliche Bau und Anthropics eigener Ton fuer
        diesen Grund. Terrakotta ist damit die einzige Farbe mit zwei FLAECHEN; die anderen zwei
        brauchen nur zwei Tinten. */
+    /* "Standard + Blau" (06.10.): nur die Linienfarbe der Charts (UC.chartInk), die Oberflaeche bleibt
+       im Standard. Die Werte sind die erste Stufe von UC.ruhigeFamilie. */
+    html[data-chartakzent="blau"] .up-root { --up-chart-ink: #3f66b0; }
+    html[data-chartakzent="blau"] .up-root[data-theme="dark"] { --up-chart-ink: #83abf4; }
     html[data-accent="indigo"] .up-root { --up-accent: #5E6AD2; --up-accent-fg: #ffffff; --up-accent-ink: #5E6AD2; }
     html[data-accent="indigo"] .up-root[data-theme="dark"] { --up-accent-ink: #7C8AF0; }
     html[data-accent="azur"] .up-root { --up-accent: #0075DE; --up-accent-fg: #ffffff; --up-accent-ink: #0075DE; }

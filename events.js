@@ -1167,7 +1167,7 @@
          Kurve in brand-detail. Der Vergleich gestrichelt in der VIERTEN Schriftfarbe (03.10.:
          "heller"). Keine
          Event-Farbe fuer Reihen (Spezifikation 29). */
-      var tinte = UC.accentInk ? UC.accentInk(root) : token("--vc-text", "#1f1f1b");
+      var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : token("--vc-text", "#1f1f1b");
       var grau = token("--vc-fourth", "#80858e");
       var ds = [{ label: aName, __id: "affected", __baseColor: tinte, borderColor: tinte,
                   __favicon: a.affected && a.affected.logo_url ? a.affected.logo_url : undefined,
@@ -2687,6 +2687,12 @@
     });
     if (UC.onViewChange) UC.onViewChange(function (name) {
       if (name === "events" && root.isConnected) setTimeout(function () { adresseLesen(true); }, 0);
+    });
+    /* Akzent gewechselt (06.10., "Standard + Blau"): die Kurve traegt ihre Farbe aus UC.chartInk, die
+       Farbe steht beim Zeichnen fest -- also neu zeichnen. Andere Einstellungen zeichnet makeLine selbst. */
+    if (UC.onPrefs) UC.onPrefs(function (d) {
+      if (root.isConnected === false || (d && d.name && d.name !== "accent")) return;
+      if (state.ansicht === "detail") renderChart();
     });
     if (UC.onResize) UC.onResize(root, function () {
       if (state.ansicht === "uebersicht" && elListe) {

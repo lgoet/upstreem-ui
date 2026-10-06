@@ -470,7 +470,7 @@
          Heatmap-Zelle bei 65 Prozent; die Begruendung dafuer war, dass die Kurve sichtbar zum
          Radar darueber gehoert. Das gilt weiter, nur folgt die Matrix jetzt selbst der
          Akzentfarbe -- beide kommen also nach wie vor aus einer Quelle. */
-      var linie = UC.accentInk ? UC.accentInk(root) : "#1f1f1b";
+      var linie = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : "#1f1f1b";
       var comp = state.company ? [{
         company_id: cid, name: state.company.name, color: linie,
         favicon_url: state.company.favicon_url || state.company.logo_url || state.company.logo || ""
@@ -726,6 +726,12 @@
     else if (UC.onResize) UC.onResize(root, function(){
       clearTimeout(root.__updRespT);
       root.__updRespT = setTimeout(function(){ try { line.resize(); } catch(e){} }, 160);
+    });
+    /* Akzent gewechselt (06.10., "Standard + Blau"): die Kurve traegt ihre Farbe aus UC.chartInk, die
+       Farbe steht beim Zeichnen fest -- also neu zeichnen. Andere Einstellungen zeichnet makeLine selbst. */
+    if (UC.onPrefs) UC.onPrefs(function(d){
+      if (root.isConnected === false || (d && d.name && d.name !== "accent")) return;
+      renderChart();
     });
 
     /* ---------------- Oeffentliche Schnittstelle ---------------- */

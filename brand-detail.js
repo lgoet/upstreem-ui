@@ -472,7 +472,7 @@
          Eine gesetzte Markenfarbe gewinnt weiterhin und kommt aus dem RPC: daran aendert sich
          nichts, sie ist die Aussage der Marke und nicht die der Oberflaeche. */
       var farbe = String(c.color || c.brand_color || "").trim() ||
-                  (UC.accentInk ? UC.accentInk(root) : "#1f1f1b");
+                  (UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : "#1f1f1b");
       line.render(UC.buildLineDatasets(pts, [{
         company_id: cid, name: c.name || "", color: farbe,
         favicon_url: c.logo_url || c.favicon_url || ""
@@ -712,6 +712,12 @@
     };
 
     root.__ubdController = ctrl;
+    /* Akzent gewechselt (06.10., "Standard + Blau"): die Kurve traegt ihre Farbe aus UC.chartInk, die
+       Farbe steht beim Zeichnen fest -- also neu zeichnen. Andere Einstellungen zeichnet makeLine selbst. */
+    if (UC.onPrefs) UC.onPrefs(function (d) {
+      if (root.isConnected === false || (d && d.name && d.name !== "accent")) return;
+      renderChart();
+    });
     /* Alles nachholen, was auf genau diese Instanz gewartet hat. */
     if (spaet) spaet.drain(instanceId, ctrl);
     /* Aendert der Loader sein Attribut, muss die Komponente das sehen -- sonst bliebe das

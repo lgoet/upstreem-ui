@@ -111,12 +111,13 @@
       "How upstreem looks across the whole app": "Wie upstreem in der ganzen App aussieht",
       "Appearance": "Darstellung",
       "Accent color": "Akzentfarbe",
-      "The color of buttons, switches, checks and the selected page in the navigation. Logos, favicons and charts keep their own colors.":
-        "Die Farbe von Knöpfen, Schaltern, Häkchen und der gewählten Seite in der Navigation. Logos, Favicons und Charts behalten ihre eigenen Farben.",
+      "The color of buttons, switches, checks and the selected page in the navigation. Logos, favicons and charts keep their own colors, except with Default + Blue: everything as in Default, charts in blue.":
+        "Die Farbe von Knöpfen, Schaltern, Häkchen und der gewählten Seite in der Navigation. Logos, Favicons und Charts behalten ihre eigenen Farben, außer bei Standard + Blau: alles wie im Standard, die Charts in Blau.",
       "Default": "Standard",
       "Indigo": "Indigo",
       "Azure": "Azur",
       "Terracotta": "Terrakotta",
+      "Default + Blue": "Standard + Blau",
       "System": "System",
 
       /* Die Meldungen des Profilbild-Uploads. Ohne Diagnose und ohne interne Namen -- nur, was
@@ -174,6 +175,9 @@
        begruendet. */
     var AKZENTE = [
       { wert: "default",    name: "Default", farbe: "#1f1f1b", farbeDunkel: "#e0e0e0" },
+      /* Direkt unter dem Standard (06.10. angefordert): alles wie dort, nur die Charts im ruhigen
+         Blau. Der Punkt ist halb und halb -- links die Farbe der Oberflaeche, rechts die der Charts. */
+      { wert: "standard-blau", name: "Default + Blue", farbe: "#1f1f1b", farbeDunkel: "#e0e0e0", farbe2: "#3f66b0", farbe2Dunkel: "#83abf4" },
       /* Der Punkt zeigt die TINTE, also den Ton, den man im gewaehlten Thema wirklich zu
          sehen bekommt -- nicht die Flaechenfarbe. Die Werte stehen neben ihrer Begruendung in
          core.css beim Token --up-accent-ink. */
@@ -354,6 +358,9 @@
          Standards gilt. Nicht am gespeicherten Thema: "System" kann beides sein. */
       var dunkel = !!(M && M.back && M.back.getAttribute("data-theme") === "dark");
       var f = (dunkel && o.farbeDunkel) ? o.farbeDunkel : o.farbe;
+      var f2 = o.farbe2 ? ((dunkel && o.farbe2Dunkel) ? o.farbe2Dunkel : o.farbe2) : "";
+      /* Zwei Farben: halb geteilt, harte Kante in der Mitte. */
+      if (f2) return '<span class="ums-dot" style="background:linear-gradient(90deg,' + esc(f) + ' 50%,' + esc(f2) + ' 50%)"></span>';
       return '<span class="ums-dot" style="background:' + esc(f) + '"></span>';
     }
     function selHtml(name, liste, jetzt) {
@@ -397,7 +404,7 @@
         '<div class="ums-secline"></div>' +
         zeileHtml("Theme", "System follows the setting of your operating system.",
           selHtml("theme", THEMEN, themaJetzt())) +
-        zeileHtml("Accent color", "The color of buttons, switches, checks and the selected page in the navigation. Logos, favicons and charts keep their own colors.",
+        zeileHtml("Accent color", "The color of buttons, switches, checks and the selected page in the navigation. Logos, favicons and charts keep their own colors, except with Default + Blue: everything as in Default, charts in blue.",
           selHtml("accent", AKZENTE, UC.getPref("accent"))) +
         zeileHtml("Show upstreem branding", "",
           schalterHtml("branding", UC.getPref("branding") !== "off")) +

@@ -2310,7 +2310,7 @@
       if (!tr.length) { linie.empty(); return; }
       var p = d.product || {}, b = p.brand && typeof p.brand === "object" ? p.brand : { type: "other" };
       var feld = state.dMetrik;
-      var tinte = UC.accentInk ? UC.accentInk(root) : token("--vc-text", "#1f1f1b");
+      var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : token("--vc-text", "#1f1f1b");
       var grau = token("--vc-fourth", "#80858e");
       /* Ein Tag ohne Wert steht auf 0 wie in jedem Chart der App -- ausser der Position, dort
          laeuft die Linie ueber den Tag (siehe zeichneChart). */

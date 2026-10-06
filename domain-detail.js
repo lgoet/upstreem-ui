@@ -155,8 +155,13 @@
      hellere Stufe als eine 2px-Linie; die Deckkraft stuft er selbst weiter ab).
      Die URL-Typen (Ring, Balken darunter) behalten ihre Farben -- auch das wie dort.
      Ohne ruhigeFamilie (aelteres core) bleibt es bei der Farbe des Zitationstyps. */
+  /* SEIT DEM 06.10. DER SCHWARZE VERLAUF (angefordert: "dort alles im Standard-Akzent in den
+     schwarzen Gradients", das Blau dabei merken): UC.chartFamilie gibt im Standard die fuenf
+     Stufen der Balkenrampe und nur mit "Standard + Blau" (Einstellungen) die ruhige blaue Familie,
+     die hier bisher immer stand. Ohne chartFamilie (aelteres core) bleibt es bei ruhigeFamilie. */
   function ruhig(isDark, rueckfall) {
     var UCr = window.UpstreemCore;
+    if (UCr && typeof UCr.chartFamilie === "function") return UCr.chartFamilie(isDark);
     if (UCr && typeof UCr.ruhigeFamilie === "function") return UCr.ruhigeFamilie(isDark);
     return [rueckfall, rueckfall, rueckfall, rueckfall, rueckfall];
   }
@@ -1031,6 +1036,12 @@
          der Typ-Split tragen ihre Farben im Markup und muessen es hier tun. */
       renderTypes();
       renderFunnel(); renderBars();
+    });
+    /* Akzent gewechselt (06.10., "Standard + Blau"): Kurven, Trichter und Balken tragen ihre Farbe
+       aus UC.chartFamilie, die Farbe steht beim Zeichnen fest -- also neu zeichnen. */
+    if (UC.onPrefs) UC.onPrefs(function (d) {
+      if (root.isConnected === false || (d && d.name && d.name !== "accent")) return;
+      renderChart(); renderFunnel(); renderBars();
     });
 
     /* Die Beschriftungsspalte der Balken haengt an der Breite der EIGENEN Box. */

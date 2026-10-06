@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261093;
+  var BUILD = 20261094;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -237,7 +237,8 @@
     date_preset: { last7: 1, last30: 1, last3: 1 },
     branding:    { on: 1, off: 1 },
     /* Die Akzentfarbe. "default" ist die bisherige -- Flaeche in der Schriftfarbe des Themas. */
-    accent:      { "default": 1, indigo: 1, azur: 1, terrakotta: 1 },
+    /* "standard-blau" (06.10.): wie der Standard, nur die Charts im ruhigen Blau (siehe akzentAnwenden). */
+    accent:      { "default": 1, "standard-blau": 1, indigo: 1, azur: 1, terrakotta: 1 },
     /* Event-Marker in den Liniendiagrammen (02.10., Impact Events). Vorgabe AN -- so verlangt:
        "die Standarderfahrung muss die Events zeigen". Der Fokus-Marker im Event-Detail steht
        unabhaengig davon immer (das ganze Diagramm handelt von ihm). */
@@ -344,11 +345,19 @@
      alle. "default" schreibt gar nichts: ohne Attribut gelten die Werte aus .up-root, und die
      sind buchstabengleich das, was vorher dastand.
      Gesetzt wird beim Aufbau und bei jeder Aenderung -- der Zuhoerer steht gleich darunter. */
+  /* "STANDARD + BLAU" (06.10. angefordert): alles wie im Standard, nur die Charts, die dort schwarz
+     oder im schwarzen Verlauf stehen, im ruhigen Blau (UC.ruhigeFamilie, das Blau des Domain Detail).
+     Es setzt deshalb KEIN data-accent -- daran haengt die ganze Oberflaeche (Knoepfe, Auswahl, die
+     Bulk-Leiste der Prompts-Tabelle prueft nur "ist eins gesetzt") --, sondern ein eigenes Attribut,
+     das nur die Charts lesen: UC.chartInk, UC.chartFamilie, UC.balkenGrau. */
   function akzentAnwenden(){
     var w = getPref("accent");
     try {
-      if (!w || w === "default") document.documentElement.removeAttribute("data-accent");
+      var blau = w === "standard-blau";
+      if (!w || w === "default" || blau) document.documentElement.removeAttribute("data-accent");
       else document.documentElement.setAttribute("data-accent", w);
+      if (blau) document.documentElement.setAttribute("data-chartakzent", "blau");
+      else document.documentElement.removeAttribute("data-chartakzent");
     } catch(e){}
   }
   akzentAnwenden();
@@ -13923,8 +13932,18 @@
      trug Weiss mit 2,69:1, in beiden Themen). i jenseits der Rampe: die letzte Stufe. */
   var BALKEN_GRAU_HELL = ["#1f1f1b", "#3e4146", "#585c63", "#6b6f78", "#80858e", "#adb0b5", "#c2c4c8", "#cfd0d3", "#dcdbdd"];
   var BALKEN_GRAU_DUNKEL = ["#e0e0e0", "#c9cbd0", "#adb0b5", "#80858e", "#6c717a", "#5b5f66", "#4c4f55", "#414449", "#393b40"];
+  /* Dieselbe Rampe im ruhigen Blau fuer "Standard + Blau" (06.10.). Erste Stufe ist die Linienfarbe
+     (#3f66b0 hell, #83abf4 dunkel -- die erste Stufe von UC.ruhigeFamilie), die weiteren aus der
+     Familie und ihrer Mischung mit dem Grund. Dieselbe Regel wie fuer Grau: keine Stufe in der
+     Luminanz 0,30 bis 0,40 (gerechnet: hell .14/.16/.19/.23/.28 dann .49/.59/.70/.79, dunkel
+     .41 dann .29/.23/.19/.14/.10/.07/.05/.04). */
+  var BALKEN_BLAU_HELL = ["#3f66b0", "#4a70b6", "#5579bc", "#6083c2", "#7392c9", "#a8bbdd", "#bccbe5", "#cfdaed", "#dfe6f3"];
+  var BALKEN_BLAU_DUNKEL = ["#83abf4", "#7092d0", "#6685bd", "#5e7aad", "#526992", "#48597a", "#3f4d67", "#384257", "#323a49"];
+  function chartBlau(){
+    try { return document.documentElement.getAttribute("data-chartakzent") === "blau"; } catch(e){ return false; }
+  }
   function balkenGrau(i, dunkel){
-    var g = dunkel ? BALKEN_GRAU_DUNKEL : BALKEN_GRAU_HELL;
+    var g = chartBlau() ? (dunkel ? BALKEN_BLAU_DUNKEL : BALKEN_BLAU_HELL) : (dunkel ? BALKEN_GRAU_DUNKEL : BALKEN_GRAU_HELL);
     return g[Math.max(0, Math.min(Number(i) || 0, g.length - 1))];
   }
   /* ---------- makeBarList ---------------------------------------------------------------------
@@ -18074,6 +18093,25 @@
     return true;
   }
 
+  /* DIE FARBE EINER EINZELNEN DATENLINIE (06.10.). Im Standard und in den Akzenten ist das die
+     Akzent-Tinte (Standard: die Schriftfarbe, also schwarz); mit "Standard + Blau" das ruhige Blau --
+     ueber --up-chart-ink, das nur in diesem Modus gesetzt ist (core.css). Fuer Charts, nie fuer
+     Knoepfe oder Auswahl: dort bleibt accentInk. */
+  function chartInk(el){
+    var n = (el && el.nodeType === 1) ? el : document.documentElement;
+    var v = "";
+    try { v = String(getComputedStyle(n).getPropertyValue("--up-chart-ink") || "").trim(); } catch(e){}
+    return v || accentInk(el);
+  }
+  /* DIE FUENF STUFEN EINER DATENFAMILIE (06.10., Domain Detail): im Standard der schwarze Verlauf
+     aus der Balkenrampe (angefordert: "dort auch alles im Standard-Akzent in den schwarzen
+     Gradients"), mit "Standard + Blau" die ruhige blaue Familie, die das Domain Detail bisher immer
+     trug. */
+  function chartFamilie(dunkel){
+    if (chartBlau()) return ruhigeFamilie(dunkel);
+    var g = dunkel ? BALKEN_GRAU_DUNKEL : BALKEN_GRAU_HELL;
+    return [g[0], g[2], g[4], g[5], g[7]];
+  }
   function accentInk(el){
     var n = (el && el.nodeType === 1) ? el : document.documentElement;
     var v = "";
@@ -21173,7 +21211,7 @@
     planPilleHtml: planPilleHtml,
     planIstDev: planIstDev,
     planAnzeige: planAnzeige,
-    ruhigeFamilie: ruhigeFamilie,
+    ruhigeFamilie: ruhigeFamilie, chartInk: chartInk, chartFamilie: chartFamilie,
     /* Den Streifen eines gerade gebauten Umschalters SOFORT setzen, noch vor dem ersten Bild --
        sonst steht die Box bis zum naechsten Lauf ohne Streifen da (view-switch, 29.09.). */
     segJetzt: function(el){ sicher("segLauf", function(){ segLauf(el || null, true, true); }); },
