@@ -395,6 +395,24 @@
   animation-play-state: paused;
 }
 .ulh-text .ulh-cta .ulh-btn:hover::before { opacity: 1; animation-play-state: running; }
+/* Auf dem dunklen Knopf ist der Funke WEISS (06.10. abends angefordert): das Blau des Chips las sich
+   auf Fast-Schwarz als Fremdfarbe. Derselbe Verlauf, nur die Farbe getauscht. */
+.ulh-text .ulh-cta .ulh-btn-pri::before {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%,
+              rgba(255, 255, 255, .7) 32%, #ffffff 50%, rgba(255, 255, 255, .7) 68%,
+              rgba(255, 255, 255, 0) 100%);
+}
+/* Der Pfeil hinter "Book a Demo": 14px wie die Zeichen der Knoepfe der App, 6px Abstand. Die Spanne
+   haelt ihre Breite auch leer -- das Zeichen kommt erst, wenn core da ist. Beim Ueberfahren ruckt
+   er 2px nach rechts, auf der Kurve der Seite. */
+.ulh-btn-pfeil {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px; margin-left: 6px; flex: 0 0 14px;
+  transition: translate 260ms var(--ulh-expo);
+}
+.ulh-btn-pfeil svg { width: 14px; height: 14px; display: block; }
+.ulh-btn:hover .ulh-btn-pfeil { translate: 2px 0; }
+@media (prefers-reduced-motion: reduce) { .ulh-btn-pfeil { transition: none; } }
 
 /* ---------- Der Hintergrund ----------
    Zwei Ebenen, beide hinter allem:
@@ -1370,15 +1388,33 @@
 .ulh-app .ulh-shop [data-sek="landscape"],
 .ulh-app .ulh-shop .ush-zwei { display: none; }
 .ulh-app .ulh-shop .ush-vorschau.is-dense .up-tbody .up-row { height: 72px; flex: 0 0 72px; }
-/* Die Zeilen fallen nacheinander ein, wie in der Prompts-Seite (dieselbe Bewegung, 55ms Abstand).
-   --ulh-i setzt landing-hero.js im selben Zug, in dem die Zeilen entstehen. */
-.ulh-root .ulh-shop.is-zeilen .ush-vorschau .up-tbody .up-row {
-  animation: ulhRise 550ms var(--ulh-expo) backwards;
-  animation-delay: calc(var(--ulh-i, 0) * 55ms);
+/* Die Zeilen fallen nacheinander ein (06.10. abends neu, sie stockten -- Begruendung an
+   shopFuellen). Zwei Stufen: is-zeilen haelt sie verborgen und legt ihre Ebenen schon an
+   (will-change), is-laeuft startet die Bewegung, wenn die Fotos dekodiert sind. fill "both":
+   die Zeile steht nach ihrem Lauf auf dem Endbild, bis is-zeilen faellt -- sonst fiele sie
+   zwischen Ende und Aufraeumen auf opacity 0 zurueck. 700ms und 60ms Abstand wie SHOP_ZEILEN_LAUF
+   und SHOP_ZEILEN_STUFE in landing-hero.js. */
+.ulh-root .ulh-shop.is-zeilen .ush-vorschau .up-tbody .up-row { opacity: 0; will-change: transform, opacity; }
+.ulh-root .ulh-shop.is-zeilen.is-laeuft .ush-vorschau .up-tbody .up-row {
+  animation: ulhRise 700ms var(--ulh-expo) both;
+  animation-delay: calc(var(--ulh-i, 0) * 60ms);
 }
 @media (prefers-reduced-motion: reduce) {
-  .ulh-root .ulh-shop.is-zeilen .ush-vorschau .up-tbody .up-row { animation: none; }
+  .ulh-root .ulh-shop.is-zeilen .ush-vorschau .up-tbody .up-row,
+  .ulh-root .ulh-shop.is-zeilen.is-laeuft .ush-vorschau .up-tbody .up-row { animation: none; opacity: 1; }
 }
+/* Der Klick auf das Produkt (shopProduktKlick): erst der Hover der Zeile aus core, dann der Druck --
+   wie bei der Karte im Brett, nur ein Prozent statt drei: eine Zeile ist breit, drei Prozent
+   wuerden sie sichtbar schrumpfen lassen. */
+.ulh-app .ulh-shop .ush-vorschau .up-row { transition: background 140ms ease, transform 170ms var(--ulh-ease); }
+.ulh-app .ulh-shop .ush-vorschau .up-row.ulh-fass,
+.ulh-app .ulh-shop .ush-vorschau .up-colscroll .up-row.ulh-fass > .up-td:first-child { background: var(--vt-row-hover); }
+.ulh-app .ulh-shop .ush-vorschau .up-row.ulh-druck { transform: scale(0.99); }
+/* Das Detail steigt herauf wie jede Seite im Fenster (ulhRise auf der Kurve der Seite) -- nur der
+   Inhalt: Seitenkopf und Reiter bleiben stehen, wie in der App, wenn man ein Produkt oeffnet.
+   is-detail setzt shopProduktKlick und nimmt es nach 1.2s wieder ab. */
+.ulh-root .ulh-shop.is-detail .ush-main { animation: ulhRise 700ms var(--ulh-expo) backwards; }
+@media (prefers-reduced-motion: reduce) { .ulh-root .ulh-shop.is-detail .ush-main { animation: none; } }
 
 /* ---------- Die Karten im Fenster: flacher ----------
    Gemessen: eine Karte war 285px hoch, ueber dem Brett stehen 261px Kopf und Werkzeugleiste, und
@@ -1811,22 +1847,32 @@
 .ulh-vis .ush-bewegung .up-row { height: 64px; flex: 0 0 64px; }
 /* Die Produktzelle: Foto, dann Titel und Marke -- der Abstand wie in der Tabelle von Shopping. */
 .ulh-vis-prod { display: flex; align-items: center; gap: 12px; min-width: 0; }
-/* Der Nachweis der Fotos unter dem Block (CC BY / CC BY-SA verlangen ihn): klein, leise, an der
-   Kante der Karten. */
-.ulh-bildnachweis { margin: 14px 8px 0; padding: 0 4px; font-size: 11px; line-height: 1.55; color: var(--ulh-third); max-width: 120ch; }
-.ulh-bildnachweis a { color: inherit; text-decoration: underline; text-decoration-color: rgba(158, 158, 158, .45); text-underline-offset: 2px; }
-.ulh-bildnachweis a:hover { color: var(--ulh-sub); }
 /* ---- Der Block "Events" (06.10.) ----
-   Links die Event-Karte der App (events.css), vorn das Acme-Event, dahinter ein zweites, gedreht
-   und leiser. Die Karte hat die Breite, die sie im Raster der App hat (rund 300px), und steht
-   mittig -- auf voller Kartenbreite waere ihr Band ein Balken. Rechts die Kurve des Event-Details
-   (UC.makeLine), so hoch wie der sichtbare Teil der Vorschau. Beide Reihen 344 hoch, wie die
-   unteren Reihen des ersten Blocks. */
+   Links die Event-Karte der App (events.css): DREI KARTEN IM FAECHER (06.10. abends: "wie bei
+   unseren Fanned Logo Chips, auch rechts hinter der vorderen Card ein Event, Versatz minimal
+   groesser"). Die Bauart von .up-fan-c in core.css: alle drei liegen auf EINEM Platz und drehen um
+   einen Punkt weit unter sich -- transform-origin 50% 260% liegt gut anderthalb Kartenhoehen unter
+   der Karte, so stehen die seitlichen von selbst auf einem Bogen, aussen etwas tiefer. Bei 7 Grad
+   ragen sie oben rund 90px und unten rund 55px heraus (vorher: eine Karte, 65px).
+   Die Karte ist 15% breiter als die 296 des App-Rasters (angefordert), steht mittig, und die zwei
+   hinteren sind kleiner und leiser. Sie faechern auf, wenn die Karte ins Bild kommt (is-da), mit
+   der Kurve der Seite -- vorher liegen sie genau hinter der vorderen.
+   Rechts die Kurve des Event-Details (UC.makeLine), so hoch wie der sichtbare Teil der Vorschau.
+   Beide Reihen 344 hoch, wie die unteren Reihen des ersten Blocks. */
 .ulh-vis-eventkarte, .ulh-vis-eventkurve { --ulh-vs: 1; --ulh-vh: 344px; }
 .ulh-evkarten { position: relative; height: calc(100% - 40px); display: flex; justify-content: center; align-items: flex-start; padding-top: 6px; }
-.ulh-evkarten .uev-karte { width: 296px; flex: 0 0 auto; }
-.ulh-evkarte-hinten { position: absolute; top: 6px; left: 50%; translate: -34% 0; rotate: 5deg; scale: .92; opacity: .5; }
-.ulh-evkarte-vorn { position: relative; z-index: 1; translate: -12% 14px; box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 12px 28px rgba(11, 13, 24, .08); }
+.ulh-evkarten .uev-karte { width: 340px; flex: 0 0 auto; }
+.ulh-evkarte-links, .ulh-evkarte-rechts {
+  position: absolute; top: 6px; left: 0; right: 0; margin-inline: auto;
+  transform-origin: 50% 260%; rotate: 0deg; scale: .94; opacity: .6;
+  transition: rotate 1000ms var(--ulh-expo) 350ms;
+}
+.ulh-card.is-da .ulh-evkarte-links  { rotate: -7deg; }
+.ulh-card.is-da .ulh-evkarte-rechts { rotate: 7deg; }
+.ulh-evkarte-vorn { position: relative; box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 12px 28px rgba(11, 13, 24, .08); }
+@media (prefers-reduced-motion: reduce) { .ulh-evkarte-links, .ulh-evkarte-rechts { transition: none; } }
+/* Kein Tooltip in der Kurve (06.10. abends angefordert): die Leinwand nimmt keine Maus an. */
+.ulh-evk canvas { pointer-events: none; }
 .ulh-evk { height: calc(100% - 40px); display: flex; flex-direction: column; }
 .ulh-evk-wrap { position: relative; flex: 1 1 auto; min-height: 0; }
 
@@ -3488,8 +3534,8 @@
   .ulh-vis-linie .ulh-vis-in, .ulh-vis-regal .ulh-vis-in, .ulh-vis-werber .ulh-vis-in,
   .ulh-vis-bewegung .ulh-vis-in, .ulh-vis-eventkarte .ulh-vis-in,
   .ulh-vis-eventkurve .ulh-vis-in { width: calc(100% / var(--ulh-vs)); }
-  /* Die Event-Karte vorn mittig, wenn daneben kein Platz fuer die zweite ist. */
-  .ulh-evkarte-vorn { translate: 0 14px; }
+  /* Die Event-Karten auf schmalem Schirm: so breit, dass links und rechts noch je eine hervorsieht. */
+  .ulh-evkarten .uev-karte { width: min(340px, 70%); }
   .ulh-vis-sprachen, .ulh-vis-modelle, .ulh-vis-linie, .ulh-vis-regal, .ulh-vis-werber { --ulh-vs: 0.86; }
   /* Die Ad-Karten laufen wie die Tabellen rechts hinaus -- zwei ganz, die dritte angeschnitten. */
   .ulh-vis-anzeigen .ulh-vis-in { padding: 0; }
@@ -3597,4 +3643,11 @@
   .ulh-nav-rechts .ulh-btn-sec { display: none; }
   .ulh-fuss-in { flex-direction: column; }
   .ulh-geo-mk-t, .ulh-geo-mk-s { font-size: 10.5px; }
+  /* Der Faecher auf dem Telefon flacher: die Karte ist hier schmal und dadurch hoch (rund 370px),
+     und mit 260% und 7 Grad lag der Drehpunkt so tief, dass die hinteren oben 117px herausragten --
+     gemessen weit ueber den Rand der Vorschau hinaus, sichtbar abgeschnitten. 200% und 4 Grad
+     lassen rund 50px stehen, und das passt in die 46px Rand neben der vorderen. */
+  .ulh-evkarte-links, .ulh-evkarte-rechts { transform-origin: 50% 200%; }
+  .ulh-card.is-da .ulh-evkarte-links  { rotate: -4deg; }
+  .ulh-card.is-da .ulh-evkarte-rechts { rotate: 4deg; }
 }

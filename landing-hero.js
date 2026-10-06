@@ -57,7 +57,7 @@
     udd: "<div class=\"up-root udd-root\" data-instance=\"lh-udd\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand=\"Acme\"></div>",
     hph: "<div class=\"up-root up-ph-root pfph-root\" data-instance=\"lh-hph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d10%22%2F%3E%3Cpath%20d%3D%22M29%2015.5%2016.2%2048.5H23.1L25.3%2041.9H38.7L40.9%2048.5H47.8L35%2015.5ZM32%2025.4%2028.9%2034.4H35.1Z%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Workspace</span></div><h1 class=\"up-ph-heading\">Performance</h1><p class=\"up-ph-desc\">Explore topic performance, compare brands, and uncover strengths and gaps</p></div></div></div>",
     uhm: "<div class=\"up-root uhm-root\" data-instance=\"lh-uhm\" data-cdn-pin=\"\" data-isdark=\"no\"><div class=\"up-head\"><div class=\"up-heading\">Performance Chart</div><div class=\"up-head-tools\"><div class=\"uhm-metric up-seg\" role=\"tablist\" aria-label=\"Metric\"><button class=\"up-seg-btn is-active\" data-metric=\"visibility\" type=\"button\" role=\"tab\" aria-selected=\"true\">Visibility</button><button class=\"up-seg-btn\" data-metric=\"rank\" type=\"button\" role=\"tab\" aria-selected=\"false\">Ranking</button><button class=\"up-seg-btn\" data-metric=\"sentiment\" type=\"button\" role=\"tab\" aria-selected=\"false\">Sentiment</button></div><!-- Der Einstellungsknopf steht ganz rechts, hinter dem Filter. Er stand vorher links davon; core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars). --><div class=\"uhm-pick\"><button class=\"uhm-pick-btn up-iconbtn\" type=\"button\" data-tip=\"Brands &amp; Topics\" aria-label=\"Choose brands and topics\"></button><div class=\"uhm-pick-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"uhm-set\"><button class=\"uhm-set-btn up-iconbtn\" type=\"button\" data-tip=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z\"/><path d=\"M8.5 10C7.67157 10 7 9.32843 7 8.5C7 7.67157 7.67157 7 8.5 7C9.32843 7 10 7.67157 10 8.5C10 9.32843 9.32843 10 8.5 10Z\"/><path d=\"M15.5 17C16.3284 17 17 16.3284 17 15.5C17 14.6716 16.3284 14 15.5 14C14.6716 14 14 14.6716 14 15.5C14 16.3284 14.6716 17 15.5 17Z\"/><path d=\"M10 8.5L17 8.5\"/><path d=\"M14 15.5L7 15.5\"/></svg></button><div class=\"uhm-set-menu up-menu\" role=\"menu\" aria-hidden=\"true\"></div></div></div></div><div class=\"uhm-box\"><div class=\"uhm-scroll\"><div class=\"uhm-grid\"></div></div></div></div>",
-    ush: "<div class=\"up-root ush-root\" data-instance=\"lh-ush\" data-cdn-pin=\"\" data-isdark=\"no\"></div>"
+    ush: "<div class=\"up-root ush-root\" data-adresse=\"aus\" data-instance=\"lh-ush\" data-cdn-pin=\"\" data-isdark=\"no\"></div>"
   };
   /* ---- MARKUP ENDE ---- */
 
@@ -312,9 +312,9 @@
      core.js), und die zeichnen daraufhin neu. Genau daran lag es, dass die vier Charts der
      Domain-Detail-Sektion in dunklen Farben standen, obwohl an ihrer Wurzel "light" stand:
      gezeichnet wurden sie, bevor das Attribut da war, und niemand hat es ihnen danach gesagt.
-     Danach kommt hellHalten und setzt data-theme AUSDRUECKLICH auf "light" -- core nimmt es fuer
-     hell naemlich weg, und ohne das Attribut gilt wieder, was der Rechner des Besuchers
-     eingestellt hat. */
+     Danach kommt hellHalten und haelt die Wurzeln hell -- seit dem 06.10. in derselben Schreibweise
+     wie core (kein data-theme), damit die beiden nicht mehr gegeneinander schreiben (Begruendung
+     dort). */
   function themaHell(){
     try { if (window.setUpstreemTheme) window.setUpstreemTheme("light"); } catch (e){}
   }
@@ -364,7 +364,11 @@
         '</p>' +
         '<div class="ulh-cta">' +
           '<button class="ulh-btn ulh-btn-sec" type="button">Talk to Sales</button>' +
-          '<button class="ulh-btn ulh-btn-pri" type="button">Book a Demo</button>' +
+          /* Der Pfeil (06.10. angefordert) kommt wie jedes Zeichen der Seite aus core und wird von
+             zeichenSetzen() nachgeliefert; sein Platz steht schon vorher (landing-hero.css), damit
+             der Knopf nicht breiter springt, wenn er kommt. */
+          '<button class="ulh-btn ulh-btn-pri" type="button">Book a Demo' +
+            '<span class="ulh-btn-pfeil" data-ic="arrowRightLong" data-ic-w="2" aria-hidden="true"></span></button>' +
         '</div>' +
       '</div>' +
       /* data-up-keepclip an Ausschnitt und Buehne: core entklammert beim Mount jeder Komponente
@@ -2168,7 +2172,7 @@
     if (art === "regal" || art === "werber") return '<div class="ulh-balken" data-ulh-balken="' + art + '"></div>';
     if (art === "anzeigen") return visAnzeigen();
     if (art === "eventkarte") return visEventKarte();
-    if (art === "eventkurve") return '<div class="ulh-evk" data-ulh-evk><div class="ulh-evk-wrap"><canvas class="up-line-canvas"></canvas></div><div class="up-legend"></div></div>';
+    if (art === "eventkurve") return '<div class="ulh-evk" data-ulh-evk><div class="ulh-evk-wrap"><canvas class="up-line-canvas"></canvas></div></div>';
     return "";
   }
 
@@ -2228,8 +2232,8 @@
      dort ist das Einbinden ausdruecklich erlaubt. Jede Adresse am 06.10. geprueft (HTTP 200,
      image/jpeg, 330px-Vorschau -- Commons liefert nur noch Standardbreiten: 250/330/500/960).
      DIE LIZENZEN VERLANGEN EINEN NACHWEIS: nur zwei Fotos sind CC0, die anderen CC BY oder CC BY-SA.
-     Der Nachweis steht unter dem Block "Beyond classic GEO" (bildnachweisHtml) -- wer ein Foto
-     tauscht, traegt Urheber und Lizenz dort mit ein.
+     Der sichtbare Block unter den Karten ist seit dem 06.10. auf Wunsch weg; der Nachweis steht am
+     Foto selbst (title: Urheber, Lizenz, Commons) -- wer ein Foto tauscht, traegt autor/lizenz mit.
      Die Marken: getrackte Hersteller (Tesla, BMW, Audi, Volvo, Porsche) und die erfundene Acme --
      ihre Produkte zeigen allgemeine Fotos (eine Wallbox, Fussmatten, ein Ladekabel) ohne fremde
      Marke darauf. Thule ist nicht getrackt und steht deshalb, wie in der App, als "Other".
@@ -2281,16 +2285,6 @@
       autor: "Alexander Migl", lizenz: "CC BY-SA 4.0", seite: "Porsche_Taycan_4S_IMG_3526.jpg" }
   ];
   function echtesProdukt(id){ return ECHTE_PRODUKTE.filter(function(p){ return p.id === id; })[0]; }
-  /* Der Nachweis der Fotos: Urheber, Lizenz, Link auf die Seite bei Commons -- klein und leise,
-     aber vollstaendig, wie es CC BY und CC BY-SA verlangen. */
-  function bildnachweisHtml(){
-    return '<p class="ulh-bildnachweis">Product photos via Wikimedia Commons: ' +
-      ECHTE_PRODUKTE.map(function(p){
-        return '<a href="https://commons.wikimedia.org/wiki/File:' + p.seite + '" target="_blank" rel="noopener">' +
-          p.t.replace(/ from €.*$/, "") + '</a> (' + p.autor + ', ' + p.lizenz + ')';
-      }).join(", ") + '. Ad illustrations: US EPA via <a href="https://openclipart.org" target="_blank" rel="noopener">Openclipart</a> (public domain).</p>';
-  }
-
   /* Die Produkte: Zubehoer, das Kaeufer eines Elektroautos wirklich in einem Shopping-Ergebnis
      sehen. Die Position ist ein Rang, also immer mit einer Nachkommastelle (CLAUDE.md 2b). */
   var PRODUKTE = [
@@ -2309,17 +2303,40 @@
   /* Drei Produkt-Ads in den Feldern der Ads-RPCs (ad_format, title, landing_domain, ...), so wie die
      Ad-Karte der App sie liest. Die Werbemittel sind ISOMETRISCHE Illustrationen (06.10. angefordert:
      "echte Produktads, gern isometrische Grafiken aus dem Internet, schoen minimalistisch"): ein
-     Satz aus EINER Hand -- US EPA, ueber Openclipart, gemeinfrei (keine Nennung noetig, wir nennen
-     sie trotzdem im Nachweis). Eine isometrische Wallbox oder ein Kabel gibt es frei lizenziert
-     nicht; fuer das Laden zu Hause steht deshalb das Haus.
-     Openclipart ist eine kleine Seite: die drei Bilder liegen dort im Zwischenspeicher und kamen am
-     06.10. in 0.3s (HTTP 200, PNG mit Transparenz). Faellt eines aus, zeigt die Ad-Karte ihr
-     Platzhalter-Zeichen -- dafuer sorgt core. */
+     Satz aus EINER Hand -- US EPA, ueber Openclipart, gemeinfrei (keine Nennung noetig). Eine isometrische
+     Wallbox oder ein Kabel gibt es frei lizenziert nicht; fuer das Laden zu Hause steht deshalb das
+     Haus.
+     UEBER DAS BILD-CDN wsrv.nl, NICHT DIREKT VON OPENCLIPART (06.10. gemeldet: "laden ultra spaet,
+     das dritte gar nicht"). Openclipart rechnet ein Bild, das lange niemand angefragt hat, erst bei
+     Bedarf -- gemessen 28.8s fuer den Kompaktwagen, 0.5s fuer die anderen zwei. wsrv.nl holt es
+     einmal, verkleinert es auf 480px WebP und liefert es danach aus dem Cloudflare-Zwischenspeicher:
+     gemessen 55-64ms je Bild, ein Jahr Cache, CORS offen. Faellt eines trotzdem aus, zeigt die
+     Ad-Karte ihr Platzhalter-Zeichen -- dafuer sorgt core. */
+  function isoBild(id){ return "https://wsrv.nl/?url=openclipart.org/image/800px/" + id + "&w=480&output=webp"; }
   var ISO = {
-    limousine: "https://openclipart.org/image/800px/327138",
-    kompakt:   "https://openclipart.org/image/800px/274743",
-    haus:      "https://openclipart.org/image/800px/327136"
+    limousine: isoBild(327138),
+    kompakt:   isoBild(274743),
+    haus:      isoBild(327136)
   };
+  /* Die Bilder der Sektion VORAB laden und dekodieren (06.10.): die Ad-Karte und die Zeilen von
+     Shopping tragen loading="lazy" -- ein Bild beginnt dann erst zu laden, wenn es ins Bild kommt,
+     und erscheint sichtbar spaet. Hier liegen sie schon im Speicher, wenn Karte oder Szene kommen;
+     decode() nimmt ausserdem das Entpacken vorweg, das sonst mitten in eine Bewegung faellt (die
+     Zeilen der Produktliste stockten -- dort fielen zehn Fotos gleichzeitig an). Das Versprechen
+     wartet die Shopping-Szene ab, bevor die Zeilen einlaufen. */
+  function bilderVorladen(){
+    if (bilderVorladen.fertig) return bilderVorladen.fertig;
+    var urls = ECHTE_PRODUKTE.map(function(p){ return wikiBild(p.bild); })
+      .concat([ISO.limousine, ISO.kompakt, ISO.haus]);
+    bilderVorladen.fertig = Promise.all(urls.map(function(u){
+      var i = new Image();
+      i.decoding = "async";
+      i.referrerPolicy = "no-referrer";
+      i.src = u;
+      return i.decode ? i.decode()["catch"](function(){}) : Promise.resolve();
+    }));
+    return bilderVorladen.fertig;
+  }
   var ANZEIGEN = [
     { id: "lh-ad-1", m: "ac", beziehung: "you", advertiser_name: "Acme", ad_format: "product_card_v2",
       title: "Acme EX5 Touring", description: "Up to 610 km of range. 0.9% APR financing this month.",
@@ -2345,6 +2362,7 @@
     var marke = m ? m.name : "Other (unassigned)";
     var bild = '<span class="ush-bild has-img"><span class="ush-bild-ph">' + (kern ? kern.icon("image", 1.8) : "") + '</span>' +
       '<img src="' + wikiBild(p.bild) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+      ' title="Photo: ' + p.autor + ', ' + p.lizenz + ', Wikimedia Commons"' +
       ' onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/></span>';
     return '<span class="ulh-vis-prod">' + bild +
       '<span class="ush-zweizeilig"><span class="ush-titel">' + p.t + '</span>' +
@@ -2811,7 +2829,6 @@
             '<div class="ulh-cards-row">' + merkmalKarte(HANDEL[2], 0) + merkmalKarte(HANDEL[3], 1) + '</div>' +
           '</div>' +
         '</div>' +
-        bildnachweisHtml() +
       '</div>' +
     '</section>';
   }
@@ -2820,20 +2837,21 @@
      Links ein Event, wie es in der App als Karte steht (events.js, karteHtml -- Band mit dem
      Titelbild, Zeichen, Titel, Datum und Typ, Text, drei Kennzahlen; dieselben Klassen aus
      events.css), am Beispiel des Relaunchs der Acme-Webseite mit dem blauen Titelbild.
-     Rechts die Wirkung, wie sie das Event-Detail zeigt: UC.makeLine mit den betroffenen Prompts in
-     der Primaerfarbe, der Vergleichsgruppe gestrichelt, dem Pin des Events auf der Zeitachse und
-     dem Tooltip der App -- hier dauerhaft offen, eine Woche nach dem Relaunch. */
+     Rechts die Wirkung, wie sie das Event-Detail zeigt: UC.makeLine mit den betroffenen Prompts und
+     dem Pin des Events auf der Zeitachse (Tooltip und Vergleichsgruppe sind seit dem 06.10. abends
+     weg, angefordert). */
   var EVENT_CHIP = "Events";
   var EVENT_H = "See what moved your visibility";
   var EVENT_SUB = "Log launches, relaunches and campaigns on your timeline, and compare how AI " +
     "visibility changed before and after.";
   var EVENTKARTEN = [
+    /* "Log every launch" war zu schwach (06.10.) -- die Karte sagt jetzt, WOZU man es eintraegt. */
     { breit: 40, vis: "eventkarte",
-      h: "Log every launch",
-      p: "Relaunches, campaigns and press moments, right on the timeline." },
+      h: "Every launch on one timeline",
+      p: "Relaunches, campaigns and price changes, right where your visibility moved." },
     { breit: 60, vis: "eventkurve",
-      h: "Compare before and after",
-      p: "Affected prompts against a comparison group, from the day the event went live." }
+      h: "See what each launch changed",
+      p: "Visibility of the affected prompts, from the day the event went live." }
   ];
   var EVENT_TON = "#3b82f6";
   /* Die Titelbilder liegen neben den Dateien der App (event-covers/, wie in events.js). Die Adresse
@@ -2864,13 +2882,20 @@
       '</div>' +
     '</article>';
   }
-  /* Vorn das Acme-Event, dahinter -- leicht gedreht und leiser -- ein zweites: eine Spur, dass es
-     nicht bei einem bleibt. */
+  /* DREI KARTEN IM FAECHER (06.10. angefordert: "wie bei unseren Fanned Logo Chips, auch rechts
+     hinter der vorderen Card ein Event, Versatz minimal groesser, links z.B. eine Marketingkampagne").
+     Dieselbe Bauart wie UC.makeFaecher: alle drei liegen auf EINEM Platz und drehen um einen Punkt
+     weit unter sich (landing-hero.css, .ulh-evkarten), die Mitte vorn. Sie faechern auf, wenn die
+     Karte erscheint -- vorher liegen sie aufeinander. In der Reihenfolge des Markups: die beiden
+     hinteren zuerst, damit die vordere ohne z-index oben liegt. */
   function visEventKarte(){
     return '<div class="ulh-evkarten">' +
-      eventKarteHtml({ name: "Spring pricing update", ton: "#d9577f", cover: "wave-pink.svg", pos: "78%", icon: "euro",
-                       datum: "Aug 4, 2026", typ: "Pricing change", text: "New lease rates for the EX range.",
-                       topics: "3", prompts: "86", urls: "12" }, "ulh-evkarte-hinten") +
+      eventKarteHtml({ name: "EX5 autumn campaign", ton: "#d9577f", cover: "wave-pink.svg", pos: "78%", icon: "megaphone",
+                       datum: "Aug 4, 2026", typ: "Brand campaign", text: "Video and social for the EX5, in five markets.",
+                       topics: "4", prompts: "96", urls: "12" }, "ulh-evkarte-links") +
+      eventKarteHtml({ name: "New lease rates", ton: "#0f9b8e", cover: "wave-teal.svg", pos: "70%", icon: "euro",
+                       datum: "Sep 1, 2026", typ: "Pricing change", text: "Lower monthly rates across the EX range.",
+                       topics: "2", prompts: "58", urls: "6" }, "ulh-evkarte-rechts") +
       eventKarteHtml({ name: "Acme.com relaunch", ton: EVENT_TON, cover: "wave-blue.svg", pos: "55%", icon: "globe",
                        datum: "Sep 15, 2026", typ: "Website relaunch",
                        text: "New model pages, a rebuilt configurator and structured specs for every EV.",
@@ -2878,19 +2903,17 @@
     '</div>';
   }
   /* Die Kurve: 28 Tage, der Relaunch am 15. Die betroffenen Prompts stehen davor bei gut 21
-     Prozent und ziehen danach auf rund 31 an; die Vergleichsgruppe bleibt bei 19 bis 20. Feste
-     kleine Wellen statt Zufall -- in jeder Runde dasselbe Bild. */
+     Prozent und ziehen danach auf rund 31 an. Feste kleine Wellen statt Zufall -- in jeder Runde
+     dasselbe Bild. */
   function eventKurveDaten(){
-    var tage = [], betroffen = [], vergleich = [], start = Date.UTC(2026, 8, 1);
+    var tage = [], betroffen = [], start = Date.UTC(2026, 8, 1);
     for (var i = 0; i < 28; i++){
       tage.push(new Date(start + i * 864e5).toISOString().slice(0, 10));
       var nach = Math.max(0, i - 14), anstieg = 9.6 * (1 - Math.exp(-nach / 4.2));
       betroffen.push(Math.round((21.4 + anstieg + Math.sin(i * 1.3) * 0.7) * 10) / 10);
-      vergleich.push(Math.round((19.6 + Math.sin(i * 0.9 + 1) * 0.6) * 10) / 10);
     }
-    return { tage: tage, betroffen: betroffen, vergleich: vergleich };
+    return { tage: tage, betroffen: betroffen };
   }
-  var EVENT_TIPP = 21;   /* der Tag, an dem der Tooltip offen steht: eine Woche nach dem Relaunch */
   function visEventKurveFuellen(root){
     var kern = window.UpstreemCore;
     var feld = root.querySelector("[data-ulh-evk]");
@@ -2900,36 +2923,20 @@
     function zeichnen(){
       var d = eventKurveDaten();
       var tinte = kern.chartInk ? kern.chartInk(feld) : "#1f1f1b";
+      /* OHNE TOOLTIP UND OHNE VERGLEICHSGRUPPE (06.10. abends angefordert): eine Linie und der Pin
+         des Events -- der Knick am Tag des Relaunchs ist die ganze Aussage. Damit entfaellt die
+         Legende; den Tooltip beim Ueberfahren nimmt landing-hero.css (.ulh-evk canvas). */
       var linie = kern.makeLine({
-        wrap: wrap, canvas: leinwand, legend: feld.querySelector(".up-legend"),
+        wrap: wrap, canvas: leinwand,
         isDark: function(){ return false; }, gran: function(){ return "day"; },
         unit: function(){ return "%"; }, decimals: function(){ return 1; },
-        tipLabel: function(){ return "Visibility:"; }, legendeImmer: true,
+        tipLabel: function(){ return "Visibility:"; },
         markers: function(){ return [{ id: "lh-ev1", date: "2026-09-15", name: "Acme.com relaunch",
                                        type: "website_relaunch", color: EVENT_TON, fokus: true }]; }
       });
       linie.render({ labels: d.tage, datasets: [
-        { label: "Affected prompts", __id: "affected", __baseColor: tinte, borderColor: tinte, data: d.betroffen },
-        { label: "Comparison", __id: "comparison", __baseColor: "#80858e", borderColor: "#80858e", __dash: true, data: d.vergleich }
+        { label: "Affected prompts", __id: "affected", __baseColor: tinte, borderColor: tinte, data: d.betroffen }
       ] });
-      /* Der Tooltip bleibt offen -- derselbe Griff wie am Chart im Fenster (tippZeigen): leeren,
-         setzen, update, danach die aktiven Punkte. Erst wenn Chart.js steht (es laedt nach). */
-      var n = 0;
-      (function tipp(){
-        var chart = window.Chart && window.Chart.getChart ? window.Chart.getChart(leinwand) : null;
-        if (!chart){ if (++n < 60) setTimeout(tipp, 100); return; }
-        var punkte = chart.data.datasets.map(function(_, di){ return { datasetIndex: di, index: EVENT_TIPP }; });
-        function setzen(){
-          try {
-            chart.tooltip.setActiveElements([], { x: 0, y: 0 });
-            chart.tooltip.setActiveElements(punkte, { x: 0, y: 0 });
-            chart.update();
-            chart.setActiveElements(punkte);
-          } catch (e){}
-        }
-        setTimeout(setzen, 900);    /* nach dem Aufziehen der Linien */
-        leinwand.addEventListener("mouseleave", function(){ setTimeout(setzen, 60); });
-      })();
     }
     /* Wie die Balken: gezeichnet wird, wenn die Karte erscheint -- sonst waere das Aufziehen der
        Linien vorbei, bevor jemand bis hierher scrollt. */
@@ -2983,6 +2990,8 @@
   var QUELL_DOMAIN = "forbes.com";
 
   /* ---- DIE FARBEN DER QUELLEN-SEKTION (28.09. angefordert) --------------------------------
+     DIE BLAUE FAMILIE UNTEN GALT BIS ZUM 06.10. -- seitdem kommen die Farben aus core (siehe den
+     Absatz direkt ueber QUELL_FARBEN). Die Herleitung bleibt als Geschichte stehen.
      "Die Farben sind noch sehr wild. URL-Type-Farben die bleiben. Aber alle anderen [...]
      harmonischer, professioneller und schoener. Linear-Farben als Base vielleicht? Aber so, dass
      es ins Gesamtfarbkonzept passt und wirklich subtil und professionell aussieht."
@@ -3018,11 +3027,19 @@
                  Vergleich als schwerer blauer Block da -- es ist die groesste Farbflaeche der
                  Sektion, und eine Flaeche traegt eine hellere Stufe als eine 2px-Linie.
      Die URL-Typen (der Ring) bleiben ausdruecklich, wie sie sind. */
-  var QUELL_FARBEN = {
-    linien:   ["#3f66b0", "#6083c2", "#7f9cd1", "#9cb2d9", "#b4c5e2"],
-    modelle:  ["#3f66b0", "#6083c2", "#7f9cd1", "#9cb2d9"],
-    trichter: "#7f9cd1"
-  };
+  /* SEIT DEM 06.10. AUS CORE (angefordert: "Linechart und Funnelchart sind immer noch im blauen
+     Gradient"). Die Domain-Detail-Seite der App zeichnet Kurven, Trichter, Ring und Balken aus
+     UC.chartFamilie -- im Standard die Stufen von Schwarz nach Grau. Ring und Balken taten das hier
+     schon (sie fragen core selbst), Kurven und Trichter trugen noch das Blau von unten. Jetzt
+     dieselbe Familie, in derselben Ordnung: Kurven nach Anteil, Modelle die ersten vier Stufen,
+     der Trichter Stufe 3. Der Rueckfall (core noch nicht da -- etwa wenn landing-boot.js core von
+     der zweiten Quelle nachholt und diese Datei dadurch vorher laeuft) ist dieselbe Familie als
+     Zahlen, am 06.10. aus UC.chartFamilie(false) abgelesen -- und nicht mehr das Blau. */
+  var QUELL_FARBEN = (function(){
+    var k = window.UpstreemCore, f = k && typeof k.chartFamilie === "function" ? k.chartFamilie(false) : null;
+    if (!f || f.length < 5) f = ["#1f1f1b", "#585c63", "#80858e", "#adb0b5", "#cfd0d3"];
+    return { linien: f.slice(0, 5), modelle: f.slice(0, 4), trichter: f[2] };
+  })();
 
   /* Jeden BUCHSTABEN einzeln, damit die Farbe wirklich durch den Satz laeuft und nicht in
      Wortsprüngen. Die Buchstaben stecken in Wortkasten: ein Zeilenumbruch darf zwischen zwei
@@ -4251,22 +4268,35 @@
   /* Die Landingpage ist HELL, immer. core liest beim Start localStorage.pref_theme und setzt allen
      .up-root-Elementen data-theme -- wer die App schon einmal im Dunkeln benutzt hat, saehe hier
      also ein dunkles Dashboard auf weissem Grund. Gemessen: genau das passierte.
-     setUpstreemTheme("no") waere der falsche Griff, denn es SCHREIBT pref_theme: ein Besuch der
-     Landingpage haette die Themenwahl des Nutzers in der App umgestellt. Also nur die zwei
-     Attribute an den Wurzeln hier drin, und ein Waechter, der sie festhaelt, falls core sie spaeter
-     noch einmal anfasst. Nur schreiben, wenn der Wert abweicht -- sonst loest der Waechter sich
-     selbst wieder aus. */
+     Also ein Waechter an den Wurzeln hier drin, der das Dunkle wieder herausnimmt, falls es kommt.
+     Nur schreiben, wenn der Wert abweicht -- sonst loest der Waechter sich selbst wieder aus.
+     HELL HEISST HIER WIE IN CORE: KEIN data-theme, data-isdark "no" (06.10. umgestellt). Bis dahin
+     schrieb diese Stelle data-theme="light" -- und core, dem themaHell() das helle Thema gesagt
+     hat, nimmt genau dieses Attribut fuer hell wieder weg (applyThemeTo), bei JEDEM neuen Knoten
+     auf der Seite. Zwei Schreiber im Wechsel: gemessen sieben Wurzeln der Shopping-Seite mitten im
+     Einlauf ihrer Zeilen, und jede Komponente mit einem Waechter auf data-isdark zeichnete mit.
+     Die Sorge von damals ("ohne das Attribut gilt das Betriebssystem") traegt nicht mehr: keine
+     der geladenen Dateien hat noch eine Regel auf prefers-color-scheme, eine .up-root ohne
+     data-theme ist hell (core.css, ":root, .up-root, [data-theme=light]"). Ein "light", das eine
+     Komponente selbst setzt, bleibt stehen -- es bedeutet dasselbe. */
   function hellHalten(root){
     var alle = [root].concat([].slice.call(root.querySelectorAll(".up-root")));
     alle.forEach(function(el){
       /* EIN Nebenfenster ist dunkel (die URL-Typen). Es traegt data-ulh-dunkel, und alles darin
          bekommt hier das dunkle Thema statt des hellen -- derselbe Waechter, nur mit dem anderen
          Wert. Ohne diese Abfrage haette der Waechter das Fenster im naechsten Takt wieder
-         aufgehellt, und der Doughnut haette dunkle Farben auf hellem Grund gezeichnet. */
+         aufgehellt, und der Doughnut haette dunkle Farben auf hellem Grund gezeichnet.
+         data-up-thema-fest sagt core, dass es diese Wurzel nicht anfassen soll (applyThemeTo) --
+         sonst setzte core sie bei jedem neuen Knoten hell und dieser Waechter zurueck. */
       var dunkel = el.closest && el.closest("[data-ulh-dunkel]");
-      var thema = dunkel ? "dark" : "light", ist = dunkel ? "yes" : "no";
-      if (el.getAttribute("data-theme") !== thema) el.setAttribute("data-theme", thema);
-      if (el.getAttribute("data-isdark") !== ist) el.setAttribute("data-isdark", ist);
+      if (dunkel){
+        if (el.classList.contains("up-root") && !el.hasAttribute("data-up-thema-fest")) el.setAttribute("data-up-thema-fest", "");
+        if (el.getAttribute("data-theme") !== "dark") el.setAttribute("data-theme", "dark");
+        if (el.getAttribute("data-isdark") !== "yes") el.setAttribute("data-isdark", "yes");
+        return;
+      }
+      if (el.getAttribute("data-theme") === "dark") el.removeAttribute("data-theme");
+      if (el.getAttribute("data-isdark") !== "no") el.setAttribute("data-isdark", "no");
     });
   }
 
@@ -4707,6 +4737,10 @@
     /* Die Kurven im Abschnitt darunter. Die drei anderen Vorschauen sind statisch. */
     (function(){ var w = document.querySelector(".ulh-root");
       if (!w) return;
+      /* Die Fotos der Sektion nach dem ersten Bild des Heros, nicht mit ihm: 13 Bilder (rund
+         400 KB) sollen nicht um die Leitung der Komponenten konkurrieren. Shopping kommt erst nach
+         rund 20s, die Ad-Karte liegt unter dem Falz -- 1.2s spaeter ist frueh genug. */
+      setTimeout(bilderVorladen, 1200);
       visLinieFuellen(w);
       /* Die dritte Reihe: Band und Bahnen werden gebaut und danach in Bewegung gesetzt. */
       visSprachenFuellen(w);
@@ -6643,7 +6677,14 @@
      Marken, Farben und Produkte wie in den Karten darunter (PRODUKTE). Die Komponente bekommt sie
      ueber ihren echten Setter, so wie in der App aus dem Run-JS-Schritt. */
   var SHOP_SEITE_MS = 380;
-  var SHOP_STAND_MS = 7600;   /* Hochzaehlen (rund 1.2s) plus die Standzeit der anderen Szenen */
+  /* Seit dem 06.10. abends mit einem Klick auf ein Produkt ("im Hero auch noch einmal einen Klick
+     auf ein Shopping-Produkt und Oeffnen von Product Detail"): die Uebersicht steht SHOP_KLICK_MS
+     (Hochzaehlen rund 1.2s, die Zeilen rund 1.3s, dann Ruhe), dann wird der Home Charger angefasst
+     und gedrueckt wie die Karte im Brett (FASS_MS/DRUCK_AB/DRUCK_NACH), und das Detail steht
+     SHOP_DETAIL_MS, bevor die Chancen kommen. Zusammen 8.9s statt der 7.6 ohne Klick. */
+  var SHOP_KLICK_MS = 3300;
+  var SHOP_DETAIL_MS = 4800;
+  var SHOP_PRODUKT = "p2";
   var shopUhren = [];
   function shopNach(fn, ms){ shopUhren.push(setTimeout(fn, ms)); }
   function shopUhrenAus(){ shopUhren.forEach(function(u){ clearTimeout(u); }); shopUhren = []; }
@@ -6744,28 +6785,158 @@
       merchant_distribution: { top: SHOP_HAENDLER, rest: { observations: 136, share: 47.7, merchants: 9 }, merchants_total: 12 }
     };
   }
+  /* Das Product Detail des Home Chargers in der Form von cached_shopping_product_detail_v1
+     (bubble/shopping_backend_vertrag.md): Kopf, vier Kennzahlen, 14 Tage Verlauf, wo es erscheint,
+     Haendler und die Auftritte. Die Zahlen passen zur Uebersicht davor -- Visibility 28.9 gegen
+     19.2, Position 1.4 gegen 2.1, sechs Haendler, die Presence der Marke wie dort. */
+  function shopDetailDaten(pid){
+    function r2(x){ return Math.round(x * 100) / 100; }
+    function wert(x){ return { value: x[0], previous: x[1], delta: r2(x[0] - x[1]) }; }
+    function preis(v){ return { price: v, currency: "EUR", price_str: "€" + v.toFixed(2) }; }
+    var ue = shopDaten(), p = echtesProdukt(pid), kopf = shopProdukt(p);
+    var marke = SHOP_MARKEN.filter(function(b){ return b.m === p.m; })[0] || SHOP_MARKEN[0];
+    var tage = ue.chart.days, beob = [Math.round(p.vis[0] * 1.6), Math.round(p.vis[1] * 1.6)];
+    var trend = tage.map(function(tag, j){
+      var t = j / 13, welle = Math.sin(j * 1.9) * 1.3;
+      return { day: tag, visibility: r2(p.vis[1] + (p.vis[0] - p.vis[1]) * t + welle),
+               observations: Math.max(1, Math.round((beob[1] + (beob[0] - beob[1]) * t) / 14 + Math.sin(j * 1.3))),
+               avg_position: r2(p.pos[1] + (p.pos[0] - p.pos[1]) * t + Math.sin(j * 2.3) * 0.1),
+               brand_presence: r2(marke.pres[1] + (marke.pres[0] - marke.pres[1]) * t + welle * 1.4),
+               brand_avg_position: r2(marke.pos[1] + (marke.pos[0] - marke.pos[1]) * t) };
+    });
+    var haendler = [["Acme Store", 17, 37.0, 799], ["Amazon.de", 12, 26.1, 829], ["Otto.de", 8, 17.4, 849],
+                    ["MediaMarkt", 5, 10.9, 899], ["Hornbach", 3, 6.5, 879], ["OBI", 1, 2.1, 869]];
+    var modelle = ["chatgpt", "perplexity", "gemini", "chatgpt", "perplexity", "chatgpt"];
+    var auftritte = [0, 1, 2, 3, 4, 5].map(function(i){
+      var h = haendler[i % 4];
+      return { prompt_run_id: "lhrun-00" + (41 - i), run_at: tage[13 - i] + "T0" + (8 + i) + ":15:00+00:00", day: tage[13 - i],
+               merchant_name: h[0], model: modelle[i], market: i === 3 ? "AT" : "DE", title: p.t,
+               price: h[3], currency: "EUR", price_str: "€" + h[3].toFixed(2),
+               topics: [["Charging", "Pricing"], ["Charging"], ["Electric", "Charging"], ["Charging"], ["Pricing"], ["Charging"]][i],
+               position: [1, 1, 2, 1, 3, 1][i], is_first: [1, 1, 2, 1, 3, 1][i] === 1, render_type: "carousel" };
+    });
+    kopf.listing_title = p.t + " Wallbox, Type 2, 7.5 m cable";
+    kopf.images = [kopf.image_url];
+    kopf.latest_price = preis(p.preis[0]);
+    return {
+      meta: ue.meta,
+      product: kopf,
+      kpis: { visibility: wert(p.vis), observations: wert(beob), avg_position: wert(p.pos),
+              first_position_rate: wert([61.2, 44.8]) },
+      trend: trend,
+      topics: [{ tag_id: "t4", name: "Charging", responses: 31, share: 67.4 },
+               { tag_id: "t1", name: "Pricing", responses: 12, share: 26.1 },
+               { tag_id: "t3", name: "Electric", responses: 9, share: 19.6 }],
+      models: [{ model: "chatgpt", responses: 21, share: 45.7 }, { model: "perplexity", responses: 14, share: 30.4 },
+               { model: "gemini", responses: 11, share: 23.9 }],
+      markets: [{ market: "DE", responses: 29, share: 63.0 }, { market: "AT", responses: 10, share: 21.7 },
+                { market: "CH", responses: 7, share: 15.2 }],
+      merchants: haendler.map(function(h){
+        return { merchant_name: h[0], observations: h[1], share: h[2], latest_price: preis(h[3]),
+                 price_ranges: [{ currency: "EUR", min: h[3], max: h[3] }] };
+      }),
+      appearances: { total_count: beob[0], limit: 15, offset: 0, rows: auftritte }
+    };
+  }
   /* Die Spalten der Produktliste im Fenster: Observations und First Position Rate fallen weg --
      mit allen sieben liefe die Tabelle in 1078px Breite seitlich hinaus. Die Auswahl liest die
      Komponente aus dem Speicher (core makeColumns, "<prefix>_cols__<instanceId>"), und zwar beim
      ERSTEN Zeichnen der Tabelle -- also hier, beim Laden der Datei, und nicht erst in der Szene. */
   try { window.localStorage.setItem("ush_cols__" + ID.ush + "__topprodukte", JSON.stringify({ obs: false, first: false })); }
   catch (e){}
+  /* DIE ZEILEN STOCKTEN (06.10. abends gemeldet). Drei Dinge fielen in ihre Bewegung: der Bau der
+     Seite im Setter (eine lange Aufgabe, die das erste Bild der Bewegung verschluckt), die zehn
+     Fotos, die erst waehrend der Bewegung ankamen und die Zeilen neu rastern liessen, und ein
+     Nachfassen bei +400ms (Zeichen, Tooltips), das mitten in die Staffel neu layoutete.
+     Jetzt stehen die Zeilen nach dem Setter verborgen (is-zeilen, mit will-change -- die Ebenen
+     entstehen VOR der Bewegung), das Nachfassen laeuft im selben Zug, und die Bewegung (is-laeuft)
+     beginnt erst, wenn die Fotos der Zeilen dekodiert sind (bilderVorladen hat sie meist schon im
+     Speicher) UND core seinen Zeichen-Lauf hinter sich hat: core sammelt neue Knoten und stempelt
+     ihre Zeichen gebuendelt einmal je 250ms (stampToolbarIcons, zeichenNachziehen -- gemessen 137
+     Aenderungen an svg in der Seite). Fiel dieser Lauf in die Staffel, schrieb er mitten in die
+     Bewegung. Also fruehestens SHOP_ZEILEN_FRUEH nach dem Setter, hoechstens SHOP_ZEILEN_WARTE,
+     danach zwei gemalte Bilder. Die Kennzahlen zaehlen in der Zeit schon hoch. */
+  var SHOP_ZEILEN_FRUEH = 300, SHOP_ZEILEN_WARTE = 600, SHOP_ZEILEN_LAUF = 700, SHOP_ZEILEN_STUFE = 60;
+  /* Die Modelle fuer Shopping: das Detail liest Name und Zeichen aus dem Modell-Speicher von core
+     (UC.getModels), und ohne ihn stuende dort "Chatgpt" ohne Logo (gemessen 06.10.). In der App
+     fuellt ihn Bubble; hier einmal die drei, die Shopping-Ergebnisse zeigen. Auf der Seite liest
+     ihn sonst nur core selbst -- die Antwortkarte hat ihre eigene Liste (setResponsesTableModels). */
+  function shopModelle(){
+    if (shopModelle.an || !window.setUpstreemModels) return;
+    shopModelle.an = true;
+    window.setUpstreemModels(JSON.stringify([
+      { key: "chatgpt", display_name: "ChatGPT", logo_url: quellzeichen("openai.com"), provider: "openai" },
+      { key: "perplexity", display_name: "Perplexity", logo_url: quellzeichen("perplexity.ai") },
+      { key: "gemini", display_name: "Gemini", logo_url: quellzeichen("gemini.google.com") }
+    ]));
+  }
   function shopFuellen(root){
     var seite = root && root.querySelector(".ulh-shop");
-    /* is-zeilen VOR dem Setter: die Zeilen entstehen synchron im Setter und tragen die Bewegung
-       damit vom ersten Bild an -- kein Aufblitzen in der Endlage. */
-    if (seite) seite.classList.add("is-zeilen");
+    shopModelle();
+    if (seite){ seite.classList.remove("is-laeuft"); seite.classList.add("is-zeilen"); }
     if (window.setShoppingOverview){
       try { window.setShoppingOverview(ID.ush, JSON.stringify(shopDaten()), ""); }
       catch (e){ if (window.console) console.warn("[landing-hero] Shopping:", e); }
     }
+    ohneTipps(root); hellHalten(root); zeichenSetzen(root);
     if (!seite) return;
     var zeilen = seite.querySelectorAll(".ush-vorschau .up-tbody .up-row");
     for (var i = 0; i < zeilen.length; i++) zeilen[i].style.setProperty("--ulh-i", i);
+    var los = false;
+    function starten(){
+      if (los) return;
+      los = true;
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){
+        if (!seite.classList.contains("is-zeilen")) return;
+        seite.classList.add("is-laeuft");
+        shopNach(function(){
+          seite.classList.remove("is-zeilen");
+          seite.classList.remove("is-laeuft");
+          for (var j = 0; j < zeilen.length; j++) zeilen[j].style.removeProperty("--ulh-i");
+        }, SHOP_ZEILEN_LAUF + zeilen.length * SHOP_ZEILEN_STUFE + 200);
+      }); });
+    }
+    var fotos = [].slice.call(seite.querySelectorAll(".ush-vorschau .up-tbody img"));
+    var dekodiert = false, frueh = false;
+    function zeilenLos(){ if (dekodiert && frueh) starten(); }
+    Promise.all(fotos.map(function(f){ return f.decode ? f.decode()["catch"](function(){}) : null; }))
+      .then(function(){ dekodiert = true; zeilenLos(); });
+    shopNach(function(){ frueh = true; zeilenLos(); }, SHOP_ZEILEN_FRUEH);
+    shopNach(starten, SHOP_ZEILEN_WARTE);
+  }
+  /* Der Klick auf ein Produkt: Hover, Druck, dann das Detail -- derselbe Ablauf wie die Karte im
+     Brett (karteKlicken), nur an der Zeile. Geoeffnet wird ueber den Controller der Komponente
+     (seite "detail", ohne neuen Verlaufseintrag), so wie ein Klick in der App; die Anfrage, die
+     das ausloest, verpufft in der Stummschaltung (landing-boot.js), die Antwort kommt im selben
+     Zug ueber den echten Setter -- das Skelett wird nie gemalt. */
+  function shopProduktKlick(root){
+    var seite = root.querySelector(".ulh-shop");
+    var komp = seite && seite.querySelector(".ush-root");
+    var ctrl = komp && komp.__ushController;
+    var zeile = seite && seite.querySelector('.ush-vorschau .up-row[data-produkt="lh-' + SHOP_PRODUKT + '"]');
+    if (!ctrl || !ctrl.seite) return false;
+    function oeffnen(){
+      if (zeile) zeile.classList.remove("ulh-fass");
+      seite.classList.add("is-detail");
+      ctrl.seite("detail", false, { produktId: "lh-" + SHOP_PRODUKT });
+      if (window.setShoppingProductDetail){
+        try { window.setShoppingProductDetail(ID.ush, JSON.stringify(shopDetailDaten(SHOP_PRODUKT)), ""); }
+        catch (e){ if (window.console) console.warn("[landing-hero] Shopping-Detail:", e); }
+      }
+      ohneTipps(root); hellHalten(root); zeichenSetzen(root);
+      shopNach(function(){ ohneTipps(root); hellHalten(root); }, 400);
+      shopNach(function(){ seite.classList.remove("is-detail"); }, 1200);
+    }
+    if (!zeile){ oeffnen(); return true; }
+    zeile.classList.add("ulh-fass");
     shopNach(function(){
-      seite.classList.remove("is-zeilen");
-      for (var j = 0; j < zeilen.length; j++) zeilen[j].style.removeProperty("--ulh-i");
-    }, 550 + zeilen.length * 55 + 200);
+      zeile.classList.add("ulh-druck");
+      shopNach(function(){
+        zeile.classList.remove("ulh-druck");
+        shopNach(oeffnen, DRUCK_NACH);
+      }, DRUCK_AB);
+    }, FASS_MS);
+    return true;
   }
   function shopSzene(root){
     var seite = root.querySelector(".ulh-shop");
@@ -6793,9 +6964,9 @@
       shopNach(function(){ seite.classList.remove("is-kommt"); }, MIRA_RISE_MS);
       shopNach(function(){
         shopFuellen(root);
-        shopNach(function(){ ohneTipps(root); hellHalten(root); zeichenSetzen(root); }, 400);
+        shopNach(function(){ shopProduktKlick(root); }, SHOP_KLICK_MS);
         /* Danach die Chancen: chancenSzene nimmt die Seite, die steht, selbst weg. */
-        shopNach(function(){ chancenSzene(root); }, SHOP_STAND_MS);
+        shopNach(function(){ chancenSzene(root); }, SHOP_KLICK_MS + FASSEN_GESAMT + SHOP_DETAIL_MS);
       }, SHOP_SEITE_MS);
     }, AUSBLENDEN_MS);
     return true;
@@ -6890,7 +7061,11 @@
       shopUhrenAus();
       /* Shopping vergisst seine Antwort: in der naechsten Runde zaehlen die Kennzahlen wieder
          hoch, statt fertig dazustehen. Die Anfrage, die resetShopping ausloest, verpufft in der
-         Stummschaltung (landing-boot.js); die Antwort kommt erst mit der Szene. */
+         Stummschaltung (landing-boot.js); die Antwort kommt erst mit der Szene. VORHER zurueck auf
+         die Uebersicht: die Runde endete im Product Detail, und reset laesst die Seite stehen. */
+      var shopKomp = shop && shop.querySelector(".ush-root");
+      if (shopKomp && shopKomp.__ushController && shopKomp.__ushController.seite) shopKomp.__ushController.seite("overview", false);
+      if (shop){ shop.classList.remove("is-detail"); shop.classList.remove("is-laeuft"); }
       if (window.resetShopping) window.resetShopping(ID.ush);
       schubladeZu(root);             /* nichts Offenes in die naechste Runde mitnehmen */
       perfUhrenAus();                /* alle Uhren der Szene anhalten */

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261099;
+  var BUILD = 20261100;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -17807,6 +17807,12 @@
 
   function applyThemeTo(el, dark){
     if (!el || !el.classList || !el.classList.contains("up-root")) return;
+    /* EINE WURZEL MIT FESTEM THEMA (06.10.): data-up-thema-fest heisst, die Seite legt das Thema
+       dieser Wurzel selbst fest, und core laesst sie in Ruhe. Gebraucht auf der Landingpage: ein
+       Nebenfenster ist dort absichtlich dunkel auf heller Seite. Ohne den Ausstieg setzte der
+       Beobachter unten es bei JEDEM neuen Knoten der Seite auf hell, die Seite im naechsten Bild
+       zurueck auf dunkel -- zwei Neuberechnungen je Szenenwechsel, mitten in deren Bewegung. */
+    if (el.hasAttribute("data-up-thema-fest")) return;
     /* Nichts schreiben, was schon dasteht. Der Kommentar unten sagt es selbst: die Komponenten
        haengen mit eigenen Beobachtern an data-isdark. Ein Schreiben mit dem GLEICHEN Wert weckt
        sie trotzdem alle -- auf der Prompts-Seite sind das 85 Wurzeln, deren Waechter fuer nichts
@@ -19074,6 +19080,10 @@
     arrowDownRight: '<path d="M9 17.3497C9 17.3497 15.9383 17.8924 16.9154 16.9154C17.8924 15.9383 17.3496 9 17.3496 9M16.5 16.5L6.5 6.5"/>',
     /* ArrowRight01Icon -- Weiter -- in der Aktionsliste der Quick Actions */
     arrowRight: '<path d="M9.00005 6C9.00005 6 15 10.4189 15 12C15 13.5812 9 18 9 18"/>',
+    /* ArrowRight02Icon -- der Pfeil MIT Schaft, hinter "Book a Demo" auf der Landingpage (06.10.
+       angefordert: "Arrow right neben dem Text"). arrowRight oben ist trotz des Namens ein Winkel;
+       dieser hier ist derselbe Satz und dieselbe Machart wie arrowUpRight. */
+    arrowRightLong: '<path d="M20 12H4"/><path d="M15 17C15 17 20 13.3176 20 12C20 10.6824 15 7 15 7"/>',
     /* ArrowUp01Icon -- Aufwaerts -- Passwortfeld der Anmeldeseite */
     arrowUp: '<path d="M17.9998 15C17.9998 15 13.5809 9.00001 11.9998 9C10.4187 8.99999 5.99985 15 5.99985 15"/>',
     /* ArrowTurnBackwardIcon -- Eingabetaste: der Hinweis unter dem Quick-Actions-Feld */

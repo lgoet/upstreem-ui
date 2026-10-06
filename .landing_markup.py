@@ -165,6 +165,9 @@ for schluessel, pfad, kennung in TEILE:
     # Die Schublade der Opportunities bleibt IM Fenster. Ohne das wandert sie in die oberste Ebene
     # des Browsers und liegt ueber der ganzen Seite -- siehe opportunities.js, data-portal.
     m = m.replace('class="up-root uo-root"', 'class="up-root uo-root" data-portal="inline"')
+    # Shopping schreibt sonst ?shop/?product in die Adresse -- auf der Landingpage ist das die
+    # Adresse der Framer-Seite. data-adresse="aus" laesst die Komponente die Adresse in Ruhe.
+    m = m.replace('class="up-root ush-root"', 'class="up-root ush-root" data-adresse="aus"')
     # Die Rueckwege nach Bubble fallen weg. Auch mehrzeilig eingerueckt geschrieben, deshalb der
     # Blick auf das ganze Attribut samt fuehrendem Leerraum.
     m = re.sub(r'\s*data-[a-z0-9-]+-fn="bubble_fn_[^"]*"', "", m)

@@ -372,6 +372,10 @@
     var instanceId = root.getAttribute("data-instance") || "default";
     if (/^[A-Z_]{4,}$/.test(instanceId)) return null;   /* Platzhalter noch nicht ersetzt */
     var fire = UC.makeFire(root, { label: "shopping", eventPrefix: "ush" });
+    /* data-adresse="aus" (06.10., Landingpage): die Seite steht in einer fremden Seite -- deren
+       Adresse gehoert nicht uns. Dann liest und schreibt die Komponente keine ?shop/?product, und
+       Zurueck im Browser bleibt bei der fremden Seite. In der App steht das Attribut nicht. */
+    var ohneAdresse = root.getAttribute("data-adresse") === "aus";
 
     /* Der Stand je Instanz im window-Speicher: Bubble baut das Element bei einem Themenwechsel neu
        (feedback Themenwechsel = Neuaufbau), dann geht es mit Seite, Filtern und Daten weiter --
@@ -479,6 +483,7 @@
 
     /* ---- Adresse ------------------------------------------------------------------------------ */
     function adresseLesen() {
+      if (ohneAdresse) return { seite: SEITE_OK[state.seite] ? state.seite : "overview", produktId: state.produktId || null };
       var q;
       try { q = new URLSearchParams(window.location.search); } catch (e) { q = null; }
       var s = q ? str(q.get("shop")).trim() : "", p = q ? str(q.get("product")).trim() : "";
@@ -488,6 +493,7 @@
       return { seite: SEITE_OK[s] && s !== "detail" ? s : "overview", produktId: null };
     }
     function adresseSetzen(neuerEintrag) {
+      if (ohneAdresse) return;
       try {
         var u = new URL(window.location.href);
         var s = state.seite === "detail" ? "products" : state.seite;
@@ -2583,7 +2589,7 @@
 
     /* ?shop und ?product gehoeren der Shopping-Ansicht (06.10., wie ?event in den Events):
        ausserhalb nicht in der Adresse, zurueck wieder da, nach einem Teamwechsel die Overview. */
-    if (UC.ansichtsParameter) UC.ansichtsParameter({ ansicht: "shopping", schluessel: ["shop", "product"], owner: root,
+    if (UC.ansichtsParameter && !ohneAdresse) UC.ansichtsParameter({ ansicht: "shopping", schluessel: ["shop", "product"], owner: root,
       onTeamWechsel: function () { if (state.seite !== "overview") seiteOeffnen("overview", false); } });
     /* Erster Stand: die Adresse entscheidet. */
     var a0 = adresseLesen();

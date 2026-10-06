@@ -166,6 +166,17 @@
      Riegel. Die Liste oben deckt die Namen ab, die wirklich feuern; kommt einer dazu, sagt es
      die Warnung in landing-hero.js. */
 
+  /* ══ KEIN THEMA AUS CORE BEIM START (06.10.) ════════════════════════════════════════════════
+     core stellt beim Laden selbst ein Thema her (themeBeimStart): aus der gespeicherten Wahl oder,
+     ohne sie, aus dem Betriebssystem. Auf einem dunkel gestellten Rechner hiess das: core setzte
+     "dark", schrieb pref_theme=dark und data-up-pagetheme=dark an das <html> der fremden Seite, und
+     erst landing-hero.js (themaHell) drehte es danach auf hell -- ein Umweg ueber Dunkel bei jedem
+     Besuch, mit Neuzeichnen aller Abonnenten. Die Landingpage ist immer hell und sagt das selbst;
+     die Marke, mit der core seinen Start ueberspringt, steht deshalb hier, VOR core.js.
+     (Der Wechsel zweier Schreiber an data-theme, der die Zeilen von Shopping stocken liess, lag an
+     hellHalten in landing-hero.js -- Begruendung dort.) In der App steht die Zeile nicht. */
+  try { window.__upThemeBooted = true; } catch (e){}
+
   /* Die Komponenten, die im Fenster stehen. Wer eine hinzufuegt, aendert NUR diese zwei Bloecke
      und das Markup in .landing_markup.py -- in Framer bleibt es beim Pin. */
   css("core.css");
