@@ -2356,9 +2356,12 @@
           else if (w === "models") {
             var mi = modellInfo(x.model);
             name = mi.name; logo = mi.logo;
-          } else { var code = marktCode(x.market); name = code ? marktName(code) : t("Unknown"); logo = flagge(code); }
+          } else { var code = marktCode(x.market); name = code ? marktName(code) : t("Unknown"); }
           var r = num(x.responses);
+          /* Maerkte tragen das Flaggenplaettchen aus core (flagge: Code) statt einer PNG im Logo-
+             Kaestchen; ohne Code zeigt das Plaettchen "?" und die Namen bleiben buendig. */
           return { key: w + i, name: name, share: anteilWert(x.share), color: grau(i + 1), logo: logo,
+                   flagge: w === "markets" ? (/^[A-Z]{2}$/.test(code) ? code : "?") : undefined,
                    wert: w === "topics" && r != null ? ersetze(t(r === 1 ? "{n} response" : "{n} responses"), { n: ganz(r) }) : undefined };
         }));
       });
@@ -2384,7 +2387,6 @@
       }
       return code;
     }
-    function flagge(code) { return /^[A-Z]{2}$/.test(code) ? "https://flagcdn.com/w40/" + code.toLowerCase() + ".png" : ""; }
     function zeichneDetailHaendler(d) {
       var el = sek("dhaendler");
       if (!el) return;

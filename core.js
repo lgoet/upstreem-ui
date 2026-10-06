@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261095;
+  var BUILD = 20261096;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -764,6 +764,7 @@
     /* Themen-Modal */
     "New Topic": "Neues Topic",
     "Edit Topic": "Topic bearbeiten",
+    "Remove emoji": "Emoji entfernen",
     "Confirm delete?": "Wirklich löschen?",
     "Close": "Schließen",
     /* Gruppierungs-Modal */
@@ -8571,6 +8572,14 @@
      Bild und stieg aus -- kein Globus, obwohl genau dafuer alles da ist. Deshalb merkt sich der
      Zuhoerer den Kasten, solange das Bild noch haengt, und gibt ihn mit. */
   function faviconRueckfall(img, kastenVorher){
+    /* Ein Balken-Logo hat seinen eigenen Rueckfall: der Kasten bleibt, darin das Zeichen aus
+       data-ersatz (in Ads die Bank). Ohne diese Weiche lief Googles Platzhalter-Globus (Status 200,
+       also kein error) in den kastenlosen Zweig unten und stand als nackter Globus da -- gemeldet
+       am 06.10. am Chart "Anteil der Werbetreibenden". */
+    if (img && img.classList && img.classList.contains("up-bar-logo")){
+      if (img.parentNode) barLogoErsatz(img);
+      return;
+    }
     var kasten = kastenVorher || (img && img.closest ? img.closest(FAV_KASTEN) : null);
     if (!img && !kasten) return;
     if (kasten){
@@ -9922,6 +9931,13 @@
             '" data-pick="color" data-tip="Topic Color" aria-label="Topic color" aria-expanded="' + (colorOpen ? "true" : "false") + '">' +
             '<span class="up-topicmodal-pickswatch" style="background:' + esc(color) + '"></span>' +
           '</button>' +
+          /* Ein gesetztes Emoji liess sich bis zum 06.10. nur gegen ein anderes tauschen, nie
+             entfernen (gemeldet). Der Knopf steht nur da, wenn es etwas zu entfernen gibt; er
+             leert den Entwurf, gespeichert wird erst mit Save -- emoji "" ersetzt dann das alte
+             (die Nutzlast ist ein vollstaendiger Ersatz, kein Diff). Ein offener Waehler bleibt
+             offen: wer entfernt, will vielleicht gleich ein anderes waehlen. */
+          (draftEmoji ? '<button type="button" class="up-btn-sec up-topicmodal-emojiweg" data-emoji-weg>' +
+            icon("x", 2) + '<span>' + esc(t_("Remove emoji")) + '</span></button>' : '') +
         '</div>' + panel;
     }
     function renderAppearance(){
@@ -9982,6 +9998,7 @@
           fireDelete();
           return;
         }
+        if (e.target.closest("[data-emoji-weg]")){ draftEmoji = ""; renderAppearance(); return; }
         var pickBtn = e.target.closest("[data-pick]");
         if (pickBtn){
           var kind = pickBtn.getAttribute("data-pick");
@@ -14015,8 +14032,13 @@
      und bei einem Ladefehler das Ersatzzeichen (it.ersatz, Name eines Zeichens; Vorgabe "globe",
      Ads gibt "bank"). Eine Liste ganz ohne Logos bleibt ohne Kaestchen.
      barLogoErsatz tauscht ein Bild, das nicht laedt, gegen dasselbe Kaestchen mit dem Zeichen --
-     gleiche Groesse, die Rechnung "passt der Name in den Balken" bleibt also richtig. */
+     gleiche Groesse, die Rechnung "passt der Name in den Balken" bleibt also richtig.
+     Ein MARKT traegt statt eines Logos it.flagge (Laendercode): dann das Flaggenplaettchen der
+     App (flagHtml, 18x14, Rueckfallbuchstaben) und nicht eine Flaggen-PNG im quadratischen
+     Logo-Kaestchen -- so stand sie bis zum 06.10. in Shopping ("Wo dieses Produkt erscheint"),
+     gestaucht und gerahmt, und sah anders aus als jede andere Flagge der App. */
   function barLogoHtml(it, mitKasten, cls){
+    if (it && it.flagge != null) return flagHtml(String(it.flagge), "up-bar-flagge" + (cls ? " " + cls : ""));
     var blg = it && it.logo ? String(it.logo) : "";
     if (blg.indexOf("//") === 0) blg = "https:" + blg;
     if (blg && !/^https?:\/\//i.test(blg)) blg = "";
@@ -14089,7 +14111,7 @@
       var spalte = cfg.labelCol ? !!cfg.labelCol() : false;
       var maxName = 0;
       /* Traegt irgendein Eintrag ein Logo oder Zeichen, bekommt jeder das Kaestchen (barLogoHtml). */
-      var mitLogos = d.some(function(it){ return !!(it.logo || it.zeichen || it.ersatz); });
+      var mitLogos = d.some(function(it){ return !!(it.logo || it.zeichen || it.ersatz || it.flagge != null); });
       var html = '<div class="up-bars' + (spalte ? " has-labelcol" : "") + '">' + d.map(function(it){
         var hell = barIsLight(it.color);
         var txt = hell ? "rgba(31,31,27,0.96)" : "rgba(255,255,255,0.95)";
@@ -14128,13 +14150,15 @@
           '</div>';
       }).join("") + '</div>';
       mount.innerHTML = html;
+      /* Flaggen brauchen ihre Verdrahtung (Bild da: Buchstabe weg; 404: Buchstabe bleibt). */
+      try { wireFlags(mount); } catch(e){}
 
       var rows = [].slice.call(mount.querySelectorAll(".up-bar-row"));
       /* Logo oder Zeichen-Platte vor dem Namen zaehlen mit (04.10.): measureText misst nur den
          Text, und so blieb "Kaufland" mit Platte im Balken stehen und wurde abgeschnitten, statt
          nach aussen zu ruecken -- 15px Platte plus 6px Abstand fehlten in der Rechnung. */
       var masse = rows.map(function(row){
-        var name = row.querySelector(".up-bar-name"), lg = name && name.querySelector(".up-bar-logo");
+        var name = row.querySelector(".up-bar-name"), lg = name && name.querySelector(".up-bar-logo, .up-bar-flagge");
         var lgW = lg ? lg.getBoundingClientRect().width + (parseFloat(getComputedStyle(name).columnGap) || 0) : 0;
         return { nameW: measureText(name) + lgW,
                  pctW:  measureText(row.querySelector(".up-bar-pct-in")) };
@@ -15939,7 +15963,7 @@
       d = (d || []).slice().sort(function(a, b){ return b.share - a.share; });
       if (isEmpty(d)){ empty(); return; }
       lastKeys = keysOf(d); lastMode = "bar";
-      var mitLogos = d.some(function(it){ return !!(it.logo || it.ersatz); });
+      var mitLogos = d.some(function(it){ return !!(it.logo || it.ersatz || it.flagge != null); });
       body.innerHTML = '<div class="up-bars">' + d.map(function(it){
         /* Label colour follows the fill's luminance so it stays readable: white on dark/mid fills,
            dark on genuinely light ones. Bar colours are identical in both themes, so this is
@@ -15963,6 +15987,7 @@
               '<span class="up-bar-pct-out" style="color:' + outPctColor + '">' + esc(fmtPct(it.share)) + '</span>' +
             '</span></div></div>';
       }).join("") + '</div>';
+      try { wireFlags(body); } catch(e){}
 
       var rows = Array.prototype.slice.call(body.querySelectorAll(".up-bar-row"));
       if (cfg.onSliceClick){
