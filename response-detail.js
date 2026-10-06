@@ -156,6 +156,24 @@
         '<div class="urd-shop-wrap"><div class="urd-shop-row"></div></div>' +
       '</div>' +
 
+      /* ADS (06.10., Handoff "Response Detail Ads"): unter Products, ueber Full Response -- erst
+         was die Antwort empfiehlt, dann was dafuer bezahlt wurde, dann der Text. Dieselbe Reihe wie
+         Products (.urd-shop-*), die Karte ist UC.adCardHtml aus core wie im Ads-Bereich. Ohne Ads
+         kein Abschnitt und kein Hinweis. */
+      '<div class="urd-sect urd-sect-ads" hidden>' +
+        '<div class="urd-sec">' +
+          '<div class="urd-sec-txt">' +
+            '<span class="urd-sec-title">Ads</span>' +
+            '<span class="urd-sec-desc">Sponsored placements shown with this response</span>' +
+          '</div>' +
+          '<div class="urd-shop-nav" hidden>' +
+            '<button type="button" class="up-iconbtn urd-shop-prev" aria-label="Previous Ads">' + UC.icon("chevronLeft", 2) + '</button>' +
+            '<button type="button" class="up-iconbtn urd-shop-next" aria-label="More Ads">' + UC.icon("chevronRight", 2) + '</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="urd-shop-wrap"><div class="urd-shop-row urd-ads-row"></div></div>' +
+      '</div>' +
+
       '<div class="urd-sect urd-sect-body">' +
         '<div class="urd-sec">' +
           '<div class="urd-sec-txt">' +
@@ -236,9 +254,11 @@
     var elMN     = root.querySelector(".urd-mrow-n");
     var elMMore  = root.querySelector(".urd-mrow-more");
     var elShop   = root.querySelector(".urd-sect-shop");
-    var elShopRow = root.querySelector(".urd-shop-row");
-    var elShopWrap = root.querySelector(".urd-shop-wrap");
-    var elShopNav = root.querySelector(".urd-shop-nav");
+    var elShopRow = root.querySelector(".urd-sect-shop .urd-shop-row");
+    var elShopWrap = root.querySelector(".urd-sect-shop .urd-shop-wrap");
+    var elShopNav = root.querySelector(".urd-sect-shop .urd-shop-nav");
+    var elAds    = root.querySelector(".urd-sect-ads");
+    var elAdsRow = elAds.querySelector(".urd-ads-row");
     var elBody   = root.querySelector(".up-rb");
     var elAv     = root.querySelector(".urd-msg-av");
     var elHlBtn  = root.querySelector(".urd-hlbtn");
@@ -665,50 +685,132 @@
       elShopRow.scrollLeft = 0;
       shopRand();
     }
-    /* Pfeile nur, wenn es etwas zu blaettern gibt; jeder aus, wenn seine Seite am Ende ist. Die Blende
+    /* EINE WAAGRECHTE REIHE MIT PFEILEN (Products, seit dem 06.10. auch Ads -- dieselbe Mechanik,
+       darum eine Funktion statt zwei Kopien). sect ist der Abschnitt mit .urd-shop-nav/-wrap/-row,
+       kartenSel die Karten darin.
+       Pfeile nur, wenn es etwas zu blaettern gibt; jeder aus, wenn seine Seite am Ende ist. Die Blende
        rechts (is-more) sagt "da kommt noch was" und verschwindet am Ende, sonst laege die letzte
        Karte halb im Nebel. ziel: wohin ein Pfeil gerade faehrt -- das scroll-Ereignis kommt erst
-       mit gemalten Bildern, ein verdeckter Tab malt keine. */
-    function shopRand(ziel) {
-      var max = elShopRow.scrollWidth - elShopRow.clientWidth;
-      var pos = ziel != null ? ziel : elShopRow.scrollLeft;
-      elShopNav.hidden = max <= 2;
-      var prev = elShopNav.querySelector(".urd-shop-prev"), next = elShopNav.querySelector(".urd-shop-next");
-      prev.disabled = pos <= 2; prev.classList.toggle("is-disabled", pos <= 2);
-      next.disabled = pos >= max - 2; next.classList.toggle("is-disabled", pos >= max - 2);
-      elShopWrap.classList.toggle("is-more", max > 2 && pos < max - 2);
-      /* Links angeschnitten heisst: gescrollt, und keine Karte beginnt genau an der Kante. */
-      var anKante = pos <= 1 || [].some.call(elShopRow.querySelectorAll(".urd-pc"), function (k) {
-        return Math.abs(k.offsetLeft - SHOP_RAND - pos) <= 1;
-      });
-      elShopWrap.classList.toggle("is-links", !anKante);
-    }
-    /* Die Pfeile zielen auf den ANFANG einer Karte, nie dazwischen (05.10.: vorher eine Sichtbreite
+       mit gemalten Bildern, ein verdeckter Tab malt keine.
+       Die Pfeile zielen auf den ANFANG einer Karte, nie dazwischen (05.10.: vorher eine Sichtbreite
        minus 80px, und das Einrasten legte die Karte dann an die Aussenkante der Reihe -- links
        abgeschnitten). "Weiter": die erste Karte, die rechts nicht ganz zu sehen ist, steht danach
        vorn. "Zurueck": eine Sichtbreite zurueck, auf den naechsten Kartenanfang. RAND = das Polster
        der Reihe (2px), auf dem auch die erste Karte steht. Am Ende steht die letzte Karte rechts. */
     var SHOP_RAND = 2;
-    function shopBlaettern(r) {
-      var karten = [].slice.call(elShopRow.querySelectorAll(".urd-pc"));
-      if (!karten.length) return;
-      var max = elShopRow.scrollWidth - elShopRow.clientWidth, pos = elShopRow.scrollLeft, sicht = elShopRow.clientWidth;
-      var ziel;
-      if (r > 0) {
-        var naechste = karten.filter(function (k) { return k.offsetLeft + k.offsetWidth > pos + sicht + 1; })[0];
-        ziel = naechste ? naechste.offsetLeft - SHOP_RAND : max;
-      } else {
-        var grenze = pos - sicht + SHOP_RAND;
-        var erste = karten.filter(function (k) { return k.offsetLeft - SHOP_RAND >= grenze - 1; })[0];
-        ziel = erste ? erste.offsetLeft - SHOP_RAND : 0;
+    function reiheMachen(sect, kartenSel) {
+      var row = sect.querySelector(".urd-shop-row"), wrap = sect.querySelector(".urd-shop-wrap"), nav = sect.querySelector(".urd-shop-nav");
+      function rand(ziel) {
+        var max = row.scrollWidth - row.clientWidth;
+        var pos = ziel != null ? ziel : row.scrollLeft;
+        nav.hidden = max <= 2;
+        var prev = nav.querySelector(".urd-shop-prev"), next = nav.querySelector(".urd-shop-next");
+        prev.disabled = pos <= 2; prev.classList.toggle("is-disabled", pos <= 2);
+        next.disabled = pos >= max - 2; next.classList.toggle("is-disabled", pos >= max - 2);
+        wrap.classList.toggle("is-more", max > 2 && pos < max - 2);
+        /* Links angeschnitten heisst: gescrollt, und keine Karte beginnt genau an der Kante. */
+        var anKante = pos <= 1 || [].some.call(row.querySelectorAll(kartenSel), function (k) {
+          return Math.abs(k.offsetLeft - SHOP_RAND - pos) <= 1;
+        });
+        wrap.classList.toggle("is-links", !anKante);
       }
-      ziel = Math.max(0, Math.min(max, ziel));
-      try { elShopRow.scrollTo({ left: ziel, behavior: "smooth" }); } catch (e) { elShopRow.scrollLeft = ziel; }
-      shopRand(ziel);
+      function blaettern(r) {
+        var karten = [].slice.call(row.querySelectorAll(kartenSel));
+        if (!karten.length) return;
+        var max = row.scrollWidth - row.clientWidth, pos = row.scrollLeft, sicht = row.clientWidth;
+        var ziel;
+        if (r > 0) {
+          var naechste = karten.filter(function (k) { return k.offsetLeft + k.offsetWidth > pos + sicht + 1; })[0];
+          ziel = naechste ? naechste.offsetLeft - SHOP_RAND : max;
+        } else {
+          var grenze = pos - sicht + SHOP_RAND;
+          var erste = karten.filter(function (k) { return k.offsetLeft - SHOP_RAND >= grenze - 1; })[0];
+          ziel = erste ? erste.offsetLeft - SHOP_RAND : 0;
+        }
+        ziel = Math.max(0, Math.min(max, ziel));
+        try { row.scrollTo({ left: ziel, behavior: "smooth" }); } catch (e) { row.scrollLeft = ziel; }
+        rand(ziel);
+      }
+      nav.querySelector(".urd-shop-prev").addEventListener("click", function () { blaettern(-1); });
+      nav.querySelector(".urd-shop-next").addEventListener("click", function () { blaettern(1); });
+      row.addEventListener("scroll", function () { rand(); }, { passive: true });
+      return { rand: rand };
     }
-    elShopNav.querySelector(".urd-shop-prev").addEventListener("click", function () { shopBlaettern(-1); });
-    elShopNav.querySelector(".urd-shop-next").addEventListener("click", function () { shopBlaettern(1); });
-    elShopRow.addEventListener("scroll", function () { shopRand(); }, { passive: true });
+    var shopReihe = reiheMachen(elShop, ".urd-pc");
+    function shopRand(ziel) { shopReihe.rand(ziel); }
+
+    /* ---- Ads (06.10.) ----------------------------------------------------------------------
+       Die Ad-Objekte stehen im SELBEN Payload, Feld ads am Eintrag -- dieselben Felder wie die
+       Ad-Objekte der Ads-RPCs, dazu relationship und logo_url (hier kommt keine Advertiser-Liste
+       mit, aus der ads.js beides sonst liest). Modell, Markt und Zeitpunkt bekommt die Karte NICHT:
+       sie gelten fuer die ganze Antwort und stehen schon im Kopf. Ohne Logo das Favicon der
+       Domain des Werbetreibenden, sonst das Bank-Zeichen -- wie im Ads-Bereich. */
+    var adListe = [];
+    function adsLesen(d) {
+      var l = d && isArr(d.ads) ? d.ads : [];
+      return l.filter(function (x) { return x && typeof x === "object" && String(x.id == null ? "" : x.id).trim(); });
+    }
+    function adBeziehung(ad) {
+      var r = String(ad.relationship == null ? "" : ad.relationship).trim();
+      if (r === "you" || r === "competitor") return r;
+      var cid = String(ad.company_id == null ? "" : ad.company_id).trim();
+      if (!cid || !UC.getBrands) return null;
+      var b = UC.getBrands().filter(function (x) { return x && String(x.company_id) === cid; })[0];
+      return b ? ((b.role === "own" || b.is_own === true) ? "you" : "competitor") : null;
+    }
+    function adKarte(ad) {
+      var ohne = {};
+      Object.keys(ad).forEach(function (k) { if (k !== "model" && k !== "market" && k !== "observed_at") ohne[k] = ad[k]; });
+      var logo = sichereUrl(ad.logo_url) || (UC.faviconUrl ? UC.faviconUrl(ad.domain || ad.advertiser_domain || ad.landing_domain) : "");
+      return UC.adCardHtml ? UC.adCardHtml(ohne, { logo: logo, beziehung: adBeziehung(ad), zeichen: "bank" }) : "";
+    }
+    /* Laden: drei Skelettkarten im Bildformat der Ad Card (Handoff). */
+    function adsSkelett() {
+      var k = "";
+      for (var i = 0; i < 3; i++) {
+        k += '<div class="up-adcard is-sk" aria-hidden="true"><span class="up-adcard-media"></span>' +
+          '<span class="up-adcard-body"><span class="urd-sk urd-ads-skl" style="width:42%"></span>' +
+          '<span class="urd-sk urd-ads-skl" style="width:88%"></span><span class="urd-sk urd-ads-skl" style="width:64%"></span></span></div>';
+      }
+      return k;
+    }
+    var adsReihe = reiheMachen(elAds, ".up-adcard");
+    function adsRand(ziel) { adsReihe.rand(ziel); }
+    function renderAds() {
+      var laedt = istLaden() && !state.fehler;
+      adListe = (!istLaden() && !state.fehler && state.data) ? adsLesen(state.data) : [];
+      elAds.hidden = !(laedt || adListe.length);
+      if (elAds.hidden) { elAdsRow.innerHTML = ""; return; }
+      elAdsRow.innerHTML = laedt ? adsSkelett() : adListe.map(adKarte).join("");
+      elAdsRow.scrollLeft = 0;
+      adsRand();
+    }
+    /* Eine Ad oeffnen, wie ein Produkt (produktOeffnen): ist in Bubble ein Empfaenger fuer urdAd
+       verdrahtet, entscheidet er. Sonst direkt: den Drawer schliessen, in den Ads-Bereich wechseln
+       und dort den Ad-Drawer mit genau diesem Objekt oeffnen -- dafuer braucht es keinen Abruf,
+       das Objekt traegt alle Felder. Ohne Ads-Element auf der Seite bleibt das Ereignis. */
+    function adOeffnen(id) {
+      id = String(id || "").trim();
+      var ad = adListe.filter(function (x) { return String(x.id) === id; })[0];
+      if (!ad) return;
+      var fnName = root.getAttribute("data-ad-fn") || "bubble_fn_urdAd";
+      var ar = document.querySelector(".uad-root"), ac = ar && ar.__uadController;
+      if (typeof window[fnName] === "function" || !ac || typeof ac.adObjekt !== "function") {
+        fire("data-ad-fn", "urdAd", id);
+        return;
+      }
+      var dr = root.closest ? root.closest('[id^="drawer-"]') : null;
+      if (dr && typeof window.closeDrawer === "function") {
+        try { window.closeDrawer(dr.id.replace(/^drawer-/, "")); } catch (e) {}
+      }
+      if (UC.ansichtWechseln) UC.ansichtWechseln("ads");
+      else if (typeof window.usnNavigieren === "function") window.usnNavigieren("ads");
+      ac.adObjekt(ad);
+    }
+    elAdsRow.addEventListener("click", function (e) {
+      var k = e.target.closest ? e.target.closest(".up-adcard[data-ad-id]") : null;
+      if (k) adOeffnen(k.getAttribute("data-ad-id"));
+    });
 
     /* ---- Produkte im Text ------------------------------------------------------------------
        Der Produktname vor dem ersten Komma ("Raab Vitalfood Elektrolyt"), weil das Modell
@@ -1245,6 +1347,7 @@
       renderAbsender();
       renderMents();
       renderShop();
+      renderAds();
       renderBody();
       renderCites();
     }
@@ -1470,6 +1573,7 @@
       glistSchliessen();
       mentionsZeile();
       if (produktListe.length) shopRand();
+      if (!elAds.hidden) adsRand();
     });
 
     render();

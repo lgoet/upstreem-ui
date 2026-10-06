@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261092;
+  var BUILD = 20261093;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1772,6 +1772,8 @@
     "Previous products": "Vorherige Produkte",
     "More products": "Weitere Produkte",
     "No price shown": "Kein Preis angegeben",
+    "Sponsored placements shown with this response": "Bezahlte Platzierungen, die zu dieser Response gezeigt wurden",
+    "Previous Ads": "Vorherige Ads", "More Ads": "Weitere Ads",
     "No merchant shown": "Kein Händler angegeben",
     "Position {n} in this response": "Platz {n} in dieser Response",
     "This response could not be found.": "Diese Response wurde nicht gefunden.",
@@ -3924,6 +3926,13 @@
      Store der Seite (setUpstreemTopics). Ohne beides der Chip in Grau -- so wie im Store eine
      Topic ohne Farbe aussieht. Wird nur EIN Thema geliefert, gilt diese Farbe in beiden.
      cfg { dunkel, cls, tip } */
+  /* Mit oder ohne Emoji in jedem Topic-Chip (06.10., Topic-Handoff 2b/2a). Eine Produktentscheidung,
+     also EIN Schalter fuer die ganze App statt einer Option je Verbraucher: UC.topicEmoji(false)
+     blendet .up-topicchip-e ueberall aus (Klasse am <html>, Regel in core.css). Vorgabe: mit. */
+  function topicEmoji(an){
+    try { document.documentElement.classList.toggle("up-topic-ohne-emoji", an === false); } catch(e){}
+    return an !== false;
+  }
   function topicHex(x, dunkel){
     if (!x || typeof x !== "object") return "";
     var h = String((dunkel ? (x.hex_dark || x.hex_light) : (x.hex_light || x.hex_dark)) || x.color || "").trim();
@@ -3945,6 +3954,15 @@
     }
     if (!name && eigen) name = String(eigen.name == null ? "" : eigen.name).trim();
     if (!name) return "";
+    /* Nur ein Name, keine Id (Shopping, Recent Appearances, 06.10.): die Topic gleichen Namens aus
+       dem Store, ohne Ruecksicht auf Gross- und Kleinschreibung -- sonst stuende dort ein grauer Punkt. */
+    if (!eigen){
+      var nk = name.toLowerCase(), alle = getTopics();
+      for (var j = 0; j < alle.length; j++){
+        var y = alle[j];
+        if (y && String(y.name == null ? "" : y.name).trim().toLowerCase() === nk){ eigen = y; break; }
+      }
+    }
     var hex = topicHex(tp, cfg.dunkel) || topicHex(eigen, cfg.dunkel);
     var emo = String(tp.emoji || (eigen && eigen.emoji) || "").trim();
     return '<span class="up-topicchip is-static' + (cfg.cls ? " " + cfg.cls : "") + '"' +
@@ -21272,7 +21290,7 @@
     relativeTime: relativeTime,
     modelChip: modelChip, modelLogoUrl: modelLogoUrl, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,
     adCardHtml: adCardHtml, adFormatLabel: adFormatLabel, makeSeitenDrawer: makeSeitenDrawer, balkenGrau: balkenGrau,
-    faviconUrl: faviconUrl, topicChipHtml: topicChipHtml,
+    faviconUrl: faviconUrl, topicChipHtml: topicChipHtml, topicEmoji: topicEmoji,
     marketChip: marketChip,
     aufResize: aufResize,
     beobachteGroesse: beobachteGroesse,

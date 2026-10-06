@@ -1766,14 +1766,15 @@
     var html = shown.map(function(t){
       t = t || {};
       var color = t.hex_light || t.hex_dark || '#6b7280';
-      return '<span class="up-topicchip" style="--ust-tag-color:'+_escAttr(color)+';">'+
+      return '<span class="up-topicchip is-static" style="--ust-tag-color:'+_escAttr(color)+';">'+
         (t.emoji?'<span class="up-topicchip-e">'+esc(t.emoji)+'</span>':'')+
         '<span class="up-topicchip-lbl">'+esc(t.name||'')+'</span></span>';
     }).join('');
     /* Der "+n"-Chip behaelt seinen lokalen Namen: fuer .uo-tag-more steht hier eine Regel, fuer
        .uo-tagmore (so heisst er in opportunities.css) nicht -- und opportunities.css wird in
        Mira nicht geladen. */
-    if (hidden > 0) html += '<span class="uo-tag-more">+'+hidden+'</span>';
+    /* Seit dem 06.10. der "+N"-Chip aus core (.is-mehr); uo-tag-more bleibt als Griff. */
+    if (hidden > 0) html += '<span class="up-topicchip is-static is-mehr uo-tag-more">+'+hidden+'</span>';
     return html;
   }
   function _oppFmtDate(iso){ if(!iso) return ''; var d=new Date(iso); if(isNaN(d.getTime())) return String(iso); return d.getDate()+'. '+_OPP_MONTHS[d.getMonth()]+' '+d.getFullYear(); }

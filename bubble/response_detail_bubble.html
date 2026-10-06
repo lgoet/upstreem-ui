@@ -14,6 +14,10 @@
      links, Market und Themen rechts, und die Zeile "Mentioned" mit den Marken ("+N more").
   2. "Products": die Shopping-Produkte DIESER Antwort als Karten, in ihrer Reihenfolge. Nur wenn
      die Antwort welche hat (shopping_products, get_mention_detail_v8) -- sonst fehlt der Abschnitt.
+  2b. "Ads" (06.10.): die Anzeigen DIESER Antwort als Ad-Karten (dieselbe Karte wie im Ads-Bereich),
+     unter Products, ueber Full Response. Nur wenn die Antwort welche hat (Feld ads am Eintrag,
+     get_mention_detail_v8 -- DB-Auftrag bubble/db_auftrag_response_ads.md) -- sonst fehlt der
+     Abschnitt. Beim Laden drei Skelettkarten (Handoff).
   3. "Full Response": der Antworttext mit Tabellen, nummerierten Zitat-Chips, Markenauszeichnung
      und den Produkten im Text (gepunktet unterstrichen, mit ihrer Karte verbunden).
   4. "Citations": die Quellen, nummeriert (dieselbe Zahl wie am Zitat im Text), umschaltbar
@@ -52,11 +56,16 @@
   | urdView    | Umschalter Kacheln/Liste                  | "grid" oder "list", roh         |
   | urdDomain  | Klick auf die Domain einer Quelle (Kachel oder Zeile) | die Domain als Text  |
   | urdProduct | Klick auf eine Produktkarte, NUR wenn ein Empfaenger verdrahtet ist ODER kein Shopping-Element auf der Seite steht | source_product_id, roh |
+  | urdAd      | Klick auf eine Ad-Karte, NUR wenn ein Empfaenger verdrahtet ist ODER kein Ads-Element auf der Seite steht | die id der Ad, roh |
 
   urdProduct braucht KEINEN Workflow: ohne Empfaenger oeffnet der Klick das Produkt selbst -- der
   Drawer geht zu, die Seitenleiste wechselt auf Shopping (usnNav wie ein Klick dort), und das
   Shopping-Element zeigt das Product Detail. Wer etwas anderes will, legt ein JavaScriptToBubble
   "urdProduct" an; dann entscheidet der Workflow.
+
+  urdAd ebenso (06.10.): ohne Empfaenger geht der Drawer zu, die Seitenleiste wechselt auf Ads,
+  und der Ad-Drawer des Ads-Elements zeigt genau diese Anzeige (ohne neuen Abruf). Wer etwas anderes
+  will (z. B. die Ad Library), legt ein JavaScriptToBubble "urdAd" an und data-ad-fn.
 
   urdView ist der EINZIGE dieser Auslöser, der optional ist. Die Komponente merkt sich die
   Wahl Kacheln/Liste ohnehin selbst (UC.prefSet), Bubble braucht davon nichts zu wissen.
@@ -205,7 +214,8 @@
      data-view-fn="bubble_fn_urdView"
      data-domain-fn="bubble_fn_urdDomain">
   <!-- data-product-fn="bubble_fn_urdProduct" nur, wenn ein Workflow den Klick auf ein Produkt
-       selbst behandeln soll -- ohne oeffnet die Komponente das Produkt im Shopping-Bereich. -->
+       selbst behandeln soll -- ohne oeffnet die Komponente das Produkt im Shopping-Bereich.
+       data-ad-fn="bubble_fn_urdAd" ebenso fuer den Klick auf eine Ad (ohne: Ad-Drawer im Ads-Bereich). -->
   <!--
     DER EINFACHSTE WEG, die Daten hereinzugeben: den dynamischen Ausdruck als INHALT dieses Blocks.
     Die Komponente liest ihn beim Aufbau selbst, es braucht dafuer keinen Run-JS-Schritt.

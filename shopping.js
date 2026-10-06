@@ -2433,8 +2433,12 @@
           '<div class="up-td"><span class="up-num">' + esc(datum(r.run_at || r.day)) + '</span></div>' +
           td("model", r.model ? (UC.modelChip ? UC.modelChip(str(r.model)) : esc(str(r.model))) : '<span class="up-num is-empty">–</span>') +
           td("market", /^[A-Za-z]{2}$/.test(str(r.market).trim()) && UC.marketChip ? UC.marketChip(str(r.market).trim()) : (marktCode(r.market) ? esc(marktCode(r.market)) : '<span class="up-num is-empty">–</span>')) +
-          '<div class="up-td up-td-topic">' + (topics.length ? '<span class="ush-topics" title="' + esc(topics.join(", ")) + '"><span class="ush-titel">' + esc(topics[0]) + '</span>' +
-            (topics.length > 1 ? '<span class="up-marke is-leise">+' + (topics.length - 1) + '</span>' : '') + '</span>' : '<span class="up-num is-empty">–</span>') + '</div>' +
+          /* Topics als der Chip aus core (06.10.: "ueberall die uebliche Topic-Darstellung"), Farbe und
+             Emoji ueber den Namen aus dem Topic-Store; "+N" als der Chip ohne Punkt, die uebrigen
+             Namen im Tooltip. */
+          '<div class="up-td up-td-topic">' + (topics.length ? '<span class="ush-topics">' +
+            (UC.topicChipHtml ? UC.topicChipHtml({ name: topics[0] }, { dunkel: isDark() }) : '<span class="ush-titel">' + esc(topics[0]) + '</span>') +
+            (topics.length > 1 ? '<span class="up-topicchip is-static is-mehr" data-tip="' + esc(topics.slice(1).join(", ")) + '">+' + (topics.length - 1) + '</span>' : '') + '</span>' : '<span class="up-num is-empty">–</span>') + '</div>' +
           /* Die Platzierung EINER Antwort ist eine ganze Zahl (Platz 2 im Karussell), kein
              Durchschnitt -- "2.0" laese sich wie ein Mittelwert. Die Raute bleibt wie beim Rang. */
           td("position", pos != null ? '<span class="up-rank-group">' + HASH + '<span class="up-num">' + esc(ganz(pos)) + '</span></span>' : posLeer ? '<span class="ush-unter">' + esc(t("Single card")) + '</span>' : '<span class="up-num is-empty">–</span>') +

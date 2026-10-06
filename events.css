@@ -209,8 +209,9 @@
 .uev-scope-lbl { display: inline-flex; align-items: center; gap: 6px; font-size: var(--up-fs-m); color: var(--vc-muted); }
 .uev-scope-wert { font-size: var(--up-fs-m); color: var(--vc-text); }
 .uev-scope-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-/* Ein geloeschtes Topic: ausgegraut (Vertrag 3.2), nicht durchgestrichen. */
-.uev-topic-weg { opacity: .5; }
+/* Ein geloeschtes Topic: ausgegraut (Vertrag 3.2), nicht durchgestrichen -- seit dem 06.10. ueber
+   .is-weg aus core (grauer Punkt, Name in --vc-muted, Topic-Handoff). Halbe Deckkraft obendrauf
+   machte es unleserlich. */
 .uev-scope-neben { display: flex; flex-direction: column; gap: 4px; font-size: var(--up-fs-s); color: var(--vc-muted); }
 
 /* Die Responses-Tabelle unter der Komponente (eigenes Element, Vorgabe-Instanz responses_events):

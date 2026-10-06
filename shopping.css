@@ -109,6 +109,7 @@
 .ush-rating { display: inline-flex; align-items: center; gap: 4px; }
 .ush-rating svg { width: 13px; height: 13px; display: block; color: var(--vc-third); }
 .ush-topics { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.ush-topics .is-mehr { flex: 0 0 auto; }
 .ush-topprodukt { display: inline-flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer; }
 .ush-topprodukt:hover .ush-titel { text-decoration: underline; text-underline-offset: 2px; }
 

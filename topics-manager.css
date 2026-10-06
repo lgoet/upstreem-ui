@@ -26,8 +26,9 @@
    Die Klasse bleibt stehen und nicht nur im Markup -- .contract_diff.py liest Klassennamen aus den
    CSS-Dateien, und ein Name, der dort verschwindet, koennte fremden Code brechen. */
 .utm-topicchip-e { font-size: 12px; line-height: 1; flex: 0 0 auto; }
-.utm-topicchip-count { flex: 0 0 auto; font-size: 11px; font-weight: 600; color: var(--vc-fourth);
-  font-variant-numeric: tabular-nums; }
+/* Die Zahl kommt seit dem 06.10. aus core (.up-topicchip-zahl, gleiche Werte plus 2px Abstand);
+   hier bleibt nur, dass sie nicht schrumpft. */
+.utm-topicchip-count { flex: 0 0 auto; }
 
 /* Loading skeleton: same shape as the real chip, filled with the shared skeleton pulse instead of
    inventing a new one (.up-tsk / uutpulse are already core.css globals). */
@@ -100,7 +101,8 @@
 /* Ohne Rahmen -- der Chip hat seit dem 08.09. keinen mehr (core.css). Ein gestrichelter Rahmen
    war die Marke fuer "dieses Thema gibt es nicht mehr"; sie wird jetzt von der Flaeche getragen:
    keine Farbe, nur der Panelgrund, und der Text gedaempft. */
-.utm-cg-chip.is-gone { color: var(--vc-muted); background: var(--vc-heading-bg); }
+/* Seit dem 06.10. traegt das .is-weg aus core (grauer Punkt, Name in --vc-muted, Topic-Handoff);
+   is-gone bleibt nur als Name im Markup. */
 /* Auge und Kebab als ein Paar rechts. Der auto-Rand sitzt am Behaelter, nicht am Auge -- anders als
    im Popover der prompts-table, wo es keinen Behaelter gibt. */
 .utm-cg-actions { flex: 0 0 auto; margin-left: auto; display: inline-flex; align-items: center; gap: 2px; }

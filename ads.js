@@ -1725,8 +1725,9 @@
       l = topicListe(l);
       if (!l.length) return leerZelle();
       var rest = l.slice(1).map(function (x) { return str(x.topic_name).trim(); });
+      /* "+N" als der Chip ohne Punkt (Topic-Handoff, 06.10.), die uebrigen Namen im Tooltip. */
       return '<span class="uad-topics">' + topicChip(l[0]) +
-        (rest.length ? '<span class="up-marke is-leise" data-tip="' + esc(rest.join(", ")) + '">+' + rest.length + '</span>' : '') + '</span>';
+        (rest.length ? '<span class="up-topicchip is-static is-mehr" data-tip="' + esc(rest.join(", ")) + '">+' + rest.length + '</span>' : '') + '</span>';
     }
     /* Ads des Advertisers: die neuesten 20 (Vertrag), als Karten; "By Campaign" gruppiert nach
        campaign_id, sonst utm_campaign -- nur, wenn eine Ad Kampagnendaten traegt. */
@@ -2093,7 +2094,11 @@
         return true;
       },
       redraw: function () { geruest = null; zeichnen(); if (drawer) drawer.thema(); },
-      state: state, root: root, seite: seiteOeffnen, advertiser: advertiserOeffnen, ad: drawerOeffnen, drawer: drawer
+      state: state, root: root, seite: seiteOeffnen, advertiser: advertiserOeffnen, ad: drawerOeffnen, drawer: drawer,
+      /* Ein Ad-Objekt von AUSSEN oeffnen (06.10., Response Detail): es kommt in den Index, aus
+         dem der Drawer liest, und der Drawer geht auf -- ohne dass diese Seite es selbst gezeichnet
+         haben muss. Dieselben Felder wie die Ad-Objekte der Ads-RPCs. */
+      adObjekt: function (ad) { var id = adMerken(ad); if (id) drawerOeffnen(id); return !!id; }
     };
     root.__uadController = ctrl;
 

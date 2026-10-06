@@ -833,7 +833,8 @@
      gemeinsamen .up-topicchip aus core, wie das Opportunities-Modul auch. Die Regeln des
      alten Chips waren danach tot. .uo-tags (der Behaelter) und .uo-tag-more (der
      "+n"-Chip) bleiben, beide werden weiter gebaut. */
-  #ask-mira .uo-tag-more { height: 26px; padding: 0 10px; border-radius: 8px; display: inline-flex; align-items: center; flex: 0 0 auto; border: 0; background: var(--am-soft-2); color: var(--am-muted); font-size: 12px; line-height: 1; font-weight: 600; white-space: nowrap; }
+  /* Seit dem 06.10. der "+N"-Chip aus core (.up-topicchip.is-mehr); hier nur, dass er nicht schrumpft. */
+  #ask-mira .uo-tag-more { flex: 0 0 auto; }
 
   /* ---- list rows (1:1 with the Opportunities list mode) — default collapsed view ---- */
   #ask-mira .uo-row {

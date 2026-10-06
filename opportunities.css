@@ -269,14 +269,9 @@
 /* Topic chips are core's .up-topicchip. Only the row wrapper is local -- clampTagsTwoRows() in the
    JS measures offsetTop against this container to decide what to fold into the "+N" chip. */
 .uo-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; overflow: hidden; }
-/* Neutral counterpart to .up-topicchip for the folded remainder: same 28px box and radius, no tint,
-   because it stands for several differently-coloured tags at once. */
-.uo-tagmore {
-  height: 28px; padding: 0 10px; border-radius: 8px; display: inline-flex; align-items: center;
-  flex: 0 0 auto; border: 1px solid transparent; background: var(--vc-heading-bg);
-  color: var(--vc-muted); font-size: 12px; line-height: 1; font-weight: 500;
-  white-space: nowrap; cursor: default;
-}
+/* Der "+N"-Chip ist seit dem 06.10. der aus core (.up-topicchip.is-mehr: derselbe Chip ohne Punkt,
+   Topic-Handoff). Hier bleibt nur, dass er nicht schrumpft. */
+.uo-tagmore { flex: 0 0 auto; }
 
 /* WEG (08.09. angefordert). Der Fuss enthaelt genau eine Sache -- das Anlagedatum --, und die
    beantwortet keine Frage, die man vor dem Oeffnen der Karte stellt. Die Regel bleibt stehen
@@ -573,7 +568,8 @@ button.uo-comp-more:hover { background: var(--vt-row-hover); color: var(--vc-tex
 .uo-skel-fav { width: 24px; height: 24px; border-radius: 8px; flex: 0 0 auto; }
 .uo-skel-source .uo-skel-line { flex: 1 1 auto; max-width: 60%; height: 12px; border-radius: 5px; }
 .uo-skel-tags { display: flex; gap: 6px; margin-top: 16px; }
-.uo-skel-tag { width: 98px; height: 28px; border-radius: 8px; }
+/* So hoch und rund wie der Topic-Chip ("Dot", 24px, Radius 6), sonst ruckt es beim Ankommen. */
+.uo-skel-tag { width: 98px; height: 24px; border-radius: var(--up-r-s); }
 .uo-skel-tag.sm { width: 64px; }
 .uo-skel-cnt { width: 18px; height: 14px; border-radius: 4px; }
 

@@ -80,7 +80,7 @@
 .uad-unter > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 /* Topic-Chip (core) und "+N" in Zelle und Kachelfuss: der Chip kuerzt seinen Namen, die Zahl nie. */
 .uad-topics { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
-.uad-topics .up-marke { flex: 0 0 auto; }
+.uad-topics .is-mehr { flex: 0 0 auto; }
 .uad-maerkte { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
 .uad-maerkte .up-marke { flex: 0 0 auto; }
 .uad-root .up-td-model { gap: 8px; }

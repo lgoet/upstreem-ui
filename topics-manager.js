@@ -186,7 +186,9 @@
            still -- genau das hat .contract_diff.py hier gemeldet. */
         (t.emoji ? '<span class="up-topicchip-e utm-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
         '<span class="up-topicchip-lbl utm-topicchip-lbl">' + esc(t.name == null ? "" : t.name) + '</span>' +
-        '<span class="utm-topicchip-count">' + fmtInt(toNum(t.prompt_count) || 0) + '</span>' +
+        /* Die Zahl ist seit dem 06.10. die Zahl des Chips aus core (.up-topicchip-zahl, Handoff);
+           .utm-topicchip-count bleibt als Alias stehen. */
+        '<span class="up-topicchip-zahl utm-topicchip-count">' + fmtInt(toNum(t.prompt_count) || 0) + '</span>' +
         '</button>';
     }
     /* Fixed-width skeleton pills of varying width purely for visual rhythm — no data to reflect
@@ -275,12 +277,13 @@
           if (String(state.topics[i].id) === String(id)){ t = state.topics[i]; break; }
         }
         if (!t){
-          return '<span class="up-topicchip utm-cg-chip is-gone" title="This topic no longer exists">' +
+          /* is-weg (core, 06.10.): grauer Punkt, leiser Name. is-gone bleibt als Alias. */
+          return '<span class="up-topicchip is-static is-weg utm-cg-chip is-gone" title="This topic no longer exists">' +
             '<span class="up-topicchip-lbl">Deleted topic</span></span>';
         }
         var color = String(t.hex_light || t.hex_dark || "#6b7280");
         if (color.charAt(0) !== "#") color = "#" + color;
-        return '<span class="up-topicchip utm-cg-chip" style="--ust-tag-color:' + esc(color) + '">' +
+        return '<span class="up-topicchip is-static utm-cg-chip" style="--ust-tag-color:' + esc(color) + '">' +
           (t.emoji ? '<span class="up-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
           '<span class="up-topicchip-lbl">' + esc(t.name == null ? "" : t.name) + '</span>' +
         '</span>';

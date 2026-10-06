@@ -540,13 +540,17 @@
     if (!src.length) src = ['Discovery','Comparison','Buying intent','How-to','Reviews','Alternatives','Pricing','Best-of'].map(function(n){ return { name: n, hex_light: '', emoji: '' }; });
     return src.map(function(t){ return { name: t.name, color: makeColor(t.hex_light, '#9ca3af'), emoji: t.emoji }; });
   }
+  /* Der Chip der Ladeanimation ist seit dem 06.10. der Topic-Chip aus core ("Dot", Topic-Handoff) --
+     hier stand eine eigene Pille mit eigenem Punkt, die dem neuen Chip schon fast glich. Die Farbe
+     geht ueber --ust-tag-color, der Punkt kommt aus core; .upr-tl-tag traegt nur noch das Einblenden. */
   function _uprMakeTag(tp){
-    var tag = document.createElement('span'); tag.className = 'upr-tl-tag';
-    var dot = document.createElement('span'); dot.className = 'upr-tl-dot'; dot.style.background = tp.color || 'var(--vc-third)';
+    var tag = document.createElement('span'); tag.className = 'up-topicchip is-static upr-tl-tag';
+    if (tp.color) tag.style.setProperty('--ust-tag-color', tp.color);
     var label = String(tp.name || '');
     if (label.length > 15) label = label.slice(0, 15) + '…';   // keep loader chips compact
     tag.title = String(tp.name || '');
-    tag.appendChild(dot); tag.appendChild(document.createTextNode((tp.emoji ? tp.emoji + ' ' : '') + label));
+    if (tp.emoji) { var em = document.createElement('span'); em.className = 'up-topicchip-e'; em.textContent = tp.emoji; tag.appendChild(em); }
+    var lb = document.createElement('span'); lb.className = 'up-topicchip-lbl'; lb.textContent = label; tag.appendChild(lb);
     return tag;
   }
   function _uprLimitToRows(host, maxRows){
@@ -672,7 +676,7 @@
   function renderTags(tags){
     if (!Array.isArray(tags) || !tags.length) return '<span class="upr-cell-empty">–</span>';
     return '<div class="upr-tags-list">' + tags.map(function(tag){
-      return '<span class="up-topicchip" style="--ust-tag-color:' + esc(makeColor(tag.hex_light, '#6b7280')) + ';">' +
+      return '<span class="up-topicchip is-static" style="--ust-tag-color:' + esc(makeColor(tag.hex_light, '#6b7280')) + ';">' +
         (tag.emoji ? '<span class="up-topicchip-e">' + esc(tag.emoji) + '</span>' : '') +
         '<span class="up-topicchip-lbl">' + esc(tag.name) + '</span></span>';
     }).join('') + '</div>';

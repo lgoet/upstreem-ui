@@ -81,11 +81,16 @@
         '.ust-cell.ust-cell{width:100%;height:100%;min-width:0;display:flex;align-items:center;background:transparent;border:0;overflow:hidden;font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
         '.ust-cell *,.ust-topics-popup *{box-sizing:border-box;}',
         '.ust-cell .ust-row{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;width:100%;min-width:0;min-height:28px;overflow:hidden;}',
-        /* Masse woertlich von .up-topicchip in core: 0 8px 0 11px und gap 6. Hier standen 0 10px
-           und gap 7 -- derselbe Chip in zwei Groessen, und das faellt nebeneinander auf. */
-        '.ust-cell .ust-tag,.ust-topics-popup .ust-tag{height:28px;padding:0 9px 0 12px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;border:0;background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 10%,transparent);color:var(--ust-tag-color,#4b5563);font-size:12px;line-height:1;font-weight:500;white-space:nowrap;cursor:pointer;user-select:none;}',
-        '.ust-cell .ust-tag-emoji,.ust-topics-popup .ust-tag-emoji{font-size:12px;line-height:1;}',
-        '.ust-cell .ust-tag-label,.ust-topics-popup .ust-tag-label{white-space:nowrap;}',
+        /* SEIT DEM 06.10. IST DER CHIP DER ZELLE DER CHIP AUS CORE (.up-topicchip.is-static, "Dot"
+           aus dem Topic-Handoff). Hier stand bis dahin eine eigene Fassung mit eigener Hoehe und
+           eigenen Farben -- jede Aenderung am Chip musste zweimal gemacht werden. Uebrig bleibt nur,
+           was die Zelle braucht: nicht schrumpfen (die Zeile misst die Chips selbst) und der Zeiger,
+           weil die GANZE Zelle das Bearbeiten oeffnet. (0,3,0), damit es .is-static schlaegt.
+           EIGENE KLASSENNAMEN (upt-zchip / upt-zmehr) statt .ust-tag / .ust-more: die alte
+           eigenstaendige Fassung (siehe oben) schreibt ihr Aussehen auf genau diese Namen, und
+           mit ihnen am Chip stuende ihr Rahmen wieder ueber dem Chip aus core. */
+        '.ust-cell .upt-zchip.upt-zchip,.ust-topics-popup .upt-zchip.upt-zchip{flex:0 0 auto;user-select:none;}',
+        '.ust-cell .upt-zchip.upt-zchip,.ust-cell .upt-zmehr.upt-zmehr{cursor:pointer;}',
         '.ust-cell .ust-empty{display:inline-flex;align-items:center;color:#a0a5ad;font-size:13px;line-height:1;}',
         /* Dash shrinks/fades out, "+ Add" grows/fades in from width:0 — same idiom as the topic
            chip checkbox elsewhere in this file (a max-width transition, not display, since
@@ -100,14 +105,9 @@
            die Obergrenze der Aufklapp-Bewegung, nicht die Breite: "+ Add" ist 30px, "+ Hinzufuegen"
            gemessen 79 -- 120 laesst beiden Luft, ohne dass die Bewegung merklich schneller wird. */
         '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty-add{max-width:120px;opacity:1;margin-left:4px;}',
-        '.ust-cell .ust-more{height:28px;padding:0 10px;border-radius:8px;display:inline-flex;align-items:center;flex:0 0 auto;border:0;background:#f9f8f9;color:var(--ust-more-color,#5f646d);font-size:12px;line-height:1;font-weight:600;white-space:nowrap;cursor:pointer;user-select:none;}',
-        '.ust-cell.ust-cell{--ust-more-border:#d9dde3;--ust-more-color:#5f646d;}',
-        '.ust-cell .ust-more:hover{background:#ececec;color:#1f1f1b;}',
-        '.ust-cell[data-theme="dark"] .ust-tag{background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 22%,transparent);color:#e0e0e0;}',
+        /* "+N" ist der "+N"-Chip aus core (.up-topicchip.is-mehr: ohne Punkt, enger, leiser). */
+        '.ust-cell .upt-zmehr.upt-zmehr{flex:0 0 auto;user-select:none;}',
         '.ust-cell[data-theme="dark"] .ust-empty{color:#555;}',
-        '.ust-cell[data-theme="dark"]{--ust-more-color:#a0a0a0;}',
-        '.ust-cell[data-theme="dark"] .ust-more{background:#232326;}',
-        '.ust-cell[data-theme="dark"] .ust-more:hover{background:rgba(42,42,42,0.85);color:#e0e0e0;}',
         '.ust-topics-popup.ust-topics-popup{position:fixed;z-index:2147483000;display:none;pointer-events:none;max-width:320px;padding:10px;border:1px solid #d9dde3;border-radius:12px;background:#fff;box-shadow:var(--up-e-2);font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
         '.ust-topics-popup .ust-popup-inner{display:flex;flex-wrap:wrap;gap:8px;}',
         /* Border brightened vs. the plain --vc-border dark value (#353535) — against this popup's
@@ -121,8 +121,7 @@
            0 14px 34px, dunkel .6). Das Token erreicht das Popup am <body>, seit die Tiefen in core
            an :root und [data-theme="dark"] stehen, und dreht mit dessen data-theme -- darum steht
            in der Dunkel-Regel kein Schatten mehr. */
-        '.ust-topics-popup[data-theme="dark"]{background:#232326;border-color:#3e3e44;}',
-        '.ust-topics-popup[data-theme="dark"] .ust-tag{background:color-mix(in srgb,var(--ust-tag-color,#6b7280) 22%,transparent);color:#e0e0e0;}'
+        '.ust-topics-popup[data-theme="dark"]{background:#232326;border-color:#3e3e44;}'
       ].join('');
       document.head.appendChild(style);
 
@@ -144,7 +143,7 @@
            Tabellenzeile faehrt der Zeiger bei JEDER Zeile, die man ueberstreicht. Im Popover und
            im Topics-Management sind es Schalter, dort ist der Hover richtig; in der Zelle sind sie
            reine Anzeige. Genau so war es beschrieben: "nur an einer Stelle, in der Topic-Zelle". */
-        return '<span class="ust-tag" style="--ust-tag-color:'+esc(t.color)+';">'+(t.emoji?'<span class="ust-tag-emoji">'+esc(t.emoji)+'</span>':'')+'<span class="ust-tag-label">'+esc(t.name)+'</span></span>';
+        return '<span class="up-topicchip is-static upt-zchip" style="--ust-tag-color:'+esc(t.color)+';">'+(t.emoji?'<span class="up-topicchip-e">'+esc(t.emoji)+'</span>':'')+'<span class="up-topicchip-lbl">'+esc(t.name)+'</span></span>';
       }
 
       /* Dieselbe Entscheidung wie vorher, nur nicht mehr pro Zelle einzeln.
@@ -305,13 +304,13 @@
              einer Tabellenzeile faehrt der Zeiger bei jeder Zeile. In der Zelle sind sie
              reine Anzeige. Der Zwilling in tagHtml war schon umgestellt, DIESER Bauweg --
              der die Chips der Zelle wirklich baut -- nicht: die Randlinie blieb. */
-          el.className='ust-tag'; el.style.setProperty('--ust-tag-color', t.color);
-          el.innerHTML=(t.emoji?'<span class="ust-tag-emoji">'+esc(t.emoji)+'</span>':'')+'<span class="ust-tag-label">'+esc(t.name)+'</span>';
+          el.className='up-topicchip is-static upt-zchip'; el.style.setProperty('--ust-tag-color', t.color);
+          el.innerHTML=(t.emoji?'<span class="up-topicchip-e">'+esc(t.emoji)+'</span>':'')+'<span class="up-topicchip-lbl">'+esc(t.name)+'</span>';
 
           row.appendChild(el); st.tagEls.push(el);
         });
         var more=document.createElement('span');
-        more.className='ust-more'; more.style.display='none';
+        more.className='up-topicchip is-static is-mehr upt-zmehr'; more.style.display='none';
 
         more.addEventListener('mouseenter', function(){ showPopup(st); });
         more.addEventListener('mouseleave', hidePopup);

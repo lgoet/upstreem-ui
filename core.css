@@ -302,6 +302,9 @@
          die Auswahl schon am 08.09. deckend da -- hier war es noch der alte Aufbau.
          Gemessen mit _h_helle_leiter.html. */
       --up-menu-bg: #ffffff; --up-sel-bg: #f4f2f4; --up-menu-border: #dcdbdd;
+      /* Der Topic-Chip "Dot" (06.10., Topic-Handoff): Grund und Rand je Zustand. Gewaehlt ist
+         --up-sel-bg hell (#f4f2f4); die drei uebrigen Stufen gab es noch nicht. */
+      --up-chip-rand-hover: #cfcdd0; --up-chip-an: #f4f2f4; --up-chip-an-hover: #eeedef; --up-chip-rand-an-hover: #b9b7bb;
       /* Event-Pins (Design-Handoff 02.10.): der Rand des Pins und die Hilfslinie, die die Vorgabe
          mit eigenen Werten fuehrt -- #CDD1D6 und #9AA1AB (dieselbe Stufe auch fuer die leiseste
          Schrift der Gruppenkarte, #9CA3AF, drei Werte daneben). Alles andere der Vorgabe liegt
@@ -523,6 +526,7 @@
          blaustichig; wer das auch will, aendert die drei --vc-Werte, aber das ist eine eigene
          Entscheidung und keine Folge dieser hier. */
       --up-menu-bg: #232326; --up-sel-bg: #28282c; --up-menu-border: #3e3e44;
+      --up-chip-rand-hover: #4a4a52; --up-chip-an: #26262a; --up-chip-an-hover: #2c2c30; --up-chip-rand-an-hover: #5a5a62;
       --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32);
       /* Event-Pins im Dunkeln: dieselben Stufen auf der dunklen Leiter -- der Rand eine Stufe
          ueber --up-menu-border, die Linie auf --vc-fourth (#6c717a), damit sie wie hell hinter
@@ -1759,18 +1763,53 @@
        Anzeige und Schalter buchstabengleich.
        Die gewaehlte Marke traegt der Haken (.up-topicchip-check), der ohnehin schon einfaehrt --
        eine zweite Marke daneben war nie noetig. */
-    .up-topicchip { height: 28px; padding: 0 9px 0 12px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;
-      cursor: pointer; font-family: inherit;
-      border: 0;
-      background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 10%, transparent);
-      color: var(--ust-tag-color, #4b5563); font-size: 12px; font-weight: 500; line-height: 1;
+    /* ---- DER CHIP "DOT" (06.10., Topic-Handoff 2a/2b, Werte final) -------------------------
+       Neues Gesicht fuer denselben Chip: Klassen, Aufbau und --ust-tag-color bleiben, damit jeder
+       Verbraucher es ohne Aenderung bekommt. Statt der Toenung in Themenfarbe jetzt ein neutraler
+       Chip mit Rand, die Farbe traegt ein 6px-Punkt vor dem Namen. 24px statt 28, Radius 6 statt 8,
+       Schrift in --vc-text statt in der Themenfarbe. Das Emoji (2b) steht zwischen Punkt und Name,
+       wenn eins gesetzt ist.
+       Der Rand ist zurueck, den der 08.09. wegen der Naht bei 125-Prozent-Skalierung (Windows)
+       entfernt hatte: die Naht kam von einer HALBTRANSPARENTEN Fuellung, die an der Grenze Rahmen-
+       zu Polsterkasten zweimal gerundet wurde. Ohne Fuellung (transparent) gibt es nichts, was
+       doppelt gerundet werden koennte -- an Windows bei 125 Prozent trotzdem einmal ansehen
+       (im Handoff als "nicht gemessen" gefuehrt). */
+    .up-topicchip { height: 24px; padding: 0 8px; border-radius: var(--up-r-s); display: inline-flex; align-items: center; gap: 6px;
+      cursor: pointer; font-family: inherit; box-sizing: border-box;
+      border: 1px solid var(--vc-border); background: transparent;
+      color: var(--vc-text); font-size: 12px; font-weight: 500; line-height: 1;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
-      transition: background 200ms cubic-bezier(.2,0,.38,.9); }
+      transition: background-color var(--up-t-1) ease, border-color var(--up-t-1) ease; }
+    /* Der Punkt als ::before -- so kommt er ohne neues Markup in jeden Chip der App. order -1:
+       vor Emoji und Name; das Kaestchen (-2) steht noch davor. Im Dunkeln 72 Prozent Themenfarbe
+       mit Weiss, sonst verschwinden die dunklen Topic-Farben auf dem dunklen Grund. */
+    .up-topicchip::before { content: ""; order: -1; width: 6px; height: 6px; flex: 0 0 6px;
+      border-radius: var(--up-r-voll); background: var(--ust-tag-color, var(--vc-fourth)); }
+    [data-theme="dark"] .up-topicchip::before { background: color-mix(in srgb, var(--ust-tag-color, var(--vc-fourth)) 72%, white); }
     .up-topicchip-e { font-size: 12px; line-height: 1; }
-    /* is-on bleibt als Klasse (das JS setzt sie, und Fremdregeln koennen daran haengen), traegt
-       aber keinen Rahmen mehr. Die Fuellung wird stattdessen eine Stufe kraeftiger -- sichtbar,
-       ohne die Geometrie anzufassen. */
-    .up-topicchip.is-on { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 20%, transparent); }
+    /* 2b oder 2a ist eine Produktentscheidung (Handoff): mit UC.topicEmoji(false) traegt kein Chip
+       der App ein Emoji, ohne dass ein Verbraucher etwas aendert. Vorgabe: mit (2b). */
+    html.up-topic-ohne-emoji .up-topicchip-e { display: none; }
+    /* Die Zahl im Chip (Topics Manager): leise, Tabellenziffern, 2px vom Namen abgesetzt. */
+    .up-topicchip-zahl { font-size: 11px; font-weight: 600; color: var(--vc-fourth); font-variant-numeric: tabular-nums; padding-left: 2px; }
+    /* Die Zustaende, nur an Schaltern: Ueberfahren hebt den Grund auf --vc-heading-bg und den
+       Rand eine Stufe an; gewaehlt (is-on) ist der Grund eine Stufe tiefer, gewaehlt + Ueberfahren
+       noch eine. Die Farbe bleibt --vc-text -- .up-chiphover faerbt sonst in die Akzent-Tinte.
+       Die Zustaende stehen ueber :not(.is-static) und wiegen damit (0,3,0): mehr als
+       .up-chiphover:hover (0,2,0), das an denselben Chips haengt. */
+    .up-topicchip:not(.is-static):hover { background: var(--vc-heading-bg); border-color: var(--up-chip-rand-hover); color: var(--vc-text); }
+    .up-topicchip.is-on { background: var(--up-chip-an); border-color: var(--up-chip-rand-hover); }
+    .up-topicchip.is-on:not(.is-static):hover { background: var(--up-chip-an-hover); border-color: var(--up-chip-rand-an-hover); }
+    /* Mit Kaestchen links 6 statt 8 -- das Kaestchen steht vor dem Punkt. */
+    .up-topicchip:has(.up-topicchip-check) { padding-left: 6px; }
+    /* "+2" in einer Tabellenzelle: derselbe Chip ohne Punkt, enger und leiser (Handoff). */
+    .up-topicchip.is-mehr { padding: 0 6px; font-size: 11px; font-weight: 600; color: var(--vc-third); }
+    .up-topicchip.is-mehr::before { display: none; }
+    /* Eine geloeschte Topic (Gruppierungen im Topics Manager, Events): grauer Punkt, leiser Name. */
+    .up-topicchip.is-weg { color: var(--vc-muted); }
+    .up-topicchip.is-weg::before { background: var(--vc-fourth); }
+    /* Ein Skelett-Chip (.up-tsk, Topics Manager) hat noch keine Topic -- also auch keinen Punkt. */
+    .up-topicchip.up-tsk::before { display: none; }
     /* Nicht anklickbare Variante: im Prompts-Popover sind die Chips Schalter, im Radar, im
        Detailbereich und in einer Tabellenzelle sind sie reine Anzeige. Die Regel stand bisher nur
        in prompts-table.css -- der Radar gab die Klasse also schon aus und bekam sie nur dann, wenn
@@ -1816,10 +1855,15 @@
   :root {
     --vc-text: #1f1f1b; --vc-muted: #3e4146; --vc-third: #6b6f78; --vc-fourth: #80858e;
     --vc-text-invert: #e0e0e0; --up-sel-bg: #f4f2f4;
+    /* Die Chip-Stufen auch hier: Topic-Chips stehen in Flaechen am body (Topic-Modal, Bulk-Leiste). */
+    --vc-border: #e4e2e4; --vc-heading-bg: #f9f8f9;
+    --up-chip-rand-hover: #cfcdd0; --up-chip-an: #f4f2f4; --up-chip-an-hover: #eeedef; --up-chip-rand-an-hover: #b9b7bb;
   }
   [data-theme="dark"] {
     --vc-text: #e0e0e0; --vc-muted: #c9cbd0; --vc-third: #a0a0a0; --vc-fourth: #6c717a;
     --vc-text-invert: #1f1f1b; --up-sel-bg: #28282c;
+    --vc-border: #34343a; --vc-heading-bg: #232326;
+    --up-chip-rand-hover: #4a4a52; --up-chip-an: #26262a; --up-chip-an-hover: #2c2c30; --up-chip-rand-an-hover: #5a5a62;
   }
   .up-root {
       --uhm-h0: #f0f3f8; --uhm-h1: #c8d4e5; --uhm-h2: #8aa4c4; --uhm-h3: #4a6e96; --uhm-h4: #1e3a5f;
@@ -1879,8 +1923,9 @@
        STATISCHE CHIPS SIND NICHT BETROFFEN: .up-topicchip.is-static traegt gar kein
        Haken-Element (geprueft ueber alle Komponenten), sie zeigen also weiterhin nur Emoji und
        Namen. */
-    .up-topicchip-check { display: inline-flex; align-items: center; justify-content: center;
-      width: 14px; height: 14px; flex: 0 0 auto; margin-left: 2px;
+    /* Seit dem 06.10. VOR dem Punkt (Handoff: "it sits before the dot"), ohne Abstand nach links. */
+    .up-topicchip-check { display: inline-flex; align-items: center; justify-content: center; order: -2;
+      width: 14px; height: 14px; flex: 0 0 auto; margin: 0;
       border-radius: 4px; border: 1.5px solid color-mix(in srgb, currentColor 32%, transparent);
       background: transparent; color: inherit;
       transition: background-color var(--up-cb-t) var(--up-cb-ease),
@@ -1892,20 +1937,11 @@
       transition: opacity var(--up-cb-t) var(--up-cb-ease),
                   transform var(--up-cb-t) var(--up-cb-ease); }
     .up-topicchip-check.is-on svg { opacity: 1; transform: scale(1); }
-    /* Matches .ust-cell[data-theme="dark"] .ust-tag exactly (prompts-table.js's own topics-column
-       widget) -- same chip, same colours, everywhere. [data-theme="dark"] on ANY ancestor matches
-       here (the bulk-topics bar, both topic-modal backdrops, the grouping create/edit modal, the
-       grouping dropdown's own chips), so a new consumer gets this for free instead of needing its
-       own scoped copy -- which is exactly how this chip went uncovered in the grouping modal/popup
-       before: only the bulk-topics bar had ever added one. */
-    [data-theme="dark"] .up-topicchip { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 22%, transparent); color: var(--vc-text); }
-    /* Die is-on-Stufe MUSS hier wiederholt werden. [data-theme="dark"] .up-topicchip wiegt 0-2-1
-       und schlaegt damit .up-topicchip.is-on (0-2-0) -- die Zeile darueber faerbt also BEIDE
-       Zustaende gleich, und im dunklen Thema war ein gewaehlter Chip vom ungewaehlten nur noch am
-       Haken zu unterscheiden. Am 22.09. an der Bulk-Leiste aufgefallen, gilt aber ueberall.
-       22 -> 34 statt 10 -> 20 wie im hellen: auf dunklem Grund traegt eine Tonung weniger weit,
-       der Sockel liegt deshalb schon hoeher und der Schritt ist entsprechend groesser. */
-    [data-theme="dark"] .up-topicchip.is-on { background: color-mix(in srgb, var(--ust-tag-color, #6b7280) 34%, transparent); }
+    /* Im Dunkeln (06.10.): die Toenungs-Regeln (22 / 34 Prozent) sind mit dem "Dot" entfallen --
+       Grund und Rand kommen aus Token, die das Thema selbst dreht; eigen bleibt nur der Punkt
+       (oben). [data-theme="dark"] an JEDEM Vorfahren reicht dafuer, auch an den Flaechen am body
+       (Bulk-Leiste, Topic-Modal), die die Chip-Token ueber :root / [data-theme] bekommen. */
+
     /* ONE chip grid for the whole app -- 8px row+column gap (flex-wrap's own `gap` gives both for
        free). Was missing a base rule entirely: every consumer either duplicated this declaration
        itself (prompts-table's .upt-gm-list) or, like the Edit Topics popup, simply had no gap at

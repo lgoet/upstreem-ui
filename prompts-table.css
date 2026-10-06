@@ -1281,8 +1281,8 @@
   border: 1px solid var(--vc-border); background: var(--vc-bg); border-radius: 16px;
   padding: 16px; display: flex; flex-direction: column; overflow: hidden;
   /* height im Uebergang, weil das Auge die Karte auf ihre Kopfzeile schrumpft -- ohne das
-     springt die Tabelle darunter. */
-  transition: background 200ms ease, height 200ms ease;
+     springt die Tabelle darunter. Polster und Rahmen fahren mit (06.10.: zugeklappt ohne Kasten). */
+  transition: background 200ms ease, height 200ms ease, padding 200ms ease, border-color 200ms ease;
 }
 /* height: auto und nicht 32px wie bei .tcd-head: dort steht die Kopfzeile ueber einem Chart in
    voller Hoehe und traegt Knoepfe. Hier ist sie nur Text, und eine feste Hoehe mit zentriertem
@@ -1344,13 +1344,20 @@
    256px nach "auto" laeuft nicht: auto ist kein Wert, zwischen dem interpoliert werden kann, und
    der Browser springt. Im Citations Combo Chart klappt es, weil .combo-box von 430px auf 0 geht,
    also von Laenge zu Laenge.
-   Hier kann das Ziel nicht 0 sein -- die Kopfzeile bleibt stehen. Also der abgeleitete Wert:
-       16px Polster oben + 20px Kopfzeile + 16px Polster unten
-   Die 20 sind das Auge: ein 32px-Knopf mit -6px oben und unten, also 20px wirksame Hoehe. Der
-   Titel daneben ist 14px bei 1.2, also 16.8px, und damit kleiner -- der Knopf bestimmt die Zeile.
-   Wer eine der drei Zahlen aendert, aendert diese mit; deshalb steht sie als calc und nicht als
-   52px, damit die Rechnung sichtbar bleibt. Gemessen wird sie in _h_upt_kpi_falten.html. */
-.up-root .upt-kpis.is-hidden-view .upt-kpi { height: calc(16px + 20px + 16px); }
+   Hier kann das Ziel nicht 0 sein -- die Kopfzeile bleibt stehen. Bis zum 06.10. waren es
+   16 + 20 + 16 (Polster, Auge mit -6px Raendern, Polster); seitdem faellt das Polster zugeklappt
+   weg, und das Ziel ist die volle Hoehe des Auges, 32px (Regel darunter). Gemessen wird es in
+   _h_upt_kpi_falten.html. */
+/* ZUGEKLAPPT OHNE KASTEN (06.10. angefordert: "deutlich subtiler, weniger hoch, ohne Border um
+   jede der drei -- in etwa wie im Citations Combo Chart"). Dort bleibt zugeklappt nur die
+   Kopfzeile stehen: 32px, kein Rahmen, kein Grund, der Titel an der Kante. Genau das hier: Rahmen
+   und Grund gehen auf transparent (sie fahren mit, statt zu springen), das Polster auf 0, die
+   Hoehe auf die 32px des Auges -- dessen negative Raender gibt es zugeklappt nicht, die Zeile ist
+   also genau so hoch wie der Knopf. Beide Komponenten sehen eingeklappt gleich aus; die Titel
+   sind hier wie dort ausgegraut. */
+.up-root .upt-kpis.is-hidden-view .upt-kpi { height: 32px; padding: 0; border-color: transparent; background: transparent; }
+.upt-kpis.is-hidden-view .upt-kpi-head { height: 32px; }
+.upt-kpis.is-hidden-view .upt-kpi-eye { margin: 0; }
 /* flex: 0 0 0 und nicht nur height: 0 -- der Koerper hat sonst weiter flex-grow: 1 und zieht
    sich aus der Restverteilung 3,2px zurueck (gemessen). Sichtbar ist das nichts, aber es macht
    aus "die Karte ist zu" ein "fast zu", und die naechste Messung glaubt es dann nicht. */

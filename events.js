@@ -1303,7 +1303,8 @@
     function topicChipHtml(tp) {
       var eigen = topicsAlle().filter(function (x) { return String(x.id) === String(tp.id); })[0];
       var fb = eigen ? topicFarbe(eigen) : "", emo = (eigen && eigen.emoji) || tp.emoji || "";
-      return '<span class="up-topicchip is-static' + (tp.deleted ? " uev-topic-weg" : "") + '"' +
+      /* Geloescht: is-weg aus core (grauer Punkt, leiser Name, 06.10.); uev-topic-weg als Alias. */
+      return '<span class="up-topicchip is-static' + (tp.deleted ? " is-weg uev-topic-weg" : "") + '"' +
           (fb ? ' style="--ust-tag-color:' + esc(fb) + '"' : '') +
           (tp.deleted ? ' data-tip="' + esc(t("This topic was deleted after the event was created. Its prompts still count.")) + '"' : '') + '>' +
         (emo ? '<span class="up-topicchip-e">' + esc(emo) + '</span>' : '') +

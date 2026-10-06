@@ -294,11 +294,13 @@
     var hidden = list.length - shown.length;
     var html = shown.map(function(t){
       var color = t.hex_light || t.hex_dark || '#6b7280';
-      return '<span class="up-topicchip" style="--ust-tag-color:'+esc(color)+';">'+
+      /* is-static (06.10.): reine Anzeige -- ohne die Klasse bekam der Chip den Hover eines Schalters. */
+      return '<span class="up-topicchip is-static" style="--ust-tag-color:'+esc(color)+';">'+
         (t.emoji?'<span class="up-topicchip-e">'+esc(t.emoji)+'</span>':'')+
         '<span class="up-topicchip-lbl">'+esc(t.name)+'</span></span>';
     }).join('');
-    if (hidden > 0) html += '<span class="uo-tagmore">+'+hidden+'</span>';
+    /* "+N" ist der Chip aus core ohne Punkt (.is-mehr, Topic-Handoff 06.10.); uo-tagmore bleibt als Griff. */
+    if (hidden > 0) html += '<span class="up-topicchip is-static is-mehr uo-tagmore">+'+hidden+'</span>';
     return html;
   }
 
@@ -399,7 +401,7 @@
   function clampTagsTwoRows(container){
     if (!container) return;
     var old = container.querySelector('.uo-tagmore'); if (old) old.remove();
-    var tags = Array.prototype.slice.call(container.querySelectorAll('.up-topicchip'));
+    var tags = Array.prototype.slice.call(container.querySelectorAll('.up-topicchip:not(.is-mehr)'));
     if (!tags.length) return;
     tags.forEach(function(t){ t.style.display=''; });
     var tops = [];
@@ -411,7 +413,7 @@
     tags.forEach(function(t){ if (t.offsetTop >= row3) t.style.display='none'; else visible.push(t); });
     var hidden = tags.length - visible.length;
     var more = document.createElement('span');
-    more.className = 'uo-tagmore'; more.textContent = '+'+hidden;
+    more.className = 'up-topicchip is-static is-mehr uo-tagmore'; more.textContent = '+'+hidden;
     container.appendChild(more);
     var guard = 0;
     while (more.offsetTop >= row3 && visible.length && guard < 60){

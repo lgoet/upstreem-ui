@@ -59,6 +59,11 @@
 .combo-root.is-hidden-view .combo-box { height: 0 !important; opacity: 0; border-width: 0; }
 .combo-root.is-hidden-view .combo-panel-body { opacity: 0; }
 .combo-root.is-hidden-view .combo-head { margin-bottom: 0; }
+/* Die Ueberschriften ausgegraut wie die Kartentitel der Prompts-Tabelle zugeklappt (06.10.: "sodass
+   beide Komponenten im ausgeblendeten Zustand gleich aussehen"); der Knopf zum Aufklappen bleibt
+   voll. 200ms wie die Blende der Kaesten. */
+.combo-heading { transition: opacity 200ms ease; }
+.combo-root.is-hidden-view .combo-heading { opacity: .4; }
 .combo-root.is-hidden-view .combo-unit-left { margin-bottom: 0; }
 /* grey out the (now inactive) controls; the Hide/Show toggle stays active */
 .combo-root.is-hidden-view .cc-gran,

@@ -174,7 +174,11 @@
    (.is-on). Gemeldet am 01.09.: "in Prompt Research bei der Topic-Auswahl sind die auch noch so
    falsch". Der Hover bleibt -- diese Chips SIND Schalter, und ein Schalter darf zeigen, dass er
    einer ist. */
-.upr-chip:hover { border-color: var(--vc-hover-border); }
+/* Den Hover dieser Schalter bringt seit dem 06.10. der Chip aus core selbst mit ("Dot": Grund
+   --vc-heading-bg, Rand eine Stufe kraeftiger); die eigene Randfarbe hier entfaellt. */
+/* Die Klasse bleibt als Griff (Klick-Selektor im JS, und .contract_diff.py liest Klassennamen aus
+   der CSS): nur, dass der Chip nicht schrumpft. */
+.upr-chip { flex: 0 0 auto; }
 .upr-showmore {
   height: 28px; padding: 0 10px; border: 1px solid var(--vc-border); border-radius: 8px;
   background: var(--vc-bg); color: var(--vc-muted);
@@ -184,8 +188,9 @@
 }
 .upr-showmore:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
 .upr-showmore svg { width: 13px; height: 13px; display: block; }
+/* So hoch und rund wie der Topic-Chip ("Dot", 24px, Radius 6). */
 .upr-skeleton-chip {
-  height: 28px; border-radius: 8px; background: var(--vc-sk); flex-shrink: 0;
+  height: 24px; border-radius: var(--up-r-s); background: var(--vc-sk); flex-shrink: 0;
   animation: uprPulse 1.2s ease-in-out infinite;
 }
 @keyframes uprPulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
@@ -596,7 +601,6 @@
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
 }
 .upr-tags-list { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; overflow: hidden; }
-.upr-tags-list .up-topicchip { cursor: default; }
 .upr-cell-empty { color: var(--vc-third); font-size: 13px; }
 
 /* Volume: four segments, filled left to right, the fill colour carrying the level. */
@@ -659,15 +663,16 @@
 .upr-loading-inner .upr-tl-tags { margin-top: 16px; }
 .upr-tl-tags { display: flex; gap: 7px; flex-wrap: wrap; justify-content: center; align-items: flex-start; width: 100%; min-height: 24px; }
 .upr-tl-tags.is-loop { flex-wrap: nowrap; overflow: hidden; }
-.upr-tl-tag {
-  display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 8px;
-  font-size: 11.5px; line-height: 1; font-weight: 500;
-  background: var(--vc-heading-bg); border: 1px solid var(--vc-border); color: var(--vc-muted);
-  white-space: nowrap; flex: 0 0 auto; opacity: 0; transform: translateY(5px);
-  transition: opacity .34s ease, transform .34s cubic-bezier(.2,.8,.3,1);
+/* Aussehen aus core (.up-topicchip, seit dem 06.10.); hier nur das Einblenden der Ladeanimation.
+   Der Uebergang nennt Grund und Rand aus core mit, sonst ueberschriebe er dessen Uebergang. */
+.upr-tl-tag.upr-tl-tag {
+  flex: 0 0 auto; opacity: 0; transform: translateY(5px);
+  transition: opacity .34s ease, transform .34s cubic-bezier(.2,.8,.3,1), background-color var(--up-t-1) ease, border-color var(--up-t-1) ease;
 }
 .upr-tl-tag.on { opacity: 1; transform: none; }
-.upr-tl-dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; background: var(--vc-third); }
+/* Den Punkt zeichnet seit dem 06.10. der Chip aus core (::before). Die alte Klasse bleibt als Alias
+   stehen, falls fremder Code sie noch baut -- dann sieht sie aus wie vorher. */
+.upr-tl-dot { width: 6px; height: 6px; border-radius: var(--up-r-voll); flex: 0 0 auto; background: var(--vc-third); }
 
 /* ---------- previous researches: right-hand sidebar ----------
    Was an inline panel under the composer; it is a page-level drawer now, so the list has room for

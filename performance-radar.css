@@ -194,7 +194,8 @@
 .uhm-colhead.is-sk, .uhm-rowhead.is-sk { padding-bottom: 8px; }
 .uhm-sk-logo { width: 28px; height: 28px; border-radius: 8px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
 .uhm-sk-bar { width: 44px; height: 9px; border-radius: 4px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
-.uhm-sk-chip { width: 88px; height: 28px; border-radius: 8px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+/* So hoch und rund wie der Topic-Chip ("Dot", 24px, Radius 6, seit dem 06.10.). */
+.uhm-sk-chip { width: 88px; height: 24px; border-radius: var(--up-r-s); background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
 .uhm-empty {
   min-height: 220px; display: flex; align-items: center; justify-content: center;
   color: var(--vc-muted); font-size: 13px;
