@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261096;
+  var BUILD = 20261097;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -3935,6 +3935,11 @@
      Farbe und Emoji: zuerst, was das Objekt selbst traegt, sonst die Topic gleicher Id aus dem
      Store der Seite (setUpstreemTopics). Ohne beides der Chip in Grau -- so wie im Store eine
      Topic ohne Farbe aussieht. Wird nur EIN Thema geliefert, gilt diese Farbe in beiden.
+     AUSNAHME SEIT DEM 06.10.: Findet sich die Topic per ID im Store, gewinnt der Store -- Name,
+     Farbe und Emoji. Bubble zieht ihn nach jeder Bearbeitung nach (Refresh-Anhang), die Nutzlast
+     einer Komponente dagegen kann von vorher sein (gemeldet: Emoji entfernt, die Gruppenliste der
+     Prompts-Tabelle zeigte es weiter). Ein Feld, das die Store-Zeile gar nicht traegt, kommt
+     weiter aus der Nutzlast -- ein Store aus einer schmaleren RPC loescht so kein Emoji.
      cfg { dunkel, cls, tip } */
   /* Mit oder ohne Emoji in jedem Topic-Chip (06.10., Topic-Handoff 2b/2a). Eine Produktentscheidung,
      also EIN Schalter fuer die ganze App statt einer Option je Verbraucher: UC.topicEmoji(false)
@@ -3954,15 +3959,18 @@
     tp = tp && typeof tp === "object" ? tp : {};
     var id = String(tp.id != null ? tp.id : (tp.topic_id != null ? tp.topic_id : (tp.tag_id != null ? tp.tag_id : ""))).trim();
     var name = String(tp.name != null ? tp.name : (tp.topic_name != null ? tp.topic_name : "")).trim();
-    var eigen = null;
+    var eigen = null, perId = false;
     if (id){
       var liste = getTopics();
       for (var i = 0; i < liste.length; i++){
         var x = liste[i];
-        if (x && String(x.id != null ? x.id : x.tag_id) === id){ eigen = x; break; }
+        if (x && String(x.id != null ? x.id : x.tag_id) === id){ eigen = x; perId = true; break; }
       }
     }
-    if (!name && eigen) name = String(eigen.name == null ? "" : eigen.name).trim();
+    if (eigen && (perId || !name)){
+      var sn = String(eigen.name == null ? "" : eigen.name).trim();
+      if (sn) name = sn;
+    }
     if (!name) return "";
     /* Nur ein Name, keine Id (Shopping, Recent Appearances, 06.10.): die Topic gleichen Namens aus
        dem Store, ohne Ruecksicht auf Gross- und Kleinschreibung -- sonst stuende dort ein grauer Punkt. */
@@ -3973,8 +3981,11 @@
         if (y && String(y.name == null ? "" : y.name).trim().toLowerCase() === nk){ eigen = y; break; }
       }
     }
-    var hex = topicHex(tp, cfg.dunkel) || topicHex(eigen, cfg.dunkel);
-    var emo = String(tp.emoji || (eigen && eigen.emoji) || "").trim();
+    var hex = perId ? (topicHex(eigen, cfg.dunkel) || topicHex(tp, cfg.dunkel))
+                    : (topicHex(tp, cfg.dunkel) || topicHex(eigen, cfg.dunkel));
+    var emo = (perId && Object.prototype.hasOwnProperty.call(eigen, "emoji"))
+      ? String(eigen.emoji || "").trim()
+      : String(tp.emoji || (eigen && eigen.emoji) || "").trim();
     return '<span class="up-topicchip is-static' + (cfg.cls ? " " + cfg.cls : "") + '"' +
              (hex ? ' style="--ust-tag-color:' + esc(hex) + '"' : "") +
              (cfg.tip ? ' data-tip="' + esc(cfg.tip) + '"' : "") + '>' +
@@ -8554,7 +8565,11 @@
      .up-fav ist (dessen ::after IST der Globus). Nur wer beides nicht hat, braucht die Marke. */
   /* .up-es-av-fb: der Rueckfall der Suchzeile (entityAvatar) -- er zeigt schon ein Zeichen, ein
      Globus darueber waere doppelt. */
-  var FAV_BUCHSTABE = ".up-logo-ltr, .up-stack-ltr, .udt-logo-ltr, .udt-sub-ltr, .uut-logo-ltr, .up-es-av-fb";
+  /* .up-logo-zeichen: das Zeichen, das ein Kasten statt des Buchstabens traegt (Ads: die Bank fuer
+     Werbetreibende ohne Logo). Fehlte es hier, bekam der Kasten bei Googles Platzhalter-Favicon
+     ZUSAETZLICH den Globus -- gemeldet am 06.10.: "sowohl das Globe als auch das Werbetreibenden-
+     Icon sichtbar". */
+  var FAV_BUCHSTABE = ".up-logo-ltr, .up-stack-ltr, .udt-logo-ltr, .udt-sub-ltr, .uut-logo-ltr, .up-es-av-fb, .up-logo-zeichen";
 
   function istFavicon(img){
     var src = img.getAttribute("src") || "";

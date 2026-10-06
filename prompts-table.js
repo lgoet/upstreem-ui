@@ -3029,6 +3029,16 @@
                '<span class="upt-grp-name">' + esc(label) + '</span>';
       }
       if (untag) return '<span class="upt-grp-name">' + esc(label) + '</span>';
+      /* UC.topicChipHtml (06.10.): Name, Farbe und Emoji kommen aus dem Topic-Store, sobald die
+         Topic dort per ID steht -- die Gruppen-Nutzlast ist gemerkt (STORE, persist) und wird bei
+         einer Topic-Bearbeitung NICHT neu geholt. Gemeldet: Emoji entfernt, die Liste zeigte es
+         weiter, waehrend die Topics-Spalte (frische Zeilen) stimmte. Die Nutzlast bleibt der
+         Rueckfall, etwa fuer eine Topic, die es im Store nicht mehr gibt. */
+      if (UC.topicChipHtml && g.tag_id != null){
+        var chip = UC.topicChipHtml({ id: g.tag_id, name: label, emoji: g.tag_emoji,
+                                      hex_light: g.tag_hex_light, hex_dark: g.tag_hex_dark });
+        if (chip) return chip;
+      }
       /* core's .up-topicchip — the same chip the topic popover and the grouping popup draw.
          Read-only here, so no checkbox slot; everything else is identical by construction. */
       var hex = String(g.tag_hex_light || g.tag_hex_dark || "#6b7280");
@@ -3038,6 +3048,13 @@
                '<span class="up-topicchip-lbl">' + esc(label) + '</span>' +
              '</span>';
     }
+    /* Aendert sich der Topic-Store (Bubble nach einer Bearbeitung), zeichnet die Gruppenliste
+       neu -- ohne neuen Gruppen-Abruf: Zahlen und Zugehoerigkeit aendert ein umbenanntes oder
+       umgefaerbtes Thema nicht, nur sein Aussehen, und das liest groupChipHtml aus dem Store.
+       owner = root: Bubble baut die Wurzel neu, ohne owner wuechse die Abonnentenliste. */
+    if (UC.onTopics) UC.onTopics(function(){
+      if (groupingOn() && state.groupsHasData && (state.groups || []).length) renderTable();
+    }, root);
     function grpHeadHtml(g){
       var id = groupId(g), open = state.expandedGroup === id;
       var custom = isYes2(g.is_custom);
