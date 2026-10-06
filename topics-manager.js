@@ -179,7 +179,7 @@
          der Zeit vor der Auslagerung, und die war 32px hoch und hatte einen Rahmen -- ein Thema
          sah hier anders aus als ueberall sonst. .utm-topicchip bleibt als Aufhaenger fuer die
          Zaehler-Plakette, den breiteren Textabschnitt und den Klick-Selektor. */
-      return '<button type="button" class="up-topicchip utm-topicchip up-chiphover" data-topic-id="' + esc(id) +
+      return '<button type="button" class="up-topicchip is-gross utm-topicchip up-chiphover" data-topic-id="' + esc(id) +
         '" style="--ust-tag-color:' + esc(color) + '">' +
         /* Beide Klassennamen: .up-topicchip-e traegt das Aussehen, .utm-topicchip-e bleibt als
            Alias stehen. Ein Klassenname, an dem fremder Code haengen koennte, verschwindet nicht
@@ -197,7 +197,7 @@
     function skeletonChipsHtml(){
       /* Auch das Skelett traegt .up-topicchip: die Geometrie steht jetzt dort, und ein Skelett, das
          nicht die Groesse des echten Chips hat, ruckt beim Ankommen der Daten. */
-      return SK_WIDTHS.map(function(w){ return '<span class="up-topicchip utm-topicchip up-tsk" style="width:' + w + 'px"></span>'; }).join("");
+      return SK_WIDTHS.map(function(w){ return '<span class="up-topicchip is-gross utm-topicchip up-tsk" style="width:' + w + 'px"></span>'; }).join("");
     }
     function renderChips(){
       if (!elGrid) return;
@@ -278,12 +278,12 @@
         }
         if (!t){
           /* is-weg (core, 06.10.): grauer Punkt, leiser Name. is-gone bleibt als Alias. */
-          return '<span class="up-topicchip is-static is-weg utm-cg-chip is-gone" title="This topic no longer exists">' +
+          return '<span class="up-topicchip is-static is-gross is-weg utm-cg-chip is-gone" title="This topic no longer exists">' +
             '<span class="up-topicchip-lbl">Deleted topic</span></span>';
         }
         var color = String(t.hex_light || t.hex_dark || "#6b7280");
         if (color.charAt(0) !== "#") color = "#" + color;
-        return '<span class="up-topicchip is-static utm-cg-chip" style="--ust-tag-color:' + esc(color) + '">' +
+        return '<span class="up-topicchip is-static is-gross utm-cg-chip" style="--ust-tag-color:' + esc(color) + '">' +
           (t.emoji ? '<span class="up-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
           '<span class="up-topicchip-lbl">' + esc(t.name == null ? "" : t.name) + '</span>' +
         '</span>';

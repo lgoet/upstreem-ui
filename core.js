@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261094;
+  var BUILD = 20261095;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -6074,9 +6074,14 @@
       }
       offen = true;
       host.classList.add("is-open");
+      /* IMMER OBEN BEGINNEN (06.10. abends angefordert: "Scrollposition beim Oeffnen immer 0").
+         Das scrollTop = 0 oben fiel auf einen Koerper, der noch display: none war -- dort haelt der
+         Wert nicht, und die Schublade ging an der Stelle des vorigen Ads auf. Jetzt, wo sie sichtbar
+         ist, noch einmal, und beim Hereinfahren ein drittes Mal (Bilder, die erst dann Hoehe haben). */
+      if (inhalt != null) api.body.scrollTop = 0;
       /* Erst sichtbar, DANN herein -- sonst springt die Schublade ohne Fahrt. Die Uhr ist der
          Rueckfall fuer einen verdeckten Tab, in dem kein Bild gemalt wird. */
-      var rein = function(){ if (offen) host.classList.add("is-in"); };
+      var rein = function(){ if (offen){ host.classList.add("is-in"); if (inhalt != null) api.body.scrollTop = 0; } };
       try { requestAnimationFrame(function(){ requestAnimationFrame(rein); }); } catch(e){}
       setTimeout(rein, 40);
       try { host.querySelector(".up-sdrawer-close").focus({ preventScroll: true }); } catch(e2){}
@@ -10468,11 +10473,64 @@
       selectPage(item.getAttribute("data-page"), true);
     });
 
+    /* NIE UEBER DEN RAND (06.10. abends): laeuft die Zeile ueber, fallen erst die Zeichen weg,
+       laeuft sie dann noch ueber, werden die Namen gekuerzt (CSS in core.css bei is-narrow).
+       Gemessen an der rechten Kante des LETZTEN Reiters, nicht an scrollWidth: das zaehlt den
+       Strich mit, der beim Verkleinern noch 200ms von seiner alten Stelle herueberfaehrt, und die
+       verlaengerten Klickflaechen (::before, 12px rechts ueber den Reiter hinaus). Beides hat
+       Namen gekuerzt, die gepasst haetten (gemessen bei 375: 12px "Ueberlauf", danach 0).
+       In einer geparkten Ansicht (Breite 0) wird nichts entschieden; die erste echte Breite
+       kommt ueber onResize. */
+    function ueberhang(){
+      var items = nav.querySelectorAll(".up-ph-navitem");
+      if (!items.length) return 0;
+      var cs = getComputedStyle(nav);
+      var kante = nav.getBoundingClientRect().right - (parseFloat(cs.paddingRight) || 0) - (parseFloat(cs.borderRightWidth) || 0);
+      return items[items.length - 1].getBoundingClientRect().right - kante;
+    }
+    /* Gekuerzt wird nur, was laenger ist als sein Anteil: die Kappe ist die Breite, bei der alle
+       Reiter bis zu ihr ungekuerzt bleiben und der Rest genau aufgeht -- wie bei Browser-Tabs.
+       Ein flex-shrink allein kuerzt ALLE im Verhaeltnis, dann stand bei 420px und fuenf Reitern
+       "Topics…" neben "Gruppierungen…" (gemessen), obwohl "Topics" ganz gepasst haette.
+       Gemessen in Bruchteilen (Range) und aufgerundet: scrollWidth rundet, und schon 0.09px
+       zu wenig setzen die "…" -- so geschehen bei "Überblick" (Text 63.36, Kasten 63.27). */
+    function kappe(){
+      var items = [].slice.call(nav.querySelectorAll(".up-ph-navitem"));
+      var cs = getComputedStyle(nav);
+      var platz = nav.getBoundingClientRect().width -
+                  (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0) -
+                  (parseFloat(cs.borderLeftWidth) || 0) - (parseFloat(cs.borderRightWidth) || 0) -
+                  (parseFloat(cs.columnGap) || 0) * Math.max(0, items.length - 1);
+      var breiten = items.map(function(it){
+        var l = it.querySelector(".up-ph-navlabel"), ics = getComputedStyle(it), b = 0;
+        if (l){ var rg = document.createRange(); rg.selectNodeContents(l); b = rg.getBoundingClientRect().width; }
+        return Math.ceil(b) + (parseFloat(ics.paddingLeft) || 0) + (parseFloat(ics.paddingRight) || 0);
+      }).sort(function(a, b){ return a - b; });
+      for (var i = 0; i < breiten.length; i++){
+        var anteil = platz / (breiten.length - i);
+        if (breiten[i] > anteil) return Math.max(0, Math.floor(anteil));
+        platz -= breiten[i];
+      }
+      return null;
+    }
+    function einpassen(){
+      if (!nav.isConnected) return;
+      nav.classList.remove("is-ohne-zeichen", "is-kuerzen");
+      nav.style.removeProperty("--up-nav-kappe");
+      if (!nav.clientWidth) return;
+      if (ueberhang() > .5) nav.classList.add("is-ohne-zeichen");
+      if (ueberhang() <= .5) return;
+      var k = kappe();
+      if (k != null) nav.style.setProperty("--up-nav-kappe", k + "px");
+      nav.classList.add("is-kuerzen");
+    }
+    nav.__upEinpassen = einpassen;
+    einpassen();
     positionUnderline(nav.querySelector(".up-ph-navitem.is-selected"), false);
     /* Fuer UC.makePageCrumbs: setzt es .up-ph-root erst NACH diesem Aufbau, wechseln die Reiter
        ihr Polster, ohne dass sich die Breite der Wurzel aendern muss -- und onResize meldet nur
        Breiten. Der Strich stand dann 27px ueber dem Textende statt 3 (gemessen). */
-    nav.__upStrichNeu = function(){ positionUnderline(nav.querySelector(".up-ph-navitem.is-selected"), false); };
+    nav.__upStrichNeu = function(){ einpassen(); positionUnderline(nav.querySelector(".up-ph-navitem.is-selected"), false); };
     /* Und wenn eine Webschrift fertig geladen ist: Geist aendert die Breite der Beschriftung, nicht
        die der Wurzel -- onResize schweigt dazu. Gemessen: Strich 4.34 statt 3px hinter dem Text,
        wenn die Schrift erst nach dem Aufbau ankam. Nur solange die Leiste im Dokument haengt. */
@@ -10495,8 +10553,13 @@
        but this kit isn't specific to that). */
     if (onResize){
       widthTiers(root, cfg);
-      onResize(root, function(){ positionUnderline(nav.querySelector(".up-ph-navitem.is-selected"), false); });
+      onResize(root, function(){ einpassen(); positionUnderline(nav.querySelector(".up-ph-navitem.is-selected"), false); });
     }
+    /* Eine andere Sprache aendert die Breite der Namen, nicht die der Wurzel. */
+    window.addEventListener("up-prefs-change", function(e){
+      if (!nav.isConnected || (e && e.detail && e.detail.name && e.detail.name !== "locale")) return;
+      setTimeout(function(){ nav.__upStrichNeu(); }, 0);
+    });
 
     return { selectPage: selectPage, positionUnderline: positionUnderline };
   }
@@ -13946,6 +14009,31 @@
     var g = chartBlau() ? (dunkel ? BALKEN_BLAU_DUNKEL : BALKEN_BLAU_HELL) : (dunkel ? BALKEN_GRAU_DUNKEL : BALKEN_GRAU_HELL);
     return g[Math.max(0, Math.min(Number(i) || 0, g.length - 1))];
   }
+  /* DAS LOGO VOR DEM BALKENNAMEN, mit Ersatz (06.10. abends: "wenn das Logo nicht laedt oder keins
+     da ist, das Zeichen auch in den Container -- dass die ohne dastehen, ist kacke"). In einer Liste,
+     in der Eintraege Logos tragen, bekommt jeder Eintrag das Kaestchen: mit Logo das Bild, ohne Logo
+     und bei einem Ladefehler das Ersatzzeichen (it.ersatz, Name eines Zeichens; Vorgabe "globe",
+     Ads gibt "bank"). Eine Liste ganz ohne Logos bleibt ohne Kaestchen.
+     barLogoErsatz tauscht ein Bild, das nicht laedt, gegen dasselbe Kaestchen mit dem Zeichen --
+     gleiche Groesse, die Rechnung "passt der Name in den Balken" bleibt also richtig. */
+  function barLogoHtml(it, mitKasten, cls){
+    var blg = it && it.logo ? String(it.logo) : "";
+    if (blg.indexOf("//") === 0) blg = "https:" + blg;
+    if (blg && !/^https?:\/\//i.test(blg)) blg = "";
+    var ersatz = String((it && it.ersatz) || "globe");
+    if (!/^[A-Za-z0-9_-]{1,40}$/.test(ersatz)) ersatz = "globe";
+    if (blg) return '<img class="up-bar-logo' + (cls ? " " + cls : "") + '" src="' + esc(blg) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+      ' data-ersatz="' + ersatz + '" onerror="if(window.UpstreemCore&amp;&amp;UpstreemCore.barLogoErsatz){UpstreemCore.barLogoErsatz(this)}else{this.remove()}"/>';
+    return mitKasten ? '<span class="up-bar-logo is-zeichen' + (cls ? " " + cls : "") + '" aria-hidden="true">' + icon(ersatz, 2) + '</span>' : "";
+  }
+  function barLogoErsatz(img){
+    if (!img || !img.parentNode) return;
+    var s = document.createElement("span");
+    s.className = String(img.className || "up-bar-logo") + " is-zeichen";
+    s.setAttribute("aria-hidden", "true");
+    s.innerHTML = icon(img.getAttribute("data-ersatz") || "globe", 2);
+    img.parentNode.replaceChild(s, img);
+  }
   /* ---------- makeBarList ---------------------------------------------------------------------
      Die Balkenliste als eigenstaendiges Bauteil. Markup und CSS sind DIESELBEN wie im Balkenmodus
      von makeTypeChart (.up-bars/.up-bar-row/.up-bar-track/.up-bar-fill/.up-bar-outside) -- es ist
@@ -14000,6 +14088,8 @@
       if (!d.length){ mount.innerHTML = '<div class="up-chart-empty">No data</div>'; return; }
       var spalte = cfg.labelCol ? !!cfg.labelCol() : false;
       var maxName = 0;
+      /* Traegt irgendein Eintrag ein Logo oder Zeichen, bekommt jeder das Kaestchen (barLogoHtml). */
+      var mitLogos = d.some(function(it){ return !!(it.logo || it.zeichen || it.ersatz); });
       var html = '<div class="up-bars' + (spalte ? " has-labelcol" : "") + '">' + d.map(function(it){
         var hell = barIsLight(it.color);
         var txt = hell ? "rgba(31,31,27,0.96)" : "rgba(255,255,255,0.95)";
@@ -14009,16 +14099,12 @@
         if (String(it.name || "").length > maxName) maxName = String(it.name).length;
         /* Vor dem Namen im Balken (ohne Beschriftungsspalte): die Zeichen-Platte oder das Logo,
            dieselbe Regel wie im Balkenmodus von makeTypeChart. */
-        var blg = it.logo ? String(it.logo) : "";
-        if (blg.indexOf("//") === 0) blg = "https:" + blg;
         var vorName = spalte ? "" : it.zeichen
           ? '<span class="up-bar-logo is-zeichen" aria-hidden="true">' + it.zeichen + '</span>'
-          : (blg ? '<img class="up-bar-logo" src="' + esc(blg) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"/>' : '');
+          : barLogoHtml(it, mitLogos);
         var wertTxt = it.wert != null ? String(it.wert) : fmt(it.share);
         return '<div class="up-bar-row" data-bar-key="' + esc(String(it.key == null ? it.name : it.key)) + '">' +
-          (spalte ? '<span class="up-bar-label">' +
-              (it.logo ? '<img class="up-bar-logo" src="' + esc(it.logo) + '" alt="" loading="lazy" ' +
-                         'onerror="this.style.display=&quot;none&quot;"/>' : '') +
+          (spalte ? '<span class="up-bar-label">' + barLogoHtml(it, mitLogos) +
               '<span class="up-bar-labeltxt">' + esc(it.name) + '</span></span>' : '') +
           '<div class="up-bar-track">' +
             '<div class="up-bar-fill" style="background:' + esc(it.color) + ';width:' +
@@ -15853,6 +15939,7 @@
       d = (d || []).slice().sort(function(a, b){ return b.share - a.share; });
       if (isEmpty(d)){ empty(); return; }
       lastKeys = keysOf(d); lastMode = "bar";
+      var mitLogos = d.some(function(it){ return !!(it.logo || it.ersatz); });
       body.innerHTML = '<div class="up-bars">' + d.map(function(it){
         /* Label colour follows the fill's luminance so it stays readable: white on dark/mid fills,
            dark on genuinely light ones. Bar colours are identical in both themes, so this is
@@ -15865,10 +15952,7 @@
         /* Ein Logo vor dem Namen, wenn der Eintrag eines mitbringt -- dieselbe Regel wie in der
            Legende des Rings. Damit kann diese Balkenliste die des Model Breakdowns ersetzen, und
            beide Charts der Zeile animieren identisch (Balken waechst, dann faden die Texte ein). */
-        var blg = it.logo ? String(it.logo) : "";
-        if (blg.indexOf("//") === 0) blg = "https:" + blg;
-        var logoHtml = blg ? '<img class="up-bar-logo" src="' + esc(blg) + '" alt="" loading="lazy"' +
-                             ' referrerpolicy="no-referrer" onerror="this.remove()"/>' : "";
+        var logoHtml = barLogoHtml(it, mitLogos);
         return '<div class="up-bar-row' + (cfg.onSliceClick && it.key !== "other" ? " is-clickable" : "") + (it.__dimmed ? " is-dimmed" : "") + '" data-type-key="' + esc(it.key || "") + '"><div class="up-bar-track">' +
             '<div class="up-bar-fill" style="background:' + it.color + ';width:0%">' +
               '<span class="up-bar-name" style="color:' + txt + ';opacity:0">' + logoHtml + esc(it.name) + '</span>' +
@@ -20770,7 +20854,7 @@
       var id = idOf(t), on = !!picked[id];
       var color = String(t.hex_light || t.hex_dark || "#6b7280");
       if (color.charAt(0) !== "#") color = "#" + color;
-      return '<button type="button" class="up-topicchip up-chiphover' + (on ? " is-on" : "") +
+      return '<button type="button" class="up-topicchip is-gross up-chiphover' + (on ? " is-on" : "") +
         '" data-gm-topic="' + esc(id) + '" style="--ust-tag-color:' + esc(color) + '">' +
         (t.emoji ? '<span class="up-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
         '<span class="up-topicchip-lbl">' + esc(t.name == null ? "" : t.name) + '</span>' +
@@ -21328,6 +21412,7 @@
     relativeTime: relativeTime,
     modelChip: modelChip, modelLogoUrl: modelLogoUrl, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,
     adCardHtml: adCardHtml, adFormatLabel: adFormatLabel, makeSeitenDrawer: makeSeitenDrawer, balkenGrau: balkenGrau,
+    barLogoErsatz: barLogoErsatz,
     faviconUrl: faviconUrl, topicChipHtml: topicChipHtml, topicEmoji: topicEmoji,
     marketChip: marketChip,
     aufResize: aufResize,

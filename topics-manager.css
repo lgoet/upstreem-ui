@@ -14,8 +14,8 @@
   padding: 20px 0 40px; border-top: 1px solid var(--vc-border); min-height: 80px; }
 .utm-empty { padding: 24px 0; color: var(--vc-muted); font-size: 13px; }
 
-/* Das Aussehen kommt aus .up-topicchip in core -- 28px, Radius 8, kein sichtbarer Rahmen, nur der
-   getoente Grund, hell und dunkel. Hier stand eine eigene Kopie mit 32px Hoehe und einem sichtbaren
+/* Das Aussehen kommt aus .up-topicchip in core, in der grossen Fassung .is-gross (28px, seit dem
+   06.10. wieder -- der Dot-Chip ist sonst 24). Hier stand eine eigene Kopie mit 32px Hoehe und einem sichtbaren
    Rahmen, aus der Zeit vor der Auslagerung: ein Thema sah auf dieser Seite anders aus als in der
    Prompts-Tabelle und als in den Gruppierungen zwei Zeilen weiter unten. Uebrig bleibt, was der
    Knopf braucht (ein button zentriert seinen Text von sich aus) und was diese Seite zusaetzlich

@@ -234,13 +234,9 @@
 .ush-root.is-narrow .ush-wo { grid-template-columns: minmax(0, 1fr); }
 .ush-root.is-narrow .ush-wo-spalte + .ush-wo-spalte { border-left: 0; border-top: 1px solid var(--vc-border); }
 
-/* ---- Telefon (is-vnarrow unter 500, gesetzt von UC.makePageNav) ------------------------------------
-   Vier Reiter passen mit Zeichen nicht in 368px (gemessen bei 400: 108px Ueberlauf, "Merchants"
-   allein braucht gut 110px). Dort tragen die Reiter nur ihren Namen, mit 8px Polster; is-narrow
-   steht zusaetzlich in der Kette, damit die Regel den schmalen Reiter aus core ueber die
-   Spezifitaet schlaegt und nicht ueber die Ladereihenfolge. */
-.up-root.ush-root.is-narrow.is-vnarrow .up-ph-navicon { display: none; }
-.up-root.ush-root.is-narrow.is-vnarrow .up-ph-navitem { padding: 0 8px; }
+/* Die Reiter auf dem Telefon (erst ohne Zeichen, dann gekuerzt) regelt seit dem 06.10. core fuer
+   jeden Seitenkopf (makePageNav, .up-ph-nav.is-ohne-zeichen / .is-kuerzen) -- hier stand die
+   erste Fassung davon, nur fuer Shopping. */
 /* Der Kennzahl-Umschalter der Charts (vier Stufen, 415px breit) wird eine waagerecht wischbare
    Leiste ueber die volle Breite, wie eine Chip-Reihe. Der gleitende Streifen ist ein ::before im
    Kasten und faehrt beim Wischen mit. */

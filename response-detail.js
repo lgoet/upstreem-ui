@@ -764,24 +764,16 @@
       var logo = sichereUrl(ad.logo_url) || (UC.faviconUrl ? UC.faviconUrl(ad.domain || ad.advertiser_domain || ad.landing_domain) : "");
       return UC.adCardHtml ? UC.adCardHtml(ohne, { logo: logo, beziehung: adBeziehung(ad), zeichen: "bank" }) : "";
     }
-    /* Laden: drei Skelettkarten im Bildformat der Ad Card (Handoff). */
-    function adsSkelett() {
-      var k = "";
-      for (var i = 0; i < 3; i++) {
-        k += '<div class="up-adcard is-sk" aria-hidden="true"><span class="up-adcard-media"></span>' +
-          '<span class="up-adcard-body"><span class="urd-sk urd-ads-skl" style="width:42%"></span>' +
-          '<span class="urd-sk urd-ads-skl" style="width:88%"></span><span class="urd-sk urd-ads-skl" style="width:64%"></span></span></div>';
-      }
-      return k;
-    }
     var adsReihe = reiheMachen(elAds, ".up-adcard");
     function adsRand(ziel) { adsReihe.rand(ziel); }
+    /* KEIN SKELETT, wie bei Products (06.10. abends entschieden, gegen den Handoff: "die sind ja
+       nicht immer da -- es sieht komisch aus, wenn die jedes Mal mitladen und dann keine kommen").
+       Der Abschnitt kommt mit den Daten oder gar nicht. */
     function renderAds() {
-      var laedt = istLaden() && !state.fehler;
       adListe = (!istLaden() && !state.fehler && state.data) ? adsLesen(state.data) : [];
-      elAds.hidden = !(laedt || adListe.length);
+      elAds.hidden = !adListe.length;
       if (elAds.hidden) { elAdsRow.innerHTML = ""; return; }
-      elAdsRow.innerHTML = laedt ? adsSkelett() : adListe.map(adKarte).join("");
+      elAdsRow.innerHTML = adListe.map(adKarte).join("");
       elAdsRow.scrollLeft = 0;
       adsRand();
     }

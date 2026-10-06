@@ -1082,13 +1082,17 @@
       if (!UC.makeColumns || !wurzel) return null;
       var d = TABELLEN[name], st = { cols: {}, widths: {}, dense: false };
       var mitMenue = !!wurzel.querySelector(".up-cols-menu");
+      /* Topics with Ads IMMER kompakt (06.10. abends: "ohne komfortablen Modus") -- das Zahnrad
+         zeigt dort nur die Spalten, keine Zeilenhoehe. */
+      var immerDicht = name === "topics";
       var kit = UC.makeColumns({
         root: wurzel, state: st, columns: d.spalten, storePrefix: "uad", instanceId: instanceId + "__" + name,
         firstKey: "erste", firstMin: d.erste.min, noActions: true, scrollen: true,
-        dense: mitMenue, badgeSel: ".uad-cols-badge", cellPrefixes: ["up"]
+        dense: mitMenue && !immerDicht, badgeSel: ".uad-cols-badge", cellPrefixes: ["up"]
       });
       st.cols = kit.readCols(); st.widths = kit.readWidths();
-      if (mitMenue) {
+      if (immerDicht) { st.dense = true; wurzel.classList.add("is-dense"); }
+      else if (mitMenue) {
         try { st.dense = window.localStorage.getItem(dichteSchluessel(name)) === "1"; } catch (x) {}
         wurzel.classList.toggle("is-dense", st.dense);
       }
@@ -1223,7 +1227,8 @@
       balken.render(l.map(function (x, i) {
         var n = str(x.advertiser_name).trim(), info_ = advInfo(n, x.company_id), v = anteilWert(x.ad_share_pct);
         return { key: n, name: n, share: v / max * 100, wert: pct(v), color: UC.balkenGrau ? UC.balkenGrau(i, isDark()) : "#1f1f1b",
-                 logo: info_.logo || undefined, zeichen: info_.logo ? undefined : UC.icon(ADV_ZEICHEN, 2) };
+                 /* Ohne Logo und bei einem Bild, das nicht laedt: das Bank-Zeichen im Kaestchen (core). */
+                 logo: info_.logo || undefined, ersatz: ADV_ZEICHEN };
       }));
     }
     /* ---- Topics with Ads: Suche, Sortierung, Seiten (06.10.) ------------------------------------

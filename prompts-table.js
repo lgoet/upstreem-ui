@@ -1887,7 +1887,7 @@
                 var on = isStaged(id);
                 var color = String(t.hex_light || t.hex_dark || "#6b7280");
                 if (color.charAt(0) !== "#") color = "#" + color;
-                return '<button type="button" class="up-topicchip up-chiphover' + (on ? " is-on" : "") +
+                return '<button type="button" class="up-topicchip is-gross up-chiphover' + (on ? " is-on" : "") +
                  '" data-topic="' + esc(id) + '" style="--ust-tag-color:' + esc(color) + '">' +
                  (t.emoji ? '<span class="up-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
                  '<span class="up-topicchip-lbl">' + esc(t.name == null ? "" : t.name) + '</span>' +
@@ -2241,7 +2241,7 @@
       var id = topicId(t);
       var color = String(t.hex_light || t.hex_dark || "#6b7280");
       if (color.charAt(0) !== "#") color = "#" + color;
-      return '<button type="button" class="up-topicchip up-chiphover' + (on ? " is-on" : "") +
+      return '<button type="button" class="up-topicchip is-gross up-chiphover' + (on ? " is-on" : "") +
         '" data-et-topic="' + esc(id) + '" style="--ust-tag-color:' + esc(color) + '">' +
         (t.emoji ? '<span class="up-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
         '<span class="up-topicchip-lbl">' + esc(t.name == null ? "" : t.name) + '</span>' +

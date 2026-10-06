@@ -1827,6 +1827,15 @@
     /* Bleibt als eigene Klasse -- sie sagt "nicht anklickbar" und nichts sonst mehr: Rahmen und
        Polster sind jetzt oben schon so. */
     .up-topicchip.is-static { cursor: default; }
+    /* Die grosse Fassung (06.10. angefordert): 28 statt 24 im Topics Manager und ueberall, wo man
+       Topics AUSWAEHLT (Gruppierungs-Popup, Topic-Popover der Prompts-Tabelle, Edit Topics). Dort
+       ist der Chip ein Schalter mit Kaestchen und wird angeklickt, in Tabellenzellen nur gelesen.
+       Die Schrift bleibt 12 -- genau so stand der Chip bis zum 06.10. auf 28px (Radius 8, Schrift
+       12). Hoehe, Polster und Radius ziehen zusammen um eine Stufe an: Polster je Seite +2 wie die
+       Hoehe, Radius von --up-r-s auf --up-r-m. (0,3,0) mit Kaestchen, damit die 8 links die 6 aus
+       .up-topicchip:has(...) und die 10 aus .is-gross sicher schlaegt. */
+    .up-topicchip.is-gross { height: var(--up-h-seg); padding: 0 10px; border-radius: var(--up-r-m); }
+    .up-topicchip.is-gross:has(.up-topicchip-check) { padding-left: 8px; }
 
     /* KEIN RIESIGES ZEICHEN, BEVOR DIE KOMPONENTEN-CSS DA IST (19.09. gemeldet: "irgendwo in
        Mira flasht beim Laden noch ein altes SVG auf, ganz gross auf der Seite").
@@ -3209,10 +3218,13 @@
    sonst lag das Bild randlos auf einer 15px-Platte, und ein Favicon, das seine Flaeche ganz
    fuellt, sah aus wie ein loses Bild. Jetzt ist das Kaestchen der Standard, fuer Logos UND
    Zeichen-Platten (Haendler in Shopping, Werbetreibende ohne Logo in Ads).
-   20px aussen: 14 Bild + 2x2 Polster + 2x1 Rahmen, Radius s (6). Die Spur ist 32px hoch, es passt.
+   20px aussen: 16 Bild + 2x1 Polster + 2x1 Rahmen, Radius s (6). Die Spur ist 32px hoch, es passt.
+   1px Polster statt der 2 aus domain-detail (06.10. abends: "das Polster wirkt an ein paar Stellen
+   zu gross"): Favicons bringen ihren eigenen Rand mit, mit 2px stand das Bild darin bei 14px und
+   wirkte verloren. 1px ist das Polster jeder anderen Logo-Kachel in core (.up-logo-box, .up-ment-logo).
    Am Bild selbst und ohne Huelle: Rahmen und Polster gehen an einem img, object-fit contain
    beschneidet nichts. Im Dunkeln verschmilzt der Rahmen mit dem hellen Grund. */
-.up-bar-logo { box-sizing: border-box; width: 20px; height: 20px; flex: 0 0 20px; padding: 2px;
+.up-bar-logo { box-sizing: border-box; width: 20px; height: 20px; flex: 0 0 20px; padding: 1px;
   border: 1px solid var(--vc-border); border-radius: var(--up-r-s);
   background: var(--vt-logo-bg); object-fit: contain; display: block; }
 .up-root[data-theme="dark"] .up-bar-logo { background: var(--vc-text); border-color: var(--vc-text); }
@@ -4970,6 +4982,20 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    internally (.up-ph-navitem already centers its own icon+label). A page header's own "Add X"
    button can drop its trailing word here by wrapping it in a child with class up-ph-addbtn-full. */
 .up-root.is-narrow .up-ph-navitem { flex: 1 1 0; }
+/* NIE UEBER DEN RAND (06.10. abends angefordert, fuer jeden Seitenkopf). makePageNav misst, ob die
+   Reiterzeile ueberlaeuft, und setzt dann zwei Stufen nacheinander:
+   1. is-ohne-zeichen: die Zeichen fallen weg, Polster 8 (die Fassung, die Shopping und Ads bis
+      hier je fuer sich unter 500px hatten -- gemessen bei 400: 108px Ueberlauf mit Zeichen);
+   2. is-kuerzen, nur wenn es auch ohne Zeichen nicht passt: Reiter, die breiter sind als ihr
+      Anteil, werden auf die Kappe --up-nav-kappe begrenzt (makePageNav rechnet sie aus, kurze
+      Namen bleiben ganz) und der Name endet mit "…".
+   Gemessen und nicht an einer Breite festgemacht: wie viele Reiter mit welchen Namen in welcher
+   Sprache passen, sagt keine feste Stufe. (0,5,0), damit es die schmalen Reiter der kompakten
+   Koepfe weiter unten ((0,4,0), Polster 0 15 0 12) schlaegt. */
+.up-root .up-ph-nav.is-ohne-zeichen .up-ph-navicon { display: none; }
+.up-root .up-ph-nav.is-ohne-zeichen .up-ph-navitem.up-ph-navitem { padding: 0 8px; }
+.up-root .up-ph-nav.is-kuerzen .up-ph-navitem.up-ph-navitem { flex: 1 1 auto; min-width: 0; max-width: var(--up-nav-kappe, none); }
+.up-root .up-ph-nav.is-kuerzen .up-ph-navlabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .up-root.is-narrow .up-ph-addbtn-full { display: none; }
 /* Die schmale Fassung des Etiketts. Sie ist ein eigener Satz aus dem Katalog und nicht der Rest
    eines abgeschnittenen -- im Deutschen steht das Verb hinten, ein abgeschnittener Satz waere

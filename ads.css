@@ -164,9 +164,7 @@
 .uad-auf-ad .uad-zweizeilig { flex: 1 1 auto; }
 .uad-auf-ad .up-tsk-bar { display: block; }
 
-/* ---- Telefon: drei Reiter mit Zeichen passen nicht in 343px -- dort nur der Name, wie Shopping. */
-.up-root.uad-root.is-narrow.is-vnarrow .up-ph-navicon { display: none; }
-.up-root.uad-root.is-narrow.is-vnarrow .up-ph-navitem { padding: 0 8px; }
+/* Die Reiter auf dem Telefon regelt seit dem 06.10. core fuer jeden Seitenkopf (makePageNav). */
 
 /* ============================================================================================
    DER AD-DETAIL-DRAWER (UC.makeSeitenDrawer, Klasse uad-drawer). Er haengt am <body>, also ohne

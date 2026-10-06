@@ -455,10 +455,7 @@
 /* Ohne Modell, Markt und Datum (die stehen im Kopf der Seite) bleibt die Meta-Zeile leer -- sie darf
    dann keinen Abstand halten. */
 .urd-ads-row .up-adcard-meta:empty { display: none; }
-/* Skelett: dieselbe Flaeche wie die Produktkarte, im Bildformat der Ad Card. */
-.urd-ads-row .up-adcard.is-sk { cursor: default; pointer-events: none; }
-.urd-ads-row .up-adcard.is-sk .up-adcard-media { background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
-.urd-ads-skl { display: block; height: 12px; border-radius: var(--up-r-xs); }
+/* Kein Skelett (06.10. abends): der Abschnitt kommt mit den Daten oder gar nicht, wie Products. */
 .urd-pc { flex: 0 0 236px; scroll-snap-align: start; display: flex; flex-direction: column;
   min-width: 0; padding: 8px; border-radius: var(--up-r-2xl); border: 1px solid var(--vc-border);
   background: var(--vc-bg); box-sizing: border-box; text-align: left; font: inherit; color: inherit;
