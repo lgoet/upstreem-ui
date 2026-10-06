@@ -145,7 +145,9 @@
     "ask_mira_settings_change","ask_mira_suggested_question","ask_mira_voice","miraAction",
     /* Quick Actions */
     "qa_add_brand","qa_add_prompt","qa_edit_brand","qa_export_data","qa_select_brand",
-    "qa_select_domain","qa_select_prompt","qa_select_url","quick_actions_search"
+    "qa_select_domain","qa_select_prompt","qa_select_url","quick_actions_search",
+    /* Shopping (sechste Szene): die vier Anfragen. Die Daten kommen aus landing-hero.js. */
+    "shopOverview","shopProducts","shopProductDetail","shopMerchants"
   ];
   function stumm(){}
   for (var si = 0; si < STUMM.length; si++){
@@ -186,6 +188,8 @@
      Charts selbst. */
   css("domain-detail.css");
   css("performance-radar.css");
+  /* Sechste Szene: die Shopping-Seite, Komponente ganz (CSS und JS) wie Domain Detail. */
+  css("shopping.css");
   css("landing-hero.css");
 
   js("core.js");
@@ -203,6 +207,7 @@
   js("page-headers/performance-page-header.js");
   js("performance-radar.js");
   js("domain-detail.js");
+  js("shopping.js");
   /* Zuletzt: diese Datei ruft die Setter der anderen. */
   js("landing-hero.js");
 })();

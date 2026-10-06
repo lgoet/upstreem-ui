@@ -50,6 +50,9 @@ TEILE = [
     # Fuenfte Szene: die Performance-Seite, Kopf und Heatmap.
     ("hph", "page-headers/bubble/performance_page_header_bubble.html", "lh-hph"),
     ("uhm", "bubble/performance_radar_bubble.html", "lh-uhm"),
+    # Sechste Szene (06.10.): Shopping. Eine Komponente mit eigenem Kopf (Krumen, Reiter) -- kein
+    # eigener Seitenkopf daneben noetig.
+    ("ush", "bubble/shopping_bubble.html", "lh-ush"),
 ]
 
 # Feste Werte fuer die Platzhalter. BRAND_NAME ist eine erfundene Marke -- erfundene Zahlen unter
@@ -138,6 +141,8 @@ for schluessel, pfad, kennung in TEILE:
         sys.exit(1)
     m = m.replace('data-instance="INSTANCE_ID"', 'data-instance="%s"' % kennung)
     m = m.replace('data-instance="ROOTID_[dynamic id]"', 'data-instance="%s"' % kennung)
+    # Shopping traegt in der Vorlage eine feste Kennung (alle Run-JS-Schritte heissen so).
+    m = m.replace('data-instance="shopping_page"', 'data-instance="%s"' % kennung)
     for k, v in ERSATZ.items():
         m = m.replace(k, v)
     # Kein Sticky im Fenster. Der Kopf der Tabelle wuerde sich an den Ausschnitt haengen und ueber

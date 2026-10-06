@@ -34,9 +34,8 @@
         Diese Sektion ist immer hell.
      Die Werte sind die hellen Werte aus core (--vc-bg, --vc-heading-bg, --vc-text, --vc-muted,
      --vc-sk). Aendert sich dort die helle Palette, gehoert sie hier nachgezogen. */
-  /* #FFFFFFF2 statt #ffffff: Weiss bei 95% Deckkraft (F2 = 242 von 255). Damit scheint hinter der
-     Sektion der Grund der Framer-Seite um fuenf Prozent durch, und hinter dem Fenster das blaue
-     Bild. Die Vorlage macht es genauso -- ihr Fensterhintergrund steht bei 80%. */
+  /* REINWEISS (06.10. angefordert: "Background in #ffffff"). Bis dahin #FFFFFFF2, Weiss bei 95%
+     Deckkraft, damit der Grund der Framer-Seite um fuenf Prozent durchschien. */
   /* VIER core-Marken, hier lokal. Sie stehen in vierzehn Regeln dieser Datei -- und waren an
      den Stellen, die NICHT unter .ulh-app liegen, unaufloesbar: gemessen an .ulh-btn-sec,
      .ulh-pk, .ulh-orb-chip und .ulh-vis-tab, alle vier "NICHT AUFLOESBAR". Eine Deklaration mit
@@ -47,7 +46,7 @@
      vorschreibt. Bauteile unter .ulh-app bleiben unberuehrt: ihr eigenes .up-root steht naeher
      und gewinnt. (22.09.) */
   --vc-bg: #ffffff; --vc-heading-bg: #f9f8f9; --vc-hover-border: #6f6f6f; --vc-third: #9e9e9e;
-  --ulh-grund: #FFFFFFF2;
+  --ulh-grund: #ffffff;
   /* Die Blende. Derselbe Ton wie die Leiste (#f5f5f5) machte den Rahmen dort unsichtbar, wo die
      Leiste anliegt; 15% dunkler (#d0d0d0 = 208) war zu viel und sah nach einem grauen Balken aus.
      Der Weg: #f5f5f5 unsichtbar, #d0d0d0 ein grauer Balken, #e8e8e8 zu dunkel, #e9edf1 mit Blau
@@ -93,9 +92,8 @@
   /* Die Linie der Schienen. Heller als der Rahmen der Karten (#e7e9ec): sie laeuft ueber die ganze
      Hoehe der Seite und wird dadurch als Flaeche wahrgenommen, nicht als Linie. */
   --ulh-schiene: #ededf0;
-  /* Der Grund der Seite bleibt das 95%-Weiss, das die Sektion von Anfang an hatte -- durch die
-     fuenf Prozent scheint der Grund der Framer-Seite durch, und genau das war so gewollt.
-     Off-white ist stattdessen der KASTEN um die vier Karten: dort, und nur dort, braucht es
+  /* Der Grund der Seite ist seit dem 06.10. reinweiss (vorher 95%, siehe --ulh-grund).
+     Off-white ist der KASTEN um die Karten: dort, und nur dort, braucht es
      einen dunkleren Grund, damit die Karten in reinem Weiss als Karten lesbar sind. */
   --ulh-seite: var(--ulh-grund);
   --ulh-kasten: #F6F6F7;
@@ -111,8 +109,7 @@
      ersten Farbe ist damit weiter und der Effekt deutlicher zu sehen. */
   --ulh-third: #9e9e9e;
   --ulh-border: #e0e2e6;
-  /* Der Funke am Chip. Deine Farbe, und sie liegt in derselben Familie wie das blaue Bild im
-     Hintergrund -- das ist kein Zufall, sondern der Grund, warum beides zusammengeht. */
+  /* Der Funke -- seit dem 06.10. als Hover der zwei Knoepfe im Hero, vorher um den Chip. */
   --ulh-funke: #98CEF2;
   /* Die Buehne hat eine FESTE Breite und wird als Ganzes verkleinert. Nur so sieht man die App in
      ihrem Desktop-Layout: die Komponenten messen ihre eigene Breite (clientWidth) und stapeln
@@ -173,8 +170,9 @@
 .ulh-text {
   max-width: 780px;
   margin: 0 auto;
-  /* Unten das Doppelte: der Abstand von den Knoepfen zum Fensteranfang war zu knapp. */
-  padding: clamp(48px, 9vh, 104px) 24px clamp(56px, 8vh, 88px);
+  /* Unten das Doppelte: der Abstand von den Knoepfen zum Fensteranfang war zu knapp.
+     06.10.: beides noch einmal groesser ("mehr Luft im Textblock und zur Hero hin"). */
+  padding: clamp(56px, 10vh, 120px) 24px clamp(72px, 10vh, 120px);
   text-align: center;
 }
 /* Zeilenhoehe UNTER 1 und negative Laufweite: das ist der halbe Effekt. Bei 0.95 und -0.02em liest
@@ -183,7 +181,9 @@
    clamp statt fester 64px, weil die Sektion in Framer auch auf dem Telefon steht. */
 .ulh-h1 {
   margin: 0;
-  font-size: clamp(36px, 5.7vw, 66px);
+  /* 06.10.: etwas groesser (66 -> 74 oben). Der Mindestwert bleibt 36 -- "AI Search Analytics"
+     muss auf dem Telefon in eine Zeile passen. */
+  font-size: clamp(36px, 6.2vw, 74px);
   font-weight: 600;
   line-height: .95;
   letter-spacing: -0.02em;
@@ -191,11 +191,13 @@
 }
 .ulh-h1 span { display: block; }
 .ulh-sub {
-  max-width: 560px;
-  margin: clamp(16px, 2.2vh, 22px) auto 0;
-  font-size: clamp(15px, 1.25vw, 18px);
-  /* 500 statt der geerbten 400 -- 100 mehr, wie gewuenscht. */
-  font-weight: 500;
+  /* 620 statt 560 (06.10.): mit 19px Schrift brauchte der Satz rund 590px, und "drive" fiel in
+     eine eigene Zeile. */
+  max-width: 620px;
+  margin: clamp(22px, 3vh, 30px) auto 0;
+  /* 06.10.: ganz leicht groesser (18 -> 19 oben) und 100 leichter (500 -> 400). */
+  font-size: clamp(16px, 1.32vw, 19px);
+  font-weight: 400;
   line-height: 1.45;
   color: var(--ulh-sub);
 }
@@ -237,34 +239,9 @@
   /* Der Ring. Ohne diese Fuellung gibt es keinen Rand, durch den etwas ziehen koennte. */
   background: var(--ulh-chip-ring, var(--ulh-border));
 }
-.ulh-chip::before {
-  content: "";
-  display: block;
-  /* Kraeftiger: der Kern ist jetzt ein satteres Blau als --ulh-funke, und die Verlaufsmarken
-     liegen enger beieinander -- damit ist das helle Stueck ein Punkt und kein Hauch.
-     SCHMALER, und das ist der eigentliche Punkt: mit 100px Breite lag der Streifen quer ueber die
-     ganze Pille. Zeigte er nach LINKS, deckte seine Breite die vollen 32px Hoehe ab und leuchtete
-     oben UND unten -- zwei Funken statt einem. 26px sind schmaler als die Pille hoch ist, also
-     liegt immer genau ein Stueck des Rings im Licht. */
-  background: linear-gradient(90deg, rgba(152, 206, 242, 0) 0%,
-              var(--ulh-funke) 32%, #4FA9E4 50%, var(--ulh-funke) 68%,
-              rgba(152, 206, 242, 0) 100%);
-  height: 300px;
-  width: 26px;
-  position: absolute;
-  animation: ulhSchimmer 5s linear forwards infinite;
-  z-index: 0;
-  top: 50%;
-  /* left und der negative Rand muessen SEIN, obwohl die Vorlage ohne sie auskommt. Dort ist die
-     Karte etwa so breit wie der Streifen, also liegt seine statische Lage ohnehin fast in der
-     Mitte. Diese Pille ist 199px breit: ohne left sitzt der Drehpunkt bei 50px vom linken Rand,
-     der Streifen kreist um einen Punkt weit links, und auf der rechten Haelfte des Rings kommt
-     nie Licht an. Gemessen: bei 35 und 115 Grad war auf dem Ring kein Blau zu sehen.
-     Der negative Rand ist die halbe Streifenbreite (13 von 26), damit der Drehpunkt mittig liegt. */
-  left: 50%;
-  margin-left: -13px;
-  transform-origin: top center;
-}
+/* DER FUNKE IST VOM CHIP AUF DIE KNOEPFE GEWANDERT (06.10. angefordert: "entferne den Spark, der
+   da drum faehrt" und "fuege diesen Spark als Hover-Effekt auf Talk to Sales und Book a Demo
+   hinzu"). Der Chip behaelt seinen Ring; der Streifen steht jetzt unten bei .ulh-cta. */
 @keyframes ulhSchimmer { to { transform: rotate(360deg); } }
 /* ALS BADGE (30.09. angefordert: "Icon vorne, dann der Text, Hintergrund komplett weiss, gerne
    ein bisschen invertiert, modern mit Schatten -- Abmessung gleich lassen").
@@ -308,20 +285,21 @@
 .ulh-chip { box-shadow: 0 1px 2px rgba(11, 13, 24, .05); }
 /* Wer keine Bewegung will, bekommt keine. */
 @media (prefers-reduced-motion: reduce) {
-  .ulh-chip::before { animation: none; }
+  .ulh-text .ulh-cta .ulh-btn::before { animation: none; }
 }
-.ulh-eyebrow { margin: 0 0 clamp(18px, 2.4vh, 26px); }
+.ulh-eyebrow { margin: 0 0 clamp(24px, 3.2vh, 34px); }
 
 /* ---------- Die drei Treiber unter der Unterzeile ----------
    Eigene Zeile, damit sie zu dritt nebeneinander stehen -- der Umbruch nach "drive" steht im
-   Markup. Gleiche Abstaende ueberall: 8px zwischen Zeichen und Wort, 20px zwischen den drei. */
+   Markup. Seit dem 06.10. OHNE Zeichen und enger zusammen (angefordert): 14px zwischen den drei
+   statt 20, und die Zeile ruckt 4px naeher an den Satz darueber. */
 .ulh-drivers {
   display: flex;
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px 20px;
-  margin-top: 6px;
+  gap: 4px 14px;
+  margin-top: 2px;
 }
 .ulh-driver {
   display: inline-flex;
@@ -330,7 +308,7 @@
   /* Gewicht und Farbe wie im Satz darueber -- die drei Treiber sind der zweite Teil DESSELBEN
      Satzes, kein eigener Rang. Vorher standen sie auf 600 und in --ulh-text, also kraeftiger und
      dunkler, und lasen sich dadurch wie eine Aufzaehlung fuer sich. */
-  font-weight: 500;
+  font-weight: 400;
   color: var(--ulh-sub);
 }
 .ulh-driver svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--ulh-sub); }
@@ -338,7 +316,7 @@
 /* ---------- Die zwei Knoepfe ----------
    Masse an attio.com abgelesen: 36px hoch, Radius 10, 14px/500, Polster 0 12px, und zwischen den
    beiden 10px (dort gemessen: der eine endet bei 714, der andere beginnt bei 724). */
-.ulh-cta { display: flex; justify-content: center; gap: 10px; margin-top: 30px; }
+.ulh-cta { display: flex; justify-content: center; gap: 12px; margin-top: clamp(34px, 4.6vh, 44px); }
 .ulh-btn {
   display: inline-flex;
   align-items: center;
@@ -365,6 +343,51 @@
 }
 .ulh-btn-pri { border: 1px solid var(--ulh-text); background: var(--ulh-text); color: #ffffff; }
 .ulh-btn-pri:hover { background: #33332e; border-color: #33332e; }
+/* DER FUNKE ALS HOVER der zwei Knoepfe im Hero (06.10. angefordert, vorher lief er um den Chip).
+   Dieselbe Machart wie dort: der Knopf selbst ist der RING (seine Fuellung), innen liegt 1px
+   eingerueckt die eigentliche Flaeche (::after), und zwischen beiden dreht der Lichtstreifen
+   (::before) -- er ist nur auf dem 1px Ring zu sehen. isolation, damit die zwei Ebenen mit
+   negativem z-index ueber dem Grund des Knopfs und unter seiner Schrift liegen.
+   Streifen und Farben sind die des Chips (26px breit, --ulh-funke mit #4FA9E4 im Kern). Nur die
+   Dauer ist kuerzer, 2.4s statt 5s: ein Knopf wird ein, zwei Sekunden lang ueberfahren, und in
+   dieser Zeit soll das Licht einmal herumkommen. Ausserhalb des Hovers steht der Streifen still
+   und unsichtbar; beim naechsten Hover laeuft er dort weiter, wo er stand.
+   Der Rahmen war 1px border -- jetzt ist er der Ring, also border 0 und 1px mehr Polster, damit
+   Breite und Schrift genau dort bleiben, wo sie waren. */
+.ulh-text .ulh-cta .ulh-btn { position: relative; overflow: hidden; isolation: isolate; border: 0; padding: 0 13px; }
+.ulh-text .ulh-cta .ulh-btn-sec, .ulh-text .ulh-cta .ulh-btn-sec:hover { background: var(--ulh-border); }
+.ulh-text .ulh-cta .ulh-btn-pri, .ulh-text .ulh-cta .ulh-btn-pri:hover { background: var(--ulh-text); }
+.ulh-text .ulh-cta .ulh-btn::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  border-radius: 9px;
+  background: var(--ulh-grund);
+  transition: background 140ms ease;
+}
+.ulh-text .ulh-cta .ulh-btn-pri::after { background: var(--ulh-text); }
+.ulh-text .ulh-cta .ulh-btn-sec:hover::after { background: var(--vc-heading-bg, #f5f5f5); }
+.ulh-text .ulh-cta .ulh-btn-pri:hover::after { background: #33332e; }
+.ulh-text .ulh-cta .ulh-btn::before {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  top: 50%;
+  left: 50%;
+  width: 26px;
+  height: 300px;
+  margin-left: -13px;
+  transform-origin: top center;
+  background: linear-gradient(90deg, rgba(152, 206, 242, 0) 0%,
+              var(--ulh-funke) 32%, #4FA9E4 50%, var(--ulh-funke) 68%,
+              rgba(152, 206, 242, 0) 100%);
+  opacity: 0;
+  transition: opacity 200ms ease;
+  animation: ulhSchimmer 2.4s linear infinite;
+  animation-play-state: paused;
+}
+.ulh-text .ulh-cta .ulh-btn:hover::before { opacity: 1; animation-play-state: running; }
 
 /* ---------- Der Hintergrund ----------
    Zwei Ebenen, beide hinter allem:
@@ -396,9 +419,14 @@
    durchsichtigen Schwarz heraus grau zu werden. */
 /* UNTEN MINIMAL SCHWAECHER (30.09. angefordert): #8fb4e6 -> #9cbde9, also 12 Prozent Weiss
    hineingemischt. Die Mitte bleibt #b9d1f1 -- verlangt war nur das untere Ende. */
+/* GRAU STATT BLAU (06.10. angefordert: "ein schoenes, professionelles Grau, gern mit ganz
+   leichtem Blau-Touch"). Dieselbe Blende und dieselben drei Marken wie das Blau davor, nur die
+   Toene: ein kuehles Grau, dessen Blauanteil mit der Tiefe waechst (b minus r: 3, 8, 12) -- oben
+   kaum von Weiss zu unterscheiden, unten erkennbar kuehl, nirgends blau. Die weissen Lichter
+   (::after) und die senkrechten Linien bleiben, wie sie sind. */
 .ulh-bg-foto {
   background: linear-gradient(to bottom,
-              rgba(238, 244, 252, 0) 16%, #eef4fc 34%, #b9d1f1 60%, #9cbde9 100%);
+              rgba(244, 245, 247, 0) 16%, #f4f5f7 34%, #e3e6eb 60%, #d4d9e0 100%);
 }
 /* MITTIG ETWAS HELLER (30.09. angefordert: "mittig ganz leicht weniger kraeftig als links und
    rechts"): ein Schleier aus Weiss darueber, der zu den Seiten auf 0 geht. Die quer laufende
@@ -675,7 +703,7 @@
 /* Mira und die Prompts-Seite liegen von Anfang an im Markup, aber unsichtbar: die Komponenten
    brauchen ihre echte Groesse, um sich einzurichten (Chathoehe, is-compact, Scrollsperre, die
    Spaltenanpassung der Tabelle), und display: none haette ihnen eine Hoehe von 0 gemeldet. */
-.ulh-mira, .ulh-prompts, .ulh-chancen, .ulh-perf { opacity: 0; }
+.ulh-mira, .ulh-prompts, .ulh-chancen, .ulh-perf, .ulh-shop { opacity: 0; }
 .ulh-seite.is-da { opacity: 1; }
 /* is-weg NACH is-da, und das ist kein Schoenheitsfehler in der Reihenfolge: eine Seite, die schon
    dran WAR und jetzt weg soll, traegt beide Klassen. Beide haben dieselbe Spezifitaet, also
@@ -947,7 +975,7 @@
 /* Die Leiste bringt ihre Breite selbst mit; rechts davon der Seiteninhalt.
    min-width: 0, sonst sprengt eine breite Tabelle die Spalte. */
 .ulh-side { flex: 0 0 auto; }
-.ulh-main, .ulh-prompts, .ulh-chancen, .ulh-perf {
+.ulh-main, .ulh-prompts, .ulh-chancen, .ulh-perf, .ulh-shop {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
@@ -1309,6 +1337,10 @@
    sie dorthin, im Schaustueck nehmen sie 245px, und zu sehen sein soll die TABELLE. Die
    Komponente bleibt unangetastet, hier faellt nur weg, was das Fenster nicht zeigen soll. */
 .ulh-app .upt-kpis { display: none; }
+/* Die Filterzeile der Shopping-Seite (Kalender und Filter) faellt im Fenster weg (06.10.): die
+   Landingpage laedt date-range und filter-bar nicht, die Zeile stand als 34px leerer Streifen
+   zwischen Reitern und Inhalt. Die anderen Seiten im Fenster zeigen ebenfalls keinen Kalender. */
+.ulh-app .ush-filterzeile { display: none; }
 
 /* ---------- Die Karten im Fenster: flacher ----------
    Gemessen: eine Karte war 285px hoch, ueber dem Brett stehen 261px Kopf und Werkzeugleiste, und
@@ -1421,7 +1453,10 @@
    nirgends sonst vorkommt. Die Breite des inneren Kastens ist entsprechend groesser gerechnet,
    damit er nach der Verkleinerung genau die Karte fuellt. */
 .ulh-vis {
-  margin-top: auto; padding-top: 26px;
+  /* 40 statt 26 (06.10. angefordert: "Gap zwischen Text und Grafik etwas groesser, auch wenn die
+     Cards dadurch minimal groesser werden"). Jede --ulh-vh unten ist um dieselben 14px mitgewachsen
+     -- die sichtbare Vorschau bleibt also genau so gross, nur der Abstand darueber waechst. */
+  margin-top: auto; padding-top: 40px;
   --ulh-vs: 0.86;
   position: relative;
   /* Die Hoehe steht am AEUSSEREN Kasten und nicht am inneren: transform: scale aendert die
@@ -1441,14 +1476,14 @@
 /* BEIDE Reihen gleich hoch, und dazu 30px mehr als zuerst. Gerechnet und nicht geraten: die
    Reihenhoehe entsteht aus Text plus Vorschau, und die Texte sind verschieden lang -- die Zahlen
    hier sind so gesetzt, dass beide Reihen auf dieselbe Hoehe kommen (gemessen 428px). */
-.ulh-vis-linie   { --ulh-vs: 1;    --ulh-vh: 274px; }
-.ulh-vis-zeilen  { --ulh-vs: 0.74; --ulh-vh: 274px; }
+.ulh-vis-linie   { --ulh-vs: 1;    --ulh-vh: 288px; }
+.ulh-vis-zeilen  { --ulh-vs: 0.74; --ulh-vh: 288px; }
 /* Die untere Reihe ist hoeher als die obere, und das hat einen Grund und keine Symmetrie: im
    Drilldown sollen VIER Seiten ganz zu sehen sein. Ueber ihnen stehen drei Domainzeilen, die
    Kopfzeile, die Werkzeugleiste und die Kopfzeile des Drilldowns -- zusammen 253px, die vier
    Zeilen kommen mit 136 dazu. Gemessen: die vierte endet bei 389. */
-.ulh-vis-domains { --ulh-vs: 0.74; --ulh-vh: 396px; }
-.ulh-vis-chancen { --ulh-vs: 0.82; --ulh-vh: 330px; }
+.ulh-vis-domains { --ulh-vs: 0.74; --ulh-vh: 410px; }
+.ulh-vis-chancen { --ulh-vs: 0.82; --ulh-vh: 344px; }
 /* ---------- Dritte Sektion: die Quellen -------------------------------------------------------
    Der Kopf steht mittig und ist der groesste Text der Seite -- er traegt die Aussage der Sektion
    allein, ohne Karte darum. Zwei Toene in EINEM Satz: der erste Teil dunkel, der Rest in der
@@ -1716,8 +1751,26 @@
    Beide Vorschauen sind KEINE verkleinerten Bauteile der App, sondern eigene Bilder -- deshalb
    --ulh-vs: 1. Was aus der App kommt, sind die Teile darin: der Marktchip (core.css .up-market)
    und die Form der Karte (Radius, Rahmen, Schatten wie .ulh-vis-tab). */
-.ulh-vis-sprachen { --ulh-vs: 1; --ulh-vh: 330px; }
-.ulh-vis-modelle  { --ulh-vs: 1; --ulh-vh: 330px; }
+.ulh-vis-sprachen { --ulh-vs: 1; --ulh-vh: 344px; }
+.ulh-vis-modelle  { --ulh-vs: 1; --ulh-vh: 344px; }
+/* ---- Der zweite Kartenblock: Shopping und Ads ("Beyond classic GEO", 06.10.) ----
+   Dieselben Karten, derselbe Kasten, dieselben Anteile wie der Block darueber. Eigene Werte hat er
+   nur, wo seine Vorschauen andere Bauteile zeigen:
+     produkte   traegt die Geometrie der Prompt-Tabelle (ulh-vis-zeilen, siehe merkmalKarte)
+     regal      die Balkenliste der App, unskaliert wie die Kurve der ersten Karte
+     werber     dieselbe Balkenliste
+     anzeigen   drei Ad-Karten der App, wie die Tabellen auf 0.74 verkleinert
+   Alle vier auf 288, der Hoehe der ersten Reihe darueber -- beide Reihen gleich hoch.
+   Oben nur ein Teil des Sektionspolsters: der Block folgt direkt auf den ersten, und zwei volle
+   Polster uebereinander (bis 144 + 132px) saehen nach Seitenende aus statt nach Fortsetzung. */
+.ulh-feat.ulh-handel { padding-top: clamp(24px, 4vh, 48px); }
+.ulh-vis-regal, .ulh-vis-werber { --ulh-vs: 1; --ulh-vh: 288px; }
+.ulh-vis-anzeigen { --ulh-vs: 0.74; --ulh-vh: 288px; }
+.ulh-vis-anzeigen .ulh-vis-in { padding: 0 24px; }
+/* Drei Spalten wie das Raster der Ad Library (uad-auf-liste: mindestens 260px, 8px Abstand). */
+.ulh-anz { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+/* Ein Schaustueck: die Karte hebt sich beim Ueberfahren wie in der App, oeffnet aber nichts. */
+.ulh-anz .up-adcard { cursor: default; }
 
 /* Das Band. overflow: hidden am Kasten, die Spur darin faehrt ueber transform -- eine Bewegung
    ueber margin/top wuerde je Bild ein Layout ausloesen. */
@@ -1765,7 +1818,7 @@
   content: ""; position: absolute; left: 0; right: 0; height: 15%;
   pointer-events: none; z-index: 3;
 }
-.ulh-vis-sprachen::before { top: 26px; background: linear-gradient(to bottom, #ffffff 12%, rgba(255,255,255,0) 100%); }
+.ulh-vis-sprachen::before { top: 40px; background: linear-gradient(to bottom, #ffffff 12%, rgba(255,255,255,0) 100%); }
 .ulh-vis-sprachen::after  { bottom: 0;  background: linear-gradient(to top,    #ffffff 12%, rgba(255,255,255,0) 100%); }
 
 /* Die Bahnen. Der Kasten ist der Bezugsrahmen, jeder Ring liegt mittig darin und dreht als
@@ -1778,7 +1831,8 @@
    38 und nicht 26: mit 26 lagen die Zeichen der AEUSSEREN Bahn an ihrem tiefsten Punkt noch ein
    paar Pixel unter der Kante. Der Kasten ist um 12 flacher, die Mitte damit um 6 hoeher -- und
    6px sind genau das, was unten gefehlt hat. */
-.ulh-orb { position: relative; height: calc(100% - 38px); }
+/* 52 = die 38 von damals plus die 14px, um die Polster und Hoehe am 06.10. gewachsen sind. */
+.ulh-orb { position: relative; height: calc(100% - 52px); }
 .ulh-orb-ring {
   position: absolute; left: 50%; top: 50%; margin: 0; border-radius: 50%;
   transform-origin: center center; translate: -50% -50%;
@@ -2817,7 +2871,7 @@
    der ganze Fensterblock in einem Kasten mit "hidden md:block".
    Die Ueberschrift traegt die Sektion auf dem Telefon allein. */
 @media (max-width: 900px) {
-  .ulh-text { padding-bottom: clamp(40px, 8vh, 72px); }
+  .ulh-text { padding-bottom: clamp(48px, 9vh, 88px); }
 }
 
 /* ---------- Fuenfte Sektion: Mira bei der Arbeit ----------------------------------------------
@@ -3363,8 +3417,10 @@
      rechnen -- damit werden Schrift, Abstaende und der Kreis gemeinsam kleiner, statt dass eines
      davon gequetscht wird. */
   .ulh-vis-sprachen .ulh-vis-in, .ulh-vis-modelle .ulh-vis-in,
-  .ulh-vis-linie .ulh-vis-in { width: calc(100% / var(--ulh-vs)); }
-  .ulh-vis-sprachen, .ulh-vis-modelle, .ulh-vis-linie { --ulh-vs: 0.86; }
+  .ulh-vis-linie .ulh-vis-in, .ulh-vis-regal .ulh-vis-in, .ulh-vis-werber .ulh-vis-in { width: calc(100% / var(--ulh-vs)); }
+  .ulh-vis-sprachen, .ulh-vis-modelle, .ulh-vis-linie, .ulh-vis-regal, .ulh-vis-werber { --ulh-vs: 0.86; }
+  /* Die Ad-Karten laufen wie die Tabellen rechts hinaus -- zwei ganz, die dritte angeschnitten. */
+  .ulh-vis-anzeigen .ulh-vis-in { padding: 0; }
 
   /* ---- Die Leiste ----
      Sie steht in derselben Spur wie alles andere; die zwei Knoepfe rechts bekommen weniger
@@ -3465,7 +3521,7 @@
      Inhalts. Mehr passt nicht, und mehr braucht es nicht: man sieht, dass da eine App laeuft. */
   .ulh-vis-in { width: 700px; }
   /* Die zwei Zeichnungen noch etwas kleiner -- auf dem Telefon ist die Karte 332px breit. */
-  .ulh-vis-sprachen, .ulh-vis-modelle, .ulh-vis-linie { --ulh-vs: 0.78; }
+  .ulh-vis-sprachen, .ulh-vis-modelle, .ulh-vis-linie, .ulh-vis-regal, .ulh-vis-werber { --ulh-vs: 0.78; }
   .ulh-nav-rechts .ulh-btn-sec { display: none; }
   .ulh-fuss-in { flex-direction: column; }
   .ulh-geo-mk-t, .ulh-geo-mk-s { font-size: 10.5px; }

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261097;
+  var BUILD = 20261098;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -4007,7 +4007,8 @@
     var name = String(m.name == null ? "" : m.name).trim();
     var lg = String(m.logo_url || m.logo || m.favicon_url || "").trim();
     if (lg.indexOf("//") === 0) lg = "https:" + lg;
-    if (lg && !/^https?:\/\//i.test(lg)) lg = "";
+    /* data:image/ wie in barLogoHtml (06.10., Landingpage: die eigene Marke als eingebettetes SVG). */
+    if (lg && !/^https?:\/\//i.test(lg) && !/^data:image\//i.test(lg)) lg = "";
     /* Ohne Logo, aber mit Domain: das Favicon dieser Domain statt des Buchstabens (05.10., Ads:
        Werbetreibende ausserhalb der getrackten Marken tragen nur ihre Landing-Domain). */
     if (!lg && m.domain) lg = faviconUrl(m.domain);
@@ -14056,7 +14057,9 @@
     if (it && it.flagge != null) return flagHtml(String(it.flagge), "up-bar-flagge" + (cls ? " " + cls : ""));
     var blg = it && it.logo ? String(it.logo) : "";
     if (blg.indexOf("//") === 0) blg = "https:" + blg;
-    if (blg && !/^https?:\/\//i.test(blg)) blg = "";
+    /* data:image/ ist erlaubt (06.10.): die Landingpage traegt die eigene Marke als eingebettetes
+       SVG, und ein Bild aus einer data-Adresse kann im src nichts ausfuehren. */
+    if (blg && !/^https?:\/\//i.test(blg) && !/^data:image\//i.test(blg)) blg = "";
     var ersatz = String((it && it.ersatz) || "globe");
     if (!/^[A-Za-z0-9_-]{1,40}$/.test(ersatz)) ersatz = "globe";
     if (blg) return '<img class="up-bar-logo' + (cls ? " " + cls : "") + '" src="' + esc(blg) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +

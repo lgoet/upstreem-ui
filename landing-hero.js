@@ -30,7 +30,7 @@
   /* Feste Kennungen. Es gibt genau eine Hero-Sektion pro Seite, also braucht keine davon eine
      laufende Nummer -- und feste Namen machen die Demodaten unten lesbar. */
   var ID = { usn: "lh-usn", dph: "lh-dph", vot: "lh-vot", tcd: "lh-tcd", upt: "lh-upt",
-             urt: "lh-urt", udd: "lh-udd", hph: "lh-hph", uhm: "lh-uhm" };
+             urt: "lh-urt", udd: "lh-udd", hph: "lh-hph", uhm: "lh-uhm", ush: "lh-ush" };
 
   /* WARUM DER BLOCK UNTEN NIE VON HAND GETAUSCHT WIRD (28.09. gemeldet: "Export Icons in den
      Buttons sind noch nicht wie in der Hauptapp"). Beim Wechsel des Zeichensatzes am 22.09. sind
@@ -47,7 +47,7 @@
     dph: "<div class=\"up-root up-ph-root dph-root\" data-instance=\"lh-dph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d10%22%2F%3E%3Cpath%20d%3D%22M29%2015.5%2016.2%2048.5H23.1L25.3%2041.9H38.7L40.9%2048.5H47.8L35%2015.5ZM32%2025.4%2028.9%2034.4H35.1Z%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E\" data-mode-default=\"standard\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><!-- KEINE Meta-Zeile auf dem Dashboard. dashboard-page-header.js baut sie zusaetzlich aus, falls sie in einer schon eingebauten Seite noch steht. --><h1 class=\"up-ph-heading\">Dashboard</h1><p class=\"up-ph-desc\">Monitor your AI visibility, performance, and latest developments</p></div><div class=\"dph-topright\"><!-- dashboard-page-header.js fuellt das weiter bei setDashboardPageHeaderKpis(), SICHTBAR ist es nicht mehr (dashboard-page-header.css: .dph-kpis { display: none }). Das Markup bleibt, damit der bestehende Setter nicht ins Leere laeuft. --><div class=\"dph-kpis\"></div><div class=\"dph-tools\"><!-- Nur das Zeichen, kein Wort: library-big -- dasselbe wie im Onboarding-Kopf. dashboard-page-header.js setzt es beim Init auch in einer schon eingebauten Seite und haengt .up-ph-iconbtn dazu. --><button class=\"dph-docsbtn up-ph-iconbtn\" type=\"button\" data-tip=\"Open Documentation\" aria-label=\"Open Documentation\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"8\" height=\"18\" x=\"3\" y=\"3\" rx=\"1\" /><path d=\"M7 3v18\" /><path d=\"M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z\" /></svg></button><!-- Lucide refresh-cw. dashboard-page-header.js setzt dasselbe Zeichen beim Init aus core (UC.icon(\"refreshCw\")) -- hier steht es fuer den Fall, dass das JS noch unterwegs ist, damit der Knopf nicht leer aufblitzt. Dieselben Pfade, geprueft gegen lucide-static. --><!-- Suche: drueckt Cmd+K (Strg+K) -- darauf hoert die Palette (Quick Actions) selbst. Kein Workflow noetig. Wer zusaetzlich einen will, setzt data-search-fn am Wurzelelement -- dann geht auch ein Ereignis heraus. dashboard-page-header.js baut diesen Knopf auch in eine schon eingebaute Seite. --><button class=\"dph-searchbtn up-ph-iconbtn\" type=\"button\" data-tip=\"Quick Actions\" aria-label=\"Open Quick Actions\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg></button><button class=\"dph-refreshbtn up-ph-iconbtn\" type=\"button\" aria-label=\"Refresh\" data-tip=\"Refresh Data\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /><path d=\"M21 3v5h-5\" /><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /><path d=\"M8 16H3v5\" /></svg></button></div></div></div></div>",
     vot: "<div class=\"up-root vot-root\" data-instance=\"lh-vot\" data-cdn-pin=\"\" data-isdark=\"no\" data-export-instance=\"\" data-processing=\"no\" data-processing2=\"no\"><div class=\"vot-unit vot-unit-left\"><div class=\"vot-head\"><div class=\"vot-heading\">Visibility over Time</div><div class=\"vot-head-tools\"><div class=\"vc-gran\" role=\"tablist\" aria-label=\"Granularity\"><button class=\"vc-gran-btn is-active\" data-gran=\"day\" type=\"button\" role=\"tab\" data-tip=\"Day\" aria-label=\"Day\">D</button><button class=\"vc-gran-btn\" data-gran=\"week\" type=\"button\" role=\"tab\" data-tip=\"Week\" aria-label=\"Week\">W</button><button class=\"vc-gran-btn\" data-gran=\"month\" type=\"button\" role=\"tab\" data-tip=\"Month\" aria-label=\"Month\">M</button></div><button class=\"vot-maximize vot-max-top vot-iconbtn\" type=\"button\" data-tip=\"Minimize\" aria-label=\"Minimize\"><svg class=\"ic-max\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 3h6v6\"/><path d=\"m21 3-7 7\"/><path d=\"m3 21 7-7\"/><path d=\"M9 21H3v-6\"/></svg><svg class=\"ic-min\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m14 10 7-7\"/><path d=\"M20 10h-6V4\"/><path d=\"m3 21 7-7\"/><path d=\"M4 14h6v6\"/></svg></button></div></div><div class=\"vot-box vot-box-left\"><div class=\"vot-panel-body\"><button class=\"vot-scale-btn\" type=\"button\" data-tip=\"Chart Settings\" aria-label=\"Chart Settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z\"/><path d=\"M8.5 10C7.67157 10 7 9.32843 7 8.5C7 7.67157 7.67157 7 8.5 7C9.32843 7 10 7.67157 10 8.5C10 9.32843 9.32843 10 8.5 10Z\"/><path d=\"M15.5 17C16.3284 17 17 16.3284 17 15.5C17 14.6716 16.3284 14 15.5 14C14.6716 14 14 14.6716 14 15.5C14 16.3284 14.6716 17 15.5 17Z\"/><path d=\"M10 8.5L17 8.5\"/><path d=\"M14 15.5L7 15.5\"/></svg></button><div class=\"up-line-wrap\"><canvas class=\"up-line-canvas\"></canvas></div><div class=\"up-legend\"></div></div></div></div><div class=\"vot-unit vot-unit-right\"><div class=\"vot-head\"><div class=\"vot-heading vot-heading-right\"><span class=\"vot-head-label\">Top Brands</span><span class=\"vot-head-sep\"></span><span class=\"vot-head-count\"></span></div><div class=\"vot-head-tools\"><div class=\"vot-sort\"><button class=\"vot-sort-btn vot-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"vot-filter\"><button class=\"vot-filter-btn vot-iconbtn\" type=\"button\" data-tip=\"Filter brands\" aria-label=\"Filter\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 21L7 18\"/><path d=\"M17 21L17 15\"/><path d=\"M17 6L17 3\"/><path d=\"M7 9L7 3\"/><path d=\"M7 18C6.06812 18 5.60218 18 5.23463 17.8478C4.74458 17.6448 4.35523 17.2554 4.15224 16.7654C4 16.3978 4 15.9319 4 15C4 14.0681 4 13.6022 4.15224 13.2346C4.35523 12.7446 4.74458 12.3552 5.23463 12.1522C5.60218 12 6.06812 12 7 12C7.93188 12 8.39782 12 8.76537 12.1522C9.25542 12.3552 9.64477 12.7446 9.84776 13.2346C10 13.6022 10 14.0681 10 15C10 15.9319 10 16.3978 9.84776 16.7654C9.64477 17.2554 9.25542 17.6448 8.76537 17.8478C8.39782 18 7.93188 18 7 18Z\"/><path d=\"M17 12C16.0681 12 15.6022 12 15.2346 11.8478C14.7446 11.6448 14.3552 11.2554 14.1522 10.7654C14 10.3978 14 9.93188 14 9C14 8.06812 14 7.60218 14.1522 7.23463C14.3552 6.74458 14.7446 6.35523 15.2346 6.15224C15.6022 6 16.0681 6 17 6C17.9319 6 18.3978 6 18.7654 6.15224C19.2554 6.35523 19.6448 6.74458 19.8478 7.23463C20 7.60218 20 8.06812 20 9C20 9.93188 20 10.3978 19.8478 10.7654C19.6448 11.2554 19.2554 11.6448 18.7654 11.8478C18.3978 12 17.9319 12 17 12Z\"/></svg><span class=\"vot-filter-badge\"></span></button><div class=\"up-ment-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"vot-export vot-iconbtn\" type=\"button\" data-tip=\"Export\" aria-label=\"Export\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg></button><button class=\"vot-maximize vot-max-right vot-iconbtn\" type=\"button\" data-tip=\"Maximize\" aria-label=\"Maximize\"><svg class=\"ic-max\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 3h6v6\"/><path d=\"m21 3-7 7\"/><path d=\"m3 21 7-7\"/><path d=\"M9 21H3v-6\"/></svg><svg class=\"ic-min\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m14 10 7-7\"/><path d=\"M20 10h-6V4\"/><path d=\"m3 21 7-7\"/><path d=\"M4 14h6v6\"/></svg></button><button class=\"vot-goto vot-iconbtn\" type=\"button\" data-tip=\"Open\" aria-label=\"Open\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 6.65032C9 6.65032 15.9383 6.10759 16.9154 7.08463C17.8924 8.06167 17.3496 15 17.3496 15M16.5 7.5L6.5 17.5\"/></svg></button></div></div><div class=\"vot-box vot-box-right\"><div class=\"vt-table\"></div></div></div></div>",
     tcd: "<div class=\"up-root tcd-root\" data-instance=\"lh-tcd\" data-cdn-pin=\"\" data-isdark=\"no\" data-export-instance=\"\" data-processing=\"no\" data-processing2=\"no\"><div class=\"tcd-unit tcd-unit-left\"><div class=\"tcd-head\"><div class=\"tcd-mode\" role=\"tablist\" aria-label=\"Mode\"><button class=\"tcd-mode-btn is-active\" data-mode=\"domain\" type=\"button\" role=\"tab\">Domains</button><button class=\"tcd-mode-btn\" data-mode=\"url\" type=\"button\" role=\"tab\">URLs</button></div><div class=\"tcd-head-tools\"><div class=\"tcl-seg\" role=\"tablist\" aria-label=\"Chart type\"><button class=\"tcl-seg-btn is-active\" data-chart=\"doughnut\" role=\"tab\" aria-selected=\"true\" data-tip=\"Doughnut\" aria-label=\"Doughnut\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.5 15.8278C17.9985 21.756 9.86407 23.4835 5.20143 18.8641C0.629484 14.3347 2.04493 6.12883 8.05653 3.5\"/><path d=\"M17.6831 12.5C19.5708 12.5 20.5146 12.5 21.1241 11.655C21.1469 11.6234 21.1848 11.5667 21.2052 11.5336C21.7527 10.6471 21.4705 9.966 20.9063 8.60378C20.3946 7.36853 19.6447 6.24615 18.6993 5.30073C17.7538 4.35531 16.6315 3.60536 15.3962 3.0937C14.034 2.52946 13.3529 2.24733 12.4664 2.79477C12.4333 2.81523 12.3766 2.85309 12.345 2.87587C11.5 3.4854 11.5 4.42922 11.5 6.31686V8.42748C11.5 10.3473 11.5 11.3072 12.0964 11.9036C12.6928 12.5 13.6527 12.5 15.5725 12.5H17.6831Z\"/></svg></button><button class=\"tcl-seg-btn\" data-chart=\"bar\" role=\"tab\" aria-selected=\"false\" data-tip=\"Bars\" aria-label=\"Bars\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3V13C3 16.7712 3 18.6569 4.17157 19.8284C5.34315 21 7.22876 21 11 21H21\"/><path d=\"M7 8V9C7 9.55228 7.44772 10 8 10H18C18.5523 10 19 9.55228 19 9V8C19 7.44772 18.5523 7 18 7H8C7.44772 7 7 7.44772 7 8Z\"/><path d=\"M7 15V16C7 16.5523 7.44772 17 8 17H14C14.5523 17 15 16.5523 15 16V15C15 14.4477 14.5523 14 14 14H8C7.44772 14 7 14.4477 7 15Z\"/></svg></button></div></div></div><div class=\"tcd-box\"><div class=\"tcd-panel-body\"><div class=\"tcl-top-total\"><span class=\"n\">0</span><span class=\"lbl\">Citations</span></div><div class=\"up-donut-body\"></div></div></div></div><div class=\"tcd-unit tcd-unit-right\"><div class=\"tcd-head\"><div class=\"tcd-heading tcd-heading-right\"><span class=\"tcd-head-label\">Top Domains</span><span class=\"tcd-head-sep\"></span><span class=\"tcd-head-count\"></span></div><div class=\"tcd-head-tools\"><button class=\"tcd-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"tcd-brand-toggle-lbl\"><img class=\"tcd-brand-logo\" src=\"\" style=\"display:none\"/><span class=\"tcd-brand-label\"></span></span><span class=\"tcd-brand-check\"><svg class=\"tcd-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7\"/></svg><svg class=\"tcd-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.9922 12L2.99219 12\"/></svg></span></button><div class=\"tcd-filter\"><button class=\"tcd-filter-btn tcd-iconbtn\" type=\"button\" data-tip=\"Filter\" aria-label=\"Filter\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 21L7 18\"/><path d=\"M17 21L17 15\"/><path d=\"M17 6L17 3\"/><path d=\"M7 9L7 3\"/><path d=\"M7 18C6.06812 18 5.60218 18 5.23463 17.8478C4.74458 17.6448 4.35523 17.2554 4.15224 16.7654C4 16.3978 4 15.9319 4 15C4 14.0681 4 13.6022 4.15224 13.2346C4.35523 12.7446 4.74458 12.3552 5.23463 12.1522C5.60218 12 6.06812 12 7 12C7.93188 12 8.39782 12 8.76537 12.1522C9.25542 12.3552 9.64477 12.7446 9.84776 13.2346C10 13.6022 10 14.0681 10 15C10 15.9319 10 16.3978 9.84776 16.7654C9.64477 17.2554 9.25542 17.6448 8.76537 17.8478C8.39782 18 7.93188 18 7 18Z\"/><path d=\"M17 12C16.0681 12 15.6022 12 15.2346 11.8478C14.7446 11.6448 14.3552 11.2554 14.1522 10.7654C14 10.3978 14 9.93188 14 9C14 8.06812 14 7.60218 14.1522 7.23463C14.3552 6.74458 14.7446 6.35523 15.2346 6.15224C15.6022 6 16.0681 6 17 6C17.9319 6 18.3978 6 18.7654 6.15224C19.2554 6.35523 19.6448 6.74458 19.8478 7.23463C20 7.60218 20 8.06812 20 9C20 9.93188 20 10.3978 19.8478 10.7654C19.6448 11.2554 19.2554 11.6448 18.7654 11.8478C18.3978 12 17.9319 12 17 12Z\"/></svg><span class=\"tcd-filter-badge\"></span></button><div class=\"up-filter-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"tcd-export tcd-iconbtn\" type=\"button\" data-tip=\"Export\" aria-label=\"Export\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg></button><button class=\"tcd-goto tcd-iconbtn\" type=\"button\" data-tip=\"Open\" aria-label=\"Open\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 6.65032C9 6.65032 15.9383 6.10759 16.9154 7.08463C17.8924 8.06167 17.3496 15 17.3496 15M16.5 7.5L6.5 17.5\"/></svg></button></div></div><div class=\"tcd-box\"><div class=\"tct-table\"></div></div></div></div>",
-    mqa: "<div id=\"mira-quick-actions\" data-theme=\"light\" data-team=\"\" data-cdn-pin=\"\" data-export-instance=\"\"><button class=\"mqa-trigger\" type=\"button\" aria-label=\"Open quick actions\"><svg class=\"mqa-trigger-ic\" viewBox=\"0 0 24 24\"><path d=\"M17 17L21 21\"/><path d=\"M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z\"/></svg><span class=\"mqa-trigger-label\">Quick Actions</span><span class=\"mqa-kbd\" data-kbd>\u2318K</span></button><div class=\"mqa-overlay\" role=\"presentation\" aria-hidden=\"true\"><div class=\"mqa-modal\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Quick actions\"><div class=\"mqa-search\"><svg class=\"mqa-search-ic\" viewBox=\"0 0 24 24\"><path d=\"M17 17L21 21\"/><path d=\"M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z\"/></svg><span class=\"mqa-chips\" id=\"mqa-chips\"></span><span class=\"mqa-inputwrap\"><input class=\"mqa-input\" type=\"text\" autocomplete=\"off\" spellcheck=\"false\" placeholder=\"\" aria-label=\"Search\" /><span class=\"mqa-ph\" id=\"mqa-ph\" aria-hidden=\"true\">Search brands, domains, URLs, prompts\u2026</span></span><span class=\"mqa-ph-cmd\" id=\"mqa-ph-cmd\" aria-hidden=\"true\">/ for filters</span><span class=\"mqa-kbd mqa-esc\" id=\"mqa-esc\">esc</span><button class=\"mqa-fav is-hidden\" type=\"button\" id=\"mqa-fav\" aria-pressed=\"false\" aria-label=\"Save as Favorite\"><svg viewBox=\"0 0 24 24\"><path d=\"M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z\" /></svg></button><button class=\"mqa-clear is-hidden\" type=\"button\" id=\"mqa-clear\" aria-label=\"Reset search\"><svg viewBox=\"0 0 24 24\"><path d=\"M19.5 5.5L18.8803 15.5251C18.7219 18.0864 18.6428 19.3671 18.0008 20.2879C17.6833 20.7431 17.2747 21.1273 16.8007 21.416C15.8421 22 14.559 22 11.9927 22C9.42312 22 8.1383 22 7.17905 21.4149C6.7048 21.1257 6.296 20.7408 5.97868 20.2848C5.33688 19.3626 5.25945 18.0801 5.10461 15.5152L4.5 5.5\"/><path d=\"M3 5.5H21M16.0557 5.5L15.3731 4.09173C14.9196 3.15626 14.6928 2.68852 14.3017 2.39681C14.215 2.3321 14.1231 2.27454 14.027 2.2247C13.5939 2 13.0741 2 12.0345 2C10.9688 2 10.436 2 9.99568 2.23412C9.8981 2.28601 9.80498 2.3459 9.71729 2.41317C9.32164 2.7167 9.10063 3.20155 8.65861 4.17126L8.05292 5.5\"/><path d=\"M9.5 16.5L9.5 10.5\"/><path d=\"M14.5 16.5L14.5 10.5\"/></svg></button></div><!-- Die zwei Woerter in EIGENEN Spans: ein Satz aus drei Knoten laesst sich nicht uebersetzen. quick-actions.js zieht das bei bereits eingebauten Elementen zur Laufzeit nach (ctaTrennen). --><button class=\"mqa-entercta is-hidden\" type=\"button\" id=\"mqa-entercta\" data-worte=\"1\"><span>Press</span><span class=\"mqa-kbd\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 4v7a4 4 0 0 1-4 4H4\" /><path d=\"m9 10-5 5 5 5\" /></svg>Enter</span><span>to search</span></button><div class=\"mqa-scroll\"><div class=\"mqa-results\" aria-live=\"polite\"></div></div><div class=\"mqa-recent-wrap\" id=\"mqa-recent\"></div><div class=\"mqa-actions-wrap\"></div></div></div></div>",
+    mqa: "<div id=\"mira-quick-actions\" data-theme=\"light\" data-team=\"\" data-cdn-pin=\"\" data-export-instance=\"\"><button class=\"mqa-trigger\" type=\"button\" aria-label=\"Open quick actions\"><svg class=\"mqa-trigger-ic\" viewBox=\"0 0 24 24\"><path d=\"M17 17L21 21\"/><path d=\"M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z\"/></svg><span class=\"mqa-trigger-label\">Quick Actions</span><span class=\"mqa-kbd\" data-kbd>\u2318K</span></button><div class=\"mqa-overlay\" role=\"presentation\" aria-hidden=\"true\"><div class=\"mqa-modal\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Quick actions\"><div class=\"mqa-search\"><svg class=\"mqa-search-ic\" viewBox=\"0 0 24 24\"><path d=\"M17 17L21 21\"/><path d=\"M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z\"/></svg><span class=\"mqa-chips\" id=\"mqa-chips\"></span><span class=\"mqa-inputwrap\"><input class=\"mqa-input\" type=\"text\" autocomplete=\"off\" spellcheck=\"false\" placeholder=\"\" aria-label=\"Search\" /><span class=\"mqa-ph\" id=\"mqa-ph\" aria-hidden=\"true\"><span class=\"mqa-ph-lang\">Search brands, domains, URLs, prompts\u2026</span><span class=\"mqa-ph-kurz\">Search\u2026</span></span></span><span class=\"mqa-ph-cmd\" id=\"mqa-ph-cmd\" aria-hidden=\"true\">/ for filters</span><span class=\"mqa-kbd mqa-esc\" id=\"mqa-esc\">esc</span><button class=\"mqa-fav is-hidden\" type=\"button\" id=\"mqa-fav\" aria-pressed=\"false\" aria-label=\"Save as Favorite\"><svg viewBox=\"0 0 24 24\"><path d=\"M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z\" /></svg></button><button class=\"mqa-clear is-hidden\" type=\"button\" id=\"mqa-clear\" aria-label=\"Reset search\"><svg viewBox=\"0 0 24 24\"><path d=\"M19.5 5.5L18.8803 15.5251C18.7219 18.0864 18.6428 19.3671 18.0008 20.2879C17.6833 20.7431 17.2747 21.1273 16.8007 21.416C15.8421 22 14.559 22 11.9927 22C9.42312 22 8.1383 22 7.17905 21.4149C6.7048 21.1257 6.296 20.7408 5.97868 20.2848C5.33688 19.3626 5.25945 18.0801 5.10461 15.5152L4.5 5.5\"/><path d=\"M3 5.5H21M16.0557 5.5L15.3731 4.09173C14.9196 3.15626 14.6928 2.68852 14.3017 2.39681C14.215 2.3321 14.1231 2.27454 14.027 2.2247C13.5939 2 13.0741 2 12.0345 2C10.9688 2 10.436 2 9.99568 2.23412C9.8981 2.28601 9.80498 2.3459 9.71729 2.41317C9.32164 2.7167 9.10063 3.20155 8.65861 4.17126L8.05292 5.5\"/><path d=\"M9.5 16.5L9.5 10.5\"/><path d=\"M14.5 16.5L14.5 10.5\"/></svg></button></div><!-- Die zwei Woerter in EIGENEN Spans: ein Satz aus drei Knoten laesst sich nicht uebersetzen. quick-actions.js zieht das bei bereits eingebauten Elementen zur Laufzeit nach (ctaTrennen). --><button class=\"mqa-entercta is-hidden\" type=\"button\" id=\"mqa-entercta\" data-worte=\"1\"><span>Press</span><span class=\"mqa-kbd\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 4v7a4 4 0 0 1-4 4H4\" /><path d=\"m9 10-5 5 5 5\" /></svg>Enter</span><span>to search</span></button><div class=\"mqa-scroll\"><div class=\"mqa-results\" aria-live=\"polite\"></div></div><div class=\"mqa-recent-wrap\" id=\"mqa-recent\"></div><div class=\"mqa-actions-wrap\"></div></div></div></div>",
     mira: "<div class=\"up-root am-root\" data-typespeed=\"1.6\" id=\"ask-mira\" data-instance=\"lh-mira\" data-cdn-pin=\"\" data-isdark=\"no\"><div class=\"am-shell\"><!-- ===================== HERO ===================== --><header class=\"am-hero\"><div class=\"am-hero-inner\"><div class=\"am-hero-text\"><div class=\"am-title-row\"><span class=\"am-brand\"><span class=\"am-logo-mark\" aria-hidden=\"true\"></span><span class=\"am-wordmark\">mira</span></span><span class=\"am-status-pill\" id=\"am-status-pill\"><span class=\"am-status-dot\"></span><span id=\"am-status-text\">Ready</span></span></div><p class=\"am-subline\">Chat with your AI Search data.</p></div><div class=\"am-chat-titlebar\" id=\"am-chat-titlebar\" aria-hidden=\"true\"><button class=\"am-ct-back\" id=\"am-ct-back\" type=\"button\" aria-label=\"Back to start\" data-tip=\"Back to start\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path d=\"M15 6C15 6 9.00001 10.4189 9 12C8.99999 13.5812 15 18 15 18\"/></svg></button><button class=\"am-ct-name\" id=\"am-ct-name\" type=\"button\" data-tip=\"Rename chat\"><span class=\"am-ct-text\" id=\"am-ct-text\"></span><span class=\"am-ct-skeleton\" id=\"am-ct-skeleton\" aria-hidden=\"true\"></span></button><button class=\"am-ct-chev\" id=\"am-ct-chev\" type=\"button\" aria-label=\"Chat options\" aria-haspopup=\"menu\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></button><input class=\"am-ct-input\" id=\"am-ct-input\" type=\"text\" maxlength=\"120\" aria-label=\"Chat name\"><span class=\"am-ct-edit-actions\" id=\"am-ct-edit-actions\"><button class=\"am-ct-mini\" id=\"am-ct-save\" type=\"button\" data-tip=\"Save\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path d=\"M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7\"/></svg></button><button class=\"am-ct-mini\" id=\"am-ct-discard\" type=\"button\" data-tip=\"Discard\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button></span></div><button class=\"am-ghost-btn am-prev-btn\" type=\"button\" id=\"am-open-prev\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic am-prev-ic\"><path d=\"M11 3H13C16.7712 3 18.6569 3 19.8284 4.17157C21 5.34315 21 7.22876 21 11V13C21 16.7712 21 18.6569 19.8284 19.8284C18.6569 21 16.7712 21 13 21H11C7.22876 21 5.34315 21 4.17157 19.8284C3 18.6569 3 16.7712 3 13V11C3 7.22876 3 5.34315 4.17157 4.17157C5.34315 3 7.22876 3 11 3Z\"/><path d=\"M8.00488 16.0049L8.00488 8.00488\"/></svg><span class=\"am-prev-label-full\">All Chats</span><span class=\"am-prev-label-short\">Chats</span></button></div></header><!-- ===================== CHAT VIEW ===================== --><main class=\"am-chat\" id=\"am-chat\"><div class=\"am-messages\" id=\"am-messages\"></div><!-- Suggested questions (shown when empty) --><div class=\"am-suggested\" id=\"am-suggested\"><div class=\"am-welcome\"><h2 class=\"am-welcome-title\" id=\"am-welcome-title\">How can I help you today?</h2></div><p class=\"am-suggested-label\" id=\"am-suggested-label\">Try asking</p><div class=\"am-suggested-grid\" id=\"am-suggested-grid\"></div><div class=\"am-quick\" id=\"am-quick\" aria-label=\"Quick actions\"></div></div></main><!-- ===================== COMPOSER ===================== --><footer class=\"am-composer-area\"><button class=\"am-scroll-bottom\" type=\"button\" id=\"am-scroll-bottom\" aria-label=\"Scroll to latest\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></button><div class=\"am-composer-shell\" id=\"am-composer-shell\"><!-- ZWEITE FASSUNG (08.09.). Was hier stand: Textzeile und Aktionsspalte nebeneinander, ein Fader-Knopf und darunter ein ausklappbares Fach mit \"Answer detail\" und der Modellwahl. Beides ist weg -- Modell UND Aufwand liegen jetzt in EINER Schaltflaeche unten links, deren Menue nach oben aufgeht, und links davon ein Plus fuer den Entitaets-Picker. WICHTIG FUER EINEN BESTEHENDEN EINBAU: ask-mira.js baut das alte Markup zur Laufzeit selbst auf diese Fassung um (composerUmbauen). Wer sein Element in Bubble nicht anfasst, bekommt die neue Leiste trotzdem -- dieses Markup hier ist die Aufraeumarbeit fuer NEUINSTALLATIONEN, keine Voraussetzung. --><div class=\"am-composer is-v2\" id=\"am-composer\" data-am-composer=\"v5\"><!-- Der Picker: oberhalb des Feldes, auf seiner ganzen Breite. Er haengt AN .am-composer (position: relative) und nicht am Koerper: im Top Layer waere die volle Breite des Feldes nicht mehr herstellbar. --><div class=\"am-pick-panel\" id=\"am-pick-panel\" aria-hidden=\"true\"><div class=\"am-pick-search\"><svg width=\"24\" height=\"24\" class=\"am-pick-sic\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M17 17L21 21\"/><path d=\"M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z\"/></svg><span class=\"am-pick-chips\" id=\"am-pick-chips\"></span><span class=\"am-pick-inwrap\"><input class=\"am-pick-input\" id=\"am-pick-input\" type=\"text\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search your workspace\"></span><span class=\"am-pick-count\" id=\"am-pick-count\"></span></div><!-- Ueberschrift UND Chips in EINER Zeile, 16px auseinander, links ausgerichtet. --><div class=\"am-pick-crow\" id=\"am-pick-crow\"><p class=\"am-pick-h\" id=\"am-pick-h\"></p><!-- An der Stelle des frueheren Umschalters: die Befehle als Chips -- Brand, Prompt, Domain, URL. Getippt werden sie ueber \"/\" wie in Quick Actions. --><div class=\"am-pick-cmds\" id=\"am-pick-cmds\"></div></div><div class=\"am-pick-scroll\" id=\"am-pick-scroll\"><div class=\"am-pick-list\" id=\"am-pick-list\" role=\"listbox\" aria-live=\"polite\"></div></div></div><div class=\"am-quote-slot\" id=\"am-quote-slot\"></div><div class=\"am-input-wrap\"><!-- Die uebernommenen Bezuege stehen IM Textfeld, als erstes -- wie in Prompt Research (11.09.). Der Text geht direkt hinter der letzten Pille weiter: das Textfeld bekommt dafuer einen Einzug, den ask-mira.js aus der Lage der Pillen rechnet. ask-mira.js haengt den Streifen auch in einem aelteren eingebauten Element hierher um -- diese Stelle ist die Aufraeumarbeit fuer Neuinstallationen. --><div class=\"am-picks\" id=\"am-picks\"></div><textarea class=\"am-textarea\" id=\"am-textarea\" rows=\"1\" maxlength=\"2800\" placeholder=\"\"></textarea><div class=\"am-ph-loop\" id=\"am-ph-loop\" aria-hidden=\"true\"><span class=\"am-ph-text\" id=\"am-ph-text\">Ask Mira...</span></div></div><div class=\"am-actions\"><div class=\"am-act-l\"><button class=\"am-icon-action am-pick-btn\" type=\"button\" id=\"am-pick-btn\" aria-label=\"Add a reference\" aria-expanded=\"false\" data-tip=\"Add a reference\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M11.9922 4.00012V20.0001M19.9922 12.0001H3.99222\"/></svg></button></div><div class=\"am-act-r\"><div class=\"am-eff\" id=\"am-eff\"><button class=\"am-eff-btn\" type=\"button\" id=\"am-eff-btn\" aria-haspopup=\"true\" aria-expanded=\"false\"><span class=\"am-eff-name\" id=\"am-eff-name\"></span><span class=\"am-eff-lvl\" id=\"am-eff-lvl\"></span><svg width=\"24\" height=\"24\" class=\"am-eff-chev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></button><div class=\"am-eff-menu\" id=\"am-eff-menu\" role=\"dialog\" aria-label=\"Model and effort\"><button class=\"am-eff-head\" type=\"button\" id=\"am-eff-head\" aria-expanded=\"false\"><span class=\"am-eff-hname\" id=\"am-eff-hname\"></span><span class=\"am-eff-hlvl\" id=\"am-eff-hlvl\"></span><svg width=\"24\" height=\"24\" class=\"am-eff-hchev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M9.00005 18C9.00005 18 15 13.5811 15 12C15 10.4188 9 6 9 6\"/></svg></button><!-- EIN Rumpf um beide Ansichten; seine Hoehe setzt ask-mira.js gemessen, damit das Menue beim Umschalten weich waechst statt zu springen. --><div class=\"am-eff-body\" id=\"am-eff-body\"><div class=\"am-eff-pane am-eff-slider\" id=\"am-eff-slider\"><div class=\"am-eff-track\" id=\"am-eff-track\" role=\"slider\" tabindex=\"0\" aria-valuemin=\"0\" aria-valuemax=\"2\" aria-valuenow=\"1\"><span class=\"am-eff-fill\" id=\"am-eff-fill\"></span><span class=\"am-eff-ultra\" id=\"am-eff-ultra\" aria-hidden=\"true\"><!-- Die Punkte in EIGENER Schicht: nur sie tragen den Ausblender nach links, der Verlauf darunter steht auf ganzer Breite. --><span class=\"am-eff-dots\" id=\"am-eff-dots\"></span></span><span class=\"am-eff-dot\" data-i=\"0\"></span><span class=\"am-eff-dot\" data-i=\"1\"></span><span class=\"am-eff-dot\" data-i=\"2\"></span><span class=\"am-eff-thumb\" id=\"am-eff-thumb\"></span></div><div class=\"am-eff-labels\" id=\"am-eff-labels\"></div></div><div class=\"am-eff-pane am-eff-models\" id=\"am-eff-models\"></div><p class=\"am-eff-note\" id=\"am-eff-note\"></p></div></div></div><button class=\"am-icon-action am-mic\" type=\"button\" id=\"am-mic\" aria-label=\"Voice input\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M7 6.5C7 4.01472 9.01472 2 11.5 2C13.9853 2 16 4.01472 16 6.5V11.5C16 13.9853 13.9853 16 11.5 16C9.01472 16 7 13.9853 7 11.5V6.5Z\"/><path d=\"M11.5 19H11.0828C7.57267 19 4.57706 16.4623 4 13M11.5 19H11.9172C15.4273 19 18.4229 16.4623 19 13M11.5 19V22\"/></svg></button><button class=\"am-send\" type=\"button\" id=\"am-send\" aria-label=\"Send message\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic am-ic-send\"><path d=\"M12 19V5\"/><path d=\"M5 12L12 5L19 12\"/></svg><span class=\"am-send-spinner\" aria-hidden=\"true\"></span></button></div></div><div class=\"am-rec\" id=\"am-rec\" aria-hidden=\"true\"><span class=\"am-rec-live\"><span class=\"am-rec-dot\"></span><span class=\"am-rec-time\" id=\"am-rec-time\">0:00</span></span><div class=\"am-rec-wave\"><canvas class=\"am-rec-canvas\" id=\"am-rec-canvas\"></canvas></div><span class=\"am-rec-spring\"></span><div class=\"am-rec-actions\"><button class=\"am-rec-btn am-rec-cancel\" type=\"button\" id=\"am-rec-cancel\" aria-label=\"Discard recording\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button><button class=\"am-rec-btn am-rec-confirm\" type=\"button\" id=\"am-rec-confirm\" aria-label=\"Send recording\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7\"/></svg></button></div></div></div><div class=\"am-rec-note\" id=\"am-rec-note\" role=\"status\" aria-live=\"polite\"></div></div></footer><!-- ===================== PREVIOUS CHATS PANEL ===================== --><div class=\"am-prev-scrim\" id=\"am-prev-scrim\" hidden></div><aside class=\"am-prev-panel\" id=\"am-prev-panel\" aria-hidden=\"true\"><div class=\"am-prev-head\"><p class=\"am-prev-title\">Previous chats</p><button class=\"am-icon-btn\" type=\"button\" id=\"am-close-prev\" aria-label=\"Close\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button></div><div class=\"am-prev-toolbar\"><button class=\"am-newchat\" type=\"button\" id=\"am-new-chat\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M11.9922 4.00012V20.0001M19.9922 12.0001H3.99222\"/></svg><span>New Chat</span></button><button class=\"am-settings-btn\" type=\"button\" id=\"am-settings-btn\" aria-label=\"Settings\" data-tip=\"Settings\" aria-expanded=\"false\"></button></div><div class=\"am-hl-panel\" id=\"am-hl-settings-panel\"><div class=\"am-set-row\"><label class=\"am-set-label\">Brand Highlights</label><div class=\"am-dd\" id=\"am-dd-brand\" data-set=\"brand\"><button class=\"am-dd-trigger\" type=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"false\"><span class=\"am-dd-value\">Logo</span><svg width=\"24\" height=\"24\" class=\"am-dd-chev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></button><div class=\"am-dd-menu\" role=\"listbox\"><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"logo\"><span class=\"am-dd-check\"></span><span>Logo</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"icon\"><span class=\"am-dd-check\"></span><span>Icon</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"none\"><span class=\"am-dd-check\"></span><span>No Highlight</span><span></span></button></div></div></div><div class=\"am-set-row\"><label class=\"am-set-label\">Citation Highlights</label><div class=\"am-dd\" id=\"am-dd-citation\" data-set=\"citation\"><button class=\"am-dd-trigger\" type=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"false\"><span class=\"am-dd-value\">Icon</span><svg width=\"24\" height=\"24\" class=\"am-dd-chev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></button><div class=\"am-dd-menu\" role=\"listbox\"><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"icon\"><span class=\"am-dd-check\"></span><span>Icon</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"favicon\"><span class=\"am-dd-check\"></span><span>Favicon</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"none\"><span class=\"am-dd-check\"></span><span>No Highlight</span><span></span></button></div></div></div><div class=\"am-set-row\"><label class=\"am-set-label\">Response Highlights</label><div class=\"am-dd\" id=\"am-dd-response\" data-set=\"response\"><button class=\"am-dd-trigger\" type=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"false\"><span class=\"am-dd-value\">Logo</span><svg width=\"24\" height=\"24\" class=\"am-dd-chev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></button><div class=\"am-dd-menu\" role=\"listbox\"><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"logo\"><span class=\"am-dd-check\"></span><span>Logo</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"icon\"><span class=\"am-dd-check\"></span><span>Icon</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"none\"><span class=\"am-dd-check\"></span><span>No Highlight</span><span></span></button></div></div></div></div><div class=\"am-prev-list\" id=\"am-prev-list\"></div></aside></div></div>",
     pph: "<div class=\"up-root up-ph-root pph-root\" data-instance=\"lh-pph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d10%22%2F%3E%3Cpath%20d%3D%22M29%2015.5%2016.2%2048.5H23.1L25.3%2041.9H38.7L40.9%2048.5H47.8L35%2015.5ZM32%2025.4%2028.9%2034.4H35.1Z%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Database</span></div><h1 class=\"up-ph-heading\">Prompt Insights</h1><p class=\"up-ph-desc\">Manage Prompts, Topics and monitor latest Responses</p></div><div class=\"pph-topright\"><button class=\"up-ph-addbtn up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\" /><path d=\"M12 5v14\" /></svg><span>Add <span class=\"up-ph-addbtn-full\">Prompts</span></span></button><button class=\"pph-refreshbtn up-ph-iconbtn\" type=\"button\" aria-label=\"Refresh\" data-tip=\"Refresh Data\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /><path d=\"M21 3v5h-5\" /><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /><path d=\"M8 16H3v5\" /></svg></button></div></div><!-- UC.makePageNav (core.js) builds the three tab items + the sliding indicator into this on init. --><div class=\"up-ph-nav\" role=\"tablist\"></div></div>",
     upt: "<div class=\"up-root upt-root\" data-instance=\"lh-upt\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"\" data-sticky=\"no\" data-sticky-top=\"171\" data-export-instance=\"\"><div class=\"up-head\"><div class=\"up-heading\"><span class=\"up-head-label\">Prompts</span><span class=\"up-head-sep\"></span><span class=\"up-head-count\"></span><span class=\"upt-selcount\"><span class=\"upt-selcount-n\">0 selected</span><button class=\"upt-selcount-clear\" type=\"button\" aria-label=\"Clear selection\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button></span></div><div class=\"upt-status\" role=\"tablist\" aria-label=\"Prompt status\"></div><div class=\"up-head-tools\"><button class=\"upt-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"upt-brand-toggle-lbl\"><img class=\"upt-brand-logo\" src=\"\" style=\"display:none\" alt=\"\"/><span class=\"upt-brand-label\"></span></span><span class=\"upt-brand-check\"><svg class=\"upt-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7\"/></svg><svg class=\"upt-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.9922 12L2.99219 12\"/></svg></span></button><div class=\"up-sort\"><button class=\"up-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 17L21 21\"/><path d=\"M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z\"/></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Search prompts...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search prompts\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button></div></div><div class=\"up-cols\"><button class=\"up-cols-btn up-iconbtn\" type=\"button\" data-tip=\"Table Settings\" aria-label=\"Table settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z\"/><path d=\"M8.5 10C7.67157 10 7 9.32843 7 8.5C7 7.67157 7.67157 7 8.5 7C9.32843 7 10 7.67157 10 8.5C10 9.32843 9.32843 10 8.5 10Z\"/><path d=\"M15.5 17C16.3284 17 17 16.3284 17 15.5C17 14.6716 16.3284 14 15.5 14C14.6716 14 14 14.6716 14 15.5C14 16.3284 14.6716 17 15.5 17Z\"/><path d=\"M10 8.5L17 8.5\"/><path d=\"M14 15.5L7 15.5\"/></svg></button><span class=\"upt-cols-badge\"></span><div class=\"up-cols-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg><span>Export</span></button></div></div><div class=\"up-box\"><div class=\"up-table\"><div class=\"up-thead\"><div class=\"up-th up-th-prompt is-sortable\" data-sortcol=\"prompt\"><span class=\"upt-check\" role=\"checkbox\" tabindex=\"0\" aria-checked=\"false\" data-selectall></span><span class=\"up-th-txt\">Prompt</span><span class=\"up-thsort\" data-for=\"prompt\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span><span class=\"up-grip\" data-grip=\"prompt\"></span></div><div class=\"up-th up-th-visibility is-sortable\" data-sortcol=\"visibility\"><img class=\"upt-th-brandlogo\" src=\"\" alt=\"\"/><span class=\"up-th-txt\">Visibility</span><span class=\"up-th-info\" data-explain=\"visibility\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16V12\"/><path d=\"M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z\"/></svg></span><span class=\"up-thsort\" data-for=\"visibility\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div><div class=\"up-th up-th-rank is-sortable\" data-sortcol=\"rank\"><span class=\"up-th-txt\">Rank</span><span class=\"up-th-info\" data-explain=\"rank\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16V12\"/><path d=\"M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z\"/></svg></span><span class=\"up-thsort\" data-for=\"rank\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div><div class=\"up-th up-th-sentiment is-sortable\" data-sortcol=\"sentiment\"><span class=\"up-th-txt\">Sentiment</span><span class=\"up-th-info\" data-explain=\"sentiment\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16V12\"/><path d=\"M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z\"/></svg></span><span class=\"up-thsort\" data-for=\"sentiment\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div><div class=\"up-th up-th-brands\">Brand Mentions<span class=\"up-th-info\" data-explain=\"brands\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16V12\"/><path d=\"M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z\"/></svg></span></div><div class=\"up-th up-th-topics\">Topics</div><div class=\"up-th up-th-market\">Market<span class=\"up-th-info\" data-explain=\"market\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16V12\"/><path d=\"M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z\"/></svg></span></div><div class=\"up-th up-th-created is-sortable\" data-sortcol=\"created\"><span class=\"up-th-txt\">Created</span><span class=\"up-thsort\" data-for=\"created\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div></div><div class=\"up-tbody\"></div></div></div><div class=\"up-foot\"><div class=\"up-pagesize\"><span class=\"up-pagesize-lbl\">Rows per page</span><div class=\"up-pagesize-seg\" role=\"group\" aria-label=\"Rows per page\"></div></div><div class=\"up-pager\"></div></div></div>",
@@ -56,7 +56,8 @@
     urt: "<div class=\"up-root urt-root\" data-instance=\"lh-urt\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"\" data-spotlight-mode=\"no\" data-export-instance=\"\" data-sticky=\"no\" data-sticky-top=\"171\" data-sticky=\"no\" data-default-view=\"cards\"><div class=\"up-head\"><div class=\"up-heading\"><span class=\"up-head-label\">Responses</span><span class=\"up-head-sep\"></span><span class=\"up-head-count\"></span></div><div class=\"up-head-tools\"><button class=\"urt-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"urt-brand-toggle-lbl\"><img class=\"urt-brand-logo\" src=\"\" style=\"display:none\" alt=\"\"/><span class=\"urt-brand-label\"></span></span><span class=\"urt-brand-check\"><svg class=\"urt-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7\"/></svg><svg class=\"urt-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.9922 12L2.99219 12\"/></svg></span></button><div class=\"up-ment\"><button class=\"up-ment-btn\" type=\"button\" data-tip=\"Filter for brand mentions\" aria-haspopup=\"menu\" aria-expanded=\"false\"><span class=\"up-ment-lbl\">All Brands</span><svg class=\"up-ment-chev\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg><svg class=\"up-ment-clear\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button><div class=\"up-ment-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><!-- Reihenfolge: Sorter VOR dem Fader, also von rechts gelesen der Fader vor dem Sorter. core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars) -- hier steht sie richtig, damit eine Neuinstallation nicht erst umsortiert werden muss. --><div class=\"up-sort\"><button class=\"up-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><!-- lucide \"settings-2\" \u2014 the SAME filter glyph visibility-chart / topcitations / combo-chart use. .up-iconbtn makes it behave like every other toolbar icon button. --><div class=\"urt-fader\"><button class=\"urt-fader-btn up-iconbtn\" type=\"button\" data-tip=\"Filter by rank &amp; sentiment\" aria-label=\"Filter by rank and sentiment\" aria-haspopup=\"menu\" aria-expanded=\"false\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 21L7 18\"/><path d=\"M17 21L17 15\"/><path d=\"M17 6L17 3\"/><path d=\"M7 9L7 3\"/><path d=\"M7 18C6.06812 18 5.60218 18 5.23463 17.8478C4.74458 17.6448 4.35523 17.2554 4.15224 16.7654C4 16.3978 4 15.9319 4 15C4 14.0681 4 13.6022 4.15224 13.2346C4.35523 12.7446 4.74458 12.3552 5.23463 12.1522C5.60218 12 6.06812 12 7 12C7.93188 12 8.39782 12 8.76537 12.1522C9.25542 12.3552 9.64477 12.7446 9.84776 13.2346C10 13.6022 10 14.0681 10 15C10 15.9319 10 16.3978 9.84776 16.7654C9.64477 17.2554 9.25542 17.6448 8.76537 17.8478C8.39782 18 7.93188 18 7 18Z\"/><path d=\"M17 12C16.0681 12 15.6022 12 15.2346 11.8478C14.7446 11.6448 14.3552 11.2554 14.1522 10.7654C14 10.3978 14 9.93188 14 9C14 8.06812 14 7.60218 14.1522 7.23463C14.3552 6.74458 14.7446 6.35523 15.2346 6.15224C15.6022 6 16.0681 6 17 6C17.9319 6 18.3978 6 18.7654 6.15224C19.2554 6.35523 19.6448 6.74458 19.8478 7.23463C20 7.60218 20 8.06812 20 9C20 9.93188 20 10.3978 19.8478 10.7654C19.6448 11.2554 19.2554 11.6448 18.7654 11.8478C18.3978 12 17.9319 12 17 12Z\"/></svg></button><div class=\"urt-fader-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 17L21 21\"/><path d=\"M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z\"/></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Search prompts...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search responses\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button></div></div><div class=\"up-cols\"><button class=\"up-cols-btn up-iconbtn\" type=\"button\" data-tip=\"Table Settings\" aria-label=\"Table settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z\"/><path d=\"M8.5 10C7.67157 10 7 9.32843 7 8.5C7 7.67157 7.67157 7 8.5 7C9.32843 7 10 7.67157 10 8.5C10 9.32843 9.32843 10 8.5 10Z\"/><path d=\"M15.5 17C16.3284 17 17 16.3284 17 15.5C17 14.6716 16.3284 14 15.5 14C14.6716 14 14 14.6716 14 15.5C14 16.3284 14.6716 17 15.5 17Z\"/><path d=\"M10 8.5L17 8.5\"/><path d=\"M14 15.5L7 15.5\"/></svg></button><span class=\"urt-cols-badge\"></span><div class=\"up-cols-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><!-- .up-dense / .up-dense-btn are core's segmented control \u2014 the same one the Row Height picker uses. Reused verbatim so this switcher IS the app's switcher, not a lookalike. .urt-viewswitch only overrides the width (core's is full-width for the popover). --><div class=\"up-dense urt-viewswitch\" role=\"group\" aria-label=\"View\"><button class=\"up-dense-btn up-dense-btn-icon is-active\" type=\"button\" data-view=\"table\" data-tip=\"Table view\" aria-label=\"Table view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18\"/></svg></button><button class=\"up-dense-btn up-dense-btn-icon\" type=\"button\" data-view=\"cards\" data-tip=\"Card view\" aria-label=\"Card view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 4V20\"/><path d=\"M18 4V20\"/><path d=\"M21 7L3 7\"/><path d=\"M21 17L3 17\"/></svg></button></div><button class=\"up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg><span>Export</span></button></div></div><div class=\"up-box\"><div class=\"up-table\"><div class=\"up-thead\"><!-- The lead column's resize grip. Every other table has one; without it the first column simply cannot be dragged (core's resize kit binds to .up-grip). --><div class=\"up-th up-th-prompt\">Prompt<span class=\"up-grip\" data-grip=\"prompt\"></span></div><!-- \"<brand logo> mentioned?\", identical to urls-table: the logo is filled in from data-brand-logo, and without one the label falls back to \"<brand name> mentioned?\" --><div class=\"up-th up-th-mentioned\"><img class=\"up-th-brandlogo\" src=\"\" alt=\"\" style=\"display:none\"/><span class=\"up-th-mentlbl\">Mentioned</span></div><div class=\"up-th up-th-sentiment is-sortable\" data-sortcol=\"sentiment\"><span class=\"up-th-txt\">Sentiment</span><span class=\"up-thsort\" data-for=\"sentiment\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div><div class=\"up-th up-th-rank is-sortable\" data-sortcol=\"rank\"><span class=\"up-th-txt\">Rank</span><span class=\"up-thsort\" data-for=\"rank\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div><div class=\"up-th up-th-brands\">Brand Mentions</div><div class=\"up-th up-th-citations\">Citations</div><div class=\"up-th up-th-model\">Model</div><div class=\"up-th up-th-date is-sortable\" data-sortcol=\"date\"><span class=\"up-th-txt\">Date</span><span class=\"up-thsort\" data-for=\"date\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div></div><div class=\"up-tbody\"></div></div></div><div class=\"urt-cards\"></div><div class=\"up-foot\"><div class=\"up-pagesize\"><span class=\"up-pagesize-lbl\">Rows per page</span><div class=\"up-pagesize-seg\" role=\"group\" aria-label=\"Rows per page\"></div></div><div class=\"up-pager\"></div></div></div>",
     udd: "<div class=\"up-root udd-root\" data-instance=\"lh-udd\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand=\"Acme\"></div>",
     hph: "<div class=\"up-root up-ph-root pfph-root\" data-instance=\"lh-hph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d10%22%2F%3E%3Cpath%20d%3D%22M29%2015.5%2016.2%2048.5H23.1L25.3%2041.9H38.7L40.9%2048.5H47.8L35%2015.5ZM32%2025.4%2028.9%2034.4H35.1Z%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Workspace</span></div><h1 class=\"up-ph-heading\">Performance</h1><p class=\"up-ph-desc\">Explore topic performance, compare brands, and uncover strengths and gaps</p></div></div></div>",
-    uhm: "<div class=\"up-root uhm-root\" data-instance=\"lh-uhm\" data-cdn-pin=\"\" data-isdark=\"no\"><div class=\"up-head\"><div class=\"up-heading\">Performance Chart</div><div class=\"up-head-tools\"><div class=\"uhm-metric up-seg\" role=\"tablist\" aria-label=\"Metric\"><button class=\"up-seg-btn is-active\" data-metric=\"visibility\" type=\"button\" role=\"tab\" aria-selected=\"true\">Visibility</button><button class=\"up-seg-btn\" data-metric=\"rank\" type=\"button\" role=\"tab\" aria-selected=\"false\">Ranking</button><button class=\"up-seg-btn\" data-metric=\"sentiment\" type=\"button\" role=\"tab\" aria-selected=\"false\">Sentiment</button></div><!-- Der Einstellungsknopf steht ganz rechts, hinter dem Filter. Er stand vorher links davon; core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars). --><div class=\"uhm-pick\"><button class=\"uhm-pick-btn up-iconbtn\" type=\"button\" data-tip=\"Brands &amp; Topics\" aria-label=\"Choose brands and topics\"></button><div class=\"uhm-pick-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"uhm-set\"><button class=\"uhm-set-btn up-iconbtn\" type=\"button\" data-tip=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z\"/><path d=\"M8.5 10C7.67157 10 7 9.32843 7 8.5C7 7.67157 7.67157 7 8.5 7C9.32843 7 10 7.67157 10 8.5C10 9.32843 9.32843 10 8.5 10Z\"/><path d=\"M15.5 17C16.3284 17 17 16.3284 17 15.5C17 14.6716 16.3284 14 15.5 14C14.6716 14 14 14.6716 14 15.5C14 16.3284 14.6716 17 15.5 17Z\"/><path d=\"M10 8.5L17 8.5\"/><path d=\"M14 15.5L7 15.5\"/></svg></button><div class=\"uhm-set-menu up-menu\" role=\"menu\" aria-hidden=\"true\"></div></div></div></div><div class=\"uhm-box\"><div class=\"uhm-scroll\"><div class=\"uhm-grid\"></div></div></div></div>"
+    uhm: "<div class=\"up-root uhm-root\" data-instance=\"lh-uhm\" data-cdn-pin=\"\" data-isdark=\"no\"><div class=\"up-head\"><div class=\"up-heading\">Performance Chart</div><div class=\"up-head-tools\"><div class=\"uhm-metric up-seg\" role=\"tablist\" aria-label=\"Metric\"><button class=\"up-seg-btn is-active\" data-metric=\"visibility\" type=\"button\" role=\"tab\" aria-selected=\"true\">Visibility</button><button class=\"up-seg-btn\" data-metric=\"rank\" type=\"button\" role=\"tab\" aria-selected=\"false\">Ranking</button><button class=\"up-seg-btn\" data-metric=\"sentiment\" type=\"button\" role=\"tab\" aria-selected=\"false\">Sentiment</button></div><!-- Der Einstellungsknopf steht ganz rechts, hinter dem Filter. Er stand vorher links davon; core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars). --><div class=\"uhm-pick\"><button class=\"uhm-pick-btn up-iconbtn\" type=\"button\" data-tip=\"Brands &amp; Topics\" aria-label=\"Choose brands and topics\"></button><div class=\"uhm-pick-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"uhm-set\"><button class=\"uhm-set-btn up-iconbtn\" type=\"button\" data-tip=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z\"/><path d=\"M8.5 10C7.67157 10 7 9.32843 7 8.5C7 7.67157 7.67157 7 8.5 7C9.32843 7 10 7.67157 10 8.5C10 9.32843 9.32843 10 8.5 10Z\"/><path d=\"M15.5 17C16.3284 17 17 16.3284 17 15.5C17 14.6716 16.3284 14 15.5 14C14.6716 14 14 14.6716 14 15.5C14 16.3284 14.6716 17 15.5 17Z\"/><path d=\"M10 8.5L17 8.5\"/><path d=\"M14 15.5L7 15.5\"/></svg></button><div class=\"uhm-set-menu up-menu\" role=\"menu\" aria-hidden=\"true\"></div></div></div></div><div class=\"uhm-box\"><div class=\"uhm-scroll\"><div class=\"uhm-grid\"></div></div></div></div>",
+    ush: "<div class=\"up-root ush-root\" data-instance=\"lh-ush\" data-cdn-pin=\"\" data-isdark=\"no\"></div>"
   };
   /* ---- MARKUP ENDE ---- */
 
@@ -353,12 +354,12 @@
         '<h1 class="ulh-h1"><span>AI Search Analytics</span><span>Made simple.</span></h1>' +
         /* Der Umbruch nach "drive" steht hier und nicht in der CSS: die drei Treiber sollen zu
            dritt in einer Zeile stehen, und das ist eine Aussage ueber den Text, nicht ueber die
-           Breite. Die Zeichen setzt zeichenSetzen() nach, sobald core da ist. */
+           Breite. Seit dem 06.10. ohne Zeichen davor (angefordert). */
         '<p class="ulh-sub">Track and optimize your brand’s AI search performance and drive' +
           '<span class="ulh-drivers">' +
-            '<span class="ulh-driver" data-ic="chartColumnUp">Qualified Traffic</span>' +
-            '<span class="ulh-driver" data-ic="users">Leads</span>' +
-            '<span class="ulh-driver" data-ic="dollarSign">Revenue</span>' +
+            '<span class="ulh-driver">Qualified Traffic</span>' +
+            '<span class="ulh-driver">Leads</span>' +
+            '<span class="ulh-driver">Revenue</span>' +
           '</span>' +
         '</p>' +
         '<div class="ulh-cta">' +
@@ -416,6 +417,10 @@
                 '<div class="ulh-seite ulh-perf" data-up-kopfrahmen>' +
                   (MARKUP.hph || "") + (MARKUP.uhm || "") +
                 '</div>' +
+                /* Sechste Seite (06.10.): Shopping. Nach Performance, vor dem Neustart -- sie
+                   zeigt den Teil der Antworten, den die Seiten davor nicht kennen: Produkte. Die
+                   Komponente bringt ihren Kopf selbst mit (Krumen, Reiter). */
+                '<div class="ulh-seite ulh-shop" data-up-kopfrahmen>' + (MARKUP.ush || "") + '</div>' +
               '</div>' +
             '</div>' +
           '</div>' +
@@ -425,6 +430,7 @@
       '</div>' +
       '</section>' +
       merkmale() +
+      handel() +
       quellen() +
       msc() +
       geo() +
@@ -1698,33 +1704,30 @@
      Angesehen habe ich, wie es die Naechstliegenden machen: Peec AI, Profound und Otterly fuehren
      alle drei mit der MESSUNG und enden mit dem HANDELN, und alle drei nennen die Modelle beim
      Namen. Uebernommen ist davon der Bau, kein Satz. */
+  /* DIE TEXTE AUF RUND 60 PROZENT (06.10. angefordert: "Texte unter den Headings je auf ca. die
+     Haelfte, oder sagen wir 60%"). Gekuerzt um die Erklaerung, nicht um die Aussage: jeder Satz
+     sagt weiter, was die Karte zeigt, nur ohne den zweiten Satz, der es noch einmal begruendet. */
   var MERKMALE = [
     { breit: 40, vis: "linie",
       h: "Track your visibility over time",
-      p: "See how often each model names your brand, in which position, and with what sentiment. " +
-         "Side by side with the competitors you track." },
+      p: "How often each model names you, in which position, next to your competitors." },
     { breit: 60, vis: "zeilen",
       h: "See which questions you show up for",
-      p: "Every answer starts with a question someone asked. Track the ones that matter in your " +
-         "market, grouped by topic, and see where you are named and where you are not." },
+      p: "Track the questions that matter in your market, grouped by topic, and see where you are named." },
     { breit: 60, vis: "domains",
       h: "Find the sources behind the answers",
-      p: "Answers are built from pages. See which domains get cited in your category, and open " +
-         "one to see the exact pages behind it." },
+      p: "See which domains get cited in your category, down to the exact pages." },
     { breit: 40, vis: "chancen",
       h: "Get a list of what to fix",
-      p: "Upstreem turns the gaps into concrete tasks: a listing to get, a page to write, one to " +
-         "improve. Each with the numbers behind it." },
+      p: "Upstreem turns the gaps into concrete tasks, each with the numbers behind it." },
     /* Reihe drei, 50/50. Die zwei Karten beantworten die Fragen, die nach den ersten vier kommen:
        "gilt das auch fuer meinen Markt?" und "gilt das fuer alle Modelle?". */
     { breit: 50, vis: "sprachen",
       h: "Monitor LLMs in any language, from any country",
-      p: "Track the questions your buyers actually ask, in their language and their market. " +
-         "Volumes and rankings are reported per market, not averaged into one number." },
+      p: "Track the questions buyers ask in their own language, with rankings per market." },
     { breit: 50, vis: "modelle",
       h: "Daily AI response tracking across multiple models",
-      p: "Every prompt runs against each model, every day. You see where the answers agree, " +
-         "where they differ, and which model names you first." }
+      p: "Every prompt runs against each model, every day, so you see where answers differ." }
   ];
 
   /* ---- Reihe drei, links: Prompts in fuenf Maerkten ----
@@ -2158,6 +2161,9 @@
     if (art === "chancen") return visChancen();
     if (art === "sprachen") return visSprachen();
     if (art === "modelle")  return visModelle();
+    if (art === "produkte") return visProdukte();
+    if (art === "regal" || art === "werber") return '<div class="ulh-balken" data-ulh-balken="' + art + '"></div>';
+    if (art === "anzeigen") return visAnzeigen();
     return "";
   }
 
@@ -2184,11 +2190,136 @@
            '</div>';
   }
 
+  /* ---------- Shopping und Ads: "Beyond classic GEO" (06.10. angefordert) ---------------------
+     Ein zweiter Kartenblock unter dem ersten, 2x2, "genauso konsistent wie die Cards darueber":
+     dieselbe Karte (merkmalKarte), derselbe Kasten, dieselben Anteile (60/40 oben, 40/60 unten),
+     und in jeder Vorschau ein ECHTES Bauteil der App -- die Zeilen der Tabelle (.up-row mit
+     UC.markenChip), die Balkenliste (UC.makeBarList, dieselbe wie in Shopping und Ads) und die
+     Ad-Karte (UC.adCardHtml). Die Zahlen sind Demodaten im Automobilmarkt der Seite: plausibel,
+     nicht schmeichelhaft, die eigene Marke ist die erfundene Acme. */
+  var HANDEL_CHIP = "Shopping & Ads";
+  var HANDEL_H = "Beyond classic GEO";
+  var HANDEL_SUB = "AI assistants answer with products and ads, not only with text. upstreem " +
+    "tracks both: where your products land in the shopping results, and who pays to stand next " +
+    "to the answer.";
+  var HANDEL = [
+    { breit: 60, vis: "produkte", stil: "zeilen",
+      h: "See your products in AI shopping",
+      p: "Track which products the models recommend and in which position yours appear." },
+    { breit: 40, vis: "regal",
+      h: "Know who owns the shelf",
+      p: "Your share of every product list, next to the brands you compete with." },
+    { breit: 40, vis: "werber",
+      h: "See who advertises in AI answers",
+      p: "Every sponsored placement next to an answer, grouped by advertiser." },
+    { breit: 60, vis: "anzeigen",
+      h: "Inspect every ad next to your answers",
+      p: "Open the ad, its landing page and the prompt that triggered it." }
+  ];
+  /* Die Produkte: Zubehoer, das Kaeufer eines Elektroautos wirklich in einem Shopping-Ergebnis
+     sehen. Die Position ist ein Rang, also immer mit einer Nachkommastelle (CLAUDE.md 2b). */
+  var PRODUKTE = [
+    { t: "Acme Home Charger 11 kW",     m: "ac", vis: 34.2, pos: 1.4, haendler: 6 },
+    { t: "Tesla Wall Connector",         m: "te", vis: 28.7, pos: 1.9, haendler: 4 },
+    { t: "BMW Wallbox Plus",             m: "bm", vis: 19.5, pos: 2.6, haendler: 5 },
+    { t: "Acme All-Weather Floor Mats",  m: "ac", vis: 14.8, pos: 2.2, haendler: 3 },
+    { t: "Volvo Roof Box 420 L",         m: "vo", vis: 9.1,  pos: 3.4, haendler: 2 }
+  ];
+  /* Share of Shelf und Ad Share: je fuenf Marken, der staerkste Balken fuellt die Spur (wie in
+     Shopping und Ads), daneben der echte Anteil. */
+  var REGAL = [
+    { m: "ac", v: 31.9 }, { m: "te", v: 24.6 }, { m: "bm", v: 17.2 }, { m: "au", v: 11.8 }, { m: "vo", v: 8.4 }
+  ];
+  var WERBER = [
+    { m: "ac", v: 34.6 }, { m: "bm", v: 22.1 }, { m: "te", v: 17.8 }, { m: "vo", v: 9.3 }, { m: "au", v: 6.2 }
+  ];
+  /* Drei Ads in den Feldern der Ads-RPCs (ad_format, title, landing_domain, ...), so wie die
+     Ad-Karte der App sie liest: zwei eigene als Produktkarte, die des Wettbewerbers als Bildkarte. */
+  var ANZEIGEN = [
+    { id: "lh-ad-1", m: "ac", beziehung: "you", advertiser_name: "Acme", ad_format: "product_card_v2",
+      title: "Acme EX5 Touring", description: "Up to 610 km of range. 0.9% APR financing this month.",
+      landing_domain: "acme.com", price: 64900, currency: "EUR", model: "chatgpt", market: "DE",
+      observed_at: "2026-10-03T09:12:00Z" },
+    { id: "lh-ad-2", m: "bm", beziehung: "competitor", advertiser_name: "BMW", ad_format: "image_card_v2",
+      title: "The new electric lineup", description: "Explore trims, range and offers near you.",
+      landing_domain: "bmw.de", model: "chatgpt", market: "DE", observed_at: "2026-10-02T16:40:00Z" },
+    { id: "lh-ad-3", m: "ac", beziehung: "you", advertiser_name: "Acme", ad_format: "product_card_v2",
+      title: "Acme Home Charger 11 kW", description: "Charges an EX5 overnight. Installation included.",
+      landing_domain: "acme.com", price: 799, currency: "EUR", model: "perplexity", market: "DE",
+      observed_at: "2026-10-01T11:05:00Z" }
+  ];
+  function handelMarke(id){ return MARKEN.filter(function(x){ return x.id === id; })[0] || null; }
+
+  /* Die Produkttabelle: dieselbe Bauart wie die Prompt-Tabelle der ersten Karte (visZeilen) --
+     .up-row mit --up-cols, die Zellen der App. Produkt = UC.markenChip (Logo der Marke + Titel, wie
+     die Zelle "Brand" in Shopping), die Position als Rang mit dem Zeichen aus core. */
+  function visProdukte(){
+    var kern = window.UpstreemCore;
+    var kopf = ["Product", "Visibility", "Avg. Position", "Merchants"];
+    var hash = kern && kern.HASH_ICON ? kern.HASH_ICON.replace("<svg ", '<svg class="up-hash" ') : "";
+    var html = '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 110px 140px 110px;">' +
+      '<div class="up-row up-thead">' + kopf.map(function(t){
+        return '<div class="up-td">' + t + '</div>'; }).join("") + '</div>';
+    html += PRODUKTE.map(function(p, i){
+      var m = handelMarke(p.m);
+      var chip = kern && kern.markenChip ? kern.markenChip({ name: p.t, logo_url: m ? m.logo : "" }) : p.t;
+      return '<div class="up-row' + (i === 1 ? " is-mitte" : "") + '">' +
+        '<div class="up-td"><span class="ulh-vis-prompt">' + chip + '</span></div>' +
+        '<div class="up-td"><span class="up-num">' + proz(p.vis) + '</span></div>' +
+        '<div class="up-td"><span class="up-rank-group">' + hash + '<span class="up-num">' + eine(p.pos) + '</span></span></div>' +
+        '<div class="up-td"><span class="up-num">' + p.haendler + '</span></div>' +
+      '</div>';
+    }).join("");
+    return html + '</div>';
+  }
+  function visAnzeigen(){
+    var kern = window.UpstreemCore;
+    if (!kern || !kern.adCardHtml) return "";
+    return '<div class="ulh-anz">' + ANZEIGEN.map(function(a){
+      var m = handelMarke(a.m);
+      return kern.adCardHtml(a, { logo: m ? m.logo : "", beziehung: a.beziehung, zeichen: "bank" });
+    }).join("") + '</div>';
+  }
+  /* Die Balken fahren ein, wenn ihre Karte erscheint -- nicht beim Aufbau, sonst waere die
+     Bewegung vorbei, bevor jemand bis hierher gescrollt hat. Der Anlass ist DERSELBE wie fuer die
+     Karte selbst: die Klasse is-da, die auftritte() setzt (samt seiner Sicherung fuer Seiten ohne
+     Bilder). 300ms danach, damit die Karte schon steht, wenn die Balken loslaufen. */
+  function visBalkenFuellen(root){
+    var kern = window.UpstreemCore;
+    if (!kern || !kern.makeBarList) return;
+    [].forEach.call(root.querySelectorAll("[data-ulh-balken]"), function(platz){
+      if (platz.__ulhBalken) return;
+      platz.__ulhBalken = true;
+      var daten = platz.getAttribute("data-ulh-balken") === "werber" ? WERBER : REGAL;
+      var max = Math.max.apply(null, daten.map(function(d){ return d.v; })) || 1;
+      var liste = kern.makeBarList({ mount: platz, isDark: function(){ return false; },
+                                     fmt: function(v){ return proz(v); } });
+      function zeichnen(){
+        liste.render(daten.map(function(d, i){
+          var m = handelMarke(d.m) || { name: d.m, logo: "" };
+          return { key: d.m, name: m.name, share: d.v / max * 100, wert: proz(d.v), logo: m.logo,
+                   color: kern.balkenGrau ? kern.balkenGrau(i, false) : "#1f1f1b" };
+        }));
+      }
+      var karte = platz.closest(".ulh-card");
+      if (!karte || karte.classList.contains("is-da")){ zeichnen(); return; }
+      var mo = new MutationObserver(function(){
+        if (!karte.classList.contains("is-da")) return;
+        mo.disconnect();
+        setTimeout(zeichnen, 300);
+      });
+      mo.observe(karte, { attributes: true, attributeFilter: ["class"] });
+    });
+  }
+
   function merkmalKarte(m, i){
     return '<article class="ulh-card ulh-auf" style="--ulh-w:' + m.breit + ';--auf:' + (i || 0) + '">' +
       '<h3 class="ulh-card-h">' + m.h + '</h3>' +
       '<p class="ulh-card-p">' + m.p + '</p>' +
-      '<div class="ulh-vis ulh-vis-' + m.vis + '" data-ulh-vis="' + m.vis + '">' +
+      /* m.stil (06.10.): eine Vorschau, die die Geometrie einer anderen uebernimmt -- die
+         Produkttabelle traegt die Masse der Prompt-Tabelle (ulh-vis-zeilen) samt Hover. */
+      '<div class="ulh-vis ulh-vis-' + (m.stil || m.vis) + (m.stil ? " ulh-vis-" + m.vis : "") +
+        '" data-ulh-vis="' + m.vis + '">' +
         /* up-root an der Vorschau, und das ist keine Kosmetik: die Marken der App (--vc-border,
            --vc-text, --vt-head-bg und der ganze Rest) stehen in core.css AUSSCHLIESSLICH an
            .up-root. Ohne diese Klasse fiel jede Farbe in den Vorschauen auf den Rueckfall zurueck
@@ -2517,6 +2648,25 @@
             /* Die dritte Reihe teilt sich 50/50 -- deshalb steht der Anteil an der Karte und nicht
                an der Reihe (--ulh-w, siehe merkmalKarte). */
             '<div class="ulh-cards-row">' + merkmalKarte(MERKMALE[4], 0) + merkmalKarte(MERKMALE[5], 1) + '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</section>';
+  }
+
+  /* Der Block "Beyond classic GEO" -- Bau wie merkmale(): Kopf, Kasten, zwei Reihen. */
+  function handel(){
+    return '<section class="ulh-feat ulh-handel">' +
+      '<div class="ulh-spur">' +
+        '<div class="ulh-feat-kopf ulh-auf">' +
+          '<span class="ulh-feat-chip">' + HANDEL_CHIP + '</span>' +
+          '<h2 class="ulh-feat-h">' + HANDEL_H + '</h2>' +
+          '<p class="ulh-feat-sub">' + HANDEL_SUB + '</p>' +
+        '</div>' +
+        '<div class="ulh-cards-box">' +
+          '<div class="ulh-cards">' +
+            '<div class="ulh-cards-row">' + merkmalKarte(HANDEL[0], 0) + merkmalKarte(HANDEL[1], 1) + '</div>' +
+            '<div class="ulh-cards-row">' + merkmalKarte(HANDEL[2], 0) + merkmalKarte(HANDEL[3], 1) + '</div>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -4275,6 +4425,7 @@
       /* Die dritte Reihe: Band und Bahnen werden gebaut und danach in Bewegung gesetzt. */
       visSprachenFuellen(w);
       visModelleFuellen(w);
+      visBalkenFuellen(w);
       ulhTakt(w);
       quellFuellen();
       /* NUR BEIM ERSTEN FUELLEN (28.09. gemessen): fuellen() laeuft am Ende JEDES Zyklus erneut
@@ -6154,7 +6305,8 @@
      erste Ansicht hatte, fehlte der zweiten. */
   function perfSchluss(root){
     perfHinaus(root);
-    perfNach(function(){ neustart(root); }, PERF_ABGANG_MS);
+    /* Seit dem 06.10. kommt danach Shopping, und erst Shopping endet im Neustart. */
+    perfNach(function(){ shopSzene(root); }, PERF_ABGANG_MS);
   }
 
   function perfSzene(root){
@@ -6197,6 +6349,154 @@
           perfNach(function(){ perfZweiteAnsicht(root); }, PERF_AUF_MS + PERF_STAND_MS);
         });
       }, PERF_SEITE_MS);
+    }, AUSBLENDEN_MS);
+    return true;
+  }
+
+  /* ---------- Sechste Szene: Shopping (06.10. angefordert) --------------------------------
+     "Folge denselben Regeln und Design-, Animations- und Dauer-Richtlinien wie bei den anderen
+     Hero-Steps." Also der Bau der Performance-Szene, Schritt fuer Schritt:
+       1. die Seite, die gerade dran ist, geht (is-weg), die Leiste springt auf "shopping"
+       2. nach AUSBLENDEN_MS steigt die Shopping-Seite herauf (is-da + is-kommt, ulhRise 690ms)
+       3. ERST WENN SIE STEHT, kommen die Daten (SHOP_SEITE_MS, wie PERF_SEITE_MS) -- die
+          Kennzahlen zaehlen dann in der Komponente selbst hoch, die Linien ziehen sich auf
+       4. Standzeit, dann geht die Seite und der Kreislauf beginnt von vorn (neustart)
+     Alle Uhren an EINER Stelle (shopNach), damit ein Neustart keine alte mitnimmt -- dieselbe
+     Lehre wie bei perfUhren.
+     Die Daten sind die Antwort von cached_shopping_overview_v1 in genau ihrer Form
+     (bubble/shopping_backend_vertrag.md), gefuellt mit dem Automobilmarkt der Seite: dieselben
+     Marken, Farben und Produkte wie in den Karten darunter (PRODUKTE). Die Komponente bekommt sie
+     ueber ihren echten Setter, so wie in der App aus dem Run-JS-Schritt. */
+  var SHOP_SEITE_MS = 380;
+  var SHOP_STAND_MS = 7600;   /* Hochzaehlen (rund 1.2s) plus die Standzeit der anderen Szenen */
+  var SHOP_ABGANG_MS = 450;
+  var shopUhren = [];
+  function shopNach(fn, ms){ shopUhren.push(setTimeout(fn, ms)); }
+  function shopUhrenAus(){ shopUhren.forEach(function(u){ clearTimeout(u); }); shopUhren = []; }
+
+  /* Je Marke: Share of Shelf, Presence, Beobachtungen, mittlere Position, Anteil Platz eins --
+     jeweils [jetzt, vorher]. Acme legt zu, Tesla gibt ab, die anderen bewegen sich kaum. */
+  var SHOP_MARKEN = [
+    { m: "ac", sos: [31.9, 27.4], pres: [72.5, 64.8], obs: [84, 71], pos: [1.8, 2.2], erst: [46.3, 39.0], prod: 4, top: 0 },
+    { m: "te", sos: [24.6, 27.1], pres: [61.2, 66.0], obs: [65, 70], pos: [2.1, 1.9], erst: [31.5, 36.2], prod: 3, top: 1 },
+    { m: "bm", sos: [17.2, 16.5], pres: [48.9, 47.1], obs: [46, 44], pos: [2.6, 2.7], erst: [12.8, 11.9], prod: 3, top: 2 },
+    { m: "au", sos: [11.8, 12.3], pres: [36.4, 37.9], obs: [31, 33], pos: [3.1, 3.0], erst: [6.4, 7.1],   prod: 2, top: -1 },
+    { m: "vo", sos: [8.4, 9.6],   pres: [27.0, 29.8], obs: [22, 26], pos: [3.4, 3.2], erst: [3.0, 4.2],   prod: 2, top: 4 }
+  ];
+  var SHOP_PREISE = [[799, 899], [420, 475], [949, 1049], [119, 139], [589, 649]];
+  var SHOP_HAENDLER = [
+    { merchant_name: "Amazon.de", observations: 58, share: 24.1, products: 9 },
+    { merchant_name: "Acme Store", observations: 41, share: 17.0, products: 4 },
+    { merchant_name: "Otto.de", observations: 27, share: 11.2, products: 5 }
+  ];
+  function shopDaten(){
+    function r2(x){ return Math.round(x * 100) / 100; }
+    function wert(x){ return { value: x[0], previous: x[1], delta: r2(x[0] - x[1]) }; }
+    var tage = [], start = Date.UTC(2026, 8, 21);
+    for (var i = 0; i < 14; i++) tage.push(new Date(start + i * 864e5).toISOString().slice(0, 10));
+    function marke(id){ var m = handelMarke(id) || { name: id, logo: "", farbe: "#6b7280" };
+      return { company_id: "lh-" + id, name: m.name, logo_url: m.logo, color: m.farbe }; }
+    function produkt(i){
+      var p = PRODUKTE[i], b = marke(p.m);
+      b.type = p.m === "ac" ? "own" : "competitor";
+      var vor = [r2(p.vis * 0.82), r2(p.pos + 0.3)];
+      return { source_product_id: "lh-p" + i, title: p.t, listing_title: p.t, brand: b, image_url: null,
+               visibility: wert([p.vis, vor[0]]), observations: wert([Math.round(p.vis * 1.6), Math.round(p.vis * 1.3)]),
+               avg_position: wert([p.pos, vor[1]]), first_position_rate: wert([r2(70 - p.pos * 16), r2(64 - p.pos * 16)]),
+               price_ranges: [{ currency: "EUR", min: SHOP_PREISE[i][0], max: SHOP_PREISE[i][1] }],
+               rating: [4.6, 4.7, 4.4, 4.5, 4.3][i], num_reviews: [212, 1840, 960, 88, 143][i],
+               merchants: ["Amazon.de", "Otto.de"].slice(0, p.haendler > 3 ? 2 : 1), merchant_count: p.haendler,
+               first_seen: tage[0] + "T08:00:00+00:00", last_seen: tage[13] + "T18:00:00+00:00" };
+    }
+    var marken = SHOP_MARKEN.map(function(b, i){
+      var k = marke(b.m);
+      k.type = b.m === "ac" ? "own" : "competitor"; k.rank = i + 1;
+      k.share_of_shelf = wert(b.sos); k.presence = wert(b.pres); k.observations = wert(b.obs);
+      k.avg_position = wert(b.pos); k.first_position_rate = wert(b.erst); k.products = b.prod;
+      k.top_product = b.top < 0 ? null : { source_product_id: "lh-p" + b.top, title: PRODUKTE[b.top].t,
+                                           image_url: null, visibility: PRODUKTE[b.top].vis };
+      return k;
+    });
+    /* Die Linien: vom Wert "vorher" zum Wert "jetzt", mit einer kleinen, festen Welle darauf --
+       eine Gerade sieht nach Rechnung aus, Zufall wuerde von Runde zu Runde anders aussehen. */
+    var serien = SHOP_MARKEN.map(function(b, i){
+      var k = marke(b.m);
+      k.is_own = b.m === "ac"; k.in_top5 = true;
+      k.points = tage.map(function(tag, j){
+        var t = j / 13, welle = Math.sin(j * 1.7 + i * 2.1) * 1.1;
+        return { day: tag, share_of_shelf: r2(b.sos[1] + (b.sos[0] - b.sos[1]) * t + welle),
+                 presence: r2(b.pres[1] + (b.pres[0] - b.pres[1]) * t + welle * 2),
+                 avg_position: r2(b.pos[1] + (b.pos[0] - b.pos[1]) * t),
+                 first_position_rate: r2(b.erst[1] + (b.erst[0] - b.erst[1]) * t + welle) };
+      });
+      return k;
+    });
+    var acme = marke("ac");
+    return {
+      meta: { data_available_from: "2026-09-07",
+              period: { from: tage[0], to: tage[13], requested_from: tage[0], days: 14 },
+              previous_period: { from: "2026-09-07", to: "2026-09-20" }, comparison_available: true,
+              own_company: acme, own_company_set: true, own_observations: 84,
+              totals: { runs_with_known_state: 412, runs_with_shopping: 158, shopping_responses: 158,
+                        observations: 262, responses_with_list: 141, products: 14 },
+              previous_totals: { runs_with_known_state: 398, runs_with_shopping: 140, shopping_responses: 140,
+                                 observations: 244, responses_with_list: 126, products: 13 } },
+      kpis: { shopping_rate: wert([38.4, 35.1]), share_of_shelf: wert([31.9, 27.4]),
+              avg_position: wert([1.8, 2.2]), first_position_rate: wert([46.3, 39.0]),
+              brand_presence: wert([72.5, 64.8]) },
+      chart: { days: tage, series: serien },
+      brands: marken,
+      brands_other: { company_id: null, name: null, logo_url: null, color: null, type: "other", rank: null,
+                      share_of_shelf: wert([6.1, 7.1]), presence: wert([18.3, 19.0]), observations: wert([14, 15]),
+                      avg_position: wert([4.2, 4.0]), first_position_rate: wert([0, 1.2]), products: 3, top_product: null },
+      brands_page: { total_count: 5, limit: 25, offset: 0 },
+      brands_summary: { tracked_brands_observed: 5, unassigned_share_of_shelf: 6.1, unassigned_products: 3, own_rank: 1,
+                        own_share_of_shelf: wert([31.9, 27.4]),
+                        top_competitor: (function(){ var t = marke("te"); t.share_of_shelf = 24.6; return t; })() },
+      top_products: [0, 1, 2, 3, 4].map(produkt),
+      movement: { rising: [produkt(0)], declining: [produkt(4)] },
+      merchant_distribution: { top: SHOP_HAENDLER, rest: { observations: 136, share: 47.7, merchants: 9 }, merchants_total: 12 }
+    };
+  }
+  function shopFuellen(){
+    if (window.setShoppingOverview){
+      try { window.setShoppingOverview(ID.ush, JSON.stringify(shopDaten()), ""); }
+      catch (e){ if (window.console) console.warn("[landing-hero] Shopping:", e); }
+    }
+  }
+  function shopSzene(root){
+    var seite = root.querySelector(".ulh-shop");
+    /* Ohne die Seite (ein aelteres Markup) geht es direkt zum Neustart -- der Kreislauf darf an
+       keiner fehlenden Seite haengen bleiben. Laeuft die Szene schon, passiert nichts. */
+    if (!seite){ neustart(root); return false; }
+    if (seite.__ulhShopAuf) return false;
+    seite.__ulhShopAuf = true;
+    /* Weg geht, was gerade steht -- dazu gehoert auch das Dashboard, das beim ersten Aufbau OHNE
+       is-da sichtbar ist (gemessen: ein direkter Aufruf aus dem Dashboard liess es unter der
+       Shopping-Seite stehen). */
+    [].forEach.call(root.querySelectorAll(".ulh-seite.is-da, .ulh-main:not(.is-weg)"), function(alt){
+      if (alt === seite) return;
+      alt.classList.remove("is-da");
+      alt.classList.add("is-weg");
+    });
+    if (window.setSidebarActive) window.setSidebarActive(ID.usn, "shopping");
+    shopUhrenAus();
+    shopNach(function(){
+      seite.classList.remove("is-weg");
+      seite.classList.add("is-da");
+      seite.classList.add("is-kommt");
+      hellHalten(root);
+      ohneTipps(root);
+      shopNach(function(){ seite.classList.remove("is-kommt"); }, MIRA_RISE_MS);
+      shopNach(function(){
+        shopFuellen();
+        shopNach(function(){ ohneTipps(root); hellHalten(root); zeichenSetzen(root); }, 400);
+        shopNach(function(){
+          seite.classList.remove("is-da");
+          seite.classList.add("is-weg");
+          shopNach(function(){ neustart(root); }, SHOP_ABGANG_MS);
+        }, SHOP_STAND_MS);
+      }, SHOP_SEITE_MS);
     }, AUSBLENDEN_MS);
     return true;
   }
@@ -6250,11 +6550,13 @@
     var prompts = root.querySelector(".ulh-prompts");
     var chancen = root.querySelector(".ulh-chancen");
     var perf = root.querySelector(".ulh-perf");
+    var shop = root.querySelector(".ulh-shop");
     if (!main || !chancen) return false;
 
     /* 1. Die letzte Seite geht -- wie jeder andere Wechsel. Das ist jetzt die Performance-Seite;
        das Brett davor ist zu diesem Zeitpunkt schon weg. */
     if (perf){ perf.classList.remove("is-da"); perf.classList.add("is-weg"); }
+    if (shop){ shop.classList.remove("is-da"); shop.classList.add("is-weg"); }
     chancen.classList.remove("is-da");
     chancen.classList.add("is-weg");
     if (window.setSidebarActive) window.setSidebarActive(ID.usn, "dashboard");
@@ -6269,7 +6571,7 @@
          ersten Bau des Kreislaufs passiert -- in der zweiten Runde blieb Mira leer, weil
          miraSzene is-da dazusetzte, ohne das is-weg von hier abzunehmen. Gemessen an der
          Klassenliste: "mira.is-weg.is-da" bei Deckkraft 0. */
-      [mira, prompts, chancen, perf].forEach(function(seite){
+      [mira, prompts, chancen, perf, shop].forEach(function(seite){
         if (!seite) return;
         seite.classList.remove("is-da");
         seite.classList.remove("is-weg");
@@ -6281,6 +6583,12 @@
       if (prompts) prompts.__ulhPromptsAuf = false;
       chancen.__ulhChancenAuf = false;
       if (perf) perf.__ulhPerfAuf = false;
+      if (shop) shop.__ulhShopAuf = false;
+      shopUhrenAus();
+      /* Shopping vergisst seine Antwort: in der naechsten Runde zaehlen die Kennzahlen wieder
+         hoch, statt fertig dazustehen. Die Anfrage, die resetShopping ausloest, verpufft in der
+         Stummschaltung (landing-boot.js); die Antwort kommt erst mit der Szene. */
+      if (window.resetShopping) window.resetShopping(ID.ush);
       schubladeZu(root);             /* nichts Offenes in die naechste Runde mitnehmen */
       perfUhrenAus();                /* alle Uhren der Szene anhalten */
       perfTippWeg();
@@ -6426,6 +6734,7 @@
     root.__ulhPrompts = function(){ return promptsSzene(root); };
     root.__ulhChancen = function(){ return chancenSzene(root); };
     root.__ulhPerf    = function(){ return perfSzene(root); };
+    root.__ulhShop    = function(){ return shopSzene(root); };
     root.__ulhNeu     = function(){ return neustart(root); };
     /* EINE ZEILE, DIE SAGT, WORAN ES LIEGT. Sie schreibt nichts und aendert nichts -- sie zaehlt
        auf, was geladen ist, was gefuellt wurde und was leer blieb. Damit laesst sich auf der
