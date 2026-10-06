@@ -1478,6 +1478,9 @@
   max-width: 62ch;
   font-size: 16px; font-weight: 400; line-height: 1.55; letter-spacing: -0.01em;
   color: var(--ulh-sub);
+  /* Wie die Unterzeilen der Karten: kein einzelnes Wort allein unten (06.10. nachts gemessen,
+     375px: "... as your / visibility."). */
+  text-wrap: pretty;
 }
 
 /* Zwei Reihen, je zwei Karten, 8px dazwischen -- waagerecht wie senkrecht derselbe Abstand.

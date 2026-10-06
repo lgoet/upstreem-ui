@@ -2229,16 +2229,20 @@
       h: "See which products AI puts first",
       p: "Position, rating and price for every product the models recommend, yours and your competitors'." },
     /* Oben rechts seit dem 06.10. die Produktbewegung von Shopping statt der Balken (angefordert).
-       Die Zeile sagt, WOZU man hinsieht (frueh merken), nicht, was die Spalten zeigen. */
+       06.10. nachts: "eher, dass man Dynamiken frueh erkennen und steuern kann" -- also beides in
+       der Zeile: frueh SEHEN (Schwung) und STEUERN (womit). */
     { breit: 40, vis: "bewegung",
-      h: "Catch slipping products early",
-      p: "See which products AI recommends more or less often, and how many places they moved." },
+      h: "Spot product momentum early",
+      p: "See which products gain or lose AI recommendations, and steer content, pricing or ads while the shift is small." },
     { breit: 40, vis: "werber",
       h: "Find out who buys your prompts",
       p: "Every advertiser showing ads on your tracked prompts, ranked by share of placements." },
+    /* 06.10. nachts: "strategischer" -- die Karte zeigt nicht Anzeigen, sie zeigt, wie die
+       Wettbewerber im Kaufmoment spielen: was sie versprechen, welche Fragen sie kaufen, wohin der
+       Klick geht. Und wozu man das wissen will: um zu antworten. */
     { breit: 60, vis: "anzeigen",
-      h: "See the prompt behind every ad",
-      p: "Open each sponsored placement with its creative, landing page and the question that triggered it." }
+      h: "Read the strategy behind every ad",
+      p: "What rivals promise, which buyer questions they target and where each click lands, so you can plan your answer." }
   ];
   /* ---- ECHTE PRODUKTE MIT ECHTEN FOTOS (06.10. angefordert: "echte Produkte und echte
      Produktbilder -- guter Mix aus Autozubehoer, Wallboxen, ganzen Autos, Leasingangeboten") ----
@@ -2855,18 +2859,22 @@
      dem Pin des Events auf der Zeitachse (Tooltip und Vergleichsgruppe sind seit dem 06.10. abends
      weg, angefordert). */
   var EVENT_CHIP = "Events";
-  var EVENT_H = "Find out which launches paid off";
-  var EVENT_SUB = "Log relaunches, campaigns and price changes, then see what each one did to your " +
-    "AI visibility.";
+  /* KEIN "LAUNCH" MEHR (06.10. nachts: "da steht ueberall das Wort Launch -- das ist ein Feature,
+     um den Impact von Massnahmen wirklich zu messen"). Die Texte sprechen jetzt von Massnahmen
+     (initiative) und von MESSEN; das Beispiel-Event selbst bleibt der Relaunch von
+     acme.com/electric, so angefordert. */
+  var EVENT_H = "Measure what really moved your visibility";
+  var EVENT_SUB = "Log content updates, campaigns and price changes, then measure the impact of each " +
+    "one against a comparison group.";
   var EVENTKARTEN = [
     /* Nach der Recherche (06.10. spaet, Begruendung bei MERKMALE): die Vergleichsgruppe ist das,
        was die Wirkung BELEGT -- deshalb "Prove" und die Gruppe in der Unterzeile. */
     { breit: 40, vis: "eventkarte",
-      h: "Put every launch on the timeline",
-      p: "Relaunches, campaigns and price changes sit on your visibility chart, so every jump has a reason." },
+      h: "Put every initiative on the timeline",
+      p: "Content updates, campaigns and price changes sit on your visibility chart, so every shift has a known cause." },
     { breit: 60, vis: "eventkurve",
-      h: "Prove what each launch changed",
-      p: "Affected prompts from go-live onward, measured against a comparison group that stayed untouched." }
+      h: "Prove the impact of each initiative",
+      p: "Affected prompts from day one, measured against an untouched comparison group, so noise never passes as impact." }
   ];
   var EVENT_TON = "#3b82f6";
   var EVENT_NAME = "acme.com/electric relaunch";
@@ -6731,6 +6739,11 @@
   var SHOP_KOMMT_MS = ZEILEN_START + 240;
   /* Der Auftritt des Details: vier Teile, der letzte bei 300ms, je 680ms lang. */
   var SHOP_DETAIL_AUF = 980;
+  /* Der Hover der angeklickten Zeile steht EINE SEKUNDE, bevor gedrueckt wird (06.10. nachts
+     angefordert) -- laenger als die 420ms an der Karte im Brett: eine Zeile in einer Liste von
+     zehn muss man erst finden, bevor der Klick etwas erklaert. */
+  var SHOP_FASS_MS = 1000;
+  var SHOP_FASSEN_GESAMT = SHOP_FASS_MS + DRUCK_AB + DRUCK_NACH;
   var SHOP_PRODUKT = "p2";
   var shopUhren = [];
   function shopNach(fn, ms){ shopUhren.push(setTimeout(fn, ms)); }
@@ -6955,7 +6968,7 @@
         zeile.classList.remove("ulh-druck");
         shopNach(oeffnen, DRUCK_NACH);
       }, DRUCK_AB);
-    }, FASS_MS);
+    }, SHOP_FASS_MS);
     return true;
   }
   function shopSzene(root){
@@ -6992,7 +7005,7 @@
       shopNach(function(){ shopProduktKlick(root); }, SHOP_ZEILEN_ENDE + VOR_KLICK_MS);
       /* Danach die Chancen: chancenSzene nimmt die Seite, die steht, selbst weg. */
       shopNach(function(){ chancenSzene(root); },
-               SHOP_ZEILEN_ENDE + VOR_KLICK_MS + FASSEN_GESAMT + SHOP_DETAIL_AUF + STAND_MS);
+               SHOP_ZEILEN_ENDE + VOR_KLICK_MS + SHOP_FASSEN_GESAMT + SHOP_DETAIL_AUF + STAND_MS);
     }, AUSBLENDEN_MS);
     return true;
   }

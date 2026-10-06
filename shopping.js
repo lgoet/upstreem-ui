@@ -98,6 +98,14 @@
     if (s.indexOf("//") === 0) s = "https:" + s;
     return /^https?:\/\/[^\s"'<>]+$/i.test(s) ? s : "";
   }
+  /* Ein MARKEN-LOGO darf auch ein eingebettetes Bild sein (data:image/...), wie in core seit dem
+     06.10. (barLogoHtml, markenChip). Gemeldet auf der Landingpage: dort traegt Acme ihr Zeichen
+     als eingebettetes SVG, und sichereUrl liess nur http(s) durch -- im Product Detail stand statt
+     des Zeichens der Ersatzbuchstabe "A". Nur fuer <img src>, nie fuer einen Link. */
+  function logoUrl(u) {
+    var s = str(u).trim();
+    return /^data:image\/(png|jpe?g|gif|webp|svg\+xml)[;,]/i.test(s) ? s : sichereUrl(s);
+  }
 
   /* ---- Zahlen, wie sie die Uebergabe festlegt (Abschnitt 4) --------------------------------
      Prozent mit einer Stelle, Position mit einer Stelle hinter der Raute, Anzahlen ganz. */
@@ -1135,7 +1143,7 @@
       if (m.type === "other") return '<span class="up-logo-box ush-andere-logo"><span class="up-logo-ltr">–</span></span>';
       var n = str(m.name).trim();
       var ltr = '<span class="up-logo-ltr">' + esc(n.charAt(0).toUpperCase() || "?") + '</span>';
-      var u = sichereUrl(m.logo_url);
+      var u = logoUrl(m.logo_url);
       return u ? '<span class="up-logo-box has-img"><img src="' + esc(u) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/>' + ltr + '</span>'
                : '<span class="up-logo-box">' + ltr + '</span>';
     }
@@ -1538,7 +1546,7 @@
           if (v == null) { if (istPos) return; v = 0; }
           punkte.push({ company_id: id, day: tg, visibility_pct: v });
         });
-        firmen.push({ company_id: id, name: str(r.name).trim() || t("Other"), favicon_url: sichereUrl(r.logo_url),
+        firmen.push({ company_id: id, name: str(r.name).trim() || t("Other"), favicon_url: logoUrl(r.logo_url),
                       color: /^#[0-9a-f]{3,8}$/i.test(str(r.color).trim()) ? str(r.color).trim() : null,
                       visibility_window_pct: reihen.length - i });
       });
@@ -1940,8 +1948,8 @@
       function rein(id, name, logo) {
         id = str(id).trim(); name = str(name).trim();
         if (!id || !name) return;
-        if (da[id]) { if (!da[id].logo && sichereUrl(logo)) da[id].logo = sichereUrl(logo); return; }
-        da[id] = { key: id, label: name, logo: sichereUrl(logo) || "" };
+        if (da[id]) { if (!da[id].logo && logoUrl(logo)) da[id].logo = logoUrl(logo); return; }
+        da[id] = { key: id, label: name, logo: logoUrl(logo) || "" };
         l.push(da[id]);
       }
       (UC.getBrands ? UC.getBrands() : []).forEach(function (b) { if (b) rein(b.company_id, b.name, b.logo_url || b.favicon_url); });
