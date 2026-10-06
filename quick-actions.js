@@ -1689,10 +1689,24 @@
       .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
       .toLowerCase();
   }
+  /* WARTE-UHR (06.10.). Bubble antwortet auf jede Suche mit setResults oder setError -- AUSSER
+     der Run-JS-Schritt stirbt, bevor er einen der beiden ruft. Genau das ist passiert: ein
+     URL-Titel aus Binaerdaten (eine MP3, deren Bytes als Titel gespeichert waren) trug "\5" und
+     "\6", im Backtick sind das Oktal-Escapes, also SyntaxError -- und die Suche zeigte fuer immer
+     das Skelett. Nach 15 Sekunden ohne Antwort fuer DIESE Anfrage steht jetzt der Fehlerzustand
+     da; kommt die Antwort doch noch, ersetzt sie ihn (setResults prueft nur die requestId). Normal
+     antwortet die Suche in unter zwei Sekunden. */
+  var WARTE_MS = 15000, warteUhr = 0;
+  function warteStart(reqId){
+    clearTimeout(warteUhr);
+    warteUhr = setTimeout(function(){ warteUhr = 0; if (latestReqId === reqId && state === "loading") renderError(); }, WARTE_MS);
+  }
+  function warteEnde(){ clearTimeout(warteUhr); warteUhr = 0; }
   function runSearch(){
     var reqId = newReqId(); latestReqId = reqId;
     if (window.MQA_DEBUG) console.log("[MQA] runSearch -> new active req=", reqId, "scope=", FILTERS.scope, "rank=", FILTERS.rank, "q=", JSON.stringify(query));
     renderLoading();
+    warteStart(reqId);
     fire("mira_quick_actions_search", {
       query: query,
       query_folded: foldDiacritics(query),
@@ -2006,11 +2020,12 @@
       payload = payload || {};
       if (window.MQA_DEBUG) console.log("[MQA] setResults req=", payload.requestId, "active=", latestReqId, (payload.requestId && payload.requestId !== latestReqId) ? "IGNORED (stale requestId)" : "RENDER");
       if (payload.requestId && payload.requestId !== latestReqId) return;
+      warteEnde();
       var items = coerceItems(payload.items);
       _lastCompleted = { query: query, scope: FILTERS.scope || "", rank: FILTERS.rank || "", type: FILTERS.type || "", urltype: FILTERS.urltype || "", market: FILTERS.market || "", mentioning: FILTERS.mentioning || "" };
       renderResults(items);
     },
-    setError: function(payload){ payload = payload || {}; if (payload.requestId && payload.requestId !== latestReqId) return; renderError(payload.message); },
+    setError: function(payload){ payload = payload || {}; if (payload.requestId && payload.requestId !== latestReqId) return; warteEnde(); renderError(payload.message); },
     // exposed so the Bubble "Run JavaScript" step can sanitize the RPC response before parsing:
     //   MiraQuickActions.setResults({ requestId: `ID`, items: MiraQuickActions.parseItems(`[RESPONSE]`) });
     // (setResults also sanitizes internally, so passing a raw string as items works too)

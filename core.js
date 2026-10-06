@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261090;
+  var BUILD = 20261091;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -2728,7 +2728,10 @@
      broken payload still reports its ORIGINAL error rather than a confusing second one. Returns
      null and warns (with the code-point dump) when nothing works. Arrays/objects pass straight
      through, so a caller can accept both shapes without branching. */
-  function parseLoose(raw, label){
+  /* opts.leise (06.10.): keine Meldung bei einem Fehlschlag. normParams versucht danach noch
+     readBubble und meldet erst, wenn auch das scheitert -- sonst stand "payload is not valid JSON
+     -- ignored" in der Konsole, obwohl die Daten im zweiten Anlauf gelesen und gezeigt wurden. */
+  function parseLoose(raw, label, opts){
     if (raw == null) return null;
     if (typeof raw === "object") return raw;               // already a value, nothing to parse
     var s = String(raw)
@@ -2860,6 +2863,16 @@
       if (/^[A-Za-z_$][\w$]*\s*:/.test(t.substr(k, 64))) return true;
       return false;
     }
+    /* Was nach der schliessenden Klammer hinter einem String stehen darf: das Ende, die naechste
+       Klammer oder ein Komma, hinter dem JSON weitergeht. */
+    function nachKlammerOk(t, k){
+      var n = t.length;
+      while (k < n && /\s/.test(t.charAt(k))) k++;
+      if (k >= n) return true;
+      var c = t.charAt(k);
+      if (c === "}" || c === "]") return true;
+      return c === "," && fortsetzungOk(t, k + 1);
+    }
     function scanString(t, i, curly, istWert){
       var n = t.length, j = i + 1, body = "";
       while (j < n){
@@ -2892,10 +2905,16 @@
              Also einen Schritt weiter schauen: NACH einem echten Komma folgt in gueltigem JSON
              immer ein Schluessel oder ein Wert. "füh" ist keins von beiden, das Komma steht also
              im Text und das Anfuehrungszeichen davor gehoert dazu.
-             Bei } und ] bleibt es beim einfachen Test: dort ist die Lage eindeutig genug, und ein
-             Text, der auf "} endet, ist selten genug, um ihn nicht gegen Schaerfe zu tauschen. */
+             Bei } und ] galt bis zum 06.10. der einfache Test ("ein Text, der auf "} endet, ist
+             selten genug"). Dann kam die Responses-Tabelle mit Binaermuell in einem Textfeld:
+             mitten darin stand "]0z4000000;... -- das galt als Ende des Wertes, und der Rest lag in
+             Code-Position ("Expected ',' or '}' after property value", position 15831). Also auch
+             hier ein Blick hinter die Klammer: in gueltigem JSON folgt ihr das Ende, ein Komma mit
+             echter Fortsetzung oder die naechste Klammer -- dieselbe Regel, die parseBubbleJson
+             (jsonNachKlammer) seit dem 29.09. hat. */
           var strukturell;
-          if (k >= n || nxt === "}" || nxt === "]" || (nxt === ":" && !istWert)) strukturell = true;
+          if (k >= n || (nxt === ":" && !istWert)) strukturell = true;
+          else if (nxt === "}" || nxt === "]") strukturell = nachKlammerOk(t, k + 1);
           else if (nxt === ",") strukturell = fortsetzungOk(t, k + 1);
           else strukturell = false;
           if (strukturell){
@@ -2942,7 +2961,7 @@
        that says anything is why the repaired text STILL does not parse. Print the neighbourhood
        of that position too: "unexpected token" without the surrounding 60 characters is a riddle,
        and a riddle in a console warning is the same as no warning at all. */
-    if (window.console){
+    if (window.console && !(opts && opts.leise)){
       var at = /position (\d+)/.exec(repairMsg), near = "";
       if (at){
         var p = +at[1];
@@ -2981,7 +3000,7 @@
      components hold on to params and a surprise mutation there is its own class of bug. */
   function normParams(params, label){
     if (typeof params === "string"){
-      var roh = params, parsed = parseLoose(params, label);
+      var roh = params, parsed = parseLoose(params, label, { leise: true });
       /* A bare array is the other easy mistake: renderFoo(`[ … ]`) instead of
          renderFoo(`{"instanceId": …, "rows": [ … ]}`). Treat it as the rows list. */
       /* Zweiter Versuch mit readBubble, BEVOR etwas als unlesbar gilt. parseLoose und
@@ -2994,6 +3013,7 @@
       if (!isArr(parsed) && !(parsed && typeof parsed === "object")){
         var zweit = readBubble(roh);
         if (zweit && typeof zweit === "object") parsed = zweit;
+        else parseLoose(roh, label);          /* beide gescheitert: jetzt die Meldung mit der Stelle */
       }
       if (isArr(parsed)) params = { rows: parsed };
       else if (parsed && typeof parsed === "object") params = parsed;
@@ -3029,7 +3049,17 @@
     for (i = 0; i < LISTS.length; i++){
       var key = LISTS[i];
       if (typeof out[key] !== "string") continue;
-      var v = parseLoose(out[key], (label || "upstreem") + " " + key);
+      /* Derselbe zweite Anlauf wie oben fuer den ganzen Payload (06.10.). Hier fehlte er, und
+         genau hier kommt die Hausform an: fn({ instanceId, rows: RAW }) traegt die Liste als
+         TEXT. Gemeldet an der Responses-Tabelle: ein Textfeld mit Binaermuell, parseLoose gab auf,
+         readBubble liest denselben Text -- die Tabelle zeigte trotzdem "nicht lesbar". */
+      var lbl = (label || "upstreem") + " " + key;
+      var v = parseLoose(out[key], lbl, { leise: true });
+      if (v == null && String(out[key]).trim()){
+        var v2 = readBubble(out[key]);
+        if (v2 && typeof v2 === "object") v = v2;
+        else parseLoose(out[key], lbl);
+      }
       /* Scheitert das Parsen, wurde daraus bisher schlicht [] -- und damit sah ein zerrissener
          Payload fuer JEDE Komponente exakt aus wie ein leeres Ergebnis. parseLoose warnt zwar in
          der Konsole, aber die Komponente bekommt nur die leere Liste zu sehen und meldet
