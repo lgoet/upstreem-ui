@@ -3161,12 +3161,25 @@
    faedt mit dem Text ein, weil es in demselben span liegt -- eine eigene Animation waere ein
    zweiter Takt in derselben Bewegung. */
 .up-bar-name, .up-bar-name-out { display: inline-flex; align-items: center; gap: 6px; }
-.up-bar-logo { width: 15px; height: 15px; border-radius: 4px; flex: 0 0 auto; object-fit: cover;
-  display: block; background: var(--vt-logo-bg); }
-/* Die Zeichen-Platte (makeBarList, it.zeichen, 04.10.): dieselbe Platte wie ein Logo, darauf das
-   Zeichen in der Tinte der Logo-Platten (--vt-logo-ink, wie der Buchstabe in .up-logo-box). */
+/* makeBarList zeichnet dieselben Balken noch einmal: ein Bild lang ohne Uebergang (06.10.). */
+.up-bars.is-sofort :is(.up-bar-fill, .up-bar-name, .up-bar-pct, .up-bar-outside) { transition: none; }
+/* DAS LOGO IM BALKEN IN EINEM KAESTCHEN (06.10. fuer alle Balkenlisten, angefordert an den
+   Ads-Balken: "genau so wie ueberall, wie bei Domain Detail"). Bis hier stand das Kaestchen nur
+   lokal in domain-detail.css (01.10., Modell-Logos): Rahmen, heller Grund, 2px Luft -- ueberall
+   sonst lag das Bild randlos auf einer 15px-Platte, und ein Favicon, das seine Flaeche ganz
+   fuellt, sah aus wie ein loses Bild. Jetzt ist das Kaestchen der Standard, fuer Logos UND
+   Zeichen-Platten (Haendler in Shopping, Werbetreibende ohne Logo in Ads).
+   20px aussen: 14 Bild + 2x2 Polster + 2x1 Rahmen, Radius s (6). Die Spur ist 32px hoch, es passt.
+   Am Bild selbst und ohne Huelle: Rahmen und Polster gehen an einem img, object-fit contain
+   beschneidet nichts. Im Dunkeln verschmilzt der Rahmen mit dem hellen Grund. */
+.up-bar-logo { box-sizing: border-box; width: 20px; height: 20px; flex: 0 0 20px; padding: 2px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-s);
+  background: var(--vt-logo-bg); object-fit: contain; display: block; }
+.up-root[data-theme="dark"] .up-bar-logo { background: var(--vc-text); border-color: var(--vc-text); }
+/* Die Zeichen-Platte (makeBarList, it.zeichen, 04.10.): dasselbe Kaestchen, darauf das Zeichen in
+   der Tinte der Logo-Platten (--vt-logo-ink, wie der Buchstabe in .up-logo-box). */
 .up-bar-logo.is-zeichen { display: inline-flex; align-items: center; justify-content: center; color: var(--vt-logo-ink, var(--vc-muted)); }
-.up-bar-logo.is-zeichen svg { width: 11px; height: 11px; display: block; }
+.up-bar-logo.is-zeichen svg { width: 12px; height: 12px; display: block; }
 .up-bar-name-out { font-size: 11px; font-weight: 600; }
 .up-bar-pct-out { font-size: 11px; font-weight: 600; }
 /* Die eigene Wertspalte (cfg.pctCol). Rechts ausgerichtet und mit tabellarischen Ziffern, damit
@@ -3280,6 +3293,14 @@
 .up-logo-box img { width: 22px; height: 22px; border-radius: 7px; object-fit: cover; display: block; }
 .up-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
 .up-logo-box.has-img .up-logo-ltr { display: none; }
+/* EIN ZEICHEN STATT DES ANFANGSBUCHSTABENS (06.10., Ads: "Werbetreibende ohne Logo zeigen das
+   Werbetreibende-Zeichen"). Dieselbe Stelle und Tinte wie der Buchstabe, in beiden Kacheln: der
+   Logo-Kachel der Tabellen (24px, Zeichen 14) und dem 18px-Logo der Chips (Zeichen 11). Kommt
+   das Bild doch, verschwindet es wie der Buchstabe. */
+.up-logo-zeichen { display: inline-flex; color: var(--vt-logo-ink, var(--vc-muted)); }
+.up-logo-zeichen svg { width: 14px; height: 14px; display: block; }
+.up-ment-logo .up-logo-zeichen svg { width: 11px; height: 11px; }
+.up-logo-box.has-img .up-logo-zeichen, .up-ment-logo.has-img .up-logo-zeichen { display: none; }
 
 /* ---------- DER LOGO-FAECHER (UC.makeFaecher, 29.09.) ----------
    Fuenf Karten auf einem Platz, gedreht um EINEN Punkt weit unter ihnen: transform-origin 50%
@@ -3500,6 +3521,11 @@
    visibility-chart's .vt-num never did, and extracting THAT one into .up-num quietly spread the
    omission to prompts-table. Fixing it here fixes both at once. */
 .up-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+/* In einer Tabellenzelle darf die Zahl schrumpfen und kuerzt dann mit Auslassungspunkten (06.10.).
+   Die Zelle schneidet erst an ihrem POLSTERRAND ab (overflow hidden), nicht am Inhalt -- ein
+   langer Wert ("€19.62–€21.62" in 100px) lief deshalb bis zu 4,5px in die 16px rechts hinein, und
+   das Polster ist Pflicht (gemeldet an der Preisspalte der Shopping-Produkte). */
+.up-td > .up-num { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .up-rank-group { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 .up-hash { width: 12px; height: 12px; color: var(--vc-third); flex: 0 0 auto; display: block; }
 /* ---------- SENTIMENT OHNE KASTEN (29.09. angefordert) ----------

@@ -70,7 +70,9 @@
   Every one fires a single RAW value — NOT JSON — via fn(value):
     gran      "day" | "week" | "month"
     rowclick  the clicked row's company_id, as a string
-    goto      the instanceId, as a string
+    goto      the instanceId, as a string. Seit dem 06.10. geht der Knopf AUCH SELBST: offene Drawer
+              zu, dann die Ansicht "brands" (andere Ansicht: data-goto-view="<key>"). In Bubble
+              ist dafuer nichts noetig; ein bestehender Zweig an diesem Event schadet nicht.
     sort      "<field>_<dir>", field via {visibility:"visibility", ranking:"rank", sentiment:"sentiment"}
               e.g. "rank_asc", "visibility_desc"
     submit    comma-joined company-id string, e.g. "12,47,90" — must be Bubble type "text",

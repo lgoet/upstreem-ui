@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261091;
+  var BUILD = 20261092;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -424,7 +424,9 @@
     "Research settings": "Recherche einstellen",
     "Show tools": "Werkzeuge zeigen",
     "Hide tools": "Werkzeuge ausblenden",
-    "Filters and settings": "Filter und Einstellungen",
+    /* Der Knopf, der die Werkzeugleiste ueber einer Tabelle aufklappt (06.10.): "Filtern" tut die
+       Filterleiste oben, nicht diese Leiste -- darin stehen Sortierung, Suche und Spalten. */
+    "Sort, search and settings": "Sortieren, Suchen und Einstellungen",
     /* Tabelle einstellen, Sortiermenue, Reiter -- die Menues, die JEDE Tabelle aus core baut */
     "Columns": "Spalten",
     "Select all": "Alle auswählen",
@@ -1234,7 +1236,6 @@
     "Prompt status": "Status des Prompts",
     "Search prompts": "Prompts suchen",
     "Search prompts...": "Prompts suchen...",
-    "Search, filters and settings": "Suche, Filter und Einstellungen",
 
     /* Auswahl und Sammelleiste */
     "1 selected": "1 ausgewählt",
@@ -3959,7 +3960,8 @@
      einer Marke {name, logo_url} statt aus dem Modell-Store. Ohne Logo der Anfangsbuchstabe.
      cfg.cls haengt eine Klasse an, cfg.nach fertiges Markup hinter den Namen (die Marke "You"),
      cfg.nameHtml ersetzt den Namen (Suchtreffer markiert), cfg.ltr das Zeichen in der Kachel
-     (Shopping: "–" fuer nicht zugeordnete Produkte). */
+     (Shopping: "–" fuer nicht zugeordnete Produkte), cfg.zeichen ein Icon statt des Buchstabens
+     (06.10., Ads: Werbetreibende ohne Logo). */
   function markenChip(m, cfg){
     cfg = cfg || {};
     m = m || {};
@@ -3972,7 +3974,8 @@
     if (!lg && m.domain) lg = faviconUrl(m.domain);
     return '<span class="up-model-chip up-marken-chip' + (cfg.cls ? " " + cfg.cls : "") + '"' + (name ? ' title="' + esc(name) + '"' : '') + '>' +
              '<span class="up-ment-logo' + (lg ? " has-img" : "") + '">' +
-               '<span class="up-model-ltr">' + esc(cfg.ltr != null ? cfg.ltr : (name.charAt(0).toUpperCase() || "?")) + '</span>' +
+               (cfg.zeichen ? '<span class="up-logo-zeichen">' + icon(cfg.zeichen, 2) + '</span>'
+                 : '<span class="up-model-ltr">' + esc(cfg.ltr != null ? cfg.ltr : (name.charAt(0).toUpperCase() || "?")) + '</span>') +
                (lg ? '<img src="' + esc(lg) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
                      ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +
              '</span>' +
@@ -3989,7 +3992,8 @@
      Anders als dort: das Bild 16:10 statt quadratisch (ein Werbemittel ist ein Banner, kein
      freigestelltes Produkt -- darum ohne Polster und ohne multiply), oben links das Format.
      ad   ein Ad-Objekt der Ads-RPCs (recent_ads, ads, items -- dieselben 29 Felder)
-     opts { logo, beziehung ("you" | "competitor"), q (Suchtreffer markieren), klasse }
+     opts { logo, beziehung ("you" | "competitor"), q (Suchtreffer markieren), klasse,
+            zeichen (Icon in der Logo-Kachel, wenn es kein Logo gibt) }
      Die Karte ist ein Knopf mit data-ad-id; was ein Klick oeffnet, entscheidet der Aufrufer. */
   var AD_FORMAT = { image_card_v2: "Image Ad", product_card_v2: "Product Ad" };
   var AD_FORMAT_ZEICHEN = { image_card_v2: "image", product_card_v2: "shoppingBag" };
@@ -4022,7 +4026,7 @@
         (fmt ? '<span class="up-adcard-fmt">' + esc(adFormatLabel(fmt)) + '</span>' : '') +
       '</span>' +
       '<span class="up-adcard-body">' +
-        '<span class="up-adcard-top">' + markenChip({ name: adv || "–", logo_url: opts.logo || "" }, { cls: "up-adcard-adv", nameHtml: adv ? mark(adv) : esc("–"), nach: marke }) + '</span>' +
+        '<span class="up-adcard-top">' + markenChip({ name: adv || "–", logo_url: opts.logo || "" }, { cls: "up-adcard-adv", nameHtml: adv ? mark(adv) : esc("–"), nach: marke, zeichen: opts.zeichen }) + '</span>' +
         '<span class="up-adcard-title">' + (titel ? mark(titel) : '<span class="is-empty">–</span>') + '</span>' +
         (desc ? '<span class="up-adcard-desc">' + mark(desc) + '</span>' : '') +
         '<span class="up-adcard-foot">' +
@@ -6112,9 +6116,37 @@
       if (state.query.length && state.query.length < MINC){ latestReqId = null; return; }
       debTimer = setTimeout(run, DEB);
     }
+    /* DER PLATZHALTER PASST IMMER (06.10.). Gemeldet in den Ads: "Werbetreibende durchsuchu" --
+       der deutsche Text ist 202px breit, das offene Feld 172px, und das Feld schneidet hart ab.
+       text-overflow wirkt an einem Platzhalter mit Fokus nicht (Chrome), und das Feld HAT den
+       Fokus, sobald es aufgeht. Also wird der Text selbst gekuerzt, mit Auslassungspunkten, sobald
+       das Feld seine Breite erreicht hat (Ende der Breitenfahrt) -- gemessen mit der Schrift des
+       Feldes. Der volle Text bleibt am Feld gemerkt; aendert ihn jemand (Sprachlauf), gilt der neue. */
+    function platzhalterEinpassen(){
+      if (!input || !box.classList.contains("is-open")) return;
+      var jetzt = input.getAttribute("placeholder") || "";
+      if (jetzt !== input.__upPhKurz) input.__upPhVoll = jetzt;
+      var voll = input.__upPhVoll || "", w = input.clientWidth;
+      if (!voll || w < 24) return;
+      var cs = getComputedStyle(input), c = platzhalterEinpassen.c || (platzhalterEinpassen.c = document.createElement("canvas").getContext("2d"));
+      c.font = cs.fontStyle + " " + cs.fontWeight + " " + cs.fontSize + " " + cs.fontFamily;
+      var kurz = voll;
+      if (c.measureText(voll).width > w - 2){
+        var basis = voll.replace(/[\u2026.]+$/, "");
+        while (basis.length > 1 && c.measureText(basis + "\u2026").width > w - 2) basis = basis.slice(0, -1);
+        kurz = basis.replace(/\s+$/, "") + "\u2026";
+      }
+      input.__upPhKurz = kurz;
+      if (kurz !== jetzt) input.setAttribute("placeholder", kurz);
+    }
+    if (box && !box.__upPhWacht){
+      box.__upPhWacht = true;
+      box.addEventListener("transitionend", function(e){ if (e.propertyName === "width") platzhalterEinpassen(); });
+    }
     function toggle(){
       var open = !box.classList.contains("is-open");
       box.classList.toggle("is-open", open);
+      if (open){ setTimeout(platzhalterEinpassen, 0); setTimeout(platzhalterEinpassen, 320); }
       syncTakeover();   // mobile: take over the row when opening, release it when closing
       /* Deliberately no toolbar re-fit here: the open search's width is already reserved by the
          component's own gap calculation, so the tier decision is the same open or closed.
@@ -10980,8 +11012,10 @@
         elTrig = document.createElement("button");
         elTrig.type = "button";
         elTrig.className = "up-iconbtn up-tbtrig";
-        elTrig.setAttribute("data-tip", cfg.tip || t_("Filters and settings"));
-        elTrig.setAttribute("aria-label", cfg.tip || t_("Show tools"));
+        /* Ein Text fuer alle Tabellen (06.10.); cfg.tip bleibt fuer einen Aufrufer, der wirklich
+           etwas anderes in der Leiste hat. */
+        elTrig.setAttribute("data-tip", t_(cfg.tip || "Sort, search and settings"));
+        elTrig.setAttribute("aria-label", t_(cfg.tip || "Sort, search and settings"));
         elTrig.setAttribute("aria-expanded", "false");
         elTrig.innerHTML = icon("listFilterPlus", 2);
       }
@@ -13904,7 +13938,7 @@
     var mount = cfg.mount;
     var isDark = cfg.isDark || function(){ return false; };
     var fmt = cfg.fmt || function(v){ return fmtPct(v); };
-    var letzte = null, ro = null;
+    var letzte = null, letzteSig = null, ro = null;
 
     /* opts.ohneFahrt (29.09. spaet): die Balken stehen sofort auf ihrer Breite, statt von 0
        einzufahren. Fuer einen Aufrufer, der DIESELBEN Daten ein zweites Mal zeichnet -- nach
@@ -13914,6 +13948,17 @@
       if (!mount) return;
       letzte = items;
       var ohneFahrt = !!(opts && opts.ohneFahrt);
+      /* DIESELBEN BALKEN EIN ZWEITES MAL (06.10., Ads: "die Barcharts triggern doppelte
+         Appear-Animationen"). Eine Seite zeichnet bei jeder Antwort und jedem Store-Nachtrag neu,
+         und jedes Mal fuhren die Balken wieder von 0 ein -- auch wenn sich an ihnen nichts
+         geaendert hatte. Stehen die Balken schon da und sind Schluessel und Werte gleich, kommen
+         sie ohne Fahrt (ein spaet geliefertes Logo zaehlt nicht als Aenderung). Neue Werte fahren
+         weiter ein: das ist die Aussage "das hat sich geaendert". */
+      var sig = (items || []).filter(Boolean).map(function(it){
+        return String(it.key == null ? it.name : it.key) + ":" + (Number(it.share) || 0) + ":" + (it.wert == null ? "" : it.wert);
+      }).join("|");
+      if (!ohneFahrt && sig === letzteSig && mount.querySelector(".up-bar-row")) ohneFahrt = true;
+      letzteSig = sig;
       var d = (items || []).slice().filter(Boolean);
       if (!d.length){ mount.innerHTML = '<div class="up-chart-empty">No data</div>'; return; }
       var spalte = cfg.labelCol ? !!cfg.labelCol() : false;
@@ -14025,7 +14070,17 @@
          erst nach der Einfahrt. Und es gibt EINEN Waechter je Liste: bisher kam bei jedem
          Zeichnen ein neuer dazu, und die alten liefen mit. */
       var bereit = ohneFahrt;
-      if (ohneFahrt) alle();
+      if (ohneFahrt){
+        /* Ohne Fahrt auch ohne Einblenden: Namen und Werte kommen sonst mit ihren 0,18s noch
+           einmal aus dem Nichts -- genau das zweite Erscheinen, das vermieden werden soll. Fuer
+           EIN Bild ohne Uebergang, danach gelten die Uebergaenge wieder (Breitenwechsel). */
+        var bars = mount.querySelector(".up-bars");
+        if (bars) bars.classList.add("is-sofort");
+        alle();
+        var weg = function(){ if (bars) bars.classList.remove("is-sofort"); };
+        requestAnimationFrame(function(){ requestAnimationFrame(weg); });
+        setTimeout(weg, 80);
+      }
       else {
         requestAnimationFrame(function(){ requestAnimationFrame(function(){ breitenSetzen(); }); });
         /* Notbremse: in einem verdeckten Tab laeuft requestAnimationFrame nicht. Ohne diese Zeile
@@ -16719,6 +16774,23 @@
     else { try { sessionStorage.setItem("am_pending_ref", JSON.stringify(bezug)); } catch(e){} }
     return true;
   }
+  /* ZU EINER ANSICHT GEHEN, AUS JEDER LAGE (UC.ansichtWechseln, 06.10.). Angefordert an den
+     Go-To-Knoepfen von Visibility Chart und Top Citations: "ohne Bubble-Konfiguration offene
+     Drawer schliessen und zur richtigen Ansicht navigieren". Derselbe Weg wie anMira und die
+     Event-Pins: erst alle Drawer zu, dann die Ansicht ueber die Seitenleiste (usnNavigieren --
+     nur dort setzt Bubble den State "Current View"), ohne Leiste showView mit ansichtHalten.
+     Ist die Ansicht schon offen, bleibt es beim Schliessen der Drawer. */
+  function ansichtWechseln(name, zusaetzlich){
+    name = String(name == null ? "" : name).trim();
+    if (!name) return false;
+    try { closeAllDrawers(zusaetzlich || []); } catch(e){}
+    try {
+      if ((currentView() || "") === name) return true;
+      if (typeof window.usnNavigieren === "function") window.usnNavigieren(name);
+      else if (typeof window.showView === "function"){ window.showView(name); ansichtHalten(name); }
+    } catch(e){}
+    return true;
+  }
   /* DIE FORM DES BEZUGS je Typ ist die eines Treffers aus Miras Suche (UC.entityItems) --
      dieselben Felder, die UC.entityId, UC.entityLabel und UC.entityBild lesen. So entsteht in
      Mira dieselbe Pille, als haette der Nutzer den Eintrag ueber das Plus gewaehlt. Eingang ist
@@ -17824,11 +17896,98 @@
     } catch(e){}
     return TEAM.id;
   }
+  /* TEAMWECHSEL MELDEN (06.10.). Bis hier merkte sich setUpstreemTeam die Id nur. Gemeldet an
+     den Events: das offene Event blieb nach einem Teamwechsel in der Adresse (?event=...) und das
+     Detail eines fremden Teams ging wieder auf. onTeamChange(fn(neu, alt), owner) hoert jede
+     Aenderung auf eine andere, nicht leere Id; alt ist "" beim ersten Setzen in einem Seitenleben.
+     Die Liste liegt am geteilten TEAM-Objekt auf window, damit zwei core-Kopien dieselbe sehen. */
+  function onTeamChange(fn, owner){
+    var subs = TEAM.subs || (TEAM.subs = []);
+    var sub = { fn: fn, owner: owner || null };
+    subs.push(sub);
+    return function(){ var i = subs.indexOf(sub); if (i >= 0) subs.splice(i, 1); };
+  }
   function setUpstreemTeam(id){
     var v = String(id == null ? "" : id).trim();
     if (v === "TEAM_ID") v = "";
+    var alt = TEAM.id;
     TEAM.id = v;
+    if (v && v !== alt){
+      var subs = TEAM.subs || [];
+      for (var i = subs.length - 1; i >= 0; i--){
+        var sub = subs[i];
+        if (sub.owner && !document.contains(sub.owner)){ subs.splice(i, 1); continue; }
+        try { sub.fn(v, alt || ""); } catch(e){ if (window.console) console.warn("[team] ein Abonnent hat geworfen:", e); }
+      }
+    }
     return v;
+  }
+  /* ---- DIE ADRESS-PARAMETER EINER ANSICHT (UC.ansichtsParameter, 06.10.) -------------------
+     Events, Shopping und Ads schreiben ihren Zustand in die Adresse (?event=, ?shop=&product=,
+     ?ads=&advertiser=). Das ist richtig, solange man in der Ansicht ist -- Zurueck im Browser,
+     Neuladen, ein geteilter Link. Gemeldet am 06.10.: die Parameter blieben stehen, wenn man die
+     Ansicht verliess ("event=... bleibt bei Pagereloads und sogar beim Teamwechsel"), und im
+     HAR stand  ?event=...&shop=merchants&view=prompts&ads=advertisers  -- drei fremde Zustaende
+     auf der Prompts-Seite.
+     Jetzt:
+     - Verlaesst man die Ansicht, gehen ihre Parameter aus der Adresse, werden aber gemerkt.
+     - Kommt man zurueck und die Adresse traegt keine eigenen, kommen die gemerkten wieder hinein
+       -- das offene Event ist also weiter da. Steht ein ANDERER Wert in der Adresse (ein Link),
+       gewinnt die Adresse.
+     - Wechselt das Team, werden sie verworfen und cfg.onTeamWechsel gerufen. Auch ueber ein
+       Neuladen hinweg: das Team, unter dem die Parameter galten, steht in sessionStorage.
+     Die Komponente liest die Adresse weiter selbst (in ihrem onViewChange, nach setTimeout 0) --
+     dieser Baustein laeuft synchron davor und stellt nur die Adresse richtig.
+     cfg: { ansicht: "events", schluessel: ["event"], owner: root, onTeamWechsel(neu, alt) } */
+  function ansichtsParameter(cfg){
+    var name = String(cfg.ansicht || ""), keys = cfg.schluessel || [], gemerkt = null;
+    var SPEICHER = "up_ansparam_" + name;
+    function lesen(){
+      var o = {}, q;
+      try { q = new URLSearchParams(window.location.search); } catch(e){ return o; }
+      keys.forEach(function(k){ var v = q.get(k); if (v != null && v !== "") o[k] = v; });
+      return o;
+    }
+    function hat(o){ return !!o && Object.keys(o).length > 0; }
+    function schreiben(werte){
+      try {
+        var u = new URL(window.location.href);
+        keys.forEach(function(k){ if (werte && werte[k] != null) u.searchParams.set(k, werte[k]); else u.searchParams.delete(k); });
+        var neu = u.pathname + u.search + u.hash;
+        if (neu !== window.location.pathname + window.location.search + window.location.hash) window.history.replaceState(window.history.state, "", neu);
+      } catch(e){}
+    }
+    function teamMerken(){ try { window.sessionStorage.setItem(SPEICHER, getTeam() || ""); } catch(e){} }
+    function teamVorher(){ try { return window.sessionStorage.getItem(SPEICHER) || ""; } catch(e){ return ""; } }
+    function lebt(){ return !cfg.owner || document.contains(cfg.owner); }
+    function wegNachTeam(neu, alt){
+      gemerkt = null; schreiben(null); teamMerken();
+      if (typeof cfg.onTeamWechsel === "function"){ try { cfg.onTeamWechsel(neu, alt); } catch(e){} }
+    }
+    function teamPruefen(neu, alt){
+      if (!lebt() || !neu) return;
+      var vorher = alt || teamVorher();
+      if (vorher && vorher !== neu) wegNachTeam(neu, vorher); else teamMerken();
+    }
+    onViewChange(function(v){
+      if (!lebt()) return;
+      if (v === name){
+        if (!hat(lesen()) && hat(gemerkt)) schreiben(gemerkt);
+        gemerkt = null;
+        teamMerken();
+        return;
+      }
+      var jetzt = lesen();
+      if (!hat(jetzt)) return;
+      gemerkt = jetzt; schreiben(null);
+      /* Bubble kann die Adresse nach showView noch einmal schreiben (Seitenparameter mitsenden) --
+         dann einmal nachfassen, solange die Ansicht nicht wieder offen ist. */
+      setTimeout(function(){ if (currentView() !== name && hat(lesen())) { gemerkt = lesen(); schreiben(null); } }, 400);
+    });
+    onTeamChange(function(neu, alt){ teamPruefen(neu, alt); }, cfg.owner);
+    /* Kam das Team schon vor dieser Komponente (setUpstreemTeam lief frueher), jetzt pruefen. */
+    if (getTeam()) teamPruefen(getTeam(), "");
+    return { lesen: lesen, merken: teamMerken };
   }
   /* ---------- Heat-Rampe ----------
      Die fuenf Stufen stehen als --uhm-h0..--uhm-h4 in core.css, eine Reihe pro Theme. heatAt liest
@@ -19280,7 +19439,9 @@
     if (lg.indexOf("//") === 0) lg = "https:" + lg;
     if (lg && !/^https?:\/\//i.test(lg)) lg = "";
     var ltr = String(x.label || "?").trim().charAt(0).toUpperCase() || "?";
-    return '<span class="up-ment-logo' + (lg ? " has-img" : "") + '"><span class="up-model-ltr">' + esc(ltr) + '</span>' +
+    /* x.zeichen (06.10.): ein Icon statt des Buchstabens, wie im Marken-Chip. */
+    return '<span class="up-ment-logo' + (lg ? " has-img" : "") + '">' +
+      (x.zeichen ? '<span class="up-logo-zeichen">' + icon(x.zeichen, 2) + '</span>' : '<span class="up-model-ltr">' + esc(ltr) + '</span>') +
       (lg ? '<img src="' + esc(lg) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/>' : '') +
       '</span>';
   }
@@ -20952,6 +21113,7 @@
     getDashboardMode: getDashboardMode, setDashboardMode: setDashboardMode,
     onDashboardMode: onDashboardMode,
     currentView: currentView,
+    onTeamChange: onTeamChange, ansichtsParameter: ansichtsParameter, ansichtWechseln: ansichtWechseln,
     /* Fuer die Komponenten: "darf ich hier messen?" ohne Layoutwert. Gebraucht wird das ueberall,
        wo ein Takt oder ein Beobachter etwas ausmisst -- in einer geparkten Ansicht zwingt jeder
        Lesezugriff den Browser, den Teilbaum trotzdem zu layouten. */

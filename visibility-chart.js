@@ -714,6 +714,10 @@
         }
         if (e.target.closest(".vot-goto")){
           votFire(root, "data-goto-fn", "bubble_fn_votGoTo", instanceId);
+          /* Selbst hingehen (06.10.): offene Drawer zu, dann die Brands-Ansicht -- dort steht die
+             ganze Sichtbarkeit. Eine Platzierung, die woandershin fuehren soll, nennt die Ansicht
+             in data-goto-view. Das Ereignis bleibt: ein Bubble-Zweig, der dasselbe tut, schadet nicht. */
+          if (UC.ansichtWechseln) UC.ansichtWechseln(String(root.getAttribute("data-goto-view") || "brands").trim());
           return;
         }
         if (e.target.closest(".vot-export")){

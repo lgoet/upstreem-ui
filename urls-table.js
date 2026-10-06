@@ -1496,8 +1496,7 @@
     var toolGroup = UC.makeToolGroup ? UC.makeToolGroup({
       root: root, tools: elHeadTools,
       filterActive: filterAktiv,
-      prefKey: UC.prefKey ? UC.prefKey("uut_tools__" + instanceId) : null,
-      tip: "Search, filters and settings"
+      prefKey: UC.prefKey ? UC.prefKey("uut_tools__" + instanceId) : null
     }) : null;
 
     return {

@@ -34,7 +34,8 @@
   (just the instanceId):
     mode      fn(mode, instanceId)         mode: "domain" | "url"
     rowclick  fn(id, instanceId)           id = domain string, or url/title string in url mode
-    goto      fn(instanceId)
+    goto      fn(instanceId). Seit dem 06.10. geht der Knopf AUCH SELBST: offene Drawer zu, dann
+                                            die Ansicht "citations" (andere: data-goto-view="<key>").
     export    fn(instanceId)
     types     fn(combined, instanceId)     combined = "<citationIds>;<urlIds>", each side comma-
                                             joined, e.g. "Editorial,Competition;guide,review" —

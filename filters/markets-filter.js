@@ -250,6 +250,22 @@
       return list;
     }
 
+    /* DIE PROMPT-ZAHL HINTER JEDEM EINTRAG (06.10. angefordert). prompt_count ist die Zahl der
+       Prompts dieses Markts im ganzen Team -- neben der Prompts-Tabelle passt sie zu dem, was darunter
+       steht. Ueberall sonst (Dashboard, Citations, Shopping, Ads ...) liest man sie als Zahl der
+       Zeilen darunter, und das ist sie nicht. Also nur in der Prompts-Ansicht, oder wo eine
+       Platzierung es ausdruecklich will (data-counts="yes"; "no" schaltet es auch dort ab).
+       Welche Ansicht: zuerst die #view-* um das Element, sonst die, die core zuletzt gezeigt hat,
+       sonst die Adresse. Die Sortierung nach Haeufigkeit bleibt -- sie braucht die Zahl nicht. */
+    function zahlenZeigen() {
+      var a = String(root.getAttribute("data-counts") || "").trim().toLowerCase();
+      if (a === "yes" || a === "true") return true;
+      if (a === "no" || a === "false") return false;
+      var v = root.closest ? root.closest('[id^="view-"]') : null;
+      var name = v ? v.id.slice(5) : (UC.currentView && UC.currentView()) || "";
+      if (!name) { try { name = new URLSearchParams(location.search).get("view") || ""; } catch (e) {} }
+      return name === "prompts";
+    }
     /* ---------------- render ---------------- */
     function renderSortMenu() {
       elSortMenu.innerHTML = SORTS.map(function (s) {
@@ -291,7 +307,7 @@
                '<span class="umk-opt-main">' + flagHtml(m, "umk-opt-flag") +
                  '<span class="umk-opt-name">' + esc(nameOf(m)) + '</span>' +
                '</span>' +
-               '<span class="umk-opt-count">' + toNum(m.prompt_count) + '</span>' +
+               (zahlenZeigen() ? '<span class="umk-opt-count">' + toNum(m.prompt_count) + '</span>' : '') +
              '</div>';
     }
     function renderList() {

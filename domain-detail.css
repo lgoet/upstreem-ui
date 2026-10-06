@@ -198,13 +198,15 @@
    Inhaltsflaeche (object-fit contain, nichts wird angeschnitten). Eine Huelle braeuchte eine
    Aenderung am Markup in core, und die gaelte fuer jede Balkenliste der App.
    20px aussen: 14 Bild + 2x2 Polster + 2x1 Rahmen, Radius s (6). Im Dunkeln verschmilzt der Rahmen
-   mit dem Grund, wie an den Chips (.up-stack-vis). */
-.udd-modelcard :is(.up-bar-logo, .up-donut-legend-logo) {
+   mit dem Grund, wie an den Chips (.up-stack-vis).
+   Seit dem 06.10. steht das Kaestchen fuer .up-bar-logo in core, fuer alle Balkenlisten; hier
+   bleibt nur die Legende des Rings, die es so nur in dieser Karte gibt. */
+.udd-modelcard .up-donut-legend-logo {
   box-sizing: border-box; width: 20px; height: 20px; flex: 0 0 20px; padding: 2px;
   border: 1px solid var(--vc-border); border-radius: var(--up-r-s);
   background: var(--vt-logo-bg); object-fit: contain;
 }
-.up-root[data-theme="dark"] .udd-modelcard :is(.up-bar-logo, .up-donut-legend-logo) {
+.up-root[data-theme="dark"] .udd-modelcard .up-donut-legend-logo {
   background: var(--vc-text); border-color: var(--vc-text);
 }
 /* Die Hoehe aendert sich beim Umschalten zwischen Ring und Balken -- 200ms ease (Vorgabe), damit

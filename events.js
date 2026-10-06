@@ -2675,7 +2675,11 @@
       if (listeUhrId) { clearTimeout(listeUhrId); listeUhrId = null; }
       if (state.ansicht === "uebersicht") renderListe(); else { krumenNeu(); renderKopf(); }
     }, root);
-    window.addEventListener("popstate", function () { if (root.isConnected) adresseLesen(false); });
+    /* Nur, solange die Events offen sind (06.10.): ausserhalb steht ?event nicht mehr in der Adresse
+       (UC.ansichtsParameter), und ein popstate auf dem Dashboard haette das offene Detail sonst
+       zur Uebersicht gemacht -- beim Zurueckkommen waere es weg gewesen. */
+    function aufEvents() { var v = UC.currentView ? UC.currentView() : ""; return !v || v === "events"; }
+    window.addEventListener("popstate", function () { if (root.isConnected && aufEvents()) adresseLesen(false); });
     window.addEventListener("up-event-open", function (e) {
       if (!root.isConnected || !e.detail) return;
       oeffnen(e.detail.id, false);
@@ -2838,6 +2842,12 @@
       if (!D || root.isConnected === false) return;
       if (!listeGeladen() || !(UC.getEvents && UC.getEvents().length)) UC.setEvents(JSON.stringify(D.liste()), "demo");
     });
+    /* ?event gehoert der Events-Ansicht (06.10., gemeldet: "der Param bleibt bei Pagereloads und
+       sogar beim Teamwechsel"): ausserhalb nicht in der Adresse, beim Zurueckkommen wieder da, nach
+       einem Teamwechsel weg -- auch ueber ein Neuladen hinweg. Vor dem ersten Stand, damit ein
+       Parameter aus einem anderen Team gar nicht erst geoeffnet wird. */
+    if (UC.ansichtsParameter) UC.ansichtsParameter({ ansicht: "events", schluessel: ["event"], owner: root,
+      onTeamWechsel: function () { if (state.ansicht === "detail") zurUebersicht(false); } });
     /* Erster Stand: die Adresse entscheidet. fire.spaet fuer einen Tiefenlink -- beim
        Seitenaufbau stehen Bubbles Empfaenger oft noch nicht. */
     if (adresseEvent()) oeffnen(adresseEvent(), false, true); else baueUebersicht();

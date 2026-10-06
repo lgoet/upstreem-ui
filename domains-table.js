@@ -1820,8 +1820,7 @@
           !!state.brandMentioned ||
           Object.keys(state.mentionApplied).some(function(k){ return state.mentionApplied[k]; });
       },
-      prefKey: UC.prefKey ? UC.prefKey("udt_tools__" + instanceId) : null,
-      tip: "Search, filters and settings"
+      prefKey: UC.prefKey ? UC.prefKey("udt_tools__" + instanceId) : null
     }) : null;
 
     return {

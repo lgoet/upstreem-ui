@@ -98,9 +98,14 @@
 .ush-andere { color: var(--vc-third); }
 /* Der Strich auf der Platte von "Andere" in der Tinte der Logo-Platten: --vc-third lag im Dunkeln
    auf der hellen Platte bei 1,98:1. Die Zuruecknahme traegt der Name daneben (.ush-andere). */
-.ush-haendler-ic { display: inline-flex; align-items: center; justify-content: center; color: var(--vt-logo-ink, var(--vc-muted)); }
+/* Das Haendler-Zeichen steht seit dem 06.10. OHNE Platte (angefordert) -- also in der Farbe der
+   Zeichen vor Text (--vc-muted), nicht in der Tinte der Platten. Zeichen und Text mit 6px statt 8. */
+.ush-haendler-ic { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--vc-muted); }
+.ush-haendler-ic.is-leise { color: var(--vc-third); }
 .ush-haendler-ic svg { width: 14px; height: 14px; display: block; }
-.ush-haendlerzahl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--up-fs-m); color: var(--vc-text); white-space: nowrap; }
+.ush-haendlerpaar { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.ush-haendlerzahl { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: var(--up-fs-m); color: var(--vc-text); white-space: nowrap; }
+.ush-haendlerzahl-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .ush-rating { display: inline-flex; align-items: center; gap: 4px; }
 .ush-rating svg { width: 13px; height: 13px; display: block; color: var(--vc-third); }
 .ush-topics { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
@@ -193,6 +198,11 @@
 .ush-galerie-knopf { flex: 0 0 40px; width: 40px; height: 40px; padding: 2px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vt-logo-bg); cursor: pointer; overflow: hidden; scroll-snap-align: start; }
 .ush-galerie-knopf img { width: 100%; height: 100%; object-fit: contain; display: block; }
+/* Wenige Bilder stehen mittig unter dem Hauptbild (06.10. angefordert). Ueber auto-Raender statt
+   justify-content: center -- laeuft die Reihe ueber, werden die Raender 0 und das erste Bild bleibt
+   erreichbar; center wuerde es links aus der Bildlaufflaeche schieben. */
+.ush-galerie-knopf:first-child { margin-left: auto; }
+.ush-galerie-knopf:last-child { margin-right: auto; }
 .ush-galerie-knopf.is-on { border-color: var(--up-accent-ink); }
 /* Nach innen: die Reihe schneidet alles ab, was ueber ihren Rand ragt. */
 .ush-galerie-knopf:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: -2px; }

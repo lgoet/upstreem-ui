@@ -5386,8 +5386,7 @@
         if (state.mentionApplied && Object.keys(state.mentionApplied).some(function(k){ return state.mentionApplied[k]; })) return true;
         return false;
       },
-      prefKey: UC.prefKey ? UC.prefKey("upt_tools__" + instanceId) : null,
-      tip: "Search, filters and settings"
+      prefKey: UC.prefKey ? UC.prefKey("upt_tools__" + instanceId) : null
     }) : null;
 
     return {

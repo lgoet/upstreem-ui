@@ -1155,8 +1155,11 @@
     function haendlerName(n) { return str(n).trim(); }
     function haendlerHtml(n, q) {
       var name = haendlerName(n);
-      if (!name) return '<span class="up-logo-box ush-haendler-ic"><span class="up-logo-ltr">?</span></span><span class="up-varname ush-andere">' + esc(t("Unknown")) + '</span>';
-      return '<span class="up-logo-box ush-haendler-ic">' + UC.icon("store", 2) + '</span><span class="up-varname" title="' + esc(name) + '">' + hl(name, q) + '</span>';
+      /* Nur das Zeichen, ohne Platte (06.10. angefordert: "einfach nur ein Icon"). Haendler haben
+         kein Logo, die Platte versprach eines. Zeichen und Name in einer eigenen Gruppe mit 6px
+         statt den 10px der Zelle -- sie gehoeren zusammen wie Logo und Name im Marken-Chip. */
+      if (!name) return '<span class="ush-haendlerpaar"><span class="ush-haendler-ic is-leise">' + UC.icon("store", 2) + '</span><span class="up-varname ush-andere">' + esc(t("Unknown")) + '</span></span>';
+      return '<span class="ush-haendlerpaar"><span class="ush-haendler-ic">' + UC.icon("store", 2) + '</span><span class="up-varname" title="' + esc(name) + '">' + hl(name, q) + '</span></span>';
     }
     function bildHtml(url, klasse) {
       var u = sichereUrl(url);
@@ -1239,17 +1242,19 @@
         sp("obs", "Observations", 128, 0.9, 70, 30, { info: "obs" }),
         sp("first", "First Position Rate", 156, 1.1, 50, 44, { info: "firstProd" }),
         sp("rating", "Rating", 92, 0.7, 40, 30),
-        sp("price", "Price", 130, 1, 60, 50, { info: "price" })] },
+        /* 148: eine Preisspanne ("€19.62–€21.62") braucht 105px Text plus 28 Polster; mit 128/130
+           lief sie 4,5px in das rechte Polster (06.10. gemessen). Was laenger ist, kuerzt core. */
+        sp("price", "Price", 148, 1, 60, 50, { info: "price" })] },
       products: { erste: { label: "Product", min: 280, sort: "title", sk: { w: 170, logo: true } }, spalten: [
         sp("brand", "Brand", 160, 1.2, 85, { w: 70, logo: true }),
         sp("vis", "Visibility", 124, 1, 90, 60, { sort: "visibility", info: "vis" }),
         sp("obs", "Observations", 148, 1, 70, 30, { sort: "observations", info: "obs" }),
         sp("pos", "Avg. Position", 144, 1, 80, 36, { sort: "avg_position", info: "pos" }),
         sp("first", "First Position Rate", 176, 1.1, 50, 44, { sort: "first_position_rate", info: "firstProd" }),
-        sp("price", "Price", 128, 1.1, 60, 60, { sort: "price", info: "price" }),
+        sp("price", "Price", 148, 1.1, 60, 60, { sort: "price", info: "price" }),
         sp("rating", "Rating", 92, 0.7, 30, 30, { sort: "rating" }),
         sp("merchants", "Merchants", 128, 1.1, 40, 70),
-        sp("seen", "Last Seen", 112, 0.9, 20, 60, { sort: "last_seen" })] },
+        sp("seen", "Last Seen", 120, 0.9, 20, 60, { sort: "last_seen" })] },
       brands: { erste: { label: "Brand", min: 220, sort: "name", sk: { w: 110, logo: true } }, spalten: [
         sp("share", "Share of Shelf", 154, 1.2, 90, 60, { sort: "share_of_shelf", info: "share" }),
         sp("presence", "Presence", 126, 0.9, 80, 44, { sort: "presence", info: "presence" }),
@@ -1902,8 +1907,8 @@
       var mh = (isArr(p.merchants) ? p.merchants : []).map(haendlerName).filter(Boolean);
       var mz = anzahlWert(p.merchant_count) != null ? anzahlWert(p.merchant_count) : mh.length;
       var haendler = mz > 0
-        ? '<span class="ush-haendlerzahl" title="' + esc(mh.join(", ")) + '"><span class="up-logo-box ush-haendler-ic">' + UC.icon("store", 2) + '</span>' +
-          esc(ersetze(t(mz === 1 ? "{n} merchant" : "{n} merchants"), { n: ganz(mz) })) + '</span>'
+        ? '<span class="ush-haendlerzahl" title="' + esc(mh.join(", ")) + '"><span class="ush-haendler-ic">' + UC.icon("store", 2) + '</span>' +
+          '<span class="ush-haendlerzahl-txt">' + esc(ersetze(t(mz === 1 ? "{n} merchant" : "{n} merchants"), { n: ganz(mz) })) + '</span></span>'
         : '<span class="up-num is-empty">–</span>';
       return '<div ' + produktZeile(p) + '>' +
         '<div class="up-td">' + produktZelle(p, meta, true, q) + '</div>' +
@@ -2570,6 +2575,10 @@
     };
     root.__ushController = ctrl;
 
+    /* ?shop und ?product gehoeren der Shopping-Ansicht (06.10., wie ?event in den Events):
+       ausserhalb nicht in der Adresse, zurueck wieder da, nach einem Teamwechsel die Overview. */
+    if (UC.ansichtsParameter) UC.ansichtsParameter({ ansicht: "shopping", schluessel: ["shop", "product"], owner: root,
+      onTeamWechsel: function () { if (state.seite !== "overview") seiteOeffnen("overview", false); } });
     /* Erster Stand: die Adresse entscheidet. */
     var a0 = adresseLesen();
     state.seite = a0.seite; state.produktId = a0.produktId;

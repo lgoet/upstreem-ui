@@ -252,6 +252,22 @@
       abmelden = UC.onTopics ? UC.onTopics(function (list) { ctrl.setTopics(list); }, root) : null;
     }
 
+    /* DIE PROMPT-ZAHL HINTER JEDEM EINTRAG (06.10. angefordert). prompt_count ist die Zahl der
+       Prompts dieser Topic im ganzen Team -- neben der Prompts-Tabelle passt sie zu dem, was darunter
+       steht. Ueberall sonst (Dashboard, Citations, Shopping, Ads ...) liest man sie als Zahl der
+       Zeilen darunter, und das ist sie nicht. Also nur in der Prompts-Ansicht, oder wo eine
+       Platzierung es ausdruecklich will (data-counts="yes"; "no" schaltet es auch dort ab).
+       Welche Ansicht: zuerst die #view-* um das Element, sonst die, die core zuletzt gezeigt hat,
+       sonst die Adresse. Die Sortierung nach Haeufigkeit bleibt -- sie braucht die Zahl nicht. */
+    function zahlenZeigen() {
+      var a = String(root.getAttribute("data-counts") || "").trim().toLowerCase();
+      if (a === "yes" || a === "true") return true;
+      if (a === "no" || a === "false") return false;
+      var v = root.closest ? root.closest('[id^="view-"]') : null;
+      var name = v ? v.id.slice(5) : (UC.currentView && UC.currentView()) || "";
+      if (!name) { try { name = new URLSearchParams(location.search).get("view") || ""; } catch (e) {} }
+      return name === "prompts";
+    }
     /* ---------------- data helpers ---------------- */
     function hex(t) { return (isDark ? t.hex_dark : t.hex_light) || t.hex_light || t.hex_dark || "#808080"; }
     function isSel(id) { return selected.indexOf(id) >= 0; }
@@ -298,7 +314,7 @@
                '<span class="utf-opt-main">' + mark +
                  '<span class="utf-opt-name">' + esc(t.name) + '</span>' +
                '</span>' +
-               '<span class="utf-opt-count">' + toNum(t.prompt_count) + '</span>' +
+               (zahlenZeigen() ? '<span class="utf-opt-count">' + toNum(t.prompt_count) + '</span>' : '') +
              '</div>';
     }
     /* A grouping is "selected" when every topic in it is. That is the only definition that makes

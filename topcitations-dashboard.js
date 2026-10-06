@@ -851,6 +851,9 @@
           var gFnName = root.getAttribute("data-goto-fn") || "bubble_fn_tcdGoTo";
           var gFn = resolveBubbleFn(gFnName);
           if (typeof gFn === "function"){ try { gFn(instanceId); } catch(err){} }
+          /* Selbst hingehen (06.10.): offene Drawer zu, dann die Citations-Ansicht; eine andere
+             Ansicht nennt data-goto-view. Das Ereignis bleibt fuer bestehende Bubble-Zweige. */
+          if (UC.ansichtWechseln) UC.ansichtWechseln(String(root.getAttribute("data-goto-view") || "citations").trim());
           return;
         }
         var exportBtnEl = e.target.closest(".tcd-export");

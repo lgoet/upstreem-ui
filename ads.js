@@ -151,6 +151,7 @@
     "Too many requests. Please wait a moment.": "Zu viele Anfragen. Bitte warte einen Moment.",
     "This is taking longer than expected. Please try again.": "Das dauert länger als erwartet. Bitte erneut versuchen.",
     "Try again": "Erneut versuchen",
+    "No matching topics": "Keine passenden Topics",
     "View Response": "Antwort ansehen"
   });
 
@@ -221,7 +222,11 @@
                    topic_count: ["topic_count:desc"], last_seen: ["last_seen:desc"], first_seen: ["first_seen:asc"],
                    advertiser_name: ["advertiser_name:asc"] },
     prompts: { ad_coverage: ["ad_coverage:desc", "ad_coverage:asc"], ad_appearances: ["ad_appearances:desc"],
-               advertiser_count: ["advertiser_count:desc"], last_ad_seen: ["last_ad_seen:desc"], prompt_text: ["prompt_text:asc"] }
+               advertiser_count: ["advertiser_count:desc"], last_ad_seen: ["last_ad_seen:desc"], prompt_text: ["prompt_text:asc"] },
+    /* Topics with Ads (06.10.): sortiert wird in der Komponente -- overview.topics traegt ALLE
+       Topics im Scope (Vertrag 4.1, keine Grenze), es gibt also nichts nachzuladen. */
+    topics: { ad_coverage: ["ad_coverage:desc", "ad_coverage:asc"], advertiser_count: ["advertiser_count:desc"],
+              ad_appearances: ["ad_appearances:desc"], topic_name: ["topic_name:asc"] }
   };
   var FORMAT_KURZ = { image_card_v2: "Image", product_card_v2: "Product" };
   var WARTE_MS = 25000;
@@ -252,6 +257,8 @@
       advertisers: gemerkt("advertisers", { suche: "", order: ORDER_VORGABE.advertisers, page: 1, pageSize: GROESSE }),
       library: gemerkt("library", { modus: "ads", ansicht: "grid", suche: "", page: 1, pageSize: 25 }),
       prompts: gemerkt("prompts", { order: ORDER_VORGABE.prompts, page: 1, pageSize: GROESSE }),
+      /* Topics with Ads auf der Overview: Suche, Sortierung und Seite, alles in der Komponente. */
+      topicsTab: gemerkt("topicsTab", { suche: "", order: "ad_coverage_desc", page: 1, pageSize: GROESSE }),
       dMetrik: gemerkt("dMetrik", "n"), dGruppe: gemerkt("dGruppe", "all"),
       offen: {},
       cache: gemerkt("cache", { overview: {}, advertisers: {}, detail: {}, library: {}, prompts: {}, optionen: {} }),
@@ -264,7 +271,7 @@
     function persist() {
       if (root.isConnected === false) return;
       STORE[instanceId] = { filter: state.filter, adFilter: state.adFilter, advertisers: state.advertisers, library: state.library,
-        prompts: state.prompts, dMetrik: state.dMetrik, dGruppe: state.dGruppe, cache: state.cache, reihe: state.reihe,
+        prompts: state.prompts, topicsTab: state.topicsTab, dMetrik: state.dMetrik, dGruppe: state.dGruppe, cache: state.cache, reihe: state.reihe,
         domains: state.domains };
     }
     function isDark() { return (UC.themeParam && UC.themeParam(root.getAttribute("data-isdark"))) || root.getAttribute("data-theme") === "dark"; }
@@ -758,9 +765,12 @@
     }
     /* Die Logo-Kachel der Tabellen (.up-logo-box). Ein geliefertes Logo gewinnt, sonst was advInfo
        kennt (Marken-Store, dann das Favicon der Domain), erst danach der Buchstabe. */
+    /* Ohne Logo das Zeichen der Werbetreibenden (BankIcon, 06.10. angefordert) statt des
+       Anfangsbuchstabens -- in jeder Kachel der Seite: Tabelle, Balken, Karte, Auswahl, Drawer. */
+    var ADV_ZEICHEN = "bank";
     function advLogo(name, logo, companyId) {
       var n = str(name).trim(), u = sichereUrl(logo) || advInfo(n, companyId).logo;
-      var ltr = '<span class="up-logo-ltr">' + esc(n.charAt(0).toUpperCase() || "?") + '</span>';
+      var ltr = '<span class="up-logo-zeichen">' + UC.icon(ADV_ZEICHEN, 2) + '</span>';
       return u ? '<span class="up-logo-box has-img"><img src="' + esc(u) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/>' + ltr + '</span>'
                : '<span class="up-logo-box">' + ltr + '</span>';
     }
@@ -777,7 +787,7 @@
     function karte(ad, q) {
       adMerken(ad);
       var i = advInfo(ad.advertiser_name, ad.company_id);
-      return UC.adCardHtml ? UC.adCardHtml(ad, { logo: i.logo, beziehung: i.beziehung, q: q }) : "";
+      return UC.adCardHtml ? UC.adCardHtml(ad, { logo: i.logo, beziehung: i.beziehung, q: q, zeichen: ADV_ZEICHEN }) : "";
     }
     function gueltigeAds(l) { return (isArr(l) ? l : []).filter(function (x) { return x && typeof x === "object" && str(x.id).trim(); }); }
 
@@ -906,15 +916,18 @@
     }
     /* Ein Abschnitt mit Tabelle, Werkzeugen und Pager -- eine eigene .up-root wie in Shopping: die
        Suchuebernahme aus core (offene Suche nimmt schmal die ganze Kopfzeile) haengt an ".up-root". */
-    function tabSek(titel, werkzeuge, ohnePager) {
-      return '<section class="up-root uad-sek uad-tab" data-sek="tabelle">' +
-        kopf(titel, { tools: werkzeuge }) +
-        '<div class="up-root uad-tabwurzel"><div class="uad-tabelle"></div></div>' +
-        (ohnePager ? '' : '<div class="up-foot uad-foot">' +
+    function fussHtml() {
+      return '<div class="up-foot uad-foot">' +
           '<div class="up-pagesize"><span class="up-pagesize-lbl">' + esc(t("Rows per page")) + '</span>' +
             '<div class="up-pagesize-seg" role="group" aria-label="' + esc(t("Rows per page")) + '"></div></div>' +
           '<div class="up-pager"></div>' +
-        '</div>') +
+        '</div>';
+    }
+    function tabSek(titel, werkzeuge, ohnePager, sekName) {
+      return '<section class="up-root uad-sek uad-tab" data-sek="' + (sekName || "tabelle") + '">' +
+        kopf(titel, { tools: werkzeuge }) +
+        '<div class="up-root uad-tabwurzel"><div class="uad-tabelle"></div></div>' +
+        (ohnePager ? '' : fussHtml()) +
       '</section>';
     }
     function baueGeruest() {
@@ -929,7 +942,9 @@
           '<div class="uad-zwei">' +
             '<section class="uad-sek" data-sek="anteil">' + kopf("Advertiser Share", { info: "share", tools: leiserKnopf("View all", 'data-uad-ziel="advertisers"') }) +
               '<div class="up-box uad-balkenbox"><div class="uad-balkenplatz"></div></div></section>' +
-            '<section class="uad-sek" data-sek="topics">' + kopf("Topics with Ads") + '<div class="uad-vorschauplatz"></div></section>' +
+            /* Topics with Ads als ganze Tabelle wie alle anderen (06.10. angefordert): Suche und
+               Zahnrad in der Kopfzeile, Seiten darunter. */
+            tabSek("Topics with Ads", sucheHtml("Search topics…", "Search topics") + spaltenKnopf(), false, "topics") +
           '</div>' +
           '<section class="uad-sek" data-sek="recent">' + kopf("Recent Ads", { tools: leiserKnopf("Open Ad Library", 'data-uad-ziel="library"') }) +
             '<div class="uad-karten"></div></section>' +
@@ -981,6 +996,8 @@
       });
       var tab = sek("tabelle");
       if (tab) tabelleVerdrahten(tab);
+      var tsek = s === "overview" ? sek("topics") : null;
+      if (tsek) topicsVerdrahten(tsek);
     }
 
     /* ---- Tabellen-Bausteine (wie Shopping) ----------------------------------------------------- */
@@ -1019,10 +1036,10 @@
         sp("formats", "Formats", 140, 1, 30, 60),
         sp("first", "First Seen", 120, 0.9, 20, 60, { sort: "first_seen" }),
         sp("last", "Last Seen", 120, 0.9, 50, 60, { sort: "last_seen" })] },
-      topics: { erste: { label: "Topic", min: 180, sk: { w: 110 } }, spalten: [
-        sp("cov", "Ad Coverage", 140, 1, 90, 60, { info: "coverage" }),
-        sp("advs", "Advertisers", 112, 0.8, 80, 30),
-        sp("n", "Appearances", 122, 0.8, 70, 30)] },
+      topics: { erste: { label: "Topic", min: 180, sort: "topic_name", sk: { w: 110 } }, spalten: [
+        sp("cov", "Ad Coverage", 140, 1, 90, 60, { sort: "ad_coverage", info: "coverage" }),
+        sp("advs", "Advertisers", 112, 0.8, 80, 30, { sort: "advertiser_count" }),
+        sp("n", "Appearances", 122, 0.8, 70, 30, { sort: "ad_appearances" })] },
       dprompts: { erste: { label: "Prompt", min: 280, sk: { w: 180 } }, spalten: [
         sp("topic", "Topic", 160, 1.2, 60, 80),
         sp("n", "Appearances", 122, 0.8, 90, 30),
@@ -1150,7 +1167,8 @@
         sek("kpis").innerHTML = '<div class="uad-kpifehler">' + fehlerKasten(a) + '</div>';
         if (linie) linie.empty(t("Ads data could not be loaded"));
         sek("anteil").querySelector(".uad-balkenplatz").innerHTML = "";
-        sek("topics").querySelector(".uad-vorschauplatz").innerHTML = "";
+        sek("topics").querySelector(".uad-tabelle").innerHTML = "";
+        topicsPager(null);
         sek("recent").querySelector(".uad-karten").innerHTML = "";
         return;
       }
@@ -1205,16 +1223,138 @@
       balken.render(l.map(function (x, i) {
         var n = str(x.advertiser_name).trim(), info_ = advInfo(n, x.company_id), v = anteilWert(x.ad_share_pct);
         return { key: n, name: n, share: v / max * 100, wert: pct(v), color: UC.balkenGrau ? UC.balkenGrau(i, isDark()) : "#1f1f1b",
-                 logo: info_.logo || undefined };
+                 logo: info_.logo || undefined, zeichen: info_.logo ? undefined : UC.icon(ADV_ZEICHEN, 2) };
       }));
+    }
+    /* ---- Topics with Ads: Suche, Sortierung, Seiten (06.10.) ------------------------------------
+       Alles auf dem Payload der Overview -- er traegt alle Topics im Scope. Vorgabe: Ad Coverage
+       absteigend (angefordert: "nach Ad Coverage, nicht nach Werbetreibenden"). */
+    var topicsSort = null;
+    function topicsSortWert(x, feld) {
+      if (feld === "topic_name") return str(x.topic_name).trim().toLowerCase();
+      if (feld === "ad_coverage") return anteilWert(x.ad_coverage_pct);
+      return anzahlWert(x[feld]);
+    }
+    function topicsListe(d) {
+      var tt = state.topicsTab, q = str(tt.suche).trim().toLowerCase();
+      var l = (isArr(d && d.topics) ? d.topics : []).filter(function (x) {
+        return x && typeof x === "object" && str(x.topic_name).trim() && (!q || str(x.topic_name).toLowerCase().indexOf(q) >= 0);
+      });
+      var m = /^(.*)_(asc|desc)$/.exec(tt.order || "") || [null, "ad_coverage", "desc"];
+      var feld = m[1], auf = m[2] === "asc";
+      return l.map(function (x, i) { return { x: x, i: i }; }).sort(function (a, b) {
+        var va = topicsSortWert(a.x, feld), vb = topicsSortWert(b.x, feld);
+        /* Leere Werte immer ans Ende, gleiche Werte in der Reihenfolge der Lieferung. */
+        if (va == null && vb == null) return a.i - b.i;
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        var c = typeof va === "string" ? va.localeCompare(vb) : va - vb;
+        return (auf ? c : -c) || (a.i - b.i);
+      }).map(function (o) { return o.x; });
+    }
+    function topicsPager(total) {
+      var p = pager.topics, tt = state.topicsTab;
+      if (!p) return;
+      p.st.page = tt.page || 1; p.st.pageSize = tt.pageSize || GROESSE; p.st.totalCount = total; p.st.loading = false;
+      try { p.kit.renderPageSize(); p.kit.renderPager(); } catch (e) {}
+      var foot = sek("topics") && sek("topics").querySelector(".uad-foot");
+      if (foot) foot.hidden = !(num(total) > 0);
+    }
+    function topicsNeu() { zeichneTopics(daten(ovAnfrage())); }
+    function topicsVerdrahten(el) {
+      var tt = state.topicsTab;
+      var pst = { page: tt.page || 1, pageSize: tt.pageSize || GROESSE, totalCount: null, loading: false };
+      if (UC.makePager) pager.topics = { st: pst, kit: UC.makePager({ root: el, state: pst, onChange: function () {
+        tt.page = pst.page; tt.pageSize = pst.pageSize; persist(); topicsNeu();
+      } }) };
+      var spe = spaltenFuer("topics", el), cw = el.querySelector(".up-cols");
+      if (spe && cw && UC.makePopover) {
+        var cm = cw.querySelector(".up-cols-menu"), cb = cw.querySelector(".up-cols-btn");
+        var cpop = UC.makePopover({ wrap: cw, menu: cm, opener: cb, group: "uad-" + instanceId });
+        cb.addEventListener("click", function (e) {
+          e.stopPropagation();
+          if (cpop.isOpen()) { cpop.close(false); return; }
+          spe.kit.populateCols(); cpop.open();
+        });
+        cm.addEventListener("click", function (e) {
+          if (e.target.closest("[data-colsall]")) { spe.kit.selectAllCols(); return; }
+          var dn = e.target.closest("[data-dense]");
+          if (dn) { dichteSetzen("topics", dn.getAttribute("data-dense") === "1"); spe.kit.populateCols(); return; }
+          var cr = e.target.closest("[data-col]");
+          if (cr) spe.kit.toggleCol(cr.getAttribute("data-col"));
+        });
+        spe.kit.syncColsBadge();
+      }
+      if (UC.makeHeadSort) {
+        var sst = { sortField: "", sortDir: "" }, m0 = /^(.*)_(asc|desc)$/.exec(tt.order || "ad_coverage_desc");
+        sst.sortField = m0 ? m0[1] : "ad_coverage"; sst.sortDir = m0 ? m0[2] : "desc";
+        topicsSort = UC.makeHeadSort({ root: el, state: sst, cycles: ZYKLEN.topics, defaultSort: { field: "ad_coverage", dir: "desc" },
+          onSort: function (feld, dir) {
+            sst.sortField = feld; sst.sortDir = dir;
+            tt.order = feld + "_" + dir; tt.page = 1; pst.page = 1; persist(); topicsNeu();
+          } });
+      }
+      el.addEventListener("click", function (e) {
+        if (ziehtNoch || (e.target.closest && e.target.closest(".up-grip"))) return;
+        var k = pager.topics && pager.topics.kit;
+        var ps = e.target.closest && e.target.closest("[data-pagesize]");
+        if (ps && k) { k.setPageSize(Number(ps.getAttribute("data-pagesize"))); return; }
+        if (e.target.closest(".up-page-prev") && k) { k.goToPage(pst.page - 1); return; }
+        if (e.target.closest(".up-page-next") && k) { k.goToPage(pst.page + 1); return; }
+        var pg = e.target.closest(".up-page[data-page]");
+        if (pg && k) { k.goToPage(Number(pg.getAttribute("data-page"))); return; }
+        var so = e.target.closest(".up-th.is-sortable[data-sort]");
+        if (so && topicsSort) { topicsSort.headSortClick(so.getAttribute("data-sort")); return; }
+        /* "Clear search" im Leerzustand leert nur DIESE Suche -- nicht die Filter der Seite, die der
+           Knopf der Wurzel sonst zuruecksetzt. */
+        if (e.target.closest("[data-uad-topicsweg]")) {
+          e.stopPropagation();
+          var inp0 = el.querySelector(".up-search-input"); if (inp0) inp0.value = "";
+          el.querySelector(".uad-suche") && el.querySelector(".uad-suche").classList.remove("has-text");
+          tt.suche = ""; tt.page = 1; pst.page = 1; persist(); topicsNeu();
+        }
+      });
+      var box = el.querySelector(".uad-suche");
+      if (box && UC.makeSearch) {
+        var input = box.querySelector(".up-search-input");
+        var sst2 = { query: tt.suche || "", page: 1, loading: false };
+        if (tt.suche) { input.value = tt.suche; box.classList.add("is-open", "has-text"); }
+        var kit = sucheKit.topics = UC.makeSearch({ root: el, box: box, input: input, state: sst2, prefix: "uadt", minChars: 1, debounceMs: 150,
+          onRender: function () {},
+          onFire: function (p) {
+            var q = str(p.query).trim();
+            if (q === str(tt.suche)) return;
+            tt.suche = q; tt.page = 1; pst.page = 1; persist(); topicsNeu();
+          } });
+        box.querySelector(".up-search-btn").addEventListener("click", function () { kit.toggle(); });
+        if (kit.syncTakeover) kit.syncTakeover();
+        input.addEventListener("input", function () { kit.onInput(); });
+        input.addEventListener("keydown", function (e) { if (e.key === "Escape" && box.classList.contains("is-open")) kit.toggle(); });
+        box.querySelector(".up-search-clear").addEventListener("click", function () {
+          input.value = ""; kit.onInput();
+          try { input.focus(); } catch (e2) {}
+        });
+      }
     }
     function zeichneTopics(d) {
       var el = sek("topics");
       if (!el) return;
-      var platz = vorschauPlatz(el, "topics");
-      if (!d) { platz.innerHTML = tabelleHtml(kopfAus("topics"), skelettAus("topics", 5)); spaltenAnwenden("topics"); return; }
-      var l = (isArr(d.topics) ? d.topics : []).filter(function (x) { return x && typeof x === "object" && str(x.topic_name).trim(); });
-      if (!l.length) { platz.innerHTML = '<div class="up-box">' + UC.leerHtml({ mini: true, titel: leerSatz() }) + '</div>'; return; }
+      var platz = el.querySelector(".uad-tabelle");
+      if (topicsSort) { try { topicsSort.syncHeadSorters(); } catch (e) {} }
+      if (!d) { zahlSetzen(el, null); platz.innerHTML = tabelleHtml(kopfAus("topics"), skelettAus("topics", 5)); spaltenAnwenden("topics"); topicsPager(null); if (topicsSort) topicsSort.syncHeadSorters(); return; }
+      var alle = topicsListe(d), tt = state.topicsTab, gr = tt.pageSize || GROESSE;
+      zahlSetzen(el, alle.length);
+      if (!alle.length) {
+        var gesucht = !!str(tt.suche).trim();
+        platz.innerHTML = '<div class="up-box">' + (gesucht
+          ? UC.leerHtml({ gefiltert: true, was: "topics", knopf: "Clear search", knopfAttr: "data-uad-topicsweg" })
+          : UC.leerHtml({ mini: true, titel: leerSatz() })) + '</div>';
+        topicsPager(0);
+        return;
+      }
+      var seiten = Math.max(1, Math.ceil(alle.length / gr));
+      if ((tt.page || 1) > seiten) tt.page = seiten;
+      var l = alle.slice(((tt.page || 1) - 1) * gr, (tt.page || 1) * gr);
       platz.innerHTML = tabelleHtml(kopfAus("topics"), l.map(function (x) {
         var id = str(x.topic_id).trim();
         return '<div class="up-row uad-zeile' + (id ? '" data-topic="' + esc(id) + '" role="link" tabindex="0"' : ' is-statisch"') + '>' +
@@ -1225,6 +1365,8 @@
         '</div>';
       }).join(""), "uad-klickbar");
       spaltenAnwenden("topics");
+      if (topicsSort) topicsSort.syncHeadSorters();
+      topicsPager(alle.length);
     }
     function zeichneRecent(d) {
       var el = sek("recent"), platz = el && el.querySelector(".uad-karten");
@@ -1447,14 +1589,14 @@
         if (!v || da[v]) return;
         da[v] = 1;
         var item = { key: v, label: str(o.label).trim() || v, zahl: anzahlWert(o.count) != null ? ganz(o.count) : null };
-        if (feld === "advertisers") item.logo = advInfo(v, null).logo || "";
+        if (feld === "advertisers") { item.logo = advInfo(v, null).logo || ""; item.zeichen = ADV_ZEICHEN; }
         out.push(item);
       });
       var gew = feld === "advertisers" ? state.adFilter.advertisers : state.adFilter.formate;
       (gew || []).forEach(function (v) {
         if (da[v]) return;
         da[v] = 1;
-        out.push(feld === "advertisers" ? { key: v, label: v, logo: advInfo(v, null).logo || "" } : { key: v, label: UC.adFormatLabel ? UC.adFormatLabel(v) : v });
+        out.push(feld === "advertisers" ? { key: v, label: v, logo: advInfo(v, null).logo || "", zeichen: ADV_ZEICHEN } : { key: v, label: UC.adFormatLabel ? UC.adFormatLabel(v) : v });
       });
       return out;
     }
@@ -1772,7 +1914,7 @@
       var lauf = str(ad.prompt_run_id).trim();
       if (!/^[A-Za-z0-9_-]{6,80}$/.test(lauf)) lauf = "";
       var pid = str(ad.prompt_id).trim(), ptext = str(ad.prompt_text).trim();
-      var logoHtml = '<span class="up-ment-logo' + (i.logo ? " has-img" : "") + '"><span class="up-model-ltr">' + esc(adv.charAt(0).toUpperCase() || "?") + '</span>' +
+      var logoHtml = '<span class="up-ment-logo' + (i.logo ? " has-img" : "") + '"><span class="up-logo-zeichen">' + UC.icon(ADV_ZEICHEN, 2) + '</span>' +
         (i.logo ? '<img src="' + esc(i.logo) + '" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/>' : '') + '</span>';
       var krume = '<span class="up-sdrawer-typ">' + esc(t("Ad")) + '</span><span class="up-sdrawer-sep">/</span>' + logoHtml +
         (adv ? '<button type="button" class="up-sdrawer-name uad-dr-adv" data-advertiser="' + esc(adv) + '">' + esc(adv) + '</button>' : '<span class="up-sdrawer-name">–</span>');
@@ -1955,6 +2097,9 @@
     };
     root.__uadController = ctrl;
 
+    /* ?ads und ?advertiser gehoeren der Ads-Ansicht (06.10., wie ?event in den Events). */
+    if (UC.ansichtsParameter) UC.ansichtsParameter({ ansicht: "ads", schluessel: ["ads", "advertiser"], owner: root,
+      onTeamWechsel: function () { if (state.seite !== "overview") seiteOeffnen("overview", false); } });
     /* Erster Stand: die Adresse entscheidet. */
     var a0 = adresseLesen();
     state.seite = a0.seite; state.advertiser = a0.advertiser;

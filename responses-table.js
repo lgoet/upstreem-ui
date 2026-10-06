@@ -1217,8 +1217,7 @@
     var toolGroup = UC.makeToolGroup ? UC.makeToolGroup({
       root: root, tools: elHeadTools,
       filterActive: function(){ return anyFilterActive(); },
-      prefKey: UC.prefKey ? UC.prefKey("urt_tools__" + instanceId) : null,
-      tip: "Search, filters and settings"
+      prefKey: UC.prefKey ? UC.prefKey("urt_tools__" + instanceId) : null
     }) : null;
 
     /* ---------------- click delegation ---------------- */
