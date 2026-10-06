@@ -1464,6 +1464,9 @@
   font-size: 40px; font-weight: 500; letter-spacing: -0.04em; line-height: 1.1;
   color: var(--ulh-text);
   text-align: left;
+  /* Zwei Zeilen gleich lang statt einem einzelnen Wort unten (06.10. spaet, mit den neuen
+     Ueberschriften: "From AI answers to your next / move"). */
+  text-wrap: balance;
   /* KEIN eigenes Polster. Hier stand noch das alte "padding: 0 24px" -- und weil der Kopf um die
      drei Elemente dasselbe Polster schon traegt, begann der Text der Ueberschrift 24px weiter
      rechts als Chip und Unterzeile darunter. Genau das war die gemeldete Luecke davor. */
@@ -1516,12 +1519,16 @@
   font-size: 19px; font-weight: 500; letter-spacing: -0.022em; line-height: 1.25;
   color: var(--ulh-text);
   max-width: 26ch;
+  /* Kein einzelnes Wort allein in der zweiten Zeile (06.10. spaet gemessen, auf dem Telefon:
+     "Know which buyer questions you / win"): Ueberschrift ausgeglichen, Unterzeile ohne Waise. */
+  text-wrap: balance;
 }
 .ulh-card-p {
   margin: 9px 0 0;
   font-size: 14.5px; font-weight: 400; line-height: 1.55; letter-spacing: -0.005em;
   color: var(--ulh-sub);
   max-width: 54ch;
+  text-wrap: pretty;
 }
 /* ---- Die Vorschau in der Karte ----
    Sie steht unten, haelt die zwei Karten einer Reihe auf derselben Hoehe (margin-top: auto) und

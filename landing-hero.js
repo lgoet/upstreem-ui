@@ -1712,27 +1712,40 @@
   /* DIE TEXTE AUF RUND 60 PROZENT (06.10. angefordert: "Texte unter den Headings je auf ca. die
      Haelfte, oder sagen wir 60%"). Gekuerzt um die Erklaerung, nicht um die Aussage: jeder Satz
      sagt weiter, was die Karte zeigt, nur ohne den zweiten Satz, der es noch einmal begruendet. */
+  /* NEU GETEXTET NACH EINER RECHERCHE BEI DEN WETTBEWERBERN (06.10. spaet angefordert: "recherchiere
+     eine grosse Runde, wie Wettbewerber diese Features bewerben, und orientiere dich stark daran").
+     Gelesen: rund 65 Seiten von Profound, Peec, Otterly, AthenaHQ, Scrunch, Ahrefs, Semrush,
+     Evertune, Goodie, Gauge, Rankscale, Writesonic, Similarweb, SE Ranking, LLM Pulse, Adthena u. a.
+     Was die starken Zeilen dort gemeinsam haben, und was hier uebernommen ist (der Bau, kein Satz):
+       - ein Verb vorn (See/Know/Find/Track/Prove), drei bis sieben Woerter, Satzanfang gross
+       - die Zeile nennt die FRAGE, die die Karte beantwortet, oder einen Gegner ("who buys your
+         prompts") -- nicht die Kennzahlen, die im Bild stehen. Genau daran war "See which products
+         move / Rising and falling products, with the change in ..." gescheitert
+       - die Unterzeile traegt EIN Merkmal fuer Genauigkeit (exakte URLs, je Markt, taeglich)
+     Was die Wettbewerber auf ihren Startseiten NICHT zeigen, steht hier vorn: der Prompt hinter
+     jeder Anzeige und die Vergleichsgruppe bei Events. */
   var MERKMALE = [
     { breit: 40, vis: "linie",
-      h: "Track your visibility over time",
-      p: "How often each model names you, in which position, next to your competitors." },
+      h: "See how often AI recommends you",
+      p: "Visibility and position per model, day by day, side by side with your competitors." },
     { breit: 60, vis: "zeilen",
-      h: "See which questions you show up for",
-      p: "Track the questions that matter in your market, grouped by topic, and see where you are named." },
+      h: "Know which buyer questions you win",
+      p: "Every tracked prompt, grouped by topic, with who gets named and where you land." },
     { breit: 60, vis: "domains",
-      h: "Find the sources behind the answers",
-      p: "See which domains get cited in your category, down to the exact pages." },
+      h: "See which pages AI trusts most",
+      p: "The domains and exact URLs the models cite, so you know where to get mentioned next." },
     { breit: 40, vis: "chancen",
-      h: "Get a list of what to fix",
-      p: "Upstreem turns the gaps into concrete tasks, each with the numbers behind it." },
+      h: "Your next moves, ranked by priority",
+      p: "Every visibility gap becomes a concrete task, with the prompts and numbers behind it." },
     /* Reihe drei, 50/50. Die zwei Karten beantworten die Fragen, die nach den ersten vier kommen:
        "gilt das auch fuer meinen Markt?" und "gilt das fuer alle Modelle?". */
+    /* Die Sprachen in der Unterzeile sind die der Vorschau (SPRACHEN: DE, FR, IT neben Englisch). */
     { breit: 50, vis: "sprachen",
-      h: "Monitor LLMs in any language, from any country",
-      p: "Track the questions buyers ask in their own language, with rankings per market." },
+      h: "Track every market in its own language",
+      p: "Prompts in German, French or Italian, asked from each country, with rankings per market." },
     { breit: 50, vis: "modelle",
-      h: "Daily AI response tracking across multiple models",
-      p: "Every prompt runs against each model, every day, so you see where answers differ." }
+      h: "See where the models disagree",
+      p: "Your prompts run daily on every major model, showing which ones name you and which don't." }
   ];
 
   /* ---- Reihe drei, links: Prompts in fuenf Maerkten ----
@@ -1811,10 +1824,9 @@
   var ORBIT_R = [66, 102, 138];
 
   var MERKMAL_CHIP = "Platform";
-  var MERKMAL_H = "What upstreem shows you";
-  var MERKMAL_SUB = "AI assistants answer your buyers’ questions every day. upstreem tracks " +
-    "what they say about your brand, which sources those answers come from, and what to change " +
-    "so you show up more often.";
+  var MERKMAL_H = "From AI answers to your next move";
+  var MERKMAL_SUB = "Visibility, prompts, sources and tasks in one place, across every major model, " +
+    "every day.";
 
   /* ---- Die Vorschauen in den Karten ----
      Jede Karte zeigt das Bauteil, von dem sie spricht -- und zwar das ECHTE: die Zeilen sind
@@ -2208,23 +2220,25 @@
      nicht schmeichelhaft, die eigene Marke ist die erfundene Acme. */
   var HANDEL_CHIP = "Shopping & Ads";
   var HANDEL_H = "Beyond classic GEO";
-  var HANDEL_SUB = "AI assistants answer with products and ads, not only with text. upstreem " +
-    "tracks both: where your products land in the shopping results, and who pays to stand next " +
-    "to the answer.";
+  /* Die Ueberschrift hat der Nutzer selbst vorgegeben ("Beyond Classic GEO"); neu ist nur die
+     Unterzeile -- "dieselben Prompts" sagt, dass es EIN Werkzeug ist und kein zweites. */
+  var HANDEL_SUB = "Shopping results and sponsored placements, tracked on the same prompts as your " +
+    "visibility.";
   var HANDEL = [
     { breit: 60, vis: "produkte", stil: "zeilen",
-      h: "See your products in AI shopping",
-      p: "Track which products the models recommend and in which position yours appear." },
-    /* Oben rechts seit dem 06.10. die Produktbewegung von Shopping statt der Balken (angefordert). */
+      h: "See which products AI puts first",
+      p: "Position, rating and price for every product the models recommend, yours and your competitors'." },
+    /* Oben rechts seit dem 06.10. die Produktbewegung von Shopping statt der Balken (angefordert).
+       Die Zeile sagt, WOZU man hinsieht (frueh merken), nicht, was die Spalten zeigen. */
     { breit: 40, vis: "bewegung",
-      h: "See which products move",
-      p: "Rising and falling products, with the change in Visibility and position." },
+      h: "Catch slipping products early",
+      p: "See which products AI recommends more or less often, and how many places they moved." },
     { breit: 40, vis: "werber",
-      h: "See who advertises in AI answers",
-      p: "Every sponsored placement next to an answer, grouped by advertiser." },
+      h: "Find out who buys your prompts",
+      p: "Every advertiser showing ads on your tracked prompts, ranked by share of placements." },
     { breit: 60, vis: "anzeigen",
-      h: "Inspect every ad next to your answers",
-      p: "Open the ad, its landing page and the prompt that triggered it." }
+      h: "See the prompt behind every ad",
+      p: "Open each sponsored placement with its creative, landing page and the question that triggered it." }
   ];
   /* ---- ECHTE PRODUKTE MIT ECHTEN FOTOS (06.10. angefordert: "echte Produkte und echte
      Produktbilder -- guter Mix aus Autozubehoer, Wallboxen, ganzen Autos, Leasingangeboten") ----
@@ -2841,17 +2855,18 @@
      dem Pin des Events auf der Zeitachse (Tooltip und Vergleichsgruppe sind seit dem 06.10. abends
      weg, angefordert). */
   var EVENT_CHIP = "Events";
-  var EVENT_H = "See what moved your visibility";
-  var EVENT_SUB = "Log launches, relaunches and campaigns on your timeline, and compare how AI " +
-    "visibility changed before and after.";
+  var EVENT_H = "Find out which launches paid off";
+  var EVENT_SUB = "Log relaunches, campaigns and price changes, then see what each one did to your " +
+    "AI visibility.";
   var EVENTKARTEN = [
-    /* "Log every launch" war zu schwach (06.10.) -- die Karte sagt jetzt, WOZU man es eintraegt. */
+    /* Nach der Recherche (06.10. spaet, Begruendung bei MERKMALE): die Vergleichsgruppe ist das,
+       was die Wirkung BELEGT -- deshalb "Prove" und die Gruppe in der Unterzeile. */
     { breit: 40, vis: "eventkarte",
-      h: "Every launch on one timeline",
-      p: "Relaunches, campaigns and price changes, right where your visibility moved." },
+      h: "Put every launch on the timeline",
+      p: "Relaunches, campaigns and price changes sit on your visibility chart, so every jump has a reason." },
     { breit: 60, vis: "eventkurve",
-      h: "See what each launch changed",
-      p: "Visibility of the affected prompts, from the day the event went live." }
+      h: "Prove what each launch changed",
+      p: "Affected prompts from go-live onward, measured against a comparison group that stayed untouched." }
   ];
   var EVENT_TON = "#3b82f6";
   var EVENT_NAME = "acme.com/electric relaunch";
