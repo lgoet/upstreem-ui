@@ -684,14 +684,13 @@ Es gibt **zwei unterschiedliche Tooltip-Typen** im System:
 
 **A) Icon-Button-Tooltip** (Mira-Style, dunkel, klein)
 ```css
-.tip {
-  position: fixed; z-index: 2147483000;   /* an <body> gehängt, damit nichts es clippen kann */
+.up-tip {
+  position: fixed; z-index: 2147483640;   /* an <body> gehängt, damit nichts es clippen kann */
   height: 24px; padding: 0 9px; border-radius: 6px;
   font-size: 12px; font-weight: 500; line-height: 1;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  box-shadow: var(--up-e-2);              /* Tiefe "haengt an einem Ausloeser", seit 28.09. */
   opacity: 0; transform: translateY(4px); transition: opacity .14s ease, transform .14s ease;
 }
-.tip.show { opacity: 1; transform: translateY(0); }
 ```
 Farben: BG `#1f1f1b` / Text `#ffffff` — **in beiden Themes identisch, nicht invertieren.**
 Tooltips schweben über der Seite und liegen nicht in der Oberfläche; eine Invertierung
@@ -700,9 +699,11 @@ lässt sie im Dark Mode wie eine fremde Komponente wirken.
 Erscheint nach **60ms** Hover-Delay (bewusst kurz gehalten, „fast ohne Delay" wie Mira),
 verschwindet sofort bei Klick/Mousedown.
 
-Die Farben müssen **literal** gesetzt werden, nicht über `var(--vc-text)`: Der Tooltip hängt
-an `<body>` und damit außerhalb des Komponenten-Roots, wo die CSS-Variablen nicht definiert
-sind. Genau daran ist der Explainer-Tooltip einmal unsichtbar geblieben.
+Die Farben stehen **literal** da, nicht über `var(--vc-text)`: Der Tooltip hängt an `<body>`,
+und `--vc-text` würde dort nicht mit dem Thema der Komponente wechseln (genau daran ist der
+Explainer-Tooltip einmal unsichtbar geblieben) -- und er soll ohnehin in beiden Themes gleich
+aussehen. Die **Tiefen** dagegen (`--up-e-*`) stehen seit dem 28.09. auch an `:root` und
+erreichen den Tooltip dort; deshalb `var(--up-e-2)` statt eines eigenen Schattens.
 
 **JS-Nutzungsmuster (Tabellen-Komponenten):**
 ```js
@@ -716,11 +717,15 @@ var showTip = _tips.showTip, showTipText = _tips.showTipText,
 ```
 `makeTooltips` installiert auch `[data-tip]`- und `[data-brandtip]`-Hover-Handler am Root automatisch.
 
-**B) Line-Chart-Datenpunkt-Tooltip** (folgt dem Cursor, größer, mit Zeilen)
-- Radius **16px**, Padding `10px 12px`
-- Light Mode: `background:#ffffff; border:1px solid #e0e2e6; box-shadow:0 4px 14px rgba(0,0,0,.10)`
-- Dark Mode: `background:#121212; kein Border; box-shadow:0 4px 14px rgba(0,0,0,.25)`
-- Text: Titel `--vc-muted`-Ton (`#6f737c` hell / `#8a8a8a` dunkel), Werte `--vc-text`-Ton
+**B) Chart-Datenpunkt-Tooltip** (Linie folgt dem Cursor; derselbe Kasten am Doughnut)
+- Radius **16px**, Padding `10px 12px` (Linie) bzw. `12px 14px` (Doughnut)
+- Light Mode: `background:#ffffff; border:1px solid #dcdbdd`
+- Dark Mode: `background:#232326; border:1px solid #3e3e44` -- die **Menüfläche**, nicht der
+  Seitengrund: was oben liegt, ist in dieser Leiter heller (vorher `#121212`, ein Loch statt einer
+  Ebene)
+- Schatten in beiden Themen `var(--up-e-2)` (seit 06.10.; vorher je Thema ein eigener Wert). Das
+  Token löst sich am Ort auf: der Tooltip hängt im Chart, also unter der Wurzel mit ihrem Thema.
+- Text: Titel `#6b6f78` hell / `#8a8a8a` dunkel, Werte `#1f1f1b` / `#e6e6e6`
 - Folgt der Maus mit Easing (`FOLLOW = 0.18` pro Frame, ca. 280ms „Trägheit")
 
 **C) Explainer-Tooltip** (Spaltenüberschriften in den Tabellen, erklärt eine Metrik)
@@ -731,8 +736,12 @@ aussieht, darunter Überschrift und ein Satz Erklärung auf dunklem Grund.
 ```css
 .explain {
   position: fixed; z-index: 2147483001; width: 248px; padding: 8px;
-  border-radius: 14px; background: #1f1f1b;          /* literal, siehe oben */
-  box-shadow: 0 12px 32px rgba(0,0,0,.28);
+  border-radius: 14px;
+  /* Die UMGEKEHRTE Karte (seit 28.09. Token): hell eine dunkle Karte, dunkel eine helle.
+     --vc-inverse-bg #1f1f1b / #eeedef, --vc-inverse-ink #ffffff / #1f1f1b -- an :root und an
+     [data-theme="dark"], also auch am <body> richtig. */
+  background: var(--vc-inverse-bg); color: var(--vc-inverse-ink);
+  box-shadow: var(--up-e-2);
   opacity: 0; transform: translateY(-4px);
   transition: opacity .14s ease, transform .14s ease;
 }
@@ -755,11 +764,11 @@ aussieht, darunter Überschrift und ein Satz Erklärung auf dunklem Grund.
   content: ""; position: absolute; top: -10px; left: var(--caret, 50%);
   transform: translateX(-50%);
   border-left: 12px solid transparent; border-right: 12px solid transparent;
-  border-bottom: 11px solid #1f1f1b;
+  border-bottom: 11px solid var(--vc-inverse-bg);
 }
 .explain.is-flipped::before {    /* nach oben geklappt, wenn unten kein Platz ist */
   top: auto; bottom: -10px;
-  border-bottom: 0; border-top: 11px solid #1f1f1b;
+  border-bottom: 0; border-top: 11px solid var(--vc-inverse-bg);
 }
 ```
 `--caret` wird beim Öffnen per JS auf die Icon-Mitte gesetzt, geklemmt auf

@@ -59,21 +59,12 @@
   /* ---- Kleine Helfer -------------------------------------------------------------------------- */
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
   function num(v) { if (v == null || v === "") return null; var n = Number(v); return isFinite(n) ? n : null; }
-  /* Ein Objekt aus Bubble-Text. readBubble (nicht parseLoose): die Antworten tragen Emojis im Feld
-     icon, und parseLoose scheitert an Emojis. readBubble gibt fuer Text eine Liste -- ein Objekt
-     kommt als ihr erstes Element. */
-  function objekt(raw) {
-    var v = UC.readBubble ? UC.readBubble(raw) : null;
-    if (isArr(v)) v = v.length ? v[0] : null;
-    /* Der Umschlag der RPC ({"json": "<Text>"}) statt seines Feldes json (04.10.): wer in Bubble
-       "Result of step 1" statt "Result of step 1's json" einsetzt, schickt das Ganze. Gemessen
-       ergab das "Die Zahl der Prompts konnte nicht geladen werden" -- der Inhalt steckt aber
-       vollstaendig darin, also wird er ausgepackt statt verworfen. */
-    if (v && typeof v === "object" && !isArr(v) && v.json != null && Object.keys(v).length === 1) {
-      return typeof v.json === "object" ? v.json : objekt(v.json);
-    }
-    return v && typeof v === "object" ? v : null;
-  }
+  /* Ein Objekt aus Bubble-Text: UC.bubbleObjekt (core, seit 05.10. -- hier stand bis zum 06.10. die
+     Vorlage dafuer). Es liest mit readBubble (nicht parseLoose: die Antworten tragen Emojis im Feld
+     icon), nimmt aus einer Liste das erste Element und packt den Umschlag {"json": "<Text>"} aus --
+     wer in Bubble "Result of step 1" statt "Result of step 1's json" einsetzt, schickt das Ganze
+     (04.10. gemessen: "Die Zahl der Prompts konnte nicht geladen werden"). */
+  function objekt(raw) { return UC.bubbleObjekt ? UC.bubbleObjekt(raw) : null; }
   function team() { try { return (UC.getTeam && UC.getTeam()) || ""; } catch (e) { return ""; } }
   function body(o) {
     var b = { p_team: team() };

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261100;
+  var BUILD = 20261101;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -2701,7 +2701,10 @@
     var code = String(waehrung == null ? "" : waehrung).trim().toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
     var z = fmtNum(n, 2);
     if (WAEHRUNG_ZEICHEN[code]) return WAEHRUNG_ZEICHEN[code] + z;
-    return code ? code + " " + z : z;
+    /* GESCHUETZTES Leerzeichen zwischen Code und Betrag: "CHF" und "12.00" duerfen nie auf zwei
+       Zeilen stehen. Die Vorlage in shopping.js hatte es; beim Umzug hierher (05.10.) war es zu
+       einem normalen geworden -- aufgefallen am 06.10., als Shopping auf diese Funktion umzog. */
+    return code ? code + "\u00a0" + z : z;
   }
   /* Die eine Stelle, durch die JEDE Zahl dieser App geht. nachkomma == null heisst: so viele
      Stellen, wie die Zahl schon hat (also keine erzwungene Genauigkeit). */
@@ -3699,7 +3702,13 @@
      directly -- and dropped as soon as it disagrees with what is live. The expensive part was never
      the property read, it was the iframe walk below; that is still cached. */
   function resolveBubbleFn(fnName){
-    var live = window[fnName] || (window.parent && window.parent[fnName]) || (window.top && window.top[fnName]);
+    /* JEDER Zugriff auf ein fremdes Fenster im try (06.10.): liegt die Seite in einem Rahmen
+       fremden Ursprungs (Framer: framercanvas.com unter framer.com), WIRFT schon das Lesen von
+       window.parent[name] einen SecurityError -- ungefangen riss er den Aufrufer mit, auf der
+       Landingpage bis zum 21.09. das ganze Fuellen. Abgefangen war das bisher nur dort, ueber
+       die Stummschaltung in landing-boot.js; der Rest dieser Funktion hatte seine try schon. */
+    function aus(w){ try { return w ? w[fnName] : undefined; } catch(e){ return undefined; } }
+    var live = window[fnName] || aus(window.parent) || aus(window.top);
     if (typeof live === "function"){
       if (__resolvedFnCache[fnName] !== live) __resolvedFnCache[fnName] = live;
       return live;
@@ -13741,7 +13750,10 @@
       var boxBg = dark ? "#232326" : "#ffffff";
       /* Rahmen der schwebenden Schicht: border-tertiary in beiden Themen (#3e3e44 / #dcdbdd). */
       var boxBorder = dark ? "border:1px solid #3e3e44;" : "border:1px solid #dcdbdd;";
-      var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
+      /* Die Tiefe aus der Skala (e-2: haengt an einem Ausloeser, wie .up-tip und die Erklaerkarte).
+         Hier stand bis zum 06.10. ein eigener Wert je Thema (0 4px 14px .10/.25). Das Token loest
+         sich am Ort auf: der Tooltip haengt im Chart, also unter der Wurzel mit ihrem Thema. */
+      var boxShadow = "box-shadow:var(--up-e-2);";
       var textColor = dark ? "#e6e6e6" : "#1f1f1b";
       var mutedColor = dark ? "#8a8a8a" : "#6b6f78";
       var dayLabel = chart.data.labels[dps[0].dataIndex];
@@ -15716,7 +15728,7 @@
         /* Dieselbe Korrektur wie am Linien-Tooltip weiter oben: Menueflaeche statt Seitengrund. */
         var boxBg = dark ? "#232326" : "#ffffff";
         var boxBorder = dark ? "border:1px solid #3e3e44;" : "border:1px solid #dcdbdd;";
-        var boxShadow = dark ? "box-shadow:0 4px 14px rgba(0,0,0,.25);" : "box-shadow:0 4px 14px rgba(0,0,0,.10);";
+        var boxShadow = "box-shadow:var(--up-e-2);";   /* wie am Linien-Tooltip oben */
         var mutedColor = dark ? "#8a8a8a" : "#6b6f78";
         kBox.style.cssText = "background:" + boxBg + ";color:" + textColor + ";" + boxBorder + "border-radius:16px;padding:12px 14px;font-family:Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:13px;line-height:1.35;" + boxShadow + "white-space:nowrap;";
         kTitle.style.cssText = "display:flex;align-items:center;gap:6px;font-weight:600;margin-bottom:6px;";

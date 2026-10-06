@@ -99,7 +99,7 @@ Schriftgrößen** und **57 Radien** heraus, wo sechs und fünf gemeint waren.
 | Höhe | 24 · 28 · 32 · 40 · 55 | `--up-h-chip/seg/btn/gross/row` | Primer, identisch (24/28/32/40/48) |
 | Dauer | 120 · 200 · 260 | `--up-t-1/2/3` | Material 3 (UI-Band 100–300) |
 | Kurve | 2 | `--up-ease`, `--up-ease-auf` | — |
-| Tiefe | 4 | `--up-e-1..4` | Atlassian (sunken/default/raised/overlay) |
+| Tiefe | 4 + 2 benannte | `--up-e-1..4`, `--up-e-drawer`, `--up-e-chip` | Atlassian (sunken/default/raised/overlay) |
 
 **Die Skalen kommen aus DEINEM Bestand, nicht von außen.** Jede Stufe ist die, die die App
 ohnehin am häufigsten trägt; die Fachsysteme oben waren die Gegenprobe, nicht die Vorlage. Zwei
@@ -133,6 +133,13 @@ Vier Dinge, die man dabei wissen muss:
 - **Ausnahmen, die bleiben:** `--up-dd-radius` (14px) für Menüs, `--up-dd-pad`, `--up-dd-gap`,
   `--up-sub-gap`, `--up-focus-w`. Die gab es vorher und sie sind in sich stimmig. Eine Skala mit
   einer benannten Ausnahme ist besser als zwei Skalen nebeneinander.
+
+- **Tiefe nach Rolle, nicht nach Auge** (Stand 06.10.): `e-1` liegt auf der Fläche (Knopf,
+  Feld, Kachel), `e-2` hängt an einem Auslöser (Menü, Popover, jeder Tooltip, Erklärkarte),
+  `e-3` schwebt frei über dem Inhalt (Leiste, ihr Knopf), `e-4` liegt über einem Schleier
+  (Dialog, Palette); dazu `e-drawer` (wirft seitlich) und `e-chip` (gehobener Chip). Die
+  umgekehrte Karte (hell dunkel, dunkel hell) trägt `--vc-inverse-bg`/`--vc-inverse-ink`. Alle
+  stehen auch an `:root` und erreichen damit, was an `<body>` hängt.
 
 `.check_skala.py` hält das. Es arbeitet mit einer **Grundlinie** (`.skala_grundlinie.json`): was
 am Einführungstag schon dastand, ist als Bestand vermerkt und blockiert nie einen Commit —

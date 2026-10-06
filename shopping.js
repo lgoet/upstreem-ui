@@ -57,38 +57,16 @@
      eine Zeile statt eines Namens ein Objekt traegt. */
   function str(v) { return v == null || typeof v === "object" ? "" : String(v); }
   function ersetze(s, o) { return String(s).replace(/\{(\w+)\}/g, function (_, k) { return o[k] != null ? o[k] : ""; }); }
-  /* Die Produkt-Ids sind groesser als Number.MAX_SAFE_INTEGER (Uebergabe 4) -- als Zahl
-     verloeren sie ihre letzten Stellen. Das Backend schickt sie als Text; kaeme eine doch einmal
-     ohne Anfuehrungszeichen, wird sie VOR dem Lesen zu Text, statt still eine andere Id zu werden. */
-  function idsQuoten(raw) {
-    return String(raw).replace(/("source_product_id"\s*:\s*)(-?\d{12,})(?=\s*[,}\]])/g, '$1"$2"');
-  }
-  /* Ein Objekt aus Bubble-Text, mit UC.readBubble wie jede Komponente. readBubble gibt fuer Text
-     eine Liste -- ein Objekt kommt als ihr erstes Element. Der Umschlag {"json": "..."} wird
-     ausgepackt, falls jemand "Result of step 1" statt seines Feldes json einsetzt (Events, 04.10.). */
-  function objekt(raw) {
-    if (raw == null) return null;
-    var v = typeof raw === "string" ? (UC.readBubble ? UC.readBubble(idsQuoten(raw)) : null) : raw;
-    if (isArr(v)) v = v.length ? v[0] : null;
-    if (v && typeof v === "object" && !isArr(v) && v.json != null && Object.keys(v).length === 1) {
-      return typeof v.json === "object" ? v.json : objekt(v.json);
-    }
-    return v && typeof v === "object" && !isArr(v) ? v : null;
-  }
-  /* Der dritte Wert der Setter: Bubbles "error body". Er zaehlt NUR, wenn keine lesbare Antwort da
-     ist -- eine gelungene RPC braucht keinen Fehler-Wert, und was Bubble bei Erfolg dort hinschreibt
-     (oder ein vergessener Platzhalter), darf eine richtige Antwort nie verdraengen (Events, 04.10.). */
-  function fehlerDa(f) {
-    var s = String(f == null ? "" : f).trim().toLowerCase();
-    return s !== "" && s !== "null" && s !== "undefined" && s !== "no" && s !== "false";
-  }
-  /* Der stabile Code aus dem Fehler-Body ({"code":"P0001","message":"shopping_..."}) oder der
-     nackte Code. */
-  function fehlerCode(f) {
-    var roh = String(f == null ? "" : f).trim();
-    if (roh.charAt(0) === "{") { var o = objekt(roh); if (o && o.message != null) return String(o.message); }
-    return roh;
-  }
+  /* Ein Objekt aus Bubble-Text: UC.bubbleObjekt (core, seit 05.10. -- hier stand bis zum 06.10. eine
+     Kopie davon). Es packt den Umschlag {"json": "..."} aus, nimmt aus einer Liste das erste
+     Element, und die Produkt-Ids (groesser als Number.MAX_SAFE_INTEGER, Uebergabe 4) werden VOR
+     dem Lesen zu Text -- sonst waeren sie still eine andere Id. */
+  function objekt(raw) { return UC.bubbleObjekt ? UC.bubbleObjekt(raw, { grosseIds: ["source_product_id"] }) : null; }
+  /* Der dritte Wert der Setter: Bubbles "error body" -- UC.bubbleFehler gibt den Code daraus oder ""
+     fuer KEIN Fehler. Er zaehlt NUR, wenn keine lesbare Antwort da ist: eine gelungene RPC braucht
+     keinen Fehler-Wert, und was Bubble bei Erfolg dort hinschreibt (oder ein vergessener
+     Platzhalter), darf eine richtige Antwort nie verdraengen (Events, 04.10.). */
+  function fehlerCode(f) { return UC.bubbleFehler ? UC.bubbleFehler(f) : str(f).trim(); }
   function team() { try { return (UC.getTeam && UC.getTeam()) || ""; } catch (e) { return ""; } }
   /* Nur http(s): ein Bild oder Logo aus den Daten darf nie javascript: oder data: sein. Protokoll-
      relativ wird https, wie in core (brandStack). */
@@ -118,7 +96,6 @@
   function anzahlWert(v) { v = num(v); return v == null || v < 0 || v >= 1e15 ? null : v; }
   function posWert(v) { v = num(v); return v == null || v < 0.95 || v > 1000 ? null : Math.max(1, v); }
   function noteWert(v) { v = num(v); return v == null || v < 0 || v > 5.05 ? null : Math.min(5, v); }
-  function preisWert(v) { v = num(v); return v == null || v < 0 || v >= 1e12 ? null : v; }
   function deltaWert(art, d) { d = num(d); var g = art === "pos" ? 1000 : art === "anzahl" ? 1e15 : 100.5; return d == null || Math.abs(d) > g ? null : d; }
   /* Die Kennzahl einer Chart-Reihe nach ihrem Feldnamen. */
   function metrikWert(feld, v) { return /position/.test(feld) ? posWert(v) : feld === "observations" ? anzahlWert(v) : anteilWert(v); }
@@ -132,15 +109,10 @@
     if (typeof o !== "object") return { v: num(o), p: null, d: null };
     return { v: num(o.value), p: num(o.previous), d: num(o.delta) };
   }
-  var WAEHRUNG = { EUR: "€", USD: "$", GBP: "£", JPY: "¥" };
-  function geld(v, c) {
-    v = preisWert(v);
-    if (v == null) return "";
-    var code = str(c).trim().toUpperCase().replace(/[^A-Z]/g, "").slice(0, 3);
-    var z = UC.fmtNum ? UC.fmtNum(v, 2) : v.toFixed(2);
-    if (WAEHRUNG[code]) return WAEHRUNG[code] + z;
-    return code ? code + " " + z : z;
-  }
+  /* Ein Preis: UC.fmtGeld (core, aus dieser Datei dorthin gezogen, 05.10.) -- mit denselben Grenzen
+     wie die Kopie, die hier stand: "" fuer alles, was kein Preis sein kann (negativ, ab einer
+     Billion), dann zeigt der Aufrufer price_str. */
+  function geld(v, c) { return UC.fmtGeld ? UC.fmtGeld(v, c) : ""; }
   /* price_ranges: je Waehrung {currency, min, max}; min = max ist EIN Preis (Uebergabe 4). */
   function preisSpanne(ranges) {
     if (!isArr(ranges)) return "";
@@ -779,7 +751,7 @@
           delete state.fehler[kanal + sig];
           merken(kanal, sig, d);
         } else {
-          state.fehler[kanal + sig] = fehlerDa(f) ? (fehlerCode(f) || "x") : (str(raw).trim() ? "x" : "leer");
+          state.fehler[kanal + sig] = fehlerCode(f) || (str(raw).trim() ? "x" : "leer");
         }
       }
       persist();

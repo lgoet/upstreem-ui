@@ -1070,10 +1070,11 @@
   align-items: center; justify-content: center;
   display: none;
   /* Der einzige Schatten der Komponente: dieser Knopf liegt UEBER dem Inhalt und braucht eine
-     Kante, sonst verschwimmt er auf einer hellen Seite. Nach LINKS keiner mehr -- dort ist der
-     Bildschirmrand, und ein Schatten, der ueber die Kante hinausfaellt, ist nur ein dunkler
-     Streifen. */
-  box-shadow: 1px 1px 2px rgba(0,0,0,.10), 4px 6px 16px rgba(0,0,0,.10);
+     Kante, sonst verschwimmt er auf einer hellen Seite. Seit dem 06.10. die Tiefe aus der Skala
+     (e-3: schwebt frei ueber dem Inhalt, wie die Leiste selbst) statt eines eigenen Werts -- der
+     blieb im Dunkeln bei 10 Prozent und war dort kaum zu sehen; das Token traegt je Thema seine
+     eigene Staerke. Was nach links faellt, liegt hinter dem Bildschirmrand (left: 0). */
+  box-shadow: var(--up-e-3);
 }
 .up-root.up-portal.usn-fab.is-on { display: inline-flex; }
 /* Derselbe Umschalter, hier etwas groesser, weil er allein ueber der Seite schwebt. Ohne die
