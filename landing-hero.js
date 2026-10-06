@@ -2172,7 +2172,7 @@
     if (art === "regal" || art === "werber") return '<div class="ulh-balken" data-ulh-balken="' + art + '"></div>';
     if (art === "anzeigen") return visAnzeigen();
     if (art === "eventkarte") return visEventKarte();
-    if (art === "eventkurve") return '<div class="ulh-evk" data-ulh-evk><div class="ulh-evk-wrap"><canvas class="up-line-canvas"></canvas></div></div>';
+    if (art === "eventkurve") return '<div class="ulh-evk" data-ulh-evk><div class="ulh-evk-wrap"><canvas class="up-line-canvas"></canvas></div><div class="up-legend"></div></div>';
     return "";
   }
 
@@ -2854,6 +2854,7 @@
       p: "Visibility of the affected prompts, from the day the event went live." }
   ];
   var EVENT_TON = "#3b82f6";
+  var EVENT_NAME = "acme.com/electric relaunch";
   /* Die Titelbilder liegen neben den Dateien der App (event-covers/, wie in events.js). Die Adresse
      kommt aus dem Lader: landing-boot.js traegt jede geladene Datei in __upAssetsLoaded ein. Ohne
      ihn (Messaufbau) der Pfad neben der Seite. */
@@ -2896,23 +2897,27 @@
       eventKarteHtml({ name: "New lease rates", ton: "#0f9b8e", cover: "wave-teal.svg", pos: "70%", icon: "euro",
                        datum: "Sep 1, 2026", typ: "Pricing change", text: "Lower monthly rates across the EX range.",
                        topics: "2", prompts: "58", urls: "6" }, "ulh-evkarte-rechts") +
-      eventKarteHtml({ name: "Acme.com relaunch", ton: EVENT_TON, cover: "wave-blue.svg", pos: "55%", icon: "globe",
+      /* Vorn der Relaunch der Seite acme.com/electric (06.10. spaet angefordert) -- eine Seite,
+         keine ganze Domain: die Zahlen sind entsprechend kleiner, und der Pin in der Kurve
+         daneben traegt denselben Namen (EVENT_NAME). */
+      eventKarteHtml({ name: EVENT_NAME, ton: EVENT_TON, cover: "wave-blue.svg", pos: "55%", icon: "globe",
                        datum: "Sep 15, 2026", typ: "Website relaunch",
-                       text: "New model pages, a rebuilt configurator and structured specs for every EV.",
-                       topics: "All", prompts: "214", urls: "38" }, "ulh-evkarte-vorn") +
+                       text: "The new EV hub: range calculator, model comparison and an FAQ for every model.",
+                       topics: "3", prompts: "86", urls: "12" }, "ulh-evkarte-vorn") +
     '</div>';
   }
   /* Die Kurve: 28 Tage, der Relaunch am 15. Die betroffenen Prompts stehen davor bei gut 21
-     Prozent und ziehen danach auf rund 31 an. Feste kleine Wellen statt Zufall -- in jeder Runde
-     dasselbe Bild. */
+     Prozent und ziehen danach auf rund 31 an; die Vergleichsgruppe bleibt bei 19 bis 20. Feste
+     kleine Wellen statt Zufall -- in jeder Runde dasselbe Bild. */
   function eventKurveDaten(){
-    var tage = [], betroffen = [], start = Date.UTC(2026, 8, 1);
+    var tage = [], betroffen = [], vergleich = [], start = Date.UTC(2026, 8, 1);
     for (var i = 0; i < 28; i++){
       tage.push(new Date(start + i * 864e5).toISOString().slice(0, 10));
       var nach = Math.max(0, i - 14), anstieg = 9.6 * (1 - Math.exp(-nach / 4.2));
       betroffen.push(Math.round((21.4 + anstieg + Math.sin(i * 1.3) * 0.7) * 10) / 10);
+      vergleich.push(Math.round((19.6 + Math.sin(i * 0.9 + 1) * 0.6) * 10) / 10);
     }
-    return { tage: tage, betroffen: betroffen };
+    return { tage: tage, betroffen: betroffen, vergleich: vergleich };
   }
   function visEventKurveFuellen(root){
     var kern = window.UpstreemCore;
@@ -2923,19 +2928,20 @@
     function zeichnen(){
       var d = eventKurveDaten();
       var tinte = kern.chartInk ? kern.chartInk(feld) : "#1f1f1b";
-      /* OHNE TOOLTIP UND OHNE VERGLEICHSGRUPPE (06.10. abends angefordert): eine Linie und der Pin
-         des Events -- der Knick am Tag des Relaunchs ist die ganze Aussage. Damit entfaellt die
-         Legende; den Tooltip beim Ueberfahren nimmt landing-hero.css (.ulh-evk canvas). */
+      /* OHNE TOOLTIP, ABER MIT VERGLEICHSGRUPPE UND LEGENDE (06.10. spaet richtiggestellt: weg
+         sollte nur der Tooltip, die gestrichelte Vergleichslinie und die Legende gehoeren dazu).
+         Den Tooltip beim Ueberfahren nimmt landing-hero.css (.ulh-evk canvas). */
       var linie = kern.makeLine({
-        wrap: wrap, canvas: leinwand,
+        wrap: wrap, canvas: leinwand, legend: feld.querySelector(".up-legend"),
         isDark: function(){ return false; }, gran: function(){ return "day"; },
         unit: function(){ return "%"; }, decimals: function(){ return 1; },
-        tipLabel: function(){ return "Visibility:"; },
-        markers: function(){ return [{ id: "lh-ev1", date: "2026-09-15", name: "Acme.com relaunch",
+        tipLabel: function(){ return "Visibility:"; }, legendeImmer: true,
+        markers: function(){ return [{ id: "lh-ev1", date: "2026-09-15", name: EVENT_NAME,
                                        type: "website_relaunch", color: EVENT_TON, fokus: true }]; }
       });
       linie.render({ labels: d.tage, datasets: [
-        { label: "Affected prompts", __id: "affected", __baseColor: tinte, borderColor: tinte, data: d.betroffen }
+        { label: "Affected prompts", __id: "affected", __baseColor: tinte, borderColor: tinte, data: d.betroffen },
+        { label: "Comparison group", __id: "comparison", __baseColor: "#80858e", borderColor: "#80858e", __dash: true, data: d.vergleich }
       ] });
     }
     /* Wie die Balken: gezeichnet wird, wenn die Karte erscheint -- sonst waere das Aufziehen der
@@ -5234,6 +5240,18 @@
      Zahl: PROMPTS_WARTEN ist die Ruhe nach Miras fertiger Antwort, STAND_MS die nach den
      eingelaufenen Zeilen der Liste. */
   var STAND_MS = 6200;
+  /* DER TAKT DER GANZEN RUNDE (06.10. spaet angefordert: "der finale State bei Shopping und
+     Product Detail soll etwas laenger stehen bleiben, aber alles im Gesamtzyklus synchronisieren").
+     Bis dahin hatte jede Szene ihre eigene Standzeit (Detail 4.1s, Schublade 4.0s, Performance
+     6.0s, Prompts 6.2s, Uebersicht vor dem Klick 2.0s, Brett vor dem Klick 2.4s). Jetzt zwei Zahlen
+     fuer die ganze Runde:
+       STAND_MS      so lange steht der ENDZUSTAND einer Szene nach ihrer letzten Bewegung --
+                     Miras Antwort, die Prompts-Liste, das Product Detail, die offene Schublade,
+                     jede der zwei Performance-Ansichten
+       VOR_KLICK_MS  so lange steht ein ZWISCHENSTAND, bevor darin geklickt wird -- die
+                     Shopping-Uebersicht vor dem Produkt, das Brett vor der Karte. Lang genug, um
+                     die Liste zu lesen; kuerzer als ein Endzustand, weil die Szene weitergeht. */
+  var VOR_KLICK_MS = 3200;
   var MIRA_WARTEN = 8000;        /* nach dem Ende des Erscheinens, Bewegung inbegriffen */
   var MIRA_FRAGE = "Create an AI Visibility Report for Q3 2026";
   var MIRA_ZEICHEN_MS = 34;      /* je Zeichen -- 43 Zeichen ergeben rund 1.5 Sekunden */
@@ -5994,7 +6012,7 @@
      die Antwort war eben erst fertig getippt, und zwei Sekunden spaeter war die Seite weg. */
   /* 4200 -> 6200: zwei Sekunden laenger auf der fertigen Antwort stehen bleiben (24.09.
      angefordert), und derselbe Wert wie STAND_MS bei der Prompts-Liste. */
-  var PROMPTS_WARTEN = 6200;
+  var PROMPTS_WARTEN = STAND_MS;
 
   function promptsAnsetzen(root){
     if (root.__ulhPromptsAn) return;
@@ -6378,8 +6396,10 @@
      Schublade auf. */
   /* 5200 -> 3200 -> 2400: noch einmal kuerzer (24.09.). Das ist der Stand NACH dem zweiten Zug --
      die Karte liegt in Done, und danach geht die Schublade auf. */
-  var CHANCEN_HALT = 2400;      /* Endzustand des Bretts, bevor die Karte aufgeht */
-  var CHANCEN_OFFEN = 4000;     /* wie lange die Schublade offen bleibt */
+  /* Seit dem 06.10. spaet aus dem Takt der Runde (STAND_MS/VOR_KLICK_MS, Begruendung dort):
+     vorher 2400 und 4000. */
+  var CHANCEN_HALT = VOR_KLICK_MS;   /* das Brett steht, bevor die Karte aufgeht */
+  var CHANCEN_OFFEN = STAND_MS;      /* wie lange die Schublade offen bleibt -- der Endzustand */
   var CHANCEN_ZU = 520;         /* das Zufahren der Schublade, bevor die Seite geht */
 
   function chancenAblauf(root){
@@ -6563,7 +6583,8 @@
 
   var PERF_AUF_MS    = 1000;  /* der Auftritt der Zellen: 560ms Dauer plus 360ms diagonaler
                                  Versatz (--uhm-pop: 2 in der landing-hero.css), aufgerundet */
-  var PERF_STAND_MS  = 6000;  /* so lange steht jede der zwei Ansichten -- NACH ihrem Auftritt */
+  var PERF_STAND_MS  = STAND_MS;  /* so lange steht jede der zwei Ansichten -- NACH ihrem Auftritt
+                                     (bis zum 06.10. 6000, jetzt der Takt der Runde) */
   var PERF_ABGANG_MS = 450;   /* der Weg hinaus: 390ms Bewegung plus Zugabe fuer den Tausch */
   var PERF_SEITE_MS  = 380;   /* erst steht die Seite, dann kommen die Daten -- siehe unten */
 
@@ -6664,26 +6685,37 @@
 
   /* ---------- Sechste Szene: Shopping (06.10. angefordert) --------------------------------
      "Folge denselben Regeln und Design-, Animations- und Dauer-Richtlinien wie bei den anderen
-     Hero-Steps." Also der Bau der Performance-Szene, Schritt fuer Schritt:
+     Hero-Steps." Schritt fuer Schritt (Stand 06.10. spaet):
        1. die Seite, die gerade dran ist, geht (is-weg), die Leiste springt auf "shopping"
-       2. nach AUSBLENDEN_MS steigt die Shopping-Seite herauf (is-da + is-kommt, ulhRise 690ms)
-       3. ERST WENN SIE STEHT, kommen die Daten (SHOP_SEITE_MS, wie PERF_SEITE_MS) -- die
-          Kennzahlen zaehlen dann in der Komponente selbst hoch, die Linien ziehen sich auf
-       4. Standzeit, dann geht die Seite und der Kreislauf beginnt von vorn (neustart)
+       2. nach AUSBLENDEN_MS tritt die Shopping-Seite auf -- MIT ihren Daten, die Teile
+          nacheinander, die Zeilen einzeln (Begruendung unten, bei SHOP_ZEILEN)
+       3. VOR_KLICK_MS Stand, dann Klick auf ein Produkt, das Detail steht STAND_MS
+       4. danach die Chancen
      Alle Uhren an EINER Stelle (shopNach), damit ein Neustart keine alte mitnimmt -- dieselbe
      Lehre wie bei perfUhren.
      Die Daten sind die Antwort von cached_shopping_overview_v1 in genau ihrer Form
      (bubble/shopping_backend_vertrag.md), gefuellt mit dem Automobilmarkt der Seite: dieselben
      Marken, Farben und Produkte wie in den Karten darunter (PRODUKTE). Die Komponente bekommt sie
      ueber ihren echten Setter, so wie in der App aus dem Run-JS-Schritt. */
-  var SHOP_SEITE_MS = 380;
-  /* Seit dem 06.10. abends mit einem Klick auf ein Produkt ("im Hero auch noch einmal einen Klick
-     auf ein Shopping-Produkt und Oeffnen von Product Detail"): die Uebersicht steht SHOP_KLICK_MS
-     (Hochzaehlen rund 1.2s, die Zeilen rund 1.3s, dann Ruhe), dann wird der Home Charger angefasst
-     und gedrueckt wie die Karte im Brett (FASS_MS/DRUCK_AB/DRUCK_NACH), und das Detail steht
-     SHOP_DETAIL_MS, bevor die Chancen kommen. Zusammen 8.9s statt der 7.6 ohne Klick. */
-  var SHOP_KLICK_MS = 3300;
-  var SHOP_DETAIL_MS = 4800;
+  /* DER AUFTRITT WIE BEI DER PROMPTS-SEITE (06.10. spaet: "die Appear-Animationen stimmen immer
+     noch nicht -- erst oberer Teil, dann die Tabelle Row fuer Row, wie z.B. bei Prompts Table").
+     Vorher stieg die Seite als EIN Block auf, mit ihrem Skelett, und 380ms spaeter tauschten die
+     Daten das Skelett aus -- mitten im Bild, waehrend die Seite noch stieg. Jetzt kommen die Daten
+     im selben Zug, in dem die Seite auftritt (wie promptsFuellen), und die Teile steigen mit
+     denselben Zahlen auf wie die Prompts-Seite (landing-hero.css): Seitenkopf 0, Summary 140,
+     Kennzahlen 220, Top Products 300; die Zeilen erst ab ZEILEN_START, eine je 55ms, 550ms lang.
+     Der Bau im Setter (die lange Aufgabe) liegt damit VOR dem ersten Bild der Bewegung, und core
+     stempelt seine Zeichen nach 250ms -- lange bevor die erste Zeile laeuft.
+     Danach der Klick auf ein Produkt (06.10. abends angefordert): die Uebersicht steht
+     VOR_KLICK_MS, dann wird der Home Charger angefasst und gedrueckt wie die Karte im Brett
+     (FASS_MS/DRUCK_AB/DRUCK_NACH), das Detail steigt auf und steht STAND_MS -- der Takt der Runde. */
+  var SHOP_ZEILEN = 10, SHOP_ZEILE_LAUF = 550, SHOP_ZEILE_STUFE = 55;
+  var SHOP_ZEILEN_ENDE = ZEILEN_START + (SHOP_ZEILEN - 1) * SHOP_ZEILE_STUFE + SHOP_ZEILE_LAUF;
+  /* is-kommt haelt den Tabellenkoerper verborgen, bis is-zeilen uebernimmt -- es muss also laenger
+     stehen als ZEILEN_START (derselbe Grund wie bei der Prompts-Seite). */
+  var SHOP_KOMMT_MS = ZEILEN_START + 240;
+  /* Der Auftritt des Details: vier Teile, der letzte bei 300ms, je 680ms lang. */
+  var SHOP_DETAIL_AUF = 980;
   var SHOP_PRODUKT = "p2";
   var shopUhren = [];
   function shopNach(fn, ms){ shopUhren.push(setTimeout(fn, ms)); }
@@ -6844,19 +6876,6 @@
      ERSTEN Zeichnen der Tabelle -- also hier, beim Laden der Datei, und nicht erst in der Szene. */
   try { window.localStorage.setItem("ush_cols__" + ID.ush + "__topprodukte", JSON.stringify({ obs: false, first: false })); }
   catch (e){}
-  /* DIE ZEILEN STOCKTEN (06.10. abends gemeldet). Drei Dinge fielen in ihre Bewegung: der Bau der
-     Seite im Setter (eine lange Aufgabe, die das erste Bild der Bewegung verschluckt), die zehn
-     Fotos, die erst waehrend der Bewegung ankamen und die Zeilen neu rastern liessen, und ein
-     Nachfassen bei +400ms (Zeichen, Tooltips), das mitten in die Staffel neu layoutete.
-     Jetzt stehen die Zeilen nach dem Setter verborgen (is-zeilen, mit will-change -- die Ebenen
-     entstehen VOR der Bewegung), das Nachfassen laeuft im selben Zug, und die Bewegung (is-laeuft)
-     beginnt erst, wenn die Fotos der Zeilen dekodiert sind (bilderVorladen hat sie meist schon im
-     Speicher) UND core seinen Zeichen-Lauf hinter sich hat: core sammelt neue Knoten und stempelt
-     ihre Zeichen gebuendelt einmal je 250ms (stampToolbarIcons, zeichenNachziehen -- gemessen 137
-     Aenderungen an svg in der Seite). Fiel dieser Lauf in die Staffel, schrieb er mitten in die
-     Bewegung. Also fruehestens SHOP_ZEILEN_FRUEH nach dem Setter, hoechstens SHOP_ZEILEN_WARTE,
-     danach zwei gemalte Bilder. Die Kennzahlen zaehlen in der Zeit schon hoch. */
-  var SHOP_ZEILEN_FRUEH = 300, SHOP_ZEILEN_WARTE = 600, SHOP_ZEILEN_LAUF = 700, SHOP_ZEILEN_STUFE = 60;
   /* Die Modelle fuer Shopping: das Detail liest Name und Zeichen aus dem Modell-Speicher von core
      (UC.getModels), und ohne ihn stuende dort "Chatgpt" ohne Logo (gemessen 06.10.). In der App
      fuellt ihn Bubble; hier einmal die drei, die Shopping-Ergebnisse zeigen. Auf der Seite liest
@@ -6870,45 +6889,32 @@
       { key: "gemini", display_name: "Gemini", logo_url: quellzeichen("gemini.google.com") }
     ]));
   }
+  /* Die Daten in die Komponente, ueber ihren echten Setter -- im selben Zug, in dem die Seite
+     auftritt (shopSzene). Der Tabellenkoerper ist bis ZEILEN_START verborgen (is-kommt). */
   function shopFuellen(root){
-    var seite = root && root.querySelector(".ulh-shop");
     shopModelle();
-    if (seite){ seite.classList.remove("is-laeuft"); seite.classList.add("is-zeilen"); }
     if (window.setShoppingOverview){
       try { window.setShoppingOverview(ID.ush, JSON.stringify(shopDaten()), ""); }
       catch (e){ if (window.console) console.warn("[landing-hero] Shopping:", e); }
     }
     ohneTipps(root); hellHalten(root); zeichenSetzen(root);
-    if (!seite) return;
-    var zeilen = seite.querySelectorAll(".ush-vorschau .up-tbody .up-row");
+  }
+  /* Der Zaehler fuer die Staffel steht erst im AUGENBLICK von is-zeilen an den Zeilen, nicht
+     beim Fuellen: die Komponente zeichnet die Tabelle nach dem Setter noch einmal (Spalten,
+     Breiten), und die Zeilen danach sind andere Elemente. Gemessen im Zeitraffer: mit dem Zaehler
+     aus shopFuellen kamen alle zehn Zeilen im selben Bild (1120ms) -- ohne Staffel. Derselbe
+     Grund, aus dem zeilenAnsetzen bei der Prompts-Seite erst dann zaehlt. */
+  function shopZeilenLos(seite){
+    var zeilen = seite.querySelectorAll('[data-sek="topprodukte"] .up-tbody .up-row');
     for (var i = 0; i < zeilen.length; i++) zeilen[i].style.setProperty("--ulh-i", i);
-    var los = false;
-    function starten(){
-      if (los) return;
-      los = true;
-      requestAnimationFrame(function(){ requestAnimationFrame(function(){
-        if (!seite.classList.contains("is-zeilen")) return;
-        seite.classList.add("is-laeuft");
-        shopNach(function(){
-          seite.classList.remove("is-zeilen");
-          seite.classList.remove("is-laeuft");
-          for (var j = 0; j < zeilen.length; j++) zeilen[j].style.removeProperty("--ulh-i");
-        }, SHOP_ZEILEN_LAUF + zeilen.length * SHOP_ZEILEN_STUFE + 200);
-      }); });
-    }
-    var fotos = [].slice.call(seite.querySelectorAll(".ush-vorschau .up-tbody img"));
-    var dekodiert = false, frueh = false;
-    function zeilenLos(){ if (dekodiert && frueh) starten(); }
-    Promise.all(fotos.map(function(f){ return f.decode ? f.decode()["catch"](function(){}) : null; }))
-      .then(function(){ dekodiert = true; zeilenLos(); });
-    shopNach(function(){ frueh = true; zeilenLos(); }, SHOP_ZEILEN_FRUEH);
-    shopNach(starten, SHOP_ZEILEN_WARTE);
+    seite.classList.add("is-zeilen");
   }
   /* Der Klick auf ein Produkt: Hover, Druck, dann das Detail -- derselbe Ablauf wie die Karte im
      Brett (karteKlicken), nur an der Zeile. Geoeffnet wird ueber den Controller der Komponente
      (seite "detail", ohne neuen Verlaufseintrag), so wie ein Klick in der App; die Anfrage, die
      das ausloest, verpufft in der Stummschaltung (landing-boot.js), die Antwort kommt im selben
-     Zug ueber den echten Setter -- das Skelett wird nie gemalt. */
+     Zug ueber den echten Setter -- das Skelett wird nie gemalt. Die Teile des Details steigen
+     danach auf wie die der Uebersicht (is-detail, landing-hero.css). */
   function shopProduktKlick(root){
     var seite = root.querySelector(".ulh-shop");
     var komp = seite && seite.querySelector(".ush-root");
@@ -6924,8 +6930,7 @@
         catch (e){ if (window.console) console.warn("[landing-hero] Shopping-Detail:", e); }
       }
       ohneTipps(root); hellHalten(root); zeichenSetzen(root);
-      shopNach(function(){ ohneTipps(root); hellHalten(root); }, 400);
-      shopNach(function(){ seite.classList.remove("is-detail"); }, 1200);
+      shopNach(function(){ seite.classList.remove("is-detail"); ohneTipps(root); hellHalten(root); }, SHOP_DETAIL_AUF + 120);
     }
     if (!zeile){ oeffnen(); return true; }
     zeile.classList.add("ulh-fass");
@@ -6959,15 +6964,20 @@
       seite.classList.remove("is-weg");
       seite.classList.add("is-da");
       seite.classList.add("is-kommt");
-      hellHalten(root);
-      ohneTipps(root);
-      shopNach(function(){ seite.classList.remove("is-kommt"); }, MIRA_RISE_MS);
+      shopFuellen(root);
+      shopNach(function(){ shopZeilenLos(seite); }, ZEILEN_START);
+      shopNach(function(){ seite.classList.remove("is-kommt"); }, SHOP_KOMMT_MS);
+      /* Aufraeumen, sobald die letzte Zeile steht: bliebe is-zeilen haengen, liefe der Hover der
+         Zeile beim Klick gegen eine noch gesetzte animation. */
       shopNach(function(){
-        shopFuellen(root);
-        shopNach(function(){ shopProduktKlick(root); }, SHOP_KLICK_MS);
-        /* Danach die Chancen: chancenSzene nimmt die Seite, die steht, selbst weg. */
-        shopNach(function(){ chancenSzene(root); }, SHOP_KLICK_MS + FASSEN_GESAMT + SHOP_DETAIL_MS);
-      }, SHOP_SEITE_MS);
+        seite.classList.remove("is-zeilen");
+        [].forEach.call(seite.querySelectorAll(".ush-vorschau .up-tbody .up-row"), function(z){ z.style.removeProperty("--ulh-i"); });
+        ohneTipps(root); hellHalten(root);
+      }, SHOP_ZEILEN_ENDE + 120);
+      shopNach(function(){ shopProduktKlick(root); }, SHOP_ZEILEN_ENDE + VOR_KLICK_MS);
+      /* Danach die Chancen: chancenSzene nimmt die Seite, die steht, selbst weg. */
+      shopNach(function(){ chancenSzene(root); },
+               SHOP_ZEILEN_ENDE + VOR_KLICK_MS + FASSEN_GESAMT + SHOP_DETAIL_AUF + STAND_MS);
     }, AUSBLENDEN_MS);
     return true;
   }
@@ -7016,7 +7026,10 @@
      davon vergisst, bekommt keinen Fehler, sondern eine Szene, die beim zweiten Mal ausfaellt.
      Nicht zurueckgesetzt wird, was EINMALIG ist: das Erscheinen des Fensters, der Scroll-Beobachter
      und die Bauteile selbst. */
-  var NEUSTART_KOMMT = 1000;     /* so lange traegt die Dashboard-Seite is-kommt (drei Stufen, 300 + 520) */
+  var NEUSTART_KOMMT = 1000;     /* so lange traegt die Dashboard-Seite is-kommt (der Seitenkopf, 600ms) */
+  /* Ab wann die vier Kaesten im Kreislauf aufsteigen duerfen: 140ms nach dem Seitenkopf, wie
+     vorher in .ulh-main.is-kommt -- vorausgesetzt, Chart und Tabelle stehen (inhaltZeigen). */
+  var NEUSTART_INHALT = 140;
 
   function neustart(root){
     var main = root.querySelector(".ulh-main");
@@ -7034,6 +7047,15 @@
     chancen.classList.remove("is-da");
     chancen.classList.add("is-weg");
     if (window.setSidebarActive) window.setSidebarActive(ID.usn, "dashboard");
+    /* Die vier Kaesten des Dashboards gehen JETZT auf unsichtbar, solange ihre Seite selbst noch
+       unsichtbar ist (is-weg seit Mira) -- und nicht erst im Augenblick, in dem sie zurueckkommt.
+       Genau dort lag das Aufblitzen (06.10. spaet gemeldet: "nach vollstaendigem Loop blitzt kurz
+       das fertige Dashboard auf, verschwindet, dann legt die Animation los"). Gemessen im
+       Zeitraffer-Pruefstand: die Seite blendete ein, waehrend die Kaesten von voll sichtbar
+       ausblendeten (.vot-box traegt aus der Komponente "transition: opacity 200ms") -- der linke
+       Chartkasten stand kurz bei 33 Prozent, war danach 1.3s weg und stieg erst dann auf. */
+    root.classList.remove("is-inhalt");
+    root.__ulhInhaltAn = false;
 
     setTimeout(function(){
       /* 2. Jede Seite zurueck auf Anfang. is-da MIT abnehmen: eine Seite, die weg ist, ist nicht
@@ -7065,7 +7087,7 @@
          die Uebersicht: die Runde endete im Product Detail, und reset laesst die Seite stehen. */
       var shopKomp = shop && shop.querySelector(".ush-root");
       if (shopKomp && shopKomp.__ushController && shopKomp.__ushController.seite) shopKomp.__ushController.seite("overview", false);
-      if (shop){ shop.classList.remove("is-detail"); shop.classList.remove("is-laeuft"); }
+      if (shop) shop.classList.remove("is-detail");
       if (window.resetShopping) window.resetShopping(ID.ush);
       schubladeZu(root);             /* nichts Offenes in die naechste Runde mitnehmen */
       perfUhrenAus();                /* alle Uhren der Szene anhalten */
@@ -7127,13 +7149,17 @@
          Chart steht. Der Textblock ueber dem Fenster bleibt unberuehrt -- er war nie weg.
          miraAnsetzen ruft inhaltZeigen dabei nicht noch einmal an: die eigene Uhr unten steht
          schon im selben Durchlauf und kommt zuerst (__ulhMiraAn). */
-      root.classList.remove("is-inhalt");
-      root.__ulhInhaltAn = false;
+      /* EIN AUFTRITT, NICHT ZWEI (06.10. spaet). Bis dahin liessen ZWEI Wege die Kaesten
+         aufsteigen: .ulh-main.is-kommt (landing-hero.css) und danach noch einmal is-inhalt, das
+         inhaltZeigen mit der Frist des ERSTEN Ladens setzte (INHALT_FRUEH, 1410ms) -- also erst,
+         nachdem is-kommt bei 1000ms abgefallen war. Dazwischen fielen die Kaesten auf unsichtbar
+         zurueck. Jetzt steigt mit is-kommt nur noch der Seitenkopf, die Kaesten kommen allein
+         ueber is-inhalt, NEUSTART_INHALT nach ihm -- derselbe Auftritt wie beim ersten Laden. */
       main.classList.remove("is-weg");
       main.classList.add("is-da");
       main.classList.add("is-kommt");
       setTimeout(function(){ main.classList.remove("is-kommt"); }, NEUSTART_KOMMT);
-      inhaltZeigen(root);
+      inhaltZeigen(root, NEUSTART_INHALT);
 
       /* 6. Nachfassen wie beim ersten Aufbau: core stempelt neu eingefuegte Wurzeln mit dem
          gerade gueltigen Thema, die Komponenten setzen ihre Tooltips beim Zeichnen, und der
@@ -7405,10 +7431,10 @@
      langsamer), also 970 + 440 = 1410. */
   var INHALT_FRUEH = 1410;
   var INHALT_SPAET = 6000;       /* Notbremse */
-  function inhaltZeigen(root){
+  function inhaltZeigen(root, frueh){
     if (root.__ulhInhaltAn) return;
     root.__ulhInhaltAn = true;
-    var start = Date.now(), fertig = false;
+    var start = Date.now(), fertig = false, ab = frueh == null ? INHALT_FRUEH : frueh;
     function zeigen(){
       if (fertig) return;
       fertig = true;
@@ -7422,7 +7448,7 @@
       var leinwand = root.querySelector(".up-line-canvas");
       var lebt = leinwand && window.Chart && window.Chart.getChart && window.Chart.getChart(leinwand);
       var zeilen = root.querySelectorAll(".vot-unit-right .vt-row").length === MARKEN.length;
-      if (lebt && zeilen && alt2 >= INHALT_FRUEH){ zeigen(); return; }
+      if (lebt && zeilen && alt2 >= ab){ zeigen(); return; }
       setTimeout(warten, 90);
     })();
   }

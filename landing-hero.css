@@ -1255,29 +1255,20 @@
    zwei Bewegungen uebereinander. */
 .ulh-root .ulh-main.is-kommt { animation: none; }
 .ulh-root .ulh-main.is-kommt .dph-root { animation: ulhRise 600ms var(--ulh-expo) backwards; }
-/* Derselbe Aufbau wie beim ersten Auftritt, nur enger getaktet: im Kreislauf hat die Seite
-   NEUSTART_KOMMT (1000ms), bis is-kommt wieder abfaellt. Das Ende liegt hier bei
-   450 + 460 = 910ms -- eine Animation, die ueber das Abfallen der Klasse hinausreicht, wuerde
-   mitten in der Bewegung abgeschnitten und saehe aus wie ein Ruckler. */
-.ulh-root .ulh-main.is-kommt .vot-unit-left  .vot-head { animation: ulhRise 550ms var(--ulh-expo) 140ms backwards; }
-.ulh-root .ulh-main.is-kommt .vot-unit-left  .vot-box  { animation: ulhRise 600ms var(--ulh-expo) 210ms backwards; }
-.ulh-root .ulh-main.is-kommt .vot-unit-right .vot-head { animation: ulhRise 550ms var(--ulh-expo) 200ms backwards; }
-.ulh-root .ulh-main.is-kommt .vot-unit-right .vot-box  { animation: ulhRise 600ms var(--ulh-expo) 270ms backwards; }
-.ulh-root .ulh-main.is-kommt .tcd-unit-left  .tcd-head { animation: ulhRise 550ms var(--ulh-expo) 320ms backwards; }
-.ulh-root .ulh-main.is-kommt .tcd-unit-left  .tcd-box  { animation: ulhRise 600ms var(--ulh-expo) 390ms backwards; }
-.ulh-root .ulh-main.is-kommt .tcd-unit-right .tcd-head { animation: ulhRise 550ms var(--ulh-expo) 380ms backwards; }
-.ulh-root .ulh-main.is-kommt .tcd-unit-right .tcd-box  { animation: ulhRise 600ms var(--ulh-expo) 450ms backwards; }
+/* DIE VIER KAESTEN STEIGEN NUR NOCH UEBER is-inhalt AUF (06.10. spaet). Hier standen bis dahin
+   eigene Animationen fuer sie -- ein zweiter Weg neben is-inhalt, und zwischen beiden fielen die
+   Kaesten auf unsichtbar zurueck ("das fertige Dashboard blitzt kurz auf, verschwindet, dann
+   legt die Animation los"). landing-hero.js setzt is-inhalt im Kreislauf NEUSTART_INHALT (140ms)
+   nach dem Seitenkopf -- derselbe Auftritt wie beim ersten Laden. */
 @media (prefers-reduced-motion: reduce) {
-  .ulh-root .ulh-main.is-kommt .dph-root,
-  .ulh-root .ulh-main.is-kommt .vot-unit-left  .vot-head,
-  .ulh-root .ulh-main.is-kommt .vot-unit-left  .vot-box,
-  .ulh-root .ulh-main.is-kommt .vot-unit-right .vot-head,
-  .ulh-root .ulh-main.is-kommt .vot-unit-right .vot-box,
-  .ulh-root .ulh-main.is-kommt .tcd-unit-left  .tcd-head,
-  .ulh-root .ulh-main.is-kommt .tcd-unit-left  .tcd-box,
-  .ulh-root .ulh-main.is-kommt .tcd-unit-right .tcd-head,
-  .ulh-root .ulh-main.is-kommt .tcd-unit-right .tcd-box { animation: none; }
+  .ulh-root .ulh-main.is-kommt .dph-root { animation: none; }
 }
+/* KEINE DECKKRAFT-TRANSITION AN DEN CHART-KAESTEN. visibility-chart.css gibt .vot-box
+   "transition: height 200ms, opacity 200ms" mit. Im Hero ist das eine Falle: eine laufende
+   Transition schlaegt in der Kaskade jede Animation -- beim Setzen von is-inhalt blendete der
+   Kasten 200ms linear auf statt mit ulhRise, und beim Wegnehmen blendete er sichtbar AUS (das war
+   das Aufblitzen im Kreislauf, gemessen 33 Prozent Deckkraft). Die Hoehe behaelt ihren Uebergang. */
+.ulh-root .vot-box { transition: height 200ms ease; }
 
 /* ---------- Der Auftritt des Opportunities-Bretts ----------
    Wie bei der Prompts-Seite: die Seite selbst steigt nicht herauf, ihre Teile tun es nacheinander.
@@ -1388,20 +1379,38 @@
 .ulh-app .ulh-shop [data-sek="landscape"],
 .ulh-app .ulh-shop .ush-zwei { display: none; }
 .ulh-app .ulh-shop .ush-vorschau.is-dense .up-tbody .up-row { height: 72px; flex: 0 0 72px; }
-/* Die Zeilen fallen nacheinander ein (06.10. abends neu, sie stockten -- Begruendung an
-   shopFuellen). Zwei Stufen: is-zeilen haelt sie verborgen und legt ihre Ebenen schon an
-   (will-change), is-laeuft startet die Bewegung, wenn die Fotos dekodiert sind. fill "both":
-   die Zeile steht nach ihrem Lauf auf dem Endbild, bis is-zeilen faellt -- sonst fiele sie
-   zwischen Ende und Aufraeumen auf opacity 0 zurueck. 700ms und 60ms Abstand wie SHOP_ZEILEN_LAUF
-   und SHOP_ZEILEN_STUFE in landing-hero.js. */
-.ulh-root .ulh-shop.is-zeilen .ush-vorschau .up-tbody .up-row { opacity: 0; will-change: transform, opacity; }
-.ulh-root .ulh-shop.is-zeilen.is-laeuft .ush-vorschau .up-tbody .up-row {
-  animation: ulhRise 700ms var(--ulh-expo) both;
-  animation-delay: calc(var(--ulh-i, 0) * 60ms);
+/* DER AUFTRITT DER SHOPPING-SEITE (06.10. spaet: "erst oberer Teil, dann die Tabelle Row fuer
+   Row, wie z.B. bei Prompts Table"). Derselbe Bau wie .ulh-prompts.is-kommt, mit denselben Zahlen:
+   die Seite selbst steigt NICHT, ihre Teile tun es nacheinander -- Seitenkopf und Reiter 0,
+   Summary 140, Kennzahlen 220, Top Products 300. Der Tabellenkoerper bleibt verborgen, bis
+   is-zeilen uebernimmt (ZEILEN_START, 760ms), dann fallen die Zeilen einzeln ein, 55ms
+   auseinander. visibility und nicht opacity: der Platz bleibt stehen, die Tabelle springt nicht.
+   Die Daten sind dabei schon da -- landing-hero.js fuellt im selben Zug (shopFuellen). */
+.ulh-root .ulh-shop.is-kommt { animation: none; }
+.ulh-root .ulh-shop.is-kommt .ush-pagehead,
+.ulh-root .ulh-shop.is-kommt .ush-nav { animation: ulhRise 680ms var(--ulh-expo) backwards; }
+.ulh-root .ulh-shop.is-kommt [data-sek="summary"] { animation: ulhRise 680ms var(--ulh-expo) 140ms backwards; }
+.ulh-root .ulh-shop.is-kommt [data-sek="kpis"] { animation: ulhRise 680ms var(--ulh-expo) 220ms backwards; }
+.ulh-root .ulh-shop.is-kommt [data-sek="topprodukte"] { animation: ulhRise 680ms var(--ulh-expo) 300ms backwards; }
+.ulh-root .ulh-shop.is-kommt .ush-vorschau .up-tbody { visibility: hidden; }
+.ulh-root .ulh-shop.is-zeilen .ush-vorschau .up-tbody { visibility: visible; }
+.ulh-root .ulh-shop.is-zeilen .ush-vorschau .up-tbody .up-row {
+  animation: ulhRise 550ms var(--ulh-expo) backwards;
+  animation-delay: calc(var(--ulh-i, 0) * 55ms);
 }
+/* Das Product Detail nach dem Klick: dieselbe Staffel fuer seine Teile -- Kopf mit Foto und
+   Kennzahlen, wo es erscheint, Haendler, Auftritte. Seitenkopf und Reiter bleiben stehen, wie in
+   der App, wenn man ein Produkt oeffnet. is-detail setzt shopProduktKlick. */
+.ulh-root .ulh-shop.is-detail [data-sek="hero"] { animation: ulhRise 680ms var(--ulh-expo) backwards; }
+.ulh-root .ulh-shop.is-detail [data-sek="wo"] { animation: ulhRise 680ms var(--ulh-expo) 140ms backwards; }
+.ulh-root .ulh-shop.is-detail [data-sek="dhaendler"] { animation: ulhRise 680ms var(--ulh-expo) 220ms backwards; }
+.ulh-root .ulh-shop.is-detail [data-sek="tabelle"] { animation: ulhRise 680ms var(--ulh-expo) 300ms backwards; }
 @media (prefers-reduced-motion: reduce) {
+  .ulh-root .ulh-shop.is-kommt .ush-pagehead,
+  .ulh-root .ulh-shop.is-kommt .ush-nav,
+  .ulh-root .ulh-shop.is-kommt [data-sek],
   .ulh-root .ulh-shop.is-zeilen .ush-vorschau .up-tbody .up-row,
-  .ulh-root .ulh-shop.is-zeilen.is-laeuft .ush-vorschau .up-tbody .up-row { animation: none; opacity: 1; }
+  .ulh-root .ulh-shop.is-detail [data-sek] { animation: none; }
 }
 /* Der Klick auf das Produkt (shopProduktKlick): erst der Hover der Zeile aus core, dann der Druck --
    wie bei der Karte im Brett, nur ein Prozent statt drei: eine Zeile ist breit, drei Prozent
@@ -1410,11 +1419,7 @@
 .ulh-app .ulh-shop .ush-vorschau .up-row.ulh-fass,
 .ulh-app .ulh-shop .ush-vorschau .up-colscroll .up-row.ulh-fass > .up-td:first-child { background: var(--vt-row-hover); }
 .ulh-app .ulh-shop .ush-vorschau .up-row.ulh-druck { transform: scale(0.99); }
-/* Das Detail steigt herauf wie jede Seite im Fenster (ulhRise auf der Kurve der Seite) -- nur der
-   Inhalt: Seitenkopf und Reiter bleiben stehen, wie in der App, wenn man ein Produkt oeffnet.
-   is-detail setzt shopProduktKlick und nimmt es nach 1.2s wieder ab. */
-.ulh-root .ulh-shop.is-detail .ush-main { animation: ulhRise 700ms var(--ulh-expo) backwards; }
-@media (prefers-reduced-motion: reduce) { .ulh-root .ulh-shop.is-detail .ush-main { animation: none; } }
+
 
 /* ---------- Die Karten im Fenster: flacher ----------
    Gemessen: eine Karte war 285px hoch, ueber dem Brett stehen 261px Kopf und Werkzeugleiste, und
