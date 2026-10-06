@@ -142,6 +142,13 @@
   /* Schnell an, lang aus. Fuer Stuecke, die von unten hereinkommen: sie sollen sofort da sein und
      dann ausrollen -- eine symmetrische Kurve wirkt dabei zaeh. */
   --ulh-gleit: cubic-bezier(.16, 1, .3, 1);
+  /* DIE KURVE VON MOBBIN (06.10. angefordert: "Animationen wirklich butter smooth, nimm dir
+     mobbin.com als Beispiel"). Dort gemessen: opacity und transform, 1s, cubic-bezier(.19,1,.22,1)
+     -- easeOutExpo. Sie setzt mit voller Geschwindigkeit ein und rollt sehr lange aus; nach einem
+     Drittel der Zeit sind rund 90 Prozent des Weges getan. Das alte --ulh-ease (.4,0,.2,1) faehrt
+     dagegen LANGSAM an -- auf einem Bildschirm, in dem gerade eine Seite wechselt, liest sich
+     dieser zoegernde Beginn als Ruckler. */
+  --ulh-expo: cubic-bezier(.19, 1, .22, 1);
   position: relative;
   /* width: 100% ist hier PFLICHT und nicht Kosmetik. Ein Block-div fuellt seinen Eltern nur, wenn
      der ein normaler Block-Kontext ist. Steht die Sektion in einem FLEX-Eltern -- und genau so
@@ -520,6 +527,10 @@
    is-entering traegt die Animationen und faellt nach dem letzten Durchlauf ab. Bliebe sie stehen,
    liefe jede spaetere Bewegung im Fenster gegen eine noch gesetzte animation -- genau davor warnt
    der Kommentar im Onboarding. */
+/* Alle Aufstiege laufen seit dem 06.10. auf --ulh-expo und ein Drittel laenger als vorher (siehe
+   dort: Mobbin). Die Uhren in landing-hero.js, die is-kommt wieder abnehmen, liegen dadurch zum Teil
+   knapp vor dem Ende einer Bewegung -- bei dieser Kurve sind dort aber schon ueber 99 Prozent des
+   Weges getan, das Abnehmen ist nicht zu sehen. */
 @keyframes ulhRise {
   from { opacity: 0; transform: translateY(18px); }
   to   { opacity: 1; transform: none; }
@@ -559,8 +570,8 @@
    haengt nicht mehr an einer Uhr -- siehe unten.
    Beide um 530ms spaeter (440 -> 970, 640 -> 1170), damit das Fenster wie bisher 100ms nach dem
    letzten Knopf anfaengt und nicht mitten in den Text faellt. Die Laengen bleiben. */
-.ulh-root.is-entering .ulh-frame  { animation: ulhRise 690ms var(--ulh-ease) 970ms backwards; }
-.ulh-root.is-entering .dph-root   { animation: ulhRise 620ms var(--ulh-ease) 1170ms backwards; }
+.ulh-root.is-entering .ulh-frame  { animation: ulhRise 900ms var(--ulh-expo) 970ms backwards; }
+.ulh-root.is-entering .dph-root   { animation: ulhRise 810ms var(--ulh-expo) 1170ms backwards; }
 /* NICHT MEHR ZWEI GROSSE RECHTECKE (21.09. gemeldet: "Bitte eine richtige Appear animation im
    Dashboard, das sieht aktuell sehr mau aus"). Vorher stiegen .vot-root und .tcd-root als je ein
    Block herauf -- zwei Bewegungen fuer vier Kaesten, und in einer Sektion, in der das Brett der
@@ -600,14 +611,14 @@
    schoene smoothe Animation sein"). Die Abstaende waren 0/70/60/130/260/330/320/390 -- vor allem
    die 130ms Pause zwischen dem Visibility-Chart und den Zitaten lasen sich als zwei Auftritte
    statt als einer, der durchlaeuft. Jetzt laeuft er ohne Absatz von oben nach unten durch. */
-.ulh-root.is-inhalt .vot-unit-left  .vot-head { animation: ulhRise 560ms var(--ulh-ease) backwards; }
-.ulh-root.is-inhalt .vot-unit-left  .vot-box  { animation: ulhRise 620ms var(--ulh-ease) 45ms backwards; }
-.ulh-root.is-inhalt .vot-unit-right .vot-head { animation: ulhRise 560ms var(--ulh-ease) 40ms backwards; }
-.ulh-root.is-inhalt .vot-unit-right .vot-box  { animation: ulhRise 620ms var(--ulh-ease) 85ms backwards; }
-.ulh-root.is-inhalt .tcd-unit-left  .tcd-head { animation: ulhRise 560ms var(--ulh-ease) 150ms backwards; }
-.ulh-root.is-inhalt .tcd-unit-left  .tcd-box  { animation: ulhRise 620ms var(--ulh-ease) 195ms backwards; }
-.ulh-root.is-inhalt .tcd-unit-right .tcd-head { animation: ulhRise 560ms var(--ulh-ease) 190ms backwards; }
-.ulh-root.is-inhalt .tcd-unit-right .tcd-box  { animation: ulhRise 620ms var(--ulh-ease) 230ms backwards; }
+.ulh-root.is-inhalt .vot-unit-left  .vot-head { animation: ulhRise 730ms var(--ulh-expo) backwards; }
+.ulh-root.is-inhalt .vot-unit-left  .vot-box  { animation: ulhRise 810ms var(--ulh-expo) 45ms backwards; }
+.ulh-root.is-inhalt .vot-unit-right .vot-head { animation: ulhRise 730ms var(--ulh-expo) 40ms backwards; }
+.ulh-root.is-inhalt .vot-unit-right .vot-box  { animation: ulhRise 810ms var(--ulh-expo) 85ms backwards; }
+.ulh-root.is-inhalt .tcd-unit-left  .tcd-head { animation: ulhRise 730ms var(--ulh-expo) 150ms backwards; }
+.ulh-root.is-inhalt .tcd-unit-left  .tcd-box  { animation: ulhRise 810ms var(--ulh-expo) 195ms backwards; }
+.ulh-root.is-inhalt .tcd-unit-right .tcd-head { animation: ulhRise 730ms var(--ulh-expo) 190ms backwards; }
+.ulh-root.is-inhalt .tcd-unit-right .tcd-box  { animation: ulhRise 810ms var(--ulh-expo) 230ms backwards; }
 @media (prefers-reduced-motion: reduce) {
   .ulh-root:not(.is-inhalt) .vot-unit-left  .vot-head,
   .ulh-root:not(.is-inhalt) .vot-unit-left  .vot-box,
@@ -698,7 +709,12 @@
 .ulh-seite {
   position: absolute;
   inset: 0;
-  transition: opacity 345ms var(--ulh-ease);
+  /* Expo statt ease, 420 statt 345 (06.10., Mobbin): die alte Seite ist bei AUSBLENDEN_MS schon
+     fast ganz weg, die neue steigt danach auf. will-change, damit der Wechsel auf dem Compositor
+     laeuft: in genau diesem Augenblick baut die neue Seite ihre Komponente (bis 120ms am Stueck,
+     gemessen) -- eine Ueberblendung, die auf den Hauptfaden wartet, stockt dann mit. */
+  transition: opacity 420ms var(--ulh-expo);
+  will-change: opacity;
 }
 /* Mira und die Prompts-Seite liegen von Anfang an im Markup, aber unsichtbar: die Komponenten
    brauchen ihre echte Groesse, um sich einzurichten (Chathoehe, is-compact, Scrollsperre, die
@@ -710,7 +726,7 @@
    entscheidet die Reihenfolge -- und stand is-da hinten, blieb Mira mit Deckkraft 1 ueber der
    Prompts-Seite liegen. Genau so gemessen. */
 .ulh-seite.is-weg { opacity: 0; }
-.ulh-seite.is-kommt { animation: ulhRise 690ms var(--ulh-ease) backwards; }
+.ulh-seite.is-kommt { animation: ulhRise 900ms var(--ulh-expo) backwards; }
 
 /* Die Karte der Heatmap (performance-radar.css: .uhm-tip) haengt an <body> und bleibt deshalb
    UNVERKLEINERT -- sie steht in voller Groesse neben einer verkleinerten Oberflaeche.
@@ -783,9 +799,9 @@
    backwards als fill, wie beim Erscheinen des Fensters: ohne das blitzt jeder Teil vor seiner
    Verzoegerung kurz auf und springt dann zurueck. */
 .ulh-root .ulh-prompts.is-kommt { animation: none; }
-.ulh-root .ulh-prompts.is-kommt .up-ph-root { animation: ulhRise 520ms var(--ulh-ease) backwards; }
-.ulh-root .ulh-prompts.is-kommt .upt-grp-sidepanel { animation: ulhRise 520ms var(--ulh-ease) 140ms backwards; }
-.ulh-root .ulh-prompts.is-kommt .up-box { animation: ulhRise 520ms var(--ulh-ease) 300ms backwards; }
+.ulh-root .ulh-prompts.is-kommt .up-ph-root { animation: ulhRise 680ms var(--ulh-expo) backwards; }
+.ulh-root .ulh-prompts.is-kommt .upt-grp-sidepanel { animation: ulhRise 680ms var(--ulh-expo) 140ms backwards; }
+.ulh-root .ulh-prompts.is-kommt .up-box { animation: ulhRise 680ms var(--ulh-expo) 300ms backwards; }
 /* Die Zeilen: eine nach der anderen, 55ms auseinander. Der Zaehler steht als --ulh-i an der Zeile
    und wird von landing-hero.js gesetzt, sobald die Zeilen wirklich da sind -- eine Regel mit
    nth-child fuer fuenfzehn Zeilen waere dasselbe in laenger und ginge bei einer anderen
@@ -798,7 +814,7 @@
 .ulh-root .ulh-prompts.is-kommt .up-tbody { visibility: hidden; }
 .ulh-root .ulh-prompts.is-zeilen .up-tbody { visibility: visible; }
 .ulh-root .ulh-prompts.is-zeilen .up-tbody .up-row {
-  animation: ulhRise 420ms var(--ulh-ease) backwards;
+  animation: ulhRise 550ms var(--ulh-expo) backwards;
   animation-delay: calc(var(--ulh-i, 0) * 55ms);
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1206,7 +1222,7 @@
 .ulh-root .ulh-mira .am-chat { padding-top: 8px; }
 
 .ulh-root .ulh-mira.is-zeilen .am-msg table tbody tr {
-  animation: ulhRise 320ms var(--ulh-ease) backwards;
+  animation: ulhRise 420ms var(--ulh-expo) backwards;
   animation-delay: calc(var(--ulh-i, 0) * 60ms);
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1220,19 +1236,19 @@
    seiner Ueberschriftzeile und seinem Panel. Die Seite selbst steigt dabei NICHT, sonst laegen
    zwei Bewegungen uebereinander. */
 .ulh-root .ulh-main.is-kommt { animation: none; }
-.ulh-root .ulh-main.is-kommt .dph-root { animation: ulhRise 460ms var(--ulh-ease) backwards; }
+.ulh-root .ulh-main.is-kommt .dph-root { animation: ulhRise 600ms var(--ulh-expo) backwards; }
 /* Derselbe Aufbau wie beim ersten Auftritt, nur enger getaktet: im Kreislauf hat die Seite
    NEUSTART_KOMMT (1000ms), bis is-kommt wieder abfaellt. Das Ende liegt hier bei
    450 + 460 = 910ms -- eine Animation, die ueber das Abfallen der Klasse hinausreicht, wuerde
    mitten in der Bewegung abgeschnitten und saehe aus wie ein Ruckler. */
-.ulh-root .ulh-main.is-kommt .vot-unit-left  .vot-head { animation: ulhRise 420ms var(--ulh-ease) 140ms backwards; }
-.ulh-root .ulh-main.is-kommt .vot-unit-left  .vot-box  { animation: ulhRise 460ms var(--ulh-ease) 210ms backwards; }
-.ulh-root .ulh-main.is-kommt .vot-unit-right .vot-head { animation: ulhRise 420ms var(--ulh-ease) 200ms backwards; }
-.ulh-root .ulh-main.is-kommt .vot-unit-right .vot-box  { animation: ulhRise 460ms var(--ulh-ease) 270ms backwards; }
-.ulh-root .ulh-main.is-kommt .tcd-unit-left  .tcd-head { animation: ulhRise 420ms var(--ulh-ease) 320ms backwards; }
-.ulh-root .ulh-main.is-kommt .tcd-unit-left  .tcd-box  { animation: ulhRise 460ms var(--ulh-ease) 390ms backwards; }
-.ulh-root .ulh-main.is-kommt .tcd-unit-right .tcd-head { animation: ulhRise 420ms var(--ulh-ease) 380ms backwards; }
-.ulh-root .ulh-main.is-kommt .tcd-unit-right .tcd-box  { animation: ulhRise 460ms var(--ulh-ease) 450ms backwards; }
+.ulh-root .ulh-main.is-kommt .vot-unit-left  .vot-head { animation: ulhRise 550ms var(--ulh-expo) 140ms backwards; }
+.ulh-root .ulh-main.is-kommt .vot-unit-left  .vot-box  { animation: ulhRise 600ms var(--ulh-expo) 210ms backwards; }
+.ulh-root .ulh-main.is-kommt .vot-unit-right .vot-head { animation: ulhRise 550ms var(--ulh-expo) 200ms backwards; }
+.ulh-root .ulh-main.is-kommt .vot-unit-right .vot-box  { animation: ulhRise 600ms var(--ulh-expo) 270ms backwards; }
+.ulh-root .ulh-main.is-kommt .tcd-unit-left  .tcd-head { animation: ulhRise 550ms var(--ulh-expo) 320ms backwards; }
+.ulh-root .ulh-main.is-kommt .tcd-unit-left  .tcd-box  { animation: ulhRise 600ms var(--ulh-expo) 390ms backwards; }
+.ulh-root .ulh-main.is-kommt .tcd-unit-right .tcd-head { animation: ulhRise 550ms var(--ulh-expo) 380ms backwards; }
+.ulh-root .ulh-main.is-kommt .tcd-unit-right .tcd-box  { animation: ulhRise 600ms var(--ulh-expo) 450ms backwards; }
 @media (prefers-reduced-motion: reduce) {
   .ulh-root .ulh-main.is-kommt .dph-root,
   .ulh-root .ulh-main.is-kommt .vot-unit-left  .vot-head,
@@ -1251,9 +1267,9 @@
    rechts. Die Karten darin kommen mit ihrer Spalte -- eine zweite Staffelung innerhalb einer
    Spalte, die selbst noch aufblendet, waere dieselbe Falle wie bei der Prompts-Tabelle. */
 .ulh-root .ulh-chancen.is-kommt { animation: none; }
-.ulh-root .ulh-chancen.is-kommt .up-ph-root { animation: ulhRise 520ms var(--ulh-ease) backwards; }
-.ulh-root .ulh-chancen.is-kommt .uo-top { animation: ulhRise 520ms var(--ulh-ease) 140ms backwards; }
-.ulh-root .ulh-chancen.is-kommt .uo-col { animation: ulhRise 520ms var(--ulh-ease) backwards; }
+.ulh-root .ulh-chancen.is-kommt .up-ph-root { animation: ulhRise 680ms var(--ulh-expo) backwards; }
+.ulh-root .ulh-chancen.is-kommt .uo-top { animation: ulhRise 680ms var(--ulh-expo) 140ms backwards; }
+.ulh-root .ulh-chancen.is-kommt .uo-col { animation: ulhRise 680ms var(--ulh-expo) backwards; }
 .ulh-root .ulh-chancen.is-kommt .uo-col:nth-child(1) { animation-delay: 300ms; }
 .ulh-root .ulh-chancen.is-kommt .uo-col:nth-child(2) { animation-delay: 400ms; }
 .ulh-root .ulh-chancen.is-kommt .uo-col:nth-child(3) { animation-delay: 500ms; }
@@ -1267,7 +1283,7 @@
 .ulh-root .ulh-chancen.is-kommt .uo-card { visibility: hidden; }
 .ulh-root .ulh-chancen.is-karten .uo-card {
   visibility: visible;
-  animation: ulhRise 420ms var(--ulh-ease) backwards;
+  animation: ulhRise 550ms var(--ulh-expo) backwards;
   animation-delay: calc(var(--ulh-i, 0) * 90ms);
 }
 /* "Nothing here yet" tritt MIT auf (21.09. gemeldet: "sieht komisch aus, dass der schon sichtbar
@@ -1280,7 +1296,7 @@
 .ulh-root .ulh-chancen.is-kommt .uo-col-empty { visibility: hidden; }
 .ulh-root .ulh-chancen.is-karten .uo-col-empty {
   visibility: visible;
-  animation: ulhRise 420ms var(--ulh-ease) 520ms backwards;
+  animation: ulhRise 550ms var(--ulh-expo) 520ms backwards;
 }
 @media (prefers-reduced-motion: reduce) {
   .ulh-root .ulh-chancen.is-karten .uo-col-empty { animation: none; }
@@ -1341,6 +1357,28 @@
    Landingpage laedt date-range und filter-bar nicht, die Zeile stand als 34px leerer Streifen
    zwischen Reitern und Inhalt. Die anderen Seiten im Fenster zeigen ebenfalls keinen Kalender. */
 .ulh-app .ush-filterzeile { display: none; }
+/* SHOPPING IM FENSTER, ZWEITE FASSUNG (06.10. angefordert: "Summary und KPIs bleiben oben, darunter
+   statt dem Linechart eine Produktliste im komfortablen Row-Height-Stil, nicht horizontal
+   scrollbar"). Die Uebersicht der Komponente bleibt, wie sie ist -- im Fenster fallen nur die
+   Abschnitte zwischen den Kennzahlen und den Top Products weg (Kurve, Brand Landscape) und die zwei
+   kleinen darunter. Die Tabelle steht damit direkt unter den Kennzahlen.
+   Komfortabel heisst die 72 der App (core: .up-row) statt der 55, die die Vorschau-Tabellen der
+   Uebersicht tragen (.ush-vorschau.is-dense) -- auch fuer das Skelett, sonst springt die Hoehe,
+   wenn die Daten kommen. Die Spalten waehlt landing-hero.js (Product, Visibility, Avg. Position,
+   Rating, Price: zusammen rund 760px in 1078 -- kein Querscrollen). */
+.ulh-app .ulh-shop [data-sek="chart"],
+.ulh-app .ulh-shop [data-sek="landscape"],
+.ulh-app .ulh-shop .ush-zwei { display: none; }
+.ulh-app .ulh-shop .ush-vorschau.is-dense .up-tbody .up-row { height: 72px; flex: 0 0 72px; }
+/* Die Zeilen fallen nacheinander ein, wie in der Prompts-Seite (dieselbe Bewegung, 55ms Abstand).
+   --ulh-i setzt landing-hero.js im selben Zug, in dem die Zeilen entstehen. */
+.ulh-root .ulh-shop.is-zeilen .ush-vorschau .up-tbody .up-row {
+  animation: ulhRise 550ms var(--ulh-expo) backwards;
+  animation-delay: calc(var(--ulh-i, 0) * 55ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ulh-root .ulh-shop.is-zeilen .ush-vorschau .up-tbody .up-row { animation: none; }
+}
 
 /* ---------- Die Karten im Fenster: flacher ----------
    Gemessen: eine Karte war 285px hoch, ueber dem Brett stehen 261px Kopf und Werkzeugleiste, und
@@ -1534,10 +1572,10 @@
    Die Verzoegerungen zaehlen ab is-da, also ab dem Moment, in dem der Kasten hereinkommt; 260ms
    Vorsprung lassen ihn zuerst ankommen. */
 .ulh-quell-box:not(.is-da) .udd-card { opacity: 0; }
-.ulh-quell-box.is-da .udd-chartcard            { animation: ulhRise 560ms var(--ulh-ease) 260ms backwards; }
-.ulh-quell-box.is-da .udd-funnelcard           { animation: ulhRise 560ms var(--ulh-ease) 330ms backwards; }
-.ulh-quell-box.is-da .udd-row2 .udd-typecard   { animation: ulhRise 560ms var(--ulh-ease) 470ms backwards; }
-.ulh-quell-box.is-da .udd-row2 .udd-modelcard  { animation: ulhRise 560ms var(--ulh-ease) 540ms backwards; }
+.ulh-quell-box.is-da .udd-chartcard            { animation: ulhRise 730ms var(--ulh-expo) 260ms backwards; }
+.ulh-quell-box.is-da .udd-funnelcard           { animation: ulhRise 730ms var(--ulh-expo) 330ms backwards; }
+.ulh-quell-box.is-da .udd-row2 .udd-typecard   { animation: ulhRise 730ms var(--ulh-expo) 470ms backwards; }
+.ulh-quell-box.is-da .udd-row2 .udd-modelcard  { animation: ulhRise 730ms var(--ulh-expo) 540ms backwards; }
 
 .ulh-quell-kopf { position: relative; z-index: 0; }
 .ulh-quell-kopf > * { position: relative; z-index: 1; }
@@ -1765,12 +1803,42 @@
    Polster uebereinander (bis 144 + 132px) saehen nach Seitenende aus statt nach Fortsetzung. */
 .ulh-feat.ulh-handel { padding-top: clamp(24px, 4vh, 48px); }
 .ulh-vis-regal, .ulh-vis-werber { --ulh-vs: 1; --ulh-vh: 288px; }
+/* Die Produktbewegung (06.10., oben rechts): die Liste aus Shopping, auf 0.8 verkleinert und so
+   breit wie die Karte -- sie hat zwei Spalten und laeuft nicht seitlich hinaus. Ihre Zeilenhoehe
+   steht in shopping.css nur unter .ush-root (eine Komponente gibt es hier nicht), also hier. */
+.ulh-vis-bewegung { --ulh-vs: 0.8; --ulh-vh: 288px; }
+.ulh-vis-bewegung .ulh-vis-in { width: calc(100% / var(--ulh-vs)); }
+.ulh-vis .ush-bewegung .up-row { height: 64px; flex: 0 0 64px; }
+/* Die Produktzelle: Foto, dann Titel und Marke -- der Abstand wie in der Tabelle von Shopping. */
+.ulh-vis-prod { display: flex; align-items: center; gap: 12px; min-width: 0; }
+/* Der Nachweis der Fotos unter dem Block (CC BY / CC BY-SA verlangen ihn): klein, leise, an der
+   Kante der Karten. */
+.ulh-bildnachweis { margin: 14px 8px 0; padding: 0 4px; font-size: 11px; line-height: 1.55; color: var(--ulh-third); max-width: 120ch; }
+.ulh-bildnachweis a { color: inherit; text-decoration: underline; text-decoration-color: rgba(158, 158, 158, .45); text-underline-offset: 2px; }
+.ulh-bildnachweis a:hover { color: var(--ulh-sub); }
+/* ---- Der Block "Events" (06.10.) ----
+   Links die Event-Karte der App (events.css), vorn das Acme-Event, dahinter ein zweites, gedreht
+   und leiser. Die Karte hat die Breite, die sie im Raster der App hat (rund 300px), und steht
+   mittig -- auf voller Kartenbreite waere ihr Band ein Balken. Rechts die Kurve des Event-Details
+   (UC.makeLine), so hoch wie der sichtbare Teil der Vorschau. Beide Reihen 344 hoch, wie die
+   unteren Reihen des ersten Blocks. */
+.ulh-vis-eventkarte, .ulh-vis-eventkurve { --ulh-vs: 1; --ulh-vh: 344px; }
+.ulh-evkarten { position: relative; height: calc(100% - 40px); display: flex; justify-content: center; align-items: flex-start; padding-top: 6px; }
+.ulh-evkarten .uev-karte { width: 296px; flex: 0 0 auto; }
+.ulh-evkarte-hinten { position: absolute; top: 6px; left: 50%; translate: -34% 0; rotate: 5deg; scale: .92; opacity: .5; }
+.ulh-evkarte-vorn { position: relative; z-index: 1; translate: -12% 14px; box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 12px 28px rgba(11, 13, 24, .08); }
+.ulh-evk { height: calc(100% - 40px); display: flex; flex-direction: column; }
+.ulh-evk-wrap { position: relative; flex: 1 1 auto; min-height: 0; }
+
 .ulh-vis-anzeigen { --ulh-vs: 0.74; --ulh-vh: 288px; }
 .ulh-vis-anzeigen .ulh-vis-in { padding: 0 24px; }
 /* Drei Spalten wie das Raster der Ad Library (uad-auf-liste: mindestens 260px, 8px Abstand). */
 .ulh-anz { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 /* Ein Schaustueck: die Karte hebt sich beim Ueberfahren wie in der App, oeffnet aber nichts. */
 .ulh-anz .up-adcard { cursor: default; }
+/* Die Illustrationen brauchen Luft im 16:10-Feld: contain allein setzt sie an die Kante. Ein
+   Zehntel ringsum -- das Feld und sein Grund bleiben die der Ad-Karte. */
+.ulh-anz .up-adcard-media img { inset: 10% 12%; width: 76%; height: 80%; }
 
 /* Das Band. overflow: hidden am Kasten, die Spur darin faehrt ueber transform -- eine Bewegung
    ueber margin/top wuerde je Bild ein Layout ausloesen. */
@@ -3417,7 +3485,11 @@
      rechnen -- damit werden Schrift, Abstaende und der Kreis gemeinsam kleiner, statt dass eines
      davon gequetscht wird. */
   .ulh-vis-sprachen .ulh-vis-in, .ulh-vis-modelle .ulh-vis-in,
-  .ulh-vis-linie .ulh-vis-in, .ulh-vis-regal .ulh-vis-in, .ulh-vis-werber .ulh-vis-in { width: calc(100% / var(--ulh-vs)); }
+  .ulh-vis-linie .ulh-vis-in, .ulh-vis-regal .ulh-vis-in, .ulh-vis-werber .ulh-vis-in,
+  .ulh-vis-bewegung .ulh-vis-in, .ulh-vis-eventkarte .ulh-vis-in,
+  .ulh-vis-eventkurve .ulh-vis-in { width: calc(100% / var(--ulh-vs)); }
+  /* Die Event-Karte vorn mittig, wenn daneben kein Platz fuer die zweite ist. */
+  .ulh-evkarte-vorn { translate: 0 14px; }
   .ulh-vis-sprachen, .ulh-vis-modelle, .ulh-vis-linie, .ulh-vis-regal, .ulh-vis-werber { --ulh-vs: 0.86; }
   /* Die Ad-Karten laufen wie die Tabellen rechts hinaus -- zwei ganz, die dritte angeschnitten. */
   .ulh-vis-anzeigen .ulh-vis-in { padding: 0; }

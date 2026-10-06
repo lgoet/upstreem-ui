@@ -1787,8 +1787,14 @@
     /* Der Punkt als ::before -- so kommt er ohne neues Markup in jeden Chip der App. order -1:
        vor Emoji und Name; das Kaestchen (-2) steht noch davor. Im Dunkeln 72 Prozent Themenfarbe
        mit Weiss, sonst verschwinden die dunklen Topic-Farben auf dem dunklen Grund. */
-    .up-topicchip::before { content: ""; order: -1; width: 6px; height: 6px; flex: 0 0 6px;
-      border-radius: var(--up-r-voll); background: var(--ust-tag-color, var(--vc-fourth)); }
+    /* KEIN PUNKT MEHR, EIN STRICH (06.10. angefordert: "ca. 3px breit, 8px hoch, so aehnlich wie
+       Sentiment, aber dass man es als eigenes erkennt"). Sentiment ist 3x12 und voll gerundet
+       (.up-sent-dot); die Marke der Topic ist kuerzer (8) und eckiger (Radius 1) -- dieselbe
+       Familie, auf einen Blick zu unterscheiden. Radius 1 steht bewusst neben der Skala: jede
+       Stufe ab --up-r-xs (4) rundet einen 3px breiten Strich ganz ab, und dann waere er von
+       Sentiment nur noch an der Hoehe zu unterscheiden. */
+    .up-topicchip::before { content: ""; order: -1; width: 3px; height: 8px; flex: 0 0 3px;
+      border-radius: 1px; background: var(--ust-tag-color, var(--vc-fourth)); }
     [data-theme="dark"] .up-topicchip::before { background: color-mix(in srgb, var(--ust-tag-color, var(--vc-fourth)) 72%, white); }
     .up-topicchip-e { font-size: 12px; line-height: 1; }
     /* 2b oder 2a ist eine Produktentscheidung (Handoff): mit UC.topicEmoji(false) traegt kein Chip

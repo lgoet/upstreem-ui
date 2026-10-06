@@ -190,6 +190,8 @@
   css("performance-radar.css");
   /* Sechste Szene: die Shopping-Seite, Komponente ganz (CSS und JS) wie Domain Detail. */
   css("shopping.css");
+  /* Der Block "Events": die Event-Karte ist statisches Markup mit den Klassen von events.js. */
+  css("events.css");
   css("landing-hero.css");
 
   js("core.js");

@@ -431,6 +431,7 @@
       '</section>' +
       merkmale() +
       handel() +
+      ereignisse() +
       quellen() +
       msc() +
       geo() +
@@ -1960,7 +1961,8 @@
         : leer;
       /* Die Themenchips sind .up-topicchip aus core -- dieselben wie in der Prompts-Tabelle oben,
          gefaerbt aus derselben Themenliste. */
-      var themen = z.themen.map(function(ti){
+      /* EIN Thema je Zeile (06.10. angefordert) -- das erste, das fuer die Zeile steht. */
+      var themen = z.themen.slice(0, 1).map(function(ti){
         var t = THEMEN[ti % THEMEN.length];
         return '<span class="up-topicchip" style="--ust-tag-color:' + (t.hex_light || "#6b7280") + ';">' +
           (t.emoji ? '<span class="up-topicchip-e">' + t.emoji + '</span>' : "") +
@@ -2162,8 +2164,11 @@
     if (art === "sprachen") return visSprachen();
     if (art === "modelle")  return visModelle();
     if (art === "produkte") return visProdukte();
+    if (art === "bewegung") return visBewegung();
     if (art === "regal" || art === "werber") return '<div class="ulh-balken" data-ulh-balken="' + art + '"></div>';
     if (art === "anzeigen") return visAnzeigen();
+    if (art === "eventkarte") return visEventKarte();
+    if (art === "eventkurve") return '<div class="ulh-evk" data-ulh-evk><div class="ulh-evk-wrap"><canvas class="up-line-canvas"></canvas></div><div class="up-legend"></div></div>';
     return "";
   }
 
@@ -2206,9 +2211,10 @@
     { breit: 60, vis: "produkte", stil: "zeilen",
       h: "See your products in AI shopping",
       p: "Track which products the models recommend and in which position yours appear." },
-    { breit: 40, vis: "regal",
-      h: "Know who owns the shelf",
-      p: "Your share of every product list, next to the brands you compete with." },
+    /* Oben rechts seit dem 06.10. die Produktbewegung von Shopping statt der Balken (angefordert). */
+    { breit: 40, vis: "bewegung",
+      h: "See which products move",
+      p: "Rising and falling products, with the change in Visibility and position." },
     { breit: 40, vis: "werber",
       h: "See who advertises in AI answers",
       p: "Every sponsored placement next to an answer, grouped by advertiser." },
@@ -2216,6 +2222,75 @@
       h: "Inspect every ad next to your answers",
       p: "Open the ad, its landing page and the prompt that triggered it." }
   ];
+  /* ---- ECHTE PRODUKTE MIT ECHTEN FOTOS (06.10. angefordert: "echte Produkte und echte
+     Produktbilder -- guter Mix aus Autozubehoer, Wallboxen, ganzen Autos, Leasingangeboten") ----
+     Die Fotos kommen von Wikimedia Commons (upload.wikimedia.org): freie Lizenzen, feste Adressen,
+     dort ist das Einbinden ausdruecklich erlaubt. Jede Adresse am 06.10. geprueft (HTTP 200,
+     image/jpeg, 330px-Vorschau -- Commons liefert nur noch Standardbreiten: 250/330/500/960).
+     DIE LIZENZEN VERLANGEN EINEN NACHWEIS: nur zwei Fotos sind CC0, die anderen CC BY oder CC BY-SA.
+     Der Nachweis steht unter dem Block "Beyond classic GEO" (bildnachweisHtml) -- wer ein Foto
+     tauscht, traegt Urheber und Lizenz dort mit ein.
+     Die Marken: getrackte Hersteller (Tesla, BMW, Audi, Volvo, Porsche) und die erfundene Acme --
+     ihre Produkte zeigen allgemeine Fotos (eine Wallbox, Fussmatten, ein Ladekabel) ohne fremde
+     Marke darauf. Thule ist nicht getrackt und steht deshalb, wie in der App, als "Other".
+     vis/pos sind [jetzt, vorher]; Preise in Euro, Leasing als Monatsrate im Titel. */
+  var WIKI = "https://upload.wikimedia.org/wikipedia/commons/thumb/";
+  function wikiBild(pfad, breite){
+    return WIKI + pfad + "/" + (breite || 330) + "px-" + pfad.slice(pfad.lastIndexOf("/") + 1);
+  }
+  var ECHTE_PRODUKTE = [
+    { id: "p1", t: "Tesla Model Y Premium Long Range AWD", m: "te", preis: [49990, 49990],
+      bild: "e/e7/Tesla_Model_Y_Premium_%28Facelift%29_%E2%80%93_f_05052026.jpg",
+      vis: [31.4, 27.0], pos: [1.6, 1.9], note: 4.6, stimmen: 1840, haendler: 3,
+      autor: "M 93", lizenz: "CC BY-SA 3.0 de", seite: "Tesla_Model_Y_Premium_(Facelift)_%E2%80%93_f_05052026.jpg" },
+    { id: "p2", t: "Acme Home Charger 11 kW", m: "ac", preis: [799, 899],
+      bild: "a/af/Delta_Electronics_EVPT3215MWE_20190601.jpg",
+      vis: [28.9, 19.2], pos: [1.4, 2.1], note: 4.5, stimmen: 212, haendler: 6,
+      autor: "Solomon203", lizenz: "CC BY-SA 4.0", seite: "Delta_Electronics_EVPT3215MWE_20190601.jpg" },
+    { id: "p3", t: "Tesla Wall Connector 11 kW", m: "te", preis: [549, 549],
+      bild: "e/e3/TeslaDestinationCharger.jpg",
+      vis: [24.1, 23.3], pos: [1.9, 1.8], note: 4.7, stimmen: 960, haendler: 4,
+      autor: "Raysonho", lizenz: "CC0", seite: "TeslaDestinationCharger.jpg" },
+    { id: "p4", t: "BMW iX xDrive60 Leasing from €999/month", m: "bm", preis: [999, 999],
+      bild: "8/8d/Front_vom_BMW_iX_xDrive_60_in_der_BMW_Welt_M%C3%BCnchen_2025-04-15.jpg",
+      vis: [18.6, 16.9], pos: [2.3, 2.4], note: null, stimmen: null, haendler: 2,
+      autor: "Strubbl", lizenz: "CC BY-SA 4.0", seite: "Front_vom_BMW_iX_xDrive_60_in_der_BMW_Welt_M%C3%BCnchen_2025-04-15.jpg" },
+    { id: "p5", t: "Audi Q4 e-tron 50 quattro", m: "au", preis: [59000, 59000],
+      bild: "d/d6/Audi_Q4_e-tron_50_quattro_%E2%80%93_f_22012023.jpg",
+      vis: [15.2, 16.6], pos: [2.7, 2.5], note: 4.5, stimmen: 640, haendler: 2,
+      autor: "M 93", lizenz: "CC BY-SA 3.0 de", seite: "Audi_Q4_e-tron_50_quattro_%E2%80%93_f_22012023.jpg" },
+    { id: "p6", t: "Thule Dynamic M Roof Box 320 L", m: null, marke: "Thule", preis: [749, 849],
+      bild: "9/95/Thule_Dynamic_roof_box_%2811726731603%29.jpg",
+      vis: [12.8, 12.1], pos: [2.9, 3.0], note: 4.6, stimmen: 388, haendler: 5,
+      autor: "EHRENBERG Kommunikation", lizenz: "CC BY-SA 2.0", seite: "Thule_Dynamic_roof_box_(11726731603).jpg" },
+    { id: "p7", t: "Acme All-Weather Floor Mats, 4-piece", m: "ac", preis: [69, 89],
+      bild: "8/84/Tailored-rubber-mats-moulded-car-mats.jpg",
+      vis: [11.4, 8.3], pos: [2.4, 2.8], note: 4.4, stimmen: 143, haendler: 4,
+      autor: "Keystones", lizenz: "CC BY-SA 3.0", seite: "Tailored-rubber-mats-moulded-car-mats.jpg" },
+    { id: "p8", t: "Volvo EX30 Single Motor Extended Range", m: "vo", preis: [41690, 41690],
+      bild: "7/75/Volvo_EX30_1X7A2493.jpg",
+      vis: [9.7, 14.9], pos: [3.1, 2.4], note: 4.3, stimmen: 512, haendler: 2,
+      autor: "Alexander Migl", lizenz: "CC BY-SA 4.0", seite: "Volvo_EX30_1X7A2493.jpg" },
+    { id: "p9", t: "Acme Type 2 Charging Cable 22 kW, 7 m", m: "ac", preis: [149, 229],
+      bild: "6/6e/2015-12-23_Typ-2-Ladestecker.jpg",
+      vis: [7.9, 7.6], pos: [3.0, 3.1], note: 4.6, stimmen: 98, haendler: 3,
+      autor: "Hadhuey", lizenz: "CC BY-SA 4.0", seite: "2015-12-23_Typ-2-Ladestecker.jpg" },
+    { id: "p10", t: "Porsche Taycan 4S", m: "po", preis: [125000, 130000],
+      bild: "e/e5/Porsche_Taycan_4S_IMG_3526.jpg",
+      vis: [5.2, 7.3], pos: [3.6, 3.2], note: 4.8, stimmen: 410, haendler: 1,
+      autor: "Alexander Migl", lizenz: "CC BY-SA 4.0", seite: "Porsche_Taycan_4S_IMG_3526.jpg" }
+  ];
+  function echtesProdukt(id){ return ECHTE_PRODUKTE.filter(function(p){ return p.id === id; })[0]; }
+  /* Der Nachweis der Fotos: Urheber, Lizenz, Link auf die Seite bei Commons -- klein und leise,
+     aber vollstaendig, wie es CC BY und CC BY-SA verlangen. */
+  function bildnachweisHtml(){
+    return '<p class="ulh-bildnachweis">Product photos via Wikimedia Commons: ' +
+      ECHTE_PRODUKTE.map(function(p){
+        return '<a href="https://commons.wikimedia.org/wiki/File:' + p.seite + '" target="_blank" rel="noopener">' +
+          p.t.replace(/ from €.*$/, "") + '</a> (' + p.autor + ', ' + p.lizenz + ')';
+      }).join(", ") + '. Ad illustrations: US EPA via <a href="https://openclipart.org" target="_blank" rel="noopener">Openclipart</a> (public domain).</p>';
+  }
+
   /* Die Produkte: Zubehoer, das Kaeufer eines Elektroautos wirklich in einem Shopping-Ergebnis
      sehen. Die Position ist ein Rang, also immer mit einer Nachkommastelle (CLAUDE.md 2b). */
   var PRODUKTE = [
@@ -2225,52 +2300,116 @@
     { t: "Acme All-Weather Floor Mats",  m: "ac", vis: 14.8, pos: 2.2, haendler: 3 },
     { t: "Volvo Roof Box 420 L",         m: "vo", vis: 9.1,  pos: 3.4, haendler: 2 }
   ];
-  /* Share of Shelf und Ad Share: je fuenf Marken, der staerkste Balken fuellt die Spur (wie in
-     Shopping und Ads), daneben der echte Anteil. */
-  var REGAL = [
-    { m: "ac", v: 31.9 }, { m: "te", v: 24.6 }, { m: "bm", v: 17.2 }, { m: "au", v: 11.8 }, { m: "vo", v: 8.4 }
-  ];
+  /* Ad Share: fuenf Werbetreibende, der staerkste Balken fuellt die Spur (wie in Ads), daneben der
+     echte Anteil. (Share of Shelf stand hier bis zum 06.10. -- die Karte zeigt jetzt die
+     Produktbewegung.) */
   var WERBER = [
     { m: "ac", v: 34.6 }, { m: "bm", v: 22.1 }, { m: "te", v: 17.8 }, { m: "vo", v: 9.3 }, { m: "au", v: 6.2 }
   ];
-  /* Drei Ads in den Feldern der Ads-RPCs (ad_format, title, landing_domain, ...), so wie die
-     Ad-Karte der App sie liest: zwei eigene als Produktkarte, die des Wettbewerbers als Bildkarte. */
+  /* Drei Produkt-Ads in den Feldern der Ads-RPCs (ad_format, title, landing_domain, ...), so wie die
+     Ad-Karte der App sie liest. Die Werbemittel sind ISOMETRISCHE Illustrationen (06.10. angefordert:
+     "echte Produktads, gern isometrische Grafiken aus dem Internet, schoen minimalistisch"): ein
+     Satz aus EINER Hand -- US EPA, ueber Openclipart, gemeinfrei (keine Nennung noetig, wir nennen
+     sie trotzdem im Nachweis). Eine isometrische Wallbox oder ein Kabel gibt es frei lizenziert
+     nicht; fuer das Laden zu Hause steht deshalb das Haus.
+     Openclipart ist eine kleine Seite: die drei Bilder liegen dort im Zwischenspeicher und kamen am
+     06.10. in 0.3s (HTTP 200, PNG mit Transparenz). Faellt eines aus, zeigt die Ad-Karte ihr
+     Platzhalter-Zeichen -- dafuer sorgt core. */
+  var ISO = {
+    limousine: "https://openclipart.org/image/800px/327138",
+    kompakt:   "https://openclipart.org/image/800px/274743",
+    haus:      "https://openclipart.org/image/800px/327136"
+  };
   var ANZEIGEN = [
     { id: "lh-ad-1", m: "ac", beziehung: "you", advertiser_name: "Acme", ad_format: "product_card_v2",
       title: "Acme EX5 Touring", description: "Up to 610 km of range. 0.9% APR financing this month.",
-      landing_domain: "acme.com", price: 64900, currency: "EUR", model: "chatgpt", market: "DE",
-      observed_at: "2026-10-03T09:12:00Z" },
-    { id: "lh-ad-2", m: "bm", beziehung: "competitor", advertiser_name: "BMW", ad_format: "image_card_v2",
-      title: "The new electric lineup", description: "Explore trims, range and offers near you.",
-      landing_domain: "bmw.de", model: "chatgpt", market: "DE", observed_at: "2026-10-02T16:40:00Z" },
-    { id: "lh-ad-3", m: "ac", beziehung: "you", advertiser_name: "Acme", ad_format: "product_card_v2",
+      landing_domain: "acme.com", price: 49900, currency: "EUR", model: "chatgpt", market: "DE",
+      image_url: ISO.limousine, observed_at: "2026-10-03T09:12:00Z" },
+    { id: "lh-ad-2", m: "ac", beziehung: "you", advertiser_name: "Acme", ad_format: "product_card_v2",
       title: "Acme Home Charger 11 kW", description: "Charges an EX5 overnight. Installation included.",
       landing_domain: "acme.com", price: 799, currency: "EUR", model: "perplexity", market: "DE",
-      observed_at: "2026-10-01T11:05:00Z" }
+      image_url: ISO.haus, observed_at: "2026-10-02T16:40:00Z" },
+    { id: "lh-ad-3", m: "vo", beziehung: "competitor", advertiser_name: "Volvo", ad_format: "image_card_v2",
+      title: "Lease the EX30 from €349/month", description: "36 months, 10,000 km a year, delivery in 6 weeks.",
+      landing_domain: "volvocars.com", model: "chatgpt", market: "DE",
+      image_url: ISO.kompakt, observed_at: "2026-10-01T11:05:00Z" }
   ];
   function handelMarke(id){ return MARKEN.filter(function(x){ return x.id === id; })[0] || null; }
 
-  /* Die Produkttabelle: dieselbe Bauart wie die Prompt-Tabelle der ersten Karte (visZeilen) --
-     .up-row mit --up-cols, die Zellen der App. Produkt = UC.markenChip (Logo der Marke + Titel, wie
-     die Zelle "Brand" in Shopping), die Position als Rang mit dem Zeichen aus core. */
+  /* EIN PRODUKT IN DER ZELLE der Shopping-Tabellen: Foto (.ush-bild), Titel und darunter die Marke
+     (.ush-zweizeilig), die eigene mit der Marke "You" -- dieselben Klassen und dieselbe CSS
+     (shopping.css) wie produktZelle in shopping.js. */
+  function produktZelleHtml(p){
+    var kern = window.UpstreemCore;
+    var m = p.m ? handelMarke(p.m) : null;
+    var marke = m ? m.name : "Other (unassigned)";
+    var bild = '<span class="ush-bild has-img"><span class="ush-bild-ph">' + (kern ? kern.icon("image", 1.8) : "") + '</span>' +
+      '<img src="' + wikiBild(p.bild) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+      ' onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/></span>';
+    return '<span class="ulh-vis-prod">' + bild +
+      '<span class="ush-zweizeilig"><span class="ush-titel">' + p.t + '</span>' +
+        '<span class="ush-unter">' + marke + (p.m === "ac" ? '<span class="up-marke up-you">You</span>' : '') + '</span>' +
+      '</span></span>';
+  }
+  function euro(n){ return "€" + Math.round(n).toLocaleString("en-US"); }
+  function preisText(p){ return p.preis[0] === p.preis[1] ? euro(p.preis[0]) : euro(p.preis[0]) + "–" + euro(p.preis[1]); }
+
+  /* Oben links: die Top Products, wie in der Uebersicht von Shopping -- mit den Fotos und nur den
+     Spalten, die in einer Karte etwas sagen (06.10.: "hier natuerlich nur mit den wichtigen"):
+     Produkt, Visibility, Position, Preis. Die fuenf sichtbarsten. */
   function visProdukte(){
     var kern = window.UpstreemCore;
-    var kopf = ["Product", "Visibility", "Avg. Position", "Merchants"];
+    var kopf = ["Product", "Visibility", "Avg. Position", "Price"];
     var hash = kern && kern.HASH_ICON ? kern.HASH_ICON.replace("<svg ", '<svg class="up-hash" ') : "";
-    var html = '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 110px 140px 110px;">' +
+    var oben = ECHTE_PRODUKTE.slice().sort(function(a, b){ return b.vis[0] - a.vis[0]; }).slice(0, 5);
+    /* Die Zahlenspalten knapp: der Titel ist das, was man liest (gemessen bei 1180px: mit 110/130/150
+       war "Tesla Model Y Premi..." alles, was vom ersten Titel blieb). */
+    var html = '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 84px 108px 118px;">' +
       '<div class="up-row up-thead">' + kopf.map(function(t){
         return '<div class="up-td">' + t + '</div>'; }).join("") + '</div>';
-    html += PRODUKTE.map(function(p, i){
-      var m = handelMarke(p.m);
-      var chip = kern && kern.markenChip ? kern.markenChip({ name: p.t, logo_url: m ? m.logo : "" }) : p.t;
+    html += oben.map(function(p, i){
       return '<div class="up-row' + (i === 1 ? " is-mitte" : "") + '">' +
-        '<div class="up-td"><span class="ulh-vis-prompt">' + chip + '</span></div>' +
-        '<div class="up-td"><span class="up-num">' + proz(p.vis) + '</span></div>' +
-        '<div class="up-td"><span class="up-rank-group">' + hash + '<span class="up-num">' + eine(p.pos) + '</span></span></div>' +
-        '<div class="up-td"><span class="up-num">' + p.haendler + '</span></div>' +
+        '<div class="up-td">' + produktZelleHtml(p) + '</div>' +
+        '<div class="up-td"><span class="up-num">' + proz(p.vis[0]) + '</span></div>' +
+        '<div class="up-td"><span class="up-rank-group">' + hash + '<span class="up-num">' + eine(p.pos[0]) + '</span></span></div>' +
+        '<div class="up-td"><span class="up-num">' + preisText(p) + '</span></div>' +
       '</div>';
     }).join("");
     return html + '</div>';
+  }
+
+  /* Oben rechts: die Produktbewegung von Shopping (zeichneBewegung in shopping.js) -- dieselben
+     zwei Gruppen "Rising" und "Declining", dieselbe Zeile (Foto, Titel, Marke; rechts die
+     Aenderung der Visibility als UC.trendChip und die Position vorher -> jetzt). Die Daten sind
+     dieselben wie im Fenster oben (shopBewegung). */
+  function visBewegung(){
+    var kern = window.UpstreemCore;
+    if (!kern) return "";
+    function zeile(id){
+      var p = echtesProdukt(id);
+      var d = Math.round((p.vis[0] - p.vis[1]) * 10) / 10;
+      var chip = kern.trendChip ? kern.trendChip(d, { decimals: true, suffix: "%" }) : "";
+      return '<div class="up-row ush-zeile">' +
+        '<div class="up-td">' + produktZelleHtml(p) + '</div>' +
+        '<div class="up-td ush-bew-rechts">' +
+          '<span class="ush-bew-zeile"><span class="ush-bew-lbl">Visibility</span>' + chip + '</span>' +
+          '<span class="ush-bew-zeile ush-bew-pos"><span class="ush-bew-lbl">Position</span><span class="up-num">' + eine(p.pos[1]) + '</span>' +
+            kern.icon("arrowRight", 2) + '<span class="up-num">' + eine(p.pos[0]) + '</span></span>' +
+        '</div></div>';
+    }
+    function gruppe(titel, ic, ids){
+      return '<div class="up-thead ush-gruppenkopf"><div class="up-th"><span class="ush-gruppen-ic">' + kern.icon(ic, 2) + '</span>' + titel + '</div></div>' +
+        '<div class="up-tbody">' + ids.map(zeile).join("") + '</div>';
+    }
+    var mv = { auf: [], ab: [] };
+    ECHTE_PRODUKTE.map(function(p){ return { id: p.id, d: p.vis[0] - p.vis[1] }; })
+      .sort(function(a, b){ return b.d - a.d; })
+      .forEach(function(x){ if (x.d > 0.5 && mv.auf.length < 2) mv.auf.push(x.id); });
+    ECHTE_PRODUKTE.map(function(p){ return { id: p.id, d: p.vis[0] - p.vis[1] }; })
+      .sort(function(a, b){ return a.d - b.d; })
+      .forEach(function(x){ if (x.d < -0.5 && mv.ab.length < 2) mv.ab.push(x.id); });
+    return '<div class="up-box ush-bewegung" style="--up-cols: minmax(0,1fr) auto">' +
+      gruppe("Rising", "arrowUpRight", mv.auf) + gruppe("Declining", "arrowDownRight", mv.ab) + '</div>';
   }
   function visAnzeigen(){
     var kern = window.UpstreemCore;
@@ -2290,7 +2429,10 @@
     [].forEach.call(root.querySelectorAll("[data-ulh-balken]"), function(platz){
       if (platz.__ulhBalken) return;
       platz.__ulhBalken = true;
-      var daten = platz.getAttribute("data-ulh-balken") === "werber" ? WERBER : REGAL;
+      /* Seit dem 06.10. gibt es nur noch die Werbetreibenden (das Regal ist der Produktbewegung
+         gewichen) -- eine andere Angabe am Platz waere ein Fehler im Markup, also nichts zeichnen. */
+      if (platz.getAttribute("data-ulh-balken") !== "werber") return;
+      var daten = WERBER;
       var max = Math.max.apply(null, daten.map(function(d){ return d.v; })) || 1;
       var liste = kern.makeBarList({ mount: platz, isDark: function(){ return false; },
                                      fmt: function(v){ return proz(v); } });
@@ -2667,6 +2809,150 @@
           '<div class="ulh-cards">' +
             '<div class="ulh-cards-row">' + merkmalKarte(HANDEL[0], 0) + merkmalKarte(HANDEL[1], 1) + '</div>' +
             '<div class="ulh-cards-row">' + merkmalKarte(HANDEL[2], 0) + merkmalKarte(HANDEL[3], 1) + '</div>' +
+          '</div>' +
+        '</div>' +
+        bildnachweisHtml() +
+      '</div>' +
+    '</section>';
+  }
+
+  /* ---------- Events (06.10. angefordert: "unter den Beyond-Cards ein 1x2-Element: Events") ----
+     Links ein Event, wie es in der App als Karte steht (events.js, karteHtml -- Band mit dem
+     Titelbild, Zeichen, Titel, Datum und Typ, Text, drei Kennzahlen; dieselben Klassen aus
+     events.css), am Beispiel des Relaunchs der Acme-Webseite mit dem blauen Titelbild.
+     Rechts die Wirkung, wie sie das Event-Detail zeigt: UC.makeLine mit den betroffenen Prompts in
+     der Primaerfarbe, der Vergleichsgruppe gestrichelt, dem Pin des Events auf der Zeitachse und
+     dem Tooltip der App -- hier dauerhaft offen, eine Woche nach dem Relaunch. */
+  var EVENT_CHIP = "Events";
+  var EVENT_H = "See what moved your visibility";
+  var EVENT_SUB = "Log launches, relaunches and campaigns on your timeline, and compare how AI " +
+    "visibility changed before and after.";
+  var EVENTKARTEN = [
+    { breit: 40, vis: "eventkarte",
+      h: "Log every launch",
+      p: "Relaunches, campaigns and press moments, right on the timeline." },
+    { breit: 60, vis: "eventkurve",
+      h: "Compare before and after",
+      p: "Affected prompts against a comparison group, from the day the event went live." }
+  ];
+  var EVENT_TON = "#3b82f6";
+  /* Die Titelbilder liegen neben den Dateien der App (event-covers/, wie in events.js). Die Adresse
+     kommt aus dem Lader: landing-boot.js traegt jede geladene Datei in __upAssetsLoaded ein. Ohne
+     ihn (Messaufbau) der Pfad neben der Seite. */
+  function nebenDatei(datei){
+    var u = String((window.__upAssetsLoaded || {})["landing-hero.js"] || "").replace(/[?#].*$/, "");
+    return /landing-hero(\.min)?\.js$/.test(u) ? u.replace(/landing-hero(\.min)?\.js$/, datei) : datei;
+  }
+  function eventKarteHtml(ev, klasse){
+    var kern = window.UpstreemCore;
+    var ic = function(n){ return kern ? kern.icon(n, 2) : ""; };
+    return '<article class="uev-karte is-vorschau has-cover' + (klasse ? " " + klasse : "") + '" aria-hidden="true" style="--uev-ton:' + ev.ton + '">' +
+      '<div class="uev-karte-band has-cover" style="background-image:url(' + nebenDatei("event-covers/" + ev.cover) + ');background-position:50% ' + ev.pos + '"></div>' +
+      '<div class="uev-karte-body">' +
+        '<span class="uev-avatar" style="--uev-ton:' + ev.ton + '" aria-hidden="true">' + ic(ev.icon) + '</span>' +
+        '<h3 class="uev-karte-titel">' + ev.name + '</h3>' +
+        '<div class="uev-angaben uev-karte-meta">' +
+          '<span class="uev-angabe uev-angabe-datum">' + ic("calendar") + '<span>' + ev.datum + '</span></span>' +
+          '<span class="up-marke is-leise">' + ev.typ + '</span>' +
+        '</div>' +
+        '<p class="uev-karte-text">' + ev.text + '</p>' +
+        '<dl class="uev-stats">' +
+          '<div class="uev-stat"><dt>Topics</dt><dd>' + ev.topics + '</dd></div>' +
+          '<div class="uev-stat"><dt>Prompts</dt><dd>' + ev.prompts + '</dd></div>' +
+          '<div class="uev-stat"><dt>URLs</dt><dd>' + ev.urls + '</dd></div>' +
+        '</dl>' +
+      '</div>' +
+    '</article>';
+  }
+  /* Vorn das Acme-Event, dahinter -- leicht gedreht und leiser -- ein zweites: eine Spur, dass es
+     nicht bei einem bleibt. */
+  function visEventKarte(){
+    return '<div class="ulh-evkarten">' +
+      eventKarteHtml({ name: "Spring pricing update", ton: "#d9577f", cover: "wave-pink.svg", pos: "78%", icon: "euro",
+                       datum: "Aug 4, 2026", typ: "Pricing change", text: "New lease rates for the EX range.",
+                       topics: "3", prompts: "86", urls: "12" }, "ulh-evkarte-hinten") +
+      eventKarteHtml({ name: "Acme.com relaunch", ton: EVENT_TON, cover: "wave-blue.svg", pos: "55%", icon: "globe",
+                       datum: "Sep 15, 2026", typ: "Website relaunch",
+                       text: "New model pages, a rebuilt configurator and structured specs for every EV.",
+                       topics: "All", prompts: "214", urls: "38" }, "ulh-evkarte-vorn") +
+    '</div>';
+  }
+  /* Die Kurve: 28 Tage, der Relaunch am 15. Die betroffenen Prompts stehen davor bei gut 21
+     Prozent und ziehen danach auf rund 31 an; die Vergleichsgruppe bleibt bei 19 bis 20. Feste
+     kleine Wellen statt Zufall -- in jeder Runde dasselbe Bild. */
+  function eventKurveDaten(){
+    var tage = [], betroffen = [], vergleich = [], start = Date.UTC(2026, 8, 1);
+    for (var i = 0; i < 28; i++){
+      tage.push(new Date(start + i * 864e5).toISOString().slice(0, 10));
+      var nach = Math.max(0, i - 14), anstieg = 9.6 * (1 - Math.exp(-nach / 4.2));
+      betroffen.push(Math.round((21.4 + anstieg + Math.sin(i * 1.3) * 0.7) * 10) / 10);
+      vergleich.push(Math.round((19.6 + Math.sin(i * 0.9 + 1) * 0.6) * 10) / 10);
+    }
+    return { tage: tage, betroffen: betroffen, vergleich: vergleich };
+  }
+  var EVENT_TIPP = 21;   /* der Tag, an dem der Tooltip offen steht: eine Woche nach dem Relaunch */
+  function visEventKurveFuellen(root){
+    var kern = window.UpstreemCore;
+    var feld = root.querySelector("[data-ulh-evk]");
+    if (!kern || !kern.makeLine || !feld || feld.__ulhEvk) return;
+    feld.__ulhEvk = true;
+    var wrap = feld.querySelector(".ulh-evk-wrap"), leinwand = feld.querySelector("canvas");
+    function zeichnen(){
+      var d = eventKurveDaten();
+      var tinte = kern.chartInk ? kern.chartInk(feld) : "#1f1f1b";
+      var linie = kern.makeLine({
+        wrap: wrap, canvas: leinwand, legend: feld.querySelector(".up-legend"),
+        isDark: function(){ return false; }, gran: function(){ return "day"; },
+        unit: function(){ return "%"; }, decimals: function(){ return 1; },
+        tipLabel: function(){ return "Visibility:"; }, legendeImmer: true,
+        markers: function(){ return [{ id: "lh-ev1", date: "2026-09-15", name: "Acme.com relaunch",
+                                       type: "website_relaunch", color: EVENT_TON, fokus: true }]; }
+      });
+      linie.render({ labels: d.tage, datasets: [
+        { label: "Affected prompts", __id: "affected", __baseColor: tinte, borderColor: tinte, data: d.betroffen },
+        { label: "Comparison", __id: "comparison", __baseColor: "#80858e", borderColor: "#80858e", __dash: true, data: d.vergleich }
+      ] });
+      /* Der Tooltip bleibt offen -- derselbe Griff wie am Chart im Fenster (tippZeigen): leeren,
+         setzen, update, danach die aktiven Punkte. Erst wenn Chart.js steht (es laedt nach). */
+      var n = 0;
+      (function tipp(){
+        var chart = window.Chart && window.Chart.getChart ? window.Chart.getChart(leinwand) : null;
+        if (!chart){ if (++n < 60) setTimeout(tipp, 100); return; }
+        var punkte = chart.data.datasets.map(function(_, di){ return { datasetIndex: di, index: EVENT_TIPP }; });
+        function setzen(){
+          try {
+            chart.tooltip.setActiveElements([], { x: 0, y: 0 });
+            chart.tooltip.setActiveElements(punkte, { x: 0, y: 0 });
+            chart.update();
+            chart.setActiveElements(punkte);
+          } catch (e){}
+        }
+        setTimeout(setzen, 900);    /* nach dem Aufziehen der Linien */
+        leinwand.addEventListener("mouseleave", function(){ setTimeout(setzen, 60); });
+      })();
+    }
+    /* Wie die Balken: gezeichnet wird, wenn die Karte erscheint -- sonst waere das Aufziehen der
+       Linien vorbei, bevor jemand bis hierher scrollt. */
+    var karte = feld.closest(".ulh-card");
+    if (!karte || karte.classList.contains("is-da")){ zeichnen(); return; }
+    var mo = new MutationObserver(function(){
+      if (!karte.classList.contains("is-da")) return;
+      mo.disconnect();
+      setTimeout(zeichnen, 300);
+    });
+    mo.observe(karte, { attributes: true, attributeFilter: ["class"] });
+  }
+  function ereignisse(){
+    return '<section class="ulh-feat ulh-handel ulh-events">' +
+      '<div class="ulh-spur">' +
+        '<div class="ulh-feat-kopf ulh-auf">' +
+          '<span class="ulh-feat-chip">' + EVENT_CHIP + '</span>' +
+          '<h2 class="ulh-feat-h">' + EVENT_H + '</h2>' +
+          '<p class="ulh-feat-sub">' + EVENT_SUB + '</p>' +
+        '</div>' +
+        '<div class="ulh-cards-box">' +
+          '<div class="ulh-cards">' +
+            '<div class="ulh-cards-row">' + merkmalKarte(EVENTKARTEN[0], 0) + merkmalKarte(EVENTKARTEN[1], 1) + '</div>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -4426,6 +4712,7 @@
       visSprachenFuellen(w);
       visModelleFuellen(w);
       visBalkenFuellen(w);
+      visEventKurveFuellen(w);
       ulhTakt(w);
       quellFuellen();
       /* NUR BEIM ERSTEN FUELLEN (28.09. gemessen): fuellen() laeuft am Ende JEDES Zyklus erneut
@@ -6101,7 +6388,9 @@
     /* Die Prompts-Liste steht STAND_MS still, nachdem ihre Zeilen eingelaufen sind. Deren Auftritt
        endet bei ZEILEN_START plus Lauf plus Staffelung -- danach beginnt die Ruhe. */
     var zeilenEnde = ZEILEN_START + ZEILEN_LAUF + PROMPT_SEITE * ZEILEN_STUFE;
-    setTimeout(function(){ chancenSzene(root); }, AUSBLENDEN_MS + zeilenEnde + STAND_MS);
+    /* Seit dem 06.10. kommt zwischen Prompts und Chancen Shopping ("Shopping vor Opportunities");
+       Shopping ruft am Ende selbst chancenSzene. */
+    setTimeout(function(){ shopSzene(root); }, AUSBLENDEN_MS + zeilenEnde + STAND_MS);
   }
 
   /* ---------- Fuenfte Szene: Performance -----------------------------------------------------
@@ -6285,28 +6574,12 @@
     return karte;
   }
 
-  /* Zweite Ansicht: Stimmung mit den Balken, die zeigen, auf wie vielen Erwaehnungen ein Wert
-     beruht. Der Umschalter in der Karte stellt sich dabei selbst um -- setMetric zieht ihn nach
-     (syncSeg), und der Streifen aus core gleitet hinueber. */
-  function perfZweiteAnsicht(root){
-    var karte = perfHinaus(root);
-    perfNach(function(){
-      perfAnsicht(root, "sentiment", true);
-      if (karte) karte.classList.remove("is-geht");
-      perfWennGezeichnet(root, function(){
-        perfNach(function(){ perfSchluss(root); }, PERF_AUF_MS + PERF_STAND_MS);
-      });
-    }, PERF_ABGANG_MS);
-    return true;
-  }
-
   /* Der Schluss der Szene: die Matrix geht hinaus wie zwischen den zwei Ansichten, und ERST DANN
      wechselt die Seite. Vorher endete die Stimmung mit dem Seitenwechsel, und der Abgang, den die
      erste Ansicht hatte, fehlte der zweiten. */
   function perfSchluss(root){
     perfHinaus(root);
-    /* Seit dem 06.10. kommt danach Shopping, und erst Shopping endet im Neustart. */
-    perfNach(function(){ shopSzene(root); }, PERF_ABGANG_MS);
+    perfNach(function(){ neustart(root); }, PERF_ABGANG_MS);
   }
 
   function perfSzene(root){
@@ -6345,8 +6618,10 @@
         perfNach(function(){ ohneTipps(root); hellHalten(root); }, 400);
         /* Auftritt, dann Standzeit, dann der Wechsel. Die Standzeit zaehlt NACH dem Auftritt --
            sonst ist die Haelfte davon Bewegung. */
+        /* EINE Ansicht (06.10.: "streiche bei Performance den Sentiment-Step"): nach Auftritt
+           und Standzeit geht die Matrix, und der Kreislauf beginnt neu. */
         perfWennGezeichnet(root, function(){
-          perfNach(function(){ perfZweiteAnsicht(root); }, PERF_AUF_MS + PERF_STAND_MS);
+          perfNach(function(){ perfSchluss(root); }, PERF_AUF_MS + PERF_STAND_MS);
         });
       }, PERF_SEITE_MS);
     }, AUSBLENDEN_MS);
@@ -6369,26 +6644,48 @@
      ueber ihren echten Setter, so wie in der App aus dem Run-JS-Schritt. */
   var SHOP_SEITE_MS = 380;
   var SHOP_STAND_MS = 7600;   /* Hochzaehlen (rund 1.2s) plus die Standzeit der anderen Szenen */
-  var SHOP_ABGANG_MS = 450;
   var shopUhren = [];
   function shopNach(fn, ms){ shopUhren.push(setTimeout(fn, ms)); }
   function shopUhrenAus(){ shopUhren.forEach(function(u){ clearTimeout(u); }); shopUhren = []; }
 
   /* Je Marke: Share of Shelf, Presence, Beobachtungen, mittlere Position, Anteil Platz eins --
-     jeweils [jetzt, vorher]. Acme legt zu, Tesla gibt ab, die anderen bewegen sich kaum. */
+     jeweils [jetzt, vorher]. Acme legt zu, Tesla gibt ab, die anderen bewegen sich kaum. top ist
+     das sichtbarste Produkt der Marke aus ECHTE_PRODUKTE. */
   var SHOP_MARKEN = [
-    { m: "ac", sos: [31.9, 27.4], pres: [72.5, 64.8], obs: [84, 71], pos: [1.8, 2.2], erst: [46.3, 39.0], prod: 4, top: 0 },
-    { m: "te", sos: [24.6, 27.1], pres: [61.2, 66.0], obs: [65, 70], pos: [2.1, 1.9], erst: [31.5, 36.2], prod: 3, top: 1 },
-    { m: "bm", sos: [17.2, 16.5], pres: [48.9, 47.1], obs: [46, 44], pos: [2.6, 2.7], erst: [12.8, 11.9], prod: 3, top: 2 },
-    { m: "au", sos: [11.8, 12.3], pres: [36.4, 37.9], obs: [31, 33], pos: [3.1, 3.0], erst: [6.4, 7.1],   prod: 2, top: -1 },
-    { m: "vo", sos: [8.4, 9.6],   pres: [27.0, 29.8], obs: [22, 26], pos: [3.4, 3.2], erst: [3.0, 4.2],   prod: 2, top: 4 }
+    { m: "ac", sos: [31.9, 27.4], pres: [72.5, 64.8], obs: [84, 71], pos: [1.8, 2.2], erst: [46.3, 39.0], prod: 3, top: "p2" },
+    { m: "te", sos: [24.6, 27.1], pres: [61.2, 66.0], obs: [65, 70], pos: [2.1, 1.9], erst: [31.5, 36.2], prod: 2, top: "p1" },
+    { m: "bm", sos: [17.2, 16.5], pres: [48.9, 47.1], obs: [46, 44], pos: [2.6, 2.7], erst: [12.8, 11.9], prod: 1, top: "p4" },
+    { m: "au", sos: [11.8, 12.3], pres: [36.4, 37.9], obs: [31, 33], pos: [3.1, 3.0], erst: [6.4, 7.1],   prod: 1, top: "p5" },
+    { m: "vo", sos: [8.4, 9.6],   pres: [27.0, 29.8], obs: [22, 26], pos: [3.4, 3.2], erst: [3.0, 4.2],   prod: 1, top: "p8" }
   ];
-  var SHOP_PREISE = [[799, 899], [420, 475], [949, 1049], [119, 139], [589, 649]];
   var SHOP_HAENDLER = [
     { merchant_name: "Amazon.de", observations: 58, share: 24.1, products: 9 },
     { merchant_name: "Acme Store", observations: 41, share: 17.0, products: 4 },
     { merchant_name: "Otto.de", observations: 27, share: 11.2, products: 5 }
   ];
+  /* Ein Produkt in der Form der Overview (top_products, movement): Marke als Objekt, Kennzahlen
+     als {value, previous, delta}, das Foto in 330px. Auch die Karten unten lesen es so. */
+  function shopProdukt(p){
+    function r2(x){ return Math.round(x * 100) / 100; }
+    function wert(x){ return { value: x[0], previous: x[1], delta: r2(x[0] - x[1]) }; }
+    var m = p.m ? handelMarke(p.m) : null;
+    var marke = m ? { company_id: "lh-" + p.m, name: m.name, logo_url: m.logo, color: m.farbe, type: p.m === "ac" ? "own" : "competitor" }
+                  : { company_id: null, name: p.marke || null, logo_url: null, color: null, type: "other" };
+    return { source_product_id: "lh-" + p.id, title: p.t, listing_title: p.t, brand: marke, image_url: wikiBild(p.bild),
+             status: p.vis[0] >= p.vis[1] ? "rising" : "declining",
+             visibility: wert(p.vis), observations: wert([Math.round(p.vis[0] * 1.6), Math.round(p.vis[1] * 1.6)]),
+             avg_position: wert(p.pos), first_position_rate: wert([r2(Math.max(0, 70 - p.pos[0] * 16)), r2(Math.max(0, 70 - p.pos[1] * 16))]),
+             price_ranges: [{ currency: "EUR", min: p.preis[0], max: p.preis[1] }],
+             rating: p.note, num_reviews: p.stimmen, merchants: ["Amazon.de", "Otto.de"].slice(0, p.haendler > 3 ? 2 : 1),
+             merchant_count: p.haendler, first_seen: "2026-09-21T08:00:00+00:00", last_seen: "2026-10-04T18:00:00+00:00" };
+  }
+  /* Steigend und fallend nach der Aenderung der Visibility -- die drei groessten in jede Richtung. */
+  function shopBewegung(){
+    var mit = ECHTE_PRODUKTE.map(function(p){ return { p: p, d: p.vis[0] - p.vis[1] }; });
+    var auf = mit.filter(function(x){ return x.d > 0.5; }).sort(function(a, b){ return b.d - a.d; }).slice(0, 3);
+    var ab = mit.filter(function(x){ return x.d < -0.5; }).sort(function(a, b){ return a.d - b.d; }).slice(0, 3);
+    return { rising: auf.map(function(x){ return shopProdukt(x.p); }), declining: ab.map(function(x){ return shopProdukt(x.p); }) };
+  }
   function shopDaten(){
     function r2(x){ return Math.round(x * 100) / 100; }
     function wert(x){ return { value: x[0], previous: x[1], delta: r2(x[0] - x[1]) }; }
@@ -6396,29 +6693,16 @@
     for (var i = 0; i < 14; i++) tage.push(new Date(start + i * 864e5).toISOString().slice(0, 10));
     function marke(id){ var m = handelMarke(id) || { name: id, logo: "", farbe: "#6b7280" };
       return { company_id: "lh-" + id, name: m.name, logo_url: m.logo, color: m.farbe }; }
-    function produkt(i){
-      var p = PRODUKTE[i], b = marke(p.m);
-      b.type = p.m === "ac" ? "own" : "competitor";
-      var vor = [r2(p.vis * 0.82), r2(p.pos + 0.3)];
-      return { source_product_id: "lh-p" + i, title: p.t, listing_title: p.t, brand: b, image_url: null,
-               visibility: wert([p.vis, vor[0]]), observations: wert([Math.round(p.vis * 1.6), Math.round(p.vis * 1.3)]),
-               avg_position: wert([p.pos, vor[1]]), first_position_rate: wert([r2(70 - p.pos * 16), r2(64 - p.pos * 16)]),
-               price_ranges: [{ currency: "EUR", min: SHOP_PREISE[i][0], max: SHOP_PREISE[i][1] }],
-               rating: [4.6, 4.7, 4.4, 4.5, 4.3][i], num_reviews: [212, 1840, 960, 88, 143][i],
-               merchants: ["Amazon.de", "Otto.de"].slice(0, p.haendler > 3 ? 2 : 1), merchant_count: p.haendler,
-               first_seen: tage[0] + "T08:00:00+00:00", last_seen: tage[13] + "T18:00:00+00:00" };
-    }
     var marken = SHOP_MARKEN.map(function(b, i){
-      var k = marke(b.m);
+      var k = marke(b.m), tp = echtesProdukt(b.top);
       k.type = b.m === "ac" ? "own" : "competitor"; k.rank = i + 1;
       k.share_of_shelf = wert(b.sos); k.presence = wert(b.pres); k.observations = wert(b.obs);
       k.avg_position = wert(b.pos); k.first_position_rate = wert(b.erst); k.products = b.prod;
-      k.top_product = b.top < 0 ? null : { source_product_id: "lh-p" + b.top, title: PRODUKTE[b.top].t,
-                                           image_url: null, visibility: PRODUKTE[b.top].vis };
+      k.top_product = tp ? { source_product_id: "lh-" + tp.id, title: tp.t, image_url: wikiBild(tp.bild), visibility: tp.vis[0] } : null;
       return k;
     });
-    /* Die Linien: vom Wert "vorher" zum Wert "jetzt", mit einer kleinen, festen Welle darauf --
-       eine Gerade sieht nach Rechnung aus, Zufall wuerde von Runde zu Runde anders aussehen. */
+    /* Die Linien (im Fenster ausgeblendet, die Komponente zeichnet sie trotzdem): vom Wert "vorher"
+       zum Wert "jetzt", mit einer kleinen, festen Welle darauf. */
     var serien = SHOP_MARKEN.map(function(b, i){
       var k = marke(b.m);
       k.is_own = b.m === "ac"; k.in_top5 = true;
@@ -6432,15 +6716,16 @@
       return k;
     });
     var acme = marke("ac");
+    var oben = ECHTE_PRODUKTE.slice().sort(function(a, b){ return b.vis[0] - a.vis[0]; });
     return {
       meta: { data_available_from: "2026-09-07",
               period: { from: tage[0], to: tage[13], requested_from: tage[0], days: 14 },
               previous_period: { from: "2026-09-07", to: "2026-09-20" }, comparison_available: true,
               own_company: acme, own_company_set: true, own_observations: 84,
               totals: { runs_with_known_state: 412, runs_with_shopping: 158, shopping_responses: 158,
-                        observations: 262, responses_with_list: 141, products: 14 },
+                        observations: 262, responses_with_list: 141, products: ECHTE_PRODUKTE.length },
               previous_totals: { runs_with_known_state: 398, runs_with_shopping: 140, shopping_responses: 140,
-                                 observations: 244, responses_with_list: 126, products: 13 } },
+                                 observations: 244, responses_with_list: 126, products: ECHTE_PRODUKTE.length - 1 } },
       kpis: { shopping_rate: wert([38.4, 35.1]), share_of_shelf: wert([31.9, 27.4]),
               avg_position: wert([1.8, 2.2]), first_position_rate: wert([46.3, 39.0]),
               brand_presence: wert([72.5, 64.8]) },
@@ -6448,27 +6733,45 @@
       brands: marken,
       brands_other: { company_id: null, name: null, logo_url: null, color: null, type: "other", rank: null,
                       share_of_shelf: wert([6.1, 7.1]), presence: wert([18.3, 19.0]), observations: wert([14, 15]),
-                      avg_position: wert([4.2, 4.0]), first_position_rate: wert([0, 1.2]), products: 3, top_product: null },
+                      avg_position: wert([4.2, 4.0]), first_position_rate: wert([0, 1.2]), products: 1,
+                      top_product: { source_product_id: "lh-p6", title: echtesProdukt("p6").t, image_url: wikiBild(echtesProdukt("p6").bild), visibility: 12.8 } },
       brands_page: { total_count: 5, limit: 25, offset: 0 },
-      brands_summary: { tracked_brands_observed: 5, unassigned_share_of_shelf: 6.1, unassigned_products: 3, own_rank: 1,
+      brands_summary: { tracked_brands_observed: 5, unassigned_share_of_shelf: 6.1, unassigned_products: 1, own_rank: 1,
                         own_share_of_shelf: wert([31.9, 27.4]),
                         top_competitor: (function(){ var t = marke("te"); t.share_of_shelf = 24.6; return t; })() },
-      top_products: [0, 1, 2, 3, 4].map(produkt),
-      movement: { rising: [produkt(0)], declining: [produkt(4)] },
+      top_products: oben.map(shopProdukt),
+      movement: shopBewegung(),
       merchant_distribution: { top: SHOP_HAENDLER, rest: { observations: 136, share: 47.7, merchants: 9 }, merchants_total: 12 }
     };
   }
-  function shopFuellen(){
+  /* Die Spalten der Produktliste im Fenster: Observations und First Position Rate fallen weg --
+     mit allen sieben liefe die Tabelle in 1078px Breite seitlich hinaus. Die Auswahl liest die
+     Komponente aus dem Speicher (core makeColumns, "<prefix>_cols__<instanceId>"), und zwar beim
+     ERSTEN Zeichnen der Tabelle -- also hier, beim Laden der Datei, und nicht erst in der Szene. */
+  try { window.localStorage.setItem("ush_cols__" + ID.ush + "__topprodukte", JSON.stringify({ obs: false, first: false })); }
+  catch (e){}
+  function shopFuellen(root){
+    var seite = root && root.querySelector(".ulh-shop");
+    /* is-zeilen VOR dem Setter: die Zeilen entstehen synchron im Setter und tragen die Bewegung
+       damit vom ersten Bild an -- kein Aufblitzen in der Endlage. */
+    if (seite) seite.classList.add("is-zeilen");
     if (window.setShoppingOverview){
       try { window.setShoppingOverview(ID.ush, JSON.stringify(shopDaten()), ""); }
       catch (e){ if (window.console) console.warn("[landing-hero] Shopping:", e); }
     }
+    if (!seite) return;
+    var zeilen = seite.querySelectorAll(".ush-vorschau .up-tbody .up-row");
+    for (var i = 0; i < zeilen.length; i++) zeilen[i].style.setProperty("--ulh-i", i);
+    shopNach(function(){
+      seite.classList.remove("is-zeilen");
+      for (var j = 0; j < zeilen.length; j++) zeilen[j].style.removeProperty("--ulh-i");
+    }, 550 + zeilen.length * 55 + 200);
   }
   function shopSzene(root){
     var seite = root.querySelector(".ulh-shop");
     /* Ohne die Seite (ein aelteres Markup) geht es direkt zum Neustart -- der Kreislauf darf an
        keiner fehlenden Seite haengen bleiben. Laeuft die Szene schon, passiert nichts. */
-    if (!seite){ neustart(root); return false; }
+    if (!seite){ chancenSzene(root); return false; }
     if (seite.__ulhShopAuf) return false;
     seite.__ulhShopAuf = true;
     /* Weg geht, was gerade steht -- dazu gehoert auch das Dashboard, das beim ersten Aufbau OHNE
@@ -6489,25 +6792,25 @@
       ohneTipps(root);
       shopNach(function(){ seite.classList.remove("is-kommt"); }, MIRA_RISE_MS);
       shopNach(function(){
-        shopFuellen();
+        shopFuellen(root);
         shopNach(function(){ ohneTipps(root); hellHalten(root); zeichenSetzen(root); }, 400);
-        shopNach(function(){
-          seite.classList.remove("is-da");
-          seite.classList.add("is-weg");
-          shopNach(function(){ neustart(root); }, SHOP_ABGANG_MS);
-        }, SHOP_STAND_MS);
+        /* Danach die Chancen: chancenSzene nimmt die Seite, die steht, selbst weg. */
+        shopNach(function(){ chancenSzene(root); }, SHOP_STAND_MS);
       }, SHOP_SEITE_MS);
     }, AUSBLENDEN_MS);
     return true;
   }
 
   function chancenSzene(root){
-    var prompts = root.querySelector(".ulh-prompts");
     var seite = root.querySelector(".ulh-chancen");
-    if (!prompts || !seite || seite.__ulhChancenAuf) return false;
+    if (!seite || seite.__ulhChancenAuf) return false;
     seite.__ulhChancenAuf = true;
-    prompts.classList.remove("is-da");
-    prompts.classList.add("is-weg");
+    /* Weg geht, was GERADE steht -- seit dem 06.10. ist das Shopping, nicht mehr die Prompts. */
+    [].forEach.call(root.querySelectorAll(".ulh-seite.is-da"), function(alt){
+      if (alt === seite) return;
+      alt.classList.remove("is-da");
+      alt.classList.add("is-weg");
+    });
     if (window.setSidebarActive) window.setSidebarActive(ID.usn, "opportunities");
     setTimeout(function(){
       seite.classList.remove("is-weg");
@@ -6675,6 +6978,53 @@
     }, AUSBLENDEN_MS);
     return true;
   }
+
+  /* ---------- Der Kreislauf wartet, wenn niemand hinsieht (06.10.) --------------------------
+     "Die Animationen butter smooth -- hier und da stockt noch was." Gemessen: jeder Szenenwechsel
+     baut eine ganze Komponente (50 bis 120ms am Stueck auf einem schnellen Mac, beim Laden 245),
+     und der Kreislauf lief weiter, auch wenn das Fenster laengst aus dem Bild gescrollt war. Wer
+     dann die Karten weiter unten ansah, bekam alle zehn Sekunden einen dieser Brocken mitten in
+     sein Scrollen: das Band, die Bahnen und die Auftritte laufen ueber requestAnimationFrame und
+     standen fuer diese Zeit still.
+     Jetzt beginnt die NAECHSTE Szene erst, wenn das Fenster zu sehen ist. Die laufende darf zu Ende
+     gehen; danach wartet die Kette und laeuft weiter, sobald man zurueckscrollt -- dort, wo sie
+     stand, nicht von vorn. Gemessen wird mit lage(), also auch durch den Rahmen von Framer hindurch
+     (ein IntersectionObserver saehe dort alles als sichtbar). Ohne Groesse (verdeckter Tab,
+     Messaufbau) haelt das Tor nichts fest. */
+  function fensterImBild(root){
+    var f = root && root.querySelector ? root.querySelector(".ulh-frame") : null;
+    if (!f) return true;
+    var l = lage(f);
+    if (!l.hoch) return true;
+    return l.oben < l.hoehe && l.oben + l.hoch > 0;
+  }
+  function mitTor(fn){
+    return function(root){
+      if (!root || fensterImBild(root)) return fn.apply(this, arguments);
+      var self = this, args = arguments;
+      /* Die juengste wartende Szene gewinnt -- es steht ohnehin immer nur eine an. */
+      root.__ulhTor = function(){ return fn.apply(self, args); };
+      if (!root.__ulhTorUhr){
+        (function warten(){
+          if (fensterImBild(root)){
+            root.__ulhTorUhr = null;
+            var f = root.__ulhTor; root.__ulhTor = null;
+            if (f) f();
+            return;
+          }
+          root.__ulhTorUhr = setTimeout(warten, 400);
+        })();
+      }
+      return true;
+    };
+  }
+  szene = mitTor(szene);
+  miraSzene = mitTor(miraSzene);
+  promptsSzene = mitTor(promptsSzene);
+  shopSzene = mitTor(shopSzene);
+  chancenSzene = mitTor(chancenSzene);
+  perfSzene = mitTor(perfSzene);
+  neustart = mitTor(neustart);
 
   /* ---------- Start ----------------------------------------------------------------------- */
 

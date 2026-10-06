@@ -765,6 +765,20 @@
       if (istLaden() || !isArr(state.types)) { typeChart.skeleton(); return; }
       var vorbereitet = UC.prepTypeData("url", state.types, isDark);
       if (!vorbereitet.length) { typeChart.empty("No URL types for this period."); return; }
+      /* DIE URL-TYPEN IM VERLAUF DES CHARTS (06.10. angefordert: "nur das Model-Breakdown-Chart ist
+         im richtigen Farbverlauf, der Rest nicht"). Bis dahin trugen Ring, Legende und Balken die
+         Farben der URL-Typ-Skala (Gruen, Orange, Violett), waehrend Kurve, Trichter und Model
+         Breakdown schon im Verlauf standen. Jetzt dieselbe FAMILIE wie Kurve und Trichter
+         (ruhig -> UC.chartFamilie: im Standard schwarz nach grau, mit "Standard + Blau" blau),
+         nach Rang -- der groesste Anteil traegt die dunkelste Stufe. Die Familie und nicht die
+         feine Rampe (balkenGrau 0, 1, 2 ...): deren Nachbarstufen lagen im Ring kaum
+         unterscheidbar nebeneinander (gemessen in Blau: #3f66b0 neben #4a70b6). Mehr als fuenf
+         Typen nehmen die hellsten Stufen der Rampe. */
+      var familie = ruhig(isDark, null);
+      vorbereitet.forEach(function (it, i) {
+        var f = familie[i] || (UC.balkenGrau ? UC.balkenGrau(Math.min(7, i + 3), isDark) : null);
+        if (f) it.color = f;
+      });
       if (state.chartMode === "bar") typeChart.renderBars(vorbereitet);
       else typeChart.renderDonut(vorbereitet);
     }
@@ -1041,7 +1055,7 @@
        aus UC.chartFamilie, die Farbe steht beim Zeichnen fest -- also neu zeichnen. */
     if (UC.onPrefs) UC.onPrefs(function (d) {
       if (root.isConnected === false || (d && d.name && d.name !== "accent")) return;
-      renderChart(); renderFunnel(); renderBars();
+      renderChart(); renderFunnel(); renderBars(); renderTypes();
     });
 
     /* Die Beschriftungsspalte der Balken haengt an der Breite der EIGENEN Box. */

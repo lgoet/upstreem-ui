@@ -39,6 +39,12 @@
    align-self: center, weil die Kopfzeile ihre Kinder mittig fuehrt und der Schalter mit 32px das
    hoechste davon ist. */
 .udd-seg { margin: 0; width: fit-content; align-self: center; }
+/* 24 HOCH, NUR DIE HOEHE (06.10. angefordert: "Citation/URL Share Switcher bitte 24px, nur in
+   height"). Polster 0 16 und Schrift 12 bleiben die von is-lg -- ausdruecklich nur die Hoehe, also
+   keine Skalierung nach §1. Schiene und Knopf zusammen, sonst stuende der Knopf ueber die Schiene
+   hinaus; der gleitende Streifen misst den Knopf und folgt von selbst. (0,4,0) gegen
+   .up-seg.is-lg (0,2,0). */
+.udd-root .up-seg.is-lg.udd-seg, .udd-root .up-seg.is-lg.udd-seg .up-seg-btn { height: 24px; }
 .udd-seg[hidden] { display: none; }
 /* Die oberste Zeile mit Umschalter und Zahnrad gibt es nicht mehr. */
 
