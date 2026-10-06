@@ -865,8 +865,56 @@
       '</div>' +
       '<div class="ulh-spur ulh-fuss-unten">' +
         '<span>© ' + jahr + ' upstreem. All rights reserved.</span>' +
+        '<button class="ulh-fuss-link ulh-fuss-nachweis-knopf" type="button" data-ulh-nachweis' +
+          ' aria-expanded="false" aria-controls="ulh-bildnachweis">Image credits</button>' +
       '</div>' +
+      '<div class="ulh-spur ulh-fuss-nachweis" id="ulh-bildnachweis" hidden>' + bildnachweisHtml() + '</div>' +
     '</footer>';
+  }
+  /* DER BILDNACHWEIS IM FUSS (06.10. nachts so entschieden). 8 der 10 Produktfotos stehen unter
+     CC BY oder CC BY-SA, und die verlangen einen Nachweis, den man FINDEN kann: Titel, Urheber,
+     Quelle, Lizenz (TASL). Der sichtbare Block unter den Shopping-Karten war auf Wunsch weg, der
+     title am Foto allein reicht dafuer nicht. Jetzt: ein Knopf "Image credits" in der letzten Zeile
+     des Fusses, darunter klappt der vollstaendige Nachweis auf -- Titel mit Link auf die Seite bei
+     Commons, Urheber, Lizenz mit Link auf ihren Text. Ein Knopf und kein <details>: so bleibt die
+     Zeile stehen, wenn der Nachweis aufgeht, und der Text bekommt die volle Breite. */
+  var LIZENZ_URL = {
+    "CC0": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "CC BY-SA 2.0": "https://creativecommons.org/licenses/by-sa/2.0/",
+    "CC BY-SA 3.0": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "CC BY-SA 3.0 de": "https://creativecommons.org/licenses/by-sa/3.0/de/",
+    "CC BY-SA 4.0": "https://creativecommons.org/licenses/by-sa/4.0/"
+  };
+  function bildnachweisHtml(){
+    function a(href, text){ return '<a href="' + href + '" target="_blank" rel="noopener">' + text + '</a>'; }
+    /* Als Titel steht das WERK, also der Dateititel bei Commons -- nicht der Produktname der Demo:
+       das Foto des "Acme Home Charger" zeigt eine Wallbox von Delta Electronics, und ein Nachweis,
+       der sie unter dem erfundenen Namen fuehrt, waere keiner. */
+    function werk(seite){
+      var t = seite;
+      try { t = decodeURIComponent(seite); } catch (e){}
+      return t.replace(/\.[a-z0-9]+$/i, "").replace(/_/g, " ");
+    }
+    return '<p>Product photos from Wikimedia Commons: ' +
+      ECHTE_PRODUKTE.map(function(p){
+        var lz = LIZENZ_URL[p.lizenz] ? a(LIZENZ_URL[p.lizenz], p.lizenz) : p.lizenz;
+        return a("https://commons.wikimedia.org/wiki/File:" + p.seite, "\u201c" + werk(p.seite) + "\u201d") +
+          ' by ' + p.autor + ' (' + lz + ')';
+      }).join(", ") + '.</p>' +
+      '<p>Ad illustrations: US Environmental Protection Agency, public domain, via ' +
+        a("https://openclipart.org", "Openclipart") + '.</p>';
+  }
+  /* Auf- und zuklappen, mit aria-expanded fuer Vorleser. Eigener Griff, weil die Sektion Klicks
+     nur im nachgebauten App-Fenster schluckt (nurSchauen) -- der Fuss liegt ausserhalb. */
+  function nachweisBinden(root){
+    var knopf = root.querySelector("[data-ulh-nachweis]"), feld = root.querySelector("#ulh-bildnachweis");
+    if (!knopf || !feld || knopf.__ulhNachweis) return;
+    knopf.__ulhNachweis = true;
+    knopf.addEventListener("click", function(){
+      var auf = feld.hasAttribute("hidden");
+      if (auf) feld.removeAttribute("hidden"); else feld.setAttribute("hidden", "");
+      knopf.setAttribute("aria-expanded", auf ? "true" : "false");
+    });
   }
 
   /* ---------- Sechste Sektion: warum es diese App gibt ------------------------------------
@@ -2250,8 +2298,9 @@
      dort ist das Einbinden ausdruecklich erlaubt. Jede Adresse am 06.10. geprueft (HTTP 200,
      image/jpeg, 330px-Vorschau -- Commons liefert nur noch Standardbreiten: 250/330/500/960).
      DIE LIZENZEN VERLANGEN EINEN NACHWEIS: nur zwei Fotos sind CC0, die anderen CC BY oder CC BY-SA.
-     Der sichtbare Block unter den Karten ist seit dem 06.10. auf Wunsch weg; der Nachweis steht am
-     Foto selbst (title: Urheber, Lizenz, Commons) -- wer ein Foto tauscht, traegt autor/lizenz mit.
+     Er steht seit dem 06.10. nachts im Fuss ("Image credits", bildnachweisHtml) und als title am
+     Foto -- wer ein Foto tauscht, traegt autor, lizenz und seite mit (eine neue Lizenz auch in
+     LIZENZ_URL).
      Die Marken: getrackte Hersteller (Tesla, BMW, Audi, Volvo, Porsche) und die erfundene Acme --
      ihre Produkte zeigen allgemeine Fotos (eine Wallbox, Fussmatten, ein Ladekabel) ohne fremde
      Marke darauf. Thule ist nicht getrackt und steht deshalb, wie in der App, als "Other".
@@ -2324,24 +2373,22 @@
      Satz aus EINER Hand -- US EPA, ueber Openclipart, gemeinfrei (keine Nennung noetig). Eine isometrische
      Wallbox oder ein Kabel gibt es frei lizenziert nicht; fuer das Laden zu Hause steht deshalb das
      Haus.
-     UEBER DAS BILD-CDN wsrv.nl, NICHT DIREKT VON OPENCLIPART (06.10. gemeldet: "laden ultra spaet,
-     das dritte gar nicht"). Openclipart rechnet ein Bild, das lange niemand angefragt hat, erst bei
-     Bedarf -- gemessen 28.8s fuer den Kompaktwagen, 0.5s fuer die anderen zwei. wsrv.nl holt es
-     einmal, verkleinert es auf 480px WebP und liefert es danach aus dem Cloudflare-Zwischenspeicher:
-     gemessen 55-64ms je Bild, ein Jahr Cache, CORS offen. Faellt eines trotzdem aus, zeigt die
-     Ad-Karte ihr Platzhalter-Zeichen -- dafuer sorgt core. */
-  function isoBild(id){ return "https://wsrv.nl/?url=openclipart.org/image/800px/" + id + "&w=480&output=webp"; }
+     SEIT DEM 06.10. NACHTS IM REPO (landing-bilder/, vom Nutzer erlaubt). Vorher kamen sie ueber
+     das Bild-CDN wsrv.nl -- schnell (55-64ms), aber ein fremder Dienst, an dem die Karte hing; und
+     davor direkt von Openclipart, das ein selten angefragtes Bild erst bei Bedarf rechnet (gemessen
+     28.8s fuer den Kompaktwagen). Jetzt liegen sie neben den Dateien der Seite und kommen aus
+     demselben Pin wie alles andere (nebenDatei, wie die Titelbilder der Events): 480px WebP,
+     15-17 KB, aus Openclipart 327138 (Limousine), 274743 (Kompaktwagen), 327136 (Haus).
+     Faellt eines trotzdem aus, zeigt die Ad-Karte ihr Platzhalter-Zeichen -- dafuer sorgt core. */
   var ISO = {
-    limousine: isoBild(327138),
-    kompakt:   isoBild(274743),
-    haus:      isoBild(327136)
+    limousine: nebenDatei("landing-bilder/ad-limousine.webp"),
+    kompakt:   nebenDatei("landing-bilder/ad-kompakt.webp"),
+    haus:      nebenDatei("landing-bilder/ad-haus.webp")
   };
   /* Die Bilder der Sektion VORAB laden und dekodieren (06.10.): die Ad-Karte und die Zeilen von
      Shopping tragen loading="lazy" -- ein Bild beginnt dann erst zu laden, wenn es ins Bild kommt,
      und erscheint sichtbar spaet. Hier liegen sie schon im Speicher, wenn Karte oder Szene kommen;
-     decode() nimmt ausserdem das Entpacken vorweg, das sonst mitten in eine Bewegung faellt (die
-     Zeilen der Produktliste stockten -- dort fielen zehn Fotos gleichzeitig an). Das Versprechen
-     wartet die Shopping-Szene ab, bevor die Zeilen einlaufen. */
+     decode() nimmt ausserdem das Entpacken vorweg, das sonst mitten in eine Bewegung faellt. */
   function bilderVorladen(){
     if (bilderVorladen.fertig) return bilderVorladen.fertig;
     var urls = ECHTE_PRODUKTE.map(function(p){ return wikiBild(p.bild); })
@@ -7280,6 +7327,7 @@
     /* NACH nurSchauen: das schluckt Klicks nur in .ulh-view (dem nachgebauten App-Fenster), die
        Preissektion ist davon nicht betroffen. */
     preiseBinden(root);
+    nachweisBinden(root);
     radDurchlassen(root);
     scrollGroesse(root);
     hellHalten(root);
