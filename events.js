@@ -914,7 +914,8 @@
             '</div>' +
             '<div class="uev-hinweise" data-sek="hinweise"></div>' +
           '</div>' +
-          '<div class="up-box up-kpiband uev-kpis" data-sek="kpis"></div>' +
+          /* Ohne Aussenrahmen wie in Shopping und Ads (07.10. angefordert): .up-kpiband.is-offen. */
+          '<div class="up-kpiband is-offen uev-kpis" data-sek="kpis"></div>' +
           '</div>' +
           '<section class="uev-sek uev-sek-chart">' +
             sekKopf("Performance around event", "How your brand developed in the affected prompts before and after the event.",
@@ -944,6 +945,7 @@
         markers: chartMarker,
         onMarker: function (id) { if (id && id !== state.eventId) oeffnen(id, true); }
       });
+      seitenAnlegen();
       elMain.querySelector(".uev-fenster").addEventListener("click", function (e) {
         var b = e.target.closest("[data-fenster]");
         if (!b) return;
@@ -1188,31 +1190,97 @@
             (z.info ? '<span class="up-th-info uev-erklaer" data-explain="' + esc(z.info) + '">' + UC.icon("info", 2) + '</span>' : '') + '</div>';
         }).join("") + '</div>';
     }
+    /* ---- SEITEN STATT SCROLLEN (07.10. angefordert: "die Tabelle Marktbewegung ist scrollbar --
+       nicht machen, gleiche Pagination wie in allen anderen Tabellen") -------------------------
+       Beide Tabellen des Details (Marktbewegung, Affected URLs) waren .up-vartable mit dem
+       scrollenden Koerper aus core (.up-vbody, 7.5 Zeilen). Jetzt der Pager aus core
+       (UC.makePager) mit "Rows per page" und Seitenknoepfen, wie in Shopping und Ads.
+       Geblaettert wird IM BROWSER: die Analyse liefert competitors[] und urls[] vollstaendig
+       (Vertrag 3.9: "jeder Wettbewerber einzeln", "eine Zeile pro Ziel-URL"; kein Limit-Parameter,
+       die Mengen sind durch Tarif und impact_event_too_many_urls begrenzt) -- dieselbe Bauart wie
+       "Topics with Ads" in ads.js. Das Geruest (Inhalt + Fusszeile) entsteht einmal je Detail in
+       baueDetail(), damit der Pager an seiner Fusszeile haengen bleibt; renderMarkt/renderUrls
+       schreiben nur noch in den Inhalt. Die Zeilenzahl bleibt beim Wechsel des Events, die Seite
+       beginnt wieder bei 1. */
+    var SEITEN_GROESSE = UC.DEFAULT_PAGE_SIZE || 15;
+    var seitenGroesse = { markt: SEITEN_GROESSE, urls: SEITEN_GROESSE };
+    var seiten = {};
+    function fussHtml() {
+      return '<div class="up-foot uev-foot" hidden>' +
+          '<div class="up-pagesize"><span class="up-pagesize-lbl">' + esc(t("Rows per page")) + '</span>' +
+            '<div class="up-pagesize-seg" role="group" aria-label="' + esc(t("Rows per page")) + '"></div></div>' +
+          '<div class="up-pager"></div>' +
+        '</div>';
+    }
+    function seitenAnlegen() {
+      seiten = {};
+      ["markt", "urls"].forEach(function (n) {
+        var el = elMain.querySelector('[data-sek="' + n + '"]');
+        if (!el) return;
+        el.innerHTML = '<div class="uev-tabinhalt"></div>' + fussHtml();
+        var st = { page: 1, pageSize: seitenGroesse[n], totalCount: null, loading: false };
+        var neu = function () { seitenGroesse[n] = st.pageSize; st.loading = false; if (n === "markt") renderMarkt(); else renderUrls(); };
+        seiten[n] = { st: st, kit: UC.makePager ? UC.makePager({ root: el, state: st, onChange: neu }) : null };
+        /* Die Klicks der Fusszeile wie in Shopping und Ads -- der Pager aus core zeichnet nur. */
+        el.addEventListener("click", function (e) {
+          var k = seiten[n] && seiten[n].kit;
+          if (!k || !e.target.closest || !e.target.closest(".uev-foot")) return;
+          var ps = e.target.closest("[data-pagesize]");
+          if (ps) { k.setPageSize(Number(ps.getAttribute("data-pagesize"))); return; }
+          if (e.target.closest(".up-page-prev")) { k.goToPage(st.page - 1); return; }
+          if (e.target.closest(".up-page-next")) { k.goToPage(st.page + 1); return; }
+          var pg = e.target.closest(".up-page[data-page]");
+          if (pg) k.goToPage(Number(pg.getAttribute("data-page")));
+        });
+      });
+    }
+    /* Der Inhalt einer Tabelle (Kopf, Tabelle) -- die Fusszeile bleibt stehen. */
+    function tabInhalt(n) {
+      var el = elMain.querySelector('[data-sek="' + n + '"]');
+      return el ? (el.querySelector(".uev-tabinhalt") || el) : null;
+    }
+    /* Fusszeile zeichnen und den Ausschnitt der aktuellen Seite liefern. total null: keine Fusszeile
+       (Skelett, Leerzustand). Wie ueberall: sichtbar, sobald es Zeilen gibt -- auch bei einer Seite. */
+    function seitenStand(n, total) {
+      var s = seiten[n], el = elMain.querySelector('[data-sek="' + n + '"]');
+      var foot = el ? el.querySelector(".uev-foot") : null;
+      if (foot) foot.hidden = !(total > 0);
+      if (!s || !(total > 0)) return { von: 0, bis: total || 0 };
+      s.st.totalCount = total; s.st.loading = false;
+      var max = Math.max(1, Math.ceil(total / s.st.pageSize));
+      if (s.st.page > max) s.st.page = max;
+      if (s.kit) { try { s.kit.renderPageSize(); s.kit.renderPager(); } catch (e) {} }
+      var von = (s.st.page - 1) * s.st.pageSize;
+      return { von: von, bis: von + s.st.pageSize };
+    }
     function renderMarkt() {
       var el = elMain.querySelector('[data-sek="markt"]'), a = dieAnalyse();
+      var platz = tabInhalt("markt");
       var titel = "Market movement", desc = "Visibility of every tracked brand in the affected prompts, before and after.";
       /* Ohne Analyse wegen eines Fehlers: der Abschnitt faellt weg. Den Fehler sagen schon die
          Kennzahlen und das Diagramm darueber -- ein drittes Mal waere Laerm. */
-      if (!a && state.analyseFehler && !state.analyseLaden) { el.innerHTML = ""; el.hidden = true; return; }
+      if (!a && state.analyseFehler && !state.analyseLaden) { platz.innerHTML = ""; seitenStand("markt", null); el.hidden = true; return; }
       el.hidden = false;
       var kopf = tabKopf("Brand", [{ t: "Before" }, { t: "After" }, { t: "Change" }]);
       if (!a) {
         /* Skelett mit DENSELBEN Zellklassen wie die Zeilen, in .up-tbody -- nur dort nimmt core der
            letzten Zeile die Unterkante (sonst doppelt mit dem Rahmen, 03.10. gemeldet). */
-        el.innerHTML = sekKopf(titel, desc) + '<div class="up-vartable uev-markt">' + kopf + '<div class="up-tbody up-vbody">' +
+        platz.innerHTML = sekKopf(titel, desc) + '<div class="up-vartable uev-markt">' + kopf + '<div class="up-tbody up-vbody">' +
           (UC.skeletonRows ? UC.skeletonRows({ count: 3, rowClass: "up-row up-vrow", cellClass: "up-td",
             cols: [{ w: 110, jitter: 30, logo: true, cls: "up-var-name uev-td-marke" }, { w: 44, cls: "uev-td-zahl" }, { w: 44, cls: "uev-td-zahl" }, { w: 40, cls: "uev-td-zahl" }] }) : "") +
           '</div></div>';
+        seitenStand("markt", null);
         return;
       }
       /* Ohne Wettbewerber faellt der Abschnitt weg (Spezifikation 85) -- eine Tabelle mit nur der
          eigenen Zeile ist kein Markt. */
-      if (!(isArr(a.competitors) && a.competitors.length)) { el.innerHTML = ""; el.hidden = true; return; }
+      if (!(isArr(a.competitors) && a.competitors.length)) { platz.innerHTML = ""; seitenStand("markt", null); el.hidden = true; return; }
       var reihen = [];
       if (a.affected) reihen.push({ du: true, m: a.affected });
       a.competitors.forEach(function (c) { reihen.push({ m: c }); });
-      el.innerHTML = sekKopf(titel, desc) +
-        '<div class="up-vartable uev-markt">' + kopf + '<div class="up-tbody up-vbody">' + reihen.map(function (r) {
+      var ab = seitenStand("markt", reihen.length);
+      platz.innerHTML = sekKopf(titel, desc) +
+        '<div class="up-vartable uev-markt">' + kopf + '<div class="up-tbody up-vbody">' + reihen.slice(ab.von, ab.bis).map(function (r) {
           var v = r.m.visibility || {};
           /* Ohne Vorher-Wert steht vorher ein Strich und kein Trend -- und kein "Neu getrackt"
              (03.10.: "ein Wert ohne Vorher-Wert ist nicht gleich neu getrackt"). */
@@ -1251,22 +1319,25 @@
     }
     function renderUrls() {
       var el = elMain.querySelector('[data-sek="urls"]'), d = dieDetail(), a = dieAnalyse();
-      if (!d) { el.innerHTML = ""; return; }
+      var platz = tabInhalt("urls");
+      if (!d) { platz.innerHTML = ""; seitenStand("urls", null); return; }
       var urls = isArr(d.urls) ? d.urls : [];
       /* Ohne URLs keine leere Analyse-Tabelle (Spezifikation 42) -- der Leerzustand aus core mit
          dem Weg, eine anzulegen. Mit URLs steht "Add URL" schon im Seitenkopf: kein zweiter Knopf. */
       if (!urls.length) {
-        el.innerHTML = sekKopf("Affected URLs", "") +
+        seitenStand("urls", null);
+        platz.innerHTML = sekKopf("Affected URLs", "") +
           UC.leerHtml({ mini: true, icon: "link", titel: "No URLs added yet", text: "Add pages, articles or external sources associated with this event.",
             knopf: "Add URL", knopfAttr: "data-uev-addurl" });
         return;
       }
       var proId = {};
       (a && isArr(a.urls) ? a.urls : []).forEach(function (u) { proId[u.id] = u; });
-      el.innerHTML = sekKopf("Affected URLs", "Pages, articles or external sources associated with this event. Global share is measured in the affected prompts.") +
+      var ab = seitenStand("urls", urls.length);
+      platz.innerHTML = sekKopf("Affected URLs", "Pages, articles or external sources associated with this event. Global share is measured in the affected prompts.") +
         '<div class="up-vartable uev-urls">' +
           tabKopf("URL", [{ t: "First cited", k: "uev-th-beob", info: "zitiert" }, { t: "Global share before" }, { t: "Global share after" }, { t: "Change" }]) +
-          '<div class="up-tbody up-vbody">' + urls.map(function (u) {
+          '<div class="up-tbody up-vbody">' + urls.slice(ab.von, ab.bis).map(function (u) {
             var an = proId[u.id], hp = hostPfad(u.url), gs = an && an.global_share ? an.global_share : null;
             var sk = '<span class="up-tsk-bar"></span>';
             /* Die ganze Zeile oeffnet das URL-Detail (03.10.), "Remove" faengt seinen Klick selbst ab. */

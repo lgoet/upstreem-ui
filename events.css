@@ -160,8 +160,9 @@
 /* Beispielwerte in der Erklaerkarte der Spalte "First cited": die Chips der Tabelle nebeneinander. */
 .up-explain-vis.uev-explain-chips { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px; }
 
-/* Die drei Kennzahlen: das Kennzahlen-Band aus core (.up-kpiband, 04.10.) -- ein Kasten, Linien
-   ueber die volle Hoehe, 16px Polster. Hier nur noch der Fehlerzustand ueber alle Spalten. */
+/* Die drei Kennzahlen: das Kennzahlen-Band aus core (.up-kpiband, 04.10.), seit dem 07.10. in der
+   offenen Fassung (.is-offen) -- ohne Kasten, nur die senkrechten Linien. Hier nur noch der
+   Fehlerzustand ueber alle Spalten. */
 .uev-kpifehler { grid-column: 1 / -1; }
 
 /* Ein Abschnitt: Kopf aus core (.up-sec-head bringt seine 14px Abstand nach unten mit), darunter
@@ -185,6 +186,13 @@
 .uev-urls .up-var-name, .uev-urls .up-th-vname { min-width: 220px; }
 .uev-markt .up-var-name, .uev-markt .up-th-vname { min-width: 180px; }
 .up-vartable.uev-urls, .up-vartable.uev-markt { overflow-x: auto; }
+/* SEITEN STATT SCROLLEN (07.10.): beide Tabellen blaettern mit dem Pager aus core (events.js,
+   seitenAnlegen) -- der Koerper waechst darum mit seinen Zeilen und scrollt nicht mehr. Die
+   Regel in core (.up-vbody, 412.5px) bleibt fuer die Tabellen, die sie wollen (URL Detail).
+   Zwei Klassen gegen eine. */
+.uev-markt .up-vbody, .uev-urls .up-vbody { max-height: none; overflow-y: visible; }
+/* hidden muss gegen display: flex der Fusszeile aus core gewinnen -- wie in ads.css. */
+.uev-root .uev-foot[hidden] { display: none; }
 .uev-urls > .up-thead, .uev-urls > .up-tbody { min-width: 860px; }
 .uev-markt > .up-thead, .uev-markt > .up-tbody { min-width: 600px; }
 .uev-url-txt { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
