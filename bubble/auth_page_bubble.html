@@ -51,10 +51,9 @@
                        Passwort an -- was sich wie "falsche Zugangsdaten" anfuehlt und nicht wie
                        ein Zeitproblem -- setze hier 300. Der Nutzer merkt davon nichts, der
                        Ladezustand laeuft ab dem Klick.
-       data-bg         URL des blauen Hintergrundbildes fuer die rechte Spalte. EIN Link fuer
-                       beide Modi: im Dunkeln legt die CSS eine dunkle Decke darueber, statt ein
-                       zweites Bild zu verlangen. Fehlt die URL, bleibt der Farbverlauf allein
-                       stehen -- die Spalte sieht ruhiger aus, aber nicht kaputt.
+       data-bg         GESTRICHEN (07.10.). Die rechte Spalte traegt den grauen Verlauf der
+                       Landingpage mit Raster, ganz aus der CSS; ein Bild wird nicht mehr gelesen.
+                       Ein noch gesetztes Attribut schadet nicht, kann aber weg.
 
      ── EVENTS (JavaScriptToBubble, Value type TEXT, Trigger event an) ────────────────────────
 
@@ -188,7 +187,7 @@
 
      ── EINBAU IN KUERZE ──────────────────────────────────────────────────────────────────────
      1. Element auf die Seite, volle Breite und Hoehe, kein Padding drumherum.
-        data-instance, data-cdn-pin, data-logo, data-bg setzen.
+        data-instance, data-cdn-pin, data-logo setzen.
      2. JavaScriptToBubble-Elemente anlegen. PFLICHT: uauName, uauPassword, uauSubmit.
         Nach Bedarf: uauGoogle, uauMode, uauSide.
      3. Workflow auf uauSubmit: mode/token/email/opt_in aus dem Wert extrahieren, Name und
@@ -258,7 +257,6 @@
      data-logo="LOGO_URL"
      data-logo-dark="LOGO_DARK_URL"
      data-isdark="IS_DARK"
-     data-bg="BG_URL"
      data-name-fn="bubble_fn_uauName"
      data-password-fn="bubble_fn_uauPassword"
      data-submit-fn="bubble_fn_uauSubmit"

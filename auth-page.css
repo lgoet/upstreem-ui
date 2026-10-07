@@ -28,8 +28,6 @@
      der Uebergaenge bleiben davon unberuehrt. */
   --uau-in: 420ms;
   --uau-ease: cubic-bezier(.4, 0, .2, 1);
-  --uau-navy: #152142;
-  --uau-navy-soft: #3a4767;
   --uau-hover: #f7f8fa;
 
   min-height: 100vh;
@@ -470,41 +468,59 @@
 }
 .uau-done-ic svg { width: 22px; height: 22px; display: block; }
 
-/* ---------- rechte Spalte ---------- */
+/* ---------- rechte Spalte ----------
+   DER GRAUE VERLAUF DER LANDINGPAGE (07.10. angefordert: "ohne das svg bild, wie auf der
+   landingpage nur mit dem grauen gradient und den grids"). Bis dahin lag hier ein blaues Bild
+   (data-bg) unter einem weissen bzw. dunklen Schleier. Jetzt WORTGLEICH der Grund des Landing-
+   Heros (.ulh-bg-foto, ::after dort, .ulh-bg-grid): dieselben drei Toene, dieselbe Blende, die
+   Lichter und das Raster. Wer eine der beiden Seiten aendert, aendert die andere mit.
+   Oben bis 16% durchsichtig, wie dort: die Spalte waechst aus dem Seitengrund heraus, statt als
+   Kasten auf ihm zu liegen. Seit dem 07.10. mit weniger Blau und einen Hauch heller -- an beiden
+   Stellen zugleich (Begruendung und alte Werte in landing-hero.css an .ulh-bg-foto). */
 .uau-panel {
   border-radius: 32px; overflow: hidden; position: relative;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: clamp(16px, 1.8vw, 26px); text-align: center;
   padding: clamp(32px, 4vw, 64px) clamp(28px, 3.6vw, 56px);
-  background-color: #cfd8ea;
-  /* Der Verlauf liegt UEBER dem Bild (--uau-bgimg, vom JS gesetzt). Steht keine Bildquelle da,
-     bleibt der Verlauf allein -- ruhiger, aber nicht kaputt. */
-  background-image: linear-gradient(180deg, rgba(255,255,255,.5), rgba(255,255,255,.16) 60%),
-                    var(--uau-bgimg, none);
-  background-size: cover; background-position: center;
-  transition: background-color var(--uau-t) var(--uau-ease);
+  background: linear-gradient(to bottom,
+              rgba(246, 247, 248, 0) 16%, #f6f7f8 34%, #e8eaec 60%, #dbdde1 100%);
 }
-/* ── Dark Mode ──────────────────────────────────────────────────────────────────────────────
-   Dasselbe Bild, andere Tonung. Ein zweites, dunkles Bild waere ein zweiter Link, den jemand
-   pflegen muss -- und beim naechsten Markenwechsel waere einer davon veraltet. Der Verlauf hier
-   ist deshalb kein Aufhellen mehr, sondern eine dunkle Decke: oben etwas durchlaessiger, damit
-   die Struktur des Bildes sichtbar bleibt und keine tote Flaeche entsteht.
-   Die Werte sind hoch (0.72 bis 0.88), weil die Vorlage ein sehr helles Blau-Weiss ist -- bei
-   0.5 blieb sie im Dunkeln ein leuchtender Block neben einer dunklen Formularseite. */
-/* Kein eigener dunkler Ton mehr. Seite, Karte, Felder und der Google-Knopf lesen --vc-bg,
-   also #1b1b1b wie der Rest der App -- ein Sonderwert nur hier waere genau die Abweichung, die
-   beim naechsten Palettenwechsel uebrig bleibt. */
+/* Die Lichter unten (wortgleich .ulh-bg-foto::after): zwei Ovale leicht neben der Mitte und eine
+   flache Glocke, mit eigener Blende ab 34% -- die Begruendung fuer die eigene Ebene steht dort. */
+.uau-panel::before {
+  content: ""; position: absolute; z-index: 0; pointer-events: none;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background:
+    radial-gradient(58% 72% at 44% 100%,
+      rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .24) 28%,
+      rgba(255, 255, 255, .1) 62%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(34% 52% at 61% 97%,
+      rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, .09) 40%,
+      rgba(255, 255, 255, .03) 72%, rgba(255, 255, 255, 0) 100%),
+    linear-gradient(to right,
+      rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .02) 18%, rgba(255, 255, 255, .06) 32%,
+      rgba(255, 255, 255, .09) 44%, rgba(255, 255, 255, .1) 50%, rgba(255, 255, 255, .09) 56%,
+      rgba(255, 255, 255, .06) 68%, rgba(255, 255, 255, .02) 82%, rgba(255, 255, 255, 0) 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 34%, #000 60%);
+  mask-image: linear-gradient(to bottom, transparent 34%, #000 60%);
+}
 
 /* --uau-hover ist #f7f8fa, ein Hellgrau. Im Dunkeln blitzte der Google-Knopf beim Ueberfahren
    also weiss auf. EINMAL umdefiniert statt an jeder Stelle einzeln -- alles, was den Ton nutzt,
    zieht damit mit (Google-Knopf und Theme-Schalter). */
 .uau-root[data-theme="dark"] { --uau-hover: var(--vc-heading-bg); }
 
+/* ── Dark Mode: dasselbe Grau, gegenlaeufig ──────────────────────────────────────────────────
+   Die Landingpage ist immer hell und hat kein Vorbild dafuer. Abgeleitet statt erfunden: im
+   Hellen wird es nach unten DUNKLER (Weiss -11/-28/-43), hier nach unten HELLER, vom Seitengrund
+   --vc-bg (#1c1c1f) aus um +5/+13/+21 -- und der Blauanteil waechst mit der Tiefe wie dort,
+   seit dem 07.10. ebenso etwa halbiert (b minus r: 3, 4, 4). Die Lichter auf ein Viertel: weisse Ovale mit voller Staerke stuenden
+   auf dem dunklen Grau als Flecken da. */
 .uau-root[data-theme="dark"] .uau-panel {
-  background-color: #16203a;
-  background-image: linear-gradient(180deg, rgba(12,17,32,.72), rgba(10,14,28,.88) 70%),
-                    var(--uau-bgimg, none);
+  background: linear-gradient(to bottom,
+              rgba(28, 28, 31, 0) 16%, #212224 34%, #2a2b2e 60%, #323336 100%);
 }
+.uau-root[data-theme="dark"] .uau-panel::before { opacity: .25; }
 /* ---------- Das Linienmuster aus der Landingpage (21.09. angefordert) ----------
    WORTGLEICH von .ulh-bg-grid uebernommen, nicht nachempfunden: senkrechte 1px-Striche alle
    8px, unten verankert, nach oben ausblendend -- und dieselbe Blende
@@ -541,15 +557,16 @@
               rgba(0, 0, 0, .30) 0, rgba(0, 0, 0, .30) 1px,
               transparent 1px, transparent 8px);
 }
-.uau-root[data-theme="dark"] .uau-panel-h { color: #e8ecf6; }
-.uau-root[data-theme="dark"] .uau-panel-b { color: #a8b3cc; }
+/* Ueberschrift und Satz in den Schriftfarben der App (07.10.): das Navy und seine helleren
+   Dunkel-Fassungen waren auf das blaue Bild abgestimmt, auf Grau stuenden sie als Blaustich da.
+   Mit den Tokens wechseln sie von selbst mit dem Thema. */
 /* Der Prompt-Balken traegt --vc-bg und --vc-border, wechselt also von selbst mit -- und seit dem
    28.09. auch sein Schatten (--up-e-3 dreht mit dem Thema). Die eigene Dunkel-Regel, die hier
    einen schwarzen Zweilagen-Schatten setzte, ist damit entfallen. */
 .uau-panel-h {
   margin: 0;
   font-size: clamp(26px, 3.1vw, 46px); line-height: 1; font-weight: 600;
-  letter-spacing: -.03em; color: var(--uau-navy);
+  letter-spacing: -.03em; color: var(--vc-text);
 }
 .uau-panel-b {
   /* 64px links und rechts statt max-width 34ch: die Zeichenbegrenzung brach den kurzen Satz
@@ -557,7 +574,7 @@
      nicht die Zeichenzahl. */
   margin: 0 auto; padding: 0 64px;
   font-size: clamp(14px, 1.25vw, 19px); line-height: 1.4;
-  color: var(--uau-navy-soft); max-width: none; text-wrap: pretty;
+  color: var(--vc-muted); max-width: none; text-wrap: pretty;
 }
 .uau-prompt {
   margin-top: clamp(4px, .8vw, 10px); width: 100%; max-width: 520px;

@@ -352,9 +352,8 @@
          Fassung waere die Ecke leer -- ein fehlendes Dark-Logo darf nicht heissen, dass gar
          keines dasteht. */
       var logo = (istDunkel() && attr("data-logo-dark")) || attr("data-logo");
-      var bg   = attr("data-bg");
       return '' +
-      '<div class="uau-card"' + (bg ? ' data-hasbg="1"' : '') + '>' +
+      '<div class="uau-card">' +
         '<div class="uau-form">' +
           '<div class="uau-top">' +
             (logo ? '<img class="uau-logo" src="' + esc(logo) + '" alt="upstreem"/>' : '<span class="uau-logo"></span>') +
@@ -461,10 +460,9 @@
           '<div class="uau-foot"><span data-foot-txt></span>' +
             '<button type="button" data-foot-btn></button></div>' +
         '</div>' +
-        /* Das Bild kommt als CSS-Variable, nicht als fertiger background-image-Wert: der Verlauf
-           darueber unterscheidet sich zwischen hell und dunkel, und ein Inline-Stil haette jede
-           Dark-Mode-Regel geschlagen. So bleibt die Bildquelle hier und die Tonung in der CSS. */
-        '<div class="uau-panel"' + (bg ? ' style="--uau-bgimg: url(&quot;' + esc(bg) + '&quot;)"' : '') + '>' +
+        /* Seit dem 07.10. ohne Bild: der graue Verlauf der Landingpage steht ganz in der CSS
+           (.uau-panel). data-bg wird nicht mehr gelesen -- ein gesetztes Attribut schadet nicht. */
+        '<div class="uau-panel">' +
           '<h2 class="uau-panel-h">AI Search Analytics.<br>Made simple.</h2>' +
           '<p class="uau-panel-b">See in seconds how often AI Search recommends your brand.</p>' +
           '<div class="uau-prompt">' +
