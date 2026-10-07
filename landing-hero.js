@@ -2340,7 +2340,9 @@
   var HANDEL_SUB = "Shopping results and sponsored placements, tracked on the same prompts as your " +
     "visibility.";
   var HANDEL = [
-    { breit: 60, vis: "produkte", stil: "zeilen",
+    /* muster "versetzt" (07.10.): ein aehnliches, aber nicht dasselbe Muster wie hinter der
+       Domain-Tabelle -- die Punkte im Rautenraster statt im Quadrat. */
+    { breit: 60, vis: "produkte", stil: "zeilen", muster: "versetzt",
       h: "See which products AI puts first",
       p: "Position, rating and price for every product the models recommend, yours and your competitors'." },
     /* Oben rechts seit dem 06.10. die Produktbewegung von Shopping statt der Balken (angefordert).
@@ -2507,25 +2509,43 @@
   /* Oben links: die Top Products, wie in der Uebersicht von Shopping -- mit den Fotos und nur den
      Spalten, die in einer Karte etwas sagen (06.10.: "hier natuerlich nur mit den wichtigen"):
      Produkt, Visibility, Position, Preis. Die fuenf sichtbarsten. */
+  /* Die Zahl neben "Products" im Kopf der Vorschau. */
+  var VIS_PROD_ZAHL = 186;
+
   function visProdukte(){
     var kern = window.UpstreemCore;
     var kopf = ["Product", "Visibility", "Avg. Position", "Price"];
     var hash = kern && kern.HASH_ICON ? kern.HASH_ICON.replace("<svg ", '<svg class="up-hash" ') : "";
     var oben = ECHTE_PRODUKTE.slice().sort(function(a, b){ return b.vis[0] - a.vis[0]; }).slice(0, 5);
-    /* Die Zahlenspalten knapp: der Titel ist das, was man liest (gemessen bei 1180px: mit 110/130/150
-       war "Tesla Model Y Premi..." alles, was vom ersten Titel blieb). */
-    var html = '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 84px 108px 118px;">' +
+    /* Die Zahlenspalten mit mehr Luft rechts (07.10., wie in der Prompt-Karte): die Tabelle ist
+       kleiner skaliert (0.66 statt 0.74) und steht damit auf mehr ungeskalierten Pixeln -- 84/108/118
+       werden 104/128/140, der Titel behaelt trotzdem mehr Platz als vorher. */
+    /* WIE DIE PROMPT- UND DIE DOMAIN-KARTE (07.10. angefordert): der Kopf der App ueber der Tabelle
+       -- hier der der Products-Seite von Shopping (shopping.js, tabSek): Ueberschrift mit Zahl, rechts
+       Suche und Tabelleneinstellungen, beide .up-iconbtn mit den Zeichen aus core. Die Spaltenkoepfe
+       als .up-th, keine gehobene Zeile mehr. Darum derselbe leichte Rahmen wie um die Domain-Tabelle
+       (.ulh-rahmen). */
+    var html = '<div class="ulh-rahmen"><div class="ulh-rahmen-in">' +
+      '<div class="up-head ulh-vis-kopf">' +
+        '<div class="up-heading has-count"><span class="up-head-label">Products</span>' +
+          '<span class="up-head-sep"></span><span class="up-head-count">' + VIS_PROD_ZAHL + '</span></div>' +
+        '<div class="up-head-tools">' +
+          '<button class="up-iconbtn" type="button" tabindex="-1" aria-hidden="true">' + (kern ? kern.icon("search", 2) : "") + '</button>' +
+          '<button class="up-iconbtn" type="button" tabindex="-1" aria-hidden="true">' + (kern ? kern.icon("settings", 2) : "") + '</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 104px 128px 140px;">' +
       '<div class="up-row up-thead">' + kopf.map(function(t){
-        return '<div class="up-td">' + t + '</div>'; }).join("") + '</div>';
-    html += oben.map(function(p, i){
-      return '<div class="up-row' + (i === 1 ? " is-mitte" : "") + '">' +
+        return '<div class="up-th"><span class="up-th-txt">' + t + '</span></div>'; }).join("") + '</div>';
+    html += oben.map(function(p){
+      return '<div class="up-row">' +
         '<div class="up-td">' + produktZelleHtml(p) + '</div>' +
         '<div class="up-td"><span class="up-num">' + proz(p.vis[0]) + '</span></div>' +
         '<div class="up-td"><span class="up-rank-group">' + hash + '<span class="up-num">' + eine(p.pos[0]) + '</span></span></div>' +
         '<div class="up-td"><span class="up-num">' + preisText(p) + '</span></div>' +
       '</div>';
     }).join("");
-    return html + '</div>';
+    return html + '</div></div></div>';
   }
 
   /* Oben rechts: die Produktbewegung von Shopping (zeichneBewegung in shopping.js) -- dieselben
@@ -2554,11 +2574,18 @@
     var mv = { auf: [], ab: [] };
     ECHTE_PRODUKTE.map(function(p){ return { id: p.id, d: p.vis[0] - p.vis[1] }; })
       .sort(function(a, b){ return b.d - a.d; })
-      .forEach(function(x){ if (x.d > 0.5 && mv.auf.length < 2) mv.auf.push(x.id); });
+      .forEach(function(x){ if (x.d > 0.5 && mv.auf.length < 3) mv.auf.push(x.id); });
     ECHTE_PRODUKTE.map(function(p){ return { id: p.id, d: p.vis[0] - p.vis[1] }; })
       .sort(function(a, b){ return a.d - b.d; })
-      .forEach(function(x){ if (x.d < -0.5 && mv.ab.length < 2) mv.ab.push(x.id); });
-    return '<div class="up-box ush-bewegung" style="--up-cols: minmax(0,1fr) auto">' +
+      .forEach(function(x){ if (x.d < -0.5 && mv.ab.length < 3) mv.ab.push(x.id); });
+    /* DER ABSCHNITTSKOPF DER APP (07.10., wie bei den anderen Tabellen): Shopping setzt ueber die
+       Produktbewegung ein .up-sec-head mit Titel und Unterzeile (shopping.js, sekKopf). Drei Zeilen
+       je Gruppe statt zwei: die Reihe ist hoeher geworden. */
+    return '<div class="up-sec-head ush-sec-head"><div class="up-sec-titles">' +
+        '<span class="up-heading up-sec-h">Product Movement</span>' +
+        '<span class="up-sec-sub">Largest Visibility changes vs. previous 30 days</span>' +
+      '</div></div>' +
+      '<div class="up-box ush-bewegung" style="--up-cols: minmax(0,1fr) auto">' +
       gruppe("Rising", "arrowUpRight", mv.auf) + gruppe("Declining", "arrowDownRight", mv.ab) + '</div>';
   }
   function visAnzeigen(){
@@ -2624,7 +2651,8 @@
         /* m.muster (07.10.): das Punktraster der Sektion "See what AI answers say about you." hinter
            der Vorschau, nach aussen ausgeblendet -- eine eigene Ebene, damit die Blende nur das
            Muster trifft und nicht die Tabelle. */
-        (m.muster ? '<span class="ulh-vis-muster" aria-hidden="true"></span>' : '') +
+        (m.muster ? '<span class="ulh-vis-muster' + (m.muster === true ? '' : ' is-' + m.muster) +
+          '" aria-hidden="true"></span>' : '') +
         '<div class="ulh-vis-in up-root" data-theme="light" data-isdark="no" data-up-keepclip>' +
           visInhalt(m.vis) + '</div>' +
       '</div>' +

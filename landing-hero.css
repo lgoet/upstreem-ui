@@ -1867,7 +1867,8 @@
      regal      die Balkenliste der App, unskaliert wie die Kurve der ersten Karte
      werber     dieselbe Balkenliste
      anzeigen   drei Ad-Karten der App, wie die Tabellen auf 0.74 verkleinert
-   Alle vier auf 288, der Hoehe der ersten Reihe darueber -- beide Reihen gleich hoch.
+   Alle vier auf 288, der Hoehe der ersten Reihe darueber -- beide Reihen gleich hoch. Seit dem
+   07.10. ist die erste Reihe (produkte, bewegung) 400 hoch, wie die erste Merkmal-Reihe; siehe unten.
    Oben nur ein Teil des Sektionspolsters: der Block folgt direkt auf den ersten, und zwei volle
    Polster uebereinander (bis 144 + 132px) saehen nach Seitenende aus statt nach Fortsetzung. */
 .ulh-feat.ulh-handel { padding-top: clamp(24px, 4vh, 48px); }
@@ -1876,6 +1877,16 @@
    breit wie die Karte -- sie hat zwei Spalten und laeuft nicht seitlich hinaus. Ihre Zeilenhoehe
    steht in shopping.css nur unter .ush-root (eine Komponente gibt es hier nicht), also hier. */
 .ulh-vis-bewegung { --ulh-vs: 0.8; --ulh-vh: 288px; }
+/* DIE ERSTE SHOPPING-REIHE WIE DIE ERSTE MERKMAL-REIHE (07.10.): 400 hoch, die Produkttabelle auf
+   0.66 mit dem Kopf der App im Rahmen (wie die Domain-Karte), die Produktbewegung mit ihrem
+   Abschnittskopf auf 0.72 -- nicht ganz so klein, die Karte ist nur 40 Prozent breit. Ueber
+   [data-ulh-vis], zwei Klassen gegen .ulh-vis-zeilen und .ulh-vis-bewegung. */
+.ulh-vis[data-ulh-vis="produkte"] { --ulh-vs: 0.66; --ulh-vh: 400px; }
+.ulh-vis[data-ulh-vis="bewegung"] { --ulh-vs: 0.72; --ulh-vh: 400px; }
+/* Platz um den Rahmen fuer das Muster, wie bei der Domain-Karte. Drei Klassen gegen das seitliche
+   Polster von .ulh-vis-zeilen (68px fuer die gehobene Zeile, die es hier nicht mehr gibt). */
+.ulh-vis[data-ulh-vis="produkte"] .ulh-vis-in { position: relative; z-index: 1; padding: 24px 36px 0; box-sizing: border-box; }
+.ulh-vis[data-ulh-vis="produkte"] .ulh-vis-tab .up-thead { height: 45px; flex-basis: 45px; letter-spacing: normal; }
 .ulh-vis-bewegung .ulh-vis-in { width: calc(100% / var(--ulh-vs)); }
 .ulh-vis .ush-bewegung .up-row { height: 64px; flex: 0 0 64px; }
 /* Die Produktzelle: Foto, dann Titel und Marke -- der Abstand wie in der Tabelle von Shopping. */
@@ -2151,14 +2162,14 @@
    und 3px (damit war die halbe Vorschau weich), dann 26 und 2, jetzt 19 und 1.6.
    backdrop-filter und nicht filter: die Zeilen selbst bleiben scharf gezeichnet, unscharf wird
    nur, was DURCH diese Flaeche zu sehen ist -- so bleibt der Rest der Vorschau unberuehrt. */
-.ulh-vis-zeilen::after, .ulh-vis-domains::after, .ulh-vis-chancen::after {
+.ulh-vis-zeilen::after, .ulh-vis-domains::after, .ulh-vis-chancen::after, .ulh-vis-bewegung::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 19%;
   -webkit-backdrop-filter: blur(1.6px); backdrop-filter: blur(1.6px);
   -webkit-mask-image: linear-gradient(to bottom, transparent, #000 90%);
   mask-image: linear-gradient(to bottom, transparent, #000 90%);
   pointer-events: none; z-index: 2;
 }
-.ulh-vis-zeilen::before, .ulh-vis-domains::before, .ulh-vis-chancen::before {
+.ulh-vis-zeilen::before, .ulh-vis-domains::before, .ulh-vis-chancen::before, .ulh-vis-bewegung::before {
   content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 18%;
   background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, #ffffff 94%);
   pointer-events: none; z-index: 3;
@@ -2209,12 +2220,26 @@
    say about you." (.ulh-stimme): 1px-Punkte im 8px-Raster in --ulh-schiene. Eine Seite, ein
    Punktmuster. Die Blende ist ein Oval etwas unter der Mitte -- zur Kante hin und nach oben zum
    Kartentext verschwindet es, damit die Karte keinen gemusterten Rand bekommt. */
+/* ETWAS KRAEFTIGER (07.10. angefordert: "etwas mehr Opacity"): die Punkte in --ulh-border (#e7e9ec,
+   der Kante der Karten) statt --ulh-schiene (#ededf0) -- die naechste Stufe der eigenen Palette --,
+   und der volle Kern der Blende reicht weiter nach aussen (45 statt 32 Prozent). */
 .ulh-vis-muster {
   position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 0; pointer-events: none;
-  background-image: radial-gradient(circle, var(--ulh-schiene) 1px, transparent 1px);
+  background-image: radial-gradient(circle, var(--ulh-border) 1px, transparent 1px);
   background-size: 8px 8px;
-  -webkit-mask-image: radial-gradient(ellipse 64% 66% at 50% 56%, #000 32%, transparent 100%);
-  mask-image: radial-gradient(ellipse 64% 66% at 50% 56%, #000 32%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 64% 66% at 50% 56%, #000 45%, transparent 100%);
+  mask-image: radial-gradient(ellipse 64% 66% at 50% 56%, #000 45%, transparent 100%);
+}
+/* DIE VARIANTE HINTER DER PRODUKTTABELLE (07.10.: "aehnlich, aber nicht genau gleich"): dieselben
+   Punkte, aber versetzt im Rautenraster -- zwei Lagen im 12er-Abstand, die zweite um eine halbe
+   Masche verschoben, ergibt Punkte im Abstand von gut 8px auf der Diagonalen. Die Blende liegt
+   weiter rechts, das Muster laeuft also nicht spiegelgleich zur Domain-Karte aus. */
+.ulh-vis-muster.is-versetzt {
+  background-image: radial-gradient(circle, var(--ulh-border) 1px, transparent 1px),
+                    radial-gradient(circle, var(--ulh-border) 1px, transparent 1px);
+  background-size: 12px 12px; background-position: 0 0, 6px 6px;
+  -webkit-mask-image: radial-gradient(ellipse 66% 64% at 60% 58%, #000 42%, transparent 100%);
+  mask-image: radial-gradient(ellipse 66% 64% at 60% 58%, #000 42%, transparent 100%);
 }
 /* Die Vorschau liegt UEBER dem Muster. Platz rundherum, damit vom Muster etwas zu sehen ist
    (ungeskaliert, also mal 0.66 auf dem Schirm). */
@@ -2236,7 +2261,10 @@
 .ulh-rahmen-in > .up-head {
   height: auto; margin: 0; padding: 12px 12px 12px 16px; border-bottom: 1px solid var(--ulh-border);
 }
-.ulh-rahmen-in > .ulh-vis-dom { border: 0; border-radius: 0; box-shadow: none; }
+.ulh-rahmen-in > .ulh-vis-dom, .ulh-rahmen-in > .ulh-vis-tab { border: 0; border-radius: 0; box-shadow: none; }
+/* Die Kopfzeile der Prompt-Tabelle traegt sonst 12px oben, damit sie die Ecken der Tabelle deckt --
+   im Fenster steht sie unter dem Kopf der App und ist gerade. */
+.ulh-rahmen-in .ulh-vis-tab .up-thead { border-radius: 0; }
 /* Die Spaltenkoepfe wie in der App (.up-th aus core, 45px). */
 .ulh-vis[data-ulh-vis="domains"] .ulh-vis-dom .up-thead { height: 45px; flex-basis: 45px; letter-spacing: normal; }
 /* Die Seitenliste ohne Last Seen: vier Spuren statt fuenf (domains-table.css hat fuenf). */
