@@ -159,6 +159,12 @@
            setAuthPageError("auth", "password", "That password is not correct.")
            setAuthPageError("auth", "", "Too many attempts. Try again in a few minutes.")
 
+       setAuthPageServerError(instanceId, fehlertext)          NEU 07.10.
+         Statt eines eigenen Satzes: der Fehler, WIE SUPABASE IHN LIEFERT (Code, Meldung oder
+         beides). Die Seite macht daraus den Satz fuer den Nutzer und waehlt das Feld, z.B.
+         invalid_credentials -> "Email or password is not correct." ueber dem Formular. Die ganze
+         Liste und der Run-JS-Schritt: bubble/auth_seiten_bubble.html, "DER FEHLERSCHRITT".
+
        setAuthPageDone(instanceId, titel, text)
          Ersetzt das Formular durch den Erfolgsblock, an Ort und Stelle, ohne Sprung.
            setAuthPageDone("auth", "Welcome aboard", "Check your inbox to confirm your email.")

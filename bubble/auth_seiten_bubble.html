@@ -1,0 +1,237 @@
+<!-- ==========================================================================================
+     upstreem — Die vier Seiten ohne Anmeldeformular (Praefix `uau`, Stand 07.10.)
+
+       data-page="check-email"       "Check your email" nach dem Signup
+       data-page="forgot-password"   Passwort vergessen: Adresse eingeben, Link anfordern
+       data-page="reset-password"    Ziel des Ruecksetzlinks: neues Passwort setzen
+       data-page="404"               die Fehlerseite (auch "not-found")
+
+     EIN Element fuer alle vier, nur data-page unterscheidet sie. Es sind dieselben Dateien wie die
+     Anmeldeseite (auth-page.js/.css) und dasselbe Raster: Karte mit 16px Polster, Logo oben links,
+     Theme-Knopf oben rechts, Inhalt mittig, die blaue Flaeche der rechten Spalte als Grund unten.
+
+     Die GANZE Seite ist dieses eine HTML-Element. Auf volle Breite und volle Hoehe setzen, ohne
+     eigenes Padding, und nichts darum herum.
+
+     ── FRISCHE INSTALLATION ──────────────────────────────────────────────────────────────────
+     Diese Datei ist eine VORLAGE. Aenderungen daran erreichen ein bereits eingebautes Element
+     NICHT -- dort muss dasselbe von Hand nachgezogen werden.
+
+     ── WAS DIESE SEITEN NICHT BRAUCHEN ───────────────────────────────────────────────────────
+       data-cdn-pin    Kommt aus dem Vorlade-Skript im Seitenkopf (page_header_preload, steht
+                       app-weit unter Settings > SEO/metatags und laeuft damit auch hier). Der
+                       Loader unten nimmt dessen window.__upPin. Wer trotzdem einen setzt: er
+                       muss derselbe sein wie im Seitenkopf, sonst meldet die Konsole zwei Pins.
+       data-isdark     Das Theme liest die Seite selbst: erst pref_theme aus dem Speicher (dieselbe
+                       Wahl wie in der App, der Theme-Knopf oben rechts schreibt sie auch dorthin),
+                       sonst die Einstellung des Systems. Ein data-isdark am Element gewinnt, wenn
+                       es dasteht -- also lieber weglassen, sonst schlaegt ein fester Wert die Wahl
+                       des Nutzers.
+       data-logo       Die Wortmarke kommt von selbst, je Thema die passende (dieselben Dateien wie
+                       das Wasserzeichen in core.css). Nur setzen, wenn eine andere hin soll.
+
+     ── ATTRIBUTE ─────────────────────────────────────────────────────────────────────────────
+       data-instance   eindeutig pro Seite. Die Setter sprechen ueber diese ID.
+       data-page       siehe oben. Ohne das Attribut wird daraus die Anmeldeseite.
+       data-login-url  Wohin "Back to sign in" fuehrt. Vorgabe: /signup?mode=login
+       data-forgot-url Wohin "Request a new link" fuehrt (abgelaufener Link auf reset-password).
+                       Vorgabe: /forgot-password. Die Adresse wird als ?email= angehaengt, wenn
+                       die Seite sie kennt.
+       data-home-url   Wohin "Go to dashboard" fuehrt (404). Vorgabe: /
+       data-bg         Optional: dasselbe Hintergrundbild wie data-bg der Anmeldeseite, fuer die
+                       Flaeche unten. Ohne bleibt der Verlauf mit dem Linienmuster allein.
+
+       Die Adresse liest die Seite aus ?email= (auch ?mail=):
+         check-email      zeigt sie unter dem Satz ("We sent you a confirmation link ...")
+         forgot-password  fuellt das Feld vor
+         reset-password   reicht sie an "Request a new link" weiter
+       Ohne ?email= fehlt sie einfach -- keine der Seiten braucht sie.
+
+     ── EVENTS (JavaScriptToBubble, Value type TEXT, Trigger event an) ────────────────────────
+     Nur zwei, auf zwei Seiten. Alle Wege zurueck sind Links und brauchen nichts.
+
+       data-forgot-fn  = "bubble_fn_uauForgot"          (nur forgot-password)
+         ROHER WERT, kein JSON: der Wert IST die Adresse, schon geprueft (Form, getrimmt).
+         In Bubble also schlicht:  This JavaScriptToBubble's value
+         Feuert beim Klick auf "Send reset link" UND bei "Resend link" im Erfolgsblock (der
+         wartet 60 Sekunden, so lange sperrt Supabase dieselbe Adresse ohnehin).
+
+       data-newpw-fn   = "bubble_fn_uauNewPassword"     (nur reset-password)
+         ROHER WERT: das neue Passwort. Geprueft sind: vorhanden, mindestens 8 Zeichen, beide
+         Felder gleich. Nach dem Workflow den State ausdruecklich leeren -- in beiden Zweigen.
+
+       Nach beiden Events steht die Seite im Ladezustand (Spinner, Felder gesperrt). Heraus kommt
+       sie NUR durch setAuthPageDone oder einen der Fehler-Setter. Nach 20 Sekunden ohne beides
+       entsperrt sie sich selbst mit "That took longer than expected." -- das ist die Notbremse,
+       nicht der Normalweg. Steht der Satz im Alltag da, fehlt im Workflow der Fehlerzweig.
+
+     ── DATEN HEREIN ──────────────────────────────────────────────────────────────────────────
+
+       setAuthPageDone(instanceId)
+         Erfolg. Ohne weitere Werte stehen die festen Texte da:
+           forgot-password  "Check your email" / "If an account exists for <adresse>, you'll get
+                            a link to reset your password." -- ABSICHTLICH neutral, ob es das
+                            Konto gibt oder nicht. Sonst liesse sich mit der Seite pruefen, welche
+                            Adressen ein Konto haben.
+           reset-password   "Password updated" plus "Continue to sign in"
+         Eigene Texte gehen als zweiter und dritter Wert: setAuthPageDone(id, titel, text).
+
+       setAuthPageServerError(instanceId, fehlertext)          NEU 07.10., der Normalfall
+         Nimmt den Fehler, WIE SUPABASE IHN LIEFERT -- Code oder Meldung, auch beides
+         hintereinander -- und macht daraus einen Satz fuer den Nutzer, am richtigen Feld:
+           same_password / "should be different"   -> am Passwortfeld
+           weak_password / pwned / "at least"      -> am Passwortfeld
+           otp_expired / "session missing"         -> ueber dem Formular, mit "Request a new link"
+           over_email_send_rate_limit / "after 47 seconds"  -> ueber dem Formular, mit Sekunden
+           over_request_rate_limit                 -> ueber dem Formular
+           email_address_invalid                   -> am Adressfeld
+           user_not_found (nur forgot-password)    -> die neutrale Bestaetigung, KEIN Fehler
+           Netzwerkfehler                          -> ueber dem Formular
+           alles Unbekannte                        -> "Something went wrong. Please try again."
+         Kein Technikertext erreicht den Nutzer: was nicht erkannt wird, wird der Satz oben.
+
+       setAuthPageError(instanceId, feld, text)
+         Fuer einen eigenen Satz. feld = "email" | "password" | "confirm" | "" (Kasten oben).
+
+       setAuthPageLoading(instanceId, "yes"|"no")   resetAuthPage(instanceId)
+         Wie auf der Anmeldeseite. Selten noetig.
+
+     ── EINBAU JE SEITE ───────────────────────────────────────────────────────────────────────
+
+     1. CHECK-EMAIL  (Bubble-Seite z.B. "check-email")
+        Element mit data-page="check-email", sonst nichts. Kein Workflow.
+        Hinfuehren: am Ende des Signup-Workflows, WENN das Konto erst bestaetigt werden muss
+          Go to page check-email, Send more parameters: email = <die Adresse>
+
+     2. FORGOT-PASSWORD  (Bubble-Seite z.B. "forgot-password")
+        Element mit data-page="forgot-password" und data-forgot-fn.
+        JavaScriptToBubble "uauForgot" (TEXT, Trigger event).
+        Workflow "When uauForgot event":
+          a) Supabase-Plugin: Passwort-Ruecksetzung anfordern (resetPasswordForEmail)
+               email       = uauForgot's value
+               redirect_to = https://app.upstreem.ai/reset-password
+                             (muss in Supabase unter Auth > URL Configuration > Redirect URLs
+                             erlaubt sein, sonst landet der Link auf der Site URL)
+          b) Erfolg -> Run JavaScript:
+               (function () {
+                 try { if (window.setAuthPageDone) window.setAuthPageDone("forgot_page"); } catch (e) {}
+               })();
+          c) Fehler -> Run JavaScript (Schritt unten, "DER FEHLERSCHRITT").
+        Hinfuehren: der Link "Forgot password?" der Anmeldeseite feuert uauSide mit
+          mode = "login" und der eingetippten Adresse. Workflow dort:
+          Go to page forgot-password, Send more parameters: email = <email aus uauSide>
+
+     3. RESET-PASSWORD  (Bubble-Seite z.B. "reset-password")
+        Element mit data-page="reset-password" und data-newpw-fn.
+        JavaScriptToBubble "uauNewPassword" (TEXT, Trigger event).
+        Das Supabase-Plugin muss auf dieser Seite stehen: es liest die Sitzung aus dem
+        Ruecksetzlink (access_token im #-Teil bzw. ?code=). Die Seite selbst fasst diesen Teil
+        der Adresse NICHT an -- nur Fehlerangaben (#error=...) raeumt sie weg.
+        Workflow "When uauNewPassword event":
+          a) Supabase-Plugin: Benutzer aktualisieren (updateUser), password = uauNewPassword's value
+          b) Erfolg -> Run JavaScript:
+               (function () {
+                 try { if (window.setAuthPageDone) window.setAuthPageDone("reset_page"); } catch (e) {}
+               })();
+             Empfohlen danach: Log the user out. Der Ruecksetzlink hat eine Sitzung eroeffnet;
+             ohne Abmelden fuehrt "Continue to sign in" auf eine Anmeldeseite, waehrend man schon
+             angemeldet ist.
+          c) Fehler -> Run JavaScript (Schritt unten).
+          d) In BEIDEN Zweigen den State des Passworts wieder leeren.
+        Ein abgelaufener oder schon benutzter Link braucht KEINEN Workflow: Supabase schickt den
+        Browser mit #error_code=otp_expired zurueck, die Seite zeigt den Satz und "Request a new
+        link" sofort beim Laden.
+
+     4. 404  (die eingebaute Bubble-Seite "404")
+        Element mit data-page="404", sonst nichts. "Go back" geht zurueck, wenn man von einer
+        Seite der App kam, sonst zum Dashboard (data-home-url).
+
+     ── DER FEHLERSCHRITT (forgot-password und reset-password) ───────────────────────────────
+     Der Fehlertext ist TEXT, kein JSON. Deshalb OHNE die beiden Ersetzungen aus STYLEGUIDE §46:
+     die sind fuer JSON-Nutzlasten gebaut und wuerden aus einer Meldung wie "AuthApiError: ,"
+     "AuthApiError: null," machen. Ein Backtick, der rohe Text, ein try -- wie der Fehlerschritt
+     in bubble/signup_invite_setup.md.
+
+       (function () {
+         var FEHLER = `[Fehlertext des Supabase-Plugins, z.B. Supabase Auth A's error message]`;
+         try { if (window.setAuthPageServerError) window.setAuthPageServerError("reset_page", FEHLER); } catch (e) {}
+       })();
+
+     Welcher Ausdruck: den, den das Plugin fuer den letzten Fehler anbietet (meist ein State
+     "error message" am Supabase-Element, gefuellt in dessen Event "an error occurs"). Hat es
+     Code und Meldung getrennt, beide hintereinander in denselben Backtick -- die Seite liest
+     beides:  `[error code] [error message]`
+
+     Dieselbe Fassung STATISCH, mit einer echten Supabase-Antwort -- zum Ausprobieren, ob die
+     Seite antwortet, bevor das Plugin verdrahtet ist:
+
+       (function () {
+         var FEHLER = `same_password New password should be different from the old password.`;
+         try { if (window.setAuthPageServerError) window.setAuthPageServerError("reset_page", FEHLER); } catch (e) {}
+       })();
+
+       (function () {
+         var FEHLER = `over_email_send_rate_limit For security purposes, you can only request this after 47 seconds.`;
+         try { if (window.setAuthPageServerError) window.setAuthPageServerError("forgot_page", FEHLER); } catch (e) {}
+       })();
+
+     Die drei Zeichen, die im Backtick gefaehrlich sind (Backtick, Dollar mit geschweifter
+     Klammer, Backslash), kommen in Supabase-Meldungen nicht vor.
+-->
+
+<div class="up-root uau-root"
+     data-instance="INSTANCE_ID"
+     data-page="PAGE"
+     data-login-url="/signup?mode=login"
+     data-forgot-url="/forgot-password"
+     data-home-url="/"
+     data-forgot-fn="bubble_fn_uauForgot"
+     data-newpw-fn="bubble_fn_uauNewPassword"></div>
+
+<script>
+(function(){
+  /* Derselbe Loader wie in auth_page_bubble.html -- dort stehen die Begruendungen zu jeder Stufe.
+     Ohne data-cdn-pin am Element greift die zweite Stufe: window.__upPin aus dem Seitenkopf. */
+  function echterPin(p){
+    p = String(p == null ? "" : p).trim();
+    return (p && p !== "CDN_" + "PIN") ? p : "";
+  }
+  function readPin(cls){
+    var i, p, els = document.getElementsByClassName(cls);
+    for (i = 0; i < els.length; i++){
+      p = echterPin(els[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    if (echterPin(window.__upPin)) return window.__upPin;
+    var alle = document.querySelectorAll ? document.querySelectorAll("[data-cdn-pin]") : [];
+    for (i = 0; i < alle.length; i++){
+      p = echterPin(alle[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    var L0 = window.__upAssetsLoaded, k, m;
+    for (k in L0){
+      if (!Object.prototype.hasOwnProperty.call(L0, k)) continue;
+      m = String(L0[k] || "").match(/upstreem-ui@([^/]+)\//);
+      if (m && m[1] && m[1] !== "main") return (window.__upPin = m[1]);
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uau-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  css("core.css");        js("core.js");
+  css("auth-page.css");   js("auth-page.js");
+})();
+</script>

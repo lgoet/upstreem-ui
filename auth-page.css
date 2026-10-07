@@ -369,7 +369,9 @@
 }
 .uau-primary:hover:not(:disabled) { opacity: .9; }
 .uau-primary:disabled { opacity: .55; cursor: default; }
-.uau-google {
+/* .uau-sek (07.10.) ist derselbe umrandete Knopf ohne Google-Zeichen -- "Back to sign in" und
+   "Go back" auf den Seiten ohne Anmeldeformular. Eine Regel, damit beide gleich bleiben. */
+.uau-google, .uau-sek {
   margin-top: clamp(12px, 2vh, 18px); height: 40px; width: 100%;
   border: 1px solid var(--vc-border); border-radius: 12px;
   background: var(--vc-bg); color: var(--vc-text);
@@ -378,7 +380,7 @@
   display: inline-flex; align-items: center; justify-content: center; gap: 11px;
   transition: background var(--uau-t) var(--uau-ease), border-color var(--uau-t) var(--uau-ease);
 }
-.uau-google:hover:not(:disabled) { background: var(--uau-hover); }
+.uau-google:hover:not(:disabled), .uau-sek:hover { background: var(--uau-hover); }
 .uau-google:disabled { opacity: .55; cursor: default; }
 .uau-google svg { width: 19px; height: 19px; display: block; flex: 0 0 auto; }
 
@@ -472,10 +474,15 @@
 
 /* ---------- rechte Spalte ---------- */
 .uau-panel {
-  border-radius: 32px; overflow: hidden; position: relative;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: clamp(16px, 1.8vw, 26px); text-align: center;
   padding: clamp(32px, 4vw, 64px) clamp(28px, 3.6vw, 56px);
+}
+/* Die FLAECHE der rechten Spalte -- und seit dem 07.10. auch der Grund der Seiten ohne
+   Anmeldeformular (.uau-solo-bg, unten). Eine Regel fuer beide: dieselbe Flaeche soll an beiden
+   Stellen dieselbe sein, und zwei Abschriften liefen beim naechsten Farbwechsel auseinander. */
+.uau-panel, .uau-solo-bg {
+  border-radius: 32px; overflow: hidden; position: relative;
   background-color: #cfd8ea;
   /* Der Verlauf liegt UEBER dem Bild (--uau-bgimg, vom JS gesetzt). Steht keine Bildquelle da,
      bleibt der Verlauf allein -- ruhiger, aber nicht kaputt. */
@@ -500,7 +507,8 @@
    zieht damit mit (Google-Knopf und Theme-Schalter). */
 .uau-root[data-theme="dark"] { --uau-hover: var(--vc-heading-bg); }
 
-.uau-root[data-theme="dark"] .uau-panel {
+.uau-root[data-theme="dark"] .uau-panel,
+.uau-root[data-theme="dark"] .uau-solo-bg {
   background-color: #16203a;
   background-image: linear-gradient(180deg, rgba(12,17,32,.72), rgba(10,14,28,.88) 70%),
                     var(--uau-bgimg, none);
@@ -516,7 +524,7 @@
    Die Kinder bekommen dafuer position: relative, sonst legt sich die absolut gesetzte Ebene
    ueber Ueberschrift, Text und den Promptbalken. */
 .uau-panel > * { position: relative; z-index: 1; }
-.uau-panel::after {
+.uau-panel::after, .uau-solo-bg::after {
   content: ""; position: absolute; z-index: 0; pointer-events: none;
   left: 0; right: 0; top: 0; bottom: 0;
   background: repeating-linear-gradient(to right,
@@ -536,7 +544,8 @@
    statt aufgelegt.
    Die Rechnung ist nicht dieselbe wie im Hellen: auf einem dunklen Grund braucht eine dunkle
    Linie mehr Deckkraft als eine helle, um ueberhaupt gesehen zu werden -- .30 statt .26. */
-.uau-root[data-theme="dark"] .uau-panel::after {
+.uau-root[data-theme="dark"] .uau-panel::after,
+.uau-root[data-theme="dark"] .uau-solo-bg::after {
   background: repeating-linear-gradient(to right,
               rgba(0, 0, 0, .30) 0, rgba(0, 0, 0, .30) 1px,
               transparent 1px, transparent 8px);
@@ -598,6 +607,127 @@
 .uau-send svg { width: 52%; height: 52%; display: block; }
 .uau-panel-f { font-size: clamp(12px, .95vw, 14px); font-weight: 500; color: var(--vc-muted); }
 
+/* ══ DIE SEITEN OHNE ANMELDEFORMULAR (07.10.) ══════════════════════════════════════════════
+   Check Email, Passwort vergessen, Neues Passwort, 404 -- data-page am Element, auth-page.js
+   setzt is-solo. Dasselbe Raster wie die Anmeldeseite: dieselbe Karte (16px Polster), Logo und
+   Theme-Knopf oben in derselben Zeile mit denselben Abstaenden (.uau-form traegt sie). Nur der
+   Inhalt steht in der MITTE der Seite statt in einer linken Spalte -- es gibt keine rechte.
+   Die Flaeche der rechten Spalte liegt dafuer als Grund unten (.uau-solo-bg), nach oben
+   ausblendend: die Seite traegt dieselbe Marke wie die Anmeldeseite, und der Text steht auf
+   Weiss, wo er lesbar bleibt. */
+.uau-card.is-solo { grid-template-columns: 1fr; position: relative; }
+/* Ueber dem Grund: Logo, Knopf und Inhalt liegen VOR der Flaeche. */
+.uau-root.is-solo .uau-form { position: relative; z-index: 1; }
+.uau-root.is-solo .uau-mid { align-items: center; }
+/* 400 und nicht die 440 der Anmeldeseite: dort steht der Block linksbuendig neben einem Bild, hier
+   allein in der Mitte -- dieselbe Breite saehe zentriert breiter aus, als sie ist. Der Wert ist
+   die Breite, in der "Forgot your password?" auf einer Zeile steht. */
+.uau-root.is-solo .uau-block { max-width: 400px; }
+/* Die Spalte des Stapels (Formular und Erfolg uebereinander, .uau-stack) darf schmaler werden als
+   ihr laengstes Wort. Ohne minmax(0, ...) waechst eine Rasterspalte auf die Mindestbreite ihres
+   Inhalts -- eine lange Adresse im Chip schob die Seite auf 375px nach rechts hinaus (gemessen). */
+.uau-root.is-solo .uau-stack { grid-template-columns: minmax(0, 1fr); }
+.uau-solo-bg {
+  position: absolute; z-index: 0; left: 16px; right: 16px; bottom: 16px; height: 46%;
+  pointer-events: none;
+  /* Nach oben in den Seitengrund auslaufen -- eine harte Kante mitten auf der Seite saehe wie ein
+     zweiter Kasten aus. Die Maske gilt fuer die ganze Flaeche samt Linienmuster (::after). */
+  -webkit-mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.55) 45%, transparent 100%);
+  mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.55) 45%, transparent 100%);
+}
+
+/* Kopf: Zeichen, Ueberschrift, Satz -- mittig. */
+.uau-solo-kopf { display: flex; flex-direction: column; align-items: center; text-align: center; }
+/* Die Kachel hat die Geometrie des Erfolgszeichens (.uau-done-ic: 44px, rund, 18px darunter),
+   nur ohne dessen Gruen: sie zeigt, worum es geht, nicht dass etwas gelungen ist. */
+.uau-solo-ic {
+  width: 44px; height: 44px; border-radius: 50%; margin-bottom: 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--vc-heading-bg); border: 1px solid var(--vc-border); color: var(--vc-text);
+}
+.uau-solo-ic svg { width: 20px; height: 20px; display: block; }
+.uau-solo-kopf .uau-done-ic { margin-bottom: 18px; }
+/* Eine Zeile statt zwei wie auf der Anmeldeseite ("Hi, / Welcome Back"): die Obergrenze liegt
+   deshalb tiefer, sonst bricht "Forgot your password?" in 400px um. */
+.uau-solo-h1 { font-size: clamp(26px, min(2.6vw, 4vh), 36px); text-wrap: balance; }
+/* Die Unterzeile in der Drittfarbe (07.10. angefordert: "darunter Drittcolor"). */
+.uau-root.is-solo .uau-sub { color: var(--vc-third); text-wrap: balance; }
+/* Die Adresse, an die geschrieben wurde: der ruhige Flaechenton der App, damit sie als WERT
+   lesbar ist und nicht als Teil des Satzes. */
+.uau-solo-mail {
+  /* overflow: hidden ist hier kein Zierrat: als Kind einer Flex-Spalte waere der Chip sonst so
+     breit wie die ganze Adresse (min-content) und schoebe die Seite auf dem Telefon nach rechts
+     hinaus -- gemessen mit einer langen Adresse auf 375px. So kuerzt er mit "...". */
+  margin-top: 16px; max-width: 100%; overflow: hidden;
+  display: inline-flex; align-items: center; height: 28px; padding: 0 12px;
+  border-radius: 999px; background: var(--vc-heading-bg); border: 1px solid var(--vc-border);
+  font-size: 13px; font-weight: 500; color: var(--vc-text);
+}
+.uau-solo-mail span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uau-root.is-solo .uau-fields { margin-top: clamp(20px, 3.4vh, 32px); }
+/* Ein Link ist hier ein Knopf -- ohne Unterstrich, mit der Farbe seiner Klasse. */
+a.uau-primary, a.uau-sek, a.uau-back { text-decoration: none; }
+a.uau-primary { color: var(--up-accent-fg); }
+.uau-sek svg { width: 16px; height: 16px; display: block; flex: 0 0 auto; }
+.uau-sek { gap: 8px; }
+/* "Back to sign in" als Hauptweg (Check Email): derselbe Abstand wie der Hauptknopf der
+   Anmeldeseite unter dem Feldstapel. */
+.uau-solo-weg { margin-top: 32px; }
+/* Der leise Weg zurueck unter einem Formular: mittig, klein, wie der Seitenlink der Anmeldeseite. */
+.uau-back {
+  display: flex; width: fit-content; margin: 20px auto 0; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 500; color: var(--vc-muted);
+  transition: color var(--uau-t) var(--uau-ease);
+}
+.uau-back:hover { color: var(--vc-text); }
+.uau-back svg { width: 14px; height: 14px; display: block; }
+.uau-solo-hinweis {
+  margin: 16px 0 0; text-align: center; font-size: 13px; line-height: 1.45; color: var(--vc-third);
+}
+.uau-solo-wieder { display: flex; justify-content: center; align-items: center; gap: 6px; }
+.uau-solo-wieder .uau-side { color: var(--vc-text); }
+.uau-solo-wieder .uau-side:disabled { color: var(--vc-third); cursor: default; }
+/* Der Weg zu einem neuen Link steht IM Fehlerkasten, direkt hinter dem Satz. */
+.uau-formerr-link { margin-left: 6px; font-weight: 600; color: var(--vc-text); text-decoration: underline;
+  text-underline-offset: 2px; white-space: nowrap; }
+.uau-formerr-link[hidden] { display: none; }
+/* Fuer den Passwortverwalter da, fuer niemanden sichtbar. */
+.uau-solo-user { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+/* ---------- 404 ----------
+   Die Ziffern tragen das Linienmuster der Anmeldeseite und der Landingpage: senkrechte Striche in
+   der Schriftfarbe, durch die Zahl geschnitten (background-clip: text). Kein Bild, keine
+   Illustration -- die Marke steckt im Muster, und die Seite bleibt so ruhig wie der Rest. */
+.uau-404 {
+  font-size: clamp(96px, min(15vw, 22vh), 184px); line-height: .86; font-weight: 600;
+  letter-spacing: -.06em; text-align: center; user-select: none;
+  margin: 0 auto 22px; padding-right: .06em;
+  color: transparent;
+  background-image: repeating-linear-gradient(to right, var(--vc-text) 0, var(--vc-text) 2px,
+                    transparent 2px, transparent 6px);
+  -webkit-background-clip: text; background-clip: text;
+}
+/* Zwei Wege nebeneinander: zum Dashboard (Hauptweg) und zurueck. */
+.uau-solo-reihe { margin-top: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.uau-solo-reihe > .uau-primary, .uau-solo-reihe > .uau-sek { margin-top: 0; }
+
+/* Einzug wie auf der Anmeldeseite: Kopf, dann der Bedienteil, 130ms spaeter. */
+.uau-root.is-entering .uau-solo-kopf,
+.uau-root.is-entering .uau-404,
+.uau-root.is-entering .uau-solo-reihe,
+.uau-root.is-entering .uau-solo-weg,
+.uau-root.is-entering .uau-back,
+.uau-root.is-entering .uau-solo-hinweis { animation: uau-rise var(--uau-in) var(--uau-ease) backwards; }
+.uau-root.is-entering .uau-404 { animation-delay: 0ms; }
+.uau-root.is-entering .uau-solo-kopf { animation-delay: 60ms; }
+.uau-root.is-entering .uau-solo-reihe,
+.uau-root.is-entering .uau-solo-weg { animation-delay: 130ms; }
+.uau-root.is-entering .uau-back,
+.uau-root.is-entering .uau-solo-hinweis { animation-delay: 200ms; }
+/* In der Reihe bewegt sich die Reihe, nicht noch einmal ihre Knoepfe. */
+.uau-root.is-entering .uau-solo-reihe > .uau-primary,
+.uau-root.is-entering .uau-solo-reihe > .uau-sek { animation: none; }
+
 /* ---------- schmal ----------
    Unter 900px stapelt der Handoff die Spalten. Der Werbeblock steht dann UNTER dem Formular und
    nicht daneben: wer sich auf einem Telefon anmeldet, will das Feld sehen, nicht die Werbung. */
@@ -614,6 +744,11 @@
 .uau-root.is-narrow .uau-card { gap: 0; }
 .uau-root.is-narrow .uau-block { max-width: none; }
 .uau-root.is-narrow .uau-mid { justify-content: flex-start; padding-top: 28px; }
+/* Die Seiten ohne Formular bleiben auch schmal mittig -- sie haben nur wenig Inhalt, und oben
+   angeklebt stuende er unter dem Logo wie vergessen. Der Grund wird flacher. */
+.uau-root.is-narrow.is-solo .uau-mid { justify-content: center; padding-top: 0; }
+.uau-root.is-narrow.is-solo .uau-block { max-width: 400px; }
+.uau-root.is-narrow .uau-solo-bg { height: 34%; }
 
 /* Wer Bewegung abgestellt hat, bekommt die Zustaende trotzdem -- nur ohne Weg dorthin.
    Ueber die Variable, nicht ueber transition-duration mit !important: alle Uebergaenge dieser

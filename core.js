@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261101;
+  var BUILD = 20261102;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -156,6 +156,13 @@
   }
 
   function isYes(v){ return /^(1|true|yes|y)$/i.test(String(v == null ? "" : v).trim()); }
+  /* ---- SIEHT DAS AUS WIE EINE E-MAIL-ADRESSE? (07.10.) ----------------------------------------
+     Stand bis dahin als Kopie in auth-page.js und team-orga.js, wortgleich; die Seiten "Passwort
+     vergessen" und "Neues Passwort" brauchten sie ein drittes und viertes Mal. Die Regel ist
+     bewusst grob: ein Muster nach RFC 5322 weist echte Adressen ab (Pluszeichen, Umlaute, lange
+     Endungen), und eine Seite, die eine gueltige Adresse ablehnt, kostet einen Nutzer. Was wirklich
+     zustellbar ist, weiss ohnehin nur der Server. */
+  function mailOk(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v == null ? "" : v).trim()); }
 
   /* ---- Flaggenplaettchen -----------------------------------------------------------------------
      Woertlich aus filters/markets-filter.js hierher gezogen, weil es dort einen zweiten Abnehmer
@@ -21346,7 +21353,7 @@
     PAGE_SIZES: PAGE_SIZES,
     DEFAULT_PAGE_SIZE: DEFAULT_PAGE_SIZE,
     fmtTotal: fmtTotal,
-    isYes: isYes,
+    isYes: isYes, mailOk: mailOk,
     parseLoose: parseLoose,
     normParams: normParams,
     makeToolGroup: makeToolGroup,

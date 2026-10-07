@@ -74,7 +74,7 @@
     var esc = UC.esc, fmtDate = UC.fmtDate;
 
     var MISSING = ["makeMount", "makeFire", "makePopover", "makeTooltips", "widthTiers",
-                   "skeletonRows", "leseFehlerHtml", "readBubble", "icon", "esc", "fmtDate"]
+                   "skeletonRows", "leseFehlerHtml", "readBubble", "icon", "esc", "fmtDate", "mailOk"]
       .filter(function (k) { return typeof UC[k] !== "function"; });
     if (MISSING.length && window.console) {
       console.error("[team-orga] Die core.js auf dieser Seite ist AELTER als team-orga.js, es " +
@@ -227,10 +227,11 @@
            dieselben 8 Sekunden, mit denen der Switch-Knopf in teams.js sich selbst wieder oeffnet. */
         if (D.sendet) D.uhr = setTimeout(function () { setSendet(false); }, 8000);
       }
-      /* Ein Punkt und ein Punkt hinter dem @ -- mehr prueft diese Seite nicht. Die richtige
+      /* Ein Punkt und ein Punkt hinter dem @ -- mehr prueft diese Seite nicht (UC.mailOk, seit dem
+         07.10. in core: dieselbe Regel stand hier und in auth-page.js als Kopie). Die richtige
          Pruefung ist der Versand: ob es die Adresse GIBT, weiss nur der Mailserver, und eine
          strengere Regel hier sperrt regelmaessig gueltige Adressen aus. */
-      function mailOk(s) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s); }
+      function mailOk(s) { return UC.mailOk(s); }
 
       function senden() {
         if (D.sendet) return;
