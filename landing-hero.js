@@ -1779,7 +1779,7 @@
     { breit: 60, vis: "zeilen",
       h: "Know which buyer questions you win",
       p: "Every tracked prompt, grouped by topic, with who gets named and where you land." },
-    { breit: 60, vis: "domains",
+    { breit: 60, vis: "domains", muster: true,
       h: "See which pages AI trusts most",
       p: "The domains and exact URLs the models cite, so you know where to get mentioned next." },
     { breit: 40, vis: "chancen",
@@ -1956,13 +1956,18 @@
      in der App auch keine Marken: dort steht das Minuszeichen des leeren Stapels. Ein Stapel neben
      "–" in allen anderen Spalten waere ein Widerspruch in derselben Zeile. */
   var VIS_ZEILEN = [
-    { prompt: "Best premium electric SUV",     vis: 38.9, marken: ["ac", "bm", "au", "te"], nennungen: 6, themen: [2, 1], markt: "US" },
+    /* LAENGERE PROMPTS (07.10. angefordert), einer bricht in die zweite Zeile um -- wie in der App
+       hoechstens zwei Zeilen (.upt-prompt-text klemmt dort auf zwei). Gemessen, nicht geschaetzt:
+       die Prompt-Spalte bietet bei 1280 248px, bei 1440 393px, ab 1680 510px. Die kurzen bleiben
+       unter 393 (ab 1440 einzeilig), der lange liegt mit 570 ueber 510 und bricht ueberall um.
+       Bei 1280 brechen zwei weitere um, auch dort hoechstens zweizeilig. */
+    { prompt: "Best premium EV for a family of five", vis: 38.9, marken: ["ac", "bm", "au", "te"], nennungen: 6, themen: [2, 1], markt: "US" },
     /* Der Leerzustand steht in der dritten Zeile -- auch in einer Vorschau gehoert dazu, dass man
        nicht ueberall genannt wird. */
-    { prompt: "Premium SUV leasing rates",     vis: 21.4, marken: ["ac", "bm", "au", "vo"], nennungen: 5, themen: [0],    markt: "US" },
+    { prompt: "Premium SUV lease or buy in 2026", vis: 21.4, marken: ["ac", "bm", "au", "vo"], nennungen: 5, themen: [0],    markt: "US" },
     { prompt: "Alternativen zum BMW iX",       vis: null, marken: [],                       nennungen: 0, themen: [1, 2], markt: "DE" },
-    { prompt: "Longest range electric estate", vis: 18.2, marken: ["ac", "te", "vo"],       nennungen: 3, themen: [2],    markt: "UK" },
-    { prompt: "Which EV charges fastest",      vis: null, marken: [],                       nennungen: 0, themen: [3, 2], markt: "US" },
+    { prompt: "Which electric estate has the longest real-world range in winter, with a roof box?", vis: 18.2, marken: ["ac", "te", "vo"],       nennungen: 3, themen: [2],    markt: "GB" },   /* ISO-Code: mit "UK" fand marketChip keine Flagge */
+    { prompt: "Which EV charges fastest on a long road trip", vis: null, marken: [],                       nennungen: 0, themen: [3, 2], markt: "US" },
     /* Zwei Zeilen mehr (07.10.): die Karte ist hoeher geworden, und eine Tabelle, die nach fuenf
        Zeilen in Weiss endet, sieht leer aus statt angeschnitten. */
     { prompt: "Most reliable luxury EV brand", vis: 27.6, marken: ["bm", "ac", "au"],       nennungen: 4, themen: [0],    markt: "US" },
@@ -2107,6 +2112,9 @@
     { url: "https://www.reddit.com/r/cars/comments/5e6f7g/leasing_vs_buying_in_2026/", anteil: 7.1, typ: "forum", gesehen: "Aug 21, 2026" }
   ];
 
+  /* Die Zahl neben "Domains" im Kopf der Vorschau. */
+  var VIS_DOM_ZAHL = 312;
+
   function visDomains(){
     var kern = window.UpstreemCore;
     function tag(typ, modus){
@@ -2134,11 +2142,31 @@
        Namen und Seitenknopf immer noch Platz, und Share, Type und Last Seen standen enger als
        noetig. Type ist dabei so breit, dass die laengste Pille ("UGC / Community", 163px mit
        allem) ganz hineinpasst. */
-    var cols = "--up-cols: minmax(0,1fr) 138px 192px 136px;";
-    var html = '<div class="ulh-vis-dom" style="' + cols + '">' +
-      '<div class="up-row up-thead"><div class="up-td">Domain</div>' +
-      '<div class="up-td">Share</div><div class="up-td">Type</div>' +
-      '<div class="up-td">Last Seen</div></div>';
+    /* OHNE LAST SEEN (07.10. angefordert) -- in der Tabelle und in der aufgeklappten Seitenliste.
+       Die frei werdenden 136px gehen an Share und Type (mehr Luft rechts, wie in der Prompt-Karte)
+       und an die Domainspalte. */
+    var cols = "--up-cols: minmax(0,1fr) 160px 210px;";
+    /* WIE DIE PROMPT-KARTE (07.10. angefordert: "das gleiche mit der Domains-Tabelle"): der Kopf der
+       App ueber der Tabelle (.up-heading mit Zahl, .up-tbtrig, .up-export -- in der App klappt
+       domains-table seine Werkzeuge ebenfalls ueber UC.makeToolGroup ein) und die Spaltenkoepfe als
+       .up-th. Kaestchen gibt es hier KEINE: die Domain-Tabelle der App hat keine Auswahl.
+       DER RAHMEN (07.10., nach einer Vorlage des Nutzers): ein halbdurchsichtiger Rand um ein
+       weisses Fenster, darin Kopf und Tabelle -- nur die Grafik ist uebernommen, Inhalt und Aufbau
+       sind die der App. */
+    var html = '<div class="ulh-rahmen"><div class="ulh-rahmen-in">' +
+      '<div class="up-head ulh-vis-kopf">' +
+        '<div class="up-heading has-count"><span class="up-head-label">Domains</span>' +
+          '<span class="up-head-sep"></span><span class="up-head-count">' + VIS_DOM_ZAHL + '</span></div>' +
+        '<div class="up-head-tools">' +
+          '<button class="up-iconbtn up-tbtrig" type="button" tabindex="-1" aria-hidden="true">' +
+            ((kern && kern.icon) ? kern.icon("listFilterPlus", 2) : "") + '</button>' +
+          EXPORT_KNOPF +
+        '</div>' +
+      '</div>' +
+      '<div class="ulh-vis-dom" style="' + cols + '">' +
+      '<div class="up-row up-thead"><div class="up-th"><span class="up-th-txt">Domain</span></div>' +
+      '<div class="up-th"><span class="up-th-txt">Share</span></div>' +
+      '<div class="up-th"><span class="up-th-txt">Type</span></div></div>';
     VIS_DOM.forEach(function(d, i){
       html += '<div class="up-row' + (d.offen ? " is-expanded" : "") + '">' +
         '<div class="up-td up-td-domain">' +
@@ -2161,7 +2189,6 @@
         '<div class="up-td up-td-share"><span class="udt-num">' + proz(d.share) + '</span>' +
           (kern && kern.trendChip ? kern.trendChip(d.delta, { suffix: "%" }) : "") + '</div>' +
         '<div class="up-td up-td-type">' + tag(d.typ, "domain") + '</div>' +
-        '<div class="up-td up-td-lastseen"><span class="udt-date">' + d.gesehen + '</span></div>' +
       '</div>';
       if (!d.offen) return;
       /* FUENF Spalten wie in der App: Seite, Anteil an der Domain, Typ, zuletzt gesehen und der
@@ -2200,7 +2227,7 @@
             'data-ic="x" data-ic-w="2.2"></button>' +
         '</div>' +
         '<div class="udt-sub-head"><span>Page</span><span class="udt-sub-h-num">Domain Share</span>' +
-        '<span>Type</span><span>Last Seen</span><span></span></div>' +
+        '<span>Type</span><span></span></div>' +
         '<div class="udt-sub-list">' +
         VIS_DOM_URLS.map(function(u){
           var titel = (kern && kern.redditTitleHtml ? kern.redditTitleHtml(u.url, d.dom) : null) || u.url;
@@ -2212,14 +2239,13 @@
             '</span>' +
             '<span class="udt-sub-share">' + proz(u.anteil) + '</span>' +
             '<span class="udt-sub-type">' + tag(u.typ, "url") + '</span>' +
-            '<span class="udt-sub-date">' + u.gesehen + '</span>' +
             '<span class="udt-sub-goto">' + (kern && kern.GOTO_SVG ? kern.GOTO_SVG : "") + '</span>' +
           '</div>';
         }).join("") +
         '</div>' +
       '</div></div>';
     });
-    return html + '</div>';
+    return html + '</div></div></div>';
   }
 
   /* ---- Karte 4: drei Chancen im Listenmodus ----
@@ -2595,6 +2621,10 @@
            enthaelt -- Begruendung am Anfang von landing-hero.css.
            data-up-keepclip dazu: core entklammert beim Mount jedes .up-root die Vorfahrenkette,
            und der Beschnitt hier ist gewollt (er haelt die Vorschau in der Karte). */
+        /* m.muster (07.10.): das Punktraster der Sektion "See what AI answers say about you." hinter
+           der Vorschau, nach aussen ausgeblendet -- eine eigene Ebene, damit die Blende nur das
+           Muster trifft und nicht die Tabelle. */
+        (m.muster ? '<span class="ulh-vis-muster" aria-hidden="true"></span>' : '') +
         '<div class="ulh-vis-in up-root" data-theme="light" data-isdark="no" data-up-keepclip>' +
           visInhalt(m.vis) + '</div>' +
       '</div>' +

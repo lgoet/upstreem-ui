@@ -1586,6 +1586,10 @@
    Kopfzeile, die Werkzeugleiste und die Kopfzeile des Drilldowns -- zusammen 253px, die vier
    Zeilen kommen mit 136 dazu. Gemessen: die vierte endet bei 389. */
 .ulh-vis-domains { --ulh-vs: 0.74; --ulh-vh: 410px; }
+/* DIE DOMAIN-KARTE WIE DIE PROMPT-KARTE (07.10.): kleiner skaliert (0.66), und weil jetzt der Kopf
+   der App und der Rahmen darum stehen, 30px hoeher -- der Drilldown zeigt weiter seine vier
+   Seiten. Ueber [data-ulh-vis] wie dort, zwei Klassen gegen eine. */
+.ulh-vis[data-ulh-vis="domains"] { --ulh-vs: 0.66; --ulh-vh: 440px; }
 .ulh-vis-chancen { --ulh-vs: 0.82; --ulh-vh: 344px; }
 /* ---------- Dritte Sektion: die Quellen -------------------------------------------------------
    Der Kopf steht mittig und ist der groesste Text der Seite -- er traegt die Aussage der Sektion
@@ -2188,6 +2192,55 @@
    (11px, 600, Sperrung, 40px) gelten fuer die Domain-Tabelle weiter; hier gewinnt diese Regel
    ueber die Spezifitaet. */
 .ulh-vis[data-ulh-vis="zeilen"] .ulh-vis-tab .up-thead { height: 45px; flex-basis: 45px; letter-spacing: normal; }
+/* EIN PROMPT DARF UMBRECHEN (07.10. angefordert) -- wie in der App hoechstens zwei Zeilen
+   (.upt-prompt-text: line-clamp 2), danach die Auslassung. Die Zeile ist 72px hoch, zwei Zeilen
+   passen hinein. Nur in dieser Karte: die Regel fuer .ulh-vis-prompt selbst (eine Zeile) gilt
+   anderswo weiter. */
+.ulh-vis[data-ulh-vis="zeilen"] .ulh-vis-prompt {
+  white-space: normal; line-height: 1.35;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+}
+
+/* ---------- Die Domain-Karte: Rahmen und Muster (07.10.) ----------
+   Nach einer Vorlage des Nutzers, nur die GRAFIK: ein halbdurchsichtiger Rand um ein weisses
+   Fenster, und dahinter ein Muster, das nach aussen ausblendet. Inhalt und Aufbau bleiben die der
+   App (Kopf, Tabelle, Drilldown).
+   Das Muster ist NICHT das der Vorlage (Quadrate), sondern das der Sektion "See what AI answers
+   say about you." (.ulh-stimme): 1px-Punkte im 8px-Raster in --ulh-schiene. Eine Seite, ein
+   Punktmuster. Die Blende ist ein Oval etwas unter der Mitte -- zur Kante hin und nach oben zum
+   Kartentext verschwindet es, damit die Karte keinen gemusterten Rand bekommt. */
+.ulh-vis-muster {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 0; pointer-events: none;
+  background-image: radial-gradient(circle, var(--ulh-schiene) 1px, transparent 1px);
+  background-size: 8px 8px;
+  -webkit-mask-image: radial-gradient(ellipse 64% 66% at 50% 56%, #000 32%, transparent 100%);
+  mask-image: radial-gradient(ellipse 64% 66% at 50% 56%, #000 32%, transparent 100%);
+}
+/* Die Vorschau liegt UEBER dem Muster. Platz rundherum, damit vom Muster etwas zu sehen ist
+   (ungeskaliert, also mal 0.66 auf dem Schirm). */
+.ulh-vis[data-ulh-vis="domains"] .ulh-vis-in { position: relative; z-index: 1; padding: 24px 36px 0; box-sizing: border-box; }
+/* Der Rand: 16px halbdurchsichtiges Grau mit eigener Kante und weichem Schatten -- auf dem Schirm
+   gut 10px, so breit wie in der Vorlage (bei 12px waren es 8 und der Rand kaum zu sehen).
+   Konzentrisch: aussen 30 = innen 14 + 16. */
+.ulh-rahmen {
+  padding: 16px; border-radius: 30px;
+  background: rgba(236, 237, 241, .78); border: 1px solid rgba(11, 13, 24, .06);
+  box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 22px 50px rgba(11, 13, 24, .08);
+}
+/* Das Fenster: weiss, eine Kante, darin der Kopf und die Tabelle buendig bis an den Rand -- die
+   Tabelle verliert ihren eigenen Kasten (Rahmen, Radius, Schatten), sonst stuenden zwei Kanten
+   ineinander. */
+.ulh-rahmen-in {
+  background: var(--vc-bg); border: 1px solid var(--ulh-border); border-radius: 14px; overflow: hidden;
+}
+.ulh-rahmen-in > .up-head {
+  height: auto; margin: 0; padding: 12px 12px 12px 16px; border-bottom: 1px solid var(--ulh-border);
+}
+.ulh-rahmen-in > .ulh-vis-dom { border: 0; border-radius: 0; box-shadow: none; }
+/* Die Spaltenkoepfe wie in der App (.up-th aus core, 45px). */
+.ulh-vis[data-ulh-vis="domains"] .ulh-vis-dom .up-thead { height: 45px; flex-basis: 45px; letter-spacing: normal; }
+/* Die Seitenliste ohne Last Seen: vier Spuren statt fuenf (domains-table.css hat fuenf). */
+.ulh-vis[data-ulh-vis="domains"] .udt-subrows { --udt-subcols: minmax(0, 1fr) 112px 128px 34px; }
 /* Alle Hervorhebungen noch einmal halb so schnell: 476 -> 714ms. Und eine andere Kurve, denn
    daran lag das Hektische: --ulh-aus (.1, 1, .2, 1) startet mit voller Geschwindigkeit und klingt
    nur aus -- der Anfang war der Ruck. --ulh-weich ist an beiden Enden flach, die Zeile setzt sich
