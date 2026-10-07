@@ -1,210 +1,103 @@
 /* upstreem performance-detail.css — nur das, was DIESE Komponente zusaetzlich hat.
 
-   Bewusst NICHT hier: Tabellenrahmen (.up-table/.up-thead/.up-row/.up-th/.up-td), Suchfeld
-   (.up-search*), Segment-Switcher (.up-seg*), Icon-Button (.up-iconbtn), Zellen-Primitive
-   (.up-num/.up-sent/.up-rank-group), Trend-Chip (.up-trend), Chart-Rahmen (.up-line-*),
-   Marken-Kachel (.up-stack-*), Topic-Chip (.up-topicchip*), Leerzustand (.up-empty*). Das steht
-   alles in core.css und wird von dort benutzt. Eine zweite, fast identische Kopie ist genau der
-   Fehler aus STYLEGUIDE 25: sie weicht irgendwann um eine Deklaration ab, und niemand sieht beim
-   Schreiben, welche fehlt.
-   Alle Farben kommen aus den --vc-Tokens, damit Light und Dark ohne zweite Palette folgen. */
+   Bewusst NICHT hier: Tabellenrahmen (.up-vartable/.up-thead/.up-row/.up-th/.up-td), Suchfeld
+   (.up-search*), Icon-Button (.up-iconbtn), Zellen-Primitive (.up-num/.up-sent/.up-rank-group),
+   Trend-Chip (.up-trend), Kennzahlen (.up-kpiband/.up-kpi), Kasten (.up-box), Abschnittskopf
+   (.up-sec-head), Logo-Kaestchen (.up-logo-box), Topic-Chip (.up-topicchip*), Leerzustand
+   (.up-empty*), Fusszeile mit Seiten (.up-foot). Das steht alles in core.css und wird von dort
+   benutzt.
 
-.up-root.upd-root {
-  display: block;
-  background: var(--vc-bg);
-  border-radius: 12px;
-  border: 1px solid var(--vc-border);
-  overflow: hidden;
-}
+   AUFBAU SEIT DEM 07.10. wie die Detailbereiche von Events, Shopping und Ads -- die Werte sind
+   deren Werte, nicht neue:
+     Seite und Gruppe     .ush-seite/.ush-gruppe, .uad-seite/.uad-gruppe: 48 und 24
+     Kopf                 .uad-held: Logo 44 (Radius 12, Bild 42/11), Name 22/500, Zeile darunter 13
+     Kurve                .ush-chartbox 16 Polster, Hoehe 240 wie das Produkt-Detail
+     Rangliste            .uev-markt: Zahlenspalten 140, Name mindestens 180-220, quer scrollen
+                          statt abschneiden, Seiten statt senkrecht scrollen
+   Die Karte mit Rahmen um den ganzen Bereich ist weg; die Teile stehen offen auf der Seite wie in
+   den neuen Komponenten. Alle Farben kommen aus den --vc-Tokens. */
+
+.up-root.upd-root { display: block; }
 
 /* Leerzustand und Inhalt tauschen sich aus. Kein display:none auf dem Body allein: der Chart
    braucht beim ersten Aufbau eine messbare Breite, und ein Canvas in einem versteckten Container
    baut mit Breite 0. Deshalb haengt die Sichtbarkeit an der Wurzelklasse, und der Body ist erst
    im DOM-Fluss, wenn wirklich etwas ausgewaehlt ist. */
 .upd-root .upd-body { display: none; }
-/* text-align mit dazu: die Core-Klasse .up-empty zentriert ihren Inhalt ueber ihr eigenes
-   Layout, und die display-Angabe hier setzt das ausser Kraft. Ohne diese Zeile faellt die
-   Zentrierung still weg -- unauffaellig, solange die Kinder volle Breite haben, sichtbar sobald
-   eines eine max-width bekommt (der Skelettbalken sass darum links, der Text mittig). */
-.upd-root .upd-empty { display: block; text-align: center; }
-.upd-root.has-selection .upd-body { display: block; }
+.upd-root.has-selection .upd-body { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
 .upd-root.has-selection .upd-empty { display: none; }
 
+/* Kopf, Kennzahlen und Kurve gehoeren zusammen (24), die Abschnitte darunter stehen mit 48. */
+.upd-gruppe { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.upd-sek { display: flex; flex-direction: column; min-width: 0; }
+/* hidden muss gegen die eigenen display-Regeln gewinnen -- wie in shopping.css und ads.css. */
+.upd-root .upd-sek[hidden], .upd-root .upd-foot[hidden] { display: none; }
+.upd-sec-head .up-sec-h { gap: 6px; }
+.upd-root.is-narrow .upd-sec-head { flex-wrap: wrap; }
 
-.upd-empty-title { font-size: 14px; font-weight: 500; color: var(--vc-text); }
-.upd-empty-sub { margin-top: 6px; font-size: 13px; color: var(--vc-muted); }
-
-/* ---------- Kopfzeile: Marke x Topic ---------- */
-.upd-head {
-  display: flex; align-items: center; gap: 12px;
-  padding: 16px 20px; min-height: 64px;
-  border-bottom: 1px solid var(--vc-border);
-}
-.upd-title { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; }
-.upd-brand { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-/* Die Kachel steht hier einzeln, nicht in einem Stapel: der 4px-Ring, den .up-stack-vis fuer den
-   ueberlappenden Stapel traegt, wuerde hier nur Platz fressen. */
-.upd-brand .up-stack-item { width: 24px; height: 24px; flex: 0 0 24px; }
-.upd-brand .up-stack-vis { box-shadow: none; border-radius: 7px; }
-/* 7 - 1: der Innenradius folgt der Polsterung, und die ist seit dem Angleich an .up-logo-box
-   einen Pixel breit statt zwei. */
-.upd-brand .up-stack-item img { border-radius: 6px; }
-.upd-brand-name {
-  font-size: 14px; font-weight: 500; color: var(--vc-text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-/* Das Mal-Zeichen ist ein Bindeglied, kein Wert: Drittfarbe, damit es die beiden Namen nicht
-   optisch trennt, sondern verbindet. */
-.upd-x { font-size: 14px; color: var(--vc-third); flex: 0 0 auto; }
+/* ---------- Kopf: Marke, darunter Topic und Rang ---------- */
+.upd-held { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.upd-held-logo { display: inline-flex; flex: 0 0 auto; }
+.upd-held-logobox.up-logo-box { width: 44px; height: 44px; flex: 0 0 44px; border-radius: var(--up-r-xl); }
+.upd-held-logobox.up-logo-box img { width: 42px; height: 42px; border-radius: 11px; }
+.upd-held-logobox .up-logo-ltr { font-size: var(--up-fs-xl); }
+.upd-held-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 auto; }
+.upd-held-name { margin: 0; font-size: var(--up-fs-2xl); font-weight: var(--up-fw-m); line-height: 1.2; letter-spacing: -0.4px;
+  color: var(--vc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.upd-held-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; min-width: 0;
+  font-size: var(--up-fs-m); color: var(--vc-third); }
 .upd-topic { display: inline-flex; align-items: center; min-width: 0; }
-.upd-tools { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.upd-satz { min-width: 0; overflow-wrap: anywhere; }
+.upd-satz-sk { display: block; width: 220px; }
+/* Der Schliessen-Knopf oben in der Zeile des Namens, nicht mittig zum ganzen Kopf -- dort sass er
+   zwischen zwei Zeilen und gehoerte zu keiner. */
+.upd-held .upd-close { align-self: flex-start; flex: 0 0 auto; }
+.upd-root.is-narrow .upd-held-name { white-space: normal; overflow-wrap: anywhere; }
 
-/* ---------- KPI-Kacheln ---------- */
-.upd-kpis {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
-  border-bottom: 1px solid var(--vc-border);
-}
-/* Trenner zwischen den Kacheln, aber keiner vor der ersten: border-left auf allen ausser der
-   ersten statt border-right auf allen ausser der letzten -- so bleibt die rechte Aussenkante die
-   Kante der Karte. */
-.upd-kpi { padding: 18px 20px; min-width: 0; }
-.upd-kpi + .upd-kpi { border-left: 1px solid var(--vc-border); }
-.upd-kpi-lbl { font-size: 12px; font-weight: 400; color: var(--vc-muted); }
-.upd-kpi-val { margin-top: 8px; display: flex; align-items: center; gap: 8px; min-width: 0; }
-/* Der Wert traegt hier die groessere Stufe als in einer Tabellenzelle: er ist die Aussage der
-   Kachel, nicht ein Feld unter vielen. */
-/* Sentiment in DERSELBEN Groesse wie die drei anderen Kacheln (29.09.). Vorher zwei Punkte
-   kleiner, weil der Wert in einer Pille stand und damit mehr Gewicht trug; seit Sentiment keinen
-   Kasten mehr hat (core: Balken 3x12 + Zahl), gibt es dieses Mehrgewicht nicht mehr. */
-.upd-kpi-val .up-num, .upd-kpi-val .up-sent-val { font-size: 18px; font-weight: 500; }
-.upd-kpi-val .up-rank-group .up-hash { width: 12px; height: 12px; }
-.upd-kpi-trend { display: inline-flex; align-items: center; }
-.upd-dash { font-size: 18px; color: var(--vc-third); }
+/* ---------- Kennzahlen ----------
+   Das Erklaer-Zeichen ist .up-th-info aus core und zeigt sich dort nur unter .up-th:hover. In der
+   Kachel erscheint es wie in Shopping beim Ueberfahren der Kachel, dicht hinter dem Wort. */
+.upd-kpi .up-kpi-label { display: inline-flex; align-items: center; gap: 6px; }
+.upd-root .upd-kpi .up-th-info { margin-left: 0; }
+.upd-root .upd-kpi:hover .up-th-info { opacity: 1; }
 
-/* ---------- Standing auf diesem Topic ----------
-   Polster und Trenner kommen von .upd-split-l, nicht von hier: das Standing IST die linke Spalte. */
-.upd-stand:empty { display: none; }
-.upd-stand-head { font-size: 13px; color: var(--vc-muted); }
-.upd-stand-head strong { font-weight: 550; color: var(--vc-text); }
-.upd-rk { color: var(--vc-third); }
-.upd-stand-list { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
-/* Ohne Balken. Der Balken kodierte dieselbe Zahl ein zweites Mal, lief ueber die volle Breite und
-   machte aus einer ruhigen Liste ein Diagramm -- die Rangfolge steht schon in der Reihenfolge.
-   Feste Spalten statt flexibler Balken: Rang und Wert sind tabellarisch, damit die Ziffern
-   untereinander stehen und nichts springt, wenn eine Zeile 8% und die naechste 71.4% zeigt. */
-/* Der Abstand steht nicht als ein gemeinsames gap da: zwischen Rang und Logo darf mehr Luft sein
-   als zwischen Logo und Name -- Logo und Name gehoeren zusammen und lesen sich als eine Einheit. */
-.upd-stand-row {
-  display: flex; align-items: center; gap: 8px; height: 34px;
-  padding: 0 8px; margin: 0 -8px; border-radius: 8px;
-  cursor: pointer; transition: background 120ms ease;
-}
-.upd-stand-row:hover { background: var(--vc-heading-bg); }
-.upd-stand-row:focus-visible { outline: 2px solid var(--vc-text); outline-offset: -2px; }
-.upd-stand-idx {
-  flex: 0 0 16px; text-align: right; margin-right: 4px;
-  font-size: 12px; font-weight: 500; color: var(--vc-third); font-variant-numeric: tabular-nums;
-}
-.upd-stand-row .up-stack-item { width: 22px; height: 22px; flex: 0 0 22px; }
-/* Ohne Rahmen und ohne Ring: in einem ueberlappenden Stapel trennt der Rahmen die Logos
-   voneinander, hier steht jedes fuer sich in seiner eigenen Zeile und braucht keine Abgrenzung. */
-/* transition: none gehoert dazu und stand 8 Zeilen weiter unten als zweite Regel fuer denselben
-   Selektor -- der Grund steht am transform-Block darunter: hier ueberlappt nichts, also wackelt
-   auch nichts, und dann braucht es auch keinen Uebergang. */
-.upd-stand-row .up-stack-vis { box-shadow: none; border: 0; border-radius: 6px; transition: none; }
-.upd-stand-row .up-stack-item img { border-radius: 5px; }   /* 6 - 1, gleicher Grund */
-/* Die Hover-Animation aus core gilt dem Marken-STAPEL: dort faechert sie ueberlappende Logos
-   auseinander, damit man das einzelne trifft. Hier ueberlappt nichts, also wackelt hier auch
-   nichts -- weder beim Hover auf das Logo noch beim Hover auf die Zeile. */
-.upd-stand-row .up-stack-item:hover .up-stack-vis,
-.upd-stand-row .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
-.upd-stand-row:hover .up-stack-vis { transform: none; }
-.upd-stand-name {
-  flex: 1 1 auto; min-width: 0; font-size: 13px; font-weight: 400; color: var(--vc-muted);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-/* Gedaempft wie der Name daneben. Der Wert stand in der Primaerfarbe und war damit die einzige
-   Spalte, die auf jeder Zeile gleich laut war -- die eigene Marke hob sich nur noch ueber den
-   Namen ab, nicht mehr ueber die Zeile. Die is-self-Regel unten holt beides zurueck.
+/* ---------- Kurve ---------- */
+.upd-chartbox { padding: 16px; }
+.upd-chartbox .upd-linewrap { height: 240px; }
 
-   Die Farbe steht auf .upd-stand-val.up-num, nicht auf .upd-stand-val allein: die Zelle traegt
-   BEIDE Klassen, und core setzt .up-num{color:var(--vc-text)}. Beide waeren 0,1,0 -- gleich
-   stark, also entschiede die Reihenfolge der Dateien, welche gewinnt. Mit der Doppelklasse
-   (0,2,0) ist die Frage nicht mehr zu stellen. */
-.upd-stand-val {
-  flex: 0 0 auto; min-width: 52px; text-align: right; font-size: 13px;
-  font-variant-numeric: tabular-nums;
-}
-.upd-stand-val.up-num { color: var(--vc-muted); font-weight: 400; }
-/* Die eigene Marke ist die einzige Zeile in Primaerfarbe -- daran findet man sie, ohne die Liste
-   zu lesen. */
-.upd-stand-row.is-self .upd-stand-name { color: var(--vc-text); font-weight: 500; }
-.upd-stand-row.is-self .upd-stand-idx { color: var(--vc-text); }
-.upd-stand-row.is-self .upd-stand-val.up-num { color: var(--vc-text); font-weight: 500; }
+/* ---------- Rangliste auf diesem Topic ----------
+   .up-vartable aus core wie die Marktbewegung im Event-Detail. Hier stehen nur die Spaltenbreiten --
+   die laesst core bewusst bei der Komponente. Zahlen tabellarisch, NICHT rechtsbuendig. */
+.upd-rang .upd-td-zahl, .upd-rang .upd-th-zahl { flex: 0 0 140px; min-width: 0; }
+.upd-rang .up-var-name, .upd-rang .up-th-vname { min-width: 200px; }
+/* Reicht die Breite nicht, scrollt die Tabelle quer in ihrem Rahmen, statt die Namen abzuschneiden:
+   Kopf und Koerper so breit wie die Summe der Spalten (200 + 4 x 140). */
+.up-vartable.upd-rang { overflow-x: auto; }
+.upd-rang > .up-thead, .upd-rang > .up-tbody { min-width: 760px; }
+.upd-td-marke { gap: 10px; }
+/* Der Platz auf dem Topic vor dem Logo: leise, tabellarisch, rechtsbuendig in seiner schmalen
+   Spalte, damit 9 und 10 untereinander stehen. */
+.upd-platz { flex: 0 0 18px; text-align: right; font-size: var(--up-fs-s); font-weight: var(--up-fw-m);
+  color: var(--vc-third); font-variant-numeric: tabular-nums; }
+/* Die gewaehlte Marke: Platz und Name kraeftiger -- daran findet man sie, ohne die Liste zu lesen.
+   Kein "You": die Zeile ist die GEWAEHLTE Marke, und das muss nicht die eigene sein. */
+.upd-rang .up-row.is-self .upd-platz { color: var(--vc-text); }
+.upd-rang .up-row.is-self .up-varname { font-weight: var(--up-fw-h); }
+/* Die Zeile oeffnet die Marke (bubble_fn_updCompanyClick): Zeiger wie jede klickbare Zeile -- core
+   setzt in .up-vartable "default", hier eine Stufe spezifischer. */
+.upd-rang .up-row.upd-rangzeile { cursor: pointer; }
+.upd-rang .up-row.upd-rangzeile:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: -2px; }
 
-/* ---------- Abschnitte ---------- */
-.upd-sec { padding: 20px; }
-.upd-sec + .upd-sec { border-top: 1px solid var(--vc-border); }
-/* KEINE eigene Trennlinie am Variations-Abschnitt: der Block darueber (.upd-split) bringt
-   seine untere Kante schon mit. Eine zweite Linie direkt darunter ergibt einen 2px-Strich,
-   der doppelt so schwer wirkt wie jede andere Trennung in der App. */
+/* ---------- Seiten statt Scrollen ----------
+   Beide Tabellen blaettern mit dem Pager aus core (performance-detail.js, seitenStand); der Koerper
+   waechst mit seinen Zeilen. Die Regel in core (.up-vbody, 412.5px) bleibt fuer die Tabellen, die
+   sie wollen. Zwei Klassen gegen eine. */
+.upd-rang .up-vbody, .upd-vartable .up-vbody { max-height: none; overflow-y: visible; }
 
-/* ---------- Rangliste links, Kurve rechts ----------
-   Der Trenner ist der border-left der rechten Spalte, keine eigene Linie: eine echte Trennlinie
-   zwischen zwei Flex-Kindern muesste als drittes Element mitlaufen und beim Umbruch von vertikal
-   auf horizontal umgebaut werden. So kippt sie einfach mit.
-   align-items:stretch, damit der Trenner ueber die volle Hoehe der hoeheren Seite laeuft -- sonst
-   endet er dort, wo die kuerzere Spalte aufhoert, und sieht aus wie ein Fehler. */
-.upd-split { display: flex; align-items: stretch; border-bottom: 1px solid var(--vc-border); }
-/* Die Kurve rechts ist hoeher als die Liste links. Ohne Zentrierung klebt die Liste oben und
-   darunter steht eine Handbreit Nichts -- mittig sitzt sie auf der Achse des Charts. */
-.upd-split-l {
-  flex: 0 0 30%; min-width: 0; padding: 20px;
-  display: flex; flex-direction: column; justify-content: center;
-}
-.upd-split-r { flex: 1 1 auto; min-width: 0; padding: 20px; border-left: 1px solid var(--vc-border); }
-/* Ohne Rangliste (Scope "Global" oder weniger als zwei Marken auf dem Topic) gibt es links
-   nichts zu zeigen -- dann faellt die Spalte weg und die Kurve nimmt die ganze Breite. */
-.upd-root.no-stand .upd-split-l { display: none; }
-.upd-root.no-stand .upd-split-r { border-left: 0; }
-/* Unter 900px Containerbreite (nicht Fensterbreite) wieder untereinander: darunter wird die
-   Rangliste zu schmal fuer Name und Wert nebeneinander. */
-.upd-root.is-narrow .upd-split { display: block; }
-.upd-root.is-narrow .upd-split-l,
-.upd-root.is-narrow .upd-split-r { flex: none; width: auto; }
-.upd-root.is-narrow .upd-split-r { border-left: 0; border-top: 1px solid var(--vc-border); }
-.upd-sec-head { display: flex; align-items: center; gap: 12px; min-height: 32px; }
-.upd-sec-titles { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
-.upd-sec-h { flex: 0 0 auto; }
-.upd-sec-sub { font-size: 12px; font-weight: 400; color: var(--vc-muted); }
-.upd-scope-note { margin-left: auto; flex: 0 0 auto; }
-.upd-chartsec .upd-linewrap { height: 260px; margin-top: 16px; }
-
-/* ---------- Variations ---------- */
-.upd-varsec .upd-sec-head { margin-bottom: 14px; }
-.upd-vartable { border: 1px solid var(--vc-border); border-radius: 10px; overflow: hidden; }
-/* 55px, genau der Compact-Modus der Prompts-Table. */
-/* Die Zeilenregel steht bewusst mit .upd-vartable davor: .up-row aus core.css hat dieselbe
-   Spezifitaet wie ein blosses .upd-vrow, und bei Gleichstand entscheidet die Ladereihenfolge --
-   ein Stylesheet, das nach diesem hier landet, holt sonst die 72px aus core zurueck. */
-.upd-vartable .up-row.upd-vrow { height: 55px; flex: 0 0 55px; }
-.upd-vartable .up-thead.upd-vrow { height: 40px; flex: 0 0 40px; }
-.upd-vartable .up-row { cursor: default; }
-/* Sieben Zeilen ganz, die achte angeschnitten: 7.5 x 55px. Genau daran sieht man, dass es
-   weitergeht -- ein sauberer Schnitt an der siebten Zeile sieht aus wie das Ende der Liste. */
-/* Der Name sitzt in einem eigenen Span statt direkt in der Zelle: der Truncation-Tooltip misst
-   scrollWidth gegen clientWidth, und das geht nur an dem Element, das den Text wirklich
-   abschneidet -- nicht an der Zelle, die noch Polsterung drumherum hat. */
-/* Zahl links, Ring an der rechten Spaltenkante. Die 16px Abstand zum Zellenrand kommen aus der
-   rechten Polsterung von .up-td (core.css: 0 16px 0 12px) -- kein zweiter Wert, der irgendwann
-   von der Tabelle abweicht.
-   margin-left:auto statt space-between: kaeme in dieser Zelle je ein drittes Element dazu, wuerde
-   space-between es in die Mitte setzen; so bleibt die Zahl links und der Ring rechts. */
-/* 40 Prozent groesser: 16 x 1.4 = 22.4. Die Groesse steht hier und nicht im SVG -- die viewBox
-   bleibt 16x16, alles darin skaliert proportional mit, und Radius und Strichstaerke muessen nicht
-   nachgerechnet werden. Ein Bruchteil-Pixel schadet einem SVG nicht, es rastert ohnehin frei. */
-/* Der Bezugswert steht kleiner daneben, nicht als eigene Spalte: er erklaert die Zahl links,
-   er ist keine zweite Zahl. */
+/* ---------- Variations ----------
+   Der Abschnitt aus core polstert sich selbst mit 16 -- das war fuer die Karte gedacht, in der er
+   stand. Offen auf der Seite steht er buendig wie die Abschnitte darueber. */
+.upd-root .up-varsec { padding: 0; }
 
 /* ---------- Beispielplatten in der Erklaerkarte ----------
    Die Karte wird von UC.makeExplain an den body gehaengt, also ausserhalb jeder .up-root. Dort
@@ -215,19 +108,17 @@
    Die Platte soll aussehen wie die Zeile darunter, nur eine Spur groesser: 13px statt der 12px,
    die die geteilte Regel setzt. Nur hier, damit die Erklaerkarten der anderen Komponenten
    unveraendert bleiben. */
-/* gap: 6px gehoert dazu und stand weiter unten als zweite Regel fuer denselben Selektor: derselbe
-   Abstand zwischen Zahl und Nebentext wie in .upd-td-cnt, damit die Probe die Zelle trifft. */
+/* gap: 6px: derselbe Abstand zwischen Zahl und Nebentext wie in der Zelle, damit die Probe die
+   Zelle trifft. */
 .upd-explain-vis .up-explain-row { font-size: 13px; gap: 6px; }
-/* Zahl und Nebentext exakt wie in der Zelle darunter: 14px / 12px, und derselbe 6px-Abstand
-   zwischen beiden wie in .upd-td-cnt. Nur die Farben sind gedreht, weil die Platte invertiert
-   ist -- die Groessen sollen sich nicht unterscheiden, sonst ist es kein Beispiel mehr. */
+/* Zahl und Nebentext exakt wie in der Zelle darunter: 14px / 12px. Nur die Farben sind gedreht,
+   weil die Platte invertiert ist -- die Groessen sollen sich nicht unterscheiden, sonst ist es kein
+   Beispiel mehr. */
 .upd-explain-vis .up-num { font-size: 14px; font-weight: 500; color: inherit; }
 .upd-explain-vis .up-var-of { font-size: 12px; color: rgba(31,31,27,0.55); }
 /* Die Share-of-Voice-Zeile steht weiter auseinander als die Mention-Count-Zeile: dort sind Zahl
    und "of N" ein zusammenhaengender Wert, hier sind es zwei Darstellungen derselben Groesse und
-   duerfen als zwei Dinge lesbar sein. In der Zelle darunter uebernimmt das margin-left:auto, das
-   den Ring an den rechten Zellenrand schiebt -- die Platte hat keinen Rand, an den sich etwas
-   schieben liesse, also steht die Zahl hier. */
+   duerfen als zwei Dinge lesbar sein. */
 .upd-explain-vis .upd-explain-sov { gap: 32px; }
 /* Der Ring behaelt seine echte Groesse. Die geteilte Regel .up-explain-row svg setzt 14px und ist
    genauso stark wie .up-varring svg -- ohne diese Zeile entschiede die Ladereihenfolge. */
@@ -239,41 +130,14 @@
 .up-explain[data-theme="dark"] .upd-explain-vis .up-varring-track { stroke: #28282c; }
 .up-explain[data-theme="dark"] .upd-explain-vis .up-varring-fill  { stroke: #f0f0f0; }
 
-/* ---------- Loading ---------- */
-/* Kein Dimmen mehr. Gedimmt hiess: die Zahlen der VORIGEN Zelle stehen weiter da, nur blasser --
-   und blasse alte Zahlen sind schlimmer als gar keine, weil man ihnen nicht ansieht, dass sie
-   nicht mehr gelten. Beide Bloecke zeigen jetzt echte Skelette (siehe kpiSkeleton /
-   standSkeleton), also gibt es nichts mehr zu dimmen.
-   Die Skelettzeile der Rangliste hat dieselbe Hoehe und dasselbe Raster wie die echte, damit beim
-   Umschalten nichts springt -- nur ohne Hover und ohne Zeiger, sie ist nicht anklickbar. */
-.upd-stand-row.is-sk { cursor: default; }
-.upd-stand-row.is-sk:hover { background: transparent; }
-
-/* ---------- Dark ---------- */
-
-/* ---------- Schmal ----------
-   Unter 720px passen vier KPI-Kacheln nicht mehr nebeneinander, ohne dass die Zahl umbricht.
-   Zwei mal zwei statt vier mal eins, und die Trennlinien wandern entsprechend. */
-@media (max-width: 720px) {
-  .upd-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .upd-kpi:nth-child(odd) { border-left: 0; }
-  .upd-kpi:nth-child(n+3) { border-top: 1px solid var(--vc-border); }
-  .upd-head { flex-wrap: wrap; }
-  .upd-stand-name { max-width: 120px; }
-}
-
-/* Ladezustand ohne Auswahl: ein einzelner Balken an der Stelle der Ueberschrift, mittig. Die
-   Unterzeile bleibt im Ladezustand ganz weg -- zwei Balken untereinander lasen sich wie Inhalt,
-   der gleich kommt, obwohl hier nur auf einen Klick gewartet wird.
-
+/* ---------- Ladezustand ohne Auswahl ----------
+   Ein einzelner Balken an der Stelle der Ueberschrift, mittig. Die Unterzeile bleibt im
+   Ladezustand ganz weg -- zwei Balken untereinander lasen sich wie Inhalt, der gleich kommt,
+   obwohl hier nur auf einen Klick gewartet wird.
    KEINE Animation: upskt schiebt einen Schimmer von links nach rechts, richtig fuer Tabellenzeilen
-   die gleich gefuellt werden, falsch fuer einen ruhenden Platzhalter.
-
-   inline-block, damit der Balken dem text-align: center des Platzhalters folgt -- ein Block mit
-   Breite bliebe links stehen. .upd-empty bekommt sein text-align weiter oben explizit, weil die
-   dortige display-Angabe das Layout der Core-Klasse .up-empty ausser Kraft setzt. */
-.upd-root.is-loading:not(.has-selection) .upd-empty-title {
+   die gleich gefuellt werden, falsch fuer einen ruhenden Platzhalter. */
+.upd-root.is-loading:not(.has-selection) .upd-empty .up-empty-h {
   display: inline-block; width: 180px;
-  color: transparent; border-radius: 6px; background: var(--vc-heading-bg);
+  color: transparent; border-radius: var(--up-r-s); background: var(--vc-heading-bg);
 }
-.upd-root.is-loading:not(.has-selection) .upd-empty-sub { display: none; }
+.upd-root.is-loading:not(.has-selection) .upd-empty .up-empty-t { display: none; }

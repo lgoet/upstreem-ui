@@ -5192,11 +5192,10 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    #view-settings, die uebrigen setzt das Kopf-Skript der App (view-<name>), und ein falsch
    geratener Name liesse die Regel still ins Leere laufen. Drawer liegen in keiner Ansicht.
    Nicht dabei: .uo-root bringt seine 16px seit jeher selbst mit; .uts-root und .upr-root tragen
-   ihren Kopf in sich und rechnen ihren Randabstand mit ihm (Block darueber). .upd-root ist eine
-   Karte mit Rahmen -- Polster laege INNERHALB des Rahmens, also Aussenabstand, und dafuer
-   width auto statt der 100% von .up-root, sonst ragte sie um 32px hinaus. */
-[id^="view-"] .up-root:is(.uhm-root, .usb-root, .uto-root, .ubl-root) { padding-left: 16px; padding-right: 16px; }
-[id^="view-"] .up-root.upd-root { width: auto; margin-left: 16px; margin-right: 16px; }
+   ihren Kopf in sich und rechnen ihren Randabstand mit ihm (Block darueber). .upd-root war eine
+   Karte mit Rahmen und trug darum Aussenabstand; seit dem 07.10. steht der Bereich offen wie die
+   Detailbereiche von Events, Shopping und Ads und polstert sich wie der Radar darueber. */
+[id^="view-"] .up-root:is(.uhm-root, .usb-root, .uto-root, .ubl-root, .upd-root) { padding-left: 16px; padding-right: 16px; }
 
 /* ---------- responsive (classes set by UC.makePageNav via UC.onResize) ---------- */
 /* is-narrow (<768px default): tabs go from auto-width/left-packed to even thirds, still centered

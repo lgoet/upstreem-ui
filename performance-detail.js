@@ -20,7 +20,20 @@
    Der erste Aufbau braucht KEINEN Server: der Radar ruft renderPerformanceDetail() direkt mit den
    Daten der geklickten Zelle und den beiden Schnitten des Rasters (Spalte = Wettbewerber auf dem
    Topic, Zeile = diese Marke ueber alle Topics). Kopf, KPIs und Standing stehen damit sofort. Nur
-   Kurve, Variations und die URLs-Table darunter kommen ueber RPCs nach. */
+   Kurve, Variations und die URLs-Table darunter kommen ueber RPCs nach.
+
+   AUFBAU SEIT DEM 07.10. (angefordert: "die Designsprache und Layouts der neuen Komponenten und
+   ihrer Detailbereiche"). Vorbilder und woher jeder Wert kommt:
+     Kopf          ads.js zeichneHeld (.uad-held): Logo 44, Name in der Stufe 2xl, darunter eine
+                   leise Zeile -- hier Topic-Chip und der Satz zum Rang
+     Kennzahlen    UC.kpiKarte im offenen Kennzahlen-Band (.up-kpiband.is-4.is-offen), Werte zaehlen
+                   hoch (UC.zaehlHtml/hochzaehlen) wie in Events und Shopping
+     Abschnitte    .up-sec-head mit Titel und Untertitel, Inhalt im .up-box; 24 zwischen Kopf,
+                   Kennzahlen und Kurve (eine Gruppe), 48 zwischen den Abschnitten (.ush-seite/.ush-gruppe)
+     Rangliste     die Marktbewegung im Event-Detail: .up-vartable, Logo und Name, Zahlenspalten
+                   140 breit, blaettert mit dem Pager aus core statt zu scrollen
+     Variations    UC.variationsSection wie bisher, jetzt ebenfalls mit Seiten statt Scrollen
+   Die Karte mit Rahmen um alles ist weg: die neuen Detailbereiche stehen offen auf der Seite. */
 (function(){
   "use strict";
 
@@ -69,6 +82,8 @@
   }
 
   var esc = UC.esc, fmt1 = UC.fmt1, toNum = UC.toNum;
+  var t = UC.t || function(x){ return x; };
+  function ersetze(s, o){ return String(s).replace(/\{(\w+)\}/g, function(_, k){ return o[k] != null ? o[k] : ""; }); }
   /* Trefferhervorhebung aus dem Core -- dieselbe <mark class="up-hl">-Markierung, die die
      Tabellen in ihren Suchergebnissen setzen. */
   var highlight = UC.highlight || function(t){ return esc(t); };
@@ -95,22 +110,29 @@
 
   var CLOSE_SVG  = UC.icon("x", 2);
 
-  /* Markenkachel: dieselbe Geometrie wie der Brand-Mentions-Chip in den Tabellen
-     (.up-stack-vis), inklusive Anfangsbuchstabe als Rueckfall ohne Logo. */
-  function brandChipHtml(company){
+  /* Das Logo-Kaestchen aus core (.up-logo-box), wie in der Marktbewegung des Event-Details und im
+     Kopf der Ads -- vorher der Chip des Marken-Stapels (.up-stack-item), der fuer ueberlappende
+     Logos gebaut ist und hier drei Regeln brauchte, um NICHT wie ein Stapel auszusehen. Der
+     Anfangsbuchstabe steht darunter und bleibt, wenn das Bild nicht laedt. */
+  function logoHtml(company, cls){
     var name = String((company && company.name) || "");
     var logo = String((company && (company.favicon_url || company.favicon || company.logo_url || company.logo)) || "");
     if (logo.indexOf("//") === 0) logo = "https:" + logo;
-    return '<span class="up-stack-item' + (logo ? " has-img" : "") + '">' +
-             '<span class="up-stack-vis">' +
-               '<span class="up-stack-ltr">' + esc(name.charAt(0) || "?") + '</span>' +
-               /* KEIN loading="lazy": dieser Block oeffnet sich unter dem Falz, und lazy heisst
-                  dort "erst laden, wenn jemand hinscrollt" -- die Kacheln blieben leer, obwohl
-                  die URLs korrekt waren. Es sind hoechstens sieben Bilder. */
-               (logo ? '<img src="' + esc(logo) + '" alt="" referrerpolicy="no-referrer"' +
-                       ' onerror="this.closest(\'.up-stack-item\').classList.remove(\'has-img\'); this.remove()">' : "") +
-             '</span>' +
+    return '<span class="up-logo-box' + (cls ? " " + cls : "") + (logo ? " has-img" : "") + '">' +
+             /* KEIN loading="lazy": dieser Block oeffnet sich unter dem Falz, und lazy heisst
+                dort "erst laden, wenn jemand hinscrollt" -- die Kacheln blieben leer, obwohl
+                die URLs korrekt waren. Eine Seite der Rangliste traegt hoechstens 50 Bilder. */
+             (logo ? '<img src="' + esc(logo) + '" alt="" referrerpolicy="no-referrer"' +
+                     ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()">' : "") +
+             '<span class="up-logo-ltr">' + esc(name.trim().charAt(0).toUpperCase() || "?") + '</span>' +
            '</span>';
+  }
+  /* Abschnittskopf aus core (.up-sec-head), wortgleich wie in Events, Shopping und Ads. */
+  function sekKopf(titel, desc, rechts){
+    return '<div class="up-sec-head upd-sec-head"><div class="up-sec-titles">' +
+        '<span class="up-heading up-sec-h">' + esc(t(titel)) + '</span>' +
+        (desc ? '<span class="up-sec-sub">' + esc(t(desc)) + '</span>' : '') +
+      '</div>' + (rechts || '') + '</div>';
   }
   /* Topic-Chip in derselben Form wie im Radar und in der Prompts-Table. */
   function topicChipHtml(topic){
@@ -196,56 +218,64 @@
        Komponente selbst. Es gibt hier keine Stellen, an denen der Nutzer etwas einsetzen soll,
        und ein von Hand eingefuegter Rahmen ist genau die Art Markup, die man beim naechsten
        Einbau halb vergisst. -------- */
+    /* Die Fusszeile einer Tabelle: Zeilen je Seite links, Seiten rechts -- dasselbe Markup wie im
+       Event-Detail, in Shopping und in Ads. Versteckt, bis es Zeilen gibt (seitenStand). */
+    function fussHtml(){
+      return '<div class="up-foot upd-foot" hidden>' +
+          '<div class="up-pagesize"><span class="up-pagesize-lbl">' + esc(t("Rows per page")) + '</span>' +
+            '<div class="up-pagesize-seg" role="group" aria-label="' + esc(t("Rows per page")) + '"></div></div>' +
+          '<div class="up-pager"></div>' +
+        '</div>';
+    }
     root.innerHTML =
-      '<div class="upd-empty up-empty">' +
-        '<div class="upd-empty-title">No cell selected</div>' +
-        '<div class="upd-empty-sub">Pick a cell in the Performance Radar to see the details for that brand and topic.</div>' +
+      /* Der Leerzustand aus core (UC.leerHtml), in einem Kasten wie jeder Leerzustand der neuen
+         Detailbereiche. Die beiden Texte tauscht render() je nach Lage aus. */
+      '<div class="up-box upd-empty">' +
+        UC.leerHtml({ titel: "No cell selected", text: "Pick a cell in the Performance Radar to see the details for that brand and topic." }) +
       '</div>' +
       '<div class="upd-body">' +
-        '<div class="upd-head">' +
-          '<div class="upd-title">' +
-            '<span class="upd-brand"></span>' +
-            '<span class="upd-x">&times;</span>' +
-            '<span class="upd-topic"></span>' +
-          '</div>' +
+        '<div class="upd-gruppe">' +
           /* Der Scope-Umschalter (This Topic | Global) ist vorerst raus. Er war schluessig, solange
-             man nur auf die Kurve schaut -- die Rangliste daneben ist aber eine Aussage UEBER DIESES
-             TOPIC ("Rang 6 von 10 auf diesem Topic"), und die gibt es global nicht. Sie verschwand
-             darum beim Umschalten samt ihrer Spalte, und der Bereich sah in den zwei Zustaenden
-             verschieden aus, ohne dass der Umschalter das ankuendigt.
-
+             man nur auf die Kurve schaut -- die Rangliste darunter ist aber eine Aussage UEBER DIESES
+             TOPIC ("Rang 6 von 10 auf diesem Topic"), und die gibt es global nicht.
              Nur das Bedienelement ist weg, nicht die Mechanik: state.scope, setPerformanceDetailSeries
              mit seinem scope-Feld, setPerformanceDetailGlobal und der updScope-Event stehen
-             unveraendert. Zurueckholen heisst, diese vier Zeilen wieder einzusetzen -- vorausgesetzt,
-             es gibt bis dahin eine Antwort darauf, was links neben einer globalen Kurve steht. */
-          '<div class="upd-tools">' +
+             unveraendert. */
+          '<div class="upd-held">' +
+            '<span class="upd-held-logo"></span>' +
+            '<div class="upd-held-text">' +
+              '<h2 class="upd-held-name"></h2>' +
+              '<div class="upd-held-meta"><span class="upd-topic"></span><span class="upd-satz"></span></div>' +
+            '</div>' +
             '<button class="up-iconbtn upd-close" type="button" data-tip="Close details" aria-label="Close details">' + CLOSE_SVG + '</button>' +
           '</div>' +
+          '<div class="up-kpiband is-4 is-offen upd-kpis"></div>' +
+          '<section class="upd-sek upd-chartsec">' +
+            sekKopf("Visibility over time", "How often the brand appeared in AI answers on this topic.") +
+            '<div class="up-box upd-chartbox"><div class="up-line-wrap upd-linewrap"><canvas class="up-line-canvas"></canvas></div></div>' +
+          '</section>' +
         '</div>' +
-        '<div class="upd-kpis"></div>' +
-        /* Rangliste links, Kurve rechts, ein Trenner dazwischen. Die beiden beantworten dieselbe
-           Frage aus zwei Richtungen: wo steht die Marke gerade, und wie ist sie dahin gekommen.
-           Untereinander muss man scrollen, um beides zu sehen. Unter der Schwelle stapelt es
-           wieder, siehe is-narrow. */
-        '<div class="upd-split">' +
-          '<div class="upd-split-l upd-stand"></div>' +
-          '<div class="upd-split-r upd-chartsec">' +
-            '<div class="upd-sec-head"><span class="up-heading upd-sec-h">Visibility over time</span>' +
-              '<span class="upd-sec-sub upd-scope-note"></span></div>' +
-            '<div class="up-line-wrap upd-linewrap"><canvas class="up-line-canvas"></canvas></div>' +
-          '</div>' +
-        '</div>' +
+        /* Die Rangliste: Inhalt und Fusszeile getrennt, damit der Pager an seiner Fusszeile haengen
+           bleibt und renderStanding nur den Inhalt neu schreibt (wie seitenAnlegen in events.js). */
+        '<section class="upd-sek upd-rangsek" data-sek="rang">' +
+          sekKopf("Brands on this topic", "Every tracked brand on this topic, ranked by visibility.") +
+          '<div class="upd-tabinhalt"></div>' + fussHtml() +
+        '</section>' +
         /* Der ganze Abschnitt kommt aus core (UC.variationsSection): Ueberschrift, Untertitel,
            Suchfeld, Tabellenkopf mit den drei Erklaer-Rauten. Genau derselbe Aufruf steht in
-           brand-detail -- eine Tabelle, eine Quelle. */
+           brand-detail -- eine Tabelle, eine Quelle. Die Fusszeile kommt hier dazu. */
         UC.variationsSection({ prefix: "upd", scope: "on this topic" }) +
-        '</div>' +
       '</div>';
+    var elVarSek = root.querySelector(".upd-varsec");
+    if (elVarSek){ elVarSek.setAttribute("data-sek", "var"); elVarSek.insertAdjacentHTML("beforeend", fussHtml()); }
 
-    var elBrand   = root.querySelector(".upd-brand");
+    var elHeldLogo = root.querySelector(".upd-held-logo");
+    var elHeldName = root.querySelector(".upd-held-name");
     var elTopic   = root.querySelector(".upd-topic");
+    var elSatz    = root.querySelector(".upd-satz");
     var elKpis    = root.querySelector(".upd-kpis");
-    var elStand   = root.querySelector(".upd-stand");
+    var elStand   = root.querySelector('[data-sek="rang"] .upd-tabinhalt');
+    var elRangSek = root.querySelector('[data-sek="rang"]');
     var elScope   = root.querySelector(".upd-scope");
     var elNote    = root.querySelector(".upd-scope-note");
     var lineWrap  = root.querySelector(".upd-linewrap");
@@ -258,8 +288,49 @@
        wie ihre Ueberschriften plus Luft. --up-cols ist die Variable, die .up-thead/.up-row lesen. */
     root.querySelector(".upd-vartable").style.setProperty("--up-cols", "minmax(0,1fr) 150px 140px");
     /* Umbruch nach Containerbreite, nicht nach Fensterbreite: die Komponente kann in einer
-       schmalen Bubble-Gruppe stecken, waehrend das Fenster breit ist. */
-    if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 900, vnarrowAt: 560 });
+       schmalen Bubble-Gruppe stecken, waehrend das Fenster breit ist. Dieselben Schwellen wie im
+       Event-Detail (760/520) -- an is-narrow haengt das Kennzahlen-Band aus core (2 x 2). */
+    if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 760, vnarrowAt: 520 });
+
+    /* ---- SEITEN STATT SCROLLEN (07.10., wie im Event-Detail: "gleiche Pagination wie in allen
+       anderen Tabellen") -----------------------------------------------------------------------
+       Beide Tabellen blaettern im Browser: die Rangliste ist die Spalte des Radars, die Variations
+       kommen vollstaendig aus ihrem RPC -- es gibt nichts nachzuladen. Die Form ist wortgleich
+       seitenAnlegen/seitenStand aus events.js. */
+    var SEITEN_GROESSE = UC.DEFAULT_PAGE_SIZE || 15;
+    var seiten = {};
+    ["rang", "var"].forEach(function(n){
+      var el = root.querySelector('[data-sek="' + n + '"]');
+      if (!el) return;
+      var st = { page: 1, pageSize: SEITEN_GROESSE, totalCount: null, loading: false };
+      var neu = function(){ st.loading = false; if (n === "rang") renderStanding(); else renderVariations(); };
+      seiten[n] = { st: st, kit: UC.makePager ? UC.makePager({ root: el, state: st, onChange: neu }) : null };
+      /* Die Klicks der Fusszeile -- der Pager aus core zeichnet nur. */
+      el.addEventListener("click", function(e){
+        var k = seiten[n] && seiten[n].kit;
+        if (!k || !e.target.closest || !e.target.closest(".upd-foot")) return;
+        var ps = e.target.closest("[data-pagesize]");
+        if (ps){ k.setPageSize(Number(ps.getAttribute("data-pagesize"))); return; }
+        if (e.target.closest(".up-page-prev")){ k.goToPage(st.page - 1); return; }
+        if (e.target.closest(".up-page-next")){ k.goToPage(st.page + 1); return; }
+        var pg = e.target.closest(".up-page[data-page]");
+        if (pg) k.goToPage(Number(pg.getAttribute("data-page")));
+      });
+    });
+    /* Fusszeile zeichnen und den Ausschnitt der aktuellen Seite liefern. total null: keine
+       Fusszeile (Skelett, Leerzustand). Sichtbar, sobald es Zeilen gibt -- auch bei einer Seite. */
+    function seitenStand(n, total){
+      var s = seiten[n], el = root.querySelector('[data-sek="' + n + '"]');
+      var foot = el ? el.querySelector(".upd-foot") : null;
+      if (foot) foot.hidden = !(total > 0);
+      if (!s || !(total > 0)) return { von: 0, bis: total || 0 };
+      s.st.totalCount = total; s.st.loading = false;
+      var max = Math.max(1, Math.ceil(total / s.st.pageSize));
+      if (s.st.page > max) s.st.page = max;
+      if (s.kit){ try { s.kit.renderPageSize(); s.kit.renderPager(); } catch(e){} }
+      var von = (s.st.page - 1) * s.st.pageSize;
+      return { von: von, bis: von + s.st.pageSize };
+    }
 
     function darkNow(){ return state.isDark; }
     function isOwner(){ return root.__updController && root.__updController.__ctrlId === myCtrlId; }
@@ -304,77 +375,71 @@
         }
       };
     }
-    function kpiTile(label, valueHtml, trendHtml, tip){
-      return '<div class="upd-kpi"' + (tip ? ' data-tip="' + esc(tip) + '"' : "") + '>' +
-               '<div class="upd-kpi-lbl">' + esc(label) + '</div>' +
-               '<div class="upd-kpi-val">' + valueHtml +
-                 (trendHtml ? '<span class="upd-kpi-trend">' + trendHtml + '</span>' : "") +
-               '</div>' +
-             '</div>';
+    /* Eine Kachel des Kennzahlen-Bands: UC.kpiKarte wie in Events, Shopping und Ads. */
+    function kpiTile(label, valueHtml, trendHtml){
+      return UC.kpiKarte({ label: label, wertHtml: valueHtml, trendHtml: trendHtml, klasse: "upd-kpi" });
+    }
+    /* Das kleine "i" an jedem Label oeffnet die Erklaerkarte (makeExplain unten) -- wie
+       erklaerAnLabels in shopping.js. Vorher stand derselbe Satz als Tooltip auf der ganzen Kachel. */
+    function erklaerAnLabels(el, keys){
+      var l = el.querySelectorAll(".up-kpi-label");
+      for (var i = 0; i < l.length && i < keys.length; i++){
+        if (keys[i]) l[i].insertAdjacentHTML("beforeend",
+          '<span class="up-th-info upd-erklaer" data-explain="' + keys[i] + '">' + UC.icon("info", 2) + '</span>');
+      }
     }
     /* ---------------- Ladezustand fuer KPIs und Rangliste ----------------
        Bisher hing am Ladezustand nur die Kurve; KPIs und Rangliste wurden gedimmt und zeigten
        weiter die Zahlen der vorigen Zelle. Beim Zellwechsel stand damit ein Teil des Bereichs
        schon auf den neuen Daten, waehrend daneben noch die alten standen -- und alte Zahlen zu
        zeigen ist schlimmer als gar keine, weil man ihnen nicht ansieht, dass sie von gestern sind.
+       Die Skelette kommen aus core (UC.kpiKarteSkelett, UC.skeletonRows) und haben die Form ihrer
+       echten Geschwister. */
+    var SK_ZEILEN = 5;
 
-       Die Skelette haben die Form ihrer echten Geschwister: vier Kacheln in derselben Reihe,
-       sieben Zeilen mit Rang, Logo, Name und Wert. Bausteine aus core (up-sk-lbl/-dot/-pct), damit
-       das Schimmern ueberall dasselbe ist. */
-    /* Sieben statt fuenf: neben der Kurve ist die Spalte hoch genug dafuer, und zwei Plaetze mehr
-       zeigen im Zweifel den ganzen relevanten Ausschnitt statt eines Anschnitts. Steht hier oben,
-       weil das Skelett dieselbe Zeilenzahl braucht wie die echte Liste -- sonst springt die Hoehe
-       in dem Moment, in dem die Daten ankommen. */
-    var FENSTER = 7;
-
-    function kpiSkeleton(){
-      var tile = '<div class="upd-kpi">' +
-                   '<div class="upd-kpi-lbl"><span class="up-sk-lbl" style="width:62px"></span></div>' +
-                   '<div class="upd-kpi-val"><span class="up-sk-lbl" style="width:54px;height:18px"></span></div>' +
-                 '</div>';
-      return tile + tile + tile + tile;
+    /* Die Werte in den Kacheln zaehlen hoch wie in Events und Shopping -- dieselbe Form wie in den
+       Zellen, nur mit den Zaehl-Markierungen aus core. Zellen zaehlen nicht. */
+    function kpiWert(feld, v){
+      if (v == null) return '<span class="up-num is-empty">–</span>';
+      if (!UC.zaehlHtml) return zellWert(feld, v);
+      if (feld === "sentiment") return UC.sentHtml(v, { zaehlen: true });
+      if (feld === "rank") return '<span class="up-rank-group">' + HASH_SVG + UC.zaehlHtml(v, "num1") + '</span>';
+      if (feld === "mentions") return UC.zaehlHtml(v, "int");
+      return UC.zaehlHtml(v, "pct1");
     }
-    function standSkeleton(){
-      var rows = "";
-      for (var i = 0; i < FENSTER; i++){
-        /* Namen unterschiedlich lang, sonst liest sich der Block wie ein Balkendiagramm. */
-        var w = [96, 74, 112, 88, 68, 104, 82][i % 7];
-        rows += '<div class="upd-stand-row is-sk">' +
-                  '<span class="up-sk-lbl" style="width:10px"></span>' +
-                  '<span class="up-sk-dot" style="width:22px;height:22px;border-radius:6px"></span>' +
-                  '<span class="up-sk-lbl" style="width:' + w + 'px"></span>' +
-                  '<span class="up-sk-pct" style="width:38px;margin-left:auto"></span>' +
-                '</div>';
-      }
-      return '<div class="upd-stand-head"><span class="up-sk-lbl" style="width:210px"></span></div>' +
-             '<div class="upd-stand-list">' + rows + '</div>';
+    /* Ein Wert in einer Zelle der Rangliste, nach CLAUDE.md 2b: Visibility mit einer Stelle und
+       Prozentzeichen, Rang IMMER mit einer Stelle und der Raute, Sentiment als ganze Note mit dem
+       Balken aus core, Mentions ganz. */
+    function zellWert(feld, v){
+      if (v == null) return '<span class="up-num is-empty">–</span>';
+      if (feld === "sentiment") return UC.sentHtml(v);
+      if (feld === "rank") return '<span class="up-rank-group">' + HASH_SVG + '<span class="up-num">' + fmt1(v) + '</span></span>';
+      if (feld === "mentions") return '<span class="up-num">' + (UC.fmtInt ? UC.fmtInt(v) : Math.round(v)) + '</span>';
+      return '<span class="up-num">' + (UC.fmtPct ? UC.fmtPct(v, 1) : fmt1(v) + "%") + '</span>';
     }
 
     function renderKpis(){
-      if (state.loading){ elKpis.innerHTML = kpiSkeleton(); return; }
+      if (state.loading){
+        elKpis.innerHTML = [0, 1, 2, 3].map(function(){ return UC.kpiKarteSkelett ? UC.kpiKarteSkelett("upd-kpi") : ""; }).join("");
+        return;
+      }
       var src = kpiSource(), k = src.kpi;
-      var vis = num(k.visibility_pct), sv = num(k.sentiment), rv = num(k.avg_rank);
       var ment = num(k.mentions), mentPrev = num(k.mentions_prev);
       var mentDelta = (ment != null && mentPrev != null) ? (ment - mentPrev) : null;
-      var dash = '<span class="upd-dash">-</span>';
-
-      var visHtml  = vis == null ? dash : '<span class="up-num">' + fmtPctShort(vis, true) + '</span>';
-      var sentHtml = sv == null ? dash : UC.sentHtml(sv);
-      var rankHtml = rv == null ? dash
-        : '<span class="up-rank-group">' + HASH_SVG + '<span class="up-num">' + fmt1(rv) + '</span></span>';
-      var mentHtml = ment == null ? dash : '<span class="up-num">' + Math.round(ment) + '</span>';
-
-      var t = UC.trendChip;
+      var tc = UC.trendChip;
       elKpis.innerHTML =
-        kpiTile("Visibility", visHtml, t ? t(num(k.visibility_delta_pct), { decimals: true, suffix: "%" }) : "",
-                "Share of responses this brand appears in.") +
+        kpiTile("Visibility", kpiWert("visibility", num(k.visibility_pct)),
+                tc ? tc(num(k.visibility_delta_pct), { decimals: true, suffix: "%" }) : "") +
         /* Rank ist invertiert: die kleinere Zahl ist die bessere, also ist ein negatives Delta gruen. */
-        kpiTile("Avg. Rank", rankHtml, t ? t(num(k.avg_rank_delta), { decimals: true, inverted: true }) : "",
-                "Average position among the brands named in a response.") +
-        kpiTile("Sentiment", sentHtml, t ? t(num(k.sentiment_delta), {}) : "",
-                "How positively the brand is described, 0 to 100.") +
-        kpiTile("Mentions", mentHtml, t ? t(mentDelta, {}) : "",
-                "How many times the brand was named. Higher means the other numbers rest on more data.");
+        kpiTile("Avg. Rank", kpiWert("rank", num(k.avg_rank)),
+                tc ? tc(num(k.avg_rank_delta), { decimals: true, inverted: true }) : "") +
+        kpiTile("Sentiment", kpiWert("sentiment", num(k.sentiment)),
+                tc ? tc(num(k.sentiment_delta), {}) : "") +
+        kpiTile("Mentions", kpiWert("mentions", ment), tc ? tc(mentDelta, {}) : "");
+      erklaerAnLabels(elKpis, ["kVis", "kRank", "kSent", "kMent"]);
+      /* Je Kombination gemerkt: dieselbe Zelle noch einmal gezeichnet (Theme, Neuaufbau, Nachzuegler)
+         zaehlt nicht von vorn, eine andere schon. */
+      if (UC.hochzaehlen) UC.hochzaehlen(elKpis, "upd|" + instanceId + "|" + paarSchluessel(state.company, state.topic));
 
       /* Der Hinweis gehoert zum Scope-Umschalter und ist mit ihm raus. Die Zeile bleibt
          defensiv, damit ein wieder eingesetzter Umschalter sie sofort wieder fuellt. */
@@ -386,68 +451,91 @@
     }
 
     /* ---------------- Standing auf diesem Topic ----------------
-       Kostet keinen einzigen Serveraufruf: die Spalte des Rasters liegt schon vor. */
+       Kostet keinen einzigen Serveraufruf: die Spalte des Rasters liegt schon vor. Zwei Teile: der
+       Satz zum Rang steht im Kopf unter dem Namen (er ist DIE Aussage dieser Zelle), die ganze
+       Rangliste als Tabelle darunter -- wie die Marktbewegung im Event-Detail. Vorher zeigte die
+       Liste nur ein Fenster von sieben Marken um die eigene; mit Seiten kann sie vollstaendig sein,
+       und die erste Seite ist die, auf der die gewaehlte Marke steht. */
+    function spalteSortiert(){
+      var col = (state.column || []).filter(function(c){ return c && num(c.visibility_pct) != null; });
+      col.sort(function(a, b){ return num(b.visibility_pct) - num(a.visibility_pct); });
+      return col;
+    }
+    function rangSatz(col){
+      if (!state.company || col.length < 2) return "";
+      var myId = String(state.company.company_id), myIdx = -1;
+      for (var i = 0; i < col.length; i++) if (String(col[i].company_id) === myId){ myIdx = i; break; }
+      if (myIdx < 0) return ersetze(t("Not among the {n} brands tracked on this topic"), { n: col.length });
+      if (myIdx === 0){
+        return ersetze(t("Leading this topic, {diff} ahead of #2 {name}"), {
+          diff: fmtPctShort(num(col[0].visibility_pct) - num(col[1].visibility_pct)),
+          name: String(col[1].name || "") });
+      }
+      /* Mit Rang davor: "behind Volvo" laesst offen, ob Volvo der Erste ist oder irgendwer
+         dazwischen. */
+      return ersetze(t("Rank {rank} of {n} on this topic, {diff} behind #1 {name}"), {
+        rank: myIdx + 1, n: col.length,
+        diff: fmtPctShort(num(col[0].visibility_pct) - num(col[myIdx].visibility_pct)),
+        name: String(col[0].name || "") });
+    }
+    function rangKopf(){
+      function th(txt, key){
+        return '<div class="up-th upd-th-zahl">' + esc(t(txt)) +
+          '<span class="up-th-info upd-erklaer" data-explain="' + key + '">' + UC.icon("info", 2) + '</span></div>';
+      }
+      return '<div class="up-thead up-vrow"><div class="up-th up-th-vname">' + esc(t("Brand")) + '</div>' +
+        th("Visibility", "kVis") + th("Avg. Rank", "kRank") + th("Sentiment", "kSent") + th("Mentions", "kMent") + '</div>';
+    }
+    /* Die Seite der gewaehlten Marke: einmal je Kombination, danach blaettert der Nutzer selbst. */
+    var rangSeiteFuer = null;
     function renderStanding(){
       if (state.loading){
-        root.classList.remove("no-stand");   // die Spalte bleibt stehen, sonst springt das Layout
-        elStand.innerHTML = standSkeleton();
+        elRangSek.hidden = false;
+        elSatz.innerHTML = '<span class="up-tsk-bar upd-satz-sk"></span>';
+        elStand.innerHTML = '<div class="up-vartable upd-rang">' + rangKopf() + '<div class="up-tbody up-vbody">' +
+          (UC.skeletonRows ? UC.skeletonRows({ count: SK_ZEILEN, rowClass: "up-row up-vrow", cellClass: "up-td",
+            cols: [{ w: 110, jitter: 30, logo: true, cls: "up-var-name upd-td-marke" }, { w: 44, cls: "upd-td-zahl" },
+                   { w: 36, cls: "upd-td-zahl" }, { w: 40, cls: "upd-td-zahl" }, { w: 32, cls: "upd-td-zahl" }] }) : "") +
+          '</div></div>';
+        seitenStand("rang", null);
         return;
       }
-      var col = (state.column || []).filter(function(c){ return c && num(c.visibility_pct) != null; });
+      var col = spalteSortiert();
+      elSatz.textContent = state.scope === "topic" ? rangSatz(col) : "";
+      /* Eine Rangliste mit nur einer Marke ist keine -- der Abschnitt faellt dann weg, wie die
+         Marktbewegung ohne Wettbewerber (Spezifikation 85 der Events). */
       if (state.scope !== "topic" || !state.company || col.length < 2){
         elStand.innerHTML = "";
-        root.classList.add("no-stand");     // linke Spalte faellt weg, die Kurve nimmt die Breite
+        seitenStand("rang", null);
+        elRangSek.hidden = true;
         return;
       }
-      root.classList.remove("no-stand");
-      col.sort(function(a, b){ return num(b.visibility_pct) - num(a.visibility_pct); });
-
+      elRangSek.hidden = false;
       var myId = String(state.company.company_id);
-      var myIdx = -1;
-      for (var i = 0; i < col.length; i++) if (String(col[i].company_id) === myId){ myIdx = i; break; }
-      var leader = col[0], mine = myIdx >= 0 ? col[myIdx] : null;
-
-      var head;
-      if (myIdx === 0){
-        head = '<strong>Leading</strong> this topic, ' +
-               (col.length > 1 ? fmtPctShort(num(col[0].visibility_pct) - num(col[1].visibility_pct)) +
-                                 ' ahead of <span class="upd-rk">#</span>2 ' + esc(String(col[1].name || "")) : "");
-      } else if (mine){
-        head = 'Rank <strong>' + (myIdx + 1) + '</strong> of ' + col.length + ' on this topic, ' +
-               fmtPctShort(num(leader.visibility_pct) - num(mine.visibility_pct)) +
-               /* Mit Rang davor: "behind Volvo" laesst offen, ob Volvo der Erste ist oder
-                  irgendwer dazwischen. Das Rautenzeichen in Drittfarbe, wie ueberall sonst. */
-               ' behind <span class="upd-rk">#</span>1 ' + esc(String(leader.name || ""));
-      } else {
-        head = 'Not among the ' + col.length + ' brands tracked on this topic';
+      var schluessel = paarSchluessel(state.company, state.topic);
+      if (rangSeiteFuer !== schluessel && seiten.rang){
+        rangSeiteFuer = schluessel;
+        var myIdx = -1;
+        for (var i = 0; i < col.length; i++) if (String(col[i].company_id) === myId){ myIdx = i; break; }
+        seiten.rang.st.page = myIdx >= 0 ? Math.floor(myIdx / seiten.rang.st.pageSize) + 1 : 1;
       }
-
-      /* Fuenf Zeilen, und die eigene Marke steht darin so mittig wie moeglich: zwei darueber, zwei
-         darunter. Das ist der Ausschnitt, der die Frage beantwortet -- wen habe ich gerade vor mir
-         und wer sitzt mir im Nacken. Eine Liste, die immer bei Rang 1 anfaengt, zeigt bei Rang 9
-         fuenf Marken, mit denen die eigene nichts zu tun hat.
-         Am Rand rutscht das Fenster nach innen statt ueber die Liste hinaus: bei Rang 2 also
-         1 bis 5, beim Letzten die letzten fuenf. Ist die Marke gar nicht in der Spalte, bleibt es
-         bei den Top 5. */
-      var start = 0;
-      if (myIdx >= 0) start = Math.max(0, Math.min(myIdx - Math.floor(FENSTER / 2), col.length - FENSTER));
-      var show = col.slice(start, start + FENSTER);
-
-      elStand.innerHTML =
-        '<div class="upd-stand-head">' + head + '</div>' +
-        '<div class="upd-stand-list">' + show.map(function(c){
-          var v = num(c.visibility_pct) || 0;
+      var ab = seitenStand("rang", col.length);
+      elStand.innerHTML = '<div class="up-vartable upd-rang">' + rangKopf() + '<div class="up-tbody up-vbody">' +
+        col.slice(ab.von, ab.bis).map(function(c, j){
           var self = String(c.company_id) === myId;
-          var realIdx = col.indexOf(c);
-          return '<div class="upd-stand-row' + (self ? " is-self" : "") + '" role="button" tabindex="0"' +
+          return '<div class="up-row up-vrow upd-rangzeile' + (self ? " is-self" : "") + '" role="button" tabindex="0"' +
                    ' data-cid="' + esc(String(c.company_id)) + '"' +
                    ' data-cname="' + esc(String(c.name || "")) + '">' +
-                   '<span class="upd-stand-idx">' + (realIdx + 1) + '</span>' +
-                   brandChipHtml(c) +
-                   '<span class="upd-stand-name">' + esc(String(c.name || "")) + '</span>' +
-                   '<span class="upd-stand-val up-num">' + fmtPctShort(v, true) + '</span>' +
+                   '<div class="up-td up-var-name upd-td-marke">' +
+                     '<span class="upd-platz">' + (ab.von + j + 1) + '</span>' + logoHtml(c) +
+                     '<span class="up-varname">' + esc(String(c.name || "")) + '</span>' +
+                   '</div>' +
+                   '<div class="up-td upd-td-zahl">' + zellWert("visibility", num(c.visibility_pct)) + '</div>' +
+                   '<div class="up-td upd-td-zahl">' + zellWert("rank", num(c.avg_rank)) + '</div>' +
+                   '<div class="up-td upd-td-zahl">' + zellWert("sentiment", num(c.sentiment)) + '</div>' +
+                   '<div class="up-td upd-td-zahl">' + zellWert("mentions", num(c.mentions)) + '</div>' +
                  '</div>';
-        }).join("") + '</div>';
+        }).join("") + '</div></div>';
     }
 
     /* ---------------- Kurve ---------------- */
@@ -500,20 +588,28 @@
            stand, gab allen drei Zellen nur .up-td -- ohne die Spaltenbreiten stand die
            Namensspalte zu breit und alles dahinter versetzt. */
         elVBody.innerHTML = UC.variationRows(null, { rowClass: "up-vrow upd-vrow" });
+        seitenStand("var", null);
         return;
       }
       var rows = varRows();
       if (!rows.length){
         elVBody.innerHTML = '<div class="up-empty-mini">' +
-          (state.varQuery ? "No variation matches this search." : "No variations recorded for this combination.") +
+          esc(t(state.varQuery ? "No variation matches this search." : "No variations recorded for this combination.")) +
           '</div>';
+        seitenStand("var", null);
         return;
       }
       /* UC.variationRows baut die Zeilen -- dasselbe Kit, das brand-detail benutzt. Was hier
-         frueher stand, war die Vorlage dafuer; sie ist wortgleich nach core gewandert. */
-      elVBody.innerHTML = UC.variationRows(rows, { query: state.varQuery,
+         frueher stand, war die Vorlage dafuer; sie ist wortgleich nach core gewandert. Seit dem
+         07.10. nur die Zeilen der aktuellen Seite. */
+      var ab = seitenStand("var", rows.length);
+      elVBody.innerHTML = UC.variationRows(rows.slice(ab.von, ab.bis), { query: state.varQuery,
                                                    rowClass: "up-vrow upd-vrow" });
     }
+    /* Eine neue Suche beginnt auf Seite 1 -- sonst stuende man nach dem Tippen auf einer Seite,
+       die es fuer die kuerzere Liste nicht mehr gibt (seitenStand fiele zwar auf die letzte
+       zurueck, aber die erste ist die, auf der die besten Treffer stehen). */
+    function varSeiteZurueck(){ if (seiten["var"]) seiten["var"].st.page = 1; }
 
     /* ---------------- Gesamt-Render ---------------- */
     function render(){
@@ -524,17 +620,17 @@
       /* Der Leerkasten traegt zwei verschiedene Aussagen: "noch nichts gewaehlt" und "es kam
          etwas an, aber es war unlesbar". Ohne die zweite las sich ein zerrissener Payload als
          "Pick a cell", obwohl der Nutzer laengst eine gewaehlt hatte. */
-      var elLeerT = root.querySelector(".upd-empty-title");
-      var elLeerS = root.querySelector(".upd-empty-sub");
+      var elLeerT = root.querySelector(".upd-empty .up-empty-h");
+      var elLeerS = root.querySelector(".upd-empty .up-empty-t");
       if (elLeerT && elLeerS){
-        elLeerT.textContent = state.leseFehler ? "Could not load this cell" : "No cell selected";
-        elLeerS.textContent = state.leseFehler
+        elLeerT.textContent = t(state.leseFehler ? "Could not load this cell" : "No cell selected");
+        elLeerS.textContent = t(state.leseFehler
           ? "The data could not be read. Please reload the page."
-          : "Pick a cell in the Performance Radar to see the details for that brand and topic.";
+          : "Pick a cell in the Performance Radar to see the details for that brand and topic.");
       }
       if (!on) return;
-      elBrand.innerHTML = brandChipHtml(state.company) +
-        '<span class="upd-brand-name">' + esc(String(state.company.name || "")) + '</span>';
+      elHeldLogo.innerHTML = logoHtml(state.company, "upd-held-logobox");
+      elHeldName.textContent = String(state.company.name || "");
       elTopic.innerHTML = topicChipHtml(state.topic);
       renderKpis();
       renderStanding();
@@ -614,14 +710,14 @@
     }
 
     elStand.addEventListener("click", function(e){
-      var row = e.target.closest ? e.target.closest(".upd-stand-row") : null;
+      var row = e.target.closest ? e.target.closest(".upd-rangzeile") : null;
       if (!row) return;
       fireCompanyClick(row);
     });
     /* Tastatur: die Zeile ist ein Button, also muss sie auch auf Enter und Leertaste hoeren. */
     elStand.addEventListener("keydown", function(e){
       if (e.key !== "Enter" && e.key !== " ") return;
-      var row = e.target.closest ? e.target.closest(".upd-stand-row") : null;
+      var row = e.target.closest ? e.target.closest(".upd-rangzeile") : null;
       if (!row) return;
       e.preventDefault();
       row.click();
@@ -639,17 +735,18 @@
       var open = !elSearch.classList.contains("is-open");
       elSearch.classList.toggle("is-open", open);
       if (open){ setTimeout(function(){ try { elSInput.focus(); } catch(e){} }, 60); }
-      else if (state.varQuery){ state.varQuery = ""; elSInput.value = ""; elSearch.classList.remove("has-text"); renderVariations(); persist(); }
+      else if (state.varQuery){ state.varQuery = ""; elSInput.value = ""; elSearch.classList.remove("has-text"); varSeiteZurueck(); renderVariations(); persist(); }
     });
     elSInput.addEventListener("input", function(){
       state.varQuery = String(elSInput.value || "").trim();
+      varSeiteZurueck();
       elSearch.classList.toggle("has-text", !!elSInput.value.length);
       renderVariations();
       persist();
     });
     root.querySelector(".up-search-clear").addEventListener("click", function(){
       state.varQuery = ""; elSInput.value = ""; elSearch.classList.remove("has-text");
-      renderVariations(); persist(); try { elSInput.focus(); } catch(e){}
+      varSeiteZurueck(); renderVariations(); persist(); try { elSInput.focus(); } catch(e){}
     });
 
     /* Der geteilte Tooltip. showTipWide zeigt den vollen Text, unsuppress hebt die Stummschaltung
@@ -679,10 +776,25 @@
              '<span class="up-explain-row">Mercedes E Class</span>';
     }
 
+    var KPI_ERKLAER = {
+      kVis:  function(){ return UC.explainCopy ? UC.explainCopy("visibility", { scope: " on this topic" }) : null; },
+      kRank: function(){ return UC.explainCopy ? UC.explainCopy("rank", { scope: " on this topic" }) : null; },
+      kSent: function(){ return UC.explainCopy ? UC.explainCopy("sentiment", { scope: " on this topic" }) : null; },
+      kMent: function(){ return { h: t("Mentions"), t: t("How many times the brand was named. Higher means the other numbers rest on more data.") }; }
+    };
     if (UC.makeExplain){
       UC.makeExplain({
         root: root, getIsDark: darkNow,
         html: function(key){
+          /* Die Kennzahlen (Kacheln und Spaltenkoepfe der Rangliste): die EINE Erklaerung je
+             Kennzahl aus core (UC.explainCopy), mit "on this topic" -- dieselben Saetze wie in den
+             Tabellen der App. Mentions hat dort keinen Eintrag; der Satz ist der der alten Kachel. */
+          var k = KPI_ERKLAER[key];
+          if (k){
+            var ek = k();
+            return ek ? '<div class="up-explain-h">' + esc(ek.h) + '</div>' +
+                        '<div class="up-explain-t">' + esc(ek.t) + '</div>' : "";
+          }
           var e = VAR_EXPLAIN[key];
           if (!e) return "";
           /* upd-explain-vis als Marke: die Erklaerkarte haengt im body, ausserhalb jeder
@@ -766,6 +878,7 @@
       if (wechsel){
         state.series = { topic: null, global: null };
         state.variations = null;
+        varSeiteZurueck();
         state.globalKpis = null;
         /* Und SOFORT in den Ladezustand, ohne auf Bubble zu warten.
 
@@ -817,6 +930,7 @@
       var list = Array.isArray(rows) ? rows : [];
       if (!state.company){ VORAB.variations = list; persist(); return; }
       state.variations = list;
+      varSeiteZurueck();
       renderVariations();
       persist();
       ladezustandPruefen();

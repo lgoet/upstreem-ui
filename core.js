@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261106;
+  var BUILD = 20261107;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -590,6 +590,7 @@
     /* Die Stuecke, die die Komponenten einsetzen -- eigene Eintraege, weil sie eigene Texte sind.
        Das fuehrende Leerzeichen gehoert dazu: der Satz klebt sie direkt an. */
     " for this prompt": " für diesen Prompt",
+    " on this topic": " auf diesem Topic",
     " in AI answers for this prompt": " in KI-Antworten auf diesen Prompt",
     " for this domain": " für diese Domain",
     " for this URL": " für diese URL",
@@ -788,6 +789,7 @@
     "Hide grouping": "Gruppierung ausblenden",
     /* Variations-Kit */
     "Variations": "Variationen",
+    "Different brand names used in AI responses": "Verschiedene Namen der Brand in KI-Antworten",
     "Variation Name": "Variation",
     "Search variations": "Variationen suchen",
     "No variations recorded.": "Noch keine Variationen erfasst.",
@@ -1627,6 +1629,16 @@
       "Zeigt, auf wie vielen Mentions ein Wert beruht.",
     "Visibility over time": "Visibility im Zeitverlauf",
     "Leading": "Führend",
+    /* Performance Detail im Aufbau der neuen Detailbereiche (07.10.) */
+    "How often the brand appeared in AI answers on this topic.":
+      "Wie oft die Brand in KI-Antworten zu diesem Topic vorkam.",
+    "Brands on this topic": "Brands auf diesem Topic",
+    "Every tracked brand on this topic, ranked by visibility.":
+      "Jede beobachtete Brand auf diesem Topic, nach Visibility sortiert.",
+    "Leading this topic, {diff} ahead of #2 {name}": "Führend auf diesem Topic, {diff} vor #2 {name}",
+    "Rank {rank} of {n} on this topic, {diff} behind #1 {name}":
+      "Platz {rank} von {n} auf diesem Topic, {diff} hinter #1 {name}",
+    "Not among the {n} brands tracked on this topic": "Nicht unter den {n} beobachteten Brands auf diesem Topic",
 
     /* brand-editor */
     "Alias": "Alias",
@@ -19640,7 +19652,7 @@
         '<div class="up-sec-head ' + pfx + '-sec-head">' +
           '<div class="up-sec-titles">' +
             '<span class="up-heading up-sec-h">' + esc(opts.title || t_("Variations")) + '</span>' +
-            (sub ? '<span class="up-sec-sub">' + esc(sub) + '</span>' : "") +
+            (sub ? '<span class="up-sec-sub">' + esc(t_(sub)) + '</span>' : "") +
           '</div>' + search +
         '</div>' +
         '<div class="up-vartable ' + pfx + '-vartable">' +
