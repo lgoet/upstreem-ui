@@ -1,0 +1,23 @@
+/* upstreem not-found.css — die 404-Seite (Praefix `unf`).
+
+   Rahmen, Kopf und Knoepfe kommen aus core (.up-es-*, .up-btn-pri.is-lg, .up-btn-sec.is-lg).
+   Hier steht nur, was es genau einmal gibt: die Zahl und die Reihe der zwei Wege. */
+
+/* Die Ziffern tragen das Linienmuster der Anmeldeseite und der Landingpage: senkrechte Striche in
+   der Schriftfarbe, durch die Zahl geschnitten (background-clip: text) -- 2px Strich, 4px Luecke,
+   damit die Zahl auch bei 96px noch als Flaeche liest und nicht in Linien zerfaellt. Kein Bild:
+   das Muster folgt dem Thema ueber --vc-text von selbst.
+   clamp: auf einem flachen Laptopfenster darf die Zahl nicht die Haelfte der Hoehe nehmen
+   (min(vw, vh)), auf dem Telefon bleibt sie bei 96px gross genug, um die Seite zu tragen. */
+.unf-zahl {
+  margin: 0 auto 22px; padding-right: .06em; text-align: center; user-select: none;
+  font-size: clamp(96px, min(15vw, 22vh), 184px); line-height: .86; font-weight: 600;
+  letter-spacing: -.06em; color: transparent;
+  background-image: repeating-linear-gradient(to right, var(--vc-text) 0, var(--vc-text) 2px,
+                    transparent 2px, transparent 6px);
+  -webkit-background-clip: text; background-clip: text;
+}
+/* Zwei Wege nebeneinander, gleich breit: der Hauptweg links, der Weg zurueck daneben. 32px
+   Abstand wie ueber jedem Hauptknopf der Einzelseiten (.up-es-cta). */
+.unf-reihe { margin-top: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.unf-reihe > * { width: 100%; min-width: 0; }

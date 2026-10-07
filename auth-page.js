@@ -25,7 +25,7 @@
   if (!window.__uauBootStubbed){
     window.__uauBootStubbed = true;
     ["renderAuthPage", "setAuthPageMode", "setAuthPageLoading", "setAuthPageError",
-     "setAuthPageDone", "setAuthPageInvite", "setAuthPageServerError", "resetAuthPage"].forEach(function(n){
+     "setAuthPageDone", "setAuthPageInvite", "resetAuthPage"].forEach(function(n){
       window[n] = function(){ BOOTQ.push([n, arguments]); };
     });
   }
@@ -115,9 +115,11 @@
     'stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12L12 5L19 12"/></svg>';
 
   /* ── Pruefungen ────────────────────────────────────────────────────────────
-     Die E-Mail-Regel ist bewusst grob (Begruendung an UC.mailOk). Sie steht seit dem 07.10. in
-     core: hier, in team-orga.js und auf den neuen Seiten unten war es dieselbe Zeile. Core ist
-     an dieser Stelle immer da -- uauBoot startet erst, wenn es geladen ist. */
+     Die E-Mail-Regel ist bewusst grob. Ein Muster, das RFC 5322 nachbildet, weist echte Adressen
+     ab (Pluszeichen, Umlaute, lange Endungen) -- und eine Anmeldeseite, die eine gueltige Adresse
+     ablehnt, kostet einen Nutzer. Was wirklich zustellbar ist, weiss ohnehin nur der Server. */
+  /* Seit dem 07.10. aus core (UC.mailOk): dieselbe Regel nutzen team-orga und forgot-password --
+     eine Regel an drei Orten liefe irgendwann auseinander. */
   function mailOk(v){ return window.UpstreemCore.mailOk(v); }
 
   /* Vier Stufen. Laenge zaehlt doppelt, weil sie mehr bringt als jede Zeichenklasse: aus acht
@@ -206,10 +208,9 @@
      das Element nach dem ersten Zeichnen oft neu auf, und die neue Wurzel faende in der
      bereinigten Adresse nichts mehr. Ein Neuladen zeigt die Meldung dagegen nicht erneut. */
   var _absage = null;
-  /* Suchzeile UND Anker als EINE Tabelle (07.10. herausgezogen: die Seite "Neues Passwort" liest
-     denselben Weg -- Supabase schickt einen abgelaufenen Ruecksetzlink mit error_code=otp_expired
-     im Anker zurueck). Der erste Fund eines Schluessels gilt. null, wenn nichts zu lesen war. */
-  function adressQ(){
+  function oauthAbsage(){
+    if (_absage != null) return _absage;
+    _absage = "";
     var q = {};
     try {
       [String(window.location.search || "").replace(/^\?/, ""),
@@ -222,11 +223,12 @@
           if (!(k in q)) q[k] = v;
         });
       });
-    } catch(e){ return null; }
-    return q;
-  }
-  /* Die Fehlerangaben aus der Adresse nehmen, damit ein Neuladen sie nicht noch einmal zeigt. */
-  function adressFehlerWeg(){
+    } catch(e){ return _absage; }
+    if (!q.error && !q.error_code && !q.error_description) return _absage;
+    var worte = (String(q.error_description || "") + " " + String(q.error_code || "")).toLowerCase();
+    _absage = /invite|signup_disabled|signups? not allowed/.test(worte)
+      ? "No invite found for this email address. Ask your team to invite you, then use the link in the invite email."
+      : "Google sign-in did not work. Please try again. New accounts need an invite from your team.";
     try {
       if (window.history && window.history.replaceState){
         var u = new URL(window.location.href);
@@ -235,145 +237,8 @@
         window.history.replaceState(window.history.state, "", u.toString());
       }
     } catch(e){}
-  }
-  function oauthAbsage(){
-    if (_absage != null) return _absage;
-    _absage = "";
-    var q = adressQ();
-    if (!q) return _absage;
-    if (!q.error && !q.error_code && !q.error_description) return _absage;
-    var worte = (String(q.error_description || "") + " " + String(q.error_code || "")).toLowerCase();
-    _absage = /invite|signup_disabled|signups? not allowed/.test(worte)
-      ? "No invite found for this email address. Ask your team to invite you, then use the link in the invite email."
-      : "Google sign-in did not work. Please try again. New accounts need an invite from your team.";
-    adressFehlerWeg();
     return _absage;
   }
-
-  /* ── Das Logo ohne Attribut (07.10.) ─────────────────────────────────────────────────────────
-     Die Wortmarke liegt seit langem als Datei auf Supabase, je Thema eine (core.css nimmt
-     dieselben zwei fuer das Wasserzeichen der Charts). Die Seiten ohne Anmeldeformular brauchen
-     deshalb kein data-logo mehr -- und die Anmeldeseite faellt auf sie zurueck, wenn ihr Element
-     keines traegt, statt die Ecke leer zu lassen. Ein gesetztes data-logo gewinnt weiter. */
-  var LOGO_HELL = "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-1f1f1f.svg";
-  var LOGO_DUNKEL = "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-e0e0e0.svg";
-  /* Ein Attribut, das nur den Platzhalter der Vorlage traegt (LOGO_URL, IS_DARK), gilt als leer. */
-  function attrVon(root, n, f){
-    var v = root.getAttribute(n);
-    return (v == null || v === "" || /^[A-Z_]{3,}$/.test(v)) ? (f || "") : v;
-  }
-  function logoFuer(root, dunkel){
-    return (dunkel && attrVon(root, "data-logo-dark")) || attrVon(root, "data-logo") ||
-           (dunkel ? LOGO_DUNKEL : LOGO_HELL);
-  }
-  /* ── Theme ────────────────────────────────────────────────────────────────────────────────────
-     Die Seite bestimmt es selbst, in dieser Reihenfolge:
-       1. was schon am Element steht (core hat es beim Laden gesetzt)
-       2. data-isdark, falls es jemand setzt
-       3. die gemerkte Wahl aus localStorage -- derselbe Schluessel wie im Rest der App
-       4. die Einstellung des Betriebssystems
-     Der Schluessel heisst pref_theme und gehoert core (setUpstreemTheme schreibt ihn). Einen
-     eigenen zu fuehren hiesse, dass diese Seiten eine andere Wahl merken als die App dahinter --
-     der Nutzer stellte dunkel ein und saehe beim naechsten Login wieder hell. Deshalb braucht
-     keine der Seiten ein data-isdark: die Wahl kommt aus derselben Ablage wie in der App. */
-  function dunkelFuer(root){
-    if (root.getAttribute("data-theme") === "dark") return true;
-    var roh = root.getAttribute("data-isdark");
-    if (roh != null && roh !== "" && !/^[A-Z_]{3,}$/.test(roh)) return window.UpstreemCore.isYes(roh);
-    try {
-      var g = localStorage.getItem("pref_theme");
-      if (g === "dark") return true;
-      if (g === "light") return false;
-    } catch(e){}
-    try { return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); }
-    catch(e){ return false; }
-  }
-  /* Ein Event, dessen Wert der Wert IST -- kein JSON drumherum (Begruendung an absenden in
-     makeController: Passwoerter duerfen jedes Zeichen enthalten). Nicht still scheitern: wer den
-     Namen nicht findet, bekommt eine deutliche Meldung in der Konsole. */
-  function feuerRoh(root, attr, fallback, wert){
-    var UC = window.UpstreemCore;
-    var fnName = root.getAttribute(attr) || fallback;
-    function finde(n){ var f = UC.resolveBubbleFn ? UC.resolveBubbleFn(n) : window[n]; return typeof f === "function" ? f : null; }
-    /* Beide Schreibweisen: Bubble legt das JavaScriptToBubble-Element als bubble_fn_<name> an.
-       Ohne Attribut am Element kommt hier der nackte Vorgabename an -- gemessen am 07.10. auf der
-       Seite "Passwort vergessen": das Event erreichte nichts, weil nur "uauForgot" gesucht wurde. */
-    var fn = finde(fnName) || (fnName.indexOf("bubble_fn_") === 0 ? null : finde("bubble_fn_" + fnName));
-    if (typeof fn !== "function"){
-      if (window.console) console.warn("[auth-page] " + fnName + " nicht gefunden — dieser Wert " +
-        "hat keinen Bubble-Workflow erreicht. Fehlt das JavaScriptToBubble-Element?");
-      return false;
-    }
-    try { fn(String(wert == null ? "" : wert)); return true; }
-    catch(e){
-      if (window.console) console.warn("[auth-page] " + fnName + " hat geworfen:", e);
-      return false;
-    }
-  }
-
-  /* ── WAS SUPABASE ZURUECKGIBT, IN SAETZEN FUER MENSCHEN (07.10.) ───────────────────────────────
-     setAuthPageServerError nimmt den ROHEN Fehler aus Bubble -- den Text, den das Supabase-Plugin
-     liefert, oder dessen JSON ({"code":"weak_password","message":"..."}) -- und macht daraus Feld
-     und Satz. Gezeigt wird NIE der Servertext selbst: "Auth session missing!" oder "AuthApiError"
-     sagt dem Nutzer nichts, was er tun kann.
-     Erkannt wird am Code (neuere GoTrue-Fassungen schicken ihn mit) und am Wortlaut (aeltere nicht).
-     Was nichts davon trifft, bekommt den allgemeinen Satz -- auch ein Fehler, den es heute noch
-     nicht gibt, steht also nie leer da.
-     Ruecksetzlinks: ein abgelaufener oder schon benutzter Link kommt je nach Fluss als otp_expired,
-     als "Token has expired or is invalid" oder -- wenn die Seite ohne gueltige Sitzung aufgerufen
-     wird -- als "Auth session missing!". Alle drei heissen fuer den Nutzer dasselbe: neuen Link
-     holen. aktion "neuerLink" haengt dafuer den Weg zur Seite "Passwort vergessen" an. */
-  function serverFehler(roh, art){
-    var UC = window.UpstreemCore;
-    var r = String(roh == null ? "" : roh).trim(), code = "";
-    if (r.charAt(0) === "{"){
-      var o = UC.bubbleObjekt ? UC.bubbleObjekt(r) : null;
-      if (o){ code = String(o.code || o.error_code || o.error || ""); }
-    }
-    var text = UC.bubbleFehler ? UC.bubbleFehler(r) : r;
-    var w = (code + " " + text).toLowerCase();
-    var reset = art === "reset-password";
-    var sek = /after (\d+) seconds?/.exec(w);
-    if (/same_password|different from the old/.test(w))
-      return { feld: "password", text: "Choose a password you have not used before." };
-    if (/pwned|known to be weak|easy to guess|data breach/.test(w))
-      return { feld: "password", text: "This password appeared in a data breach. Please choose a different one." };
-    if (/weak_password|at least \d+ characters|should contain at least|password is too short/.test(w))
-      return { feld: "password", text: "That password is too weak. Use at least 8 characters with letters and numbers." };
-    if (/otp_expired|flow_state_expired|bad_code_verifier|link is invalid|has expired|expired or is invalid|invalid or has expired/.test(w))
-      return { feld: "", text: reset ? "This reset link has expired or was already used." : "This link has expired or was already used.",
-               aktion: reset ? "neuerLink" : "" };
-    if (/session_not_found|auth session missing|session missing|not authenticated|invalid jwt|jwt expired/.test(w))
-      return reset ? { feld: "", text: "This reset link has expired or was already used.", aktion: "neuerLink" }
-                   : { feld: "", text: "Your session has expired. Please sign in again." };
-    if (/reauthentication_needed|reauthenticat/.test(w))
-      return { feld: "", text: "Please sign in again to change your password." };
-    /* Die Sekunden VOR der allgemeinen Mail-Sperre: GoTrue schickt die Minutensperre je Adresse
-       ("you can only request this after 47 seconds") mit demselben Code over_email_send_rate_limit
-       wie die Sperre des ganzen Projekts. Die genauere Angabe gewinnt. */
-    if (sek)
-      return { feld: "", text: "Please wait " + sek[1] + " seconds before trying again." };
-    if (/over_email_send_rate_limit|email rate limit/.test(w))
-      return { feld: "", text: "Too many emails were sent. Please wait a few minutes and try again." };
-    if (/over_request_rate_limit|rate limit|too many requests|429/.test(w))
-      return { feld: "", text: "Too many attempts. Please wait a moment and try again." };
-    if (/email_address_invalid|invalid format|unable to validate email/.test(w))
-      return { feld: "email", text: "That does not look like an email address." };
-    if (/invalid_credentials|invalid login credentials/.test(w))
-      return { feld: "", text: "Email or password is not correct." };
-    if (/email_not_confirmed|not confirmed/.test(w))
-      return { feld: "", text: "Please confirm your email first. Check your inbox for the link." };
-    if (/user_already_exists|email_exists|already registered|already been registered/.test(w))
-      return { feld: "email", text: "An account with this email already exists. Sign in instead." };
-    if (/signup_disabled|signups? not allowed|invite/.test(w))
-      return { feld: "", text: "New accounts need an invite from your team." };
-    if (/user_not_found/.test(w))
-      return { feld: "email", text: "We could not find an account with this email." };
-    if (/failed to fetch|networkerror|network request|timed? ?out|timeout/.test(w))
-      return { feld: "", text: "We could not reach the server. Check your connection and try again." };
-    return { feld: "", text: "Something went wrong. Please try again." };
-  }
-
 
   function makeController(root){
     var UC = window.UpstreemCore;
@@ -386,16 +251,47 @@
        Nicht still scheitern: wer den Namen nicht findet, bekommt dieselbe deutliche Meldung
        wie bei makeFire -- ein Passwort, das nirgends ankommt, sieht sonst aus wie ein
        fehlgeschlagener Login. */
-    function fireRoh(attr, fallback, wert){ return feuerRoh(root, attr, fallback, wert); }
+    function fireRoh(attr, fallback, wert){
+      var fnName = root.getAttribute(attr) || fallback;
+      var fn = UC.resolveBubbleFn ? UC.resolveBubbleFn(fnName) : window[fnName];
+      if (typeof fn !== "function"){
+        if (window.console) console.warn("[auth-page] " + fnName + " nicht gefunden — dieser Wert " +
+          "hat keinen Bubble-Workflow erreicht. Fehlt das JavaScriptToBubble-Element?");
+        return false;
+      }
+      try { fn(String(wert == null ? "" : wert)); return true; }
+      catch(e){
+        if (window.console) console.warn("[auth-page] " + fnName + " hat geworfen:", e);
+        return false;
+      }
+    }
 
     var state = { mode: "login", busy: false, done: false, errs: {}, formErr: "",
                   token: "", mailFest: false };
     var busyTimer = null;
 
-    function attr(n, f){ return attrVon(root, n, f); }
-    /* Das Theme bestimmt dunkelFuer (oben, mit Begruendung) -- seit dem 07.10. fuer alle Seiten
-       dieser Datei an einer Stelle. */
-    function istDunkel(){ return dunkelFuer(root); }
+    function attr(n, f){ var v = root.getAttribute(n); return (v == null || v === "" || /^[A-Z_]{3,}$/.test(v)) ? (f || "") : v; }
+    /* ── Theme ────────────────────────────────────────────────────────────────
+       Die Seite bestimmt es selbst, in dieser Reihenfolge:
+         1. was schon am Element steht (core hat es beim Laden gesetzt)
+         2. die gemerkte Wahl aus localStorage -- derselbe Schluessel wie im Rest der App
+         3. die Einstellung des Betriebssystems
+       Erst dann data-isdark, falls es doch jemand setzt.
+       Der Schluessel heisst pref_theme und gehoert core (setUpstreemTheme schreibt ihn). Einen
+       eigenen zu fuehren hiesse, dass die Anmeldeseite eine andere Wahl merkt als die App
+       dahinter -- der Nutzer stellte dunkel ein und saehe beim naechsten Login wieder hell. */
+    function istDunkel(){
+      if (root.getAttribute("data-theme") === "dark") return true;
+      var roh = root.getAttribute("data-isdark");
+      if (roh != null && roh !== "" && !/^[A-Z_]{3,}$/.test(roh)) return UC.isYes(roh);
+      try {
+        var g = localStorage.getItem("pref_theme");
+        if (g === "dark") return true;
+        if (g === "light") return false;
+      } catch(e){}
+      try { return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); }
+      catch(e){ return false; }
+    }
     /* data-theme ist der Schalter, an dem die --vc-*-Tokens in core haengen.
        NUR anfassen, wenn data-isdark ueberhaupt gesetzt ist. Ohne diese Bedingung raeumte die
        Funktion ein von aussen gesetztes data-theme weg und die Seite waere schlagartig hell --
@@ -413,7 +309,7 @@
       }
       var l = root.querySelector(".uau-logo");
       if (l && l.tagName === "IMG"){
-        var neu = logoFuer(root, d);
+        var neu = (d && attr("data-logo-dark")) || attr("data-logo");
         if (neu && l.getAttribute("src") !== neu) l.setAttribute("src", neu);
       }
     }
@@ -455,7 +351,7 @@
       /* Im Dunkeln ein eigenes Logo, wenn eines hinterlegt ist. Ohne Rueckfall auf die helle
          Fassung waere die Ecke leer -- ein fehlendes Dark-Logo darf nicht heissen, dass gar
          keines dasteht. */
-      var logo = logoFuer(root, istDunkel());
+      var logo = (istDunkel() && attr("data-logo-dark")) || attr("data-logo");
       var bg   = attr("data-bg");
       return '' +
       '<div class="uau-card"' + (bg ? ' data-hasbg="1"' : '') + '>' +
@@ -1053,11 +949,6 @@
         zeigeFehler();
         return true;
       },
-      /* Der rohe Fehler aus Bubble (07.10.): serverFehler macht Feld und Satz daraus. */
-      setServerError: function(roh){
-        var f = serverFehler(roh, state.mode);
-        return this.setError(f.feld, f.text);
-      },
       setDone: function(titel, text){
         setBusy(false);
         state.done = true;
@@ -1084,463 +975,6 @@
     };
   }
 
-  /* ══ DIE SEITEN OHNE ANMELDEFORMULAR (07.10.) ════════════════════════════════════════════════
-     Vier kleine Seiten, die bis dahin reine Bubble-Seiten waren: "Check your email" nach dem
-     Signup, "Passwort vergessen", "Neues Passwort" (das Ziel des Ruecksetzlinks) und die 404.
-     Sie stehen HIER und nicht in einer eigenen Datei, weil sie aus denselben Teilen bestehen wie
-     die Anmeldeseite -- Logo und Theme-Knopf oben, Feld, Hauptknopf, Fehlerkasten, Staerkeanzeige,
-     Ladezustand mit Notbremse, Erfolgsblock. Eine zweite Datei haette jedes davon nachgebaut, und
-     die beiden liefen auseinander, sobald eine Seite geaendert wird und die andere nicht.
-     Welche Seite, sagt data-page. Ohne das Attribut bleibt es die Anmeldeseite (login/signup).
-     DAS RASTER: wie die Anmeldeseite -- dieselbe Karte mit 16px Polster, oben links das Logo, oben
-     rechts der Theme-Knopf, in denselben Abstaenden. Der Inhalt steht in der Mitte der Seite, nicht
-     in der linken Spalte: es gibt keine rechte. Die blaue Flaeche der rechten Spalte steht dafuer
-     als Grund unten auf der Seite (.uau-solo-bg), mit demselben Linienmuster.
-     KEINE Bubble-Events ausser den zwei, ohne die es nicht geht: der Ruecksetzlink muss verschickt
-     und das neue Passwort gesetzt werden -- beides kann nur Supabase. Alle Wege zurueck sind Links. */
-  var SEITEN = {
-    "check-email": {
-      ic: "mail", h1: "Check your email",
-      sub: "We sent you a confirmation link. Please confirm your email to continue.",
-      hinweis: "Didn’t get it? Check your spam folder. It can take a minute to arrive."
-    },
-    "forgot-password": {
-      ic: "lock", h1: "Forgot your password?",
-      sub: "Enter your email and we’ll send you a link to reset your password.",
-      cta: "Send reset link", ctaBusy: "Sending link",
-      /* NEUTRAL, ob es das Konto gibt oder nicht: sonst liesse sich mit dieser Seite pruefen,
-         welche Adressen bei upstreem ein Konto haben (Account Enumeration). Supabase verschickt
-         ohnehin nur an bestehende Konten und meldet fuer fremde Adressen keinen Fehler. */
-      doneH: "Check your email",
-      doneSub: "If an account exists for {mail}, you’ll get a link to reset your password.",
-      doneSubOhne: "If an account exists for this email, you’ll get a link to reset your password."
-    },
-    "reset-password": {
-      ic: "lock", h1: "Set a new password",
-      sub: "Choose a strong password you don’t use anywhere else.",
-      cta: "Reset password", ctaBusy: "Resetting password",
-      doneH: "Password updated", doneSub: "You can now sign in with your new password.",
-      doneCta: "Continue to sign in"
-    },
-    "not-found": {
-      h1: "Page not found",
-      sub: "The page you’re looking for doesn’t exist or has been moved.",
-      cta: "Go to dashboard", zurueck: "Go back"
-    }
-  };
-  /* "404" als Schreibweise zugelassen: so heisst die Seite in Bubble. */
-  function seiteVon(root){
-    var p = String(root.getAttribute("data-page") || "").trim().toLowerCase();
-    if (p === "404") p = "not-found";
-    return SEITEN[p] ? p : "";
-  }
-  /* Ruecksetzen schickt Supabase hoechstens einmal je Minute an dieselbe Adresse. Der Knopf
-     "Resend link" wartet genau so lange -- frueher waere ein Klick, den der Server abweist. */
-  var NEU_SENDEN_S = 60;
-
-  function makeSeite(root, art){
-    var UC = window.UpstreemCore;
-    var esc = UC.esc, T = SEITEN[art];
-    var state = { busy: false, done: false, errs: {}, formErr: "", aktion: "", mail: "" };
-    var busyTimer = null, wiederUhr = null, wiederBis = 0;
-
-    /* Wohin die Wege fuehren. Vorgaben sind die Adressen der App: der Login liegt auf der
-       Signup-Seite (die Landingpage verlinkt app.upstreem.ai/signup?mode=login). Jede ist per
-       Attribut ueberschreibbar, falls die Bubble-Seiten anders heissen. */
-    var URL_LOGIN  = attrVon(root, "data-login-url", "/signup?mode=login");
-    var URL_FORGOT = attrVon(root, "data-forgot-url", "/forgot-password");
-    var URL_HOME   = attrVon(root, "data-home-url", "/");
-
-    /* Die Adresse kann aus der Seitenadresse kommen (?email=) oder vom Element. Auf "Check your
-       email" steht sie dann im Text, auf "Passwort vergessen" ist das Feld vorbelegt (der Link
-       "Forgot password?" der Anmeldeseite reicht die eingetippte Adresse weiter). */
-    var q = adressQ() || {};
-    state.mail = String(q.email || q.mail || attrVon(root, "data-email") || "").trim();
-    if (!mailOk(state.mail)) state.mail = "";
-
-    function ic(n, w){ return UC.icon ? UC.icon(n, w || 2) : ""; }
-    function kopf(icon, h1, sub, extra){
-      return '<div class="uau-solo-kopf">' +
-        (icon ? '<span class="uau-solo-ic">' + ic(icon, 1.8) + '</span>' : '') +
-        '<h1 class="uau-h1 uau-solo-h1">' + esc(h1) + '</h1>' +
-        '<div class="uau-sub" data-sub>' + sub + '</div>' + (extra || '') +
-      '</div>';
-    }
-    function zurueckLink(text){
-      return '<a class="uau-back" href="' + esc(URL_LOGIN) + '">' + ic("arrowLeft", 2) +
-        '<span>' + esc(text || "Back to sign in") + '</span></a>';
-    }
-    function feld(name, label, typ, auto, ph, mehr){
-      return '<label class="uau-field" data-w-' + name + '>' +
-        '<span class="uau-label">' + esc(label) + '</span>' +
-        '<input class="up-field uau-input" type="' + typ + '" name="' + name + '" autocomplete="' + auto + '"' +
-          ' placeholder="' + esc(ph) + '" data-f-' + name + '/>' +
-        '<span class="uau-err"><span data-e-' + name + '></span></span>' + (mehr || '') +
-      '</label>';
-    }
-    var STAERKE_HTML = '<span class="uau-strength" data-strength><div><span class="uau-strength-in">' +
-      '<span class="uau-bars"><span class="uau-bar"></span><span class="uau-bar"></span>' +
-      '<span class="uau-bar"></span><span class="uau-bar"></span></span>' +
-      '<span class="uau-strength-txt" data-strength-txt></span></span></div></span>';
-    var FEHLER_HTML = '<div class="uau-formerr" data-formerr><div><div class="uau-formerr-in">' +
-      '<span data-formerr-txt></span><a class="uau-formerr-link" data-formerr-link hidden></a></div></div></div>';
-
-    function inhalt(){
-      if (art === "check-email"){
-        return kopf(T.ic, T.h1, esc(T.sub),
-            state.mail ? '<div class="uau-solo-mail"><span>' + esc(state.mail) + '</span></div>' : '') +
-          '<a class="uau-sek uau-solo-weg" href="' + esc(URL_LOGIN) + '">' + ic("arrowLeft", 2) + '<span>Back to sign in</span></a>' +
-          '<p class="uau-solo-hinweis">' + esc(T.hinweis) + '</p>';
-      }
-      if (art === "forgot-password"){
-        return kopf(T.ic, T.h1, esc(T.sub)) + FEHLER_HTML +
-          /* Ein echtes <form>, wie auf der Anmeldeseite: Enter loest aus, und der Passwortverwalter
-             erkennt das Feld als Adresse. */
-          '<form class="uau-form-el" novalidate data-form>' +
-            '<div class="uau-fields">' + feld("mail", "Work email", "email", "email", "alex@company.com") + '</div>' +
-            '<button class="uau-primary" type="submit" data-primary><span class="uau-spin"></span>' +
-              '<span data-primary-txt>' + esc(T.cta) + '</span></button>' +
-          '</form>' + zurueckLink();
-      }
-      if (art === "reset-password"){
-        return kopf(T.ic, T.h1, esc(T.sub)) + FEHLER_HTML +
-          '<form class="uau-form-el" novalidate data-form>' +
-            /* Ein verstecktes Benutzerfeld: ohne es weiss der Passwortverwalter nicht, ZU WELCHEM
-               Konto das neue Passwort gehoert, und speichert es nicht oder beim falschen. Chrome
-               warnt sonst "Password forms should have (optionally hidden) username fields". */
-            '<input class="uau-solo-user" type="email" name="username" autocomplete="username" tabindex="-1"' +
-              ' aria-hidden="true" readonly value="' + esc(state.mail) + '"/>' +
-            '<div class="uau-fields">' +
-              feld("pw", "New password", "password", "new-password", "At least 8 characters", STAERKE_HTML) +
-              feld("pw2", "Confirm password", "password", "new-password", "Repeat your new password") +
-            '</div>' +
-            '<button class="uau-primary" type="submit" data-primary><span class="uau-spin"></span>' +
-              '<span data-primary-txt>' + esc(T.cta) + '</span></button>' +
-          '</form>' + zurueckLink();
-      }
-      /* not-found */
-      return '<div class="uau-404" aria-hidden="true">404</div>' +
-        kopf("", T.h1, esc(T.sub)) +
-        '<div class="uau-solo-reihe">' +
-          '<a class="uau-primary" href="' + esc(URL_HOME) + '">' + esc(T.cta) + '</a>' +
-          '<button class="uau-sek" type="button" data-zurueck>' + ic("arrowLeft", 2) + '<span>' + esc(T.zurueck) + '</span></button>' +
-        '</div>';
-    }
-    function fertig(){
-      if (art === "forgot-password"){
-        return kopf("mail", T.doneH, "", "") +
-          '<p class="uau-solo-hinweis uau-solo-wieder"><span>Didn’t get it?</span>' +
-            '<button type="button" class="uau-side" data-wieder></button></p>' + zurueckLink();
-      }
-      if (art === "reset-password"){
-        return '<div class="uau-solo-kopf"><span class="uau-done-ic">' + ic("check", 2.4) + '</span>' +
-            '<h1 class="uau-h1 uau-solo-h1" data-done-h>' + esc(T.doneH) + '</h1>' +
-            '<div class="uau-sub" data-done-b>' + esc(T.doneSub) + '</div></div>' +
-          '<a class="uau-primary" href="' + esc(URL_LOGIN) + '">' + esc(T.doneCta) + '</a>';
-      }
-      return "";
-    }
-
-    root.classList.add("is-solo");
-    root.setAttribute("data-uau-page", art);
-    var bg = attrVon(root, "data-bg");
-    root.innerHTML = '<div class="uau-card is-solo">' +
-      '<div class="uau-form">' +
-        '<div class="uau-top">' +
-          '<img class="uau-logo" src="' + esc(logoFuer(root, dunkelFuer(root))) + '" alt="upstreem"/>' +
-          '<button class="uau-themebtn" type="button" data-theme-btn aria-label="Switch theme"></button>' +
-        '</div>' +
-        '<div class="uau-mid">' +
-          '<div class="uau-block uau-stack">' +
-            '<div class="uau-pane" data-pane-form>' + inhalt() + '</div>' +
-            (fertig() ? '<div class="uau-pane is-off" data-pane-done aria-hidden="true">' + fertig() + '</div>' : '') +
-          '</div>' +
-        '</div>' +
-      '</div>' +
-      /* Der Grund: die Flaeche der rechten Spalte der Anmeldeseite, hier unten ueber die ganze
-         Breite. Das Bild dazu wie dort aus data-bg; ohne bleibt der Verlauf allein. */
-      '<div class="uau-solo-bg" aria-hidden="true"' + (bg ? ' style="--uau-bgimg: url(&quot;' + esc(bg) + '&quot;)"' : '') + '></div>' +
-    '</div>';
-
-    var el = {
-      form: root.querySelector("[data-form]"),
-      primary: root.querySelector("[data-primary]"),
-      primTxt: root.querySelector("[data-primary-txt]"),
-      mail: root.querySelector("[data-f-mail]"),
-      pw: root.querySelector("[data-f-pw]"),
-      pw2: root.querySelector("[data-f-pw2]"),
-      formErr: root.querySelector("[data-formerr]"),
-      formErrT: root.querySelector("[data-formerr-txt]"),
-      formErrL: root.querySelector("[data-formerr-link]"),
-      strength: root.querySelector("[data-strength]"),
-      strTxt: root.querySelector("[data-strength-txt]"),
-      paneForm: root.querySelector("[data-pane-form]"),
-      paneDone: root.querySelector("[data-pane-done]"),
-      wieder: root.querySelector("[data-wieder]")
-    };
-    if (el.mail && state.mail) el.mail.value = state.mail;
-
-    /* ---------------- Theme ---------------- */
-    function syncTheme(){
-      var d = dunkelFuer(root);
-      if (d) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
-      var b = root.querySelector("[data-theme-btn]");
-      if (b){
-        b.innerHTML = d ? SUN_SVG : MOON_SVG;
-        b.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
-      }
-      var l = root.querySelector(".uau-logo");
-      var neu = logoFuer(root, d);
-      if (l && l.getAttribute("src") !== neu) l.setAttribute("src", neu);
-    }
-    root.querySelector("[data-theme-btn]").addEventListener("click", function(){
-      var neuDunkel = !dunkelFuer(root);
-      /* Ueber core: setUpstreemTheme schreibt pref_theme -- die Wahl gilt danach auch in der App. */
-      if (UC.setUpstreemTheme) UC.setUpstreemTheme(neuDunkel ? "dark" : "light");
-      else { if (neuDunkel) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme"); }
-      syncTheme();
-    });
-    if (UC.onTheme) UC.onTheme(syncTheme);
-
-    /* ---------------- Fehler, Staerke, Ladezustand ---------------- */
-    function zeigeFehler(){
-      ["mail", "pw", "pw2"].forEach(function(k){
-        var f = root.querySelector("[data-w-" + k + "]");
-        if (!f) return;
-        var msg = state.errs[k] || "";
-        f.classList.toggle("is-err", !!msg);
-        var slot = root.querySelector("[data-e-" + k + "]");
-        if (slot) slot.textContent = msg;
-      });
-      if (!el.formErr) return;
-      el.formErrT.textContent = state.formErr || "";
-      el.formErr.classList.toggle("is-on", !!state.formErr);
-      /* Der Weg aus einem abgelaufenen Link: gleich daneben ein neuer -- nicht nur der Satz, dass
-         es nicht ging. */
-      var mitLink = state.aktion === "neuerLink";
-      el.formErrL.hidden = !mitLink;
-      if (mitLink){
-        el.formErrL.textContent = "Request a new link";
-        el.formErrL.setAttribute("href", URL_FORGOT + (state.mail ? (URL_FORGOT.indexOf("?") >= 0 ? "&" : "?") +
-          "email=" + encodeURIComponent(state.mail) : ""));
-      }
-    }
-    function renderStaerke(){
-      if (!el.strength) return;
-      var an = !!el.pw.value;
-      el.strength.classList.toggle("is-on", an);
-      if (!an){ el.strength.removeAttribute("data-level"); return; }
-      var lv = staerke(el.pw.value);
-      el.strength.setAttribute("data-level", String(lv));
-      var bars = el.strength.querySelectorAll(".uau-bar");
-      for (var i = 0; i < bars.length; i++) bars[i].classList.toggle("is-on", i < lv);
-      el.strTxt.textContent = STAERKE[lv] || "";
-    }
-    function setBusy(on){
-      state.busy = !!on;
-      if (el.primary){
-        el.primary.classList.toggle("is-busy", state.busy);
-        el.primary.disabled = state.busy;
-        el.primTxt.textContent = state.busy ? T.ctaBusy : T.cta;
-      }
-      [el.mail, el.pw, el.pw2].forEach(function(f){ if (f) f.disabled = state.busy; });
-      if (busyTimer){ clearTimeout(busyTimer); busyTimer = null; }
-      if (state.busy){
-        /* Die Notbremse der Anmeldeseite, dieselben 20 Sekunden (BUSY_MAX). */
-        busyTimer = setTimeout(function(){
-          busyTimer = null;
-          state.formErr = "That took longer than expected. Please try again.";
-          state.aktion = "";
-          setBusy(false);
-          zeigeFehler();
-        }, BUSY_MAX);
-      }
-    }
-
-    /* ---------------- Pruefen und Absenden ---------------- */
-    function pruefe(){
-      var e = {};
-      if (art === "forgot-password"){
-        var m = String(el.mail.value || "").trim();
-        if (!m) e.mail = "Please enter your email address.";
-        else if (!mailOk(m)) e.mail = "That does not look like an email address.";
-      }
-      if (art === "reset-password"){
-        var p1 = String(el.pw.value || ""), p2 = String(el.pw2.value || "");
-        /* Dieselbe Regel wie beim Anlegen (8 Zeichen): ein neues Passwort ist ein neues Passwort. */
-        if (!p1) e.pw = "Please enter a new password.";
-        else if (p1.length < 8) e.pw = "At least 8 characters.";
-        if (!p2) e.pw2 = "Please repeat your new password.";
-        else if (p1 && p2 !== p1) e.pw2 = "The passwords do not match.";
-      }
-      state.errs = e; state.formErr = ""; state.aktion = "";
-      zeigeFehler();
-      var erste = e.mail ? el.mail : (e.pw ? el.pw : (e.pw2 ? el.pw2 : null));
-      if (erste){ try { erste.focus(); } catch(x){} return false; }
-      return true;
-    }
-    function absenden(){
-      if (state.busy || state.done) return;
-      if (!pruefe()) return;
-      if (art === "forgot-password"){
-        state.mail = String(el.mail.value || "").trim();
-        /* Die Adresse als ROHER Wert, wie das Passwort auf der Anmeldeseite: in Bubble ist
-           "This JavaScriptToBubble's value" dann schon die Adresse, ohne Auslesen. */
-        feuerRoh(root, "data-forgot-fn", "uauForgot", state.mail);
-      } else {
-        feuerRoh(root, "data-newpw-fn", "uauNewPassword", String(el.pw.value || ""));
-      }
-      setBusy(true);
-    }
-    if (el.form) el.form.addEventListener("submit", function(e){ e.preventDefault(); absenden(); });
-    if (el.mail) el.mail.addEventListener("input", function(){ if (state.errs.mail){ delete state.errs.mail; zeigeFehler(); } });
-    if (el.pw) el.pw.addEventListener("input", function(){
-      renderStaerke();
-      if (state.errs.pw){ delete state.errs.pw; zeigeFehler(); }
-      /* "Passt nicht" verschwindet, sobald beide wieder gleich sind -- egal, in welchem Feld
-         der Nutzer korrigiert. */
-      if (state.errs.pw2 && el.pw2.value === el.pw.value){ delete state.errs.pw2; zeigeFehler(); }
-    });
-    if (el.pw2) el.pw2.addEventListener("input", function(){
-      if (state.errs.pw2 && (!el.pw2.value || el.pw2.value === el.pw.value)){ delete state.errs.pw2; zeigeFehler(); }
-    });
-
-    /* "Go back" auf der 404: zurueck, wenn es ein Zurueck gibt -- sonst zum Dashboard. Ein
-       direkt geoeffneter toter Link hat keinen Verlauf, und ein Knopf, der nichts tut, ist
-       schlimmer als einer, der woanders hinfuehrt. */
-    var zurueckKnopf = root.querySelector("[data-zurueck]");
-    if (zurueckKnopf) zurueckKnopf.addEventListener("click", function(){
-      var vonHier = false;
-      try { vonHier = !!document.referrer && new URL(document.referrer).origin === window.location.origin; } catch(e){}
-      if (vonHier && window.history.length > 1) window.history.back();
-      else window.location.href = URL_HOME;
-    });
-
-    /* ---------------- Erneut senden (Passwort vergessen) ---------------- */
-    function wiederRender(){
-      if (!el.wieder) return;
-      var rest = Math.ceil((wiederBis - Date.now()) / 1000);
-      if (state.busy){ el.wieder.textContent = "Sending…"; el.wieder.disabled = true; return; }
-      if (rest > 0){ el.wieder.textContent = "Resend in " + rest + "s"; el.wieder.disabled = true; return; }
-      el.wieder.textContent = "Resend link"; el.wieder.disabled = false;
-      if (wiederUhr){ clearInterval(wiederUhr); wiederUhr = null; }
-    }
-    function wiederStarten(){
-      wiederBis = Date.now() + NEU_SENDEN_S * 1000;
-      if (wiederUhr) clearInterval(wiederUhr);
-      wiederUhr = setInterval(wiederRender, 1000);
-      wiederRender();
-    }
-    if (el.wieder) el.wieder.addEventListener("click", function(){
-      if (el.wieder.disabled || !state.mail) return;
-      feuerRoh(root, "data-forgot-fn", "uauForgot", state.mail);
-      setBusy(true);
-      wiederRender();
-    });
-
-    function zeigeFertig(titel, text){
-      setBusy(false);
-      state.done = true;
-      var h = el.paneDone.querySelector(".uau-h1"), b = el.paneDone.querySelector(".uau-sub");
-      if (art === "forgot-password"){
-        if (h) h.textContent = titel || T.doneH;
-        if (b) b.textContent = text || (state.mail ? T.doneSub.replace("{mail}", state.mail) : T.doneSubOhne);
-        wiederStarten();
-      } else {
-        if (h) h.textContent = titel || T.doneH;
-        if (b) b.textContent = text || T.doneSub;
-      }
-      el.paneForm.classList.add("is-off");
-      el.paneForm.setAttribute("aria-hidden", "true");
-      el.paneDone.classList.remove("is-off");
-      el.paneDone.removeAttribute("aria-hidden");
-    }
-    function zeigeFormular(){
-      state.done = false;
-      if (wiederUhr){ clearInterval(wiederUhr); wiederUhr = null; }
-      if (!el.paneDone) return;
-      el.paneDone.classList.add("is-off");
-      el.paneDone.setAttribute("aria-hidden", "true");
-      el.paneForm.classList.remove("is-off");
-      el.paneForm.removeAttribute("aria-hidden");
-    }
-
-    /* Ein abgelaufener oder schon benutzter Ruecksetzlink kommt von Supabase mit error_code in der
-       Adresse zurueck (#error=access_denied&error_code=otp_expired&...). Dann steht der Weg zu
-       einem neuen Link sofort da -- nicht erst, nachdem jemand zweimal ein Passwort getippt hat. */
-    if (art === "reset-password" && (q.error || q.error_code || q.error_description)){
-      var f0 = serverFehler(String(q.error_code || "") + " " + String(q.error_description || q.error || ""), art);
-      state.formErr = f0.text; state.aktion = f0.aktion || "";
-      adressFehlerWeg();
-    }
-
-    syncTheme();
-    if (window.MutationObserver){
-      new MutationObserver(syncTheme).observe(root, { attributes: true, attributeFilter: ["data-isdark", "data-logo", "data-logo-dark"] });
-    }
-    /* Schmal wie auf der Anmeldeseite (messeBreite dort, mit Begruendung der drei Wege): erst das
-       schmale Polster, dann rueckt der Inhalt an die Raender. Fehlte hier zuerst -- gemessen stand
-       der Block auf 375px mit 44px Rand je Seite statt mit dem schmalen Polster. */
-    function messeBreite(){ root.classList.toggle("is-narrow", root.clientWidth < 1100); }
-    messeBreite();
-    if (window.ResizeObserver){ try { new ResizeObserver(messeBreite).observe(root); } catch(e){} }
-    if (UC.aufResize) UC.aufResize(messeBreite); else window.addEventListener("resize", messeBreite);
-    zeigeFehler();
-    /* Einzug wie auf der Anmeldeseite: Kopf, dann der Bedienteil (Klassen in der CSS). */
-    root.classList.add("is-entering");
-    setTimeout(function(){ root.classList.remove("is-entering"); }, 760);
-
-    return {
-      root: root,
-      setMode: function(){ return true; },
-      setInvite: function(){ return true; },
-      setLoading: function(on){ setBusy(UC.isYes(on)); return true; },
-      /* Dieselbe Form wie auf der Anmeldeseite: (feld, text). "email", "password", "confirm"
-         gehoeren an ihr Feld, alles andere in den Kasten ueber dem Formular. */
-      setError: function(feldName, text){
-        setBusy(false);
-        if (state.done) zeigeFormular();
-        var f = String(feldName || "").toLowerCase(), t = String(text == null ? "" : text);
-        state.aktion = "";
-        if (f === "email" || f === "mail") state.errs.mail = t;
-        else if (f === "password" || f === "pw") state.errs.pw = t;
-        else if (f === "confirm" || f === "password_confirm" || f === "pw2") state.errs.pw2 = t;
-        else state.formErr = t || "Something went wrong. Please try again.";
-        zeigeFehler();
-        return true;
-      },
-      setServerError: function(roh){
-        var f = serverFehler(roh, art);
-        /* Auf "Passwort vergessen" verraet die Seite NIE, ob es ein Konto gibt: "user not found"
-           wird zur selben Bestaetigung wie ein Erfolg. */
-        if (art === "forgot-password" && /user_not_found|user not found/i.test(String(roh || ""))){
-          zeigeFertig(); return true;
-        }
-        /* Eine Serverantwort ersetzt die vorige ganz: ein Feldfehler vom letzten Versuch stuende
-           sonst neben dem neuen Satz und widerspraeche ihm. */
-        state.errs = {}; state.formErr = "";
-        this.setError(f.feld, f.text);
-        state.aktion = f.aktion || "";
-        zeigeFehler();
-        return true;
-      },
-      setDone: function(titel, text){
-        if (!el.paneDone){ setBusy(false); return true; }
-        zeigeFertig(titel ? String(titel) : "", text ? String(text) : "");
-        return true;
-      },
-      reset: function(){
-        setBusy(false);
-        zeigeFormular();
-        state.errs = {}; state.formErr = ""; state.aktion = "";
-        [el.mail, el.pw, el.pw2].forEach(function(f){ if (f) f.value = ""; });
-        if (el.mail && state.mail) el.mail.value = state.mail;
-        renderStaerke(); zeigeFehler();
-        return true;
-      }
-    };
-  }
-
   var mount = null;
   function uauRun(){
     var UCl = window.UpstreemCore;
@@ -1556,7 +990,6 @@
         setAuthPageError: doError,
         setAuthPageDone: doDone,
         setAuthPageInvite: doInvite,
-        setAuthPageServerError: doServerError,
         resetAuthPage: doReset
       },
       forwardShape: { renderAuthPage: "params", resetAuthPage: "id" }
@@ -1578,9 +1011,7 @@
   function initRootNow(root){
     if (root.__uauController) return root.__uauController;
     if ((root.getAttribute("data-instance") || "default") === "INSTANCE_ID") return null;
-    /* data-page waehlt eine der Seiten ohne Anmeldeformular (07.10.), sonst die Anmeldeseite. */
-    var art = seiteVon(root);
-    var c = art ? makeSeite(root, art) : makeController(root);
+    var c = makeController(root);
     root.__uauController = c;
     return c;
   }
@@ -1600,7 +1031,6 @@
   function doDone(id, titel, text){ var c = resolve(id); return c ? c.setDone(titel, text) : false; }
   function doInvite(id, token, mail){ var c = resolve(id); return c ? c.setInvite(token, mail) : false; }
   function doReset(id){ var c = resolve(id); return c ? c.reset() : false; }
-  function doServerError(id, roh){ var c = resolve(id); return c ? c.setServerError(roh) : false; }
 
   uauBoot(30);
 })();

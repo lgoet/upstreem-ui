@@ -1,0 +1,17 @@
+/* upstreem check-email.css — "Check your email" (Praefix `uce`).
+
+   Rahmen, Kopf, Knopf und Hinweis kommen aus core (.up-es-*, .up-btn-sec.is-lg). Hier steht nur,
+   was es genau einmal gibt: die Adresse unter dem Satz. */
+
+/* Die Adresse, an die geschrieben wurde: der ruhige Flaechenton der App, damit sie als WERT
+   lesbar ist und nicht als Teil des Satzes. Die Geometrie eines Chips (28px, rund).
+   overflow: hidden ist kein Zierrat: als Kind einer Flex-Spalte waere der Chip sonst so breit wie
+   die ganze Adresse und schoebe die Seite auf dem Telefon nach rechts hinaus (gemessen auf 375px
+   mit einer langen Adresse). So kuerzt er mit "…". */
+.uce-mail {
+  margin-top: 16px; max-width: 100%; overflow: hidden;
+  display: inline-flex; align-items: center; height: 28px; padding: 0 12px;
+  border-radius: 999px; background: var(--vc-heading-bg); border: 1px solid var(--vc-border);
+  font-size: 13px; font-weight: 500; color: var(--vc-text);
+}
+.uce-mail span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

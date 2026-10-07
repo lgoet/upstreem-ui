@@ -1,0 +1,83 @@
+<!-- ==========================================================================================
+     upstreem — Check Email (Praefix `uce`, Stand 07.10.)
+
+     "Check your email" nach dem Signup. Die GANZE Seite ist dieses eine HTML-Element: auf volle
+     Breite und volle Hoehe setzen, ohne eigenes Padding, nichts darum herum.
+
+     ── FRISCHE INSTALLATION ──────────────────────────────────────────────────────────────────
+     Diese Datei ist eine VORLAGE. Aenderungen daran erreichen ein bereits eingebautes Element
+     NICHT -- dort muss dasselbe von Hand nachgezogen werden.
+
+     ── WAS DIE SEITE NICHT BRAUCHT ───────────────────────────────────────────────────────────
+     Keine Events, keine Setter, keinen Workflow. Ausserdem nicht:
+       data-cdn-pin   kommt aus dem Vorlade-Skript im Seitenkopf (page_header_preload steht
+                      app-weit unter Settings > SEO/metatags und laeuft auch hier; der Loader unten
+                      nimmt dessen window.__upPin). Wer trotzdem einen setzt: derselbe wie dort.
+       data-isdark    das Thema kommt aus pref_theme, derselben Wahl wie in der App, sonst vom
+                      System. Ein gesetztes data-isdark gewinnt -- also weglassen.
+       data-logo      die Wortmarke kommt je Thema von selbst.
+
+     ── ATTRIBUTE ─────────────────────────────────────────────────────────────────────────────
+       data-login-url  wohin "Back to sign in" fuehrt. Vorgabe: /signup?mode=login
+       data-bg         optional: das Hintergrundbild der Anmeldeseite (data-bg dort) fuer die
+                       Flaeche unten. Ohne bleibt der Verlauf mit dem Linienmuster.
+       data-email      optional; die Adresse kommt sonst aus ?email= (auch ?mail=).
+
+     ── EINBAU ────────────────────────────────────────────────────────────────────────────────
+     1. Bubble-Seite "check-email", dieses Element darauf.
+     2. Hinfuehren: am Ende des Signup-Workflows, WENN die Adresse erst bestaetigt werden muss:
+          Go to page check-email, Send more parameters: email = <die Adresse>
+        Die Adresse steht dann unter dem Satz. Ohne Parameter fehlt sie einfach.
+-->
+
+<div class="up-root uce-root"
+     data-instance="check_email"
+     data-login-url="/signup?mode=login"></div>
+
+<script>
+(function(){
+  /* Derselbe Loader wie in auth_page_bubble.html -- dort stehen die Begruendungen zu jeder Stufe.
+     Ohne data-cdn-pin am Element greift die zweite Stufe: window.__upPin aus dem Seitenkopf. */
+  function echterPin(p){
+    p = String(p == null ? "" : p).trim();
+    return (p && p !== "CDN_" + "PIN") ? p : "";
+  }
+  function readPin(cls){
+    var i, p, els = document.getElementsByClassName(cls);
+    for (i = 0; i < els.length; i++){
+      p = echterPin(els[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    if (echterPin(window.__upPin)) return window.__upPin;
+    var alle = document.querySelectorAll ? document.querySelectorAll("[data-cdn-pin]") : [];
+    for (i = 0; i < alle.length; i++){
+      p = echterPin(alle[i].getAttribute("data-cdn-pin"));
+      if (p) return (window.__upPin = p);
+    }
+    var L0 = window.__upAssetsLoaded, k, m;
+    for (k in L0){
+      if (!Object.prototype.hasOwnProperty.call(L0, k)) continue;
+      m = String(L0[k] || "").match(/upstreem-ui@([^/]+)\//);
+      if (m && m[1] && m[1] !== "main") return (window.__upPin = m[1]);
+    }
+    return "main";
+  }
+  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uce-root") + "/";
+  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
+  function once(url, make){
+    var name = url.slice(url.lastIndexOf("/") + 1);
+    if (L[name]){
+      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
+        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
+        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
+      return;
+    }
+    L[name] = url; make(url);
+  }
+  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
+  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
+
+  css("core.css");          js("core.js");
+  css("check-email.css");   js("check-email.js");
+})();
+</script>

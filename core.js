@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261102;
+  var BUILD = 20261103;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -157,8 +157,8 @@
 
   function isYes(v){ return /^(1|true|yes|y)$/i.test(String(v == null ? "" : v).trim()); }
   /* ---- SIEHT DAS AUS WIE EINE E-MAIL-ADRESSE? (07.10.) ----------------------------------------
-     Stand bis dahin als Kopie in auth-page.js und team-orga.js, wortgleich; die Seiten "Passwort
-     vergessen" und "Neues Passwort" brauchten sie ein drittes und viertes Mal. Die Regel ist
+     Stand bis dahin als Kopie in auth-page.js und team-orga.js, wortgleich; forgot-password.js
+     brauchte sie ein drittes Mal. Die Regel ist
      bewusst grob: ein Muster nach RFC 5322 weist echte Adressen ab (Pluszeichen, Umlaute, lange
      Endungen), und eine Seite, die eine gueltige Adresse ablehnt, kostet einen Nutzer. Was wirklich
      zustellbar ist, weiss ohnehin nur der Server. */
@@ -1182,6 +1182,72 @@
     "Send me product updates": "Schick mir Produktneuigkeiten",
     "Something went wrong. Please try again.":
       "Da ist etwas schiefgegangen. Bitte versuche es noch einmal.",
+
+    /* ── Die Einzelseiten (07.10.): check-email, forgot-password, reset-password, not-found ────
+       Saetze, die schon oben stehen ("Back to sign in", "At least 8 characters", die Adress-
+       pruefung), stehen hier NICHT ein zweites Mal -- der Katalog ist app-weit, ein zweiter
+       Eintrag desselben Schluessels ueberschriebe den ersten still. Die Saetze mit eingesetzter
+       Adresse oder Sekundenzahl bleiben englisch: sie entstehen erst beim Zeichnen. */
+    "Check your email": "Sieh in dein Postfach",
+    "We sent you a confirmation link. Please confirm your email to continue.":
+      "Wir haben dir einen Bestätigungslink geschickt. Bitte bestätige deine E-Mail-Adresse, um fortzufahren.",
+    "Didn’t get it? Check your spam folder. It can take a minute to arrive.":
+      "Nichts angekommen? Sieh im Spam-Ordner nach. Es kann eine Minute dauern.",
+    "Forgot your password?": "Passwort vergessen?",
+    "Enter your email and we’ll send you a link to reset your password.":
+      "Gib deine E-Mail-Adresse ein, und wir schicken dir einen Link, um dein Passwort zurückzusetzen.",
+    "Work email": "Geschäftliche E-Mail",
+    "Send reset link": "Link senden",
+    "Sending link": "Link wird gesendet",
+    "If an account exists for this email, you’ll get a link to reset your password.":
+      "Wenn es zu dieser Adresse ein Konto gibt, bekommst du einen Link, um dein Passwort zurückzusetzen.",
+    "Didn’t get it?": "Nichts angekommen?",
+    "Resend link": "Link erneut senden",
+    "Sending…": "Wird gesendet…",
+    "Set a new password": "Neues Passwort festlegen",
+    "Choose a strong password you don’t use anywhere else.":
+      "Wähle ein starkes Passwort, das du nirgendwo sonst verwendest.",
+    "New password": "Neues Passwort",
+    "Confirm password": "Passwort bestätigen",
+    "Repeat your new password": "Neues Passwort wiederholen",
+    "Reset password": "Passwort zurücksetzen",
+    "Resetting password": "Passwort wird zurückgesetzt",
+    "Please enter a new password.": "Bitte gib ein neues Passwort ein.",
+    "Please repeat your new password.": "Bitte wiederhole dein neues Passwort.",
+    "The passwords do not match.": "Die Passwörter stimmen nicht überein.",
+    "Request a new link": "Neuen Link anfordern",
+    "Password updated": "Passwort geändert",
+    "You can now sign in with your new password.": "Du kannst dich jetzt mit deinem neuen Passwort anmelden.",
+    "Continue to sign in": "Weiter zur Anmeldung",
+    "Page not found": "Seite nicht gefunden",
+    "The page you’re looking for doesn’t exist or has been moved.":
+      "Die Seite, die du suchst, gibt es nicht oder sie wurde verschoben.",
+    "Go to dashboard": "Zum Dashboard",
+    "Go back": "Zurück",
+    /* Die Stufen der Staerkeanzeige; "Strong" steht schon oben (Opportunities). */
+    "Weak": "Schwach",
+    "Fair": "Mittel",
+    "Good": "Gut",
+    /* Die Saetze zu Supabase-Fehlern (UC.authFehler). */
+    "Choose a password you have not used before.": "Wähle ein Passwort, das du noch nicht verwendet hast.",
+    "This password appeared in a data breach. Please choose a different one.":
+      "Dieses Passwort ist aus einem Datenleck bekannt. Bitte wähle ein anderes.",
+    "That password is too weak. Use at least 8 characters with letters and numbers.":
+      "Dieses Passwort ist zu schwach. Nimm mindestens 8 Zeichen mit Buchstaben und Zahlen.",
+    "This reset link has expired or was already used.": "Dieser Link ist abgelaufen oder wurde schon benutzt.",
+    "This link has expired or was already used.": "Dieser Link ist abgelaufen oder wurde schon benutzt.",
+    "Your session has expired. Please sign in again.": "Deine Sitzung ist abgelaufen. Bitte melde dich neu an.",
+    "Please sign in again to change your password.": "Bitte melde dich neu an, um dein Passwort zu ändern.",
+    "Too many emails were sent. Please wait a few minutes and try again.":
+      "Es wurden zu viele E-Mails verschickt. Bitte warte ein paar Minuten und versuch es dann noch einmal.",
+    "Too many attempts. Please wait a moment and try again.":
+      "Zu viele Versuche. Bitte warte einen Moment und versuch es dann noch einmal.",
+    "Email or password is not correct.": "E-Mail-Adresse oder Passwort stimmen nicht.",
+    "Please confirm your email first. Check your inbox for the link.":
+      "Bitte bestätige zuerst deine E-Mail-Adresse. Den Link findest du in deinem Postfach.",
+    "We could not find an account with this email.": "Zu dieser Adresse gibt es kein Konto.",
+    "We could not reach the server. Check your connection and try again.":
+      "Der Server ist nicht erreichbar. Prüfe deine Verbindung und versuch es noch einmal.",
 
     /* ── Einladungsseite (invite-page.js, 25.09.) ──────────────────────────────────────────────
        Die Oberzeile steht UEBER dem Teamnamen, deshalb endet der Satz offen: "Du wurdest
@@ -19962,6 +20028,370 @@
     '</div>';
   }
 
+  /* ══ EINZELSEITE: der Rahmen der kleinen ganzseitigen Flaechen (07.10.) ═══════════════════════
+     Vier Seiten, die bis dahin reine Bubble-Seiten waren, sind je eine EIGENE Komponente:
+     check-email (uce), forgot-password (ufp), reset-password (urp), not-found (unf). Sie teilen
+     alles ausser ihrem Inhalt, und das steht deshalb hier, einmal statt viermal:
+       - der Rahmen der Anmeldeseite: Karte mit 16px Polster, oben links die Wortmarke, oben rechts
+         der Theme-Knopf, der Inhalt mittig, als Grund unten die Flaeche ihrer rechten Spalte;
+       - das Thema aus pref_theme wie in der App (kein data-isdark noetig), die Wortmarke je Thema;
+       - Feld mit Beschriftung und Fehlerzeile, Hauptknopf mit Spinner und Notbremse, der
+         Fehlerkasten (.up-formerr), der Erfolgsblock im selben Raster;
+       - die Staerkeanzeige und die Saetze zu Supabase-Fehlern.
+     Die Masse sind die von auth-page.css, wortgleich. auth-page, invite-page und onboarding
+     behalten vorerst ihre eigenen Kopien -- wie bei .up-btn-pri.is-lg am 25.09.: sie umzustellen
+     hiesse drei fertige Seiten anzufassen, an denen niemand etwas gemeldet hat. */
+  var WORTMARKE = {
+    /* Dieselben zwei Dateien wie das Wasserzeichen der Charts in core.css. */
+    hell:   "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-1f1f1f.svg",
+    dunkel: "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-e0e0e0.svg"
+  };
+  /* Die Notbremse der Anmeldeseite (BUSY_MAX dort), dieselben 20 Sekunden. */
+  var ES_BREMSE_MS = 20000;
+  /* Die Dauer des Einzugs, dieselbe wie dort (classList entfernt sich nach dem letzten Bild der
+     letzten Stufe: 420ms Einzug plus 3 x 120ms Versatz, aufgerundet). */
+  var ES_EINZUG_MS = 800;
+
+  /* Ein Attribut, das nur den Platzhalter der Vorlage traegt (LOGO_URL, IS_DARK), gilt als leer. */
+  function esAttr(root, n, f){
+    var v = root ? root.getAttribute(n) : null;
+    return (v == null || v === "" || /^[A-Z_]{3,}$/.test(v)) ? (f || "") : v;
+  }
+  /* Dieselbe Reihenfolge wie auf der Anmeldeseite und der Einladungsseite: ein ausdrueckliches
+     data-theme, dann data-isdark, dann die gespeicherte Wahl (pref_theme, die Ablage der App),
+     dann das System. Damit braucht keine dieser Seiten ein data-isdark: wer in der App dunkel
+     gewaehlt hat, sieht auch "Passwort vergessen" dunkel. */
+  function esIstDunkel(root){
+    if (root.getAttribute("data-theme") === "dark") return true;
+    var roh = root.getAttribute("data-isdark");
+    if (roh != null && roh !== "" && !/^[A-Z_]{3,}$/.test(roh)) return isYes(roh);
+    var p = readPrefTheme();
+    if (p) return p === "dark";
+    try { return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); }
+    catch(e){ return false; }
+  }
+  /* Ein gesetztes data-logo gewinnt; ohne steht die Wortmarke von Supabase da, nicht eine leere Ecke. */
+  function wortmarkeUrl(root, dunkel){
+    return (dunkel && esAttr(root, "data-logo-dark")) || esAttr(root, "data-logo") ||
+           (dunkel ? WORTMARKE.dunkel : WORTMARKE.hell);
+  }
+
+  /* Suchzeile UND Anker als eine Tabelle. Supabase schreibt Fehler eines Ruecksetzlinks in den
+     Anker (#error_code=otp_expired&...), Bubble-Parameter stehen in der Suchzeile. Der erste Fund
+     eines Schluessels gilt. */
+  function adressParameter(){
+    var q = {};
+    try {
+      [String(window.location.search || "").replace(/^\?/, ""),
+       String(window.location.hash || "").replace(/^#/, "")].forEach(function(s){
+        s.split("&").forEach(function(kv){
+          var i = kv.indexOf("=");
+          if (i < 1) return;
+          var k = kv.slice(0, i), v = kv.slice(i + 1);
+          try { v = decodeURIComponent(v.replace(/\+/g, " ")); } catch(e){}
+          if (!(k in q)) q[k] = v;
+        });
+      });
+    } catch(e){}
+    return q;
+  }
+  /* Die Fehlerangaben aus der Adresse nehmen, damit ein Neuladen sie nicht noch einmal zeigt. Den
+     Rest des Ankers (access_token einer gueltigen Sitzung) fasst das NICHT an -- den liest das
+     Supabase-Plugin. Ein Anker mit Fehler traegt keinen. */
+  function adressFehlerWeg(){
+    try {
+      if (!window.history || !window.history.replaceState) return;
+      var u = new URL(window.location.href);
+      ["error", "error_code", "error_description"].forEach(function(k){ u.searchParams.delete(k); });
+      if (/(^|&)error(_code|_description)?=/.test(String(u.hash || "").replace(/^#/, ""))) u.hash = "";
+      window.history.replaceState(window.history.state, "", u.toString());
+    } catch(e){}
+  }
+
+  /* Ein Event, dessen Wert der Wert IST -- kein JSON drumherum. makeFire verpackt immer als JSON;
+     fuer eine Adresse oder ein Passwort ist genau das falsch: ein Anfuehrungszeichen darin wird zu
+     \" und schneidet jede Regex-Extraktion in Bubble ab. Beide Schreibweisen des Namens: Bubble
+     legt das JavaScriptToBubble-Element als bubble_fn_<name> an. Nicht still scheitern: ein Wert,
+     der keinen Workflow erreicht, sieht sonst aus wie ein Fehler auf dem Server. */
+  function feuerRoh(root, attr, vorgabe, wert, label){
+    var name = esAttr(root, attr, vorgabe);
+    function finde(n){ var f = resolveBubbleFn(n); return typeof f === "function" ? f : null; }
+    var fn = finde(name) || (name.indexOf("bubble_fn_") === 0 ? null : finde("bubble_fn_" + name));
+    if (!fn){
+      if (window.console) console.warn("[" + (label || "upstreem") + "] " + name + " nicht gefunden -- " +
+        "dieser Wert hat keinen Bubble-Workflow erreicht. Fehlt das JavaScriptToBubble-Element?");
+      return false;
+    }
+    try { fn(String(wert == null ? "" : wert)); return true; }
+    catch(e){
+      if (window.console) console.warn("[" + (label || "upstreem") + "] " + name + " hat geworfen:", e);
+      return false;
+    }
+  }
+
+  /* ---- Passwortstaerke: die Regel und die Anzeige der Anmeldeseite (auth-page.js staerke) ------
+     8 Zeichen allein "Weak", dazu Gross/Klein oder Ziffer "Fair", beides "Good", dazu Laenge oder
+     Sonderzeichen "Strong". Unter 8 bleibt es schwach, egal wie bunt. */
+  var PW_STUFEN = ["", "Weak", "Fair", "Good", "Strong"];
+  function pwStaerke(pw){
+    pw = String(pw || "");
+    if (!pw) return 0;
+    var p = 0;
+    if (pw.length >= 8) p++;
+    if (pw.length >= 12) p++;
+    if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) p++;
+    if (/\d/.test(pw)) p++;
+    if (/[^A-Za-z0-9]/.test(pw)) p++;
+    if (pw.length < 8) return 1;
+    return Math.max(1, Math.min(4, p));
+  }
+  function pwStaerkeHtml(){
+    return '<span class="up-pwst" data-es-staerke><span><span class="up-pwst-in">' +
+      '<span class="up-pwst-bars"><span class="up-pwst-bar"></span><span class="up-pwst-bar"></span>' +
+      '<span class="up-pwst-bar"></span><span class="up-pwst-bar"></span></span>' +
+      '<span class="up-pwst-txt" data-es-staerke-txt></span></span></span></span>';
+  }
+  /* Die Balken fuellen sich von links, damit die Staerke auch ohne Farbe ablesbar ist. */
+  function pwStaerkeZeigen(el, pw){
+    if (!el) return;
+    var lv = pwStaerke(pw);
+    el.classList.toggle("is-on", lv > 0);
+    if (!lv){ el.removeAttribute("data-level"); return; }
+    el.setAttribute("data-level", String(lv));
+    var bars = el.querySelectorAll(".up-pwst-bar");
+    for (var i = 0; i < bars.length; i++) bars[i].classList.toggle("is-on", i < lv);
+    var t = el.querySelector("[data-es-staerke-txt]");
+    if (t) t.textContent = t_(PW_STUFEN[lv] || "");
+  }
+
+  /* ---- WAS SUPABASE ZURUECKGIBT, IN SAETZEN FUER MENSCHEN -------------------------------------
+     Nimmt den ROHEN Fehler aus Bubble -- den Text des Supabase-Plugins, dessen JSON
+     ({"code":"weak_password","message":"..."}) oder Code und Meldung hintereinander -- und gibt
+     { feld, text, aktion } zurueck. Gezeigt wird NIE der Servertext: "Auth session missing!" sagt
+     niemandem, was er tun kann. Erkannt wird am Code (neuere GoTrue-Fassungen) und am Wortlaut
+     (aeltere). Was nichts trifft, bekommt den allgemeinen Satz -- auch ein Fehler, den es heute
+     noch nicht gibt, steht also nie leer da.
+     art: "reset" (neues Passwort), "forgot" (Link anfordern), sonst Anmeldung.
+     aktion "neuerLink": ein abgelaufener oder schon benutzter Ruecksetzlink -- als otp_expired,
+     "Token has expired or is invalid" oder, ohne gueltige Sitzung, "Auth session missing!". Fuer
+     den Nutzer heisst das alles: neuen Link holen. */
+  function authFehler(roh, art){
+    var r = String(roh == null ? "" : roh).trim(), code = "";
+    if (r.charAt(0) === "{"){
+      var o = bubbleObjekt(r);
+      if (o) code = String(o.code || o.error_code || o.error || "");
+    }
+    var w = (code + " " + (bubbleFehler(r) || r)).toLowerCase();
+    var reset = art === "reset";
+    var sek = /after (\d+) seconds?/.exec(w);
+    if (/same_password|different from the old/.test(w))
+      return { feld: "password", text: "Choose a password you have not used before." };
+    if (/pwned|known to be weak|easy to guess|data breach/.test(w))
+      return { feld: "password", text: "This password appeared in a data breach. Please choose a different one." };
+    if (/weak_password|at least \d+ characters|should contain at least|password is too short/.test(w))
+      return { feld: "password", text: "That password is too weak. Use at least 8 characters with letters and numbers." };
+    if (/otp_expired|flow_state_expired|bad_code_verifier|link is invalid|has expired|expired or is invalid|invalid or has expired/.test(w))
+      return { feld: "", text: reset ? "This reset link has expired or was already used." : "This link has expired or was already used.",
+               aktion: reset ? "neuerLink" : "" };
+    if (/session_not_found|auth session missing|session missing|not authenticated|invalid jwt|jwt expired/.test(w))
+      return reset ? { feld: "", text: "This reset link has expired or was already used.", aktion: "neuerLink" }
+                   : { feld: "", text: "Your session has expired. Please sign in again." };
+    if (/reauthentication_needed|reauthenticat/.test(w))
+      return { feld: "", text: "Please sign in again to change your password." };
+    /* Die Sekunden VOR der allgemeinen Mail-Sperre: GoTrue schickt die Minutensperre je Adresse
+       ("you can only request this after 47 seconds") mit demselben Code over_email_send_rate_limit
+       wie die Sperre des ganzen Projekts. Die genauere Angabe gewinnt. */
+    if (sek)
+      return { feld: "", text: "Please wait " + sek[1] + " seconds before trying again." };
+    if (/over_email_send_rate_limit|email rate limit/.test(w))
+      return { feld: "", text: "Too many emails were sent. Please wait a few minutes and try again." };
+    if (/over_request_rate_limit|rate limit|too many requests|429/.test(w))
+      return { feld: "", text: "Too many attempts. Please wait a moment and try again." };
+    if (/email_address_invalid|invalid format|unable to validate email/.test(w))
+      return { feld: "email", text: "That does not look like an email address." };
+    if (/invalid_credentials|invalid login credentials/.test(w))
+      return { feld: "", text: "Email or password is not correct." };
+    if (/email_not_confirmed|not confirmed/.test(w))
+      return { feld: "", text: "Please confirm your email first. Check your inbox for the link." };
+    if (/user_not_found/.test(w))
+      return { feld: "email", text: "We could not find an account with this email.", unbekannt: true };
+    if (/failed to fetch|networkerror|network request|timed? ?out|timeout/.test(w))
+      return { feld: "", text: "We could not reach the server. Check your connection and try again." };
+    return { feld: "", text: "Something went wrong. Please try again." };
+  }
+
+  /* ---- Markup-Teile der Einzelseite. auf = Stufe des Einzugs (1 zuerst, 4 zuletzt). ---------- */
+  function esKopfHtml(o){
+    o = o || {};
+    var zeichen = o.ok ? '<span class="up-es-ic is-ok">' + icon("check", 2.4) + '</span>'
+                : (o.icon ? '<span class="up-es-ic">' + icon(o.icon, 1.8) + '</span>' : '');
+    return '<div class="up-es-kopf" data-es-auf="' + (o.auf || 1) + '">' + zeichen +
+      '<h1 class="up-es-h1" data-es-h1>' + esc(o.titel || "") + '</h1>' +
+      (o.text != null ? '<p class="up-es-sub" data-es-sub>' + esc(o.text) + '</p>' : '') +
+      (o.extra || '') + '</div>';
+  }
+  function esFeldHtml(o){
+    o = o || {};
+    var n = esc(o.name || "feld");
+    return '<label class="up-es-feld" data-es-feld="' + n + '">' +
+      '<span class="up-es-label">' + esc(o.label || "") + '</span>' +
+      '<input class="up-field up-es-input" type="' + esc(o.typ || "text") + '" name="' + n + '"' +
+        ' autocomplete="' + esc(o.auto || "off") + '"' + (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') +
+        ' data-es-input="' + n + '"/>' +
+      '<span class="up-es-err"><span data-es-err="' + n + '"></span></span>' + (o.mehr || '') +
+    '</label>';
+  }
+  function esKnopfHtml(o){
+    o = o || {};
+    return '<button class="up-btn-pri is-lg up-es-cta" type="submit" data-es-cta data-es-auf="' + (o.auf || 3) + '"' +
+      ' data-txt="' + esc(o.text || "") + '" data-txt-busy="' + esc(o.textBusy || o.text || "") + '">' +
+      '<span class="up-btn-spin" aria-hidden="true"></span><span data-es-cta-txt>' + esc(o.text || "") + '</span></button>';
+  }
+  function esFehlerHtml(){
+    return '<div class="up-formerr up-es-formerr" data-es-formerr role="alert"><div><div class="up-formerr-in">' +
+      '<span data-es-formerr-txt></span><a class="up-es-formerr-link" data-es-formerr-link hidden></a></div></div></div>';
+  }
+  function esZurueckHtml(o){
+    o = o || {};
+    return '<a class="up-es-zurueck" href="' + esc(o.href || "/") + '" data-es-auf="' + (o.auf || 4) + '">' +
+      icon("arrowLeft", 2) + '<span>' + esc(o.text || "Back to sign in") + '</span></a>';
+  }
+
+  /* ---- makeEinzelseite(root, cfg) ---------------------------------------------------------------
+     Baut den Rahmen in root und haengt Thema, Breite und Einzug an. cfg:
+       label     Name fuer Konsolenmeldungen ("forgot-password")
+       inhalt    HTML des Formularblocks
+       fertig    HTML des Erfolgsblocks (optional, liegt im selben Raster darueber)
+       einzug    false, wenn die Seite schon einmal stand (Neuaufbau nach Themenwechsel)
+       onSenden  wird beim Absenden des <form data-es-form> gerufen (Enter oder Knopf)
+       onBremse  nach 20s Ladezustand ohne Antwort, NACH dem Satz im Fehlerkasten
+     Zurueck kommen die Griffe, die jede der Seiten braucht: q, fehler, busy, fertig. */
+  function makeEinzelseite(root, cfg){
+    cfg = cfg || {};
+    var bg = esAttr(root, "data-bg");
+    var st = { busy: false, fertig: false }, bremse = null;
+    function q(sel){ return root.querySelector(sel); }
+
+    root.classList.add("up-es");
+    root.innerHTML =
+      '<div class="up-es-karte">' +
+        '<div class="up-es-spalte">' +
+          '<div class="up-es-top">' +
+            /* Faellt die Datei aus, bleibt die Ecke leer statt des Bruchbild-Zeichens (wie in der
+               Einladungsseite). */
+            '<img class="up-es-logo" data-es-logo alt="upstreem" src="' + esc(wortmarkeUrl(root, esIstDunkel(root))) + '"' +
+              ' onerror="this.style.visibility=\'hidden\'"/>' +
+            '<button class="up-iconbtn up-es-themebtn" type="button" data-es-theme aria-label="Switch theme"></button>' +
+          '</div>' +
+          '<div class="up-es-mitte">' +
+            '<div class="up-es-block">' +
+              '<div class="up-es-pane" data-es-pane="form">' + (cfg.inhalt || '') + '</div>' +
+              (cfg.fertig ? '<div class="up-es-pane is-off" data-es-pane="fertig" aria-hidden="true">' + cfg.fertig + '</div>' : '') +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="up-es-grund" aria-hidden="true"' +
+          (bg ? ' style="--up-es-bild: url(&quot;' + esc(bg) + '&quot;)"' : '') + '></div>' +
+      '</div>';
+
+    /* ---------------- Thema ---------------- */
+    function syncTheme(){
+      var d = esIstDunkel(root);
+      if (d) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
+      var b = q("[data-es-theme]");
+      if (b){
+        /* Das Zeichen zeigt, WOHIN der Klick fuehrt: im Hellen ein Mond. */
+        b.innerHTML = d ? icon("sun", 2) : icon("moon", 2);
+        b.setAttribute("aria-label", d ? "Switch to light mode" : "Switch to dark mode");
+      }
+      var l = q("[data-es-logo]"), neu = wortmarkeUrl(root, d);
+      if (l && l.getAttribute("src") !== neu){ l.style.visibility = ""; l.setAttribute("src", neu); }
+    }
+    q("[data-es-theme]").addEventListener("click", function(){
+      /* Ueber core: setUpstreemTheme schreibt pref_theme -- die Wahl gilt danach auch in der App. */
+      setUpstreemTheme(esIstDunkel(root) ? "light" : "dark");
+      syncTheme();
+    });
+    onTheme(syncTheme);
+    if (window.MutationObserver){
+      new MutationObserver(syncTheme).observe(root, { attributes: true, attributeFilter: ["data-isdark", "data-logo", "data-logo-dark"] });
+    }
+
+    /* ---------------- Breite ----------------
+       An der Wurzel gemessen, nicht am Fenster -- in Bubble steckt die Seite in einem Element.
+       760 wie die Einladungsseite, die einspaltige Schwester. */
+    function messe(){ root.classList.toggle("is-narrow", root.clientWidth < 760); }
+    messe();
+    onResize(root, messe);
+
+    /* ---------------- Fehler, Ladezustand, Erfolg ---------------- */
+    function fehler(felder, formText, link){
+      felder = felder || {};
+      var alle = root.querySelectorAll("[data-es-feld]");
+      for (var i = 0; i < alle.length; i++){
+        var n = alle[i].getAttribute("data-es-feld"), msg = felder[n] || "";
+        alle[i].classList.toggle("is-err", !!msg);
+        var slot = alle[i].querySelector("[data-es-err]");
+        if (slot) slot.textContent = msg;
+      }
+      var box = q("[data-es-formerr]");
+      if (!box) return;
+      q("[data-es-formerr-txt]").textContent = formText || "";
+      box.classList.toggle("is-on", !!formText);
+      /* Der Weg aus dem Fehler steht gleich dahinter -- nie nur der Satz, dass es nicht ging. */
+      var a = q("[data-es-formerr-link]"), mit = !!(formText && link && link.href);
+      a.hidden = !mit;
+      if (mit){ a.textContent = link.text || ""; a.setAttribute("href", link.href); }
+    }
+    function busy(an){
+      st.busy = !!an;
+      var k = q("[data-es-cta]");
+      if (k){
+        k.classList.toggle("is-busy", st.busy);
+        k.disabled = st.busy;
+        var t = k.querySelector("[data-es-cta-txt]");
+        if (t) t.textContent = k.getAttribute(st.busy ? "data-txt-busy" : "data-txt") || "";
+      }
+      var f = root.querySelectorAll("[data-es-input]");
+      for (var i = 0; i < f.length; i++) f[i].disabled = st.busy;
+      if (bremse){ clearTimeout(bremse); bremse = null; }
+      if (st.busy) bremse = setTimeout(function(){
+        bremse = null;
+        busy(false);
+        fehler(null, "That took longer than expected. Please try again.");
+        if (cfg.onBremse) cfg.onBremse();
+      }, ES_BREMSE_MS);
+    }
+    function fertig(an){
+      st.fertig = !!an;
+      var f = q('[data-es-pane="form"]'), d = q('[data-es-pane="fertig"]');
+      if (!d) return;
+      f.classList.toggle("is-off", st.fertig);
+      d.classList.toggle("is-off", !st.fertig);
+      if (st.fertig){ f.setAttribute("aria-hidden", "true"); d.removeAttribute("aria-hidden"); }
+      else { d.setAttribute("aria-hidden", "true"); f.removeAttribute("aria-hidden"); }
+    }
+    var form = q("form[data-es-form]");
+    if (form) form.addEventListener("submit", function(e){
+      e.preventDefault();
+      if (st.busy || st.fertig) return;
+      if (cfg.onSenden) cfg.onSenden();
+    });
+
+    syncTheme();
+    if (cfg.einzug !== false){
+      root.classList.add("is-entering");
+      setTimeout(function(){ root.classList.remove("is-entering"); }, ES_EINZUG_MS);
+    }
+
+    return {
+      root: root, q: q, fehler: fehler, busy: busy, fertig: fertig,
+      istBusy: function(){ return st.busy; },
+      istFertig: function(){ return st.fertig; },
+      dunkel: function(){ return esIstDunkel(root); }
+    };
+  }
+
   /* ══ Das Abo lesen: UC.aboLesen, UC.plaeneLesen (28.09.) ════════════════════════════════════
      Aus settings-billing hierher gezogen. Das Access Gate las am 28.09. kurz dieselbe Nutzlast;
      seit derselben Nacht liest es die schlanke Quota-RPC (get_team_plan_quota), weil die grosse
@@ -21359,6 +21789,13 @@
     makeToolGroup: makeToolGroup,
     leseFehlerHtml: leseFehlerHtml,
     leerHtml: leerHtml,
+    /* Die Einzelseite (07.10.): Rahmen und Teile der kleinen ganzseitigen Flaechen. */
+    makeEinzelseite: makeEinzelseite,
+    esKopfHtml: esKopfHtml, esFeldHtml: esFeldHtml, esKnopfHtml: esKnopfHtml,
+    esFehlerHtml: esFehlerHtml, esZurueckHtml: esZurueckHtml, esAttr: esAttr,
+    pwStaerke: pwStaerke, pwStaerkeHtml: pwStaerkeHtml, pwStaerkeZeigen: pwStaerkeZeigen,
+    authFehler: authFehler, feuerRoh: feuerRoh,
+    adressParameter: adressParameter, adressFehlerWeg: adressFehlerWeg,
     /* Tarifkarten (28.09.): die Karte der Landingpage als Bauteil, plus die drei Regeln, die ein
        Aufrufer ausserhalb der Karte braucht -- Takt lesen, Euro schreiben, Tarifliste pruefen. */
     makePlans: makePlans,
