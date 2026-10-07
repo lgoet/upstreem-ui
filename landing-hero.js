@@ -2858,7 +2858,15 @@
         })
       },
       options: {
-        responsive: true, maintainAspectRatio: false,
+        /* NICHT responsive (07.10., gemeldet: "im Mobilemode ist das Linechart nicht sichtbar, nur
+           die beiden Chips"). Chart.js misst seinen Behaelter mit getBoundingClientRect -- also
+           SAMT der Verkleinerung der Karte (transform scale 0.78 am Telefon) -- und zieht davon die
+           Aussenraender der Leinwand ab. Am Telefon zeichnete die Kurve dadurch erst in 78 Prozent
+           der Breite; die Luecke rechts hatte eine Regel mit margin: auto "zentriert", und genau
+           diese Raender zog Chart.js beim naechsten Messen wieder ab: gemessen 43px, nach einem
+           weiteren resize() 0px. Die Groesse kommt jetzt aus groesse() unten, aus der LAYOUT-
+           Breite des Feldes (clientWidth), die die Verkleinerung nicht kennt. */
+        responsive: false, maintainAspectRatio: false,
         /* Kein Achsenkreuz und keine Legende: die Karte zeigt die BEWEGUNG, nicht die Skala. */
         scales: { x: { display: false }, y: { display: false, min: KRV_MIN, max: KRV_MAX } },
         plugins: { legend: { display: false }, tooltip: { enabled: false } },
@@ -2869,6 +2877,13 @@
       }
     });
     feld.__ulhChart = chart;
+    /* Die Leinwand auf die Layoutgroesse des Feldes (siehe responsive oben). Ausdrueckliche Masse an
+       resize() -- ohne sie mass Chart.js wieder selbst, mit Verkleinerung und Raendern. */
+    function groesse(){
+      var w = feld.clientWidth, h = feld.clientHeight;
+      if (w > 0 && h > 0 && (w !== chart.width || h !== chart.height)){ try { chart.resize(w, h); } catch (e){} }
+    }
+    groesse();
     /* Die Schilder sitzen auf ihrem Punkt. Chart.js kennt seine Punktkoordinaten erst nach dem
        ersten Zeichnen, also danach setzen -- und bei jeder Groessenaenderung neu. */
     function schilderSetzen(){
@@ -2880,7 +2895,7 @@
          requestAnimationFrame. Gemessen in einem verdeckten Tab, wo rAF nie feuert: ALLE Punkte
          lagen auf y = 204, also auf der Grundlinie, obwohl die Achse fuer 38.9 Prozent 44px
          ausrechnet. Aus der Achse gerechnet stimmt die Lage im ersten Bild. */
-      try { chart.resize(); } catch (e){}
+      groesse();
       var ax = chart.scales.x, ay = chart.scales.y;
       if (!ax || !ay) return;
       KRV.forEach(function(k, i){
@@ -2917,6 +2932,10 @@
     if (typeof ResizeObserver !== "undefined"){
       try { new ResizeObserver(function(){ setTimeout(schilderSetzen, 40); }).observe(feld); } catch (e){}
     }
+    /* Und das Fenster selbst (Drehen des Telefons): seit die Kurve nicht mehr responsive ist,
+       haengt ihre Groesse allein an diesen Aufrufen -- der Beobachter allein liefert nur, wenn die
+       Seite Bilder malt, und gemessen blieb er in einem nicht malenden Fenster ganz stumm. */
+    window.addEventListener("resize", function(){ setTimeout(schilderSetzen, 40); });
     /* Gehoben wird beim Ueberfahren der KARTE und nur die eigene Marke. Zwei Aenderungen gegen
        die erste Fassung, beide vom Nutzer: die Linie einer fremden Marke hervorzuheben sagt
        nichts, und eine Linie in einer Vorschau genau zu treffen ist eine Zumutung -- die Karte

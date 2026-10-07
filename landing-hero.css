@@ -3702,10 +3702,10 @@
      der App richtig, denn dort steht sie unter einem Chart, das die ganze Seite fuellt. */
   .ulh-vis .up-legend.is-hidden { display: block; }
 
-  /* Die Kurve zeichnet auf eine Leinwand mit FESTER Breite -- gemessen 278px in einem 356px
-     breiten Kasten, also links angeschlagen mit einer Luecke rechts. Auf einer 332px breiten
-     Karte faellt das auf. Auto-Raender stellen sie in die Mitte. */
-  .ulh-vis-linie .ulh-krv-canvas { margin-left: auto; margin-right: auto; }
+  /* Hier stand margin: auto an der Leinwand der Kurve, gegen eine Luecke rechts. Die Luecke kam
+     daher, dass Chart.js die VERKLEINERTE Breite mass; die Raender zog es beim naechsten Messen ab,
+     und die Kurve schrumpfte auf 0 (07.10.). Die Groesse setzt jetzt landing-hero.js (groesse() in
+     krvZeichnen) aus der Layoutbreite -- die Leinwand fuellt ihr Feld, Raender braucht es nicht. */
 
   /* ---- Das Chancen-Brett ----
      Es laeuft hier NICHT rechts hinaus wie die Tabellen daneben, sondern passt ganz in die Karte.
