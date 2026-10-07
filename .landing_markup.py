@@ -168,6 +168,10 @@ for schluessel, pfad, kennung in TEILE:
     # Shopping schreibt sonst ?shop/?product in die Adresse -- auf der Landingpage ist das die
     # Adresse der Framer-Seite. data-adresse="aus" laesst die Komponente die Adresse in Ruhe.
     m = m.replace('class="up-root ush-root"', 'class="up-root ush-root" data-adresse="aus"')
+    # Die URL-Typen des Domain Details im Verlauf der Charts (schwarz nach grau) statt in der
+    # URL-Typ-Skala der App -- NUR hier (07.10.: "nur in der Landingpage, in der App ganz normal in
+    # unseren bestehenden Farben"). domain-detail.js liest das Attribut (typenImVerlauf).
+    m = m.replace('class="up-root udd-root"', 'class="up-root udd-root" data-typfarben="verlauf"')
     # Die Rueckwege nach Bubble fallen weg. Auch mehrzeilig eingerueckt geschrieben, deshalb der
     # Blick auf das ganze Attribut samt fuehrendem Leerraum.
     m = re.sub(r'\s*data-[a-z0-9-]+-fn="bubble_fn_[^"]*"', "", m)

@@ -298,6 +298,13 @@
     if (isDark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
     function darkNow() { return isDark; }
 
+    /* Die URL-Typen im Verlauf der Charts NUR, wenn die Einbettung es verlangt -- und das tut allein
+       die Landingpage (landing-hero.js, MARKUP.udd). In der App bleiben Ring, Legende und Balken in
+       der URL-Typ-Skala (07.10. angefordert: "nur in der Landingpage, hier ganz normal in unseren
+       bestehenden Farben"). Ein Attribut und kein Blick auf .ulh-root: so entscheidet die Stelle,
+       die die Instanz anlegt, und die Komponente muss nicht wissen, auf welcher Seite sie steht. */
+    var typenImVerlauf = root.getAttribute("data-typfarben") === "verlauf";
+
     /* Die Tooltips fehlten hier komplett -- makeTooltips wurde nie gerufen, also blieb JEDES
        data-tip dieser Komponente stumm: Zahnrad, Ring/Balken-Umschalter, alle. Der zweite
        Parameter ist die Themenabfrage; ohne ihn steht der Tooltip im Dunkeln hell. */
@@ -765,8 +772,10 @@
       if (istLaden() || !isArr(state.types)) { typeChart.skeleton(); return; }
       var vorbereitet = UC.prepTypeData("url", state.types, isDark);
       if (!vorbereitet.length) { typeChart.empty("No URL types for this period."); return; }
-      /* DIE URL-TYPEN IM VERLAUF DES CHARTS (06.10. angefordert: "nur das Model-Breakdown-Chart ist
-         im richtigen Farbverlauf, der Rest nicht"). Bis dahin trugen Ring, Legende und Balken die
+      /* DIE URL-TYPEN IM VERLAUF DES CHARTS -- seit dem 07.10. NUR AUF DER LANDINGPAGE
+         (typenImVerlauf, siehe oben); die App behaelt die Farben aus prepTypeData. Die Anforderung
+         vom 06.10. ("nur das Model-Breakdown-Chart ist im richtigen Farbverlauf, der Rest nicht")
+         galt der Landing, war hier aber fuer beide umgesetzt. Bis dahin trugen Ring, Legende und Balken die
          Farben der URL-Typ-Skala (Gruen, Orange, Violett), waehrend Kurve, Trichter und Model
          Breakdown schon im Verlauf standen. Jetzt dieselbe FAMILIE wie Kurve und Trichter
          (ruhig -> UC.chartFamilie: im Standard schwarz nach grau, mit "Standard + Blau" blau),
@@ -774,11 +783,13 @@
          feine Rampe (balkenGrau 0, 1, 2 ...): deren Nachbarstufen lagen im Ring kaum
          unterscheidbar nebeneinander (gemessen in Blau: #3f66b0 neben #4a70b6). Mehr als fuenf
          Typen nehmen die hellsten Stufen der Rampe. */
-      var familie = ruhig(isDark, null);
-      vorbereitet.forEach(function (it, i) {
-        var f = familie[i] || (UC.balkenGrau ? UC.balkenGrau(Math.min(7, i + 3), isDark) : null);
-        if (f) it.color = f;
-      });
+      if (typenImVerlauf) {
+        var familie = ruhig(isDark, null);
+        vorbereitet.forEach(function (it, i) {
+          var f = familie[i] || (UC.balkenGrau ? UC.balkenGrau(Math.min(7, i + 3), isDark) : null);
+          if (f) it.color = f;
+        });
+      }
       if (state.chartMode === "bar") typeChart.renderBars(vorbereitet);
       else typeChart.renderDonut(vorbereitet);
     }
