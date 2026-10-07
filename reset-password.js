@@ -20,7 +20,7 @@
                 vorhanden, mindestens 8 Zeichen, beide Felder gleich.
      setResetPasswordDone(INSTANCE[, titel, text])
      setResetPasswordError(INSTANCE, "<Fehler roh>")
-   Rahmen, Felder, Knopf, Fehlerkasten und Thema kommen aus core (UC.makeEinzelseite).
+   Rahmen, Felder, Knopf, Fehlerzeile und Thema kommen aus core (UC.makeEinzelseite).
    Einzelheiten und die Run-JS-Schritte: bubble/reset_password_bubble.html. */
 (function(){
   "use strict";
@@ -96,7 +96,6 @@
       einzug: !alt,
       inhalt:
         UC.esKopfHtml({ titel: T.h1 }) +
-        UC.esFehlerHtml() +
         '<form class="up-es-form" novalidate data-es-form>' +
           /* Ein verstecktes Benutzerfeld: ohne es weiss der Passwortverwalter nicht, ZU WELCHEM
              Konto das neue Passwort gehoert, und speichert es nicht oder beim falschen. Chrome
@@ -109,6 +108,8 @@
             UC.esFeldHtml({ name: "confirm", label: T.pw2, typ: "password", auto: "new-password" }) +
           '</div>' +
           UC.esKnopfHtml({ text: T.cta, textBusy: T.ctaBusy }) +
+          /* Der Fehler des Formulars direkt unter dem Knopf: roter Satz, kein Kasten. */
+          UC.esFehlerHtml() +
         '</form>' +
         UC.esZurueckHtml({ href: login, text: T.zurueck }),
       fertig:

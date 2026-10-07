@@ -16,7 +16,7 @@
      setForgotPasswordDone(INSTANCE[, titel, text])   der Link ist verschickt
      setForgotPasswordError(INSTANCE, "<Fehler roh>")  der Fehler, wie Supabase ihn liefert
    Die Adresse kann aus ?email= kommen (der Link "Forgot password?" der Anmeldeseite reicht sie
-   weiter). Rahmen, Feld, Knopf, Fehlerkasten und Thema kommen aus core (UC.makeEinzelseite).
+   weiter). Rahmen, Feld, Knopf, Fehlerzeile und Thema kommen aus core (UC.makeEinzelseite).
    Einzelheiten und die Run-JS-Schritte: bubble/forgot_password_bubble.html. */
 (function(){
   "use strict";
@@ -94,13 +94,14 @@
       einzug: !alt,
       inhalt:
         UC.esKopfHtml({ titel: T.h1, text: T.sub }) +
-        UC.esFehlerHtml() +
         /* Ein echtes <form>: Enter loest aus, und der Passwortverwalter erkennt das Feld. */
         '<form class="up-es-form" novalidate data-es-form>' +
           '<div class="up-es-felder" data-es-auf="2">' +
             UC.esFeldHtml({ name: "email", label: T.label, typ: "email", auto: "email", ph: T.ph }) +
           '</div>' +
           UC.esKnopfHtml({ text: T.cta, textBusy: T.ctaBusy }) +
+          /* Der Fehler des Formulars direkt unter dem Knopf: roter Satz, kein Kasten. */
+          UC.esFehlerHtml() +
         '</form>' +
         UC.esZurueckHtml({ href: login, text: T.zurueck }),
       fertig:
@@ -109,7 +110,7 @@
         '<button type="button" class="up-es-zurueck ufp-wieder" data-ufp-wieder></button>' +
         UC.esZurueckHtml({ href: login, text: T.zurueck }),
       onSenden: absenden,
-      /* Die Notbremse nach einem "Resend": ihr Satz steht im Fehlerkasten des FORMULARS, und das
+      /* Die Notbremse nach einem "Resend": ihr Satz steht in der Fehlerzeile des FORMULARS, und das
          liegt dann verdeckt unter der Bestaetigung. Also zurueck dorthin, wo er zu lesen ist. */
       onBremse: zurueckInsFormular
     });

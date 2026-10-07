@@ -2063,6 +2063,25 @@
     }
     @media (prefers-reduced-motion: reduce){ .up-formerr { transition: none; } }
 
+    /* ---------- Die Fehlerzeile (07.10.): der Fehlerzustand der App als Baustein ----------
+       Ein roter Satz in --vt-down, KEIN Kasten, keine Flaeche, kein Rahmen. So stehen Fehler in der
+       App seit langem -- team-orga (.uto-err, .uto-formerr), add-brand (.uab-err), settings-brand
+       (.usb-fileerr) --, nur gab es dafuer keinen gemeinsamen Baustein, und der einzige Fehler in
+       core war der Kasten .up-formerr. Der stand auf den Einzelseiten und wurde am 07.10.
+       abgelehnt ("diese daemlichen Container mit der Primaerfont drin").
+       Aufklappen ueber grid-template-rows 0fr -> 1fr: keine gemessene Hoehe, und was darunter
+       steht, rutscht weich statt zu springen. .is-on zeigt sie. */
+    .up-fehlerzeile {
+      display: grid; grid-template-rows: 0fr; opacity: 0;
+      transition: grid-template-rows var(--up-t-2) var(--up-ease), opacity var(--up-t-2) var(--up-ease);
+    }
+    .up-fehlerzeile > span {
+      overflow: hidden; min-height: 0; display: block; padding-top: 5px;
+      font-size: 12px; line-height: 1.4; color: var(--vt-down);
+    }
+    .up-fehlerzeile.is-on { grid-template-rows: 1fr; opacity: 1; }
+    @media (prefers-reduced-motion: reduce){ .up-fehlerzeile { transition: none; } }
+
     /* ══ EINZELSEITE (07.10.) ══════════════════════════════════════════════════════════════════
        Der Rahmen der kleinen ganzseitigen Flaechen: check-email, forgot-password, reset-password,
        not-found (UC.makeEinzelseite in core.js baut das Markup). Vier eigene Komponenten, ein
@@ -2151,18 +2170,9 @@
     .up-es-input::placeholder { color: var(--vc-third); }
     .up-es-input:disabled { opacity: .55; cursor: default; }
     /* Der Rahmen faerbt sich NICHT, solange das Feld den Fokus hat: sonst wechselt die Farbe genau
-       in dem Moment, in dem jemand den Fehler beheben will. */
-    .up-es-feld.is-err .up-es-input:not(:focus) { border-color: var(--vc-neg, #c8412e); }
-    /* Die Fehlerzeile klappt ueber grid-template-rows auf, ohne gemessene Hoehe. */
-    .up-es-err {
-      display: grid; grid-template-rows: 0fr; opacity: 0;
-      transition: grid-template-rows var(--up-t-2) var(--up-ease), opacity var(--up-t-2) var(--up-ease);
-    }
-    .up-es-err > span {
-      overflow: hidden; min-height: 0; display: block; padding-top: 5px;
-      font-size: 12px; line-height: 1.4; color: var(--vc-neg, #c8412e);
-    }
-    .up-es-feld.is-err .up-es-err { grid-template-rows: 1fr; opacity: 1; }
+       in dem Moment, in dem jemand den Fehler beheben will. Die Zeile darunter ist .up-fehlerzeile. */
+    .up-es-feld.is-err .up-es-input:not(:focus) { border-color: var(--vt-down); }
+    .up-es-feld.is-err .up-fehlerzeile { grid-template-rows: 1fr; opacity: 1; }
 
     /* ---------- Passwortstaerke (UC.pwStaerkeHtml): die Anzeige der Anmeldeseite ----------
        Oben 8px wie dort, unten keine: dort folgt eine Optionszeile, hier das naechste Feld mit
@@ -2205,9 +2215,13 @@
       animation: up-ph-spin 620ms linear infinite;
     }
     .is-busy > .up-btn-spin { display: block; }
-    /* Der Weg zu einem neuen Link steht IM Fehlerkasten, direkt hinter dem Satz. */
+    /* Der Fehler des ganzen Formulars: die Fehlerzeile direkt UNTER dem Knopf, mittig -- dort, wo
+       der Blick nach dem Klick ist. Zwei Klassen gegen das Polster von .up-fehlerzeile > span. */
+    .up-fehlerzeile.up-es-fehler { text-align: center; }
+    .up-fehlerzeile.up-es-fehler > span { padding-top: 12px; }
+    /* Der Weg zu einem neuen Link steht direkt hinter dem Satz, in derselben Farbe, unterstrichen. */
     .up-es-formerr-link {
-      margin-left: 6px; font-weight: 600; color: var(--vc-text); white-space: nowrap;
+      margin-left: 4px; font-weight: 500; color: inherit; white-space: nowrap;
       text-decoration: underline; text-underline-offset: 2px;
     }
     .up-es-formerr-link[hidden] { display: none; }

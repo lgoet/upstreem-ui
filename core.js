@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261104;
+  var BUILD = 20261105;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -20032,8 +20032,9 @@
        - das Raster der Anmeldeseite: Karte mit 16px Polster, oben links die Wortmarke, oben rechts
          der Theme-Knopf, der Inhalt mittig, auf dem Seitengrund der App;
        - das Thema aus pref_theme wie in der App (kein data-isdark noetig), die Wortmarke je Thema;
-       - Feld mit Beschriftung und Fehlerzeile, Hauptknopf mit Spinner und Notbremse, der
-         Fehlerkasten (.up-formerr), der Erfolgsblock im selben Raster;
+       - Feld mit Beschriftung, Hauptknopf mit Spinner und Notbremse, die Fehlerzeile
+         (.up-fehlerzeile, roter Satz ohne Kasten) an Feld und Formular, der Erfolgsblock im
+         selben Raster;
        - die Staerkeanzeige und die Saetze zu Supabase-Fehlern.
      Feld und Knopf haben die Masse von auth-page.css, Ueberschrift und Grund die der App (siehe
      core.css, EINZELSEITE). auth-page, invite-page und onboarding
@@ -20238,7 +20239,7 @@
       '<input class="up-field up-es-input" type="' + esc(o.typ || "text") + '" name="' + n + '"' +
         ' autocomplete="' + esc(o.auto || "off") + '"' + (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') +
         ' data-es-input="' + n + '"/>' +
-      '<span class="up-es-err"><span data-es-err="' + n + '"></span></span>' + (o.mehr || '') +
+      '<span class="up-fehlerzeile up-es-err"><span data-es-err="' + n + '"></span></span>' + (o.mehr || '') +
     '</label>';
   }
   function esKnopfHtml(o){
@@ -20247,9 +20248,11 @@
       ' data-txt="' + esc(o.text || "") + '" data-txt-busy="' + esc(o.textBusy || o.text || "") + '">' +
       '<span class="up-btn-spin" aria-hidden="true"></span><span data-es-cta-txt>' + esc(o.text || "") + '</span></button>';
   }
+  /* Der Fehler des ganzen Formulars: die Fehlerzeile (.up-fehlerzeile), kein Kasten. Gehoert
+     direkt hinter den Hauptknopf. */
   function esFehlerHtml(){
-    return '<div class="up-formerr up-es-formerr" data-es-formerr role="alert"><div><div class="up-formerr-in">' +
-      '<span data-es-formerr-txt></span><a class="up-es-formerr-link" data-es-formerr-link hidden></a></div></div></div>';
+    return '<div class="up-fehlerzeile up-es-fehler" data-es-formerr role="alert"><span>' +
+      '<span data-es-formerr-txt></span><a class="up-es-formerr-link" data-es-formerr-link hidden></a></span></div>';
   }
   function esZurueckHtml(o){
     o = o || {};
@@ -20264,7 +20267,7 @@
        fertig    HTML des Erfolgsblocks (optional, liegt im selben Raster darueber)
        einzug    false, wenn die Seite schon einmal stand (Neuaufbau nach Themenwechsel)
        onSenden  wird beim Absenden des <form data-es-form> gerufen (Enter oder Knopf)
-       onBremse  nach 20s Ladezustand ohne Antwort, NACH dem Satz im Fehlerkasten
+       onBremse  nach 20s Ladezustand ohne Antwort, NACH dem Satz in der Fehlerzeile
      Ein data-bg gibt es nicht mehr (07.10.): der Grund ist der Seitengrund, ohne Bild.
      Zurueck kommen die Griffe, die jede der Seiten braucht: q, fehler, busy, fertig. */
   function makeEinzelseite(root, cfg){
