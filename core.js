@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261105;
+  var BUILD = 20261106;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -9031,12 +9031,48 @@
     /* Kein befragbares Kind -- dann entscheidet das Element selbst. */
     return gefragt ? false : messbar(el);
   }
+  /* ---- EIN ELEMENT MIT EIGENEM TEXT IST EIN BLATT (07.10.) --------------------------------------
+     Gemeldet: "Komponenten switchen beim Laden wild zwischen DE und US" (URL Detail). Nachgestellt
+     mit Sprache de: im Skelett standen die Kennzahlen deutsch, nach den Daten "Last Seen", "Domain
+     Share", "Global Share" englisch -- und blieben es, bis irgendein spaeterer Volllauf sie wieder
+     fing. Der Grund steht hier: der Abstieg ging durch JEDES Element mit Kindern hindurch, und die
+     Elemente auf dem Weg bekommen nur ihre Attribute (siehe spracheLauf), nie ihren Text. Das
+     Etikett <span>Last Seen<span class="up-th-info">...</span></span> hat Text UND ein Kind -- es
+     wurde durchschritten, sein Textknoten fiel durch.
+     Ob ein Text uebersetzt wurde, hing damit davon ab, WO der Lauf begann: von der Seite aus lag
+     das Etikett unterhalb der Tiefengrenze in einem Blatt (uebersetzt), vom frisch gezeichneten
+     Ast aus wurde es durchschritten (englisch). Beim Laden wechseln sich beide Arten ab -- daher
+     das Hin und Her. Betroffen war jede Beschriftung, die Text NEBEN einem Zeichen traegt:
+     Kennzahlen, Spaltenkoepfe mit Info oder Sortierpfeil, Abschnittskoepfe mit Info.
+     Jetzt endet der Abstieg an einem Element mit eigenem Text: es wird als Ganzes behandelt. Das
+     ist nie weniger als vorher (ein Blatt umfasst alles darunter) und billig -- solche Elemente
+     sind Etiketten und Knoepfe, keine Seitenbereiche. */
+  function eigenerTextDa(el){
+    for (var c = el.firstChild; c; c = c.nextSibling){
+      if (c.nodeType === 3 && /\S/.test(c.nodeValue || "")) return true;
+    }
+    return false;
+  }
   function sichtbareBereiche(start){
     /* document ist keine brauchbare Wurzel fuer diese Suche -- ihr erstes Kind ist <html> und
        dessen erstes <head>. Aufrufer, die document uebergeben (der Beobachter tut es bei
        gedeckelten Sammlungen), meinen den Koerper. */
     var koerper = (start && start.nodeType === 1) ? start : document.body;
     if (!koerper) return [document];
+    /* ---- INNERHALB EINER SICHTBAREN KOMPONENTE ZAEHLT NUR DIE KOMPONENTE (07.10.) -------------
+       Zweiter Teil desselben Befunds (siehe eigenerTextDa): in URL Detail blieben "Mentions" und
+       "Conversion" englisch, wenn die Daten nach dem Seitenaufbau kamen. Ihre Ueberschriften
+       stehen von Anfang an im Markup, ihre Abschnitte sind im Ladezustand aber verborgen (hidden,
+       .is-loading) -- der Lauf ueberging sie als "geparkt". Sichtbar werden sie spaeter durch
+       ein ATTRIBUT, und darauf reagiert der Beobachter nicht (nur auf neue Knoten und Text).
+       Das Ueberspringen verborgener Aeste ist fuer die geparkten ANSICHTEN da (93 Prozent der
+       Knoten, siehe oben) -- die liegen ausserhalb der Komponenten. Innerhalb einer sichtbaren
+       Komponente ist ein verborgener Abschnitt ein Zustand, der jeden Augenblick umschlagen kann,
+       und klein. Also: beginnt der Lauf IN einer sichtbaren Komponente, wird der Ast als Ganzes
+       behandelt; trifft der Abstieg auf eine sichtbare Komponentenwurzel, ebenso. Dann steht der
+       Text schon deutsch da, wenn sein Abschnitt aufgeht. */
+    var komp = koerper.closest ? koerper.closest(".up-root") : null;
+    if (komp && astSichtbar(komp)) return [koerper];
     if (koerper.nodeType === 1 && !astSichtbar(koerper)) return [];
     var raus = [], reihe = [koerper], tiefe = 0;
     while (reihe.length && tiefe <= BEREICH_TIEFE){
@@ -9044,8 +9080,9 @@
       for (var i = 0; i < reihe.length; i++){
         var el = reihe[i];
         if (!astSichtbar(el)) continue;                 /* geparkt: der ganze Ast faellt weg */
+        if (el.classList && el.classList.contains("up-root")){ raus.push(el); continue; }
         var kinder = el.childElementCount || 0;
-        if (tiefe === BEREICH_TIEFE || !kinder || kinder > BEREICH_KINDER){ raus.push(el); continue; }
+        if (tiefe === BEREICH_TIEFE || !kinder || kinder > BEREICH_KINDER || eigenerTextDa(el)){ raus.push(el); continue; }
         for (var k = 0; k < el.children.length; k++) naechste.push(el.children[k]);
       }
       reihe = naechste; tiefe++;
