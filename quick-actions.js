@@ -706,7 +706,9 @@
   function avHtml(src, fbInner, istFlagge){
     var kl = "mqa-av" + (istFlagge ? " is-flag" : "");
     if (!src) return '<span class="' + kl + ' is-fb">' + fbInner + '</span>';
-    return '<span class="' + kl + '"><img src="' + escAttr(src) + '" alt="" loading="lazy" ' +
+    /* no-referrer wie an jedem Favicon und Logo der Tabellen (URL-Tabelle, Domain-Tabelle): manche
+       Hosts liefern ihr Bild an eine fremde Seite nur ohne Herkunftsangabe aus. */
+    return '<span class="' + kl + '"><img src="' + escAttr(src) + '" alt="" loading="lazy" referrerpolicy="no-referrer" ' +
       'onerror="this.style.display=\'none\';this.parentNode.classList.add(\'is-fb\');">' +
       '<span class="mqa-av-fb">' + fbInner + '</span></span>';
   }
@@ -758,11 +760,35 @@
     return '<span class="mqa-metric' + cls + '">' + (lbl ? '<span class="mqa-metric-lbl">' + esc(lbl) + '</span>' : "") + esc(txt) + '</span>';
   }
 
+  /* DER TITEL EINER URL WIE IN DER URL-TABELLE (07.10. angefordert: "alle Sonderformatierungs-
+     regeln der URL-Tabelle -- Reddit, LinkedIn -- auch hier"). Hier stand nur title || url, und
+     bei Reddit und LinkedIn ist der gescrapte Titel fast immer die Domain: die Treffer hiessen
+     "reddit.com", "reddit.com", "linkedin.com". Die Regeln stehen in core (UC.plattformTitel, als
+     Text: diese Palette hebt selbst hervor, mit ihrer Mehrwortsuche, und faerbt mit ihren eigenen
+     Marken, weil sie nicht unter .up-root haengt). Ohne core -- die Palette laeuft ausdruecklich
+     auch dort -- bleibt es beim alten Titel. */
+  function urlPlattform(item){
+    var k = window.UpstreemCore;
+    return (k && k.plattformTitel) ? k.plattformTitel(item.url, item.title) : null;
+  }
+  function urlTitelHtml(item, mitTreffer){
+    var f = mitTreffer ? hl : esc;
+    var p = urlPlattform(item);
+    if (!p) return f(item.title || item.url || "");
+    return '<span class="mqa-plattform">' + f(p.vorn) + '</span>' +
+      (p.text ? ' <span class="mqa-plattform">/</span> ' + f(p.text) : '');
+  }
+  /* Dasselbe als reiner Text, fuer die Beschriftung in der Leiste ("r/cars / Best EV 2026"). */
+  function urlTitelText(item){
+    var p = urlPlattform(item);
+    return p ? p.vorn + (p.text ? " / " + p.text : "") : (item.title || item.url || "");
+  }
+
   function rowHtml(type, item, ri){
     var av = "", primary = "", secondary = "";
     if (type === "brand"){ av = avHtml(item.logo, letter(item.name)); primary = hl(item.name || ""); }
     else if (type === "domain"){ av = avHtml(item.favicon, GLOBE); primary = hl(item.domain || ""); }
-    else if (type === "url"){ av = avHtml(item.favicon, GLOBE); primary = hl(item.title || item.url || ""); secondary = hl(item.url || ""); }
+    else if (type === "url"){ av = avHtml(item.favicon, GLOBE); primary = urlTitelHtml(item, true); secondary = hl(item.url || ""); }
     else if (type === "prompt"){
       var mk = String(item.market || "").toUpperCase();
       var flag = flaggeUrl(item.market);
@@ -1107,7 +1133,7 @@
     var av = "", primary = "", secondary = "";
     if (item.type === "brand"){ av = avHtml(item.logo, letter(item.name)); primary = esc(item.name || ""); }
     else if (item.type === "domain"){ av = avHtml(item.favicon, GLOBE); primary = esc(item.domain || ""); }
-    else if (item.type === "url"){ av = avHtml(item.favicon, GLOBE); primary = esc(item.title || item.url || ""); secondary = esc(item.url || ""); }
+    else if (item.type === "url"){ av = avHtml(item.favicon, GLOBE); primary = urlTitelHtml(item, false); secondary = esc(item.url || ""); }
     else if (item.type === "prompt"){
       var mk = String(item.market || "").toUpperCase();
       av = avHtml(flaggeUrl(item.market),
@@ -1475,7 +1501,7 @@
     var typ = it.type, id = "", label = "", logo = "";
     if (typ === "brand"){       id = it.id;     label = it.name || "";            logo = it.logo || ""; }
     else if (typ === "domain"){ id = it.domain; label = it.domain || "";          logo = it.favicon || ""; }
-    else if (typ === "url"){    id = it.url;    label = it.title || it.url || ""; logo = it.favicon || ""; }
+    else if (typ === "url"){    id = it.url;    label = urlTitelText(it); logo = it.favicon || ""; }
     else if (typ === "prompt"){ id = it.id;     label = it.prompt_text || "";
       /* Beim Prompt ist die Flagge des Marktes das Bild -- dieselbe Quelle wie in der Zeile,
          und ueber flaggeUrl() dieselbe wie in der Topbar. */

@@ -392,6 +392,10 @@
 .mqa-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .mqa-primary { font-size: 13.5px; font-weight: 500; color: var(--am-text); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mqa-secondary { font-size: 12px; color: var(--am-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Der Plattform-Vorsatz einer URL ("r/cars", "Post", "Article") und sein Trenner: leise wie in der
+   URL-Tabelle (.up-reddit-sub, dort --vc-third). Hier --am-muted-2, dieselbe Farbe ueber die
+   Marken der Palette, weil --vc-third ausserhalb von .up-root nicht aufloest. */
+.mqa-plattform { color: var(--am-muted-2); }
 .mqa-type { flex: 0 0 auto; font-size: 11px; font-weight: 500; color: var(--am-muted-2); letter-spacing: 0.01em; }
 .mqa-enter { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 5px; border: 1px solid var(--am-border); background: var(--am-card); color: var(--am-muted); opacity: 0; pointer-events: none; transition: opacity .1s ease; }
 .mqa-enter svg { width: 13px; height: 13px; display: block; }

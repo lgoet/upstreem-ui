@@ -690,6 +690,12 @@
         ? UCf.leseFehlerHtml("opportunities") : '<div class="uo-col-empty">The data could not be read.</div>';
       return;
     }
+    /* LEER HEISST SOFORT LEER (07.10. angefordert: "wenn leere Daten reinkommen, sofort den
+       No-Data-Platzhalter"). Hier stand ein Gnadenfenster -- 6s, solange nie Karten da waren --,
+       das jede ECHTE leere Antwort genauso traf. Jetzt am Ablauf: nur waehrend eines
+       ausdruecklichen opportunitiesSetLoading("yes") ohne sein "no" ist eine leere Liste ein
+       Zwischenstand; der Leerzustand kommt dann mit dem "no". Die Uhr bleibt als Notbremse. */
+    if (!S.items.length && !S.leerFrei && !wartetAufNein) S.leerFrei = true;
     if (!S.items.length && !S.leerFrei){
       renderSkeleton();
       if (!leerUhr){
@@ -697,8 +703,9 @@
         leerUhr = setTimeout(function(){
           leerUhr = null;
           if (S.loading || S.items.length) return;
+          wartetAufNein = false;
           S.leerFrei = true; render();
-        }, S.jeKarten ? ((UCg && UCg.EMPTY_GRACE_MS) || 500) : 6000);
+        }, (UCg && UCg.LEER_NOTBREMSE_MS) || 6000);
       }
       return;
     }
@@ -1351,7 +1358,9 @@
     var t = String(v == null ? "" : v).trim().toLowerCase();
     return t === "yes" || t === "true" || t === "1";
   }
-  window.opportunitiesSetLoading = function(v){ S.loading = isYesVal(v); render(); };
+  /* wartetAufNein: ein ausdrueckliches "yes" ohne sein "no" -- siehe den Leerzustand in zeichnen(). */
+  var wartetAufNein = false;
+  window.opportunitiesSetLoading = function(v){ S.loading = isYesVal(v); wartetAufNein = S.loading; render(); };
   /* Die Suche von aussen an- oder abschalten -- "yes"/"no" als Text wie jeder Setter hier. "no"
      ist der Weg fuer den Fehlerzweig des Workflows hinter ophSearch; im Normalfall beendet die
      neue Liste die Suche von selbst. */

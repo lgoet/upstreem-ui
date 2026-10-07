@@ -530,6 +530,8 @@
     }
 
     var emptyGraceTimer = null;
+    /* Ein ausdrueckliches setLoading("yes") ohne sein "no" -- siehe den Leerzustand in renderBody. */
+    var wartetAufNein = false;
     function clearEmptyGrace(){ if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; } }
     function anyFilterActive(){
       return !!state.query || !!state.brandMentioned || state.rankFilterActive || state.sentFilterActive ||
@@ -564,18 +566,25 @@
       if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; container.innerHTML = UC.leseFehlerHtml("responses"); return; }
       if (!state.rows.length){
         if (anyFilterActive()){ clearEmptyGrace(); letztesBody = null; container.innerHTML = emptyHtml(true); return; }
+        /* LEER HEISST SOFORT LEER (07.10. angefordert: "wenn leere Daten reinkommen, sofort den
+           No-Data-Platzhalter"). Hier stand ein Gnadenfenster -- 6s beim ersten Laden, sonst
+           0.5s --, weil Bubble am 07.09. eine leere Liste VOR dem RPC geschickt hatte. Das Fenster
+           traf aber jede ECHTE leere Antwort genauso: sechs Sekunden Skelett fuer "es gibt nichts".
+           Unterschieden wird jetzt am Ablauf statt an der Uhr: steht ein ausdrueckliches
+           setLoading("yes") ohne sein "no" (wartetAufNein), ist die leere Liste ein Zwischenstand
+           und der Leerzustand kommt im Moment des "no". Sonst ist sie die Antwort. Die Uhr bleibt
+           nur als Notbremse, falls das "no" nie kommt -- ein Ladezustand muss enden. */
+        if (!wartetAufNein){ clearEmptyGrace(); letztesBody = null; container.innerHTML = emptyHtml(false); return; }
         if (!emptyGraceTimer){
           letztesBody = null;
           container.innerHTML = isCards ? skeletonCardsHtml(state.pageSize) : skeletonRowsHtml(state.pageSize);
           emptyGraceTimer = setTimeout(function(){
             emptyGraceTimer = null;
             if (isBusy() || !state.hasData || state.rows.length) return;
+            wartetAufNein = false;
             letztesBody = null;
             container.innerHTML = emptyHtml(false);
-          /* Laenger, solange noch nie Zeilen da waren -- Begruendung steht in urls-table.js an
-             derselben Stelle: Bubble schickt vor dem echten Datensatz einen leeren, und 500ms
-             spaeter stand faelschlich "es gibt nichts" da. */
-          }, state.jeZeilen ? (UC.EMPTY_GRACE_MS || 500) : 6000);
+          }, UC.LEER_NOTBREMSE_MS || 6000);
         }
         return;
       }
@@ -1510,6 +1519,7 @@
         explicitOverride = true;
         LOADING_EXPLICIT[instanceId] = true;
         state.extLoading = isYes(on);
+        wartetAufNein = state.extLoading;
         /* Ein NEUER Ladeversuch raeumt den Lesefehler weg. Ohne das ueberlebt er jeden weiteren
            Versuch: die Komponente zeigte den Fehler dann auch, nachdem laengst frische Daten
            unterwegs waren. Gemessen am 24.08. -- der Fehler stand nach einem reset() noch da. */

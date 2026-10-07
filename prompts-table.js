@@ -2386,6 +2386,8 @@
       });
     }
     var emptyGraceTimer = null;
+    /* Ein ausdrueckliches setLoading("yes") ohne sein "no" -- siehe den Leerzustand in renderTable. */
+    var wartetAufNein = false;
     function clearEmptyGrace(){ if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; } }
     function renderEmptyState(filtered){
       letztesBody = null;
@@ -3707,6 +3709,15 @@
       if (!state.rows.length){
         var filtered = !!state.query || !!state.brandMentioned;
         if (filtered){ clearEmptyGrace(); renderEmptyState(true); return; }
+        /* LEER HEISST SOFORT LEER (07.10. angefordert: "wenn leere Daten reinkommen, sofort den
+           No-Data-Platzhalter"). Hier stand ein Gnadenfenster -- 6s beim ersten Laden, sonst
+           0.5s --, weil Bubble am 07.09. eine leere Liste VOR dem RPC geschickt hatte. Das Fenster
+           traf aber jede ECHTE leere Antwort genauso: sechs Sekunden Skelett fuer "es gibt nichts".
+           Unterschieden wird jetzt am Ablauf statt an der Uhr: steht ein ausdrueckliches
+           setLoading("yes") ohne sein "no" (wartetAufNein), ist die leere Liste ein Zwischenstand
+           und der Leerzustand kommt im Moment des "no". Sonst ist sie die Antwort. Die Uhr bleibt
+           nur als Notbremse, falls das "no" nie kommt -- ein Ladezustand muss enden. */
+        if (!wartetAufNein){ clearEmptyGrace(); renderEmptyState(false); return; }
         if (!emptyGraceTimer){
           letztesBody = null;
           elTbody.innerHTML = skeletonRows(state.pageSize);
@@ -3714,11 +3725,9 @@
           emptyGraceTimer = setTimeout(function(){
             emptyGraceTimer = null;
             if (isBusy() || !state.hasData || state.rows.length) return;
+            wartetAufNein = false;
             renderEmptyState(false);
-          /* Laenger, solange noch nie Zeilen da waren -- Begruendung steht in urls-table.js an
-             derselben Stelle: Bubble schickt vor dem echten Datensatz einen leeren, und 500ms
-             spaeter stand faelschlich "es gibt nichts" da. */
-          }, state.jeZeilen ? (UC.EMPTY_GRACE_MS || 500) : 6000);
+          }, UC.LEER_NOTBREMSE_MS || 6000);
         }
         return;
       }
@@ -5655,9 +5664,15 @@
            Was sich aendern KANN, steht in der Bedingung, und zwar vollstaendig:
              der Zustand selbst; der Lesefehler (nur beim Einschalten); das Laden und ein
              laufender Soft-Reload (nur beim Ausschalten -- endSoftReload ist sonst ein Nichts). */
+        /* Das "no" nach einer leeren Liste aendert nichts am Zustand -- die Zeilen haben ihn schon
+           beendet --, muss aber zeichnen: erst jetzt steht fest, dass die leere Liste die Antwort
+           war (siehe den Leerzustand in renderTable). */
+        var warteteAufNein = wartetAufNein;
+        wartetAufNein = an;
         var aendert = (an !== state.extLoading) ||
                       (an && state.leseFehler) ||
-                      (!an && (state.loading || state.softReload));
+                      (!an && (state.loading || state.softReload)) ||
+                      (!an && warteteAufNein);
         if (!aendert) return;
         state.extLoading = an;
         /* Ein NEUER Ladeversuch raeumt den Lesefehler weg. Ohne das ueberlebt er jeden weiteren

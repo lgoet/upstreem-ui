@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261107;
+  var BUILD = 20261108;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -3353,6 +3353,19 @@
      eine Aenderung an ihrer Datei. */
   function plattformTitelHtml(url, title, q){
     return redditTitleHtml(url, title, q) || linkedinTitleHtml(url, title, q);
+  }
+  /* DERSELBE TITEL ALS TEXT (07.10., Quick Actions): { vorn, text } oder null -- dieselben zwei
+     Regeln in derselben Reihenfolge wie plattformTitelHtml, nur ohne Markup. Fuer Aufrufer, die
+     selbst hervorheben und selbst faerben: die Palette (quick-actions.js) laeuft ohne .up-root und
+     mit eigener Mehrwortsuche, und das Anheften in die Leiste braucht eine Beschriftung als Text.
+     Eine Regel, zwei Ausgaben -- die Sonderformen von Reddit und LinkedIn stehen weiter nur hier. */
+  function plattformTitel(url, title){
+    if (!isGenericUrlTitle(title, url)) return null;
+    var r = parseRedditUrl(url);
+    if (r) return { vorn: "r/" + r.sub, text: r.slug || "" };
+    var l = parseLinkedinUrl(url);
+    if (l) return { vorn: l.vorn, text: l.text || "" };
+    return null;
   }
   /* ---------- readBubble ----------
      parseBubbleJson mit drei Ergaenzungen, die jeder Konsument sonst selbst schreibt -- und die
@@ -18693,6 +18706,11 @@
      -- zufaellig ueberall auf demselben Wert, aber ohne gemeinsamen Ort waere die naechste
      Aenderung wieder eine Wanderung durch fuenf Dateien. */
   var EMPTY_GRACE_MS = 500;
+  /* SEIT DEM 07.10. zeigen die Tabellen eine leere Antwort SOFORT (EMPTY_GRACE_MS benutzt keine
+     Komponente mehr; es bleibt fuer aeltere Pins im Export). Gewartet wird nur noch, solange
+     Bubble ausdruecklich "Loading yes" gesagt und das "no" noch nicht geschickt hat -- und auch
+     dann hoechstens so lange: ein Ladezustand muss enden (CLAUDE.md 2). */
+  var LEER_NOTBREMSE_MS = 6000;
 
   /* ---- icon(name, strokeWidth) --------------------------------------------------------------
      Lucide-Geometrie an einer Stelle, Strichstaerke am Aufrufort. Die Trennung ist der Punkt:
@@ -21776,6 +21794,7 @@
   var API = {
     BUILD: BUILD,
     EMPTY_GRACE_MS: EMPTY_GRACE_MS,
+    LEER_NOTBREMSE_MS: LEER_NOTBREMSE_MS,
     icon: icon,
     iconFormen: iconFormen,
     /* Der Nachzug auch nach aussen: er laeuft von selbst mit jedem Wurzel-Lauf, aber ein
@@ -21921,6 +21940,7 @@
     highlight: highlight,
     redditTitleHtml: plattformTitelHtml,
     plattformTitelHtml: plattformTitelHtml,
+    plattformTitel: plattformTitel,
     parseLinkedinUrl: parseLinkedinUrl,
     esc: esc,
     parseBubbleJson: parseBubbleJson,

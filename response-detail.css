@@ -401,6 +401,11 @@
    fuer den Titel nichts uebrig. */
 .urd-root.is-vnarrow .urd-cite-row { flex-wrap: wrap; }
 .urd-root.is-vnarrow .urd-cr-ments { width: 100%; padding-left: 30px; }
+/* AM TELEFON OHNE MODELL-LOGO NEBEN DER ANTWORT (07.10. angefordert: "das LLM-Logo weg, dass der
+   Response full auf ganzer Breite ist"). Das Logo nahm 32 + 16 der rund 340px -- und das Modell
+   steht ohnehin in der Kennzahlen-Zeile oben. Die Karte hat width: 100% und fuellt damit allein
+   die Zeile. */
+.urd-root.is-vnarrow .urd-msg-av { display: none; }
 
 /* ==== Products (05.10., get_mention_detail_v8) ===================================================
    Die Shopping-Produkte DIESER Antwort, in ihrer Reihenfolge, ueber "Full Response". Nur mit

@@ -1067,19 +1067,14 @@
           applyCols();
           return;
         }
-        /* An empty delivery can be an interim "clearing" step before real data lands a beat later.
-           Same short grace window visibility-chart uses before committing to "No data". */
-        if (!emptyGraceTimer){
-          tableEl.innerHTML = skeletonHtml();
-          applyCols();
-          emptyGraceTimer = setTimeout(function(){
-            emptyGraceTimer = null;
-            var live = (state.status === "inactive") ? state.inactiveRows : state.tableRows;
-            if (isLoading() || (Array.isArray(live) && live.length && !q)) return;
-            tableEl.innerHTML = headHtml() + '<div class="up-empty-mini">' + (q ? "No matches" : "No data") + '</div>';
-            applyCols();
-          }, (UC.EMPTY_GRACE_MS || 500));
-        }
+        /* LEER HEISST SOFORT LEER (07.10. angefordert: "wenn leere Daten reinkommen, sofort den
+           No-Data-Platzhalter"). Hier stand ein Gnadenfenster von 0.5s. Es braucht keins: eine
+           Lieferung beendet in dieser Tabelle einen ausdruecklichen Ladezustand NICHT (isLoading
+           liest nur setLoading), eine leere Liste waehrend "yes" landet also oben im Skelett --
+           und was hier ankommt, ist die Antwort. */
+        if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; }
+        tableEl.innerHTML = headHtml() + '<div class="up-empty-mini">No data</div>';
+        applyCols();
         return;
       }
       if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; }
