@@ -4782,6 +4782,23 @@
 .up-root.is-narrow .up-kpiband.is-4 > .up-kpi:nth-child(n+3) { border-top: 1px solid var(--vc-border); }
 .up-root.is-vnarrow .up-kpiband, .up-root.is-vnarrow .up-kpiband.is-4 { --up-kpiband-n: 1; }
 .up-root.is-vnarrow .up-kpiband > .up-kpi + .up-kpi { border-left: 0; border-top: 1px solid var(--vc-border); }
+/* DIE OFFENE FASSUNG (07.10. angefordert fuer Shopping und Ads: "die Aussenborder weg, nur die
+   vertikalen Separatoren"): das Band ohne .up-box -- kein Kasten, kein Grund, die Kennzahlen stehen
+   auf der Seite und sind nur durch die senkrechten Linien getrennt. Ohne Kasten gibt es keine Kante,
+   von der die erste Zahl Abstand halten muesste: die erste Kachel einer Zeile hat links kein
+   Polster, die letzte rechts keins -- so steht die Beschriftung buendig mit den Ueberschriften
+   darunter. Oben und unten 4px statt 16, damit die Linien etwas ueber die Schrift hinausreichen,
+   ohne dass ein leerer Streifen ueber der Leiste steht. Die Linien selbst kommen aus den Regeln
+   darueber, auch im schmalen 2 x 2 und untereinander. */
+.up-kpiband.is-offen > .up-kpi { padding: 4px 16px; }
+.up-kpiband.is-offen > .up-kpi:first-child { padding-left: 0; }
+.up-kpiband.is-offen > .up-kpi:last-child { padding-right: 0; }
+.up-root.is-narrow .up-kpiband.is-offen.is-4 > .up-kpi:nth-child(odd) { padding-left: 0; }
+.up-root.is-narrow .up-kpiband.is-offen.is-4 > .up-kpi:nth-child(even) { padding-right: 0; }
+/* Zwei Zeilen: die zweite haelt Abstand zur Linie zwischen ihnen. */
+.up-root.is-narrow .up-kpiband.is-offen.is-4 > .up-kpi:nth-child(n+3) { padding-top: 12px; margin-top: 8px; }
+.up-root.is-vnarrow .up-kpiband.is-offen > .up-kpi { padding-left: 0; padding-right: 0; }
+.up-root.is-vnarrow .up-kpiband.is-offen > .up-kpi + .up-kpi { padding-top: 12px; margin-top: 8px; }
 /* DIE SPARKLINE (UC.sparkHtml, 04.10.): 72 x 24 neben dem Wert einer Kachel, Linie 1.5 in der
    Akzent-Tinte, der letzte Punkt als Marke. Keine Achse, keine Flaeche -- sie sagt nur die
    Richtung, die Zahl daneben sagt den Wert. */

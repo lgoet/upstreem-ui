@@ -1010,7 +1010,7 @@
         html = '<div class="ush-seite" data-seite="overview">' +
           '<div class="ush-gruppe">' +
             '<div data-sek="summary"></div>' +
-            '<div class="up-box up-kpiband is-4 ush-kpis" data-sek="kpis"></div>' +
+            '<div class="up-kpiband is-4 is-offen ush-kpis" data-sek="kpis"></div>' +
             '<section class="ush-sek" data-sek="chart">' +
               sekKopf("Shopping Performance", t("How your brand and competitors appear in AI shopping results"),
                 segHtml("ush-metrik", [["presence", "Brand Presence"], ["share_of_shelf", "Share of Shelf"], ["avg_position", "Avg. Position"], ["first_position_rate", "First Position Rate"]], state.ovMetrik)) +
@@ -1027,7 +1027,7 @@
       } else if (s === "brands") {
         html = '<div class="ush-seite" data-seite="brands">' +
           '<div class="ush-gruppe">' +
-            '<div class="up-box up-kpiband is-4 ush-kpis" data-sek="kpis"></div>' +
+            '<div class="up-kpiband is-4 is-offen ush-kpis" data-sek="kpis"></div>' +
             '<section class="ush-sek" data-sek="chart">' +
               sekKopf("Brand Performance", t("How the top brands develop in AI shopping results"),
                 segHtml("ush-metrik", [["share_of_shelf", "Share of Shelf"], ["presence", "Presence"], ["avg_position", "Avg. Position"], ["first_position_rate", "First Position Rate"]], state.brMetrik)) +
@@ -1043,7 +1043,7 @@
       } else if (s === "merchants") {
         html = '<div class="ush-seite" data-seite="merchants">' +
           '<div class="ush-gruppe">' +
-            '<div class="up-box up-kpiband ush-kpis" data-sek="kpis"></div>' +
+            '<div class="up-kpiband is-offen ush-kpis" data-sek="kpis"></div>' +
             '<section class="ush-sek" data-sek="balken"></section>' +
           '</div>' +
           tabSek("tabelle", "Merchants", sucheHtml("Search merchants…", "Search merchants")) +

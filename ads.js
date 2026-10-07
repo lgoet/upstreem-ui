@@ -936,7 +936,7 @@
       if (s === "overview") {
         html = '<div class="uad-seite" data-seite="overview">' +
           '<div class="uad-gruppe">' +
-            '<div class="up-box up-kpiband is-4 uad-kpis" data-sek="kpis"></div>' +
+            '<div class="up-kpiband is-4 is-offen uad-kpis" data-sek="kpis"></div>' +
             '<section class="uad-sek" data-sek="chart">' + kopf("Ad Coverage") + chartHtml() + '</section>' +
           '</div>' +
           '<div class="uad-zwei">' +
@@ -957,7 +957,7 @@
         html = '<div class="uad-seite" data-seite="advertiser">' +
           '<div class="uad-gruppe">' +
             '<div data-sek="held"></div>' +
-            '<div class="up-box up-kpiband is-4 uad-kpis" data-sek="kpis"></div>' +
+            '<div class="up-kpiband is-4 is-offen uad-kpis" data-sek="kpis"></div>' +
             '<section class="uad-sek" data-sek="chart">' + kopf("Activity", { tools: segHtml("uad-metrik", [["n", "Appearances"], ["share", "Ad Share"]], state.dMetrik) }) + chartHtml() + '</section>' +
           '</div>' +
           '<section class="uad-sek" data-sek="dprompts">' + kopf("Prompts") + '<div class="uad-vorschauplatz"></div></section>' +
