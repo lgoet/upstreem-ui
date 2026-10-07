@@ -1571,6 +1571,16 @@
    hier sind so gesetzt, dass beide Reihen auf dieselbe Hoehe kommen (gemessen 428px). */
 .ulh-vis-linie   { --ulh-vs: 1;    --ulh-vh: 288px; }
 .ulh-vis-zeilen  { --ulh-vs: 0.74; --ulh-vh: 288px; }
+/* DIE ERSTE REIHE IST HOEHER (07.10. angefordert: "die Cards mit der Prompts-Tabelle und die links
+   daneben groesser in height"). Ueber der Tabelle steht jetzt der Kopf der App (Ueberschrift,
+   Zahl, Werkzeugleiste, Export), und sie ist kleiner skaliert (0.74 -> 0.66) -- 400px zeigen damit
+   den Kopf, die Spaltenkoepfe und gut fuenf Zeilen, bevor der Auslauf unten beginnt. Die Kurve
+   links waechst auf dieselbe Hoehe, sonst stuende die Reihe schief.
+   ueber [data-ulh-vis] und nicht ueber .ulh-vis-zeilen: diese Klasse traegt auch die
+   Produkttabelle im Handel-Block (stil: "zeilen"), und die bleibt, wie sie ist. Zwei Klassen
+   Spezifitaet gegen eine. */
+.ulh-vis.ulh-vis-linie, .ulh-vis[data-ulh-vis="zeilen"] { --ulh-vh: 400px; }
+.ulh-vis[data-ulh-vis="zeilen"] { --ulh-vs: 0.66; }
 /* Die untere Reihe ist hoeher als die obere, und das hat einen Grund und keine Symmetrie: im
    Drilldown sollen VIER Seiten ganz zu sehen sein. Ueber ihnen stehen drei Domainzeilen, die
    Kopfzeile, die Werkzeugleiste und die Kopfzeile des Drilldowns -- zusammen 253px, die vier
@@ -2165,6 +2175,19 @@
    Schatten mit 30px Weichzeichnung -- zusammen 58. Bei 52px war der Schatten abgeschnitten, bei
    64 blieben genau 28px und damit zwei Pixel zu wenig (gemessen). */
 .ulh-vis-zeilen .ulh-vis-in, .ulh-vis-chancen .ulh-vis-in { padding: 0 68px; box-sizing: border-box; }
+/* DIE PROMPT-TABELLE HAT KEINE GEHOBENE ZEILE MEHR (07.10.), also auch keinen Grund fuer die 68px
+   seitlich: 20px bleiben, damit der Schatten der Tabelle nicht an der Kante der Vorschau endet.
+   Drei Klassen gegen die Regel darueber. */
+.ulh-vis[data-ulh-vis="zeilen"] .ulh-vis-in { padding: 0 20px; --upt-check-size: 18px; }
+/* Der Kopf der App ueber der Tabelle (.up-head aus core: 32px hoch, 16px darunter). Ohne Polster
+   oben -- die Vorschau hat ihren Abstand zum Kartentext schon (.ulh-vis, padding-top). */
+.ulh-vis[data-ulh-vis="zeilen"] .ulh-vis-kopf { margin-top: 0; }
+/* DIE SPALTENKOEPFE WIE IN DER APP (07.10. angefordert: "fonts in weight und color so wie in der
+   Hauptapp"): Groesse, Schnitt und Farbe kommen jetzt aus core (.up-th: 12px, 400, --vc-muted),
+   und die Zeile ist 45px hoch wie dort. Die Regeln weiter unten fuer .ulh-vis-tab .up-thead
+   (11px, 600, Sperrung, 40px) gelten fuer die Domain-Tabelle weiter; hier gewinnt diese Regel
+   ueber die Spezifitaet. */
+.ulh-vis[data-ulh-vis="zeilen"] .ulh-vis-tab .up-thead { height: 45px; flex-basis: 45px; letter-spacing: normal; }
 /* Alle Hervorhebungen noch einmal halb so schnell: 476 -> 714ms. Und eine andere Kurve, denn
    daran lag das Hektische: --ulh-aus (.1, 1, .2, 1) startet mit voller Geschwindigkeit und klingt
    nur aus -- der Anfang war der Ruck. --ulh-weich ist an beiden Enden flach, die Zeile setzt sich
@@ -3563,6 +3586,11 @@
      Prompt-Text bei 116px statt an der Kante, und genau das war "die Spalte Prompt ist weg". Die
      Domain-Tabelle hat das Polster nie gehabt, und dort stimmte es. */
   .ulh-vis-zeilen .ulh-vis-in, .ulh-vis-chancen .ulh-vis-in { padding: 0; }
+  /* Die Prompt-Karte (07.10.): ihr Polster von 20px kommt von einer spezifischeren Regel und muss
+     hier ausdruecklich auf 0, sonst stuende es auch auf dem Telefon. 850 statt 830: die festen
+     Spalten sind zusammen 20px breiter geworden (570 statt 550), die Prompt-Spalte bleibt so
+     genau so breit wie vorher. */
+  .ulh-root .ulh-vis[data-ulh-vis="zeilen"] .ulh-vis-in { padding: 0; width: 850px; }
   /* Die zwei Bilder in der dritten Reihe sind KEINE Bauteile der App, sondern Zeichnungen: sie
      brauchen keinen Ausschnitt, sie passen. Also keine feste Breite, sondern etwas kleiner
      rechnen -- damit werden Schrift, Abstaende und der Kreis gemeinsam kleiner, statt dass eines

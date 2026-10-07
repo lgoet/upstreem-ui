@@ -1957,13 +1957,25 @@
      "–" in allen anderen Spalten waere ein Widerspruch in derselben Zeile. */
   var VIS_ZEILEN = [
     { prompt: "Best premium electric SUV",     vis: 38.9, marken: ["ac", "bm", "au", "te"], nennungen: 6, themen: [2, 1], markt: "US" },
-    /* Die zweite Zeile ist die, die beim Ueberfahren gehoben wird -- sie traegt deshalb Zahlen.
-       Der Leerzustand steht in der dritten. */
+    /* Der Leerzustand steht in der dritten Zeile -- auch in einer Vorschau gehoert dazu, dass man
+       nicht ueberall genannt wird. */
     { prompt: "Premium SUV leasing rates",     vis: 21.4, marken: ["ac", "bm", "au", "vo"], nennungen: 5, themen: [0],    markt: "US" },
     { prompt: "Alternativen zum BMW iX",       vis: null, marken: [],                       nennungen: 0, themen: [1, 2], markt: "DE" },
     { prompt: "Longest range electric estate", vis: 18.2, marken: ["ac", "te", "vo"],       nennungen: 3, themen: [2],    markt: "UK" },
-    { prompt: "Which EV charges fastest",      vis: null, marken: [],                       nennungen: 0, themen: [3, 2], markt: "US" }
+    { prompt: "Which EV charges fastest",      vis: null, marken: [],                       nennungen: 0, themen: [3, 2], markt: "US" },
+    /* Zwei Zeilen mehr (07.10.): die Karte ist hoeher geworden, und eine Tabelle, die nach fuenf
+       Zeilen in Weiss endet, sieht leer aus statt angeschnitten. */
+    { prompt: "Most reliable luxury EV brand", vis: 27.6, marken: ["bm", "ac", "au"],       nennungen: 4, themen: [0],    markt: "US" },
+    { prompt: "Bestes Elektro-SUV für Familien", vis: 12.3, marken: ["vo", "ac"],           nennungen: 2, themen: [1],    markt: "DE" }
   ];
+  /* Die Zahl neben "Prompts" im Kopf der Vorschau -- ein Konto mit einer gut gefuellten Liste. */
+  var VIS_ZEILEN_ZAHL = 248;
+  /* Der Export-Knopf WORTGLEICH aus der Vorlage der Prompts-Tabelle (dieselbe Zeichnung, die im
+     Hero-Fenster oben steht). core baut ihn nicht -- er steht in jeder Bubble-Vorlage als Markup --,
+     also steht er hier einmal als Konstante und nicht als nachgezeichnetes Zeichen. */
+  var EXPORT_KNOPF = '<button class="up-export" type="button" tabindex="-1" aria-hidden="true">' +
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />' +
+    '<path d="m7 10 5 5 5-5" /></svg><span>Export</span></button>';
 
   function visZeilen(){
     var kern = window.UpstreemCore;
@@ -2001,9 +2013,34 @@
        Zwei nebeneinander braeuchten 195, und bei 190 wurden sie gestaucht und abgeschnitten.
        Die frei werdenden 65px gehen an die Prompt-Spalte (1fr): bei 1280 sah man vorher 106px
        von jedem Prompt, keiner passte. */
-    var html = '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 96px 180px 125px 84px;">' +
-      '<div class="up-row up-thead">' + kopf.map(function(t){
-        return '<div class="up-td">' + t + '</div>'; }).join("") + '</div>';
+    /* SPALTEN MIT MEHR LUFT RECHTS (07.10. angefordert): die Tabelle ist kleiner skaliert und hat
+       kaum noch seitliches Polster, steht also auf mehr ungeskalierten Pixeln -- die gehen an die
+       festen Spalten, damit Zahl, Zeichen und Chips nicht an ihrer rechten Kante kleben:
+       Visibility 96 -> 120, Brand Mentions 180 -> 196, Topics 125 -> 150, Market 84 -> 104. */
+    var kastchen = function(){
+      return '<span class="upt-check" aria-hidden="true">' + ((kern && kern.CHECK_SVG) || "") + '</span>';
+    };
+    /* DER KOPF DER APP (07.10. angefordert: "Heading + Count + Toolbar Ausklapp Icon + Export
+       button, wie in der Hauptapp"). Dieselben Klassen wie im Kopf der Prompts-Tabelle, alle aus
+       core: .up-head, .up-heading mit Zahl (has-count), .up-tbtrig (der Knopf, der die
+       eingeklappte Werkzeugleiste aufzieht -- dasselbe Zeichen, das UC.makeToolGroup setzt) und
+       .up-export. Nichts davon ist hier bedienbar, also tabindex -1 und aria-hidden. */
+    var html = '<div class="up-head ulh-vis-kopf">' +
+        '<div class="up-heading has-count"><span class="up-head-label">Prompts</span>' +
+          '<span class="up-head-sep"></span><span class="up-head-count">' + VIS_ZEILEN_ZAHL + '</span></div>' +
+        '<div class="up-head-tools">' +
+          '<button class="up-iconbtn up-tbtrig" type="button" tabindex="-1" aria-hidden="true">' +
+            ((kern && kern.icon) ? kern.icon("listFilterPlus", 2) : "") + '</button>' +
+          EXPORT_KNOPF +
+        '</div>' +
+      '</div>' +
+      '<div class="ulh-vis-tab" style="--up-cols: minmax(0,1fr) 120px 196px 150px 104px;">' +
+      /* Die Spaltenkoepfe sind .up-th wie in der App (12px, 400, --vc-muted aus core) und nicht
+         mehr .up-td mit eigener Groesse und eigenem Schnitt. Das Kaestchen vor "Prompt" ist das
+         "alle waehlen" der App. */
+      '<div class="up-row up-thead">' + kopf.map(function(t, k){
+        return '<div class="up-th' + (k === 0 ? " up-th-prompt" : "") + '">' + (k === 0 ? kastchen() : "") +
+          '<span class="up-th-txt">' + t + '</span></div>'; }).join("") + '</div>';
     html += VIS_ZEILEN.map(function(z, i){
       var leer = '<span class="up-num is-empty">–</span>';
       /* Ohne Nachkommastelle (29.09. spaet angefordert, hier und in der Domain-Karte): in einer
@@ -2032,8 +2069,12 @@
           (t.emoji ? '<span class="up-topicchip-e">' + t.emoji + '</span>' : "") +
           '<span class="up-topicchip-lbl">' + t.name + '</span></span>';
       }).join("");
-      return '<div class="up-row' + (i === 1 ? " is-mitte" : "") + '">' +
-        '<div class="up-td"><span class="ulh-vis-prompt">' + z.prompt + '</span></div>' +
+      /* KEINE gehobene Zeile mehr (07.10. angefordert: "die Hoveranimation auf der Prompt-Tabelle
+         komplett weg"): ohne is-mitte greift keine der Regeln dafuer in landing-hero.css. Die
+         Produkttabelle im Handel-Block behaelt ihre -- sie baut ihre Zeilen selbst.
+         Das Kaestchen vorne wie in der App (.upt-td-prompt traegt den Abstand zum Text). */
+      return '<div class="up-row">' +
+        '<div class="up-td upt-td-prompt">' + kastchen() + '<span class="ulh-vis-prompt">' + z.prompt + '</span></div>' +
         '<div class="up-td">' + sicht + '</div>' +
         '<div class="up-td">' + marken + '</div>' +
         '<div class="up-td"><span class="ulh-vis-themen">' + themen + '</span></div>' +
