@@ -1,16 +1,15 @@
 /* upstreem not-found.js — die 404-Seite (Praefix `unf`). Braucht core.js.
 
    ── Wozu ─────────────────────────────────────────────────────────────────
-   Aufgebaut wie die 404-Seiten von Linear, Vercel und Stripe: die Zahl als Bild, ein kurzer Satz
-   ohne Schuldzuweisung, und ZWEI Wege hinaus -- zum Dashboard (der Hauptweg) und zurueck. Keine
-   Illustration: die Zahl traegt das Linienmuster der Anmeldeseite und der Landingpage, die Marke
-   steckt im Muster, und die Seite bleibt so ruhig wie der Rest der App.
+   Ruhig wie der Rest der App: "404" klein in der Drittfarbe als Kennung, die Ueberschrift, ein
+   kurzer Satz ohne Schuldzuweisung, EIN Hauptknopf zum Dashboard und leise der Weg zurueck. Keine
+   Illustration, keine Riesenziffern (07.10. gestrichen: "alles subtil professionell").
 
    ── Was sie braucht ──────────────────────────────────────────────────────
-   Nichts von Bubble: keine Events, keine Setter. "Go back" geht im Verlauf zurueck, wenn man von
-   einer Seite der App kam -- sonst zum Dashboard. Ein direkt geoeffneter toter Link hat keinen
-   Verlauf, und ein Knopf, der nichts tut, ist schlimmer als einer, der woanders hinfuehrt.
-   Rahmen, Wortmarke und Thema kommen aus core (UC.makeEinzelseite).
+   Nichts von Bubble: keine Events, keine Setter, keine eigene CSS. "Go back" geht im Verlauf
+   zurueck, wenn man von einer Seite der App kam -- sonst zum Dashboard. Ein direkt geoeffneter
+   toter Link hat keinen Verlauf, und ein Knopf, der nichts tut, ist schlimmer als einer, der
+   woanders hinfuehrt. Rahmen, Wortmarke und Thema kommen aus core (UC.makeEinzelseite).
    Einzelheiten: bubble/not_found_bubble.html. */
 (function(){
   "use strict";
@@ -25,8 +24,9 @@
   }
 
   var T = {
+    oben:    "404",
     h1:      "Page not found",
-    sub:     "The page you’re looking for doesn’t exist or has been moved.",
+    sub:     "This page doesn’t exist or was moved.",
     home:    "Go to dashboard",
     zurueck: "Go back"
   };
@@ -49,13 +49,10 @@
       label: "not-found",
       einzug: !GESEHEN[id],
       inhalt:
-        '<div class="unf-zahl" aria-hidden="true" data-es-auf="1">404</div>' +
-        UC.esKopfHtml({ titel: T.h1, text: T.sub, auf: 2 }) +
-        '<div class="unf-reihe" data-es-auf="3">' +
-          '<a class="up-btn-pri is-lg" href="' + esc(home) + '">' + esc(T.home) + '</a>' +
-          '<button class="up-btn-sec is-lg" type="button" data-unf-zurueck>' +
-            UC.icon("arrowLeft", 2) + '<span>' + esc(T.zurueck) + '</span></button>' +
-        '</div>'
+        UC.esKopfHtml({ oben: T.oben, titel: T.h1, text: T.sub }) +
+        '<a class="up-btn-pri is-lg up-es-cta" href="' + esc(home) + '" data-es-auf="2">' + esc(T.home) + '</a>' +
+        '<button class="up-es-zurueck" type="button" data-unf-zurueck data-es-auf="3">' +
+          UC.icon("arrowLeft", 2) + '<span>' + esc(T.zurueck) + '</span></button>'
     });
     GESEHEN[id] = true;
 

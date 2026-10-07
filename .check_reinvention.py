@@ -138,7 +138,9 @@ def geaendert():
         u = subprocess.run(["git", "ls-files", "--others", "--exclude-standard", "*.css"],
                            cwd=HIER, capture_output=True, text=True, timeout=10)
         namen = [x for x in (r.stdout + u.stdout).split("\n") if x.strip().endswith(".css")]
-        return [os.path.join(HIER, n) for n in namen]
+        # Geloeschte Dateien stehen auch in "git diff --name-only" -- an ihnen gibt es nichts zu
+        # pruefen, und open() brach den ganzen Lauf ab (07.10., check-email.css entfernt).
+        return [os.path.join(HIER, n) for n in namen if os.path.exists(os.path.join(HIER, n))]
     except Exception:
         return []
 

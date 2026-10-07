@@ -1,7 +1,8 @@
 <!-- ==========================================================================================
      upstreem — 404 (Praefix `unf`, Stand 07.10.)
 
-     Die Fehlerseite. Gehoert auf Bubbles eingebaute Seite "404". Die GANZE Seite ist dieses eine
+     Die Fehlerseite: "404" klein als Kennung, Ueberschrift, ein Satz, der Knopf zum Dashboard und
+     leise "Go back". Gehoert auf Bubbles eingebaute Seite "404". Die GANZE Seite ist dieses eine
      HTML-Element: auf volle Breite und volle Hoehe setzen, ohne eigenes Padding.
 
      ── FRISCHE INSTALLATION ──────────────────────────────────────────────────────────────────
@@ -9,12 +10,11 @@
      NICHT -- dort muss dasselbe von Hand nachgezogen werden.
 
      ── WAS DIE SEITE NICHT BRAUCHT ───────────────────────────────────────────────────────────
-     Keine Events, keine Setter, keinen Workflow; kein data-cdn-pin, kein data-isdark, kein
+     Keine Events, keine Setter, keinen Workflow, keine eigene CSS; kein data-cdn-pin, kein data-isdark, kein
      data-logo (Begruendung wie in check_email_bubble.html).
 
      ── ATTRIBUTE ─────────────────────────────────────────────────────────────────────────────
        data-home-url   wohin "Go to dashboard" fuehrt. Vorgabe: /
-       data-bg         optional: das Hintergrundbild der Anmeldeseite fuer die Flaeche unten.
 
      "Go back" geht im Verlauf zurueck, wenn man von einer Seite der App kam -- sonst ebenfalls
      zu data-home-url. Ein direkt geoeffneter toter Link hat keinen Verlauf, und ein Knopf, der
@@ -68,7 +68,7 @@
   function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
   function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
 
-  css("core.css");        js("core.js");
-  css("not-found.css");   js("not-found.js");
+  css("core.css");   js("core.js");
+  js("not-found.js");
 })();
 </script>

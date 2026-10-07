@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261103;
+  var BUILD = 20261104;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1187,29 +1187,23 @@
        Saetze, die schon oben stehen ("Back to sign in", "At least 8 characters", die Adress-
        pruefung), stehen hier NICHT ein zweites Mal -- der Katalog ist app-weit, ein zweiter
        Eintrag desselben Schluessels ueberschriebe den ersten still. Die Saetze mit eingesetzter
-       Adresse oder Sekundenzahl bleiben englisch: sie entstehen erst beim Zeichnen. */
+       Adresse oder Sekundenzahl bleiben englisch: sie entstehen erst beim Zeichnen. "Sign in"
+       (der Knopf nach dem neuen Passwort) steht oben bei der Anmeldung. */
     "Check your email": "Sieh in dein Postfach",
     "We sent you a confirmation link. Please confirm your email to continue.":
       "Wir haben dir einen Bestätigungslink geschickt. Bitte bestätige deine E-Mail-Adresse, um fortzufahren.",
-    "Didn’t get it? Check your spam folder. It can take a minute to arrive.":
-      "Nichts angekommen? Sieh im Spam-Ordner nach. Es kann eine Minute dauern.",
     "Forgot your password?": "Passwort vergessen?",
-    "Enter your email and we’ll send you a link to reset your password.":
-      "Gib deine E-Mail-Adresse ein, und wir schicken dir einen Link, um dein Passwort zurückzusetzen.",
+    "We’ll send you a link to reset it.": "Wir schicken dir einen Link zum Zurücksetzen.",
     "Work email": "Geschäftliche E-Mail",
     "Send reset link": "Link senden",
     "Sending link": "Link wird gesendet",
-    "If an account exists for this email, you’ll get a link to reset your password.":
-      "Wenn es zu dieser Adresse ein Konto gibt, bekommst du einen Link, um dein Passwort zurückzusetzen.",
-    "Didn’t get it?": "Nichts angekommen?",
+    "If an account exists for this email, we sent a reset link.":
+      "Wenn es zu dieser Adresse ein Konto gibt, haben wir dir einen Link geschickt.",
     "Resend link": "Link erneut senden",
     "Sending…": "Wird gesendet…",
     "Set a new password": "Neues Passwort festlegen",
-    "Choose a strong password you don’t use anywhere else.":
-      "Wähle ein starkes Passwort, das du nirgendwo sonst verwendest.",
     "New password": "Neues Passwort",
     "Confirm password": "Passwort bestätigen",
-    "Repeat your new password": "Neues Passwort wiederholen",
     "Reset password": "Passwort zurücksetzen",
     "Resetting password": "Passwort wird zurückgesetzt",
     "Please enter a new password.": "Bitte gib ein neues Passwort ein.",
@@ -1217,11 +1211,9 @@
     "The passwords do not match.": "Die Passwörter stimmen nicht überein.",
     "Request a new link": "Neuen Link anfordern",
     "Password updated": "Passwort geändert",
-    "You can now sign in with your new password.": "Du kannst dich jetzt mit deinem neuen Passwort anmelden.",
-    "Continue to sign in": "Weiter zur Anmeldung",
+    "Sign in with your new password.": "Melde dich mit deinem neuen Passwort an.",
     "Page not found": "Seite nicht gefunden",
-    "The page you’re looking for doesn’t exist or has been moved.":
-      "Die Seite, die du suchst, gibt es nicht oder sie wurde verschoben.",
+    "This page doesn’t exist or was moved.": "Diese Seite gibt es nicht oder sie wurde verschoben.",
     "Go to dashboard": "Zum Dashboard",
     "Go back": "Zurück",
     /* Die Stufen der Staerkeanzeige; "Strong" steht schon oben (Opportunities). */
@@ -18726,6 +18718,11 @@
                  '<path d="M22 5C22 5 19.958 8 17 8C14.042 8 12 5 12 5C12 5 14 2 17 2C20 2 22 5 22 5Z"/>' +
                  '<path d="M12.1257 11H12.0007M8.125 11H8M12.2507 11C12.2507 11.1381 12.1388 11.25 12.0007 11.25C11.8627 11.25 11.7507 11.1381 11.7507 11C11.7507 10.8619 11.8627 10.75 12.0007 10.75C12.1388 10.75 12.2507 10.8619 12.2507 11ZM8.25 11C8.25 11.1381 8.13807 11.25 8 11.25C7.86193 11.25 7.75 11.1381 7.75 11C7.75 10.8619 7.86193 10.75 8 10.75C8.13807 10.75 8.25 10.8619 8.25 11Z"/>' +
                  '<path d="M17.125 5H17M17.25 5C17.25 5.13807 17.1381 5.25 17 5.25C16.8619 5.25 16.75 5.13807 16.75 5C16.75 4.86193 16.8619 4.75 17 4.75C17.1381 4.75 17.25 4.86193 17.25 5Z"/>',
+    /* Hugeicons Mail01 (07.10. angefordert): das Zeichen von "Check your email". Woertlich aus
+       @hugeicons/core-free-icons@4.3.5 (dist/esm/Mail01Icon.js). Ein EIGENER Schluessel: "mail"
+       weiter unten ist das Lucide-Zeichen im Event-Popup und bleibt, wie es ist. */
+    mail01: '<path d="M2 6L8.91302 9.91697C11.4616 11.361 12.5384 11.361 15.087 9.91697L22 6"/>' +
+            '<path d="M2.01577 13.4756C2.08114 16.5412 2.11383 18.0739 3.24496 19.2094C4.37608 20.3448 5.95033 20.3843 9.09883 20.4634C11.0393 20.5122 12.9607 20.5122 14.9012 20.4634C18.0497 20.3843 19.6239 20.3448 20.7551 19.2094C21.8862 18.0739 21.9189 16.5412 21.9842 13.4756C22.0053 12.4899 22.0053 11.5101 21.9842 10.5244C21.9189 7.45886 21.8862 5.92609 20.7551 4.79066C19.6239 3.65523 18.0497 3.61568 14.9012 3.53657C12.9607 3.48781 11.0393 3.48781 9.09882 3.53656C5.95033 3.61566 4.37608 3.65521 3.24495 4.79065C2.11382 5.92608 2.08114 7.45885 2.01576 10.5244C1.99474 11.5101 1.99475 12.4899 2.01577 13.4756Z"/>',
     /* Vier Zeichen fuer die Teamverwaltung (team-orga): einladen, aufklappen, entfernen und die
        Besitzerrolle. Woertlich aus lucide-static wie jedes andere hier.
        chevronUp gehoert dazu, weil der Winkel am Protokoll sein ZEICHEN wechselt und sich nicht
@@ -20032,13 +20029,14 @@
      Vier Seiten, die bis dahin reine Bubble-Seiten waren, sind je eine EIGENE Komponente:
      check-email (uce), forgot-password (ufp), reset-password (urp), not-found (unf). Sie teilen
      alles ausser ihrem Inhalt, und das steht deshalb hier, einmal statt viermal:
-       - der Rahmen der Anmeldeseite: Karte mit 16px Polster, oben links die Wortmarke, oben rechts
-         der Theme-Knopf, der Inhalt mittig, als Grund unten die Flaeche ihrer rechten Spalte;
+       - das Raster der Anmeldeseite: Karte mit 16px Polster, oben links die Wortmarke, oben rechts
+         der Theme-Knopf, der Inhalt mittig, auf dem Seitengrund der App;
        - das Thema aus pref_theme wie in der App (kein data-isdark noetig), die Wortmarke je Thema;
        - Feld mit Beschriftung und Fehlerzeile, Hauptknopf mit Spinner und Notbremse, der
          Fehlerkasten (.up-formerr), der Erfolgsblock im selben Raster;
        - die Staerkeanzeige und die Saetze zu Supabase-Fehlern.
-     Die Masse sind die von auth-page.css, wortgleich. auth-page, invite-page und onboarding
+     Feld und Knopf haben die Masse von auth-page.css, Ueberschrift und Grund die der App (siehe
+     core.css, EINZELSEITE). auth-page, invite-page und onboarding
      behalten vorerst ihre eigenen Kopien -- wie bei .up-btn-pri.is-lg am 25.09.: sie umzustellen
      hiesse drei fertige Seiten anzufassen, an denen niemand etwas gemeldet hat. */
   var WORTMARKE = {
@@ -20221,10 +20219,12 @@
   }
 
   /* ---- Markup-Teile der Einzelseite. auf = Stufe des Einzugs (1 zuerst, 4 zuletzt). ---------- */
+  /* o.icon: ein Zeichen ueber der Ueberschrift, ohne Kachel. o.oben: eine kleine Kennung statt
+     dessen (die 404). Beides optional -- die meisten Seiten tragen nur Ueberschrift und Satz. */
   function esKopfHtml(o){
     o = o || {};
-    var zeichen = o.ok ? '<span class="up-es-ic is-ok">' + icon("check", 2.4) + '</span>'
-                : (o.icon ? '<span class="up-es-ic">' + icon(o.icon, 1.8) + '</span>' : '');
+    var zeichen = o.icon ? '<span class="up-es-ic" aria-hidden="true">' + icon(o.icon, 1.5) + '</span>' : '';
+    if (o.oben) zeichen += '<p class="up-es-oben">' + esc(o.oben) + '</p>';
     return '<div class="up-es-kopf" data-es-auf="' + (o.auf || 1) + '">' + zeichen +
       '<h1 class="up-es-h1" data-es-h1>' + esc(o.titel || "") + '</h1>' +
       (o.text != null ? '<p class="up-es-sub" data-es-sub>' + esc(o.text) + '</p>' : '') +
@@ -20265,10 +20265,10 @@
        einzug    false, wenn die Seite schon einmal stand (Neuaufbau nach Themenwechsel)
        onSenden  wird beim Absenden des <form data-es-form> gerufen (Enter oder Knopf)
        onBremse  nach 20s Ladezustand ohne Antwort, NACH dem Satz im Fehlerkasten
+     Ein data-bg gibt es nicht mehr (07.10.): der Grund ist der Seitengrund, ohne Bild.
      Zurueck kommen die Griffe, die jede der Seiten braucht: q, fehler, busy, fertig. */
   function makeEinzelseite(root, cfg){
     cfg = cfg || {};
-    var bg = esAttr(root, "data-bg");
     var st = { busy: false, fertig: false }, bremse = null;
     function q(sel){ return root.querySelector(sel); }
 
@@ -20290,8 +20290,6 @@
             '</div>' +
           '</div>' +
         '</div>' +
-        '<div class="up-es-grund" aria-hidden="true"' +
-          (bg ? ' style="--up-es-bild: url(&quot;' + esc(bg) + '&quot;)"' : '') + '></div>' +
       '</div>';
 
     /* ---------------- Thema ---------------- */

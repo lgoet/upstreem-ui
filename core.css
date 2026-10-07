@@ -2067,42 +2067,42 @@
        Der Rahmen der kleinen ganzseitigen Flaechen: check-email, forgot-password, reset-password,
        not-found (UC.makeEinzelseite in core.js baut das Markup). Vier eigene Komponenten, ein
        Rahmen -- vier Kopien davon liefen beim ersten Nachziehen auseinander.
-       Die Masse sind die der Anmeldeseite (auth-page.css), wortgleich: Karte mit 16px Polster,
-       Spalte mit demselben Polster, Wortmarke 18px, Feld 40px mit Radius 12, Hauptknopf
-       .up-btn-pri.is-lg. Anders als dort steht der Inhalt in der MITTE (es gibt keine rechte
-       Spalte), und die Flaeche der rechten Spalte liegt dafuer als Grund unten (.up-es-grund).
+       Das Raster ist das der Anmeldeseite (16px Kartenpolster, dasselbe Spaltenpolster, die
+       Wortmarke oben links, der Theme-Knopf oben rechts), der Inhalt steht mittig.
+       SO RUHIG WIE DIE APP (07.10. nachgezogen: "subtil professionell, wie der rest der app"):
+       KEIN Grafikband, KEINE Kachel um das Zeichen, der Grund ist der Seitengrund der App
+       (--up-surface, dasselbe wie html/body im Theme-Snippet), die Ueberschrift steht auf der
+       App-Skala (28px, die Groesse der Seitenkoepfe) statt der 44px der Anmeldeseite.
        Zwei Klassen an der Wurzel: .up-root setzt weiter unten in dieser Datei eigene Werte, und
        ein Konflikt wird ueber Spezifitaet geloest, nicht ueber die Reihenfolge. */
     .up-root.up-es {
       min-height: 100vh; min-height: 100dvh;
       display: flex; align-items: stretch; justify-content: center;
-      padding: 0; background: var(--vc-bg); color: var(--vc-text);
+      padding: 0; background: var(--up-surface); color: var(--vc-text);
     }
     .up-es-karte {
-      position: relative; width: 100%; min-height: 100vh; min-height: 100dvh;
+      width: 100%; min-height: 100vh; min-height: 100dvh;
       display: grid; grid-template-columns: minmax(0, 1fr); padding: 16px;
-      background: var(--vc-bg); overflow: hidden;
+      background: var(--up-surface);
     }
-    /* Ueber dem Grund: Wortmarke, Knopf und Inhalt liegen VOR der Flaeche. Das Polster ist das der
-       linken Spalte der Anmeldeseite: senkrecht an vh, waagerecht an vw (Begruendung dort). */
+    /* Das Polster der linken Spalte der Anmeldeseite: senkrecht an vh, waagerecht an vw. */
     .up-es-spalte {
-      position: relative; z-index: 1; min-width: 0;
-      display: flex; flex-direction: column;
+      min-width: 0; display: flex; flex-direction: column;
       padding: clamp(20px, 4vh, 52px) clamp(28px, 4.4vw, 64px);
     }
     .up-es-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: 0 0 auto; }
     .up-es-logo { height: 18px; width: auto; flex: 0 0 auto; display: block; }
     /* .up-iconbtn bringt keinen Fokusring mit (dieselbe Zeile wie in invite-page.css). */
     .up-es-themebtn:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+    /* Etwas ueber der Mitte, nicht exakt darin: ein kurzer Block in der geometrischen Mitte wirkt
+       optisch zu tief. Der Abstand unten entspricht der Kopfzeile oben. */
     .up-es-mitte {
-      flex: 1 1 auto; min-height: 0;
+      flex: 1 1 auto; min-height: 0; padding-bottom: 48px;
       display: flex; flex-direction: column; justify-content: center; align-items: center;
     }
-    /* 400 und nicht die 440 der Anmeldeseite: dort steht der Block linksbuendig neben einem Bild,
-       hier allein in der Mitte, und dieselbe Breite saehe zentriert breiter aus, als sie ist.
-       minmax(0, 1fr): sonst waechst die Spalte auf ihr laengstes Wort -- eine lange Adresse schob
-       die Seite auf 375px nach rechts hinaus (gemessen am 07.10.). */
-    .up-es-block { width: 100%; max-width: 400px; display: grid; grid-template-columns: minmax(0, 1fr); }
+    /* 360px: ein Feld, ein Knopf -- breiter wirkt es leer. minmax(0, 1fr): sonst waechst die Spalte
+       auf ihr laengstes Wort, eine lange Adresse schob die Seite auf 375px hinaus (gemessen). */
+    .up-es-block { width: 100%; max-width: 360px; display: grid; grid-template-columns: minmax(0, 1fr); }
     /* Formular und Erfolg im selben Raster uebereinander: die Seite behaelt beim Wechsel ihre Hoehe.
        visibility erst NACH dem Ausblenden: sonst laege der Tabulator in einem unsichtbaren Feld. */
     .up-es-block > .up-es-pane { grid-area: 1 / 1; }
@@ -2118,34 +2118,27 @@
 
     /* ---------- Kopf: Zeichen, Ueberschrift, Satz -- mittig ---------- */
     .up-es-kopf { display: flex; flex-direction: column; align-items: center; text-align: center; }
-    /* Die Kachel hat die Geometrie des Erfolgszeichens der Anmeldeseite (44px, rund, 18px darunter),
-       ohne dessen Gruen: sie zeigt, worum es geht, nicht dass etwas gelungen ist. */
-    .up-es-ic {
-      width: 44px; height: 44px; border-radius: 50%; margin-bottom: 18px; flex: 0 0 auto;
-      display: inline-flex; align-items: center; justify-content: center;
-      background: var(--vc-heading-bg); border: 1px solid var(--vc-border); color: var(--vc-text);
+    /* Das Zeichen allein, ohne Kachel und ohne Flaeche -- in der Schriftfarbe, 28px wie die
+       Ueberschrift, Strich 1.5 (dafuer sind die Hugeicons gezeichnet). */
+    .up-es-ic { display: block; width: 28px; height: 28px; margin-bottom: 16px; color: var(--vc-text); }
+    .up-es-ic svg { width: 28px; height: 28px; display: block; }
+    /* Die Kennung ueber der Ueberschrift (die 404): klein, in der Drittfarbe, Ziffern in Spalten. */
+    .up-es-oben {
+      margin: 0 0 8px; font-size: 13px; font-weight: 500; color: var(--vc-third);
+      font-variant-numeric: tabular-nums;
     }
-    .up-es-ic svg { width: 20px; height: 20px; display: block; }
-    .up-es-ic.is-ok {
-      background: var(--vc-pos-bg, rgba(46, 158, 99, .12)); border-color: transparent; color: var(--vc-pos, #2e9e63);
-    }
-    .up-es-ic.is-ok svg { width: 22px; height: 22px; }
-    /* Eine Zeile statt zwei wie auf der Anmeldeseite ("Hi, / Welcome Back"): die Obergrenze liegt
-       tiefer, sonst bricht "Forgot your password?" in 400px um. Schnitt, Zeilenhoehe und Sperrung
-       sind die von .uau-h1. */
     .up-es-h1 {
-      margin: 0; font-size: clamp(26px, min(2.6vw, 4vh), 36px); line-height: 1.06;
-      font-weight: 600; letter-spacing: -.025em; color: var(--vc-text); text-wrap: balance;
+      margin: 0; font-size: 28px; line-height: 1.15; font-weight: 600; letter-spacing: -.02em;
+      color: var(--vc-text); text-wrap: balance;
     }
     /* Die Unterzeile in der Drittfarbe (07.10. angefordert: "darunter Drittcolor"). */
     .up-es-sub {
-      margin: clamp(8px, .9vw, 12px) 0 0;
-      font-size: 14px; line-height: 1.45; color: var(--vc-third); text-wrap: balance;
+      margin: 8px 0 0; font-size: 14px; line-height: 1.45; color: var(--vc-third); text-wrap: balance;
     }
 
     /* ---------- Felder: die Geometrie von .uau-field/.uau-input ---------- */
     .up-es-form { display: contents; }
-    .up-es-felder { margin-top: clamp(20px, 3.4vh, 32px); display: flex; flex-direction: column; gap: 12px; }
+    .up-es-felder { margin-top: 28px; display: flex; flex-direction: column; gap: 12px; }
     .up-es-feld { display: flex; flex-direction: column; }
     .up-es-label { font-size: 12px; font-weight: 600; color: var(--vc-muted); }
     .up-es-label + * { margin-top: 7px; }
@@ -2196,11 +2189,11 @@
       font-size: 12px; font-weight: 500; color: var(--vc-muted);
     }
 
-    /* ---------- Knoepfe, Fehlerkasten, Wege zurueck ---------- */
-    /* 32px ueber dem Hauptknopf, wie auf der Anmeldeseite unter dem Feldstapel. */
-    .up-es-cta, .up-es-weg { width: 100%; margin-top: 32px; }
+    /* ---------- Knoepfe, Fehlerkasten, leise Wege ---------- */
+    /* 24px ueber dem Hauptknopf: nah genug, dass Feld und Knopf eine Gruppe sind. */
+    .up-es-cta { width: 100%; margin-top: 24px; }
     /* Ein Link ist hier ein Knopf: ohne Unterstrich. */
-    .up-es a.up-btn-pri, .up-es a.up-btn-sec { text-decoration: none; }
+    .up-es a.up-btn-pri { text-decoration: none; }
     /* Beschaeftigt ist nicht gesperrt: .4 hiesse "geht nicht", .55 ist der Wert der Anmeldeseite.
        Drei Klassen gegen .up-btn-pri:disabled. */
     .up-es .up-es-cta.is-busy:disabled { opacity: .55; cursor: progress; }
@@ -2218,68 +2211,33 @@
       text-decoration: underline; text-underline-offset: 2px;
     }
     .up-es-formerr-link[hidden] { display: none; }
-    /* Der leise Weg zurueck unter einem Formular: mittig, klein, im Ton des Seitenlinks der
-       Anmeldeseite ("Forgot password?"). */
+    /* Der leise Weg: mittig, klein, im Ton des Seitenlinks der Anmeldeseite ("Forgot password?").
+       Als Link UND als Knopf (not-found "Go back", forgot-password "Resend link"). */
     .up-es-zurueck {
       display: flex; width: fit-content; margin: 20px auto 0; align-items: center; gap: 6px;
+      padding: 0; border: 0; background: none; cursor: pointer; font-family: inherit;
       font-size: 13px; font-weight: 500; color: var(--vc-muted); text-decoration: none;
       transition: color var(--up-t-2) var(--up-ease);
     }
-    .up-es-zurueck:hover { color: var(--vc-text); }
+    .up-es-zurueck:hover:not(:disabled) { color: var(--vc-text); }
+    .up-es-zurueck:disabled { color: var(--vc-third); cursor: default; }
     .up-es-zurueck svg { width: 14px; height: 14px; display: block; }
-    .up-es-hinweis { margin: 16px 0 0; text-align: center; font-size: 13px; line-height: 1.45; color: var(--vc-third); }
-
-    /* ---------- Der Grund: die Flaeche der rechten Spalte der Anmeldeseite ----------
-       Farben, Verlauf und Linienmuster wortgleich zu .uau-panel und .uau-panel::after (dort steht,
-       warum Weiss im Hellen und Schwarz im Dunkeln). Hier unten ueber die ganze Breite und nach
-       oben in den Seitengrund auslaufend -- eine harte Kante mitten auf der Seite saehe wie ein
-       zweiter Kasten aus. Das Bild kommt optional aus data-bg (--up-es-bild). */
-    .up-es-grund {
-      position: absolute; z-index: 0; left: 16px; right: 16px; bottom: 16px; height: 46%;
-      pointer-events: none; border-radius: 32px; overflow: hidden;
-      background-color: #cfd8ea;
-      background-image: linear-gradient(180deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, .16) 60%),
-                        var(--up-es-bild, none);
-      background-size: cover; background-position: center;
-      -webkit-mask-image: linear-gradient(to top, #000 0%, rgba(0, 0, 0, .55) 45%, transparent 100%);
-      mask-image: linear-gradient(to top, #000 0%, rgba(0, 0, 0, .55) 45%, transparent 100%);
-    }
-    .up-root[data-theme="dark"] .up-es-grund {
-      background-color: #16203a;
-      background-image: linear-gradient(180deg, rgba(12, 17, 32, .72), rgba(10, 14, 28, .88) 70%),
-                        var(--up-es-bild, none);
-    }
-    .up-es-grund::after {
-      content: ""; position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none;
-      background: repeating-linear-gradient(to right,
-                  rgba(255, 255, 255, .55) 0, rgba(255, 255, 255, .55) 1px,
-                  transparent 1px, transparent 8px);
-      -webkit-mask-image: linear-gradient(to bottom, transparent 16%, rgba(0, 0, 0, .18) 32%,
-                          rgba(0, 0, 0, .62) 50%, #000 66%);
-      mask-image: linear-gradient(to bottom, transparent 16%, rgba(0, 0, 0, .18) 32%,
-                  rgba(0, 0, 0, .62) 50%, #000 66%);
-    }
-    .up-root[data-theme="dark"] .up-es-grund::after {
-      background: repeating-linear-gradient(to right,
-                  rgba(0, 0, 0, .30) 0, rgba(0, 0, 0, .30) 1px,
-                  transparent 1px, transparent 8px);
-    }
+    .up-es-zurueck:focus-visible { outline: 0; border-radius: 4px; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
     /* ---------- Einzug ----------
-       Wie auf der Anmeldeseite: 18px Weg, 420ms (--uau-in, --uiv-in, --uob-in tragen dieselbe
-       Zahl), backwards, damit die Stufen waehrend ihrer Verzoegerung nicht sichtbar dastehen.
-       Die Stufe steht am Element (data-es-auf), je 120ms Versatz. */
-    @keyframes up-es-auf { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+       Wie auf der Anmeldeseite, nur leiser: 8px Weg statt 18 -- auf einer Seite mit drei Zeilen
+       soll man das Ankommen spueren, nicht zusehen. 420ms wie --uau-in/--uiv-in/--uob-in,
+       backwards, damit die Stufen waehrend ihrer Verzoegerung nicht dastehen. Die Stufe steht am
+       Element (data-es-auf), je 120ms Versatz. */
+    @keyframes up-es-auf { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
     .up-es.is-entering [data-es-auf] { animation: up-es-auf 420ms var(--up-ease-auf) backwards; }
     .up-es.is-entering [data-es-auf="2"] { animation-delay: var(--up-t-1); }
     .up-es.is-entering [data-es-auf="3"] { animation-delay: calc(var(--up-t-1) * 2); }
     .up-es.is-entering [data-es-auf="4"] { animation-delay: calc(var(--up-t-1) * 3); }
 
-    /* ---------- schmal ----------
-       Das schmale Polster der Anmeldeseite; der Inhalt bleibt mittig -- er ist kurz, und oben
-       angeklebt stuende er unter der Wortmarke wie vergessen. Der Grund wird flacher. */
+    /* ---------- schmal ---------- */
     .up-es.is-narrow .up-es-spalte { padding: clamp(20px, 6vw, 36px); }
-    .up-es.is-narrow .up-es-grund { height: 34%; }
+    .up-es.is-narrow .up-es-mitte { padding-bottom: 24px; }
 
     @media (prefers-reduced-motion: reduce){
       .up-es.is-entering [data-es-auf] { animation: none; }

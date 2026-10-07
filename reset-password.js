@@ -2,9 +2,10 @@
    Braucht core.js.
 
    ── Wozu ─────────────────────────────────────────────────────────────────
-   Wer dem Link aus der Mail folgt, landet hier. Zwei Felder (neues Passwort, bestaetigen), die
-   Staerkeanzeige der Anmeldeseite, EIN Knopf. Danach an derselben Stelle "Password updated" mit
-   dem Weg zur Anmeldung.
+   Wer dem Link aus der Mail folgt, landet hier. Die Ueberschrift, zwei Felder (neues Passwort,
+   bestaetigen), die Staerkeanzeige der Anmeldeseite, EIN Knopf -- kein Zeichen, kein Untertitel
+   (07.10.: "subtil professionell"). Danach an derselben Stelle "Password updated" mit dem Knopf
+   zur Anmeldung.
 
    ── Fehler ───────────────────────────────────────────────────────────────
    Was Supabase beim Setzen zurueckgibt, kommt ROH ueber setResetPasswordError und wird in core
@@ -43,11 +44,9 @@
 
   var T = {
     h1:       "Set a new password",
-    sub:      "Choose a strong password you don’t use anywhere else.",
     pw:       "New password",
     pwPh:     "At least 8 characters",
     pw2:      "Confirm password",
-    pw2Ph:    "Repeat your new password",
     cta:      "Reset password",
     ctaBusy:  "Resetting password",
     zurueck:  "Back to sign in",
@@ -57,8 +56,8 @@
     pw2Ungl:  "The passwords do not match.",
     neuerLink: "Request a new link",
     doneH:    "Password updated",
-    doneSub:  "You can now sign in with your new password.",
-    doneCta:  "Continue to sign in"
+    doneSub:  "Sign in with your new password.",
+    doneCta:  "Sign in"
   };
   /* Dieselbe Regel wie beim Anlegen auf der Anmeldeseite: ein neues Passwort ist ein neues Passwort. */
   var MIN_LAENGE = 8;
@@ -96,7 +95,7 @@
       label: "reset-password",
       einzug: !alt,
       inhalt:
-        UC.esKopfHtml({ icon: "lock", titel: T.h1, text: T.sub }) +
+        UC.esKopfHtml({ titel: T.h1 }) +
         UC.esFehlerHtml() +
         '<form class="up-es-form" novalidate data-es-form>' +
           /* Ein verstecktes Benutzerfeld: ohne es weiss der Passwortverwalter nicht, ZU WELCHEM
@@ -107,14 +106,14 @@
           '<div class="up-es-felder" data-es-auf="2">' +
             UC.esFeldHtml({ name: "password", label: T.pw, typ: "password", auto: "new-password", ph: T.pwPh,
                             mehr: UC.pwStaerkeHtml() }) +
-            UC.esFeldHtml({ name: "confirm", label: T.pw2, typ: "password", auto: "new-password", ph: T.pw2Ph }) +
+            UC.esFeldHtml({ name: "confirm", label: T.pw2, typ: "password", auto: "new-password" }) +
           '</div>' +
           UC.esKnopfHtml({ text: T.cta, textBusy: T.ctaBusy }) +
         '</form>' +
         UC.esZurueckHtml({ href: login, text: T.zurueck }),
       fertig:
-        UC.esKopfHtml({ ok: true, titel: T.doneH, text: T.doneSub }) +
-        '<a class="up-btn-pri is-lg up-es-weg" href="' + esc(login) + '">' + esc(T.doneCta) + '</a>',
+        UC.esKopfHtml({ titel: T.doneH, text: T.doneSub }) +
+        '<a class="up-btn-pri is-lg up-es-cta" href="' + esc(login) + '">' + esc(T.doneCta) + '</a>',
       onSenden: absenden
     });
     var pw = seite.q('[data-es-input="password"]'), pw2 = seite.q('[data-es-input="confirm"]');

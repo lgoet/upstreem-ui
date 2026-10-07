@@ -2,9 +2,11 @@
    (Praefix `ufp`). Braucht core.js.
 
    ── Wozu ─────────────────────────────────────────────────────────────────
-   Aufgebaut wie die Seiten von Linear, Vercel und Notion: eine Ueberschrift, ein Satz, EIN Feld,
-   EIN Knopf, darunter leise der Weg zurueck. Danach an derselben Stelle die Bestaetigung mit
-   "Resend link" -- und die ist NEUTRAL, ob es das Konto gibt oder nicht. Sonst liesse sich mit
+   Aufgebaut wie die Seiten von Linear, Vercel und Notion: eine Ueberschrift, ein kurzer Satz,
+   EIN Feld, EIN Knopf, darunter leise der Weg zurueck -- kein Zeichen, kein Beiwerk (07.10.:
+   "subtil professionell, wie der rest der app"). Danach an derselben Stelle die Bestaetigung mit
+   dem Mail-Zeichen und einem leisen "Resend link" -- und die ist NEUTRAL, ob es das Konto gibt
+   oder nicht. Sonst liesse sich mit
    dieser Seite pruefen, welche Adressen bei upstreem ein Konto haben (Account Enumeration).
    Supabase verschickt ohnehin nur an bestehende Konten.
 
@@ -40,7 +42,7 @@
 
   var T = {
     h1:       "Forgot your password?",
-    sub:      "Enter your email and we’ll send you a link to reset your password.",
+    sub:      "We’ll send you a link to reset it.",
     label:    "Work email",
     ph:       "alex@company.com",
     cta:      "Send reset link",
@@ -49,9 +51,8 @@
     leer:     "Please enter your email address.",
     form:     "That does not look like an email address.",
     doneH:    "Check your email",
-    doneMit:  "If an account exists for {mail}, you’ll get a link to reset your password.",
-    doneOhne: "If an account exists for this email, you’ll get a link to reset your password.",
-    nicht:    "Didn’t get it?",
+    doneMit:  "If an account exists for {mail}, we sent a reset link.",
+    doneOhne: "If an account exists for this email, we sent a reset link.",
     wieder:   "Resend link",
     wiederIn: "Resend in {s}s",
     sendet:   "Sending…"
@@ -66,7 +67,7 @@
   var STORE = window.__ufpStore = window.__ufpStore || {};
 
   function makeController(root){
-    var UC = window.UpstreemCore, esc = UC.esc;
+    var UC = window.UpstreemCore;
     var MISSING = ["makeEinzelseite", "esKopfHtml", "esFeldHtml", "esKnopfHtml", "esFehlerHtml",
                    "esZurueckHtml", "esAttr", "adressParameter", "authFehler", "feuerRoh", "mailOk"]
       .filter(function(k){ return typeof UC[k] !== "function"; });
@@ -92,7 +93,7 @@
       label: "forgot-password",
       einzug: !alt,
       inhalt:
-        UC.esKopfHtml({ icon: "lock", titel: T.h1, text: T.sub }) +
+        UC.esKopfHtml({ titel: T.h1, text: T.sub }) +
         UC.esFehlerHtml() +
         /* Ein echtes <form>: Enter loest aus, und der Passwortverwalter erkennt das Feld. */
         '<form class="up-es-form" novalidate data-es-form>' +
@@ -103,9 +104,9 @@
         '</form>' +
         UC.esZurueckHtml({ href: login, text: T.zurueck }),
       fertig:
-        UC.esKopfHtml({ icon: "mail", titel: T.doneH, text: "", auf: 1 }) +
-        '<p class="up-es-hinweis ufp-wieder"><span>' + esc(T.nicht) + '</span>' +
-          '<button type="button" class="ufp-wiederknopf" data-ufp-wieder></button></p>' +
+        UC.esKopfHtml({ icon: "mail01", titel: T.doneH, text: "" }) +
+        /* Zwei leise Wege untereinander: erneut senden, zurueck zur Anmeldung. */
+        '<button type="button" class="up-es-zurueck ufp-wieder" data-ufp-wieder></button>' +
         UC.esZurueckHtml({ href: login, text: T.zurueck }),
       onSenden: absenden,
       /* Die Notbremse nach einem "Resend": ihr Satz steht im Fehlerkasten des FORMULARS, und das

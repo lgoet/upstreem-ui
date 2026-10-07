@@ -1,7 +1,8 @@
 <!-- ==========================================================================================
      upstreem — Check Email (Praefix `uce`, Stand 07.10.)
 
-     "Check your email" nach dem Signup. Die GANZE Seite ist dieses eine HTML-Element: auf volle
+     "Check your email" nach dem Signup: das Mail-Zeichen, die Ueberschrift, ein Satz, leise der
+     Weg zurueck zur Anmeldung. Die GANZE Seite ist dieses eine HTML-Element: auf volle
      Breite und volle Hoehe setzen, ohne eigenes Padding, nichts darum herum.
 
      ── FRISCHE INSTALLATION ──────────────────────────────────────────────────────────────────
@@ -9,7 +10,7 @@
      NICHT -- dort muss dasselbe von Hand nachgezogen werden.
 
      ── WAS DIE SEITE NICHT BRAUCHT ───────────────────────────────────────────────────────────
-     Keine Events, keine Setter, keinen Workflow. Ausserdem nicht:
+     Keine Events, keine Setter, keinen Workflow, keine eigene CSS. Ausserdem nicht:
        data-cdn-pin   kommt aus dem Vorlade-Skript im Seitenkopf (page_header_preload steht
                       app-weit unter Settings > SEO/metatags und laeuft auch hier; der Loader unten
                       nimmt dessen window.__upPin). Wer trotzdem einen setzt: derselbe wie dort.
@@ -19,15 +20,11 @@
 
      ── ATTRIBUTE ─────────────────────────────────────────────────────────────────────────────
        data-login-url  wohin "Back to sign in" fuehrt. Vorgabe: /signup?mode=login
-       data-bg         optional: das Hintergrundbild der Anmeldeseite (data-bg dort) fuer die
-                       Flaeche unten. Ohne bleibt der Verlauf mit dem Linienmuster.
-       data-email      optional; die Adresse kommt sonst aus ?email= (auch ?mail=).
 
      ── EINBAU ────────────────────────────────────────────────────────────────────────────────
      1. Bubble-Seite "check-email", dieses Element darauf.
      2. Hinfuehren: am Ende des Signup-Workflows, WENN die Adresse erst bestaetigt werden muss:
-          Go to page check-email, Send more parameters: email = <die Adresse>
-        Die Adresse steht dann unter dem Satz. Ohne Parameter fehlt sie einfach.
+          Go to page check-email
 -->
 
 <div class="up-root uce-root"
@@ -77,7 +74,7 @@
   function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
   function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
 
-  css("core.css");          js("core.js");
-  css("check-email.css");   js("check-email.js");
+  css("core.css");   js("core.js");
+  js("check-email.js");
 })();
 </script>
