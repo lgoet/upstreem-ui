@@ -2111,6 +2111,11 @@
 .ulh-vis-tab .up-topicchip-lbl, .ulh-vis-tab .up-market-code,
 .ulh-vis-dom .tct-tag-lbl, .ulh-vis-dom .up-trend { font-weight: var(--ulh-vis-pille); }
 .ulh-vis-tab .up-row, .ulh-vis-dom .up-row { border-bottom: 1px solid var(--ulh-border); }
+/* NICHT an der Kopfzeile (07.10. gemeldet: "unter der Heading Row ein doppelter Strich, 2px statt
+   1"). Seit die Spaltenkoepfe .up-th aus core sind, tragen sie ihre eigene Unterkante -- wie in der
+   App. Die Linie der Zeile darunter lag gemessen genau daneben. Eine Klasse mehr, damit die Regel
+   ueber die Spezifitaet gewinnt. */
+.ulh-vis-tab .up-row.up-thead, .ulh-vis-dom .up-row.up-thead { border-bottom: 0; }
 .ulh-vis-tab .up-row:last-child, .ulh-vis-dom .up-row:last-child { border-bottom: 0; }
 .ulh-vis-tab .up-td:first-child, .ulh-vis-dom .up-td:first-child { border-left: 0; }
 /* Die Prompt-Zeile ist in dieser Karte der Gegenstand -- die Zahlen daneben erklaeren sie nur.
@@ -2222,10 +2227,14 @@
    Kartentext verschwindet es, damit die Karte keinen gemusterten Rand bekommt. */
 /* ETWAS KRAEFTIGER (07.10. angefordert: "etwas mehr Opacity"): die Punkte in --ulh-border (#e7e9ec,
    der Kante der Karten) statt --ulh-schiene (#ededf0) -- die naechste Stufe der eigenen Palette --,
-   und der volle Kern der Blende reicht weiter nach aussen (45 statt 32 Prozent). */
+   und der volle Kern der Blende reicht weiter nach aussen (45 statt 32 Prozent).
+   NOCH EINE STUFE (07.10. spaeter: "noch mehr Opacity, etwas deutlicher zu erkennen"): #d8dbe0, so
+   weit unter der Kartenkante (#e7e9ec) wie die Kante unter der Schiene liegt -- zwei gleiche
+   Schritte derselben kuehlen Grauleiter. Als Marke, weil beide Muster sie tragen. */
+.ulh-root { --ulh-punkt: #d8dbe0; }
 .ulh-vis-muster {
   position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 0; pointer-events: none;
-  background-image: radial-gradient(circle, var(--ulh-border) 1px, transparent 1px);
+  background-image: radial-gradient(circle, var(--ulh-punkt) 1px, transparent 1px);
   background-size: 8px 8px;
   -webkit-mask-image: radial-gradient(ellipse 64% 66% at 50% 56%, #000 45%, transparent 100%);
   mask-image: radial-gradient(ellipse 64% 66% at 50% 56%, #000 45%, transparent 100%);
@@ -2235,8 +2244,8 @@
    Masche verschoben, ergibt Punkte im Abstand von gut 8px auf der Diagonalen. Die Blende liegt
    weiter rechts, das Muster laeuft also nicht spiegelgleich zur Domain-Karte aus. */
 .ulh-vis-muster.is-versetzt {
-  background-image: radial-gradient(circle, var(--ulh-border) 1px, transparent 1px),
-                    radial-gradient(circle, var(--ulh-border) 1px, transparent 1px);
+  background-image: radial-gradient(circle, var(--ulh-punkt) 1px, transparent 1px),
+                    radial-gradient(circle, var(--ulh-punkt) 1px, transparent 1px);
   background-size: 12px 12px; background-position: 0 0, 6px 6px;
   -webkit-mask-image: radial-gradient(ellipse 66% 64% at 60% 58%, #000 42%, transparent 100%);
   mask-image: radial-gradient(ellipse 66% 64% at 60% 58%, #000 42%, transparent 100%);
