@@ -2781,9 +2781,9 @@
        vom Rand uebersteht, schneidet #ask-mira ohnehin weg. */
     position: relative; z-index: 1;
     /* gap 2 und nicht 6: der Umschalter soll auf DERSELBEN Hoehe stehen wie der der
-       Hauptleiste, wenn beide eingeklappt sind. Dort sitzt er bei 48 (14 Polster + 32 Logo + 2).
-       Mit 6 plus den 2 am Logo standen hier 54 -- sechs Pixel daneben, gemessen. Der Abstand zu
-       den vier Zeichen darunter haengt am Umschalter selbst (margin-bottom). */
+       Hauptleiste, wenn beide eingeklappt sind. Dort sitzt er seit dem 07.10. bei 54 (14 Polster
+       + 32 Logo + 8); die 6 ueber den 2 hier traegt .am-mini-logo. Der Abstand zu den vier
+       Zeichen darunter haengt am Umschalter selbst (margin-bottom). */
     flex-direction: column; align-items: center; gap: 2px;
     padding: 14px 12px 16px;
     background: var(--am-bg); border-left: 1px solid var(--am-border-strong);
@@ -2825,6 +2825,10 @@
   .am-mini-logo {
     width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
     color: var(--am-text); flex: 0 0 auto;
+    /* 6 + die 2 der Leiste = die 8, die die Hauptleiste seit dem 07.10. zwischen Zeichen und
+       Umschalter traegt (sidebar.css). Nur hier und nicht am gap: das gap gilt auch zwischen
+       Umschalter und den Zeichen darunter, und die sollen bleiben, wo sie sind. */
+    margin-bottom: 6px;
   }
   .am-mini-logo svg { width: 20px; height: 20px; display: block; fill: none; stroke: currentColor;
     stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
