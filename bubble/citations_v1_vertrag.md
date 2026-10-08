@@ -1,11 +1,17 @@
 # Citations v1 – Vertrag (gebaut, Stand 08.10.2026)
 
-> Wortgleich vom Datenbank-Chat übernommen (08.10.). Prüfung gegen die Oberfläche und offene
-> Punkte: `citations_db_rueckmeldung.md`, Abschnitt „Rückmeldung 2“.
+> Wortgleich vom Datenbank-Chat übernommen (08.10., finaler Stand am Abend). Prüfung gegen die
+> Oberfläche und offene Punkte: `citations_db_rueckmeldung.md`, Abschnitt „Rückmeldung 2“.
+>
+> **Finaler Stand gegen die Oberfläche (08.10. abends):**
+> - Suche in URLs und Drilldown nur noch in der URL (Titelsuche kostete rund 8 s). Die Oberfläche
+>   passt dazu: Suchfeld „Type in url...“, hervorgehoben wird die URL-Zeile, wie bei den alten RPCs.
+> - Tabellen-Cache 100 statt 500 Zeilen: ohne Folgen für die Oberfläche, tiefere Seiten werden
+>   direkt gerechnet.
 >
 > **Gegen Prod gemessen (08.10., 20 Fälle, `testdaten/citations_v1/lauf1_team_e6037cb1.json`).**
 > Laufzeiten 42–334 ms, aus dem Cache um 60 ms. Drei Abweichungen, an den DB-Chat gemeldet:
-> 1. `meta.stale` fehlt in allen Antworten.
+> 1. `meta.stale` fehlte im ersten Lauf; im zweiten Lauf da, erledigt.
 > 2. Ohne `p_domain` kommt nicht `citations_domain_required`, sondern HTTP 404 von PostgREST
 >    („Could not find the function …“), weil `p_domain` keinen Default hat.
 > 3. `citations_rate_limited` kommt als HTTP 500 (`P0429` kennt PostgREST nicht; `PT429` gäbe 429).
@@ -79,7 +85,7 @@ Weitere Regeln:
   - bisheriges `ilike` (darum findet die Suche nie weniger als vorher).
 
   Beispiele: „fuer“ findet „für“, „für“ findet „fuer“ und „fur“, „strasse“ findet „Straße“, „creme“ findet „Crème“. „muller“ findet „Mueller“ **nicht**. Die Escape-Regel für `%`, `_` und `\` bleibt.
-- Domains durchsucht die Suche im Domainnamen. URLs und Drilldown durchsucht sie in URL **und** Titel.
+- Domains durchsucht die Suche im Domainnamen. URLs und Drilldown durchsucht sie **nur in der URL**, wie die bisherigen RPCs (Entscheidung 08.10.2026: Titelsuche kostete beim größten Team rund 8 s). Titel werden nicht durchsucht.
 
 **Sortierungen:**
 
@@ -198,7 +204,7 @@ Die Zahlenwerte sind nur zur Illustration; die echten stehen in den Beispielantw
 
 Das Verhalten nach außen bleibt gleich. Neu ist nur das Feld `meta.stale`; Felder dürfen laut Versionsregel dazukommen.
 
-- **Eigene Cache-Tabelle `app.citations_cache`.** Der Trigger, der bei jedem neuen Run `rpc_cache` für das ganze Team leert, berührt diese Tabelle nicht. Gecacht wird das Rohergebnis je Kombination aus Filter, Suche und Sortierung. Bei Tabellen ist das die sortierte Liste bis 500 Zeilen; die Seiten werden daraus geschnitten. Ab `offset + limit > 500` wird direkt gerechnet.
+- **Eigene Cache-Tabelle `app.citations_cache`.** Der Trigger, der bei jedem neuen Run `rpc_cache` für das ganze Team leert, berührt diese Tabelle nicht. Gecacht wird das Rohergebnis je Kombination aus Filter, Suche und Sortierung. Bei Tabellen sind das die ersten 100 Zeilen der sortierten Liste; die Seiten werden daraus geschnitten. Ab `offset + limit > 100` wird direkt gerechnet (gleiches Ergebnis, nur ohne Cache).
 - **Versioniert.** Jeder Eintrag trägt den Datenstand, aus dem er gerechnet wurde. Der Datenstand setzt sich zusammen aus:
   - der letzten Änderung der Citation-Rollups im Zeitraum inklusive Vorperiode;
   - den Domain-Overrides;
