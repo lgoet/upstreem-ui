@@ -1,5 +1,21 @@
 # Citations-Seite: Bestandsliste der Bubble-Workflows (Stand 08.10.2026)
 
+> **Stand 08.10. nachmittags: weitgehend erledigt, keine Screenshots mehr nötig.**
+> - Die Ereignisse kennt der Code der Komponenten.
+> - Die RPCs dahinter hat das DB-Audit benannt (`citations_db_bestand.md`). Sie werden durch die
+>   neuen `_v1` ersetzt.
+> - Page load setzt `companies`: entfällt, die Marken kommen über den Marken-Store in core.
+> - **SET GRAN** (auf jeder Seite mit Kalender und Linechart), beim Seitenaufbau und bei jedem
+>   Kalenderwechsel:
+>   - Spanne unter 7 Tagen → Day
+>   - ab 29 → Week
+>   - ab 179 → Month
+>   - dazwischen (7 bis 28) bleibt die vorige Stufe.
+>
+>   Wird als EINE Regel nach core übernommen.
+> - Offen bleibt nur, ob Models, Markets und Topics heute seitenübergreifend gelten. Der Zeitraum
+>   teilt sich über den Kalender selbst („Apply to all“).
+
 Wozu: Die neue Seiten-Komponente muss **alles** übernehmen, was die Bubble-Workflows heute tun,
 auch das, was nirgends dokumentiert ist (Bedingungen, Custom States, Schritte, die andere Elemente
 anfassen). Was hier fehlt, fehlt nach dem Umbau still. Darum vor dem Bau einmal vollständig.
