@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261108;
+  var BUILD = 20261109;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1131,6 +1131,7 @@
     "This model cannot be changed right now.":
       "Dieses Modell kann gerade nicht geändert werden.",
     "This model is not available yet.": "Dieses Modell gibt es noch nicht.",
+    "Select at least one model to save.": "Wähle mindestens ein Modell, um zu speichern.",
     "Your plan does not include this model.": "Dein Tarif enthält dieses Modell nicht.",
     "Your plan allows": "Dein Tarif erlaubt",
     "Invite new members": "Neue Mitglieder einladen",

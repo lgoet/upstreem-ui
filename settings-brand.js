@@ -89,6 +89,14 @@
      plan" -- das ist geraten, und geraten war es in genau dem Fall falsch, der am haeufigsten
      vorkommt. Lieber ein Satz, der nur sagt, was sichtbar ist. */
   var REASON_FALLBACK = "This model cannot be changed right now.";
+  /* GRUENDE, DIE AM ENTWURF HAENGEN (08.10. gemeldet: "Perplexity abwaehlen, dann Gemini waehlen --
+     geht nicht, die Quoten aktualisieren sich erst nach Save und Reload"). Die RPC rechnet
+     can_enable/can_disable gegen den GESPEICHERTEN Stand: bei 3 von 3 traegt jedes freie Modell
+     model_limit_reached, und das blieb stehen, auch nachdem im Entwurf eins abgewaehlt war. Diese
+     Gruende rechnet die Komponente deshalb selbst gegen die aktuelle Auswahl (renderModels);
+     von der RPC zaehlen nur die festen: Modell nicht verfuegbar, nicht im Tarif, keine Rechte. */
+  var ENTWURF_GRUENDE = { model_limit_reached: 1, limit_reached: 1,
+                          minimum_one_model_required: 1, minimum_one_model: 1 };
   var LOGO_TYPES = ["image/png", "image/svg+xml"];
 
   var ICON = {
@@ -735,10 +743,16 @@
         ? draft.models.map(function(m){
             /* Drei Gruende, warum eine Karte nicht schaltbar ist, und jeder bekommt seinen eigenen
                Satz. "Gesperrt" ohne Begruendung ist die Variante, ueber die sich jeder aergert. */
+            /* Erst die festen Sperren aus der RPC, dann das Limit -- es zaehlt die aktuelle
+               Auswahl, nicht die gespeicherte. So laesst sich bei 3 von 3 eins abwaehlen und sofort
+               ein anderes waehlen. "Mindestens ein Modell" sperrt hier KEINE Karte mehr (08.10.:
+               "auch alle 3 abwaehlen, dann neue waehlen"): die Regel gilt erst beim Speichern,
+               siehe den Knopf unten. */
             var why = "";
             if (!meta.canManage) why = "Only admins can change the tracked models.";
-            else if (m.canToggle === false) why = REASON[m.reason] || REASON_FALLBACK;
-            else if (full && !m.active) why = UC.t("Your plan allows {n} active models. Turn one off first.")
+            else if (!m.active && m.sperreAn) why = REASON[m.sperreAn] || REASON_FALLBACK;
+            else if (m.active && m.sperreAus) why = REASON[m.sperreAus] || REASON_FALLBACK;
+            else if (!m.active && full) why = UC.t("Your plan allows {n} active models. Turn one off first.")
                                                  .replace("{n}", lim);
 
             /* NICHT schaltbar und NICHT verfuegbar sind zwei verschiedene Dinge, und sie duerfen
@@ -769,8 +783,12 @@
         : '<div class="usb-modelsempty">No models available yet.</div>';
 
       var dirty = keysOf(draft.models) !== keysOf(saved.models);
-      elModelsSave.disabled = !dirty;
-      elModelsHint.textContent = dirty ? "Unsaved changes" : "";
+      /* Ohne ein einziges Modell wird nicht gespeichert -- die Regel der RPC (mindestens eins),
+         hier am Knopf statt an der letzten Karte, damit ein kompletter Tausch moeglich bleibt. */
+      var leer = draft.models.length > 0 && on === 0;
+      elModelsSave.disabled = !dirty || leer;
+      elModelsHint.textContent = leer ? UC.t("Select at least one model to save.")
+                               : (dirty ? "Unsaved changes" : "");
       elModelsHint.classList.toggle("is-dirty", dirty);
     }
 
@@ -1402,17 +1420,31 @@
           saved.models = models.map(function(m){
             var on = m.currently_tracking != null ? m.currently_tracking === true
                    : (m.active != null ? (UC.isYes(m.active) || m.active === true) : false);
-            /* can_toggle deckt beide Richtungen ab. Fehlt es (handgeschriebener Aufruf), darf
-               geschaltet werden -- sonst waere eine Liste ohne diese Felder komplett tot. */
-            var toggle = m.can_toggle != null ? m.can_toggle !== false : true;
+            /* Die FESTEN Sperren, je Richtung getrennt (siehe ENTWURF_GRUENDE oben):
+                 sperreAn   das Modell laesst sich nicht EINschalten -- es ist nicht verfuegbar
+                            (is_model_active false) oder nicht im Tarif (is_allowed_by_plan false);
+                 sperreAus  es laesst sich nicht AUSschalten, aus einem Grund, der nicht am
+                            Entwurf haengt.
+               Ein Modell, das nicht mehr im Tarif ist, aber noch laeuft, darf also abgewaehlt,
+               aber nicht wieder eingeschaltet werden. Ohne die neuen Felder (handgeschriebener
+               Aufruf) gilt can_toggle wie bisher -- dann aber nur mit einem festen Grund. */
+            var grund = String(m.disabled_reason || "");
+            var fest = !!grund && !ENTWURF_GRUENDE[grund];
+            var sperreAn = "";
+            if (m.is_model_active === false) sperreAn = "model_inactive";
+            else if (m.is_allowed_by_plan === false) sperreAn = REASON[grund] ? grund : "plan_limit";
+            else if (fest && (m.can_enable === false || (m.can_enable == null && m.can_toggle === false))) sperreAn = grund;
+            var sperreAus = "";
+            if (fest && (m.can_disable === false || (m.can_disable == null && m.can_toggle === false))) sperreAus = grund;
             return {
               key: String(m.model_key || m.key || m.model || ""),
               display_name: m.display_name || m.name || "",
               logo_url: m.logo_url || "",
               provider: m.provider || "",
               active: on,
-              canToggle: toggle,
-              reason: m.disabled_reason || "",
+              sperreAn: sperreAn,
+              sperreAus: sperreAus,
+              reason: grund,
               sort: UC.toNum(m.sort_order) || 0
             };
           }).filter(function(m){ return !!m.key; })
