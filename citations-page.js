@@ -70,6 +70,44 @@
   ];
   var REFRESH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /> <path d="M8 16H3v5" /></svg>';
 
+  /* ---- SOBALD SICHTBAR: ohne Dauerlauf (08.10.) -----------------------------------------------
+     Die Ansichten der App sind beim Seitenaufbau versteckt und werden spaeter nur per Stil
+     sichtbar -- ohne neuen Knoten, also ohne Meldung von watchRoots. Statt laufend nachzusehen,
+     wird nur in einem KURZEN, BEGRENZTEN Fenster nachgesehen: nach dem Laden dieser Datei (bis
+     10s) und nach jedem Ansichtswechsel der App (showView, ueber UC.onViewChange; bis 3s, weil
+     Bubble die Gruppe erst nach showView einblendet). Danach laeuft nichts, bis die App wieder
+     eine Ansicht oeffnet. Die Bubble-App ruft showView auch beim Seitenaufbau.
+     beiSicht(el, schluessel, fn, test): fn einmal, sobald test(el) wahr ist. Derselbe Schluessel
+     ersetzt einen wartenden Eintrag, statt einen zweiten anzulegen. */
+  var SICHT = [], sichtUhren = [];
+  /* Beim Seitenaufbau alle 500ms bis 10s (20 Blicke, jeder eine Sichtbarkeitsabfrage) -- ohne
+     showView waere eine Ansicht, die nach 7s aufgeht, mit groben Stufen erst bei 10s da gewesen
+     (gemessen). Nach einem Ansichtswechsel bis 3s. */
+  var FENSTER_START = [0, 150, 300], FENSTER_WECHSEL = [0, 250, 750, 1500, 3000];
+  for (var fs = 500; fs <= 10000; fs += 500) FENSTER_START.push(fs);
+  function sichtPruefen() {
+    SICHT = SICHT.filter(function (w) {
+      if (w.el.isConnected === false) return false;
+      var da = false;
+      try { da = w.test(w.el); } catch (e) { da = true; }
+      if (!da) return true;
+      try { w.fn(); } catch (e) {}
+      return false;
+    });
+    if (!SICHT.length) { sichtUhren.forEach(clearTimeout); sichtUhren = []; }
+  }
+  function sichtFenster(stufen) {
+    sichtUhren.forEach(clearTimeout);
+    sichtUhren = stufen.map(function (ms) { return setTimeout(sichtPruefen, ms); });
+  }
+  function beiSicht(el, schluessel, fn, test) {
+    SICHT = SICHT.filter(function (w) { return !(w.el === el && w.schluessel === schluessel); });
+    SICHT.push({ el: el, schluessel: schluessel, fn: fn, test: test });
+    if (!sichtUhren.length) sichtFenster(FENSTER_WECHSEL);
+  }
+  if (UC.onViewChange) UC.onViewChange(function () { if (SICHT.length) sichtFenster(FENSTER_WECHSEL); });
+  function messbar(el) { return !UC.messbar || UC.messbar(el); }
+
   function initRoot(root) {
     if (root.__ucsCtrl) return root.__ucsCtrl;
     var instanceId = str(root.getAttribute("data-instance")).trim() || "citations_page";
@@ -342,13 +380,18 @@
        Geladen wird nur, was der offene Reiter braucht, und nur, solange die Seite zu sehen ist.
        Ohne Team und ohne Kalender gibt es keine erste Anfrage: die Zahlen muessen genau diesen
        Zeitraum und dieses Team haben. */
-    function sichtbar() { return root.isConnected !== false && (!UC.istSichtbar || UC.istSichtbar(root)); }
+    function sichtbarTest(el) { return el.isConnected !== false && (!UC.istSichtbar || UC.istSichtbar(el)); }
+    function sichtbar() { return sichtbarTest(root); }
     var warteUhr = null, kalenderVersuche = 0;
     function spaeter(ms) { if (!warteUhr) warteUhr = setTimeout(function () { warteUhr = null; bedarf(); }, ms); }
     function filterStand() { var f = {}, k; for (k in state.f) f[k] = state.f[k]; f.team = team(); return f; }
+    /* Verdeckt: KEIN Nachfragen im Takt (frueher jede Sekunde, solange die Ansicht geparkt war) --
+       geladen wird, sobald die Ansicht wieder aufgeht (beiSicht). Ohne Team ebenso nicht: der
+       erste setUpstreemTeam meldet sich ueber UC.onTeamChange (unten) und laedt dann. Nur das
+       Warten auf den Kalender laeuft im Takt, und das ist auf 20 Versuche begrenzt. */
     function bereit() {
-      if (!sichtbar()) { spaeter(1000); return false; }
-      if (!team()) { spaeter(300); return false; }
+      if (!sichtbar()) { beiSicht(root, "laden", function () { bedarf(); }, sichtbarTest); return false; }
+      if (!team()) return false;
       if (!state.kalenderDa && !kalenderLesen()) {
         /* Fehlt date-range.js ganz, laedt die Seite nach 3s ohne Zeitraum: die RPCs nehmen dann
            ihre Vorgabe (Vertrag: die letzten 7 Tage). */
@@ -507,31 +550,23 @@
   }
   window.resetCitationsPage = function (id) { return jede(id, function (c) { c.reset(); }); };
   /* EINRICHTEN, SOBALD DIE WURZEL ZU SEHEN IST (08.10. gemeldet: "beim Pageload auf die
-     Citations-Seite laedt sie nicht, nur beim Sidebar-Klick"). Bubble setzt das Element beim
-     Seitenaufbau in die noch VERSTECKTE Ansicht und macht sie spaeter nur per Stil sichtbar --
-     ohne neuen Knoten. watchRoots meldet aber nur neue Knoten: eine Wurzel, die beim Erscheinen
-     nicht messbar war, wurde uebersprungen und nie wieder angesehen (nachgestellt: Wurzel da,
-     Ansicht sichtbar, 0 Kinder, 0 Anfragen). Also: was beim Erscheinen nicht messbar ist, wird
-     alle 300ms nachgesehen, bis es messbar ist. Erst DANN einrichten, mit Absicht -- so entstehen
-     Kalender, Chart und Tabellen darin sichtbar und vermessen sich richtig. */
-  var wartet = [];
-  var warteUhr = null;
-  function nachsehen() {
-    warteUhr = null;
-    wartet = wartet.filter(function (r) {
-      if (r.__ucsCtrl || r.isConnected === false) return false;
-      if (!UC.messbar || UC.messbar(r)) { initRoot(r); return false; }
-      return true;
-    });
-    if (wartet.length) warteUhr = setTimeout(nachsehen, 300);
-  }
+     Citations-Seite laedt sie nicht, nur beim Sidebar-Klick"). Bubble setzt das Element in die
+     noch VERSTECKTE Ansicht und macht sie spaeter nur per Stil sichtbar; watchRoots meldet nur
+     neue Knoten, eine beim Erscheinen nicht messbare Wurzel wurde also nie eingerichtet
+     (nachgestellt: Wurzel da, Ansicht sichtbar, 0 Kinder, 0 Anfragen). Jetzt wartet sie ueber
+     beiSicht -- ohne Dauerlauf. Erst sichtbar einrichten, mit Absicht: so entstehen Kalender,
+     Chart und Tabellen darin sichtbar und vermessen sich richtig. */
+  /* Eine Wurzel, die versteckt ERSCHEINT, bekommt das lange Fenster (10s): das ist der
+     Seitenaufbau, und bis Bubble die Ansicht einblendet, kann es dauern. */
   function einrichten() {
+    var neu = false;
     alle().forEach(function (r) {
       if (r.__ucsCtrl) return;
-      if (!UC.messbar || UC.messbar(r)) { initRoot(r); return; }
-      if (wartet.indexOf(r) < 0) wartet.push(r);
+      if (messbar(r)) { initRoot(r); return; }
+      if (!SICHT.some(function (w) { return w.el === r; })) neu = true;
+      beiSicht(r, "einrichten", function () { initRoot(r); }, messbar);
     });
-    if (wartet.length && !warteUhr) warteUhr = setTimeout(nachsehen, 300);
+    if (neu) sichtFenster(FENSTER_START);
   }
   if (UC.watchRoots) UC.watchRoots("ucs-root", einrichten);
   einrichten();
