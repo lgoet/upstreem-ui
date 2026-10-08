@@ -95,3 +95,51 @@ Oberfläche geprüft. **Freigabe zum Bau** mit den Entscheidungen und Ergänzung
    samt Tests.
 3. Abschnitt 4 an mich.
 4. Altfunktionen bleiben unverändert, bis die alte Seite abgeschaltet ist.
+
+---
+
+# Rückmeldung 2: zum gebauten Vertrag (`citations_v1_vertrag.md`, 08.10.)
+
+Gegen die Oberfläche geprüft. **Passt**, bis auf einen Punkt:
+
+| Geprüft | Ergebnis |
+|---|---|
+| Aufruf (POST, `Content-Profile: app`, Nutzer-JWT) | so ruft `UC.rpc` schon (core.js, live bestanden am 08.10.) |
+| Zeitraum höchstens 366 Tage | Kalender lässt höchstens 6 Monate zu |
+| `p_series_limit` 7 | Combo-Chart zeigt 7 Linien |
+| `mentions[]` höchstens 4 | Markenstapel der Tabellen zeigt 4 plus Zähler |
+| Sortierungen | decken alles ab, was die Tabellen heute anbieten |
+| Typ-Verteilung ohne den angezeigten Typ-Filter | richtig so |
+| `meta.stale` | Die Oberfläche zeigt es vorerst nicht an (höchstens 15 Minuten alt) |
+| `P0429` | PostgREST liefert dafür HTTP 400; die Oberfläche liest `message`, also kein Problem |
+
+## Der eine Punkt: Umlaute in der Suche
+
+Heute falten die **Tabellen** den Suchbegriff selbst. Sie schicken `query_folded` (ohne Akzente)
+und `query_de` (ä→ae usw.) mit. Mit `_v1` fällt das weg, weil die Logik in die Datenbank gehört.
+Ohne Faltung findet „mueller“ „Müller“ nicht mehr. Das ist ein Rückschritt gegenüber heute.
+
+Bitte:
+
+1. `create extension if not exists unaccent with schema extensions;` (auf Supabase verfügbar).
+2. Eine `immutable` Hilfsfunktion `app._suche_norm(t text)`:
+   - `lower`;
+   - `ä→ae`, `ö→oe`, `ü→ue`, `ß→ss`;
+   - dann `unaccent`.
+3. Ein Treffer liegt vor, wenn **eine** der beiden Prüfungen passt:
+   - `_suche_norm(feld)` enthält `_suche_norm(p_search)`; das deckt „mueller“ und „müller“ ab;
+   - `unaccent(lower(feld))` enthält `unaccent(lower(p_search))`; das deckt „muller“ ab.
+4. Das gilt für alle drei Tabellen-Funktionen und ihre Felder (Domain; URL und Titel).
+5. Die Escape-Regel bleibt (`%`, `_`, `\`).
+
+Ist das nicht in diesem Zug machbar, bitte ausdrücklich sagen. Dann bleibt es als bekannte
+Einschränkung stehen und wird nicht still vergessen.
+
+## Abschnitt 4 (Beispielantworten)
+
+Die Antworten hole ich selbst über die App, mit dem Nutzer-JWT und denselben Aufrufen wie die
+spätere Seite. Damit ist auch geprüft, dass der Deploy live ist. Von dir brauche ich nur noch:
+
+1. Die Ergebnisse von `citations_v1_prod_test.sql` (B11) und die Laufzeiten für 30 und 90 Tage am
+   größten Team, jeweils kalt und aus dem Cache.
+2. Die Bestätigung, dass der Hintergrund-Job `citations-cache-refresh` eingeplant ist und läuft.
