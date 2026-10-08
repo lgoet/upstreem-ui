@@ -684,10 +684,12 @@
       var liste = (typeof window.askMiraRecentChats === "function") ? window.askMiraRecentChats(3) : [];
       if (liste.length) _chatsGeladen = true;
       if (!liste.length){
-        /* Solange Mira ihre Liste noch nicht hat, ein Skelett in der Form der Zeilen -- "keine
-           Chats" waere eine Aussage, die noch niemand gepruft hat. Nach 6s ohne Liste ist sie
-           wahr (dieselbe Frist wie Miras eigene Chatleiste). */
-        elChats.innerHTML = _chatsLeer
+        /* "No chats yet" SOFORT, sobald Mira ihre Liste beantwortet hat -- auch leer (08.10.: "zeigt
+           Recent Chats deutlich laenger Skeleton, bevor 'Noch keine Chats' kommt"). Vorher wartete
+           hier eine eigene 6s-Uhr, zusaetzlich zu Miras. Die Uhr bleibt nur als Rueckfall fuer eine
+           Seite ohne Mira bzw. mit einer Mira, die askMiraChatsGeladen noch nicht kennt. */
+        var miraWeiss = typeof window.askMiraChatsGeladen === "function" && window.askMiraChatsGeladen();
+        elChats.innerHTML = (_chatsLeer || miraWeiss)
           ? '<div class="upw-chats-empty" data-i18n="No chats yet">' + esc(t("No chats yet")) + '</div>'
           : chatSkelett();
         return;

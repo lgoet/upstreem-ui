@@ -451,6 +451,9 @@
   var elPrevList   = root.querySelector('#am-prev-list');
   var _prevLoaded  = false;   // becomes true once the app receives its chat sessions (or a timeout fallback)
   var _prevAuffang = null;    // die Uhr des Auffangnetzes, damit sie neu gestellt werden kann
+  /* Ein ausdrueckliches askMiraSetChatsLoading("yes") ohne sein "no" -- nur dann ist eine leere
+     Chatliste ein Zwischenstand (siehe askMiraSetPreviousChats, 08.10.). */
+  var _prevWartetAufNein = false;
   /* Das Skelett soll aussehen wie der Inhalt, der kommt: Zeilen von 34px mit EINER Textzeile
      darin, nicht sieben ausgefuellte Bloecke. Die Breiten wechseln, weil Chatnamen verschieden
      lang sind -- gleich lange Balken lesen sich als Tabelle, nicht als Liste. */
@@ -6976,14 +6979,14 @@
       }
       S.previousChats = einListe;
     }
-    /* Eine LEERE Liste beendet das Laden NICHT. Bubble ruft diesen Setter regelmaessig einmal mit
-       einer leeren Liste, bevor der RPC zurueck ist -- und das machte aus dem Skelett augenblicklich
-       eine leere Leiste. Genau so gemeldet (03.09.): "beim initial Load gibt es in der sidebar
-       keinen skeleton, bis die chats alle da sind".
-       Der wirklich leere Fall -- ein neuer Nutzer ohne Chats -- faellt nach sechs Sekunden ins
-       Auffangnetz am Ende der Datei und zeigt dann die leere Leiste. Sechs Sekunden Skelett fuer
-       einen neuen Nutzer sind besser als gar keins fuer alle anderen. */
-    if (S.previousChats.length) prevGeladenSetzen(true);
+    /* LEER HEISST SOFORT LEER (08.10. angefordert, wie bei den Tabellen: "wenn leere Daten
+       reinkommen, zeigt Recent Chats noch deutlich laenger Skeleton -- das darf nicht sein").
+       Bis hierher beendete eine leere Liste das Laden NIE: Bubble hatte am 03.09. einmal eine
+       leere Liste vor dem RPC geschickt, und jeder neue Nutzer sah danach sechs Sekunden Skelett.
+       Jetzt am Ablauf statt an der Uhr: nur waehrend eines ausdruecklichen
+       askMiraSetChatsLoading("yes") ohne sein "no" ist die leere Liste ein Zwischenstand. Sonst
+       ist sie die Antwort. */
+    if (S.previousChats.length || !_prevWartetAufNein) prevGeladenSetzen(true);
     renderPrevious();
     titelNachziehen();
     /* Fuer "Recent chats" im Power Dashboard: es zeichnet neu, sobald die Liste sich aendert. */
@@ -7006,13 +7009,17 @@
     var text = String(v == null ? "" : v).trim().toLowerCase();
     var laedt = !(text === "no" || text === "false" || text === "0" || text === "");
     clearTimeout(_prevAuffang); _prevAuffang = null;
+    _prevWartetAufNein = laedt;
     prevGeladenSetzen(!laedt);
     if (laedt){
       _prevAuffang = setTimeout(function(){
-        if (!_prevLoaded){ prevGeladenSetzen(true); renderPrevious(); }
+        if (!_prevLoaded){ _prevWartetAufNein = false; prevGeladenSetzen(true); renderPrevious();
+          try { window.dispatchEvent(new CustomEvent('askmira:chats')); } catch(e){} }
       }, 20000);
     }
     renderPrevious();
+    /* Auch "Recent chats" im Dashboard haengt am Ladestand, nicht nur an der Liste. */
+    try { window.dispatchEvent(new CustomEvent('askmira:chats')); } catch(e){}
     return true;
   };
   window.askMiraSetProjects = function(projects){
@@ -9126,6 +9133,9 @@
   /* Die letzten Chats fuer "Recent chats". Die Reihenfolge ist die von Bubble -- ausser die Chats
      tragen einen Zeitstempel, dann der neueste zuerst. Mira selbst liest keinen; ob Bubble einen
      mitschickt, entscheidet der Workflow. */
+  /* Ist die Chatliste beantwortet -- auch wenn sie leer ist? Fuer "Recent chats" im Dashboard:
+     dort steht "No chats yet" genau dann, wenn Mira es weiss, statt nach einer eigenen Uhr. */
+  window.askMiraChatsGeladen = function(){ return !!_prevLoaded; };
   window.askMiraRecentChats = function(n){
     var zeit = function(c){
       var t = Date.parse(c && (c.updated_at || c.last_message_at || c.modified_date || c.created_at) || '');
