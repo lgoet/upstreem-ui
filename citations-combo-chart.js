@@ -497,6 +497,11 @@
           var g = bn.getAttribute("data-gran");
           if (g === curGran) return;
           curGran = g; GRAN_STORE[instanceId] = g; GRAN_PICKED[instanceId] = true; syncGranActive();
+          /* Immer auch als DOM-Ereignis (wie makeFire es fuer jede Komponente tut). Im LOKALEN
+             Modus (data-local="yes", die Seite hat den Chart eingebettet und laedt selbst) NUR
+             so: dann gibt es bewusst keinen Bubble-Workflow (08.10., Seiten-Komponenten). */
+          try { root.dispatchEvent(new CustomEvent("comboGranularity", { detail: { gran: g }, bubbles: true })); } catch(e){}
+          if (isYes(root.getAttribute("data-local"))) return;
           var fnName = root.getAttribute("data-gran-fn") || "bubble_fn_comboGranularity";
           var fn = resolveBubbleFn(fnName);
           if (typeof fn === "function"){ try { fn(g); } catch(e){} }

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261110;
+  var BUILD = 20261111;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -10951,6 +10951,16 @@
           payload = withTeam;
         }
       } catch(e){}
+      /* LOKALER MODUS (08.10., fuer die Seiten-Komponenten). Traegt die Wurzel data-local="yes",
+         hat eine Seite sie eingebettet und laedt selbst: das Ereignis geht NUR als DOM-Ereignis an
+         die Seite, nicht an Bubble -- und ohne Warnung ueber einen fehlenden Empfaenger, denn es
+         gibt bewusst keinen. Dieselbe Bedeutung wie data-local an Kalender und Filtern.
+         Pro ELEMENT: dieselbe URL-Tabelle in einem anderen Reusable traegt das Attribut nicht und
+         feuert weiter an Bubble wie bisher. */
+      if (root.getAttribute && isYes(root.getAttribute("data-local"))){
+        try { root.dispatchEvent(new CustomEvent(evtPrefix + fallbackName, { detail: payload, bubbles: true })); } catch(e){}
+        return true;
+      }
       var fnName = root.getAttribute(attr) || fallbackName;
       var fn = resolveBubbleFn(fnName);
       /* Der Rueckfall ohne Praefix findet nichts: Bubble veroeffentlicht bubble_fn_<name>, der
@@ -18559,6 +18569,129 @@
   }
   window.setUpstreemSupabaseUrl = setUpstreemSupabaseUrl;
 
+  /* ══ DER DIREKTE DATENWEG (08.10.) ════════════════════════════════════════════════════════════
+     Seiten-Komponenten (Citations zuerst) rufen ihre RPCs SELBST auf, ohne Bubble-Workflow und
+     ohne Run-JS-Schritt: POST {SUPA}/rest/v1/rpc/<name>, Schema app, mit dem Login des Nutzers.
+     Das ist derselbe Weg, den eine spaetere Web-App (Next.js) geht -- nur die Stelle, an der das
+     Token herkommt, ist hier Bubble-spezifisch.
+
+     WOHER DIE TEILE KOMMEN (gemessen 08.10. in der Konsole des Nutzers):
+       Adresse    window.ncgSupabaseURL (Zeroqode "Supabase Pro Kit"), sonst SUPA
+       Schluessel AUTH.key (Attribut/Setter), sonst window.ncgSupabasePublishableKey bzw.
+                  ncgSupabaseAPIKey -- er ist OEFFENTLICH, die Sicherheit liegt in der Datenbank
+                  (require_team_access gegen auth.uid())
+       Token      die Sitzung der Supabase-Bibliothek im localStorage, sb-<projekt>-auth-token,
+                  bei JEDEM Aufruf frisch gelesen; sonst AUTH.token
+     Das Token wird hier NIE selbst erneuert: das tut das Plugin, und zwei Stellen, die denselben
+     Refresh-Token einloesen, loggen den Nutzer aus. Laeuft es gerade ab, wartet der Aufruf kurz,
+     bis das Plugin ein neues hingelegt hat; kommt ein 401 "JWT expired", genau EIN zweiter Versuch.
+
+     Antwort: { ok, status, daten } oder { ok:false, status, fehler:{ code, message, hint, details } }.
+     Wirft nie. Ein Umschlag {"json":"<Text>"} (Bubble-Form, auch als [{json}]) wird ausgepackt.
+     opts: { schema ("app"), signal (AbortSignal), timeoutMs (30000) }. */
+  function rpcAdresse(){
+    var u = String(window.ncgSupabaseURL || "").trim().replace(/\/+$/, "");
+    return /^https:\/\/[a-z0-9.-]+$/i.test(u) ? u : SUPA;
+  }
+  function rpcSchluessel(){
+    return String(AUTH.key || window.ncgSupabasePublishableKey || window.ncgSupabaseAPIKey || "").trim();
+  }
+  function sitzungLesen(){
+    var ref = "";
+    try { ref = new URL(rpcAdresse()).hostname.split(".")[0]; } catch(e){}
+    if (!ref) return null;
+    try {
+      var v = JSON.parse(window.localStorage.getItem("sb-" + ref + "-auth-token") || "null");
+      var sz = v && (v.currentSession || v);
+      if (sz && sz.access_token) return { token: String(sz.access_token), ablauf: Number(sz.expires_at) || 0 };
+    } catch(e){}
+    return null;
+  }
+  /* Ein Token, das noch mindestens 15 Sekunden gilt. Sonst bis 4 Sekunden warten, ob das Plugin
+     auffrischt (es tut das selbst, auch nach dem Aufwachen eines Tabs), dann das beste, was da ist. */
+  function rpcToken(){
+    return new Promise(function(fertig){
+      var start = Date.now();
+      (function schau(){
+        var sz = sitzungLesen();
+        if (!sz) return fertig(AUTH.token || "");
+        if (!sz.ablauf || sz.ablauf - Date.now() / 1000 > 15) return fertig(sz.token);
+        if (Date.now() - start < 4000) return setTimeout(schau, 250);
+        fertig(sz.token);
+      })();
+    });
+  }
+  function rpcUmschlag(d){
+    var u = (isArr(d) && d.length === 1) ? d[0] : d;
+    if (u && typeof u === "object" && !isArr(u) && typeof u.json === "string" && Object.keys(u).length === 1){
+      try { return JSON.parse(u.json.replace(/\\\\/g, "\\")); } catch(e){ return undefined; }
+    }
+    return d;
+  }
+  function rpc(name, params, opts){
+    opts = opts || {};
+    name = String(name == null ? "" : name);
+    if (!/^[a-z0-9_]+$/i.test(name)){
+      return Promise.resolve({ ok: false, status: 0, fehler: { code: "", message: "invalid_function", hint: "", details: "" } });
+    }
+    var schema = opts.schema || "app";
+    function einmal(){
+      return rpcToken().then(function(token){
+        var schluessel = rpcSchluessel();
+        if (!token || !schluessel){
+          return { ok: false, status: 401, fehler: { code: "", message: "not authenticated", hint: token ? "no api key" : "no session", details: "" } };
+        }
+        var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+        var zeitAus = false;
+        var uhr = setTimeout(function(){ zeitAus = true; if (ctrl) ctrl.abort(); }, opts.timeoutMs || 30000);
+        if (opts.signal && ctrl){
+          if (opts.signal.aborted) ctrl.abort();
+          else opts.signal.addEventListener("abort", function(){ ctrl.abort(); });
+        }
+        return fetch(rpcAdresse() + "/rest/v1/rpc/" + name, {
+          method: "POST",
+          headers: { "apikey": schluessel, "Authorization": "Bearer " + token,
+                     "Content-Type": "application/json", "Accept": "application/json",
+                     "Content-Profile": schema, "Accept-Profile": schema },
+          body: JSON.stringify(params || {}),
+          signal: ctrl ? ctrl.signal : undefined
+        }).then(function(r){
+          return r.text().then(function(t){ clearTimeout(uhr); return { r: r, t: t }; });
+        }).then(function(x){
+          var d;
+          try { d = x.t ? JSON.parse(x.t) : null; } catch(e){ d = undefined; }
+          if (x.r.ok){
+            var aus = d === undefined ? undefined : rpcUmschlag(d);
+            if (aus === undefined) return { ok: false, status: x.r.status, fehler: { code: "", message: "unreadable_response", hint: "", details: "" } };
+            return { ok: true, status: x.r.status, daten: aus };
+          }
+          var f = d && typeof d === "object" ? d : {};
+          return { ok: false, status: x.r.status, fehler: {
+            code: String(f.code || ""), message: String(f.message || ("http_" + x.r.status)),
+            hint: String(f.hint || ""), details: String(f.details || "") } };
+        }, function(e){
+          clearTimeout(uhr);
+          var weg = e && e.name === "AbortError";
+          return { ok: false, status: 0, fehler: { code: "", hint: "", details: "",
+            message: weg ? (zeitAus ? "timeout" : "aborted") : "network" } };
+        });
+      });
+    }
+    return einmal().then(function(erg){
+      if (!erg.ok && erg.status === 401 && /jwt|expired/i.test(erg.fehler.message + " " + erg.fehler.code)){
+        return new Promise(function(w){ setTimeout(w, 1500); }).then(einmal);
+      }
+      return erg;
+    });
+  }
+  /* Fuer die Konsole: ist der Weg bereit? Nennt nie das Token selbst. */
+  function rpcBereit(){
+    var sz = sitzungLesen();
+    return { adresse: rpcAdresse(), schluessel: !!rpcSchluessel(), sitzung: !!sz,
+             gueltigNochSek: sz && sz.ablauf ? Math.round(sz.ablauf - Date.now() / 1000) : null,
+             tokenAusBubble: !!AUTH.token };
+  }
+
   /* ---- Verkleinern ----------------------------------------------------------------------------
      Auf KANTE kantePx, mittig beschnitten, als PNG. Zwei Gruende, und der zweite ist der
      wichtigere:
@@ -21836,6 +21969,8 @@
     variationRing: variationRing,
     granAvailability: granAvailability,
     granFuerZeitraum: granFuerZeitraum,
+    rpc: rpc,
+    rpcBereit: rpcBereit,
     normGran: normGran,
     granRangeDays: granRangeDays,
     granAusDaten: granAusDaten,
