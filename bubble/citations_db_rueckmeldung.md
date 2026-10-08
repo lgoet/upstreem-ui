@@ -13,7 +13,7 @@ Oberfläche geprüft. **Freigabe zum Bau** mit den Entscheidungen und Ergänzung
 | C2 | **b: wie heute.** Vorperiode `greatest(least(Tage / 2, 30), 1)` Tage direkt vor `date_from`. Das schont die Rechenzeit und gilt so in der ganzen App. In `meta` bitte `prev_from` und `prev_to` mitliefern, damit die Oberfläche den Vergleichszeitraum nennen kann. |
 | C3 | **Für den Bau nicht nötig.** Die neue Seite ruft ausschließlich die neuen `_v1`-Funktionen. Welche Altfunktionen Bubble heute ruft, klären wir beim Abschalten der alten Seite; dann räumst du auf. |
 | C4 | **Weglassen.** Die Oberfläche zeigt weder Trending noch Fading (im Code geprüft). |
-| C5 | **30 Tage.** Die Seite schickt den Zeitraum ohnehin immer mit; der Default gilt nur für Aufrufe ohne Datum. |
+| C5 | **Nichts ändern.** Den Zeitraum bestimmt immer der Kalender der Oberfläche (mit „Apply to all“); die Seite schickt `p_date_from`/`p_date_to` bei jedem Aufruf. Nimm als Default, was die bestehenden Citations-Funktionen heute haben, damit nichts Neues entsteht. |
 | C6 | **Sofort**, als eigener Hotfix **vor** dem Bau. Mit Testabfrage, dass n8n (`service_role`) weiter darf und `anon`/`authenticated` nicht mehr. |
 
 ## 2. Aufruf und Antwortform
