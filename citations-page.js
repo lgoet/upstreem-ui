@@ -510,12 +510,14 @@
         try { window.setDomainsTablePages(ids.udt, domain, l || [], rid); } catch (e) {}
       });
     }
-    /* Aktualisieren: beide sofort in den Ladezustand, dann den Cache der DB leeren, dann beide
-       frisch und gemeinsam laden. Scheitert das Leeren, wird trotzdem neu geladen. */
+    /* Aktualisieren: Chart und Tabelle frisch von der DB holen (am Speicher dieser Seite vorbei),
+       gemeinsam wie jedes Laden. KEIN clear_citations_cache_v1 (08.10.: "das ist falsch") -- der
+       Cache der DB haelt sich selbst frisch (stale-while-revalidate, Vertrag Abschnitt 5); ihn zu
+       leeren hiesse nur, dass die naechste Abfrage kalt rechnet (bis 6s im grossen Team). */
     function aktualisieren() {
       if (!team() || !bereit()) return;
-      var vorab = UC.rpc(D.FN.clear, { p_team: team() }).then(function () { lader.leeren(); });
-      bedarf({ frisch: true, vorab: vorab });
+      lader.leeren();
+      bedarf({ frisch: true });
     }
 
     /* Teamwechsel ohne Neuladen: andere Daten, also nichts aus dem Speicher weiterzeigen. */
