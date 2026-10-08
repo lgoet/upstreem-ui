@@ -31,14 +31,14 @@
      und navigiert selbst. In Bubble gibt es dann:
        - KEINEN Pageload-Workflow, keinen API-Call, kein Run JS,
        - KEINE Elemente/Workflows fuer uivAccept, uivSignup, uivDashboard, uivBack,
-       - nur noch ZWEI JavaScript-to-Bubble-Elemente:
-           uivLogout  Abmelden (macht das Plugin), Workflow wie bisher.
-           uivTeam    NACH dem Annehmen, Wert {"team_id": "..."} (Typ text, Publish value an).
-                      Das Annehmen setzt das aktive Team NICHT (Vertrag 08.10.). Der Workflow
-                      macht dasselbe wie "Switch" in der Sidebar (usnTeam): das Team des Nutzers
-                      auf team_id setzen, dann zum Dashboard navigieren. team_id per Regex
-                      (?<="team_id":")[^"]+ aus dem Wert. Fehlt das Element, geht die Seite
-                      direkt zu data-dashboard-url -- dann aber im bisherigen Team.
+       - nur noch EIN JavaScript-to-Bubble-Element: uivLogout (Abmelden macht das Plugin),
+         Workflow wie bisher.
+     Nach dem Annehmen geht die Seite zu data-dashboard-url, wie vorher der Accept-Workflow.
+     Das aktive Team setzt das Annehmen nicht (wie die alte Funktion); die Hauptseite holt beim
+     Laden ohnehin alles selbst. KEIN Teamwechsel-Workflow auf dieser Seite noetig.
+     (Optional und NICHT empfohlen: data-team-fn -> Ereignis uivTeam {"team_id"} nach dem
+     Annehmen statt der Navigation. Nur fuer den Fall, dass die Einladung je das Team aktiv
+     setzen soll.)
      Gerufen werden (Vertrag: bubble/invite_db_vertrag.md):
        get_team_invite_by_token_v3(p_token)     beim Aufbau; ohne Anmeldung als anon
        accept_team_invite_by_token_v2(p_token)  beim Klick auf "Accept invite"; nur angemeldet
@@ -49,7 +49,7 @@
        - Gueltig und ?log leer: die Seite schreibt ?mail=<eingeladene Adresse> in die Adresse.
        - ?log=yes (zurueck von der Anmeldung) und angemeldet: die Seite nimmt sofort an, ohne
          Klick, und entfernt log aus der Adresse.
-       - Nach dem Annehmen: Haken, "Welcome to upstreem", dann uivTeam (oder data-dashboard-url).
+       - Nach dem Annehmen: Haken, "Welcome to upstreem", dann data-dashboard-url.
        - Angemeldet mit einem anderen Konto als dem eingeladenen (email_matches false): kein
          "Accept", sondern der Satz dazu und "Log out" daneben. log=yes nimmt dann nicht an.
        - "Sign up" geht nach data-signup-url mit mode=signup, token und mail.
@@ -247,8 +247,7 @@
      data-dashboard-url="DASHBOARD_URL"
      data-signup-url="SIGNUP_URL"
      data-signin-url="SIGNIN_URL"
-     data-logout-fn="bubble_fn_uivLogout"
-     data-team-fn="bubble_fn_uivTeam"></div>
+     data-logout-fn="bubble_fn_uivLogout"></div>
 
 <script>
 (function(){
