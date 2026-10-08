@@ -1,0 +1,48 @@
+<!--
+  UPSTREEM — CITATIONS-SEITE als EINE Komponente (Praefix ucs), 08.10.2026
+
+  WOHIN: ein HTML-Element, volle Breite, ohne eigenes Polster. Die Komponente baut ALLES selbst:
+  Seitenkopf (Krume "Citations", Reiter Domains / URLs, Aktualisieren), Kalender, Filterleiste,
+  Combo-Chart und die Tabelle des Reiters. Chart und Tabellen sind die bestehenden Bausteine
+  (citations-combo-chart, domains-table, urls-table) im LOKALEN Modus -- dieselben Bausteine an
+  anderen Orten der App (Drawer, andere Reusables) bleiben davon unberuehrt.
+
+  ── Was Bubble NICHT mehr tut ─────────────────────────────────────────────────
+  Keine Workflows, keine API-Calls, kein Run JS, keine JavaScript-to-Bubble-Elemente fuer diese
+  Seite. Die Komponente ruft die vier RPCs selbst (UC.rpc, Nutzer-JWT aus dem Supabase Pro Kit):
+      cached_citations_overview_v1      Chart (Zeitreihe, Typ-Verteilung)
+      cached_citations_domains_v1       Domains-Tabelle
+      cached_citations_urls_v1          URLs-Tabelle
+      cached_citations_domain_urls_v1   Drilldown "Show Pages" einer Domain
+      clear_citations_cache_v1          der Aktualisieren-Knopf
+  Vertrag: bubble/citations_v1_vertrag.md.
+  Voraussetzungen auf der Seite: das Auth-Element des Supabase Pro Kit (Adresse, Schluessel,
+  Sitzung) und das Header-Script (laedt citations-data.js und citations-page.js).
+
+  ── Was die Seite selbst regelt ───────────────────────────────────────────────
+  - Team aus setUpstreemTeam (wie jede Seite), Marken aus setUpstreemBrands (Schalter "<Marke>
+    mentioned?" und das Marken-Menue), Models/Markets/Topics aus den globalen Stores.
+  - Zeitraum aus dem eigenen Kalender; "Apply everywhere" gilt app-weit wie bisher.
+  - Die Stufe des Charts (Tag/Woche/Monat) folgt jedem neuen Zeitraum (UC.granFuerZeitraum,
+    dieselbe Regel wie SET GRAN), dazwischen gilt der Klick im Chart. Der SET-GRAN-Workflow wird
+    fuer DIESE Seite nicht gebraucht.
+  - Models, Markets, Topics und das Filter-Menue der Tabellen gelten fuer beide Reiter gemeinsam.
+  - Reiter in der Adresse: ?cit=urls (Domains steht nicht drin). Zurueck/Vor wechselt den Reiter.
+  - Zeilenklick: openDrawer("domain", domain) bzw. openDrawer("url", url) -- die Drawer der App,
+    ohne Workflow (wie im Agentic Dashboard).
+
+  ── Attribute ─────────────────────────────────────────────────────────────────
+  data-instance   optional, Vorgabe "citations_page". Nur noetig, wenn die Seite zweimal steht.
+  data-adresse    optional, "aus": die Komponente laesst die Adresse in Ruhe (?cit).
+  Kein data-isdark, kein data-cdn-pin: das Thema setzt core, den Pin das Header-Script.
+
+  ── Umstellen: erst parallel, dann tauschen ───────────────────────────────────
+  1. Das Element auf eine eigene Test-Ansicht oder Test-Seite (mit Header-Script und Auth-Element)
+     stellen und neben der alten Citations-Ansicht vergleichen: gleiche Zeitraeume, gleiche Filter,
+     dieselben Zahlen?
+  2. Stimmt alles: in #view-citations die alten Elemente (Seitenkopf, Kalender, Filterleiste,
+     Combo-Chart, Domains- und URLs-Tabelle) samt ihrer Workflows durch DIESES eine Element
+     ersetzen. Die alten Elemente in anderen Ansichten und Drawern bleiben stehen.
+  3. Die alten Citations-RPCs bleiben in der Datenbank, bis nichts mehr sie ruft (Vertrag, C3).
+-->
+<div class="up-root ucs-root" data-instance="citations_page"></div>

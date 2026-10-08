@@ -1,0 +1,19 @@
+/* upstreem citations-page.css -- die Citations-Seite als eine Komponente (08.10.). Praefix ucs.
+
+   Kopf, Reiter und Filterzeile mit denselben Werten wie Shopping und Ads (shopping.css, ads.css):
+   der kompakte Kopf aus core (.ucs-pagehead, .up-root.ucs-root .up-ph-nav), Kalender fest, die
+   Filterleiste nimmt den Rest. Chart und Tabellen bringen ihre eigene CSS mit
+   (citations-combo-chart.css, domains-table.css, urls-table.css) -- hier steht nur, wie sie
+   untereinander stehen. */
+
+.ucs-root { display: block; }
+.ucs-root .ucs-pagehead { padding: 8px 0; }
+.ucs-filterzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 16px; }
+.ucs-filterzeile > .udr-root { flex: 0 0 auto; }
+.ucs-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
+/* 24 zwischen Chart und Tabelle: "innerhalb einer Gruppe" nach dem Entwurf von Shopping -- beide
+   gehoeren zur selben Auswahl (der Chart zeigt die ersten sieben Zeilen der Tabelle). */
+.ucs-main { display: flex; flex-direction: column; gap: 24px; padding: 24px 0 64px; min-width: 0; }
+.ucs-chart, .ucs-tab { min-width: 0; }
+/* hidden gegen das display der eigenen Regel: der Reiter, der nicht offen ist, steht nicht da. */
+.ucs-root .ucs-tab[hidden] { display: none; }

@@ -5059,21 +5059,21 @@
   margin-left: calc(-1 * var(--up-ph-zug-l, 0px)); margin-right: calc(-1 * var(--up-ph-zug-r, 0px));
   width: calc(100% + var(--up-ph-zug-l, 0px) + var(--up-ph-zug-r, 0px)); }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-desc,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead) .up-ph-desc { display: none; }
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead) .up-ph-desc { display: none; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-top {
   align-items: center; min-height: var(--up-h-btn); padding-bottom: 8px; position: relative; }
 /* Die Linie laeuft bis an die Kante der Bubble-Gruppe um den Kopf, also so weit UEBER das Element
    hinaus, wie die Gruppe Polster hat -- 16 oder 0, je nachdem, ob es in Bubble schon raus ist.
    UC.makePageCrumbs misst das (--up-ph-rand-l/-r); ohne Messung liegt sie unter dem Element. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-top::after,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead)::after {
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead)::after {
   content: ""; position: absolute; bottom: 0; height: 1px; pointer-events: none;
   left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px));
   background: var(--vc-border); }
 /* Die Ueberschrift als Krumenzeile: 14px, auf der Mitte der 32px-Zeile. Vor dem JS steht hier der
    Seitenname aus der Vorlage -- in derselben Groesse, also ohne Sprung. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-heading,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead) .up-ph-heading {
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead) .up-ph-heading {
   display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0;
   font-size: var(--up-fs-l); font-weight: 500; line-height: var(--up-h-btn); letter-spacing: 0;
   color: var(--vc-third); white-space: nowrap; }
@@ -5099,19 +5099,23 @@
    hinaus. Die Luecke wird dafuer 25 -- vom Textende bis zum naechsten Zeichen bleiben es
    3 + 25 = 28, kein Reiter rueckt. ::before links 13, rechts 12: zusammen genau die Luecke,
    ohne halbe Pixel und ohne dass sich zwei Reiter ueberlappen. */
+.up-root.ucs-root .up-ph-nav,
 .up-root.uad-root .up-ph-nav,
 .up-root.ush-root .up-ph-nav,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav { margin-top: 0; gap: 25px; }
+.up-root.ucs-root .up-ph-navitem,
 .up-root.uad-root .up-ph-navitem,
 .up-root.ush-root .up-ph-navitem,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem {
   height: calc(var(--up-h-btn) + 16px); padding: 0 3px 0 0; position: relative; }
+.up-root.ucs-root .up-ph-navitem::before,
 .up-root.uad-root .up-ph-navitem::before,
 .up-root.ush-root .up-ph-navitem::before,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem::before {
   content: ""; position: absolute; top: 0; bottom: 0; left: -13px; right: -12px; }
 /* Der ERSTE Reiter reicht nach links hoechstens bis an die Kante der Gruppe -- bei einem Einzug
    unter 13 laege sonst ein Teil der Klickflaeche ueber dem Rand der Seitenleiste. */
+.up-root.ucs-root .up-ph-navitem:first-child::before,
 .up-root.uad-root .up-ph-navitem:first-child::before,
 .up-root.ush-root .up-ph-navitem:first-child::before,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem:first-child::before { left: calc(-1 * min(13px, var(--up-ph-rand-l, 0px))); }
@@ -5120,15 +5124,19 @@
    alte Geometrie: 4px Luecke und 12px Seitenpolster, sonst laegen die gestreckten Reiter 28px
    auseinander. Und keine verlaengerte Klickflaeche: bei 4px Luecke griffe sie 10px in den
    Nachbarn, und der spaetere Nachbar liegt oben -- ein Klick rechts in Reiter 1 waehlte Reiter 2. */
+.up-root.ucs-root.is-narrow .up-ph-nav,
 .up-root.uad-root.is-narrow .up-ph-nav,
 .up-root.ush-root.is-narrow .up-ph-nav,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav { gap: 4px; }
+.up-root.ucs-root.is-narrow .up-ph-navitem,
 .up-root.uad-root.is-narrow .up-ph-navitem,
 .up-root.ush-root.is-narrow .up-ph-navitem,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem { padding: 0 15px 0 12px; }
+.up-root.ucs-root.is-narrow .up-ph-navitem::before,
 .up-root.uad-root.is-narrow .up-ph-navitem::before,
 .up-root.ush-root.is-narrow .up-ph-navitem::before,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem::before { content: none; }
+.up-root.ucs-root .up-ph-nav::after,
 .up-root.uad-root .up-ph-nav::after,
 .up-root.ush-root .up-ph-nav::after,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav::after {
@@ -5166,14 +5174,14 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    Beschreibung, Linie und Ueberschrift teilen sich die Regeln des kompakten Kopfs oben. Hoehe
    und Luft der Zeile stehen in der Komponente (teams.css, prompt-research.css), weil dort ihr
    Regler data-head-top sitzt; hier nur, was keinen Regler braucht. */
-.up-root:is(.uts-root, .upr-root, .uev-root, .ush-root, .uad-root).has-crumbs {
+.up-root:is(.uts-root, .upr-root, .uev-root, .ush-root, .uad-root, .ucs-root).has-crumbs {
   padding-left: var(--up-ph-innen-l, 0px); padding-right: var(--up-ph-innen-r, 0px);
   margin-left: calc(-1 * var(--up-ph-zug-l, 0px)); margin-right: calc(-1 * var(--up-ph-zug-r, 0px));
   width: calc(100% + var(--up-ph-zug-l, 0px) + var(--up-ph-zug-r, 0px)); }
 /* Die Kopfzeile steht rechts bei 8 wie in jedem Seitenkopf, der Inhalt der Komponente darunter
    bei 16: also zieht sie sich um die Differenz nach aussen (--up-ph-kopfzug-l/-r aus
    UC.makePageCrumbs, ohne JS 0; links ist die Differenz heute 0). */
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead) { align-items: center; min-height: var(--up-h-btn); position: relative;
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead) { align-items: center; min-height: var(--up-h-btn); position: relative;
   margin-left: calc(-1 * var(--up-ph-kopfzug-l, 0px)); margin-right: calc(-1 * var(--up-ph-kopfzug-r, 0px)); }
 
 /* ---------- DIE KOMPONENTEN TRAGEN IHR SEITENPOLSTER SELBST (29.09. angefordert) ----------
@@ -5195,6 +5203,11 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 :is(#view-dashboard, #view-prompts, #view-citations, #view-brands)
   .up-root:is(.vot-root, .tcd-root, .combo-root, .upt-root, .urt-root, .utm-root,
               .uut-root, .udt-root, .ubo-root, .udb-root) { padding-left: 16px; padding-right: 16px; }
+/* IN DER CITATIONS-SEITE (citations-page.js, 08.10.) stehen Chart und Tabellen im Inhalt der
+   Komponente, und den legt UC.makePageCrumbs schon auf 16 vom Rand (--up-ph-innen-l/-r). Die 16
+   oben kaemen dazu -- 32 statt 16. Mit der Kennung, sonst verliert die Regel gegen die obere. */
+:is(#view-dashboard, #view-prompts, #view-citations, #view-brands) .ucs-root
+  .up-root:is(.combo-root, .uut-root, .udt-root) { padding-left: 0; padding-right: 0; }
 
 /* ---------- DIESELBEN 16px IN DEN FUENF UEBRIGEN ANSICHTEN (29.09. nachmittags) ----------
    Mit den Koepfen von Performance, Opportunities, Prompt Research, Teams und Settings muss auch

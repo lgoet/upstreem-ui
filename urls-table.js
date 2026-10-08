@@ -13,7 +13,7 @@
   var __uutBootQueue = window.__uutBootQueue = window.__uutBootQueue || [];
   if (!window.__uutBootStubbed){
     window.__uutBootStubbed = true;
-    ["renderUrlsTable", "setUrlsTableLoading", "resetUrlsTable", "setUrlsTableBrands"].forEach(function(n){
+    ["renderUrlsTable", "setUrlsTableLoading", "resetUrlsTable", "setUrlsTableBrands", "setUrlsTableFilters"].forEach(function(n){
       window[n] = function(){ __uutBootQueue.push([n, arguments]); };
     });
   }
@@ -1567,6 +1567,27 @@
         if (!state.extLoading){ state.loading = false; state.softReload = false; dim.end(); }   // "fertig" beendet auch ein internes Nachladen
         persist(); render();
       },
+      /* GEMEINSAMER FILTERSTAND (08.10., citations-page.js): die Citations-Seite fuehrt das
+         Filter-Menue fuer Domains und URLs gemeinsam. Waehlt man in der einen Tabelle, muss das
+         Menue der anderen dieselbe Auswahl ZEIGEN -- sonst steht dort "All Types", waehrend die
+         Daten laengst gefiltert sind. Setzt nur den sichtbaren Stand und FEUERT NICHTS: die Seite
+         kennt die Auswahl schon. Geaendert wird nur, was mitkommt (undefined = bleibt). */
+      setFilters: function(o){
+        o = o || {};
+        function satz(v){
+          var a = Array.isArray(v) ? v : String(v == null ? "" : v).split(","), s = {};
+          a.forEach(function(k){ k = String(k == null ? "" : k).trim(); if (k) s[k] = true; });
+          return s;
+        }
+        if (o.citation_types !== undefined){ state.appliedSel = satz(o.citation_types); state.filterSel = satz(o.citation_types); }
+        if (o.url_types !== undefined){ state.appliedUrlSel = satz(o.url_types); state.filterUrlSel = satz(o.url_types); }
+        if (o.citation_types !== undefined || o.url_types !== undefined){ populateFilter(); syncFilterBadge(); }
+        if (o.brands !== undefined){ state.mentionApplied = satz(o.brands); state.mentionSel = satz(o.brands); populateMent(); syncMentLabel(); }
+        if (o.brand_mentioned !== undefined){ var b = String(o.brand_mentioned || ""); state.brandMentioned = b === "yes" || b === "no" ? b : ""; syncBrand(); }
+        state.page = 1;
+        persist(); renderPager();
+        return true;
+      },
       /* RESET: alles, was bestimmt, WELCHE Zeilen man sieht und in welcher Reihenfolge, zurueck
          auf die Vorgabe -- Suche, beide Typ-Listen, "Brand mentioned", die Marken-Auswahl,
          Sortierung, Seite und Zeilen je Seite. Was dagegen einstellt, WIE die Tabelle aussieht,
@@ -1666,6 +1687,11 @@
   /* Fills the "Mentioned brands" dropdown. Accepts an array or a JSON string of
      {company_id, name, logo_url} (id/brand_id/logo/favicon also accepted). Routed
      through update() so it lands in state.brands and re-renders the menu. */
+  function doFilters(id, o){
+    if (typeof o === "string"){ try { o = JSON.parse(o); } catch(e){ o = null; } }
+    var ctrl = id ? resolve(id) : null;
+    return ctrl && ctrl.setFilters ? ctrl.setFilters(o || {}) : false;
+  }
   function doBrands(id, brands){
     var list = brands;
     if (typeof list === "string"){ try { list = JSON.parse(list); } catch(e){ list = []; } }
@@ -1687,7 +1713,8 @@
     resolveLocal: "__uutResolveLocal",
     queue: "__uutBootQueue",
     initRoot: initRoot,
-    api: { renderUrlsTable: doRender, setUrlsTableLoading: doLoading, resetUrlsTable: doReset, setUrlsTableBrands: doBrands },
+    api: { renderUrlsTable: doRender, setUrlsTableLoading: doLoading, resetUrlsTable: doReset, setUrlsTableBrands: doBrands,
+           setUrlsTableFilters: doFilters },
     forwardShape: { renderUrlsTable: "params", resetUrlsTable: "id" }
   });
   function rootsWithId(id){ return mount.rootsWithId(id); }

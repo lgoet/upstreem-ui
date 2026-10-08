@@ -14,7 +14,7 @@
   if (!window.__udtBootStubbed){
     window.__udtBootStubbed = true;
     ["renderDomainsTable", "setDomainsTableLoading", "resetDomainsTable", "setDomainsTableBrands",
-     "setDomainsTablePages"].forEach(function(n){
+     "setDomainsTablePages", "setDomainsTableFilters"].forEach(function(n){
       window[n] = function(){ __udtBootQueue.push([n, arguments]); };
     });
   }
@@ -1927,6 +1927,25 @@
         }
         return true;
       },
+      /* GEMEINSAMER FILTERSTAND (08.10., citations-page.js): die Citations-Seite fuehrt das
+         Filter-Menue fuer Domains und URLs gemeinsam. Waehlt man in der einen Tabelle, muss das
+         Menue der anderen dieselbe Auswahl ZEIGEN -- sonst steht dort "All Types", waehrend die
+         Daten laengst gefiltert sind. Setzt nur den sichtbaren Stand und FEUERT NICHTS: die Seite
+         kennt die Auswahl schon. Geaendert wird nur, was mitkommt (undefined = bleibt). */
+      setFilters: function(o){
+        o = o || {};
+        function satz(v){
+          var a = Array.isArray(v) ? v : String(v == null ? "" : v).split(","), s = {};
+          a.forEach(function(k){ k = String(k == null ? "" : k).trim(); if (k) s[k] = true; });
+          return s;
+        }
+        if (o.citation_types !== undefined){ state.appliedSel = satz(o.citation_types); state.filterSel = satz(o.citation_types); populateFilter(); syncFilterBadge(); }
+        if (o.brands !== undefined){ state.mentionApplied = satz(o.brands); state.mentionSel = satz(o.brands); populateMent(); syncMentLabel(); }
+        if (o.brand_mentioned !== undefined){ var b = String(o.brand_mentioned || ""); state.brandMentioned = b === "yes" || b === "no" ? b : ""; syncBrand(); }
+        state.page = 1;
+        persist(); renderPager();
+        return true;
+      },
       reset: function(){
         state.query = ""; elSearchIn.value = ""; elSearch.classList.remove("is-open");
         state.filterSel = {}; state.appliedSel = {};
@@ -1989,6 +2008,11 @@
   function doLoading(id, on){ var c = resolve(id); if (!c) return false; c.setLoading(on); return true; }
   function doReset(id){ var c = resolve(id); if (!c) return false; return c.reset(); }
 
+  function doFilters(id, o){
+    if (typeof o === "string"){ try { o = JSON.parse(o); } catch(e){ o = null; } }
+    var ctrl = id ? resolve(id) : null;
+    return ctrl && ctrl.setFilters ? ctrl.setFilters(o || {}) : false;
+  }
   function doBrands(id, brands){
     var list = brands;
     if (typeof list === "string"){ try { list = JSON.parse(list); } catch(e){ list = []; } }
@@ -2039,7 +2063,7 @@
     queue: "__udtBootQueue",
     initRoot: initRoot,
     api: { renderDomainsTable: doRender, setDomainsTableLoading: doLoading, resetDomainsTable: doReset,
-           setDomainsTableBrands: doBrands, setDomainsTablePages: doPages },
+           setDomainsTableBrands: doBrands, setDomainsTablePages: doPages, setDomainsTableFilters: doFilters },
     forwardShape: { renderDomainsTable: "params", resetDomainsTable: "id" }
   });
   function rootsWithId(id){ return mount.rootsWithId(id); }
