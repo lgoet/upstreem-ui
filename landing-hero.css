@@ -801,6 +801,20 @@
    Die Zahl steht als Faktor an EINER Stelle -- performance-radar liest sie fuer den Versatz der
    Zellen und die CSS fuer die Dauer, sonst laufen Versatz und Dauer auseinander. */
 .ulh-perf .uhm-grid { --uhm-pop: 2; }
+/* Die Themen links als Punkt mit Text, ohne Chip und ohne Emoji -- der Stil, den die Seite schon
+   zeigt. Stand bis zum 08.10. in performance-radar.css fuer App UND Seite; die App zeigt seitdem
+   den Topic-Chip (gewuenscht), die Seite bleibt, wie sie war. */
+.ulh-perf .uhm-rowhead .up-topicchip {
+  background: none; border: 0; padding: 0; gap: 8px; max-width: 100%;
+}
+.ulh-perf .uhm-rowhead .up-topicchip::before {
+  content: ""; width: 8px; height: 8px; flex: 0 0 8px; border-radius: 999px;
+  background: var(--ust-tag-color, var(--vc-muted));
+}
+.ulh-perf .uhm-rowhead .up-topicchip-e { display: none; }
+.ulh-perf .uhm-rowhead .up-topicchip-lbl {
+  color: var(--vc-text); font-weight: 500; font-size: 12.5px;
+}
 /* Keine Karten an den Zellen. Die Szene zeigt zwei Ansichten und braucht keine dritte Bewegung,
    und was hier ohnehin niemand anfassen kann, soll auch nicht auf eine Maus reagieren, die nur
    ueber das Fenster faehrt: ohne mouseover kein Tooltip -- genau darauf hoert die Komponente --

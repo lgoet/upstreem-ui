@@ -58,25 +58,10 @@
 .uhm-grid { display: grid; align-items: stretch; min-width: min-content; }
 
 /* ---------- die Themen links ----------
-   Ein farbiger Punkt und der Name in der TEXTfarbe -- kein Chip, kein Emoji. Der Chip aus core
-   (.up-topicchip) bleibt das Markup, hier wird nur sein Aussehen fuer diese eine Stelle
-   umgestellt: seine Farbe steckt in --ust-tag-color und wird zum Punkt.
-   Wortgleich uebernommen aus landing-hero.css (.ulh-perf .uhm-rowhead ...), wo es zuerst stand.
-   Dort ist es jetzt raus: dieselben Zeilen an zwei Orten sind die naechste Stelle, die
-   auseinanderlaeuft -- und gewuenscht ist ausdruecklich, dass die App so aussieht wie die Seite.
-   Streng auf .uhm-rowhead begrenzt: derselbe Chip steht auch im Themen-Waehler dieser Komponente
-   (.uhm-pick-col) und ist dort ein Chip mit Flaeche, weil man ihn dort anklickt. */
-.uhm-rowhead .up-topicchip {
-  background: none; border: 0; padding: 0; gap: 8px; max-width: 100%;
-}
-.uhm-rowhead .up-topicchip::before {
-  content: ""; width: 8px; height: 8px; flex: 0 0 8px; border-radius: 999px;
-  background: var(--ust-tag-color, var(--vc-muted));
-}
-.uhm-rowhead .up-topicchip-e { display: none; }
-.uhm-rowhead .up-topicchip-lbl {
-  color: var(--vc-text); font-weight: 500; font-size: 12.5px;
-}
+   Der Topic-Chip der App, unveraendert (08.10.: "unser neues Topic-Styling, da gab es bisher noch
+   Sonderregeln"). Bis hier machte eine Sonderregel daraus einen Punkt mit Text, ohne Flaeche und
+   ohne Emoji, in 12.5px. Die Landingpage behaelt diesen Punkt-Stil: er steht jetzt wieder dort
+   (landing-hero.css, .ulh-perf .uhm-rowhead), die App aendert die Seite nicht mit. */
 
 /* ---------- column headers (brands) ---------- */
 .uhm-colhead {

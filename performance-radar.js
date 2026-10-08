@@ -290,7 +290,6 @@
     if (!cell){ hideTip(); return; }
     var el = ensureTip();
     el.setAttribute("data-theme", isDark ? "dark" : "light");
-    var hex = isDark ? (topic.hexDark || topic.hexLight) : (topic.hexLight || topic.hexDark);
     el.innerHTML =
       '<div class="uhm-tip-head">' +
         '<span class="up-logo-box' + (company.logo ? " has-img" : "") + '">' +
@@ -299,7 +298,7 @@
         '</span>' +
         '<span class="uhm-tip-name">' + esc(company.name || "") + '</span>' +
       '</div>' +
-      '<div class="uhm-tip-topic">' + topicChipHtml(topic, hex, true) + '</div>' +
+      '<div class="uhm-tip-topic">' + topicChipHtml(topic, isDark) + '</div>' +
       '<div class="uhm-tip-sep"></div>' +
       '<div class="uhm-tip-rows">' + metricRowsHtml(cell) + '</div>';
 
@@ -327,10 +326,19 @@
     })(performance.now());
   }
 
-  /* core.css's .up-topicchip — THE topic chip for the whole app. Nothing chip-shaped is drawn
-     locally; only the colour custom property is supplied. */
-  function topicChipHtml(topic, hex, isStatic){
-    return '<span class="up-topicchip' + (isStatic ? " is-static" : "") + '" style="--ust-tag-color:' + esc(hex || "#6b7280") + '">' +
+  /* DER TOPIC-CHIP DER APP (08.10.: "unser neues Topic-Styling, da gab es bisher noch
+     Sonderregeln"): UC.topicChipHtml -- Name, Farbe und Emoji kommen per Id aus dem Topic-Store,
+     wie in Ads, Events und Response Detail. Bis hier stand der Chip lokal gebaut (Farbe nur aus der
+     Nutzlast), und die Themenspalte machte per CSS einen Punkt ohne Emoji daraus. Der Rueckfall
+     ohne core-Kit ist der alte Bau. */
+  function topicChipHtml(topic, isDark){
+    if (UC.topicChipHtml){
+      var h = UC.topicChipHtml({ id: topic.id, name: topic.name, emoji: topic.emoji,
+                                 hex_light: topic.hexLight, hex_dark: topic.hexDark }, { dunkel: !!isDark });
+      if (h) return h;
+    }
+    var hex = isDark ? (topic.hexDark || topic.hexLight) : (topic.hexLight || topic.hexDark);
+    return '<span class="up-topicchip is-static" style="--ust-tag-color:' + esc(hex || "#6b7280") + '">' +
       (topic.emoji ? '<span class="up-topicchip-e">' + esc(topic.emoji) + '</span>' : "") +
       '<span class="up-topicchip-lbl">' + esc(topic.name == null ? "" : topic.name) + '</span>' +
     '</span>';
@@ -482,7 +490,17 @@
        eine Marke, ist die neue Liste hier sofort da -- ohne Reload und ohne dass die mutierende
        Stelle wissen muss, dass es diesen Picker gibt. Die Abmeldung haengt am root, core raeumt
        tote Abonnenten selbst weg. */
-    if (UC.onTopics) UC.onTopics(function(){ syncAvailable(); if (pickPop.isOpen()) populatePicker(); }, root);
+    /* Aendert sich der Topic-Store (eine Topic bearbeitet: Name, Farbe, Emoji), ziehen auch die
+       Chips der Themenspalte nach -- sie lesen ihn seit dem 08.10. (UC.topicChipHtml). Nur die
+       Koepfe werden neu geschrieben, das Raster bleibt stehen. */
+    function zeilenkoepfeNeu(){
+      root.querySelectorAll(".uhm-rowhead[data-topic]").forEach(function(el){
+        var id = el.getAttribute("data-topic");
+        var t = state.topics.filter(function(x){ return x.id === id; })[0];
+        if (t) el.innerHTML = topicChipHtml(t, state.isDark);
+      });
+    }
+    if (UC.onTopics) UC.onTopics(function(){ syncAvailable(); zeilenkoepfeNeu(); if (pickPop.isOpen()) populatePicker(); }, root);
     if (UC.onBrands) UC.onBrands(function(){ syncAvailable(); if (pickPop.isOpen()) populatePicker(); }, root);
 
     if (UC.makeTooltips) UC.makeTooltips(root, function(){ return state.isDark; });
@@ -727,8 +745,7 @@
     }
 
     function rowHeadHtml(t){
-      var hex = state.isDark ? (t.hexDark || t.hexLight) : (t.hexLight || t.hexDark);
-      return '<div class="uhm-rowhead" data-topic="' + esc(t.id) + '">' + topicChipHtml(t, hex, true) + '</div>';
+      return '<div class="uhm-rowhead" data-topic="' + esc(t.id) + '">' + topicChipHtml(t, state.isDark) + '</div>';
     }
 
     /* Alles, was eine Zelle ausmacht -- Fuellung, Schriftfarbe, Text, Gewichtungsbalken -- in
@@ -1031,10 +1048,7 @@
                  '</span><span class="up-ment-name">' + esc(c.name) + '</span>';
         });
       var topics = pickColumnHtml("topics", "Topics", state.availTopics, state.selTopics, state.topicLimit,
-        function(t){
-          var hex = state.isDark ? (t.hexDark || t.hexLight) : (t.hexLight || t.hexDark);
-          return topicChipHtml(t, hex, true);
-        });
+        function(t){ return topicChipHtml(t, state.isDark); });
       /* Reset zeigt sich, sobald IRGENDETWAS vom Ausgangszustand abweicht -- der noch nicht
          abgeschickte Entwurf ODER die bereits angewendete Auswahl. Vorher hing er nur am
          Entwurf und verschwand damit direkt nach dem Apply, also genau dann, wenn man ihn
