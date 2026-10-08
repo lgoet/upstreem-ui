@@ -105,6 +105,13 @@
 .ubd-chartwrap { position: relative; height: 260px; }
 .ubd-canvas { display: block; width: 100%; height: 100%; }
 .ubd-varwrap { display: none; }
+/* DER RAND DER TABELLE BLEIBT IN DER KARTE (08.10.). core nimmt der .up-vartable im Dunkeln den
+   Rand wie jedem Kasten -- offen auf der Seite ist die Flaeche dort die Kante. Hier steht sie IN
+   der Karte, mit derselben Flaeche, und ohne Rand verschwaende ihre Kante ganz. (0,4,0) gegen
+   (0,3,0) aus core. */
+.up-root[data-theme="dark"] .ubd-card .up-vartable {
+  border-color: var(--vc-border); border-left-width: 1px; border-right-width: 1px;
+}
 .ubd-root.is-variations .ubd-chartwrap { display: none; }
 .ubd-root.is-variations .ubd-varwrap { display: block; }
 

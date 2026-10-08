@@ -1058,7 +1058,14 @@
     /* 16px wie jeder andere Container mit Rahmen in dieser App (.up-box). Vorher 10 -- ein
        kleinerer Innenradius wirkt nur dort richtig, wo ein groesserer Rahmen direkt aussen
        anliegt; hier liegt Polsterung dazwischen, und dann liest sich die Abweichung als Fehler. */
-    .up-vartable { border: 1px solid var(--vc-border); border-radius: 16px; overflow: hidden; }
+    /* MIT EIGENER FLAECHE (08.10. gemeldet: "im Event Detail fehlt im Darkmode der Hintergrund in
+       den Rows -- ich dachte, das sind core-Tabellen"). Die Tabelle war fuer die Variations gebaut,
+       und die standen immer IN einer Karte (Brand Detail, frueher das Performance Detail): sie
+       borgte deren Flaeche und hatte nie eine eigene. Das Event-Detail und das neue Performance
+       Detail stellen sie offen auf die Seite -- gemessen im Dunkeln: Zeilen durchsichtig, also
+       Seitengrund #101114 statt der Kastenflaeche #1c1c1f daneben. Jetzt dieselbe Flaeche wie
+       .up-box, und im Dunkeln dieselbe Kante (siehe die zwei Listen weiter unten). */
+    .up-vartable { border: 1px solid var(--vc-border); border-radius: 16px; overflow: hidden; background: var(--vc-bg); }
     /* Mit .up-vartable davor, weil .up-row aus core dieselbe Spezifitaet haette und dann die
        Ladereihenfolge entscheiden wuerde -- STYLEGUIDE: nie ueber die Reihenfolge gewinnen. */
     .up-vartable .up-row.up-vrow { height: 55px; flex: 0 0 55px; }
@@ -2849,6 +2856,10 @@
        border-color und nicht border: 0 -- der 1px bleibt als Platz stehen, damit keine Flaeche um
        2px waechst und kein Sticky-Kopf um einen Pixel springt. */
     .up-root[data-theme="dark"] .up-box,
+    /* .up-vartable ist derselbe Kasten (Rahmen, Radius 16, eigene Flaeche) -- im Dunkeln also
+       auch ohne sichtbaren Rand. Steht sie IN einer Karte, holt die Karte den Rand selbst zurueck
+       (brand-detail.css). */
+    .up-root[data-theme="dark"] .up-vartable,
     /* .up-sticky liegt auf DERSELBEN Wurzel, nicht darunter -- core.js toggelt die Klasse an
        root (makeSticky). Als Nachfahrenselektor geschrieben traf die Regel nichts, und genau die
        sechs grossen Tabellen behielten im Dunkeln ihre Umrandung: Prompts, Responses, Domains,
@@ -2889,6 +2900,7 @@
        und schon 1px Unterschied zwischen Kopf und Koerper verschiebt die Spalten gegeneinander --
        davor warnt der Kommentar am Sticky-Block ausdruecklich. */
     .up-root[data-theme="dark"] .up-box,
+    .up-root[data-theme="dark"] .up-vartable,
     .up-root[data-theme="dark"].up-sticky .up-thead,
     .up-root[data-theme="dark"].up-sticky .up-tbody {
       border-left-width: 0; border-right-width: 0;
