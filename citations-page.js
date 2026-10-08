@@ -506,10 +506,35 @@
     return r.length > 0;
   }
   window.resetCitationsPage = function (id) { return jede(id, function (c) { c.reset(); }); };
-  if (UC.watchRoots) UC.watchRoots("ucs-root", function () {
-    alle().forEach(function (r) { if (!UC.messbar || UC.messbar(r)) initRoot(r); });
-  });
-  alle().forEach(function (r) { initRoot(r); });
+  /* EINRICHTEN, SOBALD DIE WURZEL ZU SEHEN IST (08.10. gemeldet: "beim Pageload auf die
+     Citations-Seite laedt sie nicht, nur beim Sidebar-Klick"). Bubble setzt das Element beim
+     Seitenaufbau in die noch VERSTECKTE Ansicht und macht sie spaeter nur per Stil sichtbar --
+     ohne neuen Knoten. watchRoots meldet aber nur neue Knoten: eine Wurzel, die beim Erscheinen
+     nicht messbar war, wurde uebersprungen und nie wieder angesehen (nachgestellt: Wurzel da,
+     Ansicht sichtbar, 0 Kinder, 0 Anfragen). Also: was beim Erscheinen nicht messbar ist, wird
+     alle 300ms nachgesehen, bis es messbar ist. Erst DANN einrichten, mit Absicht -- so entstehen
+     Kalender, Chart und Tabellen darin sichtbar und vermessen sich richtig. */
+  var wartet = [];
+  var warteUhr = null;
+  function nachsehen() {
+    warteUhr = null;
+    wartet = wartet.filter(function (r) {
+      if (r.__ucsCtrl || r.isConnected === false) return false;
+      if (!UC.messbar || UC.messbar(r)) { initRoot(r); return false; }
+      return true;
+    });
+    if (wartet.length) warteUhr = setTimeout(nachsehen, 300);
+  }
+  function einrichten() {
+    alle().forEach(function (r) {
+      if (r.__ucsCtrl) return;
+      if (!UC.messbar || UC.messbar(r)) { initRoot(r); return; }
+      if (wartet.indexOf(r) < 0) wartet.push(r);
+    });
+    if (wartet.length && !warteUhr) warteUhr = setTimeout(nachsehen, 300);
+  }
+  if (UC.watchRoots) UC.watchRoots("ucs-root", einrichten);
+  einrichten();
   Q.splice(0).forEach(function (q) { try { window[q[0]].apply(null, q[1]); } catch (e) {} });
   }
 
