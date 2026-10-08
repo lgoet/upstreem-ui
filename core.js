@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261109;
+  var BUILD = 20261110;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -19608,6 +19608,35 @@
      kein Preset, an dessen Rand ein Klick kippen koennte. */
   var GRAN_DAY_MAX = 100;
 
+  /* ---- DIE STARTSTUFE AUS DEM ZEITRAUM (08.10.) ------------------------------------------------
+     Bisher ein Bubble-Workflow ("SET GRAN") auf jeder Seite mit Kalender und Linechart, beim
+     Seitenaufbau und bei jedem Kalenderwechsel: unter 7 Tagen Day, ab 29 Week, ab 179 Month --
+     und dazwischen (7 bis 28 Tage) NICHTS. Die Stufe hing dort davon ab, was vorher eingestellt
+     war (gemeldet und so gewollt geschlossen: "eine Luecke, bitte einbauen").
+     Jetzt EINE Regel ohne Luecke, gezaehlt wie in Bubble ("date_to - date_from formatted as
+     days", also last 7 days = 6, last 30 days = 29):
+       unter 29 Tagen   day
+       29 bis 178       week
+       ab 179           month
+     Sie passt zu granAvailability darueber: Day ist bis 100 Tage frei, Week ab 8, Month ab 31 --
+     die Startstufe ist also immer eine waehlbare. Sie bestimmt nur den START nach einem
+     Kalenderwechsel; ein Klick auf den Schalter danach gilt, bis der Zeitraum sich wieder aendert.
+     Tage als Kalendertage (UTC-Mitternacht), damit eine Zeitumstellung im Zeitraum keinen Tag
+     verschiebt. Unlesbare Eingabe: null -- der Aufrufer behaelt dann seine Stufe. */
+  var GRAN_WOCHE_AB = 29, GRAN_MONAT_AB = 179;
+  function granKalendertag(v){
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v instanceof Date ? v.toISOString() : String(v == null ? "" : v));
+    return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : NaN;
+  }
+  function granFuerZeitraum(von, bis){
+    var a = granKalendertag(von), b = granKalendertag(bis);
+    if (isNaN(a) || isNaN(b)) return null;
+    var tage = Math.round(Math.abs(b - a) / 86400000);
+    if (tage >= GRAN_MONAT_AB) return "month";
+    if (tage >= GRAN_WOCHE_AB) return "week";
+    return "day";
+  }
+
   /* sel: die Knoepfe des Schalters. Ohne Angabe .vc-gran-btn (Visibility Chart, Brand Detail,
      Domain Detail, Brands Overview); der Combo Chart traegt .cc-gran-btn. */
   function granAvailability(root, series, aktuell, sel){
@@ -21806,6 +21835,7 @@
     variationRows: variationRows,
     variationRing: variationRing,
     granAvailability: granAvailability,
+    granFuerZeitraum: granFuerZeitraum,
     normGran: normGran,
     granRangeDays: granRangeDays,
     granAusDaten: granAusDaten,
