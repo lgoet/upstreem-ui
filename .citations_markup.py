@@ -13,7 +13,10 @@ Was ersetzt wird:
   - BRAND_NAME/BRAND_LOGO -> __UCS_BRAND__/__UCS_BRANDLOGO__ (eigene Marke aus dem Store)
   - die data-*-fn-Attribute fallen weg: die Seite antwortet selbst, Bubble ist nicht dabei
   - data-local="yes" an jede Wurzel
-  - data-sticky-top="171" -> 0: die 171 waren der Kopf der alten Bubble-Ansicht ueber der Tabelle
+  - data-sticky-top="171" -> 16: die 171 waren der Kopf der alten Bubble-Ansicht ueber der Tabelle.
+    Der Kopf dieser Seite klebt nicht, also klebt die Leiste 16 unter der Oberkante -- derselbe
+    Wert wie auf Dashboard und Opportunities (core: stickyTopSetzen). 0 lag direkt am Rand
+    (08.10. gemeldet).
 
 Aufruf nach jeder Aenderung an einer der drei Vorlagen:
     python3 .citations_markup.py
@@ -75,7 +78,7 @@ for schluessel, pfad, kennung in TEILE:
     m = m.replace('data-instance="INSTANCE_ID"', 'data-instance="%s"' % kennung)
     for k, v in ERSATZ.items():
         m = m.replace(k, v)
-    m = m.replace('data-sticky-top="171"', 'data-sticky-top="0"')
+    m = m.replace('data-sticky-top="171"', 'data-sticky-top="16"')
     m = re.sub(r'\s*data-[a-z0-9-]+-fn="bubble_fn_[^"]*"', "", m)
     m = re.sub(r'(<div class="up-root [^"]*")', r'\1 data-local="yes"', m, count=1)
     rest = [x for x in re.findall(r'"[A-Z][A-Z0-9_]{3,}"', m)]
