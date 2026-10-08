@@ -221,7 +221,9 @@
         if (erg && erg.ok && a.sig) merken(a.sig, erg.daten);
         return erg || { ok: false, status: 0, fehler: { message: "network" } };
       }, function () {
-        if (laufend[kanal] === eintrag) laufend[kanal] = null;
+        /* Abgebrochen, weil eine neuere Anfrage desselben Kanals kam: ueberholt, kein Fehler. */
+        if (laufend[kanal] !== eintrag) return { ok: false, ueberholt: true };
+        laufend[kanal] = null;
         return { ok: false, status: 0, fehler: { message: "network" } };
       });
       return eintrag.promise;

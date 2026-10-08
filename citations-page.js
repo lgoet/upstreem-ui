@@ -306,6 +306,33 @@
       if (g === state.gran) return;
       state.gran = g; persist(); chartLaden();
     });
+    /* EXPORT (08.10. gemeldet: "keiner der Export-Knoepfe funktioniert"). Die Tabellen oeffnen das
+       Export-Fenster der App (export-data.js, ein eigenes Bubble-Element) ueber dessen Kennung in
+       data-export-instance -- die stand hier leer, der Klick lief ins Leere. Jetzt setzt die Seite
+       sie VOR dem Klick der Tabelle (Fangphase): aus ihrem eigenen data-export-instance, sonst vom
+       Export-Element, das auf der Seite steht. Dazu der Typ des Reiters (domains/urls), damit das
+       Fenster richtig vorgewaehlt aufgeht. Steht kein Export-Element auf der Seite, sagt die Seite
+       es, statt still nichts zu tun. */
+    function exportKennung() {
+      var k = str(root.getAttribute("data-export-instance")).trim();
+      if (k && !/^[A-Z_]{3,}$/.test(k)) return k;
+      var e = document.querySelector(".uex-root[data-instance]");
+      k = e ? str(e.getAttribute("data-instance")).trim() : "";
+      return k && !/^[A-Z_]{3,}$/.test(k) ? k : "";
+    }
+    root.addEventListener("click", function (e) {
+      var b = e.target && e.target.closest ? e.target.closest(".up-export") : null;
+      var tab = b && b.closest(".udt-root, .uut-root");
+      if (!tab || !root.contains(tab)) return;
+      var k = exportKennung();
+      if (!k || typeof window.upstreemExportOpen !== "function") {
+        e.stopPropagation();
+        if (UC.toast) UC.toast(t("Export is not available on this page."));
+        return;
+      }
+      tab.setAttribute("data-export-instance", k);
+      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: tab.classList.contains("uut-root") ? "urls" : "domains" }); } catch (err) {}
+    }, true);
     if (elRefresh) elRefresh.addEventListener("click", function () {
       if (UC.spinOnce) UC.spinOnce(elRefresh);
       aktualisieren();
@@ -329,60 +356,100 @@
       }
       return true;
     }
-    function bedarf() {
+    /* CHART UND TABELLE ZEIGEN GEMEINSAM (08.10. angefordert: "nur weil eine vielleicht frueher
+       fertig ist, darf die nicht schon Daten zeigen, wenn die andere noch laedt"). Bei allem, was
+       BEIDE betrifft -- Oeffnen, Reiter, Filter, Zeitraum, Aktualisieren, Teamwechsel -- gehen beide
+       in den Ladezustand, beide RPCs gehen GLEICHZEITIG hinaus (kein Nacheinander), und gezeichnet
+       wird erst, wenn beide Antworten da sind. Liegt eine davon schon im Speicher, wartet sie auf
+       die andere; liegen beide da, steht alles sofort.
+       Was nur EINEN Teil betrifft, laeuft allein: Suche, Sortierung, Seite (Tabelle) und D/W/M
+       (Chart). Gezeichnet wird je TEIL nur aus der juengsten Gruppe, die ihn angefordert hat: tippt
+       jemand in die Suche, waehrend das gemeinsame Laden noch laeuft, uebernimmt die neue Anfrage
+       die Tabelle -- der Chart der aelteren Gruppe kommt trotzdem (sonst bliebe er im Skelett). */
+    var gruppeNr = 0, juengsteJe = {};
+    function gemeinsam(auftraege, o) {
+      o = o || {};
+      var nr = ++gruppeNr;
+      auftraege.forEach(function (a) { juengsteJe[a.kanal] = nr; });
+      var alleDa = !o.frisch && auftraege.every(function (a) { return a.imSpeicher; });
+      if (!alleDa) auftraege.forEach(function (a) { a.ladenAn(); });
+      var vorab = o.vorab ? Promise.resolve(o.vorab).then(null, function () {}) : Promise.resolve();
+      return vorab.then(function () {
+        return Promise.all(auftraege.map(function (a) { return a.laden(o.frisch); }));
+      }).then(function (zeigen) {
+        zeigen.forEach(function (z, i) { if (z && juengsteJe[auftraege[i].kanal] === nr) z(); });
+      });
+    }
+    function bedarf(o) {
       if (!bereit()) return;
-      chartLaden();
-      tabelleLaden(state.tab);
+      gemeinsam([chartAuftrag(), tabellenAuftrag(state.tab)], o);
     }
     function overviewAnfrage() { return D.overview(filterStand(), { modus: state.tab === "urls" ? "url" : "domain", gran: state.gran }); }
     function tabellenAnfrage(art) { var s = tabStand(art); return (art === "urls" ? D.urls : D.domains)(filterStand(), s); }
 
-    function chartLaden(frisch) {
-      if (!bereit()) return;
+    /* Ein Auftrag: was er laedt, ob es schon im Speicher liegt, wie er den Ladezustand anschaltet,
+       und -- nach der Antwort -- eine Funktion, die zeichnet (null, wenn eine neuere Anfrage
+       derselben Art ihn ueberholt hat). Gezeichnet wird erst, wenn der Aufrufer das sagt. */
+    function chartAuftrag() {
       var a = overviewAnfrage(), mode = state.tab === "urls" ? "url" : "domain";
-      var schon = lader.ausSpeicher(a);
-      if (schon === undefined || frisch) { try { window.setComboChartLoading(ids.combo, "yes"); } catch (e) {} }
-      lader.laden("overview", a, { frisch: !!frisch }).then(function (erg) {
-        if (erg.ueberholt) return;
-        var p = erg.ok ? D.zuCombo(erg.daten, mode) : null;
-        if (!p) {
-          state.fehler.chart = erg.ok ? "x" : D.fehlerArt(erg);
-          try { window.renderComboChart({ instanceId: ids.combo, __parseError: true }); } catch (e) {}
-        } else {
-          state.fehler.chart = null;
-          p.instanceId = ids.combo;
-          p.isDark = isDark();
-          try { window.renderComboChart(p); } catch (e) {}
+      return {
+        kanal: "overview",
+        imSpeicher: lader.ausSpeicher(a) !== undefined,
+        ladenAn: function () { try { window.setComboChartLoading(ids.combo, "yes"); } catch (e) {} },
+        laden: function (frisch) {
+          return lader.laden("overview", a, { frisch: !!frisch }).then(function (erg) {
+            if (erg.ueberholt) return null;
+            return function () {
+              var p = erg.ok ? D.zuCombo(erg.daten, mode) : null;
+              if (!p) {
+                state.fehler.chart = erg.ok ? "x" : D.fehlerArt(erg);
+                try { window.renderComboChart({ instanceId: ids.combo, __parseError: true }); } catch (e) {}
+              } else {
+                state.fehler.chart = null;
+                p.instanceId = ids.combo; p.isDark = isDark();
+                try { window.renderComboChart(p); } catch (e) {}
+              }
+              /* Der Chart haelt einen AUSDRUECKLICH gesetzten Ladezustand, bis er ebenso
+                 ausdruecklich endet -- eine Lieferung allein beendet ihn nicht
+                 (citations-combo-chart.js, LOADING_EXPLICIT; gemessen 08.10.). */
+              try { window.setComboChartLoading(ids.combo, "no"); } catch (e) {}
+            };
+          });
         }
-        /* Der Chart haelt einen AUSDRUECKLICH gesetzten Ladezustand, bis er ebenso ausdruecklich
-           endet -- eine Lieferung allein beendet ihn nicht (citations-combo-chart.js,
-           LOADING_EXPLICIT). Ohne diese Zeile blieb er mit Daten im Skelett (gemessen 08.10.). */
-        try { window.setComboChartLoading(ids.combo, "no"); } catch (e) {}
-      });
+      };
     }
-    function tabelleLaden(art, frisch) {
-      if (art !== state.tab || !bereit()) return;
+    function tabellenAuftrag(art) {
       var a = tabellenAnfrage(art), s = tabStand(art), id = art === "urls" ? ids.uut : ids.udt;
       var render = art === "urls" ? "renderUrlsTable" : "renderDomainsTable", laed = art === "urls" ? "setUrlsTableLoading" : "setDomainsTableLoading";
-      var schon = lader.ausSpeicher(a);
-      if (schon === undefined || frisch) { try { window[laed](id, "yes"); } catch (e) {} }
       var reqId = s.requestId;
-      lader.laden("tabelle_" + art, a, { frisch: !!frisch }).then(function (erg) {
-        if (erg.ueberholt) return;
-        var p = erg.ok ? (art === "urls" ? D.zuUrls(erg.daten) : D.zuDomains(erg.daten)) : null;
-        if (!p) {
-          state.fehler[art] = erg.ok ? "x" : D.fehlerArt(erg);
-          try { window[render]({ instanceId: id, __parseError: true }); } catch (e) {}
-          return;
+      return {
+        kanal: "tabelle_" + art,
+        imSpeicher: lader.ausSpeicher(a) !== undefined,
+        ladenAn: function () { try { window[laed](id, "yes"); } catch (e) {} },
+        laden: function (frisch) {
+          return lader.laden("tabelle_" + art, a, { frisch: !!frisch }).then(function (erg) {
+            if (erg.ueberholt) return null;
+            return function () {
+              var p = erg.ok ? (art === "urls" ? D.zuUrls(erg.daten) : D.zuDomains(erg.daten)) : null;
+              if (!p) {
+                state.fehler[art] = erg.ok ? "x" : D.fehlerArt(erg);
+                try { window[render]({ instanceId: id, __parseError: true }); } catch (e) {}
+                return;
+              }
+              state.fehler[art] = null;
+              p.instanceId = id; p.isDark = isDark();
+              if (reqId != null) p.requestId = reqId;
+              var m = eigeneMarke();
+              if (m) { p.brand_name = str(m.name); p.brand_logo = str(m.logo_url); }
+              try { window[render](p); } catch (e) {}
+            };
+          });
         }
-        state.fehler[art] = null;
-        p.instanceId = id; p.isDark = isDark();
-        if (reqId != null) p.requestId = reqId;
-        var m = eigeneMarke();
-        if (m) { p.brand_name = str(m.name); p.brand_logo = str(m.logo_url); }
-        try { window[render](p); } catch (e) {}
-      });
+      };
     }
+    /* Allein: nur der Chart (D/W/M) bzw. nur die Tabelle (Suche, Sortierung, Seite). */
+    function chartLaden() { if (bereit()) gemeinsam([chartAuftrag()]); }
+    function tabelleLaden(art) { if (art === state.tab && bereit()) gemeinsam([tabellenAuftrag(art)]); }
     /* Der Drilldown einer Domain. Seine Anfrage-Kennung kommt von der Tabelle und geht mit der
        Antwort zurueck -- eine veraltete verwirft die Tabelle selbst. */
     function drilldownLaden(d) {
@@ -400,13 +467,12 @@
         try { window.setDomainsTablePages(ids.udt, domain, l || [], rid); } catch (e) {}
       });
     }
+    /* Aktualisieren: beide sofort in den Ladezustand, dann den Cache der DB leeren, dann beide
+       frisch und gemeinsam laden. Scheitert das Leeren, wird trotzdem neu geladen. */
     function aktualisieren() {
-      if (!team()) return;
-      UC.rpc(D.FN.clear, { p_team: team() }).then(function () {
-        lader.leeren();
-        chartLaden(true);
-        tabelleLaden(state.tab, true);
-      });
+      if (!team() || !bereit()) return;
+      var vorab = UC.rpc(D.FN.clear, { p_team: team() }).then(function () { lader.leeren(); });
+      bedarf({ frisch: true, vorab: vorab });
     }
 
     /* Teamwechsel ohne Neuladen: andere Daten, also nichts aus dem Speicher weiterzeigen. */

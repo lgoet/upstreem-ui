@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261113;
+  var BUILD = 20261114;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1279,6 +1279,7 @@
     "This invitation has been revoked. Please ask your team for a new one.":
       "Diese Einladung wurde zurückgezogen. Bitte lass dir von deinem Team eine neue schicken.",
     "This invitation has already been used.": "Diese Einladung wurde bereits verwendet.",
+    "Export is not available on this page.": "Der Export ist auf dieser Seite nicht verfügbar.",
     "This invitation was sent to a different email address. Sign in with that address to accept it.":
       "Diese Einladung ging an eine andere E-Mail-Adresse. Melde dich mit dieser Adresse an, um sie anzunehmen.",
     "Sign up or sign in to accept this invitation.":

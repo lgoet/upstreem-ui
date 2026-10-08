@@ -34,6 +34,11 @@
   ── Attribute ─────────────────────────────────────────────────────────────────
   data-instance   optional, Vorgabe "citations_page". Nur noetig, wenn die Seite zweimal steht.
   data-adresse    optional, "aus": die Komponente laesst die Adresse in Ruhe (?cit).
+  data-export-instance  optional: die Kennung des Export-Elements (export-data, z.B.
+                  "export_citations"). Ohne Angabe nimmt die Seite das Export-Element, das auf der
+                  Seite steht. DAS EXPORT-ELEMENT MUSS AUF DER SEITE STEHEN (sichtbar, wie bisher in
+                  der Citations-Ansicht), samt seinem Export-Workflow -- sonst sagt der Knopf
+                  "Export is not available on this page.". Der Typ (domains/urls) folgt dem Reiter.
   Kein data-isdark, kein data-cdn-pin: das Thema setzt core, den Pin das Header-Script.
 
   ── Umstellen: erst parallel, dann tauschen ───────────────────────────────────
