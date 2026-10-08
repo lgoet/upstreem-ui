@@ -44,6 +44,10 @@ for p in sorted(QUELLEN):
         pass
     # gelesene data-Attribute
     for m in re.finditer(r'getAttribute\(\s*"(data-[a-z0-9-]+)"', s): v["dataattrs"].add(m.group(1))
+    # Ein Feuer-Helfer einer Komponente (votFire, tcdFire, 08.10.) liest sein data-*-fn selbst --
+    # getAttribute(attr) steht dann nur einmal, mit einer Variablen. Ohne diese Zeile meldete der
+    # Waechter fuenf Attribute als ENTFERNT, als tcd seine sieben Handmuster in tcdFire buendelte.
+    for m in re.finditer(r'\w+Fire\(\s*(?:root\s*,\s*)?"(data-[a-z0-9-]+-fn)"', s): v["dataattrs"].add(m.group(1))
     # Payload-Schluessel in gefeuerten Objekten (grobe, aber stabile Naeherung)
     for m in re.finditer(r'fire[\w.]*\([^;]{0,400}?\{([^{}]{0,600})\}', s, re.S):
         for k in re.finditer(r'(?:^|[\s,{])([a-z_][a-z0-9_]*)\s*:', m.group(1)):

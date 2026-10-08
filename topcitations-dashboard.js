@@ -94,6 +94,21 @@
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
 
+    /* EIN Weg nach draussen statt sieben gleicher Handmuster. Neu ist nur der LOKALE MODUS
+       (08.10., Dashboard-Seite): data-local="yes" heisst, eine Seite hat diesen Baustein
+       eingebettet und laedt selbst. Dann geht das Ereignis NUR als DOM-Ereignis an die Seite
+       ("tcd-" plus der Name ohne bubble_fn_, z.B. tcd-tcdMode; detail.value ist der erste Wert)
+       -- dieselbe Bedeutung wie data-local bei makeFire. Ohne das Attribut ruft er Bubble wie
+       bisher, mit denselben Argumenten. */
+    function tcdFire(attr, standardName, args){
+      if (isYes(root.getAttribute("data-local"))){
+        try { root.dispatchEvent(new CustomEvent("tcd-" + String(standardName).replace(/^bubble_fn_/, ""), { detail: { value: args[0], instanceId: instanceId }, bubbles: true })); } catch(e){}
+        return;
+      }
+      var fn = resolveBubbleFn(root.getAttribute(attr) || standardName);
+      if (typeof fn === "function"){ try { fn.apply(null, args); } catch(e){} }
+    }
+
     function readProcessing(){
       var a = root.getAttribute("data-processing");
       var b = root.getAttribute("data-processing2");
@@ -471,9 +486,7 @@
       Array.prototype.slice.call(tableEl.querySelectorAll(".tct-row")).forEach(function(row){
         var id = row.getAttribute("data-id");
         row.addEventListener("click", function(){
-          var fnName = root.getAttribute("data-rowclick-fn") || "bubble_fn_tcdRowClick";
-          var fn = resolveBubbleFn(fnName);
-          if (typeof fn === "function"){ try { fn(id, instanceId); } catch(e){} }
+          tcdFire("data-rowclick-fn", "bubble_fn_tcdRowClick", [id, instanceId]);
         });
       });
       checkBrandWidth();
@@ -549,9 +562,7 @@
       state.appliedUrlTypeSel = {}; urlIds.forEach(function(k){ state.appliedUrlTypeSel[k] = true; });
       persistState();
       syncFilterBadge();
-      var fnName = root.getAttribute("data-types-fn") || "bubble_fn_tcdApplyTypeFilter";
-      var fn = resolveBubbleFn(fnName);
-      if (typeof fn === "function"){ try { fn(combined, instanceId); } catch(e){} }
+      tcdFire("data-types-fn", "bubble_fn_tcdApplyTypeFilter", [combined, instanceId]);
     }
     /* Shared by the filter menu's own Reset button and the header reset button next to the chart
        (see chartResetBtn below) — one place so the two entry points can never drift apart. */
@@ -567,14 +578,10 @@
       fireApplyFilter();   // also clears the applied snapshot + hides the badge
     }
     function fireDimension(){
-      var fnName = root.getAttribute("data-dimension-fn") || "bubble_fn_tcdFilterDimension";
-      var fn = resolveBubbleFn(fnName);
-      if (typeof fn === "function"){ try { fn(state.filterDimension, instanceId); } catch(e){} }
+      tcdFire("data-dimension-fn", "bubble_fn_tcdFilterDimension", [state.filterDimension, instanceId]);
     }
     function fireBrand(){
-      var fnName = root.getAttribute("data-brand-fn") || "bubble_fn_tcdBrandMentioned";
-      var fn = resolveBubbleFn(fnName);
-      if (typeof fn === "function"){ try { fn(state.brandMentioned || "", instanceId); } catch(e){} }
+      tcdFire("data-brand-fn", "bubble_fn_tcdBrandMentioned", [state.brandMentioned || "", instanceId]);
     }
 
     var brandToggle = root.querySelector(".tcd-brand-toggle");
@@ -825,9 +832,7 @@
           populateFilter();
           renderChartSide(); renderTableSide();
           syncBrandToggle();
-          var mFnName = root.getAttribute("data-mode-fn") || "bubble_fn_tcdMode";
-          var mFn = resolveBubbleFn(mFnName);
-          if (typeof mFn === "function"){ try { mFn(m, instanceId); } catch(err){} }
+          tcdFire("data-mode-fn", "bubble_fn_tcdMode", [m, instanceId]);
           return;
         }
         var chartBtn = e.target.closest(".tcl-seg-btn");
@@ -848,9 +853,7 @@
         }
         var gotoBtnEl = e.target.closest(".tcd-goto");
         if (gotoBtnEl){
-          var gFnName = root.getAttribute("data-goto-fn") || "bubble_fn_tcdGoTo";
-          var gFn = resolveBubbleFn(gFnName);
-          if (typeof gFn === "function"){ try { gFn(instanceId); } catch(err){} }
+          tcdFire("data-goto-fn", "bubble_fn_tcdGoTo", [instanceId]);
           /* Selbst hingehen (06.10.): offene Drawer zu, dann die Citations-Ansicht; eine andere
              Ansicht nennt data-goto-view. Das Ereignis bleibt fuer bestehende Bubble-Zweige. */
           if (UC.ansichtWechseln) UC.ansichtWechseln(String(root.getAttribute("data-goto-view") || "citations").trim());
@@ -859,9 +862,7 @@
         var exportBtnEl = e.target.closest(".tcd-export");
         if (exportBtnEl){
           openExport();
-          var eFnName = root.getAttribute("data-export-fn") || "bubble_fn_tcdExportTable";
-          var eFn = resolveBubbleFn(eFnName);
-          if (typeof eFn === "function"){ try { eFn(instanceId); } catch(err){} }
+          tcdFire("data-export-fn", "bubble_fn_tcdExportTable", [instanceId]);
           return;
         }
         var brandBtnEl = e.target.closest(".tcd-brand-toggle");

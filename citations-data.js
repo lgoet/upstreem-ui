@@ -24,6 +24,15 @@
   /* Leer heisst "alle" (Vertrag: null oder []). null statt [] -- dann steht der Parameter in der
      Signatur des Caches gleich, egal ob die Auswahl nie gesetzt oder geleert wurde. */
   function liste(a) { a = isArr(a) ? a.map(str).map(function (x) { return x.trim(); }).filter(Boolean) : []; return a.length ? a : null; }
+  /* Kennungen (Topics, Marken) nur, wenn sie wie eine uuid aussehen, ohne Dubletten. Ein einziger
+     anderer Eintrag liesse die DB den GANZEN Aufruf ablehnen (22P02, uuid[]) -- gefunden am 08.10.
+     im Test mit einem manipulierten Topic-Ereignis ("'; drop"). */
+  var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  function uuids(a) {
+    var gesehen = {};
+    var l = (liste(a) || []).filter(function (x) { var k = x.toLowerCase(); if (!UUID.test(x) || gesehen[k]) return false; gesehen[k] = true; return true; });
+    return l.length ? l : null;
+  }
   function sucheVon(s) { s = str(s).trim(); return s ? s.slice(0, 200) : null; }
   function ganz(v, vorgabe, min, max) { var n = num(v); n = n == null ? vorgabe : Math.round(n); return Math.max(min, Math.min(max, n)); }
 
@@ -50,10 +59,10 @@
     f = f || {};
     var b = {
       p_team: str(f.team), p_date_from: str(f.von) || null, p_date_to: str(f.bis) || null,
-      p_models: liste(f.modelle), p_markets: liste(f.maerkte), p_tag_ids: liste(f.topics),
+      p_models: liste(f.modelle), p_markets: liste(f.maerkte), p_tag_ids: uuids(f.topics),
       p_tagmode: f.tagmode === "and" ? "and" : "or",
       p_mentioned: f.erwaehnt === "yes" || f.erwaehnt === "no" ? f.erwaehnt : "all",
-      p_mentioned_brands: liste(f.marken),
+      p_mentioned_brands: uuids(f.marken),
       p_citation_types: liste(f.citationTypen)
     };
     if (art !== "domains") b.p_url_types = liste(f.urlTypen);
@@ -66,9 +75,12 @@
     o = o || {};
     var modus = o.modus === "url" ? "url" : "domain";
     var gran = o.gran === "week" || o.gran === "month" ? o.gran : "day";
+    /* o.serien: 0 fuer Top Citations im Dashboard (Vertrag Dashboard v1: nur kpis und types, ohne
+       Zeitreihe -- dieselben Zahlen, ein Drittel der Zeit). Ohne Angabe 7 wie die Citations-Seite. */
+    var serien = o.serien == null ? 7 : ganz(o.serien, 7, 0, 10);
     /* Im Domain-Modus gilt die Tabelle der Domains -- also auch ihr Filterumfang (ohne URL-Typen). */
     return anfrage("overview", mit(basis(f, modus === "url" ? "urls" : "domains"),
-      { p_mode: modus, p_granularity: gran, p_series_limit: 7 }));
+      { p_mode: modus, p_granularity: gran, p_series_limit: serien }));
   }
   function tabelle(art, f, t) {
     t = t || {};
@@ -177,7 +189,7 @@
     var f = (erg && erg.fehler) || {}, m = str(f.message).toLowerCase(), c = str(f.code);
     if (/rate_limited/.test(m)) return "rate";
     if (m === "forbidden" || c === "42501" || c === "P0403" || /team_access|not authenticated/.test(m) || erg.status === 401 || erg.status === 403) return "zugang";
-    if (/invalid_param|invalid_date|domain_required/.test(m)) return "param";
+    if (/invalid_param|invalid_date|domain_required|team_required/.test(m)) return "param";
     if (m === "network" || m === "timeout" || erg.status === 0) return "netz";
     return "x";
   }

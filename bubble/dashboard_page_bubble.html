@@ -1,0 +1,63 @@
+<!--
+  UPSTREEM — DASHBOARD-SEITE als EINE Komponente (Praefix uds), 08.10.2026
+
+  WOHIN: ein HTML-Element, volle Breite, ohne eigenes Polster, in #view-dashboard. Die Komponente
+  baut ALLES selbst: Seitenkopf (Krume "Dashboard", Umschalter Agentic/Analytic, Docs, Suche,
+  Aktualisieren) und beide Ansichten:
+    Agentic   das Power Dashboard (power-dashboard.js): Kennzahlen, Competitive field, Trending
+              Citations. Miras Eingabefeld, Recent chats und das Opportunities-Brett leiht es sich
+              wie bisher von ask-mira.js und opportunities.js auf derselben Seite.
+    Analytic  Kalender, Filter (Models, Markets, Topics), Visibility-Chart, Top Citations,
+              Responses-Tabelle.
+  Alle Bausteine sind die bestehenden der App im LOKALEN Modus (data-local) -- dieselben Bausteine
+  an anderen Orten (Drawer, andere Reusables) bleiben davon unberuehrt.
+
+  ── Was Bubble NICHT mehr tut ─────────────────────────────────────────────────
+  Keine Workflows, keine API-Calls, kein Run JS, keine JavaScript-to-Bubble-Elemente fuer diese
+  Seite. Die Komponente ruft ihre RPCs selbst (UC.rpc, Nutzer-JWT aus dem Supabase Pro Kit):
+      cached_dashboard_overview_v1      Kennzahlen (own/field), Markentabelle, Agentic-Top-5
+      cached_dashboard_visibility_v1    Visibility-Chart
+      cached_dashboard_responses_v1     Responses-Tabelle
+      cached_citations_overview_v1      Top Citations: Typ-Verteilung (p_series_limit 0)
+      cached_citations_domains_v1/_urls_v1   Top Citations und Agentic "Trending Citations"
+      clear_dashboard_cache_v1          der Aktualisieren-Knopf: leert den DB-Cache des Teams
+                                        (Dashboard UND Citations), dann laedt die Seite frisch
+  Vertrag: bubble/dashboard_v1_vertrag.md.
+  Voraussetzungen auf der Seite: das Auth-Element des Supabase Pro Kit (Adresse, Schluessel,
+  Sitzung) und das Header-Script (laedt dashboard-data.js und dashboard-page.js).
+
+  ── Was die Seite selbst regelt ───────────────────────────────────────────────
+  - Agentic/Analytic: dieselbe Wahl wie bisher (localStorage up_dashboard, Werte power/standard).
+    Den Workflow auf dphMode und den Custom State dash_mode braucht es fuer DIESE Seite nicht mehr.
+  - Agentic zeigt wie bisher immer die letzten 30 Tage ohne Filter.
+  - Analytic: Zeitraum aus dem eigenen Kalender ("Apply to all" gilt app-weit), die Stufe des
+    Charts folgt jedem neuen Zeitraum (UC.granFuerZeitraum), dazwischen gilt der Klick.
+  - Team aus setUpstreemTeam, Marken aus setUpstreemBrands (eigene Marke: role "own").
+  - Zeilenklick: Marke -> openDrawer("brand"), Domain/URL -> openDrawer("domain"/"url"),
+    Response -> openDrawer("response") -- die Drawer der App, ohne Workflow.
+  - Docs oeffnet https://docs.upstreem.ai/welcome in einem neuen Tab, die Suche oeffnet Quick
+    Actions (Cmd+K) -- beides ohne Workflow.
+
+  ── Attribute ─────────────────────────────────────────────────────────────────
+  data-instance        optional, Vorgabe "dashboard_page". Nur noetig, wenn die Seite zweimal steht.
+  data-mode-default    optional, "power" (Vorgabe) oder "standard": was ein Geraet sieht, das noch
+                       nie umgeschaltet hat. Die Wahl des Nutzers gewinnt.
+  data-export-instance optional: die Kennung des Export-Elements (export-data). Ohne Angabe nimmt
+                       die Seite das Export-Element, das auf der Seite steht. DAS EXPORT-ELEMENT
+                       MUSS AUF DER SEITE STEHEN (sichtbar) -- sonst sagt der Knopf "Export is not
+                       available on this page.". Der Typ (brands/domains/urls/prompt_runs) folgt
+                       dem Baustein, an dem geklickt wurde.
+  data-docs-url        optional, eine andere https-Adresse fuer den Docs-Knopf.
+  Kein data-isdark, kein data-cdn-pin: das Thema setzt core, den Pin das Header-Script.
+
+  ── Umstellen: erst parallel, dann tauschen ───────────────────────────────────
+  1. Das Element auf eine eigene Test-Ansicht oder Test-Seite (mit Header-Script, Auth-Element,
+     Mira und Opportunities) stellen und neben dem alten Dashboard vergleichen: gleiche Zeitraeume,
+     gleiche Filter, dieselben Zahlen?
+  2. Stimmt alles: in #view-dashboard die alten Elemente (Dashboard-Seitenkopf, die Gruppen
+     Standard und Power samt Kalender, Filterleiste, Visibility-Chart, Top Citations,
+     Responses-Tabelle, Power Dashboard) und ihre Workflows durch DIESES eine Element ersetzen.
+     Mira (view=mira), Opportunities und das Export-Element bleiben auf der Seite.
+  3. Danach rechte_bestand_dashboard.sql einspielen (Vertrag, Abschnitt 7).
+-->
+<div class="up-root uds-root" data-instance="dashboard_page"></div>

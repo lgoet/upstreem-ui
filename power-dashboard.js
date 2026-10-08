@@ -236,7 +236,15 @@
   function initRoot(root){
     if (!root) return null;
     if (root.__upwController) return root.__upwController;
-    var ctrl = buildController(root);
+    /* KEIN ZWEITER AUFBAU WAEHREND DES ERSTEN (08.10., Dashboard-Seite). Im lokalen Modus geht die
+       Bedarfsmeldung als DOM-Ereignis SYNCHRON hinaus, noch im Aufbau -- antwortet die Seite darauf
+       mit setPowerDashboardLoading, kam sie hier wieder an, baute das Markup ein zweites Mal, und
+       der erste Controller (der am Ende gewinnt) zeichnete in abgehaengte Elemente: gemessen 0
+       Aenderungen im Dokument, die Kacheln blieben im Skelett. Wie __votBuilding in visibility-chart. */
+    if (root.__upwBuilding) return null;
+    root.__upwBuilding = true;
+    var ctrl;
+    try { ctrl = buildController(root); } finally { root.__upwBuilding = false; }
     root.__upwController = ctrl;
     return ctrl;
   }

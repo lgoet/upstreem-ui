@@ -71,41 +71,13 @@
   var REFRESH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /> <path d="M8 16H3v5" /></svg>';
 
   /* ---- SOBALD SICHTBAR: ohne Dauerlauf (08.10.) -----------------------------------------------
-     Die Ansichten der App sind beim Seitenaufbau versteckt und werden spaeter nur per Stil
-     sichtbar -- ohne neuen Knoten, also ohne Meldung von watchRoots. Statt laufend nachzusehen,
-     wird nur in einem KURZEN, BEGRENZTEN Fenster nachgesehen: nach dem Laden dieser Datei (bis
-     10s) und nach jedem Ansichtswechsel der App (showView, ueber UC.onViewChange; bis 3s, weil
-     Bubble die Gruppe erst nach showView einblendet). Danach laeuft nichts, bis die App wieder
-     eine Ansicht oeffnet. Die Bubble-App ruft showView auch beim Seitenaufbau.
-     beiSicht(el, schluessel, fn, test): fn einmal, sobald test(el) wahr ist. Derselbe Schluessel
-     ersetzt einen wartenden Eintrag, statt einen zweiten anzulegen. */
-  var SICHT = [], sichtUhren = [];
-  /* Beim Seitenaufbau alle 500ms bis 10s (20 Blicke, jeder eine Sichtbarkeitsabfrage) -- ohne
-     showView waere eine Ansicht, die nach 7s aufgeht, mit groben Stufen erst bei 10s da gewesen
-     (gemessen). Nach einem Ansichtswechsel bis 3s. */
-  var FENSTER_START = [0, 150, 300], FENSTER_WECHSEL = [0, 250, 750, 1500, 3000];
-  for (var fs = 500; fs <= 10000; fs += 500) FENSTER_START.push(fs);
-  function sichtPruefen() {
-    SICHT = SICHT.filter(function (w) {
-      if (w.el.isConnected === false) return false;
-      var da = false;
-      try { da = w.test(w.el); } catch (e) { da = true; }
-      if (!da) return true;
-      try { w.fn(); } catch (e) {}
-      return false;
-    });
-    if (!SICHT.length) { sichtUhren.forEach(clearTimeout); sichtUhren = []; }
+     Seit dem 08.10. abends in core (UC.beiSicht), weil die Dashboard-Seite dasselbe braucht: kurze,
+     begrenzte Fenster nach dem Laden (bis 10s) und nach jedem Ansichtswechsel (bis 3s), danach
+     laeuft nichts. Begruendung und Zahlen stehen dort. Fehlt der Helfer (core auf einem aelteren
+     Pin), wird sofort gerufen -- wie vor dem 08.10., die Seite laedt dann eben gleich. */
+  function beiSicht(el, schluessel, fn, test, o) {
+    if (UC.beiSicht) UC.beiSicht(el, schluessel, fn, test, o); else fn();
   }
-  function sichtFenster(stufen) {
-    sichtUhren.forEach(clearTimeout);
-    sichtUhren = stufen.map(function (ms) { return setTimeout(sichtPruefen, ms); });
-  }
-  function beiSicht(el, schluessel, fn, test) {
-    SICHT = SICHT.filter(function (w) { return !(w.el === el && w.schluessel === schluessel); });
-    SICHT.push({ el: el, schluessel: schluessel, fn: fn, test: test });
-    if (!sichtUhren.length) sichtFenster(FENSTER_WECHSEL);
-  }
-  if (UC.onViewChange) UC.onViewChange(function () { if (SICHT.length) sichtFenster(FENSTER_WECHSEL); });
   function messbar(el) { return !UC.messbar || UC.messbar(el); }
 
   function initRoot(root) {
@@ -424,8 +396,8 @@
       });
     }
     function bedarf(o) {
-      if (!bereit()) return;
-      gemeinsam([chartAuftrag(), tabellenAuftrag(state.tab)], o);
+      if (!bereit()) return null;
+      return gemeinsam([chartAuftrag(), tabellenAuftrag(state.tab)], o);
     }
     function overviewAnfrage() { return D.overview(filterStand(), { modus: state.tab === "urls" ? "url" : "domain", gran: state.gran }); }
     function tabellenAnfrage(art) { var s = tabStand(art); return (art === "urls" ? D.urls : D.domains)(filterStand(), s); }
@@ -514,11 +486,15 @@
        Refresh-Knopf einer Komponente (08.10. bestaetigt: "das ist gewollt" -- einmal kurz
        herausgenommen und am selben Tag zurueck). Beide sofort in den Ladezustand, dann
        clear_citations_cache_v1, dann Chart und Tabelle frisch und gemeinsam. Scheitert das Leeren,
-       wird trotzdem neu geladen. */
+       wird trotzdem neu geladen. EINMAL ZUR ZEIT (08.10. abends, wie die Dashboard-Seite): ein
+       weiterer Klick waehrend des Laufs zaehlt nicht -- die DB erlaubt clear 10 Mal je Minute. */
+    var aktualisiertGerade = false;
     function aktualisieren() {
-      if (!team() || !bereit()) return;
-      var vorab = UC.rpc(D.FN.clear, { p_team: team() }).then(function () { lader.leeren(); });
-      bedarf({ frisch: true, vorab: vorab });
+      if (aktualisiertGerade || !team() || !bereit()) return;
+      aktualisiertGerade = true;
+      var vorab = UC.rpc(D.FN.clear, { p_team: team() }).then(function () { lader.leeren(); }, function () { lader.leeren(); });
+      var fertig = function () { aktualisiertGerade = false; };
+      Promise.resolve(bedarf({ frisch: true, vorab: vorab })).then(fertig, fertig);
     }
 
     /* Teamwechsel ohne Neuladen: andere Daten, also nichts aus dem Speicher weiterzeigen. */
@@ -562,14 +538,12 @@
   /* Eine Wurzel, die versteckt ERSCHEINT, bekommt das lange Fenster (10s): das ist der
      Seitenaufbau, und bis Bubble die Ansicht einblendet, kann es dauern. */
   function einrichten() {
-    var neu = false;
     alle().forEach(function (r) {
       if (r.__ucsCtrl) return;
       if (messbar(r)) { initRoot(r); return; }
-      if (!SICHT.some(function (w) { return w.el === r; })) neu = true;
-      beiSicht(r, "einrichten", function () { initRoot(r); }, messbar);
+      var neu = !(UC.wartetAufSicht && UC.wartetAufSicht(r));
+      beiSicht(r, "einrichten", function () { initRoot(r); }, messbar, { lang: neu });
     });
-    if (neu) sichtFenster(FENSTER_START);
   }
   if (UC.watchRoots) UC.watchRoots("ucs-root", einrichten);
   einrichten();

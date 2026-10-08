@@ -1,0 +1,37 @@
+/* upstreem dashboard-page.css -- die Dashboard-Seite als eine Komponente (08.10.). Praefix uds.
+
+   Kopf und Filterzeile mit denselben Werten wie die Citations-Seite (citations-page.css), der
+   kompakte Kopf selbst kommt aus core (.uds-pagehead). Die Bausteine bringen ihre eigene CSS mit
+   (power-dashboard.css, visibility-chart.css, topcitations-dashboard.css, responses-table.css) --
+   hier steht nur, wie sie untereinander stehen. */
+
+.uds-root { display: block; }
+.uds-root .uds-pagehead { padding: 8px 0; }
+/* Die Werkzeuge rechts: 8 zwischen den Zeichenknoepfen wie im bisherigen Dashboard-Kopf
+   (dashboard-page-header.css, .dph-tools), der Umschalter steht vorn. */
+.uds-tools { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.uds-tools .up-ph-iconbtn { flex: 0 0 auto; }
+/* Zeichen und Wort stehen beide im Markup; breit traegt der Knopf sein Wort, auf dem Telefon nur
+   das Zeichen -- dieselbe Regel wie im bisherigen Kopf (dort .dph-modeic/.dph-modelbl). */
+.uds-modeic { display: none; }
+.uds-modeic svg { width: 16px; height: 16px; display: block; }
+.uds-root.is-vnarrow .uds-modelbl { display: none; }
+.uds-root.is-vnarrow .uds-modeic { display: block; }
+.uds-root.is-vnarrow .uds-mode .up-seg-btn { flex: 0 0 auto; width: 28px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center; }
+
+/* Die Ansicht, die nicht gewaehlt ist, steht nicht da (hidden gegen das display der Regeln). */
+.uds-root .uds-ansicht[hidden] { display: none; }
+/* Das Agentic Dashboard haelt seine Spalte samt Polster selbst (--upw-pad in
+   power-dashboard.css, im schmalen Fenster ausdruecklich 16). Der Inhalt dieser Komponente steht
+   aber schon 16 vom Rand (UC.makePageCrumbs, --up-ph-innen-l/-r) -- also gibt dieser Teil die 16
+   zurueck, sonst stuenden 32 da. Dieselbe Verdopplung, vor der core.css bei .upw-root warnt. */
+.uds-root .uds-agentic { margin-left: calc(-1 * var(--up-ph-innen-l, 0px)); margin-right: calc(-1 * var(--up-ph-innen-r, 0px)); }
+
+.uds-filterzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 16px; }
+.uds-filterzeile > .udr-root { flex: 0 0 auto; }
+.uds-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
+/* 48 zwischen den drei Bloecken: drei eigene Auswertungen, also "zwischen Gruppen" nach dem
+   Entwurf von Shopping (shopping.css, .ush-seite). */
+.uds-main { display: flex; flex-direction: column; gap: 48px; padding: 24px 0 64px; min-width: 0; }
+.uds-teil { min-width: 0; }

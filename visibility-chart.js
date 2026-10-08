@@ -56,6 +56,15 @@
      Kommaliste). Ein Wechsel wuerde den Vertrag brechen. Die Nutzlast bleibt darum Zeichen fuer
      Zeichen dieselbe -- nur der Ausfall ist ab jetzt hoerbar. */
   function votFire(root, attr, standardName, wert){
+    /* LOKALER MODUS (08.10., Dashboard-Seite): data-local="yes" heisst, eine Seite hat den Chart
+       eingebettet und laedt selbst. Dann geht das Ereignis NUR als DOM-Ereignis an die Seite
+       ("vot-" plus der Name ohne bubble_fn_, z.B. vot-votGranularity), mit dem rohen Wert in
+       detail.value -- dieselbe Bedeutung wie data-local bei makeFire. Ohne das Attribut bleibt
+       alles beim Alten. */
+    if (isYes(root.getAttribute("data-local"))){
+      try { root.dispatchEvent(new CustomEvent("vot-" + String(standardName).replace(/^bubble_fn_/, ""), { detail: { value: wert }, bubbles: true })); } catch(e){}
+      return true;
+    }
     var name = root.getAttribute(attr) || standardName;
     var fn = resolveBubbleFn(name);
     if (typeof fn !== "function"){
@@ -236,6 +245,12 @@
            lands a moment later — showing "No data" immediately for that interim state flashes an
            empty placeholder that's gone a beat later. Give a short grace window for a follow-up
            render before committing to the empty view. */
+        /* Lokaler Modus: keine Zwischenlieferungen, leer ist leer -- sofort (wie die Kurve oben). */
+        if (isYes(root.getAttribute("data-local"))){
+          if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
+          tableEl.innerHTML = head + '<div class="up-empty-mini">No data</div>';
+          return;
+        }
         if (!tableEmptyGraceTimer){
           tableEl.innerHTML = tableSkeletonHtml();
           tableEmptyGraceTimer = setTimeout(function(){
@@ -946,6 +961,15 @@
             state.series = __arr; state.hasLine = true; state.linePending = false; state.noDataConfirmed = false;
             clearTimeout(root.__votPendingT); clearTimeout(root.__votNoDataT);
             applyGranAvailability(); seedFilterSelection(); populateFilter();
+          }
+          /* IM LOKALEN MODUS IST LEER DIE ANTWORT (08.10., Dashboard-Seite). Die Grace-Fenster
+             darunter sind fuer Bubble gebaut, das vor den echten Daten gern eine leere
+             Zwischenlieferung schickt -- dort heisst leer "behalte die letzte Kurve". Eine Seite,
+             die selbst laedt, schickt keine Zwischenstaende: kam ihr Filter leer zurueck, blieb hier
+             die ALTE Kurve stehen bzw. das Skelett lief bis zu 2,5s (gemessen). Also sofort "No data". */
+          else if (isYes(root.getAttribute("data-local"))){
+            state.series = []; state.hasLine = true; state.linePending = false; state.noDataConfirmed = true;
+            clearTimeout(root.__votPendingT); clearTimeout(root.__votNoDataT);
           }
           else {
             state.linePending = !state.hasLine ? false : (isLoading() ? true : state.linePending);

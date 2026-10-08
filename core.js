@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261114;
+  var BUILD = 20261115;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -13146,20 +13146,41 @@
   /* Loads Chart.js once per PAGE, shared across every upstreem component. Loading it twice
      breaks existing chart instances (each load replaces window.Chart with a fresh registry), so
      if another component already injected it we wait for that copy instead of adding a second. */
+  /* EIN ZERSTOERTER CHART RECHNET NICHT MEHR NACH (08.10., gefunden im Lasttest der Dashboard-
+     Seite). Chart.js drosselt seine Groessenmeldung auf das naechste Bild; wird der Chart in
+     genau diesem Bild zerstoert (eine Ansicht geht auf und ihr Inhalt wird sofort neu gezeichnet),
+     laeuft die Meldung trotzdem und greift auf canvas === null: "Cannot read properties of null
+     (reading 'ownerDocument')" in chart.umd.min.js, als unbehandelter Fehler in der Konsole.
+     Gemessen 1 Fall in 49 Schritten. Dieselbe Sorte kommt ein zweites Mal: nach einer
+     Groessenaenderung schiebt Chart.js sein update() um die Resize-Verzoegerung auf; wird der
+     Chart dazwischen zerstoert, laeuft update() auf geraeumten Plugins ("Cannot set properties of
+     undefined (setting 'fullSize')"). Ein Chart ohne canvas ist zerstoert (destroy() setzt es auf
+     null) und hat nichts zu vermessen oder zu zeichnen -- also ueberspringen. Einmal je geladenem
+     Chart.js, egal wer es geladen hat. */
+  function chartAbsichern(){
+    var C = window.Chart, P = C && C.prototype;
+    if (!P || P.__upResizeSicher) return;
+    ["_resize", "update", "render"].forEach(function(n){
+      var f = P[n];
+      if (typeof f !== "function") return;
+      P[n] = function(){ if (!this.canvas) return; return f.apply(this, arguments); };
+    });
+    P.__upResizeSicher = true;
+  }
   function loadChartJs(){
-    if (window.Chart) return Promise.resolve();
-    if (window.__upstreemChartJs) return window.__upstreemChartJs;
+    if (window.Chart){ chartAbsichern(); return Promise.resolve(); }
+    if (window.__upstreemChartJs) return window.__upstreemChartJs.then(function(){ chartAbsichern(); });
     window.__upstreemChartJs = new Promise(function(res, rej){
       var existing = document.querySelector('script[data-upstreem-chartjs], script[data-ccchart], script[src*="chart.umd"], script[src*="chart.js@"], script[src*="chart.local"]');
       if (existing){
-        var iv = setInterval(function(){ if (window.Chart){ clearInterval(iv); res(); } }, 40);
-        setTimeout(function(){ clearInterval(iv); if (window.Chart) res(); else rej(new Error("chartjs timeout")); }, 10000);
+        var iv = setInterval(function(){ if (window.Chart){ clearInterval(iv); chartAbsichern(); res(); } }, 40);
+        setTimeout(function(){ clearInterval(iv); if (window.Chart){ chartAbsichern(); res(); } else rej(new Error("chartjs timeout")); }, 10000);
         return;
       }
       var s = document.createElement("script");
       s.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
       s.setAttribute("data-upstreem-chartjs", "1");
-      s.onload = function(){ res(); };
+      s.onload = function(){ chartAbsichern(); res(); };
       s.onerror = rej;
       document.head.appendChild(s);
     });
@@ -16795,6 +16816,44 @@
     if (typeof fn === "function") VIEW_SUBS.push(fn);
     return function(){ var i = VIEW_SUBS.indexOf(fn); if (i >= 0) VIEW_SUBS.splice(i, 1); };
   }
+  /* ---------- SOBALD SICHTBAR, OHNE DAUERLAUF (08.10., aus citations-page.js hierher) ----------
+     Die Ansichten der App sind beim Seitenaufbau versteckt und werden spaeter nur per Stil
+     sichtbar -- ohne neuen Knoten, also ohne Meldung von watchRoots. Statt laufend nachzusehen
+     ("riesen always firing dinger" abgelehnt, 08.10.), wird nur in KURZEN, BEGRENZTEN Fenstern
+     nachgesehen: beim Seitenaufbau alle 500ms bis 10s (lang), nach jedem Ansichtswechsel der App
+     (showView) bis 3s, weil Bubble die Gruppe erst nach showView einblendet. Danach laeuft
+     nichts, bis die App wieder eine Ansicht oeffnet.
+     beiSicht(el, schluessel, fn, test, o): fn einmal, sobald test(el) wahr ist (ohne test:
+     istSichtbar). Derselbe Schluessel ersetzt einen wartenden Eintrag, statt einen zweiten
+     anzulegen. o.lang: das lange Fenster (Seitenaufbau) neu starten.
+     Die zweite Seiten-Komponente (Dashboard) haette dieselben 35 Zeilen gebraucht -- darum hier. */
+  var SICHT = [], sichtUhren = [];
+  var SICHT_LANG = [0, 150, 300], SICHT_KURZ = [0, 250, 750, 1500, 3000];
+  for (var sichtMs = 500; sichtMs <= 10000; sichtMs += 500) SICHT_LANG.push(sichtMs);
+  function sichtPruefen(){
+    SICHT = SICHT.filter(function(w){
+      if (w.el.isConnected === false) return false;
+      var da = false;
+      try { da = w.test(w.el); } catch(e){ da = true; }
+      if (!da) return true;
+      try { w.fn(); } catch(e){}
+      return false;
+    });
+    if (!SICHT.length){ sichtUhren.forEach(clearTimeout); sichtUhren = []; }
+  }
+  function sichtFenster(stufen){
+    sichtUhren.forEach(clearTimeout);
+    sichtUhren = stufen.map(function(ms){ return setTimeout(sichtPruefen, ms); });
+  }
+  function beiSicht(el, schluessel, fn, test, o){
+    if (!el || typeof fn !== "function") return;
+    SICHT = SICHT.filter(function(w){ return !(w.el === el && w.schluessel === schluessel); });
+    SICHT.push({ el: el, schluessel: schluessel, fn: fn, test: typeof test === "function" ? test : istSichtbar });
+    if (o && o.lang) sichtFenster(SICHT_LANG);
+    else if (!sichtUhren.length) sichtFenster(SICHT_KURZ);
+  }
+  function wartetAufSicht(el){ return SICHT.some(function(w){ return w.el === el; }); }
+  onViewChange(function(){ if (SICHT.length) sichtFenster(SICHT_KURZ); });
   /* WELCHE Ansicht ist offen? Die Frage ist nicht am DOM zu beantworten -- die Host-App laesst
      besuchte Ansichten im Dokument stehen, ein offsetParent-Test haelt sie fuer sichtbar (auf der
      Prompts-Seite stehen 184 Wurzeln). Der einzige verlaessliche Zeuge ist showView selbst: die
@@ -22017,6 +22076,7 @@
     dropdownOpened: dropdownOpened,
     closeAllDropdowns: closeAllDropdowns,
     onViewChange: onViewChange,
+    beiSicht: beiSicht, wartetAufSicht: wartetAufSicht,
     getDashboardMode: getDashboardMode, setDashboardMode: setDashboardMode,
     onDashboardMode: onDashboardMode,
     currentView: currentView,
