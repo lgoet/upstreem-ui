@@ -778,7 +778,7 @@
         wrap: elMore, menu: elMenu, opener: elBtn, group: "ufb-" + instanceId,
         /* makePopover setzt aria-hidden am Menue, aber nicht aria-expanded am Knopf -- das
            gehoert dem Aufrufer, weil nur er weiss, welches Element der Ausloeser ist. */
-        onClose: function () { sub.close(); elBtn.setAttribute("aria-expanded", "false"); }
+        onClose: function () { sub.close(); elBtn.setAttribute("aria-expanded", "false"); lageSpaeterLoesen(); }
       });
       elBtn.addEventListener("click", function (e) {
         e.stopPropagation();
@@ -796,18 +796,59 @@
            (Am GESCHLOSSENEN Panel weichen die Werte um 2px ab, weil core.css es mit
            transform: scale(0.985) kleiner haelt; offsetWidth ist davon unberuehrt, die Rechnung
            also trotzdem richtig.) */
-        var vw = window.innerWidth || document.documentElement.clientWidth || 0;
-        var kippen = (elMore.getBoundingClientRect().left + elMore.clientLeft +
-                      elMenu.offsetWidth) > (vw - 8);
+        var lage = lageMessen();
         einziehen();
         /* Auch die Filter, die schon hier standen: der Moment, in dem ihre Liste sichtbar wird. */
         liste.forEach(nachziehen);
         spiegelnAlle();
         render();
         pop.open();
-        elMenu.classList.toggle("is-right", kippen);
+        lageSetzen(lage);
         elBtn.setAttribute("aria-expanded", "true");
       });
+
+      /* DAS PANEL BLEIBT IM FENSTER (08.10., gemessen auf 375px Breite). Bisher gab es nur zwei
+         Lagen: unter dem Knopf nach rechts, oder -- passte das nicht -- nach links gekippt
+         (is-right). Auf dem Telefon passt keine von beiden: das Panel ist dort bis 320px breit,
+         der Knopf steht neben dem Kalender in der Mitte, und gekippt lag es 49px (Dashboard)
+         bzw. 65px (Citations) LINKS ausserhalb des Bildes. Jetzt wird nach dem Kippen noch ins
+         Fenster geschoben, mit dem Rand der App: 16 auf dem Telefon, sonst 8 wie die Panels in
+         core. Auf breiten Seiten aendert sich nichts -- dort passt eine der zwei Lagen immer.
+         Gelesen wird VOR jedem Schreiben (siehe oben, 718ms am 03.09.), geschrieben danach;
+         die Lage steht inline (left), damit sie die Regeln der zwei Klassen schlaegt. */
+      function lageMessen() {
+        var vw = window.innerWidth || document.documentElement.clientWidth || 0;
+        var r = elMore.getBoundingClientRect();
+        if (!vw || !r.width) return null;
+        var breite = elMenu.offsetWidth, rand = vw < 500 ? 16 : 8;
+        /* "left: 0" zaehlt ab der Polsterkante der Schale, also plus ihr Rahmen. */
+        var start = r.left + elMore.clientLeft, links = start;
+        if (links + breite > vw - rand) links = r.right - elMore.clientLeft - breite;
+        links = Math.max(rand, Math.min(links, vw - rand - breite));
+        return { versatz: Math.round(links - start), kippen: links < start };
+      }
+      var lageUhr = null;
+      function lageSetzen(l) {
+        clearTimeout(lageUhr); lageUhr = null;
+        if (!l) return;
+        elMenu.style.left = l.versatz + "px";
+        elMenu.style.right = "auto";
+        elMenu.classList.toggle("is-right", l.kippen);
+      }
+      /* Nach dem Schliessen gilt die gemessene Lage nicht mehr: rueckt der Knopf spaeter (ein
+         laengerer Kalendertext, eine andere Breite), stand das unsichtbare Panel mit der alten
+         Lage ueber dem Rand -- gemessen 523px seitlicher Ueberlauf. Also weg damit, sobald die
+         Ausblendung vorbei ist (vorher waere ein Sprung waehrend des Ausblendens zu sehen); dann
+         gilt die Regel fuer das geschlossene Panel in der CSS. */
+      function lageSpaeterLoesen() {
+        clearTimeout(lageUhr);
+        lageUhr = setTimeout(function () {
+          lageUhr = null;
+          if (pop.isOpen()) return;
+          elMenu.style.left = ""; elMenu.style.right = "";
+          elMenu.classList.remove("is-right");
+        }, 300);
+      }
 
       /* ---------------- Untermenue ----------------
          Verweildauer, Feststellen per Klick, Umklappen und das Hineingehen auf schmalen Seiten
@@ -1003,6 +1044,10 @@
          spaeter in die Leiste -- das ist der Preis, und er ist unsichtbar. */
       if (UC.aufResize) UC.aufResize(function () { einziehen(); });
       if (UC.aufResize) UC.aufResize(render);
+      /* Nach render(): das setzt is-drill, und daran haengt die Breite des Panels. Nur das
+         OFFENE Panel -- das geschlossene steht ohne gemessene Lage rechts am Knopf (CSS) und
+         ragt damit nicht ueber den rechten Rand (gemessen vorher 105px seitlicher Ueberlauf). */
+      if (UC.aufResize) UC.aufResize(function () { if (pop.isOpen()) lageSetzen(lageMessen()); });
 
       var ctrl = {
         reset: function () { alleLeeren(); },

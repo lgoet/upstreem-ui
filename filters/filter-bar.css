@@ -194,8 +194,14 @@
    Knopf steht links, also klappt sein Panel unter ihm nach rechts auf. */
 .ufb-menu.ufb-menu { left: 0; right: auto; width: 248px; }
 /* Kippt an der rechten Fensterkante zurueck auf rechts ausgerichtet. Die Klasse setzt das JS
-   nach einer Messung. */
+   nach einer Messung; seit dem 08.10. schiebt es danach noch ins Fenster (inline left). */
 .ufb-menu.is-right { left: auto; right: 0; }
+/* GESCHLOSSEN, BEVOR ES JE GEMESSEN WURDE, STEHT DAS PANEL RECHTS AM KNOPF (08.10.). Es ist dann
+   unsichtbar, steht aber im Dokument -- nach rechts aufgeklappt ragte es auf dem Telefon 105px
+   ueber den Rand und machte die Seite seitlich scrollbar. Was links hinausragt, zaehlt beim
+   Scrollen nicht. Sobald das JS eine Lage gemessen hat, gilt die (inline left schlaegt diese
+   Regel); offen gilt sie ohnehin nie. */
+.ufb-more:not(.is-open) > .ufb-menu { left: auto; right: 0; }
 
 /* ---------- die Zeilen ----------
    .up-optrow aus core, hier nur Hoehe, Polster und die drei Plaetze: Spiegel des Filter-Triggers
