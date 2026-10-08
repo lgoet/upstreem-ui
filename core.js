@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261111;
+  var BUILD = 20261112;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1279,6 +1279,8 @@
     "This invitation has been revoked. Please ask your team for a new one.":
       "Diese Einladung wurde zurückgezogen. Bitte lass dir von deinem Team eine neue schicken.",
     "This invitation has already been used.": "Diese Einladung wurde bereits verwendet.",
+    "This invitation was sent to a different email address. Sign in with that address to accept it.":
+      "Diese Einladung ging an eine andere E-Mail-Adresse. Melde dich mit dieser Adresse an, um sie anzunehmen.",
     "Sign up or sign in to accept this invitation.":
       "Registriere dich oder melde dich an, um die Einladung anzunehmen.",
 
@@ -18603,9 +18605,18 @@
     try {
       var v = JSON.parse(window.localStorage.getItem("sb-" + ref + "-auth-token") || "null");
       var sz = v && (v.currentSession || v);
-      if (sz && sz.access_token) return { token: String(sz.access_token), ablauf: Number(sz.expires_at) || 0 };
+      if (sz && sz.access_token) return { token: String(sz.access_token), ablauf: Number(sz.expires_at) || 0,
+        email: String((sz.user && sz.user.email) || "") };
     } catch(e){}
     return null;
+  }
+  /* Fuer Seiten, die selbst wissen muessen, ob jemand angemeldet ist (Einladungsseite, 08.10.):
+     die Sitzung des Plugins, OHNE das Token. Abgelaufen zaehlt als nicht angemeldet -- das
+     Plugin frischt beim Seitenaufbau selbst auf, ein altes Token ist kein Konto. */
+  function sitzungInfo(){
+    var sz = sitzungLesen();
+    if (!sz || (sz.ablauf && sz.ablauf < Date.now() / 1000)) return null;
+    return { email: sz.email };
   }
   /* Ein Token, das noch mindestens 15 Sekunden gilt. Sonst bis 4 Sekunden warten, ob das Plugin
      auffrischt (es tut das selbst, auch nach dem Aufwachen eines Tabs), dann das beste, was da ist. */
@@ -18635,10 +18646,29 @@
       return Promise.resolve({ ok: false, status: 0, fehler: { code: "", message: "invalid_function", hint: "", details: "" } });
     }
     var schema = opts.schema || "app";
+    /* Ohne Token traegt Authorization den Schluessel nur, wenn er selbst ein JWT ist (der alte
+       anon-Schluessel, "eyJ..."). Ein neuer Publishable Key (sb_publishable_...) ist keins und
+       gehoert nur nach apikey -- die Gateway nimmt die Anfrage dann als anon. */
+    function kopf(token, schluessel){
+      var h = { "apikey": schluessel, "Content-Type": "application/json", "Accept": "application/json",
+                "Content-Profile": schema, "Accept-Profile": schema };
+      if (token) h.Authorization = "Bearer " + token;
+      else if (/^eyJ/.test(schluessel)) h.Authorization = "Bearer " + schluessel;
+      return h;
+    }
     function einmal(){
       return rpcToken().then(function(token){
         var schluessel = rpcSchluessel();
-        if (!token || !schluessel){
+        /* OHNE ANMELDUNG (opts.anon, 08.10.): ein Aufruf, der auch Fremden offensteht (die
+           Einladung hinter einem Link aus der Mail), geht ohne Sitzung als Rolle anon. Ein
+           abgelaufenes Token, das das Plugin nicht aufgefrischt hat, zaehlt dann wie keins --
+           mitgeschickt brachte es nur "JWT expired" statt der Antwort. Ohne opts.anon bleibt
+           alles wie bisher: kein Token, kein Aufruf. */
+        if (opts.anon && token){
+          var szA = sitzungLesen();
+          if (szA && szA.token === token && szA.ablauf && szA.ablauf < Date.now() / 1000) token = "";
+        }
+        if (!schluessel || (!token && !opts.anon)){
           return { ok: false, status: 401, fehler: { code: "", message: "not authenticated", hint: token ? "no api key" : "no session", details: "" } };
         }
         var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
@@ -18650,9 +18680,7 @@
         }
         return fetch(rpcAdresse() + "/rest/v1/rpc/" + name, {
           method: "POST",
-          headers: { "apikey": schluessel, "Authorization": "Bearer " + token,
-                     "Content-Type": "application/json", "Accept": "application/json",
-                     "Content-Profile": schema, "Accept-Profile": schema },
+          headers: kopf(token, schluessel),
           body: JSON.stringify(params || {}),
           signal: ctrl ? ctrl.signal : undefined
         }).then(function(r){
@@ -21971,6 +21999,7 @@
     granFuerZeitraum: granFuerZeitraum,
     rpc: rpc,
     rpcBereit: rpcBereit,
+    sitzungInfo: sitzungInfo,
     normGran: normGran,
     granRangeDays: granRangeDays,
     granAusDaten: granAusDaten,

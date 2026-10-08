@@ -26,6 +26,34 @@
      Kopfzeile: upstreem-Logo links. Rechts fuer Angemeldete "Dashboard" und "Log out" (wie im
      Onboarding), dazu immer der Themenknopf.
 
+     ── DIREKT (seit 08.10., so einbauen) ──────────────────────────────────────────────────
+     Mit data-direct="yes" ruft die Seite ihre zwei RPCs SELBST (UC.rpc, PostgREST, Schema app)
+     und navigiert selbst. In Bubble gibt es dann:
+       - KEINEN Pageload-Workflow, keinen API-Call, kein Run JS,
+       - KEINE Elemente/Workflows fuer uivAccept, uivSignup, uivDashboard, uivBack,
+       - nur noch EIN JavaScript-to-Bubble-Element: uivLogout (Abmelden macht das Plugin).
+     Gerufen werden (Vertrag: bubble/invite_db_auftrag.md):
+       get_team_invite_by_token_v3(p_token)     beim Aufbau; ohne Anmeldung als anon
+       accept_team_invite_by_token_v2(p_token)  beim Klick auf "Accept invite"; nur angemeldet
+     Ablauf:
+       - Token aus ?token=. Fehlt er: "This invitation link is not valid."
+       - Angemeldet erkennt die Seite an der Sitzung des Supabase-Plugins; data-logged-in und
+         data-user-email braucht es nicht mehr (stehen sie da, schaden sie nicht).
+       - Gueltig und ?log leer: die Seite schreibt ?mail=<eingeladene Adresse> in die Adresse.
+       - ?log=yes (zurueck von der Anmeldung) und angemeldet: die Seite nimmt sofort an, ohne
+         Klick, und entfernt log aus der Adresse.
+       - Nach dem Annehmen: Haken, "Welcome to upstreem", dann data-dashboard-url.
+       - "Sign up" geht nach data-signup-url mit mode=signup, token und mail.
+     Ruft ein alter Pageload-Workflow trotzdem noch setInvitePage, wird das ignoriert (Warnung in
+     der Konsole) -- er wuerde die geladene Einladung sonst ueberschreiben.
+     Fehlt eine der drei Adressen, faellt genau dieser Knopf auf sein altes Ereignis zurueck.
+
+       data-direct         "yes"
+       data-dashboard-url  Pfad des Dashboards, z.B. /dashboard
+       data-signup-url     Pfad der Auth Page, z.B. /signup (mode, token, mail haengt die Seite an)
+       data-signin-url     Pfad der Anmeldung fuer "Back to sign in", z.B. /login
+     Nur Pfade dieser App (/...) oder https://-Adressen; alles andere gilt als nicht gesetzt.
+
      ── ATTRIBUTE ───────────────────────────────────────────────────────────────────────────
        data-instance    eindeutig pro Platzierung, z.B. "invite". Alle Setter sprechen darueber.
        data-cdn-pin     LEER LASSEN, wenn der Kopf-Vorlader (bubble/page_header_preload.html) auf
@@ -208,13 +236,11 @@
      data-logo="LOGO_URL"
      data-logo-dark="LOGO_DARK_URL"
      data-isdark="IS_DARK"
-     data-logged-in="LOGGED_IN"
-     data-user-email="USER_EMAIL"
-     data-accept-fn="bubble_fn_uivAccept"
-     data-signup-fn="bubble_fn_uivSignup"
-     data-logout-fn="bubble_fn_uivLogout"
-     data-dashboard-fn="bubble_fn_uivDashboard"
-     data-back-fn="bubble_fn_uivBack"></div>
+     data-direct="yes"
+     data-dashboard-url="DASHBOARD_URL"
+     data-signup-url="SIGNUP_URL"
+     data-signin-url="SIGNIN_URL"
+     data-logout-fn="bubble_fn_uivLogout"></div>
 
 <script>
 (function(){

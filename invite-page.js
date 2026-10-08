@@ -84,6 +84,7 @@
     abgelaufen:   "This invitation has expired. Please ask your team for a new one.",
     zurueck:      "This invitation has been revoked. Please ask your team for a new one.",
     benutzt:      "This invitation has already been used.",
+    andereMail:   "This invitation was sent to a different email address. Sign in with that address to accept it.",
     /* Unter "Sign up", solange niemand angemeldet ist (26.09. angefordert): annehmen kann nur,
        wer ein Konto hat -- und wer schon eins hat, meldet sich auf derselben Seite an. */
     erstKonto:    "Sign up or sign in to accept this invitation.",
@@ -184,6 +185,30 @@
        Doppelklick. busy nicht: der Kreisel im Knopf gehoert zu einer Uhr, die mit dem alten
        Controller weg ist. */
     var instanceId = String(root.getAttribute("data-instance") || "default");
+
+    /* ---- DIREKT (08.10.) ----
+       data-direct="yes": die Seite ruft ihre zwei RPCs selbst ueber UC.rpc und navigiert selbst.
+       Kein Pageload-Workflow, kein Run-JS, keine Ereignisse fuer Annehmen, Sign up, Dashboard und
+       Zurueck. Nur "Log out" bleibt ein Bubble-Ereignis: abmelden muss das Plugin, das die
+       Sitzung fuehrt. Ohne das Attribut bleibt alles wie bisher (Setter aus Bubble).
+         get_team_invite_by_token_v3(p_token)     auch ohne Anmeldung (anon), Zustand als Feld
+         accept_team_invite_by_token_v2(p_token)  nur angemeldet, idempotent
+       Vertrag: bubble/invite_db_auftrag.md. */
+    var direkt = UC.isYes(root.getAttribute("data-direct")) && typeof UC.rpc === "function";
+    function urlParam(n){ try { return new URL(window.location.href).searchParams.get(n); } catch (e) { return null; } }
+    function urlAendern(fn){
+      try {
+        var u = new URL(window.location.href);
+        fn(u.searchParams);
+        var neu = u.pathname + u.search + u.hash;
+        if (neu !== window.location.pathname + window.location.search + window.location.hash) window.history.replaceState(window.history.state, "", neu);
+      } catch (e) {}
+    }
+    var token = str(urlParam("token"));
+    /* log=yes: der Nutzer kommt von der Anmeldung zurueck (Sign up -> Konto -> angemeldet ->
+       zurueck hierher). Dann nimmt die Seite die Einladung gleich an, ohne zweiten Klick. */
+    var vonAnmeldung = UC.isYes(urlParam("log"));
+
     var gemerkt = STORE[instanceId] || {};
     var fertigGemerkt = gemerkt.phase === "ready" || gemerkt.phase === "error";
     var annehmenGemerkt = gemerkt.phase === "accepting" || gemerkt.phase === "welcome";
@@ -334,7 +359,18 @@
     var elWelT    = root.querySelector("[data-welcome-t]");
     var elWelSpin = root.querySelector("[data-welcome-spin]");
 
-    function drin(){ return UC.isYes(attr("data-logged-in", "no")); }
+    /* Angemeldet: was Bubble sagt, ODER -- im direkten Modus -- die Sitzung des Plugins selbst.
+       Die Seite braucht dann kein data-logged-in mehr; steht es noch da, schadet es nicht. */
+    function drin(){
+      if (UC.isYes(attr("data-logged-in", "no"))) return true;
+      return direkt && !!(UC.sitzungInfo && UC.sitzungInfo());
+    }
+    function kontoMail(){
+      var m = str(attr("data-user-email"));
+      if (m || !direkt) return m;
+      var si = UC.sitzungInfo ? UC.sitzungInfo() : null;
+      return str((si && si.email) || (state.data && state.data.sitzungMail));
+    }
 
     /* ---------------- Die Kachel ----------------
        Logo des Teams, sonst sein Anfangsbuchstabe, ohne Team das Team-Zeichen. Nur neu bauen,
@@ -386,7 +422,7 @@
       var d = state.data || {};
       var angemeldet = drin();
       var fehler = state.phase === "error";
-      var mail = str(attr("data-user-email"));
+      var mail = kontoMail();
       root.setAttribute("data-phase", state.phase);
       /* Das Skelett zeigt die Kontozeile nur, wenn sie gleich auch kommt (siehe CSS). */
       root.classList.toggle("has-who", angemeldet && !!mail);
@@ -531,6 +567,30 @@
       var m = EREIGNIS[was];
       return m ? fire(m[0], m[1], null) : false;
     }
+    /* WEITER: im direkten Modus zur Adresse aus dem Attribut, sonst (oder ohne Attribut) das
+       Bubble-Ereignis wie bisher. Nur Pfade dieser App (/...) oder https -- ein javascript: im
+       Attribut waere ein Loch. Sign up nimmt Token und Adresse mit; die Auth Page liest beides
+       (mode, token, mail). */
+    var ZIEL = { dashboard: "data-dashboard-url", signup: "data-signup-url", back: "data-signin-url" };
+    function zielAdresse(was){
+      var roh = ZIEL[was] ? str(attr(ZIEL[was])) : "";
+      if (!roh || !/^(\/(?!\/)|https:\/\/)/.test(roh)) return "";
+      if (was !== "signup") return roh;
+      try {
+        var u = new URL(roh, window.location.href);
+        u.searchParams.set("mode", "signup");
+        if (token) u.searchParams.set("token", token);
+        var m = state.data && state.data.mail;
+        if (m) u.searchParams.set("mail", m);
+        return u.origin === window.location.origin ? u.pathname + u.search + u.hash : u.href;
+      } catch (e) { return roh; }
+    }
+    function weiter(was){
+      var ziel = direkt ? zielAdresse(was) : "";
+      if (!ziel) return melden(was);
+      try { window.location.assign(ziel); return true; } catch (e) { return false; }
+    }
+
     /* Ein Knopf, der wegnavigiert, dreht sich, bis die Seite geht. Tut sie es nicht, gibt er nach
        KNOPF_MAX wieder frei und sagt es -- ein Knopf, der sich fuer immer dreht, ist tot. */
     function busyStarten(){
@@ -550,6 +610,7 @@
        setInvitePageError, und die Seite kehrt mit der Meldung zur Einladung zurueck. */
     function annehmen(){
       if (state.phase !== "ready") return;
+      if (direkt){ direktAnnehmen(); return; }
       state.phase = "accepting"; state.err = "";
       var angekommen = melden("accept");
       /* Hat Bubble noch waehrend des Aufrufs geantwortet, gilt seine Antwort. */
@@ -569,6 +630,38 @@
         willkommenUhrStellen();
       }, HAKEN_STEHT);
     }
+    /* DIREKT ANNEHMEN: dieselbe Bewegung wie oben, der RPC laeuft parallel dazu. Geht er gut,
+       steht der Willkommensblock einen Moment (WEITER_MS nach dem Haken), dann geht es zum
+       Dashboard. Geht er schief, kehrt die Seite mit dem passenden Satz zurueck. */
+    var WEITER_MS = 900;
+    function annehmenFehler(a){
+      var m = str(a && a.fehler && a.fehler.message).toLowerCase();
+      if (!a || a.status === 0 || a.status >= 500 || !m || m === "unreadable_response") return T.annehmenLos;
+      if (/mismatch/.test(m)) return T.andereMail;
+      if (/not authenticated|no session/.test(m)) return T.erstKonto;
+      return freundlich(m);
+    }
+    function direktAnnehmen(){
+      state.phase = "accepting"; state.err = "";
+      render();
+      var hakenFertig = Date.now() + HAKEN_STEHT;
+      uhrHaken = setTimeout(function(){
+        uhrHaken = null;
+        if (state.phase !== "accepting") return;
+        state.phase = "welcome";
+        render();
+        willkommenUhrStellen();
+      }, HAKEN_STEHT);
+      UC.rpc("accept_team_invite_by_token_v2", { p_token: token }, { timeoutMs: 20000 }).then(function(a){
+        if (state.phase !== "accepting" && state.phase !== "welcome") return;
+        if (!a.ok){ api.setError(annehmenFehler(a)); return; }
+        setTimeout(function(){
+          if (state.phase !== "accepting" && state.phase !== "welcome") return;
+          if (!weiter("dashboard")) api.setError(T.klemmt);
+        }, Math.max(0, hakenFertig - Date.now()) + WEITER_MS);
+      });
+    }
+
     /* Die Notbremse des Willkommensblocks. Eigene Funktion, weil ein Neuaufbau mitten im Annehmen
        (siehe STORE) im Willkommensblock beginnt und dieselbe Uhr braucht -- ohne sie drehte der
        Kreisel dort fuer immer, falls Bubble nicht weiternavigiert. */
@@ -586,7 +679,7 @@
       if (state.busy || state.phase === "accepting") return;
       var was = elCta.getAttribute("data-was");
       if (was === "accept"){ annehmen(); return; }
-      if (!melden(was)){ state.err = T.klemmt; render(); return; }
+      if (!weiter(was)){ state.err = T.klemmt; render(); return; }
       busyStarten();
     });
     elCta2.addEventListener("click", function(){
@@ -599,7 +692,7 @@
       var b = e.target && e.target.closest ? e.target.closest("[data-act]") : null;
       if (!b || !root.contains(b)) return;
       if (state.phase === "accepting" || state.phase === "welcome") return;
-      if (!melden(b.getAttribute("data-act")) && state.phase !== "loading"){
+      if (!weiter(b.getAttribute("data-act")) && state.phase !== "loading"){
         state.err = T.klemmt; render();
       }
     });
@@ -640,8 +733,9 @@
     if (state.phase === "loading") ladenStellen();
     else if (state.phase === "welcome") willkommenUhrStellen();
 
-    return {
+    var api = {
       root: root,
+      direkt: direkt,
       setData: function(raw){
         var p = UC.readBubble ? UC.readBubble(raw) : null;
         if (Array.isArray(p)) p = p[0];
@@ -693,7 +787,11 @@
              bekommt -- lieber eine Adresse als gar kein "Invited by". */
           inviter: str(p.inviter_name || p.invited_by_name || p.invited_by || p.inviter ||
                        p.created_by_name || p.created_by_email),
-          role:    str(p.role || p.invited_role)
+          role:    str(p.role || p.invited_role),
+          /* Nur im direkten Modus gefuellt (v3): die eingeladene Adresse fuer die Anmeldung, und
+             mit welchem Konto die Datenbank den Aufruf gesehen hat. */
+          mail:        str(p.invited_email),
+          sitzungMail: str(p.signed_in_email)
         };
         /* EIN FEHLER AUS DER DATENBANK (25.09.): wirft der RPC eine Ausnahme ("invalid invite
            token"), antwortet Supabase mit HTTP 400 und dieser Huelle -- {"code": "P0001",
@@ -736,9 +834,42 @@
         state = { phase: "loading", data: null, err: "", busy: false };
         ersterAuftritt = true;
         render(); ladenStellen();
+        if (direkt) direktLaden();
         return true;
       }
     };
+
+    /* DIREKT LADEN: die Einladung zum Token aus der Adresse. Ohne Anmeldung als anon. Die
+       Antwort geht durch denselben setData wie die aus Bubble -- ein Weg, eine Logik. */
+    function direktLaden(){
+      if (!token){ api.setError(T.ungueltig); return; }
+      UC.rpc("get_team_invite_by_token_v3", { p_token: token }, { anon: true, timeoutMs: 12000 }).then(function(a){
+        if (state.phase !== "loading") return;
+        if (!a.ok){
+          api.setError(a.status === 0 || a.status >= 500 || a.fehler.message === "unreadable_response" ? T.laedtNicht : freundlich(a.fehler.message));
+          return;
+        }
+        var d = (a.daten && typeof a.daten === "object" && !Array.isArray(a.daten)) ? a.daten : null;
+        if (!d){ api.setError(T.unlesbar); return; }
+        var st = str(d.status).toLowerCase();
+        api.setData(JSON.stringify({
+          ok: d.valid === true, status: st, expires_at: d.expires_at,
+          message: st === "invalid" ? T.ungueltig : "",
+          team_name: d.team_name, team_logo_url: d.team_logo_url, inviter_name: d.inviter_name, role: d.role,
+          invited_email: d.invited_email, signed_in_email: d.signed_in_email
+        }));
+        if (state.phase !== "ready") return;
+        if (vonAnmeldung){
+          urlAendern(function(q){ q.delete("log"); });
+          vonAnmeldung = false;
+          if (drin()) annehmen();
+        } else if (state.data.mail){
+          urlAendern(function(q){ q.set("mail", state.data.mail); });
+        }
+      });
+    }
+    if (direkt && state.phase === "loading") direktLaden();
+    return api;
   }
 
   var mount = null;
@@ -777,7 +908,19 @@
     root.__uivController = c;
     return c;
   }
-  function doSet(id, raw){ var c = resolve(id); return c ? c.setData(raw) : false; }
+  /* Im direkten Modus laedt die Seite selbst. Ein alter Pageload-Workflow, der noch
+     setInvitePage ruft, wuerde die geladene Einladung ueberschreiben -- mit genau den leeren
+     Feldern, die zum Umbau gefuehrt haben (08.10.). Also annehmen nur ohne data-direct. */
+  var direktGemeldet = false;
+  function doSet(id, raw){
+    var c = resolve(id);
+    if (!c) return false;
+    if (c.direkt){
+      if (!direktGemeldet && window.console){ direktGemeldet = true; console.warn("[invite-page] setInvitePage wird ignoriert: das Element laedt selbst (data-direct). Den Pageload-Workflow entfernen."); }
+      return false;
+    }
+    return c.setData(raw);
+  }
   function doError(id, text){ var c = resolve(id); return c ? c.setError(text) : false; }
   function doReset(id){ var c = resolve(id); return c ? c.reset() : false; }
 
