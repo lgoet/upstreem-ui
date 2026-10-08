@@ -2,6 +2,16 @@
 
 > Wortgleich vom Datenbank-Chat übernommen (08.10.). Prüfung gegen die Oberfläche und offene
 > Punkte: `citations_db_rueckmeldung.md`, Abschnitt „Rückmeldung 2“.
+>
+> **Gegen Prod gemessen (08.10., 20 Fälle, `testdaten/citations_v1/lauf1_team_e6037cb1.json`).**
+> Laufzeiten 42–334 ms, aus dem Cache um 60 ms. Drei Abweichungen, an den DB-Chat gemeldet:
+> 1. `meta.stale` fehlt in allen Antworten.
+> 2. Ohne `p_domain` kommt nicht `citations_domain_required`, sondern HTTP 404 von PostgREST
+>    („Could not find the function …“), weil `p_domain` keinen Default hat.
+> 3. `citations_rate_limited` kommt als HTTP 500 (`P0429` kennt PostgREST nicht; `PT429` gäbe 429).
+>
+> Die Oberfläche liest Fehler über `message`, nicht über den Status. Keiner der drei Punkte
+> blockiert sie.
 
 Dieser Vertrag ersetzt Teil B von `CITATIONS_BACKEND_VERTRAG.md`. Eingearbeitet sind die Rückmeldung vom 08.10. und die Bestandsaufnahmen 2 und 3.
 
@@ -63,7 +73,12 @@ Weitere Regeln:
 | `p_limit` | int | 25 | 1–100 |
 | `p_offset` | int | 0 | ≥ 0 |
 
-- **Suche:** Groß- und Kleinschreibung spielen keine Rolle (`ilike`). Umlaute werden **nicht** gefaltet, weil `unaccent` nicht installiert ist: „mueller“ findet „Müller“ nicht, „müller“ findet es.
+- **Suche (ab `citations_v1_perf_4.sql`):** Groß- und Kleinschreibung spielen keine Rolle, Umlaute und Akzente werden gefaltet. Ein Feld trifft, wenn eine dieser Bedingungen gilt:
+  - `_suche_norm(feld)` enthält `_suche_norm(p_search)` (lower, ä→ae, ö→oe, ü→ue, ß→ss, dann `unaccent`),
+  - `unaccent(lower(feld))` enthält `unaccent(lower(p_search))`,
+  - bisheriges `ilike` (darum findet die Suche nie weniger als vorher).
+
+  Beispiele: „fuer“ findet „für“, „für“ findet „fuer“ und „fur“, „strasse“ findet „Straße“, „creme“ findet „Crème“. „muller“ findet „Mueller“ **nicht**. Die Escape-Regel für `%`, `_` und `\` bleibt.
 - Domains durchsucht die Suche im Domainnamen. URLs und Drilldown durchsucht sie in URL **und** Titel.
 
 **Sortierungen:**
