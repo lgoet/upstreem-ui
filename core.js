@@ -18646,15 +18646,12 @@
       return Promise.resolve({ ok: false, status: 0, fehler: { code: "", message: "invalid_function", hint: "", details: "" } });
     }
     var schema = opts.schema || "app";
-    /* Ohne Token traegt Authorization den Schluessel nur, wenn er selbst ein JWT ist (der alte
-       anon-Schluessel, "eyJ..."). Ein neuer Publishable Key (sb_publishable_...) ist keins und
-       gehoert nur nach apikey -- die Gateway nimmt die Anfrage dann als anon. */
+    /* Ohne Token traegt Authorization den oeffentlichen Schluessel -- so steht es im Vertrag der
+       Einladungsseite (08.10., vom DB-Chat gegen Prod getestet) und so macht es supabase-js. */
     function kopf(token, schluessel){
-      var h = { "apikey": schluessel, "Content-Type": "application/json", "Accept": "application/json",
-                "Content-Profile": schema, "Accept-Profile": schema };
-      if (token) h.Authorization = "Bearer " + token;
-      else if (/^eyJ/.test(schluessel)) h.Authorization = "Bearer " + schluessel;
-      return h;
+      return { "apikey": schluessel, "Authorization": "Bearer " + (token || schluessel),
+               "Content-Type": "application/json", "Accept": "application/json",
+               "Content-Profile": schema, "Accept-Profile": schema };
     }
     function einmal(){
       return rpcToken().then(function(token){

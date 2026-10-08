@@ -193,7 +193,7 @@
        Sitzung fuehrt. Ohne das Attribut bleibt alles wie bisher (Setter aus Bubble).
          get_team_invite_by_token_v3(p_token)     auch ohne Anmeldung (anon), Zustand als Feld
          accept_team_invite_by_token_v2(p_token)  nur angemeldet, idempotent
-       Vertrag: bubble/invite_db_auftrag.md. */
+       Vertrag: bubble/invite_db_vertrag.md. */
     var direkt = UC.isYes(root.getAttribute("data-direct")) && typeof UC.rpc === "function";
     function urlParam(n){ try { return new URL(window.location.href).searchParams.get(n); } catch (e) { return null; } }
     function urlAendern(fn){
@@ -638,7 +638,9 @@
       var m = str(a && a.fehler && a.fehler.message).toLowerCase();
       if (!a || a.status === 0 || a.status >= 500 || !m || m === "unreadable_response") return T.annehmenLos;
       if (/mismatch/.test(m)) return T.andereMail;
-      if (/not authenticated|no session/.test(m)) return T.erstKonto;
+      /* 42501 / HTTP 401: mit dem oeffentlichen Schluessel gerufen, also nicht angemeldet
+         (Vertrag 08.10.: "wie nicht angemeldet behandeln"). */
+      if (/not authenticated|no session|permission denied/.test(m) || a.status === 401 || str(a.fehler && a.fehler.code) === "42501") return T.erstKonto;
       return freundlich(m);
     }
     function direktAnnehmen(){
@@ -655,8 +657,15 @@
       UC.rpc("accept_team_invite_by_token_v2", { p_token: token }, { timeoutMs: 20000 }).then(function(a){
         if (state.phase !== "accepting" && state.phase !== "welcome") return;
         if (!a.ok){ api.setError(annehmenFehler(a)); return; }
+        var teamId = str(a.daten && a.daten.team_id);
         setTimeout(function(){
           if (state.phase !== "accepting" && state.phase !== "welcome") return;
+          /* DAS NEUE TEAM AKTIV SETZEN (Vertrag 08.10.: das Annehmen setzt es nicht). Das aktive
+             Team schreibt Bubble -- derselbe Weg wie "Switch" in Sidebar und Teams (usnTeam).
+             Ist uivTeam angeschlossen, wechselt Bubble das Team und navigiert; die Notbremse
+             des Willkommensblocks laeuft weiter. Ohne Element direkt zum Dashboard, dann im
+             bisherigen Team. */
+          if (teamId && attr("data-team-fn") && fire("data-team-fn", "uivTeam", { team_id: teamId })) return;
           if (!weiter("dashboard")) api.setError(T.klemmt);
         }, Math.max(0, hakenFertig - Date.now()) + WEITER_MS);
       });
@@ -852,9 +861,13 @@
         var d = (a.daten && typeof a.daten === "object" && !Array.isArray(a.daten)) ? a.daten : null;
         if (!d){ api.setError(T.unlesbar); return; }
         var st = str(d.status).toLowerCase();
+        /* Angemeldet mit einem anderen Konto als dem eingeladenen: gar nicht erst "Accept"
+           anbieten (Vertrag 08.10., Schritt 4). Der Fehlerzustand zeigt das Team, den Satz und --
+           angemeldet -- "Log out" daneben. Auch log=yes nimmt dann nicht an. */
+        var fremdesKonto = d.valid === true && d.email_matches === false && drin();
         api.setData(JSON.stringify({
-          ok: d.valid === true, status: st, expires_at: d.expires_at,
-          message: st === "invalid" ? T.ungueltig : "",
+          ok: d.valid === true && !fremdesKonto, status: st, expires_at: d.expires_at,
+          message: st === "invalid" ? T.ungueltig : fremdesKonto ? T.andereMail : "",
           team_name: d.team_name, team_logo_url: d.team_logo_url, inviter_name: d.inviter_name, role: d.role,
           invited_email: d.invited_email, signed_in_email: d.signed_in_email
         }));
