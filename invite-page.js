@@ -239,7 +239,11 @@
       try { return !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); }
       catch(e){ return false; }
     }
-    function logoAdresse(){ return (istDunkel() && attr("data-logo-dark")) || attr("data-logo"); }
+    /* Ohne data-logo die Wortmarke aus core (08.10.) -- die Adresse muss nicht mehr ins Element. */
+    function logoAdresse(){
+      var d = istDunkel();
+      return (d && attr("data-logo-dark")) || attr("data-logo") || (UC.wortmarke ? UC.wortmarke(d) : "");
+    }
     function syncTheme(){
       var d = istDunkel();
       if (d) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");

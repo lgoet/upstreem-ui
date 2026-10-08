@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261112;
+  var BUILD = 20261113;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -21996,6 +21996,9 @@
     granFuerZeitraum: granFuerZeitraum,
     rpc: rpc,
     rpcBereit: rpcBereit,
+    /* Die upstreem-Wortmarke, EINE Quelle (08.10.): Seiten ohne eigenes data-logo nehmen sie von
+       hier, statt die Adresse in jedes Element zu schreiben. */
+    wortmarke: function(dunkel){ return dunkel ? WORTMARKE.dunkel : WORTMARKE.hell; },
     sitzungInfo: sitzungInfo,
     normGran: normGran,
     granRangeDays: granRangeDays,

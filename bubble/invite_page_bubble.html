@@ -62,6 +62,9 @@
        data-signup-url     Pfad der Auth Page, z.B. /signup (mode, token, mail haengt die Seite an)
        data-signin-url     Pfad der Anmeldung fuer "Back to sign in", z.B. /login
      Nur Pfade dieser App (/...) oder https://-Adressen; alles andere gilt als nicht gesetzt.
+     Seit 08.10. ebenfalls NICHT mehr noetig: data-cdn-pin (der Loader nimmt den Pin des
+     Header-Scripts, window.__upPin), data-logo/data-logo-dark (Wortmarke aus core, UC.wortmarke),
+     data-isdark (gespeicherte Wahl bzw. System) und data-instance.
 
      ── ATTRIBUTE ───────────────────────────────────────────────────────────────────────────
        data-instance    eindeutig pro Platzierung, z.B. "invite". Alle Setter sprechen darueber.
@@ -240,11 +243,6 @@
 ========================================================================================== -->
 
 <div class="up-root uiv-root"
-     data-instance="INSTANCE_ID"
-     data-cdn-pin="CDN_PIN"
-     data-logo="LOGO_URL"
-     data-logo-dark="LOGO_DARK_URL"
-     data-isdark="IS_DARK"
      data-direct="yes"
      data-dashboard-url="DASHBOARD_URL"
      data-signup-url="SIGNUP_URL"
