@@ -115,6 +115,15 @@
        Grundaufbau (leere Liste, Zustand idle) ueber das, was gleich zurueckkommen soll. */
     var instanceId = root.getAttribute('data-instance') || 'default';
     var vorrat = STORE[instanceId] || null;
+    /* LOKALER MODUS (09.10., Prompt-Research-Seite): die Seite laedt und schreibt selbst
+       (prompt-research-page.js). Dann geht kein Ereignis an Bubble, auch wenn auf der Seite noch
+       ein bubble_fn_* mit demselben Namen haengt -- sonst liefe jede Aktion doppelt. Die Seite
+       hoert auf die window-Ereignisse, die es schon immer als Rueckfall gab. */
+    var lokal = root.getAttribute('data-local') === 'yes';
+    function senden(fnName, evName, payload){
+      if (!lokal && typeof window[fnName] === 'function') window[fnName](JSON.stringify(payload));
+      else window.dispatchEvent(new CustomEvent(evName, { detail: payload }));
+    }
     var aufbau = true;
 
     /* Page header, built HERE and not in the Bubble template on purpose. That template is a
@@ -452,6 +461,7 @@
   var SUGGESTION_TAGS_LIMIT = 15;
   var acceptWithTags = true;
   var currentResearchMeta = { keywords: [], market: null, market_name: null, business_model: null, persona: null };
+  var listeFehler = false;
 
   /* ---------- Vorrat fuer den Neuaufbau (siehe STORE oben) ----------
      Was Bubble geliefert hat, so wie es kam: die Rohlisten, nicht die umgeformten -- jede Render-
@@ -465,6 +475,28 @@
   var laufSeit = 0;
   /* Das Eingabefeld baut initTagEditor weiter unten; dort werden diese beiden ersetzt. */
   var eingabe = { stand: function(){ return []; }, setzen: function(){} };
+  /* Der Inhalt des Feldes beim letzten Start (siehe Start-Knopf). */
+  var vorStart = null;
+  /* Die Fehlerzeile unter dem Eingabefeld (core: .up-fehlerzeile, roter Satz ohne Kasten). Nur
+     der lokale Modus schreibt hinein -- Bubble hatte nie einen Fehlertext, setError war dort
+     immer nur "zurueck zum Start". */
+  var fehlerText = '';
+  function fehlerZeigen(txt){
+    fehlerText = String(txt || '');
+    var zeile = root.querySelector('.upr-fehler');
+    if (!zeile && fehlerText){
+      var bereich = root.querySelector('.upr-composer-area');
+      if (!bereich) return;
+      zeile = document.createElement('div');
+      zeile.className = 'up-fehlerzeile upr-fehler';
+      zeile.setAttribute('role', 'alert');
+      zeile.innerHTML = '<span></span>';
+      bereich.appendChild(zeile);
+    }
+    if (!zeile) return;
+    zeile.firstChild.textContent = fehlerText;
+    zeile.classList.toggle('is-on', !!fehlerText);
+  }
   function merke(){
     if (aufbau || BESITZER[instanceId] !== root) return;
     STORE[instanceId] = {
@@ -477,7 +509,8 @@
       kontext: currentResearchMeta,
       mitTags: acceptWithTags,
       aktion: root.classList.contains('is-action-loading'),
-      eingabe: eingabe.stand()
+      eingabe: eingabe.stand(),
+      fehler: fehlerText, listeFehler: listeFehler
     };
   }
 
@@ -706,8 +739,20 @@
       business_model: item.business_model || input.business_model || null,
       persona: item.persona || input.persona || null,
       prompt_count: Number(item.prompt_count || item.suggested_prompt_count || item.inserted_count || 0),
-      created_at: item.created_at || item.finished_at || item.updated_at || null
+      created_at: item.created_at || item.finished_at || item.updated_at || null,
+      /* Seit dem 09.10. (prompt_research_jobs_v1) stehen auch laufende und gescheiterte Jobs in
+         der Liste. Bubbles alte Liste kennt kein status -- dann gilt der Eintrag als fertig, wie
+         bisher. */
+      status: String(item.status || '').toLowerCase(),
+      fehler_code: item.error && typeof item.error === 'object' ? String(item.error.code || '') : ''
     };
+  }
+  /* Was ein gescheiterter Lauf dem Nutzer sagt (Vertrag 14.1): nur was passiert ist, keine
+     internen Namen. */
+  function fehlerSatz(code){
+    if (code === 'n8n_unreachable') return 'Could not be started';
+    if (code === 'timeout') return 'Timed out';
+    return 'Research failed';
   }
   function formatHistoryDate(value){
     if (!value) return 'recently';
@@ -715,6 +760,7 @@
     catch(e){ return String(value); }
   }
   function renderPreviousResearches(rawItems){
+    listeFehler = false;
     previousResearches = (Array.isArray(rawItems) ? rawItems : []).map(normalizeResearchMeta).filter(function(x){ return x.job_id; });
     /* Gemerkt erst NACH dem Umformen: eine Liste, an der normalizeResearchMeta scheitert, darf
        nicht in den Vorrat -- sonst scheiterte jeder Neuaufbau ein zweites Mal an ihr. */
@@ -733,15 +779,26 @@
     }
     historyList.innerHTML = previousResearches.map(function(item, index){
       var headline = (item.keywords && item.keywords.length) ? item.keywords.join(', ') : 'Untitled research';
-      return '<div class="upr-history-item" data-history-index="' + index + '" role="button" tabindex="0">' +
+      /* Laufend: weder oeffnen (es gibt noch nichts) noch loeschen (n8n liefe ins Leere, Vertrag
+         14.1). Gescheitert: loeschen ja, oeffnen nein. */
+      var laeuft = item.status === 'queued' || item.status === 'running';
+      var kaputt = item.status === 'error';
+      var zeile = laeuft
+        ? '<span class="upr-history-lauf">' + esc(UC.t ? UC.t('Running') : 'Running') + '</span>'
+        : kaputt
+          ? '<span class="upr-history-fehler">' + esc(UC.t ? UC.t(fehlerSatz(item.fehler_code)) : fehlerSatz(item.fehler_code)) + '</span>'
+          : esc(item.prompt_count || 0) + ' prompts';
+      var still = laeuft || kaputt;
+      return '<div class="upr-history-item' + (still ? ' is-still' : '') + '" data-history-index="' + index + '"' +
+        (still ? ' data-oeffnen="nein"' : ' role="button" tabindex="0"') + '>' +
         '<div class="upr-history-main">' +
           '<div class="upr-history-headline" data-tip="' + esc(headline) + '">' + esc(headline) + '</div>' +
-          '<div class="upr-history-date">' + esc(formatHistoryDate(item.created_at)) + ', ' + esc(item.prompt_count || 0) + ' prompts</div>' +
+          '<div class="upr-history-date">' + esc(formatHistoryDate(item.created_at)) + ', ' + zeile + '</div>' +
           '<div class="upr-history-meta-row">' + contextPills(item, false) + '</div>' +
         '</div>' +
         '<div class="upr-history-actions">' +
-          '<button class="up-iconbtn upr-history-delete" type="button" data-action="delete-research" data-job-id="' + esc(item.job_id) + '" data-history-index="' + index + '" data-tip="Delete research" aria-label="Delete research">' + ICON.trash + '</button>' +
-          '<button class="up-iconbtn" type="button" data-action="open-research" data-history-index="' + index + '" data-tip="Open research" aria-label="Open research">' + ICON.gotoArrow + '</button>' +
+          (laeuft ? '' : '<button class="up-iconbtn upr-history-delete" type="button" data-action="delete-research" data-job-id="' + esc(item.job_id) + '" data-history-index="' + index + '" data-tip="Delete research" aria-label="Delete research">' + ICON.trash + '</button>') +
+          (still ? '' : '<button class="up-iconbtn" type="button" data-action="open-research" data-history-index="' + index + '" data-tip="Open research" aria-label="Open research">' + ICON.gotoArrow + '</button>') +
         '</div>' +
       '</div>';
     }).join('');
@@ -837,16 +894,13 @@
     setResearchState('results');
     if (historyList) historyList.scrollTop = 0;
     var payload = { job_id: item.job_id, keywords: item.keywords, market: item.market, market_name: item.market_name, business_model: item.business_model, persona: item.persona };
-    if (window.bubble_fn_openPromptResearchJob) window.bubble_fn_openPromptResearchJob(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('upstreem:open-prompt-research-job', { detail: payload })); }
+    senden('bubble_fn_openPromptResearchJob', 'upstreem:open-prompt-research-job', payload);
   }
   function emitPromptAction(action, payload){
     payload = payload || {};
     if (action === 'accept' || action === 'accept_all') payload.accept_with_tags = acceptWithTags;
-    var json = JSON.stringify(payload);
     var fnName = { accept: 'bubble_fn_acceptSuggestedPrompt', ignore: 'bubble_fn_ignoreSuggestedPrompt', accept_all: 'bubble_fn_acceptAllSuggestedPrompts', delete_all: 'bubble_fn_deleteAllSuggestedPrompts' }[action];
-    if (fnName && typeof window[fnName] === 'function') window[fnName](json);
-    else { window.dispatchEvent(new CustomEvent('upstreem:suggested-prompt:' + action, { detail: payload })); }
+    senden(fnName || '', 'upstreem:suggested-prompt:' + action, payload);
   }
 
   /* ---------- results table ---------- */
@@ -1060,10 +1114,13 @@
     updateResearchContext(payload); renderResultsContext();
     if (root.__uprStartLocked) return;
     root.__uprStartLocked = true; setTimeout(function(){ root.__uprStartLocked = false; }, 1200);
+    /* Was im Feld stand, BEVOR es geleert wird: scheitert der Start, setzt setError es zurueck --
+       sonst muesste man die Begriffe nach jedem Fehler neu tippen. */
+    vorStart = eingabe.stand();
+    fehlerZeigen('');
     setResearchState('running');
     if (textarea){ textarea.value = ''; autoResizeTextarea(); }
-    if (window.bubble_fn_startPromptResearch) window.bubble_fn_startPromptResearch(JSON.stringify(payload));
-    else { window.dispatchEvent(new CustomEvent('upstreem:start-prompt-research', { detail: payload })); }
+    senden('bubble_fn_startPromptResearch', 'upstreem:start-prompt-research', payload);
   });
 
   if (resultsBody) resultsBody.addEventListener('click', function(e){
@@ -1083,18 +1140,17 @@
       var dIndex = Number(deleteBtn.getAttribute('data-history-index'));
       var dItem = previousResearches[dIndex];
       var payload = { job_id: jobId, keywords: dItem ? dItem.keywords : [], market: dItem ? dItem.market : null };
-      if (window.bubble_fn_deletePromptResearch) window.bubble_fn_deletePromptResearch(JSON.stringify(payload));
-      else window.dispatchEvent(new CustomEvent('upstreem:delete-prompt-research', { detail: payload }));
+      senden('bubble_fn_deletePromptResearch', 'upstreem:delete-prompt-research', payload);
       return;
     }
     var itemRow = e.target.closest('.upr-history-item');
-    if (!itemRow) return;
+    if (!itemRow || itemRow.getAttribute('data-oeffnen') === 'nein') return;
     emitOpenResearchJob(previousResearches[Number(itemRow.getAttribute('data-history-index'))]);
   });
   if (historyList) historyList.addEventListener('keydown', function(e){
     if (e.key !== 'Enter' && e.key !== ' ') return;
     var itemRow = e.target.closest('.upr-history-item');
-    if (!itemRow) return;
+    if (!itemRow || itemRow.getAttribute('data-oeffnen') === 'nein') return;
     e.preventDefault();
     emitOpenResearchJob(previousResearches[Number(itemRow.getAttribute('data-history-index'))]);
   });
@@ -1424,7 +1480,26 @@
   var api = window.upstreemPromptResearch = window.upstreemPromptResearch || {};
   api.setRunning  = function(){ setResearchState('running'); };
   api.setIdle     = function(){ setResearchState('idle'); };
-  api.setError    = function(){ setResearchState('idle'); };
+  /* setError(text): zurueck zum Start, und der Satz steht unter dem Feld. Lief gerade eine
+     Recherche an, kommt der Inhalt des Feldes zurueck. Ohne Text wie immer: nur zurueck. */
+  api.setError    = function(msg){
+    var lief = root.classList.contains('is-running');
+    setResearchState('idle');
+    if (lief && vorStart && vorStart.length) eingabe.setzen(vorStart);
+    vorStart = null;
+    if (typeof msg === 'string') fehlerZeigen(msg);
+    merke();
+  };
+  /* Die Liste der Recherchen konnte nicht geladen werden: der Lesefehler aus core statt "noch
+     keine Recherchen" -- leer und kaputt sehen nie gleich aus. */
+  api.setHistoryError = function(){
+    listeFehler = true;
+    gemerkterVerlauf = null;
+    previousResearches = [];
+    if (historyCountEl) historyCountEl.textContent = '0';
+    if (historyList) historyList.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml('researches') : '';
+    setActionLoading(false);
+  };
   api.setComplete = function(data){ Array.isArray(data) ? renderSuggestedPrompts(data) : setResearchState('idle'); };
   api.setPrompts  = function(data, meta){
     if (typeof data === 'string'){ try { data = JSON.parse(data); } catch(e){ data = []; } }
@@ -1547,6 +1622,7 @@
     if (v.modell != null) state.business_model = v.modell;
     if (v.persona != null) state.persona = v.persona;
     if (Array.isArray(v.verlauf)) renderPreviousResearches(v.verlauf);
+    else if (v.listeFehler) api.setHistoryError();
     if (v.kontext && typeof v.kontext === 'object'){
       var k = v.kontext;
       currentResearchMeta = { keywords: Array.isArray(k.keywords) ? k.keywords.slice() : [],
@@ -1564,6 +1640,7 @@
     /* Zuletzt: setActionLoading merkt sich den disabled-Stand jedes Knopfs, und den legt
        setResearchState eben erst fest. */
     if (v.aktion) setActionLoading(true);
+    if (v.fehler) fehlerZeigen(v.fehler);
   }
   /* Scheitert das Wiedereinsetzen, steht die Wurzel im Grundzustand da -- wie vor dem 27.09.
      nach jedem Neuaufbau --, aber sie lebt: aufbau faellt, die Warteschlange laeuft, und der

@@ -755,6 +755,12 @@
 .upr-history-item:focus-visible .upr-history-actions,
 .upr-history-actions:focus-within { opacity: 1; }
 .upr-history-delete:hover { color: var(--vt-down, #b0200c); }
+/* Laufende und gescheiterte Recherchen (09.10., Seite): sie lassen sich nicht oeffnen, also kein
+   Zeiger. Der Zustand steht als Wort in der Datumszeile -- gescheitert in der Fehlerfarbe der App,
+   ohne Kasten, wie jede Fehlerzeile. */
+.upr-history-item.is-still { cursor: default; }
+.upr-history-lauf { color: var(--vc-text); }
+.upr-history-fehler { color: var(--vt-down); }
 
 /* ---------- responsive ---------- */
 @media (max-width: 1040px) {

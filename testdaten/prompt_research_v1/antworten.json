@@ -1,0 +1,1236 @@
+{
+ "team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+ "nutzer": "aea6e317-d901-419b-b2b2-5ca3573ea2f5",
+ "erstellt": "2026-10-09T14:12:00Z",
+ "quelle": "Datenbank-Chat, prompt_research_v1.sql in Prod mit ROLLBACK, 09.10.2026 (vom Nutzer in den Chat gegeben, unveraendert uebernommen)",
+ "faelle": [
+  {
+   "fall": "1 Liste links (Vorgabe p_limit 5)",
+   "funktion": "prompt_research_jobs_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70"
+   },
+   "ms": 10,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "limit": 5,
+     "order": "finished_desc",
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "generated_at": "2026-10-09T14:10:45Z",
+     "running_count": 0
+    },
+    "rows": [
+     {
+      "step": "Complete",
+      "error": null,
+      "job_id": "46aeee80-923c-44ce-b9f4-ae1114d878b4",
+      "market": "DE",
+      "status": "success",
+      "persona": null,
+      "flag_url": "https://flagcdn.com/de.svg",
+      "keywords": [
+       "Automatikgetriebe"
+      ],
+      "progress": 100,
+      "created_at": "2026-08-29T16:03:28.861552+00:00",
+      "started_at": "2026-08-29T16:03:28.825+00:00",
+      "updated_at": "2026-08-29T16:03:41.439+00:00",
+      "finished_at": "2026-08-29T16:03:41.439+00:00",
+      "market_name": "Germany",
+      "prompt_count": 11,
+      "market_alpha2": "DE",
+      "market_alpha3": "DEU",
+      "business_model": "b2c",
+      "status_message": "Prompt research completed."
+     },
+     {
+      "step": "Complete",
+      "error": null,
+      "job_id": "e277d836-40a0-4bd3-baad-6b01816f3367",
+      "market": "DE",
+      "status": "success",
+      "persona": null,
+      "flag_url": "https://flagcdn.com/de.svg",
+      "keywords": [
+       "Luxury",
+       "Sedans"
+      ],
+      "progress": 100,
+      "created_at": "2026-08-27T09:57:24.224401+00:00",
+      "started_at": "2026-08-27T09:57:24.163+00:00",
+      "updated_at": "2026-08-27T09:57:41.019+00:00",
+      "finished_at": "2026-08-27T09:57:41.019+00:00",
+      "market_name": "Germany",
+      "prompt_count": 19,
+      "market_alpha2": "DE",
+      "market_alpha3": "DEU",
+      "business_model": "b2c",
+      "status_message": "Prompt research completed."
+     },
+     {
+      "step": "Complete",
+      "error": null,
+      "job_id": "5c50d309-6366-4c22-aa06-1945d1e88ca6",
+      "market": "DE",
+      "status": "success",
+      "persona": null,
+      "flag_url": "https://flagcdn.com/de.svg",
+      "keywords": [
+       "Safety"
+      ],
+      "progress": 100,
+      "created_at": "2026-07-07T06:32:37.633295+00:00",
+      "started_at": "2026-07-07T06:32:37.578+00:00",
+      "updated_at": "2026-07-07T06:32:59.256+00:00",
+      "finished_at": "2026-07-07T06:32:59.256+00:00",
+      "market_name": "Germany",
+      "prompt_count": 20,
+      "market_alpha2": "DE",
+      "market_alpha3": "DEU",
+      "business_model": "b2c",
+      "status_message": "Prompt research completed."
+     },
+     {
+      "step": "Complete",
+      "error": null,
+      "job_id": "44d4a46d-0293-458a-8caa-652e8a24932b",
+      "market": "DE",
+      "status": "success",
+      "persona": null,
+      "flag_url": "https://flagcdn.com/de.svg",
+      "keywords": [
+       "Safety"
+      ],
+      "progress": 100,
+      "created_at": "2026-07-06T14:46:33.590084+00:00",
+      "started_at": "2026-07-06T14:46:33.547+00:00",
+      "updated_at": "2026-07-06T14:46:53.444+00:00",
+      "finished_at": "2026-07-06T14:46:53.444+00:00",
+      "market_name": "Germany",
+      "prompt_count": 20,
+      "market_alpha2": "DE",
+      "market_alpha3": "DEU",
+      "business_model": "b2c",
+      "status_message": "Prompt research completed."
+     },
+     {
+      "step": "Complete",
+      "error": null,
+      "job_id": "b350c2d9-58f8-4b10-8d48-b737a445eb86",
+      "market": "DE",
+      "status": "success",
+      "persona": null,
+      "flag_url": "https://flagcdn.com/de.svg",
+      "keywords": [
+       "Hybrid",
+       "SUV",
+       "Safety"
+      ],
+      "progress": 100,
+      "created_at": "2026-07-06T08:50:07.841466+00:00",
+      "started_at": "2026-07-06T08:50:07.778+00:00",
+      "updated_at": "2026-07-06T08:50:33.959+00:00",
+      "finished_at": "2026-07-06T08:50:33.959+00:00",
+      "market_name": "Germany",
+      "prompt_count": 17,
+      "market_alpha2": "DE",
+      "market_alpha3": "DEU",
+      "business_model": "b2c",
+      "status_message": "Prompt research completed."
+     }
+    ]
+   },
+   "fehler": null
+  },
+  {
+   "fall": "2 Ergebnis einer Recherche",
+   "funktion": "prompt_research_result_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_job_id": "46aeee80-923c-44ce-b9f4-ae1114d878b4"
+   },
+   "ms": 6,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "step": "Complete",
+     "error": null,
+     "job_id": "46aeee80-923c-44ce-b9f4-ae1114d878b4",
+     "market": "DE",
+     "status": "success",
+     "persona": null,
+     "flag_url": "https://flagcdn.com/de.svg",
+     "keywords": [
+      "Automatikgetriebe"
+     ],
+     "progress": 100,
+     "created_at": "2026-08-29T16:03:28.861552+00:00",
+     "started_at": "2026-08-29T16:03:28.825+00:00",
+     "updated_at": "2026-08-29T16:03:41.439+00:00",
+     "finished_at": "2026-08-29T16:03:41.439+00:00",
+     "market_name": "Germany",
+     "prompt_count": 11,
+     "market_alpha2": "DE",
+     "market_alpha3": "DEU",
+     "business_model": "b2c",
+     "status_message": "Prompt research completed.",
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "generated_at": "2026-10-09T14:10:45Z",
+     "prompts_limit": 150,
+     "prompts_active": 102,
+     "prompts_remaining": 48
+    },
+    "rows": [
+     {
+      "id": "56770426-cc33-427e-ac11-d7d270df3d29",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "beste Automatikautos für Senioren mit einfacher Bedienung",
+      "prompt_focus": null,
+      "estimated_volume": 60
+     },
+     {
+      "id": "584dc3a9-adee-41f5-95dc-333f0524d3aa",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "welche Automatikautos haben die beste Beschleunigung?",
+      "prompt_focus": null,
+      "estimated_volume": 65
+     },
+     {
+      "id": "9ac2b68a-76f8-4662-b233-a2f5e4ddc99b",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "welche Automatikautos haben die geringsten Wartungskosten?",
+      "prompt_focus": null,
+      "estimated_volume": 65
+     },
+     {
+      "id": "a50c4fa2-dbbf-46b0-956e-6b5bd2833693",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "welche Automatikautos sind für Vielfahrer am besten geeignet?",
+      "prompt_focus": null,
+      "estimated_volume": 70
+     },
+     {
+      "id": "a817a611-9dbb-4152-ab91-8c2d80be034b",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "vergleich Automatik vs. Schaltgetriebe: Was ist besser für Anfänger?",
+      "prompt_focus": null,
+      "estimated_volume": 70
+     },
+     {
+      "id": "aecf95e2-4e15-47e4-baa8-c1a49962f8f6",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "Automatikgetriebe Probleme und welche Marken am wenigsten Ärger machen",
+      "prompt_focus": null,
+      "estimated_volume": 65
+     },
+     {
+      "id": "b6ff0bd7-66a2-400c-9e56-ce42b36fad1c",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       },
+       {
+        "name": "SUV",
+        "emoji": null,
+        "tag_id": "8daee9bb-30f9-4315-8fd7-30252cd58521",
+        "hex_dark": "#6d28d9",
+        "hex_light": "#6d28d9"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "beste Automatikautos für den Winter mit Allradantrieb",
+      "prompt_focus": null,
+      "estimated_volume": 70
+     },
+     {
+      "id": "c20ff183-00ce-471b-989a-c38df22df9d6",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "beste Gebrauchtwagen mit Automatikgetriebe und niedrigem Verbrauch",
+      "prompt_focus": null,
+      "estimated_volume": 80
+     },
+     {
+      "id": "d0ccc417-9cdd-45aa-8aab-2b5321fd6298",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       },
+       {
+        "name": "Hybrid",
+        "emoji": null,
+        "tag_id": "377fa98a-f1b1-4b2c-b91e-571f673a6baa",
+        "hex_dark": "#15803d",
+        "hex_light": "#15803d"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "beste Automatikautos mit Plug-in-Hybrid für den Pendleralltag",
+      "prompt_focus": null,
+      "estimated_volume": 60
+     },
+     {
+      "id": "eb271985-c463-4793-8f8e-6d440b1807d2",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "welche Automatikautos sind am sparsamsten im Verbrauch?",
+      "prompt_focus": null,
+      "estimated_volume": 75
+     },
+     {
+      "id": "ed2ed814-564b-4ffa-a033-caa1f966045b",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       },
+       {
+        "name": "Safety",
+        "emoji": null,
+        "tag_id": "13b8d3b5-8f38-4f03-9c9d-b299a8df96da",
+        "hex_dark": "#b45309",
+        "hex_light": "#b45309"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "beste Automatikautos mit modernen Assistenzsystemen",
+      "prompt_focus": null,
+      "estimated_volume": 65
+     }
+    ]
+   },
+   "fehler": null
+  },
+  {
+   "fall": "3 Zwei Vorschlaege annehmen, mit Tags",
+   "funktion": "prompt_research_decide_v1",
+   "params": {
+    "p_ids": [
+     "56770426-cc33-427e-ac11-d7d270df3d29",
+     "584dc3a9-adee-41f5-95dc-333f0524d3aa"
+    ],
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_action": "accept",
+    "p_with_tags": true
+   },
+   "ms": 29,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "action": "accept",
+     "ignored": 0,
+     "skipped": 0,
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "accepted": 2,
+     "with_tags": true,
+     "generated_at": "2026-10-09T14:10:45Z",
+     "prompts_limit": 150,
+     "prompts_active": 104,
+     "prompts_remaining": 46
+    },
+    "rows": [
+     {
+      "reason": null,
+      "result": "accepted",
+      "prompt_id": "ad3b78d1-088b-4423-a518-354a39b28691",
+      "prompt_text": "beste Automatikautos für Senioren mit einfacher Bedienung",
+      "suggestion_id": "56770426-cc33-427e-ac11-d7d270df3d29",
+      "tags_copied_count": 1
+     },
+     {
+      "reason": null,
+      "result": "accepted",
+      "prompt_id": "a9fe7cc6-ef96-4f44-882a-26871034ac32",
+      "prompt_text": "welche Automatikautos haben die beste Beschleunigung?",
+      "suggestion_id": "584dc3a9-adee-41f5-95dc-333f0524d3aa",
+      "tags_copied_count": 1
+     }
+    ]
+   },
+   "fehler": null
+  },
+  {
+   "fall": "4 Einen Vorschlag ignorieren (auch Delete all)",
+   "funktion": "prompt_research_decide_v1",
+   "params": {
+    "p_ids": [
+     "9ac2b68a-76f8-4662-b233-a2f5e4ddc99b"
+    ],
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_action": "ignore"
+   },
+   "ms": 3,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "action": "ignore",
+     "ignored": 1,
+     "skipped": 0,
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "accepted": 0,
+     "with_tags": true,
+     "generated_at": "2026-10-09T14:10:45Z",
+     "prompts_limit": 150,
+     "prompts_active": 104,
+     "prompts_remaining": 46
+    },
+    "rows": [
+     {
+      "reason": null,
+      "result": "ignored",
+      "prompt_id": null,
+      "prompt_text": "welche Automatikautos haben die geringsten Wartungskosten?",
+      "suggestion_id": "9ac2b68a-76f8-4662-b233-a2f5e4ddc99b",
+      "tags_copied_count": 0
+     }
+    ]
+   },
+   "fehler": null
+  },
+  {
+   "fall": "5 Annehmen ohne Tags, dazu eine schon erledigte Id (not_open)",
+   "funktion": "prompt_research_decide_v1",
+   "params": {
+    "p_ids": [
+     "a50c4fa2-dbbf-46b0-956e-6b5bd2833693",
+     "56770426-cc33-427e-ac11-d7d270df3d29"
+    ],
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_action": "accept",
+    "p_with_tags": false
+   },
+   "ms": 8,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "action": "accept",
+     "ignored": 0,
+     "skipped": 1,
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "accepted": 1,
+     "with_tags": false,
+     "generated_at": "2026-10-09T14:10:45Z",
+     "prompts_limit": 150,
+     "prompts_active": 105,
+     "prompts_remaining": 45
+    },
+    "rows": [
+     {
+      "reason": null,
+      "result": "accepted",
+      "prompt_id": "83c65ab9-476d-4da6-9874-9b313afe2e17",
+      "prompt_text": "welche Automatikautos sind für Vielfahrer am besten geeignet?",
+      "suggestion_id": "a50c4fa2-dbbf-46b0-956e-6b5bd2833693",
+      "tags_copied_count": 0
+     },
+     {
+      "reason": "not_open",
+      "result": "skipped",
+      "prompt_id": null,
+      "prompt_text": null,
+      "suggestion_id": "56770426-cc33-427e-ac11-d7d270df3d29",
+      "tags_copied_count": 0
+     }
+    ]
+   },
+   "fehler": null
+  },
+  {
+   "fall": "6 Ergebnis danach (offene Vorschlaege weniger)",
+   "funktion": "prompt_research_result_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_job_id": "46aeee80-923c-44ce-b9f4-ae1114d878b4"
+   },
+   "ms": 3,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "step": "Complete",
+     "error": null,
+     "job_id": "46aeee80-923c-44ce-b9f4-ae1114d878b4",
+     "market": "DE",
+     "status": "success",
+     "persona": null,
+     "flag_url": "https://flagcdn.com/de.svg",
+     "keywords": [
+      "Automatikgetriebe"
+     ],
+     "progress": 100,
+     "created_at": "2026-08-29T16:03:28.861552+00:00",
+     "started_at": "2026-08-29T16:03:28.825+00:00",
+     "updated_at": "2026-08-29T16:03:41.439+00:00",
+     "finished_at": "2026-08-29T16:03:41.439+00:00",
+     "market_name": "Germany",
+     "prompt_count": 7,
+     "market_alpha2": "DE",
+     "market_alpha3": "DEU",
+     "business_model": "b2c",
+     "status_message": "Prompt research completed.",
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "generated_at": "2026-10-09T14:10:45Z",
+     "prompts_limit": 150,
+     "prompts_active": 105,
+     "prompts_remaining": 45
+    },
+    "rows": [
+     {
+      "id": "a817a611-9dbb-4152-ab91-8c2d80be034b",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "vergleich Automatik vs. Schaltgetriebe: Was ist besser für Anfänger?",
+      "prompt_focus": null,
+      "estimated_volume": 70
+     },
+     {
+      "id": "aecf95e2-4e15-47e4-baa8-c1a49962f8f6",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "Automatikgetriebe Probleme und welche Marken am wenigsten Ärger machen",
+      "prompt_focus": null,
+      "estimated_volume": 65
+     },
+     {
+      "id": "b6ff0bd7-66a2-400c-9e56-ce42b36fad1c",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       },
+       {
+        "name": "SUV",
+        "emoji": null,
+        "tag_id": "8daee9bb-30f9-4315-8fd7-30252cd58521",
+        "hex_dark": "#6d28d9",
+        "hex_light": "#6d28d9"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "beste Automatikautos für den Winter mit Allradantrieb",
+      "prompt_focus": null,
+      "estimated_volume": 70
+     },
+     {
+      "id": "c20ff183-00ce-471b-989a-c38df22df9d6",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "beste Gebrauchtwagen mit Automatikgetriebe und niedrigem Verbrauch",
+      "prompt_focus": null,
+      "estimated_volume": 80
+     },
+     {
+      "id": "d0ccc417-9cdd-45aa-8aab-2b5321fd6298",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       },
+       {
+        "name": "Hybrid",
+        "emoji": null,
+        "tag_id": "377fa98a-f1b1-4b2c-b91e-571f673a6baa",
+        "hex_dark": "#15803d",
+        "hex_light": "#15803d"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "beste Automatikautos mit Plug-in-Hybrid für den Pendleralltag",
+      "prompt_focus": null,
+      "estimated_volume": 60
+     },
+     {
+      "id": "eb271985-c463-4793-8f8e-6d440b1807d2",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "welche Automatikautos sind am sparsamsten im Verbrauch?",
+      "prompt_focus": null,
+      "estimated_volume": 75
+     },
+     {
+      "id": "ed2ed814-564b-4ffa-a033-caa1f966045b",
+      "tags": [
+       {
+        "name": "Automatikgetriebe",
+        "emoji": null,
+        "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f",
+        "hex_dark": "#9145e8",
+        "hex_light": "#9145e8"
+       },
+       {
+        "name": "Safety",
+        "emoji": null,
+        "tag_id": "13b8d3b5-8f38-4f03-9c9d-b299a8df96da",
+        "hex_dark": "#b45309",
+        "hex_light": "#b45309"
+       }
+      ],
+      "market": "DE",
+      "created_at": "2026-08-29T16:03:40.770757+00:00",
+      "prompt_text": "beste Automatikautos mit modernen Assistenzsystemen",
+      "prompt_focus": null,
+      "estimated_volume": 65
+     }
+    ]
+   },
+   "fehler": null
+  },
+  {
+   "fall": "7 start-job Schritt 1: prompt_research_start_v1 (neuer Job)",
+   "funktion": "prompt_research_start_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_market": "de",
+    "p_persona": "parent_family",
+    "p_keywords": [
+     "Elektro-SUV",
+     "Familie",
+     "Elektro-SUV"
+    ],
+    "p_business_model": "hybrid"
+   },
+   "ms": 6,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "step": "Queued",
+     "error": null,
+     "job_id": "9d9af2a7-8a91-4077-843e-c9cb9cf6a6b2",
+     "market": "DE",
+     "reused": false,
+     "status": "queued",
+     "persona": "parent_family",
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "flag_url": "https://flagcdn.com/de.svg",
+     "keywords": [
+      "Elektro-SUV",
+      "Familie"
+     ],
+     "progress": 0,
+     "created_at": "2026-10-09T14:10:45.003867+00:00",
+     "started_at": null,
+     "updated_at": "2026-10-09T14:10:45.003867+00:00",
+     "finished_at": null,
+     "market_name": "Germany",
+     "prompt_count": 0,
+     "market_alpha2": "DE",
+     "market_alpha3": "DEU",
+     "business_model": "hybrid",
+     "status_message": "Prompt research is queued."
+    },
+    "rows": []
+   },
+   "fehler": null
+  },
+  {
+   "fall": "8 Zweiter Start sofort danach (reused)",
+   "funktion": "prompt_research_start_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_market": "DE",
+    "p_persona": null,
+    "p_keywords": [
+     "Kombi"
+    ],
+    "p_business_model": "b2c"
+   },
+   "ms": 2,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "step": "Queued",
+     "error": null,
+     "job_id": "9d9af2a7-8a91-4077-843e-c9cb9cf6a6b2",
+     "market": "DE",
+     "reused": true,
+     "status": "queued",
+     "persona": "parent_family",
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "flag_url": "https://flagcdn.com/de.svg",
+     "keywords": [
+      "Elektro-SUV",
+      "Familie"
+     ],
+     "progress": 0,
+     "created_at": "2026-10-09T14:10:45.003867+00:00",
+     "started_at": null,
+     "updated_at": "2026-10-09T14:10:45.003867+00:00",
+     "finished_at": null,
+     "market_name": "Germany",
+     "prompt_count": 0,
+     "market_alpha2": "DE",
+     "market_alpha3": "DEU",
+     "business_model": "hybrid",
+     "status_message": "Prompt research is queued."
+    },
+    "rows": []
+   },
+   "fehler": null
+  },
+  {
+   "fall": "9 n8n: prompt_research_job_update_v1 running (service_role)",
+   "funktion": "prompt_research_job_update_v1",
+   "params": {
+    "p_step": "Prompt research started",
+    "p_job_id": "9d9af2a7-8a91-4077-843e-c9cb9cf6a6b2",
+    "p_status": "running",
+    "p_message": "Prompt research is running.",
+    "p_progress": 10
+   },
+   "ms": 10,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "step": "Prompt research started",
+     "error": null,
+     "job_id": "9d9af2a7-8a91-4077-843e-c9cb9cf6a6b2",
+     "market": "DE",
+     "status": "running",
+     "persona": "parent_family",
+     "flag_url": "https://flagcdn.com/de.svg",
+     "keywords": [
+      "Elektro-SUV",
+      "Familie"
+     ],
+     "progress": 10,
+     "created_at": "2026-10-09T14:10:45.003867+00:00",
+     "started_at": "2026-10-09T14:10:45.162149+00:00",
+     "updated_at": "2026-10-09T14:10:45.162149+00:00",
+     "finished_at": null,
+     "market_name": "Germany",
+     "prompt_count": 0,
+     "market_alpha2": "DE",
+     "market_alpha3": "DEU",
+     "business_model": "hybrid",
+     "status_message": "Prompt research is running."
+    },
+    "rows": []
+   },
+   "fehler": null
+  },
+  {
+   "fall": "10 Liste waehrend der Job laeuft",
+   "funktion": "prompt_research_jobs_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70"
+   },
+   "ms": 5,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "limit": 5,
+     "order": "finished_desc",
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "generated_at": "2026-10-09T14:10:45Z",
+     "running_count": 1
+    },
+    "rows": [
+     {
+      "step": "Prompt research started",
+      "error": null,
+      "job_id": "9d9af2a7-8a91-4077-843e-c9cb9cf6a6b2",
+      "market": "DE",
+      "status": "running",
+      "persona": "parent_family",
+      "flag_url": "https://flagcdn.com/de.svg",
+      "keywords": [
+       "Elektro-SUV",
+       "Familie"
+      ],
+      "progress": 10,
+      "created_at": "2026-10-09T14:10:45.003867+00:00",
+      "started_at": "2026-10-09T14:10:45.162149+00:00",
+      "updated_at": "2026-10-09T14:10:45.162149+00:00",
+      "finished_at": null,
+      "market_name": "Germany",
+      "prompt_count": 0,
+      "market_alpha2": "DE",
+      "market_alpha3": "DEU",
+      "business_model": "hybrid",
+      "status_message": "Prompt research is running."
+     },
+     {
+      "step": "Complete",
+      "error": null,
+      "job_id": "46aeee80-923c-44ce-b9f4-ae1114d878b4",
+      "market": "DE",
+      "status": "success",
+      "persona": null,
+      "flag_url": "https://flagcdn.com/de.svg",
+      "keywords": [
+       "Automatikgetriebe"
+      ],
+      "progress": 100,
+      "created_at": "2026-08-29T16:03:28.861552+00:00",
+      "started_at": "2026-08-29T16:03:28.825+00:00",
+      "updated_at": "2026-08-29T16:03:41.439+00:00",
+      "finished_at": "2026-08-29T16:03:41.439+00:00",
+      "market_name": "Germany",
+      "prompt_count": 7,
+      "market_alpha2": "DE",
+      "market_alpha3": "DEU",
+      "business_model": "b2c",
+      "status_message": "Prompt research completed."
+     },
+     {
+      "step": "Complete",
+      "error": null,
+      "job_id": "e277d836-40a0-4bd3-baad-6b01816f3367",
+      "market": "DE",
+      "status": "success",
+      "persona": null,
+      "flag_url": "https://flagcdn.com/de.svg",
+      "keywords": [
+       "Luxury",
+       "Sedans"
+      ],
+      "progress": 100,
+      "created_at": "2026-08-27T09:57:24.224401+00:00",
+      "started_at": "2026-08-27T09:57:24.163+00:00",
+      "updated_at": "2026-08-27T09:57:41.019+00:00",
+      "finished_at": "2026-08-27T09:57:41.019+00:00",
+      "market_name": "Germany",
+      "prompt_count": 19,
+      "market_alpha2": "DE",
+      "market_alpha3": "DEU",
+      "business_model": "b2c",
+      "status_message": "Prompt research completed."
+     },
+     {
+      "step": "Complete",
+      "error": null,
+      "job_id": "5c50d309-6366-4c22-aa06-1945d1e88ca6",
+      "market": "DE",
+      "status": "success",
+      "persona": null,
+      "flag_url": "https://flagcdn.com/de.svg",
+      "keywords": [
+       "Safety"
+      ],
+      "progress": 100,
+      "created_at": "2026-07-07T06:32:37.633295+00:00",
+      "started_at": "2026-07-07T06:32:37.578+00:00",
+      "updated_at": "2026-07-07T06:32:59.256+00:00",
+      "finished_at": "2026-07-07T06:32:59.256+00:00",
+      "market_name": "Germany",
+      "prompt_count": 20,
+      "market_alpha2": "DE",
+      "market_alpha3": "DEU",
+      "business_model": "b2c",
+      "status_message": "Prompt research completed."
+     },
+     {
+      "step": "Complete",
+      "error": null,
+      "job_id": "44d4a46d-0293-458a-8caa-652e8a24932b",
+      "market": "DE",
+      "status": "success",
+      "persona": null,
+      "flag_url": "https://flagcdn.com/de.svg",
+      "keywords": [
+       "Safety"
+      ],
+      "progress": 100,
+      "created_at": "2026-07-06T14:46:33.590084+00:00",
+      "started_at": "2026-07-06T14:46:33.547+00:00",
+      "updated_at": "2026-07-06T14:46:53.444+00:00",
+      "finished_at": "2026-07-06T14:46:53.444+00:00",
+      "market_name": "Germany",
+      "prompt_count": 20,
+      "market_alpha2": "DE",
+      "market_alpha3": "DEU",
+      "business_model": "b2c",
+      "status_message": "Prompt research completed."
+     },
+     {
+      "step": "Complete",
+      "error": null,
+      "job_id": "b350c2d9-58f8-4b10-8d48-b737a445eb86",
+      "market": "DE",
+      "status": "success",
+      "persona": null,
+      "flag_url": "https://flagcdn.com/de.svg",
+      "keywords": [
+       "Hybrid",
+       "SUV",
+       "Safety"
+      ],
+      "progress": 100,
+      "created_at": "2026-07-06T08:50:07.841466+00:00",
+      "started_at": "2026-07-06T08:50:07.778+00:00",
+      "updated_at": "2026-07-06T08:50:33.959+00:00",
+      "finished_at": "2026-07-06T08:50:33.959+00:00",
+      "market_name": "Germany",
+      "prompt_count": 17,
+      "market_alpha2": "DE",
+      "market_alpha3": "DEU",
+      "business_model": "b2c",
+      "status_message": "Prompt research completed."
+     }
+    ]
+   },
+   "fehler": null
+  },
+  {
+   "fall": "11 n8n: prompt_research_job_update_v1 success (service_role)",
+   "funktion": "prompt_research_job_update_v1",
+   "params": {
+    "p_step": "Complete",
+    "p_job_id": "9d9af2a7-8a91-4077-843e-c9cb9cf6a6b2",
+    "p_result": {
+     "skipped_count": 0,
+     "inserted_count": 0
+    },
+    "p_status": "success",
+    "p_message": "Prompt research completed."
+   },
+   "ms": 1,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "step": "Complete",
+     "error": null,
+     "job_id": "9d9af2a7-8a91-4077-843e-c9cb9cf6a6b2",
+     "market": "DE",
+     "status": "success",
+     "persona": "parent_family",
+     "flag_url": "https://flagcdn.com/de.svg",
+     "keywords": [
+      "Elektro-SUV",
+      "Familie"
+     ],
+     "progress": 100,
+     "created_at": "2026-10-09T14:10:45.003867+00:00",
+     "started_at": "2026-10-09T14:10:45.162149+00:00",
+     "updated_at": "2026-10-09T14:10:45.176382+00:00",
+     "finished_at": "2026-10-09T14:10:45.176382+00:00",
+     "market_name": "Germany",
+     "prompt_count": 0,
+     "market_alpha2": "DE",
+     "market_alpha3": "DEU",
+     "business_model": "hybrid",
+     "status_message": "Prompt research completed."
+    },
+    "rows": []
+   },
+   "fehler": null
+  },
+  {
+   "fall": "12 Papierkorb: Recherche loeschen",
+   "funktion": "prompt_research_delete_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_job_id": "46aeee80-923c-44ce-b9f4-ae1114d878b4"
+   },
+   "ms": 5,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "job_id": "46aeee80-923c-44ce-b9f4-ae1114d878b4",
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "deleted_jobs": 1,
+     "generated_at": "2026-10-09T14:10:45Z",
+     "deleted_suggested_prompts": 20,
+     "deleted_suggested_prompt_tags": 29
+    },
+    "rows": []
+   },
+   "fehler": null
+  },
+  {
+   "fall": "13 Fehler: Start mit ungueltigem business_model",
+   "funktion": "prompt_research_start_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_market": "DE",
+    "p_keywords": [
+     "Kombi"
+    ],
+    "p_business_model": "enterprise"
+   },
+   "ms": 3,
+   "status": 400,
+   "antwort": null,
+   "fehler": {
+    "http_status": 400,
+    "code": "22023",
+    "message": "prompt_research_invalid_param",
+    "hint": "p_business_model: b2c, b2b, hybrid",
+    "details": null
+   }
+  },
+  {
+   "fall": "14 Fehler: Start ohne Begriffe",
+   "funktion": "prompt_research_start_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_market": "DE",
+    "p_keywords": [
+     " ",
+     ""
+    ],
+    "p_business_model": "b2b"
+   },
+   "ms": 5,
+   "status": 400,
+   "antwort": null,
+   "fehler": {
+    "http_status": 400,
+    "code": "22023",
+    "message": "prompt_research_invalid_param",
+    "hint": "p_keywords: 1-20 Begriffe, zusammen hoechstens 300 Zeichen",
+    "details": null
+   }
+  },
+  {
+   "fall": "15 Fehler: Start mit unbekanntem Markt",
+   "funktion": "prompt_research_start_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_market": "XX",
+    "p_keywords": [
+     "Kombi"
+    ],
+    "p_business_model": "b2b"
+   },
+   "ms": 1,
+   "status": 400,
+   "antwort": null,
+   "fehler": {
+    "http_status": 400,
+    "code": "22023",
+    "message": "prompt_research_invalid_param",
+    "hint": "p_market: alpha2 aus app.markets",
+    "details": null
+   }
+  },
+  {
+   "fall": "16 Fehler: Ergebnis nach dem Loeschen",
+   "funktion": "prompt_research_result_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_job_id": "46aeee80-923c-44ce-b9f4-ae1114d878b4"
+   },
+   "ms": 1,
+   "status": 404,
+   "antwort": null,
+   "fehler": {
+    "http_status": 404,
+    "code": "PT404",
+    "message": "prompt_research_not_found",
+    "hint": "p_job_id",
+    "details": null
+   }
+  },
+  {
+   "fall": "17 Fehler: decide mit unbekannter Aktion",
+   "funktion": "prompt_research_decide_v1",
+   "params": {
+    "p_ids": [
+     "46aeee80-923c-44ce-b9f4-ae1114d878b4"
+    ],
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_action": "delete"
+   },
+   "ms": 1,
+   "status": 400,
+   "antwort": null,
+   "fehler": {
+    "http_status": 400,
+    "code": "22023",
+    "message": "prompt_research_invalid_param",
+    "hint": "p_action: accept, ignore",
+    "details": null
+   }
+  },
+  {
+   "fall": "18 Fehler: n8n meldet running nach success (unerlaubter Wechsel)",
+   "funktion": "prompt_research_job_update_v1",
+   "params": {
+    "p_job_id": "9d9af2a7-8a91-4077-843e-c9cb9cf6a6b2",
+    "p_status": "running"
+   },
+   "ms": 3,
+   "status": 409,
+   "antwort": null,
+   "fehler": {
+    "http_status": 409,
+    "code": "PT409",
+    "message": "prompt_research_invalid_transition",
+    "hint": "success -> running",
+    "details": null
+   }
+  },
+  {
+   "fall": "19 Fehler: fremdes Team",
+   "funktion": "prompt_research_jobs_v1",
+   "params": {
+    "p_team": "00000000-0000-0000-0000-000000000001"
+   },
+   "ms": 1,
+   "status": 403,
+   "antwort": null,
+   "fehler": {
+    "http_status": 403,
+    "code": "42501",
+    "message": "forbidden",
+    "hint": null,
+    "details": null
+   }
+  },
+  {
+   "fall": "20 Fehler: job_update als angemeldeter Nutzer (nur service_role)",
+   "funktion": "prompt_research_job_update_v1",
+   "params": {
+    "p_job_id": "9d9af2a7-8a91-4077-843e-c9cb9cf6a6b2",
+    "p_status": "running"
+   },
+   "ms": 1,
+   "status": 403,
+   "antwort": null,
+   "fehler": {
+    "http_status": 403,
+    "code": "42501",
+    "message": "permission denied for function prompt_research_job_update_v1",
+    "hint": null,
+    "details": null
+   }
+  }
+ ]
+}

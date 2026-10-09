@@ -1,0 +1,44 @@
+<!--
+  UPSTREEM — PROMPT-RESEARCH-SEITE als EINE Komponente (Praefix urs), 09.10.2026
+
+  WOHIN: ein HTML-Element in die Prompt-Research-Ansicht, volle Breite, Hoehe und Polster genau wie
+  beim bisherigen Element -- die Einstellungen des alten Elements einfach uebernehmen. Die
+  Komponente baut Prompt Research (prompt-research.js) im lokalen Modus selbst ein, samt
+  Seitenkopf.
+
+  ── VORAUSSETZUNG: VERTRAG C IST IN PROD ───────────────────────────────────────
+  Die Seite ruft selbst (UC.rpc / UC.edge, Nutzer-JWT):
+      prompt_research_jobs_v1       die Liste "Previous Researches" (auch laufende und gescheiterte)
+      prompt_research_result_v1     ein Ergebnis oeffnen, und waehrend eines Laufs alle 3 s dessen Stand
+      prompt_research_decide_v1     Track, Ignore, Accept all, Delete all
+      prompt_research_delete_v1     der Papierkorb einer Recherche
+      start-job (Edge Function)     "Start Research" (kind prompt_research)
+  Die vier RPCs sind seit dem 09.10. eingespielt. STARTEN geht erst, wenn der n8n-Workflow
+  "Prompt_Creator v2 (start-job)" importiert ist und die Secrets N8N_PROMPT_RESEARCH_URL und
+  N8N_SHARED_SECRET gesetzt sind -- bis dahin zeigt die Seite unter dem Eingabefeld "Prompt research
+  is not available yet." und legt keinen Job an.
+  Vertrag: bubble/seiten_db_vorschlag_2.md, Abschnitte 7 und 14.
+
+  ── Was Bubble NICHT mehr tut ─────────────────────────────────────────────────
+  Keine Workflows fuer diese Seite: kein Laden der Liste (setPreviousResearches), kein setMarkets,
+  kein setTags, kein setPrompts / setRunning / setIdle, und keiner der sieben Ereignis-Workflows
+  (startPromptResearch, openPromptResearchJob, deletePromptResearch, acceptSuggestedPrompt,
+  ignoreSuggestedPrompt, acceptAllSuggestedPrompts, deleteAllSuggestedPrompts). Auch der alte
+  n8n-Aufruf Prompt_Creator aus Bubble entfaellt.
+  Maerkte und Themen kommen aus den Ablagen der App (setUpstreemAllMarkets, setUpstreemTopics),
+  das Kontingent nach einer Entscheidung geht an setUpstreemQuota, und Maerkte/Themen melden sich
+  ueber upMarketsChanged / upTopicsChanged neu -- diese Workflows gibt es schon.
+
+  ── Attribute ─────────────────────────────────────────────────────────────────
+  data-instance  optional, Vorgabe "prompt_research_page".
+  Kein data-isdark, kein data-cdn-pin: das Thema setzt core, den Pin das Header-Script.
+
+  ── Umstellen ─────────────────────────────────────────────────────────────────
+  1. Pin im Header-Script auf den Commit dieser Seite (oder neuer).
+  2. In der Prompt-Research-Ansicht das alte Element (.upr-root) samt seinen Lade-Schritten und den
+     sieben Ereignis-Workflows durch DIESES eine Element ersetzen. Die sieben "JavaScript to
+     Bubble"-Elemente koennen weg; bleiben sie stehen, ruft die Seite sie trotzdem nicht.
+     VORHER PRUEFEN: ruft einer dieser Workflows noch andere Setter auf (Prompts-Tabelle,
+     Kontingent)? Den Schritt dann verschieben, nicht mitloeschen.
+-->
+<div class="up-root urs-root" data-instance="prompt_research_page"></div>

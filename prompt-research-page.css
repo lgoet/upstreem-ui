@@ -1,0 +1,4 @@
+/* upstreem prompt-research-page.css -- die Huelle der Prompt-Research-Seite (09.10., Praefix urs).
+   Alles Sichtbare kommt aus prompt-research.css; die Huelle ist nur der Block, in dem die
+   eingebettete Komponente steht. */
+.urs-root { display: block; }
