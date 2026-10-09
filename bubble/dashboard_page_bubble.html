@@ -23,6 +23,28 @@
       clear_dashboard_cache_v1          der Aktualisieren-Knopf: leert den DB-Cache des Teams
                                         (Dashboard UND Citations), dann laedt die Seite frisch
   Vertrag: bubble/dashboard_v1_vertrag.md.
+
+  ── BIS ZUM DB-AUFTRAG 2: Recent Chats und Opportunities (09.10.) ──────────────
+  Beide kamen bisher aus get_power_dashboard_v1 (Pageload-Workflow mit Run JS auf
+  askMiraSetPreviousChats / askMiraSetProjects / opportunitiesSetItems). Die Seite ruft dafuer
+  noch nichts selbst -- die zwei Quellen sind beim DB-Chat angefragt (bubble/dashboard_db_auftrag_2.md).
+  BIS DAHIN den Pageload-Schritt behalten bzw. wiederherstellen, nur mit diesen drei Settern (NICHT
+  renderPowerDashboard -- das fuellt jetzt die Seite):
+    (function () {
+      var CHATS = `[RPC's chats, :format as text]`
+        .replace(/:\s*([,}\]])/g, ": null$1")
+        .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+      var PROJ = `[RPC's chat_projects, :format as text]`
+        .replace(/:\s*([,}\]])/g, ": null$1")
+        .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+      var OPPS = `[RPC's opportunities, :format as text]`
+        .replace(/:\s*([,}\]])/g, ": null$1")
+        .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
+      try { if (window.askMiraSetPreviousChats) window.askMiraSetPreviousChats(CHATS); } catch (e) {}
+      try { if (window.askMiraSetProjects) window.askMiraSetProjects(PROJ); } catch (e) {}
+      try { if (window.opportunitiesSetItems) window.opportunitiesSetItems(OPPS); } catch (e) {}
+    })();
+  Am Ereignis "When page is loaded", NICHT an der Sichtbarkeit einer Gruppe.
   Voraussetzungen auf der Seite: das Auth-Element des Supabase Pro Kit (Adresse, Schluessel,
   Sitzung) und das Header-Script (laedt dashboard-data.js und dashboard-page.js).
 
@@ -37,6 +59,11 @@
     Response -> openDrawer("response") -- die Drawer der App, ohne Workflow.
   - Docs oeffnet https://docs.upstreem.ai/welcome in einem neuen Tab, die Suche oeffnet Quick
     Actions (Cmd+K) -- beides ohne Workflow.
+  - Agentic laedt beim Aufbau den Ueberblick und die gerade gewaehlte Liste (Domains ODER URLs),
+    die andere erst beim Umschalten. Responses startet als Karten zu 6; was der Nutzer umstellt,
+    merkt sich der Browser (localStorage).
+  - Die eigene Marke (Schalter "<Marke> mentioned?") kommt aus der Antwort selbst (own), nicht nur
+    aus setUpstreemBrands -- der Store darf trotzdem role "own" tragen, Mira braucht das.
 
   ── Attribute ─────────────────────────────────────────────────────────────────
   data-instance        optional, Vorgabe "dashboard_page". Nur noetig, wenn die Seite zweimal steht.

@@ -199,9 +199,23 @@
      eine Antwort, die nach einer neueren ankommt, faellt weg. Antworten liegen je Signatur im
      Speicher (hoechstens 60): ein Zurueck auf Seite 1 oder auf den anderen Reiter laedt nichts.
      rufen(fn, params, opts) -> Promise<{ok, status, daten|fehler}> -- in der App UC.rpc. */
+  /* EIN SERVERFEHLER WIRD ZWEIMAL WIEDERHOLT (09.10.). Gemeldet: cached_citations_urls_v1 kam
+     beim Seitenaufbau mit XX000 "cannot find parent statement on pldbgapi2 call stack" zurueck,
+     zweimal hintereinander, der dritte Aufruf ein paar Sekunden spaeter lief durch. Ein Lesen ist
+     gefahrlos zu wiederholen; nach 0,8s und 2s, dann gilt der Fehler. NUR Serverfehler (5xx,
+     XX000, Netz) -- ein Rate-Limit, ein Rechte- oder ein Parameterfehler wird durch Wiederholen
+     nicht besser, und ein Rate-Limit sogar schlimmer. Abgebrochen oder ueberholt: kein Versuch. */
+  var WIEDERHOLEN = [800, 2000];
+  function serverFehler(erg) {
+    if (!erg || erg.ok || erg.ueberholt) return false;
+    var f = erg.fehler || {}, m = str(f.message).toLowerCase(), c = str(f.code);
+    if (/rate_limited/.test(m) || c === "PT429" || c === "P0429" || erg.status === 429) return false;
+    if (m === "aborted" || m === "timeout") return false;
+    return c === "XX000" || erg.status >= 500 || m === "network";
+  }
   function makeLader(o) {
     o = o || {};
-    var rufen = o.rufen, MAX = o.max || 60;
+    var rufen = o.rufen, MAX = o.max || 60, wieder = o.wiederholen || WIEDERHOLEN;
     var cache = {}, reihe = [], laufend = {}, zaehler = 0;
     function merken(sig, d) {
       cache[sig] = d;
@@ -226,18 +240,34 @@
       var nr = ++zaehler, ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
       var eintrag = { sig: a.sig, nr: nr, ctrl: ctrl };
       laufend[kanal] = eintrag;
-      eintrag.promise = Promise.resolve(rufen(a.fn, a.params, { signal: ctrl ? ctrl.signal : undefined })).then(function (erg) {
-        var aktuell = laufend[kanal] === eintrag;
-        if (aktuell) laufend[kanal] = null;
-        if (!aktuell) return { ok: false, ueberholt: true };
-        if (erg && erg.ok && a.sig) merken(a.sig, erg.daten);
-        return erg || { ok: false, status: 0, fehler: { message: "network" } };
-      }, function () {
-        /* Abgebrochen, weil eine neuere Anfrage desselben Kanals kam: ueberholt, kein Fehler. */
-        if (laufend[kanal] !== eintrag) return { ok: false, ueberholt: true };
-        laufend[kanal] = null;
-        return { ok: false, status: 0, fehler: { message: "network" } };
-      });
+      function versuch(i) {
+        return Promise.resolve(rufen(a.fn, a.params, { signal: ctrl ? ctrl.signal : undefined })).then(function (erg) {
+          if (laufend[kanal] !== eintrag) return { ok: false, ueberholt: true };
+          erg = erg || { ok: false, status: 0, fehler: { message: "network" } };
+          if (i < wieder.length && serverFehler(erg)) {
+            eintrag.versuche = i + 1;
+            return new Promise(function (weiter) { setTimeout(weiter, wieder[i]); }).then(function () {
+              if (laufend[kanal] !== eintrag) return { ok: false, ueberholt: true };
+              return versuch(i + 1);
+            });
+          }
+          laufend[kanal] = null;
+          if (erg.ok && a.sig) merken(a.sig, erg.daten);
+          return erg;
+        }, function () {
+          /* Abgebrochen, weil eine neuere Anfrage desselben Kanals kam: ueberholt, kein Fehler. */
+          if (laufend[kanal] !== eintrag) return { ok: false, ueberholt: true };
+          if (i < wieder.length) {
+            return new Promise(function (weiter) { setTimeout(weiter, wieder[i]); }).then(function () {
+              if (laufend[kanal] !== eintrag) return { ok: false, ueberholt: true };
+              return versuch(i + 1);
+            });
+          }
+          laufend[kanal] = null;
+          return { ok: false, status: 0, fehler: { message: "network" } };
+        });
+      }
+      eintrag.promise = versuch(0);
       return eintrag.promise;
     }
     return {

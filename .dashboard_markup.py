@@ -11,8 +11,8 @@ Was ersetzt wird:
   - data-instance  -> __UDS_<TEIL>__   (dashboard-page.js setzt die Kennung der Seite ein)
   - IS_DARK        -> __UDS_DARK__     (zur Laufzeit yes/no)
   - BRAND_NAME/BRAND_LOGO -> __UDS_BRAND__/__UDS_BRANDLOGO__ (eigene Marke aus dem Store)
-  - SPOTLIGHT_MODE -> no, IS_STICKY -> yes, DEFAULT_VIEW -> table (Responses wie bisher im
-    Dashboard: Tabelle, Werkzeugleiste klebt)
+  - SPOTLIGHT_MODE -> no, IS_STICKY -> yes, DEFAULT_VIEW -> cards (Responses auf dem Dashboard als
+    Karten, Werkzeugleiste klebt), dazu data-merken="yes" an den Responses (ZUSATZ)
   - die data-*-fn-Attribute fallen weg: die Seite antwortet selbst, Bubble ist nicht dabei
   - data-local="yes" an jede Wurzel
   - data-sticky-top="171" -> 16: die 171 waren der Kopf der alten Bubble-Ansicht ueber der Tabelle.
@@ -49,7 +49,14 @@ ERSATZ = {
     "BRAND_LOGO": "__UDS_BRANDLOGO__",
     "SPOTLIGHT_MODE": "no",
     "IS_STICKY": "yes",
-    "DEFAULT_VIEW": "table",
+    # Responses auf dem Dashboard als Karten, 6 je Seite (09.10. angefordert); was der Nutzer
+    # umstellt, merkt sich die Tabelle (data-merken, siehe ZUSATZ).
+    "DEFAULT_VIEW": "cards",
+}
+
+# Zusaetzliche Attribute je Teil, an die Wurzel gehaengt.
+ZUSATZ = {
+    "urt": ' data-merken="yes"',
 }
 
 
@@ -89,7 +96,7 @@ for schluessel, pfad, kennung in TEILE:
     # auf der Citations-Seite (dort 08.10. gemessen).
     m = m.replace('data-sticky-top="171"', 'data-sticky-top="16"')
     m = re.sub(r'\s*data-[a-z0-9-]+-fn="bubble_fn_[^"]*"', "", m)
-    m = re.sub(r'(<div class="up-root [^"]*")', r'\1 data-local="yes"', m, count=1)
+    m = re.sub(r'(<div class="up-root [^"]*")', lambda t: t.group(1) + ' data-local="yes"' + ZUSATZ.get(schluessel, ""), m, count=1)
     rest = [x for x in re.findall(r'"[A-Z][A-Z0-9_]{3,}"', m)]
     if rest:
         print("ABBRUCH -- unersetzte Platzhalter in %s: %s" % (pfad, ", ".join(sorted(set(rest)))))

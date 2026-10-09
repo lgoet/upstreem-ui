@@ -58,9 +58,10 @@
 
 /* ---------- model chip ----------
    Logo + label sizing comes from core's .up-ment-logo / .up-ment-name (the Mentioned dropdown's
-   pair). The chip shell around it is local: field background, 8/4 padding, 8px radius. */
-.urt-model-chip { display: inline-flex; align-items: center; gap: 8px; min-width: 0;
-  padding: 6px 8px; border-radius: 8px; border: 1px solid var(--vc-border); background: transparent; max-width: 100%; }
+   pair). KEINE Huelle mehr drumherum (09.10. angefordert: "den Container um das LLM-Logo in der
+   Spalte weg, also das Padding, Border und so") -- jetzt dieselbe Form wie .up-model-chip in core,
+   die in Response Detail und Co. ohne Rahmen steht. */
+.urt-model-chip { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
 .urt-model-ltr { font-size: 10px; font-weight: 600; color: var(--vc-muted); line-height: 1; text-transform: uppercase; }
 .up-ment-logo.has-img .urt-model-ltr { display: none; }
 /* Dark mode only: .up-ment-logo's white/light backdrop+padding exists for brand favicons, which
@@ -73,7 +74,7 @@
 /* Mobile mode: Model is one of only two columns still shown (with Prompt), so the full
    logo+name chip is replaced by just the logo in a plain 32x32 box — no border/padding shell,
    no name text, nothing else competing for the little width that's left. */
-.up-root.is-vnarrow .urt-model-chip { padding: 0; border: 0; gap: 0; }
+.up-root.is-vnarrow .urt-model-chip { gap: 0; }
 .up-root.is-vnarrow .urt-model-chip .up-ment-name { display: none; }
 .up-root.is-vnarrow .urt-model-chip .up-ment-logo {
   width: 20px; height: 20px; border-radius: 6px; padding: 1px;

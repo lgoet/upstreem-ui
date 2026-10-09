@@ -166,7 +166,11 @@
      Ein Punkt OHNE Wert (keine Runs, oder ausserhalb des Tracking-Fensters) faellt weg: die Linie
      laeuft dann ueber den Tag hinweg, wie bei jedem Linienchart der App, statt auf 0 zu fallen --
      0 waere eine Messung, die es nicht gab. */
-  function zuVisibility(vis, ov) {
+  /* o.nurImChart: die Tabelle zeigt nur die Marken, die auch im Chart stehen (ohne Handauswahl
+     die automatischen Top 7 samt eigener Marke), in der Reihenfolge der Antwort -- also in der
+     gewaehlten Sortierung. Mit Handauswahl kommt die Tabelle schon passend (p_companies). */
+  function zuVisibility(vis, ov, o) {
+    o = o || {};
     if (!istObjekt(vis) || !isArr(vis.series) || !isArr(vis.companies)) return null;
     if (!istObjekt(ov) || !isArr(ov.rows)) return null;
     var series = vis.series.filter(function (p) { return p && p.company_id != null && p.bucket && num(p.visibility_pct) != null; })
@@ -176,10 +180,15 @@
       return { company_id: str(c.company_id), name: str(c.name), favicon_url: absolut(c.logo_url),
                color: /^#[0-9a-f]{3,8}$/i.test(col) ? col : null, visibility_window_pct: num(c.visibility_pct) };
     });
-    var m = meta(ov);
+    var m = meta(ov), tabelle = zeilen(ov);
+    if (o.nurImChart && companies.length) {
+      var imChart = {};
+      companies.forEach(function (c) { imChart[c.company_id] = true; });
+      tabelle = tabelle.filter(function (r) { return imChart[str(r.company_id)]; });
+    }
     return {
       series: series, companies: companies,
-      table: zeilen(ov).map(marke),
+      table: tabelle.map(marke),
       totalCount: num(m.total_count) == null ? zeilen(ov).length : num(m.total_count),
       granularity: str(meta(vis).granularity) || "day"
     };

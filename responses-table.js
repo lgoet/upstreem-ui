@@ -224,6 +224,22 @@
        the FIRST load of an instanceId: once the visitor has switched views, STORE/saved.view wins
        from then on, same as every other remembered preference here. */
     var defaultView = String(root.getAttribute("data-default-view") || "").toLowerCase() === "cards" ? "cards" : "table";
+    /* ANSICHT UND SEITENGROESSE UEBER DEN BESUCH HINAUS (09.10., Dashboard: "immer in Cardmode und
+       pagesize 6 default, wenn der User umstellt, das im localStorage speichern"). Nur mit
+       data-merken="yes" -- ohne das bleibt es wie bisher beim Speicher der Sitzung (STORE). Der
+       Schluessel haengt an der instanceId wie rhKey; die Dashboard-Seite liest denselben
+       Schluessel, damit ihre erste Anfrage dieselbe Seitengroesse hat (dashboard-page.js). */
+    var merken = isYes(root.getAttribute("data-merken"));
+    function ansichtKey(){ return "urt_ansicht__" + instanceId; }
+    var gemerktLS = null, _ansichtGeschrieben = "";
+    if (merken){
+      try {
+        var _roh = window.localStorage.getItem(ansichtKey());
+        if (_roh){ gemerktLS = JSON.parse(_roh); _ansichtGeschrieben = _roh; }
+      } catch(e){ gemerktLS = null; }
+      if (!gemerktLS || typeof gemerktLS !== "object") gemerktLS = null;
+    }
+    function lsZahl(k, erlaubt){ var n = gemerktLS ? Number(gemerktLS[k]) : NaN; return erlaubt.indexOf(n) >= 0 ? n : null; }
 
     /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (11.09. gemeldet) ----
        "Als einziger bleibt dieser in einem ewigen Ladezustand, wenn man das Theme wechselt und
@@ -264,14 +280,14 @@
                 gemerkter Ladezustand gilt. Mit true stuende trotz gemerkter Zeilen das Skelett
                 da -- isBusy() gewinnt in renderBody vor den Zeilen. */
              : ((LOADING_EXPLICIT[instanceId] || saved.hasData) ? !!saved.loading : true),
-      view: saved.view || defaultView,
+      view: saved.view || (gemerktLS && (gemerktLS.view === "cards" || gemerktLS.view === "table") ? gemerktLS.view : "") || defaultView,
       // two independent pagination states — only the one matching `view` is "live" in page/pageSize
-      tablePage: saved.tablePage || 1, tablePageSize: saved.tablePageSize || DEFAULT_PAGE_SIZE,
+      tablePage: saved.tablePage || 1, tablePageSize: saved.tablePageSize || lsZahl("tablePageSize", TABLE_PAGE_SIZES) || DEFAULT_PAGE_SIZE,
       // Cards default to the smallest page size (6) when Cards IS the page's configured default
       // view — a page that opens straight into a card grid wants a light first paint, not 12
       // skeleton cards. A page that starts in Table and is only switched to Cards by hand keeps
       // the normal 12.
-      cardPage: saved.cardPage || 1, cardPageSize: saved.cardPageSize || (defaultView === "cards" ? 6 : 12),
+      cardPage: saved.cardPage || 1, cardPageSize: saved.cardPageSize || lsZahl("cardPageSize", CARD_PAGE_SIZES) || (defaultView === "cards" ? 6 : 12),
       query: saved.query || "",
       sortField: saved.sortField || DEFAULT_SORT.field, sortDir: saved.sortDir || DEFAULT_SORT.dir,
       // rank*/sent* are the last APPLIED values, only ever written by applyFader(). The Fader
@@ -336,6 +352,11 @@
       return pa || pb;
     }
     function persist(){
+      if (merken){
+        var _neu = JSON.stringify({ view: state.view, tablePageSize: state.tablePageSize, cardPageSize: state.cardPageSize });
+        /* Nur bei einer echten Aenderung schreiben: persist laeuft bei jedem Rendern. */
+        if (_neu !== _ansichtGeschrieben){ _ansichtGeschrieben = _neu; try { window.localStorage.setItem(ansichtKey(), _neu); } catch(e){} }
+      }
       STORE[instanceId] = {
         loading: state.extLoading, view: state.view,
         tablePage: state.tablePage, tablePageSize: state.tablePageSize,
@@ -414,11 +435,24 @@
        string) must degrade to "unknown model, show the raw key" — never throw. This runs inside
        renderBody(), so a throw here took out everything render() does afterwards: pagination,
        column layout, brand toggle, view switch. One bad row should not empty the whole toolbar. */
+    /* DER MODELL-STORE DER APP ALS RUECKFALL (09.10.). Die Modelle kamen hier nur aus der eigenen
+       Lieferung (setResponsesTableModels) -- auf der Prompts-Seite schickt Bubble sie mit, auf dem
+       Dashboard niemand. Dann stand der rohe Schluessel da ("gemini" klein, "google_aio") und kein
+       Logo; gemeldet am 09.10. fuer Gemini und Google AIO, waehrend Response Detail (liest den
+       Store ueber UC.modelChip) alles zeigte. Jetzt zuerst die eigene Liste, dann der Store, beides
+       nachsichtig verglichen (google-aio = google_aio), wie in core. */
+    function keyGleich(a, b){
+      if (a == null || b == null) return false;
+      return String(a).toLowerCase().replace(/[_\s]+/g, "-") === String(b).toLowerCase().replace(/[_\s]+/g, "-");
+    }
     function modelInfo(key){
-      var models = state.models || [];
-      for (var i = 0; i < models.length; i++){
-        var m = models[i];
-        if (m && m.key === key) return m;
+      var listen = [state.models || [], (UC.getModels ? UC.getModels() : null) || []];
+      for (var j = 0; j < listen.length; j++){
+        var models = listen[j];
+        for (var i = 0; i < models.length; i++){
+          var m = models[i];
+          if (m && (keyGleich(m.key, key) || keyGleich(m.model, key))) return m;
+        }
       }
       return null;
     }
@@ -1564,6 +1598,9 @@
        Store ueberschreibt nichts, eine Seite ohne setUpstreemBrands() verhaelt sich also
        unveraendert. */
     if (UC.brandsInto) UC.brandsInto(root, function(list){ ctrl.update({ brands: list }); });
+    /* Kommt der Modell-Store erst nach den Zeilen (setUpstreemModels), neu zeichnen: die
+       Modell-Chips lesen ihn als Rueckfall (modelInfo). */
+    if (UC.onModels) UC.onModels(function(){ ctrl.update({}); }, root);
     root.__urtController = ctrl;
     return ctrl;
   }
