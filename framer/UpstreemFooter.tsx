@@ -13,7 +13,14 @@
      unter 560px   Marke und Spalten untereinander
 
    Die zwei Netzwerk-Zeichen sind die offiziellen Umrisse, als Pfad -- wie auf der Landingpage
-   (FUSS_IC). core.js laeuft in Framer nicht, und Feather hat keine Markenzeichen. */
+   (FUSS_IC). core.js laeuft in Framer nicht, und Feather hat keine Markenzeichen.
+
+   IMAGE CREDITS (09.10. nachgezogen, Stand der Landingpage seit 06.10.): rechts in der letzten
+   Zeile der Knopf, darunter klappt der Bildnachweis auf -- Wort fuer Wort wie bildnachweisHtml()
+   in landing-hero.js. Standardmaessig AUS: die Produktfotos (CC BY/BY-SA, Nachweis Pflicht) gibt
+   es nur in der Hero-Einbettung, und die bringt ihren eigenen Fuss mit Nachweis mit. Wer die
+   Fotos auf einer anderen Framer-Seite zeigt, schaltet "Image credits" an. Neue Fotos auf der
+   Landingpage heissen: CREDITS hier mitziehen. */
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { addPropertyControls, ControlType } from "framer"
@@ -23,6 +30,33 @@ type Verweis = { label: string; link: string }
 const WORTMARKE =
     "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-1f1f1f.svg"
 const EASE = "cubic-bezier(.4, 0, .2, 1)"
+
+/* Titel = Dateiseite bei Commons ohne Endung, nicht der Produktname der Demo (siehe
+   bildnachweisHtml): das Foto des "Acme Home Charger" zeigt eine Wallbox von Delta Electronics. */
+const LIZENZ_URL: Record<string, string> = {
+    "CC0": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "CC BY-SA 2.0": "https://creativecommons.org/licenses/by-sa/2.0/",
+    "CC BY-SA 3.0": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "CC BY-SA 3.0 de": "https://creativecommons.org/licenses/by-sa/3.0/de/",
+    "CC BY-SA 4.0": "https://creativecommons.org/licenses/by-sa/4.0/",
+}
+const CREDITS = [
+    { seite: "Tesla_Model_Y_Premium_(Facelift)_%E2%80%93_f_05052026.jpg", autor: "M 93", lizenz: "CC BY-SA 3.0 de" },
+    { seite: "Delta_Electronics_EVPT3215MWE_20190601.jpg", autor: "Solomon203", lizenz: "CC BY-SA 4.0" },
+    { seite: "TeslaDestinationCharger.jpg", autor: "Raysonho", lizenz: "CC0" },
+    { seite: "Front_vom_BMW_iX_xDrive_60_in_der_BMW_Welt_M%C3%BCnchen_2025-04-15.jpg", autor: "Strubbl", lizenz: "CC BY-SA 4.0" },
+    { seite: "Audi_Q4_e-tron_50_quattro_%E2%80%93_f_22012023.jpg", autor: "M 93", lizenz: "CC BY-SA 3.0 de" },
+    { seite: "Thule_Dynamic_roof_box_(11726731603).jpg", autor: "EHRENBERG Kommunikation", lizenz: "CC BY-SA 2.0" },
+    { seite: "Tailored-rubber-mats-moulded-car-mats.jpg", autor: "Keystones", lizenz: "CC BY-SA 3.0" },
+    { seite: "Volvo_EX30_1X7A2493.jpg", autor: "Alexander Migl", lizenz: "CC BY-SA 4.0" },
+    { seite: "2015-12-23_Typ-2-Ladestecker.jpg", autor: "Hadhuey", lizenz: "CC BY-SA 4.0" },
+    { seite: "Porsche_Taycan_4S_IMG_3526.jpg", autor: "Alexander Migl", lizenz: "CC BY-SA 4.0" },
+]
+function werk(seite: string) {
+    let t = seite
+    try { t = decodeURIComponent(seite) } catch (e) {}
+    return t.replace(/\.[a-z0-9]+$/i, "").replace(/_/g, " ")
+}
 
 const IC_LINKEDIN = (
     <svg viewBox="0 0 24 24" fill="currentColor" width="17" height="17" aria-hidden="true">
@@ -48,6 +82,15 @@ const CSS = `
 .upx-fuss .upx-link { font-size: 13.5px; font-weight: 400; color: #cfcfcf; transition: color 160ms ${EASE}; }
 .upx-fuss .upx-link:hover { color: #ffffff; }
 .upx-fuss .upx-ic:focus-visible, .upx-fuss .upx-link:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; border-radius: 6px; }
+.upx-fuss .upx-nachweis-knopf {
+  font: inherit; font-size: 12.5px; color: #8f8f8f; background: none; border: 0; padding: 0;
+  cursor: pointer; transition: color 160ms ${EASE};
+}
+.upx-fuss .upx-nachweis-knopf:hover { color: #ffffff; }
+.upx-fuss .upx-nachweis-knopf:focus-visible { outline: 2px solid rgba(255, 255, 255, .5); outline-offset: 3px; border-radius: 4px; }
+.upx-fuss .upx-nachweis p { margin: 0 0 8px; max-width: 120ch; }
+.upx-fuss .upx-nachweis a { color: inherit; text-decoration: underline; text-decoration-color: rgba(255, 255, 255, .25); text-underline-offset: 2px; }
+.upx-fuss .upx-nachweis a:hover { color: #e0e0e0; }
 `
 
 /**
@@ -60,8 +103,9 @@ const CSS = `
 export default function UpstreemFooter(props: any) {
     const {
         logo, logoLink, tagline, linkedin, youtube, col1Title, col1, col2Title, col2,
-        col3Title, col3, copyright, newTab, maxWidth, sidePadding, style,
+        col3Title, col3, copyright, imageCredits, newTab, maxWidth, sidePadding, style,
     } = props
+    const [nachweisAuf, setNachweisAuf] = useState(false)
 
     const wurzel = useRef<HTMLDivElement>(null)
     const [breite, setBreite] = useState(1200)
@@ -129,9 +173,53 @@ export default function UpstreemFooter(props: any) {
                     {spalte(col3Title, col3)}
                 </div>
             </div>
-            <div style={{ ...spur, borderTop: "1px solid rgba(255, 255, 255, .08)", padding: "26px 0 34px", fontSize: 12.5, color: "#6f6f6f" }}>
+            <div
+                style={{
+                    ...spur, borderTop: "1px solid rgba(255, 255, 255, .08)", padding: "26px 0 34px",
+                    fontSize: 12.5, color: "#6f6f6f",
+                    display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "8px 24px",
+                }}
+            >
                 <span>{unten}</span>
+                {imageCredits && (
+                    <button
+                        className="upx-nachweis-knopf"
+                        type="button"
+                        aria-expanded={nachweisAuf}
+                        aria-controls="upx-bildnachweis"
+                        onClick={() => setNachweisAuf(!nachweisAuf)}
+                    >
+                        Image credits
+                    </button>
+                )}
             </div>
+            {imageCredits && nachweisAuf && (
+                <div
+                    id="upx-bildnachweis"
+                    className="upx-nachweis"
+                    style={{ ...spur, padding: "0 0 34px", marginTop: -14, fontSize: 12, lineHeight: 1.6, color: "#7a7a7a" }}
+                >
+                    <p>
+                        Product photos from Wikimedia Commons:{" "}
+                        {CREDITS.map((c, i) => (
+                            <React.Fragment key={c.seite}>
+                                <a href={"https://commons.wikimedia.org/wiki/File:" + c.seite} target="_blank" rel="noopener">
+                                    {"\u201c" + werk(c.seite) + "\u201d"}
+                                </a>
+                                {" by " + c.autor + " ("}
+                                {LIZENZ_URL[c.lizenz]
+                                    ? <a href={LIZENZ_URL[c.lizenz]} target="_blank" rel="noopener">{c.lizenz}</a>
+                                    : c.lizenz}
+                                {")" + (i < CREDITS.length - 1 ? ", " : ".")}
+                            </React.Fragment>
+                        ))}
+                    </p>
+                    <p>
+                        Ad illustrations: US Environmental Protection Agency, public domain, via{" "}
+                        <a href="https://openclipart.org" target="_blank" rel="noopener">Openclipart</a>.
+                    </p>
+                </div>
+            )}
         </footer>
     )
 }
@@ -168,6 +256,7 @@ UpstreemFooter.defaultProps = {
         { label: "Imprint", link: "https://upstreem.ai/imprint" },
     ],
     copyright: "© {year} upstreem. All rights reserved.",
+    imageCredits: false,
     newTab: true,
     maxWidth: 1440,
     sidePadding: 64,
@@ -186,6 +275,7 @@ addPropertyControls(UpstreemFooter, {
     col3Title: { type: ControlType.String, title: "Column 3" },
     col3: { type: ControlType.Array, title: "Column 3 links", control: VERWEIS },
     copyright: { type: ControlType.String, title: "Bottom line" },
+    imageCredits: { type: ControlType.Boolean, title: "Image credits", enabledTitle: "Show", disabledTitle: "Hide" },
     newTab: { type: ControlType.Boolean, title: "New tab", enabledTitle: "Yes", disabledTitle: "No" },
     maxWidth: { type: ControlType.Number, title: "Max width", min: 600, max: 2000, step: 10, unit: "px" },
     sidePadding: { type: ControlType.Number, title: "Side padding", min: 0, max: 200, step: 1, unit: "px" },
