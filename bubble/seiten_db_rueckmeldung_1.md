@@ -7,8 +7,8 @@ create-with-ai.js, teams.js, prompt-research.js, ask-mira.js).
 
 **Kurz:** Die Grundform passt; die gemeinsamen Regeln (§1), das Job-Muster (§8) und die
 Reihenfolge A → B → E → C → D sind freigegeben. Unten stehen die Änderungen je Ansicht, danach
-die Antworten auf deine zwölf Fragen. Punkte, die nur der Nutzer entscheiden kann, sind mit
-**[Nutzer]** markiert. Bis zu seiner Antwort bitte nicht bauen.
+die Antworten auf deine zwölf Fragen. **Die Entscheidungen des Nutzers stehen in Abschnitt N**
+(Nachtrag 09.10.); sie gehen allem anderen vor. Offen ist nur noch N.2 (n8n-Nutzlasten).
 
 **Umbenennungen fängt die Oberfläche ab.** Sie bekommt je Bereich ein Datenmodul (wie
 `citations-data.js`). Wo die Komponente heute anders liest (`cells` statt `rows`, `series` statt
@@ -17,7 +17,7 @@ die Antworten auf deine zwölf Fragen. Punkte, die nur der Nutzer entscheiden ka
 
 ---
 
-## 0. Quer über alle Ansichten: wer stößt n8n an? [Nutzer]
+## 0. Quer über alle Ansichten: wer stößt n8n an? (entschieden: Weg b, siehe N.1)
 
 Der Vorschlag setzt an drei Stellen eine „Next.js-Server-Route“ voraus: Prompt-Research-Start
 (6.5), Mira senden (7.4), Sprache und PDF. **Die gibt es noch nicht.** Die App läuft in Bubble,
@@ -30,10 +30,43 @@ Zwei Möglichkeiten für jetzt:
 | a) Bubble bleibt Auslöser | Die Komponente ruft `*_start_v1` und gibt die `job_id` per Ereignis an einen Bubble-Workflow weiter, der n8n aufruft. | Kein neuer Baustein. Später für Next.js neu zu bauen. |
 | b) **Supabase Edge Function** (Empfehlung) | `start-job` prüft das JWT, ruft `*_start_v1` mit dem Nutzer-Token und dann den n8n-Webhook. Das Secret liegt in den Supabase-Secrets. Gleiches Muster wie `signup-with-invite`. | Funktioniert heute aus Bubble und später unverändert aus Next.js. Mira-Senden kann die `session_id` eines neuen Chats direkt zurückgeben. |
 
-Bis zur Entscheidung bitte die `*_start_v1`-Funktionen so bauen, dass beide Wege gehen: Sie legen
-nur den Job an und antworten mit `job_id`, den Webhook ruft der Aufrufer.
+Die `*_start_v1`-Funktionen legen nur den Job an und antworten mit `job_id`; den Webhook ruft die
+Edge Function.
 
 ---
+
+## N. Entscheidungen des Nutzers (Nachtrag 09.10.)
+
+1. **Edge Function statt Next.js-Route: entschieden.** Bubble ruft n8n für diese Ansichten nicht
+   mehr. Die Komponente ruft eine Edge Function (Nutzer-JWT), die legt über `*_start_v1` den Job an
+   und stößt den Ausführer an. Die Webhook-Adressen liegen nur in den Supabase-Secrets, nie im
+   Browser. Bitte die Edge Function im Vertrag mit Namen, Body und Antwort festhalten (Vorschlag:
+   eine Funktion `start-job` mit `kind`, oder je Art eine). Die alten Bubble-Wege bleiben, bis die
+   Seiten umgestellt sind.
+2. **n8n-Nutzlasten: kommen vom Nutzer nach.** Heute stößt Bubble je einen n8n-Workflow per
+   Webhook an. Beim PDF-Export ruft ein Run-JS-Schritt die Webhook-Adresse, wartet stumpf 2,5 s und
+   setzt dann `askMiraSetExportPending(id, "no")`, ohne zu wissen, ob es geklappt hat. Das soll
+   ein echter Job werden: die Oberfläche wartet auf `success`/`failed` (Status-Abruf oder
+   Realtime-Ereignis), nicht auf eine Uhr. **Offen:** wohin das fertige PDF geht (Adresse zum
+   Herunterladen oder E-Mail).
+3. **Kein pg_cron-Worker.** Es braucht niemanden, der nach neuen Jobs sucht: Jeder Job hat einen
+   Auslöser (Klick → Edge Function), und der Auslöser führt aus oder gibt weiter. Für „Look for new“
+   heißt das: die Edge Function legt den Job an, antwortet sofort mit `job_id` und führt die
+   Rechnung danach selbst aus (im Hintergrund der Funktion) bzw. gibt sie an n8n. `view_job` mit
+   Status, Heartbeat und Aufräumen bleibt; das Aufräumen von Hängern darf ein seltener Cron sein
+   (z. B. jede Minute), aber kein 5-s-Takt. Bitte zeigen, wie die Rechnung von bis zu 60 s ohne die
+   30-s-Grenze von `authenticated` läuft.
+4. **Prompt Research hart löschen, wie heute.** Gemeint ist der Papierkorb an einer früheren
+   Recherche in der Liste links. `prompt_research_delete_v1` löscht Job, Vorschläge und Tags
+   endgültig; C.8 entfällt.
+5. **Private Realtime-Kanäle: ja.** Mit D.7 (alles auch auf `user:<uid>`), öffentliche parallel,
+   bis Bubble nicht mehr zuhört.
+6. **„Delete all Prompts“** ist das Menü neben „Accept all Prompts“ in der Ergebnisansicht von
+   Prompt Research (`bubble_fn_deleteAllSuggestedPrompts`, nur Vorschlags-Ids). Es wird
+   `prompt_research_decide_v1('ignore', ids)`: sichtbar ist beides gleich, die Vorschläge
+   verschwinden. Kein eigener Löschweg für Vorschläge.
+7. **Die 92 hängenden Prompt-Research-Jobs: freigegeben.** Bitte `prompt_research_haenger.sql`
+   ausführen (nur Status auf `failed`, nichts löschen) und die Zahl danach melden.
 
 ## A. Performance
 
@@ -90,7 +123,7 @@ nur den Job an und antworten mit `job_id`, den Webhook ruft der Aufrufer.
      `invalid_param` hieße, die Karte geht verloren.
    - Mira schickt nur `lead_url`, `title`, `reason`. **Kein `recommendation_type`** (mein Auftrag 2.B
      war da falsch). `p_tag_ids`, `p_models`, `p_markets` und die Daten bleiben optional.
-5. **„Look for new“ als Job: einverstanden** (offene Frage 4, vorbehaltlich [Nutzer]).
+5. **„Look for new“ als Job, ohne Cron-Worker** (offene Frage 4, siehe N.3).
    - `opportunities_search_status_v1`: **`p_job_id` optional.** Ohne Angabe kommt der laufende oder
      zuletzt beendete Job des Teams. Nach einem Neuladen der Seite kennt die Oberfläche keine
      `job_id`, soll aber die laufende Suche weiter anzeigen.
@@ -139,8 +172,8 @@ nur den Job an und antworten mit `job_id`, den Webhook ruft der Aufrufer.
    sie).
 7. **`prompt_research_jobs_v1`:** laufende und fehlgeschlagene Jobs mitliefern ist richtig. Die
    Oberfläche zeigt sie künftig als eigene Zeile. `step`, `progress`, `status_message` passen.
-8. **Weich löschen: einverstanden** (Frage 6, vorbehaltlich [Nutzer]). Bedingung: `jobs_v1` und
-   `result_v1` liefern gelöschte Jobs nie; `result_v1` meldet dann `prompt_research_not_found`.
+8. **Hart löschen wie heute** (Frage 6, siehe N.4). `result_v1` meldet für einen gelöschten Job
+   `prompt_research_not_found`.
 9. **Märkte und Tags: nichts bauen** (Frage 10). Zentral vorhanden, heute von Bubble befüllt:
 
    | Store | Felder |
@@ -182,7 +215,7 @@ nur den Job an und antworten mit `job_id`, den Webhook ruft der Aufrufer.
    Alles andere (Seite, Breite, offen oder zu, Blasenstil) bleibt bewusst im Browser.
 6. **`mira_turn_status_v1`:** passt als Rückfall. `queued`/`running`/`success`/`error` deckt sich mit
    den Zuständen der Oberfläche.
-7. **Realtime** (Frage 11), vorbehaltlich [Nutzer]:
+7. **Realtime** (Frage 11, entschieden: ja, siehe N.5):
    - **Alle Mira-Ereignisse müssen (auch) auf `user:<uid>` gehen.** Ein Kanal je Session reicht
      nicht: Die Oberfläche zeigt Kreisel, Punkt und neuen Titel auch für Chats, die gerade nicht
      offen sind. Vor allem kennt sie beim Senden in einen **neuen** Chat dessen id noch nicht und
@@ -193,8 +226,8 @@ nur den Job an und antworten mit `job_id`, den Webhook ruft der Aufrufer.
      `mira_title_updated`, `mira_user_transcript`, Werkzeug-Ereignisse mit `tool`.
    - **Private Kanäle parallel zu den öffentlichen: einverstanden.** Die öffentlichen erst abschalten,
      wenn niemand mehr darauf hört. Heute abonniert Bubble.
-8. **Senden, Sprache, PDF** (Frage 7): **[Nutzer]**, siehe 0. Bekannt sind nur die Nutzlasten der
-   Oberfläche:
+8. **Senden, Sprache, PDF** (Frage 7): über die Edge Function (N.1); die n8n-Seite kommt nach (N.2).
+   Die Nutzlasten der Oberfläche:
    - Senden: `{chat_id ('' = neu), message, answer_detail: Medium|High|Ultra, model: pro|flash}`
    - Sprache: `{message_id: 'voice_<ts>', chat_id (null = neu), audio_base64, mime_type, duration_ms}`.
      Das Transkript muss dieselbe `message_id` zurückgeben und bei einem neuen Chat **nach**
@@ -211,15 +244,16 @@ nur den Job an und antworten mit `job_id`, den Webhook ruft der Aufrufer.
 | 1 | Betrifft die Oberfläche heute nicht: die Kurve zeigt nur Visibility. Deine Empfehlung passt. |
 | 2 | Beide behalten. Die Oberfläche nutzt `mentioned_count`. |
 | 3 | Ja, `dashboard_opportunities_v1` reicht. Gefiltert wird nur im Browser (Status, Suche, External only), nach Topic gar nicht. |
-| 4 | Job mit Worker: aus Sicht der Oberfläche ja, mit B.5. **[Nutzer]** |
-| 5 | **[Nutzer]** (Webhook-Name und Felder), siehe 0. `prompt_research_job_update_v1` statt direktem Schreiben: ja. |
-| 6 | Weich löschen, mit C.8. **[Nutzer]** |
-| 7 | **[Nutzer]**, siehe 0 und D.8. |
+| 4 | Job ja, Worker nein: der Auslöser führt aus (N.3). |
+| 5 | Edge Function stößt n8n an (N.1), Nutzlasten folgen (N.2). `prompt_research_job_update_v1` statt direktem Schreiben: ja. |
+| 6 | Hart löschen wie heute (N.4). |
+| 7 | Edge Function (N.1); n8n-Nutzlasten folgen (N.2). |
 | 8 | Siehe D.5. |
 | 9 | Keine Kennzahlen; Pin = aktives Team; Teamwechsel bleibt bei Bubble (E.1, E.3, E.4). |
 | 10 | Zentral vorhanden, nichts bauen (C.9). |
-| 11 | Ja, mit D.7. **[Nutzer]** |
+| 11 | Ja, mit D.7 (N.5). |
 | 12 | Ja, `hint` als reine Zahl. |
 
-**Separat, nur auf Zeichen des Nutzers:** `prompt_research_haenger.sql` (92 Jobs auf `failed`),
-das Aufräumen des Cron-Protokolls und der Entzug der anon-Rechte.
+**Separat:** `prompt_research_haenger.sql` ist freigegeben (N.7). Das Aufräumen des Cron-Protokolls
+entfällt mit N.3. Der Entzug der anon-Rechte kommt erst, wenn Bubble die alten Funktionen nicht
+mehr ruft.
