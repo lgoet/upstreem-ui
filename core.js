@@ -3863,6 +3863,10 @@
     rank:       { h: "Rank", t: "The brand's average position among all brands mentioned{scope}{trend}. A lower number is better." },
     visibility: { h: "Visibility", t: "How often the brand appears in AI answers{scope}{trend}." },
     brands:     { h: "Brand Mentions", t: "Which of your tracked brands are mentioned{scope}. Hover a logo to see its name." },
+    /* Die Zahl der Nennungen (Kennzahl im Performance-Detail, 09.10.). Ohne Platzhalter: der Satz
+       ist wortgleich der Katalogeintrag, den die Kachel vorher selbst trug -- so bleibt die
+       Uebersetzung, und es gibt ihn nur noch hier. */
+    mentions:   { h: "Mentions", t: "How many times the brand was named. Higher means the other numbers rest on more data." },
     share:      { h: "Share", t: "How much of all citations in the period went to this {subject}, plus the change against the previous period." },
     /* Die Zeile "Brand Colors" in der Farbauswahl. Sie steht hier und nicht im Einstellungsfenster,
        weil die Auswahl aus core kommt (colorScaleOptionsHtml) und der Erklaerkasten derselbe ist,
@@ -19880,8 +19884,9 @@
     var wo = scope || "on this topic";
     return {
       name: { h: "Variation Name",
+              /* Kein Geviertstrich im sichtbaren Text (CLAUDE.md 5): zwei Saetze statt " -- ". */
               t: "The exact wording an AI response used for this brand. Models rarely stick to one " +
-                 "spelling \u2014 every variation here counts as the same brand, and a name that " +
+                 "spelling. Every variation here counts as the same brand, and a name that " +
                  "never appears is a name the models do not associate with you." },
       sov:  { h: "Share of Voice",
               t: "How much of this brand's mentions " + wo + " used this exact wording. High " +

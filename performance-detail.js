@@ -144,10 +144,6 @@
     '</span>';
   }
 
-  /* Spalten-Erklaerer wie in jeder Tabelle: das kleine "i" im Kopf, das den dunklen Kasten
-     oeffnet. Die Texte beantworten, was die Spalte MEINT -- nicht, wie sie heisst. */
-  var INFO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V12"/><path d="M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z"/></svg>';
-  function thInfo(key){ return '<span class="up-th-info" data-explain="' + key + '">' + INFO_SVG + '</span>'; }
   /* Die Erklaertexte kommen aus core -- dieselben, die brand-detail zeigt. Sonst erklaert
      dieselbe Spalte an zwei Orten Verschiedenes. */
   var VAR_EXPLAIN = UC.variationsExplain("on this topic");
@@ -234,33 +230,40 @@
         UC.leerHtml({ titel: "No cell selected", text: "Pick a cell in the Performance Radar to see the details for that brand and topic." }) +
       '</div>' +
       '<div class="upd-body">' +
-        '<div class="upd-gruppe">' +
           /* Der Scope-Umschalter (This Topic | Global) ist vorerst raus. Er war schluessig, solange
              man nur auf die Kurve schaut -- die Rangliste darunter ist aber eine Aussage UEBER DIESES
              TOPIC ("Rang 6 von 10 auf diesem Topic"), und die gibt es global nicht.
              Nur das Bedienelement ist weg, nicht die Mechanik: state.scope, setPerformanceDetailSeries
              mit seinem scope-Feld, setPerformanceDetailGlobal und der updScope-Event stehen
              unveraendert. */
+          /* DER KOPF KLEBT BEIM SCROLLEN (09.10. angefordert, "wie die Topbereiche der Tabellen"):
+             Logo, Name und Topic bleiben oben stehen, solange man durch Kennzahlen, Kurve und
+             Variations scrollt. Darum steht er direkt in .upd-body und nicht in einer Gruppe -- ein
+             sticky-Element klebt nur innerhalb seines Elternelements. Mit dem Ende der Variations
+             laeuft er weg; die URL-Tabelle darunter bringt ihren eigenen klebenden Kopf mit. */
           '<div class="upd-held">' +
             '<span class="upd-held-logo"></span>' +
             '<div class="upd-held-text">' +
               '<h2 class="upd-held-name"></h2>' +
-              '<div class="upd-held-meta"><span class="upd-topic"></span><span class="upd-satz"></span></div>' +
+              '<div class="upd-held-meta"><span class="upd-topic"></span></div>' +
             '</div>' +
             '<button class="up-iconbtn upd-close" type="button" data-tip="Close details" aria-label="Close details">' + CLOSE_SVG + '</button>' +
           '</div>' +
           '<div class="up-kpiband is-4 is-offen upd-kpis"></div>' +
-          '<section class="upd-sek upd-chartsec">' +
-            sekKopf("Visibility over time", "How often the brand appeared in AI answers on this topic.") +
-            '<div class="up-box upd-chartbox"><div class="up-line-wrap upd-linewrap"><canvas class="up-line-canvas"></canvas></div></div>' +
+          /* RANGLISTE LINKS, KURVE RECHTS (09.10. zurueckgeholt: "fand ich vorher besser, sah
+             aufgeraeumter aus"). Die Fassung vor dem 07.10. -- ein Fenster von sieben Marken um die
+             gewaehlte, daneben die Kurve, ein Trenner dazwischen -- im Kasten der neuen
+             Detailbereiche. Beide beantworten dieselbe Frage aus zwei Richtungen: wo steht die Marke
+             gerade, und wie ist sie dahin gekommen. Unter is-narrow untereinander. */
+          '<section class="upd-sek upd-splitsek">' +
+            '<div class="up-box upd-split">' +
+              '<div class="upd-split-l"><div class="upd-stand-head"></div><div class="upd-stand-list"></div></div>' +
+              '<div class="upd-split-r upd-chartsec">' +
+                '<div class="upd-chartkopf"><span class="up-heading upd-sec-h">' + esc(t("Visibility over time")) + '</span></div>' +
+                '<div class="up-line-wrap upd-linewrap"><canvas class="up-line-canvas"></canvas></div>' +
+              '</div>' +
+            '</div>' +
           '</section>' +
-        '</div>' +
-        /* Die Rangliste: Inhalt und Fusszeile getrennt, damit der Pager an seiner Fusszeile haengen
-           bleibt und renderStanding nur den Inhalt neu schreibt (wie seitenAnlegen in events.js). */
-        '<section class="upd-sek upd-rangsek" data-sek="rang">' +
-          sekKopf("Brands on this topic", "Every tracked brand on this topic, ranked by visibility.") +
-          '<div class="upd-tabinhalt"></div>' + fussHtml() +
-        '</section>' +
         /* Der ganze Abschnitt kommt aus core (UC.variationsSection): Ueberschrift, Untertitel,
            Suchfeld, Tabellenkopf mit den drei Erklaer-Rauten. Genau derselbe Aufruf steht in
            brand-detail -- eine Tabelle, eine Quelle. Die Fusszeile kommt hier dazu. */
@@ -272,10 +275,10 @@
     var elHeldLogo = root.querySelector(".upd-held-logo");
     var elHeldName = root.querySelector(".upd-held-name");
     var elTopic   = root.querySelector(".upd-topic");
-    var elSatz    = root.querySelector(".upd-satz");
     var elKpis    = root.querySelector(".upd-kpis");
-    var elStand   = root.querySelector('[data-sek="rang"] .upd-tabinhalt');
-    var elRangSek = root.querySelector('[data-sek="rang"]');
+    var elStand   = root.querySelector(".upd-split-l");
+    var elStandHead = root.querySelector(".upd-stand-head");
+    var elStandList = root.querySelector(".upd-stand-list");
     var elScope   = root.querySelector(".upd-scope");
     var elNote    = root.querySelector(".upd-scope-note");
     var lineWrap  = root.querySelector(".upd-linewrap");
@@ -299,11 +302,11 @@
        seitenAnlegen/seitenStand aus events.js. */
     var SEITEN_GROESSE = UC.DEFAULT_PAGE_SIZE || 15;
     var seiten = {};
-    ["rang", "var"].forEach(function(n){
+    ["var"].forEach(function(n){
       var el = root.querySelector('[data-sek="' + n + '"]');
       if (!el) return;
       var st = { page: 1, pageSize: SEITEN_GROESSE, totalCount: null, loading: false };
-      var neu = function(){ st.loading = false; if (n === "rang") renderStanding(); else renderVariations(); };
+      var neu = function(){ st.loading = false; renderVariations(); };
       seiten[n] = { st: st, kit: UC.makePager ? UC.makePager({ root: el, state: st, onChange: neu }) : null };
       /* Die Klicks der Fusszeile -- der Pager aus core zeichnet nur. */
       el.addEventListener("click", function(e){
@@ -395,7 +398,6 @@
        zeigen ist schlimmer als gar keine, weil man ihnen nicht ansieht, dass sie von gestern sind.
        Die Skelette kommen aus core (UC.kpiKarteSkelett, UC.skeletonRows) und haben die Form ihrer
        echten Geschwister. */
-    var SK_ZEILEN = 5;
 
     /* Die Werte in den Kacheln zaehlen hoch wie in Events und Shopping -- dieselbe Form wie in den
        Zellen, nur mit den Zaehl-Markierungen aus core. Zellen zaehlen nicht. */
@@ -424,8 +426,7 @@
         return;
       }
       var src = kpiSource(), k = src.kpi;
-      var ment = num(k.mentions), mentPrev = num(k.mentions_prev);
-      var mentDelta = (ment != null && mentPrev != null) ? (ment - mentPrev) : null;
+      var ment = num(k.mentions);
       var tc = UC.trendChip;
       elKpis.innerHTML =
         kpiTile("Visibility", kpiWert("visibility", num(k.visibility_pct)),
@@ -435,7 +436,9 @@
                 tc ? tc(num(k.avg_rank_delta), { decimals: true, inverted: true }) : "") +
         kpiTile("Sentiment", kpiWert("sentiment", num(k.sentiment)),
                 tc ? tc(num(k.sentiment_delta), {}) : "") +
-        kpiTile("Mentions", kpiWert("mentions", ment), tc ? tc(mentDelta, {}) : "");
+        /* Mentions OHNE Trend (09.10. angefordert): die Zahl sagt, auf wie vielen Nennungen die
+           anderen drei beruhen -- ihr Zuwachs ist keine Wertung der Marke. */
+        kpiTile("Mentions", kpiWert("mentions", ment), "");
       erklaerAnLabels(elKpis, ["kVis", "kRank", "kSent", "kMent"]);
       /* Je Kombination gemerkt: dieselbe Zelle noch einmal gezeichnet (Theme, Neuaufbau, Nachzuegler)
          zaehlt nicht von vorn, eine andere schon. */
@@ -451,11 +454,9 @@
     }
 
     /* ---------------- Standing auf diesem Topic ----------------
-       Kostet keinen einzigen Serveraufruf: die Spalte des Rasters liegt schon vor. Zwei Teile: der
-       Satz zum Rang steht im Kopf unter dem Namen (er ist DIE Aussage dieser Zelle), die ganze
-       Rangliste als Tabelle darunter -- wie die Marktbewegung im Event-Detail. Vorher zeigte die
-       Liste nur ein Fenster von sieben Marken um die eigene; mit Seiten kann sie vollstaendig sein,
-       und die erste Seite ist die, auf der die gewaehlte Marke steht. */
+       Kostet keinen einzigen Serveraufruf: die Spalte des Rasters liegt schon vor. Der Satz zum
+       Rang steht ueber der Liste, die Liste links neben der Kurve (09.10. zurueck auf die Fassung
+       vor dem 07.10.; die volle Tabelle darunter war dem Nutzer zu unruhig). */
     function spalteSortiert(){
       var col = (state.column || []).filter(function(c){ return c && num(c.visibility_pct) != null; });
       col.sort(function(a, b){ return num(b.visibility_pct) - num(a.visibility_pct); });
@@ -478,64 +479,58 @@
         diff: fmtPctShort(num(col[0].visibility_pct) - num(col[myIdx].visibility_pct)),
         name: String(col[0].name || "") });
     }
-    function rangKopf(){
-      function th(txt, key){
-        return '<div class="up-th upd-th-zahl">' + esc(t(txt)) +
-          '<span class="up-th-info upd-erklaer" data-explain="' + key + '">' + UC.icon("info", 2) + '</span></div>';
+    /* Sieben Zeilen, die gewaehlte Marke darin so mittig wie moeglich: drei darueber, drei
+       darunter. Das ist der Ausschnitt, der die Frage beantwortet -- wen habe ich vor mir, wer sitzt
+       mir im Nacken. Am Rand rutscht das Fenster nach innen statt ueber die Liste hinaus. Ist die
+       Marke nicht in der Spalte, bleibt es bei den ersten sieben. (Fassung vor dem 07.10.) */
+    var FENSTER = 7;
+    function standSkelett(){
+      var rows = "";
+      for (var i = 0; i < FENSTER; i++){
+        /* Namen unterschiedlich lang, sonst liest sich der Block wie ein Balkendiagramm. */
+        var w = [96, 74, 112, 88, 68, 104, 82][i % 7];
+        rows += '<div class="upd-stand-row is-sk">' +
+                  '<span class="up-sk-lbl upd-sk-idx"></span>' +
+                  '<span class="up-sk-dot upd-sk-logo"></span>' +
+                  '<span class="up-sk-lbl" style="width:' + w + 'px"></span>' +
+                  '<span class="up-sk-pct upd-sk-val"></span>' +
+                '</div>';
       }
-      return '<div class="up-thead up-vrow"><div class="up-th up-th-vname">' + esc(t("Brand")) + '</div>' +
-        th("Visibility", "kVis") + th("Avg. Rank", "kRank") + th("Sentiment", "kSent") + th("Mentions", "kMent") + '</div>';
+      return rows;
     }
-    /* Die Seite der gewaehlten Marke: einmal je Kombination, danach blaettert der Nutzer selbst. */
-    var rangSeiteFuer = null;
     function renderStanding(){
       if (state.loading){
-        elRangSek.hidden = false;
-        elSatz.innerHTML = '<span class="up-tsk-bar upd-satz-sk"></span>';
-        elStand.innerHTML = '<div class="up-vartable upd-rang">' + rangKopf() + '<div class="up-tbody up-vbody">' +
-          (UC.skeletonRows ? UC.skeletonRows({ count: SK_ZEILEN, rowClass: "up-row up-vrow", cellClass: "up-td",
-            cols: [{ w: 110, jitter: 30, logo: true, cls: "up-var-name upd-td-marke" }, { w: 44, cls: "upd-td-zahl" },
-                   { w: 36, cls: "upd-td-zahl" }, { w: 40, cls: "upd-td-zahl" }, { w: 32, cls: "upd-td-zahl" }] }) : "") +
-          '</div></div>';
-        seitenStand("rang", null);
+        /* Die Spalte bleibt im Laden stehen, sonst springt das Layout, wenn sie zurueckkommt. */
+        root.classList.remove("no-stand");
+        elStandHead.innerHTML = '<span class="up-sk-lbl upd-sk-satz"></span>';
+        elStandList.innerHTML = standSkelett();
         return;
       }
       var col = spalteSortiert();
-      elSatz.textContent = state.scope === "topic" ? rangSatz(col) : "";
-      /* Eine Rangliste mit nur einer Marke ist keine -- der Abschnitt faellt dann weg, wie die
-         Marktbewegung ohne Wettbewerber (Spezifikation 85 der Events). */
+      /* Eine Rangliste mit nur einer Marke ist keine: dann faellt die linke Spalte weg und die
+         Kurve nimmt die ganze Breite. */
       if (state.scope !== "topic" || !state.company || col.length < 2){
-        elStand.innerHTML = "";
-        seitenStand("rang", null);
-        elRangSek.hidden = true;
+        elStandHead.textContent = "";
+        elStandList.innerHTML = "";
+        root.classList.add("no-stand");
         return;
       }
-      elRangSek.hidden = false;
-      var myId = String(state.company.company_id);
-      var schluessel = paarSchluessel(state.company, state.topic);
-      if (rangSeiteFuer !== schluessel && seiten.rang){
-        rangSeiteFuer = schluessel;
-        var myIdx = -1;
-        for (var i = 0; i < col.length; i++) if (String(col[i].company_id) === myId){ myIdx = i; break; }
-        seiten.rang.st.page = myIdx >= 0 ? Math.floor(myIdx / seiten.rang.st.pageSize) + 1 : 1;
-      }
-      var ab = seitenStand("rang", col.length);
-      elStand.innerHTML = '<div class="up-vartable upd-rang">' + rangKopf() + '<div class="up-tbody up-vbody">' +
-        col.slice(ab.von, ab.bis).map(function(c, j){
-          var self = String(c.company_id) === myId;
-          return '<div class="up-row up-vrow upd-rangzeile' + (self ? " is-self" : "") + '" role="button" tabindex="0"' +
-                   ' data-cid="' + esc(String(c.company_id)) + '"' +
-                   ' data-cname="' + esc(String(c.name || "")) + '">' +
-                   '<div class="up-td up-var-name upd-td-marke">' +
-                     '<span class="upd-platz">' + (ab.von + j + 1) + '</span>' + logoHtml(c) +
-                     '<span class="up-varname">' + esc(String(c.name || "")) + '</span>' +
-                   '</div>' +
-                   '<div class="up-td upd-td-zahl">' + zellWert("visibility", num(c.visibility_pct)) + '</div>' +
-                   '<div class="up-td upd-td-zahl">' + zellWert("rank", num(c.avg_rank)) + '</div>' +
-                   '<div class="up-td upd-td-zahl">' + zellWert("sentiment", num(c.sentiment)) + '</div>' +
-                   '<div class="up-td upd-td-zahl">' + zellWert("mentions", num(c.mentions)) + '</div>' +
-                 '</div>';
-        }).join("") + '</div></div>';
+      root.classList.remove("no-stand");
+      elStandHead.textContent = rangSatz(col);
+      var myId = String(state.company.company_id), myIdx = -1;
+      for (var i = 0; i < col.length; i++) if (String(col[i].company_id) === myId){ myIdx = i; break; }
+      var start = myIdx >= 0 ? Math.max(0, Math.min(myIdx - Math.floor(FENSTER / 2), col.length - FENSTER)) : 0;
+      elStandList.innerHTML = col.slice(start, start + FENSTER).map(function(c, j){
+        var self = String(c.company_id) === myId;
+        return '<div class="upd-stand-row upd-rangzeile' + (self ? " is-self" : "") + '" role="button" tabindex="0"' +
+                 ' data-cid="' + esc(String(c.company_id)) + '"' +
+                 ' data-cname="' + esc(String(c.name || "")) + '">' +
+                 '<span class="upd-stand-idx">' + (start + j + 1) + '</span>' +
+                 logoHtml(c, "upd-stand-logo") +
+                 '<span class="upd-stand-name">' + esc(String(c.name || "")) + '</span>' +
+                 '<span class="upd-stand-val">' + zellWert("visibility", num(c.visibility_pct)) + '</span>' +
+               '</div>';
+      }).join("");
     }
 
     /* ---------------- Kurve ---------------- */
@@ -779,24 +774,44 @@
              '<span class="up-explain-row">Mercedes E Class</span>';
     }
 
+    /* DIE ERKLAERKARTEN DER KENNZAHLEN IM GEWOHNTEN FORMAT (09.10. gemeldet: "stimmen schon
+       wieder nicht"). Hier standen nur Titel und Satz -- ohne die helle Platte oben, auf der die
+       Kennzahl so steht wie in der Kachel. Jede andere Erklaerkarte der App hat sie (STYLEGUIDE C,
+       brands-overview, shopping, ads); ohne sie war das eine andere Sorte Karte. Dazu:
+         - Titel = Label der Kachel ("Avg. Rank", nicht das "Rank" aus core), wie brands-overview
+           seinen Titel an die Spalte angleicht;
+         - die Kacheln zeigen einen Trend, also nennt der Satz ihn ({trend}) -- Mentions nicht, die
+           Kachel hat seit dem 09.10. keinen;
+         - alle vier Saetze aus EINER Quelle (UC.explainCopy), auch Mentions.
+       Die Platten zeigen Beispielwerte wie in brands-overview, gebaut aus denselben Bausteinen wie
+       die Kachel (sentHtml, HASH_ICON, Trendpfeil). */
+    var TREND_SATZ = ", plus the change against the previous period";
     var KPI_ERKLAER = {
-      kVis:  function(){ return UC.explainCopy ? UC.explainCopy("visibility", { scope: " on this topic" }) : null; },
-      kRank: function(){ return UC.explainCopy ? UC.explainCopy("rank", { scope: " on this topic" }) : null; },
-      kSent: function(){ return UC.explainCopy ? UC.explainCopy("sentiment", { scope: " on this topic" }) : null; },
-      kMent: function(){ return { h: t("Mentions"), t: t("How many times the brand was named. Higher means the other numbers rest on more data.") }; }
+      kVis:  { key: "visibility", h: "Visibility", trend: true },
+      kRank: { key: "rank", h: "Avg. Rank", trend: true },
+      kSent: { key: "sentiment", h: "Sentiment", trend: true },
+      kMent: { key: "mentions", h: "Mentions", trend: false }
     };
+    function kpiPlatte(key){
+      var hoch = '<span class="up-explain-up">' + (UC.TREND_UP || "") + '</span>';
+      if (key === "kRank") return '<span class="up-explain-row">' + (UC.HASH_ICON || HASH_SVG) + '<span>2.3</span></span>';
+      if (key === "kSent") return '<span class="up-explain-row">' + UC.sentHtml(78) + hoch + '<span class="up-explain-up">4</span></span>';
+      if (key === "kMent") return '<span class="up-explain-row">214</span>';
+      return '<span class="up-explain-row">18.4%' + hoch + '<span class="up-explain-up">2.9%</span></span>';
+    }
     if (UC.makeExplain){
       UC.makeExplain({
-        root: root, getIsDark: darkNow,
+        /* Beide Sorten Zeichen: die der Kacheln (.upd-erklaer) und die der Variations-Spalten aus
+           core (.up-th-info in UC.variationsSection). */
+        root: root, triggerSel: ".upd-erklaer, .upd-varsec .up-th-info[data-explain]", getIsDark: darkNow,
         html: function(key){
-          /* Die Kennzahlen (Kacheln und Spaltenkoepfe der Rangliste): die EINE Erklaerung je
-             Kennzahl aus core (UC.explainCopy), mit "on this topic" -- dieselben Saetze wie in den
-             Tabellen der App. Mentions hat dort keinen Eintrag; der Satz ist der der alten Kachel. */
           var k = KPI_ERKLAER[key];
           if (k){
-            var ek = k();
-            return ek ? '<div class="up-explain-h">' + esc(ek.h) + '</div>' +
-                        '<div class="up-explain-t">' + esc(ek.t) + '</div>' : "";
+            var ek = UC.explainCopy ? UC.explainCopy(k.key, { scope: " on this topic", trend: k.trend ? TREND_SATZ : "" }) : null;
+            if (!ek) return "";
+            return '<div class="up-explain-vis">' + kpiPlatte(key) + '</div>' +
+                   '<div class="up-explain-h">' + esc(t(k.h)) + '</div>' +
+                   '<div class="up-explain-t">' + esc(ek.t) + '</div>';
           }
           var e = VAR_EXPLAIN[key];
           if (!e) return "";
@@ -805,8 +820,8 @@
              eigene Farben, und die Schriftgroesse laesst sich nur hier anheben, ohne die
              Erklaerkarten der sechs anderen Komponenten mitzuziehen. */
           return '<div class="up-explain-vis upd-explain-vis">' + varVisual(key) + '</div>' +
-                 '<div class="up-explain-h">' + esc(e.h) + '</div>' +
-                 '<div class="up-explain-t">' + esc(e.t) + '</div>';
+                 '<div class="up-explain-h">' + esc(t(e.h)) + '</div>' +
+                 '<div class="up-explain-t">' + esc(t(e.t)) + '</div>';
         }
       });
     }

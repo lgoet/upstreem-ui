@@ -355,3 +355,13 @@
    fuellt -- so liest er sich wie ein Pegel und nicht wie eine Liste. Der Block ist damit 8px
    breit statt 38, die Zahl braucht rechts also viel weniger Platz. */
 .uhm-root.has-weights .uhm-cell { position: relative; padding-right: 24px; padding-left: 8px; }
+/* DER AUFTRITT DER BALKEN (09.10. angefordert: "200ms ease"). Nur beim Einschalten (setWeights
+   setzt is-w-auftritt fuer die Dauer), nicht bei jedem Neuzeichnen der Zellen -- sonst blitzten
+   die Balken bei jedem Metrikwechsel neu auf. Die Zahl rueckt im selben Takt zur Seite. */
+.uhm-root.is-w-auftritt .uhm-w { animation: uhmWAuftritt var(--up-t-2) ease both; }
+.uhm-root.is-w-auftritt .uhm-cell { transition: padding var(--up-t-2) ease; }
+@keyframes uhmWAuftritt { from { opacity: 0; transform: translateY(-50%) scaleY(0.4); } to { opacity: 1; transform: translateY(-50%) scaleY(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .uhm-root.is-w-auftritt .uhm-w { animation: none; }
+  .uhm-root.is-w-auftritt .uhm-cell { transition: none; }
+}

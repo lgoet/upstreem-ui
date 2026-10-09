@@ -6,10 +6,12 @@
 
 .upf-root { display: block; }
 .upf-root .upf-pagehead { padding: 8px 0; }
-/* 24 zwischen Radar und Detailbereich wie zwischen Chart und Tabelle der Citations-Seite. */
-.upf-main { display: flex; flex-direction: column; gap: 24px; padding: 24px 0 64px; min-width: 0; }
+/* 48 zwischen Radar und Detailbereich und zwischen Variations und URL-Tabelle (09.10.: 24 war zu
+   eng) -- derselbe Abstand wie zwischen den Abschnitten im Detail selbst, sonst stuende die
+   URL-Tabelle naeher an den Variations als die Abschnitte darueber aneinander. */
+.upf-main { display: flex; flex-direction: column; gap: 48px; padding: 24px 0 64px; min-width: 0; }
 .upf-radar, .upf-detail, .upf-urls { min-width: 0; }
-.upf-detail { display: flex; flex-direction: column; gap: 24px; }
+.upf-detail { display: flex; flex-direction: column; gap: 48px; }
 /* hidden gegen das display der eigenen Regel: ohne Zelle steht der Bereich nicht da. */
 .upf-root .upf-detail[hidden] { display: none; }
 /* Die URL-Tabelle im Detail ist schon auf EINE Marke gefiltert (Topic und Marke der Zelle); ihr

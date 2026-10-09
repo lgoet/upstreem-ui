@@ -1210,6 +1210,12 @@
       if (on === state.weights) return;
       state.weights = on;
       writeWeights(instanceId, on);
+      /* Auftritt nur beim Einschalten, fuer die Dauer der Animation (--up-t-2, 200ms, plus Luft). */
+      if (on){
+        root.classList.add("is-w-auftritt");
+        clearTimeout(root.__uhmWUhr);
+        root.__uhmWUhr = setTimeout(function(){ root.classList.remove("is-w-auftritt"); }, 260);
+      }
       root.classList.toggle("has-weights", on);
       populateSettings();
       paintCells();

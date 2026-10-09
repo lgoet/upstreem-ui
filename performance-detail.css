@@ -9,11 +9,11 @@
 
    AUFBAU SEIT DEM 07.10. wie die Detailbereiche von Events, Shopping und Ads -- die Werte sind
    deren Werte, nicht neue:
-     Seite und Gruppe     .ush-seite/.ush-gruppe, .uad-seite/.uad-gruppe: 48 und 24
+     Abschnitte           .ush-seite/.uad-seite: 48; Kopf zu Kennzahlen 24 wie .ush-gruppe
      Kopf                 .uad-held: Logo 44 (Radius 12, Bild 42/11), Name 22/500, Zeile darunter 13
-     Kurve                .ush-chartbox 16 Polster, Hoehe 240 wie das Produkt-Detail
-     Rangliste            .uev-markt: Zahlenspalten 140, Name mindestens 180-220, quer scrollen
-                          statt abschneiden, Seiten statt senkrecht scrollen
+   SEIT DEM 09.10.: der Kopf klebt beim Scrollen, und Rangliste und Kurve stehen wieder
+   nebeneinander wie vor dem 07.10. (Werte der alten .upd-split/.upd-stand-*), nur im Kasten der
+   neuen Detailbereiche statt in der Karte um alles.
    Die Karte mit Rahmen um den ganzen Bereich ist weg; die Teile stehen offen auf der Seite wie in
    den neuen Komponenten. Alle Farben kommen aus den --vc-Tokens. */
 
@@ -24,19 +24,33 @@
    baut mit Breite 0. Deshalb haengt die Sichtbarkeit an der Wurzelklasse, und der Body ist erst
    im DOM-Fluss, wenn wirklich etwas ausgewaehlt ist. */
 .upd-root .upd-body { display: none; }
-.upd-root.has-selection .upd-body { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
+.upd-root.has-selection .upd-body { display: flex; flex-direction: column; min-width: 0; }
+/* ABSTAENDE (09.10.: "die Gaps zwischen den Segmenten wie ueberall"): 48 zwischen den Abschnitten
+   wie in Shopping und Ads, Kopf und Kennzahlen gehoeren zusammen (24, wie deren Gruppe). Als
+   margin statt gap, weil der Kopf direkt in .upd-body stehen muss (er klebt, siehe unten) und
+   trotzdem naeher an den Kennzahlen sitzt als die Abschnitte aneinander. Die 24 sind 16 Polster
+   unter dem Kopf plus 8. */
+.upd-body > * + * { margin-top: 48px; }
+.upd-body > .upd-kpis { margin-top: 8px; }
 .upd-root.has-selection .upd-empty { display: none; }
 
-/* Kopf, Kennzahlen und Kurve gehoeren zusammen (24), die Abschnitte darunter stehen mit 48. */
-.upd-gruppe { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
 .upd-sek { display: flex; flex-direction: column; min-width: 0; }
 /* hidden muss gegen die eigenen display-Regeln gewinnen -- wie in shopping.css und ads.css. */
 .upd-root .upd-sek[hidden], .upd-root .upd-foot[hidden] { display: none; }
 .upd-sec-head .up-sec-h { gap: 6px; }
 .upd-root.is-narrow .upd-sec-head { flex-wrap: wrap; }
 
-/* ---------- Kopf: Marke, darunter Topic und Rang ---------- */
-.upd-held { display: flex; align-items: center; gap: 14px; min-width: 0; }
+/* ---------- Kopf: Marke, darunter das Topic ----------
+   KLEBT BEIM SCROLLEN (09.10. angefordert, "wie die Topbereiche der Tabellen"): 16 unter der
+   Oberkante wie die Werkzeugleiste der URL-Tabelle darunter (data-sticky-top="16"), Grund der
+   Flaeche, 16 Polster darunter wie .up-sticky .up-head in core. Der Streifen ::before deckt die 16
+   darueber ab, sonst liefe der Inhalt zwischen Fensterkante und Kopf sichtbar durch (dieselbe
+   Loesung wie der Deckstreifen in core und in power-dashboard.css). */
+.upd-held { display: flex; align-items: center; gap: 14px; min-width: 0;
+  position: sticky; top: var(--upd-klebe, 16px); z-index: 6;
+  padding-bottom: 16px; background: var(--up-surface); }
+.upd-held::before { content: ""; position: absolute; left: 0; right: 0; bottom: 100%;
+  height: var(--upd-klebe, 16px); background: var(--up-surface); pointer-events: none; }
 .upd-held-logo { display: inline-flex; flex: 0 0 auto; }
 .upd-held-logobox.up-logo-box { width: 44px; height: 44px; flex: 0 0 44px; border-radius: var(--up-r-xl); }
 .upd-held-logobox.up-logo-box img { width: 42px; height: 42px; border-radius: 11px; }
@@ -47,8 +61,6 @@
 .upd-held-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; min-width: 0;
   font-size: var(--up-fs-m); color: var(--vc-third); }
 .upd-topic { display: inline-flex; align-items: center; min-width: 0; }
-.upd-satz { min-width: 0; overflow-wrap: anywhere; }
-.upd-satz-sk { display: block; width: 220px; }
 /* Der Schliessen-Knopf oben in der Zeile des Namens, nicht mittig zum ganzen Kopf -- dort sass er
    zwischen zwei Zeilen und gehoerte zu keiner. */
 .upd-held .upd-close { align-self: flex-start; flex: 0 0 auto; }
@@ -61,38 +73,59 @@
 .upd-root .upd-kpi .up-th-info { margin-left: 0; }
 .upd-root .upd-kpi:hover .up-th-info { opacity: 1; }
 
-/* ---------- Kurve ---------- */
-.upd-chartbox { padding: 16px; }
-.upd-chartbox .upd-linewrap { height: 240px; }
+/* ---------- Rangliste links, Kurve rechts (Werte der Fassung vor dem 07.10.) ----------
+   Der Trenner ist der border-left der rechten Spalte: er kippt beim Umbruch einfach mit.
+   align-items:stretch, damit er ueber die volle Hoehe der hoeheren Seite laeuft. */
+.upd-split { display: flex; align-items: stretch; min-width: 0; }
+/* Die Liste links ist niedriger als die Kurve: mittig sitzt sie auf der Achse des Charts statt
+   oben mit einer Handbreit Nichts darunter. */
+.upd-split-l { flex: 0 0 30%; min-width: 0; padding: 20px;
+  display: flex; flex-direction: column; justify-content: center; }
+.upd-split-r { flex: 1 1 auto; min-width: 0; padding: 20px; border-left: 1px solid var(--vc-border); }
+/* Ohne Rangliste (weniger als zwei Marken auf dem Topic) nimmt die Kurve die ganze Breite. */
+.upd-root.no-stand .upd-split-l { display: none; }
+.upd-root.no-stand .upd-split-r { border-left: 0; }
+/* Schmal (is-narrow, unter 760 Containerbreite) untereinander. */
+.upd-root.is-narrow .upd-split { display: block; }
+.upd-root.is-narrow .upd-split-r { border-left: 0; border-top: 1px solid var(--vc-border); }
+.upd-chartkopf { display: flex; align-items: center; min-height: var(--up-h-btn); }
+.upd-chartsec .upd-linewrap { height: 260px; margin-top: 16px; }
 
-/* ---------- Rangliste auf diesem Topic ----------
-   .up-vartable aus core wie die Marktbewegung im Event-Detail. Hier stehen nur die Spaltenbreiten --
-   die laesst core bewusst bei der Komponente. Zahlen tabellarisch, NICHT rechtsbuendig. */
-.upd-rang .upd-td-zahl, .upd-rang .upd-th-zahl { flex: 0 0 140px; min-width: 0; }
-.upd-rang .up-var-name, .upd-rang .up-th-vname { min-width: 200px; }
-/* Reicht die Breite nicht, scrollt die Tabelle quer in ihrem Rahmen, statt die Namen abzuschneiden:
-   Kopf und Koerper so breit wie die Summe der Spalten (200 + 4 x 140). */
-.up-vartable.upd-rang { overflow-x: auto; }
-.upd-rang > .up-thead, .upd-rang > .up-tbody { min-width: 760px; }
-.upd-td-marke { gap: 10px; }
-/* Der Platz auf dem Topic vor dem Logo: leise, tabellarisch, rechtsbuendig in seiner schmalen
-   Spalte, damit 9 und 10 untereinander stehen. */
-.upd-platz { flex: 0 0 18px; text-align: right; font-size: var(--up-fs-s); font-weight: var(--up-fw-m);
-  color: var(--vc-third); font-variant-numeric: tabular-nums; }
-/* Die gewaehlte Marke: Platz und Name kraeftiger -- daran findet man sie, ohne die Liste zu lesen.
-   Kein "You": die Zeile ist die GEWAEHLTE Marke, und das muss nicht die eigene sein. */
-.upd-rang .up-row.is-self .upd-platz { color: var(--vc-text); }
-.upd-rang .up-row.is-self .up-varname { font-weight: var(--up-fw-h); }
-/* Die Zeile oeffnet die Marke (bubble_fn_updCompanyClick): Zeiger wie jede klickbare Zeile -- core
-   setzt in .up-vartable "default", hier eine Stufe spezifischer. */
-.upd-rang .up-row.upd-rangzeile { cursor: pointer; }
-.upd-rang .up-row.upd-rangzeile:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: -2px; }
+.upd-stand-head { font-size: var(--up-fs-m); color: var(--vc-muted); }
+.upd-stand-list { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+/* Feste Spalten statt Balken: Rang und Wert tabellarisch, damit die Ziffern untereinander stehen.
+   Zwischen Rang und Logo mehr Luft als zwischen Logo und Name -- die zwei lesen sich als Einheit. */
+.upd-stand-row { display: flex; align-items: center; gap: 8px; height: 34px;
+  padding: 0 8px; margin: 0 -8px; border-radius: var(--up-r-m);
+  cursor: pointer; transition: background var(--up-t-1) ease; }
+.upd-stand-row:hover { background: var(--vc-heading-bg); }
+.upd-stand-row:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: -2px; }
+.upd-stand-idx { flex: 0 0 16px; text-align: right; margin-right: 4px;
+  font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-third); font-variant-numeric: tabular-nums; }
+.upd-stand-logo.up-logo-box { width: 22px; height: 22px; flex: 0 0 22px; border-radius: var(--up-r-s); }
+.upd-stand-logo.up-logo-box img { width: 20px; height: 20px; border-radius: 5px; }
+.upd-stand-logo .up-logo-ltr { font-size: var(--up-fs-xs); }
+.upd-stand-name { flex: 1 1 auto; min-width: 0; font-size: var(--up-fs-m); color: var(--vc-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Gedaempft wie der Name; die gewaehlte Marke ist die einzige Zeile in Primaerfarbe -- daran
+   findet man sie, ohne die Liste zu lesen. Zwei Klassen gegen .up-num aus core. */
+.upd-stand-val { flex: 0 0 auto; min-width: 52px; text-align: right; font-variant-numeric: tabular-nums; }
+.upd-stand-val .up-num { font-size: var(--up-fs-m); font-weight: var(--up-fw-n); color: var(--vc-muted); }
+.upd-stand-row.is-self .upd-stand-name { color: var(--vc-text); font-weight: var(--up-fw-m); }
+.upd-stand-row.is-self .upd-stand-idx { color: var(--vc-text); }
+.upd-stand-row.is-self .upd-stand-val .up-num { color: var(--vc-text); font-weight: var(--up-fw-m); }
+.upd-stand-row.is-sk { cursor: default; }
+.upd-stand-row.is-sk:hover { background: transparent; }
+.upd-sk-idx { width: 10px; }
+.upd-sk-logo { width: 22px; height: 22px; border-radius: var(--up-r-s); }
+.upd-sk-val { width: 38px; margin-left: auto; }
+.upd-sk-satz { width: 210px; }
 
 /* ---------- Seiten statt Scrollen ----------
    Beide Tabellen blaettern mit dem Pager aus core (performance-detail.js, seitenStand); der Koerper
    waechst mit seinen Zeilen. Die Regel in core (.up-vbody, 412.5px) bleibt fuer die Tabellen, die
    sie wollen. Zwei Klassen gegen eine. */
-.upd-rang .up-vbody, .upd-vartable .up-vbody { max-height: none; overflow-y: visible; }
+.upd-vartable .up-vbody { max-height: none; overflow-y: visible; }
 
 /* ---------- Variations ----------
    Der Abschnitt aus core polstert sich selbst mit 16 -- das war fuer die Karte gedacht, in der er
