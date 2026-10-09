@@ -6941,8 +6941,21 @@
       renderPrevious();
       return;
     }
-    var hatten = {};
-    altListe.forEach(function(c){ if (c && c.id != null) hatten[String(c.id)] = true; });
+    var hatten = {}, alteZeile = {};
+    altListe.forEach(function(c){ if (c && c.id != null){ hatten[String(c.id)] = true; alteZeile[String(c.id)] = c; } });
+    /* WAS EINE LIEFERUNG NICHT TRAEGT, BLEIBT (09.10.). Die Dashboard-Seite liefert die Chats aus
+       dashboard_chats_v1 -- nur id, title, updated_at. Eine bekannte Zeile wurde bisher GANZ durch
+       die neue ersetzt, und damit fielen project_id, project_title und is_pinned weg: gepinnte und
+       Projekt-Chats sprangen in "Recents". Jetzt fuellt die alte Zeile, was in der neuen FEHLT;
+       was die neue ausdruecklich traegt (auch null, etwa "aus dem Projekt genommen"), gewinnt. */
+    einListe = einListe.map(function(c){
+      var alt = c && c.id != null ? alteZeile[String(c.id)] : null;
+      if (!alt) return c;
+      var z = {}, k;
+      for (k in alt) if (Object.prototype.hasOwnProperty.call(alt, k)) z[k] = alt[k];
+      for (k in c) if (Object.prototype.hasOwnProperty.call(c, k) && c[k] !== undefined) z[k] = c[k];
+      return z;
+    });
     /* "Kennen wir das meiste?" und nicht "kennen wir alles": die erste Seite enthaelt nach einer
        frischen Antwort genau EINEN neuen Chat -- den gerade entstandenen. Bei "alles bekannt"
        waere sie damit wieder eine vollstaendige Ersetzung gewesen, und der Verlust derselbe.

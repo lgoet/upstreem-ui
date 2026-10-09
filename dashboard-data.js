@@ -312,7 +312,13 @@
     var r = zeilen(d);
     if (!r) return null;
     return r.filter(function (x) { return x.id != null; })
-      .map(function (x) { return { id: str(x.id), title: str(x.title), updated_at: x.updated_at == null ? null : str(x.updated_at) }; });
+      .map(function (x) {
+        /* Nur was da ist: ein fehlender Zeitstempel soll in Miras Liste den bekannten nicht
+           ueberschreiben (askMiraSetPreviousChats behaelt, was eine Zeile nicht traegt). */
+        var o = { id: str(x.id), title: str(x.title) };
+        if (x.updated_at != null) o.updated_at = str(x.updated_at);
+        return o;
+      });
   }
   /* Die Zeilen gehen unveraendert an opportunitiesSetItems (dieselben Felder wie bisher). */
   function zuOpportunities(d) { return zeilen(d); }
