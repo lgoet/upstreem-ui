@@ -592,15 +592,17 @@
     }
     function visAuftrag() {
       var f = filterStand();
-      /* DIE TABELLE ZEIGT DIESELBEN MARKEN WIE DER CHART (09.10. angefordert: die Auswahl im
-         Fader "soll gleichermassen auch auf die Tabelle angewendet werden"). Mit Auswahl fragt die
-         Tabelle genau diese Marken an (p_companies), ohne Auswahl die ganze Liste in der gewaehlten
-         Sortierung -- zum Chart passend gekuerzt wird nach der Antwort (D.zuVisibility), denn
-         welche Marken der Chart automatisch zeigt (Top 7, die eigene immer dabei), sagt erst
-         visibility_v1. Die Sortierung ordnet nur die Tabelle, die Auswahl bestimmt beides. */
+      /* DIE TABELLE (09.10., zweimal):
+         - OHNE eigene Auswahl sortiert sie ueber ALLE Marken und zeigt die ersten 7 der gewaehlten
+           Sortierung -- so war es vorher, und so arbeiten Tabellen neben einem Chart ueberall:
+           "Visibility aufsteigend" heisst die 7 Marken mit der geringsten Sichtbarkeit, nicht die 7
+           des Charts andersherum. Die erste Fassung vom 09.10. hatte die Tabelle auf die Marken des
+           Charts gekuerzt; damit war jede andere Sortierung sinnlos (gemeldet).
+         - MIT eigener Auswahl im Fader zeigt sie genau die gewaehlten Marken, in der gewaehlten
+           Sortierung ("soll gleichermassen auch auf die Tabelle angewendet werden"). */
       var manuell = state.vis.firmen;
       var vis = D.visibility(f, { gran: state.gran, firmen: manuell });
-      var ov = D.overview(f, manuell ? { order: state.vis.order, limit: 10, firmen: manuell } : { order: state.vis.order, limit: 100 });
+      var ov = D.overview(f, manuell ? { order: state.vis.order, limit: 10, firmen: manuell } : { order: state.vis.order, limit: 7 });
       return {
         kanal: "vis", imSpeicher: imSpeicher([vis, ov]),
         ladenAn: function () { try { setter("setVisibilityChartLoading")(ids.vot, "yes"); } catch (e) {} },
@@ -608,9 +610,9 @@
           return alleLaden([["vis_chart", vis], ["vis_tabelle", ov]], frisch).then(function (e) {
             if (e.some(function (x) { return x.ueberholt; })) return null;
             return function () {
-              /* Immer auf die Marken im Chart gekuerzt -- mit Auswahl ist das dieselbe Menge wie
-                 p_companies, und so stimmt es auch, falls die Antwort mehr traegt. */
-              var p = e[0].ok && e[1].ok ? D.zuVisibility(e[0].daten, e[1].daten, { nurImChart: true }) : null;
+              /* Nur mit eigener Auswahl auf die Marken im Chart gekuerzt (dieselbe Menge wie
+                 p_companies); ohne Auswahl gilt die Antwort, wie sie kommt. */
+              var p = e[0].ok && e[1].ok ? D.zuVisibility(e[0].daten, e[1].daten, { nurImChart: !!manuell }) : null;
               if (e[1].ok) eigeneMerken(e[1].daten);
               if (!p) {
                 try { setter("renderVisibilityChart")({ instanceId: ids.vot, __parseError: true }); } catch (err) {}

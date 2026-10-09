@@ -3978,6 +3978,11 @@
    Polster, also muss die Zahl mitwandern -- sonst saehe dieselbe Box an zwei Orten
    verschieden aus. */
 #ask-mira.up-root.is-launcher .am-composer { padding: 16px 8px 8px; row-gap: 10px; }
+/* Und waehrend der Aufnahme auch hier symmetrisch (09.10. gemeldet: im Dashboard sass die
+   Aufnahmeleiste zu tief). Die Regel weiter oben (.am-composer.is-recording, 12/12) verlor gegen
+   die Launcher-Regel direkt darueber -- gemessen 16 oben, 8 unten, die Leiste 4px unter der Mitte.
+   Dieselben 12/12, nur mit der Spezifitaet, die hier gilt. */
+#ask-mira.up-root.is-launcher .am-composer.is-recording { padding-top: 12px; padding-bottom: 12px; }
 /* "Mira answers based on..." ist im Dashboard weg (11.09. angefordert) -- der Satz erklaert
    Mira SICH SELBST, und im Launcher steht sie nur als Einstieg da, nicht als eigene Ansicht mit
    eigenem Fusstext. In Miras eigener Ansicht bleibt er (kein is-launcher dort). */

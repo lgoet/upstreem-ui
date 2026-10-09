@@ -176,9 +176,9 @@
      Ein Punkt OHNE Wert (keine Runs, oder ausserhalb des Tracking-Fensters) faellt weg: die Linie
      laeuft dann ueber den Tag hinweg, wie bei jedem Linienchart der App, statt auf 0 zu fallen --
      0 waere eine Messung, die es nicht gab. */
-  /* o.nurImChart: die Tabelle zeigt nur die Marken, die auch im Chart stehen (ohne Handauswahl
-     die automatischen Top 7 samt eigener Marke), in der Reihenfolge der Antwort -- also in der
-     gewaehlten Sortierung. Mit Handauswahl kommt die Tabelle schon passend (p_companies). */
+  /* o.nurImChart: die Tabelle zeigt nur die Marken, die auch im Chart stehen -- die Seite setzt das
+     nur bei einer eigenen Auswahl im Fader (dieselbe Menge wie p_companies). Ohne Auswahl sortiert
+     die Tabelle ueber alle Marken (dashboard-page.js, visAuftrag). */
   function zuVisibility(vis, ov, o) {
     o = o || {};
     if (!istObjekt(vis) || !isArr(vis.series) || !isArr(vis.companies)) return null;

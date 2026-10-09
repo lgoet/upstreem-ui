@@ -213,7 +213,10 @@
   cursor: pointer; transition: background 120ms ease; }
 .urt-card:hover { background: var(--vt-row-hover); }
 
-.urt-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+/* 20 statt 12 unter der Kopfzeile (09.10. angefordert: "etwas mehr Gap zwischen der Toprow mit
+   Model und Date und dem Prompt-Text"). Seit der Modell-Chip keine Huelle mehr hat, ist die Zeile
+   rund 14px niedriger -- vom Logo bis zum Prompt standen sichtbar nur noch 12 statt vorher ~19. */
+.urt-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 20px; }
 /* model chip | sentiment | rank — 16px off the chip so the metrics read as their own group
    three metrics so they do not read as one run-on group */
 .urt-card-headleft { display: flex; align-items: center; gap: 16px; min-width: 0; flex-wrap: wrap; }

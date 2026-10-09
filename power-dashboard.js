@@ -70,6 +70,22 @@
     if (h >= 18 && h < 23) return "Good evening";
     return "Hey";
   }
+  /* OHNE NAMEN EIN GANZER SATZ (09.10. angefordert: "wenn es keinen Namen gibt, nimm ein paar
+     neutralere ohne Namen"). "Good morning" allein las sich wie ein abgeschnittener Gruss. Je
+     Tageszeit zwei Saetze; welcher, entscheidet der Kalendertag -- ueber den Tag bleibt es derselbe,
+     sonst wechselte er bei jedem Neuzeichnen (die Uhr unten laeuft jede Minute). */
+  var GRUSS_OHNE_NAMEN = {
+    "Good morning":   ["Good morning, let's see what's new", "Morning! Here's where you stand"],
+    "Hi":             ["Welcome back", "Hello again, here's your overview"],
+    "Good afternoon": ["Good afternoon, let's take a look", "Welcome back, here's what's new"],
+    "Good evening":   ["Good evening, here's your overview", "Welcome back, here's where you stand"],
+    "Hey":            ["Working late? Here's your overview", "Welcome back"]
+  };
+  function grussOhneNamen(wort, jetzt){
+    var l = GRUSS_OHNE_NAMEN[wort] || [wort];
+    var tag = Math.floor((jetzt.getTime() - jetzt.getTimezoneOffset() * 60000) / 86400000);
+    return l[tag % l.length];
+  }
   function vorname(){
     var u = window.__upNutzer;
     if (!u || !u.name){
@@ -87,7 +103,8 @@
     if (!C || !elD || !elG) return;
     var jetzt = new Date(), name = vorname(), wort = grussWort(jetzt.getHours());
     var datum = C.fmtDateLong ? C.fmtDateLong(jetzt) : jetzt.toDateString();
-    var gruss = (C.t ? C.t(wort) : wort) + (name ? ", " + name : "");
+    var satz = name ? wort : grussOhneNamen(wort, jetzt);
+    var gruss = (C.t ? C.t(satz) : satz) + (name ? ", " + name : "");
     if (elD.textContent !== datum) elD.textContent = datum;
     if (elG.textContent !== gruss) elG.textContent = gruss;
   }
@@ -195,7 +212,16 @@
        niemand. Hi und Hey bleiben -- als Eintrag, damit sie nicht als unuebersetzt gelten. */
     if (UC.addMessages) UC.addMessages("de", {
       "Good morning": "Guten Morgen", "Good afternoon": "Guten Tag", "Good evening": "Guten Abend",
-      "Hi": "Hi", "Hey": "Hey"
+      "Hi": "Hi", "Hey": "Hey",
+      "Good morning, let's see what's new": "Guten Morgen, schauen wir, was es Neues gibt",
+      "Morning! Here's where you stand": "Guten Morgen! Hier stehst du gerade",
+      "Welcome back": "Willkommen zurück",
+      "Hello again, here's your overview": "Hallo, hier ist dein Überblick",
+      "Good afternoon, let's take a look": "Guten Tag, schauen wir mal rein",
+      "Welcome back, here's what's new": "Willkommen zurück, das ist neu",
+      "Good evening, here's your overview": "Guten Abend, hier ist dein Überblick",
+      "Welcome back, here's where you stand": "Willkommen zurück, hier stehst du gerade",
+      "Working late? Here's your overview": "Noch wach? Hier ist dein Überblick"
     });
     mount = UC.makeMount({
       onMount: function(m){ mount = m; },
@@ -1067,7 +1093,10 @@
          alles verdrahtet ist. */
       var pruefbar = needs.filter(function(n){ return n !== "opportunities"; });
       var schluessel = pruefbar.join(",");
-      if (pruefbar.length && !_bedarfGemeldet[schluessel]){
+      /* Im lokalen Modus (data-local, die Dashboard-Seite) antwortet die Seite auf den Bedarf und
+         zeigt einen gescheiterten Abschnitt selbst als Fehler -- der Rat, ein Toolbox-Element
+         anzulegen, waere dort falsch. */
+      if (pruefbar.length && !_bedarfGemeldet[schluessel] && !UC.isYes(root.getAttribute("data-local"))){
         _bedarfGemeldet[schluessel] = true;
         setTimeout(function(){
           var offen = pruefbar.filter(fehlt);

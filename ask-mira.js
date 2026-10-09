@@ -10296,6 +10296,11 @@
       } catch(e){}
     }
     function cancelRecording(){ var was=composer.classList.contains('is-recording'); stopAll(); if (was) fireVoice('cancel', {}); }
+    var SPRACH_FRIST_MS = 45000;
+    function sprachScheitern(mid, satz){
+      try { window.askMiraRejectVoice(mid); } catch(_){}
+      showNote(satz);
+    }
     function confirmRecording(){
       if (!composer.classList.contains('is-recording')) return;
       if (maxTimer){ clearTimeout(maxTimer); maxTimer=0; }
@@ -10308,6 +10313,12 @@
       recording = false;
       recFokusRaus();
       composer.classList.remove('is-recording'); recEl.setAttribute('aria-hidden', 'true');
+      /* AUS DEM DASHBOARD WIE GETIPPT (09.10. gemeldet: "der Sprachmodus funktioniert im
+         Dashboard nicht"). sendMessage geht aus dem Launcher erst nach Mira (neuer Chat), die
+         Aufnahme tat das nicht: die Sprachfrage landete in Miras Verlauf, waehrend man auf dem
+         Dashboard stehen blieb -- es sah aus, als passiere nichts. Jetzt derselbe Weg; der Text im
+         Dashboard-Feld bleibt dort (anders als beim Tippen gehoert er nicht zur Frage). */
+      if (istLauncher()){ try { zuMira({ neu: true }); } catch(_){} }
       try {
         var _sprachFrage = { id: mid, role: 'user', content: '', pending_voice: true, created_at: new Date().toISOString() };
         S.messages.push(_sprachFrage);
@@ -10327,8 +10338,20 @@
       function finalize(){
         var blob = chunks.length ? new Blob(chunks, { type:(recorder && recorder.mimeType)||'audio/webm' }) : null;
         function emit(b64, mime){
+          var hatEmpfaenger = typeof window.bubble_fn_ask_mira_voice === 'function';
           fireVoice('submit', { message_id: mid, chat_id: S.activeChatId, audio_base64: b64||'', mime_type: mime||'', duration_ms: dur });
           teardown();
+          /* KEIN STILLER AUSFALL (09.10.). Ohne Empfaenger ging die Aufnahme als Fensterereignis
+             ins Leere, und die Platzhalter-Blase "Transcribing" stand fuer immer da; ebenso, wenn
+             die Transkription nie zurueckkam. Jetzt: ohne Empfaenger sofort, sonst nach 45s ohne
+             Text die Blase weg, der Ladezustand aus und ein Satz unter dem Feld. */
+          if (!hatEmpfaenger){ sprachScheitern(mid, 'Voice messages aren\u2019t available right now.'); return; }
+          setTimeout(function(){
+            var i = _findPendingVoice(mid);
+            if (i >= 0 && String(S.messages[i].id) === mid && S.messages[i].pending_voice){
+              sprachScheitern(mid, 'The voice message couldn\u2019t be transcribed. Please try again.');
+            }
+          }, SPRACH_FRIST_MS);
         }
         if (blob){ var fr=new FileReader(); fr.onloadend=function(){ var res=String(fr.result||''); emit(res.indexOf(',')>=0?res.slice(res.indexOf(',')+1):res, blob.type); }; fr.onerror=function(){ emit('', blob.type); }; fr.readAsDataURL(blob); }
         else emit('', '');
