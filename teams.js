@@ -842,51 +842,6 @@
         return (root.getAttribute("data-instance") || "default") === id;
       };
 
-      /* ---------------- DIREKTER DATENWEG (09.10., Vertrag E: teams_portfolio_v1) ----------------
-         Mit data-direct="yes" holt die Tabelle ihre Zeilen selbst (UC.rpc, Login des Nutzers) statt
-         ueber einen Bubble-Workflow mit renderTeams. Die beiden Ereignisse bleiben, wie sie sind:
-         Wechseln und "Create" gehen weiter an die Workflows der Seitenleiste (usnTeam, usnNewTeam)
-         -- die gibt es in der App schon, und ein Teamwechsel laedt dort den ganzen Arbeitsbereich.
-         Angeheftet wird das aktive Team (p_pinned_team_id): es steht oben, wie bisher. Ein
-         geloeschtes oder fremdes Team ignoriert die DB, statt die Tabelle mit einem Fehler zu
-         leeren. Geladen wird beim Aufbau (sobald sichtbar) und bei jedem Teamwechsel; die ganze
-         Liste in einem Aufruf (bis 100), darueber blaettert der Lader selbst nach. */
-      if (UC.isYes(root.getAttribute("data-direct")) && UC.rpc) {
-        var direktNr = 0;
-        var direktLaden = function () {
-          var sichtbar = function (el) { return el.isConnected !== false && (!UC.istSichtbar || UC.istSichtbar(el)); };
-          if (!sichtbar(root)) { if (UC.beiSicht) UC.beiSicht(root, "teams_laden", direktLaden, sichtbar); return; }
-          var nr = ++direktNr, tm = "";
-          try { tm = (UC.getTeam && UC.getTeam()) || ""; } catch (e) {}
-          if (!state.hasData) ctrl.setLoading("yes");
-          var alle = [];
-          var seite = function (offset) {
-            var p = { p_limit: 100, p_offset: offset };
-            if (/^[0-9a-f-]{36}$/i.test(tm)) p.p_pinned_team_id = tm;
-            return UC.rpc("teams_portfolio_v1", p, { timeoutMs: 20000 }).then(function (erg) {
-              if (nr !== direktNr) return null;
-              var d = erg.ok ? erg.daten : null;
-              var rows = d && Array.isArray(d.rows) ? d.rows : null;
-              if (!rows) return false;
-              alle = alle.concat(rows);
-              var total = d.meta && Number(d.meta.total_count);
-              /* Hoechstens zehn Seiten: tausend Teams hat niemand, und eine kaputte Zaehlung soll
-                 keine Schleife werden. */
-              if (total > alle.length && rows.length && offset < 900) return seite(offset + 100);
-              return true;
-            });
-          };
-          seite(0).then(function (ok) {
-            if (ok === null || nr !== direktNr) return;
-            if (ok) ctrl.render({ rows: alle, currentTeamId: tm });
-            /* Unlesbar oder abgelehnt: der Lesefehler der Tabelle, nie eine leere Liste. */
-            else ctrl.render({ __parseError: true });
-          });
-        };
-        if (UC.onTeamChange) UC.onTeamChange(function () { direktLaden(); }, root);
-        setTimeout(direktLaden, 0);
-      }
-
       /* Ladezustand von Anfang an: bis zum ersten Aufruf gibt es nichts zu zeigen, und der
          Leerzustand waere die Behauptung, es sei schon geantwortet worden. Gilt nur beim
          allerersten Aufbau -- eine neu gebaute Wurzel zeichnet hier den gemerkten Stand

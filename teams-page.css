@@ -1,0 +1,5 @@
+/* upstreem teams-page.css -- die Teams-Seite als eine Komponente (09.10.). Praefix utp.
+   Kopf, Tabelle, Abstaende und Skelett bringt die Teams-Tabelle selbst mit (teams.css). Die Wurzel
+   ist eine .up-root wie jede Seite (core erkennt sie dann sofort), aber ein Block statt der
+   Flex-Spalte aus core -- wie .ucs-root und .upf-root. */
+.utp-root { display: block; }

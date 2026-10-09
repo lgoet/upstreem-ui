@@ -5,13 +5,6 @@
   Alle Teams, in denen der angemeldete Nutzer Mitglied ist, plus der Knopf, mit dem er in eines
   davon wechselt.
 
-  ── SEIT DEM 09.10.: DIREKT (data-direct="yes") ───────────────────────────────
-  Mit data-direct="yes" holt die Tabelle ihre Zeilen selbst (teams_portfolio_v1, Login des
-  Nutzers) -- beim Aufbau und bei jedem Teamwechsel. Der Bubble-Workflow, der bisher den RPC rief
-  und renderTeams aufrief, faellt dann weg. Wechseln und "+ New Team" bleiben wie sie sind
-  (usnTeam / usnNewTeam an die Workflows der Seitenleiste). Geloeschte Teams erscheinen nicht mehr.
-  Voraussetzung: teams_portfolio_v1 ist in Prod (Vertrag E, bubble/seiten_db_vorschlag_2.md 6.1).
-
   SEITENKOPF UND TABELLE SIND EIN ELEMENT. Auf diese Seite kommt KEIN eigenes
   page-headers/*-Element -- Meta-Zeile, Ueberschrift, Beschreibung und der Knopf
   "+ New Team" baut die Komponente selbst, mit denselben Core-Klassen (.up-ph-*), die
@@ -126,7 +119,6 @@
      data-brand-name="BRAND_NAME"
      data-brand-logo="BRAND_LOGO_URL"
      data-sticky-top="16"
-     data-direct="yes"
      data-switch-fn="bubble_fn_usnTeam"
      data-newteam-fn="bubble_fn_usnNewTeam"></div>
 

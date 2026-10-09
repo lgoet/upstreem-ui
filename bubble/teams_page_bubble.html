@@ -1,0 +1,33 @@
+<!--
+  UPSTREEM — TEAMS-SEITE als EINE Komponente (Praefix utp), 09.10.2026
+
+  WOHIN: ein HTML-Element, volle Breite, Fit height to content (auch an der Gruppe darum), in die
+  Teams-Ansicht. Die Komponente baut die Teams-Tabelle (teams.js, mit eigenem Seitenkopf und
+  "+ New Team") selbst ein und laedt sie selbst.
+
+  ── VORAUSSETZUNG: VERTRAG E IST IN PROD ───────────────────────────────────────
+  Die Seite ruft teams_portfolio_v1 selbst (UC.rpc, Nutzer-JWT), beim Aufbau und bei jedem
+  Teamwechsel, mit dem aktiven Team als p_pinned_team_id. Solange der Datenbank-Chat
+  teams_v1.sql nicht eingespielt hat, das Element NICHT einbauen.
+  Vertrag: bubble/seiten_db_vorschlag_2.md, Abschnitt 6.1.
+
+  ── Was Bubble NICHT mehr tut ─────────────────────────────────────────────────
+  Kein Laden der Liste, kein Run JS mit renderTeams / setTeamsLoading / resetTeams.
+
+  ── Was Bubble WEITER tut ─────────────────────────────────────────────────────
+  "Switch" und "+ New Team" gehen wie bisher an die Workflows der Seitenleiste
+  (bubble_fn_usnTeam, bubble_fn_usnNewTeam) -- dort ist nichts zu aendern.
+
+  ── Attribute ─────────────────────────────────────────────────────────────────
+  data-instance  optional, Vorgabe "teams_page".
+  Kein data-isdark, kein data-cdn-pin, kein data-team: Thema und aktives Team setzt core
+  (setUpstreemTheme, setUpstreemTeam), den Pin das Header-Script.
+
+  ── Umstellen ─────────────────────────────────────────────────────────────────
+  1. Pin im Header-Script auf den Commit dieser Seite (oder neuer).
+  2. In der Teams-Ansicht das alte Teams-Element (.uts-root) samt seinem Lade-Workflow
+     (RPC + renderTeams/setTeamsLoading) durch DIESES eine Element ersetzen.
+     VORHER PRUEFEN: ruft der Lade-Workflow noch andere Setter auf? Den Schritt dann
+     verschieben, nicht mitloeschen.
+-->
+<div class="up-root utp-root" data-instance="teams_page"></div>
