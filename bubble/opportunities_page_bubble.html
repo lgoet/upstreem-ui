@@ -1,0 +1,43 @@
+<!--
+  UPSTREEM — OPPORTUNITIES-SEITE als EINE Komponente (Praefix uop), 09.10.2026
+
+  WOHIN: ein HTML-Element, volle Breite, ohne eigenes Polster, in die Opportunities-Ansicht. Die
+  Komponente baut ALLES selbst: den Seitenkopf (Krume "Opportunities", Knopf "Look for new
+  Opportunities") und das Brett (opportunities.js) im lokalen Modus.
+
+  ── VORAUSSETZUNG: VERTRAG B IST IN PROD ───────────────────────────────────────
+  Die Seite ruft diese Funktionen selbst (UC.rpc / UC.edge, Nutzer-JWT):
+      dashboard_opportunities_v1        die Karten
+      opportunities_set_status_v1       jeder Statuswechsel (Ziehen, Schublade, Ignore, "alle verschieben")
+      opportunities_own_urls_v1         die eigenen URLs in "Create with AI"
+      start-job (Edge Function)         "Look for new Opportunities" als Job
+      opportunities_search_status_v1    der Stand der Suche
+  Solange der Datenbank-Chat B nicht eingespielt hat, gibt es die vier neuen noch nicht -- das
+  Element dann NICHT einbauen. Vertrag: bubble/seiten_db_vorschlag_2.md, Abschnitt 3.2, 3.5, 5.
+
+  ── Was Bubble NICHT mehr tut ─────────────────────────────────────────────────
+  Keine Workflows fuer diese Seite: kein Laden der Liste, kein change_status / move_all / ignore,
+  kein ophSearch, kein get_you_urls, kein open_url / competitor_click (die Seite oeffnet die
+  Drawer selbst). Auch kein Run JS mit opportunitiesSetItems.
+
+  ── DAS BRETT GIBT ES NUR EINMAL AUF DER SEITE ────────────────────────────────
+  Das Agentic Dashboard leiht sich das Brett aus (opportunitiesLauncherAttach). Mit dieser
+  Komponente ist IHR Brett das eine Brett: das bisherige Opportunities-Element (.uo-root) und den
+  bisherigen Seitenkopf (.oph-root) bitte entfernen, nicht daneben stehen lassen -- zwei Bretter
+  treten sich gegenseitig ab. Statuswechsel im Dashboard schreibt dann ebenfalls diese Seite.
+
+  ── Attribute ─────────────────────────────────────────────────────────────────
+  data-instance  optional, Vorgabe "opportunities_page".
+  Kein data-isdark, kein data-cdn-pin: das Thema setzt core, den Pin das Header-Script.
+
+  ── Umstellen ─────────────────────────────────────────────────────────────────
+  1. Pin im Header-Script auf den Commit dieser Seite (oder neuer).
+  2. In der Opportunities-Ansicht den alten Seitenkopf und das alte Opportunities-Element samt
+     ihrer Workflows (Laden, change_status, move_all, ignore, ophSearch, get_you_urls, open_url,
+     competitor_click) durch DIESES eine Element ersetzen.
+     VORHER PRUEFEN: ruft einer dieser Workflows noch andere Setter auf? Den Schritt dann
+     verschieben, nicht mitloeschen.
+  3. Im Dashboard den Pageload-Schritt mit opportunitiesSetItems gibt es seit dem 09.10. nicht
+     mehr (die Dashboard-Seite laedt selbst) -- dort ist nichts zu tun.
+-->
+<div class="up-root uop-root" data-instance="opportunities_page"></div>

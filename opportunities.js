@@ -933,7 +933,9 @@
   })();
 
   /* ---------- status change ---------- */
-  function setStatus(id, statusKey){
+  /* still: nur umlegen und zeichnen, KEIN Ereignis (09.10.) -- der Weg zurueck, wenn der Server
+     einen Statuswechsel ablehnt. Mit Ereignis loeste das Zuruecklegen einen zweiten Aufruf aus. */
+  function setStatus(id, statusKey, still){
     var item = S.items.find(function(x){ return String(x.id) === String(id); });
     if (!item) return;
     var prev = statusKeyOf(item);
@@ -943,6 +945,7 @@
     item.status = col ? col.status : statusKey;
     render();
     if (S.detailId === id) openDetail(id);
+    if (still) return;
     emit('change_status', { opportunity_id: id, status: (col?col.status:statusKey), status_key: statusKey, previous_status: (prevCol?prevCol.status:prev), previous_status_key: prev });
   }
 
@@ -973,7 +976,13 @@
       competitor_click: 'bubble_fn_opportunity_competitor_click'
     }[action];
     var json = JSON.stringify(payload);
-    if (fn && typeof window[fn] === 'function') window[fn](json);
+    /* LOKALER MODUS (09.10., Opportunities-Seite): traegt die Wurzel data-local="yes", laedt und
+       schreibt eine Seiten-Komponente selbst -- dann NUR das Fensterereignis, auch wenn Bubble
+       eine Funktion gleichen Namens bereithaelt. Am window und nicht an der Wurzel: das Brett
+       wird vom Agentic Dashboard ausgeliehen und steht dann in dessen DOM; die Seite muss die
+       Ereignisse trotzdem hoeren. */
+    var lokal = UC.isYes ? UC.isYes(root.getAttribute('data-local')) : root.getAttribute('data-local') === 'yes';
+    if (!lokal && fn && typeof window[fn] === 'function') window[fn](json);
     else window.dispatchEvent(new CustomEvent('upstreem:opportunity:' + action, { detail: payload }));
   }
 
@@ -1377,7 +1386,8 @@
      Liste neu zu schicken -- wovor die Vorlage ausdruecklich warnt, weil das Brett sonst sichtbar
      unter dem Nutzer neu zeichnet.
      statusKey ist einer von pending | in_progress | done | ignored. */
-  window.opportunitiesSetStatus = function(id, statusKey){ setStatus(String(id), String(statusKey)); };
+  /* opts.silent: ohne Ereignis (Zuruecklegen nach einem abgelehnten Statuswechsel, 09.10.). */
+  window.opportunitiesSetStatus = function(id, statusKey, opts){ setStatus(String(id), String(statusKey), !!(opts && opts.silent)); };
   window.opportunitiesOpenDetail = openDetail;
   window.opportunitiesCloseDetail = closeDetail;
   window.opportunitiesGetState = function(){ return { mode: S.mode, visible: S.visible, query: S.query, count: S.items.length }; };

@@ -18773,6 +18773,81 @@
       return erg;
     });
   }
+  /* ══ EDGE FUNCTIONS (09.10., Vertrag Fuenf Ansichten Fassung 2, Abschnitt 3) ═════════════════
+     Lange Laeufe und alles, was n8n anstoesst, gehen ueber Supabase Edge Functions statt ueber
+     Bubble: POST {adresse}/functions/v1/<name> mit demselben Schluessel und demselben Token wie
+     rpc() -- die Function ruft die Datenbank mit diesem Token, also gelten auth.uid() und
+     require_team_access wie bei jedem RPC. Die Webhook-Adressen von n8n kennt nur die Function.
+     Antwort wie rpc(): { ok, status, daten } oder { ok:false, status, fehler:{ code, message, hint } }.
+     Fehler der Function selbst: edge_unauthorized (401), edge_invalid_body (400),
+     edge_upstream_failed (502); Fehler der Datenbank reicht sie unveraendert durch.
+     opts: { signal, timeoutMs (30000), datei (true: die Antwort ist eine Datei -- daten ist dann
+     { blob, name } aus Content-Disposition, fuer den PDF-Export) }. Wirft nie. */
+  function edge(name, body, opts){
+    opts = opts || {};
+    name = String(name == null ? "" : name);
+    if (!/^[a-z0-9_-]+$/i.test(name)){
+      return Promise.resolve({ ok: false, status: 0, fehler: { code: "", message: "invalid_function", hint: "", details: "" } });
+    }
+    function einmal(){
+      return rpcToken().then(function(token){
+        var schluessel = rpcSchluessel();
+        if (!schluessel || !token){
+          return { ok: false, status: 401, fehler: { code: "", message: "not authenticated", hint: token ? "no api key" : "no session", details: "" } };
+        }
+        var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+        var zeitAus = false;
+        var uhr = setTimeout(function(){ zeitAus = true; if (ctrl) ctrl.abort(); }, opts.timeoutMs || 30000);
+        if (opts.signal && ctrl){
+          if (opts.signal.aborted) ctrl.abort();
+          else opts.signal.addEventListener("abort", function(){ ctrl.abort(); });
+        }
+        return fetch(rpcAdresse() + "/functions/v1/" + name, {
+          method: "POST",
+          headers: { "apikey": schluessel, "Authorization": "Bearer " + token, "Content-Type": "application/json" },
+          body: JSON.stringify(body || {}),
+          signal: ctrl ? ctrl.signal : undefined
+        }).then(function(r){
+          var typ = String((r.headers && r.headers.get && r.headers.get("content-type")) || "");
+          /* Eine Datei nur bei Erfolg und wenn sie keine JSON-Fehlermeldung ist. */
+          if (opts.datei && r.ok && typ.indexOf("application/json") < 0 && r.blob){
+            return r.blob().then(function(b){
+              clearTimeout(uhr);
+              var cd = String((r.headers.get && r.headers.get("content-disposition")) || "");
+              var m = cd.match(/filename\*?=(?:UTF-8'')?"?([^";]+)"?/i);
+              var dateiName = m ? decodeURIComponent(m[1]) : "";
+              return { ok: true, status: r.status, daten: { blob: b, name: dateiName } };
+            });
+          }
+          return r.text().then(function(t){
+            clearTimeout(uhr);
+            var d;
+            try { d = t ? JSON.parse(t) : null; } catch(e){ d = undefined; }
+            if (r.ok){
+              if (d === undefined) return { ok: false, status: r.status, fehler: { code: "", message: "unreadable_response", hint: "", details: "" } };
+              return { ok: true, status: r.status, daten: d };
+            }
+            var f = d && typeof d === "object" ? d : {};
+            return { ok: false, status: r.status, fehler: {
+              code: String(f.code || ""), message: String(f.message || ("http_" + r.status)),
+              hint: String(f.hint || ""), details: String(f.details || "") } };
+          });
+        }, function(e){
+          clearTimeout(uhr);
+          var weg = e && e.name === "AbortError";
+          return { ok: false, status: 0, fehler: { code: "", hint: "", details: "",
+            message: weg ? (zeitAus ? "timeout" : "aborted") : "network" } };
+        });
+      });
+    }
+    return einmal().then(function(erg){
+      if (!erg.ok && erg.status === 401 && /jwt|expired/i.test(erg.fehler.message + " " + erg.fehler.code)){
+        return new Promise(function(w){ setTimeout(w, 1500); }).then(einmal);
+      }
+      return erg;
+    });
+  }
+
   /* Fuer die Konsole: ist der Weg bereit? Nennt nie das Token selbst. */
   function rpcBereit(){
     var sz = sitzungLesen();
@@ -22059,7 +22134,7 @@
     variationRing: variationRing,
     granAvailability: granAvailability,
     granFuerZeitraum: granFuerZeitraum,
-    rpc: rpc,
+    rpc: rpc, edge: edge,
     rpcBereit: rpcBereit,
     /* Die upstreem-Wortmarke, EINE Quelle (08.10.): Seiten ohne eigenes data-logo nehmen sie von
        hier, statt die Adresse in jedes Element zu schreiben. */

@@ -1,0 +1,14 @@
+/* upstreem opportunities-page.css -- die Opportunities-Seite als eine Komponente (09.10.). Praefix uop.
+
+   Der kompakte Kopf kommt aus core (.uop-pagehead in denselben Listen wie Citations, Dashboard und
+   Performance), der Knopf ist .up-ph-addbtn.up-export aus core wie im bisherigen Kopf. Das Brett
+   bringt seine eigene CSS mit (opportunities.css) -- hier steht nur, wie es in der Seite steht. */
+
+.uop-root { display: block; }
+.uop-root .uop-pagehead { padding: 8px 0; }
+.uop-main { padding: 24px 0 64px; min-width: 0; }
+/* Das Brett polstert sich sonst selbst mit 16 seitlich (opportunities.css: 16px 16px 32px) --
+   in der Seite steht sein Inhalt schon 16 vom Rand (UC.makePageCrumbs), das ergaebe 32. Oben
+   gibt .uop-main die 24 wie Citations und Performance, unten die 64. Ausgeliehen im Dashboard
+   (is-launcher) gilt dessen eigene Regel. */
+.uop-root .up-root.uo-root:not(.is-launcher) { padding: 0; }
