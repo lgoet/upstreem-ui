@@ -8,7 +8,8 @@ create-with-ai.js, teams.js, prompt-research.js, ask-mira.js).
 **Kurz:** Die Grundform passt; die gemeinsamen Regeln (§1), das Job-Muster (§8) und die
 Reihenfolge A → B → E → C → D sind freigegeben. Unten stehen die Änderungen je Ansicht, danach
 die Antworten auf deine zwölf Fragen. **Die Entscheidungen des Nutzers stehen in Abschnitt N**
-(Nachtrag 09.10.); sie gehen allem anderen vor. Offen ist nur noch N.2 (n8n-Nutzlasten).
+(Nachtrag 09.10.); sie gehen allem anderen vor. Offen sind nur noch die n8n-Nutzlasten für
+Senden, Sprache und den Start von Prompt Research (N.2).
 
 **Umbenennungen fängt die Oberfläche ab.** Sie bekommt je Bereich ein Datenmodul (wie
 `citations-data.js`). Wo die Komponente heute anders liest (`cells` statt `rows`, `series` statt
@@ -43,12 +44,28 @@ Edge Function.
    Browser. Bitte die Edge Function im Vertrag mit Namen, Body und Antwort festhalten (Vorschlag:
    eine Funktion `start-job` mit `kind`, oder je Art eine). Die alten Bubble-Wege bleiben, bis die
    Seiten umgestellt sind.
-2. **n8n-Nutzlasten: kommen vom Nutzer nach.** Heute stößt Bubble je einen n8n-Workflow per
-   Webhook an. Beim PDF-Export ruft ein Run-JS-Schritt die Webhook-Adresse, wartet stumpf 2,5 s und
-   setzt dann `askMiraSetExportPending(id, "no")`, ohne zu wissen, ob es geklappt hat. Das soll
-   ein echter Job werden: die Oberfläche wartet auf `success`/`failed` (Status-Abruf oder
-   Realtime-Ereignis), nicht auf eine Uhr. **Offen:** wohin das fertige PDF geht (Adresse zum
-   Herunterladen oder E-Mail).
+2. **n8n-Nutzlasten: PDF geklärt, Senden, Sprache und Prompt-Research-Start kommen nach.**
+
+   **PDF heute:** Ein Run-JS-Schritt in Bubble hängt einen unsichtbaren iframe an die Seite, mit
+   `GET` auf den n8n-Webhook `mira-message-export-pdf` und den Parametern `team_id`,
+   `assistant_message_id`, `session_id` in der Adresse. n8n antwortet mit der PDF-Datei, der Browser
+   lädt sie herunter. Getrennt davon setzt ein zweiter Schritt nach 2,5 s
+   `askMiraSetExportPending(id, "no")`, ohne zu wissen, ob es geklappt hat.
+
+   **Befund:** Der Webhook prüft niemanden. Die Adresse steht im Quelltext der Seite; wer sie und
+   eine Session-Kennung kennt, bekommt das PDF eines fremden Chats. Bitte beim Bau prüfen, ob der
+   n8n-Workflow selbst irgendetwas gegen Nutzer oder Team prüft.
+
+   **Neu, ohne Job (der Export ist eine Anfrage mit Datei als Antwort):**
+   - Edge Function `mira-export-pdf`, `POST {session_id, assistant_message_id}` mit Nutzer-JWT.
+   - Sie prüft mit dem JWT, dass die Nachricht dem Nutzer gehört (über `mira_messages_v1`, sonst
+     `mira_not_found`), ruft n8n mit einem geheimen Header und gibt die Datei als
+     `application/pdf` mit `Content-Disposition: attachment` zurück.
+   - Die Oberfläche lädt die Datei herunter und beendet den Ladezustand genau dann; bei einem
+     Fehler zeigt sie einen Satz statt eines endlosen Kreisels.
+   - Nach der Umstellung bekommt der n8n-Webhook Header-Auth, und die Adresse ist nur noch in den
+     Supabase-Secrets. Vorher nicht: der heutige Bubble-Weg schickt keinen Header.
+   - Bitte die Laufzeit des Exports messen (kalt), damit die Grenze der Edge Function reicht.
 3. **Kein pg_cron-Worker.** Es braucht niemanden, der nach neuen Jobs sucht: Jeder Job hat einen
    Auslöser (Klick → Edge Function), und der Auslöser führt aus oder gibt weiter. Für „Look for new“
    heißt das: die Edge Function legt den Job an, antwortet sofort mit `job_id` und führt die
