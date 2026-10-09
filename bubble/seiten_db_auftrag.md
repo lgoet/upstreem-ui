@@ -13,7 +13,7 @@ Es geht um fünf Ansichten:
 - **B. Opportunities**: das Brett und das Seitenpanel
 - **C. Prompt Research**
 - **D. Mira**: Ask Mira, der Chat
-- **E. Team-Organisation**: Mitglieder, Einladungen, Protokoll, Teams-Liste
+- **E. Teams**: die Tabelle aller Teams des Nutzers (nicht die Team-Organisation in den Einstellungen)
 
 Jede Ansicht wird **eine** Komponente, die ihre Funktionen **selbst** aufruft: PostgREST,
 `POST /rest/v1/rpc/<funktion>`, Schema `app`, Nutzer-JWT, `Content-Profile: app`. Bubble ist nicht
@@ -132,20 +132,18 @@ Größter Teil. Antworten kommen heute über Supabase Realtime, Kanal `mira_user
 Frage dazu: Darf der Browser den Realtime-Kanal `mira_user_<uid>` selbst abonnieren (RLS bzw.
 Autorisierung des Kanals)? Dann fällt der Bubble-Abo-Workflow weg.
 
-### E. Team-Organisation
+### E. Teams (die Teams-Tabelle)
 
-Die Liste aus `datenbank_auftrag.md` (Abschnitt Team) mit `[NAME ERFRAGEN]` gilt weiter:
+Eine Tabelle aller Teams, in denen der angemeldete Nutzer Mitglied ist. Die Team-Organisation in
+den Einstellungen (Mitglieder, Einladungen) gehört **nicht** zu diesem Auftrag. Heute liefert ein
+unbenannter Bubble-RPC die Zeilen in **einem** Aufruf. Suche, Seiten und Spalten macht die
+Oberfläche selbst.
 
 | Aktion | Felder / Nutzlast | Art |
 |---|---|---|
-| Mitglieder | `user_id`, `email`, `display_name`, `role` (owner\|admin\|member), `joined_at`; dazu `viewer_role`, `viewer_user_id`, `viewer_email`, `permissions{can_invite, can_manage_roles, can_manage_members}` | Lesen |
-| Offene Einladungen | `invite_id`, `invited_email`, `invited_role`, `expires_at`, `created_by_email`, `status` (nur offene). **Für `member` leer.** | Lesen |
-| Protokoll | `created_at`, `event_type` (member_invited, invite_accepted, invite_revoked, member_removed, role_changed), `actor_email`, `target_email`, `meta{}`. **Für `member` leer.** | Lesen |
-| Teams des Nutzers | `team_id`, `team_name`, `domain`, `logo_url`, `billing_plan`, `active_billing_plan`, `prompts_active`, `prompts_limit`, `competitors_tracked`, `competitors_limit`, `created_at` | Lesen |
-| Einladen / erneut senden | `email`, `role` (member\|admin); `invite_id` | Schreiben **plus E-Mail**, also kein reiner RPC. Wer verschickt heute (Bubble, n8n, Edge)? |
-| Einladung zurückziehen, Mitglied entfernen, Rolle ändern, Team verlassen | `invite_id`; `user_id`; `user_id` + `role` | Schreiben (RPC), Rechte serverseitig: Owner alles, Admin nur entfernen und zu Admin machen, nie der letzte Owner, nie die eigene Zeile |
-| Team löschen | `team_id` | Schreiben; berührt das die Abrechnung (Stripe)? |
-| Team wechseln, neues Team | `team_id` | **Wo steht das aktive Team?** Liegt es in einem Bubble-Nutzerfeld, bleibt der Wechsel vorerst bei Bubble. Bitte klären. |
+| Teams des Nutzers | je Zeile `team_id`, `team_name`, `domain`, `logo_url`, `billing_plan`, `active_billing_plan`, `prompts_active`, `prompts_limit`, `competitors_tracked`, `competitors_limit`, `created_at`; dazu das aktive Team (`current_team_id`). Alle Teams in einem Aufruf, ohne Seiten. Vorschlag: `user_teams_v1()` (ohne `p_team`, der Nutzer kommt aus dem JWT). | Lesen |
+| Team wechseln | `team_id` | **Wo steht das aktive Team?** Liegt es in einem Bubble-Nutzerfeld, bleibt der Wechsel vorerst bei Bubble. Bitte klären. |
+| Neues Team | – | Heute ein Bubble-Workflow (Anlage, Onboarding). Bleibt das so? |
 
 ---
 
@@ -161,7 +159,7 @@ select p.proname,
        position('auth.uid()' in pg_get_functiondef(p.oid)) > 0           as nutzt_uid
 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
 where n.nspname = 'app'
-  and p.proname ~* '(radar|heatmap|performance|variation|opportunit|recommendation|research|suggest|mira|chat|session|project|team|member|invite|role)'
+  and p.proname ~* '(radar|heatmap|performance|variation|opportunit|recommendation|research|suggest|mira|chat|session|project|team)'
 order by p.proname;
 
 -- B) Rechte darauf
@@ -169,14 +167,14 @@ select p.proname, r.rolname, has_function_privilege(r.oid, p.oid, 'execute') as 
 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
 cross join (select oid, rolname from pg_roles where rolname in ('anon','authenticated','service_role')) r
 where n.nspname = 'app'
-  and p.proname ~* '(radar|heatmap|performance|variation|opportunit|recommendation|research|suggest|mira|chat|session|project|team|member|invite|role)'
+  and p.proname ~* '(radar|heatmap|performance|variation|opportunit|recommendation|research|suggest|mira|chat|session|project|team)'
 order by p.proname, r.rolname;
 
 -- C) Tabellen dieser Bereiche mit Spalten
 select table_name, string_agg(column_name || ' ' || data_type, ', ' order by ordinal_position)
 from information_schema.columns
 where table_schema in ('app','public')
-  and table_name ~* '(recommendation|research|suggest|mira|chat|session|project|team|member|invite|audit|log)'
+  and table_name ~* '(recommendation|research|suggest|mira|chat|session|project|team)'
 group by table_name order by table_name;
 ```
 
@@ -202,14 +200,14 @@ Welche dieser Funktionen Bubble heute je Ansicht ruft, steht nur in Bubble
    Aktualisieren-Knopf leert den DB-Cache seines Bereichs und lädt frisch, also je Bereich ein
    `clear_*_cache_v1`, wo es einen Cache gibt.
 4. **Lange Läufe:** je einer Start, Stand und Ende, und wer sie ausführt.
-5. **Offene Fragen,** die nur der Nutzer beantworten kann: aktives Team, E-Mail-Versand,
-   Abrechnung beim Löschen, Realtime im Browser.
+5. **Offene Fragen,** die nur der Nutzer beantworten kann: wo das aktive Team steht, Realtime
+   im Browser.
 
 **Reihenfolge des Baus**, damit du priorisieren kannst:
 
 1. A Performance (nur Lesen);
 2. B Opportunities (Lesen da, zwei Schreib-RPCs);
-3. E Team-Organisation;
+3. E Teams (nur Lesen, der Wechsel je nach Antwort);
 4. C Prompt Research;
 5. D Mira (der größte Teil).
 
