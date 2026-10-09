@@ -236,3 +236,14 @@ Kalt ist v1 etwas langsamer als die alten RPCs, weil die Kennzahlen zusätzlich 
 ## 8. Versionsregel
 
 Felder dürfen dazukommen. Umbenennen, Entfernen oder eine geänderte Bedeutung heißt `_v2`; `_v1` läuft weiter.
+
+## 9. Nachtrag 09.10.2026
+
+- Neu für Agentic, Regeln wie die übrigen Dashboard-Funktionen (POST, `p_team` Pflicht, PT429, `meta`):
+  - `dashboard_chats_v1(p_team, p_limit = 15 [1–50], p_offset = 0)`: `rows: [{id, title, updated_at}]`, die Chats des angemeldeten Nutzers mit und ohne Projekt, sortiert `is_pinned desc, updated_at desc, id desc`. `meta.total_count` für weitere Seiten.
+  - `dashboard_opportunities_v1(p_team)`: alle Opportunities, Zeilen mit genau den Feldern wie bisher aus `get_power_dashboard_v1 → opportunities`, sortiert nach Priorität; dazu `meta.status_counts`.
+  - Status-Werte: `Created` (= pending), `In Progress`, `Done`, `Ignored`.
+  - Backticks und `${` kommen bei beiden Funktionen nicht mehr vor.
+- `cached_dashboard_responses_v1`: `p_limit` jetzt 1–100.
+- Chart-Farben richten sich nach `position`, auch mit `p_companies`.
+- Rate-Limit: Gleichzeitige Aufrufe blockieren sich nicht mehr gegenseitig. Meldungen und Codes bleiben gleich.

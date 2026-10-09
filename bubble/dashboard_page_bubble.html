@@ -17,34 +17,24 @@
   Seite. Die Komponente ruft ihre RPCs selbst (UC.rpc, Nutzer-JWT aus dem Supabase Pro Kit):
       cached_dashboard_overview_v1      Kennzahlen (own/field), Markentabelle, Agentic-Top-5
       cached_dashboard_visibility_v1    Visibility-Chart
-      cached_dashboard_responses_v1     Responses-Tabelle
+      cached_dashboard_responses_v1     Responses-Tabelle (bis 100 Zeilen je Aufruf)
+      dashboard_chats_v1                Recent Chats (an Mira)
+      dashboard_opportunities_v1        das Opportunities-Brett
       cached_citations_overview_v1      Top Citations: Typ-Verteilung (p_series_limit 0)
       cached_citations_domains_v1/_urls_v1   Top Citations und Agentic "Trending Citations"
       clear_dashboard_cache_v1          der Aktualisieren-Knopf: leert den DB-Cache des Teams
                                         (Dashboard UND Citations), dann laedt die Seite frisch
   Vertrag: bubble/dashboard_v1_vertrag.md.
 
-  ── BIS ZUM DB-AUFTRAG 2: Recent Chats und Opportunities (09.10.) ──────────────
-  Beide kamen bisher aus get_power_dashboard_v1 (Pageload-Workflow mit Run JS auf
-  askMiraSetPreviousChats / askMiraSetProjects / opportunitiesSetItems). Die Seite ruft dafuer
-  noch nichts selbst -- die zwei Quellen sind beim DB-Chat angefragt (bubble/dashboard_db_auftrag_2.md).
-  BIS DAHIN den Pageload-Schritt behalten bzw. wiederherstellen, nur mit diesen drei Settern (NICHT
-  renderPowerDashboard -- das fuellt jetzt die Seite):
-    (function () {
-      var CHATS = `[RPC's chats, :format as text]`
-        .replace(/:\s*([,}\]])/g, ": null$1")
-        .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
-      var PROJ = `[RPC's chat_projects, :format as text]`
-        .replace(/:\s*([,}\]])/g, ": null$1")
-        .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
-      var OPPS = `[RPC's opportunities, :format as text]`
-        .replace(/:\s*([,}\]])/g, ": null$1")
-        .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
-      try { if (window.askMiraSetPreviousChats) window.askMiraSetPreviousChats(CHATS); } catch (e) {}
-      try { if (window.askMiraSetProjects) window.askMiraSetProjects(PROJ); } catch (e) {}
-      try { if (window.opportunitiesSetItems) window.opportunitiesSetItems(OPPS); } catch (e) {}
-    })();
-  Am Ereignis "When page is loaded", NICHT an der Sichtbarkeit einer Gruppe.
+  ── Recent Chats und Opportunities (seit 09.10. abends) ────────────────────────
+  Holt die Seite SELBST (Vertrag, Abschnitt 9):
+      dashboard_chats_v1           -> askMiraSetPreviousChats (mit der Agentic-Ansicht)
+      dashboard_opportunities_v1   -> opportunitiesSetItems (sobald das Brett sie braucht, danach
+                                      nur mit Aktualisieren oder Teamwechsel)
+  Der fruehere Pageload-Schritt aus get_power_dashboard_v1 (askMiraSetPreviousChats /
+  opportunitiesSetItems) wird dafuer NICHT mehr gebraucht. Miras Projekte (askMiraSetProjects)
+  bleiben Miras Sache wie auf ihrer eigenen Ansicht. Mira und das Opportunities-Element muessen
+  auf der Seite stehen -- das Dashboard leiht sich nur ihre Anzeige.
   Voraussetzungen auf der Seite: das Auth-Element des Supabase Pro Kit (Adresse, Schluessel,
   Sitzung) und das Header-Script (laedt dashboard-data.js und dashboard-page.js).
 

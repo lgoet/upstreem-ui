@@ -41,6 +41,8 @@
     overview: "cached_dashboard_overview_v1",
     visibility: "cached_dashboard_visibility_v1",
     responses: "cached_dashboard_responses_v1",
+    chats: "dashboard_chats_v1",
+    opportunities: "dashboard_opportunities_v1",
     clear: "clear_dashboard_cache_v1"
   };
   var ORDER = {
@@ -49,9 +51,9 @@
     responses: ["run_at_desc", "run_at_asc", "rank_asc", "rank_desc", "sentiment_asc", "sentiment_desc"]
   };
   function orderVon(art, o) { o = str(o); return ORDER[art].indexOf(o) >= 0 ? o : ORDER[art][0]; }
-  /* Vertrag: p_limit der Responses 1-50. Die Tabelle bietet 100 Zeilen je Seite an -- die holt die
-     Seite in zwei Haelften (responsesTeile). */
-  var RESPONSES_MAX = 50;
+  /* Vertrag: p_limit der Responses 1-100 (Nachtrag 09.10., vorher 1-50 und die 100er-Seite in zwei
+     Haelften). responsesTeile bleibt, liefert jetzt aber genau einen Teil. */
+  var RESPONSES_MAX = 100;
 
   /* ---- Zeitraum ---------------------------------------------------------------------------------
      Das Agentic-Dashboard zeigt immer die letzten 30 Tage (wie bisher: range last_30_days, "Last
@@ -125,6 +127,14 @@
     return teile;
   }
   function clear(team) { return { art: "clear", fn: FN.clear, params: { p_team: str(team) }, sig: "" }; }
+  /* Agentic, Nachtrag 09.10.: die Chats des angemeldeten Nutzers (Recent chats, Miras Liste) und
+     alle Opportunities des Teams (das geliehene Brett). Vorher kamen beide aus
+     get_power_dashboard_v1 ueber einen Bubble-Schritt. */
+  function chats(team, o) {
+    o = o || {};
+    return anfrage("chats", { p_team: str(team), p_limit: ganz(o.limit, 15, 1, 50), p_offset: ganz(o.offset, 0, 0, 1e9) });
+  }
+  function opportunities(team) { return anfrage("opportunities", { p_team: str(team) }); }
 
   /* Citations v1 fuer Top Citations und die Trending-Listen. Der Chart (Typ-Verteilung) bekommt
      KEINE Typ-Filter: der Ring zeigt alle Typen und dimmt die nicht gewaehlten -- mit dem Filter
@@ -297,6 +307,16 @@
     return { rows: rows, totalCount: total == null ? rows.length : total };
   }
 
+  /* Miras Liste liest id, title, updated_at -- mehr soll nicht hinein (Vertrag: keine Vorschau). */
+  function zuChats(d) {
+    var r = zeilen(d);
+    if (!r) return null;
+    return r.filter(function (x) { return x.id != null; })
+      .map(function (x) { return { id: str(x.id), title: str(x.title), updated_at: x.updated_at == null ? null : str(x.updated_at) }; });
+  }
+  /* Die Zeilen gehen unveraendert an opportunitiesSetItems (dieselben Felder wie bisher). */
+  function zuOpportunities(d) { return zeilen(d); }
+
   function fehlerArt(erg) { return C() && C().fehlerArt ? C().fehlerArt(erg) : "x"; }
   function makeLader(o) { return C().makeLader(o); }
 
@@ -304,6 +324,7 @@
     FN: FN, ORDER: ORDER, RESPONSES_MAX: RESPONSES_MAX,
     letzte30: letzte30, berlinHeute: berlinHeute,
     overview: overview, visibility: visibility, responses: responses, responsesTeile: responsesTeile, clear: clear,
+    chats: chats, opportunities: opportunities, zuChats: zuChats, zuOpportunities: zuOpportunities,
     topTypen: topTypen, topListe: topListe,
     zuVisibility: zuVisibility, zuMarkentabelle: zuMarkentabelle, zuTop: zuTop,
     zuPowerUeberblick: zuPowerUeberblick, zuPowerDomains: zuPowerDomains, zuPowerUrls: zuPowerUrls,

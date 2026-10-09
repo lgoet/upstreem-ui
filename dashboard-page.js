@@ -391,9 +391,12 @@
     var BEDARF_TEIL = { brands: "ov", citations_domain: "domain", citations_url: "url" };
     an("upwupwNeeds", function (d) {
       var teile = (isArr(d.needs) ? d.needs : []).map(function (n) { return BEDARF_TEIL[n]; }).filter(Boolean);
+      var opps = isArr(d.needs) && d.needs.indexOf("opportunities") >= 0;
       setTimeout(function () {
-        if (state.modus !== "power" || !teile.length || !bereit()) return;
-        gemeinsam(teile.map(function (t) { return agAuftrag(t, false); }));
+        if (state.modus !== "power" || !bereit()) return;
+        var auftraege = teile.map(function (t) { return agAuftrag(t, false); });
+        if (opps && state.oppsGeliefert !== team()) auftraege.push(oppsAuftrag());
+        if (auftraege.length) gemeinsam(auftraege);
       }, 0);
     });
 
@@ -534,7 +537,59 @@
         }
       };
     }
-    function agenticAuftraege() { return [agAuftrag("ov", true), agAuftrag(agListe(), true)]; }
+    /* CHATS UND OPPORTUNITIES (Nachtrag 09.10.: dashboard_chats_v1, dashboard_opportunities_v1).
+       Bis zum 09.10. fuellte sie ein Bubble-Schritt aus get_power_dashboard_v1 -- den hatte diese
+       Seite ersetzt, ohne die zwei mitzuversorgen: Recent chats blieben im Skelett, das Brett lud
+       endlos (gemeldet). Beide gehen an die Setter der Komponenten, denen sie gehoeren (Mira, das
+       Opportunities-Brett); das Dashboard leiht sich nur ihre Anzeige.
+       Chats kommen mit der Ansicht. Miras Setter nimmt eine kuerzere Liste als Ausschnitt und
+       behaelt, was Mira schon nachgeladen hat (ask-mira.js, 17.09.).
+       Opportunities kommen, sobald das Brett sie braucht (upwNeeds "opportunities"), und danach
+       nur noch mit Aktualisieren oder einem Teamwechsel: das Brett fuehrt verschobene Karten selbst
+       weiter -- eine zweite Lieferung beim Hin- und Herschalten setzte sie auf den alten Stand
+       zurueck. Scheitert die Abfrage, bekommt das Brett seinen Lesefehler statt endlos zu laden. */
+    function chatsAuftrag() {
+      var a = D.chats(team(), { limit: 15 });
+      return {
+        kanal: "ag_chats", imSpeicher: imSpeicher([a]), ladenAn: function () {},
+        laden: function (frisch) {
+          return lader.laden("ag_chats", a, { frisch: !!frisch }).then(function (erg) {
+            if (erg.ueberholt) return null;
+            return function () {
+              var l = erg.ok ? D.zuChats(erg.daten) : null;
+              if (l) { try { setter("askMiraSetPreviousChats")(l); } catch (e) {} }
+            };
+          });
+        }
+      };
+    }
+    function oppsAuftrag() {
+      var a = D.opportunities(team());
+      return {
+        kanal: "ag_opps", imSpeicher: false,
+        ladenAn: function () { try { setter("opportunitiesSetLoading")("yes"); } catch (e) {} },
+        laden: function () {
+          return lader.laden("ag_opps", a, { frisch: true }).then(function (erg) {
+            if (erg.ueberholt) return null;
+            return function () {
+              var l = erg.ok ? D.zuOpportunities(erg.daten) : null;
+              if (l) { state.oppsGeliefert = team(); try { setter("opportunitiesSetItems")(l); } catch (e) {} }
+              /* Ein unlesbarer Text ist der Weg des Bretts zu seinem Lesefehler (opportunities.js,
+                 opportunitiesSetItems) -- leer sahe aus wie "es gibt keine". */
+              else { try { setter("opportunitiesSetItems")("{"); } catch (e) {} }
+              /* Nach dem ausdruecklichen "yes" auch das "no": sonst wartet ein leeres Brett mit
+                 seinem Leerzustand (opportunities.js, wartetAufNein). */
+              try { setter("opportunitiesSetLoading")("no"); } catch (e) {}
+            };
+          });
+        }
+      };
+    }
+    function agenticAuftraege(frisch) {
+      var l = [agAuftrag("ov", true), agAuftrag(agListe(), true), chatsAuftrag()];
+      if (frisch && state.oppsGeliefert === team()) l.push(oppsAuftrag());
+      return l;
+    }
     function visAuftrag() {
       var f = filterStand();
       /* DIE TABELLE ZEIGT DIESELBEN MARKEN WIE DER CHART (09.10. angefordert: die Auswahl im
@@ -629,7 +684,7 @@
     var AUFTRAG = { vis: visAuftrag, top: topAuftrag, resp: respAuftrag };
     function bedarf(o) {
       if (!bereit()) return null;
-      if (state.modus === "power") return gemeinsam(agenticAuftraege(), o);
+      if (state.modus === "power") return gemeinsam(agenticAuftraege(o && o.frisch), o);
       return gemeinsam([visAuftrag(), topAuftrag(), respAuftrag()], o);
     }
     /* Allein: nur ein Teil der Analytic-Ansicht (seine eigene Bedienung). Ebenfalls gebuendelt,
@@ -661,7 +716,7 @@
     /* Teamwechsel ohne Neuladen: andere Daten, also nichts aus dem Speicher weiterzeigen, und die
        Markenauswahl des alten Teams gilt nicht mehr. */
     if (UC.onTeamChange) UC.onTeamChange(function () {
-      lader.leeren(); state.resp.offset = 0; state.vis.firmen = null; state.autoFirmen = [];
+      lader.leeren(); state.resp.offset = 0; state.vis.firmen = null; state.autoFirmen = []; state.oppsGeliefert = null;
       state.resp.firmen = null; persist(); bedarf();
     }, root);
 
