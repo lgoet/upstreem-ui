@@ -1,0 +1,54 @@
+<!--
+  UPSTREEM — PERFORMANCE-SEITE als EINE Komponente (Praefix upf), 09.10.2026
+
+  WOHIN: ein HTML-Element, volle Breite, ohne eigenes Polster, in die Performance-Ansicht. Die
+  Komponente baut ALLES selbst: den Seitenkopf (Krume "Performance"), den Performance Radar und
+  nach einem Klick auf eine Zelle den Detailbereich mit der URL-Tabelle dieser Zelle.
+  Radar, Detailbereich und URL-Tabelle sind die bestehenden Bausteine der App im LOKALEN Modus
+  (data-local) -- dieselben Bausteine an anderen Orten bleiben davon unberuehrt.
+
+  ── Was Bubble NICHT mehr tut ─────────────────────────────────────────────────
+  Keine Workflows, keine API-Calls, kein Run JS, keine JavaScript-to-Bubble-Elemente, kein Custom
+  State detail_open fuer diese Seite. Die Komponente ruft ihre RPCs selbst (UC.rpc, Nutzer-JWT):
+      performance_radar_v1              Radar (Top 12 Marken x Top 12 Topics, oder die Auswahl)
+      performance_company_chart_v1      Kurve einer Zelle (Visibility, Tag)
+      performance_brand_variations_v1   Namensvarianten einer Zelle (ganze Liste)
+      cached_citations_urls_v1          URLs einer Zelle (Topic + Marke)
+  Vertrag: bubble/seiten_db_vorschlag_2.md, Abschnitt 4 und 11 (in Prod seit 09.10.).
+
+  ── Was die Seite selbst regelt ───────────────────────────────────────────────
+  - Zeitraum: die letzten 30 Tage nach Berliner Kalender (wie bisher ohne Kalender). Das Detail
+    zeigt dieselben Tage wie der Radar.
+  - Auswahl im Radar (Fader): laedt genau diese Marken und Topics, in dieser Reihenfolge; der
+    Detailbereich geht dabei zu.
+  - Zellklick: Detailbereich auf, Kurve, Varianten und URLs laden. Schnelle Klicks werden
+    gebuendelt (80 ms), damit nur die Zelle laedt, auf der man stehen bleibt.
+  - X im Detailbereich: zu. Marke in der Rangliste: openDrawer("brand"). URL-Zeile:
+    openDrawer("url"). Export der URL-Tabelle: ueber das Export-Element der Seite.
+  - Team aus setUpstreemTeam; ein Teamwechsel setzt Auswahl und Zelle zurueck.
+  - Themenwechsel (Bubble baut das Element neu): Auswahl, offene Zelle und Daten bleiben, ohne
+    neuen Abruf.
+  - Kein Aktualisieren-Knopf (der bisherige Seitenkopf hatte keinen). Der Radar liegt im DB-Cache;
+    "Aktualisieren" im Dashboard leert ihn mit.
+
+  ── Attribute ─────────────────────────────────────────────────────────────────
+  data-instance        optional, Vorgabe "performance_page". Nur noetig, wenn die Seite zweimal steht.
+  data-export-instance optional: die Kennung des Export-Elements. Ohne Angabe nimmt die Seite das
+                       Export-Element, das auf der Seite steht; fehlt es, sagt der Knopf "Export is
+                       not available on this page.".
+  Kein data-isdark, kein data-cdn-pin: das Thema setzt core, den Pin das Header-Script.
+
+  ── Umstellen: erst parallel, dann tauschen ───────────────────────────────────
+  1. Das Element auf eine Test-Ansicht oder Test-Seite (mit Header-Script und Auth-Element)
+     stellen und neben der alten Performance-Ansicht vergleichen: dieselben Zellen, dieselben Werte?
+     Kleine Abweichungen beim Sentiment sind gewollt: es zaehlt jetzt hoechstens die letzten 30 Tage.
+  2. Stimmt alles: in der Performance-Ansicht den alten Seitenkopf (pfph-root), Radar, die Gruppe
+     "Detail" mit Detailbereich und URL-Tabelle und ihre Workflows durch DIESES eine Element
+     ersetzen (uhmSelect, uhmMetric, heatmap_cell_clicked, updClose, updScope, updCompanyClick, die
+     Page-load-/View-Schritte mit renderPerformanceRadar).
+     VORHER PRUEFEN: ruft einer dieser Workflows NOCH ANDERE Setter auf (etwa setUpstreemBrands,
+     setUpstreemTopics oder Setter anderer Elemente)? Dann diesen Schritt woandershin verschieben,
+     nicht mitloeschen -- andere Ansichten lesen dieselben Stores.
+  3. Das Export-Element bleibt auf der Seite.
+-->
+<div class="up-root upf-root" data-instance="performance_page"></div>

@@ -1481,9 +1481,13 @@
          raeumt danach auf, was gerade angekommen ist. Das Ergebnis war ein Block, der dauerhaft im
          Ladezustand stand, obwohl beide Aufrufe durchgelaufen waren. */
       feedDetail(companyId, topicId);
-      var fn = UC.resolveBubbleFn ? UC.resolveBubbleFn(fnName) : window[fnName];
+      /* LOKALER MODUS (09.10., Performance-Seite): eine Seite bettet den Radar ein und laedt selbst.
+         Dann geht der Klick nur als DOM-Ereignis (uhmCellClick, unten) hinaus -- kein Bubble-Aufruf,
+         keine Warnung ueber einen fehlenden Empfaenger. Gleiche Regel wie in UC.makeFire. */
+      var lokal = UC.isYes ? UC.isYes(root.getAttribute("data-local")) : root.getAttribute("data-local") === "yes";
+      var fn = lokal ? null : (UC.resolveBubbleFn ? UC.resolveBubbleFn(fnName) : window[fnName]);
       if (typeof fn === "function"){ try { fn(payload); } catch(e){} }
-      else if (window.console){
+      else if (!lokal && window.console){
         console.warn("[performance-radar] " + fnName + " not found on window/parent/top or any " +
           "reachable iframe — the cell click reached no Bubble workflow. Check the Toolbox element's name.");
       }

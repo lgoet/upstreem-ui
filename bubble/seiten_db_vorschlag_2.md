@@ -2,7 +2,9 @@
 
 Stand 09.10.2026. Ersetzt Fassung 1 (im Repo `bubble/seiten_db_vorschlag_1.md`) vollständig.
 
-Eingearbeitet ist Rückmeldung 1 von Claude Code mit den Entscheidungen des Nutzers (Abschnitt N). Die Datenbank ist bis auf eine Ausnahme unverändert: `prompt_research_haenger.sql` (freigegeben, ausgeführt, siehe 0.2).
+Eingearbeitet sind Rückmeldung 1 von Claude Code mit den Entscheidungen des Nutzers (Abschnitt N) und Rückmeldung 2 (CORS, Teamprüfung bei `mira-send`, ungültiges Pin-Team, n8n). In der Datenbank ist nur `prompt_research_haenger.sql` gelaufen (freigegeben, ausgeführt, siehe 0.2).
+
+Stand A Performance: in Prod eingespielt (09.10., 11:24) und danach in Prod geprüft. Alle Vergleiche mit v7, v4 und v2 stimmen, die echten Antworten stehen in Abschnitt 11. Die Funktionen können genutzt werden.
 
 Gemessen wurde in Prod (Projekt kyra.ai) mit Team 877c (Mercedes Benz) und Nutzer aea6e317… (die meisten Mira-Chats). Für die Messungen war `app.warming = on` gesetzt, damit lief kein Rate-Limit-Zähler mit. Die Werte für Mittel und Maximum stammen aus pg_stat_statements.
 
@@ -80,6 +82,10 @@ Die Oberfläche übersetzt Namen im Datenmodul je Bereich, zum Beispiel `cells` 
   | `prompt_research_limit_reached` | PT409 | `hint`: freie Plätze als reine Zahl |
   | Zugriff | wie `require_team_access` (42501 `forbidden`, P0403 `team_access_<state>`) | |
 
+- **XX000 einmal wiederholen (gilt für alle RPCs, auch die alten):**
+  - Liefert ein Aufruf `code = "XX000"` mit `pldbgapi2` in der Meldung, ruft das Datenmodul ihn **einmal** nach rund 300 ms erneut auf. Die Edge Functions machen es bei ihren Datenbankaufrufen genauso.
+  - Die Wiederholung ist immer sicher, auch bei Schreibaufrufen: Der Fehler bricht die ganze Transaktion ab, es wurde also nichts gespeichert.
+  - Ursache ist ein Fehler in der Datenbank-Erweiterung plpgsql_check 2.7 (von Supabase vorgeladen, von uns nicht genutzt). Er tritt zufällig auf, in Prod rund 5- bis 9-mal am Tag, quer durch alle Funktionen, auch bei Bubble. Siehe Abschnitt 12.
 - **Freitext:** läuft durch `app.js_safe`, das Backtick, `${` und Backslash entfernt. Echte Zeilenumbrüche bleiben erhalten.
 - **Bestand:** Für Bubble bleibt alles bestehen. Die anon-Rechte der alten Funktionen fallen erst weg, wenn Bubble sie nicht mehr ruft.
 
@@ -119,6 +125,13 @@ Die Oberfläche übersetzt Namen im Datenmodul je Bereich, zum Beispiel `cells` 
   - `edge_unauthorized` (401);
   - `edge_invalid_body` (400);
   - `edge_upstream_failed` (502).
+- **CORS (Rückmeldung 2, Nr. 1)** gilt für alle drei Functions:
+  - `OPTIONS` antwortet mit 204, ohne JWT-Prüfung.
+  - `Access-Control-Allow-Origin` ist genau die anfragende Herkunft aus der Liste `https://app.upstreem.ai` (dazu eine `*.bubbleapps.io`-Adresse, falls es sie gibt; das prüfe ich beim Bau), nie `*`. Dazu kommt `Vary: Origin`.
+  - `Access-Control-Allow-Headers: authorization, apikey, content-type, x-client-info`.
+  - `Access-Control-Allow-Methods: POST, OPTIONS`.
+  - Bei `mira-export-pdf` zusätzlich `Access-Control-Expose-Headers: Content-Disposition`.
+  - Die CORS-Kopfzeilen stehen an **jeder** Antwort, auch an 400, 401, 404, 429 und 502.
 - **Grenzen von Supabase:**
   - 150 s bis zur Antwort;
   - Laufzeit insgesamt 150 s (Free) bzw. 400 s (bezahlt);
@@ -166,7 +179,7 @@ Body Sprache: `{"team_id": "…", "type": "voice", "message_id": "voice_<ts>", "
 Ablauf:
 
 1. Die Edge Function prüft mit dem Nutzer-JWT:
-   - ein vorhandener Chat muss dem Nutzer gehören (`mira_message_check_v1(p_session_id, null)`), sonst `mira_not_found`;
+   - immer `mira_message_check_v1(p_team, p_session_id)`: Das Team wird geprüft (`require_team_access`), auch bei einem neuen Chat. Ein vorhandener Chat muss dem Nutzer und diesem Team gehören, sonst `mira_not_found`;
    - der Text darf höchstens 8.000 Zeichen haben, die Sprachaufnahme höchstens 10 MB.
 2. Sie gibt die Anfrage an n8n weiter. `user_id` und `team_id` kommen dabei aus der Prüfung, nicht aus dem Body.
 3. Antwort 202: `{"accepted": true, "chat_id": "…" | null}`.
@@ -175,11 +188,11 @@ Alles Weitere kommt über Realtime: `mira_turn_started` mit `is_new_session` und
 
 ### 3.4 `mira-export-pdf` (ohne Job)
 
-Body: `{"session_id": "…", "assistant_message_id": "…"}`
+Body: `{"team_id": "…", "session_id": "…", "assistant_message_id": "…"}`
 
 Ablauf:
 
-1. `mira_message_check_v1(p_session_id, p_message_id)` mit dem Nutzer-JWT prüft, dass der Chat dem Nutzer gehört und die Nachricht eine Antwort von Mira ist. Sonst kommt `mira_not_found` (404).
+1. `mira_message_check_v1(p_team, p_session_id, p_message_id)` mit dem Nutzer-JWT prüft, dass Team, Chat und Nachricht zum Nutzer gehören und die Nachricht eine Antwort von Mira ist. Sonst kommt `mira_not_found` (404). Body daher: `{"team_id": "…", "session_id": "…", "assistant_message_id": "…"}`.
    - Eine eigene Prüffunktion statt `mira_messages_v1`, weil `mira_messages_v1` höchstens 200 Nachrichten liefert und eine ältere Antwort sonst fälschlich als „nicht gefunden“ gälte.
 2. Die Edge Function ruft `N8N_MIRA_PDF_URL` mit `team_id` (aus der Prüfung), `session_id` und `assistant_message_id` auf, mit Header `X-Upstreem-Secret`.
 3. Antwort: die Datei als `application/pdf` mit `Content-Disposition: attachment; filename="mira-<datum>.pdf"`. Bei Fehlern kommt JSON wie in 3.1.
@@ -355,7 +368,7 @@ Unverändert. `meta.total_count` ist für 877c 69. Jede Zeile enthält `url`, `t
   - `p_limit` ist standardmäßig **100**, erlaubt 1–100; `p_offset` ≥ 0.
   - `p_order` ist `created_at_desc` (Standard) oder `created_at_asc`.
   - `p_search` ist optional, die Oberfläche schickt es nicht.
-- **Anheften:** `p_pinned_team_id` ist das aktive Team aus dem Team-Store. Es muss ein Team des Nutzers sein, sonst `teams_not_found`. Ohne Angabe wird nichts angeheftet.
+- **Anheften:** `p_pinned_team_id` ist das aktive Team aus dem Team-Store. Ohne Angabe wird nichts angeheftet. Ist es kein (nicht gelöschtes) Team des Nutzers, wird es **ignoriert**: Es gibt keinen Fehler, nichts wird angeheftet, und `meta.pinned_team_id` ist `null` (Rückmeldung 2, Nr. 3).
 - **Teams:** kommen aus der Mitgliedschaft des Nutzers. Es gibt keine Kennzahlen und keinen Cache.
 - **Neue Felder:**
   - `access_state` aus `app.team_access`: `active`, `no_plan`, `past_due`, `trialing`, `trial_ended`, `unpaid` oder `ended`;
@@ -496,8 +509,10 @@ Hier baue ich nichts. Die Daten liegen zentral in `setUpstreemMarkets`, `setUpst
 ### 8.5 Status und Prüfung
 
 - `mira_turn_status_v1(p_team, p_session_id)` liefert die letzte Antwort mit `queued`, `running`, `success` oder `error`.
-- `mira_message_check_v1(p_session_id, p_message_id default null)` ist für die Edge Functions gedacht (3.3, 3.4).
-  - Ohne `p_message_id` prüft die Funktion nur den Chat.
+- `mira_message_check_v1(p_team, p_session_id default null, p_message_id default null)` ist für die Edge Functions gedacht (3.3, 3.4).
+  - Die Funktion ruft immer `require_team_access(p_team)` auf.
+  - Mit `p_session_id` muss der Chat dem Nutzer und `p_team` gehören. Mit `p_message_id` muss die Nachricht zusätzlich in diesem Chat liegen und eine Antwort von Mira sein. Sonst kommt `mira_not_found`.
+  - An n8n geht nur das geprüfte Team.
   - Antwort: `{"meta": {"team_id": "…", "session_id": "…", "message_id": "…" | null, "role": "assistant" | null}, "rows": []}`.
 
 ### 8.6 Realtime (N.5)
@@ -518,8 +533,8 @@ Hier baue ich nichts. Die Daten liegen zentral in `setUpstreemMarkets`, `setUpst
 | Nr | Punkt | Wer |
 |---|---|---|
 | R1 | Entschieden: gelöschte Teams werden nicht ausgeliefert. | erledigt |
-| N.2 | n8n-Nutzlasten für Senden, Sprache und Prompt-Research-Start: Kann n8n eine fertige `chat_id` bzw. `job_id` übernehmen? | Nutzer / n8n |
-| N.2 | PDF: Antwortet n8n weiter direkt mit der Datei? Davon geht 3.4 aus. Laufzeit aus den n8n-Executions ablesen. | Nutzer |
+| N.2 | n8n baut der Datenbank-Chat (Rückmeldung 2, Nr. 5). Die Exporte liegen vor: Ask Mira Agent 20 (Senden und Sprache), Mira Error Handler, Prompt_Creator und Mira Message PDF Export. Alle Schlüssel stehen in Credentials, im Klartext steht keiner in einem Knoten. Je Workflow kommt eine geänderte JSON mit Änderungsliste, Prompt_Creator mit C, die drei Mira-Workflows mit D. Claude Code prüft sie vor dem Einspielen. | Datenbank-Chat |
+| N.2 | PDF: n8n antwortet weiter direkt mit der Datei (bestätigt). Die Laufzeit liest der Nutzer in den n8n-Executions ab. | erledigt |
 | R2 | Entschieden: Der Datenbank-Chat schreibt **neue** Edge Functions und deployt sie selbst. Bestehende Edge Functions fasst er nicht an. | erledigt |
 | – | `user_set_active_team_v1` erst mit Next.js | später |
 
@@ -538,3 +553,98 @@ Hier baue ich nichts. Die Daten liegen zentral in `setUpstreemMarkets`, `setUpst
 - **Wann was dazukommt:**
   - Mit B kommen dazu: `view_job`, `_job_claim_v1`, `_job_fail_v1`, `_job_reaper_v1` (Cron jede Minute) und der Code für die Edge Function `start-job`.
   - Mit D kommen die Realtime-Policy und die Edge Functions `mira-send` und `mira-export-pdf` dazu.
+
+---
+
+## 11 Nachtrag A Performance: echte Antworten (Prod, 877c, Test mit Rollback am 09.10.)
+
+| Prüfung | Ergebnis |
+|---|---|
+| Radar 30 T gegen v7 (gleiche Tage, 12/12): `rows`, `companies`, `topics`, `available_*`, `ranges` | identisch, 132 Zellen |
+| Radar 30 T Zeit | kalt 5,8 s (erster Aufruf in einer frischen Sitzung, inkl. Übersetzen der Funktion), aus dem Cache 6 ms |
+| Radar 90 T gegen v7 90 T (alles außer Sentiment, Vorperiode eingeschlossen) | 0 Abweichungen in 132 Zellen, kalt 3,9 s |
+| Radar 90 T: Sentiment von Zellen und Marken gegen v7 mit den letzten 30 Tagen | 0 Abweichungen |
+| `p_companies`, 3 Marken umgekehrt, `p_company_limit` 1 | genau diese 3, in der übergebenen Reihenfolge; `companies_explicit` true |
+| `p_domain` `[www.ADAC.de](https://www.ADAC.de)` | wird zu `adac.de` normalisiert, `date_from` = heute − 6, `prev_from` null, 132 Zellen, 3,0 s |
+| Kurve visibility/day 30 T gegen v4 | 0 Abweichungen, 30 Punkte (im Zeitraum gab es keine Tage ohne Läufe), 7 ms |
+| Kurve Topic-Fall gegen v4 | 0 Abweichungen |
+| Kurve sentiment/week 90 T gegen v4 | identisch, 14 Punkte |
+| Varianten gegen v2 (v2 schneidet bei 100 ab) | erste 100 identisch; `total_count` 392 und alle 392 geliefert; `mentions_total` 3295; kalt 3,9 s, Seite 2 aus dem Cache 2 ms |
+| `clear_dashboard_cache_v1(877c)` | 5 Einträge von Radar und Varianten vorher, 0 danach |
+| Rechte | anon bei allen 10 Funktionen gesperrt; authenticated nur bei den 3 öffentlichen; kein exception-Block |
+
+`performance_radar_v1(877c)`, meta (echt):
+
+```json
+{"team_id": "877c649c-…", "timezone": "Europe/Berlin", "date_from": "2026-09-10", "date_to": "2026-10-09",
+ "prev_from": "2026-08-26", "prev_to": "2026-09-09",
+ "sentiment_from": "2026-09-10", "sentiment_to": "2026-10-09", "sentiment_prev_from": "2026-08-26", "sentiment_prev_to": "2026-09-09",
+ "selection": {"company_limit": 12, "topic_limit": 12, "total_company_count": 11, "total_topic_count": 13,
+               "selected_company_count": 11, "selected_topic_count": 12, "companies_explicit": false, "topics_explicit": false},
+ "ranges": {"…": "…"},
+ "filters": {"models": [], "markets": [], "tag_ids": [], "tagmode": "or", "domain": null, "companies": [], "topics": []},
+ "generated_at": "2026-10-09T10:58:36Z", "cached": false, "stale": false}
+```
+
+Erste Zeile (echt): Topic SUV, Marke VW.
+
+```json
+{"topic_id": "8daee9bb-…", "topic_name": "SUV", "topic_emoji": null, "topic_position": 1, "topic_hex_light": "#6d28d9", "topic_hex_dark": "#6d28d9",
+ "company_id": "666761a9-…", "company_name": "VW", "role": "competitor", "company_position": 1,
+ "logo_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64",
+ "visibility_pct": 40.78, "visibility_prev_pct": 41.78, "visibility_delta_pct": -1.00,
+ "avg_rank": 4.64, "avg_rank_prev": 4.50, "avg_rank_delta": 0.14,
+ "sentiment": 75.46, "sentiment_prev": 72.87, "sentiment_delta": 2.59,
+ "mentions": 984, "mentions_prev": 460, "total_runs_topic_company_now": 2413, "total_runs_topic_company_prev": 1101,
+ "heat_value_visibility": 0.4368, "heat_value_rank": 0.8855, "heat_value_sentiment": 0.6405}
+```
+
+Bei 90 Tagen zeigt `meta`: `date_from` 2026-07-12, `prev_from` 2026-06-12, `prev_to` 2026-07-11, `sentiment_from` 2026-09-10 und `sentiment_prev_from` 2026-06-12. Die Vorperiode ist also 30 Tage lang, das Sentiment läuft über die letzten 30 Tage.
+
+`performance_company_chart_v1(877c, eigene Marke)`, echt:
+
+```json
+{"meta": {"team_id": "877c…", "company_id": "87468f49-…", "mode": "visibility", "granularity": "day", "timezone": "Europe/Berlin",
+          "date_from": "2026-09-10", "date_to": "2026-10-09", "points": 30,
+          "filters": {"models": [], "markets": [], "tag_ids": [], "tagmode": "or"},
+          "generated_at": "2026-10-09T10:58:52Z", "cached": false, "stale": false},
+ "rows": [{"day": "2026-09-10", "value": 28.42}, {"day": "2026-09-11", "value": 30.00}, {"day": "2026-09-12", "value": 29.09}]}
+```
+
+`performance_brand_variations_v1(877c, eigene Marke)`, echt:
+
+```json
+{"meta": {"team_id": "877c…", "company_id": "87468f49-…", "timezone": "Europe/Berlin", "date_from": "2026-09-10", "date_to": "2026-10-09",
+          "filters": {"models": [], "markets": [], "tag_ids": [], "tagmode": "or"},
+          "total_count": 392, "mentions_total": 3295, "order": "mentioned_count_desc,name_asc", "limit": 1000, "offset": 0,
+          "generated_at": "2026-10-09T10:58:56Z", "cached": false, "stale": false},
+ "rows": [{"name": "Mercedes-Benz", "mentioned_count": 570, "mentioned_runs": 570, "share_of_voice_pct": 17.30},
+          {"name": "Mercedes", "mentioned_count": 172, "mentioned_runs": 172, "share_of_voice_pct": 5.22},
+          {"name": "Mercedes E-Klasse T-Modell", "mentioned_count": 152, "mentioned_runs": 152, "share_of_voice_pct": 4.61}]}
+```
+
+---
+
+## 12 XX000 „cannot find parent statement on pldbgapi2 call stack“
+
+**Befund** aus den Postgres-Logs der letzten 24 h:
+
+- 9 Fälle, verteilt auf:
+  - PostgREST: `ingest_citations_batch_v6` (n8n) und `cached_citations_urls_v1`;
+  - pg_cron: `warm_rpc_cache` und `_dash_refresh_v1`;
+  - SQL-Editor und MCP: Tests.
+- Bei 5 der 9 Fälle lief in der Nähe kein DDL, der Fehler tritt also nicht nur nach Deployments auf.
+- Er hängt nicht an exception-Blöcken. Diese Annahme aus `rate_limit_fix_v1` war nur ein Teil der Wahrheit.
+- Dieselbe Testfolge lief in Prod mehrfach fehlerfrei durch, der Fehler kommt also zufällig.
+
+**Ursache:** Der Fehler entsteht in `plpgsql_check` 2.7. Supabase lädt die Erweiterung über `shared_preload_libraries` vor, in der Datenbank ist sie nicht einmal angelegt (`installed_version` null). Ihre Debug-Schicht pldbgapi2 verliert bei verschachtelten PL/pgSQL-Aufrufen gelegentlich den Überblick und bricht dann mit XX000 ab. Selbst beheben können wir das nicht: Die Einstellung lässt sich auf der gehosteten Plattform nicht ändern.
+
+**Vorgehen:**
+
+1. **Sofort:** Das Datenmodul und die Edge Functions wiederholen XX000 einmal (Abschnitt 1). Das ist sicher, weil die Transaktion abgebrochen wurde.
+2. **Dauerhaft:** Ein Ticket an den Supabase-Support (Text unten), damit `plpgsql_check` aus `shared_preload_libraries` entfernt oder aktualisiert wird.
+3. **Cron:** Die Refresh-Jobs springen bei einem Fehler zum nächsten Eintrag. Der übersprungene Eintrag wird im nächsten Lauf eine Minute später gerechnet.
+
+Text für den Support (Englisch, Projekt `tgdossbsevnonssyuewp`):
+
+> Our project intermittently fails with `XX000: cannot find parent statement on pldbgapi2 call stack` (also `pldbgapi2 statement call stack is broken`), about 5–9 times per day, in PostgREST RPCs, pg_cron jobs and the SQL editor, in PL/pgSQL functions without exception blocks. The message comes from plpgsql_check (2.7), which is in `shared_preload_libraries` although the extension is not installed in our database and we do not use it. Could you please remove `plpgsql_check` from `shared_preload_libraries` for this project, or upgrade it to a version that fixes the pldbgapi2 call stack handling? Postgres 17.6. Example log timestamps (UTC, 2026-10-09): 07:10:07, 07:10:18, 09:37:28, 10:06:02, 11:25:03.

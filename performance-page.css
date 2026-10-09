@@ -1,0 +1,19 @@
+/* upstreem performance-page.css -- die Performance-Seite als eine Komponente (09.10.). Praefix upf.
+
+   Der kompakte Kopf kommt aus core (.upf-pagehead in denselben Listen wie Citations und Dashboard).
+   Radar, Detailbereich und URL-Tabelle bringen ihre eigene CSS mit (performance-radar.css,
+   performance-detail.css, urls-table.css) -- hier steht nur, wie sie untereinander stehen. */
+
+.upf-root { display: block; }
+.upf-root .upf-pagehead { padding: 8px 0; }
+/* 24 zwischen Radar und Detailbereich wie zwischen Chart und Tabelle der Citations-Seite. */
+.upf-main { display: flex; flex-direction: column; gap: 24px; padding: 24px 0 64px; min-width: 0; }
+.upf-radar, .upf-detail, .upf-urls { min-width: 0; }
+.upf-detail { display: flex; flex-direction: column; gap: 24px; }
+/* hidden gegen das display der eigenen Regel: ohne Zelle steht der Bereich nicht da. */
+.upf-root .upf-detail[hidden] { display: none; }
+/* Die URL-Tabelle im Detail ist schon auf EINE Marke gefiltert (Topic und Marke der Zelle); ihr
+   Markenmenue haette nichts zu waehlen. Bisher in Bubble von Hand ausgeblendet
+   (performance_detail_bubble.html, "Die URLs-Table darunter"). Der Schalter der eigenen Marke
+   bleibt: er filtert weiter auf URLs, die auch die eigene Marke nennen. */
+.upf-urls .uut-root .up-ment { display: none; }

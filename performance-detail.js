@@ -692,9 +692,12 @@
     function fireCompanyClick(row){
       var cid = row.getAttribute("data-cid") || "";
       var fnName = root.getAttribute("data-company-fn") || "bubble_fn_updCompanyClick";
-      var fn = UC.resolveBubbleFn ? UC.resolveBubbleFn(fnName) : window[fnName];
+      /* LOKALER MODUS (09.10., Performance-Seite): nur der DOM-Event unten, kein Bubble-Aufruf und
+         keine Warnung -- die Seite oeffnet den Drawer selbst. Gleiche Regel wie in UC.makeFire. */
+      var lokal = UC.isYes ? UC.isYes(root.getAttribute("data-local")) : root.getAttribute("data-local") === "yes";
+      var fn = lokal ? null : (UC.resolveBubbleFn ? UC.resolveBubbleFn(fnName) : window[fnName]);
       if (typeof fn === "function"){ try { fn(cid); } catch(e){} }
-      else if (window.console){
+      else if (!lokal && window.console){
         console.warn("[performance-detail] " + fnName + " not found on window/parent/top or any " +
           "reachable iframe — the row click reached no Bubble workflow. Check the Toolbox element's name.");
       }

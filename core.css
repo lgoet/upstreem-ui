@@ -5059,21 +5059,21 @@
   margin-left: calc(-1 * var(--up-ph-zug-l, 0px)); margin-right: calc(-1 * var(--up-ph-zug-r, 0px));
   width: calc(100% + var(--up-ph-zug-l, 0px) + var(--up-ph-zug-r, 0px)); }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-desc,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead) .up-ph-desc { display: none; }
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead) .up-ph-desc { display: none; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-top {
   align-items: center; min-height: var(--up-h-btn); padding-bottom: 8px; position: relative; }
 /* Die Linie laeuft bis an die Kante der Bubble-Gruppe um den Kopf, also so weit UEBER das Element
    hinaus, wie die Gruppe Polster hat -- 16 oder 0, je nachdem, ob es in Bubble schon raus ist.
    UC.makePageCrumbs misst das (--up-ph-rand-l/-r); ohne Messung liegt sie unter dem Element. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-top::after,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead)::after {
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead)::after {
   content: ""; position: absolute; bottom: 0; height: 1px; pointer-events: none;
   left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px));
   background: var(--vc-border); }
 /* Die Ueberschrift als Krumenzeile: 14px, auf der Mitte der 32px-Zeile. Vor dem JS steht hier der
    Seitenname aus der Vorlage -- in derselben Groesse, also ohne Sprung. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-heading,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead) .up-ph-heading {
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead) .up-ph-heading {
   display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0;
   font-size: var(--up-fs-l); font-weight: 500; line-height: var(--up-h-btn); letter-spacing: 0;
   color: var(--vc-third); white-space: nowrap; }
@@ -5174,14 +5174,14 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    Beschreibung, Linie und Ueberschrift teilen sich die Regeln des kompakten Kopfs oben. Hoehe
    und Luft der Zeile stehen in der Komponente (teams.css, prompt-research.css), weil dort ihr
    Regler data-head-top sitzt; hier nur, was keinen Regler braucht. */
-.up-root:is(.uts-root, .upr-root, .uev-root, .ush-root, .uad-root, .ucs-root, .uds-root).has-crumbs {
+.up-root:is(.uts-root, .upr-root, .uev-root, .ush-root, .uad-root, .ucs-root, .uds-root, .upf-root).has-crumbs {
   padding-left: var(--up-ph-innen-l, 0px); padding-right: var(--up-ph-innen-r, 0px);
   margin-left: calc(-1 * var(--up-ph-zug-l, 0px)); margin-right: calc(-1 * var(--up-ph-zug-r, 0px));
   width: calc(100% + var(--up-ph-zug-l, 0px) + var(--up-ph-zug-r, 0px)); }
 /* Die Kopfzeile steht rechts bei 8 wie in jedem Seitenkopf, der Inhalt der Komponente darunter
    bei 16: also zieht sie sich um die Differenz nach aussen (--up-ph-kopfzug-l/-r aus
    UC.makePageCrumbs, ohne JS 0; links ist die Differenz heute 0). */
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead) { align-items: center; min-height: var(--up-h-btn); position: relative;
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead) { align-items: center; min-height: var(--up-h-btn); position: relative;
   margin-left: calc(-1 * var(--up-ph-kopfzug-l, 0px)); margin-right: calc(-1 * var(--up-ph-kopfzug-r, 0px)); }
 
 /* ---------- DIE KOMPONENTEN TRAGEN IHR SEITENPOLSTER SELBST (29.09. angefordert) ----------
@@ -5225,6 +5225,11 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    Karte mit Rahmen und trug darum Aussenabstand; seit dem 07.10. steht der Bereich offen wie die
    Detailbereiche von Events, Shopping und Ads und polstert sich wie der Radar darueber. */
 [id^="view-"] .up-root:is(.uhm-root, .usb-root, .uto-root, .ubl-root, .upd-root) { padding-left: 16px; padding-right: 16px; }
+/* IN DER PERFORMANCE-SEITE (performance-page.js, 09.10.) stehen Radar, Detailbereich und
+   URL-Tabelle im Inhalt der Komponente, und den legt UC.makePageCrumbs schon auf 16 vom Rand. Die
+   16 oben kaemen dazu -- 32 statt 16, wie bei Citations und Dashboard. Ueber die Seitenkennung, sonst
+   verliert die Regel gegen die obere. */
+[id^="view-"] .upf-root .up-root:is(.uhm-root, .upd-root, .uut-root) { padding-left: 0; padding-right: 0; }
 
 /* ---------- responsive (classes set by UC.makePageNav via UC.onResize) ---------- */
 /* is-narrow (<768px default): tabs go from auto-width/left-packed to even thirds, still centered
