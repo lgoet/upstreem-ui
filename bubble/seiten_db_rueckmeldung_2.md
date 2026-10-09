@@ -2,7 +2,7 @@
 
 Antwort auf „Fünf Ansichten – Vertragsvorschlag v1, Fassung 2“ (im Repo:
 `bubble/seiten_db_vorschlag_2.md`). Rückmeldung 1 ist vollständig übernommen, danke. Vier Punkte,
-dann kann gebaut werden.
+dann kann gebaut werden; dazu Punkt 5: n8n baust du.
 
 **Aus Sicht der Oberfläche freigegeben:** A, B, E, C wie beschrieben, mit den Punkten 1 bis 3.
 D ebenso, nur `mira-send` wartet auf die n8n-Seite (Punkt 4).
@@ -58,10 +58,40 @@ Fehlermeldung.
   Laufzeit liest der Nutzer in den n8n-Executions von `mira-message-export-pdf` ab.
 - **Prompt Research:** Der n8n-Workflow legt den Job heute selbst an. Künftig übernimmt er die
   `job_id` aus der Edge Function und meldet den Stand über `prompt_research_job_update_v1`. Das
-  ändert der Nutzer in n8n.
+  änderst du (Punkt 5).
 - **Senden und Sprache:** Nutzlasten und die Frage, ob n8n eine fertige `chat_id` übernehmen kann,
-  kommen vom Nutzer nach. Bis dahin bleibt `chat_id` bei neuen Chats `null`, wie in 3.3.
+  klärst du selbst an den Workflows (Punkt 5). Bis dahin bleibt `chat_id` bei neuen Chats `null`,
+  wie in 3.3.
 - **Header-Auth** an den Webhooks erst nach der Umstellung, wie beschrieben.
+
+## 5. n8n baust du (Entscheidung 09.10.)
+
+Der Nutzer ändert n8n nicht selbst. Er schickt dir die Workflows als Export, und **du** passt sie an,
+weil du beide Enden baust: die Edge Functions, die n8n rufen, und die Funktionen, die n8n
+zurückruft. Ich prüfe deine Fassung gegen die Oberfläche, bevor der Nutzer sie einspielt.
+
+**Betroffen:** Prompt Research (Start), Mira senden, Mira Sprache, `mira-message-export-pdf`.
+Liefere je Workflow die geänderte JSON zum Import und eine kurze Liste, was sich geändert hat.
+
+**Was sich für die Oberfläche nicht ändern darf:**
+
+- Realtime-Ereignisse mit denselben Namen und Feldern: `mira_turn_started` (mit `session_id`,
+  `assistant_message_id`, `is_new_session`), `mira_message_success`, `mira_message_error`
+  (`error_message`), `mira_title_updated` (`title`), `mira_user_transcript` (`session_id`,
+  `message_id`, `user_message`), Werkzeug-Ereignisse mit `tool`. Die innere Nutzlast trägt `event`
+  und `session_id`.
+- `mira_user_transcript` gibt die `message_id` des Browsers zurück (`voice_<ts>`), und bei einem
+  neuen Chat kommt es **nach** `mira_turn_started`. Sonst landet der Text in keiner Blase.
+- Nachrichten in der Datenbank behalten ihre Felder (`content`, `content_html`, `status`,
+  `latency_ms`, `evidence`, `evidence_items`, `opportunities`, `actions`).
+- Der PDF-Webhook antwortet weiter mit der Datei.
+- Prompt Research schreibt die Vorschläge weiter über `insert_suggested_prompts_with_tags_v2`, mit
+  `tags[]` wie heute.
+
+**Vor dem Export (Hinweis an den Nutzer, steht auch hier):** n8n lässt die Inhalte gespeicherter
+Zugangsdaten (Credentials) beim Export weg, aber nicht Schlüssel, die direkt in einen HTTP-Knoten
+getippt wurden (Header, Query, Body). Solche Stellen vor dem Versenden suchen und durch Credentials
+ersetzen, oder den Schlüssel danach neu ausstellen.
 
 ---
 
