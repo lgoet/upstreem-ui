@@ -439,6 +439,11 @@
       --vt-logo-ink: var(--vc-muted);
       --vt-row-hover-solid: #f9f8f9;
       --vt-up: #2ea84a; --vt-down: #b0200c;
+      /* Die Flaeche eines Gefahr-Knopfs (Loeschen im Dialog, 10.10.: "schoen rot") und die Schrift
+         darauf. Dasselbe Rot wie --vt-down hier, und zwar in BEIDEN Themen: das hellere Rot des
+         dunklen Themas (#d25d5d) traegt weisse Schrift nur mit rund 3,4:1, dieses mit 6,6:1. Darum
+         steht das Paar nur hier und nicht noch einmal im dunklen Block. */
+      --vc-danger: #b0200c; --vc-danger-fg: #ffffff;
       /* Markenauszeichnung im Antworttext. Die Farbe ist die der alten Response-Elemente,
          wortgleich uebernommen -- Orange, nicht das Gruen der Trendpfeile: eine Marke im Text ist
          keine Bewertung. Der Hintergrund liegt 10 Prozentpunkte unter dem ersten Ansatz (8 -> 6,
@@ -4809,7 +4814,11 @@
 /* Ein Knopf, den ein Schritt nicht braucht (Zurueck auf Schritt 1): das hidden-Attribut allein
    verliert gegen display: inline-flex darueber. */
 .up-modal-foot > button[hidden] { display: none; }
-.up-modal-gefahr:hover { border-color: var(--vt-down, #b0200c); color: var(--vt-down, #b0200c); }
+/* Der Gefahr-Knopf ist gefuellt rot mit weisser Schrift (10.10. angefordert, vorher umrandet und
+   erst beim Ueberfahren rot). Mit .up-modal-foot davor: er muss .up-btn-sec samt :hover schlagen,
+   und das entscheidet die Spezifitaet, nicht die Reihenfolge. Ueberfahren dunkelt ein wenig ab. */
+.up-modal-foot > .up-modal-gefahr { background: var(--vc-danger); border-color: var(--vc-danger); color: var(--vc-danger-fg); }
+.up-modal-foot > .up-modal-gefahr:hover { background: color-mix(in srgb, var(--vc-danger) 88%, #000); border-color: color-mix(in srgb, var(--vc-danger) 88%, #000); color: var(--vc-danger-fg); }
 .up-modal-spin { display: none; width: 12px; height: 12px; border-radius: var(--up-r-voll);
   border: 2px solid currentColor; border-right-color: transparent; animation: upModalDreh 700ms linear infinite; }
 .up-modal-foot > button.is-busy .up-modal-spin { display: inline-block; }

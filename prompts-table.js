@@ -2158,19 +2158,46 @@
       }
       fertig(UC.legacyCopy ? UC.legacyCopy(text) : false);
     }
+    /* LOESCHEN FRAGT IN EINEM DIALOG (10.10. angeordnet, statt des scharfgestellten Knopfs, der
+       nur die Farbe wechselte). Loeschen nimmt den Verlauf der Prompts aus allen Auswertungen mit
+       (wie in Analyse-Tools ueblich; wer ihn behalten will, laesst sie inaktiv) -- das muss da
+       stehen, mit der Zahl, die wirklich geloescht wird (bulkCount: auch "Alle N", abzueglich der
+       abgewaehlten). Der Dialog ist der der App (UC.makeModal, wie "Delete this event?" in Events);
+       ohne ihn (alter core) bleibt der Knopf beim alten Weg mit zwei Klicks. */
     function applyBulkDelete(){
       var btn = bulkDeleteBtn();
       if (!btn) return;
-      if (!btn.classList.contains("is-armed")){
-        btn.classList.add("is-armed");
-        /* Loeschen nimmt den Verlauf der Prompts aus allen Auswertungen mit (10.10. entschieden,
-           wie in Analyse-Tools ueblich; wer ihn behalten will, laesst sie inaktiv). Das muss VOR
-           dem zweiten Klick dastehen, nicht danach. */
-        bulkDeleteTip(btn, "Delete prompts and their history?");
+      var n = bulkCount();
+      if (!n) return;
+      if (UC.makeModal){
+        var eins = n === 1;
+        UC.makeModal({
+          titel: eins ? t("Delete 1 prompt?") : t("Delete {n} prompts?").replace("{n}", UC.fmtInt(n)),
+          isDark: function(){ return isDark; },
+          /* Die zwei Saetze gehoeren zusammen: in einem Block mit 8px, nicht mit den 32px, die die
+             Dialogflaeche zwischen ihre Teile legt (im Bild las sich das wie zwei Abschnitte). */
+          inhaltHtml: '<div class="upt-loeschtext">' +
+            '<p class="up-modal-hinweis">' + esc(t(eins
+              ? "This permanently deletes the prompt and all of its data, including responses, mentions and citations. Your reports will no longer include it, for any time period."
+              : "This permanently deletes the prompts and all of their data, including responses, mentions and citations. Your reports will no longer include them, for any time period.")) + '</p>' +
+            '<p class="up-modal-hinweis">' + esc(t("This can't be undone. To stop tracking but keep the history, leave prompts inactive instead.")) + '</p></div>',
+          knoepfe: [
+            { id: "abbrechen", text: "Cancel", art: "sec" },
+            { id: "ok", text: eins ? t("Delete 1 prompt") : t("Delete {n} prompts").replace("{n}", UC.fmtInt(n)), art: "gefahr",
+              aktion: function(){
+                fire("data-bulkdelete-fn", "uptBulkDelete", selectionPayload());
+                clearSelection();
+              } }
+          ]
+        });
         return;
       }
-      var p = selectionPayload();
-      fire("data-bulkdelete-fn", "uptBulkDelete", p);
+      if (!btn.classList.contains("is-armed")){
+        btn.classList.add("is-armed");
+        bulkDeleteTip(btn, "Confirm delete?");
+        return;
+      }
+      fire("data-bulkdelete-fn", "uptBulkDelete", selectionPayload());
       clearSelection();
     }
 

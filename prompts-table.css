@@ -1510,3 +1510,5 @@
 .up-root.is-vnarrow .upt-kpi-quota   { display: none; }
 .up-root.is-t1      .upt-kpis        { display: none; }
 
+/* Der Text des Loesch-Dialogs (applyBulkDelete): zwei Saetze, ein Block. */
+.upt-loeschtext { display: flex; flex-direction: column; gap: 8px; }

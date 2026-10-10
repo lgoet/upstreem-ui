@@ -60,6 +60,40 @@ begründen. Das Ergebnis für den Nutzer muss dasselbe sein. Bitte sagen:
 
 Die Oberfläche warnt vor dem Löschen. Wer die Historie behalten will, lässt den Prompt inaktiv.
 
+### 1c. Löschen läuft im Hintergrund (Nachtrag 10.10.)
+
+Heute scheitert das Löschen von Prompts mit viel Historie am Zeitlimit des Aufrufs (vom Nutzer
+gemeldet: 60 s). Mit der Neuberechnung aus 1b würde das schlimmer. Darum ist Pflicht:
+
+1. **`prompts_bulk_v1` mit `delete` antwortet sofort** (wenige Sekunden, unabhängig von der Menge der
+   Historie).
+   - Er prüft Rolle, Zielmenge und `p_expected_count`.
+   - Er markiert die Prompts als gelöscht (z. B. `deleted_at`) und legt einen Löschauftrag an.
+   - Ab diesem Moment erscheinen sie in keiner Liste mehr: Prompt-Tabelle, Gruppen, Topic-Zähler,
+     Kontingent.
+   - Derselbe Text kann sofort neu angelegt werden.
+2. **Den Rest erledigt ein Hintergrundlauf in Teilen:**
+   - Läufe, Antworten, Empfehlungen usw. löschen;
+   - die Team- und Topic-Rollups der betroffenen Tage neu rechnen;
+   - die Caches leeren.
+
+   Vorbild ist der Worker von Prompt Research: `_job_worker_v1`, pg_cron alle 5 s, 120 s je Lauf.
+   Jeder Teil muss sicher unter diesem Limit bleiben, egal wie viel Historie ein Prompt hat.
+3. **Bis der Lauf fertig ist:** Entweder zeigen die Auswertungen noch die alten Zahlen, oder sie
+   filtern gelöschte Prompts schon heraus. Bitte vorschlagen und begründen. Danach sind alle
+   Ansichten gleich.
+4. **Fehler:** Scheitert ein Teil, wird er wiederholt. Bleibt er hängen, muss das am Auftrag sichtbar
+   sein (Status), nicht still.
+5. **Antwort:** `prompts_bulk_v1` gibt beim Löschen zusätzlich `meta.job_id` zurück. Bitte sagen, ob
+   die Oberfläche den Abschluss erfahren soll (Realtime wie bei Prompt Research), oder ob es reicht,
+   dass die Prompts sofort aus den Listen verschwinden.
+
+Bitte messen (im Rollback): Wie lange braucht der Hintergrundlauf für den Prompt mit der meisten
+Historie in Prod, und wie lange der sofortige Teil für 1.000 Prompts?
+
+Dasselbe gilt für `topic_delete_v1`, falls das Entfernen der Topic-Rollups bei großen Teams lange
+dauert.
+
 ---
 
 ## 2. Ergänzungen zum Vertrag

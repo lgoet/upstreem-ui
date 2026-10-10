@@ -1369,7 +1369,16 @@
     "Confirm delete?": "Wirklich löschen?",
     /* Prompt Insights (10.10.): Loeschen nimmt den Verlauf mit (wie in Analyse-Tools ueblich) --
        das muss vor dem zweiten Klick dastehen. */
-    "Delete prompts and their history?": "Prompts samt Verlauf löschen?",
+    "Delete 1 prompt?": "1 Prompt löschen?",
+    "Delete {n} prompts?": "{n} Prompts löschen?",
+    "Delete 1 prompt": "1 Prompt löschen",
+    "Delete {n} prompts": "{n} Prompts löschen",
+    "This permanently deletes the prompt and all of its data, including responses, mentions and citations. Your reports will no longer include it, for any time period.":
+      "Damit werden der Prompt und alle seine Daten endgültig gelöscht, auch Antworten, Erwähnungen und Quellen. Deine Auswertungen enthalten ihn danach für keinen Zeitraum mehr.",
+    "This permanently deletes the prompts and all of their data, including responses, mentions and citations. Your reports will no longer include them, for any time period.":
+      "Damit werden die Prompts und alle ihre Daten endgültig gelöscht, auch Antworten, Erwähnungen und Quellen. Deine Auswertungen enthalten sie danach für keinen Zeitraum mehr.",
+    "This can't be undone. To stop tracking but keep the history, leave prompts inactive instead.":
+      "Das lässt sich nicht rückgängig machen. Wenn du das Tracking beenden, den Verlauf aber behalten willst, setz die Prompts stattdessen auf inaktiv.",
     "Up to 5 topics per prompt": "Höchstens 5 Topics je Prompt",
     "Up to 10 custom groupings": "Höchstens 10 eigene Gruppierungen",
     /* Seite Prompt Insights (prompts-page.js, 10.10.): Rueckmeldungen und Fehlersaetze. */
