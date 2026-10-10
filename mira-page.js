@@ -52,7 +52,6 @@
   function team() { try { return (UC.getTeam && UC.getTeam()) || ""; } catch (e) { return ""; } }
   function satz(txt, art, desc) { if (UC.toast) UC.toast(t(txt), { kind: art || "success", desc: desc ? t(desc) : "" }); }
   function beiSicht(el, schluessel, fn, test, o) { if (UC.beiSicht) UC.beiSicht(el, schluessel, fn, test, o); else fn(); }
-  function messbar(el) { return !UC.messbar || UC.messbar(el); }
   function am(name) {
     var f = window[name], args = [].slice.call(arguments, 1);
     if (typeof f !== "function") return undefined;
@@ -89,8 +88,18 @@
     }));
 
     function isDark() { return (UC.themeParam && UC.themeParam(root.getAttribute("data-isdark"))) || root.getAttribute("data-theme") === "dark"; }
+    /* DIE HUELLE HAT KEINEN EIGENEN KASTEN (10.10. gemeldet: "Mira hat teils doppelt bis dreifach
+       so viel Hoehe wie die Seite, die Leiste klappt unglaublich weit auf"). Mira nimmt ihre Hoehe
+       per height: 100% von ihrem Elternteil -- bis heute direkt Bubbles HTML-Element. Mit der
+       Huelle dazwischen hing das an deren Hoehe, und stand die nicht fest, wuchs Mira mit ihrer
+       Chatliste. display: contents stellt genau den alten Aufbau her: Mira ist wieder Kind des
+       HTML-Elements, die Hoehe kommt wie vorher von Bubble. Inline UND in mira-page.css, damit es
+       nicht davon abhaengt, dass die CSS-Datei ankommt. */
+    root.style.display = "contents";
     root.innerHTML = String(MARKUP.am || "").split("__UMI_AM__").join(esc(instanceId + "_mira"))
       .split("__UMI_DARK__").join(isDark() ? "yes" : "no");
+    /* Sichtbarkeit an Mira selbst messen: eine Huelle ohne Kasten ist nie "sichtbar". */
+    function innen() { return root.querySelector(".am-root") || root; }
 
     /* ---- Modelle und Themen aus core (bisher Bubble-Schritte) ---------------------------- */
     function modelleGeben(l) { if (l && l.length) am("askMiraSetModels", l); }
@@ -420,7 +429,8 @@
 
     /* ---- Laden, Teamwechsel ---------------------------------------------------------------- */
     function laden(frisch) {
-      if (!sichtbarTest(root)) { beiSicht(root, "laden", function () { laden(frisch); }, sichtbarTest); return; }
+      var el = innen();
+      if (!sichtbarTest(el)) { beiSicht(el, "laden", function () { laden(frisch); }, sichtbarTest); return; }
       kanalAuf();
       if (frisch || gem.listeFuer !== team()) listeLaden(!!frisch);
       if (!gem.einstellungen) { gem.einstellungen = true; einstellungenLaden(); }
@@ -460,13 +470,12 @@
     alle().filter(function (x) { return id == null || str(x.getAttribute("data-instance")) === String(id); })
       .forEach(function (x) { var c = initRoot(x); if (c) c.reset(); });
   };
+  /* Sofort einrichten, auch in einer verdeckten Ansicht: das alte Mira-Element stand immer mit
+     seinem Markup im Dokument, und das Dashboard leiht sich Mira von dort aus (Launcher). Laden
+     wartet trotzdem, bis Mira zu sehen ist (laden). Eine Huelle mit display: contents liesse sich
+     ohnehin nie als "messbar" pruefen. */
   function einrichten() {
-    alle().forEach(function (r) {
-      if (r.__umiCtrl) return;
-      if (messbar(r)) { initRoot(r); return; }
-      var neu = !(UC.wartetAufSicht && UC.wartetAufSicht(r));
-      beiSicht(r, "einrichten", function () { initRoot(r); }, messbar, { lang: neu });
-    });
+    alle().forEach(function (r) { if (!r.__umiCtrl) initRoot(r); });
   }
   if (UC.watchRoots) UC.watchRoots("umi-root", einrichten);
   einrichten();

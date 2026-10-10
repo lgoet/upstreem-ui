@@ -741,28 +741,29 @@
 .upr-history-item {
   position: relative;
   border-radius: 12px; padding: 12px; cursor: pointer;
-  /* Markt und Modell rechts, solange Platz ist (10.10.); sonst brechen sie unter den Titel. */
-  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px;
-  transition: background 140ms ease;
+  /* DREI SPALTEN (10.10., zweite Fassung): Titel und Datum | Markt, Modell, Persona | die zwei
+     Knoepfe. Die Knoepfe haben ihre EIGENE Spalte und nehmen ihren Platz immer ein -- auch
+     unsichtbar --, damit sie beim Hover nichts verdecken. Die erste Fassung legte sie absolut
+     ueber die Angaben, und die Flagge war dann nur noch zu einem Viertel zu sehen (gemeldet). */
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas: "main meta akt"; align-items: center; column-gap: 16px;
+  transition: background var(--up-t-1) var(--up-ease);
 }
-/* Trennlinie MITTEN in einer 8px-Luecke zwischen zwei Eintraegen (10.10.: "die Hoverstates liegen
-   direkt auf den Separator-Linien"). Die Hover-Flaeche endet so 4px vor jeder Linie, und die
-   beiden Linien am Eintrag unter dem Zeiger gehen aus -- die Flaeche ersetzt sie. */
-.upr-history-item + .upr-history-item { margin-top: 8px; }
+/* TRENNLINIEN MIT LUFT: zwischen zwei Eintraegen 9px, die Linie in der Mitte -- 4px frei ueber
+   und unter ihr. Die Hover-Flaeche bleibt im Eintrag und beruehrt die Linie nie; die Linien
+   bleiben immer stehen. */
+.upr-history-item + .upr-history-item { margin-top: 9px; }
 .upr-history-item + .upr-history-item::before {
-  content: ""; position: absolute; left: 12px; right: 12px; top: -4px;
-  height: 1px; background: var(--vc-border); pointer-events: none; transition: opacity var(--up-t-1) var(--up-ease);
+  content: ""; position: absolute; left: 12px; right: 12px; top: -5px;
+  height: 1px; background: var(--vc-border); pointer-events: none;
 }
-.upr-history-item:hover::before, .upr-history-item:focus-visible::before,
-.upr-history-item:hover + .upr-history-item::before,
-.upr-history-item:focus-visible + .upr-history-item::before { opacity: 0; }
-.upr-history-item.is-still:hover::before,
-.upr-history-item.is-still:hover + .upr-history-item::before { opacity: 1; }
 .upr-history-item:not(.is-still):hover, .upr-history-item:focus-visible { background: var(--vc-heading-bg); outline: none; }
-.upr-history-main { min-width: 0; flex: 1 1 200px; display: flex; flex-direction: column; gap: 3px; }
+.upr-history-main { grid-area: main; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 /* Markt, Modell, Persona als Text (10.10.: "nicht in diese Chips"), getrennt durch Abstand. */
 .upr-history-meta {
-  flex: 0 0 auto; margin-left: auto; display: flex; align-items: center; gap: 12px;
+  /* Zwei feste Spalten, damit Markt und Modell aller Eintraege genau untereinander stehen: der
+     Markt ist immer Flagge plus zwei Buchstaben, das Modell hoechstens "Hybrid". */
+  grid-area: meta; display: grid; grid-template-columns: 44px 44px; align-items: center; column-gap: 12px;
   font-size: var(--up-fs-s); line-height: 1.3; color: var(--vc-muted); white-space: nowrap;
 }
 .upr-history-markt { display: inline-flex; align-items: center; gap: 6px; }
@@ -771,20 +772,25 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
 }
 .upr-history-date { font-size: 12px; color: var(--vc-fourth); line-height: 1.3; font-weight: 400; }
-.upr-history-meta-row { min-width: 0; margin-top: 8px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-/* The two row buttons only appear on hover, so a long list stays quiet; they stay visible while
-   the row has keyboard focus. Seit dem 10.10. UEBER der Angabe rechts (absolut, mit der
-   Hover-Flaeche als Grund), statt ihr dauerhaft Platz wegzunehmen. */
+/* Die zwei Knoepfe: unsichtbar, bis der Eintrag unter dem Zeiger steht oder den Fokus hat. */
 .upr-history-actions {
-  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-  display: flex; align-items: center; gap: 4px; padding-left: 8px;
-  background: var(--vc-heading-bg); border-radius: 8px;
-  opacity: 0; pointer-events: none; transition: opacity 140ms ease;
+  grid-area: akt; display: flex; align-items: center; gap: 4px;
+  opacity: 0; transition: opacity var(--up-t-1) var(--up-ease);
 }
-.upr-history-item:hover .upr-history-actions,
+.upr-history-item:not(.is-still):hover .upr-history-actions,
 .upr-history-item:focus-visible .upr-history-actions,
-.upr-history-actions:focus-within { opacity: 1; pointer-events: auto; }
+.upr-history-actions:focus-within { opacity: 1; }
+/* Ein laufender Eintrag traegt die Knoepfe nur als Platzhalter (gleiche Breite, gleiche Spalte),
+   damit Markt und Modell aller Eintraege untereinander stehen. */
+.upr-history-actions.is-platzhalter { visibility: hidden; }
+/* Ohne Zeiger (Telefon, Tablet) gibt es keinen Hover: dort stehen die Knoepfe immer da. */
+@media (hover: none) { .upr-history-actions { opacity: 1; } }
 .upr-history-delete:hover { color: var(--vt-down, #b0200c); }
+/* SCHMAL (die Leiste ist dann fast so breit wie das Fenster): Markt und Modell unter Titel und
+   Datum, die Knoepfe bleiben rechts in ihrer Spalte. */
+@media (max-width: 560px) {
+  .upr-history-item { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "main akt" "meta akt"; row-gap: 6px; }
+}
 /* Laufende Recherchen (09.10., Seite): sie lassen sich nicht oeffnen, also kein Zeiger und keine
    Hover-Flaeche. Der Zustand steht als Wort in der Datumszeile. Gescheiterte stehen seit dem 10.10.
    gar nicht mehr in der Liste. */

@@ -763,17 +763,17 @@
       status: String(item.status || '').toLowerCase()
     };
   }
-  /* Rechts in der Zeile, als Text und nicht als Pille (10.10.): Markt, Geschaeftsmodell, Persona. */
+  /* Rechts in der Zeile, als Text und nicht als Pille (10.10.): Markt und Geschaeftsmodell. */
   var MODELL = { b2c: 'B2C', b2b: 'B2B', hybrid: 'Hybrid' };
   function personaText(p){ p = String(p || '').replace(/_/g, ' ').trim(); return p ? p.charAt(0).toUpperCase() + p.slice(1) : ''; }
   function historyMeta(item){
     var markt = String(item.market || '').toUpperCase();
     var name = item.market_name || markt;
     var modell = item.business_model ? (MODELL[String(item.business_model).toLowerCase()] || String(item.business_model)) : '';
-    var persona = personaText(item.persona);
-    return (markt ? '<span class="upr-history-markt" data-tip="' + esc(name) + '"><span class="upr-market-flag">' + flagHtml(getFlagUrlForMarket(markt), name) + '</span>' + esc(markt) + '</span>' : '') +
-      (modell ? '<span data-tip="' + esc(UC.t ? UC.t('Business model') : 'Business model') + '">' + esc(modell) + '</span>' : '') +
-      (persona ? '<span class="upr-history-persona" data-tip="' + esc(UC.t ? UC.t('Persona') : 'Persona') + '">' + esc(persona) + '</span>' : '');
+    /* Beide Spalten immer, auch leer -- sonst rutschte das Modell in die Spalte des Marktes. */
+    return '<span class="upr-history-markt"' + (markt ? ' data-tip="' + esc(name) + '"' : '') + '>' +
+        (markt ? '<span class="upr-market-flag">' + flagHtml(getFlagUrlForMarket(markt), name) + '</span>' + esc(markt) : '') + '</span>' +
+      '<span' + (modell ? ' data-tip="' + esc(UC.t ? UC.t('Business model') : 'Business model') + '"' : '') + '>' + esc(modell) + '</span>';
   }
   function formatHistoryDate(value){
     if (!value) return 'recently';
@@ -809,6 +809,10 @@
       var zeile = laeuft
         ? '<span class="upr-history-lauf">' + esc(UC.t ? UC.t('Running') : 'Running') + '</span>'
         : esc(item.prompt_count || 0) + ' prompts';
+      /* Die Persona in der Datumszeile, nicht rechts: dort stehen nur Markt und Modell in festen
+         Spalten (10.10.), und eine Persona ist zu lang und zu selten fuer eine eigene. */
+      var persona = personaText(item.persona);
+      if (persona) zeile += ', ' + esc(persona);
       return '<div class="upr-history-item' + (laeuft ? ' is-still' : '') + '" data-history-index="' + index + '"' +
         (laeuft ? ' data-oeffnen="nein"' : ' role="button" tabindex="0"') + '>' +
         '<div class="upr-history-main">' +
@@ -816,10 +820,16 @@
           '<div class="upr-history-date">' + esc(formatHistoryDate(item.created_at)) + ', ' + zeile + '</div>' +
         '</div>' +
         '<div class="upr-history-meta">' + historyMeta(item) + '</div>' +
-        (laeuft ? '' : '<div class="upr-history-actions">' +
-          '<button class="up-iconbtn upr-history-delete" type="button" data-action="delete-research" data-job-id="' + esc(item.job_id) + '" data-history-index="' + index + '" data-tip="Delete research" aria-label="Delete research">' + ICON.trash + '</button>' +
-          '<button class="up-iconbtn" type="button" data-action="open-research" data-history-index="' + index + '" data-tip="Open research" aria-label="Open research">' + ICON.gotoArrow + '</button>' +
-        '</div>') +
+        /* Die Knoepfe stehen immer in ihrer Spalte; ein laufender Eintrag traegt sie nur als
+           unsichtbaren Platzhalter (nicht fokussierbar, nicht klickbar) -- so stehen Markt und
+           Modell aller Eintraege untereinander. */
+        (laeuft
+          ? '<div class="upr-history-actions is-platzhalter" aria-hidden="true">' +
+              '<span class="up-iconbtn">' + ICON.trash + '</span><span class="up-iconbtn">' + ICON.gotoArrow + '</span></div>'
+          : '<div class="upr-history-actions">' +
+              '<button class="up-iconbtn upr-history-delete" type="button" data-action="delete-research" data-job-id="' + esc(item.job_id) + '" data-history-index="' + index + '" data-tip="Delete research" aria-label="Delete research">' + ICON.trash + '</button>' +
+              '<button class="up-iconbtn" type="button" data-action="open-research" data-history-index="' + index + '" data-tip="Open research" aria-label="Open research">' + ICON.gotoArrow + '</button>' +
+            '</div>') +
       '</div>';
     }).join('');
   }

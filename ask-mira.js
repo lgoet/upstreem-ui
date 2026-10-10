@@ -7870,6 +7870,26 @@
     n = n || 15;
     return s.length > n ? s.slice(0, n) + '…' : s;
   }
+  /* Evidence -> Drawer der App. Die Kennungen wie ueberall: Marke = company_id, URL = die Adresse,
+     Domain = der Name, Prompt = prompt_id, Antwort = prompt_run_id (entity_id traegt je Art genau
+     dieses Feld, siehe _ID_FIELDS_BY_TYPE). */
+  function evidenceDrawer(p){
+    var C = window.UpstreemCore;
+    if (!C || !C.drawerOeffnen) return false;
+    var a = String(p.action || '').replace(/^open_/, '') || String(p.type || '');
+    var art = '', id = '';
+    if (a === 'brand' || a === 'competitor'){ art = 'brand'; id = p.entity_id; }
+    else if (a === 'url' || a === 'citation'){ art = 'url'; id = p.url || p.entity_url || p.entity_key; }
+    else if (a === 'domain'){
+      art = 'domain'; id = p.domain || p.entity_key;
+      if (!id && (p.url || p.entity_url)){ try { id = new URL(p.url || p.entity_url).hostname.replace(/^www\./, ''); } catch(e){} }
+    }
+    else if (a === 'prompt'){ art = 'prompt'; id = p.entity_id; }
+    else if (a === 'response' || a === 'prompt_run'){ art = 'response'; id = p.entity_id; }
+    id = String(id || '').trim();
+    if (!art || !id) return false;
+    return C.drawerOeffnen(art, id, 'mira') === true;
+  }
   function openEvidenceFor(wrap){
     var row0 = wrap.closest('.am-msg');
     var payload = {
@@ -7885,6 +7905,12 @@
       domain: wrap.getAttribute('data-domain') || '',
       title: wrap.getAttribute('data-title') || ''
     };
+    /* LOKAL OEFFNET MIRA DEN DRAWER SELBST (10.10. gemeldet: "kein einziger Evidence-Klick
+       funktioniert"). Die Seite hat keinen Bubble-Workflow mehr dahinter; der Weg ist derselbe
+       wie auf allen anderen Seiten-Komponenten: UC.drawerOeffnen -> openDrawer(art, id) der App.
+       Nur wenn es dafuer keinen Drawer gibt (unbekannte Art, keine Kennung, openDrawer fehlt),
+       geht die Meldung wie bisher an Bubble. */
+    if (amLokal && evidenceDrawer(payload)) return;
     if (window.bubble_fn_ask_mira_open_evidence) window.bubble_fn_ask_mira_open_evidence(JSON.stringify(payload));
     else { window.dispatchEvent(new CustomEvent('askmira:open_evidence', { detail: payload })); }
   }
@@ -10600,8 +10626,21 @@
       var h = Math.round(vv ? vv.height : window.innerHeight);
       if (p !== _lp || h !== _lh){ _lp = p; _lh = h; scheduleFit(); }
     }
-    function elternBeobachten(){
+    /* DER WIRT, NICHT DIE HUELLE (10.10.): steckt Mira in der Huelle der Mira-Seite
+       (.umi-root, display: contents), hat diese keinen eigenen Kasten -- gemessen und beobachtet
+       wird dann das Element darueber, also wieder Bubbles HTML-Element wie vorher. */
+    function wirt(){
       var el = root.parentElement;
+      while (el && el !== document.body){
+        var d = '';
+        try { d = getComputedStyle(el).display; } catch(e){}
+        if (d !== 'contents') break;
+        el = el.parentElement;
+      }
+      return el;
+    }
+    function elternBeobachten(){
+      var el = wirt();
       if (!el || el === _roZiel || !window.ResizeObserver) return;
       _roZiel = el;
       if (_ro){ try { _ro.disconnect(); } catch(e){} }
@@ -10620,7 +10659,8 @@
          faengt den Fall ab, dass der Waechter aus irgendeinem Grund stumm bleibt. */
       if (_ro && (++_takt % 10) !== 0) return;
       if (!visible()) return;
-      var p = root.parentElement ? Math.round(root.parentElement.getBoundingClientRect().height) : 0;
+      var w = wirt();
+      var p = w ? Math.round(w.getBoundingClientRect().height) : 0;
       hoeheMelden(p);
     }
     /* Der sichtbare Bereich aendert sich ohne Groessenaenderung des Elternelements -- Tastatur auf
@@ -10644,13 +10684,13 @@
       if (kern && kern.beobachteGroesse){
         kern.beobachteGroesse(document.documentElement, watch, { hoehe: true });
         kern.beobachteGroesse(document.body, watch, { hoehe: true });
-        if (root.parentElement) kern.beobachteGroesse(root.parentElement, watch, { hoehe: true });
+        if (wirt()) kern.beobachteGroesse(wirt(), watch, { hoehe: true });
       } else {
         try { new ResizeObserver(watch).observe(document.documentElement); } catch(_){}
         try { new ResizeObserver(watch).observe(document.body); } catch(_){}
         // a sibling Bubble element resizing (its own late content, a group toggling) can shift OUR
         // position without document/body ever changing size -- watch our own host container too.
-        try { if (root.parentElement) new ResizeObserver(watch).observe(root.parentElement); } catch(_){}
+        try { if (wirt()) new ResizeObserver(watch).observe(wirt()); } catch(_){}
       }
     }
     window.addEventListener('orientationchange', function(){ setTimeout(fit, 60); setTimeout(fit, 250); });
