@@ -70,6 +70,13 @@
   /* Hoechstens 5 Topics je Prompt -- dieselbe Grenze wie im Sammeleditor der Tabelle und in der
      Datenbank (Vertrag Prompt Insights, 10.10.). */
   var TOPIC_MAX = 5;
+  /* Dieselben Grenzen wie die Datenbank (prompts_add_v1: 3 bis 500 Zeichen nach dem Trimmen).
+     Hier vorab, damit eine Zeile, die sicher abgelehnt wird, gar nicht erst in der Liste steht --
+     und damit niemand 100 Zeilen zu je 50.000 Zeichen an die Datenbank schickt (Audit 10.10.). */
+  var TEXT_MIN = 3, TEXT_MAX = 500;
+  /* Eine CSV mit 100 Prompts zu je 500 Zeichen hat rund 50 KB. 1 MB ist reichlich -- eine groessere
+     Datei wird gar nicht erst gelesen, statt den Tab beim Zerlegen einzufrieren (Audit 10.10.). */
+  var CSV_MAX_BYTES = 1024 * 1024;
 
   var ICON = {
     /* All Feather, taken from the set. */
@@ -382,11 +389,12 @@
   function normKey(t) { return String(t == null ? "" : t).trim().toLowerCase().replace(/\s+/g, " "); }
 
   function addRows(list) {
-    var dropped = 0, dupes = 0, seen = {};
+    var dropped = 0, dupes = 0, laenge = 0, seen = {};
     S.rows.forEach(function (r) { seen[normKey(r.text)] = 1; });
     list.forEach(function (r) {
       var t = String(r.text == null ? "" : r.text).trim();
       if (!t) return;
+      if (t.length < TEXT_MIN || t.length > TEXT_MAX) { laenge++; return; }
       var k = normKey(t);
       if (seen[k]) { dupes++; return; }
       if (S.rows.length >= MAX_PROMPTS) { dropped++; return; }
@@ -398,12 +406,14 @@
        als Ganzes schon -- und nur so steht das Verb im Deutschen richtig. */
     if (dupes)   notes.push(dupes === 1 ? tr("1 duplicate skipped")
                                         : tr("{n} duplicates skipped").replace("{n}", dupes));
+    if (laenge)  notes.push(laenge === 1 ? tr("1 row left out (3 to 500 characters)")
+                                         : tr("{n} rows left out (3 to 500 characters)").replace("{n}", laenge));
     if (dropped) notes.push((dropped === 1 ? tr("1 more row left out")
                                            : tr("{n} more rows left out").replace("{n}", dropped)) +
                             " (" + tr("{n} prompts per batch").replace("{n}", MAX_PROMPTS) + ")");
     /* Komma statt Mittelpunkt (seit 03.10. keine Punkte als Trenner), Klammer statt Geviertstrich. */
     S.capNote = notes.join(", ");
-    return dropped + dupes;
+    return dropped + dupes + laenge;
   }
 
   /* ---------------- markup ---------------- */
@@ -451,7 +461,7 @@
       : "";
     if (S.editing === r.id) {
       return '<li class="uap-row is-editing" data-id="' + esc(r.id) + '">' +
-               '<textarea class="uap-rowedit" rows="1">' + esc(r.text) + '</textarea>' +
+               '<textarea class="uap-rowedit" rows="1" maxlength="500">' + esc(r.text) + '</textarea>' +
              '</li>';
     }
     return '<li class="uap-row" data-id="' + esc(r.id) + '">' +
@@ -836,6 +846,11 @@
   function readFile(file) {
     if (!file) return;
     S.csvName = file.name || "";
+    if (file.size > CSV_MAX_BYTES) {
+      S.csvNote = tr("That file is too large (1 MB at most)."); S.csvSkipped = 0;
+      renderCsvNote();
+      return;
+    }
     var fr = new FileReader();
     fr.onload = function () {
       var res;

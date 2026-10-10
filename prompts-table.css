@@ -263,7 +263,10 @@
   --upt-sep-gap: 12px;
 
   position: fixed !important;
-  bottom: 80px !important;
+  /* 24 wie die Toasts (10.10., "zu weit oben, sieht aus, als liesse sie Platz fuer einen Toast"):
+     vorher 80. Kommt ein Toast, waehrend die Leiste steht, stapelt core ihn 12px darueber
+     (TOAST_DARUEBER), also ungefaehr dorthin, wo die Leiste vorher stand. */
+  bottom: 24px !important;
   /* Mitte der FREIEN Flaeche, nicht des Fensters -- siehe max-width darunter. */
   left: calc(50% + var(--up-sidebar-w, 0px) / 2) !important;
   /* Below the host page's own floating groups/drawers + their backdrops (a real, documented
@@ -457,10 +460,9 @@
    richtig, --up-accent-fg waere im Dunkeln fast schwarz. */
 .upt-bulkbar-delete.is-armed { background: var(--vt-down); color: #fff; }
 .upt-bulkbar-delete.is-armed:hover { opacity: .9; }
-/* Haelt die letzte Zeile frei, solange die Leiste steht: sie sitzt 80px ueber dem unteren
-   Rand und ist 48 hoch, endet also bei 128 -- 148 laesst 20px Luft. (Der Zusatz fuer den
-   verwaschenen Ring ist am 22.09. entfallen, den Ring gibt es nicht mehr.) */
-.upt-root.is-bulk { padding-bottom: 148px; }
+/* Haelt die letzte Zeile frei, solange die Leiste steht: sie sitzt 24px ueber dem unteren
+   Rand und ist 48 hoch, endet also bei 72 -- 92 laesst 20px Luft (vorher 80 + 48 + 20 = 148). */
+.upt-root.is-bulk { padding-bottom: 92px; }
 
 /* ---------- topic section ----------
    Not a dropdown: it slides out of the bar's own lower edge, so there is one surface instead of
@@ -627,10 +629,13 @@
    put a 13px step into the transition. */
 /* IN DER AKZENTFARBE (10.10. angefordert: "Schrift in Primaerfarbe, Hintergrund in etwas weniger
    Deckkraft Primaerfarbe"): Schrift in der Akzent-Tinte, die Flaeche 10 % davon -- dasselbe Paar wie
-   .up-you in core. Vorher Flaeche --vc-heading-bg, Schrift --vc-text. */
+   .up-you in core. Vorher Flaeche --vc-heading-bg, Schrift --vc-text.
+   Bei "Standard + Blau" (data-chartakzent, nur dann gibt es --up-chart-ink) ebenfalls blau
+   (10.10. angefordert), sonst die Tinte der gewaehlten Akzentfarbe. */
+.upt-root { --upt-chip-ink: var(--up-chart-ink, var(--up-accent-ink)); }
 .upt-selcount { display: inline-flex; align-items: center; gap: 6px; height: 24px;
-  padding: 0; border-radius: 7px; background: color-mix(in srgb, var(--up-accent-ink) 10%, transparent);
-  font-size: 12px; font-weight: 500; color: var(--up-accent-ink); white-space: nowrap; flex: 0 0 auto;
+  padding: 0; border-radius: 7px; background: color-mix(in srgb, var(--upt-chip-ink) 10%, transparent);
+  font-size: 12px; font-weight: 500; color: var(--upt-chip-ink); white-space: nowrap; flex: 0 0 auto;
   margin-left: 0; margin-right: 0; max-width: 0; opacity: 0; overflow: hidden; pointer-events: none;
   transform: translateX(-6px);
   transition: max-width 200ms var(--up-ease), opacity 120ms ease,
@@ -650,8 +655,8 @@
 /* Das X in derselben Tinte. Mit .up-root.upt-root davor: die Knopf-Regeln aus core tragen im Dunkeln
    .up-root[data-theme="dark"] (0,3,0, beim Ueberfahren 0,4,0) -- entschieden wird ueber die
    Spezifitaet, nicht ueber die Ladereihenfolge. */
-.up-root.upt-root .upt-selcount .upt-selcount-clear { color: var(--up-accent-ink); }
-.up-root.upt-root .upt-selcount .upt-selcount-clear:hover { background: color-mix(in srgb, var(--up-accent-ink) 16%, transparent); color: var(--up-accent-ink); }
+.up-root.upt-root .upt-selcount .upt-selcount-clear { color: var(--upt-chip-ink); }
+.up-root.upt-root .upt-selcount .upt-selcount-clear:hover { background: color-mix(in srgb, var(--upt-chip-ink) 16%, transparent); color: var(--upt-chip-ink); }
 
 /* ---------- responsive: narrow first column and dropped columns ---------- */
 .up-root.is-vnarrow .upt-td-prompt .up-row-goto { display: none; }

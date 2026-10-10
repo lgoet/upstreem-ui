@@ -1393,6 +1393,10 @@
     "1 adjusted (special characters removed)": "1 angepasst (Sonderzeichen entfernt)",
     "{n} adjusted (special characters removed)": "{n} angepasst (Sonderzeichen entfernt)",
     "{n} unchanged": "{n} unverändert",
+    "Too many prompts selected": "Zu viele Prompts ausgewählt",
+    "Daily limit reached": "Tagesgrenze erreicht",
+    "You can add or reactivate more prompts tomorrow.": "Weitere Prompts kannst du morgen hinzufügen oder reaktivieren.",
+    "Change up to 1,000 prompts at once, or 500 when ticked one by one.": "Ändere höchstens 1.000 Prompts auf einmal, oder 500, wenn du sie einzeln anhakst.",
     "Topics added to {n} prompt": "Topics zu {n} Prompt hinzugefügt",
     "Topics added to {n} prompts": "Topics zu {n} Prompts hinzugefügt",
     "{n} prompt set to active": "{n} Prompt auf aktiv gesetzt",
@@ -1629,6 +1633,9 @@
     "1 more row left out": "1 weitere Zeile ausgelassen",
     "{n} more rows left out": "{n} weitere Zeilen ausgelassen",
     "{n} prompts per batch": "{n} Prompts pro Durchgang",
+    "1 row left out (3 to 500 characters)": "1 Zeile weggelassen (3 bis 500 Zeichen)",
+    "{n} rows left out (3 to 500 characters)": "{n} Zeilen weggelassen (3 bis 500 Zeichen)",
+    "That file is too large (1 MB at most).": "Die Datei ist zu groß (höchstens 1 MB).",
     "Download template": "Vorlage herunterladen",
 
     /* ---- Filterleiste, zweiter Durchgang ---- */
@@ -11045,8 +11052,20 @@
      forcing a layout read (void el.offsetWidth), then re-adding it makes the browser treat it as a
      fresh animation start every time, even if the previous spin from a rapid re-click hasn't
      finished. Used by both prompts-page-header.js and dashboard-page-header.js's Refresh buttons. */
+  /* DIE DREHUNG LAEUFT AUF EINER HTML-HUELLE, NICHT AUF DEM SVG (10.10., "die Refresh-Animation
+     laggt"). Chrome kann eine Transformation an einem SVG-Element nicht auf dem Compositor laufen
+     lassen -- sie haengt am Hauptthread, und genau beim Aktualisieren baut die Seite ihre Tabellen
+     neu. Eine <span>-Huelle (display block) kann er uebernehmen; sie wird beim ersten Drehen einmal
+     um das Zeichen gelegt, die Knoepfe in den Vorlagen bleiben, wie sie sind. */
   function spinOnce(el){
     if (!el) return;
+    var sv = el.querySelector(":scope > svg");
+    if (sv){
+      var h = document.createElement("span");
+      h.className = "up-spinhuelle";
+      el.insertBefore(h, sv);
+      h.appendChild(sv);
+    }
     el.classList.remove("is-spinning");
     void el.offsetWidth;
     el.classList.add("is-spinning");
@@ -22163,9 +22182,15 @@
       if (!raw) return [];
       var arr = JSON.parse(raw);
       if (!Array.isArray(arr)) return [];
-      /* Dieselbe Pruefung wie bisher: ein Eintrag ohne Namen oder ohne Themen ist keiner. */
+      /* Dieselbe Pruefung wie bisher: ein Eintrag ohne Namen oder ohne Themen ist keiner.
+         Die Farbe nur als #rrggbb (Audit 10.10.): sie landet in einem style-Attribut, und der
+         Speicher ist von Hand beschreibbar -- "red;background:url(...)" waere dort CSS. Eine
+         ungueltige Farbe faellt weg, dann gilt die Vorgabe des Aufrufers (in der Tabelle grau). */
       return arr.filter(function(g){
         return g && typeof g.key === "string" && g.key && isArr(g.tag_ids) && g.tag_ids.length;
+      }).map(function(g){
+        if (g.color != null && !/^#[0-9a-fA-F]{6}$/.test(String(g.color))) delete g.color;
+        return g;
       });
     } catch(e){ return []; }
   }

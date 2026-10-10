@@ -85,6 +85,9 @@
      Keine internen Namen (Regel der App). */
   function fehlerSatz(erg, wobei) {
     var m = D.meldung(erg), n = D.hinweisZahl(erg), h = D.hinweis(erg);
+    /* Vorab fuer eine moegliche Tagesgrenze (Audit-Auftrag 10.10., Abschnitt 2) -- sonst traefe
+       ihr Fehler die Planlimit-Meldung darunter und sagte das Falsche. */
+    if (/daily_limit/.test(m)) return { text: t("Daily limit reached"), desc: t("You can add or reactivate more prompts tomorrow.") };
     if (/limit_reached/.test(m)) {
       if (/^topics_/.test(m)) return { text: t("Your team has reached the topic limit"), desc: t("Delete a topic you no longer need to add a new one.") };
       if (/^inactive:/.test(h)) return { text: t("Too many inactive prompts"), desc: t("Delete inactive prompts you no longer need, then try again.") };
@@ -176,11 +179,14 @@
         '<div class="up-ph-left"><h1 class="up-ph-heading">' + esc(t("Prompt Insights")) + '</h1>' +
           '<p class="up-ph-desc">' + esc(t("Manage Prompts, Topics and monitor latest Responses")) + '</p></div>' +
         '<div class="upi-tools">' +
-          /* Derselbe Knopf wie im bisherigen Kopf: kurz "Add", breit "Add Prompts". */
+          /* Derselbe Knopf wie im bisherigen Kopf, und das Etikett ENGLISCH wie dort: kurz "Add",
+             breit "Add Prompts". Die Sprachumschaltung von core (knopfEtikett) baut es aus dem
+             GANZEN englischen Satz neu ("Prompts hinzufuegen"). Hier vorab Stueck fuer Stueck
+             uebersetzt, kam "Hinzufuegen Prompts" heraus (10.10. gemeldet). */
           '<button class="up-ph-addbtn up-export upi-add" type="button" data-upi-fuer="allprompts" aria-label="' + esc(t("Add Prompts")) + '">' + PLUS_SVG +
-            '<span>' + esc(t("Add")) + ' <span class="up-ph-addbtn-full">' + esc(t("Prompts")) + '</span></span></button>' +
+            '<span>Add <span class="up-ph-addbtn-full">Prompts</span></span></button>' +
           '<button class="up-ph-addbtn up-export upi-addtopic" type="button" data-upi-fuer="topics" aria-label="' + esc(t("Add Topic")) + '">' + PLUS_SVG +
-            '<span>' + esc(t("Add")) + ' <span class="up-ph-addbtn-full">' + esc(t("Topic")) + '</span></span></button>' +
+            '<span>Add <span class="up-ph-addbtn-full">Topic</span></span></button>' +
           '<button class="up-ph-iconbtn upi-refresh" type="button" data-upi-fuer="allprompts responses" aria-label="' + esc(t("Refresh")) + '" data-tip="' + esc(t("Refresh Data")) + '">' + REFRESH_SVG + '</button>' +
         '</div>' +
       '</div>' +
@@ -631,6 +637,13 @@
       if (schreibtGerade || !team()) return;
       var z = ziel(d);
       if (!z.filter && !z.ids.length) return;
+      /* Die Grenzen des Vertrags (6.4) vorab, mit einem Satz statt eines Fehlers der Datenbank:
+         hoechstens 1.000 Ziele, 500 einzeln angehakte, 500 abgewaehlte (Audit 10.10.). */
+      if ((z.filter && z.erwartet > 1000) || (!z.filter && z.ids.length > D.GRENZE.ids) ||
+          (z.filter && z.ausgeschlossen.length > D.GRENZE.ausgeschlossen)) {
+        toast(t("Too many prompts selected"), "error", t("Change up to 1,000 prompts at once, or 500 when ticked one by one."));
+        return;
+      }
       schreibtGerade = true;
       schreiben(D.sammel(team(), aktion, z, tagIds)).then(function (erg) {
         schreibtGerade = false;

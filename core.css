@@ -193,14 +193,18 @@
          --vt-down: #d25d5d erreicht auf #1f1f1b nur 3.9:1, #ff7a66 traegt. Erfolg ist dort das
          --vt-up des dunklen Themas; auf der hellen Flaeche (Dunkel-Thema) die Werte des hellen. */
       --vc-toast-bg: var(--vc-inverse-bg);
-      --vc-toast-ink: var(--vc-inverse-ink);
-      --vc-toast-sub: rgba(255,255,255,.64);
+      /* Die Schrift ist die des ANDEREN Themas (10.10.: "immer in Fontfarbe des je anderen
+         Themes, nicht weiss und schwarz"): Titel #e0e0e0 (--vc-text dunkel), Untertitel und
+         Zeichen #a0a0a0 (--vc-third dunkel), das X #6c717a (--vc-fourth dunkel). Das dunkle
+         Thema unten traegt spiegelbildlich die hellen Werte. */
+      --vc-toast-ink: #e0e0e0;
+      --vc-toast-sub: #a0a0a0;
       --vc-toast-ok: #60d25d;
       --vc-toast-fehler: #ff7a66;
-      --vc-toast-neutral: rgba(255,255,255,.72);
+      --vc-toast-neutral: #a0a0a0;
       --vc-toast-flaeche: rgba(255,255,255,.10);
       --vc-toast-flaeche-hover: rgba(255,255,255,.18);
-      --vc-toast-zu: rgba(255,255,255,.5);
+      --vc-toast-zu: #6c717a;
 }
 [data-theme="dark"], .up-root[data-theme="dark"] {
       /* Die vier Tiefen im dunklen Thema. Sie sind NICHT die hellen mit mehr Deckkraft, auch
@@ -224,7 +228,7 @@
          hellen Themas, die Flaechen der Knoepfe aus Schwarz statt aus Weiss. */
       --vc-toast-bg: var(--vc-inverse-bg);
       --vc-toast-ink: var(--vc-inverse-ink);
-      --vc-toast-sub: rgba(31,31,27,.64);
+      --vc-toast-sub: #6b6f78;
       --vc-toast-ok: #2ea84a;
       --vc-toast-fehler: #b0200c;
       --vc-toast-neutral: #6b6f78;
@@ -5093,7 +5097,12 @@
    the animation instead of doing nothing (the class name alone wouldn't change, so a plain
    classList.add on an already-spinning button is a no-op without that reset). */
 @keyframes up-ph-spin { to { transform: rotate(360deg); } }
-.up-ph-iconbtn.is-spinning svg { animation: up-ph-spin 1s ease-in-out; }
+/* Gedreht wird die Huelle (UC.spinOnce legt sie beim ersten Mal um das Zeichen): ein HTML-Element,
+   dessen Transformation der Compositor uebernimmt -- am svg selbst nicht, dort ruckelte es, sobald
+   die Seite beim Aktualisieren rechnete. > svg bleibt fuer Knoepfe ohne Huelle. */
+.up-spinhuelle { display: block; line-height: 0; }
+.up-ph-iconbtn.is-spinning > svg,
+.up-ph-iconbtn.is-spinning > .up-spinhuelle { animation: up-ph-spin 1s ease-in-out; will-change: transform; }
 
 /* ---------- subpage nav: N tabs + a sliding active indicator (built by UC.makePageNav) ---------- */
 .up-ph-nav { display: flex; position: relative; margin-top: 32px; gap: 4px; }

@@ -4988,8 +4988,8 @@
        localStorage je Instanz, dasselbe Muster wie rhKey/gKey hier in der Datei. Das window-Feld
        bleibt als schneller Zwischenspeicher: es beantwortet den Neubau der Wurzel ohne Zugriff
        auf den Speicher, und beide werden zusammen geschrieben. */
-    /* ZU IST DIE VORGABE (29.09. spaet angefordert: "die Verteilung nach Topics und die anderen
-       Cards per Default erstmal ausblenden"). Ohne gemerkten Stand also zu.
+    /* OFFEN IST DIE VORGABE (10.10. angefordert: "die Cards oben wieder per Default sichtbar"; vom
+       29.09. bis dahin zu). Ohne gemerkten Stand also offen; wer sie zuklappt, behaelt das.
        Der Schluessel ist NEU (upt_kpizu2__), und das ist noetig: bis hierher schrieb schon der
        AUFBAU den Stand in den Speicher, nicht erst ein Klick -- unter dem alten Schluessel stand
        damit bei jedem, der die Seite je geoeffnet hat, ein "no" aus der Zeit, als offen die
@@ -5002,8 +5002,8 @@
       if (Object.prototype.hasOwnProperty.call(w, instanceId)) return !!w[instanceId];
       try {
         var v = window.localStorage.getItem(kpiKey());
-        return v == null ? true : v === "yes";
-      } catch(e){ return true; }
+        return v == null ? false : v === "yes";
+      } catch(e){ return false; }
     }
     function kpiAugeBinden(){
       var btn = kpiZeile && kpiZeile.querySelector("[data-kpi-eye]");
