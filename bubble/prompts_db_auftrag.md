@@ -123,15 +123,15 @@ Filtern plus `p_groups` und `p_mode`:
   Kompromiss); ihre Zahlen zeigen den Stand des letzten Ladens. Neu sollen sie immer mit
   denselben Filtern laden wie die Tabelle. Bitte sagen, ob das teuer wird.
 
-**Schreiben** (heute Bubble-Workflows, RPC-Namen unbekannt):
+**Schreiben** (heute Bubble-Workflows; die Aufrufe dahinter stehen in Abschnitt 3):
 
 | Aktion | Nutzlast heute | Hinweise |
 |---|---|---|
-| Topics **eines** Prompts ersetzen | `prompt_id`, `tag_ids[]` (vollständige neue Menge, darf leer sein) | heute **ohne** Obergrenze |
+| Topics **eines** Prompts ersetzen | `prompt_id`, `tag_ids[]` (vollständige neue Menge, darf leer sein) | heute **ohne** Obergrenze. In Bubble ist dafür **kein Workflow** zu finden: die Änderung wird heute vermutlich nirgends gespeichert. Es braucht eine neue Funktion |
 | Sammelaktion: Topics **hinzufügen** | Auswahl (siehe unten) + `tag_ids` (höchstens 5, nur im Browser geprüft) | nur hinzufügen, nie entfernen |
 | Sammelaktion: aktiv / inaktiv setzen | Auswahl + Ziel `active`/`inactive` | Aktivieren verbraucht Kontingent: wird das Planlimit geprüft? |
 | Sammelaktion: löschen | Auswahl | nur im Reiter Inactive angeboten. Endgültig? Was passiert mit Runs, Responses und Kennzahlen? |
-| Neues Topic anlegen **und** der Auswahl zuweisen | Auswahl + `new_topic_name`, `new_topic_emoji`, `new_topic_hex_light`, `new_topic_hex_dark` | heute ein Workflow |
+| Neues Topic aus dem Sammelpanel | `new_topic_name`, `new_topic_emoji`, `new_topic_hex_light`, `new_topic_hex_dark` (die Auswahl reist mit, wird aber nicht benutzt) | legt **nur** das Topic an (`create_tag`). Die Oberfläche wählt es danach im Panel vor; zugewiesen wird erst mit „Apply“ über die Sammelaktion |
 
 **Die Auswahl** hat heute drei Formen:
 
@@ -147,6 +147,11 @@ und Markenfilter. Eine Sammelaktion kann also mehr Prompts treffen, als der Nutz
 schickt die Seite für `filter` und `filter_group` **genau dieselben Filterparameter wie die
 Lese-Funktion** plus `excluded_ids`. Die Datenbank rechnet die Zielmenge selbst, nach derselben
 Logik wie die Liste.
+
+So läuft es heute in Bubble: Modus `ids` geht direkt an die Schreibfunktion; Modus `filter` ruft
+erst `resolve_prompt_ids` und gibt deren IDs an die Schreibfunktion. Für `filter_group` ist in
+den Workflows **keine** Bedingung zu sehen: eine Sammelaktion nach „Alle N auswählen“ in einer
+Gruppe tut heute vermutlich nichts.
 
 ### 2.2 Responses: die Tabelle
 
@@ -221,9 +226,10 @@ Vorbild. Beide Wege sollen **eine** gemeinsame interne Anlage-Funktion benutzen.
   Antwort jeder schreibenden Funktion mitgeben (wie `prompt_research_decide_v1`:
   `prompts_active`, `prompts_limit`, `prompts_remaining`).
 - **Aktualisieren** auf All Prompts bzw. Responses: Regel der App ist, dass jeder
-  Aktualisieren-Knopf den DB-Cache seines Bereichs leert und frisch lädt. Gibt es einen Cache für
-  die Prompt-Insights? Dann bitte `clear_prompts_cache_v1(p_team)`. Für Responses: reicht
-  `clear_dashboard_cache_v1`, oder leert das zu viel?
+  Aktualisieren-Knopf den DB-Cache seines Bereichs leert und frisch lädt. Heute leert das
+  Aktualisieren **keinen** Cache; `clear_prompt_insights_cache` läuft nur nach Schreibaktionen.
+  Neu: Aktualisieren auf All Prompts leert den Prompt-Insights-Cache (`_v1`-Fassung). Für
+  Responses: reicht `clear_dashboard_cache_v1`, oder leert das zu viel?
 - **Ablagen der App:** Topics und Markets kommen heute beim Seitenaufbau von Bubble
   (`setUpstreemTopics`, Markets-Store). Nach Topic- und Prompt-Änderungen sollen beide neu
   geladen werden. Gibt es Lesefunktionen dafür (`get_tags_v2`, `get_markets_v2`), die die Seite
@@ -295,10 +301,32 @@ order by 1, 2, 3;
 --    gleicher Markt im selben Team), Topics ohne Prompt, Zuordnungen auf gelöschte Topics.
 ```
 
-Für jede Funktion, die die Prompts-Ansicht heute benutzt (mindestens
-`cached_prompt_insights_alltime_v18`, `cached_prompt_topics_grouped_v1`, die Funktionen hinter
-Topics anlegen/bearbeiten/löschen, Topics je Prompt, Sammelaktionen, Prompts anlegen, die
-Responses-Liste `[NAMEN ERFRAGEN, falls aus A nicht eindeutig]`):
+**Die Aufrufe der heutigen Seite** (Namen der Aufrufe in Bubble; welche Funktion mit welcher
+Fassung dahinter steht, bitte du selbst ermitteln):
+
+| Aufruf in Bubble | Wofür (gesichert = im Workflow gesehen) |
+|---|---|
+| `get_prompt_insights_alltime` | flache Tabelle (gesichert) |
+| `cached_prompt_topics_grouped` | Gruppen (gesichert) |
+| `get_tags` | Topic-Liste (gesichert) |
+| `create_prompt_with_tags` | „Add prompts“ (gesichert) |
+| `clear_prompt_insights_cache` | nach jeder Schreibaktion außer „Topic anlegen“ (gesichert). **Nicht** beim Aktualisieren |
+| `get_team_plan_quota` | Kontingent: beim Seitenaufbau, nach Filter- und Zeitraumwechsel und nach Schreibaktionen (gesichert) |
+| `create_tag` | Topic anlegen, aus der Verwaltung und aus dem Sammelpanel (gesichert). Antwortet mit `created` (yes/no): wann ist es `no`? |
+| `update_tag`, `delete_tag` | Topic bearbeiten, löschen (gesichert) |
+| `assign_tags_bulk` | Sammelaktion Topics zuweisen (gesichert) |
+| `set_prompts_active`, `set_prompts_inactive`, `delete_prompts` | Sammelaktionen (gesichert) |
+| `resolve_prompt_ids` | „Alle N auswählen“ → IDs, vor jeder Sammelaktion im Modus `filter` (gesichert). Bitte genau beschreiben, welche Filter sie kennt |
+
+Nach jeder Schreibaktion außer dem Anlegen eines Topics ruft Bubble `clear_prompt_insights_cache`
+und lädt Tabelle und Kontingent neu, nach Topic-Änderungen und Löschen auch die Topics.
+
+Die Responses-Liste steht **nicht** in dieser Liste; sie wird in einem eigenen Bubble-Element
+geladen. Bitte die Funktion finden, die heute Responses einer Seite liefert (Vorgänger von
+`cached_dashboard_responses_v1`, im Dashboard-Vertrag „wie v21“), und prüfen, ob
+`cached_dashboard_responses_v1` für dieselben Filter dieselben Zeilen liefert.
+
+Für jede dieser Funktionen und für die Responses-Liste:
 
 1. die Definition;
 2. ein echtes Beispiel (Hauptteam, letzte 30 Tage): die ersten 3 Zeilen und die Laufzeit, kalt
@@ -389,9 +417,7 @@ ein `${` oder ein Backslash am Ende tötet dort den ganzen Schritt.
    Opportunities, Kennzahlen im Dashboard)? Ändern sich historische Zahlen anderer Ansichten?
 2. Topic löschen: Zuordnungen weg? Prompts ohne Topic? Was passiert mit eigenen Gruppierungen
    (liegen im Browser)?
-3. „Neues Topic anlegen und der Auswahl zuweisen“: in **einer** Transaktion, sonst bleibt bei
-   einem Fehler ein Topic ohne Zuweisung stehen.
-4. Welche Caches muss jede Schreibfunktion leeren (Prompt-Insights, Dashboard, Citations,
+3. Welche Caches muss jede Schreibfunktion leeren (Prompt-Insights, Dashboard, Citations,
    Performance-Radar, Topic-Heatmap)?
 
 ---
@@ -421,9 +447,9 @@ Schlag einen Vertrag in der Form der Seiten-Verträge vor. Zum Prüfen, nicht al
 | `prompt_topics_set_v1` | Topics eines Prompts ersetzen |
 | `prompts_bulk_v1` | Sammelaktionen `add_topics`, `set_active`, `set_inactive`, `delete`; Ziel `ids` oder `filter` (dieselben Filter wie die Liste) + `excluded_ids` + `p_expected_count` |
 | `topics_list_v1` (oder bestehend) | Topic-Liste |
-| `topic_save_v1`, `topic_delete_v1` | anlegen/bearbeiten, löschen; Anlage optional mit Zuweisung an eine Auswahl in einer Transaktion |
+| `topic_save_v1`, `topic_delete_v1` | anlegen/bearbeiten, löschen |
 | `cached_dashboard_responses_v1` (besteht) | Responses |
-| `clear_prompts_cache_v1` | Aktualisieren |
+| `clear_prompt_insights_cache_v1` | Aktualisieren |
 
 Dazu:
 
