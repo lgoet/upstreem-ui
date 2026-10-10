@@ -1,0 +1,50 @@
+<!--
+  UPSTREEM — MIRA-SEITE als EINE Komponente (Praefix umi), 10.10.2026
+
+  WOHIN: ein HTML-Element in die Mira-Ansicht, an die Stelle des bisherigen Mira-Elements (.am-root),
+  mit DERSELBEN Hoehe und denselben Einstellungen (feste Hoehe; Mira misst sich selbst ein). Die
+  Komponente baut Ask Mira (ask-mira.js) im lokalen Modus selbst ein.
+
+  ── VORAUSSETZUNG: VERTRAG D IST IN PROD ───────────────────────────────────────
+  mira_v1.sql eingespielt (Lukas bestaetigt), Edge Functions mira-send und mira-export-pdf deployt.
+  Die Seite ruft selbst (Nutzer-JWT):
+      mira_sessions_v1, mira_messages_v1, mira_turn_status_v1
+      mira_session_update_v1, mira_session_delete_v1, mira_project_save_v1, mira_project_delete_v1
+      mira_settings_v1, mira_settings_set_v1
+      mira-send (Text und Sprache), mira-export-pdf
+      Realtime: privater Kanal user:<uid>, alle Mira-Ereignisse
+  Vertrag: bubble/seiten_db_vorschlag_2.md, Abschnitt 15.
+
+  ── Was Bubble NICHT mehr tut ─────────────────────────────────────────────────
+  Workflows an diesen JavaScript-to-Bubble-Funktionen fallen weg (die Seite ruft sie nicht mehr):
+      bubble_fn_ask_mira_send, _select_chat, _new_chat, _refresh_chat, _refresh_chats,
+      _more_chats, _realtime_resubscribe, _rename_chat, _delete_chat, _pin_chat, _unpin_chat,
+      _move_chat, _create_project, _create_project_with_chat, _rename_project, _delete_project,
+      _settings_change, _export_pdf, _voice, _voice_start, _voice_cancel, _voice_error
+  Ebenso die Lade- und Realtime-Schritte fuer Mira: askMiraSetPreviousChats (in der Mira-Ansicht),
+  askMiraSetProjects, askMiraSetSettings, askMiraSetModels, askMiraSetTopics, das Abo auf
+  mira_user_<id> samt askMiraRealtime / askMiraRealtimeReconnected, und der n8n-Aufruf fuer das PDF.
+  Modelle und Themen kommen aus den Ablagen der App (setUpstreemModels, setUpstreemTopics).
+
+  ── Was Bubble WEITER tut (Navigation in der App) ─────────────────────────────
+      bubble_fn_ask_mira_open_evidence        Evidence-Chip oeffnen (Drawer)
+      bubble_fn_ask_mira_create_opportunity, _move_opportunity_status, _opportunity_created
+      bubble_fn_miraAction (bzw. askMiraActionFn)
+      bubble_fn_ask_mira_suggested_question   (Meldung; gesendet wird von der Seite)
+      bubble_fn_quick_actions_search + MiraQuickActions.setResults (Suche im Plus)
+      askMiraSetFavicons / askMiraSetBrandLogos / askMiraSetMarket, falls sie heute gesetzt werden
+  Diese Elemente und Workflows bleiben, wie sie sind.
+
+  ── Attribute ─────────────────────────────────────────────────────────────────
+  data-instance  optional, Vorgabe "mira_page".
+  Kein data-isdark, kein data-cdn-pin: das Thema setzt core, den Pin das Header-Script.
+
+  ── Umstellen ─────────────────────────────────────────────────────────────────
+  1. Pin im Header-Script auf den Commit dieser Seite (oder neuer).
+  2. In der Mira-Ansicht das alte Mira-Element durch DIESES eine Element ersetzen.
+  3. Die Workflows aus "Was Bubble NICHT mehr tut" entfernen, die aus "WEITER" stehen lassen.
+     VORHER PRUEFEN: ruft einer der entfernten Workflows noch andere Setter auf (Dashboard,
+     Kontingent)? Den Schritt dann verschieben, nicht mitloeschen.
+  4. Spaeter (DB-Chat): Header-Auth an den beiden Mira-Webhooks einschalten.
+-->
+<div class="up-root umi-root" data-instance="mira_page"></div>

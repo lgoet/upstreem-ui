@@ -39,7 +39,9 @@
        laeuft, bekommt genau in dieser Luecke mira_progress und womoeglich das fertige
        mira_message_success. Ohne Stub faellt beides in ein window.askMiraRealtime, das es noch
        nicht gibt -- der try im Run-JS-Schritt schluckt es, und nichts sagt, dass etwas fehlt. */
-    "askMiraRealtime", "askMiraRealtimeReconnected"
+    "askMiraRealtime", "askMiraRealtimeReconnected",
+    /* Die Eingaenge der Mira-Seite (10.10.). */
+    "askMiraSendFailed", "askMiraNeuerChat"
   ];
   var __amBootQueue = window.__amBootQueue = window.__amBootQueue || [];
 
@@ -310,6 +312,46 @@
   var root = el || document.getElementById('ask-mira');
   if (!root || root.__askMiraInit) return;
   root.__askMiraInit = true;
+  /* LOKALER MODUS (10.10., Mira-Seite mira-page.js). Mit data-local="yes" laedt und schreibt die
+     Seite selbst (Supabase-RPCs, Edge Function mira-send, privater Realtime-Kanal). Die
+     Daten-Ereignisse gehen dann NICHT an Bubble, sondern als ein Fensterereignis
+     upstreem:askmira { name, wert } an die Seite -- der Wert genau so, wie Bubble ihn bekam.
+     Was Navigation in der App ist (Evidence oeffnen, Opportunity anlegen/verschieben, Aktionen,
+     Vorschlagsfragen), bleibt bei Bubble: die Seite kennt die Drawer der App nicht. */
+  var amLokal = root.getAttribute('data-local') === 'yes';
+  var AM_LOKAL = { send: 1, select_chat: 1, new_chat: 1, refresh_chat: 1, refresh_chats: 1,
+    realtime_resubscribe: 1, more_chats: 1, rename_chat: 1, delete_chat: 1, pin_chat: 1,
+    unpin_chat: 1, move_chat: 1, create_project: 1, create_project_with_chat: 1,
+    rename_project: 1, delete_project: 1, settings_change: 1, export_pdf: 1,
+    voice: 1, voice_start: 1, voice_cancel: 1, voice_error: 1 };
+  function amBfn(name){
+    if (amLokal && AM_LOKAL[name]){
+      return function(wert){
+        try { window.dispatchEvent(new CustomEvent('upstreem:askmira', { detail: { name: name, wert: wert } })); } catch(e){}
+      };
+    }
+    var f = window[AM_BUBBLE[name] || ('bubble_fn_ask_mira_' + name)];
+    return typeof f === 'function' ? f : undefined;
+  }
+  /* Die Namen AUSGESCHRIEBEN: so findet man jede Bubble-Funktion dieser Datei per Suche, und der
+     Vertragsabgleich (.contract_snapshot.py) sieht sie weiter. */
+  var AM_BUBBLE = {
+    send: 'bubble_fn_ask_mira_send', select_chat: 'bubble_fn_ask_mira_select_chat',
+    new_chat: 'bubble_fn_ask_mira_new_chat', refresh_chat: 'bubble_fn_ask_mira_refresh_chat',
+    refresh_chats: 'bubble_fn_ask_mira_refresh_chats', more_chats: 'bubble_fn_ask_mira_more_chats',
+    realtime_resubscribe: 'bubble_fn_ask_mira_realtime_resubscribe',
+    rename_chat: 'bubble_fn_ask_mira_rename_chat', delete_chat: 'bubble_fn_ask_mira_delete_chat',
+    pin_chat: 'bubble_fn_ask_mira_pin_chat', unpin_chat: 'bubble_fn_ask_mira_unpin_chat',
+    move_chat: 'bubble_fn_ask_mira_move_chat', create_project: 'bubble_fn_ask_mira_create_project',
+    create_project_with_chat: 'bubble_fn_ask_mira_create_project_with_chat',
+    rename_project: 'bubble_fn_ask_mira_rename_project', delete_project: 'bubble_fn_ask_mira_delete_project',
+    settings_change: 'bubble_fn_ask_mira_settings_change', export_pdf: 'bubble_fn_ask_mira_export_pdf',
+    voice: 'bubble_fn_ask_mira_voice', voice_start: 'bubble_fn_ask_mira_voice_start',
+    voice_cancel: 'bubble_fn_ask_mira_voice_cancel', voice_error: 'bubble_fn_ask_mira_voice_error',
+    create_opportunity: 'bubble_fn_ask_mira_create_opportunity',
+    move_opportunity_status: 'bubble_fn_ask_mira_move_opportunity_status',
+    opportunity_created: 'bubble_fn_ask_mira_opportunity_created'
+  };
   /* AB HIER IST DIE KOMPONENTE DA (24.09. gemeldet: "beim Pageload mit neuem Pin seh ich ab und
      zu ein komisches Mira-Fenster, was ich so in der App gar nicht habe").
      Das war kein fremdes Fenster -- das war Miras eigenes Markup, BEVOR sie es in die Hand
@@ -1130,7 +1172,7 @@
   }
   function emitMoveStatus(oid, newStatus, oldStatus){
     var payload = { opportunity_id: oid, recommendation_id: oid, status: newStatus, previous_status: oldStatus };
-    if (typeof window.bubble_fn_ask_mira_move_opportunity_status === 'function') window.bubble_fn_ask_mira_move_opportunity_status(JSON.stringify(payload));
+    if (amBfn('move_opportunity_status')) amBfn('move_opportunity_status')(JSON.stringify(payload));
     else { window.dispatchEvent(new CustomEvent('askmira:opportunity-move-status', { detail: payload })); }
   }
   function applyStatus(opt){
@@ -2158,7 +2200,7 @@
     var r = btn.getAttribute('data-mira-reason'); if (r != null) payload.reason = textFuerNutzlast(r);
     if (aid) _oppcState[aid] = { status: 'loading' };
     _oppcApplyState(btn, 'loading');
-    if (typeof window.bubble_fn_ask_mira_create_opportunity === 'function') window.bubble_fn_ask_mira_create_opportunity(JSON.stringify(payload));
+    if (amBfn('create_opportunity')) amBfn('create_opportunity')(JSON.stringify(payload));
     else { window.dispatchEvent(new CustomEvent('askmira:create-opportunity', { detail: payload })); }
   });
   // Bubble reports the RPC result: { action_id, status, recommendation, error }.
@@ -2174,7 +2216,7 @@
       if (aid) _oppcState[aid] = { status: (status === 'Created' ? 'created' : 'exists'), rec: rec };
       if (btns.length) btns.forEach(function(b){ _oppcSwapToCard(b, rec); });
       if (status === 'Created'){
-        if (typeof window.bubble_fn_ask_mira_opportunity_created === 'function'){ try { window.bubble_fn_ask_mira_opportunity_created(JSON.stringify(rec)); } catch(_){} }
+        if (amBfn('opportunity_created')){ try { amBfn('opportunity_created')(JSON.stringify(rec)); } catch(_){} }
         window.dispatchEvent(new CustomEvent('askmira:opportunity-created', { detail: { recommendation: rec } }));
       }
     } else if (status === 'AlreadyExists'){          // exists but no card returned -> just mark it added
@@ -4679,7 +4721,7 @@
        fertig wird. Beim allerersten Absenden gibt es noch keine Kennung; dann bleibt die Wahl
        leer, und der Setter darf den frisch angelegten Chat oeffnen. Genau richtig. */
     if (!versuch) nutzerWahl(S.activeChatId || NEUER_CHAT);
-    var fn = window.bubble_fn_ask_mira_send;
+    var fn = amBfn('send');
     if (typeof fn === 'function'){ fn(JSON.stringify(payload)); return; }
     if (versuch < 12){
       setTimeout(function(){ anBubbleSenden(payload, versuch + 1); }, versuch < 4 ? 100 : 400);
@@ -4688,7 +4730,13 @@
     /* Aufgegeben. Das Ereignis geht trotzdem hinaus -- die Landingpage und der Prueftand hoeren
        darauf, und dort gibt es bubble_fn_* gar nicht. */
     window.dispatchEvent(new CustomEvent('askmira:send', { detail: payload }));
-    if (window.bubble_fn_ask_mira_send) return;   /* in der Zwischenzeit doch noch aufgetaucht */
+    if (amBfn('send')) return;   /* in der Zwischenzeit doch noch aufgetaucht */
+    sendeGescheitert();
+  }
+  /* Das Absenden ist gescheitert: Ladezustand aus, Protokoll weg, ein Satz im Chat. Auch der
+     Eingang der Mira-Seite (askMiraSendFailed), wenn mira-send ablehnt -- dann mit IHREM Satz
+     (z. B. "Mira is still answering in this chat"). */
+  function sendeGescheitert(text){
     _pendingAnswer = false;
     _erwartet = null;                              /* nichts gesendet, also auch nichts zu erwarten */
     try { setLoading(false, 'aus'); } catch(e){}   /* nichts gesendet, also auch keine Antwort */
@@ -4697,10 +4745,11 @@
        diese Zeile stand da "Worked for 12s ... The message could not be sent". */
     try { runDrop(); } catch(e){}
     S.messages.push({ id: 'local_err_' + Date.now(), role: 'assistant',
-      content: L().sendFailed,
+      content: text ? String(text) : L().sendFailed,
       created_at: new Date().toISOString() });
     try { renderMessages(); } catch(e){}
   }
+  window.askMiraSendFailed = function(text){ try { sendeGescheitert(text); } catch(e){} };
 
   /* ===== "Ask Mira" selection -> quoted gray chip (prompt_research X-delete mechanic) ===== */
   /* Funktion statt Konstante: der Wert braucht amFormen, und das braucht core --
@@ -6044,7 +6093,7 @@
        Ladezustand mitbringt.
        Fehlt bubble_fn_ask_mira_refresh_chat, wird NICHT nachgefasst -- stillschweigend etwas
        Falsches zu tun ist schlechter als nichts zu tun. */
-    var fn = window.bubble_fn_ask_mira_refresh_chat;
+    var fn = amBfn('refresh_chat');
     if (typeof fn !== 'function'){
       nfAus();
       return false;
@@ -6094,7 +6143,7 @@
   var LISTE_BODEN = 20000;          /* darunter war der Tab nicht lange genug weg */
   var _listeWeg = 0;
   function listeNachholen(grund){
-    var fn = window.bubble_fn_ask_mira_refresh_chats;
+    var fn = amBfn('refresh_chats');
     if (typeof fn !== 'function'){
       return false;
     }
@@ -6596,7 +6645,7 @@
   /* Den offenen Chat nachladen -- derselbe Workflow wie beim Nachfassen, damit es genau EINEN
      Weg gibt: NUR die Nachrichten, ohne Ladezustand, ohne Titelwechsel, ohne Scrollen. */
   function rtOffenenChatHolen(grund){
-    var fn = window.bubble_fn_ask_mira_refresh_chat;
+    var fn = amBfn('refresh_chat');
     if (typeof fn !== 'function'){
       return false;
     }
@@ -6701,6 +6750,14 @@
         titelWarten(chat);
         rtChatAnlegen(chat, '', rtText(p.created_at));
       }
+      /* DAS TRANSKRIPT (10.10., privater Kanal): eine Sprachnachricht bringt ihren Text in
+         user_message.content mit -- ein eigenes mira_user_transcript gibt es dort nicht mehr. */
+      if (offen && p.user_message && typeof p.user_message === 'object'){
+        var _gesprochen = rtText(p.user_message.content);
+        var _iv = -1;
+        for (var _k = S.messages.length - 1; _k >= 0; _k--){ if (S.messages[_k] && S.messages[_k].pending_voice){ _iv = _k; break; } }
+        if (_gesprochen && _iv >= 0){ try { window.askMiraResolveVoice(_gesprochen, S.messages[_iv].id); } catch(e){} }
+      }
       _rtLaeuft[chat] = { seit: Date.now(), amid: amid };
       rtUhrStellen();
       wartendSetzen(chat, true);
@@ -6781,6 +6838,28 @@
       return true;
     }
 
+    /* ANHEFTEN, PROJEKT, LOESCHEN (10.10., privater Kanal): die Zeile in der Liste aus
+       payload.session nachziehen -- auch wenn es auf einem anderen Geraet geschah. */
+    if (art === 'mira_session_updated'){
+      var sz = p.session && typeof p.session === 'object' ? p.session : null;
+      var zid = rtText(sz ? sz.id : chat);
+      if (!zid) return false;
+      if (sz && String(sz.status || '') === 'deleted'){
+        var vorher = (S.previousChats || []).length;
+        S.previousChats = (S.previousChats || []).filter(function(c){ return String(c.id) !== zid; });
+        if (S.previousChats.length !== vorher) renderPrevious();
+        return true;
+      }
+      var zeile = findChat(zid);
+      if (zeile && sz){
+        ['title', 'is_pinned', 'project_id', 'project_title', 'updated_at'].forEach(function(k){
+          if (sz[k] !== undefined) zeile[k] = sz[k];
+        });
+        renderPrevious();
+        if (zid === rtText(S.activeChatId) && sz.title){ try { window.askMiraSetActiveChat(zid, false, sz.title); } catch(e){} }
+      }
+      return true;
+    }
     if (art === 'mira_user_transcript'){
       /* Der einzige Fall mit Text, den wir direkt zeigen -- und nur im offenen Chat.
          OHNE Text passiert nichts: die Felder kommen immer alle mit, auch leer, und eine leere
@@ -6836,7 +6915,7 @@
   function realtimeNeuVerbinden(grund){
     var jetzt = Date.now();
     if (jetzt - _rtNeuZuletzt < RT_NEU_ABSTAND_MS) return false;
-    var fn = window.bubble_fn_ask_mira_realtime_resubscribe;
+    var fn = amBfn('realtime_resubscribe');
     if (typeof fn !== 'function'){
       return false;
     }
@@ -7360,7 +7439,7 @@
     if (_c && chatTitel(_c)) S.titlePending = false;   // opened a chat that already has a title -> show it (no skeleton)
     renderPrevious();
     if (window.__amRenderChatTitlebar) window.__amRenderChatTitlebar();
-    if (fireEvent && window.bubble_fn_ask_mira_select_chat) window.bubble_fn_ask_mira_select_chat(chatId);
+    if (fireEvent && amBfn('select_chat')) amBfn('select_chat')(chatId);
   };
   // Title skeleton control. Call askMiraSetTitlePending(true) whenever a message is sent; the component
   // only actually shows the skeleton if it's the FIRST message of the chat (i.e. no title exists yet).
@@ -7742,7 +7821,7 @@
   }
   function fireExportPdf(messageId){
     var payload = { assistant_message_id: messageId, session_id: S.activeChatId };
-    if (window.bubble_fn_ask_mira_export_pdf) window.bubble_fn_ask_mira_export_pdf(JSON.stringify(payload));
+    if (amBfn('export_pdf')) amBfn('export_pdf')(JSON.stringify(payload));
     else { window.dispatchEvent(new CustomEvent('askmira:export-pdf', { detail: payload })); }
   }
   /* DER SPINNER BLEIBT MINDESTENS SO LANGE STEHEN (19.09. angefordert: "mach die Zeit, bis der
@@ -8381,7 +8460,7 @@
 
   /* ---------------- events helper ---------------- */
   function amFire(fn, payload, dom){
-    var f = window['bubble_fn_ask_mira_'+fn];
+    var f = amBfn(fn);
     if (f) f(JSON.stringify(payload));
     else {
       window.dispatchEvent(new CustomEvent('askmira:'+dom, { detail: payload }));
@@ -8589,7 +8668,7 @@
     nutzerWahl(id);
     window.askMiraSetActiveChat(id, false);
     renderMessages(); renderChatTitlebar();
-    if (window.bubble_fn_ask_mira_select_chat) window.bubble_fn_ask_mira_select_chat(id);
+    if (amBfn('select_chat')) amBfn('select_chat')(id);
     else window.dispatchEvent(new CustomEvent('askmira:select-chat', { detail: { chat_id: id } }));
   }
   elPrevList.addEventListener('keydown', function(e){
@@ -8888,11 +8967,13 @@
        wegziehen, waehrend er hier schon tippt. */
     nutzerWahl(NEUER_CHAT);
     entwurfHolen('');
-    if (window.bubble_fn_ask_mira_new_chat) window.bubble_fn_ask_mira_new_chat();
+    if (amBfn('new_chat')) amBfn('new_chat')();
     else window.dispatchEvent(new CustomEvent('askmira:new-chat', {}));
     closePrevWennSchmal();
   }
   elNewChat.addEventListener('click', goToStart);
+  /* Fuer die Mira-Seite: nach einem Teamwechsel gehoert der offene Chat zum alten Team. */
+  window.askMiraNeuerChat = function(){ try { goToStart(); } catch(e){} };
 
   /* ================= LAUNCHER: Mira im Power Dashboard (11.09. angefordert) ===================
      Das Power Dashboard zeigt Miras Eingabefeld ganz oben -- und zwar DIESES, nicht einen
@@ -9853,7 +9934,7 @@
     S.settings[key] = value;
     var payload = { brand: S.settings.brand, citation: S.settings.citation, response: S.settings.response };
     hlMerken();          /* zuerst merken: die Meldung an Bubble darf nicht darueber entscheiden */
-    if (window.bubble_fn_ask_mira_settings_change) window.bubble_fn_ask_mira_settings_change(JSON.stringify(payload));
+    if (amBfn('settings_change')) amBfn('settings_change')(JSON.stringify(payload));
     else { window.dispatchEvent(new CustomEvent('askmira:settings-change', { detail: payload })); }
     /* Die Attribute setzt sonst nur renderMessages -- und an ihnen haengt der Kastenstil der
        Zitate. hlDemoZeichnen setzt sie mit, damit der Auszug im Fenster auch dann sofort stimmt,
@@ -10218,8 +10299,9 @@
 
     function fireVoice(name, payload){
       payload = payload || {};
-      var fn = { start:'bubble_fn_ask_mira_voice_start', cancel:'bubble_fn_ask_mira_voice_cancel', submit:'bubble_fn_ask_mira_voice', error:'bubble_fn_ask_mira_voice_error' }[name];
-      if (fn && typeof window[fn] === 'function') window[fn](JSON.stringify(payload));
+      var fn = { start:'voice_start', cancel:'voice_cancel', submit:'voice', error:'voice_error' }[name];
+      var f = fn ? amBfn(fn) : null;
+      if (typeof f === 'function') f(JSON.stringify(payload));
       else { window.dispatchEvent(new CustomEvent('askmira:voice-'+name, { detail: payload })); }
     }
     function showNote(msg){ if (!noteEl) return; noteEl.textContent = msg; noteEl.classList.add('is-on'); clearTimeout(noteEl._t); noteEl._t = setTimeout(function(){ noteEl.classList.remove('is-on'); }, 4500); }
@@ -10351,7 +10433,7 @@
       function finalize(){
         var blob = chunks.length ? new Blob(chunks, { type:(recorder && recorder.mimeType)||'audio/webm' }) : null;
         function emit(b64, mime){
-          var hatEmpfaenger = typeof window.bubble_fn_ask_mira_voice === 'function';
+          var hatEmpfaenger = typeof amBfn('voice') === 'function';
           fireVoice('submit', { message_id: mid, chat_id: S.activeChatId, audio_base64: b64||'', mime_type: mime||'', duration_ms: dur });
           teardown();
           /* KEIN STILLER AUSFALL (09.10.). Ohne Empfaenger ging die Aufnahme als Fensterereignis

@@ -19102,7 +19102,7 @@
       if (RT.kanaele[k.topic] !== k || k.joinRef !== ref || !RT.offen) return;
       var nutzlast = { config: { broadcast: { ack: false, self: false }, presence: { key: "" },
                                  postgres_changes: [], "private": !!k.privat } };
-      if (k.privat && token) nutzlast.access_token = token;
+      if (k.privat && token){ nutzlast.access_token = token; RT_TOKEN.letztes = token; }
       rtSenden({ topic: "realtime:" + k.topic, event: "phx_join", payload: nutzlast, ref: ref, join_ref: ref });
       k.uhr = setTimeout(function(){
         k.uhr = null;
@@ -19202,7 +19202,8 @@
       return;
     }
     if (m.event === "broadcast"){
-      var fn = k.on[p.event];
+      /* "*" nimmt jedes Ereignis des Kanals (wie on('broadcast', { event: '*' }) in supabase-js). */
+      var fn = k.on[p.event] || k.on["*"];
       if (typeof fn === "function"){
         try { fn(p.payload && typeof p.payload === "object" ? p.payload : {}); }
         catch(e){ if (window.console) console.warn("[realtime] Empfaenger fuer " + p.event + " hat geworfen:", e); }
@@ -19220,6 +19221,38 @@
       rtSchliessen();
     }
   }
+  /* PRIVATE KANAELE UND DAS TOKEN (10.10., Mira: user:<uid>). Der Beitritt traegt das Token;
+     laeuft es ab, schliesst der Server den Kanal. Darum wie supabase-js' setAuth: jede halbe
+     Minute nachsehen, ob das Plugin ein neues hat, und es dann jedem privaten Kanal als
+     access_token schicken. Das Token selbst steht nirgends in der Konsole. */
+  var RT_TOKEN = { letztes: "", uhr: null };
+  function rtTokenWache(){
+    if (RT_TOKEN.uhr) return;
+    RT_TOKEN.uhr = setInterval(function(){
+      var privat = rtAlleKanaele().filter(function(k){ return k.privat; });
+      if (!privat.length){ clearInterval(RT_TOKEN.uhr); RT_TOKEN.uhr = null; return; }
+      rpcToken().then(function(token){
+        if (!token || token === RT_TOKEN.letztes || !RT.offen) return;
+        RT_TOKEN.letztes = token;
+        privat.forEach(function(k){
+          if (k.verbunden) rtSenden({ topic: "realtime:" + k.topic, event: "access_token",
+            payload: { access_token: token }, ref: rtRef(), join_ref: k.joinRef });
+        });
+      }, function(){});
+    }, 30000);
+  }
+  /* Die Kennung des angemeldeten Nutzers (sub im Token) -- fuer Kanaele wie user:<uid>. */
+  function nutzerId(){
+    var sz = sitzungLesen();
+    var t = sz ? sz.token : (AUTH.token || "");
+    var teil = String(t || "").split(".")[1];
+    if (!teil) return "";
+    try {
+      var json = atob(teil.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((teil.length + 3) % 4));
+      var o = JSON.parse(json);
+      return o && typeof o.sub === "string" ? o.sub : "";
+    } catch(e){ return ""; }
+  }
   function kanal(topic, o){
     o = o || {};
     topic = String(topic == null ? "" : topic).trim();
@@ -19231,6 +19264,7 @@
     if (alt) rtVerlassen(alt);
     RT.kanaele[topic] = k;
     if (RT.offen) rtBeitreten(k); else rtVerbinden();
+    if (k.privat) rtTokenWache();
     return aus;
   }
 
@@ -22524,7 +22558,7 @@
     variationRing: variationRing,
     granAvailability: granAvailability,
     granFuerZeitraum: granFuerZeitraum,
-    rpc: rpc, edge: edge, kanal: kanal,
+    rpc: rpc, edge: edge, kanal: kanal, nutzerId: nutzerId,
     rpcBereit: rpcBereit,
     /* Die upstreem-Wortmarke, EINE Quelle (08.10.): Seiten ohne eigenes data-logo nehmen sie von
        hier, statt die Adresse in jedes Element zu schreiben. */

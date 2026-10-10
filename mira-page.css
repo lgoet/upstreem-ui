@@ -1,0 +1,4 @@
+/* upstreem mira-page.css -- die Huelle der Mira-Seite (10.10., Praefix umi). Alles Sichtbare
+   kommt aus ask-mira.css; Mira ist eine ganzseitige Flaeche mit eigener Scrollbox und misst
+   ihre Hoehe selbst, die Huelle muss darum die volle Hoehe weitergeben. */
+.umi-root { display: block; height: 100%; }

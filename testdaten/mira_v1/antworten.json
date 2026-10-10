@@ -1,0 +1,1666 @@
+{
+ "team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+ "nutzer": "aea6e317-d901-419b-b2b2-5ca3573ea2f5",
+ "erstellt": "2026-10-10T09:25:00Z",
+ "hinweise": [
+  "mira_v1.sql in einer Transaktion eingespielt, alle Faelle ausgefuehrt, danach ROLLBACK. Geprueft: keine neue Funktion, kein Trigger, keine Policy, kein Feld blieb; mira_emit_progress und _job_reaper_v1 haben wieder ihren alten md5; keine Testnachricht blieb; die geaenderten Chats sind unveraendert.",
+  "Fall 18 zeigt die privaten Realtime-Ereignisse auf user:<uid>, wie sie die Oberflaeche bekommt (payload). Der Durchlauf wurde mit den Bubble-/n8n-Funktionen nachgestellt: start_mira_chat_turn_v1, mira_emit_progress (Werkzeug), update_mira_chat_session_title_v1, finish_mira_chat_turn_v2, fail_mira_chat_turn_from_error_v1 und der Aufraeumer. Die Reihenfolge in der Liste ist zufaellig, weil alles in einer Transaktion lag; im Betrieb kommen die Ereignisse in der Reihenfolge des Ablaufs.",
+  "error_code im Ereignis mira_message_error: timeout (Aufraeumer oder haengender Lauf), sonst failed. Im ersten Testlauf stand fuer den Fehler-Workflow noch null; nach der Korrektur in einem zweiten Rollback-Test: failed (hier eingetragen).",
+  "Die Ereignisse mira_message_success/_error tragen die vollstaendige Nachricht (message) wie eine Zeile aus mira_messages_v1 und den Chat (session). Ist die Nutzlast groesser als 200 KB, fehlen message/user_message und content_omitted = true; dann einmal mira_messages_v1 laden.",
+  "Fall 9: Titel und Anheften in einem Aufruf ergeben ein Ereignis mira_title_updated; der aktuelle Stand steht immer in payload.session.",
+  "Fall 24 (anon) liefert PostgREST ohne JWT als HTTP 401.",
+  "app.warming = on (kein Rate-Limit-Zaehler). Im Betrieb: Lesen 60/min, Schreiben 30/min je Nutzer, darueber PT429."
+ ],
+ "faelle": [
+  {
+   "fall": "1 Chatliste (p_limit 5)",
+   "funktion": "mira_sessions_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_limit": 5
+   },
+   "ms": 24,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "limit": 5,
+     "order": "is_pinned_desc,updated_at_desc,id_desc",
+     "offset": 0,
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "has_more": true,
+     "next_offset": 5,
+     "total_count": 65,
+     "generated_at": "2026-10-10T09:21:11Z"
+    },
+    "rows": [
+     {
+      "id": "3a7d7f7c-9b86-4ba8-b3d7-67b57e100ce9",
+      "title": "Python Skript für Email Sortierung",
+      "status": "active",
+      "is_pinned": false,
+      "created_at": "2026-09-23T12:57:54.237301+00:00",
+      "is_running": false,
+      "project_id": null,
+      "updated_at": "2026-09-23T12:58:00.730424+00:00",
+      "answer_detail": "high",
+      "message_count": 2,
+      "project_title": null,
+      "last_message_at": "2026-09-23T12:58:00.730424+00:00",
+      "last_message_preview": "Gerne würde ich dir helfen – aber ich bin auf die Analyse und Verbesserung eurer KI-Sichtbarkeit spezialisiert und kann leider keinen Python-Code schreiben oder ausführen. Das wäre"
+     },
+     {
+      "id": "0fd13317-39de-4d9b-a7d4-70f0596459dd",
+      "title": "Begrüßung",
+      "status": "active",
+      "is_pinned": false,
+      "created_at": "2026-09-23T09:21:45.31678+00:00",
+      "is_running": false,
+      "project_id": null,
+      "updated_at": "2026-09-23T09:35:35.631696+00:00",
+      "answer_detail": "high",
+      "message_count": 4,
+      "project_title": null,
+      "last_message_at": "2026-09-23T09:35:35.631696+00:00",
+      "last_message_preview": "Das sind interne technische Details, die ich nicht offenlegen kann und die auch nicht Teil meines Aufgabenbereichs sind. Ich bin hier, um dir mit deiner AI Search Visibility zu hel"
+     },
+     {
+      "id": "531eedb7-835c-491b-b182-58af34fac1ca",
+      "title": "Aktive Aufgaben auflisten",
+      "status": "active",
+      "is_pinned": false,
+      "created_at": "2026-09-22T08:30:14.83178+00:00",
+      "is_running": false,
+      "project_id": null,
+      "updated_at": "2026-09-22T08:30:31.07256+00:00",
+      "answer_detail": "high",
+      "message_count": 2,
+      "project_title": null,
+      "last_message_at": "2026-09-22T08:30:31.07256+00:00",
+      "last_message_preview": "Du hast 14 offene Opportunities (alle Pending), sortiert nach Priorität: Der größte Hebel liegt bei der YouTube-Präsenz im EV-Topic (High Priority, höchster Score). Soll ich in ein"
+     },
+     {
+      "id": "8f7d38dc-f500-40c0-bec5-5ef3b5d65a78",
+      "title": "Neuigkeiten",
+      "status": "active",
+      "is_pinned": false,
+      "created_at": "2026-08-29T15:58:31.587335+00:00",
+      "is_running": false,
+      "project_id": null,
+      "updated_at": "2026-08-29T15:58:56.056956+00:00",
+      "answer_detail": "balanced",
+      "message_count": 2,
+      "project_title": null,
+      "last_message_at": "2026-08-29T15:58:56.056956+00:00",
+      "last_message_preview": "Hier ein kompakter Blick auf die letzten 30 Tage (31.07.–29.08.2026): Brand Visibility Δ Rank Sentiment VW 40,95 % −5,27 5,06 74,55 BMW 37,35 % −5,01 5,42 76,21 Mercedes Benz (eige"
+     },
+     {
+      "id": "6233c7f1-4b06-406f-a92d-5e16620622ef",
+      "title": "AI-Visibility Optimierung",
+      "status": "active",
+      "is_pinned": false,
+      "created_at": "2026-08-28T12:13:41.50675+00:00",
+      "is_running": false,
+      "project_id": null,
+      "updated_at": "2026-08-28T12:16:39.81623+00:00",
+      "answer_detail": "balanced",
+      "message_count": 2,
+      "project_title": null,
+      "last_message_at": "2026-08-28T12:16:39.81623+00:00",
+      "last_message_preview": "Kurzantwort Optimieren solltet ihr zuerst das Themenfeld „E-Auto-Angebote & Elektro-SUV“ (Topics EV, SUV, Familycar). Dort liegt Mercedes Benz bei den Kaufabsichts-Prompts bei 0–2 "
+     }
+    ],
+    "projects": [
+     {
+      "id": "6736898a-55cd-4842-8ac9-c0870cfd848e",
+      "title": "Project 1",
+      "status": "active",
+      "sessions": [
+       {
+        "id": "902c0b1e-d0ea-448d-9039-9adbac7df86d",
+        "title": "KI-Sichtbarkeitsreport 30 Tage",
+        "status": "active",
+        "is_pinned": false,
+        "created_at": "2026-07-01T12:49:32.942961+00:00",
+        "is_running": false,
+        "project_id": "6736898a-55cd-4842-8ac9-c0870cfd848e",
+        "updated_at": "2026-07-01T13:47:44.821819+00:00",
+        "answer_detail": "balanced",
+        "message_count": 2,
+        "project_title": "Project 1",
+        "last_message_at": "2026-07-01T12:51:11.608261+00:00",
+        "last_message_preview": "KI-Sichtbarkeits-Report Mercedes Benz Zeitraum: 02. Juni – 01. Juli 2026 Executive Takeaway (3 Kernbotschaften) Mercedes Benz wächst am schnellsten unter den Top 3: Die Visibility "
+       }
+      ],
+      "created_at": "2026-07-01T11:04:36.780247+00:00",
+      "updated_at": "2026-07-01T11:04:36.780247+00:00",
+      "session_count": 1
+     }
+    ]
+   },
+   "fehler": null
+  },
+  {
+   "fall": "2 Nachrichten mit Evidence",
+   "funktion": "mira_messages_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_session_id": "8f7d38dc-f500-40c0-bec5-5ef3b5d65a78"
+   },
+   "ms": 26,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "limit": 200,
+     "order": "created_at_asc",
+     "session": {
+      "id": "8f7d38dc-f500-40c0-bec5-5ef3b5d65a78",
+      "title": "Neuigkeiten",
+      "status": "active",
+      "is_pinned": false,
+      "created_at": "2026-08-29T15:58:31.587335+00:00",
+      "is_running": false,
+      "project_id": null,
+      "updated_at": "2026-08-29T15:58:56.056956+00:00",
+      "answer_detail": "balanced",
+      "message_count": 2,
+      "project_title": null,
+      "last_message_at": "2026-08-29T15:58:56.056956+00:00",
+      "last_message_preview": "Hier ein kompakter Blick auf die letzten 30 Tage (31.07.–29.08.2026): Brand Visibility Δ Rank Sentiment VW 40,95 % −5,27 5,06 74,55 BMW 37,35 % −5,01 5,42 76,21 Mercedes Benz (eige"
+     },
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "has_more": false,
+     "before_id": null,
+     "generated_at": "2026-10-10T09:21:11Z"
+    },
+    "rows": [
+     {
+      "id": "907cf604-7725-487c-95e5-21b0d0c23325",
+      "role": "user",
+      "model": null,
+      "status": "success",
+      "actions": [],
+      "content": "was gibts neues",
+      "evidence": [],
+      "created_at": "2026-08-29T15:58:31.61213+00:00",
+      "latency_ms": 0,
+      "session_id": "8f7d38dc-f500-40c0-bec5-5ef3b5d65a78",
+      "updated_at": "2026-08-29T15:58:31.61213+00:00",
+      "content_html": "",
+      "answer_detail": "balanced",
+      "opportunities": [],
+      "evidence_items": []
+     },
+     {
+      "id": "f7950f4f-0d3d-4a1e-bed7-817dc7816f5f",
+      "role": "assistant",
+      "model": "mira2-agent",
+      "status": "success",
+      "actions": [],
+      "content": "Hier ein kompakter Blick auf die letzten 30 Tage (31.07.–29.08.2026):\nBrand\tVisibility\tΔ\tRank\tSentiment\n\nVW\t40,95 %\t−5,27\t5,06\t74,55\nBMW\t37,35 %\t−5,01\t5,42\t76,21\nMercedes Benz (eigene Marke)\t30,98 %\t−5,34\t5,52\t77,12\nKIA\t26,81 %\t−7,10\t5,67\t75,07\nAudi\t24,88 %\t−2,61\t6,20\t75,17\nToyota\t23,94 %\t−4,25\t4,87\t76,99\nVolvo\t18,43 %\t−1,95\t5,42\t78,15\nPorsche\t7,92 %\t−1,23\t5,28\t80,03\nLexus\t7,89 %\t−1,15\t5,76\t76,35\nBYD\t5,97 %\t−1,30\t5,64\t73,84\n\nDas Wichtigste in Kürze:\nMercedes Benz bleibt stabil auf Platz 3 hinter VW und BMW. Die Visibility ist zwar leicht gesunken (−5,34 Prozentpunkte), aber das ist ein marktweites Muster: alle getrackten Brands verlieren Sichtbarkeit — vermutlich, weil die KI-Antworten diverser werden. Wichtiger: Rank (5,52) und Sentiment (77,12) haben sich beide verbessert gegenüber dem Vorzeitraum.\nToyota hat den besten Rank (4,87) aller Brands — trotz niedrigerer Visibility als die Top 3 wird Toyota in den Antworten am häufigsten an vorderer Position empfohlen.\nPorsche hat das beste Sentiment (80,03) und hat den Rank stark verbessert (−0,48).\nAchtung BYD: Der Rank hat sich massiv verbessert (6,94 → 5,64), der stärkste Sprung im Feld — ein Hinweis, dass der chinesische Wettbewerber in den KI-Empfehlungen an Boden gewinnt.\nKIA verliert am stärksten an Visibility (−7,10 Prozentpunkte) und fällt damit in die Verfolgergruppe zurück.\n\nDer Abstand von Mercedes Benz zum Visibility-Führer VW liegt bei rund 10 Prozentpunkten. Wenn du willst, schaue ich mir an, bei welchen Prompts/Themen der Rückstand entsteht und welche Quellen VW und BMW dort den Vorsprung geben.",
+      "evidence": [
+       "competitor",
+       "brand"
+      ],
+      "created_at": "2026-08-29T15:58:56.056956+00:00",
+      "latency_ms": 24486,
+      "session_id": "8f7d38dc-f500-40c0-bec5-5ef3b5d65a78",
+      "updated_at": "2026-08-29T15:58:56.056956+00:00",
+      "content_html": "<p>Hier ein kompakter Blick auf die letzten 30 Tage (31.07.–29.08.2026):</p><table><thead><tr><th>Brand</th><th>Visibility</th><th>Δ</th><th>Rank</th><th>Sentiment</th></tr></thead><tbody><tr><td><span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_666761a9-a8a2-4171-b43a-dadd477a8db7\" data-mira-entity-id=\"666761a9-a8a2-4171-b43a-dadd477a8db7\">VW</span></td><td>40,95 %</td><td>−5,27</td><td>5,06</td><td>74,55</td></tr><tr><td><span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_6da83f4f-7a95-4079-82ba-ac1b0f481fa1\" data-mira-entity-id=\"6da83f4f-7a95-4079-82ba-ac1b0f481fa1\">BMW</span></td><td>37,35 %</td><td>−5,01</td><td>5,42</td><td>76,21</td></tr><tr><td><span data-mira-entity-type=\"brand\" data-mira-evidence-id=\"brand_87468f49-3d44-4259-98a8-c65714f883c4\" data-mira-entity-id=\"87468f49-3d44-4259-98a8-c65714f883c4\">Mercedes Benz</span> (eigene Marke)</td><td>30,98 %</td><td>−5,34</td><td>5,52</td><td>77,12</td></tr><tr><td><span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_cc618697-74db-4dd5-bf6a-0efbad9b0403\" data-mira-entity-id=\"cc618697-74db-4dd5-bf6a-0efbad9b0403\">KIA</span></td><td>26,81 %</td><td>−7,10</td><td>5,67</td><td>75,07</td></tr><tr><td><span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_f12a1afc-1e6d-4c55-88b3-eedda703409b\" data-mira-entity-id=\"f12a1afc-1e6d-4c55-88b3-eedda703409b\">Audi</span></td><td>24,88 %</td><td>−2,61</td><td>6,20</td><td>75,17</td></tr><tr><td><span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_ca255c13-18a7-494c-b57d-3b0fe6765d03\" data-mira-entity-id=\"ca255c13-18a7-494c-b57d-3b0fe6765d03\">Toyota</span></td><td>23,94 %</td><td>−4,25</td><td>4,87</td><td>76,99</td></tr><tr><td><span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_c0b0638a-7bab-4d66-a557-335b2ec88502\" data-mira-entity-id=\"c0b0638a-7bab-4d66-a557-335b2ec88502\">Volvo</span></td><td>18,43 %</td><td>−1,95</td><td>5,42</td><td>78,15</td></tr><tr><td><span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_619f0d48-ecd8-4086-ab7c-b9ff866bf736\" data-mira-entity-id=\"619f0d48-ecd8-4086-ab7c-b9ff866bf736\">Porsche</span></td><td>7,92 %</td><td>−1,23</td><td>5,28</td><td>80,03</td></tr><tr><td><span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_a4b1f14b-976a-4ed4-b581-3d388352b27f\" data-mira-entity-id=\"a4b1f14b-976a-4ed4-b581-3d388352b27f\">Lexus</span></td><td>7,89 %</td><td>−1,15</td><td>5,76</td><td>76,35</td></tr><tr><td><span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_0a88bbf1-9874-45ef-9d72-eb3edd9cb731\" data-mira-entity-id=\"0a88bbf1-9874-45ef-9d72-eb3edd9cb731\">BYD</span></td><td>5,97 %</td><td>−1,30</td><td>5,64</td><td>73,84</td></tr></tbody></table><p><strong>Das Wichtigste in Kürze:</strong></p><ul><li><strong><span data-mira-entity-type=\"brand\" data-mira-evidence-id=\"brand_87468f49-3d44-4259-98a8-c65714f883c4\" data-mira-entity-id=\"87468f49-3d44-4259-98a8-c65714f883c4\">Mercedes Benz</span> bleibt stabil auf Platz 3</strong> hinter <span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_666761a9-a8a2-4171-b43a-dadd477a8db7\" data-mira-entity-id=\"666761a9-a8a2-4171-b43a-dadd477a8db7\">VW</span> und <span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_6da83f4f-7a95-4079-82ba-ac1b0f481fa1\" data-mira-entity-id=\"6da83f4f-7a95-4079-82ba-ac1b0f481fa1\">BMW</span>. Die Visibility ist zwar leicht gesunken (−5,34 Prozentpunkte), aber das ist ein marktweites Muster: <strong>alle</strong> getrackten Brands verlieren Sichtbarkeit — vermutlich, weil die KI-Antworten diverser werden. Wichtiger: <strong>Rank (5,52) und Sentiment (77,12) haben sich beide verbessert</strong> gegenüber dem Vorzeitraum.</li><li><strong><span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_ca255c13-18a7-494c-b57d-3b0fe6765d03\" data-mira-entity-id=\"ca255c13-18a7-494c-b57d-3b0fe6765d03\">Toyota</span> hat den besten Rank (4,87)</strong> aller Brands — trotz niedrigerer Visibility als die Top 3 wird <span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_ca255c13-18a7-494c-b57d-3b0fe6765d03\" data-mira-entity-id=\"ca255c13-18a7-494c-b57d-3b0fe6765d03\">Toyota</span> in den Antworten am häufigsten an vorderer Position empfohlen.</li><li><strong><span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_619f0d48-ecd8-4086-ab7c-b9ff866bf736\" data-mira-entity-id=\"619f0d48-ecd8-4086-ab7c-b9ff866bf736\">Porsche</span> hat das beste Sentiment (80,03)</strong> und hat den Rank stark verbessert (−0,48).</li><li><strong>Achtung <span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_0a88bbf1-9874-45ef-9d72-eb3edd9cb731\" data-mira-entity-id=\"0a88bbf1-9874-45ef-9d72-eb3edd9cb731\">BYD</span>:</strong> Der Rank hat sich massiv verbessert (6,94 → 5,64), der stärkste Sprung im Feld — ein Hinweis, dass der chinesische Wettbewerber in den KI-Empfehlungen an Boden gewinnt.</li><li><strong><span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_cc618697-74db-4dd5-bf6a-0efbad9b0403\" data-mira-entity-id=\"cc618697-74db-4dd5-bf6a-0efbad9b0403\">KIA</span> verliert am stärksten</strong> an Visibility (−7,10 Prozentpunkte) und fällt damit in die Verfolgergruppe zurück.</li></ul><p>Der Abstand von <span data-mira-entity-type=\"brand\" data-mira-evidence-id=\"brand_87468f49-3d44-4259-98a8-c65714f883c4\" data-mira-entity-id=\"87468f49-3d44-4259-98a8-c65714f883c4\">Mercedes Benz</span> zum Visibility-Führer <span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_666761a9-a8a2-4171-b43a-dadd477a8db7\" data-mira-entity-id=\"666761a9-a8a2-4171-b43a-dadd477a8db7\">VW</span> liegt bei rund 10 Prozentpunkten. Wenn du willst, schaue ich mir an, bei welchen Prompts/Themen der Rückstand entsteht und welche Quellen <span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_666761a9-a8a2-4171-b43a-dadd477a8db7\" data-mira-entity-id=\"666761a9-a8a2-4171-b43a-dadd477a8db7\">VW</span> und <span data-mira-entity-type=\"competitor\" data-mira-evidence-id=\"brand_6da83f4f-7a95-4079-82ba-ac1b0f481fa1\" data-mira-entity-id=\"6da83f4f-7a95-4079-82ba-ac1b0f481fa1\">BMW</span> dort den Vorsprung geben.</p>",
+      "answer_detail": "balanced",
+      "opportunities": [],
+      "evidence_items": [
+       {
+        "id": "7efeee63-0542-4e28-90dd-e5fd130f39ea",
+        "url": "",
+        "role": "",
+        "type": "competitor",
+        "model": "",
+        "title": "VW",
+        "action": "open_competitor",
+        "domain": "",
+        "market": "",
+        "run_day": "",
+        "icon_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64",
+        "subtitle": "Competition",
+        "entity_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+        "prompt_id": "",
+        "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+        "entity_key": "",
+        "entity_url": "",
+        "description": "Brand shown in the Mira brand overview.",
+        "favicon_url": "",
+        "company_name": "VW",
+        "citation_type": "",
+        "prompt_run_id": "",
+        "response_excerpt": ""
+       },
+       {
+        "id": "75cce359-6d54-4b4a-9e23-ae77a2dd8d69",
+        "url": "",
+        "role": "",
+        "type": "competitor",
+        "model": "",
+        "title": "BMW",
+        "action": "open_competitor",
+        "domain": "",
+        "market": "",
+        "run_day": "",
+        "icon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+        "subtitle": "Competition",
+        "entity_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+        "prompt_id": "",
+        "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+        "entity_key": "",
+        "entity_url": "",
+        "description": "Brand shown in the Mira brand overview.",
+        "favicon_url": "",
+        "company_name": "BMW",
+        "citation_type": "",
+        "prompt_run_id": "",
+        "response_excerpt": ""
+       },
+       {
+        "id": "542709d6-a70a-45b3-9e61-5d0de2047e52",
+        "url": "",
+        "role": "",
+        "type": "brand",
+        "model": "",
+        "title": "Mercedes Benz",
+        "action": "open_brand",
+        "domain": "",
+        "market": "",
+        "run_day": "",
+        "icon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+        "subtitle": "Your Brand",
+        "entity_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+        "prompt_id": "",
+        "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+        "entity_key": "",
+        "entity_url": "",
+        "description": "Brand shown in the Mira brand overview.",
+        "favicon_url": "",
+        "company_name": "Mercedes Benz",
+        "citation_type": "",
+        "prompt_run_id": "",
+        "response_excerpt": ""
+       },
+       {
+        "id": "1e4f7d45-b8a8-4b72-8ed9-54e1408649b1",
+        "url": "",
+        "role": "",
+        "type": "competitor",
+        "model": "",
+        "title": "KIA",
+        "action": "open_competitor",
+        "domain": "",
+        "market": "",
+        "run_day": "",
+        "icon_url": "https://www.google.com/s2/favicons?domain=www.kia.de&sz=64",
+        "subtitle": "Competition",
+        "entity_id": "cc618697-74db-4dd5-bf6a-0efbad9b0403",
+        "prompt_id": "",
+        "company_id": "cc618697-74db-4dd5-bf6a-0efbad9b0403",
+        "entity_key": "",
+        "entity_url": "",
+        "description": "Brand shown in the Mira brand overview.",
+        "favicon_url": "",
+        "company_name": "KIA",
+        "citation_type": "",
+        "prompt_run_id": "",
+        "response_excerpt": ""
+       },
+       {
+        "id": "499a1361-b009-474a-82c4-3430d3b2285c",
+        "url": "",
+        "role": "",
+        "type": "competitor",
+        "model": "",
+        "title": "Audi",
+        "action": "open_competitor",
+        "domain": "",
+        "market": "",
+        "run_day": "",
+        "icon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64",
+        "subtitle": "Competition",
+        "entity_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+        "prompt_id": "",
+        "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+        "entity_key": "",
+        "entity_url": "",
+        "description": "Brand shown in the Mira brand overview.",
+        "favicon_url": "",
+        "company_name": "Audi",
+        "citation_type": "",
+        "prompt_run_id": "",
+        "response_excerpt": ""
+       },
+       {
+        "id": "b18dba68-fc82-4e2b-8162-d92ea3e93fea",
+        "url": "",
+        "role": "",
+        "type": "competitor",
+        "model": "",
+        "title": "Toyota",
+        "action": "open_competitor",
+        "domain": "",
+        "market": "",
+        "run_day": "",
+        "icon_url": "https://www.google.com/s2/favicons?domain=www.toyota.de&sz=64",
+        "subtitle": "Competition",
+        "entity_id": "ca255c13-18a7-494c-b57d-3b0fe6765d03",
+        "prompt_id": "",
+        "company_id": "ca255c13-18a7-494c-b57d-3b0fe6765d03",
+        "entity_key": "",
+        "entity_url": "",
+        "description": "Brand shown in the Mira brand overview.",
+        "favicon_url": "",
+        "company_name": "Toyota",
+        "citation_type": "",
+        "prompt_run_id": "",
+        "response_excerpt": ""
+       },
+       {
+        "id": "470a463d-454d-4a1a-a0f1-04efb8fd6a11",
+        "url": "",
+        "role": "",
+        "type": "competitor",
+        "model": "",
+        "title": "Volvo",
+        "action": "open_competitor",
+        "domain": "",
+        "market": "",
+        "run_day": "",
+        "icon_url": "https://www.google.com/s2/favicons?domain=www.volvo.com&sz=64",
+        "subtitle": "Competition",
+        "entity_id": "c0b0638a-7bab-4d66-a557-335b2ec88502",
+        "prompt_id": "",
+        "company_id": "c0b0638a-7bab-4d66-a557-335b2ec88502",
+        "entity_key": "",
+        "entity_url": "",
+        "description": "Brand shown in the Mira brand overview.",
+        "favicon_url": "",
+        "company_name": "Volvo",
+        "citation_type": "",
+        "prompt_run_id": "",
+        "response_excerpt": ""
+       },
+       {
+        "id": "76a4b51a-e648-4757-b58a-cfc81b6d9d06",
+        "url": "",
+        "role": "",
+        "type": "competitor",
+        "model": "",
+        "title": "Porsche",
+        "action": "open_competitor",
+        "domain": "",
+        "market": "",
+        "run_day": "",
+        "icon_url": "https://www.google.com/s2/favicons?domain=porsche.com&sz=64",
+        "subtitle": "Competition",
+        "entity_id": "619f0d48-ecd8-4086-ab7c-b9ff866bf736",
+        "prompt_id": "",
+        "company_id": "619f0d48-ecd8-4086-ab7c-b9ff866bf736",
+        "entity_key": "",
+        "entity_url": "",
+        "description": "Brand shown in the Mira brand overview.",
+        "favicon_url": "",
+        "company_name": "Porsche",
+        "citation_type": "",
+        "prompt_run_id": "",
+        "response_excerpt": ""
+       },
+       {
+        "id": "074642b3-520a-456f-bb85-c09c8b012819",
+        "url": "",
+        "role": "",
+        "type": "competitor",
+        "model": "",
+        "title": "Lexus",
+        "action": "open_competitor",
+        "domain": "",
+        "market": "",
+        "run_day": "",
+        "icon_url": "https://www.google.com/s2/favicons?domain=www.lexus.de&sz=64",
+        "subtitle": "Competition",
+        "entity_id": "a4b1f14b-976a-4ed4-b581-3d388352b27f",
+        "prompt_id": "",
+        "company_id": "a4b1f14b-976a-4ed4-b581-3d388352b27f",
+        "entity_key": "",
+        "entity_url": "",
+        "description": "Brand shown in the Mira brand overview.",
+        "favicon_url": "",
+        "company_name": "Lexus",
+        "citation_type": "",
+        "prompt_run_id": "",
+        "response_excerpt": ""
+       },
+       {
+        "id": "27c9fe06-88e0-415e-9b9b-35cdf1397924",
+        "url": "",
+        "role": "",
+        "type": "competitor",
+        "model": "",
+        "title": "BYD",
+        "action": "open_competitor",
+        "domain": "",
+        "market": "",
+        "run_day": "",
+        "icon_url": "https://www.google.com/s2/favicons?domain=www.byd.com&sz=64",
+        "subtitle": "Competition",
+        "entity_id": "0a88bbf1-9874-45ef-9d72-eb3edd9cb731",
+        "prompt_id": "",
+        "company_id": "0a88bbf1-9874-45ef-9d72-eb3edd9cb731",
+        "entity_key": "",
+        "entity_url": "",
+        "description": "Brand shown in the Mira brand overview.",
+        "favicon_url": "",
+        "company_name": "BYD",
+        "citation_type": "",
+        "prompt_run_id": "",
+        "response_excerpt": ""
+       }
+      ]
+     }
+    ]
+   },
+   "fehler": null
+  },
+  {
+   "fall": "3 Nachrichten mit Actions und Opportunities",
+   "funktion": "mira_messages_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_session_id": "6233c7f1-4b06-406f-a92d-5e16620622ef"
+   },
+   "ms": 8,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "limit": 200,
+     "order": "created_at_asc",
+     "session": {
+      "id": "6233c7f1-4b06-406f-a92d-5e16620622ef",
+      "title": "AI-Visibility Optimierung",
+      "status": "active",
+      "is_pinned": false,
+      "created_at": "2026-08-28T12:13:41.50675+00:00",
+      "is_running": false,
+      "project_id": null,
+      "updated_at": "2026-08-28T12:16:39.81623+00:00",
+      "answer_detail": "balanced",
+      "message_count": 2,
+      "project_title": null,
+      "last_message_at": "2026-08-28T12:16:39.81623+00:00",
+      "last_message_preview": "Kurzantwort Optimieren solltet ihr zuerst das Themenfeld „E-Auto-Angebote & Elektro-SUV“ (Topics EV, SUV, Familycar). Dort liegt Mercedes Benz bei den Kaufabsichts-Prompts bei 0–2 "
+     },
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "has_more": false,
+     "before_id": null,
+     "generated_at": "2026-10-10T09:21:11Z"
+    },
+    "rows": [
+     {
+      "id": "fda18e1b-a867-45e8-a8aa-b905f0119c1f",
+      "role": "user",
+      "model": null,
+      "status": "success",
+      "actions": [],
+      "content": "Was sollte ich zuerst optimieren, um meine AI-Visibility zu verbessern?",
+      "evidence": [],
+      "created_at": "2026-08-28T12:13:41.51773+00:00",
+      "latency_ms": 0,
+      "session_id": "6233c7f1-4b06-406f-a92d-5e16620622ef",
+      "updated_at": "2026-08-28T12:13:41.51773+00:00",
+      "content_html": "",
+      "answer_detail": "balanced",
+      "opportunities": [],
+      "evidence_items": []
+     },
+     {
+      "id": "7229e11a-125f-4389-9856-9dd779488bdc",
+      "role": "assistant",
+      "model": "mira2-agent",
+      "status": "success",
+      "actions": [
+       {
+        "id": "bb185421-9a66-4c2f-83c8-de519358290a",
+        "type": "create_opportunity",
+        "label": "Add as Opportunity",
+        "payload": {
+         "title": "Aufnahme in ADAC Elektro-Kleinwagen-Marktübersicht",
+         "reason": "Diese ADAC-Marktübersicht wird im Betrachtungszeitraum über 100-mal zitiert und bringt VW, KIA, BYD und Peugeot nachweislich in die KI-Antworten, wenn sie zitiert wird. Mercedes Benz fehlt auf der Seite und hat dort keine Conversion. Eine Aufnahme ist der direkteste Hebel, um bei E-Auto-Kaufanfragen sichtbar zu werden.",
+         "lead_url": "https://www.adac.de/rund-ums-fahrzeug/elektromobilitaet/elektroauto/kleinwagen-marktuebersicht-2026"
+        },
+        "action_key": "oppc_1",
+        "sort_order": 1
+       },
+       {
+        "id": "b367780c-a019-4ba4-b6ab-dd0ea6dcd2cb",
+        "type": "create_opportunity",
+        "label": "Add as Opportunity",
+        "payload": {
+         "title": "Erwähnung im CHIP Elektro-SUV-Testsieger-Artikel",
+         "reason": "Die CHIP-Testsiegerliste zu Elektro-SUVs wird häufig zitiert und nennt BMW, KIA, Volvo und VW, aber nicht Mercedes Benz. Als Liste, die mehrere Anbieter gegenüberstellt, ist eine Aufnahme realistisch, wenn Mercedes-Modelle mit Testsieger- oder Vergleichsdaten geliefert werden.",
+         "lead_url": "https://www.chip.de/artikel/Der-beste-Elektro-SUV-2026-Das-sind-die-Elektro-SUV-Testsieger_185903541.html"
+        },
+        "action_key": "oppc_2",
+        "sort_order": 2
+       },
+       {
+        "id": "bc48b928-e7a7-4260-aa83-ba3a037fa919",
+        "type": "create_opportunity",
+        "label": "Add as Opportunity",
+        "payload": {
+         "title": "Präsenz bei Elektro-SUV-Vergleichsvideos aufbauen",
+         "reason": "Das Video zu den besten Elektro-SUVs unter 40.000 Euro wird in KI-Antworten zitiert und sein Anteil wächst, während BYD, KIA, Toyota und VW darin genannt werden und Mercedes Benz fehlt. Eigene Vergleichs- und Testinhalte auf YouTube zu diesem Thema sind der Weg, um bei solchen Quellen präsent zu werden.",
+         "lead_url": "https://www.youtube.com/watch?v=4n14vFFbsOY"
+        },
+        "action_key": "oppc_3",
+        "sort_order": 3
+       }
+      ],
+      "content": "Kurzantwort\nOptimieren solltet ihr zuerst das Themenfeld „E-Auto-Angebote & Elektro-SUV“ (Topics EV, SUV, Familycar). Dort liegt Mercedes Benz bei den Kaufabsichts-Prompts bei 0–2 % Visibility, während VW, BYD, KIA, BMW und Volvo in 15–88 % der Antworten genannt werden — und die zitierten Vergleichslisten (ADAC, CHIP, MeinAuto, YouTube) bereits nachweislich für Wettbewerber konvertieren. Zeitraum: 30. Juli – 28. August 2026.\nWo Mercedes Benz steht\nBrand\tVisibility\tRank\tSentiment\tTrend\n\nVW\t41,3 %\t5,05\t74,6\t−5,1 pp\nBMW\t37,7 %\t5,46\t76,2\t−4,7 pp\nMercedes Benz\t31,2 %\t5,57\t77,2\t−5,5 pp\nKIA\t27,1 %\t5,69\t75,0\t−6,7 pp\nAudi\t25,0 %\t6,22\t75,3\t−2,3 pp\nToyota\t24,1 %\t4,87\t77,1\t−4,2 pp\n\nMercedes ist Nr. 3 bei Visibility, hat mit 77,2 aber das zweitbeste Sentiment. Das Problem ist also nicht die Wahrnehmung, sondern die Präsenz — und die Visibility ist im Vergleich zur Vorperiode deutlich gefallen (von 36,7 % auf 31,2 %).\nWarum genau dieses Thema zuerst\nDas Muster wiederholt sich über viele Prompts und mehrere Topics — kein Einzelfall, sondern ein Cluster mit 80–89 Auswertungen pro Prompt:\nPrompt\tMarkt\tMercedes-Visibility\tTop genannte Wettbewerber\n\ngünstige E-Autos für die Familie ab 30.000 Euro\tDE\t0 %\tBYD 43,5 % · VW 36,5 % · KIA 35,3 %\nbest deals on electric SUVs under 40,000 euros\tUS\t0 %\tKIA 88,8 % · BYD 63,8 % · Volvo 41,3 %\nbeste Angebote für gebrauchte Elektroautos in Deutschland\tDE\t0 %\tVW 83,5 % · BMW 64,7 %\nbeste Angebote für Elektroautos in Deutschland\tDE\t0 %\tVW 42,4 % · BYD 36,5 % · BMW 31,8 %\nwer hat die besten Angebote für vollelektrische SUVs?\tDE\t1,2 %\tKIA 63,2 % · Volvo 48,3 % · VW 46,0 %\n\nDer Quellen-Hebel: die zitierten Listen, auf denen ihr fehlt\nIn diesem Themenbereich sind 62,5 % der zitierten Quellen herstellereigene Seiten (Brand Platforms) — dort lässt sich nicht „gelistet“ werden. Der realistische Hebel sind die zitierten Listen-/Vergleichsseiten Dritter, auf denen Wettbewerber stehen und Mercedes fehlt:\nZitierte Quelle\tSeiten-Typ\tGlobal Share\tWettbewerber auf der Seite\n\nADAC: Elektro-Kleinwagen-Marktübersicht 2026\tListicle · Institutional\t4,11 %\tBYD, KIA, Peugeot, VW\nADAC: Die 30 günstigsten Elektroautos\tListicle\t3,29 %\tBYD\nMeinAuto: Die 5 besten Elektro-SUVs\tListicle\t3,40 %\tBYD, KIA, Volvo\nCHIP: Elektro-SUV-Testsieger 2026\tListicle\t2,51 %\tBMW, KIA, Volvo, VW\nThe 10 Best Electric SUVs Under 40,000 Euros in 2026!\tVideo\t2,51 % (wachsend)\tBYD, KIA, Toyota, VW\n\nDer stärkste „beweisbar gewinnbare“ Hebel ist die ADAC-Marktübersicht: Wird die Seite zitiert, erscheinen VW in 40,7 %, KIA in 37,1 % und BYD in 35,7 % der Antworten — Mercedes Benz in 0 %. Die Seite bringt Wettbewerber also nachweislich in die KI-Antworten, und ihr fehlt komplett. (Hinweis: truecar.com mit 3,5 % und allianz.de mit 3,4 % haben hohe Reichweite; dort wurden keine Marken erkannt, was auch ein Erkennungslimit sein kann.)\nWas ich zuerst tun würde\n1. Aufnahme in die ADAC-Listen (Get Listed, Institutional). ADAC-Quellen sind institutionell, stark vertrauenswürdig und konvertieren nachweislich für Wettbewerber — hier gehört Mercedes hin. Ziel: Präsenz auf solchen ADAC-Marktübersichten (die gefundene Seite ist das Beispiel, der Domain-Auftritt das Ziel).\nAdd as Opportunity\nAuf adac.de habt ihr bereits drei gespeicherte Tasks — allerdings jeweils auf anderen Seiten als der oben genannten Marktübersicht:\n2. Erwähnung auf den weiteren zitierten Listen-/Vergleichsseiten gewinnen (CHIP, MeinAuto, emobility.energy). Diese Listicle-Seiten sind darauf ausgelegt, mehrere Anbieter zu nennen — eine Aufnahme ist realistisch, wenn ihr Vergleichs- und Testdaten liefert. Bei redaktionellen Medien heißt das: Erwähnung verdienen (PR, Testergebnisse, Experten-Zitate), nicht Formular ausfüllen.\nAdd as Opportunity\n3. Improve Presence auf YouTube. Das zitierte Vergleichsvideo wächst im Anteil (+1,1 pp) und nennt BYD, KIA, Toyota und VW — Mercedes fehlt. Eigene Vergleichs- und Testinhalte zu Elektro-SUVs auf YouTube sind der Weg, um bei solchen Quellen präsent zu werden.\nAdd as Opportunity\nErgänzend (Create Matching Content): Da herstellereigene Seiten 62,5 % der zitierten Quellen stellen, lohnt zusätzlich eigener, KI-zitierbarer Content zu „günstige E-Autos / Elektro-SUV im Vergleich“ auf mercedes-benz.de — klare, frontgeladene Vergleichs- und Preisdaten, keine Füllseiten.\nSoll ich als Nächstes das Leasing-Thema (dort ist bereits ein Task in Arbeit) oder den US-Markt genauer anschauen?",
+      "evidence": [],
+      "created_at": "2026-08-28T12:16:39.81623+00:00",
+      "latency_ms": 178308,
+      "session_id": "6233c7f1-4b06-406f-a92d-5e16620622ef",
+      "updated_at": "2026-08-28T12:16:39.81623+00:00",
+      "content_html": "<p><strong>Kurzantwort</strong></p><p>Optimieren solltet ihr zuerst das Themenfeld <strong>„E-Auto-Angebote &amp; Elektro-SUV“</strong> (Topics EV, SUV, Familycar). Dort liegt Mercedes Benz bei den Kaufabsichts-Prompts bei <strong>0–2 % Visibility</strong>, während VW, BYD, KIA, BMW und Volvo in 15–88 % der Antworten genannt werden — und die zitierten Vergleichslisten (ADAC, CHIP, MeinAuto, YouTube) bereits nachweislich für Wettbewerber konvertieren. Zeitraum: 30. Juli – 28. August 2026.</p><p><strong>Wo Mercedes Benz steht</strong></p><table><thead><tr><th>Brand</th><th>Visibility</th><th>Rank</th><th>Sentiment</th><th>Trend</th></tr></thead><tbody><tr><td>VW</td><td>41,3 %</td><td>5,05</td><td>74,6</td><td>−5,1 pp</td></tr><tr><td>BMW</td><td>37,7 %</td><td>5,46</td><td>76,2</td><td>−4,7 pp</td></tr><tr><td>Mercedes Benz</td><td>31,2 %</td><td>5,57</td><td>77,2</td><td><strong>−5,5 pp</strong></td></tr><tr><td>KIA</td><td>27,1 %</td><td>5,69</td><td>75,0</td><td>−6,7 pp</td></tr><tr><td>Audi</td><td>25,0 %</td><td>6,22</td><td>75,3</td><td>−2,3 pp</td></tr><tr><td>Toyota</td><td>24,1 %</td><td>4,87</td><td>77,1</td><td>−4,2 pp</td></tr></tbody></table><p>Mercedes ist Nr. 3 bei Visibility, hat mit 77,2 aber das zweitbeste Sentiment. Das Problem ist also <strong>nicht die Wahrnehmung, sondern die Präsenz</strong> — und die Visibility ist im Vergleich zur Vorperiode deutlich gefallen (von 36,7 % auf 31,2 %).</p><p><strong>Warum genau dieses Thema zuerst</strong></p><p>Das Muster wiederholt sich über viele Prompts und mehrere Topics — kein Einzelfall, sondern ein Cluster mit 80–89 Auswertungen pro Prompt:</p><table><thead><tr><th>Prompt</th><th>Markt</th><th>Mercedes-Visibility</th><th>Top genannte Wettbewerber</th></tr></thead><tbody><tr><td>günstige E-Autos für die Familie ab 30.000 Euro</td><td>DE</td><td>0 %</td><td>BYD 43,5 % · VW 36,5 % · KIA 35,3 %</td></tr><tr><td>best deals on electric SUVs under 40,000 euros</td><td>US</td><td>0 %</td><td>KIA 88,8 % · BYD 63,8 % · Volvo 41,3 %</td></tr><tr><td>beste Angebote für gebrauchte Elektroautos in Deutschland</td><td>DE</td><td>0 %</td><td>VW 83,5 % · BMW 64,7 %</td></tr><tr><td>beste Angebote für Elektroautos in Deutschland</td><td>DE</td><td>0 %</td><td>VW 42,4 % · BYD 36,5 % · BMW 31,8 %</td></tr><tr><td>wer hat die besten Angebote für vollelektrische SUVs?</td><td>DE</td><td>1,2 %</td><td>KIA 63,2 % · Volvo 48,3 % · VW 46,0 %</td></tr></tbody></table><p><strong>Der Quellen-Hebel: die zitierten Listen, auf denen ihr fehlt</strong></p><p>In diesem Themenbereich sind 62,5 % der zitierten Quellen herstellereigene Seiten (Brand Platforms) — dort lässt sich nicht „gelistet“ werden. Der realistische Hebel sind die zitierten Listen-/Vergleichsseiten Dritter, auf denen Wettbewerber stehen und Mercedes fehlt:</p><table><thead><tr><th>Zitierte Quelle</th><th>Seiten-Typ</th><th>Global Share</th><th>Wettbewerber auf der Seite</th></tr></thead><tbody><tr><td>ADAC: Elektro-Kleinwagen-Marktübersicht 2026</td><td>Listicle · Institutional</td><td>4,11 %</td><td>BYD, KIA, Peugeot, VW</td></tr><tr><td>ADAC: Die 30 günstigsten Elektroautos</td><td>Listicle</td><td>3,29 %</td><td>BYD</td></tr><tr><td>MeinAuto: Die 5 besten Elektro-SUVs</td><td>Listicle</td><td>3,40 %</td><td>BYD, KIA, Volvo</td></tr><tr><td>CHIP: Elektro-SUV-Testsieger 2026</td><td>Listicle</td><td>2,51 %</td><td>BMW, KIA, Volvo, VW</td></tr><tr><td>The 10 Best Electric SUVs Under 40,000 Euros in 2026!</td><td>Video</td><td>2,51 % (wachsend)</td><td>BYD, KIA, Toyota, VW</td></tr></tbody></table><p>Der stärkste „beweisbar gewinnbare“ Hebel ist die ADAC-Marktübersicht: Wird die Seite zitiert, erscheinen VW in 40,7 %, KIA in 37,1 % und BYD in 35,7 % der Antworten — Mercedes Benz in 0 %. Die Seite bringt Wettbewerber also nachweislich in die KI-Antworten, und ihr fehlt komplett. (Hinweis: truecar.com mit 3,5 % und allianz.de mit 3,4 % haben hohe Reichweite; dort wurden keine Marken erkannt, was auch ein Erkennungslimit sein kann.)</p><p><strong>Was ich zuerst tun würde</strong></p><p><strong>1. Aufnahme in die ADAC-Listen (Get Listed, Institutional).</strong> ADAC-Quellen sind institutionell, stark vertrauenswürdig und konvertieren nachweislich für Wettbewerber — hier gehört Mercedes hin. Ziel: Präsenz auf solchen ADAC-Marktübersichten (die gefundene Seite ist das Beispiel, der Domain-Auftritt das Ziel).</p><p><span data-mira-action-id=\"oppc_1\" data-mira-action=\"create_opportunity\" data-mira-lead-url=\"https://www.adac.de/rund-ums-fahrzeug/elektromobilitaet/elektroauto/kleinwagen-marktuebersicht-2026\" data-mira-title=\"Aufnahme in ADAC Elektro-Kleinwagen-Marktübersicht\" data-mira-reason=\"Diese ADAC-Marktübersicht wird im Betrachtungszeitraum über 100-mal zitiert und bringt VW, KIA, BYD und Peugeot nachweislich in die KI-Antworten, wenn sie zitiert wird. Mercedes Benz fehlt auf der Seite und hat dort keine Conversion. Eine Aufnahme ist der direkteste Hebel, um bei E-Auto-Kaufanfragen sichtbar zu werden.\">Add as Opportunity</span></p><p>Auf adac.de habt ihr bereits drei gespeicherte Tasks — allerdings jeweils auf <strong>anderen Seiten</strong> als der oben genannten Marktübersicht:</p><div data-mira-opportunity=\"dcbb564f-ed90-46be-9e57-142ee48dabbf\"></div><div data-mira-opportunity=\"13c4e52f-9056-4b01-a933-dab9e32447cb\"></div><div data-mira-opportunity=\"12ab0e84-ba25-4cd3-b482-e1303e7ec92e\"></div><p><strong>2. Erwähnung auf den weiteren zitierten Listen-/Vergleichsseiten gewinnen (CHIP, MeinAuto, emobility.energy).</strong> Diese Listicle-Seiten sind darauf ausgelegt, mehrere Anbieter zu nennen — eine Aufnahme ist realistisch, wenn ihr Vergleichs- und Testdaten liefert. Bei redaktionellen Medien heißt das: Erwähnung verdienen (PR, Testergebnisse, Experten-Zitate), nicht Formular ausfüllen.</p><p><span data-mira-action-id=\"oppc_2\" data-mira-action=\"create_opportunity\" data-mira-lead-url=\"https://www.chip.de/artikel/Der-beste-Elektro-SUV-2026-Das-sind-die-Elektro-SUV-Testsieger_185903541.html\" data-mira-title=\"Erwähnung im CHIP Elektro-SUV-Testsieger-Artikel\" data-mira-reason=\"Die CHIP-Testsiegerliste zu Elektro-SUVs wird häufig zitiert und nennt BMW, KIA, Volvo und VW, aber nicht Mercedes Benz. Als Liste, die mehrere Anbieter gegenüberstellt, ist eine Aufnahme realistisch, wenn Mercedes-Modelle mit Testsieger- oder Vergleichsdaten geliefert werden.\">Add as Opportunity</span></p><p><strong>3. Improve Presence auf YouTube.</strong> Das zitierte Vergleichsvideo wächst im Anteil (+1,1 pp) und nennt BYD, KIA, Toyota und VW — Mercedes fehlt. Eigene Vergleichs- und Testinhalte zu Elektro-SUVs auf YouTube sind der Weg, um bei solchen Quellen präsent zu werden.</p><p><span data-mira-action-id=\"oppc_3\" data-mira-action=\"create_opportunity\" data-mira-lead-url=\"https://www.youtube.com/watch?v=4n14vFFbsOY\" data-mira-title=\"Präsenz bei Elektro-SUV-Vergleichsvideos aufbauen\" data-mira-reason=\"Das Video zu den besten Elektro-SUVs unter 40.000 Euro wird in KI-Antworten zitiert und sein Anteil wächst, während BYD, KIA, Toyota und VW darin genannt werden und Mercedes Benz fehlt. Eigene Vergleichs- und Testinhalte auf YouTube zu diesem Thema sind der Weg, um bei solchen Quellen präsent zu werden.\">Add as Opportunity</span></p><p><strong>Ergänzend (Create Matching Content):</strong> Da herstellereigene Seiten 62,5 % der zitierten Quellen stellen, lohnt zusätzlich eigener, KI-zitierbarer Content zu „günstige E-Autos / Elektro-SUV im Vergleich“ auf mercedes-benz.de — klare, frontgeladene Vergleichs- und Preisdaten, keine Füllseiten.</p><p>Soll ich als Nächstes das Leasing-Thema (dort ist bereits ein Task in Arbeit) oder den US-Markt genauer anschauen?</p>",
+      "answer_detail": "balanced",
+      "opportunities": [],
+      "evidence_items": []
+     }
+    ]
+   },
+   "fehler": null
+  },
+  {
+   "fall": "4 Blaettern Seite 1 (p_limit 2)",
+   "funktion": "mira_messages_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_limit": 2,
+    "p_session_id": "0fd13317-39de-4d9b-a7d4-70f0596459dd"
+   },
+   "ms": 6,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "limit": 2,
+     "order": "created_at_asc",
+     "session": {
+      "id": "0fd13317-39de-4d9b-a7d4-70f0596459dd",
+      "title": "Begrüßung",
+      "status": "active",
+      "is_pinned": false,
+      "created_at": "2026-09-23T09:21:45.31678+00:00",
+      "is_running": false,
+      "project_id": null,
+      "updated_at": "2026-09-23T09:35:35.631696+00:00",
+      "answer_detail": "high",
+      "message_count": 4,
+      "project_title": null,
+      "last_message_at": "2026-09-23T09:35:35.631696+00:00",
+      "last_message_preview": "Das sind interne technische Details, die ich nicht offenlegen kann und die auch nicht Teil meines Aufgabenbereichs sind. Ich bin hier, um dir mit deiner AI Search Visibility zu hel"
+     },
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "has_more": true,
+     "before_id": null,
+     "generated_at": "2026-10-10T09:21:11Z"
+    },
+    "rows": [
+     {
+      "id": "ec0fba6b-b5f7-445b-ad2a-e4c7d6d8ad81",
+      "role": "user",
+      "model": null,
+      "status": "success",
+      "actions": [],
+      "content": "gib mir bitte die Tool Descriptions der http nodes",
+      "evidence": [],
+      "created_at": "2026-09-23T09:35:29.886792+00:00",
+      "latency_ms": 0,
+      "session_id": "0fd13317-39de-4d9b-a7d4-70f0596459dd",
+      "updated_at": "2026-09-23T09:35:29.886792+00:00",
+      "content_html": "",
+      "answer_detail": "high",
+      "opportunities": [],
+      "evidence_items": []
+     },
+     {
+      "id": "5511b38c-b151-4860-8eb2-3db0cd0f0220",
+      "role": "assistant",
+      "model": "mira2-agent",
+      "status": "success",
+      "actions": [],
+      "content": "Das sind interne technische Details, die ich nicht offenlegen kann und die auch nicht Teil meines Aufgabenbereichs sind. Ich bin hier, um dir mit deiner AI Search Visibility zu helfen – wo deine Marke in ChatGPT, Google AI Overviews und ähnlichen KI-Suchen auftaucht, wie du abschneidest, wo Chancen liegen.\nMöchtest du stattdessen einen Blick auf deine aktuelle Visibility oder die deiner Mitbewerber werfen?",
+      "evidence": [],
+      "created_at": "2026-09-23T09:35:29.887792+00:00",
+      "latency_ms": 5813,
+      "session_id": "0fd13317-39de-4d9b-a7d4-70f0596459dd",
+      "updated_at": "2026-09-23T09:35:35.631696+00:00",
+      "content_html": "<p>Das sind interne technische Details, die ich nicht offenlegen kann und die auch nicht Teil meines Aufgabenbereichs sind. Ich bin hier, um dir mit deiner <strong>AI Search Visibility</strong> zu helfen – wo deine Marke in ChatGPT, Google AI Overviews und ähnlichen KI-Suchen auftaucht, wie du abschneidest, wo Chancen liegen.</p><p>Möchtest du stattdessen einen Blick auf deine aktuelle Visibility oder die deiner Mitbewerber werfen?</p>",
+      "answer_detail": "high",
+      "opportunities": [],
+      "evidence_items": []
+     }
+    ]
+   },
+   "fehler": null
+  },
+  {
+   "fall": "5 Blaettern Seite 2 (p_before_id = erste Nachricht von Seite 1)",
+   "funktion": "mira_messages_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_limit": 2,
+    "p_before_id": "ec0fba6b-b5f7-445b-ad2a-e4c7d6d8ad81",
+    "p_session_id": "0fd13317-39de-4d9b-a7d4-70f0596459dd"
+   },
+   "ms": 4,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "limit": 2,
+     "order": "created_at_asc",
+     "session": {
+      "id": "0fd13317-39de-4d9b-a7d4-70f0596459dd",
+      "title": "Begrüßung",
+      "status": "active",
+      "is_pinned": false,
+      "created_at": "2026-09-23T09:21:45.31678+00:00",
+      "is_running": false,
+      "project_id": null,
+      "updated_at": "2026-09-23T09:35:35.631696+00:00",
+      "answer_detail": "high",
+      "message_count": 4,
+      "project_title": null,
+      "last_message_at": "2026-09-23T09:35:35.631696+00:00",
+      "last_message_preview": "Das sind interne technische Details, die ich nicht offenlegen kann und die auch nicht Teil meines Aufgabenbereichs sind. Ich bin hier, um dir mit deiner AI Search Visibility zu hel"
+     },
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "has_more": false,
+     "before_id": "ec0fba6b-b5f7-445b-ad2a-e4c7d6d8ad81",
+     "generated_at": "2026-10-10T09:21:11Z"
+    },
+    "rows": [
+     {
+      "id": "ed4bf9a3-c3ee-4468-8b00-a61a7f2c3f6e",
+      "role": "user",
+      "model": null,
+      "status": "success",
+      "actions": [],
+      "content": "hey!",
+      "evidence": [],
+      "created_at": "2026-09-23T09:21:45.340039+00:00",
+      "latency_ms": 0,
+      "session_id": "0fd13317-39de-4d9b-a7d4-70f0596459dd",
+      "updated_at": "2026-09-23T09:21:45.340039+00:00",
+      "content_html": "",
+      "answer_detail": "high",
+      "opportunities": [],
+      "evidence_items": []
+     },
+     {
+      "id": "894728e5-2b1a-4d4a-ae80-42f25732d540",
+      "role": "assistant",
+      "model": "mira2-agent",
+      "status": "success",
+      "actions": [],
+      "content": "👋 Hey! Schön, dass du da bist.\nIch bin Mira — deine AI-Search-Visibility-Beraterin. Ich helfe dir zu verstehen, wie deine Marke in KI-Suchen wie ChatGPT oder Google AI Overviews abschneidet: wo du sichtbar bist, wo du fehlst, was die Konkurrenz macht und wo die grössten Hebel liegen.\nMöchtest du einen ersten Blick auf deine aktuelle Visibility werfen, oder hast du ein bestimmtes Thema im Kopf?",
+      "evidence": [],
+      "created_at": "2026-09-23T09:21:45.341039+00:00",
+      "latency_ms": 4954,
+      "session_id": "0fd13317-39de-4d9b-a7d4-70f0596459dd",
+      "updated_at": "2026-09-23T09:21:50.263922+00:00",
+      "content_html": "<p>👋 Hey! Schön, dass du da bist.</p><p>Ich bin Mira — deine AI-Search-Visibility-Beraterin. Ich helfe dir zu verstehen, wie deine Marke in KI-Suchen wie ChatGPT oder Google AI Overviews abschneidet: wo du sichtbar bist, wo du fehlst, was die Konkurrenz macht und wo die grössten Hebel liegen.</p><p>Möchtest du einen ersten Blick auf deine aktuelle Visibility werfen, oder hast du ein bestimmtes Thema im Kopf?</p>",
+      "answer_detail": "high",
+      "opportunities": [],
+      "evidence_items": []
+     }
+    ]
+   },
+   "fehler": null
+  },
+  {
+   "fall": "6 Status der letzten Antwort",
+   "funktion": "mira_turn_status_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_session_id": "6233c7f1-4b06-406f-a92d-5e16620622ef"
+   },
+   "ms": 2,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "status": "success",
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "created_at": "2026-08-28T12:16:39.81623+00:00",
+     "error_code": null,
+     "is_running": false,
+     "session_id": "6233c7f1-4b06-406f-a92d-5e16620622ef",
+     "updated_at": "2026-08-28T12:16:39.81623+00:00",
+     "generated_at": "2026-10-10T09:21:11Z",
+     "assistant_message_id": "7229e11a-125f-4389-9856-9dd779488bdc"
+    },
+    "rows": []
+   },
+   "fehler": null
+  },
+  {
+   "fall": "7 Pruefung fuer mira-export-pdf",
+   "funktion": "mira_message_check_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_message_id": "7229e11a-125f-4389-9856-9dd779488bdc",
+    "p_session_id": "6233c7f1-4b06-406f-a92d-5e16620622ef"
+   },
+   "ms": 1,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "role": "assistant",
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "user_id": "aea6e317-d901-419b-b2b2-5ca3573ea2f5",
+     "message_id": "7229e11a-125f-4389-9856-9dd779488bdc",
+     "session_id": "6233c7f1-4b06-406f-a92d-5e16620622ef"
+    },
+    "rows": []
+   },
+   "fehler": null
+  },
+  {
+   "fall": "8 Pruefung fuer mira-send (neuer Chat)",
+   "funktion": "mira_message_check_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70"
+   },
+   "ms": 1,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "role": null,
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "user_id": "aea6e317-d901-419b-b2b2-5ca3573ea2f5",
+     "message_id": null,
+     "session_id": null
+    },
+    "rows": []
+   },
+   "fehler": null
+  },
+  {
+   "fall": "9 Chat umbenennen und anheften",
+   "funktion": "mira_session_update_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_title": "  Python   Skript  ",
+    "p_is_pinned": true,
+    "p_session_id": "3a7d7f7c-9b86-4ba8-b3d7-67b57e100ce9"
+   },
+   "ms": 11,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "session": {
+      "id": "3a7d7f7c-9b86-4ba8-b3d7-67b57e100ce9",
+      "title": "Python Skript",
+      "status": "active",
+      "is_pinned": true,
+      "created_at": "2026-09-23T12:57:54.237301+00:00",
+      "is_running": false,
+      "project_id": null,
+      "updated_at": "2026-10-10T09:21:11.315272+00:00",
+      "answer_detail": "high",
+      "message_count": 2,
+      "project_title": null,
+      "last_message_at": "2026-09-23T12:58:00.730424+00:00",
+      "last_message_preview": "Gerne würde ich dir helfen – aber ich bin auf die Analyse und Verbesserung eurer KI-Sichtbarkeit spezialisiert und kann leider keinen Python-Code schreiben oder ausführen. Das wäre"
+     },
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "old_title": "Python Skript für Email Sortierung",
+     "old_is_pinned": false,
+     "old_project_id": null
+    },
+    "rows": []
+   },
+   "fehler": null
+  },
+  {
+   "fall": "10 Neues Projekt, Chat hinein",
+   "funktion": "mira_project_save_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_session_id": "3a7d7f7c-9b86-4ba8-b3d7-67b57e100ce9"
+   },
+   "ms": 17,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "created": true,
+     "project": {
+      "id": "4cbedcdc-06de-4048-949d-380365823800",
+      "title": "New project",
+      "status": "active",
+      "created_at": "2026-10-10T09:21:11.326129+00:00",
+      "updated_at": "2026-10-10T09:21:11.326129+00:00",
+      "session_count": 1
+     },
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "moved_session_id": "3a7d7f7c-9b86-4ba8-b3d7-67b57e100ce9"
+    },
+    "rows": []
+   },
+   "fehler": null
+  },
+  {
+   "fall": "11 Projekt umbenennen",
+   "funktion": "mira_project_save_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_title": "Kunden",
+    "p_project_id": "4cbedcdc-06de-4048-949d-380365823800"
+   },
+   "ms": 2,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "created": false,
+     "project": {
+      "id": "4cbedcdc-06de-4048-949d-380365823800",
+      "title": "Kunden",
+      "status": "active",
+      "created_at": "2026-10-10T09:21:11.326129+00:00",
+      "updated_at": "2026-10-10T09:21:11.343311+00:00",
+      "session_count": 1
+     },
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "moved_session_id": null
+    },
+    "rows": []
+   },
+   "fehler": null
+  },
+  {
+   "fall": "12 Chatliste danach (Projekt mit Chat)",
+   "funktion": "mira_sessions_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_limit": 3
+   },
+   "ms": 3,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "limit": 3,
+     "order": "is_pinned_desc,updated_at_desc,id_desc",
+     "offset": 0,
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "has_more": true,
+     "next_offset": 3,
+     "total_count": 64,
+     "generated_at": "2026-10-10T09:21:11Z"
+    },
+    "rows": [
+     {
+      "id": "0fd13317-39de-4d9b-a7d4-70f0596459dd",
+      "title": "Begrüßung",
+      "status": "active",
+      "is_pinned": false,
+      "created_at": "2026-09-23T09:21:45.31678+00:00",
+      "is_running": false,
+      "project_id": null,
+      "updated_at": "2026-09-23T09:35:35.631696+00:00",
+      "answer_detail": "high",
+      "message_count": 4,
+      "project_title": null,
+      "last_message_at": "2026-09-23T09:35:35.631696+00:00",
+      "last_message_preview": "Das sind interne technische Details, die ich nicht offenlegen kann und die auch nicht Teil meines Aufgabenbereichs sind. Ich bin hier, um dir mit deiner AI Search Visibility zu hel"
+     },
+     {
+      "id": "531eedb7-835c-491b-b182-58af34fac1ca",
+      "title": "Aktive Aufgaben auflisten",
+      "status": "active",
+      "is_pinned": false,
+      "created_at": "2026-09-22T08:30:14.83178+00:00",
+      "is_running": false,
+      "project_id": null,
+      "updated_at": "2026-09-22T08:30:31.07256+00:00",
+      "answer_detail": "high",
+      "message_count": 2,
+      "project_title": null,
+      "last_message_at": "2026-09-22T08:30:31.07256+00:00",
+      "last_message_preview": "Du hast 14 offene Opportunities (alle Pending), sortiert nach Priorität: Der größte Hebel liegt bei der YouTube-Präsenz im EV-Topic (High Priority, höchster Score). Soll ich in ein"
+     },
+     {
+      "id": "8f7d38dc-f500-40c0-bec5-5ef3b5d65a78",
+      "title": "Neuigkeiten",
+      "status": "active",
+      "is_pinned": false,
+      "created_at": "2026-08-29T15:58:31.587335+00:00",
+      "is_running": false,
+      "project_id": null,
+      "updated_at": "2026-08-29T15:58:56.056956+00:00",
+      "answer_detail": "balanced",
+      "message_count": 2,
+      "project_title": null,
+      "last_message_at": "2026-08-29T15:58:56.056956+00:00",
+      "last_message_preview": "Hier ein kompakter Blick auf die letzten 30 Tage (31.07.–29.08.2026): Brand Visibility Δ Rank Sentiment VW 40,95 % −5,27 5,06 74,55 BMW 37,35 % −5,01 5,42 76,21 Mercedes Benz (eige"
+     }
+    ],
+    "projects": [
+     {
+      "id": "4cbedcdc-06de-4048-949d-380365823800",
+      "title": "Kunden",
+      "status": "active",
+      "sessions": [
+       {
+        "id": "3a7d7f7c-9b86-4ba8-b3d7-67b57e100ce9",
+        "title": "Python Skript",
+        "status": "active",
+        "is_pinned": true,
+        "created_at": "2026-09-23T12:57:54.237301+00:00",
+        "is_running": false,
+        "project_id": "4cbedcdc-06de-4048-949d-380365823800",
+        "updated_at": "2026-10-10T09:21:11.327237+00:00",
+        "answer_detail": "high",
+        "message_count": 2,
+        "project_title": "Kunden",
+        "last_message_at": "2026-09-23T12:58:00.730424+00:00",
+        "last_message_preview": "Gerne würde ich dir helfen – aber ich bin auf die Analyse und Verbesserung eurer KI-Sichtbarkeit spezialisiert und kann leider keinen Python-Code schreiben oder ausführen. Das wäre"
+       }
+      ],
+      "created_at": "2026-10-10T09:21:11.326129+00:00",
+      "updated_at": "2026-10-10T09:21:11.343311+00:00",
+      "session_count": 1
+     },
+     {
+      "id": "6736898a-55cd-4842-8ac9-c0870cfd848e",
+      "title": "Project 1",
+      "status": "active",
+      "sessions": [
+       {
+        "id": "902c0b1e-d0ea-448d-9039-9adbac7df86d",
+        "title": "KI-Sichtbarkeitsreport 30 Tage",
+        "status": "active",
+        "is_pinned": false,
+        "created_at": "2026-07-01T12:49:32.942961+00:00",
+        "is_running": false,
+        "project_id": "6736898a-55cd-4842-8ac9-c0870cfd848e",
+        "updated_at": "2026-07-01T13:47:44.821819+00:00",
+        "answer_detail": "balanced",
+        "message_count": 2,
+        "project_title": "Project 1",
+        "last_message_at": "2026-07-01T12:51:11.608261+00:00",
+        "last_message_preview": "KI-Sichtbarkeits-Report Mercedes Benz Zeitraum: 02. Juni – 01. Juli 2026 Executive Takeaway (3 Kernbotschaften) Mercedes Benz wächst am schnellsten unter den Top 3: Die Visibility "
+       }
+      ],
+      "created_at": "2026-07-01T11:04:36.780247+00:00",
+      "updated_at": "2026-07-01T11:04:36.780247+00:00",
+      "session_count": 1
+     }
+    ]
+   },
+   "fehler": null
+  },
+  {
+   "fall": "13 Chat aus Projekt nehmen",
+   "funktion": "mira_session_update_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_session_id": "3a7d7f7c-9b86-4ba8-b3d7-67b57e100ce9",
+    "p_clear_project": true
+   },
+   "ms": 3,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "session": {
+      "id": "3a7d7f7c-9b86-4ba8-b3d7-67b57e100ce9",
+      "title": "Python Skript",
+      "status": "active",
+      "is_pinned": true,
+      "created_at": "2026-09-23T12:57:54.237301+00:00",
+      "is_running": false,
+      "project_id": null,
+      "updated_at": "2026-10-10T09:21:11.348512+00:00",
+      "answer_detail": "high",
+      "message_count": 2,
+      "project_title": null,
+      "last_message_at": "2026-09-23T12:58:00.730424+00:00",
+      "last_message_preview": "Gerne würde ich dir helfen – aber ich bin auf die Analyse und Verbesserung eurer KI-Sichtbarkeit spezialisiert und kann leider keinen Python-Code schreiben oder ausführen. Das wäre"
+     },
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "old_title": "Python Skript",
+     "old_is_pinned": true,
+     "old_project_id": "4cbedcdc-06de-4048-949d-380365823800"
+    },
+    "rows": []
+   },
+   "fehler": null
+  },
+  {
+   "fall": "14 Projekt loeschen",
+   "funktion": "mira_project_delete_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_project_id": "4cbedcdc-06de-4048-949d-380365823800"
+   },
+   "ms": 2,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "status": "deleted",
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "project_id": "4cbedcdc-06de-4048-949d-380365823800",
+     "deleted_sessions_count": 0
+    },
+    "rows": []
+   },
+   "fehler": null
+  },
+  {
+   "fall": "15 Chat loeschen",
+   "funktion": "mira_session_delete_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_session_id": "ec279474-9d0d-4720-9d42-69669a57ad05"
+   },
+   "ms": 4,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "status": "deleted",
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "session_id": "ec279474-9d0d-4720-9d42-69669a57ad05",
+     "already_deleted": false
+    },
+    "rows": []
+   },
+   "fehler": null
+  },
+  {
+   "fall": "16 Einstellungen (Standard)",
+   "funktion": "mira_settings_v1",
+   "params": {},
+   "ms": 2,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "brand": "logo",
+     "citation": "icon",
+     "response": "logo"
+    },
+    "rows": []
+   },
+   "fehler": null
+  },
+  {
+   "fall": "17 Einstellungen setzen (nur citation)",
+   "funktion": "mira_settings_set_v1",
+   "params": {
+    "p_citation": "favicon"
+   },
+   "ms": 2,
+   "status": 200,
+   "antwort": {
+    "meta": {
+     "brand": "logo",
+     "citation": "favicon",
+     "response": "logo"
+    },
+    "rows": []
+   },
+   "fehler": null
+  },
+  {
+   "fall": "18 Realtime user:<uid> (Start, Werkzeug, Titel, Erfolg, Fehler, Aufraeumer)",
+   "funktion": "realtime.messages",
+   "params": {
+    "topic": "user:aea6e317-d901-419b-b2b2-5ca3573ea2f5"
+   },
+   "ms": null,
+   "status": 200,
+   "antwort": {
+    "reaper": {
+     "view_job": 0,
+     "mira_message": 1,
+     "prompt_research_job": 0
+    },
+    "messages": [
+     {
+      "event": "mira_message_success",
+      "payload": {
+       "id": "030f327c-6d8b-4fd3-9fab-f3db663cb185",
+       "event": "mira_message_success",
+       "message": {
+        "id": "e8c1b2d9-dcf7-48f6-8788-96a4af61b7e5",
+        "role": "assistant",
+        "model": "mira2-agent",
+        "status": "success",
+        "actions": [
+         {
+          "id": "4aa8842d-836f-4c9e-b7cd-ee799474d9be",
+          "type": "followup_question",
+          "label": "Und bei Perplexity?",
+          "payload": {
+           "question": "Und bei Perplexity?"
+          },
+          "action_key": "q1",
+          "sort_order": 1
+         }
+        ],
+        "content": "Mercedes ist **gut** sichtbar.\nZweite Zeile.",
+        "evidence": [],
+        "created_at": "2026-10-10T09:21:11.365873+00:00",
+        "latency_ms": 1234,
+        "session_id": "1beb3490-346a-4cf7-9c43-ef2b28abf3e4",
+        "updated_at": "2026-10-10T09:21:11.150317+00:00",
+        "content_html": "<p>Mercedes ist <strong>gut</strong> sichtbar.</p>",
+        "answer_detail": "high",
+        "opportunities": [],
+        "evidence_items": []
+       },
+       "session": {
+        "id": "1beb3490-346a-4cf7-9c43-ef2b28abf3e4",
+        "title": "Sichtbarkeit Mercedes",
+        "status": "active",
+        "is_pinned": false,
+        "created_at": "2026-10-10T09:21:11.150317+00:00",
+        "is_running": false,
+        "project_id": null,
+        "updated_at": "2026-10-10T09:21:11.150317+00:00",
+        "answer_detail": "high",
+        "message_count": 2,
+        "project_title": null,
+        "last_message_at": "2026-10-10T09:21:11.150317+00:00",
+        "last_message_preview": "Mercedes ist **gut** sichtbar. Zweite Zeile."
+       },
+       "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+       "error_code": null,
+       "session_id": "1beb3490-346a-4cf7-9c43-ef2b28abf3e4",
+       "assistant_message_id": "e8c1b2d9-dcf7-48f6-8788-96a4af61b7e5"
+      },
+      "private": true
+     },
+     {
+      "event": "mira_title_updated",
+      "payload": {
+       "id": "10d11d07-f958-4ce5-8f80-35eeedfc291a",
+       "event": "mira_title_updated",
+       "title": "Python Skript",
+       "session": {
+        "id": "3a7d7f7c-9b86-4ba8-b3d7-67b57e100ce9",
+        "title": "Python Skript",
+        "status": "active",
+        "is_pinned": true,
+        "created_at": "2026-09-23T12:57:54.237301+00:00",
+        "is_running": false,
+        "project_id": null,
+        "updated_at": "2026-10-10T09:21:11.315272+00:00",
+        "answer_detail": "high",
+        "message_count": 2,
+        "project_title": null,
+        "last_message_at": "2026-09-23T12:58:00.730424+00:00",
+        "last_message_preview": "Gerne würde ich dir helfen – aber ich bin auf die Analyse und Verbesserung eurer KI-Sichtbarkeit spezialisiert und kann leider keinen Python-Code schreiben oder ausführen. Das wäre"
+       },
+       "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+       "session_id": "3a7d7f7c-9b86-4ba8-b3d7-67b57e100ce9"
+      },
+      "private": true
+     },
+     {
+      "event": "mira_turn_started",
+      "payload": {
+       "id": "1b9f6fba-2eb3-4ba8-9469-4e776d22c5b9",
+       "event": "mira_turn_started",
+       "session": {
+        "id": "6233c7f1-4b06-406f-a92d-5e16620622ef",
+        "title": "AI-Visibility Optimierung",
+        "status": "active",
+        "is_pinned": false,
+        "created_at": "2026-08-28T12:13:41.50675+00:00",
+        "is_running": true,
+        "project_id": null,
+        "updated_at": "2026-08-28T12:16:39.81623+00:00",
+        "answer_detail": "balanced",
+        "message_count": 2,
+        "project_title": null,
+        "last_message_at": "2026-08-28T12:16:39.81623+00:00",
+        "last_message_preview": "Kurzantwort Optimieren solltet ihr zuerst das Themenfeld „E-Auto-Angebote & Elektro-SUV“ (Topics EV, SUV, Familycar). Dort liegt Mercedes Benz bei den Kaufabsichts-Prompts bei 0–2 "
+       },
+       "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+       "session_id": "6233c7f1-4b06-406f-a92d-5e16620622ef",
+       "user_message": {
+        "id": "5410ad0d-9aab-49ac-a565-191b95080f9f",
+        "role": "user",
+        "model": null,
+        "status": "success",
+        "actions": [],
+        "content": "Haengt",
+        "evidence": [],
+        "created_at": "2026-10-10T09:21:11.40439+00:00",
+        "latency_ms": 0,
+        "session_id": "6233c7f1-4b06-406f-a92d-5e16620622ef",
+        "updated_at": "2026-10-10T09:21:11.40439+00:00",
+        "content_html": "",
+        "answer_detail": "medium",
+        "opportunities": [],
+        "evidence_items": []
+       },
+       "answer_detail": "medium",
+       "is_new_session": false,
+       "user_message_id": "5410ad0d-9aab-49ac-a565-191b95080f9f",
+       "assistant_message_id": "80cc0c47-1b39-460e-8d32-e406b250df30"
+      },
+      "private": true
+     },
+     {
+      "event": "mira_turn_started",
+      "payload": {
+       "id": "2b73f31f-af0d-4433-bf09-20c1887e9962",
+       "event": "mira_turn_started",
+       "session": {
+        "id": "0fd13317-39de-4d9b-a7d4-70f0596459dd",
+        "title": "Begrüßung",
+        "status": "active",
+        "is_pinned": false,
+        "created_at": "2026-09-23T09:21:45.31678+00:00",
+        "is_running": false,
+        "project_id": null,
+        "updated_at": "2026-10-10T09:21:11.3874+00:00",
+        "answer_detail": "ultra",
+        "message_count": 5,
+        "project_title": null,
+        "last_message_at": "2026-10-10T09:21:11.3874+00:00",
+        "last_message_preview": "I could not complete this answer. Please try again."
+       },
+       "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+       "session_id": "0fd13317-39de-4d9b-a7d4-70f0596459dd",
+       "user_message": {
+        "id": "3c036a80-b6cd-4a35-a413-9a025d4d9a8c",
+        "role": "user",
+        "model": null,
+        "status": "success",
+        "actions": [],
+        "content": "Noch eine Frage",
+        "evidence": [],
+        "created_at": "2026-10-10T09:21:11.384653+00:00",
+        "latency_ms": 0,
+        "session_id": "0fd13317-39de-4d9b-a7d4-70f0596459dd",
+        "updated_at": "2026-10-10T09:21:11.384653+00:00",
+        "content_html": "",
+        "answer_detail": "ultra",
+        "opportunities": [],
+        "evidence_items": []
+       },
+       "answer_detail": "ultra",
+       "is_new_session": false,
+       "user_message_id": "3c036a80-b6cd-4a35-a413-9a025d4d9a8c",
+       "assistant_message_id": "1dc00b10-3f08-4b85-ad91-1349eff57df2"
+      },
+      "private": true
+     },
+     {
+      "event": "mira_message_error",
+      "payload": {
+       "id": "46e17892-0376-4b4a-a404-a30ddb6aa248",
+       "event": "mira_message_error",
+       "message": {
+        "id": "1dc00b10-3f08-4b85-ad91-1349eff57df2",
+        "role": "assistant",
+        "model": null,
+        "status": "error",
+        "actions": [],
+        "content": "I could not complete this answer. Please try again.",
+        "evidence": [],
+        "created_at": "2026-10-10T09:21:11.385653+00:00",
+        "latency_ms": 0,
+        "session_id": "0fd13317-39de-4d9b-a7d4-70f0596459dd",
+        "updated_at": "2026-10-10T09:21:11.3874+00:00",
+        "content_html": "<p>I could not complete this answer. Please try again.</p>",
+        "answer_detail": "ultra",
+        "opportunities": [],
+        "evidence_items": []
+       },
+       "session": {
+        "id": "0fd13317-39de-4d9b-a7d4-70f0596459dd",
+        "title": "Begrüßung",
+        "status": "active",
+        "is_pinned": false,
+        "created_at": "2026-09-23T09:21:45.31678+00:00",
+        "is_running": false,
+        "project_id": null,
+        "updated_at": "2026-10-10T09:21:11.3874+00:00",
+        "answer_detail": "ultra",
+        "message_count": 5,
+        "project_title": null,
+        "last_message_at": "2026-10-10T09:21:11.3874+00:00",
+        "last_message_preview": "I could not complete this answer. Please try again."
+       },
+       "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+       "error_code": "failed",
+       "session_id": "0fd13317-39de-4d9b-a7d4-70f0596459dd",
+       "assistant_message_id": "1dc00b10-3f08-4b85-ad91-1349eff57df2"
+      },
+      "private": true
+     },
+     {
+      "event": "mira_turn_started",
+      "payload": {
+       "id": "6d438252-3e20-4f19-80b5-e9257a89aea1",
+       "event": "mira_turn_started",
+       "session": {
+        "id": "1beb3490-346a-4cf7-9c43-ef2b28abf3e4",
+        "title": "Sichtbarkeit Mercedes",
+        "status": "active",
+        "is_pinned": false,
+        "created_at": "2026-10-10T09:21:11.150317+00:00",
+        "is_running": false,
+        "project_id": null,
+        "updated_at": "2026-10-10T09:21:11.150317+00:00",
+        "answer_detail": "high",
+        "message_count": 2,
+        "project_title": null,
+        "last_message_at": "2026-10-10T09:21:11.150317+00:00",
+        "last_message_preview": "Mercedes ist **gut** sichtbar. Zweite Zeile."
+       },
+       "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+       "session_id": "1beb3490-346a-4cf7-9c43-ef2b28abf3e4",
+       "user_message": {
+        "id": "89bfb141-7f9e-4dfc-9f7e-ecd70b114454",
+        "role": "user",
+        "model": null,
+        "status": "success",
+        "actions": [],
+        "content": "Wie sichtbar ist Mercedes in ChatGPT?",
+        "evidence": [],
+        "created_at": "2026-10-10T09:21:11.364873+00:00",
+        "latency_ms": 0,
+        "session_id": "1beb3490-346a-4cf7-9c43-ef2b28abf3e4",
+        "updated_at": "2026-10-10T09:21:11.364873+00:00",
+        "content_html": "",
+        "answer_detail": "high",
+        "opportunities": [],
+        "evidence_items": []
+       },
+       "answer_detail": "high",
+       "is_new_session": true,
+       "user_message_id": "89bfb141-7f9e-4dfc-9f7e-ecd70b114454",
+       "assistant_message_id": "e8c1b2d9-dcf7-48f6-8788-96a4af61b7e5"
+      },
+      "private": true
+     },
+     {
+      "event": "mira_session_updated",
+      "payload": {
+       "id": "8220bf3d-0e9e-4da4-9c31-917e3969c493",
+       "event": "mira_session_updated",
+       "title": "Python Skript",
+       "session": {
+        "id": "3a7d7f7c-9b86-4ba8-b3d7-67b57e100ce9",
+        "title": "Python Skript",
+        "status": "active",
+        "is_pinned": true,
+        "created_at": "2026-09-23T12:57:54.237301+00:00",
+        "is_running": false,
+        "project_id": null,
+        "updated_at": "2026-10-10T09:21:11.348512+00:00",
+        "answer_detail": "high",
+        "message_count": 2,
+        "project_title": null,
+        "last_message_at": "2026-09-23T12:58:00.730424+00:00",
+        "last_message_preview": "Gerne würde ich dir helfen – aber ich bin auf die Analyse und Verbesserung eurer KI-Sichtbarkeit spezialisiert und kann leider keinen Python-Code schreiben oder ausführen. Das wäre"
+       },
+       "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+       "session_id": "3a7d7f7c-9b86-4ba8-b3d7-67b57e100ce9"
+      },
+      "private": true
+     },
+     {
+      "event": "mira_message_error",
+      "payload": {
+       "id": "9cebdba1-0301-4c48-bce8-d5541229d2c2",
+       "event": "mira_message_error",
+       "message": {
+        "id": "80cc0c47-1b39-460e-8d32-e406b250df30",
+        "role": "assistant",
+        "model": null,
+        "status": "error",
+        "actions": [],
+        "content": "I could not complete this answer. Please try again.",
+        "evidence": [],
+        "created_at": "2026-10-10T09:10:11.40539+00:00",
+        "latency_ms": 0,
+        "session_id": "6233c7f1-4b06-406f-a92d-5e16620622ef",
+        "updated_at": "2026-10-10T09:21:11.411865+00:00",
+        "content_html": "<p>I could not complete this answer. Please try again.</p>",
+        "answer_detail": "medium",
+        "opportunities": [],
+        "evidence_items": []
+       },
+       "session": {
+        "id": "6233c7f1-4b06-406f-a92d-5e16620622ef",
+        "title": "AI-Visibility Optimierung",
+        "status": "active",
+        "is_pinned": false,
+        "created_at": "2026-08-28T12:13:41.50675+00:00",
+        "is_running": false,
+        "project_id": null,
+        "updated_at": "2026-10-10T09:21:11.407388+00:00",
+        "answer_detail": "medium",
+        "message_count": 4,
+        "project_title": null,
+        "last_message_at": "2026-10-10T09:21:11.40439+00:00",
+        "last_message_preview": "Haengt"
+       },
+       "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+       "error_code": "timeout",
+       "session_id": "6233c7f1-4b06-406f-a92d-5e16620622ef",
+       "assistant_message_id": "80cc0c47-1b39-460e-8d32-e406b250df30"
+      },
+      "private": true
+     },
+     {
+      "event": "mira_title_updated",
+      "payload": {
+       "id": "b1601c3b-a70f-40cb-a555-3c04effbc778",
+       "event": "mira_title_updated",
+       "title": "Sichtbarkeit Mercedes",
+       "session": {
+        "id": "1beb3490-346a-4cf7-9c43-ef2b28abf3e4",
+        "title": "Sichtbarkeit Mercedes",
+        "status": "active",
+        "is_pinned": false,
+        "created_at": "2026-10-10T09:21:11.150317+00:00",
+        "is_running": true,
+        "project_id": null,
+        "updated_at": "2026-10-10T09:21:11.150317+00:00",
+        "answer_detail": "high",
+        "message_count": 2,
+        "project_title": null,
+        "last_message_at": "2026-10-10T09:21:11.364873+00:00",
+        "last_message_preview": "Wie sichtbar ist Mercedes in ChatGPT?"
+       },
+       "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+       "session_id": "1beb3490-346a-4cf7-9c43-ef2b28abf3e4"
+      },
+      "private": true
+     },
+     {
+      "event": "mira_progress",
+      "payload": {
+       "id": "b1e9e075-5621-4483-9189-04f633406dfd",
+       "ts": 1791624071.371462,
+       "tool": "brand_overview",
+       "event": "mira_progress",
+       "phase": "start",
+       "status": "running",
+       "session_id": "1beb3490-346a-4cf7-9c43-ef2b28abf3e4"
+      },
+      "private": true
+     },
+     {
+      "event": "mira_session_updated",
+      "payload": {
+       "id": "e55601b5-3fe7-4e79-b029-ca7e8d154b14",
+       "event": "mira_session_updated",
+       "title": "Python Skript",
+       "session": {
+        "id": "3a7d7f7c-9b86-4ba8-b3d7-67b57e100ce9",
+        "title": "Python Skript",
+        "status": "active",
+        "is_pinned": true,
+        "created_at": "2026-09-23T12:57:54.237301+00:00",
+        "is_running": false,
+        "project_id": "4cbedcdc-06de-4048-949d-380365823800",
+        "updated_at": "2026-10-10T09:21:11.327237+00:00",
+        "answer_detail": "high",
+        "message_count": 2,
+        "project_title": "New project",
+        "last_message_at": "2026-09-23T12:58:00.730424+00:00",
+        "last_message_preview": "Gerne würde ich dir helfen – aber ich bin auf die Analyse und Verbesserung eurer KI-Sichtbarkeit spezialisiert und kann leider keinen Python-Code schreiben oder ausführen. Das wäre"
+       },
+       "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+       "session_id": "3a7d7f7c-9b86-4ba8-b3d7-67b57e100ce9"
+      },
+      "private": true
+     },
+     {
+      "event": "mira_session_updated",
+      "payload": {
+       "id": "f7375a3a-f5b0-4fe6-ae04-2b75a54279ab",
+       "event": "mira_session_updated",
+       "title": "Neuigkeiten",
+       "session": {
+        "id": "ec279474-9d0d-4720-9d42-69669a57ad05",
+        "title": "Neuigkeiten",
+        "status": "deleted",
+        "is_pinned": false,
+        "created_at": "2026-08-28T11:12:20.271637+00:00",
+        "is_running": false,
+        "project_id": null,
+        "updated_at": "2026-10-10T09:21:11.354264+00:00",
+        "answer_detail": "balanced",
+        "message_count": 2,
+        "project_title": null,
+        "last_message_at": "2026-08-28T11:12:39.183873+00:00",
+        "last_message_preview": "Kurzer Überblick über die letzten 7 Tage (22.–28.08.2026): Die auffälligste Bewegung ist VW — der Visibility-Leader legt massiv zu und baut seinen Vorsprung aus. Brand Visibility Δ"
+       },
+       "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+       "session_id": "ec279474-9d0d-4720-9d42-69669a57ad05"
+      },
+      "private": true
+     }
+    ]
+   },
+   "fehler": null
+  },
+  {
+   "fall": "19 Fehler: fremder Chat / unbekannte id",
+   "funktion": "mira_messages_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_session_id": "00000000-0000-0000-0000-000000000001"
+   },
+   "ms": 1,
+   "status": 404,
+   "antwort": null,
+   "fehler": {
+    "http_status": 404,
+    "code": "PT404",
+    "message": "mira_not_found",
+    "hint": "p_session_id",
+    "details": null
+   }
+  },
+  {
+   "fall": "20 Fehler: Pruefung mit Nutzer-Nachricht statt Antwort",
+   "funktion": "mira_message_check_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_message_id": "fda18e1b-a867-45e8-a8aa-b905f0119c1f",
+    "p_session_id": "6233c7f1-4b06-406f-a92d-5e16620622ef"
+   },
+   "ms": 1,
+   "status": 404,
+   "antwort": null,
+   "fehler": {
+    "http_status": 404,
+    "code": "PT404",
+    "message": "mira_not_found",
+    "hint": "p_message_id",
+    "details": null
+   }
+  },
+  {
+   "fall": "21 Fehler: leerer Titel",
+   "funktion": "mira_session_update_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+    "p_title": "   ",
+    "p_session_id": "3a7d7f7c-9b86-4ba8-b3d7-67b57e100ce9"
+   },
+   "ms": 1,
+   "status": 400,
+   "antwort": null,
+   "fehler": {
+    "http_status": 400,
+    "code": "22023",
+    "message": "mira_invalid_param",
+    "hint": "p_title: nicht leer, hoechstens 80 Zeichen",
+    "details": null
+   }
+  },
+  {
+   "fall": "22 Fehler: ungueltiger Wert in Einstellungen",
+   "funktion": "mira_settings_set_v1",
+   "params": {
+    "p_brand": "gross"
+   },
+   "ms": 0,
+   "status": 400,
+   "antwort": null,
+   "fehler": {
+    "http_status": 400,
+    "code": "22023",
+    "message": "mira_invalid_param",
+    "hint": "p_brand: logo, icon, none",
+    "details": null
+   }
+  },
+  {
+   "fall": "23 Fehler: fremdes Team",
+   "funktion": "mira_sessions_v1",
+   "params": {
+    "p_team": "00000000-0000-0000-0000-000000000001"
+   },
+   "ms": 0,
+   "status": 403,
+   "antwort": null,
+   "fehler": {
+    "http_status": 403,
+    "code": "42501",
+    "message": "forbidden",
+    "hint": null,
+    "details": null
+   }
+  },
+  {
+   "fall": "24 Fehler: anon",
+   "funktion": "mira_sessions_v1",
+   "params": {
+    "p_team": "877c649c-f5f2-44e9-bb04-155f5bf44e70"
+   },
+   "ms": 0,
+   "status": 401,
+   "antwort": null,
+   "fehler": {
+    "http_status": 401,
+    "code": "42501",
+    "message": "permission denied for function mira_sessions_v1",
+    "hint": null,
+    "details": null
+   }
+  }
+ ]
+}
