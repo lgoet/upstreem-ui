@@ -820,12 +820,10 @@
           '<div class="upr-history-date">' + esc(formatHistoryDate(item.created_at)) + ', ' + zeile + '</div>' +
         '</div>' +
         '<div class="upr-history-meta">' + historyMeta(item) + '</div>' +
-        /* Die Knoepfe stehen immer in ihrer Spalte; ein laufender Eintrag traegt sie nur als
-           unsichtbaren Platzhalter (nicht fokussierbar, nicht klickbar) -- so stehen Markt und
-           Modell aller Eintraege untereinander. */
+        /* Die Knoepfe liegen in derselben Zelle wie Markt und Modell und kommen beim Hover an deren
+           Stelle. Ein laufender Eintrag hat keine (nichts zu oeffnen, Loeschen liefe ins Leere). */
         (laeuft
-          ? '<div class="upr-history-actions is-platzhalter" aria-hidden="true">' +
-              '<span class="up-iconbtn">' + ICON.trash + '</span><span class="up-iconbtn">' + ICON.gotoArrow + '</span></div>'
+          ? ''
           : '<div class="upr-history-actions">' +
               '<button class="up-iconbtn upr-history-delete" type="button" data-action="delete-research" data-job-id="' + esc(item.job_id) + '" data-history-index="' + index + '" data-tip="Delete research" aria-label="Delete research">' + ICON.trash + '</button>' +
               '<button class="up-iconbtn" type="button" data-action="open-research" data-history-index="' + index + '" data-tip="Open research" aria-label="Open research">' + ICON.gotoArrow + '</button>' +
