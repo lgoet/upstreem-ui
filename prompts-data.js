@@ -53,7 +53,10 @@
                "name_asc", "name_desc", "created_at_desc", "created_at_asc"];
   /* Grenzen des Vertrags (6.4) -- hier nur, damit die Seite nichts schickt, was sicher abgelehnt
      wird. Geprueft wird in der Datenbank. */
-  var GRENZE = { topicsFilter: 20, firmen: 50, suche: 200, limit: 100, gruppen: 10, gruppenTopics: 3,
+  /* topicsFilter 50: so viele Topics hat ein Team hoechstens (Vertrag 6.4); die Datenbank nimmt bis
+     100 Filtereintraege (DB-Audit 10.10.). Hier stand 20 -- bei mehr gewaehlten Topics haette die
+     Liste STILL mit weniger gefiltert. */
+  var GRENZE = { topicsFilter: 50, firmen: 50, suche: 200, limit: 100, gruppen: 10, gruppenTopics: 3,
                  gruppenName: 60, anlegen: 100, topicsJePrompt: 5, ids: 500, ausgeschlossen: 500 };
 
   function anfrage(art, params) { return { art: art, fn: FN[art], params: params, sig: FN[art] + "|" + JSON.stringify(params) }; }

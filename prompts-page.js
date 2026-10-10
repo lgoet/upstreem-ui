@@ -87,7 +87,13 @@
     var m = D.meldung(erg), n = D.hinweisZahl(erg), h = D.hinweis(erg);
     /* Vorab fuer eine moegliche Tagesgrenze (Audit-Auftrag 10.10., Abschnitt 2) -- sonst traefe
        ihr Fehler die Planlimit-Meldung darunter und sagte das Falsche. */
-    if (/daily_limit/.test(m)) return { text: t("Daily limit reached"), desc: t("You can add or reactivate more prompts tomorrow.") };
+    /* Zwei Tagesgrenzen (DB-Audit 10.10.): Anlegen und Reaktivieren zusammen hoechstens 2 x
+       Planlimit (hint = noch erlaubte Zahl), Loeschen hoechstens 20 Auftraege (hint "delete:0"). */
+    if (/daily_limit/.test(m)) {
+      if (/^delete:/.test(h)) return { text: t("Daily limit reached"), desc: t("You can delete more prompts tomorrow.") };
+      return { text: t("Daily limit reached"),
+               desc: n ? t("You can add or reactivate {n} more prompts today.").replace("{n}", String(n)) : t("You can add or reactivate more prompts tomorrow.") };
+    }
     if (/limit_reached/.test(m)) {
       if (/^topics_/.test(m)) return { text: t("Your team has reached the topic limit"), desc: t("Delete a topic you no longer need to add a new one.") };
       if (/^inactive:/.test(h)) return { text: t("Too many inactive prompts"), desc: t("Delete inactive prompts you no longer need, then try again.") };
@@ -98,6 +104,9 @@
     if (/selection_changed/.test(m)) return { text: t("The selection has changed"), desc: t("Please select the prompts again.") };
     if (/forbidden/.test(m)) return { text: t("Only owners and admins can delete"), desc: "" };
     if (/duplicate_name/.test(m)) return { text: t("A topic with this name already exists"), desc: "" };
+    /* Die Pruefungen des Topic-Dialogs (DB-Audit 10.10.): hint nennt das Feld. */
+    if (/^topics_invalid_param/.test(m) && /^p_name/.test(h)) return { text: t("Use 1 to 60 characters, with at least one letter or digit."), desc: "" };
+    if (/^topics_invalid_param/.test(m) && /^p_emoji/.test(h)) return { text: t("Pick an emoji from the emoji picker."), desc: "" };
     if (/rate_limited/.test(m) || (erg && erg.status === 429)) return { text: t("Too many requests"), desc: t("Please wait a moment and try again.") };
     if (/not_found/.test(m)) return { text: t("Some items no longer exist"), desc: t("Refresh the page and try again.") };
     return { text: wobei || t("That didn't work"), desc: t("Please try again.") };
@@ -652,7 +661,12 @@
         kontingentNachziehen(r.kontingent);
         var n = r.geaendert != null ? r.geaendert : (r.ziel || 0);
         var uv = r.unveraendert || 0;
-        toast(satz(n), "success", uv ? t("{n} unchanged").replace("{n}", String(uv)) : "");
+        /* Wieder aktivierte Prompts laufen erst im normalen Takt wieder, fruehestens 24 Stunden nach
+           ihrem letzten Lauf (Kostenregel des DB-Audits 10.10.) -- das gehoert dazugesagt, sonst
+           wartet jemand auf frische Zahlen. */
+        var zusatz = [uv ? t("{n} unchanged").replace("{n}", String(uv)) : "",
+                      aktion === "set_active" && n ? t("They are tracked again with their next daily run.") : ""].filter(Boolean).join(" ");
+        toast(satz(n), "success", zusatz);
         if (aktion === "add_topics" || aktion === "delete") { try { if (UC.topicsChanged) UC.topicsChanged(); } catch (e) {} }
         nachAenderung();
       }, function () { schreibtGerade = false; fehlerToast(null); nachAenderung(); });
