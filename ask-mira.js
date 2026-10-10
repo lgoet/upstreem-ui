@@ -10602,6 +10602,27 @@
       var hs = h + 'px';
       if (root.style.height !== hs) root.style.height = hs;
       if (root.style.maxHeight !== hs) root.style.maxHeight = hs;
+      anWirt(h);
+    }
+    /* DIE HOEHE GEHT AUSDRUECKLICH AN DEN WIRT (10.10., zweite Meldung: "erst ein Viertel, nach
+       3-4 Sekunden ploppt es auf 100 %", danach "nur 150px oben, waechst nie"). Bis hierher
+       setzte Mira nur sich selbst und verliess sich darauf, dass Bubbles "fit to content" das
+       HTML-Element nachzieht. Das tut Bubble mit Verzoegerung -- und steht das Element auf
+       einer festen Hoehe, schneidet es Mira auf genau diese Hoehe ab. Darum schreibt Mira die
+       Hoehe jetzt selbst an das Element, in dem sie steht (height UND min-height, damit weder
+       eine Bubble-Mindesthoehe noch ein Inhaltsmass dagegenhaelt). Die Hoehe zaehlt ab der
+       Oberkante des Wirts: steht Mira darin nicht ganz oben, kommt der Abstand dazu.
+       Nur zu Hause: ausgeliehen (is-launcher) ist der Wirt der Platz im Dashboard, und dessen
+       Hoehe gehoert dem Dashboard. z-index und alles andere am Wirt bleiben unberuehrt. */
+    function anWirt(h){
+      var w = wirt();
+      if (!w || w === document.body || w === document.documentElement) return;
+      if (root.classList.contains('is-launcher')) return;
+      var oben = 0;
+      try { oben = Math.max(0, Math.round(root.getBoundingClientRect().top - w.getBoundingClientRect().top)); } catch(e){}
+      var ws = (h + oben) + 'px';
+      if (w.style.height !== ws) w.style.height = ws;
+      if (w.style.minHeight !== ws) w.style.minHeight = ws;
     }
     /* Der Scrollbereich der Seite: #main der App (dort scrollt sie), sonst das Dokument. */
     function scroller(){
@@ -10641,11 +10662,13 @@
        Groessenwaechter, ohne dass jemand misst. Der Takt bleibt als Auffangnetz, aber langsam --
        er faengt nur noch den Fall ab, dass Bubble uns umhaengt, das Elternelement also ein
        anderes ist. */
-    var _lp = null, _lh = null, _roZiel = null, _ro = null;
-    function hoeheMelden(p){
-      var h = Math.round(vv ? vv.height : window.innerHeight);
-      if (p !== _lp || h !== _lh){ _lp = p; _lh = h; scheduleFit(); }
-    }
+    var _roZiel = null, _ro = null;
+    /* KEIN GEDAECHTNIS MEHR (10.10.). Hier stand ein Vergleich mit dem zuletzt gemeldeten Wert:
+       nur bei einer Aenderung lief fit(). Lief fit() dann aber ins Leere, weil die Ansicht im
+       selben Moment noch geparkt war, galt der Wert trotzdem als erledigt -- und jede spaetere,
+       gleiche Messung fand "keine Aenderung". Mira blieb auf ihrer Inhaltshoehe stehen. fit()
+       vergleicht selbst und schreibt nur bei einer Aenderung; mehr Schutz braucht es nicht. */
+    function hoeheMelden(){ scheduleFit(); }
     /* DER WIRT, NICHT DIE HUELLE (10.10.): steckt Mira in der Huelle der Mira-Seite
        (.umi-root, display: contents), hat diese keinen eigenen Kasten -- gemessen und beobachtet
        wird dann das Element darueber, also wieder Bubbles HTML-Element wie vorher. */
@@ -10666,21 +10689,44 @@
       if (_ro){ try { _ro.disconnect(); } catch(e){} }
       _ro = new ResizeObserver(function(eintraege){
         if (!visible()) return;
-        hoeheMelden(seitenHoehe());
+        hoeheMelden();
       });
       _ro.observe(el);
     }
-    var _takt = 0;
+    /* Der Takt misst jedes Mal, sobald Mira sichtbar ist (10.10.). Vorher sprang er neun von
+       zehn Takten ueber, sobald ein Groessenwaechter stand -- der aber hing am Elternelement, das
+       sich beim Einblenden der Ansicht nicht zwingend aendert. Das Auffangnetz griff so erst nach
+       zwanzig Sekunden. visible() fragt zuerst messbar() und liest in einer geparkten Ansicht
+       keinen Layoutwert; offen sind es zwei Rechtecke alle zwei Sekunden. */
     function watch(){
       elternBeobachten();
-      /* Steht der Waechter, macht ER die Arbeit -- aber nicht blind darauf verlassen: jeder
-         zehnte Takt misst trotzdem. Das sind zwanzig Sekunden statt dreimal je Sekunde und
-         faengt den Fall ab, dass der Waechter aus irgendeinem Grund stumm bleibt. */
-      if (_ro && (++_takt % 10) !== 0) return;
       if (!visible()) return;
-      /* Gemessen wird die Hoehe, die Mira haben SOLL -- sie aendert sich, wenn ueber Mira etwas
-         dazukommt oder der Scrollbereich der Seite seine Groesse aendert. */
-      hoeheMelden(seitenHoehe());
+      fit();
+    }
+    /* BILD FUER BILD NACH EINEM ANSICHTSWECHSEL (10.10.). core meldet den Wechsel, BEVOR die App
+       die Ansicht einblendet (gemessen: fit() aus launcherAus fand Mira noch geparkt und brach
+       ab). Statt auf einen Waechter zu hoffen, sieht Mira zwei Sekunden lang in jedem Bild nach
+       und setzt die Hoehe im ersten Bild, in dem sie sichtbar ist. Begrenzt, und in einer
+       geparkten Ansicht ohne Layoutzugriff (messbar). */
+    var _bildBis = 0, _bildLaeuft = false;
+    function bildFenster(ms){
+      _bildBis = Math.max(_bildBis, Date.now() + (ms || 2000));
+      if (_bildLaeuft) return;
+      _bildLaeuft = true;
+      (function bild(){
+        if (Date.now() > _bildBis || root.__amTot){ _bildLaeuft = false; return; }
+        if (visible()) fit();
+        requestAnimationFrame(bild);
+      })();
+    }
+    if (window.UpstreemCore && window.UpstreemCore.onViewChange){
+      window.UpstreemCore.onViewChange(function(){ bildFenster(2000); });
+    }
+    /* UND DIREKT AN MIRA: wird ihr Kasten sichtbar oder aendert er sich, meldet das der Browser
+       VOR dem Zeichnen -- die Hoehe sitzt dann schon im ersten Bild. Steht die Hoehe einmal,
+       aendert sich der Kasten nicht mehr von selbst, der Waechter bleibt also still. */
+    if (window.ResizeObserver){
+      try { new ResizeObserver(function(){ if (visible()) fit(); }).observe(root); } catch(e){}
     }
     /* Der sichtbare Bereich aendert sich ohne Groessenaenderung des Elternelements -- Tastatur auf
        dem Telefon, Adressleiste. Das meldet visualViewport selbst. */
@@ -10689,6 +10735,7 @@
     requestAnimationFrame(fit);
     window.addEventListener('load', function(){ fit(); setTimeout(fit, 60); setTimeout(fit, 200); setTimeout(fit, 450); });
     setTimeout(fit, 120); setTimeout(fit, 400);
+    bildFenster(3000);
     setInterval(watch, 2000);
     window.addEventListener('resize', scheduleFit);
     // Deliberately NO window 'scroll' listener and no vv 'scroll' listener: page scrolling must
@@ -10704,7 +10751,7 @@
         kern.beobachteGroesse(document.documentElement, watch, { hoehe: true });
         kern.beobachteGroesse(document.body, watch, { hoehe: true });
         if (wirt()) kern.beobachteGroesse(wirt(), watch, { hoehe: true });
-        if (scroller()) kern.beobachteGroesse(scroller(), function(){ _takt = 9; watch(); }, { hoehe: true });
+        if (scroller()) kern.beobachteGroesse(scroller(), watch, { hoehe: true });
       } else {
         try { new ResizeObserver(watch).observe(document.documentElement); } catch(_){}
         try { new ResizeObserver(watch).observe(document.body); } catch(_){}

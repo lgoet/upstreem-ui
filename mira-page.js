@@ -99,7 +99,16 @@
     root.innerHTML = String(MARKUP.am || "").split("__UMI_AM__").join(esc(instanceId + "_mira"))
       .split("__UMI_DARK__").join(isDark() ? "yes" : "no");
     /* Sichtbarkeit an Mira selbst messen: eine Huelle ohne Kasten ist nie "sichtbar". */
-    function innen() { return root.querySelector(".am-root") || root; }
+    /* Mira wird festgehalten, sobald sie einmal gefunden ist (10.10.): das Power Dashboard leiht
+       sie beim Seitenaufbau aus und haengt sie in seinen Platz. Danach steht sie NICHT mehr in
+       dieser Huelle -- die Suche darin fand nichts, laden() pruefte statt ihrer die Huelle selbst
+       (display: contents, also nie sichtbar) und wartete fuer immer. Im Pruefstand gemessen:
+       Dashboard zuerst, dann Mira -- 0 Abrufe, leere Chatliste. */
+    var amEl = null;
+    function innen() {
+      if (!amEl || amEl.isConnected === false) amEl = root.querySelector(".am-root");
+      return amEl || root;
+    }
 
     /* ---- Modelle und Themen aus core (bisher Bubble-Schritte) ---------------------------- */
     function modelleGeben(l) { if (l && l.length) am("askMiraSetModels", l); }
