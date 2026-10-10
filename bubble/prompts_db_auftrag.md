@@ -84,7 +84,8 @@ Zeitraum `date_from`/`date_to`, Models (Liste), Markets (Liste), Topics (Liste p
 
 ### 2.1 All Prompts: die Tabelle
 
-**Lesen, flach.** Heute `cached_prompt_insights_alltime_v18` (laut Vorlage). Die Oberfläche
+**Lesen, flach.** Heute `cached_prompt_insights_alltime_v18` (laut Vorlage; Aufruf in Bubble
+`get_prompt_insights_alltime`). Die Oberfläche
 schickt bzw. braucht:
 
 | Bedienung | Werte heute | Parameter heute (laut Vorlage) |
@@ -106,7 +107,8 @@ Felder, die die Tabelle **heute liest** (aus dem Code):
   `created_at`.
 - **Kopf:** Gesamtzahl aktiv, Gesamtzahl inaktiv, Zahl der Prompts **ohne Topic**.
 
-**Lesen, gruppiert.** Heute `cached_prompt_topics_grouped_v1` (laut Vorlage) mit denselben
+**Lesen, gruppiert.** Heute `cached_prompt_topics_grouped_v1` (laut Vorlage; Aufruf in Bubble
+`cached_prompt_topics_grouped`) mit denselben
 Filtern plus `p_groups` und `p_mode`:
 
 - `p_mode`: `both` (Topic-Gruppen und eigene Gruppierungen), `custom` (nur eigene), `topics`
@@ -168,8 +170,7 @@ Felder, die die Tabelle liest: `prompt_run_id`, `prompt_text`, `has_user_brand`,
 
 **Vorschlag:** `cached_dashboard_responses_v1` unverändert wiederverwenden. Bitte prüfen:
 
-- Welche Funktion ruft Bubble heute auf der Responses-Unterseite? `[NAME ERFRAGEN, falls aus der
-  Bestandsaufnahme nicht eindeutig]`
+- Welche Funktion liefert heute die Responses dieser Unterseite? (siehe Abschnitt 3)
 - Liefert sie für dieselben Filter dieselben Zeilen wie `cached_dashboard_responses_v1`?
 - Ist `response_preview` Modelltext? Dann gilt die Backtick-Regel (Abschnitt 4.4), auch wenn die
   neue Seite nicht mehr über Bubble läuft. Dieselben Daten erreichen über andere Ansichten noch
@@ -179,8 +180,8 @@ Felder, die die Tabelle liest: `prompt_run_id`, `prompt_text`, `has_user_brand`,
 
 **Lesen:** je Topic `id`, `name`, `emoji`, `hex_light`, `hex_dark`, `prompt_count`, `created_at`
 (ISO). Suche und Sortierung (Nutzung, neueste, Name) macht die Oberfläche selbst; die Liste kommt
-in **einem** Aufruf. Gibt es dafür schon eine Funktion (`get_tags_v2`?), die mit Nutzer-JWT
-aufrufbar ist? Zählt `prompt_count` nur aktive Prompts?
+in **einem** Aufruf. Heute kommt sie aus dem Aufruf `get_tags`. Ist die Funktion dahinter mit
+Nutzer-JWT aufrufbar? Zählt `prompt_count` nur aktive Prompts?
 
 **Schreiben** (heute drei Bubble-Ereignisse):
 
@@ -192,7 +193,7 @@ aufrufbar ist? Zählt `prompt_count` nur aktive Prompts?
 
 ### 2.4 Dialog „Add prompts“
 
-Ein Aufruf je Speichern:
+Ein Aufruf je Speichern (heute `create_prompt_with_tags`):
 
 ```json
 {"count": 2,
@@ -213,8 +214,9 @@ Ein Aufruf je Speichern:
   Planlimits.
 - Ein CSV-Import kann Zeilenumbrüche innerhalb eines Prompts liefern.
 
-Bitte klären: Was passiert beim Anlegen heute alles? Zum Beispiel ein Schedule, ein sofortiger
-erster Lauf (n8n?), das Leeren des Insights-Caches, der Topic-Zähler. Die Anlage in
+Bubble ruft danach `clear_prompt_insights_cache` und lädt Tabelle, Märkte, Topics und Kontingent
+neu. Bitte klären, was in der **Datenbank** beim Anlegen passiert: zum Beispiel ein Schedule,
+ein sofortiger erster Lauf (Trigger, n8n?), der Topic-Zähler. Die Anlage in
 `prompt_research_decide_v1` (Planlimit, Schedule, höchstens 5 Tags, Cache leeren) ist das
 Vorbild. Beide Wege sollen **eine** gemeinsame interne Anlage-Funktion benutzen.
 
@@ -322,8 +324,8 @@ Nach jeder Schreibaktion außer dem Anlegen eines Topics ruft Bubble `clear_prom
 und lädt Tabelle und Kontingent neu, nach Topic-Änderungen und Löschen auch die Topics.
 
 Die Responses-Liste steht **nicht** in dieser Liste; sie wird in einem eigenen Bubble-Element
-geladen. Bitte die Funktion finden, die heute Responses einer Seite liefert (Vorgänger von
-`cached_dashboard_responses_v1`, im Dashboard-Vertrag „wie v21“), und prüfen, ob
+geladen. Bitte die Funktion finden, die heute die Responses liefert (vermutlich die, die der
+Dashboard-Vertrag als „v21“ nennt), und prüfen, ob
 `cached_dashboard_responses_v1` für dieselben Filter dieselben Zeilen liefert.
 
 Für jede dieser Funktionen und für die Responses-Liste:
