@@ -10586,17 +10586,37 @@
         root.style.height = kh + 'px'; root.style.maxHeight = kh + 'px';
         return;
       }
-      // Otherwise the HOST owns our height. Drop ours and take whatever the Bubble container gives
-      // us. Every earlier version computed a height from the viewport instead, which made us taller
-      // than the slot we were placed in -- and an element sticking out of its container is exactly
-      // what pushed #main's scrollHeight past the real end of the page and let it scroll into empty
-      // space below the app.
-      root.style.height = ''; root.style.maxHeight = '';
-      if (root.getBoundingClientRect().height >= 320) return;
-      // Only reachable when the host container is auto-height and we would collapse to nothing --
-      // then, and only then, claim a screenful so the chat is usable at all.
-      var vh = Math.round(window.innerHeight);
-      root.style.height = vh + 'px'; root.style.maxHeight = vh + 'px';
+      /* VOLLE SEITENHOEHE, UND MIRA GIBT SIE AN DEN WIRT WEITER (10.10. angeordnet: "die Komponente
+         muss immer auf ganze Page Height stecken, 100 %, nicht mehr, nicht weniger, und die Hoehe
+         ans Parent weitergeben"). Bis heute nahm Mira die Hoehe VOM Bubble-Element (height: 100 %)
+         und rechnete selbst nur, wenn sie dabei unter 320px fiel. Steht das Element auf "fit to
+         content", kam dabei entweder zu wenig heraus (Mira so hoch wie ihr Inhalt) oder zu viel
+         (die Chatliste zog sie auf das Mehrfache der Seite).
+         Jetzt rechnet Mira: die sichtbare Hoehe des Scrollbereichs der Seite (#main) ab ihrer
+         eigenen Oberkante -- scroll-UNABHAENGIG (Oberkante + scrollTop), damit Scrollen nichts
+         veraendert (Regel 2 oben). Das Bubble-Element waechst mit ihr; unter Mira bleibt nichts,
+         also scrollt die Seite nicht. Steht ueber Mira noch etwas in der Ansicht, ist es
+         abgezogen. */
+      var h = seitenHoehe();
+      if (!(h >= 320)) h = Math.max(320, Math.round(window.innerHeight));
+      var hs = h + 'px';
+      if (root.style.height !== hs) root.style.height = hs;
+      if (root.style.maxHeight !== hs) root.style.maxHeight = hs;
+    }
+    /* Der Scrollbereich der Seite: #main der App (dort scrollt sie), sonst das Dokument. */
+    function scroller(){
+      var m = document.getElementById('main');
+      return (m && m.contains(root)) ? m : null;
+    }
+    function seitenHoehe(){
+      var r = root.getBoundingClientRect(), m = scroller();
+      if (m){
+        var mr = m.getBoundingClientRect();
+        var oben = r.top - mr.top + m.scrollTop - (m.clientTop || 0);
+        return Math.round(m.clientHeight - oben);
+      }
+      var se = document.scrollingElement || document.documentElement;
+      return Math.round(window.innerHeight - (r.top + (se ? se.scrollTop : 0)));
     }
     /* Fuer den Launcher: beim Ausleihen und beim Zurueckgeben SOFORT neu messen, nicht erst beim
        naechsten Lauf des Waechters unten (bis zu 2s). */
@@ -10646,8 +10666,7 @@
       if (_ro){ try { _ro.disconnect(); } catch(e){} }
       _ro = new ResizeObserver(function(eintraege){
         if (!visible()) return;
-        var e = eintraege[eintraege.length - 1];
-        hoeheMelden(e && e.contentRect ? Math.round(e.contentRect.height) : 0);
+        hoeheMelden(seitenHoehe());
       });
       _ro.observe(el);
     }
@@ -10659,9 +10678,9 @@
          faengt den Fall ab, dass der Waechter aus irgendeinem Grund stumm bleibt. */
       if (_ro && (++_takt % 10) !== 0) return;
       if (!visible()) return;
-      var w = wirt();
-      var p = w ? Math.round(w.getBoundingClientRect().height) : 0;
-      hoeheMelden(p);
+      /* Gemessen wird die Hoehe, die Mira haben SOLL -- sie aendert sich, wenn ueber Mira etwas
+         dazukommt oder der Scrollbereich der Seite seine Groesse aendert. */
+      hoeheMelden(seitenHoehe());
     }
     /* Der sichtbare Bereich aendert sich ohne Groessenaenderung des Elternelements -- Tastatur auf
        dem Telefon, Adressleiste. Das meldet visualViewport selbst. */
@@ -10685,6 +10704,7 @@
         kern.beobachteGroesse(document.documentElement, watch, { hoehe: true });
         kern.beobachteGroesse(document.body, watch, { hoehe: true });
         if (wirt()) kern.beobachteGroesse(wirt(), watch, { hoehe: true });
+        if (scroller()) kern.beobachteGroesse(scroller(), function(){ _takt = 9; watch(); }, { hoehe: true });
       } else {
         try { new ResizeObserver(watch).observe(document.documentElement); } catch(_){}
         try { new ResizeObserver(watch).observe(document.body); } catch(_){}
