@@ -625,9 +625,12 @@
    border-box element past its own padding — the chip kept 13px of width with no selection, an
    invisible spacer that made the gap between heading and switcher wrong in the default case and
    put a 13px step into the transition. */
+/* IN DER AKZENTFARBE (10.10. angefordert: "Schrift in Primaerfarbe, Hintergrund in etwas weniger
+   Deckkraft Primaerfarbe"): Schrift in der Akzent-Tinte, die Flaeche 10 % davon -- dasselbe Paar wie
+   .up-you in core. Vorher Flaeche --vc-heading-bg, Schrift --vc-text. */
 .upt-selcount { display: inline-flex; align-items: center; gap: 6px; height: 24px;
-  padding: 0; border-radius: 7px; background: var(--vc-heading-bg);
-  font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto;
+  padding: 0; border-radius: 7px; background: color-mix(in srgb, var(--up-accent-ink) 10%, transparent);
+  font-size: 12px; font-weight: 500; color: var(--up-accent-ink); white-space: nowrap; flex: 0 0 auto;
   margin-left: 0; margin-right: 0; max-width: 0; opacity: 0; overflow: hidden; pointer-events: none;
   transform: translateX(-6px);
   transition: max-width 200ms var(--up-ease), opacity 120ms ease,
@@ -644,7 +647,11 @@
 @media (prefers-reduced-motion: reduce){ .upt-selcount { transition-duration: 1ms; } }
 /* Entfallen: der Inhalt stand vollstaendig im Kit (core.css, Zeichenknopf). */
 .upt-selcount-clear svg { width: 12px; height: 12px; display: block; }
-.upt-selcount-clear:hover { background: var(--vc-switch-bg); color: var(--vc-text); }
+/* Das X in derselben Tinte. Mit .up-root.upt-root davor: die Knopf-Regeln aus core tragen im Dunkeln
+   .up-root[data-theme="dark"] (0,3,0, beim Ueberfahren 0,4,0) -- entschieden wird ueber die
+   Spezifitaet, nicht ueber die Ladereihenfolge. */
+.up-root.upt-root .upt-selcount .upt-selcount-clear { color: var(--up-accent-ink); }
+.up-root.upt-root .upt-selcount .upt-selcount-clear:hover { background: color-mix(in srgb, var(--up-accent-ink) 16%, transparent); color: var(--up-accent-ink); }
 
 /* ---------- responsive: narrow first column and dropped columns ---------- */
 .up-root.is-vnarrow .upt-td-prompt .up-row-goto { display: none; }
