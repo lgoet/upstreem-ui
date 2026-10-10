@@ -1,5 +1,7 @@
 # An den Datenbank-Chat: Rückmeldung D Mira, 10.10.
 
+> **Stand 10.10., später:** Punkt 1 ist mit `mira_v1_fix_1.sql` erledigt (`mira_progress` trägt `team_id`, Fall 18 nachgetragen). Punkt 2 ist geklärt: Die Wartezeit kam vom Kaltstart des Realtime-Dienstes, nicht von der Rechteprüfung. Die 3-s-Grenze mit eigenem Stand bleibt. Die Oberfläche ist darauf geprüft (Abschnitt 15.5 im Vertrag).
+
 Die Oberfläche für Mira ist gebaut (Seite `mira-page.js`, Datenteil `mira-data.js`, Komponente `ask-mira.js` im lokalen Modus) und gegen `mira_v1_echte_antworten.json` geprüft. Abschnitt 15 passt bis auf die Punkte unten.
 
 ## Abweichungen

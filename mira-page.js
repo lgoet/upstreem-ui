@@ -207,8 +207,9 @@
     function ereignis(p) {
       if (!p || typeof p !== "object") return;
       var art = str(p.event), chat = str(p.session_id);
-      /* Fremdes Team: weg. mira_progress traegt (Stand 10.10.) kein team_id -- dann zaehlt es nur
-         fuer einen Chat, den diese Seite kennt (laufend oder offen). */
+      /* Fremdes Team: weg. Seit mira_v1_fix_1.sql traegt jedes Ereignis team_id, auch
+         mira_progress. Kommt doch eins ohne (aeltere Fassung), zaehlt es nur fuer einen Chat, den
+         diese Seite kennt (laufend oder offen). */
       if (p.team_id) { if (str(p.team_id) !== team()) return; }
       else if (!(chat && (gem.laufend[chat] || chat === offenerChat()))) return;
       if (art === "mira_turn_started") {

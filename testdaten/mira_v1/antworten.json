@@ -9,7 +9,8 @@
   "Die Ereignisse mira_message_success/_error tragen die vollstaendige Nachricht (message) wie eine Zeile aus mira_messages_v1 und den Chat (session). Ist die Nutzlast groesser als 200 KB, fehlen message/user_message und content_omitted = true; dann einmal mira_messages_v1 laden.",
   "Fall 9: Titel und Anheften in einem Aufruf ergeben ein Ereignis mira_title_updated; der aktuelle Stand steht immer in payload.session.",
   "Fall 24 (anon) liefert PostgREST ohne JWT als HTTP 401.",
-  "app.warming = on (kein Rate-Limit-Zaehler). Im Betrieb: Lesen 60/min, Schreiben 30/min je Nutzer, darueber PT429."
+  "app.warming = on (kein Rate-Limit-Zaehler). Im Betrieb: Lesen 60/min, Schreiben 30/min je Nutzer, darueber PT429.",
+  "mira_progress traegt seit mira_v1_fix_1.sql (10.10.) ebenfalls team_id; in Fall 18 nachgetragen und im Rollback-Test bestaetigt."
  ],
  "faelle": [
   {
@@ -1495,7 +1496,8 @@
        "event": "mira_progress",
        "phase": "start",
        "status": "running",
-       "session_id": "1beb3490-346a-4cf7-9c43-ef2b28abf3e4"
+       "session_id": "1beb3490-346a-4cf7-9c43-ef2b28abf3e4",
+       "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70"
       },
       "private": true
      },
