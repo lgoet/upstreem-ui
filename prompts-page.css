@@ -1,0 +1,24 @@
+/* upstreem prompts-page.css -- die Seite Prompt Insights als eine Komponente (10.10.). Praefix upi.
+
+   Kopf, Reiter und Filterzeile mit denselben Werten wie die Citations-Seite (citations-page.css):
+   der kompakte Kopf aus core (.upi-pagehead, .up-root.upi-root .up-ph-nav), Kalender fest, die
+   Filterleiste nimmt den Rest. Prompt-Tabelle, Response-Tabelle und Topic-Verwaltung bringen ihre
+   eigene CSS mit -- hier steht nur, wie sie in der Seite stehen. */
+
+.upi-root { display: block; }
+.upi-root .upi-pagehead { padding: 8px 0; }
+/* Die Knoepfe oben rechts: so viele, wie der Reiter braucht, mit dem Abstand des alten Kopfs
+   (prompts-page-header.css, .pph-topright). */
+.upi-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+/* hidden gegen das display der Knopf-Regeln aus core: ein Knopf, der zum Reiter nicht gehoert,
+   steht nicht da. */
+.upi-root [data-upi-fuer][hidden] { display: none; }
+.upi-filterzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 16px; }
+.upi-filterzeile > .udr-root { flex: 0 0 auto; }
+.upi-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
+/* Topics liest keinen Filter -- dort stehen Kalender und Filter nicht. */
+.upi-root[data-upi-reiter="topics"] .upi-filterzeile { display: none; }
+.upi-main { padding: 24px 0 64px; min-width: 0; }
+.upi-tab { min-width: 0; }
+.upi-root .upi-tab[hidden] { display: none; }
+.up-root .upi-tools .up-ph-addbtn { margin-top: 0; }

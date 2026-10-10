@@ -1,0 +1,66 @@
+<!--
+  UPSTREEM — PROMPT INSIGHTS als EINE Komponente (Praefix upi), 10.10.2026
+
+  WOHIN: ein HTML-Element, volle Breite, ohne eigenes Polster. Die Komponente baut ALLES selbst:
+  Seitenkopf (Krume "Prompt Insights", Reiter All Prompts / Responses / Topics, Knoepfe je
+  Reiter), Kalender, Filterleiste und den Inhalt des Reiters. Prompt-Tabelle, Response-Tabelle und
+  Topic-Verwaltung sind die bestehenden Bausteine (prompts-table, responses-table, topics-manager)
+  im LOKALEN Modus -- dieselben Bausteine an anderen Orten der App bleiben davon unberuehrt.
+
+  ── VORAUSSETZUNG: DER VERTRAG IST IN PROD ────────────────────────────────────
+  Die Funktionen unten baut der Datenbank-Chat nach bubble/prompts_db_rueckmeldung.md. Solange sie
+  nicht in Prod sind, bleibt die alte Ansicht stehen.
+
+  ── Was Bubble NICHT mehr tut ─────────────────────────────────────────────────
+  Keine Workflows, keine API-Calls, kein Run JS fuer diese Seite. Die Komponente ruft selbst
+  (UC.rpc, Nutzer-JWT aus dem Supabase Pro Kit):
+      cached_prompts_list_v1        Prompt-Tabelle (flach) und die Prompts einer aufgeklappten Gruppe
+      cached_prompts_groups_v1      Gruppenkoepfe (Topics, eigene Gruppierungen, ohne Topic)
+      prompts_page_meta_v1          Kontingent, Topics, Rolle, alle Maerkte
+      prompts_add_v1                "Add Prompts" (der Dialog speichert ueber die Seite)
+      prompt_topics_set_v1          Topics eines Prompts
+      prompts_bulk_v1               Sammelaktionen: Topics zuweisen, aktiv, inaktiv, loeschen
+      topic_save_v1, topic_delete_v1  Topic anlegen, bearbeiten, loeschen
+      prompts_refresh_v1            Aktualisieren auf All Prompts
+      cached_dashboard_responses_v1 Response-Tabelle (dieselbe Funktion wie im Dashboard)
+      clear_dashboard_cache_v1      Aktualisieren auf Responses
+  Danach entfallen in der Prompts-Ansicht ALLE bisherigen Workflows: view_first_prompts,
+  REFRESH_PROMPTS, TABLE_RPC, TABLE_RPC (GROUPED), GROUPING RPC, FILL TABLE, FILL TAGS,
+  REFRESH_Tags, REFRESH_COMPANIES, RESET_SELECTED, LOADING_YES/NO, die upt*-, urt*-, utm*-,
+  pph*- und uapAddPrompts-Workflows, die Filter- und Kalender-Workflows *_prompts und
+  *_promptruns -- und im usnNav-Workflow der Schritt resetPromptsTable("prompts_table").
+  VORHER PRUEFEN: ruft einer davon noch etwas, das NICHT zur Prompts-Ansicht gehoert? Dann den
+  Schritt verschieben, nicht mitloeschen.
+
+  ── Was die Seite selbst regelt ───────────────────────────────────────────────
+  - Team aus setUpstreemTeam, Marken aus setUpstreemBrands (Schalter "<Marke> mentioned?" und das
+    Marken-Menue), Models/Markets/Topics der Filter aus den globalen Stores.
+  - Zeitraum aus dem eigenen Kalender; "Apply everywhere" gilt app-weit wie bisher. Models,
+    Markets und Topics gelten fuer All Prompts und Responses gemeinsam. Auf Topics stehen sie
+    nicht.
+  - Grouping an: der Topic-Filter ist aus (wie bisher).
+  - Nach Aenderungen: Kontingent (setUpstreemQuota), dazu topicsChanged/marketsChanged, damit die
+    anderen Ansichten ihre Listen neu holen (wie bisher am Ende der Workflows).
+  - Rolle: Loeschen von Prompts und Topics nur owner/admin; fuer andere fehlt der Knopf.
+  - Reiter in der Adresse: ?pi=responses bzw. ?pi=topics. Zurueck/Vor wechselt den Reiter.
+  - Zeilenklick: openDrawer("prompt", prompt_id) bzw. openDrawer("response", prompt_run_id).
+  - Ansichtswechsel: die Prompt-Tabelle raeumt ihre Auswahl selbst (frueher resetPromptsTable im
+    usnNav).
+
+  ── Attribute ─────────────────────────────────────────────────────────────────
+  data-instance   optional, Vorgabe "prompts_page". Nur noetig, wenn die Seite zweimal steht.
+  data-adresse    optional, "aus": die Komponente laesst die Adresse in Ruhe (?pi).
+  data-export-instance  optional: die Kennung des Export-Elements. Ohne Angabe nimmt die Seite
+                  das Export-Element, das auf der Seite steht. DAS EXPORT-ELEMENT MUSS AUF DER SEITE
+                  STEHEN, samt seinem Export-Workflow. Der Typ folgt dem Reiter (prompts bzw.
+                  prompt_runs).
+  Kein data-isdark, kein data-cdn-pin: das Thema setzt core, den Pin das Header-Script.
+
+  ── Umstellen: erst parallel, dann tauschen ───────────────────────────────────
+  1. Das Element auf eine Test-Ansicht stellen und neben der alten Prompts-Ansicht vergleichen.
+  2. Stimmt alles: in #view-prompts die alten Elemente (Seitenkopf, Kalender, Filterleiste, Prompt-
+     und Response-Tabelle, Topic-Verwaltung) samt ihrer Workflows durch DIESES eine Element
+     ersetzen. Das Export-Element bleibt stehen. Den Dialog "Add Prompts" laedt das Header-Script
+     (add-prompts.js), dafuer gibt es kein Element.
+-->
+<div class="up-root upi-root" data-instance="prompts_page"></div>

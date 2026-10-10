@@ -666,7 +666,10 @@
 .up-root.is-vnarrow .upt-brand-toggle,
 .up-root.is-vnarrow .up-sort,
 .up-root.is-vnarrow .up-cols,
-.up-root.is-vnarrow .up-export { display: none !important; }
+/* :not(.up-ph-addbtn) (10.10.): gemeint ist der Export-Knopf DIESER Leiste. Ohne die Ausnahme traf
+   die Regel jeden Kopfknopf einer schmalen Seite, die die Tabelle einbettet (Prompt Insights:
+   "Add Prompts" im schmalen Fenster weg, gemessen display none). */
+.up-root.is-vnarrow .up-export:not(.up-ph-addbtn) { display: none !important; }
 .up-root.is-vnarrow .up-head { flex-wrap: nowrap; }
 /* Selection active on mobile: the switcher would otherwise fight the selected-count chip for the
    same slot, so it steps aside and the chip (already living inside .up-heading, right after the

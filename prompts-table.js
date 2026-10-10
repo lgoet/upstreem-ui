@@ -1754,8 +1754,11 @@
       /* Topics und Loeschen schliessen sich aus: in der Inaktiv-Ansicht gibt es keine Topics
          (inaktive Prompts werden nicht verschlagwortet), dort steht Loeschen an derselben
          Stelle. Die Zahl der Segmente bleibt damit in beiden Ansichten gleich. */
+      /* data-loeschen="nein" (10.10., Prompt Insights): Loeschen nur fuer owner/admin. Fuer alle
+         anderen fehlt der Knopf; geprueft wird ohnehin in der Datenbank. */
+      var darfLoeschen = root.getAttribute("data-loeschen") !== "nein";
       var ersterWerkzeug = isInactive
-        ? werkzeug('data-bulk-delete', "trash", "Delete", "upt-bulkbar-delete")
+        ? (darfLoeschen ? werkzeug('data-bulk-delete', "trash", "Delete", "upt-bulkbar-delete") : "")
         : werkzeug('data-bulk-topics aria-expanded="' + (wasOpen ? "true" : "false") + '"', "tags", "Topics");
       bar.innerHTML =
         '<div class="upt-bulkbar-row' + (isInactive ? " is-inactive" : "") + '">' +
@@ -2003,7 +2006,7 @@
              .has-text, prompts-table.css:360). Gleiche Bauart wie domains-table.js:480. */
           ? '<div class="upt-topichead' + (topicQuery ? " has-text" : "") + '">' +
               '<div class="upt-topicsearch-wrap">' +
-                '<input class="upt-topicsearch-in" type="text" placeholder="Search or create topics..." autocomplete="off" spellcheck="false" value="' + esc(topicQuery) + '"/>' +
+                '<input class="upt-topicsearch-in" type="text" maxlength="60" placeholder="Search or create topics..." autocomplete="off" spellcheck="false" value="' + esc(topicQuery) + '"/>' +
                 '<button class="upt-topicsearch-clear" type="button" data-topic-search-clear aria-label="Clear search">' + CLOSE_SVG + '</button>' +
               '</div>' +
               '<button class="upt-topicreset" type="button" data-topic-reset>Reset</button>' +
@@ -2160,7 +2163,10 @@
       if (!btn) return;
       if (!btn.classList.contains("is-armed")){
         btn.classList.add("is-armed");
-        bulkDeleteTip(btn, "Confirm delete?");
+        /* Loeschen nimmt den Verlauf der Prompts aus allen Auswertungen mit (10.10. entschieden,
+           wie in Analyse-Tools ueblich; wer ihn behalten will, laesst sie inaktiv). Das muss VOR
+           dem zweiten Klick dastehen, nicht danach. */
+        bulkDeleteTip(btn, "Delete prompts and their history?");
         return;
       }
       var p = selectionPayload();
@@ -2271,6 +2277,12 @@
       if (applyBtn) applyBtn.disabled = !etHasChanges();
     }
     function etToggleTopic(id){
+      /* Hoechstens 5 Topics je Prompt, wie im Sammeleditor (10.10.: eine Grenze fuer alle Wege,
+         die Datenbank prueft sie ebenso). Abwaehlen geht immer. */
+      if (!etStaged[id] && Object.keys(etStaged).length >= TOPIC_MAX){
+        if (UC.toast) UC.toast(t("Up to 5 topics per prompt"), { kind: "neutral" });
+        return;
+      }
       if (etStaged[id]) delete etStaged[id]; else etStaged[id] = true;
       etRenderLists(true);
     }
@@ -2660,8 +2672,15 @@
       }
       populateGroupMenu(); syncGroupBtn();
       state.expandedGroup = null;
-      if (groupingOn() && !state.groupsHasData){
+      /* JEDES Einschalten meldet sich (10.10.). Vorher nur das erste je Sitzung (!groupsHasData):
+         danach zeigte die Tabelle die alten Gruppen, und wer mitlesen muss, ob gruppiert ist,
+         erfuhr nichts -- die Seite Prompt Insights liess den Topic-Filter stehen, obwohl die
+         Gruppen ihre eigenen Topics mitbringen (gemessen im Pruefstand pi01: aus, an, Seite blieb
+         auf "flach"). Ein Einschalten ist selten; die frischen Zahlen sind den einen Aufruf wert.
+         Eine Suche, die beim Umschalten geleert wurde, auch auf der Gegenseite leeren. */
+      if (groupingOn()){
         fetchGroups();
+        if (hadQuery) runSearch();
       } else {
         /* Turning OFF fired nothing at all here before this line -- the only other place
            uptGroups fires is fetchGroups(), which this branch deliberately does NOT call
@@ -3645,6 +3664,9 @@
          Bubble function shows up. Its answer reaches whichever controller is alive by then
          (setGroups resolves by instanceId), so nothing is lost by not starting a second one.
          state.groupsLoading is set above the check so this controller still renders as loading. */
+      /* Lokal eingebettet (eine Seite antwortet, nicht Bubble): es gibt keine Bubble-Funktion, auf
+         die zu warten waere -- sofort feuern, sonst stuende die Gruppenansicht 3s im Skelett. */
+      if (root.getAttribute("data-local") === "yes"){ fetchGroups(); return; }
       if (GROUPS_PENDING[instanceId]) return;
       GROUPS_PENDING[instanceId] = true;
       (function go(){

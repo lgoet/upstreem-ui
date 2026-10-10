@@ -395,6 +395,9 @@
        Bubble events itself. */
     var topicModal = UC.makeTopicModal({
       getIsDark: function(){ return isDark; },
+      /* data-loeschen="nein" (10.10.): die Seite Prompt Insights setzt es fuer Mitglieder ohne
+         owner/admin -- dann fehlt der Loeschknopf im Dialog. Geprueft wird in der Datenbank. */
+      darfLoeschen: function(){ return root.getAttribute("data-loeschen") !== "nein"; },
       onSave: function(payload, mode, topic){
         if (mode === "edit" && topic) payload.id = String(topic.id);
         fire(mode === "edit" ? "data-edit-fn" : "data-add-fn",
@@ -642,6 +645,11 @@
         persist(); populateSort(); render();
         return true;
       },
+      /* Fuer eine Seite, die die Komponente einbettet (Prompt Insights, 10.10.): "Add topic" sitzt
+         dort im Seitenkopf, nicht in der Leiste -- derselbe Dialog wie der Knopf hier. Und ein
+         gescheitertes Speichern laesst den Dialog offen und sagt warum (statt der 8s-Notbremse). */
+      openAdd: function(){ topicModal.open("create", null); },
+      saveFailed: function(text){ topicModal.saveFailed(text); },
       destroy: function(){
         topicModal.destroy();
         if (root.__utmController === this) root.__utmController = null;

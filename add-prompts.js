@@ -67,6 +67,9 @@
      there building a payload nobody wants to debug. Nothing about the cap is shown until it is
      actually reached; a counter that says "0 / 100" on an empty dialog is noise. */
   var MAX_PROMPTS = 100;
+  /* Hoechstens 5 Topics je Prompt -- dieselbe Grenze wie im Sammeleditor der Tabelle und in der
+     Datenbank (Vertrag Prompt Insights, 10.10.). */
+  var TOPIC_MAX = 5;
 
   var ICON = {
     /* All Feather, taken from the set. */
@@ -250,11 +253,28 @@
      full country name is accepted too and looked up against the market store -- somebody WILL
      type "Germany" into that column, and silently importing it as a market called "Germany" that
      matches nothing is the kind of failure that only shows up weeks later. */
+  /* ALLE Maerkte, nicht nur die mit Prompts (10.10.). core sagt es seit dem zweiten Markt-Store
+     selbst: beim ANLEGEN muss jeder Markt waehlbar sein, sonst kann ein Team nie einen neuen
+     anfangen (core.js, setAllMarkets). Solange niemand die volle Liste setzt, liefert
+     getAllMarkets die gefilterte -- dann ist es exakt wie vorher. */
+  function alleMaerkte() {
+    if (UC.getAllMarkets) return UC.getAllMarkets() || [];
+    return UC.getMarkets ? UC.getMarkets() : [];
+  }
+  /* Die Zahl der Prompts steht nur in der GEFILTERTEN Liste. Ein Markt ohne Prompts zeigt keine
+     Zahl statt einer erfundenen 0 -- die volle Liste traegt gar keine. */
+  function promptZahl(a2) {
+    var l = UC.getMarkets ? UC.getMarkets() : [];
+    for (var i = 0; i < l.length; i++) {
+      if (String(l[i].alpha2 || "").toLowerCase() === a2) return toNum(l[i].prompt_count);
+    }
+    return null;
+  }
   function normMarket(v) {
     var s = String(v == null ? "" : v).trim();
     if (!s) return "";
     if (/^[A-Za-z]{2}$/.test(s)) return s.toLowerCase();
-    var list = UC.getMarkets ? UC.getMarkets() : [];
+    var list = alleMaerkte();
     var lower = s.toLowerCase();
     for (var i = 0; i < list.length; i++) {
       var m = list[i];
@@ -314,7 +334,7 @@
 
   function marketName(a2) {
     if (!a2) return "";
-    var list = UC.getMarkets ? UC.getMarkets() : [];
+    var list = alleMaerkte();
     for (var i = 0; i < list.length; i++) {
       if (String(list[i].alpha2 || "").toLowerCase() === a2) return String(list[i].name || a2.toUpperCase());
     }
@@ -322,7 +342,7 @@
   }
   function flagUrl(a2) {
     if (!a2) return "";
-    var list = UC.getMarkets ? UC.getMarkets() : [];
+    var list = alleMaerkte();
     for (var i = 0; i < list.length; i++) {
       if (String(list[i].alpha2 || "").toLowerCase() === a2 && list[i].flag_url) return String(list[i].flag_url);
     }
@@ -563,7 +583,7 @@
   function optsHtml(kind) {
     var q = S.pickQuery.toLowerCase();
     if (kind === "market") {
-      var list = (UC.getMarkets ? UC.getMarkets() : []).filter(function (m) {
+      var list = alleMaerkte().filter(function (m) {
         return !q || String(m.name || "").toLowerCase().indexOf(q) >= 0 ||
                      String(m.alpha2 || "").toLowerCase().indexOf(q) >= 0;
       });
@@ -578,7 +598,7 @@
                    '<img class="uap-flag uap-opt-flag" src="' + esc(flagUrl(a2)) + '" alt="">' +
                    '<span class="uap-opt-name">' + esc(m.name || a2.toUpperCase()) + '</span>' +
                  '</span>' +
-                 '<span class="uap-opt-count">' + toNum(m.prompt_count) + '</span>' +
+                 '<span class="uap-opt-count">' + (promptZahl(a2) == null ? "" : promptZahl(a2)) + '</span>' +
                '</div>';
       }).join("");
     }
@@ -920,7 +940,14 @@
       if (opt && back.contains(opt)) {
         var val = opt.getAttribute("data-val");
         if (S.pick === "market") { S.market = S.market === val ? "" : val; renderTriggers(); renderList(); renderMenus(); }
-        else { if (S.tags[val]) delete S.tags[val]; else S.tags[val] = true; renderTriggers(); renderMenus(); }
+        else {
+          /* Hoechstens 5 Topics je Prompt (10.10., eine Grenze fuer alle Wege, die Datenbank prueft
+             sie ebenso). Abwaehlen geht immer. */
+          if (S.tags[val]) delete S.tags[val];
+          else if (selectedTagIds().length >= TOPIC_MAX) { if (UC.toast) UC.toast(tr("Up to 5 topics per prompt"), { kind: "neutral" }); return; }
+          else S.tags[val] = true;
+          renderTriggers(); renderMenus();
+        }
         return;
       }
       /* A click anywhere else inside the card closes an open picker. */
@@ -1010,6 +1037,26 @@
       source:       "user_generated"
     };
 
+    /* SEITE STATT BUBBLE (10.10., Prompt Insights als Seiten-Komponente). Hat die Seite beim
+       Oeffnen onSubmit mitgegeben, speichert SIE (direkt in der Datenbank) und meldet das Ergebnis
+       zurueck: { ok: true } schliesst den Dialog, alles andere laesst ihn OFFEN -- mit allen
+       Zeilen, damit nichts neu getippt werden muss. Den Satz dazu zeigt die Seite (sie kennt
+       angelegt/uebersprungen); kein eigener Toast hier und kein Bubble-Ereignis, sonst legte der
+       alte Workflow dieselben Prompts ein zweites Mal an. */
+    if (S.abgabe) {
+      var fertig = function (erg) {
+        if (!isOpen) return;
+        if (erg && erg.ok) { close(); return; }
+        S.saving = false;
+        M.save.disabled = false;
+        M.card.classList.remove("is-saving");
+      };
+      var r;
+      try { r = S.abgabe(payload); } catch (e) { r = null; }
+      Promise.resolve(r).then(fertig, function () { fertig(null); });
+      return;
+    }
+
     /* Through UC.makeFire, not by resolving the name here. makeFire is what prepends team_id, what
        resolves the name across parent/top and every reachable iframe, what warns exactly once when
        nothing picks the call up, and what dispatches the DOM event as a fallback. Calling
@@ -1042,6 +1089,7 @@
     S.csvNote = ""; S.csvSkipped = 0; S.csvName = ""; S.capNote = "";
     S.tab = opts.tab === "csv" ? "csv" : "manual";
     S.pick = null; S.pickQuery = "";
+    S.abgabe = typeof opts.onSubmit === "function" ? opts.onSubmit : null;
     /* Default market first, an explicit opts.market second. Both optional; neither is required
        for the dialog to work, the market just starts empty then. */
     if (DEFAULT_MARKET) S.market = DEFAULT_MARKET;

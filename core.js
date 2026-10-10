@@ -1367,6 +1367,52 @@
     "Nothing to copy": "Nichts zu kopieren",
     "Could not copy": "Kopieren nicht möglich",
     "Confirm delete?": "Wirklich löschen?",
+    /* Prompt Insights (10.10.): Loeschen nimmt den Verlauf mit (wie in Analyse-Tools ueblich) --
+       das muss vor dem zweiten Klick dastehen. */
+    "Delete prompts and their history?": "Prompts samt Verlauf löschen?",
+    "Up to 5 topics per prompt": "Höchstens 5 Topics je Prompt",
+    "Up to 10 custom groupings": "Höchstens 10 eigene Gruppierungen",
+    /* Seite Prompt Insights (prompts-page.js, 10.10.): Rueckmeldungen und Fehlersaetze. */
+    "Topic": "Topic",
+    "Topic created": "Topic angelegt",
+    "Topic saved": "Topic gespeichert",
+    "Topic deleted": "Topic gelöscht",
+    "{n} prompt added": "{n} Prompt hinzugefügt",
+    "{n} prompts added": "{n} Prompts hinzugefügt",
+    "No new prompts added": "Keine neuen Prompts hinzugefügt",
+    "{n} skipped (already there or invalid)": "{n} übersprungen (schon vorhanden oder ungültig)",
+    "{n} unchanged": "{n} unverändert",
+    "Topics added to {n} prompt": "Topics zu {n} Prompt hinzugefügt",
+    "Topics added to {n} prompts": "Topics zu {n} Prompts hinzugefügt",
+    "{n} prompt set to active": "{n} Prompt auf aktiv gesetzt",
+    "{n} prompts set to active": "{n} Prompts auf aktiv gesetzt",
+    "{n} prompt set to inactive": "{n} Prompt auf inaktiv gesetzt",
+    "{n} prompts set to inactive": "{n} Prompts auf inaktiv gesetzt",
+    "{n} prompt deleted": "{n} Prompt gelöscht",
+    "{n} prompts deleted": "{n} Prompts gelöscht",
+    "Not enough room in your plan": "Nicht genug Platz in deinem Plan",
+    "{n} more active prompts fit into your plan.": "In deinen Plan passen noch {n} aktive Prompts.",
+    "Deactivate prompts or upgrade your plan.": "Deaktiviere Prompts oder wechsle in einen größeren Plan.",
+    "Too many inactive prompts": "Zu viele inaktive Prompts",
+    "Delete inactive prompts you no longer need, then try again.": "Lösche inaktive Prompts, die du nicht mehr brauchst, und versuche es dann erneut.",
+    "Your team has reached the topic limit": "Dein Team hat die Höchstzahl an Topics erreicht",
+    "Delete a topic you no longer need to add a new one.": "Lösche ein Topic, das du nicht mehr brauchst, um ein neues anzulegen.",
+    "The selection has changed": "Die Auswahl hat sich geändert",
+    "Please select the prompts again.": "Bitte wähle die Prompts erneut aus.",
+    "Only owners and admins can delete": "Nur Owner und Admins können löschen",
+    "A topic with this name already exists": "Ein Topic mit diesem Namen gibt es schon",
+    "Too many requests": "Zu viele Anfragen",
+    "Please wait a moment and try again.": "Bitte warte einen Moment und versuche es erneut.",
+    "Some items no longer exist": "Einige Einträge gibt es nicht mehr",
+    "Refresh the page and try again.": "Lade die Seite neu und versuche es erneut.",
+    "That didn't work": "Das hat nicht geklappt",
+    "The groups could not be loaded": "Die Gruppen konnten nicht geladen werden",
+    "The prompts of this group could not be loaded": "Die Prompts dieser Gruppe konnten nicht geladen werden",
+    "The prompts could not be added": "Die Prompts konnten nicht hinzugefügt werden",
+    "The topics could not be saved": "Die Topics konnten nicht gespeichert werden",
+    "The topic could not be created": "Das Topic konnte nicht angelegt werden",
+    "The topic could not be deleted": "Das Topic konnte nicht gelöscht werden",
+    "The topic could not be saved.": "Das Topic konnte nicht gespeichert werden.",
     "Bulk actions": "Sammelaktionen",
     "Set Active": "Auf aktiv setzen",
     "Set Inactive": "Auf inaktiv setzen",
@@ -10089,6 +10135,9 @@
     var palette = cfg.palette || TOPIC_COLOR_PALETTE;
     var onSave = cfg.onSave || function(){};
     var onDelete = cfg.onDelete || null;
+    /* Darf der Nutzer loeschen? (10.10.: Topics loeschen nur owner/admin.) Fehlt die Angabe, gilt
+       wie bisher: Loeschen, sobald onDelete da ist. Geprueft wird ohnehin in der Datenbank. */
+    var darfLoeschen = typeof cfg.darfLoeschen === "function" ? cfg.darfLoeschen : function(){ return true; };
 
     var modalBackdrop = null, modalOpenerEl = null;
     var modalMode = null;        // null | "create" | "edit"
@@ -10166,6 +10215,8 @@
             '<div class="up-topicmodal-field">' +
               '<label class="up-topicmodal-label">Name</label>' +
               '<input type="text" class="up-topicmodal-name" maxlength="60" autocomplete="off" spellcheck="false"/>' +
+              /* Die Fehlerzeile der App (roter Satz, kein Kasten): saveFailed() fuellt sie. */
+              '<div class="up-fehlerzeile up-topicmodal-err" role="alert"><span></span></div>' +
             '</div>' +
             '<div class="up-topicmodal-field">' +
               '<label class="up-topicmodal-label">Appearance</label>' +
@@ -10176,7 +10227,7 @@
         '</div>';
 
       var nameInput = modalBackdrop.querySelector(".up-topicmodal-name");
-      nameInput.addEventListener("input", function(){ draftName = nameInput.value; syncSaveEnabled(); });
+      nameInput.addEventListener("input", function(){ draftName = nameInput.value; fehlerZeigen(""); syncSaveEnabled(); });
 
       modalBackdrop.addEventListener("click", function(e){
         if (e.target === modalBackdrop){ closeModal(); return; }
@@ -10232,6 +10283,7 @@
       if (draftColor.charAt(0) !== "#") draftColor = "#" + draftColor;
       pickOpen = null; modalSaving = false;
       clearTimeout(modalSaveTimer);
+      fehlerZeigen("");
       modalBackdrop.setAttribute("data-theme", getIsDark() ? "dark" : "light");
       var titleEl = modalBackdrop.querySelector(".up-topicmodal-title");
       if (titleEl) titleEl.textContent = t_(mode === "create" ? "New Topic" : "Edit Topic");
@@ -10239,7 +10291,7 @@
       if (nameInput) nameInput.value = draftName;
       var foot = modalBackdrop.querySelector(".up-topicmodal-foot");
       if (foot){
-        foot.innerHTML = (mode === "edit" && onDelete
+        foot.innerHTML = (mode === "edit" && onDelete && darfLoeschen()
           ? '<button type="button" class="up-topicmodal-delete" data-modal-delete>Delete</button>'
           : "") +
           '<button type="button" class="up-topicmodal-save" data-modal-save' + (draftName.trim() ? "" : " disabled") + '>Save</button>';
@@ -10287,13 +10339,30 @@
         if (saveBtn){ saveBtn.disabled = !draftName.trim(); saveBtn.style.opacity = ""; }
       }, 8000);
     }
+    function fehlerZeigen(text){
+      var z = modalBackdrop && modalBackdrop.querySelector(".up-topicmodal-err");
+      if (!z) return;
+      z.firstChild.textContent = text || "";
+      z.classList.toggle("is-on", !!text);
+    }
+    /* SPEICHERN GESCHEITERT (10.10., Prompt Insights): der Aufrufer meldet den Fehler, statt den
+       Dialog zu schliessen. Der Dialog bleibt offen, mit allem, was getippt war; Save ist sofort
+       wieder klickbar (nicht erst nach der 8s-Notbremse), und der Satz steht darin. */
+    function saveFailed(text){
+      if (!modalBackdrop || !modalMode) return;
+      clearTimeout(modalSaveTimer);
+      modalSaving = false;
+      var saveBtn = modalBackdrop.querySelector(".up-topicmodal-save");
+      if (saveBtn){ saveBtn.disabled = !draftName.trim(); saveBtn.style.opacity = ""; }
+      fehlerZeigen(text || t_("The topic could not be saved."));
+    }
     function fireDelete(){
       if (!modalTopic || !onDelete) return;
       onDelete(modalTopic);
       closeModal();
     }
     return {
-      open: openModal, close: closeModal,
+      open: openModal, close: closeModal, saveFailed: saveFailed,
       isOpen: function(){ return !!modalMode; },
       /* The render/update path needs to tell "modal is open because the user is mid-edit" apart
          from "modal is open AND its save is in flight, so THIS incoming re-render is very likely
@@ -22111,6 +22180,7 @@
   }
 
   var CG_MAX_TOPICS = 3;
+  var CG_MAX_GRUPPEN = 10;
   var CG_TOPICS_COLLAPSED = 10;   /* soviele zeigen, dann ein "Show all"-Knopf */
 
   /* Das Anlegen-/Bearbeiten-Fenster. Aufruf:
@@ -22313,7 +22383,7 @@
                   '<button class="up-cgm-dotbtn upt-gm-dotbtn" type="button" data-gm-colorbtn aria-label="' + esc(t_("Group color")) + '">' +
                     '<span class="up-cgm-dot upt-gm-dot"></span></button>' +
                 '</div>' +
-                '<input class="up-topicmodal-name up-cgm-name-in upt-gm-name-in" type="text" placeholder="' +
+                '<input class="up-topicmodal-name up-cgm-name-in upt-gm-name-in" type="text" maxlength="60" placeholder="' +
                   esc(platzhalter()) + '" autocomplete="off" spellcheck="false"/>' +
               '</div>' +
               '<div class="up-cgm-colorpanel upt-gm-colorpanel"></div>' +
@@ -22389,6 +22459,14 @@
              wer bearbeitet, will seine Gruppe nicht ans Ende geschoben sehen. */
           var altKey = bearbeitet ? bearbeitet.key : null;
           var liste = cgRead();
+          /* Hoechstens 10 eigene Gruppierungen (10.10., Vertrag Prompt Insights: die Datenbank nimmt
+             nicht mehr an). Eine neue ueber der Grenze wird nicht gespeichert -- das Ueberschreiben
+             einer gleichnamigen und das Bearbeiten gehen immer. */
+          var schonDa = liste.some(function(g){ return g.key === name || g.key === altKey; });
+          if (!schonDa && liste.length >= CG_MAX_GRUPPEN){
+            toast(t_("Up to 10 custom groupings"), { kind: "neutral" });
+            return;
+          }
           var pos = -1, i;
           for (i = 0; i < liste.length; i++) if (liste[i].key === altKey){ pos = i; break; }
           var ohne = liste.filter(function(g){ return g.key !== name && g.key !== altKey; });
