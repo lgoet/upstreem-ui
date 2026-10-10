@@ -181,7 +181,19 @@
        Rand der Bubble-Gruppe), und die Linie unter dem Kopf laeuft bis an deren Kante -- siehe
        core.css, "DER KOMPAKTE KOPF IN EINER KOMPONENTE". */
     /* komponente: das Startfeld bleibt bei 16 wie jeder Block, nur die Kopfzeile reicht rechts bis 8. */
-    if (UC.makePageCrumbs) UC.makePageCrumbs(root, { icon: "telescope", name: "Prompt Research", komponente: true });
+    /* In der Ergebnisansicht eine zweite Stufe: die Recherche, die offen ist (10.10. angefordert).
+       "Prompt Research" ist dann ein Knopf zurueck zum Start -- das war vorher "Back to start" in
+       einer eigenen Zeile ueber der Tabelle. */
+    var krumen = UC.makePageCrumbs ? UC.makePageCrumbs(root, { icon: "telescope", name: "Prompt Research", komponente: true,
+      stufen: function(){
+        if (!root.classList.contains('is-results')) return [];
+        var kw = currentResearchMeta && currentResearchMeta.keywords && currentResearchMeta.keywords.length
+          ? currentResearchMeta.keywords.join(', ') : 'Research';
+        return [{ name: kw, uebersetzen: !(currentResearchMeta && currentResearchMeta.keywords && currentResearchMeta.keywords.length) }];
+      },
+      klick: function(){ setResearchState('idle'); closeHistoryPanel(); },
+      klickWenn: function(){ return root.classList.contains('is-results'); }
+    }) : null;
 
     /* The top-right action belongs to the PAGE, not to the start screen: it was absolutely
        positioned inside .upr-content, so the new page header pushed it down with it. Lifted to
@@ -485,13 +497,14 @@
     fehlerText = String(txt || '');
     var zeile = root.querySelector('.upr-fehler');
     if (!zeile && fehlerText){
-      var bereich = root.querySelector('.upr-composer-area');
-      if (!bereich) return;
+      var schale = root.querySelector('.upr-composer-shell');
+      if (!schale || !schale.parentNode) return;
       zeile = document.createElement('div');
       zeile.className = 'up-fehlerzeile upr-fehler';
       zeile.setAttribute('role', 'alert');
       zeile.innerHTML = '<span></span>';
-      bereich.appendChild(zeile);
+      /* Direkt unter dem Eingabefeld, nicht ans Ende des Bereichs (dort stand sie unter dem Tipp). */
+      schale.parentNode.insertBefore(zeile, schale.nextSibling);
     }
     if (!zeile) return;
     zeile.firstChild.textContent = fehlerText;
@@ -667,6 +680,7 @@
     root.classList.toggle('is-error', isError);
     /* Nach dem Umschalten, nicht davor: die Funktion liest genau diese Klassen. */
     heldenHoeheSetzen();
+    if (krumen) krumen.zeichnen();
     if (textarea) textarea.disabled = isRunning;
     if (settingsToggle) settingsToggle.disabled = isRunning;
     if (startButton){
@@ -725,7 +739,10 @@
       '<span class="upr-context-pill" data-tip="Business model: ' + esc(businessLabel) + '">' + ICON.briefcase + '<span>' + esc(businessLabel) + '</span></span>' +
       (personaLabel !== 'No persona' ? '<span class="upr-context-pill" data-tip="Persona: ' + esc(personaLabel) + '">' + ICON.user + '<span>' + esc(personaLabel) + '</span></span>' : '');
   }
-  function renderResultsContext(){ if (resultsContext) resultsContext.innerHTML = contextPills(currentResearchMeta, true); }
+  function renderResultsContext(){
+    if (resultsContext) resultsContext.innerHTML = contextPills(currentResearchMeta, true);
+    if (krumen) krumen.zeichnen();
+  }
 
   /* ---------- previous researches (sidebar) ---------- */
   function normalizeResearchMeta(item){
@@ -743,16 +760,20 @@
       /* Seit dem 09.10. (prompt_research_jobs_v1) stehen auch laufende und gescheiterte Jobs in
          der Liste. Bubbles alte Liste kennt kein status -- dann gilt der Eintrag als fertig, wie
          bisher. */
-      status: String(item.status || '').toLowerCase(),
-      fehler_code: item.error && typeof item.error === 'object' ? String(item.error.code || '') : ''
+      status: String(item.status || '').toLowerCase()
     };
   }
-  /* Was ein gescheiterter Lauf dem Nutzer sagt (Vertrag 14.1): nur was passiert ist, keine
-     internen Namen. */
-  function fehlerSatz(code){
-    if (code === 'n8n_unreachable') return 'Could not be started';
-    if (code === 'timeout') return 'Timed out';
-    return 'Research failed';
+  /* Rechts in der Zeile, als Text und nicht als Pille (10.10.): Markt, Geschaeftsmodell, Persona. */
+  var MODELL = { b2c: 'B2C', b2b: 'B2B', hybrid: 'Hybrid' };
+  function personaText(p){ p = String(p || '').replace(/_/g, ' ').trim(); return p ? p.charAt(0).toUpperCase() + p.slice(1) : ''; }
+  function historyMeta(item){
+    var markt = String(item.market || '').toUpperCase();
+    var name = item.market_name || markt;
+    var modell = item.business_model ? (MODELL[String(item.business_model).toLowerCase()] || String(item.business_model)) : '';
+    var persona = personaText(item.persona);
+    return (markt ? '<span class="upr-history-markt" data-tip="' + esc(name) + '"><span class="upr-market-flag">' + flagHtml(getFlagUrlForMarket(markt), name) + '</span>' + esc(markt) + '</span>' : '') +
+      (modell ? '<span data-tip="' + esc(UC.t ? UC.t('Business model') : 'Business model') + '">' + esc(modell) + '</span>' : '') +
+      (persona ? '<span class="upr-history-persona" data-tip="' + esc(UC.t ? UC.t('Persona') : 'Persona') + '">' + esc(persona) + '</span>' : '');
   }
   function formatHistoryDate(value){
     if (!value) return 'recently';
@@ -761,7 +782,10 @@
   }
   function renderPreviousResearches(rawItems){
     listeFehler = false;
-    previousResearches = (Array.isArray(rawItems) ? rawItems : []).map(normalizeResearchMeta).filter(function(x){ return x.job_id; });
+    /* Gescheiterte Recherchen stehen NICHT in der Liste (10.10.: "muessen wirklich nicht sichtbar
+       sein") -- es gibt an ihnen nichts zu oeffnen, und den Grund sagt die Fehlerzeile beim Lauf. */
+    previousResearches = (Array.isArray(rawItems) ? rawItems : []).map(normalizeResearchMeta)
+      .filter(function(x){ return x.job_id && x.status !== 'error'; });
     /* Gemerkt erst NACH dem Umformen: eine Liste, an der normalizeResearchMeta scheitert, darf
        nicht in den Vorrat -- sonst scheiterte jeder Neuaufbau ein zweites Mal an ihr. */
     gemerkterVerlauf = Array.isArray(rawItems) ? rawItems : [];
@@ -780,26 +804,22 @@
     historyList.innerHTML = previousResearches.map(function(item, index){
       var headline = (item.keywords && item.keywords.length) ? item.keywords.join(', ') : 'Untitled research';
       /* Laufend: weder oeffnen (es gibt noch nichts) noch loeschen (n8n liefe ins Leere, Vertrag
-         14.1). Gescheitert: loeschen ja, oeffnen nein. */
+         14.1). */
       var laeuft = item.status === 'queued' || item.status === 'running';
-      var kaputt = item.status === 'error';
       var zeile = laeuft
         ? '<span class="upr-history-lauf">' + esc(UC.t ? UC.t('Running') : 'Running') + '</span>'
-        : kaputt
-          ? '<span class="upr-history-fehler">' + esc(UC.t ? UC.t(fehlerSatz(item.fehler_code)) : fehlerSatz(item.fehler_code)) + '</span>'
-          : esc(item.prompt_count || 0) + ' prompts';
-      var still = laeuft || kaputt;
-      return '<div class="upr-history-item' + (still ? ' is-still' : '') + '" data-history-index="' + index + '"' +
-        (still ? ' data-oeffnen="nein"' : ' role="button" tabindex="0"') + '>' +
+        : esc(item.prompt_count || 0) + ' prompts';
+      return '<div class="upr-history-item' + (laeuft ? ' is-still' : '') + '" data-history-index="' + index + '"' +
+        (laeuft ? ' data-oeffnen="nein"' : ' role="button" tabindex="0"') + '>' +
         '<div class="upr-history-main">' +
           '<div class="upr-history-headline" data-tip="' + esc(headline) + '">' + esc(headline) + '</div>' +
           '<div class="upr-history-date">' + esc(formatHistoryDate(item.created_at)) + ', ' + zeile + '</div>' +
-          '<div class="upr-history-meta-row">' + contextPills(item, false) + '</div>' +
         '</div>' +
-        '<div class="upr-history-actions">' +
-          (laeuft ? '' : '<button class="up-iconbtn upr-history-delete" type="button" data-action="delete-research" data-job-id="' + esc(item.job_id) + '" data-history-index="' + index + '" data-tip="Delete research" aria-label="Delete research">' + ICON.trash + '</button>') +
-          (still ? '' : '<button class="up-iconbtn" type="button" data-action="open-research" data-history-index="' + index + '" data-tip="Open research" aria-label="Open research">' + ICON.gotoArrow + '</button>') +
-        '</div>' +
+        '<div class="upr-history-meta">' + historyMeta(item) + '</div>' +
+        (laeuft ? '' : '<div class="upr-history-actions">' +
+          '<button class="up-iconbtn upr-history-delete" type="button" data-action="delete-research" data-job-id="' + esc(item.job_id) + '" data-history-index="' + index + '" data-tip="Delete research" aria-label="Delete research">' + ICON.trash + '</button>' +
+          '<button class="up-iconbtn" type="button" data-action="open-research" data-history-index="' + index + '" data-tip="Open research" aria-label="Open research">' + ICON.gotoArrow + '</button>' +
+        '</div>') +
       '</div>';
     }).join('');
   }

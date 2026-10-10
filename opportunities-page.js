@@ -54,7 +54,9 @@
   function str(v) { return v == null || typeof v === "object" ? "" : String(v); }
   function team() { try { return (UC.getTeam && UC.getTeam()) || ""; } catch (e) { return ""; } }
   function setter(n) { return typeof window[n] === "function" ? window[n] : function () {}; }
-  function satz(txt) { if (UC.toast) UC.toast(t(txt)); }
+  /* icon "info" fuer alles, was nicht geklappt hat oder nichts brachte -- derselbe Toast wie
+     ueberall, nur ohne Haken (wie "Nothing to copy" in der Prompts-Tabelle). */
+  function satz(txt, icon) { if (UC.toast) UC.toast(t(txt), icon ? { icon: icon } : undefined); }
   function beiSicht(el, schluessel, fn, test, o) { if (UC.beiSicht) UC.beiSicht(el, schluessel, fn, test, o); else fn(); }
   function messbar(el) { return !UC.messbar || UC.messbar(el); }
   function brettLokal() { return !!document.querySelector('.uo-root[data-local="yes"]'); }
@@ -145,7 +147,7 @@
       abfrageStop();
       gem.job = null;
       setter("opportunitiesSetSearching")("no");
-      if (fehlerSatz) satz(fehlerSatz);
+      if (fehlerSatz) satz(fehlerSatz, "info");
     }
     /* Ein Stand, egal woher (Broadcast oder Einzelabfrage). */
     function standVerarbeiten(job, s, endgueltig) {
@@ -159,13 +161,22 @@
         gem.job = null;
         /* Die neue Liste beendet die Suche im Brett (opportunitiesSetItems). Scheitert sie, endet
            die Suche trotzdem. */
-        if (job.team === team()) listeLaden(true).then(function (l) { if (!l) sucheEnde(); });
+        if (job.team === team()) listeLaden(true).then(function (l) { if (!l) sucheEnde(); else ergebnisMelden(s.ergebnis); });
         else sucheEnde();
         return;
       }
       sucheEnde(s.fehler && s.fehler.code === "timeout"
         ? "The search for new opportunities took too long. Please try again."
         : "The search for new opportunities failed. Please try again.");
+    }
+    /* Wie viele neue Opportunities die Suche angelegt hat, als Toast wie jede andere Rueckmeldung
+       der App (10.10. angefordert). Ohne Zahl im Ergebnis sagt die Seite nur, dass sie fertig ist. */
+    function ergebnisMelden(e) {
+      if (!e || e.neu == null) { satz("The search for new opportunities is complete."); return; }
+      if (e.neu === 1) { satz("1 new opportunity was created."); return; }
+      if (e.neu > 1) { satz(t("{n} new opportunities were created.").replace("{n}", e.neu)); return; }
+      satz(e.voll ? "No new opportunities: the board already has the maximum number of active ones. Move some to Done or Ignored to make room."
+                  : "No new opportunities were found this time.", "info");
     }
     function standAbfragen(job, endgueltig) {
       var a = D.sucheStand(job.team, job.id);
@@ -194,7 +205,7 @@
     function sucheStarten() {
       var tm = team();
       if (!tm || gem.job || window.__uoSucheLaeuft) return;
-      if (!UC.edge) { satz("Looking for new opportunities is not available right now."); return; }
+      if (!UC.edge) { satz("Looking for new opportunities is not available right now.", "info"); return; }
       gem.job = { id: "", team: tm, seit: Date.now() };
       var job = gem.job;
       setter("opportunitiesSetSearching")("yes");

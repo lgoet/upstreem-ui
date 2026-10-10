@@ -206,8 +206,13 @@
    stage. This one is authored inside .upr-content, which .upr-root.is-results hides -- but the
    boot script lifts it out to .upr-shell, so it escaped that rule and both showed at once.
    Hide it explicitly in the states where .upr-content is not the visible view. */
-.upr-root.is-results .upr-history-entry,
-.upr-root.is-running .upr-history-entry { display: none; }
+/* SEIT DEM 10.10. bleibt der Knopf in allen Zustaenden in der Kopfzeile ("belass es einfach in der
+   Topbar"); der zweite Knopf in der Ergebnisansicht ist weg, ebenso deren Zeile "Back to start" --
+   zurueck fuehrt jetzt die Krume "Prompt Research". Nur der Knopf, der NICHT an die Wurzel
+   gehoben wurde (alte Fassung ohne Kopf), verschwindet weiter mit seiner Ansicht. */
+.upr-root.is-results .upr-shell > .upr-history-entry,
+.upr-root.is-running .upr-shell > .upr-history-entry { display: none; }
+.upr-results-stage > .upr-results-nav { display: none; }
 /* Secondary button, same shape as core's .up-empty-btn so it reads as one family. */
 .upr-secondary-btn {
   height: 32px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: 8px;
@@ -237,7 +242,13 @@
    Flaechenfarbe der Seite (--up-surface, #121212). Vorher lag hier --vc-heading-bg ueber --vc-bg,
    also zwei Grautoene eine Stufe heller -- dasselbe Feld sah in den zwei Komponenten verschieden
    aus. Hell bleibt es, wie es ist. */
-.up-root[data-theme="dark"].upr-root .upr-composer-shell { background: #1e1e1e; }
+/* 10.10.: die Schale ist das Token --vc-bg (#1c1c1f) statt des festen #1e1e1e -- das war ein
+   neutrales Grau ohne den Blaustich der Palette und sah neben Feld (#232326) und Seite (#101114)
+   fremd aus ("ganz komische bg-Farbe"). Jetzt eine Stufe dunkler als das Feld, im selben Ton.
+   Die Auswahlfelder in den Einstellungen tragen darum die Feldfarbe -- auf --vc-bg waeren sie
+   genau so dunkel wie die Schale und nur noch am Rand zu erkennen. */
+.up-root[data-theme="dark"].upr-root .upr-composer-shell { background: var(--vc-bg); }
+.up-root[data-theme="dark"].upr-root .upr-dd-trigger { background: var(--vc-field); }
 /* Dark: Feldfarbe statt Seitenfarbe, und im Ruhezustand kein Rand -- dieselbe Aenderung wie am
    Eingabefeld von Mira, aus demselben Grund. --up-surface ist #121212, die Farbe der SEITE; das
    Feld lag damit dunkler als seine Schale (#1e1e1e). --vc-field ist #2a2a2a.
@@ -730,18 +741,31 @@
 .upr-history-item {
   position: relative;
   border-radius: 12px; padding: 12px; cursor: pointer;
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  /* Markt und Modell rechts, solange Platz ist (10.10.); sonst brechen sie unter den Titel. */
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px;
   transition: background 140ms ease;
 }
-/* Separator between entries, drawn as a pseudo-element rather than a border so the rounded hover
-   pill still covers the full row -- a real border-top would sit inside the radius and cut a
-   straight line across the top two corners. Inset by the row padding, the app-wide list look. */
+/* Trennlinie MITTEN in einer 8px-Luecke zwischen zwei Eintraegen (10.10.: "die Hoverstates liegen
+   direkt auf den Separator-Linien"). Die Hover-Flaeche endet so 4px vor jeder Linie, und die
+   beiden Linien am Eintrag unter dem Zeiger gehen aus -- die Flaeche ersetzt sie. */
+.upr-history-item + .upr-history-item { margin-top: 8px; }
 .upr-history-item + .upr-history-item::before {
-  content: ""; position: absolute; left: 12px; right: 12px; top: 0;
-  height: 1px; background: var(--vc-border); pointer-events: none;
+  content: ""; position: absolute; left: 12px; right: 12px; top: -4px;
+  height: 1px; background: var(--vc-border); pointer-events: none; transition: opacity var(--up-t-1) var(--up-ease);
 }
-.upr-history-item:hover, .upr-history-item:focus-visible { background: var(--vc-heading-bg); outline: none; }
-.upr-history-main { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 3px; }
+.upr-history-item:hover::before, .upr-history-item:focus-visible::before,
+.upr-history-item:hover + .upr-history-item::before,
+.upr-history-item:focus-visible + .upr-history-item::before { opacity: 0; }
+.upr-history-item.is-still:hover::before,
+.upr-history-item.is-still:hover + .upr-history-item::before { opacity: 1; }
+.upr-history-item:not(.is-still):hover, .upr-history-item:focus-visible { background: var(--vc-heading-bg); outline: none; }
+.upr-history-main { min-width: 0; flex: 1 1 200px; display: flex; flex-direction: column; gap: 3px; }
+/* Markt, Modell, Persona als Text (10.10.: "nicht in diese Chips"), getrennt durch Abstand. */
+.upr-history-meta {
+  flex: 0 0 auto; margin-left: auto; display: flex; align-items: center; gap: 12px;
+  font-size: var(--up-fs-s); line-height: 1.3; color: var(--vc-muted); white-space: nowrap;
+}
+.upr-history-markt { display: inline-flex; align-items: center; gap: 6px; }
 .upr-history-headline {
   font-size: 14px; font-weight: 500; line-height: 1.3; letter-spacing: -0.01em; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
@@ -749,18 +773,25 @@
 .upr-history-date { font-size: 12px; color: var(--vc-fourth); line-height: 1.3; font-weight: 400; }
 .upr-history-meta-row { min-width: 0; margin-top: 8px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 /* The two row buttons only appear on hover, so a long list stays quiet; they stay visible while
-   the row has keyboard focus. */
-.upr-history-actions { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; opacity: 0; transition: opacity 140ms ease; }
+   the row has keyboard focus. Seit dem 10.10. UEBER der Angabe rechts (absolut, mit der
+   Hover-Flaeche als Grund), statt ihr dauerhaft Platz wegzunehmen. */
+.upr-history-actions {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  display: flex; align-items: center; gap: 4px; padding-left: 8px;
+  background: var(--vc-heading-bg); border-radius: 8px;
+  opacity: 0; pointer-events: none; transition: opacity 140ms ease;
+}
 .upr-history-item:hover .upr-history-actions,
 .upr-history-item:focus-visible .upr-history-actions,
-.upr-history-actions:focus-within { opacity: 1; }
+.upr-history-actions:focus-within { opacity: 1; pointer-events: auto; }
 .upr-history-delete:hover { color: var(--vt-down, #b0200c); }
-/* Laufende und gescheiterte Recherchen (09.10., Seite): sie lassen sich nicht oeffnen, also kein
-   Zeiger. Der Zustand steht als Wort in der Datumszeile -- gescheitert in der Fehlerfarbe der App,
-   ohne Kasten, wie jede Fehlerzeile. */
+/* Laufende Recherchen (09.10., Seite): sie lassen sich nicht oeffnen, also kein Zeiger und keine
+   Hover-Flaeche. Der Zustand steht als Wort in der Datumszeile. Gescheiterte stehen seit dem 10.10.
+   gar nicht mehr in der Liste. */
 .upr-history-item.is-still { cursor: default; }
 .upr-history-lauf { color: var(--vc-text); }
-.upr-history-fehler { color: var(--vt-down); }
+/* Die Fehlerzeile unter dem Eingabefeld, mittig wie alles auf der Startseite (10.10.). */
+.upr-fehler > span { text-align: center; padding-top: 8px; }
 
 /* ---------- responsive ---------- */
 @media (max-width: 1040px) {

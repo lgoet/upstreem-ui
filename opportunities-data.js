@@ -84,8 +84,19 @@
     var s = str(m.status);
     return {
       jobId: str(m.job_id), status: ["queued", "running", "success", "error"].indexOf(s) >= 0 ? s : null,
-      meldung: str(m.status_message), fehler: obj(m.error) ? { code: str(m.error.code), message: str(m.error.message) } : null
+      meldung: str(m.status_message), fehler: obj(m.error) ? { code: str(m.error.code), message: str(m.error.message) } : null,
+      ergebnis: zuErgebnis(m.result)
     };
+  }
+  /* Was die Suche gebracht hat (meta.result bei success, Vertrag 13): { neu, voll } -- neu ist
+     created_count (null, wenn die Zahl fehlt), voll heisst: das Brett hat schon die hoechste Zahl
+     aktiver Karten, darum kam nichts dazu (status Active_Limit_Reached). */
+  function zuErgebnis(r) {
+    r = obj(r);
+    if (!r) return null;
+    var n = Number(r.created_count);
+    return { neu: r.created_count == null || !isFinite(n) ? null : Math.max(0, Math.round(n)),
+             voll: /active_limit/i.test(str(r.status)) };
   }
   /* Antwort von start-job (202): { job_id, kind, status, reused }. */
   function zuStart(d) {

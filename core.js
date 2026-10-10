@@ -10371,8 +10371,18 @@
      KEIN z-index, keine Position, keine Stapelung: an der fremden Gruppe aendert sich nur, ob
      ihre eigene leere Flaeche Klicks faengt (Host-Stapelung nie umschreiben, 11.08.).
      Gemeint ist genau die Gruppe um das HTML-Element des Seitenkopfs -- nicht weiter oben. */
+  /* DAS HTML-ELEMENT UM EINE KOMPONENTE (10.10.). Seit die Seiten-Komponenten (Teams, Prompt
+     Research) die echte Komponente in ihre eigene Wurzel betten, ist deren Elternteil nicht mehr
+     Bubbles HTML-Element, sondern die Huelle der Seite (.utp-root, .urs-root) -- die Randmessung
+     fand keine Gruppe und blieb stehen: kein Seitenpolster (gemeldet: "die ganze Komponente hat
+     gerade gar kein 16px padding"). Huellen, die selbst .up-root sind, werden uebersprungen. */
+  function htmlUm(root){
+    var e = root && root.parentElement;
+    while (e && e.classList && e.classList.contains("up-root")) e = e.parentElement;
+    return e;
+  }
   function kopfPolsterDurchlassen(root){
-    var html = root && root.parentElement;
+    var html = htmlUm(root);
     if (!html || !html.classList || !html.classList.contains("bubble-element")) return;
     var gruppe = html.parentElement;
     if (!gruppe || !gruppe.classList || !gruppe.classList.contains("bubble-element") ||
@@ -10395,9 +10405,9 @@
        Rahmen lief keine Messung -- gemessen alle drei Variablen leer --, und Kopf samt Linien
        blieben im Polster stecken ("neben den Kopfzeilen noch 16px links und rechts, das soll wie
        in der Hauptapp sein"). Ein Elternteil mit data-up-kopfrahmen gilt deshalb wie eine Gruppe. */
-    var eltern = root && root.parentElement;
+    var eltern = htmlUm(root);
     if (eltern && eltern.hasAttribute && eltern.hasAttribute("data-up-kopfrahmen")) return eltern;
-    var html = root && root.parentElement, gr = html && html.parentElement;
+    var html = eltern, gr = html && html.parentElement;
     if (!html || !html.classList || !html.classList.contains("bubble-element")) return null;
     if (!gr || !gr.classList || !gr.classList.contains("bubble-element") || gr.classList.contains("Page")) return null;
     if (root.__upKopfRahmen === gr) return gr;
