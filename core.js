@@ -18848,6 +18848,186 @@
     });
   }
 
+  /* ══ REALTIME: OEFFENTLICHE BROADCAST-KANAELE (10.10.) ═══════════════════════════════════════
+     Die Datenbank meldet jeden Statuswechsel eines Jobs als Broadcast (Look for new: Kanal
+     view_job:<job_id>, Ereignis view_job_status; Prompt Research: prompt_research_job:<job_id>,
+     Ereignis prompt_research_status). Damit faellt das Abfragen im Takt weg.
+     Ein eigener kleiner Client statt supabase-js: die App laedt supabase-js nicht selbst (das
+     Bubble-Plugin bringt seinen eigenen Stand mit, auf den hier kein Verlass ist), und gebraucht
+     wird nur Beitreten, Zuhoeren, Verlassen -- das Phoenix-Protokoll von Supabase Realtime in JSON
+     (vsn 1.0.0), wie supabase-js es spricht.
+     EIN Socket fuer die ganze Seite (auf window, wie jede Ablage hier), beliebig viele Kanaele
+     darauf. Bricht die Verbindung ab, verbindet er neu (1, 2, 5, 10, 30 s) und tritt allen
+     Kanaelen wieder bei. Herzschlag alle 25 s; bleibt die Antwort darauf aus, gilt die
+     Verbindung als tot und wird neu aufgebaut.
+
+     kanal(topic, { on: { ereignis: fn(nutzlast) }, status: fn(art, info), privat }) -> { stop(), verbunden() }
+       art "verbunden"  info.wieder: false beim ersten Beitritt, true nach jedem Wiederverbinden --
+                        dann ist waehrend der Trennung vielleicht etwas verpasst worden, und der
+                        Aufrufer laedt einmal nach.
+       art "getrennt"   die Verbindung ist weg (es wird schon neu verbunden)
+       art "fehler"     der Server hat den Beitritt abgelehnt; info ist seine Antwort, genau so,
+                        wie sie kam (steht auch in der Konsole -- der DB-Chat braucht den Wortlaut,
+                        wenn das Projekt nur private Kanaele erlaubt).
+     OHNE TOKEN bei oeffentlichen Kanaelen (private: false, Vorgabe). Gemessen am 10.10. gegen
+     Prod: ohne Token kommt "ok" sofort; mit einem ungueltigen oder abgelaufenen Token antwortet
+     der Server GAR NICHT -- der Beitritt hinge still. Ein oeffentlicher Kanal braucht es nicht.
+     o.privat = true (falls die DB auf private Kanaele mit Policy umstellt): dann private: true
+     und das Token des Nutzers, wie supabase-js es schickt.
+     Bleibt die Antwort auf einen Beitritt 10 s aus, gilt er als gescheitert ("fehler",
+     message "join timeout") und wird nach 5, 10, 30, 60 s wiederholt. */
+  var RT = (window.__upRealtime = window.__upRealtime ||
+            { ws: null, offen: false, kanaele: {}, ref: 0, versuch: 0, puls: null, pulsRef: null, wieder: null });
+  var RT_WARTEN = [1000, 2000, 5000, 10000, 30000];
+  function rtRef(){ RT.ref++; return String(RT.ref); }
+  function rtSenden(m){
+    if (!RT.ws || !RT.offen) return false;
+    try { RT.ws.send(JSON.stringify(m)); return true; } catch(e){ return false; }
+  }
+  function rtMelden(k, art, info){
+    if (k.statusFn){ try { k.statusFn(art, info || {}); } catch(e){ if (window.console) console.warn("[realtime] status-Empfaenger hat geworfen:", e); } }
+  }
+  var RT_BEITRITT_WARTEN = [5000, 10000, 30000, 60000];
+  function rtBeitreten(k){
+    k.joinRef = rtRef();
+    var ref = k.joinRef;
+    if (k.uhr){ clearTimeout(k.uhr); k.uhr = null; }
+    (k.privat ? rpcToken() : Promise.resolve("")).then(function(token){
+      if (RT.kanaele[k.topic] !== k || k.joinRef !== ref || !RT.offen) return;
+      var nutzlast = { config: { broadcast: { ack: false, self: false }, presence: { key: "" },
+                                 postgres_changes: [], "private": !!k.privat } };
+      if (k.privat && token) nutzlast.access_token = token;
+      rtSenden({ topic: "realtime:" + k.topic, event: "phx_join", payload: nutzlast, ref: ref, join_ref: ref });
+      k.uhr = setTimeout(function(){
+        k.uhr = null;
+        if (RT.kanaele[k.topic] !== k || k.joinRef !== ref || k.verbunden) return;
+        if (window.console) console.warn("[realtime] Beitritt zu " + k.topic + ": keine Antwort in 10 s");
+        rtMelden(k, "fehler", { message: "join timeout" });
+        var ms = RT_BEITRITT_WARTEN[Math.min(k.fehlversuche || 0, RT_BEITRITT_WARTEN.length - 1)];
+        k.fehlversuche = (k.fehlversuche || 0) + 1;
+        setTimeout(function(){ if (RT.kanaele[k.topic] === k && RT.offen && !k.verbunden) rtBeitreten(k); }, ms);
+      }, 10000);
+    }, function(){});
+  }
+  function rtAlleKanaele(){ return Object.keys(RT.kanaele).map(function(t){ return RT.kanaele[t]; }); }
+  function rtNeuVersuch(){
+    if (RT.wieder || !rtAlleKanaele().length) return;
+    var ms = RT_WARTEN[Math.min(RT.versuch, RT_WARTEN.length - 1)];
+    RT.versuch++;
+    RT.wieder = setTimeout(function(){ RT.wieder = null; if (rtAlleKanaele().length) rtVerbinden(); }, ms);
+  }
+  function rtSchliessen(){
+    var ws = RT.ws;
+    RT.ws = null; RT.offen = false; RT.pulsRef = null;
+    if (RT.puls){ clearInterval(RT.puls); RT.puls = null; }
+    if (ws){ try { ws.close(); } catch(e){} }
+  }
+  function rtVerbinden(){
+    if (RT.ws) return;
+    var schluessel = rpcSchluessel();
+    if (!schluessel || typeof WebSocket === "undefined"){
+      rtAlleKanaele().forEach(function(k){ rtMelden(k, "fehler", { message: schluessel ? "no websocket" : "no api key" }); });
+      return;
+    }
+    var url = rpcAdresse().replace(/^http/i, "ws") + "/realtime/v1/websocket?apikey=" +
+              encodeURIComponent(schluessel) + "&vsn=1.0.0";
+    var ws;
+    try { ws = new WebSocket(url); } catch(e){ rtNeuVersuch(); return; }
+    RT.ws = ws; RT.offen = false;
+    ws.onopen = function(){
+      if (RT.ws !== ws) return;
+      RT.offen = true; RT.versuch = 0; RT.pulsRef = null;
+      RT.puls = setInterval(function(){
+        if (RT.ws !== ws) return;
+        /* Die letzte Antwort fehlt noch: die Verbindung ist tot, auch wenn der Browser es nicht
+           merkt. Schliessen -- onclose verbindet neu. */
+        if (RT.pulsRef){ try { ws.close(); } catch(e){} return; }
+        RT.pulsRef = rtRef();
+        rtSenden({ topic: "phoenix", event: "heartbeat", payload: {}, ref: RT.pulsRef });
+      }, 25000);
+      rtAlleKanaele().forEach(rtBeitreten);
+    };
+    ws.onmessage = function(ev){
+      if (RT.ws !== ws) return;
+      var m;
+      try { m = JSON.parse(ev.data); } catch(e){ return; }
+      rtNachricht(m);
+    };
+    ws.onclose = function(){
+      if (RT.ws !== ws) return;
+      RT.ws = null; RT.offen = false; RT.pulsRef = null;
+      if (RT.puls){ clearInterval(RT.puls); RT.puls = null; }
+      rtAlleKanaele().forEach(function(k){ if (k.verbunden){ k.verbunden = false; rtMelden(k, "getrennt"); } });
+      rtNeuVersuch();
+    };
+    ws.onerror = function(){ /* onclose folgt */ };
+  }
+  function rtNachricht(m){
+    if (!m || typeof m.topic !== "string") return;
+    if (m.topic === "phoenix"){ if (m.ref != null && m.ref === RT.pulsRef) RT.pulsRef = null; return; }
+    if (m.topic.indexOf("realtime:") !== 0) return;
+    var k = RT.kanaele[m.topic.slice(9)];
+    if (!k) return;
+    var p = m.payload || {};
+    if (m.event === "phx_reply" && m.ref === k.joinRef){
+      if (k.uhr){ clearTimeout(k.uhr); k.uhr = null; }
+      if (p.status === "ok"){
+        k.fehlversuche = 0;
+        var wieder = k.warVerbunden;
+        k.verbunden = true; k.warVerbunden = true;
+        rtMelden(k, "verbunden", { wieder: wieder });
+      } else {
+        k.verbunden = false;
+        if (window.console) console.warn("[realtime] Beitritt zu " + k.topic + " abgelehnt:", JSON.stringify(p.response || p));
+        rtMelden(k, "fehler", p.response || p);
+      }
+      return;
+    }
+    /* Der Server meldet einen Fehler im Kanal (auch so kommt "nur private Kanaele"). */
+    if (m.event === "system" && p.status === "error"){
+      if (window.console) console.warn("[realtime] Kanal " + k.topic + ":", JSON.stringify(p));
+      rtMelden(k, "fehler", p);
+      return;
+    }
+    if (m.event === "phx_error" || m.event === "phx_close"){
+      if (k.verbunden){ k.verbunden = false; rtMelden(k, "getrennt"); }
+      /* Der Kanal ist zu, der Socket nicht: nach einer Pause neu beitreten. */
+      setTimeout(function(){ if (RT.kanaele[k.topic] === k && RT.offen && !k.verbunden) rtBeitreten(k); }, 2000);
+      return;
+    }
+    if (m.event === "broadcast"){
+      var fn = k.on[p.event];
+      if (typeof fn === "function"){
+        try { fn(p.payload && typeof p.payload === "object" ? p.payload : {}); }
+        catch(e){ if (window.console) console.warn("[realtime] Empfaenger fuer " + p.event + " hat geworfen:", e); }
+      }
+    }
+  }
+  function rtVerlassen(k){
+    if (k.uhr){ clearTimeout(k.uhr); k.uhr = null; }
+    if (RT.kanaele[k.topic] === k) delete RT.kanaele[k.topic];
+    if (k.verbunden) rtSenden({ topic: "realtime:" + k.topic, event: "phx_leave", payload: {}, ref: rtRef(), join_ref: k.joinRef });
+    k.verbunden = false;
+    /* Kein Kanal mehr: die Verbindung zu. Eine offene Leitung ohne Kanal kostet nur. */
+    if (!rtAlleKanaele().length){
+      if (RT.wieder){ clearTimeout(RT.wieder); RT.wieder = null; }
+      rtSchliessen();
+    }
+  }
+  function kanal(topic, o){
+    o = o || {};
+    topic = String(topic == null ? "" : topic).trim();
+    var k = { topic: topic, on: o.on || {}, statusFn: typeof o.status === "function" ? o.status : null,
+              privat: o.privat === true, verbunden: false, warVerbunden: false, joinRef: null, uhr: null, fehlversuche: 0 };
+    var aus = { stop: function(){ rtVerlassen(k); }, verbunden: function(){ return k.verbunden; } };
+    if (!topic) return aus;
+    var alt = RT.kanaele[topic];
+    if (alt) rtVerlassen(alt);
+    RT.kanaele[topic] = k;
+    if (RT.offen) rtBeitreten(k); else rtVerbinden();
+    return aus;
+  }
+
   /* Fuer die Konsole: ist der Weg bereit? Nennt nie das Token selbst. */
   function rpcBereit(){
     var sz = sitzungLesen();
@@ -22134,7 +22314,7 @@
     variationRing: variationRing,
     granAvailability: granAvailability,
     granFuerZeitraum: granFuerZeitraum,
-    rpc: rpc, edge: edge,
+    rpc: rpc, edge: edge, kanal: kanal,
     rpcBereit: rpcBereit,
     /* Die upstreem-Wortmarke, EINE Quelle (08.10.): Seiten ohne eigenes data-logo nehmen sie von
        hier, statt die Adresse in jedes Element zu schreiben. */

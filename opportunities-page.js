@@ -17,8 +17,8 @@
    zurueck (opportunitiesSetStatus mit silent) und sagt es in einem Satz. Schreiben laeuft
    nacheinander, damit zwei schnelle Wechsel derselben Karte in ihrer Reihenfolge ankommen.
 
-   SUCHE: start-job legt einen Job an, die Seite fragt alle 3 s nach seinem Stand, bei success laedt
-   sie die Liste neu (die neue Liste beendet die Suche im Brett), bei error sagt sie es. Nach einem
+   SUCHE: start-job legt einen Job an, die Seite hoert auf dessen Realtime-Kanal (view_job:<id>,
+   seit 10.10. statt Abfragen im Takt), bei success laedt sie die Liste neu (die neue Liste beendet die Suche im Brett), bei error sagt sie es. Nach einem
    Neuladen der Seite findet sie einen laufenden Job ueber den Stand ohne job_id wieder. */
 (function () {
   "use strict";
@@ -129,40 +129,67 @@
     }
 
     /* ---- Suche als Job ----------------------------------------------------------------------- */
-    var TAKT = 3000, HOECHSTENS = 200000;
-    function abfrageStop() { if (gem.abfrage) { clearTimeout(gem.abfrage); gem.abfrage = null; } }
+    /* KEIN ABFRAGEN IM TAKT MEHR (10.10., DB: opportunities_realtime_v1.sql). Die DB meldet jeden
+       Wechsel als Broadcast auf view_job:<job_id>, Ereignis view_job_status, Nutzlast = meta von
+       opportunities_search_status_v1. Den Stand fragt die Seite nur noch EINZELN ab: beim Oeffnen
+       (laufendeSucheFinden), nach dem ersten Beitritt zum Kanal (ein Wechsel zwischen start-job und
+       Beitritt ginge sonst verloren), nach jedem Wiederverbinden, wenn der Beitritt scheitert, und
+       einmal nach der Frist des Aufraeumers -- bleibt dann jede Meldung aus, haengt die Suche nicht
+       fuer immer. */
+    var NOTFRIST = 3.5 * 60 * 1000;   /* der Aufraeumer der DB beendet einen Job nach 3 min */
+    function abfrageStop() {
+      if (gem.kanal) { gem.kanal.stop(); gem.kanal = null; }
+      if (gem.notfrist) { clearTimeout(gem.notfrist); gem.notfrist = null; }
+    }
     function sucheEnde(fehlerSatz) {
       abfrageStop();
       gem.job = null;
       setter("opportunitiesSetSearching")("no");
       if (fehlerSatz) satz(fehlerSatz);
     }
-    function abfragen() {
+    /* Ein Stand, egal woher (Broadcast oder Einzelabfrage). */
+    function standVerarbeiten(job, s, endgueltig) {
+      if (gem.job !== job || !s) return;
+      if (s.status === "queued" || s.status === "running" || !s.status) {
+        if (endgueltig) sucheEnde("The search for new opportunities is taking too long. Please try again later.");
+        return;
+      }
+      if (s.status === "success") {
+        abfrageStop();
+        gem.job = null;
+        /* Die neue Liste beendet die Suche im Brett (opportunitiesSetItems). Scheitert sie, endet
+           die Suche trotzdem. */
+        if (job.team === team()) listeLaden(true).then(function (l) { if (!l) sucheEnde(); });
+        else sucheEnde();
+        return;
+      }
+      sucheEnde(s.fehler && s.fehler.code === "timeout"
+        ? "The search for new opportunities took too long. Please try again."
+        : "The search for new opportunities failed. Please try again.");
+    }
+    function standAbfragen(job, endgueltig) {
+      var a = D.sucheStand(job.team, job.id);
+      UC.rpc(a.fn, a.params, { timeoutMs: 15000 }).then(function (erg) {
+        if (gem.job !== job) return;
+        standVerarbeiten(job, erg.ok ? D.zuStand(erg.daten) : null, endgueltig);
+      });
+    }
+    function beobachten() {
       abfrageStop();
       var job = gem.job;
-      if (!job) return;
-      if (Date.now() - job.seit > HOECHSTENS) { sucheEnde("The search for new opportunities is taking too long. Please try again later."); return; }
-      gem.abfrage = setTimeout(function () {
-        gem.abfrage = null;
-        if (gem.job !== job) return;
-        var a = D.sucheStand(job.team, job.id);
-        UC.rpc(a.fn, a.params, { timeoutMs: 15000 }).then(function (erg) {
+      if (!job || !job.id) return;
+      if (UC.kanal) gem.kanal = UC.kanal("view_job:" + job.id, {
+        on: { view_job_status: function (p) { standVerarbeiten(job, D.zuStand({ meta: p, rows: [] }), false); } },
+        status: function (art) {
           if (gem.job !== job) return;
-          var s = erg.ok ? D.zuStand(erg.daten) : null;
-          if (!s || s.status === "queued" || s.status === "running") { abfragen(); return; }
-          if (s.status === "success") {
-            gem.job = null;
-            /* Die neue Liste beendet die Suche im Brett (opportunitiesSetItems). Scheitert sie,
-               endet die Suche trotzdem. */
-            if (job.team === team()) listeLaden(true).then(function (l) { if (!l) sucheEnde(); });
-            else sucheEnde();
-            return;
-          }
-          sucheEnde(s.fehler && s.fehler.code === "timeout"
-            ? "The search for new opportunities took too long. Please try again."
-            : "The search for new opportunities failed. Please try again.");
-        });
-      }, TAKT);
+          if (art === "verbunden" || art === "fehler") standAbfragen(job, false);
+        }
+      });
+      else standAbfragen(job, false);
+      gem.notfrist = setTimeout(function () {
+        gem.notfrist = null;
+        if (gem.job === job) standAbfragen(job, true);
+      }, NOTFRIST);
     }
     function sucheStarten() {
       var tm = team();
@@ -181,7 +208,7 @@
           return;
         }
         job.id = st.jobId;
-        abfragen();
+        beobachten();
       });
     }
     /* Laeuft fuer dieses Team schon eine Suche (anderer Tab, Neuladen)? Dann zeigt das Brett sie. */
@@ -194,7 +221,7 @@
         if (!s || (s.status !== "queued" && s.status !== "running") || gem.job || tm !== team()) return;
         gem.job = { id: s.jobId, team: tm, seit: Date.now() };
         setter("opportunitiesSetSearching")("yes");
-        abfragen();
+        beobachten();
       });
     }
 
@@ -220,8 +247,8 @@
     };
     root.__uopCtrl = ctrl;
     aktiv = ctrl;
-    /* Neuaufbau mitten in einer Suche: die Abfrage gehoert dem Store, sie laeuft weiter. */
-    if (gem.job && !gem.abfrage && gem.job.id) abfragen();
+    /* Neuaufbau mitten in einer Suche: der Kanal gehoert dem Store, er bleibt offen. */
+    if (gem.job && !gem.kanal && gem.job.id) beobachten();
     setTimeout(function () { bedarf(); }, 0);
     return ctrl;
   }

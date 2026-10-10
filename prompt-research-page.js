@@ -11,10 +11,11 @@
    jedem Teamwechsel. Laufende und gescheiterte Recherchen stehen mit drin.
    MAERKTE UND THEMEN kommen aus den Ablagen von core (setUpstreemAllMarkets, setUpstreemTopics),
    nicht aus einem eigenen Aufruf.
-   START: start-job (Edge Function) legt den Job an und stoesst n8n an. Danach fragt die Seite alle
-   3 s prompt_research_result_v1 nach genau diesem Job: bei success stehen die Vorschlaege schon in
-   der Antwort, bei error steht der Grund unter dem Eingabefeld. Laeuft beim Aufbau schon ein Job
-   (Neuladen, anderer Tab), zeigt die Seite das Ladebild und fragt weiter.
+   START: start-job (Edge Function) legt den Job an und stoesst n8n an. Danach hoert die Seite auf
+   dessen Realtime-Kanal (prompt_research_job:<id>, seit 10.10. statt Abfragen im Takt): bei
+   success holt sie einmal prompt_research_result_v1, bei error steht der Grund unter dem
+   Eingabefeld. Laeuft beim Aufbau schon ein Job (Neuladen, anderer Tab), zeigt die Seite das
+   Ladebild und hoert auf seinen Kanal.
    ENTSCHEIDEN: Track / Ignore / alle -> prompt_research_decide_v1, danach das Ergebnis neu. Das
    Kontingent aus der Antwort geht an setUpstreemQuota, und die Maerkte und Themen der App melden
    sich ueber die bekannten Signale neu (marketsChanged, topicsChanged).
@@ -108,80 +109,111 @@
     function jobsLaden(frisch) {
       var tm = team();
       if (!tm) return Promise.resolve(null);
+      /* Nach einem Neuaufbau der Stand, den die Seite zuletzt hatte -- er enthaelt auch die Zeilen,
+         die ein Realtime-Ereignis ersetzt hat; der Speicher des Laders kennt die nicht. */
+      if (!frisch && gem.jobsRows && gem.jobsFuer === tm) {
+        pr("setPreviousResearches", gem.jobsRows);
+        return Promise.resolve({ rows: gem.jobsRows, laufend: null });
+      }
       return lader.laden("jobs", D.jobs(tm), { frisch: !!frisch }).then(function (erg) {
         if (erg.ueberholt || tm !== team()) return null;
         var j = erg.ok ? D.zuJobs(erg.daten) : null;
         if (!j) { pr("setHistoryError"); return null; }
+        gem.jobsRows = j.rows; gem.jobsFuer = tm;
         pr("setPreviousResearches", j.rows);
+        /* Der beobachtete Job ist inzwischen fertig (ein Ereignis ging waehrend einer Trennung
+           verloren) oder geloescht (anderer Tab). */
+        var lauf = gem.lauf;
+        if (lauf && lauf.id) {
+          var zeile = j.rows.filter(function (r) { return str(r.job_id) === lauf.id; })[0];
+          if (!zeile) { laufEnde(); pr("setError", t("The research was deleted.")); }
+          else if (!D.istLauf(zeile.status)) jobFertig(lauf, zeile);
+        }
         /* Ein Job, den diese Seite noch nicht beobachtet (Neuladen waehrend des Laufs, anderer
-           Tab, ein Start, den die DB als "reused" beantwortet hat): Ladebild und Abfrage. */
+           Tab, ein Start, den die DB als "reused" beantwortet hat): Ladebild und Kanal. */
         if (j.laufend && (!gem.lauf || gem.lauf.id !== str(j.laufend.job_id))) beobachten(j.laufend, tm);
         return j;
       });
+    }
+    /* Ein Realtime-Ereignis bringt die ganze Zeile: sie ersetzt die alte direkt. Waehrend eine
+       Aenderung geschrieben wird, nur im Stand -- die Liste kommt danach ohnehin frisch. */
+    function zeileErsetzen(p) {
+      if (!gem.jobsRows || gem.jobsFuer !== team()) return;
+      var id = str(p.job_id), z = {}, k;
+      if (!id) return;
+      for (k in p) if (Object.prototype.hasOwnProperty.call(p, k) && k !== "team_id") z[k] = p[k];
+      var rows = gem.jobsRows.slice(), i = -1;
+      rows.forEach(function (r, n) { if (str(r.job_id) === id) i = n; });
+      if (i >= 0) rows[i] = z; else rows.unshift(z);
+      gem.jobsRows = rows;
+      if (!gem.schreibt) pr("setPreviousResearches", rows);
     }
     function laden(frisch) {
       if (!sichtbarTest(root)) { beiSicht(root, "laden", function () { laden(frisch); }, sichtbarTest); return; }
       jobsLaden(frisch);
     }
 
-    /* ---- Laufender Job ---------------------------------------------------------------------- */
-    var TAKT = 3000;
-    /* Der Aufraeumer der DB setzt einen Job nach 10 min ohne Aenderung auf error (Vertrag 3.5);
-       zwei Minuten darueber gibt die Seite auf, falls auch das ausbleibt. */
-    var HOECHSTENS = 12 * 60 * 1000;
-    var FEHLVERSUCHE = 5;
-    function abfrageStop() { if (gem.abfrage) { clearTimeout(gem.abfrage); gem.abfrage = null; } }
-    function laufEnde() { abfrageStop(); gem.lauf = null; }
-    function beobachten(job, tm) {
-      laufEnde();
-      gem.lauf = { id: str(job.job_id), team: tm, seit: Date.now(), fehl: 0 };
-      pr("setResearchMeta", job);
-      pr("setRunning");
-      abfragen();
+    /* ---- Laufender Job ----------------------------------------------------------------------
+       KEIN ABFRAGEN IM TAKT MEHR (10.10., DB: prompt_research_realtime_v1.sql). Die DB meldet jeden
+       Wechsel als Broadcast auf prompt_research_job:<job_id>, Ereignis prompt_research_status, mit
+       der ganzen Zeile wie in prompt_research_jobs_v1. prompt_research_done aus n8n kommt
+       zusaetzlich und wird nicht gebraucht.
+       Die Liste laedt die Seite nur noch EINZELN nach: nach dem ersten Beitritt zum Kanal (ein
+       Wechsel zwischen start-job und Beitritt ginge sonst verloren), nach jedem Wiederverbinden,
+       wenn der Beitritt scheitert, und einmal nach der Frist des Aufraeumers -- bleibt dann jede
+       Meldung aus, haengt das Ladebild nicht fuer immer. */
+    var NOTFRIST = 11 * 60 * 1000;   /* der Aufraeumer der DB beendet einen Job nach 10 min ohne Aenderung */
+    function laufEnde() {
+      if (gem.kanal) { gem.kanal.stop(); gem.kanal = null; }
+      if (gem.notfrist) { clearTimeout(gem.notfrist); gem.notfrist = null; }
+      gem.lauf = null;
     }
-    function abfragen() {
-      abfrageStop();
-      var lauf = gem.lauf;
-      if (!lauf) return;
-      gem.abfrage = setTimeout(function () {
-        gem.abfrage = null;
+    function kanalAuf(lauf) {
+      if (UC.kanal) gem.kanal = UC.kanal("prompt_research_job:" + lauf.id, {
+        on: { prompt_research_status: function (p) {
+          if (gem.lauf !== lauf || str(p.job_id) !== lauf.id) return;
+          zeileErsetzen(p);
+          if (!D.istLauf(p.status)) jobFertig(lauf, p);
+        } },
+        status: function (art) {
+          if (gem.lauf !== lauf) return;
+          if (art === "verbunden" || art === "fehler") jobsLaden(true);
+        }
+      });
+      else jobsLaden(true);
+      gem.notfrist = setTimeout(function () {
+        gem.notfrist = null;
         if (gem.lauf !== lauf) return;
-        if (lauf.team !== team()) { laufEnde(); return; }
-        if (Date.now() - lauf.seit > HOECHSTENS) {
+        jobsLaden(true).then(function () {
+          if (gem.lauf !== lauf) return;
           laufEnde();
           pr("setError", t(D.jobFehlerSatz("timeout")));
-          jobsLaden(true);
-          return;
-        }
-        var a = D.ergebnis(lauf.team, lauf.id);
-        UC.rpc(a.fn, a.params, { timeoutMs: 15000 }).then(function (erg) {
-          if (gem.lauf !== lauf) return;
-          var z = erg.ok ? D.zuErgebnis(erg.daten) : null;
-          if (!z) {
-            var art = D.fehlerArt(erg);
-            if (erg.ok || art === "weg") {
-              laufEnde();
-              pr("setError", t(erg.ok ? "The research could not be read. Please reload the page." : "The research was deleted."));
-              jobsLaden(true);
-              return;
-            }
-            /* Ein Rate-Limit oder ein Aussetzer: weiterfragen, nach FEHLVERSUCHE am Stueck aufgeben. */
-            if (art !== "rate" && ++lauf.fehl >= FEHLVERSUCHE) {
-              laufEnde();
-              pr("setError", t("The research status could not be loaded. Please reload the page."));
-              return;
-            }
-            abfragen();
-            return;
-          }
-          lauf.fehl = 0;
-          if (D.istLauf(z.status)) { abfragen(); return; }
-          laufEnde();
-          if (z.status === "success") ergebnisZeigen(lauf.id, z, true);
-          else pr("setError", t(D.jobFehlerSatz(z.fehlerCode)));
-          jobsLaden(true);
         });
-      }, TAKT);
+      }, NOTFRIST);
+    }
+    function beobachten(job, tm) {
+      laufEnde();
+      gem.lauf = { id: str(job.job_id), team: tm };
+      pr("setResearchMeta", job);
+      pr("setRunning");
+      kanalAuf(gem.lauf);
+    }
+    /* Der Job ist fertig: bei success einmal das Ergebnis holen, bei error der Grund unter dem Feld. */
+    function jobFertig(lauf, zeile) {
+      if (gem.lauf !== lauf) return;
+      laufEnde();
+      if (lauf.team !== team()) return;
+      if (str(zeile.status).toLowerCase() !== "success") {
+        pr("setError", t(D.jobFehlerSatz(zeile.error && typeof zeile.error === "object" ? str(zeile.error.code) : "")));
+        return;
+      }
+      gem.offen = lauf.id;
+      lader.laden("ergebnis", D.ergebnis(lauf.team, lauf.id), { frisch: true }).then(function (erg) {
+        if (erg.ueberholt || gem.offen !== lauf.id || lauf.team !== team()) return;
+        var z = erg.ok ? D.zuErgebnis(erg.daten) : null;
+        if (z) ergebnisZeigen(lauf.id, z, true);
+        else { gem.offen = null; pr("setError", t("The research could not be loaded. Please try again.")); }
+      });
     }
 
     /* ---- Ergebnis --------------------------------------------------------------------------- */
@@ -227,7 +259,7 @@
       if (!UC.edge) { pr("setError", t("Prompt research is not available yet.")); return; }
       gem.offen = null;
       /* Ein Platzhalter, bis die Antwort die Id bringt: ein zweiter Start in dieser Zeit tut nichts. */
-      gem.lauf = { id: "", team: tm, seit: Date.now(), fehl: 0 };
+      gem.lauf = { id: "", team: tm };
       var lauf = gem.lauf;
       UC.edge("start-job", body, { timeoutMs: 30000 }).then(function (erg) {
         if (gem.lauf !== lauf) return;
@@ -253,14 +285,19 @@
           jobsLaden(true);
           return;
         }
-        abfragen();
-        jobsLaden(true);
+        /* Der erste Beitritt zum Kanal laedt die Liste (mit dem neuen Job darin). */
+        kanalAuf(lauf);
       });
     }
 
     /* ---- Entscheiden und Loeschen (nacheinander) -------------------------------------------- */
     function inReihe(fn) {
-      gem.kette = (gem.kette || Promise.resolve()).then(fn, fn);
+      function los() {
+        gem.schreibt = true;
+        function fertig() { gem.schreibt = false; }
+        return Promise.resolve().then(fn).then(fertig, fertig);
+      }
+      gem.kette = (gem.kette || Promise.resolve()).then(los, los);
       return gem.kette;
     }
     function entscheiden(aktion, d) {

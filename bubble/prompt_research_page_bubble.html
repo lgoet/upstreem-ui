@@ -9,7 +9,8 @@
   ── VORAUSSETZUNG: VERTRAG C IST IN PROD ───────────────────────────────────────
   Die Seite ruft selbst (UC.rpc / UC.edge, Nutzer-JWT):
       prompt_research_jobs_v1       die Liste "Previous Researches" (auch laufende und gescheiterte)
-      prompt_research_result_v1     ein Ergebnis oeffnen, und waehrend eines Laufs alle 3 s dessen Stand
+      prompt_research_result_v1     ein Ergebnis oeffnen (und einmal, wenn ein Lauf fertig ist)
+      Realtime prompt_research_job:<id>   der Stand eines Laufs (oeffentlicher Broadcast, kein Abfragen)
       prompt_research_decide_v1     Track, Ignore, Accept all, Delete all
       prompt_research_delete_v1     der Papierkorb einer Recherche
       start-job (Edge Function)     "Start Research" (kind prompt_research)
