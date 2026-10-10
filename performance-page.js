@@ -227,7 +227,7 @@
       var k = exportKennung();
       if (!k || typeof window.upstreemExportOpen !== "function") {
         e.stopPropagation();
-        if (UC.toast) UC.toast(t("Export is not available on this page."));
+        if (UC.toast) UC.toast(t("Export isn't available on this page"), { kind: "neutral" });
         return;
       }
       tab.setAttribute("data-export-instance", k);

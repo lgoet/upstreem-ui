@@ -186,6 +186,20 @@
          die Tinte, ihre Schrift der Grund. Dafuer braucht es kein drittes Token. */
       --vc-inverse-bg: #1f1f1b;
       --vc-inverse-ink: #ffffff;
+      /* DER TOAST (10.10., Handoff Stil 1a): eine dunkle Flaeche in JEDEM Thema -- anders als die
+         Erklaerkarte dreht er sich nicht um; er liegt ueber der Seite und meldet, ohne Farbe zu
+         brauchen, der Zustand steht nur im Zeichen. Im Dunkeln eine Stufe heller (#2c2c30), sonst
+         verschwaende er auf der Seite. Fehler-Rot heller als --vt-down: #d25d5d erreicht auf
+         #1f1f1b nur 3.9:1, #ff7a66 traegt. Erfolg ist das --vt-up des dunklen Themas. */
+      --vc-toast-bg: #1f1f1b;
+      --vc-toast-ink: #ffffff;
+      --vc-toast-sub: rgba(255,255,255,.64);
+      --vc-toast-ok: #60d25d;
+      --vc-toast-fehler: #ff7a66;
+      --vc-toast-neutral: rgba(255,255,255,.72);
+      --vc-toast-flaeche: rgba(255,255,255,.10);
+      --vc-toast-flaeche-hover: rgba(255,255,255,.18);
+      --vc-toast-zu: rgba(255,255,255,.5);
 }
 [data-theme="dark"], .up-root[data-theme="dark"] {
       /* Die vier Tiefen im dunklen Thema. Sie sind NICHT die hellen mit mehr Deckkraft, auch
@@ -205,6 +219,7 @@
       /* Die Erklaerkarte im Dunkeln: heller Grund, die Schrift im Ton der hellen Karte. */
       --vc-inverse-bg: #eeedef;
       --vc-inverse-ink: #1f1f1b;
+      --vc-toast-bg: #2c2c30;
 }
 .up-root {
       /* --vc-muted ist um vier Einheiten dunkler als vorher (#6f737c), und das ist KEINE neue
@@ -3204,6 +3219,68 @@
        placeTip() direkt am Element -- eine Regel hier verlor gegen die Grundregel, gemessen blieb
        transform: translateY(4px) aktiv. Eingeblendet wird allein ueber die Deckkraft. */
     .up-tip[data-theme="dark"] { background: #f0f0f0; color: var(--vc-text-invert); }
+
+    /* ---------- Der Toast (10.10., UC.toast in core.js) ----------
+       Unten mittig im INHALTSbereich: links die Breite der Seitenleiste, die sidebar.js als
+       --up-sidebar-w ans <html> schreibt (dieselbe Mitte wie die Massenleiste der Prompts-Tabelle).
+       --up-toast-unten setzt core, wenn unten schon etwas liegt. Die Huelle laesst Klicks durch,
+       nur die Toasts selbst nehmen sie an.
+       z-index ueber Drawern, Menues und Dialogen, unter dem Tooltip (2147483640 -- der
+       beschriftet und verdeckt nie). */
+    .up-toasts {
+      position: fixed; left: var(--up-sidebar-w, 0px); right: 0; bottom: var(--up-toast-unten, 24px);
+      z-index: 2147483630; display: flex; flex-direction: column; align-items: center; gap: 8px;
+      padding: 0 16px; pointer-events: none;
+      font-family: Geist, system-ui, sans-serif; -webkit-font-smoothing: antialiased;
+      transition: bottom var(--up-t-2) var(--up-ease);
+    }
+    /* Im Top Layer (popover, siehe core.js toastHost) bringt der Browser eigene Vorgaben mit:
+       inset 0, margin auto, Rahmen, Hintergrund. Weggeraeumt wie bei .uca-portal[popover]. */
+    .up-toasts[popover] {
+      top: auto; width: auto; height: auto; max-width: none; max-height: none;
+      margin: 0; border: 0; background: transparent; color: inherit; overflow: visible;
+    }
+    .up-toasts[popover]:not(:popover-open) { display: none; }
+    .up-toast {
+      box-sizing: border-box; pointer-events: auto;
+      display: flex; align-items: flex-start; gap: 10px;
+      width: fit-content; max-width: min(420px, calc(100vw - 32px)); min-height: 44px;
+      padding: 12px 12px 12px 14px; border-radius: var(--up-r-xl);
+      background: var(--vc-toast-bg); color: var(--vc-toast-ink); box-shadow: var(--up-e-4);
+      opacity: 0; transform: translateY(10px) scale(.98);
+      transition: opacity var(--up-t-2) var(--up-ease-auf), transform var(--up-t-2) var(--up-ease-auf);
+    }
+    .up-toast.is-on { opacity: 1; transform: none; }
+    /* Abgang: der Handoff nennt 160 ms -- auf die Skala gezogen (--up-t-1, 120 ms); der Unterschied
+       ist nicht zu sehen, eine Dauer neben der Skala waere ein dritter Wert fuer dasselbe. */
+    .up-toast.is-weg { opacity: 0; transform: scale(.97); transition: opacity var(--up-t-1) ease, transform var(--up-t-1) ease; }
+    .up-toast-ic { flex: 0 0 16px; width: 16px; height: 16px; margin-top: 2px; display: inline-flex; color: var(--vc-toast-neutral); }
+    .up-toast-ic svg { width: 16px; height: 16px; display: block; }
+    .up-toast.is-success .up-toast-ic { color: var(--vc-toast-ok); }
+    .up-toast.is-error .up-toast-ic { color: var(--vc-toast-fehler); }
+    .up-toast-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; padding-right: 4px; }
+    .up-toast-t { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 20px; overflow-wrap: anywhere; }
+    .up-toast-d { font-size: var(--up-fs-m); font-weight: var(--up-fw-n); line-height: 18px; color: var(--vc-toast-sub); overflow-wrap: anywhere; }
+    .up-toast-act {
+      flex: 0 0 auto; height: 24px; margin-top: -2px; padding: 0 8px; border: 0; border-radius: var(--up-r-s);
+      background: var(--vc-toast-flaeche); color: var(--vc-toast-ink);
+      font-family: inherit; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); cursor: pointer;
+      transition: background var(--up-t-1) var(--up-ease);
+    }
+    .up-toast-act:hover { background: var(--vc-toast-flaeche-hover); }
+    .up-toast-x {
+      flex: 0 0 20px; width: 20px; height: 20px; padding: 0; border: 0; border-radius: var(--up-r-s);
+      display: inline-flex; align-items: center; justify-content: center;
+      background: transparent; color: var(--vc-toast-zu); cursor: pointer;
+      transition: background var(--up-t-1) var(--up-ease), color var(--up-t-1) var(--up-ease);
+    }
+    .up-toast-x svg { width: 13px; height: 13px; display: block; }
+    .up-toast-x:hover { color: var(--vc-toast-ink); background: var(--vc-toast-flaeche); }
+    .up-toast-act:focus-visible, .up-toast-x:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: 1px; }
+    @media (prefers-reduced-motion: reduce){
+      .up-toast, .up-toast.is-on, .up-toast.is-weg { transform: none; }
+      .up-toasts { transition: none; }
+    }
     /* Tooltips keep the same dark card in both themes: they float above the page, not inside
        the surface, so inverting them made them read as a different component. */
 

@@ -2145,7 +2145,7 @@
       var text = texte.join(", ");
       function fertig(ok){
         if (!UC.toast) return;
-        if (!ok) { UC.toast(t("Could not copy"), { icon: "info" }); return; }
+        if (!ok) { UC.toast(t("Couldn't copy"), { kind: "error", desc: t("Try again.") }); return; }
         UC.toast(t("{n} prompts copied").replace("{n}", UC.fmtInt(n)), { icon: "check" });
       }
       if (navigator.clipboard && navigator.clipboard.writeText){

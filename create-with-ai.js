@@ -277,8 +277,7 @@
         "</div>" +
 
       "</div>" +
-    "</div>" +
-    '<div class="uca-toast" data-toast aria-live="polite"></div>';
+    "</div>";
   }
 
   /* ---------------------------------------------------------------------------
@@ -352,7 +351,6 @@
     var elPLabel   = qp("[data-primary-label]");
     var elCopy     = qp("[data-copy]");
     var elHow      = qp("[data-how]");
-    var elToast    = qp("[data-toast]");
     var elLinksCnt = qp("[data-links-count]");
     var elFormatSeg= qp("[data-format-seg]");
     var elSchema   = qp("[data-schema]");
@@ -431,12 +429,10 @@
         ? { mode: "improve", label: "Improve this page",      icon: UC.icon("astroid", 2) }
         : { mode: "create",  label: "Create your own version", icon: UC.icon("astroid", 2) };
     }
-    function toast(msg){
-      elToast.textContent = msg;
-      elToast.classList.add("is-on");
-      clearTimeout(elToast._t);
-      elToast._t = setTimeout(function(){ elToast.classList.remove("is-on"); }, 1900);
-    }
+    /* Seit dem 10.10. der Toast aus core -- derselbe wie ueberall; vorher ein eigener kleiner
+       Kasten (.uca-toast) im Popup. Der Toast aus core liegt ebenfalls im Top Layer, also ueber
+       diesem Popup. */
+    function toast(msg){ if (UC.toast) UC.toast(UC.t ? UC.t(msg) : msg, { kind: "neutral" }); }
 
     /* ---- Prompt ---- */
     function formatLabel(){ return S.format === "html" ? "clean HTML" : (S.format === "plain" ? "plain text" : "Markdown"); }

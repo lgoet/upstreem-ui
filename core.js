@@ -1280,6 +1280,40 @@
       "Diese Einladung wurde zurückgezogen. Bitte lass dir von deinem Team eine neue schicken.",
     "This invitation has already been used.": "Diese Einladung wurde bereits verwendet.",
     "Export is not available on this page.": "Der Export ist auf dieser Seite nicht verfügbar.",
+
+    /* ── Toasts der Seiten-Komponenten (10.10., Textregeln aus dem Toast-Handoff: ein Satz ohne
+       Punkt, die zweite Zeile sagt bei Fehlern, was zu tun ist) ───────────────────────────── */
+    "Export isn't available on this page": "Der Export ist auf dieser Seite nicht verfügbar",
+    "Couldn't copy": "Kopieren nicht möglich",
+    "Try again.": "Versuch es noch einmal.",
+    "Wait a minute and try again.": "Warte eine Minute und versuch es dann noch einmal.",
+    "Too many changes in a short time": "Zu viele Änderungen in kurzer Zeit",
+    "Couldn't save the change": "Die Änderung konnte nicht gespeichert werden",
+    "1 new opportunity created": "1 neue Opportunity angelegt",
+    "{n} new opportunities created": "{n} neue Opportunities angelegt",
+    "Search for new opportunities finished": "Suche nach neuen Opportunities abgeschlossen",
+    "No new opportunities": "Keine neuen Opportunities",
+    "No new opportunities found": "Keine neuen Opportunities gefunden",
+    "The board already has the maximum number of active ones. Move some to Done or Ignored to make room.":
+      "Das Board hat schon die Höchstzahl aktiver Opportunities. Verschieb einige nach Done oder Ignored, um Platz zu schaffen.",
+    "Looking for new opportunities isn't available right now": "Die Suche nach neuen Opportunities ist gerade nicht verfügbar",
+    "The search is taking too long": "Die Suche dauert zu lange",
+    "Check back in a few minutes.": "Schau in ein paar Minuten noch einmal vorbei.",
+    "The search took too long": "Die Suche hat zu lange gedauert",
+    "Try again in a few minutes.": "Versuch es in ein paar Minuten noch einmal.",
+    "The search for new opportunities failed": "Die Suche nach neuen Opportunities ist fehlgeschlagen",
+    "Too many searches in a short time": "Zu viele Suchen in kurzer Zeit",
+    "The search couldn't be started": "Die Suche konnte nicht gestartet werden",
+    "The research found no new prompts": "Die Recherche hat keine neuen Prompts gefunden",
+    "A research is already running for this team": "Für dieses Team läuft schon eine Recherche",
+    "Not enough prompt slots": "Nicht genug Prompt-Plätze",
+    "Only {n} prompt slots are left in your plan.": "In deinem Tarif sind nur noch {n} Prompt-Plätze frei.",
+    "There are no prompt slots left in your plan.": "In deinem Tarif sind keine Prompt-Plätze mehr frei.",
+    "1 prompt is now tracked": "1 Prompt wird jetzt verfolgt",
+    "{n} prompts are now tracked": "{n} Prompts werden jetzt verfolgt",
+    "Prompts removed": "Prompts entfernt",
+    "Couldn't delete the research": "Die Recherche konnte nicht gelöscht werden",
+    "Research deleted": "Recherche gelöscht",
     "This invitation was sent to a different email address. Sign in with that address to accept it.":
       "Diese Einladung ging an eine andere E-Mail-Adresse. Melde dich mit dieser Adresse an, um sie anzunehmen.",
     "Sign up or sign in to accept this invitation.":
@@ -11073,33 +11107,195 @@
     return fire;
   }
 
-  /* ── Toast ───────────────────────────────────────────────────────────────────────────────────
-     showMacToast liegt NICHT in diesem Repo, sondern im Seitenkopf der Bubble-App. Genau deshalb
-     steht der Aufruf hier und nicht viermal einzeln: er muss defensiv sein (Seite ohne die
-     Funktion, Funktion wirft), und eine kaputte Rueckmeldung darf niemals die Aktion mitreissen,
-     die sie bestaetigen soll. domains-table und urls-table haben dieselbe Zeile bisher je selbst
-     getragen; sie duerfen so bleiben, neue Aufrufer nehmen diesen Weg.
+  /* ── Toast (10.10., Handoff "Toast Notifications", Stil 1a) ─────────────────────────────────
+     Bis heute rief diese Stelle window.showMacToast aus dem Seitenkopf der Bubble-App. Jetzt
+     zeichnet core den Toast selbst -- dieselbe Rueckmeldung auf jeder Seite, ohne dass Bubble beim
+     Pageload etwas einrichten muss.
 
-     Rueckgabe sagt, ob der Toast wirklich rausging -- ein Aufrufer, der eine Rueckmeldung
-     garantieren muss, kann daran erkennen, dass die Seite keine hat. */
+     UC.toast(text, { kind, desc, action: { label, onClick }, timeout, icon }) -> true | false
+       kind     "success" | "error" | "neutral". Ohne kind entscheidet das alte icon (siehe
+                toastArt); ohne beides "success" -- das war der Vorgabewert ("check").
+       desc     zweite Zeile, nur wenn sie hilft (bei Fehlern: was jetzt zu tun ist)
+       action   hoechstens eine, kurzes Verb; der Klick fuehrt onClick aus und schliesst
+       timeout  ms, ueberschreibt die Vorgabe: Erfolg 2000, Neutral 4000, mit Aktion 6000,
+                Fehler bleibt stehen, bis er geschlossen wird
+     Unten mittig im Inhaltsbereich (links die Breite der Seitenleiste, --up-sidebar-w), hoechstens
+     drei uebereinander, der neue unten. Liegt unten mittig schon etwas (die Massenleiste der
+     Prompts-Tabelle, Miras Eingabefeld, die Benachrichtigungskarte, alles mit
+     data-up-toast-darueber), steht der Stapel 12px darueber -- gemessen, solange ein Toast offen
+     ist, weil die Massenleiste beim Aufklappen der Themenauswahl waechst.
+     Zeiger darauf haelt die Uhr an; danach laeuft der Rest weiter (mindestens 400 ms).
+
+     window.showMacToast bleibt als NAME bestehen und zeigt hierher: Run-JS-Schritte in Bubble
+     wie showMacToast('Invite could not be resend!', { icon: 'alert', timeout: 4000 }) laufen
+     unveraendert weiter, im neuen Aussehen. Setzt der Seitenkopf seine alte Fassung danach noch
+     einmal, holt toastAliasSetzen den Namen zurueck (in den ersten 30 s und bei jedem Toast). */
+  var TOAST = (window.__upToast = window.__upToast || { host: null, liste: [], seq: 0, uhr: null });
+  var TOAST_DAUER = { success: 2000, neutral: 4000 };
+  var TOAST_ZEICHEN = { success: "checkCircle", error: "alertCircle", neutral: "info" };
+  var TOAST_MAX = 3;
+  var TOAST_DARUEBER = ".upt-bulkbar.is-on, .am-composer-area, .unc-card.is-shown, [data-up-toast-darueber]";
+  /* Die Namen, die die alte Bubble-Fassung kannte, auf die drei Arten -- "wie gehabt": ein
+     Haken ist Erfolg, eine Warnung ist Fehler, alles andere (info, copy, ...) ist neutral. */
+  function toastArt(o){
+    var k = String(o.kind || o.type || "").toLowerCase();
+    if (k === "success" || k === "error" || k === "neutral") return k;
+    var ic = String(o.icon || "").toLowerCase().trim();
+    if (!ic) return "success";
+    if (/^(check|checkmark|tick|success|ok|done|saved|check-circle|checkcircle)$/.test(ic)) return "success";
+    if (/^(alert|alert-circle|alertcircle|alert-triangle|error|warning|warn|x|close|fail|failed|danger|cross|ban)$/.test(ic)) return "error";
+    return "neutral";
+  }
+  function toastHost(){
+    var h = TOAST.host;
+    if (h && document.body && document.body.contains(h)) return h;
+    if (!document.body) return null;
+    h = document.createElement("div");
+    h.className = "up-toasts";
+    h.setAttribute("aria-live", "polite");
+    h.addEventListener("keydown", function(e){
+      if (e.key !== "Escape") return;
+      var neu = TOAST.liste[TOAST.liste.length - 1];
+      if (neu && neu.el.contains(e.target)){ e.stopPropagation(); toastWeg(neu); }
+    });
+    /* TOP LAYER (wie .uca-portal): der Opportunity-Drawer, Create with AI und Quick Actions
+       liegen per popover im Top Layer, und gegen den gewinnt keine z-index-Zahl -- ein Toast aus
+       einem offenen Drawer heraus laege sonst dahinter. Wo es popover nicht gibt, bleibt der
+       z-index aus core.css. */
+    if (typeof h.showPopover === "function"){ try { h.setAttribute("popover", "manual"); } catch(e){} }
+    document.body.appendChild(h);
+    TOAST.host = h;
+    return h;
+  }
+  /* Im Top Layer liegt oben, was zuletzt befoerdert wurde: bei jedem neuen Toast einmal neu
+     zeigen, dann steht der Stapel ueber einem Drawer, der seit dem letzten Toast aufging. */
+  function toastNachOben(h){
+    if (!h.hasAttribute("popover") || typeof h.showPopover !== "function") return;
+    try {
+      if (h.matches(":popover-open")) h.hidePopover();
+      h.showPopover();
+    } catch(e){}
+  }
+  /* Platz unten: der hoechste Rand unter allem, was unten in derselben Spalte liegt. Nur
+     Elemente in der unteren Haelfte zaehlen -- ein Feld weiter oben ist kein Hindernis. */
+  function toastPlatz(){
+    var h = TOAST.host;
+    if (!h) return;
+    var hr = h.getBoundingClientRect(), vh = window.innerHeight || 0, unten = 24;
+    var mitte = hr.left + hr.width / 2, halb = 220;
+    var els = document.querySelectorAll(TOAST_DARUEBER);
+    for (var i = 0; i < els.length; i++){
+      var el = els[i];
+      if (h.contains(el)) continue;
+      if (el.checkVisibility && !el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
+      var r = el.getBoundingClientRect();
+      if (!r.width || !r.height || r.top >= vh || r.bottom <= 0) continue;
+      if (r.top < vh * 0.5) continue;
+      if (r.right < mitte - halb || r.left > mitte + halb) continue;
+      unten = Math.max(unten, Math.round(vh - r.top + 12));
+    }
+    if (h.__unten !== unten){ h.__unten = unten; h.style.setProperty("--up-toast-unten", unten + "px"); }
+  }
+  function toastWacheAn(){
+    if (TOAST.uhr) return;
+    TOAST.uhr = setInterval(function(){
+      if (!TOAST.liste.length){ clearInterval(TOAST.uhr); TOAST.uhr = null; return; }
+      toastPlatz();
+    }, 250);
+  }
+  function toastWeg(e){
+    if (!e || e.weg) return;
+    e.weg = true;
+    if (e.uhr){ clearTimeout(e.uhr); e.uhr = null; }
+    var i = TOAST.liste.indexOf(e);
+    if (i >= 0) TOAST.liste.splice(i, 1);
+    e.el.classList.remove("is-on");
+    e.el.classList.add("is-weg");
+    setTimeout(function(){
+      if (e.el.parentNode) e.el.parentNode.removeChild(e.el);
+      var h = TOAST.host;
+      if (h && !TOAST.liste.length && h.hasAttribute("popover")){ try { h.hidePopover(); } catch(err){} }
+    }, 130);
+  }
+  function toastUhr(e, ms){
+    if (e.uhr) clearTimeout(e.uhr);
+    e.start = Date.now(); e.rest = ms;
+    e.uhr = setTimeout(function(){ toastWeg(e); }, ms);
+  }
   function toast(text, opts){
     opts = opts || {};
     var t = String(text == null ? "" : text).trim();
     if (!t) return false;
     try {
-      if (typeof window.showMacToast === "function"){
-        window.showMacToast(t, { icon: opts.icon || "check",
-                                 timeout: opts.timeout == null ? 2000 : opts.timeout });
-        return true;
+      toastAliasSetzen();
+      var h = toastHost();
+      if (!h) return false;
+      h.setAttribute("data-theme", getUpstreemTheme() === "dark" ? "dark" : "light");
+      var art = toastArt(opts);
+      var aktion = opts.action && typeof opts.action === "object" && String(opts.action.label || "").trim() ? opts.action : null;
+      var desc = String(opts.desc == null ? "" : opts.desc).trim();
+      var ms = Number(opts.timeout);
+      if (!(ms > 0)) ms = art === "error" ? 0 : (aktion ? 6000 : TOAST_DAUER[art]);
+      var el = document.createElement("div");
+      el.className = "up-toast is-" + art;
+      el.setAttribute("role", art === "error" ? "alert" : "status");
+      el.innerHTML =
+        '<span class="up-toast-ic" aria-hidden="true">' + icon(TOAST_ZEICHEN[art], 2) + '</span>' +
+        '<span class="up-toast-txt"><span class="up-toast-t"></span>' + (desc ? '<span class="up-toast-d"></span>' : '') + '</span>' +
+        (aktion ? '<button type="button" class="up-toast-act"></button>' : '') +
+        (art === "error" ? '<button type="button" class="up-toast-x" aria-label="' + esc(t_("Close")) + '">' + icon("x", 2.2) + '</button>' : '');
+      el.querySelector(".up-toast-t").textContent = t;
+      if (desc) el.querySelector(".up-toast-d").textContent = desc;
+      var e = { el: el, art: art, ms: ms, uhr: null, weg: false, id: ++TOAST.seq };
+      if (aktion){
+        var b = el.querySelector(".up-toast-act");
+        b.textContent = String(aktion.label);
+        b.addEventListener("click", function(){
+          try { if (typeof aktion.onClick === "function") aktion.onClick(); } catch(err){ if (window.console) console.warn("[toast] Aktion hat geworfen:", err); }
+          toastWeg(e);
+        });
       }
-    } catch(e){
-      if (window.console) console.warn("[toast] showMacToast hat geworfen:", e);
+      var x = el.querySelector(".up-toast-x");
+      if (x) x.addEventListener("click", function(){ toastWeg(e); });
+      /* Zeiger darauf haelt die Uhr an, danach der Rest -- mindestens 400 ms, sonst verschwaende
+         der Toast im Moment des Wegziehens. */
+      el.addEventListener("mouseenter", function(){
+        if (!e.uhr) return;
+        clearTimeout(e.uhr); e.uhr = null;
+        e.rest = Math.max(0, e.rest - (Date.now() - e.start)); e.pause = true;
+      });
+      el.addEventListener("mouseleave", function(){
+        if (!e.pause || e.weg) return;
+        e.pause = false; toastUhr(e, Math.max(400, e.rest));
+      });
+      h.appendChild(el);
+      toastNachOben(h);
+      TOAST.liste.push(e);
+      while (TOAST.liste.length > TOAST_MAX) toastWeg(TOAST.liste[0]);
+      toastPlatz();
+      toastWacheAn();
+      /* Eingeblendet erst im naechsten Bild -- sonst laeuft keine Bewegung. */
+      void el.offsetWidth;
+      el.classList.add("is-on");
+      if (ms > 0) toastUhr(e, ms);
+      return true;
+    } catch(err){
+      if (window.console) console.warn("[toast] konnte nicht gezeigt werden:", err);
       return false;
     }
-    if (window.console) console.warn("[toast] Auf dieser Seite gibt es kein showMacToast — die " +
-      "Meldung \"" + t + "\" wurde nirgends angezeigt.");
-    return false;
   }
+  /* Der alte Name fuer die Run-JS-Schritte in Bubble: showMacToast(text, { icon, timeout }). */
+  function showMacToastNeu(text, opts){ return toast(text, opts); }
+  showMacToastNeu.__upKern = true;
+  function toastAliasSetzen(){
+    if (window.showMacToast && window.showMacToast.__upKern) return;
+    window.showMacToast = showMacToastNeu;
+  }
+  toastAliasSetzen();
+  (function(){
+    var bis = Date.now() + 30000;
+    var w = setInterval(function(){ toastAliasSetzen(); if (Date.now() > bis) clearInterval(w); }, 1000);
+  })();
 
   /* ── Signalbruecke: ein Workflow sagt der Seite Bescheid ─────────────────────────────────────
      Der Fall: In den Einstellungen wird gespeichert, und der Team-Header oben auf der Seite zeigt
@@ -19295,6 +19491,10 @@
            '<path d="M12.125 12.75H12M12.25 12.75C12.25 12.8881 12.1381 13 12 13C11.8619 13 11.75 12.8881 11.75 12.75C11.75 12.6119 11.8619 12.5 12 12.5C12.1381 12.5 12.25 12.6119 12.25 12.75Z"/>' +
            '<path d="M14.9152 7.61089L13.8078 5.38179C13.019 3.79393 12.6246 3 12 3C11.3754 3 10.981 3.79393 10.1922 5.38179L9.08483 7.61089C8.58107 8.62494 8.32919 9.13197 7.87976 9.24608C7.8485 9.25401 7.81689 9.26043 7.78503 9.26533C7.32682 9.3357 6.89919 8.96678 6.04393 8.22895C4.0124 6.47635 2.99663 5.60004 2.38034 5.94899C2.34045 5.97157 2.30213 5.99686 2.26565 6.02467C1.70197 6.45439 2.09541 7.74136 2.88229 10.3153L4.04783 14.1279C4.47098 15.5121 4.68255 16.2042 5.21787 16.6021C5.75318 17 6.47261 17 7.91147 17L16.0886 16.9999C17.5274 16.9999 18.2468 16.9999 18.7821 16.602C19.3175 16.2041 19.529 15.512 19.9522 14.1279L21.1177 10.3153C21.9046 7.74137 22.298 6.4544 21.7344 6.02468C21.6979 5.99687 21.6595 5.97158 21.6197 5.94899C21.0034 5.60006 19.9876 6.47636 17.9561 8.22896C17.1008 8.96679 16.6732 9.3357 16.215 9.26533C16.1831 9.26043 16.1515 9.25401 16.1202 9.24607C15.6708 9.13197 15.4189 8.62494 14.9152 7.61089Z"/>',
     check:    '<path d="M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7"/>',
+    /* checkCircle und alertCircle (10.10.): die Zeichen des Toasts fuer Erfolg und Fehler,
+       woertlich aus lucide-static (circle-check, circle-alert). Neutral nimmt "info". */
+    checkCircle: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+    alertCircle: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
     chevronDown:  '<path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/>',
     chevronRight: '<path d="M9.00005 18C9.00005 18 15 13.5811 15 12C15 10.4188 9 6 9 6"/>',
     /* Lucide chevron-left. Bisher gab es ihn nicht und onboarding-page dreht den rechten per CSS

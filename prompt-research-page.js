@@ -55,7 +55,9 @@
 
   function str(v) { return v == null || typeof v === "object" ? "" : String(v); }
   function team() { try { return (UC.getTeam && UC.getTeam()) || ""; } catch (e) { return ""; } }
-  function satz(txt, icon) { if (UC.toast) UC.toast(t(txt), icon ? { icon: icon } : undefined); }
+  /* Der Toast aus core (10.10.): art "success" | "error" | "neutral", desc die zweite Zeile --
+     bei Fehlern, was jetzt zu tun ist. Ein Satz ohne Punkt, wie im Handoff festgelegt. */
+  function satz(txt, art, desc) { if (UC.toast) UC.toast(t(txt), { kind: art || "success", desc: desc ? t(desc) : "" }); }
   function beiSicht(el, schluessel, fn, test, o) { if (UC.beiSicht) UC.beiSicht(el, schluessel, fn, test, o); else fn(); }
   function messbar(el) { return !UC.messbar || UC.messbar(el); }
   /* Die Komponente ist ein Einzelstueck mit Namensraum; jeder Aufruf geht ueber sie. */
@@ -231,7 +233,7 @@
       gem.offen = z.rows.length ? jobId : null;
       kontingent(z.meta);
       pr("setPrompts", z.rows, z.meta);
-      if (!z.rows.length && frischGelaufen) satz("The research found no new prompts.", "info");
+      if (!z.rows.length && frischGelaufen) satz("The research found no new prompts", "neutral");
     }
     function oeffnen(jobId) {
       var tm = team();
@@ -281,7 +283,7 @@
            Begriffen, nicht den eben getippten. Die Liste bringt sie mit, jobsLaden zeigt sie. */
         if (d2.reused === true) {
           laufEnde();
-          satz("A research is already running for this team.", "info");
+          satz("A research is already running for this team", "neutral");
           jobsLaden(true);
           return;
         }
@@ -312,22 +314,22 @@
           if (!erg.ok) {
             pr("setActionLoading", false);
             var art = D.fehlerArt(erg), frei = D.hinweisZahl(erg);
-            satz(art === "limit"
-              ? (frei ? t("Only {n} prompt slots are left in your plan.").replace("{n}", frei) : t("There are no prompt slots left in your plan."))
-              : art === "rate" ? "Too many changes in a short time. Please wait a minute and try again."
-              : "The change could not be saved. Please try again.", "info");
+            if (art === "limit") satz("Not enough prompt slots", "error",
+              frei ? t("Only {n} prompt slots are left in your plan.").replace("{n}", frei) : "There are no prompt slots left in your plan.");
+            else if (art === "rate") satz("Too many changes in a short time", "error", "Wait a minute and try again.");
+            else satz("Couldn't save the change", "error", "Try again.");
             return null;
           }
           var m = erg.daten && erg.daten.meta ? erg.daten.meta : null;
           kontingent(m);
           var n = m ? Number(akzeptieren ? m.accepted : m.ignored) || 0 : 0;
           if (akzeptieren && n) {
-            satz(n === 1 ? "1 prompt is now tracked." : t("{n} prompts are now tracked.").replace("{n}", n));
+            satz(n === 1 ? "1 prompt is now tracked" : t("{n} prompts are now tracked").replace("{n}", n));
             /* Neue Prompts aendern die Zaehler der Maerkte und Themen der App -- dieselben Signale,
                mit denen jede andere Stelle das meldet. */
             if (UC.marketsChanged) UC.marketsChanged();
             if (UC.topicsChanged) UC.topicsChanged();
-          } else if (aktion === "delete_all" && n) satz("Prompts removed.");
+          } else if (aktion === "delete_all" && n) satz("Prompts removed");
           jobsLaden(true);
           if (!jobId || tm !== team()) { pr("setActionLoading", false); return null; }
           return lader.laden("ergebnis", D.ergebnis(tm, jobId), { frisch: true }).then(function (e2) {
@@ -350,11 +352,11 @@
         return schreiben(D.loeschen(tm, jobId)).then(function (erg) {
           if (!erg.ok && D.fehlerArt(erg) !== "weg") {
             pr("setActionLoading", false);
-            satz(D.fehlerArt(erg) === "rate" ? "Too many changes in a short time. Please wait a minute and try again."
-                                             : "The research could not be deleted. Please try again.", "info");
+            if (D.fehlerArt(erg) === "rate") satz("Too many changes in a short time", "error", "Wait a minute and try again.");
+            else satz("Couldn't delete the research", "error", "Try again.");
             return null;
           }
-          satz("Research deleted.");
+          satz("Research deleted");
           if (gem.offen === jobId) { gem.offen = null; pr("setIdle"); }
           /* setPreviousResearches gibt die Knoepfe wieder frei. */
           return jobsLaden(true).then(function (j) { if (!j) pr("setActionLoading", false); });

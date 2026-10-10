@@ -54,9 +54,9 @@
   function str(v) { return v == null || typeof v === "object" ? "" : String(v); }
   function team() { try { return (UC.getTeam && UC.getTeam()) || ""; } catch (e) { return ""; } }
   function setter(n) { return typeof window[n] === "function" ? window[n] : function () {}; }
-  /* icon "info" fuer alles, was nicht geklappt hat oder nichts brachte -- derselbe Toast wie
-     ueberall, nur ohne Haken (wie "Nothing to copy" in der Prompts-Tabelle). */
-  function satz(txt, icon) { if (UC.toast) UC.toast(t(txt), icon ? { icon: icon } : undefined); }
+  /* Der Toast aus core (10.10.): art "success" | "error" | "neutral", desc die zweite Zeile --
+     bei Fehlern, was jetzt zu tun ist. Ein Satz ohne Punkt, wie im Handoff festgelegt. */
+  function satz(txt, art, desc) { if (UC.toast) UC.toast(t(txt), { kind: art || "success", desc: desc ? t(desc) : "" }); }
   function beiSicht(el, schluessel, fn, test, o) { if (UC.beiSicht) UC.beiSicht(el, schluessel, fn, test, o); else fn(); }
   function messbar(el) { return !UC.messbar || UC.messbar(el); }
   function brettLokal() { return !!document.querySelector('.uo-root[data-local="yes"]'); }
@@ -143,17 +143,17 @@
       if (gem.kanal) { gem.kanal.stop(); gem.kanal = null; }
       if (gem.notfrist) { clearTimeout(gem.notfrist); gem.notfrist = null; }
     }
-    function sucheEnde(fehlerSatz) {
+    function sucheEnde(fehlerSatz, desc) {
       abfrageStop();
       gem.job = null;
       setter("opportunitiesSetSearching")("no");
-      if (fehlerSatz) satz(fehlerSatz, "info");
+      if (fehlerSatz) satz(fehlerSatz, "error", desc);
     }
     /* Ein Stand, egal woher (Broadcast oder Einzelabfrage). */
     function standVerarbeiten(job, s, endgueltig) {
       if (gem.job !== job || !s) return;
       if (s.status === "queued" || s.status === "running" || !s.status) {
-        if (endgueltig) sucheEnde("The search for new opportunities is taking too long. Please try again later.");
+        if (endgueltig) sucheEnde("The search is taking too long", "Check back in a few minutes.");
         return;
       }
       if (s.status === "success") {
@@ -165,18 +165,17 @@
         else sucheEnde();
         return;
       }
-      sucheEnde(s.fehler && s.fehler.code === "timeout"
-        ? "The search for new opportunities took too long. Please try again."
-        : "The search for new opportunities failed. Please try again.");
+      if (s.fehler && s.fehler.code === "timeout") sucheEnde("The search took too long", "Try again in a few minutes.");
+      else sucheEnde("The search for new opportunities failed", "Try again.");
     }
     /* Wie viele neue Opportunities die Suche angelegt hat, als Toast wie jede andere Rueckmeldung
        der App (10.10. angefordert). Ohne Zahl im Ergebnis sagt die Seite nur, dass sie fertig ist. */
     function ergebnisMelden(e) {
-      if (!e || e.neu == null) { satz("The search for new opportunities is complete."); return; }
-      if (e.neu === 1) { satz("1 new opportunity was created."); return; }
-      if (e.neu > 1) { satz(t("{n} new opportunities were created.").replace("{n}", e.neu)); return; }
-      satz(e.voll ? "No new opportunities: the board already has the maximum number of active ones. Move some to Done or Ignored to make room."
-                  : "No new opportunities were found this time.", "info");
+      if (!e || e.neu == null) { satz("Search for new opportunities finished"); return; }
+      if (e.neu === 1) { satz("1 new opportunity created"); return; }
+      if (e.neu > 1) { satz(t("{n} new opportunities created").replace("{n}", e.neu)); return; }
+      if (e.voll) satz("No new opportunities", "neutral", "The board already has the maximum number of active ones. Move some to Done or Ignored to make room.");
+      else satz("No new opportunities found", "neutral");
     }
     function standAbfragen(job, endgueltig) {
       var a = D.sucheStand(job.team, job.id);
@@ -205,7 +204,7 @@
     function sucheStarten() {
       var tm = team();
       if (!tm || gem.job || window.__uoSucheLaeuft) return;
-      if (!UC.edge) { satz("Looking for new opportunities is not available right now.", "info"); return; }
+      if (!UC.edge) { satz("Looking for new opportunities isn't available right now", "neutral"); return; }
       gem.job = { id: "", team: tm, seit: Date.now() };
       var job = gem.job;
       setter("opportunitiesSetSearching")("yes");
@@ -214,8 +213,8 @@
         var st = erg.ok ? D.zuStart(erg.daten) : null;
         if (!st) {
           var f = (erg.fehler && erg.fehler.message) || "";
-          sucheEnde(/rate_limited/.test(f) ? "Too many searches in a short time. Please wait a minute."
-                                           : "The search could not be started. Please try again.");
+          if (/rate_limited/.test(f)) sucheEnde("Too many searches in a short time", "Wait a minute and try again.");
+          else sucheEnde("The search couldn't be started", "Try again.");
           return;
         }
         job.id = st.jobId;
@@ -296,8 +295,8 @@
         if (!erg.ok) {
           zuruecklegen(zurueck, meinNr);
           var f = (erg.fehler && erg.fehler.message) || "";
-          if (UC.toast) UC.toast(t(/rate_limited/.test(f) ? "Too many changes in a short time. Please wait a minute and try again."
-                                                          : "The change could not be saved. Please try again."));
+          if (/rate_limited/.test(f)) satz("Too many changes in a short time", "error", "Wait a minute and try again.");
+          else satz("Couldn't save the change", "error", "Try again.");
           return;
         }
         /* Uebersprungene Karten gibt es nicht mehr (oder nicht in diesem Team): die Liste im

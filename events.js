@@ -2854,7 +2854,7 @@
           renderDetail();
           if (!weg && txt === fehlerText("")) return true;
         }
-        if (UC.toast) UC.toast(txt);
+        if (UC.toast) UC.toast(txt, { kind: "error" });
         return true;
       },
       /* Die Responses-Tabelle gehoert nicht dieser Komponente: bei Erfolg geht der Text unveraendert
