@@ -1390,6 +1390,8 @@
     "{n} prompts added": "{n} Prompts hinzugefügt",
     "No new prompts added": "Keine neuen Prompts hinzugefügt",
     "{n} skipped (already there or invalid)": "{n} übersprungen (schon vorhanden oder ungültig)",
+    "1 adjusted (special characters removed)": "1 angepasst (Sonderzeichen entfernt)",
+    "{n} adjusted (special characters removed)": "{n} angepasst (Sonderzeichen entfernt)",
     "{n} unchanged": "{n} unverändert",
     "Topics added to {n} prompt": "Topics zu {n} Prompt hinzugefügt",
     "Topics added to {n} prompts": "Topics zu {n} Prompts hinzugefügt",

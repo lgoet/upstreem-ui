@@ -7,9 +7,11 @@
   Topic-Verwaltung sind die bestehenden Bausteine (prompts-table, responses-table, topics-manager)
   im LOKALEN Modus -- dieselben Bausteine an anderen Orten der App bleiben davon unberuehrt.
 
-  ── VORAUSSETZUNG: DER VERTRAG IST IN PROD ────────────────────────────────────
-  Die Funktionen unten baut der Datenbank-Chat nach bubble/prompts_db_rueckmeldung.md. Solange sie
-  nicht in Prod sind, bleibt die alte Ansicht stehen.
+  ── DER VERTRAG IST IN PROD (seit 10.10.) ─────────────────────────────────────
+  bubble/prompt_insights_v1_vertrag.md, Abschnitt 9 (geht vor). Echte Antworten:
+  testdaten/prompt_insights_v1/antworten.json -- die Seite ist dagegen geprueft.
+  Loeschen: die Antwort kommt sofort, die Prompts sind sofort weg; den Rest raeumt ein
+  Hintergrundjob der Datenbank auf (Cron prompt-purge-worker). In Bubble ist dafuer nichts zu tun.
 
   ── Was Bubble NICHT mehr tut ─────────────────────────────────────────────────
   Keine Workflows, keine API-Calls, kein Run JS fuer diese Seite. Die Komponente ruft selbst

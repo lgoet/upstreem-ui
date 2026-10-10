@@ -4,10 +4,10 @@
    Elemente noch Bubble -- nur den Filterstand, die RPCs des Vertrags und die Form, in der die
    eingebetteten Bausteine (prompts-table, topics-manager, responses-table) ihre Daten lesen.
 
-   VERTRAG: Vorschlag des Datenbank-Chats vom 10.10. (Abschnitt 6), mit der Rueckmeldung
-   bubble/prompts_db_rueckmeldung.md. STAND: GEBAUT GEGEN DEN VORSCHLAG, NOCH OHNE ECHTE ANTWORTEN.
-   Feldnamen, die die Datenbank beim Bau aendert, werden NUR hier nachgezogen -- die Seite und die
-   Bausteine sehen weiter dieselbe Form.
+   VERTRAG: PROMPT_INSIGHTS_V1_VORSCHLAG.md des Datenbank-Chats, Abschnitt 6 und Abschnitt 9 (der
+   gebaute Stand, geht vor). Geprueft gegen die echten Antworten
+   (testdaten/prompt_insights_v1/antworten.json, Team 877c, 30 Tage). Feldnamen, die die Datenbank
+   aendert, werden NUR hier nachgezogen -- die Seite und die Bausteine sehen dieselbe Form.
 
    Der Filterstand f: { team, von, bis, modelle[], maerkte[], topics[], tagmode }.
    Der Tabellenstand s: { status, suche, order, limit, offset, erwaehnt, firmen[] }.
@@ -136,10 +136,12 @@
      Im Filtermodus gehen GENAU die Filter der Liste mit (Vertrag 6.3) -- die Auswahl "Alle N" ist
      die Menge, die der Nutzer gesehen hat, nicht mehr. p_expected_count ist Pflicht: weicht die
      Datenbank davon ab, aendert sie nichts (prompts_selection_changed). */
+  /* Die Topics zum Hinzufuegen heissen p_add_tag_ids (gebauter Vertrag 9.1): p_tag_ids ist in
+     prompts_bulk_v1 der Topic-FILTER wie in Liste und Gruppen. Darum stehen sie nach den Filtern --
+     die erste Fassung schrieb sie in p_tag_ids, und im Filtermodus ueberschrieb der Filter sie. */
   function sammel(team, aktion, ziel, tagIds) {
     ziel = ziel || {};
     var p = { p_team: str(team), p_action: aktion };
-    if (aktion === "add_topics") p.p_tag_ids = uuids(tagIds, GRENZE.topicsJePrompt) || [];
     if (ziel.filter) {
       mit(p, basis(ziel.f, ziel.gruppe));
       mit(p, tabelle(ziel.s));
@@ -150,6 +152,7 @@
       p.p_target = "ids";
       p.p_ids = uuids(ziel.ids, GRENZE.ids) || [];
     }
+    if (aktion === "add_topics") p.p_add_tag_ids = uuids(tagIds, GRENZE.topicsJePrompt) || [];
     return schreiben("sammel", p);
   }
   /* Topic anlegen (tagId leer) oder bearbeiten. Die Farbe genau #rrggbb (Vertrag 6.4). */

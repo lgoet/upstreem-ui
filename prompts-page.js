@@ -88,8 +88,9 @@
     if (/limit_reached/.test(m)) {
       if (/^topics_/.test(m)) return { text: t("Your team has reached the topic limit"), desc: t("Delete a topic you no longer need to add a new one.") };
       if (/^inactive:/.test(h)) return { text: t("Too many inactive prompts"), desc: t("Delete inactive prompts you no longer need, then try again.") };
+      /* hint = freie Plaetze. Bei 0 (der haeufige Fall, echte Antwort) kein "0 more ... fit". */
       return { text: t("Not enough room in your plan"),
-               desc: n != null ? t("{n} more active prompts fit into your plan.").replace("{n}", String(n)) : t("Deactivate prompts or upgrade your plan.") };
+               desc: n ? t("{n} more active prompts fit into your plan.").replace("{n}", String(n)) : t("Deactivate prompts or upgrade your plan.") };
     }
     if (/selection_changed/.test(m)) return { text: t("The selection has changed"), desc: t("Please select the prompts again.") };
     if (/forbidden/.test(m)) return { text: t("Only owners and admins can delete"), desc: "" };
@@ -787,7 +788,12 @@
         var r = erg.ok ? D.zuAnlage(erg.daten) : null;
         if (!erg.ok || !r) { fehlerToast(erg, t("The prompts could not be added")); return { ok: false }; }
         kontingentNachziehen(r.kontingent);
-        var weg = r.uebersprungen ? t("{n} skipped (already there or invalid)").replace("{n}", String(r.uebersprungen)) : "";
+        /* Was nicht angelegt wurde und was die Datenbank umgeschrieben hat (Backtick, Backslash, ${,
+           Umbrueche, unsichtbare Zeichen) -- beides gehoert gesagt, nicht still geschluckt. */
+        var weg = [
+          r.uebersprungen ? t("{n} skipped (already there or invalid)").replace("{n}", String(r.uebersprungen)) : "",
+          r.umgeschrieben ? (r.umgeschrieben === 1 ? t("1 adjusted (special characters removed)") : t("{n} adjusted (special characters removed)").replace("{n}", String(r.umgeschrieben))) : ""
+        ].filter(Boolean).join(", ");
         if (!r.angelegt) {
           toast(t("No new prompts added"), "neutral", weg);
           return { ok: false };
