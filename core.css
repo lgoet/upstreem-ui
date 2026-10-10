@@ -186,13 +186,14 @@
          die Tinte, ihre Schrift der Grund. Dafuer braucht es kein drittes Token. */
       --vc-inverse-bg: #1f1f1b;
       --vc-inverse-ink: #ffffff;
-      /* DER TOAST (10.10., Handoff Stil 1a): eine dunkle Flaeche in JEDEM Thema -- anders als die
-         Erklaerkarte dreht er sich nicht um; er liegt ueber der Seite und meldet, ohne Farbe zu
-         brauchen, der Zustand steht nur im Zeichen. Im Dunkeln eine Stufe heller (#2c2c30), sonst
-         verschwaende er auf der Seite. Fehler-Rot heller als --vt-down: #d25d5d erreicht auf
-         #1f1f1b nur 3.9:1, #ff7a66 traegt. Erfolg ist das --vt-up des dunklen Themas. */
-      --vc-toast-bg: #1f1f1b;
-      --vc-toast-ink: #ffffff;
+      /* DER TOAST (10.10., Handoff Stil 1a "Inverted"): die umgekehrte Karte wie die Erklaerkarte --
+         hell eine dunkle Flaeche, dunkel eine helle (10.10. korrigiert: "invertiert heisst, im
+         Darkmode hell"; die erste Fassung blieb nach dem Handoff in beiden Themen dunkel).
+         Der Zustand steht nur im Zeichen. Auf der dunklen Flaeche ist das Fehler-Rot heller als
+         --vt-down: #d25d5d erreicht auf #1f1f1b nur 3.9:1, #ff7a66 traegt. Erfolg ist dort das
+         --vt-up des dunklen Themas; auf der hellen Flaeche (Dunkel-Thema) die Werte des hellen. */
+      --vc-toast-bg: var(--vc-inverse-bg);
+      --vc-toast-ink: var(--vc-inverse-ink);
       --vc-toast-sub: rgba(255,255,255,.64);
       --vc-toast-ok: #60d25d;
       --vc-toast-fehler: #ff7a66;
@@ -219,7 +220,17 @@
       /* Die Erklaerkarte im Dunkeln: heller Grund, die Schrift im Ton der hellen Karte. */
       --vc-inverse-bg: #eeedef;
       --vc-inverse-ink: #1f1f1b;
-      --vc-toast-bg: #2c2c30;
+      /* Der Toast als helle Karte (umgekehrt, siehe oben): dunkle Schrift, Zustandsfarben des
+         hellen Themas, die Flaechen der Knoepfe aus Schwarz statt aus Weiss. */
+      --vc-toast-bg: var(--vc-inverse-bg);
+      --vc-toast-ink: var(--vc-inverse-ink);
+      --vc-toast-sub: rgba(31,31,27,.64);
+      --vc-toast-ok: #2ea84a;
+      --vc-toast-fehler: #b0200c;
+      --vc-toast-neutral: #6b6f78;
+      --vc-toast-flaeche: rgba(31,31,27,.08);
+      --vc-toast-flaeche-hover: rgba(31,31,27,.14);
+      --vc-toast-zu: #80858e;
 }
 .up-root {
       /* --vc-muted ist um vier Einheiten dunkler als vorher (#6f737c), und das ist KEINE neue
@@ -3259,8 +3270,11 @@
     .up-toast.is-success .up-toast-ic { color: var(--vc-toast-ok); }
     .up-toast.is-error .up-toast-ic { color: var(--vc-toast-fehler); }
     .up-toast-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; padding-right: 4px; }
-    .up-toast-t { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 20px; overflow-wrap: anywhere; }
-    .up-toast-d { font-size: var(--up-fs-m); font-weight: var(--up-fw-n); line-height: 18px; color: var(--vc-toast-sub); overflow-wrap: anywhere; }
+    /* break-word, nicht anywhere: bei "anywhere" zaehlt jeder Buchstabe als moegliche Bruchstelle,
+       und im schmalen Inhaltsbereich brach der Text Zeichen fuer Zeichen um (10.10. gemessen bei
+       180px neben der Leiste). So bleibt das laengste Wort die kleinste Breite. */
+    .up-toast-t { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 20px; overflow-wrap: break-word; }
+    .up-toast-d { font-size: var(--up-fs-m); font-weight: var(--up-fw-n); line-height: 18px; color: var(--vc-toast-sub); overflow-wrap: break-word; }
     .up-toast-act {
       flex: 0 0 auto; height: 24px; margin-top: -2px; padding: 0 8px; border: 0; border-radius: var(--up-r-s);
       background: var(--vc-toast-flaeche); color: var(--vc-toast-ink);
