@@ -631,6 +631,22 @@
           KANAL[echt].name + " muss der Run-JS-Schritt " + KANAL[echt].setter + " rufen. Die Antwort ist trotzdem richtig zugeordnet.");
         kanal = echt;
       }
+      /* EINE LEERE ANTWORT AM FALSCHEN SETTER (10.10. gemeldet: "die Bibliothek bleibt bei leeren
+         Ergebnissen ewig im Skelett"). Ruft der Workflow einer Anfrage den Setter eines ANDEREN
+         Kanals, ordnet kanalVon die Antwort am Inhalt zu -- aber eine leere Liste hat keinen
+         Inhalt, an dem man sie erkennt. Dann landete sie bei dem Kanal des Setters, den die Seite
+         gar nicht braucht, wurde verworfen, und die wartende Anfrage lief in ihre Frist (25 s).
+         Jetzt: braucht die Seite den Kanal des Setters nicht, und wartet genau EIN anderer Kanal
+         auf eine Antwort dieser Form, gehoert sie dorthin. Gemeldet wird es trotzdem. */
+      if (!echt && d && !unterwegs[kanal] && !bedarfListe().some(function (a) { return a.kanal === kanal; })) {
+        var kand = KANAELE.filter(function (k) { return k !== kanal && unterwegs[k] && pruefen(k, d); });
+        if (kand.length === 1) {
+          melden("leer" + kanal + kand[0], KANAL[kanal].setter + " bekam eine (leere) Antwort, die zu " + KANAL[kand[0]].name +
+            " gehoert. Im Workflow von " + KANAL[kand[0]].name + " muss der Run-JS-Schritt " + KANAL[kand[0]].setter +
+            " rufen. Sie ist trotzdem richtig zugeordnet.");
+          kanal = kand[0];
+        }
+      }
       var u = unterwegs[kanal], ziel = u;
       if (!ziel) {
         var l = bedarfListe().filter(function (a) { return a.kanal === kanal; });
