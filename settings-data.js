@@ -4,8 +4,10 @@
    nur die Funktionen, ihre Parameter und die Form, in der die eingebetteten Bausteine
    (settings-brand, team-orga, settings-billing) ihre Daten lesen.
 
-   VERTRAGSSTAND (11.10.): VORSCHLAG. Die Namen unten sind die aus dem Auftrag an den DB-Chat
-   (bubble/settings_db_auftrag.md, Abschnitt 6). Verlinkt wird SCHRITT FUER SCHRITT (Abschnitt 7):
+   VERTRAGSSTAND (11.10. abends): VORSCHLAG DES DB-CHATS (bubble/settings_v1_vorschlag.md, Abschnitt
+   6 und 9; Abschnitt 9 geht vor), abgeglichen in bubble/settings_db_rueckmeldung.md. Gebaut ist
+   davon erst der Sofort-Teil (settings_sofort.sql, create-team-checkout); die v1-Funktionen kommen
+   Schritt fuer Schritt. Verlinkt wird SCHRITT FUER SCHRITT (Bauplan, Abschnitt 7):
    jede Funktion hat ihren eigenen Schalter in LIVE. Steht er auf false, ruft die Seite sie NICHT
    (ein 404 je Aufruf waere Laerm) und sagt sichtbar, dass es noch nicht geht -- beim Lesen ueber
    den Lesefehler des Bausteins, beim Schreiben mit einem Satz. Nie ein Knopf, der still nichts tut.
@@ -41,17 +43,17 @@
     markeSpeichern: "settings_brand_save_v1",
     logo: "settings_brand_logo_v1",
     modelle: "team_models_set_v1",
-    einladen: "team_invite_create_v1",
-    erneut: "team_invite_resend_v1",
     zurueckziehen: "team_invite_revoke_v1",
     entfernen: "team_member_remove_v1",
     rolle: "team_member_role_v1",
     verlassen: "team_leave_v1",
     loeschen: "team_delete_v1"
   };
-  /* Edge Functions. Eine Kasse gibt es heute nicht: die Tarifwahl oeffnet in Bubble dasselbe Portal
-     wie "Manage Billing" (Nachtrag 1, 4). Leer heisst: die Seite geht denselben Weg. */
-  var EDGE = { versand: "send-team-invite", portal: "create-billing-portal-session", kasse: "" };
+  /* Edge Functions (Vorschlag 6.4, 9.3). Einladen und erneut senden laufen ueber EINE Funktion, die
+     den Versandstand an der Einladung fuehrt (3.2): die Seite ruft keine Anlage-RPC mehr und zieht
+     nach einem gescheiterten Versand nichts mehr zurueck. Die Kasse ist seit dem 11.10. deployt
+     (create-team-checkout); das Portal bleibt die bisherige Funktion. */
+  var EDGE = { einladen: "team-invite-send", erneut: "team-invite-send", portal: "create-billing-portal-session", kasse: "create-team-checkout" };
 
   /* DER SCHALTER JE FUNKTION. Alles aus, bis der Vertrag fuer den jeweiligen Schritt steht und die
      echten Antworten geprueft sind (Auftrag 7: erst Lesen, dann Your Brand, Einladungen,
@@ -59,7 +61,7 @@
   var LIVE = {
     meta: false, marke: false, mitglieder: false, einladungen: false, protokoll: false, abo: false, tarife: false,
     markeSpeichern: false, logo: false, modelle: false,
-    einladen: false, versand: false, erneut: false, zurueckziehen: false,
+    einladen: false, erneut: false, zurueckziehen: false,
     entfernen: false, rolle: false,
     portal: false, kasse: false,
     verlassen: false, loeschen: false
@@ -68,7 +70,9 @@
 
   /* Grenzen, die die Oberflaeche VORAB einhaelt, damit der Nutzer seinen Fehler sofort sieht. Die
      Werte sind der Vorschlag des Auftrags (4.2, 4.4); die DB bestimmt sie endgueltig. */
-  var GRENZE = { mail: 254, branche: 48, zusammenfassung: 1000, logo: 2048, protokoll: 100 };
+  /* Branche: die DB erlaubt 80 (Vorschlag 6.1 limits), der Baustein bleibt bei seinen 48 -- strenger
+     schadet nicht, der Wert passt ins Dropdown. Logo 500 wie in der DB. */
+  var GRENZE = { mail: 254, branche: 48, zusammenfassung: 1000, logo: 500, protokoll: 100 };
   var ROLLEN_EINLADEN = ["member", "admin"];
   var ROLLEN = ["member", "admin", "owner"];
   var GESCHAEFT = ["b2b", "b2c", "hybrid"];
@@ -127,7 +131,9 @@
     var gm = str(w.business_model).toLowerCase();
     return anfrage("markeSpeichern", {
       p_team: str(team),
-      p_market_id: str(w.market_id).trim().toLowerCase() || null,
+      /* Gross: die DB prueft gegen app.markets.alpha2 (Vorschlag 2.2.3); settings-brand fuehrt
+         den Code klein. */
+      p_market_id: str(w.market_id).trim().toUpperCase() || null,
       p_business_model: GESCHAEFT.indexOf(gm) >= 0 ? gm : null,
       p_industry: str(w.industry).trim().slice(0, GRENZE.branche) || null,
       /* Die Zusammenfassung NICHT still kuerzen: die Seite lehnt zu lange vorher mit einem Satz ab
@@ -144,11 +150,13 @@
     l = l.filter(function (x) { if (gesehen[x]) return false; gesehen[x] = true; return true; });
     return anfrage("modelle", { p_team: str(team), p_model_keys: l });
   }
+  /* Einladen und erneut senden: Edge team-invite-send (6.4). Nur Kennungen und Adresse -- Link,
+     Token und Text baut die Funktion selbst. */
   function einladen(team, mail, rolle) {
     rolle = str(rolle).toLowerCase();
-    return anfrage("einladen", { p_team: str(team), p_email: mailNorm(mail), p_role: ROLLEN_EINLADEN.indexOf(rolle) >= 0 ? rolle : "member" });
+    return { art: "einladen", name: EDGE.einladen, body: { team_id: str(team), email: mailNorm(mail), role: ROLLEN_EINLADEN.indexOf(rolle) >= 0 ? rolle : "member" } };
   }
-  function erneut(team, id) { return anfrage("erneut", { p_team: str(team), p_invite_id: str(id) }); }
+  function erneut(team, id) { return { art: "erneut", name: EDGE.erneut, body: { team_id: str(team), invite_id: str(id) } }; }
   function zurueckziehen(team, id) { return anfrage("zurueckziehen", { p_team: str(team), p_invite_id: str(id) }); }
   function entfernen(team, uid) { return anfrage("entfernen", { p_team: str(team), p_user_id: str(uid) }); }
   function rolle(team, uid, r) {
@@ -158,11 +166,15 @@
   function verlassen(team, name) { return anfrage("verlassen", { p_team: str(team), p_confirm_name: str(name) }); }
   function loeschen(team, name) { return anfrage("loeschen", { p_team: str(team), p_confirm_name: str(name) }); }
   /* Edge: nur Kennungen, nie Adresse, Preis oder Text (Auftrag 4.4.1, 4.6.2). */
-  function versand(team, id) { return { name: EDGE.versand, body: { team_id: str(team), invite_id: str(id) } }; }
   function portal(team) { return { name: EDGE.portal, body: { team_id: str(team) } }; }
-  function kasse(team, plan, takt) {
+  /* Kasse (9.2): billing_plan_id und 'monthly'|'yearly', NIE ein Preis. return_path ist ein Pfad
+     der App (die Funktion setzt APP_URL davor); die Seite schickt den, auf dem sie gerade steht. */
+  function kasse(team, plan, takt, rueckweg) {
     takt = str(takt).toLowerCase();
-    return { name: EDGE.kasse, body: { team_id: str(team), plan_id: str(plan), billing_interval: takt === "year" || takt === "yearly" ? "year" : "month" } };
+    var b = { team_id: str(team), billing_plan_id: str(plan), billing_interval: /^year/.test(takt) ? "yearly" : "monthly" };
+    rueckweg = str(rueckweg);
+    if (/^\/(?!\/)/.test(rueckweg) && rueckweg.length <= 300) b.return_path = rueckweg;
+    return { name: EDGE.kasse, body: b };
   }
 
   /* ---- Antwortformen -------------------------------------------------------------------------
@@ -174,30 +186,41 @@
     if (istObjekt(r)) return { darf: r.allowed === true || r.can === true || r.value === true, grund: str(r.reason) };
     return { darf: false, grund: "" };
   }
+  /* Seiten-Meta (Vorschlag 6.1): {meta:{team_id, team_name, viewer_role, …, has_access,
+     access_state, is_deleted}, row:{can_*, reasons:{<flag>: grund}}}. Die fruehere Form (role,
+     permissions) bleibt als Rueckfall. */
   function zuMeta(d) {
     if (!istObjekt(d)) return null;
-    var m = meta(d), team = istObjekt(d.team) ? d.team : (istObjekt(m.team) ? m.team : {});
-    var r = istObjekt(d.permissions) ? d.permissions : (istObjekt(m.permissions) ? m.permissions : {});
-    var rolle = str(m.role || d.role).toLowerCase();
+    var m = meta(d), row = istObjekt(d.row) ? d.row : {}, team = istObjekt(d.team) ? d.team : (istObjekt(m.team) ? m.team : {});
+    var r = istObjekt(d.permissions) ? d.permissions : (istObjekt(m.permissions) ? m.permissions : row);
+    var gruende = istObjekt(row.reasons) ? row.reasons : {};
+    var rolle = str(m.viewer_role || m.role || d.role).toLowerCase();
     if (ROLLEN.indexOf(rolle) < 0) return null;
+    function rr(k) { var x = recht(r[k]); if (!x.darf && !x.grund) x.grund = str(gruende[k]); return x; }
     return {
       rolle: rolle,
       teamId: str(team.id || m.team_id),
       teamName: str(team.name || m.team_name),
       rechte: {
-        marke: recht(r.can_edit_brand), modelle: recht(r.can_manage_models),
-        einladen: recht(r.can_invite), mitglieder: recht(r.can_manage_members),
-        billing: recht(r.can_manage_billing), verlassen: recht(r.can_leave), loeschen: recht(r.can_delete)
+        marke: rr("can_edit_brand"), modelle: rr("can_manage_models"),
+        einladen: rr("can_invite"), adminEinladen: rr("can_invite_admin"), mitglieder: rr("can_manage_members"),
+        rollen: rr("can_change_roles"), ownerUebergeben: rr("can_transfer_owner"),
+        billing: rr("can_manage_billing"), verlassen: rr("can_leave"), loeschen: rr("can_delete")
       },
       mitgliederZahl: num(m.member_count), einladungenZahl: num(m.pending_invites_count),
-      zugang: str(m.access_state)
+      zugang: str(m.access_state), geloescht: m.is_deleted === true
     };
   }
   /* Your Brand (6.1): die Form, die renderSettingsBrand liest. Der Teamname kommt aus der Meta. */
   function absolut(u) { u = str(u).trim(); if (/^\/\//.test(u)) u = "https:" + u; return /^https:\/\//i.test(u) ? u : ""; }
+  /* Vorschlag 6.1: {meta, row:{company_id, name, logo_url, market, business_model, industry, summary,
+     limits, markets}}, flach statt unter brand. Die Modelle fehlen dort (Rueckmeldung 2): erwartet
+     als row.models in der Zeilenform von get_team_model_settings_v1. Die fruehere Form ({brand,
+     models}) bleibt als Rueckfall. */
   function zuMarke(d, m) {
     if (!istObjekt(d)) return null;
-    var b = istObjekt(d.brand) ? d.brand : {};
+    if (istObjekt(d.row)) d = d.row;
+    var b = istObjekt(d.brand) ? d.brand : d;
     if (!isArr(d.models)) return null;
     var lim = istObjekt(d.limits) ? d.limits : {};
     var out = {
@@ -205,7 +228,7 @@
       company_id: UUID.test(str(b.company_id)) ? str(b.company_id) : "",
       models: d.models.filter(istObjekt),
       model_limit: num(lim.models_max),
-      market: str(d.market_id).toLowerCase(),
+      market: str(d.market != null ? d.market : d.market_id).toLowerCase(),
       business_model: GESCHAEFT.indexOf(str(d.business_model).toLowerCase()) >= 0 ? str(d.business_model).toLowerCase() : "",
       industry: str(d.industry),
       summary: str(d.summary)
@@ -224,7 +247,16 @@
     return out;
   }
   /* Team (6.3-6.5): die Formen, die team-orga schon liest. Nur pruefen, nicht umbauen. */
-  function zuMitglieder(d) { return istObjekt(d) && isArr(d.members) ? d : null; }
+  /* Vorschlag 6.1: {meta:{viewer_role, viewer_user_id, viewer_email, permissions}, rows:[…]} --
+     team-orga liest {members, viewer_role, …} oben. Hier umgehaengt, die alte Form geht durch. */
+  function zuMitglieder(d) {
+    if (!istObjekt(d)) return null;
+    if (isArr(d.members)) return d;
+    if (!isArr(d.rows)) return null;
+    var m = meta(d);
+    return { members: d.rows, viewer_role: m.viewer_role, viewer_user_id: m.viewer_user_id, viewer_email: m.viewer_email,
+             permissions: istObjekt(m.permissions) ? m.permissions : {} };
+  }
   function zuEinladungen(d) {
     if (isArr(d)) return { invites: d };
     if (istObjekt(d) && (isArr(d.invites) || isArr(d.rows))) return { count: num(d.count), invites: isArr(d.invites) ? d.invites : d.rows };
@@ -241,7 +273,7 @@
   function zuTarife(d) { return isArr(d) || (istObjekt(d) && (isArr(d.plans) || isArr(d.rows))) ? (istObjekt(d) && isArr(d.rows) ? { plans: d.rows } : d) : null; }
   /* Nach dem Verlassen oder Loeschen (4.5.6): wohin. */
   function zuAustritt(d) {
-    var m = meta(d), x = istObjekt(d) ? d : {};
+    var m = meta(d), x = istObjekt(d) ? (istObjekt(d.row) ? d.row : d) : {};
     var naechstes = str(m.next_team_id || x.next_team_id);
     return { naechstesTeam: UUID.test(naechstes) ? naechstes : "", uebrig: num(m.remaining_teams != null ? m.remaining_teams : x.remaining_teams),
              geloeschtAm: str(m.deleted_at || x.deleted_at) };
@@ -250,7 +282,8 @@
      Weiterleiter, der jedes Ziel nimmt, waere ein offenes Tor fuer Phishing mit unserem Namen. */
   var STRIPE = { portal: /^billing\.stripe\.com$/i, kasse: /^checkout\.stripe\.com$/i };
   function stripeUrl(d, art) {
-    var u = istObjekt(d) ? str(d.url || (istObjekt(d.meta) ? d.meta.url : "")) : str(d);
+    /* Portal: portal_url (Vorschlag 3.5), Kasse: url bzw. checkout_url (9.2). */
+    var u = istObjekt(d) ? str(d.url || d.portal_url || d.checkout_url || (istObjekt(d.meta) ? d.meta.url : "")) : str(d);
     var x;
     try { x = new URL(u); } catch (e) { return ""; }
     if (x.protocol !== "https:" || x.username || x.password) return "";
@@ -269,8 +302,13 @@
     if (!erg || !erg.ok) return erg;
     var d = erg.daten, z = isArr(d) ? d[0] : d;
     if (isArr(d) && !d.length) return { ok: false, status: erg.status, fehler: { code: "", message: "empty_response", hint: "", details: "" } };
-    if (istObjekt(z) && z.ok === false) {
-      var m = str(z.error || z.message || z.reason || z.code) || "failed";
+    /* success:false: die Modell-Funktionen (HTTP 200, Vorschlag 3.1) und die Edge Functions. */
+    if (istObjekt(z) && (z.ok === false || z.success === false)) {
+      /* Der stabile Code zuerst: die Edge Functions schreiben ihn in error, die Modell-Funktionen
+         in code (message ist dort ein Satz fuer Bubble). */
+      var code = /^[a-z][a-z0-9_]+$/.test(str(z.code)) ? str(z.code) : "";
+      var m = str(z.error || code || z.message || z.reason) || "failed";
+      if (str(z.error) && str(z.code) && z.code !== z.error) return { ok: false, status: erg.status, fehler: { code: str(z.code), message: str(z.error), hint: str(z.hint), details: "" } };
       return { ok: false, status: erg.status, fehler: { code: str(z.code), message: m, hint: str(z.hint), details: "" } };
     }
     return erg;
@@ -286,7 +324,7 @@
     seite: seite, marke: marke, mitglieder: mitglieder, einladungen: einladungen, protokoll: protokoll, abo: abo, tarife: tarife,
     markeSpeichern: markeSpeichern, zusammenfassungZuLang: zusammenfassungZuLang, logo: logo, modelle: modelle,
     einladen: einladen, erneut: erneut, zurueckziehen: zurueckziehen, entfernen: entfernen, rolle: rolle,
-    verlassen: verlassen, loeschen: loeschen, versand: versand, portal: portal, kasse: kasse,
+    verlassen: verlassen, loeschen: loeschen, portal: portal, kasse: kasse,
     mailNorm: mailNorm, mailPruefen: mailPruefen, logoPruefen: logoPruefen,
     zuMeta: zuMeta, zuMarke: zuMarke, zuMitglieder: zuMitglieder, zuEinladungen: zuEinladungen, zuProtokoll: zuProtokoll,
     zuAbo: zuAbo, zuTarife: zuTarife, zuAustritt: zuAustritt, stripeUrl: stripeUrl,

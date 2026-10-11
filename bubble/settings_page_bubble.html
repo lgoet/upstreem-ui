@@ -8,7 +8,8 @@
   Orten der App bleiben davon unberuehrt.
 
   ── STAND: VORSCHLAG, VERLINKT WIRD SCHRITT FUER SCHRITT ──────────────────────────────────────
-  Der Auftrag an den DB-Chat: bubble/settings_db_auftrag.md. Die Funktionsnamen dort sind der
+  Auftrag: bubble/settings_db_auftrag.md, Vorschlag des DB-Chats: bubble/settings_v1_vorschlag.md
+  (Abschnitt 9 geht vor), Rueckmeldung: bubble/settings_db_rueckmeldung.md. Die Funktionsnamen dort sind der
   Vorschlag; jede Funktion hat in settings-data.js (LIVE) ihren eigenen Schalter. Solange einer aus
   ist, ruft die Seite die Funktion NICHT und sagt es sichtbar (Lesefehler im Baustein bzw. "This
   isn't available yet"). Reihenfolge der Schritte: Auftrag, Abschnitt 7.
@@ -36,7 +37,9 @@
     Testfassung. Anders mit data-nach-austritt="<seite>".
   - "Edit brand": der Marken-Editor #drawer-companysettings fuer die eigene Marke.
   - Manage billing und Tarifwahl: im selben Tab zu Stripe, NUR zu billing.stripe.com bzw.
-    checkout.stripe.com. Die Tarifwahl oeffnet wie heute das Portal, solange es keine Kasse gibt.
+    checkout.stripe.com. Tarifwahl: Kasse (create-team-checkout); laeuft schon ein Abo, das Portal.
+    Stripe kehrt auf dieselbe Ansicht zurueck (?checkout=success|cancelled), die Seite liest den
+    Abo-Stand dann einmal neu.
 
   ── Attribute ─────────────────────────────────────────────────────────────────────────────────
   data-instance        optional, Vorgabe "settings_page". Nur noetig, wenn die Seite zweimal steht.

@@ -1535,6 +1535,28 @@
     "Revoke invite": "Einladung zurückziehen",
     "This is taking longer than expected. Check the list of pending invites before you try again.": "Das dauert länger als erwartet. Sieh in der Liste der offenen Einladungen nach, bevor du es erneut versuchst.",
     "You can't invite members to this team.": "Du kannst in dieses Team keine Mitglieder einladen.",
+    "Check the pending invites and resend if needed.": "Sieh in den offenen Einladungen nach und sende sie bei Bedarf erneut.",
+    "Checkout cancelled": "Bezahlung abgebrochen",
+    "One of these models can't be used": "Eines dieser Modelle kann nicht verwendet werden",
+    "Please choose a business model": "Bitte wähle ein Geschäftsmodell",
+    "Please choose a market from the list": "Bitte wähle einen Markt aus der Liste",
+    "Please try again in {n} minutes.": "Bitte versuche es in {n} Minuten erneut.",
+    "Refresh the page to see the current plans.": "Lade die Seite neu, um die aktuellen Tarife zu sehen.",
+    "Revoke invites that are no longer needed, then try again.": "Ziehe Einladungen zurück, die du nicht mehr brauchst, und versuche es dann erneut.",
+    "Switch to another team to continue.": "Wechsle in ein anderes Team, um weiterzumachen.",
+    "Thanks, your payment went through": "Danke, deine Zahlung ist eingegangen",
+    "The invite could not be sent": "Die Einladung konnte nicht gesendet werden",
+    "This plan is no longer available": "Diesen Tarif gibt es nicht mehr",
+    "This text is too long": "Dieser Text ist zu lang",
+    "Too many invites right now": "Gerade zu viele Einladungen",
+    "Too many pending invites": "Zu viele offene Einladungen",
+    "Use Leave team instead.": "Nutze stattdessen „Team verlassen“.",
+    "Use Manage Billing to change it.": "Ändern kannst du ihn unter Manage Billing.",
+    "We couldn't confirm that the email went out": "Wir konnten nicht bestätigen, dass die E-Mail gesendet wurde",
+    "You can't remove yourself": "Du kannst dich nicht selbst entfernen",
+    "Your plan hasn't changed.": "Dein Tarif ist unverändert.",
+    "Your plan updates in a moment.": "Dein Tarif wird gleich aktualisiert.",
+    "Your team already has a plan": "Dein Team hat schon einen Tarif",
     "Use 1 to 60 characters, with at least one letter or digit.": "1 bis 60 Zeichen, mit mindestens einem Buchstaben oder einer Ziffer.",
     "Pick an emoji from the emoji picker.": "Wähle ein Emoji aus der Auswahl.",
     "They are tracked again with their next daily run.": "Sie werden mit ihrem nächsten täglichen Lauf wieder erfasst.",
@@ -19550,8 +19572,12 @@
               return { ok: true, status: r.status, daten: d };
             }
             var f = d && typeof d === "object" ? d : {};
+            /* Die Edge Functions der Settings (create-team-checkout, 11.10.) antworten mit
+               {success:false, error:<code>, code, hint} -- der Code steht in error, nicht in
+               message. Ohne diesen Rueckfall kaeme nur "http_409" an, und die Seite koennte
+               "Abo laeuft schon, Portal oeffnen" nicht von einem echten Fehler unterscheiden. */
             return { ok: false, status: r.status, fehler: {
-              code: String(f.code || ""), message: String(f.message || ("http_" + r.status)),
+              code: String(f.code || ""), message: String(f.message || f.error || ("http_" + r.status)),
               hint: String(f.hint || ""), details: String(f.details || "") } };
           });
         }, function(e){

@@ -72,6 +72,16 @@
      nachgezogen. Reihenfolge: die genauen Faelle zuerst, die allgemeinen zuletzt. */
   function fehlerSatz(erg, wobei) {
     var m = D.meldung(erg), h = D.hinweis(erg), n = D.hinweisZahl(erg);
+    if (/team_deleted/.test(m)) return { text: t("This team has been deleted"), desc: t("Switch to another team to continue.") };
+    if (/cannot_remove_self|cannot kick self/.test(m)) return { text: t("You can't remove yourself"), desc: t("Use Leave team instead.") };
+    if (/invite_send_unknown/.test(m)) return { text: t("We couldn't confirm that the email went out"), desc: t("Check the pending invites and resend if needed.") };
+    if (/billing_plan_not_found/.test(m)) return { text: t("This plan is no longer available"), desc: t("Refresh the page to see the current plans.") };
+    if (/models_min_one/.test(m)) return { text: t("At least one model has to stay active"), desc: "" };
+    if (/models_invalid/.test(m)) return { text: t("One of these models can't be used"), desc: t("Refresh the page and try again.") };
+    if (/too_long/.test(m)) return { text: /summary/.test(h) ? t("The summary is too long") : t("This text is too long"), desc: n ? t("Use at most {n} characters.").replace("{n}", String(n)) : "" };
+    if (/invalid_market/.test(m)) return { text: t("Please choose a market from the list"), desc: "" };
+    if (/invalid_business_model/.test(m)) return { text: t("Please choose a business model"), desc: "" };
+    if (/invalid[_ ]email/.test(m)) return { text: t("Please check the email address"), desc: "" };
     if (/reauth_required/.test(m)) return { text: t("Please sign in again"), desc: t("For your security, this needs a fresh sign-in.") };
     if (/last_owner/.test(m)) return { text: t("This team needs another owner first"), desc: t("Make someone else owner, or delete the team.") };
     if (/confirm/.test(m)) return { text: t("The team name didn't match"), desc: t("Type the team name exactly as shown.") };
@@ -80,10 +90,13 @@
        dieselbe Adresse (roh aus Postgres, Bubble-Workflow utoInvite Schritt 10). */
     if (/invite_(pending|duplicate)|already_invited|duplicate key/.test(m)) return { text: t("This address already has a pending invite"), desc: t("Use Resend in the list of pending invites.") };
     if (/invite_(not_pending|expired|revoked|accepted)/.test(m)) return { text: t("This invite is no longer open"), desc: t("Refresh the page to see the current list.") };
+    /* Erneut senden zu frueh: der hint traegt die Sekunden bis frei (Vorschlag 6.3). */
+    if (/invite_rate_limited/.test(m)) return { text: t("Too many invites right now"), desc: n ? t("Please try again in {n} minutes.").replace("{n}", String(Math.max(1, Math.ceil(n / 60)))) : t("Please wait a moment and try again.") };
     if (/resend_too_soon|cooldown/.test(m)) return { text: t("The invite was sent just now"), desc: n ? t("You can send it again in {n} minutes.").replace("{n}", String(n)) : t("Please wait a few minutes before sending it again.") };
-    if (/daily_limit/.test(m)) return { text: t("Daily limit reached"), desc: t("Please try again tomorrow.") };
+    if (/daily_limit/.test(m) || /daily_invites/.test(h)) return { text: t("Daily limit reached"), desc: t("Please try again tomorrow.") };
+    if (/open_invites/.test(h)) return { text: t("Too many pending invites"), desc: t("Revoke invites that are no longer needed, then try again.") };
     if (/seat|members_limit/.test(m)) return { text: t("Your plan has no free seats"), desc: t("Upgrade your plan or remove a member first.") };
-    if (/models?_limit|limit_reached/.test(m)) return { text: t("Not enough room in your plan"), desc: n ? t("Your plan allows {n} models.").replace("{n}", String(n)) : t("Turn off another model or upgrade your plan.") };
+    if (/models?_limit|limit_reached/.test(m) && !/rate/.test(m)) return { text: t("Not enough room in your plan"), desc: n ? t("Your plan allows {n} models.").replace("{n}", String(n)) : t("Turn off another model or upgrade your plan.") };
     if (/min(imum)?_one_model/.test(m)) return { text: t("At least one model has to stay active"), desc: "" };
     if (/logo/.test(m) || /^p_logo_url/.test(h)) return { text: t("This logo link can't be used"), desc: t("Use an image link that starts with https://") };
     if (/invalid_param/.test(m) && /^p_summary/.test(h)) return { text: t("The summary is too long"), desc: n ? t("Use at most {n} characters.").replace("{n}", String(n)) : "" };
@@ -328,7 +341,8 @@
     function markeZeigen(daten, m) {
       var z = daten ? D.zuMarke(daten, m) : null;
       if (!z) { try { setter("renderSettingsBrand")({ instanceId: ids.usb, __parseError: true }); } catch (e) {} return false; }
-      state.markeDaten = daten;
+      /* Flach gemerkt (die Zeile, nicht der Umschlag): Schreibantworten werden darauf gelegt. */
+      state.markeDaten = flach(daten);
       if (z.brand.logo !== state.logo) { state.logo = z.brand.logo; logoNachziehen(); }
       persist();
       z.instanceId = ids.usb;
@@ -432,9 +446,18 @@
        Block, der gespeichert wurde: renderSettingsBrand setzt Entwurf UND Stand jedes Feldes, das
        es bekommt -- eine ungespeicherte Aenderung im anderen Block (Modelle umgestellt, dann die
        Einstellungen gespeichert) waere sonst still weg. Ohne lesbare Antwort: frisch laden. */
+    /* Die Zeile einer Antwort (Vorschlag 6.1: {meta, row}); team_models_set_v1 liefert die Modelle
+       als rows. */
+    function flach(d) {
+      if (!d || typeof d !== "object" || Array.isArray(d)) return null;
+      var z = d.row && typeof d.row === "object" ? Object.assign({}, d.row) : Object.assign({}, d);
+      if (Array.isArray(d.rows) && !Array.isArray(z.models)) z.models = d.rows;
+      delete z.meta; delete z.rows;
+      return z;
+    }
     var BLOCK = { meta: ["brand", "team", "user_role", "market", "business_model", "industry", "summary"], models: ["models", "model_limit"] };
     function nachSchreibenMarke(daten, block) {
-      var neu = daten && typeof daten === "object" && !Array.isArray(daten) ? Object.assign({}, state.markeDaten || {}, daten) : null;
+      var f = flach(daten), neu = f ? Object.assign({}, state.markeDaten || {}, f) : null;
       if (neu && !Array.isArray(neu.models) && state.markeDaten) neu.models = state.markeDaten.models;
       lader.leeren();
       var z = neu ? D.zuMarke(neu, state.meta) : null;
@@ -491,9 +514,12 @@
         return schreiben(D.logo(team(), url)).then(function (erg) {
           if (!erg.ok) { usbLaden(false); zurueck(); fehlerToast(erg, t("The logo could not be saved")); return; }
           /* Nur das Logo nachziehen (siehe nachSchreibenMarke): Entwuerfe darunter bleiben. */
-          var neu = erg.daten && typeof erg.daten === "object" ? D.zuMarke(Object.assign({}, state.markeDaten || {}, erg.daten)) : null;
+          var f = flach(erg.daten), neu = f ? D.zuMarke(Object.assign({}, state.markeDaten || {}, f)) : null;
           var logo = neu ? neu.brand.logo : url;
-          if (state.markeDaten) { state.markeDaten = Object.assign({}, state.markeDaten, { brand: Object.assign({}, state.markeDaten.brand || {}, { logo_url: logo }) }); }
+          if (state.markeDaten) {
+            state.markeDaten = Object.assign({}, state.markeDaten, { logo_url: logo });
+            if (state.markeDaten.brand) state.markeDaten.brand = Object.assign({}, state.markeDaten.brand, { logo_url: logo });
+          }
           state.logo = logo; persist(); logoNachziehen(); lader.leeren();
           try { setter("setSettingsBrandLogo")(ids.usb, logo, ""); } catch (e) {}
           usbLaden(false);
@@ -536,70 +562,41 @@
     function einladungAntwort(ok, text) { var c = uto(); if (c && c.einladungErgebnis) c.einladungErgebnis(ok, text); }
     var MAIL_SATZ = { leer: "Please enter an email address.", lang: "This email address is too long.",
                       zeichen: "This email address contains characters we can't use.", form: "That does not look like an email address." };
-    /* Versand der E-Mail nach dem Anlegen bzw. erneut senden. Scheitert er, steht die Einladung
-       trotzdem offen da -- das sagt die Seite, mit dem Ausweg. */
-    /* Erneut senden: die Einladung bleibt in jedem Fall offen -- scheitert der Versand, sagt die
-       Seite es (der Bubble-Workflow meldete hier Erfolg, ohne den Versand zu pruefen). */
-    function versenden(inviteId, adresse) {
-      if (!D.live("versand")) { toast(t("The email can't be sent from here yet"), "neutral", ""); return Promise.resolve(false); }
-      return edge("versand", D.versand(team(), inviteId)).then(function (erg) {
-        if (!erg.ok) { var f = versandSatz(erg); toast(t("The email could not be sent"), "error", f); return false; }
-        toast(t("Invite sent again"), "success", adresse);
-        return true;
-      });
-    }
-    /* Eine Grenze (zu oft, Tagesgrenze) sagt, wann es wieder geht; alles andere bittet um einen
-       neuen Versuch. */
-    function versandSatz(erg) {
-      var f = fehlerSatz(erg, ""), grenze = erg.status === 429 || /rate_limited|daily_limit|cooldown|too_soon/.test(D.meldung(erg));
-      return grenze ? f.text + ". " + f.desc : t("Please try again.");
-    }
-    /* Die neue Einladung aus der Antwort: Vorschlag {meta, row}, heute eine Liste von Zeilen
-       (Bubble prueft "Objects:count > 0"). */
+    /* EINLADEN UND ERNEUT SENDEN ueber EINE Edge Function (team-invite-send, Vorschlag 3.2/6.4):
+       sie legt an, versendet und fuehrt den Versandstand an der Einladung. Die Seite zieht nach
+       einem Fehlschlag nichts mehr zurueck -- das hinterliess ein falsches "invite_revoked" und
+       konnte eine Mail mit totem Link erzeugen. Kein automatisches Wiederholen: eine Mail koennte
+       schon hinaus sein (die Funktion versendet mit Idempotenzschluessel, aber ein zweiter Klick
+       ist eine bewusste Entscheidung des Nutzers).
+       Unklarer Versand (502 team_invite_send_unknown): die Einladung steht, der Versand ist offen
+       -- der Dialog geht zu, der Satz nennt den Ausweg (erneut senden). */
     function einladungAus(daten) {
       var dd = Array.isArray(daten) ? (daten[0] || {}) : (daten && typeof daten === "object" ? daten : {});
       var z = dd.row && typeof dd.row === "object" ? dd.row : dd;
-      return { id: str(z.invite_id || z.id), unveraendert: !!(dd.meta && dd.meta.unchanged === true) };
+      return { id: str(z.invite_id || z.id), unveraendert: !!((dd.meta && dd.meta.unchanged === true) || dd.unchanged === true) };
     }
-    /* EINLADEN wie der Bubble-Workflow utoInvite (Bilder vom 11.10.): anlegen, versenden, und
-       scheitert der Versand, die Einladung wieder zurueckziehen -- sonst stuende eine offene
-       Einladung da, von der niemand eine E-Mail hat. Anders als dort bleibt der Dialog dabei OFFEN,
-       mit der getippten Adresse und dem Satz: ein neuer Versuch ist ein Klick. Laesst sich die
-       Einladung nicht zurueckziehen, bleibt sie offen und die Seite nennt Resend als Ausweg. */
+    function versandUnklar(erg) { return /invite_send_unknown/.test(D.meldung(erg)); }
     an("utoutoInvite", function (d) {
       if (!teamGleich(str(d.team_id))) { einladungAntwort(false, t("The team was switched. Please try again.")); neuLaden(); return; }
       var grund = D.mailPruefen(d.email, UC.mailOk);
       if (grund) { einladungAntwort(false, t(MAIL_SATZ[grund] || MAIL_SATZ.form)); return; }
       if (!D.live("einladen")) { einladungAntwort(false, t("Inviting isn't available here yet.")); return; }
-      var a = D.einladen(team(), d.email, d.role), adresse = a.params.p_email;
-      function offenLassen() {
-        einladungAntwort(true);
-        toast(t("Invite saved, but the email could not be sent"), "error", t("Use Resend in the list of pending invites."));
-        teamNeu(true);
-      }
+      var e = D.einladen(team(), d.email, d.role), adresse = e.body.email;
       if (einmal("team", function () {
-        return schreiben(a).then(function (erg) {
-          if (!erg.ok) { var f = fehlerSatz(erg, t("The invite could not be created")); einladungAntwort(false, f.text + (f.desc ? ". " + f.desc : "")); return; }
-          var z = einladungAus(erg.daten);
-          /* Schon offen eingeladen (Auftrag 4.4.5): dieselbe Einladung zurueck, keine zweite, und
-             auch keine zweite E-Mail ungefragt. */
-          if (z.unveraendert) {
+        return edge("einladen", e).then(function (erg) {
+          if (!erg.ok && versandUnklar(erg)) {
             einladungAntwort(true);
-            toast(t("This address already has a pending invite"), "neutral", t("Use Resend in the list of pending invites."));
-            teamNeu(false);
+            var fu = fehlerSatz(erg, "");
+            toast(fu.text, "neutral", fu.desc);
+            teamNeu(true);
             return;
           }
-          if (!D.UUID.test(z.id) || !D.live("versand")) { offenLassen(); return; }
-          return edge("versand", D.versand(team(), z.id)).then(function (ev) {
-            if (ev.ok) { einladungAntwort(true); toast(t("Invite sent"), "success", adresse); teamNeu(true); return; }
-            var satz = t("The email could not be sent") + ". " + versandSatz(ev);
-            if (!D.live("zurueckziehen")) { offenLassen(); return; }
-            return schreiben(D.zurueckziehen(team(), z.id)).then(function (rv) {
-              if (!rv.ok) { offenLassen(); return; }
-              einladungAntwort(false, satz);
-              teamNeu(true);
-            });
-          });
+          if (!erg.ok) { var f = fehlerSatz(erg, t("The invite could not be sent")); einladungAntwort(false, f.text + (f.desc ? ". " + f.desc : "")); return; }
+          var z = einladungAus(erg.daten);
+          einladungAntwort(true);
+          if (z.unveraendert) toast(t("This address already has a pending invite"), "neutral", t("Use Resend in the list of pending invites."));
+          else toast(t("Invite sent"), "success", adresse);
+          teamNeu(true);
         });
       }) === null) einladungAntwort(false, t("The last change is still being saved. Please try again in a moment."));
     });
@@ -609,9 +606,12 @@
       if (!teamGleich(str(d.team_id))) { teamGewechselt(); return; }
       if (!D.live("erneut")) { nochNicht(); return; }
       einmal("team", function () {
-        return schreiben(D.erneut(team(), id)).then(function (erg) {
-          if (!erg.ok) { fehlerToast(erg, t("The invite could not be sent again")); teamNeu(false); return; }
-          return versenden(id, str(d.email)).then(function () { teamNeu(false); });
+        return edge("erneut", D.erneut(team(), id)).then(function (erg) {
+          if (!erg.ok) {
+            var f = fehlerSatz(erg, t("The invite could not be sent again"));
+            toast(f.text, versandUnklar(erg) ? "neutral" : "error", f.desc);
+          } else toast(t("Invite sent again"), "success", str(d.email));
+          teamNeu(false);
         });
       });
     });
@@ -648,30 +648,66 @@
     });
 
     /* ---- Ereignisse von Billing (lokal: "ubl" plus Name) -------------------------------------- */
-    /* Ins Stripe-Portal bzw. an die Kasse: im SELBEN Tab (wie bisher in Bubble), nur zu Stripe. */
-    function zuStripe(art, e, wobei) {
+    /* Ins Stripe-Portal bzw. an die Kasse: im SELBEN Tab (wie bisher in Bubble), nur zu Stripe.
+       weiche(erg): ein Fehler, der einen anderen Weg nennt, statt eines Satzes (Kasse -> Portal). */
+    function zuStripe(art, e, wobei, weiche) {
       if (!D.live(art) || !e.name) { nochNicht(); return; }
       einmal("billing", function () {
         return edge(art, e).then(function (erg) {
+          if (!erg.ok && weiche && weiche(erg)) return;
           var url = erg.ok ? D.stripeUrl(erg.daten, art) : "";
           if (!url) { fehlerToast(erg.ok ? null : erg, wobei); return; }
           window.location.assign(url);
         });
       });
     }
+    function zumPortal() { zuStripe("portal", D.portal(team()), t("Billing could not be opened")); }
     an("ublublManage", function (d) {
       if (!teamGleich(str(d.team_id))) { teamGewechselt(); return; }
-      zuStripe("portal", D.portal(team()), t("Billing could not be opened"));
+      zumPortal();
     });
+    /* Der Pfad, auf den Stripe nach der Kasse zurueckkehrt (create-team-checkout setzt APP_URL davor):
+       genau diese Ansicht, Reiter Billing, ohne alte checkout-Angaben. */
+    function rueckweg() {
+      try {
+        var u = new URL(window.location.href);
+        u.searchParams.delete("checkout"); u.searchParams.delete("session_id");
+        if (!ohneAdresse) u.searchParams.set("st", "billing");
+        return u.pathname + u.search;
+      } catch (e) { return ""; }
+    }
+    /* TARIF WAEHLEN (Vorschlag 9.2): die Kasse fuer Teams ohne laufendes Abo. Laeuft schon eins,
+       antwortet sie 409 billing_subscription_exists (hint portal) -- dann das Portal, dort wird
+       gewechselt. Ob ein Abo laeuft, entscheidet die Kasse selbst, nicht der Stand auf dem Schirm. */
     an("ublublSelectPlan", function (d) {
       if (!teamGleich(str(d.team_id))) { teamGewechselt(); return; }
       if (!str(d.plan_id)) return;
-      /* Heute (Bubble-Workflow ublSelectPlan, Bild vom 11.10.) oeffnet die Tarifwahl dasselbe
-         Stripe-Portal wie "Manage Billing" -- eine eigene Kasse gibt es nicht. Solange der Vertrag
-         keine nennt (EDGE.kasse leer), geht die Seite denselben Weg. */
-      if (!D.EDGE.kasse) { zuStripe("portal", D.portal(team()), t("Billing could not be opened")); return; }
-      zuStripe("kasse", D.kasse(team(), d.plan_id, d.billing_interval), t("Checkout could not be opened"));
+      if (!D.EDGE.kasse) { zumPortal(); return; }
+      zuStripe("kasse", D.kasse(team(), d.plan_id, d.billing_interval, rueckweg()), t("Checkout could not be opened"), function (erg) {
+        if (!/subscription_exists/.test(D.meldung(erg))) return false;
+        if (!D.live("portal")) { toast(t("Your team already has a plan"), "neutral", t("Use Manage Billing to change it.")); return true; }
+        /* einmal() sperrt "billing" noch fuer diesen Lauf -- das Portal danach, nicht darin. */
+        setTimeout(zumPortal, 0);
+        return true;
+      });
     });
+    /* ZURUECK VON DER KASSE (?checkout=success|cancelled). Den neuen Stand liefert der Webhook,
+       meist binnen Sekunden: EINMAL frisch lesen, kurz verzoegert -- kein Abfragen im Kreis
+       (Vorschlag 9.2). Danach die Angaben aus der Adresse, sonst kaeme die Meldung bei jedem
+       Neuladen wieder. */
+    (function () {
+      var w = "";
+      try { w = new URL(window.location.href).searchParams.get("checkout") || ""; } catch (e) { w = ""; }
+      if (w !== "success" && w !== "cancelled") return;
+      try {
+        var u = new URL(window.location.href);
+        u.searchParams.delete("checkout"); u.searchParams.delete("session_id");
+        window.history.replaceState(window.history.state, "", u.pathname + u.search + u.hash);
+      } catch (e) {}
+      if (w === "cancelled") { toast(t("Checkout cancelled"), "neutral", t("Your plan hasn't changed.")); return; }
+      toast(t("Thanks, your payment went through"), "success", t("Your plan updates in a moment."));
+      setTimeout(function () { lader.leeren(); state.meta = null; persist(); bedarf({ frisch: true }); }, 3000);
+    })();
     an("ublublPlans", function () {
       var a = D.tarife();
       lesen("uss_tarife", a, false).then(function (erg) {

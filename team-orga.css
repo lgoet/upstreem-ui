@@ -277,6 +277,10 @@
    Single/Multi-Schalter in den Filtern. Ein Auswahlfeld waere fuer zwei Werte ein Klick zu viel. */
 .uto-seg { align-self: flex-start; }
 .uto-seg .up-seg-btn { padding: 0 18px; }
+/* Admins laden nur Member ein (11.10.): team-orga.js versteckt dann den Knopf "Admin" per hidden.
+   .up-seg-btn setzt display selbst und schlaegt damit das hidden des Browsers -- darum hier
+   ausdruecklich, ueber die Spezifitaet der Regel darueber. */
+.uto-seg .up-seg-btn[hidden] { display: none; }
 .uto-dlgfoot { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
 .uto-formerr { margin-right: auto; font-size: 12.5px; color: var(--vt-down); line-height: 1.4; }
 
