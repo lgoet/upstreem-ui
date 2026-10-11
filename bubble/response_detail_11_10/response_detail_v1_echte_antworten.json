@@ -1,0 +1,1698 @@
+{
+ "stand": "11.10.2026, Rollback-Test gegen die Live-Datenbank, Team 877c, Owner 7bed..., ungekuerzt",
+ "ratenlimit": {
+  "120_aufrufe_ok": 120,
+  "davon_fehler": 0
+ },
+ "faelle": [
+  {
+   "ms": 71.4,
+   "ok": true,
+   "fall": "chatgpt 46695423",
+   "fehler": null,
+   "antwort": {
+    "row": {
+     "id": "46695423-cfea-42ab-8c61-f64c1aed8431",
+     "ads": [],
+     "tags": [
+      {
+       "id": "13b8d3b5-8f38-4f03-9c9d-b299a8df96da",
+       "name": "Safety",
+       "emoji": null,
+       "hex_dark": "#b45309",
+       "hex_light": "#b45309"
+      },
+      {
+       "id": "94fc124b-8b50-4198-968e-0ff4c1964629",
+       "name": "Sedans",
+       "emoji": null,
+       "hex_dark": "#134e4a",
+       "hex_light": "#134e4a"
+      }
+     ],
+     "model": "chatgpt",
+     "brands": [
+      {
+       "name": "Mercedes Benz",
+       "rank": 1,
+       "role": "own",
+       "ranks": [
+        1,
+        9,
+        12
+       ],
+       "logo_url": "https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+       "mentions": 3,
+       "sentiment": 57,
+       "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+       "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png"
+      },
+      {
+       "name": "BMW",
+       "rank": 2,
+       "role": "competitor",
+       "ranks": [
+        2,
+        8,
+        10,
+        13
+       ],
+       "logo_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "mentions": 4,
+       "sentiment": 56,
+       "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+       "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+      },
+      {
+       "name": "Audi",
+       "rank": 3,
+       "role": "competitor",
+       "ranks": [
+        3,
+        11
+       ],
+       "logo_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64",
+       "mentions": 2,
+       "sentiment": 54,
+       "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64"
+      },
+      {
+       "name": "VW",
+       "rank": 4,
+       "role": "competitor",
+       "ranks": [
+        4,
+        14
+       ],
+       "logo_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64",
+       "mentions": 2,
+       "sentiment": 57,
+       "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64"
+      }
+     ],
+     "market": "DE",
+     "run_at": "2026-10-11T14:53:41.179779+00:00",
+     "run_day": "2026-10-11",
+     "citations": [
+      {
+       "url": "https://www.leasing-aktionen.de/fahrzeugtypen/limousinen-leasing",
+       "title": "Limousine Leasing: Top-Angebote vergleichen (Oktober 2026)",
+       "domain": "leasing-aktionen.de",
+       "favicon": "https://www.google.com/s2/favicons?domain=leasing-aktionen.de&sz=128",
+       "mentions": [
+        {
+         "name": "Mercedes Benz",
+         "role": "own",
+         "count": 1,
+         "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+         "match_type": null,
+         "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png"
+        },
+        {
+         "name": "Audi",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64"
+        },
+        {
+         "name": "BMW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+         "match_type": null,
+         "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+        },
+        {
+         "name": "BYD",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "0a88bbf1-9874-45ef-9d72-eb3edd9cb731",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.byd.com&sz=64"
+        },
+        {
+         "name": "KIA",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "cc618697-74db-4dd5-bf6a-0efbad9b0403",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.kia.de&sz=64"
+        },
+        {
+         "name": "Porsche",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "619f0d48-ecd8-4086-ab7c-b9ff866bf736",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=porsche.com&sz=64"
+        },
+        {
+         "name": "Volvo",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "c0b0638a-7bab-4d66-a557-335b2ec88502",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.volvo.com&sz=64"
+        },
+        {
+         "name": "VW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64"
+        }
+       ],
+       "description": "8259 Limousine Leasing Angebote für Privat &amp; Gewerbe - Die besten Aktionen finden."
+      },
+      {
+       "url": "https://www.preiswert-leasen.de/leasing/fahrzeugtypen/limousine",
+       "title": "Limousine leasen ab 124 € — 7.878 Angebote 08/2026",
+       "domain": "preiswert-leasen.de",
+       "favicon": "https://www.google.com/s2/favicons?domain=preiswert-leasen.de&sz=128",
+       "mentions": [
+        {
+         "name": "Mercedes Benz",
+         "role": "own",
+         "count": 1,
+         "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+         "match_type": null,
+         "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png"
+        },
+        {
+         "name": "Audi",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64"
+        },
+        {
+         "name": "BMW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+         "match_type": null,
+         "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+        },
+        {
+         "name": "BYD",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "0a88bbf1-9874-45ef-9d72-eb3edd9cb731",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.byd.com&sz=64"
+        },
+        {
+         "name": "KIA",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "cc618697-74db-4dd5-bf6a-0efbad9b0403",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.kia.de&sz=64"
+        },
+        {
+         "name": "Lexus",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "a4b1f14b-976a-4ed4-b581-3d388352b27f",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.lexus.de&sz=64"
+        },
+        {
+         "name": "Peugeot",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "172615e2-a0cc-4be2-8ea7-79cd415adf59",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=peugeot.de&sz=64"
+        },
+        {
+         "name": "Porsche",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "619f0d48-ecd8-4086-ab7c-b9ff866bf736",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=porsche.com&sz=64"
+        },
+        {
+         "name": "Toyota",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "ca255c13-18a7-494c-b57d-3b0fe6765d03",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.toyota.de&sz=64"
+        },
+        {
+         "name": "Volvo",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "c0b0638a-7bab-4d66-a557-335b2ec88502",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.volvo.com&sz=64"
+        },
+        {
+         "name": "VW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64"
+        }
+       ],
+       "description": "5.683 aktuelle Angebote für Limousine-Leasing ab 139 € pro Monat."
+      },
+      {
+       "url": "https://www.mivodo.com/fahrzeugtypen/limousine-leasing",
+       "title": "Limousine Leasing: Top-Angebote vergleichen (August 2026)",
+       "domain": "mivodo.com",
+       "favicon": "https://www.google.com/s2/favicons?domain=mivodo.com&sz=128",
+       "mentions": [
+        {
+         "name": "Audi",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64"
+        },
+        {
+         "name": "BMW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+         "match_type": null,
+         "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+        },
+        {
+         "name": "BYD",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "0a88bbf1-9874-45ef-9d72-eb3edd9cb731",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.byd.com&sz=64"
+        }
+       ],
+       "description": "8379 Limousine Leasing Angebote für Privat &amp; Gewerbe - Die besten Aktionen finden."
+      }
+     ],
+     "companies": [
+      {
+       "name": "Mercedes Benz",
+       "rank": 1,
+       "role": "own",
+       "logo_url": "https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+       "sentiment": 50,
+       "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+       "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+       "brand_name_raw": "Mercedes"
+      },
+      {
+       "name": "BMW",
+       "rank": 2,
+       "role": "competitor",
+       "logo_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "sentiment": 50,
+       "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+       "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "brand_name_raw": "BMW"
+      },
+      {
+       "name": "Audi",
+       "rank": 3,
+       "role": "competitor",
+       "logo_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64",
+       "sentiment": 50,
+       "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64",
+       "brand_name_raw": "Audi"
+      },
+      {
+       "name": "VW",
+       "rank": 4,
+       "role": "competitor",
+       "logo_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64",
+       "sentiment": 50,
+       "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64",
+       "brand_name_raw": "Volkswagen"
+      },
+      {
+       "name": "BMW",
+       "rank": 8,
+       "role": "competitor",
+       "logo_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "sentiment": 58,
+       "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+       "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "brand_name_raw": "BMW 3er"
+      },
+      {
+       "name": "Mercedes Benz",
+       "rank": 9,
+       "role": "own",
+       "logo_url": "https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+       "sentiment": 60,
+       "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+       "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+       "brand_name_raw": "Mercedes E-Klasse"
+      },
+      {
+       "name": "BMW",
+       "rank": 10,
+       "role": "competitor",
+       "logo_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "sentiment": 58,
+       "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+       "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "brand_name_raw": "BMW 5er"
+      },
+      {
+       "name": "Audi",
+       "rank": 11,
+       "role": "competitor",
+       "logo_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64",
+       "sentiment": 58,
+       "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64",
+       "brand_name_raw": "Audi A6"
+      },
+      {
+       "name": "Mercedes Benz",
+       "rank": 12,
+       "role": "own",
+       "logo_url": "https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+       "sentiment": 60,
+       "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+       "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+       "brand_name_raw": "Mercedes S-Klasse"
+      },
+      {
+       "name": "BMW",
+       "rank": 13,
+       "role": "competitor",
+       "logo_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "sentiment": 58,
+       "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+       "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "brand_name_raw": "BMW 7er"
+      },
+      {
+       "name": "VW",
+       "rank": 14,
+       "role": "competitor",
+       "logo_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64",
+       "sentiment": 63,
+       "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64",
+       "brand_name_raw": "VW ID.7"
+      }
+     ],
+     "prompt_id": "f7e1aaf2-531c-4a57-bde8-cb9b0c64a791",
+     "prompt_text": "wer hat die besten Angebote für komfortable Limousinen?",
+     "prompt_run_id": "46695423-cfea-42ab-8c61-f64c1aed8431",
+     "response_json": {
+      "meta": {
+       "run_key": "e7dbd31f5f504e12172fdbd4cf-ab61ab5b3",
+       "model_start_iso": "2026-10-11T14:52:32.478+00:00"
+      },
+      "text": "Wenn du nach **komfortablen Limousinen zum besten Preis-Leistungs-Verhältnis** suchst, würde ich in Deutschland vor allem Premium-Mittelklassewagen und Oberklassemodelle vergleichen. Besonders interessant sind oft junge Gebrauchtwagen, Tageszulassungen und Leasing-Sonderangebote.\n\nEs kommt darauf an, ob du eine Limousine **kaufen, gebraucht kaufen oder leasen** möchtest. Auch Mercedes, BMW, Audi und Volkswagen unterscheiden sich deutlich bei Komfort, Ausstattung und Preis.\n\n## Wo du aktuell die besten Angebote findest\n\n**1. Mivodo**\n\nGut für den Vergleich komfortabler Limousinen verschiedener Marken.\n\nBeispiel: VW ID.7 mit umfangreicher Komfortausstattung für 439 €/Monat, gebraucht, 48 Monate und 10.000 km/Jahr.\n\n[Angebote vergleichen](https://www.mivodo.com/fahrzeugtypen/limousine-leasing/)\n\n**2. Leasing-Aktionen.de**\n\nInteressant, wenn du viele Angebote nach Monatsrate, Laufzeit und Ausstattung durchsuchen möchtest.\n\n[Limousinen-Angebote ansehen](https://www.leasing-aktionen.de/fahrzeugtypen/limousinen-leasing/)\n\n**3. Preiswert-Leasen.de**\n\nHilfreich für den Vergleich von Leasingraten und effektiven Gesamtkosten. Dort findest du unter anderem Angebote für den BMW 3er und größere Limousinen.\n\n[Leasingangebote vergleichen](https://www.preiswert-leasen.de/leasing/fahrzeugtypen/limousine)\n\n## Damit ich dir die wirklich besten Angebote heraussuchen kann:\n\n1. Was möchtest du machen?\n\n- Leasing\n- Kaufen (Neuwagen)\n- Gebrauchtwagen kaufen\n- Auto-Abo\n\n2. Welches Budget passt?\n\n- Unter 300 € monatlich\n- 300–500 € monatlich\n- 500–800 € monatlich\n- Über 800 € monatlich\n- Kauf: bis 25.000 €\n- Kauf: über 25.000 €\n\n3. Welche Fahrzeugklasse bevorzugst du?\n\n- Mittelklasse – z. B. BMW 3er, Audi A4/A5\n- Oberklasse – z. B. Mercedes E-Klasse, BMW 5er, Audi A6\n- Luxusklasse – z. B. Mercedes S-Klasse, BMW 7er\n- Hauptsache komfortabel und günstig\n\n4. Welcher Antrieb?\n\n- Benzin\n- Diesel\n- Elektro\n- Hybrid\n- Egal\n\nDann kann ich dir konkrete Fahrzeuge mit Preisen gegenüberstellen, statt nur allgemeine Empfehlungen zu geben."
+     },
+     "model_detailed": "gpt-5-ui",
+     "shopping_products": [],
+     "model_display_name": "ChatGPT",
+     "shopping_products_count": 0
+    },
+    "meta": {
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "data_as_of": "2026-10-11T19:03:34.564938+00:00",
+     "prompt_run_id": "46695423-cfea-42ab-8c61-f64c1aed8431"
+    }
+   }
+  },
+  {
+   "ms": 39.3,
+   "ok": true,
+   "fall": "google-aio a9ff711d",
+   "fehler": null,
+   "antwort": {
+    "row": {
+     "id": "a9ff711d-078a-4f04-839a-dab0cde6af00",
+     "ads": [],
+     "tags": [
+      {
+       "id": "13b8d3b5-8f38-4f03-9c9d-b299a8df96da",
+       "name": "Safety",
+       "emoji": null,
+       "hex_dark": "#b45309",
+       "hex_light": "#b45309"
+      },
+      {
+       "id": "94fc124b-8b50-4198-968e-0ff4c1964629",
+       "name": "Sedans",
+       "emoji": null,
+       "hex_dark": "#134e4a",
+       "hex_light": "#134e4a"
+      }
+     ],
+     "model": "google-aio",
+     "brands": [
+      {
+       "name": "VW",
+       "rank": 5,
+       "role": "competitor",
+       "ranks": [
+        5
+       ],
+       "logo_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64",
+       "mentions": 1,
+       "sentiment": 84,
+       "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64"
+      },
+      {
+       "name": "Audi",
+       "rank": 7,
+       "role": "competitor",
+       "ranks": [
+        7
+       ],
+       "logo_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64",
+       "mentions": 1,
+       "sentiment": 83,
+       "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64"
+      },
+      {
+       "name": "BMW",
+       "rank": 9,
+       "role": "competitor",
+       "ranks": [
+        9
+       ],
+       "logo_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "mentions": 1,
+       "sentiment": 84,
+       "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+       "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+      },
+      {
+       "name": "Mercedes Benz",
+       "rank": 11,
+       "role": "own",
+       "ranks": [
+        11
+       ],
+       "logo_url": "https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+       "mentions": 1,
+       "sentiment": 82,
+       "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+       "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png"
+      }
+     ],
+     "market": "DE",
+     "run_at": "2026-10-11T14:52:50.50367+00:00",
+     "run_day": "2026-10-11",
+     "citations": [
+      {
+       "url": "https://www.adac.de/fahrzeugwelt/auto/leasing/limousine-leasen",
+       "title": "Limousine leasen - Angebote für Privat",
+       "domain": "adac.de",
+       "favicon": "https://www.google.com/s2/favicons?domain=adac.de&sz=128",
+       "mentions": [
+        {
+         "name": "Mercedes Benz",
+         "role": "own",
+         "count": 1,
+         "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+         "match_type": null,
+         "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png"
+        },
+        {
+         "name": "Audi",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64"
+        },
+        {
+         "name": "BMW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+         "match_type": null,
+         "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+        },
+        {
+         "name": "BYD",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "0a88bbf1-9874-45ef-9d72-eb3edd9cb731",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.byd.com&sz=64"
+        },
+        {
+         "name": "KIA",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "cc618697-74db-4dd5-bf6a-0efbad9b0403",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.kia.de&sz=64"
+        },
+        {
+         "name": "Peugeot",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "172615e2-a0cc-4be2-8ea7-79cd415adf59",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=peugeot.de&sz=64"
+        },
+        {
+         "name": "Porsche",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "619f0d48-ecd8-4086-ab7c-b9ff866bf736",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=porsche.com&sz=64"
+        },
+        {
+         "name": "Toyota",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "ca255c13-18a7-494c-b57d-3b0fe6765d03",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.toyota.de&sz=64"
+        },
+        {
+         "name": "Volvo",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "c0b0638a-7bab-4d66-a557-335b2ec88502",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.volvo.com&sz=64"
+        },
+        {
+         "name": "VW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64"
+        }
+       ],
+       "description": "Günstige Limousinen Leasingangebote für Privat: Jetzt neue Limousine leasen mit oder ohne Anzahlung ➤ADAC Vorteile ➤geprüfte Verträge ➤300 € Rückgabeschutz"
+      },
+      {
+       "url": "https://www.autohaus24.de/limousine",
+       "title": "Limousine Neuwagen &amp; Gebrauchtwagen Angebote | autohaus24",
+       "domain": "autohaus24.de",
+       "favicon": "https://www.google.com/s2/favicons?domain=autohaus24.de&sz=128",
+       "mentions": [
+        {
+         "name": "Mercedes Benz",
+         "role": "own",
+         "count": 1,
+         "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+         "match_type": null,
+         "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png"
+        },
+        {
+         "name": "Audi",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64"
+        },
+        {
+         "name": "BMW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+         "match_type": null,
+         "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+        },
+        {
+         "name": "Lexus",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "a4b1f14b-976a-4ed4-b581-3d388352b27f",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.lexus.de&sz=64"
+        },
+        {
+         "name": "Porsche",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "619f0d48-ecd8-4086-ab7c-b9ff866bf736",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=porsche.com&sz=64"
+        },
+        {
+         "name": "VW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64"
+        }
+       ],
+       "description": "Du bist auf der Suche nach einem Limousine? Bei autohaus24 findest Du attraktive Neuwagen &amp; Gebrauchtwagen Angebote und eine große Auswahl."
+      },
+      {
+       "url": "https://www.autohero.com/de/beratung/entscheiden/beste-autos/limousine",
+       "title": "Entdecke die besten Limousinen 2026 - Autohero",
+       "domain": "autohero.com",
+       "favicon": "https://www.google.com/s2/favicons?domain=autohero.com&sz=128",
+       "mentions": [
+        {
+         "name": "Mercedes Benz",
+         "role": "own",
+         "count": 1,
+         "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+         "match_type": null,
+         "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png"
+        },
+        {
+         "name": "Audi",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64"
+        },
+        {
+         "name": "BMW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+         "match_type": null,
+         "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+        },
+        {
+         "name": "Peugeot",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "172615e2-a0cc-4be2-8ea7-79cd415adf59",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=peugeot.de&sz=64"
+        },
+        {
+         "name": "VW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64"
+        }
+       ],
+       "description": "Entdecke die besten Limousinen-Modelle auf dem Gebrauchtwagenmarkt. Eine perfekte Mischung aus Luxus, Komfort und Stil. Finde dein Traumauto und erlebe Fahrvergnügen pur."
+      },
+      {
+       "url": "https://www.finn.com/de-DE/auto/bestenliste/luxus-limousine",
+       "title": "Die besten Luxus-Limousinen (2026) & Top-Angebote",
+       "domain": "finn.com",
+       "favicon": "https://www.google.com/s2/favicons?domain=finn.com&sz=128",
+       "mentions": [
+        {
+         "name": "Mercedes Benz",
+         "role": "own",
+         "count": 1,
+         "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+         "match_type": null,
+         "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png"
+        },
+        {
+         "name": "Audi",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64"
+        },
+        {
+         "name": "BMW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+         "match_type": null,
+         "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+        },
+        {
+         "name": "KIA",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "cc618697-74db-4dd5-bf6a-0efbad9b0403",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.kia.de&sz=64"
+        },
+        {
+         "name": "Lexus",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "a4b1f14b-976a-4ed4-b581-3d388352b27f",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.lexus.de&sz=64"
+        },
+        {
+         "name": "Peugeot",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "172615e2-a0cc-4be2-8ea7-79cd415adf59",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=peugeot.de&sz=64"
+        },
+        {
+         "name": "Toyota",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "ca255c13-18a7-494c-b57d-3b0fe6765d03",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.toyota.de&sz=64"
+        },
+        {
+         "name": "Volvo",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "c0b0638a-7bab-4d66-a557-335b2ec88502",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.volvo.com&sz=64"
+        },
+        {
+         "name": "VW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64"
+        }
+       ],
+       "description": "Premium-Limousinen stehen für Luxus pur. Entdecke jetzt die besten Modelle von Audi, BMW und Mercedes und sichere dir exklusive Angebote."
+      },
+      {
+       "url": "https://www.null-leasing.com/limousinen-leasing?srsltid=AU7gw4W-Y5qmgC3w5kelPhNUYEWqLp9IHv-7Pl_Ed5sYs2h5bBBQ32U-",
+       "title": "Limousinen Leasing Angebote ohne Anzahlung | Privat &amp; Gewerbe",
+       "domain": "null-leasing.com",
+       "favicon": "https://www.google.com/s2/favicons?domain=null-leasing.com&sz=128",
+       "mentions": [
+        {
+         "name": "Mercedes Benz",
+         "role": "own",
+         "count": 1,
+         "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+         "match_type": null,
+         "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png"
+        },
+        {
+         "name": "Audi",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64"
+        },
+        {
+         "name": "BMW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+         "match_type": null,
+         "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+        },
+        {
+         "name": "BYD",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "0a88bbf1-9874-45ef-9d72-eb3edd9cb731",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.byd.com&sz=64"
+        },
+        {
+         "name": "KIA",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "cc618697-74db-4dd5-bf6a-0efbad9b0403",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.kia.de&sz=64"
+        },
+        {
+         "name": "Peugeot",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "172615e2-a0cc-4be2-8ea7-79cd415adf59",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=peugeot.de&sz=64"
+        },
+        {
+         "name": "Toyota",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "ca255c13-18a7-494c-b57d-3b0fe6765d03",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.toyota.de&sz=64"
+        },
+        {
+         "name": "VW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64"
+        }
+       ],
+       "description": "Die besten Leasingangebote im Vergleich: Limousinen-Leasing für Privat &amp; Gewerbe ➤ Große Auswahl ✓ Neu &amp; gebraucht ✓ Hier Deine neue Limousine leasen!"
+      },
+      {
+       "url": "https://www.mivodo.com/fahrzeugtypen/limousine-leasing",
+       "title": "Limousine Leasing: Top-Angebote vergleichen (August 2026)",
+       "domain": "mivodo.com",
+       "favicon": "https://www.google.com/s2/favicons?domain=mivodo.com&sz=128",
+       "mentions": [
+        {
+         "name": "Audi",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64"
+        },
+        {
+         "name": "BMW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+         "match_type": null,
+         "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+        },
+        {
+         "name": "BYD",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "0a88bbf1-9874-45ef-9d72-eb3edd9cb731",
+         "match_type": null,
+         "favicon_url": "https://www.google.com/s2/favicons?domain=www.byd.com&sz=64"
+        }
+       ],
+       "description": "8379 Limousine Leasing Angebote für Privat &amp; Gewerbe - Die besten Aktionen finden."
+      }
+     ],
+     "companies": [
+      {
+       "name": "VW",
+       "rank": 5,
+       "role": "competitor",
+       "logo_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64",
+       "sentiment": 84,
+       "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64",
+       "brand_name_raw": "VW"
+      },
+      {
+       "name": "Audi",
+       "rank": 7,
+       "role": "competitor",
+       "logo_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64",
+       "sentiment": 83,
+       "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64",
+       "brand_name_raw": "Audi"
+      },
+      {
+       "name": "BMW",
+       "rank": 9,
+       "role": "competitor",
+       "logo_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "sentiment": 84,
+       "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+       "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "brand_name_raw": "BMW"
+      },
+      {
+       "name": "Mercedes Benz",
+       "rank": 11,
+       "role": "own",
+       "logo_url": "https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+       "sentiment": 82,
+       "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+       "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+       "brand_name_raw": "Mercedes-Benz"
+      }
+     ],
+     "prompt_id": "f7e1aaf2-531c-4a57-bde8-cb9b0c64a791",
+     "prompt_text": "wer hat die besten Angebote für komfortable Limousinen?",
+     "prompt_run_id": "a9ff711d-078a-4f04-839a-dab0cde6af00",
+     "response_json": {
+      "meta": {
+       "run_key": "f1c2473aa3359870751e377c64-037358eb6",
+       "model_start_iso": "2026-10-11T14:52:32.494+00:00"
+      },
+      "text": "Günstige und komfortable Limousinen-Angebote finden Sie aktuell bei namhaften Leasing- und Gebrauchtwagen-Plattformen sowie Automobilclubs, die verschiedene Hersteller vergleichen:\n\nGebrauchtwagen & Online-Kauf: Anbieter wie Autohaus24 oder Autohero führen beliebte Komfort-Modelle wie den Skoda Octavia ab ca. 98 € im Monat, den VW Passat ab ca. 113 € im Monat, den Audi A4 ab ca. 157 € im Monat oder den BMW 3er ab ca. 241 € im Monat. [2](https://www.autohero.com/de/beratung/entscheiden/beste-autos/limousine/) [5](https://www.autohaus24.de/limousine)\n\nAuto-Abos: Wer ein Rundum-sorglos-Paket sucht, findet Luxus- und Komfort-Limousinen (wie die Mercedes-Benz E-Klasse oder den BMW 7er) über flexible Auto-Abo-Anbieter wie FINN. [1](https://www.finn.com/de-DE/auto/bestenliste/luxus-limousine)\n\nADAC Fahrzeugwelt: Günstige Privatleasing-Konditionen mit geprüften Verträgen bietet zudem der an. [0](https://www.adac.de/fahrzeugwelt/auto/leasing/limousine-leasen/)\n\n- Suchen Sie nach Leasing, Kauf oder einem Auto-Abo?\n- Bevorzugen Sie einen Neuwagen oder Gebrauchtwagen?\n- Gibt es eine bestimmte Marke (z. B. VW, Audi, BMW, Mercedes) oder ein monatliches Budget?\n\n[[0] - Limousine leasen - Angebote für Privat - ADAC](https://www.adac.de/fahrzeugwelt/auto/leasing/limousine-leasen/)\n[[1] - Die besten Luxus-Limousinen (2026) & Top-Angebote - FINN](https://www.finn.com/de-DE/auto/bestenliste/luxus-limousine)\n[[2] - Entdecke die besten Limousinen 2026 - Autohero](https://www.autohero.com/de/beratung/entscheiden/beste-autos/limousine/)\n[[3] - Limousinen Leasing Angebote ohne Anzahlung](https://www.null-leasing.com/limousinen-leasing?srsltid=AU7gw4W-Y5qmgC3w5kelPhNUYEWqLp9IHv-7Pl_Ed5sYs2h5bBBQ32U-)\n[[4] - Limousine Leasing: Top-Angebote vergleichen (Oktober 2026)](https://www.mivodo.com/fahrzeugtypen/limousine-leasing/)\n[[5] - Limousine Gebrauchtwagen & Neuwagen - Autohaus24.de](https://www.autohaus24.de/limousine)"
+     },
+     "model_detailed": "searchapi-google_ai_overview+websearch",
+     "shopping_products": [],
+     "model_display_name": "Google AI Overviews",
+     "shopping_products_count": null
+    },
+    "meta": {
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "data_as_of": "2026-10-11T19:03:34.564938+00:00",
+     "prompt_run_id": "a9ff711d-078a-4f04-839a-dab0cde6af00"
+    }
+   }
+  },
+  {
+   "ms": 45.3,
+   "ok": true,
+   "fall": "perplexity 806cca50",
+   "fehler": null,
+   "antwort": {
+    "row": {
+     "id": "806cca50-f8e4-4fe2-8e05-abfcc927bebd",
+     "ads": [],
+     "tags": [
+      {
+       "id": "8daee9bb-30f9-4315-8fd7-30252cd58521",
+       "name": "SUV",
+       "emoji": null,
+       "hex_dark": "#6d28d9",
+       "hex_light": "#6d28d9"
+      }
+     ],
+     "model": "perplexity",
+     "brands": [
+      {
+       "name": "VW",
+       "rank": 2,
+       "role": "competitor",
+       "ranks": [
+        2,
+        5
+       ],
+       "logo_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64",
+       "mentions": 2,
+       "sentiment": 70,
+       "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64"
+      },
+      {
+       "name": "Toyota",
+       "rank": 3,
+       "role": "competitor",
+       "ranks": [
+        3
+       ],
+       "logo_url": "https://www.google.com/s2/favicons?domain=www.toyota.de&sz=64",
+       "mentions": 1,
+       "sentiment": 50,
+       "company_id": "ca255c13-18a7-494c-b57d-3b0fe6765d03",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=www.toyota.de&sz=64"
+      }
+     ],
+     "market": "DE",
+     "run_at": "2026-10-03T10:22:22.015148+00:00",
+     "run_day": "2026-10-03",
+     "citations": [
+      {
+       "url": "https://www.arbeitsagentur.de/datei/verfahrensbeschreibung-ba-bea-ab-2025_ba051449.pdf",
+       "title": "Verfahrensbeschreibung BEA 01.01.2025",
+       "domain": "arbeitsagentur.de",
+       "favicon": "https://www.google.com/s2/favicons?domain=arbeitsagentur.de&sz=128",
+       "mentions": [],
+       "description": "Verfahrensbeschreibung BEA 01.01.2025"
+      },
+      {
+       "url": "https://beilagen.gea.de/",
+       "title": "Stadtmagazin",
+       "domain": "beilagen.gea.de",
+       "favicon": "https://www.google.com/s2/favicons?domain=beilagen.gea.de&sz=128",
+       "mentions": [],
+       "description": "Stadtmagazin — title: Stadtmagazin Ihre Privatsphäre ist uns wichtig Diese Website nutzt Cookies, um bestmögliche Funktionalität bieten zu können. Ihr..."
+      },
+      {
+       "url": "https://www.cvjm-bayern.de/resources/ecics_1072.pdf",
+       "title": "BEDEUTSAM",
+       "domain": "cvjm-bayern.de",
+       "favicon": "https://www.google.com/s2/favicons?domain=cvjm-bayern.de&sz=128",
+       "mentions": [],
+       "description": "BEDEUTSAM"
+      },
+      {
+       "url": "https://gj-augsburg.de/category/aktionen-der-gja",
+       "title": "Aktionen",
+       "domain": "gj-augsburg.de",
+       "favicon": "https://www.google.com/s2/favicons?domain=gj-augsburg.de&sz=128",
+       "mentions": [],
+       "description": "Aktionen — title: \"Aktionen Grüne Jugend Augsburg\" Zur Startseite Menü WIR Vorstand Awareness Team Arbeitskreise Protokolle & Anträge Positionen Mach..."
+      },
+      {
+       "url": "https://gvs.bgetem.de/redaktion/faq-liste-eva/@@page-imagerights-view",
+       "title": "FAQ Liste EVA",
+       "domain": "gvs.bgetem.de",
+       "favicon": "https://www.google.com/s2/favicons?domain=gvs.bgetem.de&sz=128",
+       "mentions": [],
+       "description": "FAQ Liste EVA — title: gvs.bgetem.de Access to gvs.bgetem.de was denied You don't have authorization to view this page. HTTP ERROR 403 null Reload You..."
+      },
+      {
+       "url": "https://www.jugendring-duisburg.de/mitgliederorganisationen/bdaj",
+       "title": "BDAJ - Jugendring Duisburg",
+       "domain": "jugendring-duisburg.de",
+       "favicon": "https://www.google.com/s2/favicons?domain=jugendring-duisburg.de&sz=128",
+       "mentions": [],
+       "description": "BDAJ - Jugendring Duisburg — title: \"Jugendring Duisburg BDAJ\" meta: \"og:title\": \"Jugendring Duisburg\" Menü Jugendring Mitgliederorganisationen Partne..."
+      }
+     ],
+     "companies": [
+      {
+       "name": "VW",
+       "rank": 2,
+       "role": "competitor",
+       "logo_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64",
+       "sentiment": 78,
+       "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64",
+       "brand_name_raw": "VW Tiguan"
+      },
+      {
+       "name": "Toyota",
+       "rank": 3,
+       "role": "competitor",
+       "logo_url": "https://www.google.com/s2/favicons?domain=www.toyota.de&sz=64",
+       "sentiment": 50,
+       "company_id": "ca255c13-18a7-494c-b57d-3b0fe6765d03",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=www.toyota.de&sz=64",
+       "brand_name_raw": "Toyota RAV4"
+      },
+      {
+       "name": "VW",
+       "rank": 5,
+       "role": "competitor",
+       "logo_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64",
+       "sentiment": 62,
+       "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64",
+       "brand_name_raw": "VW T-Roc"
+      }
+     ],
+     "prompt_id": "64794b7a-5d02-44c8-ae54-be935ab30069",
+     "prompt_text": "wer hat die besten Angebote für gebrauchte SUVs in Deutschland?",
+     "prompt_run_id": "806cca50-f8e4-4fe2-8e05-abfcc927bebd",
+     "response_json": {
+      "meta": {
+       "run_key": "5a8fcf31636a121222fd4cf5ad-4bb58e603",
+       "model_start_iso": "2026-10-03T10:20:20.325+00:00"
+      },
+      "text": "Es hängt vom Verwendungszweck ab, aber gängige, zuverlässige Angebote sind:\n\n- Hyundai Kona, VW Tiguan, Toyota RAV4, Skoda Kodiaq\n- Kompakt-SUVs: VW T-Roc, Hyundai Tucson, Ford Kuga\n- Preis-/Verbrauchsorientierte Optionen: Dacia Duster, Suzuki Vitara\n\nPreislich oft günstiger: Dacia Duster, Suzuki Vitara; komfortabler/möbliertere Ausstattung: VW Tiguan, Skoda Kodiaq."
+     },
+     "model_detailed": "perplexity-ui",
+     "shopping_products": [],
+     "model_display_name": "Perplexity",
+     "shopping_products_count": null
+    },
+    "meta": {
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "data_as_of": "2026-10-11T19:03:34.564938+00:00",
+     "prompt_run_id": "806cca50-f8e4-4fe2-8e05-abfcc927bebd"
+    }
+   }
+  },
+  {
+   "ms": 13.6,
+   "ok": true,
+   "fall": "produkte und ads 3b7738b8",
+   "fehler": null,
+   "antwort": {
+    "row": {
+     "id": "3b7738b8-1c66-474d-a399-0725366a0792",
+     "ads": [
+      {
+       "id": "91c1cd34-fd40-410c-9043-05b1e4f81f82",
+       "url": "https://www.cadillac.com/suvs/preceding-year/escalade?ppc=ChatGPT&ad_account=adacct_69855d76dca481908b508ce7bca7b19a&d_campaign=cmpn_b3940b4f2bac819d9956a2e0377c8b04&d_adgroup=adgrp_f04b3bbe462c819db25b6a3872ad5722&d_ad=ad_e0559958d73481a39bedf1d89b8a1244&opclid=gAAAAABqwnGrPLSD4Sn_zdsZeUTe4EXfog7loq7ov3Y9HBanwUrhRWehhWn0V3AJc-qKTN9CwwLphBxthc9prLZZJ-hec3JmZaHPH1JCN2TsukBe3RMdouww&oppref=gAAAAABqwnGrPLSD4Sn_zdsZeUTe4EXfog7loq7ov3Y9HBanwUrhRWehhWn0V3AJc-qKTN9CwwLphBxthc9prLZZJ-hec3JmZaHPH1JCN2TsukBe3RMdouww&olref=gAAAAABqwnGr8l62HXTDcaoXR3ucWXxjesJge9aCH5mnMC6KmE5JT1EvIJNluQzZW0t4j3-YTnHbf5BPyHTbcvWjuzjKcrVNFT1snrPRACy5PjPOQ7181RoQufIf1UiynsK-UcAG-I1F_VV-B5Bm-63x7eHDIINdWQw",
+       "ad_id": null,
+       "model": "chatgpt",
+       "price": null,
+       "title": "2026 Cadillac Escalade",
+       "domain": "cadillac.com",
+       "market": "US",
+       "topics": [
+        {
+         "emoji": null,
+         "hex_dark": "#831843",
+         "topic_id": "931c9af3-5b91-4e93-a74f-238980f49cdd",
+         "hex_light": "#831843",
+         "topic_name": "Luxury"
+        },
+        {
+         "emoji": null,
+         "hex_dark": "#6d28d9",
+         "topic_id": "8daee9bb-30f9-4315-8fd7-30252cd58521",
+         "hex_light": "#6d28d9",
+         "topic_name": "SUV"
+        }
+       ],
+       "utm_id": null,
+       "currency": null,
+       "logo_url": null,
+       "utm_term": null,
+       "ad_format": null,
+       "image_url": "https://images.openai.com/static-rsc-5/XO2Hw_o2JsTpi4IlBpoOHMMhH5agv5KkWFWElHzg1DcOuvfatyR6GlxZmpfj7Z73Z8SCAW5snTSVmIXEbutkFTJ1N7jGAUXigZ_PIB5ap4K81-P8V0UGJgEPRzBZKZ7phrThvDNQnbUp7x30Wljv_9ViB_jY7v9Q4Ty082VmhzVe5YcKHZlHt3TUqVLOIFfdiuU5vutM1hMTU2E6Nr58euV5rhydTaBUK9WI7A_IES5Vc8kya_LD_rS80jZ6V0FuLS5kLNm6GORjLMAXMWf7ILu5sribjTRGMsnLr4IANpe72BxO5PZ3se675QbY9c3EPkn7QuDVFxRVWzcV-4xscp_4xEP_IaX-D_MMS9cBA_Vwf6jzjO35knvXK_SRb88c",
+       "price_str": null,
+       "prompt_id": "8de60b78-cd40-4b3e-8a00-5a8dff28a55f",
+       "company_id": null,
+       "utm_medium": null,
+       "utm_source": null,
+       "ad_group_id": null,
+       "campaign_id": null,
+       "description": "Powerful Performance for Uncompromising Comfort",
+       "observed_at": "2026-10-04T15:33:10.811584+00:00",
+       "prompt_text": "best financing options for luxury SUVs",
+       "utm_content": null,
+       "relationship": null,
+       "utm_campaign": null,
+       "ad_account_id": null,
+       "prompt_run_id": "3b7738b8-1c66-474d-a399-0725366a0792",
+       "landing_domain": "cadillac.com",
+       "advertiser_name": "Cadillac"
+      }
+     ],
+     "tags": [
+      {
+       "id": "931c9af3-5b91-4e93-a74f-238980f49cdd",
+       "name": "Luxury",
+       "emoji": null,
+       "hex_dark": "#831843",
+       "hex_light": "#831843"
+      },
+      {
+       "id": "8daee9bb-30f9-4315-8fd7-30252cd58521",
+       "name": "SUV",
+       "emoji": null,
+       "hex_dark": "#6d28d9",
+       "hex_light": "#6d28d9"
+      }
+     ],
+     "model": "chatgpt",
+     "brands": [
+      {
+       "name": "BMW",
+       "rank": 1,
+       "role": "competitor",
+       "ranks": [
+        1,
+        2,
+        3
+       ],
+       "logo_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "mentions": 3,
+       "sentiment": 91,
+       "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+       "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+      },
+      {
+       "name": "Lexus",
+       "rank": 6,
+       "role": "competitor",
+       "ranks": [
+        6
+       ],
+       "logo_url": "https://www.google.com/s2/favicons?domain=www.lexus.de&sz=64",
+       "mentions": 1,
+       "sentiment": 81,
+       "company_id": "a4b1f14b-976a-4ed4-b581-3d388352b27f",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=www.lexus.de&sz=64"
+      },
+      {
+       "name": "Mercedes Benz",
+       "rank": 7,
+       "role": "own",
+       "ranks": [
+        7,
+        9
+       ],
+       "logo_url": "https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+       "mentions": 2,
+       "sentiment": 65,
+       "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+       "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png"
+      },
+      {
+       "name": "Audi",
+       "rank": 10,
+       "role": "competitor",
+       "ranks": [
+        10
+       ],
+       "logo_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64",
+       "mentions": 1,
+       "sentiment": 52,
+       "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64"
+      }
+     ],
+     "market": "US",
+     "run_at": "2026-10-04T15:33:10.811584+00:00",
+     "run_day": "2026-10-04",
+     "citations": [
+      {
+       "url": "https://www.bmwusa.com/special-offers/finance.2025-M340i-xDrive-Sedan.html",
+       "title": "Lease & Finance Offers BMW USA Skip to main content Skip to main content BMW Models Build Your Own S",
+       "domain": "bmwusa.com",
+       "favicon": "https://www.google.com/s2/favicons?domain=bmwusa.com&sz=128",
+       "mentions": [
+        {
+         "name": "BMW",
+         "role": "competitor",
+         "count": 1,
+         "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+         "match_type": null,
+         "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+        }
+       ],
+       "description": "Lease & Finance Offers BMW USA Skip to main content Skip to main content BMW Models Build Your Own Shopping Electric Owners About Us Cancel Popular se..."
+      },
+      {
+       "url": "https://www.cadillac.com/offers/current?x-zipcode=90210",
+       "title": "Current Offers, Deals, Specials and Incentives",
+       "domain": "cadillac.com",
+       "favicon": "https://www.google.com/s2/favicons?domain=cadillac.com&sz=128",
+       "mentions": [],
+       "description": "Find special offers on Cadillac’s vehicle lineup. View lease and financing offers, get quotes, and search inventory at your nearest Cadillac dealer."
+      },
+      {
+       "url": "https://caredge.com/guides/deals/luxury",
+       "title": "Best Luxury Car Deals Right Now (July 2026) - CarEdge",
+       "domain": "caredge.com",
+       "favicon": "https://www.google.com/s2/favicons?domain=caredge.com&sz=128",
+       "mentions": [],
+       "description": "Compare the best luxury car deals for July 2026, including low APR financing, lease specials, and cash rebates from BMW, Mercedes-Benz, Lexus, Audi, and more. Updated monthly by CarEdge."
+      },
+      {
+       "url": "https://www.truecar.com/deals/luxury-suvs",
+       "title": "Best Luxury SUV Leases, Deals & Incentives for August 2026",
+       "domain": "truecar.com",
+       "favicon": "https://www.google.com/s2/favicons?domain=truecar.com&sz=128",
+       "mentions": [],
+       "description": "px-captcha"
+      }
+     ],
+     "companies": [
+      {
+       "name": "BMW",
+       "rank": 1,
+       "role": "competitor",
+       "logo_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "sentiment": 92,
+       "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+       "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "brand_name_raw": "BMW X5"
+      },
+      {
+       "name": "BMW",
+       "rank": 2,
+       "role": "competitor",
+       "logo_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "sentiment": 91,
+       "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+       "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "brand_name_raw": "BMW X3"
+      },
+      {
+       "name": "BMW",
+       "rank": 3,
+       "role": "competitor",
+       "logo_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "sentiment": 91,
+       "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+       "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+       "brand_name_raw": "BMW X7"
+      },
+      {
+       "name": "Lexus",
+       "rank": 6,
+       "role": "competitor",
+       "logo_url": "https://www.google.com/s2/favicons?domain=www.lexus.de&sz=64",
+       "sentiment": 81,
+       "company_id": "a4b1f14b-976a-4ed4-b581-3d388352b27f",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=www.lexus.de&sz=64",
+       "brand_name_raw": "Lexus RX/NX"
+      },
+      {
+       "name": "Mercedes Benz",
+       "rank": 7,
+       "role": "own",
+       "logo_url": "https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+       "sentiment": 78,
+       "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+       "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+       "brand_name_raw": "Mercedes GLE"
+      },
+      {
+       "name": "Mercedes Benz",
+       "rank": 9,
+       "role": "own",
+       "logo_url": "https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+       "sentiment": 51,
+       "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+       "favicon_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+       "brand_name_raw": "Mercedes-Benz GLE 350"
+      },
+      {
+       "name": "Audi",
+       "rank": 10,
+       "role": "competitor",
+       "logo_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64",
+       "sentiment": 52,
+       "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b",
+       "favicon_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64",
+       "brand_name_raw": "Audi Q8"
+      }
+     ],
+     "prompt_id": "8de60b78-cd40-4b3e-8a00-5a8dff28a55f",
+     "prompt_text": "best financing options for luxury SUVs",
+     "prompt_run_id": "3b7738b8-1c66-474d-a399-0725366a0792",
+     "response_json": {
+      "meta": {
+       "run_key": "e6948b77301244a18326f5f511-69771b8bf",
+       "model_start_iso": "2026-10-04T15:32:06.138+00:00"
+      },
+      "text": "If you’re shopping for a **new luxury SUV in the U.S. right now**, I’d prioritize **manufacturer-subsidized financing** over a generic bank loan when the APR is genuinely low. Current offers show some unusually attractive rates. ([CarEdge](https://caredge.com/guides/deals/luxury/?utm_source=chatgpt.com))\n\n### Best options I’d look at\n\n| SUV | Current advertised financing | My take |\n|---|---:|---|\n| **BMW X5** | **0.9% up to 60 mo.** + $1,000 purchase credit on select models | ⭐ Excellent |\n| **BMW X3** | **0.9% up to 60 mo.** on select models | ⭐ Excellent |\n| **BMW X7** | **0.9%** on select models | ⭐ Excellent |\n| **Cadillac VISTIQ** | **0.9% up to 72 mo.** + $2,000 allowance | ⭐ Excellent if EV |\n| **Infiniti QX80** | **0% for 60 mo.** + $3,000 cash incentive reported | ⭐ Potentially best deal |\n| **Lexus RX/NX** | ~**2.99%** | Very good |\n| **Mercedes GLE** | ~**3.99%** on current manufacturer offer | Good |\n| **Cadillac Escalade IQ** | ~**2.9%** on select models | Good |\n\nBMW's published offers, for example, show **0.90% APR up to 60 months on the X5**, along with a $1,000 purchase credit on qualifying X5s. ([BMW USA](https://www.bmwusa.com/special-offers/finance.2025-M340i-xDrive-Sedan.html?utm_source=chatgpt.com)) Cadillac is advertising **0.9% on qualifying VISTIQs**, while its current offers also include 2.9% financing on certain models. ([Cadillac](https://www.cadillac.com/offers/current?x-zipcode=90210&utm_source=chatgpt.com))\n\n### [BMW X5](https://www.phoenixcarsjapan.com/products/2026_25150220?utm_campaign=openai_catalog&utm_content=product_card&utm_medium=feed&variant=54645865578806&utm_source=chatgpt.com)\n*$65,064.84*\n\n### [BMW X3](https://www.phoenixcarsjapan.com/products/2026_22950047?utm_campaign=openai_catalog&utm_content=product_card&utm_medium=feed&variant=54628732076342&utm_source=chatgpt.com)\n*$44,108.37*\n\n### [Mercedes-Benz GLE 350](https://starlingermotors.com/products/2026-mercedes-benz-gle-350-4matic-4jgfb4fb4tb519500?utm_campaign=openai_catalog&utm_content=product_card&utm_medium=feed&variant=48515270738164&utm_source=chatgpt.com)\n*$68,116.00*\n\n### [Audi Q8](https://www.phoenixcarsjapan.com/products/2026_17200004?utm_campaign=openai_catalog&utm_content=product_card&utm_medium=feed&variant=54646734782774&utm_source=chatgpt.com)\n*$63,747.57*\n\n### The financing strategy I'd use\n\n**1. Get pre-approved through a credit union/bank first.**\nThat gives you a baseline rate and prevents the dealer from being your only financing option.\n\n**2. Then ask the manufacturer for its promotional APR.**\nLuxury manufacturers sometimes subsidize loans heavily. A 0.9% manufacturer loan can beat a bank loan by thousands.\n\n**3. Compare APR *and* incentives.**\nFor example, **0.9% with a $1,000 rebate** can be better than 0% financing if the 0% deal requires you to surrender a much larger cash incentive.\n\n**4. Don't automatically choose the longest term.**\nAt these low promotional rates, 60 months is often a sweet spot. At normal/high APRs, stretching a $70k–$100k SUV to 72–84 months can become expensive.\n\n**5. Compare leasing too.**\nFor luxury SUVs, leasing can be surprisingly competitive because of manufacturer-supported residual values. Current examples include the BMW X5, Mercedes GLE, Lexus RX/NX and Acura MDX. ([TrueCar](https://www.truecar.com/deals/luxury-suvs/?utm_source=chatgpt.com))\n\n### If you give me your numbers\n\nI can narrow this down to the **3–5 best luxury SUVs for your situation** and calculate the actual monthly payment and total interest.\n\nSend me:\n- **Budget:** e.g. $70k–$100k\n- **Down payment:** e.g. $10k\n- **Credit score:** approximate range\n- **Buy or lease**\n- **Preferred brands:** BMW, Mercedes, Lexus, Porsche, Range Rover, Cadillac, etc.\n- **New or used**\n\nThen I can compare **X5 vs. GLE vs. GX/LX vs. Escalade vs. Q8 vs. Range Rover**, including financing costs."
+     },
+     "model_detailed": "gpt-5-ui",
+     "shopping_products": [
+      {
+       "brand": {
+        "name": "BMW",
+        "type": "competitor",
+        "color": null,
+        "logo_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+        "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1"
+       },
+       "price": 65064.84,
+       "title": "BMW X5",
+       "rating": null,
+       "ordinal": 0,
+       "currency": "USD",
+       "is_first": true,
+       "position": 1,
+       "image_url": "https://images.openai.com/static-rsc-1/67RkVDw5_f9oKtRc2snhbIuxlUiBERu5cZYU1YSHFbjNhZ7AYP4C5hAuIwAunJdURqfKiUjVOImh6D5_WTbwI2P6pTF2b9dPfUqMx-8iep9ROlaLwVaaJddNSdshoCWj",
+       "price_str": "$65,064.84",
+       "image_urls": [
+        "https://images.openai.com/static-rsc-1/67RkVDw5_f9oKtRc2snhbIuxlUiBERu5cZYU1YSHFbjNhZ7AYP4C5hAuIwAunJdURqfKiUjVOImh6D5_WTbwI2P6pTF2b9dPfUqMx-8iep9ROlaLwVaaJddNSdshoCWj"
+       ],
+       "num_reviews": null,
+       "render_type": "products",
+       "listing_title": null,
+       "merchant_name": "Phoenix Cars",
+       "source_product_id": "gid://shopify/p/76XFCEVSQsOdU3MBNYI96H",
+       "shopping_group_ordinal": 0
+      },
+      {
+       "brand": {
+        "name": "BMW",
+        "type": "competitor",
+        "color": null,
+        "logo_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128",
+        "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1"
+       },
+       "price": 44108.37,
+       "title": "BMW X3",
+       "rating": null,
+       "ordinal": 1,
+       "currency": "USD",
+       "is_first": false,
+       "position": 2,
+       "image_url": "https://images.openai.com/static-rsc-1/VAWo7oGcBzOoqAAwqSGyqo8Wiyd6BWFt1IesBKShDp_izwEan14hnum8YOBTsgg9yJ1obJeoI1XZwHA43EsM-V-bLLXALcubJE-uRyaqE0GspMY9XK1UA7abkpACm4qk",
+       "price_str": "$44,108.37",
+       "image_urls": [
+        "https://images.openai.com/static-rsc-1/VAWo7oGcBzOoqAAwqSGyqo8Wiyd6BWFt1IesBKShDp_izwEan14hnum8YOBTsgg9yJ1obJeoI1XZwHA43EsM-V-bLLXALcubJE-uRyaqE0GspMY9XK1UA7abkpACm4qk"
+       ],
+       "num_reviews": null,
+       "render_type": "products",
+       "listing_title": null,
+       "merchant_name": "Phoenix Cars",
+       "source_product_id": "gid://shopify/p/50vkHHToqt1EYacIauAcDo",
+       "shopping_group_ordinal": 0
+      },
+      {
+       "brand": {
+        "name": "Mercedes Benz",
+        "type": "own",
+        "color": null,
+        "logo_url": "//49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png",
+        "company_id": "87468f49-3d44-4259-98a8-c65714f883c4"
+       },
+       "price": 68116,
+       "title": "Mercedes-Benz GLE 350",
+       "rating": null,
+       "ordinal": 2,
+       "currency": "USD",
+       "is_first": false,
+       "position": 3,
+       "image_url": "https://images.openai.com/static-rsc-1/4MWS-Wr0rcsD-9LshBtmLU6BrT_OPUm30V51nnEaQrfVmV-ZKpID_aUQm74gGKmWpw7IA-NDLYU_v-TkekKGOSkMCfJGRitvYmS3ZmAPtOtvSsPgac5UGi1kRAKmH5F2Bm-_mwtkK0HY3BaIsx4OhbkOoEjIMP4gobXNDXCSoO6-UUHbcvfE63mzuUEYRGi2",
+       "price_str": "$68,116.00",
+       "image_urls": [
+        "https://images.openai.com/static-rsc-1/4MWS-Wr0rcsD-9LshBtmLU6BrT_OPUm30V51nnEaQrfVmV-ZKpID_aUQm74gGKmWpw7IA-NDLYU_v-TkekKGOSkMCfJGRitvYmS3ZmAPtOtvSsPgac5UGi1kRAKmH5F2Bm-_mwtkK0HY3BaIsx4OhbkOoEjIMP4gobXNDXCSoO6-UUHbcvfE63mzuUEYRGi2"
+       ],
+       "num_reviews": null,
+       "render_type": "products",
+       "listing_title": "2026 Mercedes-Benz GLE 350 4MATIC",
+       "merchant_name": "Starlinger Motor Sales Inc",
+       "source_product_id": "gid://shopify/p/52l0eA4Pj4Cj6LKJzJREM",
+       "shopping_group_ordinal": 0
+      },
+      {
+       "brand": {
+        "name": "Audi",
+        "type": "competitor",
+        "color": null,
+        "logo_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64",
+        "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b"
+       },
+       "price": 63747.57,
+       "title": "Audi Q8",
+       "rating": null,
+       "ordinal": 3,
+       "currency": "USD",
+       "is_first": false,
+       "position": 4,
+       "image_url": "https://images.openai.com/static-rsc-1/ii3m5fu7acL1fkDU-Mp_n9Gn2Ixh_ZZkeAx1V5Z53libCGtv8Es-N5IHMia5qdeaKBKWW_BBzm56CuB06rLqoXOozOA1pgKDStwd0BusvObosYQRtZOdXCOWyGah9KQo",
+       "price_str": "$63,747.57",
+       "image_urls": [
+        "https://images.openai.com/static-rsc-1/ii3m5fu7acL1fkDU-Mp_n9Gn2Ixh_ZZkeAx1V5Z53libCGtv8Es-N5IHMia5qdeaKBKWW_BBzm56CuB06rLqoXOozOA1pgKDStwd0BusvObosYQRtZOdXCOWyGah9KQo"
+       ],
+       "num_reviews": null,
+       "render_type": "products",
+       "listing_title": "AUDI Q8",
+       "merchant_name": "Phoenix Cars",
+       "source_product_id": "gid://shopify/p/4ko2GiISXCHa1cg1JWYNmc",
+       "shopping_group_ordinal": 0
+      }
+     ],
+     "model_display_name": "ChatGPT",
+     "shopping_products_count": 4
+    },
+    "meta": {
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "data_as_of": "2026-10-11T19:03:34.564938+00:00",
+     "prompt_run_id": "3b7738b8-1c66-474d-a399-0725366a0792"
+    }
+   }
+  },
+  {
+   "ms": 11.1,
+   "ok": true,
+   "fall": "ohne quellen und ohne topics eaad096a",
+   "fehler": null,
+   "antwort": {
+    "row": {
+     "id": "eaad096a-4372-4e21-ac17-089b1e962600",
+     "ads": [],
+     "tags": [],
+     "model": "chatgpt",
+     "brands": [],
+     "market": "US",
+     "run_at": "2026-10-11T12:40:13.316912+00:00",
+     "run_day": "2026-10-11",
+     "citations": [],
+     "companies": [],
+     "prompt_id": "b7069816-d537-4415-a7d4-034422c0b418",
+     "prompt_text": "test",
+     "prompt_run_id": "eaad096a-4372-4e21-ac17-089b1e962600",
+     "response_json": {
+      "meta": {
+       "run_key": "972d51875fd28565a638ebad97-ae3572de8",
+       "model_start_iso": "2026-10-11T12:36:32.794+00:00"
+      },
+      "text": "Test successful! 😄✅ I'm here and working. What would you like to try next? 💛"
+     },
+     "model_detailed": "gpt-5-ui",
+     "shopping_products": [],
+     "model_display_name": "ChatGPT",
+     "shopping_products_count": 0
+    },
+    "meta": {
+     "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+     "data_as_of": "2026-10-11T19:03:34.564938+00:00",
+     "prompt_run_id": "eaad096a-4372-4e21-ac17-089b1e962600"
+    }
+   }
+  },
+  {
+   "ms": 257.6,
+   "ok": true,
+   "fall": "gross chatgpt 7a418601 (Zusammenfassung)",
+   "fehler": null,
+   "antwort": {
+    "size": 81934,
+    "brands": 5,
+    "citations": 99,
+    "companies": 5,
+    "first_cit_roles": [
+     "own",
+     "own",
+     "own",
+     "own",
+     "own"
+    ]
+   }
+  },
+  {
+   "ms": 238.8,
+   "ok": true,
+   "fall": "gross perplexity 9bc335d1 (Zusammenfassung)",
+   "fehler": null,
+   "antwort": {
+    "size": 73009,
+    "brands": 3,
+    "citations": 85
+   }
+  },
+  {
+   "ms": 242.9,
+   "ok": true,
+   "fall": "vergleich v8 gleiche felder",
+   "fehler": null,
+   "antwort": {
+    "same_ads": true,
+    "same_products": true,
+    "same_citation_set": true,
+    "same_response_text": true,
+    "companies_without_new_fields_equal": true
+   }
+  },
+  {
+   "ms": 0.3,
+   "ok": false,
+   "fall": "fehler: ohne Anmeldung",
+   "fehler": {
+    "code": "28000",
+    "hint": null,
+    "message": "settings_not_authenticated"
+   },
+   "antwort": null
+  },
+  {
+   "ms": 0.1,
+   "ok": false,
+   "fall": "fehler: anon",
+   "fehler": {
+    "code": "42501",
+    "hint": null,
+    "message": "permission denied for function response_detail_v1"
+   },
+   "antwort": null
+  },
+  {
+   "ms": 0.2,
+   "ok": false,
+   "fall": "fehler: fremdes Team",
+   "fehler": {
+    "code": "42501",
+    "hint": null,
+    "message": "team_forbidden"
+   },
+   "antwort": null
+  },
+  {
+   "ms": 1.5,
+   "ok": false,
+   "fall": "fehler: fremder Lauf mit eigenem Team",
+   "fehler": {
+    "code": "PT404",
+    "hint": null,
+    "message": "response_not_found"
+   },
+   "antwort": null
+  },
+  {
+   "ms": 2.1,
+   "ok": false,
+   "fall": "fehler: unbekannte ID",
+   "fehler": {
+    "code": "PT404",
+    "hint": null,
+    "message": "response_not_found"
+   },
+   "antwort": null
+  },
+  {
+   "ms": 0.7,
+   "ok": false,
+   "fall": "fehler: p_prompt_run_id null",
+   "fehler": {
+    "code": "22023",
+    "hint": "p_prompt_run_id",
+    "message": "team_invalid_param"
+   },
+   "antwort": null
+  },
+  {
+   "ms": 0.1,
+   "ok": false,
+   "fall": "fehler: p_team null",
+   "fehler": {
+    "code": "22023",
+    "hint": "p_team",
+    "message": "team_invalid_param"
+   },
+   "antwort": null
+  },
+  {
+   "ms": 0.5,
+   "ok": false,
+   "fall": "fehler: Team ohne Zugang (Factory Bottrop)",
+   "fehler": {
+    "code": "PT402",
+    "hint": "no_plan",
+    "message": "team_access_no_plan"
+   },
+   "antwort": null
+  },
+  {
+   "ms": 0.3,
+   "ok": false,
+   "fall": "fehler: geloeschtes Team (HUBie, nur im Test)",
+   "fehler": {
+    "code": "PT404",
+    "hint": null,
+    "message": "team_deleted"
+   },
+   "antwort": null
+  },
+  {
+   "ms": 0.9,
+   "ok": false,
+   "fall": "fehler: Ratenlimit (121. Aufruf in der Minute)",
+   "fehler": {
+    "code": "PT429",
+    "hint": "25",
+    "message": "response_rate_limited"
+   },
+   "antwort": null
+  }
+ ]
+}

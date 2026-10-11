@@ -536,6 +536,24 @@
     }
 
     /* ---- Mentions ------------------------------------------------------------------------- */
+    /* EINE ZEILE JE MARKE (11.10., Befund B3 des DB-Chats): companies[] hat eine Zeile je NENNUNG
+       -- BMW mit X5, X3 und X7 stand dreimal da, und "7 brands mentioned" waren vier Marken.
+       response_detail_v1 liefert dafuer brands[] (je Marke, nach bestem Rang, logo_url nach der
+       Logo-Regel). Ohne brands[] (v8, Bubble-Setter) wird companies[] nach company_id
+       zusammengefasst, in der Reihenfolge des ersten Auftretens -- das ist der beste Rang, weil
+       companies[] nach Rang sortiert kommt. */
+    function markenListe(d) {
+      if (isArr(d && d.brands)) return d.brands.filter(function (b) { return b && (b.name || b.brand_name_raw); });
+      var gesehen = {}, out = [];
+      (isArr(d && d.companies) ? d.companies : []).forEach(function (c) {
+        if (!c || !(c.name || c.brand_name_raw)) return;
+        var k = c.company_id ? "id:" + c.company_id : "n:" + String(c.brand_name_raw || c.name).toLowerCase();
+        if (gesehen[k]) return;
+        gesehen[k] = true;
+        out.push(c);
+      });
+      return out;
+    }
     function renderMents() {
       /* Der Fehler steht im Antworttext, nicht noch einmal hier: der Kopf traegt dann keine Zeile. */
       if (state.fehler) { elMents.innerHTML = ""; elMN.textContent = ""; elMWort.textContent = ""; elMRow.hidden = true; return; }
@@ -548,7 +566,7 @@
         mentionsZeile();
         return;
       }
-      var liste = isArr(state.data.companies) ? state.data.companies : [];
+      var liste = markenListe(state.data);
       /* Ohne Marken keine Leiste: "0 brands mentioned" auf eigenem Grund waere viel Flaeche fuer
          keine Auskunft. */
       elMRow.hidden = !liste.length;
@@ -562,8 +580,9 @@
         /* brand_name_raw und nicht name: das ist die Schreibweise, mit der die Marke im Antworttext
            steht und mit der sie dort auch ausgezeichnet wird ("LeeUP Media", nicht "LeeUp Media").
            Zwei Schreibweisen derselben Marke auf einer Seite lesen sich wie zwei Marken. */
+        /* brands[] (v1) traegt den Namen der Marke; companies[] die Schreibweise im Text. */
         var name = String((c && (c.brand_name_raw || c.name)) || "");
-        var logo = String((c && c.favicon_url) || "");
+        var logo = String((c && (c.logo_url || c.favicon_url)) || "");
         /* Nur Bildadressen -- dieselbe Pruefung wie an der Markenauszeichnung in core. */
         if (!/^(https?:)?\/\//i.test(logo)) logo = "";
         var buchst = (name.charAt(0) || "?").toUpperCase();
@@ -1002,6 +1021,11 @@
        das ist der einzige Ort in den Daten, der es hergibt. */
     function eigeneIds(d) {
       var out = null;
+      /* response_detail_v1 (11.10.) nennt die Rolle direkt an der Marke -- die verlaessliche Quelle.
+         Die Erwaehnungen der Zitationen bleiben der Weg fuer v8 und den Bubble-Setter. */
+      (isArr(d && d.brands) ? d.brands : []).concat(isArr(d && d.companies) ? d.companies : []).forEach(function (b) {
+        if (b && b.role === "own" && b.company_id) { if (!out) out = {}; out[String(b.company_id)] = true; }
+      });
       (isArr(d && d.citations) ? d.citations : []).forEach(function (c) {
         (isArr(c && c.mentions) ? c.mentions : []).forEach(function (m) {
           if (m && m.role === "own" && m.company_id) {
@@ -1017,6 +1041,8 @@
        role "own". Das ist derselbe Ort, aus dem auch der Modus "Your brand only" seine ids nimmt --
        eine Quelle, keine zweite Wahrheit. data-brand am Element ist der Rueckfall fuer den Namen. */
     function eigeneMarke(d) {
+      var eigen = (isArr(d && d.brands) ? d.brands : []).filter(function (b) { return b && b.role === "own"; })[0];
+      if (eigen) return { name: String(eigen.name || ""), logo: String(eigen.logo_url || eigen.favicon_url || "") };
       var treffer = null;
       (isArr(d && d.citations) ? d.citations : []).forEach(function (c) {
         (isArr(c && c.mentions) ? c.mentions : []).forEach(function (m) {
@@ -1342,15 +1368,18 @@
     function fehlerText(code) {
       var c = String(code || "").trim();
       if (!c) return "The response data could not be read.";
-      if (c === "mention_not_found" || c === "response_not_found") return "This response could not be found.";
-      if (/^team_access_/.test(c) || c === "forbidden" || c === "team_forbidden" || c === "not authenticated") return "Your team doesn't have access right now.";
+      if (c === "mention_not_found" || c === "response_not_found" || c === "team_invalid_param") return "This response could not be found.";
+      if (c === "settings_not_authenticated" || c === "not authenticated") return "Your session has expired. Please sign in again.";
+      if (c === "team_deleted") return "This team has been deleted.";
+      if (/^team_access_/.test(c) || c === "forbidden" || c === "team_forbidden") return "Your team doesn't have access right now.";
       if (c === "response_rate_limited") return "Too many requests in a short time. Please wait a moment.";
       return "This response could not be loaded. Please try again.";
     }
     function wiederholbar(code) {
       var c = String(code || "").trim();
-      return !(c === "mention_not_found" || c === "response_not_found" || /^team_access_/.test(c) ||
-        c === "forbidden" || c === "team_forbidden" || c === "not authenticated");
+      return !(c === "mention_not_found" || c === "response_not_found" || c === "team_invalid_param" ||
+        /^team_access_/.test(c) || c === "forbidden" || c === "team_forbidden" || c === "team_deleted" ||
+        c === "not authenticated" || c === "settings_not_authenticated");
     }
 
     /* EINBLENDEN (v2): einmal je neuer Antwort, nicht bei jedem Neuzeichnen -- die Abschnitte
@@ -1578,7 +1607,11 @@
     function kopfFuellen() {
       var k = root.__urdKopf, d = state.data;
       if (istLaden() || !d) { k.name(istLaden() ? null : ""); k.eigen.innerHTML = ""; return; }
-      k.name([d.model ? modellName(d.model) : "", d.run_at && UC.fmtDate ? UC.fmtDate(d.run_at) : ""]
+      /* Ohne Eintrag im Modell-Store liefert modellName den Schluessel ("google-aio") -- dann den
+         Anzeigenamen aus der Antwort (response_detail_v1: model_display_name). */
+      var mn = d.model ? modellName(d.model) : "";
+      if ((!mn || mn === d.model) && d.model_display_name) mn = String(d.model_display_name);
+      k.name([mn, d.run_at && UC.fmtDate ? UC.fmtDate(d.run_at) : ""]
         .filter(Boolean).join(", "));
       var pid = String(d.prompt_id || "").trim();
       k.eigen.innerHTML = pid && typeof window.openDrawer === "function"
@@ -1844,8 +1877,10 @@
      Responses-Liste durchgeht, und zu wenig, um nennenswert Speicher zu halten.
      Der Abruf laeuft mit 20s Frist: die Warte-Uhr der Komponente meldet nach 25s "No data", und
      ein ehrliches "konnte nicht geladen werden" mit Knopf soll vorher kommen. */
-  var DR_FN = "get_mention_detail_v8";
-  var DR = { root: null, id: "", gezeigt: "", nr: 0, speicher: {}, reihe: [] };
+  /* response_detail_v1 (DB-Chat 11.10.): reines JSON {meta, row}, 120 Aufrufe je Minute, warm
+     10-70ms, kalt einzelne Aufrufe bis wenige Sekunden. v8 bleibt fuer Bubble. */
+  var DR_FN = "response_detail_v1";
+  var DR = { root: null, id: "", gezeigt: "", nr: 0, speicher: {}, reihe: [], ctrl: null };
   function drMerken(id, o) {
     DR.speicher[id] = o;
     var i = DR.reihe.indexOf(id);
@@ -1880,11 +1915,17 @@
     DR.gezeigt = "";
     c.setLoading("yes");
     var nr = ++DR.nr;
+    /* Beim schnellen Durchklicken die vorige Anfrage abbrechen (Empfehlung des DB-Chats): sie
+       kaeme ohnehin zu spaet (nr), wuerde aber das Ratenlimit mitzaehlen. */
+    if (DR.ctrl) { try { DR.ctrl.abort(); } catch (e) {} }
+    var ab = typeof AbortController !== "undefined" ? new AbortController() : null;
+    DR.ctrl = ab;
     drTeam().then(function (team) {
       if (nr !== DR.nr) return null;
       if (!team) return { ok: false, status: 0, fehler: { message: "not authenticated" } };
-      return UC.rpc(DR_FN, { p_prompt_run_id: id, p_team: team }, { timeoutMs: 20000 });
+      return UC.rpc(DR_FN, { p_team: team, p_prompt_run_id: id }, { timeoutMs: 20000, signal: ab ? ab.signal : undefined });
     }).then(function (erg) {
+      if (DR.ctrl === ab) DR.ctrl = null;
       if (!erg || nr !== DR.nr) return;
       var d = erg.ok ? erg.daten : null;
       if (isArr(d)) d = d.length ? d[0] : null;

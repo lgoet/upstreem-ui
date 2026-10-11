@@ -2178,7 +2178,8 @@
     "brands mentioned": "Brands erwähnt",
     "Response not available": "Response nicht verfügbar",
     "Too many requests in a short time. Please wait a moment.": "Zu viele Anfragen in kurzer Zeit. Bitte warte einen Moment.",
-    "Try again": "Erneut versuchen",
+    "Try again": "Noch einmal versuchen",
+    "This team has been deleted.": "Dieses Team wurde gelöscht.",
 
     /* Leerzustaende der Charts und Tabellen */
     "No types": "Keine Typen",
@@ -4596,9 +4597,13 @@
       u.hash = "";
       var drop = { gclid:1, fbclid:1, ref:1, igshid:1, mc_cid:1, mc_eid:1 };
       Object.keys(drop).forEach(function (k) { u.searchParams.delete(k); });
-      Array.prototype.slice.call(u.searchParams.keys()).forEach(function (k) {
-        if (k.toLowerCase().indexOf("utm_") === 0) u.searchParams.delete(k);
-      });
+      /* Erst sammeln, dann loeschen -- und NICHT ueber slice.call: keys() ist ein Iterator, kein
+         Array-aehnliches Objekt, slice.call machte daraus []. Damit blieb jedes utm_* stehen, und
+         kein ChatGPT-Zitat (immer ?utm_source=chatgpt.com) fand seine Quelle: keine Nummer, kein
+         Titel (gemessen 11.10. an 3b7738b8, Befund B12 des DB-Chats). */
+      var weg = [];
+      u.searchParams.forEach(function (_v, k) { if (k.toLowerCase().indexOf("utm_") === 0) weg.push(k); });
+      weg.forEach(function (k) { u.searchParams.delete(k); });
       return u.toString();
     } catch (e) {
       return String(url || "").replace(/[?&]utm_[^=]+=[^&#]*/gi, "").replace(/#.*$/, "");
