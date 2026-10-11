@@ -673,6 +673,12 @@
         var u = new URL(window.location.href);
         u.searchParams.delete("checkout"); u.searchParams.delete("session_id");
         if (!ohneAdresse) u.searchParams.set("st", "billing");
+        /* Die Ansicht, in der die Seite steht (#view-<name>, Kopf-Skript): fehlt ?view in der
+           Adresse (Ansicht ohne Klick geoeffnet), kaeme Stripe sonst auf die Startansicht zurueck.
+           Der Pfad selbst bleibt, wie er ist -- auf der Testfassung also mit /version-test/. */
+        var v = root.closest ? root.closest('[id^="view-"]') : null, name = v ? String(v.id).slice(5) : "";
+        if (name && /^[a-z0-9_-]+$/i.test(name)) u.searchParams.set("view", name);
+        u.hash = "";
         return u.pathname + u.search;
       } catch (e) { return ""; }
     }
