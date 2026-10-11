@@ -10753,11 +10753,12 @@
        bewusst ein eigenes Zeichen schickt, verliert es also nicht -- nur die drei bekannten
        Zeilen der Prompts-Seite werden auf den Satz gezogen.
        Seit dem 29.09. auch "All Prompts" (scroll, Hugeicons Scroll01) und "Tracked" der Brands-Seite
-       (chatPreview), beide ausdruecklich so angefordert. Ueber den Wert, nicht nur die
+       (seit 11.10. gps01, Hugeicons Gps01; davor chatPreview), beide ausdruecklich so angefordert. Ueber den Wert, nicht nur die
        Beschriftung: "Tracked" heisst auf Deutsch anders, "tracked" bleibt. */
     var NAV_ZEICHEN = {
       allprompts: "scroll", "all prompts": "scroll",
-      tracked: "chatPreview",
+      /* Gps01 seit dem 11.10. (vom Nutzer bestimmt), vorher ChatPreview. */
+      tracked: "gps01",
       /* Seit dem 01.10.: dieselbe Form wie im Ladebild von Explore Brands (siehe ICON_PATHS.compass). */
       discover: "compass",
       prompt: "zap", prompts: "zap", "prompt insights": "zap",
@@ -19922,6 +19923,15 @@
             '<path d="M4 3H14C16.357 3 17.5355 3 18.2678 3.73223C19 4.46447 19 5.64298 19 8V16"/>' +
             '<path d="M10 7H15"/>' +
             '<path d="M10 11H13"/>',
+    /* Hugeicons Gps01 (11.10. vom Nutzer fuer den Reiter "Tracked" der Brands-Seite bestimmt,
+       statt ChatPreview). Pfade wortgleich aus @hugeicons/core-free-icons 4.3.5 (Gps01Icon); die
+       Strichbreite gibt die Huelle vor, wie bei jedem Reiterzeichen. */
+    gps01: '<path d="M20.5137 12C20.5137 16.6944 16.7081 20.5 12.0137 20.5C7.31925 20.5 3.51367 16.6944 3.51367 12C3.51367 7.30558 7.31925 3.5 12.0137 3.5C16.7081 3.5 20.5137 7.30558 20.5137 12Z"/>' +
+           '<path d="M22.5 12H20.5"/>' +
+           '<path d="M3.5 12H1.5"/>' +
+           '<path d="M12 1.5L12 3.5"/>' +
+           '<path d="M12 20.5V22.5"/>' +
+           '<path d="M15 12C15 13.6569 13.6568 15 12 15C10.3431 15 8.99995 13.6569 8.99995 12C8.99995 10.3431 10.3431 9 12 9C13.6568 9 15 10.3431 15 12Z"/>',
     chatPreview: '<path d="M21.9609 9C21.9865 9.72648 22 10.2302 22 11.001C22 11.7718 21.9865 12.5242 21.9609 13.2507C21.8772 15.6242 21.8353 16.8109 20.8699 17.7836C19.9046 18.7562 18.6843 18.8084 16.2437 18.9128C15.5098 18.9442 14.7498 18.9677 13.9693 18.9825C13.2282 18.9965 12.8576 19.0036 12.532 19.1276C12.2064 19.2516 11.9325 19.4865 11.3845 19.9563L9.20503 21.8252C9.07273 21.9386 8.90419 22.001 8.72991 22.001C8.32679 22.001 8 21.6742 8 21.2711V18.9229C7.91842 18.9196 7.83715 18.9163 7.75619 18.9128C5.31569 18.8084 4.09545 18.7562 3.13007 17.7836C2.16469 16.8109 2.12282 15.6242 2.03909 13.2507C2.01346 12.5242 2 11.7718 2 11.001C2 10.2302 2.01346 9.47779 2.03909 8.75131C2.12282 6.37784 2.16469 5.1911 3.13007 4.21846C4.09545 3.24582 5.3157 3.19361 7.7562 3.08919C8.48051 3.0582 9.2302 3.01483 10 3"/>' +
                  '<path d="M22 5C22 5 19.958 8 17 8C14.042 8 12 5 12 5C12 5 14 2 17 2C20 2 22 5 22 5Z"/>' +
                  '<path d="M12.1257 11H12.0007M8.125 11H8M12.2507 11C12.2507 11.1381 12.1388 11.25 12.0007 11.25C11.8627 11.25 11.7507 11.1381 11.7507 11C11.7507 10.8619 11.8627 10.75 12.0007 10.75C12.1388 10.75 12.2507 10.8619 12.2507 11ZM8.25 11C8.25 11.1381 8.13807 11.25 8 11.25C7.86193 11.25 7.75 11.1381 7.75 11C7.75 10.8619 7.86193 10.75 8 10.75C8.13807 10.75 8.25 10.8619 8.25 11Z"/>' +
