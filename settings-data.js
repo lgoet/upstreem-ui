@@ -62,7 +62,8 @@
     /* Schritt 1 (Lesen) gebaut am 11.10. (settings_v1_lesen.sql, Vertrag Abschnitt 11), geprueft
        gegen testdaten/settings_v1/v1_lesen_echte_antworten.json. */
     meta: true, marke: true, mitglieder: true, einladungen: true, protokoll: true, abo: true, tarife: true,
-    markeSpeichern: false, logo: false, modelle: false,
+    /* Schritt 2 (Your Brand speichern) gebaut am 11.10. (settings_v1_brand.sql, Vertrag 12). */
+    markeSpeichern: true, logo: true, modelle: true,
     einladen: false, erneut: false, zurueckziehen: false,
     entfernen: false, rolle: false,
     portal: false, kasse: false,
@@ -131,20 +132,30 @@
   function tarife(team) { return anfrage("tarife", p(team)); }
 
   /* ---- Schreiben ---------------------------------------------------------------------------- */
-  function markeSpeichern(team, w) {
-    w = w || {};
-    var gm = str(w.business_model).toLowerCase();
-    return anfrage("markeSpeichern", {
+  /* NUR GEAENDERTE FELDER (Vertrag 12): null = unveraendert, '' = leeren. Verglichen wird mit dem
+     zuletzt gelesenen Stand (alt = die flache Zeile von settings_brand_v1). Ohne alt gehen alle
+     vier hinaus -- dann leert ein leeres Feld, statt still unveraendert zu bleiben.
+     Markt in Grossschrift (app.markets.alpha2), Geschaeftsmodell als Schluessel. */
+  function markeSpeichern(team, w, alt) {
+    w = w || {}; alt = istObjekt(alt) ? alt : null;
+    function neu(v) { return str(v).trim(); }
+    function feld(jetzt, vorher, gleich) {
+      if (alt && gleich(jetzt, vorher)) return null;
+      return jetzt;
+    }
+    var gm = neu(w.business_model).toLowerCase();
+    if (gm && GESCHAEFT.indexOf(gm) < 0) gm = "";
+    var markt = neu(w.market_id).toUpperCase();
+    var q = {
       p_team: str(team),
-      /* Gross: die DB prueft gegen app.markets.alpha2 (Vorschlag 2.2.3); settings-brand fuehrt
-         den Code klein. */
-      p_market_id: str(w.market_id).trim().toUpperCase() || null,
-      p_business_model: GESCHAEFT.indexOf(gm) >= 0 ? gm : null,
-      p_industry: str(w.industry).trim().slice(0, GRENZE.branche) || null,
+      p_market_id: feld(markt, alt && str(alt.market), function (a, b) { return a === str(b).toUpperCase(); }),
+      p_business_model: feld(gm, alt && str(alt.business_model_key != null ? alt.business_model_key : alt.business_model).toLowerCase(), function (a, b) { return a === b; }),
+      p_industry: feld(neu(w.industry).slice(0, GRENZE.branche), alt && str(alt.industry), function (a, b) { return a === str(b).trim(); }),
       /* Die Zusammenfassung NICHT still kuerzen: die Seite lehnt zu lange vorher mit einem Satz ab
          (zusammenfassungZuLang). Gekuerzt gesendet waere gespeichert, was niemand geschrieben hat. */
-      p_summary: str(w.summary)
-    });
+      p_summary: feld(str(w.summary), alt && str(alt.summary), function (a, b) { return a === b; })
+    };
+    return anfrage("markeSpeichern", q);
   }
   function zusammenfassungZuLang(s) { return str(s).length > GRENZE.zusammenfassung; }
   function logo(team, url) { return anfrage("logo", { p_team: str(team), p_logo_url: str(url).trim() || null }); }
@@ -245,7 +256,13 @@
     };
     /* Die Marktliste der Antwort ist der Rueckfall des Bausteins (zuerst gilt die App-Ablage). */
     if (isArr(d.markets) && d.markets.length) out.markets = d.markets.filter(istObjekt);
-    if (m) { out.team = { id: m.teamId, name: m.teamName }; out.user_role = m.rolle; }
+    if (m) {
+      out.team = { id: m.teamId, name: m.teamName }; out.user_role = m.rolle;
+      /* Nur lesen, mit dem Grund (Vertrag 11: reasons role | no_access). */
+      var rm = m.rechte && m.rechte.marke;
+      out.nur_lesen = !rm || rm.darf ? ""
+        : (rm.grund === "no_access" ? "Choose a plan in Billing to change these settings." : "Only owners and admins can change these settings.");
+    }
     /* Rechte der Modelle vom Server: ohne Angabe NEIN (siehe recht). In jede Zeile, weil
        settings-brand den Planrahmen aus der ersten Zeile liest. */
     if (m && out.models.length) {

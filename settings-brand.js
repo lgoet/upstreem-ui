@@ -259,7 +259,10 @@
                   marketsRaw: Array.isArray(vM.marketsRaw) ? vM.marketsRaw : [],
                   /* Eigene Kopie: onCustom haengt an diese Liste an. */
                   industries: Array.isArray(vM.industries) ? vM.industries.slice() : INDUSTRIES.slice(),
-                  logoFileName: vM.logoFileName || "" };
+                  logoFileName: vM.logoFileName || "",
+                  /* NUR LESEN (11.10., Seite Settings): der Satz, warum Marke und Meta hier nicht zu
+                     aendern sind (Rolle member, Team ohne Zugang). Leer heisst: bearbeitbar. */
+                  nurLesen: vM.nurLesen || "" };
 
     /* Der Ladezustand ist der ANFANGSZUSTAND, nicht der Ausnahmefall. Ab dem Moment, in dem die
        Komponente steht, sind Skelette zu sehen -- und sie bleiben, bis ausdruecklich
@@ -414,7 +417,7 @@
     root.innerHTML =
       '<div class="usb-body">' +
 
-        '<section class="usb-sec">' +
+        '<section class="usb-sec" data-usb-bearbeitbar>' +
           '<div class="usb-sechead">' +
             '<h2 class="usb-sectitle">Brand Settings</h2>' +
             '<p class="usb-secsub">Your brand identity as it appears across the workspace.</p>' +
@@ -498,7 +501,7 @@
           '</div>' +
         '</section>' +
 
-        '<section class="usb-sec">' +
+        '<section class="usb-sec" data-usb-bearbeitbar>' +
           '<div class="usb-sechead">' +
             '<h2 class="usb-sectitle">Meta Settings</h2>' +
             '<p class="usb-secsub">Context the system uses when it generates prompts and analyses.</p>' +
@@ -636,7 +639,7 @@
         meta: { brandName: meta.brandName, brandLogo: meta.brandLogo, teamName: meta.teamName,
                 teamId: meta.teamId, rolle: meta.rolle, modelLimit: meta.modelLimit, canManage: meta.canManage,
                 markets: meta.markets, marketsRaw: meta.marketsRaw, industries: meta.industries.slice(),
-                logoFileName: meta.logoFileName },
+                logoFileName: meta.logoFileName, nurLesen: meta.nurLesen },
         logoUrl: String(elUrlIn.value || "")
       };
     }
@@ -959,9 +962,27 @@
     }
     function syncMeta(){
       var d = metaDirty();
+      if (meta.nurLesen){
+        elMetaSave.disabled = true;
+        elMetaHint.textContent = meta.nurLesen;
+        elMetaHint.classList.remove("is-dirty");
+        return;
+      }
       elMetaSave.disabled = !d;
       elMetaHint.textContent = d ? "Unsaved changes" : "";
       elMetaHint.classList.toggle("is-dirty", d);
+    }
+    /* NUR LESEN: Marken- und Meta-Karte per inert (nimmt Klicks UND Tastaturfokus), die Danger
+       Zone bleibt -- verlassen darf jeder. Die Modelle sperrt schon canManage. Der Grund steht in
+       der Speicherleiste der Meta-Karte; die Werte bleiben sichtbar. */
+    function nurLesenAnwenden(){
+      var an = !!meta.nurLesen;
+      Array.prototype.forEach.call(root.querySelectorAll("[data-usb-bearbeitbar]"), function(sec){
+        var karte = sec.querySelector(".usb-card");
+        if (!karte) return;
+        if (an) karte.setAttribute("inert", ""); else karte.removeAttribute("inert");
+      });
+      root.classList.toggle("usb-nur-lesen", an);
     }
 
     /* Ein zweites, eigenes Event nur fuer die Rueckmeldung. Es traegt KEINE Daten, sondern sagt
@@ -1102,6 +1123,7 @@
          und Browser ohne inert-Unterstuetzung haetten ohnehin nur die Maussperre. */
       if (loading) return;
       var t = e.target;
+      if (meta.nurLesen && t.closest && t.closest("[data-usb-bearbeitbar]")) return;
       if (t.closest("[data-edit-brand]")){ fire("data-editbrand-fn", "usbEditBrand", {}); return; }
       /* Der Schalter wird auch hier geprueft, nicht nur im Markup. Ein hidden-Attribut ist eine
          Anzeigeentscheidung; wer die Devtools offen hat, klickt trotzdem. */
@@ -1294,6 +1316,7 @@
          verschwand der Ladezustand des Pageloads wieder. */
       root.classList.toggle("is-loading", !!root.__usbLoading);
       root.classList.toggle("usb-owner", istOwner());
+      nurLesenAnwenden();
       renderBrand();
       renderModels();
       renderBusiness();
@@ -1419,6 +1442,7 @@
         if (wert(team.id))    meta.teamId = String(team.id);
         var rolleP = p.user_role != null ? p.user_role : (team.role != null ? team.role : p.viewer_role);
         if (wert(rolleP)) meta.rolle = String(rolleP).trim().toLowerCase();
+        if (p.nur_lesen != null) meta.nurLesen = String(p.nur_lesen);
 
         /* Die Modellzeilen kommen so, wie die RPC sie liefert. Jede Zeile traegt neben dem Modell
            auch den Plan-Kontext (active_models_limit, user_can_manage) -- der ist in allen Zeilen

@@ -808,3 +808,39 @@ Die echten Antworten stehen in `settings_v1_lesen_echte_antworten.json` (877c al
 **Laufzeit 877c:** kalt 3–9 ms, warm 1–6 ms. `settings_brand_v1` ist mit der Marktliste die größte Antwort.
 
 **Support-Konten (Entscheidung Lukas 11.10., ersetzt 9.1/8.2):** Support-Konten bleiben in der Team-Organisation sichtbar wie alle anderen Mitglieder. Das Feld `team_member.is_support` ist angelegt, wird aber nicht gesetzt (immer `false`); es wird also niemand ausgeblendet.
+
+---
+
+## 12. Schritt 2 gebaut: Your Brand und Modelle speichern (`settings_v1_brand.sql`, 11.10.2026)
+Echte Antworten: `settings_v1_brand_echte_antworten.json`.
+
+| Funktion | Eingang | Antwort |
+|---|---|---|
+| `settings_brand_save_v1` | `p_team, p_market_id, p_business_model ('b2b'\|'b2c'\|'hybrid'), p_industry, p_summary, p_name` | wie `settings_brand_v1`, dazu `meta.changed[]` und `meta.unchanged` |
+| `settings_brand_logo_v1` | `p_team, p_logo_url` | dto. mit `meta.unchanged` |
+| `team_models_set_v1` | `p_team, p_model_keys text[]` (Zielmenge) | `meta{changed{on[], off[]}, unchanged, models_max}`, `rows` = Modellzeilen wie in `settings_brand_v1.row.models` |
+
+**Regeln:**
+- `null` = Feld unverändert, `''` = leeren. Ein leerer Name setzt den Override zurück auf den Markennamen.
+- Der Markt wird in Großschrift gespeichert und gegen `app.markets` geprüft.
+- Logo nur `https://`, ohne Leer- und Anführungszeichen, höchstens 500 Zeichen.
+  - Achtung: Bubble-Uploads mit `//…cdn.bubble.io` mit `https:` davor schicken.
+- Die Modellschlüssel werden klein geschrieben und doppelte entfernt.
+- Name und Logo leeren die Seiten-Caches.
+
+**Fehler:**
+
+| SQLSTATE | message | hint |
+|---|---|---|
+| PT403 | `team_role_required` | – |
+| PT402 | `team_access_<state>` | Zustand |
+| 42501 | `team_forbidden` | – |
+| PT404 | `team_deleted`, `settings_no_own_brand` | – |
+| 22023 | `settings_invalid_market` | – |
+| 22023 | `settings_invalid_business_model` | – |
+| 22023 | `settings_too_long` | `feld:max` |
+| 22023 | `settings_invalid_logo_url` | – |
+| 22023 | `team_models_min_one` | – |
+| 22023 | `team_models_invalid` | Schlüssel |
+| 22023 | `team_models_limit` | Maximum |
+| PT429 | `settings_rate_limited` / `team_rate_limited` | Sekunden |

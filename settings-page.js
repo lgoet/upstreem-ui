@@ -72,6 +72,7 @@
      nachgezogen. Reihenfolge: die genauen Faelle zuerst, die allgemeinen zuletzt. */
   function fehlerSatz(erg, wobei) {
     var m = D.meldung(erg), h = D.hinweis(erg), n = D.hinweisZahl(erg);
+    if (/no_own_brand/.test(m)) return { text: t("Your brand isn't set up yet"), desc: t("Please contact support.") };
     if (/team_deleted/.test(m)) return { text: t("This team has been deleted"), desc: t("Switch to another team to continue.") };
     if (/cannot_remove_self|cannot kick self/.test(m)) return { text: t("You can't remove yourself"), desc: t("Use Leave team instead.") };
     if (/invite_send_unknown/.test(m)) return { text: t("We couldn't confirm that the email went out"), desc: t("Check the pending invites and resend if needed.") };
@@ -435,9 +436,15 @@
        (speichernZurueck). Ohne die Methode (alter Pin) frisch vom Server -- der Entwurf ist dann
        zwar weg, aber nichts behauptet, gespeichert zu sein. */
     function usbZurueck(block) {
-      var c = usb();
-      if (c && c.speichernZurueck) { c.speichernZurueck(block); return; }
-      lader.leeren(); bedarf({ frisch: true });
+      /* EINEN TAKT SPAETER: das Ereignis kommt synchron aus dem Klick-Handler des Bausteins, und
+         der sperrt sich erst NACH dem Feuern selbst (applyLoading "yes"). Eine sofortige Absage
+         (zu lang, Teamwechsel, nicht verlinkt) loeste die Sperre also, bevor sie gesetzt war --
+         gemessen: der Baustein hing danach bis zur Notbremse (12 s). */
+      setTimeout(function () {
+        var c = usb();
+        if (c && c.speichernZurueck) { c.speichernZurueck(block); return; }
+        lader.leeren(); bedarf({ frisch: true });
+      }, 0);
     }
     /* Nach jeder Aenderung an Marke und Modellen: der Team-Kopf der App (Seitenleiste) kommt noch
        aus Bubble und laedt auf dieses Signal neu -- derselbe Schritt wie im bisherigen Workflow. */
@@ -456,7 +463,7 @@
       delete z.meta; delete z.rows;
       return z;
     }
-    var BLOCK = { meta: ["brand", "team", "user_role", "market", "business_model", "industry", "summary"], models: ["models", "model_limit"] };
+    var BLOCK = { meta: ["brand", "team", "user_role", "nur_lesen", "market", "business_model", "industry", "summary"], models: ["models", "model_limit"] };
     function nachSchreibenMarke(daten, block) {
       var f = flach(daten), neu = f ? Object.assign({}, state.markeDaten || {}, f) : null;
       if (neu && !Array.isArray(neu.models) && state.markeDaten) neu.models = state.markeDaten.models;
@@ -477,7 +484,7 @@
         return;
       }
       einmal("marke", function () {
-        return schreiben(D.markeSpeichern(team(), d)).then(function (erg) {
+        return schreiben(D.markeSpeichern(team(), d, state.markeDaten)).then(function (erg) {
           if (!erg.ok) { usbZurueck("meta"); fehlerToast(erg, t("The settings could not be saved")); return; }
           var name = markeName();
           toast(name ? name + " " + t("settings updated") : t("Settings updated"), "success",
