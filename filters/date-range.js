@@ -1190,6 +1190,16 @@
           return applyPreset(ziel, false);
         },
         setPreset: function (key, emitToo) { return applyPreset(key, emitToo === true); },
+        /* Ein freier Zeitraum von aussen (12.10., URL-Drawer: "Zeitraum anpassen" setzt die 30 Tage
+           bis zum letzten Zitat). In die Grenzen des Kalenders gezogen wie jede Auswahl von Hand. */
+        setRange: function (from, to, emitToo) {
+          var f = parseIso(from), t = parseIso(to);
+          if (!f || !t) return false;
+          f = maxD(MIN_DATE, f); t = minD(TODAY, t);
+          if (f.getTime() > t.getTime()) f = t;
+          commit(f, t, null, rangeLabel(f, t), emitToo === true);
+          return true;
+        },
         setTheme: function (t) {
           var dark = String(t || "").toLowerCase() === "dark";
           if (dark) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");

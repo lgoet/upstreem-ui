@@ -2186,6 +2186,11 @@
     "This page could not be found.": "Diese Seite wurde nicht gefunden.",
     "This page could not be loaded. Please try again.": "Diese Seite konnte nicht geladen werden. Versuch es noch einmal.",
     "Page not available": "Seite nicht verfügbar",
+    "Your team has never cited this page.": "Diese Adresse wurde von deinem Team nie zitiert.",
+    "The selected period isn't valid. Please choose another one.": "Der gewählte Zeitraum ist ungültig. Bitte wähle einen anderen.",
+    "Not cited in the selected period. Last cited on {date}.": "Im gewählten Zeitraum nicht zitiert. Zuletzt am {date}.",
+    "Not cited in the selected period.": "Im gewählten Zeitraum nicht zitiert.",
+    "Adjust period": "Zeitraum anpassen",
 
     /* Leerzustaende der Charts und Tabellen */
     "No types": "Keine Typen",

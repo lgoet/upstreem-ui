@@ -212,10 +212,11 @@
 /* Neuer Zeitraum fuer dieselbe Seite: die alte gedimmt stehen lassen, bis die neue da ist
    (Dimmen statt Skelett, 12.10.) -- dieselben .42 wie die Tabellen in core. */
 .uud-root.is-reloading > * { opacity: .42; pointer-events: none; transition: opacity var(--up-t-1) ease; }
-/* Export gibt es in der Tabelle des Drawers nicht: der Export der App kennt keinen Filter auf
-   eine URL und gaebe ALLE Antworten des Zeitraums aus -- falsche Daten unter richtigem Namen.
-   Kommt p_url im Export dazu (Frage an den DB-Chat), faellt diese Zeile weg. */
-.uud-dw-resp .urt-root .up-export { display: none; }
+/* Ohne Seite (Fehler) keine Tabelle darunter. */
+.uud-dw.is-fehler .uud-dw-resp { display: none; }
+/* Nicht im Zeitraum: Satz und Knopf in der Leiste der Kennzahlen. */
+.uud-kpis.up-dk-leiste.is-hinweis { justify-content: space-between; gap: 12px 24px; padding: 12px 12px 12px 20px; }
+.uud-hinweis { font-size: var(--up-fs-m); color: var(--vc-muted); line-height: 1.45; min-width: 0; }
 .uud-fehler {
   order: -1;
   padding: 10px 12px; border-radius: 10px;

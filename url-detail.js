@@ -605,7 +605,9 @@
           if (!txt(x[k.key])) return;
           teile.push('<span class="uud-metachip" data-explain="' + esc(k.key) + '">' + kpiWert(k) + '</span>');
         });
-        var ls = txt(x.last_seen);
+        /* url_detail_v1: last_cited_at ist das letzte Zitat des Teams -- DAS ist "zuletzt gesehen".
+           last_scraped_at sagt nur, wann die Seite gelesen wurde, und steht hier nicht. */
+        var ls = txt(x.last_cited_at || x.last_seen);
         if (ls) teile.push('<span class="uud-zuletzt" data-explain="last_seen">' +
           esc(UC.t("Last seen {date}").replace("{date}", UC.fmtDate(ls))) + '</span>');
         elMeta0.innerHTML = teile.join(STRICH);
@@ -619,6 +621,21 @@
             (href ? UC.icon("externalLink", 2) : "");
         }
       }
+      /* NICHT IM ZEITRAUM (url_detail_v1: in_range false): die Seite wurde zitiert, nur nicht im
+         gewaehlten Zeitraum. Statt drei Nullen und einem Strich ein Satz mit dem letzten Zitat und
+         ein Knopf, der den Zeitraum dorthin legt -- so machen es Analytics-Werkzeuge (Vorschlag
+         des DB-Chats, 12.10.). Den Knopf gibt es nur, wo jemand den Zeitraum setzen kann. */
+      if (!laedt && x.in_range === false) {
+        var lc = txt(x.last_cited_at);
+        elKpis.classList.add("is-hinweis");
+        elKpis.innerHTML = '<span class="uud-hinweis">' + esc(lc
+            ? UC.t("Not cited in the selected period. Last cited on {date}.").replace("{date}", UC.fmtDate(lc))
+            : UC.t("Not cited in the selected period.")) + '</span>' +
+          (lc && typeof root.__uudZeitraum === "function"
+            ? '<button type="button" class="up-btn-sec uud-zeitraum" data-uud-zeitraum>' + esc(UC.t("Adjust period")) + '</button>' : "");
+        return;
+      }
+      elKpis.classList.remove("is-hinweis");
       elKpis.innerHTML = KPIS.filter(function (k) { return KENNZAHLEN.indexOf(k.key) >= 0; }).map(function (k) {
         /* Ueberschrift ZUERST, Wert darunter -- so steht es auf der Seite und so wird es
            vorgelesen. Das Symbol kommt aus UC.icon wie ueberall, nie selbst gezeichnet. */
@@ -869,7 +886,11 @@
        wiederholbar ist, was ein zweiter Klick nicht aendert. */
     function fehlerText(code) {
       var c = String(code || "").trim();
-      if (c === "url_not_found" || c === "team_invalid_param") return "This page could not be found.";
+      /* url_not_found kommt auch, wenn nur ein ANDERES Team die Adresse zitiert hat -- der Satz
+         spricht darum nur vom eigenen Team (Vertrag 12.10.). */
+      if (c === "url_not_found") return "Your team has never cited this page.";
+      if (c === "team_invalid_param") return "This page could not be found.";
+      if (c === "dashboard_invalid_date") return "The selected period isn't valid. Please choose another one.";
       if (c === "settings_not_authenticated" || c === "not authenticated") return "Your session has expired. Please sign in again.";
       if (c === "team_deleted") return "This team has been deleted.";
       if (/^team_access_/.test(c) || c === "forbidden" || c === "team_forbidden") return "Your team doesn't have access right now.";
@@ -878,12 +899,16 @@
     }
     function wiederholbar(code) {
       var c = String(code || "").trim();
-      return !(c === "url_not_found" || c === "team_invalid_param" || /^team_access_/.test(c) || c === "forbidden" ||
+      return !(c === "url_not_found" || c === "team_invalid_param" || c === "dashboard_invalid_date" || /^team_access_/.test(c) || c === "forbidden" ||
         c === "team_forbidden" || c === "team_deleted" || c === "not authenticated" || c === "settings_not_authenticated");
     }
 
     /* ---- Klicks ------------------------------------------------------------------------------ */
     root.addEventListener("click", function (e) {
+      if (e.target.closest && e.target.closest("[data-uud-zeitraum]")) {
+        if (typeof root.__uudZeitraum === "function") root.__uudZeitraum(txt(d().last_cited_at));
+        return;
+      }
       if (e.target.closest && e.target.closest("[data-uud-retry]")) {
         if (typeof root.__uudNeuLaden === "function") root.__uudNeuLaden();
         return;
@@ -1084,8 +1109,12 @@
          cached_dashboard_responses_v1 mit p_url -- derselbe Weg wie Dashboard und Prompt
          Insights, nur auf diese Adresse eingeschraenkt.
      Kopfleiste (core): "URL / <Titel>", Globus (Domain), Create with AI, Ask Mira, Anheften.
-     Beide RPCs sind der VORSCHLAG an den DB-Chat (bubble/url_detail_db_auftrag.md). Solange die
-     Bubble-Gruppe steht, laeuft hier nichts -- die Umstellung ist das Loeschen der Gruppe. */
+     Vertrag: bubble/url_detail_12_10/AN_CLAUDE_CODE_URL_DETAIL.md (12.10.). Solange die
+     Bubble-Gruppe steht, laeuft hier nichts -- die Umstellung ist das Loeschen der Gruppe.
+     DIE ADRESSE DER ANTWORT GILT (meta.url): die Datenbank findet eine Seite auch in anderer
+     Schreibweise (http/https, www., Schraegstrich, Raute) und nennt sie so, wie das Team sie
+     zitiert hat. Tabelle, Export, Pin, Mira und Create with AI nehmen DIESE Schreibweise -- die
+     Tabelle laedt darum erst nach der Seite. */
   /* ---- MARKUP ANFANG (erzeugt von .url_markup.py -- nicht von Hand aendern) ---- */
   var MARKUP = {
     urt: "<div class=\"up-root urt-root\" data-local=\"yes\" data-merken=\"yes\" data-instance=\"__UUD_URT__\" data-cdn-pin=\"\" data-isdark=\"__UUD_DARK__\" data-brand-name=\"__UUD_BRAND__\" data-brand-logo=\"__UUD_BRANDLOGO__\" data-spotlight-mode=\"no\" data-export-instance=\"\" data-sticky-top=\"16\" data-sticky=\"no\" data-default-view=\"table\"><div class=\"up-head\"><div class=\"up-heading\"><span class=\"up-head-label\">Responses</span><span class=\"up-head-sep\"></span><span class=\"up-head-count\"></span></div><div class=\"up-head-tools\"><button class=\"urt-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"urt-brand-toggle-lbl\"><img class=\"urt-brand-logo\" src=\"\" style=\"display:none\" alt=\"\"/><span class=\"urt-brand-label\"></span></span><span class=\"urt-brand-check\"><svg class=\"urt-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7\"/></svg><svg class=\"urt-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.9922 12L2.99219 12\"/></svg></span></button><div class=\"up-ment\"><button class=\"up-ment-btn\" type=\"button\" data-tip=\"Filter for brand mentions\" aria-haspopup=\"menu\" aria-expanded=\"false\"><span class=\"up-ment-lbl\">All Brands</span><svg class=\"up-ment-chev\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg><svg class=\"up-ment-clear\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button><div class=\"up-ment-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-sort\"><button class=\"up-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"urt-fader\"><button class=\"urt-fader-btn up-iconbtn\" type=\"button\" data-tip=\"Filter by rank &amp; sentiment\" aria-label=\"Filter by rank and sentiment\" aria-haspopup=\"menu\" aria-expanded=\"false\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 21L7 18\"/><path d=\"M17 21L17 15\"/><path d=\"M17 6L17 3\"/><path d=\"M7 9L7 3\"/><path d=\"M7 18C6.06812 18 5.60218 18 5.23463 17.8478C4.74458 17.6448 4.35523 17.2554 4.15224 16.7654C4 16.3978 4 15.9319 4 15C4 14.0681 4 13.6022 4.15224 13.2346C4.35523 12.7446 4.74458 12.3552 5.23463 12.1522C5.60218 12 6.06812 12 7 12C7.93188 12 8.39782 12 8.76537 12.1522C9.25542 12.3552 9.64477 12.7446 9.84776 13.2346C10 13.6022 10 14.0681 10 15C10 15.9319 10 16.3978 9.84776 16.7654C9.64477 17.2554 9.25542 17.6448 8.76537 17.8478C8.39782 18 7.93188 18 7 18Z\"/><path d=\"M17 12C16.0681 12 15.6022 12 15.2346 11.8478C14.7446 11.6448 14.3552 11.2554 14.1522 10.7654C14 10.3978 14 9.93188 14 9C14 8.06812 14 7.60218 14.1522 7.23463C14.3552 6.74458 14.7446 6.35523 15.2346 6.15224C15.6022 6 16.0681 6 17 6C17.9319 6 18.3978 6 18.7654 6.15224C19.2554 6.35523 19.6448 6.74458 19.8478 7.23463C20 7.60218 20 8.06812 20 9C20 9.93188 20 10.3978 19.8478 10.7654C19.6448 11.2554 19.2554 11.6448 18.7654 11.8478C18.3978 12 17.9319 12 17 12Z\"/></svg></button><div class=\"urt-fader-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 17L21 21\"/><path d=\"M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z\"/></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Search prompts...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search responses\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button></div></div><div class=\"up-cols\"><button class=\"up-cols-btn up-iconbtn\" type=\"button\" data-tip=\"Table Settings\" aria-label=\"Table settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z\"/><path d=\"M8.5 10C7.67157 10 7 9.32843 7 8.5C7 7.67157 7.67157 7 8.5 7C9.32843 7 10 7.67157 10 8.5C10 9.32843 9.32843 10 8.5 10Z\"/><path d=\"M15.5 17C16.3284 17 17 16.3284 17 15.5C17 14.6716 16.3284 14 15.5 14C14.6716 14 14 14.6716 14 15.5C14 16.3284 14.6716 17 15.5 17Z\"/><path d=\"M10 8.5L17 8.5\"/><path d=\"M14 15.5L7 15.5\"/></svg></button><span class=\"urt-cols-badge\"></span><div class=\"up-cols-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-dense urt-viewswitch\" role=\"group\" aria-label=\"View\"><button class=\"up-dense-btn up-dense-btn-icon is-active\" type=\"button\" data-view=\"table\" data-tip=\"Table view\" aria-label=\"Table view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18\"/></svg></button><button class=\"up-dense-btn up-dense-btn-icon\" type=\"button\" data-view=\"cards\" data-tip=\"Card view\" aria-label=\"Card view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 4V20\"/><path d=\"M18 4V20\"/><path d=\"M21 7L3 7\"/><path d=\"M21 17L3 17\"/></svg></button></div><button class=\"up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg><span>Export</span></button></div></div><div class=\"up-box\"><div class=\"up-table\"><div class=\"up-thead\"><div class=\"up-th up-th-prompt\">Prompt<span class=\"up-grip\" data-grip=\"prompt\"></span></div><div class=\"up-th up-th-mentioned\"><img class=\"up-th-brandlogo\" src=\"\" alt=\"\" style=\"display:none\"/><span class=\"up-th-mentlbl\">Mentioned</span></div><div class=\"up-th up-th-sentiment is-sortable\" data-sortcol=\"sentiment\"><span class=\"up-th-txt\">Sentiment</span><span class=\"up-thsort\" data-for=\"sentiment\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div><div class=\"up-th up-th-rank is-sortable\" data-sortcol=\"rank\"><span class=\"up-th-txt\">Rank</span><span class=\"up-thsort\" data-for=\"rank\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div><div class=\"up-th up-th-brands\">Brand Mentions</div><div class=\"up-th up-th-citations\">Citations</div><div class=\"up-th up-th-model\">Model</div><div class=\"up-th up-th-date is-sortable\" data-sortcol=\"date\"><span class=\"up-th-txt\">Date</span><span class=\"up-thsort\" data-for=\"date\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div></div><div class=\"up-tbody\"></div></div></div><div class=\"urt-cards\"></div><div class=\"up-foot\"><div class=\"up-pagesize\"><span class=\"up-pagesize-lbl\">Rows per page</span><div class=\"up-pagesize-seg\" role=\"group\" aria-label=\"Rows per page\"></div></div><div class=\"up-pager\"></div></div></div>"
@@ -1093,7 +1122,7 @@
   /* ---- MARKUP ENDE ---- */
   var DU = {
     FN: { detail: "url_detail_v1" },
-    slot: null, root: null, kopf: null, url: "", gezeigt: "", nr: 0, rnr: 0, ab: null, rab: null,
+    slot: null, root: null, kopf: null, url: "", kanon: "", inRange: true, gezeigt: "", nr: 0, rnr: 0, ab: null, rab: null,
     speicher: {}, reihe: [], zeile: null,
     ids: { daten: "drawer-url-daten", seite: "drawer-url", urt: "drawer-url-responses" },
     resp: null
@@ -1135,7 +1164,9 @@
     if (!c || !DU.url) return;
     var z = duZeitraum(), sig = DU.url + "|" + z.von + "|" + z.bis;
     if (!frisch && DU.speicher[sig]) {
-      if (DU.gezeigt !== sig) { DU.zeile = DU.speicher[sig]; DU.zeileFuer = DU.url; c.setV1(DU.zeile); DU.gezeigt = sig; duKopf(DU.zeile); }
+      var e = DU.speicher[sig];
+      if (DU.gezeigt !== sig) { DU.zeile = e.row; DU.zeileFuer = DU.url; c.setV1(e.row); DU.gezeigt = sig; duKopf(e.row); }
+      duAngenommen(e);
       return;
     }
     DU.gezeigt = "";
@@ -1158,18 +1189,44 @@
       if (!erg || nr !== DU.nr) return;
       if (DU.ab === ab) DU.ab = null;
       DU.root.classList.remove("is-reloading");
-      var d = erg.ok ? erg.daten : null;
-      if (isArr(d)) d = d.length ? d[0] : null;
-      if (d && d.row && typeof d.row === "object") d = d.row;
+      var roh = erg.ok ? erg.daten : null;
+      if (isArr(roh)) roh = roh.length ? roh[0] : null;
+      var d = roh && roh.row && typeof roh.row === "object" ? roh.row : roh;
+      var meta = roh && roh.meta && typeof roh.meta === "object" ? roh.meta : {};
       var ok = d && typeof d === "object" && (d.url != null || d.title != null);
-      if (ok) { duMerken(sig, d); DU.zeile = d; DU.zeileFuer = url; c.setV1(d); DU.gezeigt = sig; duKopf(d); return; }
+      if (ok) {
+        var e = { row: d, meta: meta };
+        duMerken(sig, e); DU.zeile = d; DU.zeileFuer = url; c.setV1(d); DU.gezeigt = sig; duKopf(d);
+        duAngenommen(e);
+        return;
+      }
       var code = erg.ok ? "" : duStr((erg.fehler && (erg.fehler.message || erg.fehler.code)) || "");
       if (window.console) console.warn("[url-detail] " + DU.FN.detail + " fuer " + url + ": " +
         (code || "Antwort nicht lesbar") + (erg.status ? " (HTTP " + erg.status + ")" : ""));
-      DU.zeile = null;
+      DU.zeile = null; DU.kanon = "";
       c.setFehlerCode(code);
       duKopf(false);
+      /* Ohne Seite auch keine Tabelle: sie stuende sonst leer unter der Meldung. */
+      if (DU.slot) DU.slot.querySelector(".uud-dw").classList.add("is-fehler");
     });
+  }
+  /* Die Seite ist da: ihre Schreibweise merken und die Tabelle damit laden. */
+  function duAngenommen(e) {
+    DU.kanon = duStr((e.meta && e.meta.url) || (e.row && e.row.url) || DU.url);
+    DU.inRange = !(e.row && e.row.in_range === false);
+    if (DU.slot) DU.slot.querySelector(".uud-dw").classList.remove("is-fehler");
+    duRespLaden();
+  }
+  /* "Zeitraum anpassen": die 30 Tage bis zum letzten Zitat (Vorschlag des DB-Chats). Der Kalender
+     meldet die Aenderung selbst ("change"), und die laedt Seite und Tabelle neu. */
+  function duZeitraumAufZitat(letztes) {
+    var k = DU.slot ? DU.slot.querySelector(".uud-dw-daten") : null;
+    var ctrl = k && k.__udrCtrl;
+    var bis = duStr(letztes).slice(0, 10);
+    if (!ctrl || typeof ctrl.setRange !== "function" || !/^\d{4}-\d{2}-\d{2}$/.test(bis)) return;
+    var t = new Date(bis + "T12:00:00Z");
+    t.setUTCDate(t.getUTCDate() - 29);
+    ctrl.setRange(t.toISOString().slice(0, 10), bis, true);
   }
 
   /* ---- Die Kopfleiste: Name und die vier Knoepfe dieser Art (wie drawer-topbar bei einer URL) ---- */
@@ -1191,7 +1248,7 @@
     k.eigen.innerHTML = html;
   }
   function duKopfKlick(art) {
-    var d = DU.zeile || {}, url = DU.url, titel = duStr(d.title).trim(), fav = duStr(d.favicon).trim();
+    var d = DU.zeile || {}, url = DU.kanon || DU.url, titel = duStr(d.title).trim(), fav = duStr(d.favicon).trim();
     if (art === "domain" && d.domain && UC.drawerOeffnen) UC.drawerOeffnen("domain", duStr(d.domain), "url-detail");
     else if (art === "ai" && UC.openCreateWithAi) UC.openCreateWithAi({ url: url, lead_title: titel, lead_favicon: fav });
     else if (art === "mira" && UC.anMira && UC.miraBezug) {
@@ -1205,7 +1262,17 @@
   /* ---- Die Antworten (wie dashboard-page / prompts-page, eingeschraenkt auf p_url) ---- */
   function duRespLaden() {
     var DDx = window.UpstreemDashboardDaten;
-    if (!DU.url) return;
+    if (!DU.kanon) return;
+    if (!DU.inRange) {
+      /* Nicht im Zeitraum: kein Abruf -- die Antwort waere leer --, sondern der Leerzustand der
+         Tabelle mit demselben Satz wie oben in der Seite. */
+      var lc = DU.zeile ? duStr(DU.zeile.last_cited_at) : "";
+      duSetter("renderResponsesTable")({ instanceId: DU.ids.urt, rows: [], totalCount: 0, isDark: duDunkel(),
+        empty_text: lc ? UC.t("Not cited in the selected period. Last cited on {date}.").replace("{date}", UC.fmtDate(lc))
+                       : UC.t("Not cited in the selected period.") });
+      duSetter("setResponsesTableLoading")(DU.ids.urt, "no");
+      return;
+    }
     if (!DDx || !DDx.responsesTeile) {
       duSetter("renderResponsesTable")({ instanceId: DU.ids.urt, __parseError: true });
       return;
@@ -1214,7 +1281,7 @@
     if (DU.rab) { try { DU.rab.abort(); } catch (e) {} }
     var ab = typeof AbortController !== "undefined" ? new AbortController() : null;
     DU.rab = ab;
-    var nr = ++DU.rnr, url = DU.url, z = duZeitraum(), reqId = DU.resp.requestId;
+    var nr = ++DU.rnr, url = DU.kanon, z = duZeitraum(), reqId = DU.resp.requestId;
     (UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(UC.getTeam ? UC.getTeam() : "")).then(function (team) {
       if (nr !== DU.rnr) return null;
       var teile = DDx.responsesTeile({ team: team, von: z.von, bis: z.bis }, DU.resp);
@@ -1265,12 +1332,30 @@
       /* VOR initRoot: der erste render() muss schon wissen, dass er im Drawer steht. */
       r.__uudKopf = ctx;
       r.__uudNeuLaden = function () { duLaden(true); };
+      r.__uudZeitraum = duZeitraumAufZitat;
       DU.root = r;
       initRoot(r);
       ctx.eigen.addEventListener("click", function (e) {
         var b = e.target.closest ? e.target.closest("[data-uud-kopf]") : null;
         if (b) duKopfKlick(b.getAttribute("data-uud-kopf"));
       });
+      /* EXPORT der Tabelle (12.10.): export_responses_v1 kennt p_url. Wie auf den Seiten wird das
+         Export-Fenster der App vor dem Klick der Tabelle eingestellt (Fangphase), hier mit der
+         Adresse der Seite. Ohne Export-Fenster auf der Seite: ein Satz statt eines toten Knopfs. */
+      ctx.slot.addEventListener("click", function (e) {
+        var b = e.target && e.target.closest ? e.target.closest(".urt-root .up-export") : null;
+        if (!b) return;
+        var tab = b.closest(".urt-root");
+        var ex = document.querySelector(".uex-root[data-instance]");
+        var k = ex ? duStr(ex.getAttribute("data-instance")).trim() : "";
+        if (!k || /^[A-Z_]{3,}$/.test(k) || typeof window.upstreemExportOpen !== "function" || !DU.kanon) {
+          e.stopPropagation();
+          if (UC.toast) UC.toast(UC.t("Export isn't available on this page"), "neutral");
+          return;
+        }
+        tab.setAttribute("data-export-instance", k);
+        try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: "prompt_runs", url: DU.kanon }); } catch (err) {}
+      }, true);
       /* Neuer Zeitraum: Seite und Antworten neu (die Kennzahlen gelten fuer den Zeitraum). */
       ctx.slot.addEventListener("change", function (e) {
         if (!e.target || !e.target.classList || !e.target.classList.contains("uud-dw-daten")) return;
@@ -1280,7 +1365,6 @@
         DU.resp.offset = 0;
         DU.zLetzt = z.von + "|" + z.bis;
         duLaden(false);
-        duRespLaden();
       });
       duAn("urt-urtSearch", function (d) {
         DU.resp.suche = duStr(d.query); DU.resp.offset = 0;
@@ -1328,7 +1412,7 @@
         var alt = DU.resp;
         DU.resp = duRespStart();
         DU.resp.order = alt.order; DU.resp.limit = alt.limit;
-        DU.url = url;
+        DU.url = url; DU.kanon = ""; DU.inRange = true;
         try { duSetter("resetResponsesTable")(DU.ids.urt); } catch (e) {}
       }
       /* Erst wenn der Kalender steht (er richtet sich einen Takt nach dem Drawer ein), sonst ginge
@@ -1341,7 +1425,6 @@
         var z = duZeitraum();
         DU.zLetzt = z.von + "|" + z.bis;
         duLaden(false);
-        duRespLaden();
       })();
     },
     zu: function () {}

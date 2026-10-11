@@ -574,9 +574,11 @@
     function emptyHtml(filtered){
       /* Vierte und letzte der Schwestertabellen -- damit tragen alle vier denselben
          Leerzustand aus einer Quelle, und die vierte Handzeichnung der Lupe faellt weg. */
+      /* state.leerText: ein Satz des Einbettenden fuer den Ruhefall (12.10., URL-Drawer: "nicht im
+         gewaehlten Zeitraum zitiert, zuletzt am ..."), mitgegeben als empty_text beim Rendern. */
       return UC.leerHtml({
         gefiltert: filtered, was: "responses", icon: "messageCircle",
-        text: filtered ? null : "Responses appear here once your prompts have been run."
+        text: filtered ? null : (state.leerText || "Responses appear here once your prompts have been run.")
       });
     }
     /* Wie in prompts-table: derselbe Rumpf wird nicht neu gesetzt. Hier zusaetzlich der
@@ -1493,6 +1495,9 @@
           state.loading = false; state.softReload = false; dim.end(); state.extLoading = false;
           persist(); render(); return;
         }
+        /* Satz fuer den Leerzustand (siehe emptyHtml); jeder Aufruf setzt ihn neu, ohne heisst
+           wieder der Standardsatz. */
+        if (params.rows != null) state.leerText = params.empty_text ? String(params.empty_text) : "";
         if (params.isDark != null){
           /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
              in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst

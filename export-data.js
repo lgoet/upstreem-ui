@@ -562,6 +562,8 @@
     }
     function closePopup(){
       if (!state.open) return;
+      /* Der Filter des Drawers gilt nur fuer DIESEN Export (siehe setContext). */
+      state.url = ""; state.domain = "";
       // never hide a focused element from assistive tech — move focus out FIRST
       if (overlay.contains(document.activeElement)){
         try {
@@ -640,7 +642,10 @@
         // that might still read it (e.g. a human-readable "N days" display) — for computing the
         // actual boundaries, prefer from_unix/to_unix.
         date_range: -dayCount(state.from, state.to),
-        token: String(state.token == null ? "" : state.token)
+        token: String(state.token == null ? "" : state.token),
+        /* Leer heisst: kein Filter (Bubble setzt dann p_url / p_domain auf null). */
+        url: String(state.url || ""),
+        domain: String(state.domain || "")
       };
       var payloadJson;
       try { payloadJson = JSON.stringify(payload); } catch(e){ payloadJson = ""; }
@@ -745,6 +750,13 @@
         if (t) state.type = t;
         var tok = (opts.export_accesstoken != null) ? opts.export_accesstoken : opts.token;
         if (tok != null) state.token = String(tok);
+        /* EIN FILTER AUF EINE ADRESSE ODER DOMAIN (12.10., URL-Drawer: export_responses_v1 kennt
+           p_url und p_domain). Bei JEDEM setContext neu gesetzt, auch auf leer -- und beim Schliessen
+           geleert (closePopup): ein Export, der spaeter von einer Seite ohne Filter aufgeht, darf
+           nicht die Adresse des Drawers mitnehmen. Nicht im Speicher (persist): ein Filter ist
+           Kontext, keine Einstellung. */
+        state.url = opts.url != null ? String(opts.url) : "";
+        state.domain = opts.domain != null ? String(opts.domain) : "";
         persist(); renderAll();
         return true;
       },
