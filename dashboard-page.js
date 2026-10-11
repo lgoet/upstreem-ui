@@ -180,8 +180,13 @@
     if (UC.makePageCrumbs) UC.makePageCrumbs(root, { icon: "home", name: "Dashboard", komponente: true });
     /* Der Auftritt (core, makeAuftritt): Kopf sofort, der Inhalt erst mit Stylesheets und ersten
        Daten, dann in einem Zug. Siehe dort, warum. */
+    /* Agentic: die ABSCHNITTE des Power Dashboards einzeln (11.10. gemeldet: "hat keine richtige
+       Appear-Animation" -- als ein einziger Block kam es ohne Staffel). Die Abschnitte baut
+       power-dashboard.js einmal und fuellt danach nur ihr Inneres, sie bleiben also stehen und
+       verlieren ihre Wartestellung nicht durch ein Neuzeichnen. */
     var auftritt = UC.makeAuftritt ? UC.makeAuftritt(root, { kopf: ".uds-pagehead, .uds-filterzeile",
-      inhalt: ".uds-main > .uds-teil, .uds-agentic > .upw-root" }) : null;
+      inhalt: ".uds-main > .uds-teil, .uds-agentic",
+      fein: ".uds-main > .uds-teil, .uds-agentic .upw-col > *" }) : null;
     if (UC.makeTooltips) UC.makeTooltips(root, isDark);
     if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 768, vnarrowAt: 500 });
     if (isDark()) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");

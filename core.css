@@ -150,16 +150,21 @@
    Koerper ([id^="viewbody-"]) -- ein transform an der Ansicht selbst wuerde alles darin mit
    position:fixed waehrend der Bewegung verschieben. */
 .up-auftritt-zu { opacity: 0; }
-[id^="view-"].view-on:not(:has(.up-seite)) { animation: up-ansicht-auf var(--up-t-auftritt) var(--up-ease-expo); }
-[id^="view-"].view-on:not(:has(.up-seite)) [id^="viewbody-"] { animation: up-ansicht-weg var(--up-t-auftritt) var(--up-ease-expo); }
+[id^="view-"].view-on:not(:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root)) { animation: up-ansicht-auf var(--up-t-auftritt) var(--up-ease-expo); }
+[id^="view-"].view-on:not(:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root)) [id^="viewbody-"] { animation: up-ansicht-weg var(--up-t-auftritt) var(--up-ease-expo); }
+/* Die Seiten werden an ihrer WURZEL erkannt (uds, ucs, upi, upf, uop, urs, utp, ubr), nicht nur an
+   .up-seite (11.10.): die Wurzel steht von Anfang an im Markup, .up-seite setzt erst die Seite beim
+   Einrichten -- rund 40ms nach dem Einblenden. In dieser Luecke lief der Auftritt der ganzen
+   Ansicht an und brach dann ab: die Ansicht sprang auf sichtbar, gleich danach ging der Inhalt fuer
+   den eigenen Auftritt wieder auf unsichtbar ("flasht ein paar Mal auf und zu"). */
 /* Ansichten MIT Seiten-Komponente: keine Bewegung an der Ansicht -- die Seite bewegt ihre Teile
    selbst, und zwei Auftritte uebereinander laufen gegeneinander. Ueber Spezifitaet (0,3,0 bzw.
    0,4,0 gegen die 0,2,0 bzw. 0,3,0 des Kopf-Skripts), damit es auch gilt, solange der Kopf seine Zeilen noch hat. */
-[id^="view-"].view-on:has(.up-seite), [id^="view-"].view-on:has(.up-seite) [id^="viewbody-"] { animation: none; }
+[id^="view-"].view-on:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root), [id^="view-"].view-on:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root) [id^="viewbody-"] { animation: none; }
 @keyframes up-ansicht-auf { from { opacity: 0; } }
 @keyframes up-ansicht-weg { from { transform: translateY(10px); } }
 @media (prefers-reduced-motion: reduce) {
-  [id^="view-"].view-on:not(:has(.up-seite)) [id^="viewbody-"] { animation: none; }
+  [id^="view-"].view-on:not(:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root)) [id^="viewbody-"] { animation: none; }
 }
 
 /* ================= TIEFEN UND UMGEKEHRTE KARTE, AUCH AUSSERHALB EINER WURZEL ================

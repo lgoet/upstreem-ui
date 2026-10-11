@@ -14785,14 +14785,16 @@
         requestAnimationFrame(function(){ requestAnimationFrame(weg); });
         setTimeout(weg, 80);
       }
-      else {
+      else nachAuftritt(mount, function(){
+        /* Die Einfahrt beginnt, wenn der Teil zu erscheinen beginnt (nachAuftritt) -- nicht
+           unsichtbar davor. */
         requestAnimationFrame(function(){ requestAnimationFrame(function(){ breitenSetzen(); }); });
         /* Notbremse: in einem verdeckten Tab laeuft requestAnimationFrame nicht. Ohne diese Zeile
            blieben die Balken dort auf 0% stehen -- und stuenden auch dann noch leer da, wenn der
            Nutzer zurueckwechselt, weil der Rueckruf nur EINMAL vorgesehen war. */
         setTimeout(function(){ if (rows[0] && rows[0].querySelector(".up-bar-fill").style.width === "0%") breitenSetzen(); }, 300);
         setTimeout(function(){ bereit = true; alle(); }, 640);
-      }
+      });
       if (window.ResizeObserver){
         if (ro) ro.disconnect();
         ro = new ResizeObserver(function(){ if (bereit) alle(); });
@@ -15958,6 +15960,8 @@
         /* Und die Nachkontrolle anwerfen: setzt sich die Breite erst NACH dem Zeichnen (ein View,
            der gerade eingeblendet wird), wird einmal still nachgerechnet. Siehe oben. */
         nachkontrolle();
+        /* Wartet der Teil noch auf seinen Auftritt, faehrt die Linie dann erst sichtbar ein. */
+        fahrtBeimAuftritt(wrap, function(){ return chart; });
       } catch(err){}
     }
 
@@ -16509,6 +16513,9 @@
                 evt.native.target.style.cursor = (elements && elements.length) ? "pointer" : "default";
               } : undefined }
           });
+          /* Wartet der Teil noch auf seinen Auftritt, faehrt der Ring erst dann sichtbar auf
+             (11.10.: vorher war er beim Erscheinen schon fast fertig). */
+          if (!ohneFahrt) fahrtBeimAuftritt(body, function(){ return chart; });
         } catch(err){}
       })["catch"](function(err){
         /* Nicht still. clearExtras() hat Skelett und Leerflaeche vorher entfernt, die Legende
@@ -17323,9 +17330,24 @@
     for (var i = 0; i < l.length; i++) if (l[i].getClientRects().length) r.push(l[i]);
     return r;
   }
+  /* Der Moment, in dem ein Teil wirklich zu erscheinen BEGINNT (nach seiner Staffel): erst dann
+     faellt .up-auftritt-zu weg, und der Teil meldet "up-auftritt". Daran haengen die Diagramme
+     ihre eigene Fahrt (nachAuftritt) -- sonst fuhr der Ring schon, waehrend sein Teil noch
+     unsichtbar wartete, und war beim Erscheinen fast fertig (11.10. gemeldet: "der Doughnut hat
+     gar keine Appear-Animation"). Die Deckkraft haelt bis dahin die Animation selbst (fill
+     backwards), die Klasse ist nur noch das Merkmal "hat noch nicht begonnen". */
+  function auftrittLos(el){
+    el.classList.remove("up-auftritt-zu");
+    try { el.dispatchEvent(new CustomEvent("up-auftritt")); } catch(e){}
+  }
   function auftrittBewegen(teile, ab){
     var weich = weicheBewegung(), ms = weich ? 160 : auftrittDauer();
     teile.forEach(function(el, i){
+      var verz = (ab + i) * AUFTRITT_STAFFEL;
+      /* Nur der juengste Auftritt eines Teils darf ihn freigeben: startet die Seite neu, waehrend
+         dieser Zeitgeber noch laeuft, nahm er sonst die NEUE Wartestellung weg -- ein Aufblitzen. */
+      var losNr = el.__upLosNr = (el.__upLosNr || 0) + 1;
+      if (verz > 0) setTimeout(function(){ if (el.__upLosNr === losNr) auftrittLos(el); }, verz); else auftrittLos(el);
       if (typeof el.animate !== "function") return;
       /* Ein noch laufender Auftritt desselben Teils wird ersetzt, nicht gestapelt. */
       if (el.__upAuftritt){ try { el.__upAuftritt.cancel(); } catch(e){} }
@@ -17336,11 +17358,34 @@
            (unsichtbar) statt einmal voll aufzublitzen. Danach haelt NICHTS fest -- kein
            bleibender transform, der position:fixed darin (Massenleiste) verschieben wuerde. */
         el.__upAuftritt = el.animate([von, nach], {
-          duration: ms, delay: (ab + i) * AUFTRITT_STAFFEL,
+          duration: ms, delay: verz,
           easing: "cubic-bezier(.19, 1, .22, 1)", fill: "backwards"
         });
         el.__upAuftritt.onfinish = function(){ el.__upAuftritt = null; };
       } catch(e){}
+    });
+  }
+  /* fn, sobald der Teil, in dem el steht, zu erscheinen beginnt -- oder sofort, wenn el in keinem
+     wartenden Teil steht. Notbremse 5s (Stylesheet-Frist plus Datenfrist), damit nichts haengt. */
+  function nachAuftritt(el, fn){
+    var teil = el && el.closest ? el.closest(".up-auftritt-zu") : null;
+    if (!teil){ fn(); return; }
+    var fertig = false;
+    function los(){ if (fertig) return; fertig = true; teil.removeEventListener("up-auftritt", los); fn(); }
+    teil.addEventListener("up-auftritt", los);
+    setTimeout(los, 5000);
+  }
+  /* Ein Chart.js-Diagramm, das gebaut wurde, waehrend sein Teil noch auf den Auftritt wartete,
+     faehrt seine Einfahrt beim Erscheinen noch einmal ab (reset + update: der Zustand vor der
+     ersten Animation, dann die Animation). Gebaut wird weiter sofort -- viele Stellen verlassen
+     sich darauf, dass das Diagramm nach dem Zeichnen da ist. */
+  function fahrtBeimAuftritt(el, holen){
+    if (!el || !el.closest || !el.closest(".up-auftritt-zu")) return;
+    nachAuftritt(el, function(){
+      var c = null;
+      try { c = holen(); } catch(e){ c = null; }
+      if (!c || !c.canvas || !c.canvas.isConnected) return;
+      try { c.reset(); c.update(); } catch(e){}
     });
   }
   function makeAuftritt(root, cfg){
@@ -17351,11 +17396,18 @@
       if (!wartet) return;
       wartet = false; clearTimeout(uhr);
       var teile = zu.filter(function(el){ return el.isConnected; });
-      zu.forEach(function(el){ el.classList.remove("up-auftritt-zu"); });
       zu = [];
-      /* Nachzaehlen, was JETZT zu sehen ist: ein Reiter kann waehrend des Wartens gewechselt haben. */
-      var jetzt = auftrittTeile(root, cfg.inhalt);
-      auftrittBewegen(jetzt.length ? jetzt : teile, kopfN);
+      /* Nachzaehlen, was JETZT zu sehen ist: ein Reiter kann waehrend des Wartens gewechselt haben.
+         Was dabei herausfaellt, verliert seine Warteklasse sofort -- sonst bliebe es unsichtbar. */
+      /* cfg.fein: feinere Teile fuer die Staffel, die es beim Start vielleicht noch nicht gab (ein
+         Baustein baut sein Inneres einen Takt spaeter). Verdeckt wurde mit cfg.inhalt (die Huellen),
+         eingeblendet wird fein. ERST die feinen Teile in Bewegung setzen (fill backwards haelt sie
+         ab diesem Augenblick unsichtbar), DANN die Huellen freigeben -- umgekehrt blitzte das
+         Innere einen Augenblick voll auf. */
+      var jetzt = auftrittTeile(root, cfg.fein || cfg.inhalt);
+      var bewegt = jetzt.length ? jetzt : teile;
+      auftrittBewegen(bewegt, kopfN);
+      teile.forEach(function(el){ if (bewegt.indexOf(el) < 0) auftrittLos(el); });
     }
     function versuchen(){
       if (wartet && stilDa && datenDa) zeigen();
@@ -17370,13 +17422,18 @@
         var kopf = auftrittTeile(root, cfg.kopf);
         zu.forEach(function(el){ el.classList.remove("up-auftritt-zu"); });
         zu = auftrittTeile(root, cfg.inhalt);
-        zu.concat(kopf).forEach(function(el){ el.classList.add("up-auftritt-zu"); });
+        /* Eine noch laufende Einblendung (Rueckkehr innerhalb von 600ms) haelt die Deckkraft gegen
+           die Warteklasse; endete sie spaeter, sprang der Teil erst auf unsichtbar und dann wieder
+           auf -- "auf und zu". Also abbrechen, bevor gewartet wird. */
+        zu.concat(kopf).forEach(function(el){
+          if (el.__upAuftritt){ try { el.__upAuftritt.cancel(); } catch(e){} el.__upAuftritt = null; }
+          el.__upLosNr = (el.__upLosNr || 0) + 1; el.classList.add("up-auftritt-zu");
+        });
         wartet = true; stilDa = false;
         kopfN = kopf.length;
         stileBereit(function(){
           if (meine !== nr) return;
           stilDa = true;
-          kopf.forEach(function(el){ el.classList.remove("up-auftritt-zu"); });
           auftrittBewegen(kopf, 0);
           versuchen();
           /* Daten noch unterwegs: hoechstens AUFTRITT_WARTEN ab jetzt, dann mit Skelett. */
@@ -22962,7 +23019,7 @@
     closeAllDropdowns: closeAllDropdowns,
     onViewChange: onViewChange,
     beiSicht: beiSicht, wartetAufSicht: wartetAufSicht,
-    makeAuftritt: makeAuftritt, stileBereit: stileBereit, kopfZaehler: kopfZaehler,
+    makeAuftritt: makeAuftritt, stileBereit: stileBereit, kopfZaehler: kopfZaehler, nachAuftritt: nachAuftritt,
     getDashboardMode: getDashboardMode, setDashboardMode: setDashboardMode,
     onDashboardMode: onDashboardMode,
     currentView: currentView,
