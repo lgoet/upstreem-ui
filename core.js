@@ -2173,6 +2173,12 @@
     "This response could not be loaded. Please try again.": "Diese Response konnte nicht geladen werden. Bitte versuche es erneut.",
     /* Aus events.js hierher -- Response Detail meldet denselben Fall. */
     "Your team doesn't have access right now.": "Dein Team hat gerade keinen Zugang.",
+    /* v3 als Drawer aus core (11.10.): die Markenleiste und die Fehlerfaelle des direkten Abrufs. */
+    "brand mentioned": "Brand erwähnt",
+    "brands mentioned": "Brands erwähnt",
+    "Response not available": "Response nicht verfügbar",
+    "Too many requests in a short time. Please wait a moment.": "Zu viele Anfragen in kurzer Zeit. Bitte warte einen Moment.",
+    "Try again": "Erneut versuchen",
 
     /* Leerzustaende der Charts und Tabellen */
     "No types": "Keine Typen",
@@ -4975,7 +4981,10 @@
              zufaellig ja, bei "Anfragenfluss" gegen "Anfragenfluss" zufaellig nein. Von aussen
              sah das aus, als haette nur die eigene Marke einen. */
           chip.setAttribute("data-tip", e.name || gefunden);
-          if (e.icon){
+          /* Nur eine Bildadresse (https, http oder Bubbles //s3...): das Feld kommt aus der
+             Datenbank, und ein javascript:- oder data:-Wert gehoert nicht in ein src (Pruefstand
+             drw01, 11.10.: ausgefuehrt wird er nicht, aber er steht dann im Dokument). */
+          if (e.icon && /^(https?:)?\/\//i.test(String(e.icon))){
             var img = document.createElement("img");
             img.className = "up-rb-brand-ic"; img.alt = ""; img.loading = "lazy";
             img.referrerPolicy = "no-referrer"; img.src = e.icon;
@@ -17978,6 +17987,221 @@
     return n;
   }
 
+  /* ---- DIE DRAWER AUS CORE (11.10., Response Detail als erster) ------------------------------
+     Bisher war jeder Detail-Drawer eine Bubble-Floating-Group (#drawer-<art>, #backdrop-<art>),
+     und ein Bubble-Workflow lud seine Daten, 240ms NACH dem Oeffnen. Ab jetzt baut core die
+     Huelle selbst und die Komponente holt ihre Daten selbst (UC.rpc) -- derselbe Weg wie die
+     Seiten, und der, den eine spaetere Web-App ohnehin geht.
+     DER VERTRAG DES KOPF-SKRIPTS BLEIBT: die Huelle traegt genau die Ids, die das Drawer-System
+     v4 sucht (#drawer-<art>, #backdrop-<art>). Ebenen, ?detail=, Zurueck-Taste, Scroll-Sperre,
+     Escape und das Wiederherstellen nach dem Neuladen macht weiter die Host-App -- jeder
+     Einstieg der App (openDrawer aus ueber zwanzig Stellen) bleibt unveraendert, und die noch
+     nicht umgebauten Bubble-Drawer laufen daneben weiter.
+     KEIN #content-<art>: das Kopf-Skript blendet den Inhalt erst 230ms nach dem Slide ein. Das
+     braucht ein Bubble-Drawer (sein Inhalt rendert spaet), hier ist der Inhalt sofort da und
+     faehrt mit der Flaeche herein -- so machen es vaul, shadcn, Primer (Recherche 11.10.).
+     NUR WENN BUBBLE KEINEN HAT: steht noch eine Floating Group mit derselben Id auf der Seite,
+     bleibt sie zustaendig. Die Umstellung je Drawer ist damit genau ein Schritt in Bubble: die
+     Floating Group loeschen. Entschieden wird beim Oeffnen, nicht beim Laden -- Bubble legt seine
+     Gruppen nach core an, und zwei Elemente mit derselben Id waeren ein stiller Fehler.
+     Gebaut wird im Oeffnen-Hook, der VOR dem Original der Host-App laeuft: wenn openDrawer nach
+     #drawer-<art> sucht, steht er schon da. Darum auch die feste Liste hier und nicht erst die
+     Anmeldung der Komponente: kommt ein ?detail=response:... frueher als response-detail.js,
+     geht die Huelle trotzdem auf und zeigt ihr Skelett, bis die Datei da ist. */
+  var KERN_DRAWER = {
+    response: { label: "Response" }
+  };
+  var KD = {};
+  function kdFremd(art){
+    var el = document.getElementById("drawer-" + art);
+    return !!el && !el.__upKern;
+  }
+  function kdBauen(art){
+    var kd = KD[art] || (KD[art] = { art: art });
+    if (kd.el && document.contains(kd.el)) return kd;
+    var cfg = KERN_DRAWER[art];
+    var scrim = document.createElement("div");
+    scrim.id = "backdrop-" + art;
+    scrim.className = "up-root up-kdr-scrim";
+    var el = document.createElement("aside");
+    el.id = "drawer-" + art;
+    el.className = "up-root up-kdr up-kdr-" + art;
+    el.__upKern = true;
+    el.setAttribute("role", "dialog");
+    el.setAttribute("aria-modal", "true");
+    el.setAttribute("aria-label", t_(cfg.label));
+    /* tabindex -1: beim Oeffnen bekommt die Flaeche selbst den Fokus (WAI-ARIA fuer langen Inhalt:
+       der Anfang, nicht der erste Knopf -- sonst springt der Bildschirmleser ans Ende des Kopfes). */
+    el.setAttribute("tabindex", "-1");
+    /* Zu heisst inert: die Flaeche steht nur ausserhalb des Bildes, und ohne das fuehrte die
+       Tab-Taste in ihre Knoepfe. Nicht visibility -- das Kopf-Skript ersetzt jede eigene
+       transition mit !important, und das Verstecken kaeme vor dem Hinausfahren. */
+    el.inert = true;
+    el.innerHTML =
+      '<header class="up-kdr-kopf">' +
+        /* Zurueck nur, wenn darunter ein Drawer liegt (kdKopfStand): nur dann fuehrt er woanders
+           hin als das Kreuz. Zwei Knoepfe mit derselben Wirkung nebeneinander sind einer zu viel. */
+        '<button type="button" class="up-iconbtn up-kdr-knopf" data-kdr-zurueck hidden aria-label="' + esc(t_("Back")) + '" data-tip="' + esc(t_("Back")) + '">' + icon("chevronLeft", 2) + '</button>' +
+        '<div class="up-kdr-krume">' +
+          '<span class="up-kdr-art">' + esc(t_(cfg.label)) + '</span>' +
+          '<span class="up-kdr-sep" aria-hidden="true">/</span>' +
+          '<span class="up-kdr-name"><span class="up-kdr-sk"></span></span>' +
+        '</div>' +
+        '<div class="up-kdr-werkzeuge">' +
+          '<span class="up-kdr-eigen"></span>' +
+          '<button type="button" class="up-iconbtn up-kdr-knopf" data-kdr-zu aria-label="' + esc(t_("Close")) + '" data-tip="' + esc(t_("Close")) + '">' + icon("x", 2) + '</button>' +
+        '</div>' +
+      '</header>' +
+      '<div class="up-kdr-koerper"><div class="up-kdr-spalte">' +
+        /* Bis die Komponente sich anmeldet: dieselben Skelettbalken wie ihr eigener Kopf. Meist
+           ist das kein Bild lang, beim Wiederherstellen aus der Adresse kann es dauern. */
+        '<div class="up-kdr-warte"><span class="up-kdr-sk is-l"></span><span class="up-kdr-sk is-m"></span><span class="up-kdr-sk is-s"></span></div>' +
+      '</div></div>';
+    document.body.appendChild(scrim);
+    document.body.appendChild(el);
+    kd.el = el; kd.scrim = scrim;
+    kd.name = el.querySelector(".up-kdr-name");
+    kd.eigen = el.querySelector(".up-kdr-eigen");
+    kd.koerper = el.querySelector(".up-kdr-koerper");
+    kd.slot = el.querySelector(".up-kdr-spalte");
+    kd.aufgebaut = false;
+    function zu(){ if (typeof window.closeDrawer === "function"){ try { window.closeDrawer(art); } catch(e){} } }
+    scrim.addEventListener("click", zu);
+    el.querySelector("[data-kdr-zu]").addEventListener("click", zu);
+    el.querySelector("[data-kdr-zurueck]").addEventListener("click", zu);
+    /* Eine Linie unter dem Kopf erst, wenn darunter Inhalt durchlaeuft -- oben am Anfang ist der
+       Kopf Teil der Flaeche, nicht ein Balken ueber ihr. */
+    kd.koerper.addEventListener("scroll", function(){
+      el.classList.toggle("is-gerollt", kd.koerper.scrollTop > 2);
+    }, { passive: true });
+    makeTooltips(el, function(){ return el.getAttribute("data-theme") === "dark"; });
+    /* ESCAPE MIT OFFENEM MENUE schliesst nur das Menue (gemessen 11.10.: vorher beides auf einmal).
+       Das Kopf-Skript und die Menues von core hoeren beide am document; welcher zuerst dran ist,
+       steht nirgends fest. Am window in der Einfangphase kommt dieser Griff vor beiden: ist im
+       Drawer ein Menue offen, schliesst er die Menues und haelt die Taste an. */
+    window.addEventListener("keydown", function(e){
+      if ((e.key !== "Escape" && e.keyCode !== 27) || !el.classList.contains("open")) return;
+      if (!el.querySelector(".is-open > .up-pop, .up-pop.is-shown, .up-dd.is-open, .is-open > .up-dd-menu")) return;
+      e.stopPropagation();
+      try { closeAll(null, null); } catch(err){}
+      try { closeAllDropdowns(); } catch(err){}
+    }, true);
+    /* AUF UND ZU AM ELEMENT ABLESEN, nicht an den Aufrufen: die Host-App schliesst einen Drawer
+       auch ohne closeDrawer -- openDrawer schliesst jeden derselben oder einer hoeheren Ebene
+       still (_close), und die Zurueck-Taste geht ueber _applyUrl. Die Klasse .open ist das
+       Einzige, das in allen Faellen stimmt. Der Beobachter meldet nach dem ganzen Aufruf, also
+       mit dem Endstand (welche Drawer darunter liegen). */
+    var warOffen = false;
+    new MutationObserver(function(){
+      var offen = el.classList.contains("open");
+      if (offen === warOffen) return;
+      warOffen = offen;
+      el.inert = !offen;
+      if (offen){
+        kdKopfStand(kd);
+        try { el.focus({ preventScroll: true }); } catch(e){}
+      } else {
+        kd.offen = false;
+        if (kd.handler && typeof kd.handler.zu === "function"){ try { kd.handler.zu(); } catch(e){} }
+        /* Der Fokus zurueck dorthin, von wo aus geoeffnet wurde -- sonst steht er auf <body>,
+           und die naechste Tab-Taste beginnt oben auf der Seite. */
+        var f = kd.vorherFokus; kd.vorherFokus = null;
+        try { if (f && f.focus && document.contains(f) && !el.contains(f)) f.focus({ preventScroll: true }); } catch(e){}
+      }
+    }).observe(el, { attributes: true, attributeFilter: ["class"] });
+    /* DIE MELDUNG AN BUBBLE: die Host-App ruft beim Oeffnen bubble_fn_drawer_<art> und sucht bis
+       zu 10s danach, mit einer Warnung am Ende. Fuer einen Drawer aus core gibt es keinen
+       Bubble-Empfaenger mehr -- ohne diesen leeren stuende bei jedem Oeffnen eine Warnung in der
+       Konsole, die einen Fehler meldet, wo keiner ist. Ein echter Empfaenger gewinnt immer. */
+    var fn = "bubble_fn_drawer_" + art;
+    if (typeof window[fn] !== "function"){
+      var leer = function(){};
+      leer.__upKern = true;
+      window[fn] = leer;
+    }
+    if (kd.handler) kdAufbauen(kd);
+    return kd;
+  }
+  function kdAufbauen(kd){
+    if (kd.aufgebaut || !kd.el || !kd.handler) return;
+    kd.aufgebaut = true;
+    kd.slot.innerHTML = "";
+    try {
+      kd.handler.aufbauen({
+        art: kd.art, slot: kd.slot, eigen: kd.eigen, koerper: kd.koerper,
+        /* null heisst laedt (Skelett), "" heisst kein Name (Strich). */
+        name: function(text){
+          if (text == null){ kd.name.innerHTML = '<span class="up-kdr-sk"></span>'; return; }
+          kd.name.textContent = String(text) || "–";
+        },
+        schliessen: function(){ if (typeof window.closeDrawer === "function"){ try { window.closeDrawer(kd.art); } catch(e){} } },
+        offen: function(){ return !!kd.offen; }
+      });
+    } catch(e){ if (window.console) console.warn("[drawer] " + kd.art + ": Aufbau hat geworfen:", e); }
+  }
+  function kdKopfStand(kd){
+    var darunter = [].some.call(document.querySelectorAll('[id^="drawer-"].open'), function(d){ return d !== kd.el; });
+    var b = kd.el.querySelector("[data-kdr-zurueck]");
+    if (b) b.hidden = !darunter;
+    kd.el.classList.toggle("has-zurueck", darunter);
+  }
+  /* VORAB ANLEGEN (gemessen 11.10. im Pruefstand drw01): das Kopf-Skript stellt ?detail= nur fuer
+     Drawer wieder her, deren Element SCHON steht (_applyUrl: "if (!p) return" vor openDrawer) --
+     dasselbe beim Vorwaerts-Blaettern. Eine Huelle, die erst beim Oeffnen entsteht, kam so nie
+     zurueck. Also legt core sie an, sobald Bubble drawersReady() ruft: dann stehen Bubbles
+     eigene Gruppen, und die Frage "hat Bubble noch einen?" hat eine verlaessliche Antwort. Und bei
+     jedem Oeffnen irgendeines Drawers, falls drawersReady ausbleibt. */
+  function kdAlleBauen(){
+    Object.keys(KERN_DRAWER).forEach(function(a){ if (!kdFremd(a)) kdBauen(a); });
+  }
+  function wrapDrawersReady(){
+    var orig = window.drawersReady;
+    if (typeof orig !== "function") return false;
+    if (orig.__upWrapped) return true;
+    var w = function(){
+      try { kdAlleBauen(); } catch(e){}
+      return orig.apply(this, arguments);
+    };
+    w.__upWrapped = true;
+    try { window.drawersReady = w; } catch(e){ return false; }
+    return true;
+  }
+  onDrawerOpen(function(art, id){
+    art = String(art == null ? "" : art).trim();
+    try { kdAlleBauen(); } catch(e){}
+    if (!KERN_DRAWER[art] || kdFremd(art)) return;
+    var kd = kdBauen(art);
+    id = String(id == null ? "" : id).trim();
+    if (!kd.offen){
+      var a = document.activeElement;
+      kd.vorherFokus = (a && a !== document.body && !kd.el.contains(a)) ? a : null;
+    }
+    kd.offen = true;
+    /* Ohne Kennung zeigt der Drawer, was er hatte -- dasselbe wie die Host-App, die dann auch
+       Bubble nichts meldet. */
+    if (!id) return;
+    kd.id = id;
+    if (kd.handler && typeof kd.handler.zeigen === "function"){
+      try { kd.handler.zeigen(id); } catch(e){ if (window.console) console.warn("[drawer] " + art + ": zeigen hat geworfen:", e); }
+    }
+  });
+  /* Die Komponente meldet sich an: aufbauen(ctx) einmal, zeigen(id) bei jedem Oeffnen mit
+     Kennung, zu() nach dem Schliessen. Ist der Drawer schon offen (Wiederherstellen aus der
+     Adresse vor dem Laden der Datei), holt die Anmeldung das Zeigen nach. */
+  function kernDrawer(art, handler){
+    art = String(art || "");
+    if (!KERN_DRAWER[art] || !handler) return false;
+    var kd = KD[art] || (KD[art] = { art: art });
+    kd.handler = handler;
+    if (kd.el && document.contains(kd.el)){
+      kdAufbauen(kd);
+      if (kd.offen && kd.id && typeof handler.zeigen === "function"){ try { handler.zeigen(kd.id); } catch(e){} }
+    }
+    return true;
+  }
+  /* Fuer Pruefstand und Uebergabe: baut core diesen Drawer (oder noch Bubble)? */
+  function kernDrawerAktiv(art){ return !!KERN_DRAWER[art] && !kdFremd(art); }
+
   /* ---------- EINE ENTITAET AN MIRA GEBEN (29.09. spaet, aus drawer-topbar nach core) ----------
      Angefordert: "Ask Mira" auch im Mehr-Menue der Treffer in Quick Actions -- "dieselben Wege
      wie die Knoepfe in den Topbars, Quick Actions muss nur mitgeben, ob Brand, Domain, Prompt,
@@ -18035,7 +18259,8 @@
   (function watchForDrawerFns(triesLeft){
     var a = wrapDrawerFn("openDrawer", DRAWER_SUBS, true);
     var b = wrapDrawerFn("closeDrawer", DRAWER_ZU_SUBS, false);
-    if (a && b) return;
+    var c = wrapDrawersReady();
+    if (a && b && c) return;
     if (triesLeft <= 0) return;
     setTimeout(function(){ watchForDrawerFns(triesLeft - 1); }, 200);
   })(50);
@@ -23553,6 +23778,7 @@
        Formatierer kennt. */
     getPref: getPref, setPref: setPref, setLocaleReload: setLocaleReload,
     openDrawers: openDrawers, closeAllDrawers: closeAllDrawers, drawerOeffnen: drawerOeffnen,
+    kernDrawer: kernDrawer, kernDrawerAktiv: kernDrawerAktiv,
     anMira: anMira, miraBezug: miraBezug,
     onPrefs: onPrefs, getUpstreemThemeChoice: getUpstreemThemeChoice,
     PREF_DEFAULT: PREF_DEFAULT, PREF_ERLAUBT: PREF_ERLAUBT,

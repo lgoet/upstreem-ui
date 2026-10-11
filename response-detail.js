@@ -120,20 +120,25 @@
      ============================================================================================ */
   function shell() {
     return '' +
+      /* DER KOPF (v3, 11.10., Designvorlage "Response Detail"): oben die Meta-Zeile (Modell,
+         Market, Zeit), dann der Prompt als Titel, darunter seine Themen und die Leiste der
+         genannten Marken. Vorher standen Modell, Zeit, Market und Themen gemeinsam UNTER dem
+         Titel, links und rechts verteilt -- die Vorlage trennt "wer und wann" (oben, klein) von
+         "worueber" (unter dem Titel), und so liest sich der Titel als Erstes. */
       '<div class="urd-head">' +
+        '<div class="urd-kpis"></div>' +
         /* role=button und tabindex, weil der Klick ein Ereignis feuert: ohne die zwei kann man den
            Titel mit der Tastatur nicht erreichen. */
         '<h2 class="urd-prompt" role="button" tabindex="0"></h2>' +
-        '<div class="urd-kpis"></div>' +
-        /* DIE MARKEN IM KOPF (v2): eine Zeile unter einer Linie statt eines eigenen Abschnitts.
-           Was nicht in die Zeile passt, steht hinter "+N more" (mentionsZeile). Bei zwanzig Marken
-           bleibt es so eine Zeile, bis man sie alle haben will. */
+        '<div class="urd-tags"></div>' +
+        /* DIE MARKEN als eigene Leiste auf leichtem Grund (v3): links wie viele, rechts welche.
+           Was nicht in die Zeile passt, steht weiter hinter "+N more" (mentionsZeile). */
         '<div class="urd-mrow" hidden>' +
-          /* Das Wort im eigenen Element: der Sprachlauf von core uebersetzt Elemente, deren Text
-             ein Katalogschluessel ist -- "Mentioned" plus Zaehler in einem waere "Mentioned2". */
-          '<span class="urd-mrow-lbl"><span>Mentioned</span><span class="urd-mrow-n"></span></span>' +
+          /* Zahl und Wort in eigenen Elementen: der Sprachlauf von core uebersetzt Elemente, deren
+             Text ein Katalogschluessel ist -- Zahl und Wort in einem waeren keiner. */
+          '<span class="urd-mrow-lbl"><span class="urd-mrow-n"></span><span class="urd-mrow-wort"></span></span>' +
           '<div class="urd-mrow-box">' +
-            '<div class="urd-ments up-mentlist"></div>' +
+            '<div class="urd-ments up-mentlist is-lg"></div>' +
             '<button type="button" class="urd-mrow-more" hidden></button>' +
           '</div>' +
         '</div>' +
@@ -249,6 +254,8 @@
 
     var elPrompt = root.querySelector(".urd-prompt");
     var elKpis   = root.querySelector(".urd-kpis");
+    var elTags   = root.querySelector(".urd-tags");
+    var elMWort  = root.querySelector(".urd-mrow-wort");
     var elMents  = root.querySelector(".urd-ments");
     var elMRow   = root.querySelector(".urd-mrow");
     var elMN     = root.querySelector(".urd-mrow-n");
@@ -467,12 +474,13 @@
 
     /* ---- Kopfzeile ------------------------------------------------------------------------- */
     function renderHead() {
-      if (state.fehler) { elPrompt.textContent = ""; elKpis.innerHTML = ""; return; }
+      if (state.fehler) { elPrompt.textContent = ""; elKpis.innerHTML = ""; elTags.innerHTML = ""; return; }
       if (istLaden() || !state.data) {
         elPrompt.innerHTML = '<span class="urd-sk urd-sk-prompt"></span>' +
                              '<span class="urd-sk urd-sk-prompt2"></span>';
         elKpis.innerHTML = '<span class="urd-sk urd-sk-kpi"></span>' +
                            '<span class="urd-sk urd-sk-kpi"></span>';
+        elTags.innerHTML = '<span class="urd-sk urd-sk-tag"></span><span class="urd-sk urd-sk-tag"></span>';
         return;
       }
       var d = state.data;
@@ -480,19 +488,18 @@
       elPrompt.textContent = String(d.prompt_text || "");
       elPrompt.setAttribute("data-id", String(d.prompt_id || ""));
 
-      /* v2: zwei Gruppen statt Trennstrichen. Links der Absender (Modell, Zeit), rechts wo und
-         worueber (Market, Themen). Der Abstand zwischen den Gruppen trennt staerker als ein Strich. */
-      var links = [], rechts = [];
-      if (d.model) links.push(UC.modelChip(d.model, { full: true }));
+      /* v3: die Meta-Zeile ueber dem Titel -- wer (Modell), wo (Market), wann. Getrennt durch
+         Abstand, nicht durch Punkte (CLAUDE.md 5). Die Themen stehen darunter in eigener Zeile. */
+      var meta = [];
+      if (d.model) meta.push(UC.modelChip(d.model, { full: true }));
+      if (d.market) meta.push(UC.marketChip(d.market));
       var zeit = UC.relativeTime(d.run_at);
-      if (zeit) links.push('<span class="urd-kpi-time" data-tip="' +
+      if (zeit) meta.push('<span class="urd-kpi-time" data-tip="' +
         esc(String(d.run_at || "")) + '">' + esc(zeit) + "</span>");
-      if (d.market) rechts.push(UC.marketChip(d.market));
+      elKpis.innerHTML = meta.join("");
       /* Erst bauen, dann pruefen: topicChip laesst ein Thema ohne Namen weg, und eine Liste, in
-         der keines einen Namen hat, ergab eine leere Huelle. */
-      var themen = isArr(d.tags) ? d.tags.map(topicChip).join("") : "";
-      if (themen) rechts.push('<span class="urd-tags">' + themen + "</span>");
-      elKpis.innerHTML = links.join("") + (rechts.length ? '<span class="urd-kpi-push">' + rechts.join("") + "</span>" : "");
+         der keines einen Namen hat, ergab eine leere Huelle (:empty blendet die Zeile dann aus). */
+      elTags.innerHTML = isArr(d.tags) ? d.tags.map(topicChip).join("") : "";
     }
 
     /* Ein Thema als .up-topicchip aus core -- dasselbe Bauteil und dieselbe Farbe wie in der
@@ -531,19 +538,22 @@
     /* ---- Mentions ------------------------------------------------------------------------- */
     function renderMents() {
       /* Der Fehler steht im Antworttext, nicht noch einmal hier: der Kopf traegt dann keine Zeile. */
-      if (state.fehler) { elMents.innerHTML = ""; elMN.textContent = ""; elMRow.hidden = true; return; }
+      if (state.fehler) { elMents.innerHTML = ""; elMN.textContent = ""; elMWort.textContent = ""; elMRow.hidden = true; return; }
       if (istLaden() || !state.data) {
-        elMents.innerHTML = new Array(4).join("x").split("x")
+        elMents.innerHTML = new Array(3).join("x").split("x")
           .map(function () { return '<span class="urd-sk urd-sk-ment"></span>'; }).join("");
-        elMN.textContent = "";
+        elMN.innerHTML = '<span class="urd-sk urd-sk-mn"></span>';
+        elMWort.textContent = "";
         elMRow.hidden = false;
         mentionsZeile();
         return;
       }
       var liste = isArr(state.data.companies) ? state.data.companies : [];
-      /* Ohne Marken keine Zeile: "Mentioned" ohne etwas dahinter waere eine leere Ueberschrift. */
+      /* Ohne Marken keine Leiste: "0 brands mentioned" auf eigenem Grund waere viel Flaeche fuer
+         keine Auskunft. */
       elMRow.hidden = !liste.length;
       elMN.textContent = liste.length ? String(liste.length) : "";
+      elMWort.textContent = UC.t(liste.length === 1 ? "brand mentioned" : "brands mentioned");
       if (!liste.length) {
         elMents.innerHTML = "";
         return;
@@ -554,6 +564,8 @@
            Zwei Schreibweisen derselben Marke auf einer Seite lesen sich wie zwei Marken. */
         var name = String((c && (c.brand_name_raw || c.name)) || "");
         var logo = String((c && c.favicon_url) || "");
+        /* Nur Bildadressen -- dieselbe Pruefung wie an der Markenauszeichnung in core. */
+        if (!/^(https?:)?\/\//i.test(logo)) logo = "";
         var buchst = (name.charAt(0) || "?").toUpperCase();
         /* Kein Chip und keine Karte: Logo und Name, wie in der Mentioned-Liste der Tabellen.
            Der Rahmen um jede Marke machte aus einer Aufzaehlung eine Reihe von Knoepfen -- hier
@@ -580,6 +592,8 @@
        bricht die Zeile um, und der Knopf heisst "Show less". */
     var mentionsOffen = false;
     function mentionsZeile() {
+      /* Schmal stehen ohnehin alle untereinander (CSS) -- dann gibt es nichts aufzuklappen. */
+      if (root.classList.contains("is-vnarrow")) { elMMore.hidden = true; elMRow.classList.remove("is-open"); return; }
       elMRow.classList.toggle("is-open", mentionsOffen);
       var chips = elMents.querySelectorAll(".urd-ment");
       if (!chips.length) { elMMore.hidden = true; return; }
@@ -935,6 +949,14 @@
     ];
     var letzteMessung = null;
     function renderBody() {
+      /* Im Drawer aus core ist der Fehler der ganze Inhalt -- Kopf und Leiste sind leer --, also
+         der Leerzustand aus core mit Satz und, wo es etwas bringt, dem Knopf zum Wiederholen.
+         Eingebettet bleibt es bei der Zeile im Antworttext wie bisher. */
+      if (state.fehler && root.__urdKopf) {
+        elBody.innerHTML = UC.leerHtml({ icon: "info", titel: "Response not available", text: state.fehler,
+          knopf: wiederholbar(state.fehlerCode) ? "Try again" : "", knopfAttr: "data-urd-retry" });
+        return;
+      }
       if (state.fehler) { elBody.innerHTML = '<span class="urd-empty">' + esc(state.fehler) + "</span>"; return; }
       if (istLaden() || !state.data) {
         /* Das Skelett hat jetzt die FORM einer Antwort, nicht nur ihre Masse: Absatz, Ueberschrift,
@@ -1312,12 +1334,23 @@
     /* Was im UI steht, wenn die RPC nicht antworten konnte (get_mention_detail_v8 meldet
        mention_not_found, wenn es den Lauf nicht gibt oder er nicht zum Team gehoert). Ohne Code:
        die Nutzlast liess sich nicht lesen. */
+    /* Seit dem Drawer aus core (11.10.) kommen die Codes auch direkt aus UC.rpc: dort heissen
+       Netz und Zeitueberschreitung network / timeout, ein Serverfehler http_5xx -- und die neue
+       RPC (response_detail_v1) meldet response_not_found, team_forbidden, response_rate_limited.
+       Wiederholbar ist, was beim zweiten Versuch klappen kann; "nicht gefunden" und "kein Zugang"
+       aendern sich durch einen Klick nicht, dort gibt es keinen Knopf. */
     function fehlerText(code) {
       var c = String(code || "").trim();
       if (!c) return "The response data could not be read.";
-      if (c === "mention_not_found") return "This response could not be found.";
-      if (/^team_access_/.test(c) || c === "forbidden" || c === "not authenticated") return "Your team doesn't have access right now.";
+      if (c === "mention_not_found" || c === "response_not_found") return "This response could not be found.";
+      if (/^team_access_/.test(c) || c === "forbidden" || c === "team_forbidden" || c === "not authenticated") return "Your team doesn't have access right now.";
+      if (c === "response_rate_limited") return "Too many requests in a short time. Please wait a moment.";
       return "This response could not be loaded. Please try again.";
+    }
+    function wiederholbar(code) {
+      var c = String(code || "").trim();
+      return !(c === "mention_not_found" || c === "response_not_found" || /^team_access_/.test(c) ||
+        c === "forbidden" || c === "team_forbidden" || c === "not authenticated");
     }
 
     /* EINBLENDEN (v2): einmal je neuer Antwort, nicht bei jedem Neuzeichnen -- die Abschnitte
@@ -1347,6 +1380,11 @@
     /* ---- Klicks --------------------------------------------------------------------------- */
     root.addEventListener("click", function (e) {
       if (!e.target.closest) return;
+
+      if (e.target.closest("[data-urd-retry]")) {
+        if (typeof root.__urdNeuLaden === "function") root.__urdNeuLaden();
+        return;
+      }
 
       /* aus -> ja -> nein -> aus, dieselbe Reihenfolge wie in urls-table. Kein Ereignis nach
          Bubble: der Filter braucht keine neuen Daten. */
@@ -1534,8 +1572,24 @@
       var n = chip.querySelector(".up-ment-name");
       return n ? n.textContent : String(key || "");
     }
+    /* IM DRAWER AUS CORE (11.10.) gibt es keine drawer-topbar: den Kopf baut core, und diese
+       Komponente fuellt ihn ueber den Griff, den sie beim Aufbau bekommt (root.__urdKopf) -- den
+       Namen ("Modell, Datum") und das Zap zum Prompt, rechts vor dem Kreuz. */
+    function kopfFuellen() {
+      var k = root.__urdKopf, d = state.data;
+      if (istLaden() || !d) { k.name(istLaden() ? null : ""); k.eigen.innerHTML = ""; return; }
+      k.name([d.model ? modellName(d.model) : "", d.run_at && UC.fmtDate ? UC.fmtDate(d.run_at) : ""]
+        .filter(Boolean).join(", "));
+      var pid = String(d.prompt_id || "").trim();
+      k.eigen.innerHTML = pid && typeof window.openDrawer === "function"
+        ? '<button type="button" class="up-iconbtn" data-urd-zum-prompt="' + esc(pid) + '" data-tip="' +
+            esc(UC.t("Go to parent prompt")) + '" aria-label="' + esc(UC.t("Go to parent prompt")) + '">' +
+            UC.icon("zap", 2) + "</button>"
+        : "";
+    }
     var topbarUhr = null;
     function topbarFuellen(versuch) {
+      if (root.__urdKopf) { kopfFuellen(); return; }
       if (topbarUhr) { clearTimeout(topbarUhr); topbarUhr = null; }
       if (root.isConnected === false || typeof window.setDrawerTopbar !== "function") return;
       var id = topbarInstanz();
@@ -1564,6 +1618,9 @@
       if (state.data && state.view === "grid") { spaltenSetzen((state.data.citations || []).length); markenPassen(); }
       glistSchliessen();
       mentionsZeile();
+      /* Noch einmal nach diesem Durchlauf: is-vnarrow setzt widthTiers ueber einen eigenen
+         Beobachter, und welcher zuerst feuert, ist nicht festgelegt. */
+      setTimeout(mentionsZeile, 0);
       if (produktListe.length) shopRand();
       if (!elAds.hidden) adsRand();
     });
@@ -1593,6 +1650,7 @@
         var code = !ok && UC.bubbleFehler ? UC.bubbleFehler(fehler) : "";
         var neu = !!ok && (state.loading || !state.data || String(state.data.id || "") !== String(p.id || ""));
         state.fehler = ok ? null : fehlerText(code);
+        state.fehlerCode = ok ? "" : code;
         state.data = ok ? p : null;
         state.hasData = !!ok;
         state.loading = false;
@@ -1728,8 +1786,11 @@
   if (UC.onDrawerClose && !window.__urdZuAngemeldet) {
     window.__urdZuAngemeldet = true;
     UC.onDrawerClose(function () {
+      /* Ohne die Wurzel im Drawer aus core: die laedt bei jedem Oeffnen selbst (siehe unten) und
+         zeigt eine schon geladene Antwort sofort -- ein Ladezustand nach dem Schliessen nahme ihr
+         genau das. */
       var offen = [].filter.call(document.getElementsByClassName("urd-root"), function (r) {
-        return !!r.__urdController && UC.istSichtbar(r);
+        return !!r.__urdController && !r.__urdKopf && UC.istSichtbar(r);
       });
       if (!offen.length) return;
       setTimeout(function () {
@@ -1756,7 +1817,7 @@
          neuen Daten, und was drinsteht, muss stehen bleiben. */
       if (!art || id == null || String(id) === "") return;
       [].forEach.call(document.getElementsByClassName("urd-root"), function (r) {
-        if (!r.__urdController || r.isConnected === false) return;
+        if (!r.__urdController || r.isConnected === false || r.__urdKopf) return;
         if (!r.closest('[id="drawer-' + art + '"], [id="content-' + art + '"]')) return;
         r.__urdController.setLoading("yes");
       });
@@ -1770,6 +1831,90 @@
       });
     });
   }
+
+  /* ==========================================================================================
+     ALS DRAWER AUS CORE (11.10.): die Komponente holt ihre Antwort selbst
+     ==========================================================================================
+     Steht auf der Seite keine Bubble-Floating-Group #drawer-response mehr, baut core die Huelle
+     (core.js, KERN_DRAWER) und ruft hier zeigen(prompt_run_id) -- und zwar VOR dem Hereinfahren,
+     nicht 240ms danach wie der Bubble-Workflow. Kein Run-JS-Schritt, kein Setter, kein Workflow.
+     ZWISCHENSPEICHER: eine Antwort aendert sich nicht mehr, sobald der Lauf fertig ist. Wer
+     dieselbe Antwort ein zweites Mal oeffnet (zurueck aus dem Prompt-Drawer, Liste auf und ab),
+     sieht sie sofort, ohne zweiten Abruf. 20 Eintraege: genug fuer eine Sitzung, die eine
+     Responses-Liste durchgeht, und zu wenig, um nennenswert Speicher zu halten.
+     Der Abruf laeuft mit 20s Frist: die Warte-Uhr der Komponente meldet nach 25s "No data", und
+     ein ehrliches "konnte nicht geladen werden" mit Knopf soll vorher kommen. */
+  var DR_FN = "get_mention_detail_v8";
+  var DR = { root: null, id: "", gezeigt: "", nr: 0, speicher: {}, reihe: [] };
+  function drMerken(id, o) {
+    DR.speicher[id] = o;
+    var i = DR.reihe.indexOf(id);
+    if (i >= 0) DR.reihe.splice(i, 1);
+    DR.reihe.push(id);
+    while (DR.reihe.length > 20) delete DR.speicher[DR.reihe.shift()];
+  }
+  /* Das Team kann beim Wiederherstellen aus der Adresse (?detail=response:...) noch fehlen: der
+     Drawer geht dann auf, bevor Bubble das Team gesetzt hat. Bis zu 10s darauf warten. */
+  function drTeam() {
+    var t = UC.getTeam ? UC.getTeam() : "";
+    if (t || !UC.onTeamChange) return Promise.resolve(t || "");
+    return new Promise(function (fertig) {
+      var weg = null, uhr = setTimeout(function () { if (weg) weg(); fertig(UC.getTeam() || ""); }, 10000);
+      weg = UC.onTeamChange(function () {
+        var x = UC.getTeam();
+        if (!x) return;
+        clearTimeout(uhr); if (weg) weg(); fertig(x);
+      });
+    });
+  }
+  function drLaden(id, frisch) {
+    var c = DR.root ? initRoot(DR.root) : null;
+    if (!c || !id) return;
+    DR.id = id;
+    if (!frisch && DR.speicher[id]) {
+      /* Steht genau diese Antwort schon da, wird nichts neu gezeichnet -- das Wiederoeffnen
+         kostet dann keinen einzigen Neuaufbau, waehrend die Flaeche hereinfaehrt. */
+      if (DR.gezeigt !== id) { c.set(DR.speicher[id]); DR.gezeigt = id; }
+      return;
+    }
+    DR.gezeigt = "";
+    c.setLoading("yes");
+    var nr = ++DR.nr;
+    drTeam().then(function (team) {
+      if (nr !== DR.nr) return null;
+      if (!team) return { ok: false, status: 0, fehler: { message: "not authenticated" } };
+      return UC.rpc(DR_FN, { p_prompt_run_id: id, p_team: team }, { timeoutMs: 20000 });
+    }).then(function (erg) {
+      if (!erg || nr !== DR.nr) return;
+      var d = erg.ok ? erg.daten : null;
+      if (isArr(d)) d = d.length ? d[0] : null;
+      /* response_detail_v1 (Vorschlag an den DB-Chat) liefert {meta, row}; v8 das Objekt selbst. */
+      if (d && d.row && typeof d.row === "object") d = d.row;
+      var ok = d && typeof d === "object" && (d.prompt_text != null || d.response_json);
+      if (ok) { drMerken(id, d); c.set(d); DR.gezeigt = id; return; }
+      var code = erg.ok ? "" : String((erg.fehler && (erg.fehler.message || erg.fehler.code)) || "");
+      if (window.console) console.warn("[response-detail] " + DR_FN + " fuer " + id + ": " +
+        (code || "Antwort nicht lesbar") + (erg.status ? " (HTTP " + erg.status + ")" : ""));
+      c.set(null, code);
+    });
+  }
+  if (UC.kernDrawer) UC.kernDrawer("response", {
+    aufbauen: function (ctx) {
+      ctx.slot.innerHTML = '<div class="up-root urd-root urd-im-drawer" data-instance="drawer-response"></div>';
+      var r = ctx.slot.firstChild;
+      /* VOR initRoot: der erste render() muss schon wissen, dass er im Drawer steht. */
+      r.__urdKopf = ctx;
+      r.__urdNeuLaden = function () { drLaden(DR.id, true); };
+      DR.root = r;
+      initRoot(r);
+      ctx.eigen.addEventListener("click", function (e) {
+        var b = e.target.closest ? e.target.closest("[data-urd-zum-prompt]") : null;
+        if (b && UC.drawerOeffnen) UC.drawerOeffnen("prompt", b.getAttribute("data-urd-zum-prompt"), "response-detail");
+      });
+    },
+    zeigen: function (id) { drLaden(String(id)); },
+    zu: function () {}
+  });
 
   /* Bubble spritzt das Markup neu ein -- ohne das findet ein Setter nach dem Neuaufbau keine
      Wurzel mehr, weil die alte aus dem Dokument verschwunden ist. */
