@@ -488,7 +488,7 @@
                 '<div class="usb-rowtitle">Manage AI Models</div>' +
                 '<div class="usb-rowdesc" data-model-desc></div>' +
               '</div>' +
-              '<span class="usb-count usb-skelbox usb-skelbox" data-model-count>0/0</span>' +
+              '<span class="up-zaehler usb-count usb-skelbox" data-model-count>0/0</span>' +
             '</div>' +
             '<div class="usb-models usb-skelbox" data-models></div>' +
             '<div class="usb-savebar">' +

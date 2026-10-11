@@ -104,7 +104,12 @@
       STORE[instanceId] = { tab: state.tab, f: state.f, gran: state.gran, dom: state.dom, url: state.url };
     }
 
-    var lader = D.makeLader({ rufen: function (fn, params, o) { return UC.rpc(fn, params, { signal: o && o.signal, timeoutMs: 30000 }); } });
+    /* Der Lader lebt am Fenster je Instanz (11.10., wie performance-page.js): Bubble baut die Seite
+       beim Themenwechsel neu, und mit einem frischen Lader war sein Speicher weg -- alles kam ein
+       zweites Mal vom Server, der Auftritt zeigte so lange Skelett (gemessen: 5 Anfragen, Skelett
+       90ms). STORE[instanceId] taugt dafuer nicht, persist() ersetzt es bei jeder Aenderung. */
+    var LADER = window.__ucsLader || (window.__ucsLader = {});
+    var lader = LADER[instanceId] || (LADER[instanceId] = D.makeLader({ rufen: function (fn, params, o) { return UC.rpc(fn, params, { signal: o && o.signal, timeoutMs: 30000 }); } }));
 
     /* ---- Aufbau ------------------------------------------------------------------------------- */
     function isDark() { return (UC.themeParam && UC.themeParam(root.getAttribute("data-isdark"))) || root.getAttribute("data-theme") === "dark"; }
@@ -150,6 +155,9 @@
       pages: REITER, onSelect: function (v) { reiterOeffnen(v, true); }
     }) : null;
     var krumen = UC.makePageCrumbs ? UC.makePageCrumbs(root, { icon: "globe", name: "Citations", quelle: elNav, komponente: true }) : null;
+    /* Der Auftritt (core, makeAuftritt): Kopf sofort, der Inhalt erst mit Stylesheets und ersten
+       Daten, dann in einem Zug. Siehe dort, warum. */
+    var auftritt = UC.makeAuftritt ? UC.makeAuftritt(root, { kopf: ".ucs-pagehead, .ucs-nav, .ucs-filterzeile", inhalt: ".ucs-main > *" }) : null;
     if (UC.makeTooltips) UC.makeTooltips(root, isDark);
     if (isDark()) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
 
@@ -367,7 +375,10 @@
       if (!state.kalenderDa && !kalenderLesen()) {
         /* Fehlt date-range.js ganz, laedt die Seite nach 3s ohne Zeitraum: die RPCs nehmen dann
            ihre Vorgabe (Vertrag: die letzten 7 Tage). */
-        if (kalenderVersuche++ < 20) { spaeter(150); return false; }
+        /* 30ms statt 150ms (11.10.): der Kalender richtet sich einen Takt nach der Seite ein, und
+           jede Wartezeit hier steht im Auftritt als leerer Inhalt (gemessen: erste Anfrage 155ms
+           nach dem Aufbau). Gleiche Gesamtfrist wie vorher, 3s. */
+        if (kalenderVersuche++ < 100) { spaeter(30); return false; }
       }
       return true;
     }
@@ -386,13 +397,17 @@
       o = o || {};
       var nr = ++gruppeNr;
       auftraege.forEach(function (a) { juengsteJe[a.kanal] = nr; });
-      var alleDa = !o.frisch && auftraege.every(function (a) { return a.imSpeicher; });
-      if (!alleDa) auftraege.forEach(function (a) { a.ladenAn(); });
+      /* Nur wer wirklich holen muss, geht in den Ladezustand (11.10.). Vorher reichte EIN Teil
+         ausserhalb des Speichers, und alle zeigten Skelett -- nach einem Neuaufbau der Prompts-Seite
+         holt die Seiten-Meta immer frisch, und die Liste fiel aus ihren gespeicherten Daten ins
+         Skelett und wieder zurueck (gemessen: Daten, Skelett, Daten). */
+      auftraege.forEach(function (a) { if (o.frisch || !a.imSpeicher) a.ladenAn(); });
       var vorab = o.vorab ? Promise.resolve(o.vorab).then(null, function () {}) : Promise.resolve();
       return vorab.then(function () {
         return Promise.all(auftraege.map(function (a) { return a.laden(o.frisch); }));
       }).then(function (zeigen) {
         zeigen.forEach(function (z, i) { if (z && juengsteJe[auftraege[i].kanal] === nr) z(); });
+        if (auftritt) auftritt.bereit();
       });
     }
     function bedarf(o) {

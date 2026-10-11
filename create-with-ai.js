@@ -206,7 +206,7 @@
                 '<span class="uca-links-title">Internal Links</span>' +
                 '<span class="uca-links-sub">Your pages the content should link to (max 3)</span>' +
               "</span>" +
-              '<span class="uca-links-count" data-links-count></span>' +
+              '<span class="up-zaehler uca-links-count" data-links-count></span>' +
               '<span class="uca-links-chev">' + CHEV_SVG + "</span>" +
             "</button>" +
 

@@ -5465,6 +5465,17 @@
 
     return {
       root: root,
+      /* Der Gruppierungsstand, wie ihn die Tabelle gerade zeigt (11.10.). Fuer eine Seite, die
+         lokal einbettet: sie muss VOR ihrer ersten Anfrage wissen, ob Gruppen gebraucht werden.
+         Vorher startete die Seite mit "aus", die Tabelle stand aber auf ihrer Voreinstellung "an"
+         -- die erste Lieferung kam ohne Gruppen, die Tabelle meldete uptGroups, und die Seite lud
+         alles ein zweites Mal: gemessen Daten bei 386ms, Skelett bei 534ms, Daten bei 741ms. Das
+         war das gemeldete "erscheint 2 mal hintereinander". Dieselbe Form wie das uptGroups-Ereignis. */
+      gruppierung: function(){
+        var eigene = readCustomGroups().filter(function(g){ return !g.hidden; })
+          .map(function(g){ return { key: g.key, tag_ids: g.tag_ids }; });
+        return { an: groupingOn(), modus: groupModeWirksam(), eigene: eigene };
+      },
       /* ---- grouped view: the two setters Bubble calls back into ---- */
       setGroups: function(rows){
         state.groups = Array.isArray(rows) ? rows : [];

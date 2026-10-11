@@ -93,6 +93,9 @@
     function isDark() { return (UC.themeParam && UC.themeParam(root.getAttribute("data-isdark"))) || root.getAttribute("data-theme") === "dark"; }
     root.innerHTML = String(MARKUP.upr || "").split("__URS_UPR__").join(esc(instanceId + "_research"))
       .split("__URS_DARK__").join(isDark() ? "yes" : "no");
+    /* Der Auftritt (core, makeAuftritt): erst mit Stylesheets und erster Liste, dann in einem Zug. */
+    var auftritt = UC.makeAuftritt ? UC.makeAuftritt(root, { inhalt: ":scope > *" }) : null;
+    function auftrittBereit() { if (auftritt) auftritt.bereit(); }
 
     /* ---- Maerkte und Themen aus core ------------------------------------------------------
        Beim ersten Aufbau einmal hinein, danach jede Aenderung. Nach einem Neuaufbau nicht noch
@@ -152,7 +155,7 @@
     }
     function laden(frisch) {
       if (!sichtbarTest(root)) { beiSicht(root, "laden", function () { laden(frisch); }, sichtbarTest); return; }
-      jobsLaden(frisch);
+      Promise.resolve(jobsLaden(frisch)).then(auftrittBereit, auftrittBereit);
     }
 
     /* ---- Laufender Job ----------------------------------------------------------------------

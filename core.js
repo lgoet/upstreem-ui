@@ -7219,8 +7219,14 @@
     if (!el) return true;
     if (typeof el.checkVisibility === "function"){
       try {
-        return el.checkVisibility({ visibilityProperty: true, opacityProperty: true,
-                                    checkVisibilityCSS: true, checkOpacity: true });
+        var da = el.checkVisibility({ visibilityProperty: true, opacityProperty: true,
+                                      checkVisibilityCSS: true, checkOpacity: true });
+        /* Ein Teil, das auf seinen Auftritt wartet (makeAuftritt, hoechstens einige hundert ms),
+           steht auf Deckkraft 0, ist aber gleich zu sehen. Ohne die Ausnahme schoebe eine
+           Komponente darin ihr Laden oder Zeichnen auf, und der Auftritt zeigte Skelett. */
+        if (!da && el.closest && el.closest(".up-auftritt-zu"))
+          da = el.checkVisibility({ visibilityProperty: true, checkVisibilityCSS: true });
+        return da;
       } catch(e){}
     }
     if (!el.getClientRects) return true;
@@ -16441,7 +16447,13 @@
               resizeDelay: cfg.resizeDelay != null ? cfg.resizeDelay : 120, layout: { padding: 8 },
               /* Eigener Schluessel fuer ringWidthPlugin -- Chart.js laesst fremde Optionen durch. */
               upRingPx: cfg.ringPx || null,
-              animation: ohneFahrt ? false : { duration: 200, easing: "easeOutQuad" },
+              /* DIESELBE FAHRT WIE DER LINIENCHART (11.10. gemeldet: "die Appear-Animationen passen
+                 nicht zum Rest, z.B. den Linechart-Animationen"). Vorher 200ms easeOutQuad: der Ring
+                 schnappte in einem Drittel der Zeit und mit einer anderen Kurve auf, als die Linie
+                 daneben wuchs. Jetzt 600ms easeOutQuart wie makeLine -- ein Auftritt, eine Bewegung.
+                 Die 200ms hingen am Rennen oben (Neuberechnung genau am Ende der Fahrt) -- das gibt
+                 es nur unter einem skalierten Vorfahren, und dort ist resizeDelay 0. */
+              animation: ohneFahrt ? false : { duration: 600, easing: "easeOutQuart" },
               plugins: { legend: { display:false }, tooltip: { enabled:false, external: donutTooltip } },
               onClick: (clickable && !allZero) ? function(evt, elements){
                 if (!elements || !elements.length) return;
@@ -17167,6 +17179,210 @@
     else if (!sichtUhren.length) sichtFenster(SICHT_KURZ);
   }
   function wartetAufSicht(el){ return SICHT.some(function(w){ return w.el === el; }); }
+
+  /* DER ZAEHLER EINER UEBERSCHRIFT AUS CORE (11.10.). Drei Komponenten (Visibility Chart, Top
+     Citations, Brands Overview) trugen eine eigene Kopie von "Ueberschrift . Zahl" unter eigenem
+     Praefix. Ihr Markup steckt in eingebauten Bubble-Elementen und laesst sich nicht nachtraeglich
+     aendern -- also nehmen sie beim ersten Setzen die core-Klassen an (.up-heading, .up-head-count:
+     der graue Chip) und werfen ihren alten Punkt (.xxx-head-sep) hinaus. Einmal je Kopf. */
+  function kopfZaehler(kopf, zahl){
+    if (!kopf || !zahl || kopf.__upZaehler) return;
+    kopf.__upZaehler = true;
+    kopf.classList.add("up-heading");
+    zahl.classList.add("up-head-count");
+    [].slice.call(kopf.children).forEach(function(k){
+      if (/(^|\s)[a-z]+-head-sep(\s|$)/.test(String(k.className || ""))) k.parentNode.removeChild(k);
+    });
+  }
+
+  /* ---------- DER AUFTRITT EINER SEITE (11.10.) ----------
+     Gemeldet: "das Erscheinen sieht unsmooth aus, erscheint 2 mal hintereinander, man sieht fuer
+     einen Bruchteil das unformatierte Tabellendesign, die Karten flashen auf, Top Citations flasht
+     im hellen Design". Im Pruefstand (App-Huelle mit View-System v7, auf01) gemessen, drei Ursachen:
+       1. STYLESHEETS SPAETER ALS DAS SKRIPT. Das Vorlade-Snippet haengt die CSS per Skript ein --
+          nicht renderblockierend. Kommt die Datei einer Komponente nach ihrem Skript, steht sie
+          ungestylt da; ihre dunklen Regeln fehlen, und was core hell vorgibt, blitzt hell auf
+          (gemessen: 900ms ohne prompts-table.css, mit Zeilen, Karten und Zahl).
+       2. EIN BILD MIT ROHEM MARKUP zwischen dem Einsetzen und dem ersten Lauf einer Komponente.
+       3. SKELETT, DATEN, NOCHMAL SKELETT -- wenn eine Seite nachladen musste (Prompts: Gruppen).
+     Die Antwort ist EIN Ablauf fuer jede Seite: Kopf und Filterzeile kommen sofort, der Inhalt
+     wartet, bis seine Stylesheets da sind UND die ersten Daten (oder hoechstens AUFTRITT_WARTEN --
+     dann mit Skelett, ein langsamer Abruf soll nicht wie eine leere Seite aussehen). Danach kommt
+     alles in einem Zug, gestaffelt, nur ueber opacity und transform (laeuft auf dem Compositor).
+     Die Kurve ist easeOutExpo wie auf mobbin.com, dem Massstab des Nutzers fuer Bewegung.
+     Der Ansichtswechsel des Kopf-Skripts (viewfade, 200ms Deckkraft) braucht es damit fuer diese
+     Seiten nicht mehr; fuer die Ansichten OHNE Seiten-Komponente traegt core.css denselben Auftritt
+     ([id^="view-"].view-on:not(:has(.up-seite))). Der Kopf kann seine vier Zeilen also loswerden.
+     makeAuftritt(root, { kopf: Selektor, inhalt: Selektor }) -> { start(), bereit() }
+       start():  die Seite ist gerade sichtbar geworden (Aufbau oder Ansichtswechsel)
+       bereit(): die ersten Daten sind angewendet -- einmal genuegt, es rastet ein. */
+  var AUFTRITT_WARTEN = 450, AUFTRITT_STIL_MAX = 4000, AUFTRITT_STAFFEL = 50, AUFTRITT_WEG = 10;
+  var AUFTRITTE = [];
+  function auftrittDauer(){
+    var v = 0;
+    try { v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--up-t-auftritt")); } catch(e){}
+    return v > 0 ? v : 600;
+  }
+  function weicheBewegung(){
+    try { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch(e){ return false; }
+  }
+  /* Stylesheets, die noch laden. Nur die der App (Vorlade-Snippet: data-up-preload, oder der Pfad
+     des Pakets) -- ein fremdes Stylesheet der Bubble-Seite soll keinen Auftritt aufhalten.
+     link.sheet ist null, solange die Datei nicht da ist. */
+  function stileOffen(){
+    var l = document.querySelectorAll('link[rel="stylesheet"]'), offen = [];
+    for (var i = 0; i < l.length; i++){
+      var x = l[i];
+      if (x.sheet || x.disabled) continue;
+      var h = String(x.getAttribute("href") || "");
+      if (x.hasAttribute("data-up-preload") || x.hasAttribute("data-up-stil") || /upstreem-ui@/.test(h)) offen.push(x);
+    }
+    return offen;
+  }
+  /* fn, sobald keine App-CSS mehr laedt. Wieder nachsehen nach JEDEM Ende: die Kette im
+     Vorlade-Snippet haengt bei einem Fehler die naechste Quelle ein -- das error-Ereignis der
+     ersten heisst also nicht "fertig". Hoechstens AUFTRITT_STIL_MAX, dann eben ohne. */
+  function stileBereit(fn){
+    var bis = Date.now() + AUFTRITT_STIL_MAX, fertig = false, uhr = null;
+    function los(){ if (fertig) return; fertig = true; clearTimeout(uhr); fn(); }
+    function schau(){
+      if (fertig) return;
+      var offen = stileOffen();
+      if (!offen.length || Date.now() >= bis){ los(); return; }
+      offen.forEach(function(x){
+        if (x.__upStilHoert) return;
+        x.__upStilHoert = true;
+        x.addEventListener("load", function(){ x.__upStilHoert = false; schau(); }, { once: true });
+        x.addEventListener("error", function(){ x.__upStilHoert = false; schau(); }, { once: true });
+      });
+      clearTimeout(uhr);
+      uhr = setTimeout(schau, Math.max(50, Math.min(500, bis - Date.now())));
+    }
+    schau();
+  }
+  /* Gezeigt im Sinne des Auftritts: gerendert und in der offenen Ansicht. Die Deckkraft zaehlt
+     hier NICHT -- waehrend eines alten viewfade steht die Ansicht kurz auf 0, und genau dann soll
+     der Auftritt schon laufen. */
+  function auftrittGezeigt(el){
+    if (!el || el.isConnected === false) return false;
+    var v = el.closest ? el.closest('[id^="view-"]') : null;
+    if (v && !v.classList.contains("view-on")) return false;
+    if (typeof el.checkVisibility === "function"){
+      try { return el.checkVisibility({ visibilityProperty: true, checkVisibilityCSS: true, contentVisibilityAuto: true }); } catch(e){}
+    }
+    return el.getClientRects().length > 0;
+  }
+  function auftrittTeile(root, sel){
+    if (!sel) return [];
+    var l = root.querySelectorAll(sel), r = [];
+    for (var i = 0; i < l.length; i++) if (l[i].getClientRects().length) r.push(l[i]);
+    return r;
+  }
+  function auftrittBewegen(teile, ab){
+    var weich = weicheBewegung(), ms = weich ? 160 : auftrittDauer();
+    teile.forEach(function(el, i){
+      if (typeof el.animate !== "function") return;
+      /* Ein noch laufender Auftritt desselben Teils wird ersetzt, nicht gestapelt. */
+      if (el.__upAuftritt){ try { el.__upAuftritt.cancel(); } catch(e){} }
+      var von = weich ? { opacity: 0 } : { opacity: 0, transform: "translateY(" + AUFTRITT_WEG + "px)" };
+      var nach = weich ? { opacity: 1 } : { opacity: 1, transform: "none" };
+      try {
+        /* fill "backwards": waehrend der Staffel-Verzoegerung steht der Teil schon auf dem Anfang
+           (unsichtbar) statt einmal voll aufzublitzen. Danach haelt NICHTS fest -- kein
+           bleibender transform, der position:fixed darin (Massenleiste) verschieben wuerde. */
+        el.__upAuftritt = el.animate([von, nach], {
+          duration: ms, delay: (ab + i) * AUFTRITT_STAFFEL,
+          easing: "cubic-bezier(.19, 1, .22, 1)", fill: "backwards"
+        });
+        el.__upAuftritt.onfinish = function(){ el.__upAuftritt = null; };
+      } catch(e){}
+    });
+  }
+  function makeAuftritt(root, cfg){
+    cfg = cfg || {};
+    var datenDa = false, wartet = false, nr = 0, zu = [], uhr = null, stilDa = false, kopfN = 0;
+    root.classList.add("up-seite");
+    function zeigen(){
+      if (!wartet) return;
+      wartet = false; clearTimeout(uhr);
+      var teile = zu.filter(function(el){ return el.isConnected; });
+      zu.forEach(function(el){ el.classList.remove("up-auftritt-zu"); });
+      zu = [];
+      /* Nachzaehlen, was JETZT zu sehen ist: ein Reiter kann waehrend des Wartens gewechselt haben. */
+      var jetzt = auftrittTeile(root, cfg.inhalt);
+      auftrittBewegen(jetzt.length ? jetzt : teile, kopfN);
+    }
+    function versuchen(){
+      if (wartet && stilDa && datenDa) zeigen();
+    }
+    var a = {
+      start: function(){
+        nr++;
+        var meine = nr;
+        /* Der Kopf wartet NUR auf die Stylesheets (die Filterzeile traegt eigene), nicht auf
+           Daten -- eine leere Flaeche vor dem ersten Bild liest sich als Haenger. Liegen die
+           Stylesheets schon da, ist das derselbe Takt. */
+        var kopf = auftrittTeile(root, cfg.kopf);
+        zu.forEach(function(el){ el.classList.remove("up-auftritt-zu"); });
+        zu = auftrittTeile(root, cfg.inhalt);
+        zu.concat(kopf).forEach(function(el){ el.classList.add("up-auftritt-zu"); });
+        wartet = true; stilDa = false;
+        kopfN = kopf.length;
+        stileBereit(function(){
+          if (meine !== nr) return;
+          stilDa = true;
+          kopf.forEach(function(el){ el.classList.remove("up-auftritt-zu"); });
+          auftrittBewegen(kopf, 0);
+          versuchen();
+          /* Daten noch unterwegs: hoechstens AUFTRITT_WARTEN ab jetzt, dann mit Skelett. */
+          clearTimeout(uhr);
+          uhr = setTimeout(function(){ if (meine === nr) zeigen(); }, AUFTRITT_WARTEN);
+        });
+      },
+      /* Ein Bild Luft: Diagramme zeichnen im naechsten Bild (Chart.js, rAF). Ohne sie kaeme der
+         Kasten einen Augenblick vor seiner Linie. */
+      bereit: function(){
+        datenDa = true;
+        if (wartet) requestAnimationFrame(versuchen);
+      },
+      root: root
+    };
+    AUFTRITTE = AUFTRITTE.filter(function(x){ return x.root.isConnected && x.root !== root; });
+    AUFTRITTE.push(a);
+    /* Schon zu sehen (Aufbau in der offenen Ansicht): gleich los. Das deckt auch das eine Bild
+       zwischen dem Einsetzen des Markups und dem ersten Lauf der eingebetteten Bausteine. */
+    if (auftrittGezeigt(root)) a.start();
+    return a;
+  }
+  /* Beim Ansichtswechsel: welche Seiten waren eben NICHT zu sehen? Die werden in dem Bild
+     angestossen, in dem sie es werden -- showView kommt vor Bubbles Einblenden (rund 150ms),
+     darum ein kurzes Fenster je Bild statt eines festen Takts. Seiten, die schon zu sehen
+     waren, bleiben in Ruhe. */
+  function auftritteBeimWechsel(){
+    /* Wartende Einrichtungen (beiSicht) im selben Fenster je Bild pruefen. Ihr eigener Takt nach
+       einem Wechsel ist 0/250/750ms -- Bubble blendet die Ansicht nach rund 150ms ein, die Seite
+       wurde also erst 100ms spaeter gebaut, und so lange stand die Ansicht leer (auf01: 162ms
+       eingeblendet, 314ms gebaut). Ein Durchgang ist billig: eine Handvoll Eintraege, je ein
+       checkVisibility. */
+    if (SICHT.length){
+      var sichtBis = Date.now() + 800;
+      (function sichtJeBild(){
+        sichtPruefen();
+        if (SICHT.length && Date.now() < sichtBis) requestAnimationFrame(sichtJeBild);
+      })();
+    }
+    var offen = AUFTRITTE.filter(function(a){ return a.root.isConnected && !auftrittGezeigt(a.root); });
+    if (!offen.length) return;
+    var bis = Date.now() + 1500;
+    (function schau(){
+      offen = offen.filter(function(a){
+        if (!a.root.isConnected) return false;
+        if (auftrittGezeigt(a.root)){ try { a.start(); } catch(e){} return false; }
+        return true;
+      });
+      if (offen.length && Date.now() < bis) requestAnimationFrame(schau);
+    })();
+  }
   onViewChange(function(){ if (SICHT.length) sichtFenster(SICHT_KURZ); });
   /* WELCHE Ansicht ist offen? Die Frage ist nicht am DOM zu beantworten -- die Host-App laesst
      besuchte Ansichten im Dokument stehen, ein offsetParent-Test haelt sie fuer sichtbar (auf der
@@ -17196,6 +17412,7 @@
     if (name) LETZTE_ANSICHT = name;
     if (gewechselt) nachObenBeimWechsel();
     closeAllDropdowns();
+    if (gewechselt) auftritteBeimWechsel();
     /* Ein Wechsel macht Umschalter sichtbar, die vorher geparkt waren -- und geparkte messen
        nicht (siehe messbar). Ohne diesen Lauf haetten sie keinen Streifen, bis irgendetwas
        anderes einen Durchgang ausloest. 250ms, weil showView die Gruppe erst im naechsten Task
@@ -22700,6 +22917,7 @@
     closeAllDropdowns: closeAllDropdowns,
     onViewChange: onViewChange,
     beiSicht: beiSicht, wartetAufSicht: wartetAufSicht,
+    makeAuftritt: makeAuftritt, stileBereit: stileBereit, kopfZaehler: kopfZaehler,
     getDashboardMode: getDashboardMode, setDashboardMode: setDashboardMode,
     onDashboardMode: onDashboardMode,
     currentView: currentView,

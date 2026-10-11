@@ -121,6 +121,9 @@
 
     var elDetail = root.querySelector(".upf-detail");
     if (UC.makePageCrumbs) UC.makePageCrumbs(root, { icon: "chartColumnUp", name: "Performance", komponente: true });
+    /* Der Auftritt (core, makeAuftritt): Kopf sofort, der Inhalt erst mit Stylesheets und ersten
+       Daten, dann in einem Zug. Siehe dort, warum. */
+    var auftritt = UC.makeAuftritt ? UC.makeAuftritt(root, { kopf: ".upf-pagehead", inhalt: ".upf-main > *" }) : null;
     if (UC.makeTooltips) UC.makeTooltips(root, isDark);
     if (isDark()) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
 
@@ -248,9 +251,11 @@
     function gemeinsam(auftraege) {
       var nr = ++gruppeNr;
       auftraege.forEach(function (a) { juengsteJe[a.kanal] = nr; });
-      if (!auftraege.every(function (a) { return a.imSpeicher; })) auftraege.forEach(function (a) { a.ladenAn(); });
+      /* Nur wer wirklich holen muss, zeigt Laden (11.10., wie die anderen Seiten). */
+      auftraege.forEach(function (a) { if (!a.imSpeicher) a.ladenAn(); });
       return Promise.all(auftraege.map(function (a) { return a.laden(); })).then(function (zeigen) {
         zeigen.forEach(function (z, i) { if (z && juengsteJe[auftraege[i].kanal] === nr) z(); });
+        if (auftritt) auftritt.bereit();
       });
     }
     function laden(kanal, a) { return lader.laden(kanal, a); }

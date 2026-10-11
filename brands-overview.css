@@ -32,11 +32,12 @@
 
 /* heading + total count (Top Brands • 42) — same idiom as every other table header in the app */
 .ubo-heading-table { display: flex; align-items: center; }
-.ubo-head-sep { width: 4px; height: 4px; border-radius: 50%; background: var(--vc-muted); margin: 0 8px; flex: 0 0 auto; display: none; }
-.ubo-head-count { font-size: 14px; font-weight: 500; color: var(--vc-muted); display: none; }
-.ubo-heading-table.has-count .ubo-head-sep, .ubo-heading-table.has-count .ubo-head-count { display: block; }
-.ubo-head-count.is-sk { width: 28px; height: 14px; border-radius: 4px; background: var(--vc-sk);
-  animation: uutpulse 1.2s ease-in-out infinite; display: block; }
+/* Der Zaehler kommt seit dem 11.10. aus core (.up-heading + .up-head-count, grauer Chip ohne
+   Punkt). Die Kopfzeile baut das Skript selbst (ensureChrome), also gleich mit den core-Klassen.
+   Die alten Namen bleiben als Anker stehen (eigene Seiten-CSS kann sie meinen, Vertrag): der Punkt
+   zeigt nichts mehr, die Zahl traegt die Ziffern gleich breit wie der Chip. */
+.ubo-head-sep { display: none; }
+.ubo-head-count { font-variant-numeric: tabular-nums; }
 /* "(Inactive)" qualifier before "Brands" -- same secondary/muted treatment as the head count right
    next to it, not the heading's own full-strength text color. Empty string when Active, so it
    takes no space (JS sets/clears the text in syncStatusSwitch, same idea as prompts-table's
@@ -270,7 +271,7 @@
    Breite der Werkzeuge, die sich mit jedem Schalter aendert. */
 .ubo-root.ubo-narrow-page .ubo-head { flex-wrap: wrap; }
 /* Der direkte Nachfahre, nicht .ubo-heading ueberall: dieselbe Klasse sitzt ein zweites Mal IN
-   .ubo-heading-table neben Punkt und Anzahl, und 100% Basis haette die beiden herausgedraengt. */
+   .ubo-heading-table neben dem Zaehler, und 100% Basis haette die beiden herausgedraengt. */
 .ubo-root.ubo-narrow-page .ubo-head > .ubo-heading,
 .ubo-root.ubo-narrow-page .ubo-head > .ubo-heading-table { flex: 1 0 100%; min-width: 0; }
 /* Die Werkzeugreihe darf SCHRUMPFEN und UMBRECHEN, statt aus dem Kasten zu haengen.

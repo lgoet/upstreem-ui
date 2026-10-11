@@ -129,7 +129,39 @@
   --up-t-3: 260ms;     /* Flaechen: Drawer, Modal, Seitenwechsel       (16) */
   --up-ease:     cubic-bezier(.2, 0, .38, .9);   /* hin und zurueck   (13) */
   --up-ease-auf: cubic-bezier(.22, 1, .36, 1);   /* nur Auftritte      (9) */
+  /* Der Auftritt einer ganzen Seite (11.10.): eigene, benannte Stufe AUSSERHALB der UI-Dauern.
+     Eine Seite ist keine Schaltflaeche -- sie kommt in einem Zug mit Staffel, und unter 500ms
+     liest sich das als Ruck statt als Ankommen. Die Kurve ist easeOutExpo, gemessen auf
+     mobbin.com (dem Massstab des Nutzers fuer Bewegung): schnell da, lang auslaufend. Dort sind
+     es 1s; in einer App, in der man zehnmal am Tag die Ansicht wechselt, sind 600ms richtig --
+     dieselbe Dauer wie die Einfahrt der Diagramme, damit Seite und Chart in einem Zug ankommen. */
+  --up-t-auftritt: 600ms;
+  --up-ease-expo: cubic-bezier(.19, 1, .22, 1);
+  /* easeOutQuart, wie Chart.js es fuer Linie und Ring faehrt (600ms, core.js makeLine und
+     makeTypeChart). Fuer alles, was im selben Bild wie ein Diagramm einfaehrt (Balken). */
+  --up-ease-quart: cubic-bezier(.25, 1, .5, 1);
 }
+/* ================= AUFTRITT VON SEITE UND ANSICHT (11.10.) ==================================
+   Eine Seiten-Komponente (makeAuftritt in core.js, Klasse .up-seite) laesst ihren Inhalt warten,
+   bis Stylesheets und erste Daten da sind -- hoechstens einige hundert Millisekunden. Bis dahin
+   steht er unsichtbar, aber mit seiner vollen Hoehe da (kein Springen des Kopfs).
+   Ansichten OHNE Seiten-Komponente bekommen den Auftritt hier, in derselben Kurve. Das ersetzt
+   den viewfade aus dem Kopf-Skript (View-System v7): Deckkraft an der Ansicht, der Weg nur am
+   Koerper ([id^="viewbody-"]) -- ein transform an der Ansicht selbst wuerde alles darin mit
+   position:fixed waehrend der Bewegung verschieben. */
+.up-auftritt-zu { opacity: 0; }
+[id^="view-"].view-on:not(:has(.up-seite)) { animation: up-ansicht-auf var(--up-t-auftritt) var(--up-ease-expo); }
+[id^="view-"].view-on:not(:has(.up-seite)) [id^="viewbody-"] { animation: up-ansicht-weg var(--up-t-auftritt) var(--up-ease-expo); }
+/* Ansichten MIT Seiten-Komponente: keine Bewegung an der Ansicht -- die Seite bewegt ihre Teile
+   selbst, und zwei Auftritte uebereinander laufen gegeneinander. Ueber Spezifitaet (0,3,0 bzw.
+   0,4,0 gegen die 0,2,0 bzw. 0,3,0 des Kopf-Skripts), damit es auch gilt, solange der Kopf seine Zeilen noch hat. */
+[id^="view-"].view-on:has(.up-seite), [id^="view-"].view-on:has(.up-seite) [id^="viewbody-"] { animation: none; }
+@keyframes up-ansicht-auf { from { opacity: 0; } }
+@keyframes up-ansicht-weg { from { transform: translateY(10px); } }
+@media (prefers-reduced-motion: reduce) {
+  [id^="view-"].view-on:not(:has(.up-seite)) [id^="viewbody-"] { animation: none; }
+}
+
 /* ================= TIEFEN UND UMGEKEHRTE KARTE, AUCH AUSSERHALB EINER WURZEL ================
    (28.09.) Die Tiefen standen bis heute nur an .up-root. Was am <body> haengt -- Erklaerkarte,
    Tooltip, die Menues und Leisten mit eigener Palette --, erreichte sie nicht: dort loeste
@@ -717,20 +749,29 @@
     /* ---------- toolbar ---------- */
     .up-head { display: flex; align-items: center; height: 32px; margin-bottom: 16px; gap: 8px; }
     .up-heading { display: inline-flex; align-items: center; font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; white-space: nowrap; }
-    /* separator + count exactly as in the other components: 4px dot, 8px gap either side */
-    .up-head-sep { width: 4px; height: 4px; border-radius: 50%; background: var(--vc-muted); margin: 0 8px; flex: 0 0 auto; display: none; }
-    /* Fixed-width reserved slot (not min-width, not content-based) — this is what actually
-       guarantees anything sitting to the right (e.g. prompts-table's Active/Inactive switch) never
-       shifts, regardless of whether the real count is 1 digit or 4-with-a-comma, and regardless of
-       whether the current state is the skeleton or real text. Trying to match the skeleton's width
-       to "the" real count's width doesn't work — the real count itself changes width across
-       renders, so any fixed skeleton width is only ever a coincidental match for one specific
-       number. Reserving worst-realistic-case space (a comma'd 4-digit total, ~35px) and
-       left-aligning the number inside it is the only way to make the position itself stable. */
-    .up-head-count { font-size: 14px; font-weight: 500; color: var(--vc-muted); display: none;
-      flex: 0 0 34px; width: 34px; text-align: left; white-space: nowrap; }
-    .up-head-count.is-sk { height: 14px; border-radius: 4px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
-    .up-heading.has-count .up-head-sep, .up-heading.has-count .up-head-count { display: block; }
+    /* DER ZAEHLER ALS CHIP (11.10., vom Nutzer so bestellt: "Separator weg, den Count in einen
+       Chip mit grauem Background"). Vorher "Ueberschrift . 42" mit einem 4px-Punkt. Der Chip ist
+       EIN Baustein fuer jede Zahl neben einer Ueberschrift -- .up-zaehler frei stehend,
+       .up-head-count in der Kopfzeile einer Tabelle (dort erst sichtbar mit .has-count).
+       Grund und Schrift sind die des leisen Etiketts (.up-marke.is-leise, --up-sel-bg): auf der
+       Kartenflaeche deutlich genug, ohne mit dem Inhalt zu konkurrieren. 20px hoch, 12px Ziffern
+       in gleicher Breite -- neben einer 14er-Ueberschrift die naechstkleinere Stufe.
+       .up-head-sep bleibt als Klasse stehen (im Markup eingebauter Bubble-Elemente), zeigt aber
+       nichts mehr. */
+    .up-head-sep { display: none; }
+    .up-zaehler, .up-head-count {
+      display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
+      box-sizing: border-box; height: 20px; min-width: 20px; padding: 0 7px;
+      border-radius: var(--up-r-s); background: var(--up-sel-bg); color: var(--vc-muted);
+      font-size: var(--up-fs-s); font-weight: var(--up-fw-m); line-height: 1;
+      font-variant-numeric: tabular-nums; white-space: nowrap;
+    }
+    /* In der Kopfzeile: eine Mindestbreite fuer drei Ziffern. Rechts daneben steht oft ein
+       Schalter (Active/Inactive der Prompts-Tabelle) -- er soll nicht wandern, wenn die Zahl von
+       102 auf 9 springt oder das Skelett der Zahl weicht. Erst ab vier Ziffern waechst der Chip. */
+    .up-head-count { display: none; min-width: 36px; margin-left: 8px; }
+    .up-heading.has-count .up-head-count { display: inline-flex; }
+    .up-zaehler.is-sk, .up-head-count.is-sk { color: transparent; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
     .up-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 
     /* ── Einklappbare Werkzeuggruppe ─────────────────────────────────────────────────────────
@@ -3517,7 +3558,9 @@
 .up-bar-row.is-dimmed:hover .up-bar-fill { filter: brightness(0.94); }
 .up-bar-row:hover .up-bar-track { background: color-mix(in srgb, var(--vc-heading-bg) 100%, black 6%); }
 .up-bar-track { flex: 1; height: 32px; background: var(--vc-heading-bg); border-radius: 8px; overflow: visible; position: relative; min-width: 0; transition: background 120ms ease; }
-.up-bar-fill { height: 100%; border-radius: 8px; transition: width .5s cubic-bezier(.4,0,.2,1), filter 120ms ease; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; min-width: 0; gap: 8px; overflow: hidden; }
+/* Einfahrt wie Linie und Ring (11.10.): dieselbe Dauer, dieselbe Kurve. Vorher .5s mit
+   (.4,0,.2,1) -- ein langsam anfahrender Verlauf, der neben der Linie wie ein Ruck aussah. */
+.up-bar-fill { height: 100%; border-radius: 8px; transition: width var(--up-t-auftritt) var(--up-ease-quart), filter 120ms ease; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; min-width: 0; gap: 8px; overflow: hidden; }
 .up-bar-name { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity .18s ease; }
 .up-bar-pct { font-size: 11px; font-weight: 600; white-space: nowrap; flex: 0 0 auto; transition: opacity .18s ease; }
 /* shown instead of the inside labels when the bar is too short to hold them */

@@ -172,12 +172,10 @@
    13.5px/600 was the single biggest reason the board read as a different app. */
 /* 15 statt 14 (08.09. angefordert: einen Punkt groesser). */
 .uo-col-title { font-size: 15px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
-/* Count follows the app-wide "heading, dot, count" pattern (.up-head-sep + .up-head-count) instead
-   of the bordered pill the standalone version drew. */
-/* Zwei Punkte groesser als der Titel wollte der Vergleich mit dem alten Wert (14): 16, und ein
-   Gewicht leichter (400 statt 500). Der Trenner davor ist weg -- Titel, Zahl, fertig. */
-.uo-col-count { font-size: 16px; font-weight: 400; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
-.uo-col-head .up-head-sep, .uo-list-sechead .up-head-sep { display: none !important; }
+/* Die Zahl neben dem Spaltentitel ist seit dem 11.10. der Zaehler-Chip aus core (.up-zaehler,
+   grauer Grund) wie neben jeder anderen Ueberschrift der App -- vorher 16px/400 ohne Grund.
+   Abstand gibt die Kopfzeile (gap 8); der alte Name bleibt als Anker (Vertrag). */
+.uo-col-count { font-variant-numeric: tabular-nums; }
 .uo-col-menu-wrap { margin-left: auto; position: relative; }
 
 .uo-col-body {
@@ -571,7 +569,8 @@ button.uo-comp-more:hover { background: var(--vt-row-hover); color: var(--vc-tex
 /* So hoch und rund wie der Topic-Chip ("Dot", 24px, Radius 6), sonst ruckt es beim Ankommen. */
 .uo-skel-tag { width: 98px; height: 24px; border-radius: var(--up-r-s); }
 .uo-skel-tag.sm { width: 64px; }
-.uo-skel-cnt { width: 18px; height: 14px; border-radius: 4px; }
+/* Skelett der Spaltenzahl: der Zaehler-Chip selbst im Ladezustand (.up-zaehler.is-sk). */
+.uo-skel-cnt { width: 28px; }
 
 /* ---------- responsive ---------- */
 @media (max-width: 720px) {

@@ -508,6 +508,8 @@
       var hr = root.querySelector(".tcd-heading-right");
       var cn = root.querySelector(".tcd-head-count");
       if (!hr || !cn) return;
+      /* Zaehler als grauer Chip aus core (11.10.), siehe UC.kopfZaehler. */
+      if (UC.kopfZaehler) UC.kopfZaehler(hr, cn);
       hr.classList.add("has-count");
       /* Skeleton for the WHOLE duration of loading, not just before the first load — otherwise a
          stale count from before a filter/mode change sits there unchanged while fresh data is

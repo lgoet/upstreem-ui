@@ -1118,9 +1118,10 @@
       }
       if (!uboHead.querySelector(".ubo-heading-table")){
         var h = document.createElement("div");
-        h.className = "ubo-heading-table";
+        /* Zaehler als grauer Chip aus core (11.10.): .up-heading + .up-head-count, kein Punkt. */
+        h.className = "ubo-heading-table up-heading";
         h.innerHTML = '<span class="ubo-status-tag"></span><span class="ubo-heading">Brands</span>' +
-          '<span class="ubo-head-sep"></span><span class="ubo-head-count"></span>';
+          '<span class="ubo-head-count up-head-count"></span>';
         uboHead.insertBefore(h, uboHead.firstChild);
       }
     })();
@@ -1128,6 +1129,7 @@
       var hr = root.querySelector(".ubo-heading-table");
       var cn = root.querySelector(".ubo-head-count");
       if (!hr || !cn) return;
+      if (UC.kopfZaehler) UC.kopfZaehler(hr, cn);
       if (isLoading()){ cn.textContent = ""; cn.classList.add("is-sk"); hr.classList.add("has-count"); return; }
       cn.classList.remove("is-sk");
       var n = (state.status === "inactive") ? state.totalCountInactive : state.totalCount;

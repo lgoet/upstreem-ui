@@ -122,11 +122,8 @@
 .usb-urlin:focus { outline: 0; border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
 /* ---------- Modelle ---------- */
-.usb-count {
-  flex: 0 0 auto; font-size: 13px; font-weight: 500; color: var(--vc-muted);
-  font-variant-numeric: tabular-nums; height: 24px; padding: 0 8px; border-radius: 7px;
-  background: var(--vc-heading-bg); display: inline-flex; align-items: center;
-}
+/* Der Zaehler ist seit dem 11.10. der graue Chip aus core (.up-zaehler). Hier bleibt nur der
+   Zustand "Kontingent voll": dann in voller Schriftfarbe. */
 .usb-count.is-full { color: var(--vc-text); }
 .usb-models { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 0 0 16px; }
 .usb-model {

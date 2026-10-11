@@ -158,7 +158,12 @@
       STORE[instanceId] = { tab: state.tab, f: state.f, p: state.p, grp: state.grp, resp: state.resp, seite: state.seite };
     }
 
-    var lader = D.makeLader({ rufen: function (fn, params, o) { return UC.rpc(fn, params, { signal: o && o.signal, timeoutMs: 30000 }); } });
+    /* Der Lader lebt am Fenster je Instanz (11.10., wie performance-page.js): Bubble baut die Seite
+       beim Themenwechsel neu, und mit einem frischen Lader war sein Speicher weg -- alles kam ein
+       zweites Mal vom Server, der Auftritt zeigte so lange Skelett (gemessen: 5 Anfragen, Skelett
+       90ms). STORE[instanceId] taugt dafuer nicht, persist() ersetzt es bei jeder Aenderung. */
+    var LADER = window.__upiLader || (window.__upiLader = {});
+    var lader = LADER[instanceId] || (LADER[instanceId] = D.makeLader({ rufen: function (fn, params, o) { return UC.rpc(fn, params, { signal: o && o.signal, timeoutMs: 30000 }); } }));
     /* Schreiben laeuft nicht durch den Lader (kein Speicher, kein Abbrechen durch eine neuere
        Anfrage). XX000 einmal wiederholen (Regel der Seiten-Vertraege) -- aber nur, was die DB als
        Serverfehler meldet; ein Grenzen- oder Rechtefehler bleibt, was er ist. */
@@ -224,6 +229,9 @@
       pages: REITER, onSelect: function (v) { reiterOeffnen(v, true); }
     }) : null;
     var krumen = UC.makePageCrumbs ? UC.makePageCrumbs(root, { icon: "zap", name: "Prompt Insights", quelle: elNav, komponente: true }) : null;
+    /* Der Auftritt (core, makeAuftritt): Kopf sofort, der Inhalt erst mit Stylesheets und ersten
+       Daten, dann in einem Zug. Siehe dort, warum. */
+    var auftritt = UC.makeAuftritt ? UC.makeAuftritt(root, { kopf: ".upi-pagehead, .upi-nav, .upi-filterzeile", inhalt: ".upi-main > .upi-tab" }) : null;
     if (UC.makeTooltips) UC.makeTooltips(root, isDark);
     if (isDark()) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
 
@@ -350,6 +358,20 @@
       if (elFilterleiste) elFilterleiste.setAttribute("data-topics-visible", an ? "yes" : "no");
       if (!an) { setzen("topics", null); setzen("tagmode", "or"); }
     }
+    /* Die Tabelle ist die Quelle fuer die Gruppierung (ihre Wahl liegt in ihrer Ablage, ihre
+       Voreinstellung haengt an ihrer Breite). Vor jeder Anfrage der Liste abgleichen -- sonst kam die
+       erste Lieferung ohne Gruppen, die Tabelle forderte sie nach, und alles erschien zweimal. */
+    function gruppierungAbgleichen() {
+      var t = el(".upt-root"), c = t && t.__uptController;
+      if (!c || typeof c.gruppierung !== "function") return;
+      var g = null;
+      try { g = c.gruppierung(); } catch (e) { g = null; }
+      if (!g) return;
+      var vorher = state.grp.an;
+      state.grp = { an: !!g.an, modus: g.modus || "both", eigene: isArr(g.eigene) ? g.eigene : [] };
+      if (vorher !== state.grp.an) topicFilterSichtbar(!state.grp.an);
+      persist();
+    }
 
     /* ---- Laden ---------------------------------------------------------------------------------- */
     function sichtbarTest(x) { return x.isConnected !== false && (!UC.istSichtbar || UC.istSichtbar(x)); }
@@ -360,7 +382,10 @@
       if (!sichtbarTest(root)) { beiSicht(root, "laden", function () { bedarf(); }, sichtbarTest); return false; }
       if (!team()) return false;
       if (state.tab !== "topics" && !state.kalenderDa && !kalenderLesen()) {
-        if (kalenderVersuche++ < 20) { spaeter(150); return false; }
+        /* 30ms statt 150ms (11.10.): der Kalender richtet sich einen Takt nach der Seite ein, und
+           jede Wartezeit hier steht im Auftritt als leerer Inhalt (gemessen: erste Anfrage 155ms
+           nach dem Aufbau). Gleiche Gesamtfrist wie vorher, 3s. */
+        if (kalenderVersuche++ < 100) { spaeter(30); return false; }
       }
       return true;
     }
@@ -371,13 +396,17 @@
       o = o || {};
       var nr = ++gruppeNr;
       auftraege.forEach(function (a) { juengsteJe[a.kanal] = nr; });
-      var alleDa = !o.frisch && auftraege.every(function (a) { return a.imSpeicher; });
-      if (!alleDa) auftraege.forEach(function (a) { a.ladenAn(); });
+      /* Nur wer wirklich holen muss, geht in den Ladezustand (11.10.). Vorher reichte EIN Teil
+         ausserhalb des Speichers, und alle zeigten Skelett -- nach einem Neuaufbau der Prompts-Seite
+         holt die Seiten-Meta immer frisch, und die Liste fiel aus ihren gespeicherten Daten ins
+         Skelett und wieder zurueck (gemessen: Daten, Skelett, Daten). */
+      auftraege.forEach(function (a) { if (o.frisch || !a.imSpeicher) a.ladenAn(); });
       var vorab = o.vorab ? Promise.resolve(o.vorab).then(null, function () {}) : Promise.resolve();
       return vorab.then(function () {
         return Promise.all(auftraege.map(function (a) { return a.laden(o.frisch); }));
       }).then(function (zeigen) {
         zeigen.forEach(function (z, i) { if (z && juengsteJe[auftraege[i].kanal] === nr) z(); });
+        if (auftritt) auftritt.bereit();
       });
     }
     function bedarf(o) {
@@ -385,8 +414,11 @@
       o = o || {};
       var a = [];
       if (state.tab === "allprompts") {
-        a.push(listeAuftrag());
+        gruppierungAbgleichen();
+        /* Gruppen VOR der Liste anwenden: die Liste schaltet die Tabelle frei (view_active), und
+           ohne Gruppen forderte sie sie im selben Zug noch einmal an. */
         if (state.grp.an) a.push(gruppenAuftrag());
+        a.push(listeAuftrag());
         /* Die Meta einmal je Aufbau, nicht je Sitzung: nach einem Neuaufbau (Themenwechsel) stehen
            Verwaltung und Topic-Editor frisch da und brauchen ihre Topics wieder. */
         if (!seiteDa || o.frisch || o.seite) a.push(seitenAuftrag());
@@ -543,8 +575,9 @@
         teilUhren[teil] = null;
         if (!bereit()) return;
         if (teil === "liste" && state.tab === "allprompts") {
-          var a = [listeAuftrag()];
-          if (state.grp.an) a.push(gruppenAuftrag());
+          gruppierungAbgleichen();
+          var a = state.grp.an ? [gruppenAuftrag()] : [];
+          a.push(listeAuftrag());
           gemeinsam(a);
         } else if (teil === "gruppen" && state.tab === "allprompts") gemeinsam([gruppenAuftrag()]);
         else if (teil === "resp" && state.tab === "responses") gemeinsam([respAuftrag()]);

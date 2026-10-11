@@ -89,6 +89,10 @@
       '</div>' +
       '<div class="uop-main">' + brett + '</div>';
     if (UC.makePageCrumbs) UC.makePageCrumbs(root, { icon: "listTodo", name: "Opportunities", komponente: true });
+    /* Der Auftritt (core, makeAuftritt): Kopf sofort, der Inhalt erst mit Stylesheets und ersten
+       Daten, dann in einem Zug. Siehe dort, warum. */
+    var auftritt = UC.makeAuftritt ? UC.makeAuftritt(root, { kopf: ".uop-pagehead", inhalt: ".uop-main" }) : null;
+    function auftrittBereit() { if (auftritt) auftritt.bereit(); }
     if (UC.makeTooltips) UC.makeTooltips(root, isDark);
     if (isDark()) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
 
@@ -239,7 +243,8 @@
       if (!bereit()) return;
       if (gem.team && gem.team !== team()) teamGewechselt();
       gem.team = team();
-      if (gem.listeFuer !== team()) listeLaden(false);
+      if (gem.listeFuer !== team()) listeLaden(false).then(auftrittBereit, auftrittBereit);
+      else auftrittBereit();
       laufendeSucheFinden();
     }
     function teamGewechselt() {

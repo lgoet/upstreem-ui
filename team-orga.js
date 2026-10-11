@@ -415,7 +415,7 @@
                 '</h2>' +
                 '<p class="uto-secsub">Every change to this team, newest first</p>' +
               '</div>' +
-              '<span class="uto-seccount" data-uto-logcount></span>' +
+              '<span class="up-zaehler uto-seccount" data-uto-logcount></span>' +
             '</div>' +
             '<div class="uto-logbox" data-uto-logbox hidden>' +
               '<div class="uto-table uto-log" data-uto-log></div>' +

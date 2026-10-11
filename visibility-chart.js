@@ -355,6 +355,8 @@
       var hr = root.querySelector(".vot-heading-right");
       var cn = root.querySelector(".vot-head-count");
       if (!hr || !cn) return;
+      /* Zaehler als grauer Chip aus core (11.10.), siehe UC.kopfZaehler. */
+      if (UC.kopfZaehler) UC.kopfZaehler(hr, cn);
       /* Skeleton for the WHOLE duration of isLoading(), not just before the first load —
          otherwise a stale count from before the loading toggle sits there unchanged, which reads
          as "nothing happened" rather than "loading". Same idiom as the table components' .is-sk. */

@@ -53,6 +53,8 @@
     var idUts = instanceId + "_table";
     root.innerHTML = '<div class="up-root uts-root" data-instance="' + esc(idUts) + '" data-sticky-top="16"' +
       ' data-switch-fn="bubble_fn_usnTeam" data-newteam-fn="bubble_fn_usnNewTeam"></div>';
+    /* Der Auftritt (core, makeAuftritt): erst mit Stylesheets und erster Liste, dann in einem Zug. */
+    var auftritt = UC.makeAuftritt ? UC.makeAuftritt(root, { inhalt: ":scope > *" }) : null;
 
     function sichtbarTest(el) { return el.isConnected !== false && (!UC.istSichtbar || UC.istSichtbar(el)); }
     var ladeNr = 0;
@@ -82,6 +84,7 @@
           if (ok) window.renderTeams({ instanceId: idUts, rows: alle, currentTeamId: tm });
           else window.renderTeams({ instanceId: idUts, __parseError: true });
         } catch (e) {}
+        if (auftritt) auftritt.bereit();
       });
     }
     /* Teamwechsel: FRISCH, nicht aus dem Speicher -- zwischen zwei Wechseln koennen sich die
