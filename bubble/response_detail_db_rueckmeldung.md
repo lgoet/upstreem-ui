@@ -36,6 +36,7 @@ Die vorige Anfrage wird per AbortController abgebrochen (gemessen: 3 Klicks, 2 a
 letzte Antwort steht). Eine schon geladene Antwort kommt aus dem Zwischenspeicher der Seite
 (20 Einträge), ohne zweiten Aufruf.
 
-## Eine Frage
-Kalt bis 4 s (5fefcd50): Der Drawer zeigt so lange sein Skelett und bricht nach 20 s mit „Try again“
-ab. Reicht das, oder gibt es Läufe, die regelmäßig länger brauchen?
+## Lange Läufe
+Kalt bis 4 s (5fefcd50) ist für den Drawer kein Problem: Er zeigt so lange sein Skelett. Länger dauert
+es nach Lukas' Einschätzung nur bei sehr schlechtem Netz. Darum wartet der Drawer bis zu 60 s und
+zeigt erst dann „Try again“. Keine Frage an dich offen.

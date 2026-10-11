@@ -344,6 +344,8 @@
     var WARTE_MS = 25000, warteUhr = null;
     function warteStarten() {
       if (warteUhr) clearTimeout(warteUhr);
+      /* Im Drawer aus core endet das Warten mit dem Abruf (Frist 60s, siehe drLaden). */
+      if (root.__urdKopf) { warteUhr = null; return; }
       warteUhr = setTimeout(function () {
         warteUhr = null;
         /* Eine abgehaengte Wurzel wartet fuer niemanden mehr: Bubble hat das Element neu gebaut,
@@ -1875,8 +1877,13 @@
      dieselbe Antwort ein zweites Mal oeffnet (zurueck aus dem Prompt-Drawer, Liste auf und ab),
      sieht sie sofort, ohne zweiten Abruf. 20 Eintraege: genug fuer eine Sitzung, die eine
      Responses-Liste durchgeht, und zu wenig, um nennenswert Speicher zu halten.
-     Der Abruf laeuft mit 20s Frist: die Warte-Uhr der Komponente meldet nach 25s "No data", und
-     ein ehrliches "konnte nicht geladen werden" mit Knopf soll vorher kommen. */
+     FRIST 60s, OHNE WARTE-UHR (11.10.): die Datenbank antwortet warm in Millisekunden, kalt in
+     wenigen Sekunden -- laenger dauert es nur bei sehr schlechtem Netz (so vom Nutzer eingeschaetzt).
+     Genau dort waere eine knappe Frist falsch: sie bricht eine Antwort ab, die gleich da gewesen
+     waere, und der Nutzer muesste von vorn laden. Darum bleibt das Skelett bis zu 60s stehen; erst
+     dann "konnte nicht geladen werden" mit "Try again". Die Warte-Uhr der Komponente (25s, "No
+     data") gilt im Drawer nicht: sie ist fuer Bubble gebaut, wo niemand weiss, ob der Workflow
+     ueberhaupt noch liefert -- hier weiss es der Abruf selbst (warteStarten). */
   /* response_detail_v1 (DB-Chat 11.10.): reines JSON {meta, row}, 120 Aufrufe je Minute, warm
      10-70ms, kalt einzelne Aufrufe bis wenige Sekunden. v8 bleibt fuer Bubble. */
   var DR_FN = "response_detail_v1";
@@ -1923,7 +1930,7 @@
     drTeam().then(function (team) {
       if (nr !== DR.nr) return null;
       if (!team) return { ok: false, status: 0, fehler: { message: "not authenticated" } };
-      return UC.rpc(DR_FN, { p_team: team, p_prompt_run_id: id }, { timeoutMs: 20000, signal: ab ? ab.signal : undefined });
+      return UC.rpc(DR_FN, { p_team: team, p_prompt_run_id: id }, { timeoutMs: 60000, signal: ab ? ab.signal : undefined });
     }).then(function (erg) {
       if (DR.ctrl === ab) DR.ctrl = null;
       if (!erg || nr !== DR.nr) return;
