@@ -983,7 +983,10 @@
          Geprueft statt direkt gerufen: ein aelteres core.js von einem anderen Pin auf derselben
          Seite kennt toast nicht, und der TypeError naehme den Rest dieser Funktion mit -- also
          auch das usbSaved-Event darunter. */
-      if (UC.toast) UC.toast(satz, { icon: "check" });
+      /* LOKAL (Seite Settings, 11.10.) NICHT: dort ruft die Seite die Datenbank selbst und meldet
+         erst, wenn sie geantwortet hat -- ein "updated" vor der Antwort stuende auch dann da, wenn
+         das Speichern scheitert. */
+      if (UC.toast && !UC.isYes(root.getAttribute("data-local"))) UC.toast(satz, { icon: "check" });
       fire("data-saved-fn", "usbSaved", { block: block, brand_name: marke, message: satz });
     }
 
@@ -997,6 +1000,9 @@
        das ein Tab-durch-die-Felder ungehindert durchlaesst. Die CSS-Regel daneben ist der
        Rueckfall fuer Browser ohne inert-Unterstuetzung. */
     var busyTimer = null;
+    /* Der gespeicherte Stand vor dem letzten Speichern je Block -- damit ein gescheitertes
+       Speichern den Entwurf NICHT verliert (speichernZurueck). */
+    var vorSpeichern = { models: null, meta: null };
     /* Kein Hoffen auf die Rueckmeldung. Bleibt sie aus -- Workflow-Fehler, abgebrochene RPC, ein
        Run-JavaScript-Schritt, der nie gebaut wurde -- waere die Komponente ohne diesen Wecker
        dauerhaft tot: gesperrt, mit Skelett, ohne ein Wort dazu. 12s sind grosszuegig fuer
@@ -1103,6 +1109,14 @@
       if (t.closest("[data-logo-save]")){
         var url = String(elUrlIn.value || "").trim();
         if (!url){ elUrlIn.focus(); return; }
+        /* NUR https (11.10., Runde Settings). Bis hierher ging jedes Schema hinaus -- auch
+           javascript: und data: --, und die Datenbank nahm es an (Befund H6, Brands v1). Seit
+           brands_logo_nur_eigene.sql lehnt sie alles ausser https ab; hier steht es vorher, als
+           Satz am Feld, statt als stilles Nichts nach dem Speichern. Keine Pruefung der Endung:
+           viele Logo-Adressen (CDNs, Favicon-Dienste) haben keine. */
+        var urlOk = false;
+        try { var urlX = new URL(url); urlOk = urlX.protocol === "https:" && !urlX.username && !urlX.password && urlX.hostname.indexOf(".") > 0; } catch(e){ urlOk = false; }
+        if (!urlOk){ logoError("Use an image link that starts with https://"); elUrlIn.focus(); return; }
         meta.brandLogo = url; meta.logoFileName = "";
         renderBrand(); logoError(""); merke();
         fire("data-logourl-fn", "usbLogoUrl", { url: url });
@@ -1120,6 +1134,8 @@
         return;
       }
       if (t.closest("[data-models-save]")){
+        /* Der Stand VOR dem Speichern, fuer speichernZurueck (nur die Seite Settings ruft es). */
+        vorSpeichern.models = cloneModels(saved.models);
         saved.models = cloneModels(draft.models);
         /* Sofort merken, nicht erst wenn der Server antwortet: der Rundlauf baut das Element neu
            auf, und bis die frischen Modelle zurueck sind, ist der Vorrat das Einzige, was die
@@ -1140,6 +1156,8 @@
       if (bz){ draft.businessModel = bz.getAttribute("data-biz"); renderBusiness(); syncMeta(); merke(); return; }
       if (t.closest("[data-meta-save]")){
         draft.summary = elSummary.value;
+        vorSpeichern.meta = { marketId: saved.marketId, businessModel: saved.businessModel,
+                              industry: saved.industry, summary: saved.summary };
         saved.marketId = draft.marketId; saved.businessModel = draft.businessModel;
         saved.industry = draft.industry; saved.summary = draft.summary;
         syncMeta();
@@ -1492,6 +1510,21 @@
          der Abfrage), findet der Selektor nichts, und das spaetere render() ueberschreibt die
          Klassen ohnehin wieder. Genau deshalb war nie ein Skelett zu sehen. */
       setLoading: applyLoading,
+      /* SPEICHERN GESCHEITERT (11.10., Seite Settings, nur lokal gerufen). Beim Klick wurde der
+         Entwurf schon als "gespeichert" vermerkt (damit der Rundlauf ueber Bubble ihn haelt). Sagt
+         die Datenbank nein, gilt wieder der Stand davor -- der Entwurf mit dem, was der Nutzer
+         geschrieben hat, BLEIBT, und "Unsaved changes" steht wieder da. Ein Neuladen vom Server
+         haette ihn ueberschrieben: eine lange Zusammenfassung waere weg gewesen, nur weil sie
+         eine Grenze ueberschritt. */
+      speichernZurueck: function(block){
+        if (block === "models" && vorSpeichern.models){ saved.models = vorSpeichern.models; vorSpeichern.models = null; }
+        if (block === "meta" && vorSpeichern.meta){
+          saved.marketId = vorSpeichern.meta.marketId; saved.businessModel = vorSpeichern.meta.businessModel;
+          saved.industry = vorSpeichern.meta.industry; saved.summary = vorSpeichern.meta.summary;
+          vorSpeichern.meta = null;
+        }
+        applyLoading("no");
+      },
       setLogo: function(url, fileName){
         if (url != null) meta.brandLogo = String(url);
         if (fileName != null) meta.logoFileName = String(fileName);

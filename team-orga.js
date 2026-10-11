@@ -224,8 +224,15 @@
         D.card.classList.toggle("is-saving", D.sendet);
         clearTimeout(D.uhr);
         /* Notbremse. Antwortet der Workflow nicht, bleibt der Dialog sonst fuer immer gesperrt --
-           dieselben 8 Sekunden, mit denen der Switch-Knopf in teams.js sich selbst wieder oeffnet. */
-        if (D.sendet) D.uhr = setTimeout(function () { setSendet(false); }, 8000);
+           dieselben 8 Sekunden, mit denen der Switch-Knopf in teams.js sich selbst wieder oeffnet.
+           LOKAL (Seite Settings) 35s: dort wartet der Dialog auf die Datenbank UND den Versand der
+           E-Mail (zwei Aufrufe, je bis 30s). Laeuft die Uhr ab, sagt er es, statt still wieder
+           frei zu werden -- sonst schickte ein zweiter Klick womoeglich eine zweite Einladung. */
+        if (D.sendet) D.uhr = setTimeout(function () {
+          var warLokal = !!(D.ctrl && D.ctrl.lokal);
+          setSendet(false);
+          if (warLokal) setFormErr("This is taking longer than expected. Check the list of pending invites before you try again.");
+        }, D.ctrl && D.ctrl.lokal ? 35000 : 8000);
       }
       /* Ein Punkt und ein Punkt hinter dem @ -- mehr prueft diese Seite nicht (UC.mailOk, seit dem
          07.10. in core: dieselbe Regel stand hier und in auth-page.js als Kopie). Die richtige
@@ -244,8 +251,23 @@
         setSendet(true);
         D.ctrl.invite(wert, D.rolle);
         /* Zu geht er SOFORT. Der Workflow laedt danach neu und die neue Einladung steht in der
-           Liste -- ein Dialog, der auf die Antwort wartet, haelt den Nutzer fuer nichts fest. */
+           Liste -- ein Dialog, der auf die Antwort wartet, haelt den Nutzer fuer nichts fest.
+           LOKAL (Seite Settings, 11.10.) wartet er doch: dort ruft die Seite die Datenbank selbst
+           und weiss, ob es geklappt hat. Scheitert es (Adresse schon Mitglied, Tagesgrenze), steht
+           der Satz im Dialog und die getippte Adresse ist noch da -- zugeklappt waere sie weg und
+           der Fehler nur ein Toast. Die Antwort kommt ueber ergebnis(). */
+        if (D.ctrl.lokal) return;
         schliessen();
+      }
+      /* Die Antwort der Seite (nur lokal): ok schliesst, sonst steht der Satz im Dialog. Nur fuer
+         den Controller, der gerade gesendet hat -- eine verspaetete Antwort an einen inzwischen
+         geschlossenen oder neu geoeffneten Dialog wird verworfen. */
+      function ergebnis(ctrl, ok, text) {
+        if (!D.offen || D.ctrl !== ctrl || !D.sendet) return false;
+        if (ok) { schliessen(); return true; }
+        setSendet(false);
+        setFormErr(text || "The invite could not be sent. Please try again.");
+        return true;
       }
 
       function oeffnen(ctrl, opener) {
@@ -298,6 +320,7 @@
 
       D.oeffnen = oeffnen;
       D.schliessen = schliessen;
+      D.ergebnis = ergebnis;
       DLG = D;
       return D;
     }
@@ -901,6 +924,28 @@
         if (tun) { ausfuehren(tun); return; }
       });
 
+      /* RUECKFRAGE vor allem, was sich nicht mit einem Klick zuruecknehmen laesst (11.10., Runde
+         Settings): Entfernen, Einladung zurueckziehen und jede Aenderung, die einen OWNER betrifft
+         (jemanden zum owner machen, einen owner herabstufen). member <-> admin bleibt ohne
+         Rueckfrage: das nimmt ein owner mit einem Klick zurueck. Fehlt der Dialog in core (alter
+         Pin), geht es wie bisher direkt -- ein Knopf, der dann gar nichts taete, waere schlimmer. */
+      /* Der Titel traegt einen Namen: die Vorlage ("Remove {name}?") geht durch den Katalog, der
+         Name wird danach eingesetzt -- uebersetzt wird der Satz, nie der Name. */
+      function tt(x) { return UC.t ? UC.t(x) : x; }
+      function titelMit(vorlage, name) { return tt(vorlage).replace("{name}", name); }
+      function rueckfrage(titel, saetze, knopf, fn) {
+        if (!UC.makeModal) { fn(); return; }
+        UC.makeModal({
+          titel: titel, isDark: isDark,
+          inhaltHtml: '<div class="up-modal-saetze">' + saetze.map(function (x) {
+            return '<p class="up-modal-hinweis">' + esc(tt(x)) + '</p>'; }).join("") + '</div>',
+          knoepfe: [
+            { id: "abbrechen", text: "Cancel", art: "sec" },
+            { id: "ok", text: knopf, art: "gefahr", aktion: function () { fn(); } }
+          ]
+        });
+      }
+      function wer(m) { return feld(m.display_name) || feld(m.email) || "this member"; }
       function ausfuehren(el) {
         var was = el.getAttribute("data-uto-do");
         var i = parseInt(el.getAttribute("data-uto-i"), 10);
@@ -914,8 +959,16 @@
                    role: rolleName(v.invited_role) });
             return;
           }
-          fire("data-revoke-fn", "utoRevoke",
-               { invite_id: feld(v.invite_id), email: feld(v.invited_email) });
+          var adresse = feld(v.invited_email);
+          rueckfrage(adresse ? titelMit("Revoke the invite for {name}?", adresse) : tt("Revoke this invite?"),
+            ["The link in the email stops working right away. You can invite this address again anytime."],
+            "Revoke invite",
+            function () {
+              /* Nach der Rueckfrage noch einmal: zwischen Oeffnen und Bestaetigen kann ein
+                 Neuladen die Liste veraendert haben. Gesendet wird die ID, die gefragt wurde. */
+              if (!darfWiderrufen()) return;
+              fire("data-revoke-fn", "utoRevoke", { invite_id: feld(v.invite_id), email: adresse });
+            });
           return;
         }
         var m = state.members[i];
@@ -925,8 +978,15 @@
           /* self bleibt im Payload, obwohl es seit dem 25.09. immer false ist (die eigene Zeile
              bietet kein Entfernen mehr): ein bestehender Workflow liest das Feld womoeglich mit
              Regex, und ein fehlendes Feld liefert dort leeren Text statt "false". */
-          fire("data-remove-fn", "utoRemove",
-               { user_id: feld(m.user_id), email: feld(m.email), self: istSelbst(m) });
+          rueckfrage(titelMit("Remove {name}?", wer(m)),
+            ["They lose access to this team right away. Everything the team has stays.",
+             "You can invite them again later."],
+            "Remove member",
+            function () {
+              if (!darfEntfernen(m)) return;
+              fire("data-remove-fn", "utoRemove",
+                   { user_id: feld(m.user_id), email: feld(m.email), self: istSelbst(m) });
+            });
           return;
         }
         if (was === "role") {
@@ -935,8 +995,26 @@
              Rerender die Zeilen verschoben haben. Der RPC prueft ohnehin, aber ein Ereignis, das
              der Nutzer nie gemeint hat, soll die Seite nicht senden. */
           if (!darfRolle(m, ziel)) return;
-          fire("data-role-fn", "utoRole",
-               { user_id: feld(m.user_id), email: feld(m.email), role: ziel });
+          function senden() {
+            if (!darfRolle(m, ziel)) return;
+            fire("data-role-fn", "utoRole",
+                 { user_id: feld(m.user_id), email: feld(m.email), role: ziel });
+          }
+          var vorher = rolleName(m.role);
+          if (ziel === "owner") {
+            rueckfrage(titelMit("Make {name} an owner?", wer(m)),
+              ["Owners can do everything in this team, including managing billing, removing members and deleting the team.",
+               "Only an owner can undo this."],
+              "Make owner", senden);
+            return;
+          }
+          if (vorher === "owner") {
+            rueckfrage(titelMit("Remove owner rights from {name}?", wer(m)),
+              ["They will no longer be able to manage billing or delete the team."],
+              ziel === "admin" ? "Make admin" : "Make member", senden);
+            return;
+          }
+          senden();
         }
       }
 
@@ -1195,9 +1273,16 @@
         /* Vom Dialog gerufen. Er kennt die Wurzel nicht und soll sie nicht kennen -- er bekommt
            den Controller und ruft eine Methode. */
         invite: function (email, rolle) {
-          if (!darfEinladen()) return;
+          /* Lokal wartet der Dialog auf eine Antwort -- ein stilles return liesse ihn bis zur
+             Notbremse sperren. */
+          if (!darfEinladen()) { if (DLG) DLG.ergebnis(ctrl, false, "You can't invite members to this team."); return; }
           fire("data-invite-fn", "utoInvite", { email: txt(email), role: rolleName(rolle) });
         },
+        /* LOKALER MODUS (Seite Settings, 11.10.): die Seite ruft die Datenbank selbst und meldet
+           hierher, wie es ausging. Gelesen beim Klick, nicht beim Aufbau: data-local steht fest
+           im Markup der Seite, aber ein spaeteres Setzen soll nicht an einem alten Wert haengen. */
+        get lokal() { return isYes(root.getAttribute("data-local")); },
+        einladungErgebnis: function (ok, text) { return DLG ? DLG.ergebnis(ctrl, !!ok, text) : false; },
         setTheme: function (t) { if (UC.setUpstreemTheme) UC.setUpstreemTheme(t); }
       };
       root.__utoController = ctrl;

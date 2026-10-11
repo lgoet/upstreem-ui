@@ -150,8 +150,8 @@
    Koerper ([id^="viewbody-"]) -- ein transform an der Ansicht selbst wuerde alles darin mit
    position:fixed waehrend der Bewegung verschieben. */
 .up-auftritt-zu { opacity: 0; }
-[id^="view-"].view-on:not(:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root)) { animation: up-ansicht-auf var(--up-t-auftritt) var(--up-ease-expo); }
-[id^="view-"].view-on:not(:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root)) [id^="viewbody-"] { animation: up-ansicht-weg var(--up-t-auftritt) var(--up-ease-expo); }
+[id^="view-"].view-on:not(:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root, .uss-root)) { animation: up-ansicht-auf var(--up-t-auftritt) var(--up-ease-expo); }
+[id^="view-"].view-on:not(:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root, .uss-root)) [id^="viewbody-"] { animation: up-ansicht-weg var(--up-t-auftritt) var(--up-ease-expo); }
 /* Die Seiten werden an ihrer WURZEL erkannt (uds, ucs, upi, upf, uop, urs, utp, ubr), nicht nur an
    .up-seite (11.10.): die Wurzel steht von Anfang an im Markup, .up-seite setzt erst die Seite beim
    Einrichten -- rund 40ms nach dem Einblenden. In dieser Luecke lief der Auftritt der ganzen
@@ -160,11 +160,11 @@
 /* Ansichten MIT Seiten-Komponente: keine Bewegung an der Ansicht -- die Seite bewegt ihre Teile
    selbst, und zwei Auftritte uebereinander laufen gegeneinander. Ueber Spezifitaet (0,3,0 bzw.
    0,4,0 gegen die 0,2,0 bzw. 0,3,0 des Kopf-Skripts), damit es auch gilt, solange der Kopf seine Zeilen noch hat. */
-[id^="view-"].view-on:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root), [id^="view-"].view-on:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root) [id^="viewbody-"] { animation: none; }
+[id^="view-"].view-on:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root, .uss-root), [id^="view-"].view-on:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root, .uss-root) [id^="viewbody-"] { animation: none; }
 @keyframes up-ansicht-auf { from { opacity: 0; } }
 @keyframes up-ansicht-weg { from { transform: translateY(10px); } }
 @media (prefers-reduced-motion: reduce) {
-  [id^="view-"].view-on:not(:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root)) [id^="viewbody-"] { animation: none; }
+  [id^="view-"].view-on:not(:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root, .uss-root)) [id^="viewbody-"] { animation: none; }
 }
 
 /* ================= TIEFEN UND UMGEKEHRTE KARTE, AUCH AUSSERHALB EINER WURZEL ================
@@ -5173,6 +5173,16 @@
    Vorstufen auch --vc-third tragen; Hover hebt weiter auf --vc-text, gewaehlt bleibt Akzent. */
 .up-ph-navicon { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); transition: color 120ms ease; }
 .up-ph-navicon svg { width: 16px; height: 16px; display: block; }
+/* DAS MARKENLOGO ALS REITERZEICHEN (Settings: "Your Brand"). Seit dem 11.10. hier statt in
+   settings-page-header.css: der alte Kopf UND die Seite Settings (settings-page.js) zeigen es, und
+   zwei Kopien liefen auseinander. Groesse: .up-ph-navicon misst nur SVG, ein <img> ohne Mass kaeme
+   in seiner natuerlichen Aufloesung. Der Selektor ohne Elternteil, wie er vorher in
+   settings-page-header.css stand. Ohne grayscale -- das Logo ist das Erkennungszeichen des
+   Reiters; nicht gewaehlt wird es ueber die Deckkraft leiser, weil color ein Bild nicht faerbt. */
+:is(.sph-navlogo, .uss-navlogo) {
+  width: 16px; height: 16px; display: block; flex: 0 0 auto; object-fit: cover; border-radius: var(--up-r-xs); }
+.up-ph-navitem:not(.is-selected) :is(.sph-navlogo, .uss-navlogo) { opacity: .55; transition: opacity var(--up-t-1) ease; }
+.up-ph-navitem:not(.is-selected):hover :is(.sph-navlogo, .uss-navlogo) { opacity: 1; }
 .up-ph-navlabel { font-size: 14px; font-weight: 500; color: var(--vc-third); white-space: nowrap; transition: color 120ms ease; }
 /* DER GEWAEHLTE REITER GANZ IN DER AKZENTFARBE (18.09. angefordert): Zeichen, Schrift und der
    Streifen darunter. Nur hier -- die Seitenleiste bleibt in ihrer Schriftfarbe, dort ist die
@@ -5226,21 +5236,21 @@
   margin-left: calc(-1 * var(--up-ph-zug-l, 0px)); margin-right: calc(-1 * var(--up-ph-zug-r, 0px));
   width: calc(100% + var(--up-ph-zug-l, 0px) + var(--up-ph-zug-r, 0px)); }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-desc,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead) .up-ph-desc { display: none; }
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead, .uss-pagehead) .up-ph-desc { display: none; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-top {
   align-items: center; min-height: var(--up-h-btn); padding-bottom: 8px; position: relative; }
 /* Die Linie laeuft bis an die Kante der Bubble-Gruppe um den Kopf, also so weit UEBER das Element
    hinaus, wie die Gruppe Polster hat -- 16 oder 0, je nachdem, ob es in Bubble schon raus ist.
    UC.makePageCrumbs misst das (--up-ph-rand-l/-r); ohne Messung liegt sie unter dem Element. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-top::after,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead)::after {
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead, .uss-pagehead)::after {
   content: ""; position: absolute; bottom: 0; height: 1px; pointer-events: none;
   left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px));
   background: var(--vc-border); }
 /* Die Ueberschrift als Krumenzeile: 14px, auf der Mitte der 32px-Zeile. Vor dem JS steht hier der
    Seitenname aus der Vorlage -- in derselben Groesse, also ohne Sprung. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-heading,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead) .up-ph-heading {
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead, .uss-pagehead) .up-ph-heading {
   display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0;
   font-size: var(--up-fs-l); font-weight: 500; line-height: var(--up-h-btn); letter-spacing: 0;
   color: var(--vc-third); white-space: nowrap; }
@@ -5270,12 +5280,14 @@
 .up-root.uad-root .up-ph-nav,
 .up-root.upi-root .up-ph-nav,
 .up-root.ubr-root .up-ph-nav,
+.up-root.uss-root .up-ph-nav,
 .up-root.ush-root .up-ph-nav,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav { margin-top: 0; gap: 25px; }
 .up-root.ucs-root .up-ph-navitem,
 .up-root.uad-root .up-ph-navitem,
 .up-root.upi-root .up-ph-navitem,
 .up-root.ubr-root .up-ph-navitem,
+.up-root.uss-root .up-ph-navitem,
 .up-root.ush-root .up-ph-navitem,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem {
   height: calc(var(--up-h-btn) + 16px); padding: 0 3px 0 0; position: relative; }
@@ -5283,6 +5295,7 @@
 .up-root.uad-root .up-ph-navitem::before,
 .up-root.upi-root .up-ph-navitem::before,
 .up-root.ubr-root .up-ph-navitem::before,
+.up-root.uss-root .up-ph-navitem::before,
 .up-root.ush-root .up-ph-navitem::before,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem::before {
   content: ""; position: absolute; top: 0; bottom: 0; left: -13px; right: -12px; }
@@ -5292,6 +5305,7 @@
 .up-root.uad-root .up-ph-navitem:first-child::before,
 .up-root.upi-root .up-ph-navitem:first-child::before,
 .up-root.ubr-root .up-ph-navitem:first-child::before,
+.up-root.uss-root .up-ph-navitem:first-child::before,
 .up-root.ush-root .up-ph-navitem:first-child::before,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem:first-child::before { left: calc(-1 * min(13px, var(--up-ph-rand-l, 0px))); }
 /* Im SCHMALEN Kopf (is-narrow, unter 768) teilen sich die Reiter die Breite (flex 1 1 0, Inhalt
@@ -5303,24 +5317,28 @@
 .up-root.uad-root.is-narrow .up-ph-nav,
 .up-root.upi-root.is-narrow .up-ph-nav,
 .up-root.ubr-root.is-narrow .up-ph-nav,
+.up-root.uss-root.is-narrow .up-ph-nav,
 .up-root.ush-root.is-narrow .up-ph-nav,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav { gap: 4px; }
 .up-root.ucs-root.is-narrow .up-ph-navitem,
 .up-root.uad-root.is-narrow .up-ph-navitem,
 .up-root.upi-root.is-narrow .up-ph-navitem,
 .up-root.ubr-root.is-narrow .up-ph-navitem,
+.up-root.uss-root.is-narrow .up-ph-navitem,
 .up-root.ush-root.is-narrow .up-ph-navitem,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem { padding: 0 15px 0 12px; }
 .up-root.ucs-root.is-narrow .up-ph-navitem::before,
 .up-root.uad-root.is-narrow .up-ph-navitem::before,
 .up-root.upi-root.is-narrow .up-ph-navitem::before,
 .up-root.ubr-root.is-narrow .up-ph-navitem::before,
+.up-root.uss-root.is-narrow .up-ph-navitem::before,
 .up-root.ush-root.is-narrow .up-ph-navitem::before,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem::before { content: none; }
 .up-root.ucs-root .up-ph-nav::after,
 .up-root.uad-root .up-ph-nav::after,
 .up-root.upi-root .up-ph-nav::after,
 .up-root.ubr-root .up-ph-nav::after,
+.up-root.uss-root .up-ph-nav::after,
 .up-root.ush-root .up-ph-nav::after,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav::after {
   left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px)); }
@@ -5357,14 +5375,14 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    Beschreibung, Linie und Ueberschrift teilen sich die Regeln des kompakten Kopfs oben. Hoehe
    und Luft der Zeile stehen in der Komponente (teams.css, prompt-research.css), weil dort ihr
    Regler data-head-top sitzt; hier nur, was keinen Regler braucht. */
-.up-root:is(.uts-root, .upr-root, .uev-root, .ush-root, .uad-root, .ucs-root, .uds-root, .upf-root, .uop-root, .upi-root, .ubr-root).has-crumbs {
+.up-root:is(.uts-root, .upr-root, .uev-root, .ush-root, .uad-root, .ucs-root, .uds-root, .upf-root, .uop-root, .upi-root, .ubr-root, .uss-root).has-crumbs {
   padding-left: var(--up-ph-innen-l, 0px); padding-right: var(--up-ph-innen-r, 0px);
   margin-left: calc(-1 * var(--up-ph-zug-l, 0px)); margin-right: calc(-1 * var(--up-ph-zug-r, 0px));
   width: calc(100% + var(--up-ph-zug-l, 0px) + var(--up-ph-zug-r, 0px)); }
 /* Die Kopfzeile steht rechts bei 8 wie in jedem Seitenkopf, der Inhalt der Komponente darunter
    bei 16: also zieht sie sich um die Differenz nach aussen (--up-ph-kopfzug-l/-r aus
    UC.makePageCrumbs, ohne JS 0; links ist die Differenz heute 0). */
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead) { align-items: center; min-height: var(--up-h-btn); position: relative;
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead, .uss-pagehead) { align-items: center; min-height: var(--up-h-btn); position: relative;
   margin-left: calc(-1 * var(--up-ph-kopfzug-l, 0px)); margin-right: calc(-1 * var(--up-ph-kopfzug-r, 0px)); }
 
 /* ---------- DIE KOMPONENTEN TRAGEN IHR SEITENPOLSTER SELBST (29.09. angefordert) ----------
@@ -5422,6 +5440,10 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    Inhalt der Komponente, der schon 16 vom Rand steht -- wie bei Prompt Insights. */
 :is(#view-dashboard, #view-prompts, #view-citations, #view-brands) .ubr-root
   .up-root:is(.ubo-root, .udb-root) { padding-left: 0; padding-right: 0; }
+/* IN DER SEITE SETTINGS (settings-page.js, 11.10.): Your Brand, Team Organisation und Billing
+   stehen im Inhalt der Komponente, der schon 16 vom Rand steht -- die 16 aus dem Block "DIESELBEN
+   16px" kaemen dazu. Ueber die Seitenkennung, sonst verliert die Regel gegen die dortige. */
+[id^="view-"] .uss-root .up-root:is(.usb-root, .uto-root, .ubl-root) { padding-left: 0; padding-right: 0; }
 
 /* ---------- responsive (classes set by UC.makePageNav via UC.onResize) ---------- */
 /* is-narrow (<768px default): tabs go from auto-width/left-packed to even thirds, still centered

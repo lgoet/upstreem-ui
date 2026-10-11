@@ -1,0 +1,53 @@
+<!--
+  UPSTREEM — SETTINGS als EINE Komponente (Praefix uss), 11.10.2026
+
+  WOHIN: ein HTML-Element, volle Breite, ohne eigenes Polster. Die Komponente baut ALLES selbst:
+  Seitenkopf (Krume "Settings", Reiter Your Brand / Team Organisation / Billing) und den Inhalt
+  des Reiters. Your Brand, Team Organisation und Billing sind die bestehenden Bausteine
+  (settings-brand, team-orga, settings-billing) im LOKALEN Modus -- dieselben Bausteine an anderen
+  Orten der App bleiben davon unberuehrt.
+
+  ── STAND: VORSCHLAG, VERLINKT WIRD SCHRITT FUER SCHRITT ──────────────────────────────────────
+  Der Auftrag an den DB-Chat: bubble/settings_db_auftrag.md. Die Funktionsnamen dort sind der
+  Vorschlag; jede Funktion hat in settings-data.js (LIVE) ihren eigenen Schalter. Solange einer aus
+  ist, ruft die Seite die Funktion NICHT und sagt es sichtbar (Lesefehler im Baustein bzw. "This
+  isn't available yet"). Reihenfolge der Schritte: Auftrag, Abschnitt 7.
+
+  ── Was Bubble danach NICHT mehr tut (erst NACH dem letzten Schritt umstellen) ──────────────────
+  In der Settings-Ansicht entfallen: der Seitenkopf settings_header samt sphNav, die Workflows
+  usbMeta, usbLogoUrl, usbModels, usbLeaveTeam, usbDeleteTeam, usbEditBrand, REFRESH_MODELSETTINGS,
+  "Do once when Your_Brand is visible", die uto*-Workflows (Invite, Resend, Revoke, Remove, Role)
+  samt ihren drei Lade-RPCs, die ubl*-Workflows (Manage, Plans, SelectPlan) samt Abo-RPC.
+  BLEIBT: der Seiten-Workflow bubble_fn_upSignal (Kanal account_updated) -- die Seite sendet das
+  Signal nach jeder Aenderung an Marke und Modellen, damit der Team-Kopf der App (Seitenleiste)
+  neu laedt, solange er aus Bubble kommt.
+  VORHER PRUEFEN: ruft einer der Workflows noch etwas, das NICHT zur Settings-Ansicht gehoert
+  (z.B. derselbe Billing-Workflow fuer das Access Gate)? Dann den Schritt dort behalten.
+
+  ── Was die Seite selbst regelt ───────────────────────────────────────────────────────────────
+  - Team aus setUpstreemTeam. Rolle und Rechte aus settings_page_meta_v1 (vom Server abgeleitet).
+  - Reiter in der Adresse: ?st=team bzw. ?st=billing. Zurueck/Vor wechselt den Reiter.
+  - Das Kontomenue der Seitenleiste (preferences / team / billing) waehlt den Reiter ueber
+    data-page="team" am Element (Bubble aendert das Attribut) oder per Run JS:
+        window.setSettingsPageTab && window.setSettingsPageTab("billing");
+  - Rueckfragen: Entfernen, jemanden zum Owner machen, Owner-Rechte abgeben, Einladung
+    zurueckziehen; Verlassen und Loeschen mit getipptem Teamnamen (Loeschen mit zweitem Klick).
+  - Nach Verlassen/Loeschen: zur Seite "signup" (wie bisher), mit /version-test/ auf der
+    Testfassung. Anders mit data-nach-austritt="<seite>".
+  - "Edit brand": der Marken-Editor #drawer-companysettings fuer die eigene Marke.
+  - Manage billing und Tarifwahl: im selben Tab zu Stripe, NUR zu billing.stripe.com bzw.
+    checkout.stripe.com.
+
+  ── Attribute ─────────────────────────────────────────────────────────────────────────────────
+  data-instance        optional, Vorgabe "settings_page". Nur noetig, wenn die Seite zweimal steht.
+  data-page            optional: der Reiter beim Oeffnen (preferences, team, billing).
+  data-adresse         optional, "aus": die Komponente laesst die Adresse in Ruhe (?st).
+  data-nach-austritt   optional, Vorgabe "signup": die Seite der App nach Verlassen/Loeschen.
+  Kein data-isdark, kein data-cdn-pin: das Thema setzt core, den Pin das Header-Script.
+
+  ── Umstellen: erst parallel, dann tauschen ───────────────────────────────────────────────────
+  1. Das Element auf eine Test-Ansicht stellen und neben der alten Settings-Ansicht vergleichen.
+  2. Erst wenn ALLE Schritte verlinkt sind: in #view-settings die alten Elemente (Seitenkopf, Your
+     Brand, Team Organisation, Billing) samt ihrer Workflows durch DIESES eine Element ersetzen.
+-->
+<div class="up-root uss-root" data-instance="settings_page"></div>

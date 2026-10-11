@@ -1,0 +1,14 @@
+/* upstreem settings-page.css -- die Seite Settings als eine Komponente (11.10.). Praefix uss.
+
+   Kopf und Reiter mit denselben Werten wie Brands (brands-page.css): der kompakte Kopf aus core
+   (.uss-pagehead, .up-root.uss-root .up-ph-nav), das Markenlogo als Reiterzeichen ebenfalls aus
+   core (.uss-navlogo). Your Brand, Team Organisation und Billing bringen ihre eigene CSS mit --
+   hier steht nur, wie sie in der Seite stehen. */
+
+.uss-root { display: block; }
+.uss-root .uss-pagehead { padding: 8px 0; }
+/* Derselbe Abstand unter den Reitern wie bei Brands (.ubr-main) -- dort steht davor noch die
+   Filterzeile, hier folgt der Inhalt direkt. */
+.uss-main { padding: 24px 0 64px; min-width: 0; }
+.uss-tab { min-width: 0; }
+.uss-root .uss-tab[hidden] { display: none; }
