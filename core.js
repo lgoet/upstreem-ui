@@ -1326,11 +1326,11 @@
     "Monochrome": "Einfarbig",
     "Solid": "Durchgezogen",
     "Brand Colors": "Brand-Farben",
-    "Use logo color": "Farbe aus dem Logo",
-    "Reading logo…": "Logo wird gelesen…",
-    "This brand has no logo yet.": "Diese Brand hat noch kein Logo.",
-    "No clear color found in this logo. Pick one by hand.":
-      "In diesem Logo ist keine klare Farbe zu finden. Wähle eine von Hand.",
+    "Use favicon color": "Farbe aus dem Favicon",
+    "Reading favicon…": "Favicon wird gelesen…",
+    "This brand has no favicon yet.": "Diese Brand hat noch kein Favicon.",
+    "No clear color found in this favicon. Pick one by hand.":
+      "Im Favicon ist keine klare Farbe zu finden. Wähle eine von Hand.",
     "Please reload the page and try again.": "Bitte lade die Seite neu und versuche es noch einmal.",
     "What are Brand Colors?": "Was sind Brand-Farben?",
     "Every brand is drawn in its own color instead of a fixed palette. You set that color per brand in Settings under Your Brand, in the Brand Color section. Brands without one fall back to a neutral color.":

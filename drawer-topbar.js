@@ -34,7 +34,9 @@
        data-name       der Name, der rechts vom Trenner steht. Bei einer Marke ihr Name, bei
                        einer URL ihr Titel -- was da hineingehoert, entscheidet der Drawer, nicht
                        diese Leiste.
-       data-logo       Bild fuer die Platte davor (Markenlogo oder Favicon). Fehlt es, steht der
+       data-logo       Bild fuer die Platte davor. Ein Markenlogo NUR bei der eigenen Marke,
+                       Wettbewerber, Domains und URLs immer ihr Favicon (11.10., Vertrag Brands
+                       v1 10.6 -- die Datenbank liefert es so, hier wird nichts gewaehlt). Fehlt es, steht der
                        erste Buchstabe des Namens dort. Bei prompt und response wird es nicht
                        gelesen: dort steht das Zeichen des Typs.
        data-item-id    die Kennung, die in jedem Ereignis mitgeht und die auch angeheftet wird.

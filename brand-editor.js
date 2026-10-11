@@ -253,8 +253,11 @@
               '<button class="up-search-clear ube-clear" type="button" data-color-clear ' +
                 'aria-label="Clear color"></button>' +
             '</span>' +
-            /* Holt die Hausfarbe aus dem LOGO der Marke -- dieselbe Ermittlung, mit der die
+            /* Holt die Hausfarbe aus dem FAVICON der Marke -- dieselbe Ermittlung, mit der die
                Domains im Citations-Chart ihre Farbe bekommen (UC.bildFarbe -> dominantVon).
+               FAVICON, NICHT LOGO (11.10., Regel des Nutzers, Vertrag Brands v1 10.6): ein eigenes
+               Logo gibt es NUR fuer die eigene Marke (Brand Settings), Wettbewerber zeigen immer ihr
+               Favicon. Gelesen wird company.favicon_url -- also heisst der Knopf auch so.
                Neben dem Waehler und nicht darin: es ist eine Abkuerzung zu einem Wert, keine
                dritte Art, eine Farbe zu waehlen. */
             /* Ohne disabled im Markup: dieses Stueck ist das STATISCHE Skelett, hier gibt es
@@ -262,7 +265,7 @@
                defined" -- der ganze Editor blieb leer). Den Zustand setzt farbeSpiegeln(), sobald
                Daten da sind. */
             '<button class="up-btn-sec ube-farblogo" type="button" data-color-logo>' +
-              'Use logo color</button>' +
+              'Use favicon color</button>' +
             '<button class="up-btn-pri ube-farbsave" type="button" data-color-save disabled></button>' +
             '<button class="up-btn-sec ube-farbreset" type="button" data-color-reset hidden>Reset</button>' +
           '</div>' +
@@ -437,7 +440,7 @@
       return hexOk(v) ? v.toLowerCase() : "";
     }
 
-    /* Hausfarbe aus dem Logo. Der Ablauf ist bewusst der eines Knopfes, der etwas HOLT und dann
+    /* Hausfarbe aus dem Favicon. Der Ablauf ist bewusst der eines Knopfes, der etwas HOLT und dann
        SPEICHERT -- gefragt war "ermitteln, in den Waehler schreiben und Add ausloesen":
          1. Knopf sperren und sagen, dass es laeuft. UC.bildFarbe kann bis zu acht Sekunden
             brauchen (Frist im Kern), und ein Knopf, der in der Zeit noch klickbar ist, holt
@@ -461,17 +464,17 @@
         hint.textContent = satz || "";
         if (satz) hint.removeAttribute("hidden"); else hint.setAttribute("hidden", "");
       }
-      if (!url) { melden("This brand has no logo yet."); return; }
+      if (!url) { melden("This brand has no favicon yet."); return; }
       if (!UC.bildFarbe) { melden("Please reload the page and try again."); return; }
       logoLaeuft = true;
       var alt = btn ? btn.textContent : "";
-      if (btn) { btn.disabled = true; btn.textContent = "Reading logo…"; }
+      if (btn) { btn.disabled = true; btn.textContent = "Reading favicon…"; }
       melden("");
       UC.bildFarbe(url, function (hex) {
         logoLaeuft = false;
-        if (btn) { btn.disabled = false; btn.textContent = alt || "Use logo color"; }
+        if (btn) { btn.disabled = false; btn.textContent = alt || "Use favicon color"; }
         if (!hex || !hexOk(hex)) {
-          melden("No clear color found in this logo. Pick one by hand.");
+          melden("No clear color found in this favicon. Pick one by hand.");
           return;
         }
         elFarbIn.value = hex;

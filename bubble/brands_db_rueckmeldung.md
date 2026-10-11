@@ -83,9 +83,18 @@ Die Sätze hängen an `message` und an der **Form des `hint`**. Bitte diese Form
    ebenso), mit der neuen Akzent-Faltung.
 3. **Inaktive Zeilen in Discover** tragen den **Team-Namen** der Marke, damit sie in Discover und im
    Reiter Inactive gleich heißen.
-4. **Logo (10.6):** Die Oberfläche hat für Wettbewerber nirgends einen Logo-Upload. Der Editor bietet
-   nur „Use logo color“, das eigene Logo setzt die Seite „Brand settings“. Von hier aus ist nichts
-   zu ändern. `brands_logo_nur_eigene.sql` kann unabhängig eingespielt werden.
+4. **Logo (10.6), Regel des Nutzers:** Ein Logo-Override gibt es **nur für die eigene Marke**.
+   Wettbewerber haben kein Logo, sie zeigen **immer** ihr Favicon -- in jeder Ansicht, in jeder
+   Antwort (`logo_url` eines Wettbewerbers = sein Favicon, wie du es in 10.6 schreibst).
+   Die Oberfläche hält sich daran:
+   - Hochladen oder Verlinken eines Logos gibt es nur in „Brand settings“ (eigene Marke,
+     `set_own_brand_settings_v5`).
+   - Der Marken-Editor ändert für Wettbewerber nur Name, Aliase und Farbe. Sein Farbknopf heißt
+     seit heute „Use favicon color“ und liest `company.favicon_url`, nie ein Logo.
+   - Add Brand und Discover zeigen das Favicon der Domain.
+   - Angezeigt wird überall `logo_url`, wie die Datenbank es liefert; die Oberfläche wählt nicht
+     selbst zwischen Logo und Favicon.
+   `brands_logo_nur_eigene.sql` kann unabhängig eingespielt werden.
 5. **Nach der Umstellung** wie beim Dashboard: `anon` aus allen alten Brands-Funktionen, und
    `get_team_companies_v1` liefert bitte zusätzlich `role`, solange Bubble die Ablage beim
    Seitenaufbau noch damit füllt (die Seite selbst braucht es nicht mehr).
