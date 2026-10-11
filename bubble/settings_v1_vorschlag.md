@@ -501,10 +501,10 @@ Das Limit ist 50 Aufrufe pro Minute und Nutzer. Ein Doppelaufruf je Laden ist un
 | Billing-Status lesen | voll | voll | ohne Preise | ja | nein |
 | Brand speichern, Logo | ja | ja | nein | nein | nein |
 | Modelle setzen | ja | ja | nein | nein | nein |
-| Einladen | member, admin | **nur member** (8.3) | nein | nein | nein |
+| Einladen | member, admin | member, admin (Entscheidung 11.10., siehe 10.3) | nein | nein | nein |
 | Erneut senden, zurückziehen | ja | ja (eigene und Member-Einladungen) | nein | nein | nein |
 | Mitglied entfernen | alle außer sich (letzter Owner geschützt) | nur member | nein | ja | nein |
-| Rolle ändern | ja, auch Owner-Übergabe | **nein** (8.3) | nein | ja | nein |
+| Rolle ändern | ja, auch Owner-Übergabe | member ↔ admin bei anderen (auch Admins), nicht bei sich selbst, nie Owner betreffend (10.3) | nein | ja | nein |
 | Verlassen | ja, wenn nicht letzter Owner | ja | ja | ja | ja |
 | Team löschen | ja (Name + Reauth) | nein | nein | ja | – |
 | Portal öffnen | ja | ja | nein | ja | nein |
@@ -634,7 +634,7 @@ Die echten Antworten der heutigen Lesefunktionen stehen in `settings_lesen_echte
 | K4 Team löschen | weich löschen, endgültig nach **30 Tagen** per Hintergrundjob; heute schon gelöschte Teams nie automatisch löschen |
 | K5 Abo-Ende | löscht das Team **nicht** |
 | K6 Kasse | neue Edge Function für bestehende Teams |
-| Admin-Rechte | Admin lädt nur **Member** ein, darf aber Member → Admin befördern; sonst keine Rollenänderung |
+| Admin-Rechte | ersetzt durch 10.3 |
 | Support-Konten @upstreem.ai | eigenes Merkmal, für Kunden unsichtbar (kommt mit Schritt 4) |
 | 4 heute gelöschte Teams | wieder auf „nicht gelöscht“ (`teams_wiederherstellen.sql`) |
 
@@ -699,3 +699,112 @@ Die echten Antworten der heutigen Lesefunktionen stehen in `settings_lesen_echte
 
 ### 9.3 Deployt am 11.10.2026
 `send-team-invite` v33, `stripe-webhook` v8, `create-team-checkout` v1, `team-billing-cancel` v1. Rückwege: `edge/orig/send-team-invite_v31.ts`, `edge/orig/stripe-webhook_v7.ts`. Die beiden neuen Funktionen brauchen `settings_sofort.sql` (vorher antworten sie mit 500).
+
+---
+
+## 10. Klärung zur Rückmeldung von Claude Code (11.10.2026, geht vor)
+
+### 10.1 `settings_page_meta_v1.meta.team_name`
+- Kommt dazu, und zwar derselbe Name wie im App-Kopf: `coalesce(name_override der eigenen Marke, team.name)`.
+- Ausgabe über `app.js_safe`, ohne `<>` und Steuerzeichen, höchstens 80 Zeichen.
+- `p_confirm_name` in `team_leave_v1` und `team_delete_v1` wird gegen genau diesen Wert geprüft: trim, Groß/klein egal. Sonst 22023 `team_confirm_name_mismatch`.
+
+### 10.2 Modelle beim Lesen
+- `settings_brand_v1.row.models[]` und `row.limits.models_max` kommen dazu.
+- Felder je Zeile: `model_key, display_name, logo_url, provider, currently_tracking, disabled_reason, is_model_active, is_allowed_by_plan, can_enable, can_disable, can_toggle, sort_order`. Werte und Regeln wie in `get_team_model_settings_v1`.
+- Beim Lesen werden **keine** Startzeilen angelegt. Heute hat jedes Team Zeilen; fehlen sie, zeigt die Liste `currently_tracking:false`, und `meta.models_initialized` ist `false`.
+- `team_models_set_v1` gibt `{meta:{changed:{on:[…], off:[…]}}, rows:[…]}` zurück, `rows` in genau dieser Zeilenform.
+
+### 10.3 Admin-Rechte (Entscheidung Lukas, ersetzt 9.1 und Abschnitt 5)
+- Ein Admin lädt Member **und** Admins ein.
+- Ein Admin ändert Rollen member ↔ admin in beide Richtungen, auch bei anderen Admins, aber nicht bei sich selbst.
+- Owner: Ein Admin macht niemanden zum Owner und ändert oder entfernt keinen Owner.
+- Entfernen: Ein Admin entfernt nur Member.
+- `settings_page_meta_v1.row`: `can_invite_admin` und `can_change_roles` sind `true` für owner und admin.
+- Pro Zeile in `team_members_v1.rows[]`: `can_remove`, `can_change_role` und `role_options` (z. B. `['member','admin']`; für den Owner als Betrachter zusätzlich `owner`).
+- Ablehnungen: PT403 `team_role_required` (hint `owner`) und PT409 `team_cannot_change_self`.
+- **Bestand:** `settings_sofort.sql` hat an den Rollen nichts geändert.
+  - `create_team_invite_v1` erlaubt Admins schon heute, Admins einzuladen.
+  - `set_team_member_role_v1` (Bubble) bleibt wie es ist: Admin nur member → admin.
+  - Es gibt nichts zurückzunehmen. Die neue Regel kommt mit `team_member_role_v1`.
+
+### 10.4 `team-invite-send`: Antwortform
+Erfolg (HTTP 200):
+- `{success:true, invite_id, sent_at, unchanged}`;
+- `unchanged:true`, wenn die Adresse schon offen eingeladen und zugestellt ist. Dann wird nicht erneut gesendet; „erneut senden“ geht ausdrücklich mit `invite_id`.
+
+Fehler `{success:false, error, message, code, hint, invite_id?}`:
+
+| error | HTTP | hint / Zusatz |
+|---|---|---|
+| `settings_not_authenticated` | 401 | |
+| `team_forbidden` | 403 | fremdes Team |
+| `team_role_required` | 403 | `owner,admin`; nur, wenn ein Member einlädt oder erneut sendet |
+| `team_deleted` | 409 | |
+| `team_already_member` | 409 | |
+| `team_invite_not_pending` | 409 | erneut senden auf erledigte Einladung |
+| `team_invite_not_found` | 404 | |
+| `team_invalid_email` | 400 | |
+| `team_invalid_role` | 400 | |
+| `team_invite_rate_limited` | 429 | Sekunden bis frei |
+| `team_invite_send_failed` | 502 | Resend lehnt ab; die Einladung ist verworfen (`send_failed`), sofort neu einladbar |
+| `team_invite_send_unknown` | 502 | mit `invite_id`; die Einladung steht, Versand unklar |
+
+### 10.5 `return_path` der Kasse (create-team-checkout v2, deployt)
+- Query ist erlaubt. `checkout=…` und `session_id` hängen mit `&` an (mit `?`, wenn noch keine Query da ist). Vorhandene `checkout`/`session_id` werden ersetzt, ein Fragment entfällt.
+- Der Pfad muss mit genau einem `/` beginnen: kein `//`, kein Schema, kein Backslash, keine Leer- oder Steuerzeichen, höchstens 300 Zeichen. Er muss auf den Origin von `APP_URL` zeigen.
+- Sonst gilt der Standard `/?view=settings&st=billing` (von Lukas genannt, create-team-checkout v3). Das Secret `BILLING_RETURN_PATH` kann ihn überschreiben, ist aber nicht gesetzt.
+- Beispiel: `/version-test/index?view=settings&st=billing` → `https://app.upstreem.ai/version-test/index?view=settings&st=billing&checkout=success&session_id={CHECKOUT_SESSION_ID}`.
+
+### 10.6 `billing_status_v1` für Member
+Die Felder sind vorhanden, Preise haben den Wert `null`:
+- `current_price_eur`, `monthly_price_eur`, `yearly_price_eur` = `null`;
+- `can_manage_billing:false`.
+
+Alles andere ist wie bei owner/admin: Plan, Status, `status_label`, `has_active_access`, Datumsangaben.
+
+### 10.7 `team_invites_v1.send_state`
+Bestätigt: `sent | unknown | failed`.
+- `failed` gehört zu `status='send_failed'`. Solche Einladungen erscheinen nicht in der Liste offener Einladungen und zählen nicht als offen.
+- `unknown` bedeutet `pending` ohne `sent_at`: „Delivery unclear“ mit Resend.
+
+### 10.8 Reauth über Google
+- Bestätigt am Bestand (`auth.mfa_amr_claims`): Supabase legt je Sitzung genau einen amr-Eintrag beim Anmelden an (`oauth` 12, `password` 33, `otp` 6 Sitzungen), und keiner wurde je nachträglich geändert.
+- Ein neuer Login über Google erzeugt also eine neue Sitzung mit neuem `amr[].timestamp`. Ein Token-Refresh ändert ihn nicht.
+- Die Prüfung nimmt den jüngsten `amr[].timestamp` des JWT.
+
+### 10.9 Rückkehr von der Kasse, von Claude Code bestätigt (11.10.2026)
+- **Live:** `view=settings` öffnet die Settings-Gruppe (`_viewAusUrl`). `st=billing` wertet nur die neue Settings-Seite aus. Die heutige Bubble-Ansicht landet in Settings, aber auf dem Standard-Reiter.
+- **Testversion:** Die Seite schickt `location.pathname` samt `/version-test/…` und ihre Query mit, ohne `checkout`, `session_id` und Fragment.
+- **Rückkehr:** `checkout=success` zeigt einen Hinweis und liest den Abo-Stand einmal neu (3 s verzögert). `checkout=cancelled` zeigt einen Hinweis. Danach entfernt die Seite beide Parameter per `replaceState`.
+- Der Standard `/?view=settings&st=billing` bleibt.
+
+---
+
+## 11. Schritt 1 gebaut: Lesefunktionen (`settings_v1_lesen.sql`, 11.10.2026)
+Die echten Antworten stehen in `settings_v1_lesen_echte_antworten.json` (877c als owner, admin, member, fremd, anon; dazu Blättern, Support und ein Team ohne Zugang).
+
+| Funktion | Wer | Form |
+|---|---|---|
+| `settings_page_meta_v1(p_team)` | Mitglied | `meta{team_id, team_name, viewer_role, viewer_user_id, viewer_email, viewer_is_support, has_access, access_state, is_deleted, owner_count}`, `row{can_edit_brand, can_manage_models, can_invite, can_invite_admin, can_view_invites, can_view_log, can_manage_members, can_change_roles, can_transfer_owner, can_leave, can_delete, can_manage_billing, reasons{flag: 'role'|'no_access'|'last_owner'}}` |
+| `settings_brand_v1(p_team)` | Mitglied | `meta{team_id, viewer_role, can_edit, models_initialized}`, `row{company_id, name, name_default, name_is_override, logo_url, logo_default, logo_is_override, market, market_name, business_model, business_model_key ('b2b'|'b2c'|'hybrid'|null), industry, summary, limits{name, industry, summary, logo, models_max}, business_models[], markets[{alpha2, name, flag_url}], models[…10.2]}` |
+| `team_members_v1(p_team)` | Mitglied | `meta{team_id, viewer_role, viewer_user_id, viewer_email, count, owner_count, permissions{…}}`, `rows[{user_id, email, display_name, role, joined_at, is_self, is_support, can_remove, can_change_role, role_options[]}]`. Support-Mitglieder sehen nur andere Support-Mitglieder. |
+| `team_invites_v1(p_team, p_status)` | owner/admin | `p_status`: `null`=alle außer `send_failed`, `open`, `accepted`, `revoked`, `expired`, `send_failed`. `meta{count, open_count, status}`, `rows[{invite_id, invited_email, invited_role, status, created_at, created_by_email, expires_at, resend_count, last_sent_at, send_state}]`. `send_state` ist bis Schritt 3 immer `sent`. |
+| `team_log_v1(p_team, p_limit, p_before)` | owner/admin | Höchstens 100 je Seite. `meta{limit, next_before}`: `next_before` an `p_before` weitergeben, `null` = Ende. `rows[{log_id, created_at, event_type, actor_user_id, actor_email, actor_display_name, target_user_id, target_email, meta}]` |
+| `billing_status_v1(p_team)` | Mitglied | `meta{team_id, team_name, viewer_role}`, `row{plan_id, plan_name, billing_interval, has_subscription, subscription_live, status, status_label, has_active_access, access_state, access_ended_at, is_trialing, is_past_due, cancel_at_period_end, trial_ends_at, current_period_end, next_billing_at, cancellation_effective_at, canceled_at, ended_at, prompts_per_day, competitors_max_active, models_max_active, current_price_eur, monthly_price_eur, yearly_price_eur, can_manage_billing, can_checkout, can_open_portal}`; Member: Preise `null` |
+| `billing_plans_v1(p_team)` | angemeldet; mit `p_team` nur als Mitglied | `meta{team_id, current_plan_id, current_plan_listed}`, `rows[{plan_id, id, name, monthly_price_eur, yearly_price_eur, prompts_per_day, competitors_max_active, models_max_active, trial_days, trial_available, is_current}]` |
+
+**Fehler (alle):**
+
+| SQLSTATE | message | hint |
+|---|---|---|
+| 28000 | `settings_not_authenticated` | – |
+| 42501 | `team_forbidden` | – |
+| PT404 | `team_deleted` | – |
+| PT403 | `team_role_required` | `owner,admin` |
+| 22023 | `team_invalid_param` | Parametername |
+| PT429 | `settings_rate_limited` / `team_rate_limited` / `billing_rate_limited` | Sekunden |
+
+**Laufzeit 877c:** kalt 3–9 ms, warm 1–6 ms. `settings_brand_v1` ist mit der Marktliste die größte Antwort.
+
+**Support-Konten (Entscheidung Lukas 11.10., ersetzt 9.1/8.2):** Support-Konten bleiben in der Team-Organisation sichtbar wie alle anderen Mitglieder. Das Feld `team_member.is_support` ist angelegt, wird aber nicht gesetzt (immer `false`); es wird also niemand ausgeblendet.

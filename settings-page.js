@@ -376,7 +376,8 @@
         laden: function (frisch) {
           /* Die Rolle aus der LETZTEN Meta: ist sie unbekannt, wird gefragt -- einem member gibt
              die DB ohnehin leere Listen. */
-          var nurLesen = !!(state.meta && state.meta.rolle === "member");
+          var r = state.meta && state.meta.rechte;
+          var nurLesen = !!(r && r.einladungenSehen && !r.einladungenSehen.darf && r.protokollSehen && !r.protokollSehen.darf);
           return Promise.all([
             lesen("uss_mitglieder", am, frisch),
             nurLesen ? Promise.resolve(null) : lesen("uss_einladungen", ae, frisch),
@@ -715,7 +716,7 @@
       setTimeout(function () { lader.leeren(); state.meta = null; persist(); bedarf({ frisch: true }); }, 3000);
     })();
     an("ublublPlans", function () {
-      var a = D.tarife();
+      var a = D.tarife(team());
       lesen("uss_tarife", a, false).then(function (erg) {
         if (erg.ueberholt) return;
         var z = erg.ok ? D.zuTarife(erg.daten) : null;

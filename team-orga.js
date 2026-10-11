@@ -513,8 +513,14 @@
       function letzterBesitzer(m) {
         return rolleName(m.role) === "owner" && besitzerZahl() <= 1;
       }
+      /* DER SERVER SAGT ES JE ZEILE (team_members_v1, 11.10.): can_remove, can_change_role und
+         role_options nach den Admin-Regeln. Steht das in der Zeile, gilt es -- die Regeln darunter
+         sind der Rueckfall fuer die Bubble-Fassung (get_team_organisation kennt die Felder nicht).
+         Die Sperre fuer @upstreem.ai-Zeilen bleibt in beiden Faellen: sie ist eine Entscheidung der
+         Oberflaeche, nicht der Rechte. */
       function darfEntfernen(m) {
         if (istUpstreem(m)) return false;
+        if (typeof m.can_remove === "boolean") return m.can_remove && !istSelbst(m);
         if (letzterBesitzer(m)) return false;
         /* Die EIGENE Zeile nie (25.09. angefordert). Bis dahin stand hier "Leave team" -- das
            gibt es aber schon unter Your Brand (settings-brand, Danger Zone), und zwei Ausgaenge
@@ -529,6 +535,9 @@
         if (istUpstreem(m)) return false;
         var mr = rolleName(m.role), vr = rolleName(state.viewerRole), zr = rolleName(ziel);
         if (mr === zr) return false;
+        if (isArr(m.role_options)) {
+          return m.can_change_role === true && m.role_options.map(rolleName).indexOf(zr) >= 0;
+        }
         if (letzterBesitzer(m)) return false;
         if (vr === "owner") return true;
         /* ADMINS AENDERN ROLLEN (11.10. vom Nutzer bestimmt: "admin darf rollen aendern"): zwischen

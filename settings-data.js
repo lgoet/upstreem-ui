@@ -59,7 +59,9 @@
      echten Antworten geprueft sind (Auftrag 7: erst Lesen, dann Your Brand, Einladungen,
      Mitglieder, Billing, zuletzt Verlassen und Loeschen). */
   var LIVE = {
-    meta: false, marke: false, mitglieder: false, einladungen: false, protokoll: false, abo: false, tarife: false,
+    /* Schritt 1 (Lesen) gebaut am 11.10. (settings_v1_lesen.sql, Vertrag Abschnitt 11), geprueft
+       gegen testdaten/settings_v1/v1_lesen_echte_antworten.json. */
+    meta: true, marke: true, mitglieder: true, einladungen: true, protokoll: true, abo: true, tarife: true,
     markeSpeichern: false, logo: false, modelle: false,
     einladen: false, erneut: false, zurueckziehen: false,
     entfernen: false, rolle: false,
@@ -120,10 +122,13 @@
   function seite(team) { return anfrage("meta", p(team)); }
   function marke(team) { return anfrage("marke", p(team)); }
   function mitglieder(team) { return anfrage("mitglieder", p(team)); }
-  function einladungen(team) { return anfrage("einladungen", p(team)); }
+  /* Nur offene (p_status 'open', Vertrag 11): team-orga zeigt ohnehin nur sie, und ohne Filter
+     kaemen alle angenommenen und zurueckgezogenen mit -- bei 877c 16 statt 0. */
+  function einladungen(team) { var q = p(team); q.p_status = "open"; return anfrage("einladungen", q); }
   function protokoll(team) { var q = p(team); q.p_limit = GRENZE.protokoll; q.p_before = null; return anfrage("protokoll", q); }
   function abo(team) { return anfrage("abo", p(team)); }
-  function tarife() { return anfrage("tarife", {}); }
+  /* Mit p_team: dann kommen is_current und trial_available fuer DIESES Team (Vertrag 11). */
+  function tarife(team) { return anfrage("tarife", p(team)); }
 
   /* ---- Schreiben ---------------------------------------------------------------------------- */
   function markeSpeichern(team, w) {
@@ -204,6 +209,7 @@
       rechte: {
         marke: rr("can_edit_brand"), modelle: rr("can_manage_models"),
         einladen: rr("can_invite"), adminEinladen: rr("can_invite_admin"), mitglieder: rr("can_manage_members"),
+        einladungenSehen: rr("can_view_invites"), protokollSehen: rr("can_view_log"),
         rollen: rr("can_change_roles"), ownerUebergeben: rr("can_transfer_owner"),
         billing: rr("can_manage_billing"), verlassen: rr("can_leave"), loeschen: rr("can_delete")
       },
@@ -223,16 +229,22 @@
     var b = istObjekt(d.brand) ? d.brand : d;
     if (!isArr(d.models)) return null;
     var lim = istObjekt(d.limits) ? d.limits : {};
+    /* Geschaeftsmodell: business_model ist der Anzeigetext ("B2C", auch Altbestand wie "Hybrid
+       (B2B & B2C)"), business_model_key der Schluessel -- der Schluessel zuerst. */
+    var gm = str(d.business_model_key != null ? d.business_model_key : d.business_model).toLowerCase();
     var out = {
-      brand: { name: str(b.name), logo: absolut(b.logo_url) },
+      /* Ohne eigenes Logo das Favicon der Marke (logo_default), wie im Kopf der App. */
+      brand: { name: str(b.name), logo: absolut(b.logo_url) || absolut(d.logo_default) },
       company_id: UUID.test(str(b.company_id)) ? str(b.company_id) : "",
       models: d.models.filter(istObjekt),
       model_limit: num(lim.models_max),
       market: str(d.market != null ? d.market : d.market_id).toLowerCase(),
-      business_model: GESCHAEFT.indexOf(str(d.business_model).toLowerCase()) >= 0 ? str(d.business_model).toLowerCase() : "",
+      business_model: GESCHAEFT.indexOf(gm) >= 0 ? gm : "",
       industry: str(d.industry),
       summary: str(d.summary)
     };
+    /* Die Marktliste der Antwort ist der Rueckfall des Bausteins (zuerst gilt die App-Ablage). */
+    if (isArr(d.markets) && d.markets.length) out.markets = d.markets.filter(istObjekt);
     if (m) { out.team = { id: m.teamId, name: m.teamName }; out.user_role = m.rolle; }
     /* Rechte der Modelle vom Server: ohne Angabe NEIN (siehe recht). In jede Zeile, weil
        settings-brand den Planrahmen aus der ersten Zeile liest. */
@@ -269,7 +281,33 @@
   }
   /* Billing: settings-billing liest die Antwort selbst (UC.aboLesen, UC.plaeneLesen) -- hier nur,
      ob es ueberhaupt ein Objekt bzw. eine Liste ist. */
-  function zuAbo(d) { return istObjekt(d) ? d : null; }
+  /* billing_status_v1 (Vertrag 11) liefert {meta, row} flach; settings-billing liest ueber
+     UC.aboLesen die Form der bisherigen Funktion ({ok, team_id, billing:{…}}). Hier umgehaengt,
+     Feld fuer Feld, damit der Baustein unveraendert bleibt.
+     - has_billing: auch ohne Stripe-Abo hat ein Team mit Tarif einen Plan (8 Teams, Vorschlag
+       1.4); has_billing false hiesse "No active plan", obwohl der Zugang laeuft.
+     - Verwalten nur, wenn das Portal auch aufgeht (can_open_portal): ohne Stripe-Kunden antwortet
+       es 404, der Knopf waere ein Versprechen ohne Deckung.
+     Die alte Form geht unveraendert durch. */
+  function zuAbo(d) {
+    if (!istObjekt(d)) return null;
+    if (!istObjekt(d.row)) return d;
+    var r = d.row, m = meta(d);
+    return {
+      ok: true, team_id: str(m.team_id), team_name: str(m.team_name),
+      billing: {
+        billing_plan_id: r.plan_id, plan_name: r.plan_name, billing_interval: r.billing_interval,
+        current_price_eur: r.current_price_eur, monthly_price_eur: r.monthly_price_eur, yearly_price_eur: r.yearly_price_eur,
+        next_billing_at: r.next_billing_at, canceled_at: r.canceled_at, access_ends_at: r.access_ended_at,
+        trial_ends_at: r.trial_ends_at, has_active_access: r.has_active_access,
+        can_manage_billing: r.can_manage_billing === true && r.can_open_portal !== false,
+        status: r.status, status_label: r.status_label, is_active: r.subscription_live,
+        has_billing: !!(r.has_subscription || r.plan_id), cancel_at_period_end: r.cancel_at_period_end,
+        current_period_end: r.current_period_end, ended_at: r.ended_at, is_trialing: r.is_trialing, is_past_due: r.is_past_due,
+        prompts_per_day: r.prompts_per_day, competitors_max_active: r.competitors_max_active
+      }
+    };
+  }
   function zuTarife(d) { return isArr(d) || (istObjekt(d) && (isArr(d.plans) || isArr(d.rows))) ? (istObjekt(d) && isArr(d.rows) ? { plans: d.rows } : d) : null; }
   /* Nach dem Verlassen oder Loeschen (4.5.6): wohin. */
   function zuAustritt(d) {
