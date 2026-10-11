@@ -236,6 +236,9 @@
     if (isDark()) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
 
     /* ---- Reiter und Adresse ------------------------------------------------------------------- */
+    /* Der Reiter in der Adresse ueber core (UC.seitenAdresse, 12.10.): nur solange diese Ansicht
+       offen ist -- vorher wanderte ?pi durch jede andere Ansicht mit. */
+    var adr = !ohneAdresse && UC.seitenAdresse ? UC.seitenAdresse(root, "pi", function () { return state.tab === "allprompts" ? "" : state.tab; }) : null;
     function adresseLesen() {
       if (ohneAdresse) return null;
       try { var c = new URL(window.location.href).searchParams.get("pi"); return c === "responses" || c === "topics" ? c : null; }
@@ -243,6 +246,7 @@
     }
     function adresseSetzen(neuerEintrag) {
       if (ohneAdresse) return;
+      if (adr) { adr.schreiben(neuerEintrag); return; }
       try {
         var u = new URL(window.location.href);
         if (state.tab === "allprompts") u.searchParams.delete("pi"); else u.searchParams.set("pi", state.tab);
@@ -272,6 +276,8 @@
     }
     window.addEventListener("popstate", function () {
       if (root.isConnected === false) return;
+      /* Zurueck/Vor in einer ANDEREN Ansicht betrifft diese Seite nicht. */
+      if (adr && !adr.aktiv()) return;
       var a = adresseLesen() || "allprompts";
       if (a !== state.tab) reiterOeffnen(a, false);
     });

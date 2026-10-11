@@ -3086,9 +3086,12 @@
        destroying the thing the user is looking at. Search/filters do NOT use this: there the
        result set itself changes, so the old rows would be a lie and the skeleton is the honest
        answer instead. */
-    .up-root.is-reloading .up-tbody { opacity: .42; transition: opacity 140ms ease; pointer-events: none; }
+    /* .uto-table: die Tabellen der Team-Verwaltung (12.10.) -- waehrend Resend, Revoke, Remove
+       oder ein Rollenwechsel laeuft, dimmen sie genauso; vorher gab es bis zur Antwort gar keine
+       Rueckmeldung. */
+    .up-root.is-reloading :is(.up-tbody, .uto-table) { opacity: .42; transition: opacity 140ms ease; pointer-events: none; }
     @media (prefers-reduced-motion: reduce){
-      .up-root.is-reloading .up-tbody { transition: none; }
+      .up-root.is-reloading :is(.up-tbody, .uto-table) { transition: none; }
     }
     /* height/flex-basis deliberately don't transition: with 50-100 rows on screen, animating them
        forces a synchronous layout reflow on every row simultaneously, which visibly stalls the

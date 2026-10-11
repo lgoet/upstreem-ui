@@ -273,6 +273,9 @@
     if (isDark()) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
 
     /* ---- Reiter und Adresse ------------------------------------------------------------------- */
+    /* Der Reiter in der Adresse ueber core (UC.seitenAdresse, 12.10.): nur solange diese Ansicht
+       offen ist -- vorher wanderte ?st durch jede andere Ansicht mit. */
+    var adr = !ohneAdresse && UC.seitenAdresse ? UC.seitenAdresse(root, "st", function () { return state.tab === "preferences" ? "" : state.tab; }) : null;
     function adresseLesen() {
       if (ohneAdresse) return null;
       try { var v = new URL(window.location.href).searchParams.get("st"); return v === "team" || v === "billing" ? v : null; }
@@ -280,6 +283,7 @@
     }
     function adresseSetzen(neuerEintrag) {
       if (ohneAdresse) return;
+      if (adr) { adr.schreiben(neuerEintrag); return; }
       try {
         var u = new URL(window.location.href);
         if (state.tab === "preferences") u.searchParams.delete("st"); else u.searchParams.set("st", state.tab);
@@ -304,6 +308,8 @@
     }
     window.addEventListener("popstate", function () {
       if (root.isConnected === false) return;
+      /* Zurueck/Vor in einer ANDEREN Ansicht betrifft diese Seite nicht. */
+      if (adr && !adr.aktiv()) return;
       var a = adresseLesen() || "preferences";
       if (a !== state.tab) reiterOeffnen(a, false);
     });
@@ -347,7 +353,9 @@
       o = o || {};
       var nr = ++gruppeNr, tm = team();
       auftraege.forEach(function (a) { juengsteJe[a.kanal] = nr; });
-      auftraege.forEach(function (a) { if (o.frisch || !a.imSpeicher) a.ladenAn(); });
+      /* leise: nach einer eigenen Aenderung KEIN Skelett -- die Zeilen stehen gedimmt da, bis die
+         frischen kommen (teamNeu). */
+      auftraege.forEach(function (a) { if (!o.leise && (o.frisch || !a.imSpeicher)) a.ladenAn(); });
       /* Meta und Daten GLEICHZEITIG (nicht nacheinander): gezeichnet wird erst, wenn beide da sind,
          denn die Bausteine brauchen die Rolle zum Zeichnen. */
       return Promise.all([metaLaden(o.frisch || o.meta)].concat(auftraege.map(function (a) { return a.laden(o.frisch); }))).then(function (r) {
@@ -462,7 +470,13 @@
     /* ---- Ereignisse von Your Brand (lokal: "usb" plus Name, makeFire) -------------------------- */
     function an(name, fn) { root.addEventListener(name, function (e) { fn(e.detail || {}); }); }
     function usb() { var r = el(".usb-root"); return r && r.__usbController ? r.__usbController : null; }
-    function usbLaden(an_) { try { setter("setSettingsBrandLoading")(ids.usb, an_ ? "yes" : "no"); } catch (e) {} }
+    /* Leise (gedimmt statt Skelett, 12.10.): Logo speichern, Verlassen, Loeschen -- die Werte auf
+       dem Schirm bleiben wahr, sie werden nur geschrieben. Ohne die Methode (alter Pin) wie bisher. */
+    function usbLaden(an_) {
+      var c = usb();
+      if (c && c.setLoading) { try { c.setLoading(an_ ? "yes" : "no", true); } catch (e) {} return; }
+      try { setter("setSettingsBrandLoading")(ids.usb, an_ ? "yes" : "no"); } catch (e) {}
+    }
     /* Ein gescheitertes Speichern: der Baustein stellt den Stand davor her und BEHAELT den Entwurf
        (speichernZurueck). Ohne die Methode (alter Pin) frisch vom Server -- der Entwurf ist dann
        zwar weg, aber nichts behauptet, gespeichert zu sein. */
@@ -518,7 +532,7 @@
         return schreiben(D.markeSpeichern(team(), d, state.markeDaten)).then(function (erg) {
           if (!erg.ok) { usbZurueck("meta"); fehlerToast(erg, t("The settings could not be saved")); return; }
           var name = markeName();
-          toast(name ? name + " " + t("settings updated") : t("Settings updated"), "success",
+          toast(name ? t("Settings for {name} saved").replace("{name}", name) : t("Settings saved"), "success",
                 erg.daten && erg.daten.meta && erg.daten.meta.rewritten === true ? t("Special characters were removed.") : "");
           nachSchreibenMarke(erg.daten, "meta");
           kontoSignal();
@@ -534,7 +548,7 @@
         return schreiben(a).then(function (erg) {
           if (!erg.ok) { usbZurueck("models"); fehlerToast(erg, t("The models could not be saved")); return; }
           var name = markeName();
-          toast(name ? name + " " + t("models updated") : t("Models updated"), "success");
+          toast(name ? t("Models for {name} saved").replace("{name}", name) : t("Models saved"), "success");
           nachSchreibenMarke(erg.daten, "models");
           kontoSignal();
         });
@@ -602,7 +616,22 @@
     an("usbusbDeleteTeam", function (d) { austritt("loeschen", d); });
 
     /* ---- Ereignisse von Team Organisation (lokal: "uto" plus Name) ----------------------------- */
-    function teamNeu(mitMeta) { lader.leeren(); bedarf({ frisch: true, meta: !!mitMeta }); }
+    function teamNeu(mitMeta) { lader.leeren(); return Promise.resolve(bedarf({ frisch: true, meta: !!mitMeta, leise: true })); }
+    /* DIMMEN WAEHREND EINER TEAM-AKTION (12.10. gemeldet: "bei Resend kommt bis zur Meldung gar
+       kein Feedback"). Die Tabellen bleiben stehen und werden gedimmt wie beim Sortieren
+       (UC.makeSoftReload) -- bis die frische Liste da ist, nicht nur bis zur Antwort, sonst
+       stuende fuer einen Moment wieder der alte Stand klar da. */
+    var teamDimm = null;
+    function teamDimmen(an_) {
+      var r = el(".uto-root");
+      if (!r || !UC.makeSoftReload) return;
+      if (!teamDimm || teamDimm.root !== r) { teamDimm = UC.makeSoftReload(r, { delay: 0, killAfter: 30000 }); teamDimm.root = r; }
+      if (an_) teamDimm.begin(true); else teamDimm.end();
+    }
+    function mitDimmen(fn) {
+      teamDimmen(true);
+      return Promise.resolve().then(fn).then(function () { teamDimmen(false); }, function (e) { teamDimmen(false); throw e; });
+    }
     function einladungAntwort(ok, text) { var c = uto(); if (c && c.einladungErgebnis) c.einladungErgebnis(ok, text); }
     var MAIL_SATZ = { leer: "Please enter an email address.", lang: "This email address is too long.",
                       zeichen: "This email address contains characters we can't use.", form: "That does not look like an email address." };
@@ -650,12 +679,19 @@
       if (!teamGleich(str(d.team_id))) { teamGewechselt(); return; }
       if (!D.live("erneut")) { nochNicht(); return; }
       einmal("team", function () {
-        return edge("erneut", D.erneut(team(), id, appBasis())).then(function (erg) {
-          if (!erg.ok) {
-            var f = fehlerSatz(erg, t("The invite could not be sent again"));
-            toast(f.text, versandUnklar(erg) ? "neutral" : "error", f.desc);
-          } else toast(t("Invite sent again"), "success", str(d.email));
-          teamNeu(false);
+        return mitDimmen(function () {
+          return edge("erneut", D.erneut(team(), id, appBasis())).then(function (erg) {
+            if (!erg.ok) {
+              /* Beim ERNEUTEN Senden heisst team_invite_rate_limited mit Sekunden: gerade erst
+                 gesendet (5 Minuten Abstand) -- nicht "zu viele Einladungen". */
+              var sek = D.hinweisZahl(erg);
+              var f = /invite_rate_limited/.test(D.meldung(erg)) && sek
+                ? { text: t("The invite was sent just now"), desc: t("You can send it again in {n} minutes.").replace("{n}", String(Math.max(1, Math.ceil(sek / 60)))) }
+                : fehlerSatz(erg, t("The invite could not be sent again"));
+              toast(f.text, versandUnklar(erg) ? "neutral" : "error", f.desc);
+            } else toast(t("Invite sent again"), "success", str(d.email));
+            return teamNeu(false);
+          });
         });
       });
     });
@@ -664,11 +700,13 @@
     function teamSchreiben(a, ok, wobei, mitMeta) {
       if (!D.live(a.art)) { nochNicht(); return; }
       einmal("team", function () {
-        return schreiben(a).then(function (erg) {
-          if (!erg.ok) { fehlerToast(erg, wobei); teamNeu(false); return; }
-          var gleich = erg.daten && erg.daten.meta && erg.daten.meta.unchanged === true;
-          if (gleich) toast(t("Nothing changed"), "neutral"); else toast(ok, "success");
-          teamNeu(mitMeta);
+        return mitDimmen(function () {
+          return schreiben(a).then(function (erg) {
+            if (!erg.ok) { fehlerToast(erg, wobei); return teamNeu(false); }
+            var gleich = erg.daten && erg.daten.meta && erg.daten.meta.unchanged === true;
+            if (gleich) toast(t("Nothing changed"), "neutral"); else toast(ok, "success");
+            return teamNeu(mitMeta);
+          });
         });
       });
     }

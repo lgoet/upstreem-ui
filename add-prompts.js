@@ -1086,7 +1086,8 @@
        Komponente mit altem data-cdn-pin gewinnt das Rennen), kennt es toast nicht. Ohne die
        Pruefung wuerde der TypeError den Rest dieser Funktion mitnehmen -- und damit close(). Der
        Dialog bliebe offen, obwohl die Prompts laengst gefeuert sind. */
-    if (UC.toast) UC.toast(payload.count + " prompt" + (payload.count === 1 ? "" : "s") + " added", { icon: "check" });
+    /* Als ganzer Satz durch den Katalog -- zusammengesetzt kam im deutschen UI Englisch heraus. */
+    if (UC.toast) UC.toast(tr(payload.count === 1 ? "{n} prompt added" : "{n} prompts added").replace("{n}", String(payload.count)), { icon: "check" });
 
     /* Adding prompts changes which markets the team has and how many prompts each holds, so the
        markets pickers have to be told (see the market store's comment in core.js). */

@@ -429,6 +429,11 @@
    Der Grund fuer die Sperre steht in settings-brand.js bei applyLoading: eine zweite Aenderung
    waere gegen einen Stand gemacht, den der Server schon nicht mehr hat. */
 .usb-root.is-busy { pointer-events: none; }
+/* Leise gesperrt (Speichern auf der Seite Settings, 12.10.): gedimmt statt Skelett, mit
+   demselben Mass wie das Dimmen beim Sortieren der Tabellen (core.css, is-reloading). Die
+   Danger Zone dimmt mit -- waehrend gespeichert wird, ist die ganze Komponente gesperrt. */
+.usb-root.is-busy:not(.is-loading) .usb-sec { opacity: .42; transition: opacity var(--up-t-1) ease; }
+@media (prefers-reduced-motion: reduce){ .usb-root.is-busy:not(.is-loading) .usb-sec { transition: none; } }
 
 /* Bleibt die Rueckmeldung aus, faellt die Sperre nach 12s von selbst -- und dann muss dastehen,
    warum. Ohne diese Zeile saehe die entsperrte Komponente aus wie ein normal gespeicherter

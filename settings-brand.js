@@ -1066,8 +1066,16 @@
       root.removeAttribute("inert");
       stuck("Saving is taking longer than expected. Your last change may not have been stored - reload the page to see the current state.");
     }
-    function applyLoading(on){
+    /* leise (12.10.): beim SPEICHERN dimmen statt Skelett -- die Werte auf dem Schirm sind ja
+       noch wahr, sie werden nur geschrieben (dieselbe Ueberlegung wie das Dimmen beim Sortieren
+       der Tabellen, UC.makeSoftReload). Das Skelett bleibt fuer echtes Laden. Lokal (Seite
+       Settings) ruft niemand danach noch "yes" ohne leise; in Bubble setzt der Workflow selbst
+       setSettingsBrandLoading("yes") und bekommt sein Skelett wie bisher. */
+    var leiseLaden = false;
+    function applyLoading(on, leise){
       loading = UC.isYes(on);
+      leiseLaden = loading && !!leise;
+      root.__usbLeise = leiseLaden;
       /* Der Beginn der Sperre, fuer einen Neuaufbau mittendrin. Jeder Aufruf mit "yes" stellt die
          Notbremse neu -- ladenSeit zieht genau so mit. */
       ladenSeit = loading ? Date.now() : 0;
@@ -1075,7 +1083,7 @@
          Versuch, und das Formular bliebe versteckt, obwohl frische Daten unterwegs sind. */
       if (loading) zeigeLesefehler(false);
       root.__usbLoading = loading;
-      root.classList.toggle("is-loading", loading);
+      root.classList.toggle("is-loading", loading && !leiseLaden);
       root.classList.toggle("is-busy", loading);
       if (loading) root.setAttribute("inert", ""); else root.removeAttribute("inert");
 
@@ -1171,7 +1179,7 @@
            setSettingsBrandLoading("yes") ist der uebliche erste Schritt des Workflows -- aber
            liegt er irgendwo weiter hinten, klafft dazwischen ein Fenster, in dem weitergeklickt
            werden kann. Doppelt gesetzt schadet nichts, ungesetzt schon. */
-        applyLoading("yes");
+        applyLoading("yes", UC.isYes(root.getAttribute("data-local")));
         return;
       }
       var bz = t.closest("[data-biz]");
@@ -1189,7 +1197,7 @@
           industry: draft.industry, summary: draft.summary
         });
         saved_( "meta" );
-        applyLoading("yes");     /* siehe Models-Save: die Sperre haengt nicht an Bubbles Timing */
+        applyLoading("yes", UC.isYes(root.getAttribute("data-local")));     /* siehe Models-Save: die Sperre haengt nicht an Bubbles Timing */
         return;
       }
       if (t.closest("[data-leave]")){ openDanger("leave"); return; }
@@ -1321,7 +1329,7 @@
       /* Der Ladezustand haengt am Root, nicht an dieser Closure. Sonst kann ein spaeteres render()
          die Klasse wieder abraeumen, obwohl setLoading("yes") sie gerade gesetzt hat -- genau so
          verschwand der Ladezustand des Pageloads wieder. */
-      root.classList.toggle("is-loading", !!root.__usbLoading);
+      root.classList.toggle("is-loading", !!root.__usbLoading && !root.__usbLeise);
       root.classList.toggle("usb-owner", istOwner());
       nurLesenAnwenden();
       renderBrand();

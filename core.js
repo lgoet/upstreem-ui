@@ -1114,7 +1114,7 @@
     "Brand summary": "Beschreibung der Brand",
     "Describe what your company does…": "Beschreibe, was dein Unternehmen tut…",
     "Business model": "Geschäftsmodell",
-    "Hybrid (B2B & B2C)": "Gemischt (B2B und B2C)",
+    "Hybrid (B2B & B2C)": "Hybrid (B2B & B2C)",
     "Default market": "Standardmarkt",
 
     /* ── Einstellungen: Marke, Logo, Modelle, Team ──────────────────────────────────────────── */
@@ -1283,8 +1283,8 @@
 
     /* ── Toasts der Seiten-Komponenten (10.10., Textregeln aus dem Toast-Handoff: ein Satz ohne
        Punkt, die zweite Zeile sagt bei Fehlern, was zu tun ist) ───────────────────────────── */
-    "Export isn't available on this page": "Der Export ist auf dieser Seite nicht verfügbar",
-    "Couldn't copy": "Kopieren nicht möglich",
+    "Export isn't available on this page": "Export ist auf dieser Seite nicht möglich",
+    "Couldn't copy": "Kopieren hat nicht geklappt",
     "Try again.": "Versuch es noch einmal.",
     "Wait a minute and try again.": "Warte eine Minute und versuch es dann noch einmal.",
     "Too many changes in a short time": "Zu viele Änderungen in kurzer Zeit",
@@ -1295,8 +1295,8 @@
     "No new opportunities": "Keine neuen Opportunities",
     "No new opportunities found": "Keine neuen Opportunities gefunden",
     "The board already has the maximum number of active ones. Move some to Done or Ignored to make room.":
-      "Das Board hat schon die Höchstzahl aktiver Opportunities. Verschieb einige nach Done oder Ignored, um Platz zu schaffen.",
-    "Looking for new opportunities isn't available right now": "Die Suche nach neuen Opportunities ist gerade nicht verfügbar",
+      "Das Board hat schon die maximale Anzahl aktiver Opportunities. Verschieb einige nach „Done“ oder „Ignored“, um Platz zu schaffen.",
+    "Looking for new opportunities isn't available right now": "Die Suche nach neuen Opportunities ist gerade nicht möglich",
     "The search is taking too long": "Die Suche dauert zu lange",
     "Check back in a few minutes.": "Schau in ein paar Minuten noch einmal vorbei.",
     "The search took too long": "Die Suche hat zu lange gedauert",
@@ -1306,7 +1306,7 @@
     "The search couldn't be started": "Die Suche konnte nicht gestartet werden",
     "The research found no new prompts": "Die Recherche hat keine neuen Prompts gefunden",
     "A research is already running for this team": "Für dieses Team läuft schon eine Recherche",
-    "Not enough prompt slots": "Nicht genug Prompt-Plätze",
+    "Not enough prompt slots": "Nicht genug freie Prompt-Plätze",
     "Only {n} prompt slots are left in your plan.": "In deinem Tarif sind nur noch {n} Prompt-Plätze frei.",
     "There are no prompt slots left in your plan.": "In deinem Tarif sind keine Prompt-Plätze mehr frei.",
     "1 prompt is now tracked": "1 Prompt wird jetzt verfolgt",
@@ -1331,7 +1331,7 @@
     "This brand has no favicon yet.": "Diese Brand hat noch kein Favicon.",
     "No clear color found in this favicon. Pick one by hand.":
       "Im Favicon ist keine klare Farbe zu finden. Wähle eine von Hand.",
-    "Please reload the page and try again.": "Bitte lade die Seite neu und versuche es noch einmal.",
+    "Please reload the page and try again.": "Lade die Seite neu und versuch es noch einmal.",
     "What are Brand Colors?": "Was sind Brand-Farben?",
     "Every brand is drawn in its own color instead of a fixed palette. You set that color per brand in Settings under Your Brand, in the Brand Color section. Brands without one fall back to a neutral color.":
       "Jede Brand wird in ihrer eigenen Farbe gezeichnet statt in einer festen Palette. Diese Farbe " +
@@ -1364,7 +1364,7 @@
     /* Die Massenleiste der Prompts-Tabelle, seit sie Werkzeuge statt Beschriftungen zeigt. */
     "Copy prompts": "Prompts kopieren",
     "{n} prompts copied": "{n} Prompts kopiert",
-    "Nothing to copy": "Nichts zu kopieren",
+    "Nothing to copy": "Nichts zum Kopieren",
     "Could not copy": "Kopieren nicht möglich",
     "Confirm delete?": "Wirklich löschen?",
     /* Prompt Insights (10.10.): Loeschen nimmt den Verlauf mit (wie in Analyse-Tools ueblich) --
@@ -1394,44 +1394,44 @@
     "{n} adjusted (special characters removed)": "{n} angepasst (Sonderzeichen entfernt)",
     "{n} unchanged": "{n} unverändert",
     "Too many prompts selected": "Zu viele Prompts ausgewählt",
-    "Daily limit reached": "Tagesgrenze erreicht",
+    "Daily limit reached": "Tageslimit erreicht",
     "You can add or reactivate more prompts tomorrow.": "Weitere Prompts kannst du morgen hinzufügen oder reaktivieren.",
     "You can add or reactivate {n} more prompts today.": "Heute kannst du noch {n} Prompts hinzufügen oder reaktivieren.",
     "You can delete more prompts tomorrow.": "Weitere Prompts kannst du morgen löschen.",
     /* ---- Brands als Seiten-Komponente (brands-page.js, 11.10.) ---- */
-    "Please try again tomorrow.": "Bitte versuche es morgen erneut.",
+    "Please try again tomorrow.": "Versuch es morgen noch einmal.",
     "{n} more brands fit into your plan.": "In deinen Tarif passen noch {n} Brands.",
-    "Set brands inactive or upgrade your plan.": "Setze Brands auf inaktiv oder wechsle den Tarif.",
+    "Set brands inactive or upgrade your plan.": "Deaktiviere Brands oder wechsle in einen größeren Tarif.",
     "This brand is already in your account": "Diese Brand ist schon in deinem Konto",
     "You don't have permission for this": "Dafür fehlt dir die Berechtigung",
-    "Your own brand can't be set inactive": "Deine eigene Brand kann nicht inaktiv werden",
-    "Please check the name and domain": "Bitte prüfe Name und Domain",
+    "Your own brand can't be set inactive": "Deine eigene Brand lässt sich nicht deaktivieren",
+    "Please check the name and domain": "Bitte prüf Name und Domain",
     "This brand no longer exists": "Diese Brand gibt es nicht mehr",
-    "This isn't available yet": "Das gibt es noch nicht",
-    "It comes with the next update of this page.": "Es kommt mit dem nächsten Update dieser Seite.",
-    "Editing isn't available on this page": "Bearbeiten ist auf dieser Seite nicht verfügbar",
+    "This isn't available yet": "Das ist noch nicht verfügbar",
+    "It comes with the next update of this page.": "Es kommt mit einem der nächsten Updates.",
+    "Editing isn't available on this page": "Bearbeiten ist auf dieser Seite nicht möglich",
     "The brand could not be activated": "Die Brand konnte nicht aktiviert werden",
-    "The brand could not be set inactive": "Die Brand konnte nicht inaktiv gesetzt werden",
+    "The brand could not be set inactive": "Die Brand konnte nicht deaktiviert werden",
     "Brand activated": "Brand aktiviert",
-    "Brand set inactive": "Brand inaktiv gesetzt",
+    "Brand set inactive": "Brand deaktiviert",
     "Its history stays. You can activate it again anytime.": "Ihr Verlauf bleibt. Du kannst sie jederzeit wieder aktivieren.",
     "Adding brands here isn't available yet.": "Brands hinzufügen gibt es hier noch nicht.",
     "The brand could not be added": "Die Brand konnte nicht hinzugefügt werden",
     "Brand added": "Brand hinzugefügt",
     "Special characters were removed from the name.": "Sonderzeichen wurden aus dem Namen entfernt.",
-    "Adding brands isn't available on this page": "Brands hinzufügen ist auf dieser Seite nicht verfügbar",
+    "Adding brands isn't available on this page": "Brands hinzufügen ist auf dieser Seite nicht möglich",
     "Brand activated again": "Brand wieder aktiviert",
     "Brand deleted": "Brand gelöscht",
     "Delete brand": "Brand löschen",
-    "Delete inactive brands you no longer need, then try again.": "Lösche inaktive Brands, die du nicht mehr brauchst, und versuche es dann erneut.",
+    "Delete inactive brands you no longer need, then try again.": "Lösch inaktive Brands, die du nicht mehr brauchst, und versuch es dann noch einmal.",
     "Delete this brand?": "Diese Brand löschen?",
     "Delete {name}?": "{name} löschen?",
-    "Discover could not be refreshed": "Entdecken konnte nicht aktualisiert werden",
+    "Discover could not be refreshed": "Discover konnte nicht aktualisiert werden",
     "Enter a valid domain, for example apple.com": "Gib eine gültige Domain ein, zum Beispiel apple.com",
     "Only owners and admins can delete brands": "Nur Owner und Admins können Brands löschen",
-    "Only your own brand can have a logo": "Nur deine eigene Brand kann ein Logo haben",
-    "Please pick a shorter date range": "Bitte wähle einen kürzeren Zeitraum",
-    "Please try again in a few minutes.": "Bitte versuche es in ein paar Minuten erneut.",
+    "Only your own brand can have a logo": "Ein Logo gibt es nur für deine eigene Brand",
+    "Please pick a shorter date range": "Bitte wähl einen kürzeren Zeitraum",
+    "Please try again in a few minutes.": "Versuch es in ein paar Minuten noch einmal.",
     "The brand could not be deleted": "Die Brand konnte nicht gelöscht werden",
     "This brand is still being removed": "Diese Brand wird gerade noch entfernt",
     "This can't be undone. To stop tracking but keep the history, set it inactive instead.":
@@ -1444,31 +1444,31 @@
     "Use 1 to 75 characters, with at least one letter or digit.": "Nutze 1 bis 75 Zeichen, mit mindestens einem Buchstaben oder einer Ziffer.",
     "You can add or activate {n} more brands today.": "Heute kannst du noch {n} Brands hinzufügen oder aktivieren.",
     /* Settings-Seite und Rueckfragen der Teamverwaltung (11.10.). */
-    "Ask an owner of this team.": "Frag einen Owner dieses Teams.",
+    "Ask an owner of this team.": "Wende dich an einen Owner des Teams.",
     "At least one model has to stay active": "Mindestens ein Modell muss aktiv bleiben",
     "Billing could not be opened": "Die Abrechnung konnte nicht geöffnet werden",
-    "Check your connection and try again.": "Prüfe deine Verbindung und versuche es erneut.",
-    "Checkout could not be opened": "Die Kasse konnte nicht geöffnet werden",
-    "Choose a plan in Billing to continue.": "Wähle unter Billing einen Tarif, um weiterzumachen.",
-    "For your security, this needs a fresh sign-in.": "Zu deiner Sicherheit braucht das eine neue Anmeldung.",
+    "Check your connection and try again.": "Prüf deine Verbindung und versuch es noch einmal.",
+    "Checkout could not be opened": "Die Bezahlung konnte nicht geöffnet werden",
+    "Choose a plan in Billing to continue.": "Wähl unter Billing einen Tarif, um weiterzumachen.",
+    "For your security, this needs a fresh sign-in.": "Zu deiner Sicherheit musst du dich dafür neu anmelden.",
     "Invite revoked": "Einladung zurückgezogen",
     "Invite saved, but the email could not be sent": "Einladung gespeichert, aber die E-Mail konnte nicht gesendet werden",
     "Invite sent": "Einladung gesendet",
     "Invite sent again": "Einladung erneut gesendet",
     "Inviting isn't available here yet.": "Einladen ist hier noch nicht verfügbar.",
     "Logo updated": "Logo aktualisiert",
-    "Make someone else owner, or delete the team.": "Mach zuerst jemand anderen zum Owner oder lösche das Team.",
+    "Make someone else owner, or delete the team.": "Ernenne zuerst einen anderen Owner oder lösch das Team.",
     "Member removed": "Mitglied entfernt",
     "Models updated": "Modelle aktualisiert",
     "models updated": "Modelle aktualisiert",
     "Settings updated": "Einstellungen aktualisiert",
     "settings updated": "Einstellungen aktualisiert",
-    "Nothing was saved. Please check the values and try again.": "Es wurde nichts gespeichert. Bitte prüfe die Werte und versuche es erneut.",
-    "Please check the email address": "Bitte prüfe die E-Mail-Adresse",
-    "Please check the industry": "Bitte prüfe die Branche",
-    "Please sign in again": "Bitte melde dich erneut an",
-    "Please wait a few minutes before sending it again.": "Bitte warte ein paar Minuten, bevor du sie erneut sendest.",
-    "Please wait a moment": "Bitte warte einen Moment",
+    "Nothing was saved. Please check the values and try again.": "Es wurde nichts gespeichert. Prüf die Werte und versuch es noch einmal.",
+    "Please check the email address": "Bitte prüf die E-Mail-Adresse",
+    "Please check the industry": "Bitte prüf die Branche",
+    "Please sign in again": "Bitte melde dich neu an",
+    "Please wait a few minutes before sending it again.": "Warte ein paar Minuten, bevor du sie noch einmal sendest.",
+    "Please wait a moment": "Einen Moment bitte",
     "Refresh the page to see the current list.": "Lade die Seite neu, um die aktuelle Liste zu sehen.",
     "Refresh the page to see the current state.": "Lade die Seite neu, um den aktuellen Stand zu sehen.",
     "Role changed": "Rolle geändert",
@@ -1482,7 +1482,7 @@
     "The invite is saved. Use Resend once sending is available.": "Die Einladung ist gespeichert. Nutze Resend, sobald der Versand verfügbar ist.",
     "The invite was sent just now": "Die Einladung wurde gerade erst gesendet",
     "The last change is still being saved.": "Die letzte Änderung wird noch gespeichert.",
-    "The last change is still being saved. Please try again in a moment.": "Die letzte Änderung wird noch gespeichert. Bitte versuche es gleich noch einmal.",
+    "The last change is still being saved. Please try again in a moment.": "Die letzte Änderung wird noch gespeichert. Versuch es gleich noch einmal.",
     "The logo could not be saved": "Das Logo konnte nicht gespeichert werden",
     "The member could not be removed": "Das Mitglied konnte nicht entfernt werden",
     "The models could not be saved": "Die Modelle konnten nicht gespeichert werden",
@@ -1490,33 +1490,33 @@
     "The settings could not be saved": "Die Einstellungen konnten nicht gespeichert werden",
     "The summary is too long": "Die Zusammenfassung ist zu lang",
     "The team could not be deleted": "Das Team konnte nicht gelöscht werden",
-    "The team name didn't match": "Der Teamname stimmt nicht überein",
+    "The team name didn't match": "Der Teamname stimmt nicht",
     "The team was switched": "Das Team wurde gewechselt",
-    "The team was switched. Please try again.": "Das Team wurde gewechselt. Bitte versuche es erneut.",
-    "This address already has a pending invite": "An diese Adresse ist schon eine Einladung offen",
+    "The team was switched. Please try again.": "Das Team wurde gewechselt. Versuch es noch einmal.",
+    "This address already has a pending invite": "Diese Adresse ist schon eingeladen",
     "This invite is no longer open": "Diese Einladung ist nicht mehr offen",
-    "This logo link can't be used": "Dieser Logo-Link kann nicht verwendet werden",
-    "This member can't be changed": "Dieses Mitglied kann nicht geändert werden",
+    "This logo link can't be used": "Dieser Logo-Link funktioniert nicht",
+    "This member can't be changed": "Dieses Mitglied lässt sich nicht ändern",
     "This no longer exists": "Das gibt es nicht mehr",
     "This person is already in the team": "Diese Person ist schon im Team",
-    "This role can't be given here": "Diese Rolle kann hier nicht vergeben werden",
+    "This role can't be given here": "Diese Rolle kannst du hier nicht vergeben",
     "This team has no active plan": "Dieses Team hat keinen aktiven Tarif",
-    "This team needs another owner first": "Dieses Team braucht zuerst einen weiteren Owner",
-    "Turn off another model or upgrade your plan.": "Schalte ein anderes Modell ab oder erweitere deinen Tarif.",
-    "Type the team name exactly as shown.": "Tippe den Teamnamen genau so, wie er dasteht.",
-    "Upgrade your plan or remove a member first.": "Erweitere deinen Tarif oder entferne zuerst ein Mitglied.",
-    "Uploading a file isn't available yet": "Das Hochladen einer Datei ist noch nicht verfügbar",
-    "Use Resend in the list of pending invites.": "Nutze Resend in der Liste der offenen Einladungen.",
+    "This team needs another owner first": "Das Team braucht zuerst einen weiteren Owner",
+    "Turn off another model or upgrade your plan.": "Schalte ein anderes Modell ab oder wechsle in einen größeren Tarif.",
+    "Type the team name exactly as shown.": "Gib den Teamnamen so ein, wie er dasteht.",
+    "Upgrade your plan or remove a member first.": "Wechsle in einen größeren Tarif oder entferne zuerst ein Mitglied.",
+    "Uploading a file isn't available yet": "Datei-Upload ist noch nicht verfügbar",
+    "Use Resend in the list of pending invites.": "Sende sie über „Resend“ in den offenen Einladungen erneut.",
     "Use a link to the image instead.": "Nutze stattdessen einen Link zum Bild.",
     "Use an image link that starts with https://": "Nutze einen Bild-Link, der mit https:// beginnt",
     "Use at most 48 characters.": "Nutze höchstens 48 Zeichen.",
     "Use at most {n} characters.": "Nutze höchstens {n} Zeichen.",
-    "You can send it again in {n} minutes.": "Du kannst sie in {n} Minuten erneut senden.",
-    "You could not leave the team": "Du konntest das Team nicht verlassen",
+    "You can send it again in {n} minutes.": "In {n} Minuten kannst du sie erneut senden.",
+    "You could not leave the team": "Das Team konnte nicht verlassen werden",
     "You left the team": "Du hast das Team verlassen",
     "Your plan allows {n} models.": "Dein Tarif erlaubt {n} Modelle.",
-    "Your plan has no free seats": "Dein Tarif hat keine freien Plätze",
-    "Your role doesn't allow this": "Deine Rolle erlaubt das nicht",
+    "Your plan has no free seats": "In deinem Tarif ist kein Platz mehr frei",
+    "Your role doesn't allow this": "Das lässt deine Rolle nicht zu",
     "Remove {name}?": "{name} entfernen?",
     "They lose access to this team right away. Everything the team has stays.": "Der Zugang zu diesem Team endet sofort. Alles, was das Team hat, bleibt.",
     "You can invite them again later.": "Du kannst die Person später wieder einladen.",
@@ -1537,53 +1537,70 @@
     "You can't invite members to this team.": "Du kannst in dieses Team keine Mitglieder einladen.",
     "Check the pending invites and resend if needed.": "Sieh in den offenen Einladungen nach und sende sie bei Bedarf erneut.",
     "Checkout cancelled": "Bezahlung abgebrochen",
-    "One of these models can't be used": "Eines dieser Modelle kann nicht verwendet werden",
-    "Please choose a business model": "Bitte wähle ein Geschäftsmodell",
-    "Please choose a market from the list": "Bitte wähle einen Markt aus der Liste",
-    "Please try again in {n} minutes.": "Bitte versuche es in {n} Minuten erneut.",
+    "One of these models can't be used": "Eins dieser Modelle ist nicht verfügbar",
+    "Please choose a business model": "Bitte wähl ein Geschäftsmodell",
+    "Please choose a market from the list": "Bitte wähl einen Markt aus der Liste",
+    "Please try again in {n} minutes.": "Versuch es in {n} Minuten noch einmal.",
     "Refresh the page to see the current plans.": "Lade die Seite neu, um die aktuellen Tarife zu sehen.",
-    "Revoke invites that are no longer needed, then try again.": "Ziehe Einladungen zurück, die du nicht mehr brauchst, und versuche es dann erneut.",
+    "Revoke invites that are no longer needed, then try again.": "Zieh Einladungen zurück, die du nicht mehr brauchst, und versuch es dann noch einmal.",
     "Switch to another team to continue.": "Wechsle in ein anderes Team, um weiterzumachen.",
     "Thanks, your payment went through": "Danke, deine Zahlung ist eingegangen",
     "The invite could not be sent": "Die Einladung konnte nicht gesendet werden",
     "This plan is no longer available": "Diesen Tarif gibt es nicht mehr",
-    "This text is too long": "Dieser Text ist zu lang",
-    "Too many invites right now": "Gerade zu viele Einladungen",
+    "This text is too long": "Der Text ist zu lang",
+    "Too many invites right now": "Zu viele Einladungen auf einmal",
     "Too many pending invites": "Zu viele offene Einladungen",
-    "Use Leave team instead.": "Nutze stattdessen „Team verlassen“.",
-    "Use Manage Billing to change it.": "Ändern kannst du ihn unter Manage Billing.",
-    "We couldn't confirm that the email went out": "Wir konnten nicht bestätigen, dass die E-Mail gesendet wurde",
-    "You can't remove yourself": "Du kannst dich nicht selbst entfernen",
-    "Your plan hasn't changed.": "Dein Tarif ist unverändert.",
+    "Use Leave team instead.": "Nutze dafür „Team verlassen“.",
+    "Use Manage Billing to change it.": "Ändern kannst du ihn unter „Manage Billing“.",
+    "We couldn't confirm that the email went out": "Wir konnten den Versand nicht bestätigen",
+    "You can't remove yourself": "Dich selbst kannst du nicht entfernen",
+    "Your plan hasn't changed.": "Dein Tarif bleibt unverändert.",
     "Your plan updates in a moment.": "Dein Tarif wird gleich aktualisiert.",
     "Your team already has a plan": "Dein Team hat schon einen Tarif",
-    "A newer invite for this address is pending": "Für diese Adresse ist schon eine neuere Einladung offen",
-    "Check the address and try again.": "Prüfe die Adresse und versuche es erneut.",
-    "Choose a plan to get started": "Wähle einen Tarif, um loszulegen",
+    "Reload the page to try again.": "Lade die Seite neu und versuch es noch einmal.",
+    "Pinned to sidebar": "An die Seitenleiste angeheftet",
+    "Couldn't load your chats": "Deine Chats konnten nicht geladen werden",
+    "Couldn't load this chat": "Dieser Chat konnte nicht geladen werden",
+    "This chat no longer exists": "Diesen Chat gibt es nicht mehr",
+    "The voice message couldn't be sent": "Die Sprachnachricht konnte nicht gesendet werden",
+    "Couldn't create the PDF": "Das PDF konnte nicht erstellt werden",
+    "Couldn't save the PDF": "Das PDF konnte nicht gespeichert werden",
+    "Couldn't save your settings": "Deine Einstellungen konnten nicht gespeichert werden",
+    "This answer no longer exists.": "Diese Antwort gibt es nicht mehr.",
+    "Event created": "Event angelegt",
+    "Event updated": "Event aktualisiert",
+    "URL added": "URL hinzugefügt",
+    "Settings for {name} saved": "Einstellungen für {name} gespeichert",
+    "Models for {name} saved": "Modelle für {name} gespeichert",
+    "Settings saved": "Einstellungen gespeichert",
+    "Models saved": "Modelle gespeichert",
+    "A newer invite for this address is pending": "Für diese Adresse gibt es schon eine neuere Einladung",
+    "Check the address and try again.": "Prüf die Adresse und versuch es noch einmal.",
+    "Choose a plan to get started": "Wähl zuerst einen Tarif aus",
     "Delivery unclear": "Zustellung unklar",
-    "For your security, deleting a team and making someone an owner need a sign-in from the last 15 minutes.": "Zu deiner Sicherheit braucht das Löschen eines Teams und das Ernennen eines Owners eine Anmeldung aus den letzten 15 Minuten.",
+    "For your security, deleting a team and making someone an owner need a sign-in from the last 15 minutes.": "Zu deiner Sicherheit brauchen das Löschen eines Teams und das Ernennen eines Owners eine Anmeldung aus den letzten 15 Minuten.",
     "It is deleted for good after 30 days.": "Nach 30 Tagen wird es endgültig gelöscht.",
     "It is deleted for good on {date}. Until then, support can restore it.": "Am {date} wird es endgültig gelöscht. Bis dahin kann der Support es wiederherstellen.",
-    "Log out, sign in again, then repeat this step.": "Melde dich ab, melde dich erneut an und wiederhole dann diesen Schritt.",
-    "Nothing changed": "Nichts geändert",
-    "Please try again in a moment.": "Bitte versuche es gleich noch einmal.",
-    "Revoke it and invite the address again.": "Ziehe sie zurück und lade die Adresse erneut ein.",
-    "The previous link still works. Please try again later.": "Der bisherige Link funktioniert weiter. Bitte versuche es später erneut.",
-    "This address couldn't receive the invite": "Diese Adresse konnte die Einladung nicht empfangen",
+    "Log out, sign in again, then repeat this step.": "Melde dich ab und wieder an und wiederhole dann diesen Schritt.",
+    "Nothing changed": "Keine Änderung",
+    "Please try again in a moment.": "Versuch es gleich noch einmal.",
+    "Revoke it and invite the address again.": "Zieh sie zurück und lade die Adresse neu ein.",
+    "The previous link still works. Please try again later.": "Der bisherige Link gilt weiter. Versuch es später noch einmal.",
+    "This address couldn't receive the invite": "Diese Adresse kann die Einladung nicht empfangen",
     "This invite was sent five times already": "Diese Einladung wurde schon fünfmal gesendet",
-    "Use Log out in the sidebar, sign in again, then repeat this step.": "Melde dich über „Log out“ in der Seitenleiste ab, melde dich erneut an und wiederhole dann diesen Schritt.",
-    "Use Resend on that invite.": "Nutze Resend an dieser Einladung.",
-    "We couldn't confirm that the email arrived. Use Resend.": "Wir konnten nicht bestätigen, dass die E-Mail angekommen ist. Nutze Resend.",
-    "You can't change your own role": "Du kannst deine eigene Rolle nicht ändern",
+    "Use Log out in the sidebar, sign in again, then repeat this step.": "Melde dich über „Log out“ in der Seitenleiste ab und wieder an und wiederhole dann diesen Schritt.",
+    "Use Resend on that invite.": "Sende diese Einladung über „Resend“ erneut.",
+    "We couldn't confirm that the email arrived. Use Resend.": "Wir konnten nicht bestätigen, dass die E-Mail angekommen ist. Sende sie über „Resend“ erneut.",
+    "You can't change your own role": "Deine eigene Rolle kannst du nicht ändern",
     "This removes the workspace and everything in it for every member. It is deleted for good after 30 days. Until then, only our support can restore it.": "Damit verschwindet der Workspace samt Inhalt für alle Mitglieder. Nach 30 Tagen wird er endgültig gelöscht; bis dahin kann nur unser Support ihn wiederherstellen.",
     "Only owners and admins can change these settings.": "Nur Owner und Admins können diese Einstellungen ändern.",
     "Choose a plan in Billing to change these settings.": "Wähle unter Billing einen Tarif, um diese Einstellungen zu ändern.",
     "Your brand isn't set up yet": "Deine Brand ist noch nicht eingerichtet",
     "Please contact support.": "Bitte wende dich an den Support.",
-    "Use 1 to 60 characters, with at least one letter or digit.": "1 bis 60 Zeichen, mit mindestens einem Buchstaben oder einer Ziffer.",
-    "Pick an emoji from the emoji picker.": "Wähle ein Emoji aus der Auswahl.",
+    "Use 1 to 60 characters, with at least one letter or digit.": "Nutze 1 bis 60 Zeichen, mit mindestens einem Buchstaben oder einer Ziffer.",
+    "Pick an emoji from the emoji picker.": "Wähl ein Emoji aus der Auswahl.",
     "They are tracked again with their next daily run.": "Sie werden mit ihrem nächsten täglichen Lauf wieder erfasst.",
-    "Change up to 1,000 prompts at once, or 500 when ticked one by one.": "Ändere höchstens 1.000 Prompts auf einmal, oder 500, wenn du sie einzeln anhakst.",
+    "Change up to 1,000 prompts at once, or 500 when ticked one by one.": "Du kannst bis zu 1.000 Prompts auf einmal ändern, einzeln angehakt bis zu 500.",
     "Topics added to {n} prompt": "Topics zu {n} Prompt hinzugefügt",
     "Topics added to {n} prompts": "Topics zu {n} Prompts hinzugefügt",
     "{n} prompt set to active": "{n} Prompt auf aktiv gesetzt",
@@ -1592,21 +1609,21 @@
     "{n} prompts set to inactive": "{n} Prompts auf inaktiv gesetzt",
     "{n} prompt deleted": "{n} Prompt gelöscht",
     "{n} prompts deleted": "{n} Prompts gelöscht",
-    "Not enough room in your plan": "Nicht genug Platz in deinem Plan",
-    "{n} more active prompts fit into your plan.": "In deinen Plan passen noch {n} aktive Prompts.",
-    "Deactivate prompts or upgrade your plan.": "Deaktiviere Prompts oder wechsle in einen größeren Plan.",
+    "Not enough room in your plan": "Dein Tarif ist ausgeschöpft",
+    "{n} more active prompts fit into your plan.": "In deinen Tarif passen noch {n} aktive Prompts.",
+    "Deactivate prompts or upgrade your plan.": "Deaktiviere Prompts oder wechsle in einen größeren Tarif.",
     "Too many inactive prompts": "Zu viele inaktive Prompts",
-    "Delete inactive prompts you no longer need, then try again.": "Lösche inaktive Prompts, die du nicht mehr brauchst, und versuche es dann erneut.",
-    "Your team has reached the topic limit": "Dein Team hat die Höchstzahl an Topics erreicht",
-    "Delete a topic you no longer need to add a new one.": "Lösche ein Topic, das du nicht mehr brauchst, um ein neues anzulegen.",
+    "Delete inactive prompts you no longer need, then try again.": "Lösch inaktive Prompts, die du nicht mehr brauchst, und versuch es dann noch einmal.",
+    "Your team has reached the topic limit": "Dein Team hat die maximale Anzahl an Topics erreicht",
+    "Delete a topic you no longer need to add a new one.": "Lösch ein Topic, das du nicht mehr brauchst, um ein neues anzulegen.",
     "The selection has changed": "Die Auswahl hat sich geändert",
-    "Please select the prompts again.": "Bitte wähle die Prompts erneut aus.",
+    "Please select the prompts again.": "Bitte wähl die Prompts noch einmal aus.",
     "Only owners and admins can delete": "Nur Owner und Admins können löschen",
     "A topic with this name already exists": "Ein Topic mit diesem Namen gibt es schon",
     "Too many requests": "Zu viele Anfragen",
-    "Please wait a moment and try again.": "Bitte warte einen Moment und versuche es erneut.",
+    "Please wait a moment and try again.": "Warte kurz und versuch es dann noch einmal.",
     "Some items no longer exist": "Einige Einträge gibt es nicht mehr",
-    "Refresh the page and try again.": "Lade die Seite neu und versuche es erneut.",
+    "Refresh the page and try again.": "Lade die Seite neu und versuch es noch einmal.",
     "That didn't work": "Das hat nicht geklappt",
     "The groups could not be loaded": "Die Gruppen konnten nicht geladen werden",
     "The prompts of this group could not be loaded": "Die Prompts dieser Gruppe konnten nicht geladen werden",
@@ -1743,7 +1760,7 @@
     "Manage Prompts, Topics and monitor latest Responses":
       "Prompts und Topics verwalten, neueste Responses beobachten",
     "Manage your brand, your team and your plan.":
-      "Verwalte deine Brand, dein Team und deinen Plan.",
+      "Verwalte deine Brand, dein Team und deinen Tarif.",
     "Prompt Insights": "Prompt-Auswertung",
     "Refresh": "Aktualisieren",
     "Refresh Data": "Daten aktualisieren",
@@ -2028,7 +2045,7 @@
     "No results found": "Keine Treffer",
     "Try searching for a brand, domain, URL, or prompt.":
       "Suche nach einer Brand, einer Domain, einer URL oder einem Prompt.",
-    "Please try again.": "Bitte versuche es erneut.",
+    "Please try again.": "Versuch es bitte noch einmal.",
     "Pin to sidebar": "An die Seitenleiste heften",
     "Go to parent domain": "Zur übergeordneten Domain",
     "Remove favorite": "Favorit entfernen",
@@ -2328,10 +2345,9 @@
        Komponenten gegen den Katalog -- 25 Texte ohne Eintrag. */
     "The estimated frequency that users actually use this or a very similar prompt.":
       "Wie oft Nutzer diesen oder einen sehr ähnlichen Prompt tatsächlich verwenden.",
-    "Applied everywhere \u2014 refresh to update open views":
-      "Überall angewendet \u2014 offene Ansichten mit Neuladen aktualisieren",
-    "Per view again \u2014 refresh to update open views":
-      "Wieder je Ansicht \u2014 offene Ansichten mit Neuladen aktualisieren",
+    "Applied everywhere": "Gilt jetzt überall",
+    "Per view again": "Gilt wieder je Ansicht",
+    "Refresh to update open views.": "Lade neu, um offene Ansichten zu aktualisieren.",
     "Appearance": "Darstellung",
     "How brands, citations and responses are marked in answers":
       "Wie Brands, Quellen und Antworten in den Antworten markiert werden",
@@ -2576,7 +2592,7 @@
     "No source passed yet": "Noch keine Quelle übergeben",
     "Search your pages or paste a URL…": "Seiten durchsuchen oder eine URL einfügen…",
     "Show suggestions": "Vorschläge zeigen",
-    "Already added": "Schon hinzugefügt",
+    "Already added": "Bereits hinzugefügt",
     "Add instructions…": "Anweisungen ergänzen…",
     "Nothing is published automatically. You stay in control.":
       "Es wird nichts automatisch veröffentlicht. Du behältst die Kontrolle.",
@@ -11411,7 +11427,9 @@
        desc     zweite Zeile, nur wenn sie hilft (bei Fehlern: was jetzt zu tun ist)
        action   hoechstens eine, kurzes Verb; der Klick fuehrt onClick aus und schliesst
        timeout  ms, ueberschreibt die Vorgabe: Erfolg 2000, Neutral 4000, mit Aktion 6000,
-                Fehler bleibt stehen, bis er geschlossen wird
+                Fehler 8000 (bis 12.10.: blieb stehen, bis er geschlossen wurde -- gemeldet als
+                "bleiben einfach stehen", auch wenn schon der naechste kam). Er bleibt am
+                laengsten, weil er gelesen werden muss, und hat weiter sein X.
      Unten mittig im Inhaltsbereich (links die Breite der Seitenleiste, --up-sidebar-w), hoechstens
      drei uebereinander, der neue unten. Liegt unten mittig schon etwas (die Massenleiste der
      Prompts-Tabelle, Miras Eingabefeld, die Benachrichtigungskarte, alles mit
@@ -11424,7 +11442,7 @@
      unveraendert weiter, im neuen Aussehen. Setzt der Seitenkopf seine alte Fassung danach noch
      einmal, holt toastAliasSetzen den Namen zurueck (in den ersten 30 s und bei jedem Toast). */
   var TOAST = (window.__upToast = window.__upToast || { host: null, liste: [], seq: 0, uhr: null });
-  var TOAST_DAUER = { success: 2000, neutral: 4000 };
+  var TOAST_DAUER = { success: 2000, neutral: 4000, error: 8000 };
   var TOAST_ZEICHEN = { success: "checkCircle", error: "alertCircle", neutral: "info" };
   var TOAST_MAX = 3;
   var TOAST_DARUEBER = ".upt-bulkbar.is-on, .am-composer-area, .unc-card.is-shown, [data-up-toast-darueber]";
@@ -11528,7 +11546,7 @@
       var aktion = opts.action && typeof opts.action === "object" && String(opts.action.label || "").trim() ? opts.action : null;
       var desc = String(opts.desc == null ? "" : opts.desc).trim();
       var ms = Number(opts.timeout);
-      if (!(ms > 0)) ms = art === "error" ? 0 : (aktion ? 6000 : TOAST_DAUER[art]);
+      if (!(ms > 0)) ms = aktion ? Math.max(6000, TOAST_DAUER[art] || 0) : (TOAST_DAUER[art] || 4000);
       var el = document.createElement("div");
       el.className = "up-toast is-" + art;
       el.setAttribute("role", art === "error" ? "alert" : "status");
@@ -11537,8 +11555,10 @@
         '<span class="up-toast-txt"><span class="up-toast-t"></span>' + (desc ? '<span class="up-toast-d"></span>' : '') + '</span>' +
         (aktion ? '<button type="button" class="up-toast-act"></button>' : '') +
         (art === "error" ? '<button type="button" class="up-toast-x" aria-label="' + esc(t_("Close")) + '">' + icon("x", 2.2) + '</button>' : '');
-      el.querySelector(".up-toast-t").textContent = t;
-      if (desc) el.querySelector(".up-toast-d").textContent = desc;
+      /* Durch den Katalog (12.10.): Bausteine, die englischen Text direkt uebergeben, standen im
+         deutschen UI englisch da. Ein schon uebersetzter Text ist kein Schluessel und bleibt. */
+      el.querySelector(".up-toast-t").textContent = t_(t);
+      if (desc) el.querySelector(".up-toast-d").textContent = t_(desc);
       var e = { el: el, art: art, ms: ms, uhr: null, weg: false, id: ++TOAST.seq };
       if (aktion){
         var b = el.querySelector(".up-toast-act");
@@ -17631,6 +17651,64 @@
      festgehalten. */
   var LETZTE_ANSICHT = "";
   function currentView(){ return LETZTE_ANSICHT; }
+  /* ---- DER REITER EINER SEITE IN DER ADRESSE (12.10.) ---------------------------------------
+     Die Seiten-Komponenten merken ihren Reiter in der Adresse (?pi=responses, ?br=discover,
+     ?cit=urls, ?st=billing). Bis heute schrieb jede ihn in die GEMEINSAME Adresse und nahm ihn
+     nie wieder heraus: wer einmal bei Prompt Insights auf Responses war, trug ?pi=responses
+     danach durch jede andere Ansicht (gemeldet am 12.10.). Und ihr popstate-Lauscher setzte den
+     Reiter zurueck, sobald irgendwo anders in der App Zurueck gedrueckt wurde.
+     Jetzt gilt: ein Parameter steht nur, solange die Ansicht seiner Seite offen ist. Beim
+     Ansichtswechsel nimmt core ihn heraus (replaceState, also im Eintrag der neuen Ansicht) und
+     setzt ihn beim Zurueckkommen wieder. aktiv() sagt der Seite, ob Zurueck/Vor sie betrifft.
+     Eine Seite ausserhalb jeder #view-<name>-Gruppe (Prueftand, eigene Seite) gilt immer als offen.
+     seitenAdresse(root, param, holen) -> { schreiben(neuerEintrag), aktiv(), lesen() }
+     holen(): der Wert, der in die Adresse gehoert; "" heisst: Parameter weg (Vorgabe-Reiter). */
+  var SEITEN_ADRESSEN = [];
+  function ansichtVon(el){
+    var v = el && el.closest ? el.closest('[id^="view-"]') : null;
+    return v ? String(v.id).slice(5) : "";
+  }
+  function seiteOffen(root){
+    var v = root && root.closest ? root.closest('[id^="view-"]') : null;
+    if (!v) return true;
+    if (LETZTE_ANSICHT) return String(v.id).slice(5) === LETZTE_ANSICHT;
+    return v.classList.contains("view-on");
+  }
+  function adresseErsetzen(param, wert, neuerEintrag){
+    try {
+      var u = new URL(window.location.href);
+      if (wert) u.searchParams.set(param, wert); else u.searchParams.delete(param);
+      var neu = u.pathname + u.search + u.hash;
+      if (neu === window.location.pathname + window.location.search + window.location.hash) return;
+      if (neuerEintrag) window.history.pushState(window.history.state, "", neu);
+      else window.history.replaceState(window.history.state, "", neu);
+    } catch(e){}
+  }
+  function seitenAdresse(root, param, holen){
+    var eintrag = { root: root, param: String(param), holen: holen };
+    SEITEN_ADRESSEN = SEITEN_ADRESSEN.filter(function(x){ return x.root.isConnected !== false && !(x.param === eintrag.param && x.root === root); });
+    SEITEN_ADRESSEN.push(eintrag);
+    return {
+      aktiv: function(){ return root.isConnected !== false && seiteOffen(root); },
+      schreiben: function(neuerEintrag){
+        if (root.isConnected === false || !seiteOffen(root)) return;
+        var w = ""; try { w = String(holen() || ""); } catch(e){ w = ""; }
+        adresseErsetzen(eintrag.param, w, neuerEintrag);
+      },
+      lesen: function(){
+        if (!seiteOffen(root)) return null;
+        try { return new URL(window.location.href).searchParams.get(eintrag.param); } catch(e){ return null; }
+      }
+    };
+  }
+  function seitenAdressenAbgleichen(name){
+    SEITEN_ADRESSEN = SEITEN_ADRESSEN.filter(function(x){ return x.root.isConnected !== false; });
+    SEITEN_ADRESSEN.forEach(function(x){
+      var offen = !ansichtVon(x.root) || ansichtVon(x.root) === name;
+      var w = ""; if (offen){ try { w = String(x.holen() || ""); } catch(e){ w = ""; } }
+      adresseErsetzen(x.param, offen ? w : "", false);
+    });
+  }
   /* JEDE ANSICHT FAENGT OBEN AN (18.09.). Gemeldet als "vom Power Dashboard in eine andere
      Ansicht, dort laesst sich nur ein bisschen scrollen". Gemessen auf der echten Seite:
      #main scrollt frei (scrollTopMax 493 = moeglich 493), die Brands-Ansicht ist vollstaendig
@@ -17672,6 +17750,7 @@
       sicher("toolbarLauf", function(){ toolbarLauf(); });
       sicher("segLauf", function(){ segLauf(null, true, true); });
     }, 250);
+    if (gewechselt) sicher("seitenAdressen", function(){ seitenAdressenAbgleichen(name); });
     for (var i = VIEW_SUBS.length - 1; i >= 0; i--){
       try { VIEW_SUBS[i](name); }
       catch(e){ if (window.console) console.warn("[view] ein Aufraeumer hat geworfen:", e); }
@@ -23169,6 +23248,7 @@
     dropdownOpened: dropdownOpened,
     closeAllDropdowns: closeAllDropdowns,
     onViewChange: onViewChange,
+    seitenAdresse: seitenAdresse,
     beiSicht: beiSicht, wartetAufSicht: wartetAufSicht,
     makeAuftritt: makeAuftritt, stileBereit: stileBereit, kopfZaehler: kopfZaehler, nachAuftritt: nachAuftritt,
     getDashboardMode: getDashboardMode, setDashboardMode: setDashboardMode,

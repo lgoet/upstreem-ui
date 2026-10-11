@@ -214,6 +214,9 @@
     if (isDark()) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
 
     /* ---- Reiter und Adresse ------------------------------------------------------------------- */
+    /* Der Reiter in der Adresse ueber core (UC.seitenAdresse, 12.10.): nur solange diese Ansicht
+       offen ist -- vorher wanderte ?br durch jede andere Ansicht mit. */
+    var adr = !ohneAdresse && UC.seitenAdresse ? UC.seitenAdresse(root, "br", function () { return state.tab === "tracked" ? "" : state.tab; }) : null;
     function adresseLesen() {
       if (ohneAdresse) return null;
       try { return new URL(window.location.href).searchParams.get("br") === "discover" ? "discover" : null; }
@@ -221,6 +224,7 @@
     }
     function adresseSetzen(neuerEintrag) {
       if (ohneAdresse) return;
+      if (adr) { adr.schreiben(neuerEintrag); return; }
       try {
         var u = new URL(window.location.href);
         if (state.tab === "tracked") u.searchParams.delete("br"); else u.searchParams.set("br", state.tab);
@@ -245,6 +249,8 @@
     }
     window.addEventListener("popstate", function () {
       if (root.isConnected === false) return;
+      /* Zurueck/Vor in einer ANDEREN Ansicht betrifft diese Seite nicht. */
+      if (adr && !adr.aktiv()) return;
       var a = adresseLesen() || "tracked";
       if (a !== state.tab) reiterOeffnen(a, false);
     });
