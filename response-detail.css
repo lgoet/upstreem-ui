@@ -11,58 +11,22 @@
 
 .urd-root { display: flex; flex-direction: column; gap: 40px; width: 100%; }
 
-/* ---- Prompt als Titel ------------------------------------------------------------------------
-   Vollstaendig, nie gekuerzt (Vorgabe): kein line-clamp, kein ellipsis. 20px ist eine Stufe ueber
-   der Kartenueberschrift (14px) und eine unter dem Seitentitel -- die Antwort ist ein Detail einer
-   Seite, nicht die Seite. Der Klick geht nach Bubble, also traegt er auch den Zeiger. */
-.urd-head { display: flex; flex-direction: column; gap: 16px; }
-/* v3 (11.10.): 28 statt 22, Schnitt 600. Im Drawer aus core ist die Antwort die ganze Flaeche,
-   und der Prompt ihr Titel -- die Designvorlage setzt ihn als groesste Zeile (36, auf der Skala
-   28 = --up-fs-3xl, dieselbe Stufe wie der Seitenkopf). Zeilenhoehe 1.2: bei 28px und zwei
-   Zeilen liest 1.38 sich als zwei Saetze statt als einer. */
-.urd-prompt { font-size: var(--up-fs-3xl); font-weight: 600; line-height: 1.2; letter-spacing: -0.02em;
-  max-width: 820px; text-wrap: pretty;
-  color: var(--vc-text); margin: 0; cursor: pointer; border-radius: var(--up-r-m);
-  transition: color 120ms ease; }
+/* ---- Kopf (v3) --------------------------------------------------------------------------------
+   Meta-Zeile, Titel, Leiste und Abschnittskoepfe kommen seit dem 12.10. aus core (.up-dk-*, der
+   Detail-Kopf, den URL Detail genauso traegt). Hier steht nur, was es nur in dieser Antwort gibt:
+   der Titel ist ein Knopf (er oeffnet den Prompt), die Themenzeile, und die Markenleiste mit
+   ihrem "+N more". Der Prompt ist vollstaendig, nie gekuerzt (Vorgabe). */
+.urd-prompt { cursor: pointer; border-radius: var(--up-r-m); transition: color 120ms ease; }
 .urd-prompt:hover { color: var(--vc-muted); }
 .urd-prompt:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 3px; }
-
-/* ---- KPI-Zeile: Modell, Zeit, Market ----
-   16px zwischen den Angaben, damit jede fuer sich lesbar bleibt; der Trenner ist Weissraum und
-   kein Strich, wie in der Kopfzeile der Antwortkarten. */
-/* 16px ist der Standardabstand der App zwischen zwei Angaben einer Kopfzeile. Der Trenner selbst
-   traegt keinen eigenen Abstand -- er sitzt in der Luecke, die es ohnehin gibt. */
-/* v3: die Meta-Zeile UEBER dem Titel (Modell, Market, Zeit). Seit dem 12.10. mit feinem
-   senkrechtem Strich dazwischen (.urd-kpi-sep): 1px in der Rahmenfarbe, 12 hoch -- so hoch wie
-   die Versalhoehe der 13er Schrift, damit er trennt, ohne als Zeichen gelesen zu werden. Kein
-   Mittelpunkt (CLAUDE.md 5). 12px Luecke je Seite statt 16 ohne Strich. */
-.urd-kpis { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; min-height: 24px; }
-.urd-kpi-sep { flex: 0 0 1px; width: 1px; height: 12px; background: var(--vc-border); }
-.urd-kpis:empty { display: none; }
 .urd-kpi-time { font-size: var(--up-fs-m); font-weight: 400; color: var(--vc-third); white-space: nowrap; }
 .urd-tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .urd-tags:empty { display: none; }
-/* Die Themen im Kopf sind seit dem 06.10. der Chip aus core in voller Form ("Dot", 24px). Hier stand
-   eine auf 26px verkleinerte Fassung des alten 28px-Chips -- der neue ist von sich aus kleiner, eine
-   eigene Groesse waere jetzt eine zweite. */
+/* Die Themen im Kopf sind seit dem 06.10. der Chip aus core in voller Form ("Dot", 24px). */
 
-/* ---- Marken im Kopf (v3, 11.10.) --------------------------------------------------------------
-   Eine eigene Leiste auf der Kopfflaeche, Radius 16 wie die Karten der App: links die Zahl gross
-   ("2 brands mentioned"), rechts die Marken als .up-mentlist.is-lg aus core (40px). 16px mehr
-   Abstand nach oben als zwischen Titel und Themen: die Leiste ist eine eigene Aussage, nicht die
-   dritte Zeile des Titels. Was nicht in die Zeile passt, steht weiter hinter "+N more". */
-.urd-mrow { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
-  gap: 12px 24px; min-width: 0; margin-top: 16px; padding: 12px 12px 12px 20px;
-  border-radius: var(--up-r-2xl); background: var(--vc-heading-bg); }
-.urd-root .urd-mrow[hidden] { display: none; }
-.urd-mrow-lbl { flex: 0 0 auto; display: inline-flex; align-items: baseline; gap: 8px;
-  font-size: var(--up-fs-m); font-weight: 500; color: var(--vc-third); }
-.urd-mrow-n { font-size: var(--up-fs-2xl); font-weight: 700; line-height: 1; letter-spacing: -0.02em;
-  color: var(--vc-text); font-variant-numeric: tabular-nums; }
-.urd-mrow-n:empty { display: none; }
+/* Marken: .up-mentlist aus core in der Grundgroesse (32px). Hoehe der Zeile = Hoehe eines Chips
+   (--up-mc); auf dem Grund der Leiste traegt der Chip seinen Rahmen aus core. */
 .urd-mrow-box { flex: 0 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; }
-/* Hoehe der Zeile = Hoehe eines Chips (--up-mc aus core). Auf dem Grund der Leiste traegt der
-   Chip seinen Rahmen aus core; einen eigenen Grund bekommt er hier nicht. */
 .urd-mrow .urd-ments { flex: 0 1 auto; min-width: 0; max-height: var(--up-mc); overflow: hidden; }
 .urd-mrow.is-open .urd-ments { max-height: none; }
 .urd-mrow.is-open { align-items: flex-start; }
@@ -76,26 +40,14 @@
 .urd-mrow-more:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; }
 .urd-root .urd-mrow-more[hidden] { display: none; }
 
-/* ---- Abschnittskopf (Mentions, Full Response, Citations) ----
-   Dieselbe Staffelung wie in domain-detail: Titel in Textfarbe, Beschreibung eine Stufe kleiner
-   und gedaempft. Der Umschalter der Citations sitzt rechts in derselben Zeile. */
+/* ---- Abschnittskopf: Titel und Unterzeile aus core (.up-dk-h2/.up-dk-unter) untereinander,
+   rechts in derselben Zeile das Werkzeug des Abschnitts. */
 .urd-sec { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
   margin-bottom: 16px; }
-/* Der Knopf richtet sich an der Ueberschrift aus, nicht am Fuss der Beschreibung darunter --
-   sonst haengt er unter dem Titel statt neben ihm. */
+/* Der Knopf richtet sich an der Ueberschrift aus, nicht am Fuss der Beschreibung darunter. */
 .urd-sect-body .urd-sec { align-items: flex-start; }
 .urd-sect-body .urd-hlwrap { margin-top: -6px; }
-/* Ueberschrift und Unterzeile NEBENEINANDER, Wert fuer Wert wie in url-detail.css: an der
-   Grundlinie ausgerichtet, 10px Abstand, Unterzeile genau einen Punkt kleiner (14 -> 13). Zwei
-   Detailseiten, die ihre Abschnitte verschieden ueberschreiben, lesen sich als zwei Apps.
-   Umbruch erlaubt, damit die Unterzeile auf schmalen Breiten unter die Ueberschrift faellt statt
-   sie zu quetschen. */
-/* v3 (11.10.): Ueberschrift ueber der Unterzeile und eine Stufe groesser (16/600 statt 14/500),
-   wie in der Designvorlage. Seit der Prompt-Titel 28 hat, stand 14 zu klein darunter -- der
-   Abstand 28 : 16 haelt die Staffelung der Vorlage (36 : 20). */
 .urd-sec-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.urd-sec-title { font-size: var(--up-fs-xl); font-weight: 600; letter-spacing: -0.01em; color: var(--vc-text); }
-.urd-sec-desc { font-size: var(--up-fs-m); font-weight: 400; line-height: 1.45; color: var(--vc-muted); }
 
 /* ---- Die Antwort ohne Karte (v2) ----
    Der Rahmen um einen langen Text machte ihn schwer; der Absender (Logo links) traegt die

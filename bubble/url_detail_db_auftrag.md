@@ -91,6 +91,11 @@ Dashboard und Prompt Insights es schon tun. Für den Domain-Drawer, der als Näc
 `p_domain text default null` derselbe Schritt. Wenn das aus deiner Sicht schlecht ist, sag warum
 und schlag die Alternative vor.
 
+**C. Export:** Die Responses-Tabelle hat einen Export-Knopf. Der Export der App kennt keinen
+Filter auf eine URL und gäbe alle Antworten des Zeitraums aus. Im neuen Drawer ist der Knopf
+deshalb vorerst ausgeblendet. Kann der Export (`prompt_runs`) `p_url` mitnehmen? Wenn ja, zeige ich
+ihn wieder.
+
 `get_url_bundle_v7` bleibt, bis Bubble nichts mehr daraus liest.
 
 Dazu bitte:

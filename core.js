@@ -2180,6 +2180,12 @@
     "Too many requests in a short time. Please wait a moment.": "Zu viele Anfragen in kurzer Zeit. Bitte warte einen Moment.",
     "Try again": "Noch einmal versuchen",
     "This team has been deleted.": "Dieses Team wurde gelöscht.",
+    /* URL Detail v3 (12.10.) */
+    "Open domain": "Domain öffnen",
+    "Last seen {date}": "Zuletzt gesehen {date}",
+    "This page could not be found.": "Diese Seite wurde nicht gefunden.",
+    "This page could not be loaded. Please try again.": "Diese Seite konnte nicht geladen werden. Versuch es noch einmal.",
+    "Page not available": "Seite nicht verfügbar",
 
     /* Leerzustaende der Charts und Tabellen */
     "No types": "Keine Typen",
@@ -17909,6 +17915,9 @@
     var wrapped = function(){
       var args = [].slice.call(arguments);
       if (mitRiegel && drawerVerriegelt(args)) return;
+      /* Escape, waehrend in einem Drawer aus core ein Menue offen war: das Menue schliesst sich,
+         der Drawer bleibt (siehe KD_ESC_SPERRE bei den Drawern aus core). */
+      if (name === "closeDrawer" && !args.length && KD_ESC_SPERRE) return;
       try { feuern(liste, args, name); } catch(e){}
       return orig.apply(this, arguments);
     };
@@ -18015,8 +18024,10 @@
      geht die Huelle trotzdem auf und zeigt ihr Skelett, bis die Datei da ist. */
   /* breite: wie die Bubble-Gruppe vorher (12.10. vom Nutzer: die Drawer der zweiten Ebene,
      url und response, waren 80 % breit). Unter 768 die ganze Seite (core.css). */
+  var KD_ESC_SPERRE = false;
   var KERN_DRAWER = {
-    response: { label: "Response", breite: "80vw" }
+    response: { label: "Response", breite: "80vw" },
+    url: { label: "URL", breite: "80vw" }
   };
   var KD = {};
   function kdFremd(art){
@@ -18084,15 +18095,18 @@
     }, { passive: true });
     makeTooltips(el, function(){ return el.getAttribute("data-theme") === "dark"; });
     /* ESCAPE MIT OFFENEM MENUE schliesst nur das Menue (gemessen 11.10.: vorher beides auf einmal).
-       Das Kopf-Skript und die Menues von core hoeren beide am document; welcher zuerst dran ist,
-       steht nirgends fest. Am window in der Einfangphase kommt dieser Griff vor beiden: ist im
-       Drawer ein Menue offen, schliesst er die Menues und haelt die Taste an. */
+       Die Taste NICHT anhalten: jedes Menue schliesst sich auf seinem eigenen Weg (core am document,
+       der Kalender in der Einfangphase am document). Am window angehalten blieb der Kalender offen
+       und der Drawer ging zu (12.10.); am document haengt es an der Reihenfolge, in der die Dateien
+       laden. Stattdessen merkt sich dieser Griff -- am window, also vor allen anderen --, dass ein
+       Menue offen WAR, und genau fuer diese eine Taste setzt das Schliessen ohne Namen aus
+       (closeDrawer() ist der Weg des Kopf-Skripts fuer Escape, siehe wrapDrawerFn).
+       Offen heisst: ein Menue aus core ODER irgendein Ausloeser mit aria-expanded="true". */
     window.addEventListener("keydown", function(e){
       if ((e.key !== "Escape" && e.keyCode !== 27) || !el.classList.contains("open")) return;
-      if (!el.querySelector(".is-open > .up-pop, .up-pop.is-shown, .up-dd.is-open, .is-open > .up-dd-menu")) return;
-      e.stopPropagation();
-      try { closeAll(null, null); } catch(err){}
-      try { closeAllDropdowns(); } catch(err){}
+      if (!el.querySelector('.is-open > .up-pop, .up-pop.is-shown, .up-dd.is-open, .is-open > .up-dd-menu, [aria-expanded="true"]')) return;
+      KD_ESC_SPERRE = true;
+      setTimeout(function(){ KD_ESC_SPERRE = false; }, 0);
     }, true);
     /* AUF UND ZU AM ELEMENT ABLESEN, nicht an den Aufrufen: die Host-App schliesst einen Drawer
        auch ohne closeDrawer -- openDrawer schliesst jeden derselben oder einer hoeheren Ebene
@@ -18209,6 +18223,21 @@
   }
   /* Fuer Pruefstand und Uebergabe: baut core diesen Drawer (oder noch Bubble)? */
   function kernDrawerAktiv(art){ return !!KERN_DRAWER[art] && !kdFremd(art); }
+  /* AUF DAS TEAM WARTEN (12.10., aus response-detail hierher, seit url-detail es auch braucht):
+     ein Drawer kann beim Wiederherstellen aus der Adresse aufgehen, bevor Bubble das Team gesetzt
+     hat. Liefert das Team, sobald es da ist, hoechstens nach ms (Vorgabe 10s) -- dann "" . */
+  function teamWarten(ms){
+    var t = getTeam();
+    if (t) return Promise.resolve(t);
+    return new Promise(function(fertig){
+      var weg = null, uhr = setTimeout(function(){ if (weg) weg(); fertig(getTeam() || ""); }, ms || 10000);
+      weg = onTeamChange(function(){
+        var x = getTeam();
+        if (!x) return;
+        clearTimeout(uhr); if (weg) weg(); fertig(x);
+      });
+    });
+  }
 
   /* ---------- EINE ENTITAET AN MIRA GEBEN (29.09. spaet, aus drawer-topbar nach core) ----------
      Angefordert: "Ask Mira" auch im Mehr-Menue der Treffer in Quick Actions -- "dieselben Wege
@@ -23786,7 +23815,7 @@
        Formatierer kennt. */
     getPref: getPref, setPref: setPref, setLocaleReload: setLocaleReload,
     openDrawers: openDrawers, closeAllDrawers: closeAllDrawers, drawerOeffnen: drawerOeffnen,
-    kernDrawer: kernDrawer, kernDrawerAktiv: kernDrawerAktiv,
+    kernDrawer: kernDrawer, kernDrawerAktiv: kernDrawerAktiv, teamWarten: teamWarten,
     anMira: anMira, miraBezug: miraBezug,
     onPrefs: onPrefs, getUpstreemThemeChoice: getUpstreemThemeChoice,
     PREF_DEFAULT: PREF_DEFAULT, PREF_ERLAUBT: PREF_ERLAUBT,

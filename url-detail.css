@@ -16,9 +16,9 @@
    Abschnitte am Ende keine Linie ins Leere, und der erste Abschnitt (die KPI-Leiste, immer da)
    bekommt keine ueber sich. */
 .uud-root { display: flex; flex-direction: column; gap: 0; width: 100%; }
-.uud-root > * + * {
-  margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--vc-border);
-}
+/* v3 (12.10.): 40px zwischen den Abschnitten und KEINE Linie -- wie Response Detail. Die Linie
+   zwischen jedem Abschnitt trennte, was der Abstand allein schon trennt. */
+.uud-root > * + * { margin-top: 40px; }
 .uud-root > * { min-width: 0; }
 /* Ein ausgeblendeter Bereich traegt das hidden-Attribut, und das wirkt nur ueber display:none aus
    dem Browser-Stylesheet -- jede eigene display-Regel schlaegt es. Dieselbe Falle wie in
@@ -38,57 +38,49 @@
    Zeile und brechen darunter von selbst. 120px, gemessen und nicht geraten: bei 860px Wurzel --
    der Breite im Drawer -- bleiben nach fuenf Luecken 748px fuer sechs Spalten, also 124 je
    Spalte; mit 132 brach die Leiste dort in zwei Zeilen. */
-.uud-kpis {
-  display: grid; gap: 16px;
-  /* FESTE Spaltenzahl, nicht auto-fit: auto-fit nimmt, was passt, und das ergab bei mittleren
-     Breiten fuenf Felder oben und eins darunter -- das sieht aus wie ein Fehler. Sechs hat die
-     Teiler 3 und 2, also bricht die Leiste immer gleichmaessig: 6, dann 3 und 3, dann 2 und 2
-     und 2. Die Schwellen dazu setzt widthTiers im JS, aus derselben Rechnung:
-     6*120 + 5*16 = 800, 3*120 + 2*16 = 392. */
-  grid-template-columns: repeat(6, 1fr);
-}
+/* ---- Die Leiste der Kennzahlen (v3) --------------------------------------------------------
+   .up-dk-leiste aus core, darin drei Zahlen nebeneinander: Ueberschrift 13/500 in der dritten
+   Farbe, Wert 22/700 -- dieselbe Staffel wie die Zahl der Markenleiste ("4 brands mentioned").
+   Links buendig mit 40px Luecke statt verteilt: drei Zahlen ueber 1100px verteilt lesen sich
+   nicht mehr als eine Leiste. 16 statt 12 Polster oben und unten: zwei Zeilen Inhalt statt eines
+   32er Chips. */
+.uud-kpis.up-dk-leiste { justify-content: flex-start; gap: 12px 40px; padding: 16px 20px; }
 .uud-kpi { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; min-width: 0; }
-/* 28px: die Hoehe von .up-tag (24) plus Luft, damit eine Zeile mit Chip und eine mit Zahl gleich
-   hoch sind und die Ueberschriften darunter auf einer Linie stehen. */
-.uud-kpi-val { display: flex; align-items: center; justify-content: flex-start;
-  min-height: 28px; min-width: 0; max-width: 100%; }
-.uud-kpi-num { font-size: 15px; font-weight: 500; color: var(--vc-text); font-variant-numeric: tabular-nums; }
-/* Die Raute steht in der dritten Farbe und zwei Punkt kleiner als die Zahl daneben: sie ist die
-   Einheit, nicht der Wert. Farbe kommt aus core (.up-hash), hier nur die Groesse -- 15 - 2 = 13. */
-.uud-rank .up-hash { width: 13px; height: 13px; }
-/* line-height FEST auf 16px, und das ist der Grund: das Info-Zeichen ist 14px hoch und sitzt
-   absolut auf der Mitte dieser Ueberschrift (Regel weiter unten). Wie hoch deren Kasten ist,
-   entschied bisher die Schrift -- "normal" ergibt je Schnitt zwischen 13 und 16px. Bei 13px ist
-   ein 14px-Zeichen groesser als sein Bezugskasten und steht oben und unten einen halben Pixel
-   darueber hinaus; das liest sich als "oben ganz leicht abgeschnitten", genau so gemeldet am
-   07.09. Mit 16px hat es in JEDER Schrift einen Pixel Luft nach oben und unten.
-   16 und nicht 18: 16 ist die Hoehe, die die Ueberschrift mit der Hausschrift ohnehin schon hat
-   -- die Zeile darunter verschiebt sich also nicht. Uppercase hat keine Unterlaengen, es wird
-   dabei nichts beschnitten. */
-/* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
-   Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
-.uud-kpi-lbl {
-  display: inline-flex; align-items: center; justify-content: flex-start;
-  font-size: 12px; font-weight: 600;
-  line-height: 16px;
-  color: var(--vc-third); white-space: nowrap; text-align: left;
-}
-/* Das Info-Symbol ist .up-th-info aus core. Zwei Dinge muessen anders sein, genau wie in
-   domain-detail: core schiebt es mit margin-left:auto ans Ende einer Kopfzelle, hier soll es
-   NEBEN der Ueberschrift stehen; und core deckt es bei .up-th:hover auf, ein .up-th gibt es hier
-   nicht. 6px Abstand, weil es sonst am Wort klebt -- ohne die Regel erbt es das auto und steht
-   ohne jede Luecke. Groesse, Farbe und Uebergang bleiben unveraendert aus core. */
-/* Das Info-Symbol steht AUSSERHALB des Textflusses: absolut gesetzt traegt es keine Breite, und
-   die Ueberschrift ist damit nur ihr Text. Das war noetig, solange Wert und Ueberschrift mittig
-   standen (im Fluss zentrierte sich "Wort + Luecke + Symbol", und das Wort rutschte nach links).
-   Linksbuendig braeuchte es das nicht mehr -- es bleibt trotzdem so: die Breite der Spalte soll
-   der WERT bestimmen, nicht ein Symbol, das nur beim Ueberfahren sichtbar ist. */
-.uud-kpi-lbl { position: relative; }
-.uud-info {
-  position: absolute; left: calc(100% + 8px); top: 50%; transform: translateY(-50%);
-  margin-left: 0;
-}
+.uud-kpi-val { display: flex; align-items: center; justify-content: flex-start; min-height: 26px; min-width: 0; max-width: 100%; }
+.uud-kpi-num { font-size: var(--up-fs-2xl); font-weight: 700; line-height: 1; letter-spacing: -0.02em;
+  color: var(--vc-text); font-variant-numeric: tabular-nums; }
+/* Die Raute in der dritten Farbe und kleiner als die Zahl: sie ist die Einheit, nicht der Wert. */
+.uud-rank .up-hash { width: 16px; height: 16px; }
+.uud-kpi-lbl { position: relative; display: inline-flex; align-items: center; font-size: var(--up-fs-m);
+  font-weight: 500; line-height: 16px; color: var(--vc-third); white-space: nowrap; }
+/* Das Info-Symbol (.up-th-info aus core) steht ausserhalb des Textflusses, neben der Ueberschrift;
+   core deckt es sonst nur bei .up-th:hover auf. */
+.uud-info { position: absolute; left: calc(100% + 8px); top: 50%; transform: translateY(-50%); margin-left: 0; }
 .uud-kpi:hover .uud-info { opacity: 1; }
+
+/* ---- Meta-Zeile, Titel, Link (v3) ---------------------------------------------------------- */
+.uud-domain { display: inline-flex; align-items: center; gap: 8px; min-width: 0; cursor: pointer;
+  color: var(--vc-text); font-weight: 500; border-radius: var(--up-r-xs); }
+.uud-domain:hover .uud-domain-txt { text-decoration: underline; text-underline-offset: 3px; }
+.uud-domain:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; }
+.uud-domain-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.uud-metachip { display: inline-flex; align-items: center; }
+.uud-zuletzt { white-space: nowrap; }
+/* Die Adresse unter dem Titel: eine Zeile, Punkte am Ende, das Zeichen fuer "nach draussen". */
+.uud-link { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; margin-top: -8px;
+  font-size: var(--up-fs-m); color: var(--vc-muted); text-decoration: none; }
+.uud-link[href]:hover { color: var(--vc-text); }
+.uud-link[href]:hover .uud-link-txt { text-decoration: underline; text-underline-offset: 3px; }
+.uud-link svg { flex: 0 0 14px; width: 14px; height: 14px; }
+.uud-link-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.uud-root .uud-link[hidden] { display: none; }
+/* Skelett des Kopfes, in den Massen dessen, was gleich dasteht. */
+.uud-skz { display: inline-block; height: 14px; border-radius: var(--up-r-xs); background: var(--vc-sk);
+  animation: uutpulse 1.2s ease-in-out infinite; }
+.uud-skz.is-m { width: 132px; } .uud-skz.is-s { width: 88px; }
+.uud-skz.is-titel { display: block; width: 72%; height: 28px; margin-bottom: 6px; }
+.uud-skz.is-titel2 { display: block; width: 44%; height: 28px; }
+.uud-mrow .uud-ments { flex: 0 1 auto; min-width: 0; }
 
 /* ---- Abschnittskoepfe ------------------------------------------------------------------------ */
 /* Wortgleich .urd-sec aus response-detail: die Ueberschriftzeile ist eine ZEILE, der Text darin
@@ -103,14 +95,12 @@
    Die Unterzeile ist genau EINEN Punkt kleiner als die Ueberschrift (14 -> 13): nebeneinander
    liest sich der Unterschied ueber Farbe und Gewicht, ein groesserer Sprung liesse sie wie eine
    Fussnote wirken. */
-.uud-sec-txt { display: flex; flex-direction: row; align-items: baseline; flex-wrap: wrap;
-  gap: 4px 10px; min-width: 0; }
-.uud-sec-title { font-size: 14px; font-weight: 500; color: var(--vc-text); }
-.uud-sec-desc { font-size: 13px; font-weight: 400; line-height: 1.45; color: var(--vc-muted); }
+/* v3: Titel und Unterzeile aus core (.up-dk-h2, .up-dk-unter), untereinander wie in Response Detail. */
+.uud-sec-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 
 /* ---- Mentions --------------------------------------------------------------------------------
-   Die Liste ist .up-mentlist aus core, eine Stufe groesser (is-lg, 40px). Alles -- Polsterung,
-   Radius, Logo, Schrift -- rechnet dort aus der Hoehe; hier steht nichts mehr. */
+   v3: in der Markenleiste des Kopfes, .up-mentlist aus core in der Grundgroesse (32px) -- dieselbe
+   wie in Response Detail. Alles rechnet dort aus der Hoehe; hier steht nichts mehr. */
 
 /* ---- Embed -----------------------------------------------------------------------------------
    Zwei Bauarten in einem Rahmen: mit Seitenverhaeltnis (Video) oder mit fester Hoehe (Post).
@@ -208,6 +198,24 @@
 /* ---- Fehlerband ------------------------------------------------------------------------------
    Ueber allem und nicht unter der letzten Karte: ein Fehler, den man erst nach dem Scrollen
    sieht, ist kein Fehler, den jemand sieht. */
+/* Im Drawer aus core ist der Fehler der ganze Inhalt: der Leerzustand aus core mit Satz und Knopf
+   (UC.leerHtml), ohne Kasten -- die Regel darunter gilt dem eingebetteten Element. */
+.uud-root.uud-im-drawer .uud-fehler { order: 0; padding: 0; border: 0; background: none; }
+/* Und dann NUR er: Kopf und Abschnitte der vorigen Seite stuenden sonst unter der Meldung. */
+.uud-root.uud-im-drawer.is-fehler > :not(.uud-fehler) { display: none; }
+
+/* ---- Der URL-Drawer aus core (12.10.): Kalender oben rechts, darunter die Seite, darunter die
+   Antworten, die sie zitieren. Die Tabelle ist die Responses-Tabelle selbst (lokaler Modus). */
+.uud-dw { display: flex; flex-direction: column; gap: 40px; min-width: 0; }
+.uud-dw-leiste { display: flex; justify-content: flex-end; margin-bottom: -24px; }
+.uud-dw-resp { min-width: 0; }
+/* Neuer Zeitraum fuer dieselbe Seite: die alte gedimmt stehen lassen, bis die neue da ist
+   (Dimmen statt Skelett, 12.10.) -- dieselben .42 wie die Tabellen in core. */
+.uud-root.is-reloading > * { opacity: .42; pointer-events: none; transition: opacity var(--up-t-1) ease; }
+/* Export gibt es in der Tabelle des Drawers nicht: der Export der App kennt keinen Filter auf
+   eine URL und gaebe ALLE Antworten des Zeitraums aus -- falsche Daten unter richtigem Namen.
+   Kommt p_url im Export dazu (Frage an den DB-Chat), faellt diese Zeile weg. */
+.uud-dw-resp .urt-root .up-export { display: none; }
 .uud-fehler {
   order: -1;
   padding: 10px 12px; border-radius: 10px;
@@ -256,7 +264,7 @@
    Kein eigenes Skelett-Markup: die Abschnitte stehen bereits, sie bekommen nur den Puls von core
    (uutpulse, derselbe Name und dieselbe Dauer wie an jedem Skelettbalken der App) auf ihre
    Flaechen. Ein zweiter Aufbau nur fuers Laden waere ein zweiter Aufbau, den jemand pflegen muss. */
-.uud-root.is-loading .uud-sect-ments,
+.uud-root.is-loading .uud-mrow,
 .uud-root.is-loading .uud-sect-embed,
 .uud-root.is-loading .uud-sect-conv { display: none; }
 /* Meta-Beschreibung und Zusammenfassung bleiben STEHEN und zeigen Balken. Sie sind die zwei
@@ -286,8 +294,8 @@
 /* ---- schmal ----------------------------------------------------------------------------------
    is-narrow/is-vnarrow kommen von UC.widthTiers und messen die EIGENE Box, nicht das Fenster --
    diese Seite kann in einem Drawer stehen, der auf einem breiten Schirm schmal ist. */
-.uud-root.is-narrow .uud-kpis { grid-template-columns: repeat(3, 1fr); }
-.uud-root.is-vnarrow .uud-kpis { grid-template-columns: repeat(2, 1fr); }
+.uud-root.is-vnarrow .uud-titel { font-size: var(--up-fs-2xl); }
+.uud-root.is-vnarrow .uud-kpis.up-dk-leiste { gap: 16px 24px; padding: 16px; }
 /* Ganz schmal darf die Tabelle die volle Breite nehmen -- ein Drittel von 380px waeren 127px,
    und darin steht kein Markenname. */
 .uud-root.is-vnarrow .uud-ctable { width: 100%; }

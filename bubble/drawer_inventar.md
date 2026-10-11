@@ -126,3 +126,19 @@ beachten. Im DRAWER-CSS des Kopf-Skripts diese Werte ersetzen bzw. ergänzen:
 ```
 
 (Die zwei `backdrop-filter`-Zeilen in `[id^="backdrop-"].open` fallen dabei weg.)
+
+## 8. Stand URL Detail (12.10., gebaut gegen den Vorschlag)
+
+- **Drawer aus core** wie Response Detail (`KERN_DRAWER.url`, 80 % breit). Inhalt von oben:
+  Kalender (lokal, nimmt am geteilten Zeitraum teil), die Seite (`url-detail.js`, neuer Kopf),
+  die Responses-Tabelle (`responses-table.js`, lokaler Modus, Markup aus `.url_markup.py`).
+- **Kopfleiste:** „URL / Titel“, Globus (Domain-Drawer), Create with AI, Ask Mira, Anheften
+  (nur, wenn die Seitenleiste auf der Seite ist), Schließen.
+- **Daten:** `url_detail_v1(p_team, p_url, p_date_from, p_date_to)` → `{meta, row}` und
+  `cached_dashboard_responses_v1` mit `p_url`. Beides ist der Vorschlag an den DB-Chat
+  (`bubble/url_detail_db_auftrag.md`), noch nicht gebaut.
+- Neuer Zeitraum für dieselbe Seite: gedimmt statt Skelett. Zwischenspeicher je Adresse und
+  Zeitraum (20).
+- **Export der Tabelle im Drawer ausgeblendet**, bis der Export `p_url` kennt (Frage C im Auftrag).
+- Der Detail-Kopf (Meta-Zeile, Titel, Leisten, Abschnittsköpfe) liegt jetzt in core (`.up-dk-*`)
+  und wird von Response Detail und URL Detail gemeinsam benutzt.

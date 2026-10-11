@@ -321,31 +321,35 @@
     /* Abschnitte, keine Karten -- wie in response-detail. Eine Karte je Block macht aus einer
        Detailseite eine Kachelwand; die Ueberschrift traegt den Abschnitt, nicht ein Rahmen.
        Umrandet ist nur, was einen Rahmen BRAUCHT: das Embed (fremder Inhalt) und die Tabelle. */
+    /* DER KOPF (v3, 12.10., nach dem Vorbild Response Detail): Meta-Zeile (Domain, die zwei Typen,
+       zuletzt gesehen), der Titel der Seite, darunter ihre Adresse als Link nach draussen, die
+       Leiste der Kennzahlen und die Leiste der genannten Marken. Die Bausteine kommen aus core
+       (.up-dk-*); vorher standen sechs Kennzahlen gleichrangig in einem Raster und die Marken als
+       eigener Abschnitt "Mentions". */
     return '' +
-      '<div class="uud-sect uud-sect-kpi">' +
-        '<div class="uud-kpis"></div>' +
-      '</div>' +
-
-      '<div class="uud-sect uud-sect-ments" hidden>' +
-        '<div class="uud-sec"><div class="uud-sec-txt">' +
-          '<span class="uud-sec-title">Mentions</span>' +
-          '<span class="uud-sec-desc">Relevant brands referenced on this page</span>' +
-        '</div></div>' +
-        '<div class="uud-ments up-mentlist"></div>' +
+      '<div class="uud-sect uud-head up-dk">' +
+        '<div class="uud-kopfzeile up-dk-meta"></div>' +
+        '<h2 class="uud-titel up-dk-titel"></h2>' +
+        '<a class="uud-link" target="_blank" rel="noopener noreferrer" hidden></a>' +
+        '<div class="uud-kpis up-dk-leiste"></div>' +
+        '<div class="uud-mrow up-dk-leiste" hidden>' +
+          '<span class="up-dk-zahl"><span class="up-dk-zahl-n uud-mrow-n"></span><span class="uud-mrow-wort"></span></span>' +
+          '<div class="uud-ments up-mentlist"></div>' +
+        '</div>' +
       '</div>' +
 
       '<div class="uud-sect uud-sect-embed" hidden>' +
         '<div class="uud-sec"><div class="uud-sec-txt">' +
-          '<span class="uud-sec-title uud-embedtitle"></span>' +
-          '<span class="uud-sec-desc uud-embeddesc"></span>' +
+          '<span class="uud-sec-title up-dk-h2 uud-embedtitle"></span>' +
+          '<span class="uud-sec-desc up-dk-unter uud-embeddesc"></span>' +
         '</div></div>' +
         '<div class="uud-embed"></div>' +
       '</div>' +
 
       '<div class="uud-sect uud-sect-meta" hidden>' +
         '<div class="uud-sec"><div class="uud-sec-txt">' +
-          '<span class="uud-sec-title">Meta Description</span>' +
-          '<span class="uud-sec-desc">The page\'s SEO description</span>' +
+          '<span class="uud-sec-title up-dk-h2">Meta Description</span>' +
+          '<span class="uud-sec-desc up-dk-unter">The page\'s SEO description</span>' +
         '</div></div>' +
         /* Das Skelett steht IM Markup und nicht erst im Ladezustand: die CSS blendet es um,
            und damit gibt es keinen zweiten Aufbau, den jemand pflegen muss. Drei Balken, der
@@ -356,8 +360,8 @@
 
       '<div class="uud-sect uud-sect-sum" hidden>' +
         '<div class="uud-sec"><div class="uud-sec-txt">' +
-          '<span class="uud-sec-title">AI Summary</span>' +
-          '<span class="uud-sec-desc">High-level summary of this page</span>' +
+          '<span class="uud-sec-title up-dk-h2">AI Summary</span>' +
+          '<span class="uud-sec-desc up-dk-unter">High-level summary of this page</span>' +
         '</div></div>' +
         '<div class="uud-quote">' + skelettText(4) +
           '<p class="uud-text uud-sum"></p></div>' +
@@ -365,8 +369,8 @@
 
       '<div class="uud-sect uud-sect-conv" hidden>' +
         '<div class="uud-sec"><div class="uud-sec-txt">' +
-          '<span class="uud-sec-title">Citation Conversion</span>' +
-          '<span class="uud-sec-desc">How often this citation leads to brand mentions</span>' +
+          '<span class="uud-sec-title up-dk-h2">Citation Conversion</span>' +
+          '<span class="uud-sec-desc up-dk-unter">How often this citation leads to brand mentions</span>' +
         '</div></div>' +
         '<div class="uud-conv"></div>' +
       '</div>' +
@@ -397,8 +401,13 @@
     if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 800, vnarrowAt: 400 });
 
     var elKpis   = root.querySelector(".uud-kpis");
-    var elMentSect = root.querySelector(".uud-sect-ments");
+    var elMeta0  = root.querySelector(".uud-kopfzeile");
+    var elTitel  = root.querySelector(".uud-titel");
+    var elLink   = root.querySelector(".uud-link");
+    var elMentSect = root.querySelector(".uud-mrow");
     var elMents  = root.querySelector(".uud-ments");
+    var elMN     = root.querySelector(".uud-mrow-n");
+    var elMWort  = root.querySelector(".uud-mrow-wort");
     var elEmbedSect = root.querySelector(".uud-sect-embed");
     var elEmbedTitle = root.querySelector(".uud-embedtitle");
     var elEmbedDesc = root.querySelector(".uud-embeddesc");
@@ -557,15 +566,64 @@
       return '<span class="uud-kpi-num">' + esc(UC.fmtPct(p, 1)) + '</span>';
     }
 
+    /* ---- Der Kopf (v3) ----------------------------------------------------------------------
+       Meta-Zeile: Domain (Favicon und Name, oeffnet den Domain-Drawer), Zitationstyp, URL-Typ,
+       zuletzt gesehen -- getrennt durch den feinen Strich aus core. Die Typen und das Datum tragen
+       ihre Erklaerkarte am Element selbst (data-explain), nicht an einem Info-Zeichen: in einer
+       Zeile aus Angaben waere ein Zeichen je Angabe Rauschen.
+       Leiste der Kennzahlen: nur die drei Zahlen (Domain Share, Global Share, URL Rank), je mit
+       Ueberschrift und Info-Zeichen wie bisher. */
+    var STRICH = '<span class="up-dk-sep" aria-hidden="true"></span>';
+    var KENNZAHLEN = ["domain_share", "global_share", "global_rank"];
+    /* Nur http(s) wird zum Link und nur http(s) oder // zum Bild -- die Adressen kommen aus dem
+       Crawl (Befund des DB-Chats 11.10.: es gibt Quellen ohne Schema und eine mit dem Text null). */
+    function linkAdresse(u) { u = txt(u); return /^https?:\/\//i.test(u) ? u : ""; }
+    function bildAdresse(u) { u = txt(u); return /^(https?:)?\/\//i.test(u) ? u : ""; }
+    function anzeigeAdresse(u) {
+      try { var x = new URL(u); var o = x.hostname.replace(/^www\./i, "") + x.pathname + x.search;
+        return o.length > 1 && o.charAt(o.length - 1) === "/" ? o.slice(0, -1) : o; }
+      catch (e) { return txt(u).replace(/^https?:\/\//i, "").replace(/^www\./i, ""); }
+    }
     function renderKpis() {
-      elKpis.innerHTML = KPIS.map(function (k) {
+      var x = d(), laedt = !!state.loading && !state.data;
+      if (laedt) {
+        elMeta0.innerHTML = '<span class="uud-skz is-m"></span><span class="uud-skz is-s"></span><span class="uud-skz is-s"></span>';
+        elTitel.innerHTML = '<span class="uud-skz is-titel"></span><span class="uud-skz is-titel2"></span>';
+        elLink.hidden = true;
+      } else {
+        var teile = [];
+        var dom = txt(x.domain), fav = bildAdresse(x.favicon);
+        if (dom) teile.push('<span class="uud-domain" role="button" tabindex="0" data-domain="' + esc(dom) + '"' +
+          ' data-tip="' + esc(UC.t("Open domain")) + '">' +
+          '<span class="up-ment-logo' + (fav ? " has-img" : "") + '"><span class="up-model-ltr">' +
+            esc((dom.charAt(0) || "?").toUpperCase()) + '</span>' +
+            (fav ? '<img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+                   ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +
+          '</span><span class="uud-domain-txt">' + esc(dom) + '</span></span>');
+        KPIS.forEach(function (k) {
+          if (!k.typ) return;
+          if (!txt(x[k.key])) return;
+          teile.push('<span class="uud-metachip" data-explain="' + esc(k.key) + '">' + kpiWert(k) + '</span>');
+        });
+        var ls = txt(x.last_seen);
+        if (ls) teile.push('<span class="uud-zuletzt" data-explain="last_seen">' +
+          esc(UC.t("Last seen {date}").replace("{date}", UC.fmtDate(ls))) + '</span>');
+        elMeta0.innerHTML = teile.join(STRICH);
+        var url = txt(x.url);
+        elTitel.textContent = txt(x.title) || anzeigeAdresse(url) || "\u2013";
+        var href = linkAdresse(url);
+        elLink.hidden = !url;
+        if (url) {
+          if (href) elLink.setAttribute("href", href); else elLink.removeAttribute("href");
+          elLink.innerHTML = '<span class="uud-link-txt">' + esc(anzeigeAdresse(url)) + '</span>' +
+            (href ? UC.icon("externalLink", 2) : "");
+        }
+      }
+      elKpis.innerHTML = KPIS.filter(function (k) { return KENNZAHLEN.indexOf(k.key) >= 0; }).map(function (k) {
         /* Ueberschrift ZUERST, Wert darunter -- so steht es auf der Seite und so wird es
-           vorgelesen. Vorher stand der Wert oben und die Ueberschrift darunter; die Umkehr im
-           Markup und nicht per column-reverse in der CSS, damit Lesereihenfolge und Bild
-           dasselbe sagen. */
+           vorgelesen. Das Symbol kommt aus UC.icon wie ueberall, nie selbst gezeichnet. */
         return '<div class="uud-kpi">' +
-                 '<span class="uud-kpi-lbl">' + esc(k.label) +
-                   /* Das Symbol kommt aus UC.icon wie ueberall -- nie selbst gezeichnet. */
+                 '<span class="uud-kpi-lbl">' + esc(UC.t(k.label)) +
                    '<span class="up-th-info uud-info" data-explain="' + esc(k.key) + '">' +
                      UC.icon("info", 2) + '</span>' +
                  '</span>' +
@@ -579,6 +637,9 @@
        Lesen ein STRING, kein Array. UC.readBubble liest es nach, genau wie bei jedem anderen
        Textfeld. Ohne das blieb die Mention-Liste leer, sobald companies so eingesetzt wurde. */
     function companies() {
+      /* url_detail_v1 (Vorschlag an den DB-Chat): brands[] -- eine Zeile je Marke, logo_url nach
+         der Logo-Regel. Sonst companies wie bisher. */
+      if (isArr(d().brands)) return d().brands;
       var c = d().companies;
       if (isArr(c)) return c;
       if (typeof c === "string" && c.trim()) {
@@ -588,12 +649,14 @@
       return [];
     }
     function renderMents() {
-      var liste = companies();
+      var liste = companies().filter(function (c) { return c && txt(c.company_name || c.name); });
       elMentSect.hidden = !liste.length;
+      elMN.textContent = liste.length ? String(liste.length) : "";
+      elMWort.textContent = UC.t(liste.length === 1 ? "brand mentioned" : "brands mentioned");
       if (!liste.length) { elMents.innerHTML = ""; return; }
       elMents.innerHTML = liste.map(function (c) {
         var name = txt(c && (c.company_name || c.name));
-        var logo = txt(c && (c.logo_url || c.favicon_url));
+        var logo = bildAdresse(c && (c.logo_url || c.favicon_url));
         var buchst = (name.charAt(0) || "?").toUpperCase();
         /* Dasselbe Markup wie in response-detail: .up-entchip is-soft mit dem geteilten
            .up-chiphover. Zwei Schreibweisen desselben Chips lesen sich wie zwei Bauteile. */
@@ -778,6 +841,14 @@
          stuende sonst ueber dem Skelett der naechsten. */
       if (elLeerSect) elLeerSect.hidden = true;
       elFehler.hidden = !state.fehler;
+      root.classList.toggle("is-fehler", !!state.fehler);
+      if (state.fehler && root.__uudKopf) {
+        /* Im Drawer aus core: der Leerzustand aus core, mit "Try again", wo ein zweiter Versuch
+           etwas bringen kann (wie Response Detail). */
+        elFehler.innerHTML = UC.leerHtml({ icon: "info", titel: "Page not available", text: state.fehler,
+          knopf: wiederholbar(state.fehlerCode) ? "Try again" : "", knopfAttr: "data-uud-retry" });
+        return;
+      }
       if (state.fehler) { elFehler.textContent = state.fehler; return; }
       /* Kopf und KPI-Leiste werden AUCH im Ladezustand gezeichnet. Ohne das blieben die Werte
          des vorigen Aufrufs im Dokument stehen, und das Skelett lag daneben ueber alten Zahlen --
@@ -794,8 +865,33 @@
         elMetaSect.hidden && elSumSect.hidden && elConvSect.hidden);
     }
 
+    /* Die Codes des direkten Abrufs (UC.rpc und der Vorschlag url_detail_v1) als Satz. Nicht
+       wiederholbar ist, was ein zweiter Klick nicht aendert. */
+    function fehlerText(code) {
+      var c = String(code || "").trim();
+      if (c === "url_not_found" || c === "team_invalid_param") return "This page could not be found.";
+      if (c === "settings_not_authenticated" || c === "not authenticated") return "Your session has expired. Please sign in again.";
+      if (c === "team_deleted") return "This team has been deleted.";
+      if (/^team_access_/.test(c) || c === "forbidden" || c === "team_forbidden") return "Your team doesn't have access right now.";
+      if (c === "url_rate_limited") return "Too many requests in a short time. Please wait a moment.";
+      return "This page could not be loaded. Please try again.";
+    }
+    function wiederholbar(code) {
+      var c = String(code || "").trim();
+      return !(c === "url_not_found" || c === "team_invalid_param" || /^team_access_/.test(c) || c === "forbidden" ||
+        c === "team_forbidden" || c === "team_deleted" || c === "not authenticated" || c === "settings_not_authenticated");
+    }
+
     /* ---- Klicks ------------------------------------------------------------------------------ */
     root.addEventListener("click", function (e) {
+      if (e.target.closest && e.target.closest("[data-uud-retry]")) {
+        if (typeof root.__uudNeuLaden === "function") root.__uudNeuLaden();
+        return;
+      }
+      /* Die Domain in der Meta-Zeile oeffnet den Domain-Drawer -- derselbe Weg wie der Globus der
+         Kopfleiste (openDrawer der Host-App, Ebene 1). */
+      var dm = e.target.closest && e.target.closest(".uud-domain[data-domain]");
+      if (dm) { if (UC.drawerOeffnen) UC.drawerOeffnen("domain", dm.getAttribute("data-domain"), "url-detail"); return; }
       /* Chip und Tabellenzeile feuern DASSELBE Ereignis -- es ist derselbe Sprung zur Marke, und
          zwei Ereignisse fuer einen Weg sind eines zu viel. */
       var ziel = e.target.closest && e.target.closest(".uud-ment, .uud-cbody");
@@ -815,7 +911,7 @@
     });
     root.addEventListener("keydown", function (e) {
       if (e.key !== "Enter" && e.key !== " ") return;
-      var ziel2 = e.target.closest && e.target.closest(".uud-ment, .uud-cbody");
+      var ziel2 = e.target.closest && e.target.closest(".uud-ment, .uud-cbody, .uud-domain");
       if (!ziel2) return;
       e.preventDefault();
       ziel2.click();
@@ -894,6 +990,28 @@
         persist();
         return true;
       },
+      /* url_detail_v1 (Vorschlag an den DB-Chat, 12.10.): EIN Objekt mit allem -- Kopf, brands[],
+         conversion[], summary als Klartext, description dekodiert. Ein Aufbau statt drei Settern. */
+      setV1: function (row) {
+        var ok = row && typeof row === "object" && !isArr(row);
+        state.data = ok ? row : null;
+        state.conv = ok && isArr(row.conversion) ? row.conversion : [];
+        state.summary = ok ? txt(row.summary) : "";
+        state.fehler = ok ? "" : "The page data could not be read.";
+        state.fehlerCode = "";
+        state.loading = false;
+        render();
+        persist();
+        return true;
+      },
+      setFehlerCode: function (code) {
+        state.data = null; state.conv = []; state.summary = "";
+        state.fehler = fehlerText(code); state.fehlerCode = String(code || "");
+        state.loading = false;
+        render();
+        persist();
+        return true;
+      },
       setLoading: function (v) {
         state.loading = UC.isYes(v);
         if (state.loading) state.fehler = "";
@@ -954,6 +1072,280 @@
     roots.forEach(function (r) { var c = initRoot(r); if (c) fn(c); });
     return true;
   }
+
+  /* ==========================================================================================
+     ALS DRAWER AUS CORE (12.10.): Seite, Kalender und Antworten in einem
+     ==========================================================================================
+     Steht keine Bubble-Floating-Group #drawer-url mehr auf der Seite, baut core die Huelle
+     (core.js, KERN_DRAWER) und ruft hier zeigen(<adresse>) -- vor dem Hereinfahren. Darin:
+       - oben rechts der Kalender (lokal, nimmt am geteilten Zeitraum teil wie jeder andere);
+       - diese Komponente (die Seite) aus url_detail_v1;
+       - die Responses-Tabelle (responses-table.js, lokaler Modus) aus
+         cached_dashboard_responses_v1 mit p_url -- derselbe Weg wie Dashboard und Prompt
+         Insights, nur auf diese Adresse eingeschraenkt.
+     Kopfleiste (core): "URL / <Titel>", Globus (Domain), Create with AI, Ask Mira, Anheften.
+     Beide RPCs sind der VORSCHLAG an den DB-Chat (bubble/url_detail_db_auftrag.md). Solange die
+     Bubble-Gruppe steht, laeuft hier nichts -- die Umstellung ist das Loeschen der Gruppe. */
+  /* ---- MARKUP ANFANG (erzeugt von .url_markup.py -- nicht von Hand aendern) ---- */
+  var MARKUP = {
+    urt: "<div class=\"up-root urt-root\" data-local=\"yes\" data-merken=\"yes\" data-instance=\"__UUD_URT__\" data-cdn-pin=\"\" data-isdark=\"__UUD_DARK__\" data-brand-name=\"__UUD_BRAND__\" data-brand-logo=\"__UUD_BRANDLOGO__\" data-spotlight-mode=\"no\" data-export-instance=\"\" data-sticky-top=\"16\" data-sticky=\"no\" data-default-view=\"table\"><div class=\"up-head\"><div class=\"up-heading\"><span class=\"up-head-label\">Responses</span><span class=\"up-head-sep\"></span><span class=\"up-head-count\"></span></div><div class=\"up-head-tools\"><button class=\"urt-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"urt-brand-toggle-lbl\"><img class=\"urt-brand-logo\" src=\"\" style=\"display:none\" alt=\"\"/><span class=\"urt-brand-label\"></span></span><span class=\"urt-brand-check\"><svg class=\"urt-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7\"/></svg><svg class=\"urt-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.9922 12L2.99219 12\"/></svg></span></button><div class=\"up-ment\"><button class=\"up-ment-btn\" type=\"button\" data-tip=\"Filter for brand mentions\" aria-haspopup=\"menu\" aria-expanded=\"false\"><span class=\"up-ment-lbl\">All Brands</span><svg class=\"up-ment-chev\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg><svg class=\"up-ment-clear\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button><div class=\"up-ment-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-sort\"><button class=\"up-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"urt-fader\"><button class=\"urt-fader-btn up-iconbtn\" type=\"button\" data-tip=\"Filter by rank &amp; sentiment\" aria-label=\"Filter by rank and sentiment\" aria-haspopup=\"menu\" aria-expanded=\"false\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 21L7 18\"/><path d=\"M17 21L17 15\"/><path d=\"M17 6L17 3\"/><path d=\"M7 9L7 3\"/><path d=\"M7 18C6.06812 18 5.60218 18 5.23463 17.8478C4.74458 17.6448 4.35523 17.2554 4.15224 16.7654C4 16.3978 4 15.9319 4 15C4 14.0681 4 13.6022 4.15224 13.2346C4.35523 12.7446 4.74458 12.3552 5.23463 12.1522C5.60218 12 6.06812 12 7 12C7.93188 12 8.39782 12 8.76537 12.1522C9.25542 12.3552 9.64477 12.7446 9.84776 13.2346C10 13.6022 10 14.0681 10 15C10 15.9319 10 16.3978 9.84776 16.7654C9.64477 17.2554 9.25542 17.6448 8.76537 17.8478C8.39782 18 7.93188 18 7 18Z\"/><path d=\"M17 12C16.0681 12 15.6022 12 15.2346 11.8478C14.7446 11.6448 14.3552 11.2554 14.1522 10.7654C14 10.3978 14 9.93188 14 9C14 8.06812 14 7.60218 14.1522 7.23463C14.3552 6.74458 14.7446 6.35523 15.2346 6.15224C15.6022 6 16.0681 6 17 6C17.9319 6 18.3978 6 18.7654 6.15224C19.2554 6.35523 19.6448 6.74458 19.8478 7.23463C20 7.60218 20 8.06812 20 9C20 9.93188 20 10.3978 19.8478 10.7654C19.6448 11.2554 19.2554 11.6448 18.7654 11.8478C18.3978 12 17.9319 12 17 12Z\"/></svg></button><div class=\"urt-fader-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 17L21 21\"/><path d=\"M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z\"/></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Search prompts...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search responses\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button></div></div><div class=\"up-cols\"><button class=\"up-cols-btn up-iconbtn\" type=\"button\" data-tip=\"Table Settings\" aria-label=\"Table settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z\"/><path d=\"M8.5 10C7.67157 10 7 9.32843 7 8.5C7 7.67157 7.67157 7 8.5 7C9.32843 7 10 7.67157 10 8.5C10 9.32843 9.32843 10 8.5 10Z\"/><path d=\"M15.5 17C16.3284 17 17 16.3284 17 15.5C17 14.6716 16.3284 14 15.5 14C14.6716 14 14 14.6716 14 15.5C14 16.3284 14.6716 17 15.5 17Z\"/><path d=\"M10 8.5L17 8.5\"/><path d=\"M14 15.5L7 15.5\"/></svg></button><span class=\"urt-cols-badge\"></span><div class=\"up-cols-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-dense urt-viewswitch\" role=\"group\" aria-label=\"View\"><button class=\"up-dense-btn up-dense-btn-icon is-active\" type=\"button\" data-view=\"table\" data-tip=\"Table view\" aria-label=\"Table view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18\"/></svg></button><button class=\"up-dense-btn up-dense-btn-icon\" type=\"button\" data-view=\"cards\" data-tip=\"Card view\" aria-label=\"Card view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 4V20\"/><path d=\"M18 4V20\"/><path d=\"M21 7L3 7\"/><path d=\"M21 17L3 17\"/></svg></button></div><button class=\"up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg><span>Export</span></button></div></div><div class=\"up-box\"><div class=\"up-table\"><div class=\"up-thead\"><div class=\"up-th up-th-prompt\">Prompt<span class=\"up-grip\" data-grip=\"prompt\"></span></div><div class=\"up-th up-th-mentioned\"><img class=\"up-th-brandlogo\" src=\"\" alt=\"\" style=\"display:none\"/><span class=\"up-th-mentlbl\">Mentioned</span></div><div class=\"up-th up-th-sentiment is-sortable\" data-sortcol=\"sentiment\"><span class=\"up-th-txt\">Sentiment</span><span class=\"up-thsort\" data-for=\"sentiment\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div><div class=\"up-th up-th-rank is-sortable\" data-sortcol=\"rank\"><span class=\"up-th-txt\">Rank</span><span class=\"up-thsort\" data-for=\"rank\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div><div class=\"up-th up-th-brands\">Brand Mentions</div><div class=\"up-th up-th-citations\">Citations</div><div class=\"up-th up-th-model\">Model</div><div class=\"up-th up-th-date is-sortable\" data-sortcol=\"date\"><span class=\"up-th-txt\">Date</span><span class=\"up-thsort\" data-for=\"date\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div></div><div class=\"up-tbody\"></div></div></div><div class=\"urt-cards\"></div><div class=\"up-foot\"><div class=\"up-pagesize\"><span class=\"up-pagesize-lbl\">Rows per page</span><div class=\"up-pagesize-seg\" role=\"group\" aria-label=\"Rows per page\"></div></div><div class=\"up-pager\"></div></div></div>"
+  };
+  /* ---- MARKUP ENDE ---- */
+  var DU = {
+    FN: { detail: "url_detail_v1" },
+    slot: null, root: null, kopf: null, url: "", gezeigt: "", nr: 0, rnr: 0, ab: null, rab: null,
+    speicher: {}, reihe: [], zeile: null,
+    ids: { daten: "drawer-url-daten", seite: "drawer-url", urt: "drawer-url-responses" },
+    resp: null
+  };
+  function duRespStart() {
+    return { order: "run_at_desc", limit: 15, offset: 0, suche: "", erwaehnt: "all", firmen: null,
+             rankMin: null, rankMax: null, sentMin: null, sentMax: null, requestId: null };
+  }
+  DU.resp = duRespStart();
+  function duStr(v) { return String(v == null ? "" : v); }
+  function duNum(v) { var n = parseFloat(v); return isFinite(n) ? n : null; }
+  function duDunkel() {
+    try { return (window.getUpstreemTheme ? window.getUpstreemTheme() : "") === "dark"; } catch (e) { return false; }
+  }
+  function duSetter(n) { return typeof window[n] === "function" ? window[n] : function () {}; }
+  function duMerken(sig, o) {
+    DU.speicher[sig] = o;
+    var i = DU.reihe.indexOf(sig);
+    if (i >= 0) DU.reihe.splice(i, 1);
+    DU.reihe.push(sig);
+    while (DU.reihe.length > 20) delete DU.speicher[DU.reihe.shift()];
+  }
+  /* Der Zeitraum aus dem Kalender des Drawers; ohne Kalender (Datei fehlt) nimmt die RPC ihre
+     Vorgabe. */
+  function duZeitraum() {
+    var k = DU.slot ? DU.slot.querySelector(".uud-dw-daten") : null, r = null;
+    try { r = k && k.__udrCtrl && k.__udrCtrl.getRange ? k.__udrCtrl.getRange() : null; } catch (e) { r = null; }
+    return { von: r && r.from ? duStr(r.from) : null, bis: r && r.to ? duStr(r.to) : null };
+  }
+  function duEigeneMarke() {
+    var l = UC.getBrands ? UC.getBrands() : [];
+    for (var i = 0; i < l.length; i++) if (l[i] && (duStr(l[i].role).toLowerCase() === "own" || l[i].is_own === true)) return l[i];
+    return null;
+  }
+
+  /* ---- Die Seite ---- */
+  function duLaden(frisch) {
+    var c = DU.root ? initRoot(DU.root) : null;
+    if (!c || !DU.url) return;
+    var z = duZeitraum(), sig = DU.url + "|" + z.von + "|" + z.bis;
+    if (!frisch && DU.speicher[sig]) {
+      if (DU.gezeigt !== sig) { DU.zeile = DU.speicher[sig]; DU.zeileFuer = DU.url; c.setV1(DU.zeile); DU.gezeigt = sig; duKopf(DU.zeile); }
+      return;
+    }
+    DU.gezeigt = "";
+    /* Neue Adresse: leeren (Skelett). Derselbe Adresse mit neuem Zeitraum: die alte Seite gedimmt
+       stehen lassen, bis die neue da ist -- Dimmen statt Skelett (12.10.). */
+    /* Verglichen mit der Kennung, unter der die Seite geladen wurde -- die RPC darf die Adresse
+       normalisiert zurueckgeben (Schema, Schraegstrich). */
+    var gleiche = !!DU.zeile && DU.zeileFuer === DU.url;
+    if (gleiche) DU.root.classList.add("is-reloading"); else { c.reset(); duKopf(null); }
+    if (DU.ab) { try { DU.ab.abort(); } catch (e) {} }
+    var ab = typeof AbortController !== "undefined" ? new AbortController() : null;
+    DU.ab = ab;
+    var nr = ++DU.nr, url = DU.url;
+    (UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(UC.getTeam ? UC.getTeam() : "")).then(function (team) {
+      if (nr !== DU.nr) return null;
+      if (!team) return { ok: false, status: 0, fehler: { message: "not authenticated" } };
+      return UC.rpc(DU.FN.detail, { p_team: team, p_url: url, p_date_from: z.von, p_date_to: z.bis },
+        { timeoutMs: 60000, signal: ab ? ab.signal : undefined });
+    }).then(function (erg) {
+      if (!erg || nr !== DU.nr) return;
+      if (DU.ab === ab) DU.ab = null;
+      DU.root.classList.remove("is-reloading");
+      var d = erg.ok ? erg.daten : null;
+      if (isArr(d)) d = d.length ? d[0] : null;
+      if (d && d.row && typeof d.row === "object") d = d.row;
+      var ok = d && typeof d === "object" && (d.url != null || d.title != null);
+      if (ok) { duMerken(sig, d); DU.zeile = d; DU.zeileFuer = url; c.setV1(d); DU.gezeigt = sig; duKopf(d); return; }
+      var code = erg.ok ? "" : duStr((erg.fehler && (erg.fehler.message || erg.fehler.code)) || "");
+      if (window.console) console.warn("[url-detail] " + DU.FN.detail + " fuer " + url + ": " +
+        (code || "Antwort nicht lesbar") + (erg.status ? " (HTTP " + erg.status + ")" : ""));
+      DU.zeile = null;
+      c.setFehlerCode(code);
+      duKopf(false);
+    });
+  }
+
+  /* ---- Die Kopfleiste: Name und die vier Knoepfe dieser Art (wie drawer-topbar bei einer URL) ---- */
+  function duKopf(d) {
+    var k = DU.kopf;
+    if (!k) return;
+    if (d === null) { k.name(null); k.eigen.innerHTML = ""; return; }
+    if (!d) { k.name(""); k.eigen.innerHTML = ""; return; }
+    k.name(duStr(d.title).trim() || duStr(d.domain) || DU.url);
+    function knopf(art, zeichen, label) {
+      return '<button type="button" class="up-iconbtn" data-uud-kopf="' + art + '" data-tip="' + esc(UC.t(label)) +
+        '" aria-label="' + esc(UC.t(label)) + '">' + UC.icon(zeichen, 2) + '</button>';
+    }
+    var html = "";
+    if (duStr(d.domain).trim() && typeof window.openDrawer === "function") html += knopf("domain", "domain", "Go to parent domain");
+    if (UC.openCreateWithAi) html += knopf("ai", "astroid", "Create with AI");
+    if (UC.anMira && UC.miraBezug) html += knopf("mira", "blend", "Ask Mira about this");
+    if (typeof window.upstreemPinToSidebar === "function") html += knopf("pin", "pin", "Pin to sidebar");
+    k.eigen.innerHTML = html;
+  }
+  function duKopfKlick(art) {
+    var d = DU.zeile || {}, url = DU.url, titel = duStr(d.title).trim(), fav = duStr(d.favicon).trim();
+    if (art === "domain" && d.domain && UC.drawerOeffnen) UC.drawerOeffnen("domain", duStr(d.domain), "url-detail");
+    else if (art === "ai" && UC.openCreateWithAi) UC.openCreateWithAi({ url: url, lead_title: titel, lead_favicon: fav });
+    else if (art === "mira" && UC.anMira && UC.miraBezug) {
+      var b = UC.miraBezug({ type: "url", url: url, title: titel, favicon: fav });
+      if (b) UC.anMira(b, ["url"]);
+    } else if (art === "pin" && typeof window.upstreemPinToSidebar === "function") {
+      try { window.upstreemPinToSidebar({ type: "url", id: url, label: titel || url, logo: fav }); } catch (e) {}
+    }
+  }
+
+  /* ---- Die Antworten (wie dashboard-page / prompts-page, eingeschraenkt auf p_url) ---- */
+  function duRespLaden() {
+    var DDx = window.UpstreemDashboardDaten;
+    if (!DU.url) return;
+    if (!DDx || !DDx.responsesTeile) {
+      duSetter("renderResponsesTable")({ instanceId: DU.ids.urt, __parseError: true });
+      return;
+    }
+    duSetter("setResponsesTableLoading")(DU.ids.urt, "yes");
+    if (DU.rab) { try { DU.rab.abort(); } catch (e) {} }
+    var ab = typeof AbortController !== "undefined" ? new AbortController() : null;
+    DU.rab = ab;
+    var nr = ++DU.rnr, url = DU.url, z = duZeitraum(), reqId = DU.resp.requestId;
+    (UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(UC.getTeam ? UC.getTeam() : "")).then(function (team) {
+      if (nr !== DU.rnr) return null;
+      var teile = DDx.responsesTeile({ team: team, von: z.von, bis: z.bis }, DU.resp);
+      return Promise.all(teile.map(function (a) {
+        var params = {}, k;
+        for (k in a.params) params[k] = a.params[k];
+        params.p_url = url;
+        return UC.rpc(a.fn, params, { timeoutMs: 60000, signal: ab ? ab.signal : undefined });
+      }));
+    }).then(function (es) {
+      if (!es || nr !== DU.rnr) return;
+      var ok = es.every(function (x) { return x && x.ok; });
+      var p = ok ? DDx.zuResponses(es.map(function (x) { return x.daten; })) : null;
+      if (!p) {
+        if (window.console) console.warn("[url-detail] Antworten fuer " + url + ": " +
+          es.map(function (x) { return x && !x.ok ? duStr(x.fehler && x.fehler.message) : "ok"; }).join(", "));
+        duSetter("renderResponsesTable")({ instanceId: DU.ids.urt, __parseError: true });
+      } else {
+        var mk = duEigeneMarke();
+        p.instanceId = DU.ids.urt; p.isDark = duDunkel();
+        if (reqId != null) p.requestId = reqId;
+        if (mk) { p.brand_name = duStr(mk.name); p.brand_logo = duStr(mk.logo_url); }
+        duSetter("renderResponsesTable")(p);
+      }
+      duSetter("setResponsesTableLoading")(DU.ids.urt, "no");
+    });
+  }
+  function duAn(name, fn) { DU.slot.addEventListener(name, function (e) { fn(e.detail || {}); }); }
+  function duRespNeu(fn) { return function (d) { fn(d); DU.resp.requestId = null; duRespLaden(); }; }
+
+  if (UC.kernDrawer) UC.kernDrawer("url", {
+    aufbauen: function (ctx) {
+      var dk = duDunkel() ? "yes" : "no", mk = duEigeneMarke();
+      var urt = String(MARKUP.urt || "")
+        .split("__UUD_URT__").join(esc(DU.ids.urt)).split("__UUD_DARK__").join(dk)
+        .split("__UUD_BRAND__").join(esc(mk ? duStr(mk.name) : "")).split("__UUD_BRANDLOGO__").join(esc(mk ? duStr(mk.logo_url) : ""));
+      ctx.slot.innerHTML =
+        '<div class="uud-dw">' +
+          '<div class="uud-dw-leiste"><div class="up-root udr-root uud-dw-daten" data-instance="' + esc(DU.ids.daten) +
+            '" data-local="yes" data-isdark="' + dk + '"></div></div>' +
+          /* data-local: der Klick auf eine Marke oeffnet den Brand-Drawer selbst; ein Bubble-Ereignis
+             hat im Drawer aus core keinen Empfaenger (und meldete das sonst in der Konsole). */
+          '<div class="up-root uud-root uud-im-drawer" data-local="yes" data-instance="' + esc(DU.ids.seite) + '"></div>' +
+          '<div class="uud-dw-resp">' + urt + '</div>' +
+        '</div>';
+      DU.slot = ctx.slot; DU.kopf = ctx;
+      var r = ctx.slot.querySelector(".uud-root");
+      /* VOR initRoot: der erste render() muss schon wissen, dass er im Drawer steht. */
+      r.__uudKopf = ctx;
+      r.__uudNeuLaden = function () { duLaden(true); };
+      DU.root = r;
+      initRoot(r);
+      ctx.eigen.addEventListener("click", function (e) {
+        var b = e.target.closest ? e.target.closest("[data-uud-kopf]") : null;
+        if (b) duKopfKlick(b.getAttribute("data-uud-kopf"));
+      });
+      /* Neuer Zeitraum: Seite und Antworten neu (die Kennzahlen gelten fuer den Zeitraum). */
+      ctx.slot.addEventListener("change", function (e) {
+        if (!e.target || !e.target.classList || !e.target.classList.contains("uud-dw-daten")) return;
+        /* Nur ein WIRKLICH anderer Zeitraum: der Kalender meldet sich auch beim Einrichten. */
+        var z = duZeitraum();
+        if (z.von + "|" + z.bis === DU.zLetzt) return;
+        DU.resp.offset = 0;
+        DU.zLetzt = z.von + "|" + z.bis;
+        duLaden(false);
+        duRespLaden();
+      });
+      duAn("urt-urtSearch", function (d) {
+        DU.resp.suche = duStr(d.query); DU.resp.offset = 0;
+        DU.resp.requestId = d.requestId != null ? d.requestId : null;
+        duRespLaden();
+      });
+      duAn("urt-urtSort", duRespNeu(function (d) {
+        var o = duStr(d.order);
+        if (["run_at_desc", "run_at_asc", "rank_asc", "rank_desc", "sentiment_asc", "sentiment_desc"].indexOf(o) >= 0) DU.resp.order = o;
+        DU.resp.offset = 0;
+      }));
+      duAn("urt-urtPage", duRespNeu(function (d) {
+        var l = duNum(d.limit), o = duNum(d.offset);
+        if (l != null) DU.resp.limit = Math.max(1, Math.min(100, Math.round(l)));
+        if (o != null) DU.resp.offset = Math.max(0, Math.round(o));
+      }));
+      duAn("urt-urtFilter", duRespNeu(function (d) {
+        var ra = d.rank_active === true || d.rank_active === "true", sa = d.sent_active === true || d.sent_active === "true";
+        DU.resp.rankMin = ra ? duNum(d.rank_min) : null;
+        /* 20 heisst "20+": offenes Ende, kein p_rank_max (Vertrag Dashboard v1). */
+        DU.resp.rankMax = ra && duNum(d.rank_max) != null && duNum(d.rank_max) < 20 ? duNum(d.rank_max) : null;
+        DU.resp.sentMin = sa ? duNum(d.sent_min) : null;
+        DU.resp.sentMax = sa ? duNum(d.sent_max) : null;
+        DU.resp.offset = 0;
+      }));
+      duAn("urt-urtMentioned", duRespNeu(function (d) {
+        var l = isArr(d.brands) ? d.brands.map(duStr).filter(Boolean) : [];
+        DU.resp.firmen = l.length ? l : null; DU.resp.offset = 0;
+      }));
+      duAn("urt-urtBrand", duRespNeu(function (d) {
+        var v = duStr(d.brand_mentioned);
+        DU.resp.erwaehnt = v === "yes" || v === "no" ? v : "all"; DU.resp.offset = 0;
+      }));
+      duAn("urt-urtRowClick", function (d) {
+        var id = duStr(d.prompt_run_id).trim();
+        if (id && UC.drawerOeffnen) UC.drawerOeffnen("response", id, "url-detail");
+      });
+    },
+    zeigen: function (id) {
+      var url = duStr(id).trim();
+      if (!url) return;
+      if (url !== DU.url) {
+        /* Neue Adresse: Suche, Filter und Seite der Tabelle gehoeren zur vorigen. Sortierung und
+           Seitengroesse bleiben -- das sind Vorlieben, keine Auswahl. */
+        var alt = DU.resp;
+        DU.resp = duRespStart();
+        DU.resp.order = alt.order; DU.resp.limit = alt.limit;
+        DU.url = url;
+        try { duSetter("resetResponsesTable")(DU.ids.urt); } catch (e) {}
+      }
+      /* Erst wenn der Kalender steht (er richtet sich einen Takt nach dem Drawer ein), sonst ginge
+         der erste Abruf ohne Zeitraum hinaus und der zweite gleich hinterher. Hoechstens 1,5s;
+         fehlt date-range.js, laedt der Drawer ohne Zeitraum (die RPC nimmt ihre Vorgabe). */
+      var n = 0;
+      (function warten() {
+        var k = DU.slot && DU.slot.querySelector(".uud-dw-daten");
+        if (!(k && k.__udrCtrl) && n++ < 50) { setTimeout(warten, 30); return; }
+        var z = duZeitraum();
+        DU.zLetzt = z.von + "|" + z.bis;
+        duLaden(false);
+        duRespLaden();
+      })();
+    },
+    zu: function () {}
+  });
 
   if (UC.watchRoots) UC.watchRoots("uud-root", function () {
     [].forEach.call(document.querySelectorAll(".uud-root"), initRoot);

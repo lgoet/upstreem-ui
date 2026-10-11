@@ -125,18 +125,18 @@
          genannten Marken. Vorher standen Modell, Zeit, Market und Themen gemeinsam UNTER dem
          Titel, links und rechts verteilt -- die Vorlage trennt "wer und wann" (oben, klein) von
          "worueber" (unter dem Titel), und so liest sich der Titel als Erstes. */
-      '<div class="urd-head">' +
-        '<div class="urd-kpis"></div>' +
+      '<div class="urd-head up-dk">' +
+        '<div class="urd-kpis up-dk-meta"></div>' +
         /* role=button und tabindex, weil der Klick ein Ereignis feuert: ohne die zwei kann man den
            Titel mit der Tastatur nicht erreichen. */
-        '<h2 class="urd-prompt" role="button" tabindex="0"></h2>' +
+        '<h2 class="urd-prompt up-dk-titel" role="button" tabindex="0"></h2>' +
         '<div class="urd-tags"></div>' +
         /* DIE MARKEN als eigene Leiste auf leichtem Grund (v3): links wie viele, rechts welche.
            Was nicht in die Zeile passt, steht weiter hinter "+N more" (mentionsZeile). */
-        '<div class="urd-mrow" hidden>' +
+        '<div class="urd-mrow up-dk-leiste" hidden>' +
           /* Zahl und Wort in eigenen Elementen: der Sprachlauf von core uebersetzt Elemente, deren
              Text ein Katalogschluessel ist -- Zahl und Wort in einem waeren keiner. */
-          '<span class="urd-mrow-lbl"><span class="urd-mrow-n"></span><span class="urd-mrow-wort"></span></span>' +
+          '<span class="urd-mrow-lbl up-dk-zahl"><span class="urd-mrow-n up-dk-zahl-n"></span><span class="urd-mrow-wort"></span></span>' +
           '<div class="urd-mrow-box">' +
             /* Die Grundgroesse der Liste (32px), nicht is-lg: mit 40px standen die Marken groesser
                als die Ueberschriften der Abschnitte (12.10. angemahnt: "viel zu gross"). */
@@ -152,8 +152,8 @@
       '<div class="urd-sect urd-sect-shop" hidden>' +
         '<div class="urd-sec">' +
           '<div class="urd-sec-txt">' +
-            '<span class="urd-sec-title">Products</span>' +
-            '<span class="urd-sec-desc">Shopping products the model showed in this response</span>' +
+            '<span class="urd-sec-title up-dk-h2">Products</span>' +
+            '<span class="urd-sec-desc up-dk-unter">Shopping products the model showed in this response</span>' +
           '</div>' +
           '<div class="urd-shop-nav" hidden>' +
             '<button type="button" class="up-iconbtn urd-shop-prev" aria-label="Previous products">' + UC.icon("chevronLeft", 2) + '</button>' +
@@ -170,8 +170,8 @@
       '<div class="urd-sect urd-sect-ads" hidden>' +
         '<div class="urd-sec">' +
           '<div class="urd-sec-txt">' +
-            '<span class="urd-sec-title">Ads</span>' +
-            '<span class="urd-sec-desc">Sponsored placements shown with this response</span>' +
+            '<span class="urd-sec-title up-dk-h2">Ads</span>' +
+            '<span class="urd-sec-desc up-dk-unter">Sponsored placements shown with this response</span>' +
           '</div>' +
           '<div class="urd-shop-nav" hidden>' +
             '<button type="button" class="up-iconbtn urd-shop-prev" aria-label="Previous Ads">' + UC.icon("chevronLeft", 2) + '</button>' +
@@ -184,8 +184,8 @@
       '<div class="urd-sect urd-sect-body">' +
         '<div class="urd-sec">' +
           '<div class="urd-sec-txt">' +
-            '<span class="urd-sec-title">Full Response</span>' +
-            '<span class="urd-sec-desc">The complete answer as the model returned it</span>' +
+            '<span class="urd-sec-title up-dk-h2">Full Response</span>' +
+            '<span class="urd-sec-desc up-dk-unter">The complete answer as the model returned it</span>' +
           '</div>' +
           /* Der Knopf sitzt in der Zeile der Ueberschrift, nicht darunter -- .urd-sec ist schon
              eine Zeile mit space-between, der Platz rechts war frei.
@@ -215,8 +215,8 @@
       '<div class="urd-sect urd-sect-cites">' +
         '<div class="urd-sec">' +
           '<div class="urd-sec-txt">' +
-            '<span class="urd-sec-title">Citations</span>' +
-            '<span class="urd-sec-desc">What citations were used for this answer</span>' +
+            '<span class="urd-sec-title up-dk-h2">Citations</span>' +
+            '<span class="urd-sec-desc up-dk-unter">What citations were used for this answer</span>' +
           '</div>' +
           '<div class="urd-cites-tools">' +
           /* Der Schalter steht links neben dem Umschalter -- dieselbe Reihenfolge wie in den
@@ -502,7 +502,7 @@
       var zeit = UC.relativeTime(d.run_at);
       if (zeit) meta.push('<span class="urd-kpi-time" data-tip="' +
         esc(String(d.run_at || "")) + '">' + esc(zeit) + "</span>");
-      elKpis.innerHTML = meta.join('<span class="urd-kpi-sep" aria-hidden="true"></span>');
+      elKpis.innerHTML = meta.join('<span class="up-dk-sep" aria-hidden="true"></span>');
       /* Erst bauen, dann pruefen: topicChip laesst ein Thema ohne Namen weg, und eine Liste, in
          der keines einen Namen hat, ergab eine leere Huelle (:empty blendet die Zeile dann aus). */
       elTags.innerHTML = isArr(d.tags) ? d.tags.map(topicChip).join("") : "";
@@ -1902,6 +1902,7 @@
   /* Das Team kann beim Wiederherstellen aus der Adresse (?detail=response:...) noch fehlen: der
      Drawer geht dann auf, bevor Bubble das Team gesetzt hat. Bis zu 10s darauf warten. */
   function drTeam() {
+    if (UC.teamWarten) return UC.teamWarten(10000);
     var t = UC.getTeam ? UC.getTeam() : "";
     if (t || !UC.onTeamChange) return Promise.resolve(t || "");
     return new Promise(function (fertig) {
