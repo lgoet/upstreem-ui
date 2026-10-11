@@ -18013,8 +18013,10 @@
      #drawer-<art> sucht, steht er schon da. Darum auch die feste Liste hier und nicht erst die
      Anmeldung der Komponente: kommt ein ?detail=response:... frueher als response-detail.js,
      geht die Huelle trotzdem auf und zeigt ihr Skelett, bis die Datei da ist. */
+  /* breite: wie die Bubble-Gruppe vorher (12.10. vom Nutzer: die Drawer der zweiten Ebene,
+     url und response, waren 80 % breit). Unter 768 die ganze Seite (core.css). */
   var KERN_DRAWER = {
-    response: { label: "Response" }
+    response: { label: "Response", breite: "80vw" }
   };
   var KD = {};
   function kdFremd(art){
@@ -18038,6 +18040,7 @@
     /* tabindex -1: beim Oeffnen bekommt die Flaeche selbst den Fokus (WAI-ARIA fuer langen Inhalt:
        der Anfang, nicht der erste Knopf -- sonst springt der Bildschirmleser ans Ende des Kopfes). */
     el.setAttribute("tabindex", "-1");
+    if (cfg.breite) el.style.setProperty("--up-kdr-breite", cfg.breite);
     /* Zu heisst inert: die Flaeche steht nur ausserhalb des Bildes, und ohne das fuehrte die
        Tab-Taste in ihre Knoepfe. Nicht visibility -- das Kopf-Skript ersetzt jede eigene
        transition mit !important, und das Verstecken kaeme vor dem Hinausfahren. */

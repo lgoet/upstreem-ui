@@ -138,7 +138,9 @@
              Text ein Katalogschluessel ist -- Zahl und Wort in einem waeren keiner. */
           '<span class="urd-mrow-lbl"><span class="urd-mrow-n"></span><span class="urd-mrow-wort"></span></span>' +
           '<div class="urd-mrow-box">' +
-            '<div class="urd-ments up-mentlist is-lg"></div>' +
+            /* Die Grundgroesse der Liste (32px), nicht is-lg: mit 40px standen die Marken groesser
+               als die Ueberschriften der Abschnitte (12.10. angemahnt: "viel zu gross"). */
+            '<div class="urd-ments up-mentlist"></div>' +
             '<button type="button" class="urd-mrow-more" hidden></button>' +
           '</div>' +
         '</div>' +
@@ -490,15 +492,17 @@
       elPrompt.textContent = String(d.prompt_text || "");
       elPrompt.setAttribute("data-id", String(d.prompt_id || ""));
 
-      /* v3: die Meta-Zeile ueber dem Titel -- wer (Modell), wo (Market), wann. Getrennt durch
-         Abstand, nicht durch Punkte (CLAUDE.md 5). Die Themen stehen darunter in eigener Zeile. */
+      /* v3: die Meta-Zeile ueber dem Titel -- wer (Modell), wo (Market), wann. Dazwischen ein
+         feiner senkrechter Strich (12.10. angefordert: "subtile Separatoren"), kein Mittelpunkt
+         (CLAUDE.md 5). Ein eigenes Element und kein ::before am Chip: dort waere er ein Kind des
+         Chips und saesse in dessen Luecke vor dem Logo. */
       var meta = [];
       if (d.model) meta.push(UC.modelChip(d.model, { full: true }));
       if (d.market) meta.push(UC.marketChip(d.market));
       var zeit = UC.relativeTime(d.run_at);
       if (zeit) meta.push('<span class="urd-kpi-time" data-tip="' +
         esc(String(d.run_at || "")) + '">' + esc(zeit) + "</span>");
-      elKpis.innerHTML = meta.join("");
+      elKpis.innerHTML = meta.join('<span class="urd-kpi-sep" aria-hidden="true"></span>');
       /* Erst bauen, dann pruefen: topicChip laesst ein Thema ohne Namen weg, und eine Liste, in
          der keines einen Namen hat, ergab eine leere Huelle (:empty blendet die Zeile dann aus). */
       elTags.innerHTML = isArr(d.tags) ? d.tags.map(topicChip).join("") : "";

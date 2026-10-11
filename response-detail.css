@@ -32,10 +32,12 @@
    kein Strich, wie in der Kopfzeile der Antwortkarten. */
 /* 16px ist der Standardabstand der App zwischen zwei Angaben einer Kopfzeile. Der Trenner selbst
    traegt keinen eigenen Abstand -- er sitzt in der Luecke, die es ohnehin gibt. */
-/* v3: die Meta-Zeile UEBER dem Titel (Modell, Market, Zeit), ohne Trennstriche und ohne
-   Mittelpunkte (CLAUDE.md 5) -- 16px Abstand trennen genug. Die Themen stehen in eigener Zeile
-   unter dem Titel (.urd-tags). */
-.urd-kpis { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; min-height: 24px; }
+/* v3: die Meta-Zeile UEBER dem Titel (Modell, Market, Zeit). Seit dem 12.10. mit feinem
+   senkrechtem Strich dazwischen (.urd-kpi-sep): 1px in der Rahmenfarbe, 12 hoch -- so hoch wie
+   die Versalhoehe der 13er Schrift, damit er trennt, ohne als Zeichen gelesen zu werden. Kein
+   Mittelpunkt (CLAUDE.md 5). 12px Luecke je Seite statt 16 ohne Strich. */
+.urd-kpis { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; min-height: 24px; }
+.urd-kpi-sep { flex: 0 0 1px; width: 1px; height: 12px; background: var(--vc-border); }
 .urd-kpis:empty { display: none; }
 .urd-kpi-time { font-size: var(--up-fs-m); font-weight: 400; color: var(--vc-third); white-space: nowrap; }
 .urd-tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -67,7 +69,7 @@
 /* Ein Textknopf ohne Flaeche im Ruhezustand: er ist Nachsatz der Zeile, kein Werkzeug. Kein
    Segment-Knopf (.up-seg-btn), auch wenn der Pruefer ihn so liest: er steht allein, ohne Schiene
    und ohne aktiven Zustand -- und einen Textknopf mit Hover-Grund hat core nicht. */
-.urd-mrow-more { flex: 0 0 auto; height: var(--up-h-gross); padding: 0 10px; border: 0; border-radius: var(--up-r-m);
+.urd-mrow-more { flex: 0 0 auto; height: var(--up-h-btn); padding: 0 10px; border: 0; border-radius: var(--up-r-m);
   background: transparent; font: inherit; font-size: var(--up-fs-m); font-weight: 500; color: var(--vc-muted);
   cursor: pointer; white-space: nowrap; transition: background var(--up-t-1) ease, color var(--up-t-1) ease; }
 .urd-mrow-more:hover { background: var(--vc-bg); color: var(--vc-text); }
