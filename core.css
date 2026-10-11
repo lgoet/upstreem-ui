@@ -4159,6 +4159,10 @@
   scrollbar-gutter: stable; }
 .up-kdr-spalte { box-sizing: border-box;
   padding: 16px 20px calc(96px + env(safe-area-inset-bottom)); }
+/* Response Detail: doppelter Rand (12.10. angefordert, "padding left right verdoppeln") -- dort
+   ist der Inhalt ein Lesetext, und 20px an der Kante liessen ihn an den Rand gedrueckt wirken.
+   Auf dem Telefon gilt weiter der schmale Rand (unten). */
+.up-kdr-response .up-kdr-spalte { padding-left: 40px; padding-right: 40px; }
 .up-kdr-warte { display: flex; flex-direction: column; gap: 14px; padding-top: 8px; }
 .up-kdr-warte .up-kdr-sk { display: block; height: 16px; }
 .up-kdr-warte .up-kdr-sk.is-l { width: 88%; height: 28px; }
@@ -4210,7 +4214,7 @@
   .up-kdr-werkzeuge { grid-area: 1 / 3; justify-self: end; }
   .up-kdr-sep, .up-kdr-name { display: none; }
   .up-kdr-art { color: var(--vc-text); font-weight: 600; }
-  .up-kdr-spalte { padding-left: 16px; padding-right: 16px; }
+  .up-kdr-spalte, .up-kdr-response .up-kdr-spalte { padding-left: 16px; padding-right: 16px; }
 }
 /* Der Tarif als Pille (UC.planPilleHtml, 28.09. aus teams.css hierher, seit settings-billing sie
    auch zeigt). Der Grundton des Punktes steht HIER und nicht im JS: .up-sent-dot bringt keine

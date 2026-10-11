@@ -17435,18 +17435,24 @@
           (gemessen: 900ms ohne prompts-table.css, mit Zeilen, Karten und Zahl).
        2. EIN BILD MIT ROHEM MARKUP zwischen dem Einsetzen und dem ersten Lauf einer Komponente.
        3. SKELETT, DATEN, NOCHMAL SKELETT -- wenn eine Seite nachladen musste (Prompts: Gruppen).
-     Die Antwort ist EIN Ablauf fuer jede Seite: Kopf und Filterzeile kommen sofort, der Inhalt
-     wartet, bis seine Stylesheets da sind UND die ersten Daten (oder hoechstens AUFTRITT_WARTEN --
-     dann mit Skelett, ein langsamer Abruf soll nicht wie eine leere Seite aussehen). Danach kommt
-     alles in einem Zug, gestaffelt, nur ueber opacity und transform (laeuft auf dem Compositor).
+     Die Antwort ist EIN Ablauf fuer jede Seite: alles wartet, bis seine Stylesheets da sind (das
+     loest 1 und 2), und kommt dann in EINEM Zug, gestaffelt -- Kopf, Filterzeile, Inhalt --, nur
+     ueber opacity und transform (laeuft auf dem Compositor).
+     DER INHALT WARTET NICHT AUF DIE DATEN (12.10. gemeldet: "Topbar, Navigation, Filter fluessig,
+     dann deutlich merkbarer Delay, dann Hauptcontent -- der kommt doch eh ladend rein"). Bis dahin
+     wartete er bis zu 450ms auf den ersten Abruf; beim ersten Besuch einer Ansicht ist der nie so
+     schnell, die Luecke stand also JEDES Mal da, mitten in der Staffel. Jetzt faehrt er direkt
+     hinter dem Kopf ein, mit seinem Ladezustand, und die Daten ersetzen das Skelett an Ort und
+     Stelle. Ursache 3 (Skelett, Daten, Skelett) loest das Nachladen selbst, nicht der Auftritt.
      Die Kurve ist easeOutExpo wie auf mobbin.com, dem Massstab des Nutzers fuer Bewegung.
      Der Ansichtswechsel des Kopf-Skripts (viewfade, 200ms Deckkraft) braucht es damit fuer diese
      Seiten nicht mehr; fuer die Ansichten OHNE Seiten-Komponente traegt core.css denselben Auftritt
      ([id^="view-"].view-on:not(:has(.up-seite))). Der Kopf kann seine vier Zeilen also loswerden.
      makeAuftritt(root, { kopf: Selektor, inhalt: Selektor }) -> { start(), bereit() }
        start():  die Seite ist gerade sichtbar geworden (Aufbau oder Ansichtswechsel)
-       bereit(): die ersten Daten sind angewendet -- einmal genuegt, es rastet ein. */
-  var AUFTRITT_WARTEN = 450, AUFTRITT_STIL_MAX = 4000, AUFTRITT_STAFFEL = 50, AUFTRITT_WEG = 10;
+       bereit(): die ersten Daten sind angewendet. Haelt seit dem 12.10. nichts mehr auf (siehe
+                 oben); bleibt, damit die Seiten es weiter rufen koennen. */
+  var AUFTRITT_STIL_MAX = 4000, AUFTRITT_STAFFEL = 50, AUFTRITT_WEG = 10;
   var AUFTRITTE = [];
   function auftrittDauer(){
     var v = 0;
@@ -17612,11 +17618,10 @@
         stileBereit(function(){
           if (meine !== nr) return;
           stilDa = true;
+          /* Kopf und Inhalt in EINER Staffel: der Inhalt beginnt, wo der Kopf aufhoert (kopfN
+             Stufen spaeter), egal ob seine Daten schon da sind. */
           auftrittBewegen(kopf, 0);
-          versuchen();
-          /* Daten noch unterwegs: hoechstens AUFTRITT_WARTEN ab jetzt, dann mit Skelett. */
-          clearTimeout(uhr);
-          uhr = setTimeout(function(){ if (meine === nr) zeigen(); }, AUFTRITT_WARTEN);
+          zeigen();
         });
       },
       /* Ein Bild Luft: Diagramme zeichnen im naechsten Bild (Chart.js, rAF). Ohne sie kaeme der
