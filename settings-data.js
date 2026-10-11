@@ -53,7 +53,7 @@
      den Versandstand an der Einladung fuehrt (3.2): die Seite ruft keine Anlage-RPC mehr und zieht
      nach einem gescheiterten Versand nichts mehr zurueck. Die Kasse ist seit dem 11.10. deployt
      (create-team-checkout); das Portal bleibt die bisherige Funktion. */
-  var EDGE = { einladen: "team-invite-send", erneut: "team-invite-send", portal: "create-billing-portal-session", kasse: "create-team-checkout" };
+  var EDGE = { einladen: "team-invite-send", erneut: "team-invite-send", portal: "team-billing-portal", kasse: "create-team-checkout" };
 
   /* DER SCHALTER JE FUNKTION. Alles aus, bis der Vertrag fuer den jeweiligen Schritt steht und die
      echten Antworten geprueft sind (Auftrag 7: erst Lesen, dann Your Brand, Einladungen,
@@ -64,10 +64,11 @@
     meta: true, marke: true, mitglieder: true, einladungen: true, protokoll: true, abo: true, tarife: true,
     /* Schritt 2 (Your Brand speichern) gebaut am 11.10. (settings_v1_brand.sql, Vertrag 12). */
     markeSpeichern: true, logo: true, modelle: true,
-    einladen: false, erneut: false, zurueckziehen: false,
-    entfernen: false, rolle: false,
-    portal: false, kasse: false,
-    verlassen: false, loeschen: false
+    /* Schritte 3 bis 6 gebaut am 11.10. (settings_v1_rest.sql, Vertrag 13; Kasse 9.2/10.5). */
+    einladen: true, erneut: true, zurueckziehen: true,
+    entfernen: true, rolle: true,
+    portal: true, kasse: true,
+    verlassen: true, loeschen: true
   };
   function live(art) { return LIVE[art] === true && !!(FN[art] || EDGE[art]); }
 
@@ -168,11 +169,20 @@
   }
   /* Einladen und erneut senden: Edge team-invite-send (6.4). Nur Kennungen und Adresse -- Link,
      Token und Text baut die Funktion selbst. */
-  function einladen(team, mail, rolle) {
+  /* base_url: wohin der Link der Mail zeigt (Vertrag 13.1). Die Funktion nimmt nur eigene Adressen
+     (app.upstreem.ai, auch /version-test) und faellt sonst auf ihren Standard zurueck -- also darf
+     die Seite ihre eigene schicken: auf der Testfassung fuehrt der Link dann in die Testfassung. */
+  function einladen(team, mail, rolle, basis) {
     rolle = str(rolle).toLowerCase();
-    return { art: "einladen", name: EDGE.einladen, body: { team_id: str(team), email: mailNorm(mail), role: ROLLEN_EINLADEN.indexOf(rolle) >= 0 ? rolle : "member" } };
+    var b = { team_id: str(team), email: mailNorm(mail), role: ROLLEN_EINLADEN.indexOf(rolle) >= 0 ? rolle : "member" };
+    if (str(basis)) b.base_url = str(basis);
+    return { art: "einladen", name: EDGE.einladen, body: b };
   }
-  function erneut(team, id) { return { art: "erneut", name: EDGE.erneut, body: { team_id: str(team), invite_id: str(id) } }; }
+  function erneut(team, id, basis) {
+    var b = { team_id: str(team), invite_id: str(id) };
+    if (str(basis)) b.base_url = str(basis);
+    return { art: "erneut", name: EDGE.erneut, body: b };
+  }
   function zurueckziehen(team, id) { return anfrage("zurueckziehen", { p_team: str(team), p_invite_id: str(id) }); }
   function entfernen(team, uid) { return anfrage("entfernen", { p_team: str(team), p_user_id: str(uid) }); }
   function rolle(team, uid, r) {
@@ -182,7 +192,13 @@
   function verlassen(team, name) { return anfrage("verlassen", { p_team: str(team), p_confirm_name: str(name) }); }
   function loeschen(team, name) { return anfrage("loeschen", { p_team: str(team), p_confirm_name: str(name) }); }
   /* Edge: nur Kennungen, nie Adresse, Preis oder Text (Auftrag 4.4.1, 4.6.2). */
-  function portal(team) { return { name: EDGE.portal, body: { team_id: str(team) } }; }
+  /* Portal (Vertrag 13.3): return_path nach denselben Regeln wie die Kasse. */
+  function portal(team, rueckweg) {
+    var b = { team_id: str(team) };
+    rueckweg = str(rueckweg);
+    if (/^\/(?!\/)/.test(rueckweg) && rueckweg.length <= 300) b.return_path = rueckweg;
+    return { name: EDGE.portal, body: b };
+  }
   /* Kasse (9.2): billing_plan_id und 'monthly'|'yearly', NIE ein Preis. return_path ist ein Pfad
      der App (die Funktion setzt APP_URL davor); die Seite schickt den, auf dem sie gerade steht. */
   function kasse(team, plan, takt, rueckweg) {
@@ -331,7 +347,7 @@
     var m = meta(d), x = istObjekt(d) ? (istObjekt(d.row) ? d.row : d) : {};
     var naechstes = str(m.next_team_id || x.next_team_id);
     return { naechstesTeam: UUID.test(naechstes) ? naechstes : "", uebrig: num(m.remaining_teams != null ? m.remaining_teams : x.remaining_teams),
-             geloeschtAm: str(m.deleted_at || x.deleted_at) };
+             geloeschtAm: str(m.deleted_at || x.deleted_at), endgueltigAm: str(x.purge_after || m.purge_after) };
   }
   /* WEITERLEITEN NUR ZU STRIPE (Auftrag 4.6): die Adresse kommt aus einer Antwort, und ein
      Weiterleiter, der jedes Ziel nimmt, waere ein offenes Tor fuer Phishing mit unserem Namen. */

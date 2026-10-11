@@ -844,3 +844,122 @@ Echte Antworten: `settings_v1_brand_echte_antworten.json`.
 | 22023 | `team_models_invalid` | Schlüssel |
 | 22023 | `team_models_limit` | Maximum |
 | PT429 | `settings_rate_limited` / `team_rate_limited` | Sekunden |
+
+## 13. Schritte 3 bis 6 gebaut: Einladen, Mitglieder, Billing-Portal, Verlassen und Löschen (`settings_v1_rest.sql`, 11.10.2026)
+Echte Antworten: `settings_v1_rest_echte_antworten.json` (82 Fälle im Rollback, alle wie erwartet). Rückweg: `settings_v1_rest_rueckweg.sql`.
+
+### 13.1 Einladen: nur über die Edge Function `team-invite-send` (deployt, verify_jwt an)
+| Aufruf (POST, Nutzer-JWT) | Wirkung |
+|---|---|
+| `{team_id, email, role: 'member'\|'admin', base_url?}` | neu einladen und Mail senden |
+| `{team_id, invite_id, base_url?}` | erneut senden (neuer Link, 7 Tage ab jetzt) |
+
+- **Erfolg 200:** `{success:true, invite_id, sent_at, unchanged, send_state, resend_count, expires_at}`.
+- **`unchanged:true`:** Für die Adresse gibt es schon eine offene Einladung. Es geht keine Mail raus; „erneut senden“ läuft mit `invite_id`.
+- **Fehler:** `{success:false, error, message, code, hint, invite_id?}`, HTTP wie in 10.4, dazu:
+  - 402 `team_access_<state>`: kein Zugang.
+  - 409 `team_invite_pending` (hint `other_invite`): Eine abgelaufene Einladung soll erneut raus, es gibt aber schon eine neuere offene.
+  - 429 `team_invite_rate_limited` (hint `max`): fünfmal erneut gesendet.
+  - `team_invite_send_failed`: hint `create` heißt, die Einladung ist verworfen (`send_failed`) und die Adresse sofort neu einladbar. Hint `resend` heißt, der alte Link gilt weiter.
+- **`base_url`:** nur eigene Adressen (`https://app.upstreem.ai` oder `…/version-test`); sonst Standard `https://app.upstreem.ai`. Der Link lautet `<base>/invite?token=<64 hex>`. Annehmen wie bisher über `get_team_invite_by_token_v3` / `accept_team_invite_by_token_v2`.
+- **Grenzen** (Datenbank):
+  - 50 offene je Team;
+  - 20 neue je Team und Tag;
+  - 30 je Nutzer und Tag;
+  - erneut senden frühestens 5 Minuten nach dem letzten Versand, höchstens 5-mal.
+- **Erneut senden** geht auch für abgelaufene Einladungen.
+- **Zwei Links:** Bis die neue Mail sicher raus ist, gilt der alte Link weiter; danach nur noch der neue.
+- **Protokoll:** `member_invited` bzw. `invite_resent` erst nach bestätigtem Versand; `invite_send_failed` bei Ablehnung.
+
+### 13.2 RPCs (alle `security definer`, Nutzer aus dem JWT)
+| Funktion | Eingang | Antwort |
+|---|---|---|
+| `team_invite_revoke_v1` | `p_team, p_invite_id` | `{meta{team_id}, row}` (Einladungszeile) |
+| `team_invites_v1` (ersetzt, gleiche Form) | `p_team, p_status?` | jetzt mit `sent_at`; `send_state` ist `sent`, `unknown` oder `failed` und kommt aus dem echten Versandstand |
+| `team_member_remove_v1` | `p_team, p_user_id` | wie `team_members_v1` |
+| `team_member_role_v1` | `p_team, p_user_id, p_role 'member'\|'admin'\|'owner'` | wie `team_members_v1`, dazu `meta.unchanged` |
+| `team_leave_v1` | `p_team, p_confirm_name` | `{meta{team_id}, row{left, remaining_teams, next_team_id}}` |
+| `team_delete_v1` | `p_team, p_confirm_name` | `{meta{team_id}, row{deleted, purge_after, stripe_cancel, remaining_teams, next_team_id}}` |
+| `billing_portal_prepare_v1` | nur über Edge Function `team-billing-portal` | – |
+| `team_invite_create_v1`, `team_invite_resend_v1` | nur über Edge Function `team-invite-send` | – |
+
+**Regeln:**
+
+Einladung zurückziehen:
+- Erlaubt ist das owner und admin.
+- Das geht auch ohne Zugang.
+
+Mitglied entfernen:
+- Ein owner entfernt jeden außer sich selbst.
+- Ein admin entfernt nur member.
+- Der letzte owner bleibt.
+
+Rolle ändern:
+- Ein admin ändert member↔admin in beide Richtungen, auch bei anderen admins.
+- Nicht erlaubt sind die eigene Rolle, owner und das Ernennen eines owners.
+- Ein owner ändert alles außer sich selbst.
+- Wer zum owner gemacht wird, braucht eine frische Anmeldung (≤ 15 Minuten, `amr`).
+- Das Protokoll schreibt `owner_transferred` bzw. `role_changed`.
+
+Verlassen:
+- Alle Rollen dürfen verlassen.
+- Der Teamname muss bestätigt werden; Groß- und Kleinschreibung sowie Leerzeichen am Rand zählen nicht.
+- Der letzte owner bekommt PT409 `team_last_owner` mit hint `transfer_or_delete`.
+
+Löschen:
+- Löschen darf nur ein owner.
+- Nötig sind der bestätigte Name und eine frische Anmeldung.
+- Das Team wird weich gelöscht und nach 30 Tagen endgültig.
+- Ein laufendes Stripe-Abo wird gekündigt (`stripe_cancel`).
+
+Nach Verlassen oder Löschen:
+- `next_team_id` ist das nächste Team des Nutzers, ein nicht gelöschtes, oder `null`.
+- `user_settings.last_team_id` ist schon gesetzt.
+
+### 13.3 Billing-Portal: Edge Function `team-billing-portal` (deployt, verify_jwt an)
+- **Aufruf:** `{team_id, return_path?}`. `return_path` folgt denselben Regeln wie bei der Kasse (10.5); Standard ist `/?view=settings&st=billing`.
+- **Erfolg 200:** `{success:true, url, portal_url, return_url, team_id}`.
+- **Fehler:**
+  - 409 `billing_no_customer` (hint `checkout`): Das Team hat noch nie bezahlt, also zur Kasse.
+  - 403 `team_role_required`.
+  - 429 `billing_rate_limited`: 5 je Minute, hint Sekunden.
+  - 502 `billing_portal_failed`.
+- **Ohne Zugang:** Das Portal ist auch ohne Zugang erreichbar, damit die Zahlung repariert werden kann.
+
+### 13.4 Fehlercodes neu
+| SQLSTATE | message | hint |
+|---|---|---|
+| PT403 | `settings_reauth_required` | Minuten (15) |
+| PT409 | `team_cannot_remove_self` | `team_leave_v1` |
+| PT409 | `team_cannot_change_self` | – |
+| PT409 | `team_last_owner` | `transfer_or_delete` beim Verlassen |
+| PT409 | `team_already_member` | – |
+| PT409 | `team_invite_not_pending` | aktueller Status |
+| PT409 | `team_invite_pending` | `other_invite` |
+| PT404 | `team_member_not_found`, `team_invite_not_found` | – |
+| 22023 | `team_confirm_name_mismatch` | `p_confirm_name` |
+| 22023 | `team_invalid_email`, `team_invalid_role`, `team_invalid_param` | Feld |
+| PT429 | `team_invite_rate_limited` | Sekunden oder `max` |
+| PT429 | `team_rate_limited` | Sekunden (20 Änderungen je Minute: Rolle, Entfernen, Zurückziehen, Verlassen, Löschen) |
+| PT429 | `billing_rate_limited` | Sekunden (Portal, 5 je Minute) |
+| PT409 | `billing_no_customer` | `checkout` |
+
+### 13.5 Bekannte Grenzen
+- **Doppelklick auf „erneut senden“:** Zwei gleichzeitige Aufrufe können zwei Mails schicken; dann gilt nur der Link der zuletzt bestätigten. Die Seite sperrt den Knopf, solange der Aufruf läuft.
+- **Versand unklar** (`team_invite_send_unknown`, z. B. Timeout bei Resend): Die Einladung steht mit `send_state:'unknown'`. Die Seite zeigt „Zustellung unklar“ und bietet „erneut senden“ an (nach 5 Minuten).
+
+## 14. Plan-Limits hart (`plan_limits_v1.sql`, 11.10.2026)
+**Regel:** Wechselt ein Team den Plan, wird sofort pausiert, was über den neuen Grenzen liegt. Die zuletzt hinzugefügten Einträge gehen zuerst. Ausgelöst wird das durch einen Trigger auf `app.team.billing_plan_id`, also auch bei Stripe-Downgrades.
+
+| Bereich | Grenze | „zuletzt hinzugefügt“ | Pausieren heißt |
+|---|---|---|---|
+| Wettbewerber | `competitors_max_active` | Beginn der offenen Tracking-Periode | ins Archiv, `deactivated_reason = 'plan_limit'` |
+| Prompts | `prompts_per_day` (aktive) | `created_at` | `is_active = false`, `plan_paused_at` gesetzt; Zeitplan wird mit abgeschaltet |
+| Modelle | `models_max_active`, mindestens 1 bleibt | `updated_at` | `enabled = false`, `plan_paused_at` gesetzt |
+
+- **Nichts wird gelöscht,** die Historie bleibt.
+- **Upgrade:** Ein Upgrade holt nichts automatisch zurück. Der Kunde aktiviert selbst, wie bisher über Brands und Prompts.
+- **Hinweis in der Oberfläche:** Die neuen Felder erlauben einen Hinweis wie „wegen Plan-Limit pausiert“. Das ist optional.
+- **Protokoll:** `brand_activity_log` (deactivate, `details.reason = 'plan_limit'`), `prompt_activity_log` (`prompts_plan_limit_paused`) und `team_audit_log` (`models_changed` mit `reason`).
+- **Von Hand:** `select app._plan_limits_enforce_v1('<team>', true)` zeigt, was passieren würde; mit `false` wird es ausgeführt. Das geht nur mit service_role bzw. im SQL Editor.
+- **Angewendet auf upstreem:** Kompyte und Finseo sind pausiert. Allianz (12 von 10) bleibt, bis sich sein Plan ändert.

@@ -710,15 +710,24 @@
         }
         return kopf + state.invites.map(function (v, i) {
           var alt = abgelaufen(v.expires_at);
+          /* ZUSTELLUNG UNKLAR (send_state 'unknown', Settings v1 13.5): die Einladung steht, aber
+             ob die Mail ankam, weiss niemand -- das sagt die Zeile an der Stelle des Ablaufdatums,
+             der Ausweg ist Resend daneben. */
+          var unklar = String(v.send_state || "").toLowerCase() === "unknown";
           return '<div class="up-row" data-uto-invrow="' + i + '">' +
             '<div class="up-td"><span class="uto-inv-mail">' +
-              esc(feld(v.invited_email) || "–") + '</span></div>' +
+              esc(feld(v.invited_email) || "–") + '</span>' +
+              /* Im schmalen Fenster ist die Datumsspalte weg (is-vnarrow) -- dort steht "Delivery
+                 unclear" unter der Adresse, sonst bliebe es auf dem Telefon unsichtbar. */
+              (unklar && !alt ? '<span class="uto-inv-state is-unklar uto-inv-zusatz">' + esc(UC.t("Delivery unclear")) + '</span>' : '') +
+            '</div>' +
             '<div class="up-td uto-role">' +
               '<span class="up-entchip is-static"><span class="uto-rolelbl">' +
                 esc(rolleName(v.invited_role)) + '</span></span>' +
             '</div>' +
-            '<div class="up-td uto-when"><span class="uto-inv-state' + (alt ? " is-expired" : "") +
-              '">' + (alt ? esc(UC.t("expired")) : esc(fmtDate(feld(v.expires_at)))) + '</span></div>' +
+            '<div class="up-td uto-when"><span class="uto-inv-state' + (alt ? " is-expired" : (unklar ? " is-unklar" : "")) + '"' +
+              (unklar && !alt ? ' data-tip="' + esc(UC.t("We couldn't confirm that the email arrived. Use Resend.")) + '"' : "") +
+              '>' + (alt ? esc(UC.t("expired")) : (unklar ? esc(UC.t("Delivery unclear")) : esc(fmtDate(feld(v.expires_at))))) + '</span></div>' +
             '<div class="up-td uto-inv-by">' + esc(feld(v.created_by_email) || "–") + '</div>' +
             (mitAkt ? invZelle(i) : "") +
           '</div>';

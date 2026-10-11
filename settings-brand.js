@@ -1252,7 +1252,11 @@
           '</div>' +
           '<div class="usb-dlg-body">' +
             '<p class="usb-dlg-sub">' + (isDel
-              ? "This deletes the workspace and everything in it, for every member. It cannot be undone."
+              /* Seit dem 11.10. wird weich geloescht (Settings v1 9.2/13.2): sofort weg fuer alle,
+                 endgueltig nach 30 Tagen, bis dahin nur ueber den Support zurueck. "cannot be
+                 undone" stimmte damit nicht mehr -- und genau das zu wissen kann jemandem den
+                 Tag retten, der aus Versehen geloescht hat. */
+              ? "This removes the workspace and everything in it for every member. It is deleted for good after 30 days. Until then, only our support can restore it."
               : "You lose access to this workspace. Other members keep theirs.") + '</p>' +
             '<div class="usb-dlg-field">' +
               '<label class="usb-dlg-lbl" for="usb-dlg-in">Type <b>' + esc(team) + '</b> to confirm</label>' +
@@ -1274,7 +1278,10 @@
       var go = dlg.querySelector("[data-dlg-go]");
       setTimeout(function(){ try { input.focus(); } catch(e){} }, 60);
 
-      function matches(){ return input.value.trim() === String(team).trim(); }
+      /* Gross/klein zaehlt nicht (11.10., wie der Server: team_leave_v1/team_delete_v1 vergleichen
+         getrimmt und ohne Gross/klein) -- sonst lehnte der Dialog einen Namen ab, den die
+         Datenbank angenommen haette. */
+      function matches(){ return input.value.trim().toLowerCase() === String(team).trim().toLowerCase(); }
       function disarm(){
         armed = false;
         if (armTimer){ clearTimeout(armTimer); armTimer = null; }

@@ -172,7 +172,10 @@
 /* Der Zustand einer Einladung: pending / expired. Zwei Zustaende, zwei Toene -- expired ist keine
    Warnung, sondern eine Feststellung, also die dritte Farbe und kein Rot. */
 .uto-inv-state { font-size: 12px; font-weight: 500; color: var(--vc-muted); }
-.uto-inv-state.is-expired { color: var(--vc-third); }
+/* Abgelaufen und Zustellung unklar (11.10.): beide sagen "hier stimmt etwas nicht", gleich leise. */
+.uto-inv-state:is(.is-expired, .is-unklar) { color: var(--vc-third); }
+.uto-root:not(.is-vnarrow) .uto-inv-zusatz { display: none; }
+.uto-root.is-vnarrow .uto-inv-zusatz { display: block; margin-top: 2px; }
 .uto-inv-by { color: var(--vc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Zwei Knoepfe statt eines Punktmenues -- so vorgegeben. Das Bauteil ist .up-btn-sec.up-rowbtn aus
    core (24px, Radius 7, Zeichen 13), derselbe kleine Zeilenknopf wie "Show Pages" in der

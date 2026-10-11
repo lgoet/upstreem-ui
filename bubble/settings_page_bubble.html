@@ -7,12 +7,15 @@
   (settings-brand, team-orga, settings-billing) im LOKALEN Modus -- dieselben Bausteine an anderen
   Orten der App bleiben davon unberuehrt.
 
-  ── STAND: VORSCHLAG, VERLINKT WIRD SCHRITT FUER SCHRITT ──────────────────────────────────────
-  Auftrag: bubble/settings_db_auftrag.md, Vorschlag des DB-Chats: bubble/settings_v1_vorschlag.md
-  (Abschnitt 9 geht vor), Rueckmeldung: bubble/settings_db_rueckmeldung.md. Die Funktionsnamen dort sind der
-  Vorschlag; jede Funktion hat in settings-data.js (LIVE) ihren eigenen Schalter. Solange einer aus
-  ist, ruft die Seite die Funktion NICHT und sagt es sichtbar (Lesefehler im Baustein bzw. "This
-  isn't available yet"). Reihenfolge der Schritte: Auftrag, Abschnitt 7.
+  ── STAND (11.10. abends): ALLE SCHRITTE VERLINKT ─────────────────────────────────────────────
+  Vertrag: bubble/settings_v1_vorschlag.md (Abschnitte 9-13 gehen vor), Lieferung des DB-Chats in
+  bubble/settings_11_10/. EINSPIELEN (ueber den DB-Chat bzw. Lukas), in dieser Reihenfolge:
+      1. settings_v1_lesen.sql     Lesen (Schritt 1)
+      2. settings_v1_brand.sql     Your Brand und Modelle speichern (Schritt 2)
+      3. settings_v1_rest.sql      Einladen, Mitglieder, Portal, Verlassen, Loeschen (Schritte 3-6)
+  Edge Functions (deployt): team-invite-send, team-billing-portal, create-team-checkout.
+  Die Seite ruft NICHT mehr: create_team_invite_v1, send-team-invite, create-billing-portal-session,
+  delete_team_v3 -- die bleiben fuer die alte Bubble-Ansicht stehen, bis sie ersetzt ist.
 
   ── Was Bubble danach NICHT mehr tut (erst NACH dem letzten Schritt umstellen) ──────────────────
   In der Settings-Ansicht entfallen: der Seitenkopf settings_header samt sphNav, die Workflows
@@ -33,8 +36,12 @@
         window.setSettingsPageTab && window.setSettingsPageTab("billing");
   - Rueckfragen: Entfernen, jemanden zum Owner machen, Owner-Rechte abgeben, Einladung
     zurueckziehen; Verlassen und Loeschen mit getipptem Teamnamen (Loeschen mit zweitem Klick).
-  - Nach Verlassen/Loeschen: zur Seite "signup" (wie bisher), mit /version-test/ auf der
-    Testfassung. Anders mit data-nach-austritt="<seite>".
+  - Nach Verlassen/Loeschen: gibt es ein naechstes Team, auf die Startseite der App (die DB hat es
+    als letztes Team gesetzt); sonst auf "signup" (anders mit data-nach-austritt="<seite>"). Mit
+    /version-test/ auf der Testfassung.
+  - Owner vergeben und Team loeschen brauchen eine Anmeldung, die hoechstens 15 Minuten alt ist.
+    Sonst zeigt die Seite "Please sign in again" mit "Log out" -- das ruft den Workflow der
+    Seitenleiste (bubble_fn_usnLogout), denselben wie "Log out" dort.
   - "Edit brand": der Marken-Editor #drawer-companysettings fuer die eigene Marke.
   - Manage billing und Tarifwahl: im selben Tab zu Stripe, NUR zu billing.stripe.com bzw.
     checkout.stripe.com. Tarifwahl: Kasse (create-team-checkout); laeuft schon ein Abo, das Portal.
@@ -50,7 +57,7 @@
 
   ── Umstellen: erst parallel, dann tauschen ───────────────────────────────────────────────────
   1. Das Element auf eine Test-Ansicht stellen und neben der alten Settings-Ansicht vergleichen.
-  2. Erst wenn ALLE Schritte verlinkt sind: in #view-settings die alten Elemente (Seitenkopf, Your
-     Brand, Team Organisation, Billing) samt ihrer Workflows durch DIESES eine Element ersetzen.
+  2. Stimmt alles: in #view-settings die alten Elemente (Seitenkopf, Your Brand, Team
+     Organisation, Billing) samt ihrer Workflows durch DIESES eine Element ersetzen.
 -->
 <div class="up-root uss-root" data-instance="settings_page"></div>

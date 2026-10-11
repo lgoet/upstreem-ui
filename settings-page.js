@@ -73,6 +73,13 @@
   function fehlerSatz(erg, wobei) {
     var m = D.meldung(erg), h = D.hinweis(erg), n = D.hinweisZahl(erg);
     if (/no_own_brand/.test(m)) return { text: t("Your brand isn't set up yet"), desc: t("Please contact support.") };
+    if (/invite_send_failed/.test(m)) return h === "resend"
+      ? { text: t("The email could not be sent"), desc: t("The previous link still works. Please try again later.") }
+      : { text: t("This address couldn't receive the invite"), desc: t("Check the address and try again.") };
+    if (/invite_rate_limited/.test(m) && h === "max") return { text: t("This invite was sent five times already"), desc: t("Revoke it and invite the address again.") };
+    if (/invite_pending/.test(m) && h === "other_invite") return { text: t("A newer invite for this address is pending"), desc: t("Use Resend on that invite.") };
+    if (/cannot_change_self/.test(m)) return { text: t("You can't change your own role"), desc: "" };
+    if (/billing_portal_failed/.test(m)) return { text: t("Billing could not be opened"), desc: t("Please try again in a moment.") };
     if (/team_deleted/.test(m)) return { text: t("This team has been deleted"), desc: t("Switch to another team to continue.") };
     if (/cannot_remove_self|cannot kick self/.test(m)) return { text: t("You can't remove yourself"), desc: t("Use Leave team instead.") };
     if (/invite_send_unknown/.test(m)) return { text: t("We couldn't confirm that the email went out"), desc: t("Check the pending invites and resend if needed.") };
@@ -113,16 +120,40 @@
     if (/timeout|network/.test(m)) return { text: wobei || t("That didn't work"), desc: t("Check your connection and try again.") };
     return { text: wobei || t("That didn't work"), desc: t("Please try again.") };
   }
-  function fehlerToast(erg, wobei) { var f = fehlerSatz(erg, wobei); toast(f.text, "error", f.desc); }
+  function fehlerToast(erg, wobei) {
+    if (/reauth_required/.test(D.meldung(erg))) { reauthDialog(); return; }
+    var f = fehlerSatz(erg, wobei); toast(f.text, "error", f.desc);
+  }
+  /* NEU ANMELDEN (settings_reauth_required, Vertrag 13.2): Owner vergeben und Team loeschen
+     brauchen eine Anmeldung, die hoechstens 15 Minuten alt ist. Abmelden laeuft in dieser App
+     ueber den Workflow der Seitenleiste (usnLogout) -- dieselbe Handlung wie "Log out" dort. Fehlt
+     er, sagt der Dialog, wo es geht, statt einen Knopf anzubieten, der nichts tut. */
+  function reauthDialog() {
+    var abmelden = UC.resolveBubbleFn ? UC.resolveBubbleFn("bubble_fn_usnLogout") : null;
+    if (!UC.makeModal) { toast(t("Please sign in again"), "neutral", t("Log out, sign in again, then repeat this step.")); return; }
+    UC.makeModal({
+      titel: "Please sign in again",
+      inhaltHtml: '<div class="up-modal-saetze">' +
+        '<p class="up-modal-hinweis">' + esc(t("For your security, deleting a team and making someone an owner need a sign-in from the last 15 minutes.")) + '</p>' +
+        '<p class="up-modal-hinweis">' + esc(typeof abmelden === "function" ? t("Log out, sign in again, then repeat this step.") : t("Use Log out in the sidebar, sign in again, then repeat this step.")) + '</p></div>',
+      knoepfe: typeof abmelden === "function" ? [
+        { id: "abbrechen", text: "Cancel", art: "sec" },
+        { id: "ok", text: "Log out", art: "pri", aktion: function () { try { abmelden(JSON.stringify({ action: "logout" })); } catch (e) {} } }
+      ] : [{ id: "ok", text: "OK", art: "pri" }]
+    });
+  }
   /* Was noch nicht verlinkt ist (settings-data.js, LIVE), sagt es -- nie ein stiller Knopf. */
   function nochNicht() { toast(t("This isn't available yet"), "neutral", t("It comes with the next update of this page.")); }
 
   /* Nach dem Verlassen oder Loeschen: auf eine Seite der APP, nie auf eine Adresse aus einer
      Antwort. Bubble legt Testfassungen unter /version-test/ ab -- der Praefix bleibt. */
+  function versionsPfad() { var m = /^\/version-[a-z0-9_-]+(?=\/|$)/i.exec(window.location.pathname); return m ? m[0] : ""; }
+  /* Die Adresse der App fuer Links in Mails (team-invite-send base_url): Ursprung plus Testfassung. */
+  function appBasis() { return window.location.origin + versionsPfad(); }
   function zurAppSeite(ziel) {
-    ziel = /^[a-z0-9_-]{1,40}$/i.test(ziel) ? ziel : "signup";
-    var basis = /^\/version-[a-z0-9_-]+\//i.test(window.location.pathname) ? window.location.pathname.split("/").slice(0, 2).join("/") + "/" : "/";
-    window.location.assign(basis + ziel);
+    /* "" = die Startseite der App (dort gilt das Team aus user_settings.last_team_id). */
+    ziel = ziel === "" ? "" : (/^[a-z0-9_-]{1,40}$/i.test(ziel) ? ziel : "signup");
+    window.location.assign(versionsPfad() + "/" + ziel);
   }
 
   function initRoot(root) {
@@ -555,10 +586,15 @@
         usbLaden(true);
         return schreiben(loeschen ? D.loeschen(team(), str(d.team_name)) : D.verlassen(team(), str(d.team_name))).then(function (erg) {
           if (!erg.ok) { usbLaden(false); fehlerToast(erg, loeschen ? t("The team could not be deleted") : t("You could not leave the team")); return; }
-          toast(loeschen ? t("Team deleted") : t("You left the team"), "success");
+          /* Wohin danach (Vertrag 13.2): ins naechste Team des Nutzers -- die DB hat es schon als
+             letztes Team gesetzt, die Startseite oeffnet es --, ohne weiteres Team in die
+             Team-Anlage (data-nach-austritt, Vorgabe signup). */
+          var z = D.zuAustritt(erg.daten), am = z.endgueltigAm && UC.fmtDate ? UC.fmtDate(z.endgueltigAm) : "";
+          toast(loeschen ? t("Team deleted") : t("You left the team"), "success",
+                loeschen ? (am ? t("It is deleted for good on {date}. Until then, support can restore it.").replace("{date}", am) : t("It is deleted for good after 30 days.")) : "");
           lader.leeren();
-          var ziel = str(root.getAttribute("data-nach-austritt")).trim() || "signup";
-          setTimeout(function () { zurAppSeite(ziel); }, 600);
+          var ziel = z.naechstesTeam ? "" : (str(root.getAttribute("data-nach-austritt")).trim() || "signup");
+          setTimeout(function () { zurAppSeite(ziel); }, 1500);
         });
       });
     }
@@ -589,7 +625,7 @@
       var grund = D.mailPruefen(d.email, UC.mailOk);
       if (grund) { einladungAntwort(false, t(MAIL_SATZ[grund] || MAIL_SATZ.form)); return; }
       if (!D.live("einladen")) { einladungAntwort(false, t("Inviting isn't available here yet.")); return; }
-      var e = D.einladen(team(), d.email, d.role), adresse = e.body.email;
+      var e = D.einladen(team(), d.email, d.role, appBasis()), adresse = e.body.email;
       if (einmal("team", function () {
         return edge("einladen", e).then(function (erg) {
           if (!erg.ok && versandUnklar(erg)) {
@@ -614,7 +650,7 @@
       if (!teamGleich(str(d.team_id))) { teamGewechselt(); return; }
       if (!D.live("erneut")) { nochNicht(); return; }
       einmal("team", function () {
-        return edge("erneut", D.erneut(team(), id)).then(function (erg) {
+        return edge("erneut", D.erneut(team(), id, appBasis())).then(function (erg) {
           if (!erg.ok) {
             var f = fehlerSatz(erg, t("The invite could not be sent again"));
             toast(f.text, versandUnklar(erg) ? "neutral" : "error", f.desc);
@@ -630,7 +666,8 @@
       einmal("team", function () {
         return schreiben(a).then(function (erg) {
           if (!erg.ok) { fehlerToast(erg, wobei); teamNeu(false); return; }
-          toast(ok, "success");
+          var gleich = erg.daten && erg.daten.meta && erg.daten.meta.unchanged === true;
+          if (gleich) toast(t("Nothing changed"), "neutral"); else toast(ok, "success");
           teamNeu(mitMeta);
         });
       });
@@ -669,7 +706,17 @@
         });
       });
     }
-    function zumPortal() { zuStripe("portal", D.portal(team()), t("Billing could not be opened")); }
+    /* Portal (Vertrag 13.3). Ohne Stripe-Kunden (409 billing_no_customer, hint checkout) hat das
+       Team nie bezahlt: dann die Tarifliste, dort fuehrt jeder Tarif zur Kasse. */
+    function zumPortal() {
+      zuStripe("portal", D.portal(team(), rueckweg()), t("Billing could not be opened"), function (erg) {
+        if (!/billing_no_customer/.test(D.meldung(erg))) return false;
+        var k = el(".ubl-root [data-ubl-plans]");
+        toast(t("Choose a plan to get started"), "neutral", "");
+        if (k) setTimeout(function () { k.click(); }, 0);
+        return true;
+      });
+    }
     an("ublublManage", function (d) {
       if (!teamGleich(str(d.team_id))) { teamGewechselt(); return; }
       zumPortal();
