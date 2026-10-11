@@ -483,22 +483,14 @@
       if (!state.meta && bereit()) gemeinsam([seitenAuftrag()]);
     });
     an("ubo-uboRowClick", function (d) { var id = str(wert(d)).trim(); if (UUID.test(id) && UC.drawerOeffnen) UC.drawerOeffnen("brand", id, "brands"); });
-    /* "Edit": der Marken-Editor ist ein Drawer der App. Sein Name steht nicht im Repo (Bubble
-       vergibt ihn, drawer-<art>) -- also an der Seite suchen statt raten. Fehlt er, faellt es auf
-       den alten Bubble-Weg zurueck, solange es den noch gibt, und sonst sagt es das. */
-    function editorArt() {
-      var l = document.querySelectorAll('[id^="drawer-"]');
-      for (var i = 0; i < l.length; i++) {
-        var art = l[i].id.slice(7);
-        if (/^brand[\s_-]?editor$/i.test(art)) return art;
-      }
-      return "";
-    }
+    /* "Edit": der Marken-Editor ist der Drawer #drawer-companysettings der App (vom Nutzer am
+       11.10. bestaetigt). Steht er nicht auf der Seite, faellt es auf den alten Bubble-Weg zurueck,
+       solange es den noch gibt, und sonst sagt es das -- nie ein Knopf, der still nichts tut. */
+    var EDITOR_ART = "companysettings";
     an("ubo-uboEdit", function (d) {
       var id = str(wert(d)).trim();
       if (!UUID.test(id)) return;
-      var art = editorArt();
-      if (art && UC.drawerOeffnen) { UC.drawerOeffnen(art, id, "brands"); return; }
+      if (document.getElementById("drawer-" + EDITOR_ART) && UC.drawerOeffnen) { UC.drawerOeffnen(EDITOR_ART, id, "brands"); return; }
       var alt = UC.resolveBubbleFn ? UC.resolveBubbleFn("bubble_fn_uboEdit") : null;
       if (typeof alt === "function") { try { alt(id); } catch (e) {} return; }
       toast(t("Editing isn't available on this page"), "neutral");

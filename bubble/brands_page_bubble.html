@@ -37,9 +37,8 @@
     ueber die Seite, nicht ueber den Bubble-Workflow.
   - Nach Aenderungen: upstreemBrandsChanged (die Seitenleiste und alle Marken-Menues holen neu).
   - Reiter in der Adresse: ?br=discover. Zurueck/Vor wechselt den Reiter.
-  - Zeilenklick: openDrawer("brand", company_id). "Edit": der Marken-Editor -- die Seite sucht
-    seinen Drawer an der Seite (#drawer-brand_editor, #drawer-brand-editor o.ae.). Steht er unter
-    einem anderen Namen, bitte melden.
+  - Zeilenklick: openDrawer("brand", company_id). "Edit": openDrawer("companysettings",
+    company_id) -- der Marken-Editor ist #drawer-companysettings (11.10. bestaetigt).
 
   ── Attribute ─────────────────────────────────────────────────────────────────
   data-instance   optional, Vorgabe "brands_page". Nur noetig, wenn die Seite zweimal steht.
