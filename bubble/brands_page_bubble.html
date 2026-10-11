@@ -7,22 +7,26 @@
   Bausteine (brands-overview, discover-brands) im LOKALEN Modus -- dieselben Bausteine an anderen
   Orten der App bleiben davon unberuehrt.
 
-  ── STAND DES VERTRAGS (11.10.): NOCH NICHT UMSTELLEN ──────────────────────────
-  Tracked (Chart und Tabelle) laeuft schon live ueber den Dashboard-Vertrag v1:
+  ── DER VERTRAG IST GEBAUT (11.10.) ────────────────────────────────────────────
+  bubble/brands_v1_vertrag.md, Abschnitt 11 (geht vor). Echte Antworten:
+  testdaten/brands_v1/antworten.json -- die Seite ist dagegen geprueft.
+  EINSPIELEN (ueber den DB-Chat), in dieser Reihenfolge:
+      1. brands_v1.sql                 die Funktionen, Tabellen und Jobs unten
+      2. brands_logo_nur_eigene.sql    Logo nur fuer die eigene Marke
+      3. rechte_bestand_brands.sql     ERST NACH der Umstellung (anon aus den alten Funktionen)
+  Nach Schritt 1 rechnet der Job brand-discover-rollup die letzten 366 Tage nach (die letzten 30
+  in etwa 15 Minuten, alles in etwa 3 Stunden). Solange steht in Discover "Some days are still
+  being prepared." -- erst danach sind die Zahlen dort vollstaendig.
+  Die Komponente ruft selbst (UC.rpc, Nutzer-JWT):
       cached_dashboard_visibility_v1   Linienchart
       cached_dashboard_overview_v1     Tabelle und Landscape-Matrix (alle aktiven Marken)
-      clear_dashboard_cache_v1         Aktualisieren
-  Vertrag Brands v1 (Vorschlag des DB-Chats vom 11.10., Abschnitt 10 geht vor; abgestimmt in
-  bubble/brands_db_rueckmeldung.md), in der DB NOCH NICHT GEBAUT:
-      brands_page_meta_v1          Rolle, Zaehler, Kontingent, aktive Marken (Ablage), inaktive Marken
-      brands_set_status_v1         Aktivieren / Deaktivieren
-      brands_delete_v1             Loeschen (nur owner/admin, Aufraeumen im Hintergrund)
-      brand_add_v1                 "Add Brand" und "Track" aus Discover
-      cached_discover_brands_v1    Explore Brands (aus der Tagesverdichtung, Millisekunden)
-      discover_brands_refresh_v1   Aktualisieren auf Discover (rechnet den heutigen Tag)
-  Bis dahin sagt die Seite an diesen Stellen sichtbar, dass es sie noch nicht gibt (Reiter
-  Inactive und Discover mit Lesefehler, Knoepfe mit Hinweis) -- also erst umstellen, wenn der
-  Vertrag gebaut und die Seite gegen die echten Antworten geprueft ist.
+      clear_dashboard_cache_v1         Aktualisieren auf Tracked
+      brands_page_meta_v1              Rolle, Zaehler, Kontingent, aktive Marken (Ablage), inaktive Marken
+      brands_set_status_v1             Aktivieren / Deaktivieren
+      brands_delete_v1                 Loeschen (nur owner/admin, Aufraeumen im Hintergrund, unsichtbar)
+      brand_add_v1                     "Add Brand" und "Track" aus Discover
+      cached_discover_brands_v1        Explore Brands (aus der Tagesverdichtung, unter 1 s)
+      discover_brands_refresh_v1       Aktualisieren auf Discover (rechnet den heutigen Tag)
 
   ── Was Bubble danach NICHT mehr tut ──────────────────────────────────────────
   Keine Workflows, keine API-Calls, kein Run JS fuer diese Seite. Es entfallen in der Brands-

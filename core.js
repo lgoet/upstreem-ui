@@ -1440,6 +1440,7 @@
       "Damit werden die Brand und ihr Verlauf endgültig gelöscht, samt Erwähnungen, Rankings und Sentiment. Deine Auswertungen enthalten sie danach für keinen Zeitraum mehr.",
     "Too many inactive brands": "Zu viele inaktive Brands",
     "Up to yesterday. Refresh for today.": "Stand bis gestern. Aktualisieren für heute.",
+    "Some days are still being prepared.": "Einige Tage werden noch aufbereitet.",
     "Use 1 to 75 characters, with at least one letter or digit.": "Nutze 1 bis 75 Zeichen, mit mindestens einem Buchstaben oder einer Ziffer.",
     "You can add or activate {n} more brands today.": "Heute kannst du noch {n} Brands hinzufügen oder aktivieren.",
     "Use 1 to 60 characters, with at least one letter or digit.": "1 bis 60 Zeichen, mit mindestens einem Buchstaben oder einer Ziffer.",

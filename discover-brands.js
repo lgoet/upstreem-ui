@@ -571,11 +571,15 @@
           (UC.fmtTotal ? UC.fmtTotal(state.totalResponses) : state.totalResponses);
         /* Discover rechnet einmal am Tag (Vertrag Brands v1, 10.2): ohne "Aktualisieren" reicht der
            Stand bis gestern. Das steht dann daneben, sonst sucht man die Laeufe von heute. */
-        if (state.ohneHeute) {
+        /* Fehlen noch vergangene Tage (der Hintergrundjob rechnet nach dem Einspielen nach), ist
+           das die wichtigere Aussage: die Zahlen sind dann unvollstaendig, nicht nur ohne heute. */
+        var stand = state.fehlendeTage > 0 ? "Some days are still being prepared."
+                  : (state.ohneHeute ? "Up to yesterday. Refresh for today." : "");
+        if (stand) {
           var h = document.createElement("span");
           h.className = "udb-total-stand";
-          h.setAttribute("data-i18n", "Up to yesterday. Refresh for today.");
-          h.textContent = UC.t ? UC.t("Up to yesterday. Refresh for today.") : "Up to yesterday. Refresh for today.";
+          h.setAttribute("data-i18n", stand);
+          h.textContent = UC.t ? UC.t(stand) : stand;
           elTotal.appendChild(h);
         }
       }
@@ -701,6 +705,7 @@
                 : (Array.isArray(list) && list[0] && list[0].runs_total != null ? list[0].runs_total : null));
           state.totalResponses = t == null ? null : Number(t);
           state.ohneHeute = p.today_included === false;
+          state.fehlendeTage = Number(p.missing_days) || 0;
           setLoading(false);
           merken();
           render();

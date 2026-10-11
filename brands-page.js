@@ -10,9 +10,8 @@
    DATEN: direkt ueber UC.rpc (PostgREST, Nutzer-JWT). Anfragen und Antwortformen in brands-data.js
    (ohne DOM). Tracked (Chart und Tabelle) laeuft LIVE ueber den Dashboard-Vertrag v1 -- dieselben
    Zahlen wie auf dem Dashboard. Inaktive Marken, Aktivieren/Deaktivieren, Loeschen, Anlegen und
-   Discover folgen dem Vertragsvorschlag Brands v1 (BRANDS_V1_VORSCHLAG.md, Abschnitt 10 geht vor;
-   Rueckmeldung bubble/brands_db_rueckmeldung.md) und sind in der DB noch nicht gebaut: solange
-   D.VORSCHLAG gilt, fragt die Seite dort nicht und sagt es sichtbar (kein stilles Leer).
+   Discover folgen dem Vertrag Brands v1 (bubble/brands_v1_vertrag.md, Abschnitt 11 ist der gebaute
+   Stand), geprueft gegen testdaten/brands_v1/antworten.json.
 
    FILTER: der Kalender gilt app-weit, Models, Markets und Topics fuer Tracked UND Discover (die
    Discover-Funktion kennt alle vier, Vertrag 6.1).
@@ -97,7 +96,10 @@
                desc: n ? t("{n} more brands fit into your plan.").replace("{n}", String(n)) : t("Set brands inactive or upgrade your plan.") };
     }
     if (/duplicate/.test(m)) return { text: t("This brand is already in your account"), desc: "" };
-    if (/forbidden/.test(m)) return { text: t("Only owners and admins can delete brands"), desc: "" };
+    /* brands_forbidden = Rolle (nur Loeschen); "forbidden" ohne Praefix = fremdes Team
+       (require_team_access, Vertrag 11.3) -- zwei verschiedene Saetze. */
+    if (/^brands_forbidden$/.test(m)) return { text: t("Only owners and admins can delete brands"), desc: "" };
+    if (/forbidden/.test(m)) return { text: t("You don't have permission for this"), desc: t("Refresh the page and try again.") };
     if (/own_brand/.test(m)) return { text: t("Your own brand can't be set inactive"), desc: "" };
     if (/invalid_date/.test(m)) return { text: t("Please pick a shorter date range"), desc: "" };
     if (/invalid_param/.test(m) && /^p_name/.test(h)) return { text: t("Use 1 to 75 characters, with at least one letter or digit."), desc: "" };

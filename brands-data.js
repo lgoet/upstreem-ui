@@ -10,8 +10,9 @@
        aus dem Dashboard-Vertrag v1 -- dieselben Zahlen wie auf dem Dashboard, gebaut ueber
        window.UpstreemDashboardDaten (eine Quelle, keine zweite Rechnung). Laut DB-Chat in allen
        Feldern gleich der heutigen Ansicht (BRANDS_V1_VORSCHLAG.md 3.1).
-     Alles andere: Vertragsvorschlag des DB-Chats (BRANDS_V1_VORSCHLAG.md, Abschnitt 6, Abschnitt 10
-       geht vor), abgestimmt in bubble/brands_db_rueckmeldung.md -- noch nicht gebaut.
+     Alles andere: Vertrag Brands v1, GEBAUT am 11.10. (bubble/brands_v1_vertrag.md, Abschnitt 11
+       ist der endgueltige Stand und geht vor). Geprueft gegen die echten Antworten
+       (testdaten/brands_v1/antworten.json, Team 877c, Schreibaufrufe zurueckgerollt).
        Die Namen und Feldnamen stehen NUR hier (FN, zuMeta, zuDiscover, zuAnlage). Weicht der
        Vertrag ab, wird hier nachgezogen; Seite und Bausteine sehen dieselbe Form.
        VORSCHLAG = true sagt der Seite, dass diese Wege noch nicht da sind: sie fragt dann gar
@@ -54,8 +55,9 @@
     discoverNeu: "discover_brands_refresh_v1",
     clear: "clear_dashboard_cache_v1"
   };
-  /* Bis der DB-Chat den Vertrag gebaut hat (siehe oben). Danach false. */
-  var VORSCHLAG = true;
+  /* Der Vertrag ist gebaut (11.10.). Bleibt als Schalter fuer den Fall, dass eine Funktion
+     zurueckgerollt werden muss: true heisst, die Seite fragt dort nicht und sagt es sichtbar. */
+  var VORSCHLAG = false;
 
   /* Grenzen, die die Oberflaeche vorab einhaelt -- die Datenbank prueft sie trotzdem selbst
      (Vertrag 6.5). Tabelle: alle aktiven Marken auf einmal (hoechstens 16 laut Vertrag 5); das
@@ -165,6 +167,10 @@
       }),
       total_responses: num(m.total_responses),
       today_included: m.today_included === false ? false : (m.today_included === true ? true : null),
+      /* Vergangene Tage im Zeitraum, die der Hintergrundjob noch nicht gerechnet hat (11.2) -- nach
+         dem Einspielen holt er 366 Tage nach, die letzten 30 in etwa 15 Minuten. Solange fehlt
+         etwas in den Zahlen, und das soll man sehen. */
+      missing_days: num(m.missing_days),
       data_as_of: str(m.data_as_of),
       gesamt: num(m.total_count)
     };
