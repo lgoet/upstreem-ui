@@ -49,7 +49,8 @@
     verlassen: "team_leave_v1",
     loeschen: "team_delete_v1"
   };
-  /* Edge Functions. Die Kasse hat noch keinen Namen (Auftrag 2.3) -- leer heisst: gibt es nicht. */
+  /* Edge Functions. Eine Kasse gibt es heute nicht: die Tarifwahl oeffnet in Bubble dasselbe Portal
+     wie "Manage Billing" (Nachtrag 1, 4). Leer heisst: die Seite geht denselben Weg. */
   var EDGE = { versand: "send-team-invite", portal: "create-billing-portal-session", kasse: "" };
 
   /* DER SCHALTER JE FUNKTION. Alles aus, bis der Vertrag fuer den jeweiligen Schritt steht und die
@@ -256,6 +257,24 @@
     return (STRIPE[art] || /^$/).test(x.hostname) ? x.href : "";
   }
 
+  /* ANTWORT EINER SCHREIBFUNKTION PRUEFEN (11.10., aus den Bubble-Workflows der Team-Orga). Die
+     heutigen Funktionen melden Erfolg nicht nur ueber den HTTP-Status: revoke_team_invite und
+     resend_team_invite liefern Zeilen mit ok (Bubble prueft "first item's ok"), bei
+     set_team_member_role und kick_team_member prueft Bubble nur "count > 0". Wird ein Schritt mit
+     der alten Funktion verlinkt, waere eine Zeile {ok:false} hier sonst ein Erfolg -- genau der
+     Fehler, den der Bubble-Workflow heute bei Rolle und Entfernen hat. Darum gilt fuer jede
+     Schreibantwort: {ok:false} oder [{ok:false}] ist ein Fehlschlag (mit dem Text der Zeile als
+     message), eine LEERE Liste ebenso (Bubble: "count is 0"). Alles andere bleibt, wie es war. */
+  function antwortPruefen(erg) {
+    if (!erg || !erg.ok) return erg;
+    var d = erg.daten, z = isArr(d) ? d[0] : d;
+    if (isArr(d) && !d.length) return { ok: false, status: erg.status, fehler: { code: "", message: "empty_response", hint: "", details: "" } };
+    if (istObjekt(z) && z.ok === false) {
+      var m = str(z.error || z.message || z.reason || z.code) || "failed";
+      return { ok: false, status: erg.status, fehler: { code: str(z.code), message: m, hint: str(z.hint), details: "" } };
+    }
+    return erg;
+  }
   function meldung(erg) { return erg && erg.fehler ? str(erg.fehler.message) : ""; }
   function hinweis(erg) { return erg && erg.fehler ? str(erg.fehler.hint) : ""; }
   function hinweisZahl(erg) { var m = /-?\d+/.exec(hinweis(erg)); return m ? Number(m[0]) : null; }
@@ -271,6 +290,6 @@
     mailNorm: mailNorm, mailPruefen: mailPruefen, logoPruefen: logoPruefen,
     zuMeta: zuMeta, zuMarke: zuMarke, zuMitglieder: zuMitglieder, zuEinladungen: zuEinladungen, zuProtokoll: zuProtokoll,
     zuAbo: zuAbo, zuTarife: zuTarife, zuAustritt: zuAustritt, stripeUrl: stripeUrl,
-    meldung: meldung, hinweis: hinweis, hinweisZahl: hinweisZahl, fehlerArt: fehlerArt, makeLader: makeLader
+    antwortPruefen: antwortPruefen, meldung: meldung, hinweis: hinweis, hinweisZahl: hinweisZahl, fehlerArt: fehlerArt, makeLader: makeLader
   };
 })();

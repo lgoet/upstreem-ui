@@ -75,8 +75,10 @@
     if (/reauth_required/.test(m)) return { text: t("Please sign in again"), desc: t("For your security, this needs a fresh sign-in.") };
     if (/last_owner/.test(m)) return { text: t("This team needs another owner first"), desc: t("Make someone else owner, or delete the team.") };
     if (/confirm/.test(m)) return { text: t("The team name didn't match"), desc: t("Type the team name exactly as shown.") };
-    if (/already_member/.test(m)) return { text: t("This person is already in the team"), desc: "" };
-    if (/invite_(pending|duplicate)|already_invited/.test(m)) return { text: t("This address already has a pending invite"), desc: t("Use Resend in the list of pending invites.") };
+    if (/already[_ ]member/.test(m)) return { text: t("This person is already in the team"), desc: "" };
+    /* "duplicate key value": so meldet create_team_invite heute eine zweite offene Einladung an
+       dieselbe Adresse (roh aus Postgres, Bubble-Workflow utoInvite Schritt 10). */
+    if (/invite_(pending|duplicate)|already_invited|duplicate key/.test(m)) return { text: t("This address already has a pending invite"), desc: t("Use Resend in the list of pending invites.") };
     if (/invite_(not_pending|expired|revoked|accepted)/.test(m)) return { text: t("This invite is no longer open"), desc: t("Refresh the page to see the current list.") };
     if (/resend_too_soon|cooldown/.test(m)) return { text: t("The invite was sent just now"), desc: n ? t("You can send it again in {n} minutes.").replace("{n}", String(n)) : t("Please wait a few minutes before sending it again.") };
     if (/daily_limit/.test(m)) return { text: t("Daily limit reached"), desc: t("Please try again tomorrow.") };
@@ -140,14 +142,14 @@
         var c = erg && erg.fehler ? str(erg.fehler.code) : "";
         if (erg && !erg.ok && c === "XX000") return new Promise(function (w) { setTimeout(w, 800); }).then(ruf);
         return erg;
-      });
+      }).then(D.antwortPruefen);
     }
     /* Edge: EIN Versuch. Kein XX000-Wiederholen -- eine E-Mail oder eine Stripe-Sitzung koennte
        beim ersten Mal schon entstanden sein. (Ein abgelaufenes Token wiederholt UC.edge selbst;
        dann hat die Funktion gar nicht erst begonnen.) */
     function edge(art, e) {
       if (!D.live(art) || !e.name) return Promise.resolve({ ok: false, nichtLive: true });
-      return UC.edge(e.name, e.body, { timeoutMs: 30000 });
+      return UC.edge(e.name, e.body, { timeoutMs: 30000 }).then(D.antwortPruefen);
     }
     /* JE BEREICH EIN SCHREIBVORGANG ZUR ZEIT. Der zweite Klick wartet nicht in einer Schlange --
        er sagt, dass noch einer laeuft. Eine Schlange schriebe Aenderungen gegen einen Stand, den
@@ -536,45 +538,68 @@
                       zeichen: "This email address contains characters we can't use.", form: "That does not look like an email address." };
     /* Versand der E-Mail nach dem Anlegen bzw. erneut senden. Scheitert er, steht die Einladung
        trotzdem offen da -- das sagt die Seite, mit dem Ausweg. */
-    function versenden(inviteId, adresse, erneut) {
-      if (!D.live("versand")) { toast(t("The email can't be sent from here yet"), "neutral", t("The invite is saved. Use Resend once sending is available.")); return Promise.resolve(false); }
+    /* Erneut senden: die Einladung bleibt in jedem Fall offen -- scheitert der Versand, sagt die
+       Seite es (der Bubble-Workflow meldete hier Erfolg, ohne den Versand zu pruefen). */
+    function versenden(inviteId, adresse) {
+      if (!D.live("versand")) { toast(t("The email can't be sent from here yet"), "neutral", ""); return Promise.resolve(false); }
       return edge("versand", D.versand(team(), inviteId)).then(function (erg) {
-        if (!erg.ok) {
-          /* Eine Grenze (zu oft, Tagesgrenze) sagt, wann es wieder geht; alles andere nennt den
-             Ausweg. */
-          var f = fehlerSatz(erg, ""), grenze = erg.status === 429 || /rate_limited|daily_limit|cooldown|too_soon/.test(D.meldung(erg));
-          toast(erneut ? t("The email could not be sent") : t("Invite saved, but the email could not be sent"), "error",
-                grenze ? f.text + ". " + f.desc : t("Use Resend in the list of pending invites."));
-          return false;
-        }
-        toast(erneut ? t("Invite sent again") : t("Invite sent"), "success", adresse);
+        if (!erg.ok) { var f = versandSatz(erg); toast(t("The email could not be sent"), "error", f); return false; }
+        toast(t("Invite sent again"), "success", adresse);
         return true;
       });
     }
+    /* Eine Grenze (zu oft, Tagesgrenze) sagt, wann es wieder geht; alles andere bittet um einen
+       neuen Versuch. */
+    function versandSatz(erg) {
+      var f = fehlerSatz(erg, ""), grenze = erg.status === 429 || /rate_limited|daily_limit|cooldown|too_soon/.test(D.meldung(erg));
+      return grenze ? f.text + ". " + f.desc : t("Please try again.");
+    }
+    /* Die neue Einladung aus der Antwort: Vorschlag {meta, row}, heute eine Liste von Zeilen
+       (Bubble prueft "Objects:count > 0"). */
+    function einladungAus(daten) {
+      var dd = Array.isArray(daten) ? (daten[0] || {}) : (daten && typeof daten === "object" ? daten : {});
+      var z = dd.row && typeof dd.row === "object" ? dd.row : dd;
+      return { id: str(z.invite_id || z.id), unveraendert: !!(dd.meta && dd.meta.unchanged === true) };
+    }
+    /* EINLADEN wie der Bubble-Workflow utoInvite (Bilder vom 11.10.): anlegen, versenden, und
+       scheitert der Versand, die Einladung wieder zurueckziehen -- sonst stuende eine offene
+       Einladung da, von der niemand eine E-Mail hat. Anders als dort bleibt der Dialog dabei OFFEN,
+       mit der getippten Adresse und dem Satz: ein neuer Versuch ist ein Klick. Laesst sich die
+       Einladung nicht zurueckziehen, bleibt sie offen und die Seite nennt Resend als Ausweg. */
     an("utoutoInvite", function (d) {
       if (!teamGleich(str(d.team_id))) { einladungAntwort(false, t("The team was switched. Please try again.")); neuLaden(); return; }
       var grund = D.mailPruefen(d.email, UC.mailOk);
       if (grund) { einladungAntwort(false, t(MAIL_SATZ[grund] || MAIL_SATZ.form)); return; }
       if (!D.live("einladen")) { einladungAntwort(false, t("Inviting isn't available here yet.")); return; }
-      var a = D.einladen(team(), d.email, d.role);
+      var a = D.einladen(team(), d.email, d.role), adresse = a.params.p_email;
+      function offenLassen() {
+        einladungAntwort(true);
+        toast(t("Invite saved, but the email could not be sent"), "error", t("Use Resend in the list of pending invites."));
+        teamNeu(true);
+      }
       if (einmal("team", function () {
         return schreiben(a).then(function (erg) {
           if (!erg.ok) { var f = fehlerSatz(erg, t("The invite could not be created")); einladungAntwort(false, f.text + (f.desc ? ". " + f.desc : "")); return; }
-          var dd = erg.daten && typeof erg.daten === "object" ? erg.daten : {};
-          var zeile = dd.row && typeof dd.row === "object" ? dd.row : dd;
-          var id = str(zeile.invite_id || zeile.id);
+          var z = einladungAus(erg.daten);
           /* Schon offen eingeladen (Auftrag 4.4.5): dieselbe Einladung zurueck, keine zweite, und
              auch keine zweite E-Mail ungefragt. */
-          if (dd.meta && dd.meta.unchanged === true) {
+          if (z.unveraendert) {
             einladungAntwort(true);
             toast(t("This address already has a pending invite"), "neutral", t("Use Resend in the list of pending invites."));
             teamNeu(false);
             return;
           }
-          einladungAntwort(true);
-          teamNeu(true);
-          if (!D.UUID.test(id)) { toast(t("Invite saved, but the email could not be sent"), "error", t("Use Resend in the list of pending invites.")); return; }
-          return versenden(id, a.params.p_email, false);
+          if (!D.UUID.test(z.id) || !D.live("versand")) { offenLassen(); return; }
+          return edge("versand", D.versand(team(), z.id)).then(function (ev) {
+            if (ev.ok) { einladungAntwort(true); toast(t("Invite sent"), "success", adresse); teamNeu(true); return; }
+            var satz = t("The email could not be sent") + ". " + versandSatz(ev);
+            if (!D.live("zurueckziehen")) { offenLassen(); return; }
+            return schreiben(D.zurueckziehen(team(), z.id)).then(function (rv) {
+              if (!rv.ok) { offenLassen(); return; }
+              einladungAntwort(false, satz);
+              teamNeu(true);
+            });
+          });
         });
       }) === null) einladungAntwort(false, t("The last change is still being saved. Please try again in a moment."));
     });
@@ -586,7 +611,7 @@
       einmal("team", function () {
         return schreiben(D.erneut(team(), id)).then(function (erg) {
           if (!erg.ok) { fehlerToast(erg, t("The invite could not be sent again")); teamNeu(false); return; }
-          return versenden(id, str(d.email), true).then(function () { teamNeu(false); });
+          return versenden(id, str(d.email)).then(function () { teamNeu(false); });
         });
       });
     });
@@ -641,6 +666,10 @@
     an("ublublSelectPlan", function (d) {
       if (!teamGleich(str(d.team_id))) { teamGewechselt(); return; }
       if (!str(d.plan_id)) return;
+      /* Heute (Bubble-Workflow ublSelectPlan, Bild vom 11.10.) oeffnet die Tarifwahl dasselbe
+         Stripe-Portal wie "Manage Billing" -- eine eigene Kasse gibt es nicht. Solange der Vertrag
+         keine nennt (EDGE.kasse leer), geht die Seite denselben Weg. */
+      if (!D.EDGE.kasse) { zuStripe("portal", D.portal(team()), t("Billing could not be opened")); return; }
       zuStripe("kasse", D.kasse(team(), d.plan_id, d.billing_interval), t("Checkout could not be opened"));
     });
     an("ublublPlans", function () {
