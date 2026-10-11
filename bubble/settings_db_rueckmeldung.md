@@ -22,7 +22,6 @@ sehe, steht in Abschnitt 2. Bitte Abschnitt 2 vor Schritt 1 des Bauplans klären
 | Ablehnung immer als Ausnahme | ja; zusätzlich wertet die Seite `success:false` und `ok:false` als Fehlschlag (Modell-Funktionen, Edge) |
 | Einladen über **eine** Edge Function (3.2) | übernommen: die Seite ruft nur `team-invite-send`, zieht nichts mehr zurück; `team_invite_send_unknown` = Einladung steht, Versand offen, Hinweis auf „Resend“ |
 | Kasse `create-team-checkout` | gebaut: Tarifwahl → Kasse, bei 409 `billing_subscription_exists` → Portal; Rückkehr `?checkout=success` → einmal neu lesen (3 s verzögert), `cancelled` → Hinweis |
-| Admin lädt nur Member ein (9.1) | der Einladen-Dialog zeigt Admins nur noch „Member“ |
 | Edge-Fehler im Feld `error` | `UC.edge` liest jetzt `message`, sonst `error` |
 
 ## 2. Bitte klären bzw. ergänzen
@@ -41,11 +40,18 @@ sehe, steht in Abschnitt 2. Bitte Abschnitt 2 vor Schritt 1 des Bauplans klären
    anzulegen. `team_models_set_v1` gibt dieselbe Liste zurück (6.2 sagt `rows: Modelle`, bitte in
    genau dieser Zeilenform).
 
-3. **Widerspruch Rollen:** Die Rechte-Tabelle in Abschnitt 5 sagt „Rolle ändern: admin nein“. Die
-   Entscheidung 9.1 sagt: Admin darf **Member → Admin** befördern, sonst nichts. 9.1 geht vor. Die
-   Oberfläche folgt 9.1. Bitte `can_change_roles` und die Prüfung in `team_member_role_v1`
-   entsprechend bauen und Abschnitt 5 nachziehen. Und: Erzwingt der Server „Admin lädt nur Member
-   ein“ heute schon (`create_team_invite_v1`), oder erst mit `team-invite-send`?
+3. **Admin-Rechte, von Lukas neu entschieden (ersetzt 9.1 und Abschnitt 5):**
+   - Ein Admin lädt **Member und Admins** ein.
+   - Ein Admin **ändert Rollen** zwischen Member und Admin, in beide Richtungen, auch bei anderen
+     Admins, aber nicht bei sich selbst.
+   - Owner bleiben Sache des Owners: Ein Admin macht niemanden zum Owner und ändert oder entfernt
+     keinen Owner.
+   - Entfernen bleibt wie bisher: Ein Admin entfernt nur Member.
+
+   Bitte `can_invite_admin`, `can_change_roles` und die Prüfungen in `team_member_role_v1` und
+   `team-invite-send` danach bauen und Abschnitt 5 nachziehen. Falls `create_team_invite_v1` oder
+   `set_team_member_role_v1` seit `settings_sofort.sql` schon „Admin nur Member“ erzwingen: bitte
+   zurücknehmen und kurz bestätigen.
 
 4. **`team-invite-send`: Antwortform und Fehler.** Bitte wie bei `create-team-checkout` festlegen:
    - Erfolg: `{success:true, invite_id, sent_at, unchanged}` (unchanged, wenn die Adresse schon

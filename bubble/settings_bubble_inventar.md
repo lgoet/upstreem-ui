@@ -114,7 +114,9 @@ Postgres: „duplicate key value“).
 ### 3.3 Rollenregeln im Baustein (nur Anzeige)
 
 - member: keine Aktion, sieht weder Einladungen noch Protokoll.
-- admin: einladen, erneut senden, zurückziehen; member entfernen; member zu admin.
+- admin: einladen (Member und Admin), erneut senden, zurückziehen; Member entfernen; Rollen
+  zwischen Member und Admin ändern, auch bei anderen Admins, nicht bei sich selbst (11.10. vom
+  Nutzer bestimmt).
 - owner: alles; der letzte Owner ist unantastbar; eigene Zeile nie entfernbar.
 - `@upstreem.ai`-Mitglieder: gesperrt.
 - Die Flags `can_manage_*` werden bewusst nicht gelesen (Widerspruch `admin` + `can_manage_roles:

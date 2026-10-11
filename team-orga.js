@@ -275,13 +275,6 @@
         D.opener = opener || document.activeElement;
         D.mail.value = "";
         D.rolle = "member";
-        /* ADMINS LADEN NUR MEMBER EIN (Entscheidung vom 11.10., Settings v1 9.1). Der Server prueft
-           es selbst; hier fehlt die Wahl dann ganz, statt einen Knopf anzubieten, der scheitert. */
-        var nurMember = !!(ctrl && ctrl.nurMemberEinladen);
-        Array.prototype.forEach.call(back.querySelectorAll("[data-uto-role]"), function (b) {
-          b.hidden = nurMember && b.getAttribute("data-uto-role") !== "member";
-        });
-        back.classList.toggle("is-nur-member", nurMember);
         rolleZeigen();
         setErr(""); setFormErr(""); setSendet(false);
         D.offen = true;
@@ -538,9 +531,12 @@
         if (mr === zr) return false;
         if (letzterBesitzer(m)) return false;
         if (vr === "owner") return true;
-        /* Ein Admin fasst nur Member an und kann sie nur nach OBEN bewegen -- alles andere waere
-           Verwaltung von Gleichrangigen. */
-        if (vr === "admin") return mr === "member" && zr === "admin";
+        /* ADMINS AENDERN ROLLEN (11.10. vom Nutzer bestimmt: "admin darf rollen aendern"): zwischen
+           Member und Admin in beide Richtungen, auch bei anderen Admins. Owner bleiben Sache des
+           Owners -- ein Admin macht niemanden zum Owner und fasst keinen Owner an. Die eigene
+           Zeile nicht: sich selbst herabzustufen ist ein Klick, den niemand zuruecknehmen kann,
+           der dann nur noch Member ist. */
+        if (vr === "admin") return !istSelbst(m) && mr !== "owner" && zr !== "owner";
         return false;
       }
       /* EIN MEMBER sieht weder die offenen Einladungen noch den Verlauf und laedt niemanden ein
@@ -1283,15 +1279,12 @@
           /* Lokal wartet der Dialog auf eine Antwort -- ein stilles return liesse ihn bis zur
              Notbremse sperren. */
           if (!darfEinladen()) { if (DLG) DLG.ergebnis(ctrl, false, "You can't invite members to this team."); return; }
-          if (rolleName(rolle) === "admin" && ctrl.nurMemberEinladen) rolle = "member";
           fire("data-invite-fn", "utoInvite", { email: txt(email), role: rolleName(rolle) });
         },
         /* LOKALER MODUS (Seite Settings, 11.10.): die Seite ruft die Datenbank selbst und meldet
            hierher, wie es ausging. Gelesen beim Klick, nicht beim Aufbau: data-local steht fest
            im Markup der Seite, aber ein spaeteres Setzen soll nicht an einem alten Wert haengen. */
         get lokal() { return isYes(root.getAttribute("data-local")); },
-        /* Nur der Owner vergibt beim Einladen die Rolle Admin (9.1). */
-        get nurMemberEinladen() { return state.viewerRole !== "owner"; },
         einladungErgebnis: function (ok, text) { return DLG ? DLG.ergebnis(ctrl, !!ok, text) : false; },
         setTheme: function (t) { if (UC.setUpstreemTheme) UC.setUpstreemTheme(t); }
       };
