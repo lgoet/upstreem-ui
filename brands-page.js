@@ -9,12 +9,13 @@
 
    DATEN: direkt ueber UC.rpc (PostgREST, Nutzer-JWT). Anfragen und Antwortformen in brands-data.js
    (ohne DOM). Tracked (Chart und Tabelle) laeuft LIVE ueber den Dashboard-Vertrag v1 -- dieselben
-   Zahlen wie auf dem Dashboard. Inaktive Marken, Aktivieren/Deaktivieren, Anlegen und Discover sind
-   VORSCHLAG (bubble/brands_db_auftrag.md) und noch nicht gebaut: solange D.VORSCHLAG gilt, fragt
-   die Seite dort nicht und sagt es sichtbar (kein stilles Leer, Regel der App).
+   Zahlen wie auf dem Dashboard. Inaktive Marken, Aktivieren/Deaktivieren, Loeschen, Anlegen und
+   Discover folgen dem Vertragsvorschlag Brands v1 (BRANDS_V1_VORSCHLAG.md, Abschnitt 10 geht vor;
+   Rueckmeldung bubble/brands_db_rueckmeldung.md) und sind in der DB noch nicht gebaut: solange
+   D.VORSCHLAG gilt, fragt die Seite dort nicht und sagt es sichtbar (kein stilles Leer).
 
-   FILTER: der Kalender gilt app-weit, Models, Markets und Topics fuer Tracked. Discover liest
-   (Stand Vorschlag) keinen Filter -- dort steht die Filterzeile nicht.
+   FILTER: der Kalender gilt app-weit, Models, Markets und Topics fuer Tracked UND Discover (die
+   Discover-Funktion kennt alle vier, Vertrag 6.1).
 
    ADRESSE: ?br=discover (Tracked ist die Vorgabe und steht nicht drin).
    Zeilen oeffnen den Marken-Drawer der App (brand mit company_id), "Edit" den Marken-Editor. */
@@ -79,15 +80,28 @@
      Keine internen Namen (Regel der App). Die messages stehen im Auftrag (Abschnitt 1.6, 4.3); was
      der Vertrag anders nennt, wird hier nachgezogen. */
   function fehlerSatz(erg, wobei) {
-    var m = D.meldung(erg), n = D.hinweisZahl(erg);
-    if (/daily_limit/.test(m)) return { text: t("Daily limit reached"), desc: t("Please try again tomorrow.") };
+    var m = D.meldung(erg), n = D.hinweisZahl(erg), h = D.hinweis(erg);
+    /* Tagesgrenzen (Vertrag 6.6, 10.5): hint "tracked:<Rest>", "deactivations:<Rest>" bzw. fuers
+       Loeschen. Bei 0 Rest kein "0 more". */
+    if (/daily_limit/.test(m)) {
+      if (/^tracked:/.test(h) && n) return { text: t("Daily limit reached"), desc: t("You can add or activate {n} more brands today.").replace("{n}", String(n)) };
+      return { text: t("Daily limit reached"), desc: t("Please try again tomorrow.") };
+    }
+    /* Nach dem Loeschen raeumt die DB noch einige Minuten auf (10.5): solange geht dieselbe Marke
+       nicht wieder anzulegen. */
+    if (/delete_pending/.test(m)) return { text: t("This brand is still being removed"), desc: t("Please try again in a few minutes.") };
+    if (/logo_own_only/.test(m)) return { text: t("Only your own brand can have a logo"), desc: "" };
+    if (/inactive:/.test(h) && /limit_reached/.test(m)) return { text: t("Too many inactive brands"), desc: t("Delete inactive brands you no longer need, then try again.") };
     if (/limit_reached/.test(m)) {
       return { text: t("Not enough room in your plan"),
                desc: n ? t("{n} more brands fit into your plan.").replace("{n}", String(n)) : t("Set brands inactive or upgrade your plan.") };
     }
     if (/duplicate/.test(m)) return { text: t("This brand is already in your account"), desc: "" };
-    if (/forbidden/.test(m)) return { text: t("You don't have permission for this"), desc: "" };
+    if (/forbidden/.test(m)) return { text: t("Only owners and admins can delete brands"), desc: "" };
     if (/own_brand/.test(m)) return { text: t("Your own brand can't be set inactive"), desc: "" };
+    if (/invalid_date/.test(m)) return { text: t("Please pick a shorter date range"), desc: "" };
+    if (/invalid_param/.test(m) && /^p_name/.test(h)) return { text: t("Use 1 to 75 characters, with at least one letter or digit."), desc: "" };
+    if (/invalid_param/.test(m) && /^p_domain/.test(h)) return { text: t("Enter a valid domain, for example apple.com"), desc: "" };
     if (/invalid_param/.test(m)) return { text: t("Please check the name and domain"), desc: "" };
     if (/rate_limited/.test(m) || (erg && erg.status === 429)) return { text: t("Too many requests"), desc: t("Please wait a moment and try again.") };
     if (/not_found/.test(m)) return { text: t("This brand no longer exists"), desc: t("Refresh the page and try again.") };
@@ -191,6 +205,9 @@
     /* Der Auftritt (core, makeAuftritt): Kopf sofort, der Inhalt erst mit Stylesheets und ersten
        Daten, dann in einem Zug. */
     var auftritt = UC.makeAuftritt ? UC.makeAuftritt(root, { kopf: ".ubr-pagehead, .ubr-nav, .ubr-filterzeile", inhalt: ".ubr-main > .ubr-tab" }) : null;
+    /* Bis die Rolle bekannt ist (Seiten-Meta), bietet das Zeilenmenue kein Loeschen an. */
+    (function () { var u = root.querySelector(".ubo-root"), r0 = gem.meta && gem.meta.rolle;
+      if (u && r0 !== "owner" && r0 !== "admin") u.setAttribute("data-loeschen", "nein"); })();
     if (UC.makeTooltips) UC.makeTooltips(root, isDark);
     if (isDark()) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
 
@@ -306,8 +323,7 @@
     function bereit() {
       if (!sichtbarTest(root)) { beiSicht(root, "laden", function () { bedarf(); }, sichtbarTest); return false; }
       if (!team()) return false;
-      /* Discover liest keinen Zeitraum -- dort nicht auf den Kalender warten. */
-      if (state.tab === "tracked" && !state.kalenderDa && !kalenderLesen()) {
+      if (!state.kalenderDa && !kalenderLesen()) {
         /* 30ms, Gesamtfrist 3s (wie die anderen Seiten seit dem 11.10.). */
         if (kalenderVersuche++ < 100) { spaeter(30); return false; }
       }
@@ -408,6 +424,14 @@
       state.meta = z; persist();
       try { setter("setBrandsOverviewInactive")(ids.ubo, z.inaktive); } catch (e) {}
       try { setter("renderBrandsOverview")({ instanceId: ids.ubo, totalCountInactive: z.inaktivZahl }); } catch (e) {}
+      /* Loeschen nur owner/admin (Vertrag 10.5, entschieden 11.10.): fuer alle anderen fehlt der
+         Menueeintrag. Die DB prueft trotzdem selbst. */
+      var ubo = el(".ubo-root");
+      if (ubo) { if (z.rolle === "owner" || z.rolle === "admin") ubo.removeAttribute("data-loeschen"); else ubo.setAttribute("data-loeschen", "nein"); }
+      /* DIE MARKEN-ABLAGE DER APP fuellt die Seite selbst (Vertrag 5: brands mit role) -- nach
+         Anlegen, Aktivieren, Deaktivieren und Loeschen stimmen damit Seitenleiste, Filter und jedes
+         Marken-Menue, ohne einen Bubble-Workflow. Ein leerer Stand ueberschreibt nie. */
+      if (z.marken.length && typeof window.setUpstreemBrands === "function") { try { window.setUpstreemBrands(z.marken); } catch (e) {} }
     }
     /* DISCOVER (Vorschlag). Bis der Vertrag steht, zeigt der Baustein seinen Lesefehler statt
        "Scanning your AI answers" fuer immer -- der Ladezustand muss enden (Regel der App). */
@@ -416,7 +440,7 @@
         return { kanal: "discover", imSpeicher: true, ladenAn: function () {},
                  laden: function () { return Promise.resolve(function () { try { setter("renderDiscoverBrands")({ instanceId: ids.udb, __parseError: true }); } catch (e) {} }); } };
       }
-      var a = D.discover(team(), { matched: state.disc.matched !== false });
+      var a = D.discover(filterStand(), { matched: state.disc.matched !== false, suche: state.disc.suche });
       return {
         kanal: "discover", imSpeicher: lader.ausSpeicher(a) !== undefined,
         ladenAn: function () { try { setter("setDiscoverBrandsLoading")(ids.udb, "yes"); } catch (e) {} },
@@ -449,7 +473,6 @@
        der App mit (Seitenleiste, Filter, alle Bausteine lesen sie). */
     function nachAenderung() {
       lader.leeren();
-      try { if (UC.brandsChanged) UC.brandsChanged(); } catch (e) {}
       if (bereit()) bedarf({ frisch: true, seite: true });
     }
 
@@ -507,6 +530,41 @@
     }
     an("ubo-uboSetInactive", function (d) { statusSetzen(str(wert(d)).trim(), "inactive"); });
     an("ubo-uboActivate", function (d) { statusSetzen(str(wert(d)).trim(), "active"); });
+    /* LOESCHEN (Vertrag 10.5): wie bei Prompts -- ein Dialog, der kurz sagt, was wegfaellt, und
+       den Ausweg nennt (inaktiv setzen behaelt den Verlauf). Der Knopf ist rot (Gefahr). Die Antwort
+       kommt sofort, das Aufraeumen laeuft in der DB im Hintergrund, ohne Anzeige. */
+    function markeName(id) {
+      var l = (UC.getBrands ? UC.getBrands() : []).concat(state.meta ? state.meta.inaktive : []);
+      for (var i = 0; i < l.length; i++) if (l[i] && str(l[i].company_id) === id) return str(l[i].name);
+      return "";
+    }
+    function loeschen(id) {
+      if (D.VORSCHLAG) { nochNicht(); return; }
+      schreiben(D.loeschen(team(), [id])).then(function (erg) {
+        if (!erg.ok) { fehlerToast(erg, t("The brand could not be deleted")); return; }
+        toast(t("Brand deleted"), "success");
+        nachAenderung();
+      }, function () { fehlerToast(null, t("The brand could not be deleted")); });
+    }
+    an("ubo-uboDelete", function (d) {
+      var id = str(wert(d)).trim();
+      if (!UUID.test(id) || !team()) return;
+      var name = markeName(id);
+      var titel = name ? t("Delete {name}?").replace("{name}", name) : t("Delete this brand?");
+      /* Ohne den Dialog (alter core) wird NICHT geloescht: Loeschen ohne Rueckfrage gibt es nicht. */
+      if (!UC.makeModal) { toast(t("Please reload the page and try again."), "neutral"); return; }
+      UC.makeModal({
+        titel: titel,
+        isDark: isDark,
+        inhaltHtml: '<div class="up-modal-saetze">' +
+          '<p class="up-modal-hinweis">' + esc(t("This permanently deletes the brand and its history, including mentions, rankings and sentiment. Your reports will no longer include it, for any time period.")) + '</p>' +
+          '<p class="up-modal-hinweis">' + esc(t("This can't be undone. To stop tracking but keep the history, set it inactive instead.")) + '</p></div>',
+        knoepfe: [
+          { id: "abbrechen", text: "Cancel", art: "sec" },
+          { id: "ok", text: t("Delete brand"), art: "gefahr", aktion: function () { loeschen(id); } }
+        ]
+      });
+    });
     an("ubo-uboAddBrand", function () { brandOeffnen(); });
 
     /* ---- Ereignisse von Explore Brands (makeFire, lokal: "udb-" plus Name) -------------------- */
@@ -515,10 +573,16 @@
       if (m === (state.disc.matched !== false)) return;
       state.disc.matched = m; persist(); teilLaden("discover");
     });
-    /* Die Suche filtert der Baustein selbst in seinen Zeilen (die Spitze, 30). Ob der Vertrag eine
-       Suche ueber die Spitze hinaus bringt, steht im Auftrag (2.2); bis dahin kein Abruf je Taste --
-       ein Scan dauert heute 20 bis 30 Sekunden. */
-    an("udb-udbSearch", function () {});
+    /* Suche ueber ALLE Kandidaten (Vertrag 6.2: p_search), nicht nur die 30 gezeigten. Der Baustein
+       buendelt die Tasten selbst (makeSearch); die Antwort kommt in Millisekunden aus der
+       Tagesverdichtung. */
+    an("udb-udbSearch", function (d) {
+      var q = str(d.query).trim();
+      if (q === (state.disc.suche || "")) return;
+      state.disc.suche = q; persist(); teilLaden("discover");
+    });
+    /* "Track" auf einer INAKTIVEN Marke des Teams aktiviert sie direkt, ohne Dialog (Vertrag 10.3). */
+    an("udb-udbActivate", function (d) { statusSetzen(str(d.company_id).trim(), "active"); });
 
     /* ---- Export (wie prompts-page.js) ------------------------------------------------------------
        Brands Overview oeffnet das Export-Fenster der App ueber data-export-instance; die Seite setzt
@@ -554,8 +618,16 @@
       if (D.VORSCHLAG) return Promise.resolve({ ok: false, fehler: t("Adding brands here isn't available yet.") });
       return schreiben(D.anlegen(team(), payload)).then(function (erg) {
         var r = erg.ok ? D.zuAnlage(erg.daten) : null;
+        /* Schon da (gleiche Domain oder gleicher Name, Vertrag 6.3): das ist kein Fehlschlag --
+           der Dialog geht zu und sagt es (so faengt sich auch ein doppelter Klick ab). */
+        if (!erg.ok && /duplicate/.test(D.meldung(erg))) {
+          toast(t("This brand is already in your account"), "neutral");
+          nachAenderung();
+          return { ok: true };
+        }
         if (!erg.ok || !r) { var f = fehlerSatz(erg, t("The brand could not be added")); return { ok: false, fehler: f.text }; }
-        toast(t("Brand added"), "success", r.umgeschrieben ? t("Special characters were removed from the name.") : "");
+        toast(r.aktion === "reactivated" ? t("Brand activated again") : t("Brand added"), "success",
+              r.umgeschrieben ? t("Special characters were removed from the name.") : "");
         nachAenderung();
         return { ok: true };
       }, function () { return { ok: false, fehler: t("The brand could not be added") }; });
@@ -576,9 +648,12 @@
     function aktualisieren() {
       if (aktualisiertGerade || !team() || !bereit()) return;
       aktualisiertGerade = true;
+      /* Tracked: Dashboard-Cache leeren. Discover: den heutigen Tag neu rechnen (Vertrag 10.2,
+         1-3 s; ohne das zeigt Discover den Stand bis gestern). Ein Ratenlimit dort sagt es. */
       var vorab = state.tab === "tracked"
         ? UC.rpc(D.FN.clear, { p_team: team() }).then(function () { lader.leeren(); }, function () { lader.leeren(); })
-        : Promise.resolve(lader.leeren());
+        : (D.VORSCHLAG ? Promise.resolve(lader.leeren())
+          : schreiben(D.discoverNeu(team())).then(function (erg) { if (!erg.ok) fehlerToast(erg, t("Discover could not be refreshed")); lader.leeren(); }));
       var fertig = function () { aktualisiertGerade = false; };
       Promise.resolve(bedarf({ frisch: true, vorab: vorab, seite: true })).then(fertig, fertig);
     }

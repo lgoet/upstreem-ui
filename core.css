@@ -4885,6 +4885,9 @@
 /* Ein erklaerender Satz unter einem Etikett oder am Fuss eines Schritts: leiser als der Inhalt,
    lauter als nichts. */
 .up-modal-hinweis { margin: 0; font-size: var(--up-fs-m); line-height: 1.45; color: var(--vc-third); }
+/* Saetze, die zusammengehoeren (Loeschdialoge von Prompts und Brands, 11.10. nach core): 8px
+   zwischen ihnen statt der 32px, die die Dialogflaeche zwischen ihre Teile legt. */
+.up-modal-saetze { display: flex; flex-direction: column; gap: 8px; }
 
 /* ---- Die Trefferzeile der Entitaets-Suche (UC.entityRow mit dem Praefix "up-es", 02.10.) -----
    entityRow traegt "up-es" seit jeher als Vorgabe, aber Regeln dazu gab es keine: Ask Mira malt
@@ -5684,8 +5687,8 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    ("Byte-for-byte the Grouping popover's own row menu"), und die ist am 21.09. umgestellt
    worden -- die beiden waeren im dunklen Thema sonst auseinandergelaufen: hier #b0200c, dort
    das hellere #d25d5d von --vt-down. */
-.upt-group-rowmenu .up-pop-opt.is-danger, .up-cg-rowmenu .up-pop-opt.is-danger { color: var(--vt-down); }
-.upt-group-rowmenu .up-pop-opt.is-danger:hover, .up-cg-rowmenu .up-pop-opt.is-danger:hover { background: color-mix(in srgb, var(--vt-down) 8%, transparent); }
+.upt-group-rowmenu .up-pop-opt.is-danger, .up-cg-rowmenu .up-pop-opt.is-danger, .ubo-actmenu .up-pop-opt.is-danger { color: var(--vt-down); }
+.upt-group-rowmenu .up-pop-opt.is-danger:hover, .up-cg-rowmenu .up-pop-opt.is-danger:hover, .ubo-actmenu .up-pop-opt.is-danger:hover { background: color-mix(in srgb, var(--vt-down) 8%, transparent); }
 
 /* Beim Ziehen wird die Zeile ihr eigener Platzhalter, statt nur zu dimmen: der echte Inhalt
    verschwindet, zwei graue Bloecke treten an seine Stelle, ein Rahmen markiert den Platz. Reiner

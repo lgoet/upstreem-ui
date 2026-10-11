@@ -489,6 +489,9 @@
                 : initials(r.name)) +
             "</span>" +
             '<span class="udb-name" title="' + esc(r.name) + '">' + esc(r.name) + "</span>" +
+            /* Eine INAKTIVE Marke des Teams (Vertrag Brands v1, 10.3): sie bleibt in der Liste, mit
+               dem leisen Etikett aus core statt einer eigenen Pille. */
+            (r.inaktiv ? '<span class="up-marke is-leise udb-inaktiv" data-i18n="Inactive">' + esc(UC.t ? UC.t("Inactive") : "Inactive") + "</span>" : "") +
           "</div>";
         visibleCols().forEach(function (c) {
           h += '<div class="up-td up-td-' + c.key + '">' + cellHtml(c, r) + "</div>";
@@ -566,6 +569,15 @@
           esc(UC.t(SCHL)) + '</span> <span class="udb-total-n"></span>';
         elTotal.querySelector(".udb-total-n").textContent =
           (UC.fmtTotal ? UC.fmtTotal(state.totalResponses) : state.totalResponses);
+        /* Discover rechnet einmal am Tag (Vertrag Brands v1, 10.2): ohne "Aktualisieren" reicht der
+           Stand bis gestern. Das steht dann daneben, sonst sucht man die Laeufe von heute. */
+        if (state.ohneHeute) {
+          var h = document.createElement("span");
+          h.className = "udb-total-stand";
+          h.setAttribute("data-i18n", "Up to yesterday. Refresh for today.");
+          h.textContent = UC.t ? UC.t("Up to yesterday. Refresh for today.") : "Up to yesterday. Refresh for today.";
+          elTotal.appendChild(h);
+        }
       }
       /* measure() steht mit im render(), nicht nur im ResizeObserver. Der Beobachter ist der
          richtige Weg fuer eine Bubble-Gruppe, die sich ohne Fenster-Resize aendert -- aber wenn
@@ -594,6 +606,14 @@
           var row = null;
           for (var i = 0; i < state.rows.length; i++) if (state.rows[i].id === id) { row = state.rows[i]; break; }
           if (!row) return;
+          /* Eine inaktive Marke des Teams wird direkt wieder aktiviert, ohne Dialog -- sie ist ja
+             schon angelegt (Vertrag Brands v1, 10.3). Die Seite antwortet mit der neuen Liste, in
+             der die Zeile dann fehlt. */
+          if (row.inaktiv && row.companyId) {
+            tr.disabled = true;
+            fire("data-activate-fn", "udbActivate", { company_id: row.companyId });
+            return;
+          }
           /* TRACK OEFFNET DEN ADD-BRAND-DIALOG (05.10.: "Add Brand oeffnen, Domain und Namen
              eintragen, der Nutzer drueckt dort Track oder aendert vorher noch etwas -- geht das
              ohne riesige Bubble-Action?"). Ja: add-brand.js stellt openAddBrand() app-weit bereit
@@ -647,7 +667,9 @@
             mentioned_count: r.mentioned_count == null ? null : Number(r.mentioned_count),
             domain: u.domain ? String(u.domain) : "",
             url: u.root_url ? String(u.root_url) : (u.domain ? "https://" + u.domain : ""),
-            favicon: u.favicon_url ? String(u.favicon_url) : ""
+            favicon: u.favicon_url ? String(u.favicon_url) : "",
+            inaktiv: r.status === "inactive",
+            companyId: r.company_id == null ? "" : String(r.company_id)
           };
         });
       }
@@ -678,6 +700,7 @@
                 : (p.totalResponses != null ? p.totalResponses
                 : (Array.isArray(list) && list[0] && list[0].runs_total != null ? list[0].runs_total : null));
           state.totalResponses = t == null ? null : Number(t);
+          state.ohneHeute = p.today_included === false;
           setLoading(false);
           merken();
           render();

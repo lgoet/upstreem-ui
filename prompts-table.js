@@ -2176,7 +2176,7 @@
           isDark: function(){ return isDark; },
           /* Die zwei Saetze gehoeren zusammen: in einem Block mit 8px, nicht mit den 32px, die die
              Dialogflaeche zwischen ihre Teile legt (im Bild las sich das wie zwei Abschnitte). */
-          inhaltHtml: '<div class="upt-loeschtext">' +
+          inhaltHtml: '<div class="upt-loeschtext up-modal-saetze">' +
             '<p class="up-modal-hinweis">' + esc(t(eins
               ? "This permanently deletes the prompt and all of its data, including responses, mentions and citations. Your reports will no longer include it, for any time period."
               : "This permanently deletes the prompts and all of their data, including responses, mentions and citations. Your reports will no longer include them, for any time period.")) + '</p>' +

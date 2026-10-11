@@ -1390,6 +1390,16 @@
     var ACTIONS_INACTIVE = [
       { key: "activate",   label: "Activate",           fn: "data-activate-fn",   ev: "uboActivate" }
     ];
+    /* LOESCHEN (11.10., Brands-Vertrag v1 10.5): nur, wenn eine Seite den Baustein einbettet
+       (data-local) -- in Bubble gibt es dafuer keinen Workflow, der Eintrag waere ein Knopf ins
+       Leere. Und nur fuer owner/admin: die Seite setzt data-loeschen="nein" fuer alle anderen (wie
+       die Prompt-Tabelle); die Datenbank prueft trotzdem selbst. Aktiv und inaktiv. */
+    var ACTION_DELETE = { key: "delete", label: "Delete", fn: "data-delete-fn", ev: "uboDelete", gefahr: true };
+    function aktionen(){
+      var l = ((state.status === "inactive") ? ACTIONS_INACTIVE : ACTIONS_ACTIVE).slice();
+      if (UC.isYes(root.getAttribute("data-local")) && root.getAttribute("data-loeschen") !== "nein") l.push(ACTION_DELETE);
+      return l;
+    }
     function ensureActMenu(){
       if (actMenu && document.body.contains(actMenu)) return actMenu;
       actMenu = document.createElement("div");
@@ -1399,8 +1409,7 @@
       actMenu.addEventListener("click", function(e){
         var opt = e.target.closest("[data-action]");
         if (!opt || !actOpenFor) return;
-        var list = (state.status === "inactive") ? ACTIONS_INACTIVE : ACTIONS_ACTIVE;
-        var def = list.filter(function(a){ return a.key === opt.getAttribute("data-action"); })[0];
+        var def = aktionen().filter(function(a){ return a.key === opt.getAttribute("data-action"); })[0];
         var id = actOpenFor;
         closeActMenu();
         if (def) fireRaw(def.fn, def.ev, id);
@@ -1422,9 +1431,8 @@
       closePops(null);
       actOpenFor = id;
       btn.classList.add("is-open");
-      var list = (state.status === "inactive") ? ACTIONS_INACTIVE : ACTIONS_ACTIVE;
-      actMenu.innerHTML = list.map(function(a){
-        return '<div class="up-pop-opt" data-action="' + a.key + '">' + esc(a.label) + '</div>';
+      actMenu.innerHTML = aktionen().map(function(a){
+        return '<div class="up-pop-opt' + (a.gefahr ? " is-danger" : "") + '" data-action="' + a.key + '">' + esc(UC.t ? UC.t(a.label) : a.label) + '</div>';
       }).join("");
       actMenu.setAttribute("data-theme", isDark ? "dark" : "light");
       var r = btn.getBoundingClientRect();

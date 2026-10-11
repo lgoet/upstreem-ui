@@ -83,16 +83,33 @@
       s = s.replace(/^[a-z][a-z0-9+.-]*:\/\//, "");   // jedes Schema, nicht nur https
       s = s.replace(/^www\./, "");
       s = s.split(/[\/?#]/)[0];                        // Pfad, Query, Fragment
+      s = s.replace(/:\d*$/, "");                      // Port (Vertrag Brands v1: die DB nimmt ihn auch weg)
       s = s.replace(/\.+$/, "");                       // Punkt am Ende
       return s;
+    }
+    /* DIE DOMAIN, WIE DIE DATENBANK SIE WILL (11.10., Vertrag Brands v1 6.5): nur ASCII -- eine
+       Umlautdomain geht als Punycode hinaus, und die Oberflaeche wandelt sie (new URL macht genau
+       das). Im FELD bleibt die lesbare Form stehen: "müller.de" soll nach dem Verlassen nicht als
+       "xn--mller-kva.de" dastehen. Geprueft, gespeichert und fuers Favicon benutzt wird die ASCII-
+       Form. Kann der Browser sie nicht bilden, bleibt die Eingabe -- die Pruefung sagt dann nein. */
+    function asciiDomain(d) {
+      d = String(d == null ? "" : d);
+      if (!d || /^[\x00-\x7f]*$/.test(d)) return d;
+      try { return new URL("http://" + d).hostname.replace(/\.+$/, ""); } catch (e) { return d; }
     }
 
     /* Bewusst keine TLD-Liste: die veraltet, und ein Tippfehler in der Liste sperrt eine echte
        Marke aus. Geprueft wird die FORM -- mindestens ein Punkt, erlaubte Zeichen, kein Bindestrich
        am Label-Rand, Endung mindestens zwei Buchstaben. Das faengt "apple", "apple." und
        "app le.com" ab und laesst alles Echte durch, auch .co.uk und Umlautdomains in Punycode. */
-    var DOMAIN_RE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}$/;
-    function domainOk(d) { return !!d && d.length <= MAX_DOMAIN && DOMAIN_RE.test(d); }
+    /* Endung: Buchstaben ODER eine Punycode-Endung (xn--...), wie die Datenbank es prueft. */
+    var DOMAIN_RE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.(?:[a-z]{2,}|xn--[a-z0-9-]+)$/;
+    /* Labels hoechstens 63, alles hoechstens 253 Zeichen -- dieselben Grenzen wie in der DB. */
+    function domainOk(d) {
+      d = asciiDomain(d);
+      if (!d || d.length > Math.min(MAX_DOMAIN, 253) || !DOMAIN_RE.test(d)) return false;
+      return d.split(".").every(function (l) { return l.length <= 63; });
+    }
 
     function faviconFor(d) {
       return d ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(d) + "&sz=64" : "";
@@ -234,7 +251,7 @@
        ist ehrlicher als ein gebrochenes Bild. */
     function renderFav() {
       var d = normDomain(M.domain.value);
-      var url = domainOk(d) ? faviconFor(d) : "";
+      var url = domainOk(d) ? faviconFor(asciiDomain(d)) : "";
       if (M.fav.getAttribute("data-src") === url) return;   // nicht bei jedem Tastendruck neu laden
       M.fav.setAttribute("data-src", url);
       if (!url) { M.fav.innerHTML = ICON.globe; return; }
@@ -348,7 +365,7 @@
          JS gesetzter Wert laeuft daran vorbei, und dann traegt das Event mehr als das Limit. */
       var payload = {
         name: M.name.value.trim().slice(0, MAX_NAME),
-        domain: normDomain(M.domain.value).slice(0, MAX_DOMAIN)
+        domain: asciiDomain(normDomain(M.domain.value)).slice(0, MAX_DOMAIN)
       };
 
       /* makeFire und nicht resolveBubbleFn: nur makeFire stellt team_id voran, macht EINEN

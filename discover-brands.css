@@ -22,6 +22,12 @@
   margin-left: 12px; flex: 0 0 auto; }
 .udb-total.is-sk { width: 168px; height: 13px; border-radius: 4px; background: var(--vc-sk);
   animation: uutpulse 1.2s ease-in-out infinite; }
+/* Stand der Daten ("bis gestern", Vertrag Brands v1 10.2): leiser als die Zahl davor, mit Abstand
+   statt Trennzeichen. */
+.udb-total-stand { margin-left: 8px; color: var(--vc-third); }
+/* Das Etikett "Inactive" hinter dem Namen (Vertrag 10.3): Abstand zum Namen, sonst der Baustein
+   aus core (.up-marke.is-leise). */
+.udb-inaktiv { margin-left: 8px; }
 
 /* Der Matched-Schalter ist ein Knopf mit Checkbox, kein nacktes Kontrollkaestchen: er sitzt in
    einer Reihe mit Suche und Zahnrad und muss dieselbe 32px-Hoehe und dieselbe Trefferflaeche

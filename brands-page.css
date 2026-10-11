@@ -12,8 +12,8 @@
 .ubr-filterzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 16px; }
 .ubr-filterzeile > .udr-root { flex: 0 0 auto; }
 .ubr-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
-/* Explore Brands liest (Stand Vorschlag) keinen Filter -- dort stehen Kalender und Filter nicht. */
-.ubr-root[data-ubr-reiter="discover"] .ubr-filterzeile { display: none; }
+/* Die Filterzeile gilt fuer beide Reiter: Discover kennt Zeitraum, Models, Markets und Topics
+   (Vertrag Brands v1, 6.1). */
 .ubr-main { padding: 24px 0 64px; min-width: 0; }
 .ubr-tab { min-width: 0; }
 .ubr-root .ubr-tab[hidden] { display: none; }

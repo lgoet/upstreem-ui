@@ -12,8 +12,14 @@
       cached_dashboard_visibility_v1   Linienchart
       cached_dashboard_overview_v1     Tabelle und Landscape-Matrix (alle aktiven Marken)
       clear_dashboard_cache_v1         Aktualisieren
-  Was noch FEHLT (Auftrag an den DB-Chat: bubble/brands_db_auftrag.md):
-      inaktive Marken, Aktivieren/Deaktivieren, "Add Brand", Explore Brands.
+  Vertrag Brands v1 (Vorschlag des DB-Chats vom 11.10., Abschnitt 10 geht vor; abgestimmt in
+  bubble/brands_db_rueckmeldung.md), in der DB NOCH NICHT GEBAUT:
+      brands_page_meta_v1          Rolle, Zaehler, Kontingent, aktive Marken (Ablage), inaktive Marken
+      brands_set_status_v1         Aktivieren / Deaktivieren
+      brands_delete_v1             Loeschen (nur owner/admin, Aufraeumen im Hintergrund)
+      brand_add_v1                 "Add Brand" und "Track" aus Discover
+      cached_discover_brands_v1    Explore Brands (aus der Tagesverdichtung, Millisekunden)
+      discover_brands_refresh_v1   Aktualisieren auf Discover (rechnet den heutigen Tag)
   Bis dahin sagt die Seite an diesen Stellen sichtbar, dass es sie noch nicht gibt (Reiter
   Inactive und Discover mit Lesefehler, Knoepfe mit Hinweis) -- also erst umstellen, wenn der
   Vertrag gebaut und die Seite gegen die echten Antworten geprueft ist.
@@ -32,10 +38,12 @@
   - Team aus setUpstreemTeam, Marken aus setUpstreemBrands (die Liste "All Brands" im Chart-
     Filter), Models/Markets/Topics der Filter aus den globalen Stores.
   - Zeitraum aus dem eigenen Kalender; "Apply everywhere" gilt app-weit wie bisher. Models,
-    Markets und Topics gelten fuer Tracked. Auf Discover stehen sie nicht.
+    Markets und Topics gelten fuer Tracked UND Discover.
   - "Add Brand" (Kopf) und "Track" (Discover) oeffnen den Dialog add-brand.js; gespeichert wird
     ueber die Seite, nicht ueber den Bubble-Workflow.
-  - Nach Aenderungen: upstreemBrandsChanged (die Seitenleiste und alle Marken-Menues holen neu).
+  - Nach Aenderungen fuellt die Seite die Marken-Ablage der App selbst (aus brands_page_meta_v1,
+    mit role) -- Seitenleiste, Filter und alle Marken-Menues stimmen sofort, ohne Workflow.
+  - Loeschen: nur owner/admin (fuer member fehlt der Menueeintrag), mit Bestaetigungsdialog.
   - Reiter in der Adresse: ?br=discover. Zurueck/Vor wechselt den Reiter.
   - Zeilenklick: openDrawer("brand", company_id). "Edit": openDrawer("companysettings",
     company_id) -- der Marken-Editor ist #drawer-companysettings (11.10. bestaetigt).
