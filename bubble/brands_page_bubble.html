@@ -1,0 +1,58 @@
+<!--
+  UPSTREEM — BRANDS als EINE Komponente (Praefix ubr), 11.10.2026
+
+  WOHIN: ein HTML-Element, volle Breite, ohne eigenes Polster. Die Komponente baut ALLES selbst:
+  Seitenkopf (Krume "Brands", Reiter Tracked / Discover, "Add Brand" und Aktualisieren), Kalender,
+  Filterleiste und den Inhalt des Reiters. Brands Overview und Explore Brands sind die bestehenden
+  Bausteine (brands-overview, discover-brands) im LOKALEN Modus -- dieselben Bausteine an anderen
+  Orten der App bleiben davon unberuehrt.
+
+  ── STAND DES VERTRAGS (11.10.): NOCH NICHT UMSTELLEN ──────────────────────────
+  Tracked (Chart und Tabelle) laeuft schon live ueber den Dashboard-Vertrag v1:
+      cached_dashboard_visibility_v1   Linienchart
+      cached_dashboard_overview_v1     Tabelle und Landscape-Matrix (alle aktiven Marken)
+      clear_dashboard_cache_v1         Aktualisieren
+  Was noch FEHLT (Auftrag an den DB-Chat: bubble/brands_db_auftrag.md):
+      inaktive Marken, Aktivieren/Deaktivieren, "Add Brand", Explore Brands.
+  Bis dahin sagt die Seite an diesen Stellen sichtbar, dass es sie noch nicht gibt (Reiter
+  Inactive und Discover mit Lesefehler, Knoepfe mit Hinweis) -- also erst umstellen, wenn der
+  Vertrag gebaut und die Seite gegen die echten Antworten geprueft ist.
+
+  ── Was Bubble danach NICHT mehr tut ──────────────────────────────────────────
+  Keine Workflows, keine API-Calls, kein Run JS fuer diese Seite. Es entfallen in der Brands-
+  Ansicht alle bisherigen Workflows: die ubo*-Ereignisse (uboGranularity, uboSubmitBrands,
+  uboSortTable, uboStatus, uboExportTable, uboRowClick, uboSetInactive, uboEdit, uboActivate),
+  die udb*-Ereignisse (udbSearch, udbMatched, udbTrack), bphNav/bphAdd/bphRefresh, der
+  uabAddBrand-Workflow des Dialogs FUER DIESE ANSICHT, die Filter- und Kalender-Workflows der
+  Brands-Ansicht und das view_first_brands-Laden.
+  VORHER PRUEFEN: ruft einer davon noch etwas, das NICHT zur Brands-Ansicht gehoert (z.B. der
+  uabAddBrand-Workflow, wenn der Dialog auch anderswo geoeffnet wird)? Dann den Schritt behalten.
+
+  ── Was die Seite selbst regelt ───────────────────────────────────────────────
+  - Team aus setUpstreemTeam, Marken aus setUpstreemBrands (die Liste "All Brands" im Chart-
+    Filter), Models/Markets/Topics der Filter aus den globalen Stores.
+  - Zeitraum aus dem eigenen Kalender; "Apply everywhere" gilt app-weit wie bisher. Models,
+    Markets und Topics gelten fuer Tracked. Auf Discover stehen sie nicht.
+  - "Add Brand" (Kopf) und "Track" (Discover) oeffnen den Dialog add-brand.js; gespeichert wird
+    ueber die Seite, nicht ueber den Bubble-Workflow.
+  - Nach Aenderungen: upstreemBrandsChanged (die Seitenleiste und alle Marken-Menues holen neu).
+  - Reiter in der Adresse: ?br=discover. Zurueck/Vor wechselt den Reiter.
+  - Zeilenklick: openDrawer("brand", company_id). "Edit": der Marken-Editor -- die Seite sucht
+    seinen Drawer an der Seite (#drawer-brand_editor, #drawer-brand-editor o.ae.). Steht er unter
+    einem anderen Namen, bitte melden.
+
+  ── Attribute ─────────────────────────────────────────────────────────────────
+  data-instance   optional, Vorgabe "brands_page". Nur noetig, wenn die Seite zweimal steht.
+  data-adresse    optional, "aus": die Komponente laesst die Adresse in Ruhe (?br).
+  data-export-instance  optional: die Kennung des Export-Elements. Ohne Angabe nimmt die Seite
+                  das Export-Element, das auf der Seite steht (Typ brands).
+  Kein data-isdark, kein data-cdn-pin: das Thema setzt core, den Pin das Header-Script.
+
+  ── Umstellen: erst parallel, dann tauschen ───────────────────────────────────
+  1. Das Element auf eine Test-Ansicht stellen und neben der alten Brands-Ansicht vergleichen.
+  2. Stimmt alles: in #view-brands die alten Elemente (Seitenkopf, Kalender, Filterleiste,
+     Brands Overview, Explore Brands) samt ihrer Workflows durch DIESES eine Element ersetzen.
+     Das Export-Element bleibt stehen. Den Dialog "Add Brand" laedt das Header-Script
+     (add-brand.js), dafuer gibt es kein Element.
+-->
+<div class="up-root ubr-root" data-instance="brands_page"></div>

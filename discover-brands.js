@@ -212,7 +212,10 @@
       var elSearch  = root.querySelector(".up-search");
       var elSearchIn= root.querySelector(".up-search-input");
 
-      var fire = UC.makeFire(root, "udb", { eventPrefix: "udb-" });
+      /* makeFire(root, opts) -- zwei Argumente. Hier standen drei ("udb", {...}), die Optionen kamen
+         also nie an: das DOM-Ereignis hiess "udbSearch" statt "udb-udbSearch" und Warnungen
+         "component" statt "discover-brands" (11.10. gefunden, beim Einbetten in die Brands-Seite). */
+      var fire = UC.makeFire(root, { label: "discover-brands", eventPrefix: "udb-" });
       /* UC.themeParam statt isYes: kennt core ein Thema, gewinnt core -- das Attribut ist nur
          die Momentaufnahme aus dem Lauf des Workflows. */
       function isDark() { return UC.themeParam(root.getAttribute("data-isdark")) || root.getAttribute("data-theme") === "dark"; }

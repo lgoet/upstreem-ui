@@ -1398,6 +1398,28 @@
     "You can add or reactivate more prompts tomorrow.": "Weitere Prompts kannst du morgen hinzufügen oder reaktivieren.",
     "You can add or reactivate {n} more prompts today.": "Heute kannst du noch {n} Prompts hinzufügen oder reaktivieren.",
     "You can delete more prompts tomorrow.": "Weitere Prompts kannst du morgen löschen.",
+    /* ---- Brands als Seiten-Komponente (brands-page.js, 11.10.) ---- */
+    "Please try again tomorrow.": "Bitte versuche es morgen erneut.",
+    "{n} more brands fit into your plan.": "In deinen Tarif passen noch {n} Brands.",
+    "Set brands inactive or upgrade your plan.": "Setze Brands auf inaktiv oder wechsle den Tarif.",
+    "This brand is already in your account": "Diese Brand ist schon in deinem Konto",
+    "You don't have permission for this": "Dafür fehlt dir die Berechtigung",
+    "Your own brand can't be set inactive": "Deine eigene Brand kann nicht inaktiv werden",
+    "Please check the name and domain": "Bitte prüfe Name und Domain",
+    "This brand no longer exists": "Diese Brand gibt es nicht mehr",
+    "This isn't available yet": "Das gibt es noch nicht",
+    "It comes with the next update of this page.": "Es kommt mit dem nächsten Update dieser Seite.",
+    "Editing isn't available on this page": "Bearbeiten ist auf dieser Seite nicht verfügbar",
+    "The brand could not be activated": "Die Brand konnte nicht aktiviert werden",
+    "The brand could not be set inactive": "Die Brand konnte nicht inaktiv gesetzt werden",
+    "Brand activated": "Brand aktiviert",
+    "Brand set inactive": "Brand inaktiv gesetzt",
+    "Its history stays. You can activate it again anytime.": "Ihr Verlauf bleibt. Du kannst sie jederzeit wieder aktivieren.",
+    "Adding brands here isn't available yet.": "Brands hinzufügen gibt es hier noch nicht.",
+    "The brand could not be added": "Die Brand konnte nicht hinzugefügt werden",
+    "Brand added": "Brand hinzugefügt",
+    "Special characters were removed from the name.": "Sonderzeichen wurden aus dem Namen entfernt.",
+    "Adding brands isn't available on this page": "Brands hinzufügen ist auf dieser Seite nicht verfügbar",
     "Use 1 to 60 characters, with at least one letter or digit.": "1 bis 60 Zeichen, mit mindestens einem Buchstaben oder einer Ziffer.",
     "Pick an emoji from the emoji picker.": "Wähle ein Emoji aus der Auswahl.",
     "They are tracked again with their next daily run.": "Sie werden mit ihrem nächsten täglichen Lauf wieder erfasst.",
@@ -2677,8 +2699,8 @@
       "Die Haupt-Domain. Der Hauptpfad, keine Unterseite",
     "e.g. Apple": "z. B. Apple",
     "e.g. apple.com": "z. B. apple.com",
-    "No answer from the server. The brand may still have been created — close this and refresh before trying again.":
-      "Keine Antwort vom Server. Die Brand kann trotzdem angelegt worden sein — schließe das Fenster und lade neu, bevor du es erneut versuchst.",
+    "No answer from the server. The brand may still have been created. Close this and refresh before trying again.":
+      "Keine Antwort vom Server. Die Brand kann trotzdem angelegt worden sein. Schließe das Fenster und lade neu, bevor du es erneut versuchst.",
 
     /* ---- Brands: Seitenkopf und Overview ---- */
     "Manage tracked brands, compare performance, and discover untracked competitors":

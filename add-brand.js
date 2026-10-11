@@ -18,7 +18,7 @@
 (function () {
   "use strict";
 
-  var API_NAMES = ["openAddBrand", "closeAddBrand", "resetAddBrand", "addBrandSuccess", "addBrandError"];
+  var API_NAMES = ["openAddBrand", "closeAddBrand", "resetAddBrand", "addBrandSuccess", "addBrandError", "setAddBrandSubmit"];
   var Q = (window.__uabBootQueue = window.__uabBootQueue || []);
   API_NAMES.forEach(function (n) {
     if (!window[n]) window[n] = function () { Q.push([n, [].slice.call(arguments)]); };
@@ -60,7 +60,13 @@
 
     var M = null, fire = null, isOpen = false, opener = null;
     var zuletzt = null;   /* der zuletzt abgeschickte Eintrag, fuer up-brand-added */
-    var S = { name: "", domain: "", touched: false, saving: false };
+    var S = { name: "", domain: "", touched: false, saving: false, abgabe: null };
+    /* SEITE STATT BUBBLE (11.10., Brands-Seite). Eine Seiten-Komponente kann das Speichern selbst
+       uebernehmen (direkt in der Datenbank): entweder je Aufruf (openAddBrand({ onSubmit })) oder
+       dauerhaft, solange sie auf der Seite steht (window.setAddBrandSubmit(fn, wurzel)) -- Letzteres,
+       weil auch Explore Brands den Dialog oeffnet (Track) und von der Seite nichts weiss.
+       fn(payload) liefert { ok: true } oder { ok: false, fehler: "Satz" } (auch als Promise). */
+    var ABGABE = { fn: null, wurzel: null };
 
     /* ---------------------------------------------------------------------
        Domain: normalisieren und pruefen
@@ -176,7 +182,8 @@
 
       /* eventPrefix "uab-", damit das DOM-Ersatzereignis uab-bubble_fn_uabAddBrand heisst -- im
          Gleichschritt mit jeder anderen Komponente. */
-      fire = UC.makeFire(back, "uab", { eventPrefix: "uab-" });
+      /* makeFire(root, opts): zwei Argumente (vorher drei, die Optionen kamen nie an). */
+      fire = UC.makeFire(back, { label: "add-brand", eventPrefix: "uab-" });
 
       back.addEventListener("click", function (e) {
         if (e.target === back) { close(); return; }          // Klick auf den Scrim
@@ -270,7 +277,7 @@
         saveTimer = setTimeout(function () {
           if (!S.saving) return;
           setSaving(false);
-          setFormErr("No answer from the server. The brand may still have been created — close this and refresh before trying again.");
+          setFormErr("No answer from the server. The brand may still have been created. Close this and refresh before trying again.");
         }, TIMEOUT_MS);
       }
     }
@@ -306,6 +313,7 @@
       setErr(M.fName, ""); setErr(M.fDomain, "");
       setFormErr(""); setSaving(false);
       renderCount(); renderFav();
+      S.abgabe = typeof opts.onSubmit === "function" ? opts.onSubmit : null;
 
       opener = document.activeElement;
       isOpen = true;
@@ -352,6 +360,18 @@
          Reihenfolge wie beim Radar-Zellklick, aus demselben Grund. */
       setSaving(true);
       zuletzt = payload;
+      /* Speichert eine Seite selbst, geht NICHTS an Bubble -- sonst legte der alte Workflow die
+         Marke ein zweites Mal an. Die Antwort endet in denselben zwei Wegen wie die des Workflows. */
+      var abgabe = S.abgabe || ((ABGABE.fn && (!ABGABE.wurzel || ABGABE.wurzel.isConnected)) ? ABGABE.fn : null);
+      if (abgabe) {
+        var r;
+        try { r = abgabe({ name: payload.name, domain: payload.domain }); } catch (e) { r = null; }
+        Promise.resolve(r).then(function (erg) {
+          if (!isOpen || !S.saving) return;
+          if (erg && erg.ok) window.addBrandSuccess(); else window.addBrandError(erg && erg.fehler);
+        }, function () { if (isOpen && S.saving) window.addBrandError(""); });
+        return;
+      }
       fire("data-add-fn", "bubble_fn_uabAddBrand", payload);
       /* Der Dialog schliesst NICHT selbst. Er wartet auf addBrandSuccess() oder addBrandError()
          aus dem Workflow -- das Anlegen dauert ein paar Sekunden, und ein Dialog, der sofort
@@ -370,6 +390,10 @@
       open(opts);
     };
     window.closeAddBrand = function () { close(); };
+    window.setAddBrandSubmit = function (fn, wurzel) {
+      ABGABE.fn = typeof fn === "function" ? fn : null;
+      ABGABE.wurzel = ABGABE.fn && wurzel ? wurzel : null;
+    };
 
     /* Die beiden Antworten des Workflows. Beide beenden den Ladezustand -- der Unterschied ist
        nur, ob der Dialog zugeht oder mit einer Meldung stehen bleibt. */

@@ -623,7 +623,10 @@
       /* Order, not just presence: the Y-axis switch sits LEFT of the Linechart|Landscape switch.
          Moving it here (rather than only inserting it when missing) means a placement that still
          has the old markup order gets corrected too, without a re-paste. */
-      var typeSeg = root.querySelector('.ubo-seg[aria-label="Chart type"]');
+      /* Ueber seine Knoepfe gefunden, nicht ueber aria-label: das uebersetzt core (11.10. gefunden,
+         auf Deutsch griff die Suche ins Leere). */
+      var typeKnopf = root.querySelector(".ubo-seg [data-chartmode]");
+      var typeSeg = typeKnopf ? typeKnopf.closest(".ubo-seg") : null;
       if (chartTools && ys && typeSeg && ys.nextElementSibling !== typeSeg){
         chartTools.insertBefore(ys, typeSeg);
       } else if (chartTools && ys && !ys.parentNode){
@@ -682,6 +685,15 @@
        Search used to be the one exception, firing a JSON payload through UC.makeFire; it filters
        client-side now and sends nothing at all, so that second shape is gone. */
     function fireRaw(attr, fallbackName, value){
+      /* LOKALER MODUS (11.10., Brands-Seite): data-local="yes" heisst, eine Seite hat diesen
+         Baustein eingebettet und laedt selbst. Dann geht das Ereignis NUR als DOM-Ereignis an die
+         Seite ("ubo-" plus der Name, z.B. ubo-uboSortTable) mit dem rohen Wert in detail.value --
+         dieselbe Form wie votFire im Visibility Chart. Ohne das stand jeder Klick mit einer
+         Warnung "not found" in der Konsole, weil die Seite keine Bubble-Funktionen hat. */
+      if (UC.isYes(root.getAttribute("data-local"))){
+        try { root.dispatchEvent(new CustomEvent("ubo-" + fallbackName, { detail: { value: value }, bubbles: true })); } catch(e){}
+        return;
+      }
       var fnName = root.getAttribute(attr) || fallbackName;
       var fn = UC.resolveBubbleFn(fnName);
       if (typeof fn === "function"){ try { fn(String(value == null ? "" : value)); } catch(e){} }
@@ -1040,8 +1052,9 @@
          and let the .is-reloading dim carry the feedback instead of dropping into the skeleton. */
       var liveRows = inactive ? (state.inactiveRows || []) : (state.tableRows || []);
       var keepForSort = softReload && liveRows.length > 0;
-      /* Der Lesefehler kommt VOR dem Skelett -- sonst sieht endloses Laden aus wie "gleich da". */
-      if (state.leseFehler){
+      /* Der Lesefehler kommt VOR dem Skelett -- sonst sieht endloses Laden aus wie "gleich da".
+         inaktivFehler: die Liste der INAKTIVEN war unlesbar (11.10.) -- nur im Reiter Inactive. */
+      if (state.leseFehler || (inactive && state.inaktivFehler)){
         if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; }
         tableEl.innerHTML = UC.leseFehlerHtml("brands");
         applyCols();
@@ -1106,7 +1119,11 @@
        component -- .ubo-heading-table/.ubo-head-sep/.ubo-head-count already existed in
        brands-overview.css, unused, until now. */
     (function(){
-      var seg = root.querySelector('.ubo-seg[aria-label="Brand status"]');
+      /* Ueber seine Knoepfe gefunden, nicht ueber aria-label="Brand status": das uebersetzt core.
+         Auf Deutsch fand die Suche nichts, und Ueberschrift "Brands" samt Zaehler fehlten ganz
+         (11.10. im Pruefstand gefunden, betraf auch die eingebaute Ansicht). */
+      var statusKnopf = root.querySelector(".ubo-seg [data-status]");
+      var seg = statusKnopf ? statusKnopf.closest(".ubo-seg") : null;
       if (!seg) return;
       var uboHead = seg.parentElement;
       if (!uboHead) return;
@@ -1763,7 +1780,7 @@
            the very workflows that are already in flight). */
         /* Ein Reset raeumt den Lesefehler mit weg -- er gehoert zu den Daten, nicht zur
            Bedienung, und der Aufrufer laedt danach frisch. */
-        state.leseFehler = false;
+        state.leseFehler = false; state.inaktivFehler = false;
         sortField = "visibility"; sortDir = "desc";
         SORT_STORE[instanceId] = { field: sortField, dir: sortDir };
         filterSel = {}; filterQuery = "";
@@ -1828,6 +1845,7 @@
         var tbl = (params.table != null) ? params.table : (params.brands != null ? params.brands : params.rows);
         if (tbl != null){ state.tableRows = Array.isArray(tbl) ? tbl : []; state.hasTable = true; endSortDim(); }
         if (params.inactive != null){
+          state.inaktivFehler = !Array.isArray(params.inactive);
           state.inactiveRows = Array.isArray(params.inactive) ? params.inactive : [];
           endSortDim();
           if (state.totalCountInactive == null) state.totalCountInactive = state.inactiveRows.length;
@@ -1860,8 +1878,11 @@
         render();
       },
       setInactive: function(rows){
+        /* Unlesbar ist nicht leer (11.10.): vorher wurde aus einem kaputten Payload eine leere
+           Liste und der Reiter sagte "No data". */
+        state.inaktivFehler = !Array.isArray(rows);
         state.inactiveRows = Array.isArray(rows) ? rows : [];
-        state.totalCountInactive = state.inactiveRows.length;
+        state.totalCountInactive = state.inaktivFehler ? null : state.inactiveRows.length;
         if (state.status === "inactive"){ setHeadCount(); renderTable(); }
         return true;
       },
@@ -1959,9 +1980,14 @@
      JS), repaired by the one shared parser. */
   function doInactive(id, rows){
     var list = rows;
-    if (typeof list === "string") list = UC.parseBubbleJson(list);
-    if (!Array.isArray(list)) list = [];
-    if (id){ CACHE[id] = CACHE[id] || {}; CACHE[id].params = CACHE[id].params || {}; CACHE[id].params.inactive = list; }
+    /* readBubble, nicht parseBubbleJson (11.10.): parseBubbleJson gibt fuer einen kaputten Text
+       eine LEERE Liste zurueck, und der Reiter Inactive sagte "No data" statt eines Lesefehlers
+       (im Pruefstand gemessen). readBubble sagt null. Ein ganz leerer Text bleibt leer -- so kam
+       eine leere Liste aus Bubble bisher an. */
+    if (typeof list === "string") list = !list.trim() ? [] : (UC.readBubble ? UC.readBubble(list) : UC.parseBubbleJson(list));
+    /* Unlesbar bleibt unlesbar (null), statt still eine leere Liste zu werden. */
+    if (!Array.isArray(list)) list = null;
+    if (id && list){ CACHE[id] = CACHE[id] || {}; CACHE[id].params = CACHE[id].params || {}; CACHE[id].params.inactive = list; }
     var ctrl = id ? resolve(id) : initRoot(document.querySelector(".ubo-root"));
     if (!ctrl){
       if (window.console) console.warn("[brands-overview] setBrandsOverviewInactive: no .ubo-root matches instanceId " + JSON.stringify(id));
