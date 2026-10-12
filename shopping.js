@@ -9,14 +9,26 @@
      ?view=shopping&shop=products&product=<id>       Product Detail (der Reiter Products bleibt an)
    Die Adresse fuehrt (pushState), Zurueck im Browser fuehrt zurueck.
 
-   DATENWEGE: vier RPCs (bubble/shopping_runjs.md). Jede Anfrage geht als Ereignis an Bubble und
-   traegt den FERTIGEN RPC-Body als Text; die Antwort kommt als json-Feld des Umschlags plus
-   Fehler-Body zurueck:
+   DATENWEGE (seit 13.10., Vertrag bubble/vor_nextjs_13_10/VOR_NEXTJS_V1_VERTRAG.md, Abschnitt 1):
+   die Komponente laedt SELBST ueber UC.rpc (PostgREST, Login des Nutzers) -- kein Bubble-Workflow,
+   kein Run-JS-Schritt, kein Umschlag {json}. Vier RPCs, Parameter wie v1, Antwort reines JSON:
+     cached_shopping_overview_v2        Overview UND Brands (Brands blaettert ueber p_brand_*)
+     cached_shopping_products_v2
+     cached_shopping_product_detail_v2  (p_source_product_id als Text)
+     cached_shopping_merchants_v2
+   Fehler kommen als HTTP-Fehler mit dem Code in message (shopping_invalid_param,
+   shopping_invalid_date, shopping_product_not_found, shopping_rate_limited, forbidden,
+   team_access_*); jeder beendet das Laden und steht als Fehlerzustand im Inhalt. Ein 402
+   team_access_* zeigt core selbst als Gate.
+   RUECKWEG: Gibt es eine v2 noch nicht (404 PGRST202, SQL nicht eingespielt), laedt DIESER Kanal
+   bis zum Neuladen wie vorher ueber Bubble: Ereignis mit dem fertigen v1-Body als Text, Antwort
+   ueber den Setter (json des Umschlags, Fehler-Body):
      shopOverview       cached_shopping_overview_v1        setShoppingOverview(id, json, fehler)
-                        Overview UND Brands (Brands blaettert ueber p_brand_*)
      shopProducts       cached_shopping_products_v1        setShoppingProducts(id, json, fehler)
      shopProductDetail  cached_shopping_product_detail_v1  setShoppingProductDetail(id, json, fehler)
      shopMerchants      cached_shopping_merchants_v1       setShoppingMerchants(id, json, fehler)
+   Die Setter bleiben auch sonst (Vertrag: nie entfernen) -- die Landingpage fuellt ueber sie, und
+   dort (data-adresse="aus") geht nie eine direkte Anfrage hinaus: die fremde Seite hat kein Login.
    Die Antworten nennen ihre Parameter nicht. Darum laeuft je RPC hoechstens EINE Anfrage; was
    sich waehrenddessen aendert, geht hinaus, sobald sie da ist -- so gehoert jede Antwort sicher
    zu der Anfrage, fuer die sie kam (dieselbe Bauart wie der Zaehler im Events-Popup).
@@ -49,6 +61,10 @@
   var UC = window.UpstreemCore;
   var esc = UC.esc, t = UC.t || function (x) { return x; };
   var STORE = (window.__ushStore = window.__ushStore || {});
+  /* Kanaele, deren v2 es nicht gibt (13.10., 404 PGRST202): fuer das ganze Seitenleben, ueber
+     Bubbles Neuaufbau hinweg -- sonst ginge jede Anfrage erst gegen die fehlende Funktion, und
+     jede Seite laedt einen Umweg langsamer. Neu versucht wird erst nach einem Neuladen. */
+  var OHNE_V2 = (window.__ushOhneV2 = window.__ushOhneV2 || {});
 
   /* ---- Kleine Helfer ------------------------------------------------------------------------ */
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
@@ -592,15 +608,23 @@
       persist();
     }
 
-    /* ---- Anfragen an Bubble -------------------------------------------------------------------
+    /* ---- Anfragen ------------------------------------------------------------------------------
        Je RPC ein Kanal: hoechstens EINE Anfrage unterwegs, eine Uhr, die das Warten beendet. Die
-       Antwort gehoert der Anfrage, die unterwegs war (sig). */
+       Antwort gehoert der Anfrage, die unterwegs war (sig).
+       Seit dem 13.10. geht sie direkt an v2 (direkt); attr, name, setter und rpc (v1) tragen nur
+       noch den Rueckweg ueber Bubble (ueberBubble), falls eine v2 noch fehlt. */
     var KANAL = {
-      overview: { attr: "data-overview-fn", name: "shopOverview", setter: "setShoppingOverview", rpc: "cached_shopping_overview_v1" },
-      products: { attr: "data-products-fn", name: "shopProducts", setter: "setShoppingProducts", rpc: "cached_shopping_products_v1" },
-      detail: { attr: "data-detail-fn", name: "shopProductDetail", setter: "setShoppingProductDetail", rpc: "cached_shopping_product_detail_v1" },
-      merchants: { attr: "data-merchants-fn", name: "shopMerchants", setter: "setShoppingMerchants", rpc: "cached_shopping_merchants_v1" }
+      overview: { v2: "cached_shopping_overview_v2", attr: "data-overview-fn", name: "shopOverview", setter: "setShoppingOverview", rpc: "cached_shopping_overview_v1" },
+      products: { v2: "cached_shopping_products_v2", attr: "data-products-fn", name: "shopProducts", setter: "setShoppingProducts", rpc: "cached_shopping_products_v1" },
+      detail: { v2: "cached_shopping_product_detail_v2", attr: "data-detail-fn", name: "shopProductDetail", setter: "setShoppingProductDetail", rpc: "cached_shopping_product_detail_v1" },
+      merchants: { v2: "cached_shopping_merchants_v2", attr: "data-merchants-fn", name: "shopMerchants", setter: "setShoppingMerchants", rpc: "cached_shopping_merchants_v1" }
     };
+    /* Direkt laedt nur die App. Auf der Landingpage (data-adresse="aus", einzig dort gesetzt, aus
+       .landing_markup.py) steht die Komponente in einer fremden Seite ohne Login: eine direkte
+       Anfrage kaeme dort als "not authenticated" zurueck und legte einen Fehlerzustand ueber die
+       Vorfuehrung, die ihre Daten ueber die Setter bringt. Dort bleibt der alte Weg, dessen
+       Ereignisse landing-boot.js stummschaltet. */
+    function direktWeg() { return !ohneAdresse && typeof UC.rpc === "function"; }
     var unterwegs = { overview: null, products: null, detail: null, merchants: null };
     function grundBody() {
       var f = state.filter;
@@ -639,12 +663,11 @@
       var b = mit(grundBody(), { p_search: suchText(tb.suche), p_order: orderOf("merchants", tb), p_limit: limitOf(tb), p_offset: offsetOf(tb) });
       return { kanal: "merchants", body: b, sig: sigVon(b) };
     }
-    /* Die Signatur ist der Body ohne p_team -- das Team wechselt nur mit einem Seitenaufbau. */
-    function sigVon(b) {
-      var o = {}, k;
-      for (k in b) if (k !== "p_team" && Object.prototype.hasOwnProperty.call(b, k)) o[k] = b[k];
-      return JSON.stringify(o);
-    }
+    /* Die Signatur ist der ganze Body, MIT p_team (13.10.). Bis dahin fehlte das Team darin ("es
+       wechselt nur mit einem Seitenaufbau") -- seit die App das Team ohne Neuladen wechselt
+       (UC.onTeamChange) und die Komponente selbst laedt, zeigte ein Teamwechsel sonst die
+       gemerkten Zahlen des alten Teams als Antwort fuer das neue. */
+    function sigVon(b) { return JSON.stringify(b); }
     function bedarfListe() {
       switch (state.seite) {
         case "overview": return [ovAnfrage(OV_VORGABE)];
@@ -685,8 +708,70 @@
       verdecktUhr = setTimeout(function () { verdecktUhr = null; if (sichtbar()) { filterAbgleichen(); zeichnen(); bedarf(); } else verdecktPruefen(); }, 1000);
     }
     function senden(a) {
+      var direktJetzt = direktWeg() && !OHNE_V2[a.kanal];
+      /* Ohne Team keine direkte Anfrage: p_team "" waere ein Fehler der RPC, der als Fehlerzustand
+         stehen bliebe. Das erste setUpstreemTeam meldet sich ueber UC.onTeamChange (unten) und
+         laedt dann -- wie in citations-page. */
+      if (direktJetzt && !team()) return;
+      var u = unterwegs[a.kanal] = { sig: a.sig, body: a.body, uhr: null, ctrl: null, direkt: direktJetzt };
+      if (direktJetzt) direkt(a, u); else ueberBubble(a, u);
+    }
+    /* DER DIREKTE WEG (13.10.). Die Antwort ist an IHRE Anfrage gebunden (u im Abschluss) -- nicht
+       an "was gerade unterwegs ist" wie beim Setter. Darum braucht er weder kanalVon noch die
+       Nachzuegler-Pruefung: was nicht mehr unterwegs ist (reset, Teamwechsel, Notbremse), wird
+       verworfen, sonst nichts. */
+    function direkt(a, u) {
       var k = KANAL[a.kanal];
-      var u = unterwegs[a.kanal] = { sig: a.sig, body: a.body, uhr: null };
+      u.ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      /* Die Uhr ist hier die Notbremse: UC.rpc bricht selbst nach WARTE_MS ab, wartet davor aber
+         bis zu 4 s auf ein frisches Token und versucht nach "JWT expired" einmal neu. Ohne sie
+         koennte das Skelett fast eine Minute stehen. */
+      u.uhr = setTimeout(function () {
+        if (unterwegs[a.kanal] !== u) return;
+        unterwegs[a.kanal] = null;
+        if (u.ctrl) { try { u.ctrl.abort(); } catch (e) {} }
+        ablegen(a.kanal, a.sig, null, "zeit");
+      }, WARTE_MS + 5000);
+      UC.rpc(k.v2, a.body, { timeoutMs: WARTE_MS, signal: u.ctrl ? u.ctrl.signal : undefined }).then(function (erg) {
+        if (unterwegs[a.kanal] !== u) return;
+        erg = erg || { ok: false, status: 0, fehler: { message: "network" } };
+        if (!erg.ok && v2Fehlt(erg)) {
+          /* Die Funktion gibt es noch nicht: ein Pin, der vor dem SQL ausgeliefert wird, darf
+             nichts kaputt machen. Dieselbe Anfrage geht ueber Bubble, und der Kanal bleibt dort. */
+          OHNE_V2[a.kanal] = true;
+          melden("ohneV2" + a.kanal, k.v2 + " fehlt in der Datenbank -- " + k.name + " laedt bis zum Neuladen ueber den Bubble-Workflow.");
+          clearTimeout(u.uhr);
+          u.direkt = false; u.ctrl = null;
+          ueberBubble(a, u);
+          return;
+        }
+        clearTimeout(u.uhr);
+        unterwegs[a.kanal] = null;
+        /* Die Antwort ist reines JSON (kein Umschlag); objekt nimmt sie trotzdem durch denselben
+           Weg wie den Setter-Text -- eine Liste mit einem Element wird ihr erstes, alles andere als
+           ein Objekt ist unlesbar ("x"). */
+        if (erg.ok) ablegen(a.kanal, a.sig, objekt(erg.daten), "x");
+        else ablegen(a.kanal, a.sig, null, rpcFehlerCode(erg));
+      });
+    }
+    /* 404 mit PGRST202 heisst "Funktion nicht im Schema" -- NICHT jedes 404: PT404 ist ein
+       fachliches "nicht gefunden" und bleibt ein Fehlerzustand. */
+    function v2Fehlt(erg) {
+      var f = erg.fehler || {};
+      return erg.status === 404 && (f.code === "PGRST202" || /could not find the function/i.test(str(f.message)));
+    }
+    /* Der Code aus einem UC.rpc-Fehler fuer fehlerText: message IST der Code (Vertrag). Die
+       Zustaende von UC.rpc selbst werden zu denen, die der Fehlerzustand schon kennt. */
+    function rpcFehlerCode(erg) {
+      var m = str(erg.fehler && erg.fehler.message).trim();
+      if (m === "timeout") return "zeit";
+      if (m === "unreadable_response") return "x";
+      if (erg.status === 429 && !/rate_limited/.test(m)) return "shopping_rate_limited";
+      return m || "http_" + (erg.status || 0);
+    }
+    /* DER RUECKWEG UEBER BUBBLE -- bis zum 13.10. der einzige Weg, unveraendert. */
+    function ueberBubble(a, u) {
+      var k = KANAL[a.kanal];
       u.uhr = setTimeout(function () {
         if (unterwegs[a.kanal] !== u) return;
         unterwegs[a.kanal] = null;
@@ -731,7 +816,11 @@
           KANAL[echt].name + " muss der Run-JS-Schritt " + KANAL[echt].setter + " rufen. Die Antwort ist trotzdem richtig zugeordnet.");
         kanal = echt;
       }
-      var u = unterwegs[kanal], ziel = u;
+      var u = unterwegs[kanal];
+      /* Eine DIREKTE Anfrage bekommt ihre Antwort selbst (direkt). Ein Setter, der waehrenddessen
+         kommt, nimmt ihr den Platz nicht weg -- er gilt wie eine Antwort ohne Anfrage. */
+      if (u && u.direkt) u = null;
+      var ziel = u;
       if (!ziel) {
         var l = bedarfListe().filter(function (a) { return a.kanal === kanal; });
         ziel = l.length ? l[0] : null;
@@ -745,19 +834,25 @@
         return false;
       }
       if (u) { clearTimeout(u.uhr); unterwegs[kanal] = null; }
-      var sig = ziel ? ziel.sig : null;
+      return ablegen(kanal, ziel ? ziel.sig : null, ok ? d : null, fehlerCode(f) || (str(raw).trim() ? "x" : "leer"));
+    }
+    /* Eine Antwort ablegen -- derselbe Schluss fuer Setter und direkten Weg (13.10. aus antwort
+       herausgezogen): lesbar in den Speicher, sonst der Fehlercode an ihre Anfrage. Danach wird
+       IMMER gezeichnet, das beendet den Ladezustand auch im Fehlerfall. */
+    function ablegen(kanal, sig, d, code) {
+      var ok = !!(d && pruefen(kanal, d));
       if (sig) {
         if (ok) {
           delete state.fehler[kanal + sig];
           merken(kanal, sig, d);
         } else {
-          state.fehler[kanal + sig] = fehlerCode(f) || (str(raw).trim() ? "x" : "leer");
+          state.fehler[kanal + sig] = code || "x";
         }
       }
       persist();
       zeichnen();
       bedarf();
-      return !!ok;
+      return ok;
     }
     /* NACHZUEGLER (04.10.). Nach Ablauf der Uhr kann die alte Antwort noch kommen -- waehrend schon
        die naechste Anfrage unterwegs ist, deren Platz sie sonst einnaehme: kurz die Zahlen eines
@@ -2547,6 +2642,29 @@
       if (sichtbar()) bedarf();
     });
 
+    /* Alle offenen Anfragen abschreiben: Uhr aus, direkte Anfragen abbrechen. Was danach noch
+       ankommt, findet seine Anfrage nicht mehr unterwegs und wird verworfen. */
+    function abschreiben(nurDirekt) {
+      Object.keys(unterwegs).forEach(function (k) {
+        var u = unterwegs[k];
+        if (!u || (nurDirekt && !u.direkt)) return;
+        unterwegs[k] = null;
+        clearTimeout(u.uhr);
+        if (u.ctrl) { try { u.ctrl.abort(); } catch (e) {} }
+      });
+    }
+    /* Teamwechsel ohne Neuladen (13.10.): die Anfrage des alten Teams haelt sonst ihren Kanal, bis
+       sie zurueck ist, und die Seite des neuen wartet so lange. Das neue Team hat andere
+       Signaturen (sigVon mit p_team), der Speicher des alten zeigt sich also nicht. Das erste
+       Setzen in einem Seitenleben ist ebenfalls ein Wechsel ("" -> Id) und startet das Laden. */
+    if (UC.onTeamChange) UC.onTeamChange(function () {
+      if (!direktWeg()) return;
+      /* Nur die direkten: eine Anfrage ueber Bubble (Rueckweg) behaelt ihren Platz -- ihre Antwort
+         kommt ueber den Setter und landet so unter der Signatur des alten Teams, wohin sie gehoert. */
+      abschreiben(true);
+      bedarf();
+    }, root);
+
     /* ---- Setter -------------------------------------------------------------------------------- */
     var ctrl = {
       setOverview: function (raw, f) { return antwort("overview", raw, f); },
@@ -2557,7 +2675,7 @@
         state.cache = { overview: {}, products: {}, detail: {}, merchants: {} };
         state.reihe = { overview: [], products: [], detail: [], merchants: [] };
         state.fehler = {};
-        Object.keys(unterwegs).forEach(function (k) { if (unterwegs[k]) clearTimeout(unterwegs[k].uhr); unterwegs[k] = null; });
+        abschreiben();
         vorige = {};
         persist(); geruest = null; zeichnen(); bedarf();
         return true;
