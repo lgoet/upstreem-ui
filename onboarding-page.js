@@ -16,8 +16,8 @@
    deshalb steht neben Weiter ein sichtbarer Ueberspringen-Weg und keine stille Sperre.
 
 
-   ── Selbst geladen (data-source="db", seit 13.10.) ────────────────────────────────────────────
-   Mit dem Attribut laedt die Seite selbst ueber die v1-RPCs und Edge Functions des Vertrags
+   ── Selbst geladen (seit 13.10.) ──────────────────────────────────────────────────────────────
+   Die Seite laedt selbst ueber die v1-RPCs und Edge Functions des Vertrags
    (bubble/onboarding_13_10/ONBOARDING_V1_VERTRAG.md) und haengt am Kanal onboarding:<id>; an
    Bubble gehen nur noch uobDashboard und uobLogout. Der Teil steht unten unter "SELBST LADEN"
    und uebersetzt die Antworten in die Form der Setter -- alles hier darunter gilt weiter.
@@ -339,7 +339,7 @@
     ["IN", "India"], ["BR", "Brazil"], ["MX", "Mexico"], ["ZA", "South Africa"],
     ["AE", "United Arab Emirates"]
   ];
-  /* Im Selbstlade-Modus (data-source="db") bringt onboarding_bundle_v1 die Listen mit, gegen die
+  /* Selbst geladen bringt onboarding_bundle_v1 die Listen mit, gegen die
      onboarding-start prueft (134 Maerkte, pg_timezone_names). Dann gelten SIE -- eine Wahl aus einer
      anderen Liste kaeme als Fehler "market"/"timezone" zurueck. */
   var DB_LISTEN = { markets: null, timezones: null };
@@ -585,12 +585,12 @@
 
   function makeController(root) {
     var fireBubble = UC.makeFire(root, { label: "onboarding-page", eventPrefix: "uob" });
-    /* SELBST LADEN (13.10., Vertrag bubble/onboarding_13_10/ONBOARDING_V1_VERTRAG.md): traegt die
-       Wurzel data-source="db", laedt die Seite selbst (onboarding_bundle_v1, UC.rpc) und erledigt
-       jedes Ereignis selbst -- nichts geht mehr an Bubble ausser uobDashboard und uobLogout (die
-       zwei Wege aus der Seite heraus). Ohne das Attribut bleibt alles wie bisher: Bubble fuellt
-       ueber die Setter. So laeuft die alte Seite unveraendert weiter, bis Lukas umstellt. */
-    var SELBST = root.getAttribute("data-source") === "db";
+    /* SELBST LADEN (13.10., Vertrag bubble/onboarding_13_10/ONBOARDING_V1_VERTRAG.md): die Seite
+       laedt selbst (onboarding_bundle_v1, UC.rpc) und erledigt jedes Ereignis selbst -- an Bubble
+       gehen nur uobDashboard und uobLogout (die zwei Wege aus der Seite heraus). Wie jede andere
+       Komponente, ohne Schalter: umgestellt wird mit dem Pin am Element (eigener Loader, nicht das
+       Vorlade-Snippet). Die Setter bleiben aufrufbar, gebraucht werden sie nicht mehr. */
+    var SELBST = true;
     var SB = SBSTORE[txt(root.getAttribute("data-instance")) || "onboarding"] ||
              (SBSTORE[txt(root.getAttribute("data-instance")) || "onboarding"] =
                { id: "", kanal: null, kanalId: "", limits: null, q: {}, rueckkehr: "", session: "", trialOk: false, pruefUhr: null });
@@ -4302,7 +4302,7 @@
 
 
     /* ==== SELBST LADEN: der Weg ohne Bubble (Vertrag ONBOARDING_V1_VERTRAG.md, 13.10.) ==========
-       Nur mit data-source="db". Die Seite bleibt dieselbe -- dieser Teil uebersetzt die v1-
+       Die Seite bleibt dieselbe -- dieser Teil uebersetzt die v1-
        Antworten in die Form, die die Setter seit August lesen, und erledigt die Ereignisse, die
        vorher Bubble-Workflows ausloesten:
          Laden          onboarding_bundle_v1()                      -> setBundle

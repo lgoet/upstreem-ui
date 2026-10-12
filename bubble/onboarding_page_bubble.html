@@ -9,9 +9,8 @@
      Diese Datei ist eine VORLAGE. Aenderungen daran erreichen ein bereits eingebautes Element
      NICHT -- dort muss dasselbe von Hand nachgezogen werden.
 
-     ── SEIT 13.10.: DIE SEITE LAEDT SELBST (data-source="db") ─────────────────────────────
-     Mit data-source="db" (steht unten im Markup) holt die Seite alles selbst, mit dem Login des
-     Nutzers (Vertrag bubble/onboarding_13_10/ONBOARDING_V1_VERTRAG.md):
+     ── SEIT 13.10.: DIE SEITE LAEDT SELBST ───────────────────────────────────────────────
+     Die Seite holt alles selbst, mit dem Login des Nutzers (Vertrag bubble/onboarding_13_10/ONBOARDING_V1_VERTRAG.md):
        Laden      onboarding_bundle_v1 (auch Markt-, Zeitzonen- und Grenzlisten)
        Start      Edge onboarding-start, Status ueber den Kanal onboarding:<id>
        Auswahl    onboarding_select_v1
@@ -27,7 +26,7 @@
          dem API Connector zu beiden n8n-Webhooks und create-onboarding-checkout;
        - die Seite onboarding-success (die Kasse kehrt auf /onboarding zurueck).
      get_my_teams (Dashboard-Knopf) bleibt, falls die Seite ihn dafuer braucht.
-     Ohne data-source gilt alles darunter unveraendert (Bubble fuellt ueber die Setter).
+     Die Setter weiter unten gibt es noch, gebraucht werden sie nicht mehr.
 
      ── DER ABLAUF ──────────────────────────────────────────────────────────────────────────
      Fuenf Stationen, dazwischen zwei Wartezustaende:
@@ -264,7 +263,6 @@
 
 <div class="up-root uob-root"
      data-instance="INSTANCE_ID"
-     data-source="db"
      data-cdn-pin="CDN_PIN"
      data-isdark="IS_DARK"
      data-logo="LOGO_URL"
