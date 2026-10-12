@@ -74,6 +74,13 @@
 
   var BREIT = 900, MINI = 500;
   var W_WIDE = 250, W_MINI = 64;
+  /* Die Logos der Marke als Vorgabe (siehe renderBrand): breit der Schriftzug, eingeklappt das
+     Quadrat; je eine Fassung fuer hellen und dunklen Grund. */
+  var LOGO_BASIS = "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/";
+  var LOGO_VORGABE = {
+    breitHell: LOGO_BASIS + "upstreem-lockup-1f1f1f.svg", breitDunkel: LOGO_BASIS + "upstreem-lockup-e0e0e0.svg",
+    kleinHell: LOGO_BASIS + "upstreem-mark-square-1f1f1f.svg", kleinDunkel: LOGO_BASIS + "upstreem-mark-square-e0e0e0.svg"
+  };
 
   /* Die drei Bloecke. key ist der Wert, der im Event landet und den setSidebarActive erwartet. */
   var BLOECKE = [
@@ -851,14 +858,17 @@
         return (w === "UPSTREEM_LOGO" || w === "UPSTREEM_LOGO_DARK" ||
                 w === "UPSTREEM_LOGO_SMALL" || w === "UPSTREEM_LOGO_SMALL_DARK") ? "" : w;
       }
-      var hell = quelle(root.getAttribute("data-upstreem-logo"));
-      var dunkel = quelle(root.getAttribute("data-upstreem-logo-dark"));
+      /* Ohne Attribut die Logos der Marke (13.10.: das Element ist eine Zeile ohne Attribute, und
+         die Leiste zeigte nur den Schriftzug als Text). Ein Attribut geht weiter vor. Hell = die
+         dunkle Tinte (1f1f1f), dunkel = die helle (e0e0e0). */
+      var hell = quelle(root.getAttribute("data-upstreem-logo")) || LOGO_VORGABE.breitHell;
+      var dunkel = quelle(root.getAttribute("data-upstreem-logo-dark")) || LOGO_VORGABE.breitDunkel;
       /* EINGEKLAPPT DAS QUADRAT. Der breite Schriftzug ist auf 64px kein Logo mehr, sondern ein
          zusammengedrueckter Streifen -- deshalb zwei weitere Eingaenge fuer die 1:1-Fassung,
          hell und dunkel. Fehlt sie, bleibt es beim breiten Logo: eine fehlende Marke ist
          schlimmer als eine schmale. */
-      var kleinHell = quelle(root.getAttribute("data-upstreem-logo-small"));
-      var kleinDunkel = quelle(root.getAttribute("data-upstreem-logo-small-dark"));
+      var kleinHell = quelle(root.getAttribute("data-upstreem-logo-small")) || LOGO_VORGABE.kleinHell;
+      var kleinDunkel = quelle(root.getAttribute("data-upstreem-logo-small-dark")) || LOGO_VORGABE.kleinDunkel;
       /* Das Thema steht am Balken selbst -- dieselbe Quelle, die auch die Tooltips lesen. Fehlt
          die Fassung fuer das laufende Thema, wird die andere genommen: ein Logo in der falschen
          Fassung ist immer noch besser als keines. */
