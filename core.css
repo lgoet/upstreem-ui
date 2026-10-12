@@ -2169,6 +2169,11 @@
     }
     .up-fehlerzeile.is-on { grid-template-rows: 1fr; opacity: 1; }
     @media (prefers-reduced-motion: reduce){ .up-fehlerzeile { transition: none; } }
+    /* Mittig (13.10., Onboarding): der Fehler einer ganzen Seite oder eines Formulars steht als
+       derselbe rote Satz zentriert ueber bzw. unter dem Inhalt -- dort, wo der Blick ist. Zwei
+       Klassen gegen .up-fehlerzeile > span. */
+    .up-fehlerzeile.is-mitte { text-align: center; }
+    .up-fehlerzeile.is-mitte > span { padding-top: 0; }
 
     /* ══ EINZELSEITE (07.10.) ══════════════════════════════════════════════════════════════════
        Der Rahmen der kleinen ganzseitigen Flaechen: check-email, forgot-password, reset-password,

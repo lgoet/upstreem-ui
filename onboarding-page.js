@@ -830,7 +830,9 @@
 
       '<div class="uob-mid">' +
         '<div class="uob-col">' +
-          '<div class="uob-banner" data-banner><div><div class="uob-banner-in" data-banner-txt></div></div></div>' +
+          /* Der Fehler der Seite: die Fehlerzeile aus core, mittig (13.10. -- vorher ein eigener
+             Kasten mit Flaeche und Rahmen, so nicht gewollt). */
+          '<div class="up-fehlerzeile is-mitte uob-fehler" data-banner role="alert"><span data-banner-txt></span></div>' +
           '<div class="uob-ident" data-ident><div><div class="uob-ident-in">' +
             '<span class="uob-ident-logo" data-ident-logo></span>' +
             '<span class="uob-ident-txt">' +
@@ -1240,7 +1242,7 @@
               (darf ? "" : " disabled") + '>Start over</button>' +
           '</div>' +
           /* Die Warnung steht IMMER im Markup und faehrt nur ihre Hoehe -- Bauart wie der Banner
-             (.uob-banner). Sie beim Klick erst einzufuegen hiesse, sie ohne Uebergang aufblitzen
+             (.up-fehlerzeile). Sie beim Klick erst einzufuegen hiesse, sie ohne Uebergang aufblitzen
              zu lassen: ein frisch eingesetztes Element hat keinen Ausgangszustand, von dem aus
              etwas laufen koennte. */
           (darf
@@ -4263,6 +4265,36 @@
        Fehler kommen als Code (error_code bzw. message/hint) und werden HIER zu Saetzen -- Rohtext
        aus n8n oder der DB erreicht den Nutzer nie (Befund S3 des DB-Chats). */
     var SB_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    /* ---- Nicht angemeldet: zur Anmeldung, ohne Fehlerband (13.10.) ----
+       Jeder Aufruf dieses Teils geht ueber sbRpc/sbEdge. Heisst die Antwort "nicht angemeldet"
+       (401, onboarding_not_authenticated, edge_unauthorized -- core hat ein abgelaufenes Token
+       schon einmal nachgefasst), gibt es keinen Satz: die Seite geht zur Anmeldung, und die Antwort
+       erreicht den Aufrufer nie (das Versprechen bleibt offen), damit in der Zwischenzeit kein
+       Band aufblitzt. Erst Bubbles Abmeldung (uobLogout: Plugin abmelden, dann signup) -- so
+       raeumt das Plugin eine alte Sitzung weg und die Anmeldeseite schickt nicht zurueck. Bleibt
+       die Seite trotzdem stehen (Workflow fehlt), nach 1,5 s selbst nach /signup. */
+    function sbAbgemeldet(erg) {
+      if (!erg || erg.ok) return false;
+      return erg.status === 401 || /not_authenticated|edge_unauthorized/.test(sbCode(erg));
+    }
+    function sbZurAnmeldung() {
+      if (SB.weg) return;
+      SB.weg = true;
+      try { fireBubble("data-logout-fn", "uobLogout", null); } catch (e) {}
+      window.setTimeout(function () {
+        var vor = /^\/version-test(\/|$)/.test(window.location.pathname) ? "/version-test" : "";
+        window.location.assign(vor + "/signup");
+      }, 1500);
+    }
+    function sbAuth(erg) {
+      if (!sbAbgemeldet(erg)) return erg;
+      sbZurAnmeldung();
+      return new Promise(function () {});
+    }
+    function sbRpc(n, p, o) { return UC.rpc(n, p, o).then(sbAuth); }
+    function sbEdge(n, b, o) { return UC.edge(n, b, o).then(sbAuth); }
+
     var SB_SATZ = {
       website_unreachable: "We couldn't reach your website. Please check the address and try again.",
       website_blocked: "We can't check this address. Please enter your public website.",
@@ -4354,13 +4386,18 @@
     }
 
     /* ---- Laden ---- */
+    /* Das Buendel. Direkt nach dem Seitenaufbau kann die Sitzung des Plugins noch fehlen: einmal
+       nach 1,5 s nachfassen. Heisst es dann immer noch "nicht angemeldet", ist der Nutzer
+       abgemeldet und geht zur Anmeldung (sbAuth). */
     function sbBuendel() {
       function ruf() { return UC.rpc("onboarding_bundle_v1", {}, { timeoutMs: 30000 }); }
       return ruf().then(function (erg) {
-        /* Direkt nach dem Seitenaufbau kann die Sitzung des Plugins noch fehlen: einmal nachfassen. */
-        if (erg && !erg.ok && erg.status === 401) return new Promise(function (w) { setTimeout(w, 1500); }).then(ruf);
+        /* Nur wenn die Sitzung noch gar nicht da war (core fragt dann nicht einmal an: hint "no
+           session"/"no api key"). Ein abgelaufenes Token hat core schon selbst einmal nachgefasst. */
+        var h = erg && erg.fehler ? txt(erg.fehler.hint) : "";
+        if (sbAbgemeldet(erg) && /^no (session|api key)$/.test(h)) return new Promise(function (w) { setTimeout(w, 1500); }).then(ruf);
         return erg;
-      });
+      }).then(sbAuth);
     }
     function sbLaden() {
       sbBuendel().then(function (erg) {
@@ -4451,7 +4488,7 @@
       }
       if (st === "completed" || ph === 100) {
         /* Die Nutzlast traegt kein team_id: einmal den Status lesen. */
-        UC.rpc("onboarding_status_v1", { p_onboarding: sbId() }, { timeoutMs: 20000 }).then(function (erg) {
+        sbRpc("onboarding_status_v1", { p_onboarding: sbId() }, { timeoutMs: 20000 }).then(function (erg) {
           var d = sbDaten(erg), r = d && d.row ? d.row : null;
           sbFertig(r ? r.team_id : null);
         });
@@ -4473,7 +4510,7 @@
     }
     function sbNachlesen() {
       if (!sbId()) return;
-      UC.rpc("onboarding_status_v1", { p_onboarding: sbId() }, { timeoutMs: 20000 }).then(function (erg) {
+      sbRpc("onboarding_status_v1", { p_onboarding: sbId() }, { timeoutMs: 20000 }).then(function (erg) {
         var d = sbDaten(erg); if (d && d.row) sbStatus(d.row);
       });
     }
@@ -4517,8 +4554,8 @@
     function sbKassePruefen() {
       if (state.warten !== "workspace") return;
       var weg = SB.session
-        ? UC.edge("onboarding-checkout-status", { session_id: SB.session }, { timeoutMs: 30000 })
-        : UC.rpc("onboarding_status_v1", { p_onboarding: sbId() }, { timeoutMs: 20000 });
+        ? sbEdge("onboarding-checkout-status", { session_id: SB.session }, { timeoutMs: 30000 })
+        : sbRpc("onboarding_status_v1", { p_onboarding: sbId() }, { timeoutMs: 20000 });
       weg.then(function (erg) {
         var d = sbDaten(erg); if (d && d.row) d = d.row;
         if (!d) { ctrl.setError(sbAllgemein(erg) || sbSatz("finalize_failed")); return; }
@@ -4546,7 +4583,7 @@
       q.laeuft = true;
       function runde() {
         var l = q.ziel; q.ziel = null;
-        return UC.rpc("onboarding_select_v1", { p_onboarding: sbId(), p_kind: k, p_ids: l }, { timeoutMs: 20000 }).then(function (erg) {
+        return sbRpc("onboarding_select_v1", { p_onboarding: sbId(), p_kind: k, p_ids: l }, { timeoutMs: 20000 }).then(function (erg) {
           if (!erg || !erg.ok) sbAuswahlFehler(k, erg);
           if (q.ziel) return runde();
           q.laeuft = false;
@@ -4582,7 +4619,7 @@
     function sbStart(p) {
       p = p || {};
       SB.rueckkehr = "";
-      UC.edge("onboarding-start", { company_name: txt(p.brand_name), website: txt(p.website_input) || txt(p.website_url),
+      sbEdge("onboarding-start", { company_name: txt(p.brand_name), website: txt(p.website_input) || txt(p.website_url),
                                     market: txt(p.market), timezone: txt(p.timezone), business_model: txt(p.business_model) },
               { timeoutMs: 30000 }).then(function (erg) {
         var c = lebt() ? ctrl : resolve(instanceId); if (!c) return;
@@ -4614,10 +4651,10 @@
       var ids = state.topics.filter(function (t) { return state.selTopics[t.id]; }).map(function (t) { return txt(t.id); });
       var neu = state.eigene.map(function (e) { return txt(e.name); }).filter(Boolean);
       sbAuswahlFertig().then(function () {
-        return UC.rpc("onboarding_select_v1", { p_onboarding: sbId(), p_kind: "topics", p_ids: ids.filter(function (x) { return SB_UUID.test(x); }) }, { timeoutMs: 20000 });
+        return sbRpc("onboarding_select_v1", { p_onboarding: sbId(), p_kind: "topics", p_ids: ids.filter(function (x) { return SB_UUID.test(x); }) }, { timeoutMs: 20000 });
       }).then(function (erg) {
         if (!erg || !erg.ok) return erg;
-        return UC.edge("onboarding-prompts", { onboarding_id: sbId(), new_topics: neu }, { timeoutMs: 30000 });
+        return sbEdge("onboarding-prompts", { onboarding_id: sbId(), new_topics: neu }, { timeoutMs: 30000 });
       }).then(function (erg) {
         var c = lebt() ? ctrl : resolve(instanceId); if (!c) return;
         var d = sbDaten(erg);
@@ -4641,7 +4678,7 @@
 
     /* ---- Tarife ---- */
     function sbTarife() {
-      UC.rpc("onboarding_plans_v1", {}, { timeoutMs: 20000 }).then(function (erg) {
+      sbRpc("onboarding_plans_v1", {}, { timeoutMs: 20000 }).then(function (erg) {
         var c = lebt() ? ctrl : resolve(instanceId); if (!c) return;
         var d = sbDaten(erg);
         if (!d || !isArr(d.rows)) { c.setPlans(null); return; }
@@ -4662,7 +4699,7 @@
       p = p || {};
       var pfad = /^\/version-test(\/|$)/.test(window.location.pathname) ? "/version-test/onboarding" : "/onboarding";
       sbAuswahlFertig().then(function () {
-        return UC.edge("onboarding-checkout", { onboarding_id: sbId(), plan_id: txt(p.plan_id),
+        return sbEdge("onboarding-checkout", { onboarding_id: sbId(), plan_id: txt(p.plan_id),
                                                 billing_interval: txt(p.billing_interval) === "monthly" ? "monthly" : "yearly",
                                                 return_path: pfad }, { timeoutMs: 30000 });
       }).then(function (erg) {

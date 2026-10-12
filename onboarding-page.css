@@ -1018,7 +1018,7 @@
   display: grid; gap: 2px;
   font-size: 12.5px; line-height: 1.5; color: var(--vc-third); text-align: center;
 }
-/* Die Warnung faehrt von oben herein, wenn der Knopf scharf gemacht wird. Bauart wie .uob-banner:
+/* Die Warnung faehrt von oben herein, wenn der Knopf scharf gemacht wird. Bauart wie die Fehlerzeile:
    grid-template-rows von 0fr auf 1fr, dazu Deckkraft und ein kleiner Weg -- das Element steht
    dabei die ganze Zeit im Dokument, und nur so hat der Uebergang einen Ausgangszustand. */
 .uob-res-warn {
@@ -1398,23 +1398,12 @@
   max-height: calc(100% - 120px);
 }
 
-/* ---------- Fehlerband ----------
-   Ueber dem Inhalt, nicht unter ihm: ein Fehler, der unter einer gescrollten Liste steht, ist
-   kein Fehler, den jemand sieht. */
-.uob-banner {
-  display: grid; grid-template-rows: 0fr; opacity: 0;
-  transition: grid-template-rows var(--uob-t) var(--uob-ease), opacity var(--uob-t) var(--uob-ease),
-              margin-bottom var(--uob-t) var(--uob-ease);
-  margin-bottom: 0;
-}
-.uob-banner > div { overflow: hidden; min-height: 0; }
-.uob-banner.is-on { grid-template-rows: 1fr; opacity: 1; margin-bottom: 16px; }
-.uob-banner-in {
-  padding: 10px 12px; border-radius: 10px;
-  border: 1px solid var(--vc-neg-border, rgba(200, 60, 60, .28));
-  background: var(--vc-neg-bg, rgba(200, 60, 60, .08));
-  font-size: 13px; line-height: 1.45; color: var(--vc-text);
-}
+/* ---------- Fehler der Seite ----------
+   Die Fehlerzeile aus core (.up-fehlerzeile.is-mitte): roter Satz, mittig, ohne Kasten. Hier nur
+   die Lage -- ueber dem Inhalt, nicht unter ihm: ein Fehler unter einer gescrollten Liste sieht
+   niemand. Der Abstand nach unten steht IN der Zeile (unteres Polster des Satzes): so faehrt er
+   mit ihr auf und zu, und die Uebergaenge aus core bleiben unangetastet. */
+.uob-fehler > span { padding-bottom: 16px; }
 
 /* ---------- Schrittwechsel ----------
    Die Schritte liegen im selben Raster uebereinander, damit die Spalte beim Wechsel nicht
