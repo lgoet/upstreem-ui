@@ -756,6 +756,12 @@
           }, WECHSEL_FREI_MS);
           /* Genau die Nutzlast des Teamwaehlers in der Seitenleiste (usnTeam). Wer
              data-switch-fn auf bubble_fn_usnTeam zeigt, braucht keinen neuen Workflow. */
+          /* APP-START (13.10.): kommt der Start von core, wechselt core das Team (team_switch_v1,
+             dann neu laden) -- der Bubble-Workflow usnTeam ist dann geloescht. */
+          if (UC.appStartAktiv && UC.appStartAktiv() && UC.appTeamWechseln) {
+            UC.appTeamWechseln(id).then(function (ok) { if (!ok && sw) { sw.disabled = false; if (lbl) lbl.textContent = UC.t("Switch"); } });
+            return;
+          }
           fire("data-switch-fn", "usnTeam", { team_id: id });
           return;
         }
