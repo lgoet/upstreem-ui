@@ -4113,16 +4113,19 @@
    Was hier zu Bewegung und Ebene steht, ist darum der RUECKFALL fuer eine Seite ohne Kopf-
    Skript (Pruefstand, spaeter die Web-App) -- mit den Werten der Recherche vom 11.10.: herein
    260ms, hinaus 200ms, beide mit der Kurve von vaul, und nie ease-in.
-   Form: SCHWEBEND, 8px vom Rand, Radius 12 (Geist, Linear). Unter 768px wird er zur ganzen
-   Seite wie in der Mobilvorlage -- ein Blatt von rechts, kein Blatt von unten: die Vorlage
-   zeigt eine volle Seite mit Kopf, und Wischen vom Rand kollidiert auf iOS mit Zurueck. */
-.up-root.up-kdr { position: fixed; top: 8px; right: 8px; bottom: 8px; z-index: 9920;
-  width: min(var(--up-kdr-breite, 840px), calc(100vw - 16px)); box-sizing: border-box;
+   Form: BUENDIG (13.10., vorher schwebend 8px vom Rand mit Radius 12): volle Hoehe, rechts am
+   Fensterrand, ohne Rundung -- wie die Seitenpanels von Linear, Notion, Stripe und Vercel. Bei
+   88 % Breite las sich der Rand eher als Deko; die Ebene tragen jetzt Schatten (--up-e-drawer)
+   und die eine Kante links. Unter 768px wird er zur ganzen Seite wie in der Mobilvorlage -- ein
+   Blatt von rechts, kein Blatt von unten: die Vorlage zeigt eine volle Seite mit Kopf, und
+   Wischen vom Rand kollidiert auf iOS mit Zurueck. */
+.up-root.up-kdr { position: fixed; top: 0; right: 0; bottom: 0; z-index: 9920;
+  width: min(var(--up-kdr-breite, 840px), 100vw); box-sizing: border-box;
   display: flex; flex-direction: column; overflow: hidden;
   /* Der Grund der Seite (--up-surface), nicht der Karten (--vc-bg): im Dunkeln stand der Drawer
      sonst heller als die Seite darunter (12.10. gemeldet). Im Hellen sind beide weiss. */
   background: var(--up-surface, var(--vc-bg)); color: var(--vc-text);
-  border: 1px solid var(--vc-border); border-radius: var(--up-r-xl); box-shadow: var(--up-e-drawer);
+  border: 0; border-left: 1px solid var(--vc-border); border-radius: 0; box-shadow: var(--up-e-drawer);
   font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; -webkit-font-smoothing: antialiased;
   transform: translateX(110%); transition: transform var(--up-t-2) cubic-bezier(.32, .72, 0, 1);
   will-change: transform; backface-visibility: hidden; outline: none; }
@@ -4223,11 +4226,10 @@
    und tritt hinter den Inhalt des Abschnitts zurueck. */
 .up-dk-unter { font-size: var(--up-fs-m); font-weight: 400; line-height: 1.45; color: var(--vc-third); }
 
-/* Tablet: die volle Breite bis auf den schwebenden Rand -- 80 % von 900px liessen links einen
-   Streifen Seite stehen, der nur noch nach Platzverlust aussah (so wie die Bubble-Gruppe, die
-   dort auf 100 % ging). */
+/* Tablet: die volle Breite -- 80 % von 900px liessen links einen Streifen Seite stehen, der nur
+   noch nach Platzverlust aussah (so wie die Bubble-Gruppe, die dort auf 100 % ging). */
 @media (max-width: 1023px) {
-  .up-root.up-kdr { width: calc(100vw - 16px); }
+  .up-root.up-kdr { width: 100vw; }
 }
 @media (max-width: 767px) {
   .up-root.up-kdr { top: 0; right: 0; bottom: 0; width: 100vw; border: 0; border-radius: 0; }
