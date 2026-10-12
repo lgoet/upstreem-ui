@@ -338,15 +338,23 @@
   /* "Create with AI" fragt beim Oeffnen nach den eigenen URLs (create-with-ai.js, DOM-Ereignis
      get_you_urls mit der Kennung der Instanz). Kommt keine Antwort, steht dort ein Skelett --
      also antwortet die Seite auch im Fehlerfall, mit einer leeren Liste. */
+  /* Seit 13.10. antwortet die Seite IMMER, nicht nur wenn sie gemountet ist: "Create with AI"
+     oeffnet sich auch aus dem URL-Drawer, auf jeder Ansicht. Vorher antwortete dort nur noch der
+     Bubble-Workflow get_you_urls -- ohne ihn blieb der Baukasten im Skelett. preventDefault sagt
+     create-with-ai, dass hier jemand antwortet; dann fragt es Bubble nicht mehr. */
   document.addEventListener("get_you_urls", function (e) {
-    if (!aktiv || !brettLokal()) return;
     var uid = str(e && e.detail && e.detail.uid), tm = team();
-    if (!tm) return;
+    if (!tm || !D || !D.eigeneUrls) return;
+    try { e.preventDefault(); } catch (err) {}
     var a = D.eigeneUrls(tm);
-    aktiv.gem.lader.laden("urls", a).then(function (erg) {
-      if (erg.ueberholt) return;
+    var weg = aktiv && brettLokal() ? aktiv.gem.lader.laden("urls", a)
+      : UC.rpc(a.fn, a.params, { timeoutMs: 20000 });
+    Promise.resolve(weg).then(function (erg) {
+      if (!erg || erg.ueberholt) return;
       var l = erg.ok ? D.zuUrls(erg.daten) : null;
       try { if (window.createWithAiSetYouUrls) window.createWithAiSetYouUrls(uid, l || []); } catch (err) {}
+    }, function () {
+      try { if (window.createWithAiSetYouUrls) window.createWithAiSetYouUrls(uid, []); } catch (err) {}
     });
   });
 

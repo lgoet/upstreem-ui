@@ -680,6 +680,10 @@
       try { window.dispatchEvent(new CustomEvent("mira_" + base)); } catch(_){}
       return;
     }
+    if (action === "edit_your_brand" && drawerAuf("companysettings", eigeneMarkeId())){
+      try { window.dispatchEvent(new CustomEvent("mira_" + base)); } catch(_){}
+      return;
+    }
     if (oeffneDirekt(action)){
       /* Das DOM-Ereignis geht trotzdem hinaus -- daran haengt moeglicherweise eine Auswertung.
          Der bubble_fn_* Aufruf NICHT: sonst oeffnet sich das Fenster zweimal, einmal von hier und
@@ -692,11 +696,32 @@
     try { window.dispatchEvent(new CustomEvent("mira_" + base)); } catch(_){}
   }
   // one distinct event per result category, carrying a single value (id / domain / url)
+  /* Treffer -> Drawer aus core (13.10.): alle vier Arten sind core-Drawer, geoeffnet ueber
+     openDrawer des Kopf-Skripts. Der Bubble-Workflow qa_select_* ist nur noch der Rueckfall, wenn
+     es openDrawer nicht gibt -- beides zugleich oeffnete den Drawer zweimal. */
+  var DRAWER_ART = { brand: "brand", domain: "domain", url: "url", prompt: "prompt" };
+  function drawerAuf(art, id){
+    var k = window.UpstreemCore;
+    if (!art || !id || !k || typeof k.drawerOeffnen !== "function" || typeof window.openDrawer !== "function") return false;
+    return k.drawerOeffnen(art, id, "quick-actions") === true;
+  }
   function fireSelect(cat, value){
     value = String(value == null ? "" : value);
-    var fn = "bubble_fn_qa_select_" + cat;
-    if (typeof window[fn] === "function"){ try { window[fn](value); } catch(_){} }
+    if (!drawerAuf(DRAWER_ART[cat], value)){
+      var fn = "bubble_fn_qa_select_" + cat;
+      if (typeof window[fn] === "function"){ try { window[fn](value); } catch(_){} }
+    }
     try { window.dispatchEvent(new CustomEvent("mira_qa_select_" + cat, { detail: { value: value } })); } catch(_){}
+  }
+  /* "Edit your brand" = der Marken-Editor (core-Drawer companysettings) fuer die eigene Marke,
+     wie der Stift im Marken-Drawer. Ohne eigene Marke im Store bleibt es beim Bubble-Ereignis. */
+  function eigeneMarkeId(){
+    var k = window.UpstreemCore, l = k && k.getBrands ? (k.getBrands() || []) : [];
+    for (var i = 0; i < l.length; i++){
+      var b = l[i];
+      if (b && (String(b.role || "").toLowerCase() === "own" || b.is_own === true)) return String(b.company_id || b.id || "");
+    }
+    return "";
   }
 
   /* ---------- render helpers ---------- */

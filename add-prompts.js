@@ -1105,7 +1105,12 @@
     S.csvNote = ""; S.csvSkipped = 0; S.csvName = ""; S.capNote = "";
     S.tab = opts.tab === "csv" ? "csv" : "manual";
     S.pick = null; S.pickQuery = "";
-    S.abgabe = typeof opts.onSubmit === "function" ? opts.onSubmit : null;
+    /* Ohne onSubmit (Quick Actions, Kopfknopf einer alten Seite) speichert der gemeinsame Weg aus
+       prompts-page.js direkt in der Datenbank (13.10.) -- der Bubble-Workflow uapAddPrompts bleibt
+       nur der Rueckfall fuer eine Seite ohne prompts-page.js. Vorher meldete der Dialog dort in
+       jedem Fall "added", auch wenn kein Workflow mehr zuhoerte. */
+    S.abgabe = typeof opts.onSubmit === "function" ? opts.onSubmit
+             : (typeof window.upstreemPromptsAnlegen === "function" ? window.upstreemPromptsAnlegen : null);
     /* Default market first, an explicit opts.market second. Both optional; neither is required
        for the dialog to work, the market just starts empty then. */
     if (DEFAULT_MARKET) S.market = DEFAULT_MARKET;

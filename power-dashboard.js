@@ -1188,6 +1188,12 @@
        aenderung, und wer zusaetzlich etwas tun will (etwas mitloggen, einen State setzen), haengt
        sich weiter daran. Wer nichts tut, braucht den Workflow nicht mehr. */
     function zurAnsicht(name){
+      /* Ueber core (13.10.): ansichtWechseln geht ueber die Seitenleiste, damit Bubble seinen
+         Current-View-State setzt und die Leiste den aktiven Punkt nachzieht -- showView direkt
+         liess beides stehen. Der einzige Ort fuer Next.js, an dem das Routing andocken muss. */
+      if (UC.ansichtWechseln && (typeof window.usnNavigieren === "function" || typeof window.showView === "function")){
+        try { return UC.ansichtWechseln(name) !== false; } catch(e){}
+      }
       if (typeof window.showView === "function"){ try { window.showView(name); return true; } catch(e){} }
       /* Kein showView: die Seite ist nicht die Hauptapp (Prueftand, Landingpage). Dann bleibt es
          beim Ereignis -- und einer Zeile, damit es nicht stumm nichts tut (CLAUDE.md §5). */

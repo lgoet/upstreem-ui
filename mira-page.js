@@ -122,13 +122,15 @@
 
     /* ---- Chatliste ---------------------------------------------------------------------- */
     function sichtbarTest(el) { return el.isConnected !== false && (!UC.istSichtbar || UC.istSichtbar(el)); }
-    function listeLaden(frisch) {
+    function listeLaden(frisch, leise) {
       var tm = team();
       if (!tm) return Promise.resolve(null);
       return lader.laden("chats", D.chats(tm, 0), { frisch: !!frisch }).then(function (erg) {
         if (erg.ueberholt || tm !== team()) return null;
         var z = erg.ok ? D.zuChats(erg.daten, true) : null;
-        if (!z) { satz("Couldn't load your chats", "error", "Reload the page to try again."); return null; }
+        /* leise: das Nachfassen im Hintergrund -- scheitert es, bleibt die Liste, die schon da steht,
+           und es kommt kein roter Satz aus dem Nichts. */
+        if (!z) { if (!leise) satz("Couldn't load your chats", "error", "Reload the page to try again."); return null; }
         gem.offset = z.zeilen; gem.mehr = z.mehr; gem.listeFuer = tm;
         am("askMiraSetProjects", z.projekte);
         am("askMiraSetPreviousChats", z.chats);
@@ -430,8 +432,13 @@
           return;
         }
         case "export_pdf": pdf(d); return;
-        /* new_chat, refresh_chats, voice_start/_cancel/_error: hier nichts zu tun -- die Liste
-           haelt der Kanal aktuell, und die Komponente setzt sich selbst zurueck. */
+        /* Die Komponente fragt die Liste neu an, wenn der Tab 20s und laenger weg war, nach "online",
+           nach pageshow und nach einem Wiederverbinden. Der Kanal haelt die Liste nur, solange er
+           verbunden ist -- was in der Pause kam (neuer Chat auf einem anderen Geraet, ein Titel),
+           fehlte bis zum Neuladen (Bestand 13.10.). */
+        case "refresh_chats": listeLaden(true, true); return;
+        /* new_chat, voice_start/_cancel/_error: hier nichts zu tun -- die Komponente setzt sich
+           selbst zurueck. */
         default: return;
       }
     }

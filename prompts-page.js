@@ -112,6 +112,53 @@
     return { text: wobei || t("That didn't work"), desc: t("Please try again.") };
   }
   function fehlerToast(erg, wobei) { var f = fehlerSatz(erg, wobei); toast(f.text, "error", f.desc); }
+  /* Schreiben laeuft nicht durch den Lader (kein Speicher, kein Abbrechen durch eine neuere
+     Anfrage). XX000 einmal wiederholen (Regel der Seiten-Vertraege) -- aber nur, was die DB als
+     Serverfehler meldet; ein Grenzen- oder Rechtefehler bleibt, was er ist. */
+  function schreibenRpc(a) {
+    function ruf() { return UC.rpc(a.fn, a.params, { timeoutMs: 30000 }); }
+    return ruf().then(function (erg) {
+      var c = erg && erg.fehler ? str(erg.fehler.code) : "";
+      if (erg && !erg.ok && c === "XX000") return new Promise(function (w) { setTimeout(w, 800); }).then(ruf);
+      return erg;
+    });
+  }
+  function kontingentNachziehen(k) {
+    if (!k || !UC.setQuota) return;
+    var q = (UC.getQuota && UC.getQuota()) || {};
+    q.used = k.used; q.total = k.total;
+    UC.setQuota(q, "prompts-page");
+  }
+  /* Prompts anlegen -- EIN Weg fuer jeden Einstieg (13.10.). Bis dahin speicherte nur die
+     Prompts-Seite selbst; der Dialog aus Quick Actions bekam kein onSubmit und feuerte den alten
+     Bubble-Workflow uapAddPrompts, zeigte aber in jedem Fall "added". Faellt der Workflow weg,
+     waeren die Prompts still verloren gewesen. Darum steht der Weg hier, ohne Bezug auf eine
+     Seiteninstanz, und add-prompts.js nimmt ihn, wenn niemand ein onSubmit mitgibt.
+     Danach meldet "up-prompts-added" (window), damit eine offene Prompts-Seite neu laedt. */
+  function anlegenAllgemein(payload) {
+    if (!team()) { fehlerToast(null, t("The prompts could not be added")); return Promise.resolve({ ok: false }); }
+    return schreibenRpc(D.anlegen(team(), payload)).then(function (erg) {
+      var r = erg.ok ? D.zuAnlage(erg.daten) : null;
+      if (!erg.ok || !r) { fehlerToast(erg, t("The prompts could not be added")); return { ok: false }; }
+      kontingentNachziehen(r.kontingent);
+      /* Was nicht angelegt wurde und was die Datenbank umgeschrieben hat (Backtick, Backslash, ${,
+         Umbrueche, unsichtbare Zeichen) -- beides gehoert gesagt, nicht still geschluckt. */
+      var weg = [
+        r.uebersprungen ? t("{n} skipped (already there or invalid)").replace("{n}", String(r.uebersprungen)) : "",
+        r.umgeschrieben ? (r.umgeschrieben === 1 ? t("1 adjusted (special characters removed)") : t("{n} adjusted (special characters removed)").replace("{n}", String(r.umgeschrieben))) : ""
+      ].filter(Boolean).join(", ");
+      if (!r.angelegt) {
+        toast(t("No new prompts added"), "neutral", weg);
+        return { ok: false };
+      }
+      toast((r.angelegt === 1 ? t("{n} prompt added") : t("{n} prompts added")).replace("{n}", String(r.angelegt)), "success", weg);
+      try { if (UC.marketsChanged) UC.marketsChanged(); } catch (e) {}
+      try { if (UC.topicsChanged) UC.topicsChanged(); } catch (e) {}
+      try { window.dispatchEvent(new CustomEvent("up-prompts-added", { detail: { angelegt: r.angelegt } })); } catch (e) {}
+      return { ok: true };
+    }, function () { fehlerToast(null, t("The prompts could not be added")); return { ok: false }; });
+  }
+  window.upstreemPromptsAnlegen = anlegenAllgemein;
 
   function initRoot(root) {
     if (root.__upiCtrl) return root.__upiCtrl;
@@ -164,17 +211,7 @@
        90ms). STORE[instanceId] taugt dafuer nicht, persist() ersetzt es bei jeder Aenderung. */
     var LADER = window.__upiLader || (window.__upiLader = {});
     var lader = LADER[instanceId] || (LADER[instanceId] = D.makeLader({ rufen: function (fn, params, o) { return UC.rpc(fn, params, { signal: o && o.signal, timeoutMs: 30000 }); } }));
-    /* Schreiben laeuft nicht durch den Lader (kein Speicher, kein Abbrechen durch eine neuere
-       Anfrage). XX000 einmal wiederholen (Regel der Seiten-Vertraege) -- aber nur, was die DB als
-       Serverfehler meldet; ein Grenzen- oder Rechtefehler bleibt, was er ist. */
-    function schreiben(a) {
-      function ruf() { return UC.rpc(a.fn, a.params, { timeoutMs: 30000 }); }
-      return ruf().then(function (erg) {
-        var c = erg && erg.fehler ? str(erg.fehler.code) : "";
-        if (erg && !erg.ok && c === "XX000") return new Promise(function (w) { setTimeout(w, 800); }).then(ruf);
-        return erg;
-      });
-    }
+    var schreiben = schreibenRpc;
 
     /* ---- Aufbau ------------------------------------------------------------------------------- */
     function isDark() { return (UC.themeParam && UC.themeParam(root.getAttribute("data-isdark"))) || root.getAttribute("data-theme") === "dark"; }
@@ -480,12 +517,6 @@
         if (!x) return;
         if (nein) x.setAttribute("data-loeschen", nein); else x.removeAttribute("data-loeschen");
       });
-    }
-    function kontingentNachziehen(k) {
-      if (!k || !UC.setQuota) return;
-      var q = (UC.getQuota && UC.getQuota()) || {};
-      q.used = k.used; q.total = k.total;
-      UC.setQuota(q, "prompts-page");
     }
 
     function listeAuftrag() {
@@ -848,29 +879,10 @@
     /* "Add Prompts": der Dialog der App, aber gespeichert wird HIER (onSubmit), nicht ueber den
        Bubble-Workflow -- sonst legte der alte Workflow dieselben Prompts ein zweites Mal an. Ein
        Fehler laesst den Dialog offen, mit allen Zeilen. */
-    function anlegen(payload) {
-      if (!team()) return Promise.resolve({ ok: false });
-      return schreiben(D.anlegen(team(), payload)).then(function (erg) {
-        var r = erg.ok ? D.zuAnlage(erg.daten) : null;
-        if (!erg.ok || !r) { fehlerToast(erg, t("The prompts could not be added")); return { ok: false }; }
-        kontingentNachziehen(r.kontingent);
-        /* Was nicht angelegt wurde und was die Datenbank umgeschrieben hat (Backtick, Backslash, ${,
-           Umbrueche, unsichtbare Zeichen) -- beides gehoert gesagt, nicht still geschluckt. */
-        var weg = [
-          r.uebersprungen ? t("{n} skipped (already there or invalid)").replace("{n}", String(r.uebersprungen)) : "",
-          r.umgeschrieben ? (r.umgeschrieben === 1 ? t("1 adjusted (special characters removed)") : t("{n} adjusted (special characters removed)").replace("{n}", String(r.umgeschrieben))) : ""
-        ].filter(Boolean).join(", ");
-        if (!r.angelegt) {
-          toast(t("No new prompts added"), "neutral", weg);
-          return { ok: false };
-        }
-        toast((r.angelegt === 1 ? t("{n} prompt added") : t("{n} prompts added")).replace("{n}", String(r.angelegt)), "success", weg);
-        try { if (UC.marketsChanged) UC.marketsChanged(); } catch (e) {}
-        try { if (UC.topicsChanged) UC.topicsChanged(); } catch (e) {}
-        nachAenderung();
-        return { ok: true };
-      }, function () { fehlerToast(null, t("The prompts could not be added")); return { ok: false }; });
-    }
+    /* Der Knopf der Seite nimmt denselben Weg wie jeder andere Einstieg; neu geladen wird ueber
+       "up-prompts-added" weiter unten, fuer alle Einstiege gleich. */
+    function anlegen(payload) { return anlegenAllgemein(payload); }
+    window.addEventListener("up-prompts-added", function () { if (root.isConnected) nachAenderung(); });
     if (elAdd) elAdd.addEventListener("click", function () {
       if (typeof window.openAddPrompts === "function") window.openAddPrompts({ onSubmit: anlegen });
     });

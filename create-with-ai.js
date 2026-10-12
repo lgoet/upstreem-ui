@@ -624,11 +624,18 @@
       var k = normKey(url);
       return S.selectedLinks.some(function(l){ return normKey(l.url) === k; });
     }
+    /* Erst das DOM-Ereignis: antwortet die Seite (opportunities-page.js, preventDefault), fragt
+       niemand mehr Bubble -- vorher ging die Anfrage doppelt hinaus (13.10.). */
     function fireYouUrls(){
-      if (typeof window.bubble_fn_get_you_urls === "function"){
+      var lokal = false;
+      try {
+        var ev = new CustomEvent("get_you_urls", { bubbles: true, cancelable: true, detail: { uid: UID } });
+        root.dispatchEvent(ev);
+        lokal = ev.defaultPrevented;
+      } catch(e){}
+      if (!lokal && typeof window.bubble_fn_get_you_urls === "function"){
         try { window.bubble_fn_get_you_urls(UID); } catch(e){}
       }
-      try { root.dispatchEvent(new CustomEvent("get_you_urls", { bubbles: true, detail: { uid: UID } })); } catch(e){}
     }
     function setYouUrls(data){
       var arr = data;

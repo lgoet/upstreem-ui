@@ -398,6 +398,80 @@
         return G;
       }
 
+      /* ---- Tarife, Kasse, Portal aus der Komponente (13.10.) -----------------------------------
+         Dieselben drei Wege wie im Billing-Reiter der Einstellungen (settings-data.js):
+         billing_plans_v1, Edge create-team-checkout, Edge team-billing-portal. Vorher gingen alle
+         drei als uagPlans/uagSelectPlan/uagManage an Bubble. Der Bubble-Weg bleibt Rueckfall --
+         fuer eine Seite ohne settings-data.js und fuer die Antwort "kein Zugang" (402
+         team_access_*), solange die Datenbank nicht bestaetigt hat, dass Tarif und Kasse auch
+         ohne Zugang gehen (DB-Auftrag grosse Runde, 4a). Ein Gate, das sich selbst aussperrt,
+         waere eine Falle ohne Ausgang. */
+      function SD() { var d = window.UpstreemSettingsDaten; return d && UC.rpc && UC.edge ? d : null; }
+      function gateTeam() { return (state.lage && state.lage.teamId) || feld(root.getAttribute("data-team")); }
+      function zugangsFehler(d, erg) {
+        return !!erg && (erg.status === 402 || erg.status === 404 || /team_access|PGRST202/.test(d.meldung(erg) + " " + (erg.fehler ? String(erg.fehler.code || "") : "")));
+      }
+      /* Zurueck von Stripe auf genau diese Adresse, ohne alte checkout-Angaben. Der App-Start liest
+         danach den neuen Zugang; ohne Zugang steht das Gate wieder da. */
+      function gateRueckweg() {
+        try {
+          var u = new URL(window.location.href);
+          u.searchParams.delete("checkout"); u.searchParams.delete("session_id"); u.hash = "";
+          return u.pathname + u.search;
+        } catch (e) { return ""; }
+      }
+      function zuStripe(art, e, knopf, satz, weiche, rueckfall) {
+        var d = SD(), G = GATE[instanceId];
+        if (!d || !d.live(art) || !e || !e.name || !gateTeam()) return rueckfall();
+        if (G) { fehlerZeigen(G, ""); sperren(G, knopf); }
+        UC.edge(e.name, e.body, { timeoutMs: 30000 }).then(d.antwortPruefen).then(function (erg) {
+          if (!erg.ok && weiche && weiche(d, erg)) return;
+          if (!erg.ok && zugangsFehler(d, erg)) { rueckfall(); return; }
+          var url = erg.ok ? d.stripeUrl(erg.daten, art) : "";
+          var G2 = GATE[instanceId];
+          if (!url) { if (G2) fehlerZeigen(G2, satz); return; }
+          window.location.assign(url);
+        }, function () { var G3 = GATE[instanceId]; if (G3) fehlerZeigen(G3, satz); });
+        return true;
+      }
+      function zurKasse(info, knopf, rueckfall) {
+        var d = SD();
+        if (!d || !info || !info.plan_id) return rueckfall();
+        return zuStripe("kasse", d.kasse(gateTeam(), info.plan_id, info.billing_interval, gateRueckweg()), knopf,
+          FEHLER.reaktiv, function (d2, erg) {
+            /* Laeuft schon ein Abo (409 subscription_exists), wird im Portal gewechselt -- wie in
+               den Einstellungen. */
+            if (!/subscription_exists/.test(d2.meldung(erg))) return false;
+            setTimeout(function () { zumPortal(knopf); }, 0);
+            return true;
+          }, rueckfall);
+      }
+      function zumPortal(knopf) {
+        var d = SD();
+        var rueckfall = function () { var G = GATE[instanceId]; var ok = fire("data-manage-fn", "uagManage", mitTeam({})); if (G) melden(G, "manage", ok, knopf); return ok; };
+        if (!d) return rueckfall();
+        return zuStripe("portal", d.portal(gateTeam(), gateRueckweg()), knopf, FEHLER.manage, function (d2, erg) {
+          /* Nie bezahlt (409 billing_no_customer): die Tarife, dort fuehrt jeder zur Kasse. */
+          if (!/billing_no_customer/.test(d2.meldung(erg))) return false;
+          var G = GATE[instanceId];
+          if (G) { if (G.sperre) { clearTimeout(G.sperre.uhr); G.sperre = null; sperreAnwenden(G); } }
+          if (dlg) dlg.open(knopf || null);
+          return true;
+        }, rueckfall);
+      }
+      function tarifeLaden() {
+        var d = SD(), tm = gateTeam();
+        if (!d || !d.live("tarife") || !tm) return fire("data-plans-fn", "uagPlans", mitTeam({ current_plan_id: "" }));
+        var a = d.tarife(tm);
+        UC.rpc(a.fn, a.params, { timeoutMs: 20000 }).then(function (erg) {
+          var z = erg && erg.ok ? d.zuTarife(erg.daten) : null;
+          if (z) { plaeneSetzen(z); return; }
+          if (zugangsFehler(d, erg)) { fire("data-plans-fn", "uagPlans", mitTeam({ current_plan_id: "" })); return; }
+          if (dlg) dlg.setFehler();
+        }, function () { if (dlg) dlg.setFehler(); });
+        return true;
+      }
+
       /* ---- Das Tarif-Fenster -- dasselbe wie im Billing-Reiter (core, makePlanDialog) ----------
          Es geht UEBER dem Gate auf (core.css: 100002 gegen 100001) und schliesst wie dort mit X,
          Escape und Klick daneben -- darunter steht wieder das Gate. praefix "uagp" und nicht
@@ -411,11 +485,9 @@
         /* Kein Tarif ist "Current plan": ohne Zugang gibt es keinen laufenden. */
         currentId: function () { return ""; },
         interval: function () { return (state.lage && state.lage.interval) || ""; },
-        onOpen: function () {
-          return fire("data-plans-fn", "uagPlans", mitTeam({ current_plan_id: "" }));
-        },
+        onOpen: function () { return tarifeLaden(); },
         onSelect: function (info) {
-          var ok = fire("data-select-plan-fn", "uagSelectPlan", mitTeam(info));
+          var ok = zurKasse(info, null, function () { return fire("data-select-plan-fn", "uagSelectPlan", mitTeam(info)); });
           /* Das Tarif-Fenster geht danach zu, das Gate steht wieder da -- und seine Knoepfe
              stehen dieselben 4s still wie nach einem eigenen Klick: ein "Reactivate" jetzt waere
              die zweite Kasse. */
@@ -791,10 +863,11 @@
         }
         if (tat === "teams") { ansichtSetzen("teams"); return; }
         if (tat === "reaktiv" && L) {
-          melden(G, tat, fire("data-select-plan-fn", "uagSelectPlan", mitTeam(reaktivInfo(L))), el);
+          var info = reaktivInfo(L);
+          zurKasse(info, el, function () { var ok = fire("data-select-plan-fn", "uagSelectPlan", mitTeam(info)); melden(G, tat, ok, el); return ok; });
           return;
         }
-        if (tat === "manage") { melden(G, tat, fire("data-manage-fn", "uagManage", mitTeam({})), el); return; }
+        if (tat === "manage") { zumPortal(el); return; }
         if (tat === "newteam") { melden(G, tat, fire("data-newteam-fn", "uagNewTeam", mitTeam({ action: "new_team" })), el); return; }
         if (tat === "logout") { melden(G, tat, fire("data-logout-fn", "uagLogout", mitTeam({ action: "logout" })), el); return; }
       }

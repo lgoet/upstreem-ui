@@ -1328,7 +1328,12 @@
       if (pb){
         if (gezogen){ gezogen = false; return; }      /* der Klick gehoert zum Ziehen davor */
         var pin = state.pins[parseInt(pb.getAttribute("data-pin"), 10)];
-        if (pin) fire("data-pinned-fn", "usnPinned", { type: pin.type, id: pin.id });
+        /* Alle vier Pin-Arten (prompt, brand, domain, url) sind core-Drawer: direkt oeffnen
+           (13.10.). Der Bubble-Workflow usnPinned nur noch, wenn es kein openDrawer gibt --
+           beides zugleich oeffnete den Drawer zweimal. */
+        var direkt = pin && typeof window.openDrawer === "function" && UC.drawerOeffnen &&
+          /^(prompt|brand|domain|url)$/.test(String(pin.type)) && UC.drawerOeffnen(String(pin.type), pin.id, "sidebar") === true;
+        if (pin && !direkt) fire("data-pinned-fn", "usnPinned", { type: pin.type, id: pin.id });
         if (state.klasse === "hint"){ state.offen = false; anwenden(); }
         return;
       }

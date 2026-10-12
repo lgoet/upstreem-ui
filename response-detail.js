@@ -820,23 +820,38 @@
        verdrahtet, entscheidet er. Sonst direkt: den Drawer schliessen, in den Ads-Bereich wechseln
        und dort den Ad-Drawer mit genau diesem Objekt oeffnen -- dafuer braucht es keinen Abruf,
        das Objekt traegt alle Felder. Ohne Ads-Element auf der Seite bleibt das Ereignis. */
+    /* Ads und Shopping bauen sich erst, wenn ihre Ansicht zu sehen ist (messbar). Kam man aus
+       einer anderen Ansicht, ohne dort je gewesen zu sein, gab es das Element, aber noch keinen
+       Controller -- und der Klick ging an Bubble bzw. ins Leere (Bestand 13.10.). Jetzt: erst
+       wechseln, dann bis 4s auf den Controller warten. */
+    function aufController(sel, schluessel, fn) {
+      var bis = Date.now() + 4000;
+      (function schau() {
+        var el = document.querySelector(sel), c = el && el[schluessel];
+        if (c) { fn(c); return; }
+        if (Date.now() < bis) setTimeout(schau, 60);
+      })();
+    }
+    function drawerZu() {
+      var dr = root.closest ? root.closest('[id^="drawer-"]') : null;
+      if (dr && typeof window.closeDrawer === "function") {
+        try { window.closeDrawer(dr.id.replace(/^drawer-/, "")); } catch (e) {}
+      }
+    }
     function adOeffnen(id) {
       id = String(id || "").trim();
       var ad = adListe.filter(function (x) { return String(x.id) === id; })[0];
       if (!ad) return;
       var fnName = root.getAttribute("data-ad-fn") || "bubble_fn_urdAd";
-      var ar = document.querySelector(".uad-root"), ac = ar && ar.__uadController;
-      if (typeof window[fnName] === "function" || !ac || typeof ac.adObjekt !== "function") {
+      var ar = document.querySelector(".uad-root");
+      if (typeof window[fnName] === "function" || !ar) {
         fire("data-ad-fn", "urdAd", id);
         return;
       }
-      var dr = root.closest ? root.closest('[id^="drawer-"]') : null;
-      if (dr && typeof window.closeDrawer === "function") {
-        try { window.closeDrawer(dr.id.replace(/^drawer-/, "")); } catch (e) {}
-      }
+      drawerZu();
       if (UC.ansichtWechseln) UC.ansichtWechseln("ads");
       else if (typeof window.usnNavigieren === "function") window.usnNavigieren("ads");
-      ac.adObjekt(ad);
+      aufController(".uad-root", "__uadController", function (ac) { if (typeof ac.adObjekt === "function") ac.adObjekt(ad); });
     }
     elAdsRow.addEventListener("click", function (e) {
       var k = e.target.closest ? e.target.closest(".up-adcard[data-ad-id]") : null;
@@ -942,18 +957,15 @@
       if (!id) return;
       var fnName = root.getAttribute("data-product-fn") || "bubble_fn_urdProduct";
       var sh = document.querySelector(".ush-root");
-      var sc = sh && sh.__ushController;
-      if (typeof window[fnName] === "function" || !sc || typeof sc.oeffnen !== "function") {
+      if (typeof window[fnName] === "function" || !sh) {
         fire("data-product-fn", "urdProduct", id);
         return;
       }
-      var dr = root.closest ? root.closest('[id^="drawer-"]') : null;
-      if (dr && typeof window.closeDrawer === "function") {
-        try { window.closeDrawer(dr.id.replace(/^drawer-/, "")); } catch (e) {}
-      }
-      if (typeof window.usnNavigieren === "function") window.usnNavigieren("shopping");
+      drawerZu();
+      if (UC.ansichtWechseln) UC.ansichtWechseln("shopping");
+      else if (typeof window.usnNavigieren === "function") window.usnNavigieren("shopping");
       else if (typeof window.showView === "function") window.showView("shopping");
-      sc.oeffnen(id);
+      aufController(".ush-root", "__ushController", function (sc) { if (typeof sc.oeffnen === "function") sc.oeffnen(id); });
     }
 
     /* ---- Full Response -------------------------------------------------------------------- */

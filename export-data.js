@@ -401,6 +401,10 @@
         var d = document.createElement("div");
         d.className = "udr-root";
         d.setAttribute("data-instance", calendarId());
+        /* Lokal (13.10.): der Dialog liest den Zeitraum ueber __udrCtrl und upstreem:date-range, beides
+           kommt auch lokal. Ohne das feuerte jede Wahl die Bubble-Namen bubble_fn_udr_date_* -- und
+           lag noch ein alter Kalender mit genau diesen Namen auf der Seite, lud der seine Ansicht neu. */
+        d.setAttribute("data-local", "yes");
         /* Dieselbe Untergrenze, die der Picker sonst auch hat -- ohne Angabe faellt er auf den
            1.1.2024 zurueck, und ein Export darf nicht weiter zurueckreichen als die Daten. */
         var min = root.getAttribute("data-min-date");

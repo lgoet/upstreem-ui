@@ -342,7 +342,11 @@
         prefix: "uts", mobileMax: 560,
         onRender: function () { render(); },
         /* Kein state.page = 1 hier: das setzt makeSearch selbst, bevor es feuert. */
-        onFire: function (payload) { fire("data-search-fn", "utsSearch", payload); },
+        /* Seit teams-page alle Zeilen laedt (bis 10 x 100), filtert gefiltert() lokal ueber ALLE
+           Teams -- die Lage von oben (Suche nur in der Seite) gibt es nicht mehr. utsSearch hatte
+           keinen Empfaenger mehr und hinterliess je Suche eine Konsolenwarnung; ein alter Workflow,
+           der darauf renderTeams riefe, ueberschriebe die Liste der Seite (Bestand 13.10.). */
+        onFire: function () { render(); },
         /* Der getippte Text in den Speicher, noch bevor die Entprellung laeuft -- ein Neuaufbau
            in diesen 400ms verloere ihn sonst. */
         persist: function () { persist(); }

@@ -18631,6 +18631,12 @@
     /* Seitenleiste: geloeschte Teams nicht -- ein Wechsel dorthin fuehrt ins Leere (der Start
        nimmt sie nie als aktives Team). */
     var teams = (isArr(m.teams) ? m.teams : []).filter(function(t){ return t && t.id && t.access_state !== "deleted"; });
+    /* Das aktive Team zuerst: die Liste kommt nach created_at, ohne Kennzeichen, und die
+       Seitenleiste nimmt ohne data-team-id aus Bubble das erste -- wer mehrere Teams hatte, sah
+       oben das aelteste statt des aktiven (Bestand 13.10.). */
+    var aktivId = r && r.team_id ? String(r.team_id) : "";
+    if (aktivId) teams = teams.filter(function(t){ return String(t.id) === aktivId; })
+      .concat(teams.filter(function(t){ return String(t.id) !== aktivId; }));
     appSidebars(function(id){
       if (appRuf("setSidebarTeams")) window.setSidebarTeams(id, teams);
       if (appRuf("setSidebarUser")) window.setSidebarUser(id, { id: u.id, name: u.display_name, email: u.email, avatar_url: u.avatar_url });

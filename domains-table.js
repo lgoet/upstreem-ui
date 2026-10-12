@@ -1460,6 +1460,9 @@
         search.cancel(); runSearch();
         fire("data-filter-fn", "udtFilter", { citation_types: "" });
         fire("data-mentioned-fn", "udtMentioned", { brands: "" });
+        /* Wie in urls-table: ohne diese Meldung behielt die Seite ihr "erwaehnt ja/nein", der
+           Schalter zeigte "alle", die Daten blieben gefiltert (Bestand 13.10.). */
+        fire("data-brand-fn", "udtBrand", { brand_mentioned: "" });
         return;
       }
 
