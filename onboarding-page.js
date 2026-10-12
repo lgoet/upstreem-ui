@@ -16,6 +16,12 @@
    deshalb steht neben Weiter ein sichtbarer Ueberspringen-Weg und keine stille Sperre.
 
 
+   ── Selbst geladen (data-source="db", seit 13.10.) ────────────────────────────────────────────
+   Mit dem Attribut laedt die Seite selbst ueber die v1-RPCs und Edge Functions des Vertrags
+   (bubble/onboarding_13_10/ONBOARDING_V1_VERTRAG.md) und haengt am Kanal onboarding:<id>; an
+   Bubble gehen nur noch uobDashboard und uobLogout. Der Teil steht unten unter "SELBST LADEN"
+   und uebersetzt die Antworten in die Form der Setter -- alles hier darunter gilt weiter.
+
    ── Bubble ──────────────────────────────────────────────────────────────────────────────────
    Ereignisse (data-*-fn am Root, sonst bubble_fn_<name>):
      uobStart    {brand_name, website_input, website_url, website_domain, market, timezone,
@@ -333,7 +339,15 @@
     ["IN", "India"], ["BR", "Brazil"], ["MX", "Mexico"], ["ZA", "South Africa"],
     ["AE", "United Arab Emirates"]
   ];
+  /* Im Selbstlade-Modus (data-source="db") bringt onboarding_bundle_v1 die Listen mit, gegen die
+     onboarding-start prueft (134 Maerkte, pg_timezone_names). Dann gelten SIE -- eine Wahl aus einer
+     anderen Liste kaeme als Fehler "market"/"timezone" zurueck. */
+  var DB_LISTEN = { markets: null, timezones: null };
   function marketList() {
+    if (isArr(DB_LISTEN.markets) && DB_LISTEN.markets.length) {
+      return DB_LISTEN.markets.map(function (m) { return { code: txt(m.code).toUpperCase(), name: txt(m.name) || txt(m.code) }; })
+        .filter(function (m) { return !!m.code; });
+    }
     var aus = UC && UC.getAllMarkets ? UC.getAllMarkets() : [];
     var raus = [];
     if (isArr(aus)) {
@@ -352,6 +366,7 @@
      eigene Liste waere ab dem naechsten Zonenwechsel falsch. Wo Intl das nicht hergibt (aeltere
      Browser), bleibt wenigstens die eigene Zone plus die gebraeuchlichsten. */
   function timezoneList() {
+    if (isArr(DB_LISTEN.timezones) && DB_LISTEN.timezones.length) return DB_LISTEN.timezones.map(txt).filter(Boolean);
     try {
       if (typeof Intl !== "undefined" && Intl.supportedValuesOf) {
         var l = Intl.supportedValuesOf("timeZone");
@@ -563,9 +578,26 @@
      ihrem Rest. Ein Themenwechsel faerbt nur um: kein Laden, kein Zuruecksetzen, kein anderer
      Schritt, kein zweiter Einzug. */
   var STORE = (window.__uobStore = window.__uobStore || {});
+  /* Der Stand des Selbstlade-Wegs je data-instance (Onboarding-Id, Realtime-Kanal, Auswahl-
+     Schlangen, Rueckkehr aus der Kasse). Ebenfalls am window: der Kanal und eine laufende
+     Speicherung ueberleben einen Neuaufbau, statt doppelt zu laufen. */
+  var SBSTORE = (window.__uobSelbst = window.__uobSelbst || {});
 
   function makeController(root) {
-    var fire = UC.makeFire(root, { label: "onboarding-page", eventPrefix: "uob" });
+    var fireBubble = UC.makeFire(root, { label: "onboarding-page", eventPrefix: "uob" });
+    /* SELBST LADEN (13.10., Vertrag bubble/onboarding_13_10/ONBOARDING_V1_VERTRAG.md): traegt die
+       Wurzel data-source="db", laedt die Seite selbst (onboarding_bundle_v1, UC.rpc) und erledigt
+       jedes Ereignis selbst -- nichts geht mehr an Bubble ausser uobDashboard und uobLogout (die
+       zwei Wege aus der Seite heraus). Ohne das Attribut bleibt alles wie bisher: Bubble fuellt
+       ueber die Setter. So laeuft die alte Seite unveraendert weiter, bis Lukas umstellt. */
+    var SELBST = root.getAttribute("data-source") === "db";
+    var SB = SBSTORE[txt(root.getAttribute("data-instance")) || "onboarding"] ||
+             (SBSTORE[txt(root.getAttribute("data-instance")) || "onboarding"] =
+               { id: "", kanal: null, kanalId: "", limits: null, q: {}, rueckkehr: "", session: "", trialOk: false, pruefUhr: null });
+    function fire(attrName, name, payload) {
+      if (SELBST && sbEreignis(name, payload)) return;
+      return fireBubble(attrName, name, payload);
+    }
     var instanceId = txt(root.getAttribute("data-instance")) || "onboarding";
     /* Der Stand der vorigen Wurzel dieser Instanz, null beim allerersten Aufbau. Daran haengt
        alles, was nur beim ERSTEN Aufbau passieren darf: die Adresse lesen, Markt und Zone raten,
@@ -670,6 +702,16 @@
       }
     }
     var BRAND_MAX = 5;
+    /* Hoechstzahl gewaehlter Eintraege je Art. Wettbewerber immer 5; Themen und Prompts begrenzt
+       erst die DB (meta.limits: 8 und 15) -- ohne sie (alte Verdrahtung) gab es keine Grenze. */
+    function maxFuer(kind) {
+      if (kind === "brands") return BRAND_MAX;
+      if (!SELBST) return Infinity;
+      var l = SB.limits || {};
+      if (kind === "topics") return num(l.topics_selected_max) || 8;
+      if (kind === "prompts") return num(l.prompts_selected_max) || 15;
+      return Infinity;
+    }
     /* Das Tor wird vom ERSTEN Buendel dieser Seitenansicht entschieden, danach nie wieder. Ein
        Buendel kommt auch spaeter noch -- jeder aendernde Workflow schickt am Ende eine frische
        Antwort --, und oeffnete das erneut das Tor, floege der Nutzer mitten aus seinem Schritt.
@@ -924,6 +966,12 @@
        Jede Ansicht liefert nur ihr Markup. Welche gerade sichtbar ist, entscheidet render() --
        so gibt es genau eine Stelle, an der ein Zustand zu einem Bild wird. */
 
+    /* Der Zaehler im Kopf: "n/max", wo es eine Grenze gibt (Wettbewerber, und selbst geladen auch
+       Themen und Prompts), sonst "n selected" -- dieselbe Form wie nach jedem Klick (auswahlZeichnen). */
+    function zaehlerFuer(kind, n) {
+      var max = maxFuer(kind);
+      return max < Infinity ? { text: n + "/" + max, voll: n >= max } : { text: n + " selected", voll: n > 0 };
+    }
     function kopf(h1, sub, zaehler, aktion) {
       return '<div class="uob-head">' +
         (zaehler != null
@@ -1055,14 +1103,15 @@
       '</div>';
     }
 
-    function viewLoad(kompakt) {
+    function viewLoad(kompakt, art) {
+      var ws = art === "workspace";
       var p = state.projekt || {};
       var name = txt(p.company_name) || txt(state.form.name) || "Your brand";
       /* Dieselbe Rueckfallkette wie in renderIdent: website_domain, sonst aus der Adresse
          abgeleitet -- website_domain fehlt in manchen RPC-Antworten schlicht. */
       var dom = txt(p.website_domain) ||
                 normUrl(txt(p.website_url) || txt(p.website_input) || state.form.website).domain;
-      return '<div class="uob-pane" data-pane="' + (kompakt ? "load2" : "load1") + '">' +
+      return '<div class="uob-pane" data-pane="' + (ws ? "load3" : kompakt ? "load2" : "load1") + '">' +
         '<div class="uob-body">' +
           '<div class="uob-load' + (kompakt ? " is-compact" : "") + '">' +
             /* Ohne vierten Parameter: das Zeichen entsteht aus der Domain (Google s2), siehe
@@ -1075,7 +1124,11 @@
                ungefaehr ist. Zwei Fortschrittsanzeigen uebereinander sind eine zu viel.
                renderPhasen faellt darauf herein nicht: es fragt [data-bar] mit if (bar) ab. */
             (kompakt ? '<div class="uob-bar"><div class="uob-bar-fill" data-bar></div></div>' : "") +
-            (kompakt
+            (ws
+              /* Nach der Kasse (Phase 95): das Team entsteht. Keine Themen-Marken -- es geht nicht
+                 mehr um die Auswahl, sondern um den Arbeitsbereich. */
+              ? '<p class="uob-sub" style="margin-top:18px">' + esc(UC.t("Creating your workspace. This takes a few seconds.")) + '</p>'
+              : kompakt
               ? '<p class="uob-sub" style="margin-top:18px">Writing the first prompts for the topics you picked.</p>' +
                 /* Die gewaehlten Themen als Marken -- dieselbe Idee wie im Ladebild von
                    prompt-research: das Warten zeigt, WOMIT gearbeitet wird. Hat der Nutzer
@@ -1332,7 +1385,7 @@
              fest
                ? "Your prompts are already built on these topics, so they cannot be changed here."
                : "Topics group the questions we ask the models.",
-             { text: n + " selected", voll: n > 0 },
+             zaehlerFuer("topics", n),
              /* Kein Alle-Knopf, wenn nichts mehr zu waehlen ist. Ein Knopf, der nichts tut, ist
                 schlechter als keiner. */
              (state.topics.length && !fest)
@@ -1440,7 +1493,7 @@
       return '<div class="uob-pane" data-pane="prompts">' +
         kopf("Prompts",
              "These are the questions we will ask the models for you. Keep the ones that matter.",
-             { text: n + " selected", voll: n > 0 }) +
+             zaehlerFuer("prompts", n)) +
         '<div class="uob-body">' +
           (gruppen.length
             ? '<div class="uob-list up-scroll" role="group" aria-label="Prompts">' +
@@ -1669,6 +1722,9 @@
        Gemeldet am 26.08.: bei Enterprise stand "Start free trial", obwohl es dort keine gibt. */
     function hatTest(pl) {
       if (!pl) return false;
+      /* Selbst geladen: die Testphase gibt es nur monatlich (und nur bei trial_eligible, das steckt
+         schon in trial_days, siehe sbTarife). */
+      if (SELBST && state.interval !== "monthly") return false;
       var flaggen = ["has_trial", "trial", "trial_enabled", "trial_available"];
       for (var i = 0; i < flaggen.length; i++) {
         if (pl[flaggen[i]] != null && txt(pl[flaggen[i]]) !== "") return istJa(pl[flaggen[i]]);
@@ -1705,6 +1761,10 @@
           if (t != null && t > 0) { if (tage == null) tage = t; else if (t !== tage) gleich = false; }
           else gleich = false;
         } else ohne++;
+      }
+      if (!mit && SELBST && state.interval !== "monthly" &&
+          state.plans.some(function (pl) { return num(pl.trial_days) > 0; })) {
+        return "Pick the plan that fits your team. The free trial comes with monthly billing.";
       }
       if (!mit) return "Pick the plan that fits your team.";
       if (ohne) return "Pick the plan that fits your team. Not every plan includes a free trial.";
@@ -1803,6 +1863,7 @@
       if (state.torAuf) return "resume";
       if (state.warten === "main") return "load1";
       if (state.warten === "prompts") return "load2";
+      if (state.warten === "workspace") return "load3";
       return state.step;
     }
     function viewFor(k) {
@@ -1810,6 +1871,7 @@
       if (k === "resume") return viewResume();
       if (k === "load1") return viewLoad(false);
       if (k === "load2") return viewLoad(true);
+      if (k === "load3") return viewLoad(true, "workspace");
       if (k === "brand") return viewBrand();
       if (k === "competitors") return viewBrands();
       if (k === "topics") return viewTopics();
@@ -1820,7 +1882,7 @@
 
     /* Die Spaltenbreite je Ansicht. Ein Formular liest sich schmal besser, Listen brauchen mehr,
        drei Preiskarten am meisten. */
-    var BREITE = { brand: "480px", load1: "480px", load2: "560px", resume: "480px",
+    var BREITE = { brand: "480px", load1: "480px", load2: "560px", load3: "560px", resume: "480px",
                    competitors: "880px", topics: "620px", prompts: "720px", plan: "1040px" };
 
     /* Gleiche Ansicht heisst normalerweise gleiche Gestalt: dieselbe Zahl von Kindern in
@@ -1947,7 +2009,7 @@
       /* Ein frisch gezeichnetes Tor traegt eine zugeklappte Warnung -- also muss die Marke
          dazu passen, sonst waere der erste Klick schon die Bestaetigung. */
       if (k === "resume") overScharf = false;
-      if (k === "load1" || k === "load2") renderPhasen();
+      if (k === "load1" || k === "load2" || k === "load3") renderPhasen();
       if (k === "load2") tlTagsEinblenden();
       if (UC.makeTooltips) UC.makeTooltips(root, function () { return isDark; });
     }
@@ -2107,7 +2169,7 @@
          oben waere dann dasselbe zweimal auf einem Bildschirm. Beim ersten Schritt gibt es noch
          nichts zu zeigen. */
       var k = ansichtKey();
-      var an = !!p && k !== "brand" && k !== "load1" && k !== "load2" && k !== "resume";
+      var an = !!p && k !== "brand" && k !== "load1" && k !== "load2" && k !== "load3" && k !== "resume";
       elIdent.classList.toggle("is-on", an);
       if (!an) return;
       var name = txt(p.company_name) || txt(state.form.name);
@@ -2169,7 +2231,7 @@
 
     function renderNav() {
       var k = ansichtKey();
-      var wartet = k === "load1" || k === "load2";
+      var wartet = k === "load1" || k === "load2" || k === "load3";
       /* Waehrend einer Uhr gibt es nichts zu bedienen. Die Zeile wird ausgeblendet und nicht
          entfernt: ihr Platz bleibt, damit der Inhalt darueber nicht nach unten rutscht und
          zurueckspringt, sobald sie wiederkommt. */
@@ -2251,7 +2313,7 @@
        den Karten selbst, ein Kasten daneben waere eine zweite Meinung zum selben Preis. */
     function hilfeSchluessel() {
       var k = ansichtKey();
-      if (k === "load1" || k === "load2" || k === "plan") return "";
+      if (k === "load1" || k === "load2" || k === "load3" || k === "plan") return "";
       return k;
     }
     /* Passt die Tafel neben den Inhalt, ohne ihn zu verdecken? Sie steht rechts und ist absolut
@@ -2799,6 +2861,12 @@
         /* NICHT neu zeichnen. Ein Neuaufbau setzt die Preise hart um und laesst die Karten
            springen; hier soll der Preis zaehlen und die Karte ihre Hoehe mitnehmen. */
         intervalZeichnen();
+        /* Selbst geladen haengt die Testphase am Zeitraum: Vorspann und Knopf ziehen mit. */
+        if (SELBST) {
+          var sub = root.querySelector('[data-pane="plan"] .uob-sub');
+          if (sub) sub.textContent = UC.t(testText());
+          renderNav();
+        }
         return;
       }
 
@@ -2871,8 +2939,8 @@
           eintrag.name = e.target.value;
           /* Ein Thema mit Namen ist gewaehlt, eines ohne nicht -- ohne diesen Schritt zaehlte
              ein leer gelassener Platzhalter mit. */
-          if (txt(eintrag.name)) state.selTopics[eintrag.id] = true;
-          else delete state.selTopics[eintrag.id];
+          if (txt(eintrag.name) && (state.selTopics[eintrag.id] || anzahl(state.selTopics) < maxFuer("topics"))) state.selTopics[eintrag.id] = true;
+          else if (!txt(eintrag.name)) delete state.selTopics[eintrag.id];
           var zeile = e.target.closest("[data-eigen]");
           var hk = zeile && zeile.querySelector(".uob-check");
           if (hk) hk.classList.toggle("is-leer", !txt(eintrag.name));
@@ -2920,7 +2988,7 @@
       var jetztAn;
       if (topf[id]) { delete topf[id]; jetztAn = false; }
       else {
-        if (kind === "brands" && anzahl(topf) >= BRAND_MAX) return;
+        if (anzahl(topf) >= maxFuer(kind)) return;
         topf[id] = true; jetztAn = true;
       }
       /* NICHT neu zeichnen. Ein Klick aendert genau eine Zeile, und die Liste hat einen eigenen
@@ -2972,7 +3040,7 @@
       var aus = alleServerThemenAn();
       for (var i = 0; i < state.topics.length; i++) {
         if (aus) delete state.selTopics[state.topics[i].id];
-        else state.selTopics[state.topics[i].id] = true;
+        else if (state.selTopics[state.topics[i].id] || anzahl(state.selTopics) < maxFuer("topics")) state.selTopics[state.topics[i].id] = true;
       }
       auswahlZeichnen("topics");
       var knopf = root.querySelector('[data-allof="topics"]');
@@ -3042,9 +3110,9 @@
     function themenZaehler() {
       var z = root.querySelector(".uob-count");
       if (z) {
-        var n = anzahl(state.selTopics);
-        z.textContent = n + " selected";
-        z.classList.toggle("is-full", n > 0);
+        var n = anzahl(state.selTopics), max = maxFuer("topics");
+        z.textContent = max < Infinity ? (n + "/" + max) : (n + " selected");
+        z.classList.toggle("is-full", max < Infinity ? n >= max : n > 0);
       }
       renderNav();
     }
@@ -3058,7 +3126,8 @@
       var an = !alleAn(g);
       for (var j = 0; j < g.items.length; j++) {
         var id = g.items[j].p.id;
-        if (an) state.selPrompts[id] = true; else delete state.selPrompts[id];
+        if (an) { if (state.selPrompts[id] || anzahl(state.selPrompts) < maxFuer("prompts")) state.selPrompts[id] = true; }
+        else delete state.selPrompts[id];
       }
       auswahlZeichnen("prompts");
       gruppenKnoepfe();
@@ -3095,7 +3164,8 @@
     function auswahlZeichnen(kind) {
       var topf = kind === "brands" ? state.selBrands : kind === "topics" ? state.selTopics : state.selPrompts;
       var n = anzahl(topf);
-      var voll = kind === "brands" && n >= BRAND_MAX;
+      var max = maxFuer(kind);
+      var voll = n >= max;
       var zeilen = root.querySelectorAll('[data-pick="' + kind + '"]');
       for (var i = 0; i < zeilen.length; i++) {
         var an = !!topf[zeilen[i].getAttribute("data-id")];
@@ -3108,8 +3178,8 @@
       }
       var z = root.querySelector(".uob-count");
       if (z) {
-        z.textContent = kind === "brands" ? (n + "/" + BRAND_MAX) : (n + " selected");
-        z.classList.toggle("is-full", kind === "brands" ? n >= BRAND_MAX : n > 0);
+        z.textContent = max < Infinity ? (n + "/" + max) : (n + " selected");
+        z.classList.toggle("is-full", max < Infinity ? n >= max : n > 0);
       }
     }
 
@@ -3385,18 +3455,20 @@
          Nachfolgerin hat den Takt schon uebernommen (warteFortsetzen). */
       if (!lebt()) { if (tick) { window.clearInterval(tick); tick = null; } return; }
       var ziel, unten;
-      if (state.warten === "prompts") {
+      if (state.warten === "prompts" || state.warten === "workspace") {
         warteUhrZeichnen();
         var vp = new Date().getTime() - t0;
         var w2;
-        if (vp < SPUR_DAUER) {
+        /* Der Arbeitsbereich entsteht in Sekunden (Finalize), nicht in neunzig. */
+        var dauer = state.warten === "workspace" ? 15000 : SPUR_DAUER;
+        if (vp < dauer) {
           /* Auf SPUR_KNICK normiert, damit die Kurve bei der erwarteten Dauer genau dort steht
              und nicht irgendwo in ihrer Naehe. */
-          var tau = SPUR_DAUER / 3;
-          w2 = SPUR_KNICK * (1 - Math.exp(-vp / tau)) / (1 - Math.exp(-SPUR_DAUER / tau));
+          var tau = dauer / 3;
+          w2 = SPUR_KNICK * (1 - Math.exp(-vp / tau)) / (1 - Math.exp(-dauer / tau));
         } else {
           /* Die letzten Prozent deutlich langsamer: eine Minute Zeitkonstante auf zehn Prozent. */
-          w2 = SPUR_KNICK + (SPUR_DECKEL - SPUR_KNICK) * (1 - Math.exp(-(vp - SPUR_DAUER) / 60000));
+          w2 = SPUR_KNICK + (SPUR_DECKEL - SPUR_KNICK) * (1 - Math.exp(-(vp - dauer) / 60000));
         }
         if (w2 > state.fortschritt) { state.fortschritt = w2; renderPhasen(); persist(); }
         return;
@@ -4228,6 +4300,464 @@
       return true;
     }
 
+
+    /* ==== SELBST LADEN: der Weg ohne Bubble (Vertrag ONBOARDING_V1_VERTRAG.md, 13.10.) ==========
+       Nur mit data-source="db". Die Seite bleibt dieselbe -- dieser Teil uebersetzt die v1-
+       Antworten in die Form, die die Setter seit August lesen, und erledigt die Ereignisse, die
+       vorher Bubble-Workflows ausloesten:
+         Laden          onboarding_bundle_v1()                      -> setBundle
+         uobStart       Edge onboarding-start                       -> Ladebild 1, Kanal
+         uobSelect      onboarding_select_v1 (volle Auswahl je Art, eine Anfrage zur Zeit)
+         uobTopics      Auswahl speichern, dann Edge onboarding-prompts -> Ladebild 2
+         uobStep plan   onboarding_plans_v1()                       -> setPlans
+         uobFinish      Edge onboarding-checkout                    -> Stripe
+         Status         Broadcast onboarding:<id>, Ereignis onboarding_status
+         Rueckkehr      ?checkout=success -> "Creating your workspace", nach 20 s einmal
+                        onboarding-checkout-status; ?checkout=cancelled -> Plan
+       Fehler kommen als Code (error_code bzw. message/hint) und werden HIER zu Saetzen -- Rohtext
+       aus n8n oder der DB erreicht den Nutzer nie (Befund S3 des DB-Chats). */
+    var SB_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    var SB_SATZ = {
+      website_unreachable: "We couldn't reach your website. Please check the address and try again.",
+      website_blocked: "We can't check this address. Please enter your public website.",
+      website_empty: "We couldn't find readable content on your website. Please check the address.",
+      website_invalid: "That does not look like a website address.",
+      analysis_failed: "The analysis didn't work. Please start again.",
+      prompts_failed: "The prompts couldn't be created. Please try again.",
+      timeout: "This took too long. Please start again.",
+      start_failed: "Starting didn't work. Please try again.",
+      finalize_failed: "Payment received. We're setting up your workspace and will take care of it.",
+      finalize_state: "Payment received. We're setting up your workspace and will take care of it."
+    };
+    function sbSatz(code) { return UC.t(SB_SATZ[txt(code)] || "Something went wrong. Please try again."); }
+    function sbId() { return SB.id || txt(state.projekt && state.projekt.onboarding_id); }
+    /* Der Code eines Fehlers: bei der DB in message (code ist der SQLSTATE), bei den Edge
+       Functions in code. */
+    function sbCode(erg) {
+      var f = erg && erg.fehler ? erg.fehler : {};
+      var c = txt(f.code);
+      return /^[a-z][a-z_]+$/.test(c) ? c : txt(f.message);
+    }
+    function sbHint(erg) { return erg && erg.fehler ? txt(erg.fehler.hint) : ""; }
+    function sbDaten(erg) {
+      var d = erg && erg.ok ? erg.daten : null;
+      if (isArr(d)) d = d[0];
+      return d && typeof d === "object" ? d : null;
+    }
+    /* Allgemeine Fehler, die jeder Aufruf haben kann. */
+    function sbAllgemein(erg) {
+      var c = sbCode(erg), h = sbHint(erg);
+      if (/not_authenticated/.test(c) || (erg && erg.status === 401)) return UC.t("Your session has ended. Please log in again.");
+      if (/restart_limited/.test(c)) {
+        return UC.t("You have used all your restarts for now.") + " " +
+               (h ? UC.t("The next one is available on {when}.").replace("{when}", zeitpunkt(h)) : "");
+      }
+      if (/rate_limited/.test(c)) {
+        if (h === "prompt_runs") return UC.t("You can create new prompts up to {n} times a day. Please try again tomorrow.")
+          .replace("{n}", String(num(SB.limits && SB.limits.prompt_runs_per_day) || 5));
+        return UC.t("Too many attempts. Please wait a moment and try again.");
+      }
+      if (/onboarding_busy/.test(c)) return UC.t("Your setup changed in the meantime. Please reload the page.");
+      if (/edge_not_configured|edge_upstream_failed/.test(c) || (erg && erg.status >= 500))
+        return UC.t("Something went wrong on our side. Please try again in a few minutes.");
+      return "";
+    }
+
+    /* Projekt der v1-Antwort in die Form der Setter: last_error traegt den SATZ zum Code (nur bei
+       failed -- ein Promptlauf-Fehler setzt auf ready zurueck und wird als Band gezeigt, ohne den
+       Nutzer auf das Formular zu werfen). */
+    function sbProjekt(p) {
+      var q = kopie(p) || {};
+      var st = txt(q.status).toLowerCase();
+      q.last_error = st === "failed" ? sbSatz(q.error_code || "analysis_failed") : "";
+      return q;
+    }
+    /* Eigene Themen, die der Promptlauf angelegt hat, kommen als echte Themen zurueck (is_own).
+       Dann gehoeren die lokalen Platzhalter weg, sonst stuenden sie doppelt da. */
+    function sbEigeneAufraeumen(topics) {
+      if (!isArr(topics) || !topics.some(function (t) { return t && t.is_own; })) return;
+      state.eigene.forEach(function (e) { delete state.selTopics[e.id]; });
+      state.eigene = [];
+    }
+    function sbMetaUebernehmen(meta) {
+      if (!meta || typeof meta !== "object") return;
+      if (meta.limits && typeof meta.limits === "object") SB.limits = meta.limits;
+      if (isArr(meta.markets) && meta.markets.length) DB_LISTEN.markets = meta.markets;
+      if (isArr(meta.timezones) && meta.timezones.length) DB_LISTEN.timezones = meta.timezones;
+    }
+
+    /* ---- Realtime ---- */
+    function sbAbo() {
+      var id = sbId();
+      if (!id || !UC.kanal || SB.kanalId === id) return;
+      if (SB.kanal && SB.kanal.stop) { try { SB.kanal.stop(); } catch (e) {} }
+      var inst = instanceId;
+      SB.kanalId = id;
+      SB.kanal = UC.kanal("onboarding:" + id, {
+        on: { onboarding_status: function (n) { var c = resolve(inst); if (c && c.__sbStatus) c.__sbStatus(n); } },
+        status: function (art, info) {
+          /* Nach einem Wiederverbinden kann etwas verpasst worden sein: einmal den Stand lesen. */
+          if (art !== "verbunden" || !(info && info.wieder)) return;
+          var c = resolve(inst); if (c && c.__sbNachlesen) c.__sbNachlesen();
+        }
+      });
+    }
+    function sbAboEnde() {
+      if (SB.kanal && SB.kanal.stop) { try { SB.kanal.stop(); } catch (e) {} }
+      SB.kanal = null; SB.kanalId = "";
+    }
+
+    /* ---- Laden ---- */
+    function sbBuendel() {
+      function ruf() { return UC.rpc("onboarding_bundle_v1", {}, { timeoutMs: 30000 }); }
+      return ruf().then(function (erg) {
+        /* Direkt nach dem Seitenaufbau kann die Sitzung des Plugins noch fehlen: einmal nachfassen. */
+        if (erg && !erg.ok && erg.status === 401) return new Promise(function (w) { setTimeout(w, 1500); }).then(ruf);
+        return erg;
+      });
+    }
+    function sbLaden() {
+      sbBuendel().then(function (erg) {
+        if (!lebt()) { var c = resolve(instanceId); if (c && c.__sbAnwenden) c.__sbAnwenden(erg); return; }
+        sbAnwenden(erg);
+        persist();
+      });
+    }
+    function sbAnwenden(erg) {
+      var d = sbDaten(erg);
+      if (!d) {
+        bootBeenden(); warteBeenden(); state.busy = false;
+        state.banner = sbAllgemein(erg) || UC.t(leseFehlerText());
+        render();
+        return;
+      }
+      var meta = d.meta && typeof d.meta === "object" ? d.meta : {};
+      sbMetaUebernehmen(meta);
+      var row = d.row && typeof d.row === "object" ? d.row : (d.project ? { project: d.project } : null);
+      var rs = meta.restart || d.restart || null;
+      if (!row || !row.project) {
+        SB.id = "";
+        ctrl.setBundle(null);
+        if (rs) state.restart = rs;
+        return;
+      }
+      var p = row.project, st = txt(p.status).toLowerCase();
+      SB.id = txt(p.onboarding_id);
+      sbAbo();
+      if (st === "completed") { state.projekt = sbProjekt(p); sbFertig(p.team_id); return; }
+      /* Nach der Kasse kein Tor und keine Auswahl: hier entsteht gerade das Team. */
+      if (st === "finalizing" || (SB.rueckkehr === "success" && st === "awaiting_billing")) {
+        torGeprueft = true;
+        bootBeenden();
+        state.projekt = sbProjekt(p);
+        if (state.warten !== "workspace") warteStarten("workspace", false);
+        sbKassePruefenSpaeter();
+        return;
+      }
+      if (SB.rueckkehr === "success") SB.rueckkehr = "";
+      sbEigeneAufraeumen(row.topics);
+      ctrl.setBundle({ project: sbProjekt(p), competitors: isArr(row.competitors) ? row.competitors : [],
+                       topics: isArr(row.topics) ? row.topics : [], prompts: isArr(row.prompts) ? row.prompts : [],
+                       restart: rs });
+      if (st === "ready" && txt(p.error_code)) ctrl.setError(sbSatz(p.error_code));
+      /* Offene Kasse oder abgebrochen zurueck: auf den Tarif (Vertrag 1). */
+      if (st === "awaiting_billing" || SB.rueckkehr === "cancelled") {
+        if (SB.rueckkehr === "cancelled") { torGeprueft = true; state.torAuf = false; }
+        SB.rueckkehr = "";
+        var pi = stepIndex("plan");
+        if (pi > state.maxErreicht) state.maxErreicht = pi;
+        if (txt(p.selected_plan_id)) state.plan = txt(p.selected_plan_id);
+        if (txt(p.billing_interval)) state.interval = txt(p.billing_interval) === "monthly" ? "monthly" : "yearly";
+        /* Bei geschlossenem Tor ist der Schritt noch nicht gemeldet (schrittMelden schweigt, solange
+           es offen ist) -- ohne die Meldung kaemen die Tarife nie (gemessen: Rueckkehr mit
+           ?checkout=cancelled, kein onboarding_plans_v1). */
+        if (state.step !== "plan") gehe("plan", false); else { render(); schrittMelden(); }
+      }
+    }
+    /* Nach Phase 5 oder 7: erst die Listen, dann der Status (die alte Reihenfolge der Workflows --
+       kommt der Status zuerst, baut sich der naechste Schritt leer auf). */
+    function sbNachladen(status) {
+      return sbBuendel().then(function (erg) {
+        var d = sbDaten(erg), row = d && d.row && typeof d.row === "object" ? d.row : null;
+        var c = lebt() ? ctrl : resolve(instanceId);
+        if (!c) return;
+        if (!row || !row.project) { c.setError(sbAllgemein(erg) || UC.t(leseFehlerText())); return; }
+        sbMetaUebernehmen(d.meta);
+        sbEigeneAufraeumen(row.topics);
+        if (isArr(row.competitors)) c.setBrands(row.competitors);
+        if (isArr(row.topics)) c.setTopics(row.topics);
+        if (isArr(row.prompts)) c.setPrompts(row.prompts);
+        var p = row.project;
+        c.setStatus({ status: txt(p.status) || txt(status && status.status), status_phase: num(p.status_phase) });
+        if (txt(p.status).toLowerCase() === "ready" && txt(p.error_code)) c.setError(sbSatz(p.error_code));
+      });
+    }
+
+    /* ---- Status aus dem Kanal (und beim Nachlesen) ---- */
+    function sbStatus(n) {
+      if (!n || typeof n !== "object") return;
+      var st = txt(n.status).toLowerCase(), ph = num(n.status_phase), code = txt(n.error_code);
+      if (st === "failed") {
+        state.busy = false;
+        ctrl.setStatus({ status: "failed", last_error: sbSatz(code || "analysis_failed") });
+        if (state.step !== "brand") gehe("brand", false);
+        return;
+      }
+      if (st === "completed" || ph === 100) {
+        /* Die Nutzlast traegt kein team_id: einmal den Status lesen. */
+        UC.rpc("onboarding_status_v1", { p_onboarding: sbId() }, { timeoutMs: 20000 }).then(function (erg) {
+          var d = sbDaten(erg), r = d && d.row ? d.row : null;
+          sbFertig(r ? r.team_id : null);
+        });
+        return;
+      }
+      if (st === "finalizing") {
+        torGeprueft = true; state.torAuf = false;
+        if (state.warten !== "workspace") warteStarten("workspace", false);
+        return;
+      }
+      if (st === "awaiting_billing") return;
+      if (st === "ready") {
+        /* Ein Promptlauf-Fehler kommt als ready mit Code: zurueck zur Auswahl, mit Band. */
+        if (code) { warteBeenden(); state.promptsFuer = null; ctrl.setError(sbSatz(code)); return; }
+        sbNachladen(n);
+        return;
+      }
+      ctrl.setStatus({ status: st, status_phase: ph, progress_percent: num(n.progress_percent) });
+    }
+    function sbNachlesen() {
+      if (!sbId()) return;
+      UC.rpc("onboarding_status_v1", { p_onboarding: sbId() }, { timeoutMs: 20000 }).then(function (erg) {
+        var d = sbDaten(erg); if (d && d.row) sbStatus(d.row);
+      });
+    }
+
+    /* ---- Fertig: ins Dashboard ---- */
+    function sbFertig(teamId) {
+      sbAboEnde();
+      if (SB.pruefUhr) { window.clearTimeout(SB.pruefUhr); SB.pruefUhr = null; }
+      torGeprueft = true; state.torAuf = false;
+      bootBeenden();
+      if (state.warten !== "workspace") warteStarten("workspace", false);
+      state.fortschritt = 100; renderPhasen();
+      persist();
+      /* Finalize hat das neue Team schon als aktives gesetzt (user_settings); der Weg ins
+         Dashboard ist derselbe wie der Knopf in der Kopfzeile. */
+      window.setTimeout(function () { fireBubble("data-dashboard-fn", "uobDashboard", teamId ? { team_id: txt(teamId) } : null); }, 600);
+    }
+
+    /* ---- Rueckkehr aus der Kasse ---- */
+    function sbRueckkehrLesen() {
+      try {
+        var u = new URL(window.location.href), c = u.searchParams.get("checkout");
+        if (!c) return;
+        SB.rueckkehr = c === "success" ? "success" : c === "cancelled" ? "cancelled" : "";
+        SB.session = txt(u.searchParams.get("session_id"));
+        u.searchParams.delete("checkout"); u.searchParams.delete("session_id");
+        /* Aus der Adresse, damit ein Neuladen die Rueckkehr nicht noch einmal auswertet. */
+        window.history.replaceState({}, "", u.toString());
+      } catch (e) {}
+    }
+    /* Kommt binnen 20 s keine Phase 100, fragt die Seite EINMAL nach (Vertrag 3.3/3.4). Die Function
+       schliesst selbst ab, wenn bezahlt ist und der Webhook fehlt. */
+    function sbKassePruefenSpaeter() {
+      if (SB.pruefUhr) return;
+      SB.pruefUhr = window.setTimeout(function () {
+        SB.pruefUhr = null;
+        var c = resolve(instanceId);
+        if (c && c.__sbKassePruefen) c.__sbKassePruefen();
+      }, 20000);
+    }
+    function sbKassePruefen() {
+      if (state.warten !== "workspace") return;
+      var weg = SB.session
+        ? UC.edge("onboarding-checkout-status", { session_id: SB.session }, { timeoutMs: 30000 })
+        : UC.rpc("onboarding_status_v1", { p_onboarding: sbId() }, { timeoutMs: 20000 });
+      weg.then(function (erg) {
+        var d = sbDaten(erg); if (d && d.row) d = d.row;
+        if (!d) { ctrl.setError(sbAllgemein(erg) || sbSatz("finalize_failed")); return; }
+        if (num(d.status_phase) === 100 && txt(d.team_id)) { sbFertig(d.team_id); return; }
+        var zahl = txt(d.payment);
+        if (zahl === "open" || zahl === "expired") {
+          warteBeenden(); SB.rueckkehr = "";
+          if (state.step !== "plan") gehe("plan", false);
+          ctrl.setError(UC.t("The payment wasn't completed. You can choose your plan again."));
+          return;
+        }
+        if (txt(d.error_code)) { ctrl.setError(sbSatz(d.error_code)); return; }
+        /* Bezahlt, Finalize laeuft noch: weiter auf den Kanal warten. */
+      });
+    }
+
+    /* ---- Auswahl: je Art eine Anfrage zur Zeit, die letzte Auswahl gewinnt ---- */
+    var SB_ART = { brands: "competitors", topics: "topics", prompts: "prompts" };
+    function sbAuswahl(kind, ids) {
+      var k = SB_ART[kind];
+      if (!k || !sbId()) return Promise.resolve();
+      var q = SB.q[k] || (SB.q[k] = { laeuft: false, ziel: null, warte: null });
+      q.ziel = (isArr(ids) ? ids : []).map(txt).filter(function (x) { return SB_UUID.test(x); });
+      if (q.laeuft) return q.warte;
+      q.laeuft = true;
+      function runde() {
+        var l = q.ziel; q.ziel = null;
+        return UC.rpc("onboarding_select_v1", { p_onboarding: sbId(), p_kind: k, p_ids: l }, { timeoutMs: 20000 }).then(function (erg) {
+          if (!erg || !erg.ok) sbAuswahlFehler(k, erg);
+          if (q.ziel) return runde();
+          q.laeuft = false;
+        });
+      }
+      q.warte = runde();
+      return q.warte;
+    }
+    function sbAuswahlFertig() {
+      return Promise.all(Object.keys(SB.q).map(function (k) { return SB.q[k].warte || Promise.resolve(); }));
+    }
+    function sbAuswahlFehler(k, erg) {
+      var c = sbCode(erg), h = sbHint(erg);
+      /* Waehrend eines Laufs nimmt die DB keine Auswahl an (onboarding_busy); die naechste geht durch. */
+      if (/onboarding_busy/.test(c)) return;
+      var t = sbAllgemein(erg);
+      if (!t && /too_many/.test(h)) {
+        var max = maxFuer(k === "competitors" ? "brands" : k);
+        t = UC.t(k === "competitors" ? "You can select up to {n} competitors." : k === "topics" ? "You can select up to {n} topics." : "You can select up to {n} prompts.")
+          .replace("{n}", String(max));
+      }
+      if (UC.toast) UC.toast(t || UC.t("Your selection couldn't be saved. Please try again."), { kind: "error" });
+    }
+
+    /* ---- Start ---- */
+    var SB_FELD = { name_empty: ["name", "Please enter your brand name."], name_too_long: ["name", "Use up to 60 characters."],
+                    name_characters: ["name", "Please remove special characters like < > or emoji."],
+                    website_invalid: ["website", "That does not look like a website address."],
+                    website_blocked: ["website", "We can't check this address. Please enter your public website."],
+                    website_unreachable: ["website", "We couldn't reach your website. Please check the address and try again."],
+                    market: ["market", "Please pick a market from the list."], timezone: ["timezone", "Please pick a time zone from the list."],
+                    business_model: ["business", "Please pick a business model."] };
+    function sbStart(p) {
+      p = p || {};
+      SB.rueckkehr = "";
+      UC.edge("onboarding-start", { company_name: txt(p.brand_name), website: txt(p.website_input) || txt(p.website_url),
+                                    market: txt(p.market), timezone: txt(p.timezone), business_model: txt(p.business_model) },
+              { timeoutMs: 30000 }).then(function (erg) {
+        var c = lebt() ? ctrl : resolve(instanceId); if (!c) return;
+        var d = sbDaten(erg);
+        if (!d || !txt(d.onboarding_id)) { c.__sbStartFehler(erg); return; }
+        SB.id = txt(d.onboarding_id);
+        state.projekt = Object.assign({}, state.projekt || {}, {
+          onboarding_id: SB.id, status: txt(d.status), status_phase: num(d.status_phase),
+          company_name: txt(p.brand_name), website_input: txt(p.website_input), website_url: txt(p.website_url),
+          website_domain: txt(p.website_domain), market: txt(p.market), timezone: txt(p.timezone), business_model: txt(p.business_model)
+        });
+        sbAbo();
+        var st = txt(d.status).toLowerCase();
+        if (st === "ready") { sbNachladen(d); return; }
+        c.setStatus({ status: st || "submitted", status_phase: num(d.status_phase) || 1 });
+      });
+    }
+    function sbStartFehler(erg) {
+      var c = sbCode(erg), h = sbHint(erg);
+      warteBeenden(); state.busy = false;
+      var f = /onboarding_invalid|edge_invalid_body/.test(c) ? SB_FELD[h] || (h === "company_name" ? SB_FELD.name_empty : h === "website" ? SB_FELD.website_invalid : null) : null;
+      if (f) { state.fehler = {}; state.fehler[f[0]] = UC.t(f[1]); state.banner = ""; }
+      else state.banner = sbAllgemein(erg) || sbSatz("start_failed");
+      if (state.step !== "brand") gehe("brand", false); else render();
+    }
+
+    /* ---- Prompts ---- */
+    function sbPrompts() {
+      var ids = state.topics.filter(function (t) { return state.selTopics[t.id]; }).map(function (t) { return txt(t.id); });
+      var neu = state.eigene.map(function (e) { return txt(e.name); }).filter(Boolean);
+      sbAuswahlFertig().then(function () {
+        return UC.rpc("onboarding_select_v1", { p_onboarding: sbId(), p_kind: "topics", p_ids: ids.filter(function (x) { return SB_UUID.test(x); }) }, { timeoutMs: 20000 });
+      }).then(function (erg) {
+        if (!erg || !erg.ok) return erg;
+        return UC.edge("onboarding-prompts", { onboarding_id: sbId(), new_topics: neu }, { timeoutMs: 30000 });
+      }).then(function (erg) {
+        var c = lebt() ? ctrl : resolve(instanceId); if (!c) return;
+        var d = sbDaten(erg);
+        if (!d) { c.__sbPromptsFehler(erg); return; }
+        var st = txt(d.status).toLowerCase(), ph = num(d.status_phase);
+        /* Gleiche Auswahl wie beim letzten fertigen Lauf: die Prompts liegen schon da. */
+        if (st === "ready" || ph === PROMPT_PHASE) { sbNachladen(d); return; }
+        c.setStatus({ status: st || "processing", status_phase: ph || PROMPT_LAUF_PHASE });
+      });
+    }
+    function sbPromptsFehler(erg) {
+      var c = sbCode(erg), h = sbHint(erg);
+      warteBeenden(); state.promptsFuer = null;
+      var t = sbAllgemein(erg);
+      if (!t && /topics_empty/.test(h + " " + c)) t = UC.t("Please pick at least one topic.");
+      if (!t && /too_many_own_topics/.test(h + " " + c)) t = UC.t("You can add up to {n} topics of your own.").replace("{n}", String(EIGEN_MAX));
+      if (!t && /too_many_topics/.test(h + " " + c)) t = UC.t("You can select up to {n} topics.").replace("{n}", String(maxFuer("topics")));
+      if (!t && /topic_/.test(h)) t = UC.t("Please check the names of your own topics.");
+      ctrl.setError(t || sbSatz("prompts_failed"));
+    }
+
+    /* ---- Tarife ---- */
+    function sbTarife() {
+      UC.rpc("onboarding_plans_v1", {}, { timeoutMs: 20000 }).then(function (erg) {
+        var c = lebt() ? ctrl : resolve(instanceId); if (!c) return;
+        var d = sbDaten(erg);
+        if (!d || !isArr(d.rows)) { c.setPlans(null); return; }
+        var m = d.meta || {};
+        SB.trialOk = m.trial_eligible === true;
+        /* Testphase nur, wenn dieser Nutzer sie bekommt: trial_days_effective, und 0 ohne
+           trial_eligible. Der Monatsbezug steckt in hatTest. */
+        c.setPlans(d.rows.map(function (r) {
+          var q = kopie(r) || {};
+          q.trial_days = SB.trialOk ? (num(r.trial_days_effective) || 0) : 0;
+          return q;
+        }));
+      });
+    }
+
+    /* ---- Kasse ---- */
+    function sbKasse(p) {
+      p = p || {};
+      var pfad = /^\/version-test(\/|$)/.test(window.location.pathname) ? "/version-test/onboarding" : "/onboarding";
+      sbAuswahlFertig().then(function () {
+        return UC.edge("onboarding-checkout", { onboarding_id: sbId(), plan_id: txt(p.plan_id),
+                                                billing_interval: txt(p.billing_interval) === "monthly" ? "monthly" : "yearly",
+                                                return_path: pfad }, { timeoutMs: 30000 });
+      }).then(function (erg) {
+        var c = lebt() ? ctrl : resolve(instanceId); if (!c) return;
+        var d = sbDaten(erg);
+        if (d && /^https:\/\//.test(txt(d.url))) { window.location.assign(txt(d.url)); return; }
+        c.__sbKasseFehler(erg);
+      });
+    }
+    function sbKasseFehler(erg) {
+      var c = sbCode(erg), h = sbHint(erg);
+      state.busy = false;
+      /* Die Kasse wurde schon bezahlt: nicht neu starten, auf den Abschluss warten. */
+      if (/checkout_open/.test(c) && h === "paid") {
+        torGeprueft = true;
+        state.banner = "";
+        warteStarten("workspace", false);
+        sbKassePruefenSpaeter();
+        return;
+      }
+      var t = sbAllgemein(erg);
+      if (!t && /prompts_empty/.test(h)) t = UC.t("Please select at least one prompt.");
+      if (!t && /too_many_prompts/.test(h)) t = UC.t("You can select up to {n} prompts.").replace("{n}", String(maxFuer("prompts")));
+      ctrl.setError(t || UC.t("The checkout couldn't be opened. Please try again."));
+    }
+
+    /* ---- Die Weiche: welches Ereignis erledigt dieser Teil? ---- */
+    function sbEreignis(name, payload) {
+      if (name === "uobDashboard" || name === "uobLogout") return false;
+      /* Ein neuer Versuch raeumt das Band des vorigen weg -- sonst stuende "Something went wrong"
+         ueber einem Ladebild, das gerade gut laeuft (gemessen: Kasse erst 502, dann bezahlt). */
+      if ((name === "uobStart" || name === "uobTopics" || name === "uobFinish") && state.banner) { state.banner = ""; renderBanner(); }
+      if (name === "uobStart") { sbStart(payload); return true; }
+      if (name === "uobStep") { if (payload === "plan") sbTarife(); return true; }
+      if (name === "uobSelect") { sbAuswahl(payload && payload.kind, payload && payload.ids_json); return true; }
+      if (name === "uobTopics") { sbPrompts(); return true; }
+      if (name === "uobFinish") { sbKasse(payload); return true; }
+      /* uobWorkflowStart gibt es auf diesem Weg nicht: den Lauf startet onboarding-start. */
+      return true;
+    }
+
     /* ---- Neuaufbau: merken, pruefen, abbauen ---------------------------------------------------
        Lebt diese Wurzel noch? Nach einem Neuaufbau haengt die alte als abgehaengter Knoten weiter
        im Speicher, samt ihren Uhren. Jede Uhr fragt das zuerst -- sonst zeichnete sie ins Leere,
@@ -4295,6 +4825,16 @@
        nach dem Leben soll nichts schreiben. */
     ctrl.lebt = lebt;
     ctrl.abbauen = abbauen;
+    /* Fuer den Selbstlade-Weg: Antworten, die nach einem Neuaufbau ankommen, gehen an die lebende
+       Wurzel (resolve), und dort an diese Griffe. */
+    function sbGriff(fn) { return function () { try { return fn.apply(null, arguments); } finally { persist(); } }; }
+    ctrl.__sbStatus = sbGriff(sbStatus);
+    ctrl.__sbNachlesen = sbGriff(sbNachlesen);
+    ctrl.__sbAnwenden = sbGriff(sbAnwenden);
+    ctrl.__sbKassePruefen = sbGriff(sbKassePruefen);
+    ctrl.__sbStartFehler = sbGriff(sbStartFehler);
+    ctrl.__sbPromptsFehler = sbGriff(sbPromptsFehler);
+    ctrl.__sbKasseFehler = sbGriff(sbKasseFehler);
 
     root.__uobController = ctrl;
 
@@ -4399,6 +4939,16 @@
          abgebrochen, steht hier nichts: dann ist die Tafel schon offen (state.hilfeAuf ist
          uebernommen), oder der Nutzer hat sie selbst bedient. */
       hilfeUhrStarten(saved.hilfeBis - Date.now());
+    }
+
+    /* Selbst laden: nur beim ERSTEN Aufbau. Ein Neuaufbau (Themenwechsel) macht mit dem Stand der
+       alten Wurzel weiter; Kanal und Schlangen liegen ohnehin am window (SBSTORE). Kommt der Nutzer
+       aus der Kasse zurueck, steht sofort "Creating your workspace" -- nicht erst das Skelett und
+       dann das Tor. */
+    if (SELBST && !neuaufbau) {
+      sbRueckkehrLesen();
+      if (SB.rueckkehr === "success") { torGeprueft = true; bootBeenden(); warteStarten("workspace", false); }
+      sbLaden();
     }
 
     /* Der erste Stand gehoert sofort in den Speicher, auch einer, an dem noch niemand etwas getan

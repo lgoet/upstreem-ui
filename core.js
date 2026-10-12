@@ -2791,6 +2791,62 @@
     "Pick the plan that fits your team.": "Wähle den Tarif, der zu deinem Team passt.",
     "Pick the plan that fits your team. Not every plan includes a free trial.":
       "Wähle den Tarif, der zu deinem Team passt. Nicht jeder Tarif hat eine Testphase.",
+    "Pick the plan that fits your team. The free trial comes with monthly billing.":
+      "Wähle den Tarif, der zu deinem Team passt. Die Testphase gibt es bei monatlicher Abrechnung.",
+    "Creating your workspace. This takes a few seconds.":
+      "Dein Arbeitsbereich wird eingerichtet. Das dauert ein paar Sekunden.",
+    "We couldn't reach your website. Please check the address and try again.":
+      "Wir konnten deine Website nicht erreichen. Prüf die Adresse und versuch es noch einmal.",
+    "We can't check this address. Please enter your public website.":
+      "Diese Adresse können wir nicht prüfen. Gib deine öffentliche Website ein.",
+    "We couldn't find readable content on your website. Please check the address.":
+      "Auf deiner Website haben wir keinen lesbaren Inhalt gefunden. Prüf bitte die Adresse.",
+    "The analysis didn't work. Please start again.":
+      "Die Analyse hat nicht geklappt. Starte bitte noch einmal.",
+    "The prompts couldn't be created. Please try again.":
+      "Die Prompts konnten nicht erstellt werden. Versuch es noch einmal.",
+    "This took too long. Please start again.":
+      "Das hat zu lange gedauert. Starte bitte noch einmal.",
+    "Starting didn't work. Please try again.":
+      "Der Start hat nicht geklappt. Versuch es noch einmal.",
+    "Payment received. We're setting up your workspace and will take care of it.":
+      "Zahlung erhalten. Wir richten deinen Arbeitsbereich ein und kümmern uns darum.",
+    "Your session has ended. Please log in again.":
+      "Deine Sitzung ist abgelaufen. Melde dich bitte neu an.",
+    "You can create new prompts up to {n} times a day. Please try again tomorrow.":
+      "Neue Prompts kannst du bis zu {n}-mal am Tag erstellen. Versuch es morgen noch einmal.",
+    "Your setup changed in the meantime. Please reload the page.":
+      "Dein Setup hat sich inzwischen geändert. Lade die Seite bitte neu.",
+    "Something went wrong on our side. Please try again in a few minutes.":
+      "Bei uns ist etwas schiefgegangen. Versuch es in ein paar Minuten noch einmal.",
+    "The payment wasn't completed. You can choose your plan again.":
+      "Die Zahlung wurde nicht abgeschlossen. Du kannst deinen Tarif noch einmal wählen.",
+    "You can select up to {n} competitors.":
+      "Du kannst bis zu {n} Wettbewerber auswählen.",
+    "You can select up to {n} topics.":
+      "Du kannst bis zu {n} Topics auswählen.",
+    "You can select up to {n} prompts.":
+      "Du kannst bis zu {n} Prompts auswählen.",
+    "Your selection couldn't be saved. Please try again.":
+      "Deine Auswahl konnte nicht gespeichert werden. Versuch es noch einmal.",
+    "Use up to 60 characters.":
+      "Nutze höchstens 60 Zeichen.",
+    "Please remove special characters like < > or emoji.":
+      "Entferne bitte Sonderzeichen wie < > oder Emojis.",
+    "Please pick a market from the list.":
+      "Wähle bitte einen Markt aus der Liste.",
+    "Please pick a time zone from the list.":
+      "Wähle bitte eine Zeitzone aus der Liste.",
+    "Please pick at least one topic.":
+      "Wähle bitte mindestens ein Topic.",
+    "You can add up to {n} topics of your own.":
+      "Du kannst bis zu {n} eigene Topics hinzufügen.",
+    "Please check the names of your own topics.":
+      "Prüf bitte die Namen deiner eigenen Topics.",
+    "Please select at least one prompt.":
+      "Wähle bitte mindestens einen Prompt aus.",
+    "The checkout couldn't be opened. Please try again.":
+      "Die Kasse konnte nicht geöffnet werden. Versuch es noch einmal.",
     "Billing interval": "Abrechnungszeitraum",
     "Every plan starts with a free trial. No charge until it ends.":
       "Jeder Tarif beginnt mit einer kostenlosen Testphase. Bis sie endet, wird nichts berechnet.",

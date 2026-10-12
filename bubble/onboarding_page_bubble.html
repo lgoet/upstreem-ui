@@ -9,6 +9,26 @@
      Diese Datei ist eine VORLAGE. Aenderungen daran erreichen ein bereits eingebautes Element
      NICHT -- dort muss dasselbe von Hand nachgezogen werden.
 
+     ── SEIT 13.10.: DIE SEITE LAEDT SELBST (data-source="db") ─────────────────────────────
+     Mit data-source="db" (steht unten im Markup) holt die Seite alles selbst, mit dem Login des
+     Nutzers (Vertrag bubble/onboarding_13_10/ONBOARDING_V1_VERTRAG.md):
+       Laden      onboarding_bundle_v1 (auch Markt-, Zeitzonen- und Grenzlisten)
+       Start      Edge onboarding-start, Status ueber den Kanal onboarding:<id>
+       Auswahl    onboarding_select_v1
+       Prompts    Edge onboarding-prompts (eigene Themen als Liste)
+       Tarife     onboarding_plans_v1
+       Kasse      Edge onboarding-checkout; Stripe fuehrt zurueck auf /onboarding?checkout=...
+                  -- "Creating your workspace", dann ins Dashboard (uobDashboard)
+     Es gehen nur noch ZWEI Ereignisse an Bubble: uobDashboard (Go to page index) und
+     uobLogout (Logout, dann signup). ALLES ANDERE AUF DER SEITE FAELLT WEG:
+       - FILL_DATA samt "Do once" und den beiden "Do every time status_phase is 5 / 7";
+       - "Subscribe to a channel onboarding_realtime" und der Workflow "New message";
+       - uobStart, uobWorkflowStart, uobSelect, uobTopics, uobStep, uobFinish samt ihren RPCs,
+         dem API Connector zu beiden n8n-Webhooks und create-onboarding-checkout;
+       - die Seite onboarding-success (die Kasse kehrt auf /onboarding zurueck).
+     get_my_teams (Dashboard-Knopf) bleibt, falls die Seite ihn dafuer braucht.
+     Ohne data-source gilt alles darunter unveraendert (Bubble fuellt ueber die Setter).
+
      ── DER ABLAUF ──────────────────────────────────────────────────────────────────────────
      Fuenf Stationen, dazwischen zwei Wartezustaende:
 
@@ -244,6 +264,7 @@
 
 <div class="up-root uob-root"
      data-instance="INSTANCE_ID"
+     data-source="db"
      data-cdn-pin="CDN_PIN"
      data-isdark="IS_DARK"
      data-logo="LOGO_URL"

@@ -228,6 +228,23 @@ Testreste: keine. Alle Prod-Tests liefen in zurückgerollten Transaktionen. Die 
 - **Altes `cached_citation_domain_urls_v1`** (ohne s) und `cached_citation_urls_v2`: Bubble-URL-Tabelle im Domain-Drawer. Neu ist `cached_citations_domain_urls_v1`.
 - **Direkte Tabellenzugriffe aus Bubble** (`company_alias`, `team_brand_profile`, `team_company_settings`, `team_domain_override`, `v_company_alias_enriched`): Ohne Grant bzw. Policy liefern sie nichts. Nach dem Umbau prüfen, ob noch etwas liest.
 - **Rückweg-Reihenfolge:** erst `domain_editor_alt_absichern_rueckweg.sql`, dann `domain_editor_v1_rueckweg.sql`, weil die Altversionen die neuen Helfer nutzen.
-- **Offen (nicht bestellt):**
-  - **n8n mit Wortgrenzen.** Allgemeine Wörter als Alias („the“) sind erlaubt (Entscheidung Lukas). Die DB sperrt nur 1 Zeichen, 2 Zeichen in Kleinbuchstaben und Kollisionen mit anderen Marken. Ob n8n auf ganze Wörter umgestellt wird, entscheidet Lukas.
-  - **`brand_log_v1`:** live, die Oberfläche fehlt noch. Nicht entfernen.
+- **`brand_log_v1`:** live, die Oberfläche fehlt noch. Nicht entfernen. (n8n-Matching bleibt wie es ist, Entscheidung Lukas.)
+
+## Onboarding (13.10.2026)
+- Volle Liste: `onboarding_13_10/ONBOARDING_V1_VORSCHLAG.md`, Abschnitt D.
+- **Gebaut 13.10.:** `onboarding_13_10/onboarding_v1.sql` (Rückweg `onboarding_v1_rueckweg.sql`), Vertrag `ONBOARDING_V1_VERTRAG.md`.
+  - Edge `onboarding-start`, `onboarding-prompts`, `onboarding-checkout`, `onboarding-checkout-status` sind deployt.
+  - `stripe-webhook` v9 ist deployt; Rückweg-Quelle `edge/stripe-webhook_v8_rueckweg.ts`.
+  - n8n `ONBOARDING_V1`, `ONBOARDING_PROMPTS_V1` (Import nach `n8n/AENDERUNGEN_UND_IMPORT.md`).
+  - Cron `onboarding-reaper` (jede Minute).
+  - Die Hotfix-Dateien sind ersetzt und können gelöscht werden.
+- **Nach der Umstellung abschalten:** Edge `create-onboarding-checkout`, n8n `ONBOARDING` und `ONBOARDING_PROMPTS` (alte, offene Webhooks), Bubble-Seite `onboarding-success`.
+- **Beim Aufräumen:** Im Broadcast `onboarding_status` die Felder `status_label`, `last_error`, `updated_at` und `onboarding_id` entfernen (nur Bubble liest sie).
+- **Nach dem Umbau löschen** (mit Sicherung):
+  - `onboarding_get_bundle`, `onboarding_start_v1`, die drei `onboarding_set_*_selected_v1`, `get_billing_plans_v1`, `get_onboarding_completion_status_v1`;
+  - `app.`/`public.onboarding_get_status`, `app.`/`public.onboarding_submit`, `app.onboarding_save_step1`/`_v2`, `public.onboarding_save_step1`/`_debug`;
+  - nach der n8n-Umstellung `onboarding_prompts_claim_v1`, `onboarding_get_prompt_context_v1`, `onboarding_insert_prompts_v1` (Token optional).
+- **Bleibt:** `onboarding_finalize_after_billing_v1` (Prompt-Planlimit ergänzen), `onboarding_restart_policy`, `onboarding_reset_limits_admin`, `get_my_teams_v4`, Trigger, alle sechs Tabellen.
+- **In Bubble entfernen:** Aufrufe auf `onboarding_finalize*`, `onboarding_save_selection`, `get_my_teams`/`_v2`/`_v3` (gibt es nicht mehr).
+- **Add Brand (13.10.):** Auftrag `add_brand_db_auftrag.md`. Sobald der Dialog überall `brand_add_v1` nutzt und `add_competitor_v4` eine Woche ohne Aufrufe ist: Bubble-Workflow „uabAddBrand“ und den n8n-Workflow zum Anlegen von Marken abschalten. Danach `add_competitor_v1`–`v4` und `add_team_competitor_v1` mit Sicherung löschen. `add_competitor_v4` trägt heute noch PUBLIC/anon-EXECUTE; anon bekommt nur eine Fehlermeldung.
+- **Nach dem Umbau:** SELECT auf `onboarding_project` und INSERT auf `onboarding_suggested_prompt` für `authenticated` entziehen; 5 hängende Läufe aus 2025 prüfen.
