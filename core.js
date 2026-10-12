@@ -2193,9 +2193,16 @@
     "Adjust period": "Zeitraum anpassen",
     /* Prompt Detail aus core (12.10.) */
     "Prompt not available": "Prompt nicht verfügbar",
-    "This prompt could not be found.": "Dieser Prompt wurde nicht gefunden.",
+    /* Wortlaut des DB-Chats (12.10.), auch fuer fremde und geloeschte Prompts aus alten Pins. */
+    "This prompt no longer exists.": "Dieser Prompt existiert nicht mehr.",
     "This prompt could not be loaded. Please try again.": "Dieser Prompt konnte nicht geladen werden. Versuch es noch einmal.",
     "Last run {when}": "Zuletzt gelaufen {when}",
+    "Last run on {date}": "Zuletzt gelaufen am {date}",
+    "next run {date}": "nächster Lauf {date}",
+    "Paused": "Pausiert",
+    "Paused (plan limit reached)": "Pausiert (Limit deines Tarifs erreicht)",
+    "This prompt didn't run in the selected period.": "Im gewählten Zeitraum ist dieser Prompt nicht gelaufen.",
+    "These numbers could not be loaded.": "Diese Zahlen konnten nicht geladen werden.",
 
     /* Leerzustaende der Charts und Tabellen */
     "No types": "Keine Typen",

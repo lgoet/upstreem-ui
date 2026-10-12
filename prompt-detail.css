@@ -14,9 +14,27 @@
 .uprd-main { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
 .uprd-teil { min-width: 0; }
 
-/* Meta-Zeile: Market, Topics, letzter Lauf -- Trenner aus core (.up-dk-sep). */
+/* Meta-Zeile: Market, Topics, pausiert, letzter Lauf -- Trenner aus core (.up-dk-sep). */
 .uprd-tags { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .uprd-zeit { white-space: nowrap; }
+/* Pausiert eine Stufe kraeftiger als der Rest der Zeile: es ist die eine Angabe, die erklaert,
+   warum die Zahlen darunter alt sind. Keine Farbe -- pausiert ist ein Zustand, kein Fehler. */
+.uprd-status { white-space: nowrap; font-weight: var(--up-fw-m); color: var(--vc-text); }
+
+/* Kennzahlen: das offene Band aus core (.up-kpiband.is-offen, UC.kpiKarte) in der Leiste aus core
+   (.up-dk-leiste) -- dieselbe graue Flaeche wie die Kennzahlen im URL-Drawer, darin die Kacheln
+   der App. Das Band nimmt die ganze Breite der Leiste, sonst stuenden drei Spalten auf Inhalt
+   zusammengeschoben. 4 statt 12 Polster oben und unten: die Kacheln bringen ihre 4 selbst mit. */
+.uprd-kpis.up-dk-leiste { margin-top: 0; padding: 12px 20px; }
+.uprd-kpis > .uprd-band { flex: 1 1 auto; min-width: 0; }
+/* Beim Nachladen bleiben die alten Zahlen stehen, gedimmt wie die Tabellen der App (.42). */
+.uprd-kpis.is-laedt { opacity: .42; transition: opacity var(--up-t-1) ease; }
+.uprd-hinweis { font-size: var(--up-fs-m); color: var(--vc-third); line-height: 20px; }
+/* Das Info-Zeichen an der Beschriftung, sichtbar beim Hover der Kachel -- wie performance-detail
+   (.upd-kpi .up-kpi-label). */
+.uprd-kpis .up-kpi-label { display: inline-flex; align-items: center; gap: 6px; }
+.uprd-kpis .up-th-info { margin-left: 0; }
+.uprd-kpis .up-kpi:hover .up-th-info { opacity: 1; }
 
 /* Skelett des Kopfes, in den Massen dessen, was gleich dasteht (wie URL Detail). */
 .uprd-skz { display: inline-block; height: 14px; border-radius: var(--up-r-xs); background: var(--vc-sk);

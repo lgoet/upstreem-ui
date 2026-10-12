@@ -4,18 +4,20 @@
    Ein Drawer der ERSTEN Ebene (#drawer-prompt, Hoehe und Bewegung aus der Huelle in core,
    KERN_DRAWER). Aufbau von oben, wie Response und URL:
      Kopf (core)   "Prompt / <Text>", Ask Mira, Anheften, Schliessen
-     Meta-Zeile    Market, Topics, letzter Lauf -- aus prompt_detail_v1
+     Meta-Zeile    Market, Topics, pausiert, letzter Lauf -- aus prompt_detail_v1
      Titel         der Prompt-Text, vollstaendig
      Filterzeile   Kalender und Modelle. Maerkte und Topics nicht: ein Prompt HAT seinen Markt und
                    seine Topics, ein Filter darauf waere entweder leer oder wirkungslos.
+     Kennzahlen    Visibility, Avg. Rank, Sentiment der eigenen Marke mit Delta (UC.kpiKarte im
+                   offenen Band) -- aus own der Overview, die der Chart ohnehin laedt
      Visibility    der Visibility-Chart der App mit seiner Tabelle
      Top Citations die Top Citations der App (Ring und Liste)
      Responses     die Responses-Tabelle der App
    Die drei Bausteine sind die ECHTEN der App im lokalen Modus (data-local, Markup aus den
    Bubble-Vorlagen ueber .prompt_detail_markup.py), gefuellt mit DENSELBEN Anfragen wie das
-   Dashboard (dashboard-data.js), dazu p_prompt_id. Das ist der Vorschlag an den DB-Chat
-   (bubble/prompt_detail_db_auftrag.md); solange die Bubble-Gruppe #drawer-prompt steht, laeuft
-   hier nichts.
+   Dashboard (dashboard-data.js), dazu p_prompt_id -- gebaut vom DB-Chat am 12.10.
+   (bubble/prompt_detail_12_10/); solange die Bubble-Gruppe #drawer-prompt steht, laeuft hier
+   nichts.
 
    Was die ganze Ansicht betrifft (Oeffnen, Zeitraum, Modelle) geht gleichzeitig hinaus. Was nur
    einen Teil betrifft (D/W/M, Sortierung, Suche, Seite ...), laeuft allein. Der Lader aus
@@ -67,7 +69,10 @@
     f: { von: "", bis: "", modelle: null }, gran: "day",
     vis: { order: "visibility_desc", firmen: null }, autoFirmen: [],
     top: { modus: "domain", erwaehnt: "all", citationTypen: null, urlTypen: null },
-    resp: null, eigene: null, kopfSpeicher: {}
+    resp: null, eigene: null, kopfSpeicher: {},
+    /* Kennzahlen: undefined = noch nichts da (Skelett), null = keine eigene Marke (Leiste weg).
+       laeufe ist runs_total der Overview -- 0 heisst: im Zeitraum nicht gelaufen. */
+    kpi: undefined, laeufe: null, kpiFehler: false
   };
   function respStart() {
     return { order: "run_at_desc", limit: 15, offset: 0, suche: "", requestId: null, erwaehnt: "all",
@@ -113,9 +118,22 @@
     if (d.market && UC.marketChip) teile.push(UC.marketChip(str(d.market)));
     var tags = isArr(d.tags) ? d.tags.filter(function (x) { return x && x.name; }) : [];
     if (tags.length) teile.push('<span class="uprd-tags">' + tags.map(topicChip).join("") + '</span>');
-    var lauf = str(d.last_run_at);
-    if (lauf && UC.relativeTime) teile.push('<span class="uprd-zeit" data-tip="' + esc(lauf) + '">' +
-      esc(t("Last run {when}").replace("{when}", UC.relativeTime(lauf))) + '</span>');
+    /* Pausiert steht vor dem letzten Lauf: es erklaert, warum der alt ist. Das Tarif-Limit nennt
+       den Grund, weil der Nutzer dort etwas tun kann. */
+    if (str(d.status) === "paused") teile.push('<span class="uprd-status">' +
+      esc(t(str(d.paused_reason) === "plan_limit" ? "Paused (plan limit reached)" : "Paused")) + '</span>');
+    var lauf = str(d.last_run_at), naechster = str(d.status) === "active" ? str(d.next_run_at) : "";
+    if (lauf && UC.relativeTime) {
+      /* Im Tooltip der genaue Zeitpunkt statt des rohen ISO-Texts, beim aktiven Prompt dazu der
+         naechste Lauf -- die Zeile selbst bleibt kurz. */
+      var tip = zeitpunkt(lauf) + (naechster ? ", " + t("next run {date}").replace("{date}", zeitpunkt(naechster)) : "");
+      /* Ab einem Tag liefert relativeTime ein Datum, und davor braucht der Satz ein "am" ("Zuletzt
+         gelaufen am 04. Feb 2026") -- also ein eigenes Muster statt desselben mit Datum darin. */
+      var alt_ = Date.now() - new Date(lauf).getTime() >= 864e5;
+      teile.push('<span class="uprd-zeit" data-tip="' + esc(tip) + '">' + esc(alt_
+        ? t("Last run on {date}").replace("{date}", UC.fmtDate(lauf))
+        : t("Last run {when}").replace("{when}", UC.relativeTime(lauf))) + '</span>');
+    }
     meta.innerHTML = teile.join('<span class="up-dk-sep" aria-hidden="true"></span>');
     titel.textContent = str(d.prompt_text) || "–";
     if (P.kopf) {
@@ -125,6 +143,12 @@
       if (typeof window.upstreemPinToSidebar === "function") html += knopf("pin", "pin", "Pin to sidebar");
       P.kopf.eigen.innerHTML = html;
     }
+  }
+  function zeitpunkt(iso) {
+    var x = new Date(iso);
+    if (isNaN(x.getTime())) return "";
+    var hh = String(x.getHours()), mm = String(x.getMinutes());
+    return UC.fmtDate(iso) + " " + (hh.length < 2 ? "0" : "") + hh + ":" + (mm.length < 2 ? "0" : "") + mm;
   }
   function knopf(art, zeichen, label) {
     return '<button type="button" class="up-iconbtn" data-uprd-kopf="' + art + '" data-tip="' + esc(t(label)) +
@@ -142,6 +166,66 @@
       (x.emoji ? '<span class="up-topicchip-e">' + esc(str(x.emoji)) + '</span>' : "") +
       '<span class="up-topicchip-lbl">' + esc(str(x.name)) + '</span></span>';
   }
+  /* ---- Kennzahlen: die eigene Marke in den Antworten auf diesen Prompt ----
+     own aus cached_dashboard_overview_v1 mit p_prompt_id (Vertrag 12.10.). Werte nach CLAUDE.md 2b:
+     Visibility mit einer Stelle und %, Rang immer mit einer Stelle und Raute (Delta umgekehrt),
+     Sentiment ganz. Bauart wie performance-detail: UC.kpiKarte, Werte zaehlen hoch. */
+  var HASH = UC.HASH_ICON ? UC.HASH_ICON.replace("<svg ", '<svg class="up-hash" ') : "";
+  function zahl(v) { var n = v == null || v === "" ? NaN : Number(v); return isFinite(n) ? n : null; }
+  function kpisZeichnen() {
+    var el = P.root && P.root.querySelector(".uprd-kpis");
+    if (!el) return;
+    el.classList.remove("is-laedt");
+    var hinweis = P.kpiFehler ? "These numbers could not be loaded."
+      : P.laeufe === 0 ? "This prompt didn't run in the selected period." : "";
+    el.classList.toggle("is-hinweis", !!hinweis);
+    el.hidden = !hinweis && P.kpi === null;
+    if (hinweis) { el.innerHTML = '<span class="uprd-hinweis">' + esc(t(hinweis)) + '</span>'; return; }
+    if (P.kpi === undefined) {
+      el.innerHTML = '<div class="up-kpiband is-offen uprd-band">' +
+        [0, 1, 2].map(function () { return UC.kpiKarteSkelett ? UC.kpiKarteSkelett() : ""; }).join("") + '</div>';
+      return;
+    }
+    if (P.kpi === null) { el.innerHTML = ""; return; }
+    var k = P.kpi, tc = UC.trendChip || function () { return ""; };
+    function wert(feld, v) {
+      if (v == null) return '<span class="up-num is-empty">–</span>';
+      if (feld === "sentiment") return UC.sentHtml(v, { zaehlen: true });
+      if (feld === "rank") return '<span class="up-rank-group">' + HASH + UC.zaehlHtml(v, "num1") + '</span>';
+      return UC.zaehlHtml(v, "pct1");
+    }
+    function kachel(label, schluessel, wertHtml, trendHtml) {
+      return UC.kpiKarte({ label: label, wertHtml: wertHtml, trendHtml: trendHtml })
+        .replace('</span><span class="up-kpi-row">', '<span class="up-th-info uprd-erklaer" data-explain="' + schluessel + '">' +
+          UC.icon("info", 2) + '</span></span><span class="up-kpi-row">');
+    }
+    el.innerHTML = '<div class="up-kpiband is-offen uprd-band">' +
+      kachel("Visibility", "visibility", wert("visibility", zahl(k.visibility_pct)),
+        tc(zahl(k.visibility_delta_pct), { decimals: true, suffix: "%" })) +
+      kachel("Avg. Rank", "rank", wert("rank", zahl(k.avg_rank)),
+        tc(zahl(k.avg_rank_delta), { decimals: true, inverted: true })) +
+      kachel("Sentiment", "sentiment", wert("sentiment", zahl(k.sentiment)), tc(zahl(k.sentiment_delta), {})) +
+      '</div>';
+    if (UC.hochzaehlen) UC.hochzaehlen(el, "uprd|" + P.id + "|" + P.f.von + "|" + P.f.bis + "|" + JSON.stringify(P.f.modelle));
+  }
+  /* Die Erklaerkarten im Format der App (helle Platte, Titel = Label, Satz aus UC.explainCopy mit
+     Trend-Zusatz, weil die Kachel einen Trend zeigt) -- wie performance-detail. */
+  var TREND_SATZ = ", plus the change against the previous period";
+  var KPI_ERKLAER = { visibility: "Visibility", rank: "Avg. Rank", sentiment: "Sentiment" };
+  function kpiPlatte(key) {
+    var hoch = '<span class="up-explain-up">' + (UC.TREND_UP || "") + '</span>';
+    if (key === "rank") return '<span class="up-explain-row">' + (UC.HASH_ICON || "") + '<span>2.3</span></span>';
+    if (key === "sentiment") return '<span class="up-explain-row">' + UC.sentHtml(78) + hoch + '<span class="up-explain-up">4</span></span>';
+    return '<span class="up-explain-row">18.4%' + hoch + '<span class="up-explain-up">2.9%</span></span>';
+  }
+  function erklaerung(key) {
+    if (!KPI_ERKLAER[key] || !UC.explainCopy) return "";
+    var ek = UC.explainCopy(key, { scope: " for this prompt", trend: TREND_SATZ });
+    if (!ek) return "";
+    return '<div class="up-explain-vis">' + kpiPlatte(key) + '</div>' +
+           '<div class="up-explain-h">' + esc(t(KPI_ERKLAER[key])) + '</div>' +
+           '<div class="up-explain-t">' + esc(ek.t) + '</div>';
+  }
   function kopfKlick(art) {
     var d = P.zeile || {};
     if (art === "mira" && UC.anMira && UC.miraBezug) {
@@ -156,7 +240,8 @@
   }
   function fehlerText(code) {
     var c = String(code || "").trim();
-    if (c === "prompt_not_found" || c === "team_invalid_param") return "This prompt could not be found.";
+    /* Wortlaut des DB-Chats (12.10.): auch ein fremder Prompt oder ein alter Pin landet hier. */
+    if (c === "prompt_not_found" || c === "team_invalid_param") return "This prompt no longer exists.";
     if (c === "settings_not_authenticated" || c === "not authenticated") return "Your session has expired. Please sign in again.";
     if (c === "team_deleted") return "This team has been deleted.";
     if (/^team_access_/.test(c) || c === "forbidden" || c === "team_forbidden") return "Your team doesn't have access right now.";
@@ -206,15 +291,30 @@
     if (!o || typeof o !== "object" || !o.name) return;
     P.eigene = { company_id: str(o.company_id), name: str(o.name), logo_url: str(o.logo_url) };
   }
+  function kpiAusOverview(erg) {
+    var d = erg && erg.ok ? erg.daten : null;
+    if (isArr(d)) d = d.length ? d[0] : null;
+    var ok = d && typeof d === "object" && d.meta && typeof d.meta === "object";
+    P.kpiFehler = !ok;
+    P.kpi = ok ? (d.own && typeof d.own === "object" ? d.own : null) : null;
+    var n = ok ? zahl(d.meta.runs_total) : null;
+    P.laeufe = n;
+    kpisZeichnen();
+  }
   function visLaden(frisch) {
     var f = filterStand(), manuell = P.vis.firmen;
     var vis = mitPrompt(D.visibility(f, { gran: P.gran, firmen: manuell }));
     var ov = mitPrompt(D.overview(f, manuell ? { order: P.vis.order, limit: 10, firmen: manuell } : { order: P.vis.order, limit: 7 }));
     setter("setVisibilityChartLoading")(IDS.vot, "yes");
+    /* Schreibt der Nutzer den Zeitraum um, bleiben die alten Zahlen gedimmt stehen, bis die neuen
+       da sind -- ein Skelett nur beim ersten Laden eines Prompts. */
+    var kel = P.root && P.root.querySelector(".uprd-kpis");
+    if (kel && P.kpi) kel.classList.add("is-laedt");
     return laden([["vis_chart", vis], ["vis_tabelle", ov]], frisch).then(function (e) {
       if (e.some(function (x) { return x.ueberholt; })) return;
       var p = e[0].ok && e[1].ok ? D.zuVisibility(e[0].daten, e[1].daten, { nurImChart: !!manuell }) : null;
       if (e[1].ok) eigeneMerken(e[1].daten);
+      kpiAusOverview(e[1]);
       if (!p) setter("renderVisibilityChart")({ instanceId: IDS.vot, __parseError: true });
       else {
         if (!P.vis.firmen) P.autoFirmen = p.companies.map(function (c) { return c.company_id; });
@@ -254,6 +354,9 @@
         var mk = marke();
         p.instanceId = IDS.urt; p.isDark = dunkel();
         if (reqId != null) p.requestId = reqId;
+        /* Ungefiltert leer heisst hier immer: der Prompt lief im Zeitraum nicht. "Responses appear
+           here once your prompts have been run" waere bei einem pausierten Prompt falsch. */
+        p.empty_text = t("This prompt didn't run in the selected period.");
         if (mk) { p.brand_name = str(mk.name); p.brand_logo = str(mk.logo_url); }
         setter("renderResponsesTable")(p);
       }
@@ -333,6 +436,9 @@
               ' data-models-instance="' + esc(IDS.modelle) + '" data-topics-visible="no" data-markets-visible="no" data-isdark="' + dk + '"></div>' +
             '<div class="up-root umf-root" data-instance="' + esc(IDS.modelle) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
           '</div>' +
+          /* Die Kennzahlen UNTER dem Kalender: sie gelten fuer den Zeitraum, den er zeigt (wie bei
+             URL Detail, 12.10.). */
+          '<div class="uprd-kpis up-dk-leiste"></div>' +
         '</div>' +
         '<div class="uprd-main">' +
           '<div class="uprd-teil uprd-vis">' + einsetzen(MARKUP.vot) + '</div>' +
@@ -343,6 +449,10 @@
       '</div>';
     P.slot = ctx.slot; P.kopf = ctx; P.root = ctx.slot.querySelector(".uprd-root");
     if (UC.makeTooltips) UC.makeTooltips(P.root, dunkel);
+    if (UC.makeExplain) UC.makeExplain({ root: P.root, triggerSel: ".uprd-erklaer", getIsDark: dunkel, html: erklaerung });
+    /* is-narrow/is-vnarrow fuer das Kennzahlen-Band (2 x 2 bzw. untereinander, Regeln in core). */
+    if (UC.widthTiers) UC.widthTiers(P.root);
+    kpisZeichnen();
     var s = ctx.slot;
     ctx.eigen.addEventListener("click", function (e) {
       var b = e.target.closest ? e.target.closest("[data-uprd-kopf]") : null;
@@ -459,6 +569,7 @@
            Seitengroesse und D/W/M bleiben -- Vorlieben, keine Auswahl. */
         var alt = P.resp;
         P.id = id; P.zeile = null; P.fehler = "";
+        P.kpi = undefined; P.laeufe = null; P.kpiFehler = false; kpisZeichnen();
         P.vis.firmen = null; P.autoFirmen = [];
         P.top.citationTypen = null; P.top.urlTypen = null; P.top.erwaehnt = "all";
         P.resp = respStart(); P.resp.order = alt.order; P.resp.limit = alt.limit;
