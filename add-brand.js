@@ -9,7 +9,21 @@
      Schale (Overlay, z-index, Scrim, Radius, Schatten)  .up-topicmodal-backdrop / -card
      Primaerknopf                                        .up-topicmodal-save
      Fokus-Ring der Felder                               --up-focus-Tokens
-     Event nach Bubble (team_id, JSON, DOM-Fallback)     UC.makeFire
+     Speichern, Team, Marken-Ablage                      UC.rpc, UC.teamWarten, UC.markenNachladen
+
+   ── Speichern (seit 13.10.: EIN Weg) ────────────────────────────────────────
+   Der Dialog speichert selbst ueber brand_add_v1 (Vertrag brands_v1_vertrag.md 6.3, Fehler 11.3),
+   auf jeder Seite. Vorher ging es ausserhalb der Brands-Seite ueber bubble_fn_uabAddBrand, einen
+   Bubble-Workflow und n8n an add_competitor_v4 -- dieses Ereignis feuert NICHT mehr. Danach:
+     - der Toast ("Brand added" / "Brand activated again", schon da: Hinweis statt Fehler);
+     - window-Ereignis up-brand-added {name, domain, company_id} (Explore Brands nimmt die Zeile
+       raus, die Brands-Seite laedt neu). Es ist ABBRECHBAR: wer die Marken-Ablage selbst neu
+       fuellt (die Brands-Seite), ruft preventDefault(), sonst fuellt der Dialog sie ueber
+       UC.markenNachladen -- so laeuft brands_page_meta_v1 nie doppelt.
+   Fehler stehen als Satz unter den Feldern, Feldfehler (hint p_name:/p_domain:) am Feld.
+   addBrandSuccess()/addBrandError() bleiben oeffentlich, damit ein alter Bubble-Workflow, der
+   noch auf einer Seite steht, nicht ins Leere ruft. openAddBrand({ onSubmit }) und
+   setAddBrandSubmit(fn) gehen weiterhin vor, falls eine Seite das Speichern doch selbst will.
 
    ── Vorausgefuellt oeffnen ──────────────────────────────────────────────────
        openAddBrand({ name: "Apple", domain: "apple.com" });
@@ -52,13 +66,13 @@
     var UC = window.UpstreemCore;
     var esc = UC.esc;
 
-    var MISSING = ["makeFire", "esc"].filter(function (k) { return typeof UC[k] !== "function"; });
+    var MISSING = ["rpc", "esc"].filter(function (k) { return typeof UC[k] !== "function"; });
     if (MISSING.length && window.console) {
       console.error("[add-brand] The core.js on this page is OLDER than add-brand.js and is missing: " +
         MISSING.join(", ") + ". Pin every upstreem component on a page to the same commit.");
     }
 
-    var M = null, fire = null, isOpen = false, opener = null;
+    var M = null, isOpen = false, opener = null;
     var zuletzt = null;   /* der zuletzt abgeschickte Eintrag, fuer up-brand-added */
     var S = { name: "", domain: "", touched: false, saving: false, abgabe: null };
     /* SEITE STATT BUBBLE (11.10., Brands-Seite). Eine Seiten-Komponente kann das Speichern selbst
@@ -196,11 +210,6 @@
         save: back.querySelector(".uab-save"),
         formErr: back.querySelector("[data-formerr]")
       };
-
-      /* eventPrefix "uab-", damit das DOM-Ersatzereignis uab-bubble_fn_uabAddBrand heisst -- im
-         Gleichschritt mit jeder anderen Komponente. */
-      /* makeFire(root, opts): zwei Argumente (vorher drei, die Optionen kamen nie an). */
-      fire = UC.makeFire(back, { label: "add-brand", eventPrefix: "uab-" });
 
       back.addEventListener("click", function (e) {
         if (e.target === back) { close(); return; }          // Klick auf den Scrim
@@ -368,31 +377,86 @@
         domain: asciiDomain(normDomain(M.domain.value)).slice(0, MAX_DOMAIN)
       };
 
-      /* makeFire und nicht resolveBubbleFn: nur makeFire stellt team_id voran, macht EINEN
-         JSON-String daraus (STYLEGUIDE 13), warnt genau einmal wenn niemand zuhoert, und
-         verschickt das DOM-Ersatzereignis. */
-      /* Ladezustand VOR dem Feuern. Bubble startet seine Schritte sofort, und ein Workflow, der
-         schnell antwortet, wuerde sonst addBrandSuccess() rufen, bevor der Zustand ueberhaupt
-         gesetzt ist -- der Dialog haenge dann im Spinner, obwohl alles fertig ist. Dieselbe
-         Reihenfolge wie beim Radar-Zellklick, aus demselben Grund. */
       setSaving(true);
       zuletzt = payload;
-      /* Speichert eine Seite selbst, geht NICHTS an Bubble -- sonst legte der alte Workflow die
-         Marke ein zweites Mal an. Die Antwort endet in denselben zwei Wegen wie die des Workflows. */
-      var abgabe = S.abgabe || ((ABGABE.fn && (!ABGABE.wurzel || ABGABE.wurzel.isConnected)) ? ABGABE.fn : null);
-      if (abgabe) {
-        var r;
-        try { r = abgabe({ name: payload.name, domain: payload.domain }); } catch (e) { r = null; }
-        Promise.resolve(r).then(function (erg) {
-          if (!isOpen || !S.saving) return;
-          if (erg && erg.ok) window.addBrandSuccess(); else window.addBrandError(erg && erg.fehler);
-        }, function () { if (isOpen && S.saving) window.addBrandError(""); });
-        return;
+      /* Eine Seite, die das Speichern selbst uebernimmt, geht vor (siehe Kopf); sonst speichert
+         der Dialog. Beide enden in denselben zwei Wegen. Der Dialog schliesst erst mit der
+         Antwort: ein Dialog, der sofort zugeht, behauptet einen Erfolg, den noch niemand kennt. */
+      var abgabe = S.abgabe || ((ABGABE.fn && (!ABGABE.wurzel || ABGABE.wurzel.isConnected)) ? ABGABE.fn : selbstAnlegen);
+      var r;
+      try { r = abgabe({ name: payload.name, domain: payload.domain }); } catch (e) { r = null; }
+      Promise.resolve(r).then(function (erg) {
+        if (!isOpen || !S.saving) return;
+        if (erg && erg.ok) {
+          if (erg.company_id && zuletzt) zuletzt.company_id = erg.company_id;
+          window.addBrandSuccess();
+          return;
+        }
+        /* Ein Feldfehler der DB (hint p_name:/p_domain:) steht am Feld, nicht unter dem Formular. */
+        if (erg && erg.feld) {
+          setSaving(false);
+          setErr(erg.feld === "name" ? M.fName : M.fDomain, erg.fehler || "");
+          (erg.feld === "name" ? M.name : M.domain).focus();
+          return;
+        }
+        window.addBrandError(erg && erg.fehler);
+      }, function () { if (isOpen && S.saving) window.addBrandError(""); });
+    }
+
+    /* ---------------------------------------------------------------------
+       Speichern ueber brand_add_v1 (Vertrag 6.3; Fehler 11.3, Saetze wie auf der Brands-Seite)
+       --------------------------------------------------------------------- */
+    function t(x) { return UC.t ? UC.t(x) : x; }
+    function toast(text, art, zusatz) {
+      if (UC.toast) { try { UC.toast(text, { kind: art || "success", desc: zusatz || "" }); } catch (e) {} }
+    }
+    /* Ein Satz aus Code und hint. Zwei Saetze (Was, und was jetzt) in einer Zeile, weil der
+       Dialog nur eine Fehlerzeile hat; der erste steht im Katalog ohne Punkt (er ist sonst
+       Toast-Titel), darum der Punkt hier. */
+    function fehlerSatz(erg) {
+      var f = erg && erg.fehler ? erg.fehler : {}, m = String(f.message || ""), h = String(f.hint || "");
+      var n = (/-?\d+/.exec(h) || [])[0];
+      function zwei(a, b) { return t(a) + (b ? ". " + b : ""); }
+      if (/daily_limit/.test(m)) {
+        return zwei("Daily limit reached", /^tracked:/.test(h) && n && Number(n) > 0
+          ? t("You can add or activate {n} more brands today.").replace("{n}", n) : t("Please try again tomorrow."));
       }
-      fire("data-add-fn", "bubble_fn_uabAddBrand", payload);
-      /* Der Dialog schliesst NICHT selbst. Er wartet auf addBrandSuccess() oder addBrandError()
-         aus dem Workflow -- das Anlegen dauert ein paar Sekunden, und ein Dialog, der sofort
-         zugeht, behauptet einen Erfolg, den noch niemand kennt. */
+      if (/delete_pending/.test(m)) return zwei("This brand is still being removed", t("Please try again in a few minutes."));
+      if (/inactive:/.test(h) && /limit_reached/.test(m)) return zwei("Too many inactive brands", t("Delete inactive brands you no longer need, then try again."));
+      if (/limit_reached/.test(m)) {
+        return zwei("Not enough room in your plan", n && Number(n) > 0
+          ? t("{n} more brands fit into your plan.").replace("{n}", n) : t("Set brands inactive or upgrade your plan."));
+      }
+      if (/own_brand/.test(m)) return t("This is your own brand");
+      if (/forbidden/.test(m) || /^team_access_/.test(m)) return zwei("You don't have permission for this", t("Refresh the page and try again."));
+      if (/rate_limited/.test(m) || (erg && erg.status === 429)) return zwei("Too many requests", t("Please wait a moment and try again."));
+      if (/invalid_param/.test(m)) return t("Please check the name and domain");
+      return t("The brand could not be added");
+    }
+    function selbstAnlegen(p) {
+      if (!UC.rpc) return Promise.resolve({ ok: false, fehler: t("The brand could not be added") });
+      var warten = UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(UC.getTeam ? UC.getTeam() : "");
+      return warten.then(function (team) {
+        if (!team) return { ok: false, fehler: t("The brand could not be added") };
+        return UC.rpc("brand_add_v1", { p_team: team, p_name: p.name, p_domain: p.domain }, { timeoutMs: 30000 }).then(function (erg) {
+          var f = erg && !erg.ok && erg.fehler ? erg.fehler : null, m = f ? String(f.message || "") : "", h = f ? String(f.hint || "") : "";
+          /* Schon da (gleiche Domain oder gleicher Name): kein Fehlschlag -- zu, mit Hinweis. So
+             faengt sich auch ein doppelter Klick ab. */
+          if (/duplicate/.test(m)) { toast(t("This brand is already in your account"), "neutral"); return { ok: true }; }
+          if (f) {
+            if (/invalid_param/.test(m) && /^p_name/.test(h)) return { ok: false, feld: "name", fehler: t("Use 1 to 75 characters, with at least one letter or digit.") };
+            if (/invalid_param/.test(m) && /^p_domain/.test(h)) return { ok: false, feld: "domain", fehler: t("Enter a valid domain, for example apple.com") };
+            return { ok: false, fehler: fehlerSatz(erg) };
+          }
+          var d = erg && erg.daten;
+          if (Object.prototype.toString.call(d) === "[object Array]") d = d[0];
+          if (!d || typeof d !== "object") return { ok: false, fehler: t("The brand could not be added") };
+          var meta = d.meta && typeof d.meta === "object" ? d.meta : {}, row = d.row && typeof d.row === "object" ? d.row : {};
+          toast(t(String(meta.action) === "reactivated" ? "Brand activated again" : "Brand added"), "success",
+                meta.rewritten === true ? t("Special characters were removed from the name.") : "");
+          return { ok: true, company_id: row.company_id != null ? String(row.company_id) : "" };
+        });
+      }).then(null, function () { return { ok: false, fehler: t("The brand could not be added") }; });
     }
 
     /* ---------------------------------------------------------------------
@@ -420,7 +484,15 @@
       if (!M) return;
       setSaving(false); close();
       if (zuletzt) {
-        try { window.dispatchEvent(new CustomEvent("up-brand-added", { detail: { name: zuletzt.name, domain: zuletzt.domain } })); } catch (e) {}
+        var ev = null;
+        try {
+          ev = new CustomEvent("up-brand-added", { cancelable: true,
+            detail: { name: zuletzt.name, domain: zuletzt.domain, company_id: zuletzt.company_id || "" } });
+          window.dispatchEvent(ev);
+        } catch (e) { ev = null; }
+        /* Hat niemand die Ablage selbst neu gefuellt (preventDefault, siehe Kopf), tut es der
+           Dialog -- sonst fehlt die neue Marke in Seitenleiste, Filtern und Menues. */
+        if (!(ev && ev.defaultPrevented) && UC.markenNachladen) UC.markenNachladen();
         zuletzt = null;
       }
     };

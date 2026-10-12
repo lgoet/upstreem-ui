@@ -51,22 +51,13 @@
   Bubble-Element: er baut sich beim ersten Oeffnen selbst nach <body>. Der Add-Knopf oben oeffnet
   ihn, du musst dafuer nichts verdrahten.
 
-  ── Das Event, auf das du antwortest ─────────────────────────────────────────
-      bubble_fn_uabAddBrand   EIN JSON-String, wie ueberall:
-
-          {"team_id":"…","name":"Apple","domain":"apple.com"}
-
-  Toolbox-Element "JavaScript to Bubble", Publish value = yes, Typ Text. Die Werte holst du wie
-  gewohnt per Regex heraus:
-
-      name    (?<="name":")[^"]*
-      domain  (?<="domain":")[^"]*
-
-  DIE DOMAIN KOMMT SCHON FERTIG AN. Die Find&Replace-Kette, die bisher in deinem Workflow stand
-  (https:// weg, www. weg, Schraegstrich am Ende weg), ist nicht mehr noetig -- und der Dialog kann
-  zusaetzlich etwas, das sie nicht konnte: er schneidet einen Pfad ab. Aus
-  https://www.apple.com/de/store/ wird apple.com, aus HTTP://Example.CO.UK/pfad?x=1 wird
-  example.co.uk.
+  ── Speichern (seit 13.10.) ───────────────────────────────────────────────────
+  Der Dialog speichert SELBST ueber brand_add_v1 (Nutzer-JWT), auf jeder Seite. Es gibt KEIN
+  Event mehr, auf das Bubble antwortet: bubble_fn_uabAddBrand feuert nicht mehr. Den Workflow
+  "uabAddBrand" (Speicher-Schritt mit n8n) auf allen Seiten entfernen. addBrandSuccess() und
+  addBrandError() bleiben aufrufbar, damit ein alter Workflow nicht ins Leere ruft.
+  Die Domain normalisiert der Dialog selbst (https://, www., Pfad, Query weg; Umlaute als
+  Punycode): aus https://www.apple.com/de/store/ wird apple.com.
 
   ── DER DIALOG SCHLIESST SICH NICHT SELBST ───────────────────────────────────
   Nach dem Klick auf Add geht er in den Ladezustand: Felder gedimmt und gesperrt, der Knopf traegt

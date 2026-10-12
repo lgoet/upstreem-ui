@@ -621,8 +621,8 @@
           /* TRACK OEFFNET DEN ADD-BRAND-DIALOG (05.10.: "Add Brand oeffnen, Domain und Namen
              eintragen, der Nutzer drueckt dort Track oder aendert vorher noch etwas -- geht das
              ohne riesige Bubble-Action?"). Ja: add-brand.js stellt openAddBrand() app-weit bereit
-             (der Dialog haengt an <body>) und legt die Marke ueber seinen eigenen, schon
-             verdrahteten Workflow an (bubble_fn_uabAddBrand). Kein udbTrack mehr, also auch kein
+             (der Dialog haengt an <body>) und legt die Marke selbst an (brand_add_v1, seit
+             13.10. ohne Bubble-Workflow). Kein udbTrack mehr, also auch kein
              Workflow dafuer. Gesperrt wird nichts: bricht der Nutzer ab, bleibt die Zeile, wie sie
              war. Nach dem Anlegen faellt sie weg (up-brand-added, unten).
              Nur ohne add-brand.js auf der Seite bleibt es beim alten Ereignis. */

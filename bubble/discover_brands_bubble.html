@@ -83,9 +83,8 @@
 
   ZUM TRACK-KNOPF (seit 05.10.): er oeffnet den Add-Brand-Dialog (add-brand.js, openAddBrand) mit
   Name und Domain der Zeile vorausgefuellt. Der Nutzer kann beides aendern und legt die Marke mit
-  "Track" im Dialog an -- ueber DENSELBEN Workflow wie der Plus-Knopf der Brands-Seite
-  (bubble_fn_uabAddBrand, Antwort addBrandSuccess()/addBrandError()). Nach addBrandSuccess()
-  faellt die Zeile von selbst aus der Liste. Ein eigener udbTrack-Workflow ist damit nicht
+  "Track" im Dialog an -- der Dialog speichert selbst ueber brand_add_v1 (seit 13.10., kein
+  Bubble-Workflow mehr). Nach dem Anlegen faellt die Zeile von selbst aus der Liste. Ein eigener udbTrack-Workflow ist damit nicht
   noetig; das Event kommt nur noch, wenn add-brand.js auf der Seite fehlt (dann sperrt sich der
   Knopf wie frueher, und dein Workflow sollte am Ende renderDiscoverBrands() erneut laufen lassen).
 

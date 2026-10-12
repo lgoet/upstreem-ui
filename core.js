@@ -1421,6 +1421,7 @@
     "Special characters were removed from the name.": "Sonderzeichen wurden aus dem Namen entfernt.",
     "Adding brands isn't available on this page": "Brands hinzufügen ist auf dieser Seite nicht möglich",
     "Brand activated again": "Brand wieder aktiviert",
+    "This is your own brand": "Das ist deine eigene Brand",
     "Brand deleted": "Brand gelöscht",
     "Delete brand": "Brand löschen",
     "Delete inactive brands you no longer need, then try again.": "Lösch inaktive Brands, die du nicht mehr brauchst, und versuch es dann noch einmal.",
@@ -18458,6 +18459,31 @@
     });
   }
 
+  /* MARKEN-ABLAGE NEU FUELLEN (13.10., aus brands-page.js hierher, seit der Add-Brand-Dialog auf
+     jeder Seite selbst speichert): brands_page_meta_v1 liefert alle aktiven Marken des Teams mit
+     role, Logo (eigene Marke) bzw. Favicon (Wettbewerber) und Domain -- genau die Form, die
+     setUpstreemBrands liest. Damit stimmen Seitenleiste, Filter und jedes Marken-Menue nach einer
+     Anlage, ohne Bubble-Workflow. Ein leerer oder unlesbarer Stand ueberschreibt NIE: lieber die
+     alte Liste als eine leere. Liefert true, wenn neu gesetzt wurde; wirft nie. */
+  function markenNachladen(){
+    function absolut(u){ u = String(u == null ? "" : u).trim(); if (/^\/\//.test(u)) u = "https:" + u; return /^https?:\/\//i.test(u) ? u : ""; }
+    return teamWarten(10000).then(function(team){
+      if (!team) return false;
+      return rpc("brands_page_meta_v1", { p_team: team }, { timeoutMs: 30000 }).then(function(erg){
+        var d = erg && erg.ok ? erg.daten : null;
+        if (Object.prototype.toString.call(d) === "[object Array]") d = d[0];
+        var l = d && Object.prototype.toString.call(d.brands) === "[object Array]" ? d.brands : [];
+        var marken = l.filter(function(r){ return r && r.company_id != null; }).map(function(r){
+          return { company_id: String(r.company_id), name: String(r.name == null ? "" : r.name), logo_url: absolut(r.logo_url),
+                   role: String(r.role) === "own" ? "own" : "competitor", domain: String(r.domain == null ? "" : r.domain) };
+        });
+        if (!marken.length || typeof window.setUpstreemBrands !== "function") return false;
+        try { window.setUpstreemBrands(marken); } catch(e){ return false; }
+        return true;
+      });
+    }).then(null, function(){ return false; });
+  }
+
   /* ---------- EINE ENTITAET AN MIRA GEBEN (29.09. spaet, aus drawer-topbar nach core) ----------
      Angefordert: "Ask Mira" auch im Mehr-Menue der Treffer in Quick Actions -- "dieselben Wege
      wie die Knoepfe in den Topbars, Quick Actions muss nur mitgeben, ob Brand, Domain, Prompt,
@@ -24087,7 +24113,7 @@
        Formatierer kennt. */
     getPref: getPref, setPref: setPref, setLocaleReload: setLocaleReload,
     openDrawers: openDrawers, closeAllDrawers: closeAllDrawers, drawerOeffnen: drawerOeffnen,
-    kernDrawer: kernDrawer, kernDrawerAktiv: kernDrawerAktiv, teamWarten: teamWarten,
+    kernDrawer: kernDrawer, kernDrawerAktiv: kernDrawerAktiv, teamWarten: teamWarten, markenNachladen: markenNachladen,
     anMira: anMira, miraBezug: miraBezug,
     onPrefs: onPrefs, getUpstreemThemeChoice: getUpstreemThemeChoice,
     PREF_DEFAULT: PREF_DEFAULT, PREF_ERLAUBT: PREF_ERLAUBT,

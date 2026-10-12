@@ -97,7 +97,10 @@
 
      ── OUTBOUND: static actions ──────────────────────────────────────────────
        add_new_prompt  -> bubble_fn_qa_add_prompt()   + CustomEvent("mira_qa_add_prompt")
-       add_new_brand   -> bubble_fn_qa_add_brand()    + CustomEvent("mira_qa_add_brand")
+       add_new_brand   -> openAddBrand() direkt (add-brand.js speichert selbst ueber
+                          brand_add_v1, seit 13.10.); bubble_fn_qa_add_brand() nur, wenn
+                          add-brand.js auf der Seite fehlt. Der Workflow dahinter braucht
+                          keinen Speicher-Schritt mehr.
        export_data     -> bubble_fn_qa_export_data()  + CustomEvent("mira_qa_export_data")
        edit_your_brand -> bubble_fn_qa_edit_brand()   + CustomEvent("mira_qa_edit_brand")
 

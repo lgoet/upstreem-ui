@@ -625,33 +625,20 @@
     }, true);
 
     /* ---- Add Brand ------------------------------------------------------------------------------
-       Der Dialog der App (add-brand.js), aber gespeichert wird HIER, nicht ueber den Bubble-
-       Workflow -- sonst legte der alte Workflow die Marke ein zweites Mal an. Gilt auch fuer "Track"
-       in Explore Brands (der oeffnet denselben Dialog und weiss nichts von dieser Seite): darum
-       setAddBrandSubmit, solange diese Seite steht. */
-    function anlegen(payload) {
-      if (!team()) return Promise.resolve({ ok: false });
-      if (D.VORSCHLAG) return Promise.resolve({ ok: false, fehler: t("Adding brands here isn't available yet.") });
-      return schreiben(D.anlegen(team(), payload)).then(function (erg) {
-        var r = erg.ok ? D.zuAnlage(erg.daten) : null;
-        /* Schon da (gleiche Domain oder gleicher Name, Vertrag 6.3): das ist kein Fehlschlag --
-           der Dialog geht zu und sagt es (so faengt sich auch ein doppelter Klick ab). */
-        if (!erg.ok && /duplicate/.test(D.meldung(erg))) {
-          toast(t("This brand is already in your account"), "neutral");
-          nachAenderung();
-          return { ok: true };
-        }
-        if (!erg.ok || !r) { var f = fehlerSatz(erg, t("The brand could not be added")); return { ok: false, fehler: f.text }; }
-        toast(r.aktion === "reactivated" ? t("Brand activated again") : t("Brand added"), "success",
-              r.umgeschrieben ? t("Special characters were removed from the name.") : "");
-        nachAenderung();
-        return { ok: true };
-      }, function () { return { ok: false, fehler: t("The brand could not be added") }; });
-    }
-    if (window.setAddBrandSubmit) window.setAddBrandSubmit(anlegen, root);
+       Seit 13.10. speichert der Dialog (add-brand.js) selbst ueber brand_add_v1, auf jeder Seite,
+       mit EINER Fehlerliste -- auch fuer "Track" in Explore Brands. Die Seite oeffnet ihn nur und
+       laedt nach einer Anlage neu. Fuellt nachAenderung() dabei die Marken-Ablage der App selbst
+       (seitenAuftrag: nur sichtbar und auf Tracked), sagt es das dem Dialog per preventDefault --
+       sonst holte er brands_page_meta_v1 ein zweites Mal. Auf Explore Brands oder verdeckt fuellt
+       der Dialog sie. */
+    window.addEventListener("up-brand-added", function (e) {
+      if (!root.isConnected) return;
+      if (!D.VORSCHLAG && state.tab !== "discover" && sichtbarTest(root) && team()) { try { e.preventDefault(); } catch (err) {} }
+      nachAenderung();
+    });
     function brandOeffnen(vorab) {
       if (typeof window.openAddBrand !== "function") { toast(t("Adding brands isn't available on this page"), "neutral"); return; }
-      var o = { onSubmit: anlegen };
+      var o = {};
       if (vorab) { o.name = vorab.name; o.domain = vorab.domain; }
       window.openAddBrand(o);
     }
