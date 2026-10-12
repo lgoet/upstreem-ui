@@ -2132,6 +2132,15 @@
     if (nav && nav.selectPage) nav.selectPage(a0.seite === "advertiser" ? "advertisers" : a0.seite, false);
     zeichnen();
     krumenNeu();
+    /* Der Auftritt (core, makeAuftritt) wie auf den anderen Seiten (12.10. nachgeruestet): Kopf,
+       Reiter und Filterzeile, dann der Inhalt in derselben Staffel -- er wartet wie ueberall nur auf
+       die Stylesheets, nicht auf Daten. Verdeckt wird die Huelle .uad-main, denn das Geruest darin
+       baut zeichnen() je Reiter neu: ein Teil, das erst nach dem Start entsteht, truege die
+       Warteklasse nicht. Gestaffelt wird fein ueber die Abschnitte der Seite -- darum erst NACH dem ersten
+       Zeichnen: liegen die Stylesheets schon da, startet core im selben Takt, und vorher gaebe es
+       keine Abschnitte, nur die ganze Huelle als ein Stueck. */
+    UC.makeAuftritt && UC.makeAuftritt(root, { kopf: ".uad-pagehead, .uad-nav, .uad-filterzeile",
+      inhalt: ".uad-main", fein: ".uad-main > .uad-seite > *" });
     setTimeout(function () { filterAbgleichen(); zeichnen(); bedarf(); }, 0);
     return ctrl;
   }
