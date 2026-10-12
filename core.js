@@ -18687,6 +18687,11 @@
       if (appAbgemeldet(erg)){ appZurAnmeldung(); return null; }
       if (!erg || !erg.ok || !erg.daten || typeof erg.daten !== "object"){
         APP.laeuft = false;
+        /* Gibt es app_start_v1 noch nicht (SQL nicht eingespielt: 404 / PGRST202), bleibt alles beim
+           Bubble-Weg -- Teamwechsel, Nachladen und Wegklicken gehen dann weiter an Bubble, statt an
+           Funktionen, die es nicht gibt. Kein Satz im Bild: der Bubble-Seitenaufbau laeuft ja. */
+        var fehlt = erg && (erg.status === 404 || /PGRST202|Could not find the function/.test(String(erg.fehler && (erg.fehler.code + " " + erg.fehler.message))));
+        if (fehlt){ APP.aktiv = false; return null; }
         if (typeof toast === "function") toast(t_("Your workspace could not be loaded. Please reload the page."), { kind: "error" });
         appFertig();
         return null;
