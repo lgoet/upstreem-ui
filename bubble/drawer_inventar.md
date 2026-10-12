@@ -146,7 +146,7 @@ beachten. Im DRAWER-CSS des Kopf-Skripts diese Werte ersetzen bzw. ergänzen:
 ## 9. Stand Prompt Detail (12.10., gebaut gegen den Vorschlag)
 
 - **Drawer aus core** (`KERN_DRAWER.prompt`, erste Ebene, 88 % breit), Datei `prompt-detail.js`
-  (Präfix `uprd`), Markup der Bausteine aus `.prompt_detail_markup.py`.
+  (Präfix `uprd`), Markup der Bausteine aus `.drawer_markup.py`.
 - Kopf: „Prompt / Text“, Ask Mira, Anheften. Meta-Zeile: Market, Topics, letzter Lauf. Titel:
   der Prompt. Filterzeile: Kalender und Filterleiste nur mit Modellen.
 - Darunter Visibility Chart, Top Citations, Responses: dieselben Anfragen wie das Dashboard
@@ -154,3 +154,20 @@ beachten. Im DRAWER-CSS des Kopf-Skripts diese Werte ersetzen bzw. ergänzen:
   Vorschlag an den DB-Chat (`bubble/prompt_detail_db_auftrag.md`).
 - Export aus dem Drawer gibt `prompt_id` in der Nutzlast an Bubble weiter.
 - Neue Datei im Vorlade-Snippet: `css("prompt-detail.css"); js("prompt-detail.js");`.
+
+## 10. Stand Brand (12.10., gebaut gegen den Vorschlag)
+
+- **Drawer aus core** (`KERN_DRAWER.brand`, erste Ebene, 88 % breit), Datei `brand-drawer.js`
+  (Präfix `ubdr`), Markup von Top Citations und Responses aus `.drawer_markup.py` (seit dieser Runde
+  für Prompt und Brand gemeinsam, vorher `.prompt_detail_markup.py`).
+- Kopf: „Brand / Name“, Bearbeiten (öffnet `companysettings`, noch Bubble), Ask Mira, Anheften.
+  Titel: Logo (56px, `.up-logo-box`), Name, darunter die Domain (öffnet den Domain-Drawer). Meta-Zeile
+  nur bei einer inaktiven Marke.
+- Filterzeile: Kalender, Modelle, Märkte, Topics.
+- Brand Detail (`brand-detail.js`, lokal): Kennzahlen aus `cached_dashboard_overview_v1` mit
+  `p_companies`, Kurve und Varianten aus `performance_company_chart_v1` / `performance_brand_variations_v1`
+  (`performance-data.js`: `markenKurve`, `markenVarianten`), alle Filter.
+- Top Citations mit `p_mentioned_brands`, Responses mit `p_brand` (neu). Kopf über `brand_detail_v1`
+  (neu). Vorschlag an den DB-Chat: `bubble/brand_drawer_db_auftrag.md`.
+- Export aus dem Drawer gibt `brand_id` in der Nutzlast an Bubble weiter.
+- Neue Datei im Vorlade-Snippet: `css("brand-drawer.css"); js("brand-drawer.js");`.

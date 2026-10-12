@@ -1,0 +1,42 @@
+/* upstreem brand-drawer.css -- der Marken-Drawer aus core (12.10.). Praefix ubdr. Braucht core.css.
+
+   Kopf aus core (.up-dk-*), wie Response, URL und Prompt; dazu das Logo links vom Namen (wie der
+   Kopf von performance-detail, .upd-held). Darunter die Filterzeile und die drei Bausteine --
+   Abstaende wie im Prompt-Drawer (prompt-detail.css), damit Geschwister gleich stehen. */
+.ubdr-root { display: flex; flex-direction: column; gap: 40px; min-width: 0; }
+.ubdr-root > [hidden] { display: none; }
+.ubdr-filterzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.ubdr-filterzeile > .udr-root { flex: 0 0 auto; }
+.ubdr-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
+.ubdr-main { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
+.ubdr-teil { min-width: 0; }
+
+/* Logo, Name, Domain. Die Kachel ist .up-logo-box aus core in Kopfgroesse: 56 statt 44 wie in
+   performance-detail, weil hier zwei Zeilen daneben stehen (Name 28 mit 1.2 und Domain 20 = 58).
+   Radius 16 aussen, innen 15 -- das konzentrische Kind (CLAUDE.md 1c). */
+.ubdr-held { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.ubdr-logobox { display: inline-flex; flex: 0 0 auto; }
+.ubdr-logo.up-logo-box { width: 56px; height: 56px; flex: 0 0 56px; border-radius: var(--up-r-2xl); }
+.ubdr-logo.up-logo-box img { width: 54px; height: 54px; border-radius: 15px; }
+.ubdr-logo .up-logo-ltr { font-size: var(--up-fs-2xl); }
+.ubdr-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 auto; }
+/* Die Domain wie die Adresse unter dem Titel im URL-Drawer (.uud-link): 13 in der zweiten
+   Textfarbe, beim Hover dunkler und unterstrichen. Ein Knopf, kein Link: sie oeffnet den
+   Domain-Drawer, nicht die Seite. */
+.ubdr-domain { display: flex; min-height: 20px; min-width: 0; }
+.ubdr-domlink { display: inline-flex; align-items: center; max-width: 100%; min-width: 0; padding: 0; border: 0;
+  background: none; font: inherit; font-size: var(--up-fs-m); line-height: 20px; color: var(--vc-muted);
+  cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ubdr-domlink:hover { color: var(--vc-text); text-decoration: underline; text-underline-offset: 3px; }
+.ubdr-domlink:focus-visible { outline: var(--up-focus-w, 2px) solid var(--vc-text); outline-offset: 2px; border-radius: var(--up-r-xs); }
+.ubdr-status { white-space: nowrap; font-weight: var(--up-fw-m); color: var(--vc-text); }
+
+/* Skelett des Kopfes, in den Massen dessen, was gleich dasteht (wie Prompt und URL). */
+.ubdr-skz { display: inline-block; height: 14px; border-radius: var(--up-r-xs); background: var(--vc-sk);
+  animation: uutpulse 1.2s ease-in-out infinite; }
+.ubdr-skz.is-logo { width: 56px; height: 56px; border-radius: var(--up-r-2xl); }
+.ubdr-skz.is-titel { display: block; width: 240px; max-width: 100%; height: 28px; }
+.ubdr-skz.is-s { width: 120px; }
+
+/* Ohne Marke (nicht gefunden, kein Zugang) steht nur die Meldung da. */
+.ubdr-root.is-fehler > :not(.ubdr-fehler) { display: none; }

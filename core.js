@@ -2198,6 +2198,12 @@
     "This prompt could not be loaded. Please try again.": "Dieser Prompt konnte nicht geladen werden. Versuch es noch einmal.",
     "Last run {when}": "Zuletzt gelaufen {when}",
     "Last run on {date}": "Zuletzt gelaufen am {date}",
+    /* Marken-Drawer aus core (12.10.) */
+    "Brand not available": "Marke nicht verfügbar",
+    "This brand isn't tracked by your team.": "Diese Marke wird von deinem Team nicht verfolgt.",
+    "This brand could not be loaded. Please try again.": "Diese Marke konnte nicht geladen werden. Versuch es noch einmal.",
+    "No longer tracked": "Wird nicht mehr verfolgt",
+    "This brand wasn't mentioned in the selected period.": "Diese Marke wurde im gewählten Zeitraum nicht genannt.",
     /* Huelle aus core ohne angemeldeten Baustein (kdOhneBaustein). */
     "This panel couldn't be loaded": "Dieser Bereich konnte nicht geladen werden",
     "next run {date}": "nächster Lauf {date}",
@@ -18146,7 +18152,9 @@
     url: { label: "URL", breite: "80vw" },
     /* Erste Ebene: breiter als die zweite, damit ein URL- oder Response-Drawer darueber einen
        Streifen des Prompts stehen laesst -- man sieht, wohin Zurueck fuehrt. */
-    prompt: { label: "Prompt", breite: "88vw" }
+    prompt: { label: "Prompt", breite: "88vw" },
+    /* Auch erste Ebene (12.10.), gleiche Breite wie Prompt aus demselben Grund. */
+    brand: { label: "Brand", breite: "88vw" }
   };
   var KD = {};
   function kdFremd(art){

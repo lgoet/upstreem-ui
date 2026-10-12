@@ -75,6 +75,34 @@
   }
   function kurve(a, z) { return zelle("kurve", a, z); }
   function varianten(a, z) { return zelle("varianten", a, z); }
+
+  /* EINE MARKE UEBER ALLE TOPICS, MIT DEM VOLLEN FILTERSTAND (12.10., Marken-Drawer): dieselben
+     zwei RPCs wie die Zelle des Radars, aber mit Kalender, Modellen, Maerkten und Topics der
+     Filterzeile (Vertrag 4.2/4.3: "Zeitraum und Filter wie 4.1") und mit allen drei Kennzahlen der
+     Kurve -- Vertrag 4.2 kennt visibility, rank und sentiment, das Radar braucht nur die erste.
+     f wie in dashboard-data.js: { team, von, bis, modelle[], maerkte[], topics[], tagmode }. */
+  function texte(a) {
+    var l = (isArr(a) ? a : []).map(function (x) { return str(x).trim(); }).filter(Boolean);
+    return l.length ? l : null;
+  }
+  function markeBasis(f, firma) {
+    f = f || {};
+    return { p_team: str(f.team), p_company: uuid(firma), p_date_from: datum(f.von), p_date_to: datum(f.bis),
+             p_models: texte(f.modelle), p_markets: texte(f.maerkte), p_tag_ids: uuids(f.topics),
+             p_tagmode: f.tagmode === "and" ? "and" : "or" };
+  }
+  function markenKurve(f, firma, o) {
+    o = o || {};
+    var p = markeBasis(f, firma);
+    p.p_mode = o.modus === "rank" || o.modus === "sentiment" ? o.modus : "visibility";
+    p.p_granularity = o.gran === "week" || o.gran === "month" ? o.gran : "day";
+    return anfrage("kurve", p);
+  }
+  function markenVarianten(f, firma) {
+    var p = markeBasis(f, firma);
+    p.p_limit = 1000; p.p_offset = 0;
+    return anfrage("varianten", p);
+  }
   function clear(team) { return { art: "clear", fn: FN.clear, params: { p_team: str(team) }, sig: "" }; }
 
   /* Die URL-Tabelle einer Zelle als Filterstand fuer UpstreemCitationsDaten.urls: Topic und Marke
@@ -168,6 +196,7 @@
   window.UpstreemPerformanceDaten = {
     FN: FN,
     radar: radar, kurve: kurve, varianten: varianten, clear: clear, urlFilter: urlFilter,
+    markenKurve: markenKurve, markenVarianten: markenVarianten,
     zuRadar: zuRadar, zuKurve: zuKurve, zuVarianten: zuVarianten,
     uuids: uuids
   };
