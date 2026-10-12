@@ -20,16 +20,13 @@
 .uddr-zuletzt { white-space: nowrap; color: var(--vc-third); font-size: var(--up-fs-m); line-height: 20px; }
 .uddr-sub { align-items: center; gap: 8px 12px; flex-wrap: wrap; }
 
-/* "Counts as" im Kopf: .up-filter-btn aus core, das Menue .up-sort-menu aus core braucht einen
-   Bezug (position relative). Beschriftung in der dritten Farbe, der Wert in der Textfarbe -- wie
-   die Kalenderknoepfe, die ihren Zeitraum nennen. */
+/* "Count as" im Kopf: Icon-Knopf (.up-iconbtn) mit dem Menue .up-sort-menu aus core, das einen Bezug
+   braucht (position relative). Oben der aktuelle Typ als Chip mit seiner Herkunft (automatisch oder
+   vom Team), darunter die Wahl -- 13.10. so bestellt. */
 .uddr-zaehlt { position: relative; flex: 0 0 auto; }
-.uddr-zaehlt-lbl { color: var(--vc-third); }
-.uddr-zaehlt-wert { color: var(--vc-text); }
-.uddr-zaehlt-btn svg { width: 14px; height: 14px; color: var(--vc-third); }
-/* Nur lesbar (kein owner/admin): der Knopf nennt den Stand, reagiert aber nicht -- kein Hover-Grund,
-   kein Zeiger. */
-.uddr-zaehlt.is-lesend .uddr-zaehlt-btn { cursor: default; background: transparent; }
+.uddr-zaehlt-jetzt { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 4px 8px 8px; }
+.uddr-zaehlt-quelle { font-size: var(--up-fs-s); color: var(--vc-third); }
+.uddr-zaehlt-hinweis { padding: 4px 8px 8px; font-size: var(--up-fs-s); line-height: 1.45; color: var(--vc-third); }
 /* Eine Wahl, die die DB ablehnen wuerde (Domain einer verfolgten Marke): sichtbar, aber gesperrt;
    der Grund steht im Tooltip. Gedimmt wie gesperrte Bedienelemente der App (.42). */
 .uddr-zaehlt-menu .up-pop-opt.is-disabled { opacity: .42; cursor: default; }

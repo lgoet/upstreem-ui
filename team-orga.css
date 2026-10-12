@@ -208,35 +208,9 @@
 .uto-logtoggle svg { width: 16px; height: 16px; display: block; color: var(--vc-muted); }
 .uto-logbox[hidden] { display: none; }
 
-/* Kleiner, dichter, sachlich. 34px Zeile gegen 52 in den Tabellen darueber, 12px Schrift gegen
-   13.5, und ueber 14 Zeilen ein eigener Ausschnitt statt einer Seite, die ins Endlose waechst. */
+/* Die Protokoll-Tabelle kommt seit dem 13.10. aus core (.up-logtab, .up-log-*), seit der
+   Marken-Editor dieselbe traegt. Hier stehen nur die Spalten dieses Protokolls. */
 .uto-log { --up-cols: 152px 168px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.9fr); }
-.uto-log .up-thead.up-row { height: 36px; flex: 0 0 36px; }
-.uto-log .up-row:not(.up-thead) { height: 34px; flex: 0 0 34px; }
-.uto-log .up-th, .uto-log .up-td { font-size: 12px; }
-/* Ab 14 Zeilen ein eigener Ausschnitt statt einer Seite, die ins Endlose waechst. 476 = 36 Kopf
-   + 13 x 34 -- also genau vierzehn Zeilen, danach scrollt es.
-   Hier darf overflow stehen, im Gegensatz zum Kasten oben: im Protokoll gibt es kein Zeilenmenue,
-   das herausfahren muesste. overflow-x bleibt hidden -- waagerecht wird nichts geschoben, dafuer
-   fallen auf schmalen Seiten zwei Spalten weg (unten). */
-.uto-table.uto-log { max-height: 476px; overflow-x: hidden; overflow-y: auto; }
-/* Zeit und Ereignisname in Festbreitenschrift: in einem Protokoll liest man Spalten, nicht Saetze.
-   Die Familie ist die des Systems -- diese App liefert keine eigene Festbreitenschrift aus, und
-   eine nachgeladene waere ein Netzabruf fuer fuenf Zellen. */
-.uto-log-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 11.5px; letter-spacing: -0.01em; color: var(--vc-muted);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.uto-log-ev { color: var(--vc-text); }
-/* Die drei Ereignisarten bekommen einen Punkt davor, damit man das Protokoll ueberfliegen kann:
-   eingeladen, angenommen, zurueckgezogen. Die Toene sind die vorhandenen der App: --vt-up fuer
-   angenommen, --vt-brand fuer eingeladen, die dritte Farbe fuer zurueckgezogen. Kein Rot: eine
-   zurueckgezogene Einladung ist kein Fehler, sondern eine Entscheidung. */
-.uto-log-evwrap { display: flex; align-items: center; gap: 7px; min-width: 0; }
-.uto-log-dot { flex: 0 0 6px; width: 6px; height: 6px; border-radius: 999px; background: var(--vc-third); }
-.uto-log-dot.is-ok { background: var(--vt-up); }
-.uto-log-dot.is-off { background: var(--vc-third); }
-.uto-log-dot.is-new { background: var(--vt-brand, var(--vc-muted)); }
-.uto-log-txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--vc-muted); }
 
 /* ---------- der Einladen-Dialog ---------- */
 /* Schale, Overlay, Scrim, Radius und Schatten kommen aus core (.up-topicmodal-backdrop / -card).

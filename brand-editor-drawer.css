@@ -16,5 +16,27 @@
 .ubed-root.is-lesend .ube-aliastable button { opacity: .42; pointer-events: none; }
 .ubed-root.is-lesend .ube-feld { pointer-events: none; }
 
+/* Das Protokoll unter den Abschnitten des Editors: 40 Abstand wie zwischen ihnen (16 aus dem Gap,
+   24 hier). Kopf links, Filter rechts; die Tabelle ist .up-logtab aus core, hier nur die Spalten. */
+.ubed-log { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; max-width: 720px; }
+.ubed-loghead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; min-width: 0; }
+.ubed-logtext { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ubed-logtitel { margin: 0; }
+.ubed-logfilter { flex: 0 0 auto; }
+/* Der Kopf ist der Schalter, wie im Team-Log (.uto-logtoggle). Der Winkel dreht sich nicht -- er
+   wechselt sein Zeichen. */
+.ubed-logtoggle { display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: transparent;
+  cursor: pointer; color: inherit; font: inherit; }
+.ubed-logtoggle:focus-visible { outline: 0; border-radius: var(--up-r-s); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+.ubed-logchev { display: inline-flex; }
+.ubed-logchev svg { width: 16px; height: 16px; display: block; color: var(--vc-muted); }
+.ubed-logbox { display: flex; flex-direction: column; gap: 12px; }
+.ubed-logbox[hidden] { display: none; }
+.ubed-logtab { --up-cols: 136px 140px minmax(0, 1fr) minmax(0, 1.2fr);
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l); }
+.ubed-mehr { align-self: flex-start; }
+.ubed-mehr[hidden] { display: none; }
+/* Im Lesemodus und waehrend des Speicherns bleibt das Protokoll bedienbar -- es schreibt nichts. */
+
 /* Ohne Marke (nicht gefunden, kein Zugang) steht nur die Meldung da. */
 .ubed-root.is-fehler > :not(.ubed-fehler) { display: none; }

@@ -2212,9 +2212,8 @@
     "This domain could not be loaded. Please try again.": "Diese Domain konnte nicht geladen werden. Versuch es noch einmal.",
     "Last cited on {date}": "Zuletzt zitiert am {date}",
     "Your team has never cited this domain.": "Dein Team hat diese Domain noch nie zitiert.",
-    "How this domain is counted in your citations": "Wie diese Domain in deinen Citations zählt",
-    "Counts as": "Zählt als",
-    "Your site": "Deine Seite",
+    "Current citation type": "Aktueller Citation Type",
+    "Set by your team": "Von deinem Team festgelegt",
     "Count this domain as": "Diese Domain zählt als",
     "Detected automatically": "Automatisch erkannt",
     "Your own site": "Deine eigene Seite",
@@ -2247,6 +2246,20 @@
     "Another brand in your team already uses this name or alias.": "Eine andere Marke in deinem Team nutzt diesen Namen oder Alias schon.",
     "This alias contains characters that can't be used.": "Dieser Alias enthält Zeichen, die nicht erlaubt sind.",
     "Name saved.": "Name gespeichert.",
+    "Every change to this brand, newest first": "Jede Änderung an dieser Brand, die neueste zuerst",
+    "Show older entries": "Ältere Einträge zeigen",
+    "Event types": "Ereignisarten",
+    "All events": "Alle Ereignisse",
+    "Aliases": "Aliasse",
+    "Color": "Farbe",
+    "Only owners and admins can see the activity log.": "Nur Owner und Admins sehen das Protokoll.",
+    "The activity log could not be loaded. Please try again.": "Das Protokoll konnte nicht geladen werden. Versuch es noch einmal.",
+    "{brand} Tracking Statistics": "Beobachtungs-Statistik von {brand}",
+    "Define how the system should recognize this brand across sources. Every name entered here is also tracked for this brand in AI answers and citations.": "Lege fest, woran das System diese Brand in den Quellen erkennt. Jeder Name hier wird in KI-Antworten und Citations ebenfalls dieser Brand zugeordnet.",
+    "Manual stop": "Manuell gestoppt",
+    "Reactivated": "Reaktiviert",
+    "Plan limit": "Tarif-Limit",
+    "The brand data could not be read.": "Die Daten dieser Brand konnten nicht gelesen werden.",
     "This brand is no longer tracked, so it can't be edited.": "Diese Marke wird nicht mehr verfolgt und lässt sich nicht bearbeiten.",
     "This brand is no longer tracked. You can view its settings.": "Diese Marke wird nicht mehr verfolgt. Du kannst ihre Einstellungen ansehen.",
     "{brand} in your team already has this name.": "{brand} in deinem Team heißt schon so.",
@@ -20642,6 +20655,10 @@
     /* Hugeicons Gps01 (11.10. vom Nutzer fuer den Reiter "Tracked" der Brands-Seite bestimmt,
        statt ChatPreview). Pfade wortgleich aus @hugeicons/core-free-icons 4.3.5 (Gps01Icon); die
        Strichbreite gibt die Huelle vor, wie bei jedem Reiterzeichen. */
+    /* Hugeicons DropdownFieldType (13.10. vom Nutzer benannt): das Zeichen des Knopfs "Counts as" im
+       Kopf des Domain-Drawers -- ein Feld mit Pfeil ueber zwei Zeilen, also "Typ waehlen". */
+    dropdownFieldType: '<path d="M18 4H6C4.59987 4 3.8998 4 3.36502 4.27248C2.89462 4.51217 2.51217 4.89462 2.27248 5.36502C2 5.8998 2 6.59987 2 8C2 9.40013 2 10.1002 2.27248 10.635C2.51217 11.1054 2.89462 11.4878 3.36502 11.7275C3.8998 12 4.59987 12 6 12H18C19.4001 12 20.1002 12 20.635 11.7275C21.1054 11.4878 21.4878 11.1054 21.7275 10.635C22 10.1002 22 9.40013 22 8C22 6.59987 22 5.8998 21.7275 5.36502C21.4878 4.89462 21.1054 4.51217 20.635 4.27248C20.1002 4 19.4001 4 18 4Z"/>' +
+      '<path d="M18 7.00002C18 7.00002 16.527 9 16 9C15.4729 9 14 7 14 7"/><path d="M2 16H14"/><path d="M2 20H14"/>',
     gps01: '<path d="M20.5137 12C20.5137 16.6944 16.7081 20.5 12.0137 20.5C7.31925 20.5 3.51367 16.6944 3.51367 12C3.51367 7.30558 7.31925 3.5 12.0137 3.5C16.7081 3.5 20.5137 7.30558 20.5137 12Z"/>' +
            '<path d="M22.5 12H20.5"/>' +
            '<path d="M3.5 12H1.5"/>' +

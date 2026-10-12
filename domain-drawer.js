@@ -16,7 +16,7 @@
    domain_classify_v1. Solange die Bubble-Gruppe #drawer-domain steht, laeuft hier nichts.
 
    "COUNT AS" (Bubble: add_/remove_team_domain_override; der Nutzer wollte es nicht "Override"
-   nennen): je Team laesst sich eine Domain als eigene Seite (Citation Type "You") oder als Seite
+   nennen; seit 13.10. ein Icon-Knopf mit Menue statt Text im Kopf): je Team laesst sich eine Domain als eigene Seite (Citation Type "You") oder als Seite
    eines Wettbewerbers ("Competition") zaehlen, wenn die App das nicht selbst erkennt -- oder
    zurueck zur Erkennung. Danach rechnet alles mit Citations-Bezug neu: domain_classify_v1 leert
    die Caches selbst, der Drawer verwirft seinen Speicher und laedt frisch.
@@ -168,9 +168,9 @@
     if (S.kopf) {
       S.kopf.name(dom);
       var html = "";
-      /* Ohne Recht (can_override false, nur owner/admin) steht der Knopf trotzdem da -- er sagt, wie
-         die Domain zaehlt --, oeffnet aber kein Menue (Vertrag 13.10.: "nur lesbar"). */
-      html += zaehltKnopf(d);
+      /* Ohne Recht (can_override false, nur owner/admin) oeffnet der Knopf trotzdem: das Menue nennt
+         dann den Typ und sagt, wer ihn aendern darf (Vertrag 13.10.: "nur lesbar"). */
+      html += zaehltKnopf();
       if (UC.anMira && UC.miraBezug) html += knopf("mira", "blend", "Ask Mira about this");
       if (typeof window.upstreemPinToSidebar === "function") html += knopf("pin", "pin", "Pin to sidebar");
       S.kopf.eigen.innerHTML = html;
@@ -182,36 +182,32 @@
       '" aria-label="' + esc(t(label)) + '">' + UC.icon(zeichen, 2) + '</button>';
   }
 
-  /* ---- "Count as": Knopf und Menue im Kopf -------------------------------------------------
-     Die Bausteine des Sortiermenues aus core (UC.makePopover, .up-sort-menu, .up-pop-opt mit
-     Haken) -- ein Einfachauswahl-Menue, wie es die App schon hat. Der Knopf ist .up-filter-btn
-     (32 hoch, ohne Rand, Hover-Grund) und sagt, wie die Domain gerade zaehlt. */
+  /* ---- "Count as": Icon-Knopf und Menue im Kopf (13.10. umgebaut: "oben der aktuelle Citation
+     Type, darunter die Moeglichkeiten zum Wechseln") ----------------------------------------------
+     Ein Icon-Knopf wie die anderen im Kopf (Hugeicons DropdownFieldType), das Menue aus den
+     Bausteinen des Sortiermenues in core (UC.makePopover, .up-sort-menu, .up-pop-head, .up-pop-opt
+     mit Haken, .up-pop-div). Oben der wirksame Typ als Chip -- dieselbe Form wie im Titel --, darunter
+     die Wahl. Ohne Recht (can_override false) nur der Stand und ein Satz, keine Wahl. */
   var WAHL = [
     { key: "auto", label: "Detected automatically" },
     { key: "own", label: "Your own site" },
     { key: "competitor", label: "A competitor's site" }
   ];
   function wahlJetzt(d) { var o = str(d && d.override); return o === "own" || o === "competitor" ? o : "auto"; }
-  function zaehltKnopf(d) {
-    var w = wahlJetzt(d);
-    var wort = w === "own" ? t("Your site") : w === "competitor" ? t("Competitor") : typLabel(d.citation_type_auto || d.citation_type);
-    var lesend = d.can_override === false;
-    return '<div class="uddr-zaehlt' + (lesend ? " is-lesend" : "") + '">' +
-      '<button type="button" class="up-filter-btn uddr-zaehlt-btn"' + (lesend ? ' aria-disabled="true"' : ' aria-haspopup="menu" aria-expanded="false"') +
-        ' data-tip="' + esc(t(lesend ? "Only owners and admins can change how a domain counts." : "How this domain is counted in your citations")) + '">' +
-        '<span class="uddr-zaehlt-lbl">' + esc(t("Counts as")) + '</span>' +
-        '<span class="uddr-zaehlt-wert">' + esc(wort) + '</span>' +
-        (lesend ? "" : UC.icon("chevronDown", 2)) +
-      '</button>' +
+  function zaehltKnopf() {
+    return '<div class="uddr-zaehlt">' +
+      '<button type="button" class="up-iconbtn uddr-zaehlt-btn" aria-haspopup="menu" aria-expanded="false"' +
+        ' data-tip="' + esc(t("Citation type")) + '" aria-label="' + esc(t("Citation type")) + '">' +
+        UC.icon("dropdownFieldType", 2) + '</button>' +
       '<div class="up-sort-menu uddr-zaehlt-menu" role="menu" aria-hidden="true"></div>' +
     '</div>';
   }
   var zaehltPop = null;
   function zaehltMenueVerdrahten() {
     var wrap = S.kopf && S.kopf.eigen.querySelector(".uddr-zaehlt");
-    if (!wrap || !UC.makePopover || wrap.classList.contains("is-lesend")) return;
+    if (!wrap || !UC.makePopover) return;
     var menu = wrap.querySelector(".uddr-zaehlt-menu"), btn = wrap.querySelector(".uddr-zaehlt-btn");
-    var d = S.zeile || {}, jetzt = wahlJetzt(d);
+    var d = S.zeile || {}, jetzt = wahlJetzt(d), lesend = d.can_override === false;
     /* Gehoert die Domain einer verfolgten Marke, lehnt die DB den Widerspruch ab (Vertrag 13.10.:
        eigene Marke nicht als Wettbewerber, Wettbewerber nicht als eigene Seite). Die Wahl steht
        dann gesperrt da, mit dem Grund im Tooltip -- statt eines Klicks, der nur einen Fehler bringt. */
@@ -221,15 +217,25 @@
       if (rolle === "own" && key === "competitor") return t("This is the domain of your brand {brand}.").replace("{brand}", str(firma.name));
       return "";
     }
-    menu.innerHTML = '<div class="up-pop-head">' + esc(t("Count this domain as")) + '</div>' +
-      WAHL.map(function (w) {
-        var label = t(w.label), grund = gesperrt(w.key);
-        if (w.key === "auto") label += " (" + (str(d.citation_type_auto_label) || typLabel(d.citation_type_auto || d.citation_type)) + ")";
-        return '<div class="up-pop-opt' + (w.key === jetzt ? " is-active" : "") + (grund ? " is-disabled" : "") + '" role="menuitemradio" aria-checked="' +
-          (w.key === jetzt) + '"' + (grund ? ' aria-disabled="true" data-tip="' + esc(grund) + '"' : ' tabindex="0" data-uddr-wahl="' + w.key + '"') +
-          '><span>' + esc(label) + '</span>' +
-          '<span class="up-check">' + UC.icon("check", 3) + '</span></div>';
-      }).join("");
+    var quelle = jetzt === "auto" ? t("Detected automatically") : t("Set by your team");
+    var html = '<div class="up-pop-head">' + esc(t("Current citation type")) + '</div>' +
+      '<div class="uddr-zaehlt-jetzt">' + typChip(d.citation_type, d.citation_type_label) +
+        '<span class="uddr-zaehlt-quelle">' + esc(quelle) + '</span></div>' +
+      '<div class="up-pop-div"></div>';
+    if (lesend) {
+      html += '<div class="uddr-zaehlt-hinweis">' + esc(t("Only owners and admins can change how a domain counts.")) + '</div>';
+    } else {
+      html += '<div class="up-pop-head">' + esc(t("Count this domain as")) + '</div>' +
+        WAHL.map(function (w) {
+          var label = t(w.label), grund = gesperrt(w.key);
+          if (w.key === "auto") label += " (" + (str(d.citation_type_auto_label) || typLabel(d.citation_type_auto || d.citation_type)) + ")";
+          return '<div class="up-pop-opt' + (w.key === jetzt ? " is-active" : "") + (grund ? " is-disabled" : "") + '" role="menuitemradio" aria-checked="' +
+            (w.key === jetzt) + '"' + (grund ? ' aria-disabled="true" data-tip="' + esc(grund) + '"' : ' tabindex="0" data-uddr-wahl="' + w.key + '"') +
+            '><span>' + esc(label) + '</span>' +
+            '<span class="up-check">' + UC.icon("check", 3) + '</span></div>';
+        }).join("");
+    }
+    menu.innerHTML = html;
     zaehltPop = UC.makePopover({ wrap: wrap, menu: menu, opener: btn });
     btn.addEventListener("click", function () { zaehltPop.toggle(); btn.setAttribute("aria-expanded", String(zaehltPop.isOpen())); });
     menu.addEventListener("click", function (e) {
@@ -239,6 +245,7 @@
       zaehltSetzen(o.getAttribute("data-uddr-wahl"));
     });
   }
+
   /* Speichern: sofort dimmen (Schreibaktion, kein Skelett), dann neu rechnen lassen. Die DB leert
      ihre Caches selbst (Vertrag); hier wird der Speicher des Laders verworfen und alles frisch
      geladen -- auch die Tabellen, deren Typen jetzt anders heissen koennen. */

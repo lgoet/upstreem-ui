@@ -47,7 +47,8 @@
   function teamWarten() { return UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(UC.getTeam ? UC.getTeam() : ""); }
 
   var FN = { lesen: "brand_edit_v1", rename: "brand_rename_v1", aliasAdd: "brand_alias_add_v1",
-             aliasSet: "brand_alias_set_v1", aliasDelete: "brand_alias_delete_v1", farbe: "brand_color_set_v1" };
+             aliasSet: "brand_alias_set_v1", aliasDelete: "brand_alias_delete_v1", farbe: "brand_color_set_v1",
+             log: "brand_log_v1" };
   var ID = "drawer-companysettings-editor";
 
   var E = { slot: null, root: null, kopf: null, id: "", antwort: null, nr: 0, ab: null, laeuft: false, fehler: "", fehlerWiederholbar: false };
@@ -220,6 +221,7 @@
       if (neu) {
         E.antwort = neu; zeichnen();
         appNachziehen(alt, neu);
+        if (L.offen) logLaden(false);
         if (erfolg && UC.toast) UC.toast(t(erfolg), { kind: "success" });
         return;
       }
@@ -230,6 +232,104 @@
       zeichnen();
       if (nachFehler) { try { nachFehler(code, hint); } catch (e) {} }
       if (UC.toast) UC.toast(schreibFehler(code, hint, wer), { kind: "error" });
+    });
+  }
+
+  /* ---- DAS PROTOKOLL (13.10. angefordert: "eine Logtabelle wie in Team-Orga mit einem Filter fuer
+     die Event Types") --------------------------------------------------------------------------
+     brand_log_v1 (Vertrag 13.10.), dieselbe technische Tabelle wie das Team-Log (.up-logtab aus core):
+     Zeit sortierbar geschrieben, Ereignis in Festbreitenschrift mit Punkt, wer, Einzelheiten.
+     Aufklappbar wie dort und erst beim Aufklappen geladen -- ein Protokoll liest man selten.
+     Der Filter ist der Mehrfach-Filter aus core (UC.makeAuswahlFilter) ueber p_types.
+     brand_log_v1 kennt (noch) keine Einschraenkung auf eine Marke: es kommt das Protokoll des
+     Teams, gefiltert wird hier auf companies[] -- je Abruf 100 Eintraege, aeltere auf Knopfdruck.
+     Nachtrag an den DB-Chat: p_company (bubble/domain_editor_db_nachtrag_1.md). Nur owner/admin. */
+  var LOG_TYPEN = [{ key: "status", label: "Status" }, { key: "name", label: "Name" },
+                   { key: "alias", label: "Aliases" }, { key: "color", label: "Color" }];
+  var LOG_TON = { add: "is-new", activate: "is-ok", rename: "is-new", alias_add: "is-new", alias_activate: "is-ok",
+                  color_set: "is-new", deactivate: "is-off", "delete": "is-off", alias_deactivate: "is-off",
+                  alias_delete: "is-off", color_reset: "is-off" };
+  var L = { offen: false, typen: null, rows: [], next: null, laedt: false, fehler: "", nr: 0, filter: null };
+  function logStart() { L.rows = []; L.next = null; L.fehler = ""; L.laedt = false; L.nr++; }
+  function zeitpunkt(v) {
+    var d = new Date(str(v));
+    if (isNaN(d.getTime())) return "–";
+    function z(n) { return String(n).padStart(2, "0"); }
+    return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate()) + " " + z(d.getHours()) + ":" + z(d.getMinutes());
+  }
+  function logDetails(r) {
+    var d = r.details && typeof r.details === "object" ? r.details : {}, a = str(r.action);
+    if (a === "rename" || a === "color_set" || a === "color_reset") {
+      var vor = str(d.before) || "–", nach = str(d.after) || "–";
+      return vor + " \u2192 " + nach;
+    }
+    if (a.indexOf("alias_") === 0) return str(d.alias);
+    var teile = [];
+    Object.keys(d).forEach(function (k) {
+      var v = d[k];
+      if (v == null || typeof v === "object" || /_id$/.test(k)) return;
+      teile.push(k + "=" + String(v));
+    });
+    return teile.join("  ");
+  }
+  function logZeichnen() {
+    var r = E.root;
+    if (!r) return;
+    var box = r.querySelector(".ubed-logbox"), tab = r.querySelector(".ubed-logtab"), mehr = r.querySelector("[data-ubed-mehr]");
+    var btn = r.querySelector("[data-ubed-logtoggle]");
+    btn.setAttribute("aria-expanded", String(L.offen));
+    r.querySelector(".ubed-logchev").innerHTML = UC.icon(L.offen ? "chevronUp" : "chevronDown", 2);
+    box.hidden = !L.offen;
+    if (!L.offen) return;
+    var kopf = '<div class="up-thead up-row">' +
+      '<div class="up-th">' + esc(t("Date")) + '</div><div class="up-th">' + esc(t("Event")) + '</div>' +
+      '<div class="up-th">' + esc(t("Actor")) + '</div><div class="up-th">' + esc(t("Details")) + '</div></div>';
+    mehr.hidden = !L.next || !!L.fehler;
+    mehr.disabled = L.laedt;
+    if (L.fehler) { tab.innerHTML = kopf + '<div class="up-empty-mini">' + esc(L.fehler) + '</div>'; return; }
+    if (L.laedt && !L.rows.length) {
+      tab.innerHTML = kopf + (UC.skeletonRows ? UC.skeletonRows({ count: 4, cols: [{ w: 80 }, { w: 100, jitter: 14 }, { w: 130, jitter: 20 }, { w: 150, jitter: 24 }] }) : "");
+      return;
+    }
+    if (!L.rows.length) { tab.innerHTML = kopf + '<div class="up-empty-mini">' + esc(t("No entries yet")) + '</div>'; return; }
+    tab.innerHTML = kopf + L.rows.map(function (l) {
+      var a = str(l.action) || "unknown";
+      var wer = l.by_system ? "system" : (str(l.actor_email) || str(l.actor_display_name) || "–");
+      return '<div class="up-row">' +
+        '<div class="up-td"><span class="up-log-mono">' + esc(zeitpunkt(l.created_at)) + '</span></div>' +
+        '<div class="up-td"><span class="up-log-evwrap"><span class="up-log-dot ' + (LOG_TON[a] || "") + '"></span>' +
+          '<span class="up-log-mono up-log-ev">' + esc(a) + '</span></span></div>' +
+        '<div class="up-td"><span class="up-log-txt">' + esc(wer) + '</span></div>' +
+        '<div class="up-td"><span class="up-log-mono">' + esc(logDetails(l)) + '</span></div>' +
+      '</div>';
+    }).join("");
+  }
+  /* Ein Abruf; findet er fuer diese Marke nichts, aber es gibt aeltere Seiten, holt er bis zu
+     viermal weiter -- sonst stuende "No entries yet" da, obwohl es weiter hinten Eintraege gibt. */
+  function logLaden(weiter, runde) {
+    var id = E.id, nr = weiter ? L.nr : (logStart(), L.nr);
+    runde = runde || 0;
+    L.laedt = true; logZeichnen();
+    teamWarten().then(function (team) {
+      return UC.rpc(FN.log, { p_team: team, p_limit: 100, p_before: weiter ? L.next : null, p_types: L.typen }, { timeoutMs: 30000 });
+    }).then(function (erg) {
+      if (nr !== L.nr || id !== E.id) return;
+      L.laedt = false;
+      var d = erg && erg.ok ? erg.daten : null;
+      if (isArr(d)) d = d.length ? d[0] : null;
+      if (!d || !isArr(d.rows)) {
+        var code = erg && !erg.ok ? str(erg.fehler && (erg.fehler.message || erg.fehler.code)) : "";
+        L.fehler = code === "team_role_required" ? t("Only owners and admins can see the activity log.")
+          : t("The activity log could not be loaded. Please try again.");
+        logZeichnen(); return;
+      }
+      var meine = d.rows.filter(function (r) {
+        return isArr(r.companies) && r.companies.some(function (c) { return c && str(c.company_id).toLowerCase() === id.toLowerCase(); });
+      });
+      L.rows = L.rows.concat(meine);
+      L.next = d.meta && d.meta.next_before ? str(d.meta.next_before) : null;
+      if (!meine.length && L.next && runde < 4) { logLaden(true, runde + 1); return; }
+      logZeichnen();
     });
   }
 
@@ -250,13 +350,51 @@
         /* Fuer Mitglieder ohne Schreibrecht: ein Satz statt Knoepfen, die abgelehnt wuerden. */
         '<p class="up-dk-unter ubed-lesehinweis" hidden>' + esc(t("Only owners and admins can edit brands. You can view the settings.")) + '</p>' +
         '<div class="up-root ube-root" data-local="yes" data-instance="' + esc(ID) + '" data-isdark="' + dk + '"></div>' +
+        /* Das Protokoll: Kopf wie die Abschnitte des Editors (.up-dk-h2/.up-dk-unter), aufklappbar
+           wie das Team-Log; rechts der Filter der Ereignisarten. */
+        '<section class="ubed-log">' +
+          '<div class="ubed-loghead">' +
+            '<div class="ubed-logtext">' +
+              '<h2 class="up-dk-h2 ubed-logtitel"><button type="button" class="ubed-logtoggle" data-ubed-logtoggle aria-expanded="false">' +
+                '<span>' + esc(t("Activity Log")) + '</span><span class="ubed-logchev"></span></button></h2>' +
+              '<p class="up-dk-unter">' + esc(t("Every change to this brand, newest first")) + '</p>' +
+            '</div>' +
+            '<div class="ubed-logfilter"></div>' +
+          '</div>' +
+          '<div class="ubed-logbox" hidden>' +
+            '<div class="up-table up-logtab ubed-logtab"></div>' +
+            '<button type="button" class="up-btn-sec ubed-mehr" data-ubed-mehr hidden>' + esc(t("Show older entries")) + '</button>' +
+          '</div>' +
+        '</section>' +
         '<div class="ubed-fehler" hidden></div>' +
       '</div>';
     E.slot = ctx.slot; E.kopf = ctx; E.root = ctx.slot.querySelector(".ubed-root");
     var s = ctx.slot;
     s.addEventListener("click", function (e) {
-      if (e.target.closest && e.target.closest("[data-ubed-retry]")) laden();
+      if (!e.target.closest) return;
+      if (e.target.closest("[data-ubed-retry]")) { laden(); return; }
+      if (e.target.closest("[data-ubed-logtoggle]")) {
+        L.offen = !L.offen;
+        if (L.offen && !L.rows.length && !L.laedt) logLaden(false); else logZeichnen();
+        return;
+      }
+      if (e.target.closest("[data-ubed-mehr]") && L.next && !L.laedt) logLaden(true);
     });
+    /* Der Filter der Ereignisarten: der Mehrfach-Filter aus core, wie die Typ-Filter in Events. */
+    if (UC.makeAuswahlFilter) {
+      L.filter = UC.makeAuswahlFilter({
+        titel: "Event types", alle: "All events", mehrere: "{n} Types",
+        items: function () { return LOG_TYPEN.map(function (x) { return { key: x.key, label: t(x.label) }; }); },
+        gewaehlt: [],
+        onChange: function (keys) {
+          L.typen = isArr(keys) && keys.length ? keys.slice() : null;
+          if (!L.offen) { L.offen = true; }
+          logLaden(false);
+        }
+      });
+      if (L.filter && L.filter.el) s.querySelector(".ubed-logfilter").appendChild(L.filter.el);
+    }
+    logZeichnen();
     function an(name, fn) { s.addEventListener(name, function (e) { fn(e.detail || {}); }); }
     /* Die Ereignisse, die brand-editor.js im lokalen Modus schickt (Praefix "ube" vor dem nackten
        Namen, wie bei udd und uvw). */
@@ -292,6 +430,8 @@
       if (id !== E.id) {
         E.id = id;
         try { setter("resetBrandEditor")(ID); } catch (e) {}
+        /* Das Protokoll gehoert zur vorigen Marke: zu, leer, Filter bleibt (eine Vorliebe). */
+        logStart(); L.offen = false; logZeichnen();
       }
       /* Immer frisch: ein Editor zeigt den Stand der DB, nicht den vom letzten Oeffnen -- jemand
          anderes im Team kann inzwischen etwas geaendert haben. */

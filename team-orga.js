@@ -441,7 +441,7 @@
               '<span class="up-zaehler uto-seccount" data-uto-logcount></span>' +
             '</div>' +
             '<div class="uto-logbox" data-uto-logbox hidden>' +
-              '<div class="uto-table uto-log" data-uto-log></div>' +
+              '<div class="uto-table uto-log up-logtab" data-uto-log></div>' +
             '</div>' +
           '</div>' +
 
@@ -763,16 +763,16 @@
           var ev = feld(l.event_type) || "unknown";
           var ton = EV_TON[ev] || "";
           return '<div class="up-row">' +
-            '<div class="up-td"><span class="uto-log-mono">' + esc(zeitpunkt(l.created_at)) + '</span></div>' +
-            '<div class="up-td"><span class="uto-log-evwrap">' +
-              '<span class="uto-log-dot ' + ton + '"></span>' +
-              '<span class="uto-log-mono uto-log-ev">' + esc(ev) + '</span>' +
+            '<div class="up-td"><span class="uto-log-mono up-log-mono">' + esc(zeitpunkt(l.created_at)) + '</span></div>' +
+            '<div class="up-td"><span class="uto-log-evwrap up-log-evwrap">' +
+              '<span class="uto-log-dot up-log-dot ' + ton + '"></span>' +
+              '<span class="uto-log-mono uto-log-ev up-log-mono up-log-ev">' + esc(ev) + '</span>' +
             '</span></div>' +
-            '<div class="up-td"><span class="uto-log-txt">' +
+            '<div class="up-td"><span class="uto-log-txt up-log-txt">' +
               esc(feld(l.actor_email) || feld(l.actor_display_name) || "system") + '</span></div>' +
-            '<div class="up-td uto-c-target"><span class="uto-log-txt">' +
+            '<div class="up-td uto-c-target"><span class="uto-log-txt up-log-txt">' +
               esc(feld(l.target_email) || "–") + '</span></div>' +
-            '<div class="up-td uto-c-meta"><span class="uto-log-mono">' +
+            '<div class="up-td uto-c-meta"><span class="uto-log-mono up-log-mono">' +
               esc(metaText(l.meta)) + '</span></div>' +
           '</div>';
         }).join("");

@@ -149,10 +149,13 @@
 
   /* Aus "created" wird "Created", aus "manual_stop" "Manual stop". Der Grund kommt als Schluessel
      aus der Datenbank; ihn ungefiltert anzuzeigen waere ein Entwicklertext im UI. */
+  /* Durch UC.t (13.10. gemeldet: "im DE-Setting englische Texte"): der Grund steht in einer
+     Tabellenzelle, und Zellen uebersetzt der Sprachlauf von core bewusst nicht -- dort stehen Daten. */
   function grund(v) {
     var t = txt(v).trim().replace(/[_-]+/g, " ");
     if (!t) return "–";
-    return t.charAt(0).toUpperCase() + t.slice(1);
+    t = t.charAt(0).toUpperCase() + t.slice(1);
+    return UC.t ? UC.t(t) : t;
   }
 
   function hexOk(v) { return /^#[0-9a-fA-F]{6}$/.test(txt(v).trim()); }
@@ -561,7 +564,7 @@
         return '<div class="up-row ube-row">' +
             '<div class="up-td">' + esc(zeitpunkt(z.started_at)) + '</div>' +
             '<div class="up-td' + (laeuft ? " ube-laeuft" : "") + '">' +
-              (laeuft ? "Running" : esc(zeitpunkt(z.ended_at))) + '</div>' +
+              (laeuft ? esc(UC.t ? UC.t("Running") : "Running") : esc(zeitpunkt(z.ended_at))) + '</div>' +
             '<div class="up-td">' + esc(grund(z.start_reason)) + '</div>' +
           '</div>';
       }).join("");
@@ -605,7 +608,9 @@
       elKopf.innerHTML = kopfHtml(c);
       elAliasT.innerHTML = aliasHtml(isArr(d.aliases) ? d.aliases : []);
       elZeitT.innerHTML = zeitHtml(isArr(d.tracking_periods) ? d.tracking_periods : []);
-      elZeitTi.textContent = (txt(c.name) ? txt(c.name) + " " : "") + "Tracking Statistics";
+      /* Ein Muster mit {brand} statt Name + Text: zusammengesetzt traf die Zeile keinen
+         Katalogschluessel und blieb auf Deutsch englisch (13.10. gemeldet). */
+      elZeitTi.textContent = txt(c.name) ? UC.t("{brand} Tracking Statistics").replace("{brand}", txt(c.name)) : UC.t("Tracking Statistics");
 
       /* Das Namensfeld nur fuellen, wenn niemand darin tippt -- sonst nimmt ein Payload, der
          waehrend der Eingabe eintrifft, dem Nutzer das Wort aus der Hand. */
