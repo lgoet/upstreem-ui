@@ -12,19 +12,29 @@
    Die Adresse fuehrt: ?event= schreibt die Komponente selbst (pushState), Zurueck im Browser
    fuehrt zurueck, und ein Marker in einem fremden Diagramm oeffnet ueber UC.eventOeffnen.
 
-   DATENWEGE (alles ueber Run-JS-Schritte, wie jede Komponente der App):
-     Liste      der Event-Store in core (setUpstreemEvents) -- dieselbe Antwort fuettert die
-                Marker in allen Liniendiagrammen. Diese Komponente liest nur.
-     Detail     setEventDetail(id, json)      get_impact_event_v1 (auch Antwort von Create/
-                                              Update/Add-URL/Remove-URL)
-                setEventAnalysis(id, json)    cached_impact_event_analysis_v1
-                setEventScopePreview(id, json) preview_impact_event_scope_v1
-                setEventDeleted(id, json)     delete_impact_event_v1
-                setEventError(id?, message)   der message-Code einer fehlgeschlagenen RPC
-     Ereignisse an Bubble tragen den FERTIGEN RPC-Body als Text ({"p_team": ..., ...}) -- der
-     Workflow gibt ihn unveraendert als Body an den API Connector. Als Text und nicht als Objekt:
-     makeFire schiebt einem Objekt team_id vorn ein, und PostgREST lehnt einen Parameter ab, den
-     die Funktion nicht kennt.
+   DATENWEGE (seit 13.10. direkt an Supabase, Vertrag bubble/vor_nextjs_13_10, Abschnitt 1):
+     Liste      der Event-Store in core (team_context_v1 ['events'] beim App-Start bzw.
+                setUpstreemEvents) -- dieselbe Antwort fuettert die Marker in allen
+                Liniendiagrammen. Diese Komponente liest nur; nach jeder gelungenen Aenderung
+                ruft sie UC.eventsChanged(), und core laedt den Teil neu.
+     Kanal            RPC (UC.rpc, Antwort als normales JSON)   Antwort geht an
+       uevDetail        get_impact_event_v2                     setDetail
+       uevAnalysis      cached_impact_event_analysis_v2         setAnalysis
+       uevScopePreview  preview_impact_event_scope_v2           setVorschau
+       uevCreate        create_impact_event_v2                  setDetail (Popup)
+       uevUpdate        update_impact_event_v2                  setDetail (Popup)
+       uevAddUrl        add_impact_event_url_v2                 setDetail (Popup)
+       uevRemoveUrl     remove_impact_event_url_v2              setDetail (Bestaetigung)
+       uevDelete        delete_impact_event_v2                  setGeloescht
+     Fehler kommen als HTTP-Fehler, message = Code, hint = Feld (siehe fehlerText/FELD_VON_HINT).
+     RUECKWEG: fehlt eine v2-Funktion noch (404 PGRST202), geht DIESER Kanal fuer den Rest der
+     Sitzung wieder als Bubble-Ereignis hinaus (uevDetail, uevCreate, ... mit dem fertigen
+     RPC-Body als Text), und die alten Setter antworten wie bisher:
+                setEventDetail(id, json, fehler)       setEventAnalysis(id, json, fehler)
+                setEventScopePreview(id, json, fehler)  setEventDeleted(id, json, fehler)
+                setEventError(id?, message)
+     Die Setter bleiben auch sonst stehen -- ein Bubble-Workflow, der sie noch ruft, schadet nicht.
+     uevResponses geht weiter an Bubble, ist aber ausgeschaltet (MIT_RESPONSES).
 
    Was fehlt, sagt die Oberflaeche ausdruecklich: unlesbare Antwort -> Fehlerzustand, keine Daten
    -> Leerzustand, noch nicht da -> Skelett. Die drei sehen nie gleich aus. */
@@ -66,10 +76,51 @@
      (04.10. gemessen: "Die Zahl der Prompts konnte nicht geladen werden"). */
   function objekt(raw) { return UC.bubbleObjekt ? UC.bubbleObjekt(raw) : null; }
   function team() { try { return (UC.getTeam && UC.getTeam()) || ""; } catch (e) { return ""; } }
-  function body(o) {
-    var b = { p_team: team() };
+  /* Die Parameter einer RPC: p_team vorn, dann die eigenen. body() ist dieselbe Form als Text --
+     so geht sie im Rueckweg an Bubble (makeFire schiebt einem OBJEKT team_id ein, und PostgREST
+     lehnt einen Parameter ab, den die Funktion nicht kennt). */
+  function mitTeam(o, tm) {
+    var b = { p_team: tm != null ? tm : team() };
     for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) b[k] = o[k];
-    return JSON.stringify(b);
+    return b;
+  }
+  function body(o) { return JSON.stringify(mitTeam(o)); }
+
+  /* ---- Die Regeln der Datenbank, hier noch einmal (13.10., Vertrag Abschnitt 1) -------------
+     Seit v2 prueft die Datenbank Name, Beschreibung, Typ, Zeichen, Farbe, Titelbild und URLs.
+     Was billig zu pruefen ist, prueft das Popup VORHER, damit die Meldung am Feld steht, bevor
+     etwas hinausgeht -- entscheidend bleibt die Antwort des Servers. Laenge in Zeichen wie
+     Postgres (char_length zaehlt Codepunkte, .length zaehlt UTF-16 und gaebe einem Emoji zwei). */
+  function laenge(s) { return Array.from(String(s == null ? "" : s)).length; }
+  var NAME_MAX = 120, TEXT_MAX = 2000, KURZ_MAX = 40, URL_LAENGE_MAX = 2048;
+  function urlOk(u) {
+    u = String(u == null ? "" : u).trim();
+    if (!u || u.length > URL_LAENGE_MAX) return false;
+    try { var x = new URL(u); return (x.protocol === "https:" || x.protocol === "http:") && !!x.hostname; } catch (e) { return false; }
+  }
+  var REGELN = {
+    p_name: function (v) { return laenge(String(v).trim()) >= 1 && laenge(v) <= NAME_MAX; },
+    p_description: function (v) { return laenge(v) <= TEXT_MAX; },
+    p_event_type: function (v) { return /^[a-z0-9_]+$/.test(v) && v.length <= KURZ_MAX; },
+    p_icon: function (v) { return v === "" || (/^[a-z0-9_-]+$/.test(v) && v.length <= KURZ_MAX); },
+    p_color: function (v) { return v === "" || /^#[0-9a-fA-F]{6}$/.test(v); },
+    p_cover: function (v) { return v === "" || /^[a-z0-9_]+$/.test(v) || (/^https:\/\//.test(v) && v.length <= URL_LAENGE_MAX); },
+    p_url: urlOk,
+    p_urls: function (v) { return isArr(v) && v.every(urlOk); }
+  };
+  /* Der erste Parameter, der die Regel bricht -- als hint, wie der Server ihn nennen wuerde. null
+     heisst "unveraendert" bzw. "nicht gesetzt" und ist immer erlaubt. */
+  function paramsPruefen(b) {
+    for (var k in REGELN) if (b[k] != null && !REGELN[k](b[k])) return k;
+    return "";
+  }
+  /* Ein eigener Typ als Schluessel (13.10.): p_event_type erlaubt nur [a-z0-9_]. "Podcast Launch"
+     wird zu podcast_launch, das core wieder lesbar macht ("Podcast launch"). Umlaute
+     ausgeschrieben, statt sie als Unterstrich zu verlieren. */
+  function typSchluessel(s) {
+    return String(s == null ? "" : s).trim().toLowerCase()
+      .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
+      .replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, KURZ_MAX).replace(/_+$/, "");
   }
   function ersetze(s, o) { return String(s).replace(/\{(\w+)\}/g, function (_, k) { return o[k] != null ? o[k] : ""; }); }
   function tagMs(s) {
@@ -90,16 +141,37 @@
   /* Typ, Zeichen, Farbe eines Events. Das Zeichen aus dem Typ -- NIE das Feld icon der Datenbank,
      solange es kein bekannter Zeichenname ist: dort stehen Emojis, und Emojis gehoeren nicht in
      die Oberflaeche (Entscheidung 1). */
-  function typ(ev) { return UC.eventTyp ? UC.eventTyp(ev && ev.event_type) : { key: "other", label: "Other", icon: "pin", gruppe: "other" }; }
+  function typ(ev) {
+    var x = UC.eventTyp ? UC.eventTyp(ev && ev.event_type) : { key: "other", label: "Other", icon: "pin", gruppe: "other" };
+    /* Ein eigener Typ ohne Unterstrich ("podcast", seit 13.10. die Schluesselform aus
+       typSchluessel) laesst core klein stehen -- dessen Regel macht nur a_b lesbar. Hier mit
+       grossem Anfang, als Kopie: das Objekt gehoert dem Zwischenspeicher in core. */
+    if (x && x.eigen && /^[a-z0-9]+$/.test(x.label)) {
+      var k = {}; for (var f in x) k[f] = x[f];
+      k.label = x.label.charAt(0).toUpperCase() + x.label.slice(1);
+      return k;
+    }
+    return x;
+  }
   var ZEICHEN = {};
   /* Die Zeichen der 19 Typen und eines mehr: mail fuer den Newsletter -- im Popup stehen damit zwei
      volle Reihen zu zehn (03.10. angefordert: "immer einheitlich viele"). */
   var ZEICHEN_EXTRA = ["mail"];
   (UC.EVENT_TYPEN || []).forEach(function (x) { ZEICHEN[x.icon] = 1; });
   ZEICHEN_EXTRA.forEach(function (k) { ZEICHEN[k] = 1; });
+  /* p_icon erlaubt seit 13.10. nur [a-z0-9_-]. Die Zeichennamen von core sind camelCase
+     (fileText, bookOpenCheck) -- also geht der Name als file-text hinaus und kommt beim Lesen
+     wieder zurueck. Aeltere Events tragen noch die camelCase-Form, beide werden gelesen. */
+  function iconFuerDb(name) { return name ? String(name).replace(/[A-Z]/g, function (m) { return "-" + m.toLowerCase(); }) : name; }
+  function iconAusDb(v) {
+    if (!v) return null;
+    v = String(v);
+    if (ZEICHEN[v]) return v;
+    var c = v.replace(/-([a-z0-9])/g, function (_, z) { return z.toUpperCase(); });
+    return ZEICHEN[c] ? c : null;
+  }
   function zeichen(ev) {
-    var ic = ev && ev.icon;
-    return ic && ZEICHEN[ic] ? ic : typ(ev).icon;
+    return iconAusDb(ev && ev.icon) || typ(ev).icon;
   }
   function farbe(ev) {
     var c = ev && ev.color;
@@ -250,7 +322,26 @@
     "impact_event_url_duplicate": "This URL is already part of the event.",
     "impact_event_too_many_urls": "An event can have at most 100 URLs.",
     "impact_event_not_found": "This event no longer exists.",
-    "impact_event_url_not_found": "This URL is no longer part of the event."
+    "impact_event_url_not_found": "This URL is no longer part of the event.",
+    /* Neu mit v2 (13.10., Vertrag Abschnitt 1, Faelle E1-E14) */
+    "team_forbidden": "You don't have permission to do that.",
+    "team_role_required": "You don't have permission to do that.",
+    "impact_event_forbidden": "Only the creator of this event or a team admin can do that.",
+    "impact_event_limit_reached": "Your team has reached the limit of 200 events. Delete an event to create a new one.",
+    "timeout": "This is taking longer than expected. Please try again.",
+    "network": "We could not reach the server. Check your connection and try again."
+  };
+  /* impact_event_invalid_param nennt das Feld in hint -- je Feld ein eigener Satz, damit am Feld
+     steht, WAS nicht passt. */
+  var FEHLER_PARAM = {
+    p_name: "Please enter a name with at most 120 characters.",
+    p_description: "The description can have at most 2,000 characters.",
+    p_event_type: "Please choose a different event type.",
+    p_icon: "Please choose a different icon.",
+    p_color: "Please choose a different color.",
+    p_cover: "Please choose a different cover image.",
+    p_event_date: "The date must be within the last 6 months.",
+    p_url: "Please enter a valid URL.", p_urls: "Please enter a valid URL."
   };
   /* ---- Der Klick-Dummy (data-demo="yes", 03.10. angefordert) -----------------------------
      Die Beispieldaten liegen in einer eigenen Datei neben dieser und kommen nur, wenn eine
@@ -361,10 +452,28 @@
     return true;
   }
 
-  function fehlerText(code) {
-    var c = String(code == null ? "" : code).trim();
+  function fehlerText(code, hint) {
+    var c = String(code == null ? "" : code).trim(), h = String(hint == null ? "" : hint).trim();
     if (/^team_access_/.test(c)) return t("Your team doesn't have access right now.");
+    /* Jedes Ratenlimit (<bereich>_rate_limited, 429) sagt dasselbe -- der Bereich ist intern. */
+    if (/_rate_limited$/.test(c)) return t(FEHLER.impact_event_rate_limited);
+    if (c === "impact_event_invalid_param") return t(FEHLER_PARAM[h] || "Please check your input and try again.");
+    /* E1b: beim Anlegen steht in hint die URL selbst, die nicht ging -- bei mehreren ist das die
+       einzige Stelle, die sagt, welche. Es ist die Eingabe des Nutzers; gezeigt wird sie als Text. */
+    if (c === "impact_event_invalid_url" && h && !/^p_/.test(h)) return ersetze(t("This URL can't be used: {url}"), { url: h });
     return t(FEHLER[c] || "Something went wrong. Please try again.");
+  }
+  /* Welches Feld eines Popups einen Fehler beheben kann: zuerst nach hint (dem Feld, das der
+     Server nennt), sonst nach dem Code. */
+  var FELD_VON_HINT = { p_name: "name", p_description: "text", p_event_type: "typ", p_icon: "aussehen", p_color: "aussehen",
+    p_cover: "cover", p_event_date: "datum", p_tag_ids: "topics", p_scope_mode: "topics", p_urls: "urls", p_url: "urls" };
+  var FELD_VON_CODE = { impact_event_name_required: "name", impact_event_invalid_date: "datum",
+    impact_event_topics_required: "topics", impact_event_invalid_topics: "topics", impact_event_no_active_prompts: "topics",
+    impact_event_invalid_url: "urls", impact_event_url_duplicate: "urls", impact_event_too_many_urls: "urls" };
+  function feldVonFehler(code, hint) {
+    var c = String(code == null ? "" : code), h = String(hint == null ? "" : hint);
+    if (c === "impact_event_invalid_param" || FELD_VON_CODE[c]) return FELD_VON_HINT[h] || FELD_VON_CODE[c] || "";
+    return "";
   }
 
   /* DER KATALOG IST EINER FUER DIE GANZE APP. Ein Schluessel, den core schon kennt, steht hier
@@ -490,7 +599,19 @@
     /* 03.10.: Typ-Auswahl mit eigenem Typ, Klick-Dummy, Ende des Wartens */
     "Search types": "Typen durchsuchen", "No types found": "Keine Typen gefunden", "Your type": "Dein Typ",
     "Example data": "Beispieldaten", "Example data. Nothing you do here is saved.": "Beispieldaten. Nichts, was du hier tust, wird gespeichert.",
-    "Events could not be loaded": "Events konnten nicht geladen werden", "Please reload the page.": "Bitte lade die Seite neu."
+    "Events could not be loaded": "Events konnten nicht geladen werden", "Please reload the page.": "Bitte lade die Seite neu.",
+    /* 13.10.: die Pruefungen von v2 */
+    "Please enter a name with at most 120 characters.": "Der Name darf höchstens 120 Zeichen lang sein.",
+    "The description can have at most 2,000 characters.": "Die Beschreibung darf höchstens 2.000 Zeichen lang sein.",
+    "Please choose a different event type.": "Wähl bitte einen anderen Event-Typ.",
+    "Please choose a different icon.": "Wähl bitte ein anderes Symbol.",
+    "Please choose a different color.": "Wähl bitte eine andere Farbe.",
+    "Please choose a different cover image.": "Wähl bitte ein anderes Titelbild.",
+    "Please check your input and try again.": "Prüf deine Eingaben und versuch es noch einmal.",
+    "This URL can't be used: {url}": "Diese URL lässt sich nicht verwenden: {url}",
+    "Only the creator of this event or a team admin can do that.": "Das kann nur, wer das Event angelegt hat, oder ein Admin des Teams.",
+    "Your team has reached the limit of 200 events. Delete an event to create a new one.":
+      "Dein Team hat die Grenze von 200 Events erreicht. Lösch ein Event, um ein neues anzulegen."
   });
 
   /* Spaltenzahl der Karten: nach dem PLATZ (wie response-detail.spalten -- dieselben Schwellen,
@@ -505,6 +626,25 @@
     return breite >= 1880 ? 4 : breite >= 1360 ? 3 : breite >= 800 ? 2 : 1;
   }
 
+  /* Die Kanaele (13.10.): Name des alten Bubble-Ereignisses -> v2-RPC. attr ist das Attribut, das
+     im Rueckweg den Namen des Bubble-Elements traegt. ms: laenger als die Analyse (E9: 3,4 s
+     ungecacht) braucht keine; die Schreibwege so lang wie die Warte-Uhr der Popups (WARTE_MS),
+     damit die RPC endet, bevor das Popup "dauert zu lange" sagt. */
+  var KANAL = {
+    uevDetail:       { fn: "get_impact_event_v2",             attr: "data-detail-fn",    ms: 20000 },
+    uevAnalysis:     { fn: "cached_impact_event_analysis_v2", attr: "data-analysis-fn",  ms: 24000 },
+    uevScopePreview: { fn: "preview_impact_event_scope_v2",   attr: "data-preview-fn",   ms: 20000 },
+    uevCreate:       { fn: "create_impact_event_v2",          attr: "data-create-fn",    ms: 24000, schreibt: true },
+    uevUpdate:       { fn: "update_impact_event_v2",          attr: "data-update-fn",    ms: 24000, schreibt: true },
+    uevAddUrl:       { fn: "add_impact_event_url_v2",         attr: "data-addurl-fn",    ms: 24000, schreibt: true },
+    uevRemoveUrl:    { fn: "remove_impact_event_url_v2",      attr: "data-removeurl-fn", ms: 24000, schreibt: true },
+    uevDelete:       { fn: "delete_impact_event_v2",          attr: "data-delete-fn",    ms: 24000, schreibt: true }
+  };
+  /* Kanaele, deren v2-Funktion es (noch) nicht gibt -- je Seitenaufruf gemerkt, fuer alle
+     Wurzeln. Nach einem Neuladen wird wieder zuerst v2 versucht: ist das SQL inzwischen
+     eingespielt, laeuft der neue Weg ohne Zutun. */
+  var RUECKFALL = {};
+
   /* ============================================================================================
      Eine Wurzel
      ============================================================================================ */
@@ -513,9 +653,11 @@
     var instanceId = root.getAttribute("data-instance") || "default";
     if (/^[A-Z_]{4,}$/.test(instanceId)) return null;   /* Platzhalter noch nicht ersetzt */
 
-    /* data-demo="yes": jedes Ereignis wird hier im Tab aus events-demo.js beantwortet statt an
-       Bubble zu gehen (demoAntwort) -- derselbe Weg durch die Setter wie mit echten Daten. */
+    /* data-demo="yes": jedes Ereignis wird hier im Tab aus events-demo.js beantwortet statt
+       hinauszugehen (demoAntwort) -- derselbe Weg durch die Antwort-Verteilung wie mit echten
+       Daten. */
     var demo = UC.isYes ? UC.isYes(root.getAttribute("data-demo")) : root.getAttribute("data-demo") === "yes";
+    /* Bubble-Ereignisse gibt es nur noch fuer den Rueckweg (bubbleRufen) und fuer uevResponses. */
     var fireBubble = UC.makeFire(root, { label: "events", eventPrefix: "uev" });
     function fire(attr, name, wert) {
       if (demo) { demoAntwort(name, wert); return true; }
@@ -530,25 +672,119 @@
       for (var i = 0; i < l.length; i++) if (String(l[i].id) === String(id)) return l[i].name || "";
       return "";
     }
-    function demoAntwort(name, wert) {
+    /* kx: wer auf diese Antwort wartet (siehe rufen). Ohne kx (uevResponses) nur die Tabelle. */
+    function demoAntwort(name, wert, kx) {
       var b = {};
       try { b = JSON.parse(wert); } catch (e) {}
       demoHolen(function (D) {
         setTimeout(function () {
           if (root.isConnected === false) return;
-          if (!D) { ctrl.setFehler(""); return; }
-          var r = D.antwort(name, b, { topicName: topicName, storeZeile: listeEvent }) || {};
-          if (r.fehler) ctrl.setFehler(r.fehler);
-          if (r.detail) ctrl.setDetail(JSON.stringify(r.detail));
-          if (r.analyse) ctrl.setAnalysis(JSON.stringify(r.analyse));
-          if (r.vorschau) ctrl.setVorschau(JSON.stringify(r.vorschau));
-          if (r.geloescht) ctrl.setGeloescht(JSON.stringify(r.geloescht));
+          var r = D ? (D.antwort(name, b, { topicName: topicName, storeZeile: listeEvent }) || {}) : { fehler: "" };
+          if (KANAL[name]) {
+            kam(name, r.fehler != null
+              ? { ok: false, status: 400, fehler: { code: "", message: String(r.fehler), hint: "", details: "" } }
+              : { ok: true, status: 200, daten: r.detail || r.analyse || r.vorschau || r.geloescht || null }, kx || {});
+          }
           if (r.responses && window.renderResponsesTable) {
             try { window.renderResponsesTable({ instanceId: respInstanz, rows: r.responses, totalCount: r.total }); } catch (e) {}
           }
           if (r.liste && UC.setEvents) UC.setEvents(JSON.stringify(r.liste), "demo");
         }, DEMO_MS);
       });
+    }
+
+    /* ---- DER DATENWEG (13.10.: direkt an Supabase statt ueber Bubble-Workflows) -------------
+       rufen(kanal, parameter, kx, spaet): die v2-RPC des Kanals ueber UC.rpc, die Antwort an
+       DIESELBEN Handler wie die alten Setter (setDetail, setAnalysis, ...) -- die nehmen ein
+       Objekt so gut wie Bubble-Text. kx sagt, wer wartet: { eventId } beim Detail, { sig } bei
+       der Analyse, { popup } bei Vorschau und den Popups. Damit landet eine Antwort genau dort,
+       wo sie bestellt wurde -- ueber die Setter musste die Komponente raten (eine Lese-Antwort
+       konnte ein wartendes Bearbeiten-Popup schliessen, bevor dessen Antwort da war).
+       Ein Tiefenlink wartete bisher mit fire.spaet auf Bubbles Empfaenger; hier wartet er nur
+       noch auf das Team (UC.teamWarten), das Bubble beim Seitenaufbau eventuell noch nicht
+       gesetzt hat. spaet gilt nur noch fuer den Rueckweg an Bubble. */
+    function funktionFehlt(erg) {
+      var f = (erg && erg.fehler) || {};
+      return /PGRST202/.test(String(f.code || "")) ||
+        (erg && erg.status === 404 && /could not find the function/i.test(String(f.message || "") + " " + String(f.details || "")));
+    }
+    function bubbleRufen(kanal, o, spaet) {
+      var k = KANAL[kanal], b = body(o);
+      if (spaet && fireBubble.spaet) fireBubble.spaet(k.attr, kanal, b); else fireBubble(k.attr, kanal, b);
+    }
+    function rufen(kanal, o, kx, spaet) {
+      kx = kx || {};
+      if (demo) { demoAntwort(kanal, body(o), kx); return; }
+      var k = KANAL[kanal];
+      if (RUECKFALL[kanal] || !UC.rpc) { bubbleRufen(kanal, o, spaet); return; }
+      var tm = team();
+      (tm ? Promise.resolve(tm) : (UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(""))).then(function (tm2) {
+        /* Kein Team nach 10 s: kein Aufruf ohne p_team (der Server antwortete mit forbidden) --
+           die Stelle, die wartet, bekommt den allgemeinen Fehler statt ewig zu laden. */
+        if (!tm2) return { ok: false, status: 0, fehler: { code: "", message: "", hint: "", details: "" } };
+        return UC.rpc(k.fn, mitTeam(o, tm2), { timeoutMs: k.ms });
+      }).then(function (erg) {
+        erg = erg || { ok: false, status: 0, fehler: {} };
+        if (!erg.ok && funktionFehlt(erg)) {
+          /* Die v2-Funktion ist noch nicht eingespielt: dieser Kanal geht fuer den Rest der
+             Sitzung den alten Weg, ohne jedes Mal erst an der 404 vorbei. */
+          RUECKFALL[kanal] = true;
+          bubbleRufen(kanal, o, spaet);
+          return;
+        }
+        kam(kanal, erg, kx);
+      });
+    }
+    function kam(kanal, erg, kx) {
+      var k = KANAL[kanal];
+      if (root.isConnected === false) {
+        /* Bubble hat die Wurzel inzwischen neu gebaut (Themenwechsel). Die neue weiss von dieser
+           Anfrage nichts -- aber eine gelungene Aenderung gehoert trotzdem in die Liste. */
+        if (erg.ok && k.schreibt) listeNeu();
+        return;
+      }
+      if (!erg.ok) { fehlerKam(kanal, erg.fehler || {}, kx); return; }
+      var d = erg.daten;
+      if (kanal === "uevDetail") {
+        /* Die Antwort fuer ein Event, das nicht mehr offen ist: ablegen, aber nichts Offenes als
+           Fehler markieren. */
+        if (kx.eventId !== state.eventId) { if (d && typeof d === "object" && d.id != null) ctrl.setDetail(d, "lesen"); return; }
+        ctrl.setDetail(d, "lesen");
+        return;
+      }
+      /* Eine Analyse fuer Fenster oder Filter von vorhin: setAnalysis legt unter den AKTUELLEN
+         Filtern ab -- eine spaete Antwort waere dort falsch einsortiert. Die aktuelle kommt noch. */
+      if (kanal === "uevAnalysis") { if (kx.sig === analyseSig()) ctrl.setAnalysis(d); return; }
+      if (kanal === "uevScopePreview") { if (popup && popup === kx.popup) ctrl.setVorschau(d); return; }
+      if (kanal === "uevDelete") { ctrl.setGeloescht(d); return; }
+      /* Anlegen, Bearbeiten, URL hinzufuegen und entfernen antworten mit dem Detail (Vertrag 1,
+         Antwort b). Schliesst es kein wartendes Popup mehr (dessen Uhr war abgelaufen), laedt die
+         Liste hier neu -- die Aenderung ist trotzdem geschehen. */
+      var wartet = kanal === "uevRemoveUrl" ? !!wartend.urlWeg : !!(popup && popup === kx.popup && popup.warte);
+      if (!ctrl.setDetail(d, "schreiben")) { fehlerKam(kanal, { message: "unreadable_response" }, kx); return; }
+      if (!wartet) listeNeu();
+    }
+    /* Ein Fehler der RPC dort, wo gewartet wird: am Feld eines Popups, im Detail als
+       Fehlerzustand, sonst als Toast. Nie der Code selbst (fehlerText). */
+    function fehlerKam(kanal, f, kx) {
+      var code = String(f.message || ""), hint = String(f.hint || ""), txt = fehlerText(code, hint);
+      if (kanal === "uevDetail") {
+        if (state.ansicht === "detail" && kx.eventId === state.eventId) ctrl.setFehler(code, "lesen", hint);
+        return;
+      }
+      if (kanal === "uevAnalysis") {
+        /* Auch bei impact_event_not_found still: den Toast gibt die Detail-Anfrage, die zur selben
+           Zeit dasselbe hoert -- sonst stuenden zwei gleiche untereinander. */
+        if (state.ansicht !== "detail" || kx.sig !== analyseSig()) return;
+        state.analyseLaden = false; state.analyseFehler = true;
+        renderDetail();
+        return;
+      }
+      if (kanal === "uevScopePreview") { if (popup && popup === kx.popup) popupVorschauKam(null); return; }
+      if (kanal === "uevDelete") { loeschFehler(txt); return; }
+      if (kanal === "uevRemoveUrl") { urlWegFehler(txt); return; }
+      if (popup && popup === kx.popup && popupFehlerKam(txt, code, hint)) return;
+      if (UC.toast) UC.toast(txt, { kind: "error" });
     }
     function isDark() { return UC.themeParam(root.getAttribute("data-isdark")) || root.getAttribute("data-theme") === "dark"; }
     if (isDark()) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
@@ -1509,16 +1745,15 @@
     function detailAnfordern(spaet) {
       state.detailFehler = false;
       detailUhr();
-      var b = body({ p_event_id: state.eventId });
-      if (spaet && fire.spaet) fire.spaet("data-detail-fn", "uevDetail", b); else fire("data-detail-fn", "uevDetail", b);
+      rufen("uevDetail", { p_event_id: state.eventId }, { eventId: state.eventId }, spaet);
     }
     function analyseAnfordern(spaet) {
       state.analyseLaden = true; state.analyseFehler = false;
       detailUhr();
-      var b = body({ p_event_id: state.eventId, p_window_days: state.fenster,
-                     p_models: state.modelle && state.modelle.length ? state.modelle : null,
-                     p_markets: state.maerkte && state.maerkte.length ? state.maerkte : null });
-      if (spaet && fire.spaet) fire.spaet("data-analysis-fn", "uevAnalysis", b); else fire("data-analysis-fn", "uevAnalysis", b);
+      rufen("uevAnalysis", { p_event_id: state.eventId, p_window_days: state.fenster,
+                             p_models: state.modelle && state.modelle.length ? state.modelle : null,
+                             p_markets: state.maerkte && state.maerkte.length ? state.maerkte : null },
+            { sig: analyseSig() }, spaet);
     }
     /* Das Fenster der Responses: ab dem Event-Tag bis zum Ende des Analysefensters, hoechstens
        heute (Vertrag 3.10: "das gewaehlte Analyse-Fenster uebergeben"). Ab dem Event-Tag und nicht
@@ -1690,9 +1925,12 @@
         inhaltHtml: '<p class="uev-popup-text">' + esc(t("The event, its scope and its URL list are removed. Prompt history, citations and responses stay untouched.")) + '</p>',
         knoepfe: [{ id: "abbrechen", text: "Cancel", art: "sec" },
                   { id: "ok", text: "Delete event", art: "gefahr", aktion: function (api) {
+                    /* Doppelklick: der Knopf ist ab dem ersten Klick gesperrt (busy), und eine
+                       zweite Anfrage geht auch dann nicht hinaus, wenn ihn etwas wieder frei gibt. */
+                    if (wartend.del) return false;
                     api.busy("ok", true); api.fehler("");
                     wartend.del = { id: eid, api: api, uhr: warteUhr("del", api), seq: listenStand().seq };
-                    fire("data-delete-fn", "uevDelete", body({ p_event_id: eid }));
+                    rufen("uevDelete", { p_event_id: eid }, { eventId: eid });
                     return false;
                   } }],
         onClose: function () { if (wartend.del && wartend.del.api === m) wartend.del = null; }
@@ -1708,9 +1946,10 @@
         inhaltHtml: '<p class="uev-popup-url">' + esc(u.url) + '</p><p class="uev-popup-text">' + esc(t("Only the link to this event is removed. The URL and its citations stay untouched.")) + '</p>',
         knoepfe: [{ id: "abbrechen", text: "Cancel", art: "sec" },
                   { id: "ok", text: "Remove URL", art: "gefahr", aktion: function (api) {
+                    if (wartend.urlWeg) return false;
                     api.busy("ok", true); api.fehler("");
                     wartend.urlWeg = { eventId: d.id, urlId: urlId, api: api, uhr: warteUhr("urlWeg", api) };
-                    fire("data-removeurl-fn", "uevRemoveUrl", body({ p_event_id: d.id, p_url_id: urlId }));
+                    rufen("uevRemoveUrl", { p_event_id: d.id, p_url_id: urlId }, { eventId: d.id });
                     return false;
                   } }],
         onClose: function () { if (wartend.urlWeg && wartend.urlWeg.api === m) wartend.urlWeg = null; }
@@ -1777,11 +2016,29 @@
 
     /* Ein Feld des Topic-Dialogs: Etikett ueber dem Inhalt. "Optional" steht im Etikett und nicht
        im Platzhalter -- ein Platzhalter ist weg, sobald jemand tippt (Spezifikation 56). */
-    function feld(label, inhalt, optional) {
+    /* key (13.10.): das Feld bekommt seine Fehlerzeile aus core (.up-fehlerzeile, roter Satz ohne
+       Kasten) -- dort steht, was die Datenbank oder die Pruefung vorab an DIESEM Feld meldet. */
+    function feld(label, inhalt, optional, key) {
       return '<div class="up-topicmodal-field">' +
         '<span class="up-topicmodal-label">' + esc(t(label)) +
           (optional ? ' <span class="uev-optional">' + esc(t("Optional")) + '</span>' : '') + '</span>' +
-        inhalt + '</div>';
+        inhalt + (key ? feldFehlerHtml(key) : '') + '</div>';
+    }
+    function feldFehlerHtml(key) {
+      return '<div class="up-fehlerzeile uev-feldfehler" data-feldfehler="' + esc(key) + '" role="alert"><span></span></div>';
+    }
+    /* Setzt (text) oder nimmt (leer) die Meldung an einem Feld des offenen Popups. false, wenn das
+       Popup dieses Feld nicht hat -- dann muss die Meldung woanders hin. */
+    function feldFehler(key, text) {
+      var el = key ? im('[data-feldfehler="' + key + '"]') : null;
+      if (!el) return false;
+      el.firstChild.textContent = text || "";
+      el.classList.toggle("is-on", !!text);
+      return true;
+    }
+    function feldFehlerWeg() {
+      var l = popup ? popup.api.el.querySelectorAll(".uev-feldfehler.is-on") : [];
+      for (var i = 0; i < l.length; i++) { l[i].classList.remove("is-on"); l[i].firstChild.textContent = ""; }
     }
     function wahlKnopf(art, ic, txt, leer) {
       return '<button type="button" class="up-topicmodal-name up-modal-wahl" data-wahl="' + art + '" aria-expanded="false">' +
@@ -1795,7 +2052,9 @@
        In der Liste: die 19 Typen nach Gruppen, dann die eigenen Typen, die es schon gibt (aus
        dem Event-Store), dann der gerade gewaehlte -- wie die eigene Branche, die in die Liste
        wandert, damit sie beim naechsten Oeffnen dabeisteht. */
-    var TYP_MAX = 48;           /* wie die eigene Branche (IND_MAX in settings-brand) */
+    /* Bis 13.10. 48 wie die eigene Branche (IND_MAX in settings-brand); seit v2 nimmt p_event_type
+       hoechstens 40 Zeichen. */
+    var TYP_MAX = KURZ_MAX;
     function typListe(akt) {
       var l = [], da = {};
       function merk(x) { da[String(x.key).toLowerCase()] = 1; da[String(t(x.label)).toLowerCase()] = 1; da[String(x.label).toLowerCase()] = 1; }
@@ -1854,16 +2113,21 @@
     }
     /* Ein eigener Typ ist erlaubt, wenn das Feld nicht leer ist und der Text nicht schon in der
        Liste steht -- sonst entsteht ein Doppel, das sich nur in der Schreibung unterscheidet. */
+    /* Seit 13.10. als Schluessel (typSchluessel): "Podcast Launch" und "podcast launch" sind
+       derselbe Typ, und ein Text ohne einen einzigen Buchstaben oder Ziffer ist keiner. */
     function typEigenOk(p) {
       var inp = im(".uev-typeigen");
-      var v = inp ? inp.value.trim() : "";
-      return !!v && !typListe(p.e.typ).da[v.toLowerCase()];
+      var v = inp ? inp.value.trim() : "", k = typSchluessel(v);
+      if (!k) return false;
+      var da = typListe(p.e.typ).da;
+      return !da[v.toLowerCase()] && !da[k] && !da[String(typVon(k).label).toLowerCase()];
     }
     function typEigenNehmen() {
       var p = popup, inp = im(".uev-typeigen");
       if (!p || !inp || !typEigenOk(p)) return;
-      p.e.typ = inp.value.trim().slice(0, TYP_MAX);
+      p.e.typ = typSchluessel(inp.value);
       inp.value = "";
+      feldFehler("typ", "");
       menueZu("typ"); typNeu(); pruefenZeigen(); knoepfeSync();
     }
     function typListeZeigen() {
@@ -1970,12 +2234,14 @@
       klappen(kl, !!p.e.offen);
     }
     function detailFelder(e, mitDatum) {
-      return feld("Name", '<input type="text" class="up-topicmodal-name" data-feld="name" maxlength="120" autocomplete="off" spellcheck="false"' +
-          ' placeholder="' + esc(t("e.g. Website relaunch")) + '" value="' + esc(e.name) + '"/>') +
-        (mitDatum ? feld("Date", datumFeld(e)) : "") +
-        feld("Type", typFeld(e)) +
-        feld("Description", '<textarea class="up-topicmodal-name up-modal-text" data-feld="text" rows="3" placeholder="' + esc(t("What changed?")) + '">' + esc(e.text) + '</textarea>', true) +
-        feld("Appearance", '<div class="uev-aussehen">' + aussehen(e) + '</div>');
+      return feld("Name", '<input type="text" class="up-topicmodal-name" data-feld="name" maxlength="' + NAME_MAX + '" autocomplete="off" spellcheck="false"' +
+          ' placeholder="' + esc(t("e.g. Website relaunch")) + '" value="' + esc(e.name) + '"/>', false, "name") +
+        (mitDatum ? feld("Date", datumFeld(e), false, "datum") : "") +
+        feld("Type", typFeld(e), false, "typ") +
+        /* Ohne maxlength: das Feld schnitte einen eingefuegten Text still ab. Ueber 2000 Zeichen
+           sagt es die Fehlerzeile, und der Knopf bleibt gesperrt (schrittOk). */
+        feld("Description", '<textarea class="up-topicmodal-name up-modal-text" data-feld="text" rows="3" placeholder="' + esc(t("What changed?")) + '">' + esc(e.text) + '</textarea>', true, "text") +
+        feld("Appearance", '<div class="uev-aussehen">' + aussehen(e) + '</div>', false, "aussehen");
     }
     /* DER TITELBILD-PICKER: die sechs Motive als Kacheln im Format des Bands, drei je Reihe (immer
        gleich viele je Reihe). Gewaehlt traegt die Kachel den Ring in der Akzent-Tinte und den Haken
@@ -1994,7 +2260,7 @@
     function coverFeld(e) {
       return feld("Cover image",
         '<div class="uev-cover-raster" role="group" aria-label="' + esc(t("Cover image")) + '">' + coverKacheln(e) + '</div>' +
-        klapp(!!e.cover, '<div class="uev-cover-fuss"><button type="button" class="up-quietbtn uev-cover-weg">' + esc(t("Remove cover")) + '</button></div>', "uev-cover-klapp"), true);
+        klapp(!!e.cover, '<div class="uev-cover-fuss"><button type="button" class="up-quietbtn uev-cover-weg">' + esc(t("Remove cover")) + '</button></div>', "uev-cover-klapp"), true, "cover");
     }
     function coverNeu() {
       var p = popup, r = im(".uev-cover-raster");
@@ -2054,6 +2320,7 @@
       id = String(id);
       var i = p.e.topics.indexOf(id);
       if (i >= 0) p.e.topics.splice(i, 1); else p.e.topics.push(id);
+      feldFehler("topics", "");
       topicsZeigen();
       /* Der Fokus bleibt auf der Zeile, die gerade umgeschaltet wurde -- sie ist neu gezeichnet. */
       var z = im('.uev-topicitem[data-topic-id="' + id.replace(/"/g, "") + '"]');
@@ -2076,7 +2343,7 @@
             '<div class="uev-topicfuss"></div>' +
           '</div></div></div>' +
           '<p class="uev-umfang-zahl" aria-live="polite"></p>' +
-        '</div>');
+        '</div>', false, "topics");
     }
     function urlSuche() {
       return '<div class="uev-urlsuche"><span class="uev-urlsuche-ic">' + UC.icon("search", 2) + '</span>' +
@@ -2086,7 +2353,7 @@
     function urlFelder(e) {
       return feld("Affected URLs",
           '<p class="up-modal-hinweis">' + esc(t("Add pages, articles or external sources associated with this event.")) + '</p>' +
-          urlSuche() + '<div class="uev-urlauswahl"></div>', true) +
+          urlSuche() + '<div class="uev-urlauswahl"></div>', true, "urls") +
         coverFeld(e) +
         '<div class="uev-pruef"></div>' +
         gesperrtHinweis("Date and scope can't be changed later");
@@ -2238,8 +2505,8 @@
     function schrittOk(p) {
       var e = p.e;
       if (p.art === "url") return e.urls.length === 1;
-      if (p.art === "bearbeiten") return !!e.name.trim();
-      if (p.schritt === 1) return !!e.name.trim() && !!e.datum && !!e.typ;
+      if (p.art === "bearbeiten") return !!e.name.trim() && laenge(e.text.trim()) <= TEXT_MAX;
+      if (p.schritt === 1) return !!e.name.trim() && !!e.datum && !!e.typ && laenge(e.text.trim()) <= TEXT_MAX;
       if (p.schritt === 2) {
         if (e.modus === "topics" && !e.topics.length) return false;
         var v = dieVorschau(p);
@@ -2306,7 +2573,7 @@
         p.vorschauLaeuft = sig;
         clearTimeout(p.vorschauUhr);
         p.vorschauUhr = setTimeout(function () { if (popup === p && p.vorschauLaeuft === sig) popupVorschauKam(null); }, WARTE_MS);
-        fire("data-preview-fn", "uevScopePreview", body(e.modus === "all" ? { p_scope_mode: "all" } : { p_scope_mode: "topics", p_tag_ids: e.topics.slice() }));
+        rufen("uevScopePreview", e.modus === "all" ? { p_scope_mode: "all" } : { p_scope_mode: "topics", p_tag_ids: e.topics.slice() }, { popup: p });
       }
       zahlZeigen(); pruefenZeigen(); knoepfeSync();
     }
@@ -2369,9 +2636,13 @@
     function urlNehmen(url, neu) {
       var p = popup;
       if (!p || !url || gewaehlt(p, url) || imEvent(p, url)) return;
+      /* Nur http(s), hoechstens 2048 Zeichen (13.10., wie der Server: impact_event_invalid_url) --
+         die Meldung am Feld, statt erst beim Anlegen. */
+      if (!urlOk(url)) { feldFehler("urls", fehlerText("impact_event_invalid_url")); return; }
       if (p.art === "url") p.e.urls = [{ url: url, neu: neu }];
       else if (p.e.urls.length < URL_MAX) p.e.urls.push({ url: url, neu: neu });
-      else return;
+      else { feldFehler("urls", fehlerText("impact_event_too_many_urls")); return; }
+      feldFehler("urls", "");
       var inp = im(".uev-urlein");
       if (inp) inp.value = "";
       p.such.frage = ""; p.such.treffer = null; p.such.laedt = false; p.such.fehler = "";
@@ -2385,6 +2656,7 @@
     function warten(p, art) {
       p.warte = art;
       p.api.fehler("");
+      feldFehlerWeg();
       p.api.busy(p.knopf, true);
       clearTimeout(p.warteUhr);
       /* Antwortet Bubble nie, haengt der Knopf sonst fuer immer -- und ein beschaeftigtes Popup
@@ -2397,47 +2669,73 @@
         knoepfeSync();
       }, WARTE_MS);
     }
+    /* Vor dem Senden (13.10.): dieselben Regeln wie die Datenbank (paramsPruefen). Bricht ein
+       Parameter sie, steht die Meldung am Feld, und nichts geht hinaus. Durch die Bedienung kann
+       das kaum entstehen (Laengen begrenzt, Typ als Schluessel, Zeichen und Farbe aus Listen) --
+       die Probe ist das Netz fuer das, was aus aelteren Daten kommt. */
+    function vorabPruefen(p, b) {
+      var h = paramsPruefen(b);
+      if (!h) return true;
+      feldFehlerZeigen(p, "impact_event_invalid_param", h, fehlerText("impact_event_invalid_param", h));
+      knoepfeSync();
+      return false;
+    }
     function anlegenSenden() {
-      var p = popup, e = p.e;
-      warten(p, "anlegen");
+      var p = popup;
+      /* Doppelklick: der Knopf ist busy, und ohne laufende Antwort geht nichts zweimal hinaus. */
+      if (!p || p.warte) return;
+      var e = p.e;
       var b = {
         p_name: e.name.trim(), p_event_date: e.datum, p_scope_mode: e.modus,
         p_tag_ids: e.modus === "topics" ? e.topics.slice() : null,
         p_urls: e.urls.length ? e.urls.map(function (u) { return u.url; }) : null,
         p_description: e.text.trim() || null, p_event_type: e.typ,
-        p_icon: e.icon || null, p_color: e.farbe || null
+        p_icon: e.icon ? iconFuerDb(e.icon) : null, p_color: e.farbe ? String(e.farbe).toLowerCase() : null
       };
       /* p_cover NUR, wenn ein Titelbild gewaehlt ist (04.10.): PostgREST lehnt einen Aufruf mit
          einem Parameter ab, den die Funktion nicht kennt -- und solange die Datenbank p_cover noch
          nicht fuehrt, haette sonst JEDES Anlegen gescheitert, auch ohne Titelbild. */
       if (e.cover) b.p_cover = e.cover;
-      fire("data-create-fn", "uevCreate", body(b));
+      if (!vorabPruefen(p, b)) return;
+      warten(p, "anlegen");
+      rufen("uevCreate", b, { popup: p });
     }
     /* Vertrag 3.5: null heisst unveraendert, "" leert (Beschreibung, Zeichen, Farbe). Ein leerer
        Name ist nicht erlaubt -- der Knopf ist dann gar nicht erst frei. */
     function speichern() {
-      var p = popup, e = p.e, a = p.alt;
+      var p = popup;
+      if (!p || p.warte) return;
+      var e = p.e, a = p.alt;
       var name = e.name.trim(), text = e.text.trim();
       var b = {
         p_event_id: p.eventId,
         p_name: name !== a.name.trim() ? name : null,
         p_description: text !== a.text.trim() ? text : null,
         p_event_type: e.typ !== a.typ ? e.typ : null,
-        p_icon: e.icon !== a.icon ? (e.icon || "") : null,
-        p_color: e.farbe !== a.farbe ? (e.farbe || "") : null
+        p_icon: e.icon !== a.icon ? (e.icon ? iconFuerDb(e.icon) : "") : null,
+        p_color: e.farbe !== a.farbe ? (e.farbe ? String(e.farbe).toLowerCase() : "") : null
       };
       /* Wie Zeichen und Farbe (Vertrag 3.5): "" nimmt das Titelbild ab. Unveraendert steht p_cover
          gar nicht im Body -- aus demselben Grund wie beim Anlegen (unbekannter Parameter). */
       if (e.cover !== a.cover) b.p_cover = e.cover || "";
       if (b.p_name == null && b.p_description == null && b.p_event_type == null && b.p_icon == null && b.p_color == null && !("p_cover" in b)) { p.api.schliessen(); return; }
+      if (!vorabPruefen(p, b)) return;
       warten(p, "bearbeiten");
-      fire("data-update-fn", "uevUpdate", body(b));
+      rufen("uevUpdate", b, { popup: p });
     }
     function urlSenden() {
       var p = popup;
-      if (!p.e.urls.length) return;
+      if (!p || p.warte || !p.e.urls.length) return;
+      /* 100 URLs je Event (409 impact_event_too_many_urls) -- das Detail kennt die Zahl schon. */
+      var d = state.detail[p.eventId];
+      if (d && isArr(d.urls) && d.urls.length >= URL_MAX) {
+        feldFehlerZeigen(p, "impact_event_too_many_urls", "", fehlerText("impact_event_too_many_urls"));
+        return;
+      }
+      var b = { p_event_id: p.eventId, p_url: p.e.urls[0].url };
+      if (!vorabPruefen(p, b)) return;
       warten(p, "url");
-      fire("data-addurl-fn", "uevAddUrl", body({ p_event_id: p.eventId, p_url: p.e.urls[0].url }));
+      rufen("uevAddUrl", b, { popup: p });
     }
     /* Nach jeder gelungenen Aenderung: Bubble laedt die Liste neu (upEventsChanged, 04.10.) --
        Uebersicht und Pins zeigen sonst Name, Farbe, Titelbild und URL-Zahl von vorher. Im
@@ -2458,10 +2756,18 @@
       if (!listeFrisch) listeNeu();
       if (state.ansicht === "detail" && state.eventId === id) zurUebersicht(true); else renderListe();
     }
-    function loeschFehler() {
+    /* Loeschen oder URL entfernen ist gescheitert (13.10.): die Bestaetigung geht zu, der Grund
+       steht als Toast -- dort hat sie kein Feld, an dem er stehen koennte, und die Frage "wirklich
+       loeschen?" ist beantwortet. Bis 13.10. blieb sie offen mit dem Satz darin. */
+    function loeschFehler(txt) {
       var w = wartend.del;
-      if (!w) return;
-      clearTimeout(w.uhr); w.api.busy("ok", false); w.api.fehler(fehlerText("")); wartend.del = null;
+      if (w) { clearTimeout(w.uhr); wartend.del = null; w.api.busy("ok", false); w.api.schliessen(); }
+      if (UC.toast) UC.toast(txt || fehlerText(""), { kind: "error" });
+    }
+    function urlWegFehler(txt) {
+      var w = wartend.urlWeg;
+      if (w) { clearTimeout(w.uhr); wartend.urlWeg = null; w.api.busy("ok", false); w.api.schliessen(); }
+      if (UC.toast) UC.toast(txt || fehlerText(""), { kind: "error" });
     }
     /* Ist seit dem Klick schon eine neue Liste gekommen, entscheidet sie sofort; sonst wird eine
        angefordert (upEventsChanged), und das Abo unten entscheidet, wenn sie da ist. Kommt keine,
@@ -2501,15 +2807,25 @@
       impact_event_topics_required: 2, impact_event_invalid_topics: 2, impact_event_no_active_prompts: 2,
       impact_event_invalid_url: 3, impact_event_too_many_urls: 3
     };
-    function popupFehlerKam(txt, code) {
+    /* Der Schritt des Anlegen-Popups, in dem ein Feld steht (13.10.: das Feld aus hint). */
+    var FELD_SCHRITT = { name: 1, datum: 1, typ: 1, text: 1, aussehen: 1, topics: 2, urls: 3, cover: 3 };
+    /* Eine Meldung an ihr Feld: im Anlegen-Popup erst in den Schritt, der es zeigt (die Meldung
+       unten bleibt dann leer), sonst direkt. Hat das Popup das Feld nicht (ein Topic-Fehler im
+       Bearbeiten), steht sie in der Fehlerzeile des Popups. */
+    function feldFehlerZeigen(p, code, hint, txt) {
+      var f = feldVonFehler(code, hint);
+      var n = p.art === "anlegen" ? (FELD_SCHRITT[f] || FEHLER_SCHRITT[code] || 0) : 0;
+      if (n && n !== p.schritt) schritt(n, true);
+      if (!feldFehler(f, txt)) p.api.fehler(txt);
+    }
+    function popupFehlerKam(txt, code, hint) {
       var p = popup;
       if (!p) return false;
       if (p.warte) {
         clearTimeout(p.warteUhr);
         p.warte = null;
         p.api.busy(p.knopf, false);
-        if (p.art === "anlegen" && FEHLER_SCHRITT[code]) schritt(FEHLER_SCHRITT[code], true);
-        p.api.fehler(txt);
+        feldFehlerZeigen(p, code, hint, txt);
         knoepfeSync();
         return true;
       }
@@ -2534,8 +2850,16 @@
       el.addEventListener("keydown", popupTaste);
       knoepfeSync();
     }
+    /* Hoechstens 200 Events je Team (409 impact_event_limit_reached, 13.10.): steht die Liste
+       schon bei 200, sagt es der Knopf, bevor jemand drei Schritte ausfuellt. Entscheidend bleibt
+       der Server -- die Liste kann einen Takt alt sein. */
+    var EVENTS_MAX = 200;
     function popupAnlegen() {
       if (popup) return;
+      if (!demo && listeGeladen() && (UC.getEvents ? UC.getEvents() : []).filter(function (x) { return !state.geloescht[x.id]; }).length >= EVENTS_MAX) {
+        if (UC.toast) UC.toast(fehlerText("impact_event_limit_reached"), { kind: "error" });
+        return;
+      }
       var e = { name: "", datum: heuteIso(), monat: null, typ: "", text: "", icon: null, farbe: null, cover: null, offen: null,
                 modus: "topics", topics: [], urls: [] };
       var api = UC.makeModal({
@@ -2572,7 +2896,7 @@
       var ev = state.detail[eid] || listeEvent(eid);
       if (!ev) return;
       var e = { name: String(ev.name || ""), typ: typ(ev).key, text: String(ev.description || ""),
-                icon: ZEICHEN[ev.icon] ? ev.icon : null, farbe: farbe(ev) || null, cover: coverVon(ev) ? ev.cover : null, offen: null, urls: [] };
+                icon: iconAusDb(ev.icon), farbe: farbe(ev) || null, cover: coverVon(ev) ? ev.cover : null, offen: null, urls: [] };
       var alt = { name: e.name, typ: e.typ, text: e.text, icon: e.icon, farbe: e.farbe, cover: e.cover };
       var api = UC.makeModal({
         titel: "Edit event", breit: true, isDark: isDark,
@@ -2592,7 +2916,7 @@
         titel: "Add URL", breit: true, isDark: isDark,
         inhaltHtml: '<div class="uev-schritt">' +
           '<p class="up-modal-hinweis">' + esc(t("Observations are counted from the event date, also for URLs you add now.")) + '</p>' +
-          urlSuche() + '<div class="uev-urlauswahl"></div></div>',
+          urlSuche() + feldFehlerHtml("urls") + '<div class="uev-urlauswahl"></div></div>',
         knoepfe: [{ id: "abbrechen", text: "Cancel", art: "sec" },
                   { id: "hinzu", text: "Add URL", art: "pri", aktion: function () { if (schrittOk(popup)) urlSenden(); return false; } }],
         onClose: popupZu
@@ -2627,7 +2951,7 @@
         return;
       }
       var to = x.closest("[data-typ-wahl]");
-      if (to) { p.e.typ = to.getAttribute("data-typ-wahl"); menueZu("typ"); typNeu(); pruefenZeigen(); knoepfeSync(); return; }
+      if (to) { p.e.typ = to.getAttribute("data-typ-wahl"); feldFehler("typ", ""); menueZu("typ"); typNeu(); pruefenZeigen(); knoepfeSync(); return; }
       if (x.closest(".uev-typsuche-x")) {
         p.typSuche = ""; var ts2 = im(".uev-typsuche"); if (ts2) { ts2.value = ""; try { ts2.focus(); } catch (e) {} }
         typListeZeigen();
@@ -2651,7 +2975,7 @@
       var tg = x.closest(".uev-datumwahl [data-tag]");
       if (tg) { if (tg.disabled) return; p.e.datum = tg.getAttribute("data-tag"); menueZu("datum"); datumNeu(); knoepfeSync(); return; }
       var cvk = x.closest("[data-cover]");
-      if (cvk) { var ck = cvk.getAttribute("data-cover"); p.e.cover = p.e.cover === ck ? null : ck; coverNeu(); pruefenZeigen(); knoepfeSync(); return; }
+      if (cvk) { var ck = cvk.getAttribute("data-cover"); p.e.cover = p.e.cover === ck ? null : ck; feldFehler("cover", ""); coverNeu(); pruefenZeigen(); knoepfeSync(); return; }
       if (x.closest(".uev-cover-weg")) { p.e.cover = null; coverNeu(); pruefenZeigen(); knoepfeSync(); return; }
       var pk = x.closest("[data-pick]");
       if (pk) { var k = pk.getAttribute("data-pick"); p.e.offen = p.e.offen === k ? null : k; aussehenKlappen(); return; }
@@ -2660,16 +2984,18 @@
         var z = ze.getAttribute("data-zeichen");
         /* Das Zeichen des Typs ist keine eigene Wahl: dann folgt es dem Typ weiter. */
         p.e.icon = z === typVon(p.e.typ).icon ? null : z;
+        feldFehler("aussehen", "");
         aussehenNeu(); pruefenZeigen();
         return;
       }
       var fa = x.closest("[data-farbe]");
-      if (fa) { p.e.farbe = fa.getAttribute("data-farbe") || null; aussehenNeu(); pruefenZeigen(); return; }
+      if (fa) { p.e.farbe = fa.getAttribute("data-farbe") || null; feldFehler("aussehen", ""); aussehenNeu(); pruefenZeigen(); return; }
       var ti = x.closest(".uev-topicitem");
       if (ti) { topicUmschalten(ti.getAttribute("data-topic-id")); return; }
       if (x.closest(".uev-topicalle")) {
         var alleIds = topicsAlle().map(function (y) { return String(y.id); });
         p.e.topics = p.e.topics.length === alleIds.length ? [] : alleIds;
+        feldFehler("topics", "");
         topicsZeigen(); vorschauAnfordern();
         return;
       }
@@ -2682,7 +3008,7 @@
       if (mod) {
         var mw = mod.getAttribute("data-modus");
         if (mw === p.e.modus) return;
-        p.e.modus = mw; umfangNeu(); vorschauAnfordern();
+        p.e.modus = mw; feldFehler("topics", ""); umfangNeu(); vorschauAnfordern();
         return;
       }
       var nz = x.closest("[data-neu-url]");
@@ -2692,18 +3018,26 @@
       var weg = x.closest("[data-url-weg]");
       if (weg) {
         p.e.urls.splice(parseInt(weg.getAttribute("data-url-weg"), 10), 1);
+        feldFehler("urls", "");
         auswahlZeigen(); trefferZeigen(); pruefenZeigen(); knoepfeSync();
       }
     }
     function popupEingabe(ev) {
       var p = popup, x = ev.target;
       if (!p || !x || !x.matches) return;
-      if (x.matches('[data-feld="name"]')) { p.e.name = x.value; knoepfeSync(); return; }
-      if (x.matches('[data-feld="text"]')) { p.e.text = x.value; return; }
+      if (x.matches('[data-feld="name"]')) { p.e.name = x.value; feldFehler("name", ""); knoepfeSync(); return; }
+      /* Die Beschreibung sagt die Grenze beim Tippen (2000 Zeichen, v2), nicht erst beim Senden. */
+      if (x.matches('[data-feld="text"]')) {
+        p.e.text = x.value;
+        feldFehler("text", laenge(x.value.trim()) > TEXT_MAX ? fehlerText("impact_event_invalid_param", "p_description") : "");
+        knoepfeSync();
+        return;
+      }
       if (x.matches(".uev-typsuche")) { p.typSuche = x.value; typListeZeigen(); return; }
       if (x.matches(".uev-topicsuche")) { p.topicSuche = x.value; topicsZeigen(); return; }
       if (x.matches(".uev-typeigen")) { var add = im(".uev-typeigen-add"); if (add) add.disabled = !typEigenOk(p); return; }
       if (x.matches(".uev-urlein")) {
+        feldFehler("urls", "");
         p.such.frage = x.value;
         if (p.maschine) p.maschine.tippen(x.value);
         trefferZeigen();
@@ -2765,8 +3099,12 @@
 
     /* ---- Setter --------------------------------------------------------------------------- */
     var ctrl = {
-      setDetail: function (raw) {
-        var d = objekt(raw);
+      /* quelle (13.10.): "lesen" -- die Antwort auf get_impact_event_v2, sie schliesst kein
+         wartendes Popup und keine Bestaetigung; "schreiben" -- die Antwort einer Aenderung. Ohne
+         quelle (die alten Bubble-Setter) wie bisher: jedes Detail darf beides. raw darf Text
+         (Bubble) oder schon ein Objekt (UC.rpc) sein -- objekt() nimmt beides. */
+      setDetail: function (raw, quelle) {
+        var d = objekt(raw), lesen = quelle === "lesen";
         if (!d || d.id == null) {
           state.detailLaden = false;
           if (state.ansicht === "detail" && !dieDetail()) state.detailFehler = true;
@@ -2784,8 +3122,8 @@
         persist();
         /* Ein Detail-Objekt ist auch die Antwort auf Anlegen, Bearbeiten, URL hinzufuegen und
            entfernen -- also schliesst es ein wartendes Popup dieser Art. */
-        if (wartend.urlWeg && wartend.urlWeg.eventId === id) { var api1 = wartend.urlWeg.api; clearTimeout(wartend.urlWeg.uhr); wartend.urlWeg = null; api1.schliessen(); listeNeu(); }
-        popupDetailKam(d, neu);
+        if (!lesen && wartend.urlWeg && wartend.urlWeg.eventId === id) { var api1 = wartend.urlWeg.api; clearTimeout(wartend.urlWeg.uhr); wartend.urlWeg = null; api1.busy("ok", false); api1.schliessen(); listeNeu(); }
+        if (!lesen) popupDetailKam(d, neu);
         if (state.ansicht === "detail" && state.eventId === id) {
           if (urlsNeu) { analyseAnfordern(); responsesAnfordern(false, true); }
           renderDetail();
@@ -2818,7 +3156,7 @@
         popupVorschauKam(v && num(v.affected_prompt_count) != null ? num(v.affected_prompt_count) : null);
         return !!v;
       },
-      setFehler: function (code, wo) {
+      setFehler: function (code, wo, hint) {
         /* Nimmt den Code ODER den ganzen Fehler-Body der RPC (04.10.): Bubble liefert bei "Include
            errors in response" den Body als Text -- {"code":"P0001","message":"impact_event_...",...}.
            Dann steht der Code in message; so muss in Bubble kein Feld einzeln zugeordnet werden. */
@@ -2827,8 +3165,21 @@
           /* objekt() wie setEventDetail -- UC.readBubble allein liest als Liste und gaebe [ {...} ]. */
           var o = objekt(roh);
           if (o && o.message != null) code = String(o.message);
+          if (o && o.hint != null && hint == null) hint = String(o.hint);
         }
-        var txt = fehlerText(code), weg = String(code) === "impact_event_not_found";
+        var txt = fehlerText(code, hint), weg = String(code) === "impact_event_not_found";
+        /* wo "lesen" (13.10.): die RPC get_impact_event_v2 ist gescheitert, und genau sie -- kein
+           Popup wartet darauf. Ein Event, das es nicht mehr gibt, verliert dabei sein gemerktes
+           Detail (sonst stuende es weiter im Kopf), und die Liste laedt neu. */
+        if (wo === "lesen") {
+          state.detailLaden = false;
+          if (weg && state.eventId) { delete state.detail[state.eventId]; persist(); listeNeu(); }
+          if (weg || !dieDetail()) state.detailFehler = true;
+          if (weg) { state.analyseLaden = false; state.analyseFehler = true; }
+          renderDetail();
+          if (txt !== fehlerText("") && UC.toast) UC.toast(txt, { kind: "error" });
+          return true;
+        }
         /* wo: welcher Setter den Fehler mitbrachte (der dritte Wert, 04.10.). Dann ist bekannt, wer
            gewartet hat, und die Meldung landet nur dort -- eine fehlgeschlagene Vorschau-Zahl darf
            nicht das Anlegen abbrechen, das zufaellig zur selben Zeit wartet. Ohne wo
@@ -2841,9 +3192,9 @@
         }
         /* Loeschen antwortet ueber setEventDeleted; URL entfernen und jedes Popup ueber setEventDetail. */
         var ohneWo = wo == null, mitDetail = ohneWo || wo === "detail";
-        if (wartend.del && (ohneWo || wo === "delete")) { clearTimeout(wartend.del.uhr); wartend.del.api.busy("ok", false); wartend.del.api.fehler(txt); wartend.del = null; return true; }
-        if (wartend.urlWeg && mitDetail) { clearTimeout(wartend.urlWeg.uhr); wartend.urlWeg.api.busy("ok", false); wartend.urlWeg.api.fehler(txt); wartend.urlWeg = null; return true; }
-        if (mitDetail && popupFehlerKam(txt, code)) return true;
+        if (wartend.del && (ohneWo || wo === "delete")) { loeschFehler(txt); return true; }
+        if (wartend.urlWeg && mitDetail) { urlWegFehler(txt); return true; }
+        if (mitDetail && popupFehlerKam(txt, code, hint)) return true;
         /* Kein offenes Popup wartet: das Event selbst ist weg oder nicht erreichbar. Kam der Fehler
            auf die Detail-Anfrage und steht noch kein Detail, ersetzt der Fehlerzustand das Skelett
            -- sonst liefe es bis zur Warte-Uhr. Den Toast gibt es dazu nur, wenn er mehr sagt als
@@ -2917,8 +3268,9 @@
        Parameter aus einem anderen Team gar nicht erst geoeffnet wird. */
     if (UC.ansichtsParameter) UC.ansichtsParameter({ ansicht: "events", schluessel: ["event"], owner: root,
       onTeamWechsel: function () { if (state.ansicht === "detail") zurUebersicht(false); } });
-    /* Erster Stand: die Adresse entscheidet. fire.spaet fuer einen Tiefenlink -- beim
-       Seitenaufbau stehen Bubbles Empfaenger oft noch nicht. */
+    /* Erster Stand: die Adresse entscheidet. spaet=true fuer einen Tiefenlink: seit 13.10. wartet
+       der direkte Weg dafuer nur auf das Team (rufen); fire.spaet -- warten, bis Bubbles
+       Empfaenger stehen -- gilt nur noch, wenn ein Kanal auf den Rueckweg an Bubble faellt. */
     if (adresseEvent()) oeffnen(adresseEvent(), false, true); else baueUebersicht();
     krumenNeu();
     if (spaet && spaet.drain) spaet.drain(instanceId, ctrl);

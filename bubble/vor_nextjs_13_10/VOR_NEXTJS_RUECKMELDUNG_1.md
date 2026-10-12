@@ -45,6 +45,13 @@ Bis du das bestätigst, ist das Speichern im Konto in core abgeschaltet (`VORLIE
 
 **4. `list_ads_prompts_v2`: kommen `limit` und `offset` immer mit?** Der Vertrag sagt `{items, …}`, Fall A5 hatte beide.
 
+**5. Shopping: `source_product_id` immer als Text?** In S2 und S3 ist es so. Bitte für alle `_v2`-Antworten bestätigen (selber Grund wie bei 3).
+
+**6. Events:**
+- **a)** Die Komponente schickt Icon-Namen jetzt in deiner Form `[a-z0-9_-]` (`file-text` statt `fileText`) und eigene Typen als Schlüssel (`podcast_launch`). Bitte bestätigen, dass `_v2` beides annimmt. Alte Events mit camelCase-Icon werden nur angefasst, wenn sich das Feld ändert.
+- **b)** Der `hint` bei einer ungültigen URL ist in E1b die URL selbst, in E6 `p_url`. Bitte in beiden Fällen den Feldnamen (der Client kommt mit beidem klar).
+- **c)** Nimmt `p_color` Großbuchstaben? Der Client schickt klein.
+
 ## Aufräumen
 
 Nach Einspielen der SQL und dem Pin werden diese Bubble-Wege nicht mehr ausgelöst:
