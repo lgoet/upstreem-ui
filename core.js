@@ -18652,12 +18652,21 @@
   /* Fuer die Zustaende, die nur Bubble kennt (role, content_hide, app_ready, Loader ausblenden):
      EIN Ereignis am Ende des Starts, Toolbox-Element "JavaScript to Bubble" namens appStart.
      Nutzlast {team_id, role, has_access, access_state} -- fehlt das Element, passiert nichts. */
+  /* Bis zu 10 s warten (alle 100 ms), falls Bubble das Element erst nach dem Start registriert --
+     ohne das blieben content_hide und der Team-State der Bubble-Workflows ungesetzt, und die
+     Ansichten blieben verborgen (gemeldet am 13.10.). */
   function appMelden(r){
-    try {
-      var f = resolveBubbleFn("bubble_fn_appStart");
-      if (typeof f === "function") f(JSON.stringify({ team_id: r ? String(r.team_id || "") : "", role: r ? String(r.role || "") : "",
-        has_access: r && r.access ? r.access.has_access !== false : false, access_state: r && r.access ? String(r.access.access_state || "") : "" }));
-    } catch(e){}
+    var text = JSON.stringify({ team_id: r ? String(r.team_id || "") : "", role: r ? String(r.role || "") : "",
+      has_access: r && r.access ? r.access.has_access !== false : false, access_state: r && r.access ? String(r.access.access_state || "") : "" });
+    var versuche = 0;
+    (function ruf(){
+      var f = null;
+      try { f = resolveBubbleFn("bubble_fn_appStart"); } catch(e){}
+      if (typeof f === "function"){ try { f(text); } catch(e){} return; }
+      if (++versuche < 100) setTimeout(ruf, 100);
+      else if (window.console) console.warn("[app-start] bubble_fn_appStart nicht gefunden -- auf der Seite ein " +
+        "\"JavaScript to Bubble\"-Element namens appStart anlegen (Trigger event, Publish value Text).");
+    })();
   }
   function appFertig(r){
     appMelden(r);
