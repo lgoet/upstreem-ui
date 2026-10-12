@@ -647,8 +647,8 @@
         url: String(state.url || ""),
         domain: String(state.domain || ""),
         prompt_id: String(state.promptId || ""),
-        /* Marken-Drawer (12.10.): Bubble reicht es als p_brand (Responses) bzw. p_mentioned_brands
-           (Domains, URLs) weiter; leer heisst kein Filter. */
+        /* Marken-Drawer (12.10.): Bubble reicht es als p_brand an export_responses_v1,
+           export_citations_domains_v1 und export_citations_urls_v1 weiter; leer heisst null. */
         brand_id: String(state.brandId || "")
       };
       var payloadJson;

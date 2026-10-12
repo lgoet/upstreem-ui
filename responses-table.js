@@ -61,6 +61,11 @@
      Ladevorgang, und der Wert ist vorher schon wieder ueberschrieben.
      Was hier steht, gewinnt gegen das Attribut. Wer es nie ruft, merkt nichts. */
   var BRAND_EXPLICIT = (window.__urtBrandExplicit = window.__urtBrandExplicit || {});
+  /* Die Marke des SCHALTERS im Spotlight, getrennt von der Marke der Spalte "Mentioned?"
+     (12.10., Marken-Drawer): dort zeigt die Tabelle die Antworten, die die Drawer-Marke nennen,
+     der Schalter sagt das ("BMW mentioned?", fest angehakt) -- die Spalte bleibt bei der eigenen
+     Marke (own_mentioned). Ohne Eintrag hier gilt wie bisher die Marke der Spalte. */
+  var SPOT_BRAND = (window.__urtSpotBrand = window.__urtSpotBrand || {});
 
   /* Table mode only — the card grid has no columns/row-height to configure, so the whole
      Table-Settings gear hides itself in Cards mode (see render()). "Prompt" is the firstKey,
@@ -987,6 +992,8 @@
       syncHeadBrand();
       if (!elBrand) return;
       var m = markeJetzt();
+      var sb = SPOT_BRAND[instanceId];
+      if (spotlightAn() && sb && sb.name) m = sb;
       var name = m.name;
       var logo = m.logo;
       var valid = name && name !== "BRAND_NAME";
@@ -1534,6 +1541,9 @@
           var be = BRAND_EXPLICIT[instanceId] = BRAND_EXPLICIT[instanceId] || {};
           if (params.brand_name != null) be.name = String(params.brand_name);
           if (params.brand_logo != null) be.logo = String(params.brand_logo);
+        }
+        if (params.spotlight_name != null || params.spotlight_logo != null) {
+          SPOT_BRAND[instanceId] = { name: String(params.spotlight_name || ""), logo: String(params.spotlight_logo || "") };
         }
         /* Zeilen sind die Antwort, auf die JEDER Ladezustand gewartet hat, auch der
            ausdrueckliche. Blieb state.extLoading stehen, drehte die Tabelle nach einem

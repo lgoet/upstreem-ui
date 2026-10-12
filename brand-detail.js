@@ -110,7 +110,10 @@
   var VARSEC = UC.variationsSection ? UC.variationsSection({ prefix: "ubd", scope: VAR_SCOPE }) : "";
   var VAR_EXPLAIN = UC.variationsExplain ? UC.variationsExplain(VAR_SCOPE) : {};
 
-  function num(v) { var n = Number(v); return isFinite(n) ? n : null; }
+  /* null und leer sind KEIN Wert: Number(null) ist 0, und eine Marke ohne Nennung stand dann mit
+     "0%" statt mit dem Strich da (12.10., gemessen mit der echten Overview von BYD, die fuer
+     visibility_pct null liefert). Kein Wert und null Prozent sind zwei Aussagen. */
+  function num(v) { if (v == null || v === "" || typeof v === "boolean") return null; var n = Number(v); return isFinite(n) ? n : null; }
 
 
   /* Beim Rang ist WENIGER besser -- ein negatives Delta ist also eine Verbesserung. UC.trendChip

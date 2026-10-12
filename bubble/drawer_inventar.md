@@ -167,7 +167,12 @@ beachten. Im DRAWER-CSS des Kopf-Skripts diese Werte ersetzen bzw. ergänzen:
 - Brand Detail (`brand-detail.js`, lokal): Kennzahlen aus `cached_dashboard_overview_v1` mit
   `p_companies`, Kurve und Varianten aus `performance_company_chart_v1` / `performance_brand_variations_v1`
   (`performance-data.js`: `markenKurve`, `markenVarianten`), alle Filter.
-- Top Citations mit `p_mentioned_brands`, Responses mit `p_brand` (neu). Kopf über `brand_detail_v1`
-  (neu). Vorschlag an den DB-Chat: `bubble/brand_drawer_db_auftrag.md`.
-- Export aus dem Drawer gibt `brand_id` in der Nutzlast an Bubble weiter.
+- Top Citations und Responses mit `p_brand`, Kopf über `brand_detail_v1` -- vom DB-Chat gebaut
+  (`bubble/brand_detail_12_10/`), gegen die echten Antworten geprüft (Prüfstand drw07).
+  Rückmeldung: `bubble/brand_drawer_db_rueckmeldung.md`.
+- „Mentioned“ meint in den Citations die Drawer-Marke; der Schalter der Responses steht im
+  Spotlight fest auf „<Drawer-Marke> mentioned?“ (`spotlight_name`/`spotlight_logo` neu in
+  responses-table), die Spalte „Mentioned?“ bleibt die eigene Marke.
+- Inaktive Marke: Hinweis statt Filter und Bausteine.
+- Export aus dem Drawer gibt `brand_id` in der Nutzlast an Bubble weiter (als `p_brand` an alle drei Exporte).
 - Neue Datei im Vorlade-Snippet: `css("brand-drawer.css"); js("brand-drawer.js");`.

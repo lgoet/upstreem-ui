@@ -15,10 +15,11 @@
      - Kennzahlen: cached_dashboard_overview_v1 mit p_companies;
      - Kurve und Varianten: performance_company_chart_v1 und performance_brand_variations_v1
        (performance-data.js, markenKurve/markenVarianten);
-     - Citations: mit p_mentioned_brands;
-     - Responses: mit p_brand.
-   Neu sind nur brand_detail_v1 und p_brand. Das ist der Vorschlag an den DB-Chat
-   (bubble/brand_drawer_db_auftrag.md). Solange die Bubble-Gruppe #drawer-brand steht, laeuft
+     - Citations und Responses: mit p_brand.
+   Neu sind brand_detail_v1 und p_brand, gebaut vom DB-Chat am 12.10. (bubble/brand_detail_12_10/).
+   GRUNDREGEL des Vertrags: alles im Drawer ist aus Sicht der Drawer-Marke. "Erwaehnt" in den
+   Citations meint sie, Rang und Sentiment der Responses auch; nur die Spalte "Mentioned?" der
+   Tabelle bleibt bei der eigenen Marke. Solange die Bubble-Gruppe #drawer-brand steht, laeuft
    hier nichts.
 
    Was die ganze Ansicht betrifft (Oeffnen, Zeitraum, Filter), geht gleichzeitig hinaus. Was nur
@@ -75,7 +76,10 @@
     /* Modus und Stufe der Brand-Detail-Komponente: sie meldet beides, der Drawer laedt danach. */
     ubd: { modus: "visibility", gran: "day" },
     top: { modus: "domain", erwaehnt: "all", citationTypen: null, urlTypen: null },
-    resp: null, eigene: null, kopfSpeicher: {}
+    resp: null, eigene: null, kopfSpeicher: {},
+    /* Wartet auf den Kopf: Top Citations und Responses zeigen den Namen der Drawer-Marke an ihrem
+       Schalter, und der kommt aus brand_detail_v1. */
+    kopfFertig: Promise.resolve()
   };
   function respStart() {
     return { order: "run_at_desc", limit: 15, offset: 0, suche: "", requestId: null, erwaehnt: "all",
@@ -138,10 +142,20 @@
     /* Die Domain oeffnet ihren Drawer, wie die Domain im Kopf des URL-Drawers. */
     elDomain.innerHTML = dom ? '<button type="button" class="ubdr-domlink" data-ubdr-domain="' + esc(dom) + '"' +
       ' data-tip="' + esc(t("Open domain")) + '">' + esc(dom) + '</button>' : "";
-    /* Eine Meta-Zeile nur, wenn es etwas zu sagen gibt: eine Marke, die das Team nicht mehr
-       verfolgt (alter Pin). Die Zahlen darunter sind dann leer, der Satz sagt warum. */
-    elMeta.innerHTML = str(d.status) === "inactive"
-      ? '<span class="ubdr-status">' + esc(t("No longer tracked")) + '</span>' : "";
+    elMeta.innerHTML = "";
+    /* Eine Marke, die das Team nicht mehr verfolgt (nur ueber alte Links): statt leerer Zahlen
+       ein Satz (Vertrag 12.10.: Kurve und Varianten antworten dann mit performance_not_found,
+       der Rest leer). Filter und Bausteine treten ganz zurueck. */
+    var inaktiv = str(d.status) === "inactive";
+    r.classList.toggle("is-inaktiv", inaktiv);
+    var elInaktiv = r.querySelector(".ubdr-inaktiv");
+    elInaktiv.hidden = !inaktiv;
+    if (inaktiv) {
+      var seit = str(d.deactivated_at);
+      elInaktiv.innerHTML = UC.leerHtml({ icon: "info", titel: "No longer tracked",
+        text: seit ? t("Your team stopped tracking this brand on {date}.").replace("{date}", UC.fmtDate(seit))
+                   : t("Your team no longer tracks this brand.") });
+    }
     if (B.kopf) {
       B.kopf.name(str(d.name));
       var html = knopf("edit", "squarePen", "Edit brand");
@@ -171,7 +185,8 @@
   }
   function fehlerText(code) {
     var c = String(code || "").trim();
-    if (c === "brand_not_found" || c === "team_invalid_param") return "This brand isn't tracked by your team.";
+    /* Wortlaut des DB-Chats (12.10.), auch fuer eine fremde Marke. */
+    if (c === "brand_not_found" || c === "team_invalid_param") return "This brand doesn't exist in this team.";
     if (c === "settings_not_authenticated" || c === "not authenticated") return "Your session has expired. Please sign in again.";
     if (c === "team_deleted") return "This team has been deleted.";
     if (/^team_access_/.test(c) || c === "forbidden" || c === "team_forbidden") return "Your team doesn't have access right now.";
@@ -192,7 +207,7 @@
     var ab = typeof AbortController !== "undefined" ? new AbortController() : null;
     B.ab = ab;
     var nr = ++B.nr;
-    teamWarten().then(function (team) {
+    B.kopfFertig = teamWarten().then(function (team) {
       if (nr !== B.nr) return null;
       if (!team) return { ok: false, status: 0, fehler: { message: "not authenticated" } };
       return UC.rpc(FN.kopf, { p_team: team, p_company: id }, { timeoutMs: 60000, signal: ab ? ab.signal : undefined });
@@ -258,31 +273,48 @@
       setter("setBrandDetailLoading")(IDS.ubd, "no");
     });
   }
-  /* Top Citations: dieselben Anfragen wie das Dashboard, dazu p_mentioned_brands = [Marke]. */
+  /* Die Marke des Drawers fuer die Schalter "<Marke> mentioned" -- aus dem Kopf, sonst keine
+     (dann bleibt der Schalter weg, statt die eigene Marke zu behaupten). */
+  function drawerMarke() {
+    var d = B.zeile;
+    if (!d || str(d.company_id).toLowerCase() !== B.id.toLowerCase()) return null;
+    return { id: B.id, name: str(d.name), logo: bild(d.logo_url) || bild(d.favicon_url) };
+  }
+  /* Top Citations: dieselben Anfragen wie das Dashboard, dazu p_brand (Vertrag 12.10.: nur Zitate
+     aus Antworten, die die Marke nennen; p_mentioned meint dann ebenfalls sie). */
   function topLaden(frisch) {
-    var f = filterStand(), m = B.top.modus, tp = B.top, zusatz = { p_mentioned_brands: [B.id] };
+    var f = filterStand(), m = B.top.modus, tp = B.top, zusatz = { p_brand: B.id };
     var typen = mit(D.topTypen(f, m, { erwaehnt: tp.erwaehnt }), zusatz);
     var list = mit(D.topListe(f, m, { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen, urlTypen: m === "url" ? tp.urlTypen : null, limit: 7 }), zusatz);
     setter("setTopCitationsLoading")(IDS.tcd, "yes");
-    return laden([["top_typen", typen], ["top_liste", list]], frisch).then(function (e) {
+    var kf = B.kopfFertig;
+    return Promise.all([laden([["top_typen", typen], ["top_liste", list]], frisch), kf]).then(function (x) {
+      var e = x[0];
       if (e.some(function (x) { return x.ueberholt; })) return;
       var p = e[0].ok && e[1].ok ? D.zuTop(e[0].daten, e[1].daten, m) : null;
       if (!p) setter("renderTopCitations")({ instanceId: IDS.tcd, __parseError: true });
       else {
-        var mk = marke();
+        var mk = drawerMarke();
         p.instanceId = IDS.tcd; p.isDark = dunkel();
-        if (mk) p.brand = { id: str(mk.company_id || mk.id), name: str(mk.name), logo: str(mk.logo_url) };
+        if (mk) p.brand = mk;
         setter("renderTopCitations")(p);
       }
       setter("setTopCitationsLoading")(IDS.tcd, "no");
     });
   }
   /* Responses: p_brand fest (die Marke des Drawers), p_company_ids bleibt dem Markenfilter der
-     Tabelle -- beides zusammen heisst "nennt diese Marke UND eine der gewaehlten". */
+     Tabelle -- beides zusammen heisst "nennt diese Marke UND eine der gewaehlten". p_mentioned
+     geht NICHT mit (Vertrag 12.10.: er meint die eigene Marke); der Schalter der Tabelle steht
+     im Spotlight fest auf "<Drawer-Marke> mentioned". */
   function respLaden(frisch) {
-    var teile = D.responsesTeile(filterStand(), B.resp).map(function (a) { return mit(a, { p_brand: B.id }); }), reqId = B.resp.requestId;
+    var r = {}, k;
+    for (k in B.resp) r[k] = B.resp[k];
+    r.erwaehnt = "all";
+    var teile = D.responsesTeile(filterStand(), r).map(function (a) { return mit(a, { p_brand: B.id }); }), reqId = B.resp.requestId;
     setter("setResponsesTableLoading")(IDS.urt, "yes");
-    return laden(teile.map(function (a, i) { return ["resp_" + i, a]; }), frisch).then(function (e) {
+    var kf = B.kopfFertig;
+    return Promise.all([laden(teile.map(function (a, i) { return ["resp_" + i, a]; }), frisch), kf]).then(function (x) {
+      var e = x[0];
       if (e.some(function (x) { return x.ueberholt; })) return;
       var ok = e.every(function (x) { return x.ok; });
       var p = ok ? D.zuResponses(e.map(function (x) { return x.daten; })) : null;
@@ -293,6 +325,8 @@
         if (reqId != null) p.requestId = reqId;
         p.empty_text = t("This brand wasn't mentioned in the selected period.");
         if (mk) { p.brand_name = str(mk.name); p.brand_logo = str(mk.logo_url); }
+        var dm = drawerMarke();
+        if (dm) { p.spotlight_name = dm.name; p.spotlight_logo = dm.logo; }
         setter("renderResponsesTable")(p);
       }
       setter("setResponsesTableLoading")(IDS.urt, "no");
@@ -401,9 +435,13 @@
           '<div class="ubdr-teil ubdr-top">' + einsetzen(MARKUP.tcd) + '</div>' +
           '<div class="ubdr-teil ubdr-resp">' + einsetzen(MARKUP.urt) + '</div>' +
         '</div>' +
+        '<div class="ubdr-inaktiv" hidden></div>' +
         '<div class="ubdr-fehler" hidden></div>' +
       '</div>';
     B.slot = ctx.slot; B.kopf = ctx; B.root = ctx.slot.querySelector(".ubdr-root");
+    /* Die Tabelle zeigt nur Antworten mit der Drawer-Marke: ihr Schalter steht fest darauf. */
+    var urtRoot = B.root.querySelector(".urt-root");
+    if (urtRoot) urtRoot.setAttribute("data-spotlight-mode", "yes");
     if (UC.makeTooltips) UC.makeTooltips(B.root, dunkel);
     var s = ctx.slot;
     ctx.eigen.addEventListener("click", function (e) {
@@ -490,10 +528,8 @@
       B.resp.offset = 0;
     }));
     an("urt-urtMentioned", respNeu(function (d) { var l = liste(d.brands); B.resp.firmen = l.length ? l : null; B.resp.offset = 0; }));
-    an("urt-urtBrand", respNeu(function (d) {
-      var v = str(d.brand_mentioned);
-      B.resp.erwaehnt = v === "yes" || v === "no" ? v : "all"; B.resp.offset = 0;
-    }));
+    /* urt-urtBrand: im Spotlight bedient niemand den Schalter; kommt doch eins (Alle Filter
+       loeschen), gilt weiter "all" -- siehe respLaden. */
     an("urt-urtRowClick", function (d) { var id = str(d.prompt_run_id).trim(); if (id && UC.drawerOeffnen) UC.drawerOeffnen("response", id, "brand-drawer"); });
 
     /* EXPORT (wie prompt-detail): das Export-Fenster der App vor dem Klick einstellen, mit der
@@ -511,6 +547,7 @@
       }
       teil.setAttribute("data-export-instance", k);
       var typ = teil.classList.contains("urt-root") ? "prompt_runs" : (B.top.modus === "url" ? "urls" : "domains");
+      /* Bubble reicht brand_id an alle drei Exporte als p_brand weiter (Vertrag 12.10.). */
       try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: typ, brand_id: B.id }); } catch (err) {}
     }, true);
   }

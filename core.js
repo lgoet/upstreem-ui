@@ -2200,7 +2200,9 @@
     "Last run on {date}": "Zuletzt gelaufen am {date}",
     /* Marken-Drawer aus core (12.10.) */
     "Brand not available": "Marke nicht verfügbar",
-    "This brand isn't tracked by your team.": "Diese Marke wird von deinem Team nicht verfolgt.",
+    "This brand doesn't exist in this team.": "Diese Marke gibt es in diesem Team nicht.",
+    "Your team stopped tracking this brand on {date}.": "Dein Team verfolgt diese Marke seit dem {date} nicht mehr.",
+    "Your team no longer tracks this brand.": "Dein Team verfolgt diese Marke nicht mehr.",
     "This brand could not be loaded. Please try again.": "Diese Marke konnte nicht geladen werden. Versuch es noch einmal.",
     "No longer tracked": "Wird nicht mehr verfolgt",
     "This brand wasn't mentioned in the selected period.": "Diese Marke wurde im gewählten Zeitraum nicht genannt.",

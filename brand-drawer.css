@@ -29,7 +29,6 @@
   cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ubdr-domlink:hover { color: var(--vc-text); text-decoration: underline; text-underline-offset: 3px; }
 .ubdr-domlink:focus-visible { outline: var(--up-focus-w, 2px) solid var(--vc-text); outline-offset: 2px; border-radius: var(--up-r-xs); }
-.ubdr-status { white-space: nowrap; font-weight: var(--up-fw-m); color: var(--vc-text); }
 
 /* Skelett des Kopfes, in den Massen dessen, was gleich dasteht (wie Prompt und URL). */
 .ubdr-skz { display: inline-block; height: 14px; border-radius: var(--up-r-xs); background: var(--vc-sk);
@@ -40,3 +39,6 @@
 
 /* Ohne Marke (nicht gefunden, kein Zugang) steht nur die Meldung da. */
 .ubdr-root.is-fehler > :not(.ubdr-fehler) { display: none; }
+/* Eine Marke, die das Team nicht mehr verfolgt: Kopf und Hinweis, keine Filter, keine Bausteine --
+   es gaebe nur leere Kurven und Nullen (Vertrag 12.10.). */
+.ubdr-root.is-inaktiv .ubdr-filterzeile, .ubdr-root.is-inaktiv > .ubdr-main { display: none; }
