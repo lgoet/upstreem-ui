@@ -19,8 +19,9 @@
    - Nach einer Aenderung an Name oder Farbe zieht die App nach: der Marken-Speicher (Chips,
      Charts) bekommt die neuen Werte, und das Ereignis upstreemBrandChanged sagt es allen, die
      die Marke zwischengespeichert haben (der Brand-Drawer darunter).
-   Vorschlag an den DB-Chat: bubble/domain_editor_db_auftrag.md, Teil B. Solange die Bubble-Gruppe
-   #drawer-companysettings steht, laeuft hier nichts. */
+   Gebaut vom DB-Chat am 13.10. (bubble/domain_editor_13_10/): brand_edit_v1 und je Aktion eine
+   Funktion; Grenzen in meta.limits. Solange die Bubble-Gruppe #drawer-companysettings steht, laeuft
+   hier nichts. */
 (function () {
   "use strict";
 
@@ -94,7 +95,13 @@
     if (aliasIn && num(g.alias_max)) aliasIn.setAttribute("maxlength", String(num(g.alias_max)));
     var lesend = !darfSchreiben();
     r.classList.toggle("is-lesend", lesend);
-    r.querySelector(".ubed-lesehinweis").hidden = !lesend;
+    var hinweis = r.querySelector(".ubed-lesehinweis");
+    hinweis.hidden = !lesend;
+    /* Zwei Gruende, zwei Saetze (Vertrag 13.10.): keine Rolle owner/admin, oder eine archivierte
+       Marke -- die bleibt fuer alle nur lesbar. */
+    if (lesend) hinweis.textContent = str(E.antwort.row.status) === "inactive"
+      ? t("This brand is no longer tracked. You can view its settings.")
+      : t("Only owners and admins can edit brands. You can view the settings.");
   }
 
   function fehlerText(code) {
@@ -140,9 +147,10 @@
   /* ---- Schreiben ---------------------------------------------------------------------------- */
   /* Der Satz zu einem Fehler der Schreibfunktionen (Vorschlag B4: message = Code, hint = Grund).
      Nur, was der Nutzer tun kann -- ohne Diagnose, ohne interne Namen. */
-  function schreibFehler(code, hint) {
+  function schreibFehler(code, hint, wer) {
     var c = String(code || "").trim(), h = String(hint || "").trim(), g = grenzen();
-    if (c === "brand_edit_forbidden") return t("Only owners and admins can edit brands.");
+    wer = String(wer || "").trim();
+    if (c === "brand_edit_forbidden") return h === "inactive" ? t("This brand is no longer tracked, so it can't be edited.") : t("Only owners and admins can edit brands.");
     if (/_rate_limited$/.test(c)) return t("Too many changes in a short time. Please wait a moment.");
     if (c === "brand_not_found") return t("This brand doesn't exist in this team.");
     if (c === "brand_alias_not_found") return t("This alias no longer exists.");
@@ -151,15 +159,17 @@
     if (c === "brand_name_invalid") {
       if (h === "empty") return t("Please enter a name.");
       if (h === "too_long") return num(g.name_max) ? t("Names can have up to {n} characters.").replace("{n}", num(g.name_max)) : t("This name is too long.");
-      if (h === "taken") return t("Another brand in your team already has this name.");
+      if (h === "taken") return wer ? t("{brand} in your team already has this name.").replace("{brand}", wer) : t("Another brand in your team already has this name.");
       return t("This name contains characters that can't be used.");
     }
     if (c === "brand_alias_invalid") {
       if (h === "too_short") return num(g.alias_min) ? t("Aliases need at least {n} characters.").replace("{n}", num(g.alias_min)) : t("This alias is too short.");
       if (h === "too_long") return num(g.alias_max) ? t("Aliases can have up to {n} characters.").replace("{n}", num(g.alias_max)) : t("This alias is too long.");
       if (h === "generic") return t("This word is too common to identify a brand. Use a more specific name.");
-      if (h === "duplicate") return t("This brand already has this alias.");
-      if (h.indexOf("collides") === 0) return t("Another brand in your team already uses this name or alias.");
+      /* Vertrag 13.10.: duplicate = der Alias ist der Name der Marke selbst (derselbe Alias noch
+         einmal ist kein Fehler); collides traegt in detail die Marke, der er gehoert. */
+      if (h === "duplicate") return t("This is already the brand's name.");
+      if (h.indexOf("collides") === 0) return wer ? t("This name already belongs to {brand}.").replace("{brand}", wer) : t("Another brand in your team already uses this name or alias.");
       return t("This alias contains characters that can't be used.");
     }
     if (/^team_access_/.test(c) || c === "team_forbidden") return t("Your team doesn't have access right now.");
@@ -215,10 +225,11 @@
       }
       var code = erg && !erg.ok ? str(erg.fehler && (erg.fehler.message || erg.fehler.code)) : "";
       var hint = erg && !erg.ok ? str(erg.fehler && erg.fehler.hint) : "";
+      var wer = erg && !erg.ok ? str(erg.fehler && (erg.fehler.details || erg.fehler.detail)) : "";
       if (window.console) console.warn("[brand-editor-drawer] " + fn + ": " + (code || "Antwort nicht lesbar") + (hint ? " (" + hint + ")" : ""));
       zeichnen();
       if (nachFehler) { try { nachFehler(code, hint); } catch (e) {} }
-      if (UC.toast) UC.toast(schreibFehler(code, hint), { kind: "error" });
+      if (UC.toast) UC.toast(schreibFehler(code, hint, wer), { kind: "error" });
     });
   }
 

@@ -11,10 +11,9 @@
      Umschalter    view-switch.js: "Pages / URLs" oder "Responses"
      URLs          urls-table.js im Domain-Modus -- cached_citations_domain_urls_v1
      Responses     responses-table.js -- cached_dashboard_responses_v1 mit p_domain
-   Die Bausteine laufen im lokalen Modus (data-local). Neu und Vorschlag an den DB-Chat
-   (bubble/domain_editor_db_auftrag.md): domain_detail_v1, domain_detail_stats_v1,
-   domain_url_share_v1, domain_classify_v1. Solange die Bubble-Gruppe #drawer-domain steht,
-   laeuft hier nichts.
+   Die Bausteine laufen im lokalen Modus (data-local). Neu, gebaut vom DB-Chat am 13.10.
+   (bubble/domain_editor_13_10/): domain_detail_v1, domain_detail_stats_v1, domain_url_share_v1,
+   domain_classify_v1. Solange die Bubble-Gruppe #drawer-domain steht, laeuft hier nichts.
 
    "COUNT AS" (Bubble: add_/remove_team_domain_override; der Nutzer wollte es nicht "Override"
    nennen): je Team laesst sich eine Domain als eigene Seite (Citation Type "You") oder als Seite
@@ -122,12 +121,13 @@
   }
   /* Der Typ als .up-tag, wie im URL-Drawer (url-detail.js, kpiWert): Farbe aus UC.typeColor, im
      Hellen getoent, im Dunkeln auf dem Chipgrund. Ohne Punkt -- der gehoert dem URL-Typ. */
-  function typChip(typ) {
+  function typChip(typ, dbLabel) {
     typ = str(typ);
     if (!typ) return "";
     var farbe = UC.typeColor ? UC.typeColor(typ, "citation", dunkel()) : "";
     var grund = dunkel() ? (UC.CHIP_BG_DARK || "") : (UC.tint ? UC.tint(farbe, 0.12) : "");
-    var label = UC.typeLabel ? UC.typeLabel(typ, "citation") : typ;
+    /* Die Beschriftung der App (UC.typeLabel, uebersetzt), sonst die der DB (citation_type_label). */
+    var label = (UC.typeLabel ? UC.typeLabel(typ, "citation") : "") || str(dbLabel) || typ;
     return '<span class="up-tag uddr-typ" style="color:' + esc(farbe) + ';background:' + esc(grund) + '">' +
       '<span class="up-tag-lbl">' + esc(label) + '</span></span>';
   }
@@ -157,7 +157,7 @@
     var dom = str(d.domain) || S.domain;
     elLogo.innerHTML = logoHtml(d);
     elName.textContent = dom;
-    elTyp.innerHTML = typChip(d.citation_type);
+    elTyp.innerHTML = typChip(d.citation_type, d.citation_type_label);
     /* Darunter: wem die Domain gehoert (eine verfolgte Marke) und wann sie zuletzt zitiert wurde --
        die leise Zeile des Kopfes, wie die Domain unter dem Markennamen. */
     var teile = [], c = d.company && typeof d.company === "object" ? d.company : null;
@@ -168,7 +168,9 @@
     if (S.kopf) {
       S.kopf.name(dom);
       var html = "";
-      if (d.can_override !== false) html += zaehltKnopf(d);
+      /* Ohne Recht (can_override false, nur owner/admin) steht der Knopf trotzdem da -- er sagt, wie
+         die Domain zaehlt --, oeffnet aber kein Menue (Vertrag 13.10.: "nur lesbar"). */
+      html += zaehltKnopf(d);
       if (UC.anMira && UC.miraBezug) html += knopf("mira", "blend", "Ask Mira about this");
       if (typeof window.upstreemPinToSidebar === "function") html += knopf("pin", "pin", "Pin to sidebar");
       S.kopf.eigen.innerHTML = html;
@@ -193,12 +195,13 @@
   function zaehltKnopf(d) {
     var w = wahlJetzt(d);
     var wort = w === "own" ? t("Your site") : w === "competitor" ? t("Competitor") : typLabel(d.citation_type_auto || d.citation_type);
-    return '<div class="uddr-zaehlt">' +
-      '<button type="button" class="up-filter-btn uddr-zaehlt-btn" aria-haspopup="menu" aria-expanded="false"' +
-        ' data-tip="' + esc(t("How this domain is counted in your citations")) + '">' +
+    var lesend = d.can_override === false;
+    return '<div class="uddr-zaehlt' + (lesend ? " is-lesend" : "") + '">' +
+      '<button type="button" class="up-filter-btn uddr-zaehlt-btn"' + (lesend ? ' aria-disabled="true"' : ' aria-haspopup="menu" aria-expanded="false"') +
+        ' data-tip="' + esc(t(lesend ? "Only owners and admins can change how a domain counts." : "How this domain is counted in your citations")) + '">' +
         '<span class="uddr-zaehlt-lbl">' + esc(t("Counts as")) + '</span>' +
         '<span class="uddr-zaehlt-wert">' + esc(wort) + '</span>' +
-        UC.icon("chevronDown", 2) +
+        (lesend ? "" : UC.icon("chevronDown", 2)) +
       '</button>' +
       '<div class="up-sort-menu uddr-zaehlt-menu" role="menu" aria-hidden="true"></div>' +
     '</div>';
@@ -206,15 +209,25 @@
   var zaehltPop = null;
   function zaehltMenueVerdrahten() {
     var wrap = S.kopf && S.kopf.eigen.querySelector(".uddr-zaehlt");
-    if (!wrap || !UC.makePopover) return;
+    if (!wrap || !UC.makePopover || wrap.classList.contains("is-lesend")) return;
     var menu = wrap.querySelector(".uddr-zaehlt-menu"), btn = wrap.querySelector(".uddr-zaehlt-btn");
     var d = S.zeile || {}, jetzt = wahlJetzt(d);
+    /* Gehoert die Domain einer verfolgten Marke, lehnt die DB den Widerspruch ab (Vertrag 13.10.:
+       eigene Marke nicht als Wettbewerber, Wettbewerber nicht als eigene Seite). Die Wahl steht
+       dann gesperrt da, mit dem Grund im Tooltip -- statt eines Klicks, der nur einen Fehler bringt. */
+    var firma = d.company && typeof d.company === "object" ? d.company : null, rolle = firma ? str(firma.role) : "";
+    function gesperrt(key) {
+      if (rolle === "competitor" && key === "own") return t("This domain belongs to {brand}, a competitor.").replace("{brand}", str(firma.name));
+      if (rolle === "own" && key === "competitor") return t("This is the domain of your brand {brand}.").replace("{brand}", str(firma.name));
+      return "";
+    }
     menu.innerHTML = '<div class="up-pop-head">' + esc(t("Count this domain as")) + '</div>' +
       WAHL.map(function (w) {
-        var label = t(w.label);
-        if (w.key === "auto") label += " (" + typLabel(d.citation_type_auto || d.citation_type) + ")";
-        return '<div class="up-pop-opt' + (w.key === jetzt ? " is-active" : "") + '" role="menuitemradio" aria-checked="' +
-          (w.key === jetzt) + '" tabindex="0" data-uddr-wahl="' + w.key + '"><span>' + esc(label) + '</span>' +
+        var label = t(w.label), grund = gesperrt(w.key);
+        if (w.key === "auto") label += " (" + (str(d.citation_type_auto_label) || typLabel(d.citation_type_auto || d.citation_type)) + ")";
+        return '<div class="up-pop-opt' + (w.key === jetzt ? " is-active" : "") + (grund ? " is-disabled" : "") + '" role="menuitemradio" aria-checked="' +
+          (w.key === jetzt) + '"' + (grund ? ' aria-disabled="true" data-tip="' + esc(grund) + '"' : ' tabindex="0" data-uddr-wahl="' + w.key + '"') +
+          '><span>' + esc(label) + '</span>' +
           '<span class="up-check">' + UC.icon("check", 3) + '</span></div>';
       }).join("");
     zaehltPop = UC.makePopover({ wrap: wrap, menu: menu, opener: btn });
@@ -245,11 +258,15 @@
       if (isArr(roh)) roh = roh.length ? roh[0] : null;
       var neu = roh && roh.row && typeof roh.row === "object" ? roh.row : null;
       if (!erg || !erg.ok) {
-        var code = str(erg && erg.fehler && (erg.fehler.message || erg.fehler.code));
-        if (window.console) console.warn("[domain-drawer] " + FN.zaehlen + ": " + (code || "Antwort nicht lesbar"));
-        if (UC.toast) UC.toast(t(code === "domain_classify_forbidden" ? "Only owners and admins can change how a domain counts."
-          : code === "domain_classify_rate_limited" ? "Too many changes in a short time. Please wait a moment."
-          : "This change could not be saved. Please try again."), { kind: "error" });
+        var fe = (erg && erg.fehler) || {}, code = str(fe.message || fe.code), hint = str(fe.hint), wer = str(fe.details || fe.detail);
+        if (window.console) console.warn("[domain-drawer] " + FN.zaehlen + ": " + (code || "Antwort nicht lesbar") + (hint ? " (" + hint + ")" : ""));
+        var satz = code === "domain_classify_forbidden" ? t("Only owners and admins can change how a domain counts.")
+          : code === "domain_classify_rate_limited" ? t("Too many changes in a short time. Please wait a moment.")
+          : code === "domain_classify_invalid" && hint === "tracked_competitor" ? t("This domain belongs to {brand}, a competitor.").replace("{brand}", wer || "?")
+          : code === "domain_classify_invalid" && hint === "own_brand" ? t("This is the domain of your brand {brand}.").replace("{brand}", wer || "?")
+          : code === "domain_classify_invalid" && hint === "limit" ? t("Your team can assign up to {n} domains.").replace("{n}", wer || "100")
+          : t("This change could not be saved. Please try again.");
+        if (UC.toast) UC.toast(satz, { kind: "error" });
         return;
       }
       if (neu) { S.kopfSpeicher[domain] = neu; S.zeile = neu; }
@@ -356,19 +373,32 @@
     header.domain = S.domain; header.id = S.domain;
     header.favicon = bild(kopfZ.favicon_url);
     header.citation_type = str(kopfZ.citation_type) || header.citation_type;
+    /* Vertrag 13.10.: timeseries ist die Liste der Buckets ({day, share_pct, partial, ...}); die
+       Komponente liest sie als timeseries.citation_share_over_time (Form des alten v14). */
+    var ts = isArr(r.timeseries) ? { citation_share_over_time: r.timeseries }
+      : (r.timeseries && typeof r.timeseries === "object" ? r.timeseries : { citation_share_over_time: [] });
     return { header: header, granularity: str(m.granularity) || S.udd.gran,
-             timeseries: r.timeseries || { citation_share_over_time: [] },
+             timeseries: ts,
              types_breakdown: isArr(r.types_breakdown) ? r.types_breakdown : [],
              model_breakdown: isArr(r.model_breakdown) ? r.model_breakdown : [],
              source_presence_funnel: r.source_presence_funnel || null };
   }
+  /* URL Share zeigt, wie sich die Zitationen DIESER Domain auf ihre URLs verteilen (domain-detail.js,
+     Modus "domain") -- also domain_share_pct und domain_share_total_pct (Vertrag 13.10.), nicht
+     share_pct, das ist der Anteil an allen Antworten. Titel aus urls[], die Zeilen tragen keinen. */
   function zuAnteil(roh) {
     var rows = roh && isArr(roh.rows) ? roh.rows : null;
     if (!rows) return null;
     var m = roh.meta && typeof roh.meta === "object" ? roh.meta : {};
+    var jeUrl = {};
+    (isArr(roh.urls) ? roh.urls : []).forEach(function (u) { if (u && u.url) jeUrl[str(u.url)] = u; });
     return { granularity: str(m.granularity) || S.udd.gran, domain: S.domain,
              points: rows.map(function (p) {
-               return { day: str(p.day), url: str(p.url), title: str(p.title), share_pct: num(p.share_pct), share_total_pct: num(p.share_total_pct) };
+               var u = jeUrl[str(p.url)] || {};
+               var anteil = num(p.domain_share_pct), gesamt = num(u.domain_share_total_pct);
+               return { day: str(p.day), url: str(p.url), title: str(p.title || u.title),
+                        share_pct: anteil != null ? anteil : num(p.share_pct),
+                        share_total_pct: gesamt != null ? gesamt : num(u.share_total_pct) };
              }) };
   }
   function detailAuftrag() {

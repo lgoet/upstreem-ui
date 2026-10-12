@@ -27,6 +27,13 @@
 .uddr-zaehlt-lbl { color: var(--vc-third); }
 .uddr-zaehlt-wert { color: var(--vc-text); }
 .uddr-zaehlt-btn svg { width: 14px; height: 14px; color: var(--vc-third); }
+/* Nur lesbar (kein owner/admin): der Knopf nennt den Stand, reagiert aber nicht -- kein Hover-Grund,
+   kein Zeiger. */
+.uddr-zaehlt.is-lesend .uddr-zaehlt-btn { cursor: default; background: transparent; }
+/* Eine Wahl, die die DB ablehnen wuerde (Domain einer verfolgten Marke): sichtbar, aber gesperrt;
+   der Grund steht im Tooltip. Gedimmt wie gesperrte Bedienelemente der App (.42). */
+.uddr-zaehlt-menu .up-pop-opt.is-disabled { opacity: .42; cursor: default; }
+.uddr-zaehlt-menu .up-pop-opt.is-disabled:hover { background: transparent; }
 
 /* Speichern laeuft: der Inhalt gedimmt wie die Tabellen der App (.42), bis frisch geladen ist --
    Schreibaktionen dimmen, kein Skelett. */
