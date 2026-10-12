@@ -1,0 +1,151 @@
+<!-- Stand 13.10.2026, von Lukas aus Bubble kopiert (HTML-Element des Seiten-Loaders, #page-loader).
+     Unveraendert abgelegt als Referenz fuer den App-Start (bubble/app_start_inventar.md).
+     startLoaderAnimation() wird heute in Schritt 2 des Pageload-Workflows gerufen. -->
+<style>
+/* ===========================================================================
+   LOADER — Logo zuerst, danach der Spinner
+
+   ABLAUF (Zeiten in den Variablen unten)
+     Element wird sichtbar
+     + Startverzoegerung
+     0.0 – 0.4s   Logo faded ein
+     0.4 – 3.4s   Logo steht
+     3.4 – 3.8s   Logo faded aus
+     3.8 – 4.2s   Spinner faded ein und dreht sich
+
+   WARUM DAS LOGO VORHER GEFLACKERT HAT
+   CSS-Animationen starten, sobald das Element ERZEUGT wird — nicht, wenn
+   es sichtbar wird. War das Bubble-Element beim Anlegen versteckt, lief die
+   Animation im Verborgenen durch und war beim Einblenden schon vorbei.
+   Deshalb mal ein kurzes Aufblitzen, mal gar nichts.
+
+   Jetzt passiert nichts, bis die Klasse .udl-go gesetzt wird — und die
+   setzt das Skript unten erst, wenn das Element wirklich sichtbar ist.
+   =========================================================================== */
+
+.udl-root {
+  --udl-fade:  400ms;
+  --udl-hold:  3000ms;
+  --udl-logo-w: 126px;  /* Breite des Logos */
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+}
+
+.udl-logo,
+.udl-spinner-wrap {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;               /* Ausgangszustand: beide unsichtbar, nichts laeuft */
+}
+
+.udl-logo {
+  width: var(--udl-logo-w);
+  height: auto;
+}
+
+/* Erst mit .udl-go geht es los */
+.udl-root.udl-go .udl-logo {
+  animation: udl-logo-phase
+             calc(var(--udl-fade) * 2 + var(--udl-hold))
+             ease both;
+}
+
+@keyframes udl-logo-phase {
+  0%   { opacity: 0; }
+  11%  { opacity: 1; }
+  89%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.udl-root.udl-go .udl-spinner-wrap {
+  animation: udl-fade-in var(--udl-fade) ease forwards;
+  animation-delay: calc(var(--udl-fade) * 2 + var(--udl-hold));
+}
+
+@keyframes udl-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ---- Spinner: exakt deine Originalwerte, nur die Klassennamen angepasst ---- */
+.udl-spinner {
+  --uib-size: 24px;
+  --uib-color: black;
+  --uib-speed: .4s;
+  --uib-bg-opacity: 0.1;
+  height: var(--uib-size);
+  width: var(--uib-size);
+  transform-origin: center;
+  animation: udl-rotate var(--uib-speed) linear infinite;
+  will-change: transform;
+  overflow: visible;
+}
+
+.udl-car {
+  fill: none;
+  stroke: var(--uib-color);
+  stroke-dasharray: 25, 75;
+  stroke-dashoffset: 0;
+  stroke-linecap: round;
+  transition: stroke 0.5s ease;
+}
+
+.udl-track {
+  fill: none;
+  stroke: var(--uib-color);
+  opacity: var(--uib-bg-opacity);
+  transition: stroke 0.5s ease;
+}
+
+@keyframes udl-rotate { 100% { transform: rotate(360deg); } }
+</style>
+
+<div class="udl-root">
+  <img class="udl-logo"
+       src="https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-1f1f1f.svg"
+       alt="upstreem">
+
+  <div class="udl-spinner-wrap">
+    <svg class="udl-spinner" viewBox="0 0 40 40" height="40" width="40">
+      <circle class="udl-track" cx="20" cy="20" r="17.5"
+              pathlength="100" stroke-width="5px" fill="none" />
+      <circle class="udl-car"   cx="20" cy="20" r="17.5"
+              pathlength="100" stroke-width="5px" fill="none" />
+    </svg>
+  </div>
+</div>
+
+<script>
+(function () {
+  /* ---------------------------------------------------------------------
+     EINZIGER AUSLOESER
+
+     Aus Bubble per "Run JavaScript":
+
+         startLoaderAnimation();
+
+     WICHTIG bei zwei Versionen auf einer Seite:
+     Liegen Light- und Dark-Loader beide im DOM, definieren beide diese
+     Funktion — die zuletzt geladene ueberschreibt die andere. Deshalb
+     startet sie ALLE gefundenen Loader, nicht nur den eigenen. Sichtbar
+     ist ohnehin nur einer, also laeuft die Animation genau dort.
+     --------------------------------------------------------------------- */
+  window.startLoaderAnimation = function () {
+    var alle = document.querySelectorAll('.udl-root');
+    for (var i = 0; i < alle.length; i++) {
+      var r = alle[i];
+      r.classList.remove('udl-go');
+      void r.offsetWidth;          // Reflow, damit die Animation wirklich neu beginnt
+      r.classList.add('udl-go');
+    }
+  };
+})();
+</script>

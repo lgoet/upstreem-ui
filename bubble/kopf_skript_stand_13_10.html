@@ -1,0 +1,878 @@
+<!-- Stand 13.10.2026, von Lukas aus Bubble kopiert (Settings -> SEO / metatags -> Script im Kopf).
+     Unveraendert abgelegt als Referenz. Bewertung, was davon bleibt: bubble/app_start_inventar.md.
+     Der Asset-Lader darin entspricht bubble/page_header_preload_ohne_kommentare.html (Pin 56d3434). -->
+<script>
+(function () {
+  if (window.__framePainter) return;
+  var fp = window.__framePainter = { readers: [], writers: [] };
+  var aktiv = false, start = null, intervall = 1000 / 60;
+  function naechster() {
+    if (document.hidden) setTimeout(function () { tick(performance.now()); }, intervall);
+    else window.requestAnimationFrame(tick);
+  }
+  function tick(ts) {
+    if (!aktiv) return;
+    naechster();
+    if (start === null) start = ts;
+    var t = ts - start;
+    if (t <= intervall) return;
+    start = ts - t % intervall;
+    for (var i = 0; i < fp.readers.length; i++) fp.readers[i]();
+    for (var j = 0; j < fp.writers.length; j++) fp.writers[j](ts);
+  }
+  setInterval(function () {
+    var da = !!document.querySelector('.filepond--root');
+    if (da && !aktiv) { aktiv = true; start = null; naechster(); }
+    else if (!da && aktiv) { aktiv = false; }
+  }, 500);
+})();
+</script>
+
+
+<script>
+(function () {
+  var t = "";
+  try { t = String(window.localStorage.getItem("pref_theme") || "").trim().toLowerCase(); } catch (e) {}
+  if (t === "dark" || t === "light") {
+    document.documentElement.setAttribute("data-up-pagetheme", t);
+  }
+  var DASH_VORGABE = "power";
+  var d = "";
+  try { d = String(window.localStorage.getItem("up_dashboard") || "").trim().toLowerCase(); } catch (e) {}
+  if (d !== "power" && d !== "standard") d = DASH_VORGABE;
+  if (d === "power") document.documentElement.setAttribute("data-up-dashboard", "power");
+})();
+</script>
+
+<!-- [Asset-Lader, Pin 56d3434479fd3e6c6f42e904a0424c3da9c74120: wortgleich mit
+     bubble/page_header_preload_ohne_kommentare.html in diesem Stand -- hier nicht doppelt abgelegt] -->
+
+<script>
+(function () {
+  var t = "";
+  try { t = String(window.localStorage.getItem("pref_theme") || "").trim().toLowerCase(); } catch (e) {}
+  if (t === "dark" || t === "light") {
+    document.documentElement.setAttribute("data-up-pagetheme", t);
+  }
+  var DASH_VORGABE = "power";
+  var d = "";
+  try { d = String(window.localStorage.getItem("up_dashboard") || "").trim().toLowerCase(); } catch (e) {}
+  if (d !== "power" && d !== "standard") d = DASH_VORGABE;
+  if (d === "power") document.documentElement.setAttribute("data-up-dashboard", "power");
+})();
+</script>
+<style>
+  html, body { background-color: #ffffff; }
+  html { color-scheme: light; }
+  @media (prefers-color-scheme: dark) {
+    html:not([data-up-pagetheme]), html:not([data-up-pagetheme]) body { background-color: #101114; }
+    html:not([data-up-pagetheme]) { color-scheme: dark; }
+  }
+  html[data-up-pagetheme="dark"], html[data-up-pagetheme="dark"] body { background-color: #101114; }
+  html[data-up-pagetheme="dark"] { color-scheme: dark; }
+  html[data-up-pagetheme="light"], html[data-up-pagetheme="light"] body { background-color: #ffffff; }
+  html[data-up-pagetheme="dark"] .bubble-element.Group.loader,
+  html[data-up-pagetheme="dark"] .page-loader,
+  html[data-up-pagetheme="dark"] #app-loader { background-color: #101114; }
+</style>
+
+<script>
+(function () {
+  const FAV_LIGHT = "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/favicon.png";
+  const FAV_DARK  = "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/favicon.png";
+  function setFavicon(href) {
+    // vorhandene favicons entfernen
+    const links = document.querySelectorAll('link[rel~="icon"]');
+    links.forEach(l => l.parentNode && l.parentNode.removeChild(l));
+    // neues favicon setzen
+    const link = document.createElement("link");
+    link.rel = "icon";
+    link.type = "image/png";
+    link.href = href;
+    document.head.appendChild(link);
+  }
+  function apply() {
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setFavicon(prefersDark ? FAV_DARK : FAV_LIGHT);
+  }
+  // initial
+  apply();
+  // live changes (wenn user im OS umstellt)
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  if (mq && mq.addEventListener) {
+    mq.addEventListener("change", apply);
+  } else if (mq && mq.addListener) {
+    mq.addListener(apply); // Safari alt
+  }
+})();
+</script>
+<script>
+(function () {
+  function removeTrailingEmptyHash() {
+    var href = window.location.href;
+    // Nur exakt leeren Hash entfernen: https://app.upstreem.ai/#
+    // Echte Supabase Tokens wie #access_token=... bleiben unangetastet.
+    if (href.endsWith("#")) {
+      var cleanUrl =
+        window.location.origin +
+        window.location.pathname +
+        window.location.search;
+      window.history.replaceState(window.history.state, document.title, cleanUrl);
+    }
+  }
+  // Sofort
+  removeTrailingEmptyHash();
+  // Wenn Bubble/Supabase den Hash erst nachträglich setzt
+  window.addEventListener("load", removeTrailingEmptyHash);
+  window.addEventListener("hashchange", removeTrailingEmptyHash);
+  window.addEventListener("popstate", removeTrailingEmptyHash);
+  /* v8: das setInterval (100 x 100ms) entfernt — die drei Listener reichen */
+})();
+</script>
+<style>
+/* ---------------------------------------------------------------------------
+   DRAWER — Ebenen, Datenuebergabe, Scroll-Reset, URL-Zustand, Scroll-Lock
+   Zeiten: Slide 220ms, Content 180ms.
+   --------------------------------------------------------------------------- */
+[id^="drawer-"] {
+  transform: translateX(110%) !important;
+  transition: transform 180ms ease-in !important;
+  box-shadow: -12px 0 32px rgba(0,0,0,0.15);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+[id^="drawer-"].open {
+  transform: translateX(0) !important;
+  transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+[id^="backdrop-"] {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 160ms ease !important;
+  will-change: opacity;
+}
+[id^="backdrop-"].open {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transition: opacity 200ms ease !important;
+  -webkit-backdrop-filter: blur(1.5px);
+  backdrop-filter: blur(1.5px);
+}
+[id^="content-"] {
+  opacity: 0 !important;
+  transform: translateY(6px) !important;
+  visibility: hidden;
+  transition: opacity 180ms ease,
+              transform 180ms cubic-bezier(0.32, 0.72, 0, 1),
+              visibility 0s linear 180ms !important;
+}
+[id^="content-"].ready {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  visibility: visible;
+  transition: opacity 180ms ease,
+              transform 180ms cubic-bezier(0.32, 0.72, 0, 1),
+              visibility 0s linear 0s !important;
+}
+/* Scroll-Lock: waehrend ein Drawer offen ist, scrollt der Hintergrund nicht mit */
+#main.drawer-locked {
+  overflow: hidden !important;
+}
+.dz1 { z-index: 9910 !important; }
+.dz2 { z-index: 9920 !important; }
+.dz3 { z-index: 9930 !important; }
+.bz1 { z-index: 9905 !important; }
+.bz2 { z-index: 9915 !important; }
+.bz3 { z-index: 9925 !important; }
+.selectize-dropdown { z-index: 99991 !important; }
+[id^="top-"] { z-index: 99992 !important; }
+.greyout { z-index: 99994 !important; }
+.bubble-element.Popup { z-index: 99995 !important; }
+.bubble-element.GroupFocus { z-index: 99996 !important; }
+</style>
+<script>
+/* ===========================================================================
+   DRAWER-SYSTEM v4
+   NEU gegenueber v3:
+   A) URL-ZUSTAND
+      Offene Drawer stehen jetzt in der URL:
+          ?view=domains&drawer=domain:abc123,url:xyz789
+      Reihenfolge = Ebene. Daraus folgt dreierlei, ohne Zusatzarbeit:
+        - Browser-Zurueck schliesst den obersten Drawer statt die Seite zu
+          verlassen
+        - ein Link auf einen konkreten Drawer-Zustand ist teilbar
+        - ein Reload stellt den Zustand wieder her
+      Dein bestehendes ?view= bleibt unangetastet — es ist ein eigener
+      Parameter, und dein fadeView-Handler prueft nur auf Aenderungen von
+      ?view=, laeuft beim reinen Drawer-Wechsel also nicht mit.
+   B) SCROLL-LOCK
+      Solange ein Drawer offen ist, bekommt #main die Klasse
+      "drawer-locked" (overflow:hidden). Die Scrollposition wird gemerkt
+      und beim Schliessen wiederhergestellt, damit die Seite nicht springt.
+   WICHTIG ZUR WIEDERHERSTELLUNG BEIM RELOAD:
+   Das System oeffnet die Drawer aus der URL und feuert die zugehoerigen
+   bubble_fn_drawer_<name>-Events mit der jeweiligen ID. Wann deine Seite
+   dafuer bereit ist, weiss nur deine App — deshalb wartet die
+   Wiederherstellung auf ein Signal aus Bubble:
+       drawersReady();
+   Diesen Aufruf ans ENDE deines Pageload-Workflows haengen (per "Run
+   JavaScript"), wenn alle RPCs durch sind. Vorher passiert nichts.
+   =========================================================================== */
+var CONTENT_DELAY   = 230;    // Content nach dem Slide (60 = ueberlappend, 0 = zugleich)
+var RESTORE_FALLBACK = 30000; // Notfallnetz. Bewusst hoch: es soll NUR greifen,
+                              // wenn drawersReady() gar nicht kommt (Aufruf
+                              // vergessen, Workflow abgebrochen). Ein langsamer
+                              // Pageload darf nicht ins Notfallnetz laufen —
+                              // sonst oeffnet der Drawer, bevor die Daten da sind.
+var URL_PARAM       = 'detail'; // Name des URL-Parameters. Bewusst inhalts-
+                                // bezogen ("welche Sache schaue ich an") statt
+                                // bauform-bezogen ("drawer"/"panel") — bleibt
+                                // richtig, falls die Darstellung sich mal
+                                // aendert. Nur hier aendern, Workflow-Aufrufe
+                                // bleiben unberuehrt.
+var DRAWER_LEVELS = {
+  brand: 1, prompt: 1, domain: 1,
+  url: 2, response: 2, mention: 2,
+  companysettings: 3
+};
+var _applyingFromUrl = false;   // verhindert Endlosschleife URL -> Drawer -> URL
+var _lastIds = {};              // welche ID steckt aktuell in welchem Drawer
+function _openDrawers() {
+  return Array.prototype.slice.call(document.querySelectorAll('[id^="drawer-"].open'));
+}
+function _name(el) { return el.id.replace('drawer-', ''); }
+function _lvl(el) { return DRAWER_LEVELS[_name(el)] || 1; }
+function _close(el) {
+  var n = _name(el);
+  el.classList.remove('open');
+  delete _lastIds[n];
+  var c = document.getElementById('content-' + n);
+  if (c) c.classList.remove('ready');
+  var b = document.getElementById('backdrop-' + n);
+  if (b) b.classList.remove('open');
+  /* Nach der Schliess-Animation Bescheid geben, damit Bubble erst DANN
+     States zurueckstellt. Ersetzt die manuellen "Pause 300ms"-Schritte.
+     200ms = 180ms Slide-out + kleiner Puffer. */
+  setTimeout(function () { _notifyBubble(n, '', true); }, 200);
+}
+/* ---------- Scroll-Lock ---------- */
+var _mainScrollTop = 0;
+function _syncScrollLock() {
+  var main = document.getElementById('main');
+  if (!main) return;
+  var offen = _openDrawers().length > 0;
+  var gesperrt = main.classList.contains('drawer-locked');
+  if (offen && !gesperrt) {
+    _mainScrollTop = main.scrollTop;
+    main.classList.add('drawer-locked');
+  } else if (!offen && gesperrt) {
+    main.classList.remove('drawer-locked');
+    main.scrollTop = _mainScrollTop;   // Position zurueck, damit nichts springt
+  }
+}
+/* ---------- Scroll-Reset im Drawer ---------- */
+function _resetScroll(name) {
+  var targets = [
+    document.getElementById('drawer-' + name),
+    document.getElementById('content-' + name)
+  ];
+  targets.forEach(function (el) {
+    if (!el) return;
+    if (el.scrollTop) el.scrollTop = 0;
+    var kids = el.querySelectorAll('*');
+    for (var i = 0; i < kids.length; i++) {
+      var k = kids[i];
+      if (k.scrollTop && k.scrollHeight > k.clientHeight) k.scrollTop = 0;
+    }
+  });
+}
+window.resetDrawerScroll = _resetScroll;
+/* ---------- URL lesen / schreiben ----------
+   IDs koennen ganze URLs sein (https://...). Damit die Adresszeile lesbar
+   bleibt, werden nur die beiden Zeichen geschuetzt, die das Format selbst
+   braucht: das Komma (trennt Drawer) und das Prozentzeichen (weil es fuer
+   die Maskierung benutzt wird). Doppelpunkt und Schraegstrich bleiben
+   stehen — der Name wird am ERSTEN Doppelpunkt abgetrennt, spaetere sind
+   also unproblematisch. */
+function _idEnc(s) {
+  return String(s).replace(/%/g, '%25').replace(/,/g, '%2C');
+}
+function _idDec(s) {
+  return String(s).replace(/%2C/gi, ',').replace(/%25/g, '%');
+}
+function _readUrl() {
+  try {
+    var raw = new URL(window.location.href).searchParams.get(URL_PARAM);
+    if (!raw) return [];
+    return raw.split(',').map(function (teil) {
+      var i = teil.indexOf(':');
+      return i === -1
+        ? { name: teil, id: '' }
+        : { name: teil.slice(0, i), id: _idDec(teil.slice(i + 1)) };
+    }).filter(function (x) { return x.name && DRAWER_LEVELS[x.name]; });
+  } catch (e) { return []; }
+}
+function _writeUrl(ersetzen) {
+  if (_applyingFromUrl) return;
+  var offen = _openDrawers()
+    .sort(function (a, b) { return _lvl(a) - _lvl(b); })
+    .map(function (el) {
+      var n = _name(el);
+      var id = _lastIds[n];
+      return id ? (n + ':' + _idEnc(id)) : n;
+    });
+  try {
+    var u = new URL(window.location.href);
+    if (offen.length) u.searchParams.set(URL_PARAM, offen.join(','));
+    else u.searchParams.delete(URL_PARAM);
+    // ":" "/" "," sind in Query-Werten erlaubt — zurueckwandeln, damit der
+    // Link lesbar und teilbar bleibt. %25 bleibt maskiert (siehe _idEnc).
+    var such = u.search.replace(/%3A/gi, ':').replace(/%2F/gi, '/').replace(/%2C/gi, ',');
+    var neu = u.pathname + such + u.hash;
+    var alt = window.location.pathname + window.location.search + window.location.hash;
+    if (neu === alt) return;
+    if (ersetzen) history.replaceState(history.state, document.title, neu);
+    else history.pushState(history.state, document.title, neu);
+  } catch (e) {}
+}
+/* ---------- Bubble benachrichtigen ---------- */
+/* Ruft das passende Bubble-Event auf.
+     istSchliessen = false -> bubble_fn_drawer_<name>(id)
+     istSchliessen = true  -> bubble_fn_drawer_closed_<name>()
+   Das Schliess-Event ist optional: fehlt das Toolbox-Element, passiert
+   einfach nichts (keine Warnung, damit die Konsole ruhig bleibt).
+   v8: Oeffnen-Events warten bis zu 10s (alle 50ms) auf das Toolbox-Element,
+   weil Drawer-Inhalte kuenftig lazy gemountet werden. */
+function _notifyBubble(name, id, istSchliessen) {
+  var fn = istSchliessen ? ('bubble_fn_drawer_closed_' + name)
+                         : ('bubble_fn_drawer_' + name);
+  var arg = String(id == null ? '' : id);
+  function ruf() {
+    var scopes = [window];
+    try { if (window.parent && window.parent !== window) scopes.push(window.parent); } catch (e) {}
+    try { if (window.top && window.top !== window) scopes.push(window.top); } catch (e) {}
+    for (var i = 0; i < scopes.length; i++) {
+      try {
+        if (typeof scopes[i][fn] === 'function') { scopes[i][fn](arg); return true; }
+      } catch (e) {}
+    }
+    return false;
+  }
+  if (ruf()) return true;
+  if (istSchliessen) return false;
+  var versuche = 0;
+  (function erneut() {
+    if (ruf()) return;
+    if (versuche++ < 200) { setTimeout(erneut, 50); return; }
+    if (window.console) {
+      console.warn('[drawer] ' + fn + ' nicht gefunden — im Drawer-Content ein ' +
+                   '"JavaScript to Bubble"-Element mit genau diesem Namen anlegen.');
+    }
+  })();
+  return false;
+}
+/* ---------- Oeffnen ---------- */
+window.openDrawer = function (name, id) {
+  var p = document.getElementById('drawer-' + name);
+  if (!p) return;
+  var L = DRAWER_LEVELS[name] || 1;
+  var c = document.getElementById('content-' + name);
+  var b = document.getElementById('backdrop-' + name);
+  var schonOffen = p.classList.contains('open');
+  _openDrawers().forEach(function (el) {
+    if (el !== p && _lvl(el) >= L) _close(el);
+  });
+  if (id !== undefined && id !== null && id !== '') _lastIds[name] = String(id);
+  _resetScroll(name);
+  if (!schonOffen) {
+    if (c) c.classList.remove('ready');
+    p.classList.remove('dz1', 'dz2', 'dz3');
+    p.classList.add('dz' + L);
+    if (b) {
+      b.classList.remove('bz1', 'bz2', 'bz3');
+      b.classList.add('bz' + L);
+    }
+    void p.offsetWidth;
+    p.classList.add('open');
+    if (b) b.classList.add('open');
+    /* v8: Assets des Drawers nachladen + Komponenten darin mounten (No-op, bis core.js mountIn kennt) */
+    if (window.upstreemLadeAssets) window.upstreemLadeAssets(name);
+    if (window.UpstreemCore && typeof UpstreemCore.mountIn === 'function') { try { UpstreemCore.mountIn(p); } catch (e) {} }
+    if (c) {
+      if (CONTENT_DELAY <= 0) c.classList.add('ready');
+      else setTimeout(function () { c.classList.add('ready'); }, CONTENT_DELAY);
+    }
+  }
+  _syncScrollLock();
+  _writeUrl(false);
+  if (id !== undefined && id !== null && id !== '') {
+    var fire = function () {
+      _notifyBubble(name, id);
+      setTimeout(function () { _resetScroll(name); }, 120);
+    };
+    if (schonOffen) fire();
+    else setTimeout(fire, 240);
+  }
+};
+/* ---------- Schliessen ----------
+   closeDrawer(name) schliesst GENAU diesen Drawer plus alles, was strikt
+   DARUEBER liegt (hoehere Ebene). Geschwister auf derselben Ebene bleiben
+   unangetastet.
+   Frueher wurde "Ebene >= der des genannten" geschlossen. Damit hat
+   closeDrawer('response') auch den url-Drawer mitgeschlossen, weil beide
+   Ebene 2 sind — obwohl der Aufruf mit url gar nichts zu tun hatte.
+   ------------------------------------------------------------------- */
+window.closeDrawer = function (name) {
+  if (name) {
+    var p = document.getElementById('drawer-' + name);
+    if (!p) return;
+    var L = DRAWER_LEVELS[name] || 1;
+    _openDrawers().forEach(function (el) {
+      if (el === p || _lvl(el) > L) _close(el);
+    });
+  } else {
+    var open = _openDrawers();
+    if (open.length === 0) return;
+    var top = open.reduce(function (a, b) { return _lvl(a) >= _lvl(b) ? a : b; });
+    _close(top);
+  }
+  _syncScrollLock();
+  _writeUrl(false);
+};
+window.closeAllDrawers = function () {
+  _openDrawers().forEach(_close);
+  _syncScrollLock();
+  _writeUrl(false);
+};
+/* ---------- URL -> Drawer (Browser-Zurueck, Deep-Link, Reload) ---------- */
+function _applyUrl(istErsteAnwendung) {
+  var soll = _readUrl();
+  var sollNamen = soll.map(function (x) { return x.name; });
+  _applyingFromUrl = true;
+  try {
+    // alles schliessen, was laut URL nicht mehr offen sein soll
+    _openDrawers().forEach(function (el) {
+      if (sollNamen.indexOf(_name(el)) === -1) _close(el);
+    });
+    // oeffnen, was fehlt oder eine andere ID hat
+    soll.forEach(function (x) {
+      var p = document.getElementById('drawer-' + x.name);
+      if (!p) return;
+      var offen = p.classList.contains('open');
+      var gleicheId = _lastIds[x.name] === x.id;
+      if (!offen || !gleicheId) window.openDrawer(x.name, x.id);
+    });
+  } finally {
+    _applyingFromUrl = false;
+  }
+  _syncScrollLock();
+}
+window.addEventListener('popstate', function () { _applyUrl(false); });
+/* ---------- Wiederherstellung beim Laden ----------
+   Statt einer geratenen Wartezeit wartet das System auf ein Signal aus
+   Bubble. Sobald dein Pageload-Workflow fertig ist (alle RPCs geladen,
+   "app ready = yes"), rufst du dort per "Run JavaScript" auf:
+       drawersReady();
+   Erst dann werden die Drawer aus der URL geoeffnet und die
+   bubble_fn_drawer_*-Events gefeuert. Damit ist es egal, wie lange dein
+   Pageload braucht.
+   NOTFALLNETZ: Kommt das Signal nach RESTORE_FALLBACK trotzdem nicht
+   (Aufruf vergessen, Workflow abgebrochen), wird einmal ohne Signal
+   wiederhergestellt — sonst wuerde ein Deep-Link stillschweigend gar
+   nichts tun. In der Konsole steht dann ein Hinweis.
+   ------------------------------------------------------------------- */
+var _restoreErledigt = false;
+function _restoreJetzt(quelle) {
+  if (_restoreErledigt) return;
+  _restoreErledigt = true;
+  if (!_readUrl().length) return;
+  // Im Normalbetrieb still. Nur wenn das Notfallnetz greift, gibt es eine
+  // Warnung — dann stimmt etwas mit dem drawersReady()-Aufruf nicht.
+  if (quelle === 'fallback' && window.console) {
+    console.warn('[drawer] drawersReady() kam nicht innerhalb von ' + RESTORE_FALLBACK +
+                 'ms — Drawer werden jetzt trotzdem geoeffnet. Pruefe, ob der Aufruf ' +
+                 'am Ende deines Pageload-Workflows steht und wirklich erreicht wird.');
+  }
+  _applyUrl(true);
+}
+/* Von Bubble aufzurufen, wenn die Seite wirklich bereit ist.
+   Kommt der Aufruf spaeter als RESTORE_FALLBACK, hat das Notfallnetz schon
+   uebernommen und dieser Aufruf tut nichts mehr. */
+window.drawersReady = function () { _restoreJetzt('signal'); };
+if (_readUrl().length) {
+  setTimeout(function () { _restoreJetzt('fallback'); }, RESTORE_FALLBACK);
+}
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') window.closeDrawer();
+});
+/* v8: GroupFocus-Observer entfernt (keine GroupFocus mehr in der App) */
+</script>
+<style>
+  .bad-revision {
+    all: unset !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 14px !important;
+    padding: 14px 24px !important;
+    background: #000000 !important;
+    color: #ffffff !important;
+    font-family: Inter, system-ui, sans-serif !important;
+    font-size: 0.9rem !important;
+    font-weight: 500 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    z-index: 99999 !important;
+    cursor: pointer !important;
+    border-radius: 0 !important;
+    transform: none !important;
+    box-shadow: none !important;
+    text-align: left !important;
+  }
+  .bad-revision::before {
+    content: '' !important;
+    display: inline-block !important;
+    width: 28px !important;
+    height: 28px !important;
+    background-image: url('https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-mark-square-e0e0e0.svg') !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    flex-shrink: 0 !important;
+  }
+</style>
+<link
+  rel="apple-touch-icon"
+  href="https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/1x1%20logo.png"
+>
+<style>
+/* ===========================================================================
+   VIEW-SYSTEM v7
+   WARUM v6 BEIM WECHSEL SCHEITERTE
+   --------------------------------
+   v6 hat inaktive Views mit "display: none" versteckt. Damit baut Bubble
+   die Elemente darin gar nicht erst auf — das Toolbox-Element
+   bubble_fn_view_first_prompts wurde nie registriert, und es holt das auch
+   nicht nach, wenn display spaeter wieder normal wird.
+   Das erklaert genau deinen Befund:
+     Direkt-Aufruf ?view=prompts  -> nie versteckt -> Funktion da
+     Start auf Dashboard          -> beim Aufbau versteckt -> Funktion fehlt
+   WIE v7 ES MACHT
+   ---------------
+   Inaktive Views bleiben GERENDERT, werden nur aus dem sichtbaren Bereich
+   geschoben und auf nicht-anklickbar gesetzt. Genau das Prinzip, das bei
+   den Drawern funktioniert (transform statt ausblenden).
+   Damit sieht Bubble sie als vorhanden, baut sie normal auf, registriert
+   die Toolbox-Elemente — und das Umschalten bleibt trotzdem sofort, weil
+   nur eine Klasse wechselt.
+   width: 100% ist wichtig: ohne die Angabe waere eine absolut positionierte
+   View nur so breit wie ihr Inhalt, und Komponenten, die ihre Breite messen
+   (Tabellen, Charts), wuerden falsch rechnen.
+   =========================================================================== */
+/* ---------------------------------------------------------------------------
+   Inaktive Views: gerendert, aber komplett aus dem Scrollbereich heraus.
+   position: fixed statt absolute ist hier der entscheidende Punkt.
+   Absolut positionierte Elemente tragen weiterhin zur Scrollhoehe ihres
+   Containers bei, wenn sie darueber hinausragen — bei 7-8 uebereinander
+   liegenden Views wird der scrollbare Bereich dadurch riesig und die
+   Scrollposition springt. Mit fixed sind sie fuer den Scrollbereich gar
+   nicht mehr vorhanden.
+   height/overflow geben den Komponenten darin trotzdem eine realistische
+   Groesse zum Messen (Tabellen, Charts), ohne dass Inhalt ueberlaeuft.
+   --------------------------------------------------------------------------- */
+[id^="view-"]:not(.view-on) {
+
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100vh !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+  /* kein display:none und kein visibility:hidden — sonst baut Bubble die
+     Elemente darin nicht auf */
+}
+/* Der Browser korrigiert die Scrollposition selbsttaetig, wenn sich Inhalt
+   oberhalb des sichtbaren Bereichs in der Hoehe aendert ("Scroll Anchoring").
+   Waehrend die Views ihre Daten laden, passiert das staendig — und fuehrt
+   zu genau dem ruckartigen Springen. Hier abgeschaltet. */
+#main {
+  overflow-anchor: none;
+}
+[id^="view-"].view-on {
+  animation: viewfade-o 200ms ease;
+}
+[id^="view-"].view-on [id^="viewbody-"] {
+  animation: viewfade-t 200ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+@keyframes viewfade-o { from { opacity: 0; } }
+@keyframes viewfade-t { from { transform: translateY(8px); } }
+</style>
+<script>
+/* ===========================================================================
+   VIEW-SYSTEM v7 — JS
+   Unveraendert gegenueber v6. Geaendert hat sich nur, WIE inaktive Views
+   versteckt werden (siehe CSS oben).
+   AUFRUF AUS DER SIDEBAR      showView('prompts');
+   EREIGNISSE AN BUBBLE        bubble_fn_view_first_<name>()   erstes Mal
+                               bubble_fn_view_changed(name)    jeder Wechsel
+   NEULADEN ERZWINGEN          resetView('prompts'); showView('prompts');
+   PRUEFHILFE (Konsole)        viewCheck()
+   =========================================================================== */
+var VIEW_PARAM   = 'view';
+var DEFAULT_VIEW = 'dashboard';   // Name der Startseite (Teil nach "view-")
+var _viewGeladen = {};
+var _viewAnwendend = false;
+function _alleViews() {
+  return Array.prototype.slice.call(document.querySelectorAll('[id^="view-"]'));
+}
+function _viewAusUrl() {
+  try {
+    var v = new URL(window.location.href).searchParams.get(VIEW_PARAM);
+    return v || DEFAULT_VIEW;
+  } catch (e) { return DEFAULT_VIEW; }
+}
+function _viewScopes() {
+  var s = [window];
+  try { if (window.parent && window.parent !== window) s.push(window.parent); } catch (e) {}
+  try { if (window.top && window.top !== window) s.push(window.top); } catch (e) {}
+  return s;
+}
+function _viewFnDa(fn) {
+  var s = _viewScopes();
+  for (var i = 0; i < s.length; i++) {
+    try { if (typeof s[i][fn] === 'function') return s[i]; } catch (e) {}
+  }
+  return null;
+}
+function _viewRuf(fn, arg, pflicht) {
+  var ziel = _viewFnDa(fn);
+  if (ziel) { try { ziel[fn](arg == null ? '' : String(arg)); } catch (e) {} return; }
+  var versuche = 0;
+  (function erneut() {
+    var z = _viewFnDa(fn);
+    if (z) { try { z[fn](arg == null ? '' : String(arg)); } catch (e) {} return; }
+    if (versuche++ < 200) { setTimeout(erneut, 50); return; }
+    if (pflicht && window.console) {
+      console.warn('[view] ' + fn + ' wurde nach 10s nicht gefunden. Pruefe im ' +
+                   'betreffenden Reusable das Toolbox-Element "JavaScript to Bubble": ' +
+                   'Function name muss exakt "' + fn + '" lauten und "Trigger event" ' +
+                   'muss angehakt sein. Tipp: viewCheck() in der Konsole zeigt den Stand.');
+    }
+  })();
+}
+function _scrollMainNachOben() {
+  var main = document.getElementById('main');
+  if (!main) return;
+  main.scrollTop = 0;
+  var kids = main.querySelectorAll('*');
+  for (var i = 0; i < kids.length; i++) {
+    var k = kids[i];
+    if (k.scrollTop && k.scrollHeight > k.clientHeight) k.scrollTop = 0;
+  }
+}
+function _viewUrlSchreiben(name, ersetzen) {
+  if (_viewAnwendend) return;
+  try {
+    var u = new URL(window.location.href);
+    if (name === DEFAULT_VIEW) u.searchParams.delete(VIEW_PARAM);
+    else u.searchParams.set(VIEW_PARAM, name);
+    var such = u.search.replace(/%3A/gi, ':').replace(/%2F/gi, '/').replace(/%2C/gi, ',');
+    var neu = u.pathname + such + u.hash;
+    var alt = window.location.pathname + window.location.search + window.location.hash;
+    if (neu === alt) return;
+    if (ersetzen) history.replaceState(history.state, document.title, neu);
+    else history.pushState(history.state, document.title, neu);
+  } catch (e) {}
+}
+function _viewUmschalten(name) {
+  var ziel = document.getElementById('view-' + name);
+  if (!ziel) return false;
+  _alleViews().forEach(function (el) {
+    if (el !== ziel) el.classList.remove('view-on');
+  });
+  if (ziel.classList.contains('view-on')) {
+    ziel.classList.remove('view-on');
+    void ziel.offsetWidth;
+  }
+  ziel.classList.add('view-on');
+  /* v8: Assets der View nachladen + Komponenten darin mounten (No-op, bis core.js mountIn kennt) */
+  if (window.upstreemLadeAssets) window.upstreemLadeAssets(name);
+  if (window.UpstreemCore && typeof UpstreemCore.mountIn === 'function') { try { UpstreemCore.mountIn(ziel); } catch (e) {} }
+  return true;
+}
+function _viewMelden(name) {
+
+  if (name === 'opportunities') delete _viewGeladen[name];
+  _viewRuf('bubble_fn_view_changed', name, false);
+  if (!_viewGeladen[name]) {
+    _viewGeladen[name] = true;
+    _viewRuf('bubble_fn_view_first_' + name, name, true);
+  }
+}
+window.showView = function (name) {
+  if (!name) return;
+  var ziel = document.getElementById('view-' + name);
+  if (!ziel) return;
+  /* Ist die View schon aktiv, nichts tun. Sonst wuerde ein mehrfach
+     ausgeloester Klick den Scroll jedes Mal nach oben reissen. */
+  if (ziel.classList.contains('view-on')) return;
+  if (!_viewUmschalten(name)) return;
+  _scrollMainNachOben();
+  _viewUrlSchreiben(name, false);
+  _viewMelden(name);
+};
+window.resetView = function (name) {
+  if (name) delete _viewGeladen[name];
+  else _viewGeladen = {};
+};
+window.viewCheck = function () {
+  var views = _alleViews();
+  if (!views.length) { console.log('[view] keine Elemente mit id="view-..." gefunden'); return; }
+  console.log('[view] gefundene Views und ihre Bubble-Funktionen:');
+  views.forEach(function (el) {
+    var n = el.id.replace('view-', '');
+    var f1 = 'bubble_fn_view_first_' + n;
+    console.log('   ' + n +
+      '   ' + f1 + ': ' + (_viewFnDa(f1) ? 'da' : 'FEHLT') +
+      (_viewGeladen[n] ? '   (schon geladen)' : ''));
+  });
+  console.log('   bubble_fn_view_changed: ' + (_viewFnDa('bubble_fn_view_changed') ? 'da' : 'FEHLT'));
+};
+window.addEventListener('popstate', function () {
+  var name = _viewAusUrl();
+  _viewAnwendend = true;
+  try {
+    if (_viewUmschalten(name)) { _scrollMainNachOben(); _viewMelden(name); }
+  } finally { _viewAnwendend = false; }
+});
+(function () {
+  var versuche = 0;
+  function start() {
+    var name = _viewAusUrl();
+    if (document.getElementById('view-' + name)) {
+      _viewAnwendend = true;
+      try { if (_viewUmschalten(name)) _viewMelden(name); }
+      finally { _viewAnwendend = false; }
+      return;
+    }
+    if (versuche++ < 100) setTimeout(start, 50);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+})();
+window.fadeView = function (name) { _viewUmschalten(name); };
+</script>
+<style>
+  #up-glass-group {
+    position: fixed !important;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+</style>
+<style>
+#page-loader {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  /* Bubble setzt Breite/Hoehe/Rand als Inline-Style direkt am Element.
+     Inline schlaegt normale Regeln, deshalb hier erzwingen — sonst bleibt
+     der Loader in Bubbles Originalbreite am linken Rand kleben. */
+  width: 100vw !important;
+  height: 100vh !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  z-index: 2147483000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: opacity 260ms ease;
+}
+#page-loader.loader-done {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+#page-loader.loader-weg {
+  display: none !important;
+}
+</style>
+<script>
+var LOADER_ID  = 'page-loader';
+var MIN_HOEHE  = 80;
+var NOTAUS_MS  = 20000;
+(function () {
+  var erledigt = false;
+  function loader() { return document.getElementById(LOADER_ID); }
+  function ausblenden(grund) {
+    if (erledigt) return;
+    erledigt = true;
+    var el = loader();
+    if (!el) return;
+    el.classList.add('loader-done');
+    setTimeout(function () { el.classList.add('loader-weg'); }, 300);
+    if (grund === 'notaus' && window.console) {
+      console.warn('[loader] Nach ' + (NOTAUS_MS / 1000) + 's war keine View aufgebaut — ' +
+                   'Spinner wurde vorsorglich ausgeblendet.');
+    }
+  }
+  function aktiveView() {
+    return document.querySelector('[id^="view-"].view-on');
+  }
+  /* v8: Statt requestAnimationFrame + offsetHeight in JEDEM Frame (erzwungenes Layout
+     des ganzen Dokuments pro Frame, waehrend Bubble es aufbaut) jetzt ein
+     ResizeObserver auf der aktiven View; Fallback alle 200ms. */
+  var _ro = null;
+  function beobachten() {
+    if (erledigt) return;
+    var v = aktiveView();
+    if (!v) { setTimeout(beobachten, 100); return; }
+    var letzteHoehe = -1, stabil = 0;
+    if (window.ResizeObserver) {
+      if (_ro) { try { _ro.disconnect(); } catch (e) {} }
+      _ro = new ResizeObserver(function () {
+        if (erledigt) { _ro.disconnect(); return; }
+        var h = v.offsetHeight;
+        if (h >= MIN_HOEHE && h === letzteHoehe) { if (++stabil >= 2) { ausblenden('bereit'); _ro.disconnect(); } }
+        else stabil = 0;
+        letzteHoehe = h;
+      });
+      _ro.observe(v);
+    } else {
+      var iv = setInterval(function () {
+        if (erledigt) { clearInterval(iv); return; }
+        var h = v.offsetHeight;
+        if (h >= MIN_HOEHE && h === letzteHoehe) { ausblenden('bereit'); clearInterval(iv); }
+        letzteHoehe = h;
+      }, 200);
+    }
+  }
+  function start() {
+    if (!loader()) return;
+    beobachten();
+    setTimeout(function () { ausblenden('notaus'); }, NOTAUS_MS);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
+  window.hideLoader = function () { ausblenden('manuell'); };
+  window.showLoader = function () {
+    var el = loader();
+    if (!el) return;
+    erledigt = false;
+    el.classList.remove('loader-weg');
+    void el.offsetWidth;
+    el.classList.remove('loader-done');
+    beobachten();
+    setTimeout(function () { ausblenden('notaus'); }, NOTAUS_MS);
+  };
+})();
+</script>

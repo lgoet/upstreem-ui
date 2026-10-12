@@ -121,7 +121,12 @@ Core hat für jeden Teil einen Speicher. Die Komponenten lesen diese Felder:
    - Was verrät eine fremde Id (Fehlertext, Zeitverhalten)?
 2. **Lesen schreibt:** `get_team_brand_header_v9` schreibt `last_team_id` beim Lesen. Bitte bewerten (Rennen zwischen zwei Tabs, Aufrufe ohne Nutzertoken). Vorschlag: Nur ein ausdrücklicher Teamwechsel schreibt.
 3. **Ohne Nutzertoken:** Welche dieser Funktionen sind für anon ausführbar, und welche ruft Bubble heute ohne Token (laut Brands-Runde `get_team_companies_v1`, `get_team_brand_header_v9`)? Was liefern sie anon?
-4. **Das Token im Browser:** Schritt 24 schreibt das Nutzer-JWT als Text in einen Run-JS-Schritt (`setUpstreemAuth`). Core braucht es für RPCs nicht mehr (es liest die Sitzung des Plugins), nur noch für Profilbild und Namen (GoTrue, Storage). Bitte bewerten, ob das so bleiben darf oder wie es ohne geht. Die Einstellungen-Runde baut darauf auf.
+4. **Das Token im Browser:**
+   - Schritt 24 schreibt das Nutzer-JWT als Text in einen Run-JS-Schritt (`setUpstreemAuth`).
+   - Gebraucht wird es heute von den Export-Workflows in Bubble und in core für Profilbild und Namen (GoTrue, Storage).
+   - Die RPCs der Komponenten brauchen es nicht: core liest die Sitzung des Plugins.
+   - Plan der Oberfläche: core nimmt das Token künftig selbst aus dieser Sitzung (`app_start_inventar.md`, Abschnitt 2).
+   - Bitte bewerten: Welche Exporte und Edge Functions bekommen heute das Token von Bubble? Prüfen sie es (Ablauf, Team-Zugang)?
 5. **Das Gate ist nur Anzeige:**
    - Das Zugangs-Gate sperrt die Oberfläche, die Sicherheit liegt in den Funktionen.
    - Prüfst du, dass **jede** Lese- und Schreibfunktion mit `p_team` den Zugang prüft (`require_team_access` samt Abo-Zustand), nicht nur die Mitgliedschaft?
