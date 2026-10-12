@@ -773,26 +773,6 @@
     function shell() {
       var logo = (istDunkelRoh() && attr("data-logo-dark")) || attr("data-logo");
       return '' +
-      /* Die Weltkarte. EIN Element -- der Blur ist wieder raus, und damit auch die zweite Ebene,
-         die es nur gab, weil filter vor der Maske wirkt und deshalb eine eigene Huelle brauchte.
-         Es bleibt ein Element und keine Pseudoelemente, weil das Ausblenden beim Schrittwechsel
-         etwas braucht, das im Dokument BLEIBT.
-         aria-hidden, weil hier nichts steht, was jemand vorgelesen bekommen muesste. */
-      /* NUR NOCH DAS FLIMMERRASTER. Hier lagen vier Ebenen aus onboarding-bg.svg -- vier
-         Lichter, ein Bogen, ein 80px-Raster und vier Sternmarken. Alle vier sind raus
-         (07.09. angefordert: "das svg dahinter mit den grids und sternen soll weg"). Das
-         Flimmerraster ist der Hintergrund, nicht eine fuenfte Ebene darauf: ein feines Raster
-         UNTER einem groben Raster liest sich als zwei Raster, und die Sterne waren genau das,
-         was ersetzt werden sollte.
-         Die Klassen .up-bgart-licht/-bogen/-raster/-marken bleiben in core.css stehen -- sie
-         gehoeren zum Vertrag nach aussen, und wer eine davon zurueckwill, haengt hier eine
-         Zeile ein.
-         Das Canvas malt UC.makeFlickerGrid unten in diese Huelle. Die Huelle steht hier im
-         Markup und nicht im Kit, damit sie die Blende der Komponente mitbekommt
-         (.uob-root.is-bg). */
-      '<div class="uob-bg" data-bg aria-hidden="true">' +
-        '<span class="up-bgart-flimmer" data-flimmer></span>' +
-      '</div>' +
 
       /* Die Uhr am unteren Rand. Sie steht IM Rahmen und nicht im Ladebild: das Ladebild sitzt
          mittig und waechst mit seinem Inhalt, der Rand bleibt der Rand. Sie liegt immer im
@@ -886,52 +866,6 @@
 
     root.innerHTML = shell();
 
-    /* ---- Das Flimmerraster starten ----
-       Nach dem Einhaengen, weil das Kit die Groesse seiner Huelle messen muss. Es bringt seinen
-       eigenen Ausschalter mit: es haelt an, wenn der Tab verdeckt ist, wenn die Huelle nicht im
-       Bild steht und wenn sie aus dem Dokument fliegt (Bubble baut Elemente neu) -- das Zeichnen
-       raeumt sich also selbst ab. Was bleibt, sind seine Anmeldung beim Thema und seine
-       Beobachter, und die halten die alte Leinwand fest. Die gibt abbauen() frei, sobald eine neu
-       gebaute Wurzel diese abloest (siehe STORE) -- dafuer wird der Griff hier gemerkt.
-       Die drei Zahlen sind die angeforderten Unterschiede zur Vorlage von magicui und stehen mit
-       ihrer Begruendung bei UC.makeFlickerGrid. Sie stehen HIER und nicht dort als Vorgabe, weil
-       eine zweite Seite mit demselben Grund sie anders wollen darf. */
-    var flimmer = null;
-    if (UC.makeFlickerGrid){
-      var elFlimmer = root.querySelector("[data-flimmer]");
-      /* DIE VIER ZAHLEN SIND DIE ANGEFORDERTEN (07.09., woertlich aus dem Aufruf, den der
-         Nutzer geschickt hat):
-             squareSize 3, gridGap 20, flickerChance 0.05, maxOpacity 0.4
-         flickerChance heisst bei magicui "je Sekunde und Zelle" (dort mit deltaTime
-         multipliziert), also genau unser changesPerSecond -- eine Zelle wechselt im Mittel
-         alle 20 Sekunden ihr Ziel.
-         DAZU KOMMT NUR fadeMs: das ist das "smoother". magicui setzt den neuen Wert sofort,
-         hier faehrt die Zelle 2.2 Sekunden lang dorthin.
-         Die FARBE steht nicht hier: rgb(0,0,0) waere im Dunkeln unsichtbar. Sie kommt aus der
-         Kaskade (color an .up-bgart-flimmer, dort --vc-text) und dreht sich mit dem Thema --
-         im Hellen also genau das angeforderte Schwarz. */
-      /* BLINKENDE QUADRATE (08.09. angefordert, nach dem Vorbild "Blinking Squares" von React
-         Bits Pro: ein Raster kleiner Quadrate, die leise funkeln). Installiert werden kann das
-         Original hier nicht -- es ist React plus Tailwind aus einer bezahlten Registry, und
-         diese Bibliothek ist Vanilla-JS/CSS fuer Bubble. Nachgebaut ist das VERHALTEN: ein
-         Ruhewert, auf dem das Raster steht, und einzelne Quadrate, die auf einen Gipfel fahren
-         und zurueck. Die Kurve steht im Kit.
-         OHNE FARBE, wie bestellt: die Farbe ist --vc-text, also im Hellen Schwarz und im
-         Dunkeln die dunkle Textfarbe -- kein Farbton, nur Helligkeit. */
-      if (elFlimmer) flimmer = UC.makeFlickerGrid(elFlimmer, {
-        squareSize: 3, gap: 20,       /* 23px Abstand -- wie angefordert */
-        /* Der Ruhewert traegt das Raster, der Gipfel ist das Funkeln. 0.4 ist die
-           angeforderte Deckkraft und hier der GIPFEL eines Blinkens; 0.10 ist der Ton, auf dem
-           eine Zelle wartet -- ohne ihn saehe man einzelne Lichter statt eines Rasters.
-           Ein Blinken alle 5 Sekunden je Zelle, 1.1s hoch und zurueck: auf 1440x890 sind das
-           rund 470 Blinken je Sekunde im Feld und 22 Prozent der Zellen gleichzeitig in
-           Bewegung. "Leise funkeln", nicht blinken wie eine Ampel. */
-        blinksPerSecond: 0.2,
-        blinkMs: 1100,
-        baseOpacity: 0.10,
-        maxOpacity: 0.4, fps: 30
-      });
-    }
 
     var elStack   = root.querySelector("[data-stack]");
     var elNav     = root.querySelector("[data-nav]");
@@ -1234,8 +1168,11 @@
       var geaendert = zeitFeld(p, ["updated_at", "updatedAt", "updated", "last_updated",
                                    "modified_at", "changed_at"],
                                /updat|modif|chang|edit|touch|geaender/i);
-      var laeuft = istJa(rs.run_in_progress);
-      var darf = istJa(rs.allowed);
+      /* Laeuft gerade ein Lauf, sagt das die DB (run_in_progress) -- oder die Seite selbst, wenn
+         sie im Ladebild steht. Seit das Tor auch mitten im Lauf kommt (13.10.), darf "Start over"
+         dann nicht scharf sein: onboarding-start gaebe nur den laufenden Lauf zurueck. */
+      var laeuft = istJa(rs.run_in_progress) || !!state.warten;
+      var darf = istJa(rs.allowed) && !laeuft;
 
       /* Eine Zeile unter den Knoepfen, und sie sagt IMMER etwas. Darf der Nutzer neu starten, sagt
          sie, was er dabei verliert; darf er nicht, sagt sie warum und wann wieder. Kein interner
@@ -1919,9 +1856,6 @@
       root.style.setProperty("--uob-w", spalte);
       /* Im Tor bleiben Schiene und Knopfzeile weg -- die Begruendung steht an viewResume. */
       root.classList.toggle("is-gate", k === "resume");
-      /* Die Weltkarte steht dort, wo der Bildschirm fast leer ist: Formular, Tor und das ERSTE
-         Ladebild. Ab Competitors blendet sie aus -- ab da braucht die Liste die Ruhe. */
-      root.classList.toggle("is-bg", k === "brand" || k === "resume" || k === "load1");
       /* Solange nicht feststeht, was hier ueberhaupt hingehoert, ist ausser dem Kreisel nichts zu
          sehen -- auch nicht die Kopfzeile und nicht die Schiene. */
       root.classList.toggle("is-boot", k === "boot");
@@ -3259,7 +3193,7 @@
        zeichnen: ein Neuaufbau setzte die Warnung in ihren Endzustand und der Uebergang liefe nie.
        Deshalb wird hier von Hand am Element gearbeitet, wie beim Haken in einer Liste. */
     function neustartKlick() {
-      if (!(state.restart && istJa(state.restart.allowed))) return;
+      if (!(state.restart && istJa(state.restart.allowed)) || state.warten) return;
       if (overScharf) { neuAnfangen(); return; }
       overScharf = true;
       var w = root.querySelector("[data-overwarn]");
@@ -3273,7 +3207,7 @@
       /* Die Regel wird hier ein zweites Mal gefragt. Ein gesperrter Knopf ist eine Anzeige und
          kein Riegel: disabled im Markup haelt einen Klick aus dem Code nicht auf, und die Antwort
          der RPC waere dann ein Fehler statt einer Verweigerung. */
-      if (!(state.restart && istJa(state.restart.allowed))) return;
+      if (!(state.restart && istJa(state.restart.allowed)) || state.warten) return;
       state.brands = []; state.topics = []; state.prompts = []; state.eigene = [];
       state.selBrands = {}; state.selTopics = {}; state.selPrompts = {};
       state.promptsFuer = null; state.maxErreicht = 0; state.planGesehen = false;
@@ -3993,15 +3927,13 @@
            am schwersten zu finden ist. */
         if (state.restart && !torGeprueft) {
           torGeprueft = true;
-          /* Laeuft gerade ein Lauf, gibt es nichts zu entscheiden: der Nutzer gehoert ins
-             Ladebild und nicht vor eine Frage, deren eine Antwort ohnehin gesperrt waere.
-             So angesagt am 26.08.: Neuladen im Ladebild fuehrt zurueck ins Ladebild. */
-          if (istJa(state.restart.run_in_progress)) state.restart.__keinTor = true;
+          /* Das Tor kommt bei JEDEM Neuladen eines laufenden Onboardings, auch mitten in einem
+             Lauf (13.10. so angesagt, ersetzt die Regel vom 26.08.). Laeuft einer, ist "Start
+             over" gesperrt und sagt warum; Continue fuehrt zurueck ins Ladebild. */
           /* Nicht, wenn der Nutzer schon handelt: auf der echten Seite vergehen bis zur Antwort
              der RPC gut und gerne neun Sekunden, und wer in der Zeit angefangen hat, darf nicht
              vor eine Frage gestellt werden, die er langst beantwortet hat. */
-          if (istJa(state.restart.has_onboarding) && !angefasst &&
-              !state.restart.__keinTor) state.torAuf = true;
+          if (istJa(state.restart.has_onboarding) && !angefasst) state.torAuf = true;
         }
         /* Das PROJEKT zuerst, und das ist keine Kosmetik: listeSetzen zeichnet, wenn keine Uhr
            laeuft -- dreimal, einmal je Liste. Stand das Projekt danach, zeichneten diese drei
@@ -4798,7 +4730,6 @@
       if (knopfUhr) { window.clearTimeout(knopfUhr); knopfUhr = null; }
       if (themaAb) { try { themaAb(); } catch (e) {} themaAb = null; }
       window.removeEventListener("popstate", aufZurueck);
-      if (flimmer && flimmer.stop) { try { flimmer.stop(); } catch (e) {} flimmer = null; }
     }
 
     /* Nach JEDEM Aufruf von aussen den Stand merken -- hier einmal fuer alle Setter statt in

@@ -80,43 +80,11 @@
    eigens. Der Teil fuer die Elemente selbst kam doppelt zu .up-root * aus core (s. dort). */
 .uob-root *::before, .uob-root *::after { box-sizing: border-box; }
 
-/* ---------- Weltkarte im Hintergrund ----------
-   Sie steht auf dem Formular, im Tor und im ERSTEN Ladebild -- ueberall dort, wo der Bildschirm
-   fast leer ist. Ab Competitors blendet sie aus, und zwar weich: deshalb liegt sie IMMER im
-   Dokument und traegt nur ihre Deckkraft. Ein Element, das mit seiner Klasse verschwindet,
-   verschwindet sofort; ein Uebergang braucht etwas, das bleibt.
-
-   Sie kommt als MASKE und nicht als Bild. Damit steht die Farbe hier und nicht in der Datei: eine
-   Punktwolke in #F5F5F5 waere auf weissem Grund unsichtbar und auf dunklem zu hell, es braeuchte
-   also zwei Dateien, die auseinanderlaufen.
-
-   Der Pfad ist RELATIV. Das Stylesheet kommt selbst vom CDN unter seinem Pin, also loest der
-   Browser die Datei aus demselben Pin auf -- ohne dass irgendwo eine Adresse mit Versionsnummer
-   steht, die man beim naechsten Mal vergisst.
-
-   Sie laeuft NICHT geometrisch aus dem Kasten heraus: der Kasten deckt die Wurzel genau ab, und
-   die Maske ist auf cover skaliert. Was darueber hinausgeht, wird nicht gezeichnet, statt eine
-   Bildlaufleiste zu erzeugen. Ein overflow: hidden an der Wurzel waere der naheliegende Weg und
-   der falsche: es schneidet auch die Auswahlfelder des Formulars ab, sobald eines aufklappt.
-
-   isolation: isolate an der Wurzel ist die Bedingung dafuer, dass z-index: -1 hier bleibt. Ohne
-   einen eigenen Stapelkontext faellt eine negative Ebene hinter den Hintergrund der FREMDEN Seite
-   und ist weg -- und an fremder Stapelung wird nichts angefasst (11.08.). */
+/* ---------- Grund ----------
+   Seit 13.10. ohne Hintergrundbild und ohne Flimmerraster: nur der Seitengrund, weiss bzw.
+   dunkel (so angesagt). isolation bleibt -- die Wurzel ist ihr eigener Stapelkontext, und an
+   fremder Stapelung wird nichts angefasst (11.08.). */
 .uob-root { isolation: isolate; }
-.uob-bg {
-  position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  opacity: 0; transition: opacity var(--uob-in) var(--uob-ease);
-  /* Bild und Gewicht stehen in core.css (.up-bgart-licht/-bogen/-raster/-marken). Dieselbe
-     Grafik liegt auch hinter dem Startschirm von Mira, und geteilt wird sie dort, wo beide sie
-     finden. Hier bleibt nur, was DIESER Seite gehoert: die Lage im Stapel, das Einblenden und die
-     Frage, ob das Bild auf dem Telefon ueberhaupt erscheint. */
-}
-/* Das Tor. Erst wenn die Komponente weiss, was sie zeigt, kommt das Bild -- sonst blitzt es beim
-   Laden auf und wieder weg. is-bg setzt onboarding-page.js nach dem ersten Rendern. */
-.uob-root.is-bg .uob-bg { opacity: 1; }
-/* Auf dem Telefon nicht: dort fuellt der Inhalt den Schirm, und ein Hintergrundbild dahinter macht
-   die Beschriftungen schlechter lesbar, ohne etwas zu zeigen. */
-.uob-root.is-narrow .uob-bg { display: none; }
 
 /* ---------- Uhr am unteren Rand (nur im Ladebild) ----------
    Mittig, 16px ueber dem Bildschirmrand. UNTEN verankert und als Spalte: kommt der Hinweis dazu,
@@ -194,11 +162,6 @@
 .uob-top > .uob-logo { grid-area: logo; justify-self: start; }
 .uob-top > .uob-rail { grid-area: rail; }
 .uob-top > .uob-topr { grid-area: rechts; justify-self: end; margin-right: -8px; }
-/* Die Linie wie in core (.up-ph-top::after): im unteren Polster, also ohne die 48 zu verlaengern. */
-.uob-top::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
-  background: var(--vc-border); pointer-events: none;
-}
 .uob-logo { height: 18px; width: auto; flex: 0 0 auto; display: block; }
 .uob-logo svg, .uob-logo img { height: 18px; width: auto; display: block; }
 .uob-topr { display: flex; align-items: center; gap: 4px; }
