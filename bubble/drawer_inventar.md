@@ -142,3 +142,15 @@ beachten. Im DRAWER-CSS des Kopf-Skripts diese Werte ersetzen bzw. ergänzen:
 - **Export der Tabelle im Drawer ausgeblendet**, bis der Export `p_url` kennt (Frage C im Auftrag).
 - Der Detail-Kopf (Meta-Zeile, Titel, Leisten, Abschnittsköpfe) liegt jetzt in core (`.up-dk-*`)
   und wird von Response Detail und URL Detail gemeinsam benutzt.
+
+## 9. Stand Prompt Detail (12.10., gebaut gegen den Vorschlag)
+
+- **Drawer aus core** (`KERN_DRAWER.prompt`, erste Ebene, 88 % breit), Datei `prompt-detail.js`
+  (Präfix `uprd`), Markup der Bausteine aus `.prompt_detail_markup.py`.
+- Kopf: „Prompt / Text“, Ask Mira, Anheften. Meta-Zeile: Market, Topics, letzter Lauf. Titel:
+  der Prompt. Filterzeile: Kalender und Filterleiste nur mit Modellen.
+- Darunter Visibility Chart, Top Citations, Responses: dieselben Anfragen wie das Dashboard
+  (`dashboard-data.js`), dazu `p_prompt_id`. Kopf über `prompt_detail_v1`. Beides ist der
+  Vorschlag an den DB-Chat (`bubble/prompt_detail_db_auftrag.md`).
+- Export aus dem Drawer gibt `prompt_id` in der Nutzlast an Bubble weiter.
+- Neue Datei im Vorlade-Snippet: `css("prompt-detail.css"); js("prompt-detail.js");`.

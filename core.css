@@ -4140,16 +4140,17 @@
    darunter laeuft. Die Linie kommt erst mit dem Rollen (.is-gerollt) -- oben ist der Kopf Teil
    der Flaeche. Die Knoepfe sind .up-iconbtn aus core, unveraendert. */
 /* GLAS (12.10. angefordert, "wie Apple"): der Kopf liegt UEBER dem Rollbereich, der Inhalt laeuft
-   unter ihm hindurch und scheint minimal durch -- 92 % Deckkraft des Seitengrunds, dahinter 20px
-   Unschaerfe mit etwas mehr Saettigung (so mischt Apple seine Materialien). Der Rollbereich
+   unter ihm hindurch und scheint durch -- 72 % Deckkraft des Seitengrunds, dahinter 24px
+   Unschaerfe mit etwas mehr Saettigung (so mischt Apple seine Materialien). Erst 92 %: "sieht
+   man kaum" (12.10.). Der Rollbereich
    beginnt mit dem Abstand der Kopfhoehe (--up-kdr-kopf-h), oben steht also nichts verdeckt.
    Ohne backdrop-filter (alter Browser) bleibt es ein fast deckender Kopf -- lesbar wie vorher. */
 .up-root.up-kdr { --up-kdr-kopf-h: 56px; }
 .up-kdr-kopf { position: absolute; top: 0; left: 0; right: 0; z-index: 3;
   display: flex; align-items: center; gap: 8px; height: var(--up-kdr-kopf-h);
   padding: 0 12px; box-sizing: border-box; min-width: 0;
-  background: color-mix(in srgb, var(--up-surface, var(--vc-bg)) 92%, transparent);
-  -webkit-backdrop-filter: saturate(1.8) blur(20px); backdrop-filter: saturate(1.8) blur(20px);
+  background: color-mix(in srgb, var(--up-surface, var(--vc-bg)) 72%, transparent);
+  -webkit-backdrop-filter: saturate(1.8) blur(24px); backdrop-filter: saturate(1.8) blur(24px);
   border-bottom: 1px solid transparent; transition: border-color var(--up-t-1) ease; }
 .up-kdr.is-gerollt .up-kdr-kopf { border-bottom-color: var(--vc-border); }
 .up-root .up-kdr-knopf[hidden] { display: none; }

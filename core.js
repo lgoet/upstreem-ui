@@ -2191,6 +2191,11 @@
     "Not cited in the selected period. Last cited on {date}.": "Im gewählten Zeitraum nicht zitiert. Zuletzt am {date}.",
     "Not cited in the selected period.": "Im gewählten Zeitraum nicht zitiert.",
     "Adjust period": "Zeitraum anpassen",
+    /* Prompt Detail aus core (12.10.) */
+    "Prompt not available": "Prompt nicht verfügbar",
+    "This prompt could not be found.": "Dieser Prompt wurde nicht gefunden.",
+    "This prompt could not be loaded. Please try again.": "Dieser Prompt konnte nicht geladen werden. Versuch es noch einmal.",
+    "Last run {when}": "Zuletzt gelaufen {when}",
 
     /* Leerzustaende der Charts und Tabellen */
     "No types": "Keine Typen",
@@ -18129,7 +18134,10 @@
     /* Response Detail schmaler als URL (12.10.: "merklich kleiner, aber nicht zu klein"): eine
        Antwort ist Lesetext, die URL-Seite traegt eine Tabelle. 960 bei 1440px Fenster. */
     response: { label: "Response", breite: "min(960px, 72vw)" },
-    url: { label: "URL", breite: "80vw" }
+    url: { label: "URL", breite: "80vw" },
+    /* Erste Ebene: breiter als die zweite, damit ein URL- oder Response-Drawer darueber einen
+       Streifen des Prompts stehen laesst -- man sieht, wohin Zurueck fuehrt. */
+    prompt: { label: "Prompt", breite: "88vw" }
   };
   var KD = {};
   function kdFremd(art){

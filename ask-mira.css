@@ -3706,7 +3706,9 @@
     /* #11 — Input-Bar wie ChatGPT-Mobile + #1 doppeltes Bottom-Padding (zusätzlich 32px) */
     .am-composer-area { padding-bottom: calc(clamp(24px, 4vw, 32px) + 32px); }
     .am-composer { min-height: 0; padding: 16px; gap: 12px; align-items: center; }
-    .am-textarea { min-height: 24px; font-size: 16px; }
+    /* 28 statt 24 (12.10.): so hoch wie eine Pille -- sonst wuchs das Feld auf dem Telefon um 4px,
+       sobald ein Bezug darin stand ("das Feld darf beim Chip nicht springen"). */
+    .am-textarea { min-height: 28px; font-size: 16px; }
     .am-ph-text { font-size: 16px; }
     .am-messages, .am-suggested, .am-composer { max-width: 100%; }
     .am-bubble { max-width: 100%; }

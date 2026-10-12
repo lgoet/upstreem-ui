@@ -1,0 +1,31 @@
+/* upstreem prompt-detail.css -- der Prompt-Drawer aus core (12.10.). Praefix uprd. Braucht core.css.
+
+   Kopf (Meta-Zeile, Titel) aus core (.up-dk-*), wie Response und URL. Darunter die Filterzeile und
+   die drei Bausteine der App -- Abstaende wie die Analytic-Ansicht des Dashboards
+   (dashboard-page.css, .uds-filterzeile/.uds-main), damit derselbe Inhalt an zwei Orten gleich
+   steht. Was hier steht, ist nur die Anordnung. */
+.uprd-root { display: flex; flex-direction: column; gap: 40px; min-width: 0; }
+.uprd-root > [hidden] { display: none; }
+/* Die Filterzeile unter dem Titel, links -- wie auf den Seiten. Kalender in eigener Breite, die
+   Leiste nimmt den Rest (ihre Chips brechen dort um). */
+.uprd-filterzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.uprd-filterzeile > .udr-root { flex: 0 0 auto; }
+.uprd-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
+.uprd-main { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
+.uprd-teil { min-width: 0; }
+
+/* Meta-Zeile: Market, Topics, letzter Lauf -- Trenner aus core (.up-dk-sep). */
+.uprd-tags { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.uprd-zeit { white-space: nowrap; }
+
+/* Skelett des Kopfes, in den Massen dessen, was gleich dasteht (wie URL Detail). */
+.uprd-skz { display: inline-block; height: 14px; border-radius: var(--up-r-xs); background: var(--vc-sk);
+  animation: uutpulse 1.2s ease-in-out infinite; }
+.uprd-skz.is-m { width: 132px; }
+.uprd-skz.is-s { width: 88px; }
+.uprd-skz.is-titel { display: block; width: 72%; height: 28px; margin-bottom: 6px; }
+.uprd-skz.is-titel2 { display: block; width: 44%; height: 28px; }
+
+/* Ohne Prompt (nicht gefunden, kein Zugang) steht nur die Meldung da -- ein leerer Chart unter
+   "Prompt nicht verfuegbar" waere eine zweite, falsche Aussage. */
+.uprd-root.is-fehler > :not(.uprd-fehler) { display: none; }

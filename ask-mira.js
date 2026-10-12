@@ -5523,7 +5523,13 @@
     }
     elTextarea.style.textIndent = Math.round(einzug) + 'px';
     elTextarea.style.paddingTop = Math.round(oben) + 'px';
-    elTextarea.style.minHeight = Math.ceil(elPicks.offsetHeight) + 'px';
+    /* DIE GROESSERE der zwei Mindesthoehen (12.10. gemeldet: "mit Chip wird das Feld ein paar px
+       kleiner, ohne wieder groesser"). Die Hoehe der Pillen (28) ersetzte bisher die Mindesthoehe
+       aus der CSS (34) -- gemessen 34 -> 28px, der Composer sprang um 6px. Erst die eigene
+       Angabe weg, dann die der CSS lesen, dann die groessere setzen. */
+    elTextarea.style.minHeight = '';
+    var basisMin = parseFloat(getComputedStyle(elTextarea).minHeight) || 0;
+    elTextarea.style.minHeight = Math.max(basisMin, Math.ceil(elPicks.offsetHeight)) + 'px';
     autosize();
   }
   /* Eine andere Breite verschiebt die Pillen (sie brechen um) -- also nachrechnen. */

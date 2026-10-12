@@ -563,7 +563,7 @@
     function closePopup(){
       if (!state.open) return;
       /* Der Filter des Drawers gilt nur fuer DIESEN Export (siehe setContext). */
-      state.url = ""; state.domain = "";
+      state.url = ""; state.domain = ""; state.promptId = "";
       // never hide a focused element from assistive tech — move focus out FIRST
       if (overlay.contains(document.activeElement)){
         try {
@@ -645,7 +645,8 @@
         token: String(state.token == null ? "" : state.token),
         /* Leer heisst: kein Filter (Bubble setzt dann p_url / p_domain auf null). */
         url: String(state.url || ""),
-        domain: String(state.domain || "")
+        domain: String(state.domain || ""),
+        prompt_id: String(state.promptId || "")
       };
       var payloadJson;
       try { payloadJson = JSON.stringify(payload); } catch(e){ payloadJson = ""; }
@@ -757,6 +758,7 @@
            Kontext, keine Einstellung. */
         state.url = opts.url != null ? String(opts.url) : "";
         state.domain = opts.domain != null ? String(opts.domain) : "";
+        state.promptId = opts.prompt_id != null ? String(opts.prompt_id) : "";
         persist(); renderAll();
         return true;
       },
