@@ -297,7 +297,48 @@
        Seite, und keine davon kennt das Einstellungsfenster. Dasselbe Muster wie
        up-linewidth-change weiter unten. */
     try { window.dispatchEvent(new CustomEvent("up-prefs-change", { detail: { name: name, value: v } })); } catch(e){}
+    vorliebeNachDb(name, v);
     return v;
+  }
+  /* ---- VORLIEBEN IM NUTZERKONTO (13.10., Vertrag VOR_NEXTJS_V1 Abschnitt 5) ------------------
+     Sprache, Zahlen- und Datumsformat und Akzent lagen nur im localStorage, also je Geraet. Jetzt
+     gehen sie zusaetzlich in user_settings_set_v1, und app_start_v1 liefert sie in meta.settings
+     zurueck (vorliebenAusStart). AUS, bis die Datenbank UNSERE Werte kennt: ihre erste Fassung
+     erlaubt "1,234.56"/"DD.MM.YYYY"/#RRGGBB, die App schreibt en|de, d-mon-y|mon-d-y|d-m-y|iso
+     und Akzent-Namen. Zwei unserer Datumsformate haben dort gar kein Gegenstueck -- also kein
+     Umrechnen, sondern die Liste in der Datenbank anpassen (sie hat das angeboten, eine Zeile in
+     _app_settings_allowed_v1). Danach VORLIEBEN_DB = true. */
+  var VORLIEBEN_DB = false;
+  var PREF_DB_KEY = { locale: "locale", num: "number_format", date: "date_format", accent: "accent" };
+  var VORLIEBE_VOM_START = { an: false };
+  function vorliebeNachDb(name, wert){
+    if (!VORLIEBEN_DB || !PREF_DB_KEY[name] || VORLIEBE_VOM_START.an) return null;
+    /* APP steht weiter unten (var, also schon vorhanden, aber vor dem Start noch undefined). */
+    if (typeof APP === "undefined" || !APP || !APP.aktiv) return null;
+    return rpc("user_settings_set_v1", { p_key: PREF_DB_KEY[name], p_value: wert }, { timeoutMs: 15000 });
+  }
+  /* Was im Konto steht, gewinnt beim Start -- ein neues Geraet hat sofort die Wahl des Nutzers.
+     Ohne Nachricht an die Datenbank zurueck (VORLIEBE_VOM_START). Die Sprache braucht ein
+     Neuladen; das passiert hoechstens einmal je Sitzung, damit zwei Geraete mit verschiedener
+     Wahl sich nicht gegenseitig im Kreis laden. */
+  function vorliebenAusStart(settings){
+    if (!VORLIEBEN_DB || !settings || typeof settings !== "object") return;
+    VORLIEBE_VOM_START.an = true;
+    try {
+      ["num", "date", "accent"].forEach(function(name){
+        var w = settings[PREF_DB_KEY[name]];
+        if (w != null && PREF_ERLAUBT[name] && PREF_ERLAUBT[name][w] && getPref(name) !== w) setPref(name, w);
+      });
+    } finally { VORLIEBE_VOM_START.an = false; }
+    var sprache = settings.locale;
+    if (sprache != null && PREF_ERLAUBT.locale[sprache] && getPref("locale") !== sprache){
+      var schon = false;
+      try { schon = window.sessionStorage.getItem("up_locale_vom_start") === "1"; } catch(e){}
+      if (schon) return;
+      try { window.sessionStorage.setItem("up_locale_vom_start", "1"); } catch(e){}
+      VORLIEBE_VOM_START.an = true;
+      try { setLocaleReload(sprache); } finally { VORLIEBE_VOM_START.an = false; }
+    }
   }
   /* ---- SPRACHE WECHSELN UND NEU LADEN --------------------------------------------------------
      Gemeldet am 10.09.: die App stuerzt beim Sprachwechsel ab, mit 100 Prozent Quote. Der erste
@@ -333,6 +374,14 @@
     /* _prefs ist der gemerkte Stand in dieser Sitzung -- er wird gleich weggeworfen, aber falls
        zwischen hier und dem Neuladen noch jemand liest, soll er das Neue sehen. */
     _prefs = null;
+    /* Erst ins Konto, dann neu laden -- ein Neuladen bricht die Anfrage sonst ab. Hoechstens 1,5 s
+       warten: die Sprache steht lokal schon, das Konto ist der Zusatz. */
+    var konto = vorliebeNachDb("locale", value);
+    if (konto){
+      var weg = false, neu = function(){ if (weg) return; weg = true; try { window.location.reload(); } catch(e){} };
+      konto.then(neu, neu); setTimeout(neu, 1500);
+      return true;
+    }
     try { window.location.reload(); } catch(e){}
     return true;
   }
@@ -1626,6 +1675,20 @@
     "Only owners and admins can delete": "Nur Owner und Admins können löschen",
     "A topic with this name already exists": "Ein Topic mit diesem Namen gibt es schon",
     "Too many requests": "Zu viele Anfragen",
+    "Too many searches. Please wait a moment.": "Zu viele Suchen. Warte einen Moment.",
+    "Search is not available right now. Please try again.": "Die Suche ist gerade nicht verfügbar. Versuch es noch einmal.",
+    "{n} rows exported": "{n} Zeilen exportiert",
+    "The export was cut at {n} rows. Choose a shorter range for the rest.": "Der Export endet nach {n} Zeilen. Wähl für den Rest einen kürzeren Zeitraum.",
+    "Too many exports in a short time": "Zu viele Exporte in kurzer Zeit",
+    "Please wait a minute and try again.": "Warte eine Minute und versuch es noch einmal.",
+    "Exports are not available for this team": "Für dieses Team sind keine Exporte möglich",
+    "Check your plan in Billing.": "Prüf deinen Tarif unter Billing.",
+    "You can't export this team's data": "Du kannst die Daten dieses Teams nicht exportieren",
+    "Ask a team owner for access.": "Frag einen Owner des Teams nach Zugriff.",
+    "This date range can't be exported": "Dieser Zeitraum lässt sich nicht exportieren",
+    "Choose a shorter range and try again.": "Wähl einen kürzeren Zeitraum und versuch es noch einmal.",
+    "The export didn't work": "Der Export hat nicht geklappt",
+    "1 row exported": "1 Zeile exportiert",
     "Please wait a moment and try again.": "Warte kurz und versuch es dann noch einmal.",
     "Some items no longer exist": "Einige Einträge gibt es nicht mehr",
     "Refresh the page and try again.": "Lade die Seite neu und versuch es noch einmal.",
@@ -7368,6 +7431,63 @@
      Der Name der Bubble-Funktion ist HART bubble_fn_quick_actions_search, und das ist
      Absicht: es ist dasselbe JavaScript-to-Bubble-Element, derselbe Workflow, dieselbe
      Rueckgabe. Damit braucht die Suche in Ask Mira keinen einzigen Eingriff in Bubble. */
+  /* ---- DIE SUCHE AUS DER DATENBANK (13.10., quick_search_v1, Vertrag VOR_NEXTJS_V1 Abschnitt 2) --
+     Vorher: bubble_fn_quick_actions_search -> Bubble -> search_quick_actions_v2 -> setResults. Jetzt
+     ruft core die Suche selbst und antwortet ueber DENSELBEN Rueckkanal (MiraQuickActions.setResults
+     bzw. setError mit der requestId, ueber esBruecke). Der verteilt schon an alle Frager -- Palette, "+" in Mira,
+     URL-Vorschlaege im Event-Dialog --, an ihnen aendert sich also nichts.
+     Faltung und Umlaut-Varianten macht die Datenbank ("mueller" findet "Mueller" mit Umlaut und
+     umgekehrt); query_folded/query_de gehen nicht mehr hinaus. Unter zwei Zeichen kommt []. Gibt es
+     die Funktion noch nicht (SQL nicht eingespielt, 404 PGRST202), bleibt es fuer diese Sitzung beim
+     Bubble-Weg -- ein Pin vor der SQL darf die Suche nicht abschalten. */
+  var SUCHE = { bubble: false };
+  var SUCHE_BEREICHE = { url: 1, domain: 1, brand: 1, prompt: 1 };
+  var SUCHE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  function suchParameter(d){
+    var markt = String(d.market || "").trim().toUpperCase();
+    var lim = Math.round(Number(d.limit) || 5);
+    return {
+      p_team: getTeam(),
+      p_query: String(d.query == null ? "" : d.query).slice(0, 200),
+      p_scope: SUCHE_BEREICHE[d.scope] ? d.scope : null,
+      p_rank: d.rank === "top" || d.rank === "trending" ? d.rank : null,
+      p_citation_type: d.citation_type ? String(d.citation_type) : null,
+      p_url_type: d.url_type ? String(d.url_type) : null,
+      p_market: /^[A-Z]{2}$/.test(markt) ? markt : null,
+      /* Nur eine Marken-ID filtert; ein Name (alte Palette) wuerde mit 400 abgelehnt. */
+      p_mentioning: SUCHE_UUID.test(String(d.mentioning || "")) ? String(d.mentioning) : null,
+      p_limit: Math.max(1, Math.min(25, lim))
+    };
+  }
+  function suchSatz(erg){
+    var m = erg && erg.fehler ? String(erg.fehler.message || "") : "";
+    if (/rate_limited/.test(m) || (erg && erg.status === 429)) return t("Too many searches. Please wait a moment.");
+    return t("Search is not available right now. Please try again.");
+  }
+  /* true: core sucht (die Antwort kommt ueber setResults/setError). false: Bubble-Weg nehmen. */
+  function schnellsuche(detail){
+    if (SUCHE.bubble || !detail) return false;
+    var team = getTeam();
+    if (!team) return false;
+    var reqId = detail.requestId;
+    rpc("quick_search_v1", suchParameter(detail), { timeoutMs: 15000 }).then(function(erg){
+      /* Ueber den Verteiler (esBruecke): er stellt an die Entitaets-Suchen (ES_KUNDEN) UND an die
+         Palette zu, auch auf einer Seite ohne Palette -- window.MiraQuickActions gibt es dort nicht. */
+      var qa = esBruecke();
+      var code = erg && erg.fehler ? String(erg.fehler.code || "") : "";
+      if (erg && !erg.ok && erg.status === 404 && code === "PGRST202"){
+        SUCHE.bubble = true;
+        var fn = window.bubble_fn_quick_actions_search;
+        if (typeof fn === "function"){ try { fn(JSON.stringify(detail)); } catch(e){} }
+        else if (qa && qa.setError) qa.setError({ requestId: reqId, message: suchSatz(null) });
+        return;
+      }
+      if (!qa) return;
+      if (erg && erg.ok) qa.setResults({ requestId: reqId, items: isArr(erg.daten) ? erg.daten : [] });
+      else if (qa.setError) qa.setError({ requestId: reqId, message: suchSatz(erg) });
+    });
+    return true;
+  }
   function makeEntitySearch(cfg){
     cfg = cfg || {};
     var PRE  = cfg.prefix || "es";
@@ -7446,7 +7566,8 @@
         requestId: id
       };
       var fn = window.bubble_fn_quick_actions_search;
-      if (typeof fn === "function"){ try { fn(JSON.stringify(detail)); } catch(e){} }
+      if (schnellsuche(detail)){ /* core sucht selbst (13.10.) */ }
+      else if (typeof fn === "function"){ try { fn(JSON.stringify(detail)); } catch(e){} }
       else if (cfg.onError){
         /* KEIN stiller Ausfall. Ohne die Bubble-Funktion kommt nie eine Antwort, und ein
            Skelett, das ewig laeuft, ist die schlechteste aller Meldungen. */
@@ -11897,6 +12018,13 @@
     if (!channel){
       if (window.console) console.warn("[signal] ohne Kanal gerufen — nichts gesendet.");
       return false;
+    }
+    /* account_updated (Your Brand gespeichert): Name und Logo im Kopf der Seitenleiste. Vorher
+       lud Bubble get_team_brand_header_v9; mit dem App-Start aus core laedt core den Teil "teams"
+       selbst (Vertrag VOR_NEXTJS_V1 7b, 13.10.) -- kein Bubble-Workflow mehr. */
+    if (channel === "account_updated" && APP.aktiv && APP.team){
+      appTeile(APP.team, ["teams"]);
+      return true;
     }
     var payload = { team_id: getTeam() || "", channel: channel,
                     detail: detail == null ? "" : String(detail) };
@@ -18598,8 +18726,30 @@
       if (isArr(r.markets) && appRuf("setUpstreemMarkets")) window.setUpstreemMarkets(r.markets);
       if (isArr(r.models) && appRuf("setUpstreemModels")) window.setUpstreemModels(r.models);
       if (isArr(r.events) && appRuf("setUpstreemEvents")) window.setUpstreemEvents(r.events);
+      /* Seit dem 13.10. (Vertrag VOR_NEXTJS_V1 Abschnitt 7): der Zaehler an "Prompt Insights" und
+         die Teamliste der Seitenleiste -- beides lieferte vorher nur Bubble. */
+      if (r.counts && typeof r.counts === "object") appZaehler(r.counts.prompt_count);
+      if (isArr(r.teams)) appTeamsSetzen(r.teams, APP.team);
       return true;
     });
+  }
+  /* Seitenleiste: geloeschte Teams nicht -- ein Wechsel dorthin fuehrt ins Leere (der Start nimmt
+     sie nie als aktives Team). Das aktive Team zuerst: die Liste kommt nach created_at, ohne
+     Kennzeichen, und die Seitenleiste nimmt ohne data-team-id aus Bubble das erste -- wer mehrere
+     Teams hatte, sah oben das aelteste statt des aktiven (Bestand 13.10.). */
+  function appTeamsSetzen(liste, aktivId){
+    var teams = (isArr(liste) ? liste : []).filter(function(t){ return t && t.id && t.access_state !== "deleted"; });
+    aktivId = aktivId ? String(aktivId) : "";
+    if (aktivId) teams = teams.filter(function(t){ return String(t.id) === aktivId; })
+      .concat(teams.filter(function(t){ return String(t.id) !== aktivId; }));
+    appSidebars(function(id){ if (appRuf("setSidebarTeams")) window.setSidebarTeams(id, teams); });
+    return teams;
+  }
+  /* Aktive Prompts des Teams, die Zahl neben "Prompt Insights". null/undefined: nichts setzen -- die
+     Leiste zeigt dann ihr Skelett weiter, statt einer falschen 0. */
+  function appZaehler(n){
+    if (n == null || !isFinite(Number(n))) return;
+    appSidebars(function(id){ if (appRuf("setSidebarCount")) window.setSidebarCount(id, String(Math.round(Number(n)))); });
   }
   function appAlleMaerkte(){
     var gemerkt = null;
@@ -18623,6 +18773,7 @@
   function appAnwenden(d){
     var m = d && d.meta && typeof d.meta === "object" ? d.meta : {};
     var r = d && d.row && typeof d.row === "object" ? d.row : null;
+    if (m.settings) vorliebenAusStart(m.settings);
     if (m.settings && m.settings.theme){
       APP.themaVonStart = true;
       try { setUpstreemTheme(String(m.settings.theme)); } finally { APP.themaVonStart = false; }
@@ -18630,17 +18781,11 @@
     var u = m.user || {};
     /* Seitenleiste: geloeschte Teams nicht -- ein Wechsel dorthin fuehrt ins Leere (der Start
        nimmt sie nie als aktives Team). */
-    var teams = (isArr(m.teams) ? m.teams : []).filter(function(t){ return t && t.id && t.access_state !== "deleted"; });
-    /* Das aktive Team zuerst: die Liste kommt nach created_at, ohne Kennzeichen, und die
-       Seitenleiste nimmt ohne data-team-id aus Bubble das erste -- wer mehrere Teams hatte, sah
-       oben das aelteste statt des aktiven (Bestand 13.10.). */
-    var aktivId = r && r.team_id ? String(r.team_id) : "";
-    if (aktivId) teams = teams.filter(function(t){ return String(t.id) === aktivId; })
-      .concat(teams.filter(function(t){ return String(t.id) !== aktivId; }));
+    appTeamsSetzen(m.teams, r && r.team_id ? r.team_id : "");
     appSidebars(function(id){
-      if (appRuf("setSidebarTeams")) window.setSidebarTeams(id, teams);
       if (appRuf("setSidebarUser")) window.setSidebarUser(id, { id: u.id, name: u.display_name, email: u.email, avatar_url: u.avatar_url });
     });
+    if (r) appZaehler(r.prompt_count);
     if (appRuf("setUpstreemProfile")) window.setUpstreemProfile({ display_name: u.display_name, avatar_url: u.avatar_url, user_id: u.id });
     if (!r) return null;
     APP.team = String(r.team_id || "");
@@ -18751,7 +18896,9 @@
      nicht von core kommt -- dann bleibt es beim Bubble-Weg. */
   function appTeilNachladen(teil){
     if (!APP.aktiv || !APP.team) return false;
-    appTeile(APP.team, [teil]);
+    /* Wer Topics oder Maerkte nachlaedt, hat Prompts angelegt, geloescht oder umgeschaltet --
+       der Zaehler der Seitenleiste kommt im selben Aufruf mit (13.10.). */
+    appTeile(APP.team, teil === "topics" || teil === "markets" ? [teil, "counts"] : [teil]);
     return true;
   }
   function appStartAktiv(){ return !!APP.aktiv; }
@@ -24196,6 +24343,7 @@
     plaeneLesen: plaeneLesen,
     fmtEur: fmtEur,
     getTeam: getTeam,
+    schnellsuche: schnellsuche,
     setUpstreemTeam: setUpstreemTeam,
     storeKey: storeKey,
     prefKey: prefKey,

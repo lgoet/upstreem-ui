@@ -611,8 +611,133 @@
         clearTimeout(root.__uexProcessingTimeout);
       }
     }
+    /* ---- DER EXPORT AUS DER KOMPONENTE (13.10., Vertrag VOR_NEXTJS_V1 Abschnitt 3) --------------
+       Vorher: bubble_fn_upstreemExport -> Bubble ruft die Export-RPC mit dem Nutzer-Token, baut die
+       Datei, laedt herunter, meldet upstreemExportResolve. Jetzt blaettert der Dialog selbst
+       (offset + limit, solange meta.has_more), baut die CSV aus den Spalten von export_columns_v1
+       (Reihenfolge und englische Kopfzeile kommen von der Datenbank -- nur diese Schluessel, nicht
+       die Rohfelder) und laedt sie herunter. Formelschutz macht die Datenbank (csv_safe_v1 auf jeder
+       Textspalte); hier steht trotzdem jedes Feld in Anfuehrungszeichen, " verdoppelt.
+       Gibt es eine Funktion mit genau diesen Parametern noch nicht (404 PGRST202), geht DIESER Typ
+       fuer die Sitzung wieder an Bubble -- ein Pin vor der SQL schaltet den Export nicht ab. */
+    var EXPORTE = {
+      prompts:     { fn: "export_prompts_v1",           spalten: "prompts",   seite: 5000 },
+      prompt_runs: { fn: "export_responses_v1",         spalten: "responses", seite: 2000 },
+      domains:     { fn: "export_citations_domains_v1", spalten: "domains",   seite: 10000 },
+      urls:        { fn: "export_citations_urls_v1",    spalten: "urls",      seite: 5000 },
+      brands:      { fn: "export_brands_v2",            spalten: "brands",    seite: 500 }
+    };
+    /* Obergrenze an Seiten je Export: die Datenbank erlaubt 60 Seiten je Minute und Typ. Mehr als
+       das passt nicht in einen Lauf, und eine Schleife ohne Ende waere der schlimmere Fehler. */
+    var MAX_SEITEN = 60;
+    var BUBBLE_TYP = (window.__uexBubbleTyp = window.__uexBubbleTyp || {});
+    function kern(){ var k = window.UpstreemCore; return k && typeof k.rpc === "function" && typeof k.getTeam === "function" && k.getTeam() ? k : null; }
+    function ohneRpc(erg){ return !!erg && erg.status === 404 && !!erg.fehler && String(erg.fehler.code || "") === "PGRST202"; }
+    function exportParameter(art, team, offset, limit){
+      var p = { p_team: team, p_date_from: isoDate(state.from), p_date_to: isoDate(state.to), p_offset: offset, p_limit: limit };
+      /* Die Filter des Drawers (setContext) -- nur dort, wo die Funktion sie kennt. Ein Parameter,
+         den sie nicht hat, liesse PostgREST die Funktion gar nicht finden (PGRST202). */
+      if (art === "prompt_runs"){
+        if (state.url) p.p_url = String(state.url);
+        if (state.domain) p.p_domain = String(state.domain);
+        if (state.promptId) p.p_prompt_id = String(state.promptId);
+        if (state.brandId) p.p_brand = String(state.brandId);
+      } else if (art === "domains"){
+        if (state.brandId) p.p_brand = String(state.brandId);
+      } else if (art === "urls"){
+        if (state.domain) p.p_domain = String(state.domain);
+        if (state.brandId) p.p_brand = String(state.brandId);
+      }
+      return p;
+    }
+    function csvFeld(v, typ){
+      if (v == null) return '""';
+      if (typ === "bool") v = v === true || v === "true" ? "Yes" : (v === false || v === "false" ? "No" : v);
+      else if (typeof v === "object") v = JSON.stringify(v);
+      return '"' + String(v).replace(/"/g, '""') + '"';
+    }
+    function csvBauen(spalten, zeilen){
+      var kopf = spalten.map(function(c){ return csvFeld(c.header, "text"); }).join(",");
+      var rumpf = zeilen.map(function(z){
+        return spalten.map(function(c){ return csvFeld(z ? z[c.key] : null, c.type); }).join(",");
+      });
+      /* BOM: ohne ihn liest Excel die Datei als Windows-1252, und jeder Umlaut zerfaellt. */
+      return "\uFEFF" + [kopf].concat(rumpf).join("\r\n");
+    }
+    function herunterladen(text, name){
+      var blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = name; a.rel = "noopener";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+    }
+    function exportSatz(erg){
+      var m = erg && erg.fehler ? String(erg.fehler.message || "") : "";
+      if (/rate_limited/.test(m) || (erg && erg.status === 429)) return ["Too many exports in a short time", "Please wait a minute and try again."];
+      if (/team_access/.test(m) || (erg && erg.status === 402)) return ["Exports are not available for this team", "Check your plan in Billing."];
+      if (/forbidden|role_required/.test(m) || (erg && erg.status === 403)) return ["You can't export this team's data", "Ask a team owner for access."];
+      if (/invalid_param|invalid_date/.test(m)) return ["This date range can't be exported", "Choose a shorter range and try again."];
+      return ["The export didn't work", "Please try again."];
+    }
+    /* Ganze Saetze durch den Katalog, die Zahl erst danach ({n}) -- zusammengesetzt kam im
+       deutschen UI Englisch heraus. */
+    function meldenToast(text, art, desc, n){
+      var k = window.UpstreemCore, tr = k && k.t ? k.t : function(x){ return x; };
+      var z = function(x){ return String(tr(x)).replace("{n}", String(n)); };
+      if (k && k.toast) k.toast(z(text), { kind: art, desc: desc ? z(desc) : "" });
+    }
+    /* true: die Komponente exportiert selbst. false: Bubble-Weg. */
+    function exportSelbst(){
+      var art = state.type, cfg = EXPORTE[art], k = kern();
+      if (!cfg || !k || BUBBLE_TYP[art]) return false;
+      var team = k.getTeam(), zeilen = [], seiten = 0, spalten = null;
+      setProcessing(true);
+      function fertig(){ setProcessing(false); }
+      function scheitern(erg){
+        var s = exportSatz(erg);
+        fertig();
+        meldenToast(s[0], "error", s[1]);
+      }
+      function auchBubble(){ BUBBLE_TYP[art] = true; fertig(); fireExportBubble(); }
+      k.rpc("export_columns_v1", { p_export: cfg.spalten }, { timeoutMs: 20000 }).then(function(erg){
+        if (ohneRpc(erg)) { auchBubble(); return; }
+        var r = erg && erg.ok && erg.daten && Array.isArray(erg.daten.rows) ? erg.daten.rows : null;
+        if (!r || !r.length) { scheitern(erg); return; }
+        spalten = r.filter(function(c){ return c && c.key; });
+        seite(0);
+      }, scheitern);
+      function seite(offset){
+        if (!state.processing) return;            /* Dialog geschlossen: abgebrochen */
+        k.rpc(cfg.fn, exportParameter(art, team, offset, cfg.seite), { timeoutMs: 120000 }).then(function(erg){
+          if (ohneRpc(erg)) { auchBubble(); return; }
+          var d = erg && erg.ok ? erg.daten : null;
+          if (!d || !Array.isArray(d.rows)) { scheitern(erg); return; }
+          zeilen = zeilen.concat(d.rows);
+          seiten++;
+          var m = d.meta || {};
+          if (m.has_more === true && seiten < MAX_SEITEN && d.rows.length){
+            seite(Number(m.offset || offset) + Number(m.limit || cfg.seite));
+            return;
+          }
+          var typName = (TYPES.filter(function(x){ return x.value === art; })[0] || { label: art }).label;
+          var name = "upstreem-" + typName.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + isoDate(state.from) + "-" + isoDate(state.to) + ".csv";
+          herunterladen(csvBauen(spalten, zeilen), name);
+          setProcessing(false);
+          closePopup();
+          var desc = m.has_more === true ? "The export was cut at {n} rows. Choose a shorter range for the rest." : "";
+          meldenToast(zeilen.length === 1 ? "1 row exported" : "{n} rows exported", m.has_more === true ? "neutral" : "success", desc, zeilen.length);
+        }, scheitern);
+      }
+      return true;
+    }
     function fireExport(){
       if (state.processing) return;   // already sent, ignore a repeat click
+      if (exportSelbst()) return;
+      fireExportBubble();
+    }
+    function fireExportBubble(){
+      if (state.processing) return;
       var fnName = root.getAttribute("data-export-fn") || "bubble_fn_upstreemExport";
       var fn = resolveBubbleFn(fnName);
       /* KEIN Rueckfall auf einen anderen Namen. Ich hatte einen eingebaut, als der Name mit

@@ -600,7 +600,11 @@
   }
   function newReqId(){ return "qa_" + Date.now() + "_" + Math.random().toString(36).slice(2,8); }
   function fire(name, detail){   // used for the search trigger only
-    if (typeof window.bubble_fn_quick_actions_search === "function"){ try { window.bubble_fn_quick_actions_search(JSON.stringify(detail)); } catch(_){} }
+    /* Die Suche laeuft seit dem 13.10. in core (quick_search_v1); Bubble nur, solange es die
+       Funktion noch nicht gibt oder core fehlt. */
+    var k = window.UpstreemCore, selbst = false;
+    if (k && typeof k.schnellsuche === "function"){ try { selbst = k.schnellsuche(detail) === true; } catch(_){ selbst = false; } }
+    if (!selbst && typeof window.bubble_fn_quick_actions_search === "function"){ try { window.bubble_fn_quick_actions_search(JSON.stringify(detail)); } catch(_){} }
     try { window.dispatchEvent(new CustomEvent(name, { detail: detail })); } catch(_){}
   }
   /* Export laeuft ueber DIESELBE Komponente wie ueberall sonst: window.upstreemExportOpen mit der

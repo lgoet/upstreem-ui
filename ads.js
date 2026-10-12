@@ -10,16 +10,27 @@
    Der Ad-Detail-Drawer ist ein Seiten-Drawer aus core (UC.makeSeitenDrawer): jedes Ad-Objekt traegt
    alle 29 Felder, er braucht also weder eine Anfrage noch ein Bubble-Element.
 
-   DATENWEGE: sechs RPCs (bubble/ads_runjs.md). Jede Anfrage geht als Ereignis an Bubble und traegt
-   den FERTIGEN RPC-Body als Text; die Antwort kommt als json-Feld des Umschlags plus Fehler-Body:
-     adsOverview          get_ads_overview_v1           setAdsOverview(id, json, fehler)
-     adsAdvertisers       list_ads_advertisers_v1       setAdsAdvertisers(id, json, fehler)
-     adsAdvertiserDetail  get_ads_advertiser_detail_v1  setAdsAdvertiserDetail(id, json, fehler)
-     adsLibrary           list_ads_library_v1           setAdsLibrary(id, json, fehler)
-     adsPrompts           list_ads_prompts_v1           setAdsPrompts(id, json, fehler)
-     adsFilterOptions     get_ads_filter_options_v1     setAdsFilterOptions(id, json, fehler)
-   Die Antworten nennen ihre Parameter nicht. Darum laeuft je RPC hoechstens EINE Anfrage; was sich
-   waehrenddessen aendert, geht hinaus, sobald sie da ist (dieselbe Bauart wie Shopping).
+   DATENWEGE (13.10. umgestellt, Vertrag bubble/vor_nextjs_13_10/VOR_NEXTJS_V1_VERTRAG.md, Abschnitt 1):
+   Die Komponente ruft ihre sechs RPCs SELBST ueber UC.rpc (PostgREST mit dem Login des Nutzers),
+   ohne Bubble-Workflow und ohne Run-JS-Schritt -- derselbe Weg wie Citations, Brands und spaeter
+   Next.js. Die v2 tragen p_team (statt p_team_id) und p_tag_ids (statt p_topic_ids), sonst
+   dieselben Parameter; die Antwort ist das nackte JSON-Objekt (kein Umschlag, keine Haertung).
+     Kanal       v2 (direkt)                    v1 (Rueckweg ueber Bubble)    Ereignis / Setter
+     overview    get_ads_overview_v2            get_ads_overview_v1           adsOverview / setAdsOverview(id, json, fehler)
+     advertisers list_ads_advertisers_v2        list_ads_advertisers_v1       adsAdvertisers / setAdsAdvertisers
+     detail      get_ads_advertiser_detail_v2   get_ads_advertiser_detail_v1  adsAdvertiserDetail / setAdsAdvertiserDetail
+     library     list_ads_library_v2            list_ads_library_v1           adsLibrary / setAdsLibrary
+     prompts     list_ads_prompts_v2            list_ads_prompts_v1           adsPrompts / setAdsPrompts
+     optionen    get_ads_filter_options_v2      get_ads_filter_options_v1     adsFilterOptions / setAdsFilterOptions
+   RUECKWEG: Gibt es eine v2 noch nicht (404 PGRST202, SQL nicht eingespielt), geht DIESER Kanal fuer
+   den Rest des Seitenlebens den alten Weg: Ereignis an Bubble mit dem fertigen Body in den ALTEN
+   Namen (p_team_id, p_topic_ids), Antwort ueber den Setter. Die Setter bleiben darum oeffentlich
+   (Vertrag: nie entfernen) -- auch ein noch eingebauter alter Workflow fuellt die Seite weiter.
+   Auf dem direkten Weg feuert KEIN Ereignis an Bubble.
+   Je Kanal hoechstens EINE Anfrage unterwegs; was sich waehrenddessen aendert, geht hinaus, sobald
+   sie da ist (Bauart Shopping). Direkt ist die Antwort an ihre Anfrage gebunden (eine verspaetete
+   wird an der Identitaet erkannt und verworfen); ueber Bubble nennen die Antworten ihre Parameter
+   nicht, dort bleibt die Zuordnung am Inhalt und der Nachzueglerschutz.
 
    WAS DER ENTWURF ZEIGT UND DIE RPCs NICHT LIEFERN (05.10., in der Uebergabe benannt; jeweils die
    kleinste richtige Loesung, nichts erfunden):
@@ -32,7 +43,7 @@
        liefern jede Beobachtung als eigenes Item ("nichts wird zusammengefasst") -> eine Karte je
        Beobachtung, ohne Zaehler; der Drawer zeigt die eine Beobachtung.
      - Logos im Advertiser-Stapel der Prompt-Liste: nur advertiser_count -> die Zahl.
-     - Die Ads eines Prompts beim Aufklappen: keine Prompt-Id in list_ads_library_v1 -> dieselbe
+     - Die Ads eines Prompts beim Aufklappen: keine Prompt-Id in list_ads_library_v1/v2 -> dieselbe
        RPC mit dem Prompttext als Suche, auf prompt_id gefiltert (hoechstens 100, die neuesten).
    Unlesbar, leer und noch nicht da sehen nie gleich aus: Fehlerzustand, Leerzustand, Skelett. */
 (function () {
@@ -59,6 +70,10 @@
   var UC = window.UpstreemCore;
   var esc = UC.esc, t = UC.t || function (x) { return x; };
   var STORE = (window.__uadStore = window.__uadStore || {});
+  /* Welche v2 es nicht gibt (13.10., 404 PGRST202): gemerkt fuer das Seitenleben und fuer ALLE
+     Wurzeln -- am window, damit ein Neuaufbau beim Themenwechsel nicht erst wieder ins 404 laeuft.
+     Bewusst nicht in sessionStorage: ist das SQL eingespielt, soll ein Neuladen sofort direkt gehen. */
+  var V2_FEHLT = (window.__uadV2Fehlt = window.__uadV2Fehlt || {});
 
   /* ---- Kleine Helfer ------------------------------------------------------------------------ */
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
@@ -193,6 +208,24 @@
     rate_limited: "Too many requests. Please wait a moment.",
     zeit: "This is taking longer than expected. Please try again."
   };
+  /* Der Fehler des direkten Wegs (13.10.) als Code, wie ihn fehlerText und fehlerKasten lesen.
+     message ist der Code (Vertrag: "message = Code, hint = Feld"). Das Ratenlimit (30/min je
+     Funktion) erkennt der Status, falls der Text einmal anders lautet; "timeout" aus UC.rpc ist
+     dieselbe Lage wie die abgelaufene eigene Uhr, und eine unlesbare Antwort derselbe Satz wie
+     ein kaputter Setter-Text. */
+  function rpcFehlerCode(erg) {
+    var f = (erg && erg.fehler) || {}, m = str(f.message).trim();
+    if ((erg && erg.status === 429) || str(f.code) === "PT429" || /rate.?limit/i.test(m)) return "rate_limited";
+    if (m === "timeout") return "zeit";
+    if (m === "unreadable_response") return "x";
+    return m || ("http_" + (erg ? erg.status : 0));
+  }
+  /* Fehlt die v2 in der Datenbank? Nur PostgRESTs "Funktion unbekannt" -- ein 404 PT404 (nicht
+     gefunden) ist eine echte Antwort und bleibt ein Fehler. */
+  function v2Fehlt(erg) {
+    var f = (erg && erg.fehler) || {};
+    return !!erg && !erg.ok && (str(f.code) === "PGRST202" || /could not find the function/i.test(str(f.message)));
+  }
   function fehlerText(code) {
     var c = str(code).trim();
     if (/^team_access_/.test(c) || c === "forbidden" || c === "not authenticated") return t("Your team doesn't have access right now.");
@@ -487,25 +520,29 @@
       persist();
     }
 
-    /* ---- Anfragen an Bubble -------------------------------------------------------------------
-       Je RPC ein Kanal: hoechstens EINE Anfrage unterwegs, eine Uhr, die das Warten beendet. */
+    /* ---- Anfragen -------------------------------------------------------------------------------
+       Je RPC ein Kanal: hoechstens EINE Anfrage unterwegs, eine Uhr, die das Warten beendet.
+       v2 ist der direkte Weg (13.10.), rpc der alte Name, den der Bubble-Workflow ruft. */
     var KANAL = {
-      overview: { attr: "data-overview-fn", name: "adsOverview", setter: "setAdsOverview", rpc: "get_ads_overview_v1" },
-      advertisers: { attr: "data-advertisers-fn", name: "adsAdvertisers", setter: "setAdsAdvertisers", rpc: "list_ads_advertisers_v1" },
-      detail: { attr: "data-advertiser-fn", name: "adsAdvertiserDetail", setter: "setAdsAdvertiserDetail", rpc: "get_ads_advertiser_detail_v1" },
-      library: { attr: "data-library-fn", name: "adsLibrary", setter: "setAdsLibrary", rpc: "list_ads_library_v1" },
-      prompts: { attr: "data-prompts-fn", name: "adsPrompts", setter: "setAdsPrompts", rpc: "list_ads_prompts_v1" },
-      optionen: { attr: "data-options-fn", name: "adsFilterOptions", setter: "setAdsFilterOptions", rpc: "get_ads_filter_options_v1" }
+      overview: { attr: "data-overview-fn", name: "adsOverview", setter: "setAdsOverview", rpc: "get_ads_overview_v1", v2: "get_ads_overview_v2" },
+      advertisers: { attr: "data-advertisers-fn", name: "adsAdvertisers", setter: "setAdsAdvertisers", rpc: "list_ads_advertisers_v1", v2: "list_ads_advertisers_v2" },
+      detail: { attr: "data-advertiser-fn", name: "adsAdvertiserDetail", setter: "setAdsAdvertiserDetail", rpc: "get_ads_advertiser_detail_v1", v2: "get_ads_advertiser_detail_v2" },
+      library: { attr: "data-library-fn", name: "adsLibrary", setter: "setAdsLibrary", rpc: "list_ads_library_v1", v2: "list_ads_library_v2" },
+      prompts: { attr: "data-prompts-fn", name: "adsPrompts", setter: "setAdsPrompts", rpc: "list_ads_prompts_v1", v2: "list_ads_prompts_v2" },
+      optionen: { attr: "data-options-fn", name: "adsFilterOptions", setter: "setAdsFilterOptions", rpc: "get_ads_filter_options_v1", v2: "get_ads_filter_options_v2" }
     };
     var KANAELE = Object.keys(KANAL);
     var unterwegs = {}, nachzuegler = {};
     KANAELE.forEach(function (k) { unterwegs[k] = null; nachzuegler[k] = 0; });
+    /* Der Body steht in den NEUEN Namen (p_team, p_tag_ids, 13.10.); nur der Rueckweg ueber Bubble
+       uebersetzt ihn in die alten (v1Body), denn der eingebaute Workflow reicht ihn unveraendert an
+       die v1 weiter, und die kennt nur p_team_id und p_topic_ids. */
     function grundBody() {
       var f = state.filter, a = state.adFilter;
-      return { p_team_id: team(), p_date_from: f.von || null, p_date_to: f.bis || null,
+      return { p_team: team(), p_date_from: f.von || null, p_date_to: f.bis || null,
                p_models: f.modelle && f.modelle.length ? f.modelle.slice() : null,
                p_markets: f.maerkte && f.maerkte.length ? f.maerkte.slice() : null,
-               p_topic_ids: f.topics && f.topics.length ? f.topics.slice() : null,
+               p_tag_ids: f.topics && f.topics.length ? f.topics.slice() : null,
                p_advertisers: a.advertisers && a.advertisers.length ? a.advertisers.slice() : null,
                p_ad_formats: a.formate && a.formate.length ? a.formate.slice() : null };
     }
@@ -514,12 +551,15 @@
     function offsetOf(tb) { return Math.max(0, ((num(tb.page) || 1) - 1) * limitOf(tb)); }
     function orderOf(name, tb) { return ORDER[name].indexOf(tb.order) >= 0 ? tb.order : ORDER_VORGABE[name]; }
     function suchText(s) { s = str(s).trim(); return s ? s.slice(0, 200) : null; }
-    /* Die Signatur ist der Body ohne p_team_id -- das Team wechselt nur mit einem Seitenaufbau. */
-    function sigVon(b) {
-      var o = {}, k;
-      for (k in b) if (k !== "p_team_id" && Object.prototype.hasOwnProperty.call(b, k)) o[k] = b[k];
-      return JSON.stringify(o);
+    function v1Body(b) {
+      var o = {}, k, ALT = { p_team: "p_team_id", p_tag_ids: "p_topic_ids" };
+      for (k in b) if (Object.prototype.hasOwnProperty.call(b, k)) o[ALT[k] || k] = b[k];
+      return o;
     }
+    /* Die Signatur ist der GANZE Body, mit Team (13.10.). Vorher blieb p_team_id draussen ("das Team
+       wechselt nur mit einem Seitenaufbau") -- seit die Seite selbst laedt und auf onTeamChange
+       hoert, kann es ohne Aufbau wechseln, und dann zeigte der Speicher die Zahlen des alten Teams. */
+    function sigVon(b) { return JSON.stringify(b); }
     function anfrage(kanal, b) { return { kanal: kanal, body: b, sig: sigVon(b) }; }
     function ovAnfrage() { return anfrage("overview", grundBody()); }
     function advAnfrage() {
@@ -538,7 +578,7 @@
       return anfrage("prompts", mit(grundBody(), { p_search: suchText(lb.suche), p_limit: limitOf(tb), p_offset: offsetOf(tb), p_sort: orderOf("prompts", tb) }));
     }
     /* Die Optionen der zwei Auswahlen haengen nur am Zeitraum (Vertrag). */
-    function optAnfrage() { var f = state.filter; return anfrage("optionen", { p_team_id: team(), p_date_from: f.von || null, p_date_to: f.bis || null }); }
+    function optAnfrage() { var f = state.filter; return anfrage("optionen", { p_team: team(), p_date_from: f.von || null, p_date_to: f.bis || null }); }
     /* Die Ads EINES Prompts (aufgeklappte Zeile): dieselbe Bibliothek mit dem Prompttext als Suche,
        danach auf prompt_id gefiltert (siehe Kopf dieser Datei). */
     function aufAnfrage(p) {
@@ -571,6 +611,10 @@
       bedarfListe().forEach(function (a) {
         if (state.cache[a.kanal][a.sig] || unterwegs[a.kanal]) return;
         if (state.fehler[a.kanal + a.sig]) return;
+        /* Direkt ohne Team gaebe es nur einen 400 (13.10.): das Team kommt mit setUpstreemTeam,
+           onTeamChange (unten) ruft dann bedarf. Bis dahin steht das Skelett -- es ist kurz, und
+           ein Fehler waere falsch, denn es fehlt nichts, es kommt nur noch. */
+        if (direkt(a.kanal) && !team()) return;
         senden(a);
       });
     }
@@ -585,22 +629,58 @@
       if (verdecktUhr || root.isConnected === false) return;
       verdecktUhr = setTimeout(function () { verdecktUhr = null; if (sichtbar()) { filterAbgleichen(); zeichnen(); bedarf(); } else verdecktPruefen(); }, 1000);
     }
+    /* Direkt, solange core den Weg kennt und die v2 nicht als fehlend gemerkt ist (13.10.). Ohne
+       UC.rpc (ein aelterer core-Pin) bleibt es beim Weg ueber Bubble. */
+    function direkt(kanal) { return !!(UC.rpc && !V2_FEHLT[KANAL[kanal].v2]); }
     function senden(a) {
-      var k = KANAL[a.kanal];
-      var u = unterwegs[a.kanal] = { sig: a.sig, body: a.body, uhr: null };
+      var k = KANAL[a.kanal], weg = direkt(a.kanal);
+      var u = unterwegs[a.kanal] = { sig: a.sig, body: a.body, uhr: null, direkt: weg, ab: null };
       u.uhr = setTimeout(function () {
         if (unterwegs[a.kanal] !== u) return;
         unterwegs[a.kanal] = null;
-        nachzuegler[a.kanal]++;
+        /* Direkt: die Anfrage abbrechen, ihre Antwort kaeme ohnehin nicht mehr an (Identitaet).
+           Der Nachzueglerzaehler gilt nur dem Bubble-Weg, dessen Antworten keine Anfrage kennen. */
+        if (u.ab) { try { u.ab.abort(); } catch (e) {} }
+        else nachzuegler[a.kanal]++;
         state.fehler[a.kanal + a.sig] = "zeit";
-        melden("zeit" + a.kanal, "Keine Antwort auf " + k.name + " nach " + (WARTE_MS / 1000) + " s. Ruft der Workflow von " +
+        if (!weg) melden("zeit" + a.kanal, "Keine Antwort auf " + k.name + " nach " + (WARTE_MS / 1000) + " s. Ruft der Workflow von " +
           k.name + " am Ende " + k.setter + '("' + instanceId + '", ...) auf?');
         zeichnen();
         bedarf();
       }, WARTE_MS);
+      if (weg) { rpcSenden(a, u); return; }
       var text = "";
-      try { text = JSON.stringify(a.body); } catch (e) { text = ""; }
+      try { text = JSON.stringify(v1Body(a.body)); } catch (e) { text = ""; }
       fire(k.attr, k.name, text);
+    }
+    /* DER DIREKTE WEG (13.10.): UC.rpc mit dem Body in den neuen Namen. Die Antwort geht in DENSELBEN
+       Handler wie ein Setter (antwort), mit der Anfrage als viertem Wert -- so gelten Speicher,
+       Signatur, Fehlerzustand und Neuzeichnen unveraendert. UC.rpc wirft nie; die Ablehnung ist
+       nur Absicherung. Ein 402 team_access_* faengt core selbst ab (App-Start, Gate); hier endet
+       dann nur das Laden mit dem Fehlerzustand. */
+    function rpcSenden(a, u) {
+      var k = KANAL[a.kanal];
+      u.ab = typeof AbortController !== "undefined" ? new AbortController() : null;
+      var p;
+      try { p = UC.rpc(k.v2, a.body, { timeoutMs: WARTE_MS, signal: u.ab ? u.ab.signal : undefined }); }
+      catch (e) { p = Promise.resolve({ ok: false, status: 0, fehler: { message: "network" } }); }
+      Promise.resolve(p).then(function (erg) {
+        if (unterwegs[a.kanal] !== u) return;
+        if (v2Fehlt(erg)) {
+          /* RUECKWEG: die v2 ist noch nicht eingespielt. Dieser Kanal geht ab jetzt ueber Bubble,
+             dieselbe Anfrage sofort noch einmal -- der Nutzer sieht nur ein etwas laengeres Laden. */
+          V2_FEHLT[k.v2] = true;
+          melden("v2" + k.v2, k.v2 + " gibt es in der Datenbank noch nicht (PGRST202). " + k.name + " laeuft ueber den Bubble-Workflow.");
+          clearTimeout(u.uhr);
+          unterwegs[a.kanal] = null;
+          senden(a);
+          return;
+        }
+        if (erg && erg.ok) antwort(a.kanal, erg.daten, "", u);
+        else antwort(a.kanal, null, rpcFehlerCode(erg), u);
+      }, function () {
+        if (unterwegs[a.kanal] === u) antwort(a.kanal, null, "network", u);
+      });
     }
     /* WELCHER RPC GEHOERT DIE ANTWORT? Am Inhalt, wo er eindeutig ist (wie Shopping): ein kopierter
        Workflow, der noch den Setter des Originals ruft, legt die Antwort sonst in den falschen Kanal.
@@ -624,8 +704,15 @@
       gemeldet[schluessel] = true;
       if (window.console) console.warn("[ads] " + text);
     }
-    function antwort(kanal, raw, f) {
-      var d = objekt(raw), echt = kanalVon(d);
+    /* raw: Text (Setter) ODER schon gelesenes Objekt (direkter Weg, 13.10.). f: Bubbles Fehler-Body
+       bzw. auf dem direkten Weg der fertige Code. direkt: die Anfrage, zu der die Antwort gehoert --
+       dann ist der Kanal sicher, die Zuordnung am Inhalt und der Nachzueglerschutz entfallen, und
+       eine Antwort, deren Anfrage nicht mehr die laufende ist (Uhr abgelaufen, reset), faellt weg.
+       Die grossen Ids (GROSSE_IDS) schuetzt objekt() nur im Text; direkt liest UC.rpc das JSON
+       selbst -- der Vertrag liefert sie als Text ("IDs sind immer Strings"). */
+    function antwort(kanal, raw, f, direkt) {
+      if (direkt && unterwegs[kanal] !== direkt) return false;
+      var d = objekt(raw), echt = direkt ? null : kanalVon(d);
       if (echt && echt !== kanal) {
         melden("kanal" + kanal + echt, KANAL[kanal].setter + " bekam die Antwort von " + KANAL[echt].rpc + ". Im Workflow von " +
           KANAL[echt].name + " muss der Run-JS-Schritt " + KANAL[echt].setter + " rufen. Die Antwort ist trotzdem richtig zugeordnet.");
@@ -638,7 +725,7 @@
          gar nicht braucht, wurde verworfen, und die wartende Anfrage lief in ihre Frist (25 s).
          Jetzt: braucht die Seite den Kanal des Setters nicht, und wartet genau EIN anderer Kanal
          auf eine Antwort dieser Form, gehoert sie dorthin. Gemeldet wird es trotzdem. */
-      if (!echt && d && !unterwegs[kanal] && !bedarfListe().some(function (a) { return a.kanal === kanal; })) {
+      if (!direkt && !echt && d && !unterwegs[kanal] && !bedarfListe().some(function (a) { return a.kanal === kanal; })) {
         var kand = KANAELE.filter(function (k) { return k !== kanal && unterwegs[k] && pruefen(k, d); });
         if (kand.length === 1) {
           melden("leer" + kanal + kand[0], KANAL[kanal].setter + " bekam eine (leere) Antwort, die zu " + KANAL[kand[0]].name +
@@ -654,7 +741,7 @@
         if (!ziel && d) melden("ohne" + kanal, KANAL[kanal].setter + " bekam eine Antwort, ohne dass die offene Seite sie braucht -- sie wird nicht angezeigt.");
       }
       var ok = d && pruefen(kanal, d);
-      if (ok && ziel && nachzuegler[kanal] > 0 && !passtZu(d, ziel.body)) {
+      if (!direkt && ok && ziel && nachzuegler[kanal] > 0 && !passtZu(d, ziel.body)) {
         nachzuegler[kanal]--;
         return false;
       }
@@ -662,10 +749,16 @@
       var sig = ziel ? ziel.sig : null;
       if (sig) {
         if (ok) { delete state.fehler[kanal + sig]; merken(kanal, sig, d); }
+        /* Direkt ist ein 200 ohne lesbare Form "x" (nicht lesbar), nie "leer": PostgREST schickt
+           immer einen Koerper, und leer und kaputt duerfen nicht gleich aussehen (CLAUDE.md §2). */
+        else if (direkt) state.fehler[kanal + sig] = str(f).trim() || "x";
         else state.fehler[kanal + sig] = fehlerCode(f) || (str(raw).trim() ? "x" : "leer");
       }
       persist();
       zeichnen();
+      /* Die zwei Auswahlen der Library zeigen die Optionen -- frueher nur aus setOptionen erneuert,
+         jetzt hier, damit der direkte Weg sie genauso erreicht (13.10.). */
+      if (kanal === "optionen") { if (advFilter) advFilter.neu(); if (fmtFilter) fmtFilter.neu(); }
       bedarf();
       return !!ok;
     }
@@ -2095,6 +2188,10 @@
     if (UC.onBrands) UC.onBrands(storeNeu, root);
     if (UC.onModels) UC.onModels(storeNeu, root);
     if (UC.onMarkets) UC.onMarkets(storeNeu, root);
+    /* Das Team (13.10.): ohne Team geht direkt nichts hinaus (bedarf); kommt es, wird geladen. Ein
+       Wechsel braucht nichts weiter -- das Team steht in der Signatur, der Speicher des alten
+       Teams wird also nie gezeigt. */
+    if (UC.onTeamChange) UC.onTeamChange(function () { if (root.isConnected !== false) { zeichnen(); bedarf(); } }, root);
 
     /* ---- Setter -------------------------------------------------------------------------------- */
     var ctrl = {
@@ -2103,11 +2200,16 @@
       setDetail: function (raw, f) { return antwort("detail", raw, f); },
       setLibrary: function (raw, f) { return antwort("library", raw, f); },
       setPrompts: function (raw, f) { return antwort("prompts", raw, f); },
-      setOptionen: function (raw, f) { var ok = antwort("optionen", raw, f); if (advFilter) advFilter.neu(); if (fmtFilter) fmtFilter.neu(); return ok; },
+      setOptionen: function (raw, f) { return antwort("optionen", raw, f); },
       reset: function () {
         KANAELE.forEach(function (k) {
           state.cache[k] = {}; state.reihe[k] = [];
-          if (unterwegs[k]) clearTimeout(unterwegs[k].uhr);
+          if (unterwegs[k]) {
+            clearTimeout(unterwegs[k].uhr);
+            /* Eine direkte Anfrage wird abgebrochen; kaeme ihre Antwort doch, faellt sie an der
+               Identitaet weg (13.10.). */
+            if (unterwegs[k].ab) { try { unterwegs[k].ab.abort(); } catch (e) {} }
+          }
           unterwegs[k] = null;
         });
         state.fehler = {}; vorige = {};

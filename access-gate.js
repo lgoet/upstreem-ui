@@ -401,11 +401,12 @@
       /* ---- Tarife, Kasse, Portal aus der Komponente (13.10.) -----------------------------------
          Dieselben drei Wege wie im Billing-Reiter der Einstellungen (settings-data.js):
          billing_plans_v1, Edge create-team-checkout, Edge team-billing-portal. Vorher gingen alle
-         drei als uagPlans/uagSelectPlan/uagManage an Bubble. Der Bubble-Weg bleibt Rueckfall --
-         fuer eine Seite ohne settings-data.js und fuer die Antwort "kein Zugang" (402
-         team_access_*), solange die Datenbank nicht bestaetigt hat, dass Tarif und Kasse auch
-         ohne Zugang gehen (DB-Auftrag grosse Runde, 4a). Ein Gate, das sich selbst aussperrt,
-         waere eine Falle ohne Ausgang. */
+         drei als uagPlans/uagSelectPlan/uagManage an Bubble. Die Datenbank hat bestaetigt, dass
+         alle drei nur Mitgliedschaft und Rolle pruefen, nicht den Zugang (VOR_NEXTJS_V1 4a, Faelle
+         G1/G2). Der Bubble-Weg bleibt trotzdem Rueckfall -- fuer eine Seite ohne settings-data.js
+         und falls doch einmal 402 kaeme: ein Gate, das sich selbst aussperrt, waere eine Falle
+         ohne Ausgang. Kaufen duerfen nur Owner und Admin; wer nicht darf, sieht die Knoepfe gar
+         nicht (L.verwalten aus can_manage_billing). */
       function SD() { var d = window.UpstreemSettingsDaten; return d && UC.rpc && UC.edge ? d : null; }
       function gateTeam() { return (state.lage && state.lage.teamId) || feld(root.getAttribute("data-team")); }
       function zugangsFehler(d, erg) {

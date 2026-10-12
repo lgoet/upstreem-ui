@@ -718,6 +718,9 @@
       oppAdded: 'Added',
       oppExists: 'Already added',
       oppError: 'Couldn\u2019t add the opportunity. Please try again.',
+      oppNoData: 'There is no citation data for this page yet, so no opportunity was added.',
+      oppRate: 'Too many requests. Please wait a moment and try again.',
+      oppStatusError: 'The status couldn\u2019t be changed. Please try again.',
       sendFailed: 'The message could not be sent. Please try again.',
       turnFailed: 'Mira couldn\u2019t finish this answer. Please try again.',
       runNow: 'Working for', runDone: 'Worked for', thoughtMoment: 'Thought for a moment',
@@ -839,6 +842,9 @@
       oppAdded: 'Hinzugefügt',
       oppExists: 'Bereits hinzugefügt',
       oppError: 'Opportunity konnte nicht hinzugefügt werden. Bitte erneut versuchen.',
+      oppNoData: 'Für diese Seite gibt es noch keine Zitationsdaten, darum wurde keine Opportunity angelegt.',
+      oppRate: 'Zu viele Anfragen. Warte kurz und versuch es noch einmal.',
+      oppStatusError: 'Der Status konnte nicht geändert werden. Versuch es noch einmal.',
       sendFailed: 'Die Nachricht konnte nicht gesendet werden. Bitte erneut versuchen.',
       turnFailed: 'Mira konnte diese Antwort nicht abschliessen. Bitte erneut versuchen.',
       runNow: 'Arbeitet seit', runDone: 'Gearbeitet', thoughtMoment: 'Kurz nachgedacht',
@@ -1170,8 +1176,44 @@
     st.classList.toggle('is-open', !open);
     var b = st.querySelector('.uo-status-btn'); if (b) b.setAttribute('aria-expanded', (!open) ? 'true' : 'false');
   }
-  function emitMoveStatus(oid, newStatus, oldStatus){
+  /* ---- OPPORTUNITIES AUS DEM CHAT DIREKT IN DER DATENBANK (13.10., VOR_NEXTJS_V1 Abschnitt 6) ----
+     Anlegen: opportunity_from_mira_v1 statt bubble_fn_ask_mira_create_opportunity. Status:
+     opportunities_set_status_v1 (dieselbe Funktion wie das Brett) statt
+     bubble_fn_ask_mira_move_opportunity_status. Gibt es die Funktion noch nicht (404 PGRST202,
+     SQL nicht eingespielt), bleibt es fuer diese Sitzung beim Bubble-Weg. */
+  var OPP_DB = { bubble: false };
+  function oppTeam(){ var k = window.UpstreemCore; try { return k && k.getTeam ? String(k.getTeam() || '') : ''; } catch(_){ return ''; } }
+  function oppKern(){ var k = window.UpstreemCore; return !OPP_DB.bubble && k && typeof k.rpc === 'function' && oppTeam() ? k : null; }
+  function oppOhneRpc(erg){ return !!erg && erg.status === 404 && !!erg.fehler && String(erg.fehler.code || '') === 'PGRST202'; }
+  function oppFehlerSatz(erg, vorgabe){
+    var m = erg && erg.fehler ? String(erg.fehler.message || '') : '';
+    if (/rate_limited/.test(m) || (erg && erg.status === 429)) return L().oppRate;
+    return vorgabe;
+  }
+  function statusZeigen(st, key){
+    var meta = OPP_STATUS_MAP[key]; if (!meta) return;
+    st.setAttribute('data-status', key);
+    var dot = st.querySelector('.uo-status-btn .uo-status-dot'); if (dot) dot.style.setProperty('--uo-stat', meta.color);
+    var lab = st.querySelector('.uo-status-label'); if (lab) lab.textContent = meta.label;
+    var menu = st.querySelector('.uo-status-menu'); if (menu) menu.innerHTML = statusOptionsHtml(key);
+  }
+  function emitMoveStatus(oid, newStatus, oldStatus, zurueck){
     var payload = { opportunity_id: oid, recommendation_id: oid, status: newStatus, previous_status: oldStatus };
+    var k = oppKern();
+    if (k && oid){
+      k.rpc('opportunities_set_status_v1', { p_team: oppTeam(), p_ids: [String(oid)], p_status: newStatus }, { timeoutMs: 20000 }).then(function(erg){
+        if (oppOhneRpc(erg)){ OPP_DB.bubble = true; emitMoveStatus(oid, newStatus, oldStatus, zurueck); return; }
+        if (!erg || !erg.ok){
+          /* Die Karte zeigt den neuen Status schon (optimistisch) -- er gilt aber nicht. Also
+             zurueck auf den alten und sagen, warum, statt still falsch stehen zu bleiben. */
+          if (zurueck) zurueck();
+          _oppcToast(oppFehlerSatz(erg, L().oppStatusError));
+          return;
+        }
+        window.dispatchEvent(new CustomEvent('askmira:opportunity-move-status', { detail: payload }));
+      });
+      return;
+    }
     if (amBfn('move_opportunity_status')) amBfn('move_opportunity_status')(JSON.stringify(payload));
     else { window.dispatchEvent(new CustomEvent('askmira:opportunity-move-status', { detail: payload })); }
   }
@@ -1181,16 +1223,15 @@
     var meta = OPP_STATUS_MAP[newKey]; if (!meta || newKey === oldKey){ st.classList.remove('is-open'); return; }
     var oldMeta = OPP_STATUS_MAP[oldKey];
     // optimistic UI: reflect the new status on the card immediately, no refresh
-    st.setAttribute('data-status', newKey);
-    var dot = st.querySelector('.uo-status-btn .uo-status-dot'); if (dot) dot.style.setProperty('--uo-stat', meta.color);
-    var lab = st.querySelector('.uo-status-label'); if (lab) lab.textContent = meta.label;
-    var menu = st.querySelector('.uo-status-menu'); if (menu) menu.innerHTML = statusOptionsHtml(newKey);
+    statusZeigen(st, newKey);
     st.classList.remove('is-open');
     var b = st.querySelector('.uo-status-btn'); if (b) b.setAttribute('aria-expanded','false');
-    /* An Bubble geht der DATENBANKWERT, nicht die Anzeige -- seit die zwei getrennt sind, ist
-       das status und nicht mehr label. Mit label waere hier "Pending" statt "Created"
-       angekommen, und der Workflow haette den Status nicht wiedererkannt. */
-    emitMoveStatus(st.getAttribute('data-oid'), meta.status, oldMeta ? oldMeta.status : oldKey);
+    /* An die Datenbank (und an Bubble im Rueckfall) geht der DATENBANKWERT, nicht die Anzeige --
+       seit die zwei getrennt sind, ist das status und nicht mehr label. Mit label waere hier
+       "Pending" statt "Created" angekommen. */
+    emitMoveStatus(st.getAttribute('data-oid'), meta.status, oldMeta ? oldMeta.status : oldKey, function(){
+      if (st.getAttribute('data-status') === newKey) statusZeigen(st, oldKey);
+    });
   }
   root.addEventListener('click', function(e){
     if (!e.target.closest) return;
@@ -2200,9 +2241,40 @@
     var r = btn.getAttribute('data-mira-reason'); if (r != null) payload.reason = textFuerNutzlast(r);
     if (aid) _oppcState[aid] = { status: 'loading' };
     _oppcApplyState(btn, 'loading');
+    if (oppAnlegen(aid, payload, t, r)) return;
     if (amBfn('create_opportunity')) amBfn('create_opportunity')(JSON.stringify(payload));
     else { window.dispatchEvent(new CustomEvent('askmira:create-opportunity', { detail: payload })); }
   });
+  /* Anlegen ueber die Datenbank. Die Antwort geht durch DENSELBEN Weg wie Bubbles Rueckmeldung
+     (askMiraOpportunityResult), damit Karte, Zustand und Fehler genau gleich aussehen.
+     created -> Created, exists -> AlreadyExists (Doppelklick und schon vorhandene Karte, M2/M3),
+     no_data -> keine Karte, eigener Satz. Titel und Grund gehen roh: textFuerNutzlast war nur fuer
+     den Backtick im Bubble-Schritt da. Das erste Anlegen dauert rund 7 s -- der Knopf zeigt so
+     lange "Adding". */
+  function oppAnlegen(aid, payload, titel, grund){
+    var k = oppKern();
+    if (!k || !aid) return false;
+    k.rpc('opportunity_from_mira_v1', {
+      p_team: oppTeam(), p_action_id: aid,
+      p_lead_url: payload.lead_url || null,
+      p_title: titel != null ? String(titel) : null,
+      p_reason: grund != null ? String(grund) : null
+    }, { timeoutMs: 45000 }).then(function(erg){
+      if (oppOhneRpc(erg)){
+        OPP_DB.bubble = true;
+        if (amBfn('create_opportunity')) amBfn('create_opportunity')(JSON.stringify(payload));
+        else window.askMiraOpportunityResult({ action_id: aid, status: 'Error' });
+        return;
+      }
+      if (!erg || !erg.ok){ window.askMiraOpportunityResult({ action_id: aid, status: 'Error', error: oppFehlerSatz(erg, L().oppError) }); return; }
+      var d = erg.daten && typeof erg.daten === 'object' ? erg.daten : {};
+      var st = String(d.status || '');
+      if (st === 'no_data'){ window.askMiraOpportunityResult({ action_id: aid, status: 'Error', error: L().oppNoData }); return; }
+      if (st !== 'created' && st !== 'exists'){ window.askMiraOpportunityResult({ action_id: aid, status: 'Error' }); return; }
+      window.askMiraOpportunityResult({ action_id: aid, status: st === 'created' ? 'Created' : 'AlreadyExists', recommendation: d.recommendation || null });
+    });
+    return true;
+  }
   // Bubble reports the RPC result: { action_id, status, recommendation, error }.
   // Created OR AlreadyExists (with a recommendation) -> show the normal opportunity card.
   window.askMiraOpportunityResult = function(res){
