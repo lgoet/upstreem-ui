@@ -1106,3 +1106,16 @@
 @media (prefers-reduced-motion: reduce) {
   .usn-bar, .usn-fab, .usn-scrim { --usn-t: 1ms; }
 }
+
+/* ---------- Platz fuer die Leiste in den Ansichten (13.10.) ----------
+   Bisher hielt ein Bubble-Element mit margin-left den Platz frei -- eine zweite Quelle fuer eine
+   Breite, die nur die Leiste kennt. Jetzt rueckt jede Ansicht (#view-*) selbst um
+   --up-sidebar-w ein, die die Leiste an <html> schreibt (breit 250, eingeklappt 64, Telefon 0),
+   im selben Takt wie die Leiste. Auch die geparkten Ansichten (das View-System legt sie mit
+   width 100% fest ueber den Schirm): mit border-box messen ihre Komponenten damit schon die
+   Breite, die sie sichtbar haben werden. Ohne Leiste auf der Seite ist die Variable leer -> 0. */
+[id^="view-"] {
+  box-sizing: border-box;
+  padding-left: var(--up-sidebar-w, 0px);
+  transition: padding-left var(--up-t-2, 200ms) cubic-bezier(.4, 0, .2, 1);
+}

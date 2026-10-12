@@ -139,6 +139,17 @@
     var t = String(v == null ? "" : v).trim().toLowerCase().replace(/\s+/g, "-");
     return AKTIV_SYNONYM[t] || t;
   }
+  /* DER AKTIVE PUNKT AUS DER ADRESSE (13.10.): seit die Leiste ein einzeiliges Element ohne
+     dynamisches data-active ist, zeigte sie nach jedem Neuladen "Dashboard", auch auf ?view=prompts.
+     Die Adresse ist die Wahrheit ueber die offene Ansicht (das View-System schreibt sie); ohne
+     ?view= ist es die Startansicht dashboard. Nur ein Schluessel der Leiste zaehlt -- eine Ansicht,
+     die keinen Menuepunkt hat, laesst die Markierung, wo sie ist ("" = kein Wert). */
+  function aktivAusAdresse(){
+    var v = "";
+    try { v = new URL(window.location.href).searchParams.get("view") || "dashboard"; } catch(e){ return ""; }
+    var k = aktivNorm(v);
+    return NAV_KEYS.indexOf(k) >= 0 ? k : "";
+  }
 
   /* Genau die Schluessel, die usnNav.key ausgibt -- data-active nimmt dieselben. Ein Wert, der
      hier nicht vorkommt, hebt nichts hervor; das darf nicht stumm passieren. */
@@ -365,7 +376,7 @@
          aus dem Speicher (Setter oder Klick) statt blind "dashboard": sonst sprang die Markierung
          bei jedem Neuaufbau (27.09.: Themenwechsel -> Bubble baut das Element neu) auf Dashboard
          zurueck, auf einer Seite, die den Punkt ueber setSidebarActive setzt. */
-      aktiv: aktivNorm(attr("data-active", "")) || vorrat.aktiv || "dashboard",
+      aktiv: aktivNorm(attr("data-active", "")) || aktivAusAdresse() || vorrat.aktiv || "dashboard",
       teams: vorrat.teams || [], team: vorrat.team || null,
       /* Getrennt vom Inhalt: "noch nichts angekommen" ist ein anderer Zustand als "angekommen
          und leer". Nur der erste zeigt Skelette -- der zweite zeigt, was da ist. */
@@ -1840,6 +1851,13 @@
       /* Ladezustand von aussen. Der Teamwechsel im Schalter setzt ihn selbst -- diesen Weg gibt es
          fuer jeden anderen Grund, aus dem die Seite gleich neu gebaut wird. */
       setLoading: function(v){ ladenSetzen(isYes(v)); return true; },
+      aktivNachziehen: function(k){
+        k = aktivNorm(k);
+        if (!k || NAV_KEYS.indexOf(k) < 0 || k === state.aktiv) return false;
+        state.aktiv = k; vorrat.aktiv = k;
+        if (elNav.querySelector(".usn-item")) aktivMarkieren(); else renderNav();
+        return true;
+      },
       setActive: function(k){
         state.aktiv = aktivNorm(k) || "dashboard";
         vorrat.aktiv = state.aktiv;   /* fuer einen Neuaufbau, siehe aktiv im Zustand */
@@ -1888,8 +1906,17 @@
   }
 
   var mount = null;
+  /* Der aktive Punkt folgt der offenen Ansicht: jeder Wechsel ueber showView (core meldet ihn,
+     onViewChange) und Zurueck/Vor im Browser (das View-System schaltet dort ohne showView). */
+  function alleAktivNachziehen(k){
+    [].forEach.call(document.querySelectorAll(".usn-root"), function(r){
+      var c = r.__usnController; if (c && c.aktivNachziehen) c.aktivNachziehen(k);
+    });
+  }
   function usnRun(){
     var UCl = window.UpstreemCore;
+    if (UCl.onViewChange) UCl.onViewChange(function(name){ alleAktivNachziehen(name); });
+    window.addEventListener("popstate", function(){ var k = aktivAusAdresse(); if (k) alleAktivNachziehen(k); });
     mount = UCl.makeMount({
       onMount: function(m){ mount = m; },
       rootClass: "usn-root", notPortal: true,
