@@ -106,23 +106,11 @@
 }
 
 /* ---------- Formularfehler ueber dem Feldstapel ----------
-   Wie das Namensfeld ueber grid-template-rows animiert, damit ein Serverfehler den Stapel nicht
-   nach unten springen laesst. */
-.uau-formerr {
-  display: grid; grid-template-rows: 0fr; opacity: 0;
-  transition: grid-template-rows var(--uau-t) var(--uau-ease),
-              opacity var(--uau-t) var(--uau-ease),
-              margin-top var(--uau-t) var(--uau-ease);
-  margin-top: 0;
-}
-.uau-formerr > * { overflow: hidden; min-height: 0; }
-.uau-formerr.is-on { grid-template-rows: 1fr; opacity: 1; margin-top: 18px; }
-.uau-formerr-in {
-  padding: 10px 12px; border-radius: 10px;
-  border: 1px solid var(--vc-neg-border, rgba(200, 60, 60, .28));
-  background: var(--vc-neg-bg, rgba(200, 60, 60, .08));
-  font-size: 13px; line-height: 1.45; color: var(--vc-text);
-}
+   Der rote Satz aus core (.up-fehlerzeile: Aufklappen ueber grid-template-rows, damit ein
+   Serverfehler den Stapel nicht springen laesst). Hier nur der Abstand zur Unterzeile, der mit
+   aufklappt. Der Kasten von frueher ist weg (13.10.). */
+.uau-root .up-fehlerzeile.uau-formerr { margin-top: 0; transition: grid-template-rows var(--uau-t) var(--uau-ease), opacity var(--uau-t) var(--uau-ease), margin-top var(--uau-t) var(--uau-ease); }
+.uau-root .up-fehlerzeile.uau-formerr.is-on { margin-top: 12px; }
 
 /* ---------- Felder ---------- */
 /* Auch dieser Abstand gibt auf flachen Fenstern nach -- 26px zwischen Unterzeile und erstem

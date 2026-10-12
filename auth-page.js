@@ -366,7 +366,9 @@
               '<div class="uau-pane" data-pane-form>' +
                 '<h1 class="uau-h1"><span data-hallo></span><br><span data-h1></span></h1>' +
                 '<div class="uau-sub" data-sub></div>' +
-                '<div class="uau-formerr" data-formerr><div><div class="uau-formerr-in" data-formerr-txt></div></div></div>' +
+                /* Der Fehler des Formulars ist der rote Satz aus core (.up-fehlerzeile), kein Kasten --
+                   wie auf allen anderen Einzelseiten (13.10., "falsch gestylter Error State"). */
+                '<div class="up-fehlerzeile uau-formerr" data-formerr role="alert"><span data-formerr-txt></span></div>' +
                 /* Ein echtes <form> um Felder und Hauptknopf. Chrome warnt sonst "Password field
                    is not contained in a form", und das ist keine Formalie: Passwortverwalter
                    erkennen Anmeldemasken ueber genau diese Struktur. Ohne sie bieten sie das
