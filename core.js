@@ -9081,10 +9081,91 @@
     return wunsch >= 32 && img.naturalWidth > 0 && img.naturalWidth <= 16;
   }
 
+  /* ---- ERST GOOGLE, DANN DER GLOBUS (12.10. angefordert: "wenn Favicons nicht laden, automatisch
+     Google s2 nutzen -- Domains sind ja immer vorhanden") --------------------------------------
+     Bevor der Rueckfall oben greift, bekommt ein gescheitertes Favicon EINEN zweiten Versuch ueber
+     google.com/s2/favicons mit seiner Domain. Erst wenn auch der scheitert (oder Google seinen
+     16px-Platzhalter liefert, siehe favPlatzhalter), kommt Buchstabe oder Globus.
+     WOHER DIE DOMAIN KOMMT, in dieser Reihenfolge -- geraten wird nichts:
+       1. aus der Adresse des Bildes selbst: die Favicon-Dienste tragen sie mit (gstatic faviconV2
+          url=, duckduckgo ip3, icon.horse, clearbit, wsrv.nl url=), und ein /favicon.ico liegt
+          auf der Domain, um die es geht;
+       2. aus dem Element, an dem das Bild haengt -- NUR das Bild, sein Kasten und dessen direkter
+          Elternknoten (data-domain, data-url, data-rb-url, data-href). Weiter oben nicht: ein
+          Marken-Chip in einer URL-Zeile bekaeme sonst das Favicon der URL;
+       3. bei einer Marke (data-brand / data-company-id) die Domain aus dem Marken-Speicher, wenn
+          Bubble sie mitschickt (domain, website).
+     Ein Logo aus Bubbles Dateiablage (cdn.bubble.io) hat keine Domain der Marke in der Adresse --
+     dort hilft nur 2 oder 3. Kein Treffer: weiter wie bisher.
+     Die Taste dafuer ist stopPropagation in der Einfangphase: das eigene onerror der Komponente
+     (Bild weg, Buchstabe an) laeuft dann beim ERSTEN Fehlschlag nicht, beim zweiten wie immer. */
+  var FAV_S2 = /google\.com\/s2\/favicons/i;
+  function favHost(u){
+    u = String(u || "").trim();
+    if (!u || u === "null") return "";
+    if (!/^[a-z][a-z0-9+.-]*:/i.test(u)) u = "https://" + u.replace(/^\/\//, "");
+    try { return new URL(u).hostname.replace(/^www\./i, "").toLowerCase(); } catch(e){ return ""; }
+  }
+  function favDomainAusSrc(src){
+    src = String(src || ""); var m;
+    if (FAV_S2.test(src)) return "";
+    if ((m = /gstatic\.com\/faviconV2[^#]*[?&]url=([^&#]+)/i.exec(src))) return favHost(decodeURIComponent(m[1]));
+    if ((m = /wsrv\.nl\/\?[^#]*url=([^&#]+)/i.exec(src))) return favDomainAusSrc(decodeURIComponent(m[1]));
+    if ((m = /icons\.duckduckgo\.com\/ip[23]\/([^\/?#]+)\.ico/i.exec(src))) return favHost(m[1]);
+    if ((m = /icon\.horse\/icon\/([^\/?#]+)/i.exec(src))) return favHost(m[1]);
+    if ((m = /logo\.clearbit\.com\/([^\/?#]+)/i.exec(src))) return favHost(m[1]);
+    if (/\/(favicon[^\/?#]*|apple-touch-icon[^\/?#]*)(\?|#|$)/i.test(src)) return favHost(src);
+    return "";
+  }
+  function favDomainAusMarke(id){
+    id = String(id || "").trim();
+    if (!id) return "";
+    var l = (BRANDS && BRANDS.list) || [];
+    for (var i = 0; i < l.length; i++){
+      var b = l[i];
+      if (!b || String(b.company_id) !== id) continue;
+      return favHost(b.domain || b.website || b.website_url || b.homepage || "");
+    }
+    return "";
+  }
+  function favDomain(img){
+    var d = favDomainAusSrc(img.getAttribute("src"));
+    if (d) return d;
+    var orte = [img], kasten = img.closest ? img.closest(FAV_KASTEN) : null;
+    if (kasten){ orte.push(kasten); if (kasten.parentElement) orte.push(kasten.parentElement); }
+    else if (img.parentElement) orte.push(img.parentElement);
+    for (var i = 0; i < orte.length; i++){
+      var el = orte[i];
+      if (!el || !el.getAttribute) continue;
+      var v = el.getAttribute("data-domain");
+      if (v && (d = favHost(v))) return d;
+      var u = el.getAttribute("data-url") || el.getAttribute("data-rb-url") || el.getAttribute("data-href");
+      if (u && (d = favHost(u))) return d;
+      var mk = el.getAttribute("data-brand") || el.getAttribute("data-company-id");
+      if (mk && (d = favDomainAusMarke(mk))) return d;
+    }
+    return "";
+  }
+  /* true: das Bild laedt gleich ueber Google neu (dann nichts weiter tun). */
+  function favZweiterVersuch(img){
+    if (img.__upFavS2) return false;
+    var src = img.getAttribute("src") || "";
+    if (!src || FAV_S2.test(src)) return false;
+    var d = favDomain(img);
+    if (!d) return false;
+    img.__upFavS2 = 1;
+    if (img.style && img.style.visibility === "hidden") img.style.visibility = "";
+    var k = img.closest ? img.closest(FAV_KASTEN) : null;
+    if (k && k.style && k.style.visibility === "hidden") k.style.visibility = "";
+    img.setAttribute("src", "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(d) + "&sz=64");
+    return true;
+  }
+
   document.addEventListener("error", function(e){
     var el = e && e.target;
     if (!el || el.tagName !== "IMG" || el.__upFavWeg) return;
     if (!istFavicon(el)) return;
+    if (favZweiterVersuch(el)){ e.stopPropagation(); return; }
     el.__upFavWeg = 1;                       /* ein Bild, ein Rueckfall */
     var kasten = el.closest ? el.closest(FAV_KASTEN) : null;   /* jetzt merken: gleich ist es weg */
     setTimeout(function(){ sicher("faviconRueckfall", function(){ faviconRueckfall(el, kasten); }); }, 0);
@@ -9112,6 +9193,7 @@
       if (!b || b.__upFavWeg || !b.complete) continue;
       if (b.naturalWidth !== 0 && !favPlatzhalter(b)) continue;
       if (!b.getAttribute("src") || !istFavicon(b)) continue;
+      if (b.naturalWidth === 0 && favZweiterVersuch(b)) continue;
       b.__upFavWeg = 1;
       var kn = b.closest ? b.closest(FAV_KASTEN) : null;
       sicher("faviconNachsehen", (function(bild, kk){ return function(){ faviconRueckfall(bild, kk); }; })(b, kn));
