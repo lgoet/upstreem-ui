@@ -1244,6 +1244,12 @@
         menuZu();
         /* Der Ladezustand steht schon oben -- die Seite wird gleich neu gebaut, alle Zahlen und
            Listen daneben gehoeren dem alten Team. */
+        /* APP-START (13.10.): kommt der Start von core, wechselt core das Team selbst
+           (team_switch_v1, dann neu laden) -- kein Bubble-Workflow mehr. */
+        if (UC.appStartAktiv && UC.appStartAktiv() && UC.appTeamWechseln){
+          UC.appTeamWechseln(id).then(function(ok){ if (!ok) ladenSetzen(false); });
+          return;
+        }
         fire("data-team-fn", "usnTeam", { team_id: id });
         return;
       }

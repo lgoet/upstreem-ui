@@ -1421,6 +1421,10 @@
     "Special characters were removed from the name.": "Sonderzeichen wurden aus dem Namen entfernt.",
     "Adding brands isn't available on this page": "Brands hinzufügen ist auf dieser Seite nicht möglich",
     "Brand activated again": "Brand wieder aktiviert",
+    "Your workspace could not be loaded. Please reload the page.": "Dein Arbeitsbereich konnte nicht geladen werden. Lade die Seite bitte neu.",
+    "Too many team switches. Please wait a moment.": "Zu viele Teamwechsel. Warte bitte einen Moment.",
+    "You no longer have access to this team.": "Du hast keinen Zugriff mehr auf dieses Team.",
+    "The team could not be switched. Please try again.": "Das Team konnte nicht gewechselt werden. Versuch es noch einmal.",
     "This is your own brand": "Das ist deine eigene Brand",
     "Brand deleted": "Brand gelöscht",
     "Delete brand": "Brand löschen",
@@ -18540,6 +18544,215 @@
     }).then(null, function(){ return false; });
   }
 
+  /* ══ APP-START (13.10., Vertrag bubble/app_start_13_10/APP_START_V1_VERTRAG.md) ═══════════════
+     Ersetzt den Pageload-Workflow der Hauptseite (31 Schritte, 15 RPCs). Laeuft von selbst, sobald
+     die Seitenleiste (.usn-root) auf der Seite steht -- also nur auf der Hauptseite, ohne Attribut.
+       1. app_start_v1(p_team_hint)        Hinweis: ?teamid=, sonst das Team dieses Tabs
+          - nicht angemeldet  -> Abmelden (Bubble usnLogout) und /signup
+          - row null          -> /onboarding (Nutzer ohne Team)
+       2. Thema, Team, Standardmarkt, Gate (VOR drawersReady, sonst greift die Drawer-Sperre
+          nicht), Quota, Seitenleiste (Teams, Nutzer), Profil
+       3. Mit Zugang: team_context_v1 (Marken, Topics, Maerkte, Modelle, Events),
+          user_notification_v1, markets_all_v1 (einmal je Sitzung)
+       4. drawersReady(), setSidebarReady()
+     Danach: Teamwechsel ueber team_switch_v1 und Neuladen mit ?teamid= (die Seiten bauen sich
+     dann sauber fuer das neue Team auf, wie bisher ueber Bubble). Die vier Changed-Signale laden
+     ihren Teil selbst nach (team_context_v1 mit p_parts). HTTP 402 aus irgendeinem RPC heisst:
+     Zugang weg -- der Start laeuft dann einmal neu und zeigt das Gate. */
+  var APP = (window.__upApp = window.__upApp || { aktiv: false, laeuft: false, team: "", start: null, themaVonStart: false, nachStart: 0 });
+  function appPfad(ziel){
+    var vor = /^\/version-test(\/|$)/.test(window.location.pathname) ? "/version-test" : "";
+    return vor + ziel;
+  }
+  function appTabTeam(neu){
+    try {
+      if (neu) window.sessionStorage.setItem("up_tab_team", String(neu));
+      return String(window.sessionStorage.getItem("up_tab_team") || "");
+    } catch(e){ return ""; }
+  }
+  function appAbgemeldet(erg){
+    if (!erg || erg.ok) return false;
+    return erg.status === 401 || /not_authenticated|permission denied/.test(String(erg.fehler && erg.fehler.message || ""));
+  }
+  function appZurAnmeldung(){
+    if (APP.weg) return;
+    APP.weg = true;
+    try { var f = resolveBubbleFn("bubble_fn_usnLogout"); if (typeof f === "function") f(JSON.stringify({ action: "logout" })); } catch(e){}
+    setTimeout(function(){ window.location.assign(appPfad("/signup")); }, 1500);
+  }
+  function appSidebars(fn){
+    [].forEach.call(document.querySelectorAll(".usn-root"), function(r){
+      var id = r.getAttribute("data-instance") || "default";
+      try { fn(id); } catch(e){}
+    });
+  }
+  function appRuf(name){ var f = window[name]; return typeof f === "function" ? f : null; }
+  /* Alle Teile auf einmal oder einzeln (nach einer eigenen Aenderung). */
+  function appTeile(team, teile){
+    return rpc("team_context_v1", { p_team: team, p_parts: teile || null }, { timeoutMs: 30000 }).then(function(erg){
+      var d = erg && erg.ok ? erg.daten : null;
+      var r = d && d.row && typeof d.row === "object" ? d.row : null;
+      if (!r) return false;
+      if (isArr(r.brands) && r.brands.length && appRuf("setUpstreemBrands")) window.setUpstreemBrands(r.brands);
+      if (isArr(r.topics) && appRuf("setUpstreemTopics")) window.setUpstreemTopics(r.topics);
+      if (isArr(r.markets) && appRuf("setUpstreemMarkets")) window.setUpstreemMarkets(r.markets);
+      if (isArr(r.models) && appRuf("setUpstreemModels")) window.setUpstreemModels(r.models);
+      if (isArr(r.events) && appRuf("setUpstreemEvents")) window.setUpstreemEvents(r.events);
+      return true;
+    });
+  }
+  function appAlleMaerkte(){
+    var gemerkt = null;
+    try { gemerkt = JSON.parse(window.sessionStorage.getItem("up_markets_all") || "null"); } catch(e){}
+    if (isArr(gemerkt) && gemerkt.length){ if (appRuf("setUpstreemAllMarkets")) window.setUpstreemAllMarkets(gemerkt); return Promise.resolve(true); }
+    return rpc("markets_all_v1", {}, { timeoutMs: 30000 }).then(function(erg){
+      var rows = erg && erg.ok && erg.daten && isArr(erg.daten.rows) ? erg.daten.rows : null;
+      if (!rows || !rows.length) return false;
+      try { window.sessionStorage.setItem("up_markets_all", JSON.stringify(rows)); } catch(e){}
+      if (appRuf("setUpstreemAllMarkets")) window.setUpstreemAllMarkets(rows);
+      return true;
+    });
+  }
+  function appBenachrichtigung(team){
+    return rpc("user_notification_v1", { p_team: team || null }, { timeoutMs: 20000 }).then(function(erg){
+      var r = erg && erg.ok && erg.daten ? erg.daten.row : null;
+      if (appRuf("setUpstreemNotifications")) window.setUpstreemNotifications(null, r ? [r] : []);
+    });
+  }
+  /* Die Startantwort (oder die eines Teamwechsels) in die App legen. */
+  function appAnwenden(d){
+    var m = d && d.meta && typeof d.meta === "object" ? d.meta : {};
+    var r = d && d.row && typeof d.row === "object" ? d.row : null;
+    if (m.settings && m.settings.theme){
+      APP.themaVonStart = true;
+      try { setUpstreemTheme(String(m.settings.theme)); } finally { APP.themaVonStart = false; }
+    }
+    var u = m.user || {};
+    /* Seitenleiste: geloeschte Teams nicht -- ein Wechsel dorthin fuehrt ins Leere (der Start
+       nimmt sie nie als aktives Team). */
+    var teams = (isArr(m.teams) ? m.teams : []).filter(function(t){ return t && t.id && t.access_state !== "deleted"; });
+    appSidebars(function(id){
+      if (appRuf("setSidebarTeams")) window.setSidebarTeams(id, teams);
+      if (appRuf("setSidebarUser")) window.setSidebarUser(id, { id: u.id, name: u.display_name, email: u.email, avatar_url: u.avatar_url });
+    });
+    if (appRuf("setUpstreemProfile")) window.setUpstreemProfile({ display_name: u.display_name, avatar_url: u.avatar_url, user_id: u.id });
+    if (!r) return null;
+    APP.team = String(r.team_id || "");
+    appTabTeam(APP.team);
+    setUpstreemTeam(APP.team);
+    if (r.default_market && r.default_market.alpha2 && appRuf("setUpstreemDefaultMarket")) window.setUpstreemDefaultMarket(String(r.default_market.alpha2));
+    if (appRuf("setAccessGate") && r.access){
+      var g = {}; for (var k in r.access) if (Object.prototype.hasOwnProperty.call(r.access, k)) g[k] = r.access[k];
+      if (r.quota){ g.used = r.quota.used; g.total = r.quota.total; g.plan = r.quota.plan; }
+      window.setAccessGate(JSON.stringify(g));
+    }
+    if (r.quota) setQuota(r.quota, "app_start");
+    return r;
+  }
+  /* Fuer die Zustaende, die nur Bubble kennt (role, content_hide, app_ready, Loader ausblenden):
+     EIN Ereignis am Ende des Starts, Toolbox-Element "JavaScript to Bubble" namens appStart.
+     Nutzlast {team_id, role, has_access, access_state} -- fehlt das Element, passiert nichts. */
+  function appMelden(r){
+    try {
+      var f = resolveBubbleFn("bubble_fn_appStart");
+      if (typeof f === "function") f(JSON.stringify({ team_id: r ? String(r.team_id || "") : "", role: r ? String(r.role || "") : "",
+        has_access: r && r.access ? r.access.has_access !== false : false, access_state: r && r.access ? String(r.access.access_state || "") : "" }));
+    } catch(e){}
+  }
+  function appFertig(r){
+    appMelden(r);
+    if (appRuf("drawersReady")) { try { window.drawersReady(); } catch(e){} }
+    try { var f = window.setSidebarReady; if (typeof f === "function") f(); } catch(e){}
+    /* ?teamid= ist eingeloest: aus der Adresse, damit ein Neuladen das Team des Tabs nimmt. */
+    try {
+      var u = new URL(window.location.href);
+      if (u.searchParams.has("teamid")){ u.searchParams.delete("teamid"); history.replaceState(history.state, document.title, u.toString()); }
+    } catch(e){}
+  }
+  function appStart(){
+    if (APP.laeuft) return APP.start;
+    APP.laeuft = true; APP.aktiv = true; APP.nachStart = Date.now();
+    if (typeof window.startLoaderAnimation === "function"){ try { window.startLoaderAnimation(); } catch(e){} }
+    var hinweis = "";
+    try { hinweis = new URL(window.location.href).searchParams.get("teamid") || ""; } catch(e){}
+    if (!/^[0-9a-f-]{36}$/i.test(hinweis)) hinweis = appTabTeam("");
+    if (!/^[0-9a-f-]{36}$/i.test(hinweis)) hinweis = "";
+    function ruf(){ return rpc("app_start_v1", { p_team_hint: hinweis || null }, { timeoutMs: 30000 }); }
+    APP.start = ruf().then(function(erg){
+      /* Direkt nach dem Laden kann die Sitzung des Plugins noch fehlen: einmal nachfassen. */
+      var h = erg && erg.fehler ? String(erg.fehler.hint || "") : "";
+      if (appAbgemeldet(erg) && /^no (session|api key)$/.test(h)) return new Promise(function(w){ setTimeout(w, 1500); }).then(ruf);
+      return erg;
+    }).then(function(erg){
+      if (appAbgemeldet(erg)){ appZurAnmeldung(); return null; }
+      if (!erg || !erg.ok || !erg.daten || typeof erg.daten !== "object"){
+        APP.laeuft = false;
+        if (typeof toast === "function") toast(t_("Your workspace could not be loaded. Please reload the page."), { kind: "error" });
+        appFertig();
+        return null;
+      }
+      var r = appAnwenden(erg.daten);
+      if (!r){ window.location.assign(appPfad("/onboarding")); return null; }
+      if (!(r.access && r.access.has_access === false)){
+        return Promise.all([appTeile(APP.team, null), appBenachrichtigung(APP.team), appAlleMaerkte()])
+          .then(function(){ appFertig(r); return r; }, function(){ appFertig(r); return r; });
+      }
+      appFertig(r);
+      return r;
+    }).then(function(r){ APP.laeuft = false; return r; }, function(){ APP.laeuft = false; appFertig(); return null; });
+    return APP.start;
+  }
+  /* Teamwechsel (Seitenleiste, Gate). Erst die Datenbank, dann neu laden mit ?teamid=. */
+  function appTeamWechseln(id){
+    id = String(id == null ? "" : id).trim();
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return Promise.resolve(false);
+    return rpc("team_switch_v1", { p_team: id }, { timeoutMs: 20000 }).then(function(erg){
+      if (erg && erg.ok){
+        appTabTeam(id);
+        try {
+          var u = new URL(window.location.href);
+          u.searchParams.set("teamid", id);
+          u.searchParams.delete("detail");
+          window.location.assign(u.toString());
+        } catch(e){ window.location.reload(); }
+        return true;
+      }
+      if (appAbgemeldet(erg)){ appZurAnmeldung(); return false; }
+      var m = String(erg && erg.fehler && erg.fehler.message || "");
+      if (typeof toast === "function"){
+        toast(/rate_limited/.test(m) || (erg && erg.status === 429) ? t_("Too many team switches. Please wait a moment.")
+              : /forbidden/.test(m) ? t_("You no longer have access to this team.")
+              : t_("The team could not be switched. Please try again."), { kind: "error" });
+      }
+      return false;
+    });
+  }
+  /* Ein Teil nach einer eigenen Aenderung (Changed-Signale). Gibt false zurueck, wenn der Start
+     nicht von core kommt -- dann bleibt es beim Bubble-Weg. */
+  function appTeilNachladen(teil){
+    if (!APP.aktiv || !APP.team) return false;
+    appTeile(APP.team, [teil]);
+    return true;
+  }
+  function appStartAktiv(){ return !!APP.aktiv; }
+  /* 402 aus irgendeinem RPC: der Zugang ist weg (Abo beendet, Team geloescht). Der Start laeuft
+     einmal neu und zeigt das Gate -- hoechstens alle 30 s, damit eine Seite voller Aufrufe nicht
+     dreissig Starts ausloest. */
+  function appZugangWeg(){
+    if (!APP.aktiv || APP.laeuft || Date.now() - APP.nachStart < 30000) return;
+    appStart();
+  }
+  (function appAutostart(){
+    var versuche = 0;
+    function schau(){
+      if (APP.aktiv) return;
+      if (document.querySelector(".usn-root")){ appStart(); return; }
+      if (++versuche < 150) setTimeout(schau, 100);
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", schau);
+    else schau();
+  })();
+
   /* ---------- EINE ENTITAET AN MIRA GEBEN (29.09. spaet, aus drawer-topbar nach core) ----------
      Angefordert: "Ask Mira" auch im Mehr-Menue der Treffer in Quick Actions -- "dieselben Wege
      wie die Knoepfe in den Topbars, Quick Actions muss nur mitgeben, ob Brand, Domain, Prompt,
@@ -18799,6 +19012,8 @@
   }
 
   function topicsChanged(){
+    /* Kommt der Start von core (APP-START), laedt core den Teil selbst nach (13.10.). */
+    if (appTeilNachladen("topics")) return true;
     var fn = resolveBubbleFn("bubble_fn_upTopicsChanged");
     if (typeof fn === "function"){ try { fn(""); } catch(e){} return true; }
     if (window.console) {
@@ -18991,6 +19206,8 @@
      Hauptseite statt eines zweiten RPC-Aufrufs in jedem der fuenf aendernden Workflows, und die
      Pins in den Diagrammen ziehen mit, ohne dass ein Aenderungsort von ihnen weiss. */
   function eventsChanged(){
+    /* Kommt der Start von core (APP-START), laedt core den Teil selbst nach (13.10.). */
+    if (appTeilNachladen("events")) return true;
     var fn = resolveBubbleFn("bubble_fn_upEventsChanged");
     if (typeof fn === "function"){ try { fn(""); } catch(e){} return true; }
     if (window.console) {
@@ -19158,6 +19375,8 @@
   }
 
   function marketsChanged(){
+    /* Kommt der Start von core (APP-START), laedt core den Teil selbst nach (13.10.). */
+    if (appTeilNachladen("markets")) return true;
     var fn = resolveBubbleFn("bubble_fn_upMarketsChanged");
     if (typeof fn === "function"){ try { fn(""); } catch(e){} return true; }
     if (window.console) {
@@ -19400,6 +19619,8 @@
     return true;
   }
   function brandsChanged(){
+    /* Kommt der Start von core (APP-START), laedt core den Teil selbst nach (13.10.). */
+    if (appTeilNachladen("brands")) return true;
     var fn = resolveBubbleFn("bubble_fn_upBrandsChanged");
     if (typeof fn === "function"){ try { fn(""); } catch(e){} return true; }
     if (window.console) {
@@ -19571,7 +19792,12 @@
        auftauchte, und ich sie fuer ein sinnloses Echo hielt. Sie ist es nicht: die Seite SETZT
        ihren is_dark-State ueber genau diesen Rueckkanal. Mit dem Riegel blieb er beim Aufbau aus
        und der State wurde nie gesetzt -- gemeldet als "mein Theme-Workflow ist kaputt". Der
-       Aufruf der Seite ist eine Anweisung, keine Wiederholung, und wird beantwortet. */    if (!THEME.booting){
+       Aufruf der Seite ist eine Anweisung, keine Wiederholung, und wird beantwortet. */    /* APP-START (13.10.): ein echter Wechsel geht auch in die Datenbank (user_settings_set_v1) --
+       nicht der Wert, den der Start gerade aus ihr gesetzt hat. Die Wahl "system" bleibt system. */
+    if (!THEME.booting && APP.aktiv && !APP.themaVonStart){
+      rpc("user_settings_set_v1", { p_key: "theme", p_value: systemWahl ? "system" : THEME.value }, { timeoutMs: 20000 });
+    }
+    if (!THEME.booting){
       try {
         var meld = resolveBubbleFn("bubble_fn_theme_pref");
         if (typeof meld === "function") meld(THEME.value);
@@ -19976,7 +20202,14 @@
     if (!AUTH.token) return;
     for (var i = 0; i < w.length; i++){ try { w[i](); } catch(e){} }
   }
-  function authWartet(fn){ if (typeof fn === "function") AUTH.warten.push(fn); }
+  /* Wer auf ein frisches Token wartet: steht eine gueltige Sitzung des Plugins, laeuft es nach
+     kurzer Pause weiter (das Plugin frischt selbst auf) -- auf setUpstreemAuth aus Bubble wartet
+     seit dem App-Start (13.10.) niemand mehr. */
+  function authWartet(fn){
+    if (typeof fn !== "function") return;
+    if (APP.aktiv){ setTimeout(function(){ AUTH.token = profilToken() || AUTH.token; try { fn(); } catch(e){} }, 1500); return; }
+    AUTH.warten.push(fn);
+  }
   window.setUpstreemAuth = setUpstreemAuth;
 
   /* ---- Der ERKLAERENDE Weg: alles an Attributen -----------------------------------------------
@@ -20192,6 +20425,9 @@
             return { ok: true, status: x.r.status, daten: aus };
           }
           var f = d && typeof d === "object" ? d : {};
+          /* 402 team_access_*: der Zugang des Teams ist weg -- das Gate zeigen, nicht nur einen
+             Fehler (Vertrag App-Start, Abschnitt 3). */
+          if (x.r.status === 402 && /^team_access_/.test(String(f.message || ""))) setTimeout(appZugangWeg, 0);
           return { ok: false, status: x.r.status, fehler: {
             code: String(f.code || ""), message: String(f.message || ("http_" + x.r.status)),
             hint: String(f.hint || ""), details: String(f.details || "") } };
@@ -20589,10 +20825,20 @@
           erst getUser() oder ein Token-Refresh die neuen Werte. Fuer die Anzeige im Fenster gilt
           deshalb der Wert, der GERADE gespeichert wurde, nicht der aus dem Token -- die
           Komponente zeichnet ihn selbst und wartet nicht auf eine Bestaetigung von aussen. */
+  /* Das Token fuer GoTrue und Storage: frisch aus der Sitzung des Plugins (APP-START, 13.10.: kein
+     JWT mehr aus einem Run-JS-Schritt), sonst das, was setUpstreemAuth gesetzt hat. */
+  function profilToken(){
+    var sz = sitzungLesen();
+    if (sz && sz.token && (!sz.ablauf || sz.ablauf > Date.now() / 1000)) return sz.token;
+    return AUTH.token;
+  }
   function profilSpeichern(felder, cb){
     function fertig(ok, grund){ if (cb) cb({ ok: !!ok, grund: grund || null }); }
     if (!felder || typeof felder !== "object") return fertig(false, "server");
+    if (!AUTH.token) AUTH.token = profilToken() || "";
+    if (!AUTH.key) AUTH.key = rpcSchluessel();
     if (!AUTH.token) return fertig(false, "unauthorized");
+    AUTH.token = profilToken() || AUTH.token;
     /* Ohne apikey antwortet GoTrue mit 401, und das saehe aus wie ein abgelaufenes Token --
        ein Fehler, der eine Token-Auffrischung ausloest, die nichts aendert. Also vorher pruefen
        und deutlich sagen, was fehlt. */
@@ -20623,6 +20869,7 @@
     var eimer = String(cfg.bucket || "").replace(/^\/+|\/+$/g, "");
     var pfad  = String(cfg.path || "").replace(/^\/+/, "");
     if (!eimer || !pfad || !cfg.blob) return fertig(false, "server");
+    AUTH.token = profilToken() || AUTH.token;
     if (!AUTH.token) return fertig(false, "unauthorized");
     var typ = String(cfg.contentType || (cfg.blob && cfg.blob.type) || "image/png");
     var ziel = SUPA + "/storage/v1/object/" + eimer + "/" + pfad;
@@ -24170,6 +24417,7 @@
     getPref: getPref, setPref: setPref, setLocaleReload: setLocaleReload,
     openDrawers: openDrawers, closeAllDrawers: closeAllDrawers, drawerOeffnen: drawerOeffnen,
     kernDrawer: kernDrawer, kernDrawerAktiv: kernDrawerAktiv, teamWarten: teamWarten, markenNachladen: markenNachladen,
+    appStart: appStart, appStartAktiv: appStartAktiv, appTeamWechseln: appTeamWechseln, appTeilNachladen: appTeilNachladen,
     anMira: anMira, miraBezug: miraBezug,
     onPrefs: onPrefs, getUpstreemThemeChoice: getUpstreemThemeChoice,
     PREF_DEFAULT: PREF_DEFAULT, PREF_ERLAUBT: PREF_ERLAUBT,

@@ -772,6 +772,11 @@
         if (b && b.disabled) return;
         var tm = t.closest("[data-uag-team]");
         if (tm) {
+          /* APP-START (13.10.): Teamwechsel ueber core statt Bubble. */
+          if (UC.appStartAktiv && UC.appStartAktiv() && UC.appTeamWechseln) {
+            UC.appTeamWechseln(tm.getAttribute("data-uag-team"));
+            return;
+          }
           melden(G, "team", fire("data-team-fn", "uagTeam", { team_id: tm.getAttribute("data-uag-team") }), tm);
           return;
         }

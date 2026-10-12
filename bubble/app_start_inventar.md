@@ -57,3 +57,18 @@ core führt den Start selbst aus, auf der Hauptseite (dort, wo die Seitenleiste 
 - das Kopf-Skript, wie in Abschnitt 1 bereinigt;
 - die Elemente: Seitenleiste, Ansichten mit ihren Seiten, Loader, Quick Actions, Benachrichtigung, Gate;
 - vorerst Bubble-Workflows für: Logout (Plugin), „New Team“ (Onboarding), Quick-Actions-Suche und Einstellungen (eigene Runden), Export (eigene Runde).
+
+## 4. Gebaut (13.10.): was Bubble danach noch tut
+
+core startet die Hauptseite selbst, sobald die Seitenleiste steht (`.usn-root`), gegen `APP_START_V1_VERTRAG.md`.
+
+- **Aus dem alten Pageload-Workflow entfällt alles bis auf die Bubble-Zustände.** Ersatz ist ein Toolbox-Element „JavaScript to Bubble“ namens **`appStart`**, mit Trigger event und Publish value (Text).
+  - core feuert es einmal am Ende des Starts, vor `drawersReady`.
+  - Nutzlast: `{"team_id":"…","role":"owner|admin|member","has_access":true,"access_state":"active"}`.
+  - Sein Workflow setzt, was nur Bubble kennt: State `role` (Regex `(?<="role":")[^"]*`), `content_hide`, `app_ready`, Loader ausblenden (heutige Schritte 13, 26–28, 31).
+- **Seitenleiste:** Teamwechsel (`usnTeam`) macht core (`team_switch_v1`, Neuladen mit `?teamid=`). Der Bubble-Workflow `usnTeam` wird nicht mehr ausgelöst. „New Team“, Logout und Navigation bleiben Bubble.
+- **Gate:** „Switch team“ (`uagTeam`) macht core. Tarife (`uagPlans`), Billing (`uagManage`), New Team und Logout bleiben Bubble.
+- **Benachrichtigung:** Wegklicken macht core (`user_notification_dismiss_v1`). Der Workflow `uncDismiss` wird nicht mehr ausgelöst.
+- **Thema:** Wechsel speichert core (`user_settings_set_v1`). `bubble_fn_theme_pref` feuert weiter, falls Bubble daran einen State hängt. Der REST-Schreibschritt auf `user_settings` darin muss weg.
+- **REFRESH-Custom-Events:** Die vier Changed-Signale laden selbst nach. Die Elemente `upTopicsChanged`, `upMarketsChanged`, `upBrandsChanged`, `upEventsChanged` werden nicht mehr ausgelöst.
+- **Profilbild und Name:** Das Token kommt aus der Sitzung des Plugins, „Set Internal AUTH“ entfällt.

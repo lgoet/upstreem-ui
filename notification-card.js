@@ -347,7 +347,12 @@
         elCard.classList.remove("is-closing");
         render();
       }, 180);
-      fire("data-dismiss-fn", "bubble_fn_uncDismiss", { id: n.id, reason: grund });
+      /* APP-START (13.10.): wegklicken direkt in der Datenbank (user_notification_dismiss_v1). */
+      if (UC.appStartAktiv && UC.appStartAktiv() && UC.rpc) {
+        UC.rpc("user_notification_dismiss_v1", { p_id: n.id, p_reason: grund === "primary" || grund === "secondary" ? grund : "close" });
+      } else {
+        fire("data-dismiss-fn", "bubble_fn_uncDismiss", { id: n.id, reason: grund });
+      }
     }
 
     karte.querySelector(".unc-x").addEventListener("click", function () { schliessen("close"); });
