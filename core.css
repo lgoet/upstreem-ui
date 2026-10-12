@@ -3316,10 +3316,19 @@
       width: fit-content; max-width: min(420px, calc(100vw - 32px)); min-height: 44px;
       padding: 12px 12px 12px 14px; border-radius: var(--up-r-xl);
       background: var(--vc-toast-bg); color: var(--vc-toast-ink); box-shadow: var(--up-e-4);
-      opacity: 0; transform: translateY(10px) scale(.98);
+      opacity: 0; transform: translateY(24px) scale(.96);
       transition: opacity var(--up-t-2) var(--up-ease-auf), transform var(--up-t-2) var(--up-ease-auf);
     }
-    .up-toast.is-on { opacity: 1; transform: none; }
+    /* DEUTLICHER HEREIN (12.10. gemeldet: "sieht oft aus, als wuerden die einfach aufploppen"):
+       24px Weg statt 10, die Dauer des Seitenauftritts (600ms) mit easeOutExpo wie mobbin -- der
+       groesste Teil der Strecke liegt in den ersten 200ms, der Rest setzt sanft auf. Dazu 120ms
+       Abstand zur Handlung: der Toast antwortet auf den Klick, statt mit ihm zusammenzufallen. Die
+       Deckkraft ist schneller als der Weg, sonst steht ein halb durchsichtiger Kasten lange da. */
+    .up-toast.is-on { opacity: 1; transform: none;
+      transition: opacity var(--up-t-3) ease var(--up-t-1), transform var(--up-t-auftritt) var(--up-ease-expo) var(--up-t-1); }
+    @media (prefers-reduced-motion: reduce) {
+      .up-toast, .up-toast.is-on { transform: none; transition: opacity var(--up-t-1) ease; }
+    }
     /* Abgang: der Handoff nennt 160 ms -- auf die Skala gezogen (--up-t-1, 120 ms); der Unterschied
        ist nicht zu sehen, eine Dauer neben der Skala waere ein dritter Wert fuer dasselbe. */
     .up-toast.is-weg { opacity: 0; transform: scale(.97); transition: opacity var(--up-t-1) ease, transform var(--up-t-1) ease; }
@@ -4110,7 +4119,9 @@
 .up-root.up-kdr { position: fixed; top: 8px; right: 8px; bottom: 8px; z-index: 9920;
   width: min(var(--up-kdr-breite, 840px), calc(100vw - 16px)); box-sizing: border-box;
   display: flex; flex-direction: column; overflow: hidden;
-  background: var(--vc-bg); color: var(--vc-text);
+  /* Der Grund der Seite (--up-surface), nicht der Karten (--vc-bg): im Dunkeln stand der Drawer
+     sonst heller als die Seite darunter (12.10. gemeldet). Im Hellen sind beide weiss. */
+  background: var(--up-surface, var(--vc-bg)); color: var(--vc-text);
   border: 1px solid var(--vc-border); border-radius: var(--up-r-xl); box-shadow: var(--up-e-drawer);
   font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; -webkit-font-smoothing: antialiased;
   transform: translateX(110%); transition: transform var(--up-t-2) cubic-bezier(.32, .72, 0, 1);
@@ -4128,8 +4139,17 @@
 /* Der Kopf: 56 hoch (32er Knoepfe plus 12 darueber und darunter), steht, waehrend der Inhalt
    darunter laeuft. Die Linie kommt erst mit dem Rollen (.is-gerollt) -- oben ist der Kopf Teil
    der Flaeche. Die Knoepfe sind .up-iconbtn aus core, unveraendert. */
-.up-kdr-kopf { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; height: 56px;
+/* GLAS (12.10. angefordert, "wie Apple"): der Kopf liegt UEBER dem Rollbereich, der Inhalt laeuft
+   unter ihm hindurch und scheint minimal durch -- 92 % Deckkraft des Seitengrunds, dahinter 20px
+   Unschaerfe mit etwas mehr Saettigung (so mischt Apple seine Materialien). Der Rollbereich
+   beginnt mit dem Abstand der Kopfhoehe (--up-kdr-kopf-h), oben steht also nichts verdeckt.
+   Ohne backdrop-filter (alter Browser) bleibt es ein fast deckender Kopf -- lesbar wie vorher. */
+.up-root.up-kdr { --up-kdr-kopf-h: 56px; }
+.up-kdr-kopf { position: absolute; top: 0; left: 0; right: 0; z-index: 3;
+  display: flex; align-items: center; gap: 8px; height: var(--up-kdr-kopf-h);
   padding: 0 12px; box-sizing: border-box; min-width: 0;
+  background: color-mix(in srgb, var(--up-surface, var(--vc-bg)) 92%, transparent);
+  -webkit-backdrop-filter: saturate(1.8) blur(20px); backdrop-filter: saturate(1.8) blur(20px);
   border-bottom: 1px solid transparent; transition: border-color var(--up-t-1) ease; }
 .up-kdr.is-gerollt .up-kdr-kopf { border-bottom-color: var(--vc-border); }
 .up-root .up-kdr-knopf[hidden] { display: none; }
@@ -4156,7 +4176,7 @@
    seinem Ausloeser und reichte 150px ueber die Kante -- gemessen auf 390px, die Flaeche liess
    sich seitlich schieben. Geoeffnet richtet es sich selbst aus (is-right) und bleibt innen. */
 .up-kdr-koerper { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
-  scrollbar-gutter: stable; }
+  scrollbar-gutter: stable; padding-top: var(--up-kdr-kopf-h); }
 .up-kdr-spalte { box-sizing: border-box;
   padding: 16px 20px calc(96px + env(safe-area-inset-bottom)); }
 /* Response Detail: doppelter Rand (12.10. angefordert, "padding left right verdoppeln") -- dort
@@ -4195,7 +4215,9 @@
 .up-dk-zahl-n:empty { display: none; }
 /* Abschnittskopf: Ueberschrift ueber der Unterzeile, 16/600 und 13. */
 .up-dk-h2 { font-size: var(--up-fs-xl); font-weight: 600; letter-spacing: -0.01em; color: var(--vc-text); }
-.up-dk-unter { font-size: var(--up-fs-m); font-weight: 400; line-height: 1.45; color: var(--vc-muted); }
+/* Die Unterzeile in der DRITTEN Textstufe (12.10. angefordert): sie erklaert die Ueberschrift
+   und tritt hinter den Inhalt des Abschnitts zurueck. */
+.up-dk-unter { font-size: var(--up-fs-m); font-weight: 400; line-height: 1.45; color: var(--vc-third); }
 
 /* Tablet: die volle Breite bis auf den schwebenden Rand -- 80 % von 900px liessen links einen
    Streifen Seite stehen, der nur noch nach Platzverlust aussah (so wie die Bubble-Gruppe, die
@@ -4205,7 +4227,8 @@
 }
 @media (max-width: 767px) {
   .up-root.up-kdr { top: 0; right: 0; bottom: 0; width: 100vw; border: 0; border-radius: 0; }
-  .up-kdr-kopf { height: calc(56px + env(safe-area-inset-top)); padding-top: env(safe-area-inset-top); }
+  .up-root.up-kdr { --up-kdr-kopf-h: calc(56px + env(safe-area-inset-top)); }
+  .up-kdr-kopf { padding-top: env(safe-area-inset-top); }
   /* Wie in der Mobilvorlage: der Kopf nennt nur, WAS offen ist ("Response"), mittig. Modell und
      Datum stehen darunter im Inhalt -- auf 375px haette die Krume ohnehin nur Punkte gezeigt. */
   .up-kdr-kopf { display: grid; grid-template-columns: 1fr auto 1fr; }

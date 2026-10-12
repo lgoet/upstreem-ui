@@ -5773,9 +5773,17 @@
        cfg.firstFloor setzt die Spur UND, wenn firstShare fehlt, die Rechnung -- beide mit
        derselben Zahl, sonst rechnet autoFit mit einer anderen Breite als das Raster sie zieht.
        Ohne Angabe bleibt alles bei 0.30 wie bisher. */
+    /* SPUR UND RECHNUNG MIT DERSELBEN ZAHL (12.10.). Setzte eine Tabelle nur firstShare (die
+       Responses-Tabelle: 0.18), rechnete autoFit mit 18 Prozent fuer die fuehrende Spalte, die Spur
+       blieb aber bei minmax(30%, ...). Gemessen bei 1300px: acht Spalten galten als passend, das
+       Raster brauchte 91px mehr, die rechte Spalte wurde gequetscht und die Kopflinien liefen aus
+       dem Kasten. Erst ein Ziehen der ersten Spalte (feste Pixelbreite) brachte beides wieder
+       zusammen -- genau so gemeldet. Ohne firstFloor gilt darum firstShare auch fuer die Spur. */
     function firstFloor(){
       var v = cfg.firstFloor;
-      return (typeof v === "number" && v > 0 && v < 1) ? v : 0.30;
+      if (typeof v === "number" && v > 0 && v < 1) return v;
+      var sh = cfg.firstShare;
+      return (typeof sh === "number" && sh > 0 && sh < 1) ? sh : 0.30;
     }
     function firstShare(){
       var v = cfg.firstShare;
@@ -18036,7 +18044,9 @@
      url und response, waren 80 % breit). Unter 768 die ganze Seite (core.css). */
   var KD_ESC_SPERRE = false;
   var KERN_DRAWER = {
-    response: { label: "Response", breite: "80vw" },
+    /* Response Detail schmaler als URL (12.10.: "merklich kleiner, aber nicht zu klein"): eine
+       Antwort ist Lesetext, die URL-Seite traegt eine Tabelle. 960 bei 1440px Fenster. */
+    response: { label: "Response", breite: "min(960px, 72vw)" },
     url: { label: "URL", breite: "80vw" }
   };
   var KD = {};
@@ -18255,20 +18265,48 @@
      URL". Der Weg stand bis hierher nur in drawer-topbar.js (zuMira); zwei Kopien waeren beim
      naechsten Fix auseinandergelaufen. Drei Schritte, in dieser Reihenfolge:
        1. alle offenen Drawer zu (zusaetzlich: Namen, die sicher offen sind);
-       2. die Ansicht wechseln, mit dem Weg der App: showView("mira");
-       3. der Bezug an Mira -- ist sie auf der Seite, direkt ueber askMiraAddReference, sonst
-          ueber den sessionStorage, den Mira beim Start abholt. NUR EINER der zwei Wege: mit
-          beiden kaeme der Bezug zweimal an, und ein Eintrag, den niemand abholt, stuende beim
-          naechsten Laden einer ganz anderen Seite wieder im Feld.
+       2. die Ansicht wechseln, mit dem Weg der Seitenleiste (ansichtWechseln, seit 12.10.);
+       3. der Bezug an Mira, sobald sie zu sehen ist (siehe unten). NUR EINER der zwei Wege
+          (direkt oder sessionStorage): mit beiden kaeme der Bezug zweimal an.
      Kein Ereignis an Bubble: Drawer und Ansicht erledigt das hier selbst. */
+  /* ZWEI FEHLER (12.10. gemeldet: "oeffnet Mira nicht, die URL steht auf mira, der View bleibt
+     unsichtbar; nach Klick auf Mira ist der Chip da, aber ohne die Frage, und der Platzhalter liegt
+     ueber dem Chip"):
+       1. showView allein aendert nur die Adresse. Den Bubble-State "Current View" setzt nur der Weg
+          der Seitenleiste (usnNavigieren) -- also derselbe Weg wie ansichtWechseln.
+       2. Der Bezug ging an Mira, solange sie noch nicht stand oder verdeckt war (sessionStorage,
+          beim Aufbau abgeholt). Verdeckt misst sie die Lage des Chips mit 0 -- der Einzug des
+          Textes fehlt, der Platzhalter liegt darueber. Jetzt wartet der Bezug, bis Mira steht UND
+          zu sehen ist, und kommt dann ueber askMiraAddReference -- genau der Zustand, in dem das
+          Plus-Menue einen Bezug einsetzt (Chip, Frage, Einzug, Fokus). Der sessionStorage bleibt
+          nur das Netz, falls Mira in 8s nicht erscheint. */
+  function miraWurzelBereit(){
+    var l = document.querySelectorAll('[id="ask-mira"]');
+    for (var i = 0; i < l.length; i++){
+      var w = l[i];
+      if (!w.__askMiraInit || !w.isConnected) continue;
+      /* auftrittGezeigt und nicht istSichtbar: die Ansicht faehrt mit Deckkraft 0 an, und Mira
+         misst Masse, keine Deckkraft -- gerendert und in der offenen Ansicht genuegt. */
+      if (!auftrittGezeigt(w)) continue;
+      var r = w.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) return w;
+    }
+    return null;
+  }
   function anMira(bezug, zusaetzlich){
     if (!bezug) return false;
-    try { closeAllDrawers(zusaetzlich || []); } catch(e){}
-    try { if (typeof window.showView === "function") window.showView("mira"); } catch(e){}
-    var wurzel = document.getElementById("ask-mira");
-    var miraDa = !!(wurzel && wurzel.__askMiraInit) && typeof window.askMiraAddReference === "function";
-    if (miraDa){ try { window.askMiraAddReference(bezug); } catch(e){} }
-    else { try { sessionStorage.setItem("am_pending_ref", JSON.stringify(bezug)); } catch(e){} }
+    try { ansichtWechseln("mira", zusaetzlich || []); } catch(e){}
+    var bis = Date.now() + 8000, gesehen = 0;
+    (function warten(){
+      var w = miraWurzelBereit();
+      if (w && typeof window.askMiraAddReference === "function"){
+        /* Zweimal hintereinander bereit: Mira richtet sich nach dem Einblenden einen Takt lang
+           ein (Hoehe, Composer); ein Bezug in diesem Takt wuerde gegen halbe Masse gemessen. */
+        if (++gesehen >= 2){ try { window.askMiraAddReference(bezug); } catch(e){} return; }
+      } else gesehen = 0;
+      if (Date.now() < bis){ setTimeout(warten, 60); return; }
+      try { sessionStorage.setItem("am_pending_ref", JSON.stringify(bezug)); } catch(e){}
+    })();
     return true;
   }
   /* ZU EINER ANSICHT GEHEN, AUS JEDER LAGE (UC.ansichtWechseln, 06.10.). Angefordert an den

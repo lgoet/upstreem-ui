@@ -1335,6 +1335,13 @@
       r.__uudZeitraum = duZeitraumAufZitat;
       DU.root = r;
       initRoot(r);
+      /* DER KALENDER STEHT ZWISCHEN KOPF UND KENNZAHLEN (12.10.): auf den Seiten der App sitzen die
+         Filter links unter Titel und Navigation, ueber dem, was sie filtern -- hier also unter
+         Titel und Adresse, ueber der Leiste der Kennzahlen. Vorher stand er allein oben rechts
+         ueber dem Titel ("iwie off"). Umgehaengt in den Kopf der Komponente; er bleibt im Slot,
+         sein "change" erreicht den Drawer also wie vorher. */
+      var leiste = ctx.slot.querySelector(".uud-dw-leiste"), kpis = r.querySelector(".uud-head .uud-kpis");
+      if (leiste && kpis) kpis.parentNode.insertBefore(leiste, kpis);
       ctx.eigen.addEventListener("click", function (e) {
         var b = e.target.closest ? e.target.closest("[data-uud-kopf]") : null;
         if (b) duKopfKlick(b.getAttribute("data-uud-kopf"));

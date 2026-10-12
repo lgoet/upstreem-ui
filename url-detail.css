@@ -207,11 +207,16 @@
 /* ---- Der URL-Drawer aus core (12.10.): Kalender oben rechts, darunter die Seite, darunter die
    Antworten, die sie zitieren. Die Tabelle ist die Responses-Tabelle selbst (lokaler Modus). */
 .uud-dw { display: flex; flex-direction: column; gap: 40px; min-width: 0; }
-.uud-dw-leiste { display: flex; justify-content: flex-end; margin-bottom: -24px; }
+/* Der Kalender unter Titel und Adresse, links wie die Filterzeilen der Seiten (12.10.). Die
+   Kennzahlen-Leiste darunter bringt ihre 16px Abstand selbst mit (margin-top aus core). */
+.uud-dw-leiste { display: flex; justify-content: flex-start; margin-top: 4px; }
 .uud-dw-resp { min-width: 0; }
 /* Neuer Zeitraum fuer dieselbe Seite: die alte gedimmt stehen lassen, bis die neue da ist
    (Dimmen statt Skelett, 12.10.) -- dieselben .42 wie die Tabellen in core. */
-.uud-root.is-reloading > * { opacity: .42; pointer-events: none; transition: opacity var(--up-t-1) ease; }
+/* Ohne den Kalender selbst: er steht seit dem 12.10. im Kopf, und gedimmt (pointer-events none)
+   liesse er sich waehrend des Ladens nicht noch einmal umstellen. */
+.uud-root.is-reloading > :not(.uud-head),
+.uud-root.is-reloading .uud-head > :not(.uud-dw-leiste) { opacity: .42; pointer-events: none; transition: opacity var(--up-t-1) ease; }
 /* Ohne Seite (Fehler) keine Tabelle darunter. */
 .uud-dw.is-fehler .uud-dw-resp { display: none; }
 /* Nicht im Zeitraum: Satz und Knopf in der Leiste der Kennzahlen. */

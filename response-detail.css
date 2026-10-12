@@ -121,9 +121,13 @@
    auch nicht beim Ueberfahren oder offen, nur die Schrift wird dunkler. Kein .up-iconbtn: dessen
    feste 32x32, Polster und Hover haetten hier alle ueberschrieben werden muessen. 32 hoch wie jeder
    Knopf einer Werkzeugzeile. Der Pfeil dreht sich beim Oeffnen nicht. */
-.urd-hlbtn { display: inline-flex; align-items: center; gap: 6px; height: var(--up-h-btn); padding: 0 2px;
-  border: 0; background: transparent; font: inherit; font-size: var(--up-fs-m); font-weight: 500;
-  color: var(--vc-muted); cursor: pointer; transition: color var(--up-t-1) ease; }
+.urd-hlbtn { display: inline-flex; align-items: center; gap: 6px; height: var(--up-h-btn); padding: 0 12px;
+  border: 0; border-radius: var(--up-r-m); background: var(--vc-heading-bg); font: inherit; font-size: var(--up-fs-m); font-weight: 500;
+  color: var(--vc-muted); cursor: pointer; transition: color var(--up-t-1) ease, background var(--up-t-1) ease; }
+/* Seit dem 12.10. mit grauem Grund (angefordert) -- der Knopf steht neben einer Ueberschrift und
+   las sich ohne Flaeche als Text. Hover wie die Zeilen der App. Kein .up-btn-sec aus core, auch
+   wenn der Pruefer ihn so liest: der traegt Rahmen und keinen Grund, verlangt ist das Gegenteil. */
+.urd-hlbtn:hover, .urd-hlwrap.is-open .urd-hlbtn { background: var(--vt-row-hover-solid, var(--vc-switch-bg)); }
 .urd-hlbtn svg { width: 15px; height: 15px; flex: 0 0 15px; display: block; }
 .urd-hlchev { display: inline-flex; }
 .urd-hlbtn .urd-hlchev svg { width: 14px; height: 14px; flex: 0 0 14px; }
