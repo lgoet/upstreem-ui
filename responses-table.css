@@ -74,12 +74,14 @@
 /* Mobile mode: Model is one of only two columns still shown (with Prompt), so the full
    logo+name chip is replaced by just the logo in a plain 32x32 box — no border/padding shell,
    no name text, nothing else competing for the little width that's left. */
-.up-root.is-vnarrow .urt-model-chip { gap: 0; }
-.up-root.is-vnarrow .urt-model-chip .up-ment-name { display: none; }
-.up-root.is-vnarrow .urt-model-chip .up-ment-logo {
+/* Nur in der TABELLE (.up-row): die Karte zeigt auch schmal Modellname und runde Plakette
+   (Kartenentwurf 13.10.) -- vorher trafen diese Regeln sie mit, und der Name fehlte. */
+.up-root.is-vnarrow .up-row .urt-model-chip { gap: 0; }
+.up-root.is-vnarrow .up-row .urt-model-chip .up-ment-name { display: none; }
+.up-root.is-vnarrow .up-row .urt-model-chip .up-ment-logo {
   width: 20px; height: 20px; border-radius: 6px; padding: 1px;
 }
-.up-root.is-vnarrow .urt-model-chip .up-ment-logo img { width: 100%; height: 100%; border-radius: 4px; }
+.up-root.is-vnarrow .up-row .urt-model-chip .up-ment-logo img { width: 100%; height: 100%; border-radius: 4px; }
 
 /* ---------- mentioned? column header ----------
    The logo is fixed-size and the label must be the part that gives way; without min-width:0 the
@@ -204,29 +206,45 @@
 .up-root.is-cards-view .urt-cards { display: grid; }
 .up-root.is-cards-view .up-box { display: none; }   /* .up-box wraps .up-thead + .up-tbody */
 
-/* Background + hover match .up-row exactly (var(--vc-bg) / var(--vt-row-hover)) — a card is a
-   row's alternate rendering of the same data, not a different surface. .up-surface (the popover/
-   modal white) reads a shade off from the table in dark mode; this is the same fix border-color/
-   box-shadow-on-hover would never have caught since it changed the wrong property. */
-.urt-card { display: flex; flex-direction: column; min-width: 0; min-height: 200px; max-height: 250px;
-  padding: 16px; border-radius: 14px; border: 1px solid var(--vc-border); background: var(--vc-bg);
-  cursor: pointer; transition: background 120ms ease; }
-.urt-card:hover { background: var(--vt-row-hover); }
+/* KARTENENTWURF 13.10. (upstreem-response-card, "Airbnb / Trade Republic"): ruhige Flaeche,
+   Rahmen, viel Luft, beim Hover ein weicher Schatten statt einer Flaechenfarbe. Die Masse sind
+   die des Entwurfs, auf die Skala gelegt (CLAUDE.md §1c): Radius 20 -> 16 (--up-r-2xl), Titel
+   17 -> 16, Auszug und Kennzahlen 15 -> 14. Die Marken- und Quellen-Chips bleiben im Stil der App
+   (eckig, mit Rahmen) -- so bestellt. Eine Spalte, Abstand 14 zwischen Kopf, Text und Fuss.
+   Grund wie .up-row (--vc-bg), nicht .up-surface: die Karte ist eine andere Darstellung derselben
+   Zeile. Im Dunkeln nimmt core allen Karten den Rand (core.css, Liste mit .urt-card). */
+.urt-card { display: flex; flex-direction: column; gap: 14px; min-width: 0; min-height: 200px;
+  padding: 20px; border-radius: var(--up-r-2xl); border: 1px solid var(--vc-border); background: var(--vc-bg);
+  cursor: pointer; transition: box-shadow var(--up-t-2) var(--up-ease), transform var(--up-t-1) var(--up-ease); }
+.urt-card:hover { box-shadow: var(--up-e-2); }
+.urt-card:active { transform: scale(.99); }
+.urt-card:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; }
 
-/* 20 statt 12 unter der Kopfzeile (09.10. angefordert: "etwas mehr Gap zwischen der Toprow mit
-   Model und Date und dem Prompt-Text"). Seit der Modell-Chip keine Huelle mehr hat, ist die Zeile
-   rund 14px niedriger -- vom Logo bis zum Prompt standen sichtbar nur noch 12 statt vorher ~19. */
-.urt-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 20px; }
-/* model chip | sentiment | rank — 16px off the chip so the metrics read as their own group
-   three metrics so they do not read as one run-on group */
-.urt-card-headleft { display: flex; align-items: center; gap: 16px; min-width: 0; flex-wrap: wrap; }
-.urt-card-date { font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; flex: 0 0 auto; }
+/* Kopf: links Modell und Zeit (Abstand statt Mittelpunkt), rechts die zwei Kennzahlen. */
+.urt-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.urt-card-headleft { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.urt-card-date { font-size: var(--up-fs-l); font-weight: 400; color: var(--vc-muted); white-space: nowrap; flex: 0 0 auto; }
+/* Das Modell als runde Plakette (28px, Logo 16px) -- der Entwurf; in der Tabelle bleibt das
+   18er-Logo aus core. Zwei Klassen mehr als die Dunkel-Regel oben (die nimmt der Tabellenzeile die
+   Platte), damit die Plakette in beiden Themen steht. */
+.up-root .urt-card .urt-model-chip { gap: 8px; }
+.up-root .urt-card .urt-model-chip .up-ment-logo,
+.up-root[data-theme="dark"] .urt-card .urt-model-chip .up-ment-logo {
+  width: 28px; height: 28px; padding: 0; border-radius: var(--up-r-voll); background: var(--vc-switch-bg); }
+.up-root .urt-card .urt-model-chip .up-ment-logo img { width: 16px; height: 16px; border-radius: 0; object-fit: contain; }
+.up-root .urt-card .urt-model-chip .up-ment-name { font-size: var(--up-fs-l); font-weight: 600; color: var(--vc-text); }
+/* Kennzahlen: Sentiment (Balken + Zahl aus UC.sentHtml) und Rang (# + Zahl). Der Kontext zieht
+   nur die Schrift der Zahl mit (CLAUDE.md §1). */
+.urt-card-stats { display: flex; align-items: center; gap: 14px; flex: 0 0 auto; }
+.urt-card-stat { display: inline-flex; align-items: center; }
+.urt-card-stats .up-num, .urt-card-stats .up-sent-val { font-size: var(--up-fs-l); font-weight: 600; color: var(--vc-text); }
 
-
-.urt-card-prompt { font-size: 15px; font-weight: 500; color: var(--vc-text); letter-spacing: -0.01em;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; }
-.urt-card-preview { font-size: 14px; font-weight: 400; color: var(--vc-muted); line-height: 1.4;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; flex: 1 1 auto; }
+/* Titel und Auszug als ein Block, 6 auseinander. Je hoechstens zwei Zeilen. */
+.urt-card-body { display: flex; flex-direction: column; gap: 6px; flex: 1 1 auto; min-height: 0; }
+.urt-card-prompt { font-size: var(--up-fs-xl); font-weight: 600; line-height: 1.3; color: var(--vc-text); letter-spacing: -0.015em;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.urt-card-preview { font-size: var(--up-fs-l); font-weight: 400; color: var(--vc-muted); line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
 /* no separator line: the footer is already set apart by its own whitespace */
 /* flex-wrap ist hier PFLICHT und nicht Geschmack. GEMESSEN am 04.09.: bei drei Spalten passen
@@ -237,7 +255,7 @@
    werden".
    row-gap 8px und nicht die 10px der Spalte: uebereinander wirkt derselbe Abstand groesser. */
 .urt-card-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-  column-gap: 10px; row-gap: 8px; margin-top: 12px; }
+  column-gap: 12px; row-gap: 8px; padding-top: 4px; }
 .urt-card-footleft { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .urt-card-brands, .urt-card-citations { min-width: 0; }
 /* Die Citations bleiben rechts, auch wenn sie umgebrochen sind. Ohne diese Zeile steht auf der
@@ -250,6 +268,21 @@
    Einzug. Damit hat auch das "+N" dieselbe Luft wie der Ring der Chips. */
 .urt-card-citations { margin-left: auto; padding-right: 4px; }
 .urt-card-ment { flex: 0 0 auto; }
+/* "Deine Marke erwaehnt": runde Marke im Gruen der App, getoent statt voll (Entwurf). Zwei Klassen
+   gegen .up-ment-cell.is-yes .up-ment-badge aus core. */
+.urt-card-ment.up-ment-cell .up-ment-badge { width: 22px; height: 22px; border-radius: var(--up-r-voll);
+  background: color-mix(in srgb, var(--vt-up) 16%, transparent); }
+.urt-card-ment.up-ment-cell .up-ment-badge svg,
+.up-root[data-theme="dark"] .urt-card-ment.up-ment-cell .up-ment-badge svg { width: 12px; height: 12px; color: var(--vt-up); }
+
+/* KOMPAKT (Kartenbreite unter 400px, setzt applyCardCols): kleinere Masse, hoechstens drei
+   Quellen (im Markup). */
+.urt-cards.is-kompakt .urt-card { padding: 16px; }
+.urt-cards.is-kompakt .urt-card-date,
+.up-root .urt-cards.is-kompakt .urt-card .urt-model-chip .up-ment-name { font-size: var(--up-fs-m); }
+.up-root .urt-cards.is-kompakt .urt-card .urt-model-chip .up-ment-logo { width: 26px; height: 26px; }
+.urt-cards.is-kompakt .urt-card-stats { gap: 12px; }
+.urt-cards.is-kompakt .urt-card-ment.up-ment-cell .up-ment-badge { width: 20px; height: 20px; }
 
 /* skeleton cards */
 .urt-card-sk { pointer-events: none; }

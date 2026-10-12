@@ -428,13 +428,13 @@
     /* spreadLeft is for the CARD footer only. There the stack sits hard against the card's right
        edge, so the default rightward hover spread pushes chips outside it. In the table the
        column has the rest of the row to its right and behaves like every other chip stack. */
-    function citationsChips(sources, total, spreadLeft){
+    function citationsChips(sources, total, spreadLeft, max){
       var mapped = (Array.isArray(sources) ? sources : []).map(function(s){
         return { name: s && s.title, favicon: s && s.favicon };
       });
       /* fav: die Chips dieser Spalte sind Seiten und keine Marken -- faellt ein Favicon aus, steht
          ein Globus statt des Anfangsbuchstabens da. */
-      return brandStack(mapped, total, spreadLeft ? { max: 5, spread: "left", fav: true } : { max: 5, fav: true });
+      return brandStack(mapped, total, spreadLeft ? { max: max || 5, spread: "left", fav: true } : { max: max || 5, fav: true });
     }
     /* Defensive on the ENTRY, not just the key: a malformed models list (a hole, a null, a bare
        string) must degrade to "unknown model, show the raw key" — never throw. This runs inside
@@ -519,31 +519,54 @@
         '<div class="up-td urt-td-mentioned">' + mentCell(r.has_user_brand) + '</div>' +
         '<div class="up-td urt-td-sentiment">' + sentCell(r.user_sentiment) + '</div>' +
         '<div class="up-td urt-td-rank">' + rankCell(r.user_rank) + '</div>' +
-        '<div class="up-td urt-td-brands">' + brandStack(r.companies_preview, r.companies_preview_totalcount, { max: 4, tipKey: "brand_name_raw" }) + '</div>' +
+        '<div class="up-td urt-td-brands">' + (function(){ var m = eindeutig(r.companies_preview, r.companies_preview_totalcount); return brandStack(m.list, m.total, { max: 4, tipKey: "brand_name_raw" }); })() + '</div>' +
         '<div class="up-td urt-td-citations">' + citationsChips(r.sources_preview, r.sources_totalcount) + '</div>' +
         '<div class="up-td urt-td-model">' + modelChip(r.model) + '</div>' +
         '<div class="up-td urt-td-date"><span class="urt-date" data-tip="' + esc(fmtDate(r.run_at)) + '">' + esc(relativeTime(r.run_at)) + '</span></div>' +
       '</div>';
+    }
+    /* Eine Marke zweimal im Stapel ist ein Datenfehler (gesehen 13.10.: Kia doppelt) -- angezeigt
+       wird jede einmal, nach company_id, sonst nach Namen. Was wegfaellt, zaehlt auch in "+N" nicht
+       mehr mit, sonst stuende dort eine Marke, die schon zu sehen ist. */
+    function eindeutig(list, total){
+      var gesehen = {}, raus = 0;
+      var l = (Array.isArray(list) ? list : []).filter(function(m){
+        var k = m && (m.company_id || m.id) ? "i:" + String(m.company_id || m.id) : "n:" + String(m && m.name || "").trim().toLowerCase();
+        if (k === "n:") return true;
+        if (gesehen[k]){ raus++; return false; }
+        gesehen[k] = true; return true;
+      });
+      var t = toNum(total);
+      return { list: l, total: t == null ? t : Math.max(l.length, t - raus) };
     }
     function cardHtml(r){
       var promptText = String(r.prompt_text == null ? "" : r.prompt_text);
       var preview = String(r.response_preview == null ? "" : r.response_preview);
       var hasSent = r.user_sentiment != null && r.user_sentiment !== "" && isFinite(Number(r.user_sentiment));
       var hasRank = r.user_rank != null && r.user_rank !== "" && isFinite(Number(r.user_rank));
+      var marken = eindeutig(r.companies_preview, r.companies_preview_totalcount);
+      /* Kartenentwurf 13.10.: Kopf links Modell und Zeit, rechts die zwei Kennzahlen; darunter
+         Titel und Auszug als ein Block; im Fuss die Chips (die bleiben im Stil der App, eckig mit
+         Rahmen -- so bestellt). Die Kennzahlen fehlen ganz, wenn es nichts zu sagen gibt: eine
+         Karte ist eine Zusammenfassung, eine Reihe "–" waere Rauschen. Zwischen Modell und Zeit
+         steht Abstand und kein Mittelpunkt (CLAUDE.md §5). */
       return '<div class="urt-card" data-run="' + esc(String(r.prompt_run_id || "")) + '" tabindex="0" role="button">' +
         '<div class="urt-card-head">' +
           '<div class="urt-card-headleft">' +
             modelChip(r.model) +
-            /* Metrics live in the head row next to the model chip, and are omitted entirely when
-               there is nothing to say — a card is a summary, and a row of "–" placeholders is
-               noise. The table view is where a present value is compared against a missing one. */
-            (hasSent ? sentCell(r.user_sentiment) : "") +
-            (hasRank ? rankCell(r.user_rank) : "") +
+            '<span class="urt-card-date" data-tip="' + esc(fmtDate(r.run_at)) + '">' + esc(relativeTime(r.run_at)) + '</span>' +
           '</div>' +
-          '<span class="urt-card-date" data-tip="' + esc(fmtDate(r.run_at)) + '">' + esc(relativeTime(r.run_at)) + '</span>' +
+          ((hasSent || hasRank)
+            ? '<div class="urt-card-stats">' +
+                (hasSent ? '<span class="urt-card-stat" data-tip="' + esc(UC.t("Sentiment")) + '" aria-label="' + esc(UC.t("Sentiment")) + '">' + sentCell(r.user_sentiment) + '</span>' : "") +
+                (hasRank ? '<span class="urt-card-stat" data-tip="' + esc(UC.t("Rank")) + '" aria-label="' + esc(UC.t("Rank")) + '">' + rankCell(r.user_rank) + '</span>' : "") +
+              '</div>'
+            : "") +
         '</div>' +
-        '<div class="urt-card-prompt">' + highlight(promptText, state.query) + '</div>' +
-        '<div class="urt-card-preview">' + mdPreview(preview) + '</div>' +
+        '<div class="urt-card-body">' +
+          '<div class="urt-card-prompt">' + highlight(promptText, state.query) + '</div>' +
+          '<div class="urt-card-preview">' + mdPreview(preview) + '</div>' +
+        '</div>' +
         '<div class="urt-card-foot">' +
           '<div class="urt-card-footleft">' +
             /* Same icon box the table's Mentioned? column uses, minus the "Yes" label -- a card
@@ -554,7 +577,7 @@
                "+N" beim Hover darueber, weil die Hover-Regeln nur Geschwister der Chips
                verschieben. Gemeldet am 04.09. */
             '<div class="urt-card-brands">' +
-              brandStack(r.companies_preview, r.companies_preview_totalcount, {
+              brandStack(marken.list, marken.total, {
                 max: 4, tipKey: "brand_name_raw",
                 tailHtml: UC.isYes(r.has_user_brand)
                   ? '<span class="up-ment-cell is-yes urt-card-ment" data-tip="Your brand is mentioned">' +
@@ -563,7 +586,7 @@
               }) +
             '</div>' +
           '</div>' +
-          '<div class="urt-card-citations">' + citationsChips(r.sources_preview, r.sources_totalcount, true) + '</div>' +
+          '<div class="urt-card-citations">' + citationsChips(r.sources_preview, r.sources_totalcount, true, kartenKompakt ? 3 : 5) + '</div>' +
         '</div>' +
       '</div>';
     }
@@ -1086,6 +1109,7 @@
        widest that still fits), so the last row is always exactly as full as every other row; when
        that forces fewer columns than the width could hold, the 1fr track spreads the difference
        into wider cards instead, per instruction — never more, narrower columns to force a fit. */
+    var kartenKompakt = false;
     function computeCardCols(width, count){
       if (!count || count < 1) return 1;
       var gap = 14;
@@ -1101,7 +1125,17 @@
       var w = elCards.getBoundingClientRect().width || 0;
       if (!w) return;
       var count = (isBusy() || !state.hasData) ? state.pageSize : (state.rows.length || state.pageSize);
-      root.style.setProperty("--urt-cols", computeCardCols(w, count));
+      var cols = computeCardCols(w, count);
+      root.style.setProperty("--urt-cols", cols);
+      /* KOMPAKT unter 400px Kartenbreite (Kartenentwurf 13.10.): kleinere Masse und hoechstens drei
+         Quellen statt fuenf. Die Zahl der Chips steht im Markup ("+N" muss stimmen), also zeichnet
+         ein Wechsel die Karten neu -- nur beim Wechsel, nicht bei jeder Breitenaenderung. */
+      var kompakt = (w - 14 * (cols - 1)) / cols < 400;
+      elCards.classList.toggle("is-kompakt", kompakt);
+      if (kompakt !== kartenKompakt){
+        kartenKompakt = kompakt;
+        if (state.hasData && !isBusy()) renderBody();
+      }
     }
     function applyResponsive(){
       var w = root.getBoundingClientRect().width || 0;
