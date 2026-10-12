@@ -1787,6 +1787,8 @@
 
     /* ---- Zeichnen -------------------------------------------------------------------------- */
     var letzteAnsicht = "";
+    /* Steht der Seiteneinzug noch aus? Siehe render(). */
+    var einzugAusstehend = false;
     /* Wahr genau fuer den ersten Durchgang einer neu gebauten Wurzel (siehe Start unten): was
        dort gezeichnet wird, stand auf der alten Wurzel schon da und zieht nicht noch einmal ein. */
     var stillerAufbau = false;
@@ -1848,6 +1850,18 @@
     function render(neuEingezogen) {
       var k = ansichtKey();
       var wechsel = k !== letzteAnsicht;
+      /* DER SEITENEINZUG BEGINNT MIT DER ERSTEN ECHTEN ANSICHT (13.10.), nicht beim Aufbau. Die
+         Seite laedt selbst, das Tor kommt also erst mit der Antwort -- lief der Einzug ab dem Aufbau,
+         bekam das Tor ZWEI Einzuege (is-entering und is-arriving). Fiel is-arriving weg, solange
+         is-entering noch dran war, uebernahm dieselbe Animation dessen Zeiten (420ms ab 260ms) und
+         sprang von Deckkraft 1 auf 0.57 zurueck: das Aufblitzen rund eine Sekunde nach dem Tor,
+         gemeldet am 13.10. Jetzt ist der Seiteneinzug der EINZIGE Einzug dieser Ansicht. */
+      if (wechsel && einzugAusstehend && k !== "boot") {
+        einzugAusstehend = false;
+        neuEingezogen = true;
+        root.classList.add("is-entering");
+        window.setTimeout(function () { root.classList.remove("is-entering"); }, 900);
+      }
       /* Vier Tarife brauchen mehr Spalte als drei -- mit 1040px waeren die Karten so schmal, dass
          jede Merkmalszeile dreifach umbricht. Die Spalte ist ohnehin nur eine Obergrenze; auf
          einem engeren Schirm schrumpft sie mit. */
@@ -4787,9 +4801,9 @@
     syncTheme();
 
     if (!neuaufbau) {
-      root.classList.add("is-entering");
+      /* Der Einzug startet in render() mit der ersten Ansicht nach dem Bootkreisel. */
+      einzugAusstehend = true;
       render(true);
-      window.setTimeout(function () { root.classList.remove("is-entering"); }, 900);
     } else {
       /* Neuaufbau: KEIN Einzug, und auch sonst nichts, was sich bewegt. Die Huelle ist oben schon
          einmal vermessen (messeBreite), also liefe jeder Zustand, den render() jetzt setzt, als
