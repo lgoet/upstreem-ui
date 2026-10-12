@@ -2,7 +2,7 @@
 """Zieht das statische Markup der eingebetteten Bausteine aus den Bubble-Vorlagen in die Drawer aus
 core (12.10.): prompt-detail.js (Visibility-Chart, Top Citations, Responses) und brand-drawer.js
 (Top Citations, Responses). Nachbau von .dashboard_markup.py; Unterschiede: Platzhalter
-__<PRAEFIX>_*__, im Drawer klebt keine Leiste (IS_STICKY no), Responses als Tabelle.
+__<PRAEFIX>_*__, die Leiste klebt unter dem Glaskopf (IS_STICKY yes, seit 13.10.), Responses als Tabelle.
 Bis zum Marken-Drawer hiess die Datei .prompt_detail_markup.py -- eine zweite Kopie fuer den
 zweiten Drawer waere ab dem ersten Umbau auseinandergelaufen.
 
@@ -53,7 +53,11 @@ ERSATZ_MUSTER = {
     "BRAND_NAME": "__P_BRAND__",
     "BRAND_LOGO": "__P_BRANDLOGO__",
     "SPOTLIGHT_MODE": "no",
-    "IS_STICKY": "no",
+    # Die Werkzeugleiste klebt auch im Drawer (13.10. angefordert: "wie ueberall anders"). Der
+    # Drawer-Koerper ist der Scroller und hat oben das Polster des Glaskopfs (56): core klebt die
+    # Leiste an dessen Kante plus data-sticky-top (16, wie auf den Seiten) und zieht den
+    # Deckstreifen bis ganz oben (syncDeckstreifen).
+    "IS_STICKY": "yes",
     # Responses auf dem Dashboard als Karten, 6 je Seite (09.10. angefordert); was der Nutzer
     # umstellt, merkt sich die Tabelle (data-merken, siehe ZUSATZ).
     "DEFAULT_VIEW": "table",

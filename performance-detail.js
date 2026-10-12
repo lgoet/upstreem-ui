@@ -757,22 +757,8 @@
        opportunities); diese beiden hier hatten nur Ueberschrift und Text und sahen deshalb
        neben den anderen wie eine andere Sorte Tooltip aus.
 
-       Die Plaettchen sind aus DENSELBEN Bausteinen gebaut wie die echten Zellen -- derselbe
-       Ring, dieselbe up-num, dasselbe "of N". Ein nachgemaltes Beispiel waere die Stelle, an
-       der Karte und Spalte irgendwann auseinanderlaufen. */
-    function varVisual(key){
-      if (key === "sov"){
-        /* Eine Zahl, dahinter derselbe Ring wie in der Zelle -- nicht zwei Zeilen. Die Platte
-           soll die Spalte zeigen, nicht ihre Spannweite vorfuehren. */
-        return '<span class="up-explain-row upd-explain-sov"><span class="up-num">62.5%</span>' + (UC.variationRing ? UC.variationRing(62.5) : "") + '</span>';
-      }
-      if (key === "cnt"){
-        return '<span class="up-explain-row"><span class="up-num">19</span>' +
-               '<span class="up-var-of">of 69</span></span>';
-      }
-      return '<span class="up-explain-row">Mercedes S500</span>' +
-             '<span class="up-explain-row">Mercedes E Class</span>';
-    }
+       Die Plaettchen der Variations kommen seit dem 13.10. aus core (UC.variationsPlatte), aus
+       DENSELBEN Bausteinen wie die echten Zellen -- brand-detail zeigt dieselbe Tabelle. */
 
     /* DIE ERKLAERKARTEN DER KENNZAHLEN IM GEWOHNTEN FORMAT (09.10. gemeldet: "stimmen schon
        wieder nicht"). Hier standen nur Titel und Satz -- ohne die helle Platte oben, auf der die
@@ -815,11 +801,9 @@
           }
           var e = VAR_EXPLAIN[key];
           if (!e) return "";
-          /* upd-explain-vis als Marke: die Erklaerkarte haengt im body, ausserhalb jeder
-             .up-root -- die --vc-Tokens loesen dort NICHT auf. Ring und "of N" brauchen deshalb
-             eigene Farben, und die Schriftgroesse laesst sich nur hier anheben, ohne die
-             Erklaerkarten der sechs anderen Komponenten mitzuziehen. */
-          return '<div class="up-explain-vis upd-explain-vis">' + varVisual(key) + '</div>' +
+          /* Die Platte aus core (UC.variationsPlatte, seit 13.10.; vorher hier als varVisual):
+             brand-detail zeigt dieselbe Tabelle und braucht dieselbe Karte. */
+          return (UC.variationsPlatte ? UC.variationsPlatte(key, { klasse: "upd-explain-vis", sovKlasse: "upd-explain-sov" }) : "") +
                  '<div class="up-explain-h">' + esc(t(e.h)) + '</div>' +
                  '<div class="up-explain-t">' + esc(t(e.t)) + '</div>';
         }

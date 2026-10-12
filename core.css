@@ -4176,7 +4176,10 @@
 /* overflow-x hidden: ein GESCHLOSSENES Menue (der Kalender oben rechts) steht linksbuendig an
    seinem Ausloeser und reichte 150px ueber die Kante -- gemessen auf 390px, die Flaeche liess
    sich seitlich schieben. Geoeffnet richtet es sich selbst aus (is-right) und bleibt innen. */
-.up-kdr-koerper { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
+/* position + z-index 0: der Koerper ist eine eigene Stapelebene UNTER dem Glaskopf (z 3). Ohne sie
+   legte sich ein klebender Tabellenkopf (.up-sticky .up-head, z 6, samt Deckstreifen bis oben) ueber
+   den Glaskopf -- gemessen 13.10., als die Tabellen in den Drawern zu kleben begannen. */
+.up-kdr-koerper { position: relative; z-index: 0; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain;
   scrollbar-gutter: stable; padding-top: var(--up-kdr-kopf-h); }
 .up-kdr-spalte { box-sizing: border-box;
   padding: 16px 20px calc(96px + env(safe-area-inset-bottom)); }
@@ -5119,6 +5122,40 @@
 .up-root.is-narrow .up-kpiband.is-offen.is-4 > .up-kpi:nth-child(n+3) { padding-top: 12px; margin-top: 8px; }
 .up-root.is-vnarrow .up-kpiband.is-offen > .up-kpi { padding-left: 0; padding-right: 0; }
 .up-root.is-vnarrow .up-kpiband.is-offen > .up-kpi + .up-kpi { padding-top: 12px; margin-top: 8px; }
+/* ---------- Beispielplatten der Variations-Erklaerkarten (UC.variationsPlatte) ----------
+   13.10. aus performance-detail.css hierher: brand-detail braucht dieselben. Jede Regel traegt
+   auch den alten Namen (.upd-explain-vis/-sov), den performance-detail weiter mitgibt -- so bleibt
+   der Vertrag ohne Entfernung, und die Deklarationen stehen trotzdem nur einmal da.
+   Die Karte wird von UC.makeExplain an den body gehaengt, also ausserhalb jeder .up-root. Dort
+   loest KEIN --vc-Token auf: der Ring waere ohne Strich, das "of N" ohne Farbe. Beides bekommt
+   hier feste Werte, und zwar zweimal -- die Karte ist invertiert, im hellen Theme ist die Platte
+   dunkel und umgekehrt.
+
+   Die Platte soll aussehen wie die Zeile darunter, nur eine Spur groesser: 13px statt der 12px,
+   die die geteilte Regel setzt. Nur an .up-varvis, damit die Erklaerkarten der anderen Komponenten
+   unveraendert bleiben. */
+/* gap: 6px: derselbe Abstand zwischen Zahl und Nebentext wie in der Zelle, damit die Probe die
+   Zelle trifft. */
+.up-varvis .up-explain-row, .upd-explain-vis .up-explain-row { font-size: 13px; gap: 6px; }
+/* Zahl und Nebentext exakt wie in der Zelle darunter: 14px / 12px. Nur die Farben sind gedreht,
+   weil die Platte invertiert ist -- die Groessen sollen sich nicht unterscheiden, sonst ist es kein
+   Beispiel mehr. */
+.up-varvis .up-num, .upd-explain-vis .up-num { font-size: 14px; font-weight: 500; color: inherit; }
+.up-varvis .up-var-of, .upd-explain-vis .up-var-of { font-size: 12px; color: rgba(31,31,27,0.55); }
+/* Die Share-of-Voice-Zeile steht weiter auseinander als die Mention-Count-Zeile: dort sind Zahl
+   und "of N" ein zusammenhaengender Wert, hier sind es zwei Darstellungen derselben Groesse und
+   duerfen als zwei Dinge lesbar sein. */
+.up-varvis .up-varvis-sov, .upd-explain-vis .upd-explain-sov { gap: 32px; }
+/* Der Ring behaelt seine echte Groesse. Die geteilte Regel .up-explain-row svg setzt 14px und ist
+   genauso stark wie .up-varring svg -- ohne diese Zeile entschiede die Ladereihenfolge. */
+.up-varvis .up-varring svg, .upd-explain-vis .up-varring svg { width: 22.4px; height: 22.4px; }
+.up-varvis .up-varring-track, .upd-explain-vis .up-varring-track { stroke: #e4e2e4; }
+.up-varvis .up-varring-fill, .upd-explain-vis .up-varring-fill { stroke: #1f1f1b; }
+/* Dark: die Platte ist dunkel, also drehen sich Ring und Nebentext mit. */
+.up-explain[data-theme="dark"] .up-varvis .up-var-of, .up-explain[data-theme="dark"] .upd-explain-vis .up-var-of { color: rgba(240,240,240,0.55); }
+.up-explain[data-theme="dark"] .up-varvis .up-varring-track, .up-explain[data-theme="dark"] .upd-explain-vis .up-varring-track { stroke: #28282c; }
+.up-explain[data-theme="dark"] .up-varvis .up-varring-fill, .up-explain[data-theme="dark"] .upd-explain-vis .up-varring-fill { stroke: #f0f0f0; }
+
 /* DIE SPARKLINE (UC.sparkHtml, 04.10.): 72 x 24 neben dem Wert einer Kachel, Linie 1.5 in der
    Akzent-Tinte, der letzte Punkt als Marke. Keine Achse, keine Flaeche -- sie sagt nur die
    Richtung, die Zahl daneben sagt den Wert. */

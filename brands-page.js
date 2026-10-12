@@ -291,9 +291,17 @@
       if (a || (b && l.length)) filterGeaendert();
     });
     function kalender() { var k = el(".ubr-daten"); return k && k.__udrCtrl ? k.__udrCtrl : null; }
+    /* Die Stufe des Charts folgt jedem neuen Zeitraum (UC.granFuerZeitraum, wie SET GRAN in Bubble
+       und wortgleich wie auf Dashboard und Citations); dazwischen gilt der Klick im Chart. Fehlte
+       hier bis zum 13.10. -- gemeldet: "bei Brands Overview stellt sich die Granularitaet nicht
+       mehr automatisch um". */
     function zeitraum(von, bis) {
       var a = setzen("von", von), b = setzen("bis", bis);
       state.kalenderDa = true;
+      if ((a || b) && UC.granFuerZeitraum) {
+        var g = UC.granFuerZeitraum(von, bis);
+        if (g) state.gran = g;
+      }
       return a || b;
     }
     function kalenderLesen() {

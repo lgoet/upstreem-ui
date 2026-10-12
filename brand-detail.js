@@ -172,7 +172,16 @@
         '</div>' +
 
         '<div class="ubd-chartwrap"><canvas class="ubd-canvas"></canvas></div>' +
-        '<div class="ubd-varwrap">' + VARSEC + '</div>' +
+        /* Die Fusszeile der Tabelle: Zeilen je Seite links, Seiten rechts -- dasselbe Markup wie
+           performance-detail, Events, Shopping und Ads (13.10.: "wie alle anderen Tabellen mit
+           vernuenftiger Pagination"). Versteckt, bis es Zeilen gibt (seitenStand). */
+        '<div class="ubd-varwrap">' + VARSEC +
+          '<div class="up-foot ubd-foot" hidden>' +
+            '<div class="up-pagesize"><span class="up-pagesize-lbl">' + esc(UC.t ? UC.t("Rows per page") : "Rows per page") + '</span>' +
+              '<div class="up-pagesize-seg" role="group" aria-label="' + esc(UC.t ? UC.t("Rows per page") : "Rows per page") + '"></div></div>' +
+            '<div class="up-pager"></div>' +
+          '</div>' +
+        '</div>' +
       '</div>';
   }
 
@@ -205,6 +214,35 @@
     var elVBody   = root.querySelector(".ubd-vbody");
     var elSearch  = root.querySelector(".ubd-search");
     var elSInput  = elSearch ? elSearch.querySelector(".up-search-input") : null;
+
+    /* SEITEN STATT SCROLLEN (13.10.): die Varianten kommen vollstaendig an, geblaettert wird im
+       Browser mit dem Pager aus core -- wortgleich seitenAnlegen/seitenStand aus performance-detail. */
+    var elVarWrap = root.querySelector(".ubd-varwrap");
+    var varSeite = { page: 1, pageSize: UC.DEFAULT_PAGE_SIZE || 15, totalCount: null, loading: false };
+    var varPager = UC.makePager && elVarWrap ? UC.makePager({ root: elVarWrap, state: varSeite,
+      onChange: function () { varSeite.loading = false; renderVariations(); } }) : null;
+    if (elVarWrap) elVarWrap.addEventListener("click", function (e) {
+      if (!varPager || !e.target.closest || !e.target.closest(".ubd-foot")) return;
+      var ps = e.target.closest("[data-pagesize]");
+      if (ps) { varPager.setPageSize(Number(ps.getAttribute("data-pagesize"))); return; }
+      if (e.target.closest(".up-page-prev")) { varPager.goToPage(varSeite.page - 1); return; }
+      if (e.target.closest(".up-page-next")) { varPager.goToPage(varSeite.page + 1); return; }
+      var pg = e.target.closest(".up-page[data-page]");
+      if (pg) varPager.goToPage(Number(pg.getAttribute("data-page")));
+    });
+    /* Fusszeile zeichnen und den Ausschnitt der aktuellen Seite liefern. total null: keine
+       Fusszeile (Skelett, Leerzustand). Sichtbar, sobald es Zeilen gibt -- auch bei einer Seite. */
+    function seitenStand(total) {
+      var foot = elVarWrap ? elVarWrap.querySelector(".ubd-foot") : null;
+      if (foot) foot.hidden = !(total > 0);
+      if (!(total > 0)) return { von: 0, bis: total || 0 };
+      varSeite.totalCount = total; varSeite.loading = false;
+      var max = Math.max(1, Math.ceil(total / varSeite.pageSize));
+      if (varSeite.page > max) varSeite.page = max;
+      if (varPager) { try { varPager.renderPageSize(); varPager.renderPager(); } catch (e) {} }
+      var von = (varSeite.page - 1) * varSeite.pageSize;
+      return { von: von, bis: von + varSeite.pageSize };
+    }
 
     /* Der gemerkte Stand dieser Instanz, wenn es ihn gibt -- dann ist diese Wurzel ein Neuaufbau
        und macht dort weiter, wo die alte stand (siehe STORE). Ohne ihn: der erste Aufbau, mit
@@ -535,9 +573,11 @@
          VORIGEN Marke mit. Ohne istLaden() stuenden die dann waehrend des Ladens da. */
       if (istLaden() || state.variations == null) {
         elVBody.innerHTML = UC.variationRows(null, { rowClass: "up-vrow ubd-vrow" });
+        seitenStand(null);
         return;
       }
-      elVBody.innerHTML = UC.variationRows(varsMitAnteil(), {
+      var alle = varsMitAnteil(), ab = seitenStand(alle.length);
+      elVBody.innerHTML = UC.variationRows(alle.slice(ab.von, ab.bis), {
         query: state.varQuery,
         rowClass: "up-vrow ubd-vrow",
         emptyText: state.varQuery ? "No variation matches this search."
@@ -567,6 +607,8 @@
       });
       elSInput.addEventListener("input", function () {
         state.varQuery = String(elSInput.value || "").trim();
+        /* Eine neue Suche beginnt auf Seite 1 -- dort stehen die besten Treffer. */
+        varSeite.page = 1;
         elSearch.classList.toggle("has-text", !!elSInput.value.length);
         renderVariations(); persist();
       });
@@ -584,7 +626,10 @@
         html: function (key) {
           var e = VAR_EXPLAIN[key];
           if (!e) return "";
-          return '<div class="up-explain-h">' + esc(e.h) + '</div>' +
+          /* Mit der hellen Platte wie jede Erklaerkarte der App (13.10. nachgeholt, hier fehlte
+             sie) -- dieselbe wie in performance-detail, aus core. */
+          return (UC.variationsPlatte ? UC.variationsPlatte(key) : "") +
+                 '<div class="up-explain-h">' + esc(e.h) + '</div>' +
                  '<div class="up-explain-t">' + esc(e.t) + '</div>';
         }
       });
@@ -674,6 +719,7 @@
       },
       setVariations: function (rows) {
         var list = UC.parseLoose ? UC.parseLoose(rows, "brand-detail variations") : rows;
+        varSeite.page = 1;
         state.variations = isArr(list) ? list : [];
         state.loading = false;
         warteBeenden();
@@ -701,7 +747,7 @@
         letzteKurve = false;
         /* Auch die Suche zuruecksetzen: sonst zeigt die naechste Marke eine gefilterte Liste,
            ohne dass irgendwo ein Suchbegriff zu sehen waere. */
-        state.varQuery = ""; state.fehler = null;
+        state.varQuery = ""; state.fehler = null; varSeite.page = 1;
         if (elSInput) { elSInput.value = ""; }
         if (elSearch) { elSearch.classList.remove("is-open", "has-text"); }
         /* Ab jetzt laeuft die Uhr: ein Reset ist der Anfang einer Wartezeit auf neue Daten. */

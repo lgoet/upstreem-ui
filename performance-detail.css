@@ -132,36 +132,7 @@
    stand. Offen auf der Seite steht er buendig wie die Abschnitte darueber. */
 .upd-root .up-varsec { padding: 0; }
 
-/* ---------- Beispielplatten in der Erklaerkarte ----------
-   Die Karte wird von UC.makeExplain an den body gehaengt, also ausserhalb jeder .up-root. Dort
-   loest KEIN --vc-Token auf: der Ring waere ohne Strich, das "of N" ohne Farbe. Beides bekommt
-   hier feste Werte, und zwar zweimal -- die Karte ist invertiert, im hellen Theme ist die Platte
-   dunkel und umgekehrt.
-
-   Die Platte soll aussehen wie die Zeile darunter, nur eine Spur groesser: 13px statt der 12px,
-   die die geteilte Regel setzt. Nur hier, damit die Erklaerkarten der anderen Komponenten
-   unveraendert bleiben. */
-/* gap: 6px: derselbe Abstand zwischen Zahl und Nebentext wie in der Zelle, damit die Probe die
-   Zelle trifft. */
-.upd-explain-vis .up-explain-row { font-size: 13px; gap: 6px; }
-/* Zahl und Nebentext exakt wie in der Zelle darunter: 14px / 12px. Nur die Farben sind gedreht,
-   weil die Platte invertiert ist -- die Groessen sollen sich nicht unterscheiden, sonst ist es kein
-   Beispiel mehr. */
-.upd-explain-vis .up-num { font-size: 14px; font-weight: 500; color: inherit; }
-.upd-explain-vis .up-var-of { font-size: 12px; color: rgba(31,31,27,0.55); }
-/* Die Share-of-Voice-Zeile steht weiter auseinander als die Mention-Count-Zeile: dort sind Zahl
-   und "of N" ein zusammenhaengender Wert, hier sind es zwei Darstellungen derselben Groesse und
-   duerfen als zwei Dinge lesbar sein. */
-.upd-explain-vis .upd-explain-sov { gap: 32px; }
-/* Der Ring behaelt seine echte Groesse. Die geteilte Regel .up-explain-row svg setzt 14px und ist
-   genauso stark wie .up-varring svg -- ohne diese Zeile entschiede die Ladereihenfolge. */
-.upd-explain-vis .up-varring svg { width: 22.4px; height: 22.4px; }
-.upd-explain-vis .up-varring-track { stroke: #e4e2e4; }
-.upd-explain-vis .up-varring-fill  { stroke: #1f1f1b; }
-/* Dark: die Platte ist dunkel, also drehen sich Ring und Nebentext mit. */
-.up-explain[data-theme="dark"] .upd-explain-vis .up-var-of { color: rgba(240,240,240,0.55); }
-.up-explain[data-theme="dark"] .upd-explain-vis .up-varring-track { stroke: #28282c; }
-.up-explain[data-theme="dark"] .upd-explain-vis .up-varring-fill  { stroke: #f0f0f0; }
+/* Die Beispielplatten der Variations-Erklaerkarten stehen seit dem 13.10. in core (.up-varvis). */
 
 /* ---------- Ladezustand ohne Auswahl ----------
    Ein einzelner Balken an der Stelle der Ueberschrift, mittig. Die Unterzeile bleibt im

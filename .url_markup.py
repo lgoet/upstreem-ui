@@ -39,7 +39,11 @@ ERSATZ = {
     "IS_PROCESSING": "no",
     "EXPORT_INSTANCE_ID": "",
     "SPOTLIGHT_MODE": "no",
-    "IS_STICKY": "no",
+    # Die Werkzeugleiste klebt auch im Drawer (13.10. angefordert: "wie ueberall anders"). Der
+    # Drawer-Koerper ist der Scroller und hat oben das Polster des Glaskopfs (56): core klebt die
+    # Leiste an dessen Kante plus data-sticky-top (16, wie auf den Seiten) und zieht den
+    # Deckstreifen bis ganz oben (syncDeckstreifen).
+    "IS_STICKY": "yes",
     "DEFAULT_VIEW": "table",
     "BRAND_NAME": "__UUD_BRAND__",
     "BRAND_LOGO": "__UUD_BRANDLOGO__",

@@ -21527,6 +21527,26 @@
       '</div>';
   }
 
+  /* DIE PLATTE DER ERKLAERKARTEN ZUR VARIANTENTABELLE (13.10. aus performance-detail hierher, seit
+     brand-detail sie auch braucht -- dort fehlte sie, und eine Erklaerkarte ohne helle Platte ist
+     eine andere Sorte Karte). Gebaut aus DENSELBEN Bausteinen wie die Zellen: Ring, .up-num,
+     "of N". key: "name" | "sov" | "cnt". CSS: .up-varvis in core.css.
+     o.klasse / o.sovKlasse: Zusatzklassen -- performance-detail traegt so seine alten Namen
+     (upd-explain-vis, upd-explain-sov) weiter, damit der Vertrag nichts verliert. */
+  function variationsPlatte(key, o){
+    o = o || {};
+    var innen;
+    if (key === "sov"){
+      /* Eine Zahl, dahinter derselbe Ring wie in der Zelle -- nicht zwei Zeilen. Die Platte soll
+         die Spalte zeigen, nicht ihre Spannweite vorfuehren. */
+      innen = '<span class="up-explain-row up-varvis-sov' + (o.sovKlasse ? " " + esc(o.sovKlasse) : "") + '"><span class="up-num">62.5%</span>' + variationRing(62.5) + '</span>';
+    } else if (key === "cnt"){
+      innen = '<span class="up-explain-row"><span class="up-num">19</span><span class="up-var-of">of 69</span></span>';
+    } else {
+      innen = '<span class="up-explain-row">Mercedes S500</span><span class="up-explain-row">Mercedes E Class</span>';
+    }
+    return '<div class="up-explain-vis up-varvis' + (o.klasse ? " " + esc(o.klasse) : "") + '">' + innen + '</div>';
+  }
   function variationRows(list, opts){
     opts = opts || {};
     var rows = list || [];
@@ -23676,6 +23696,7 @@
     granAusLieferung: granAusLieferung,
     dayKey: dayKey,
     variationsSection: variationsSection,
+    variationsPlatte: variationsPlatte,
     variationsExplain: variationsExplain,
     mentFilter: mentFilter,
     makeAuswahlFilter: makeAuswahlFilter,
