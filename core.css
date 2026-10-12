@@ -4225,6 +4225,31 @@
 /* Die Unterzeile in der DRITTEN Textstufe (12.10. angefordert): sie erklaert die Ueberschrift
    und tritt hinter den Inhalt des Abschnitts zurueck. */
 .up-dk-unter { font-size: var(--up-fs-m); font-weight: 400; line-height: 1.45; color: var(--vc-third); }
+/* DER KOPF MIT BILD (13.10. aus brand-drawer.css hierher, seit der Domain-Drawer ihn auch traegt):
+   Logo oder Favicon links, daneben der Titel (.up-dk-titel) und darunter eine leise Zeile. Die
+   Kachel ist .up-logo-box aus core in Kopfgroesse, genau die des Kopfes von performance-detail und
+   Ads (.upd-held-logobox): 44, Radius 12 aussen, innen 11 -- das konzentrische Kind (CLAUDE.md 1c);
+   56 war dem Nutzer zu gross. */
+.up-dk-held { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.up-dk-held-bild { display: inline-flex; flex: 0 0 auto; }
+.up-dk-logo.up-logo-box { width: 44px; height: 44px; flex: 0 0 44px; border-radius: var(--up-r-xl); }
+.up-dk-logo.up-logo-box img { width: 42px; height: 42px; border-radius: 11px; }
+.up-dk-logo .up-logo-ltr { font-size: var(--up-fs-xl); }
+.up-dk-held-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 auto; }
+/* Die leise Zeile unter dem Titel: 13 in der zweiten Textfarbe; ist sie ein Knopf, wird sie beim
+   Hover dunkler und unterstrichen (wie die Adresse unter dem Titel im URL-Drawer, .uud-link). */
+.up-dk-held-sub { display: flex; min-height: 20px; min-width: 0; }
+.up-dk-held-link { display: inline-flex; align-items: center; max-width: 100%; min-width: 0; padding: 0; border: 0;
+  background: none; font: inherit; font-size: var(--up-fs-m); line-height: 20px; color: var(--vc-muted);
+  cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.up-dk-held-link:hover { color: var(--vc-text); text-decoration: underline; text-underline-offset: 3px; }
+.up-dk-held-link:focus-visible { outline: var(--up-focus-w, 2px) solid var(--vc-text); outline-offset: 2px; border-radius: var(--up-r-xs); }
+/* Skelett des Kopfes, in den Massen dessen, was gleich dasteht. */
+.up-dk-sk { display: inline-block; height: 14px; border-radius: var(--up-r-xs); background: var(--vc-sk);
+  animation: uutpulse 1.2s ease-in-out infinite; }
+.up-dk-sk.is-logo { width: 44px; height: 44px; border-radius: var(--up-r-xl); }
+.up-dk-sk.is-titel { display: block; width: 240px; max-width: 100%; height: 28px; }
+.up-dk-sk.is-s { width: 120px; }
 
 /* Tablet: die volle Breite -- 80 % von 900px liessen links einen Streifen Seite stehen, der nur
    noch nach Platzverlust aussah (so wie die Bubble-Gruppe, die dort auf 100 % ging). */

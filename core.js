@@ -2206,6 +2206,51 @@
     "This brand could not be loaded. Please try again.": "Diese Marke konnte nicht geladen werden. Versuch es noch einmal.",
     "No longer tracked": "Wird nicht mehr verfolgt",
     "This brand wasn't mentioned in the selected period.": "Diese Marke wurde im gewählten Zeitraum nicht genannt.",
+    /* Domain-Drawer aus core (13.10.) */
+    "Domain not available": "Domain nicht verfügbar",
+    "This isn't a valid domain.": "Das ist keine gültige Domain.",
+    "This domain could not be loaded. Please try again.": "Diese Domain konnte nicht geladen werden. Versuch es noch einmal.",
+    "Last cited on {date}": "Zuletzt zitiert am {date}",
+    "Your team has never cited this domain.": "Dein Team hat diese Domain noch nie zitiert.",
+    "How this domain is counted in your citations": "Wie diese Domain in deinen Citations zählt",
+    "Counts as": "Zählt als",
+    "Your site": "Deine Seite",
+    "Count this domain as": "Diese Domain zählt als",
+    "Detected automatically": "Automatisch erkannt",
+    "Your own site": "Deine eigene Seite",
+    "A competitor's site": "Seite eines Wettbewerbers",
+    "Only owners and admins can change how a domain counts.": "Nur Owner und Admins können ändern, wie eine Domain zählt.",
+    "Too many changes in a short time. Please wait a moment.": "Zu viele Änderungen in kurzer Zeit. Bitte warte einen Moment.",
+    "This change could not be saved. Please try again.": "Diese Änderung konnte nicht gespeichert werden. Versuch es noch einmal.",
+    "This domain now counts as your own site.": "Diese Domain zählt jetzt als deine eigene Seite.",
+    "This domain now counts as a competitor's site.": "Diese Domain zählt jetzt als Seite eines Wettbewerbers.",
+    "This domain is detected automatically again.": "Diese Domain wird wieder automatisch erkannt.",
+    "No answers cited this domain in the selected period.": "Im gewählten Zeitraum hat keine KI-Antwort diese Domain zitiert.",
+    "Brand Editor": "Brand-Editor",
+    /* Marken-Editor als Drawer aus core (13.10.) */
+    "Only owners and admins can edit brands.": "Nur Owner und Admins können Marken bearbeiten.",
+    "Only owners and admins can edit brands. You can view the settings.": "Nur Owner und Admins können Marken bearbeiten. Du kannst die Einstellungen ansehen.",
+    "This alias no longer exists.": "Diesen Alias gibt es nicht mehr.",
+    "This brand already has the maximum number of aliases.": "Diese Marke hat schon die höchste Zahl an Aliassen.",
+    "Please enter a color like #1f6feb.": "Gib eine Farbe wie #1f6feb ein.",
+    "Please enter a name.": "Gib einen Namen ein.",
+    "Names can have up to {n} characters.": "Namen dürfen höchstens {n} Zeichen haben.",
+    "This name is too long.": "Dieser Name ist zu lang.",
+    "Another brand in your team already has this name.": "Eine andere Marke in deinem Team heißt schon so.",
+    "This name contains characters that can't be used.": "Dieser Name enthält Zeichen, die nicht erlaubt sind.",
+    "Aliases need at least {n} characters.": "Aliasse brauchen mindestens {n} Zeichen.",
+    "This alias is too short.": "Dieser Alias ist zu kurz.",
+    "Aliases can have up to {n} characters.": "Aliasse dürfen höchstens {n} Zeichen haben.",
+    "This alias is too long.": "Dieser Alias ist zu lang.",
+    "This word is too common to identify a brand. Use a more specific name.": "Dieses Wort ist zu allgemein, um eine Marke zu erkennen. Nimm einen genaueren Namen.",
+    "This brand already has this alias.": "Diese Marke hat diesen Alias schon.",
+    "Another brand in your team already uses this name or alias.": "Eine andere Marke in deinem Team nutzt diesen Namen oder Alias schon.",
+    "This alias contains characters that can't be used.": "Dieser Alias enthält Zeichen, die nicht erlaubt sind.",
+    "Name saved.": "Name gespeichert.",
+    "Alias added.": "Alias hinzugefügt.",
+    "Alias removed.": "Alias entfernt.",
+    "Color saved.": "Farbe gespeichert.",
+    "Color reset.": "Farbe zurückgesetzt.",
     /* Huelle aus core ohne angemeldeten Baustein (kdOhneBaustein). */
     "This panel couldn't be loaded": "Dieser Bereich konnte nicht geladen werden",
     "next run {date}": "nächster Lauf {date}",
@@ -18156,7 +18201,12 @@
        Streifen des Prompts stehen laesst -- man sieht, wohin Zurueck fuehrt. */
     prompt: { label: "Prompt", breite: "88vw" },
     /* Auch erste Ebene (12.10.), gleiche Breite wie Prompt aus demselben Grund. */
-    brand: { label: "Brand", breite: "88vw" }
+    brand: { label: "Brand", breite: "88vw" },
+    domain: { label: "Domain", breite: "88vw" },
+    /* Der Marken-Editor (Bubble-Name companysettings, dritte Ebene): ein Formular, kein Bericht --
+       schmal wie ein Einstellungsfenster, damit Zeilen und Felder nicht ueber die halbe Seite
+       laufen. Er liegt ueber dem Brand-Drawer, der links davon sichtbar bleibt. */
+    companysettings: { label: "Brand Editor", breite: "min(720px, 60vw)" }
   };
   var KD = {};
   function kdFremd(art){

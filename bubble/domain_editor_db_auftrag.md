@@ -114,6 +114,7 @@ Neuer Aufbau:
 
 Die URL-Tabelle und die Responses bleiben bei den bestehenden RPCs. Bitte prüfen:
 - Stimmt `total_count` der Responses mit `p_domain` mit `runs_with_domain` aus `cached_citations_domain_urls_v1` überein?
+- **Export der URL-Tabelle im Drawer:** Die Export-Nutzlast trägt `domain`. Kennt `export_citations_urls_v1` einen Domain-Filter (`p_domain`, dieselbe Normalisierung)? Falls nicht, bitte ergänzen. Sonst exportiert der Knopf alle URLs statt der dieser Domain.
 
 ---
 

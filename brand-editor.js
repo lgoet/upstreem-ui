@@ -201,14 +201,16 @@
     root.innerHTML =
       '<div class="ube-loaderr up-empty" hidden></div>' +
       '<div class="ube-body">' +
-        '<div class="ube-kopf"></div>' +
+        /* Kopf und Abschnittskoepfe aus dem Detail-Kit in core (.up-dk-*, 13.10.): derselbe Kopf
+           mit Bild wie Brand- und Domain-Drawer, dieselben Ueberschriften wie alle Drawer. */
+        '<div class="ube-kopf up-dk-held"></div>' +
         /* Der Name ist ein Formularfeld wie Alias und Farbe -- nicht mehr eine Ueberschrift mit
            Stift. Drei Abschnitte, drei Mal dieselbe Zeile aus Feld und Knopf: das ist die Form,
            die der Rest der App auch hat. */
         '<section class="ube-sec ube-sec-name">' +
           '<div class="ube-sechead">' +
-            '<h2 class="ube-sectitle">Primary tracking- and display name</h2>' +
-            '<p class="ube-secsub">Shown everywhere in the app and matched in AI answers.</p>' +
+            '<h2 class="ube-sectitle up-dk-h2">Primary tracking- and display name</h2>' +
+            '<p class="ube-secsub up-dk-unter">Shown everywhere in the app and matched in AI answers.</p>' +
           '</div>' +
           '<div class="ube-zeile">' +
             '<input class="up-field ube-feld ube-namein" type="text" autocomplete="off" ' +
@@ -218,8 +220,8 @@
         '</section>' +
         '<section class="ube-sec ube-sec-alias">' +
           '<div class="ube-sechead">' +
-            '<h2 class="ube-sectitle">Brand Match Aliases / Products</h2>' +
-            '<p class="ube-secsub">Define how the system should recognize this brand across sources. ' +
+            '<h2 class="ube-sectitle up-dk-h2">Brand Match Aliases / Products</h2>' +
+            '<p class="ube-secsub up-dk-unter">Define how the system should recognize this brand across sources. ' +
               'Every name entered here is also tracked for this brand in AI answers and citations.</p>' +
           '</div>' +
           '<div class="ube-aliasadd">' +
@@ -238,8 +240,8 @@
         '</section>' +
         '<section class="ube-sec ube-sec-farbe">' +
           '<div class="ube-sechead">' +
-            '<h2 class="ube-sectitle">Brand Color</h2>' +
-            '<p class="ube-secsub">Change the primary color for this brand. It is used in every chart.</p>' +
+            '<h2 class="ube-sectitle up-dk-h2">Brand Color</h2>' +
+            '<p class="ube-secsub up-dk-unter">Change the primary color for this brand. It is used in every chart.</p>' +
           '</div>' +
           '<div class="ube-farbzeile">' +
             '<span class="ube-farbfeld">' +
@@ -277,8 +279,8 @@
         '</section>' +
         '<section class="ube-sec ube-sec-zeit">' +
           '<div class="ube-sechead">' +
-            '<h2 class="ube-sectitle ube-zeittitle">Tracking Statistics</h2>' +
-            '<p class="ube-secsub">The periods during which this brand was tracked in AI responses.</p>' +
+            '<h2 class="ube-sectitle up-dk-h2 ube-zeittitle">Tracking Statistics</h2>' +
+            '<p class="ube-secsub up-dk-unter">The periods during which this brand was tracked in AI responses.</p>' +
           '</div>' +
           '<div class="ube-zeittable"></div>' +
         '</section>' +
@@ -492,14 +494,16 @@
       var fav = txt(c.favicon_url).trim();
       /* Die Platte ist .up-logo-box aus core (Radius, Grund, 1px Polster); .up-fav ist der
          Aufhaenger, an dem der Globus-Rueckfall greift. Beide zusammen, wie in den Tabellen. */
-      return '<span class="up-logo-box up-fav ube-fav' + (fav ? " has-img" : "") + '">' +
+      return '<span class="up-dk-held-bild"><span class="up-logo-box up-dk-logo up-fav ube-fav' + (fav ? " has-img" : "") + '">' +
                (fav ? '<img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer">' : "") +
-             '</span>' +
-             '<div class="ube-kopftext">' +
-               '<h1 class="ube-name">' + esc(txt(c.name) || "–") + '</h1>' +
-               (d ? '<a class="ube-domain" href="' + esc(d.ziel) + '" target="_blank" rel="noopener">' +
+             '</span></span>' +
+             '<div class="ube-kopftext up-dk-held-text">' +
+               '<h1 class="ube-name up-dk-titel">' + esc(txt(c.name) || "–") + '</h1>' +
+               '<div class="up-dk-held-sub">' +
+               (d ? '<a class="ube-domain up-dk-held-link" href="' + esc(d.ziel) + '" target="_blank" rel="noopener">' +
                       esc(d.text) + '</a>'
                   : '<span class="ube-domain is-leer">–</span>') +
+               '</div>' +
              '</div>';
     }
 
@@ -566,10 +570,10 @@
     }
 
     function skelett() {
-      elKopf.innerHTML = '<span class="up-logo-box up-fav ube-fav"></span>' +
-        '<div class="ube-kopftext">' +
-        '<span class="up-tsk-bar ube-sk-name"></span>' +
-        '<span class="up-tsk-bar ube-sk-dom"></span></div>';
+      elKopf.innerHTML = '<span class="up-dk-held-bild"><span class="up-dk-sk is-logo"></span></span>' +
+        '<div class="ube-kopftext up-dk-held-text">' +
+        '<span class="up-dk-sk is-titel"></span>' +
+        '<div class="up-dk-held-sub"><span class="up-dk-sk is-s"></span></div></div>';
       var reihen = UC.skeletonRows
         ? UC.skeletonRows({ count: 2, rowClass: "up-row ube-row", cellClass: "up-td", cells: 3 })
         : "";

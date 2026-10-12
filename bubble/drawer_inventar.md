@@ -176,3 +176,15 @@ beachten. Im DRAWER-CSS des Kopf-Skripts diese Werte ersetzen bzw. ergänzen:
 - Inaktive Marke: Hinweis statt Filter und Bausteine.
 - Export aus dem Drawer gibt `brand_id` in der Nutzlast an Bubble weiter (als `p_brand` an alle drei Exporte).
 - Neue Datei im Vorlade-Snippet: `css("brand-drawer.css"); js("brand-drawer.js");`.
+
+## 11. Stand Domain und Marken-Editor (13.10., gebaut gegen den Vorschlag)
+
+- **Domain** (`KERN_DRAWER.domain`, erste Ebene, 88 %), Datei `domain-drawer.js` (Präfix `uddr`):
+  - Kopf mit Favicon, Domain und Typ-Chip; „Counts as“-Menü (eigene Seite, Wettbewerber, Automatik) im Kopf.
+  - Filterzeile; Domain Detail (lokal); Umschalter (view-switch, lokal); URL-Tabelle im Domain-Modus bzw. Responses mit `p_domain`.
+  - Neu: `domain_detail_v1`, `domain_detail_stats_v1`, `domain_url_share_v1`, `domain_classify_v1`.
+- **Marken-Editor** (`KERN_DRAWER.companysettings`, dritte Ebene, `min(720px, 60vw)`), Datei `brand-editor-drawer.js` (Präfix `ubed`):
+  - brand-editor.js lokal; Kopf und Abschnitte jetzt aus dem Detail-Kit (`.up-dk-held`, `.up-dk-h2`).
+  - Lesen über `brand_edit_v1`, je Aktion eine Schreibfunktion mit neuem Stand als Antwort.
+  - Sätze zu jedem Fehler, Werte bleiben im Feld; Lesemodus für Mitglieder; `upstreemBrandChanged` lässt den Brand-Drawer neu laden.
+- Auftrag: `bubble/domain_editor_db_auftrag.md`. Der Kopf mit Bild (`.up-dk-held`) liegt seit dieser Runde in core.

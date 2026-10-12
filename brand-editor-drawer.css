@@ -1,0 +1,20 @@
+/* upstreem brand-editor-drawer.css -- der Marken-Editor als Drawer aus core (13.10.). Praefix ubed.
+   Braucht core.css und brand-editor.css. Die Komponente bringt Kopf (aus dem Detail-Kit) und
+   Abschnitte selbst mit; hier stehen nur die Zustaende des Drawers. */
+.ubed-root { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.ubed-root > [hidden] { display: none; }
+
+/* Speichern laeuft: gedimmt wie die Tabellen der App (.42) -- Schreibaktion, kein Skelett. Keine
+   Klicks in der Zeit: eine zweite Aktion auf einen Stand, den es gleich nicht mehr gibt, waere
+   ein Rennen (B3.9 im DB-Auftrag). */
+.ubed-root.is-speichert .ube-root { opacity: .42; pointer-events: none; transition: opacity var(--up-t-1) ease; }
+
+/* Lesen ohne Schreibrecht: die Bedienelemente treten zurueck und nehmen keine Klicks. Die Felder
+   bleiben lesbar -- es ist eine Ansicht, kein Fehler. */
+.ubed-root.is-lesend .ube-zeile button, .ubed-root.is-lesend .ube-aliasadd,
+.ubed-root.is-lesend .ube-farbzeile button, .ubed-root.is-lesend .ube-aliastable .up-switch,
+.ubed-root.is-lesend .ube-aliastable button { opacity: .42; pointer-events: none; }
+.ubed-root.is-lesend .ube-feld { pointer-events: none; }
+
+/* Ohne Marke (nicht gefunden, kein Zugang) steht nur die Meldung da. */
+.ubed-root.is-fehler > :not(.ubed-fehler) { display: none; }

@@ -34,10 +34,13 @@ VORLAGE = {
     "vot": "bubble/visibility_chart_bubble.html",
     "tcd": "bubble/topcitations_dashboard_bubble.html",
     "urt": "bubble/responses_table_bubble.html",
+    "uut": "bubble/urls_table_bubble.html",
 }
 DRAWER = {
     "prompt": ("prompt-detail.js", "UPRD", ["vot", "tcd", "urt"]),
     "brand": ("brand-drawer.js", "UBDR", ["tcd", "urt"]),
+    # Domain: die URL-Tabelle im Domain-Modus (Anteil innerhalb der Domain, domainshare_*).
+    "domain": ("domain-drawer.js", "UDDR", ["uut", "urt"], {"DOMAIN_MODE": "yes"}),
 }
 
 ERSATZ_MUSTER = {
@@ -92,8 +95,11 @@ def markup(pfad):
     return rest.rstrip()
 
 
-def schreiben(ziel, praefix, teile):
+def schreiben(ziel, praefix, teile, extra=None):
     ersatz = dict((k, v.replace("__P_", "__" + praefix + "_")) for k, v in ERSATZ_MUSTER.items())
+    # Abweichungen je Drawer, vorne eingesetzt: die Reihenfolge der Ersetzung bleibt die des Musters.
+    for k, v in (extra or {}).items():
+        ersatz[k] = v
     bloecke = {}
     for schluessel in teile:
         pfad = VORLAGE[schluessel]

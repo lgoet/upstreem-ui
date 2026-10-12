@@ -105,7 +105,7 @@
      Favicon-Rueckfall aus core ueber data-domain. */
   function logoHtml(d) {
     var logo = bild(d.logo_url) || bild(d.favicon_url), name = str(d.name).trim();
-    return '<span class="up-logo-box ubdr-logo' + (logo ? " has-img" : "") + '"' +
+    return '<span class="up-logo-box up-dk-logo ubdr-logo' + (logo ? " has-img" : "") + '"' +
         (d.domain ? ' data-domain="' + esc(str(d.domain)) + '"' : "") + '>' +
       (logo ? '<img src="' + esc(logo) + '" alt="" referrerpolicy="no-referrer"' +
               ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()">' : "") +
@@ -126,9 +126,9 @@
       return;
     }
     if (!d) {
-      elLogo.innerHTML = '<span class="ubdr-skz is-logo"></span>';
-      elName.innerHTML = '<span class="ubdr-skz is-titel"></span>';
-      elDomain.innerHTML = '<span class="ubdr-skz is-s"></span>';
+      elLogo.innerHTML = '<span class="up-dk-sk is-logo"></span>';
+      elName.innerHTML = '<span class="up-dk-sk is-titel"></span>';
+      elDomain.innerHTML = '<span class="up-dk-sk is-s"></span>';
       elMeta.innerHTML = "";
       if (B.kopf) { B.kopf.name(null); B.kopf.eigen.innerHTML = ""; }
       return;
@@ -137,7 +137,7 @@
     elName.textContent = str(d.name) || "–";
     var dom = str(d.domain).trim();
     /* Die Domain oeffnet ihren Drawer, wie die Domain im Kopf des URL-Drawers. */
-    elDomain.innerHTML = dom ? '<button type="button" class="ubdr-domlink" data-ubdr-domain="' + esc(dom) + '"' +
+    elDomain.innerHTML = dom ? '<button type="button" class="up-dk-held-link ubdr-domlink" data-ubdr-domain="' + esc(dom) + '"' +
       ' data-tip="' + esc(t("Open domain")) + '">' + esc(dom) + '</button>' : "";
     elMeta.innerHTML = "";
     /* Eine Marke, die das Team nicht mehr verfolgt (nur ueber alte Links): statt leerer Zahlen
@@ -465,11 +465,11 @@
       '<div class="up-root ubdr-root">' +
         '<div class="ubdr-head up-dk">' +
           '<div class="ubdr-meta up-dk-meta"></div>' +
-          '<div class="ubdr-held">' +
-            '<span class="ubdr-logobox"></span>' +
-            '<div class="ubdr-text">' +
+          '<div class="up-dk-held ubdr-held">' +
+            '<span class="up-dk-held-bild ubdr-logobox"></span>' +
+            '<div class="up-dk-held-text ubdr-text">' +
               '<h2 class="ubdr-titel up-dk-titel"></h2>' +
-              '<div class="ubdr-domain"></div>' +
+              '<div class="up-dk-held-sub ubdr-domain"></div>' +
             '</div>' +
           '</div>' +
           /* Filterzeile wie auf den Seiten: links unter dem Kopf, ueber dem, was sie filtert. */
@@ -603,6 +603,16 @@
       try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: typ, brand_id: B.id }); } catch (err) {}
     }, true);
   }
+
+  /* Der Marken-Editor (brand-editor-drawer.js) meldet eine geaenderte Marke: der gemerkte Kopf ist
+     dann alt. Zeigt der Drawer gerade diese Marke, laedt er Kopf und Bausteine frisch -- Name und
+     Farbe stehen in beiden. */
+  window.addEventListener("upstreemBrandChanged", function (e) {
+    var id = str(e.detail && e.detail.company_id).toLowerCase();
+    if (!id) return;
+    Object.keys(B.kopfSpeicher).forEach(function (k) { if (k.toLowerCase() === id) delete B.kopfSpeicher[k]; });
+    if (B.id && B.id.toLowerCase() === id) alleLaden(true, true);
+  });
 
   UC.kernDrawer("brand", {
     aufbauen: aufbauen,

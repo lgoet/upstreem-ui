@@ -1,0 +1,41 @@
+/* upstreem domain-drawer.css -- der Domain-Drawer aus core (13.10.). Praefix uddr. Braucht core.css.
+
+   Dieselben Regeln wie Brand und Prompt: Kopf mit Bild aus core (.up-dk-held), Filterzeile
+   darunter, die Bausteine in 48er Abstand. Was hier steht, ist nur die Anordnung -- die Masse
+   sind die von brand-drawer.css, damit Geschwister gleich stehen. */
+.uddr-root { display: flex; flex-direction: column; gap: 40px; min-width: 0; }
+.uddr-root > [hidden] { display: none; }
+.uddr-filterzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.uddr-filterzeile > .udr-root { flex: 0 0 auto; }
+.uddr-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
+.uddr-main { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
+.uddr-teil { min-width: 0; }
+
+/* Titelzeile: Domain und daneben der Chip des Citation Types (13.10. so bestellt). Mittig zur
+   Versalhoehe der 28er Schrift; der Chip bricht unter die Domain, wenn sie lang ist. */
+.uddr-titelzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; min-width: 0; }
+.uddr-titelzeile .up-dk-titel { min-width: 0; }
+.uddr-typwahl { display: inline-flex; flex: 0 0 auto; }
+.uddr-typwahl:empty { display: none; }
+.uddr-zuletzt { white-space: nowrap; color: var(--vc-third); font-size: var(--up-fs-m); line-height: 20px; }
+.uddr-sub { align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+
+/* "Counts as" im Kopf: .up-filter-btn aus core, das Menue .up-sort-menu aus core braucht einen
+   Bezug (position relative). Beschriftung in der dritten Farbe, der Wert in der Textfarbe -- wie
+   die Kalenderknoepfe, die ihren Zeitraum nennen. */
+.uddr-zaehlt { position: relative; flex: 0 0 auto; }
+.uddr-zaehlt-lbl { color: var(--vc-third); }
+.uddr-zaehlt-wert { color: var(--vc-text); }
+.uddr-zaehlt-btn svg { width: 14px; height: 14px; color: var(--vc-third); }
+
+/* Speichern laeuft: der Inhalt gedimmt wie die Tabellen der App (.42), bis frisch geladen ist --
+   Schreibaktionen dimmen, kein Skelett. */
+.uddr-root.is-speichert .uddr-main, .uddr-root.is-speichert .uddr-head { opacity: .42; pointer-events: none;
+  transition: opacity var(--up-t-1) ease; }
+
+/* Umschalter ueber den Tabellen, dann die gewaehlte Tabelle. */
+.uddr-tabellen { display: flex; flex-direction: column; gap: 16px; }
+.uddr-tabellen > [hidden] { display: none; }
+
+/* Ohne Domain (ungueltig, kein Zugang) steht nur die Meldung da. */
+.uddr-root.is-fehler > :not(.uddr-fehler) { display: none; }

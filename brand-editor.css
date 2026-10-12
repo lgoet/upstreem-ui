@@ -17,19 +17,10 @@
    Posten: jeder kostet einen vollen Durchlauf ueber das Dokument je Style-Neuberechnung,
    gemessen am 03.09. rund 8ms pro Regel, unabhaengig von den Treffern. */
 
-/* Zwischen den Bloecken eine Linie, wie in url-detail (.uud-root > * + *): 32px darueber wie
-   darunter, der Abstand INNERHALB eines Blocks bleibt bei 12. Die Linie haengt am FOLGENDEN
-   Block -- so traegt der Kopf keine ueber sich, und ein ausgeblendeter Block am Ende keine ins
-   Leere. */
-.ube-body { display: flex; flex-direction: column; gap: 0; max-width: 720px; }
-.ube-body > * + * {
-  margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--vc-border);
-}
-/* AUSSER unter dem Kopf. Die Kopfzeile ist keine Sektion, sondern die Ueberschrift der ganzen
-   Ansicht -- eine Linie darunter trennt sie von dem, wozu sie gehoert. Der Abstand von 32
-   bleibt, nur die Linie und deren zweite 32 fallen weg. Ein Selektor mit zwei Klassen gegen
-   einen mit einer, also ueber die Spezifitaet gewonnen und nicht ueber die Reihenfolge. */
-.ube-body > .ube-kopf + * { padding-top: 0; border-top: 0; }
+/* Zwischen den Bloecken 40, ohne Linie -- dieselbe Ordnung wie in den Drawern aus core (13.10.:
+   "mit den gleichen Regeln wie die anderen Drawer"). Die Ueberschriften der Abschnitte (.up-dk-h2,
+   16/600) tragen die Gliederung; Linien darunter waeren eine zweite. */
+.ube-body { display: flex; flex-direction: column; gap: 40px; max-width: 720px; }
 .ube-body > * { min-width: 0; }
 .ube-body > [hidden] { display: none; }
 /* display:flex schlaegt das eingebaute [hidden] -- dieselbe Zeile wie in settings-brand. */
@@ -37,37 +28,19 @@
 .ube-loaderr { max-width: 720px; }
 .ube-loaderr[hidden] { display: none; }
 
-/* ---------- Kopf ---------- */
-.ube-kopf { display: flex; align-items: center; gap: 14px; }
-/* Die Platte ist .up-logo-box aus core, nur groesser: sie steht neben dem Namen und nicht in
-   einer Tabellenzeile. Alle Werte des Bauteils im selben Verhaeltnis mitgezogen (Faktor 44/24):
-   Radius 8 -> 14.7 (auf 14 gerundet), Polster 1 -> 2, Bild 22 -> 40. Der Rest -- Grund,
-   Ausrichtung, der Globus-Rueckfall -- bleibt, wie er ist. */
-.ube-fav.ube-fav { width: 44px; height: 44px; flex: 0 0 44px; border-radius: 14px; padding: 2px; }
-.ube-fav.ube-fav img { width: 40px; height: 40px; border-radius: 12px; }
-/* Der Globus des Rueckfalls sitzt mittig und in derselben Groesse wie ein Logo. */
-.ube-fav.ube-fav::after { width: 20px; height: 20px; }
-.ube-kopftext { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-/* Der Name steht hier als Kopfzeile und nicht mehr als 26px-Ueberschrift mit Stift daneben:
-   umbenannt wird im Formular darunter, wie Alias und Farbe auch. 20px ist die Groesse, die
-   brand-detail seiner Ueberschrift gibt. */
-.ube-name { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.015em;
-  color: var(--vc-text); line-height: 1.3; overflow: hidden; text-overflow: ellipsis;
-  white-space: nowrap; }
-/* Der Balken ist .up-tsk-bar aus core (Ton, Puls, Radius) -- hier stehen nur Breite und Hoehe,
-   die die zwei Zeilen darunter wirklich haben. Vorher trugen die zwei Spans eine Klasse, zu der
-   es KEINE Regel gab: das Kopfskelett war unsichtbar. */
-.ube-sk-name { width: 168px; height: 15px; }
-.ube-sk-dom  { width: 116px; height: 11px; margin-top: 4px; }
-.ube-domain { font-size: 13px; color: var(--vc-muted); text-decoration: none; }
-.ube-domain:hover { color: var(--vc-text); text-decoration: underline; }
-.ube-domain.is-leer { color: var(--vc-third); }
+/* ---------- Kopf ----------
+   Der Kopf mit Bild aus core (.up-dk-held, .up-dk-logo, .up-dk-titel, .up-dk-held-link, 13.10.):
+   dieselbe Kachel, derselbe Titel und dieselbe leise Zeile wie Brand- und Domain-Drawer. Hier steht
+   nur, was es dort nicht gibt: der Globus-Rueckfall von .up-fav in Kachelgroesse und die leere
+   Domain. */
+.ube-fav.up-dk-logo::after { width: 20px; height: 20px; }
+.ube-domain.is-leer { font-size: var(--up-fs-m); line-height: 20px; color: var(--vc-third); }
 
 /* ---------- Abschnitte ---------- */
 .ube-sec { display: flex; flex-direction: column; gap: 12px; }
 .ube-sechead { display: flex; flex-direction: column; gap: 4px; }
-.ube-sectitle { font-size: 16px; font-weight: 500; color: var(--vc-text); margin: 0; line-height: 1.3; }
-.ube-secsub { font-size: 13px; font-weight: 400; color: var(--vc-third); margin: 0; line-height: 1.45; }
+/* Schrift, Schnitt und Farbe aus .up-dk-h2 / .up-dk-unter (core); hier nur der Rand der h2/p. */
+.ube-sectitle, .ube-secsub { margin: 0; }
 
 /* ---------- Eingabefelder ----------
    .up-field aus core traegt NUR den Fokusring (core.css: "eine ZUSATZKLASSE, keine Ersetzung").
