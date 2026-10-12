@@ -1,0 +1,313 @@
+{
+ "_hinweis": "Echte Antworten (Rollback-Test, Team 877c, Rolle owner). Vorher im selben Test angelegt: Mercedes Farbe, Mercedes Alias 'Mercedes AMG' (gab es schon, daher kein Eintrag), Zuordnung mercedes-benz.de = own; BMW Name, Alias 'BMW AG' an und aus, bmw.com = competitor; youtube.com = own (fremde Domain, erscheint bei keiner Marke). Alle Eintraege haben im Test dieselbe Zeit, weil sie in einer Transaktion entstanden.",
+ "eigene Marke (Mercedes), ohne Filter": {
+  "meta": {
+   "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+   "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+   "limit": 50,
+   "types": null,
+   "next_before": null,
+   "available_types": [
+    "status",
+    "name",
+    "alias",
+    "color",
+    "domain"
+   ]
+  },
+  "rows": [
+   {
+    "actor_email": "l.goetzkes@online.de",
+    "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_display_name": "Lukas Götzkes",
+    "by_system": false,
+    "n": 1,
+    "created_at": "2026-10-12T12:10:47.57375+00:00",
+    "log_id": "8349454a-e00f-4b34-ba46-67376eb46d3e",
+    "action": "color_set",
+    "type": "color",
+    "details": {
+     "before": null,
+     "after": "#00adef"
+    },
+    "companies": [
+     {
+      "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+      "name": "Mercedes Benz",
+      "favicon_url": "https://www.google.com/s2/favicons?domain=mercedes-benz.de&sz=64"
+     }
+    ]
+   },
+   {
+    "actor_email": "l.goetzkes@online.de",
+    "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_display_name": "Lukas Götzkes",
+    "by_system": false,
+    "n": 1,
+    "created_at": "2026-10-12T12:10:47.57375+00:00",
+    "log_id": "4017fdb4-2fd9-4782-be93-eadd5b38f2c5",
+    "action": "domain_own",
+    "type": "domain",
+    "details": {
+     "domain": "mercedes-benz.de",
+     "before": null,
+     "after": "own"
+    },
+    "companies": []
+   }
+  ]
+ },
+ "eigene Marke (Mercedes), p_types alias": {
+  "meta": {
+   "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+   "company_id": "87468f49-3d44-4259-98a8-c65714f883c4",
+   "limit": 50,
+   "types": [
+    "alias"
+   ],
+   "next_before": null,
+   "available_types": [
+    "status",
+    "name",
+    "alias",
+    "color",
+    "domain"
+   ]
+  },
+  "rows": []
+ },
+ "BMW, ohne Filter": {
+  "meta": {
+   "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+   "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+   "limit": 50,
+   "types": null,
+   "next_before": null,
+   "available_types": [
+    "status",
+    "name",
+    "alias",
+    "color",
+    "domain"
+   ]
+  },
+  "rows": [
+   {
+    "actor_email": "l.goetzkes@online.de",
+    "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_display_name": "Lukas Götzkes",
+    "by_system": false,
+    "n": 1,
+    "created_at": "2026-10-12T12:10:47.57375+00:00",
+    "log_id": "e6c7d147-9a57-47d6-9c39-c255158eae05",
+    "action": "alias_add",
+    "type": "alias",
+    "details": {
+     "alias": "BMW AG",
+     "alias_id": "892fc3f8-aeb5-448a-a5ae-4bee4865efd0"
+    },
+    "companies": [
+     {
+      "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+      "name": "BMW Group",
+      "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+     }
+    ]
+   },
+   {
+    "actor_email": "l.goetzkes@online.de",
+    "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_display_name": "Lukas Götzkes",
+    "by_system": false,
+    "n": 1,
+    "created_at": "2026-10-12T12:10:47.57375+00:00",
+    "log_id": "59b5ea15-15f8-49b2-b3b5-f8e7f6a59833",
+    "action": "domain_competitor",
+    "type": "domain",
+    "details": {
+     "domain": "bmw.com",
+     "before": null,
+     "after": "competitor"
+    },
+    "companies": []
+   },
+   {
+    "actor_email": "l.goetzkes@online.de",
+    "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_display_name": "Lukas Götzkes",
+    "by_system": false,
+    "n": 1,
+    "created_at": "2026-10-12T12:10:47.57375+00:00",
+    "log_id": "1521fca7-7898-47ab-9bc2-a45cfb9ed5d1",
+    "action": "alias_deactivate",
+    "type": "alias",
+    "details": {
+     "alias": "BMW AG",
+     "alias_id": "892fc3f8-aeb5-448a-a5ae-4bee4865efd0"
+    },
+    "companies": [
+     {
+      "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+      "name": "BMW Group",
+      "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+     }
+    ]
+   },
+   {
+    "actor_email": "l.goetzkes@online.de",
+    "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_display_name": "Lukas Götzkes",
+    "by_system": false,
+    "n": 1,
+    "created_at": "2026-10-12T12:10:47.57375+00:00",
+    "log_id": "05fdc8f7-34b6-437b-969f-19c4eb06ab62",
+    "action": "rename",
+    "type": "name",
+    "details": {
+     "before": "BMW",
+     "after": "BMW Group"
+    },
+    "companies": [
+     {
+      "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+      "name": "BMW Group",
+      "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+     }
+    ]
+   }
+  ]
+ },
+ "BMW, p_types alias": {
+  "meta": {
+   "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+   "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+   "limit": 50,
+   "types": [
+    "alias"
+   ],
+   "next_before": null,
+   "available_types": [
+    "status",
+    "name",
+    "alias",
+    "color",
+    "domain"
+   ]
+  },
+  "rows": [
+   {
+    "actor_email": "l.goetzkes@online.de",
+    "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_display_name": "Lukas Götzkes",
+    "by_system": false,
+    "n": 1,
+    "created_at": "2026-10-12T12:10:47.57375+00:00",
+    "log_id": "e6c7d147-9a57-47d6-9c39-c255158eae05",
+    "action": "alias_add",
+    "type": "alias",
+    "details": {
+     "alias": "BMW AG",
+     "alias_id": "892fc3f8-aeb5-448a-a5ae-4bee4865efd0"
+    },
+    "companies": [
+     {
+      "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+      "name": "BMW Group",
+      "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+     }
+    ]
+   },
+   {
+    "actor_email": "l.goetzkes@online.de",
+    "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_display_name": "Lukas Götzkes",
+    "by_system": false,
+    "n": 1,
+    "created_at": "2026-10-12T12:10:47.57375+00:00",
+    "log_id": "1521fca7-7898-47ab-9bc2-a45cfb9ed5d1",
+    "action": "alias_deactivate",
+    "type": "alias",
+    "details": {
+     "alias": "BMW AG",
+     "alias_id": "892fc3f8-aeb5-448a-a5ae-4bee4865efd0"
+    },
+    "companies": [
+     {
+      "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+      "name": "BMW Group",
+      "favicon_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128"
+     }
+    ]
+   }
+  ]
+ },
+ "fremde Marke (Kompyte in 877c)": {
+  "meta": {
+   "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+   "company_id": "2b299338-cbd9-41b1-ba53-fa37b047d94b",
+   "limit": 50,
+   "types": null,
+   "next_before": null,
+   "available_types": [
+    "status",
+    "name",
+    "alias",
+    "color",
+    "domain"
+   ]
+  },
+  "rows": []
+ },
+ "unbekannte Marke": {
+  "rows": []
+ },
+ "BMW, 1 je Seite (zweite Seite)": {
+  "meta": {
+   "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+   "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1",
+   "limit": 1,
+   "types": null,
+   "next_before": "2026-10-12T12:10:47.573750Z_59b5ea15-15f8-49b2-b3b5-f8e7f6a59833",
+   "available_types": [
+    "status",
+    "name",
+    "alias",
+    "color",
+    "domain"
+   ]
+  },
+  "rows": [
+   {
+    "actor_email": "l.goetzkes@online.de",
+    "actor_user_id": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+    "actor_display_name": "Lukas Götzkes",
+    "by_system": false,
+    "n": 1,
+    "created_at": "2026-10-12T12:10:47.57375+00:00",
+    "log_id": "59b5ea15-15f8-49b2-b3b5-f8e7f6a59833",
+    "action": "domain_competitor",
+    "type": "domain",
+    "details": {
+     "domain": "bmw.com",
+     "before": null,
+     "after": "competitor"
+    },
+    "companies": []
+   }
+  ]
+ },
+ "ohne p_company (Team)": {
+  "rows": 9,
+  "actions": [
+   "alias_add",
+   "color_set",
+   "domain_competitor",
+   "domain_own",
+   "domain_own",
+   "alias_deactivate",
+   "rename",
+   "color_reset",
+   "color_set"
+  ]
+ }
+}

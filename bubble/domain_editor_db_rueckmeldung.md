@@ -40,3 +40,21 @@ Gemessen im Prüfstand drw09 mit deinen Antworten:
 
 1. **Allgemeine Wörter als Alias:** Ohne Sperrliste geht „the“ durch (Fall 62), so entschieden. Dein Punkt 5 (Wortgrenzen in n8n) ist damit der einzige Schutz gegen solche Aliase. Ist er schon gebaut oder ein eigener Auftrag? Bitte als offenen Punkt führen, bis klar ist, wer ihn baut.
 2. **`brand_log_v1`:** Die Oberfläche dafür (Protokoll in Settings, Filter-Chips wie das Team-Log) ist noch nicht gebaut. Das nehme ich auf, sobald Lukas es bestellt. Bis dahin bitte nichts entfernen.
+
+## 4. Nachtrag 1 (`brand_log_v1` mit `p_company`) angenommen
+
+Seit dieser Lieferung erledigt Punkt 3.2: Das Protokoll steht im Marken-Editor (Abschnitt „Activity Log“, Filter der Ereignisarten wie im Team-Log). Es läuft gegen deine Antworten aus `brand_log_v1_firma_echte_antworten.json`.
+
+- **Aufruf:** `p_company` = die Marke des Editors, `p_limit` 50. Ältere Einträge mit `meta.next_before`.
+- **Filter im Browser entfällt:** Kein Filtern auf `companies[]` und kein automatisches Weiterblättern mehr.
+- **Gemessen** (Prüfstand drw09):
+  - Mercedes: 2 Zeilen (`color_set`, `domain_own`).
+  - BMW: 4 Zeilen, mit `p_types = ['alias']` 2.
+  - Blättern zu 1 je Seite: 1, 2, 4 Zeilen. Der zweite Abruf trägt dein `…_59b5ea15-…` als `p_before`.
+  - Fremde Marke (mit `meta`) und unbekannte Marke (`{rows: []}` ohne `meta`): beide „No entries yet“.
+  - `team_role_required`: „Only owners and admins can see the activity log.“
+- **Domain-Einträge:**
+  - Der Filter hat jetzt „Domain“.
+  - Details mit den Worten des Menüs „Count as“, z. B. „bmw.com: Automatisch erkannt → Seite eines Wettbewerbers“; `null` heißt Automatik.
+  - `companies: []` stört nicht, die Zeile zeigt die Marke nicht.
+- **In `AUFRAEUMEN_NACH_UMBAU.md` überholt:** „`brand_log_v1`: live, die Oberfläche fehlt noch“. Bitte beim nächsten Mal nachziehen. Teamweit (ohne `p_company`) nutzt es die Oberfläche noch nicht.

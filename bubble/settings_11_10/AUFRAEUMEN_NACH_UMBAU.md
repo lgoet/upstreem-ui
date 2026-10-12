@@ -195,3 +195,39 @@ Testreste: keine. Alle Prod-Tests liefen in zurückgerollten Transaktionen. Die 
 - **`team_invite.send_tracked`:** false bei allen alten Einladungen (alter Weg), gilt als versendet. Nach dem Abschalten von Bubble bleibt das Feld; es zeigt dann nur noch den Altbestand.
 - **Status-Check `team_invite`:** hat jetzt `send_failed`. Der Rückweg setzt den alten Check als NOT VALID.
 - **Edge-Rückwege:** neue Functions einfach nicht mehr aufrufen; Quellen in `edge/team-invite-send`, `edge/team-billing-portal`.
+
+## Response Detail (11.10.2026)
+- **`response_detail_v1`** ersetzt `get_mention_detail_v8` für die neue Oberfläche. v8 bleibt, bis Bubble nichts mehr daraus liest.
+- **`get_mention_detail`, `_v6` (keine Referenz im Repo), `_v2`–`_v5`:** nach dem Abschalten von Bubble löschen. Vorher mit `_aufraeumen_fn_backup` sichern.
+- **`get_mention_detail_v7`:** wird von Shopping und Events in Bubble genutzt. Fällt weg, wenn diese Drawer umgebaut sind.
+- **`require_team_access`:** ist `security definer` ohne `search_path`. Beim Aufräumen durch `_set_require_v1` + Zugangsprüfung ersetzen.
+
+## URL Detail (12.10.2026)
+- **`url_detail_v1`** ersetzt `get_url_bundle_v7`, `get_url_detailed_v*` und `get_url_citation_conversion_v*` für die neue Oberfläche. Diese bleiben, bis Bubble sie nicht mehr ruft; danach mit Sicherung löschen.
+- **Die Responses im URL-Drawer** laufen in Bubble über `cached_mentions_overview_v1` mit `p_url`, neu über `cached_dashboard_responses_v1` mit `p_url`.
+- **`reset_team_url_v1`:** Jedes Mitglied kann eine neue Analyse auslösen (Kosten). Beim Umbau auf owner/admin plus Ratenlimit umstellen oder entfernen.
+
+## Prompt Detail (12.10.2026)
+- **`prompt_detail_v1`** und die Seiten-RPCs mit `p_prompt_id` ersetzen `get_prompt_detail_bundle_v6`/`get_prompt_detail_bundle`, `cached_competition_chart_v15`, `cached_citation_overview_v14` und `cached_mentions_overview_v1` im Prompt-Drawer. Die alten bleiben, bis Bubble sie nicht mehr ruft.
+
+## Brand Detail (12.10.2026)
+- **`brand_detail_v1`** und die Seiten-RPCs mit `p_companies` (Overview) bzw. `p_brand` (Responses, Export, Citations) ersetzen im Brand-Drawer `get_company_detailed_overview_v4`, `get_company_detailed_chart_v3/v4`, `get_company_brand_name_variations_v2` und `get_citation_overview_bundle_v26` mit `p_company`. Die alten bleiben, bis Bubble sie nicht mehr ruft; danach mit Sicherung löschen. Bis dahin sind sie abgesichert (`brand_alt_absichern.sql`).
+- **Marken-Kopien der Citations-Rechnung:** `_citations_fb_scope_v1`, `_citations_fb_overview_calc_v1`, `_citations_gb_domains_calc_v1`, `_citations_gb_urls_calc_v1`, `_citations_gb_n_v1` und `_citations_gb_tiles_v1` sind Textkopien der Originale.
+  - Unterschiede: Sie lesen Temp-Tabellen statt der Rollups, und „erwähnt“ bezieht sich auf die Drawer-Marke.
+  - **Wer die Originale ändert, muss die Kopien neu erzeugen** (`_build/brd/reps.py`, Paare in `COPIES`).
+  - Beim Aufräumen prüfen, ob eine gemeinsame Fassung mit Tabellen-Schalter besser ist.
+- **`_dash_responses_base_v1`:** `p_company` ist jetzt ein UND-Filter und die Messmarke, statt mit `p_company_ids` ODER-verknüpft zu sein. Einziger Aufrufer ist `_dash_responses_calc_v1`.
+- **`get_company_edit_v2`:** liefert für fremde Marken `brand_not_found`. Falls Bubble es beim Hinzufügen neuer Wettbewerber vor dem Anlegen ruft, fällt das hier auf; Rückweg: `brand_alt_absichern_rueckweg.sql`.
+
+## Domain-Drawer und Marken-Editor (13.10.2026)
+- **Neu ersetzt alt:**
+  - `domain_detail_v1`, `domain_detail_stats_v1` und `domain_url_share_v1` ersetzen `get_domain_detail_v3`–`v14` und `get_domain_url_share_over_time_v1`–`v6`.
+  - `domain_classify_v1` ersetzt `add/remove_team_domain_override`.
+  - `brand_edit_v1` und `brand_*_v1` ersetzen `get_company_edit_v1/v2`, `update_team_company_display_name_v1`, `add/toggle/delete_company_alias_v1` und `set/clear_company_color_override_v1`.
+  - Die Altversionen bleiben, bis Bubble sie nicht mehr ruft; danach mit Sicherung löschen.
+- **Altes `cached_citation_domain_urls_v1`** (ohne s) und `cached_citation_urls_v2`: Bubble-URL-Tabelle im Domain-Drawer. Neu ist `cached_citations_domain_urls_v1`.
+- **Direkte Tabellenzugriffe aus Bubble** (`company_alias`, `team_brand_profile`, `team_company_settings`, `team_domain_override`, `v_company_alias_enriched`): Ohne Grant bzw. Policy liefern sie nichts. Nach dem Umbau prüfen, ob noch etwas liest.
+- **Rückweg-Reihenfolge:** erst `domain_editor_alt_absichern_rueckweg.sql`, dann `domain_editor_v1_rueckweg.sql`, weil die Altversionen die neuen Helfer nutzen.
+- **Offen (nicht bestellt):**
+  - **n8n mit Wortgrenzen.** Allgemeine Wörter als Alias („the“) sind erlaubt (Entscheidung Lukas). Die DB sperrt nur 1 Zeichen, 2 Zeichen in Kleinbuchstaben und Kollisionen mit anderen Marken. Ob n8n auf ganze Wörter umgestellt wird, entscheidet Lukas.
+  - **`brand_log_v1`:** live, die Oberfläche fehlt noch. Nicht entfernen.

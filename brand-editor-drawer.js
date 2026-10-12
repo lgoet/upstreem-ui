@@ -241,14 +241,15 @@
      Zeit sortierbar geschrieben, Ereignis in Festbreitenschrift mit Punkt, wer, Einzelheiten.
      Aufklappbar wie dort und erst beim Aufklappen geladen -- ein Protokoll liest man selten.
      Der Filter ist der Mehrfach-Filter aus core (UC.makeAuswahlFilter) ueber p_types.
-     brand_log_v1 kennt (noch) keine Einschraenkung auf eine Marke: es kommt das Protokoll des
-     Teams, gefiltert wird hier auf companies[] -- je Abruf 100 Eintraege, aeltere auf Knopfdruck.
-     Nachtrag an den DB-Chat: p_company (bubble/domain_editor_db_nachtrag_1.md). Nur owner/admin. */
+     Eingeschraenkt auf die Marke ueber p_company (Nachtrag 1, 13.10.): dazu gehoeren auch die
+     Zuordnungen ihrer eigenen Domain ("Counts as"). Aeltere Eintraege ueber meta.next_before.
+     Nur owner/admin. */
   var LOG_TYPEN = [{ key: "status", label: "Status" }, { key: "name", label: "Name" },
-                   { key: "alias", label: "Aliases" }, { key: "color", label: "Color" }];
+                   { key: "alias", label: "Aliases" }, { key: "color", label: "Color" }, { key: "domain", label: "Domain" }];
   var LOG_TON = { add: "is-new", activate: "is-ok", rename: "is-new", alias_add: "is-new", alias_activate: "is-ok",
                   color_set: "is-new", deactivate: "is-off", "delete": "is-off", alias_deactivate: "is-off",
-                  alias_delete: "is-off", color_reset: "is-off" };
+                  alias_delete: "is-off", color_reset: "is-off", domain_own: "is-new", domain_competitor: "is-new",
+                  domain_auto: "is-off" };
   var L = { offen: false, typen: null, rows: [], next: null, laedt: false, fehler: "", nr: 0, filter: null };
   function logStart() { L.rows = []; L.next = null; L.fehler = ""; L.laedt = false; L.nr++; }
   function zeitpunkt(v) {
@@ -264,6 +265,12 @@
       return vor + " \u2192 " + nach;
     }
     if (a.indexOf("alias_") === 0) return str(d.alias);
+    /* Zuordnung der Domain, mit den Worten des Menues "Count as" im Domain-Drawer (null heisst
+       Automatik). Uebersetzt per t(), weil der Katalog in Tabellenzellen nicht greift. */
+    if (a.indexOf("domain_") === 0) {
+      var rolle = function (v) { v = str(v); return t(v === "own" ? "Your own site" : v === "competitor" ? "A competitor's site" : "Detected automatically"); };
+      return str(d.domain) + ": " + rolle(d.before) + " \u2192 " + rolle(d.after);
+    }
     var teile = [];
     Object.keys(d).forEach(function (k) {
       var v = d[k];
@@ -304,14 +311,11 @@
       '</div>';
     }).join("");
   }
-  /* Ein Abruf; findet er fuer diese Marke nichts, aber es gibt aeltere Seiten, holt er bis zu
-     viermal weiter -- sonst stuende "No entries yet" da, obwohl es weiter hinten Eintraege gibt. */
-  function logLaden(weiter, runde) {
+  function logLaden(weiter) {
     var id = E.id, nr = weiter ? L.nr : (logStart(), L.nr);
-    runde = runde || 0;
     L.laedt = true; logZeichnen();
     teamWarten().then(function (team) {
-      return UC.rpc(FN.log, { p_team: team, p_limit: 100, p_before: weiter ? L.next : null, p_types: L.typen }, { timeoutMs: 30000 });
+      return UC.rpc(FN.log, { p_team: team, p_limit: 50, p_before: weiter ? L.next : null, p_types: L.typen, p_company: id }, { timeoutMs: 30000 });
     }).then(function (erg) {
       if (nr !== L.nr || id !== E.id) return;
       L.laedt = false;
@@ -323,12 +327,8 @@
           : t("The activity log could not be loaded. Please try again.");
         logZeichnen(); return;
       }
-      var meine = d.rows.filter(function (r) {
-        return isArr(r.companies) && r.companies.some(function (c) { return c && str(c.company_id).toLowerCase() === id.toLowerCase(); });
-      });
-      L.rows = L.rows.concat(meine);
+      L.rows = L.rows.concat(d.rows);
       L.next = d.meta && d.meta.next_before ? str(d.meta.next_before) : null;
-      if (!meine.length && L.next && runde < 4) { logLaden(true, runde + 1); return; }
       logZeichnen();
     });
   }

@@ -126,3 +126,10 @@ Auch die alten Bubble-RPCs schreiben ins Protokoll.
 | URL Share | 90–140 ms bei 7 Tagen, 1,5 s bei 30 Tagen |
 | Editor | unter 40 ms je Aktion |
 | `brand_log_v1` | unter 10 ms |
+
+## Nachtrag 1: `brand_log_v1` je Marke
+`brand_log_v1(p_team, p_limit, p_before, p_types, p_company)`. `p_company` ist der letzte, optionale Parameter; ohne ihn bleibt alles wie bisher.
+- Mit `p_company` kommen die Einträge, deren `companies` die Marke enthält, dazu die Domain-Einträge zu ihrer Website-Domain (z. B. `mercedes-benz.de` bei Mercedes). Domain-Einträge haben `companies: []`.
+- Fremde oder unbekannte Marke: leere `rows`, kein Fehler, wie die übrigen Lese-RPCs.
+- `meta.company_id` ist gesetzt. Rolle, `p_types` und `next_before` bleiben wie bisher.
+- Echte Antworten: `brand_log_v1_firma_echte_antworten.json`.
