@@ -46,6 +46,8 @@ deiner Seite. Zwei Fragen sind offen (Abschnitt 3).
    die echte Overview für `b0ac…` (7 Tage) nachreichen. Konkret: Ist `own` dann ein Objekt mit
    `null`-Werten, `null` oder fehlt es ganz? Der Drawer verträgt alle drei Formen, aber geprüft
    ist nur die erste.
+   **Erledigt durch `prompt_detail_v1_nachtrag_ohne_laeufe.json`:** `own` ist ein Objekt mit `null`-Werten,
+   `runs_total` 0. Genau diese Form war geprüft.
 
 ## 4. Laufzeiten
 

@@ -2198,6 +2198,8 @@
     "This prompt could not be loaded. Please try again.": "Dieser Prompt konnte nicht geladen werden. Versuch es noch einmal.",
     "Last run {when}": "Zuletzt gelaufen {when}",
     "Last run on {date}": "Zuletzt gelaufen am {date}",
+    /* Huelle aus core ohne angemeldeten Baustein (kdOhneBaustein). */
+    "This panel couldn't be loaded": "Dieser Bereich konnte nicht geladen werden",
     "next run {date}": "nächster Lauf {date}",
     "Paused": "Pausiert",
     "Paused (plan limit reached)": "Pausiert (Limit deines Tarifs erreicht)",
@@ -18322,8 +18324,27 @@
     kd.id = id;
     if (kd.handler && typeof kd.handler.zeigen === "function"){
       try { kd.handler.zeigen(id); } catch(e){ if (window.console) console.warn("[drawer] " + art + ": zeigen hat geworfen:", e); }
-    }
+    } else kdOhneBaustein(kd);
   });
+  /* MELDET SICH KEIN BAUSTEIN AN (12.10. gemeldet: "geht auf, bleibt im Loader, keine RPCs"):
+     dann fehlt seine Datei im Kopf-Skript oder sie ist nicht angekommen, und das Skelett liefe
+     ohne Ende -- leer und kaputt saehen gleich aus. 10s sind grosszuegig: beim Wiederherstellen
+     aus der Adresse oeffnet der Drawer, bevor die Dateien da sind, und meldet sich die Datei
+     spaeter doch noch an, raeumt kdAufbauen die Meldung mit dem Rest weg. Im UI nur, was der
+     Nutzer tun kann; der Dateiname steht in der Konsole. */
+  function kdOhneBaustein(kd){
+    clearTimeout(kd.ohneUhr);
+    kd.ohneUhr = setTimeout(function(){
+      if (kd.handler || !kd.offen || !kd.slot) return;
+      var w = kd.slot.querySelector(".up-kdr-warte");
+      if (!w) return;
+      if (window.console) console.warn("[drawer] " + kd.art + ": kein Baustein angemeldet. Fehlt " + kd.art +
+        "-detail.js im Kopf-Skript, oder ist die Datei am Pin nicht angekommen?");
+      kd.name.textContent = "–";
+      w.outerHTML = leerHtml({ icon: "info", titel: "This panel couldn't be loaded",
+        text: "Please reload the page and try again." });
+    }, 10000);
+  }
   /* Die Komponente meldet sich an: aufbauen(ctx) einmal, zeigen(id) bei jedem Oeffnen mit
      Kennung, zu() nach dem Schliessen. Ist der Drawer schon offen (Wiederherstellen aus der
      Adresse vor dem Laden der Datei), holt die Anmeldung das Zeigen nach. */
