@@ -1,190 +1,22 @@
 <!--
-  UPSTREEM — EVENTS (Impact Events, Praefix uev), 02.10.2026
+  UPSTREEM -- IMPACT EVENTS als EINE Zeile (Praefix uev), Stand 13.10.2026
 
-  WOHIN: ein HTML-Element in der Ansicht "events" (#view-events). Das Element ist LEER bis auf das
-  Wurzel-Div; die Komponente baut Seitenkopf, Uebersicht und Detail selbst.
-  VORERST AUS (04.10.): Das Detail zeigt keine Responses, uevResponses feuert nicht -- das
-  folgende Element NICHT einbauen; steht es doch da, bleibt es versteckt.
-  Darunter, als EIGENES Element: eine Responses-Tabelle (responses_table_bubble.html) mit
-  data-instance="responses_events" -- dort erscheinen die Responses, die die URLs des Events
-  zitieren. Die Events-Komponente blendet sie selbst ein und aus. An diesem Element
-  data-sticky="no" setzen: ihr klebender Kopf malt sonst einen 171px hohen Streifen ueber sich und
-  deckt den Umfang des Events zu (die Komponente schaltet es zur Sicherheit auch selbst ab).
-  FEHLT dieses Element, zeigt das Detail den Abschnitt "Responses citing affected URLs" gar nicht
-  (seit 03.10.; vorher stand eine Ueberschrift ueber nichts) -- er erscheint, sobald es da ist.
+  WOHIN: ein HTML-Element, volle Breite, ohne eigenes Polster. Geladen wird ueber das
+  Vorlade-Snippet im Kopf der Seite (bubble/page_header_preload_ohne_kommentare.html) -- dieses
+  Element traegt KEIN eigenes Script und keinen Pin, genau wie Brands, Citations und Onboarding.
 
-  Massgeblich fuer alle Felder: bubble/events_backend_vertrag.md (Backend-Vertrag vom 02.10.).
+  Die Komponente ruft selbst (UC.rpc, Nutzer-JWT, Vertrag bubble/vor_nextjs_13_10):
+      get_impact_event_v2, cached_impact_event_analysis_v2, preview_impact_event_scope_v2,
+      create_impact_event_v2, update_impact_event_v2, add_impact_event_url_v2,
+      remove_impact_event_url_v2, delete_impact_event_v2; die Eventliste kommt aus core
+      (team_context_v1, Teil events).
+  Gibt es eine dieser Funktionen noch nicht (SQL nicht eingespielt), nimmt die Komponente fuer
+  diese Sitzung den alten Bubble-Workflow unter seinem bisherigen Namen.
 
-  ── Zwei Zustaende ───────────────────────────────────────────────────────────
-    ?view=events                 Uebersicht (Karten; die Liste gibt es seit dem 03.10. nicht mehr)
-    ?view=events&event=<uuid>    Detail
-  ?event= schreibt die Komponente selbst. Ein Event-Marker in einem anderen Diagramm oeffnet das
-  Detail ueber UC.eventOeffnen -- auch dafuer ist in Bubble nichts zu tun.
-
-  ── Attribute am Wurzel-Div ──────────────────────────────────────────────────
-  | Attribut                  | Pflicht | Bedeutung                                              |
-  |---------------------------|---------|--------------------------------------------------------|
-  | data-instance             | JA      | z.B. "events_page"                                     |
-  | data-cdn-pin              | JA      | derselbe Commit wie alle Elemente der Seite            |
-  | data-isdark               | nein    | "yes"/"no"; kennt core ein Thema, gewinnt core          |
-  | data-responses-instance   | nein    | Instanz der Responses-Tabelle, Vorgabe "responses_events" |
-  | data-demo                 | nein    | "yes": Klick-Dummy mit den Beispielen des Vertrags        |
-  | data-detail-fn …          | nein    | Namen der JavaScriptToBubble-Elemente, siehe unten      |
-
-  ── KLICK-DUMMY: data-demo="yes" ───────────────────────────────────────────────
-  Zum Durchklicken ohne einen einzigen Workflow: die Komponente holt events-demo.js (neben
-  events.js, nur in diesem Fall) und beantwortet jedes Ereignis selbst -- Uebersicht, Detail,
-  Anlegen, Bearbeiten, URLs, Loeschen, Suche. Im Kopf steht "Example data". Die Beispiel-Events
-  kommen auch in den Event-Store, die Pins erscheinen also in allen Liniendiagrammen der Seite.
-  Nichts geht an Bubble, nichts wird gespeichert; ein Neuladen setzt alles zurueck. Kommt eine
-  echte Liste (setUpstreemEvents), gewinnt sie. Fuer den Betrieb das Attribut wieder entfernen.
-  Auch die Events aus den Diagramm-Beispielen (events_runjs_charts.md) bekommen damit ein Detail.
-  OHNE data-demo und ohne Workflows fuer uevDetail/uevAnalysis zeigt das Detail nach 25s sichtbarer
-  Wartezeit "Could not load analysis" statt eines endlosen Skeletts.
-
-  ── DIE LISTE: kein eigener Setter ───────────────────────────────────────────
-  Die Uebersicht liest den Event-Store aus core. Ihn fuellt EIN Run-JS-Schritt im Seitenaufbau mit
-  list_impact_events_v1 -- dieselbe Antwort setzt die Event-Marker in ALLEN Liniendiagrammen der
-  App. Nach jeder Aenderung laeuft derselbe Schritt noch einmal, ausgeloest von upEventsChanged
-  (siehe unten). Alle Schritte samt
-  statischer Fassung mit den Vertragsdaten: bubble/events_runjs.md.
-  setUpstreemEvents steht seit Pin 2d61ace im Vorlade-Snippet (UP_API): ein Aufruf, der vor core
-  kommt, wird gemerkt und nachgeholt -- die Hausform reicht, keine Warteschleife.
-
-      (function () {
-        var ROH = `[Ergebnis von list_impact_events_v1]`
-          .replace(/:\s*([,}\]])/g, ": null$1")
-          .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
-        try { if (window.setUpstreemEvents) window.setUpstreemEvents(ROH); } catch (e) {}
-      })();
-
-  ── Ereignisse an Bubble: der Wert IST der RPC-Body ───────────────────────────
-  Jedes Ereignis traegt den fertigen JSON-Body der RPC, p_team schon drin. Im API Connector ist
-  der Body jedes Calls darum genau <body> -- ein Parameter mit dem Schluessel "body". Im Workflow:
-    1. API Connector: die RPC, Feld body = This JavascriptToBubble's value (unveraendert).
-    2. Run JS mit dem Setter unten: Antwort UND Fehler-Body in einem Schritt, ohne "Only when".
-       Die Komponente prueft selbst, ob es ein Fehler war (seit 04.10.).
-
-  | Ereignis (JS-to-Bubble) | Attribut am Wurzel-Div | RPC                              | Setter danach        |
-  |-------------------------|------------------------|----------------------------------|----------------------|
-  | uevDetail               | data-detail-fn         | get_impact_event_v1              | setEventDetail       |
-  | uevAnalysis             | data-analysis-fn       | cached_impact_event_analysis_v1  | setEventAnalysis     |
-  | uevResponses            | data-responses-fn      | cached_mentions_overview_v1      | setEventResponses    |
-  | uevScopePreview         | data-preview-fn        | preview_impact_event_scope_v1    | setEventScopePreview |
-  | uevCreate               | data-create-fn         | create_impact_event_v1           | setEventDetail       |
-  | uevUpdate               | data-update-fn         | update_impact_event_v1           | setEventDetail       |
-  | uevAddUrl               | data-addurl-fn         | add_impact_event_url_v1          | setEventDetail       |
-  | uevRemoveUrl            | data-removeurl-fn      | remove_impact_event_url_v1       | setEventDetail       |
-  | uevDelete               | data-delete-fn         | delete_impact_event_v1           | setEventDeleted      |
-
-  Die Liste nach einer Aenderung holt NICHT der aendernde Workflow: nach jedem gelungenen Anlegen,
-  Bearbeiten, URL hinzufuegen/entfernen und Loeschen ruft die Komponente upstreemEventsChanged()
-  (core, seit 04.10.), und das feuert bubble_fn_upEventsChanged -- wie upBrandsChanged. Dafuer auf
-  der Hauptseite ein Toolbox-Element "JavaScript to Bubble" namens upEventsChanged (Trigger event
-  an), dessen Workflow list_impact_events_v1 ruft und setUpstreemEvents (Schritt oben).
-  Nach uevAddUrl, uevRemoveUrl: die Komponente fordert die Analyse selbst neu an (uevAnalysis).
-
-  ── Die Popups (Anlegen, Bearbeiten, URL hinzufuegen) ────────────────────────
-  Brauchen nichts Neues ausser den vier Ereignissen oben (uevScopePreview, uevCreate, uevUpdate,
-  uevAddUrl). Die URL-Suche darin ist die Suche der Palette und von Ask Mira (UC.makeEntitySearch):
-  sie schickt an bubble_fn_quick_actions_search und erwartet die Antwort ueber
-  window.MiraQuickActions.setResults -- derselbe Workflow, der auf jeder Seite mit der Palette schon
-  laeuft (search_quick_actions_v2, scope "url"). Fehlt er auf der Events-Seite, sagt das Popup
-  "Search is not available right now" und laesst einen vollstaendigen Link trotzdem zu.
-  Ein Fehler beim Zaehlen (Fehler-Body an setEventScopePreview) erscheint unter der Auswahl,
-  ein Fehler beim Speichern im Popup selbst -- bei Anlegen springt es zum Schritt, der ihn behebt.
-
-  ── Die Setter ────────────────────────────────────────────────────────────────
-    setEventDetail("<instanz>", `<json>`, `<error body>`)          Objekt aus get_/create_/update_/…_url_v1
-    setEventAnalysis("<instanz>", `<json>`, `<error body>`)        Objekt aus cached_impact_event_analysis_v1
-    setEventScopePreview("<instanz>", `<json>`, `<error body>`)    {"affected_prompt_count": 47}
-    setEventDeleted("<instanz>", `<json>`, `<error body>`)         {"ok": true, "deleted_event_id": "…"}
-    setEventResponses("<instanz>", `<payload>`, `<error body>`)    Payload wie renderResponsesTable
-    setEventError("<instanz>", "<message>")        nur noch fuer alte Workflows mit "Only when"
-  Der dritte Wert ist [Result of step 1's error body]; bei Erfolg leer. Mit zwei Werten wie bisher.
-    setEventsLoading("<instanz>", "analysis"|"detail", "yes"|"no")
-    resetEvents("<instanz>")
-
-  Run-JS-Form (CLAUDE.md 2a), z.B. nach get_impact_event_v1:
-      (function () {
-        var ROH = `[Ergebnis der RPC]`
-          .replace(/:\s*([,}\]])/g, ": null$1")
-          .replace(/:\s*(yes|no)\s*([,}\]])/g, function (_, v, t) { return ": " + (v === "yes") + t; });
-        var FEHLER = `[Result of step 1's error body]`;
-        try { if (window.setEventDetail) window.setEventDetail("events_page", ROH, FEHLER); } catch (e) {}
-      })();
-
-  Die Texte der RPCs sind laut Vertrag (1) durch app.js_safe gelaufen -- Backticks, Backslashes
-  und ${ sind dort schon entschaerft.
+  ── Was Bubble danach NICHT mehr tut ───────────────────────────────────────────
+  Keine Workflows, keine API-Calls, kein Run JS fuer diese Seite. Es entfallen, sobald
+  vor_nextjs_v1.sql eingespielt ist und die Seite einen Tag sauber lief:
+  uev* (uevDetail, uevAnalysis, uevScopePreview, uevCreate, uevUpdate, uevAddUrl,
+  uevRemoveUrl, uevDelete), der REFRESH der Eventliste und das view_first_events-Laden.
 -->
-
-<div class="up-root uev-root"
-     data-instance="events_page"
-     data-cdn-pin="CDN_PIN"
-     data-isdark="IS_DARK"
-     data-responses-instance="responses_events"
-     data-detail-fn="bubble_fn_uevDetail"
-     data-analysis-fn="bubble_fn_uevAnalysis"
-     data-responses-fn="bubble_fn_uevResponses"
-     data-preview-fn="bubble_fn_uevScopePreview"
-     data-create-fn="bubble_fn_uevCreate"
-     data-update-fn="bubble_fn_uevUpdate"
-     data-addurl-fn="bubble_fn_uevAddUrl"
-     data-removeurl-fn="bubble_fn_uevRemoveUrl"
-     data-delete-fn="bubble_fn_uevDelete"></div>
-
-<script>
-(function(){
-  /* Loader nach STYLEGUIDE §26 -- wortgleich mit response_detail_bubble.html, nur Klasse und
-     Dateien anders. Die Filter-Dateien laedt dieses Element mit: Models- und Markets-Filter stehen
-     als lokale Instanzen IN der Komponente (Entscheidung 7), in der Filterleiste der App. */
-  function echterPin(p){
-    p = String(p == null ? "" : p).trim();
-    return (p && p !== "CDN_" + "PIN") ? p : "";
-  }
-  function readPin(cls){
-    var i, p, els = document.getElementsByClassName(cls);
-    for (i = 0; i < els.length; i++){
-      p = echterPin(els[i].getAttribute("data-cdn-pin"));
-      if (p) return (window.__upPin = p);
-    }
-    if (echterPin(window.__upPin)) return window.__upPin;
-    var alle = document.querySelectorAll ? document.querySelectorAll("[data-cdn-pin]") : [];
-    for (i = 0; i < alle.length; i++){
-      p = echterPin(alle[i].getAttribute("data-cdn-pin"));
-      if (p) return (window.__upPin = p);
-    }
-    var L0 = window.__upAssetsLoaded, k, m;
-    for (k in L0){
-      if (!Object.prototype.hasOwnProperty.call(L0, k)) continue;
-      m = String(L0[k] || "").match(/upstreem-ui@([^/]+)\//);
-      if (m && m[1] && m[1] !== "main") return (window.__upPin = m[1]);
-    }
-    return "main";
-  }
-  var base = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@" + readPin("uev-root") + "/";
-  var L = window.__upAssetsLoaded || (window.__upAssetsLoaded = {});
-  function once(url, make){
-    var name = url.slice(url.lastIndexOf("/") + 1);
-    if (L[name]){
-      if (L[name] !== url && window.console) console.warn("upstreem: " + name +
-        " ist schon von einem anderen Pin geladen. Geladen bleibt " + L[name] +
-        ", ignoriert wird " + url + ". Setzt alle Elemente auf denselben Pin.");
-      return;
-    }
-    L[name] = url; make(url);
-  }
-  function css(f){ once(base + f, function(u){ var l = document.createElement("link"); l.rel = "stylesheet"; l.href = u; document.head.appendChild(l); }); }
-  function js(f){ once(base + f, function(u){ var s = document.createElement("script"); s.src = u; s.async = false; document.head.appendChild(s); }); }
-
-  css("core.css");                        js("core.js");
-  css("filters/models-filter.css");       js("filters/models-filter.js");
-  css("filters/markets-filter.css");      js("filters/markets-filter.js");
-  /* Die Filterleiste ("Filters") um Models und Markets im Detail, und fuer das Anlegen-Popup die
-     Kalender-Zellen aus date-range.css (Datum) -- deren Regeln stehen ohne Elternklasse. Den
-     Topics-Filter braucht das Popup seit dem 03.10. nicht mehr (eigene Liste). */
-  css("filters/filter-bar.css");          js("filters/filter-bar.js");
-  css("filters/date-range.css");
-  css("events.css");                      js("events.js");
-})();
-</script>
+<div class="up-root uev-root" data-instance="events_page"></div>
