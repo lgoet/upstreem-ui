@@ -128,6 +128,7 @@
   cssRoh("core.css");  jsRoh("core.js");
   css("sidebar.css");  js("sidebar.js");
   css("access-gate.css");  js("access-gate.js");
+  if (/\/onboarding(\/|$)/.test(location.pathname)){ css("onboarding-page.css"); js("onboarding-page.js"); }
 
   function welle2(){
     css("visibility-chart.css");        js("visibility-chart.js");

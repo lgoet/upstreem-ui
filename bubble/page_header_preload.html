@@ -291,6 +291,9 @@
      2,5s spaeter -- so lange stuende die App offen, obwohl die Nutzlast laengst sagt, dass
      sie gesperrt ist. Die Aufrufe davor faengt UP_API oben auf. */
   css("access-gate.css");  js("access-gate.js");
+  /* Die Onboarding-Seite ist der erste Bildschirm und laedt selbst (13.10.): ihre Dateien
+     sofort mit core, nur auf dieser Seite -- das Element ist dann eine Zeile wie ueberall. */
+  if (/\/onboarding(\/|$)/.test(location.pathname)){ css("onboarding-page.css"); js("onboarding-page.js"); }
 
   /* ── WELLE 2: der Vorrat ───────────────────────────────────────────────────
      Wann sie laeuft, entscheidet VORRAT oben. Bei "idle" requestIdleCallback mit Frist, damit es
