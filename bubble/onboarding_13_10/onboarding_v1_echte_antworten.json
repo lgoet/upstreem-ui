@@ -1,16 +1,654 @@
 {
-  "_hinweis": "Echte Antworten der v1-Funktionen aus Prod, 12.10.2026, in einer Transaktion mit Rollback (onboarding_v1.sql darin eingespielt, danach zurückgerollt). Nutzer 4a3601b2 ohne Onboarding; Onboarding 4aae98d9 (Zet Casino) mit echten Kandidaten, Themen und Prompts. Für 'status_mitten_im_lauf' und 'bundle_failed' wurde der Status im Rollback gesetzt. Fehler stehen so, wie PostgREST sie liefert: message = Code, hint = Grund, sqlstate = HTTP-Status (PT404 -> 404, PT409 -> 409, 22023 -> 400). Im Bündel ohne Onboarding sind markets und timezones auf 3 Einträge gekürzt (echt: 134 bzw. 488).",
-  "faelle": [
-    {"fall": "bundle_ohne_onboarding", "rpc": "onboarding_bundle_v1()", "antwort": {"row": null, "meta": {"limits": {"name_max": 60, "topic_max": 40, "prompt_max": 300, "prompt_min": 3, "website_max": 255, "own_topics_max": 5, "competitors_max": 5, "own_prompts_max": 10, "prompt_runs_per_day": 5, "topics_selected_max": 8, "prompts_selected_max": 15}, "markets": [{"code": "AF", "name": "Afghanistan", "flag_url": "https://flagcdn.com/af.svg", "language_code": "fa"}, {"code": "AL", "name": "Albania", "flag_url": "https://flagcdn.com/al.svg", "language_code": "sq"}, {"code": "DZ", "name": "Algeria", "flag_url": "https://flagcdn.com/dz.svg", "language_code": "ar"}], "restart": {"limit": 1, "reason": null, "allowed": true, "remaining": 1, "free_restart": false, "window_hours": 168, "has_onboarding": false, "next_allowed_at": null, "run_in_progress": false}, "timezones": ["Africa/Abidjan", "Africa/Accra", "Africa/Addis_Ababa"], "data_as_of": "2026-10-12T13:37:37.393135+00:00", "business_models": [{"code": "B2B", "label": "B2B"}, {"code": "B2C", "label": "B2C"}, {"code": "Hybrid", "label": "Hybrid (B2B & B2C)"}, {"code": "CitiesRegions", "label": "Cities & Regions"}]}}},
-    {"fall": "prompt_add", "rpc": "onboarding_prompt_add_v1(p_onboarding, 'Online Casino mit PayPal Auszahlung')", "antwort": {"row": {"id": "7f7684f3-3d44-4d0e-ac94-f7ccda3c911b", "is_own": true, "market": "DE", "selected": true, "topic_ids": [], "prompt_text": "Online Casino mit PayPal Auszahlung", "primary_topic_id": null}, "meta": {"own_max": 10, "own_count": 1, "onboarding_id": "4aae98d9-de4c-4e99-8804-d8e78d52f2c6"}}},
-    {"fall": "bundle_awaiting_billing_mit_prompts (meta ohne markets/timezones)", "rpc": "onboarding_bundle_v1()", "antwort": {"row": {"topics": [{"id": "d04d163b-ab90-4d8a-97f0-b506499d20f8", "name": "Online-Casino", "is_own": false, "hex_dark": "#de1b22", "selected": true, "hex_light": "#de1b22", "description": null}, {"id": "e5e3537b-4148-4e7f-83fc-6e6771eab97f", "name": "Casino Spiele", "is_own": false, "hex_dark": "#725a1d", "selected": true, "hex_light": "#725a1d", "description": null}, {"id": "3a7fed5d-5947-429a-aea7-4240869878fc", "name": "Online Spielautomaten", "is_own": false, "hex_dark": "#4f926b", "selected": true, "hex_light": "#4f926b", "description": null}, {"id": "cdf9ddb3-2f93-4160-97e0-187f62199766", "name": "Jackpots", "is_own": false, "hex_dark": "#1b6eda", "selected": false, "hex_light": "#1b6eda", "description": null}, {"id": "4e2d8c42-92a2-47eb-8f03-5febcc6e20a8", "name": "Tischspiele", "is_own": false, "hex_dark": "#7a33cc", "selected": true, "hex_light": "#7a33cc", "description": null}], "project": {"market": "DE", "status": "awaiting_billing", "summary": "Zet Casino ist eine B2C-Marke im Online-Glücksspiel. Die bereitgestellte Website enthält außer Cookie-Hinweisen und Platzhaltertext keine konkreten Informationen zu angebotenen Spielen, Zahlungsarten, Lizenzierung, Zielgruppenmerkmalen oder regionaler Verfügbarkeit.", "team_id": null, "industry": "Online-Glücksspiel", "timezone": "Europe/Berlin", "created_at": "2026-08-24T15:41:16.30538+00:00", "error_code": null, "updated_at": "2026-08-29T16:15:28.883+00:00", "website_url": "https://zetspins.com/", "company_name": "Zet Casino", "status_phase": 7, "checkout_open": true, "onboarding_id": "4aae98d9-de4c-4e99-8804-d8e78d52f2c6", "website_input": "https://zetspins.com", "business_model": "B2C", "website_domain": "zetspins.com", "billing_interval": "yearly", "progress_percent": 100, "selected_plan_id": "3129be58-d59a-4221-ba53-7b2e4131cf5f"}, "prompts": [{"id": "a19a6fb6-6fc0-40aa-bd2f-da120fe4fc35", "is_own": false, "market": "DE", "selected": true, "topic_ids": ["d04d163b-ab90-4d8a-97f0-b506499d20f8"], "prompt_text": "bestes Online Casino mit schneller Auszahlung und hohem Bonus", "primary_topic_id": "d04d163b-ab90-4d8a-97f0-b506499d20f8"}, {"id": "99e19b46-f12f-4a21-a50b-058de6ab63d3", "is_own": false, "market": "DE", "selected": true, "topic_ids": ["e5e3537b-4148-4e7f-83fc-6e6771eab97f"], "prompt_text": "beste Casino Spiele mit hoher Auszahlungsquote", "primary_topic_id": "e5e3537b-4148-4e7f-83fc-6e6771eab97f"}, {"id": "a5838871-5377-403a-ac17-88ee708cbc61", "is_own": false, "market": "DE", "selected": false, "topic_ids": ["3a7fed5d-5947-429a-aea7-4240869878fc"], "prompt_text": "beste Online Spielautomaten mit hoher Auszahlungsquote", "primary_topic_id": "3a7fed5d-5947-429a-aea7-4240869878fc"}, {"id": "8b95a47b-30b5-47b7-8404-936b70e1261f", "is_own": false, "market": "DE", "selected": false, "topic_ids": ["4e2d8c42-92a2-47eb-8f03-5febcc6e20a8"], "prompt_text": "beste Online Tischspiele wie Blackjack und Roulette", "primary_topic_id": "4e2d8c42-92a2-47eb-8f03-5febcc6e20a8"}, {"id": "d43bf46a-ea41-4ee8-941e-7077ea0de1d9", "is_own": false, "market": "DE", "selected": true, "topic_ids": ["d04d163b-ab90-4d8a-97f0-b506499d20f8"], "prompt_text": "seriöse Online Casinos mit gültiger Lizenz für Echtgeldspiele", "primary_topic_id": "d04d163b-ab90-4d8a-97f0-b506499d20f8"}, {"id": "48464199-5fab-48fc-baa5-80acfa9be0b8", "is_own": false, "market": "DE", "selected": false, "topic_ids": ["e5e3537b-4148-4e7f-83fc-6e6771eab97f"], "prompt_text": "welche Casino Spiele haben die besten Gewinnchancen für Anfänger, wenn man mit kleinem Budget startet?", "primary_topic_id": "e5e3537b-4148-4e7f-83fc-6e6771eab97f"}, {"id": "cd2ab74a-151b-4948-9070-c5dddb15a50e", "is_own": false, "market": "DE", "selected": false, "topic_ids": ["3a7fed5d-5947-429a-aea7-4240869878fc"], "prompt_text": "welche Online Spielautomaten zahlen am besten aus?", "primary_topic_id": "3a7fed5d-5947-429a-aea7-4240869878fc"}, {"id": "bdbbe964-c1f8-41d5-be6e-b928c6cf39bb", "is_own": false, "market": "DE", "selected": false, "topic_ids": ["4e2d8c42-92a2-47eb-8f03-5febcc6e20a8"], "prompt_text": "wo kann man Live Roulette mit echten Dealern spielen, auch wenn man nur kleine Einsätze machen möchte?", "primary_topic_id": "4e2d8c42-92a2-47eb-8f03-5febcc6e20a8"}, {"id": "3086a855-182a-468d-8f75-e3f0ffcb308a", "is_own": false, "market": "DE", "selected": true, "topic_ids": ["d04d163b-ab90-4d8a-97f0-b506499d20f8"], "prompt_text": "welches Online Casino bietet die besten Willkommensboni, ohne komplizierte Bonusbedingungen und mit schneller Auszahlung?", "primary_topic_id": "d04d163b-ab90-4d8a-97f0-b506499d20f8"}, {"id": "7465f0f0-3949-439b-93e1-1ac8db702221", "is_own": false, "market": "DE", "selected": false, "topic_ids": ["e5e3537b-4148-4e7f-83fc-6e6771eab97f"], "prompt_text": "Casino Spiele mit niedrigem Einsatz und trotzdem guten Gewinnmöglichkeiten für Spieler, die wenig riskieren möchten", "primary_topic_id": "e5e3537b-4148-4e7f-83fc-6e6771eab97f"}, {"id": "65a953d0-5d6e-44dd-944a-a0b095a1577b", "is_own": false, "market": "DE", "selected": false, "topic_ids": ["3a7fed5d-5947-429a-aea7-4240869878fc"], "prompt_text": "neue Online Spielautomaten mit Freispielen ohne Einzahlung und hoher Auszahlungsquote für mobile Geräte", "primary_topic_id": "3a7fed5d-5947-429a-aea7-4240869878fc"}, {"id": "78fc6f20-c15a-499f-b1f2-688d14d613a0", "is_own": false, "market": "DE", "selected": false, "topic_ids": ["4e2d8c42-92a2-47eb-8f03-5febcc6e20a8"], "prompt_text": "Online Blackjack mit niedrigem Mindesteinsatz für Gelegenheitsspieler, die ein realistisches Casino-Erlebnis suchen", "primary_topic_id": "4e2d8c42-92a2-47eb-8f03-5febcc6e20a8"}, {"id": "a3676949-8996-4a13-b643-e7af8ad85acf", "is_own": false, "market": "DE", "selected": false, "topic_ids": ["d04d163b-ab90-4d8a-97f0-b506499d20f8", "3a7fed5d-5947-429a-aea7-4240869878fc"], "prompt_text": "Online Casino mit den meisten Spielautomaten, Live-Casino-Angeboten und einer gut bewerteten App für unterwegs", "primary_topic_id": "d04d163b-ab90-4d8a-97f0-b506499d20f8"}, {"id": "c59359ed-0175-482c-92cb-5b3500e0ac7a", "is_own": false, "market": "DE", "selected": false, "topic_ids": ["e5e3537b-4148-4e7f-83fc-6e6771eab97f"], "prompt_text": "neue Casino Spiele mit Freispielen und Bonusrunden 2026", "primary_topic_id": "e5e3537b-4148-4e7f-83fc-6e6771eab97f"}, {"id": "cb5def6a-5e82-4c1d-823b-f80169769c65", "is_own": false, "market": "DE", "selected": false, "topic_ids": ["3a7fed5d-5947-429a-aea7-4240869878fc"], "prompt_text": "Online Spielautomaten mit progressivem Jackpot, Bonusspielen und hohen Gewinnchancen, die auch auf dem Handy gut laufen", "primary_topic_id": "3a7fed5d-5947-429a-aea7-4240869878fc"}, {"id": "7f7684f3-3d44-4d0e-ac94-f7ccda3c911b", "is_own": true, "market": "DE", "selected": true, "topic_ids": [], "prompt_text": "Online Casino mit PayPal Auszahlung", "primary_topic_id": null}], "competitors": [{"id": "40d9a1b8-ed7b-463d-92fe-b97291d4e66f", "name": "AdmiralBet", "domain": "admiralbet.de", "selected": false, "favicon_url": "https://www.google.com/s2/favicons?domain=admiralbet.de&sz=64"}, {"id": "a4498989-8944-4ec9-8a27-1257125ba5e4", "name": "BingBong", "domain": "bingbong.de", "selected": false, "favicon_url": "https://www.google.com/s2/favicons?domain=bingbong.de&sz=64"}, {"id": "5bd2d841-5b67-491b-baa5-2f04b88bcd52", "name": "DrückGlück", "domain": "drueckglueck.de", "selected": false, "favicon_url": "https://www.google.com/s2/favicons?domain=drueckglueck.de&sz=64"}, {"id": "e1e21c3b-abf0-46f5-bbd6-b13114ec806a", "name": "JackpotPiraten", "domain": "jackpotpiraten.de", "selected": true, "favicon_url": "https://www.google.com/s2/favicons?domain=jackpotpiraten.de&sz=64"}, {"id": "8c77aa1c-e421-4fd9-b4c0-607a22ca1362", "name": "LÖWEN PLAY", "domain": "loewen-play.de", "selected": true, "favicon_url": "https://www.google.com/s2/favicons?domain=loewen-play.de&sz=64"}, {"id": "c38be60f-de7d-49a4-9a37-eb19fa41b4ec", "name": "Merkur Spiel", "domain": "merkur-spiel.de", "selected": true, "favicon_url": "https://www.google.com/s2/favicons?domain=merkur-spiel.de&sz=64"}, {"id": "c844fe81-4b29-46c7-a176-4ecfc05734c6", "name": "NetBet", "domain": "netbet.de", "selected": true, "favicon_url": "https://www.google.com/s2/favicons?domain=netbet.de&sz=64"}, {"id": "5b7c9a67-46ce-4826-9265-799fd17bf275", "name": "Slotmagie", "domain": "slotmagie.de", "selected": false, "favicon_url": "https://www.google.com/s2/favicons?domain=slotmagie.de&sz=64"}, {"id": "eba78f4d-9f7f-4825-98df-968b829638bb", "name": "StarGames", "domain": "stargames.de", "selected": false, "favicon_url": "https://www.google.com/s2/favicons?domain=stargames.de&sz=64"}, {"id": "6b3eb1af-63c8-4b73-a482-944a17b76a4b", "name": "Tipico", "domain": "tipico.de", "selected": true, "favicon_url": "https://www.google.com/s2/favicons?domain=tipico.de&sz=64"}]}, "meta": {"limits": {"name_max": 60, "topic_max": 40, "prompt_max": 300, "prompt_min": 3, "website_max": 255, "own_topics_max": 5, "competitors_max": 5, "own_prompts_max": 10, "prompt_runs_per_day": 5, "topics_selected_max": 8, "prompts_selected_max": 15}, "restart": {"limit": 1, "reason": null, "allowed": true, "remaining": 1, "free_restart": false, "window_hours": 168, "has_onboarding": true, "next_allowed_at": null, "run_in_progress": false}, "data_as_of": "2026-10-12T13:37:37.393135+00:00", "business_models": [{"code": "B2B", "label": "B2B"}, {"code": "B2C", "label": "B2C"}, {"code": "Hybrid", "label": "Hybrid (B2B & B2C)"}, {"code": "CitiesRegions", "label": "Cities & Regions"}]}}},
-    {"fall": "status", "rpc": "onboarding_status_v1(p_onboarding)", "antwort": {"row": {"status": "awaiting_billing", "team_id": null, "error_code": null, "updated_at": "2026-08-29T16:15:28.883+00:00", "status_phase": 7, "checkout_open": true, "onboarding_id": "4aae98d9-de4c-4e99-8804-d8e78d52f2c6", "progress_percent": 100}, "meta": {"data_as_of": "2026-10-12T13:37:37.393135+00:00"}}},
-    {"fall": "select_competitors", "rpc": "onboarding_select_v1(p_onboarding, 'competitors', [2 Ids])", "antwort": {"meta": {"max": 5, "kind": "competitors", "count": 2, "onboarding_id": "4aae98d9-de4c-4e99-8804-d8e78d52f2c6"}, "rows": ["e1e21c3b-abf0-46f5-bbd6-b13114ec806a", "8c77aa1c-e421-4fd9-b4c0-607a22ca1362"]}},
-    {"fall": "select_fehler_zu_viele", "rpc": "onboarding_select_v1(p_onboarding, 'competitors', [10 Ids])", "antwort": {"error": {"hint": "too_many_competitors", "message": "onboarding_invalid", "sqlstate": "22023"}}},
-    {"fall": "plans", "rpc": "onboarding_plans_v1()", "antwort": {"meta": {"currency": "EUR", "trial_eligible": true}, "rows": [{"id": "54be31d2-dc61-4a5e-8ea0-31c4370a4cb3", "name": "Essential", "sort_order": null, "trial_days": 14, "prompts_per_day": 50, "yearly_price_eur": 948.00, "models_max_active": 3, "monthly_price_eur": 89.00, "trial_days_effective": 14, "ai_responses_per_month": 4500, "competitors_max_active": 5}, {"id": "3129be58-d59a-4221-ba53-7b2e4131cf5f", "name": "Professional", "sort_order": null, "trial_days": 14, "prompts_per_day": 150, "yearly_price_eur": 2220.00, "models_max_active": 3, "monthly_price_eur": 205.00, "trial_days_effective": 14, "ai_responses_per_month": 13500, "competitors_max_active": 10}, {"id": "a980c741-807e-43dd-9617-8e06b82999ba", "name": "Enterprise", "sort_order": null, "trial_days": 0, "prompts_per_day": 350, "yearly_price_eur": 4380.00, "models_max_active": 3, "monthly_price_eur": 429.00, "trial_days_effective": 0, "ai_responses_per_month": 31500, "competitors_max_active": 15}]}},
-    {"fall": "status_mitten_im_lauf", "rpc": "onboarding_status_v1(p_onboarding)", "antwort": {"row": {"status": "processing", "team_id": null, "error_code": null, "updated_at": "2026-10-12T13:37:37.393135+00:00", "status_phase": 3, "checkout_open": false, "onboarding_id": "4aae98d9-de4c-4e99-8804-d8e78d52f2c6", "progress_percent": 45}, "meta": {"data_as_of": "2026-10-12T13:37:37.393135+00:00"}}},
-    {"fall": "bundle_failed (nur project und meta.restart)", "rpc": "onboarding_bundle_v1()", "antwort": {"project": {"market": "DE", "status": "failed", "summary": "Zet Casino ist eine B2C-Marke im Online-Glücksspiel. Die bereitgestellte Website enthält außer Cookie-Hinweisen und Platzhaltertext keine konkreten Informationen zu angebotenen Spielen, Zahlungsarten, Lizenzierung, Zielgruppenmerkmalen oder regionaler Verfügbarkeit.", "team_id": null, "industry": "Online-Glücksspiel", "timezone": "Europe/Berlin", "created_at": "2026-08-24T15:41:16.30538+00:00", "error_code": "website_unreachable", "updated_at": "2026-10-12T13:37:37.393135+00:00", "website_url": "https://zetspins.com/", "company_name": "Zet Casino", "status_phase": 3, "checkout_open": false, "onboarding_id": "4aae98d9-de4c-4e99-8804-d8e78d52f2c6", "website_input": "https://zetspins.com", "business_model": "B2C", "website_domain": "zetspins.com", "billing_interval": "yearly", "progress_percent": 45, "selected_plan_id": "3129be58-d59a-4221-ba53-7b2e4131cf5f"}, "restart": {"limit": 1, "reason": null, "allowed": true, "remaining": 1, "free_restart": true, "window_hours": 168, "has_onboarding": true, "next_allowed_at": null, "run_in_progress": false}}},
-    {"fall": "select_im_falschen_status", "rpc": "onboarding_select_v1(..., 'topics', [])", "antwort": {"error": {"hint": "failed", "message": "onboarding_busy", "sqlstate": "PT409"}}},
-    {"fall": "status_fremd", "rpc": "onboarding_status_v1(fremdes Onboarding)", "antwort": {"error": {"hint": "", "message": "onboarding_not_found", "sqlstate": "PT404"}}}
-  ]
+ "_hinweis": "Echte Antworten der v1-Funktionen aus Prod, 12.10.2026, in einer Transaktion mit Rollback (onboarding_v1.sql darin eingespielt, danach zurückgerollt). Nutzer 4a3601b2 ohne Onboarding; Onboarding 4aae98d9 (Zet Casino) mit echten Kandidaten, Themen und Prompts. Für 'status_mitten_im_lauf' und 'bundle_failed' wurde der Status im Rollback gesetzt. Fehler stehen so, wie PostgREST sie liefert: message = Code, hint = Grund, sqlstate = HTTP-Status (PT404 -> 404, PT409 -> 409, 22023 -> 400). Im Bündel ohne Onboarding sind markets und timezones auf 3 Einträge gekürzt (echt: 134 bzw. 488).",
+ "faelle": [
+  {
+   "fall": "bundle_ohne_onboarding",
+   "rpc": "onboarding_bundle_v1()",
+   "antwort": {
+    "row": null,
+    "meta": {
+     "limits": {
+      "name_max": 60,
+      "topic_max": 40,
+      "prompt_max": 300,
+      "prompt_min": 3,
+      "website_max": 255,
+      "own_topics_max": 5,
+      "competitors_max": 5,
+      "own_prompts_max": 10,
+      "prompt_runs_per_day": 5,
+      "topics_selected_max": 8,
+      "prompts_selected_max": 15
+     },
+     "markets": [
+      {
+       "code": "AF",
+       "name": "Afghanistan",
+       "flag_url": "https://flagcdn.com/af.svg",
+       "language_code": "fa"
+      },
+      {
+       "code": "AL",
+       "name": "Albania",
+       "flag_url": "https://flagcdn.com/al.svg",
+       "language_code": "sq"
+      },
+      {
+       "code": "DZ",
+       "name": "Algeria",
+       "flag_url": "https://flagcdn.com/dz.svg",
+       "language_code": "ar"
+      }
+     ],
+     "restart": {
+      "limit": 1,
+      "reason": null,
+      "allowed": true,
+      "remaining": 1,
+      "free_restart": false,
+      "window_hours": 168,
+      "has_onboarding": false,
+      "next_allowed_at": null,
+      "run_in_progress": false
+     },
+     "timezones": [
+      "Africa/Abidjan",
+      "Africa/Accra",
+      "Africa/Addis_Ababa"
+     ],
+     "data_as_of": "2026-10-12T13:37:37.393135+00:00",
+     "business_models": [
+      {
+       "code": "B2B",
+       "label": "B2B"
+      },
+      {
+       "code": "B2C",
+       "label": "B2C"
+      },
+      {
+       "code": "Hybrid",
+       "label": "Hybrid (B2B & B2C)"
+      },
+      {
+       "code": "CitiesRegions",
+       "label": "Cities & Regions"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "fall": "prompt_add",
+   "rpc": "onboarding_prompt_add_v1(p_onboarding, 'Online Casino mit PayPal Auszahlung')",
+   "antwort": {
+    "row": {
+     "id": "7f7684f3-3d44-4d0e-ac94-f7ccda3c911b",
+     "is_own": true,
+     "market": "DE",
+     "selected": true,
+     "topic_ids": [],
+     "prompt_text": "Online Casino mit PayPal Auszahlung",
+     "primary_topic_id": null
+    },
+    "meta": {
+     "own_max": 10,
+     "own_count": 1,
+     "onboarding_id": "4aae98d9-de4c-4e99-8804-d8e78d52f2c6"
+    }
+   }
+  },
+  {
+   "fall": "bundle_awaiting_billing_mit_prompts (meta ohne markets/timezones)",
+   "rpc": "onboarding_bundle_v1()",
+   "antwort": {
+    "row": {
+     "topics": [
+      {
+       "id": "d04d163b-ab90-4d8a-97f0-b506499d20f8",
+       "name": "Online-Casino",
+       "is_own": false,
+       "hex_dark": "#de1b22",
+       "selected": true,
+       "hex_light": "#de1b22",
+       "description": null
+      },
+      {
+       "id": "e5e3537b-4148-4e7f-83fc-6e6771eab97f",
+       "name": "Casino Spiele",
+       "is_own": false,
+       "hex_dark": "#725a1d",
+       "selected": true,
+       "hex_light": "#725a1d",
+       "description": null
+      },
+      {
+       "id": "3a7fed5d-5947-429a-aea7-4240869878fc",
+       "name": "Online Spielautomaten",
+       "is_own": false,
+       "hex_dark": "#4f926b",
+       "selected": true,
+       "hex_light": "#4f926b",
+       "description": null
+      },
+      {
+       "id": "cdf9ddb3-2f93-4160-97e0-187f62199766",
+       "name": "Jackpots",
+       "is_own": false,
+       "hex_dark": "#1b6eda",
+       "selected": false,
+       "hex_light": "#1b6eda",
+       "description": null
+      },
+      {
+       "id": "4e2d8c42-92a2-47eb-8f03-5febcc6e20a8",
+       "name": "Tischspiele",
+       "is_own": false,
+       "hex_dark": "#7a33cc",
+       "selected": true,
+       "hex_light": "#7a33cc",
+       "description": null
+      }
+     ],
+     "project": {
+      "market": "DE",
+      "status": "awaiting_billing",
+      "summary": "Zet Casino ist eine B2C-Marke im Online-Glücksspiel. Die bereitgestellte Website enthält außer Cookie-Hinweisen und Platzhaltertext keine konkreten Informationen zu angebotenen Spielen, Zahlungsarten, Lizenzierung, Zielgruppenmerkmalen oder regionaler Verfügbarkeit.",
+      "team_id": null,
+      "industry": "Online-Glücksspiel",
+      "timezone": "Europe/Berlin",
+      "created_at": "2026-08-24T15:41:16.30538+00:00",
+      "error_code": null,
+      "updated_at": "2026-08-29T16:15:28.883+00:00",
+      "website_url": "https://zetspins.com/",
+      "company_name": "Zet Casino",
+      "status_phase": 7,
+      "checkout_open": true,
+      "onboarding_id": "4aae98d9-de4c-4e99-8804-d8e78d52f2c6",
+      "website_input": "https://zetspins.com",
+      "business_model": "B2C",
+      "website_domain": "zetspins.com",
+      "billing_interval": "yearly",
+      "progress_percent": 100,
+      "selected_plan_id": "3129be58-d59a-4221-ba53-7b2e4131cf5f"
+     },
+     "prompts": [
+      {
+       "id": "a19a6fb6-6fc0-40aa-bd2f-da120fe4fc35",
+       "is_own": false,
+       "market": "DE",
+       "selected": true,
+       "topic_ids": [
+        "d04d163b-ab90-4d8a-97f0-b506499d20f8"
+       ],
+       "prompt_text": "bestes Online Casino mit schneller Auszahlung und hohem Bonus",
+       "primary_topic_id": "d04d163b-ab90-4d8a-97f0-b506499d20f8"
+      },
+      {
+       "id": "99e19b46-f12f-4a21-a50b-058de6ab63d3",
+       "is_own": false,
+       "market": "DE",
+       "selected": true,
+       "topic_ids": [
+        "e5e3537b-4148-4e7f-83fc-6e6771eab97f"
+       ],
+       "prompt_text": "beste Casino Spiele mit hoher Auszahlungsquote",
+       "primary_topic_id": "e5e3537b-4148-4e7f-83fc-6e6771eab97f"
+      },
+      {
+       "id": "a5838871-5377-403a-ac17-88ee708cbc61",
+       "is_own": false,
+       "market": "DE",
+       "selected": false,
+       "topic_ids": [
+        "3a7fed5d-5947-429a-aea7-4240869878fc"
+       ],
+       "prompt_text": "beste Online Spielautomaten mit hoher Auszahlungsquote",
+       "primary_topic_id": "3a7fed5d-5947-429a-aea7-4240869878fc"
+      },
+      {
+       "id": "8b95a47b-30b5-47b7-8404-936b70e1261f",
+       "is_own": false,
+       "market": "DE",
+       "selected": false,
+       "topic_ids": [
+        "4e2d8c42-92a2-47eb-8f03-5febcc6e20a8"
+       ],
+       "prompt_text": "beste Online Tischspiele wie Blackjack und Roulette",
+       "primary_topic_id": "4e2d8c42-92a2-47eb-8f03-5febcc6e20a8"
+      },
+      {
+       "id": "d43bf46a-ea41-4ee8-941e-7077ea0de1d9",
+       "is_own": false,
+       "market": "DE",
+       "selected": true,
+       "topic_ids": [
+        "d04d163b-ab90-4d8a-97f0-b506499d20f8"
+       ],
+       "prompt_text": "seriöse Online Casinos mit gültiger Lizenz für Echtgeldspiele",
+       "primary_topic_id": "d04d163b-ab90-4d8a-97f0-b506499d20f8"
+      },
+      {
+       "id": "48464199-5fab-48fc-baa5-80acfa9be0b8",
+       "is_own": false,
+       "market": "DE",
+       "selected": false,
+       "topic_ids": [
+        "e5e3537b-4148-4e7f-83fc-6e6771eab97f"
+       ],
+       "prompt_text": "welche Casino Spiele haben die besten Gewinnchancen für Anfänger, wenn man mit kleinem Budget startet?",
+       "primary_topic_id": "e5e3537b-4148-4e7f-83fc-6e6771eab97f"
+      },
+      {
+       "id": "cd2ab74a-151b-4948-9070-c5dddb15a50e",
+       "is_own": false,
+       "market": "DE",
+       "selected": false,
+       "topic_ids": [
+        "3a7fed5d-5947-429a-aea7-4240869878fc"
+       ],
+       "prompt_text": "welche Online Spielautomaten zahlen am besten aus?",
+       "primary_topic_id": "3a7fed5d-5947-429a-aea7-4240869878fc"
+      },
+      {
+       "id": "bdbbe964-c1f8-41d5-be6e-b928c6cf39bb",
+       "is_own": false,
+       "market": "DE",
+       "selected": false,
+       "topic_ids": [
+        "4e2d8c42-92a2-47eb-8f03-5febcc6e20a8"
+       ],
+       "prompt_text": "wo kann man Live Roulette mit echten Dealern spielen, auch wenn man nur kleine Einsätze machen möchte?",
+       "primary_topic_id": "4e2d8c42-92a2-47eb-8f03-5febcc6e20a8"
+      },
+      {
+       "id": "3086a855-182a-468d-8f75-e3f0ffcb308a",
+       "is_own": false,
+       "market": "DE",
+       "selected": true,
+       "topic_ids": [
+        "d04d163b-ab90-4d8a-97f0-b506499d20f8"
+       ],
+       "prompt_text": "welches Online Casino bietet die besten Willkommensboni, ohne komplizierte Bonusbedingungen und mit schneller Auszahlung?",
+       "primary_topic_id": "d04d163b-ab90-4d8a-97f0-b506499d20f8"
+      },
+      {
+       "id": "7465f0f0-3949-439b-93e1-1ac8db702221",
+       "is_own": false,
+       "market": "DE",
+       "selected": false,
+       "topic_ids": [
+        "e5e3537b-4148-4e7f-83fc-6e6771eab97f"
+       ],
+       "prompt_text": "Casino Spiele mit niedrigem Einsatz und trotzdem guten Gewinnmöglichkeiten für Spieler, die wenig riskieren möchten",
+       "primary_topic_id": "e5e3537b-4148-4e7f-83fc-6e6771eab97f"
+      },
+      {
+       "id": "65a953d0-5d6e-44dd-944a-a0b095a1577b",
+       "is_own": false,
+       "market": "DE",
+       "selected": false,
+       "topic_ids": [
+        "3a7fed5d-5947-429a-aea7-4240869878fc"
+       ],
+       "prompt_text": "neue Online Spielautomaten mit Freispielen ohne Einzahlung und hoher Auszahlungsquote für mobile Geräte",
+       "primary_topic_id": "3a7fed5d-5947-429a-aea7-4240869878fc"
+      },
+      {
+       "id": "78fc6f20-c15a-499f-b1f2-688d14d613a0",
+       "is_own": false,
+       "market": "DE",
+       "selected": false,
+       "topic_ids": [
+        "4e2d8c42-92a2-47eb-8f03-5febcc6e20a8"
+       ],
+       "prompt_text": "Online Blackjack mit niedrigem Mindesteinsatz für Gelegenheitsspieler, die ein realistisches Casino-Erlebnis suchen",
+       "primary_topic_id": "4e2d8c42-92a2-47eb-8f03-5febcc6e20a8"
+      },
+      {
+       "id": "a3676949-8996-4a13-b643-e7af8ad85acf",
+       "is_own": false,
+       "market": "DE",
+       "selected": false,
+       "topic_ids": [
+        "d04d163b-ab90-4d8a-97f0-b506499d20f8",
+        "3a7fed5d-5947-429a-aea7-4240869878fc"
+       ],
+       "prompt_text": "Online Casino mit den meisten Spielautomaten, Live-Casino-Angeboten und einer gut bewerteten App für unterwegs",
+       "primary_topic_id": "d04d163b-ab90-4d8a-97f0-b506499d20f8"
+      },
+      {
+       "id": "c59359ed-0175-482c-92cb-5b3500e0ac7a",
+       "is_own": false,
+       "market": "DE",
+       "selected": false,
+       "topic_ids": [
+        "e5e3537b-4148-4e7f-83fc-6e6771eab97f"
+       ],
+       "prompt_text": "neue Casino Spiele mit Freispielen und Bonusrunden 2026",
+       "primary_topic_id": "e5e3537b-4148-4e7f-83fc-6e6771eab97f"
+      },
+      {
+       "id": "cb5def6a-5e82-4c1d-823b-f80169769c65",
+       "is_own": false,
+       "market": "DE",
+       "selected": false,
+       "topic_ids": [
+        "3a7fed5d-5947-429a-aea7-4240869878fc"
+       ],
+       "prompt_text": "Online Spielautomaten mit progressivem Jackpot, Bonusspielen und hohen Gewinnchancen, die auch auf dem Handy gut laufen",
+       "primary_topic_id": "3a7fed5d-5947-429a-aea7-4240869878fc"
+      },
+      {
+       "id": "7f7684f3-3d44-4d0e-ac94-f7ccda3c911b",
+       "is_own": true,
+       "market": "DE",
+       "selected": true,
+       "topic_ids": [],
+       "prompt_text": "Online Casino mit PayPal Auszahlung",
+       "primary_topic_id": null
+      }
+     ],
+     "competitors": [
+      {
+       "id": "40d9a1b8-ed7b-463d-92fe-b97291d4e66f",
+       "name": "AdmiralBet",
+       "domain": "admiralbet.de",
+       "selected": false,
+       "favicon_url": "https://www.google.com/s2/favicons?domain=admiralbet.de&sz=64"
+      },
+      {
+       "id": "a4498989-8944-4ec9-8a27-1257125ba5e4",
+       "name": "BingBong",
+       "domain": "bingbong.de",
+       "selected": false,
+       "favicon_url": "https://www.google.com/s2/favicons?domain=bingbong.de&sz=64"
+      },
+      {
+       "id": "5bd2d841-5b67-491b-baa5-2f04b88bcd52",
+       "name": "DrückGlück",
+       "domain": "drueckglueck.de",
+       "selected": false,
+       "favicon_url": "https://www.google.com/s2/favicons?domain=drueckglueck.de&sz=64"
+      },
+      {
+       "id": "e1e21c3b-abf0-46f5-bbd6-b13114ec806a",
+       "name": "JackpotPiraten",
+       "domain": "jackpotpiraten.de",
+       "selected": true,
+       "favicon_url": "https://www.google.com/s2/favicons?domain=jackpotpiraten.de&sz=64"
+      },
+      {
+       "id": "8c77aa1c-e421-4fd9-b4c0-607a22ca1362",
+       "name": "LÖWEN PLAY",
+       "domain": "loewen-play.de",
+       "selected": true,
+       "favicon_url": "https://www.google.com/s2/favicons?domain=loewen-play.de&sz=64"
+      },
+      {
+       "id": "c38be60f-de7d-49a4-9a37-eb19fa41b4ec",
+       "name": "Merkur Spiel",
+       "domain": "merkur-spiel.de",
+       "selected": true,
+       "favicon_url": "https://www.google.com/s2/favicons?domain=merkur-spiel.de&sz=64"
+      },
+      {
+       "id": "c844fe81-4b29-46c7-a176-4ecfc05734c6",
+       "name": "NetBet",
+       "domain": "netbet.de",
+       "selected": true,
+       "favicon_url": "https://www.google.com/s2/favicons?domain=netbet.de&sz=64"
+      },
+      {
+       "id": "5b7c9a67-46ce-4826-9265-799fd17bf275",
+       "name": "Slotmagie",
+       "domain": "slotmagie.de",
+       "selected": false,
+       "favicon_url": "https://www.google.com/s2/favicons?domain=slotmagie.de&sz=64"
+      },
+      {
+       "id": "eba78f4d-9f7f-4825-98df-968b829638bb",
+       "name": "StarGames",
+       "domain": "stargames.de",
+       "selected": false,
+       "favicon_url": "https://www.google.com/s2/favicons?domain=stargames.de&sz=64"
+      },
+      {
+       "id": "6b3eb1af-63c8-4b73-a482-944a17b76a4b",
+       "name": "Tipico",
+       "domain": "tipico.de",
+       "selected": true,
+       "favicon_url": "https://www.google.com/s2/favicons?domain=tipico.de&sz=64"
+      }
+     ]
+    },
+    "meta": {
+     "limits": {
+      "name_max": 60,
+      "topic_max": 40,
+      "prompt_max": 300,
+      "prompt_min": 3,
+      "website_max": 255,
+      "own_topics_max": 5,
+      "competitors_max": 5,
+      "own_prompts_max": 10,
+      "prompt_runs_per_day": 5,
+      "topics_selected_max": 8,
+      "prompts_selected_max": 15
+     },
+     "restart": {
+      "limit": 1,
+      "reason": null,
+      "allowed": true,
+      "remaining": 1,
+      "free_restart": false,
+      "window_hours": 168,
+      "has_onboarding": true,
+      "next_allowed_at": null,
+      "run_in_progress": false
+     },
+     "data_as_of": "2026-10-12T13:37:37.393135+00:00",
+     "business_models": [
+      {
+       "code": "B2B",
+       "label": "B2B"
+      },
+      {
+       "code": "B2C",
+       "label": "B2C"
+      },
+      {
+       "code": "Hybrid",
+       "label": "Hybrid (B2B & B2C)"
+      },
+      {
+       "code": "CitiesRegions",
+       "label": "Cities & Regions"
+      }
+     ]
+    }
+   }
+  },
+  {
+   "fall": "status",
+   "rpc": "onboarding_status_v1(p_onboarding)",
+   "antwort": {
+    "row": {
+     "status": "awaiting_billing",
+     "team_id": null,
+     "error_code": null,
+     "updated_at": "2026-08-29T16:15:28.883+00:00",
+     "status_phase": 7,
+     "checkout_open": true,
+     "onboarding_id": "4aae98d9-de4c-4e99-8804-d8e78d52f2c6",
+     "progress_percent": 100
+    },
+    "meta": {
+     "data_as_of": "2026-10-12T13:37:37.393135+00:00"
+    }
+   }
+  },
+  {
+   "fall": "select_competitors",
+   "rpc": "onboarding_select_v1(p_onboarding, 'competitors', [2 Ids])",
+   "antwort": {
+    "meta": {
+     "max": 5,
+     "kind": "competitors",
+     "count": 2,
+     "onboarding_id": "4aae98d9-de4c-4e99-8804-d8e78d52f2c6"
+    },
+    "rows": [
+     "e1e21c3b-abf0-46f5-bbd6-b13114ec806a",
+     "8c77aa1c-e421-4fd9-b4c0-607a22ca1362"
+    ]
+   }
+  },
+  {
+   "fall": "select_fehler_zu_viele",
+   "rpc": "onboarding_select_v1(p_onboarding, 'competitors', [10 Ids])",
+   "antwort": {
+    "error": {
+     "hint": "too_many_competitors",
+     "message": "onboarding_invalid",
+     "sqlstate": "22023"
+    }
+   }
+  },
+  {
+   "fall": "plans",
+   "rpc": "onboarding_plans_v1()",
+   "antwort": {
+    "meta": {
+     "currency": "EUR",
+     "trial_eligible": true
+    },
+    "rows": [
+     {
+      "id": "54be31d2-dc61-4a5e-8ea0-31c4370a4cb3",
+      "name": "Essential",
+      "sort_order": null,
+      "trial_days": 14,
+      "prompts_per_day": 50,
+      "yearly_price_eur": 948.0,
+      "models_max_active": 3,
+      "monthly_price_eur": 89.0,
+      "trial_days_effective": 14,
+      "ai_responses_per_month": 4500,
+      "competitors_max_active": 5
+     },
+     {
+      "id": "3129be58-d59a-4221-ba53-7b2e4131cf5f",
+      "name": "Professional",
+      "sort_order": null,
+      "trial_days": 14,
+      "prompts_per_day": 150,
+      "yearly_price_eur": 2220.0,
+      "models_max_active": 3,
+      "monthly_price_eur": 205.0,
+      "trial_days_effective": 14,
+      "ai_responses_per_month": 13500,
+      "competitors_max_active": 10
+     },
+     {
+      "id": "a980c741-807e-43dd-9617-8e06b82999ba",
+      "name": "Enterprise",
+      "sort_order": null,
+      "trial_days": 0,
+      "prompts_per_day": 350,
+      "yearly_price_eur": 4380.0,
+      "models_max_active": 3,
+      "monthly_price_eur": 429.0,
+      "trial_days_effective": 0,
+      "ai_responses_per_month": 31500,
+      "competitors_max_active": 15
+     }
+    ]
+   }
+  },
+  {
+   "fall": "status_mitten_im_lauf",
+   "rpc": "onboarding_status_v1(p_onboarding)",
+   "antwort": {
+    "row": {
+     "status": "processing",
+     "team_id": null,
+     "error_code": null,
+     "updated_at": "2026-10-12T13:37:37.393135+00:00",
+     "status_phase": 3,
+     "checkout_open": false,
+     "onboarding_id": "4aae98d9-de4c-4e99-8804-d8e78d52f2c6",
+     "progress_percent": 45
+    },
+    "meta": {
+     "data_as_of": "2026-10-12T13:37:37.393135+00:00"
+    }
+   }
+  },
+  {
+   "fall": "bundle_failed (gekürzt: meta nur restart, row nur project; die Funktion antwortet wie immer mit {meta, row})",
+   "rpc": "onboarding_bundle_v1()",
+   "antwort": {
+    "meta": {
+     "restart": {
+      "limit": 1,
+      "reason": null,
+      "allowed": true,
+      "remaining": 1,
+      "free_restart": true,
+      "window_hours": 168,
+      "has_onboarding": true,
+      "next_allowed_at": null,
+      "run_in_progress": false
+     }
+    },
+    "row": {
+     "project": {
+      "market": "DE",
+      "status": "failed",
+      "summary": "Zet Casino ist eine B2C-Marke im Online-Glücksspiel. Die bereitgestellte Website enthält außer Cookie-Hinweisen und Platzhaltertext keine konkreten Informationen zu angebotenen Spielen, Zahlungsarten, Lizenzierung, Zielgruppenmerkmalen oder regionaler Verfügbarkeit.",
+      "team_id": null,
+      "industry": "Online-Glücksspiel",
+      "timezone": "Europe/Berlin",
+      "created_at": "2026-08-24T15:41:16.30538+00:00",
+      "error_code": "website_unreachable",
+      "updated_at": "2026-10-12T13:37:37.393135+00:00",
+      "website_url": "https://zetspins.com/",
+      "company_name": "Zet Casino",
+      "status_phase": 3,
+      "checkout_open": false,
+      "onboarding_id": "4aae98d9-de4c-4e99-8804-d8e78d52f2c6",
+      "website_input": "https://zetspins.com",
+      "business_model": "B2C",
+      "website_domain": "zetspins.com",
+      "billing_interval": "yearly",
+      "progress_percent": 45,
+      "selected_plan_id": "3129be58-d59a-4221-ba53-7b2e4131cf5f"
+     }
+    }
+   }
+  },
+  {
+   "fall": "select_im_falschen_status",
+   "rpc": "onboarding_select_v1(..., 'topics', [])",
+   "antwort": {
+    "error": {
+     "hint": "failed",
+     "message": "onboarding_busy",
+     "sqlstate": "PT409"
+    }
+   }
+  },
+  {
+   "fall": "status_fremd",
+   "rpc": "onboarding_status_v1(fremdes Onboarding)",
+   "antwort": {
+    "error": {
+     "hint": "",
+     "message": "onboarding_not_found",
+     "sqlstate": "PT404"
+    }
+   }
+  }
+ ]
 }
