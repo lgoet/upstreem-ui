@@ -3998,6 +3998,8 @@
         if (z.bulk){
           var pl = selectionPayload();
           pl.intent = key;
+          pl.reload = "yes";
+          gruppeMerken();
           fire("data-bulkintent-fn", "uptBulkIntent", pl);
           /* Wie Status und Loeschen: nach der Handlung ist die Auswahl erledigt. */
           clearSelection();
@@ -4007,7 +4009,9 @@
           if (key){ r.intent = key; r.intent_source = "user"; r.intent_status = "done"; }
           else { r.intent = null; r.intent_source = null; r.intent_status = "pending"; }
         });
-        fire("data-intentset-fn", "uptIntentSet", { mode: "ids", ids: String(z.id), count: 1, excluded_ids: "", intent: key });
+        var neu = intentNeuLaden();
+        if (neu) gruppeMerken();
+        fire("data-intentset-fn", "uptIntentSet", { mode: "ids", ids: String(z.id), count: 1, excluded_ids: "", intent: key, reload: neu ? "yes" : "no" });
       },
       onBranded: function(z, wert){
         if (z.bulk) return;
@@ -4015,10 +4019,29 @@
           if (wert === "") { r.branded_source = "match"; }
           else { r.branded = wert === "yes"; r.branded_source = "user"; }
         });
-        fire("data-brandedset-fn", "uptBrandedSet", { mode: "ids", ids: String(z.id), count: 1, excluded_ids: "", branded: wert });
+        /* Mit aktivem Branded-Filter verlaesst die Zeile gleich die Liste -- das Menue geht dann
+           sofort zu, statt ueber einer Zeile zu stehen, die beim Nachladen verschwindet. Ohne
+           Filter bleibt es offen (der Schalter ist ein Schalter) und es wird nichts nachgeladen:
+           die Zeile zeigt den neuen Stand schon, und sonst haengt nichts auf dem Schirm daran. */
+        var neu = !!state.branded;
+        if (neu && intentMenu) intentMenu.close();
+        fire("data-brandedset-fn", "uptBrandedSet", { mode: "ids", ids: String(z.id), count: 1, excluded_ids: "", branded: wert, reload: neu ? "yes" : "no" });
       }
     }) : null;
     function intentPopOeffnen(opener, ziel){ if (intentMenu) intentMenu.open(opener, ziel); }
+    /* Muss die Liste nach einem neuen Intent nachladen? Nur, wenn etwas auf dem Schirm davon
+       abhaengt: die Gruppen nach Intent (die Zeile wandert, die Zahlen aendern sich) oder der
+       Intent-Filter der App (die Zeile kann herausfallen). Sonst zeigt die Zeile den neuen Wert
+       schon, und ein Nachladen waere nur ein Flackern. */
+    function intentNeuLaden(){
+      if (nachIntent() && groupingOn()) return true;
+      var f = UC.intentFilterParams ? UC.intentFilterParams({ branded: false }) : {};
+      return !!(f.p_intents && f.p_intents.length);
+    }
+    /* Die offene Gruppe ueber das Nachladen nach einer EIGENEN Aenderung retten: setGroups klappt
+       sonst zu (richtig bei einem Filterwechsel, falsch hier -- man setzt einen Intent und die
+       Gruppe, in der man gerade arbeitet, ist weg). Gilt fuer genau die naechste Lieferung. */
+    function gruppeMerken(){ state.gruppeBehalten = groupingOn() ? state.expandedGroup : null; }
     /* Branded-Filter der Tabelle: dieselbe Pille wie "<Marke> mentioned?" (aus -> ja -> nein ->
        aus), eigene Klasse dazu, damit Klickweg und Breitenregeln die beiden nicht verwechseln.
        Nur sichtbar, wenn die Zeilen Intent-/Branded-Felder tragen. */
@@ -5684,7 +5707,12 @@
         GROUPS_PENDING[instanceId] = false;   // the pending poll has landed; a later one may run
         /* A fresh header set invalidates whatever section was open — the sections themselves may
            be different objects now. */
-        state.expandedGroup = null;
+        /* Ausnahme (13.10.): nach einer eigenen Intent-Aenderung bleibt die offene Gruppe offen,
+           wenn es sie noch gibt, und laedt ihre Zeilen auf derselben Seite neu (gruppeMerken). */
+        var behalten = state.gruppeBehalten;
+        state.gruppeBehalten = null;
+        var nochDa = behalten && state.groups.some(function(g){ return groupId(g) === behalten; });
+        state.expandedGroup = nochDa ? behalten : null;
         state.gRows = []; state.gTotal = null; state.gLoading = false;
         /* Into STORE right here, not only via the render() API's own persist(): this is the ONLY
            place groupsHasData ever becomes true, and a re-render of the Bubble element landing
@@ -5692,6 +5720,7 @@
            ask for them all over again — which is the duplicate-uptGroups case itself. */
         persist();
         renderTable();
+        if (nochDa) fetchGroupPage(0);
       },
       setGroupPrompts: function(rows, requestId){
         /* Stale-response guard, same shape as the drilldown's: a slow answer to an older request

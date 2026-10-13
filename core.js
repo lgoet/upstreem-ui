@@ -5964,29 +5964,87 @@
     wrap.innerHTML = '<div class="up-menu up-intentpop' + (k.menue ? " " + k.menue : "") + '" role="menu" aria-hidden="true"></div>';
     (cfg.root || document.body).appendChild(wrap);
     var menu = wrap.firstChild, opener = null, ziel = null;
+    /* Der Waechter fuer nachZeichnen: NUR solange das Menue offen ist, ein Beobachter auf dem
+       Dokument. So muss kein Zeichenweg des Aufrufers (die Tabelle hat ein Dutzend: Seite,
+       Gruppen, Seitenliste, aufgeklappte Gruppe, Sammelleiste ...) daran denken. Die Pruefung ist
+       billig (document.contains) und laeuft gebuendelt einmal je Aufgabe. */
+    var waechter = null, waechterGeplant = false;
+    function waechterAn(){
+      if (waechter || !window.MutationObserver) return;
+      waechter = new MutationObserver(function(){
+        if (waechterGeplant) return;
+        waechterGeplant = true;
+        Promise.resolve().then(function(){ waechterGeplant = false; nachZeichnen(); });
+      });
+      waechter.observe(document.documentElement, { childList: true, subtree: true });
+    }
+    function waechterAus(){ if (waechter){ waechter.disconnect(); waechter = null; } }
     var pop = makePopover({ wrap: wrap, menu: menu, onClose: function(){
+      waechterAus();
+      clearTimeout(fehltUhr); fehltUhr = null;
+      wrap.classList.remove("is-verwaist");
       if (opener) opener.setAttribute("aria-expanded", "false");
       opener = null; ziel = null;
     } });
     function zeile(){ return ziel && !ziel.bulk && cfg.zeile ? cfg.zeile(ziel) : null; }
     function zeichnen(){ menu.innerHTML = intentMenuHtml(zeile()); }
-    function oeffnen(el, z){
-      if (pop.isOpen() && opener === el){ pop.close(false); return; }
-      pop.close(false);
-      ziel = z || {};
-      zeichnen();
-      /* Der Halter bekommt die Kanten des Ausloesers. Gerechnet gegen seinen Elternteil, nicht
-         gegen die Wurzel: welches Element positioniert ist, entscheidet der Aufrufer. */
+    /* Der Halter bekommt die Kanten des Ausloesers. Gerechnet gegen seinen Elternteil, nicht
+       gegen die Wurzel: welches Element positioniert ist, entscheidet der Aufrufer. */
+    function anlegen(el){
       var bezug = wrap.offsetParent || document.body;
       var a = el.getBoundingClientRect(), b = bezug.getBoundingClientRect();
       wrap.style.left = Math.round(a.left - b.left + bezug.scrollLeft) + "px";
       wrap.style.top = Math.round(a.top - b.top + bezug.scrollTop) + "px";
       wrap.style.width = Math.round(a.width) + "px";
       wrap.style.height = Math.round(a.height) + "px";
+    }
+    /* Woran der Ausloeser nach einem Neuzeichnen wiederzuerkennen ist: das Label einer Zeile an
+       seiner Art (Intent oder Branded) und seiner Prompt-Id, der Knopf der Sammelleiste an seinem
+       Attribut. Gesucht wird im ganzen Dokument -- die Sammelleiste haengt am body. */
+    function kennung(el){
+      if (el.hasAttribute("data-bulk-intent")) return "[data-bulk-intent]";
+      var id = el.getAttribute("data-intent-open");
+      var art = el.classList.contains("up-branded") ? ".up-branded" : ".up-intent";
+      return id == null ? "" : art + '[data-intent-open="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]';
+    }
+    var suche = "";
+    function oeffnen(el, z){
+      if (pop.isOpen() && opener === el){ pop.close(false); return; }
+      pop.close(false);
+      ziel = z || {};
+      zeichnen();
+      anlegen(el);
       wrap.classList.toggle("is-oben", !!ziel.bulk);
-      opener = el;
+      opener = el; suche = kennung(el);
       el.setAttribute("aria-expanded", "true");
       pop.open();
+      waechterAn();
+    }
+    /* NACH JEDEM NEUZEICHNEN DES AUFRUFERS (13.10., gemeldet: "die Tabelle refresht, das Dropdown
+       bleibt bestehen, man weiss nicht mehr, wo es hingehoert"). Steht der Ausloeser noch im
+       Dokument, bleibt alles. Ist er durch einen neuen Knoten ersetzt (Zelle neu gezeichnet,
+       Leiste neu gebaut), wandert das Menue an den neuen und zeigt den neuen Stand. Gibt es ihn
+       nicht mehr (Zeile weggefiltert, andere Seite), geht das Menue zu. */
+    /* Fehlt der Ausloeser nur KURZ (Nachladen: einen Moment steht das Skelett da), wird das Menue
+       nur unsichtbar und kommt an der neuen Zeile wieder -- gemessen am Live-Nachladen nach einer
+       KI-Zuordnung, das sonst jedes offene Menue zugeklappt haette. Erst wenn er nach 1,5s noch
+       fehlt, ist die Zeile wirklich weg (weggefiltert, andere Seite), und das Menue geht zu. */
+    var fehltUhr = null;
+    function nachZeichnen(){
+      if (!pop.isOpen() || !opener) return;
+      if (document.contains(opener) && !wrap.classList.contains("is-verwaist")) return;
+      var neu = document.contains(opener) ? opener : (suche ? document.querySelector(suche) : null);
+      if (!neu || !neu.getBoundingClientRect().width){
+        wrap.classList.add("is-verwaist");
+        if (!fehltUhr) fehltUhr = setTimeout(function(){ fehltUhr = null; if (wrap.classList.contains("is-verwaist")) pop.close(false); }, 1500);
+        return;
+      }
+      clearTimeout(fehltUhr); fehltUhr = null;
+      wrap.classList.remove("is-verwaist");
+      opener = neu;
+      neu.setAttribute("aria-expanded", "true");
+      anlegen(neu);
+      zeichnen();
     }
     menu.addEventListener("click", function(e){
       e.stopPropagation();
@@ -6004,7 +6062,26 @@
       if (!el) return;
       e.preventDefault(); el.click();
     });
-    return { open: oeffnen, close: function(){ pop.close(false); }, isOpen: function(){ return pop.isOpen(); } };
+    return { open: oeffnen, close: function(){ pop.close(false); }, isOpen: function(){ return pop.isOpen(); },
+             nachZeichnen: nachZeichnen };
+  }
+
+  /* ---- Intents live (13.10.) ---------------------------------------------------------------
+     EIN Abo auf team_prompts:<team> fuer alle, die es brauchen (Prompts-Seite, Prompt-Detail).
+     kanal() haelt je Thema genau EINEN Abonnenten -- ein zweiter warf den ersten raus. Hier wird
+     einmal abonniert und als Ereignis "up-intents-live" (window, detail = Nutzlast der DB:
+     { team_id, prompt_ids, intent_counts }) an beliebig viele weitergereicht. Teamwechsel: neu
+     abonnieren. Aufrufer rufen intentsLiveStart() und hoeren auf das Ereignis. */
+  var IL = { team: "", abo: null };
+  function intentsLiveStart(){
+    var tm = "";
+    try { tm = getTeam() || ""; } catch(e){ tm = ""; }
+    if (!tm || IL.team === tm) return;
+    if (IL.abo && IL.abo.stop){ try { IL.abo.stop(); } catch(e){} }
+    IL.team = tm;
+    IL.abo = kanal("team_prompts:" + tm, { privat: true, on: { prompt_intents: function(n){
+      try { window.dispatchEvent(new CustomEvent("up-intents-live", { detail: n || {} })); } catch(e){}
+    } } });
   }
 
   /* ---- Intent-Filter der ganzen App (13.10.) ------------------------------------------------
@@ -15226,7 +15303,11 @@
       return typeof n === "number" ? n : 2;
     }
     var pos = { x:null, y:null }, target = { x:0, y:0 }, running = false, visible = false;
-    var FOLLOW = 0.18;
+    /* 0.18 -> 0.5 (13.10., "die Tooltips sind beim Hin-und-her-Hovern laggy"). Mit 0.18 holte der
+       Tooltip je Bild nur ein Fuenftel des Weges auf und hing gemessen im Mittel 105px hinter
+       seinem Ziel (jedes zehnte Bild 190px) -- er wirkte nachgezogen. Mit 0.5 ist er nach drei
+       Bildern da: noch ein weicher Uebergang zwischen zwei Punkten, kein Hinterherlaufen. */
+    var FOLLOW = 0.5;
     /* Das Tooltip-Element GEMERKT, nicht pro Frame gesucht. Die Schleife lief mit einem
        querySelector pro Frame -- 60 Suchen je Sekunde, in denen sich nichts aendert. */
     var ttEl = null;
@@ -16918,7 +16999,14 @@
             resizeDelay: 120,
             animation: { duration: 600, easing: "easeOutQuart" },
             /* separate, faster curve for the legend-hover cross-highlight than the initial draw */
-            transitions: { highlight: { animation: { duration: 200, easing: "easeOutQuad" } } },
+            /* active: 0 (13.10.). Chart.js animiert sonst JEDEN Wechsel des Hover-Punkts 400ms lang
+               und zeichnet dabei das ganze Chart in jedem Bild neu -- Linien, Raster, Pins. Beim
+               schnellen Hin-und-her lief das ohne Pause und zeichnete nach dem Stillstand der Maus
+               noch 24 Bilder weiter (gemessen). Ohne Animation wird nur gezeichnet, wenn sich der
+               Punkt wirklich aendert; Fuehrungslinie und Tooltip folgen trotzdem weich (siehe
+               FOLLOW im Tooltip). */
+            transitions: { highlight: { animation: { duration: 200, easing: "easeOutQuad" } },
+                           active: { animation: { duration: 0 } } },
             interaction: { mode: "index", intersect: false },
             layout: { padding: function(){
               /* Oben Platz fuer die Event-Pins, aber nur, wenn einer im Bild steht -- sonst bleibt
@@ -25177,7 +25265,7 @@
     INTENTE: INTENTE, intentArt: intentArt, hatIntent: hatIntent, intentZustand: intentZustand,
     intentHtml: intentHtml, brandedHtml: brandedHtml, intentMenuHtml: intentMenuHtml,
     intentsLive: intentsLive, intentFilterGet: intentFilterGet, intentFilterSet: intentFilterSet, intentFilterParams: intentFilterParams,
-    makeIntentMenu: makeIntentMenu, intentName: intentName,
+    makeIntentMenu: makeIntentMenu, intentName: intentName, intentsLiveStart: intentsLiveStart,
     relativeTime: relativeTime,
     modelChip: modelChip, modelLogoUrl: modelLogoUrl, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,
     adCardHtml: adCardHtml, adFormatLabel: adFormatLabel, makeSeitenDrawer: makeSeitenDrawer, balkenGrau: balkenGrau,

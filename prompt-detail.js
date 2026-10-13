@@ -108,13 +108,16 @@
     } else if (wert === "") d.branded_source = "match";
     else { d.branded = wert === "yes"; d.branded_source = "user"; }
     kopfZeichnen();
-    teamWarten().then(function (team) {
+    /* Der Reihe nach (P.intentKette): zwei schnelle Aenderungen duerfen sich nicht ueberholen,
+       sonst gewaenne in der Datenbank zufaellig die langsamere. */
+    P.intentKette = (P.intentKette || Promise.resolve()).then(function () { return teamWarten(); }).then(function (team) {
       if (!team) return { ok: false, status: 0 };
       var p = { p_team: team, p_target: "ids", p_ids: [id] };
       if (art === "intent") p.p_intent = wert || null;
       else p.p_branded = wert === "yes" ? true : (wert === "no" ? false : null);
       return UC.rpc(art === "intent" ? "prompt_intent_set_v1" : "prompt_branded_set_v1", p, { timeoutMs: 30000 });
-    }).then(function (erg) {
+    });
+    P.intentKette.then(function (erg) {
       if (erg && erg.ok) {
         try { window.dispatchEvent(new CustomEvent("up-prompt-intent", { detail: { prompt_id: id } })); } catch (e) {}
         return;
@@ -125,6 +128,8 @@
       if (UC.toast) UC.toast(t("The intent could not be saved"), { kind: "error", desc: t("Please try again.") });
       if (P.id === id) alleLaden(true, true);
     });
+    /* Die Kette lebt weiter, auch wenn ein Glied scheitert. */
+    P.intentKette = P.intentKette.then(function () {}, function () {});
   }
 
   /* ---- Der Kopf (Meta-Zeile, Titel) und die Kopfleiste ---- */
@@ -460,6 +465,23 @@
   var AUFTRAG = { vis: visAuftrag, top: topAuftrag, resp: respAuftrag };
   /* Alles, was die ganze Ansicht betrifft (Oeffnen, Filter, Zeitraum, Nochmal): eine Gruppe. Beim
      Oeffnen mit dem Kopf. */
+  /* Den Kopf frisch lesen, ohne Ladezustand (Live-Meldung). Scheitert es, bleibt der alte Stand
+     stehen -- der naechste Aufbau liest ohnehin neu. */
+  function kopfLeise() {
+    var id = P.id;
+    teamWarten().then(function (team) {
+      if (!team || P.id !== id) return null;
+      return UC.rpc(FN.kopf, { p_team: team, p_prompt_id: id }, { timeoutMs: 30000 });
+    }).then(function (erg) {
+      if (!erg || !erg.ok || P.id !== id) return;
+      var roh = erg.daten;
+      if (isArr(roh)) roh = roh.length ? roh[0] : null;
+      var d = roh && roh.row && typeof roh.row === "object" ? roh.row : roh;
+      if (!d || typeof d !== "object" || d.prompt_text == null) return;
+      P.kopfSpeicher[id] = d; P.zeile = d;
+      kopfZeichnen();
+    }, function () {});
+  }
   function alleLaden(frisch, mitKopf) {
     if (!P.id) return;
     teamWarten().then(function (team) {
@@ -581,6 +603,18 @@
       onIntent: function (z, key) { intentSpeichern("intent", key); },
       onBranded: function (z, wert) { intentSpeichern("branded", wert); }
     }) : null;
+    /* Live (13.10.): die KI hat zugeordnet. Betrifft es DIESEN Prompt, still den Kopf neu lesen --
+       ohne Skelett, nur der Wert springt von "Classifying" auf das Label. Vorher blieb es stehen,
+       bis man den Drawer neu oeffnete. */
+    if (UC.intentsLiveStart) UC.intentsLiveStart();
+    if (!s.__intentLive) {
+      s.__intentLive = function (e) {
+        var d = e.detail || {}, ids = isArr(d.prompt_ids) ? d.prompt_ids.map(str) : [];
+        if (!P.id || ids.indexOf(String(P.id)) < 0 || !document.contains(s)) return;
+        kopfLeise();
+      };
+      window.addEventListener("up-intents-live", s.__intentLive);
+    }
     s.addEventListener("click", function (e) {
       var b = e.target.closest ? e.target.closest("[data-intent-open]") : null;
       if (!b || !intentMenu || !P.zeile) return;

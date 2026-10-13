@@ -770,26 +770,36 @@
        Einzeln (Klick aufs Label): die Tabelle zeigt den neuen Wert schon, hier wird nur gespeichert
        und danach still nachgeladen -- ein Satz kommt nur, wenn es nicht geklappt hat. Als
        Sammelaktion: ein Satz mit der Zahl, wie bei Topics und Status. */
+    /* EINE WARTESCHLANGE statt "laeuft schon, also nichts" (13.10.). Vorher wurde jede Aenderung,
+       die waehrend eines laufenden Speicherns kam, still verworfen: Intent und gleich danach
+       Branded umgestellt, beides stand in der Zeile, gespeichert war nur das erste. Jetzt laufen
+       sie der Reihe nach. Eigene Kette, nicht schreibtGerade -- das gehoert den Sammelaktionen
+       (Topics, Status, Loeschen), und die sollen nicht hinter einem Intent warten. */
+    var intentKette = Promise.resolve();
     function schreibeIntent(anfrage, d, satz) {
-      if (schreibtGerade || !team()) return;
+      if (!team()) return;
       var z = anfrage.__ziel;
       if (!z.filter && !z.ids.length) return;
       if ((z.filter && z.erwartet > 1000) || (!z.filter && z.ids.length > D.GRENZE.ids)) {
         toast(t("Too many prompts selected"), "error", t("Change up to 1,000 prompts at once, or 500 when ticked one by one."));
         return;
       }
-      schreibtGerade = true;
-      schreiben(anfrage).then(function (erg) {
-        schreibtGerade = false;
-        if (!erg.ok) { fehlerToast(erg, t("The intent could not be saved")); nachAenderung(); return; }
-        if (satz) {
-          var dd = erg.daten && typeof erg.daten === "object" ? erg.daten : {};
-          var n = num(dd.updated);
-          if (n == null && dd.meta) n = num(dd.meta.changed);
-          toast(satz(n == null ? (z.filter ? z.erwartet : z.ids.length) : n), "success");
-        }
-        nachAenderung();
-      }, function () { schreibtGerade = false; fehlerToast(null, t("The intent could not be saved")); nachAenderung(); });
+      intentKette = intentKette.then(function () {
+        return schreiben(anfrage).then(function (erg) {
+          if (!erg.ok) { fehlerToast(erg, t("The intent could not be saved")); nachAenderung(); return; }
+          if (satz) {
+            var dd = erg.daten && typeof erg.daten === "object" ? erg.daten : {};
+            var n = num(dd.updated);
+            if (n == null && dd.meta) n = num(dd.meta.changed);
+            toast(satz(n == null ? (z.filter ? z.erwartet : z.ids.length) : n), "success");
+          }
+          /* reload "no": die Tabelle zeigt den neuen Wert schon, und nichts auf dem Schirm haengt
+             daran (keine Gruppen nach Intent, kein Intent- oder Branded-Filter). Dann nur den
+             Speicher leeren -- ein Nachladen waere ein Flackern ohne neuen Inhalt. Nach einem
+             Fehler wird immer nachgeladen: dann gilt der Stand der Datenbank. */
+          if (str(d.reload) === "no") lader.leeren(); else nachAenderung();
+        }, function () { fehlerToast(null, t("The intent could not be saved")); nachAenderung(); });
+      });
     }
     function mitZiel(a, z) { a.__ziel = z; return a; }
     an("upt-uptIntentSet", function (d) {
@@ -991,24 +1001,18 @@
        auf dem privaten Kanal team_prompts:<team>. Dann Liste und Gruppen neu -- die Caches hat sie
        schon geleert. Ohne den Kanal stuende "Classifying" bis zum naechsten Seitenwechsel da.
        Gebuendelt (600ms): beim Nachklassifizieren des Bestands kommen die Meldungen in Folge. */
-    var intentKanal = null, intentKanalTeam = "", intentUhr = null;
-    function intentKanalAuf() {
-      var tm = team();
-      if (!UC.kanal || !tm || intentKanalTeam === tm) return;
-      if (intentKanal && intentKanal.stop) { try { intentKanal.stop(); } catch (e) {} }
-      intentKanalTeam = tm;
-      intentKanal = UC.kanal("team_prompts:" + tm, {
-        privat: true,
-        on: { prompt_intents: function () {
-          clearTimeout(intentUhr);
-          intentUhr = setTimeout(function () {
-            intentUhr = null;
-            if (state.tab !== "allprompts" || !document.contains(root)) return;
-            lader.leeren(); bedarf();
-          }, 600);
-        } }
-      });
-    }
+    /* Das Abo selbst haelt core (UC.intentsLiveStart): auch das Prompt-Detail hoert mit, und
+       der Kanal nimmt je Thema nur einen Abonnenten. */
+    var intentUhr = null;
+    function intentKanalAuf() { if (UC.intentsLiveStart) UC.intentsLiveStart(); }
+    window.addEventListener("up-intents-live", function () {
+      clearTimeout(intentUhr);
+      intentUhr = setTimeout(function () {
+        intentUhr = null;
+        if (state.tab !== "allprompts" || !document.contains(root)) return;
+        lader.leeren(); bedarf();
+      }, 600);
+    });
 
     var ctrl = {
       root: root, state: state, ids: ids,

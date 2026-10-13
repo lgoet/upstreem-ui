@@ -2524,6 +2524,23 @@
     .up-intent > svg, .up-branded > svg { width: 14px; height: 14px; flex: 0 0 14px; color: var(--vc-fourth); }
     .up-intent-lbl, .up-branded-lbl { overflow: hidden; text-overflow: ellipsis; }
     .up-intent.is-pending, .up-intent.is-failed { color: var(--vc-fourth); }
+    /* "Classifying" glaenzt (13.10., zweite Runde: "wie im Loader bei Mira"; die erste Fassung war
+       ausdruecklich statisch). Dieselbe Mechanik wie .am-run-txt in ask-mira.css: der Text wird
+       zur Maske, ein heller Streifen laeuft darueber -- Werte von dort uebernommen (100 Grad,
+       30/50/70 Prozent, 1.56s, rueckwaerts). Nur der Text, nicht das Zeichen: die Uhr bleibt
+       ruhig. Ohne Bewegungswunsch: still, in der leisen Farbe. */
+    .up-intent.is-pending .up-intent-lbl {
+      background-image: linear-gradient(100deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0) 70%);
+      background-color: currentColor;
+      background-size: 200% 100%; background-repeat: no-repeat; background-position: -120% 0;
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: upIntentGlanz 1.56s linear infinite reverse;
+    }
+    @keyframes upIntentGlanz { from { background-position: -120% 0; } to { background-position: 220% 0; } }
+    @media (prefers-reduced-motion: reduce){
+      .up-intent.is-pending .up-intent-lbl { background: none; animation: none; -webkit-text-fill-color: currentColor; }
+    }
     /* Der Stift hinter einem selbst gesetzten Wert: 11px, eine Stufe unter dem Zeichen vorne --
        er ist ein Vermerk zum Wert, kein zweites Zeichen gleichen Rangs. */
     .up-intent-user { display: inline-flex; color: var(--vc-fourth); }
@@ -2562,6 +2579,8 @@
        plus "Der KI ueberlassen") breiter als 240 und brach sonst in zwei Zeilen um. */
     .up-intentwrap .up-intentpop { left: 0; right: auto; width: max-content; min-width: 240px; max-width: min(320px, 92vw); pointer-events: none; }
     .up-intentwrap .up-intentpop.is-shown { pointer-events: auto; }
+    /* Ausloeser kurz weg (Nachladen): unsichtbar und nicht klickbar, bis er wieder da ist. */
+    .up-intentwrap.is-verwaist { visibility: hidden; }
 
     /* Unten 8 statt 14: derselbe Abstand unter der Ueberschrift wie bei .up-pop-head. Es ist
        dieselbe Rolle, und zwei Werte dafuer waren nur gewachsen. Oben bleiben die 8, die
