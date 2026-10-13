@@ -1,0 +1,122 @@
+{
+  "meta": {
+    "stand": "2026-10-13, Produktion tgdossbsevnonssyuewp. events_tagmode_v1.sql (Dateistand, md5-geprüft) in einer Transaktion eingespielt, Fälle ausgeführt, Rückweg ausgeführt, alles zurückgerollt. Nichts wurde gespeichert.",
+    "rueckweg": {"definitionen_gleich": "4/4", "rechte_gleich": "4/4", "resolver_v2_entfernt": true},
+    "hinweis": "Die Zahl 102 im Auftrag war ein Beispiel. Echt haben die Topics 'Automatikgetriebe' (597a287b) und 'Komfort' (c7c51846) im Team 877c zusammen 7 aktive Prompts (ODER), 1 Prompt steht in beiden (UND).",
+    "nutzer": {"7bedb728-e252-493d-b5c6-f9bed0b0b2d3": "Owner 877c", "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778": "Member 877c"}
+  },
+  "faelle": [
+    {
+      "case": "1 Vorschau ODER (ohne p_tagmode)",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "POST /rest/v1/rpc/preview_impact_event_scope_v2 {\"p_team\":\"877c649c-f5f2-44e9-bb04-155f5bf44e70\",\"p_scope_mode\":\"topics\",\"p_tag_ids\":[\"597a287b-9efd-414b-b82a-c5c3d247043f\",\"c7c51846-319e-4f11-992c-d72e5bd5ffbd\"]}",
+      "http_status": 200,
+      "response": {"affected_prompt_count": 7}
+    },
+    {
+      "case": "2 Vorschau UND",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "POST /rest/v1/rpc/preview_impact_event_scope_v2 {\"p_team\":\"877c649c-f5f2-44e9-bb04-155f5bf44e70\",\"p_scope_mode\":\"topics\",\"p_tag_ids\":[\"597a287b-9efd-414b-b82a-c5c3d247043f\",\"c7c51846-319e-4f11-992c-d72e5bd5ffbd\"],\"p_tagmode\":\"and\"}",
+      "http_status": 200,
+      "response": {"affected_prompt_count": 1}
+    },
+    {
+      "case": "3 Vorschau p_tagmode xor",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "POST /rest/v1/rpc/preview_impact_event_scope_v2 {\"p_team\":\"877c649c-f5f2-44e9-bb04-155f5bf44e70\",\"p_scope_mode\":\"topics\",\"p_tag_ids\":[\"597a287b-9efd-414b-b82a-c5c3d247043f\"],\"p_tagmode\":\"xor\"}",
+      "http_status": 400,
+      "response": {"code": "22023", "message": "impact_event_invalid_param", "details": null, "hint": "p_tagmode"}
+    },
+    {
+      "case": "4 Anlegen mit UND",
+      "user": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+      "call": "POST /rest/v1/rpc/create_impact_event_v2 {\"p_team\":\"877c649c-f5f2-44e9-bb04-155f5bf44e70\",\"p_name\":\"Website Relaunch\",\"p_event_date\":\"2026-09-01\",\"p_scope_mode\":\"topics\",\"p_tag_ids\":[\"597a287b-9efd-414b-b82a-c5c3d247043f\",\"c7c51846-319e-4f11-992c-d72e5bd5ffbd\"],\"p_tagmode\":\"and\",\"p_urls\":null,\"p_description\":null,\"p_event_type\":\"website_relaunch\",\"p_icon\":null,\"p_color\":null}",
+      "http_status": 200,
+      "response": {
+        "id": "86c6f804-afba-4ddd-9b94-47aa43a245a6",
+        "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+        "name": "Website Relaunch",
+        "description": null,
+        "event_type": "website_relaunch",
+        "event_date": "2026-09-01",
+        "icon": null,
+        "color": null,
+        "cover": null,
+        "scope_mode": "topics",
+        "tag_mode": "and",
+        "scope": {"mode": "topics", "tag_mode": "and"},
+        "created_by": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+        "created_at": "2026-10-13T07:25:46.090886+00:00",
+        "updated_at": "2026-10-13T07:25:46.090886+00:00",
+        "can_delete": true,
+        "topics": [
+          {"id": "597a287b-9efd-414b-b82a-c5c3d247043f", "name": "Automatikgetriebe", "deleted": false},
+          {"id": "c7c51846-319e-4f11-992c-d72e5bd5ffbd", "name": "Komfort", "deleted": false}
+        ],
+        "selected_topic_count": 2,
+        "affected_prompt_count": 1,
+        "comparison_prompt_count": 72,
+        "affected_url_count": 0,
+        "urls": []
+      }
+    },
+    {
+      "case": "5 Event lesen (Mitglied)",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "POST /rest/v1/rpc/get_impact_event_v2 {\"p_team\":\"877c649c-f5f2-44e9-bb04-155f5bf44e70\",\"p_event_id\":\"86c6f804-afba-4ddd-9b94-47aa43a245a6\"}",
+      "http_status": 200,
+      "response": {
+        "id": "86c6f804-afba-4ddd-9b94-47aa43a245a6",
+        "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70",
+        "name": "Website Relaunch",
+        "description": null,
+        "event_type": "website_relaunch",
+        "event_date": "2026-09-01",
+        "icon": null,
+        "color": null,
+        "cover": null,
+        "scope_mode": "topics",
+        "tag_mode": "and",
+        "scope": {"mode": "topics", "tag_mode": "and"},
+        "created_by": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+        "created_at": "2026-10-13T07:25:46.090886+00:00",
+        "updated_at": "2026-10-13T07:25:46.090886+00:00",
+        "can_delete": false,
+        "topics": [
+          {"id": "597a287b-9efd-414b-b82a-c5c3d247043f", "name": "Automatikgetriebe", "deleted": false},
+          {"id": "c7c51846-319e-4f11-992c-d72e5bd5ffbd", "name": "Komfort", "deleted": false}
+        ],
+        "selected_topic_count": 2,
+        "affected_prompt_count": 1,
+        "comparison_prompt_count": 72,
+        "affected_url_count": 0,
+        "urls": []
+      }
+    },
+    {
+      "case": "6 Anlegen ohne p_tagmode (bisheriger Aufruf bleibt gültig, Auszug)",
+      "user": "7bedb728-e252-493d-b5c6-f9bed0b0b2d3",
+      "call": "POST /rest/v1/rpc/create_impact_event_v2 (gleiche zwei Topics, ohne p_tagmode)",
+      "http_status": 200,
+      "response": {"tag_mode": "or", "scope": {"mode": "topics", "tag_mode": "or"}, "affected_prompt_count": 7}
+    },
+    {
+      "case": "7 UND mit nur einem Topic = ODER",
+      "response": {"und": {"affected_prompt_count": 6}, "oder": {"affected_prompt_count": 6}}
+    },
+    {
+      "case": "8 Eingefrorene Kohorte von Fall 4 geprüft",
+      "response": {"betroffen": 1, "betroffen_mit_beiden_topics": 1, "vergleich": 72, "vergleich_mit_einem_der_topics": 0}
+    },
+    {
+      "case": "9 team_context_v1 Teil events (Auszug)",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "POST /rest/v1/rpc/team_context_v1 {\"p_team\":\"877c649c-…\",\"p_parts\":[\"events\"]}",
+      "http_status": 200,
+      "response": {"events": [
+        {"name": "Ohne Modus", "tag_mode": "or", "affected_prompt_count": 7},
+        {"name": "Website Relaunch", "tag_mode": "and", "affected_prompt_count": 1}
+      ]}
+    }
+  ]
+}

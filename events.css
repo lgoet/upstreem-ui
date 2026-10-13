@@ -217,6 +217,9 @@
 .uev-scope-lbl { display: inline-flex; align-items: center; gap: 6px; font-size: var(--up-fs-m); color: var(--vc-muted); }
 .uev-scope-wert { font-size: var(--up-fs-m); color: var(--vc-text); }
 .uev-scope-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Chips und der Satz zum And darunter als eine Gruppe in der Wertspalte. */
+.uev-scope-topics { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.uev-scope-modus { font-size: var(--up-fs-s); color: var(--vc-third); }
 /* Ein geloeschtes Topic: ausgegraut (Vertrag 3.2), nicht durchgestrichen -- seit dem 06.10. ueber
    .is-weg aus core (grauer Punkt, Name in --vc-muted, Topic-Handoff). Halbe Deckkraft obendrauf
    machte es unleserlich. */

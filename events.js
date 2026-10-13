@@ -343,6 +343,7 @@
     p_icon: "Please choose a different icon.",
     p_color: "Please choose a different color.",
     p_cover: "Please choose a different cover image.",
+    p_tagmode: "Please choose Or or And.",
     p_event_date: "The date must be within the last 6 months.",
     p_url: "Please enter a valid URL.", p_urls: "Please enter a valid URL."
   };
@@ -600,6 +601,8 @@
     "{n} days": "{n} Tage", "Preview": "Vorschau", "Untitled event": "Unbenanntes Event",
     "{n} of {total} selected": "{n} von {total} ausgewählt",
     "Prompts in any of the selected topics": "Prompts in mindestens einem der gewählten Topics",
+    "Only prompts in all of these topics": "Nur Prompts, die in allen diesen Topics stehen",
+    "Please choose Or or And.": "Bitte wähle Oder oder Und.",
     "Only prompts in all selected topics": "Nur Prompts, die in allen gewählten Topics stehen",
     "Matching all topics isn't available yet. Switch to Or to continue.":
       "Die Verknüpfung mit Und ist noch nicht verfügbar. Wechsle zu Oder, um weiterzumachen.",
@@ -1647,7 +1650,14 @@
       }
       function prompts(n) { n = num(n); return n == null ? "–" : ersetze(t(n === 1 ? "{n} Prompt" : "{n} Prompts"), { n: zahl(n) }); }
       if (d.scope_mode === "all") zeilen.push(zeile("Scope", '<span class="uev-scope-wert">' + esc(t("All active Prompts at event creation")) + '</span>'));
-      else zeilen.push(zeile("Affected topics", '<div class="uev-scope-chips">' + topics.map(topicChipHtml).join("") + '</div>'));
+      else {
+        /* Mit And verknuepft (13.10., Spalte tag_mode): darunter in einem Satz, dass nur Prompts in
+           ALLEN Topics zaehlen -- die Chips allein lesen sich als "irgendeins davon", und genau das
+           ist das Gewohnte. Or bleibt ohne Satz, wie bisher. Ein Topic: And ist dort Or. */
+        var modus = String(d.tag_mode || (d.scope && d.scope.tag_mode) || "or").toLowerCase();
+        zeilen.push(zeile("Affected topics", '<div class="uev-scope-topics"><div class="uev-scope-chips">' + topics.map(topicChipHtml).join("") + '</div>' +
+          (modus === "and" && topics.length > 1 ? '<span class="uev-scope-modus">' + esc(t("Only prompts in all of these topics")) + '</span>' : '') + '</div>'));
+      }
       zeilen.push(zeile("Affected prompts", '<span class="uev-scope-wert">' + esc(prompts(d.affected_prompt_count)) + '</span>'));
       var vgl = num(d.comparison_prompt_count);
       zeilen.push(zeile("Comparison group", '<span class="uev-scope-wert">' + esc(vgl ? prompts(vgl) : t("No comparison group")) + '</span>', vgl ? "vergleich" : ""));
