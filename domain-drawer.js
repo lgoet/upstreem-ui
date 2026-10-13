@@ -102,13 +102,20 @@
     for (k in zusatz) p[k] = zusatz[k];
     return { art: a.art, fn: a.fn, params: p, sig: a.fn + "|" + JSON.stringify(p) };
   }
+  /* Intent-Filter der App (13.10., core: UC.intentFilterParams). Leer, solange die Intents nicht
+     freigegeben sind -- dann geht kein neuer Parameter hinaus. */
+  function intentDazu(o) {
+    var U = window.UpstreemCore, x = U && U.intentFilterParams ? U.intentFilterParams() : {};
+    for (var k in x) if (Object.prototype.hasOwnProperty.call(x, k)) o[k] = x[k];
+    return o;
+  }
   /* Die Zeitraum- und Filterparameter der neuen Domain-RPCs -- dieselben Namen wie Dashboard und
      Citations (p_models, p_markets, p_tag_ids, p_tagmode). */
   function basis() {
     var f = filterStand();
-    return { p_team: f.team, p_domain: S.domain, p_date_from: f.von || null, p_date_to: f.bis || null,
+    return intentDazu({ p_team: f.team, p_domain: S.domain, p_date_from: f.von || null, p_date_to: f.bis || null,
              p_models: texte(f.modelle), p_markets: texte(f.maerkte), p_tag_ids: texte(f.topics),
-             p_tagmode: f.tagmode === "and" ? "and" : "or" };
+             p_tagmode: f.tagmode === "and" ? "and" : "or" });
   }
 
   /* ---- Der Kopf: Favicon, Domain, Chip des Citation Types ---- */
@@ -637,6 +644,12 @@
       if (zeitraum(d.date_from, d.date_to)) filterGeaendert();
     });
     s.addEventListener("umf-models", function (e) { if (setzen("modelle", auswahl("modelle", e.detail, "model_keys"))) filterGeaendert(); });
+    /* Intent-Filter der App (13.10.): gemeinsamer Stand in core, Ereignis am window. Einmal je
+       Schale -- einsetzen() kann fuer dieselbe Schale erneut laufen. */
+    if (!s.__intentHoerer) {
+      s.__intentHoerer = function () { if (document.contains(s)) filterGeaendert(); };
+      window.addEventListener("up-intentfilter", s.__intentHoerer);
+    }
     s.addEventListener("umk-markets", function (e) { if (setzen("maerkte", auswahl("maerkte", e.detail, "market_codes"))) filterGeaendert(); });
     s.addEventListener("utf-topics", function (e) {
       var d = e.detail || {}, l = liste(d.topic_ids);

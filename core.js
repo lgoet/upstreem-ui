@@ -1795,6 +1795,8 @@
     "Group by": "Gruppieren nach",
     "Group prompts": "Prompts gruppieren",
     "Filter for prompts that name a brand": "Nach Prompts filtern, die eine Marke nennen",
+    "Include branded prompts": "Prompts mit Marke einbeziehen",
+    "Included": "Einbezogen",
 
     /* Intents und Branded (13.10.) */
     "Intent": "Intent",
@@ -5923,6 +5925,55 @@
           : "");
     }
     return h;
+  }
+
+  /* ---- Intent-Filter der ganzen App (13.10.) ------------------------------------------------
+     EIN Stand fuer alle Seiten statt eines je Seite: welche Absicht man ansieht und ob Prompts mit
+     Marke mitzaehlen, ist eine Brille auf die Daten, keine Eigenschaft einer einzelnen Seite --
+     und jede Seite haette sonst ihre eigene Verdrahtung gebraucht (elf Stueck). Die Datenteile
+     lesen ihn ueber intentFilterParams(), die Seiten laden auf "up-intentfilter" (window) neu.
+     Ansichtsvorliebe, keine Teamdaten: prefKey, nicht storeKey (die Werte sind ein festes Enum).
+
+     FREIGABE: window.__upIntentsLive === true. Solange die Datenbank p_intents/p_branded nicht auf
+     jeder auswertenden Funktion kennt, antwortet PostgREST auf JEDEN Aufruf mit 404 PGRST202 --
+     die ganze App waere leer. Der Gastgeber (Next.js, NEXT_PUBLIC_UP_INTENTS=1) setzt den Wert,
+     sobald der DB-Chat geliefert hat; dafuer braucht es keinen neuen Pin.
+     Vorgabe fuer Branded: "non_branded" (Absprache 13.10.: Branded zaehlt nicht in die
+     Auswertungen). Die Prompts-Tabelle nimmt davon nur die Intents -- sie zeigt Branded-Prompts
+     immer, ausgeblendet werden sie dort nur auf Aktion (ihr eigener Filter). */
+  var IF_KEY = "up_intentfilter_v1";
+  function intentsLive(){ return window.__upIntentsLive === true; }
+  function intentFilterGet(){
+    var v = null;
+    try { v = JSON.parse(window.localStorage.getItem(prefKey(IF_KEY)) || "null"); } catch(e){ v = null; }
+    v = v && typeof v === "object" ? v : {};
+    var l = (Array.isArray(v.intents) ? v.intents : []).map(function(k){ return String(k); })
+      .filter(function(k){ return !!intentArt(k); });
+    return { intents: l, branded: v.branded === "all" ? "all" : "non_branded" };
+  }
+  function intentFilterSet(v){
+    var alt = intentFilterGet();
+    v = v || {};
+    var neu = {
+      intents: Array.isArray(v.intents) ? v.intents.map(String).filter(function(k){ return !!intentArt(k); }) : alt.intents,
+      branded: v.branded === "all" || v.branded === "non_branded" ? v.branded : alt.branded
+    };
+    /* In der Reihenfolge der Buyer Journey, damit derselbe Stand immer dieselbe Signatur ergibt
+       (die Lader cachen ueber die Parameter). */
+    neu.intents = INTENTE.map(function(a){ return a.key; }).filter(function(k){ return neu.intents.indexOf(k) >= 0; });
+    if (neu.intents.join(",") === alt.intents.join(",") && neu.branded === alt.branded) return false;
+    try { window.localStorage.setItem(prefKey(IF_KEY), JSON.stringify(neu)); } catch(e){}
+    try { window.dispatchEvent(new CustomEvent("up-intentfilter", { detail: neu })); } catch(e){}
+    return true;
+  }
+  /* Die Parameter fuer einen Aufruf. opts.branded === false: ohne p_branded (Prompts-Tabelle).
+     Nicht freigegeben: leer -- dann geht kein einziger neuer Parameter hinaus. */
+  function intentFilterParams(opts){
+    if (!intentsLive()) return {};
+    var f = intentFilterGet(), p = {};
+    if (f.intents.length) p.p_intents = f.intents.slice();
+    if (!opts || opts.branded !== false) p.p_branded = f.branded;
+    return p;
   }
 
   /* Loading skeleton rows for a grid table.
@@ -25045,6 +25096,7 @@
     brandStack: brandStack,
     INTENTE: INTENTE, intentArt: intentArt, hatIntent: hatIntent, intentZustand: intentZustand,
     intentHtml: intentHtml, brandedHtml: brandedHtml, intentMenuHtml: intentMenuHtml,
+    intentsLive: intentsLive, intentFilterGet: intentFilterGet, intentFilterSet: intentFilterSet, intentFilterParams: intentFilterParams,
     relativeTime: relativeTime,
     modelChip: modelChip, modelLogoUrl: modelLogoUrl, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,
     adCardHtml: adCardHtml, adFormatLabel: adFormatLabel, makeSeitenDrawer: makeSeitenDrawer, balkenGrau: balkenGrau,

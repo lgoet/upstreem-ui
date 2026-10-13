@@ -55,6 +55,13 @@
      Die Typ-Filter gehen nur dorthin, wo sie gelten: die Domains-Tabelle kennt keine URL-Typen
      (Vertrag: "bei domains immer ignoriert"). Schickte man sie trotzdem, stuende im Cache der DB
      fuer jede URL-Typ-Auswahl eine eigene Kopie derselben Domains-Liste. */
+  /* Intent-Filter der App (13.10., core: UC.intentFilterParams). Leer, solange die Intents nicht
+     freigegeben sind -- dann geht kein neuer Parameter hinaus. */
+  function intentDazu(o) {
+    var U = window.UpstreemCore, x = U && U.intentFilterParams ? U.intentFilterParams() : {};
+    for (var k in x) if (Object.prototype.hasOwnProperty.call(x, k)) o[k] = x[k];
+    return o;
+  }
   function basis(f, art) {
     f = f || {};
     var b = {
@@ -66,7 +73,7 @@
       p_citation_types: liste(f.citationTypen)
     };
     if (art !== "domains") b.p_url_types = liste(f.urlTypen);
-    return b;
+    return intentDazu(b);
   }
   function mit(o, x) { for (var k in x) if (Object.prototype.hasOwnProperty.call(x, k)) o[k] = x[k]; return o; }
   function anfrage(art, params) { return { art: art, fn: FN[art], params: params, sig: FN[art] + "|" + JSON.stringify(params) }; }

@@ -533,6 +533,12 @@
       if (zeitraum(d.date_from, d.date_to)) filterGeaendert();
     });
     s.addEventListener("umf-models", function (e) { if (setzen("modelle", modellAuswahl(e.detail))) filterGeaendert(); });
+    /* Intent-Filter der App (13.10.): gemeinsamer Stand in core, Ereignis am window. Einmal je
+       Schale -- einsetzen() kann fuer dieselbe Schale erneut laufen. */
+    if (!s.__intentHoerer) {
+      s.__intentHoerer = function () { if (document.contains(s)) filterGeaendert(); };
+      window.addEventListener("up-intentfilter", s.__intentHoerer);
+    }
 
     function an(name, fn) { s.addEventListener(name, function (e) { fn(e.detail || {}); }); }
     function wert(d) { return d && d.value != null ? d.value : ""; }

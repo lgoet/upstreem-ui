@@ -1400,7 +1400,39 @@
        -- sonst waere derselbe Prompt zweimal anwaehlbar und der Zaehler zaehlte ihn doppelt. Die
        uebrigen Themen stehen als kleine Marken am Zeilenende, damit die Ueberschneidung sichtbar
        bleibt. Prompts ohne Thema kommen als letzte Gruppe, nicht unter ein erfundenes. */
+    /* NACH TOPIC ODER NACH INTENT (13.10. bestellt). Den Umschalter gibt es nur, wenn die Prompts
+       einen Intent tragen (onboarding_bundle_v1, Vertrag intents_13_10, Abschnitt 6) -- vorher gibt
+       es nur eine Art zu gruppieren, und ein Schalter waere Attrappe. Die Wahl ist eine
+       Ansichtsvorliebe des Geraets (prefKey). */
+    var NACH_KEY = "uob_prompts_nach";
+    function promptsNach() {
+      var v = "topic";
+      try { v = window.localStorage.getItem(UC.prefKey ? UC.prefKey(NACH_KEY) : NACH_KEY) || "topic"; } catch (e) { v = "topic"; }
+      return v === "intent" && hatIntents() ? "intent" : "topic";
+    }
+    function promptsNachSetzen(v) {
+      try { window.localStorage.setItem(UC.prefKey ? UC.prefKey(NACH_KEY) : NACH_KEY, v === "intent" ? "intent" : "topic"); } catch (e) {}
+    }
+    function hatIntents() {
+      if (!UC.intentArt) return false;
+      for (var i = 0; i < state.prompts.length; i++) if (UC.intentArt(state.prompts[i].intent)) return true;
+      return false;
+    }
+    /* In der Reihenfolge der Buyer Journey, nicht nach Menge: die Liste erzaehlt den Weg vom
+       Verstehen zum Kaufen. Ein Prompt ohne gueltigen Intent kommt unter "Other" -- dieselbe
+       Stelle, an der die Topic-Ansicht Prompts ohne Thema sammelt. */
+    function intentGruppen() {
+      var gruppen = (UC.INTENTE || []).map(function (a) { return { id: "i:" + a.key, name: a.label, icon: a.icon, items: [] }; });
+      var index = {};
+      gruppen.forEach(function (g) { index[g.id] = g; });
+      for (var i = 0; i < state.prompts.length; i++) {
+        var p = state.prompts[i], a = UC.intentArt(p.intent);
+        (index["i:" + (a ? a.key : "other")] || gruppen[gruppen.length - 1]).items.push({ p: p, weitere: [] });
+      }
+      return gruppen.filter(function (g) { return g.items.length; });
+    }
     function promptGruppen() {
+      if (promptsNach() === "intent") return intentGruppen();
       var byId = {}, i;
       for (i = 0; i < state.topics.length; i++) byId[state.topics[i].id] = state.topics[i];
       var gruppen = [], index = {};
@@ -1429,18 +1461,30 @@
     function viewPrompts() {
       var n = anzahl(state.selPrompts);
       var gruppen = promptGruppen();
+      var mitIntent = hatIntents(), nach = promptsNach();
       return '<div class="uob-pane" data-pane="prompts">' +
         kopf("Prompts",
-             "These are the questions we will ask the models for you. Keep the ones that matter.",
+             nach === "intent"
+               ? "Prompts for every step of the buyer's journey. Keep the ones that matter."
+               : "These are the questions we will ask the models for you. Keep the ones that matter.",
              zaehlerFuer("prompts", n)) +
+        (mitIntent
+          ? '<div class="uob-nachzeile">' +
+              '<div class="up-seg uob-nach" role="radiogroup" aria-label="Group prompts by">' +
+                '<button class="up-seg-btn' + (nach === "topic" ? " is-active" : "") + '" type="button" role="radio" aria-checked="' + (nach === "topic") + '" data-uob-nach="topic">Topic</button>' +
+                '<button class="up-seg-btn' + (nach === "intent" ? " is-active" : "") + '" type="button" role="radio" aria-checked="' + (nach === "intent") + '" data-uob-nach="intent">Intent</button>' +
+              '</div>' +
+            '</div>'
+          : '') +
         '<div class="uob-body">' +
           (gruppen.length
             ? '<div class="uob-list up-scroll" role="group" aria-label="Prompts">' +
                 gruppen.map(function (g) {
                   return '<div class="uob-group">' +
                     '<div class="uob-group-h">' +
+                      (g.icon ? '<span class="uob-group-ic">' + UC.icon(g.icon, 2) + '</span>' : "") +
                       (g.farbe ? '<span class="uob-swatch" style="--uob-sw:' + esc(g.farbe) + '"></span>' : "") +
-                      '<span>' + esc(g.name) + '</span>' +
+                      '<span>' + esc(g.icon ? UC.t(g.name) : g.name) + '</span>' +
                       '<span class="uob-group-n">' + g.items.length + '</span>' +
                       /* Alle Prompts eines Themas auf einmal. Ein Umschalter und kein reines
                          Hinzufuegen: wer versehentlich alles waehlt, muss es sonst einzeln
@@ -2768,6 +2812,12 @@
 
       /* data-allof, nicht data-all: closest("[data-all]") darunter trifft nur den exakten
          Attributnamen, die beiden Knoepfe kommen sich also nicht ins Gehege. */
+      var nachBtn = e.target.closest("[data-uob-nach]");
+      if (nachBtn) {
+        var nachNeu = nachBtn.getAttribute("data-uob-nach");
+        if (nachNeu !== promptsNach()) { promptsNachSetzen(nachNeu); render(); }
+        return;
+      }
       var alleVon = e.target.closest("[data-allof]");
       if (alleVon) { alleUmschalten(alleVon.getAttribute("data-allof")); return; }
       /* Die Sperre steht auch HIER, nicht nur im Markup: ein Klick aus dem Code oder ein alter
@@ -4201,7 +4251,11 @@
           if (!tids.length && txt(r.primary_topic_id)) tids = [txt(r.primary_topic_id)];
           if (!tids.length && txt(r.topic_id)) tids = [txt(r.topic_id)];
           tids = tids.filter(function (x) { return !!x; });
-          rein.push({ id: id, prompt_text: txt(r.prompt_text), market: txt(r.market), topic_ids: tids });
+          /* intent: Vertrag intents_13_10, Abschnitt 6. Nur ein gueltiger Wert wird uebernommen;
+             fehlt er, gibt es keinen Umschalter Topic/Intent (hatIntents). */
+          var ia = UC.intentArt ? UC.intentArt(r.intent) : null;
+          rein.push({ id: id, prompt_text: txt(r.prompt_text), market: txt(r.market), topic_ids: tids,
+                      intent: ia ? ia.key : "" });
         }
         /* Eine schon gesetzte Auswahl aus den Daten uebernehmen -- so ueberlebt sie ein
            Neuladen, wenn der Server sie kennt. */

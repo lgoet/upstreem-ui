@@ -58,6 +58,13 @@
   }
 
   function ushStart() {
+  /* Intent-Filter der App (13.10., core: UC.intentFilterParams). Leer, solange die Intents nicht
+     freigegeben sind -- dann geht kein neuer Parameter hinaus. */
+  function intentDazu(o) {
+    var U = window.UpstreemCore, x = U && U.intentFilterParams ? U.intentFilterParams() : {};
+    for (var k in x) if (Object.prototype.hasOwnProperty.call(x, k)) o[k] = x[k];
+    return o;
+  }
   var UC = window.UpstreemCore;
   var esc = UC.esc, t = UC.t || function (x) { return x; };
   var STORE = (window.__ushStore = window.__ushStore || {});
@@ -552,6 +559,8 @@
       bedarf();
     }
     root.addEventListener("umf-models", function (e) { if (filterSetzen("modelle", auswahl("modelle", e.detail, "model_keys"))) filterGeaendert(); });
+    /* Intent-Filter der App (13.10.): gemeinsamer Stand in core, Ereignis am window. */
+    window.addEventListener("up-intentfilter", function () { if (document.contains(root)) filterGeaendert(); });
     root.addEventListener("umk-markets", function (e) { if (filterSetzen("maerkte", auswahl("maerkte", e.detail, "market_codes"))) filterGeaendert(); });
     root.addEventListener("utf-topics", function (e) {
       var d = e.detail || {}, ids = liste(d.topic_ids);
@@ -634,11 +643,11 @@
     var unterwegs = { overview: null, products: null, detail: null, merchants: null };
     function grundBody() {
       var f = state.filter;
-      return { p_team: team(), p_date_from: f.von || null, p_date_to: f.bis || null,
+      return intentDazu({ p_team: team(), p_date_from: f.von || null, p_date_to: f.bis || null,
                p_models: f.modelle && f.modelle.length ? f.modelle.slice() : null,
                p_markets: f.maerkte && f.maerkte.length ? f.maerkte.slice() : null,
                p_tag_ids: f.topics && f.topics.length ? f.topics.slice() : null,
-               p_tagmode: f.tagmode === "and" ? "and" : "or" };
+               p_tagmode: f.tagmode === "and" ? "and" : "or" });
     }
     function mit(o, extra) { for (var k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) o[k] = extra[k]; return o; }
     function limitOf(tb) { var n = num(tb.pageSize) || 15; return Math.max(1, Math.min(100, Math.round(n))); }

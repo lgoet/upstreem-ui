@@ -121,6 +121,8 @@ Zum Aufklappen einer Intent-Gruppe ruft die Oberfläche `cached_prompts_list_v1`
 
 ## 5 Filter auf allen auswertenden Funktionen
 
+Die Oberfläche schickt beide Parameter erst, wenn der Gastgeber sie freigibt (`NEXT_PUBLIC_UP_INTENTS=1`, also `window.__upIntentsLive`). Bis dahin ändert sich an keinem Aufruf etwas. Bitte zurückmelden, sobald **alle** Funktionen unten sie kennen. Eine einzige fehlende antwortet mit 404 PGRST202, und ihr Teil der Seite bleibt leer.
+
 Zwei neue optionale Parameter, **überall, wo heute `p_tag_ids` / `p_models` / `p_markets` ankommen**:
 
 | Parameter | Werte | fehlt |
@@ -159,6 +161,10 @@ Ungültige Werte ergeben 400, `hint = p_intents` bzw. `p_branded`.
 ## 7 Prompt Research
 
 `prompt_research_result_v1`: Jeder Vorschlag bekommt `intent` (gleiche Prüfung) und `branded`. Beim Übernehmen (`prompt_research_decide_v1`) werden beide Werte mitgespeichert, also kein zweiter Klassifikationslauf.
+
+## 7b Für die nächste Runde: „Visibility by intent“
+
+Für eine Dashboard-Ansicht wie bei Conductor oder Peec (je Intent Visibility, Share of Voice, Rang, Sentiment, eigene Marke gegen Wettbewerber, immer mit Anzahl der Prompts) bitte eine Funktion vorschlagen. Sie nimmt dieselben Filter wie `cached_dashboard_overview_v1` (also auch `p_branded`) und liefert eine Zeile je Intent und Marke. Das muss nicht in dieser Runde gebaut werden. Die Form reicht, damit die Oberfläche danach gebaut werden kann.
 
 ## 8 Bitte zurückmelden
 

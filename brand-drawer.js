@@ -522,6 +522,12 @@
       if (zeitraum(d.date_from, d.date_to)) filterGeaendert();
     });
     s.addEventListener("umf-models", function (e) { if (setzen("modelle", auswahl("modelle", e.detail, "model_keys"))) filterGeaendert(); });
+    /* Intent-Filter der App (13.10.): gemeinsamer Stand in core, Ereignis am window. Einmal je
+       Schale -- einsetzen() kann fuer dieselbe Schale erneut laufen. */
+    if (!s.__intentHoerer) {
+      s.__intentHoerer = function () { if (document.contains(s)) filterGeaendert(); };
+      window.addEventListener("up-intentfilter", s.__intentHoerer);
+    }
     s.addEventListener("umk-markets", function (e) { if (setzen("maerkte", auswahl("maerkte", e.detail, "market_codes"))) filterGeaendert(); });
     s.addEventListener("utf-topics", function (e) {
       var d = e.detail || {}, l = liste(d.topic_ids);

@@ -232,6 +232,8 @@
       persist(); bedarf();
     }
     root.addEventListener("umf-models", function (e) { if (setzen("modelle", auswahl("modelle", e.detail, "model_keys"))) filterGeaendert(); });
+    /* Intent-Filter der App (13.10.): gemeinsamer Stand in core, Ereignis am window. */
+    window.addEventListener("up-intentfilter", function () { if (document.contains(root)) filterGeaendert(); });
     root.addEventListener("umk-markets", function (e) { if (setzen("maerkte", auswahl("maerkte", e.detail, "market_codes"))) filterGeaendert(); });
     root.addEventListener("utf-topics", function (e) {
       var d = e.detail || {}, l = liste(d.topic_ids);

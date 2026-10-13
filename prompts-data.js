@@ -84,7 +84,10 @@
     /* Intent-Filter: aus der Gruppe (eine Intent-Gruppe ist genau ein Wert) oder aus dem Filter
        der Seite. Nur gesetzt, wenn es etwas zu filtern gibt -- ohne den Parameter bleibt jeder
        Aufruf gueltig, auch solange die Funktion ihn noch nicht kennt (PostgREST: 404 PGRST202). */
-    var iv = (liste(o.intents || f.intents) || []).map(function (x) { return x.toLowerCase(); })
+    /* Ohne Gruppe und ohne eigenen Wert: der Intent-Filter der App (ohne Branded -- die Tabelle
+       zeigt Branded-Prompts immer und filtert sie nur auf Aktion, mit ihrem eigenen Schalter). */
+    var U = window.UpstreemCore, glob = U && U.intentFilterParams ? U.intentFilterParams({ branded: false }) : {};
+    var iv = (liste(o.intents || f.intents || glob.p_intents) || []).map(function (x) { return x.toLowerCase(); })
       .filter(function (x) { return INTENTE.indexOf(x) >= 0 || x === "pending"; });
     if (iv.length) p.p_intents = iv;
     return p;

@@ -227,7 +227,7 @@
 .ufb-mirror svg { width: 16px; height: 16px; display: block; color: var(--vc-muted); }
 /* Der Text darf schrumpfen, alles andere nicht. Die Klassen sind die der Filter -- ihr Trigger
    wird hier gespiegelt, also stehen sie auch hier. */
-.ufb-mirror .utf-label, .ufb-mirror .umf-label, .ufb-mirror .umk-label {
+.ufb-mirror .utf-label, .ufb-mirror .umf-label, .ufb-mirror .umk-label, .ufb-mirror .uif-label {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1 1 auto;
 }
 .ufb-caret { margin-left: 2px; flex: 0 0 16px; width: 16px; height: 16px; color: var(--vc-third); }
@@ -276,20 +276,20 @@
    Zeile), und sein Panel steht im Fluss statt absolut an einem Trigger, den es nicht mehr gibt.
    Angefasst wird nur die POSITIONIERUNG und die Sichtbarkeit -- Rahmen, Polster, Liste,
    Suchfeld, Fusszeile und jede Farbe darin bleiben, wie der Filter sie baut. */
-.ufb-sub .utf-trigger, .ufb-sub .umf-trigger, .ufb-sub .umk-trigger { display: none; }
+.ufb-sub .utf-trigger, .ufb-sub .umf-trigger, .ufb-sub .umk-trigger, .ufb-sub .uif-trigger { display: none; }
 /* Wurzel und Huelle des Filters tragen in ihrer eigenen CSS eine FESTE Hoehe von 32px -- die des
    Triggers, weil in einer Werkzeugleiste genau das ihr Kasten ist und das Panel darueber
    hinausfliegt. Hier IST das Panel der Inhalt, also muss die Hoehe dem Inhalt folgen. Gemessen,
    bevor das hier stand: Huelle 268x32, Panel darin 268x289 -- das Panel hing 257px aus seinem
    eigenen Elternteil heraus, und das Untermenue war 49px hoch statt 297.
    width: max-content an der Wurzel gilt hier ebenso nicht: die Breite gibt das Untermenue vor. */
-.ufb-sub .utf-root, .ufb-sub .umf-root, .ufb-sub .umk-root {
+.ufb-sub .utf-root, .ufb-sub .umf-root, .ufb-sub .umk-root, .ufb-sub .uif-root {
   display: block; width: 100%; max-width: none; height: auto;
 }
-.ufb-sub .utf-wrap, .ufb-sub .umf-wrap, .ufb-sub .umk-wrap {
+.ufb-sub .utf-wrap, .ufb-sub .umf-wrap, .ufb-sub .umk-wrap, .ufb-sub .uif-wrap {
   display: block; position: static; height: auto; width: 100%;
 }
-.ufb-sub .utf-menu, .ufb-sub .umf-menu, .ufb-sub .umk-menu {
+.ufb-sub .utf-menu, .ufb-sub .umf-menu, .ufb-sub .umk-menu, .ufb-sub .uif-menu {
   position: static; top: auto; left: auto; right: auto;
   opacity: 1; transform: none;
   /* Kein zweiter Rahmen und kein zweiter Schatten: das Untermenue aus core bringt beides schon
@@ -303,7 +303,7 @@
   padding: 0;
 }
 /* Und kein eigener Abstand: das Untermenue polstert schon. */
-.ufb-sub > .utf-root, .ufb-sub > .umf-root, .ufb-sub > .umk-root { margin: 0; }
+.ufb-sub > .utf-root, .ufb-sub > .umf-root, .ufb-sub > .umk-root, .ufb-sub > .uif-root { margin: 0; }
 
 /* ── pointer-events ───────────────────────────────────────────────────────────────────────────
    Hier stand einmal der Fehler hinter "sobald man auf das Unterdropdown hovert, wechselt das
@@ -335,7 +335,8 @@
    dazu, den jemand pflegen muesste. */
 .ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .utf-menu,
 .ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .umf-menu,
-.ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .umk-menu { pointer-events: auto; }
+.ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .umk-menu,
+.ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .uif-menu { pointer-events: auto; }
 /* Die Huelle traegt keine eigene Geometrie -- sie ist nur der Schalter zwischen den drei
    Inhalten. */
 .ufb-host { min-width: 0; }
@@ -383,3 +384,32 @@
   .ufb-row, .ufb-reset { min-height: 40px; }
   .up-subback { min-height: 40px; }
 }
+
+/* ---------- Intent-Filter (13.10.) ----------
+   Den bringt die Leiste selbst mit (filter-bar.js, uifEinrichten). Ausserhalb der Leiste gibt es
+   ihn nicht zu sehen: die Wurzel steht nur einen Takt neben der Leiste, bis einziehen() sie holt,
+   und darf in diesem Takt nicht als Knopf aufblitzen. In der Leiste gelten die Regeln oben
+   (display: block, Panel im Fluss), wie bei den drei anderen Filtern.
+   Die Zeilen sind .up-filter-item aus core; hier nur, was die anderen Filter in ihrer eigenen CSS
+   tragen: der Abstand der Zeilen, der gewaehlte Grund, das Zeichen vor dem Namen. Masse wie
+   .umf-opt (34 hoch, 13/500), damit die vier Untermenues gleich aussehen. */
+.uif-root { display: none; }
+.uif-menu { pointer-events: none; }
+.uif-list { display: flex; flex-direction: column; gap: 4px; padding: 2px 0; }
+.uif-opt { min-height: 34px; }
+.uif-opt.is-checked { background: var(--up-sel-bg); }
+.uif-opt-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.uif-opt-main > svg { width: 16px; height: 16px; flex: 0 0 16px; color: var(--vc-fourth); }
+.uif-opt-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: var(--up-fs-m); font-weight: var(--up-fw-m); }
+/* Der Zaehler ab zwei Auswahlen -- im Spiegel der Zeile zu sehen. Masse wie .umf-count und
+   .utf-count (16er Scheibe, 10px Ziffer, Farben des Gegenthemas): drei Filter stehen in dieser
+   Leiste untereinander, und ein Zaehler, der anders aussieht, waere ein anderes Ding. Eine
+   eigene Klasse, weil models-filter.css nicht auf jeder Seite mit der Leiste geladen ist. */
+.uif-count { flex: 0 0 16px; width: 16px; height: 16px; border-radius: var(--up-r-voll);
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--vc-text); color: var(--up-menu-bg);
+  font-size: 10px; font-weight: var(--up-fw-m); line-height: 1; font-variant-numeric: tabular-nums; }
+/* Der Branded-Schalter im Panel: eine Zeile wie in jedem Menue aus core (.up-pop-row). */
+.ufb-branded { cursor: pointer; }
+.ufb-branded:hover { background: var(--up-sel-bg); }

@@ -900,6 +900,13 @@
   font-size: 12px; font-weight: 600; color: var(--vc-muted); letter-spacing: .01em;
 }
 .uob-group-n { font-weight: 500; color: var(--vc-third); font-variant-numeric: tabular-nums; }
+/* Nach Intent (13.10.): das Zeichen der Stufe statt der Themenfarbe, in derselben Groesse wie die
+   Marke (12) plus Strich -- 14, wie das Intent-Label der App (core, .up-intent). */
+.uob-group-ic { display: inline-flex; color: var(--vc-fourth); }
+.uob-group-ic svg { width: 14px; height: 14px; display: block; }
+/* Der Umschalter Topic / Intent: eine eigene Zeile zwischen Kopf und Liste, links buendig mit
+   dem Kopf. Der Schalter selbst ist .up-seg aus core. */
+.uob-nachzeile { display: flex; margin: 0 0 16px; }
 /* Ganz rechts in der Themenzeile: alle Prompts dieses Themas auf einmal. margin-left: auto
    schiebt ihn dorthin, ohne dass die Zeile ein Raster braucht. Leise gehalten -- er steht neben
    einer Ueberschrift und darf sie nicht ueberstimmen. */

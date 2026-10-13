@@ -71,14 +71,21 @@
   }
   function letzte30(jetzt) { var bis = berlinHeute(jetzt); return { von: tageZurueck(bis, 29), bis: bis }; }
 
+  /* Intent-Filter der App (13.10., core: UC.intentFilterParams). Leer, solange die Intents nicht
+     freigegeben sind -- dann geht kein neuer Parameter hinaus. */
+  function intentDazu(o) {
+    var U = window.UpstreemCore, x = U && U.intentFilterParams ? U.intentFilterParams() : {};
+    for (var k in x) if (Object.prototype.hasOwnProperty.call(x, k)) o[k] = x[k];
+    return o;
+  }
   /* ---- Anfragen bauen -------------------------------------------------------------------------- */
   function basis(f) {
     f = f || {};
-    return {
+    return intentDazu({
       p_team: str(f.team), p_date_from: str(f.von) || null, p_date_to: str(f.bis) || null,
       p_models: liste(f.modelle), p_markets: liste(f.maerkte), p_tag_ids: uuids(f.topics),
       p_tagmode: f.tagmode === "and" ? "and" : "or"
-    };
+    });
   }
   function anfrage(art, params) { return { art: art, fn: FN[art], params: params, sig: FN[art] + "|" + JSON.stringify(params) }; }
 

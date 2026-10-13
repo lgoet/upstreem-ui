@@ -109,7 +109,16 @@
       ctrl: "__umkCtrl", selKey: "market_codes", opt: ".umk-opt", keyAttr: "data-key",
       nameSel: ".umk-opt-name", clearSel: ".umk-chev-x", evt: "umk-markets", chip: "Market", icon: "mapPin",
       fnAttrs: [["data-markets-fn", "bubble_fn_umkMarkets"], ["data-markets-apply-fn", null]],
-      fnMarke: "umk" }
+      fnMarke: "umk" },
+    /* Intent (13.10.): der einzige Filter, den diese Leiste SELBST mitbringt (uifEinrichten unten).
+       Er hat keine Bubble-Vergangenheit und keine eigene Platzierung -- er gehoert zur Leiste, und
+       ein eigenes Element auf elf Seiten waere elfmal dieselbe Verdrahtung gewesen. Sein Stand
+       liegt in core (UC.intentFilterGet/Set), gemeinsam fuer alle Seiten. Es gibt ihn nur, wenn
+       der Gastgeber die Intents freigegeben hat (UC.intentsLive). */
+    { key: "intents", label: "Intent", attr: "data-intents-instance", visAttr: "data-intents-visible", rootSel: ".uif-root",
+      ctrl: "__uifCtrl", selKey: "intent_keys", opt: ".uif-opt", keyAttr: "data-key",
+      nameSel: ".uif-opt-name", clearSel: ".uif-chev-x", evt: "uif-intents", chip: "Intent", icon: "signpost",
+      fnAttrs: [], fnMarke: "uif" }
   ];
   /* Wie viele Namen ein Chip zeigt, bevor er auf "+N" zusammenfasst. Zwei: bei drei Namen ist der
      Chip breiter als der Knopf davor, und dann liest man die Leiste nicht mehr, sondern buchstabiert
@@ -179,8 +188,110 @@
       }, 0);
     };
 
+    /* ---- Der Intent-Filter (13.10.) ----------------------------------------------------------
+       Dieselbe Form wie die drei anderen, damit Einziehen, Spiegel, Chips und Reset ohne
+       Sonderweg laufen: Wurzel, Trigger mit Beschriftung und X, Panel mit .up-filter-item-Zeilen,
+       Controller mit getSelected, aufsteigendes Ereignis. Der Trigger ist im Untermenue
+       ausgeblendet wie bei den anderen (filter-bar.css) -- die Zeile der Leiste ist der Ausloeser.
+       Die Auswahl schreibt core; jede Wurzel hoert auf "up-intentfilter" und zieht nach, auch die
+       einer zweiten Leiste auf derselben Seite (Drawer ueber einer Seite). */
+    function uifEinrichten(w) {
+      if (w.__uifCtrl) { w.__uifCtrl.sync(); return w.__uifCtrl; }
+      w.classList.add("uif-root");
+      w.innerHTML =
+        '<div class="uif-wrap">' +
+          '<button class="uif-trigger" type="button" tabindex="-1" aria-hidden="true">' +
+            '<span class="uif-label">Intent</span>' +
+            '<span class="uif-chev"><span class="uif-chev-x" role="button" tabindex="-1" aria-label="Clear selection">' + UC.icon("x", 2.2) + '</span></span>' +
+          '</button>' +
+          '<div class="uif-menu" role="dialog">' +
+            '<div class="uif-list" role="listbox" aria-multiselectable="true">' +
+              (UC.INTENTE || []).map(function (a) {
+                return '<div class="up-filter-item uif-opt" role="option" tabindex="0" aria-selected="false" data-key="' + esc(a.key) + '">' +
+                  '<span class="up-filter-check">' + UC.icon("check", 3) + '</span>' +
+                  '<span class="uif-opt-main">' + UC.icon(a.icon, 2) +
+                    '<span class="uif-opt-name">' + esc(UC.t ? UC.t(a.label) : a.label) + '</span></span>' +
+                '</div>';
+              }).join("") +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      var elTrig = w.querySelector(".uif-trigger"), elLbl = w.querySelector(".uif-label");
+      function sync() {
+        var f = UC.intentFilterGet(), n = f.intents.length;
+        Array.prototype.forEach.call(w.querySelectorAll(".uif-opt"), function (r) {
+          var an = f.intents.indexOf(r.getAttribute("data-key")) >= 0;
+          r.classList.toggle("is-checked", an);
+          r.setAttribute("aria-selected", an ? "true" : "false");
+        });
+        w.classList.toggle("has-sel", n > 0);
+        var a = n === 1 && UC.intentArt ? UC.intentArt(f.intents[0]) : null;
+        elLbl.textContent = a ? (UC.t ? UC.t(a.label) : a.label) : "Intent";
+        var alt = elTrig.querySelector(".uif-count");
+        if (alt) alt.parentNode.removeChild(alt);
+        if (n > 1) {
+          var b = document.createElement("span");
+          b.className = "uif-count"; b.textContent = String(n);
+          elTrig.insertBefore(b, elTrig.querySelector(".uif-chev"));
+        }
+      }
+      function setzen(liste) {
+        if (!UC.intentFilterSet(liste)) return;
+      }
+      w.addEventListener("click", function (e) {
+        if (e.target.closest(".uif-chev-x")) { e.stopPropagation(); setzen({ intents: [] }); return; }
+        var r = e.target.closest(".uif-opt");
+        if (!r) return;
+        var k = r.getAttribute("data-key"), l = UC.intentFilterGet().intents.slice(), i = l.indexOf(k);
+        if (i >= 0) l.splice(i, 1); else l.push(k);
+        setzen({ intents: l });
+      });
+      w.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        var r = e.target.closest && e.target.closest(".uif-opt");
+        if (!r) return;
+        e.preventDefault(); r.click();
+      });
+      window.addEventListener("up-intentfilter", function () {
+        if (!document.contains(w)) return;
+        sync();
+        try { w.dispatchEvent(new CustomEvent("uif-intents", { bubbles: true,
+          detail: { intent_keys: UC.intentFilterGet().intents.join(",") } })); } catch (e) {}
+      });
+      var ctrl = {
+        getSelected: function () { return { intent_keys: UC.intentFilterGet().intents.join(",") }; },
+        setSelected: function (csv) {
+          setzen({ intents: String(csv == null ? "" : csv).split(",").map(function (x) { return x.trim(); }).filter(Boolean) });
+        },
+        sync: sync
+      };
+      w.__uifCtrl = ctrl;
+      sync();
+      return ctrl;
+    }
+    /* Fuer eine Leiste die Intent-Wurzel bereitstellen: Attribut setzen (dann findet gewuenscht()
+       den Filter) und die Wurzel neben die Leiste stellen, von wo einziehen() sie holt. */
+    function uifBereitstellen(root) {
+      if (!UC.intentsLive || !UC.intentsLive() || !UC.intentFilterGet) return;
+      var iid = String(root.getAttribute("data-intents-instance") || "").trim();
+      if (!iid) { iid = String(root.getAttribute("data-instance") || "ufb") + "_intents"; root.setAttribute("data-intents-instance", iid); }
+      var da = Array.prototype.some.call(document.querySelectorAll(".uif-root"), function (x) {
+        return String(x.getAttribute("data-instance") || "") === iid;
+      });
+      if (da) return;
+      var w = document.createElement("div");
+      w.className = "up-root uif-root";
+      w.setAttribute("data-instance", iid);
+      w.setAttribute("data-local", "yes");
+      if (root.getAttribute("data-isdark") != null) w.setAttribute("data-isdark", root.getAttribute("data-isdark"));
+      if (root.getAttribute("data-theme") != null) w.setAttribute("data-theme", root.getAttribute("data-theme"));
+      (root.parentNode || document.body).insertBefore(w, root.nextSibling);
+      uifEinrichten(w);
+    }
+
     function initRoot(root) {
       if (root.__ufbCtrl) return root.__ufbCtrl;
+      uifBereitstellen(root);
       root.classList.add("ufb-root");
       var instanceId = String(root.getAttribute("data-instance") || "").trim() || "default";
 
@@ -391,6 +502,16 @@
                 UC.icon("chevronLeft", 2) + '<span class="ufb-back-lbl">Back</span>' +
               '</button>' +
               '<div class="ufb-rows"></div>' +
+              /* Branded (13.10.): ein Schalter direkt im Panel, kein Untermenue -- es gibt nur
+                 an/aus. Vorgabe aus: Prompts, die eine Marke nennen, zaehlen nicht mit (sie
+                 bringen die Marke fast sicher in die Antwort). Nur mit freigegebenen Intents. */
+              (UC.intentsLive && UC.intentsLive()
+                ? '<div class="ufb-div ufb-branded-div"></div>' +
+                  '<div class="up-pop-row ufb-branded" role="menuitemcheckbox" tabindex="0" aria-checked="false" data-ufb-branded>' +
+                    '<span class="up-pop-label">Include branded prompts</span>' +
+                    '<span class="up-switch"></span>' +
+                  '</div>'
+                : '') +
               /* Reset in einer Huelle, die von 0 auf ihre Hoehe faehrt (200ms). Vorher stand hier
                  display: none -- und daran gibt es nichts zu animieren, die Zeile war einfach
                  ploetzlich da. */
@@ -596,7 +717,7 @@
         var wrap = elRows.querySelector('.up-subwrap[data-sub="' + f.key + '"]');
         var ziel = wrap && wrap.querySelector("[data-mirror]");
         if (!ziel) return;
-        var trig = w && w.querySelector(".utf-trigger, .umf-trigger, .umk-trigger");
+        var trig = w && w.querySelector(".utf-trigger, .umf-trigger, .umk-trigger, .uif-trigger");
         if (!trig) { ziel.innerHTML = '<span class="ufb-mirror-fallback">' + esc(f.label) + "</span>"; return; }
         var teile = [];
         Array.prototype.forEach.call(trig.children, function (c) {
@@ -608,7 +729,7 @@
              direktes Kind ist bei topics das Zeichen, bei models/markets steckt es in
              .umf-trigger-ic / .umk-trigger-ic. */
           if (c.classList && (c.classList.contains("utf-chev") || c.classList.contains("umf-chev") ||
-                              c.classList.contains("umk-chev"))) return;
+                              c.classList.contains("umk-chev") || c.classList.contains("uif-chev"))) return;
           /* Der Zeichenhalter der Filter (.umf-trigger-ic / .umk-trigger-ic) traegt ZWEI Dinge,
              je nach Zustand: ohne oder mit mehreren Auswahlen das Zeichen des Filters, bei genau
              einer das LOGO des Modells bzw. die FLAGGE des Marktes. Das Zeichen waere hier
@@ -635,7 +756,7 @@
          dann neu. Ein Beobachter je Filter statt eines Pollings. */
       function spiegelBeobachten(f, w) {
         if (!window.MutationObserver || w.__ufbObs) return;
-        var trig = w.querySelector(".utf-trigger, .umf-trigger, .umk-trigger");
+        var trig = w.querySelector(".utf-trigger, .umf-trigger, .umk-trigger, .uif-trigger");
         if (!trig) return;
         w.__ufbObs = new MutationObserver(function () { spiegeln(f); render(); });
         w.__ufbObs.observe(trig, { childList: true, subtree: true, characterData: true,
@@ -701,6 +822,19 @@
         return t.replace(/["\\]/g, "\\$&");
       }
       function aktiv() { return liste.filter(function (f) { return auswahl(f).length > 0; }); }
+      /* Branded mitgezaehlt (13.10.)? Das ist die Abweichung von der Vorgabe und damit ein Filter,
+         der sichtbar sein muss: als Chip und fuer Reset/Clear All. */
+      function brandedAn() {
+        return !!(UC.intentsLive && UC.intentsLive() && UC.intentFilterGet && UC.intentFilterGet().branded === "all");
+      }
+      function brandedSyncen() {
+        var z = root.querySelector("[data-ufb-branded]");
+        if (!z) return;
+        var an = brandedAn();
+        z.setAttribute("aria-checked", an ? "true" : "false");
+        var sw = z.querySelector(".up-switch");
+        if (sw) sw.classList.toggle("is-on", an);
+      }
 
       /* ---------------- Chips ---------------- */
       function chipText(f) {
@@ -748,6 +882,16 @@
               UC.icon("x", 2.6) + '</button>' +
           '</span>');
         });
+        if (brandedAn()) {
+          var bn = tr("Branded"), btip = tr("Clear {filter}").split("{filter}").join(bn);
+          teile.push('<span class="up-entchip is-static ufb-chip" data-chip="branded">' +
+            '<span class="ufb-chip-ic">' + UC.icon("flag", 2) + '</span>' +
+            '<span class="ufb-chip-lbl"><span class="ufb-chip-key">' + esc(bn) + ': </span>' + esc(tr("Included")) + '</span>' +
+            '<button class="ufb-chip-x" type="button" data-chip-clear="branded" aria-label="' +
+              esc(tr("Clear {filter} filter").split("{filter}").join(bn)) + '" data-tip="' + esc(btip) + '">' +
+              UC.icon("x", 2.6) + '</button>' +
+          '</span>');
+        }
         elChips.innerHTML = teile.join("");
       }
 
@@ -762,8 +906,9 @@
 
       /* ---------------- render ---------------- */
       function render() {
-        var an = aktiv().length > 0;
+        var an = aktiv().length > 0 || brandedAn();
         root.classList.toggle("has-filters", an);
+        brandedSyncen();
         renderChips();
         var eng = schmal();
         root.classList.toggle("is-wrap", eng);
@@ -916,6 +1061,7 @@
          has-sel wird mitgeprueft, weil der Filter selbst darauf prueft -- ohne die Klasse waere
          der Klick ein Klick auf den Trigger und wuerde sein Panel umschalten. */
       function einenLeeren(key) {
+        if (key === "branded") { if (UC.intentFilterSet) UC.intentFilterSet({ branded: "non_branded" }); render(); return; }
         var f = byKey(key);
         if (!f) return;
         var w = eingezogen[f.key];
@@ -944,6 +1090,7 @@
          Eine Warnung fuer eine Sache, die niemand bestellt hat, ist Laerm. */
       function alleLeeren() {
         liste.forEach(function (f) { einenLeeren(f.key); });
+        if (brandedAn()) einenLeeren("branded");
         spiegelnAlle();
         render();
       }
@@ -951,6 +1098,12 @@
         if (!e.target.closest) return;
         if (e.target.closest("[data-ufb-reset]")) { e.stopPropagation(); alleLeeren(); pop.close(true); return; }
         if (e.target.closest("[data-ufb-clear]")) { alleLeeren(); return; }
+        if (e.target.closest("[data-ufb-branded]")) {
+          e.stopPropagation();
+          if (UC.intentFilterSet) UC.intentFilterSet({ branded: brandedAn() ? "non_branded" : "all" });
+          render();
+          return;
+        }
         var cx = e.target.closest("[data-chip-clear]");
         if (cx) { einenLeeren(cx.getAttribute("data-chip-clear")); return; }
       });
@@ -961,6 +1114,14 @@
          verloren. */
       FILTERS.forEach(function (f) {
         document.addEventListener(f.evt, function () { spiegeln(f); render(); }, false);
+      });
+      /* Branded aendert sich auch von einer ANDEREN Leiste aus (gemeinsamer Stand in core). */
+      window.addEventListener("up-intentfilter", function () { if (document.contains(root)) render(); });
+      root.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        var z = e.target.closest && e.target.closest("[data-ufb-branded]");
+        if (!z) return;
+        e.preventDefault(); z.click();
       });
 
       /* ---------------- Ausblenden zur Laufzeit ----------------
