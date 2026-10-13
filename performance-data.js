@@ -66,6 +66,9 @@
      wie die Zelle, auch wenn Mitternacht zwischen beiden Aufrufen lag. */
   function zelle(art, a, z) {
     a = a || {}; z = z || {};
+    /* KEIN Intent-Filter hier (13.10.): Radar und Zelle stehen auf der Performance-Seite, und die
+       hat keine Filterleiste. Ein Filter, den man auf der Seite nicht sieht, darf ihre Zahlen nicht
+       still veraendern. markeBasis darunter (Marken-Drawer, mit Leiste) nimmt ihn mit. */
     var p = { p_team: str(a.team), p_company: uuid(a.firma), p_tag_ids: uuid(a.topic) ? [uuid(a.topic)] : null };
     if (datum(z.von) && datum(z.bis)) { p.p_date_from = datum(z.von); p.p_date_to = datum(z.bis); }
     if (art === "kurve") { p.p_mode = "visibility"; p.p_granularity = "day"; }

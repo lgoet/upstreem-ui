@@ -867,7 +867,10 @@
         fenster: state.fenster, metrik: state.metrik, modelle: state.modelle, maerkte: state.maerkte };
     }
     function dieDetail() { return state.eventId ? state.detail[state.eventId] || null : null; }
-    function analyseSig() { return [state.eventId, state.fenster, (state.modelle || []).join(","), (state.maerkte || []).join(",")].join("|"); }
+    /* Der Intent-Filter der App gehoert in die Signatur (13.10.): sonst zeigte ein Wechsel die
+       gemerkte Analyse des vorigen Filters. */
+    function intentP() { return UC.intentFilterParams ? UC.intentFilterParams() : {}; }
+    function analyseSig() { return [state.eventId, state.fenster, (state.modelle || []).join(","), (state.maerkte || []).join(","), JSON.stringify(intentP())].join("|"); }
     function dieAnalyse() { return state.analyse[analyseSig()] || null; }
     function listeEvent(id) {
       var l = UC.getEvents ? UC.getEvents() : [];
@@ -1230,6 +1233,10 @@
     /* Eine Auswahl der Filter als Liste fuer die RPC. "include" mit Eintraegen -> genau die; ohne
        Eintraege oder bei "exclude" ohne Eintraege -> null (= alle). "exclude" mit Eintraegen ->
        alle bekannten ausser diesen, denn die RPC kennt nur eine Positivliste. */
+    window.addEventListener("up-intentfilter", function () {
+      if (!document.contains(root) || !state.eventId) return;
+      analyseAnfordern(); renderDetail();
+    });
     function filterUebernehmen(feld, d, schluessel) {
       if (!d) return;
       var gew = String(d[schluessel] || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean);
@@ -1783,10 +1790,14 @@
     function analyseAnfordern(spaet) {
       state.analyseLaden = true; state.analyseFehler = false;
       detailUhr();
-      rufen("uevAnalysis", { p_event_id: state.eventId, p_window_days: state.fenster,
-                             p_models: state.modelle && state.modelle.length ? state.modelle : null,
-                             p_markets: state.maerkte && state.maerkte.length ? state.maerkte : null },
-            { sig: analyseSig() }, spaet);
+      var body = { p_event_id: state.eventId, p_window_days: state.fenster,
+                   p_models: state.modelle && state.modelle.length ? state.modelle : null,
+                   p_markets: state.maerkte && state.maerkte.length ? state.maerkte : null };
+      /* Intent-Filter der App (13.10.; cached_impact_event_analysis_v2 kennt p_intents/p_branded).
+         Die Kohorte bleibt die beim Anlegen eingefrorene -- gefiltert wird innerhalb. */
+      var ip = intentP();
+      for (var k in ip) if (Object.prototype.hasOwnProperty.call(ip, k)) body[k] = ip[k];
+      rufen("uevAnalysis", body, { sig: analyseSig() }, spaet);
     }
     /* Das Fenster der Responses: ab dem Event-Tag bis zum Ende des Analysefensters, hoechstens
        heute (Vertrag 3.10: "das gewaehlte Analyse-Fenster uebergeben"). Ab dem Event-Tag und nicht

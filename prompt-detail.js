@@ -118,6 +118,12 @@
     if (d.market && UC.marketChip) teile.push(UC.marketChip(str(d.market)));
     var tags = isArr(d.tags) ? d.tags.filter(function (x) { return x && x.name; }) : [];
     if (tags.length) teile.push('<span class="uprd-tags">' + tags.map(topicChip).join("") + '</span>');
+    /* Intent und Branded (13.10., prompt_detail_v1.row): dieselben Labels wie in der Prompt-
+       Tabelle, hier ohne Menue -- ueberschrieben wird in der Tabelle, der Drawer zeigt den Stand. */
+    if (UC.hatIntent && UC.hatIntent(d)) {
+      teile.push(UC.intentHtml(d));
+      if (UC.brandedHtml && d.branded === true) teile.push(UC.brandedHtml(d));
+    }
     /* Pausiert steht vor dem letzten Lauf: es erklaert, warum der alt ist. Das Tarif-Limit nennt
        den Grund, weil der Nutzer dort etwas tun kann. */
     if (str(d.status) === "paused") teile.push('<span class="uprd-status">' +

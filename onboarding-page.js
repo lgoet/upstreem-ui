@@ -1419,15 +1419,17 @@
       return false;
     }
     /* In der Reihenfolge der Buyer Journey, nicht nach Menge: die Liste erzaehlt den Weg vom
-       Verstehen zum Kaufen. Ein Prompt ohne gueltigen Intent kommt unter "Other" -- dieselbe
-       Stelle, an der die Topic-Ansicht Prompts ohne Thema sammelt. */
+       Verstehen zum Kaufen. Ohne Intent sind die EIGENEN Prompts des Nutzers (DB-Rueckmeldung
+       13.10.: sie werden erst nach dem Abschluss zugeordnet) -- als letzte Gruppe "Your prompts",
+       nicht unter "Other": das waere eine Zuordnung, die noch niemand getroffen hat. */
     function intentGruppen() {
       var gruppen = (UC.INTENTE || []).map(function (a) { return { id: "i:" + a.key, name: a.label, icon: a.icon, items: [] }; });
+      gruppen.push({ id: "i:eigen", name: "Your prompts", icon: "squarePen", items: [] });
       var index = {};
       gruppen.forEach(function (g) { index[g.id] = g; });
       for (var i = 0; i < state.prompts.length; i++) {
         var p = state.prompts[i], a = UC.intentArt(p.intent);
-        (index["i:" + (a ? a.key : "other")] || gruppen[gruppen.length - 1]).items.push({ p: p, weitere: [] });
+        index[a ? "i:" + a.key : "i:eigen"].items.push({ p: p, weitere: [] });
       }
       return gruppen.filter(function (g) { return g.items.length; });
     }

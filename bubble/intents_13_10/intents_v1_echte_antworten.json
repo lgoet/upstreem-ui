@@ -1,0 +1,263 @@
+{
+  "meta": {
+    "stand": "2026-10-13, Produktion tgdossbsevnonssyuewp. intents_v1.sql (Dateistand, je Teil md5-geprüft) in einer Transaktion eingespielt, Fälle ausgeführt, alles zurückgerollt. Nichts wurde gespeichert.",
+    "nutzer": {"f25d8f66-cdbb-408f-a0fd-0c0ec1b75778": "Member 877c", "7bedb728-e252-493d-b5c6-f9bed0b0b2d3": "Owner 877c"},
+    "hinweis_intents": "Vor dem n8n-Lauf steht jeder Prompt auf pending. Für die Antworten hat der Member in der Transaktion einen Prompt per prompt_intent_set_v1 auf recommendation gesetzt; alle anderen sind pending.",
+    "lauf_2": "Alle 32 Filterfunktionen einmal mit p_intents [\"recommendation\"] aufgerufen (200, gleiche Prompt-Menge: Dashboard, Antworten und Liste zeigen je die 86 Runs dieses Prompts). Danach Rückweg im selben Lauf: 62/62 Definitionen, Signaturen und Rechte wie vorher, keine Reste.",
+    "gekuerzt": "prompts_page_meta_v1.markets_all (148 Märkte) ist hier gekürzt, sonst unverändert."
+  },
+  "faelle": [
+    {
+      "case": "1 prompt_intent_set_v1 Erfolg",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "POST /rest/v1/rpc/prompt_intent_set_v1 {\"p_team\":\"877c649c-f5f2-44e9-bb04-155f5bf44e70\",\"p_target\":\"ids\",\"p_ids\":[\"5a411e8a-059f-48e6-976a-a8420c43ed9e\"],\"p_intent\":\"recommendation\"}",
+      "http_status": 200,
+      "response": {"updated": 1}
+    },
+    {
+      "case": "2 prompt_intent_set_v1 ungültiger Wert",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "POST /rest/v1/rpc/prompt_intent_set_v1 {\"p_team\":\"877c649c-f5f2-44e9-bb04-155f5bf44e70\",\"p_target\":\"ids\",\"p_ids\":[\"5a411e8a-059f-48e6-976a-a8420c43ed9e\"],\"p_intent\":\"buying\"}",
+      "http_status": 400,
+      "response": {"code": "22023", "message": "prompt_intent_invalid", "details": null, "hint": "p_intent"}
+    },
+    {
+      "case": "3 prompt_intent_set_v1 gleicher Wert nochmal (\"Recommendation \", wird klein geschrieben und getrimmt)",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "http_status": 200,
+      "response": {"updated": 0}
+    },
+    {
+      "case": "4 cached_prompts_list_v1 zwei Zeilen, eine pending",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "POST /rest/v1/rpc/cached_prompts_list_v1 {\"p_team\":\"877c649c-f5f2-44e9-bb04-155f5bf44e70\",\"p_order\":\"name_asc\",\"p_limit\":2}",
+      "http_status": 200,
+      "response": {
+        "meta": {"limit": 2, "order": "name_asc", "stale": false, "cached": false,
+                 "counts": {"active": 102, "inactive": 23, "untagged_active": 23, "untagged_inactive": 2},
+                 "offset": 0, "status": "active", "date_to": "2026-10-13",
+                 "filters": {"models": [], "search": null, "status": "active", "date_to": "2026-10-13", "markets": [], "tag_ids": [], "tagmode": "or", "untagged": false, "date_from": "2026-09-14", "mentioned": "all", "company_ids": []},
+                 "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70", "timezone": "Europe/Berlin", "date_from": "2026-09-14",
+                 "total_count": 102, "generated_at": "2026-10-13T18:05:39Z", "sentiment_from": "2026-09-14"},
+        "rows": [
+          {"tags": [{"name": "SUV", "emoji": null, "tag_id": "8daee9bb-30f9-4315-8fd7-30252cd58521", "hex_dark": "#6d28d9", "hex_light": "#6d28d9"}],
+           "intent": "recommendation", "market": "US", "source": "user_generated", "branded": false, "avg_rank": null, "is_active": true,
+           "prompt_id": "5a411e8a-059f-48e6-976a-a8420c43ed9e", "created_at": "2026-01-20T12:09:39.838525+00:00", "runs_total": 86,
+           "prompt_text": "best all-wheel drive SUVs for winter driving",
+           "top_mentions": [
+             {"name": "Toyota", "logo_url": "https://www.google.com/s2/favicons?domain=www.toyota.de&sz=64", "company_id": "ca255c13-18a7-494c-b57d-3b0fe6765d03", "mention_runs": 84, "mentioned_pct": 97.67},
+             {"name": "KIA", "logo_url": "https://www.google.com/s2/favicons?domain=www.kia.de&sz=64", "company_id": "cc618697-74db-4dd5-bf6a-0efbad9b0403", "mention_runs": 26, "mentioned_pct": 30.23},
+             {"name": "Volvo", "logo_url": "https://www.google.com/s2/favicons?domain=www.volvo.com&sz=64", "company_id": "c0b0638a-7bab-4d66-a557-335b2ec88502", "mention_runs": 19, "mentioned_pct": 22.09},
+             {"name": "Audi", "logo_url": "https://www.google.com/s2/favicons?domain=www.audi.de&sz=64", "company_id": "f12a1afc-1e6d-4c55-88b3-eedda703409b", "mention_runs": 17, "mentioned_pct": 19.77},
+             {"name": "BMW", "logo_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128", "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1", "mention_runs": 15, "mentioned_pct": 17.44}],
+           "avg_sentiment": null, "intent_source": "user", "intent_status": "done", "branded_brands": [], "branded_source": "match",
+           "mentioned_runs": 0, "visibility_pct": 0, "last_seen_run_at": null, "companies_mentioned_count": 7},
+          {"tags": [], "intent": null, "market": "US", "source": "user_generated", "branded": false, "avg_rank": 5, "is_active": true,
+           "prompt_id": "e42e94f1-f644-47ea-820c-138866ded686", "created_at": "2026-01-20T13:23:12.059186+00:00", "runs_total": 82,
+           "prompt_text": "best compact cars with high safety ratings",
+           "top_mentions": [
+             {"name": "KIA", "logo_url": "https://www.google.com/s2/favicons?domain=www.kia.de&sz=64", "company_id": "cc618697-74db-4dd5-bf6a-0efbad9b0403", "mention_runs": 65, "mentioned_pct": 79.27},
+             {"name": "Toyota", "logo_url": "https://www.google.com/s2/favicons?domain=www.toyota.de&sz=64", "company_id": "ca255c13-18a7-494c-b57d-3b0fe6765d03", "mention_runs": 59, "mentioned_pct": 71.95},
+             {"name": "VW", "logo_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64", "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7", "mention_runs": 4, "mentioned_pct": 4.88},
+             {"name": "Mercedes Benz", "logo_url": "https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png", "company_id": "87468f49-3d44-4259-98a8-c65714f883c4", "mention_runs": 2, "mentioned_pct": 2.44},
+             {"name": "BYD", "logo_url": "https://www.google.com/s2/favicons?domain=www.byd.com&sz=64", "company_id": "0a88bbf1-9874-45ef-9d72-eb3edd9cb731", "mention_runs": 1, "mentioned_pct": 1.22}],
+           "avg_sentiment": 88.5, "intent_source": null, "intent_status": "pending", "branded_brands": [], "branded_source": "match",
+           "mentioned_runs": 2, "visibility_pct": 2.44, "last_seen_run_at": "2026-10-02T17:21:18.016325+00:00", "companies_mentioned_count": 5}
+        ]
+      }
+    },
+    {
+      "case": "5 cached_prompts_groups_v1 mit p_group_by intent",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "POST /rest/v1/rpc/cached_prompts_groups_v1 {\"p_team\":\"877c649c-f5f2-44e9-bb04-155f5bf44e70\",\"p_group_by\":\"intent\"}",
+      "http_status": 200,
+      "response": {
+        "meta": {"mode": "intent", "group_by": "intent", "stale": false, "cached": false, "status": "active", "date_to": "2026-10-13",
+                 "filters": {"models": [], "search": null, "status": "active", "date_to": "2026-10-13", "markets": [], "tag_ids": [], "tagmode": "or", "untagged": false, "date_from": "2026-09-14", "mentioned": "all", "company_ids": []},
+                 "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70", "timezone": "Europe/Berlin", "date_from": "2026-09-14",
+                 "generated_at": "2026-10-13T18:05:39Z", "sentiment_from": "2026-09-14", "dropped_tag_ids": []},
+        "rows": [
+          {"name": "informational", "emoji": null, "tag_id": null, "tag_ids": [], "avg_rank": null, "hex_dark": null, "group_key": "informational", "hex_light": null, "group_type": "intent", "runs_total": 0, "avg_sentiment": null, "prompts_count": 0, "visibility_pct": null, "prompts_count_inactive": 0},
+          {"name": "recommendation", "emoji": null, "tag_id": null, "tag_ids": [], "avg_rank": null, "hex_dark": null, "group_key": "recommendation", "hex_light": null, "group_type": "intent", "runs_total": 86, "avg_sentiment": null, "prompts_count": 1, "visibility_pct": 0, "prompts_count_inactive": 0},
+          {"name": "transactional", "emoji": null, "tag_id": null, "tag_ids": [], "avg_rank": null, "hex_dark": null, "group_key": "transactional", "hex_light": null, "group_type": "intent", "runs_total": 0, "avg_sentiment": null, "prompts_count": 0, "visibility_pct": null, "prompts_count_inactive": 0},
+          {"name": "other", "emoji": null, "tag_id": null, "tag_ids": [], "avg_rank": null, "hex_dark": null, "group_key": "other", "hex_light": null, "group_type": "intent", "runs_total": 0, "avg_sentiment": null, "prompts_count": 0, "visibility_pct": null, "prompts_count_inactive": 0},
+          {"name": "pending", "emoji": null, "tag_id": null, "tag_ids": [], "avg_rank": 4.83, "hex_dark": null, "group_key": "pending", "hex_light": null, "group_type": "intent", "runs_total": 8290, "avg_sentiment": 78.16, "prompts_count": 101, "visibility_pct": 31.63, "prompts_count_inactive": 23}
+        ]
+      }
+    },
+    {
+      "case": "6 Gruppe aufklappen: cached_prompts_list_v1 mit p_intents [recommendation] (Auszug)",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "POST /rest/v1/rpc/cached_prompts_list_v1 {\"p_team\":\"877c649c-f5f2-44e9-bb04-155f5bf44e70\",\"p_intents\":[\"recommendation\"]}",
+      "http_status": 200,
+      "response": {"meta": {"total_count": 1, "counts": {"active": 1, "inactive": 0, "untagged_active": 0, "untagged_inactive": 0},
+                            "filters": {"pf": {"intents": ["recommendation"]}, "models": [], "markets": [], "tag_ids": [], "tagmode": "or", "status": "active"}},
+                   "rows": [{"prompt_id": "5a411e8a-059f-48e6-976a-a8420c43ed9e", "intent": "recommendation", "intent_source": "user", "intent_status": "done", "runs_total": 86}]}
+    },
+    {
+      "case": "7 prompts_page_meta_v1 (markets_all gekürzt)",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "POST /rest/v1/rpc/prompts_page_meta_v1 {\"p_team\":\"877c649c-f5f2-44e9-bb04-155f5bf44e70\"}",
+      "http_status": 200,
+      "response": {
+        "meta": {"role": "member", "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70", "generated_at": "2026-10-13T18:05:39Z"},
+        "quota": {"plan": "Legacy Free", "prompts_limit": 150, "inactive_limit": 1000, "prompts_active": 102, "prompts_inactive": 23, "prompts_remaining": 48},
+        "intent_counts": {"informational": 0, "recommendation": 1, "transactional": 0, "other": 0, "pending": 101},
+        "topics": [
+          {"name": "Automatikgetriebe", "emoji": null, "tag_id": "597a287b-9efd-414b-b82a-c5c3d247043f", "hex_dark": "#9145e8", "hex_light": "#9145e8", "created_at": "2026-08-29T16:03:05.697468+00:00", "prompt_count_active": 6, "prompt_count_inactive": 0},
+          {"name": "Komfort", "emoji": null, "tag_id": "c7c51846-319e-4f11-992c-d72e5bd5ffbd", "hex_dark": "#de1b22", "hex_light": "#de1b22", "created_at": "2026-07-31T10:02:04.858414+00:00", "prompt_count_active": 2, "prompt_count_inactive": 0},
+          {"name": "Luxury", "emoji": null, "tag_id": "931c9af3-5b91-4e93-a74f-238980f49cdd", "hex_dark": "#831843", "hex_light": "#831843", "created_at": "2026-01-20T13:03:34.998146+00:00", "prompt_count_active": 8, "prompt_count_inactive": 10},
+          {"name": "Familycar", "emoji": null, "tag_id": "cf90be49-1dd9-42ec-81eb-109992b3b3c6", "hex_dark": "#5E716A", "hex_light": "#5E716A", "created_at": "2026-01-20T12:20:01.871645+00:00", "prompt_count_active": 11, "prompt_count_inactive": 1},
+          {"name": "Hybrid", "emoji": null, "tag_id": "377fa98a-f1b1-4b2c-b91e-571f673a6baa", "hex_dark": "#15803d", "hex_light": "#15803d", "created_at": "2026-01-20T12:19:17.15306+00:00", "prompt_count_active": 8, "prompt_count_inactive": 2},
+          {"name": "EV Range", "emoji": null, "tag_id": "1dd28241-01ea-4c88-9f70-9033d118e6f0", "hex_dark": "#2A3439", "hex_light": "#2A3439", "created_at": "2026-01-20T12:17:35.182566+00:00", "prompt_count_active": 4, "prompt_count_inactive": 0},
+          {"name": "Sedans", "emoji": null, "tag_id": "94fc124b-8b50-4198-968e-0ff4c1964629", "hex_dark": "#134e4a", "hex_light": "#134e4a", "created_at": "2026-01-20T12:17:17.145094+00:00", "prompt_count_active": 10, "prompt_count_inactive": 6},
+          {"name": "Leasing & Financing", "emoji": null, "tag_id": "ab158f44-148f-4608-8065-7fb0dcb43a57", "hex_dark": "#134e4a", "hex_light": "#134e4a", "created_at": "2026-01-20T12:17:04.346404+00:00", "prompt_count_active": 8, "prompt_count_inactive": 2},
+          {"name": "Safety", "emoji": null, "tag_id": "13b8d3b5-8f38-4f03-9c9d-b299a8df96da", "hex_dark": "#b45309", "hex_light": "#b45309", "created_at": "2026-01-20T12:16:54.325127+00:00", "prompt_count_active": 8, "prompt_count_inactive": 2},
+          {"name": "Convertible", "emoji": null, "tag_id": "41aed320-a537-4149-8c3e-d4500e7977dd", "hex_dark": "#0e7490", "hex_light": "#0e7490", "created_at": "2026-01-20T12:16:19.523523+00:00", "prompt_count_active": 2, "prompt_count_inactive": 4},
+          {"name": "Station Wagon", "emoji": null, "tag_id": "f89cdff6-6393-4119-a346-c5891844e12f", "hex_dark": "#1d4ed8", "hex_light": "#1d4ed8", "created_at": "2026-01-20T12:15:51.39472+00:00", "prompt_count_active": 12, "prompt_count_inactive": 0},
+          {"name": "SUV", "emoji": null, "tag_id": "8daee9bb-30f9-4315-8fd7-30252cd58521", "hex_dark": "#6d28d9", "hex_light": "#6d28d9", "created_at": "2026-01-20T12:15:39.290902+00:00", "prompt_count_active": 29, "prompt_count_inactive": 4},
+          {"name": "EV", "emoji": null, "tag_id": "6640089c-5632-4e30-9771-6dbfcc0fa16d", "hex_dark": "#708090", "hex_light": "#708090", "created_at": "2026-01-20T12:15:30.364836+00:00", "prompt_count_active": 14, "prompt_count_inactive": 2}
+        ],
+        "markets": [
+          {"name": "Germany", "alpha2": "DE", "flag_url": "https://flagcdn.com/de.svg", "prompt_count_active": 79, "prompt_count_inactive": 16},
+          {"name": "United States of America", "alpha2": "US", "flag_url": "https://flagcdn.com/us.svg", "prompt_count_active": 23, "prompt_count_inactive": 7}
+        ],
+        "markets_all": [
+          {"name": "Afghanistan", "alpha2": "AF", "flag_url": "https://flagcdn.com/af.svg"},
+          {"name": "Albania", "alpha2": "AL", "flag_url": "https://flagcdn.com/al.svg"},
+          "… 146 weitere, unverändert …"
+        ]
+      }
+    },
+    {
+      "case": "8 cached_dashboard_overview_v1 mit p_branded non_branded",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "POST /rest/v1/rpc/cached_dashboard_overview_v1 {\"p_team\":\"877c649c-f5f2-44e9-bb04-155f5bf44e70\",\"p_branded\":\"non_branded\",\"p_limit\":5}",
+      "http_status": 200,
+      "ms": 2689,
+      "response": {
+        "own": {"name": "Mercedes Benz", "is_own": true, "avg_rank": 4.83, "logo_url": "https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png", "mentions": 2622, "position": 3, "sentiment": 78.16, "company_id": "87468f49-3d44-4259-98a8-c65714f883c4", "avg_rank_prev": 5.03, "mentions_prev": 1238, "avg_rank_delta": -0.2, "sentiment_prev": 78.08, "visibility_pct": 31.3, "sentiment_delta": 0.08, "runs_with_sentiment": 2620, "visibility_prev_pct": 31.45, "visibility_delta_pct": -0.15, "runs_with_sentiment_prev": 1238},
+        "meta": {"limit": 5, "order": "visibility_desc", "stale": false, "cached": false, "offset": 0, "search": null, "date_to": "2026-10-13",
+                 "filters": {"models": [], "markets": [], "tag_ids": [], "tagmode": "or"}, "prev_to": "2026-09-13",
+                 "team_id": "877c649c-f5f2-44e9-bb04-155f5bf44e70", "timezone": "Europe/Berlin", "companies": [], "date_from": "2026-09-14",
+                 "prev_from": "2026-08-30", "runs_total": 8376, "total_count": 11, "generated_at": "2026-10-13T18:05:42Z", "has_own_brand": true,
+                 "sentiment_from": "2026-09-14", "ignored_filters": [], "runs_total_prev": 3936, "sentiment_prev_from": "2026-08-30"},
+        "rows": [
+          {"name": "VW", "is_own": false, "avg_rank": 5.07, "logo_url": "https://www.google.com/s2/favicons?domain=volkswagen.de&sz=64", "mentions": 3646, "position": 1, "sentiment": 75.66, "company_id": "666761a9-a8a2-4171-b43a-dadd477a8db7", "avg_rank_prev": 5.03, "mentions_prev": 1596, "avg_rank_delta": 0.04, "sentiment_prev": 74.55, "visibility_pct": 43.53, "sentiment_delta": 1.11, "visibility_prev_pct": 40.55, "visibility_delta_pct": 2.98},
+          {"name": "BMW", "is_own": false, "avg_rank": 4.9, "logo_url": "https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://bmw.de&size=128", "mentions": 3087, "position": 2, "sentiment": 76.49, "company_id": "6da83f4f-7a95-4079-82ba-ac1b0f481fa1", "avg_rank_prev": 5.08, "mentions_prev": 1383, "avg_rank_delta": -0.18, "sentiment_prev": 76.72, "visibility_pct": 36.86, "sentiment_delta": -0.23, "visibility_prev_pct": 35.14, "visibility_delta_pct": 1.72},
+          {"name": "Mercedes Benz", "is_own": true, "avg_rank": 4.83, "logo_url": "https://49eaeb540a500f6e4ee0dfc1266fad7e.cdn.bubble.io/f1782914188332x829122730841226800/mercedes-logo-mercedes-benz-logo-png-transparent-svg-vector-bie-13.png", "mentions": 2622, "position": 3, "sentiment": 78.16, "company_id": "87468f49-3d44-4259-98a8-c65714f883c4", "avg_rank_prev": 5.03, "mentions_prev": 1238, "avg_rank_delta": -0.2, "sentiment_prev": 78.08, "visibility_pct": 31.3, "sentiment_delta": 0.08, "visibility_prev_pct": 31.45, "visibility_delta_pct": -0.15},
+          {"name": "KIA", "is_own": false, "avg_rank": 5.5, "logo_url": "https://www.google.com/s2/favicons?domain=www.kia.de&sz=64", "mentions": 2287, "position": 4, "sentiment": 75.15, "company_id": "cc618697-74db-4dd5-bf6a-0efbad9b0403", "avg_rank_prev": 5.48, "mentions_prev": 1026, "avg_rank_delta": 0.02, "sentiment_prev": 75.91, "visibility_pct": 27.3, "sentiment_delta": -0.76, "visibility_prev_pct": 26.07, "visibility_delta_pct": 1.23},
+          {"name": "Toyota", "is_own": false, "avg_rank": 4.56, "logo_url": "https://www.google.com/s2/favicons?domain=www.toyota.de&sz=64", "mentions": 2214, "position": 5, "sentiment": 78.73, "company_id": "ca255c13-18a7-494c-b57d-3b0fe6765d03", "avg_rank_prev": 4.67, "mentions_prev": 971, "avg_rank_delta": -0.11, "sentiment_prev": 78.11, "visibility_pct": 26.43, "sentiment_delta": 0.62, "visibility_prev_pct": 24.67, "visibility_delta_pct": 1.76}
+        ],
+        "field": {"best_rank": 4.56, "brand_count": 11, "avg_sentiment": 76.1}
+      }
+    },
+    {
+      "case": "9 cached_dashboard_overview_v1 ohne p_branded",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "POST /rest/v1/rpc/cached_dashboard_overview_v1 {\"p_team\":\"877c649c-f5f2-44e9-bb04-155f5bf44e70\",\"p_limit\":5}",
+      "http_status": 200,
+      "ms": 5,
+      "hinweis": "Zahlen wie mit non_branded, weil 877c keinen branded Prompt hat. Diese Antwort kam aus dem bestehenden Cache (gleicher Schlüssel wie vor intents_v1); non_branded hat einen eigenen Schlüssel und wurde beim ersten Aufruf gerechnet.",
+      "response": {
+        "own": {"name": "Mercedes Benz", "is_own": true, "avg_rank": 4.83, "mentions": 2622, "position": 3, "sentiment": 78.16, "company_id": "87468f49-3d44-4259-98a8-c65714f883c4", "visibility_pct": 31.3, "visibility_prev_pct": 31.45, "visibility_delta_pct": -0.15, "runs_with_sentiment": 2620},
+        "meta": {"limit": 5, "order": "visibility_desc", "stale": false, "cached": true, "runs_total": 8376, "total_count": 11, "generated_at": "2026-10-13T16:01:04Z", "runs_total_prev": 3936, "filters": {"models": [], "markets": [], "tag_ids": [], "tagmode": "or"}},
+        "rows": "die fünf Zeilen sind identisch mit Fall 8 (VW 43.53, BMW 36.86, Mercedes Benz 31.3, KIA 27.3, Toyota 26.43)",
+        "field": {"best_rank": 4.56, "brand_count": 11, "avg_sentiment": 76.1}
+      }
+    },
+    {
+      "case": "10 cached_dashboard_overview_v1 mit p_intents [recommendation] (Auszug)",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "POST /rest/v1/rpc/cached_dashboard_overview_v1 {\"p_team\":\"877c649c-…\",\"p_intents\":[\"recommendation\"],\"p_limit\":3}",
+      "http_status": 200,
+      "response": {"meta": {"runs_total": 86, "runs_total_prev": 38},
+                   "own": {"name": "Mercedes Benz", "mentions": 0, "visibility_pct": 0, "position": 9},
+                   "rows": [{"name": "Toyota", "mentions": 84, "visibility_pct": 97.67}, {"name": "KIA", "mentions": 26, "visibility_pct": 30.23}, {"name": "Volvo", "mentions": 19, "visibility_pct": 22.09}]}
+    },
+    {
+      "case": "11 ungültige Filter",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "cached_dashboard_overview_v1 {\"p_intents\":[\"buying\"]} bzw. {\"p_branded\":\"maybe\"}",
+      "http_status": 400,
+      "response": [{"code": "22023", "message": "dashboard_invalid_param", "details": null, "hint": "p_intents"},
+                   {"code": "22023", "message": "dashboard_invalid_param", "details": null, "hint": "p_branded"}]
+    },
+    {
+      "case": "12 prompt_detail_v1 (Auszug row)",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "http_status": 200,
+      "response": {"row": {"prompt_id": "5a411e8a-059f-48e6-976a-a8420c43ed9e", "intent": "recommendation", "intent_source": "user", "intent_status": "done", "branded": false, "branded_source": "match", "branded_brands": []}}
+    },
+    {
+      "case": "13 prompt_branded_set_v1 true, Liste mit p_branded branded, dann null",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "POST /rest/v1/rpc/prompt_branded_set_v1 {\"p_team\":\"877c…\",\"p_target\":\"ids\",\"p_ids\":[\"e42e94f1-f644-47ea-820c-138866ded686\"],\"p_branded\":true}",
+      "http_status": 200,
+      "response": {"set_true": {"updated": 1},
+                   "liste_branded": {"meta": {"total_count": 1, "filters": {"pf": {"branded": "branded"}}}, "rows": [{"prompt_id": "e42e94f1-f644-47ea-820c-138866ded686", "branded": true, "branded_source": "user", "branded_brands": []}]},
+                   "set_null": {"updated": 1}}
+    },
+    {
+      "case": "14 prompt_intent_set_v1 im Filtermodus mit falscher Anzahl",
+      "user": "f25d8f66-cdbb-408f-a0fd-0c0ec1b75778",
+      "call": "prompt_intent_set_v1 {\"p_target\":\"filter\",\"p_intent\":\"other\",\"p_expected_count\":1,\"p_intents\":[\"pending\"]}",
+      "http_status": 409,
+      "response": {"code": "PT409", "message": "prompts_selection_changed", "details": null, "hint": "101"}
+    },
+    {
+      "case": "15 Intent-Lauf (n8n): claim als Mitglied, claim und store als service_role",
+      "response": {
+        "claim_als_mitglied": {"http_status": 403, "message": "permission denied for function prompt_intent_claim_v1"},
+        "claim": {"count": 3, "items": [{"i": 0, "id": "88c9ebbc-6760-459e-a9ea-b9b94593e779", "text": "beste Elektroautos für Familien in Deutschland", "market": "DE"},
+                                        {"i": 1, "id": "c4c2f065-bcc3-4445-b9e5-2d56a65d8515", "text": "wer bietet Luxus-SUVs mit Allradantrieb", "market": "DE"},
+                                        {"i": 2, "id": "d24fb30e-2831-4b53-aaca-8080a0873815", "text": "beste Leasingangebote für Neuwagen mit E-Antrieb", "market": "DE"}]},
+        "store_eingabe": "i0 \" Informational\", i1 \"buying\", i2 fehlt",
+        "store": {"done": 1, "retry": 1, "failed": 0, "ignored": 0},
+        "zustand_danach": [{"i": 0, "intent": "informational", "source": "ai", "status": "done", "attempts": 1, "model": "gpt-4o-mini"},
+                           {"i": 1, "intent": null, "status": "pending", "attempts": 1, "naechster_versuch_in_min": 2},
+                           {"i": 2, "intent": null, "status": "pending", "attempts": 1, "sperre_aktiv": true}],
+        "dritter_fehlversuch": "intent_attempts 3 und Sperre abgelaufen: _pi_intent_sweep_v1 setzt 1 Prompt auf failed",
+        "hinweis": "Die Testtexte der Klassifikation sind von Hand gesetzt (Rollback), nicht vom Modell."
+      }
+    },
+    {
+      "case": "16 Neuer Prompt: Abgleich, Anstoß, Textänderung",
+      "response": {"anlegen": {"text": "GLC Leasing ohne Anzahlung bei Mercedes-Benz", "intent_status": "pending", "branded": true, "branded_source": "match",
+                               "marken": [{"name": "Mercedes Benz", "company_id": "87468f49-3d44-4259-98a8-c65714f883c4"}], "anstoesse_an_prompt_intents_kick": 1},
+                   "text_geaendert": {"text": "GLC Leasing ohne Anzahlung", "branded": false, "ids": []}}
+    },
+    {
+      "case": "17 Marke geändert: Alias \"SUVs\" für einen Wettbewerber angelegt",
+      "response": {"branded_877c_vorher": 0, "branded_877c_nachher": 22, "prompt_5a411e8a_branded": true}
+    },
+    {
+      "case": "18 Prompt Research: Vorschläge mit intent, übernehmen",
+      "response": {"vorschlaege": [{"text": "BMW X5 Leasing Angebote ohne Anzahlung", "intent": "transactional", "branded": true},
+                                   {"text": "was ist ein Plug-in-Hybrid und wie lange haelt der Akku", "intent": null, "branded": false, "eingabe": "buying"}],
+                   "uebernommen_mit_prompt_research_decide_v1": {"intent": "transactional", "intent_source": "ai", "intent_status": "done", "intent_model": "prompt_research", "branded": true, "branded_source": "match"},
+                   "prompt_research_result_v1_alt": "bestehende Vorschläge ohne Intent: intent null, branded false"}
+    },
+    {
+      "case": "19 Onboarding: onboarding_run_finish_prompts_v1 mit 21 Kandidaten (Testprojekt in der Transaktion, Topics A/B/C)",
+      "response": {"ergebnis": {"ok": true, "status": "ready", "status_phase": 7, "inserted": 15, "skipped": 1, "skipped_branded": 2,
+                                "intents": {"informational": 4, "recommendation": 7, "transactional": 4}},
+                   "verworfen": ["Mercedes Benz GLC or a rival which is better (eigene Marke)", "Tesla Model Y alternatives with better interior (Wettbewerber)", "cheap car insurance for new drivers (other)"],
+                   "topic_abdeckung": "Topic C hatte nur einen transactional-Vorschlag an Stelle 20; er wurde gewählt, dafür fiel ein späterer transactional-Vorschlag von Topic B weg.",
+                   "alter_workflow_ohne_intent": {"ok": true, "inserted": 15, "intents": {"pending": 15}}}
+    },
+    {
+      "case": "20 Rechte",
+      "response": {"anon_auf_filterfunktionen": 0, "authenticated_auf_32_plus_2_schreibfunktionen": 34, "authenticated_auf_helfern": 0,
+                   "prompt_intent_claim_v1_und_store_v1": "nur service_role", "realtime_policy": 1, "cron": 1, "trigger": 13}
+    }
+  ],
+  "bestand_nach_dem_einspielen": {
+    "prompts": 622,
+    "pending": 622,
+    "branded_alle_teams": 1,
+    "branded_text": "welche Rösterei bietet Omni-Roasts und Barista-Kurse in NRW",
+    "team_877c": {"aktiv": 102, "aktiv_branded": 0},
+    "backfill_je_intent": "erst nach dem n8n-Lauf; Abfrage siehe AN_CLAUDE_CODE_INTENTS.md"
+  }
+}

@@ -1797,6 +1797,7 @@
     "Filter for prompts that name a brand": "Nach Prompts filtern, die eine Marke nennen",
     "Include branded prompts": "Prompts mit Marke einbeziehen",
     "Included": "Einbezogen",
+    "Your prompts": "Deine Prompts",
 
     /* Intents und Branded (13.10.) */
     "Intent": "Intent",

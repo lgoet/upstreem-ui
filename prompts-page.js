@@ -458,6 +458,7 @@
     }
     function bedarf(o) {
       if (!bereit()) return null;
+      intentKanalAuf();
       o = o || {};
       var a = [];
       if (state.tab === "allprompts") {
@@ -982,6 +983,30 @@
       state.p.offset = 0; state.resp.offset = 0;
       persist(); bedarf({ seite: true });
     }, root);
+
+    /* ---- Intents live (13.10., DB-Rueckmeldung Abschnitt 5) ------------------------------------
+       Hat ein Lauf Intents geschrieben (oder Prompts auf failed gesetzt), meldet die Datenbank das
+       auf dem privaten Kanal team_prompts:<team>. Dann Liste und Gruppen neu -- die Caches hat sie
+       schon geleert. Ohne den Kanal stuende "Classifying" bis zum naechsten Seitenwechsel da.
+       Gebuendelt (600ms): beim Nachklassifizieren des Bestands kommen die Meldungen in Folge. */
+    var intentKanal = null, intentKanalTeam = "", intentUhr = null;
+    function intentKanalAuf() {
+      var tm = team();
+      if (!UC.kanal || !tm || intentKanalTeam === tm) return;
+      if (intentKanal && intentKanal.stop) { try { intentKanal.stop(); } catch (e) {} }
+      intentKanalTeam = tm;
+      intentKanal = UC.kanal("team_prompts:" + tm, {
+        privat: true,
+        on: { prompt_intents: function () {
+          clearTimeout(intentUhr);
+          intentUhr = setTimeout(function () {
+            intentUhr = null;
+            if (state.tab !== "allprompts" || !document.contains(root)) return;
+            lader.leeren(); bedarf();
+          }, 600);
+        } }
+      });
+    }
 
     var ctrl = {
       root: root, state: state, ids: ids,

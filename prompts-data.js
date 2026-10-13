@@ -202,8 +202,14 @@
     return schreiben("intentSetzen", zielSetzen({ p_team: str(team), p_intent: INTENTE.indexOf(w) >= 0 ? w : null }, ziel));
   }
   /* Branded von Hand: true / false, oder null = wieder dem Namensabgleich ueberlassen. */
+  /* Hier ist p_branded der WERT; der Filter der Zielmenge heisst p_branded_filter (DB-Rueckmeldung
+     13.10., Abschnitt 4). Erst die Zielmenge, dann umbenennen und den Wert setzen -- sonst
+     ueberschriebe der Filter den Wert. */
   function brandedSetzen(team, ziel, wert) {
-    return schreiben("brandedSetzen", zielSetzen({ p_team: str(team), p_branded: wert === "yes" ? true : (wert === "no" ? false : null) }, ziel));
+    var p = zielSetzen({ p_team: str(team) }, ziel);
+    if ("p_branded" in p) { p.p_branded_filter = p.p_branded; delete p.p_branded; }
+    p.p_branded = wert === "yes" ? true : (wert === "no" ? false : null);
+    return schreiben("brandedSetzen", p);
   }
 
   /* ---- Antworten in die Form der Bausteine -------------------------------------------------- */
