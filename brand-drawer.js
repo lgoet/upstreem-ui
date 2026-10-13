@@ -459,6 +459,10 @@
       .split("__UBDR_BRANDLOGO__").join(esc(mk ? str(mk.logo_url) : ""))
       .split("__UBDR_BRAND__").join(esc(mk ? str(mk.name) : ""));
   }
+  /* Setzt data-form="abschnitte" an die Wurzel eines erzeugten Bausteins. Das Markup selbst ist
+     von .drawer_markup.py erzeugt und wird nicht von Hand geaendert -- darum hier, am Anfang der
+     Zeichenkette verankert: nur das erste Element, nie eines darin. */
+  function abschnitte(html) { return String(html).replace(/^<div /, '<div data-form="abschnitte" '); }
   function aufbauen(ctx) {
     var dk = dunkel() ? "yes" : "no";
     ctx.slot.innerHTML =
@@ -488,8 +492,11 @@
           '</div>' +
         '</div>' +
         '<div class="ubdr-main">' +
-          '<div class="ubdr-teil ubdr-detail"><div class="up-root ubd-root" data-local="yes" data-instance="' + esc(IDS.ubd) + '" data-isdark="' + dk + '"></div></div>' +
-          '<div class="ubdr-teil ubdr-top">' + einsetzen(MARKUP.tcd) + '</div>' +
+          /* data-form="abschnitte": Kurve und Doughnut ohne Kartenrahmen, wie Domain Detail im
+             Domain-Drawer (13.10.) -- nur hier im Drawer; dieselben Bausteine auf dem Dashboard
+             und auf der Landingpage behalten ihre Karten. Die Regeln stehen je beim Baustein. */
+          '<div class="ubdr-teil ubdr-detail"><div class="up-root ubd-root" data-local="yes" data-form="abschnitte" data-instance="' + esc(IDS.ubd) + '" data-isdark="' + dk + '"></div></div>' +
+          '<div class="ubdr-teil ubdr-top">' + abschnitte(einsetzen(MARKUP.tcd)) + '</div>' +
           '<div class="ubdr-teil ubdr-resp">' + einsetzen(MARKUP.urt) + '</div>' +
         '</div>' +
         '<div class="ubdr-inaktiv" hidden></div>' +

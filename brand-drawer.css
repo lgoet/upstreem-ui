@@ -4,10 +4,13 @@
    Kopf von performance-detail, .upd-held). Rechts daneben die Filter, darunter die drei
    Bausteine -- Abstaende wie im Prompt-Drawer (prompt-detail.css), damit Geschwister gleich
    stehen. */
-.ubdr-root { display: flex; flex-direction: column; gap: 40px; min-width: 0; }
+/* 48 unter dem Kopf, 64 zwischen den Abschnitten -- die Werte des Domain-Drawers (13.10.): seit
+   die Kurve und der Doughnut ohne Kartenrahmen stehen (data-form="abschnitte", brand-drawer.js),
+   ist die Luft das, was die Abschnitte trennt. Vorher 40 und 48, gerechnet fuer Karten. */
+.ubdr-root { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
 .ubdr-root > [hidden] { display: none; }
 /* Kopf und Filter in einer Zeile: .up-dk-heldzeile / .up-dk-filterzeile aus core (13.10.). */
-.ubdr-main { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
+.ubdr-main { display: flex; flex-direction: column; gap: 64px; min-width: 0; }
 .ubdr-teil { min-width: 0; }
 
 /* Logo, Name, Domain: der Kopf mit Bild aus core (.up-dk-held, 13.10.). */

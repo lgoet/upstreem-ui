@@ -4,10 +4,13 @@
    die drei Bausteine der App -- Abstaende wie die Analytic-Ansicht des Dashboards
    (dashboard-page.css, .uds-filterzeile/.uds-main), damit derselbe Inhalt an zwei Orten gleich
    steht. Was hier steht, ist nur die Anordnung. */
-.uprd-root { display: flex; flex-direction: column; gap: 40px; min-width: 0; }
+/* 48 unter dem Kopf, 64 zwischen den Abschnitten -- die Werte des Domain-Drawers (13.10.): seit
+   Kurve und Doughnut ohne Kartenrahmen stehen (data-form="abschnitte", prompt-detail.js), ist die
+   Luft das, was die Abschnitte trennt. Vorher 40 und 48, gerechnet fuer Karten. */
+.uprd-root { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
 .uprd-root > [hidden] { display: none; }
 /* Titel und Filter in einer Zeile: .up-dk-heldzeile.is-satz / .up-dk-filterzeile aus core (13.10.). */
-.uprd-main { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
+.uprd-main { display: flex; flex-direction: column; gap: 64px; min-width: 0; }
 .uprd-teil { min-width: 0; }
 
 /* Meta-Zeile: Market, Topics, pausiert, letzter Lauf -- Trenner aus core (.up-dk-sep). */

@@ -158,3 +158,5 @@
 .ubd-root.is-narrow .ubd-head .vc-gran { margin-left: auto; }
 .ubd-root.is-narrow .ubd-seg { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .ubd-root.is-narrow .ubd-chartwrap { height: 220px; }
+
+/* Abschnittsform im Drawer (data-form="abschnitte"): aus core (13.10.). */

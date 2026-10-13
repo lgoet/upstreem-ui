@@ -216,3 +216,5 @@
    Vier Stufen Spezifitaet gegen die drei der Grundregel darueber -- ueber die Spezifitaet, nicht
    ueber die Reihenfolge. */
 .vot-root .up-legend .up-company-item:hover .up-company-name { color: var(--vc-text); }
+
+/* Abschnittsform im Drawer (data-form="abschnitte"): aus core (13.10.). */

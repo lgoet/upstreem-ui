@@ -472,6 +472,9 @@
   }
 
   /* ---- Aufbau im Drawer ---- */
+  /* Setzt data-form="abschnitte" an die Wurzel eines erzeugten Bausteins (das Markup ist von
+     .drawer_markup.py erzeugt und bleibt unberuehrt). Am Anfang verankert: nur das erste Element. */
+  function abschnitte(html) { return String(html).replace(/^<div /, '<div data-form="abschnitte" '); }
   function einsetzen(m) {
     var mk = marke();
     return String(m || "").split("__UPRD_VOT__").join(esc(IDS.vot))
@@ -504,8 +507,11 @@
           '<div class="uprd-kpis up-dk-leiste"></div>' +
         '</div>' +
         '<div class="uprd-main">' +
-          '<div class="uprd-teil uprd-vis">' + einsetzen(MARKUP.vot) + '</div>' +
-          '<div class="uprd-teil uprd-top">' + einsetzen(MARKUP.tcd) + '</div>' +
+          /* data-form="abschnitte": Kurve und Doughnut ohne Kartenrahmen, wie Domain Detail im
+             Domain-Drawer (13.10.) -- nur hier; dieselben Bausteine auf dem Dashboard behalten
+             ihre Karten. Die Tabellen daneben behalten ihren Kasten wie jede Tabelle der App. */
+          '<div class="uprd-teil uprd-vis">' + abschnitte(einsetzen(MARKUP.vot)) + '</div>' +
+          '<div class="uprd-teil uprd-top">' + abschnitte(einsetzen(MARKUP.tcd)) + '</div>' +
           '<div class="uprd-teil uprd-resp">' + einsetzen(MARKUP.urt) + '</div>' +
         '</div>' +
         '<div class="uprd-fehler" hidden></div>' +

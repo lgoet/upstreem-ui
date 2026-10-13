@@ -336,8 +336,7 @@
    Abschnittstitel 18 -> 16 und Unterzeile 14 -> 13 (beides der Abschnittskopf aus core),
    Etiketten 14 (--up-fs-l), Radius des Trichters 14 -> 12 (--up-r-xl). */
 .udd-root.is-abschnitte { grid-template-columns: 1fr; row-gap: 64px; }
-.udd-root.is-abschnitte .udd-chartcard,
-.udd-root.is-abschnitte .udd-funnelcard { border: 0; border-radius: 0; padding: 0; background: transparent; }
+/* Chart- und Trichterkarte ohne Rahmen: die Abschnittsform aus core (data-form="abschnitte"). */
 
 /* Etikett ueber der grossen Zahl, Zahl und Veraenderung auf einer Grundlinie. 20 oben wie in der
    Vorlage; 24 unten bleibt (29.09. angefordert: "mehr Gap unter der Share-Prozentzahl"), die 16

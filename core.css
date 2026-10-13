@@ -4296,6 +4296,11 @@
   gap: 16px 24px; min-width: 0; }
 .up-dk-heldzeile > :first-child { flex: 1 1 auto; min-width: min(100%, 280px); }
 .up-dk-heldzeile.is-satz > :first-child { flex-basis: 0; }
+/* Bei einem Satz OBEN rechts, nicht an der Unterkante (13.10.: "der Kalender ist nicht genau oben
+   rechts, der ist viel zu weit unten" -- URL- und Prompt-Drawer): der Titel bricht dort ueber
+   mehrere Zeilen um, und unter ihm steht im URL-Drawer noch die Adresse; an der Unterkante sass
+   der Kalender darum zwei bis drei Zeilen tief. */
+.up-dk-heldzeile.is-satz { align-items: flex-start; }
 /* Die Filterreihe: 8px wie jede Werkzeugreihe. Mit aktiven Filtern stehen deren Chips im
    Filterknopf-Baustein daneben (ufb bricht selbst um) -- darum darf er schrumpfen, der Kalender
    nicht. flex-start und nicht flex-end: neben dem Kopf schrumpft die Reihe nie, es aendert dort
@@ -4305,6 +4310,22 @@
   flex: 0 1 auto; min-width: 0; max-width: 100%; }
 .up-dk-filterzeile > .udr-root { flex: 0 0 auto; }
 .up-dk-filterzeile > .ufb-root { flex: 0 1 auto; width: auto; min-width: 0; }
+/* DIE ABSCHNITTSFORM (13.10., Vorbild Domain Detail; "die Borders um die grossen Elemente weg, das
+   sieht cleaner aus"). Ein Baustein im Drawer steht ohne Kartenrahmen, Radius und eigene Flaeche
+   auf dem Grund des Drawers -- die Luft zwischen den Abschnitten trennt. Gesetzt von der
+   einbettenden Stelle ueber data-form="abschnitte" an der Wurzel des Bausteins (Domain-, Brand-,
+   Prompt-Drawer); Dashboard und Landingpage setzen es nicht und behalten ihre Karten. Erst in drei
+   Bausteinen einzeln gebaut, darum hier. Tabellen behalten ihren Kasten wie ueberall in der App --
+   darum neben ihnen auch kein Trenner (er laege als zweite Linie neben ihrem Rand).
+   Kurve und Ring: links 0 Polster, damit sie an der Kante der Ueberschrift beginnen; rechts 16, mit
+   dem Spaltenabstand 32 bis zur Tabelle wie vorher (16 + 1 Rand + 16). Untereinander (schmal,
+   maximiert) steht keine Tabelle daneben, dann auch rechts 0. (0,4,0) gegen die Kartenregeln der
+   Bausteine und gegen deren dunkle Randregel (0,3,0, nur die Randfarbe). */
+.up-root[data-form="abschnitte"] :is(.ubd-card, .udd-chartcard, .udd-funnelcard, .vot-box-left, .tcd-unit-left .tcd-box) {
+  border: 0; border-radius: 0; background: transparent; }
+.up-root[data-form="abschnitte"] :is(.ubd-card, .udd-chartcard, .udd-funnelcard) { padding: 0; }
+.up-root[data-form="abschnitte"] :is(.vot-box-left .vot-panel-body, .tcd-unit-left .tcd-panel-body) { padding-left: 0; }
+.up-root[data-form="abschnitte"]:is(.is-narrow, .is-max) :is(.vot-box-left .vot-panel-body, .tcd-unit-left .tcd-panel-body) { padding-right: 0; }
 .up-dk-held-link:focus-visible { outline: var(--up-focus-w, 2px) solid var(--vc-text); outline-offset: 2px; border-radius: var(--up-r-xs); }
 /* Skelett des Kopfes, in den Massen dessen, was gleich dasteht. */
 .up-dk-sk { display: inline-block; height: 14px; border-radius: var(--up-r-xs); background: var(--vc-sk);
@@ -5507,15 +5528,16 @@
 .up-ph-navunderline { position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--up-accent-ink);
   z-index: 1; transition: left 200ms ease, width 200ms ease; }
 /* DER GEWAEHLTE REITER IN EINEM BEHAELTER (13.10. angefordert: "leichter Field-Background und
-   Border, Rundung 12px, standardmaessiges, eher kleines Padding"). Als ::after HINTER dem Reiter
-   (z-index -1 in seinem eigenen Stapel, isolation), nicht als Polster am Reiter selbst: die linke
-   Kante des ersten Reiterzeichens steht genau unter dem Krumenzeichen, und Polster wuerde sie
-   verschieben. Der Akzentstrich darunter BLEIBT (13.10. bestaetigt: "der Akzentstrich soll
-   bleiben"). ::before ist schon die verlaengerte Klickflaeche, darum ::after. */
+   Border, eher kleines Padding"; Rundung zweite Runde 8 statt 12). Als ::after HINTER dem Reiter
+   (z-index -1 in seinem eigenen Stapel, isolation). Er fuellt den Reiter in der Breite GENAU --
+   die Luft um Zeichen und Schrift ist das Polster des Reiters selbst. So ist der Akzentstrich
+   darunter (makePageNav misst den Reiter) genau so lang wie der Behaelter, und der erste Behaelter
+   beginnt an der Kante des Inhalts statt im 16px-Rand (beides 13.10. angefordert). ::before ist
+   schon die verlaengerte Klickflaeche, darum ::after. */
 .up-ph-navitem.is-selected { position: relative; isolation: isolate; }
 .up-ph-navitem.is-selected::after {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: var(--vc-heading-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-xl); }
+  background: var(--vc-heading-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-m); }
 
 /* ---------- DER KOMPAKTE SEITENKOPF MIT BROTKRUMEN (29.09. angefordert) ----------
    "Aktuell nehmen die mir zu viel Platz ein und sind groesstenteils nicht aligned mit dem Layout
@@ -5588,15 +5610,16 @@
    RECHTS 3px Polster (29.09.: nachmittags 2, "symmetrischer mit den Icons"; abends 1 mehr, "so
    dass der aktive Strich 1px rechts weiter geht"): der Strich laeuft 3px ueber das Textende
    hinaus. Die Luecke wird dafuer 25 -- vom Textende bis zum naechsten Zeichen bleiben es
-   3 + 25 = 28, kein Reiter rueckt. ::before links 13, rechts 12: zusammen genau die Luecke,
-   ohne halbe Pixel und ohne dass sich zwei Reiter ueberlappen. */
+   3 + 25 = 28, kein Reiter rueckt. SEIT DEM 13.10. (Behaelter um den gewaehlten Reiter): 8
+   Polster links und rechts am Reiter, Luecke 12 -- Schrift zu Schrift weiter 8 + 12 + 8 = 28.
+   ::before links und rechts je 6: zusammen genau die Luecke, ohne dass sich Reiter ueberlappen. */
 .up-root.ucs-root .up-ph-nav,
 .up-root.uad-root .up-ph-nav,
 .up-root.upi-root .up-ph-nav,
 .up-root.ubr-root .up-ph-nav,
 .up-root.uss-root .up-ph-nav,
 .up-root.ush-root .up-ph-nav,
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav { margin-top: 0; gap: 25px; }
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav { margin-top: 0; gap: 12px; }
 .up-root.ucs-root .up-ph-navitem,
 .up-root.uad-root .up-ph-navitem,
 .up-root.upi-root .up-ph-navitem,
@@ -5604,7 +5627,7 @@
 .up-root.uss-root .up-ph-navitem,
 .up-root.ush-root .up-ph-navitem,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem {
-  height: calc(var(--up-h-btn) + 16px); padding: 0 3px 0 0; position: relative; }
+  height: calc(var(--up-h-btn) + 16px); padding: 0 8px; position: relative; }
 .up-root.ucs-root .up-ph-navitem::before,
 .up-root.uad-root .up-ph-navitem::before,
 .up-root.upi-root .up-ph-navitem::before,
@@ -5612,7 +5635,7 @@
 .up-root.uss-root .up-ph-navitem::before,
 .up-root.ush-root .up-ph-navitem::before,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem::before {
-  content: ""; position: absolute; top: 0; bottom: 0; left: -13px; right: -12px; }
+  content: ""; position: absolute; top: 0; bottom: 0; left: -6px; right: -6px; }
 /* Der ERSTE Reiter reicht nach links hoechstens bis an die Kante der Gruppe -- bei einem Einzug
    unter 13 laege sonst ein Teil der Klickflaeche ueber dem Rand der Seitenleiste. */
 .up-root.ucs-root .up-ph-navitem:first-child::before,
@@ -5621,13 +5644,16 @@
 .up-root.ubr-root .up-ph-navitem:first-child::before,
 .up-root.uss-root .up-ph-navitem:first-child::before,
 .up-root.ush-root .up-ph-navitem:first-child::before,
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem:first-child::before { left: calc(-1 * min(13px, var(--up-ph-rand-l, 0px))); }
-/* Der Behaelter des gewaehlten Reiters in der 48er-Leiste: 32 hoch (--up-h-btn, 8 ueber und unter
-   sich wie die Knoepfe der Kopfzeile), 10 Luft um Zeichen und Schrift. Rechts 7: der Reiter traegt
-   schon 3 Polster rechts (siehe oben), zusammen also auch 10. */
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem:first-child::before { left: calc(-1 * min(6px, var(--up-ph-rand-l, 0px))); }
+/* ZWEITE RUNDE (13.10.: "Padding ganz minimal kleiner, Akzentstrich auf ganzer Laenge, nicht ueber
+   die linke Grenze"): der Behaelter ist 28 hoch (--up-h-seg, die naechste Stufe unter 32) und
+   genau so breit wie der Reiter, der dafuer 8 Polster links und rechts traegt (vorher 10 Luft, der
+   Behaelter ragte um 10 nach links in den Rand). Der Abstand zwischen den Reitern sinkt um diese
+   2 x 8 von 25 auf 12 -- von Schrift zu Schrift bleiben es 28 wie vorher.
+   Folge: das erste Reiterzeichen steht 8 weiter rechts als das Krumenzeichen darueber. */
 .up-root:is(.ucs-root, .uad-root, .upi-root, .ubr-root, .uss-root, .ush-root) .up-ph-navitem.is-selected::after,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem.is-selected::after {
-  top: 8px; bottom: 8px; left: -10px; right: -7px; }
+  top: 10px; bottom: 10px; left: 0; right: 0; }
 /* Im SCHMALEN Kopf (is-narrow, unter 768) teilen sich die Reiter die Breite (flex 1 1 0, Inhalt
    mittig) -- dort gibt es keine linke Kante, die unter dem Krumenzeichen stehen koennte. Also die
    alte Geometrie: 4px Luecke und 12px Seitenpolster, sonst laegen die gestreckten Reiter 28px

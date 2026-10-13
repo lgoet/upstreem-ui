@@ -195,3 +195,5 @@
 .tcd-chart-reset.is-visible { display: inline-flex; }
 .tcd-chart-reset:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
 .tcd-chart-reset svg { width: 13px; height: 13px; flex: 0 0 13px; display: block; }
+
+/* Abschnittsform im Drawer (data-form="abschnitte"): aus core (13.10.). */
