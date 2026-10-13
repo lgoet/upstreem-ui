@@ -44,20 +44,20 @@
   /* ---- MARKUP ANFANG (erzeugt von .landing_markup.py -- nicht von Hand aendern) ---- */
   var MARKUP = {
     usn: "<div class=\"up-root usn-root\" data-instance=\"lh-usn\" data-cdn-pin=\"\" data-isdark=\"no\" data-team-id=\"t1\" data-active=\"dashboard\" data-prompt-count=\"\" data-export-instance=\"\" data-upstreem-logo=\"\" data-upstreem-logo-dark=\"\" data-upstreem-logo-small=\"\" data-upstreem-logo-small-dark=\"\"></div>",
-    dph: "<div class=\"up-root up-ph-root dph-root\" data-instance=\"lh-dph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d10%22%2F%3E%3Cpath%20d%3D%22M29%2015.5%2016.2%2048.5H23.1L25.3%2041.9H38.7L40.9%2048.5H47.8L35%2015.5ZM32%2025.4%2028.9%2034.4H35.1Z%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E\" data-mode-default=\"standard\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><!-- KEINE Meta-Zeile auf dem Dashboard. dashboard-page-header.js baut sie zusaetzlich aus, falls sie in einer schon eingebauten Seite noch steht. --><h1 class=\"up-ph-heading\">Dashboard</h1><p class=\"up-ph-desc\">Monitor your AI visibility, performance, and latest developments</p></div><div class=\"dph-topright\"><!-- dashboard-page-header.js fuellt das weiter bei setDashboardPageHeaderKpis(), SICHTBAR ist es nicht mehr (dashboard-page-header.css: .dph-kpis { display: none }). Das Markup bleibt, damit der bestehende Setter nicht ins Leere laeuft. --><div class=\"dph-kpis\"></div><div class=\"dph-tools\"><!-- Nur das Zeichen, kein Wort: library-big -- dasselbe wie im Onboarding-Kopf. dashboard-page-header.js setzt es beim Init auch in einer schon eingebauten Seite und haengt .up-ph-iconbtn dazu. --><button class=\"dph-docsbtn up-ph-iconbtn\" type=\"button\" data-tip=\"Open Documentation\" aria-label=\"Open Documentation\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"8\" height=\"18\" x=\"3\" y=\"3\" rx=\"1\" /><path d=\"M7 3v18\" /><path d=\"M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z\" /></svg></button><!-- Lucide refresh-cw. dashboard-page-header.js setzt dasselbe Zeichen beim Init aus core (UC.icon(\"refreshCw\")) -- hier steht es fuer den Fall, dass das JS noch unterwegs ist, damit der Knopf nicht leer aufblitzt. Dieselben Pfade, geprueft gegen lucide-static. --><!-- Suche: drueckt Cmd+K (Strg+K) -- darauf hoert die Palette (Quick Actions) selbst. Kein Workflow noetig. Wer zusaetzlich einen will, setzt data-search-fn am Wurzelelement -- dann geht auch ein Ereignis heraus. dashboard-page-header.js baut diesen Knopf auch in eine schon eingebaute Seite. --><button class=\"dph-searchbtn up-ph-iconbtn\" type=\"button\" data-tip=\"Quick Actions\" aria-label=\"Open Quick Actions\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg></button><button class=\"dph-refreshbtn up-ph-iconbtn\" type=\"button\" aria-label=\"Refresh\" data-tip=\"Refresh Data\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /><path d=\"M21 3v5h-5\" /><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /><path d=\"M8 16H3v5\" /></svg></button></div></div></div></div>",
-    vot: "<div class=\"up-root vot-root\" data-instance=\"lh-vot\" data-cdn-pin=\"\" data-isdark=\"no\" data-export-instance=\"\" data-processing=\"no\" data-processing2=\"no\"><div class=\"vot-unit vot-unit-left\"><div class=\"vot-head\"><div class=\"vot-heading\">Visibility over Time</div><div class=\"vot-head-tools\"><div class=\"vc-gran\" role=\"tablist\" aria-label=\"Granularity\"><button class=\"vc-gran-btn is-active\" data-gran=\"day\" type=\"button\" role=\"tab\" data-tip=\"Day\" aria-label=\"Day\">D</button><button class=\"vc-gran-btn\" data-gran=\"week\" type=\"button\" role=\"tab\" data-tip=\"Week\" aria-label=\"Week\">W</button><button class=\"vc-gran-btn\" data-gran=\"month\" type=\"button\" role=\"tab\" data-tip=\"Month\" aria-label=\"Month\">M</button></div><button class=\"vot-maximize vot-max-top vot-iconbtn\" type=\"button\" data-tip=\"Minimize\" aria-label=\"Minimize\"><svg class=\"ic-max\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 3h6v6\"/><path d=\"m21 3-7 7\"/><path d=\"m3 21 7-7\"/><path d=\"M9 21H3v-6\"/></svg><svg class=\"ic-min\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m14 10 7-7\"/><path d=\"M20 10h-6V4\"/><path d=\"m3 21 7-7\"/><path d=\"M4 14h6v6\"/></svg></button></div></div><div class=\"vot-box vot-box-left\"><div class=\"vot-panel-body\"><button class=\"vot-scale-btn\" type=\"button\" data-tip=\"Chart Settings\" aria-label=\"Chart Settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z\"/><path d=\"M8.5 10C7.67157 10 7 9.32843 7 8.5C7 7.67157 7.67157 7 8.5 7C9.32843 7 10 7.67157 10 8.5C10 9.32843 9.32843 10 8.5 10Z\"/><path d=\"M15.5 17C16.3284 17 17 16.3284 17 15.5C17 14.6716 16.3284 14 15.5 14C14.6716 14 14 14.6716 14 15.5C14 16.3284 14.6716 17 15.5 17Z\"/><path d=\"M10 8.5L17 8.5\"/><path d=\"M14 15.5L7 15.5\"/></svg></button><div class=\"up-line-wrap\"><canvas class=\"up-line-canvas\"></canvas></div><div class=\"up-legend\"></div></div></div></div><div class=\"vot-unit vot-unit-right\"><div class=\"vot-head\"><div class=\"vot-heading vot-heading-right\"><span class=\"vot-head-label\">Top Brands</span><span class=\"vot-head-sep\"></span><span class=\"vot-head-count\"></span></div><div class=\"vot-head-tools\"><div class=\"vot-sort\"><button class=\"vot-sort-btn vot-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"vot-filter\"><button class=\"vot-filter-btn vot-iconbtn\" type=\"button\" data-tip=\"Filter brands\" aria-label=\"Filter\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 21L7 18\"/><path d=\"M17 21L17 15\"/><path d=\"M17 6L17 3\"/><path d=\"M7 9L7 3\"/><path d=\"M7 18C6.06812 18 5.60218 18 5.23463 17.8478C4.74458 17.6448 4.35523 17.2554 4.15224 16.7654C4 16.3978 4 15.9319 4 15C4 14.0681 4 13.6022 4.15224 13.2346C4.35523 12.7446 4.74458 12.3552 5.23463 12.1522C5.60218 12 6.06812 12 7 12C7.93188 12 8.39782 12 8.76537 12.1522C9.25542 12.3552 9.64477 12.7446 9.84776 13.2346C10 13.6022 10 14.0681 10 15C10 15.9319 10 16.3978 9.84776 16.7654C9.64477 17.2554 9.25542 17.6448 8.76537 17.8478C8.39782 18 7.93188 18 7 18Z\"/><path d=\"M17 12C16.0681 12 15.6022 12 15.2346 11.8478C14.7446 11.6448 14.3552 11.2554 14.1522 10.7654C14 10.3978 14 9.93188 14 9C14 8.06812 14 7.60218 14.1522 7.23463C14.3552 6.74458 14.7446 6.35523 15.2346 6.15224C15.6022 6 16.0681 6 17 6C17.9319 6 18.3978 6 18.7654 6.15224C19.2554 6.35523 19.6448 6.74458 19.8478 7.23463C20 7.60218 20 8.06812 20 9C20 9.93188 20 10.3978 19.8478 10.7654C19.6448 11.2554 19.2554 11.6448 18.7654 11.8478C18.3978 12 17.9319 12 17 12Z\"/></svg><span class=\"vot-filter-badge\"></span></button><div class=\"up-ment-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"vot-export vot-iconbtn\" type=\"button\" data-tip=\"Export\" aria-label=\"Export\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg></button><button class=\"vot-maximize vot-max-right vot-iconbtn\" type=\"button\" data-tip=\"Maximize\" aria-label=\"Maximize\"><svg class=\"ic-max\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 3h6v6\"/><path d=\"m21 3-7 7\"/><path d=\"m3 21 7-7\"/><path d=\"M9 21H3v-6\"/></svg><svg class=\"ic-min\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m14 10 7-7\"/><path d=\"M20 10h-6V4\"/><path d=\"m3 21 7-7\"/><path d=\"M4 14h6v6\"/></svg></button><button class=\"vot-goto vot-iconbtn\" type=\"button\" data-tip=\"Open\" aria-label=\"Open\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 6.65032C9 6.65032 15.9383 6.10759 16.9154 7.08463C17.8924 8.06167 17.3496 15 17.3496 15M16.5 7.5L6.5 17.5\"/></svg></button></div></div><div class=\"vot-box vot-box-right\"><div class=\"vt-table\"></div></div></div></div>",
-    tcd: "<div class=\"up-root tcd-root\" data-instance=\"lh-tcd\" data-cdn-pin=\"\" data-isdark=\"no\" data-export-instance=\"\" data-processing=\"no\" data-processing2=\"no\"><div class=\"tcd-unit tcd-unit-left\"><div class=\"tcd-head\"><div class=\"tcd-mode\" role=\"tablist\" aria-label=\"Mode\"><button class=\"tcd-mode-btn is-active\" data-mode=\"domain\" type=\"button\" role=\"tab\">Domains</button><button class=\"tcd-mode-btn\" data-mode=\"url\" type=\"button\" role=\"tab\">URLs</button></div><div class=\"tcd-head-tools\"><div class=\"tcl-seg\" role=\"tablist\" aria-label=\"Chart type\"><button class=\"tcl-seg-btn is-active\" data-chart=\"doughnut\" role=\"tab\" aria-selected=\"true\" data-tip=\"Doughnut\" aria-label=\"Doughnut\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.5 15.8278C17.9985 21.756 9.86407 23.4835 5.20143 18.8641C0.629484 14.3347 2.04493 6.12883 8.05653 3.5\"/><path d=\"M17.6831 12.5C19.5708 12.5 20.5146 12.5 21.1241 11.655C21.1469 11.6234 21.1848 11.5667 21.2052 11.5336C21.7527 10.6471 21.4705 9.966 20.9063 8.60378C20.3946 7.36853 19.6447 6.24615 18.6993 5.30073C17.7538 4.35531 16.6315 3.60536 15.3962 3.0937C14.034 2.52946 13.3529 2.24733 12.4664 2.79477C12.4333 2.81523 12.3766 2.85309 12.345 2.87587C11.5 3.4854 11.5 4.42922 11.5 6.31686V8.42748C11.5 10.3473 11.5 11.3072 12.0964 11.9036C12.6928 12.5 13.6527 12.5 15.5725 12.5H17.6831Z\"/></svg></button><button class=\"tcl-seg-btn\" data-chart=\"bar\" role=\"tab\" aria-selected=\"false\" data-tip=\"Bars\" aria-label=\"Bars\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3V13C3 16.7712 3 18.6569 4.17157 19.8284C5.34315 21 7.22876 21 11 21H21\"/><path d=\"M7 8V9C7 9.55228 7.44772 10 8 10H18C18.5523 10 19 9.55228 19 9V8C19 7.44772 18.5523 7 18 7H8C7.44772 7 7 7.44772 7 8Z\"/><path d=\"M7 15V16C7 16.5523 7.44772 17 8 17H14C14.5523 17 15 16.5523 15 16V15C15 14.4477 14.5523 14 14 14H8C7.44772 14 7 14.4477 7 15Z\"/></svg></button></div></div></div><div class=\"tcd-box\"><div class=\"tcd-panel-body\"><div class=\"tcl-top-total\"><span class=\"n\">0</span><span class=\"lbl\">Citations</span></div><div class=\"up-donut-body\"></div></div></div></div><div class=\"tcd-unit tcd-unit-right\"><div class=\"tcd-head\"><div class=\"tcd-heading tcd-heading-right\"><span class=\"tcd-head-label\">Top Domains</span><span class=\"tcd-head-sep\"></span><span class=\"tcd-head-count\"></span></div><div class=\"tcd-head-tools\"><button class=\"tcd-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"tcd-brand-toggle-lbl\"><img class=\"tcd-brand-logo\" src=\"\" style=\"display:none\"/><span class=\"tcd-brand-label\"></span></span><span class=\"tcd-brand-check\"><svg class=\"tcd-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7\"/></svg><svg class=\"tcd-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.9922 12L2.99219 12\"/></svg></span></button><div class=\"tcd-filter\"><button class=\"tcd-filter-btn tcd-iconbtn\" type=\"button\" data-tip=\"Filter\" aria-label=\"Filter\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 21L7 18\"/><path d=\"M17 21L17 15\"/><path d=\"M17 6L17 3\"/><path d=\"M7 9L7 3\"/><path d=\"M7 18C6.06812 18 5.60218 18 5.23463 17.8478C4.74458 17.6448 4.35523 17.2554 4.15224 16.7654C4 16.3978 4 15.9319 4 15C4 14.0681 4 13.6022 4.15224 13.2346C4.35523 12.7446 4.74458 12.3552 5.23463 12.1522C5.60218 12 6.06812 12 7 12C7.93188 12 8.39782 12 8.76537 12.1522C9.25542 12.3552 9.64477 12.7446 9.84776 13.2346C10 13.6022 10 14.0681 10 15C10 15.9319 10 16.3978 9.84776 16.7654C9.64477 17.2554 9.25542 17.6448 8.76537 17.8478C8.39782 18 7.93188 18 7 18Z\"/><path d=\"M17 12C16.0681 12 15.6022 12 15.2346 11.8478C14.7446 11.6448 14.3552 11.2554 14.1522 10.7654C14 10.3978 14 9.93188 14 9C14 8.06812 14 7.60218 14.1522 7.23463C14.3552 6.74458 14.7446 6.35523 15.2346 6.15224C15.6022 6 16.0681 6 17 6C17.9319 6 18.3978 6 18.7654 6.15224C19.2554 6.35523 19.6448 6.74458 19.8478 7.23463C20 7.60218 20 8.06812 20 9C20 9.93188 20 10.3978 19.8478 10.7654C19.6448 11.2554 19.2554 11.6448 18.7654 11.8478C18.3978 12 17.9319 12 17 12Z\"/></svg><span class=\"tcd-filter-badge\"></span></button><div class=\"up-filter-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"tcd-export tcd-iconbtn\" type=\"button\" data-tip=\"Export\" aria-label=\"Export\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg></button><button class=\"tcd-goto tcd-iconbtn\" type=\"button\" data-tip=\"Open\" aria-label=\"Open\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 6.65032C9 6.65032 15.9383 6.10759 16.9154 7.08463C17.8924 8.06167 17.3496 15 17.3496 15M16.5 7.5L6.5 17.5\"/></svg></button></div></div><div class=\"tcd-box\"><div class=\"tct-table\"></div></div></div></div>",
+    dph: "<div class=\"up-root up-ph-root dph-root\" data-instance=\"lh-dph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d10%22%2F%3E%3Cpath%20d%3D%22M29%2015.5%2016.2%2048.5H23.1L25.3%2041.9H38.7L40.9%2048.5H47.8L35%2015.5ZM32%2025.4%2028.9%2034.4H35.1Z%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E\" data-mode-default=\"standard\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><!-- KEINE Meta-Zeile auf dem Dashboard. dashboard-page-header.js baut sie zusaetzlich aus, falls sie in einer schon eingebauten Seite noch steht. --><div class=\"up-ph-heading\">Dashboard</div><p class=\"up-ph-desc\">Monitor your AI visibility, performance, and latest developments</p></div><div class=\"dph-topright\"><!-- dashboard-page-header.js fuellt das weiter bei setDashboardPageHeaderKpis(), SICHTBAR ist es nicht mehr (dashboard-page-header.css: .dph-kpis { display: none }). Das Markup bleibt, damit der bestehende Setter nicht ins Leere laeuft. --><div class=\"dph-kpis\"></div><div class=\"dph-tools\"><!-- Nur das Zeichen, kein Wort: library-big -- dasselbe wie im Onboarding-Kopf. dashboard-page-header.js setzt es beim Init auch in einer schon eingebauten Seite und haengt .up-ph-iconbtn dazu. --><button class=\"dph-docsbtn up-ph-iconbtn\" type=\"button\" data-tip=\"Open Documentation\" aria-label=\"Open Documentation\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"8\" height=\"18\" x=\"3\" y=\"3\" rx=\"1\" /><path d=\"M7 3v18\" /><path d=\"M20.4 18.9c.2.5-.1 1.1-.6 1.3l-1.9.7c-.5.2-1.1-.1-1.3-.6L11.1 5.1c-.2-.5.1-1.1.6-1.3l1.9-.7c.5-.2 1.1.1 1.3.6Z\" /></svg></button><!-- Lucide refresh-cw. dashboard-page-header.js setzt dasselbe Zeichen beim Init aus core (UC.icon(\"refreshCw\")) -- hier steht es fuer den Fall, dass das JS noch unterwegs ist, damit der Knopf nicht leer aufblitzt. Dieselben Pfade, geprueft gegen lucide-static. --><!-- Suche: drueckt Cmd+K (Strg+K) -- darauf hoert die Palette (Quick Actions) selbst. Kein Workflow noetig. Wer zusaetzlich einen will, setzt data-search-fn am Wurzelelement -- dann geht auch ein Ereignis heraus. dashboard-page-header.js baut diesen Knopf auch in eine schon eingebaute Seite. --><button class=\"dph-searchbtn up-ph-iconbtn\" type=\"button\" data-tip=\"Quick Actions\" aria-label=\"Open Quick Actions\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m21 21-4.34-4.34\" /><circle cx=\"11\" cy=\"11\" r=\"8\" /></svg></button><button class=\"dph-refreshbtn up-ph-iconbtn\" type=\"button\" aria-label=\"Refresh\" data-tip=\"Refresh Data\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /><path d=\"M21 3v5h-5\" /><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /><path d=\"M8 16H3v5\" /></svg></button></div></div></div></div>",
+    vot: "<div class=\"up-root vot-root\" data-instance=\"lh-vot\" data-cdn-pin=\"\" data-isdark=\"no\" data-export-instance=\"\" data-processing=\"no\" data-processing2=\"no\"><div class=\"vot-unit vot-unit-left\"><div class=\"vot-head\"><div class=\"vot-heading\">Visibility over Time</div><div class=\"vot-head-tools\"><div class=\"vc-gran\" role=\"tablist\" aria-label=\"Granularity\"><button class=\"vc-gran-btn is-active\" data-gran=\"day\" type=\"button\" role=\"tab\" data-tip=\"Day\" aria-label=\"Day\">D</button><button class=\"vc-gran-btn\" data-gran=\"week\" type=\"button\" role=\"tab\" data-tip=\"Week\" aria-label=\"Week\">W</button><button class=\"vc-gran-btn\" data-gran=\"month\" type=\"button\" role=\"tab\" data-tip=\"Month\" aria-label=\"Month\">M</button></div><button class=\"vot-maximize vot-max-top vot-iconbtn\" type=\"button\" data-tip=\"Minimize\" aria-label=\"Minimize\"><svg class=\"ic-max\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 3h6v6\"/><path d=\"m21 3-7 7\"/><path d=\"m3 21 7-7\"/><path d=\"M9 21H3v-6\"/></svg><svg class=\"ic-min\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m14 10 7-7\"/><path d=\"M20 10h-6V4\"/><path d=\"m3 21 7-7\"/><path d=\"M4 14h6v6\"/></svg></button></div></div><div class=\"vot-box vot-box-left\"><div class=\"vot-panel-body\"><button class=\"vot-scale-btn\" type=\"button\" data-tip=\"Chart Settings\" aria-label=\"Chart Settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z\"/><path d=\"M8.5 10C7.67157 10 7 9.32843 7 8.5C7 7.67157 7.67157 7 8.5 7C9.32843 7 10 7.67157 10 8.5C10 9.32843 9.32843 10 8.5 10Z\"/><path d=\"M15.5 17C16.3284 17 17 16.3284 17 15.5C17 14.6716 16.3284 14 15.5 14C14.6716 14 14 14.6716 14 15.5C14 16.3284 14.6716 17 15.5 17Z\"/><path d=\"M10 8.5L17 8.5\"/><path d=\"M14 15.5L7 15.5\"/></svg></button><div class=\"up-line-wrap\"><canvas class=\"up-line-canvas\"></canvas></div><div class=\"up-legend\"></div></div></div></div><div class=\"vot-unit vot-unit-right\"><div class=\"vot-head\"><div class=\"vot-heading vot-heading-right up-heading\"><span class=\"vot-head-label\">Top Brands</span><span class=\"vot-head-count up-head-count\"></span></div><div class=\"vot-head-tools\"><div class=\"vot-sort\"><button class=\"vot-sort-btn vot-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"vot-filter\"><button class=\"vot-filter-btn vot-iconbtn\" type=\"button\" data-tip=\"Filter brands\" aria-label=\"Filter\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 21L7 18\"/><path d=\"M17 21L17 15\"/><path d=\"M17 6L17 3\"/><path d=\"M7 9L7 3\"/><path d=\"M7 18C6.06812 18 5.60218 18 5.23463 17.8478C4.74458 17.6448 4.35523 17.2554 4.15224 16.7654C4 16.3978 4 15.9319 4 15C4 14.0681 4 13.6022 4.15224 13.2346C4.35523 12.7446 4.74458 12.3552 5.23463 12.1522C5.60218 12 6.06812 12 7 12C7.93188 12 8.39782 12 8.76537 12.1522C9.25542 12.3552 9.64477 12.7446 9.84776 13.2346C10 13.6022 10 14.0681 10 15C10 15.9319 10 16.3978 9.84776 16.7654C9.64477 17.2554 9.25542 17.6448 8.76537 17.8478C8.39782 18 7.93188 18 7 18Z\"/><path d=\"M17 12C16.0681 12 15.6022 12 15.2346 11.8478C14.7446 11.6448 14.3552 11.2554 14.1522 10.7654C14 10.3978 14 9.93188 14 9C14 8.06812 14 7.60218 14.1522 7.23463C14.3552 6.74458 14.7446 6.35523 15.2346 6.15224C15.6022 6 16.0681 6 17 6C17.9319 6 18.3978 6 18.7654 6.15224C19.2554 6.35523 19.6448 6.74458 19.8478 7.23463C20 7.60218 20 8.06812 20 9C20 9.93188 20 10.3978 19.8478 10.7654C19.6448 11.2554 19.2554 11.6448 18.7654 11.8478C18.3978 12 17.9319 12 17 12Z\"/></svg><span class=\"vot-filter-badge\"></span></button><div class=\"up-ment-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"vot-export vot-iconbtn\" type=\"button\" data-tip=\"Export\" aria-label=\"Export\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg></button><button class=\"vot-maximize vot-max-right vot-iconbtn\" type=\"button\" data-tip=\"Maximize\" aria-label=\"Maximize\"><svg class=\"ic-max\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 3h6v6\"/><path d=\"m21 3-7 7\"/><path d=\"m3 21 7-7\"/><path d=\"M9 21H3v-6\"/></svg><svg class=\"ic-min\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m14 10 7-7\"/><path d=\"M20 10h-6V4\"/><path d=\"m3 21 7-7\"/><path d=\"M4 14h6v6\"/></svg></button><button class=\"vot-goto vot-iconbtn\" type=\"button\" data-tip=\"Open\" aria-label=\"Open\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 6.65032C9 6.65032 15.9383 6.10759 16.9154 7.08463C17.8924 8.06167 17.3496 15 17.3496 15M16.5 7.5L6.5 17.5\"/></svg></button></div></div><div class=\"vot-box vot-box-right\"><div class=\"vt-table\"></div></div></div></div>",
+    tcd: "<div class=\"up-root tcd-root\" data-instance=\"lh-tcd\" data-cdn-pin=\"\" data-isdark=\"no\" data-export-instance=\"\" data-processing=\"no\" data-processing2=\"no\"><div class=\"tcd-unit tcd-unit-left\"><div class=\"tcd-head\"><div class=\"tcd-mode\" role=\"tablist\" aria-label=\"Mode\"><button class=\"tcd-mode-btn is-active\" data-mode=\"domain\" type=\"button\" role=\"tab\">Domains</button><button class=\"tcd-mode-btn\" data-mode=\"url\" type=\"button\" role=\"tab\">URLs</button></div><div class=\"tcd-head-tools\"><div class=\"tcl-seg\" role=\"tablist\" aria-label=\"Chart type\"><button class=\"tcl-seg-btn is-active\" data-chart=\"doughnut\" role=\"tab\" aria-selected=\"true\" data-tip=\"Doughnut\" aria-label=\"Doughnut\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.5 15.8278C17.9985 21.756 9.86407 23.4835 5.20143 18.8641C0.629484 14.3347 2.04493 6.12883 8.05653 3.5\"/><path d=\"M17.6831 12.5C19.5708 12.5 20.5146 12.5 21.1241 11.655C21.1469 11.6234 21.1848 11.5667 21.2052 11.5336C21.7527 10.6471 21.4705 9.966 20.9063 8.60378C20.3946 7.36853 19.6447 6.24615 18.6993 5.30073C17.7538 4.35531 16.6315 3.60536 15.3962 3.0937C14.034 2.52946 13.3529 2.24733 12.4664 2.79477C12.4333 2.81523 12.3766 2.85309 12.345 2.87587C11.5 3.4854 11.5 4.42922 11.5 6.31686V8.42748C11.5 10.3473 11.5 11.3072 12.0964 11.9036C12.6928 12.5 13.6527 12.5 15.5725 12.5H17.6831Z\"/></svg></button><button class=\"tcl-seg-btn\" data-chart=\"bar\" role=\"tab\" aria-selected=\"false\" data-tip=\"Bars\" aria-label=\"Bars\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3V13C3 16.7712 3 18.6569 4.17157 19.8284C5.34315 21 7.22876 21 11 21H21\"/><path d=\"M7 8V9C7 9.55228 7.44772 10 8 10H18C18.5523 10 19 9.55228 19 9V8C19 7.44772 18.5523 7 18 7H8C7.44772 7 7 7.44772 7 8Z\"/><path d=\"M7 15V16C7 16.5523 7.44772 17 8 17H14C14.5523 17 15 16.5523 15 16V15C15 14.4477 14.5523 14 14 14H8C7.44772 14 7 14.4477 7 15Z\"/></svg></button></div></div></div><div class=\"tcd-box\"><div class=\"tcd-panel-body\"><div class=\"tcl-top-total\"><span class=\"n\">0</span><span class=\"lbl\">Citations</span></div><div class=\"up-donut-body\"></div></div></div></div><div class=\"tcd-unit tcd-unit-right\"><div class=\"tcd-head\"><div class=\"tcd-heading tcd-heading-right up-heading\"><span class=\"tcd-head-label\">Top Domains</span><span class=\"tcd-head-count up-head-count\"></span></div><div class=\"tcd-head-tools\"><button class=\"tcd-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"tcd-brand-toggle-lbl\"><img class=\"tcd-brand-logo\" src=\"\" style=\"display:none\"/><span class=\"tcd-brand-label\"></span></span><span class=\"tcd-brand-check\"><svg class=\"tcd-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7\"/></svg><svg class=\"tcd-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.9922 12L2.99219 12\"/></svg></span></button><div class=\"tcd-filter\"><button class=\"tcd-filter-btn tcd-iconbtn\" type=\"button\" data-tip=\"Filter\" aria-label=\"Filter\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 21L7 18\"/><path d=\"M17 21L17 15\"/><path d=\"M17 6L17 3\"/><path d=\"M7 9L7 3\"/><path d=\"M7 18C6.06812 18 5.60218 18 5.23463 17.8478C4.74458 17.6448 4.35523 17.2554 4.15224 16.7654C4 16.3978 4 15.9319 4 15C4 14.0681 4 13.6022 4.15224 13.2346C4.35523 12.7446 4.74458 12.3552 5.23463 12.1522C5.60218 12 6.06812 12 7 12C7.93188 12 8.39782 12 8.76537 12.1522C9.25542 12.3552 9.64477 12.7446 9.84776 13.2346C10 13.6022 10 14.0681 10 15C10 15.9319 10 16.3978 9.84776 16.7654C9.64477 17.2554 9.25542 17.6448 8.76537 17.8478C8.39782 18 7.93188 18 7 18Z\"/><path d=\"M17 12C16.0681 12 15.6022 12 15.2346 11.8478C14.7446 11.6448 14.3552 11.2554 14.1522 10.7654C14 10.3978 14 9.93188 14 9C14 8.06812 14 7.60218 14.1522 7.23463C14.3552 6.74458 14.7446 6.35523 15.2346 6.15224C15.6022 6 16.0681 6 17 6C17.9319 6 18.3978 6 18.7654 6.15224C19.2554 6.35523 19.6448 6.74458 19.8478 7.23463C20 7.60218 20 8.06812 20 9C20 9.93188 20 10.3978 19.8478 10.7654C19.6448 11.2554 19.2554 11.6448 18.7654 11.8478C18.3978 12 17.9319 12 17 12Z\"/></svg><span class=\"tcd-filter-badge\"></span></button><div class=\"up-filter-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"tcd-export tcd-iconbtn\" type=\"button\" data-tip=\"Export\" aria-label=\"Export\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg></button><button class=\"tcd-goto tcd-iconbtn\" type=\"button\" data-tip=\"Open\" aria-label=\"Open\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 6.65032C9 6.65032 15.9383 6.10759 16.9154 7.08463C17.8924 8.06167 17.3496 15 17.3496 15M16.5 7.5L6.5 17.5\"/></svg></button></div></div><div class=\"tcd-box\"><div class=\"tct-table\"></div></div></div></div>",
     mqa: "<div id=\"mira-quick-actions\" data-theme=\"light\" data-team=\"\" data-cdn-pin=\"\" data-export-instance=\"\"><button class=\"mqa-trigger\" type=\"button\" aria-label=\"Open quick actions\"><svg class=\"mqa-trigger-ic\" viewBox=\"0 0 24 24\"><path d=\"M17 17L21 21\"/><path d=\"M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z\"/></svg><span class=\"mqa-trigger-label\">Quick Actions</span><span class=\"mqa-kbd\" data-kbd>\u2318K</span></button><div class=\"mqa-overlay\" role=\"presentation\" aria-hidden=\"true\"><div class=\"mqa-modal\" role=\"dialog\" aria-modal=\"true\" aria-label=\"Quick actions\"><div class=\"mqa-search\"><svg class=\"mqa-search-ic\" viewBox=\"0 0 24 24\"><path d=\"M17 17L21 21\"/><path d=\"M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z\"/></svg><span class=\"mqa-chips\" id=\"mqa-chips\"></span><span class=\"mqa-inputwrap\"><input class=\"mqa-input\" type=\"text\" autocomplete=\"off\" spellcheck=\"false\" placeholder=\"\" aria-label=\"Search\" /><span class=\"mqa-ph\" id=\"mqa-ph\" aria-hidden=\"true\"><span class=\"mqa-ph-lang\">Search brands, domains, URLs, prompts\u2026</span><span class=\"mqa-ph-kurz\">Search\u2026</span></span></span><span class=\"mqa-ph-cmd\" id=\"mqa-ph-cmd\" aria-hidden=\"true\">/ for filters</span><span class=\"mqa-kbd mqa-esc\" id=\"mqa-esc\">esc</span><button class=\"mqa-fav is-hidden\" type=\"button\" id=\"mqa-fav\" aria-pressed=\"false\" aria-label=\"Save as Favorite\"><svg viewBox=\"0 0 24 24\"><path d=\"M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z\" /></svg></button><button class=\"mqa-clear is-hidden\" type=\"button\" id=\"mqa-clear\" aria-label=\"Reset search\"><svg viewBox=\"0 0 24 24\"><path d=\"M19.5 5.5L18.8803 15.5251C18.7219 18.0864 18.6428 19.3671 18.0008 20.2879C17.6833 20.7431 17.2747 21.1273 16.8007 21.416C15.8421 22 14.559 22 11.9927 22C9.42312 22 8.1383 22 7.17905 21.4149C6.7048 21.1257 6.296 20.7408 5.97868 20.2848C5.33688 19.3626 5.25945 18.0801 5.10461 15.5152L4.5 5.5\"/><path d=\"M3 5.5H21M16.0557 5.5L15.3731 4.09173C14.9196 3.15626 14.6928 2.68852 14.3017 2.39681C14.215 2.3321 14.1231 2.27454 14.027 2.2247C13.5939 2 13.0741 2 12.0345 2C10.9688 2 10.436 2 9.99568 2.23412C9.8981 2.28601 9.80498 2.3459 9.71729 2.41317C9.32164 2.7167 9.10063 3.20155 8.65861 4.17126L8.05292 5.5\"/><path d=\"M9.5 16.5L9.5 10.5\"/><path d=\"M14.5 16.5L14.5 10.5\"/></svg></button></div><!-- Die zwei Woerter in EIGENEN Spans: ein Satz aus drei Knoten laesst sich nicht uebersetzen. quick-actions.js zieht das bei bereits eingebauten Elementen zur Laufzeit nach (ctaTrennen). --><button class=\"mqa-entercta is-hidden\" type=\"button\" id=\"mqa-entercta\" data-worte=\"1\"><span>Press</span><span class=\"mqa-kbd\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 4v7a4 4 0 0 1-4 4H4\" /><path d=\"m9 10-5 5 5 5\" /></svg>Enter</span><span>to search</span></button><div class=\"mqa-scroll\"><div class=\"mqa-results\" aria-live=\"polite\"></div></div><div class=\"mqa-recent-wrap\" id=\"mqa-recent\"></div><div class=\"mqa-actions-wrap\"></div></div></div></div>",
     mira: "<div class=\"up-root am-root\" data-typespeed=\"1.6\" id=\"ask-mira\" data-instance=\"lh-mira\" data-cdn-pin=\"\" data-isdark=\"no\"><div class=\"am-shell\"><!-- ===================== HERO ===================== --><header class=\"am-hero\"><div class=\"am-hero-inner\"><div class=\"am-hero-text\"><div class=\"am-title-row\"><span class=\"am-brand\"><span class=\"am-logo-mark\" aria-hidden=\"true\"></span><span class=\"am-wordmark\">mira</span></span><span class=\"am-status-pill\" id=\"am-status-pill\"><span class=\"am-status-dot\"></span><span id=\"am-status-text\">Ready</span></span></div><p class=\"am-subline\">Chat with your AI Search data.</p></div><div class=\"am-chat-titlebar\" id=\"am-chat-titlebar\" aria-hidden=\"true\"><button class=\"am-ct-back\" id=\"am-ct-back\" type=\"button\" aria-label=\"Back to start\" data-tip=\"Back to start\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path d=\"M15 6C15 6 9.00001 10.4189 9 12C8.99999 13.5812 15 18 15 18\"/></svg></button><button class=\"am-ct-name\" id=\"am-ct-name\" type=\"button\" data-tip=\"Rename chat\"><span class=\"am-ct-text\" id=\"am-ct-text\"></span><span class=\"am-ct-skeleton\" id=\"am-ct-skeleton\" aria-hidden=\"true\"></span></button><button class=\"am-ct-chev\" id=\"am-ct-chev\" type=\"button\" aria-label=\"Chat options\" aria-haspopup=\"menu\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></button><input class=\"am-ct-input\" id=\"am-ct-input\" type=\"text\" maxlength=\"120\" aria-label=\"Chat name\"><span class=\"am-ct-edit-actions\" id=\"am-ct-edit-actions\"><button class=\"am-ct-mini\" id=\"am-ct-save\" type=\"button\" data-tip=\"Save\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path d=\"M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7\"/></svg></button><button class=\"am-ct-mini\" id=\"am-ct-discard\" type=\"button\" data-tip=\"Discard\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button></span></div><button class=\"am-ghost-btn am-prev-btn\" type=\"button\" id=\"am-open-prev\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic am-prev-ic\"><path d=\"M11 3H13C16.7712 3 18.6569 3 19.8284 4.17157C21 5.34315 21 7.22876 21 11V13C21 16.7712 21 18.6569 19.8284 19.8284C18.6569 21 16.7712 21 13 21H11C7.22876 21 5.34315 21 4.17157 19.8284C3 18.6569 3 16.7712 3 13V11C3 7.22876 3 5.34315 4.17157 4.17157C5.34315 3 7.22876 3 11 3Z\"/><path d=\"M8.00488 16.0049L8.00488 8.00488\"/></svg><span class=\"am-prev-label-full\">All Chats</span><span class=\"am-prev-label-short\">Chats</span></button></div></header><!-- ===================== CHAT VIEW ===================== --><main class=\"am-chat\" id=\"am-chat\"><div class=\"am-messages\" id=\"am-messages\"></div><!-- Suggested questions (shown when empty) --><div class=\"am-suggested\" id=\"am-suggested\"><div class=\"am-welcome\"><h2 class=\"am-welcome-title\" id=\"am-welcome-title\">How can I help you today?</h2></div><p class=\"am-suggested-label\" id=\"am-suggested-label\">Try asking</p><div class=\"am-suggested-grid\" id=\"am-suggested-grid\"></div><div class=\"am-quick\" id=\"am-quick\" aria-label=\"Quick actions\"></div></div></main><!-- ===================== COMPOSER ===================== --><footer class=\"am-composer-area\"><button class=\"am-scroll-bottom\" type=\"button\" id=\"am-scroll-bottom\" aria-label=\"Scroll to latest\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></button><div class=\"am-composer-shell\" id=\"am-composer-shell\"><!-- ZWEITE FASSUNG (08.09.). Was hier stand: Textzeile und Aktionsspalte nebeneinander, ein Fader-Knopf und darunter ein ausklappbares Fach mit \"Answer detail\" und der Modellwahl. Beides ist weg -- Modell UND Aufwand liegen jetzt in EINER Schaltflaeche unten links, deren Menue nach oben aufgeht, und links davon ein Plus fuer den Entitaets-Picker. WICHTIG FUER EINEN BESTEHENDEN EINBAU: ask-mira.js baut das alte Markup zur Laufzeit selbst auf diese Fassung um (composerUmbauen). Wer sein Element in Bubble nicht anfasst, bekommt die neue Leiste trotzdem -- dieses Markup hier ist die Aufraeumarbeit fuer NEUINSTALLATIONEN, keine Voraussetzung. --><div class=\"am-composer is-v2\" id=\"am-composer\" data-am-composer=\"v5\"><!-- Der Picker: oberhalb des Feldes, auf seiner ganzen Breite. Er haengt AN .am-composer (position: relative) und nicht am Koerper: im Top Layer waere die volle Breite des Feldes nicht mehr herstellbar. --><div class=\"am-pick-panel\" id=\"am-pick-panel\" aria-hidden=\"true\"><div class=\"am-pick-search\"><svg width=\"24\" height=\"24\" class=\"am-pick-sic\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M17 17L21 21\"/><path d=\"M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z\"/></svg><span class=\"am-pick-chips\" id=\"am-pick-chips\"></span><span class=\"am-pick-inwrap\"><input class=\"am-pick-input\" id=\"am-pick-input\" type=\"text\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search your workspace\"></span><span class=\"am-pick-count\" id=\"am-pick-count\"></span></div><!-- Ueberschrift UND Chips in EINER Zeile, 16px auseinander, links ausgerichtet. --><div class=\"am-pick-crow\" id=\"am-pick-crow\"><p class=\"am-pick-h\" id=\"am-pick-h\"></p><!-- An der Stelle des frueheren Umschalters: die Befehle als Chips -- Brand, Prompt, Domain, URL. Getippt werden sie ueber \"/\" wie in Quick Actions. --><div class=\"am-pick-cmds\" id=\"am-pick-cmds\"></div></div><div class=\"am-pick-scroll\" id=\"am-pick-scroll\"><div class=\"am-pick-list\" id=\"am-pick-list\" role=\"listbox\" aria-live=\"polite\"></div></div></div><div class=\"am-quote-slot\" id=\"am-quote-slot\"></div><div class=\"am-input-wrap\"><!-- Die uebernommenen Bezuege stehen IM Textfeld, als erstes -- wie in Prompt Research (11.09.). Der Text geht direkt hinter der letzten Pille weiter: das Textfeld bekommt dafuer einen Einzug, den ask-mira.js aus der Lage der Pillen rechnet. ask-mira.js haengt den Streifen auch in einem aelteren eingebauten Element hierher um -- diese Stelle ist die Aufraeumarbeit fuer Neuinstallationen. --><div class=\"am-picks\" id=\"am-picks\"></div><textarea class=\"am-textarea\" id=\"am-textarea\" rows=\"1\" maxlength=\"2800\" placeholder=\"\"></textarea><div class=\"am-ph-loop\" id=\"am-ph-loop\" aria-hidden=\"true\"><span class=\"am-ph-text\" id=\"am-ph-text\">Ask Mira...</span></div></div><div class=\"am-actions\"><div class=\"am-act-l\"><button class=\"am-icon-action am-pick-btn\" type=\"button\" id=\"am-pick-btn\" aria-label=\"Add a reference\" aria-expanded=\"false\" data-tip=\"Add a reference\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M11.9922 4.00012V20.0001M19.9922 12.0001H3.99222\"/></svg></button></div><div class=\"am-act-r\"><div class=\"am-eff\" id=\"am-eff\"><button class=\"am-eff-btn\" type=\"button\" id=\"am-eff-btn\" aria-haspopup=\"true\" aria-expanded=\"false\"><span class=\"am-eff-name\" id=\"am-eff-name\"></span><span class=\"am-eff-lvl\" id=\"am-eff-lvl\"></span><svg width=\"24\" height=\"24\" class=\"am-eff-chev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></button><div class=\"am-eff-menu\" id=\"am-eff-menu\" role=\"dialog\" aria-label=\"Model and effort\"><button class=\"am-eff-head\" type=\"button\" id=\"am-eff-head\" aria-expanded=\"false\"><span class=\"am-eff-hname\" id=\"am-eff-hname\"></span><span class=\"am-eff-hlvl\" id=\"am-eff-hlvl\"></span><svg width=\"24\" height=\"24\" class=\"am-eff-hchev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M9.00005 18C9.00005 18 15 13.5811 15 12C15 10.4188 9 6 9 6\"/></svg></button><!-- EIN Rumpf um beide Ansichten; seine Hoehe setzt ask-mira.js gemessen, damit das Menue beim Umschalten weich waechst statt zu springen. --><div class=\"am-eff-body\" id=\"am-eff-body\"><div class=\"am-eff-pane am-eff-slider\" id=\"am-eff-slider\"><div class=\"am-eff-track\" id=\"am-eff-track\" role=\"slider\" tabindex=\"0\" aria-valuemin=\"0\" aria-valuemax=\"2\" aria-valuenow=\"1\"><span class=\"am-eff-fill\" id=\"am-eff-fill\"></span><span class=\"am-eff-ultra\" id=\"am-eff-ultra\" aria-hidden=\"true\"><!-- Die Punkte in EIGENER Schicht: nur sie tragen den Ausblender nach links, der Verlauf darunter steht auf ganzer Breite. --><span class=\"am-eff-dots\" id=\"am-eff-dots\"></span></span><span class=\"am-eff-dot\" data-i=\"0\"></span><span class=\"am-eff-dot\" data-i=\"1\"></span><span class=\"am-eff-dot\" data-i=\"2\"></span><span class=\"am-eff-thumb\" id=\"am-eff-thumb\"></span></div><div class=\"am-eff-labels\" id=\"am-eff-labels\"></div></div><div class=\"am-eff-pane am-eff-models\" id=\"am-eff-models\"></div><p class=\"am-eff-note\" id=\"am-eff-note\"></p></div></div></div><button class=\"am-icon-action am-mic\" type=\"button\" id=\"am-mic\" aria-label=\"Voice input\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M7 6.5C7 4.01472 9.01472 2 11.5 2C13.9853 2 16 4.01472 16 6.5V11.5C16 13.9853 13.9853 16 11.5 16C9.01472 16 7 13.9853 7 11.5V6.5Z\"/><path d=\"M11.5 19H11.0828C7.57267 19 4.57706 16.4623 4 13M11.5 19H11.9172C15.4273 19 18.4229 16.4623 19 13M11.5 19V22\"/></svg></button><button class=\"am-send\" type=\"button\" id=\"am-send\" aria-label=\"Send message\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic am-ic-send\"><path d=\"M12 19V5\"/><path d=\"M5 12L12 5L19 12\"/></svg><span class=\"am-send-spinner\" aria-hidden=\"true\"></span></button></div></div><div class=\"am-rec\" id=\"am-rec\" aria-hidden=\"true\"><span class=\"am-rec-live\"><span class=\"am-rec-dot\"></span><span class=\"am-rec-time\" id=\"am-rec-time\">0:00</span></span><div class=\"am-rec-wave\"><canvas class=\"am-rec-canvas\" id=\"am-rec-canvas\"></canvas></div><span class=\"am-rec-spring\"></span><div class=\"am-rec-actions\"><button class=\"am-rec-btn am-rec-cancel\" type=\"button\" id=\"am-rec-cancel\" aria-label=\"Discard recording\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button><button class=\"am-rec-btn am-rec-confirm\" type=\"button\" id=\"am-rec-confirm\" aria-label=\"Send recording\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7\"/></svg></button></div></div></div><div class=\"am-rec-note\" id=\"am-rec-note\" role=\"status\" aria-live=\"polite\"></div></div></footer><!-- ===================== PREVIOUS CHATS PANEL ===================== --><div class=\"am-prev-scrim\" id=\"am-prev-scrim\" hidden></div><aside class=\"am-prev-panel\" id=\"am-prev-panel\" aria-hidden=\"true\"><div class=\"am-prev-head\"><p class=\"am-prev-title\">Previous chats</p><button class=\"am-icon-btn\" type=\"button\" id=\"am-close-prev\" aria-label=\"Close\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button></div><div class=\"am-prev-toolbar\"><button class=\"am-newchat\" type=\"button\" id=\"am-new-chat\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" class=\"am-ic\"><path d=\"M11.9922 4.00012V20.0001M19.9922 12.0001H3.99222\"/></svg><span>New Chat</span></button><button class=\"am-settings-btn\" type=\"button\" id=\"am-settings-btn\" aria-label=\"Settings\" data-tip=\"Settings\" aria-expanded=\"false\"></button></div><div class=\"am-hl-panel\" id=\"am-hl-settings-panel\"><div class=\"am-set-row\"><label class=\"am-set-label\">Brand Highlights</label><div class=\"am-dd\" id=\"am-dd-brand\" data-set=\"brand\"><button class=\"am-dd-trigger\" type=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"false\"><span class=\"am-dd-value\">Logo</span><svg width=\"24\" height=\"24\" class=\"am-dd-chev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></button><div class=\"am-dd-menu\" role=\"listbox\"><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"logo\"><span class=\"am-dd-check\"></span><span>Logo</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"icon\"><span class=\"am-dd-check\"></span><span>Icon</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"none\"><span class=\"am-dd-check\"></span><span>No Highlight</span><span></span></button></div></div></div><div class=\"am-set-row\"><label class=\"am-set-label\">Citation Highlights</label><div class=\"am-dd\" id=\"am-dd-citation\" data-set=\"citation\"><button class=\"am-dd-trigger\" type=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"false\"><span class=\"am-dd-value\">Icon</span><svg width=\"24\" height=\"24\" class=\"am-dd-chev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></button><div class=\"am-dd-menu\" role=\"listbox\"><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"icon\"><span class=\"am-dd-check\"></span><span>Icon</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"favicon\"><span class=\"am-dd-check\"></span><span>Favicon</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"none\"><span class=\"am-dd-check\"></span><span>No Highlight</span><span></span></button></div></div></div><div class=\"am-set-row\"><label class=\"am-set-label\">Response Highlights</label><div class=\"am-dd\" id=\"am-dd-response\" data-set=\"response\"><button class=\"am-dd-trigger\" type=\"button\" aria-haspopup=\"listbox\" aria-expanded=\"false\"><span class=\"am-dd-value\">Logo</span><svg width=\"24\" height=\"24\" class=\"am-dd-chev\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></button><div class=\"am-dd-menu\" role=\"listbox\"><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"logo\"><span class=\"am-dd-check\"></span><span>Logo</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"icon\"><span class=\"am-dd-check\"></span><span>Icon</span><span></span></button><button class=\"am-dd-opt\" type=\"button\" role=\"option\" data-value=\"none\"><span class=\"am-dd-check\"></span><span>No Highlight</span><span></span></button></div></div></div></div><div class=\"am-prev-list\" id=\"am-prev-list\"></div></aside></div></div>",
-    pph: "<div class=\"up-root up-ph-root pph-root\" data-instance=\"lh-pph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d10%22%2F%3E%3Cpath%20d%3D%22M29%2015.5%2016.2%2048.5H23.1L25.3%2041.9H38.7L40.9%2048.5H47.8L35%2015.5ZM32%2025.4%2028.9%2034.4H35.1Z%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Database</span></div><h1 class=\"up-ph-heading\">Prompt Insights</h1><p class=\"up-ph-desc\">Manage Prompts, Topics and monitor latest Responses</p></div><div class=\"pph-topright\"><button class=\"up-ph-addbtn up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\" /><path d=\"M12 5v14\" /></svg><span>Add <span class=\"up-ph-addbtn-full\">Prompts</span></span></button><button class=\"pph-refreshbtn up-ph-iconbtn\" type=\"button\" aria-label=\"Refresh\" data-tip=\"Refresh Data\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /><path d=\"M21 3v5h-5\" /><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /><path d=\"M8 16H3v5\" /></svg></button></div></div><!-- UC.makePageNav (core.js) builds the three tab items + the sliding indicator into this on init. --><div class=\"up-ph-nav\" role=\"tablist\"></div></div>",
+    pph: "<div class=\"up-root up-ph-root pph-root\" data-instance=\"lh-pph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d10%22%2F%3E%3Cpath%20d%3D%22M29%2015.5%2016.2%2048.5H23.1L25.3%2041.9H38.7L40.9%2048.5H47.8L35%2015.5ZM32%2025.4%2028.9%2034.4H35.1Z%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Database</span></div><div class=\"up-ph-heading\">Prompt Insights</div><p class=\"up-ph-desc\">Manage Prompts, Topics and monitor latest Responses</p></div><div class=\"pph-topright\"><button class=\"up-ph-addbtn up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\" /><path d=\"M12 5v14\" /></svg><span>Add <span class=\"up-ph-addbtn-full\">Prompts</span></span></button><button class=\"pph-refreshbtn up-ph-iconbtn\" type=\"button\" aria-label=\"Refresh\" data-tip=\"Refresh Data\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\" /><path d=\"M21 3v5h-5\" /><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\" /><path d=\"M8 16H3v5\" /></svg></button></div></div><!-- UC.makePageNav (core.js) builds the three tab items + the sliding indicator into this on init. --><div class=\"up-ph-nav\" role=\"tablist\"></div></div>",
     upt: "<div class=\"up-root upt-root\" data-instance=\"lh-upt\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"\" data-sticky=\"no\" data-sticky-top=\"171\" data-export-instance=\"\"><div class=\"up-head\"><div class=\"up-heading\"><span class=\"up-head-label\">Prompts</span><span class=\"up-head-sep\"></span><span class=\"up-head-count\"></span><span class=\"upt-selcount\"><span class=\"upt-selcount-n\">0 selected</span><button class=\"upt-selcount-clear\" type=\"button\" aria-label=\"Clear selection\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button></span></div><div class=\"upt-status\" role=\"tablist\" aria-label=\"Prompt status\"></div><div class=\"up-head-tools\"><button class=\"upt-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"upt-brand-toggle-lbl\"><img class=\"upt-brand-logo\" src=\"\" style=\"display:none\" alt=\"\"/><span class=\"upt-brand-label\"></span></span><span class=\"upt-brand-check\"><svg class=\"upt-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7\"/></svg><svg class=\"upt-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.9922 12L2.99219 12\"/></svg></span></button><div class=\"up-sort\"><button class=\"up-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 17L21 21\"/><path d=\"M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z\"/></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Search prompts...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search prompts\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button></div></div><div class=\"up-cols\"><button class=\"up-cols-btn up-iconbtn\" type=\"button\" data-tip=\"Table Settings\" aria-label=\"Table settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z\"/><path d=\"M8.5 10C7.67157 10 7 9.32843 7 8.5C7 7.67157 7.67157 7 8.5 7C9.32843 7 10 7.67157 10 8.5C10 9.32843 9.32843 10 8.5 10Z\"/><path d=\"M15.5 17C16.3284 17 17 16.3284 17 15.5C17 14.6716 16.3284 14 15.5 14C14.6716 14 14 14.6716 14 15.5C14 16.3284 14.6716 17 15.5 17Z\"/><path d=\"M10 8.5L17 8.5\"/><path d=\"M14 15.5L7 15.5\"/></svg></button><span class=\"upt-cols-badge\"></span><div class=\"up-cols-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg><span>Export</span></button></div></div><div class=\"up-box\"><div class=\"up-table\"><div class=\"up-thead\"><div class=\"up-th up-th-prompt is-sortable\" data-sortcol=\"prompt\"><span class=\"upt-check\" role=\"checkbox\" tabindex=\"0\" aria-checked=\"false\" data-selectall></span><span class=\"up-th-txt\">Prompt</span><span class=\"up-thsort\" data-for=\"prompt\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span><span class=\"up-grip\" data-grip=\"prompt\"></span></div><div class=\"up-th up-th-visibility is-sortable\" data-sortcol=\"visibility\"><img class=\"upt-th-brandlogo\" src=\"\" alt=\"\"/><span class=\"up-th-txt\">Visibility</span><span class=\"up-th-info\" data-explain=\"visibility\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16V12\"/><path d=\"M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z\"/></svg></span><span class=\"up-thsort\" data-for=\"visibility\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div><div class=\"up-th up-th-rank is-sortable\" data-sortcol=\"rank\"><span class=\"up-th-txt\">Rank</span><span class=\"up-th-info\" data-explain=\"rank\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16V12\"/><path d=\"M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z\"/></svg></span><span class=\"up-thsort\" data-for=\"rank\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div><div class=\"up-th up-th-sentiment is-sortable\" data-sortcol=\"sentiment\"><span class=\"up-th-txt\">Sentiment</span><span class=\"up-th-info\" data-explain=\"sentiment\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16V12\"/><path d=\"M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z\"/></svg></span><span class=\"up-thsort\" data-for=\"sentiment\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div><div class=\"up-th up-th-brands\">Brand Mentions<span class=\"up-th-info\" data-explain=\"brands\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16V12\"/><path d=\"M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z\"/></svg></span></div><div class=\"up-th up-th-topics\">Topics</div><div class=\"up-th up-th-market\">Market<span class=\"up-th-info\" data-explain=\"market\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16V12\"/><path d=\"M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z\"/></svg></span></div><div class=\"up-th up-th-created is-sortable\" data-sortcol=\"created\"><span class=\"up-th-txt\">Created</span><span class=\"up-thsort\" data-for=\"created\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div></div><div class=\"up-tbody\"></div></div></div><div class=\"up-foot\"><div class=\"up-pagesize\"><span class=\"up-pagesize-lbl\">Rows per page</span><div class=\"up-pagesize-seg\" role=\"group\" aria-label=\"Rows per page\"></div></div><div class=\"up-pager\"></div></div></div>",
-    oph: "<div class=\"up-root up-ph-root oph-root\" data-instance=\"lh-oph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d10%22%2F%3E%3Cpath%20d%3D%22M29%2015.5%2016.2%2048.5H23.1L25.3%2041.9H38.7L40.9%2048.5H47.8L35%2015.5ZM32%2025.4%2028.9%2034.4H35.1Z%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Workspace</span></div><h1 class=\"up-ph-heading\">Opportunities</h1><p class=\"up-ph-desc\">Manage tasks, prioritize opportunities, and track progress</p></div><button class=\"up-ph-addbtn up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 7V5a2 2 0 0 1 2-2h2\" /><path d=\"M17 3h2a2 2 0 0 1 2 2v2\" /><path d=\"M21 17v2a2 2 0 0 1-2 2h-2\" /><path d=\"M7 21H5a2 2 0 0 1-2-2v-2\" /><rect width=\"8\" height=\"8\" x=\"8\" y=\"8\" rx=\"1\" /></svg><span>Look for<span class=\"up-ph-addbtn-full\"> new Opportunities</span></span></button></div></div>",
+    oph: "<div class=\"up-root up-ph-root oph-root\" data-instance=\"lh-oph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d10%22%2F%3E%3Cpath%20d%3D%22M29%2015.5%2016.2%2048.5H23.1L25.3%2041.9H38.7L40.9%2048.5H47.8L35%2015.5ZM32%2025.4%2028.9%2034.4H35.1Z%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Workspace</span></div><div class=\"up-ph-heading\">Opportunities</div><p class=\"up-ph-desc\">Manage tasks, prioritize opportunities, and track progress</p></div><button class=\"up-ph-addbtn up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 7V5a2 2 0 0 1 2-2h2\" /><path d=\"M17 3h2a2 2 0 0 1 2 2v2\" /><path d=\"M21 17v2a2 2 0 0 1-2 2h-2\" /><path d=\"M7 21H5a2 2 0 0 1-2-2v-2\" /><rect width=\"8\" height=\"8\" x=\"8\" y=\"8\" rx=\"1\" /></svg><span>Look for<span class=\"up-ph-addbtn-full\"> new Opportunities</span></span></button></div></div>",
     uo: "<div class=\"up-root uo-root\" data-portal=\"inline\" data-instance=\"lh-uo\" data-cdn-pin=\"\" data-isdark=\"no\" data-sticky=\"no\" data-sticky-top=\"16\"><div class=\"up-head uo-head\"><div class=\"up-heading has-count\"><span class=\"up-head-label\">Active Opportunities</span><span class=\"up-head-sep\"></span><span class=\"up-head-count uo-total\">0</span></div><div class=\"up-head-tools\"><!-- Sorter vor der Suche: dieselbe Reihenfolge wie in allen anderen Kopfzeilen. core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars). --><div class=\"uo-popwrap\"><button class=\"uo-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\" aria-haspopup=\"menu\" aria-expanded=\"false\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-menu uo-sort-pop\" role=\"menu\" aria-hidden=\"true\"><div class=\"up-pop-head\">Sort by</div><div class=\"up-pop-opt is-active\" role=\"menuitem\" data-sort=\"priority\">Priority<svg class=\"up-check\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7\"/></svg></div><div class=\"up-pop-opt\" role=\"menuitem\" data-sort=\"newest\">Newest<svg class=\"up-check\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7\"/></svg></div><div class=\"up-pop-div\"></div><div class=\"up-pop-row uo-toggle-external\"><span class=\"up-pop-label\">External only</span><span class=\"up-switch uo-switch-external\" role=\"switch\"></span></div></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 17L21 21\"/><path d=\"M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z\"/></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Search opportunities...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search opportunities\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button></div></div><div class=\"up-seg uo-mode\" role=\"tablist\" aria-label=\"View\"><button class=\"up-seg-btn is-active\" type=\"button\" role=\"tab\" data-mode=\"board\" data-tip=\"Board view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"18\" rx=\"1.5\"></rect><rect x=\"14\" y=\"3\" width=\"7\" height=\"11\" rx=\"1.5\"></rect></svg>Board</button><button class=\"up-seg-btn\" type=\"button\" role=\"tab\" data-mode=\"list\" data-tip=\"List view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 5h.01\" /><path d=\"M3 12h.01\" /><path d=\"M3 19h.01\" /><path d=\"M8 5h13\" /><path d=\"M8 12h13\" /><path d=\"M8 19h13\" /></svg>List</button></div><div class=\"uo-popwrap\"><button class=\"uo-settings-btn up-iconbtn\" type=\"button\" data-tip=\"Board settings\" aria-label=\"Board settings\" aria-haspopup=\"menu\" aria-expanded=\"false\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z\"/><path d=\"M8.5 10C7.67157 10 7 9.32843 7 8.5C7 7.67157 7.67157 7 8.5 7C9.32843 7 10 7.67157 10 8.5C10 9.32843 9.32843 10 8.5 10Z\"/><path d=\"M15.5 17C16.3284 17 17 16.3284 17 15.5C17 14.6716 16.3284 14 15.5 14C14.6716 14 14 14.6716 14 15.5C14 16.3284 14.6716 17 15.5 17Z\"/><path d=\"M10 8.5L17 8.5\"/><path d=\"M14 15.5L7 15.5\"/></svg></button><div class=\"up-menu uo-settings-pop\" role=\"menu\" aria-hidden=\"true\"><div class=\"up-pop-head\">Lanes</div><div class=\"up-pop-row\" data-board=\"pending\"><span class=\"up-pop-label\"><span class=\"uo-col-dot\" style=\"background:#9ca3af;\"></span>Pending</span><span class=\"up-switch is-on\" role=\"switch\"></span></div><div class=\"up-pop-row\" data-board=\"in_progress\"><span class=\"up-pop-label\"><span class=\"uo-col-dot\" style=\"background:#2384E2;\"></span>In Progress</span><span class=\"up-switch is-on\" role=\"switch\"></span></div><div class=\"up-pop-row\" data-board=\"done\"><span class=\"up-pop-label\"><span class=\"uo-col-dot\" style=\"background:#15803d;\"></span>Done</span><span class=\"up-switch\" role=\"switch\"></span></div><div class=\"up-pop-row\" data-board=\"ignored\"><span class=\"up-pop-label\"><span class=\"uo-col-dot\" style=\"background:#b4451f;\"></span>Ignored</span><span class=\"up-switch\" role=\"switch\"></span></div></div></div></div></div><!-- opportunities.js renders the lanes / list into this. --><div class=\"uo-stage\"></div><div class=\"uo-scrim\"></div><div class=\"uo-modal\" role=\"dialog\" aria-modal=\"true\"></div><!-- Optional: paste a JSON array here to render without a Run-JS step (useful while designing). --><script class=\"uo-data-json\" type=\"application/json\">[]</script></div>",
     urt: "<div class=\"up-root urt-root\" data-instance=\"lh-urt\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"\" data-spotlight-mode=\"no\" data-export-instance=\"\" data-sticky=\"no\" data-sticky-top=\"171\" data-sticky=\"no\" data-default-view=\"cards\"><div class=\"up-head\"><div class=\"up-heading\"><span class=\"up-head-label\">Responses</span><span class=\"up-head-sep\"></span><span class=\"up-head-count\"></span></div><div class=\"up-head-tools\"><button class=\"urt-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"urt-brand-toggle-lbl\"><img class=\"urt-brand-logo\" src=\"\" style=\"display:none\" alt=\"\"/><span class=\"urt-brand-label\"></span></span><span class=\"urt-brand-check\"><svg class=\"urt-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7\"/></svg><svg class=\"urt-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.9922 12L2.99219 12\"/></svg></span></button><div class=\"up-ment\"><button class=\"up-ment-btn\" type=\"button\" data-tip=\"Filter for brand mentions\" aria-haspopup=\"menu\" aria-expanded=\"false\"><span class=\"up-ment-lbl\">All Brands</span><svg class=\"up-ment-chev\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg><svg class=\"up-ment-clear\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button><div class=\"up-ment-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><!-- Reihenfolge: Sorter VOR dem Fader, also von rechts gelesen der Fader vor dem Sorter. core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars) -- hier steht sie richtig, damit eine Neuinstallation nicht erst umsortiert werden muss. --><div class=\"up-sort\"><button class=\"up-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><!-- lucide \"settings-2\" \u2014 the SAME filter glyph visibility-chart / topcitations / combo-chart use. .up-iconbtn makes it behave like every other toolbar icon button. --><div class=\"urt-fader\"><button class=\"urt-fader-btn up-iconbtn\" type=\"button\" data-tip=\"Filter by rank &amp; sentiment\" aria-label=\"Filter by rank and sentiment\" aria-haspopup=\"menu\" aria-expanded=\"false\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M7 21L7 18\"/><path d=\"M17 21L17 15\"/><path d=\"M17 6L17 3\"/><path d=\"M7 9L7 3\"/><path d=\"M7 18C6.06812 18 5.60218 18 5.23463 17.8478C4.74458 17.6448 4.35523 17.2554 4.15224 16.7654C4 16.3978 4 15.9319 4 15C4 14.0681 4 13.6022 4.15224 13.2346C4.35523 12.7446 4.74458 12.3552 5.23463 12.1522C5.60218 12 6.06812 12 7 12C7.93188 12 8.39782 12 8.76537 12.1522C9.25542 12.3552 9.64477 12.7446 9.84776 13.2346C10 13.6022 10 14.0681 10 15C10 15.9319 10 16.3978 9.84776 16.7654C9.64477 17.2554 9.25542 17.6448 8.76537 17.8478C8.39782 18 7.93188 18 7 18Z\"/><path d=\"M17 12C16.0681 12 15.6022 12 15.2346 11.8478C14.7446 11.6448 14.3552 11.2554 14.1522 10.7654C14 10.3978 14 9.93188 14 9C14 8.06812 14 7.60218 14.1522 7.23463C14.3552 6.74458 14.7446 6.35523 15.2346 6.15224C15.6022 6 16.0681 6 17 6C17.9319 6 18.3978 6 18.7654 6.15224C19.2554 6.35523 19.6448 6.74458 19.8478 7.23463C20 7.60218 20 8.06812 20 9C20 9.93188 20 10.3978 19.8478 10.7654C19.6448 11.2554 19.2554 11.6448 18.7654 11.8478C18.3978 12 17.9319 12 17 12Z\"/></svg></button><div class=\"urt-fader-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 17L21 21\"/><path d=\"M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z\"/></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Search prompts...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search responses\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button></div></div><div class=\"up-cols\"><button class=\"up-cols-btn up-iconbtn\" type=\"button\" data-tip=\"Table Settings\" aria-label=\"Table settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z\"/><path d=\"M8.5 10C7.67157 10 7 9.32843 7 8.5C7 7.67157 7.67157 7 8.5 7C9.32843 7 10 7.67157 10 8.5C10 9.32843 9.32843 10 8.5 10Z\"/><path d=\"M15.5 17C16.3284 17 17 16.3284 17 15.5C17 14.6716 16.3284 14 15.5 14C14.6716 14 14 14.6716 14 15.5C14 16.3284 14.6716 17 15.5 17Z\"/><path d=\"M10 8.5L17 8.5\"/><path d=\"M14 15.5L7 15.5\"/></svg></button><span class=\"urt-cols-badge\"></span><div class=\"up-cols-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><!-- .up-dense / .up-dense-btn are core's segmented control \u2014 the same one the Row Height picker uses. Reused verbatim so this switcher IS the app's switcher, not a lookalike. .urt-viewswitch only overrides the width (core's is full-width for the popover). --><div class=\"up-dense urt-viewswitch\" role=\"group\" aria-label=\"View\"><button class=\"up-dense-btn up-dense-btn-icon is-active\" type=\"button\" data-view=\"table\" data-tip=\"Table view\" aria-label=\"Table view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18\"/></svg></button><button class=\"up-dense-btn up-dense-btn-icon\" type=\"button\" data-view=\"cards\" data-tip=\"Card view\" aria-label=\"Card view\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 4V20\"/><path d=\"M18 4V20\"/><path d=\"M21 7L3 7\"/><path d=\"M21 17L3 17\"/></svg></button></div><button class=\"up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg><span>Export</span></button></div></div><div class=\"up-box\"><div class=\"up-table\"><div class=\"up-thead\"><!-- The lead column's resize grip. Every other table has one; without it the first column simply cannot be dragged (core's resize kit binds to .up-grip). --><div class=\"up-th up-th-prompt\">Prompt<span class=\"up-grip\" data-grip=\"prompt\"></span></div><!-- \"<brand logo> mentioned?\", identical to urls-table: the logo is filled in from data-brand-logo, and without one the label falls back to \"<brand name> mentioned?\" --><div class=\"up-th up-th-mentioned\"><img class=\"up-th-brandlogo\" src=\"\" alt=\"\" style=\"display:none\"/><span class=\"up-th-mentlbl\">Mentioned</span></div><div class=\"up-th up-th-sentiment is-sortable\" data-sortcol=\"sentiment\"><span class=\"up-th-txt\">Sentiment</span><span class=\"up-thsort\" data-for=\"sentiment\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div><div class=\"up-th up-th-rank is-sortable\" data-sortcol=\"rank\"><span class=\"up-th-txt\">Rank</span><span class=\"up-thsort\" data-for=\"rank\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div><div class=\"up-th up-th-brands\">Brand Mentions</div><div class=\"up-th up-th-citations\">Citations</div><div class=\"up-th up-th-model\">Model</div><div class=\"up-th up-th-date is-sortable\" data-sortcol=\"date\"><span class=\"up-th-txt\">Date</span><span class=\"up-thsort\" data-for=\"date\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div></div><div class=\"up-tbody\"></div></div></div><div class=\"urt-cards\"></div><div class=\"up-foot\"><div class=\"up-pagesize\"><span class=\"up-pagesize-lbl\">Rows per page</span><div class=\"up-pagesize-seg\" role=\"group\" aria-label=\"Rows per page\"></div></div><div class=\"up-pager\"></div></div></div>",
     udd: "<div class=\"up-root udd-root\" data-typfarben=\"verlauf\" data-instance=\"lh-udd\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand=\"Acme\"></div>",
-    hph: "<div class=\"up-root up-ph-root pfph-root\" data-instance=\"lh-hph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d10%22%2F%3E%3Cpath%20d%3D%22M29%2015.5%2016.2%2048.5H23.1L25.3%2041.9H38.7L40.9%2048.5H47.8L35%2015.5ZM32%2025.4%2028.9%2034.4H35.1Z%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Workspace</span></div><h1 class=\"up-ph-heading\">Performance</h1><p class=\"up-ph-desc\">Explore topic performance, compare brands, and uncover strengths and gaps</p></div></div></div>",
+    hph: "<div class=\"up-root up-ph-root pfph-root\" data-instance=\"lh-hph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d10%22%2F%3E%3Cpath%20d%3D%22M29%2015.5%2016.2%2048.5H23.1L25.3%2041.9H38.7L40.9%2048.5H47.8L35%2015.5ZM32%2025.4%2028.9%2034.4H35.1Z%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Workspace</span></div><div class=\"up-ph-heading\">Performance</div><p class=\"up-ph-desc\">Explore topic performance, compare brands, and uncover strengths and gaps</p></div></div></div>",
     uhm: "<div class=\"up-root uhm-root\" data-instance=\"lh-uhm\" data-cdn-pin=\"\" data-isdark=\"no\"><div class=\"up-head\"><div class=\"up-heading\">Performance Chart</div><div class=\"up-head-tools\"><div class=\"uhm-metric up-seg\" role=\"tablist\" aria-label=\"Metric\"><button class=\"up-seg-btn is-active\" data-metric=\"visibility\" type=\"button\" role=\"tab\" aria-selected=\"true\">Visibility</button><button class=\"up-seg-btn\" data-metric=\"rank\" type=\"button\" role=\"tab\" aria-selected=\"false\">Ranking</button><button class=\"up-seg-btn\" data-metric=\"sentiment\" type=\"button\" role=\"tab\" aria-selected=\"false\">Sentiment</button></div><!-- Der Einstellungsknopf steht ganz rechts, hinter dem Filter. Er stand vorher links davon; core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars). --><div class=\"uhm-pick\"><button class=\"uhm-pick-btn up-iconbtn\" type=\"button\" data-tip=\"Brands &amp; Topics\" aria-label=\"Choose brands and topics\"></button><div class=\"uhm-pick-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"uhm-set\"><button class=\"uhm-set-btn up-iconbtn\" type=\"button\" data-tip=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z\"/><path d=\"M8.5 10C7.67157 10 7 9.32843 7 8.5C7 7.67157 7.67157 7 8.5 7C9.32843 7 10 7.67157 10 8.5C10 9.32843 9.32843 10 8.5 10Z\"/><path d=\"M15.5 17C16.3284 17 17 16.3284 17 15.5C17 14.6716 16.3284 14 15.5 14C14.6716 14 14 14.6716 14 15.5C14 16.3284 14.6716 17 15.5 17Z\"/><path d=\"M10 8.5L17 8.5\"/><path d=\"M14 15.5L7 15.5\"/></svg></button><div class=\"uhm-set-menu up-menu\" role=\"menu\" aria-hidden=\"true\"></div></div></div></div><div class=\"uhm-box\"><div class=\"uhm-scroll\"><div class=\"uhm-grid\"></div></div></div></div>",
-    ush: "<div class=\"up-root ush-root\" data-adresse=\"aus\" data-instance=\"lh-ush\" data-cdn-pin=\"\" data-isdark=\"no\"></div>"
+    ush: "<div class=\"up-root ush-root\" data-adresse=\"aus\" data-instance=\"lh-ush\"></div>"
   };
   /* ---- MARKUP ENDE ---- */
 
@@ -319,11 +319,72 @@
     try { if (window.setUpstreemTheme) window.setUpstreemTheme("light"); } catch (e){}
   }
 
+  /* ---------- Vorgerendert oder selbst gebaut (13.10.) ---------------------------------------
+     Bis zum 13.10. baute diese Datei die GANZE Seite im Browser -- im rohen HTML der Startseite
+     stand kein einziges Wort, keine Ueberschrift, kein Link. Gemessen auf upstreem.ai: 0 Woerter
+     ohne JavaScript, 2093 mit. GPTBot, ClaudeBot, PerplexityBot und OAI-SearchBot fuehren kein
+     JavaScript aus; fuer sie war die Startseite leer.
+     Seitdem rendert Framer die Seite vor (framer/UpstreemLanding.tsx). Das Markup darin ist
+     ERZEUGT, nicht abgeschrieben: .landing_ssr.js laesst diese Datei in Node laufen und schreibt
+     seiteHtml(true) in die Komponente. Die Texte stehen also weiter nur hier.
+     seiteHtml(true) ist die Seite OHNE die Komponenten der App im Fenster: an ihrer Stelle steht je
+     ein leeres <template data-ulh-m>. Fuer einen Crawler sind die Fenster Rauschen (Seitenleisten,
+     Tabellenkoepfe, fuenf Seitentitel), und sie sind der groesste Teil der Bytes. Dasselbe gilt
+     fuer die Vorschauen in den Karten (<template data-ulh-v>, siehe visInhalt): sie bauen sich
+     teils aus core, und ohne core waeren sie beim Vorrendern ein anderes Markup als danach.
+     bauen() uebernimmt das vorgerenderte Markup, wenn es zu dieser Datei passt (standDerSeite), und
+     setzt nur die Komponenten ein. Passt es nicht -- die Komponente in Framer ist aelter als der
+     Pin --, baut es die Seite wie bisher selbst: dann sieht man den neuen Stand, nur ohne den
+     Vorsprung des Vorrenderns. Ein Mischstand aus altem Text und neuem Fenster entsteht nie. */
+  var NUR_GERUEST = false;
+  /* Die Wurzel der Startseite. NICHT jede .ulh-root: Leiste und Fuss als eigene Framer-Komponenten
+     (data-ulh-teil) tragen die Klasse auch -- ihre Masse und Farben kommen aus deren Variablen --,
+     sind aber keine Landingpage und werden von landing-teile.js gebunden. */
+  var WURZEL = ".ulh-root:not([data-ulh-teil])";
+  function demoTeil(k){
+    return NUR_GERUEST ? '<template data-ulh-m="' + k + '"></template>' : (MARKUP[k] || "");
+  }
+  function seiteHtml(geruest){
+    NUR_GERUEST = !!geruest;
+    try { return seiteBauen(); } finally { NUR_GERUEST = false; }
+  }
+  /* FNV-1a, 32 Bit. Kein Schutz gegen Absicht, nur gegen Versehen: gleicher Text, gleiche Zahl. */
+  function fnv(t){
+    var h = 0x811c9dc5;
+    for (var i = 0; i < t.length; i++){ h ^= t.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+    return ("0000000" + h.toString(16)).slice(-8);
+  }
+  /* Das Jahr im Fuss zaehlt nicht mit: das Markup in Framer stammt aus dem Jahr seiner Erzeugung,
+     und ein Jahreswechsel soll nicht die ganze Seite neu bauen. */
+  var STAND = null;
+  function standDerSeite(){
+    if (!STAND) STAND = fnv(seiteHtml(true).replace(/<span data-ulh-jahr>\d+<\/span>/g, "<span data-ulh-jahr></span>"));
+    return STAND;
+  }
+
   function bauen(root){
-    if (root.querySelector(".ulh-frame")) return;          /* schon gebaut */
+    var platz = root.querySelectorAll("template[data-ulh-m], template[data-ulh-v]");
+    if (root.querySelector(".ulh-frame") && !platz.length) return;          /* schon gebaut */
     listenmodusSetzen();
     themaHell();
-    root.innerHTML =
+    if (platz.length && root.getAttribute("data-ulh-ssr") === standDerSeite()){
+      /* An der Stelle des Platzhalters, nicht am Ende des Elternteils: .ulh-seite traegt zwei oder
+         drei Komponenten hintereinander, und ihre Reihenfolge ist die der Vorlage. */
+      [].forEach.call(platz, function(t){
+        var m = t.getAttribute("data-ulh-m");
+        t.insertAdjacentHTML("beforebegin", m ? (MARKUP[m] || "") : visInhalt(t.getAttribute("data-ulh-v")));
+        t.parentNode.removeChild(t);
+      });
+      /* Woran man von aussen sieht, welcher Weg lief (__ulhDiag, Pruefstand). */
+      root.setAttribute("data-ulh-ssr-weg", "uebernommen");
+      return;
+    }
+    if (platz.length) root.setAttribute("data-ulh-ssr-weg", "neu gebaut");
+    root.innerHTML = seiteHtml(false);
+  }
+
+  function seiteBauen(){
+    return (
       /* Die zwei Schienen. Sie laufen ueber die GANZE Seite und nicht je Sektion: die Seite hat
          eine Spur, und alles darin richtet sich an derselben Kante aus -- der Rahmen des Fensters
          oben genauso wie die Karten unten. Deshalb ein eigenes Element an der Wurzel und keine
@@ -351,19 +412,24 @@
             '<span class="ulh-chip-ic" data-ic="zap" data-ic-w="1.9" aria-hidden="true"></span>' +
             '<span class="ulh-chip-t">Get mentioned in AI search</span></span></span>' +
         '</p>' +
-        '<h1 class="ulh-h1"><span>AI Search Analytics</span><span>Made simple.</span></h1>' +
+        /* Das Leerzeichen zwischen den zwei Spans sieht niemand (beide sind display: block), es steht
+           fuer die, die nur den Text lesen: ohne es heisst die Ueberschrift fuer einen Crawler
+           "AI Search AnalyticsMade simple." (13.10. gemessen). */
+        '<h1 class="ulh-h1"><span>AI Search Analytics</span> <span>Made simple.</span></h1>' +
         /* Der Umbruch nach "drive" steht hier und nicht in der CSS: die drei Treiber sollen zu
            dritt in einer Zeile stehen, und das ist eine Aussage ueber den Text, nicht ueber die
            Breite. Seit dem 06.10. ohne Zeichen davor (angefordert). */
-        '<p class="ulh-sub">Track and optimize your brand’s AI search performance and drive' +
+        /* Die Leerzeichen zwischen den Treibern: dieselbe Ueberlegung wie bei der Ueberschrift. Im
+           Flex-Kasten (.ulh-drivers) faellt Leerraum zwischen den Elementen weg. */
+        '<p class="ulh-sub">Track and optimize your brand’s AI search performance and drive ' +
           '<span class="ulh-drivers">' +
-            '<span class="ulh-driver">Qualified Traffic</span>' +
-            '<span class="ulh-driver">Leads</span>' +
+            '<span class="ulh-driver">Qualified Traffic</span> ' +
+            '<span class="ulh-driver">Leads</span> ' +
             '<span class="ulh-driver">Revenue</span>' +
           '</span>' +
         '</p>' +
         '<div class="ulh-cta">' +
-          '<button class="ulh-btn ulh-btn-sec" type="button">Talk to Sales</button>' +
+          '<button class="ulh-btn ulh-btn-sec" type="button">Talk to Sales</button> ' +
           /* Der Pfeil (06.10. angefordert) kommt wie jedes Zeichen der Seite aus core und wird von
              zeichenSetzen() nachgeliefert; sein Platz steht schon vorher (landing-hero.css), damit
              der Knopf nicht breiter springt, wenn er kommt. */
@@ -395,8 +461,8 @@
               /* Quick Actions ist ein Seiten-Singleton und steht deshalb neben der Leiste, nicht
                  darin. sidebar.js haengt es von selbst in seine eigene Zeile um -- genau so
                  laeuft es in der App auch. */
-              (MARKUP.mqa || "") +
-              '<div class="ulh-side">' + (MARKUP.usn || "") + '</div>' +
+              demoTeil("mqa") +
+              '<div class="ulh-side">' + demoTeil("usn") + '</div>' +
               /* Zwei Seiten UEBEREINANDER im selben Kasten, nicht nacheinander: die Sektion
                  wechselt vom Dashboard zu Mira, und eine ausgeblendete Seite darf keinen Platz mehr
                  brauchen. Mira steht von Anfang an im Markup -- sie richtet sich an ihrer echten
@@ -407,24 +473,24 @@
                  16 links und 8 rechts vom Rand, die Linien bis an die Kante (UC.makePageCrumbs). */
               '<div class="ulh-seiten">' +
                 '<div class="ulh-seite ulh-main" data-up-kopfrahmen>' +
-                  (MARKUP.dph || "") + (MARKUP.vot || "") + (MARKUP.tcd || "") +
+                  demoTeil("dph") + demoTeil("vot") + demoTeil("tcd") +
                 '</div>' +
-                '<div class="ulh-seite ulh-mira">' + (MARKUP.mira || "") + '</div>' +
+                '<div class="ulh-seite ulh-mira">' + demoTeil("mira") + '</div>' +
                 '<div class="ulh-seite ulh-prompts" data-up-kopfrahmen>' +
-                  (MARKUP.pph || "") + (MARKUP.upt || "") +
+                  demoTeil("pph") + demoTeil("upt") +
                 '</div>' +
                 '<div class="ulh-seite ulh-chancen" data-up-kopfrahmen>' +
-                  (MARKUP.oph || "") + (MARKUP.uo || "") +
+                  demoTeil("oph") + demoTeil("uo") +
                 '</div>' +
                 /* Fuenfte Seite: Performance. Sie steht am Ende des Kreislaufs, weil sie die Frage
                    beantwortet, die nach den Chancen kommt -- "und wo stehe ich je Thema?". */
                 '<div class="ulh-seite ulh-perf" data-up-kopfrahmen>' +
-                  (MARKUP.hph || "") + (MARKUP.uhm || "") +
+                  demoTeil("hph") + demoTeil("uhm") +
                 '</div>' +
                 /* Sechste Seite (06.10.): Shopping. Nach Performance, vor dem Neustart -- sie
                    zeigt den Teil der Antworten, den die Seiten davor nicht kennen: Produkte. Die
                    Komponente bringt ihren Kopf selbst mit (Krumen, Reiter). */
-                '<div class="ulh-seite ulh-shop" data-up-kopfrahmen>' + (MARKUP.ush || "") + '</div>' +
+                '<div class="ulh-seite ulh-shop" data-up-kopfrahmen>' + demoTeil("ush") + '</div>' +
               '</div>' +
             '</div>' +
           '</div>' +
@@ -441,7 +507,7 @@
       geo() +
       stimme() +
       preise() +
-      fuss();
+      fuss());
   }
 
   /* ---------- Die Leiste oben --------------------------------------------------------------
@@ -463,12 +529,15 @@
     { k: "resources", t: "Resources" }
   ];
   var NAV_MENUES = {
-    /* Die Punkte unter "Platform" zeigen auf Stellen DIESER Seite -- der Klick scrollt dorthin,
-       keine Adresse, kein Neuladen. */
+    /* Die Punkte unter "Platform" zeigen auf Stellen der STARTSEITE. Auf ihr scrollt der Klick
+       dorthin (landing-teile.js), auf jeder anderen Seite -- dort steht dieselbe Leiste als eigene
+       Komponente -- fuehrt er mit dem Anker auf die Startseite. Der Anker ist zugleich die id der
+       Sektion (merkmale, quellen, msc). Vor dem 13.10. stand hier href="#": ein Verweis, den kein
+       Crawler und keine andere Seite verfolgen konnte. */
     platform: { spalte: "Platform", eintraege: [
-      { t: "Overview", s: "What upstreem shows you", ziel: ".ulh-feat" },
-      { t: "Source Insights", s: "Which pages answers are built from", ziel: ".ulh-quell" },
-      { t: "Agentic AEO", s: "Mira does the work for you", ziel: ".ulh-msc" }
+      { t: "Overview", s: "What upstreem shows you", ziel: ".ulh-feat", anker: "overview" },
+      { t: "Source Insights", s: "Which pages answers are built from", ziel: ".ulh-quell", anker: "sources" },
+      { t: "Agentic AEO", s: "Mira does the work for you", ziel: ".ulh-msc", anker: "mira" }
     ]},
     resources: { spalte: "Resources", eintraege: [
       { t: "Blog", s: "Notes on AI search", href: "https://upstreem.ai/blog" },
@@ -479,15 +548,20 @@
   function navKarte(k){
     var m = NAV_MENUES[k];
     return '<div class="ulh-nav-karte" data-menue="' + k + '">' +
-      '<span class="ulh-nav-spalte">' + m.spalte + '</span>' +
+      /* Die Leerzeichen zwischen den Teilen (13.10.) sieht niemand -- jeder Kasten hier ist ein
+         Flex-Kasten, und dort faellt Leerraum zwischen den Elementen weg. Sie stehen fuer die, die
+         nur den Text lesen (Crawler, Vorleser im Lesemodus): ohne sie hiess es dort
+         "PlatformOverviewWhat upstreem shows you". Dasselbe in leiste(), fuss(), msc(), geo(),
+         stimme() und im Hero. */
+      '<span class="ulh-nav-spalte">' + m.spalte + '</span> ' +
       m.eintraege.map(function(e){
         var attr = e.href ? ' href="' + e.href + '" target="_blank" rel="noopener"'
-                          : ' href="#" data-ziel="' + e.ziel + '"';
+                          : ' href="https://upstreem.ai/#' + e.anker + '" data-ziel="' + e.ziel + '"';
         return '<a class="ulh-nav-eintrag"' + attr + '>' +
-          '<span class="ulh-nav-e-t">' + e.t + '</span>' +
+          '<span class="ulh-nav-e-t">' + e.t + '</span> ' +
           '<span class="ulh-nav-e-s">' + e.s + '</span>' +
         '</a>';
-      }).join("") +
+      }).join(" ") +
     '</div>';
   }
 
@@ -501,7 +575,7 @@
           NAV_PUNKTE.map(function(p){
             return '<button class="ulh-nav-punkt" type="button" data-menue="' + p.k + '">' +
               p.t + '</button>';
-          }).join("") +
+          }).join(" ") + " " +
           '<a class="ulh-nav-punkt" href="https://upstreem.ai/pricing" target="_blank"' +
             ' rel="noopener">Pricing</a>' +
         '</nav>' +
@@ -509,7 +583,7 @@
           /* Anmelden und Registrieren gehen in einen NEUEN Tab: die Seite ist die Werbung, die
              App ist die Arbeit -- wer sich anmeldet, soll die Seite nicht verlieren. */
           '<a class="ulh-btn ulh-btn-sec" target="_blank" rel="noopener"' +
-            ' href="https://app.upstreem.ai/signup?mode=login">Log in</a>' +
+            ' href="https://app.upstreem.ai/signup?mode=login">Log in</a> ' +
           '<a class="ulh-btn ulh-btn-pri" target="_blank" rel="noopener"' +
             ' href="https://app.upstreem.ai/signup">Start for free</a>' +
         '</div>' +
@@ -520,100 +594,14 @@
     '</header>';
   }
 
-  /* Das Panel folgt dem Zeiger. Gemessen wird am Inhalt, der schon dasteht -- deshalb kennt es
-     seine Zielgroesse, bevor es faehrt.
-     Geschlossen wird beim Verlassen der GANZEN Leiste und mit einer kurzen Nachfrist: der Weg von
-     einem Punkt zum Panel fuehrt ueber ein paar Pixel Nichts, und ohne Frist faellt es genau dort
-     zu. */
+  /* Das Panel, das dem Zeiger folgt, steht seit dem 13.10. in landing-teile.js: dieselbe Leiste
+     steht jetzt auch als eigene Framer-Komponente auf den anderen Seiten, und beide sollen sich
+     gleich verhalten, ohne dass es das Verhalten zweimal gibt. landing-boot.js laedt die Datei VOR
+     dieser (async = false haelt die Reihenfolge). Fehlt sie, bleibt das Menue zu -- die Links
+     darin stehen trotzdem im Markup. */
   function navLauf(root){
-    var nav = root.querySelector(".ulh-nav");
-    var pop = root.querySelector(".ulh-nav-pop");
-    if (!nav || !pop) return;
-    var karten = {};
-    [].forEach.call(pop.querySelectorAll(".ulh-nav-karte"), function(k){
-      karten[k.getAttribute("data-menue")] = k;
-    });
-    var offen = null, uhr = null;
-
-    function zeigen(k, knopf){
-      clearTimeout(uhr);
-      if (offen === k) return;
-      offen = k;
-      var karte = karten[k];
-      if (!karte) return;
-      /* Beim ERSTEN Oeffnen springt das Panel an seine Stelle, ohne Uebergang: sonst faehrt es von
-         der linken Kante (Lage 0) herueber, waehrend es aufblendet -- gemeldet als "es fliegt von
-         oben links herein". Von da an sind Lage und Groesse Uebergaenge, denn dann WANDERT es
-         wirklich von einem Punkt zum naechsten.
-         Der Sprung braucht ein erzwungenes Neuberechnen dazwischen, sonst fasst der Browser beide
-         Schreibvorgaenge zu einem zusammen und der Uebergang laeuft doch. */
-      var zu = !pop.classList.contains("is-offen");
-      if (zu) pop.style.transition = "none";
-      for (var name in karten) karten[name].classList.toggle("is-da", name === k);
-      /* Die Groesse KOMMT VOM INHALT und wird nicht geschaetzt: die Karte steht schon im Panel,
-         also hat sie eine Groesse -- auch die unsichtbare. */
-      pop.style.width = karte.offsetWidth + "px";
-      pop.style.height = karte.offsetHeight + "px";
-      /* Die Lage folgt dem Punkt, bleibt aber in der Spur.
-         Gesucht wird an der LEISTE und nicht an der Wurzel: haengt sie in der Seite darueber
-         (leisteAuslagern), steht sie nicht mehr in der Wurzel -- die Suche fand dann nichts, und
-         das Menue blieb zu, obwohl es seine Groesse schon gesetzt hatte. Genau so gemessen. */
-      var flaeche = nav.querySelector(".ulh-nav-in");
-      if (!flaeche) return;
-      var innen = flaeche.getBoundingClientRect();
-      var r = knopf.getBoundingClientRect();
-      var x = r.left - innen.left - 20;
-      var max = innen.width - karte.offsetWidth;
-      if (x > max) x = max;
-      if (x < 0) x = 0;
-      pop.style.transform = "translateX(" + Math.round(x) + "px)";
-      if (zu){
-        void pop.offsetWidth;               /* Neuberechnen erzwingen */
-        pop.style.transition = "";
-      }
-      pop.classList.add("is-offen");
-      nav.classList.add("is-offen");
-    }
-    function schliessen(){
-      clearTimeout(uhr);
-      uhr = setTimeout(function(){
-        offen = null;
-        pop.classList.remove("is-offen");
-        nav.classList.remove("is-offen");
-      }, 140);
-    }
-
-    [].forEach.call(nav.querySelectorAll(".ulh-nav-punkt[data-menue]"), function(b){
-      b.addEventListener("mouseenter", function(){ zeigen(b.getAttribute("data-menue"), b); });
-      b.addEventListener("focus", function(){ zeigen(b.getAttribute("data-menue"), b); });
-    });
-    /* Ein Punkt OHNE Menue schliesst es -- sonst bliebe es offen, waehrend man auf Pricing steht. */
-    [].forEach.call(nav.querySelectorAll(".ulh-nav-punkt:not([data-menue])"), function(b){
-      b.addEventListener("mouseenter", schliessen);
-    });
-    nav.addEventListener("mouseleave", schliessen);
-    pop.addEventListener("mouseenter", function(){ clearTimeout(uhr); });
-
-    /* Die Punkte unter "Platform" scrollen zu ihrer Sektion. Welches FENSTER dabei scrollt, haengt
-       davon ab, ob die Sektion in einem Rahmen steckt: dann bewegt sich das Fenster darueber und
-       nicht dieses. Derselbe Grund wie beim Lagegeber. */
-    [].forEach.call(pop.querySelectorAll("[data-ziel]"), function(a){
-      a.addEventListener("click", function(e){
-        e.preventDefault();
-        var ziel = root.querySelector(a.getAttribute("data-ziel"));
-        if (!ziel) return;
-        schliessen();
-        var l = lage(ziel);
-        var weg = l.oben - 90;                 /* 90px: die Leiste steht im Weg */
-        try {
-          var rahmen = window.frameElement;
-          var w = rahmen ? rahmen.ownerDocument.defaultView : window;
-          w.scrollBy({ top: weg, behavior: "smooth" });
-        } catch (err){
-          window.scrollBy({ top: weg, behavior: "smooth" });
-        }
-      });
-    });
+    var t = window.UpstreemLandingTeile;
+    if (t && t.navLauf) t.navLauf(root);
   }
 
   /* ---------- Siebte Sektion: ein Satz, der es zusammenfasst ---------------------------------
@@ -636,7 +624,7 @@
         '<p class="ulh-stimme-sub ulh-auf" style="--auf:1">' + STIMME_SUB + '</p>' +
         '<div class="ulh-stimme-knoepfe ulh-auf" style="--auf:2">' +
           '<a class="ulh-btn ulh-btn-pri" target="_blank" rel="noopener"' +
-            ' href="https://app.upstreem.ai/signup">' + STIMME_CTA + '</a>' +
+            ' href="https://app.upstreem.ai/signup">' + STIMME_CTA + '</a> ' +
           '<a class="ulh-btn ulh-btn-sec" href="https://upstreem.ai/contact">' + STIMME_CTA2 + '</a>' +
         '</div>' +
       '</div>' +
@@ -854,17 +842,20 @@
         '<div class="ulh-fuss-spalten">' +
           FUSS_SPALTEN.map(function(sp){
             return '<div class="ulh-fuss-spalte">' +
-              '<span class="ulh-fuss-kopf">' + sp.t + '</span>' +
+              '<span class="ulh-fuss-kopf">' + sp.t + '</span> ' +
               sp.e.map(function(e){
                 return '<a class="ulh-fuss-link" href="' + e.h + '" target="_blank"' +
                   ' rel="noopener">' + e.t + '</a>';
-              }).join("") +
+              }).join(" ") +
             '</div>';
-          }).join("") +
+          }).join(" ") +
         '</div>' +
       '</div>' +
       '<div class="ulh-spur ulh-fuss-unten">' +
-        '<span>© ' + jahr + ' upstreem. All rights reserved.</span>' +
+        /* Das Jahr in einem eigenen Knoten: das vorgerenderte Markup (UpstreemLanding.tsx,
+           UpstreemFooter.tsx) traegt das Jahr seiner Erzeugung, landing-teile.js stellt es auf das
+           laufende -- und standDerSeite() nimmt es aus dem Vergleich. */
+        '<span>© <span data-ulh-jahr>' + jahr + '</span> upstreem. All rights reserved.</span>' +
         '<button class="ulh-fuss-link ulh-fuss-nachweis-knopf" type="button" data-ulh-nachweis' +
           ' aria-expanded="false" aria-controls="ulh-bildnachweis">Image credits</button>' +
       '</div>' +
@@ -906,15 +897,12 @@
   }
   /* Auf- und zuklappen, mit aria-expanded fuer Vorleser. Eigener Griff, weil die Sektion Klicks
      nur im nachgebauten App-Fenster schluckt (nurSchauen) -- der Fuss liegt ausserhalb. */
+  /* Seit dem 13.10. in landing-teile.js (Begruendung bei navLauf). Das Jahr im Fuss stellt dieselbe
+     Datei auf das laufende -- das vorgerenderte Markup traegt das Jahr seiner Erzeugung. */
   function nachweisBinden(root){
-    var knopf = root.querySelector("[data-ulh-nachweis]"), feld = root.querySelector("#ulh-bildnachweis");
-    if (!knopf || !feld || knopf.__ulhNachweis) return;
-    knopf.__ulhNachweis = true;
-    knopf.addEventListener("click", function(){
-      var auf = feld.hasAttribute("hidden");
-      if (auf) feld.removeAttribute("hidden"); else feld.setAttribute("hidden", "");
-      knopf.setAttribute("aria-expanded", auf ? "true" : "false");
-    });
+    var t = window.UpstreemLandingTeile;
+    if (t && t.nachweisBinden) t.nachweisBinden(root);
+    if (t && t.jahrSetzen) t.jahrSetzen(root);
   }
 
   /* ---------- Sechste Sektion: warum es diese App gibt ------------------------------------
@@ -1041,7 +1029,7 @@
         '<span class="ulh-geo-mk ulh-auf" style="left:' + links +
         ';bottom:' + (y * 100).toFixed(2) + '%;--auf:' + k + '">' +
         '<span class="ulh-geo-mk-txt">' +
-          '<span class="ulh-geo-mk-t">' + m.t + '</span>' +
+          '<span class="ulh-geo-mk-t">' + m.t + '</span> ' +
           '<span class="ulh-geo-mk-s">' + m.s + '</span>' +
         '</span>' +
         '<span class="ulh-geo-mk-punkt"></span>' +
@@ -1060,7 +1048,7 @@
         '<div class="ulh-geo-kpis">' +
           GEO_KPIS.map(function(k, i){
             return '<div class="ulh-geo-kpi ulh-auf" style="--auf:' + i + '">' +
-              '<span class="ulh-geo-v">' + k.v + '</span>' +
+              '<span class="ulh-geo-v">' + k.v + '</span> ' +
               '<span class="ulh-geo-l">' + k.l + '</span>' +
             '</div>';
           }).join("") +
@@ -1173,7 +1161,7 @@
     "and sources, shows where every number comes from, and says what to do next.";
 
   function msc(){
-    return '<section class="ulh-msc">' +
+    return '<section class="ulh-msc" id="mira">' +
       '<div class="ulh-spur">' +
         /* Derselbe Kopf wie ueber den Karten -- gleiche Klassen, gleiche Masse, gleiche Farben.
            Ein zweiter Kopf mit eigenen Werten waere derselbe Kopf, nur ein bisschen anders. */
@@ -1190,7 +1178,7 @@
               MSC_KARTEN.map(function(k, i){
                 return '<div class="ulh-card ulh-msc-karte ulh-auf" style="--auf:' + i + '">' +
                   '<span class="ulh-msc-ic" data-ic="' + k.ic + '" data-ic-w="1.6"></span>' +
-                  '<span class="ulh-msc-t">' + k.t + '</span>' +
+                  '<span class="ulh-msc-t">' + k.t + '</span> ' +
                   '<span class="ulh-msc-s">' + k.s + '</span>' +
                 '</div>';
               }).join("") +
@@ -2288,6 +2276,11 @@
   }
 
   function visInhalt(art){
+    /* Vorgerendert (13.10.) steht hier nur ein Platzhalter: die Vorschauen bauen sich zum Teil aus
+       core (Chips, Zeichen, Flaggen), und core gibt es beim Vorrendern nicht. Ein Rueckfall ohne
+       core saehe anders aus als die Vorschau danach -- und waere fuer einen Crawler ohnehin nur
+       Demo-Zahlen. bauen() setzt sie ein, wenn es das Markup uebernimmt (wie die Fenster). */
+    if (NUR_GERUEST) return '<template data-ulh-v="' + art + '"></template>';
     if (art === "linie")   return visLinie();
     if (art === "zeilen")  return visZeilen();
     if (art === "domains") return visDomains();
@@ -2977,7 +2970,7 @@
        Um die vier Karten liegt ein KASTEN: er traegt den off-white Grund, auf dem die Karten in
        reinem Weiss erst als Karten lesbar sind, und er haelt 8px Abstand zu den Schienen des
        Gitters -- die Karten beruehren die Kante der Seite damit nie. */
-    return '<section class="ulh-feat">' +
+    return '<section class="ulh-feat" id="overview">' +
       '<div class="ulh-spur">' +
         '<div class="ulh-feat-kopf ulh-auf">' +
           '<span class="ulh-feat-chip">' + MERKMAL_CHIP + '</span>' +
@@ -3057,7 +3050,11 @@
       '<div class="uev-karte-band has-cover" style="background-image:url(' + nebenDatei("event-covers/" + ev.cover) + ');background-position:50% ' + ev.pos + '"></div>' +
       '<div class="uev-karte-body">' +
         '<span class="uev-avatar" style="--uev-ton:' + ev.ton + '" aria-hidden="true">' + ic(ev.icon) + '</span>' +
-        '<h3 class="uev-karte-titel">' + ev.name + '</h3>' +
+        /* div statt h3 (13.10.): die Karte ist ein Schaustueck (aria-hidden), ihr Titel ist kein
+           Abschnitt der Landingpage -- als h3 standen "EX5 autumn campaign" und zwei weitere
+           Demo-Namen gleichrangig neben den Ueberschriften der Karten. Die Form haengt an der
+           Klasse (events.css: margin 0, Groesse, Schnitt, Zeilenhoehe), gemessen gleich. */
+        '<div class="uev-karte-titel">' + ev.name + '</div>' +
         '<div class="uev-angaben uev-karte-meta">' +
           '<span class="uev-angabe uev-angabe-datum">' + ic("calendar") + '<span>' + ev.datum + '</span></span>' +
           '<span class="up-marke is-leise">' + ev.typ + '</span>' +
@@ -3327,6 +3324,8 @@
         }
       }
       if (buchstaben.length && h) schriftTakt(h, buchstaben);
+      /* Abgehaengte Wurzel (Seitenwechsel in Framer): die Schleife endet mit ihr. */
+      if (root.isConnected === false) return;
       requestAnimationFrame(takt);
     })();
   }
@@ -3418,7 +3417,7 @@
   }
 
   function quellen(){
-    return '<section class="ulh-quell">' +
+    return '<section class="ulh-quell" id="sources">' +
       '<div class="ulh-spur">' +
         '<div class="ulh-quell-kopf">' +
           /* Derselbe blaue Chip wie ueber der Ueberschrift der Karten (.ulh-feat-chip) -- eine
@@ -3450,7 +3449,7 @@
              so steht die Palette an EINER Stelle, auch fuer den Teil, den die CSS zeichnet. */
           '<div class="ulh-quell-app up-root" data-theme="light" data-isdark="no" data-up-keepclip' +
             ' style="--ulh-q-trichter: ' + QUELL_FARBEN.trichter + '">' +
-            (MARKUP.udd || "") +
+            demoTeil("udd") +
           '</div>' +
         '</div>' +
         '</div>' +
@@ -3597,7 +3596,7 @@
     /* Erst das Thema, dann die Daten: die Charts nehmen ihre Farben beim Zeichnen, und das
        passiert im selben Zug wie das Setzen der Daten. */
     themaHell();
-    var wurzel0 = document.querySelector(".ulh-root");
+    var wurzel0 = document.querySelector(WURZEL);
     if (wurzel0) hellHalten(wurzel0);
     window.__uddMode = window.__uddMode || {};
     window.__uddMode[ID.udd] = "domain";
@@ -4068,7 +4067,7 @@
      Sektionen auf einer Seite gibt es nicht -- start() baut jede fuer sich, und dieser Weg fuehrt
      zu derselben. */
   function donutFuellenSpaeter(){
-    var wurzel = document.querySelector(".ulh-root");
+    var wurzel = document.querySelector(WURZEL);
     if (wurzel) donutFuellen(wurzel);
   }
 
@@ -4167,7 +4166,7 @@
        Hauptfenster abgedeckt wird -- jetzt deckt die Karte, wie die URL-Typen links. */
     return '<div class="ulh-fen ulh-fen-antwort is-vorn">' + chrom() +
       '<div class="ulh-fen-view" data-up-keepclip>' +
-        '<div class="ulh-fen-app" data-up-keepclip>' + (MARKUP.urt || "") + '</div>' +
+        '<div class="ulh-fen-app" data-up-keepclip>' + demoTeil("urt") + '</div>' +
       '</div>' +
     '</div>';
   }
@@ -4450,6 +4449,29 @@
        Markenzeichen). Ein Tooltip, der nur in einem der vier Fenster erscheint, waere der
        auffaelligste Unterschied zwischen ihnen. */
     [].slice.call(root.querySelectorAll(".ulh-view, .ulh-fen-view")).forEach(ohneTippsIn);
+    /* In derselben Kette, weil sie dieselben Zeitpunkte braucht: die Komponenten bauen ihr Markup
+       ueber Sekunden und teils neu. */
+    ueberschriftenFlach(root);
+  }
+
+  /* ---- Nur EINE h1 auf der Seite (13.10.) ----
+     Die Fenster zeigen echte Seiten der App, und jede davon hat ihren Titel als h1 -- auf der
+     Landingpage standen damit sechs: "AI Search Analytics Made simple." und dazu Dashboard, Prompt
+     Insights, Opportunities, Performance und Shopping. Fuer eine Suchmaschine sind das sechs
+     gleichrangige Hauptthemen einer Seite, die genau eines hat.
+     Vier der fuenf kommen aus den Vorlagen und werden schon in .landing_markup.py zu div. Der
+     fuenfte baut sich zur Laufzeit (shopping.js schreibt seinen Kopf selbst), und den fasst diese
+     Funktion: jede h1 in einem Fenster wird ein div mit denselben Attributen und demselben Inhalt.
+     Die Form haengt an der Klasse (.up-ph-heading), nicht am Element -- gemessen gleich, siehe
+     Uebergabe. NICHT in shopping.js: in der App ist der Titel richtig eine h1. */
+  function ueberschriftenFlach(root){
+    var h = root.querySelectorAll(".ulh-app h1, .ulh-fen-app h1");
+    for (var i = 0; i < h.length; i++){
+      var alt = h[i], neu = document.createElement("div");
+      for (var a = 0; a < alt.attributes.length; a++) neu.setAttribute(alt.attributes[a].name, alt.attributes[a].value);
+      while (alt.firstChild) neu.appendChild(alt.firstChild);
+      alt.parentNode.replaceChild(neu, alt);
+    }
   }
   function ohneTippsIn(view){
     if (!view) return;
@@ -4931,9 +4953,9 @@
     antwortFuellen(0);
     /* fuellen() bekommt keine Wurzel mit -- die Sektion ist ein Singleton, und der Lauf braucht
        sie nur, um Tooltips nachzuraeumen. */
-    antwortLauf(document.querySelector(".ulh-root"));
+    antwortLauf(document.querySelector(WURZEL));
     /* Die Kurven im Abschnitt darunter. Die drei anderen Vorschauen sind statisch. */
-    (function(){ var w = document.querySelector(".ulh-root");
+    (function(){ var w = document.querySelector(WURZEL);
       if (!w) return;
       /* Die Fotos der Sektion nach dem ersten Bild des Heros, nicht mit ihm: 13 Bilder (rund
          400 KB) sollen nicht um die Leitung der Komponenten konkurrieren. Shopping kommt erst nach
@@ -7398,6 +7420,11 @@
   }
   function mitTor(fn){
     return function(root){
+      /* Abgehaengt (13.10.): seit die Seite nicht mehr in einem Rahmen steckt, sondern in der
+         Framer-Seite selbst, ueberlebt diese Datei einen Seitenwechsel -- die alte Wurzel ist dann
+         aus dem Dokument, ihre Uhren laufen aber weiter. fensterImBild meldet fuer ein abgehaengtes
+         Element "im Bild" (Hoehe 0), und der Kreislauf liefe unsichtbar ewig weiter. Hier endet er. */
+      if (root && root.isConnected === false) return false;
       if (!root || fensterImBild(root)) return fn.apply(this, arguments);
       var self = this, args = arguments;
       /* Die juengste wartende Szene gewinnt -- es steht ohnehin immer nur eine an. */
@@ -7571,6 +7598,9 @@
         }
         var f = root.querySelector(".ulh-stage");
         if (f) f.style.display = "none";
+        /* is-shown auch hier: vorgerendert wartet der Hero-Text darauf (landing-hero.css,
+           data-ulh-ssr) -- ohne die Klasse bliebe bei einem kaputten Pin auch die Ueberschrift weg. */
+        root.classList.add("is-shown");
         return;
       }
       setTimeout(warte, ABSTAND);
@@ -7685,7 +7715,7 @@
   }
 
   function start(){
-    var roots = document.querySelectorAll(".ulh-root");
+    var roots = document.querySelectorAll(WURZEL);
     for (var i = 0; i < roots.length; i++){
       if (roots[i].__ulhAuf) continue;
       roots[i].__ulhAuf = true;
@@ -7709,6 +7739,20 @@
       los(roots[i]);
     }
   }
+
+  /* NUR FUER .landing_ssr.js: dort laeuft diese Datei in Node, ohne Dokument, und liefert das
+     Markup fuer die Framer-Komponenten -- statt zu starten. Im Browser setzt niemand den Schalter. */
+  if (window.__ulhNurHtml){
+    window.__ulhHtml = { seite: seiteHtml(true), stand: standDerSeite(), leiste: leiste(), fuss: fuss() };
+    return;
+  }
+
+  /* Der Wiedereinstieg (13.10.). In einem Rahmen begann jeder Besuch der Startseite mit einem
+     frischen Fenster. In der Framer-Seite selbst bleibt diese Datei ueber einen Seitenwechsel
+     geladen (Framer wechselt Seiten ohne Neuladen), und beim Zurueckkommen steht eine NEUE Wurzel
+     da, die niemand startet -- landing-boot.js laedt jede Datei nur einmal. UpstreemLanding.tsx
+     ruft deshalb start() selbst, wenn die Datei schon da ist. */
+  window.UpstreemLanding = { start: start };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();

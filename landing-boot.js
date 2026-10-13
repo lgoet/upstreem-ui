@@ -177,6 +177,40 @@
      hellHalten in landing-hero.js -- Begruendung dort.) In der App steht die Zeile nicht. */
   try { window.__upThemeBooted = true; } catch (e){}
 
+  /* ══ KEIN APP-START AUF DER LANDINGPAGE (13.10.) ═══════════════════════════════════════════
+     Seit 2ea3ef9 (12.10.) startet core die App von selbst, sobald eine Seitenleiste (.usn-root)
+     auf der Seite steht (appAutostart): app_start_v1, und ohne Anmeldung nach 1,5 s
+     location.assign("/signup"). Die Landingpage zeigt eine ECHTE Seitenleiste im Fenster -- also
+     lief genau das. Gemessen im Pruefstand am 13.10.: das Embed (Stand HEAD) landete nach wenigen
+     Sekunden auf /signup. Im Rahmen ist das "nur" ein leeres Embed; seit die Seite in der
+     Framer-Seite selbst steht, waere es die ganze Seite upstreem.ai.
+     core legt seinen Zustand in window.__upApp an und uebernimmt einen, der schon da ist. Steht er
+     auf "laeuft", kehrt appStart() sofort zurueck; "aktiv: false" laesst jeden anderen Weg so, wie
+     er ohne App-Start ist. Dieselbe Bauart wie __upThemeBooted direkt darueber. In der App steht die
+     Zeile nicht. Seit dem 13.10. prueft auch core selbst (appAutostart ignoriert eine Seitenleiste
+     in .ulh-root) -- diese Zeile bleibt als Netz fuer einen aelteren core am selben Pin. */
+  try {
+    if (!window.__upApp) window.__upApp = { aktiv: false, laeuft: true, team: "", start: null,
+                                            themaVonStart: false, nachStart: 0, landing: true };
+  } catch (e){}
+
+  /* ══ KEINE ECHTE TASTE ERREICHT DAS SCHAUSTUECK (13.10.) ════════════════════════════════════
+     Quick Actions oeffnet seine Palette mit Cmd/Ctrl+K und hoert darauf am DOCUMENT, in der
+     Einfangphase (quick-actions.js). Im Embed-Rahmen war das harmlos: die Taste kam nur an, wenn
+     der Rahmen den Fokus hatte. Seit die Seite als Code-Komponente IN der Framer-Seite steht
+     (UpstreemLanding.tsx), ist das Document das der Seite -- ein Cmd+K irgendwo auf upstreem.ai
+     haette die Palette im Fenster geoeffnet und dem Browser die Taste weggenommen.
+     Der Riegel sitzt am WINDOW, ebenfalls in der Einfangphase: das window kommt vor dem document,
+     also erreicht die Taste den Zuhoerer der Palette nie. Nur die Weitergabe wird gestoppt, kein
+     preventDefault -- der Browser tut mit der Taste, was er ohne die Sektion taete. Die Szenen
+     oeffnen die Palette nicht per Taste, ihnen fehlt also nichts. In der App steht die Zeile nicht. */
+  try {
+    window.addEventListener("keydown", function(e){
+      var k = (e.key || "").toLowerCase();
+      if ((e.metaKey || e.ctrlKey) && (k === "k" || e.code === "KeyK")) e.stopPropagation();
+    }, true);
+  } catch (e){}
+
   /* Die Komponenten, die im Fenster stehen. Wer eine hinzufuegt, aendert NUR diese zwei Bloecke
      und das Markup in .landing_markup.py -- in Framer bleibt es beim Pin. */
   css("core.css");
@@ -221,6 +255,10 @@
   js("performance-radar.js");
   js("domain-detail.js");
   js("shopping.js");
+  /* Das Verhalten von Leiste und Fuss (13.10.): dieselbe Datei laden die eigenen Komponenten
+     UpstreemTopbar.tsx und UpstreemFooter.tsx auf den anderen Seiten. VOR landing-hero.js, das
+     sie ruft. */
+  js("landing-teile.js");
   /* Zuletzt: diese Datei ruft die Setter der anderen. */
   js("landing-hero.js");
 })();

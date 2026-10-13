@@ -149,6 +149,17 @@
      dagegen LANGSAM an -- auf einem Bildschirm, in dem gerade eine Seite wechselt, liest sich
      dieser zoegernde Beginn als Ruckler. */
   --ulh-expo: cubic-bezier(.19, 1, .22, 1);
+  /* DIE FENSTERHOEHE ALS EINE MARKE (13.10.). --ulh-fh und nicht --ulh-vh: der Name ist schon die
+     Hoehe der Vorschauen in den Karten (.ulh-vis, weiter unten). Alle Abstaende, die mit der Hoehe des Fensters
+     wachsen (clamp(56px, 10vh, 120px) und 22 weitere), rechnen mit --ulh-fh statt mit vh.
+     Warum: im Embed-Rahmen von Framer war "das Fenster" der RAHMEN, und der ist so hoch wie die
+     ganze Seite (gemessen 11761px). 10vh waren dort 1176px -- jede dieser Angaben stand also auf
+     ihrer Obergrenze, und genau so sieht upstreem.ai seit Wochen aus. In der Framer-Seite selbst
+     (UpstreemLanding.tsx) ist vh das echte Fenster, und die Seite waere sichtbar enger geworden:
+     gemessen bei 1440x900 stand der Hero 35px hoeher, der Fuss 48px niedriger. Dort setzt die
+     Regel unten die Marke deshalb so hoch, dass wieder jede Obergrenze greift -- dasselbe Bild
+     wie bisher. Ausserhalb (Pruefstand, Embed) bleibt sie 1vh, also wie geschrieben. */
+  --ulh-fh: 1vh;
   position: relative;
   /* width: 100% ist hier PFLICHT und nicht Kosmetik. Ein Block-div fuellt seinen Eltern nur, wenn
      der ein normaler Block-Kontext ist. Steht die Sektion in einem FLEX-Eltern -- und genau so
@@ -179,7 +190,7 @@
   margin: 0 auto;
   /* Unten das Doppelte: der Abstand von den Knoepfen zum Fensteranfang war zu knapp.
      06.10.: beides noch einmal groesser ("mehr Luft im Textblock und zur Hero hin"). */
-  padding: clamp(56px, 10vh, 120px) 24px clamp(72px, 10vh, 120px);
+  padding: clamp(56px, calc(10 * var(--ulh-fh)), 120px) 24px clamp(72px, calc(10 * var(--ulh-fh)), 120px);
   text-align: center;
 }
 /* Zeilenhoehe UNTER 1 und negative Laufweite: das ist der halbe Effekt. Bei 0.95 und -0.02em liest
@@ -201,7 +212,7 @@
   /* 620 statt 560 (06.10.): mit 19px Schrift brauchte der Satz rund 590px, und "drive" fiel in
      eine eigene Zeile. */
   max-width: 620px;
-  margin: clamp(22px, 3vh, 30px) auto 0;
+  margin: clamp(22px, calc(3 * var(--ulh-fh)), 30px) auto 0;
   /* 06.10.: ganz leicht groesser (18 -> 19 oben) und 100 leichter (500 -> 400). */
   font-size: clamp(16px, 1.32vw, 19px);
   font-weight: 400;
@@ -294,7 +305,7 @@
 @media (prefers-reduced-motion: reduce) {
   .ulh-text .ulh-cta .ulh-btn::before { animation: none; }
 }
-.ulh-eyebrow { margin: 0 0 clamp(24px, 3.2vh, 34px); }
+.ulh-eyebrow { margin: 0 0 clamp(24px, calc(3.2 * var(--ulh-fh)), 34px); }
 
 /* ---------- Die drei Treiber unter der Unterzeile ----------
    Eigene Zeile, damit sie zu dritt nebeneinander stehen -- der Umbruch nach "drive" steht im
@@ -323,7 +334,7 @@
 /* ---------- Die zwei Knoepfe ----------
    Masse an attio.com abgelesen: 36px hoch, Radius 10, 14px/500, Polster 0 12px, und zwischen den
    beiden 10px (dort gemessen: der eine endet bei 714, der andere beginnt bei 724). */
-.ulh-cta { display: flex; justify-content: center; gap: 12px; margin-top: clamp(34px, 4.6vh, 44px); }
+.ulh-cta { display: flex; justify-content: center; gap: 12px; margin-top: clamp(34px, calc(4.6 * var(--ulh-fh)), 44px); }
 .ulh-btn {
   display: inline-flex;
   align-items: center;
@@ -907,7 +918,7 @@
   grid-template-rows: 1fr;
   /* Kein seitliches Polster mehr: der Rahmen nimmt 3/4 der Breite und steht mittig, der Rest ist
      ohnehin Luft. Zwei Begrenzungen uebereinander machten ihn nur schmaler als in der Vorlage. */
-  padding: 0 0 clamp(40px, 8vh, 96px);
+  padding: 0 0 clamp(40px, calc(8 * var(--ulh-fh)), 96px);
 }
 /* Der Rahmen ist ZWEI Kaesten, nicht einer -- so macht es die Vorlage, und daher kommt der Eindruck
    eines Geraets. Gemessen an attio.com bei 1440px Fensterbreite:
@@ -1463,7 +1474,7 @@
    Ueberschrift links und nicht mittig: der Text darueber im Hero ist mittig, weil er allein
    steht -- hier beginnt ein Abschnitt, der gelesen wird, und der beginnt an der Kante der Spur.
    Die Werte der Ueberschrift sind vorgegeben: Geist, 40px, mittleres Gewicht, -0.04em, 1.1. */
-.ulh-feat { position: relative; z-index: 1; padding: clamp(72px, 11vh, 132px) 0 clamp(80px, 12vh, 144px); }
+.ulh-feat { position: relative; z-index: 1; padding: clamp(72px, calc(11 * var(--ulh-fh)), 132px) 0 clamp(80px, calc(12 * var(--ulh-fh)), 144px); }
 .ulh-feat-kopf { padding: 0 24px; }
 /* Der Chip ueber der Ueberschrift. Eine Stufe heller als der Pitch-Chip im Team-Fenster oben
    (#1d4ed8): dort steht er auf Weiss in einem kleinen Fenster, hier auf einer hellen Seite neben
@@ -1511,7 +1522,7 @@
    dem die Karten ueberhaupt als Karten lesbar sind -- reines Weiss auf 95%-Weiss waere nur ein
    Rahmen. */
 .ulh-cards-box {
-  margin: clamp(36px, 5vh, 56px) 8px 0;
+  margin: clamp(36px, calc(5 * var(--ulh-fh)), 56px) 8px 0;
   padding: 4px;
   background: var(--ulh-kasten);
   border: 1px solid var(--ulh-border);
@@ -1616,11 +1627,11 @@
   /* Als Variablen, weil der Strich im Kopf genau diese zwei Strecken ueberbruecken muss: von der
      Oberkante der Sektion bis zur Oberkante des Kastens. Zwei Zahlen an drei Stellen waeren drei
      Zahlen, die auseinanderlaufen. */
-  --ulh-quell-luft: clamp(72px, 11vh, 132px);
+  --ulh-quell-luft: clamp(72px, calc(11 * var(--ulh-fh)), 132px);
   /* 50px mehr als vorher: zwischen dem Knopf und dem Kasten soll Ruhe stehen. */
-  --ulh-quell-abstand: calc(clamp(44px, 6vh, 76px) + 50px);
+  --ulh-quell-abstand: calc(clamp(44px, calc(6 * var(--ulh-fh)), 76px) + 50px);
   /* Die Luft ueber dem Knopf -- steht zweimal: am Knopf und in der Rechnung, wo das Muster endet. */
-  --ulh-quell-ctaluft: clamp(22px, 3vh, 34px);
+  --ulh-quell-ctaluft: clamp(22px, calc(3 * var(--ulh-fh)), 34px);
   /* Die Luft ueber und unter der Domainzeile -- EINE Zahl, weil beide gleich sein sollen:
      16 plus 30 Prozent. */
   --ulh-quell-kopfluft: 21px;
@@ -1886,7 +1897,7 @@
    07.10. ist die erste Reihe (produkte, bewegung) 400 hoch, wie die erste Merkmal-Reihe; siehe unten.
    Oben nur ein Teil des Sektionspolsters: der Block folgt direkt auf den ersten, und zwei volle
    Polster uebereinander (bis 144 + 132px) saehen nach Seitenende aus statt nach Fortsetzung. */
-.ulh-feat.ulh-handel { padding-top: clamp(24px, 4vh, 48px); }
+.ulh-feat.ulh-handel { padding-top: clamp(24px, calc(4 * var(--ulh-fh)), 48px); }
 .ulh-vis-regal, .ulh-vis-werber { --ulh-vs: 1; --ulh-vh: 288px; }
 /* Die Produktbewegung (06.10., oben rechts): die Liste aus Shopping, auf 0.8 verkleinert und so
    breit wie die Karte -- sie hat zwei Spalten und laeuft nicht seitlich hinaus. Ihre Zeilenhoehe
@@ -2414,10 +2425,10 @@
 @media (max-width: 900px) {
   .ulh-cards-row { flex-direction: column; }
   .ulh-feat-h { font-size: 32px; max-width: none; }
-  .ulh-feat { padding-top: clamp(48px, 8vh, 80px); }
+  .ulh-feat { padding-top: clamp(48px, calc(8 * var(--ulh-fh)), 80px); }
   /* Dieselbe Schwelle wie bei den Karten: was nebeneinander nicht mehr lesbar ist, geht
      uebereinander. Kurve und Trichter je 400px breit waeren zwei Briefmarken. */
-  .ulh-quell { --ulh-quell-luft: clamp(48px, 8vh, 80px); }
+  .ulh-quell { --ulh-quell-luft: clamp(48px, calc(8 * var(--ulh-fh)), 80px); }
   .ulh-quell-app .udd-root { grid-template-columns: 1fr; }
   /* NUR hier faellt die gehobene Zeile weg, auf dem breiten Schirm bleibt sie. Zwei Gruende: die
      Karte ist auf schmalen Schirmen selbst angeschnitten, die gehobene Zeile faehrt also aus ihr
@@ -3132,7 +3143,7 @@
    der ganze Fensterblock in einem Kasten mit "hidden md:block".
    Die Ueberschrift traegt die Sektion auf dem Telefon allein. */
 @media (max-width: 900px) {
-  .ulh-text { padding-bottom: clamp(48px, 9vh, 88px); }
+  .ulh-text { padding-bottom: clamp(48px, calc(9 * var(--ulh-fh)), 88px); }
 }
 
 /* ---------- Fuenfte Sektion: Mira bei der Arbeit ----------------------------------------------
@@ -3148,7 +3159,7 @@
    das untere Polster der Kartensektion plus das obere der Quellen. Hier bringt die Quellensektion
    nur 8px mit (die Trennlinie sitzt an ihrer Unterkante), also stehen die restlichen hier. */
 .ulh-msc {
-  padding: calc(clamp(80px, 12vh, 144px) + clamp(72px, 11vh, 132px) - 8px) 0 clamp(72px, 10vh, 120px);
+  padding: calc(clamp(80px, calc(12 * var(--ulh-fh)), 144px) + clamp(72px, calc(11 * var(--ulh-fh)), 132px) - 8px) 0 clamp(72px, calc(10 * var(--ulh-fh)), 120px);
 }
 .ulh-msc-row { align-items: stretch; }
 /* Zwei Linien ueber die ganze Breite, je 8px vom Kasten entfernt -- dieselbe Machart wie die
@@ -3212,7 +3223,7 @@
   position: relative; z-index: 1;
   /* Unten KEIN Polster: die Schraffur soll genau auf der Linie enden, die die Sektion
      abschliesst -- ein Streifen Weiss darunter laesst das Chart schweben. */
-  padding: clamp(80px, 11vh, 132px) 0 0;
+  padding: clamp(80px, calc(11 * var(--ulh-fh)), 132px) 0 0;
   overflow: hidden;
 }
 /* Der Grund: ueber die ganze Breite und hinter allem. Die Kurve steigt nach rechts, also steht der
@@ -3305,7 +3316,7 @@
 /* Vier Zahlen, zwei mal zwei. Der Strich links ist dieselbe Machart wie im Vorbild: eine Kante,
    kein Kasten -- die Zahl soll stehen, nicht in einer Karte sitzen. */
 .ulh-geo-kpis {
-  margin-top: clamp(34px, 5vh, 54px);
+  margin-top: clamp(34px, calc(5 * var(--ulh-fh)), 54px);
   display: grid; grid-template-columns: repeat(2, minmax(0, 250px)); gap: 26px 40px;
 }
 .ulh-geo-kpi {
@@ -3434,8 +3445,8 @@
   position: relative; z-index: 1;
   /* Luft ueber und unter der Sektion: sie steht zwischen zwei waagerechten Linien, und die sollen
      als eigener Abschnitt lesbar sein und nicht als Fortsetzung der Zahlen darueber. */
-  margin: clamp(72px, 9vh, 120px) 0;
-  padding: clamp(84px, 12vh, 148px) 0;
+  margin: clamp(72px, calc(9 * var(--ulh-fh)), 120px) 0;
+  padding: clamp(84px, calc(12 * var(--ulh-fh)), 148px) 0;
   /* Der weisse Grund gehoert dazu und ist nicht Kosmetik: die zwei senkrechten Schienen der Seite
      laufen ueber die ganze Hoehe, und ohne eine deckende Flaeche stehen sie mitten in dieser
      Sektion. Sie soll aber allein stehen -- nur die zwei waagerechten Linien. */
@@ -3457,11 +3468,11 @@
   letter-spacing: -0.02em; color: var(--ulh-text);
 }
 .ulh-stimme-sub {
-  margin: clamp(18px, 2.4vh, 26px) 0 0; max-width: 52ch;
+  margin: clamp(18px, calc(2.4 * var(--ulh-fh)), 26px) 0 0; max-width: 52ch;
   font-size: 16px; font-weight: 400; line-height: 1.55; letter-spacing: -0.01em;
   color: var(--ulh-sub);
 }
-.ulh-stimme-knoepfe { margin-top: clamp(28px, 3.6vh, 42px); display: flex; gap: 10px; }
+.ulh-stimme-knoepfe { margin-top: clamp(28px, calc(3.6 * var(--ulh-fh)), 42px); display: flex; gap: 10px; }
 
 /* ---------- Der Fuss --------------------------------------------------------------------------
    Schwarz und ueber die ganze Breite: das Ende der Seite soll auch wie eines aussehen. Die Farben
@@ -3558,11 +3569,11 @@
   position: relative; z-index: 1;
   width: 100vw; margin-left: calc(50% - 50vw);
   background: #0b0b0b; color: #e0e0e0;
-  padding: clamp(84px, 12vh, 132px) 0 0;
+  padding: clamp(84px, calc(12 * var(--ulh-fh)), 132px) 0 0;
 }
 .ulh-fuss-in {
   display: flex; gap: 48px; align-items: flex-start; flex-wrap: wrap;
-  padding-bottom: clamp(72px, 10vh, 114px);
+  padding-bottom: clamp(72px, calc(10 * var(--ulh-fh)), 114px);
 }
 .ulh-fuss-marke { display: flex; flex-direction: column; gap: 14px; margin-right: auto; max-width: 300px; }
 .ulh-fuss-logo { display: inline-flex; align-items: center; text-decoration: none; }
@@ -3821,3 +3832,37 @@
   .ulh-card.is-da .ulh-evkarte-links  { rotate: -4deg; }
   .ulh-card.is-da .ulh-evkarte-rechts { rotate: 4deg; }
 }
+
+/* ---------- Vorgerendert in der Framer-Seite (13.10.) ---------------------------------------
+   Seit dem 13.10. steht die Seite nicht mehr in einem Embed-Rahmen, sondern als Code-Komponente
+   IN der Framer-Seite (framer/UpstreemLanding.tsx), und ihr Markup kommt vorgerendert mit dem
+   HTML -- damit Crawler ohne JavaScript sie lesen koennen. Drei Folgen fuer die Form:
+
+   1. Die Leiste liegt UEBER dem Hero, wie auf der Seite bisher. Im Rahmen hing sie fixiert in der
+      Seite darueber (leisteAuslagern) und nahm keinen Platz; hier steht sie in der Wurzel und
+      klebt dort (sticky). Ohne die Zeile rutschte der ganze Hero um ihre Hoehe nach unten:
+      62px Leiste plus 1px Linie (.ulh-nav-in, .ulh-nav). */
+.ulh-root[data-ulh-inline] > .ulh-nav { margin-bottom: -63px; }
+/*    Dazu die Fensterhoehe (Begruendung an --ulh-fh in .ulh-root): 20px je vh liegt ueber jeder
+      Obergrenze der Datei (die groesste braucht 13.4px je vh, clamp(72px, 9vh, 120px)) -- alle
+      Abstaende stehen damit auf ihrem Hoechstwert, wie im Rahmen. */
+.ulh-root[data-ulh-inline] { --ulh-fh: 20px; }
+/* 2. Der Hero-Text wartet auf seinen Auftritt. Vorgerendert stuende er sofort da, und sobald
+      landing-hero.js laeuft, setzte is-entering seine Animationen mit "backwards" -- er verschwaende
+      und kaeme noch einmal herein. Unsichtbar bis is-shown, wie im Rahmen, wo er erst mit dem
+      Skript entstand. Crawler lesen den Text unabhaengig davon (sie werten keine CSS aus).
+      Faellt das Skript aus, setzt landing-hero.js is-shown trotzdem (Aufgeben nach 10 s). */
+.ulh-root[data-ulh-ssr]:not(.is-shown) :is(.ulh-eyebrow, .ulh-h1, .ulh-sub, .ulh-cta) { opacity: 0; }
+/* 3. Die Anker der Leiste (#overview, #sources, #mira) kommen von anderen Seiten: die Sektion
+      soll beim Sprung unter der Leiste stehen, nicht dahinter. */
+.ulh-root > section[id] { scroll-margin-top: 63px; }
+
+/* ---------- Leiste und Fuss als eigene Komponenten (13.10.) ----------------------------------
+   framer/UpstreemTopbar.tsx und framer/UpstreemFooter.tsx tragen DIESELBE Leiste und DENSELBEN
+   Fuss wie die Startseite, in einer .ulh-root, weil Masse und Farben aus deren Variablen kommen.
+   Den weissen Grund der Wurzel brauchen sie nicht: unter der halbdurchsichtigen Leiste soll die
+   Seite durchscheinen wie auf der Startseite, und der Fuss bringt seinen eigenen mit. */
+/* Die Fensterhoehe wie auf der Startseite (siehe --ulh-fh): der Fuss traegt Abstaende auf vh
+   (clamp(84px, 12vh, 132px)), und die stehen dort auf ihrer Obergrenze. Ohne die Zeile war der
+   eigene Fuss bei 1440x900 gemessen 48px niedriger als der auf der Startseite. */
+.ulh-root.ulh-teil { background: none; --ulh-fh: 20px; }

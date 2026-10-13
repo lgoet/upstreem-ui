@@ -19172,7 +19172,13 @@
     var versuche = 0;
     function schau(){
       if (APP.aktiv) return;
-      if (document.querySelector(".usn-root")){ appStart(); return; }
+      /* Nur eine Seitenleiste der APP startet die App -- nicht die in der Vorfuehrung der
+         Landingpage (.ulh-root, 13.10.): dort lief sonst app_start_v1 und ohne Anmeldung nach
+         1,5 s die Umleitung auf /signup, auf upstreem.ai selbst. landing-boot.js setzt zusaetzlich
+         window.__upApp auf "laeuft" -- das Netz, falls ein aelterer core geladen ist. */
+      var leisten = document.querySelectorAll(".usn-root"), appLeiste = false;
+      for (var i = 0; i < leisten.length; i++) if (!(leisten[i].closest && leisten[i].closest(".ulh-root"))){ appLeiste = true; break; }
+      if (appLeiste){ appStart(); return; }
       if (++versuche < 150) setTimeout(schau, 100);
     }
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", schau);

@@ -1,282 +1,72 @@
-/* upstreem -- der Fuss der Landingpage als Framer-Code-Komponente (01.10. angefordert).
+/* upstreem -- der Fuss der STARTSEITE als eigene Framer-Code-Komponente, fuer alle anderen Seiten
+   (Blog, Preise, Rechtliches). Neu gebaut am 13.10.
 
-   Einbau in Framer: Assets -> Code -> "+" -> New Component, den ganzen Inhalt dieser Datei
-   einfuegen, speichern, auf die Seite ziehen und die Breite auf "Fill" stellen.
+   WARUM NEU: die Fassung vom 01.10. war ein Nachbau mit eigenen Werten in React und sah anders aus
+   als der Fuss der Startseite (13.10. abgelehnt). Jetzt ist es DERSELBE Fuss:
+     - Markup und jeder Text (Spalten, Netzwerke, Bildnachweis): fuss() aus landing-hero.js, von
+       .landing_ssr.js unten eingesetzt (FUSS).
+     - Form: landing-hero.css aus dem Pin.
+     - Verhalten (Bildnachweis auf- und zuklappen, das laufende Jahr): landing-teile.js aus dem Pin.
+   Vorgerendert: alle Links stehen im HTML der Seite, auch fuer Crawler ohne JavaScript. Das Jahr
+   im vorgerenderten Markup ist das seiner Erzeugung; landing-teile.js stellt es auf das laufende.
 
-   Vorbild ist der Fuss aus landing-hero.js / landing-hero.css (fuss(), .ulh-fuss*), Wert fuer
-   Wert: schwarz ueber die ganze Breite, links die Marke mit Satz und den zwei Netzwerken, rechts
-   drei Spalten, unten die Zeile mit dem Jahr. Jahr aus dem Datum, wie dort.
-
-   BREITE, NICHT FENSTER: die schmalen Fassungen haengen an der Breite der Komponente
-   (ResizeObserver), nicht an einer Media Query -- im Framer-Editor ist das Fenster der Editor.
-     unter 900px   16px Rand statt der Seitenspur, engere Luecke
-     unter 560px   Marke und Spalten untereinander
-
-   Die zwei Netzwerk-Zeichen sind die offiziellen Umrisse, als Pfad -- wie auf der Landingpage
-   (FUSS_IC). core.js laeuft in Framer nicht, und Feather hat keine Markenzeichen.
-
-   IMAGE CREDITS (09.10. nachgezogen, Stand der Landingpage seit 06.10.): rechts in der letzten
-   Zeile der Knopf, darunter klappt der Bildnachweis auf -- Wort fuer Wort wie bildnachweisHtml()
-   in landing-hero.js. Standardmaessig AUS: die Produktfotos (CC BY/BY-SA, Nachweis Pflicht) gibt
-   es nur in der Hero-Einbettung, und die bringt ihren eigenen Fuss mit Nachweis mit. Wer die
-   Fotos auf einer anderen Framer-Seite zeigt, schaltet "Image credits" an. Neue Fotos auf der
-   Landingpage heissen: CREDITS hier mitziehen. */
+   EINBAU: Assets -> Code -> die vorhandene Datei "UpstreemFooter" oeffnen, den GANZEN Inhalt durch
+   diesen ersetzen, speichern -- die Instanzen auf allen Seiten ziehen mit. Rechts unter "Pin" den
+   Commit eintragen, an der Instanz Breite "Fill". Auf der Startseite steht er NICHT (die bringt
+   ihren Fuss mit). */
 import * as React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect } from "react"
 import { addPropertyControls, ControlType } from "framer"
 
-type Verweis = { label: string; link: string }
+/* ---- SSR ANFANG (erzeugt von .landing_ssr.js -- nicht von Hand aendern) ---- */
+const FUSS = "<div class=\"ulh-root ulh-teil\" data-ulh-teil=\"fuss\"><footer class=\"ulh-fuss\"><div class=\"ulh-spur ulh-fuss-in\"><div class=\"ulh-fuss-marke\"><a class=\"ulh-fuss-logo\" href=\"https://upstreem.ai\" aria-label=\"upstreem\"><img src=\"https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-1f1f1f.svg\" alt=\"upstreem\" width=\"218\" height=\"31\"/></a><p class=\"ulh-fuss-satz\">See how AI answers talk about your brand.</p><div class=\"ulh-fuss-netz\"><a class=\"ulh-fuss-ic\" href=\"https://www.linkedin.com/company/upstreem\" target=\"_blank\" rel=\"noopener\" aria-label=\"LinkedIn\"><svg viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM10 9h3.8v1.7h.05c.53-1 1.83-2.05 3.76-2.05 4.02 0 4.76 2.6 4.76 5.98V21h-4v-5.5c0-1.31-.02-3-1.85-3-1.85 0-2.13 1.43-2.13 2.9V21h-4z\"/></svg></a><a class=\"ulh-fuss-ic\" href=\"https://www.youtube.com/@upstreem\" target=\"_blank\" rel=\"noopener\" aria-label=\"YouTube\"><svg viewBox=\"0 0 24 24\" fill=\"currentColor\"><path d=\"M23 12s0-3.5-.45-5.17a2.9 2.9 0 0 0-2.04-2.05C18.85 4.33 12 4.33 12 4.33s-6.85 0-8.51.45A2.9 2.9 0 0 0 1.45 6.83C1 8.5 1 12 1 12s0 3.5.45 5.17a2.9 2.9 0 0 0 2.04 2.05c1.66.45 8.51.45 8.51.45s6.85 0 8.51-.45a2.9 2.9 0 0 0 2.04-2.05C23 15.5 23 12 23 12zM9.8 15.3V8.7l5.7 3.3z\"/></svg></a></div></div><div class=\"ulh-fuss-spalten\"><div class=\"ulh-fuss-spalte\"><span class=\"ulh-fuss-kopf\">Product</span> <a class=\"ulh-fuss-link\" href=\"https://upstreem.ai\" target=\"_blank\" rel=\"noopener\">Overview</a> <a class=\"ulh-fuss-link\" href=\"https://upstreem.ai/pricing\" target=\"_blank\" rel=\"noopener\">Pricing</a> <a class=\"ulh-fuss-link\" href=\"https://app.upstreem.ai/signup?mode=login\" target=\"_blank\" rel=\"noopener\">Log in</a></div> <div class=\"ulh-fuss-spalte\"><span class=\"ulh-fuss-kopf\">Resources</span> <a class=\"ulh-fuss-link\" href=\"https://upstreem.ai/blog\" target=\"_blank\" rel=\"noopener\">Blog</a> <a class=\"ulh-fuss-link\" href=\"https://docs.upstreem.ai/welcome\" target=\"_blank\" rel=\"noopener\">Documentation</a></div> <div class=\"ulh-fuss-spalte\"><span class=\"ulh-fuss-kopf\">Legal</span> <a class=\"ulh-fuss-link\" href=\"https://upstreem.ai/terms-of-service\" target=\"_blank\" rel=\"noopener\">Terms of service</a> <a class=\"ulh-fuss-link\" href=\"https://upstreem.ai/privacy-policy\" target=\"_blank\" rel=\"noopener\">Privacy policy</a> <a class=\"ulh-fuss-link\" href=\"https://upstreem.ai/imprint\" target=\"_blank\" rel=\"noopener\">Imprint</a></div></div></div><div class=\"ulh-spur ulh-fuss-unten\"><span>© <span data-ulh-jahr>2026</span> upstreem. All rights reserved.</span><button class=\"ulh-fuss-link ulh-fuss-nachweis-knopf\" type=\"button\" data-ulh-nachweis aria-expanded=\"false\" aria-controls=\"ulh-bildnachweis\">Image credits</button></div><div class=\"ulh-spur ulh-fuss-nachweis\" id=\"ulh-bildnachweis\" hidden><p>Product photos from Wikimedia Commons: <a href=\"https://commons.wikimedia.org/wiki/File:Tesla_Model_Y_Premium_(Facelift)_%E2%80%93_f_05052026.jpg\" target=\"_blank\" rel=\"noopener\">“Tesla Model Y Premium (Facelift) – f 05052026”</a> by M 93 (<a href=\"https://creativecommons.org/licenses/by-sa/3.0/de/\" target=\"_blank\" rel=\"noopener\">CC BY-SA 3.0 de</a>), <a href=\"https://commons.wikimedia.org/wiki/File:Delta_Electronics_EVPT3215MWE_20190601.jpg\" target=\"_blank\" rel=\"noopener\">“Delta Electronics EVPT3215MWE 20190601”</a> by Solomon203 (<a href=\"https://creativecommons.org/licenses/by-sa/4.0/\" target=\"_blank\" rel=\"noopener\">CC BY-SA 4.0</a>), <a href=\"https://commons.wikimedia.org/wiki/File:TeslaDestinationCharger.jpg\" target=\"_blank\" rel=\"noopener\">“TeslaDestinationCharger”</a> by Raysonho (<a href=\"https://creativecommons.org/publicdomain/zero/1.0/\" target=\"_blank\" rel=\"noopener\">CC0</a>), <a href=\"https://commons.wikimedia.org/wiki/File:Front_vom_BMW_iX_xDrive_60_in_der_BMW_Welt_M%C3%BCnchen_2025-04-15.jpg\" target=\"_blank\" rel=\"noopener\">“Front vom BMW iX xDrive 60 in der BMW Welt München 2025-04-15”</a> by Strubbl (<a href=\"https://creativecommons.org/licenses/by-sa/4.0/\" target=\"_blank\" rel=\"noopener\">CC BY-SA 4.0</a>), <a href=\"https://commons.wikimedia.org/wiki/File:Audi_Q4_e-tron_50_quattro_%E2%80%93_f_22012023.jpg\" target=\"_blank\" rel=\"noopener\">“Audi Q4 e-tron 50 quattro – f 22012023”</a> by M 93 (<a href=\"https://creativecommons.org/licenses/by-sa/3.0/de/\" target=\"_blank\" rel=\"noopener\">CC BY-SA 3.0 de</a>), <a href=\"https://commons.wikimedia.org/wiki/File:Thule_Dynamic_roof_box_(11726731603).jpg\" target=\"_blank\" rel=\"noopener\">“Thule Dynamic roof box (11726731603)”</a> by EHRENBERG Kommunikation (<a href=\"https://creativecommons.org/licenses/by-sa/2.0/\" target=\"_blank\" rel=\"noopener\">CC BY-SA 2.0</a>), <a href=\"https://commons.wikimedia.org/wiki/File:Tailored-rubber-mats-moulded-car-mats.jpg\" target=\"_blank\" rel=\"noopener\">“Tailored-rubber-mats-moulded-car-mats”</a> by Keystones (<a href=\"https://creativecommons.org/licenses/by-sa/3.0/\" target=\"_blank\" rel=\"noopener\">CC BY-SA 3.0</a>), <a href=\"https://commons.wikimedia.org/wiki/File:Volvo_EX30_1X7A2493.jpg\" target=\"_blank\" rel=\"noopener\">“Volvo EX30 1X7A2493”</a> by Alexander Migl (<a href=\"https://creativecommons.org/licenses/by-sa/4.0/\" target=\"_blank\" rel=\"noopener\">CC BY-SA 4.0</a>), <a href=\"https://commons.wikimedia.org/wiki/File:2015-12-23_Typ-2-Ladestecker.jpg\" target=\"_blank\" rel=\"noopener\">“2015-12-23 Typ-2-Ladestecker”</a> by Hadhuey (<a href=\"https://creativecommons.org/licenses/by-sa/4.0/\" target=\"_blank\" rel=\"noopener\">CC BY-SA 4.0</a>), <a href=\"https://commons.wikimedia.org/wiki/File:Porsche_Taycan_4S_IMG_3526.jpg\" target=\"_blank\" rel=\"noopener\">“Porsche Taycan 4S IMG 3526”</a> by Alexander Migl (<a href=\"https://creativecommons.org/licenses/by-sa/4.0/\" target=\"_blank\" rel=\"noopener\">CC BY-SA 4.0</a>).</p><p>Ad illustrations: US Environmental Protection Agency, public domain, via <a href=\"https://openclipart.org\" target=\"_blank\" rel=\"noopener\">Openclipart</a>.</p></div></footer></div>"
+/* ---- SSR ENDE ---- */
 
-const WORTMARKE =
-    "https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-1f1f1f.svg"
-const EASE = "cubic-bezier(.4, 0, .2, 1)"
+const CDN = "https://cdn.jsdelivr.net/gh/lgoet/upstreem-ui@"
+const SCHRIFT = "https://fonts.googleapis.com/css2?family=Geist:wght@400..700&display=swap"
 
-/* Titel = Dateiseite bei Commons ohne Endung, nicht der Produktname der Demo (siehe
-   bildnachweisHtml): das Foto des "Acme Home Charger" zeigt eine Wallbox von Delta Electronics. */
-const LIZENZ_URL: Record<string, string> = {
-    "CC0": "https://creativecommons.org/publicdomain/zero/1.0/",
-    "CC BY-SA 2.0": "https://creativecommons.org/licenses/by-sa/2.0/",
-    "CC BY-SA 3.0": "https://creativecommons.org/licenses/by-sa/3.0/",
-    "CC BY-SA 3.0 de": "https://creativecommons.org/licenses/by-sa/3.0/de/",
-    "CC BY-SA 4.0": "https://creativecommons.org/licenses/by-sa/4.0/",
-}
-const CREDITS = [
-    { seite: "Tesla_Model_Y_Premium_(Facelift)_%E2%80%93_f_05052026.jpg", autor: "M 93", lizenz: "CC BY-SA 3.0 de" },
-    { seite: "Delta_Electronics_EVPT3215MWE_20190601.jpg", autor: "Solomon203", lizenz: "CC BY-SA 4.0" },
-    { seite: "TeslaDestinationCharger.jpg", autor: "Raysonho", lizenz: "CC0" },
-    { seite: "Front_vom_BMW_iX_xDrive_60_in_der_BMW_Welt_M%C3%BCnchen_2025-04-15.jpg", autor: "Strubbl", lizenz: "CC BY-SA 4.0" },
-    { seite: "Audi_Q4_e-tron_50_quattro_%E2%80%93_f_22012023.jpg", autor: "M 93", lizenz: "CC BY-SA 3.0 de" },
-    { seite: "Thule_Dynamic_roof_box_(11726731603).jpg", autor: "EHRENBERG Kommunikation", lizenz: "CC BY-SA 2.0" },
-    { seite: "Tailored-rubber-mats-moulded-car-mats.jpg", autor: "Keystones", lizenz: "CC BY-SA 3.0" },
-    { seite: "Volvo_EX30_1X7A2493.jpg", autor: "Alexander Migl", lizenz: "CC BY-SA 4.0" },
-    { seite: "2015-12-23_Typ-2-Ladestecker.jpg", autor: "Hadhuey", lizenz: "CC BY-SA 4.0" },
-    { seite: "Porsche_Taycan_4S_IMG_3526.jpg", autor: "Alexander Migl", lizenz: "CC BY-SA 4.0" },
-]
-function werk(seite: string) {
-    let t = seite
-    try { t = decodeURIComponent(seite) } catch (e) {}
-    return t.replace(/\.[a-z0-9]+$/i, "").replace(/_/g, " ")
+function pinAus(v: any): string {
+    const t = String(v || "").trim()
+    return !t || t === "CDN_PIN" || t === "PIN_HIER" ? "main" : t
 }
 
-const IC_LINKEDIN = (
-    <svg viewBox="0 0 24 24" fill="currentColor" width="17" height="17" aria-hidden="true">
-        <path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zM10 9h3.8v1.7h.05c.53-1 1.83-2.05 3.76-2.05 4.02 0 4.76 2.6 4.76 5.98V21h-4v-5.5c0-1.31-.02-3-1.85-3-1.85 0-2.13 1.43-2.13 2.9V21h-4z" />
-    </svg>
-)
-const IC_YOUTUBE = (
-    <svg viewBox="0 0 24 24" fill="currentColor" width="17" height="17" aria-hidden="true">
-        <path d="M23 12s0-3.5-.45-5.17a2.9 2.9 0 0 0-2.04-2.05C18.85 4.33 12 4.33 12 4.33s-6.85 0-8.51.45A2.9 2.9 0 0 0 1.45 6.83C1 8.5 1 12 1 12s0 3.5.45 5.17a2.9 2.9 0 0 0 2.04 2.05c1.66.45 8.51.45 8.51.45s6.85 0 8.51-.45a2.9 2.9 0 0 0 2.04-2.05C23 15.5 23 12 23 12zM9.8 15.3V8.7l5.7 3.3z" />
-    </svg>
-)
-
-const CSS = `
-@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400..700&display=swap");
-.upx-fuss, .upx-fuss * { box-sizing: border-box; }
-.upx-fuss a { text-decoration: none; }
-.upx-fuss .upx-ic {
-  width: 32px; height: 32px; border-radius: 9px; display: inline-flex; align-items: center;
-  justify-content: center; color: #9a9a9a; background: rgba(255, 255, 255, .05);
-  transition: color 160ms ${EASE}, background 160ms ${EASE};
+/* Wie in UpstreemTopbar.tsx: landing-teile.js einmal je Seite. */
+function teileLaden(pin: string) {
+    const w = window as any
+    if (w.UpstreemLandingTeile) { w.UpstreemLandingTeile.binden(); return }
+    const L = w.__upAssetsLoaded || (w.__upAssetsLoaded = {})
+    if (L["landing-teile.js"]) return
+    const s = document.createElement("script")
+    s.src = CDN + pin + "/landing-teile.js"
+    L["landing-teile.js"] = s.src
+    s.async = false
+    document.head.appendChild(s)
 }
-.upx-fuss .upx-ic:hover { color: #ffffff; background: rgba(255, 255, 255, .1); }
-.upx-fuss .upx-link { font-size: 13.5px; font-weight: 400; color: #cfcfcf; transition: color 160ms ${EASE}; }
-.upx-fuss .upx-link:hover { color: #ffffff; }
-.upx-fuss .upx-ic:focus-visible, .upx-fuss .upx-link:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; border-radius: 6px; }
-.upx-fuss .upx-nachweis-knopf {
-  font: inherit; font-size: 12.5px; color: #8f8f8f; background: none; border: 0; padding: 0;
-  cursor: pointer; transition: color 160ms ${EASE};
-}
-.upx-fuss .upx-nachweis-knopf:hover { color: #ffffff; }
-.upx-fuss .upx-nachweis-knopf:focus-visible { outline: 2px solid rgba(255, 255, 255, .5); outline-offset: 3px; border-radius: 4px; }
-.upx-fuss .upx-nachweis p { margin: 0 0 8px; max-width: 120ch; }
-.upx-fuss .upx-nachweis a { color: inherit; text-decoration: underline; text-decoration-color: rgba(255, 255, 255, .25); text-underline-offset: 2px; }
-.upx-fuss .upx-nachweis a:hover { color: #e0e0e0; }
-`
 
 /**
- * Breite frei (in Framer auf "Fill" stellen), Hoehe aus dem Inhalt.
+ * Breite "Fill", Hoehe aus dem Inhalt.
  *
  * @framerSupportedLayoutWidth any-prefer-fixed
  * @framerSupportedLayoutHeight auto
- * @framerIntrinsicWidth 1200
+ * @framerIntrinsicWidth 1440
  */
 export default function UpstreemFooter(props: any) {
-    const {
-        logo, logoLink, tagline, linkedin, youtube, col1Title, col1, col2Title, col2,
-        col3Title, col3, copyright, imageCredits, newTab, maxWidth, sidePadding, style,
-    } = props
-    const [nachweisAuf, setNachweisAuf] = useState(false)
-
-    const wurzel = useRef<HTMLDivElement>(null)
-    const [breite, setBreite] = useState(1200)
-    useEffect(() => {
-        const el = wurzel.current
-        if (!el || typeof ResizeObserver === "undefined") return
-        const ro = new ResizeObserver((e) => setBreite(e[0].contentRect.width))
-        ro.observe(el)
-        return () => ro.disconnect()
-    }, [])
-    const schmal = breite < 900
-    const sehrSchmal = breite < 560
-    const ziel = newTab ? { target: "_blank", rel: "noopener" } : {}
-    const jahr = new Date().getFullYear()
-    /* "{year}" im Text wird durch das Jahr ersetzt -- so bleibt die Zeile einstellbar, ohne dass
-       sie jedes Jahr von Hand nachgezogen werden muss. */
-    const unten = String(copyright || "").split("{year}").join(String(jahr))
-
-    const spur: React.CSSProperties = { maxWidth, margin: "0 auto", width: "100%" }
-    const spalte = (titel: string, links: Verweis[]) => (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 128 }}>
-            <span style={{ fontSize: 13, fontWeight: 500, color: "#6f6f6f", marginBottom: 2 }}>{titel}</span>
-            {(links || []).map((l, i) => (
-                <a key={i} className="upx-link" href={l.link || "#"} {...ziel}>{l.label}</a>
-            ))}
+    const { pin, style } = props
+    const p = pinAus(pin)
+    useEffect(() => { teileLaden(p) }, [])
+    return (
+        <div style={{ width: "100%", ...style }}>
+            <link rel="stylesheet" href={SCHRIFT} />
+            <link rel="stylesheet" href={CDN + p + "/landing-hero.css"} />
+            <div dangerouslySetInnerHTML={{ __html: FUSS }} />
         </div>
     )
-
-    return (
-        <footer
-            ref={wurzel as any}
-            className="upx-fuss"
-            style={{
-                ...style,
-                width: "100%",
-                background: "#0b0b0b",
-                color: "#e0e0e0",
-                fontFamily: 'Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
-                padding: `clamp(84px, 12vh, 132px) ${schmal ? 16 : sidePadding}px 0`,
-            }}
-        >
-            <style>{CSS}</style>
-            <div
-                style={{
-                    ...spur,
-                    display: "flex", gap: schmal ? 32 : 48, alignItems: "flex-start", flexWrap: "wrap",
-                    flexDirection: sehrSchmal ? "column" : "row",
-                    paddingBottom: "clamp(72px, 10vh, 114px)",
-                }}
-            >
-                <div style={{ display: "flex", flexDirection: "column", gap: 14, marginRight: sehrSchmal ? 0 : "auto", maxWidth: 300 }}>
-                    <a href={logoLink || "#"} aria-label="upstreem" style={{ display: "inline-flex", alignItems: "center" }}>
-                        {/* Die Wortmarke ist dunkle Tinte -- auf Schwarz umgedreht, wie auf der Landingpage. */}
-                        <img src={(logo && logo.src) || logo || WORTMARKE} alt="upstreem" style={{ display: "block", height: 31, width: "auto", filter: "invert(1)" }} />
-                    </a>
-                    <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.5, color: "#9a9a9a", maxWidth: "30ch" }}>{tagline}</p>
-                    <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                        {linkedin && <a className="upx-ic" href={linkedin} {...ziel} aria-label="LinkedIn">{IC_LINKEDIN}</a>}
-                        {youtube && <a className="upx-ic" href={youtube} {...ziel} aria-label="YouTube">{IC_YOUTUBE}</a>}
-                    </div>
-                </div>
-                <div style={{ display: "flex", gap: "clamp(40px, 6vw, 88px)", flexWrap: "wrap" }}>
-                    {spalte(col1Title, col1)}
-                    {spalte(col2Title, col2)}
-                    {spalte(col3Title, col3)}
-                </div>
-            </div>
-            <div
-                style={{
-                    ...spur, borderTop: "1px solid rgba(255, 255, 255, .08)", padding: "26px 0 34px",
-                    fontSize: 12.5, color: "#6f6f6f",
-                    display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "8px 24px",
-                }}
-            >
-                <span>{unten}</span>
-                {imageCredits && (
-                    <button
-                        className="upx-nachweis-knopf"
-                        type="button"
-                        aria-expanded={nachweisAuf}
-                        aria-controls="upx-bildnachweis"
-                        onClick={() => setNachweisAuf(!nachweisAuf)}
-                    >
-                        Image credits
-                    </button>
-                )}
-            </div>
-            {imageCredits && nachweisAuf && (
-                <div
-                    id="upx-bildnachweis"
-                    className="upx-nachweis"
-                    style={{ ...spur, padding: "0 0 34px", marginTop: -14, fontSize: 12, lineHeight: 1.6, color: "#7a7a7a" }}
-                >
-                    <p>
-                        Product photos from Wikimedia Commons:{" "}
-                        {CREDITS.map((c, i) => (
-                            <React.Fragment key={c.seite}>
-                                <a href={"https://commons.wikimedia.org/wiki/File:" + c.seite} target="_blank" rel="noopener">
-                                    {"\u201c" + werk(c.seite) + "\u201d"}
-                                </a>
-                                {" by " + c.autor + " ("}
-                                {LIZENZ_URL[c.lizenz]
-                                    ? <a href={LIZENZ_URL[c.lizenz]} target="_blank" rel="noopener">{c.lizenz}</a>
-                                    : c.lizenz}
-                                {")" + (i < CREDITS.length - 1 ? ", " : ".")}
-                            </React.Fragment>
-                        ))}
-                    </p>
-                    <p>
-                        Ad illustrations: US Environmental Protection Agency, public domain, via{" "}
-                        <a href="https://openclipart.org" target="_blank" rel="noopener">Openclipart</a>.
-                    </p>
-                </div>
-            )}
-        </footer>
-    )
-}
-
-const VERWEIS = {
-    type: ControlType.Object,
-    controls: {
-        label: { type: ControlType.String, title: "Label" },
-        link: { type: ControlType.Link, title: "Link" },
-    },
 }
 
 UpstreemFooter.defaultProps = {
-    logo: WORTMARKE,
-    logoLink: "https://upstreem.ai",
-    tagline: "See how AI answers talk about your brand.",
-    linkedin: "https://www.linkedin.com/company/upstreem",
-    youtube: "https://www.youtube.com/@upstreem",
-    col1Title: "Product",
-    col1: [
-        { label: "Overview", link: "https://upstreem.ai" },
-        { label: "Pricing", link: "https://upstreem.ai/pricing" },
-        { label: "Log in", link: "https://app.upstreem.ai/signup?mode=login" },
-    ],
-    col2Title: "Resources",
-    col2: [
-        { label: "Blog", link: "https://upstreem.ai/blog" },
-        { label: "Documentation", link: "https://docs.upstreem.ai/welcome" },
-    ],
-    col3Title: "Legal",
-    col3: [
-        { label: "Terms of service", link: "https://upstreem.ai/terms-of-service" },
-        { label: "Privacy policy", link: "https://upstreem.ai/privacy-policy" },
-        { label: "Imprint", link: "https://upstreem.ai/imprint" },
-    ],
-    copyright: "© {year} upstreem. All rights reserved.",
-    imageCredits: false,
-    newTab: true,
-    maxWidth: 1440,
-    sidePadding: 64,
+    pin: "",
 }
 
 addPropertyControls(UpstreemFooter, {
-    logo: { type: ControlType.Image, title: "Logo" },
-    logoLink: { type: ControlType.Link, title: "Logo link" },
-    tagline: { type: ControlType.String, title: "Tagline", displayTextArea: true },
-    linkedin: { type: ControlType.Link, title: "LinkedIn" },
-    youtube: { type: ControlType.Link, title: "YouTube" },
-    col1Title: { type: ControlType.String, title: "Column 1" },
-    col1: { type: ControlType.Array, title: "Column 1 links", control: VERWEIS },
-    col2Title: { type: ControlType.String, title: "Column 2" },
-    col2: { type: ControlType.Array, title: "Column 2 links", control: VERWEIS },
-    col3Title: { type: ControlType.String, title: "Column 3" },
-    col3: { type: ControlType.Array, title: "Column 3 links", control: VERWEIS },
-    copyright: { type: ControlType.String, title: "Bottom line" },
-    imageCredits: { type: ControlType.Boolean, title: "Image credits", enabledTitle: "Show", disabledTitle: "Hide" },
-    newTab: { type: ControlType.Boolean, title: "New tab", enabledTitle: "Yes", disabledTitle: "No" },
-    maxWidth: { type: ControlType.Number, title: "Max width", min: 600, max: 2000, step: 10, unit: "px" },
-    sidePadding: { type: ControlType.Number, title: "Side padding", min: 0, max: 200, step: 1, unit: "px" },
+    pin: { type: ControlType.String, title: "Pin", placeholder: "commit, e.g. 5ae33d2" },
 })

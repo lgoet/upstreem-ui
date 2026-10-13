@@ -172,6 +172,13 @@ for schluessel, pfad, kennung in TEILE:
     # URL-Typ-Skala der App -- NUR hier (07.10.: "nur in der Landingpage, in der App ganz normal in
     # unseren bestehenden Farben"). domain-detail.js liest das Attribut (typenImVerlauf).
     m = m.replace('class="up-root udd-root"', 'class="up-root udd-root" data-typfarben="verlauf"')
+    # EINE h1 auf der Landingpage (13.10.): die Seitentitel in den Fenstern (Dashboard, Prompt
+    # Insights, Opportunities, Performance) sind in der App die h1 ihrer Seite -- auf der Landingpage
+    # stuenden damit fuenf h1 neben der echten. Fuer eine Suchmaschine ist das eine Seite mit fuenf
+    # Hauptthemen, die alle nichts mit ihr zu tun haben. Ein div mit derselben Klasse: die Form
+    # haengt an .up-ph-heading, nicht am Element. Shopping baut seinen Kopf zur Laufzeit, den fasst
+    # landing-hero.js (ueberschriftenFlach). Die Vorlagen und die App bleiben unberuehrt.
+    m = re.sub(r'<h1 class="up-ph-heading">(.*?)</h1>', r'<div class="up-ph-heading">\1</div>', m, flags=re.S)
     # Die Rueckwege nach Bubble fallen weg. Auch mehrzeilig eingerueckt geschrieben, deshalb der
     # Blick auf das ganze Attribut samt fuehrendem Leerraum.
     m = re.sub(r'\s*data-[a-z0-9-]+-fn="bubble_fn_[^"]*"', "", m)
