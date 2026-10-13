@@ -336,7 +336,7 @@
   function visAuftrag() {
     var f = filterStand(), manuell = P.vis.firmen;
     var vis = mitPrompt(D.visibility(f, { gran: P.gran, firmen: manuell }));
-    var ov = mitPrompt(D.overview(f, manuell ? { order: P.vis.order, limit: 10, firmen: manuell } : { order: P.vis.order, limit: 7 }));
+    var ov = mitPrompt(D.overview(f, manuell ? { order: P.vis.order, limit: 10, firmen: manuell } : { order: P.vis.order, limit: 8 }));
     return {
       kanal: "vis", imSpeicher: imSpeicher([vis, ov]),
       ladenAn: function () {
@@ -368,7 +368,7 @@
   function topAuftrag() {
     var f = filterStand(), m = P.top.modus, tp = P.top;
     var typen = mitPrompt(D.topTypen(f, m, { erwaehnt: tp.erwaehnt }));
-    var list = mitPrompt(D.topListe(f, m, { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen, urlTypen: m === "url" ? tp.urlTypen : null, limit: 7 }));
+    var list = mitPrompt(D.topListe(f, m, { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen, urlTypen: m === "url" ? tp.urlTypen : null, limit: 8 }));
     return {
       kanal: "top", imSpeicher: imSpeicher([typen, list]),
       ladenAn: function () { setter("setTopCitationsLoading")(IDS.tcd, "yes"); },
@@ -486,14 +486,18 @@
       '<div class="up-root uprd-root">' +
         '<div class="uprd-head up-dk">' +
           '<div class="uprd-meta up-dk-meta"></div>' +
-          '<h2 class="uprd-titel up-dk-titel"></h2>' +
-          /* Filterzeile wie auf den Seiten: links unter dem Kopf, ueber dem, was sie filtert. Nur
+          /* Titel und Filter in EINER Zeile, die Filter oben rechts (13.10., "bei allen Drawern die
+             Filter nach oben rechts" -- wie .uddr-heldzeile im Domain-Drawer). Reicht die Breite
+             nicht, rutschen sie unter den Titel, linksbuendig -- siehe prompt-detail.css. Nur
              Modelle: Topics und Maerkte stehen per Attribut aus (data-*-visible). */
-          '<div class="uprd-filterzeile">' +
+          '<div class="up-dk-heldzeile is-satz uprd-heldzeile">' +
+          '<h2 class="uprd-titel up-dk-titel"></h2>' +
+          '<div class="up-dk-filterzeile uprd-filterzeile">' +
             '<div class="up-root udr-root uprd-daten" data-instance="' + esc(IDS.daten) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
             '<div class="up-root ufb-root uprd-filterleiste" data-instance="' + esc(IDS.filter) + '"' +
               ' data-models-instance="' + esc(IDS.modelle) + '" data-topics-visible="no" data-markets-visible="no" data-isdark="' + dk + '"></div>' +
             '<div class="up-root umf-root" data-instance="' + esc(IDS.modelle) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
+          '</div>' +
           '</div>' +
           /* Die Kennzahlen UNTER dem Kalender: sie gelten fuer den Zeitraum, den er zeigt (wie bei
              URL Detail, 12.10.). */

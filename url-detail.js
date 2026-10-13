@@ -329,8 +329,15 @@
     return '' +
       '<div class="uud-sect uud-head up-dk">' +
         '<div class="uud-kopfzeile up-dk-meta"></div>' +
-        '<h2 class="uud-titel up-dk-titel"></h2>' +
-        '<a class="uud-link" target="_blank" rel="noopener noreferrer" hidden></a>' +
+        /* Titel und Adresse als ein Block in einer Zeile, in die der Drawer rechts seinen Kalender
+           haengt (13.10., "bei allen Drawern die Filter nach oben rechts"). Ohne Drawer steht der
+           Block allein darin und sieht aus wie vorher. */
+        '<div class="up-dk-heldzeile is-satz uud-heldzeile">' +
+          '<div class="uud-heldtext">' +
+            '<h2 class="uud-titel up-dk-titel"></h2>' +
+            '<a class="uud-link" target="_blank" rel="noopener noreferrer" hidden></a>' +
+          '</div>' +
+        '</div>' +
         '<div class="uud-kpis up-dk-leiste"></div>' +
         '<div class="uud-mrow up-dk-leiste" hidden>' +
           '<span class="up-dk-zahl"><span class="up-dk-zahl-n uud-mrow-n"></span><span class="uud-mrow-wort"></span></span>' +
@@ -538,13 +545,13 @@
       if (k.typ) {
         var roh = txt(v);
         if (!roh) return LEER;
-        var farbe = UC.typeColor(roh, k.typ === "url" ? "url" : "citation", dunkel());
-        var grund = dunkel() ? UC.CHIP_BG_DARK : UC.tint(farbe, 0.12);
+        /* Schrift, Grund, Rand und Punkt aus UC.typeStyle (13.10.), wie jeder Typ-Chip der App. */
+        var st = UC.typeStyle(k.typ === "url" ? "url" : "citation", roh, dunkel());
         var label = UC.typeLabel ? UC.typeLabel(roh, k.typ) : roh;
-        /* Punkt nur beim URL-Typ. Das ist die Regel des Hauses (siehe quick-actions): sie haelt
-           die beiden Vokabulare auseinander, wenn sie nebeneinander stehen. */
-        return '<span class="up-tag" style="color:' + esc(farbe) + ';background:' + esc(grund) + '">' +
-                 (k.typ === "url" ? '<span class="up-tag-dot" style="background:' + esc(farbe) + '"></span>' : '') +
+        /* Punkt nur beim URL-Typ (typeStyle liefert ihn auch nur dort). Das ist die Regel des
+           Hauses: sie haelt die beiden Vokabulare auseinander, wenn sie nebeneinander stehen. */
+        return '<span class="up-tag" style="color:' + esc(st.ink) + ';background:' + esc(st.bg) + ';border-color:' + esc(st.bd) + '">' +
+                 (st.dot ? '<span class="up-tag-dot" style="background:' + esc(st.dot) + '"></span>' : '') +
                  '<span class="up-tag-lbl">' + esc(label) + '</span>' +
                '</span>';
       }
@@ -1320,7 +1327,7 @@
         .split("__UUD_BRAND__").join(esc(mk ? duStr(mk.name) : "")).split("__UUD_BRANDLOGO__").join(esc(mk ? duStr(mk.logo_url) : ""));
       ctx.slot.innerHTML =
         '<div class="uud-dw">' +
-          '<div class="uud-dw-leiste"><div class="up-root udr-root uud-dw-daten" data-instance="' + esc(DU.ids.daten) +
+          '<div class="up-dk-filterzeile uud-dw-leiste"><div class="up-root udr-root uud-dw-daten" data-instance="' + esc(DU.ids.daten) +
             '" data-local="yes" data-isdark="' + dk + '"></div></div>' +
           /* data-local: der Klick auf eine Marke oeffnet den Brand-Drawer selbst; ein Bubble-Ereignis
              hat im Drawer aus core keinen Empfaenger (und meldete das sonst in der Konsole). */
@@ -1335,13 +1342,15 @@
       r.__uudZeitraum = duZeitraumAufZitat;
       DU.root = r;
       initRoot(r);
-      /* DER KALENDER STEHT ZWISCHEN KOPF UND KENNZAHLEN (12.10.): auf den Seiten der App sitzen die
-         Filter links unter Titel und Navigation, ueber dem, was sie filtern -- hier also unter
-         Titel und Adresse, ueber der Leiste der Kennzahlen. Vorher stand er allein oben rechts
-         ueber dem Titel ("iwie off"). Umgehaengt in den Kopf der Komponente; er bleibt im Slot,
-         sein "change" erreicht den Drawer also wie vorher. */
-      var leiste = ctx.slot.querySelector(".uud-dw-leiste"), kpis = r.querySelector(".uud-head .uud-kpis");
-      if (leiste && kpis) kpis.parentNode.insertBefore(leiste, kpis);
+      /* DER KALENDER STEHT RECHTS NEBEN TITEL UND ADRESSE (13.10., "bei allen Drawern die Filter
+         nach oben rechts", wie .uddr-heldzeile im Domain-Drawer): an der Unterkante des Blocks,
+         ueber der Leiste der Kennzahlen; zu schmal, rutscht er linksbuendig darunter. Vorher
+         (12.10.) stand er links unter der Adresse, davor allein ueber dem Titel ("iwie off" --
+         der Unterschied jetzt: er steht in EINER Zeile mit dem Titel, nicht ueber ihm).
+         Umgehaengt in den Kopf der Komponente; er bleibt im Slot, sein "change" erreicht den
+         Drawer also wie vorher. */
+      var leiste = ctx.slot.querySelector(".uud-dw-leiste"), zeile = r.querySelector(".uud-head .uud-heldzeile");
+      if (leiste && zeile) zeile.appendChild(leiste);
       ctx.eigen.addEventListener("click", function (e) {
         var b = e.target.closest ? e.target.closest("[data-uud-kopf]") : null;
         if (b) duKopfKlick(b.getAttribute("data-uud-kopf"));

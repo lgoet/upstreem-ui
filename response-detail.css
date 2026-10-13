@@ -70,6 +70,12 @@
    Was NICHT mitgezogen ist und deshalb hier bleibt: die Breitenbegrenzung des einzelnen Chips
    und der leere Zustand darunter -- beides gehoert zu DIESER Seite, nicht zum Chip. */
 .urd-ment { max-width: 100%; }
+/* DIE MARKEN IN "x brands mentioned" auf dem Grund der Seite (13.10. angefordert: hell weiss,
+   dunkel der Seitengrund) -- sie stehen in der grauen Leiste (.up-dk-leiste), und im Grau der
+   Leiste (is-soft) verschwammen sie mit ihr. --vc-bg ist hell #fff und dunkel der Grund des
+   Drawers. Nur in Ruhe: den Hover traegt weiter .up-chiphover aus core. */
+/* Spezifitaet 0,7,0 gegen die Dunkel-Regel aus core (0,6,0, --vc-field) -- siehe url-detail.css. */
+.urd-mrow .up-mentlist .up-entchip.is-soft.urd-ment.urd-ment:not(:hover) { background: var(--vc-bg); }
 
 /* Kein Treffer: derselbe Ton wie jeder leere Zustand der App, nur ohne Bild -- der Abschnitt ist
    eine Zeile hoch und braucht keine halbe Karte Luft. */
@@ -117,21 +123,17 @@
    Der Knopf ist der Zahnrad-Knopf der App: 28px, Radius 8, Icon in Sekundaerfarbe, Hover wie
    ueberall. .up-pop und die Positionierung kommen aus core (UC.makePopover). */
 .urd-hlwrap { position: relative; flex: 0 0 auto; }
-/* v2: ein beschrifteter Textknopf (Zeichen, "Highlights", Pfeil) ohne Rahmen und ohne Flaeche --
-   auch nicht beim Ueberfahren oder offen, nur die Schrift wird dunkler. Kein .up-iconbtn: dessen
-   feste 32x32, Polster und Hover haetten hier alle ueberschrieben werden muessen. 32 hoch wie jeder
-   Knopf einer Werkzeugzeile. Der Pfeil dreht sich beim Oeffnen nicht. */
-.urd-hlbtn { display: inline-flex; align-items: center; gap: 6px; height: var(--up-h-btn); padding: 0 12px;
-  border: 0; border-radius: var(--up-r-m); background: var(--vc-heading-bg); font: inherit; font-size: var(--up-fs-m); font-weight: 500;
-  color: var(--vc-muted); cursor: pointer; transition: color var(--up-t-1) ease, background var(--up-t-1) ease; }
-/* Seit dem 12.10. mit grauem Grund (angefordert) -- der Knopf steht neben einer Ueberschrift und
-   las sich ohne Flaeche als Text. Hover wie die Zeilen der App. Kein .up-btn-sec aus core, auch
-   wenn der Pruefer ihn so liest: der traegt Rahmen und keinen Grund, verlangt ist das Gegenteil. */
-.urd-hlbtn:hover, .urd-hlwrap.is-open .urd-hlbtn { background: var(--vt-row-hover-solid, var(--vc-switch-bg)); }
+/* Der Knopf ist .up-btn-sec aus core (13.10.: "den grauen Grund weg und nur eine Border") --
+   Rahmen, Hoehe 32, Hover. Bis dahin ein eigener Knopf mit grauem Grund (12.10.); der Rahmen ist
+   genau das, was der Zweitknopf aus core ohnehin traegt, ein Nachbau waere ein zweites Aussehen.
+   Hier stehen nur der Abstand zwischen Zeichen, Wort und Pfeil und die Schrift der Zeile. Der
+   Pfeil dreht sich beim Oeffnen nicht. Offen sieht er aus wie beim Ueberfahren. */
+.urd-hlbtn.up-btn-sec { gap: 6px; padding: 0 12px; font-size: var(--up-fs-m); color: var(--vc-muted); }
+.urd-hlbtn.up-btn-sec:hover { color: var(--vc-text); }
+.urd-hlwrap.is-open .urd-hlbtn.up-btn-sec { color: var(--vc-text); border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
 .urd-hlbtn svg { width: 15px; height: 15px; flex: 0 0 15px; display: block; }
 .urd-hlchev { display: inline-flex; }
 .urd-hlbtn .urd-hlchev svg { width: 14px; height: 14px; flex: 0 0 14px; }
-.urd-hlbtn:hover, .urd-hlwrap.is-open .urd-hlbtn { color: var(--vc-text); }
 .urd-hlbtn:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; border-radius: var(--up-r-xs); }
 .urd-hlbtn[hidden] { display: none; }
 .urd-hlopt[disabled] { opacity: 0.45; cursor: default; }

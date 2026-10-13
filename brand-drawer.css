@@ -1,13 +1,12 @@
 /* upstreem brand-drawer.css -- der Marken-Drawer aus core (12.10.). Praefix ubdr. Braucht core.css.
 
    Kopf aus core (.up-dk-*), wie Response, URL und Prompt; dazu das Logo links vom Namen (wie der
-   Kopf von performance-detail, .upd-held). Darunter die Filterzeile und die drei Bausteine --
-   Abstaende wie im Prompt-Drawer (prompt-detail.css), damit Geschwister gleich stehen. */
+   Kopf von performance-detail, .upd-held). Rechts daneben die Filter, darunter die drei
+   Bausteine -- Abstaende wie im Prompt-Drawer (prompt-detail.css), damit Geschwister gleich
+   stehen. */
 .ubdr-root { display: flex; flex-direction: column; gap: 40px; min-width: 0; }
 .ubdr-root > [hidden] { display: none; }
-.ubdr-filterzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
-.ubdr-filterzeile > .udr-root { flex: 0 0 auto; }
-.ubdr-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
+/* Kopf und Filter in einer Zeile: .up-dk-heldzeile / .up-dk-filterzeile aus core (13.10.). */
 .ubdr-main { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
 .ubdr-teil { min-width: 0; }
 

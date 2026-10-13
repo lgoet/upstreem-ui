@@ -142,10 +142,17 @@
          der Schluessel wird als TEXT sortiert, und das ist nur bei ISO die Zeitachse. */
       var day = UC.dayKey ? UC.dayKey(p.day) : String(p.day);
       if (!day) return;
-      daySet[day] = true;
-      (byId[id] = byId[id] || {})[day] = Number(p.share_pct) || 0;
+      /* Keine Daten sind keine 0 (13.10.) -- dieselbe Regel wie in core (buildLineDatasets):
+         null bleibt null, und ein Tag, an dem keine Reihe einen Wert hat, faellt am Rand weg. */
+      var v = (p.share_pct != null && p.share_pct !== "") ? Number(p.share_pct) : null;
+      if (v != null && !isFinite(v)) v = null;
+      if (!daySet[day]) daySet[day] = v != null ? "da" : "leer";
+      else if (v != null) daySet[day] = "da";
+      (byId[id] = byId[id] || {})[day] = v;
     });
     var labels = Object.keys(daySet).sort();
+    while (labels.length && daySet[labels[0]] !== "da") labels.shift();
+    while (labels.length && daySet[labels[labels.length - 1]] !== "da") labels.pop();
     var ids = Object.keys(byId);
     ids.forEach(function(id){
       if (!metaMap[id]){

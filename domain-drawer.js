@@ -119,16 +119,16 @@
              ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()">' : "") +
       '<span class="up-logo-ltr">' + esc((dom.charAt(0) || "?").toUpperCase()) + '</span></span>';
   }
-  /* Der Typ als .up-tag, wie im URL-Drawer (url-detail.js, kpiWert): Farbe aus UC.typeColor, im
-     Hellen getoent, im Dunkeln auf dem Chipgrund. Ohne Punkt -- der gehoert dem URL-Typ. */
+  /* Der Typ als .up-tag, wie im URL-Drawer (url-detail.js, kpiWert): Schrift, Grund und Rand aus
+     UC.typeStyle (13.10.). Ohne Punkt -- der gehoert dem URL-Typ. Laeuft eine aeltere core ohne
+     typeStyle, bleibt der Chip ungefaerbt statt zu werfen. */
   function typChip(typ, dbLabel) {
     typ = str(typ);
     if (!typ) return "";
-    var farbe = UC.typeColor ? UC.typeColor(typ, "citation", dunkel()) : "";
-    var grund = dunkel() ? (UC.CHIP_BG_DARK || "") : (UC.tint ? UC.tint(farbe, 0.12) : "");
+    var st = UC.typeStyle ? UC.typeStyle("citation", typ, dunkel()) : { ink: "", bg: "", bd: "" };
     /* Die Beschriftung der App (UC.typeLabel, uebersetzt), sonst die der DB (citation_type_label). */
     var label = (UC.typeLabel ? UC.typeLabel(typ, "citation") : "") || str(dbLabel) || typ;
-    return '<span class="up-tag uddr-typ" style="color:' + esc(farbe) + ';background:' + esc(grund) + '">' +
+    return '<span class="up-tag uddr-typ" style="color:' + esc(st.ink) + ';background:' + esc(st.bg) + ';border-color:' + esc(st.bd) + '">' +
       '<span class="up-tag-lbl">' + esc(label) + '</span></span>';
   }
   function typLabel(typ) { return UC.typeLabel ? UC.typeLabel(str(typ), "citation") : str(typ); }
@@ -586,7 +586,7 @@
           /* Kopf und Filter in EINER Zeile, die Filter oben rechts (13.10., Designvorlage Domain
              Detail: "Die Filter sind hier oben rechts"). Reicht die Breite nicht, rutschen sie
              unter den Kopf, linksbuendig -- siehe domain-drawer.css. */
-          '<div class="uddr-heldzeile">' +
+          '<div class="up-dk-heldzeile uddr-heldzeile">' +
           '<div class="up-dk-held">' +
             '<span class="up-dk-held-bild uddr-bild"></span>' +
             '<div class="up-dk-held-text">' +
@@ -594,7 +594,7 @@
               '<div class="up-dk-held-sub uddr-sub"></div>' +
             '</div>' +
           '</div>' +
-          '<div class="uddr-filterzeile">' +
+          '<div class="up-dk-filterzeile uddr-filterzeile">' +
             '<div class="up-root udr-root uddr-daten" data-instance="' + esc(IDS.daten) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
             '<div class="up-root ufb-root uddr-filterleiste" data-instance="' + esc(IDS.filter) + '" data-topics-instance="' + esc(IDS.topics) + '"' +
               ' data-models-instance="' + esc(IDS.modelle) + '" data-markets-instance="' + esc(IDS.maerkte) + '" data-isdark="' + dk + '"></div>' +

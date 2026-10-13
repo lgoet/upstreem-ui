@@ -433,8 +433,8 @@
          team-orga -- "neutral, aber eindeutig, eine Farbe, die wir so noch nirgends haben". Warmes
          Taupe: kein Signalton (nicht Rot, Gruen, Gelb, Blau), kein Violett oder Indigo (zwei der
          Akzentfarben), und bewusst WARM, damit es nicht mit dem kuehlen Grau der leisen Schrift
-         (--vc-third #6b6f78) verwechselt wird. Die Braeune der Typpaletten sind gesaettigt und
-         orange (#9a5b2e, #b45309, #c2683b) -- das hier ist entsaettigt.
+         (--vc-third #6b6f78) verwechselt wird. Die Braeune der Typpaletten (seit 13.10. die
+         Familie commercial, Schrift #7B461E auf #FFF4EC) sind orange -- das hier ist entsaettigt.
          Gerechnet: Schrift #76634d auf der Flaeche #f2ede6 4.8:1, ueber AA fuer 11px. */
       --vc-staff-ink: #76634d; --vc-staff-bg: #f2ede6;
       /* DIE SCHIENE EINES UMSCHALTERS -- im Hellen ein einziger, DECKENDER Ton, fuer jede Groesse
@@ -1478,8 +1478,10 @@
     .up-filter-list.is-fill-checked .up-filter-item.is-checked { background: var(--up-sel-bg); }
     /* the dropdown shows the SAME chip the table uses — identical to TopCitations, so a type
        looks the same wherever it appears */
+    /* Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke. */
     .up-filter-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
-      font-size: 12px; font-weight: 600; white-space: nowrap; max-width: 100%; overflow: hidden; }
+      border: 1px solid transparent; box-sizing: border-box;
+      font-size: 12px; font-weight: 500; white-space: nowrap; max-width: 100%; overflow: hidden; }
     .up-filter-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
     /* Nur noch die Lage -- Aussehen kommt aus .up-btn-pri weiter unten.
        flex: 0 0 auto ist PFLICHT (25.09. gemeldet: "Anwenden im URL-Type-Reiter nur 16px hoch").
@@ -2878,7 +2880,9 @@
     }
     /* Rows scroll up past the pinned header; without this they'd show behind a transparent page
        topbar. This opaque strip covers everything from the header up to the top of the viewport. */
-    .up-sticky .up-head::before {
+    /* Nur solange die Leiste wirklich klebt (.is-geklebt, 13.10., siehe klebPruefenAlle in core.js):
+       in Ruhe deckte der Streifen sonst den Inhalt UEBER der Tabelle zu. */
+    .up-sticky.is-geklebt .up-head::before {
       content: ""; position: absolute; left: 0; right: 0; bottom: 100%;
       /* Exactly var(--up-sticky-top), not +16px on top of it -- that extra was meant as "a little
          more painted above, just in case", but it does not scale: at the app's usual sticky-top
@@ -3971,9 +3975,10 @@
 .up-row:hover .up-row-goto { opacity: 1; transform: translateX(0); transition-delay: 220ms; }
 .up-root.is-vnarrow .up-row-goto { display: none; }
 
-/* type/citation chip */
+/* type/citation chip. Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke. */
 .up-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
-  font-size: 12px; font-weight: 600; white-space: nowrap; max-width: 100%; overflow: hidden; }
+  border: 1px solid transparent; box-sizing: border-box;
+  font-size: 12px; font-weight: 500; white-space: nowrap; max-width: 100%; overflow: hidden; }
 .up-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
 .up-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
 
@@ -4278,6 +4283,28 @@
   background: none; font: inherit; font-size: var(--up-fs-m); line-height: 20px; color: var(--vc-muted);
   cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .up-dk-held-link:hover { color: var(--vc-text); text-decoration: underline; text-underline-offset: 3px; }
+/* KOPF UND FILTER IN EINER ZEILE (13.10., "bei allen Drawern die Filter nach oben rechts"): links
+   der Kopf, rechts Kalender und Filterknopf, an der Unterkante des Kopfes. Erst im Domain-Drawer
+   gebaut, dann in Brand-, Prompt- und URL-Drawer kopiert -- vier gleiche Bloecke, also hierher.
+   Reicht die Breite nicht, bricht die Zeile und die Filter stehen linksbuendig darunter (space-
+   between laesst ein umgebrochenes Kind links). Der Kopf gibt bis 280px nach, darunter bricht die
+   Zeile -- sonst wuerde ein langer Name zerlegt, bevor die Filter weichen.
+   .is-satz: der Kopf ist ein ganzer Satz (Prompt, Seitentitel). Mit Grundbreite auto waere seine
+   Wunschbreite die ganze Zeile, und die Filter stuenden fast immer darunter; mit 0 bricht der Satz
+   neben ihnen um (gemessen: langer Prompt bei 1440, Titel 688 breit, Unterkanten buendig). */
+.up-dk-heldzeile { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap;
+  gap: 16px 24px; min-width: 0; }
+.up-dk-heldzeile > :first-child { flex: 1 1 auto; min-width: min(100%, 280px); }
+.up-dk-heldzeile.is-satz > :first-child { flex-basis: 0; }
+/* Die Filterreihe: 8px wie jede Werkzeugreihe. Mit aktiven Filtern stehen deren Chips im
+   Filterknopf-Baustein daneben (ufb bricht selbst um) -- darum darf er schrumpfen, der Kalender
+   nicht. flex-start und nicht flex-end: neben dem Kopf schrumpft die Reihe nie, es aendert dort
+   also nichts; allein unter dem Kopf UND selbst umgebrochen (sehr schmal) stuenden ihre Teile mit
+   flex-end rechts gestaffelt statt linksbuendig (gemessen bei 480). */
+.up-dk-filterzeile { display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 8px;
+  flex: 0 1 auto; min-width: 0; max-width: 100%; }
+.up-dk-filterzeile > .udr-root { flex: 0 0 auto; }
+.up-dk-filterzeile > .ufb-root { flex: 0 1 auto; width: auto; min-width: 0; }
 .up-dk-held-link:focus-visible { outline: var(--up-focus-w, 2px) solid var(--vc-text); outline-offset: 2px; border-radius: var(--up-r-xs); }
 /* Skelett des Kopfes, in den Massen dessen, was gleich dasteht. */
 .up-dk-sk { display: inline-block; height: 14px; border-radius: var(--up-r-xs); background: var(--vc-sk);
@@ -5479,6 +5506,16 @@
    grey 1px separator would silently cover the bottom half of this 2px indicator. */
 .up-ph-navunderline { position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--up-accent-ink);
   z-index: 1; transition: left 200ms ease, width 200ms ease; }
+/* DER GEWAEHLTE REITER IN EINEM BEHAELTER (13.10. angefordert: "leichter Field-Background und
+   Border, Rundung 12px, standardmaessiges, eher kleines Padding"). Als ::after HINTER dem Reiter
+   (z-index -1 in seinem eigenen Stapel, isolation), nicht als Polster am Reiter selbst: die linke
+   Kante des ersten Reiterzeichens steht genau unter dem Krumenzeichen, und Polster wuerde sie
+   verschieben. Der Akzentstrich darunter BLEIBT (13.10. bestaetigt: "der Akzentstrich soll
+   bleiben"). ::before ist schon die verlaengerte Klickflaeche, darum ::after. */
+.up-ph-navitem.is-selected { position: relative; isolation: isolate; }
+.up-ph-navitem.is-selected::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: var(--vc-heading-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-xl); }
 
 /* ---------- DER KOMPAKTE SEITENKOPF MIT BROTKRUMEN (29.09. angefordert) ----------
    "Aktuell nehmen die mir zu viel Platz ein und sind groesstenteils nicht aligned mit dem Layout
@@ -5585,6 +5622,12 @@
 .up-root.uss-root .up-ph-navitem:first-child::before,
 .up-root.ush-root .up-ph-navitem:first-child::before,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem:first-child::before { left: calc(-1 * min(13px, var(--up-ph-rand-l, 0px))); }
+/* Der Behaelter des gewaehlten Reiters in der 48er-Leiste: 32 hoch (--up-h-btn, 8 ueber und unter
+   sich wie die Knoepfe der Kopfzeile), 10 Luft um Zeichen und Schrift. Rechts 7: der Reiter traegt
+   schon 3 Polster rechts (siehe oben), zusammen also auch 10. */
+.up-root:is(.ucs-root, .uad-root, .upi-root, .ubr-root, .uss-root, .ush-root) .up-ph-navitem.is-selected::after,
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem.is-selected::after {
+  top: 8px; bottom: 8px; left: -10px; right: -7px; }
 /* Im SCHMALEN Kopf (is-narrow, unter 768) teilen sich die Reiter die Breite (flex 1 1 0, Inhalt
    mittig) -- dort gibt es keine linke Kante, die unter dem Krumenzeichen stehen koennte. Also die
    alte Geometrie: 4px Luecke und 12px Seitenpolster, sonst laegen die gestreckten Reiter 28px
@@ -5604,6 +5647,11 @@
 .up-root.uss-root.is-narrow .up-ph-navitem,
 .up-root.ush-root.is-narrow .up-ph-navitem,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem { padding: 0 15px 0 12px; }
+/* Schmal hat der Reiter sein Polster selbst (12/15) und die Nachbarn liegen 4 entfernt: der
+   Behaelter fuellt den Reiter, statt in den Nachbarn zu ragen. */
+.up-root.is-narrow:is(.ucs-root, .uad-root, .upi-root, .ubr-root, .uss-root, .ush-root) .up-ph-navitem.is-selected::after,
+.up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem.is-selected::after {
+  left: 0; right: 0; }
 .up-root.ucs-root.is-narrow .up-ph-navitem::before,
 .up-root.uad-root.is-narrow .up-ph-navitem::before,
 .up-root.upi-root.is-narrow .up-ph-navitem::before,
@@ -5611,14 +5659,16 @@
 .up-root.uss-root.is-narrow .up-ph-navitem::before,
 .up-root.ush-root.is-narrow .up-ph-navitem::before,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem::before { content: none; }
-.up-root.ucs-root .up-ph-nav::after,
-.up-root.uad-root .up-ph-nav::after,
-.up-root.upi-root .up-ph-nav::after,
-.up-root.ubr-root .up-ph-nav::after,
-.up-root.uss-root .up-ph-nav::after,
-.up-root.ush-root .up-ph-nav::after,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav::after {
   left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px)); }
+/* Die Seiten mit eigener Wurzel (cfg.komponente): dort zieht sich nur die KOPFZEILE rechts um die
+   Differenz nach aussen (--up-ph-kopfzug-r, 8), die Reiterleiste steht weiter in der Wurzel. Ihre
+   Grundlinie muss also um genau diesen Zug weiter laufen -- gemessen am 13.10. in der
+   Next.js-Huelle: Kopflinie bis 1024, Reiterlinie bis 1016, also 8 vor dem Rand. In Bubble
+   dieselbe Rechnung. */
+.up-root:is(.ucs-root, .uad-root, .upi-root, .ubr-root, .uss-root, .ush-root) .up-ph-nav::after {
+  left: calc(-1 * (var(--up-ph-rand-l, 0px) + var(--up-ph-kopfzug-l, 0px)));
+  right: calc(-1 * (var(--up-ph-rand-r, 0px) + var(--up-ph-kopfzug-r, 0px))); }
 .up-ph-crumb { display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: var(--vc-third); }
 .up-ph-crumb.is-akt { color: var(--vc-text); }
 /* Das Zeichen der Seite vor ihrem Namen, in dessen Farbe (erbt von .up-ph-crumb). 16 breit wie

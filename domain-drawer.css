@@ -11,22 +11,7 @@
 .uddr-root > [hidden] { display: none; }
 .uddr-main { display: flex; flex-direction: column; gap: 64px; min-width: 0; }
 
-/* KOPF UND FILTER IN EINER ZEILE (13.10., Vorlage: "Die Filter sind hier oben rechts"). Links der
-   Kopf, rechts Kalender und Filterknopf, an der Unterkante des Kopfes ausgerichtet wie in der
-   Vorlage. Reicht die Breite nicht, bricht die Zeile: die Filter stehen dann linksbuendig unter
-   dem Kopf (justify-content space-between laesst ein umgebrochenes Kind links). Der Kopf gibt
-   bis 280px nach, darunter bricht die Zeile -- sonst wuerde eine lange Domain auf Silben zerlegt,
-   bevor die Filter weichen. */
-.uddr-heldzeile { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap;
-  gap: 16px 24px; min-width: 0; }
-.uddr-heldzeile > .up-dk-held { flex: 1 1 auto; min-width: min(100%, 280px); }
-/* Die Filterleiste rechts: 8px wie jede Werkzeugreihe. Mit aktiven Filtern stehen deren Chips im
-   Filterknopf-Baustein daneben (ufb bricht selbst um) -- darum darf er schrumpfen, der Kalender
-   nicht. */
-.uddr-filterzeile { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 8px;
-  flex: 0 1 auto; min-width: 0; max-width: 100%; }
-.uddr-filterzeile > .udr-root { flex: 0 0 auto; }
-.uddr-filterzeile > .ufb-root { flex: 0 1 auto; width: auto; min-width: 0; }
+/* Kopf und Filter in einer Zeile: .up-dk-heldzeile / .up-dk-filterzeile aus core (13.10.). */
 
 /* Das Bild im Kopf: 52 wie in der Vorlage, eine Stufe groesser als die 44 der anderen Drawer --
    hier ist die Domain selbst das Thema, und ihr Favicon die einzige Marke im Kopf. Faktor 52/44

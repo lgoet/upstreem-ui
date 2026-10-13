@@ -184,7 +184,7 @@
       /* idx needs its own cls (vt-td-idx) — without it the bar falls back to the generic cell's
          left-aligned padding instead of the real idx column's centered one. */
       return tableHeadHtml() + '<div class="vt-tbody">' + UC.skeletonRows({
-        count: 7, rowClass: "vt-row", cellClass: "vt-td",
+        count: UC.MAX_LINE_SERIES || 8, rowClass: "vt-row", cellClass: "vt-td",
         cols: [{ w:12, cls:"vt-td-idx" }, { w:70, jitter:18, logo:true }, 46, 52, 56]
       }) + '</div>';
     }
@@ -265,7 +265,7 @@
       var body = rows.map(function(r, i){
         var pos = (r.position != null) ? Number(r.position) : null;
         var isLast = (i === rows.length - 1);
-        var gap = (isLast && pos != null && pos > 7) ? " vt-gap" : "";
+        var gap = (isLast && pos != null && pos > (UC.MAX_LINE_SERIES || 8)) ? " vt-gap" : "";
         var logo = r.logo_url
           ? '<span class="up-logo-box has-img"><img src="' + esc(r.logo_url) + '"/></span>'
           : '<span class="up-logo-box"></span>';
@@ -532,7 +532,8 @@
         filterSel[String(c.company_id)] = !!activeIds[String(c.company_id)];
       });
     }
-    var MAX_FILTER_SEL = 7;
+    /* Aus core, wie in brands-overview: so viele Marken, wie der Chart Linien zeichnet (8 seit 13.10.). */
+    var MAX_FILTER_SEL = UC.MAX_LINE_SERIES || 8;
     var USER_FILTERED = (window.__votUserFiltered = window.__votUserFiltered || {});
     function isAtInitialSelection(){
       /* Compare against what Reset would actually restore (same fallback it uses) — not just

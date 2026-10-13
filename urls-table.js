@@ -307,28 +307,28 @@
       var txt = th.querySelector(".up-th-txt");
       if (txt) txt.textContent = domainModus() ? "Domain Share" : "Share";
     }
-    /* URL types have their own dark palette; citation types deliberately do not.
+    /* Farben seit dem 13.10. aus UC.typeStyle: Schrift, Grund, Rand und Punkt fuer beide Themen,
+       eine Quelle fuer jeden Typ-Chip der App (STYLEGUIDE 1a/1b).
        A missing/empty type is "Uncategorized" — same convention as core.js's URL_LABEL.other and
        topcitations-dashboard's URL_TYPE_CHIP.other — never a blank cell. A non-empty value that
        just doesn't match a known key still renders as its own raw text: a real, if unmapped, type
        is not the same thing as an absent one. */
     function urlTypeInfo(raw){
-      var key = String(raw == null ? "" : raw).trim().toLowerCase().replace(/[\s-]+/g, "_");
-      var t = URL_TYPE[key];
-      /* Die Beschriftung kommt aus core (UC.typLabel) und ist damit uebersetzt -- die Farbe
-         bleibt hier, die unterscheidet sich je Komponente wirklich. Gemeldet am 07.09.: im Ring
-         standen die URL-Typen deutsch, in dieser Spalte englisch. Der Sprachlauf fasst
-         Tabellenzellen absichtlich nicht an, also muss die Zelle selbst uebersetzt ankommen. */
-      if (t) return { label: UC.typLabel(raw, "url"), color: isDark ? t.cDark : t.c, base: t.c };
-      return { label: UC.typLabel(raw, "url"), color: isDark ? OTHER_DARK : OTHER_LIGHT, base: OTHER_LIGHT };
+      /* Beschriftung UND Farbe kommen aus core: die Beschriftung uebersetzt (07.09. gemeldet: im
+         Ring deutsch, in dieser Spalte englisch -- der Sprachlauf fasst Tabellenzellen absichtlich
+         nicht an), die Farbe seit dem 13.10. aus typeStyle, das den Schluessel selbst normalisiert. */
+      return { label: UC.typLabel(raw, "url"), stil: UC.typeStyle("url", raw, isDark) };
+    }
+    /* Die vier Chipwerte als style-Text; der Rand selbst (1px, border-box) steht in der CSS. */
+    function chipStil(st){
+      return "color:" + st.ink + ";background:" + st.bg + ";border-color:" + st.bd;
     }
     function tagHtml(raw){
       var ti = urlTypeInfo(raw);
-      var bg = isDark ? CHIP_BG_DARK : tint(ti.base, 0.12);
       /* URL types always carry a leading dot; citation types never do. That is what keeps the two
          systems apart at a glance when they appear next to each other. */
-      return '<span class="uut-tag" style="color:' + ti.color + ';background:' + bg + '">' +
-               '<span class="uut-tag-dot" style="background:' + ti.color + '"></span>' +
+      return '<span class="uut-tag" style="' + chipStil(ti.stil) + '">' +
+               '<span class="uut-tag-dot" style="background:' + ti.stil.dot + '"></span>' +
                '<span class="uut-tag-lbl">' + esc(ti.label) + '</span>' +
              '</span>';
     }
@@ -551,26 +551,20 @@
             ? '<button class="up-filter-reset" type="button">' + esc(UC.t("Reset")) + '</button>' : "") +
         '</div><div class="up-filter-list">';
       html += keys.map(function(key){
-        var label, color, base;
-        if (isUrlDim){ var ti = urlTypeInfo(key); label = ti.label; color = ti.color; base = ti.base; }
-        /* Farbe ueber den KANONISCHEN Namen, Beschriftung uebersetzt. Beides aus citeName zu
-           nehmen ging nicht: CITE_COLOR ist nach dem englischen Namen geschluesselt, eine
-           deutsche Beschriftung faende dort nichts und der Chip waere grau. */
-        else { color = CITE_COLOR[citeName(key)] || OTHER_LIGHT; base = color;
-               label = UC.typLabel(key, "citation"); }
-        /* IM DUNKELN KEIN KASTEN UM DEN CHIP (10.09. gemeldet). CHIP_BG_DARK ist #242424, das
-           Dropdown darunter #232326 -- fast dieselbe Farbe, aber eben nicht dieselbe. Auf einer
-           ueberfahrenen oder gewaehlten Zeile wechselt der Zeilengrund (#232326 bzw. #28282c),
-           und dann steht der Chip als sichtbarer Kasten in einem dritten Ton darin. Im Dunkeln
-           traegt ein Chip dieser App ohnehin nur die FARBE DER SCHRIFT und keinen Grund; hier
-           war der Grund die Ausnahme, und sie fiel genau dort auf, wo sie stoerte.
-           In der TABELLE bleibt CHIP_BG_DARK: dort liegt der Chip auf der Zeile und braucht
-           seine Flaeche. Geaendert ist nur die Liste im Dropdown. */
-        var bg = isDark ? "transparent" : tint(base, 0.12);
-        var dot = isUrlDim ? '<span class="uut-tag-dot" style="background:' + color + '"></span>' : "";
+        var label, st;
+        if (isUrlDim){ var ti = urlTypeInfo(key); label = ti.label; st = ti.stil; }
+        /* Farbe ueber den Rohschluessel (typeStyle uebersetzt ihn per citeName), Beschriftung
+           uebersetzt. Aus der Beschriftung ginge es nicht: eine deutsche faende keinen Typ. */
+        else { st = UC.typeStyle("citation", key, isDark); label = UC.typLabel(key, "citation"); }
+        /* DER CHIP IM DROPDOWN IST DERSELBE WIE IN DER TABELLE, auch im Dunkeln (13.10.). Bis dahin
+           stand er dort ohne Grund (10.09. gemeldet: #242424 auf dem Dropdown #232326 sah aus wie
+           ein Kasten in einem dritten Ton). Der Grund war damals eine zufaellige Naehe zweier
+           Grautoene; seit Variante D ist der dunkle Chip bewusst getoent und durch seinen Rand
+           begrenzt -- ein gezeichneter Chip, kein verrutschter Ton. */
+        var dot = isUrlDim ? '<span class="uut-tag-dot" style="background:' + st.dot + '"></span>' : "";
         return '<div class="up-filter-item' + (sel[key] ? " is-checked" : "") + '" data-type="' + esc(key) + '">' +
                  '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
-                 '<span class="up-filter-tag" style="color:' + color + ';background:' + bg + '">' + dot +
+                 '<span class="up-filter-tag" style="' + chipStil(st) + '">' + dot +
                    '<span class="up-filter-tag-lbl">' + esc(label) + '</span></span>' +
                '</div>';
       }).join("");
@@ -904,8 +898,7 @@
       if (kind === "type"){
         return ["article","comparison","listicle"].map(function(k){
           var t = URL_TYPE[k];
-          var col = isDark ? t.cDark : t.c;
-          return '<span class="uut-explain-chip" style="color:' + col + ';background:' + tint(col, isDark ? 0.18 : 0.12) + '">' + esc(t.label) + '</span>';
+          return '<span class="uut-explain-chip" style="' + chipStil(UC.typeStyle("url", k, isDark)) + '">' + esc(t.label) + '</span>';
         }).join("");
       }
       if (kind === "brands"){

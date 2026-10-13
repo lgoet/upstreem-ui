@@ -195,7 +195,7 @@
              was dahinter liegt. KEIN .up-iconbtn mehr: der waere hier in Breite, Polster und
              Hover ueberschrieben worden, also ein gesprengtes Bauteil (CLAUDE.md 1). */
           '<span class="urd-hlwrap">' +
-            '<button class="urd-hlbtn" type="button" aria-label="Highlight settings"></button>' +
+            '<button class="urd-hlbtn up-btn-sec" type="button" aria-label="Highlight settings"></button>' +
             '<div class="urd-hlpop up-pop"></div>' +
           '</span>' +
         '</div>' +

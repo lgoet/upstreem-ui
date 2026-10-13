@@ -567,6 +567,36 @@
     }
     function istMini(){ return state.klasse === "mini" || (state.klasse === "wide" && state.eingeklappt); }
 
+    /* Die Breite an <html>. BEIM ERSTEN MAL OHNE FAHRT: die Ansichten standen bis hierher bei
+       0 (die Variable gab es noch nicht), und ihr Uebergang aus sidebar.css liess den Inhalt beim
+       Seitenaufbau 200ms lang von links hereingleiten (gemessen am Stand davor: padding-left der
+       Ansicht "running" von 0 auf 250 im Moment des ersten Setzens). Das Attribut schaltet den
+       Uebergang ab, der Stil der Ansichten wird einmal gelesen -- damit gilt der neue Wert als
+       schon erreicht --, danach ist es wieder weg. Gelesen wird getComputedStyle, kein Layout. */
+    var breiteErstmals = true;
+    function breiteSetzen(px){
+      var html = document.documentElement;
+      var neu = px + "px";
+      if (!breiteErstmals || html.style.getPropertyValue("--up-sidebar-w") === neu){
+        breiteErstmals = false;
+        html.style.setProperty("--up-sidebar-w", neu);
+        return;
+      }
+      breiteErstmals = false;
+      html.setAttribute("data-usn-still", "");
+      html.style.setProperty("--up-sidebar-w", neu);
+      [].forEach.call(document.querySelectorAll('[id^="view-"]'), function(v){ void getComputedStyle(v).paddingLeft; });
+      html.removeAttribute("data-usn-still");
+    }
+    /* is-faehrt an der Leiste, solange Breite und Zeilen fahren: sidebar.css schneidet den Text
+       dann hart ab statt mit "…" (die Auslassung sass sonst in jedem Bild woanders). */
+    var fahrtUhr = null;
+    function fahrtMarkieren(){
+      bar.classList.add("is-faehrt");
+      if (fahrtUhr) clearTimeout(fahrtUhr);
+      fahrtUhr = setTimeout(function(){ fahrtUhr = null; bar.classList.remove("is-faehrt"); }, dauerMs(bar) + 60);
+    }
+
     function anwenden(melden){
       var k = klasseAusBreite();
       if (k !== state.klasse){
@@ -577,6 +607,8 @@
       }
       var hint = state.klasse === "hint";
       var mini = !hint && istMini();
+      /* Der Zustand VOR diesem Aufruf -- nur ein echter Wechsel startet die Fahrt der Gruppen. */
+      var warMini = bar.classList.contains("is-mini");
 
       /* Eingeklappt gibt es keine Zeile, in der ein Textfeld Platz haette -- eine laufende
          Umbenennung wird darum beim Wechsel verworfen statt unsichtbar weiterzulaufen. */
@@ -588,17 +620,20 @@
       fab.classList.toggle("is-on", hint && !state.offen);
       scrim.classList.toggle("is-on", hint && state.offen);
 
-      /* Beim Wechsel zwischen wide und mini muessen die Gruppenhoehen neu gesetzt werden --
-         im Mini-Zustand ohne Grenze, danach wieder mit der gemessenen. */
-      if (typeof hoehenSetzen === "function") setTimeout(hoehenSetzen, 0);
+      /* Beim Wechsel zwischen wide und mini fahren die zugeklappten Gruppen auf (eingeklappt ist
+         jede offen) bzw. wieder zu -- IM SELBEN AUFRUF wie die Klasse, damit sie im selben Bild
+         starten wie die Breite der Leiste. Hier stand ein setTimeout(hoehenSetzen, 0): er lief
+         einen Takt NACH dem Start der Fahrt und setzte die Hoehe hart (von "keine Grenze" auf 0
+         gibt es keinen Uebergang). Gemessen (usn13): die letzte Zeile sprang im zweiten Bild
+         176px nach unten bzw. oben. */
+      if (warMini !== mini){ fahrtMarkieren(); gruppenAngleichen(mini); }
       /* Im Mini-Zustand sind die Zeilen schmaler und stehen hoeher (keine Ueberschriften): die
          Marke muss beides uebernehmen. Zweimal, wie beim Zuklappen -- die Breite der Leiste
          faehrt 200ms. */
       if (typeof tipsSchalten === "function") tipsSchalten();
-      /* Die Marke haengt jetzt am Zustand: eingeklappt zeigt sie das Quadrat, ausgeklappt den
-         breiten Schriftzug. Ohne diesen Aufruf blieb beim Umschalten das Bild des vorigen
-         Zustands stehen -- bis irgendwann etwas anderes renderBrand angestossen haette. */
-      if (typeof renderBrand === "function") renderBrand();
+      /* Hier stand renderBrand(): die Marke tauschte beim Umschalten ihr Bild. Seit dem 13.10.
+         stehen beide Fassungen im Kasten und sidebar.css blendet um (siehe renderBrand) -- beim
+         Umschalten gibt es an der Marke nichts mehr zu tun. */
       elToggle.hidden = hint;
       elToggle.setAttribute("aria-label", mini ? "Expand sidebar" : "Collapse sidebar");
 
@@ -607,7 +642,7 @@
       /* Die Breite als Variable an <html>: wer seinen Seitencontainer mit
          padding-left: var(--up-sidebar-w) versieht, braucht keinen Workflow und hat den
          Uebergang automatisch synchron zur Leiste. */
-      try { document.documentElement.style.setProperty("--up-sidebar-w", px + "px"); } catch(e){}
+      try { breiteSetzen(px); } catch(e){}
 
       /* wide und hint sind fuer Bubble da: sie bilden die zwei States der App direkt ab, ohne dass
          ein Workflow erst aus mode etwas ableiten muss. visible bleibt, was es war -- "belegt die
@@ -873,23 +908,30 @@
          die Fassung fuer das laufende Thema, wird die andere genommen: ein Logo in der falschen
          Fassung ist immer noch besser als keines. */
       var istDunkel = bar.getAttribute("data-theme") === "dark";
-      var mini = bar.classList.contains("is-mini");
       var klein = istDunkel ? (kleinDunkel || kleinHell) : (kleinHell || kleinDunkel);
       var breit = istDunkel ? (dunkel || hell) : (hell || dunkel);
-      var quadrat = mini && !!klein;
-      var wahl = quadrat ? klein : breit;
-      var neu = !wahl
+      /* BEIDE FASSUNGEN STEHEN IM KASTEN (13.10.), welche zu sehen ist, entscheidet sidebar.css
+         ueber .is-mini -- per Deckkraft, im Takt der Fahrt. Vorher wurde hier beim Umschalten das
+         Bild getauscht: im ersten Bild der Fahrt, mit einem frischen <img>, das erst laden musste.
+         Das Markup haengt damit nicht mehr am Zustand der Leiste, nur noch am Thema. */
+      var neu = (!breit
         ? '<span class="usn-brand-word">upstreem</span>'
-        : '<img class="usn-brand-img' + (quadrat ? ' is-square' : '') + '" alt="upstreem" ' +
-          'src="' + esc(wahl) + '"' +
+        : '<img class="usn-brand-img is-breit" alt="upstreem" src="' + esc(breit) + '"' +
           /* Bricht das Bild, faellt der Schriftzug ein -- eine leere Zeile oben in der Leiste
              saehe wie ein Ladefehler der ganzen App aus. */
-          ' onerror="this.outerHTML=&quot;<span class=\'usn-brand-word\'>upstreem</span>&quot;"/>';
-      /* Die Klasse wandert an den KASTEN und nicht nur ans Bild: seine Hoehe ist fest gesetzt
-         (siehe sidebar.css), und ein quadratisches Logo braucht dort eine andere Zahl als ein
-         Schriftzug -- die Rechnung fuer den Abstand darunter liest sie mit. */
-      elBrandMk.classList.toggle("is-square", quadrat);
-      if (elBrandMk.innerHTML !== neu) elBrandMk.innerHTML = neu;
+          ' onerror="this.outerHTML=&quot;<span class=\'usn-brand-word\'>upstreem</span>&quot;"/>') +
+        (klein
+          /* alt leer: dasselbe Logo steht schon als breite Fassung mit alt="upstreem" da. Bricht
+             das Quadrat, geht es weg -- eingeklappt stand im Fehlerfall auch vorher nichts. */
+          ? '<img class="usn-brand-img is-square" alt="" src="' + esc(klein) + '" onerror="this.remove()"/>'
+          : '');
+      /* has-square sagt sidebar.css, ob es eingeklappt etwas zum Einblenden gibt -- ohne Quadrat
+         bleibt die breite Fassung stehen (verkleinert, wie bisher). */
+      elBrandMk.classList.toggle("has-square", !!klein);
+      /* Am zuletzt GESCHRIEBENEN Text vergleichen, nicht an innerHTML: der Browser gibt das
+         onerror-Attribut anders zurueck, als es hier steht, und dann waere jeder Aufruf ein
+         Neuaufbau -- anwenden() ruft renderBrand bei jedem Umschalten. */
+      if (elBrandMk.__usnHtml !== neu){ elBrandMk.__usnHtml = neu; elBrandMk.innerHTML = neu; }
     }
 
     function renderNav(){
@@ -947,8 +989,11 @@
        Leiste, in der die aktive Zeile einfach die aktive Zeile ist. Die Flaeche traegt die Zeile
        wieder selbst (sidebar.css: .usn-item.is-active). */
 
-    /* Die Hoehe wird GEMESSEN und als Zahl gesetzt: von auto auf 0 gibt es keinen Uebergang, und
-       ein geschaetzter Maximalwert laesst die Gruppe erst spaet in Bewegung kommen. */
+    /* Der Ruhezustand der Gruppen, ohne Fahrt (nach jedem Neuaufbau der Liste): zu = 0, offen =
+       ohne Grenze. Offen stand hier frueher die gemessene Hoehe in px -- sie wurde beim naechsten
+       Aufbau neu gemessen, war aber dazwischen eine Grenze, die eine laengere Liste (ein neuer
+       Pin, eine Umbenennung) abgeschnitten haette. Gemessen wird jetzt nur noch fuer die Fahrt
+       selbst (fahren). */
     function hoehenSetzen(){
       /* Im Mini-Zustand hat keine Gruppe eine Grenze: die Ueberschrift ist dort weg, es gaebe
          also keinen Weg zurueck aus dem zugeklappten Zustand. Den inline-Wert leeren statt ihn
@@ -957,8 +1002,61 @@
       [].forEach.call(elNav.querySelectorAll(".usn-block"), function(bl){
         var body = bl.querySelector("[data-body]");
         if (!body) return;
-        if (mini){ body.style.maxHeight = ""; return; }
-        body.style.maxHeight = bl.classList.contains("is-closed") ? "0px" : body.scrollHeight + "px";
+        body.style.maxHeight = (!mini && bl.classList.contains("is-closed")) ? "0px" : "";
+      });
+    }
+    /* Laengste Dauer plus Verzoegerung der Uebergaenge eines Elements, in ms -- die Uhr, nach der
+       eine Fahrt spaetestens als beendet gilt. Aus dem berechneten Stil und nicht als Zahl hier:
+       unter "weniger Bewegung" ist es 1ms, und die Dauer steht nur an einer Stelle (sidebar.css,
+       --usn-fahrt). */
+    function dauerMs(el){
+      var cs = getComputedStyle(el);
+      var d = String(cs.transitionDuration || "").split(","), v = String(cs.transitionDelay || "").split(",");
+      var ms = function(x){ x = String(x || "").trim(); var n = parseFloat(x); if (!isFinite(n)) return 0; return /ms$/.test(x) ? n : n * 1000; };
+      var max = 0;
+      for (var i = 0; i < d.length; i++) max = Math.max(max, ms(d[i]) + ms(v[i % v.length]));
+      return max;
+    }
+    /* EINE GRUPPE AUF- ODER ZUFAHREN (13.10.). Von auto auf 0 gibt es keinen Uebergang, also wird
+       die Hoehe fuer die Dauer der Fahrt als Zahl gesetzt:
+         1. Start = die Hoehe, die JETZT zu sehen ist (getBoundingClientRect, nicht scrollHeight) --
+            so faehrt ein zweiter Klick mitten in der Fahrt von der aktuellen Lage zurueck, statt
+            erst auf die volle Hoehe zu springen.
+         2. is-faehrt: der Kasten schneidet ab, solange er faehrt (sidebar.css). DAS fehlte beim
+            Aufklappen -- is-closed ging weg, und mit ihm das Abschneiden, im selben Moment.
+         3. umschalten() (Klassen, aria) erst NACH dem festgeschriebenen Startwert.
+         4. Ziel: offen = scrollHeight, zu = 0. Am Ende offen wieder ohne Grenze.
+       Das Ende kommt ueber transitionend ODER die Uhr (der Tab kann verdeckt sein, dann feuert
+       transitionend spaet oder nie). Die laufende Nummer sorgt dafuer, dass eine abgeloeste Fahrt
+       nichts mehr anfasst. */
+    var fahrtNr = 0;
+    function fahren(body, offen, umschalten){
+      var start = body.getBoundingClientRect().height;
+      body.style.maxHeight = start + "px";
+      body.classList.add("is-faehrt");
+      void body.offsetHeight;
+      if (umschalten) umschalten();
+      body.style.maxHeight = (offen ? body.scrollHeight : 0) + "px";
+      var nr = ++fahrtNr;
+      body.__usnFahrt = nr;
+      function fertig(){
+        if (body.__usnFahrt !== nr) return;
+        body.__usnFahrt = 0;
+        body.removeEventListener("transitionend", amEnde);
+        body.classList.remove("is-faehrt");
+        if (offen) body.style.maxHeight = "";
+      }
+      function amEnde(e){ if (e.target === body && e.propertyName === "max-height") fertig(); }
+      body.addEventListener("transitionend", amEnde);
+      setTimeout(fertig, dauerMs(body) + 60);
+    }
+    /* Wechsel zwischen wide und mini: eingeklappt ist jede Gruppe offen (dort gibt es keine
+       Ueberschrift, also keinen Weg zurueck), ausgeklappt gilt wieder die Wahl. Gefahren werden
+       nur die zugeklappten -- die offenen haben in beiden Zustaenden dieselbe Hoehe. */
+    function gruppenAngleichen(mini){
+      [].forEach.call(elNav.querySelectorAll(".usn-block.is-closed"), function(bl){
+        var body = bl.querySelector("[data-body]");
+        if (body) fahren(body, mini);
       });
     }
     function gruppeSchalten(head){
@@ -972,12 +1070,15 @@
       if (!bl) return;
       var body = bl.querySelector("[data-body]");
       var zu = state.zu.indexOf(head) >= 0;
-      /* Vor dem Zuklappen die gemessene Hoehe setzen, sonst faellt der Kasten von auto auf 0 und
-         der Uebergang hat keinen Startwert. */
-      if (zu){ body.style.maxHeight = body.scrollHeight + "px"; void body.offsetHeight; }
-      bl.classList.toggle("is-closed", zu);
-      bl.querySelector("[data-head]").setAttribute("aria-expanded", zu ? "false" : "true");
-      body.style.maxHeight = zu ? "0px" : body.scrollHeight + "px";
+      var hd = bl.querySelector("[data-head]");
+      function umschalten(){
+        bl.classList.toggle("is-closed", zu);
+        hd.setAttribute("aria-expanded", zu ? "false" : "true");
+      }
+      /* Eingeklappt ist die Gruppe ohnehin offen (die Ueberschrift ist dort weg) -- nur die Wahl
+         merken, nichts fahren. */
+      if (!body || bar.classList.contains("is-mini")){ umschalten(); return; }
+      fahren(body, !zu, umschalten);
     }
     /* Die Zahl neben "Teams". Vorher stand hier eine Logo-Vorschau (UC.brandStack, drei Logos plus
        "+N") -- die Zahl sagt dasselbe in der Sprache, die die Leiste schon spricht.

@@ -406,9 +406,10 @@
      -- gemeldet als "zu knallig, nicht unser Farbschema". Jetzt kommt jeder Ton aus derselben
      Palette wie die Typ-Chips der Citations-Seite, in beiden Themen, und evPill/ask-mira.css
      nehmen ihn nur zur Haelfte (siehe .am-ev-ic). Die Zuordnung folgt der Bedeutung: die eigene
-     Marke ist dort "You", der Wettbewerber "Competition"; Prompt behaelt sein Violett, Domain
-     und Empfehlung ihr Gruen (jetzt das Petrol von Editorial), URL ihr Blau. Citation hat
-     keinen Ton -- sie steht nur in der Drittfarbe. */
+     Marke ist dort "You", der Wettbewerber "Competition"; Prompt traegt Violett (Knowledge-Base).
+     Seit den neuen Typfarben (13.10., Variante D) sind Domain und Empfehlung blau (Editorial),
+     URL tuerkis (UGC), You die Schriftfarbe des Themes. Citation hat keinen Ton -- sie steht
+     nur in der Drittfarbe. */
   var EVIDENCE = {
     brand:         { label: 'Your Brand',     ton: 'You',             icon: ICON.copy },
     competitor:    { label: 'Competitor',     ton: 'Competition',     icon: ICON.swords },
@@ -1803,7 +1804,6 @@
     improve_existing_content: amFormen("trendingUp")
   };
   var _OPP_CITE = { Brand_Platform:'Brand Platforms', UGC_Community:'UGC / Community', Competition:'Competition', Editorial:'Editorial', Institutional:'Institutional', Knowledge_Base:'Knowledge Base', You:'Your Content' };
-  var _OPP_CITE_COLOR = { Editorial:'#14b8a6', UGC_Community:'#0ea5e9', Knowledge_Base:'#6366f1', Brand_Platform:'#d946ef', Institutional:'#64748b', Competition:'#f97316', You:'#f43f5e' };
   var _OPP_STAT_COLOR = { pending:'#9ca3af', in_progress:'#2384E2', done:'#15803d', ignored:'#b4451f' };
   // the four canonical statuses a card can move between (label = exact DB status value)
   /* DIESELBEN NAMEN WIE IM OPPORTUNITIES-BOARD (19.09. gemeldet: "die Statusnamen sind andere
@@ -1840,7 +1840,13 @@
   }
   function _oppRecIcon(t){ return _OPP_REC_ICON[t] || _OPP_REC_ICON.get_listed; }
   function _oppCitePretty(c){ return _OPP_CITE[c] || String(c||'').replace(/_/g,' '); }
-  function _oppCiteColor(c){ return _OPP_CITE_COLOR[c] || '#6b6f78'; }
+  /* Die Farbe des Zitationstyps aus core (13.10.), wortgleich mit citeColor in opportunities.js.
+     Hier stand eine eigene, noch aeltere Palette (Tailwind-Toene), die schon vor
+     Variante D von der App abwich. */
+  function _oppCiteColor(c){
+    var k = window.UpstreemCore;
+    return (k && k.typeColor) ? k.typeColor(c, 'citation', root.getAttribute('data-theme') === 'dark') : 'var(--uo-muted)';
+  }
   function _oppStatusKey(s){ s = String(s||'').toLowerCase(); if (s.indexOf('progress')>=0) return 'in_progress'; if (s==='done'||s==='completed') return 'done'; if (s==='ignored') return 'ignored'; return 'pending'; }
   function _oppStatusLabel(s){ return (String(s||'').toLowerCase()==='created') ? 'Pending' : String(s||''); }   // value stays "Created"; only the label says "Pending"
   /* Der Kommentar hier sagte "1:1 reuse of the Opportunities module chip rendering", und genau

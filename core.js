@@ -18,16 +18,50 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261115;
+  var BUILD = 20261116;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
   } catch(e){}
 
-  var CITE_COLOR = {
-    "Editorial":"#27a79b", "UGC / Community":"#34a1d1", "Knowledge-Base":"#797ad8",
-    "Brand Platforms":"#bc69c9", "Institutional":"#5e7eac", "Competition":"#dd7e3e", "You":"#d35f73"
+  /* ══ TYPFARBEN (13.10., Variante D "Branchenueblich") ════════════════════════════════════
+     Ersetzt CITE_COLOR, CITE_COLOR_DARK, URL_TYPE (alte c/cDark-Palette), URL_COLOR_CHART,
+     URL_COLOR_DARK, CHART_OTHER_LIGHT/DARK als eigene Werte und die Chip-Formel
+     tint(farbe, 0.12) hell / #242424 dunkel.
+     Warum neu: die alte Palette hatte 7 + 14 kraeftige Toene, mittelhelle Schrift auf
+     12-%-Toenung ohne Rand -- bunt und schwer lesbar. Vorbild ist jetzt Peec AI: Farbe nur im
+     Chip, sehr heller Grund, feiner Rand im selben Ton, dunkle Schrift im Schnitt 500. Die Toene
+     folgen der Branchenkonvention (Competition rot, Brand Platforms orange, Editorial blau, UGC
+     tuerkis, Knowledge-Base violett, Institutional schiefergrau).
+     Jeder Eintrag traegt ALLE Werte fuer beide Themen, damit keine Komponente mehr selbst rechnet:
+       fill / fillDark   Flaeche in Charts (Ring, Balken, Legendenpunkt, Punkt im URL-Chip)
+       ink  / inkDark    Schrift im Chip
+       bg   / bgDark     Grund des Chips (dunkel GETOENT, nicht mehr flach #242424)
+       bd   / bdDark     Rand des Chips, 1px
+     Kontrast Schrift auf Grund (WCAG, nachgerechnet): Typen hell 6.6 bis 7.1, dunkel 9.5 bis 9.7;
+     Rueckfall 5.5 / 6.4; You 16.5 / 13. Gelesen wird ueber typeStyle() weiter unten.
+     STYLEGUIDE 1a/1b fuehrt dieselben Werte als Tabelle. */
+  var CITE_TYPE = {
+    "Editorial":       { fill:"#7493C7", fillDark:"#8BA6D1", ink:"#375587", inkDark:"#B4CCF2", bg:"#F0F7FF", bgDark:"#1D232E", bd:"#D0E3FF", bdDark:"#2C384D" },
+    "UGC / Community": { fill:"#49A1AB", fillDark:"#6DB2B9", ink:"#00636D", inkDark:"#9CD6DD", bg:"#EAFBFD", bgDark:"#162628", bd:"#BFEBF0", bdDark:"#1C3E42" },
+    "Knowledge-Base":  { fill:"#9688C1", fillDark:"#A79CCC", ink:"#594A82", inkDark:"#CDC3EE", bg:"#F7F5FF", bgDark:"#23212C", bd:"#E3DCFD", bdDark:"#39344B" },
+    "Brand Platforms": { fill:"#BB845F", fillDark:"#C8997B", ink:"#7B461E", inkDark:"#EAC1A6", bg:"#FFF4EC", bgDark:"#2B2019", bd:"#FADAC6", bdDark:"#483224" },
+    "Institutional":   { fill:"#8195A6", fillDark:"#97A7B5", ink:"#455868", inkDark:"#BECDDA", bg:"#F3F7FB", bgDark:"#1F2327", bd:"#D8E3ED", bdDark:"#313940" },
+    "Competition":     { fill:"#C17E78", fillDark:"#CD948F", ink:"#803F3B", inkDark:"#EFBCB7", bg:"#FFF2F1", bgDark:"#2D1F1D", bd:"#FED6D2", bdDark:"#4B302D" },
+    /* You traegt die Akzentfarbe des Themes (STYLEGUIDE 1: Akzent ist die Schriftfarbe) und ist
+       als einziger Chip invertiert, damit die eigene Seite in jeder Liste sofort auffaellt. In
+       Charts ist You damit die Textfarbe des Themes. */
+    "You":             { fill:"#1F1F1B", fillDark:"#E0E0E0", ink:"#FFFFFF", inkDark:"#1B1B1B", bg:"#1F1F1B", bgDark:"#E0E0E0", bd:"#1F1F1B", bdDark:"#E0E0E0" }
   };
+  /* Rueckfall fuer unbekannte Typen und "Uncategorized", fuer Citation UND URL. */
+  var TYPE_OTHER = { fill:"#9E9E9E", fillDark:"#808080", ink:"#5F636B", inkDark:"#A8A8A8", bg:"#F5F5F5", bgDark:"#262626", bd:"#E0E2E6", bdDark:"#3A3A3A" };
+  /* Wer nur EINEN Wert je Typ liest (Ring, Legende, typeColor, ask-mira, Landingpage), bekommt die
+     Chart-Flaeche. Die Namen bleiben, weil sie an UC haengen und von aussen gelesen werden. */
+  var CITE_COLOR = {}, CITE_COLOR_DARK = {};
+  Object.keys(CITE_TYPE).forEach(function(k){
+    CITE_COLOR[k] = CITE_TYPE[k].fill;
+    CITE_COLOR_DARK[k] = CITE_TYPE[k].fillDark;
+  });
   var CITE_ALIAS = {
     "Brand_Platform":"Brand Platforms", "Brand Platform":"Brand Platforms",
     "Knowledge_Base":"Knowledge-Base", "Knowledge Base":"Knowledge-Base",
@@ -45,8 +79,7 @@
        2. Vier Komponenten hielten je eine eigene Kopie der Beschriftungen. Die Uebersetzung an
           vier Stellen nachzuziehen heisst, sie beim naechsten neuen Typ an drei zu vergessen.
      Darum EIN Ort: die Rohform kommt herein, die uebersetzte Beschriftung heraus. Die Farben
-     bleiben bei den Komponenten -- die unterscheiden sich wirklich (URL-Typen haben eine eigene
-     dunkle Palette, Citation-Typen nicht).
+     liegen seit dem 13.10. ebenfalls hier (CITE_TYPE, URL_TYPE, typeStyle).
      Ein Wert, der zu keinem Schluessel passt, kommt UNVERAENDERT zurueck: das ist ein echter,
      nur unbekannter Typ und keine fehlende Angabe. Leer heisst "Ohne Kategorie". */
   function typLabel(raw, art){
@@ -60,30 +93,79 @@
     var u = URL_LABEL[key];
     return u ? t(u) : roh;
   }
-  /* URL types: canonical palette, copied 1:1 from the standalone URL Type chip component.
-     Unlike citation types these DO have a real dark variant. */
-  var URL_TYPE = {
-    homepage:        { label:"Homepage",         c:"#b45309", cDark:"#fbbf24" },
-    product_service: { label:"Product / Service", c:"#c2683b", cDark:"#fdba74" },
-    marketplace:     { label:"Marketplace",      c:"#9a5b2e", cDark:"#fcae6f" },
-    company_info:    { label:"Company Info",     c:"#a16207", cDark:"#facc15" },
-    article:         { label:"Article",          c:"#047857", cDark:"#6ee7b7" },
-    listicle:        { label:"Listicle",         c:"#0e7490", cDark:"#67e8f9" },
-    guide:           { label:"Guide",            c:"#2563eb", cDark:"#93c5fd" },
-    comparison:      { label:"Comparison",       c:"#4f46e5", cDark:"#a5b4fc" },
-    review:          { label:"Review",           c:"#6d28d9", cDark:"#c4b5fd" },
-    documentation:   { label:"Documentation",    c:"#6d28d9", cDark:"#c4b5fd" },
-    forum:           { label:"Forum",            c:"#9333ea", cDark:"#d8b4fe" },
-    directory:       { label:"Directory",        c:"#a21caf", cDark:"#f0abfc" },
-    video:           { label:"Video",            c:"#7c3aed", cDark:"#c4b5fd" },
-    social_post:     { label:"Social Post",      c:"#8b5cf6", cDark:"#ddd6fe" }
+  /* ---- URL-Typen: drei Familien (13.10.) --------------------------------------------------
+     Der Chip (Schrift, Grund, Rand) kommt von der FAMILIE, damit eine Tabelle mit vielen
+     URL-Typen ruhig bleibt; unterschieden werden die Typen durch die Beschriftung und den Punkt,
+     der die Chart-Flaeche des Typs traegt. In Charts sind die Typen einer Familie ueber die
+     Helligkeit gestaffelt -- hell von dunkel nach hell, dunkel gegenlaeufig, damit der erste
+     (meist groesste) Typ einer Familie in beiden Themen am staerksten wirkt.
+     Die Familientoene sind die der Zitationstypen: commercial = Brand Platforms,
+     editorial = Editorial, reference = Knowledge-Base. */
+  var URL_FAMILY = {
+    commercial: { ink:"#7B461E", inkDark:"#EAC1A6", bg:"#FFF4EC", bgDark:"#2B2019", bd:"#FADAC6", bdDark:"#483224" },
+    editorial:  { ink:"#375587", inkDark:"#B4CCF2", bg:"#F0F7FF", bgDark:"#1D232E", bd:"#D0E3FF", bdDark:"#2C384D" },
+    reference:  { ink:"#594A82", inkDark:"#CDC3EE", bg:"#F7F5FF", bgDark:"#23212C", bd:"#E3DCFD", bdDark:"#39344B" }
   };
+  var URL_TYPE = {
+    homepage:        { label:"Homepage",          family:"commercial", fill:"#845738", fillDark:"#F1C7AC" },
+    product_service: { label:"Product / Service", family:"commercial", fill:"#A57656", fillDark:"#D2AA8F" },
+    marketplace:     { label:"Marketplace",       family:"commercial", fill:"#C89675", fillDark:"#B48D73" },
+    company_info:    { label:"Company Info",      family:"commercial", fill:"#EBB896", fillDark:"#977158" },
+    article:         { label:"Article",           family:"editorial",  fill:"#4A648E", fillDark:"#BAD2F9" },
+    listicle:        { label:"Listicle",          family:"editorial",  fill:"#607BA7", fillDark:"#A4BCE2" },
+    guide:           { label:"Guide",             family:"editorial",  fill:"#7793C1", fillDark:"#8FA6CB" },
+    comparison:      { label:"Comparison",        family:"editorial",  fill:"#8FACDB", fillDark:"#7A90B4" },
+    review:          { label:"Review",            family:"editorial",  fill:"#A8C6F5", fillDark:"#667B9E" },
+    documentation:   { label:"Documentation",     family:"reference",  fill:"#665A8A", fillDark:"#D3CAF5" },
+    forum:           { label:"Forum",             family:"reference",  fill:"#7D71A2", fillDark:"#BDB4DE" },
+    directory:       { label:"Directory",         family:"reference",  fill:"#9589BC", fillDark:"#A79EC7" },
+    video:           { label:"Video",             family:"reference",  fill:"#AEA2D6", fillDark:"#9188B1" },
+    social_post:     { label:"Social Post",       family:"reference",  fill:"#C7BBF0", fillDark:"#7C749B" }
+  };
+  /* Die Chipwerte der Familie in jeden Typ kopieren, damit ein Leser nur EIN Objekt braucht.
+     c / cDark bleiben als Name fuer die Chip-Schrift: so hiessen die Felder bis zum 13.10., und
+     URL_TYPE haengt an UC -- ein Leser ausserhalb dieses Repos faende sonst undefined. */
+  Object.keys(URL_TYPE).forEach(function(k){
+    var e = URL_TYPE[k], f = URL_FAMILY[e.family];
+    e.ink = f.ink; e.inkDark = f.inkDark; e.bg = f.bg; e.bgDark = f.bgDark; e.bd = f.bd; e.bdDark = f.bdDark;
+    e.c = f.ink; e.cDark = f.inkDark;
+  });
   var ALL_URL_TYPES = Object.keys(URL_TYPE);
+  /* Chart-Flaechen je URL-Typ, abgeleitet. Bis zum 13.10. eine eigene, dritte Palette. */
+  var URL_COLOR_CHART = {}, URL_COLOR_DARK = {};
+  ALL_URL_TYPES.forEach(function(k){
+    URL_COLOR_CHART[k] = URL_TYPE[k].fill;
+    URL_COLOR_DARK[k] = URL_TYPE[k].fillDark;
+  });
+  /* ---- EIN Lesezugriff fuer jeden Typ-Chip der App -------------------------------------------
+     typeStyle("citation" | "url", roh, isDark) -> { fill, ink, bg, bd, dot }, fertig fuers Thema.
+     dot nur bei URL-Typen (Citation-Chips haben keinen Punkt, STYLEGUIDE 1a). Unbekannt oder leer
+     fuehrt zu TYPE_OTHER -- ein grauer Chip ist die ehrliche Aussage "kein bekannter Typ".
+     Der URL-Schluessel wird wie in urls-table normalisiert ("Product Service" -> product_service),
+     citeName() uebersetzt die Bubble-Schreibweisen der Zitationstypen (steht weiter unten, als
+     Funktionsdeklaration aber schon hier aufrufbar). */
+  function typeStyle(art, raw, isDark){
+    var e, dot = null;
+    if (art === "citation"){
+      e = CITE_TYPE[citeName(raw)] || TYPE_OTHER;
+    } else {
+      var key = String(raw == null ? "" : raw).trim().toLowerCase().replace(/[\s-]+/g, "_");
+      e = URL_TYPE[key] || TYPE_OTHER;
+      dot = isDark ? e.fillDark : e.fill;
+    }
+    return {
+      fill: isDark ? e.fillDark : e.fill,
+      ink:  isDark ? e.inkDark  : e.ink,
+      bg:   isDark ? e.bgDark   : e.bg,
+      bd:   isDark ? e.bdDark   : e.bd,
+      dot:  dot
+    };
+  }
   /* Was ein Typ BEDEUTET, in einem Satz. Bisher lag das nur im freistehenden URL-Type-Element und
      damit ausserhalb dieses Repos -- die Palette war hier, die Erklaerung dort, und beide waren
      bereits auseinandergelaufen. Hier stehen sie nebeneinander, weil jede Erklaerkarte, die einen
      Typ zeigt, denselben Satz zeigen soll.
-     Der Schluessel der Zitationstypen ist der KANONISCHE Name aus CITE_COLOR, nicht die
+     Der Schluessel der Zitationstypen ist der KANONISCHE Name aus CITE_TYPE, nicht die
      Bubble-Schreibweise -- citeName() uebersetzt Brand_Platform und Freunde vorher. */
   var CITE_DESC = {
     "You":              "This is one of your own pages. You control it directly, so it is the fastest content to improve or expand.",
@@ -127,6 +209,8 @@
     if (mode === "url") return t(URL_TYPE_DESC[k] || "");
     return t(CITE_DESC[citeName(k)] || "");
   }
+  /* Die alten Neutraltoene der Chips. Seit dem 13.10. zeichnet kein Typ-Chip mehr damit (Grund,
+     Rand und Schrift kommen aus typeStyle); die Namen bleiben, weil sie an UC haengen. */
   var OTHER_LIGHT = "#8c8f96", OTHER_DARK = "#a8abb2", CHIP_BG_DARK = "#242424";
   var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   /* Sonntag zuerst, weil Date.getDay() dort bei 0 anfaengt. */
@@ -7276,8 +7360,8 @@
 
      DAS VOKABULAR KOMMT AUS CORE und wird nicht ein drittes Mal aufgeschrieben:
      ALL_CITATION_TYPES, ALL_URL_TYPES, URL_TYPE, typLabel, typeColor liegen alle schon hier.
-     Die Palette spiegelt sie absichtlich in ihrer eigenen Datei (sie laeuft ohne core, siehe
-     ihren Kopf) -- dieser Kern nicht: er IST core.
+     Die Palette (quick-actions.js) liest die Farben seit dem 13.10. ebenfalls aus core
+     (typeStyle) statt aus einer eigenen Kopie.
 
      Was hier NICHT ist: Markup. Der Aufrufer malt mit seinen eigenen Klassen, denn eine Regel
      in core.css erreicht die Palette nie. Dieser Kern liefert Daten und Zustand. */
@@ -13614,6 +13698,45 @@
     _kopfNeuFns.push(fn);
   }
 
+  /* ---- KLEBT DIE LEISTE GERADE? (13.10.) ------------------------------------------------------
+     Der Deckstreifen ueber einer klebenden Leiste (.up-head::before, bis 72px hoch) war IMMER da --
+     auch in Ruhe, wo die Leiste noch mitten im Inhalt steht. Er malte dann die Flaeche des Grundes
+     ueber alles direkt UEBER der Tabelle: im Domain-Drawer den ganzen Pages/Responses-Umschalter
+     ("nur ein grosser weisser Bereich"), im URL-Drawer die letzten Zeilen der Citation Conversion,
+     in jedem Drawer das untere Ende des Abschnitts vor der Responses-Tabelle.
+     Jetzt traegt die Wurzel .is-geklebt nur, solange die Leiste wirklich klebt (sie steht dann
+     tiefer in ihrer Wurzel als in Ruhe), und nur dann malt der Streifen (core.css).
+     EIN Zuhoerer fuer die ganze Seite, in der Einfangphase (scroll blubbert nicht, und Drawer
+     scrollen in ihrem eigenen Behaelter), je Bild hoechstens einmal: zwei Lesungen je Tabelle,
+     geschrieben wird nur bei einem Wechsel. */
+  var KLEB_WURZELN = [];
+  var _klebRaf = 0;
+  function klebPruefenAlle(){
+    _klebRaf = 0;
+    KLEB_WURZELN = KLEB_WURZELN.filter(function(w){ return w.root.isConnected; });
+    KLEB_WURZELN.forEach(function(w){
+      var head = w.head && w.head.isConnected ? w.head : (w.head = w.root.querySelector(".up-head"));
+      if (!head || !w.root.classList.contains("up-sticky")){ w.root.classList.remove("is-geklebt"); return; }
+      var d = head.getBoundingClientRect().top - w.root.getBoundingClientRect().top;
+      /* d in Ruhe: der Abstand der Leiste zum Anfang ihrer Wurzel. Der kleinste je gesehene Wert ist
+         die Ruhelage; klebt die Leiste, waechst d um die Strecke, die die Wurzel schon unter ihr
+         weggescrollt ist. */
+      if (w.ruhe == null || d < w.ruhe) w.ruhe = d;
+      var klebt = d > w.ruhe + 0.5;
+      if (klebt !== w.root.classList.contains("is-geklebt")) w.root.classList.toggle("is-geklebt", klebt);
+    });
+  }
+  function klebPlanen(){ if (!_klebRaf) _klebRaf = requestAnimationFrame(klebPruefenAlle); }
+  try {
+    document.addEventListener("scroll", klebPlanen, { capture: true, passive: true });
+    window.addEventListener("resize", klebPlanen, { passive: true });
+  } catch(e){}
+  function klebAnmelden(root, head){
+    for (var i = 0; i < KLEB_WURZELN.length; i++) if (KLEB_WURZELN[i].root === root){ KLEB_WURZELN[i].ruhe = null; klebPlanen(); return; }
+    KLEB_WURZELN.push({ root: root, head: head || null, ruhe: null });
+    klebPlanen();
+  }
+
   function makeSticky(root, headEl){
     /* GEMESSEN am 03.09.: syncTheadOffset stand mit 1569ms bei 8,4 Prozent -- es liest bei JEDEM
        Zeichnen die Hoehe der Werkzeugleiste und erzwingt damit ein Layout. Die Hoehe kann sich
@@ -13720,6 +13843,7 @@
          noch ein Scroller liegt. */
       stickyTopSetzen(on);
       if (on){ syncTheadOffset(); syncDeckstreifen(); }
+      klebAnmelden(root, headEl);
     }
     /* WIE HOCH MUSS DER DECKSTREIFEN WIRKLICH SEIN (19.09. gemessen im Domain-Drawer).
        .up-head::before malt die Flaeche ueber der geklebten Leiste, damit keine Zeile darueber
@@ -14136,34 +14260,16 @@
   }
 
   /* ---------- chart colour system ----------
-     Citation types have a genuine dark accent, not the same hex reused on both themes. This was
-     previously local to topcitations-dashboard, which meant citations-combo-chart rendered
-     light-mode citation hexes in dark mode. Shared now so that cannot drift again.
-     CHART_OTHER_* are deliberately NOT the same values as OTHER_LIGHT/OTHER_DARK above:
-     the chart palette's neutral is #a0a0a0, the chip palette's is #a8abb2. Same idea, different
-     tuning; keeping both avoids silently shifting a colour nobody asked to change. */
-  var CITE_COLOR_DARK = {
-    "Editorial":"#5cd7c8", "UGC / Community":"#62b4da", "Knowledge-Base":"#8082db",
-    "Brand Platforms":"#c377cf", "Institutional":"#7693bb", "Competition":"#de8c54", "You":"#d76f82"
-  };
+     Seit dem 13.10. stehen alle Typfarben oben bei CITE_TYPE und URL_TYPE; CITE_COLOR_DARK,
+     URL_COLOR_CHART und URL_COLOR_DARK sind dort aus fill/fillDark abgeleitet. Hier bleibt nur
+     der graue Rueckfall der Charts, ebenfalls abgeleitet (TYPE_OTHER): die Namen haengen an UC
+     und werden ausserhalb gelesen (landing-hero.js, prepTypeData weiter unten). */
   var URL_LABEL = {
     homepage:"Homepage", product_service:"Product / Service", marketplace:"Marketplace", company_info:"Company Info",
     article:"Article", listicle:"Listicle", guide:"Guide", comparison:"Comparison", review:"Review",
     documentation:"Documentation", forum:"Forum", directory:"Directory", video:"Video", social_post:"Social Post", other:"Uncategorized"
   };
-  /* bright chart-fill palette, tuned for large area fills — deliberately separate from URL_TYPE
-     above, which is tuned for small text-on-tint chips. */
-  var URL_COLOR_CHART = {
-    homepage:"#c3753a", product_service:"#ce8662", marketplace:"#ae7c58", company_info:"#b48139",
-    article:"#369379", listicle:"#3e90a6", guide:"#5182ef", comparison:"#726bea", review:"#8a53e1",
-    documentation:"#8a53e1", forum:"#a95cee", directory:"#b549bf", video:"#9661f1", social_post:"#a27df8", other:"#8c8f96"
-  };
-  var URL_COLOR_DARK = {
-    homepage:"#fbbf24", product_service:"#fdba74", marketplace:"#fcae6f", company_info:"#facc15",
-    article:"#6ee7b7", listicle:"#67e8f9", guide:"#93c5fd", comparison:"#a5b4fc", review:"#c4b5fd",
-    documentation:"#c4b5fd", forum:"#d8b4fe", directory:"#f0abfc", video:"#c4b5fd", social_post:"#ddd6fe", other:"#a0a0a0"
-  };
-  var CHART_OTHER_LIGHT = "#8c8f96", CHART_OTHER_DARK = "#a0a0a0";
+  var CHART_OTHER_LIGHT = TYPE_OTHER.fill, CHART_OTHER_DARK = TYPE_OTHER.fillDark;
   var MAX_URL_SLICES = 8;
 
   /* Slice/line colour for a raw type key. mode: "url" | anything else (= citation type). */
@@ -15052,11 +15158,18 @@
        linear      — die einzige selbst gerechnete: siehe unten
      All three are mid-toned by design, which is what lets them work unchanged on a white AND a
      dark chart background — no separate light/dark variant needed. */
-  var LINE_PALETTE = ["#14b8a6","#0ea5e9","#6366f1","#d946ef","#f97316","#f43f5e","#64748b"];
+  /* ACHT Farben seit dem 13.10. ("Visibility Chart und Top Citations auf 8 Eintraege"): mit
+     sieben bekaeme die achte Linie die Farbe der ersten. Die achte ist dieselbe Tailwind-500-Stufe
+     wie die anderen. */
+  var LINE_PALETTE = ["#14b8a6","#0ea5e9","#6366f1","#d946ef","#f97316","#f43f5e","#64748b","#84cc16"];
   var COLOR_SCALES = {
-    tableau:    { label: "Tableau",         colors: ["#5778a4","#e49444","#d1615d","#85b6b2","#6a9f58","#e7ca60","#a87c9f"] },
-    colorblind: { label: "Colorblind Safe", colors: ["#e69f00","#56b4e9","#009e73","#f0e442","#0072b2","#d55e00","#cc79a7"] },
-    vivid:      { label: "Vivid",           colors: ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b","#e377c2"] },
+    /* Je Skala eine ACHTE Farbe (13.10., acht Linien): Tableau und Vivid die achte ihrer
+       Vorlage (Tableau 10, d3 category10). Colorblind: die achte von Okabe-Ito ist Schwarz und
+       verschwaende auf der dunklen Karte -- dafuer das neutrale Grau, das in farbenblind-sicheren
+       Skalen fuer "die uebrige Reihe" steht. */
+    tableau:    { label: "Tableau",         colors: ["#5778a4","#e49444","#d1615d","#85b6b2","#6a9f58","#e7ca60","#a87c9f","#f1a2a9"] },
+    colorblind: { label: "Colorblind Safe", colors: ["#e69f00","#56b4e9","#009e73","#f0e442","#0072b2","#d55e00","#cc79a7","#999999"] },
+    vivid:      { label: "Vivid",           colors: ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd","#8c564b","#e377c2","#7f7f7f"] },
     /* "Linear" -- angefordert am 08.09.: eine Palette in Linears Farbraum, "mehrere Abstufungen
        einer Familie (Blau -> Tuerkis -> Gruen -> Orange)", ausdruecklich NICHT als Vorgabe.
        Dieselbe Rechnung wie bei TOPIC_COLOR_PALETTE, nur andersherum benutzt: dort dreht der
@@ -15068,7 +15181,9 @@
        Gemessen auf beiden Gruenden: Kontrast 5.78 bis 6.40 auf der dunklen Karte (#1c1c1f),
        2.66 bis 2.94 auf Weiss -- mitteltonig wie die drei anderen Skalen, damit sie ohne eine
        zweite Fassung in beiden Themen laeuft. */
-    linear:     { label: "Linear",          colors: ["#579cf1","#00aad3","#00b1ab","#2db477","#83a93a","#b69700","#d88225"] }
+    /* Die achte (13.10.): ein weiterer gleich grosser Schritt hinter Orange (Farbton 29.8 Grad, L
+       und C wie oben) -- Kontrast 3.02 auf Weiss, 5.63 auf der dunklen Karte. */
+    linear:     { label: "Linear",          colors: ["#579cf1","#00aad3","#00b1ab","#2db477","#83a93a","#b69700","#d88225","#e57363"] }
   };
   /* "default" is not in COLOR_SCALES on purpose — it means "each company's own colour, backfilled
      from LINE_PALETTE", which is what a null colorScale already produces below. */
@@ -15079,7 +15194,9 @@
      "Brand Colors", denn genau das ist es, jede Marke in ihrer eigenen Farbe. */
   var SCALE_ORDER = ["linear", "tableau", "default", "vivid", "colorblind"];
   var SCALE_VORGABE = "linear";
-  var MAX_LINE_SERIES = 7;
+  /* 8 seit dem 13.10. ("Visibility Chart und Top Citations auf 8 Eintraege erweitern"); jede
+     Farbskala oben hat dafuer acht Farben. */
+  var MAX_LINE_SERIES = 8;
   function buildLineDatasets(series, companies, colorScale){
     series = Array.isArray(series) ? series : [];
     companies = Array.isArray(companies) ? companies : [];
@@ -15108,13 +15225,28 @@
          Vorher waren sie zwei Labels, also zwei Spalten fuer denselben Tag. */
       var day = dayKey(p.day);
       if (!day) return;
-      daySet[day] = true;
-      var v = (p.visibility_pct != null) ? Number(p.visibility_pct) : (p.share_pct != null ? Number(p.share_pct) : 0);
-      (byId[id] = byId[id] || {})[day] = v || 0;
+      /* KEINE DATEN SIND KEINE 0 (13.10., "Keine Daten heisst keine Daten, nicht Daten aber 0%").
+         Hier stand `: 0` und `v || 0`: ein Tag ohne Runs, den die Datenbank ehrlich als null
+         schickt (domain_detail_stats_v1: share_pct null bei total_runs = 0), wurde zu 0 Prozent --
+         gemeldet als Absturz der Kurve auf 0 am heutigen, noch leeren Tag. null bleibt jetzt null:
+         die Linie laeuft darueber hinweg (spanGaps) bzw. bricht ab (__luecken). */
+      var v = (p.visibility_pct != null && p.visibility_pct !== "") ? Number(p.visibility_pct)
+            : (p.share_pct != null && p.share_pct !== "") ? Number(p.share_pct) : null;
+      if (v != null && !isFinite(v)) v = null;
+      if (!daySet[day]) daySet[day] = v != null ? "da" : "leer";
+      else if (v != null) daySet[day] = "da";
+      (byId[id] = byId[id] || {})[day] = v;
     });
     /* Sortieren als Text ist ab hier richtig: die Schluessel sind YYYY-MM-DD, und dort ist die
        alphabetische Reihenfolge die zeitliche. */
     var labels = Object.keys(daySet).sort();
+    /* Tage am RAND, an denen keine Reihe einen Wert hat, gehoeren nicht auf die Achse: so endet
+       die Kurve gestern, wenn heute noch nichts gemessen ist -- wie die Visibility-Kurven, deren
+       Datenmodul solche Tage gar nicht erst weitergibt (dashboard-data.js, zuVisibility). Leere
+       Tage MITTENDRIN bleiben stehen: Shopping bricht dort die Linie ab (__luecken), und eine
+       Achse mit Loch sagt ehrlicher "an diesem Tag nichts" als eine, die den Tag verschweigt. */
+    while (labels.length && daySet[labels[0]] !== "da") labels.shift();
+    while (labels.length && daySet[labels[labels.length - 1]] !== "da") labels.pop();
     var ids = Object.keys(byId);
     ids.forEach(function(id){
       if (!metaMap[id]) metaMap[id] = { color:null, favicon:"", name:id, global_share:null };
@@ -16620,7 +16752,9 @@
     function render(built){
       if (!isOwner()) return;
       clearExtras();
-      if (!built || !built.datasets || !built.datasets.length){ empty(); return; }
+      /* Keine Tage mit Daten (13.10.: buildLineDatasets laesst leere Randtage weg, und wo nur leere
+         kamen, bleibt keiner) ist der Leerzustand -- nicht eine Achse mit Linien auf 0. */
+      if (!built || !built.datasets || !built.datasets.length || (built.labels && !built.labels.length)){ empty(); return; }
       /* Same chart already on the canvas → leave it alone. Not just a saved rebuild: rebuilding
          restarts the entrance animation, so a second render() arriving 200ms after the first
          (data, then loading=no) made the lines wipe in twice. Both halves of the check matter —
@@ -16833,6 +16967,11 @@
        cssText-Schreibzugriffe und ein erzwungener Layoutdurchgang pro Bewegung. */
     var el = null, kBox = null, kTitle = null, kSub = null, kVal = null, kDot = null, kLbl = null;
     var letztesTheme = null, letzteKennung = null, letzteBreite = 0, letzteHoehe = 0;
+    function verbergen(){
+      if (state.raf){ cancelAnimationFrame(state.raf); state.raf = null; }
+      state.x = null; state.y = null;
+      if (el) el.style.opacity = "0";
+    }
     return function(context){
       var chart = context.chart, tooltip = context.tooltip;
       var dark = !!getIsDark();
@@ -16851,6 +16990,11 @@
         /* Wie bei der Linie: der Tooltip zaehlt nur im Chart-Kasten, nie ueber Drawern (13.10.). */
         if (chart.canvas.parentNode.classList) chart.canvas.parentNode.classList.add("up-chart-kasten");
         chart.canvas.parentNode.appendChild(el);
+        /* Netz unter dem Ausblenden von Chart.js: verlaesst der Zeiger die Leinwand, ohne dass
+           Chart.js noch ein Ereignis mit opacity 0 schickt (das Diagramm wurde waehrenddessen neu
+           gebaut -- Filter, Fahrt beim Auftritt), haette der Tooltip sonst keinen Grund zu gehen.
+           Am Behaelter und nicht an der Leinwand: die wird beim Neubau ersetzt, der Behaelter bleibt. */
+        chart.canvas.parentNode.addEventListener("mouseleave", verbergen);
         kBox = null; letztesTheme = null; letzteKennung = null;
       }
       if (!kBox){
@@ -16875,7 +17019,13 @@
         kVal.style.cssText = "color:" + textColor + ";";
         letzteKennung = null;         /* Groesse kann sich mit dem Rahmen geaendert haben */
       }
-      if (tooltip.opacity === 0){ el.style.opacity = "0"; return; }
+      /* AUSBLENDEN BRICHT DIE GLEITFAHRT AB (13.10., "bei allen Doughnuts bleibt der Tooltip ab und
+         zu stehen"). stepFn unten setzte in JEDEM Bild der 120ms-Fahrt opacity 1 -- kam das
+         Ausblenden waehrend der Fahrt (Zeiger schnell vom Ring), machte das naechste Bild den
+         Tooltip wieder sichtbar, und danach kam kein Ereignis mehr, das ihn wegnahm. Die Lage wird
+         vergessen wie beim Linien-Tooltip: der naechste erscheint an seinem Segment, statt vom
+         alten Ort heranzugleiten. */
+      if (tooltip.opacity === 0){ verbergen(); return; }
       var i = (tooltip.dataPoints && tooltip.dataPoints[0] && tooltip.dataPoints[0].dataIndex) || 0;
       var od = chart.data.datasets[0].originalData;
       var val = (od && od[i] != null) ? od[i] : (chart.data.datasets[0].data[i] || 0);
@@ -16917,11 +17067,13 @@
       if (ty < cy + ca.top + m) ty = caretY + m;
       ty = clamp(ty, cy + ca.top + m, cy + ca.bottom - letzteHoehe - m);
       if (state.raf) cancelAnimationFrame(state.raf);
-      var sx = state.x || tx, sy = state.y || ty, st = performance.now(), d = 120;
+      var sx = state.x != null ? state.x : tx, sy = state.y != null ? state.y : ty, st = performance.now(), d = 120;
+      /* Sichtbar EINMAL hier, nicht in jedem Bild der Fahrt (siehe verbergen). */
+      el.style.opacity = "1";
       function stepFn(now){
         var t = Math.min(1, (now-st)/d), k = t < .5 ? 2*t*t : -1 + (4-2*t)*t;
         var nx = lerp(sx, tx, k), ny = lerp(sy, ty, k);
-        el.style.transform = "translate3d(" + nx + "px," + ny + "px,0)"; el.style.opacity = "1";
+        el.style.transform = "translate3d(" + nx + "px," + ny + "px,0)";
         state.x = nx; state.y = ny;
         if (t < 1) state.raf = requestAnimationFrame(stepFn);
       }
@@ -23131,17 +23283,20 @@
      in teams.js (PLAN_DOT); seit settings-billing sie ebenfalls zeigt ("die kleinen Shapes vor dem
      aktuellen Tarif, wie aus der Teams-Tabelle"), steht sie hier -- EINE Farbe je Tarif fuer
      beide Stellen, sonst liefen sie beim naechsten neuen Tarif auseinander.
-     Die Farben sind drei Nachbarn aus der Zitationstyp-Palette (Editorial, UGC, Knowledge-Base),
-     aufsteigend nach Stufe: Teal, Blau, Indigo. Ein Tarif ohne Eintrag (auch "Legacy Free")
+     Die Farben waren drei Nachbarn aus der Zitationstyp-Palette (Editorial, UGC, Knowledge-Base),
+     aufsteigend nach Stufe: Teal, Blau, Indigo. Seit dem 13.10. stehen sie FEST hier: die
+     Typfarben wurden neu gesetzt (Variante D), und die Kopplung an CITE_COLOR war zufaellig --
+     ein Tarif ist kein Zitationstyp, und die Pillen in Teams und Billing sollten sich durch den
+     Umbau nicht aendern. Ein Tarif ohne Eintrag (auch "Legacy Free")
      bekommt den neutralen Grundton aus core.css (.up-planpill .up-sent-dot) -- die ehrliche
      Aussage "keine der bekannten Stufen". Kommt ein Tarif dazu, ist das EINE Zeile hier.
      Ohne laufenden Tarif (aktiv === false) bleibt es beim Grundton, der Name wird gedaempft und
      ein Hinweis sagt warum. translate="no": der Tarifname ist ein Name.
      opts.klasse: eine Klasse der Komponente dazu (teams: uts-plan). */
   var PLAN_PUNKT = {
-    essential:    CITE_COLOR["Editorial"],
-    professional: CITE_COLOR["UGC / Community"],
-    enterprise:   CITE_COLOR["Knowledge-Base"]
+    essential:    "#27a79b",
+    professional: "#34a1d1",
+    enterprise:   "#797ad8"
   };
   function planFarbe(name){
     var k = String(name == null ? "" : name).trim().toLowerCase();
@@ -24384,6 +24539,10 @@
     drawerRiegel: drawerRiegel,
     fireViewChange: fireViewChange,
     CITE_COLOR: CITE_COLOR,
+    CITE_TYPE: CITE_TYPE,
+    TYPE_OTHER: TYPE_OTHER,
+    URL_FAMILY: URL_FAMILY,
+    typeStyle: typeStyle,
     CITE_ALIAS: CITE_ALIAS,
     ALL_CITATION_TYPES: ALL_CITATION_TYPES,
     URL_TYPE: URL_TYPE,

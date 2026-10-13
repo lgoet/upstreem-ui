@@ -388,3 +388,15 @@
 .udd-root.is-abschnitte.is-vnarrow .udd-kpi-val { font-size: var(--up-fs-3xl); }
 .udd-root.is-abschnitte.is-vnarrow .udd-kpi-val .up-tsk-bar { height: 28px; width: 104px; }
 .udd-root.is-abschnitte.is-vnarrow.is-domainshare .udd-chartwrap { height: 304px; }
+
+/* URL TYPE SPLIT UND MODEL BREAKDOWN OHNE RAHMEN (13.10. angefordert: "die Borders weg, nur genau
+   in der Mitte beider ein 1px-Separator"). Kein Spaltenabstand, dafuer 24 Polster zur Mitte auf
+   beiden Seiten -- so liegt der Rand der rechten Karte genau auf der halben Breite. Die Abschnitte
+   darueber stehen ebenfalls ohne Rahmen (siehe .udd-chartcard oben). */
+.udd-root.is-abschnitte .udd-row2 { column-gap: 0; row-gap: 0; }
+.udd-root.is-abschnitte .udd-row2 > .udd-card { border: 0; border-radius: 0; background: transparent; padding: 0; }
+.udd-root.is-abschnitte:not(.is-narrow):not(.is-stack) .udd-row2 > .udd-card:first-child { padding-right: 24px; }
+.udd-root.is-abschnitte:not(.is-narrow):not(.is-stack) .udd-row2 > .udd-card + .udd-card { padding-left: 24px; border-left: 1px solid var(--vc-border); }
+/* Schmal (Telefon, Tablet hochkant) untereinander: der Trenner liegt dann waagrecht zwischen
+   beiden, mit derselben Luft nach oben und unten wie zwischen den Abschnitten der Seite (32). */
+.udd-root.is-abschnitte:is(.is-narrow, .is-stack) .udd-row2 > .udd-card + .udd-card { margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--vc-border); }

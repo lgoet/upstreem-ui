@@ -1,6 +1,6 @@
 /* upstreem sidebar.css — die App-Navigation (Praefix `usn`). Braucht core.css.
 
-   .check_reinvention.py meldet hier drei Stellen als Nachbau (Stand 25.09.). Alle drei sind
+   .check_reinvention.py meldet hier vier Stellen als Nachbau (Stand 13.10.). Alle vier sind
    Fehlalarme derselben Art -- der Vergleich laeuft ueber "hat Hintergrund, Rahmen, Radius, Hoehe
    und transition", und das trifft jede anklickbare Zeile:
      .usn-team      der Team-Umschalter oben. Kein Segmented Control: er hat keine Geschwister, aus
@@ -9,10 +9,12 @@
      .usn-item      eine Navigationszeile. Dasselbe Argument: sie markiert, WO man ist, und schaltet
                     nicht zwischen Ansichten um. Sie traegt ausserdem den eingeklappten Zustand der
                     Leiste, den kein Kit-Knopf kennt.
-     .usn-bar.is-mini .usn-txt / .usn-fade  (22.09. nachgetragen). Das ist ueberhaupt kein
-                    Bauteil, sondern der EINGEKLAPPTE Zustand: Breite auf 0, Deckkraft auf 0, alles
-                    animiert. Der Pruefer sieht "Breite, Deckkraft, transition" und denkt an einen
-                    Knopf.
+     .usn-head, .usn-acc  (13.10. nachgetragen; ersetzt den Eintrag fuer .usn-txt/.usn-fade, der
+                    seitdem nicht mehr anschlaegt). Der Pruefer sieht "overflow, transition, width"
+                    und denkt an die ausfahrende Suche (.up-search). Beides ist kein Eingabefeld:
+                    die Abschnittsueberschrift faehrt beim Einklappen ihre Hoehe auf 0, der
+                    Kontoknopf seine Breite auf 46 -- es ist der EINGEKLAPPTE Zustand der Leiste,
+                    kein Bauteil.
    Wo es ein Kit-Bauteil gibt, wird es benutzt: .up-iconbtn, .up-tip, .up-menu, .up-pop-opt,
    .up-stack, .up-logo-box, .up-sk.
 
@@ -29,7 +31,8 @@
                       als keiner
    .usn-bar.is-hidden die Leiste ist herausgefahren, nur der schwebende Knopf steht da
 
-   Der Uebergang laeuft ueber --usn-t (200ms) und betrifft width, transform und opacity.
+   Der Uebergang laeuft ueber --usn-fahrt (260ms) und --usn-fahrt-kurve, siehe unten. Er faehrt
+   Breite, Polster und Hoehen; Text blendet nur aus und behaelt seine Breite.
    Die Breite geht zusaetzlich als --up-sidebar-w an <html>, damit der Seiteninhalt ohne
    Umweg ueber einen Workflow mitwandern kann. */
 
@@ -49,6 +52,21 @@
    haengt davon ab, welches Element Bubble zuerst aufbaut.
    Also ueber die Spezifitaet, wie es die Hausregel verlangt -- kein !important. */
 .up-root.usn-root { display: block; width: 0; height: 0; min-height: 0; overflow: hidden; flex: 0 0 auto; }
+
+/* ── DIE FAHRT: eine Dauer, eine Kurve fuer alles, was beim Ein-/Ausklappen wandert (13.10.) ──
+   Leiste, Gruppen und der Platz der Ansichten ([id^="view-"] ganz unten) lesen DIESE zwei Werte.
+   An :root und nicht an der Leiste, weil die Ansichten nicht in der Leiste liegen -- nur so
+   laufen Leiste und Seiteninhalt garantiert im selben Takt, auch unter "weniger Bewegung".
+   Vorher: Leiste --usn-t (200ms, .4,0,.2,1), Ansichten --up-t-2 mit derselben Kurve als Literal,
+   und unter prefers-reduced-motion fiel nur die Leiste auf 1ms -- der Inhalt fuhr weiter 200ms.
+   260ms (--up-t-3): die Leiste ist eine Flaeche wie Drawer und Modal, keine Schaltflaeche.
+   Die Kurve faellt schnell an und laeuft lang aus (--up-ease-auf, quint-out). Die alte
+   .4,0,.2,1 faehrt langsam an -- im ersten Bild bewegt sich fast nichts, und das liest sich als
+   Stocken nach dem Klick (feedback_bewegung_wie_mobbin). */
+:root {
+  --usn-fahrt: var(--up-t-3, 260ms);
+  --usn-fahrt-kurve: var(--up-ease-auf, cubic-bezier(.22, 1, .36, 1));
+}
 
 .usn-bar, .usn-fab, .usn-scrim {
   --usn-t: 200ms;
@@ -143,7 +161,11 @@
   background: var(--usn-bg); color: var(--vc-text);
   /* Keine Rahmen, keine Schatten -- ausdruecklich so gewollt. Die Flaeche trennt. */
   border: 0; box-shadow: none;
-  transition: width var(--usn-t) var(--usn-ease), transform var(--usn-t) var(--usn-ease);
+  /* padding faehrt mit: eingeklappt sind es 14/12 statt 8/16, und ein Polster, das im ersten Bild
+     umspringt, schiebt jedes Zeichen der Leiste um 4px zur Seite und 6px nach unten. */
+  transition: width var(--usn-fahrt) var(--usn-fahrt-kurve),
+              padding var(--usn-fahrt) var(--usn-fahrt-kurve),
+              transform var(--usn-fahrt) var(--usn-fahrt-kurve);
   overflow: visible;   /* die Dropdowns duerfen herausragen */
 }
 /* 14 oben und nicht 8 (08.09. angefordert: "6px mehr top padding"). Eingeklappt steht ganz
@@ -170,25 +192,46 @@
    Und ASYMMETRISCH: eine Uebergangsangabe gilt fuer den Zustand, in DEN gewechselt wird. Beim
    Einklappen zaehlt also die Regel unten, beim Aufklappen die hier. Dort darf die Breite NICHT
    verzoegert zuruecckommen, sonst stuende die Leiste offen und leer, bevor der Text erscheint --
-   derselbe Fehler in der anderen Richtung. */
+   derselbe Fehler in der anderen Richtung.
+
+   NACHTRAG 13.10. -- DER KNIFF HAT NIE GEGRIFFEN. Ein Uebergang entsteht nur zwischen zwei
+   rechenbaren Werten; von `auto` (flex-basis, width) auf 0 gibt es keinen, also auch keine
+   Verzoegerung -- die Breite fiel im ERSTEN Bild auf 0. Gemessen am Stand davor (usn13): jedes
+   Zeichen sprang beim Einklappen im ersten Bild 89.5px in die Mitte der noch 250px breiten Leiste
+   (justify-content: center) und fuhr von dort zurueck; Teamlogo 91px, Quick Actions 90px,
+   Avatar 77.5px, Logo 99px, Einklappknopf 100.5px.
+   Jetzt behaelt der Text seine Breite in BEIDEN Zustaenden und wird nur ausgeblendet. Er
+   schrumpft mit der Leiste (flex mit min-width 0) und wird von seinem Knopf abgeschnitten; die
+   Zeichen stehen nicht mehr ueber eine Zentrierung, sondern ueber ein Polster links, das
+   mitfaehrt (siehe .usn-item, .usn-team, .mqa-trigger, .usn-acc weiter unten). So bewegt sich
+   kein Zeichen sprunghaft, und nichts muss umgeschaltet werden, wenn die Fahrt endet.
+   Ausblenden schnell und ohne Verzoegerung (das erste Drittel der Fahrt), Einblenden erst, wenn
+   die Leiste schon breit genug fuer den Text ist. */
 .usn-txt, .usn-fade {
-  transition: opacity calc(var(--usn-t) * .55) var(--usn-ease) calc(var(--usn-t) * .4),
-              flex-basis 0s linear 0s,
-              width 0s linear 0s;
+  transition: opacity calc(var(--usn-fahrt) * .55) var(--usn-fahrt-kurve) calc(var(--usn-fahrt) * .35);
 }
-/* flex: 0 0 0 und nicht nur width: 0 -- ohne das waechst .usn-txt (flex: 1 1 auto) wieder in
-   den freien Platz, und das Icon steht dann nicht mittig in den 64px, sondern links am Rand. */
 .usn-bar.is-mini .usn-txt,
 .usn-bar.is-mini .usn-fade {
-  opacity: 0; flex: 0 0 0; width: 0; overflow: hidden; pointer-events: none;
-  transition: opacity calc(var(--usn-t) * .5) var(--usn-ease) 0s,
-              flex-basis 0s linear var(--usn-t),
-              width 0s linear var(--usn-t);
+  opacity: 0; pointer-events: none;
+  transition: opacity calc(var(--usn-fahrt) * .35) var(--usn-fahrt-kurve) 0s;
 }
-/* Die Abschnittsueberschrift ist ein Block: Breite 0 nimmt ihr nicht die Hoehe, sie muss
-   zusaetzlich zusammenfallen. Die Bloecke bleiben trotzdem getrennt -- das macht der Abstand
-   zwischen ihnen. */
-.usn-bar.is-mini .usn-head { opacity: 0; height: 0; padding: 0; overflow: hidden; }
+/* Waehrend der Fahrt schneidet der Text hart ab statt mit "…": eine Auslassung, die in jedem
+   Bild an einer anderen Stelle sitzt, flackert ("Prompt Insi…", "Prompt In…"). is-faehrt setzt
+   sidebar.js fuer die Dauer der Fahrt (anwenden). */
+.usn-bar.is-faehrt .usn-txt,
+.usn-bar.is-faehrt .usn-txt *,
+.usn-bar.is-faehrt .mqa-trigger-label { text-overflow: clip; }
+/* Die Abschnittsueberschrift ist ein Block: sie muss zusaetzlich in der HOEHE zusammenfallen.
+   Hoehe und Polster fahren (Regel .usn-head weiter unten traegt die feste Hoehe) -- vorher
+   fielen sie im ersten Bild auf 0, und jede Zeile darunter sprang je Gruppe 22px nach oben.
+   Doppelte Klasse, damit die Regel gegen .usn-bar.is-mini .usn-fade gewinnt, die nur die
+   Deckkraft faehrt. */
+.usn-bar.is-mini .usn-head.usn-fade {
+  opacity: 0; height: 0; padding-bottom: 0;
+  transition: opacity calc(var(--usn-fahrt) * .35) var(--usn-fahrt-kurve) 0s,
+              height var(--usn-fahrt) var(--usn-fahrt-kurve),
+              padding-bottom var(--usn-fahrt) var(--usn-fahrt-kurve);
+}
 
 /* ---------- Team-Kopf ---------- */
 /* Negative Seitenraender: die Leiste polstert mit 16, die Kopfzeile soll aber 8 zu den
@@ -222,10 +265,18 @@
    is-off nimmt die Zeile GANZ aus dem Fluss, Linie und Abstaende inbegriffen. Im ersten Anlauf
    stand hier visibility: hidden, und dadurch blieb oben ein leerer Streifen stehen -- genau so
    gemeldet. */
-.usn-brand { display: flex; align-items: center; flex: 0 0 auto;
+.usn-brand { display: flex; align-items: flex-start; flex: 0 0 auto;
   min-width: 0; height: 32px; box-sizing: content-box;
   padding-bottom: 8px; margin: 0 -8px 16px;
-  position: relative; }
+  position: relative;
+  /* Eingeklappt stehen Logo und Knopf UEBEREINANDER (72 statt 32 hoch). Die Zeile ist darum
+     keine Spalte mehr, die im ersten Bild umbricht (vorher: +48px, alles darunter sprang), sondern
+     waechst in der Hoehe mit der Fahrt; der Knopf faehrt absolut an seinen Platz (siehe
+     .usn-brand > .usn-toggle). align-items: flex-start, damit das Logo in der oberen 32er-Zeile
+     bleibt, waehrend die Zeile hoeher wird. */
+  transition: height var(--usn-fahrt) var(--usn-fahrt-kurve),
+              padding-bottom var(--usn-fahrt) var(--usn-fahrt-kurve),
+              margin var(--usn-fahrt) var(--usn-fahrt-kurve); }
 /* DIE LINIE IST EIN EIGENES ELEMENT und nicht die border-bottom der Zeile -- nur so kann sie
    eine andere Breite haben als die Zeile, in der sie liegt.
    SIE GEHT JETZT DURCH, von Kante zu Kante der Leiste (08.09. angefordert: "bitte durchziehen,
@@ -242,6 +293,9 @@
 .usn-brand::after {
   content: ""; position: absolute; left: -8px; right: -8px; bottom: 0; height: 1px;
   background: var(--vc-border);
+  /* Faehrt im selben Takt wie Polster der Leiste und Aussenabstand der Zeile: -8 -> -12 ist genau
+     deren Summe, also steht die Linie in jedem Bild an der Kante der Leiste. */
+  transition: left var(--usn-fahrt) var(--usn-fahrt-kurve), right var(--usn-fahrt) var(--usn-fahrt-kurve);
 }
 .usn-brand.is-off { display: none; }
 /* ---- DIE LINIE BLEIBT, AUCH OHNE BRANDING (29.09. angefordert) ----
@@ -252,20 +306,38 @@
    der Hoehe der Seitenkoepfe (core.css, kompakter Seitenkopf). Danach 16px bis zur naechsten
    Zeile, wie unter der Markenzeile; die 24px Oberabstand von Quick Actions bzw. Navigation
    gehoerten zur Luecke UNTER der Teamzeile und fallen hier weg. */
+/* Hoehe fest und align-items oben (13.10.): eingeklappt steht der Knopf unter dem Team (70 =
+   32 + 6 + 32), und die Zeile waechst mit der Fahrt dorthin, statt im ersten Bild zur Spalte
+   umzubrechen -- dieselbe Bauart wie die Markenzeile. */
 .usn-brand.is-off + .usn-top { position: relative; box-sizing: content-box;
-  padding-bottom: 8px; margin-bottom: 16px; }
+  height: 32px; align-items: flex-start;
+  padding-bottom: 8px; margin-bottom: 16px;
+  transition: margin var(--usn-fahrt) var(--usn-fahrt-kurve),
+              height var(--usn-fahrt) var(--usn-fahrt-kurve),
+              padding-bottom var(--usn-fahrt) var(--usn-fahrt-kurve); }
 .usn-brand.is-off + .usn-top::after {
   content: ""; position: absolute; left: -8px; right: -8px; bottom: 0; height: 1px;
-  background: var(--vc-border); pointer-events: none; }
+  background: var(--vc-border); pointer-events: none;
+  transition: left var(--usn-fahrt) var(--usn-fahrt-kurve), right var(--usn-fahrt) var(--usn-fahrt-kurve); }
 .usn-brand.is-off ~ .usn-qa:not(:empty) { margin-top: 0; }
 .usn-brand.is-off ~ .usn-qa:empty + .usn-nav { margin-top: 0; }
 /* Eingeklappt wie die Markenzeile dort: 16px darunter, die Linie bis an die Kante bei 12px
    Polster. Die Wurzelklasse davor, weil .usn-bar.is-mini .usn-top den Aussenabstand auf 0 setzt. */
-.usn-bar.is-mini .usn-brand.is-off + .usn-top { padding-bottom: 16px; margin-bottom: 16px; }
+.usn-bar.is-mini .usn-brand.is-off + .usn-top { height: 70px; padding-bottom: 16px; margin-bottom: 16px; }
 .usn-bar.is-mini .usn-brand.is-off + .usn-top::after { left: -12px; right: -12px; }
-.usn-brand-mark { display: inline-flex; align-items: center; min-width: 0; overflow: hidden;
+/* BEIDE FASSUNGEN STEHEN IM KASTEN, uebereinander in derselben Rasterzelle (13.10.). Vorher
+   tauschte renderBrand beim Umschalten das Bild aus -- im ersten Bild der Fahrt, als die Leiste
+   noch 250px breit war, und mit einem neuen <img>, das erst geladen werden musste. Jetzt blenden
+   die zwei nur gegeneinander (Deckkraft), am Markup aendert sich beim Umschalten nichts.
+   Der Kasten ist 32 hoch wie die Zeile, das Bild mittig darin -- dieselbe Lage wie zuvor (Zeile
+   32, Kasten 19, mittig). Er schneidet ab (max-width + overflow), statt das Bild zu stauchen:
+   ein Schriftzug, der beim Einklappen schmaler gerechnet wird, sieht wie ein Zoom aus. */
+.usn-brand-mark { display: inline-grid; align-items: center; justify-items: start;
+  flex: 0 1 auto; min-width: 0; overflow: hidden;
+  max-width: calc(100% - 32px);
   /* 0 6px wie .usn-team: so beginnt der Schriftzug genau ueber dem Teamlogo. */
   padding: 0 6px;
+  transition: padding-left var(--usn-fahrt) var(--usn-fahrt-kurve), max-width var(--usn-fahrt) var(--usn-fahrt-kurve);
   /* DIE HOEHE ALS VARIABLE, nicht als Zahl an zwei Stellen. Sie stand hier und noch einmal im
      calc des Aussenabstands unten; seit es eine zweite Fassung des Logos gibt (das Quadrat im
      eingeklappten Zustand, 22px statt 16.5), waeren das drei Stellen gewesen, die zusammen
@@ -277,13 +349,19 @@
      18.98, auf den ganzen Pixel. Die drei Abstaende um die Zeile bleiben gleich -- die Zeile ist
      32 hoch und das Logo mittig darin, die Rechnung oben haengt nicht an dieser Zahl. */
   --usn-mark-h: 19px;
-  height: var(--usn-mark-h); }
+  height: 32px; }
+.usn-brand-mark > * { grid-area: 1 / 1;
+  transition: opacity calc(var(--usn-fahrt) * .55) var(--usn-fahrt-kurve) calc(var(--usn-fahrt) * .35); }
+/* Ausgeklappt ist das Quadrat da, aber unsichtbar; eingeklappt umgekehrt (weiter unten). */
+.usn-brand-mark > .is-square { opacity: 0;
+  transition: opacity calc(var(--usn-fahrt) * .35) var(--usn-fahrt-kurve) 0s; }
 /* Das QUADRAT: 22px. Ein 1:1-Logo auf 16.5px waere winzig -- die Leiste ist eingeklappt 64px
    breit und hat nach ihrem 12px-Polster 40px Platz, ein 22er Zeichen sitzt darin ruhig und
    bleibt neben dem 26px-Teamlogo darunter die kleinere Marke. */
 /* 23 seit dem 07.10.: dieselben 15 Prozent wie der Schriftzug, auf das Zeichen, das eingeklappt
    wirklich zu sehen war (20px, siehe max-height unten) -- 20 x 1.15 = 23. */
-.usn-brand-mark.is-square { --usn-mark-h: 23px; }
+/* Die 23 stehen seit dem 13.10. am Bild selbst (.usn-brand-img.is-square weiter unten): der Kasten
+   traegt beide Fassungen zugleich und kann nicht mehr eine Hoehe fuer beide vorgeben. */
 /* Der Schriftzug als Text -- der Rueckfall, wenn kein Bild gesetzt ist. Am 07.09. viermal
    nachgestellt: 15 -> 13 (zu klein) -> 14 -> 15 (zu viel) -> 14.5, die Mitte zwischen den letzten
    beiden. Damit ist er genau so gross wie der Teamname darunter.
@@ -295,28 +373,40 @@
    letzten Werten. Ein Bild, das kleiner ist als sein Kasten, waere in der Rechnung fuer die drei
    Abstaende wieder eine Unbekannte, deshalb genau die Kastenhoehe. Dieselbe Bauart wie
    .ulh-nav-logo auf der Landingpage (dort 20px, hier die kleinere Fassung fuer eine Leiste). */
-.usn-brand-img { height: var(--usn-mark-h, 19px); width: auto; display: block; max-width: 100%; object-fit: contain; }
+/* max-width none (13.10., vorher 100%): der Kasten schneidet ab, das Bild behaelt seine Groesse --
+   siehe .usn-brand-mark. Ein ueberlanger Schriftzug wird damit rechts beschnitten statt
+   verkleinert; beim eigenen Logo (114px in 201px Platz) kommt das nicht vor. */
+.usn-brand-img { height: var(--usn-mark-h, 19px); width: auto; display: block; max-width: none; object-fit: contain; }
 /* Die quadratische Fassung ist so BREIT wie hoch -- das ist der ganze Unterschied. object-fit
    contain haelt ein Bild, das nicht genau 1:1 ist, trotzdem unverzerrt. */
-.usn-brand-img.is-square { width: var(--usn-mark-h, 23px); }
+.usn-brand-img.is-square { --usn-mark-h: 23px; width: var(--usn-mark-h, 23px); }
 /* Im Mini-Zustand ist links kein Platz fuer einen Schriftzug. Das BILD bleibt: ein Logo ist auch
    auf 64px noch ein Logo, ein Wort nicht. Zeichen und Knopf stehen dann uebereinander, wie in
    .usn-top, das im Mini ebenfalls zur Spalte wird -- und dafuer braucht die Zeile ihre feste
    Hoehe nicht mehr. */
 /* gap 8 und nicht 6: eingeklappt stehen Logo und Einklappknopf UEBEREINANDER, und mit dem
    quadratischen Logo darueber standen sie zu dicht. */
-.usn-bar.is-mini .usn-brand { flex-direction: column; justify-content: center; gap: 8px;
-  height: auto; margin: 0 0 calc(8px + (32px - var(--usn-brand-h, 16.5px)) / 2); }
-/* Und die Zeile muss die Hoehe des Kastens KENNEN, um sie aus der Rechnung herauszunehmen --
-   der Kasten ist ihr Kind, eine Variable von dort erreicht sie nicht. Deshalb steht sie
-   zusaetzlich hier, an der Zeile, und wird von derselben Klasse umgeschaltet. */
-.usn-bar.is-mini .usn-brand:has(.usn-brand-mark.is-square) { --usn-brand-h: 22px; }
+/* 72 = Logokasten 32 + Luft 8 + Knopf 32. Eine feste Hoehe statt height: auto, damit sie
+   fahren kann (13.10.); vorher brach die Zeile hier zur Spalte um. */
+.usn-bar.is-mini .usn-brand { height: 72px; }
+/* Hier stand --usn-brand-h fuer einen calc-Aussenabstand. Den hatte die Regel vom 21.09. weiter
+   unten (margin 0 0 16px) schon ueberschrieben; mit der festen Hoehe oben ist er ganz entfallen. */
 /* Eingeklappt zieht die Zeile NICHT aus dem Polster heraus (margin 0). Um trotzdem
    durchzugehen, braucht die Linie hier das GANZE Polster der eingeklappten Leiste als
    negativen Wert -- nicht 8px wie ausgeklappt, sondern 12. */
 .usn-bar.is-mini .usn-brand::after { left: -12px; right: -12px; }
-.usn-bar.is-mini .usn-brand-word { display: none; }
-.usn-bar.is-mini .usn-brand-mark { padding: 0; }
+/* Eingeklappt: der Schriftzug blendet aus, das Quadrat ein. Ohne quadratische Fassung (has-square
+   fehlt) bleibt das breite Bild stehen, auf 23px begrenzt -- eine fehlende Marke ist schlimmer
+   als eine schmale; nur der Text-Rueckfall verschwindet wie bisher. */
+.usn-bar.is-mini .usn-brand-mark.has-square > :not(.is-square),
+.usn-bar.is-mini .usn-brand-mark:not(.has-square) > .usn-brand-word {
+  opacity: 0; transition: opacity calc(var(--usn-fahrt) * .35) var(--usn-fahrt-kurve) 0s; }
+.usn-bar.is-mini .usn-brand-mark > .is-square { opacity: 1;
+  transition: opacity calc(var(--usn-fahrt) * .55) var(--usn-fahrt-kurve) calc(var(--usn-fahrt) * .35); }
+/* Das Quadrat steht mittig in den 39px Inhalt der eingeklappten Leiste: 12 Polster + 8 = 20,
+   genau wo es vorher im zentrierten 32er-Kasten stand ((39 - 32) / 2 + (32 - 23) / 2 = 8).
+   Das Polster faehrt von 6 auf 8, der Kasten gibt die Breite unter dem Knopf frei. */
+.usn-bar.is-mini .usn-brand-mark { padding-left: 8px; max-width: 100%; }
 /* ---- EINGEKLAPPT AUF DIESELBE LINIE WIE MIRA (21.09. angefordert) ----
    Angefordert: sind BEIDE Leisten eingeklappt, sollen das eigene Logo und Miras Zeichen auf
    derselben Hoehe stehen, und der Umschalter darunter ebenso. Beide Leisten haben schon
@@ -334,13 +424,10 @@
 /* MEHR LUFT ZWISCHEN ZEICHEN UND UMSCHALTER (07.10. angefordert): 8 statt 2. Miras eingeklappte
    Leiste zieht denselben Betrag mit (ask-mira.css, .am-mini-logo), damit beide Umschalter weiter
    auf einer Hoehe stehen -- die Regel vom 21.09. darueber gilt unveraendert. */
-.usn-bar.is-mini .usn-brand { gap: 8px; padding-bottom: 16px; margin: 0 0 16px; }
-.usn-bar.is-mini .usn-brand-mark {
-  height: 32px; width: 32px; flex: 0 0 32px; justify-content: center;
-}
+.usn-bar.is-mini .usn-brand { padding-bottom: 16px; margin: 0 0 16px; }
 /* 23 statt 20 (07.10., "15% groesser", siehe .is-square). Der Kasten bleibt 32 -- Miras Zeichen
    steht auf derselben Mitte, nur das eigene Logo ist jetzt eine Spur groesser als ihres. */
-.usn-bar.is-mini .usn-brand-mark img,
+.usn-bar.is-mini .usn-brand-mark:not(.has-square) img,
 .usn-bar.is-mini .usn-brand-mark svg { max-height: 23px; max-width: 23px; }
 /* Der Umschalter traegt in Miras Leiste keine gedaempfte Deckkraft -- "gleiche Farbe / Opacity
    wie bei Mira". Die 0.8 aus dem Ruhezustand entfaellt deshalb im eingeklappten Zustand; im
@@ -352,8 +439,21 @@
 .usn-bar.is-mini .usn-toggle svg { opacity: 1; }
 .usn-bar.is-mini .up-iconbtn.usn-toggle { color: var(--vc-muted); }
 .usn-bar.is-mini .usn-toggle { flex: 0 0 32px; width: 32px; height: 32px; }
+/* DER KNOPF IN DER MARKENZEILE FAEHRT (13.10.). Ausgeklappt rechts oben in der Zeile, eingeklappt
+   unter dem Logo, mittig: top 32 + 8, right (39 - 32) / 2. Vorher wechselte die Zeile zur Spalte,
+   und der Knopf sprang im ersten Bild 100px nach links und 46px nach unten.
+   Nur in der Markenzeile: ohne Marke sitzt er in .usn-top (renderBrand), dort gilt das alte
+   Umbrechen weiter. Drei Klassen, damit die Regel gegen .usn-bar .up-iconbtn gewinnt, deren
+   Farbuebergang hier mitgenommen wird. */
+.usn-bar .usn-brand > .usn-toggle {
+  position: absolute; top: 0; right: 0;
+  transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease),
+              top var(--usn-fahrt) var(--usn-fahrt-kurve), right var(--usn-fahrt) var(--usn-fahrt-kurve);
+}
+.usn-bar.is-mini .usn-brand > .usn-toggle { top: 40px; right: calc((var(--usn-mini) - 2 * 12px - 1px - 32px) / 2); }
 
-.usn-top { display: flex; align-items: center; gap: 10px; margin: 0 -8px; flex: 0 0 auto; min-width: 0; }
+.usn-top { display: flex; align-items: center; gap: 10px; margin: 0 -8px; flex: 0 0 auto; min-width: 0;
+  transition: margin var(--usn-fahrt) var(--usn-fahrt-kurve); }
 /* .check_reinvention meldet .up-seg-btn (Segmented-Control-Knopf) fuer .usn-team und .usn-item.
    Das ist ein Fehlalarm ueber die gemeinsamen Eigenschaften "Knopf ohne Rahmen mit Radius":
    .up-seg-btn ist eine Haelfte eines Umschalters in einer Schiene mit eigenem Hintergrund, mit
@@ -377,7 +477,14 @@
   height: 32px; padding: 0 6px;
   border: 0; border-radius: 12px; background: transparent;
   font: inherit; color: var(--vc-text); cursor: pointer; text-align: left;
-  transition: background var(--usn-t) var(--usn-ease);
+  /* max-width 100% statt keiner Grenze: dieselbe Wirkung (flex mit min-width 0 waechst ohnehin
+     nicht ueber die Zeile), aber ein Wert, von dem aus die Breite eingeklappt auf 32 fahren kann.
+     overflow, damit Name und Doppelpfeil dabei am Knopf abgeschnitten werden. */
+  max-width: 100%; overflow: hidden;
+  transition: background var(--usn-t) var(--usn-ease),
+              max-width var(--usn-fahrt) var(--usn-fahrt-kurve),
+              padding-left var(--usn-fahrt) var(--usn-fahrt-kurve),
+              margin-left var(--usn-fahrt) var(--usn-fahrt-kurve);
 }
 /* --vc-heading-bg ist ein durchscheinendes #f5f5f5 und auf der gleichfarbigen Leiste nicht zu
    sehen. Dieselbe Flaeche wie der aktive Menuepunkt, dazu die Chevrons in der Primaerfarbe. */
@@ -387,18 +494,21 @@
    Klasse is-open setzt makePopover auf den WRAP (.usn-top), nicht auf den Knopf -- deshalb der
    Weg von dort nach innen. */
 .usn-top.is-open .usn-team .usn-sw { color: var(--vc-text); }
-/* gap: 0 -- die Luecken zwischen den Flex-Kindern bleiben sonst stehen, auch wenn die Kinder
-   selbst 0 breit sind, und das Icon steht dann um genau diese Luecke neben der Mitte. */
 /* Im Mini-Zustand ist der Teamknopf ein Quadrat wie der Einklapp-Knopf darunter -- vorher war
    er so breit wie sein Logo (24) und 40 hoch, die Hoverflaeche also ein hochkant stehendes
-   Rechteck. Die Margins muessen dort ebenfalls weg: die Elemente sind 0 breit, ihre Abstaende
-   waren es nicht, und das Logo stand um genau diese Werte neben der Mitte. */
+   Rechteck.
+   SEIT 13.10. OHNE ZENTRIERUNG: Name und Doppelpfeil behalten ihre Breite (siehe .usn-txt), das
+   Logo steht ueber das Polster links an seinem Platz, und alle drei Werte fahren:
+     Breite   bis 32                        (max-width, von 100%)
+     Lage     (39 - 32) / 2 = 3.5           mittig in den 39px Inhalt der Leiste
+     Polster  (32 - 23) / 2 = 4.5           Logo mittig im Quadrat
+   Ergebnis wie vorher: Logo bei 20px. Vorher sprang es im ersten Bild 91px in die Mitte. */
 .usn-bar.is-mini .usn-team {
-  flex: 0 0 auto; width: 32px; height: 32px; padding: 0; margin: 0; gap: 0; justify-content: center;
+  max-width: 32px; height: 32px;
+  padding-left: calc((32px - 23px) / 2);
+  margin-left: calc((var(--usn-mini) - 2 * 12px - 1px - 32px) / 2);
 }
 .usn-bar.is-mini .usn-top { margin: 0; }
-.usn-bar.is-mini .usn-teamname,
-.usn-bar.is-mini .usn-team .usn-sw { margin-left: 0; }
 /* 23 statt 24, auf Ansage. Der Radius geht anteilig mit (8 -> 7.7), ebenso das Bild darin
    (22 -> 21) und dessen Radius (7 -> 6.7) -- ein Bauteil ist ein Paket aus Massen, und wer eines
    davon aendert, zieht die anderen im selben Verhaeltnis nach. */
@@ -467,8 +577,21 @@
 .usn-toggle[hidden] { display: none; }
 /* Im Mini-Zustand rutscht der Knopf unter den Namen, sonst waere die Zeile fuer 64px zu eng.
    Und margin-left MUSS dort weg: in einer Spalte schiebt auto den Knopf an die rechte Kante --
-   gemessen stand er auf Mitte 222 statt 125, waehrend alles andere mittig sass. */
-.usn-bar.is-mini .usn-top { flex-direction: column; gap: 6px; }
+   gemessen stand er auf Mitte 222 statt 125, waehrend alles andere mittig sass.
+   SEIT 13.10. KEINE SPALTE MEHR: der Umbruch war ein Sprung im ersten Bild (Knopf 100px nach
+   links, alles darunter 46px nach unten). Der Knopf faehrt absolut an seinen Platz, wie in der
+   Markenzeile: ausgeklappt rechts in der Zeile, eingeklappt unter dem Team -- top 32 + 6,
+   right (39 - 32) / 2. Lage am Ende wie vorher (gemessen 15.5 / 52).
+   Weil der Knopf damit aus dem Fluss ist, haelt der Teamknopf ausgeklappt selbst Abstand zu ihm
+   (32 Knopf + 10 Luecke, das gap der Zeile); eingeklappt gilt wieder sein Quadrat. */
+.usn-bar .usn-brand.is-off + .usn-top > .usn-toggle {
+  position: absolute; top: 0; right: 0;
+  transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease),
+              top var(--usn-fahrt) var(--usn-fahrt-kurve), right var(--usn-fahrt) var(--usn-fahrt-kurve);
+}
+.usn-bar.is-mini .usn-brand.is-off + .usn-top > .usn-toggle { top: 38px; right: calc((var(--usn-mini) - 2 * 12px - 1px - 32px) / 2); }
+.usn-bar .usn-brand.is-off + .usn-top .usn-team { max-width: calc(100% - 32px - 10px); }
+.usn-bar.is-mini .usn-brand.is-off + .usn-top .usn-team { max-width: 32px; }
 .usn-bar.is-mini .usn-toggle { margin-left: 0; }
 
 /* ---------- Quick Actions ---------- */
@@ -534,7 +657,15 @@
   text-transform: none; line-height: 1;
 }
 .usn-bar .mqa-trigger:hover .mqa-trigger-label { color: var(--vc-muted); }
-.usn-bar .mqa-trigger { white-space: nowrap; overflow: hidden; }
+.usn-bar .mqa-trigger { white-space: nowrap; overflow: hidden;
+  /* Der Uebergang aus quick-actions.css (Flaeche, Rahmen, Farbe) plus das Polster links, das beim
+     Einklappen faehrt (siehe unten). Die .14s von dort sind hier --up-t-1: ein Hover ist reiner
+     Zustand, und dafuer hat die Skala genau eine Stufe. */
+  transition: background var(--up-t-1) ease, border-color var(--up-t-1) ease, color var(--up-t-1) ease,
+              padding-left var(--usn-fahrt) var(--usn-fahrt-kurve); }
+.usn-bar .mqa-trigger-label,
+.usn-bar .mqa-trigger .mqa-kbd {
+  transition: opacity calc(var(--usn-fahrt) * .55) var(--usn-fahrt-kurve) calc(var(--usn-fahrt) * .35); }
 .usn-bar .mqa-trigger-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .usn-bar .mqa-trigger-ic { color: inherit; }
 /* Das Tastenkuerzel in der dritten Textstufe (07.09. angefordert): es ist die leiseste Angabe
@@ -547,10 +678,15 @@
    width:100% mit Beschriftung und Tastenkuerzel -- in 40px Innenbreite bricht die Zeile um und
    das Kuerzel haengt aus der Leiste heraus (gemessen). Die Regeln stehen HIER und nicht in
    quick-actions.css: die Komponente liegt auch auf Seiten ohne Sidebar, und dort ist an ihr
-   nichts zu aendern. Spezifitaet ueber .usn-bar.is-mini, kein !important. */
-.usn-bar.is-mini .mqa-trigger { padding: 0; gap: 0; justify-content: center; }
+   nichts zu aendern. Spezifitaet ueber .usn-bar.is-mini, kein !important.
+   SEIT 13.10. AUSGEBLENDET STATT display: none, und die Lupe steht ueber das Polster statt ueber
+   eine Zentrierung: (39 Inhalt - 2 Rahmen - 15 Zeichen) / 2 = 11, also bei 24px wie vorher.
+   Beschriftung und Kuerzel bleiben im Fluss, der Knopf schneidet sie ab (overflow oben) --
+   vorher sprang die Lupe im ersten Bild 90px in die Mitte der noch breiten Leiste. */
+.usn-bar.is-mini .mqa-trigger { padding-left: calc((var(--usn-mini) - 2 * 12px - 1px - 2px - 15px) / 2); }
 .usn-bar.is-mini .mqa-trigger-label,
-.usn-bar.is-mini .mqa-trigger .mqa-kbd { display: none; }
+.usn-bar.is-mini .mqa-trigger .mqa-kbd { opacity: 0;
+  transition: opacity calc(var(--usn-fahrt) * .35) var(--usn-fahrt-kurve) 0s; }
 
 /* ---------- Menue ---------- */
 /* position: relative macht die Liste zum Bezugsrahmen der gleitenden Marke darunter -- und damit
@@ -616,7 +752,14 @@
   width: 100%; display: flex; align-items: center; gap: 6px;
   padding: 0 8px 6px; border: 0; background: transparent; cursor: pointer;
   font-family: inherit; white-space: nowrap; text-align: left;
-  transition: opacity calc(var(--usn-t) * .6) var(--usn-ease), color var(--usn-t) var(--usn-ease);
+  /* FESTE HOEHE (13.10.), gemessen 22 = 16 Zeile + 6 Polster. Eingeklappt faellt sie auf 0, und
+     von auto aus gaebe es dorthin keinen Uebergang -- die Zeilen darunter sprangen. overflow,
+     damit Text und Chevron dabei am Kopf abgeschnitten werden. */
+  height: 22px; overflow: hidden;
+  transition: opacity calc(var(--usn-fahrt) * .55) var(--usn-fahrt-kurve) calc(var(--usn-fahrt) * .35),
+              color var(--usn-t) var(--usn-ease),
+              height var(--usn-fahrt) var(--usn-fahrt-kurve),
+              padding-bottom var(--usn-fahrt) var(--usn-fahrt-kurve);
 }
 .usn-head:hover { color: var(--vc-muted); }
 .usn-head-lbl { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -630,10 +773,27 @@
    der fehlenden Liste zu erkennen. */
 .usn-block.is-closed .usn-head-chev { opacity: 1; transform: rotate(-90deg); transition-delay: 0ms; }
 
-/* Der Inhalt faehrt ueber die gemessene Hoehe zu (JS setzt max-height in px). overflow:hidden
-   nur im geschlossenen Zustand: offen wuerde es die Hoverflaeche der letzten Zeile abschneiden. */
-.usn-block-body { max-height: none; transition: max-height var(--usn-t) var(--usn-ease); }
+/* Der Inhalt faehrt ueber die gemessene Hoehe auf und zu (sidebar.js, fahren: max-height in px
+   fuer die Dauer der Fahrt, danach offen wieder ohne Grenze). overflow:hidden im geschlossenen
+   Zustand UND WAEHREND JEDER FAHRT (.is-faehrt): offen, in Ruhe, wuerde es die Hoverflaeche der
+   letzten Zeile abschneiden.
+   DAS WAR DER FEHLER BEIM AUFKLAPPEN (13.10. gemeldet: "das ganze Menueitem sichtbar, geclippt
+   ueber dem anderen Content, und dann slidet der Bereich erst auf"). Das Abschneiden hing nur an
+   is-closed, und die Klasse ging beim Aufklappen im selben Moment weg, in dem die Fahrt begann:
+   ab dem ersten Bild war der Kasten 0 hoch, aber nicht mehr abschneidend. Gemessen am Stand davor
+   (usn13): alle 5 Zeilen von "Workspace" sofort sichtbar, 156px ueber der Gruppe darunter
+   (die Zeilen tragen z-index 1 und liegen damit auch noch obenauf). Zuklappen war nie betroffen --
+   dort kam is-closed zu Beginn.
+   Die Zeilen blenden dabei mit: zu schnell aus, auf langsamer ein. Nur ausgeklappt -- eingeklappt
+   ist jede Gruppe offen (siehe unten), dort darf is-closed nichts verbergen. */
+.usn-block-body { max-height: none;
+  transition: max-height var(--usn-fahrt) var(--usn-fahrt-kurve), opacity calc(var(--usn-fahrt) * .7) var(--usn-fahrt-kurve); }
 .usn-block.is-closed .usn-block-body { overflow: hidden; }
+.usn-bar:not(.is-mini) .usn-block.is-closed .usn-block-body { opacity: 0;
+  transition: max-height var(--usn-fahrt) var(--usn-fahrt-kurve), opacity calc(var(--usn-fahrt) * .4) var(--usn-fahrt-kurve); }
+/* Vier Klassen: muss gegen .usn-bar.is-mini .usn-block-body (overflow: visible) gewinnen -- auch
+   beim Wechsel in den Mini-Zustand faehrt eine zugeklappte Gruppe auf. */
+.usn-bar .usn-block .usn-block-body.is-faehrt { overflow: hidden; }
 .usn-bar.is-mini .usn-head-chev { display: none; }
 /* Im Mini-Zustand bleibt jede Gruppe offen: dort ist die Ueberschrift weg, es gaebe also keinen
    Weg zurueck. Die Hoehe raeumt das JS aus dem inline-Stil (hoehenSetzen) -- eine Regel hier
@@ -653,7 +813,8 @@
   border: 0; border-radius: 12px; background: transparent;
   font: inherit; font-size: 14px; font-weight: 500; color: var(--vc-text);
   cursor: pointer; text-align: left;
-  transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease);
+  transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease),
+              padding-left var(--usn-fahrt) var(--usn-fahrt-kurve);
 }
 .usn-item + .usn-item { margin-top: 2px; }
 /* 5px statt 7 zwischen Icon und Wort -- und ausdruecklich NUR in den Menuepunkten (20.09.).
@@ -732,17 +893,11 @@
    statt aus der Schriftfarbe (.up-marke.is-akzent), am Standard-Akzent ist das dieselbe Farbe.
    Im Dunkeln traegt die Leiste den Grund der Seite, dort gilt die Marke aus core unveraendert. */
 .usn-bar:not([data-theme="dark"]) .usn-item .usn-beta { background: color-mix(in srgb, var(--up-accent-ink) 5.6%, transparent); }
-/* Eingeklappt geht die Marke wie der Name auf Breite 0 (.usn-fade) -- ihr Polster aus .up-marke
-   (0 7px) blieb aber stehen: 14px Restbreite, und das Zeichen sass 7px links neben den anderen
-   (gemessen 14 gegen 21). Das Polster faellt mit der Breite, im selben verzoegerten Takt. */
-.usn-bar.is-mini .usn-item .usn-beta {
-  padding: 0; margin-left: 0;
-  transition: opacity calc(var(--usn-t) * .5) var(--usn-ease) 0s,
-              flex-basis 0s linear var(--usn-t),
-              width 0s linear var(--usn-t),
-              padding 0s linear var(--usn-t),
-              margin-left 0s linear var(--usn-t);
-}
+/* Hier stand eine Regel, die der Marke eingeklappt Polster und Abstand nahm: mit der Zentrierung
+   der Zeile schob ihre Restbreite das Zeichen 7px aus der Mitte. Seit dem 13.10. steht das Zeichen
+   ueber das Polster der Zeile (.usn-bar.is-mini .usn-item), die Marke ist nur noch ausgeblendet
+   (.usn-fade) und liegt rechts ausserhalb, abgeschnitten von der Navigation -- sie verschiebt
+   nichts mehr, also gibt es nichts mehr nachzuziehen. */
 /* KEINE Hoverstates auf der Logo-Vorschau. .up-stack bringt Anheben, Spreizen und den
    Marken-Tooltip mit -- alles richtig in einer Tabellenzeile, hier falsch: die Chips sind
    Beiwerk in einem Knopf, kein eigenes Ziel. pointer-events:none nimmt Hover UND Tooltip auf
@@ -784,7 +939,11 @@
 .usn-chips .up-stack-vis { border-radius: 7.3px; padding: 1px; border: 0; }
 .usn-chips .up-stack-item img { border-radius: 6.4px; }
 .usn-chips .up-stack-ltr { font-size: 7.9px; }
-.usn-bar.is-mini .usn-item { justify-content: center; padding: 0; gap: 0; }
+/* Eingeklappt steht das Zeichen ueber das Polster links mittig, nicht ueber eine Zentrierung
+   (13.10., Begruendung bei .usn-txt oben): (39px Inhalt - 22px Zeichenspalte) / 2 = 8.5, also bei
+   20.5px wie vorher. Das Polster faehrt von 8 aus mit -- das Zeichen wandert 3.5px statt im
+   ersten Bild 89.5px in die Mitte zu springen. */
+.usn-bar.is-mini .usn-item { padding-left: calc((var(--usn-mini) - 2 * 12px - 1px - 22px) / 2); }
 
 /* Ladezustand der ganzen Leiste (Teamwechsel). Die Skelette entstehen von selbst, weil die
    Enthuellung zurueckgenommen wird -- hier bleibt nur, die Leiste aus der Bedienung zu nehmen:
@@ -948,7 +1107,12 @@
   width: 100%; display: flex; align-items: center; gap: 10px;
   padding: 8px; border: 0; border-radius: 12px; background: transparent;
   font: inherit; color: var(--vc-text); cursor: pointer; text-align: left;
-  transition: background var(--usn-t) var(--usn-ease);
+  /* overflow: Name, Adresse und das Mehr-Zeichen bleiben eingeklappt im Fluss (siehe unten) und
+     werden am Knopf abgeschnitten. */
+  overflow: hidden;
+  transition: background var(--usn-t) var(--usn-ease),
+              width var(--usn-fahrt) var(--usn-fahrt-kurve),
+              margin-left var(--usn-fahrt) var(--usn-fahrt-kurve);
 }
 .usn-acc:hover { background: var(--usn-sel); }
 /* EINGEKLAPPT IST DER KNOPF SO GROSS WIE DAS BILD PLUS 8px (18.09. gemeldet: "der
@@ -961,12 +1125,22 @@
    die werden nie negativ, der Knopf staende links und haenge rechts heraus.
    Die Huelle traegt auch .usn-pop (position: relative) fuer das Konto-Menue; das Menue ist
    absolut positioniert und liegt damit ausserhalb des Flusses, die Flexzeile fasst es nicht an.
-   Die ausgeklappte Leiste bleibt, wie sie ist -- dort ist die ganze Zeile der Knopf. */
-.usn-bar.is-mini .usn-accwrap { display: flex; justify-content: center; }
+   Die ausgeklappte Leiste bleibt, wie sie ist -- dort ist die ganze Zeile der Knopf.
+   SEIT 13.10. OHNE FLEXZEILE UND ZENTRIERUNG, damit es fahren kann: die Breite geht von 100% auf
+   46, und der negative Aussenabstand (39 - 46) / 2 = -3.5 legt den Knopf mittig -- das Bild bei
+   16.5px wie vorher. Die Hoehe kommt nicht aus einer festen Zahl (von auto aus gaebe es keinen
+   Uebergang), sondern aus dem Textblock: er ist 41 hoch (zwei Zeilen zu 20 plus 1) und nimmt
+   eingeklappt per Aussenabstand je 5.5 zurueck, so dass der Knopf 30 + 2 x 8 = 46 hoch ist.
+   Vorher sprang das Bild im ersten Bild 77.5px in die Mitte und 5.5px nach unten. */
 .usn-bar.is-mini .usn-acc {
-  justify-content: center; gap: 0;
-  flex: 0 0 46px; width: 46px; height: 46px; padding: 8px;
+  width: 46px;
+  margin-left: calc((var(--usn-mini) - 2 * 12px - 1px - 46px) / 2);
 }
+.usn-acc .usn-acc-txt { transition: opacity calc(var(--usn-fahrt) * .55) var(--usn-fahrt-kurve) calc(var(--usn-fahrt) * .35),
+                           margin var(--usn-fahrt) var(--usn-fahrt-kurve); }
+.usn-bar.is-mini .usn-acc-txt.usn-txt { margin: calc((30px - 41px) / 2) 0;
+  transition: opacity calc(var(--usn-fahrt) * .35) var(--usn-fahrt-kurve) 0s,
+              margin var(--usn-fahrt) var(--usn-fahrt-kurve); }
 /* Der Kreis traegt die Initialen; ein Bild legt sich per position darueber, damit beim
    Ausfall des Bildes wieder der Buchstabe steht und nicht ein leerer Kreis. */
 .usn-av {
@@ -1098,13 +1272,17 @@
   background: rgba(0,0,0,.30);
   backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
   opacity: 0; pointer-events: none;
-  transition: opacity var(--usn-t) var(--usn-ease);
+  /* Im Takt der Leiste, die im hint-Zustand ueber ihm hereinfaehrt (13.10.). */
+  transition: opacity var(--usn-fahrt) var(--usn-fahrt-kurve);
 }
 .up-root.up-portal.usn-scrim.is-on { opacity: 1; pointer-events: auto; }
 .usn-scrim[data-theme="dark"] { background: rgba(0,0,0,.45); }
 
 @media (prefers-reduced-motion: reduce) {
   .usn-bar, .usn-fab, .usn-scrim { --usn-t: 1ms; }
+  /* An :root, damit auch der Platz der Ansichten (unten) springt statt zu fahren -- vorher fuhr
+     der Inhalt unter "weniger Bewegung" weiter 200ms, waehrend die Leiste schon stand. */
+  :root { --usn-fahrt: 1ms; }
 }
 
 /* ---------- Platz fuer die Leiste in den Ansichten (13.10.) ----------
@@ -1114,8 +1292,19 @@
    im selben Takt wie die Leiste. Auch die geparkten Ansichten (das View-System legt sie mit
    width 100% fest ueber den Schirm): mit border-box messen ihre Komponenten damit schon die
    Breite, die sie sichtbar haben werden. Ohne Leiste auf der Seite ist die Variable leer -> 0. */
+/* DIESELBE FAHRT WIE DIE LEISTE (13.10.): beide lesen --usn-fahrt und --usn-fahrt-kurve von :root,
+   und sidebar.js setzt Klasse und Breite im selben Aufruf (anwenden) -- Leiste und Inhalt starten
+   also im selben Bild und kommen im selben Bild an. Vorher stand hier eine eigene Kopie der Werte
+   (--up-t-2 und die Kurve als Literal), gleich nur, solange niemand eine von beiden aenderte.
+   Das Polster ist ein Layout-Uebergang: die Ansicht wird in jedem Bild der Fahrt neu umbrochen.
+   Ein transform waere billiger, verschiebt aber alles mit position: fixed in der Ansicht mit
+   (core.css, Auftritt der Ansicht) und liesse rechts einen leeren Streifen stehen. */
 [id^="view-"] {
   box-sizing: border-box;
   padding-left: var(--up-sidebar-w, 0px);
-  transition: padding-left var(--up-t-2, 200ms) cubic-bezier(.4, 0, .2, 1);
+  transition: padding-left var(--usn-fahrt) var(--usn-fahrt-kurve);
 }
+/* Beim allerersten Setzen der Breite nicht fahren: die Ansicht stand bis dahin bei 0 (die Variable
+   gab es noch nicht), und der Inhalt glitt beim Seitenaufbau von links herein. sidebar.js setzt das
+   Attribut nur fuer diesen einen Schritt (anwenden, erster Lauf). */
+html[data-usn-still] [id^="view-"] { transition: none; }

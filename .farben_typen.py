@@ -92,26 +92,35 @@ LABEL = {"homepage":"Homepage","product_service":"Product / Service","marketplac
 FAM_VON = {u:n for n,_,us in FAMILIEN for u in us}
 
 # ---- heute, zum Vergleich --------------------------------------------------------------------
-HEUTE = {
- "cite_fill_light": {"You":"#d35f73","Competition":"#dd7e3e","Editorial":"#27a79b",
-   "UGC / Community":"#34a1d1","Institutional":"#5e7eac","Knowledge-Base":"#797ad8",
-   "Brand Platforms":"#bc69c9"},
- "cite_fill_dark": {"You":"#d76f82","Competition":"#de8c54","Editorial":"#5cd7c8",
-   "UGC / Community":"#62b4da","Institutional":"#7693bb","Knowledge-Base":"#8082db",
-   "Brand Platforms":"#c377cf"},
- "url_fill_light": {"homepage":"#c3753a","product_service":"#ce8662","marketplace":"#ae7c58",
-   "company_info":"#b48139","article":"#369379","listicle":"#3e90a6","guide":"#5182ef",
-   "comparison":"#726bea","review":"#8a53e1","documentation":"#8a53e1","forum":"#a95cee",
-   "directory":"#b549bf","video":"#9661f1","social_post":"#a27df8"},
- "url_fill_dark": {"homepage":"#fbbf24","product_service":"#fdba74","marketplace":"#fcae6f",
-   "company_info":"#facc15","article":"#6ee7b7","listicle":"#67e8f9","guide":"#93c5fd",
-   "comparison":"#a5b4fc","review":"#c4b5fd","documentation":"#c4b5fd","forum":"#d8b4fe",
-   "directory":"#f0abfc","video":"#c4b5fd","social_post":"#ddd6fe"},
- "url_chip_light": {"homepage":"#b45309","product_service":"#c2683b","marketplace":"#9a5b2e",
-   "company_info":"#a16207","article":"#047857","listicle":"#0e7490","guide":"#2563eb",
-   "comparison":"#4f46e5","review":"#6d28d9","documentation":"#6d28d9","forum":"#9333ea",
-   "directory":"#a21caf","video":"#7c3aed","social_post":"#8b5cf6"},
+# Seit dem 13.10. ist "heute" Variante D ("Branchenueblich"), Wert fuer Wert aus core.js
+# (CITE_TYPE, TYPE_OTHER, URL_FAMILY, URL_TYPE). Der Chip hat jetzt einen EIGENEN Grund und Rand
+# statt tint(farbe, 0.12) / #242424 -- gerechnet wird deshalb gegen diese Werte, nicht gegen
+# eine Mischung. Bis zum 13.10. stand hier die alte Palette (#d35f73, #27a79b ...).
+HEUTE_CITE = {
+ "Editorial":       {"fill":"#7493C7","fillDark":"#8BA6D1","ink":"#375587","inkDark":"#B4CCF2","bg":"#F0F7FF","bgDark":"#1D232E","bd":"#D0E3FF","bdDark":"#2C384D"},
+ "UGC / Community": {"fill":"#49A1AB","fillDark":"#6DB2B9","ink":"#00636D","inkDark":"#9CD6DD","bg":"#EAFBFD","bgDark":"#162628","bd":"#BFEBF0","bdDark":"#1C3E42"},
+ "Knowledge-Base":  {"fill":"#9688C1","fillDark":"#A79CCC","ink":"#594A82","inkDark":"#CDC3EE","bg":"#F7F5FF","bgDark":"#23212C","bd":"#E3DCFD","bdDark":"#39344B"},
+ "Brand Platforms": {"fill":"#BB845F","fillDark":"#C8997B","ink":"#7B461E","inkDark":"#EAC1A6","bg":"#FFF4EC","bgDark":"#2B2019","bd":"#FADAC6","bdDark":"#483224"},
+ "Institutional":   {"fill":"#8195A6","fillDark":"#97A7B5","ink":"#455868","inkDark":"#BECDDA","bg":"#F3F7FB","bgDark":"#1F2327","bd":"#D8E3ED","bdDark":"#313940"},
+ "Competition":     {"fill":"#C17E78","fillDark":"#CD948F","ink":"#803F3B","inkDark":"#EFBCB7","bg":"#FFF2F1","bgDark":"#2D1F1D","bd":"#FED6D2","bdDark":"#4B302D"},
+ "You":             {"fill":"#1F1F1B","fillDark":"#E0E0E0","ink":"#FFFFFF","inkDark":"#1B1B1B","bg":"#1F1F1B","bgDark":"#E0E0E0","bd":"#1F1F1B","bdDark":"#E0E0E0"},
 }
+HEUTE_FAMILIE = {
+ "commercial": {"label":"Commercial","ink":"#7B461E","inkDark":"#EAC1A6","bg":"#FFF4EC","bgDark":"#2B2019","bd":"#FADAC6","bdDark":"#483224"},
+ "editorial":  {"label":"Editorial","ink":"#375587","inkDark":"#B4CCF2","bg":"#F0F7FF","bgDark":"#1D232E","bd":"#D0E3FF","bdDark":"#2C384D"},
+ "reference":  {"label":"Reference, community, media","ink":"#594A82","inkDark":"#CDC3EE","bg":"#F7F5FF","bgDark":"#23212C","bd":"#E3DCFD","bdDark":"#39344B"},
+}
+# (Schluessel, Familie, fill, fillDark) in der Reihenfolge von URL_TYPE in core.js
+HEUTE_URL = [
+ ("homepage","commercial","#845738","#F1C7AC"), ("product_service","commercial","#A57656","#D2AA8F"),
+ ("marketplace","commercial","#C89675","#B48D73"), ("company_info","commercial","#EBB896","#977158"),
+ ("article","editorial","#4A648E","#BAD2F9"), ("listicle","editorial","#607BA7","#A4BCE2"),
+ ("guide","editorial","#7793C1","#8FA6CB"), ("comparison","editorial","#8FACDB","#7A90B4"),
+ ("review","editorial","#A8C6F5","#667B9E"),
+ ("documentation","reference","#665A8A","#D3CAF5"), ("forum","reference","#7D71A2","#BDB4DE"),
+ ("directory","reference","#9589BC","#A79EC7"), ("video","reference","#AEA2D6","#9188B1"),
+ ("social_post","reference","#C7BBF0","#7C749B"),
+]
 
 # ---- Die drei Regeln -------------------------------------------------------------------------
 L_FILL, C_FILL = 0.685, 0.145          # genau die Werte der Linear-Skala in core.js
@@ -266,30 +275,33 @@ def bau(key, titel, satz, warum, preis, fn):
     return daten
 
 # ---- heute als Vergleichsfall, mit denselben Massen ------------------------------------------
+# chip_bg / chip_bd (und _dark) gibt es nur hier: die Vorschlaege A bis C rechnen den Chip noch
+# als Mischung, die Seite faellt fuer sie auf die alte Formel zurueck.
 def heute_daten():
-    cite, url = HEUTE["cite_fill_light"], HEUTE["url_fill_light"]
-    d = {"key":"heute", "titel":"Heute (zum Vergleich)",
-         "satz":"Vier Paletten von Hand: Chart hell, Chart dunkel, Chip hell, Chip dunkel.",
-         "warum":"Gewachsen, nicht gerechnet -- jede Farbe einzeln gewaehlt.",
-         "preis":"Ungleiche Gewichte und vier Farben, die praktisch dieselbe sind.",
+    cite = {n: HEUTE_CITE[n]["fill"] for n in CITE_ORDER}
+    url = {u: f for u, _, f, _ in HEUTE_URL}
+    d = {"key":"heute", "titel":"Heute: Variante D (seit 13.10.)",
+         "satz":"Farbe nur im Chip: sehr heller Grund, feiner Rand im selben Ton, dunkle Schrift im Schnitt 500.",
+         "warum":"Branchenkonvention (Vorbild Peec AI): Competition rot, Brand Platforms orange, Editorial blau, "
+                 "UGC tuerkis, Knowledge-Base violett, Institutional schiefergrau; You in der Schriftfarbe.",
+         "preis":"URL-Typen einer Familie teilen den Chip -- unterschieden werden sie durch Beschriftung und Punkt.",
          "cite":[], "url":[]}
     for name in CITE_ORDER:
-        f = cite[name]
-        d["cite"].append({"key":name, "label":name, "fill":f,
-            "chip_light":f, "chip_light_k":round(kontrast(f, ueber(f,WEISS,0.12)),2),
-            "chip_dark":HEUTE["cite_fill_dark"][name],
-            "chip_dark_k":round(kontrast(HEUTE["cite_fill_dark"][name], CHIP_BG_DARK),2),
-            "fill_dark":HEUTE["cite_fill_dark"][name],
-            "k_weiss":round(kontrast(f,WEISS),2), "k_dunkel":round(kontrast(HEUTE["cite_fill_dark"][name],DUNKELKARTE),2)})
-    for u in URL_ORDER:
-        f = url[u]
-        d["url"].append({"key":u, "label":LABEL[u], "familie":FAM_VON[u], "fill":f,
-            "chip_light":HEUTE["url_chip_light"][u],
-            "chip_light_k":round(kontrast(HEUTE["url_chip_light"][u], ueber(f,WEISS,0.12)),2),
-            "chip_dark":HEUTE["url_fill_dark"][u],
-            "chip_dark_k":round(kontrast(HEUTE["url_fill_dark"][u], CHIP_BG_DARK),2),
-            "fill_dark":HEUTE["url_fill_dark"][u],
-            "k_weiss":round(kontrast(f,WEISS),2), "k_dunkel":round(kontrast(HEUTE["url_fill_dark"][u],DUNKELKARTE),2)})
+        e = HEUTE_CITE[name]
+        d["cite"].append({"key":name, "label":name, "fill":e["fill"], "fill_dark":e["fillDark"],
+            "chip_light":e["ink"], "chip_light_k":round(kontrast(e["ink"], e["bg"]),2),
+            "chip_bg":e["bg"], "chip_bd":e["bd"],
+            "chip_dark":e["inkDark"], "chip_dark_k":round(kontrast(e["inkDark"], e["bgDark"]),2),
+            "chip_bg_dark":e["bgDark"], "chip_bd_dark":e["bdDark"],
+            "k_weiss":round(kontrast(e["fill"],WEISS),2), "k_dunkel":round(kontrast(e["fillDark"],DUNKELKARTE),2)})
+    for u, fam, f, fd in HEUTE_URL:
+        e = HEUTE_FAMILIE[fam]
+        d["url"].append({"key":u, "label":LABEL[u], "familie":e["label"], "fill":f, "fill_dark":fd,
+            "chip_light":e["ink"], "chip_light_k":round(kontrast(e["ink"], e["bg"]),2),
+            "chip_bg":e["bg"], "chip_bd":e["bd"],
+            "chip_dark":e["inkDark"], "chip_dark_k":round(kontrast(e["inkDark"], e["bgDark"]),2),
+            "chip_bg_dark":e["bgDark"], "chip_bd_dark":e["bdDark"],
+            "k_weiss":round(kontrast(f,WEISS),2), "k_dunkel":round(kontrast(fd,DUNKELKARTE),2)})
     d["mass"] = bericht("heute", cite, url)
     return d
 

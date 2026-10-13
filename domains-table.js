@@ -294,13 +294,16 @@
     }
     /* Domains only ever have a citation type (no url-type concept) — one palette, no leading dot
        needed to distinguish it from a second type system the way urls-table's chip does. */
+    /* Die vier Chipwerte aus UC.typeStyle (13.10.) als style-Text; der Rand selbst (1px,
+       border-box) steht in der CSS. Eine Quelle fuer jeden Typ-Chip der App. */
+    function chipStil(st){
+      return "color:" + st.ink + ";background:" + st.bg + ";border-color:" + st.bd;
+    }
     function tagHtml(raw){
       if (!raw) return "";
-      /* Farbe ueber den kanonischen Namen, Beschriftung uebersetzt -- siehe urls-table. */
-      var color = CITE_COLOR[citeName(raw)] || OTHER_LIGHT;
+      /* Farbe aus typeStyle (uebersetzt den Rohschluessel selbst), Beschriftung uebersetzt. */
       var label = UC.typLabel(raw, "citation");
-      var bg = isDark ? CHIP_BG_DARK : tint(color, 0.12);
-      return '<span class="udt-tag" style="color:' + color + ';background:' + bg + '">' +
+      return '<span class="udt-tag" style="' + chipStil(UC.typeStyle("citation", raw, isDark)) + '">' +
                '<span class="udt-tag-lbl">' + esc(label) + '</span>' +
              '</span>';
     }
@@ -419,21 +422,17 @@
        blank cell. A non-empty value that just doesn't match a known key still renders as its own
        raw text: that is a real (if unmapped) type, not an absent one. */
     function urlTypeInfo(raw){
-      var key = String(raw == null ? "" : raw).trim().toLowerCase().replace(/[\s-]+/g, "_");
-      var t = URL_TYPE[key];
-      /* Beschriftung aus core (uebersetzt), Farbe hier -- siehe urls-table. Betrifft auch den
-         Drilldown, der denselben Chip benutzt. */
-      if (t) return { label: UC.typLabel(raw, "url"), color: isDark ? t.cDark : t.c, base: t.c };
-      return { label: UC.typLabel(raw, "url"), color: isDark ? OTHER_DARK : OTHER_LIGHT, base: OTHER_LIGHT };
+      /* Beschriftung (uebersetzt) und Farbe (typeStyle, seit 13.10.) aus core -- siehe urls-table.
+         Betrifft auch den Drilldown, der denselben Chip benutzt. */
+      return { label: UC.typLabel(raw, "url"), stil: UC.typeStyle("url", raw, isDark) };
     }
     /* Same chip as urls-table's URL-type cell — leading dot included, since that dot is what
        tells URL types and citation types apart at a glance. One step smaller here, matching the
        rest of the drilldown. Always renders now that a missing type has a real label. */
     function urlTagHtml(raw){
       var ti = urlTypeInfo(raw);
-      var bg = isDark ? CHIP_BG_DARK : tint(ti.base, 0.12);
-      return '<span class="udt-sub-tag" style="color:' + ti.color + ';background:' + bg + '">' +
-               '<span class="udt-sub-tag-dot" style="background:' + ti.color + '"></span>' +
+      return '<span class="udt-sub-tag" style="' + chipStil(ti.stil) + '">' +
+               '<span class="udt-sub-tag-dot" style="background:' + ti.stil.dot + '"></span>' +
                '<span class="udt-sub-tag-lbl">' + esc(ti.label) + '</span>' +
              '</span>';
     }
@@ -519,19 +518,12 @@
           '</div>' +
           '<div class="up-filter-list">' + ALL_URL_TYPES.map(function(k){
             var ti = urlTypeInfo(k);
-            /* IM DUNKELN KEIN KASTEN UM DEN CHIP (10.09. gemeldet). CHIP_BG_DARK ist #242424, das
-               Dropdown darunter #232326 -- fast dieselbe Farbe, aber eben nicht dieselbe. Auf einer
-               ueberfahrenen oder gewaehlten Zeile wechselt der Zeilengrund (#232326 bzw. #28282c),
-               und dann steht der Chip als sichtbarer Kasten in einem dritten Ton darin. Im Dunkeln
-               traegt ein Chip dieser App ohnehin nur die FARBE DER SCHRIFT und keinen Grund; hier
-               war der Grund die Ausnahme, und sie fiel genau dort auf, wo sie stoerte.
-               In der TABELLE bleibt CHIP_BG_DARK: dort liegt der Chip auf der Zeile und braucht
-               seine Flaeche. Geaendert ist nur die Liste im Dropdown. */
-            var bg = isDark ? "transparent" : tint(ti.base, 0.12);
+            /* Derselbe Chip wie in der Tabelle, auch im Dunkeln (13.10.) -- Begruendung bei
+               populateFilter weiter unten. */
             return '<div class="up-filter-item' + (state.subTypes[k] ? " is-checked" : "") + '" data-subtype="' + esc(k) + '">' +
               '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
-              '<span class="up-filter-tag" style="color:' + ti.color + ';background:' + bg + '">' +
-                '<span class="uut-tag-dot" style="background:' + ti.color + '"></span>' +
+              '<span class="up-filter-tag" style="' + chipStil(ti.stil) + '">' +
+                '<span class="uut-tag-dot" style="background:' + ti.stil.dot + '"></span>' +
                 '<span class="up-filter-tag-lbl">' + esc(ti.label) + '</span></span>' +
             '</div>';
           }).join("") + '</div>' +
@@ -944,20 +936,15 @@
           (anySel ? '<button class="up-filter-reset" type="button">Reset</button>' : "") +
         '</div><div class="up-filter-list">';
       html += ALL_CITATION_TYPES.map(function(key){
-        var color = CITE_COLOR[citeName(key)] || OTHER_LIGHT;
         var label = UC.typLabel(key, "citation");
-        /* IM DUNKELN KEIN KASTEN UM DEN CHIP (10.09. gemeldet). CHIP_BG_DARK ist #242424, das
-           Dropdown darunter #232326 -- fast dieselbe Farbe, aber eben nicht dieselbe. Auf einer
-           ueberfahrenen oder gewaehlten Zeile wechselt der Zeilengrund (#232326 bzw. #28282c),
-           und dann steht der Chip als sichtbarer Kasten in einem dritten Ton darin. Im Dunkeln
-           traegt ein Chip dieser App ohnehin nur die FARBE DER SCHRIFT und keinen Grund; hier
-           war der Grund die Ausnahme, und sie fiel genau dort auf, wo sie stoerte.
-           In der TABELLE bleibt CHIP_BG_DARK: dort liegt der Chip auf der Zeile und braucht
-           seine Flaeche. Geaendert ist nur die Liste im Dropdown. */
-        var bg = isDark ? "transparent" : tint(color, 0.12);
+        /* DER CHIP IM DROPDOWN IST DERSELBE WIE IN DER TABELLE, auch im Dunkeln (13.10.). Bis dahin
+           stand er dort ohne Grund (10.09. gemeldet: #242424 auf dem Dropdown #232326 sah aus wie
+           ein Kasten in einem dritten Ton). Der Grund war damals eine zufaellige Naehe zweier
+           Grautoene; seit Variante D ist der dunkle Chip bewusst getoent und durch seinen Rand
+           begrenzt -- ein gezeichneter Chip, kein verrutschter Ton. */
         return '<div class="up-filter-item' + (sel[key] ? " is-checked" : "") + '" data-type="' + esc(key) + '">' +
                  '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
-                 '<span class="up-filter-tag" style="color:' + color + ';background:' + bg + '">' +
+                 '<span class="up-filter-tag" style="' + chipStil(UC.typeStyle("citation", key, isDark)) + '">' +
                    '<span class="up-filter-tag-lbl">' + esc(label) + '</span></span>' +
                '</div>';
       }).join("");
@@ -1191,9 +1178,8 @@
     function explainVisual(kind){
       if (kind === "type"){
         return ["Editorial","UGC_Community","Institutional"].map(function(k){
-          var col = CITE_COLOR[citeName(k)] || OTHER_LIGHT;
           var label = UC.typLabel(k, "citation");
-          return '<span class="udt-explain-chip" style="color:' + col + ';background:' + tint(col, isDark ? 0.18 : 0.12) + '">' + esc(label) + '</span>';
+          return '<span class="udt-explain-chip" style="' + chipStil(UC.typeStyle("citation", k, isDark)) + '">' + esc(label) + '</span>';
         }).join("");
       }
       if (kind === "used"){

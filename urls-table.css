@@ -71,7 +71,8 @@
        used to carry its own byte-identical uut-explain-* copy. Only the URL-type pill stays local:
        no other table's explainer needs a coloured chip like this. */
     .uut-explain-chip { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 7px;
-      font-size: 11px; font-weight: 600; white-space: nowrap; }
+      border: 1px solid transparent; box-sizing: border-box;
+      font-size: 11px; font-weight: 500; white-space: nowrap; }
 
     /* ---------- pagination ---------- */
     
@@ -367,8 +368,10 @@
     .uut-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
     .uut-used { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; font-variant-numeric: tabular-nums; }
     .uut-date { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+    /* Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke. Kein Nachbau von .up-planpill (meldet .check_reinvention.py wegen des Rahmens): das ist der Typ-Chip aus STYLEGUIDE 1a/1b, Masse wie .up-tag. */
     .uut-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
-      font-size: 12px; font-weight: 600; white-space: nowrap; max-width: 100%; overflow: hidden; }
+      border: 1px solid transparent; box-sizing: border-box;
+      font-size: 12px; font-weight: 500; white-space: nowrap; max-width: 100%; overflow: hidden; }
     .uut-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
     .uut-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
     .uut-trend { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; flex: 0 0 auto; font-variant-numeric: tabular-nums; }

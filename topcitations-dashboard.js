@@ -40,26 +40,19 @@
   var esc = UC.esc, isYes = UC.isYes, resolveBubbleFn = UC.resolveBubbleFn, tint = UC.tint,
       citeName = UC.citeName, fmtTotal = UC.fmtTotal, CHECK_SVG = UC.CHECK_SVG,
       CITE_COLOR = UC.CITE_COLOR, CITE_ALIAS = UC.CITE_ALIAS, ALL_CITATION_TYPES = UC.ALL_CITATION_TYPES,
-      ALL_URL_TYPES = UC.ALL_URL_TYPES, CHIP_BG_DARK = UC.CHIP_BG_DARK;
+      ALL_URL_TYPES = UC.ALL_URL_TYPES;
 
-  /* Chip colours are a SEPARATE system from the chart-slice colours: chips are small text-on-tint
-     labels, slices are large fills. Core owns the slice palette (UC.typeColor); the chip palette
-     stays here. UC.URL_TYPE covers every key except the "other" bucket this component needs. */
-  var URL_TYPE_CHIP = {};
-  Object.keys(UC.URL_TYPE).forEach(function(k){ URL_TYPE_CHIP[k] = UC.URL_TYPE[k]; });
-  URL_TYPE_CHIP.other = { label:"Uncategorized", c:"#6b6f78", cDark:"#a0a0a0" };
-
+  /* Chip und Ring lesen seit dem 13.10. dieselbe Quelle: UC.typeStyle liefert Schrift, Grund,
+     Rand und (nur bei URL-Typen) den Punkt, UC.typeColor die Flaeche im Ring. Hier stand bis
+     dahin eine eigene Kopie von UC.URL_TYPE samt eigenem "other"-Eintrag; der Rueckfall fuer
+     unbekannte und "other" ist jetzt TYPE_OTHER in core.
+     Beschriftung uebersetzt (UC.typLabel) -- gemeldet am 07.09.: die Typen standen hier noch
+     englisch, waehrend sie im Ring nebenan deutsch waren. */
   function tagInfo(raw, mode, isDark){
-    if (mode === "url"){
-      var ut = URL_TYPE_CHIP[raw] || URL_TYPE_CHIP.other;
-      var c = isDark ? ut.cDark : ut.c;
-      /* Beschriftung uebersetzt (UC.typLabel), Farbe aus der eigenen Palette -- gemeldet am
-         07.09.: die Typen standen hier noch englisch, waehrend sie im Ring nebenan deutsch
-         waren. */
-      return { label: UC.typLabel(raw, "url"), color: c, bg: isDark ? CHIP_BG_DARK : tint(ut.c, 0.12), dot: true };
-    }
-    var cc = UC.typeColor(raw, "citation", isDark);
-    return { label: UC.typLabel(raw, "citation"), color: cc, bg: isDark ? CHIP_BG_DARK : tint(UC.typeColor(raw, "citation", false), 0.12), dot: false };
+    var art = mode === "url" ? "url" : "citation";
+    var st = UC.typeStyle(art, raw, isDark);
+    return { label: UC.typLabel(raw, art), stil: "color:" + st.ink + ";background:" + st.bg + ";border-color:" + st.bd,
+             dot: st.dot };
   }
   var fmtPct = UC.fmtPct;
 
@@ -70,7 +63,7 @@
        bar falls back to the generic cell's left-aligned padding instead of the real idx column's
        centered one. */
     return tableHeadHtml(mode) + '<div class="tct-tbody">' + UC.skeletonRows({
-      count: 7, rowClass: "tct-row", cellClass: "tct-td",
+      count: 8, rowClass: "tct-row", cellClass: "tct-td",
       cols: [{ w:12, cls:"tct-td-idx" }, { w:60, jitter:18, logo:true }, 46, 40, 36]
     }) + '</div>';
   }
@@ -468,8 +461,8 @@
         var typeTag = "";
         if (typeRawKey != null){
           var ti = tagInfo(typeRawKey, tagMode, isDark);
-          var dotHtml = ti.dot ? '<span class="tct-tag-dot" style="background:' + ti.color + '"></span>' : "";
-          typeTag = '<span class="tct-tag" style="background:' + ti.bg + ';color:' + ti.color + '">' + dotHtml + '<span class="tct-tag-lbl">' + esc(ti.label) + '</span></span>';
+          var dotHtml = ti.dot ? '<span class="tct-tag-dot" style="background:' + ti.dot + '"></span>' : "";
+          typeTag = '<span class="tct-tag" style="' + ti.stil + '">' + dotHtml + '<span class="tct-tag-lbl">' + esc(ti.label) + '</span></span>';
         }
         var shareRaw = isUrl ? r.global_share_pct : r.share_pct;
         var shareNull = (shareRaw == null || shareRaw === "");
@@ -667,10 +660,10 @@
             var key = String(t.type);
             var checked = !!sel[key];
             var ti = tagInfo(key, dimension === "url_type" ? "url" : "domain", isDark);
-            var dotHtml = ti.dot ? '<span class="tct-tag-dot" style="background:' + ti.color + '"></span>' : "";
+            var dotHtml = ti.dot ? '<span class="tct-tag-dot" style="background:' + ti.dot + '"></span>' : "";
             return '<div class="up-filter-item ' + (checked ? "is-checked" : "") + '" data-key="' + esc(key) + '">' +
               '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
-              '<span class="tct-tag" style="background:' + ti.bg + ';color:' + ti.color + '">' + dotHtml + '<span class="tct-tag-lbl">' + esc(ti.label) + '</span></span>' +
+              '<span class="tct-tag" style="' + ti.stil + '">' + dotHtml + '<span class="tct-tag-lbl">' + esc(ti.label) + '</span></span>' +
               '</div>';
           }).join("");
 

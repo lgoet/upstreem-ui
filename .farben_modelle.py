@@ -65,8 +65,10 @@ def kontrast(a, b):
     if la < lb: la, lb = lb, la
     return (la+0.05)/(lb+0.05)
 
-CITE_L = ["#d35f73","#dd7e3e","#27a79b","#34a1d1","#5e7eac","#797ad8","#bc69c9"]
-CITE_D = ["#d76f82","#de8c54","#5cd7c8","#62b4da","#7693bb","#8082db","#c377cf"]
+# Die Flaechen der Zitationstypen (fill / fillDark aus core.js, seit 13.10. Variante D), in der
+# Reihenfolge You, Competition, Editorial, UGC, Institutional, Knowledge-Base, Brand Platforms.
+CITE_L = ["#1F1F1B","#C17E78","#7493C7","#49A1AB","#8195A6","#9688C1","#BB845F"]
+CITE_D = ["#E0E0E0","#CD948F","#8BA6D1","#6DB2B9","#97A7B5","#A79CCC","#C8997B"]
 TREND_L = ["#2ea84a","#b0200c"]
 TREND_D = ["#60d25d","#d25d5d"]
 

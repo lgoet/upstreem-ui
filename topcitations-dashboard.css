@@ -128,8 +128,10 @@
 .tct-name { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .tct-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
 .tct-used { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+/* Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke. Kein Nachbau von .up-planpill (meldet .check_reinvention.py wegen des Rahmens): das ist der Typ-Chip aus STYLEGUIDE 1a/1b, Masse wie .up-tag. */
 .tct-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
-  font-size: 12px; font-weight: 600; white-space: nowrap; max-width: 100%; overflow: hidden; }
+  border: 1px solid transparent; box-sizing: border-box;
+  font-size: 12px; font-weight: 500; white-space: nowrap; max-width: 100%; overflow: hidden; }
 .tct-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
 .tct-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
 

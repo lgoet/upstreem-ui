@@ -96,7 +96,7 @@
     var gran = o.gran === "week" || o.gran === "month" ? o.gran : "day";
     var firmen = uuids(o.firmen, 10);
     var p = mit(basis(f), { p_granularity: gran, p_companies: firmen });
-    if (!firmen) p.p_series_limit = ganz(o.serien, 7, 1, 10);
+    if (!firmen) p.p_series_limit = ganz(o.serien, 8, 1, 10);
     return anfrage("visibility", p);
   }
   /* Responses. r: { order, limit, offset, suche, erwaehnt, firmen, sentMin, sentMax, rankMin, rankMax } */
@@ -151,7 +151,7 @@
   }
   function topListe(f, modus, t) {
     t = t || {};
-    var cf = citFilter(f, t), tab = { order: t.order || "share_desc", limit: t.limit || 7, offset: 0, suche: "" };
+    var cf = citFilter(f, t), tab = { order: t.order || "share_desc", limit: t.limit || 8, offset: 0, suche: "" };
     return modus === "url" ? C().urls(cf, tab) : C().domains(cf, tab);
   }
 

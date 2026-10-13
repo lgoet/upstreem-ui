@@ -614,16 +614,16 @@
     function visAuftrag() {
       var f = filterStand();
       /* DIE TABELLE (09.10., zweimal):
-         - OHNE eigene Auswahl sortiert sie ueber ALLE Marken und zeigt die ersten 7 der gewaehlten
+         - OHNE eigene Auswahl sortiert sie ueber ALLE Marken und zeigt die ersten 8 (bis 13.10.: 7) der gewaehlten
            Sortierung -- so war es vorher, und so arbeiten Tabellen neben einem Chart ueberall:
-           "Visibility aufsteigend" heisst die 7 Marken mit der geringsten Sichtbarkeit, nicht die 7
+           "Visibility aufsteigend" heisst die 8 Marken mit der geringsten Sichtbarkeit, nicht die 8
            des Charts andersherum. Die erste Fassung vom 09.10. hatte die Tabelle auf die Marken des
            Charts gekuerzt; damit war jede andere Sortierung sinnlos (gemeldet).
          - MIT eigener Auswahl im Fader zeigt sie genau die gewaehlten Marken, in der gewaehlten
            Sortierung ("soll gleichermassen auch auf die Tabelle angewendet werden"). */
       var manuell = state.vis.firmen;
       var vis = D.visibility(f, { gran: state.gran, firmen: manuell });
-      var ov = D.overview(f, manuell ? { order: state.vis.order, limit: 10, firmen: manuell } : { order: state.vis.order, limit: 7 });
+      var ov = D.overview(f, manuell ? { order: state.vis.order, limit: 10, firmen: manuell } : { order: state.vis.order, limit: 8 });
       return {
         kanal: "vis", imSpeicher: imSpeicher([vis, ov]),
         ladenAn: function () { try { setter("setVisibilityChartLoading")(ids.vot, "yes"); } catch (e) {} },
@@ -653,7 +653,7 @@
     function topAuftrag() {
       var f = filterStand(), m = state.top.modus, tp = state.top;
       var typen = D.topTypen(f, m, { erwaehnt: tp.erwaehnt });
-      var list = D.topListe(f, m, { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen, urlTypen: m === "url" ? tp.urlTypen : null, limit: 7 });
+      var list = D.topListe(f, m, { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen, urlTypen: m === "url" ? tp.urlTypen : null, limit: 8 });
       return {
         kanal: "top", imSpeicher: imSpeicher([typen, list]),
         ladenAn: function () { try { setter("setTopCitationsLoading")(ids.tcd, "yes"); } catch (e) {} },

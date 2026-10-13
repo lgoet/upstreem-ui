@@ -323,7 +323,7 @@
   function topAuftrag() {
     var f = filterStand(), m = B.top.modus, tp = B.top, zusatz = { p_brand: B.id };
     var typen = mit(D.topTypen(f, m, { erwaehnt: tp.erwaehnt }), zusatz);
-    var list = mit(D.topListe(f, m, { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen, urlTypen: m === "url" ? tp.urlTypen : null, limit: 7 }), zusatz);
+    var list = mit(D.topListe(f, m, { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen, urlTypen: m === "url" ? tp.urlTypen : null, limit: 8 }), zusatz);
     return {
       kanal: "top", imSpeicher: imSpeicher([typen, list]),
       ladenAn: function () { setter("setTopCitationsLoading")(IDS.tcd, "yes"); },
@@ -465,6 +465,11 @@
       '<div class="up-root ubdr-root">' +
         '<div class="ubdr-head up-dk">' +
           '<div class="ubdr-meta up-dk-meta"></div>' +
+          /* Kopf und Filter in EINER Zeile, die Filter oben rechts (13.10., "bei allen Drawern die
+             Filter nach oben rechts" -- dieselbe Anordnung wie im Domain-Drawer, .uddr-heldzeile).
+             Reicht die Breite nicht, rutschen sie unter den Kopf, linksbuendig -- siehe
+             brand-drawer.css. Die Meta-Zeile bleibt darueber in voller Breite. */
+          '<div class="up-dk-heldzeile ubdr-heldzeile">' +
           '<div class="up-dk-held ubdr-held">' +
             '<span class="up-dk-held-bild ubdr-logobox"></span>' +
             '<div class="up-dk-held-text ubdr-text">' +
@@ -472,14 +477,14 @@
               '<div class="up-dk-held-sub ubdr-domain"></div>' +
             '</div>' +
           '</div>' +
-          /* Filterzeile wie auf den Seiten: links unter dem Kopf, ueber dem, was sie filtert. */
-          '<div class="ubdr-filterzeile">' +
+          '<div class="up-dk-filterzeile ubdr-filterzeile">' +
             '<div class="up-root udr-root ubdr-daten" data-instance="' + esc(IDS.daten) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
             '<div class="up-root ufb-root ubdr-filterleiste" data-instance="' + esc(IDS.filter) + '" data-topics-instance="' + esc(IDS.topics) + '"' +
               ' data-models-instance="' + esc(IDS.modelle) + '" data-markets-instance="' + esc(IDS.maerkte) + '" data-isdark="' + dk + '"></div>' +
             '<div class="up-root utf-root" data-instance="' + esc(IDS.topics) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
             '<div class="up-root umf-root" data-instance="' + esc(IDS.modelle) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
             '<div class="up-root umk-root" data-instance="' + esc(IDS.maerkte) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
+          '</div>' +
           '</div>' +
         '</div>' +
         '<div class="ubdr-main">' +

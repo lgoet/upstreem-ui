@@ -115,51 +115,52 @@ var LOADING_EXPLICIT = (window.__udtLoadingExplicit = window.__udtLoadingExplici
 
 ---
 
-## 1a. Citation-Type-Farben
+## 1a. Citation-Type-Farben (Stand 13.10., Variante D "Branchenüblich")
 
-Verwendet in: `topcitations_dashboard.html`, `citations_combo_chart.html`, `url_classification.html`.
-Bewusst **keine** Verwendung in `visibility_chart.html` (dort gibt es keine Citation-Type-Anzeige).
+Ersetzt die bisherige Palette vollständig. Quelle der Werte: `CITE_TYPE` in `core.js`.
+Vorbild ist Peec AI: Farbe nur im Chip, sehr heller Grund, feiner Rand im selben Ton, dunkle
+Schrift. Die Farbtöne folgen der Branchenkonvention (Competition rot, Brand Platforms orange,
+Editorial blau, UGC türkis).
 
-**Wichtiger struktureller Unterschied zu URL-Types (unten):** In `citations_combo_chart.html`
-und `url_classification.html` ist der Akzentwert **in beiden Themes identisch** — nur der
-Chip-Hintergrund wechselt (siehe Formel unten). Einzige Ausnahme: `topcitations_dashboard.html`
-hat auf expliziten Wunsch eine **eigene, kräftigere Dark-Variante** (`CITE_COLOR_DARK`) bekommen
-und ist damit die einzige Komponente mit echtem Light/Dark-Unterschied bei Citation Types.
+| Citation Type | fill | fillDark | ink | inkDark | bg | bgDark | bd | bdDark |
+|---|---|---|---|---|---|---|---|---|
+| Editorial | `#7493C7` | `#8BA6D1` | `#375587` | `#B4CCF2` | `#F0F7FF` | `#1D232E` | `#D0E3FF` | `#2C384D` |
+| UGC / Community | `#49A1AB` | `#6DB2B9` | `#00636D` | `#9CD6DD` | `#EAFBFD` | `#162628` | `#BFEBF0` | `#1C3E42` |
+| Knowledge-Base | `#9688C1` | `#A79CCC` | `#594A82` | `#CDC3EE` | `#F7F5FF` | `#23212C` | `#E3DCFD` | `#39344B` |
+| Brand Platforms | `#BB845F` | `#C8997B` | `#7B461E` | `#EAC1A6` | `#FFF4EC` | `#2B2019` | `#FADAC6` | `#483224` |
+| Institutional | `#8195A6` | `#97A7B5` | `#455868` | `#BECDDA` | `#F3F7FB` | `#1F2327` | `#D8E3ED` | `#313940` |
+| Competition | `#C17E78` | `#CD948F` | `#803F3B` | `#EFBCB7` | `#FFF2F1` | `#2D1F1D` | `#FED6D2` | `#4B302D` |
+| You | `#1F1F1B` | `#E0E0E0` | `#FFFFFF` | `#1B1B1B` | `#1F1F1B` | `#E0E0E0` | `#1F1F1B` | `#E0E0E0` |
+| Fallback / Uncategorized | `#9E9E9E` | `#808080` | `#5F636B` | `#A8A8A8` | `#F5F5F5` | `#262626` | `#E0E2E6` | `#3A3A3A` |
 
-| Citation Type | Standard (Combo Chart, URL Classification — beide Themes) | TopCitations Dashboard — Light | TopCitations Dashboard — Dark |
-|---|---|---|---|
-| Editorial | `#27a79b` | `#27a79b` | `#8bd0c8` |
-| UGC / Community | `#34a1d1` | `#34a1d1` | `#91bfd4` |
-| Knowledge-Base | `#797ad8` | `#797ad8` | `#abacd9` |
-| Brand Platforms | `#bc69c9` | `#bc69c9` | `#c7a2cd` |
-| Institutional | `#5e7eac` | `#5e7eac` | `#a0abba` |
-| Competition | `#dd7e3e` | `#dd7e3e` | `#d6a685` |
-| You | `#d35f73` | `#d35f73` | `#d39ca6` |
-| Fallback (unbekannt) | `#6f737c` (`OTHER_LIGHT`) / `#a0a0a0` (`OTHER_DARK`) | — | — |
+- **fill**: Flächen in Charts (Doughnut, Balken, Legendenpunkt).
+- **ink, bg, bd**: Schrift, Grund und Rand des Chips.
+- **You** trägt die Akzentfarbe des Themes (Abschnitt 1) und ist als einziger Chip invertiert.
+- **Lesen** immer über `UC.typeStyle("citation" | "url", roh, isDark)` → `{ fill, ink, bg, bd, dot }`; Ringe und Legenden über `UC.typeColor` (= `fill`). Keine Komponente hält eine eigene Kopie.
 
-**Chip-Hintergrund-Formel** (Combo Chart & URL Classification, per `tagInfo()`/Badge-Logik):
+> **Neue Dark-Mode-Regel (ersetzt "flach #242424, keine Tönung"):**
+> Im Dark Mode ist der Chip-Grund **leicht getönt** (OKLCH L 0.255, C 0.022 im Farbton des Typs),
+> der Rand etwas heller getönt (L 0.34, C 0.04), die Schrift hell (L 0.84, C 0.06).
+> Der Grund hebt sich vom Seitenhintergrund kaum ab (1.09:1). Sichtbar wird der Chip durch den Rand.
+> Chart-Flächen werden im Dark Mode heller (`fillDark`), damit sie auf `#1B1B1B` gleich stark wirken.
+
+**Kontrast** Schrift auf Chip-Grund (WCAG): Typen hell 6.6 bis 7.1:1, dunkel 9.5 bis 9.7:1;
+Fallback 5.5:1 / 6.4:1; You 16.5:1 / 13:1.
+
+**Chip-Maße** (gelten für `.tct-tag`, `.ut-badge`, `.utc-chip`):
 ```
-Light:  rgba(farbe, 0.12)   — 12%-Tönung der Akzentfarbe
-Dark:   #242424             — flach, KEINE Tönung
-Border: keiner
-```
-
-**Chip-Maße** (`.tct-tag` in TopCitations, `.ut-badge` in URL Classification):
-```
-Höhe:          24px (TopCitations, kompakt) / 28px (URL Classification, groß)
-Padding:       0 10px / 0 11px
-Border-Radius: 7px / 8px
-Font-Size:     12px / 14px
-Font-Weight:   600
-Gap:           6px / 7px  (Punkt → Label)
+Höhe:          24px kompakt / 28px groß (unverändert)
+Padding:       0 10px / 0 11px (unverändert)
+Border:        1px solid bd          NEU
+Box-Sizing:    border-box            NEU (Rand liegt innerhalb der Höhe)
+Border-Radius: 7px / 8px (unverändert)
+Font-Size:     12px / 14px (unverändert)
+Font-Weight:   500                   NEU (vorher 600)
 Punkt:         KEINER
 ```
 
-> **Wichtige Unterscheidung, die überall gilt:**
-> **Citation Types haben KEINEN Punkt** im Chip, nur farbigen Text auf getöntem Grund.
-> **URL Types haben IMMER einen Punkt** (6×6px, `border-radius: 999px`, in der
-> Akzentfarbe, davor 6px Gap). So sind die beiden Systeme auf einen Blick
-> auseinanderzuhalten, auch wenn sie in derselben Tabelle nebeneinander stehen.
+> **Unverändert gilt:** Citation Types haben KEINEN Punkt im Chip, URL Types haben IMMER einen
+> (6×6px, `border-radius: 999px`, 6px Gap).
 
 Aliase auf dem Weg zu diesen Keys (`CITE_ALIAS`/`citeName()`): `Brand_Platform`/`Brand Platform` →
 `Brand Platforms`, `Knowledge_Base`/`Knowledge Base` → `Knowledge-Base`, `UGC_Community`/
@@ -167,105 +168,51 @@ Aliase auf dem Weg zu diesen Keys (`CITE_ALIAS`/`citeName()`): `Brand_Platform`/
 
 ---
 
-## 1b. URL-Type-Farben
+## 1b. URL-Type-Farben (Stand 13.10., Variante D)
 
-Verwendet in: `url_classification.html`, `url_type_chip.html` (eigenständige Komponente, **keine**
-Citation-Type-Farben — ausschließlich URL-Types). Die **Chart-Fill-Variante** in
-`topcitations_dashboard.html` (`URL_COLOR_CHART`/`URL_COLOR_DARK`) ist bewusst kräftiger für große
-Flächen und weicht leicht von der Chip-Palette unten ab — beide sind unten dokumentiert.
+Quelle: `URL_FAMILY` und `URL_TYPE` in `core.js`. Es gibt nur noch **drei Chip-Farben**, eine je
+Familie. Die Typen unterscheiden sich im Chip durch die Beschriftung und durch den **Punkt**,
+der die Chart-Fläche des Typs trägt. In Charts sind die Typen einer Familie über die Helligkeit
+gestaffelt. Die Familientöne sind dieselben wie bei den Citation Types:
+Commercial = Brand Platforms, Editorial = Editorial, Reference = Knowledge-Base.
 
-Anders als Citation Types haben URL Types eine **echte** eigene Dark-Palette (`cDark`) in jeder
-Komponente, nicht nur in TopCitations.
+**Chip je Familie**
 
-**Commercial / Brand** — warme Amber-/Bronzetöne
+| Familie | ink | inkDark | bg | bgDark | bd | bdDark |
+|---|---|---|---|---|---|---|
+| Commercial | `#7B461E` | `#EAC1A6` | `#FFF4EC` | `#2B2019` | `#FADAC6` | `#483224` |
+| Editorial | `#375587` | `#B4CCF2` | `#F0F7FF` | `#1D232E` | `#D0E3FF` | `#2C384D` |
+| Reference, community, media | `#594A82` | `#CDC3EE` | `#F7F5FF` | `#23212C` | `#E3DCFD` | `#39344B` |
+| Fallback | `#5F636B` | `#A8A8A8` | `#F5F5F5` | `#262626` | `#E0E2E6` | `#3A3A3A` |
 
-| Type | Chip Hell | Chip Dunkel |
-|---|---|---|
-| Homepage | `#b45309` | `#fbbf24` |
-| Product / Service | `#c2683b` | `#fdba74` |
-| Marketplace | `#9a5b2e` | `#fcae6f` |
-| Company Info | `#a16207` | `#facc15` |
+**Fläche je Typ** (Chart und Chip-Punkt)
 
-**Editorial** — kühles Türkis bis Blau
+| Typ | Familie | fill | fillDark |
+|---|---|---|---|
+| Homepage | Commercial | `#845738` | `#F1C7AC` |
+| Product / Service | Commercial | `#A57656` | `#D2AA8F` |
+| Marketplace | Commercial | `#C89675` | `#B48D73` |
+| Company Info | Commercial | `#EBB896` | `#977158` |
+| Article | Editorial | `#4A648E` | `#BAD2F9` |
+| Listicle | Editorial | `#607BA7` | `#A4BCE2` |
+| Guide | Editorial | `#7793C1` | `#8FA6CB` |
+| Comparison | Editorial | `#8FACDB` | `#7A90B4` |
+| Review | Editorial | `#A8C6F5` | `#667B9E` |
+| Documentation | Reference | `#665A8A` | `#D3CAF5` |
+| Forum | Reference | `#7D71A2` | `#BDB4DE` |
+| Directory | Reference | `#9589BC` | `#A79EC7` |
+| Video | Reference | `#AEA2D6` | `#9188B1` |
+| Social Post | Reference | `#C7BBF0` | `#7C749B` |
+| Uncategorized | Fallback | `#9E9E9E` | `#808080` |
 
-| Type | Chip Hell | Chip Dunkel |
-|---|---|---|
-| Article | `#047857` | `#6ee7b7` |
-| Listicle | `#0e7490` | `#67e8f9` |
-| Guide | `#2563eb` | `#93c5fd` |
-| Comparison | `#4f46e5` | `#a5b4fc` |
-| Review | `#6d28d9` | `#c4b5fd` |
+Hell gestaffelt von dunkel nach hell, im Dark Mode **gegenläufig** von hell nach dunkel, damit der
+erste (meist größte) Typ einer Familie in beiden Themes am stärksten wirkt.
 
-**Reference / Community / Media** — Indigo bis Violett
+Die getrennte **Chart-Fill-Variante** (`URL_COLOR_CHART`/`URL_COLOR_DARK` mit eigenen Werten)
+entfällt. Beide Namen bleiben als Ableitung aus `fill`/`fillDark` erhalten.
+Documentation und Review teilen keinen Wert mehr.
 
-| Type | Chip Hell | Chip Dunkel |
-|---|---|---|
-| Documentation | `#6d28d9` | `#c4b5fd` |
-| Forum | `#9333ea` | `#d8b4fe` |
-| Directory | `#a21caf` | `#f0abfc` |
-| Video | `#7c3aed` | `#c4b5fd` |
-| Social Post | `#8b5cf6` | `#ddd6fe` |
-
-**Fallback**
-
-| Type | Chip Hell | Chip Dunkel |
-|---|---|---|
-| Uncategorized (`other`) | `#6f737c` | `#a0a0a0` |
-
-> Documentation und Review teilen zufällig denselben Wert (`#6d28d9`/`#c4b5fd`) — das ist
-> beabsichtigt so im Code, kein Fehler.
-
-**Chart-Fill-Variante** (`topcitations_dashboard.html`, `URL_COLOR_CHART`/`URL_COLOR_DARK` —
-kräftiger, für Doughnut-/Bar-Slices statt kleiner Chips):
-
-| Type | Chart Hell | Chart Dunkel |
-|---|---|---|
-| Homepage | `#c3753a` | `#fbbf24` |
-| Product / Service | `#ce8662` | `#fdba74` |
-| Marketplace | `#ae7c58` | `#fcae6f` |
-| Company Info | `#b48139` | `#facc15` |
-| Article | `#369379` | `#6ee7b7` |
-| Listicle | `#3e90a6` | `#67e8f9` |
-| Guide | `#5182ef` | `#93c5fd` |
-| Comparison | `#726bea` | `#a5b4fc` |
-| Review | `#8a53e1` | `#c4b5fd` |
-| Documentation | `#8a53e1` | `#c4b5fd` |
-| Forum | `#a95cee` | `#d8b4fe` |
-| Directory | `#b549bf` | `#f0abfc` |
-| Video | `#9661f1` | `#c4b5fd` |
-| Social Post | `#a27df8` | `#ddd6fe` |
-| Fallback | `#8c8f96` | `#a0a0a0` |
-
-**Chip-Hintergrund-Formel** (identisch zur Citation-Type-Formel):
-```
-Light:  rgba(farbe, 0.12)
-Dark:   #242424   — flach, KEINE Tönung
-Border: keiner
-```
-
-**Chip-Maße** (`.ut-badge` in `url_classification.html` — groß, dotless):
-```
-Höhe:          28px
-Padding:       0 11px
-Border-Radius: 8px
-Font-Size:     14px
-Font-Weight:   600
-Gap:           7px  (Punkt → Label)
-```
-
-**Chip-Maße** (`.utc-chip` in `url_type_chip.html` — eigenständige Komponente, kompakt, mit Punkt):
-```
-Höhe:          24px
-Padding:       0 10px
-Border-Radius: 7px
-Font-Size:     12px
-Font-Weight:   600
-Gap:           6px
-Punkt:         6×6px, border-radius 999px, in der Akzentfarbe
-```
-Farben und Hintergrund-Formel sind identisch zu oben — `url_type_chip.html` ist die **Quelle**,
-aus der die Palette in `topcitations_dashboard.html` 1:1 übernommen wurde (siehe Kommentar dort:
-"canonical URL type chip colours — copied 1:1 from the standalone URL Type chip component").
+**Chip-Maße:** wie 1a, plus Punkt.
 
 ---
 
@@ -1515,6 +1462,7 @@ Komponente wirklich zusätzlich hat (eine Zeilenhöhe, eine Index-Zelle, ein Act
 | Linien-Chart (Plugins, Tooltip, Skeleton, Größen-Poll, Verify, Legende, Watermark) | `UC.makeLine({wrap, canvas, legend, isDark, isOwner, gran})` |
 | Doughnut + Bars hinter einem Controller | `UC.makeTypeChart({body, isDark, isOwner, mode, total, centerLabel})` |
 | Chart-Daten aufbereiten / Farben | `UC.prepTypeData`, `UC.typeColor`, `UC.CITE_COLOR_DARK`, `UC.barIsLight` |
+| Typ-Chips (Citation und URL, Schrift/Grund/Rand/Punkt) | `UC.typeStyle(art, roh, isDark)`, Werte in `UC.CITE_TYPE`/`UC.URL_TYPE`/`UC.URL_FAMILY`/`UC.TYPE_OTHER` (1a/1b) |
 | Button-Tooltips (`[data-tip]`, `[data-brandtip]`) | `UC.makeTooltips(root, getIsDark)` |
 | Dropdowns | `UC.makePopover({wrap, menu, opener, onClose, group})` |
 | Spalten: Sichtbarkeit, Breiten, Resize, Cols-Menü | `UC.makeColumns({root, state, columns, storePrefix, instanceId, …})` |

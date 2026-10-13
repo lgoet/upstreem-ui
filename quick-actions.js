@@ -224,57 +224,31 @@
      scope/market/type narrow the search; rank turns the list into a leaderboard (no query needed). */
   var FILTERS = { scope: null, rank: null, type: null, urltype: null, market: null, mentioning: null };
   var CITATION_TYPES = ["You","Competition","Brand_Platform","Editorial","Institutional","Knowledge_Base","UGC_Community"];
-  // url types + their own colour system, mirrored from the URL-classification component
+  // url types; die Farben liefert core (typStil weiter unten)
   var URL_TYPES = ["homepage","product_service","marketplace","company_info","article","listicle","guide",
                    "comparison","review","documentation","forum","directory","video","social_post","other"];
   var URL_TYPE_LABEL = { homepage:"Homepage", product_service:"Product / Service", marketplace:"Marketplace",
     company_info:"Company Info", article:"Article", listicle:"Listicle", guide:"Guide", comparison:"Comparison",
     review:"Review", documentation:"Documentation", forum:"Forum", directory:"Directory", video:"Video",
     social_post:"Social Post", other:"Uncategorized" };
-  /* Both palettes are core.js's, value for value -- URL_TYPE and CITE_COLOR there. They are
-     MIRRORED rather than imported because this component is deliberately standalone: its Bubble
-     loader pulls only quick-actions.css/.js, no core, so that the palette works on a page that
-     embeds nothing else. The price is that these two tables have to be kept in step with core by
-     hand; that is why they are one block with this note on it instead of scattered lookups.
-
-     What changed here and why: this file used to carry ONE colour per type and no dark variant, so
-     a chip in the palette was a different colour from the same chip in the tables as soon as the
-     app was in dark mode -- and the citation hues were a second, older set entirely (#14b8a6 for
-     Editorial where core says #27a79b). Now: core's light value, core's dark value, core's names.
-
-     Citation types have no real dark variant in core either -- the same hue carries both themes,
-     and only the chip BACKGROUND changes. URL types do have one. */
-  var URL_TYPE_COLOR = {
-    homepage:        { c:"#b45309", cDark:"#fbbf24" },
-    product_service: { c:"#c2683b", cDark:"#fdba74" },
-    marketplace:     { c:"#9a5b2e", cDark:"#fcae6f" },
-    company_info:    { c:"#a16207", cDark:"#facc15" },
-    article:         { c:"#047857", cDark:"#6ee7b7" },
-    listicle:        { c:"#0e7490", cDark:"#67e8f9" },
-    guide:           { c:"#2563eb", cDark:"#93c5fd" },
-    comparison:      { c:"#4f46e5", cDark:"#a5b4fc" },
-    review:          { c:"#6d28d9", cDark:"#c4b5fd" },
-    documentation:   { c:"#6d28d9", cDark:"#c4b5fd" },
-    forum:           { c:"#9333ea", cDark:"#d8b4fe" },
-    directory:       { c:"#a21caf", cDark:"#f0abfc" },
-    video:           { c:"#7c3aed", cDark:"#c4b5fd" },
-    social_post:     { c:"#8b5cf6", cDark:"#ddd6fe" }
-  };
-  var OTHER_LIGHT = "#8c8f96", OTHER_DARK = "#a8abb2", CHIP_BG_DARK = "#242424";
-  function urlTypeLabel(t){ return URL_TYPE_LABEL[t] || String(t||"").replace(/_/g," "); }
-  /* base = the LIGHT hue always. The tinted background is mixed from it in both themes, so a
-     chip's fill stays the same family whatever the text colour does. */
-  function urlTypeBase(t){ var e = URL_TYPE_COLOR[t]; return e ? e.c : OTHER_LIGHT; }
-  function urlTypeColor(t){
-    var e = URL_TYPE_COLOR[t];
-    if (!e) return isDarkTheme() ? OTHER_DARK : OTHER_LIGHT;
-    return isDarkTheme() ? e.cDark : e.c;
+  /* DIE TYPFARBEN KOMMEN AUS CORE (13.10.). Hier stand bis dahin eine von Hand gespiegelte Kopie
+     von URL_TYPE und CITE_COLOR, weil diese Komponente urspruenglich ohne core lief. Seit
+     ensureCore (Kopf dieser Datei) holt sie core.js selbst nach, und die Kopie war genau das, was
+     sie zu verhindern vorgab: beim Wechsel auf Variante D waere sie als einzige Stelle der App
+     bei den alten Farben geblieben. Jetzt liest sie UC.typeStyle -- dieselben Werte wie jede
+     Tabelle, hell wie dunkel.
+     Ohne core (der Moment, bevor ensureCore fertig ist) bleiben Chip und Punkt ungefaerbt statt
+     zu werfen; die Palette zeichnet beim naechsten Oeffnen ohnehin neu. */
+  function typStil(art, raw){
+    var k = window.UpstreemCore;
+    if (k && k.typeStyle) return k.typeStyle(art, raw, isDarkTheme());
+    return { fill: "", ink: "", bg: "", bd: "", dot: art === "url" ? "" : null };
   }
-  var CITE_COLOR = {
-    Editorial:"#27a79b", UGC_Community:"#34a1d1", Knowledge_Base:"#797ad8",
-    Brand_Platform:"#bc69c9", Institutional:"#5e7eac", Competition:"#dd7e3e", You:"#d35f73"
-  };
-  function citeColor(c){ return CITE_COLOR[c] || OTHER_LIGHT; }
+  function urlTypeLabel(t){ return URL_TYPE_LABEL[t] || String(t||"").replace(/_/g," "); }
+  /* Ein Wert je Typ (Punkt vor einer Menuezeile, Farbe des Filterwerts): die Chart-Flaeche, wie
+     der Ring und die Legenden der App. */
+  function urlTypeColor(t){ return typStil("url", t).fill; }
+  function citeColor(c){ return typStil("citation", c).fill; }
   /* core's citeName in miniature: the RPC's raw keys are not what the app shows. */
   var CITE_LABEL = {
     UGC_Community:"UGC / Community", Knowledge_Base:"Knowledge-Base", Brand_Platform:"Brand Platforms"
@@ -299,22 +273,14 @@
     return urlTypeLabel(t);
   }
   function isDarkTheme(){ return root.getAttribute("data-theme") === "dark"; }
-  /* core's tint(), same maths -- a hex plus an alpha, so the chip fill is the type's own colour at
-     12% rather than a neutral grey that ignores the type entirely. */
-  function tint(hex, a){
-    var h = String(hex).replace("#", "");
-    if (h.length === 3) h = h.split("").map(function(x){ return x + x; }).join("");
-    var n = parseInt(h, 16);
-    return "rgba(" + ((n>>16)&255) + "," + ((n>>8)&255) + "," + (n&255) + "," + a + ")";
-  }
-  /* The chip the TABLES draw: colour on a tinted ground in light, colour on the flat dark chip
-     ground in dark. URL types carry a leading dot, citation types never do -- that is what keeps
-     the two vocabularies apart at a glance when they sit next to each other. Geometry copied from
-     core.css's .up-tag; the class is local because core.css is not loaded here. */
-  function tagHtml(label, color, base, withDot){
-    var bg = isDarkTheme() ? CHIP_BG_DARK : tint(base, 0.12);
-    return '<span class="mqa-tag" style="color:' + color + ';background:' + bg + '">' +
-             (withDot ? '<span class="mqa-tag-dot" style="background:' + color + '"></span>' : '') +
+  /* The chip the TABLES draw: Schrift, Grund und Rand aus typeStyle (st), seit dem 13.10. auch
+     im Dunkeln getoent statt flach. URL types carry a leading dot, citation types never do --
+     that is what keeps the two vocabularies apart at a glance when they sit next to each other.
+     Geometry copied from core.css's .up-tag; the class is local because core.css is not loaded
+     here. */
+  function tagHtml(label, st, withDot){
+    return '<span class="mqa-tag" style="color:' + st.ink + ';background:' + st.bg + ';border-color:' + st.bd + '">' +
+             (withDot ? '<span class="mqa-tag-dot" style="background:' + st.dot + '"></span>' : '') +
              '<span class="mqa-tag-lbl">' + esc(label) + '</span>' +
            '</span>';
   }
@@ -445,8 +411,7 @@
             "exactly one type. Use it to see which kinds of sources the answers about you are built from.",
       chips: function(){
         return CITATION_TYPES.map(function(t){
-          var col = citeColor(t);
-          return { label: citeLabel(t), color: col, base: col, dot: false };
+          return { label: citeLabel(t), stil: typStil("citation", t), dot: false };
         });
       }
     },
@@ -460,7 +425,7 @@
             "the page.",
       chips: function(){
         return URL_TYPES.map(function(t){
-          return { label: urlTypeLabelUeb(t), color: urlTypeColor(t), base: urlTypeBase(t), dot: true };
+          return { label: urlTypeLabelUeb(t), stil: typStil("url", t), dot: true };
         });
       }
     },
@@ -921,7 +886,7 @@
              in the filter menu, and in the tables. A hand-copied second list is how a glossary
              starts lying. */
           html += '<div class="mqa-ref-chips">';
-          r.chips().forEach(function(c){ html += tagHtml(c.label, c.color, c.base, c.dot); });
+          r.chips().forEach(function(c){ html += tagHtml(c.label, c.stil, c.dot); });
           html += '</div>';
         }
         /* Hier stand ein Knopf ("Show top domains" und Geschwister), der die Filter setzte und

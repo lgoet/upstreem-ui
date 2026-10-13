@@ -81,6 +81,11 @@
 .uud-skz.is-titel { display: block; width: 72%; height: 28px; margin-bottom: 6px; }
 .uud-skz.is-titel2 { display: block; width: 44%; height: 28px; }
 .uud-mrow .uud-ments { flex: 0 1 auto; min-width: 0; }
+/* Die Marken auf dem Grund der Seite wie im Response-Drawer (13.10.): hell weiss, dunkel der Grund
+   des Drawers; sonst verschwammen sie mit dem Grau der Leiste. Hover bleibt bei core. */
+/* Spezifitaet 0,7,0: core setzt im Dunkeln .up-root[data-theme="dark"] .up-mentlist .up-entchip.is-soft:not(:hover)
+   (0,6,0) auf --vc-field -- dagegen gewinnt diese Regel ueber ihre Klassen, nicht ueber die Ladereihenfolge. */
+.uud-mrow .up-mentlist .up-entchip.is-soft.uud-ment.uud-ment:not(:hover) { background: var(--vc-bg); }
 
 /* ---- Abschnittskoepfe ------------------------------------------------------------------------ */
 /* Wortgleich .urd-sec aus response-detail: die Ueberschriftzeile ist eine ZEILE, der Text darin
@@ -207,16 +212,19 @@
 /* ---- Der URL-Drawer aus core (12.10.): Kalender oben rechts, darunter die Seite, darunter die
    Antworten, die sie zitieren. Die Tabelle ist die Responses-Tabelle selbst (lokaler Modus). */
 .uud-dw { display: flex; flex-direction: column; gap: 40px; min-width: 0; }
-/* Der Kalender unter Titel und Adresse, links wie die Filterzeilen der Seiten (12.10.). Die
-   Kennzahlen-Leiste darunter bringt ihre 16px Abstand selbst mit (margin-top aus core). */
-.uud-dw-leiste { display: flex; justify-content: flex-start; margin-top: 4px; }
+/* Titel und Kalender in einer Zeile: .up-dk-heldzeile.is-satz / .up-dk-filterzeile aus core (13.10.).
+   Ohne Drawer steht der Block allein in der Zeile -- sie tut dann nichts. Innen dieselben 16 wie
+   .up-dk: die Adresse zieht sich mit ihrem -8 auf 8 unter den Titel. */
+.uud-heldtext { display: flex; flex-direction: column; gap: 16px; }
 .uud-dw-resp { min-width: 0; }
 /* Neuer Zeitraum fuer dieselbe Seite: die alte gedimmt stehen lassen, bis die neue da ist
    (Dimmen statt Skelett, 12.10.) -- dieselben .42 wie die Tabellen in core. */
 /* Ohne den Kalender selbst: er steht seit dem 12.10. im Kopf, und gedimmt (pointer-events none)
-   liesse er sich waehrend des Ladens nicht noch einmal umstellen. */
+   liesse er sich waehrend des Ladens nicht noch einmal umstellen. Seit dem 13.10. sitzt er in der
+   Zeile neben dem Titel -- gedimmt wird darum dort jedes Kind ausser ihm, nicht die Zeile. */
 .uud-root.is-reloading > :not(.uud-head),
-.uud-root.is-reloading .uud-head > :not(.uud-dw-leiste) { opacity: .42; pointer-events: none; transition: opacity var(--up-t-1) ease; }
+.uud-root.is-reloading .uud-head > :not(.uud-heldzeile),
+.uud-root.is-reloading .uud-heldzeile > :not(.uud-dw-leiste) { opacity: .42; pointer-events: none; transition: opacity var(--up-t-1) ease; }
 /* Ohne Seite (Fehler) keine Tabelle darunter. */
 .uud-dw.is-fehler .uud-dw-resp { display: none; }
 /* Nicht im Zeitraum: Satz und Knopf in der Leiste der Kennzahlen. */
