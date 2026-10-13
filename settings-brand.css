@@ -118,7 +118,7 @@
   border: 1px solid var(--vc-border); border-radius: 9px; background: transparent;
   color: var(--vc-text); font: inherit; font-size: 13px; }
 .usb-urlin::placeholder { color: var(--vc-third); }
-.usb-urlin:hover { border-color: var(--vc-hover-border); }
+/* Hover kommt aus core (Hover der Eingabefelder, 13.10.). */
 .usb-urlin:focus { outline: 0; border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
 /* ---------- Modelle ---------- */
@@ -265,7 +265,7 @@
   font-family: inherit; font-size: 13.5px; line-height: 1.55; resize: vertical; display: block;
   outline: 0; transition: border-color 150ms ease, box-shadow 150ms ease; }
 .usb-sumin::placeholder { color: var(--vc-third); }
-.usb-sumin:hover { border-color: var(--vc-hover-border); }
+/* Hover kommt aus core (Hover der Eingabefelder, 13.10.). */
 .usb-sumin:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 /* Der native Ziehgriff ist ein hauchduenner Schatten und auf hellem Grund praktisch unsichtbar.
    Chrome laesst sich der Griff nicht umfaerben, also wird der native ausgeblendet und der

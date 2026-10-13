@@ -135,6 +135,11 @@
     if (m === "mira_invalid_param" || m === "edge_invalid_body" || s === 400) return "eingabe";
     if (s === 502 || m === "mira_start_failed" || m === "edge_upstream_failed") return "start";
     if (c === "42501" || c === "P0403" || s === 403) return "rechte";
+    /* Status 0: die Anfrage kam nie an. Fuer die Seite sieht ein vom Browser geblockter Aufruf
+       (CORS: die Function kennt die Adresse der App nicht, 13.10. auf localhost gemessen) genauso
+       aus wie ein Netzausfall -- und in den Logs der Function steht dann NICHTS. */
+    if (s === 0 && m === "timeout") return "zeit";
+    if (s === 0 && m === "network") return "netz";
     return "sonst";
   }
 

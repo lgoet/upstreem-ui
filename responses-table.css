@@ -215,8 +215,11 @@
    Zeile. Im Dunkeln nimmt core allen Karten den Rand (core.css, Liste mit .urt-card). */
 .urt-card { display: flex; flex-direction: column; gap: 14px; min-width: 0; min-height: 200px;
   padding: 20px; border-radius: var(--up-r-2xl); border: 1px solid var(--vc-border); background: var(--vc-bg);
-  cursor: pointer; transition: box-shadow var(--up-t-2) var(--up-ease), transform var(--up-t-1) var(--up-ease); }
-.urt-card:hover { box-shadow: var(--up-e-2); }
+  cursor: pointer; transition: box-shadow var(--up-t-2) var(--up-ease), border-color var(--up-t-2) var(--up-ease), transform var(--up-t-1) var(--up-ease); }
+/* Hover subtil (13.10., "viel zu krass"): vorher --up-e-2, der Schatten der Menues und Popover --
+   fuer eine Karte, die auf der Seite liegt, zu viel. Jetzt der Rand eine Spur kraeftiger (derselbe
+   Ton wie der Hover der Eingabefelder) und die Tiefe einer Flaeche (--up-e-1). */
+.urt-card:hover { border-color: color-mix(in srgb, var(--vc-border) 86%, var(--vc-text)); box-shadow: var(--up-e-1); }
 .urt-card:active { transform: scale(.99); }
 .urt-card:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; }
 

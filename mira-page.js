@@ -44,6 +44,22 @@
   function umiStart() {
   var UC = window.UpstreemCore, D = window.UpstreemMiraDaten, C = window.UpstreemCitationsDaten;
   var esc = UC.esc, t = UC.t || function (x) { return x; };
+  /* Die Saetze, die beim Senden an die Stelle der allgemeinen Meldung treten. Bis zum 13.10. ohne
+     deutsche Fassung -- auf Deutsch kamen sie englisch. Keiner der Schluessel steht in core. */
+  if (UC.addMessages) UC.addMessages("de", {
+    "Mira is still answering in this chat. Wait for the answer, then send again.":
+      "Mira antwortet in diesem Chat noch. Warte auf die Antwort und sende dann erneut.",
+    "Too many messages in a short time. Wait a minute and try again.":
+      "Zu viele Nachrichten in kurzer Zeit. Warte eine Minute und versuch es noch einmal.",
+    "Mira couldn't start this answer. Try again.": "Mira konnte diese Antwort nicht starten. Versuch es noch einmal.",
+    "This message couldn't be sent. Shorten it and try again.":
+      "Diese Nachricht konnte nicht gesendet werden. Kürze sie und versuch es noch einmal.",
+    "You don't have access to this team.": "Du hast keinen Zugriff auf dieses Team.",
+    "Mira couldn't be reached. Check your connection and try again.":
+      "Mira ist gerade nicht erreichbar. Prüf deine Verbindung und versuch es noch einmal.",
+    "Mira is taking too long to respond. Try again in a moment.":
+      "Mira braucht gerade zu lange. Versuch es gleich noch einmal."
+  });
   /* Je Instanz ueber einen Neuaufbau hinweg (Themenwechsel): Lader, Kanal, die Nachrichten je
      Chat, laufende Antworten. Nichts davon gehoert der Wurzel. */
   var STORE = (window.__umiStore = window.__umiStore || {});
@@ -303,6 +319,8 @@
       if (art === "start") return t("Mira couldn't start this answer. Try again.");
       if (art === "eingabe") return t("This message couldn't be sent. Shorten it and try again.");
       if (art === "rechte") return t("You don't have access to this team.");
+      if (art === "netz") return t("Mira couldn't be reached. Check your connection and try again.");
+      if (art === "zeit") return t("Mira is taking too long to respond. Try again in a moment.");
       return null;
     }
     function senden(d) {

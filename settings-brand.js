@@ -774,8 +774,11 @@
                 (starr ? ' aria-disabled="true" data-tip="' + esc(why) + '"' : "") + '>' +
               /* Nur wenn es ein Logo gibt. Ein leeres Kaestchen als Platzhalter sieht aus wie ein
                  Bild, das nicht geladen hat. */
+              /* data-up-logo-thema: die Kachel ist im Dunkeln dunkel (--vc-heading-bg), das Logo folgt
+                 also dem Thema -- auch bei einem Wechsel, nach dem diese Liste nicht neu gezeichnet
+                 wird; core zieht es am Merkmal nach (openAiLogosAngleichen, 13.10.). */
               (m.logo_url ? '<span class="usb-model-logo"><img src="' + esc(UC.modelLogoUrl ? UC.modelLogoUrl(m.key, m.logo_url, isDark(), m.provider) : m.logo_url) + '" alt="" ' +
-                 'onerror="this.parentNode.remove();"/></span>' : "") +
+                 'data-up-logo-thema onerror="this.parentNode.remove();"/></span>' : "") +
               '<span class="usb-model-txt">' +
                 '<span class="usb-model-name">' + esc(m.display_name || m.key) + '</span>' +
                 (m.provider ? '<span class="usb-model-prov">' + esc(m.provider) + '</span>' : "") +

@@ -44,6 +44,14 @@
   var UC = window.UpstreemCore;
   var esc = UC.esc, isYes = UC.isYes;
 
+  /* Die zwei Saetze des Hinweisstreifens (13.10.). Neue Schluessel, gegen alle Kataloge geprueft --
+     keiner davon steht schon in core oder einer anderen Komponente (addMessages ist app-weit).
+     "beobachtete Brands" wie im Trichter darueber ("URLs, die beobachtete Brands erwähnen"). */
+  if (UC.addMessages) UC.addMessages("de", {
+    "URLs mention tracked brands but not {brand}": "URLs nennen beobachtete Brands, aber nicht {brand}",
+    "Show these URLs": "Diese URLs anzeigen"
+  });
+
   var MODES = [
     { key: "citation", label: "Citation Share", heading: "Citations Share over Time" },
     /* Die Ueberschrift heisst URL Share, weil genau das gezeigt wird: wie sich die Zitationen
@@ -170,7 +178,13 @@
      Markup. Wie in brand-detail und performance-detail baut die Komponente ihren Innenaufbau
      selbst -- es gibt im Bubble-Element keine Stelle, an der jemand von Hand etwas einsetzen soll.
      ============================================================================================ */
-  function shell() {
+  /* abs: die Form "Abschnitte statt Karten" (13.10., Designvorlage Domain Detail). Sie gilt nur, wo
+     die einbettende Stelle data-form="abschnitte" setzt -- heute allein der Domain-Drawer aus core
+     (domain-drawer.js). Die Landingpage (landing-hero.js) und das alte Bubble-Element behalten ihre
+     Karten: dieselbe Komponente steht dort in einer anderen Umgebung, und die Vorlage galt dem Drawer.
+     Im Markup unterscheiden sich nur drei Stellen: das Etikett ueber der grossen Zahl, der Kopf des
+     Trichters (Abschnittskopf aus core, .up-dk-h2/.up-dk-unter) und der Hinweisstreifen darunter. */
+  function shell(abs) {
     return '' +
       /* .up-seg/.up-seg-btn und .vc-gran/.vc-gran-btn sind die Haus-Bauteile aus core.css. Hier
          steht nur die Positionierung, kein eigenes Aussehen. */
@@ -204,21 +218,43 @@
             '</div>' +
           '</div>' +
         '</div>' +
-        '<div class="udd-kpi">' +
-          '<span class="udd-kpi-val"></span>' +
-          '<span class="udd-kpi-trend"></span>' +
-        '</div>' +
+        (abs
+          /* Das Etikett nennt die Zahl darunter, wie in der Vorlage -- ohne es stuende eine 38er
+             Zahl allein unter dem Umschalter, und wofuer sie steht, muesste man aus dem aktiven
+             Knopf erschliessen. Derselbe Text wie der Knopf, also derselbe Katalogeintrag. */
+          ? '<div class="udd-kpi">' +
+              '<span class="udd-kpi-lbl">Citation Share</span>' +
+              '<span class="udd-kpi-zeile">' +
+                '<span class="udd-kpi-val"></span>' +
+                '<span class="udd-kpi-trend"></span>' +
+              '</span>' +
+            '</div>'
+          : '<div class="udd-kpi">' +
+              '<span class="udd-kpi-val"></span>' +
+              '<span class="udd-kpi-trend"></span>' +
+            '</div>') +
         '<div class="udd-chartwrap"><canvas class="udd-canvas"></canvas></div>' +
         '<div class="udd-legend up-legend"></div>' +
       '</div>' +
 
       '<div class="udd-card udd-funnelcard">' +
-        '<div class="udd-sec">' +
-          '<span class="udd-sec-title">Source Funnel</span>' +
-          '<span class="udd-sec-desc">How often this source is cited, how many of its cited URLs ' +
-            'mention brands, and where your brand is still missing</span>' +
-        '</div>' +
+        (abs
+          /* Abschnittskopf der Detail-Drawer aus core (.up-dk-h2 16/600, .up-dk-unter 13 in der
+             dritten Textstufe) -- derselbe wie im Marken-Editor und im URL-Drawer. Die eigenen
+             Klassen .udd-sec-title/-desc stehen hier NICHT daneben: beide setzen Schrift mit
+             gleicher Spezifitaet, und dann entschiede die Ladereihenfolge. */
+          ? '<div class="udd-sec udd-abs-kopf">' +
+              '<h3 class="up-dk-h2">Source Funnel</h3>' +
+              '<p class="up-dk-unter">How often this source is cited, how many of its cited URLs ' +
+                'mention brands, and where your brand is still missing</p>' +
+            '</div>'
+          : '<div class="udd-sec">' +
+              '<span class="udd-sec-title">Source Funnel</span>' +
+              '<span class="udd-sec-desc">How often this source is cited, how many of its cited URLs ' +
+                'mention brands, and where your brand is still missing</span>' +
+            '</div>') +
         '<div class="udd-funnel"></div>' +
+        (abs ? '<div class="udd-luecke up-dk-leiste" hidden></div>' : '') +
       '</div>' +
 
       /* Typ-Split und Model Breakdown stehen nebeneinander in einer Zeile. Das Typ-Chart ist
@@ -266,7 +302,11 @@
     var instanceId = root.getAttribute("data-instance") || "default";
     if (instanceId === "INSTANCE_ID") return null;   /* Platzhalter noch nicht ersetzt */
 
-    root.innerHTML = shell();
+    /* Die Form steht beim Aufbau fest: sie bestimmt das Markup, und ein Attribut, das erst spaeter
+       kaeme, gibt es bei keiner einbettenden Stelle (der Drawer schreibt es mit ins Markup). */
+    var abs = root.getAttribute("data-form") === "abschnitte";
+    root.classList.toggle("is-abschnitte", abs);
+    root.innerHTML = shell(abs);
     var fire = UC.makeFire(root, { label: "domain-detail", eventPrefix: "udd" });
 
     /* Schmale Breiten ueber die EIGENE Box, nicht ueber eine Media Query auf das Fenster: diese
@@ -287,6 +327,7 @@
     var elCanvas  = root.querySelector(".udd-canvas");
     var elLegend  = root.querySelector(".udd-legend");
     var elFunnel  = root.querySelector(".udd-funnel");
+    var elLuecke  = root.querySelector(".udd-luecke");
     var elTypeBody = root.querySelector(".udd-typebody");
     var elTypeSeg  = root.querySelector(".udd-typeseg");
     var elModelSeg = root.querySelector(".udd-modelseg");
@@ -555,8 +596,17 @@
        Gezeichnet als EIN Pfad je Stufe: oben eine weiche Kurve von der Hoehe der Stufe zur naechsten,
        unten die Grundlinie. Die Kurve ist ein kubischer Bezier mit waagerechten Anfassern -- so
        laeuft sie an beiden Enden waagerecht aus und die Stufen gehen ohne Knick ineinander ueber. */
-    var FN_H = 132;         /* Zeichenhoehe des Trichters in Einheiten des viewBox */
+    /* In der Abschnittsform 140 wie in der Vorlage: der Trichter steht dort ueber die volle Breite
+       statt in einer halben Karte, und dieselben 132 laegen bei doppelter Breite flacher. */
+    var FN_H = abs ? 140 : 132;   /* Zeichenhoehe des Trichters in Einheiten des viewBox */
     var FN_MIN = 0.06;      /* kleinste sichtbare Hoehe, als Anteil */
+    /* Die Deckkraft der drei Stufen in der Abschnittsform, AUFSTEIGEND (Vorlage: hell, mittel,
+       dunkel -- die letzte Stufe ist die eigene Marke, um die es geht). Abgeleitet aus den drei
+       Grautoenen der Vorlage, nicht erfunden: #EDEDEA/#D9D9D5/#ABABA6 auf Weiss sind die Textfarbe
+       mit rund 8/16/36 % Deckung, #2A2A2A/#3A3A3A/#5A5A5A auf #0F0F0F die helle Textfarbe mit
+       12/19/34 %. Die FARBE kommt weiter aus der Chart-Familie (UC.chartFamilie, Stufe 0), damit
+       "Standard + Blau" auch den Trichter blau faerbt -- wie Kurve und Balken. */
+    var FN_DECK_ABS = { hell: [0.08, 0.16, 0.36], dunkel: [0.12, 0.19, 0.34] };
     function trichterHtml(f) {
       var stufen = STUFEN.map(function (s) {
         var v = num(s.wert(f));
@@ -570,7 +620,8 @@
         };
       });
       var basis = stufen[0].wert || 0;
-      var farbe = ruhig(isDark, typFarbe())[2];
+      var farbe = abs ? ruhig(isDark, typFarbe())[0] : ruhig(isDark, typFarbe())[2];
+      var deckAbs = FN_DECK_ABS[isDark ? "dunkel" : "hell"];
       var hoehen = stufen.map(function (s) {
         var a = basis > 0 ? (s.wert / basis) : 0;
         return Math.max(FN_MIN, Math.min(1, a));
@@ -586,7 +637,7 @@
         /* Deckkraft stuft sich ab: die erste Stufe ist die volle Menge, jede weitere ein Rest
            davon. Eine eigene Farbe je Stufe waere eine zweite Aussage -- hier geht es nur um
            "immer weniger". */
-        var deck = 0.92 - i * 0.18;
+        var deck = abs ? deckAbs[Math.min(i, deckAbs.length - 1)] : 0.92 - i * 0.18;
         pfade += '<path class="udd-fn-band" d="M' + x0 + ',' + y0 +
                  ' C' + cx + ',' + y0 + ' ' + cx + ',' + y1 + ' ' + x1 + ',' + y1 +
                  ' L' + x1 + ',' + FN_H + ' L' + x0 + ',' + FN_H + ' Z"' +
@@ -594,7 +645,7 @@
       }
       var trenner = "";
       for (var t = 1; t < stufen.length; t++) {
-        trenner += '<line class="udd-fn-div" x1="' + (t * proStufe) + '" y1="0" x2="' + (t * proStufe) + '" y2="' + FN_H + '"></line>';
+        trenner += '<line class="udd-fn-div' + (abs ? ' is-luft' : '') + '" x1="' + (t * proStufe) + '" y1="0" x2="' + (t * proStufe) + '" y2="' + FN_H + '"></line>';
       }
       var kopf = stufen.map(function (s) {
         return '<div class="udd-fn-col">' +
@@ -715,6 +766,8 @@
     }
 
     function renderFunnel() {
+      /* Zuerst: auch Fehler und Laden raeumen den Streifen weg (er zeigt dann nichts). */
+      renderLuecke();
       if (state.fehler) { elFunnel.innerHTML = '<div class="up-chart-empty">' + esc(state.fehler) + '</div>'; return; }
       if (istLaden() || !state.funnel) {
         elFunnel.innerHTML = '<div class="udd-fn-sk">' +
@@ -727,6 +780,48 @@
       var kopf = elFunnel.querySelector(".udd-fn-head");
       if (kopf) kopf.style.setProperty("--udd-fnc", String(STUFEN.length));
     }
+
+    /* ---- Hinweisstreifen unter dem Trichter (nur Abschnittsform, 13.10. nach Vorlage) ----------
+       "{n} URLs mention tracked brands but not {brand}" -- die Seiten dieser Domain, die einen
+       Wettbewerber nennen, die eigene Marke aber nicht. Die Zahl liefert domain_detail_stats_v1
+       selbst (competitor_only_urls = comp and not you); nur wenn sie fehlt, wird sie gerechnet
+       (verfolgte minus eigene -- dasselbe, weil jede Seite mit der eigenen Marke auch zu den
+       verfolgten zaehlt).
+       Der Knopf filtert die URL-Tabelle darunter. Das kann nur die einbettende Seite, also geht
+       ein Ereignis hinaus (uddLuecke) und die Tabelle bleibt Sache des Drawers. Der Filter dort
+       braucht die Wettbewerber (p_mentioned_brands); kennt die App keinen, steht der Streifen
+       nicht da -- ein Knopf, der eine leere Auswahl filtert, zeigte die falschen Seiten. */
+    function wettbewerberIds() {
+      var l = UC.getBrands ? UC.getBrands() : [];
+      return (isArr(l) ? l : []).filter(function (b) {
+        return b && String(b.role || "").toLowerCase() === "competitor" && (b.company_id || b.id);
+      }).map(function (b) { return String(b.company_id || b.id); });
+    }
+    function lueckeZahl(f) {
+      if (!f) return null;
+      var n = num(f.competitor_only_urls);
+      if (n == null) {
+        var a = num(f.urls_with_tracked_brands), b = num(f.urls_mentioning_you);
+        n = a != null && b != null ? Math.max(0, a - b) : null;
+      }
+      return n;
+    }
+    function renderLuecke() {
+      if (!elLuecke) return;
+      var n = (state.fehler || istLaden()) ? null : lueckeZahl(state.funnel);
+      if (n == null || n <= 0 || !wettbewerberIds().length) { elLuecke.hidden = true; elLuecke.innerHTML = ""; return; }
+      var marke = state.brand || UC.t("your brand");
+      /* Zahl gross links, Satz daneben, Knopf rechts -- die Leiste aus core (.up-dk-leiste mit
+         .up-dk-zahl/-n), dieselbe wie unter dem Titel von URL- und Response-Drawer. Der Satz ist
+         ein Muster mit Platzhalter: mit eingesetztem Namen stuende er in keinem Katalog. */
+      elLuecke.innerHTML =
+        '<span class="up-dk-zahl"><span class="up-dk-zahl-n">' + esc(UC.fmtTotal(n)) + '</span>' +
+          '<span>' + esc(UC.t("URLs mention tracked brands but not {brand}").replace("{brand}", marke)) + '</span></span>' +
+        '<button type="button" class="up-btn-sec udd-luecke-btn" data-udd-luecke>' +
+          '<span>' + esc(UC.t("Show these URLs")) + '</span>' + UC.icon("chevronRight", 2) + '</button>';
+      elLuecke.hidden = false;
+    }
+    if (abs && UC.onBrands) UC.onBrands(function () { if (root.isConnected !== false) renderLuecke(); }, root);
 
     /* Der Typ-Split. UC.makeTypeChart ist derselbe Baustein, den das Combo-Chart und das
        Topcitations-Dashboard benutzen -- Doughnut, Balken, Legende, Skelett und der Tooltip
@@ -995,6 +1090,13 @@
     /* ---- Klicks ------------------------------------------------------------------------------ */
     root.addEventListener("click", function (e) {
       if (!e.target.closest) return;
+      var lk = e.target.closest("[data-udd-luecke]");
+      if (lk && elLuecke && elLuecke.contains(lk)) {
+        /* Die Wettbewerber gehen mit: die einbettende Seite filtert damit, und so zaehlt sie
+           dieselbe Menge, die der Streifen nennt. */
+        fire("data-luecke-fn", "uddLuecke", { count: lueckeZahl(state.funnel), competitor_ids: wettbewerberIds() });
+        return;
+      }
       var m = e.target.closest("[data-mode]");
       if (m && elSeg.contains(m)) {
         var k = m.getAttribute("data-mode");

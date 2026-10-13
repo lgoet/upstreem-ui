@@ -405,7 +405,7 @@
 /* outline: none ohne Ersatz war eine Sackgasse: prompt-research.js fokussiert dieses Feld 80ms
    nach dem Trigger-Klick, der Cursor steht also darin und das Feld sieht unveraendert aus.
    Derselbe Fehler war in add-prompts.css schon einmal behoben. */
-.upr-dd-search:hover { border-color: var(--vc-hover-border); }
+/* Hover kommt aus core (Hover der Eingabefelder, 13.10.). */
 .upr-dd-search:focus {
   border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0;
 }

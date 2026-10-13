@@ -751,6 +751,24 @@
       border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring);
     }
 
+    /* ---------- Hover der Eingabefelder (13.10.) ----------
+       EIN Hover fuer jedes Feld mit Rahmen. Vorher drei Sorten: dunkler Rand (--vc-hover-border,
+       #6f6f6f -- "sehr dunkel", Add Brand), Rand plus Flaeche (Suchfelder oben in den Dropdowns)
+       und gar keiner (Add Prompts, Anmeldung, Dialoge). Jetzt nur der Rand, eine Spur kraeftiger als
+       er ohnehin ist, keine Flaeche -- wie Linear. Gemischt am Feld selbst aus seinem Rand und
+       seiner Schrift, damit derselbe Wert hell, dunkel und in den Menues (eigene Farbsaetze) passt.
+       Spezifitaet 0,2,0: schlaegt die Grundregel jedes Feldes (0,1,0), verliert gegen echte Zustaende
+       wie Fehler (.uab-field.is-err .uab-in, 0,3,0) und geoeffnet (.uob-ddwrap.is-open, 0,3,0). Fokus,
+       deaktiviert und aria-invalid stehen im :where (ohne Gewicht) -- der Fokusring bleibt.
+       Neue Felder: die Klasse hier eintragen ODER .up-field ans Feld setzen, keine eigene Hover-Regel. */
+    :is(.up-field, .up-fieldwrap, .up-es-input, .up-ddsearch-in, .up-topicmodal-name, .up-ment-search,
+        .up-cgm-search-in, .upt-gm-search-in, .uab-in, .uap-input, .uap-rowedit, .uau-input, .ube-feld,
+        .uca-input, .uca-bld-input, .ums-in, .uob-input, .uob-select, .usb-dlg-in, .usb-sumin,
+        .usb-urlin, .usn-pin-in, .uto-in, .upr-dd-search, .am-ct-input, .am-prev-item-input,
+        .am-prev-proj-input):is(:hover):where(:not(:focus, :focus-within, :disabled, [aria-invalid="true"])) {
+      border-color: color-mix(in srgb, var(--vc-border) 86%, var(--vc-text));
+    }
+
     /* ---------- toolbar ---------- */
     .up-head { display: flex; align-items: center; height: 32px; margin-bottom: 16px; gap: 8px; }
     .up-heading { display: inline-flex; align-items: center; font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; white-space: nowrap; }
@@ -1818,7 +1836,7 @@
       transition: border-color 150ms ease, background 150ms ease;
     }
     .up-ddsearch-in::placeholder { color: var(--vc-third); }
-    .up-ddsearch-in:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+    /* Hover kommt aus core (Hover der Eingabefelder, 13.10.). */
     .up-ddsearch-in:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
     .up-ddsearch-ic {
       position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
@@ -2469,6 +2487,11 @@
        Haken -- deshalb sah jeder Sorter anders aus als die Filterlisten daneben.
        .up-pop-opt ist der geteilte Optionstyp: diese eine Regel erreicht jeden Sorter der App. */
     .up-pop-opt:hover, .up-pop-opt.is-active { background: var(--up-sel-bg); }
+    /* Die Farbe eines Typs vor einer Menuezeile (13.10., "Count as" im Domain-Drawer): dieselbe Form
+       wie in den Chart-Legenden (10 x 10, Radius 4), die Farbe inline aus UC.typeColor. Steht mit
+       dem Text in .up-pop-opt-l, damit der Haken rechts bleibt. */
+    .up-pop-opt-l { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+    .up-pop-form { flex: 0 0 auto; width: 10px; height: 10px; border-radius: var(--up-r-xs); }
     .up-pop-opt .up-check { width: 16px; height: 16px; color: var(--vc-text); opacity: 0; flex: 0 0 auto;
       transform: scale(.7); transition: opacity var(--up-cb-t) var(--up-cb-ease), transform var(--up-cb-t) var(--up-cb-ease); }
     .up-pop-opt .up-check svg { width: 16px; height: 16px; display: block; }
@@ -2668,6 +2691,9 @@
 
     .up-scale-opt { display: flex; flex-direction: column; gap: 8px; padding: 9px 10px; border-radius: 9px; cursor: pointer; }
     .up-scale-opt:hover, .up-scale-opt.is-active { background: var(--up-sel-bg); }
+    /* 4px zwischen den Zeilen wie an jedem Dropdown aus core (.up-optrow + .up-optrow) -- ohne
+       stiessen zwei getoente Zeilen (Hover und gewaehlt) Kante an Kante aneinander. */
+    .up-scale-opt + .up-scale-opt { margin-top: 4px; }
     .up-scale-opt-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
     .up-scale-opt-lbl { font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
     /* Das Info-Zeichen an "Brand Colors". Es IST .up-th-info -- Groesse, Farbe und Hover kommen
@@ -3454,6 +3480,10 @@
    Zwei Abweichungen: die Schrift ist Geist wie in der ganzen App (Vorgabe: System-UI), und der
    Zeitraum im Kartenkopf steht auf 11 statt 10,5px -- halbe Pixel runden je Browser anders, die
    Skala der App hat sie darum nicht (CLAUDE.md 1c). */
+/* Der Kasten eines Charts ist sein eigener Stapelkontext (13.10.): z-index 9999/10000 von Tooltip
+   und Pins gelten nur darin. Ohne das stachen sie durch die ganze Seite -- ueber Drawer (9905-9930),
+   Menues und Popover. Jetzt liegen sie auf der Ebene der Seite, in der das Chart steht. */
+.up-chart-kasten { isolation: isolate; }
 .up-evm-layer { position: absolute; inset: 0; pointer-events: none;
   /* UEBER dem Tooltip von Chart.js (.up-line-tt, z-index 9999 im selben Kasten). Mit 2 lag die
      Karte eines Stapels hinter ihm (03.10. gemeldet); die Ebene selbst nimmt keinen Zeiger, nur
@@ -4793,12 +4823,11 @@
               var(--up-stack-ring, var(--vc-bg));
 }
 /* only the gap-ring follows the row hover colour; the circle fill stays the (light-in-dark) logo bg.
-   .urt-card:hover needs the identical rule -- without it, a card's brand/citation stack keeps its
-   ring calibrated against the card's RESTING background, so hovering (which repaints the whole
-   card a different shade) leaves the stack's ring looking like a separate white box stuck on top
-   instead of blending into the new hover shade the way it does on a table row. */
-.up-row:hover .up-stack-vis,
-.urt-card:hover .up-stack-vis { box-shadow: 0 0 0 4px var(--vt-row-hover-solid, var(--vc-bg));
+   Die Karte (.urt-card) gehoert seit dem Kartenentwurf vom 13.10. NICHT mehr hierher: sie wechselt
+   beim Hover ihre Flaeche nicht mehr (nur Rand und Schatten). Mit der Regel bekam jeder Chip einer
+   gehoverten Karte einen Ring in der Hover-Farbe der Tabellenzeile -- gemeldet als "Border um die
+   Brand- und Citation-Chips". */
+.up-row:hover .up-stack-vis { box-shadow: 0 0 0 4px var(--vt-row-hover-solid, var(--vc-bg));
   --up-stack-ring: var(--vt-row-hover-solid, var(--vc-bg)); }
 /* 5 statt 7: der Chip hat jetzt 1px Rahmen und 2px Polsterung, das Bild sitzt also 3px innen. */
 .up-stack-item img { width: 100%; height: 100%; border-radius: 5px; object-fit: contain; display: block; }

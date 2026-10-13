@@ -242,7 +242,7 @@
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 .uto-in::placeholder { color: var(--vc-third); }
-.uto-in:hover { border-color: var(--vc-hover-border); }
+/* Hover kommt aus core (Hover der Eingabefelder, 13.10.). */
 .uto-in:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 /* Fehler am Feld: rot am Rahmen und ein Satz darunter, beides erst nach dem ersten Absenden. */
 .uto-err { display: none; font-size: 12.5px; font-weight: 400; color: var(--vt-down); line-height: 1.4; }

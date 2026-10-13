@@ -321,7 +321,11 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 /* Name: .up-ment-name aus core (13/500, wie im Marken-Filter), hier nur das Wachsen. */
 .uev-topic-name { flex: 1 1 auto; }
 .uev-topic-zahl { flex: 0 0 auto; font-size: var(--up-fs-s); color: var(--vc-fourth); font-variant-numeric: tabular-nums; }
-.uev-topicfuss { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 0 9px; border-top: 1px solid var(--vc-border); }
+/* Links der Or/And-Umschalter aus core, rechts Zahl und "Select all" -- die Ordnung des Fusses im
+   Topics-Filter (.utf-foot). 8px oben statt 4: der Umschalter ist 28 hoch und braucht unter der
+   Linie dieselbe Luft wie dort. */
+.uev-topicfuss { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0 0; border-top: 1px solid var(--vc-border); }
+.uev-topicfuss-r { display: inline-flex; align-items: center; gap: 12px; margin-left: auto; min-width: 0; }
 .uev-topicfuss-zahl { font-size: var(--up-fs-s); color: var(--vc-third); }
 .uev-umfang-zahl { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--up-fs-m); color: var(--vc-text); }
 .uev-umfang-zahl.is-laeuft { color: var(--vc-third); }

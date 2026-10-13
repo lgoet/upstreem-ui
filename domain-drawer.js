@@ -188,17 +188,19 @@
      Bausteinen des Sortiermenues in core (UC.makePopover, .up-sort-menu, .up-pop-head, .up-pop-opt
      mit Haken, .up-pop-div). Oben der wirksame Typ als Chip -- dieselbe Form wie im Titel --, darunter
      die Wahl. Ohne Recht (can_override false) nur der Stand und ein Satz, keine Wahl. */
+  /* typ: der Citation Type, als der die Domain mit dieser Wahl zaehlt -- seine Farbe steht als
+     kleine Form vor der Zeile (13.10.), wie der Chip oben im Menue. */
   var WAHL = [
     { key: "auto", label: "Detected automatically" },
-    { key: "own", label: "Your own site" },
-    { key: "competitor", label: "A competitor's site" }
+    { key: "own", label: "Your own site", typ: "You" },
+    { key: "competitor", label: "A competitor's site", typ: "Competition" }
   ];
   function wahlJetzt(d) { var o = str(d && d.override); return o === "own" || o === "competitor" ? o : "auto"; }
   function zaehltKnopf() {
     return '<div class="uddr-zaehlt">' +
       '<button type="button" class="up-iconbtn uddr-zaehlt-btn" aria-haspopup="menu" aria-expanded="false"' +
         ' data-tip="' + esc(t("Citation type")) + '" aria-label="' + esc(t("Citation type")) + '">' +
-        UC.icon("dropdownFieldType", 2) + '</button>' +
+        UC.icon("bookmarkPlus", 2) + '</button>' +
       '<div class="up-sort-menu uddr-zaehlt-menu" role="menu" aria-hidden="true"></div>' +
     '</div>';
   }
@@ -231,7 +233,8 @@
           if (w.key === "auto") label += " (" + (str(d.citation_type_auto_label) || typLabel(d.citation_type_auto || d.citation_type)) + ")";
           return '<div class="up-pop-opt' + (w.key === jetzt ? " is-active" : "") + (grund ? " is-disabled" : "") + '" role="menuitemradio" aria-checked="' +
             (w.key === jetzt) + '"' + (grund ? ' aria-disabled="true" data-tip="' + esc(grund) + '"' : ' tabindex="0" data-uddr-wahl="' + w.key + '"') +
-            '><span>' + esc(label) + '</span>' +
+            '><span class="up-pop-opt-l">' + (w.typ && UC.typeColor ? '<span class="up-pop-form" style="background:' + esc(UC.typeColor(w.typ, "citation", dunkel())) + '"></span>' : '') +
+            '<span>' + esc(label) + '</span></span>' +
             '<span class="up-check">' + UC.icon("check", 3) + '</span></div>';
         }).join("");
     }
@@ -580,6 +583,10 @@
     ctx.slot.innerHTML =
       '<div class="up-root uddr-root">' +
         '<div class="uddr-head up-dk">' +
+          /* Kopf und Filter in EINER Zeile, die Filter oben rechts (13.10., Designvorlage Domain
+             Detail: "Die Filter sind hier oben rechts"). Reicht die Breite nicht, rutschen sie
+             unter den Kopf, linksbuendig -- siehe domain-drawer.css. */
+          '<div class="uddr-heldzeile">' +
           '<div class="up-dk-held">' +
             '<span class="up-dk-held-bild uddr-bild"></span>' +
             '<div class="up-dk-held-text">' +
@@ -595,9 +602,12 @@
             '<div class="up-root umf-root" data-instance="' + esc(IDS.modelle) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
             '<div class="up-root umk-root" data-instance="' + esc(IDS.maerkte) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
           '</div>' +
+          '</div>' +
         '</div>' +
         '<div class="uddr-main">' +
-          '<div class="uddr-teil"><div class="up-root udd-root" data-local="yes" data-instance="' + esc(IDS.udd) + '" data-isdark="' + dk + '"' +
+          /* data-form="abschnitte": Domain Detail in der Form der Vorlage (Abschnitte statt
+             Karten, Hinweisstreifen unter dem Trichter) -- nur hier, nicht auf der Landingpage. */
+          '<div class="uddr-teil"><div class="up-root udd-root" data-local="yes" data-form="abschnitte" data-instance="' + esc(IDS.udd) + '" data-isdark="' + dk + '"' +
             ' data-brand="' + esc(mk ? str(mk.name) : "") + '"></div></div>' +
           '<div class="uddr-teil uddr-tabellen">' +
             '<div class="up-root uvw-root" data-local="yes" data-instance="' + esc(IDS.uvw) + '" data-isdark="' + dk + '" data-value="pages"></div>' +
@@ -647,6 +657,27 @@
       var g = str(d.gran);
       if (g !== "day" && g !== "week" && g !== "month") return;
       S.udd.gran = g; teilLaden("detail");
+    });
+    /* "Show these URLs" im Hinweisstreifen unter dem Trichter (domain-detail.js, uddLuecke): die
+       URL-Tabelle auf die Seiten stellen, die einen Wettbewerber nennen, die eigene Marke aber
+       nicht. Das sind zwei Filter, die die Tabelle schon hat und die die RPC schon kennt --
+       "Brand mentioned: No" (p_mentioned no: die Seite nennt die eigene Marke nicht) und die
+       Markenauswahl mit allen Wettbewerbern (p_mentioned_brands, ODER-verknuepft). Zusammen genau
+       competitor_only_urls aus dem Trichter, also dieselbe Zahl wie im Streifen. Die Tabelle zeigt
+       beide Filter sichtbar an (setUrlsTableFilters, still), der Nutzer nimmt sie dort wieder
+       heraus wie jeden anderen. Danach: auf "Pages / URLs" stellen, frisch laden, hinrollen. */
+    an("udduddLuecke", function (d) {
+      var ids = isArr(d.competitor_ids) ? d.competitor_ids.map(str).filter(Boolean) : [];
+      if (!ids.length) return;
+      S.urls.marken = ids; S.urls.erwaehnt = "no"; S.urls.offset = 0; S.urls.requestId = null;
+      try { setter("setUrlsTableFilters")(IDS.uut, { brands: ids, brand_mentioned: "no" }); } catch (e) {}
+      if (S.tab !== "pages") {
+        S.tab = "pages"; tabZeigen();
+        try { setter("setViewSwitch")(IDS.uvw, "pages"); } catch (e) {}
+      }
+      gemeinsam([urlsAuftrag()], false);
+      var ziel = S.root && S.root.querySelector(".uddr-tabellen");
+      if (ziel && ziel.scrollIntoView) { try { ziel.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) { ziel.scrollIntoView(); } }
     });
     /* Der Umschalter: Pages (URLs) oder Responses. Die gewaehlte Tabelle laedt, wenn sie fuer den
        aktuellen Filterstand noch nicht da ist. */

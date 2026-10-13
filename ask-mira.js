@@ -1616,6 +1616,10 @@
         var rim = document.createElement('img');
         rim.src = logoUrl; rim.alt = '';
         rim.setAttribute('loading','lazy'); rim.setAttribute('referrerpolicy','no-referrer'); rim.setAttribute('draggable','false');
+        /* Der Chip liegt auf --am-soft, folgt also dem Thema (siehe _modelLogo). Gezeichnet wird er
+           einmal mit der Antwort; einen spaeteren Themenwechsel zieht core am Merkmal nach
+           (openAiLogosAngleichen, 13.10.). Andere Logos laesst core dabei in Ruhe. */
+        rim.setAttribute('data-up-logo-thema', '');
         rim.onerror = function(){ box.innerHTML = RESP_FALLBACK_SVG(); };
         box.appendChild(rim);
       } else { box.innerHTML = RESP_FALLBACK_SVG(); }

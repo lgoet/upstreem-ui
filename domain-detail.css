@@ -323,3 +323,68 @@
    sollen nicht zwei Bauarten sein, auch nicht in der Breite. */
 /* Hier standen die Regeln des Zahnrads und seiner Bereichsliste (.udd-ly*). Sie sind mit der
    Einstellung selbst entfallen -- siehe domain-detail.js. */
+
+/* ---- ABSCHNITTSFORM (13.10., Designvorlage Domain Detail) ------------------------------------
+   Nur mit data-form="abschnitte" (setzt allein der Domain-Drawer, siehe shell() im JS). Die
+   Vorlage: Abschnitte statt Kacheln -- kein Rahmen, keine Polsterung, die Kurve und der Trichter
+   je ueber die volle Breite untereinander, 64px Luft zwischen den Abschnitten (die Vorlage setzt
+   genau diesen Abstand, und ohne Rahmen ist die Luft das, was die Abschnitte trennt).
+   Die Charts, der Umschalter und D/W/M sind core und bleiben, wie sie sind -- hier steht nur,
+   WO sie stehen, und die Typografie der Zahlen um sie herum.
+   Ihre Masse auf die Skala gelegt (CLAUDE.md 1c): grosse Zahl 48 -> 38 (--up-fs-display, die
+   Stufe fuer DIE EINE Zahl eines Abschnitts), Trichterzahlen 28 (--up-fs-3xl, wie Vorlage),
+   Abschnittstitel 18 -> 16 und Unterzeile 14 -> 13 (beides der Abschnittskopf aus core),
+   Etiketten 14 (--up-fs-l), Radius des Trichters 14 -> 12 (--up-r-xl). */
+.udd-root.is-abschnitte { grid-template-columns: 1fr; row-gap: 64px; }
+.udd-root.is-abschnitte .udd-chartcard,
+.udd-root.is-abschnitte .udd-funnelcard { border: 0; border-radius: 0; padding: 0; background: transparent; }
+
+/* Etikett ueber der grossen Zahl, Zahl und Veraenderung auf einer Grundlinie. 20 oben wie in der
+   Vorlage; 24 unten bleibt (29.09. angefordert: "mehr Gap unter der Share-Prozentzahl"), die 16
+   der Vorlage waeren dahinter zurueckgefallen. */
+.udd-root.is-abschnitte .udd-kpi { flex-direction: column; align-items: flex-start; gap: 8px;
+  margin: 20px 0 24px; min-height: 0; }
+.udd-kpi-lbl { font-size: var(--up-fs-l); line-height: 20px; color: var(--vc-third); }
+.udd-kpi-zeile { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.udd-root.is-abschnitte .udd-kpi-val { font-size: var(--up-fs-display); line-height: 1; letter-spacing: -0.035em; }
+.udd-root.is-abschnitte .udd-kpi-val .up-num { font-weight: var(--up-fw-h); }
+/* Skelett in der Hoehe der Zahl (38, Zeilenhoehe 1), damit nichts springt, wenn sie kommt. */
+.udd-root.is-abschnitte .udd-kpi-val .up-tsk-bar { height: 38px; width: 140px; border-radius: var(--up-r-m); }
+/* URL Share: ohne Kennzahl nimmt die Kurve deren Platz, damit der Trichter darunter beim
+   Umschalten nicht huepft (dieselbe Ueberlegung wie oben bei 300). Kennzahlblock 20 + 20 + 8 + 38
+   + 24 = 110, minus die 16 Abstand zur Kopfzeile: 260 + 94 = 354. */
+.udd-root.is-abschnitte.is-domainshare .udd-chartwrap { height: 354px; }
+
+/* Trichter: Kopf aus core, darunter drei Zahlen, das Bild, der Hinweisstreifen. */
+.udd-root.is-abschnitte .udd-abs-kopf { gap: 4px; margin-bottom: 28px; }
+.udd-root.is-abschnitte .udd-abs-kopf > * { margin: 0; }
+.udd-root.is-abschnitte .udd-funnel { justify-content: flex-start; }
+/* Breit: keine Striche zwischen den Zahlen (die Vorlage trennt mit Luft). Jede Spalte beginnt
+   genau auf dem Drittel, an dem ihre Stufe im Bild beginnt -- deshalb Abstand rechts statt gap. */
+.udd-root.is-abschnitte:not(.is-narrow) .udd-fn-col { gap: 6px; padding: 0 24px 16px 0; }
+.udd-root.is-abschnitte:not(.is-narrow) .udd-fn-col + .udd-fn-col { padding-left: 0; border-left: 0; }
+.udd-root.is-abschnitte:not(.is-narrow) .udd-fn-val { font-size: var(--up-fs-3xl); line-height: 1; letter-spacing: -0.025em; }
+.udd-root.is-abschnitte .udd-fn-head .udd-fn-val { font-weight: var(--up-fw-h); }
+.udd-root.is-abschnitte .udd-fn-label { font-size: var(--up-fs-l); font-weight: var(--up-fw-h); line-height: 20px; }
+.udd-root.is-abschnitte .udd-fn-sub { font-size: var(--up-fs-m); line-height: 18px; color: var(--vc-third); }
+.udd-root.is-abschnitte .udd-fn-svg { height: 140px; border-radius: var(--up-r-xl); }
+/* Die Trenner im Bild sind Luft in der Farbe des Grundes (2px), keine Linie -- wie in der Vorlage.
+   Der Grund ist der des Drawers (--up-surface), im Dunkeln dunkler als --vc-bg. */
+.udd-fn-div.is-luft { stroke: var(--up-surface, var(--vc-bg)); stroke-width: 2; }
+.udd-root.is-abschnitte .udd-fn-sk-body { height: 140px; border-radius: var(--up-r-xl); }
+/* Kopf gemessen 94 (Zahl 28 + 6 + Etikett 20 + 6 + Unterzeile 18 + 16 unten), minus die 12 Abstand
+   des Skeletts zwischen seinen zwei Balken: 82. So steht das Bild an derselben Stelle wie danach. */
+.udd-root.is-abschnitte .udd-fn-sk-head { height: 82px; }
+
+/* Hinweisstreifen: die Leiste aus core (.up-dk-leiste). 24 Abstand zum Bild statt 16 aus core --
+   die Vorlage setzt den Streifen mit deutlich mehr Luft ab als eine Leiste unter einem Titel.
+   Der Satz darf umbrechen (core haelt .up-dk-zahl starr, dort steht nur ein Wort daneben). */
+.udd-root.is-abschnitte .udd-luecke { margin-top: 24px; }
+.udd-root.is-abschnitte .udd-luecke .up-dk-zahl { flex: 0 1 auto; min-width: 0; }
+.udd-root.is-abschnitte .udd-luecke-btn { flex: 0 0 auto; }
+
+/* Telefon: Zahl eine Stufe kleiner (Vorlage 48 -> 40 unter 640; auf der Skala 28), die Kurve wie
+   bisher 220, im URL Share wieder um den Kennzahlblock hoeher: 20 + 20 + 8 + 28 + 24 - 16 = 84. */
+.udd-root.is-abschnitte.is-vnarrow .udd-kpi-val { font-size: var(--up-fs-3xl); }
+.udd-root.is-abschnitte.is-vnarrow .udd-kpi-val .up-tsk-bar { height: 28px; width: 104px; }
+.udd-root.is-abschnitte.is-vnarrow.is-domainshare .udd-chartwrap { height: 304px; }

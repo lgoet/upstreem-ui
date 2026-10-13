@@ -328,6 +328,9 @@
     "team_role_required": "You don't have permission to do that.",
     "impact_event_forbidden": "Only the creator of this event or a team admin can do that.",
     "impact_event_limit_reached": "Your team has reached the limit of 200 events. Delete an event to create a new one.",
+    /* Kein Code der Datenbank, sondern unserer (rufen): "And" geschickt, die Funktion kennt
+       p_tagmode noch nicht. Am Feld der Topics, mit dem, was jetzt geht. */
+    "impact_event_tagmode_unavailable": "Matching all topics isn't available yet. Switch to Or to continue.",
     "timeout": "This is taking longer than expected. Please try again.",
     "network": "We could not reach the server. Check your connection and try again."
   };
@@ -466,9 +469,9 @@
   /* Welches Feld eines Popups einen Fehler beheben kann: zuerst nach hint (dem Feld, das der
      Server nennt), sonst nach dem Code. */
   var FELD_VON_HINT = { p_name: "name", p_description: "text", p_event_type: "typ", p_icon: "aussehen", p_color: "aussehen",
-    p_cover: "cover", p_event_date: "datum", p_tag_ids: "topics", p_scope_mode: "topics", p_urls: "urls", p_url: "urls" };
+    p_cover: "cover", p_event_date: "datum", p_tag_ids: "topics", p_tagmode: "topics", p_scope_mode: "topics", p_urls: "urls", p_url: "urls" };
   var FELD_VON_CODE = { impact_event_name_required: "name", impact_event_invalid_date: "datum",
-    impact_event_topics_required: "topics", impact_event_invalid_topics: "topics", impact_event_no_active_prompts: "topics",
+    impact_event_topics_required: "topics", impact_event_invalid_topics: "topics", impact_event_tagmode_unavailable: "topics", impact_event_no_active_prompts: "topics",
     impact_event_invalid_url: "urls", impact_event_url_duplicate: "urls", impact_event_too_many_urls: "urls" };
   function feldVonFehler(code, hint) {
     var c = String(code == null ? "" : code), h = String(hint == null ? "" : hint);
@@ -596,6 +599,10 @@
       "Beobachtungen zählen ab dem Event-Datum, auch für URLs, die du jetzt hinzufügst.",
     "{n} days": "{n} Tage", "Preview": "Vorschau", "Untitled event": "Unbenanntes Event",
     "{n} of {total} selected": "{n} von {total} ausgewählt",
+    "Prompts in any of the selected topics": "Prompts in mindestens einem der gewählten Topics",
+    "Only prompts in all selected topics": "Nur Prompts, die in allen gewählten Topics stehen",
+    "Matching all topics isn't available yet. Switch to Or to continue.":
+      "Die Verknüpfung mit Und ist noch nicht verfügbar. Wechsle zu Oder, um weiterzumachen.",
     /* 03.10.: Typ-Auswahl mit eigenem Typ, Klick-Dummy, Ende des Wartens */
     "Search types": "Typen durchsuchen", "No types found": "Keine Typen gefunden", "Your type": "Dein Typ",
     "Example data": "Beispieldaten", "Example data. Nothing you do here is saved.": "Beispieldaten. Nichts, was du hier tust, wird gespeichert.",
@@ -725,6 +732,16 @@
         return UC.rpc(k.fn, mitTeam(o, tm2), { timeoutMs: k.ms });
       }).then(function (erg) {
         erg = erg || { ok: false, status: 0, fehler: {} };
+        /* "And" (p_tagmode) und die Funktion kennt den Parameter noch nicht: PostgREST meldet das
+           als fehlende Funktion (PGRST202), obwohl es sie gibt. Das ist KEIN Grund fuer den
+           Rueckweg zu Bubble -- der wuerde den Kanal fuer die ganze Sitzung umstellen, und Bubble
+           kennt "And" ebenso wenig. Still auf "Or" zurueckzufallen waere eine andere Auswahl als
+           die gezeigte. Also ein Fehler am Feld der Topics. Sobald die Datenbank p_tagmode
+           fuehrt, laeuft derselbe Aufruf ohne Zutun durch. */
+        if (!erg.ok && funktionFehlt(erg) && o && o.p_tagmode) {
+          kam(kanal, { ok: false, status: 400, fehler: { code: "", message: "impact_event_tagmode_unavailable", hint: "p_tagmode", details: "" } }, kx);
+          return;
+        }
         if (!erg.ok && funktionFehlt(erg)) {
           /* Die v2-Funktion ist noch nicht eingespielt: dieser Kanal geht fuer den Rest der
              Sitzung den alten Weg, ohne jedes Mal erst an der 404 vorbei. */
@@ -780,7 +797,13 @@
         renderDetail();
         return;
       }
-      if (kanal === "uevScopePreview") { if (popup && popup === kx.popup) popupVorschauKam(null); return; }
+      if (kanal === "uevScopePreview") {
+        if (popup && popup === kx.popup) {
+          popupVorschauKam(null);
+          if (code === "impact_event_tagmode_unavailable") feldFehler("topics", txt);
+        }
+        return;
+      }
       if (kanal === "uevDelete") { loeschFehler(txt); return; }
       if (kanal === "uevRemoveUrl") { urlWegFehler(txt); return; }
       if (popup && popup === kx.popup && popupFehlerKam(txt, code, hint)) return;
@@ -2304,10 +2327,22 @@
         '</div>';
       }).join("");
     }
+    /* OR/AND (13.10. angefordert, "wie im Topics-Filter"): derselbe Umschalter aus core
+       (.up-seg) an derselben Stelle wie dort, links im Fuss der Liste. Immer bedienbar, auch
+       unter zwei Topics -- wie im Filter: ein Regler, der sich selbst ausgraut, liest sich als
+       kaputt. Or = Prompts in irgendeinem der Topics, And = nur Prompts, die in allen stehen. */
     function topicsFuss(p) {
-      var n = p.e.topics.length, alle = topicsAlle().length;
-      return '<span class="uev-topicfuss-zahl">' + esc(ersetze(t("{n} of {total} selected"), { n: n, total: alle })) + '</span>' +
-        (alle ? '<button type="button" class="up-quietbtn uev-topicalle">' + esc(t(n === alle ? "Clear" : "Select all")) + '</button>' : '');
+      var n = p.e.topics.length, alle = topicsAlle().length, m = p.e.tagModus === "and" ? "and" : "or";
+      return '<span class="up-seg uev-tagmodus" role="group" aria-label="' + esc(t("Match mode")) + '">' +
+          '<button class="up-seg-btn' + (m === "or" ? " is-active" : "") + '" type="button" data-tagmodus="or" aria-pressed="' + (m === "or") + '"' +
+            ' data-tip="' + esc(t("Prompts in any of the selected topics")) + '">' + esc(t("Or")) + '</button>' +
+          '<button class="up-seg-btn' + (m === "and" ? " is-active" : "") + '" type="button" data-tagmodus="and" aria-pressed="' + (m === "and") + '"' +
+            ' data-tip="' + esc(t("Only prompts in all selected topics")) + '">' + esc(t("And")) + '</button>' +
+        '</span>' +
+        '<span class="uev-topicfuss-r">' +
+          '<span class="uev-topicfuss-zahl">' + esc(ersetze(t("{n} of {total} selected"), { n: n, total: alle })) + '</span>' +
+          (alle ? '<button type="button" class="up-quietbtn uev-topicalle">' + esc(t(n === alle ? "Clear" : "Select all")) + '</button>' : '') +
+        '</span>';
     }
     function topicsZeigen() {
       var p = popup, l = im(".uev-topicliste"), f = im(".uev-topicfuss");
@@ -2392,7 +2427,18 @@
       var b = im('[data-wahl="' + art + '"]');
       if (b) b.setAttribute("aria-expanded", "false");
     }
-    function umfangSig(e) { return e.modus === "all" ? "all" : "topics|" + e.topics.slice().sort().join(","); }
+    function umfangSig(e) { return e.modus === "all" ? "all" : "topics|" + tagModusWirkt(e) + "|" + e.topics.slice().sort().join(","); }
+    /* "And" wirkt erst ab zwei Topics -- mit einem ist "alle" dasselbe wie "eins". Dann geht der
+       Parameter gar nicht erst hinaus (und die Zahl von eben gilt weiter). */
+    function tagModusWirkt(e) { return e.modus === "topics" && e.tagModus === "and" && e.topics.length > 1 ? "and" : "or"; }
+    function umfangParameter(e) {
+      if (e.modus === "all") return { p_scope_mode: "all" };
+      var o = { p_scope_mode: "topics", p_tag_ids: e.topics.slice() };
+      /* Nur bei "And": "Or" ist das, was die Datenbank ohne den Parameter tut, und so bleibt jeder
+         Aufruf mit "Or" gueltig, auch solange sie p_tagmode noch nicht kennt (wie p_cover). */
+      if (tagModusWirkt(e) === "and") o.p_tagmode = "and";
+      return o;
+    }
     /* Je Auswahl die gezaehlte Zahl: wer zwischen "Selected topics" und "All" hin und her schaltet,
        loest keine neue Anfrage aus fuer etwas, das schon gezaehlt ist. */
     function dieVorschau(p) { return (p.vorschauen && p.vorschauen[umfangSig(p.e)]) || null; }
@@ -2573,7 +2619,7 @@
         p.vorschauLaeuft = sig;
         clearTimeout(p.vorschauUhr);
         p.vorschauUhr = setTimeout(function () { if (popup === p && p.vorschauLaeuft === sig) popupVorschauKam(null); }, WARTE_MS);
-        rufen("uevScopePreview", e.modus === "all" ? { p_scope_mode: "all" } : { p_scope_mode: "topics", p_tag_ids: e.topics.slice() }, { popup: p });
+        rufen("uevScopePreview", umfangParameter(e), { popup: p });
       }
       zahlZeigen(); pruefenZeigen(); knoepfeSync();
     }
@@ -2696,6 +2742,7 @@
          einem Parameter ab, den die Funktion nicht kennt -- und solange die Datenbank p_cover noch
          nicht fuehrt, haette sonst JEDES Anlegen gescheitert, auch ohne Titelbild. */
       if (e.cover) b.p_cover = e.cover;
+      if (tagModusWirkt(e) === "and") b.p_tagmode = "and";
       if (!vorabPruefen(p, b)) return;
       warten(p, "anlegen");
       rufen("uevCreate", b, { popup: p });
@@ -2861,7 +2908,7 @@
         return;
       }
       var e = { name: "", datum: heuteIso(), monat: null, typ: "", text: "", icon: null, farbe: null, cover: null, offen: null,
-                modus: "topics", topics: [], urls: [] };
+                modus: "topics", topics: [], tagModus: "or", urls: [] };
       var api = UC.makeModal({
         titel: "Create event", unter: schrittText(1), breit: true, isDark: isDark,
         inhaltHtml: '<div class="uev-schritt" data-schritt="1">' + detailFelder(e, true) + '</div>' +
@@ -3002,6 +3049,13 @@
       if (x.closest(".uev-topicsuche-x")) {
         p.topicSuche = ""; var tsx = im(".uev-topicsuche"); if (tsx) { tsx.value = ""; try { tsx.focus(); } catch (e2) {} }
         topicsZeigen();
+        return;
+      }
+      var tmo = x.closest("[data-tagmodus]");
+      if (tmo) {
+        var tw = tmo.getAttribute("data-tagmodus") === "and" ? "and" : "or";
+        if (tw === p.e.tagModus) return;
+        p.e.tagModus = tw; feldFehler("topics", ""); topicsZeigen(); vorschauAnfordern();
         return;
       }
       var mod = x.closest("[data-modus]");

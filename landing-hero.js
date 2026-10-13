@@ -4098,7 +4098,11 @@
       resizeDelay: 0
     });
     koerper.__ulhDonut = werk;
-    werk.renderDonut(urlScheiben(kern, FEN_URL_STAND[fenUrlIndex]));
+    /* ohneFahrt (13.10.): in der App faehrt der Ring seit heute wirklich auf -- vorher hat das
+       Luecken-Plugin in core die Fahrt in jedem Bild ueberschrieben, der Ring stand sofort. Die
+       Landingpage ist auf genau dieses Stehen abgestimmt (Unschaerfe bis der Ring steht,
+       ringWartenDann), also bleibt es hier beim alten Bild. */
+    werk.renderDonut(urlScheiben(kern, FEN_URL_STAND[fenUrlIndex]), { ohneFahrt: true });
     return true;
   }
 
@@ -4132,7 +4136,7 @@
       koerper.classList.add("is-wechsel");
       setTimeout(function(){
         fenUrlIndex = (fenUrlIndex + 1) % FEN_URL_STAND.length;
-        koerper.__ulhDonut.renderDonut(urlScheiben(kern, FEN_URL_STAND[fenUrlIndex]));
+        koerper.__ulhDonut.renderDonut(urlScheiben(kern, FEN_URL_STAND[fenUrlIndex]), { ohneFahrt: true });
         /* Der Kopf des Fensters nennt keine Zahl (die steht in der Mitte des Rings), es gibt hier
            also nichts weiter nachzuziehen. */
         /* ERST AUFBLENDEN, WENN DER NEUE RING WIRKLICH STEHT (24.09. gemeldet: "es ist kurz ganz

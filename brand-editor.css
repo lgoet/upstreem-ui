@@ -56,7 +56,7 @@
 .ube-feld::placeholder { color: var(--vc-third); }
 /* Hover NUR ohne Fokus: sonst wechselt der Rahmen die Farbe, waehrend man tippt. Dieselbe
    Trennung wie in auth-page. */
-.ube-feld:hover:not(:focus) { border-color: var(--vc-hover-border); }
+/* Hover kommt aus core (Hover der Eingabefelder, 13.10.). */
 
 /* ---------- Aliase ---------- */
 .ube-zeile, .ube-aliasadd { display: flex; align-items: center; gap: 8px; }

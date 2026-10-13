@@ -4520,6 +4520,39 @@
     var d = typeof dunkel === "boolean" ? dunkel : getUpstreemTheme() === "dark";
     return d ? OPENAI_LOGO.dunkel : OPENAI_LOGO.hell;
   }
+  /* DAS LOGO FOLGT DEM THEMA AUCH NACH DEM ZEICHNEN (13.10. gemeldet: "im Filter Dropdown, im
+     Modelfilter bleibt im Darkmode das schwarze ChatGPT-Logo"). modelLogoUrl entscheidet nur in
+     dem Augenblick, in dem das Markup entsteht. Wer danach nicht neu zeichnet, behaelt die alte
+     Variante -- und das ist der Normalfall: der Start setzt das Thema aus der Datenbank erst NACH
+     dem ersten Bild (appAnwenden), der Models-Filter zeichnet Trigger und Liste nur bei einer
+     Aenderung der Auswahl neu, und die Filterleiste haelt eingezogene Wurzeln ueber jeden Neuaufbau.
+     Gemessen in _h_logo13.html: Thema nach dem Aufbau auf dunkel -> Trigger, Zeile, Spiegel in der
+     Leiste und Modell-Chip blieben alle vier schwarz.
+     Darum hier, an EINER Stelle: ein Bild, das dem Thema folgen soll, traegt data-up-logo-thema,
+     und sobald sich irgendwo data-theme aendert -- ueber setUpstreemTheme, ueber data-isdark einer
+     Komponente, ueber eine eingezogene Wurzel --, bekommt es die Variante seiner Wurzel. Die Wurzel
+     und nicht das App-Thema, weil das der Grund ist, auf dem es sitzt (siehe oben).
+     Nur mit Merkmal: die Balkenlisten und Miras Lauf-Chips liegen in BEIDEN Themen auf heller
+     Platte und rufen modelLogoUrl ausdruecklich mit false -- die duerfen nicht mitkippen. Ein
+     vergessenes Merkmal laesst ein Logo veralten, ein fehlender Ausschluss machte es unsichtbar.
+     Beobachtet wird nur das eine Attribut; es aendert sich beim Themenwechsel, sonst fast nie. */
+  function openAiLogosAngleichen(scope){
+    var bilder = (scope || document).querySelectorAll("img[data-up-logo-thema]");
+    for (var i = 0; i < bilder.length; i++){
+      var img = bilder[i], alt = img.getAttribute("src");
+      if (alt !== OPENAI_LOGO.hell && alt !== OPENAI_LOGO.dunkel) continue;
+      var wurzel = img.closest ? img.closest(".up-root") : null;
+      var neu = (wurzel ? wurzel.getAttribute("data-theme") === "dark" : getUpstreemTheme() === "dark")
+        ? OPENAI_LOGO.dunkel : OPENAI_LOGO.hell;
+      if (alt !== neu) img.setAttribute("src", neu);
+    }
+  }
+  /* Einmal je Seite, auch wenn core ueber zwei Pins zweimal geladen wird. */
+  if (!window.__upLogoThemaObs && window.MutationObserver && document.documentElement){
+    window.__upLogoThemaObs = new MutationObserver(function(){ openAiLogosAngleichen(document); });
+    window.__upLogoThemaObs.observe(document.documentElement,
+      { attributes: true, attributeFilter: ["data-theme"], subtree: true });
+  }
   /* Kopien, keine veraenderten Eintraege: der Store behaelt die Adresse aus Bubble, und ein
      Themenwechsel liest beim naechsten Zeichnen das andere Logo. */
   function modelleMitLogo(list){
@@ -4543,7 +4576,7 @@
              (full !== name ? ' data-tip="' + esc(full) + '"' : "") + '>' +
              '<span class="up-ment-logo' + (logo ? " has-img" : "") + '">' +
                '<span class="up-model-ltr">' + esc(initial) + '</span>' +
-               (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+               (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer" data-up-logo-thema' +
                        ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +
              '</span>' +
              '<span class="up-ment-name">' + esc(name) + '</span>' +
@@ -15039,12 +15072,13 @@
   };
   /* "default" is not in COLOR_SCALES on purpose — it means "each company's own colour, backfilled
      from LINE_PALETTE", which is what a null colorScale already produces below. */
-  /* TABLEAU steht vorn und ist die Vorgabe. "default" bleibt als SCHLUESSEL, damit gespeicherte
-     Werte weiter gelten -- umbenannt ist nur die Beschriftung: "Brand Colors", denn genau das ist
-     es, jede Marke in ihrer eigenen Farbe. "Default" war irrefuehrend, sobald es nicht mehr die
-     Vorgabe ist. */
-  var SCALE_ORDER = ["tableau", "linear", "default", "vivid", "colorblind"];
-  var SCALE_VORGABE = "tableau";
+  /* LINEAR steht vorn und ist seit dem 13.10. die Vorgabe (angefordert: "Default Chart Line Color
+     soll Linear sein"; am 08.09. war es noch ausdruecklich keine). Wer schon eine Skala gewaehlt
+     hat, behaelt sie -- die Vorgabe greift nur, wo nichts gespeichert ist. "default" bleibt als
+     SCHLUESSEL, damit gespeicherte Werte weiter gelten -- umbenannt ist nur die Beschriftung:
+     "Brand Colors", denn genau das ist es, jede Marke in ihrer eigenen Farbe. */
+  var SCALE_ORDER = ["linear", "tableau", "default", "vivid", "colorblind"];
+  var SCALE_VORGABE = "linear";
   var MAX_LINE_SERIES = 7;
   function buildLineDatasets(series, companies, colorScale){
     series = Array.isArray(series) ? series : [];
@@ -15976,6 +16010,10 @@
       return typeof u === "string" ? u : "%";
     }
     var wrap = cfg.wrap, canvas = cfg.canvas, legendEl = cfg.legend || null;
+    /* Eigener Stapelkontext (13.10.): Tooltip (9999) und Event-Pins (10000) zaehlen nur noch IM
+       Chart. Vorher lagen die Pins ueber jedem Drawer (9905-9930) und jedem Menue der Seite --
+       gemeldet: "die Pins sind ueber dem Drawer sichtbar". */
+    if (wrap && wrap.classList) wrap.classList.add("up-chart-kasten");
     var isDark = cfg.isDark || function(){ return false; };
     var isOwner = cfg.isOwner || function(){ return true; };
     var chart = null, legendCompanies = [], verifyT = null, sizeIv = null, lastBuilt = null, lastSig = null;
@@ -16746,16 +16784,34 @@
       var r = (meta.data[0] && meta.data[0].outerRadius) || 100;
       var gap = SEG_GAP / r, N = meta.data.length;
       var available = (Math.PI*2) - gap*N;
-      var total = meta.total || chart.data.datasets[args.index].data.reduce(function(a,b){ return a + Number(b||0); }, 0);
+      /* DER AUFTRITT (13.10., "der Doughnut hat noch immer keine Appear-Animation"): hier
+         standen bis heute die ENDwinkel aus den Daten, in jedem Bild. Chart.js laesst den Bogen
+         jedes Segments von 0 auf seinen Anteil wachsen (animateRotate, 600ms) -- und dieses Plugin
+         ueberschrieb das vor jedem Zeichnen mit dem fertigen Ring. Gemessen: 0 auf 93 Prozent in
+         unter 18ms, also gar keine Fahrt.
+         Jetzt folgt es dem Bogen, den Chart.js gerade zeichnen will (roh), und rechnet nur die
+         Luecken heraus: Anteil am vollen Kreis mal (Kreis minus Luecken). Im Ruhezustand ist roh der
+         Anteil aus den Daten, also dasselbe Ergebnis wie vorher.
+         roh muss gemerkt werden: was hier geschrieben wird, steht danach im Bogen, und das naechste
+         Bild ohne Fahrt (Hover) wuerde sonst den schon gekuerzten Wert noch einmal kuerzen. Ein Wert,
+         der nicht der zuletzt geschriebene ist, kommt von Chart.js und ist das neue roh.
+         Die Luecken wachsen mit (p = gezeichneter Anteil am Kreis): bei p = 0 laegen sonst N Bogen der
+         Laenge 0 im Abstand der Luecken, und mit runden Ecken sind das N Punkte rund um den Ring. */
+      var roh = meta.data.map(function(arc){
+        if (arc.$upGeschrieben == null || arc.circumference !== arc.$upGeschrieben) arc.$upRoh = arc.circumference;
+        var c = Number(arc.$upRoh);
+        return isFinite(c) && c > 0 ? c : 0;
+      });
+      var p = Math.min(1, roh.reduce(function(a, b){ return a + b; }, 0) / (Math.PI*2));
+      var luecke = gap * p;
       var cur = -Math.PI/2;
       meta.data.forEach(function(arc, i){
-        var value = chart.data.datasets[args.index].data[i];
-        var frac = total > 0 ? (value/total) : 0;
-        var span = frac * available;
-        arc.startAngle = cur + gap/2;
-        arc.endAngle = cur + span + gap/2;
+        var span = roh[i] / (Math.PI*2) * available;
+        arc.startAngle = cur + luecke/2;
+        arc.endAngle = cur + span + luecke/2;
         arc.circumference = span;
-        cur += span + gap;
+        arc.$upGeschrieben = span;
+        cur += span + luecke;
       });
     }
   };
@@ -16792,6 +16848,8 @@
            sah es auch aus. Die Deckkraft bleibt bei der CSS-Transition, die animiert niemand sonst. */
         el.style.cssText = "position:absolute;left:0;top:0;pointer-events:none;z-index:9999;opacity:0;transform:translate3d(0,0,0);transition:opacity 120ms ease;";
         el.innerHTML = '<div class="up-tt-box"><div class="up-tt-title"><span class="up-tt-dot"></span><span class="up-tt-lbl"></span></div><div class="up-tt-sub">Share:</div><div class="up-tt-val"></div></div>';
+        /* Wie bei der Linie: der Tooltip zaehlt nur im Chart-Kasten, nie ueber Drawern (13.10.). */
+        if (chart.canvas.parentNode.classList) chart.canvas.parentNode.classList.add("up-chart-kasten");
         chart.canvas.parentNode.appendChild(el);
         kBox = null; letztesTheme = null; letzteKennung = null;
       }
@@ -17052,7 +17110,9 @@
                  daneben wuchs. Jetzt 600ms easeOutQuart wie makeLine -- ein Auftritt, eine Bewegung.
                  Die 200ms hingen am Rennen oben (Neuberechnung genau am Ende der Fahrt) -- das gibt
                  es nur unter einem skalierten Vorfahren, und dort ist resizeDelay 0. */
-              animation: ohneFahrt ? false : { duration: 600, easing: "easeOutQuart" },
+              /* Unter prefers-reduced-motion steht der Ring sofort -- jetzt, wo er wirklich faehrt
+                 (13.10., siehe constantGapPlugin), gilt dieselbe Ruecksicht wie beim Auftritt. */
+              animation: (ohneFahrt || weicheBewegung()) ? false : { duration: 600, easing: "easeOutQuart" },
               plugins: { legend: { display:false }, tooltip: { enabled:false, external: donutTooltip } },
               onClick: (clickable && !allZero) ? function(evt, elements){
                 if (!elements || !elements.length) return;
@@ -17921,13 +17981,39 @@
       } catch(e){}
     });
   }
-  /* fn, sobald der Teil, in dem el steht, zu erscheinen beginnt -- oder sofort, wenn el in keinem
-     wartenden Teil steht. Notbremse 5s (Stylesheet-Frist plus Datenfrist), damit nichts haengt. */
+  /* Wie lange el noch in der Staffel unsichtbar steht: die feinen Teile verlieren ihre
+     Warteklasse sofort und stehen per fill "backwards" unsichtbar, bis ihre Verzoegerung um ist.
+     Ohne currentTime (Animation noch "pending") zaehlt die ganze Verzoegerung. */
+  function staffelRest(el){
+    var rest = 0;
+    for (var a = el; a && a.nodeType === 1; a = a.parentElement){
+      var an = a.__upAuftritt;
+      if (!an || !an.effect || typeof an.effect.getTiming !== "function") continue;
+      try { rest = Math.max(rest, (an.effect.getTiming().delay || 0) - (Number(an.currentTime) || 0)); } catch(e){}
+    }
+    return rest;
+  }
+  /* Beim Ablauf noch einmal nachsehen: startet die Seite ihren Auftritt neu, waehrend hier
+     gewartet wird, ersetzt eine neue Staffel die alte (gemessen: Fahrt bei 430ms, die neue Karte
+     stand mit 150ms Verzoegerung erst bei 41). Hoechstens 10 Runden, dann sofort. */
+  function nachStaffel(el, fn, runde){
+    var rest = staffelRest(el);
+    /* Ein Bild (20ms) vor dem Ende: der Zeitgeber kommt eher spaet als frueh, und sonst stuende
+       der fertige Ring noch ein Bild lang in der beginnenden Einblendung (gemessen: 86 Prozent bei
+       Deckkraft 0.08). Bei Deckkraft 0 neu zu starten sieht niemand. */
+    if (rest > 20 && (runde || 0) < 10) setTimeout(function(){ nachStaffel(el, fn, (runde || 0) + 1); }, rest - 20);
+    else fn();
+  }
+  /* fn, sobald el wirklich zu erscheinen beginnt: erst die Freigabe des wartenden Teils, dann das
+     Ende seiner Staffel-Verzoegerung. Gemessen am Doughnut der Top Citations (13.10.): gebaut bei
+     258ms, die Huelle frei bei 433ms, die Karte darin sichtbar erst ab 545ms -- mit nur der
+     Freigabe war die Fahrt halb durch, bevor man sie sah. Notbremse 5s (Stylesheet-Frist plus
+     Datenfrist), damit nichts haengt. */
   function nachAuftritt(el, fn){
     var teil = el && el.closest ? el.closest(".up-auftritt-zu") : null;
-    if (!teil){ fn(); return; }
+    if (!teil){ nachStaffel(el, fn); return; }
     var fertig = false;
-    function los(){ if (fertig) return; fertig = true; teil.removeEventListener("up-auftritt", los); fn(); }
+    function los(){ if (fertig) return; fertig = true; teil.removeEventListener("up-auftritt", los); nachStaffel(el, fn); }
     teil.addEventListener("up-auftritt", los);
     setTimeout(los, 5000);
   }
@@ -17936,7 +18022,12 @@
      ersten Animation, dann die Animation). Gebaut wird weiter sofort -- viele Stellen verlassen
      sich darauf, dass das Diagramm nach dem Zeichnen da ist. */
   function fahrtBeimAuftritt(el, holen){
-    if (!el || !el.closest || !el.closest(".up-auftritt-zu")) return;
+    if (!el || !el.closest) return;
+    /* Ohne Warteklasse UND ohne laufende Staffel ueber el: der Auftritt ist vorbei, die erste
+       Fahrt war sichtbar -- nichts nachholen. */
+    var inStaffel = false;
+    for (var a = el; a && a.nodeType === 1; a = a.parentElement){ if (a.__upAuftritt){ inStaffel = true; break; } }
+    if (!el.closest(".up-auftritt-zu") && !inStaffel) return;
     nachAuftritt(el, function(){
       var c = null;
       try { c = holen(); } catch(e){ c = null; }
@@ -21148,13 +21239,12 @@
             '<path d="M4 3H14C16.357 3 17.5355 3 18.2678 3.73223C19 4.46447 19 5.64298 19 8V16"/>' +
             '<path d="M10 7H15"/>' +
             '<path d="M10 11H13"/>',
+    /* Lucide bookmark-plus (ISC) -- "Count as" im Kopf des Domain-Drawers (13.10. bestellt). Ersetzt
+       dort Hugeicons DropdownFieldType, das damit keiner mehr rief und entfernt ist. */
+    bookmarkPlus: '<path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/><path d="M12 7v6"/><path d="M15 10H9"/>',
     /* Hugeicons Gps01 (11.10. vom Nutzer fuer den Reiter "Tracked" der Brands-Seite bestimmt,
        statt ChatPreview). Pfade wortgleich aus @hugeicons/core-free-icons 4.3.5 (Gps01Icon); die
        Strichbreite gibt die Huelle vor, wie bei jedem Reiterzeichen. */
-    /* Hugeicons DropdownFieldType (13.10. vom Nutzer benannt): das Zeichen des Knopfs "Counts as" im
-       Kopf des Domain-Drawers -- ein Feld mit Pfeil ueber zwei Zeilen, also "Typ waehlen". */
-    dropdownFieldType: '<path d="M18 4H6C4.59987 4 3.8998 4 3.36502 4.27248C2.89462 4.51217 2.51217 4.89462 2.27248 5.36502C2 5.8998 2 6.59987 2 8C2 9.40013 2 10.1002 2.27248 10.635C2.51217 11.1054 2.89462 11.4878 3.36502 11.7275C3.8998 12 4.59987 12 6 12H18C19.4001 12 20.1002 12 20.635 11.7275C21.1054 11.4878 21.4878 11.1054 21.7275 10.635C22 10.1002 22 9.40013 22 8C22 6.59987 22 5.8998 21.7275 5.36502C21.4878 4.89462 21.1054 4.51217 20.635 4.27248C20.1002 4 19.4001 4 18 4Z"/>' +
-      '<path d="M18 7.00002C18 7.00002 16.527 9 16 9C15.4729 9 14 7 14 7"/><path d="M2 16H14"/><path d="M2 20H14"/>',
     gps01: '<path d="M20.5137 12C20.5137 16.6944 16.7081 20.5 12.0137 20.5C7.31925 20.5 3.51367 16.6944 3.51367 12C3.51367 7.30558 7.31925 3.5 12.0137 3.5C16.7081 3.5 20.5137 7.30558 20.5137 12Z"/>' +
            '<path d="M22.5 12H20.5"/>' +
            '<path d="M3.5 12H1.5"/>' +

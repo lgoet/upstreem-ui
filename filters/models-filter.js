@@ -283,13 +283,18 @@
        neither event), and that check has nowhere to live in an attribute. */
     function logoHtml(m, cls) {
       /* OpenAI hell/dunkel (05.10.): auch Modelle aus setModelsFilterModels, die nicht durch den
-         Store gehen. Die Kachel faellt mit dem Bild weg, Grund ist also das Menue. */
-      var url = fixUrl(UC && UC.modelLogoUrl ? UC.modelLogoUrl(m.key || m.model, m.logo_url, undefined, m.provider) : m.logo_url);
+         Store gehen. Die Kachel faellt mit dem Bild weg, Grund ist also das Menue -- und damit das
+         Thema DIESER Wurzel, nicht das der App (13.10.): beide koennen beim Aufbau auseinander
+         liegen. Spaetere Themenwechsel zieht core nach, darum data-up-logo-thema am Bild (siehe
+         openAiLogosAngleichen); ohne das blieben Trigger und Zeilen auf der Variante vom Aufbau,
+         weil beide nur bei einer neuen Auswahl neu gezeichnet werden. */
+      var url = fixUrl(UC && UC.modelLogoUrl
+        ? UC.modelLogoUrl(m.key || m.model, m.logo_url, root.getAttribute("data-theme") === "dark", m.provider) : m.logo_url);
       var initial = esc(nameOf(m).charAt(0).toUpperCase() || "?");
       if (url && LOGO_OK[url]) cls += " has-img";
       return '<span class="' + cls + ' umf-logo">' +
                '<span class="umf-logo-fb">' + initial + '</span>' +
-               (url ? '<img class="umf-logo-img" src="' + esc(url) + '" alt="" loading="lazy">' : '') +
+               (url ? '<img class="umf-logo-img" src="' + esc(url) + '" alt="" loading="lazy" data-up-logo-thema>' : '') +
              '</span>';
     }
     function wireLogos(scope) {

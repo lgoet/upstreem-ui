@@ -112,12 +112,21 @@
   /* Combo-Chart (renderComboChart). Die Zeitreihe kommt je Bucket; der Chart liest "day" als
      x-Wert -- bei Woche und Monat ist das der Anfang des Buckets (Vertrag: bucket). Die Reihen
      sind genau die ersten sieben Zeilen der Tabelle (Vertrag: "identisch mit der Tabelle"), also
-     global_share = share_pct der Reihe. */
+     global_share = share_pct der Reihe.
+     Ein Bucket OHNE Messung faellt weg, wie in zuVisibility (dashboard-data.js): die Linie laeuft
+     ueber ihn hinweg, und ist es der juengste (heute, noch keine Runs), steht der Tag gar nicht erst
+     auf der Achse. Anders als visibility_v1, das dort null schickt, liefert die Citations-RPC ein
+     DICHTES Raster -- jeder Tag jeder Reihe, ohne Runs mit share_pct 0 und runs_with_any 0
+     (gemessen an testdaten/citations_v1/lauf1: 203 von 210 Punkten). Die 0 dort ist 0 durch 0,
+     keine Messung; als Wert gezeichnet fiel jede Linie heute auf 0 (gemeldet 13.10.). Fehlt
+     runs_with_any in der Antwort, bleibt der Punkt -- nur eine ausdrueckliche 0 ist "nichts
+     gemessen". Ein share_pct von 0 bei runs_with_any > 0 ist dagegen echt und bleibt. */
+  function gemessen(p) { return num(p.share_pct) != null && num(p.runs_with_any) !== 0; }
   function zuCombo(d, modus) {
     if (!d || typeof d !== "object" || !isArr(d.series) || !isArr(d.timeseries)) return null;
     var m = meta(d), url = (modus || m.mode) === "url";
-    var series = d.timeseries.filter(function (p) { return p && p.key != null; }).map(function (p) {
-      var o = { day: str(p.bucket), share_pct: num(p.share_pct) == null ? 0 : num(p.share_pct),
+    var series = d.timeseries.filter(function (p) { return p && p.key != null && gemessen(p); }).map(function (p) {
+      var o = { day: str(p.bucket), share_pct: num(p.share_pct),
                 bucket_from: str(p.bucket_from), bucket_to: str(p.bucket_to), partial: !!p.partial };
       o[url ? "url" : "domain"] = str(p.key);
       return o;
