@@ -1814,6 +1814,7 @@
     "Branded": "Branded",
     "Names {names}": "Nennt {names}",
     "Names a tracked brand": "Nennt eine getrackte Marke",
+    "Marked as branded by you": "Von dir als branded markiert",
     "The intent is being set. This takes a moment.": "Der Intent wird gerade zugeordnet. Das dauert einen Moment.",
     "The intent couldn't be set automatically. Choose one yourself.": "Der Intent ließ sich nicht automatisch zuordnen. Wähl ihn selbst.",
     "The intent could not be saved": "Der Intent konnte nicht gespeichert werden",
@@ -5877,7 +5878,10 @@
     });
     var MAX = 3, gezeigt = marken.slice(0, MAX), rest = marken.length - gezeigt.length;
     var namen = marken.map(function(m){ return String(m.name || "").trim(); }).filter(Boolean);
-    var tip = namen.length ? t("Names {names}").replace("{names}", namen.join(", ")) : t("Names a tracked brand");
+    /* Ohne erkannte Marke hat der Nutzer es von Hand gesetzt -- dann nennt der Prompt eben KEINE
+       getrackte Marke, und der Tooltip sagt, wer es entschieden hat. */
+    var tip = namen.length ? t("Names {names}").replace("{names}", namen.join(", "))
+      : (r.branded_source === "user" ? t("Marked as branded by you") : t("Names a tracked brand"));
     var favs = gezeigt.map(function(m){
       var logo = String(m.logo_url || m.favicon_url || "").trim();
       if (logo.indexOf("//") === 0) logo = "https:" + logo;
@@ -5890,7 +5894,11 @@
         '</span>';
     }).join("");
     var kl = "up-branded" + (r.branded_source === "user" ? " is-user" : "") + (opts.klick ? " is-klick" : "");
-    var innen = '<span class="up-branded-lbl">' + esc(t("Branded")) + '</span>' +
+    /* Keine Marke erkannt (von Hand auf branded gesetzt, DB-Rueckmeldung: dann ist die Liste leer):
+       das Zeichen von "Brands" aus der Seitenleiste (squareStack) VOR dem Wort, damit das Label
+       nicht nackt dasteht und dieselbe Form hat wie das Intent-Label daneben (Zeichen plus Text). */
+    var innen = (favs ? "" : icon("squareStack", 2)) +
+      '<span class="up-branded-lbl">' + esc(t("Branded")) + '</span>' +
       (favs ? '<span class="up-branded-favs">' + favs + (rest > 0 ? '<span class="up-branded-mehr">+' + rest + '</span>' : "") + '</span>' : "");
     if (opts.klick){
       return '<button type="button" class="' + kl + '" data-tip="' + esc(tip) + '" data-intent-open="' +

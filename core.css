@@ -2521,7 +2521,7 @@
     .up-intent, .up-branded { display: inline-flex; align-items: center; gap: 6px; height: var(--up-h-chip);
       min-width: 0; max-width: 100%; box-sizing: border-box; font-family: inherit; font-size: var(--up-fs-s);
       font-weight: var(--up-fw-m); line-height: 1; color: var(--vc-muted); white-space: nowrap; }
-    .up-intent > svg { width: 14px; height: 14px; flex: 0 0 14px; color: var(--vc-fourth); }
+    .up-intent > svg, .up-branded > svg { width: 14px; height: 14px; flex: 0 0 14px; color: var(--vc-fourth); }
     .up-intent-lbl, .up-branded-lbl { overflow: hidden; text-overflow: ellipsis; }
     .up-intent.is-pending, .up-intent.is-failed { color: var(--vc-fourth); }
     /* Der Stift hinter einem selbst gesetzten Wert: 11px, eine Stufe unter dem Zeichen vorne --
