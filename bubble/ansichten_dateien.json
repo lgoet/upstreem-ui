@@ -1,0 +1,136 @@
+{
+  "_zweck": [
+    "Welche Dateien jede Ansicht und jeder Drawer der Next.js-App braucht (13.10.). Die EINE Quelle dafuer:",
+    "upstreem-app/werkzeug/wirt_bauen.py erzeugt daraus public/wirt/ansichten.js, das nur die Dateien der",
+    "offenen Ansicht laedt und den Rest beim ersten Besuch. Vorher lud das Vorlade-Snippet beim Start alle",
+    "143 Dateien, und jede Ansicht baute sich geparkt mit auf (14.8k Knoten, 125 Wurzeln).",
+    "Reihenfolge je Liste = Ausfuehrungsreihenfolge: eingebettete Bausteine vor der Seite, *-data.js",
+    "direkt vor seiner Seite (wie im Vorlade-Snippet). '@name' setzt eine Gruppe ein.",
+    "Wer eine Datei ins Vorlade-Snippet aufnimmt, traegt sie hier ein -- wirt_bauen.py bricht sonst ab."
+  ],
+  "start": {
+    "_warum": "Laedt das Vorlade-Snippet selbst, vor allem anderen: core, die Seitenleiste und das Gate stehen auf jeder Seite der App.",
+    "dateien": ["core.css", "core.js", "sidebar.css", "sidebar.js", "access-gate.css", "access-gate.js"]
+  },
+  "global": {
+    "_warum": [
+      "Auf der App-Seite immer, unabhaengig von der Ansicht. notification-card und preferences zuerst: der",
+      "App-Start in core ruft setUpstreemNotifications und setUpstreemProfile OHNE Warteschlange -- fehlt die",
+      "Datei in dem Moment, ist der Wert weg. citations-data.js: fast jede Seite wartet beim Booten darauf",
+      "(UpstreemCitationsDaten). settings-data.js: das Gate holt Tarife und Kasse darueber -- ohne die Datei",
+      "bliebe nur der Bubble-Rueckfall, den es in Next.js nicht gibt. quick-actions (Cmd+K) und export-data",
+      "(aus fast jeder Ansicht und jedem Drawer) nach der Ansicht: sie stehen nicht im ersten Bild."
+    ],
+    "vor_der_ansicht": ["notification-card.css", "notification-card.js", "preferences.css", "preferences.js",
+                        "citations-data.js", "settings-data.js"],
+    "nach_der_ansicht": ["quick-actions.css", "quick-actions.js", "export-data.css", "export-data.js"]
+  },
+  "gruppen": {
+    "filter": [
+      "filters/date-range.css", "filters/date-range.js",
+      "filters/filter-bar.css", "filters/filter-bar.js",
+      "filters/models-filter.css", "filters/models-filter.js",
+      "filters/topics-filter.css", "filters/topics-filter.js",
+      "filters/markets-filter.css", "filters/markets-filter.js"
+    ]
+  },
+  "ansichten": {
+    "dashboard": {
+      "_warum": "mit: das Power Dashboard leiht sich Miras Eingabefeld (#ask-mira) und das Opportunities-Brett aus deren Ansichten (askMiraLauncherAttach, opportunitiesLauncherAttach) -- beide Wurzeln muessen stehen, geparkt.",
+      "dateien": ["@filter", "visibility-chart.css", "visibility-chart.js", "topcitations-dashboard.css", "topcitations-dashboard.js",
+                  "responses-table.css", "responses-table.js", "power-dashboard.css", "power-dashboard.js",
+                  "dashboard-data.js", "dashboard-page.css", "dashboard-page.js"],
+      "mit": ["mira", "opportunities"]
+    },
+    "prompts": {
+      "dateien": ["@filter", "prompts-table.css", "prompts-table.js", "responses-table.css", "responses-table.js",
+                  "topics-manager.css", "topics-manager.js", "dashboard-data.js", "prompts-data.js", "prompts-page.css", "prompts-page.js"]
+    },
+    "citations": {
+      "dateien": ["@filter", "citations-combo-chart.css", "citations-combo-chart.js", "urls-table.css", "urls-table.js",
+                  "domains-table.css", "domains-table.js", "citations-data.js", "citations-page.css", "citations-page.js"]
+    },
+    "brands": {
+      "dateien": ["@filter", "brands-overview.css", "brands-overview.js", "discover-brands.css", "discover-brands.js",
+                  "brands-data.js", "dashboard-data.js", "brands-page.css", "brands-page.js"]
+    },
+    "shopping": { "dateien": ["@filter", "shopping.css", "shopping.js"] },
+    "ads": { "dateien": ["@filter", "ads.css", "ads.js"] },
+    "performance": {
+      "dateien": ["urls-table.css", "urls-table.js", "performance-radar.css", "performance-radar.js",
+                  "performance-detail.css", "performance-detail.js", "performance-data.js", "performance-page.css", "performance-page.js"]
+    },
+    "opportunities": {
+      "dateien": ["opportunities.css", "opportunities.js", "create-with-ai.css", "create-with-ai.js",
+                  "opportunities-data.js", "opportunities-page.css", "opportunities-page.js"]
+    },
+    "events": {
+      "_warum": "responses-table: das Ereignis zeigt seine Antworten ueber renderResponsesTable.",
+      "dateien": ["@filter", "responses-table.css", "responses-table.js", "events.css", "events.js"]
+    },
+    "research": {
+      "dateien": ["prompt-research.css", "prompt-research.js", "prompt-research-data.js", "prompt-research-page.css", "prompt-research-page.js"]
+    },
+    "mira": {
+      "_warum": "@filter: Mira setzt den Topics-Filter (setTopicsFilter*) in ihrem Kopf.",
+      "dateien": ["@filter", "ask-mira.css", "ask-mira.js", "mira-data.js", "mira-page.css", "mira-page.js"]
+    },
+    "teams": { "dateien": ["teams.css", "teams.js", "teams-data.js", "teams-page.css", "teams-page.js"] },
+    "settings": {
+      "dateien": ["settings-billing.css", "settings-billing.js", "settings-brand.css", "settings-brand.js",
+                  "team-orga.css", "team-orga.js", "settings-data.js", "settings-page.css", "settings-page.js"]
+    }
+  },
+  "drawer": {
+    "_warum": "Schluessel = Name im Drawer-System (openDrawer(art)), Inhalt aus core (KERN_DRAWER) plus die Bausteine, die er einbettet, und die *-data.js, auf die er beim Booten wartet.",
+    "response": { "dateien": ["response-detail.css", "response-detail.js"] },
+    "url": {
+      "dateien": ["filters/date-range.css", "filters/date-range.js", "responses-table.css", "responses-table.js",
+                  "create-with-ai.css", "create-with-ai.js", "dashboard-data.js", "url-detail.css", "url-detail.js"]
+    },
+    "prompt": {
+      "dateien": ["@filter", "visibility-chart.css", "visibility-chart.js", "topcitations-dashboard.css", "topcitations-dashboard.js",
+                  "responses-table.css", "responses-table.js", "dashboard-data.js", "prompt-detail.css", "prompt-detail.js"]
+    },
+    "brand": {
+      "dateien": ["@filter", "topcitations-dashboard.css", "topcitations-dashboard.js", "responses-table.css", "responses-table.js",
+                  "brand-detail.css", "brand-detail.js", "dashboard-data.js", "performance-data.js", "brand-drawer.css", "brand-drawer.js"]
+    },
+    "domain": {
+      "dateien": ["@filter", "urls-table.css", "urls-table.js", "responses-table.css", "responses-table.js",
+                  "view-switch.css", "view-switch.js", "dashboard-data.js", "domain-detail.css", "domain-detail.js", "domain-drawer.css", "domain-drawer.js"]
+    },
+    "companysettings": { "dateien": ["brand-editor.css", "brand-editor.js", "brand-editor-drawer.css", "brand-editor-drawer.js"] }
+  },
+  "auf_abruf": {
+    "_warum": [
+      "Dialoge, die von ueberall aufgehen (Quick Actions, Seiten, Tabellen): der erste Aufruf laedt die Dateien",
+      "und ruft dann die echte Funktion. openAddPrompts bringt prompts-page.js mit: ohne onSubmit (Quick Actions)",
+      "speichert der Dialog ueber dessen upstreemPromptsAnlegen -- sonst bliebe nur der Bubble-Rueckfall, den es",
+      "in Next.js nicht gibt. Ohne Wurzel baut die Seite dabei nichts."
+    ],
+    "openAddPrompts": ["dashboard-data.js", "prompts-data.js", "prompts-page.js", "add-prompts.css", "add-prompts.js"],
+    "openAddBrand": ["add-brand.css", "add-brand.js"]
+  },
+  "eigene_seiten": {
+    "_warum": "Laedt das Vorlade-Snippet nur auf ihrer eigenen Seite (/onboarding), nicht auf der App-Seite.",
+    "dateien": ["onboarding-page.css", "onboarding-page.js"]
+  },
+  "nicht_in_der_app": {
+    "_warum": [
+      "Im Vorlade-Snippet, aber von keiner Seite der App gebraucht: die alten Seitenkoepfe (die Seiten",
+      "bauen ihren Kopf seit Oktober selbst, keine Wurzel *ph-root steht mehr im Markup; nur noch die",
+      "Landingpage), Coloris (laedt brand-editor.js selbst, ladeColoris) und Chart.js (laedt core bei",
+      "Bedarf, ensureChart)."
+    ],
+    "dateien": [
+      "page-headers/dashboard-page-header.css", "page-headers/dashboard-page-header.js",
+      "page-headers/prompts-page-header.css", "page-headers/prompts-page-header.js",
+      "page-headers/citations-page-header.css", "page-headers/citations-page-header.js",
+      "page-headers/brands-page-header.css", "page-headers/brands-page-header.js",
+      "page-headers/settings-page-header.css", "page-headers/settings-page-header.js",
+      "page-headers/performance-page-header.js", "page-headers/opportunities-page-header.js",
+      "vendor-coloris.min.css", "vendor-coloris.min.js"
+    ]
+  }
+}

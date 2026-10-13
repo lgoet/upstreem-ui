@@ -3258,6 +3258,14 @@
     .up-tsk-bar { display: inline-block; height: 12px; border-radius: 4px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
     .up-tsk-logo { display: inline-block; width: 24px; height: 24px; border-radius: 8px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; flex: 0 0 auto; }
     @keyframes uutpulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+    /* SKELETTE, DIE NIEMAND SIEHT, STEHEN STILL (13.10.): beim Start baut die App alle Ansichten und
+       Drawer mit Skeletten -- gemessen 1280 Endlos-Animationen, rund 1090 davon in geparkten
+       Ansichten oder geschlossenen Drawern. Stil und Malen in jedem Bild: der Hauptthread war in Ruhe
+       zu 100 Prozent belegt (5.1 s Arbeit in 5 s, 4x CPU), mit dieser Regel 0.5 s. Pausieren statt
+       abschalten: kein Layoutwechsel, und beim Einblenden laeuft es an derselben Stelle weiter.
+       html davor fuer die Spezifitaet gegen .x .y::after-Regeln der Skelette. */
+    html [id^="view-"]:not(.view-on) *, html [id^="view-"]:not(.view-on) *::before, html [id^="view-"]:not(.view-on) *::after,
+    html .up-kdr:not(.open) *, html .up-kdr:not(.open) *::before, html .up-kdr:not(.open) *::after { animation-play-state: paused; }
 
     /* Narrow layouts drop columns too, but that is handled together with the gear menu in
        applyCols() — an inline grid-template from JS would beat a class rule here, so both
@@ -3671,6 +3679,12 @@
 /* object-fit: contain haelt den Ring rund, wenn max-height die Box flacher macht als breit --
    ohne das zoege das svg in die Breite. */
 .up-sk-chart svg { width: 100%; height: 100%; display: block; object-fit: contain; }
+/* Der Schimmer im Ringskelett per CSS statt SMIL (13.10.): ein <animateTransform> tickt im
+   Hauptthread in jedem Bild, auch geparkt und in einer 0x0-Huelle, und animation-play-state haelt
+   es nicht an. Sechs Ringe kosteten in Ruhe 1.4 s von 5 s (1x CPU). Dieselbe Strecke wie vorher
+   (-60 bis 160 in 1.2 s), jetzt anhaltbar mit der Regel oben. */
+.up-sk-chart .up-sk-wisch { animation: upskwisch 1.2s linear infinite; }
+@keyframes upskwisch { from { transform: translateX(-60px); } to { transform: translateX(160px); } }
 .up-sk-ring { stroke: var(--vc-sk); }
 .up-sk-g0 { stop-color: var(--vc-sk); }
 .up-sk-g1 { stop-color: #ffffff; }

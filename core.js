@@ -17111,7 +17111,8 @@
         '<defs><mask id="' + mId + '"><circle cx="50" cy="50" r="38" fill="none" stroke="white" stroke-width="7"/></mask>' +
         '<linearGradient id="' + gId + '" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" class="up-sk-g0"/><stop offset="50%" class="up-sk-g1"/><stop offset="100%" class="up-sk-g0"/></linearGradient></defs>' +
         '<circle cx="50" cy="50" r="38" fill="none" class="up-sk-ring" stroke-width="7"/>' +
-        '<rect x="-60" y="0" width="50" height="100" fill="url(#' + gId + ')" mask="url(#' + mId + ')"><animateTransform attributeName="transform" type="translate" from="-60 0" to="160 0" dur="1.2s" repeatCount="indefinite"/></rect>' +
+        /* Bewegt per CSS (.up-sk-wisch), nicht per SMIL -- siehe core.css bei .up-sk-chart (13.10.). */
+        '<rect class="up-sk-wisch" x="-60" y="0" width="50" height="100" fill="url(#' + gId + ')" mask="url(#' + mId + ')"></rect>' +
       '</svg></div>' +
       '<div class="up-sk-legend">' + legend + '</div>' +
     '</div>';
@@ -18824,12 +18825,33 @@
   function kdAlleBauen(){
     Object.keys(KERN_DRAWER).forEach(function(a){ if (!kdFremd(a)) kdBauen(a); });
   }
+  /* ERST BEIM OEFFNEN BAUEN (13.10., Next.js-Gastgeber, Schalter window.__upLazyDrawer): alle Huellen
+     vorab heisst auch, dass jede angemeldete Komponente ihren Inhalt sofort aufbaut (kdAufbauen) --
+     Prompt, Brand, Domain und URL mit Tabellen und Skeletten, zusammen rund 7.600 Knoten beim Start
+     (gemessen im Pruefstand: 2213, 2081, 2424, 847) fuer Drawer, die meist keiner oeffnet. Mit dem
+     Schalter baut core nur
+       - beim Oeffnen den einen Drawer (der Oeffnen-Hook laeuft vor openDrawer der Host-App),
+       - bei drawersReady die Drawer, die in ?detail= stehen -- nur die sucht _applyUrl des
+         Kopf-Skripts beim Wiederherstellen, und nur fuer die braucht es die Huelle VOR ihm.
+     Beim Blaettern (popstate) braucht es keinen Vorab-Bau: einen Eintrag mit ?detail=<art> gibt es
+     im selben Dokument nur, weil dieser Drawer geoeffnet wurde -- dann steht er schon (gemessen
+     13.10.: zu, Zurueck, geht wieder auf). Ein eigener popstate-Hoerer kaeme ohnehin zu spaet: am
+     window laufen auch Einfang-Hoerer in Anmeldereihenfolge, also NACH dem des Kopf-Skripts.
+     Bubble setzt den Schalter nicht und bleibt beim Vorab-Bau (FALLE "_applyUrl" oben). */
+  function kdAusAdresseBauen(){
+    var roh = "";
+    try { roh = String(new URL(window.location.href).searchParams.get("detail") || ""); } catch(e){}
+    roh.split(",").forEach(function(teil){
+      var a = teil.split(":")[0];
+      if (a && KERN_DRAWER[a] && !kdFremd(a)) kdBauen(a);
+    });
+  }
   function wrapDrawersReady(){
     var orig = window.drawersReady;
     if (typeof orig !== "function") return false;
     if (orig.__upWrapped) return true;
     var w = function(){
-      try { kdAlleBauen(); } catch(e){}
+      try { if (window.__upLazyDrawer) kdAusAdresseBauen(); else kdAlleBauen(); } catch(e){}
       return orig.apply(this, arguments);
     };
     w.__upWrapped = true;
@@ -18838,7 +18860,8 @@
   }
   onDrawerOpen(function(art, id){
     art = String(art == null ? "" : art).trim();
-    try { kdAlleBauen(); } catch(e){}
+    /* Mit __upLazyDrawer nur dieser eine (kdBauen gleich darunter), siehe kdAusAdresseBauen. */
+    if (!window.__upLazyDrawer){ try { kdAlleBauen(); } catch(e){} }
     if (!KERN_DRAWER[art] || kdFremd(art)) return;
     var kd = kdBauen(art);
     id = String(id == null ? "" : id).trim();

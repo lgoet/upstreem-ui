@@ -586,7 +586,9 @@
     an("usbusbEditBrand", function () {
       var z = state.markeDaten ? D.zuMarke(state.markeDaten) : null, id = z ? z.company_id : "";
       if (!id) { var l = UC.getBrands ? UC.getBrands() : []; for (var i = 0; i < l.length; i++) if (l[i] && l[i].role === "own") { id = str(l[i].company_id); break; } }
-      if (D.UUID.test(id) && document.getElementById("drawer-companysettings") && UC.drawerOeffnen) { UC.drawerOeffnen("companysettings", id, "settings"); return; }
+      /* kernDrawerAktiv: in Next.js legt core die Huelle erst beim Oeffnen an (13.10.). */
+      var editorDa = (UC.kernDrawerAktiv && UC.kernDrawerAktiv("companysettings")) || document.getElementById("drawer-companysettings");
+      if (D.UUID.test(id) && editorDa && UC.drawerOeffnen) { UC.drawerOeffnen("companysettings", id, "settings"); return; }
       toast(t("Editing isn't available on this page"), "neutral");
     });
     /* VERLASSEN UND LOESCHEN. Die Rueckfrage (getippter Teamname, beim Loeschen zweiter Klick)

@@ -529,7 +529,9 @@
     an("ubo-uboEdit", function (d) {
       var id = str(wert(d)).trim();
       if (!UUID.test(id)) return;
-      if (document.getElementById("drawer-" + EDITOR_ART) && UC.drawerOeffnen) { UC.drawerOeffnen(EDITOR_ART, id, "brands"); return; }
+      /* kernDrawerAktiv: in Next.js legt core die Huelle erst beim Oeffnen an (13.10.), das Element
+         fehlt bis dahin -- der Drawer ist trotzdem da. */
+      if (((UC.kernDrawerAktiv && UC.kernDrawerAktiv(EDITOR_ART)) || document.getElementById("drawer-" + EDITOR_ART)) && UC.drawerOeffnen) { UC.drawerOeffnen(EDITOR_ART, id, "brands"); return; }
       var alt = UC.resolveBubbleFn ? UC.resolveBubbleFn("bubble_fn_uboEdit") : null;
       if (typeof alt === "function") { try { alt(id); } catch (e) {} return; }
       toast(t("Editing isn't available on this page"), "neutral");
