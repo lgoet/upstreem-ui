@@ -11,17 +11,10 @@
    Original. */
 /* fit-content: .up-seg ist ein Flex-Container und nimmt sonst die volle Breite des Elternteils,
    wodurch sich die vier Knoepfe ueber die ganze Karte strecken. Der Schalter soll nur so breit
-   sein wie seine Beschriftungen. 16px links und rechts je Knopf -- die Beschriftungen sind hier
-   laenger als die zweistelligen Zustaende, fuer die der Standardabstand gedacht ist. */
-/* Dieser Umschalter bleibt auf 32px, waehrend .up-seg in core auf 26 gegangen ist. Er ist kein
-   Werkzeug in einer Leiste, sondern die Navigation dieser Seite -- vier gleichwertige Ansichten,
-   und er steht allein ueber dem Inhalt.
-   Zu .check_reinvention.py, das hier "gesprengt" meldet: die Pille wird nicht angeschnitten,
-   sondern auf ihre FRUEHERE Groesse zurueckgestellt. Hoehe und Polster stehen an Leiste UND
-   Knopf (32 und 16, die Werte, die .up-seg vor der Verkleinerung hatte), und der Radius bleibt
-   bei 8, weil er bei 32px derselbe war -- es gibt also keinen Wert, der nicht mitgezogen ist. */
-/* Groesse und Grund aus core (.up-seg.is-lg): 32px, 16px Polster, voller Schalterton. Hier steht
-   nur, wo er sitzt. */
+   sein wie seine Beschriftungen. */
+/* Groesse aus core: seit dem 13.10. die Grundform von .up-seg (26px, 8px Polster), nicht mehr
+   .is-lg (32/16) -- angefordert als "die kleine Version der Switcher". Hoehe, Polster, Radius und
+   Schrift kommen damit als Paket aus core; hier steht nur, wo er sitzt. */
 .ubd-seg { margin: 0 0 16px; width: fit-content; align-self: flex-start; }
 
 /* ---- Karte ----------------------------------------------------------------------------------- */

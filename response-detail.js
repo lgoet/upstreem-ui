@@ -194,9 +194,13 @@
           /* v2: ein beschrifteter Textknopf statt des Zahnrads allein -- das Zeichen sagte nicht,
              was dahinter liegt. KEIN .up-iconbtn mehr: der waere hier in Breite, Polster und
              Hover ueberschrieben worden, also ein gesprengtes Bauteil (CLAUDE.md 1). */
+          /* .up-menu ist DIE Dropdown-Huelle aus core (13.10.: "kein echtes Dropdown, ganz
+             anderes Verhalten beim Appear"). Vorher .up-pop mit eigenem display:none/flex --
+             das sprang auf, statt wie jedes Menue der App einzublenden (Deckkraft + 4px Fahrt
+             ueber .is-shown), und trug eigene Masse fuer Rahmen, Radius, Polster. */
           '<span class="urd-hlwrap">' +
-            '<button class="urd-hlbtn up-btn-sec" type="button" aria-label="Highlight settings"></button>' +
-            '<div class="urd-hlpop up-pop"></div>' +
+            '<button class="urd-hlbtn up-btn-sec" type="button" aria-label="Highlight settings" aria-haspopup="menu"></button>' +
+            '<div class="urd-hlpop up-menu" role="menu" aria-hidden="true"></div>' +
           '</span>' +
         '</div>' +
         /* Der Antworttext liest sich wie eine Nachricht -- also bekommt er auch den Absender:
@@ -1149,33 +1153,39 @@
     /* ---- Das Menue der Hervorhebungen (10) --------------------------------------------------
        Ein kleines Menue an der Kopfzeile der Antwort. UC.makePopover uebernimmt Positionierung,
        Schliessen bei Klick daneben und Escape -- dasselbe Verhalten wie jedes andere Menue der App. */
+    /* Die Bauart ist die des Chart-Settings-Menues aus core (makeScaleMenu): Ueberschrift
+       .up-pop-head, die Wahl aus mehreren als .up-pop-opt mit Haken rechts (.is-active), ein
+       Trenner .up-pop-div, und was an oder aus ist als .up-pop-row mit .up-switch. Damit kommen
+       Zeilenhoehe, Hover, Auswahlton und die 4px zwischen den Zeilen aus core statt aus einer
+       eigenen Radio-/Checkbox-Nachbildung. Lokal bleibt nur die zweite Zeile (Beschreibung),
+       die es in keinem Core-Menue gibt. */
+    function hlTextHtml(lbl, desc, labelKlasse) {
+      return '<span class="urd-hltxt"><span' + (labelKlasse ? ' class="' + labelKlasse + '"' : "") + ">" +
+        esc(lbl) + '</span><span class="urd-hldesc">' + esc(desc) + "</span></span>";
+    }
     function hlMenuHtml() {
-      return '<div class="urd-hlgrp">' +
-          '<div class="urd-hlhead">Brand highlights</div>' +
-          HL_MODES.map(function (m) {
-            return '<button type="button" class="urd-hlopt' +
-              (state.hl.brands === m.key ? " is-on" : "") + '" data-hl="' + m.key + '">' +
-              '<span class="urd-hlradio"></span>' +
-              '<span class="urd-hltxt"><span class="urd-hllbl">' + esc(m.label) + "</span>" +
-              '<span class="urd-hldesc">' + esc(m.desc) + "</span></span></button>";
-          }).join("") +
-        "</div>" +
-        '<div class="urd-hlsep"></div>' +
-        '<div class="urd-hlgrp">' +
-          '<div class="urd-hlhead">Citations</div>' +
-          '<button type="button" class="urd-hlopt" data-cites="1">' +
-            '<span class="urd-hlcheck' + (state.hl.cites ? " is-on" : "") + '">' +
-              UC.icon("check", 3) + "</span>" +
-            '<span class="urd-hltxt"><span class="urd-hllbl">Show citation chips</span>' +
-            '<span class="urd-hldesc">Sources stay listed below either way</span></span></button>' +
-          /* Das Gruppieren hat nur einen Sinn, wenn die Chips ueberhaupt da sind. */
-          '<button type="button" class="urd-hlopt' + (state.hl.cites ? "" : " is-off") +
-            '" data-group="1"' + (state.hl.cites ? "" : " disabled") + ">" +
-            '<span class="urd-hlcheck' + (state.hl.group && state.hl.cites ? " is-on" : "") + '">' +
-              UC.icon("check", 3) + "</span>" +
-            '<span class="urd-hltxt"><span class="urd-hllbl">Group adjacent sources</span>' +
-            '<span class="urd-hldesc">Several in a row become one chip</span></span></button>' +
-        "</div>";
+      var gruppe = state.hl.cites;
+      return '<div class="up-pop-head">Brand highlights</div>' +
+        HL_MODES.map(function (m) {
+          var an = state.hl.brands === m.key;
+          return '<div class="up-pop-opt' + (an ? " is-active" : "") + '" data-hl="' + m.key + '"' +
+            ' role="menuitemradio" tabindex="0" aria-checked="' + (an ? "true" : "false") + '">' +
+            hlTextHtml(m.label, m.desc) +
+            '<span class="up-check">' + UC.icon("check", 2) + "</span></div>";
+        }).join("") +
+        '<div class="up-pop-div"></div>' +
+        '<div class="up-pop-head">Citations</div>' +
+        '<div class="up-pop-row" data-cites="1" role="menuitemcheckbox" tabindex="0" aria-checked="' +
+          (state.hl.cites ? "true" : "false") + '">' +
+          hlTextHtml("Show citation chips", "Sources stay listed below either way", "up-pop-label") +
+          '<span class="up-switch' + (state.hl.cites ? " is-on" : "") + '"></span></div>' +
+        /* Das Gruppieren hat nur einen Sinn, wenn die Chips ueberhaupt da sind -- .is-locked aus
+           core (gedimmt, nicht klickbar), derselbe Zustand wie eine gesperrte Spalte. */
+        '<div class="up-pop-row' + (gruppe ? "" : " is-locked") + '" data-group="1" role="menuitemcheckbox"' +
+          (gruppe ? ' tabindex="0"' : ' aria-disabled="true"') +
+          ' aria-checked="' + (state.hl.group && gruppe ? "true" : "false") + '">' +
+          hlTextHtml("Group adjacent sources", "Several in a row become one chip", "up-pop-label") +
+          '<span class="up-switch' + (state.hl.group && gruppe ? " is-on" : "") + '"></span></div>';
     }
     var hlPop = UC.makePopover ? UC.makePopover({
       wrap: elHlWrap, menu: elHlPop, opener: elHlBtn
@@ -1186,30 +1196,44 @@
         elHlPop.innerHTML = hlMenuHtml();
         hlPop.toggle();
       });
-      elHlPop.addEventListener("click", function (e) {
-        var opt = e.target.closest ? e.target.closest("[data-hl]") : null;
-        if (opt) {
-          state.hl.brands = opt.getAttribute("data-hl");
-          hlSchreiben();
-          elHlPop.innerHTML = hlMenuHtml();
-          renderBody();
-          return;
-        }
-        var cb = e.target.closest ? e.target.closest("[data-cites]") : null;
-        if (cb) {
+      /* Eine Wahl: Zustand setzen, merken, Menue und Text neu zeichnen. Der Fokus geht danach an
+         dieselbe Zeile zurueck -- das Menue wird neu geschrieben, und ohne das landete er nach
+         Enter im Nichts. */
+      var hlWahl = function (el) {
+        var sel;
+        if (el.hasAttribute("data-hl")) {
+          state.hl.brands = el.getAttribute("data-hl");
+          sel = '[data-hl="' + state.hl.brands + '"]';
+        } else if (el.hasAttribute("data-cites")) {
           state.hl.cites = !state.hl.cites;
-          hlSchreiben();
-          elHlPop.innerHTML = hlMenuHtml();
-          renderBody();
-          return;
-        }
-        var gb = e.target.closest ? e.target.closest("[data-group]") : null;
-        if (gb && !gb.disabled) {
+          sel = "[data-cites]";
+        } else if (el.hasAttribute("data-group")) {
+          if (el.classList.contains("is-locked")) return;
           state.hl.group = !state.hl.group;
-          hlSchreiben();
-          elHlPop.innerHTML = hlMenuHtml();
-          renderBody();
-        }
+          sel = "[data-group]";
+        } else return;
+        var hatteFokus = el === document.activeElement;
+        hlSchreiben();
+        elHlPop.innerHTML = hlMenuHtml();
+        renderBody();
+        var zurueck = elHlPop.querySelector(sel);
+        if (zurueck && hatteFokus) { try { zurueck.focus(); } catch (e) {} }
+      };
+      var hlZiel = function (e) {
+        return e.target.closest ? e.target.closest("[data-hl], [data-cites], [data-group]") : null;
+      };
+      elHlPop.addEventListener("click", function (e) {
+        var el = hlZiel(e);
+        if (el) hlWahl(el);
+      });
+      /* Die Zeilen sind div wie in jedem Core-Menue (sortMenuHtml, makeScaleMenu) -- Enter und
+         Leertaste muessen darum hier ausgeloest werden. Escape schliesst core (makePopover). */
+      elHlPop.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        var el = hlZiel(e);
+        if (!el) return;
+        e.preventDefault();
+        hlWahl(el);
       });
     }
 

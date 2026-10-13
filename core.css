@@ -150,21 +150,25 @@
    Koerper ([id^="viewbody-"]) -- ein transform an der Ansicht selbst wuerde alles darin mit
    position:fixed waehrend der Bewegung verschieben. */
 .up-auftritt-zu { opacity: 0; }
-[id^="view-"].view-on:not(:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root, .uss-root)) { animation: up-ansicht-auf var(--up-t-auftritt) var(--up-ease-expo); }
-[id^="view-"].view-on:not(:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root, .uss-root)) [id^="viewbody-"] { animation: up-ansicht-weg var(--up-t-auftritt) var(--up-ease-expo); }
+[id^="view-"].view-on:not(:has(.up-seite, .uvb-root, [data-up-vorab-seit], .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root, .uss-root)) { animation: up-ansicht-auf var(--up-t-auftritt) var(--up-ease-expo); }
+[id^="view-"].view-on:not(:has(.up-seite, .uvb-root, [data-up-vorab-seit], .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root, .uss-root)) [id^="viewbody-"] { animation: up-ansicht-weg var(--up-t-auftritt) var(--up-ease-expo); }
 /* Die Seiten werden an ihrer WURZEL erkannt (uds, ucs, upi, upf, uop, urs, utp, ubr), nicht nur an
    .up-seite (11.10.): die Wurzel steht von Anfang an im Markup, .up-seite setzt erst die Seite beim
    Einrichten -- rund 40ms nach dem Einblenden. In dieser Luecke lief der Auftritt der ganzen
    Ansicht an und brach dann ab: die Ansicht sprang auf sichtbar, gleich danach ging der Inhalt fuer
    den eigenen Auftritt wieder auf unsichtbar ("flasht ein paar Mal auf und zu"). */
+/* Der Platzhalter (.uvb-root, core.js seitenVorab) blendet sich selbst ein, und die Seite danach
+   uebernimmt seine Bewegung (data-up-vorab-seit, 13.10. abends) -- ein Einblenden der ganzen
+   Ansicht dazu liefe gegen beide, und eine Seite ohne eigenen Auftritt (Mira, Events) blendete
+   beim Austausch noch einmal von unsichtbar ein: der Kopf blinkte. */
 /* Ansichten MIT Seiten-Komponente: keine Bewegung an der Ansicht -- die Seite bewegt ihre Teile
    selbst, und zwei Auftritte uebereinander laufen gegeneinander. Ueber Spezifitaet (0,3,0 bzw.
    0,4,0 gegen die 0,2,0 bzw. 0,3,0 des Kopf-Skripts), damit es auch gilt, solange der Kopf seine Zeilen noch hat. */
-[id^="view-"].view-on:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root, .uss-root), [id^="view-"].view-on:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root, .uss-root) [id^="viewbody-"] { animation: none; }
+[id^="view-"].view-on:has(.up-seite, .uvb-root, [data-up-vorab-seit], .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root, .uss-root), [id^="view-"].view-on:has(.up-seite, .uvb-root, [data-up-vorab-seit], .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root, .uss-root) [id^="viewbody-"] { animation: none; }
 @keyframes up-ansicht-auf { from { opacity: 0; } }
 @keyframes up-ansicht-weg { from { transform: translateY(10px); } }
 @media (prefers-reduced-motion: reduce) {
-  [id^="view-"].view-on:not(:has(.up-seite, .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root, .uss-root)) [id^="viewbody-"] { animation: none; }
+  [id^="view-"].view-on:not(:has(.up-seite, .uvb-root, [data-up-vorab-seit], .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root, .uss-root)) [id^="viewbody-"] { animation: none; }
 }
 
 /* ================= TIEFEN UND UMGEKEHRTE KARTE, AUCH AUSSERHALB EINER WURZEL ================
@@ -760,12 +764,14 @@
        Spezifitaet 0,2,0: schlaegt die Grundregel jedes Feldes (0,1,0), verliert gegen echte Zustaende
        wie Fehler (.uab-field.is-err .uab-in, 0,3,0) und geoeffnet (.uob-ddwrap.is-open, 0,3,0). Fokus,
        deaktiviert und aria-invalid stehen im :where (ohne Gewicht) -- der Fokusring bleibt.
-       Neue Felder: die Klasse hier eintragen ODER .up-field ans Feld setzen, keine eigene Hover-Regel. */
+       Neue Felder: die Klasse hier eintragen ODER .up-field ans Feld setzen, keine eigene Hover-Regel.
+       .am-composer (13.10.) ist Miras Eingabekasten -- der Rahmen sitzt am Kasten, nicht am Textfeld
+       darin (das hat border: 0), also steht der Kasten hier. :focus-within greift, sobald man tippt. */
     :is(.up-field, .up-fieldwrap, .up-es-input, .up-ddsearch-in, .up-topicmodal-name, .up-ment-search,
         .up-cgm-search-in, .upt-gm-search-in, .uab-in, .uap-input, .uap-rowedit, .uau-input, .ube-feld,
         .uca-input, .uca-bld-input, .ums-in, .uob-input, .uob-select, .usb-dlg-in, .usb-sumin,
         .usb-urlin, .usn-pin-in, .uto-in, .upr-dd-search, .am-ct-input, .am-prev-item-input,
-        .am-prev-proj-input):is(:hover):where(:not(:focus, :focus-within, :disabled, [aria-invalid="true"])) {
+        .am-prev-proj-input, .am-composer):is(:hover):where(:not(:focus, :focus-within, :disabled, [aria-invalid="true"])) {
       border-color: color-mix(in srgb, var(--vc-border) 86%, var(--vc-text));
     }
 
@@ -789,10 +795,11 @@
       font-size: var(--up-fs-s); font-weight: var(--up-fw-m); line-height: 1;
       font-variant-numeric: tabular-nums; white-space: nowrap;
     }
-    /* In der Kopfzeile: eine Mindestbreite fuer drei Ziffern. Rechts daneben steht oft ein
-       Schalter (Active/Inactive der Prompts-Tabelle) -- er soll nicht wandern, wenn die Zahl von
-       102 auf 9 springt oder das Skelett der Zahl weicht. Erst ab vier Ziffern waechst der Chip. */
-    .up-head-count { display: none; min-width: 36px; margin-left: 8px; }
+    /* In der Kopfzeile OHNE eigene Mindestbreite (13.10. angefordert: "die Mindestbreite entfernen" --
+       mit den frueheren 36px stand eine einstellige Zahl mit sichtbar mehr Luft links und rechts als
+       eine dreistellige). Jeder Chip traegt jetzt dasselbe Polster (7) um seine Ziffern; dass ein
+       Schalter rechts daneben beim Wechsel von 102 auf 9 ein Stueck wandert, ist der Preis dafuer. */
+    .up-head-count { display: none; margin-left: 8px; }
     .up-heading.has-count .up-head-count { display: inline-flex; }
     .up-zaehler.is-sk, .up-head-count.is-sk { color: transparent; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
     .up-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
@@ -5600,21 +5607,21 @@
   margin-left: calc(-1 * var(--up-ph-zug-l, 0px)); margin-right: calc(-1 * var(--up-ph-zug-r, 0px));
   width: calc(100% + var(--up-ph-zug-l, 0px) + var(--up-ph-zug-r, 0px)); }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-desc,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead, .uss-pagehead) .up-ph-desc { display: none; }
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead, .uss-pagehead, .uvb-pagehead) .up-ph-desc { display: none; }
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-top {
   align-items: center; min-height: var(--up-h-btn); padding-bottom: 8px; position: relative; }
 /* Die Linie laeuft bis an die Kante der Bubble-Gruppe um den Kopf, also so weit UEBER das Element
    hinaus, wie die Gruppe Polster hat -- 16 oder 0, je nachdem, ob es in Bubble schon raus ist.
    UC.makePageCrumbs misst das (--up-ph-rand-l/-r); ohne Messung liegt sie unter dem Element. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-top::after,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead, .uss-pagehead)::after {
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead, .uss-pagehead, .uvb-pagehead)::after {
   content: ""; position: absolute; bottom: 0; height: 1px; pointer-events: none;
   left: calc(-1 * var(--up-ph-rand-l, 0px)); right: calc(-1 * var(--up-ph-rand-r, 0px));
   background: var(--vc-border); }
 /* Die Ueberschrift als Krumenzeile: 14px, auf der Mitte der 32px-Zeile. Vor dem JS steht hier der
    Seitenname aus der Vorlage -- in derselben Groesse, also ohne Sprung. */
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-heading,
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead, .uss-pagehead) .up-ph-heading {
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead, .uss-pagehead, .uvb-pagehead) .up-ph-heading {
   display: flex; align-items: center; gap: 6px; min-width: 0; margin: 0;
   font-size: var(--up-fs-l); font-weight: 500; line-height: var(--up-h-btn); letter-spacing: 0;
   color: var(--vc-third); white-space: nowrap; }
@@ -5641,6 +5648,7 @@
    3 + 25 = 28, kein Reiter rueckt. SEIT DEM 13.10. (Behaelter um den gewaehlten Reiter): 8
    Polster links und rechts am Reiter, Luecke 12 -- Schrift zu Schrift weiter 8 + 12 + 8 = 28.
    ::before links und rechts je 6: zusammen genau die Luecke, ohne dass sich Reiter ueberlappen. */
+.up-root.uvb-root .up-ph-nav,
 .up-root.ucs-root .up-ph-nav,
 .up-root.uad-root .up-ph-nav,
 .up-root.upi-root .up-ph-nav,
@@ -5648,6 +5656,7 @@
 .up-root.uss-root .up-ph-nav,
 .up-root.ush-root .up-ph-nav,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav { margin-top: 0; gap: 12px; }
+.up-root.uvb-root .up-ph-navitem,
 .up-root.ucs-root .up-ph-navitem,
 .up-root.uad-root .up-ph-navitem,
 .up-root.upi-root .up-ph-navitem,
@@ -5716,7 +5725,7 @@
    Grundlinie muss also um genau diesen Zug weiter laufen -- gemessen am 13.10. in der
    Next.js-Huelle: Kopflinie bis 1024, Reiterlinie bis 1016, also 8 vor dem Rand. In Bubble
    dieselbe Rechnung. */
-.up-root:is(.ucs-root, .uad-root, .upi-root, .ubr-root, .uss-root, .ush-root) .up-ph-nav::after {
+.up-root:is(.ucs-root, .uad-root, .upi-root, .ubr-root, .uss-root, .ush-root, .uvb-root) .up-ph-nav::after {
   left: calc(-1 * (var(--up-ph-rand-l, 0px) + var(--up-ph-kopfzug-l, 0px)));
   right: calc(-1 * (var(--up-ph-rand-r, 0px) + var(--up-ph-kopfzug-r, 0px))); }
 .up-ph-crumb { display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: var(--vc-third); }
@@ -5752,15 +5761,46 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    Beschreibung, Linie und Ueberschrift teilen sich die Regeln des kompakten Kopfs oben. Hoehe
    und Luft der Zeile stehen in der Komponente (teams.css, prompt-research.css), weil dort ihr
    Regler data-head-top sitzt; hier nur, was keinen Regler braucht. */
-.up-root:is(.uts-root, .upr-root, .uev-root, .ush-root, .uad-root, .ucs-root, .uds-root, .upf-root, .uop-root, .upi-root, .ubr-root, .uss-root).has-crumbs {
+.up-root:is(.uts-root, .upr-root, .uev-root, .ush-root, .uad-root, .ucs-root, .uds-root, .upf-root, .uop-root, .upi-root, .ubr-root, .uss-root, .uvb-root).has-crumbs {
   padding-left: var(--up-ph-innen-l, 0px); padding-right: var(--up-ph-innen-r, 0px);
   margin-left: calc(-1 * var(--up-ph-zug-l, 0px)); margin-right: calc(-1 * var(--up-ph-zug-r, 0px));
   width: calc(100% + var(--up-ph-zug-l, 0px) + var(--up-ph-zug-r, 0px)); }
 /* Die Kopfzeile steht rechts bei 8 wie in jedem Seitenkopf, der Inhalt der Komponente darunter
    bei 16: also zieht sie sich um die Differenz nach aussen (--up-ph-kopfzug-l/-r aus
    UC.makePageCrumbs, ohne JS 0; links ist die Differenz heute 0). */
-.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead, .uss-pagehead) { align-items: center; min-height: var(--up-h-btn); position: relative;
+.up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead, .uss-pagehead, .uvb-pagehead) { align-items: center; min-height: var(--up-h-btn); position: relative;
   margin-left: calc(-1 * var(--up-ph-kopfzug-l, 0px)); margin-right: calc(-1 * var(--up-ph-kopfzug-r, 0px)); }
+
+/* ---------- DER PLATZHALTER EINER ANSICHT (.uvb-*, core.js seitenVorab, 13.10. abends) ----------
+   Steht, solange die Dateien einer Ansicht beim ersten Besuch laden (Next.js-App), statt einer
+   leeren Flaeche. Der Kopf steht oben in den Listen der Seitenkoepfe -- dieselbe Geometrie wie
+   jede Seite, 8 ueber und unter der 32er-Zeile wie .ucs-pagehead und Geschwister. Darunter ein
+   ruhiges Skelett in den Massen, mit denen jede Seite beginnt: Filterzeile in Knopfhoehe, Karten
+   im Rahmen und Radius der Diagrammkarten (16, combo-box-left).
+   Einblenden wie der Auftritt der Seiten (makeAuftritt: Deckkraft und 10px Weg, easeOutExpo,
+   50ms Staffel), damit die Seite die Bewegung an derselben Stelle uebernehmen kann. */
+.uvb-root { display: block; }
+.uvb-root .uvb-pagehead { padding: 8px 0; animation: uvb-auf var(--up-t-auftritt) var(--up-ease-expo) both; }
+/* Die Reiterleiste der Seiten mit Reitern (Prompts, Citations, Brands, Shopping, Ads, Settings):
+   Hoehe und Grundlinie aus den Listen oben (.up-root.uvb-root .up-ph-nav/-navitem), die Reiter
+   selbst nur als Balken -- ihre Namen kennt erst die Seite. */
+.uvb-root .uvb-nav { animation: uvb-auf var(--up-t-auftritt) var(--up-ease-expo) 50ms both; }
+.uvb-main { display: flex; flex-direction: column; gap: 16px; padding-top: 16px;
+  animation: uvb-auf var(--up-t-auftritt) var(--up-ease-expo) 100ms both; }
+.uvb-zeile { display: flex; gap: 8px; }
+.uvb-sk { display: block; background: var(--vc-sk); border-radius: var(--up-r-m); animation: uutpulse 1.2s ease-in-out infinite; }
+.uvb-sk.is-knopf { width: 112px; height: var(--up-h-btn); }
+.uvb-sk.is-knopf.is-kurz { width: 88px; }
+.uvb-sk.is-titel { width: 132px; height: 12px; border-radius: var(--up-r-xs); }
+.uvb-sk.is-reiter { width: 72px; height: 12px; border-radius: var(--up-r-xs); }
+.uvb-karte { box-sizing: border-box; height: 240px; padding: 20px; border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); }
+.uvb-karte.is-gross { height: 360px; }
+@keyframes uvb-auf { from { opacity: 0; transform: translateY(10px); } }
+@media (prefers-reduced-motion: reduce) {
+  .uvb-root .uvb-pagehead, .uvb-root .uvb-nav, .uvb-main { animation-name: uvb-auf-weich; }
+  .uvb-sk { animation: none; }
+}
+@keyframes uvb-auf-weich { from { opacity: 0; } }
 
 /* ---------- DIE KOMPONENTEN TRAGEN IHR SEITENPOLSTER SELBST (29.09. angefordert) ----------
    "Gib den ganzen Komponenten einfach 16px padding left und right, nur nicht den Topbars."

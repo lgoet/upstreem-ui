@@ -143,8 +143,10 @@
       /* .up-seg/.up-seg-btn und .vc-gran/.vc-gran-btn sind die Haus-Bauteile aus core.css --
          derselbe Segmented-Control, den opportunities benutzt, und derselbe
          Granularitaets-Schalter wie in visibility-chart. Hier steht deshalb nur die
-         Positionierung, kein eigenes Aussehen. */
-      '<div class="up-seg is-lg ubd-seg" role="tablist">' +
+         Positionierung, kein eigenes Aussehen.
+         Ohne is-lg (13.10.: "die Switcher oben ueberm Chart ... die kleine Version"): die
+         Grundform aus core, 26px wie der D/W/M-Schalter in der Karte darunter. */
+      '<div class="up-seg ubd-seg" role="tablist">' +
         MODES.map(function (m) {
           return '<button class="up-seg-btn" type="button" role="tab" data-mode="' + m.key + '">' +
                    esc(m.label) + '</button>';

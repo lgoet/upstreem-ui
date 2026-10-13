@@ -114,7 +114,11 @@
   function noteWert(v) { v = num(v); return v == null || v < 0 || v > 5.05 ? null : Math.min(5, v); }
   function deltaWert(art, d) { d = num(d); var g = art === "pos" ? 1000 : art === "anzahl" ? 1e15 : 100.5; return d == null || Math.abs(d) > g ? null : d; }
   /* Die Kennzahl einer Chart-Reihe nach ihrem Feldnamen. */
-  function metrikWert(feld, v) { return /position/.test(feld) ? posWert(v) : feld === "observations" ? anzahlWert(v) : anteilWert(v); }
+  /* Nur avg_position und brand_avg_position sind Plaetze. Hier stand /position/ -- das traf auch
+     first_position_rate, einen ANTEIL: dessen 0 Prozent fiel unter die Platzgrenze (0,95) und
+     wurde "kein Wert". Solange das Chart null als 0 zeichnete, fiel das nicht auf; seit null null
+     bleibt (13.10.), verschwanden damit alle Marken ohne ersten Platz aus dem Chart. */
+  function metrikWert(feld, v) { return /avg_position$/.test(feld) ? posWert(v) : feld === "observations" ? anzahlWert(v) : anteilWert(v); }
   function pct(v) { v = anteilWert(v); return v == null ? "–" : (UC.fmtPct ? UC.fmtPct(v, 1) : v.toFixed(1) + "%"); }
   function ganz(v) { v = anzahlWert(v); return v == null ? "–" : (UC.fmtInt ? UC.fmtInt(v) : String(Math.round(v))); }
   function stelle(v) { v = num(v); return v == null ? "–" : (UC.fmtNum ? UC.fmtNum(v, 1) : v.toFixed(1)); }
@@ -212,6 +216,8 @@
     "No observed products match these filters.": "Keine beobachteten Produkte passen zu diesen Filtern.",
     "No AI Shopping products observed": "Keine KI-Shopping-Produkte beobachtet",
     "None of the AI responses in this range showed shopping products.": "Keine KI-Antwort in diesem Zeitraum hat Shopping-Produkte gezeigt.",
+    "No tracked brand appeared in AI shopping results in this range.": "In diesem Zeitraum kam keine getrackte Marke in KI-Shopping-Ergebnissen vor.",
+    "No {metric} values in this range.": "Keine Werte für {metric} in diesem Zeitraum.",
     "Shopping results aren't available for these models": "Für diese Modelle gibt es keine Shopping-Ergebnisse",
     "AI shopping results are currently only observed in ChatGPT. Choose ChatGPT in the model filter.":
       "KI-Shopping-Ergebnisse werden derzeit nur in ChatGPT beobachtet. Wähle ChatGPT im Modell-Filter.",
@@ -1593,38 +1599,64 @@
          eigene ohne Treffer faellt heraus (Entwurf: "own brand hidden from charts"). */
       if (s === "overview") reihen = reihen.filter(function (x) { return x.in_top5 === true; });
       if (eigeneOhneTreffer(d.meta)) reihen = reihen.filter(function (x) { return x.is_own !== true; });
-      var feld = metrikJetzt(), istPos = feld === "avg_position";
-      if (!tage.length || !reihen.length) { linie.empty(); return; }
+      var feld = metrikJetzt();
+      /* LEER IST NICHT GLEICH LEER (13.10. gemeldet: "Shopping Rate von 0.1%, aber das Linechart
+         sagt 'Keine Daten'"). Die Kachel zaehlt ALLE Runs mit Shopping-Ergebnis, das Chart nur die
+         getrackten Marken darin -- kam in den Ergebnissen keine vor, ist das Chart zu Recht leer,
+         aber das nackte "No data" las sich wie ein Widerspruch zur Kachel. Darum sagt jeder Fall,
+         WAS fehlt: ohne Tage ist die Antwort kaputt (Lesefehler, nicht "leer"), ohne Reihe kam
+         keine Marke vor, und ohne einen einzigen Wert fehlt genau diese Kennzahl. Dass es gar keine
+         Shopping-Ergebnisse gab, faengt schon leerZustand fuer die ganze Seite ab. */
+      if (!tage.length) { linie.empty(t("The chart data could not be read.")); return; }
+      var markeFehlt = t("No tracked brand appeared in AI shopping results in this range.");
+      if (!reihen.length) { linie.empty(markeFehlt); return; }
       /* WIE JEDES LINIENCHART DER APP (05.10. gemeldet: Farben und Legende folgten den
-         Einstellungen nicht, und ein Tag ohne Wert brach die Linie ab):
+         Einstellungen nicht):
          - die Datensaetze baut UC.buildLineDatasets wie in Visibility- und Brands-Chart, mit der
            Farbskala aus den Einstellungen; "Brand Colors" nimmt die Farbe der Marke aus der Antwort.
            Die Reihenfolge der Antwort bleibt (visibility_window_pct absteigend), damit eine Marke
            beim Wechsel der Kennzahl ihre Farbe behaelt;
          - die Legende folgt "Legende zeigen" (legendeImmer nur im Detail, siehe makeLine oben);
-         - ein Tag ohne Wert steht auf 0 wie dort. Ausnahme die Position: 0 waere ein Platz vor dem
-           ersten -- dort fehlt der Punkt, und die Linie laeuft ueber den Tag hinweg. */
-      var punkte = [], firmen = [];
+         - KEINE DATEN SIND KEINE 0 (13.10., dieselbe Regel wie buildLineDatasets in core): hier
+           stand "ein Tag ohne Wert steht auf 0". Die Uebergabe sagt das Gegenteil -- null heisst
+           "an dem Tag gar keine Shopping-Antwort, die Linie dort unterbrechen", 0 heisst "Antwort
+           da, Marke nicht drin" --, und in der echten Antwort vom 13.10. waren 7 von 11 Tagen null:
+           alle Linien fielen dort auf 0 Prozent, als haette jede Marke an dem Tag verloren. null
+           bleibt jetzt null, __luecken bricht die Linie dort ab. Die Position kannte das schon. */
+      var punkte = [], firmen = [], irgendeinWert = false;
       reihen.forEach(function (r, i) {
         var id = str(r.company_id).trim() || ("r" + i), proTag = {};
         (isArr(r.points) ? r.points : []).forEach(function (p) { if (p && p.day) proTag[str(p.day).slice(0, 10)] = metrikWert(feld, p[feld]); });
-        tage.forEach(function (tg) {
-          var v = proTag[tg];
-          if (v == null) { if (istPos) return; v = 0; }
-          punkte.push({ company_id: id, day: tg, visibility_pct: v });
-        });
+        var werte = tage.map(function (tg) { return proTag[tg] == null ? null : proTag[tg]; });
+        /* Eine Marke ganz ohne Wert (Position: kam nie vor) bleibt aus Linie UND Legende -- wie
+           bisher, als ihre Punkte gar nicht erst entstanden. 0 ist ein Wert und bleibt drin. */
+        if (!werte.some(function (v) { return v != null; })) return;
+        irgendeinWert = true;
+        tage.forEach(function (tg, j) { punkte.push({ company_id: id, day: tg, visibility_pct: werte[j] }); });
         firmen.push({ company_id: id, name: str(r.name).trim() || t("Other"), favicon_url: logoUrl(r.logo_url),
                       color: /^#[0-9a-f]{3,8}$/i.test(str(r.color).trim()) ? str(r.color).trim() : null,
                       visibility_window_pct: reihen.length - i });
       });
+      /* Kein einziger Wert fuer diese Kennzahl: die Position ist null, wo die Marke nicht vorkommt
+         (Uebergabe), also heisst das dasselbe wie "keine Reihe". Jede andere Kennzahl nennt sich
+         selbst -- die Achse mit null Linien sahe sonst wie ein Ladefehler aus. */
+      if (!irgendeinWert) {
+        linie.empty(feld === "avg_position" ? markeFehlt : ersetze(t("No {metric} values in this range."), { metric: t(metrikLabel()) }));
+        return;
+      }
       var bau = UC.buildLineDatasets(punkte, firmen, UC.getColorScalePref ? UC.getColorScalePref() : null);
-      /* buildLineDatasets kennt nur die Tage, an denen es Punkte gab -- die Achse sind aber alle
-         Tage des Zeitraums. Also auf chart.days zurueckgelegt. */
+      /* buildLineDatasets laesst leere Randtage weg (13.10.) -- die Achse hier sind aber alle Tage
+         des Zeitraums (Uebergabe: "X-Achse: chart.days"), also auf chart.days zurueckgelegt. Bei
+         Shopping ist ein leerer Tag Information: an sechs Tagen ohne ein einziges Shopping-Ergebnis
+         endet die Linie sichtbar, statt dass die Achse den Zeitraum still verkuerzt.
+         __luecken: null unterbricht die Linie (makeLine), ein einzelner Tag zwischen zwei Luecken
+         bekommt dort seinen Punkt -- sonst waere er ohne Nachbarn unsichtbar. */
       var stelleVon = {};
       bau.labels.forEach(function (l, i) { stelleVon[l] = i; });
       bau.datasets.forEach(function (ds) {
         var alt = ds.data;
         ds.data = tage.map(function (tg) { return stelleVon[tg] != null ? alt[stelleVon[tg]] : null; });
+        ds.__luecken = true;
       });
       linie.render({ labels: tage, datasets: bau.datasets });
     }

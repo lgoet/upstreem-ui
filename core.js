@@ -16573,6 +16573,19 @@
            werden -- dort gab es an dem Tag gar keine Messung (Uebergabe: "die Linie dort
            unterbrechen"). Ohne das Feld wie bisher. */
         d.spanGaps = !d.__luecken; d.clip = 8;
+        /* Ein Tag MIT Wert zwischen zwei Luecken (13.10., Shopping): ohne Nachbarn zeichnet die
+           Linie dort nichts, und bei pointRadius 0 bliebe der Wert unsichtbar -- gemessen an der
+           echten Antwort vom 13.10., deren 7. Oktober zwischen zwei leeren Tagen lag. Er bekommt
+           den Punkt, den ein Ein-Tages-Chart auch traegt (4, gefuellt). Nur mit __luecken; wer
+           Luecken ueberbrueckt, hat keine einsamen Werte. */
+        if (d.__luecken && !single){
+          var einsam = function(c){
+            var a = c.dataset.data || [], i = c.dataIndex;
+            return a[i] != null && a[i - 1] == null && a[i + 1] == null;
+          };
+          d.pointRadius = function(c){ return einsam(c) ? 4 : 0; };
+          d.pointBackgroundColor = function(c){ return einsam(c) ? c.dataset.__baseColor : tc.bg; };
+        }
         /* __dash: eine Vergleichsreihe (Event-Detail). build() setzt jede Linieneigenschaft neu,
            also muss auch der Strich hier stehen -- sonst waere er nach dem ersten Neuzeichnen weg. */
         d.borderDash = d.__dash ? [5, 4] : [];
@@ -18125,10 +18138,14 @@
     el.classList.remove("up-auftritt-zu");
     try { el.dispatchEvent(new CustomEvent("up-auftritt")); } catch(e){}
   }
-  function auftrittBewegen(teile, ab){
+  /* versatz: so viele Millisekunden ist der Auftritt schon unterwegs -- der Seitenkopf uebernimmt
+     die Bewegung seines Platzhalters (seitenVorab, siehe dort) an der Stelle, an der er gerade
+     steht, statt noch einmal bei unsichtbar zu beginnen. Eine negative Verzoegerung laesst die Animation
+     mittendrin anfangen; ist sie laenger als die Dauer, steht der Teil sofort fertig da. */
+  function auftrittBewegen(teile, ab, versatz){
     var weich = weicheBewegung(), ms = weich ? 160 : auftrittDauer();
     teile.forEach(function(el, i){
-      var verz = (ab + i) * AUFTRITT_STAFFEL;
+      var verz = (ab + i) * AUFTRITT_STAFFEL - (versatz || 0);
       /* Nur der juengste Auftritt eines Teils darf ihn freigeben: startet die Seite neu, waehrend
          dieser Zeitgeber noch laeuft, nahm er sonst die NEUE Wartestellung weg -- ein Aufblitzen. */
       var losNr = el.__upLosNr = (el.__upLosNr || 0) + 1;
@@ -18204,9 +18221,64 @@
       try { c.reset(); c.update(); } catch(e){}
     });
   }
+  /* ---- DER PLATZHALTER EINER ANSICHT (13.10. abends) -----------------------------------------
+     Gemeldet: "Wenn man nach Pageload die Views wechselt, gibt es einen grossen Delay von bis zu 3
+     Sekunden, wo einfach nichts angezeigt wird. Nur Sidebar und weisser Content." Die Next.js-App
+     laedt die Dateien einer Ansicht erst beim ersten Besuch und setzt die Wurzel erst danach ein
+     (nie ungestylt) -- bis dahin stand die Ansicht leer. Gemessen im Pruefstand (vk, kalter CDN,
+     4x CPU, Klick auf Citations): 77 leere Bilder, 1292ms; mit dem echten CDN beim ersten Abruf
+     eines Pins (jsDelivr minifiziert erst) bis zu Sekunden.
+     seitenVorab(root, { icon, name, marke, reiter }) zeichnet sofort, was die Seite ohnehin zeigen wird:
+     den Seitenkopf mit Krume (dasselbe makePageCrumbs, dieselben Regeln -- .uvb-root steht in
+     den Listen der Seitenkoepfe in core.css, also auf den Pixel dort, wo die Seite ihn zeichnet)
+     und darunter ein ruhiges Skelett. Nur core: zu diesem Zeitpunkt ist von der Seite noch nichts
+     geladen.
+     Die Uebergabe: der Gastgeber setzt beim Austausch data-up-vorab-seit (Zeitpunkt, an dem der
+     Platzhalter erschien) um die neue Wurzel. makeAuftritt liest ihn (vorabUebernehmen) und
+     faehrt den Auftritt des Seitenkopfs von DORT weiter -- war der Platzhalter schon ganz da,
+     bleibt der Kopf einfach stehen. Der Inhalt darunter blendet wie immer ein (siehe zeigen() in
+     makeAuftritt, warum nicht ebenfalls weiter). */
+  function vorabJetzt(){
+    try { return window.performance && performance.now ? performance.now() : Date.now(); } catch(e){ return Date.now(); }
+  }
+  function vorabUebernehmen(root){
+    var h = root && root.closest ? root.closest("[data-up-vorab-seit]") : null;
+    if (!h) return -1;
+    var t = parseFloat(h.getAttribute("data-up-vorab-seit"));
+    h.removeAttribute("data-up-vorab-seit");
+    return isFinite(t) && t >= 0 ? t : -1;
+  }
+  function seitenVorab(root, cfg){
+    if (!root) return null;
+    cfg = cfg || {};
+    root.classList.add("uvb-root");
+    root.setAttribute("aria-busy", "true");
+    var mitKopf = cfg.kopf !== false && !!cfg.name;
+    root.innerHTML =
+      (mitKopf ? '<div class="up-ph-top uvb-pagehead"><div class="up-ph-left"><h1 class="up-ph-heading">' +
+        esc(t_(cfg.name)) + '</h1></div></div>' : '') +
+      /* cfg.reiter: so viele Reiter hat die Seite (0 = keine Reiterleiste) -- Leiste und Grundlinie
+         stehen dann schon, wo die Seite sie zeichnet. */
+      (mitKopf && cfg.reiter > 0 ? '<div class="up-ph-nav uvb-nav" aria-hidden="true">' +
+        new Array(Math.min(8, cfg.reiter | 0) + 1).join('<span class="up-ph-navitem"><span class="uvb-sk is-reiter"></span></span>') + '</div>' : '') +
+      /* Das Skelett: eine Filterzeile (zwei Knoepfe in Knopfhoehe) und zwei Karten -- das, womit
+         jede Seite darunter beginnt. Keine Nachbildung einer bestimmten Seite: es wird in jedem
+         Fall durch die echte ersetzt, und ein falsches Detail fiele mehr auf als keines. */
+      '<div class="uvb-main" aria-hidden="true">' +
+        '<div class="uvb-zeile"><span class="uvb-sk is-knopf"></span><span class="uvb-sk is-knopf is-kurz"></span></div>' +
+        '<div class="uvb-karte is-gross"><span class="uvb-sk is-titel"></span></div>' +
+        '<div class="uvb-karte"><span class="uvb-sk is-titel"></span></div>' +
+      '</div>';
+    if (THEME.value != null) applyThemeTo(root, THEME.value === "dark");
+    if (mitKopf) makePageCrumbs(root, { icon: cfg.icon, name: cfg.name, marke: cfg.marke, komponente: true });
+    return root;
+  }
   function makeAuftritt(root, cfg){
     cfg = cfg || {};
-    var datenDa = false, wartet = false, nr = 0, zu = [], uhr = null, stilDa = false, kopfN = 0;
+    var datenDa = false, wartet = false, nr = 0, zu = [], uhr = null, stilDa = false, kopfN = 0, vorabSeit = -1;
+    /* Wie weit der Auftritt des Platzhalters schon ist (seitenVorab), sonst 0. Erst beim Bewegen
+       gerechnet: zwischen start() und dem Bewegen liegen die Stylesheets. */
+    function versatz(){ return vorabSeit >= 0 ? Math.max(0, vorabJetzt() - vorabSeit) : 0; }
     root.classList.add("up-seite");
     function zeigen(){
       if (!wartet) return;
@@ -18222,7 +18294,14 @@
          Innere einen Augenblick voll auf. */
       var jetzt = auftrittTeile(root, cfg.fein || cfg.inhalt);
       var bewegt = jetzt.length ? jetzt : teile;
-      auftrittBewegen(bewegt, kopfN);
+      /* NACH DEM PLATZHALTER faehrt nur der KOPF seine Bewegung von dort weiter, wo der Platzhalter
+         stand -- er steht auf den Pixel gleich und bleibt also einfach stehen. Der INHALT kommt
+         wie bei jedem Auftritt von unsichtbar, ohne auf die Kopfstaffel zu warten: er ersetzt ein
+         Skelett, das anders aussieht, und er ordnet sich in seinen ersten Bildern noch um (im
+         schmalen Fenster gemessen 13.10.: Citations stellt die Tabelle auf dicht um, Verschiebung
+         0.77, voll sichtbar, als der Inhalt sofort ganz da stand). Unter der Einblendung sieht man
+         das nicht -- dieselbe Einblendung wie ohne Platzhalter. */
+      auftrittBewegen(bewegt, vorabSeit >= 0 ? 0 : kopfN);
       teile.forEach(function(el){ if (bewegt.indexOf(el) < 0) auftrittLos(el); });
     }
     function versuchen(){
@@ -18246,13 +18325,14 @@
           el.__upLosNr = (el.__upLosNr || 0) + 1; el.classList.add("up-auftritt-zu");
         });
         wartet = true; stilDa = false;
+        vorabSeit = vorabUebernehmen(root);
         kopfN = kopf.length;
         stileBereit(function(){
           if (meine !== nr) return;
           stilDa = true;
           /* Kopf und Inhalt in EINER Staffel: der Inhalt beginnt, wo der Kopf aufhoert (kopfN
              Stufen spaeter), egal ob seine Daten schon da sind. */
-          auftrittBewegen(kopf, 0);
+          auftrittBewegen(kopf, 0, versatz());
           zeigen();
         });
       },
@@ -18790,8 +18870,61 @@
       leer.__upKern = true;
       window[fn] = leer;
     }
-    if (kd.handler) kdAufbauen(kd);
+    if (kd.handler) kdAufbauenWennDa(kd, false);
     return kd;
+  }
+  /* ERST BAUEN, WENN ALLE DATEIEN DES DRAWERS DA SIND (13.10. abends, gemeldet: "in den Drawern,
+     gerade beim ersten Oeffnen, sind die Skelette voellig im Arsch, gestaucht, gequetscht; im
+     Domain Detail sind die Umschalter kurz mittig statt links").
+     Ursache, gemessen im Pruefstand mit kaltem CDN (vk, 4x CPU): der Lader der Next.js-App
+     (__upAnsichten.drawer) haengt Skripte und Stylesheets des Drawers GLEICHZEITIG ein. Die
+     Skripte laufen, sobald sie da sind -- domain-drawer.js meldete sich bei 1028ms an, und
+     kdAufbauen baute sofort. Vier Stylesheets (urls-table, view-switch, domain-detail,
+     domain-drawer) kamen erst bis 1358ms: 12 Bilder ungestylt, davon 7 mit dem Umschalter in
+     der Mitte (.uvw-root ohne view-switch.css steht als Spalte, align-items center aus core).
+     Beim ersten Abruf minifiziert jsDelivr eine Datei erst, und eine CSS kann so Sekunden
+     hinter ihrem Skript liegen.
+     Also wartet der ERSTE Aufbau auf das Versprechen des Laders: es ist erst erfuellt, wenn
+     ALLE Dateien des Drawers geladen sind (Stylesheets angewendet, Skripte gelaufen), und es
+     kommt auch bei einem Fehler oder nach seiner Frist -- ein Drawer bleibt also nie im
+     Skelett haengen. Bis dahin steht die Huelle mit Kopf und dem Warte-Skelett aus core
+     (.up-kdr-warte), nie ungestyltes Markup der Komponente.
+     Nur mit __upLazyDrawer und dem Lader: in Bubble laedt das Vorlade-Snippet alles beim Start,
+     dort bleibt der Aufbau, wie er war.
+     mitZeigen: der Aufruf kam aus der Anmeldung (kernDrawer) -- die zeigte nach dem Aufbau
+     schon immer selbst; aus kdBauen zeigt danach der Oeffnen-Hook. Im wartenden Fall zeigt
+     immer der Aufbau selbst, mit der Kennung, die DANN gilt (kd.id), und nur, wenn der Drawer
+     noch offen ist. */
+  function kdDateien(art){
+    var L = window.__upAnsichten;
+    if (!window.__upLazyDrawer || !L || typeof L.drawer !== "function") return null;
+    try {
+      if (typeof L.istDrawer === "function" && !L.istDrawer(art)) return null;
+      var p = L.drawer(art);
+      return p && typeof p.then === "function" ? p : null;
+    } catch(e){ return null; }
+  }
+  function kdAufbauenWennDa(kd, mitZeigen){
+    if (kd.wartetDateien || !kd.el || !kd.handler) return;
+    /* Schon gebaut (die Komponente meldet sich ein zweites Mal an): kein Warten, aber das Zeigen
+       wie bisher -- kdAufbauen selbst tut dann nichts. */
+    var p = (kd.aufgebaut || kd.dateienDa) ? null : kdDateien(kd.art);
+    if (!p){
+      kdAufbauen(kd);
+      if (mitZeigen && kd.offen && kd.id && typeof kd.handler.zeigen === "function"){ try { kd.handler.zeigen(kd.id); } catch(e){} }
+      return;
+    }
+    kd.wartetDateien = true;
+    function fort(){
+      kd.wartetDateien = false;
+      kd.dateienDa = true;
+      if (!kd.el || !document.contains(kd.el)) return;
+      kdAufbauen(kd);
+      if (kd.offen && kd.id && kd.handler && typeof kd.handler.zeigen === "function"){
+        try { kd.handler.zeigen(kd.id); } catch(e){ if (window.console) console.warn("[drawer] " + kd.art + ": zeigen hat geworfen:", e); }
+      }
+    }
+    p.then(fort, fort);
   }
   function kdAufbauen(kd){
     if (kd.aufgebaut || !kd.el || !kd.handler) return;
@@ -18874,6 +19007,9 @@
        Bubble nichts meldet. */
     if (!id) return;
     kd.id = id;
+    /* Wartet der erste Aufbau noch auf die Dateien (kdAufbauenWennDa), zeigt er selbst, sobald
+       er steht -- mit dieser Kennung, kd.id ist eben gesetzt. */
+    if (kd.handler && kd.wartetDateien) return;
     if (kd.handler && typeof kd.handler.zeigen === "function"){
       try { kd.handler.zeigen(id); } catch(e){ if (window.console) console.warn("[drawer] " + art + ": zeigen hat geworfen:", e); }
     } else kdOhneBaustein(kd);
@@ -18905,10 +19041,7 @@
     if (!KERN_DRAWER[art] || !handler) return false;
     var kd = KD[art] || (KD[art] = { art: art });
     kd.handler = handler;
-    if (kd.el && document.contains(kd.el)){
-      kdAufbauen(kd);
-      if (kd.offen && kd.id && typeof handler.zeigen === "function"){ try { handler.zeigen(kd.id); } catch(e){} }
-    }
+    if (kd.el && document.contains(kd.el)) kdAufbauenWennDa(kd, true);
     return true;
   }
   /* Fuer Pruefstand und Uebergabe: baut core diesen Drawer (oder noch Bubble)? */
@@ -24570,7 +24703,7 @@
     onViewChange: onViewChange,
     seitenAdresse: seitenAdresse,
     beiSicht: beiSicht, wartetAufSicht: wartetAufSicht,
-    makeAuftritt: makeAuftritt, stileBereit: stileBereit, kopfZaehler: kopfZaehler, nachAuftritt: nachAuftritt,
+    makeAuftritt: makeAuftritt, seitenVorab: seitenVorab, stileBereit: stileBereit, kopfZaehler: kopfZaehler, nachAuftritt: nachAuftritt,
     getDashboardMode: getDashboardMode, setDashboardMode: setDashboardMode,
     onDashboardMode: onDashboardMode,
     currentView: currentView,

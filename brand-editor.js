@@ -494,7 +494,11 @@
 
     function kopfHtml(c) {
       var d = domainTeile(c.domain);
-      var fav = txt(c.favicon_url).trim();
+      /* logo_url zuerst, wie jede andere Stelle der App (brand-detail, brand-drawer, Tabellen):
+         die eigene Marke zeigt hier ihr Logo, Wettbewerber ihr Favicon -- die DB entscheidet, der
+         Drawer reicht es durch (brand-editor-drawer.js, logoVon). favicon_url bleibt der Rueckfall
+         fuer einen Aufrufer, der nur das Favicon kennt. */
+      var fav = txt(c.logo_url).trim() || txt(c.favicon_url).trim();
       /* Die Platte ist .up-logo-box aus core (Radius, Grund, 1px Polster); .up-fav ist der
          Aufhaenger, an dem der Globus-Rueckfall greift. Beide zusammen, wie in den Tabellen. */
       return '<span class="up-dk-held-bild"><span class="up-logo-box up-dk-logo up-fav ube-fav' + (fav ? " has-img" : "") + '">' +

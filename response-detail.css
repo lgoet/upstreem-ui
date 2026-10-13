@@ -121,7 +121,7 @@
 
 /* ---- Menue der Hervorhebungen (Punkt 10) -----------------------------------------------------
    Der Knopf ist der Zahnrad-Knopf der App: 28px, Radius 8, Icon in Sekundaerfarbe, Hover wie
-   ueberall. .up-pop und die Positionierung kommen aus core (UC.makePopover). */
+   ueberall. .up-menu und die Positionierung kommen aus core (UC.makePopover). */
 .urd-hlwrap { position: relative; flex: 0 0 auto; }
 /* Der Knopf ist .up-btn-sec aus core (13.10.: "den grauen Grund weg und nur eine Border") --
    Rahmen, Hoehe 32, Hover. Bis dahin ein eigener Knopf mit grauem Grund (12.10.); der Rahmen ist
@@ -136,40 +136,27 @@
 .urd-hlbtn .urd-hlchev svg { width: 14px; height: 14px; flex: 0 0 14px; }
 .urd-hlbtn:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; border-radius: var(--up-r-xs); }
 .urd-hlbtn[hidden] { display: none; }
-.urd-hlopt[disabled] { opacity: 0.45; cursor: default; }
-.urd-hlopt[disabled]:hover { background: transparent; }
-
-.urd-hlpop { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; min-width: 248px;
-  background: var(--up-surface, var(--vc-bg)); border: 1px solid var(--vc-border);
-  border-radius: 12px; box-shadow: var(--up-e-2, 0 12px 32px rgba(0,0,0,0.14)); padding: 6px;
-  display: none; flex-direction: column; box-sizing: border-box; }
-.urd-hlwrap.is-open .urd-hlpop { display: flex; }
-.urd-hlgrp { display: flex; flex-direction: column; gap: 1px; }
-/* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
-   Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
-.urd-hlhead { font-size: 12px; font-weight: 600; color: var(--vc-third); padding: 6px 8px 4px; }
-.urd-hlsep { height: 1px; background: var(--vc-border); margin: 6px 4px; flex: 0 0 1px; }
-.urd-hlopt { display: flex; align-items: flex-start; gap: 9px; width: 100%; border: 0;
-  background: transparent; font: inherit; text-align: left; padding: 7px 8px; border-radius: 8px;
-  cursor: pointer; color: var(--vc-text); }
-.urd-hlopt:hover { background: var(--vc-heading-bg); }
-/* Der Punkt zeigt die Wahl -- ein Ring, gefuellt wenn aktiv. Dasselbe Bild wie in den
-   Einstellungen der App: kein Haken, weil sich die vier Modi ausschliessen. */
-.urd-hlradio { width: 15px; height: 15px; border-radius: 999px; flex: 0 0 15px; margin-top: 2px;
-  border: 1.5px solid var(--vc-border); box-sizing: border-box; position: relative; }
-.urd-hlopt.is-on .urd-hlradio { border-color: var(--up-accent); }
-.urd-hlopt.is-on .urd-hlradio::after { content: ""; position: absolute; inset: 3px;
-  border-radius: 999px; background: var(--up-accent); }
-/* Der Haken dagegen ist ein Schalter: an oder aus, keine Auswahl aus mehreren. */
-.urd-hlcheck { width: 15px; height: 15px; border-radius: 5px; flex: 0 0 15px; margin-top: 2px;
-  border: 1.5px solid var(--vc-border); box-sizing: border-box; display: inline-flex;
-  align-items: center; justify-content: center; color: var(--up-accent-fg); }
-.urd-hlcheck svg { width: 10px; height: 10px; display: none; }
-.urd-hlcheck.is-on { background: var(--up-accent); border-color: var(--up-accent); }
-.urd-hlcheck.is-on svg { display: block; }
-.urd-hltxt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.urd-hllbl { font-size: 13px; font-weight: 500; color: var(--vc-text); }
-.urd-hldesc { font-size: 11.5px; font-weight: 400; color: var(--vc-muted); line-height: 1.35; }
+/* Das Wort im Knopf: unveraendert 13/500 in Textfarbe. Die Regel galt vorher fuer .urd-hllbl
+   ueberall und traf das Wort im Knopf mit; seit die Menuezeilen core-Klassen tragen, gibt es
+   .urd-hllbl nur noch hier. */
+.urd-hlbtn .urd-hllbl { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
+/* Das Menue ist .up-menu aus core (13.10.: "kein echtes Dropdown, ganz anderes Verhalten beim
+   Appear"). Hier stand eine eigene Huelle mit display:none/flex -- sie sprang auf, statt wie jedes
+   Menue einzublenden, und trug eigene Werte fuer Rahmen, Radius, Polster und Schatten. Jetzt kommen
+   Huelle, Einblendung, Lage (rechtsbuendig unter dem Knopf), Ueberschriften, Zeilen, Haken,
+   Schalter und die 4px zwischen den Zeilen aus core. Hier steht nur die eigene Breite und die
+   zweite Zeile. 288 statt der 230 der Grundform: neben dem 38px-Schalter soll die laengste
+   Beschreibung ("Sources stay listed below either way") in EINER Zeile stehen -- bei 264 brach
+   sie um, gemessen 70 statt 54px Zeilenhoehe. */
+.urd-hlpop.up-menu { width: 288px; }
+.urd-hltxt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+/* Die Beschreibung unter dem Etikett: 12px, leise -- die Schrift von .up-sec-sub, der
+   Unterzeile aus core. Kein eigenes Bauteil, weil kein Core-Menue eine zweite Zeile kennt. */
+.urd-hldesc { font-size: var(--up-fs-s); font-weight: var(--up-fw-n); color: var(--vc-muted); line-height: 1.35; }
+/* Eine Zeile mit Schalter ist als Ganzes klickbar (Klick auf das Etikett schaltet), also zeigt
+   sie es auch. .up-pop-row setzt keinen Zeiger, weil sie in core auch fuer reine Anzeigen steht. */
+.urd-hlpop .up-pop-row[data-cites], .urd-hlpop .up-pop-row[data-group] { cursor: pointer; }
+.urd-hlpop :is(.up-pop-opt, .up-pop-row):focus-visible { outline: 2px solid var(--vc-text); outline-offset: -2px; }
 
 /* ---- Citations ----
    Zwei Ansichten derselben Liste. Der Umschalter ist .up-seg aus core. */

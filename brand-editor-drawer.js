@@ -59,10 +59,33 @@
     if (isArr(roh)) roh = roh.length ? roh[0] : null;
     return roh && roh.row && typeof roh.row === "object" ? roh : null;
   }
+  /* DAS BILD DER MARKE, wie es die ganze App zeigt (13.10., gemeldet: "eine andere Quelle fuer das
+     Favicon als andere Stellen"). brand_edit_v1 liefert nur favicon_url, und das ist die Spalte
+     companies.favicon_url -- ohne die Logo-Regel. Tabellen, Chips, Seitenleiste und der Kopf des
+     Marken-Drawers zeigen dagegen logo_url aus der DB: fuer die EIGENE Marke ihr Logo aus Brand
+     Settings, fuer Wettbewerber ihr Favicon. Bei der eigenen Marke mit Logo stand im Editor also
+     ein anderes Bild als ueberall sonst (gemessen an den echten Antworten: Mercedes-Logo von der
+     Bubble-CDN gegen google.com/s2/favicons?domain=mercedes-benz.de).
+     Darum hier dieselbe Quelle wie die App: logo_url, falls die RPC es einmal mitliefert, sonst
+     der Markenspeicher (team_context_v1 -> setUpstreemBrands, dieselbe logo_url), sonst das
+     Favicon. Gewaehlt wird dabei nichts selbst -- welches Bild gilt, entscheidet die DB.
+     favicon_url bleibt daneben stehen: "Use favicon color" liest ausdruecklich das Favicon. */
+  function bild(u) { u = str(u).trim(); if (/^\/\//.test(u)) u = "https:" + u; return /^https?:\/\//i.test(u) ? u : ""; }
+  function logoVon(r) {
+    var direkt = bild(r.logo_url);
+    if (direkt) return direkt;
+    var id = str(r.company_id).toLowerCase(), l = UC.getBrands ? UC.getBrands() : [];
+    for (var i = 0; isArr(l) && i < l.length; i++) {
+      var b = l[i];
+      if (b && str(b.company_id || b.id).toLowerCase() === id && bild(b.logo_url)) return bild(b.logo_url);
+    }
+    return bild(r.favicon_url);
+  }
   function zuEditor(antwort) {
     var r = antwort.row;
     return {
       company: { company_id: str(r.company_id), name: str(r.name), domain: str(r.domain), favicon_url: str(r.favicon_url),
+                 logo_url: logoVon(r),
                  color_override: r.color_override || null, effective_color: r.effective_color || null, default_color: r.default_color || null },
       aliases: isArr(r.aliases) ? r.aliases : [],
       tracking_periods: isArr(r.tracking_periods) ? r.tracking_periods : []

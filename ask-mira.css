@@ -1674,9 +1674,12 @@
      Der Fokus braucht die Ausnahme ueberhaupt, weil diese Regel mit der ID spezifischer ist
      (1,2,0) als .am-composer:focus-within (0,2,0) und den Fokusrand sonst schluckt.
      border-color statt border: 0 -- der 1px bleibt als Platz stehen, sonst springt die Zeile
-     beim Hineinklicken um 2px. */
+     beim Hineinklicken um 2px.
+     Auch nicht unter dem Zeiger (13.10.): der Hover kommt seit heute aus der geteilten Feldregel in
+     core (Liste bei .up-field). Diese Regel ist mit der ID spezifischer als jene (0,2,0) und hielt
+     den Rand sonst auch beim Ueberfahren durchsichtig -- im Dunkeln gab es dann keinen Hover. */
   #ask-mira[data-theme="dark"] .am-composer { background: var(--vc-field); }
-  #ask-mira[data-theme="dark"] .am-composer:not(:focus-within) { border-color: transparent; }
+  #ask-mira[data-theme="dark"] .am-composer:not(:focus-within, :hover) { border-color: transparent; }
   /* settings tray inside the shell — slides open/closed smoothly */
   .am-settings-panel {
     width: 100%; background: transparent; overflow: hidden; max-height: 0; opacity: 0; pointer-events: none;
