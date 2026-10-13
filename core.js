@@ -1795,15 +1795,15 @@
     "Group by": "Gruppieren nach",
     "Group prompts": "Prompts gruppieren",
     "Filter for prompts that name a brand": "Nach Prompts filtern, die eine Marke nennen",
-    "Include branded prompts": "Prompts mit Marke einbeziehen",
+    "Branded prompts": "Branded Prompts",
     "Included": "Einbezogen",
     "Your prompts": "Deine Prompts",
 
     /* Intents und Branded (13.10.) */
     "Intent": "Intent",
-    "Informational": "Informativ",
+    /* "Recommendation" bleibt "Empfehlung" -- das ist Ask Mira (Kategorie). Die Intents tragen
+       ihren deutschen Namen am Eintrag (INTENTE.de, "Kommerziell"), siehe intentName. */
     "Recommendation": "Empfehlung",
-    "Transactional": "Transaktional",
     "Classifying": "Wird zugeordnet",
     "Not classified": "Nicht zugeordnet",
     "Set by AI": "Von der KI gesetzt",
@@ -5798,12 +5798,19 @@
      daneben haette beide gleich laut gemacht.
      Die Zeichen: Wissen (Buch), Optionen (Liste), Konditionen (Karte), Rest (RectangleEllipsis,
      vom Nutzer gewaehlt). Reihenfolge = Buyer Journey, sie ist auch die der Gruppen und Filter. */
+  /* de steht AM EINTRAG und nicht im Katalog: "Recommendation" und "Other" sind dort schon
+     anderweitig belegt (Ask Mira, Typlisten) -- ein Katalogeintrag haette die mit umbenannt
+     (Katalog-Kollision). Gelesen wird ueber intentName(). */
   var INTENTE = [
-    { key: "informational",  label: "Informational",  icon: "bookOpen" },
-    { key: "recommendation", label: "Recommendation", icon: "listTodo" },
-    { key: "transactional",  label: "Transactional",  icon: "creditCard" },
-    { key: "other",          label: "Other",          icon: "rectangleEllipsis" }
+    { key: "informational",  label: "Informational",  de: "Informativ",    icon: "bookOpen" },
+    { key: "recommendation", label: "Recommendation", de: "Kommerziell",   icon: "listTodo" },
+    { key: "transactional",  label: "Transactional",  de: "Transaktional", icon: "creditCard" },
+    { key: "other",          label: "Other",          de: "Andere",        icon: "rectangleEllipsis" }
   ];
+  function intentName(a){
+    if (!a) return "";
+    return getPref("locale") === "de" && a.de ? a.de : a.label;
+  }
   function intentArt(k){
     k = String(k == null ? "" : k).trim().toLowerCase();
     for (var i = 0; i < INTENTE.length; i++) if (INTENTE[i].key === k) return INTENTE[i];
@@ -5837,7 +5844,7 @@
     var z = intentZustand(r);
     var lbl, ic, tip;
     if (z.status === "done"){
-      lbl = z.art.label; ic = z.art.icon;
+      lbl = intentName(z.art); ic = z.art.icon;
       tip = z.user ? "Set by you" : "Set by AI";
     } else if (z.status === "failed"){
       lbl = "Not classified"; ic = "helpCircle";
@@ -5847,7 +5854,8 @@
       tip = "The intent is being set. This takes a moment.";
     }
     var kl = "up-intent is-" + z.status + (z.user ? " is-user" : "") + (opts.klick ? " is-klick" : "");
-    lbl = t(lbl); tip = t(tip);
+    if (z.status !== "done") lbl = t(lbl);
+    tip = t(tip);
     var innen = icon(ic, 2) + '<span class="up-intent-lbl">' + esc(lbl) + '</span>' +
       (z.user ? '<span class="up-intent-user" aria-hidden="true">' + icon("squarePen", 2) + '</span>' : "");
     var daten = ' data-intent="' + esc(z.art ? z.art.key : z.status) + '" data-tip="' + esc(tip) + '"';
@@ -5904,7 +5912,7 @@
         var an = !!(z && z.art && z.art.key === a.key);
         return '<div class="up-pop-opt up-intent-opt' + (an ? " is-active" : "") + '" data-intent-set="' + a.key + '"' +
           ' role="menuitemradio" tabindex="0" aria-checked="' + (an ? "true" : "false") + '">' +
-          '<span class="up-pop-opt-l">' + icon(a.icon, 2) + '<span>' + esc(t(a.label)) + '</span></span>' +
+          '<span class="up-pop-opt-l">' + icon(a.icon, 2) + '<span>' + esc(intentName(a)) + '</span></span>' +
           '<span class="up-check">' + icon("check", 2) + '</span></div>';
       }).join("");
     if (z && z.status === "done"){
@@ -5926,6 +5934,69 @@
           : "");
     }
     return h;
+  }
+
+  /* ---- Das Menue zum Ueberschreiben, als Baustein (13.10.) -----------------------------------
+     Gebraucht in der Prompt-Tabelle (Label in der Zeile, Sammelleiste) und im Prompt-Detail (Label
+     im Kopf). EINE Huelle je Aufrufer: eine .up-menu in einem Halter, der an die Stelle des
+     Ausloesers gesetzt wird (absolut im Wurzelelement des Aufrufers, kein Portal). ziel.bulk: ohne
+     Haken, Herkunft und Branded -- die Sammelleiste unten am Fenster, das Menue klappt nach oben.
+       cfg.root        wohin der Halter gehaengt wird
+       cfg.zeile(ziel) die Zeile zum Ziel (fuer Haken, Herkunft, Branded)
+       cfg.onIntent(ziel, key)   key "" = zurueck an die KI
+       cfg.onBranded(ziel, wert) "yes" | "no" | "" (zurueck an den Abgleich) -- das Menue bleibt
+                                 offen und zeichnet sich neu, es ist ein Schalter */
+  function makeIntentMenu(cfg){
+    cfg = cfg || {};
+    var wrap = document.createElement("div");
+    /* cfg.klasse: eigene Namen des Aufrufers dazu (Halter und Huelle), etwa die, unter denen er
+       das Menue vorher selbst gebaut hat -- ein Name, an dem schon jemand haengt, bleibt. */
+    var k = cfg.klasse || {};
+    wrap.className = "up-intentwrap" + (k.halter ? " " + k.halter : "");
+    wrap.innerHTML = '<div class="up-menu up-intentpop' + (k.menue ? " " + k.menue : "") + '" role="menu" aria-hidden="true"></div>';
+    (cfg.root || document.body).appendChild(wrap);
+    var menu = wrap.firstChild, opener = null, ziel = null;
+    var pop = makePopover({ wrap: wrap, menu: menu, onClose: function(){
+      if (opener) opener.setAttribute("aria-expanded", "false");
+      opener = null; ziel = null;
+    } });
+    function zeile(){ return ziel && !ziel.bulk && cfg.zeile ? cfg.zeile(ziel) : null; }
+    function zeichnen(){ menu.innerHTML = intentMenuHtml(zeile()); }
+    function oeffnen(el, z){
+      if (pop.isOpen() && opener === el){ pop.close(false); return; }
+      pop.close(false);
+      ziel = z || {};
+      zeichnen();
+      /* Der Halter bekommt die Kanten des Ausloesers. Gerechnet gegen seinen Elternteil, nicht
+         gegen die Wurzel: welches Element positioniert ist, entscheidet der Aufrufer. */
+      var bezug = wrap.offsetParent || document.body;
+      var a = el.getBoundingClientRect(), b = bezug.getBoundingClientRect();
+      wrap.style.left = Math.round(a.left - b.left + bezug.scrollLeft) + "px";
+      wrap.style.top = Math.round(a.top - b.top + bezug.scrollTop) + "px";
+      wrap.style.width = Math.round(a.width) + "px";
+      wrap.style.height = Math.round(a.height) + "px";
+      wrap.classList.toggle("is-oben", !!ziel.bulk);
+      opener = el;
+      el.setAttribute("aria-expanded", "true");
+      pop.open();
+    }
+    menu.addEventListener("click", function(e){
+      e.stopPropagation();
+      var z = ziel;
+      if (!z) return;
+      var opt = e.target.closest("[data-intent-set]");
+      if (opt){ pop.close(true); if (cfg.onIntent) cfg.onIntent(z, opt.getAttribute("data-intent-set")); return; }
+      if (e.target.closest("[data-branded-reset]")){ if (cfg.onBranded) cfg.onBranded(z, ""); zeichnen(); return; }
+      var br = e.target.closest("[data-branded-set]");
+      if (br){ if (cfg.onBranded) cfg.onBranded(z, br.getAttribute("aria-checked") === "true" ? "no" : "yes"); zeichnen(); }
+    });
+    menu.addEventListener("keydown", function(e){
+      if (e.key !== "Enter" && e.key !== " ") return;
+      var el = e.target.closest("[data-intent-set], [data-branded-set]");
+      if (!el) return;
+      e.preventDefault(); el.click();
+    });
+    return { open: oeffnen, close: function(){ pop.close(false); }, isOpen: function(){ return pop.isOpen(); } };
   }
 
   /* ---- Intent-Filter der ganzen App (13.10.) ------------------------------------------------
@@ -25098,6 +25169,7 @@
     INTENTE: INTENTE, intentArt: intentArt, hatIntent: hatIntent, intentZustand: intentZustand,
     intentHtml: intentHtml, brandedHtml: brandedHtml, intentMenuHtml: intentMenuHtml,
     intentsLive: intentsLive, intentFilterGet: intentFilterGet, intentFilterSet: intentFilterSet, intentFilterParams: intentFilterParams,
+    makeIntentMenu: makeIntentMenu, intentName: intentName,
     relativeTime: relativeTime,
     modelChip: modelChip, modelLogoUrl: modelLogoUrl, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,
     adCardHtml: adCardHtml, adFormatLabel: adFormatLabel, makeSeitenDrawer: makeSeitenDrawer, balkenGrau: balkenGrau,

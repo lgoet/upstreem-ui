@@ -89,10 +89,43 @@
     return { art: a.art, fn: a.fn, params: p, sig: a.fn + "|" + JSON.stringify(p) };
   }
   function filterStand() {
+    /* ohneIntent (13.10.): EIN Prompt -- ein Intent- oder Branded-Filter liesse ihn entweder ganz
+       stehen oder ganz verschwinden. Die Datenteile haengen den Filter der App dann nicht an. */
     return { team: UC.getTeam ? UC.getTeam() : "", von: P.f.von, bis: P.f.bis, modelle: P.f.modelle,
-             maerkte: null, topics: null, tagmode: "or" };
+             maerkte: null, topics: null, tagmode: "or", ohneIntent: true };
   }
   function marke() { return eigeneMarke() || P.eigene || null; }
+
+  /* ---- Intent und Branded speichern (13.10.) ----
+     Sofort zeigen, dann speichern. Scheitert es, kommt der Stand der Datenbank zurueck (der Kopf
+     wird neu gelesen) und ein Satz, warum -- nie still der falsche Wert. */
+  function intentSpeichern(art, wert) {
+    var d = P.zeile, id = P.id;
+    if (!d || !id) return;
+    if (art === "intent") {
+      if (wert) { d.intent = wert; d.intent_source = "user"; d.intent_status = "done"; }
+      else { d.intent = null; d.intent_source = null; d.intent_status = "pending"; }
+    } else if (wert === "") d.branded_source = "match";
+    else { d.branded = wert === "yes"; d.branded_source = "user"; }
+    kopfZeichnen();
+    teamWarten().then(function (team) {
+      if (!team) return { ok: false, status: 0 };
+      var p = { p_team: team, p_target: "ids", p_ids: [id] };
+      if (art === "intent") p.p_intent = wert || null;
+      else p.p_branded = wert === "yes" ? true : (wert === "no" ? false : null);
+      return UC.rpc(art === "intent" ? "prompt_intent_set_v1" : "prompt_branded_set_v1", p, { timeoutMs: 30000 });
+    }).then(function (erg) {
+      if (erg && erg.ok) {
+        try { window.dispatchEvent(new CustomEvent("up-prompt-intent", { detail: { prompt_id: id } })); } catch (e) {}
+        return;
+      }
+      if (UC.toast) UC.toast(t("The intent could not be saved"), { kind: "error", desc: t("Please try again.") });
+      if (P.id === id) alleLaden(true, true);
+    }, function () {
+      if (UC.toast) UC.toast(t("The intent could not be saved"), { kind: "error", desc: t("Please try again.") });
+      if (P.id === id) alleLaden(true, true);
+    });
+  }
 
   /* ---- Der Kopf (Meta-Zeile, Titel) und die Kopfleiste ---- */
   function kopfZeichnen() {
@@ -121,8 +154,8 @@
     /* Intent und Branded (13.10., prompt_detail_v1.row): dieselben Labels wie in der Prompt-
        Tabelle, hier ohne Menue -- ueberschrieben wird in der Tabelle, der Drawer zeigt den Stand. */
     if (UC.hatIntent && UC.hatIntent(d)) {
-      teile.push(UC.intentHtml(d));
-      if (UC.brandedHtml && d.branded === true) teile.push(UC.brandedHtml(d));
+      teile.push(UC.intentHtml(d, { klick: true, id: P.id }));
+      if (UC.brandedHtml && d.branded === true) teile.push(UC.brandedHtml(d, { klick: true, id: P.id }));
     }
     /* Pausiert steht vor dem letzten Lauf: es erklaert, warum der alt ist. Das Tarif-Limit nennt
        den Grund, weil der Nutzer dort etwas tun kann. */
@@ -499,7 +532,7 @@
             '<div class="up-dk-filterzeile uprd-filterzeile">' +
             '<div class="up-root udr-root uprd-daten" data-instance="' + esc(IDS.daten) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
             '<div class="up-root ufb-root uprd-filterleiste" data-instance="' + esc(IDS.filter) + '"' +
-              ' data-models-instance="' + esc(IDS.modelle) + '" data-topics-visible="no" data-markets-visible="no" data-isdark="' + dk + '"></div>' +
+              ' data-models-instance="' + esc(IDS.modelle) + '" data-topics-visible="no" data-markets-visible="no" data-intents-visible="no" data-isdark="' + dk + '"></div>' +
             '<div class="up-root umf-root" data-instance="' + esc(IDS.modelle) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
           '</div>' +
           '</div>' +
@@ -539,12 +572,21 @@
       if (zeitraum(d.date_from, d.date_to)) filterGeaendert();
     });
     s.addEventListener("umf-models", function (e) { if (setzen("modelle", modellAuswahl(e.detail))) filterGeaendert(); });
-    /* Intent-Filter der App (13.10.): gemeinsamer Stand in core, Ereignis am window. Einmal je
-       Schale -- einsetzen() kann fuer dieselbe Schale erneut laufen. */
-    if (!s.__intentHoerer) {
-      s.__intentHoerer = function () { if (document.contains(s)) filterGeaendert(); };
-      window.addEventListener("up-intentfilter", s.__intentHoerer);
-    }
+    /* Intent und Branded ueberschreiben (13.10.): Klick auf das Label im Kopf, dasselbe Menue wie
+       in der Prompt-Tabelle (UC.makeIntentMenu). Gespeichert wird hier direkt; danach meldet
+       "up-prompt-intent" (window), damit eine offene Prompts-Seite ihre Liste nachzieht. */
+    var intentMenu = UC.makeIntentMenu ? UC.makeIntentMenu({
+      root: P.root,
+      zeile: function () { return P.zeile; },
+      onIntent: function (z, key) { intentSpeichern("intent", key); },
+      onBranded: function (z, wert) { intentSpeichern("branded", wert); }
+    }) : null;
+    s.addEventListener("click", function (e) {
+      var b = e.target.closest ? e.target.closest("[data-intent-open]") : null;
+      if (!b || !intentMenu || !P.zeile) return;
+      e.stopPropagation();
+      intentMenu.open(b, { id: P.id });
+    });
 
     function an(name, fn) { s.addEventListener(name, function (e) { fn(e.detail || {}); }); }
     function wert(d) { return d && d.value != null ? d.value : ""; }

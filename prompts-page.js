@@ -936,6 +936,8 @@
        "up-prompts-added" weiter unten, fuer alle Einstiege gleich. */
     function anlegen(payload) { return anlegenAllgemein(payload); }
     window.addEventListener("up-prompts-added", function () { if (root.isConnected) nachAenderung(); });
+    /* Intent oder Branded im Prompt-Detail geaendert (13.10.): dieselbe Zeile steht hier. */
+    window.addEventListener("up-prompt-intent", function () { if (root.isConnected) nachAenderung(); });
     if (elAdd) elAdd.addEventListener("click", function () {
       if (typeof window.openAddPrompts === "function") window.openAddPrompts({ onSubmit: anlegen });
     });

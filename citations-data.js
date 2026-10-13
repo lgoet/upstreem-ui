@@ -73,7 +73,7 @@
       p_citation_types: liste(f.citationTypen)
     };
     if (art !== "domains") b.p_url_types = liste(f.urlTypen);
-    return intentDazu(b);
+    return f.ohneIntent ? b : intentDazu(b);
   }
   function mit(o, x) { for (var k in x) if (Object.prototype.hasOwnProperty.call(x, k)) o[k] = x[k]; return o; }
   function anfrage(art, params) { return { art: art, fn: FN[art], params: params, sig: FN[art] + "|" + JSON.stringify(params) }; }

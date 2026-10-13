@@ -5,6 +5,10 @@
 - Edge-Funktion `prompt-intents-kick` (deployt)
 - n8n `n8n/PROMPT_INTENTS_V1.json` (neu) und `n8n/ONBOARDING_PROMPTS_V1.json` (geändert)
 - Änderungsliste für Prompt_Creator v2 in `n8n/AENDERUNGEN_UND_IMPORT.md`
+- **Nachtrag 1:** `intents_v1_nachtrag1.sql`, Rückweg `intents_v1_nachtrag1_rueckweg.sql`
+  - neuer Branded-Abgleich (§7)
+  - ein Anstoß je Transaktion (§6)
+  - Für die Oberfläche ändert sich kein Feld und keine Funktion.
 
 **Getestet:**
 - Zwei Läufe in Produktion, jeweils in einer Transaktion mit Rollback. Gespeichert wurde nichts.
@@ -139,6 +143,7 @@ Die Oberfläche lädt daraufhin Liste und Gruppen neu. Die Caches sind dann scho
 - **Anlegen:** Jeder neue Prompt startet auf `pending`, egal ob einzeln, als CSV, aus der Prompt Research ohne Intent oder als eigener Onboarding-Prompt.
   - Die Datenbank stößt sofort an. n8n holt bis zu 50 offene Prompts je Runde und schickt sie in einem Aufruf ans Modell (gpt-4o-mini, Temperatur 0).
   - Eine CSV mit 200 Prompts braucht also 4 Aufrufe, je 50 Prompts.
+  - Je Transaktion geht nur ein Anstoß raus (Nachtrag 1). Legt `prompts_add_v1` 10 Prompts an, kommt ein Anstoß statt 10, und n8n holt alle 10 in einer Runde.
 - **Wiederholung:**
   - Höchstens 3 Versuche, mit 2 bzw. 4 Minuten Abstand. Danach `failed`.
   - Nach 24 h ohne Ergebnis wird auf jeden Fall `failed` gesetzt. Nichts bleibt dauerhaft auf `pending`.
@@ -147,13 +152,26 @@ Die Oberfläche lädt daraufhin Liste und Gruppen neu. Die Caches sind dann scho
 
 ## 7 Branded
 
-**Abgleich:** gegen Namen, Anzeigenamen und Aliasse der eigenen Marke und aller getrackten Wettbewerber.
-- Ganze Wörter, Groß- und Kleinschreibung sowie Satzzeichen sind egal. „Mercedes-Benz“ trifft „mercedes benz“, „Audi“ trifft nicht „Audiophile“.
-- Aliasse mit `contains_ci` gelten als Teiltext, `regex` als Muster.
+**Abgleich (Stand Nachtrag 1):** Er folgt dem n8n-Workflow citation_processor, der Marken in Webseitentexten findet.
+- **Marken:** wie `get_team_companies_context_v2`. Das sind die eigene Marke und alle Wettbewerber des Teams, die global aktiv sind.
+  - Der Name ist der Anzeigename, sonst der globale Name. Der globale Name trifft also nicht mehr, wenn ein Anzeigename gesetzt ist. Soll er weiter treffen, legt man ihn als Alias an.
+  - Dazu kommen die aktiven Aliasse. Der Alias-Modus (`exact_ci`, `contains_ci`, `regex`) spielt keine Rolle, wie im Workflow.
+- **Text:** wird wie im Workflow normalisiert. Akzente fallen weg („Škoda“ = „skoda“), Groß- und Kleinschreibung ist egal, Satzzeichen außer Punkt und Bindestrich werden zu Leerzeichen.
+- **Treffer, wenn eins davon zutrifft:**
+  1. Ein Alias steht als ganzes Wort bzw. ganze Wortfolge im Text. „VW“ trifft „vw-bus mieten“, „Hub Spot“ trifft „HUB SPOT CRM“.
+  2. Der Name steht als ganzes Wort bzw. ganze Wortfolge im Text. „Audi“ trifft „Audi-Händler“, aber nicht „Audiophile“. „monday.com“ trifft nicht „monday com“.
+  3. Der Name hat genau ein Kernwort, also ohne Rechtsform und ohne allgemeine Wörter aus der Stoppliste des Workflows wie „Group“, „Inc.“ oder „Software“. Steht dieses Kernwort im Text, ist es ein Treffer: „BMW Group“ trifft „BMW X5“, „HubSpot Inc.“ trifft „hubspot pricing“.
+     - Kurze Vorsatzwörter (bis 2 Zeichen) müssen dann auch im Text stehen: „Le Creuset“ trifft „creuset“ allein nicht, „H2 Hotels“ trifft „hotels“ nicht.
+  4. Kurzmarken mit 3 Zeichen (Kia, BMW) treffen nur als ganzes Wort: „Kia Sportage“ ja, „Kiara“ nein.
+- **Bewusst nicht übernommen** (mit echten Prompts geprüft):
+  - Die unscharfe Alias-Überlappung des Workflows (zwei gemeinsame Wörter reichen). Mit ihr traf „günstiges hotel in düsseldorf“ vier Hotelmarken über deren Aliasse „X Hotel Düsseldorf“. „beste amerikanische Buffet-Restaurants in Bottrop“ traf die eigene Marke über „Factory Buffet Bottrop“.
+  - Der Teilwort-Treffer für Kurzmarken, damit nicht „Kiara“ als Kia zählt.
+- **Folge:** Marken mit zwei Kernwörtern („Meininger Hotels“, „ibis Hotels“) treffen nur mit vollem Namen oder einem Alias. Ein Alias „Meininger“ im Brands-Bereich reicht, der Abgleich läuft dann sofort neu.
+- **Gilt überall, wo Branded berechnet wird:** Prompts, Research-Vorschläge, Onboarding (eigene Marke und Kandidaten-Wettbewerber, jeweils Name und Domain als Alias).
 
-**Neuabgleich:** wenn sich die Marken des Teams ändern, also Wettbewerber neu oder weg, Name, Anzeigename oder Alias geändert. Er gilt für alle Prompts ohne Nutzerentscheidung und für offene Research-Vorschläge. Danach werden die betroffenen Caches geleert.
-
-**Abgleich im Modell-Workflow:** Seinen Code kann ich in der Datenbank nicht sehen. Der Prompt-Abgleich arbeitet mit Wortgrenzen und ohne Groß/Klein. Weicht der Modell-Workflow davon ab, bitte melden.
+**Neuabgleich:** wenn sich die Marken des Teams ändern, also Wettbewerber neu oder weg, Name, Anzeigename oder Alias geändert. Seit Nachtrag 1 auch, wenn eine Marke global aktiv oder inaktiv wird. Er gilt für alle Prompts ohne Nutzerentscheidung und für offene Research-Vorschläge. Danach werden die betroffenen Caches geleert.
+- **Dauer:** Ein Team mit 46 Prompts und 70 Vorschlägen braucht rund 90 ms, alle Teams zusammen rund 0,6 s.
+- **Gemessen in der Transaktion:** Ein neuer Alias brauchte 86 ms bis zum fertigen Neuabgleich.
 
 ## 8 Onboarding und Prompt Research
 
@@ -170,10 +188,13 @@ Die Oberfläche lädt daraufhin Liste und Gruppen neu. Die Caches sind dann scho
 ## Zu Punkt 3: Zahlen
 
 - **Branded:**
-  - Von 622 Prompts aller Teams nennt **1** eine getrackte Marke („welche Rösterei bietet Omni-Roasts …“).
+  - Nach Nachtrag 1 nennt von 622 Prompts aller Teams **keiner** eine getrackte Marke. Die 519 aktiven Research-Vorschläge ebenfalls nicht.
+  - Der eine Treffer aus intents_v1 („welche Rösterei bietet Omni-Roasts …“) war falsch. Der alte Abgleich fand den globalen Namen „Rösterei“ der eigenen Marke, der Anzeigename ist „Rösterei Vier“.
   - Team 877c: **0 von 102** aktiven Prompts.
-  - Die Onboarding-Generierung hat Markennamen bisher also schon weitgehend gemieden.
-- **Intents je Wert:** Die gibt es erst nach dem n8n-Lauf. Vorher steht jeder Prompt auf `pending`. Abfrage für danach:
+  - Die Onboarding-Generierung hat Markennamen bisher also schon gemieden.
+- **Intents je Wert:** Der Backfill lief nach dem Import von selbst durch, am 13.10. zwischen 18:34 und 18:42 UTC, mit höchstens 2 Versuchen je Prompt.
+  - Ergebnis: 605 recommendation, 10 informational, 4 other, 3 transactional, 0 offen, 0 failed.
+  - Abfrage:
 
 ```sql
 select coalesce(intent, intent_status) as wert, count(*)

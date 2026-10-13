@@ -3044,7 +3044,7 @@
     function groupLabel(g){
       if (nachIntent()){
         var a = UC.intentArt ? UC.intentArt(g.group_key) : null;
-        return a ? UC.t(a.label) : UC.t("Classifying");
+        return a ? (UC.intentName ? UC.intentName(a) : a.label) : UC.t("Classifying");
       }
       if (isYes2(g.is_untagged)) return "No topic";
       return String(g.tag_name || g.group_key || "");
@@ -3973,20 +3973,6 @@
       var vor = thead.querySelector(".up-th-market");
       if (vor) thead.insertBefore(th, vor); else thead.appendChild(th);
     })();
-    var elIntentWrap = document.createElement("div");
-    elIntentWrap.className = "upt-intentwrap";
-    elIntentWrap.innerHTML = '<div class="up-menu upt-intentpop" role="menu" aria-hidden="true"></div>';
-    root.appendChild(elIntentWrap);
-    var elIntentPop = elIntentWrap.querySelector(".upt-intentpop");
-    var intentZiel = null;   /* { id } fuer eine Zeile, { bulk: true } fuer die Sammelleiste */
-    var intentOpener = null;
-    var intentPop = UC.makePopover ? UC.makePopover({
-      wrap: elIntentWrap, menu: elIntentPop,
-      onClose: function(){
-        if (intentOpener) intentOpener.setAttribute("aria-expanded", "false");
-        intentOpener = null; intentZiel = null;
-      }
-    }) : null;
     function zeileZu(id){
       var alle = (state.rows || []).concat(state.gRows || []);
       for (var i = 0; i < alle.length; i++) if (String(alle[i].prompt_id) === String(id)) return alle[i];
@@ -4003,71 +3989,36 @@
       });
       persist();
     }
-    function intentPopOeffnen(opener, ziel){
-      if (!intentPop || !UC.intentMenuHtml) return;
-      if (intentPop.isOpen() && intentOpener === opener){ intentPop.close(false); return; }
-      intentPop.close(false);
-      intentZiel = ziel;
-      elIntentPop.innerHTML = UC.intentMenuHtml(ziel.bulk ? null : zeileZu(ziel.id));
-      /* Lage: der Halter steht genau ueber dem Ausloeser (gleiche Kanten); die Huelle haengt
-         darunter (oder darueber, is-oben). Die Rechnung gegen den Halter-Elternteil, nicht gegen
-         die Wurzel: welches Element positioniert ist, entscheidet die Seite, nicht diese Datei. */
-      var bezug = elIntentWrap.offsetParent || document.body;
-      var a = opener.getBoundingClientRect(), b = bezug.getBoundingClientRect();
-      elIntentWrap.style.left = Math.round(a.left - b.left + bezug.scrollLeft) + "px";
-      elIntentWrap.style.top = Math.round(a.top - b.top + bezug.scrollTop) + "px";
-      elIntentWrap.style.width = Math.round(a.width) + "px";
-      elIntentWrap.style.height = Math.round(a.height) + "px";
-      elIntentWrap.classList.toggle("is-oben", !!ziel.bulk);
-      intentOpener = opener;
-      opener.setAttribute("aria-expanded", "true");
-      intentPop.open();
-    }
-    function intentSetzen(key){
-      var z = intentZiel;
-      if (!z) return;
-      if (z.bulk){
-        var pl = selectionPayload();
-        pl.intent = key;
-        fire("data-bulkintent-fn", "uptBulkIntent", pl);
-        intentPop.close(true);
-        /* Wie Status und Loeschen: nach der Handlung ist die Auswahl erledigt. */
-        clearSelection();
-        return;
+    /* Das Menue ist der Baustein aus core (UC.makeIntentMenu) -- dasselbe wie im Prompt-Detail.
+       Hier bleibt nur, was danach passiert: sofort zeigen, Ereignis an die Seite. */
+    var intentMenu = UC.makeIntentMenu ? UC.makeIntentMenu({
+      root: root, klasse: { halter: "upt-intentwrap", menue: "upt-intentpop" },
+      zeile: function(z){ return zeileZu(z.id); },
+      onIntent: function(z, key){
+        if (z.bulk){
+          var pl = selectionPayload();
+          pl.intent = key;
+          fire("data-bulkintent-fn", "uptBulkIntent", pl);
+          /* Wie Status und Loeschen: nach der Handlung ist die Auswahl erledigt. */
+          clearSelection();
+          return;
+        }
+        zeilenAendern(z.id, function(r){
+          if (key){ r.intent = key; r.intent_source = "user"; r.intent_status = "done"; }
+          else { r.intent = null; r.intent_source = null; r.intent_status = "pending"; }
+        });
+        fire("data-intentset-fn", "uptIntentSet", { mode: "ids", ids: String(z.id), count: 1, excluded_ids: "", intent: key });
+      },
+      onBranded: function(z, wert){
+        if (z.bulk) return;
+        zeilenAendern(z.id, function(r){
+          if (wert === "") { r.branded_source = "match"; }
+          else { r.branded = wert === "yes"; r.branded_source = "user"; }
+        });
+        fire("data-brandedset-fn", "uptBrandedSet", { mode: "ids", ids: String(z.id), count: 1, excluded_ids: "", branded: wert });
       }
-      zeilenAendern(z.id, function(r){
-        if (key){ r.intent = key; r.intent_source = "user"; r.intent_status = "done"; }
-        else { r.intent = null; r.intent_source = null; r.intent_status = "pending"; }
-      });
-      fire("data-intentset-fn", "uptIntentSet", { mode: "ids", ids: String(z.id), count: 1, excluded_ids: "", intent: key });
-      intentPop.close(true);
-    }
-    function brandedSetzen(wert){
-      var z = intentZiel;
-      if (!z || z.bulk) return;
-      zeilenAendern(z.id, function(r){
-        if (wert === "") { r.branded_source = "match"; }
-        else { r.branded = wert === "yes"; r.branded_source = "user"; }
-      });
-      fire("data-brandedset-fn", "uptBrandedSet", { mode: "ids", ids: String(z.id), count: 1, excluded_ids: "", branded: wert });
-      /* Offen lassen: der Schalter ist ein Schalter, kein Menuepunkt -- man sieht ihn umspringen. */
-      var r = zeileZu(z.id);
-      if (r) elIntentPop.innerHTML = UC.intentMenuHtml(r);
-    }
-    elIntentPop.addEventListener("click", function(e){
-      e.stopPropagation();
-      var opt = e.target.closest("[data-intent-set]");
-      if (opt){ intentSetzen(opt.getAttribute("data-intent-set")); return; }
-      if (e.target.closest("[data-branded-reset]")){ brandedSetzen(""); return; }
-      var br = e.target.closest("[data-branded-set]");
-      if (br){ brandedSetzen(br.getAttribute("aria-checked") === "true" ? "no" : "yes"); return; }
-    });
-    elIntentPop.addEventListener("keydown", function(e){
-      if (e.key !== "Enter" && e.key !== " ") return;
-      var el = e.target.closest("[data-intent-set], [data-branded-set]");
-      if (!el) return;
-      e.preventDefault(); el.click();
-    });
+    }) : null;
+    function intentPopOeffnen(opener, ziel){ if (intentMenu) intentMenu.open(opener, ziel); }
     /* Branded-Filter der Tabelle: dieselbe Pille wie "<Marke> mentioned?" (aus -> ja -> nein ->
        aus), eigene Klasse dazu, damit Klickweg und Breitenregeln die beiden nicht verwechseln.
        Nur sichtbar, wenn die Zeilen Intent-/Branded-Felder tragen. */

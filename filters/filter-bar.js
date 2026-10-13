@@ -210,7 +210,7 @@
                 return '<div class="up-filter-item uif-opt" role="option" tabindex="0" aria-selected="false" data-key="' + esc(a.key) + '">' +
                   '<span class="up-filter-check">' + UC.icon("check", 3) + '</span>' +
                   '<span class="uif-opt-main">' + UC.icon(a.icon, 2) +
-                    '<span class="uif-opt-name">' + esc(UC.t ? UC.t(a.label) : a.label) + '</span></span>' +
+                    '<span class="uif-opt-name">' + esc(UC.intentName ? UC.intentName(a) : a.label) + '</span></span>' +
                 '</div>';
               }).join("") +
             '</div>' +
@@ -226,7 +226,7 @@
         });
         w.classList.toggle("has-sel", n > 0);
         var a = n === 1 && UC.intentArt ? UC.intentArt(f.intents[0]) : null;
-        elLbl.textContent = a ? (UC.t ? UC.t(a.label) : a.label) : "Intent";
+        elLbl.textContent = a ? (UC.intentName ? UC.intentName(a) : a.label) : "Intent";
         var alt = elTrig.querySelector(".uif-count");
         if (alt) alt.parentNode.removeChild(alt);
         if (n > 1) {
@@ -271,8 +271,14 @@
     }
     /* Fuer eine Leiste die Intent-Wurzel bereitstellen: Attribut setzen (dann findet gewuenscht()
        den Filter) und die Wurzel neben die Leiste stellen, von wo einziehen() sie holt. */
+    /* data-intents-visible="no": eine Leiste, in der der Filter keinen Sinn hat (Prompt-Detail: EIN
+       Prompt). Dann weder Intent-Zeile noch Branded-Schalter. */
+    function intentsHier(root) {
+      var v = String(root.getAttribute("data-intents-visible") || "").trim().toLowerCase();
+      return !!(UC.intentsLive && UC.intentsLive()) && !(v === "no" || v === "false" || v === "0");
+    }
     function uifBereitstellen(root) {
-      if (!UC.intentsLive || !UC.intentsLive() || !UC.intentFilterGet) return;
+      if (!intentsHier(root) || !UC.intentFilterGet) return;
       var iid = String(root.getAttribute("data-intents-instance") || "").trim();
       if (!iid) { iid = String(root.getAttribute("data-instance") || "ufb") + "_intents"; root.setAttribute("data-intents-instance", iid); }
       var da = Array.prototype.some.call(document.querySelectorAll(".uif-root"), function (x) {
@@ -505,10 +511,12 @@
               /* Branded (13.10.): ein Schalter direkt im Panel, kein Untermenue -- es gibt nur
                  an/aus. Vorgabe aus: Prompts, die eine Marke nennen, zaehlen nicht mit (sie
                  bringen die Marke fast sicher in die Antwort). Nur mit freigegebenen Intents. */
-              (UC.intentsLive && UC.intentsLive()
+              (intentsHier(root)
                 ? '<div class="ufb-div ufb-branded-div"></div>' +
                   '<div class="up-pop-row ufb-branded" role="menuitemcheckbox" tabindex="0" aria-checked="false" data-ufb-branded>' +
-                    '<span class="up-pop-label">Include branded prompts</span>' +
+                    /* "Branded prompts" -- so heisst die Achse bei Peec/Scrunch ("Branding",
+                       "Branded Query"); kurz genug fuer eine Zeile. */
+                    '<span class="up-pop-label">Branded prompts</span>' +
                     '<span class="up-switch"></span>' +
                   '</div>'
                 : '') +
@@ -825,7 +833,7 @@
       /* Branded mitgezaehlt (13.10.)? Das ist die Abweichung von der Vorgabe und damit ein Filter,
          der sichtbar sein muss: als Chip und fuer Reset/Clear All. */
       function brandedAn() {
-        return !!(UC.intentsLive && UC.intentsLive() && UC.intentFilterGet && UC.intentFilterGet().branded === "all");
+        return !!(intentsHier(root) && UC.intentFilterGet && UC.intentFilterGet().branded === "all");
       }
       function brandedSyncen() {
         var z = root.querySelector("[data-ufb-branded]");

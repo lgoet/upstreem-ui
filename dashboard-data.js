@@ -81,7 +81,8 @@
   /* ---- Anfragen bauen -------------------------------------------------------------------------- */
   function basis(f) {
     f = f || {};
-    return intentDazu({
+    /* f.ohneIntent: ein Teil, in dem der Filter der App keinen Sinn hat (Prompt-Detail: EIN Prompt). */
+    return (f.ohneIntent ? function (o) { return o; } : intentDazu)({
       p_team: str(f.team), p_date_from: str(f.von) || null, p_date_to: str(f.bis) || null,
       p_models: liste(f.modelle), p_markets: liste(f.maerkte), p_tag_ids: uuids(f.topics),
       p_tagmode: f.tagmode === "and" ? "and" : "or"
@@ -150,7 +151,8 @@
   function citFilter(f, t) {
     t = t || {};
     return { team: f.team, von: f.von, bis: f.bis, modelle: f.modelle, maerkte: f.maerkte, topics: f.topics, tagmode: f.tagmode,
-             erwaehnt: t.erwaehnt, marken: null, citationTypen: t.citationTypen || null, urlTypen: t.urlTypen || null };
+             erwaehnt: t.erwaehnt, marken: null, citationTypen: t.citationTypen || null, urlTypen: t.urlTypen || null,
+             ohneIntent: !!f.ohneIntent };
   }
   function topTypen(f, modus, t) {
     t = t || {};

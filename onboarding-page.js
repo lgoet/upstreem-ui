@@ -1423,8 +1423,8 @@
        13.10.: sie werden erst nach dem Abschluss zugeordnet) -- als letzte Gruppe "Your prompts",
        nicht unter "Other": das waere eine Zuordnung, die noch niemand getroffen hat. */
     function intentGruppen() {
-      var gruppen = (UC.INTENTE || []).map(function (a) { return { id: "i:" + a.key, name: a.label, icon: a.icon, items: [] }; });
-      gruppen.push({ id: "i:eigen", name: "Your prompts", icon: "squarePen", items: [] });
+      var gruppen = (UC.INTENTE || []).map(function (a) { return { id: "i:" + a.key, name: UC.intentName ? UC.intentName(a) : a.label, icon: a.icon, items: [] }; });
+      gruppen.push({ id: "i:eigen", name: UC.t("Your prompts"), icon: "squarePen", items: [] });
       var index = {};
       gruppen.forEach(function (g) { index[g.id] = g; });
       for (var i = 0; i < state.prompts.length; i++) {
@@ -1486,7 +1486,7 @@
                     '<div class="uob-group-h">' +
                       (g.icon ? '<span class="uob-group-ic">' + UC.icon(g.icon, 2) + '</span>' : "") +
                       (g.farbe ? '<span class="uob-swatch" style="--uob-sw:' + esc(g.farbe) + '"></span>' : "") +
-                      '<span>' + esc(g.icon ? UC.t(g.name) : g.name) + '</span>' +
+                      '<span>' + esc(g.name) + '</span>' +
                       '<span class="uob-group-n">' + g.items.length + '</span>' +
                       /* Alle Prompts eines Themas auf einmal. Ein Umschalter und kein reines
                          Hinzufuegen: wer versehentlich alles waehlt, muss es sonst einzeln

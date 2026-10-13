@@ -2547,11 +2547,22 @@
     .up-intent-opt .up-pop-opt-l > svg { width: 16px; height: 16px; flex: 0 0 16px; color: var(--vc-fourth); }
     /* Die Herkunft unter den Werten: leise Zeile mit Zeichen, rechts der Ruecksprung als Textknopf. */
     .up-intent-herkunft { display: flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: var(--up-fs-s);
-      font-weight: var(--up-fw-m); color: var(--vc-third); }
+      font-weight: var(--up-fw-m); color: var(--vc-third); white-space: nowrap; }
     .up-intent-herkunft > svg { width: 14px; height: 14px; flex: 0 0 14px; color: var(--vc-fourth); }
     .up-intent-reset { margin-left: auto; border: 0; background: transparent; padding: 4px 6px; margin-right: -6px;
       border-radius: var(--up-r-s); font: inherit; color: var(--vc-text); cursor: pointer; }
     .up-intent-reset:hover { background: var(--up-sel-bg); }
+    /* Der Halter des Menues (UC.makeIntentMenu): steht absolut genau ueber dem Ausloeser (Lage aus
+       JS), die Huelle haengt links buendig darunter. Der Halter faengt keine Klicks, sonst laege
+       ein unsichtbarer Kasten ueber dem Label, solange das Menue zu ist. Das Aufklappen nach oben
+       (is-oben, Sammelleiste am unteren Fensterrand) gibt es nur in der Prompt-Tabelle und steht
+       in prompts-table.css. */
+    .up-intentwrap { position: absolute; z-index: 60; pointer-events: none; }
+    /* max-content mit 240 als Untergrenze: auf Deutsch ist die Herkunftszeile ("Von dir gesetzt"
+       plus "Der KI ueberlassen") breiter als 240 und brach sonst in zwei Zeilen um. */
+    .up-intentwrap .up-intentpop { left: 0; right: auto; width: max-content; min-width: 240px; max-width: min(320px, 92vw); pointer-events: none; }
+    .up-intentwrap .up-intentpop.is-shown { pointer-events: auto; }
+
     /* Unten 8 statt 14: derselbe Abstand unter der Ueberschrift wie bei .up-pop-head. Es ist
        dieselbe Rolle, und zwei Werte dafuer waren nur gewachsen. Oben bleiben die 8, die
        zusammen mit dem Trenner darueber (7px Aussenabstand) die Zaesur bilden. */
