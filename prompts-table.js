@@ -415,6 +415,12 @@
     { key: "topics",     label: "Topics",          w: "minmax(12%, 1.3fr)", min: 150, dropAt: "vnarrow", prio: 60 },
     /* Reference data, never needs to eat spare row width -- capped at 128px same as Rank/Sentiment,
        not left on a %/fr leash that grows it back out on a wide screen. */
+    /* Intent (13.10.): Label plus, falls branded, das Branded-Label mit den genannten Marken.
+       264 = gemessen im Pruefstand pi03: "Recommendation" mit Zeichen 130 (Polster 2x6, davon 6
+       ueber -6px Aussenabstand ausgeglichen), 12 Abstand, "Branded" mit drei Favicons 95 -- 237,
+       dazu 12 + 16 Zellpolster. Mit 150 stand "Informatio…" und "Reco… B…" da.
+       Gezeigt nur, wenn die Zeilen ueberhaupt Intent-Felder tragen (isHidden). */
+    { key: "intent",     label: "Intent",          w: "minmax(264px, 1.2fr)", min: 264, dropAt: "narrow",  prio: 35 },
     { key: "market",     label: "Market",          w: "minmax(90px, 128px)", min: 90,  dropAt: "narrow",  prio: 20 },
     { key: "created",    label: "Created",         w: "minmax(10%, 0.7fr)",min: 110, dropAt: "narrow",  prio: 10 }
   ];
@@ -544,6 +550,11 @@
       } catch(e){ return "both"; }
     }
     function writeGroupMode(v){ try { window.localStorage.setItem(gKey("groupmode"), v); } catch(e){} }
+    /* Gruppieren nach Topic oder Intent (13.10.). Derselbe Speicher wie die anderen Gruppenwahlen. */
+    function readGroupBy(){
+      try { return gGet("groupby") === "intent" ? "intent" : "topic"; } catch(e){ return "topic"; }
+    }
+    function writeGroupBy(v){ try { window.localStorage.setItem(gKey("groupby"), v); } catch(e){} }
     /* Defaults to List Mode (wide) the very first time grouping is ever turned on -- only an
        EXPLICIT prior choice (the key actually set, "yes" or "no") overrides that default; a
        missing key isn't the same thing as a stored "no". */
@@ -589,7 +600,7 @@
     var elFoot      = root.querySelector(".up-foot");
     var elSearch    = root.querySelector(".up-search");
     var elSearchIn  = root.querySelector(".up-search-input");
-    var elBrand     = root.querySelector(".upt-brand-toggle");
+    var elBrand     = root.querySelector(".upt-brand-toggle:not(.upt-branded-toggle)");
     /* Overwrites whatever data-tip a hand-pasted root copy already carries -- this is a static
        Bubble element, not one this file builds, so a wording fix only reaches existing embeds if
        the CDN'd JS itself rewrites the attribute at init. Same reasoning as the .upt-status
@@ -696,6 +707,14 @@
       rowHeight: readRowHeight(),
       selected: saved.selected || {},       // prompt_id -> true, persisted across pages
       brandMentioned: saved.brandMentioned || "",
+      /* Branded-Filter der Tabelle (13.10.): "" = alle (Vorgabe -- Branded-Prompts werden nur auf
+         Aktion des Nutzers ausgeblendet), "yes" = nur branded, "no" = ohne branded. */
+      branded: saved.branded || "",
+      /* Tragen die Zeilen Intent-Felder? Erst dann gibt es Spalte, Filter und Gruppierung nach
+         Intent -- vorher hat die Datenbank sie nicht, und ein leeres Feld als "Classifying" zu
+         zeigen waere gelogen. Gemerkt, damit ein Neuaufbau nicht erst ohne Spalte zeichnet. */
+      intentDa: !!saved.intentDa,
+      groupBy: readGroupBy(),               // "topic" (default) | "intent"
       brands: saved.brands || [],                             // full tracked-brand list, fed in once via setPromptsTableBrands
       mentionSel: saved.mentionSel || {}, mentionApplied: saved.mentionApplied || {}, // mentioned-brands multi-select filter
       /* Active vs Inactive is a VIEW, not a filter: the two are mutually exclusive and the
@@ -819,6 +838,7 @@
         sortField: state.sortField, sortDir: state.sortDir,
         pageSize: state.pageSize, page: state.page,
         selected: state.selected, brandMentioned: state.brandMentioned,
+        branded: state.branded, intentDa: state.intentDa,
         brands: state.brands, mentionSel: state.mentionSel, mentionApplied: state.mentionApplied,
         status: state.status, topics: state.topics,
         rows: state.rows, totalCount: state.totalCount, ohneTopic: state.ohneTopic, hasData: state.hasData,
@@ -1342,6 +1362,7 @@
         var g = (state.groups || []).filter(function(x){ return groupId(x) === state.gSelectAllGroup; })[0];
         return { mode: "filter_group", count: bulkCount(), group_key: state.gSelectAllGroup,
                  tag_ids: g ? groupTagIds(g).join(",") : "", tagmode: "and",
+                 intents: groupIntents(g), branded: brandedWert(),
                  is_custom: g && isYes2(g.is_custom) ? "yes" : "no",
                  untagged: g && isYes2(g.is_untagged) ? "yes" : "no",
                  excluded_ids: excludedIds().join(",") };
@@ -1352,7 +1373,7 @@
            excluded_ids wirklich angefasst wird. excluded_ids ist IMMER dabei, notfalls leer --
            ein fehlendes Feld reisst den Run-JS-Step in Bubble. */
         return { mode: "filter", count: bulkCount(),
-                 query: state.query, brand_mentioned: state.brandMentioned,
+                 query: state.query, brand_mentioned: state.brandMentioned, branded: brandedWert(),
                  status: state.status, order: orderValue(state.sortField, state.sortDir),
                  excluded_ids: excludedIds().join(",") };
       }
@@ -1360,6 +1381,11 @@
       return { mode: "ids", count: ids.length, ids: ids.join(","), excluded_ids: "" };
     }
     function excludedIds(){ return Object.keys(state.excluded || {}); }
+    /* Der Branded-Filter der Tabelle in der Form des Vertrags (p_branded). */
+    function brandedWert(){ return state.branded === "yes" ? "branded" : (state.branded === "no" ? "non_branded" : "all"); }
+    /* Eine Gruppe in der Intent-Ansicht steht fuer genau einen Wert (group_key). */
+    function groupIntents(g){ return g && nachIntent() ? groupId(g) : ""; }
+    function nachIntent(){ return !!state.intentDa && state.groupBy === "intent"; }
     function bulkCount(){
       /* Im Filter-Modus zaehlt die Gesamtzahl MINUS der von Hand abgewaehlten. Genau die Zahl,
          die der Server nach dem Abziehen von excluded_ids anfassen wird -- Anzeige und Wirkung
@@ -1772,6 +1798,7 @@
             escape +
           '</span>' +
           ersterWerkzeug +
+          (state.intentDa && !isInactive ? werkzeug('data-bulk-intent aria-haspopup="menu" aria-expanded="false"', "signpost", "Set intent") : "") +
           werkzeug('data-bulk-copy', "copy", "Copy prompts") +
           werkzeug('data-bulk-status', "power", statusLabel) +
           werkzeug('data-bulk-clear', "x", "Clear selection") +
@@ -2210,6 +2237,7 @@
         { w:56,  cls:"upt-td-sentiment" },
         { logo:true, logoStyle:"border-radius:999px", cls:"upt-td-brands" },
         { w:90,  cls:"upt-td-topics" },
+        { w:96,  cls:"upt-td-intent" },
         { w:60,  cls:"upt-td-market" },
         { w:76,  cls:"upt-td-created" }
       ]});
@@ -2223,6 +2251,15 @@
       return '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(v) + '</span></span>';
     }
     function sentCell(v){ return UC.sentHtml(v); }
+    /* Intent und Branded in einer Zelle: zwei Antworten auf "was fuer eine Frage ist das", und
+       Branded allein waere eine Spalte, die in den meisten Zeilen leer bleibt. Beide klickbar --
+       derselbe Klick oeffnet dasselbe Menue (Ueberschreiben, Branded-Schalter). */
+    function intentCell(r){
+      if (!UC.intentHtml || !UC.hatIntent || !UC.hatIntent(r)) return '<span class="up-num is-empty">–</span>';
+      var id = String(r.prompt_id == null ? "" : r.prompt_id);
+      return '<span class="upt-intentzelle">' + UC.intentHtml(r, { klick: true, id: id }) +
+        (UC.brandedHtml ? UC.brandedHtml(r, { klick: true, id: id }) : "") + '</span>';
+    }
     function marketCell(m){
       var code = String(m == null ? "" : m).trim().toUpperCase();
       if (!code) return '<span class="up-num is-empty">–</span>';
@@ -2414,6 +2451,7 @@
         '<div class="up-td upt-td-sentiment">' + sentCell(r.avg_sentiment_30d) + '</div>' +
         '<div class="up-td upt-td-brands">' + UC.brandStack(r.top_mentions, r.companies_preview_totalcount) + '</div>' +
         '<div class="up-td upt-td-topics">' + topicsCell(id, r.tags) + '</div>' +
+        '<div class="up-td upt-td-intent">' + intentCell(r) + '</div>' +
         '<div class="up-td upt-td-market">' + marketCell(r.market) + '</div>' +
         '<div class="up-td upt-td-created"><span class="upt-date">' + esc(fmtDate(r.created_at)) + '</span></div>' +
       '</div>';
@@ -2603,9 +2641,22 @@
       if (!elGrpMenu) return;
       var custom = readCustomGroups();
       var on = state.grouped;
-      var h = '<div class="up-pop-head">Grouping</div>' +
+      /* GANZ OBEN der Umschalter Topic / Intent (13.10. so bestellt). Der Segmentstreifen aus core
+         (.up-dense), derselbe wie die Zeilenhoehe im Spaltenmenue. Eine Wahl schaltet die
+         Gruppierung mit ein -- wer "nach Intent" waehlt, will gruppiert sehen. Nur, wenn die
+         Zeilen Intents tragen; sonst gibt es nur eine Art und der Schalter waere Attrappe. */
+      var mitIntent = !!state.intentDa;
+      var istIntent = mitIntent && state.groupBy === "intent";
+      var h = mitIntent
+        ? '<div class="up-pop-head">Group by</div>' +
+          '<div class="up-dense upt-grpby" role="radiogroup" aria-label="Group by">' +
+            '<button class="up-dense-btn' + (!istIntent ? " is-active" : "") + '" type="button" role="radio" aria-checked="' + (!istIntent ? "true" : "false") + '" data-grp-by="topic">Topic</button>' +
+            '<button class="up-dense-btn' + (istIntent ? " is-active" : "") + '" type="button" role="radio" aria-checked="' + (istIntent ? "true" : "false") + '" data-grp-by="intent">Intent</button>' +
+          '</div><div class="up-pop-div"></div>'
+        : '<div class="up-pop-head">Grouping</div>';
+      h +=
         '<div class="up-pop-row" data-grp-toggle>' +
-          '<span class="up-pop-label">Group by topics</span>' +
+          '<span class="up-pop-label">' + (mitIntent ? "Group prompts" : "Group by topics") + '</span>' +
           '<span class="up-switch' + (on ? " is-on" : "") + '" role="switch" aria-checked="' + (on ? "true" : "false") + '"></span>' +
         '</div>';
       /* Grouping is an Active-view feature; say so instead of silently doing nothing. */
@@ -2617,6 +2668,8 @@
          (populateGrpSideSort, data-grpside-sortfield) mit Richtungsschalter, und der steht dort,
          wo man die Gruppen ohnehin ansieht. Beide schrieben dasselbe state.groupSort -- zwei
          Bedienwege fuer eine Einstellung, von denen einer weniger kann. */
+      /* Eigene Gruppierungen sind Topic-Buendel -- in der Intent-Ansicht gibt es sie nicht. */
+      if (istIntent){ elGrpMenu.innerHTML = h; return; }
       h += '<div class="up-pop-div"></div><div class="up-pop-sub">Custom groupings</div>';
       if (!custom.length){
         h += '<div class="upt-group-note">No custom grouping yet.</div>';
@@ -2989,6 +3042,10 @@
     /* The RPC's booleans arrive as real booleans from Supabase but as strings through Bubble. */
     function isYes2(v){ return v === true || v === "true" || v === "yes" || v === 1 || v === "1"; }
     function groupLabel(g){
+      if (nachIntent()){
+        var a = UC.intentArt ? UC.intentArt(g.group_key) : null;
+        return a ? UC.t(a.label) : UC.t("Classifying");
+      }
       if (isYes2(g.is_untagged)) return "No topic";
       return String(g.tag_name || g.group_key || "");
     }
@@ -3066,6 +3123,12 @@
        "No topic" is bare text. One function, so the wide view's sidelist can never drift from
        what the inline header already draws for the identical group. */
     function groupChipHtml(g){
+      /* Intent-Ansicht: der Kopf ist das Label selbst (ohne Klick -- der Kopf klappt auf). Die
+         Gruppe "pending" steht fuer noch nicht zugeordnete Prompts. */
+      if (nachIntent() && UC.intentHtml){
+        var k = groupId(g);
+        return UC.intentHtml(k === "pending" ? { intent_status: "pending" } : { intent: k, intent_status: "done" });
+      }
       var custom = isYes2(g.is_custom), untag = isYes2(g.is_untagged);
       var label = groupLabel(g);
       if (custom){
@@ -3491,6 +3554,8 @@
         state.gReqId = grpReqSeq;
         fire("data-groupopen-fn", "uptGroupOpen", {
           group_key: id,
+          intents: groupIntents(g),
+          group_by: nachIntent() ? "intent" : "topic",
           tag_ids: groupTagIds(g).join(","),
           untagged: isYes2(g.is_untagged) ? "yes" : "no",
           is_custom: isYes2(g.is_custom) ? "yes" : "no",
@@ -3655,7 +3720,7 @@
       /* Hidden groupings are simply not sent: the server never computes a section nobody wants to
          see, instead of computing it and the client throwing it away. */
       var custom = readCustomGroups().filter(function(g){ return !g.hidden; });
-      var p = { grouped: "yes", mode: groupModeWirksam() };
+      var p = { grouped: "yes", mode: groupModeWirksam(), group_by: nachIntent() ? "intent" : "topic", branded: brandedWert() };
       /* Only send p_groups when the user actually HAS visible custom groups -- the RPC's default
          is one group per topic plus untagged, and sending an empty array would ask for zero. */
       if (custom.length) p.groups = JSON.stringify(custom.map(function(g){
@@ -3884,6 +3949,162 @@
       elGrpSideSortMenu.innerHTML = html;
     }
 
+    /* ---------------- Intent: Erkennen, Ueberschreiben, Sammelaktion (13.10.) ----------------
+       Das Menue ist EINES fuer die ganze Tabelle: eine .up-menu-Huelle aus core in einem Halter,
+       der an die Stelle des angeklickten Labels gesetzt wird (Halter absolut in der Wurzel, also
+       kein Portal). Eine Huelle je Zeile waeren 100 Menues im Baum fuer eine Handlung, die man
+       selten braucht. Fuer die Sammelleiste (unten am Fenster) klappt es nach OBEN auf.
+       Die Werte schreibt die Seite (uptIntentSet / uptBrandedSet / uptBulkIntent); hier wird nur
+       sofort gezeigt, was der Nutzer gewaehlt hat, und die Zelle neu gezeichnet. */
+    function intentErkennen(rows){
+      if (!Array.isArray(rows) || !rows.length) return;
+      var da = rows.some(function(r){ return UC.hatIntent && UC.hatIntent(r); });
+      if (da === state.intentDa) return;
+      state.intentDa = da;
+      if (typeof applyCols === "function") applyCols();
+      syncBranded();
+    }
+    (function(){
+      var thead = root.querySelector(".up-thead");
+      if (!thead || thead.querySelector(".up-th-intent")) return;
+      var th = document.createElement("div");
+      th.className = "up-th up-th-intent";
+      th.textContent = "Intent";
+      var vor = thead.querySelector(".up-th-market");
+      if (vor) thead.insertBefore(th, vor); else thead.appendChild(th);
+    })();
+    var elIntentWrap = document.createElement("div");
+    elIntentWrap.className = "upt-intentwrap";
+    elIntentWrap.innerHTML = '<div class="up-menu upt-intentpop" role="menu" aria-hidden="true"></div>';
+    root.appendChild(elIntentWrap);
+    var elIntentPop = elIntentWrap.querySelector(".upt-intentpop");
+    var intentZiel = null;   /* { id } fuer eine Zeile, { bulk: true } fuer die Sammelleiste */
+    var intentOpener = null;
+    var intentPop = UC.makePopover ? UC.makePopover({
+      wrap: elIntentWrap, menu: elIntentPop,
+      onClose: function(){
+        if (intentOpener) intentOpener.setAttribute("aria-expanded", "false");
+        intentOpener = null; intentZiel = null;
+      }
+    }) : null;
+    function zeileZu(id){
+      var alle = (state.rows || []).concat(state.gRows || []);
+      for (var i = 0; i < alle.length; i++) if (String(alle[i].prompt_id) === String(id)) return alle[i];
+      return null;
+    }
+    /* Beide Kopien einer Zeile (flache Liste und offene Gruppe tragen eigene Objekte) bekommen
+       denselben Wert -- sonst zeigt die eine Ansicht nach dem Umschalten den alten. */
+    function zeilenAendern(id, fn){
+      (state.rows || []).concat(state.gRows || []).forEach(function(r){ if (String(r.prompt_id) === String(id)) fn(r); });
+      var r = zeileZu(id);
+      if (!r) return;
+      Array.prototype.forEach.call(root.querySelectorAll('.up-row[data-id="' + (window.CSS && CSS.escape ? CSS.escape(String(id)) : String(id)) + '"] .upt-td-intent'), function(td){
+        td.innerHTML = intentCell(r);
+      });
+      persist();
+    }
+    function intentPopOeffnen(opener, ziel){
+      if (!intentPop || !UC.intentMenuHtml) return;
+      if (intentPop.isOpen() && intentOpener === opener){ intentPop.close(false); return; }
+      intentPop.close(false);
+      intentZiel = ziel;
+      elIntentPop.innerHTML = UC.intentMenuHtml(ziel.bulk ? null : zeileZu(ziel.id));
+      /* Lage: der Halter steht genau ueber dem Ausloeser (gleiche Kanten); die Huelle haengt
+         darunter (oder darueber, is-oben). Die Rechnung gegen den Halter-Elternteil, nicht gegen
+         die Wurzel: welches Element positioniert ist, entscheidet die Seite, nicht diese Datei. */
+      var bezug = elIntentWrap.offsetParent || document.body;
+      var a = opener.getBoundingClientRect(), b = bezug.getBoundingClientRect();
+      elIntentWrap.style.left = Math.round(a.left - b.left + bezug.scrollLeft) + "px";
+      elIntentWrap.style.top = Math.round(a.top - b.top + bezug.scrollTop) + "px";
+      elIntentWrap.style.width = Math.round(a.width) + "px";
+      elIntentWrap.style.height = Math.round(a.height) + "px";
+      elIntentWrap.classList.toggle("is-oben", !!ziel.bulk);
+      intentOpener = opener;
+      opener.setAttribute("aria-expanded", "true");
+      intentPop.open();
+    }
+    function intentSetzen(key){
+      var z = intentZiel;
+      if (!z) return;
+      if (z.bulk){
+        var pl = selectionPayload();
+        pl.intent = key;
+        fire("data-bulkintent-fn", "uptBulkIntent", pl);
+        intentPop.close(true);
+        /* Wie Status und Loeschen: nach der Handlung ist die Auswahl erledigt. */
+        clearSelection();
+        return;
+      }
+      zeilenAendern(z.id, function(r){
+        if (key){ r.intent = key; r.intent_source = "user"; r.intent_status = "done"; }
+        else { r.intent = null; r.intent_source = null; r.intent_status = "pending"; }
+      });
+      fire("data-intentset-fn", "uptIntentSet", { mode: "ids", ids: String(z.id), count: 1, excluded_ids: "", intent: key });
+      intentPop.close(true);
+    }
+    function brandedSetzen(wert){
+      var z = intentZiel;
+      if (!z || z.bulk) return;
+      zeilenAendern(z.id, function(r){
+        if (wert === "") { r.branded_source = "match"; }
+        else { r.branded = wert === "yes"; r.branded_source = "user"; }
+      });
+      fire("data-brandedset-fn", "uptBrandedSet", { mode: "ids", ids: String(z.id), count: 1, excluded_ids: "", branded: wert });
+      /* Offen lassen: der Schalter ist ein Schalter, kein Menuepunkt -- man sieht ihn umspringen. */
+      var r = zeileZu(z.id);
+      if (r) elIntentPop.innerHTML = UC.intentMenuHtml(r);
+    }
+    elIntentPop.addEventListener("click", function(e){
+      e.stopPropagation();
+      var opt = e.target.closest("[data-intent-set]");
+      if (opt){ intentSetzen(opt.getAttribute("data-intent-set")); return; }
+      if (e.target.closest("[data-branded-reset]")){ brandedSetzen(""); return; }
+      var br = e.target.closest("[data-branded-set]");
+      if (br){ brandedSetzen(br.getAttribute("aria-checked") === "true" ? "no" : "yes"); return; }
+    });
+    elIntentPop.addEventListener("keydown", function(e){
+      if (e.key !== "Enter" && e.key !== " ") return;
+      var el = e.target.closest("[data-intent-set], [data-branded-set]");
+      if (!el) return;
+      e.preventDefault(); el.click();
+    });
+    /* Branded-Filter der Tabelle: dieselbe Pille wie "<Marke> mentioned?" (aus -> ja -> nein ->
+       aus), eigene Klasse dazu, damit Klickweg und Breitenregeln die beiden nicht verwechseln.
+       Nur sichtbar, wenn die Zeilen Intent-/Branded-Felder tragen. */
+    var elBranded = root.querySelector(".upt-branded-toggle");
+    if (!elBranded && elHeadTools){
+      elBranded = document.createElement("button");
+      elBranded.type = "button";
+      elBranded.className = "upt-brand-toggle upt-branded-toggle";
+      elBranded.setAttribute("data-tip", "Filter for prompts that name a brand");
+      elBranded.innerHTML = '<span class="upt-brand-toggle-lbl"><span class="upt-brand-label">Branded</span></span>' +
+        '<span class="upt-brand-check">' +
+          '<svg class="upt-brand-check-yes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7"/></svg>' +
+          '<svg class="upt-brand-check-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20.9922 12L2.99219 12"/></svg>' +
+        '</span>';
+      var nach = root.querySelector(".upt-brand-toggle:not(.upt-branded-toggle)");
+      if (nach && nach.parentNode === elHeadTools) elHeadTools.insertBefore(elBranded, nach.nextSibling);
+      else elHeadTools.insertBefore(elBranded, elHeadTools.firstChild);
+    }
+    function syncBranded(){
+      if (!elBranded) return;
+      elBranded.classList.toggle("is-visible", !!state.intentDa && state.status !== "inactive");
+      elBranded.classList.toggle("is-yes", state.branded === "yes");
+      elBranded.classList.toggle("is-no", state.branded === "no");
+      elBranded.setAttribute("aria-label", state.branded === "yes" ? "Only branded prompts"
+        : (state.branded === "no" ? "Without branded prompts" : "All prompts, branded or not"));
+    }
+    function cycleBranded(){
+      state.branded = state.branded === "" ? "yes" : (state.branded === "yes" ? "no" : "");
+      state.page = 1;
+      persist(); syncBranded(); renderPager();
+      state.softReload = false; endSoftReload(); invalidateSelectAll();
+      fire("data-branded-fn", "uptBranded", { branded: state.branded === "yes" ? "branded" : (state.branded === "no" ? "non_branded" : "all") });
+      if (groupingOn()) fetchGroups();
+      refreshOpenGroupIfAny();
+    }
+    syncBranded();
+
     /* ---------------- columns / pager / sort (core) ---------------- */
     var PROMPT_MIN = 260;
     var colsKit = UC.makeColumns({
@@ -3895,6 +4116,7 @@
          Removed from the grid template rather than hidden with CSS — a hidden cell would leave its
          track behind and knock the row out of line. */
       isHidden: function(c){
+        if (c.key === "intent" && !state.intentDa) return true;
         return state.status === "inactive" &&
           (c.key === "brands" || c.key === "visibility" || c.key === "rank" || c.key === "sentiment");
       },
@@ -4151,6 +4373,16 @@
           toggleGrouping();
           return;
         }
+        var grpBy = e.target.closest("[data-grp-by]");
+        if (grpBy){
+          var nach = grpBy.getAttribute("data-grp-by") === "intent" ? "intent" : "topic";
+          if (nach === state.groupBy && state.grouped){ return; }
+          state.groupBy = nach; writeGroupBy(nach);
+          state.expandedGroup = null; state.groups = []; state.groupsHasData = false;
+          if (!state.grouped) toggleGrouping();
+          else { clearSelection(); populateGroupMenu(); syncGroupBtn(); fetchGroups(); }
+          return;
+        }
         if (e.target.closest("[data-grp-onlycustom]")){
           state.groupMode = state.groupMode === "both" ? "custom" : (state.groupMode === "custom" ? "topics" : "both");
           writeGroupMode(state.groupMode);
@@ -4391,6 +4623,8 @@
         }
         if (e.target.closest("[data-bulk-copy]")){ bulkCopyPrompts(); return; }
         if (e.target.closest("[data-bulk-status]")){ setTopicMenuOpen(false); applyBulkStatus(); return; }
+        var biBtn = e.target.closest("[data-bulk-intent]");
+        if (biBtn){ e.stopPropagation(); setTopicMenuOpen(false); intentPopOeffnen(biBtn, { bulk: true }); return; }
         if (e.target.closest("[data-bulk-delete]")){ applyBulkDelete(); return; }
         return;
       }
@@ -4430,7 +4664,9 @@
       }
       if (e.target.closest(".up-search-btn")){ closePops(); toggleSearch(); return; }
       if (e.target.closest(".up-export")){ openExport(); return; }
-      if (e.target.closest(".upt-brand-toggle")){ closePops(); cycleBrand(); return; }
+      /* :not -- der Branded-Schalter (13.10.) traegt dieselbe Klasse fuer dieselbe Optik und hat
+         seinen eigenen Klickweg weiter unten. Ohne die Ausnahme schaltete er diesen Filter um. */
+      if (e.target.closest(".upt-brand-toggle:not(.upt-branded-toggle)")){ closePops(); cycleBrand(); return; }
 
       if (e.target.closest(".up-ment-clear")){
         state.mentionSel = {}; persist();
@@ -4571,6 +4807,15 @@
         headSortClick(th.getAttribute("data-sortcol")); return;
       }
 
+      /* --- Intent-/Branded-Label: oeffnet das Menue, schluckt den Zeilenklick --- */
+      var intentBtn = e.target.closest("[data-intent-open]");
+      if (intentBtn && root.contains(intentBtn)){
+        e.stopPropagation();
+        intentPopOeffnen(intentBtn, { id: intentBtn.getAttribute("data-intent-open") });
+        return;
+      }
+      if (e.target.closest(".upt-branded-toggle")){ closePops(); cycleBranded(); return; }
+
       /* --- topics cell (opens the Edit Topics popup; must come BEFORE the row-click handler) ---
          Clicking the tags opens topic management for that prompt rather than the prompt's own
          detail page, so it deliberately swallows the row click. Inactive prompts don't get topic
@@ -4604,6 +4849,8 @@
         else { var sid = chk.getAttribute("data-select"); if (sid) toggleSelectRow(sid); }
         return;
       }
+      /* Ein Knopf in der Zeile (Intent-Label) bekommt seine eigene Taste, nicht die der Zeile. */
+      if (e.target.closest && e.target.closest("[data-intent-open]")) return;
       var row = e.target.closest && e.target.closest(".up-row");
       if (!row || row.classList.contains("up-tsk") || state.status === "inactive") return;
       e.preventDefault();
@@ -5474,7 +5721,7 @@
       gruppierung: function(){
         var eigene = readCustomGroups().filter(function(g){ return !g.hidden; })
           .map(function(g){ return { key: g.key, tag_ids: g.tag_ids }; });
-        return { an: groupingOn(), modus: groupModeWirksam(), eigene: eigene };
+        return { an: groupingOn(), modus: groupModeWirksam(), eigene: eigene, nach: state.intentDa ? state.groupBy : "topic" };
       },
       /* ---- grouped view: the two setters Bubble calls back into ---- */
       setGroups: function(rows){
@@ -5501,6 +5748,7 @@
         if (requestId != null && state.gReqId != null && String(requestId) !== String(state.gReqId)) return;
         var list = coerceRows(rows);
         state.gRows = list;
+        intentErkennen(list);
         /* group_total_count rides on every row this same prompts RPC call returns -- the
            filtered-set count for the tag_ids this specific group-open request asked for, and what
            the group's own pager pages through. Not the group header's prompts_count (a separate,
@@ -5634,6 +5882,7 @@
           var hatteVorherDaten = state.hasData;
           state.rows = Array.isArray(params.rows) ? params.rows : [];
           state.hasData = true;
+          intentErkennen(state.rows);
           if (state.rows && state.rows.length) state.jeZeilen = true;   /* Merker fuer das Gnadenfenster */
           /* Nur ECHTE Zeilen loeschen den Lesefehler. Wuerde ihn jeder beliebige Aufruf
              loeschen (etwa ein reiner Theme-Render), stuende danach der Leerzustand da --

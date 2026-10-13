@@ -1792,6 +1792,33 @@
     "Grouping": "Gruppierung",
     "Group Prompts": "Prompts gruppieren",
     "Group by topics": "Nach Topics gruppieren",
+    "Group by": "Gruppieren nach",
+    "Group prompts": "Prompts gruppieren",
+    "Filter for prompts that name a brand": "Nach Prompts filtern, die eine Marke nennen",
+
+    /* Intents und Branded (13.10.) */
+    "Intent": "Intent",
+    "Informational": "Informativ",
+    "Recommendation": "Empfehlung",
+    "Transactional": "Transaktional",
+    "Classifying": "Wird zugeordnet",
+    "Not classified": "Nicht zugeordnet",
+    "Set by AI": "Von der KI gesetzt",
+    "Set by you": "Von dir gesetzt",
+    "Reset to AI": "Der KI überlassen",
+    "Reset to match": "Automatisch erkennen",
+    "Set intent": "Intent setzen",
+    "Branded": "Branded",
+    "Names {names}": "Nennt {names}",
+    "Names a tracked brand": "Nennt eine getrackte Marke",
+    "The intent is being set. This takes a moment.": "Der Intent wird gerade zugeordnet. Das dauert einen Moment.",
+    "The intent couldn't be set automatically. Choose one yourself.": "Der Intent ließ sich nicht automatisch zuordnen. Wähl ihn selbst.",
+    "The intent could not be saved": "Der Intent konnte nicht gespeichert werden",
+    "Intent set for {n} prompt": "Intent für {n} Prompt gesetzt",
+    "Intent set for {n} prompts": "Intent für {n} Prompts gesetzt",
+    "Only branded prompts": "Nur Prompts mit Marke",
+    "Without branded prompts": "Ohne Prompts mit Marke",
+    "All prompts, branded or not": "Alle Prompts, mit und ohne Marke",
     "Custom groupings": "Eigene Gruppierungen",
     "Only show custom groupings": "Nur eigene Gruppierungen zeigen",
     "No custom grouping yet.": "Noch keine eigene Gruppierung.",
@@ -5758,6 +5785,144 @@
     /* opts.spread:"left" — for a stack pinned to the right edge of its cell/card, where the
        default rightward hover spread would push chips outside the container. */
     return '<span class="up-stack' + (opts.spread === "left" ? " is-spread-left" : "") + '">' + html + '</span>';
+  }
+
+  /* ---- Prompt-Intents und Branded (13.10.) ---------------------------------------------------
+     Vertrag: bubble/intents_13_10/DB_AUFTRAG_INTENTS.md. Genau ein Intent je Prompt aus vier
+     Werten; was nicht genau einer davon ist, ist KEIN Intent (die Datenbank prueft hart, hier wird
+     nur noch gelesen). Das Label ist Variante B vom 13.10.: Zeichen plus Text, ohne Flaeche --
+     es steht in Zeilen neben den Topic-Chips, und die tragen Rand und Strich; ein zweiter Chip
+     daneben haette beide gleich laut gemacht.
+     Die Zeichen: Wissen (Buch), Optionen (Liste), Konditionen (Karte), Rest (RectangleEllipsis,
+     vom Nutzer gewaehlt). Reihenfolge = Buyer Journey, sie ist auch die der Gruppen und Filter. */
+  var INTENTE = [
+    { key: "informational",  label: "Informational",  icon: "bookOpen" },
+    { key: "recommendation", label: "Recommendation", icon: "listTodo" },
+    { key: "transactional",  label: "Transactional",  icon: "creditCard" },
+    { key: "other",          label: "Other",          icon: "rectangleEllipsis" }
+  ];
+  function intentArt(k){
+    k = String(k == null ? "" : k).trim().toLowerCase();
+    for (var i = 0; i < INTENTE.length; i++) if (INTENTE[i].key === k) return INTENTE[i];
+    return null;
+  }
+  /* Hat diese Zeile ueberhaupt Intent-Felder? Solange die Datenbank sie nicht liefert, fehlen sie
+     ganz -- dann darf NICHTS gezeichnet werden. Ein fehlendes Feld als "Classifying" zu zeigen
+     hiesse, jedem Prompt einen Lauf anzudichten, der nie stattfindet. */
+  function hatIntent(r){
+    return !!r && typeof r === "object" && ("intent" in r || "intent_status" in r);
+  }
+  /* done: gueltiger Wert. failed: drei Versuche ohne gueltigen Wert (Vertrag 2.3) -- der Nutzer
+     setzt ihn selbst. pending: alles andere, auch ein ungueltiger Wert, der den Weg hierher
+     trotzdem gefunden hat (der Hintergrundlauf holt ihn nach). */
+  function intentZustand(r){
+    r = r || {};
+    var a = intentArt(r.intent);
+    if (a) return { status: "done", art: a, user: String(r.intent_source || "") === "user" };
+    if (String(r.intent_status || "").toLowerCase() === "failed") return { status: "failed", art: null, user: false };
+    return { status: "pending", art: null, user: false };
+  }
+  /* Das Label. opts.klick: als Knopf mit data-intent-open (die Tabelle oeffnet daran das Menue);
+     opts.id: der Prompt, fuer den es steht. Der Ladezustand ist STATISCH (Ansage 13.10.: keine
+     Animation, ausgegraut) -- die Uhr in der leisesten Textfarbe, sonst dieselbe Form, damit die
+     Zeile beim Eintreffen des Werts nicht springt. Der Stift steht nur hinter einem Wert, den der
+     Nutzer selbst gesetzt hat: er sagt "das hat keine KI entschieden", und genau das schuetzt ihn
+     vor jeder Neuklassifikation. */
+  function intentHtml(r, opts){
+    opts = opts || {};
+    if (!hatIntent(r)) return "";
+    var z = intentZustand(r);
+    var lbl, ic, tip;
+    if (z.status === "done"){
+      lbl = z.art.label; ic = z.art.icon;
+      tip = z.user ? "Set by you" : "Set by AI";
+    } else if (z.status === "failed"){
+      lbl = "Not classified"; ic = "helpCircle";
+      tip = "The intent couldn't be set automatically. Choose one yourself.";
+    } else {
+      lbl = "Classifying"; ic = "clock";
+      tip = "The intent is being set. This takes a moment.";
+    }
+    var kl = "up-intent is-" + z.status + (z.user ? " is-user" : "") + (opts.klick ? " is-klick" : "");
+    lbl = t(lbl); tip = t(tip);
+    var innen = icon(ic, 2) + '<span class="up-intent-lbl">' + esc(lbl) + '</span>' +
+      (z.user ? '<span class="up-intent-user" aria-hidden="true">' + icon("squarePen", 2) + '</span>' : "");
+    var daten = ' data-intent="' + esc(z.art ? z.art.key : z.status) + '" data-tip="' + esc(tip) + '"';
+    if (opts.klick){
+      return '<button type="button" class="' + kl + '"' + daten +
+        ' data-intent-open="' + esc(opts.id == null ? "" : opts.id) + '" aria-haspopup="menu">' + innen + '</button>';
+    }
+    return '<span class="' + kl + '"' + daten + '>' + innen + '</span>';
+  }
+  /* Branded (Variante B2): das Wort plus die Favicons der Marken, die der Prompt nennt -- damit
+     man sieht, WARUM er als branded zaehlt. Non-branded zeigt nichts: das ist der Normalfall, und
+     ein Label auf jeder zweiten Zeile waere Laerm. Hoechstens drei Zeichen, der Rest als +N;
+     faellt ein Favicon aus, steht der Anfangsbuchstabe da (dasselbe Verhalten wie brandStack). */
+  function brandedHtml(r, opts){
+    opts = opts || {};
+    if (!r || r.branded !== true) return "";
+    var marken = (Array.isArray(r.branded_brands) ? r.branded_brands : []).filter(function(m){
+      return m && typeof m === "object" && (m.name || m.logo_url || m.favicon_url);
+    });
+    var MAX = 3, gezeigt = marken.slice(0, MAX), rest = marken.length - gezeigt.length;
+    var namen = marken.map(function(m){ return String(m.name || "").trim(); }).filter(Boolean);
+    var tip = namen.length ? t("Names {names}").replace("{names}", namen.join(", ")) : t("Names a tracked brand");
+    var favs = gezeigt.map(function(m){
+      var logo = String(m.logo_url || m.favicon_url || "").trim();
+      if (logo.indexOf("//") === 0) logo = "https:" + logo;
+      if (!/^https?:\/\//i.test(logo)) logo = "";
+      var ini = String(m.name || "").trim().charAt(0).toUpperCase();
+      return '<span class="up-branded-fav' + (logo ? " has-img" : "") + '">' +
+        '<span class="up-branded-ini">' + esc(ini) + '</span>' +
+        (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+                ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : "") +
+        '</span>';
+    }).join("");
+    var kl = "up-branded" + (r.branded_source === "user" ? " is-user" : "") + (opts.klick ? " is-klick" : "");
+    var innen = '<span class="up-branded-lbl">' + esc(t("Branded")) + '</span>' +
+      (favs ? '<span class="up-branded-favs">' + favs + (rest > 0 ? '<span class="up-branded-mehr">+' + rest + '</span>' : "") + '</span>' : "");
+    if (opts.klick){
+      return '<button type="button" class="' + kl + '" data-tip="' + esc(tip) + '" data-intent-open="' +
+        esc(opts.id == null ? "" : opts.id) + '" aria-haspopup="menu">' + innen + '</button>';
+    }
+    return '<span class="' + kl + '" data-tip="' + esc(tip) + '">' + innen + '</span>';
+  }
+  /* Das Menue zum Ueberschreiben, Inhalt fuer eine .up-menu-Huelle. r ist die Zeile (oder bei
+     Sammelaktionen null: dann ohne Haken, ohne Herkunft, ohne Branded). Die Herkunft steht unter
+     den Werten, nicht als Ueberschrift: sie beantwortet "wer hat das entschieden", und "Reset to
+     AI" gibt es nur, wenn es etwas zurueckzugeben gibt.
+     data-intent-set="<key>" setzt, data-intent-set="" gibt an die KI zurueck,
+     data-branded-set schaltet Branded um (Wert im aria-checked). */
+  function intentMenuHtml(r, opts){
+    opts = opts || {};
+    var z = r ? intentZustand(r) : null;
+    var h = '<div class="up-pop-head">' + esc(t("Intent")) + '</div>' +
+      INTENTE.map(function(a){
+        var an = !!(z && z.art && z.art.key === a.key);
+        return '<div class="up-pop-opt up-intent-opt' + (an ? " is-active" : "") + '" data-intent-set="' + a.key + '"' +
+          ' role="menuitemradio" tabindex="0" aria-checked="' + (an ? "true" : "false") + '">' +
+          '<span class="up-pop-opt-l">' + icon(a.icon, 2) + '<span>' + esc(t(a.label)) + '</span></span>' +
+          '<span class="up-check">' + icon("check", 2) + '</span></div>';
+      }).join("");
+    if (z && z.status === "done"){
+      h += '<div class="up-pop-div"></div>' +
+        '<div class="up-intent-herkunft">' + icon(z.user ? "squarePen" : "sparkles", 2) +
+          '<span>' + esc(t(z.user ? "Set by you" : "Set by AI")) + '</span>' +
+          (z.user ? '<button type="button" class="up-intent-reset" data-intent-set="">' + esc(t("Reset to AI")) + '</button>' : "") +
+        '</div>';
+    }
+    if (r && opts.branded !== false && "branded" in r){
+      var b = r.branded === true;
+      h += '<div class="up-pop-div"></div>' +
+        '<div class="up-pop-row" data-branded-set role="menuitemcheckbox" tabindex="0" aria-checked="' + (b ? "true" : "false") + '">' +
+          '<span class="up-pop-label">' + esc(t("Branded")) + '</span>' +
+          '<span class="up-switch' + (b ? " is-on" : "") + '"></span></div>' +
+        (r.branded_source === "user"
+          ? '<div class="up-intent-herkunft">' + icon("squarePen", 2) + '<span>' + esc(t("Set by you")) + '</span>' +
+              '<button type="button" class="up-intent-reset" data-branded-reset>' + esc(t("Reset to match")) + '</button></div>'
+          : "");
+    }
+    return h;
   }
 
   /* Loading skeleton rows for a grid table.
@@ -22074,6 +22239,8 @@
     /* MoreVerticalIcon -- Das senkrechte Dreipunktmenue der Brands Overview */
     moreVertical: '<path d="M11.9967 12.5V12M11.9967 6.5V6M11.9967 18.5V18M12.9967 12.5C12.9967 11.9477 12.549 11.5 11.9967 11.5C11.4444 11.5 10.9967 11.9477 10.9967 12.5C10.9967 13.0523 11.4444 13.5 11.9967 13.5C12.549 13.5 12.9967 13.0523 12.9967 12.5ZM12.9967 6.5C12.9967 5.94772 12.549 5.5 11.9967 5.5C11.4444 5.5 10.9967 5.94772 10.9967 6.5C10.9967 7.05228 11.4444 7.5 11.9967 7.5C12.549 7.5 12.9967 7.05228 12.9967 6.5ZM12.9967 18.5C12.9967 17.9477 12.549 17.5 11.9967 17.5C11.4444 17.5 10.9967 17.9477 10.9967 18.5C10.9967 19.0523 11.4444 19.5 11.9967 19.5C12.549 19.5 12.9967 19.0523 12.9967 18.5Z"/>',
     /* HelpCircleIcon -- Hilfe -- in Create with AI */
+    /* RectangleEllipsis (Lucide) -- Intent "Other" (13.10. vom Nutzer gewaehlt). */
+    rectangleEllipsis: '<rect width="20" height="12" x="2" y="6" rx="2"/><path d="M12 12h.01"/><path d="M17 12h.01"/><path d="M7 12h.01"/>',
     helpCircle: '<circle cx="12" cy="12" r="10"/>' +
                 '<path d="M9.5 9.5C9.5 8.11929 10.6193 7 12 7C13.3807 7 14.5 8.11929 14.5 9.5C14.5 10.3569 14.0689 11.1131 13.4117 11.5636C12.7283 12.0319 12 12.6716 12 13.5"/>' +
                 '<path d="M12.125 16.75H12M12.25 16.75C12.25 16.8881 12.1381 17 12 17C11.8619 17 11.75 16.8881 11.75 16.75C11.75 16.6119 11.8619 16.5 12 16.5C12.1381 16.5 12.25 16.6119 12.25 16.75Z"/>',
@@ -24876,6 +25043,8 @@
     sentColor: sentColor,
     sentHtml: sentHtml,
     brandStack: brandStack,
+    INTENTE: INTENTE, intentArt: intentArt, hatIntent: hatIntent, intentZustand: intentZustand,
+    intentHtml: intentHtml, brandedHtml: brandedHtml, intentMenuHtml: intentMenuHtml,
     relativeTime: relativeTime,
     modelChip: modelChip, modelLogoUrl: modelLogoUrl, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,
     adCardHtml: adCardHtml, adFormatLabel: adFormatLabel, makeSeitenDrawer: makeSeitenDrawer, balkenGrau: balkenGrau,

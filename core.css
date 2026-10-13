@@ -2506,6 +2506,52 @@
     .up-pop-opt .up-check svg { width: 16px; height: 16px; display: block; }
     .up-pop-opt.is-active .up-check { opacity: 1; transform: scale(1); }
     .up-pop-div { height: 1px; background: var(--vc-border); margin: 7px 4px; }
+    /* ---- Intent-Label und Branded-Label (13.10., Variante B / B2) ---------------------------
+       Zeichen plus Text, OHNE Flaeche und ohne Rand: in einer Zeile neben Topic-Chips (Rand +
+       Strich) muss die Absicht leiser sein als die Ordnung des Nutzers. Hoehe die Chip-Stufe (24),
+       damit eine Zelle mit Label und eine ohne dieselbe Zeilenhoehe ergeben.
+       Das Zeichen in --vc-fourth, der Text in --vc-muted: das Zeichen ist der Wiedererkenner, nicht
+       die Aussage. Laden und "nicht zugeordnet" stehen ganz in --vc-fourth -- statisch, ohne
+       Bewegung (Ansage 13.10.), dieselbe Form, damit nichts springt, wenn der Wert eintrifft.
+       Klickbar (is-klick, ein <button>): 6px Polster und ein Hover-Grund aus --up-sel-bg, wie jede
+       Menuezeile. Das Polster gleicht der BEHAELTER aus (-6px links), nicht der Knopf selbst: ein
+       negativer Aussenabstand am Knopf machte den Behaelter 6px schmaler, und max-width: 100% zog
+       das Label dann um genau diese 6px zusammen -- "Informatio…" in einer 264px breiten Zelle
+       (gemessen im Pruefstand pi03: 100 statt 106px). */
+    .up-intent, .up-branded { display: inline-flex; align-items: center; gap: 6px; height: var(--up-h-chip);
+      min-width: 0; max-width: 100%; box-sizing: border-box; font-family: inherit; font-size: var(--up-fs-s);
+      font-weight: var(--up-fw-m); line-height: 1; color: var(--vc-muted); white-space: nowrap; }
+    .up-intent > svg { width: 14px; height: 14px; flex: 0 0 14px; color: var(--vc-fourth); }
+    .up-intent-lbl, .up-branded-lbl { overflow: hidden; text-overflow: ellipsis; }
+    .up-intent.is-pending, .up-intent.is-failed { color: var(--vc-fourth); }
+    /* Der Stift hinter einem selbst gesetzten Wert: 11px, eine Stufe unter dem Zeichen vorne --
+       er ist ein Vermerk zum Wert, kein zweites Zeichen gleichen Rangs. */
+    .up-intent-user { display: inline-flex; color: var(--vc-fourth); }
+    .up-intent-user svg { width: 11px; height: 11px; }
+    :is(.up-intent, .up-branded).is-klick { border: 0; background: transparent; padding: 0 6px;
+      border-radius: var(--up-r-s); cursor: pointer; transition: background-color var(--up-t-1) ease; }
+    :is(.up-intent, .up-branded).is-klick:hover, :is(.up-intent, .up-branded).is-klick[aria-expanded="true"] { background: var(--up-sel-bg); }
+    :is(.up-intent, .up-branded).is-klick:focus-visible { outline: var(--up-focus-w, 2px) solid var(--vc-text); outline-offset: 0; }
+    /* Branded: das Wort und die Favicons der genannten Marken. 14px mit Radius 4 -- die kleinste
+       Logostufe, die als Logo noch lesbar ist; der Anfangsbuchstabe liegt darunter und wird nur
+       sichtbar, wenn das Bild ausfaellt (has-img faellt dann weg). */
+    .up-branded-favs { display: inline-flex; align-items: center; gap: 2px; }
+    .up-branded-fav { position: relative; width: 14px; height: 14px; flex: 0 0 14px; border-radius: var(--up-r-xs);
+      overflow: hidden; display: inline-grid; place-items: center; background: var(--vc-heading-bg);
+      box-shadow: inset 0 0 0 1px var(--vc-border); }
+    .up-branded-fav img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .up-branded-ini { font-size: var(--up-fs-xs); font-weight: var(--up-fw-h); color: var(--vc-third); }
+    .up-branded-fav.has-img .up-branded-ini { visibility: hidden; }
+    .up-branded-mehr { font-size: var(--up-fs-xs); color: var(--vc-fourth); font-variant-numeric: tabular-nums; padding-left: 2px; }
+    /* Im Menue: das Zeichen vor jedem Wert in derselben Farbe wie am Label, 16px wie die Haken. */
+    .up-intent-opt .up-pop-opt-l > svg { width: 16px; height: 16px; flex: 0 0 16px; color: var(--vc-fourth); }
+    /* Die Herkunft unter den Werten: leise Zeile mit Zeichen, rechts der Ruecksprung als Textknopf. */
+    .up-intent-herkunft { display: flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: var(--up-fs-s);
+      font-weight: var(--up-fw-m); color: var(--vc-third); }
+    .up-intent-herkunft > svg { width: 14px; height: 14px; flex: 0 0 14px; color: var(--vc-fourth); }
+    .up-intent-reset { margin-left: auto; border: 0; background: transparent; padding: 4px 6px; margin-right: -6px;
+      border-radius: var(--up-r-s); font: inherit; color: var(--vc-text); cursor: pointer; }
+    .up-intent-reset:hover { background: var(--up-sel-bg); }
     /* Unten 8 statt 14: derselbe Abstand unter der Ueberschrift wie bei .up-pop-head. Es ist
        dieselbe Rolle, und zwei Werte dafuer waren nur gewachsen. Oben bleiben die 8, die
        zusammen mit dem Trenner darueber (7px Aussenabstand) die Zaesur bilden. */

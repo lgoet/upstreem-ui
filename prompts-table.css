@@ -1517,3 +1517,21 @@
 
 /* Der Text des Loesch-Dialogs (applyBulkDelete): zwei Saetze, ein Block. */
 .upt-loeschtext { display: flex; flex-direction: column; gap: 8px; }
+
+/* ---------- Intent (13.10.) ----------
+   Die Zelle: Intent-Label und, falls branded, das Branded-Label nebeneinander. 6px Abstand plus
+   die je 6px Polster der beiden Knoepfe = 18px zwischen den Texten -- zwei Angaben, keine Gruppe.
+   -6px links: gleicht das Polster des ersten Knopfs aus, damit sein Zeichen an der Spaltenkante
+   steht wie der Inhalt jeder anderen Zelle (core, .up-intent.is-klick).
+   Der Menue-Halter: steht absolut genau ueber dem angeklickten Label (Lage aus JS), die Huelle ist
+   die .up-menu aus core und haengt links buendig darunter. Der Halter selbst faengt keine Klicks,
+   sonst laege ein unsichtbarer Kasten ueber dem Label, solange das Menue zu ist.
+   is-oben: fuer die Sammelleiste am unteren Fensterrand klappt das Menue nach oben auf. */
+.upt-intentzelle { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: calc(100% + 6px); margin-left: -6px; }
+.upt-intentwrap { position: absolute; z-index: 60; pointer-events: none; }
+.upt-intentwrap .upt-intentpop { left: 0; right: auto; width: 240px; pointer-events: none; }
+.upt-intentwrap .upt-intentpop.is-shown { pointer-events: auto; }
+.upt-intentwrap.is-oben .upt-intentpop { top: auto; bottom: calc(100% + var(--up-dd-gap)); transform-origin: bottom left; }
+/* Der Umschalter Topic / Intent ganz oben im Gruppieren-Menue: Segmentstreifen aus core, hier
+   nur der Abstand zur Zeile darunter, den der Trenner nicht stellt. */
+.upt-grpby { margin-bottom: 2px; }

@@ -189,7 +189,9 @@
       var u = (window.__uptStore || {})[ids.upt] || {};
       return { status: u.status === "inactive" ? "inactive" : "active", suche: str(u.query),
                order: "visibility_desc", limit: num(u.pageSize) || UC.DEFAULT_PAGE_SIZE || 15, offset: 0,
-               erwaehnt: "all", firmen: null, requestId: null };
+               erwaehnt: "all", firmen: null, requestId: null,
+               /* Branded-Filter der Tabelle (13.10.): Vorgabe alle, ausgeblendet nur auf Aktion. */
+               branded: u.branded === "yes" ? "branded" : (u.branded === "no" ? "non_branded" : "all") };
     }
     var state = {
       tab: "allprompts",
@@ -411,7 +413,7 @@
       try { g = c.gruppierung(); } catch (e) { g = null; }
       if (!g) return;
       var vorher = state.grp.an;
-      state.grp = { an: !!g.an, modus: g.modus || "both", eigene: isArr(g.eigene) ? g.eigene : [] };
+      state.grp = { an: !!g.an, modus: g.modus || "both", eigene: isArr(g.eigene) ? g.eigene : [], nach: g.nach === "intent" ? "intent" : "topic" };
       if (vorher !== state.grp.an) topicFilterSichtbar(!state.grp.an);
       persist();
     }
@@ -546,8 +548,8 @@
       };
     }
     function gruppenAuftrag() {
-      var s = { status: "active", suche: state.p.suche, erwaehnt: state.p.erwaehnt, firmen: state.p.firmen };
-      var a = D.gruppen(filterStand(), s, state.grp.modus, state.grp.eigene);
+      var s = { status: "active", suche: state.p.suche, erwaehnt: state.p.erwaehnt, firmen: state.p.firmen, branded: state.p.branded };
+      var a = D.gruppen(filterStand(), s, state.grp.modus, state.grp.eigene, state.grp.nach);
       return {
         kanal: "gruppen", imSpeicher: lader.ausSpeicher(a) !== undefined,
         ladenAn: function () {},
@@ -654,6 +656,12 @@
       state.p.erwaehnt = v === "yes" || v === "no" ? v : "all";
       state.p.offset = 0; state.p.requestId = null; persist(); teilLaden("liste");
     });
+    /* Branded-Filter der Tabelle (13.10.): all | branded | non_branded. */
+    function brandedAus(v) { v = str(v); return v === "branded" || v === "non_branded" ? v : "all"; }
+    an("upt-uptBranded", function (d) {
+      state.p.branded = brandedAus(d.branded);
+      state.p.offset = 0; state.p.requestId = null; persist(); teilLaden("liste");
+    });
     an("upt-uptMentioned", function (d) {
       var l = liste(d.brands);
       state.p.firmen = l.length ? l : null;
@@ -671,7 +679,9 @@
         if (!isArr(eigene)) eigene = [];
       }
       var vorher = state.grp.an;
-      state.grp = { an: an_, modus: str(d.mode) === "custom" || str(d.mode) === "topics" ? str(d.mode) : "both", eigene: eigene };
+      state.grp = { an: an_, modus: str(d.mode) === "custom" || str(d.mode) === "topics" ? str(d.mode) : "both", eigene: eigene,
+                    nach: str(d.group_by) === "intent" ? "intent" : "topic" };
+      if (d.branded != null) state.p.branded = brandedAus(d.branded);
       persist();
       if (vorher !== an_) {
         topicFilterSichtbar(!an_);
@@ -684,9 +694,9 @@
       if (!bereit()) return;
       var gruppe = {
         tagIds: liste(d.tag_ids), tagmode: str(d.tagmode) === "or" ? "or" : "and",
-        ohneTopic: str(d.untagged) === "yes"
+        ohneTopic: str(d.untagged) === "yes", intents: liste(d.intents)
       };
-      var s = { status: "active", suche: state.p.suche, erwaehnt: state.p.erwaehnt, firmen: state.p.firmen,
+      var s = { status: "active", suche: state.p.suche, erwaehnt: state.p.erwaehnt, firmen: state.p.firmen, branded: state.p.branded,
                 order: str(d.order) || state.p.order, limit: num(d.limit) || 10, offset: num(d.offset) || 0 };
       var a = D.liste(filterStand(), s, gruppe), rid = d.request_id;
       lader.laden("gruppe_offen", a).then(function (erg) {
@@ -703,11 +713,12 @@
     function ziel(d) {
       var mode = str(d.mode);
       if (mode === "ids") return { ids: liste(d.ids || d.prompt_ids) };
-      var s = { status: state.p.status, suche: state.p.suche, erwaehnt: state.p.erwaehnt, firmen: state.p.firmen };
+      var s = { status: state.p.status, suche: state.p.suche, erwaehnt: state.p.erwaehnt, firmen: state.p.firmen,
+                branded: d.branded != null ? brandedAus(d.branded) : state.p.branded };
       var z = { filter: true, f: filterStand(), s: s, ausgeschlossen: liste(d.excluded_ids), erwartet: num(d.count) || 0 };
       if (mode === "filter_group") {
         s.status = "active";
-        z.gruppe = { tagIds: liste(d.tag_ids), tagmode: "and", ohneTopic: str(d.untagged) === "yes" };
+        z.gruppe = { tagIds: liste(d.tag_ids), tagmode: "and", ohneTopic: str(d.untagged) === "yes", intents: liste(d.intents) };
       }
       return z;
     }
@@ -751,6 +762,45 @@
       var aktiv = str(d.status) === "active";
       sammel(aktiv ? "set_active" : "set_inactive", d, null,
         aktiv ? anzahlSatz("{n} prompt set to active", "{n} prompts set to active") : anzahlSatz("{n} prompt set to inactive", "{n} prompts set to inactive"));
+    });
+    /* ---- Intent und Branded setzen (13.10.) ------------------------------------------------------
+       Einzeln (Klick aufs Label): die Tabelle zeigt den neuen Wert schon, hier wird nur gespeichert
+       und danach still nachgeladen -- ein Satz kommt nur, wenn es nicht geklappt hat. Als
+       Sammelaktion: ein Satz mit der Zahl, wie bei Topics und Status. */
+    function schreibeIntent(anfrage, d, satz) {
+      if (schreibtGerade || !team()) return;
+      var z = anfrage.__ziel;
+      if (!z.filter && !z.ids.length) return;
+      if ((z.filter && z.erwartet > 1000) || (!z.filter && z.ids.length > D.GRENZE.ids)) {
+        toast(t("Too many prompts selected"), "error", t("Change up to 1,000 prompts at once, or 500 when ticked one by one."));
+        return;
+      }
+      schreibtGerade = true;
+      schreiben(anfrage).then(function (erg) {
+        schreibtGerade = false;
+        if (!erg.ok) { fehlerToast(erg, t("The intent could not be saved")); nachAenderung(); return; }
+        if (satz) {
+          var dd = erg.daten && typeof erg.daten === "object" ? erg.daten : {};
+          var n = num(dd.updated);
+          if (n == null && dd.meta) n = num(dd.meta.changed);
+          toast(satz(n == null ? (z.filter ? z.erwartet : z.ids.length) : n), "success");
+        }
+        nachAenderung();
+      }, function () { schreibtGerade = false; fehlerToast(null, t("The intent could not be saved")); nachAenderung(); });
+    }
+    function mitZiel(a, z) { a.__ziel = z; return a; }
+    an("upt-uptIntentSet", function (d) {
+      var z = ziel(d);
+      schreibeIntent(mitZiel(D.intentSetzen(team(), z, str(d.intent)), z), d, null);
+    });
+    an("upt-uptBulkIntent", function (d) {
+      var z = ziel(d);
+      schreibeIntent(mitZiel(D.intentSetzen(team(), z, str(d.intent)), z), d,
+        anzahlSatz("Intent set for {n} prompt", "Intent set for {n} prompts"));
+    });
+    an("upt-uptBrandedSet", function (d) {
+      var z = ziel(d);
+      schreibeIntent(mitZiel(D.brandedSetzen(team(), z, str(d.branded)), z), d, null);
     });
     an("upt-uptBulkDelete", function (d) {
       sammel("delete", d, null, anzahlSatz("{n} prompt deleted", "{n} prompts deleted"));

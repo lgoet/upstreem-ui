@@ -46,8 +46,14 @@
     sammel: "prompts_bulk_v1",
     topicSpeichern: "topic_save_v1",
     topicLoeschen: "topic_delete_v1",
-    aktualisieren: "prompts_refresh_v1"
+    aktualisieren: "prompts_refresh_v1",
+    /* Intents und Branded (13.10., Auftrag bubble/intents_13_10/DB_AUFTRAG_INTENTS.md, Abschnitt 3). */
+    intentSetzen: "prompt_intent_set_v1",
+    brandedSetzen: "prompt_branded_set_v1"
   };
+  /* Die vier Werte des Vertrags plus "pending" (die Gruppe der noch nicht zugeordneten). Was nicht
+     darunter ist, geht gar nicht erst raus -- die Datenbank lehnte sonst den ganzen Aufruf ab. */
+  var INTENTE = ["informational", "recommendation", "transactional", "other"];
   /* Die Sortierungen der Tabelle (prompts-table.js, ORDER_MAP) -- dieselben Schluessel im Vertrag. */
   var ORDER = ["visibility_desc", "visibility_asc", "rank_asc", "rank_desc", "sentiment_desc", "sentiment_asc",
                "name_asc", "name_desc", "created_at_desc", "created_at_asc"];
@@ -75,6 +81,12 @@
       p_tagmode: (o.tagmode || f.tagmode) === "and" ? "and" : "or"
     };
     if (o.ohneTopic) { p.p_untagged = true; p.p_tag_ids = null; }
+    /* Intent-Filter: aus der Gruppe (eine Intent-Gruppe ist genau ein Wert) oder aus dem Filter
+       der Seite. Nur gesetzt, wenn es etwas zu filtern gibt -- ohne den Parameter bleibt jeder
+       Aufruf gueltig, auch solange die Funktion ihn noch nicht kennt (PostgREST: 404 PGRST202). */
+    var iv = (liste(o.intents || f.intents) || []).map(function (x) { return x.toLowerCase(); })
+      .filter(function (x) { return INTENTE.indexOf(x) >= 0 || x === "pending"; });
+    if (iv.length) p.p_intents = iv;
     return p;
   }
   function tabelle(s) {
@@ -87,12 +99,17 @@
       p_company_ids: uuids(s.firmen, GRENZE.firmen)
     };
   }
+  /* p_branded nur, wenn gefiltert wird (Vertrag 5: fehlt er, gilt 'all'). */
+  function brandedParam(p, wert) {
+    if (wert === "branded" || wert === "non_branded") p.p_branded = wert;
+    return p;
+  }
 
   /* Die flache Liste. g (optional): die aufgeklappte Gruppe { tagIds[], tagmode, ohneTopic }. */
   function liste_(f, s, g) {
     s = s || {};
     var o = str(s.order);
-    return anfrage("liste", mit(mit(basis(f, g), tabelle(s)), {
+    return anfrage("liste", mit(brandedParam(mit(basis(f, g), tabelle(s)), s.branded), {
       p_order: ORDER.indexOf(o) >= 0 ? o : ORDER[0],
       p_limit: ganz(s.limit, 15, 1, GRENZE.limit),
       p_offset: ganz(s.offset, 0, 0, 1e9)
@@ -101,16 +118,19 @@
   /* Die Gruppenkoepfe. eigene: [{key, tag_ids}] aus dem Browser (ausgeblendete schickt der
      Aufrufer gar nicht erst). modus: both | custom | topics. Sie laden immer mit denselben Filtern
      wie die Tabelle (Vertrag 6.2), also auch mit Suche und Marken. */
-  function gruppen(f, s, modus, eigene) {
+  function gruppen(f, s, modus, eigene, nach) {
     var gs = (isArr(eigene) ? eigene : []).map(function (x) {
       var key = str(x && x.key).trim().slice(0, GRENZE.gruppenName);
       var t = uuids(x && x.tag_ids, GRENZE.gruppenTopics);
       return key && t ? { key: key, tag_ids: t } : null;
     }).filter(Boolean).slice(0, GRENZE.gruppen);
-    return anfrage("gruppen", mit(mit(basis(f), tabelle(s)), {
+    var q = mit(brandedParam(mit(basis(f), tabelle(s)), s.branded), {
       p_mode: modus === "custom" || modus === "topics" ? modus : "both",
       p_groups: gs.length ? gs : null
-    }));
+    });
+    /* Nach Intent: eigene Gruppierungen sind Topic-Buendel und gelten dort nicht (Vertrag 4). */
+    if (nach === "intent") { q.p_group_by = "intent"; q.p_groups = null; q.p_mode = "both"; }
+    return anfrage("gruppen", q);
   }
   function seite(team) { return anfrage("seite", { p_team: str(team) }); }
 
@@ -142,12 +162,12 @@
   /* Die Topics zum Hinzufuegen heissen p_add_tag_ids (gebauter Vertrag 9.1): p_tag_ids ist in
      prompts_bulk_v1 der Topic-FILTER wie in Liste und Gruppen. Darum stehen sie nach den Filtern --
      die erste Fassung schrieb sie in p_tag_ids, und im Filtermodus ueberschrieb der Filter sie. */
-  function sammel(team, aktion, ziel, tagIds) {
+  function zielSetzen(p, ziel) {
     ziel = ziel || {};
-    var p = { p_team: str(team), p_action: aktion };
     if (ziel.filter) {
       mit(p, basis(ziel.f, ziel.gruppe));
       mit(p, tabelle(ziel.s));
+      brandedParam(p, ziel.s && ziel.s.branded);
       p.p_target = "filter";
       p.p_excluded_ids = uuids(ziel.ausgeschlossen, GRENZE.ausgeschlossen) || [];
       p.p_expected_count = ganz(ziel.erwartet, 0, 0, 1e6);
@@ -155,6 +175,10 @@
       p.p_target = "ids";
       p.p_ids = uuids(ziel.ids, GRENZE.ids) || [];
     }
+    return p;
+  }
+  function sammel(team, aktion, ziel, tagIds) {
+    var p = zielSetzen({ p_team: str(team), p_action: aktion }, ziel);
     if (aktion === "add_topics") p.p_add_tag_ids = uuids(tagIds, GRENZE.topicsJePrompt) || [];
     return schreiben("sammel", p);
   }
@@ -169,6 +193,15 @@
   }
   function topicLoeschen(team, tagId) { return schreiben("topicLoeschen", { p_team: str(team), p_tag_id: str(tagId) }); }
   function aktualisieren(team) { return schreiben("aktualisieren", { p_team: str(team) }); }
+  /* Intent setzen (ein Wert) oder an die KI zurueckgeben (null). Ziel wie bei der Sammelaktion. */
+  function intentSetzen(team, ziel, intent) {
+    var w = str(intent).toLowerCase();
+    return schreiben("intentSetzen", zielSetzen({ p_team: str(team), p_intent: INTENTE.indexOf(w) >= 0 ? w : null }, ziel));
+  }
+  /* Branded von Hand: true / false, oder null = wieder dem Namensabgleich ueberlassen. */
+  function brandedSetzen(team, ziel, wert) {
+    return schreiben("brandedSetzen", zielSetzen({ p_team: str(team), p_branded: wert === "yes" ? true : (wert === "no" ? false : null) }, ziel));
+  }
 
   /* ---- Antworten in die Form der Bausteine -------------------------------------------------- */
   function meta(d) { return d && d.meta && typeof d.meta === "object" ? d.meta : {}; }
@@ -186,7 +219,7 @@
      avg_sentiment_30d (heisst im Vertrag avg_sentiment), companies_preview_totalcount (heisst
      companies_mentioned_count), top_mentions mit favicon_url (Vertrag: logo_url), tags mit id. */
   function promptZeile(r) {
-    return {
+    var z = {
       prompt_id: str(r.prompt_id), prompt_text: str(r.prompt_text), market: str(r.market),
       is_active: r.is_active !== false, created_at: str(r.created_at),
       visibility_pct: num(r.visibility_pct), avg_rank: num(r.avg_rank),
@@ -197,6 +230,20 @@
       companies_preview_totalcount: num(r.companies_mentioned_count != null ? r.companies_mentioned_count : r.companies_preview_totalcount),
       tags: (isArr(r.tags) ? r.tags : []).filter(function (t) { return t && typeof t === "object"; }).map(topic)
     };
+    return intentFelder(z, r);
+  }
+  /* Intent und Branded (Vertrag 4) -- nur, was die Datenbank wirklich schickt. Ein FEHLENDES Feld
+     muss fehlen bleiben: die Tabelle erkennt daran, dass es noch keine Intents gibt, und zeigt
+     dann weder Spalte noch "Classifying". */
+  function intentFelder(z, r) {
+    ["intent", "intent_source", "intent_status", "branded_source"].forEach(function (k) {
+      if (k in r) z[k] = r[k] == null ? null : str(r[k]);
+    });
+    if ("branded" in r) z.branded = r.branded === true || r.branded === "true" ? true : (r.branded === false || r.branded === "false" ? false : null);
+    if ("branded_brands" in r) z.branded_brands = (isArr(r.branded_brands) ? r.branded_brands : [])
+      .filter(function (m) { return m && typeof m === "object"; })
+      .map(function (m) { return { company_id: str(m.company_id), name: str(m.name), logo_url: absolut(m.logo_url || m.favicon_url) }; });
+    return z;
   }
   /* Die flache Liste: Zeilen plus die Kopfzahlen. Die Tabelle blaettert im Reiter Active mit
      totalCount, im Reiter Inactive mit totalCountInactive (prompts-table.js, currentTotal) --
@@ -327,6 +374,7 @@
     liste: liste_, gruppen: gruppen, seite: seite,
     anlegen: anlegen, topicsSetzen: topicsSetzen, sammel: sammel,
     topicSpeichern: topicSpeichern, topicLoeschen: topicLoeschen, aktualisieren: aktualisieren,
+    intentSetzen: intentSetzen, brandedSetzen: brandedSetzen, INTENTE: INTENTE,
     responses: responses, zuResponses: zuResponses,
     zuListe: zuListe, zuGruppenZeilen: zuGruppenZeilen, zuGruppen: zuGruppen, abgelegteTopics: abgelegteTopics,
     zuSeite: zuSeite, zuAnlage: zuAnlage, zuSammel: zuSammel, zuTopic: zuTopic,
