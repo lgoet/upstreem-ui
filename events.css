@@ -2,8 +2,8 @@
 
    Werte von den Vorbildern uebernommen, nicht neu erfunden (CLAUDE.md 1b):
      Seitenkopf in der Komponente   teams.css (.uts-pagehead): Luft 8 oben, 8 unten, 16 Abstand
-     Karte                          opportunities.css (.uo-card): Rahmen, Radius 16, Polster 16,
-                                    Hover-Rahmen und -Flaeche
+     Karte                          opportunities.css (.uo-card): Rahmen, Radius 16, Polster 16;
+                                    Hover, Druck, Fokus seit 13.10. aus core (.up-karte-klick)
      Abschnittskopf                 response-detail.css (.urd-sec): Titel 14/500, Text 13/400
      Kasten, Tabelle, Kennzahl      core (.up-box, .up-table, UC.kpiKarte)
    Farben nur aus Marken. Die Farbe eines Events (--uev-ton) toent Grafik und Zeichen, sonst nichts:
@@ -43,13 +43,11 @@
    es 400 und 610). Die Spalte waechst nicht darueber hinaus; was in der Reihe uebrig bleibt, steht
    rechts frei, statt die Karten zu dehnen. */
 .uev-karten { display: grid; grid-template-columns: repeat(var(--uev-cols, 1), minmax(0, 500px)); gap: 20px; }
+/* Hover, Druck und Fokus: .up-karte-klick aus core (13.10., "alle Cards wie im Card Mode"). Skelett
+   und Vorschau im Anlegen-Popup tragen die Klasse nicht -- sie reagieren nicht und brauchen keine
+   Ruecknahme mehr. */
 .uev-karte { --uev-t: var(--uev-ton, var(--vc-text)); position: relative; display: flex; flex-direction: column; min-width: 0; overflow: hidden;
-  padding: 8px; background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); cursor: pointer;
-  transition: border-color var(--up-t-1) var(--up-ease), box-shadow var(--up-t-2) var(--up-ease); }
-.uev-karte:hover { border-color: var(--vc-hover-border); box-shadow: var(--up-e-1); }
-.uev-karte:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: 2px; }
-.uev-karte:is(.is-sk, .is-vorschau) { cursor: default; }
-.uev-karte:is(.is-sk, .is-vorschau):hover { border-color: var(--vc-border); box-shadow: none; }
+  padding: 8px; background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); }
 .uev-karte-band { flex: 0 0 auto; height: 80px; border-radius: var(--up-r-m); background: color-mix(in srgb, var(--uev-t) 10%, var(--vc-bg)); }
 /* Mit Titelbild (03.10.): das Motiv deckt das Band, Bild und senkrechte Lage kommen inline
    (coverStil); bis es geladen ist, steht die leise Flaeche darunter. */

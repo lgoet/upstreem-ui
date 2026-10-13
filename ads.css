@@ -108,8 +108,8 @@
 /* ---- Skelette ----------------------------------------------------------------------------------- */
 .uad-sk-flaeche { background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .uad-sk-flaeche { animation: none; } }
-.uad-karte-sk { cursor: default; }
-.uad-karte-sk:hover { transform: none; box-shadow: none; }
+/* Das Skelett ist .up-adcard ohne .up-karte-klick (Hover, Druck, Fokus und Zeiger stehen seit dem
+   13.10. dort, nicht mehr an .up-adcard) -- es reagiert also nicht und braucht keine Ruecknahme. */
 .uad-karte-sk .up-tsk-bar { display: block; }
 
 /* ---- Advertiser Detail: der Kopf (Entwurf: Logo 44, Name 22/500, Marke, Domain) ----------------
@@ -155,12 +155,10 @@
 .uad-auf-titel { font-size: var(--up-fs-s); font-weight: 600; color: var(--vc-third); white-space: nowrap; }
 .uad-auf-kopf .up-quietbtn { margin-left: auto; }
 .uad-auf-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 8px; }
+/* Hover, Druck und Fokus: .up-karte-klick aus core (13.10.), wie jede klickbare Karte. Das Skelett
+   (.is-sk) traegt die Klasse nicht. */
 .uad-auf-ad { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 8px; border: 1px solid var(--vc-border);
-  border-radius: var(--up-r-xl); background: var(--vc-bg); text-align: left; font: inherit; color: inherit; cursor: pointer;
-  transition: border-color var(--up-t-1) var(--up-ease); }
-.uad-auf-ad:hover { border-color: var(--vc-hover-border); }
-.uad-auf-ad:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: 2px; }
-.uad-auf-ad.is-sk { cursor: default; }
+  border-radius: var(--up-r-xl); background: var(--vc-bg); text-align: left; font: inherit; color: inherit; }
 .uad-auf-ad .uad-zweizeilig { flex: 1 1 auto; }
 .uad-auf-ad .up-tsk-bar { display: block; }
 

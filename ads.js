@@ -1987,7 +1987,7 @@
         else {
           inhalt = '<div class="uad-auf-liste">' + l.map(function (x) {
             var id = adMerken(x), titel = str(x.title).trim() || "–";
-            return '<button type="button" class="uad-auf-ad" data-ad-id="' + esc(id) + '">' + vorschauBild(x) +
+            return '<button type="button" class="uad-auf-ad up-karte-klick" data-ad-id="' + esc(id) + '">' + vorschauBild(x) +
               '<span class="uad-zweizeilig"><span class="uad-titel" title="' + esc(titel) + '">' + esc(titel) + '</span>' +
               '<span class="uad-unter"><span>' + esc(str(x.advertiser_name).trim()) + '</span><span>' + esc(datum(x.observed_at)) + '</span></span></span></button>';
           }).join("") + '</div>';

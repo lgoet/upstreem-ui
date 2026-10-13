@@ -685,7 +685,9 @@
         : UC.markenChip(b, { cls: "urd-pc-brand" });
       /* Ohne Produkt-Id kein Ziel -- dann ist die Karte nur Anzeige, kein Knopf. */
       var tag = id ? 'button type="button"' : "div";
-      return "<" + tag + ' class="urd-pc' + (id ? "" : " is-static") + '" data-pkey="' + k + '"' +
+      /* Nur die klickbare Karte bekommt den geteilten Zustand aus core (.up-karte-klick) -- eine
+         statische reagiert nicht auf den Zeiger. */
+      return "<" + tag + ' class="urd-pc' + (id ? " up-karte-klick" : " is-static") + '" data-pkey="' + k + '"' +
           (id ? ' data-product="' + esc(id) + '"' : "") + ">" +
         '<span class="urd-pc-media' + (bild ? " has-img" : "") + '">' +
           (bild ? '<img src="' + esc(bild) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
@@ -1292,7 +1294,7 @@
 
       elGrid.innerHTML = liste.map(function (c) {
         var fav = favOf(c), dom = domainOf(c), desc = descOf(c);
-        return '<div class="urd-cite-card" role="button" tabindex="0" data-url="' +
+        return '<div class="urd-cite-card up-karte-klick" role="button" tabindex="0" data-url="' +
                  esc(quellWert(c)) + '" data-href="' + esc(String(c.url)) + '">' +
                  '<div class="urd-cc-head">' + nr(c) +
                    (fav ? '<img class="urd-cc-fav" src="' + esc(fav) + '" alt="" loading="lazy"' +

@@ -274,8 +274,6 @@
      effort, which is the opposite of what a backlog of opportunities is for. Renamed so the low
      end reads as "small, quick" rather than "not important". */
   var POT_LABEL = { 1: 'Quick win', 2: 'Solid', 3: 'Strong', 4: 'Top priority' };
-  /* Wie viele Wettbewerber im Detail sichtbar sind, bevor der Rest hinter den Zaehler geht. */
-  var COMP_CAP = 3;
   function potBars(lvl){
     var bars = '';
     for (var i=1;i<=4;i++) bars += '<span class="uo-pot-bar p'+i+(i<=lvl?' is-on':'')+'"></span>';
@@ -357,7 +355,7 @@
 
   /* ---------- card ---------- */
   function cardHtml(item){
-    return '<div class="uo-card" draggable="true" data-id="'+esc(item.id)+'">'+
+    return '<div class="uo-card up-karte-klick" draggable="true" data-id="'+esc(item.id)+'">'+
       '<div class="uo-card-top">'+
         '<span class="uo-eyebrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+recIcon(item.recommendation_type)+'</svg><span>'+esc(item.label||'')+'</span></span>'+
         potHtml(item)+
@@ -726,6 +724,65 @@
     return '<div class="uo-kpi"><div class="uo-kpi-label">'+label+info+'</div><div class="uo-kpi-val">'+valHtml+'</div></div>';
   }
   function metaItem(k, v){ return '<div class="uo-meta-item"><span class="uo-meta-k">'+k+'</span><span class="uo-meta-v">'+v+'</span></div>'; }
+  /* Ein Wettbewerber als Chip -- dasselbe Markup wie in response-detail.js und url-detail.js
+     (.up-entchip is-soft + .up-chiphover, darin .up-ment-logo und .up-ment-name aus core).
+     Wettbewerber zeigen IMMER ihr Favicon (favicon_url), ein Logo gibt es nur fuer die eigene
+     Marke. Nur Bildadressen -- dieselbe Pruefung wie an den beiden Vorbildern: ein Wert aus den
+     Daten darf nie javascript: oder data: in ein src schreiben. */
+  function mentChip(c, i){
+    var name = String((c && c.name) || '');
+    var logo = String((c && c.favicon_url) || '');
+    if (!/^(https?:)?\/\//i.test(logo)) logo = '';
+    var buchst = (name.charAt(0) || '?').toUpperCase();
+    return '<span class="up-entchip is-soft up-chiphover uo-ment" role="button" tabindex="0" data-comp-idx="'+i+'">'+
+             '<span class="up-ment-logo'+(logo ? ' has-img' : '')+'">'+
+               '<span class="up-model-ltr">'+esc(buchst)+'</span>'+
+               (logo ? '<img src="'+esc(logo)+'" alt="" loading="lazy" referrerpolicy="no-referrer"'+
+                       ' onerror="this.parentNode.classList.remove(\'has-img\'); this.remove()"/>' : '')+
+             '</span>'+
+             '<span class="up-ment-name">'+esc(name)+'</span>'+
+           '</span>';
+  }
+  /* "+N more" wie in response-detail.js (mentionsZeile): die Liste steht in EINER Zeile (die CSS
+     kappt sie auf die Hoehe eines Chips), und gezaehlt wird, was tiefer beginnt als der erste Chip
+     -- offsetTop ist eine Layoutgroesse, es braucht kein gemaltes Bild. Dazu kommt, was der Server
+     gar nicht erst mitgeschickt hat (data-comp-rest): beides ist fuer den Nutzer "mehr". Aufgeklappt
+     bricht die Zeile um, und der Knopf heisst "Show less". Gibt es nur den Server-Rest, steht die
+     Zahl da, ist aber gesperrt -- aufklappen wuerde nichts zeigen, und sie wegzulassen behauptete,
+     die Liste sei vollstaendig.
+     Bis zu drei Runden, aus demselben Grund wie im Vorbild: der Knopf nimmt der Zeile selbst Platz,
+     und mit "+11 more" daneben rutscht noch ein Chip in die zweite Zeile. */
+  function uoMentZeile(){
+    var zeile = modalEl && modalEl.querySelector('.uo-mrow');
+    if (!zeile) return;
+    var liste = zeile.querySelector('.uo-ments');
+    var knopf = zeile.querySelector('.uo-mrow-more');
+    var rest = Number(zeile.getAttribute('data-comp-rest')) || 0;
+    /* Schmal (Telefon) stehen alle Marken untereinander (CSS, dieselbe Schwelle 480 wie das
+       is-vnarrow des Vorbilds) -- dann gibt es nichts aufzuklappen, nur den Server-Rest. */
+    var schmal = !!(window.matchMedia && window.matchMedia('(max-width: 480px)').matches);
+    var chips = liste ? liste.querySelectorAll('.uo-ment') : [];
+    if (schmal || !chips.length){
+      zeile.classList.remove('is-open');
+      knopf.hidden = !rest;
+      knopf.disabled = true;
+      knopf.textContent = rest ? (UC.t ? UC.t('+{n} more') : '+{n} more').replace('{n}', String(rest)) : '';
+      return;
+    }
+    var offen = zeile.classList.contains('is-open');
+    for (var runde = 0; runde < 3; runde++){
+      var oben = chips[0].offsetTop, weg = 0;
+      for (var i = 0; i < chips.length; i++) if (chips[i].offsetTop > oben + 4) weg++;
+      var txt = offen ? (UC.t ? UC.t('Show less') : 'Show less')
+                      : (UC.t ? UC.t('+{n} more') : '+{n} more').replace('{n}', String(weg + rest));
+      var versteckt = !offen && weg + rest === 0;
+      var gesperrt = !offen && weg === 0;
+      if (knopf.hidden === versteckt && knopf.textContent === txt && knopf.disabled === gesperrt) break;
+      knopf.hidden = versteckt;
+      knopf.disabled = gesperrt;
+      knopf.textContent = txt;
+    }
+  }
 
   function detailHtml(item){
     var gapNeg = Number(item.gap) < 0;
@@ -750,28 +807,29 @@
       metaItem('Created', esc(fmtDate(item.created_at)))+
     '</div>';
 
-    /* Gedeckelt auf drei. Die Liste ist ein vertikaler Stack mit rund 44px pro Zeile -- bei
-       zwoelf erwaehnten Wettbewerbern schiebt sie alles unter sich aus der Karte heraus, und
-       genau das ist der Grund, warum die aufgeklappte Karte abgeschnitten aussah. Drei Zeilen
-       plus Zaehler ist auch die Form, die alle anderen Marken-Stapel in der App haben (siehe
-       UC.brandStack).
-
-       Versteckt wird per Klasse, NICHT per slice: data-comp-idx muss weiter der Position in
-       item.mentioned_competitors entsprechen, sonst feuert der Klick auf den falschen Namen.
-       Der Zaehler addiert zwei Dinge, die der Nutzer nicht auseinanderhalten muss -- was hier
-       nur eingeklappt ist, und was der Server gar nicht erst mitgeschickt hat. Nur wenn etwas
-       eingeklappt ist, laesst sich der Zaehler auch aufklappen. */
-    var localMore = Math.max(0, comps.length - COMP_CAP);
-    var moreTotal = localMore + Math.max(0, compMore);
-    var moreChip = !moreTotal ? ''
-      : localMore
-        ? '<button type="button" class="uo-comp-more" data-comp-expand data-comp-rest="'+Math.max(0, compMore)+'">+'+moreTotal+' more</button>'
-        : '<span class="uo-comp-more">+'+moreTotal+' more</span>';
-
-    var compList = comps.length ? '<div class="uo-m-section-title">Mentioned competitors</div><div class="uo-comp-list'+(localMore ? ' is-capped' : '')+'">'+
-      comps.map(function(c, i){ return '<div class="uo-comp" data-comp-idx="'+i+'" role="button" tabindex="0">'+favHtml(c.favicon_url, c.name)+'<span class="uo-comp-name">'+esc(c.name)+'</span></div>'; }).join('')+
-      moreChip+
-      '</div>' : '';
+    /* DIE MARKENLEISTE WIE IN RESPONSE UND URL DETAIL (13.10. angefordert: "genau so gestylt").
+       Vorher ein senkrechter Stapel gerahmter Zeilen (eigene Masse, 11er Radius, auf drei
+       gedeckelt) unter einer eigenen Ueberschrift -- die einzige Markenliste der App in dieser
+       Form. Jetzt dieselben Bausteine aus core: die Leiste .up-dk-leiste (Zahl gross links,
+       Marken rechts), die Liste .up-mentlist in der Grundgroesse 32 und je Marke der Chip
+       .up-entchip.is-soft mit dem geteilten Hover .up-chiphover. Das Markup des Chips ist Zeichen
+       fuer Zeichen das aus response-detail.js (renderMents); nur die Kennung heisst data-comp-idx,
+       weil der Klick die Position in item.mentioned_competitors braucht, nicht eine company_id.
+       Keine eigene Ueberschrift mehr: die Leiste sagt mit "3 brands mentioned" selbst, was sie
+       ist -- wie in den beiden Vorbildern.
+       Die Zahl links ist die GANZE Zahl: competitor_count, auch wenn der Server weniger Namen
+       mitschickt. Was er nicht mitschickt, steht im "+N more" mit drin (siehe uoMentZeile). */
+    var gesamt = Math.max(Number(item.competitor_count) || 0, comps.length);
+    var compList = comps.length
+      ? '<div class="uo-mrow up-dk-leiste" data-comp-rest="'+Math.max(0, compMore)+'">'+
+          '<span class="up-dk-zahl"><span class="up-dk-zahl-n">'+gesamt+'</span>'+
+            '<span>'+esc(UC.t ? UC.t(gesamt === 1 ? 'brand mentioned' : 'brands mentioned') : (gesamt === 1 ? 'brand mentioned' : 'brands mentioned'))+'</span></span>'+
+          '<div class="uo-mrow-box">'+
+            '<div class="uo-ments up-mentlist">'+comps.map(function(c, i){ return mentChip(c, i); }).join('')+'</div>'+
+            '<button type="button" class="uo-mrow-more" hidden></button>'+
+          '</div>'+
+        '</div>'
+      : '';
 
     var statusKey = statusKeyOf(item);
     /* is-lg ist die 32px-Stufe von .up-seg in core: Hoehe 32, Flaeche --vc-switch-bg, Knoepfe
@@ -841,6 +899,12 @@
     portal.setAttribute('data-theme', isDark() ? 'dark' : 'light');   // the portal is outside the root's theme attribute
     portal.classList.add('detail-open');
     void modal.offsetWidth;
+    /* Jetzt, nicht im naechsten Bild: die Schublade hat ab detail-open ihr Layout (das
+       translateX der Einfahrt verschiebt nur das Bild, nicht offsetTop), und der Knopf soll
+       schon beim Hereinfahren die richtige Zahl tragen. Nach dem Laden der Schrift noch
+       einmal -- erst dann haben die Namen ihre endgueltige Breite. */
+    uoMentZeile();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ if (S.detailId === id) uoMentZeile(); });
     requestAnimationFrame(function(){ portal.classList.add('detail-in'); });
     lockPageScroll(true);
     modal.querySelector('#uo-m-close').addEventListener('click', closeDetail);
@@ -1110,26 +1174,16 @@
       return;
     }
 
-    /* Vor der Wettbewerber-Zeile pruefen: der Zaehler liegt in derselben Liste, und ein Klick
-       darauf soll aufklappen statt ein competitor_click auf den falschen Namen zu feuern. */
-    var compEx = e.target.closest('[data-comp-expand]');
+    /* "+N more" / "Show less" der Markenleiste: klappt die Zeile auf und zu (uoMentZeile). */
+    var compEx = e.target.closest('.uo-mrow-more');
     if (compEx){
       e.stopPropagation();
-      var lst = compEx.closest('.uo-comp-list');
-      if (lst) lst.classList.remove('is-capped');
-      /* Aufklappen zeigt nur, was auch da ist. Hat der Server zusaetzlich gekuerzt, bleibt
-         dessen Rest stehen -- jetzt als reiner Text, weil daran nichts mehr zu klicken ist.
-         Den Zaehler hier ersatzlos zu entfernen wuerde behaupten, die Liste sei vollstaendig. */
-      var rest = Number(compEx.getAttribute('data-comp-rest')) || 0;
-      if (!rest){ compEx.remove(); return; }
-      var still = document.createElement('span');
-      still.className = 'uo-comp-more';
-      still.textContent = '+' + rest + ' more';
-      compEx.parentNode.replaceChild(still, compEx);
+      var zeile = compEx.closest('.uo-mrow');
+      if (zeile && !compEx.disabled){ zeile.classList.toggle('is-open'); uoMentZeile(); }
       return;
     }
 
-    var comp = e.target.closest('.uo-comp');
+    var comp = e.target.closest('.uo-ment');
     if (comp && comp.hasAttribute('data-comp-idx')){
       e.stopPropagation();
       var itc = S.items.find(function(x){ return String(x.id) === String(S.detailId); });
@@ -1143,6 +1197,16 @@
   }
   root.addEventListener('click', onRootClick);
   portal.addEventListener('click', onRootClick);
+  /* Tastatur wie in response-detail.js: der Chip ist ein span mit role=button, und role=button
+     allein macht ihn noch nicht bedienbar -- Enter und Leertaste loesen den Klick aus. Der
+     "+N more"-Knopf ist ein echtes <button>, dort klickt der Browser selbst. */
+  portal.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    var z = e.target.closest ? e.target.closest('.uo-ment') : null;
+    if (!z) return;
+    e.preventDefault();
+    z.click();
+  });
   if (scrimEl) scrimEl.addEventListener('click', closeDetail);
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && S.detailId) closeDetail(); });
 
@@ -1307,6 +1371,9 @@
     rzTimer = setTimeout(function(){
       applySticky(); updateLayout();
       if (S.mode === 'board') clampAllCardTags();
+      /* Die Schublade waechst mit dem Fenster (min(720px, 86%)), und damit passen mehr oder
+         weniger Marken in die Zeile -- der Zaehler muss nachziehen. */
+      if (S.detailId) uoMentZeile();
     }, 90);
   }
   /* Beides gedrosselt: onResize misst Karten und schreibt Klassen. */

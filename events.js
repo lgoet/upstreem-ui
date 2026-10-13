@@ -1034,7 +1034,7 @@
        vorschau: dieselbe Karte im Anlegen-Popup, ohne Menue und ohne Klick. */
     function karteHtml(ev, vorschau) {
       var f = farbe(ev), cv = coverVon(ev);
-      return '<article class="uev-karte' + (vorschau ? " is-vorschau" : "") + (cv ? " has-cover" : "") + '"' +
+      return '<article class="uev-karte' + (vorschau ? " is-vorschau" : " up-karte-klick") + (cv ? " has-cover" : "") + '"' +
           (vorschau ? ' aria-hidden="true"' : ' role="link" tabindex="0" data-event-id="' + esc(ev.id) + '"') +
           (f ? ' style="--uev-ton:' + esc(f) + '"' : '') + '>' +
         (function () { var ct = coverTeile(cv); return '<div class="uev-karte-band' + ct.klasse + '"' + ct.attr + '></div>'; })() +

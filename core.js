@@ -4814,7 +4814,7 @@
     var wann = ad.observed_at ? fmtDate(ad.observed_at) : "";
     var marke = opts.beziehung === "you" ? '<span class="up-marke up-you">' + esc(t_("You")) + '</span>'
       : opts.beziehung === "competitor" ? '<span class="up-marke is-leise">' + esc(t_("Competitor")) + '</span>' : '';
-    return '<button type="button" class="up-adcard' + (opts.klasse ? " " + esc(opts.klasse) : "") + '"' + (id ? ' data-ad-id="' + esc(id) + '"' : '') + '>' +
+    return '<button type="button" class="up-adcard up-karte-klick' + (opts.klasse ? " " + esc(opts.klasse) : "") + '"' + (id ? ' data-ad-id="' + esc(id) + '"' : '') + '>' +
       '<span class="up-adcard-media' + (bild ? " has-img" : "") + '">' +
         '<span class="up-adcard-ph">' + icon(AD_FORMAT_ZEICHEN[fmt] || "image", 1.5) + '</span>' +
         (bild ? '<img src="' + esc(bild) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/>' : '') +

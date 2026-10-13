@@ -184,11 +184,12 @@
    Zeilen auch dann, wenn der Titel nur eine braucht, und der Fuss steht auf gleicher Hoehe. */
 /* v2: ohne Mindesthoehe, Polster 14/16, Radius 16 -- kurze Quellen liessen mit 184px halbe
    Kacheln leer. */
+/* Hover, Druck und Fokus: .up-karte-klick aus core (13.10.), derselbe Zustand wie die Karte im Card
+   Mode der Responses-Tabelle. Vorher faerbte der Hover hier die Flaeche (--vt-row-hover) -- die
+   einzige Karte der App, die so reagierte. */
 .urd-cite-card { display: flex; flex-direction: column; min-width: 0;
   padding: 14px 16px; border-radius: var(--up-r-2xl); border: 1px solid var(--vc-border); background: var(--vc-bg);
-  cursor: pointer; transition: background 120ms ease; box-sizing: border-box; }
-.urd-cite-card:hover { background: var(--vt-row-hover); }
-.urd-cite-card:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; }
+  box-sizing: border-box; }
 .urd-cc-head { display: flex; align-items: center; gap: 8px; min-width: 0; margin-bottom: 10px; }
 .urd-cc-fav { width: 18px; height: 18px; border-radius: 5px; flex: 0 0 auto; object-fit: cover;
   display: block; background: var(--vt-logo-bg); }
@@ -441,17 +442,15 @@
 /* Kein Skelett (06.10. abends): der Abschnitt kommt mit den Daten oder gar nicht, wie Products. */
 .urd-pc { flex: 0 0 236px; scroll-snap-align: start; display: flex; flex-direction: column;
   min-width: 0; padding: 8px; border-radius: var(--up-r-2xl); border: 1px solid var(--vc-border);
-  background: var(--vc-bg); box-sizing: border-box; text-align: left; font: inherit; color: inherit;
-  transition: box-shadow var(--up-t-2) var(--up-ease), transform var(--up-t-2) var(--up-ease),
-    border-color var(--up-t-2) ease; }
-button.urd-pc { cursor: pointer; }
-/* Anheben statt Einfaerben: die Flaeche bleibt ruhig, die Karte liest sich als Objekt. Der kleine
-   Schatten (--up-e-chip) statt des Menue-Schattens e-2 aus dem Entwurf -- e-2 lag schon unter den
-   kleinen Kacheln in Mira wie eine Wolke (05.10.). */
-button.urd-pc:hover, .urd-pc.is-hl { transform: translateY(-2px); box-shadow: var(--up-e-chip); }
-.urd-pc.is-hl { border-color: var(--vc-text); }
-@media (prefers-reduced-motion: reduce) { button.urd-pc:hover, .urd-pc.is-hl { transform: none; } }
-.urd-pc:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; }
+  background: var(--vc-bg); box-sizing: border-box; text-align: left; font: inherit; color: inherit; }
+/* Hover, Druck und Fokus der klickbaren Karte: .up-karte-klick aus core (13.10., "alle Cards wie im
+   Card Mode"). Vorher hob sie sich um 2px mit --up-e-chip und zoomte das Bild auf 1.04 -- beides
+   ist weg, weil keine andere Karte der App so reagiert.
+   is-hl ist derselbe Zustand, von aussen gesetzt: Wort im Text und Karte heben einander hervor
+   (produktHervor). Die klickbare Karte holt ihn aus core (.up-karte-klick.is-hl); die statische
+   ohne Produkt-Id traegt die Klasse nicht, reagiert also nicht auf den Zeiger, soll beim Wort aber
+   genauso aussehen -- daher hier dieselben zwei Werte wie in core. */
+.urd-pc.is-static.is-hl { border-color: color-mix(in srgb, var(--vc-border) 86%, var(--vc-text)); box-shadow: var(--up-e-1); }
 
 /* Bild: quadratisch auf der Kopfflaeche, contain -- ein Produkt wird nie beschnitten. multiply im
    Hellen: Produktfotos stehen fast immer freigestellt auf Weiss, und Weiss auf Grau haette eine
@@ -459,10 +458,8 @@ button.urd-pc:hover, .urd-pc.is-hl { transform: translateY(-2px); box-shadow: va
 .urd-pc-media { position: relative; aspect-ratio: 1 / 1; border-radius: var(--up-r-m);
   background: var(--vc-heading-bg); overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .urd-pc-media img { width: 100%; height: 100%; object-fit: contain; display: block; padding: 16px;
-  box-sizing: border-box; mix-blend-mode: multiply; transition: transform var(--up-t-3) var(--up-ease); }
+  box-sizing: border-box; mix-blend-mode: multiply; }
 .up-root[data-theme="dark"] .urd-pc-media img { mix-blend-mode: normal; }
-button.urd-pc:hover .urd-pc-media img { transform: scale(1.04); }
-@media (prefers-reduced-motion: reduce) { button.urd-pc:hover .urd-pc-media img { transform: none; } }
 .urd-pc-noimg { color: var(--vc-fourth); display: inline-flex; }
 .urd-pc-noimg svg { width: 22px; height: 22px; }
 .urd-pc-media.has-img .urd-pc-noimg { display: none; }

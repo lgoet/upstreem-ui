@@ -765,8 +765,9 @@
    geht mit -- ueber :has(+ ...), weil sie im Markup VOR der Liste steht und CSS sonst keinen Weg
    rueckwaerts hat. */
 .ulh-app .uo-m-body { overflow-y: hidden; }
-.ulh-app .uo-comp-list { display: none; }
-.ulh-app .uo-m-section-title:has(+ .uo-comp-list) { display: none; }
+/* Seit dem 13.10. ist der Block die Markenleiste .uo-mrow ("x brands mentioned", wie in Response
+   Detail) und traegt keine eigene Ueberschrift mehr -- eine Regel statt zwei. */
+.ulh-app .uo-mrow { display: none; }
 /* Und der Themenblock. Ohne ihn blieben 31px zu viel -- gemessen 575 Inhalt auf 544 Platz.
    Er ist der Block, der am wenigsten fehlt: dieselben Themenchips stehen auf der Karte im Brett
    dahinter, und die Karte hier soll die Zahlen zeigen, die es dort NICHT gibt. */

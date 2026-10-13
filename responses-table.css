@@ -212,16 +212,12 @@
    17 -> 16, Auszug und Kennzahlen 15 -> 14. Die Marken- und Quellen-Chips bleiben im Stil der App
    (eckig, mit Rahmen) -- so bestellt. Eine Spalte, Abstand 14 zwischen Kopf, Text und Fuss.
    Grund wie .up-row (--vc-bg), nicht .up-surface: die Karte ist eine andere Darstellung derselben
-   Zeile. Im Dunkeln nimmt core allen Karten den Rand (core.css, Liste mit .urt-card). */
+   Zeile. Im Dunkeln nimmt core allen Karten den Rand (core.css, Liste mit .urt-card).
+   Hover, Druck und Fokus stehen NICHT hier: sie kamen von dieser Karte und sind seit dem 13.10.
+   der geteilte Zustand .up-karte-klick in core.css ("alle Cards wie im Card Mode"), den das
+   Markup mitbringt (responses-table.js). Das Skelett traegt die Klasse nicht -- es reagiert nicht. */
 .urt-card { display: flex; flex-direction: column; gap: 14px; min-width: 0; min-height: 200px;
-  padding: 20px; border-radius: var(--up-r-2xl); border: 1px solid var(--vc-border); background: var(--vc-bg);
-  cursor: pointer; transition: box-shadow var(--up-t-2) var(--up-ease), border-color var(--up-t-2) var(--up-ease), transform var(--up-t-1) var(--up-ease); }
-/* Hover subtil (13.10., "viel zu krass"): vorher --up-e-2, der Schatten der Menues und Popover --
-   fuer eine Karte, die auf der Seite liegt, zu viel. Jetzt der Rand eine Spur kraeftiger (derselbe
-   Ton wie der Hover der Eingabefelder) und die Tiefe einer Flaeche (--up-e-1). */
-.urt-card:hover { border-color: color-mix(in srgb, var(--vc-border) 86%, var(--vc-text)); box-shadow: var(--up-e-1); }
-.urt-card:active { transform: scale(.99); }
-.urt-card:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; }
+  padding: 20px; border-radius: var(--up-r-2xl); border: 1px solid var(--vc-border); background: var(--vc-bg); }
 
 /* Kopf: links Modell und Zeit (Abstand statt Mittelpunkt), rechts die zwei Kennzahlen. */
 .urt-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

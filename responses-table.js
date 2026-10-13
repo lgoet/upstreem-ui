@@ -550,7 +550,7 @@
          Rahmen -- so bestellt). Die Kennzahlen fehlen ganz, wenn es nichts zu sagen gibt: eine
          Karte ist eine Zusammenfassung, eine Reihe "–" waere Rauschen. Zwischen Modell und Zeit
          steht Abstand und kein Mittelpunkt (CLAUDE.md §5). */
-      return '<div class="urt-card" data-run="' + esc(String(r.prompt_run_id || "")) + '" tabindex="0" role="button">' +
+      return '<div class="urt-card up-karte-klick" data-run="' + esc(String(r.prompt_run_id || "")) + '" tabindex="0" role="button">' +
         '<div class="urt-card-head">' +
           '<div class="urt-card-headleft">' +
             modelChip(r.model) +

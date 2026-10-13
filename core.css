@@ -4057,19 +4057,37 @@
 .up-colscroll .up-row > .up-td:first-child { background: var(--vc-bg); }
 .up-colscroll .up-row:hover > .up-td:first-child { background: var(--vt-row-hover); }
 
+/* DIE KLICKBARE KARTE (13.10.): EIN Zustand fuer Hover, Druck und Fokus jeder Karte, die man
+   anklicken kann ("alle Cards sollen die gleichen Hover/Klick-States kriegen wie die im
+   Response-Table Card Mode"). Vorher hatte jede Karte ihren eigenen: die Antwortkarte Rand plus
+   --up-e-1, die Quellenkachel eine gefaerbte Flaeche, Produkt- und Ad Card ein Anheben um 2px mit
+   --up-e-chip, die Event-Karte --vc-hover-border, die Opportunity-Karte Rand plus Flaeche.
+   Die Werte sind die der Antwortkarte (.urt-card, Kartenentwurf 13.10.): der Rand eine Spur
+   kraeftiger -- derselbe Ton wie der Hover der Eingabefelder --, die Tiefe einer Flaeche (--up-e-1;
+   --up-e-2 war "viel zu krass", das ist der Schatten der Menues), beim Druck 1 Prozent kleiner.
+   Geometrie (Radius, Polster, Rand, Flaeche) bleibt bei der Karte -- hier steht NUR der Zustand.
+   Im Dunkeln nimmt die Randliste oben einigen Karten den Rand ((0,3,0) gegen (0,2,0) hier): die
+   behalten ihn auch im Hover nicht und zeigen nur die Tiefe, genau wie die Antwortkarte.
+   is-hl ist derselbe Zustand, von aussen gesetzt (Produktkarte und ihr Wort im Antworttext).
+   Markup: die Klasse an jede klickbare Karte, NICHT an Skelett, Vorschau oder statische Fassung --
+   die reagieren nicht und brauchen so auch keine Ruecknahme. Traeger am 13.10.: .urt-card,
+   .urd-cite-card, .urd-pc (mit Produkt-Id), .up-adcard (adCardHtml), .uad-auf-ad, .uev-karte,
+   .uo-card. */
+.up-karte-klick { cursor: pointer;
+  transition: box-shadow var(--up-t-2) var(--up-ease), border-color var(--up-t-2) var(--up-ease), transform var(--up-t-1) var(--up-ease); }
+.up-karte-klick:hover, .up-karte-klick.is-hl { border-color: color-mix(in srgb, var(--vc-border) 86%, var(--vc-text)); box-shadow: var(--up-e-1); }
+.up-karte-klick:active { transform: scale(.99); }
+.up-karte-klick:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; }
+
 /* DIE AD CARD (05.10., Ads V1, core.js adCardHtml): die Produktkarte des Response Detail (.urd-pc)
    als Baustein fuer Anzeigen. Polster 8, Radius 16, innen 8 am Bild (konzentrisch); Text 14/6/6,
-   Fuss unten buendig (margin-top auto). Anheben mit dem kleinen Schatten --up-e-chip wie die
-   Produktkarte: der Entwurf nennt --up-e-2, der lag dort am 05.10. "wie eine Wolke" unter den
-   Kacheln und wurde ersetzt. Das Raster (.up-adgrid) fuellt, was da ist, ab 240px je Karte. */
+   Fuss unten buendig (margin-top auto). Hover, Druck und Fokus kommen seit dem 13.10. aus
+   .up-karte-klick (oben), die adCardHtml mitgibt -- vorher hob sich die Karte um 2px mit
+   --up-e-chip. Das Raster (.up-adgrid) fuellt, was da ist, ab 240px je Karte. */
 .up-adgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
 .up-adcard { display: flex; flex-direction: column; min-width: 0; padding: 8px; border-radius: var(--up-r-2xl);
   border: 1px solid var(--vc-border); background: var(--vc-bg); box-sizing: border-box; text-align: left;
-  font: inherit; color: inherit; cursor: pointer;
-  transition: box-shadow var(--up-t-2) var(--up-ease), transform var(--up-t-2) var(--up-ease); }
-.up-adcard:hover { transform: translateY(-2px); box-shadow: var(--up-e-chip); }
-@media (prefers-reduced-motion: reduce) { .up-adcard:hover { transform: none; } }
-.up-adcard:focus-visible { outline: var(--up-focus-w, 2px) solid var(--up-focus); outline-offset: 2px; }
+  font: inherit; color: inherit; }
 /* Das Werbemittel: 16:10 auf der Kopfflaeche, contain -- ein Banner wird nie beschnitten. Ohne
    Polster und ohne multiply (anders als ein Produktfoto steht ein Banner nicht auf Weiss frei). */
 .up-adcard-media { position: relative; aspect-ratio: 16 / 10; border-radius: var(--up-r-m); background: var(--vc-heading-bg);
