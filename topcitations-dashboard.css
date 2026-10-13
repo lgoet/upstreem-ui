@@ -34,12 +34,14 @@
 .tcd-heading { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tcd-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 .tcd-box {
-  flex: 1 1 auto; min-height: 0; height: 430px;   /* 45px table head + 7×55px rows, fits exactly */
+  /* 487 = 1 Rand + 45 Tabellenkopf + 8 x 55 Zeilen + 1 Rand (13.10.: acht Eintraege; mit 430 waren
+     von acht Zeilen sechs ganz zu sehen). Der Ring links waechst mit, beide Kaesten gleich hoch. */
+  flex: 1 1 auto; min-height: 0; height: 487px;
   border: 1px solid var(--vc-border); background: var(--vc-bg); overflow: hidden;
   display: flex; flex-direction: column; position: relative; transition: background 200ms ease;
   border-radius: 16px;
 }
-.tcd-root.is-max .tcd-box, .tcd-root.is-narrow .tcd-box { height: 430px; }
+.tcd-root.is-max .tcd-box, .tcd-root.is-narrow .tcd-box { height: 487px; }
 /* Kopfleiste und Kartenrand im Dunkeln stehen jetzt in core.css und gelten fuer JEDE Tabelle und
    Karte der App -- hier bewusst keine lokale Fassung mehr: derselbe Wert an zwei Orten laeuft
    irgendwann auseinander. Siehe dort "Dark: kein Rand um die aeusseren Flaechen". */

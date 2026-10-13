@@ -27,8 +27,11 @@
 .vot-heading { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vot-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 
+/* 487 = 1 Rand + 45 Tabellenkopf + 8 x 55 Zeilen + 1 Rand (13.10.: acht Eintraege). Mit 427 sah
+   man von acht geladenen Zeilen sechs ganz und die siebte halb -- die Tabelle meldete 8, der
+   Kasten schnitt ab (overflow hidden). Beide Kaesten gleich hoch, die Kurve waechst mit. */
 .vot-box {
-  flex: 1 1 auto; min-height: 0; height: 427px;
+  flex: 1 1 auto; min-height: 0; height: 487px;
   border: 1px solid var(--vc-border); background: var(--vc-bg); overflow: hidden;
   display: flex; flex-direction: column;
   transition: height 200ms ease, opacity 200ms ease;
@@ -41,8 +44,8 @@
 
 .vot-panel-body { flex: 1 1 auto; min-height: 0; padding: 16px; position: relative; display: flex; flex-direction: column; transition: opacity 200ms ease; }
 .vot-box-left .vot-panel-body { padding-top: 24px; }
-.vot-root.is-max .vot-box-left, .vot-root.is-narrow .vot-box-left { height: 427px; }
-.vot-root.is-max .vot-box-right, .vot-root.is-narrow .vot-box-right { height: 427px; }
+.vot-root.is-max .vot-box-left, .vot-root.is-narrow .vot-box-left { height: 487px; }
+.vot-root.is-max .vot-box-right, .vot-root.is-narrow .vot-box-right { height: 487px; }
 .vot-root.is-narrow .vot-max-right { display: none; }
 .vot-root.is-narrow .vot-max-top { display: none; }
 

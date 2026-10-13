@@ -328,15 +328,16 @@
        eigener Abschnitt "Mentions". */
     return '' +
       '<div class="uud-sect uud-head up-dk">' +
-        '<div class="uud-kopfzeile up-dk-meta"></div>' +
+        /* Die Meta-Zeile (Typen, zuletzt gesehen) in einer Zeile mit dem Kalender, den der Drawer
+           rechts hineinhaengt (13.10. zweite Runde: "auf Hoehe des zuletzt-gesehen-Datums, nicht des
+           Titels"). Ohne Drawer steht die Meta-Zeile allein darin und sieht aus wie vorher. */
+        '<div class="up-dk-metazeile uud-metazeile"><div class="uud-kopfzeile up-dk-meta"></div></div>' +
         /* Titel und Adresse als ein Block in einer Zeile, in die der Drawer rechts seinen Kalender
            haengt (13.10., "bei allen Drawern die Filter nach oben rechts"). Ohne Drawer steht der
            Block allein darin und sieht aus wie vorher. */
-        '<div class="up-dk-heldzeile is-satz uud-heldzeile">' +
-          '<div class="uud-heldtext">' +
-            '<h2 class="uud-titel up-dk-titel"></h2>' +
-            '<a class="uud-link" target="_blank" rel="noopener noreferrer" hidden></a>' +
-          '</div>' +
+        '<div class="uud-heldtext">' +
+          '<h2 class="uud-titel up-dk-titel"></h2>' +
+          '<a class="uud-link" target="_blank" rel="noopener noreferrer" hidden></a>' +
         '</div>' +
         '<div class="uud-kpis up-dk-leiste"></div>' +
         '<div class="uud-mrow up-dk-leiste" hidden>' +
@@ -1349,7 +1350,8 @@
          der Unterschied jetzt: er steht in EINER Zeile mit dem Titel, nicht ueber ihm).
          Umgehaengt in den Kopf der Komponente; er bleibt im Slot, sein "change" erreicht den
          Drawer also wie vorher. */
-      var leiste = ctx.slot.querySelector(".uud-dw-leiste"), zeile = r.querySelector(".uud-head .uud-heldzeile");
+      /* Seit der zweiten Runde (13.10.) in die META-Zeile, auf Hoehe von "zuletzt gesehen". */
+      var leiste = ctx.slot.querySelector(".uud-dw-leiste"), zeile = r.querySelector(".uud-head .uud-metazeile");
       if (leiste && zeile) zeile.appendChild(leiste);
       ctx.eigen.addEventListener("click", function (e) {
         var b = e.target.closest ? e.target.closest("[data-uud-kopf]") : null;

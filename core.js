@@ -11443,9 +11443,14 @@
         '<span class="up-ph-navicon">' + navZeichen(p) + '</span>' +
         '<span class="up-ph-navlabel">' + esc(t_(p.label)) + '</span>' +
       '</div>';
-    }).join("") + '<div class="up-ph-navunderline"></div>';
+    }).join("") + '<div class="up-ph-navpille" aria-hidden="true"></div><div class="up-ph-navunderline"></div>';
 
     var underline = nav.querySelector(".up-ph-navunderline");
+    /* DER BEHAELTER GLEITET WIE DER STRICH (13.10.: "mit dem gleichen Slide-Effekt wie unsere
+       Switcher-Buttons"). Ein eigenes Element unter den Reitern, gesetzt mit denselben Massen wie
+       der Strich -- vorher war er ein ::after am gewaehlten Reiter und sprang beim Wechsel. Hoehe
+       und Rundung kommen aus core.css, hier nur Lage und Breite. */
+    var pille = nav.querySelector(".up-ph-navpille");
 
     /* transition:none for the initial placement only -- without it the indicator would visibly
        grow in from a 0-width sliver at (0,0) on first paint, since it starts with no inline
@@ -11455,10 +11460,17 @@
       if (!item) return;
       var navRect = nav.getBoundingClientRect();
       var itemRect = item.getBoundingClientRect();
-      if (!animate) underline.style.transition = "none";
-      underline.style.left = (itemRect.left - navRect.left) + "px";
-      underline.style.width = itemRect.width + "px";
-      if (!animate){ void underline.offsetWidth; underline.style.transition = ""; }
+      [underline, pille].forEach(function(el){
+        if (!el) return;
+        if (!animate) el.style.transition = "none";
+        el.style.left = (itemRect.left - navRect.left) + "px";
+        el.style.width = itemRect.width + "px";
+      });
+      if (!animate){
+        void underline.offsetWidth;
+        underline.style.transition = "";
+        if (pille) pille.style.transition = "";
+      }
     }
 
     function selectPage(value, fireEvent){
@@ -17036,7 +17048,11 @@
          never itself look greyed out just because the ring paint is. */
       var realColors = chart.data.datasets[0].__realColors;
       var nameColor = (realColors && realColors[i]) || sliceColor;
-      var isUrlMode = getMode && getMode() === "url";
+      /* getMode als Funktion ODER als fester Text (13.10.: prompts-table gibt mode: "donut" mit --
+         "getMode is not a function" beim ersten Ueberfahren des Rings, Next.js zeigte es als
+         Laufzeitfehler). Beides ist ein vernuenftiger Aufruf, also beides annehmen. */
+      var modusJetzt = typeof getMode === "function" ? getMode() : getMode;
+      var isUrlMode = modusJetzt === "url";
       /* Inhalt nur neu schreiben, wenn er sich aendert. Solange der Zeiger im selben Segment
          bleibt, feuert Chart.js weiter -- der Text ist dann aber derselbe. */
       var kennung = i + "|" + (isUrlMode ? "u" : "n") + "|" + sliceColor + "|" + nameColor + "|" + val;

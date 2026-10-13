@@ -4283,29 +4283,28 @@
   background: none; font: inherit; font-size: var(--up-fs-m); line-height: 20px; color: var(--vc-muted);
   cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .up-dk-held-link:hover { color: var(--vc-text); text-decoration: underline; text-underline-offset: 3px; }
-/* KOPF UND FILTER IN EINER ZEILE (13.10., "bei allen Drawern die Filter nach oben rechts"): links
-   der Kopf, rechts Kalender und Filterknopf, an der Unterkante des Kopfes. Erst im Domain-Drawer
-   gebaut, dann in Brand-, Prompt- und URL-Drawer kopiert -- vier gleiche Bloecke, also hierher.
-   Reicht die Breite nicht, bricht die Zeile und die Filter stehen linksbuendig darunter (space-
-   between laesst ein umgebrochenes Kind links). Der Kopf gibt bis 280px nach, darunter bricht die
-   Zeile -- sonst wuerde ein langer Name zerlegt, bevor die Filter weichen.
-   .is-satz: der Kopf ist ein ganzer Satz (Prompt, Seitentitel). Mit Grundbreite auto waere seine
-   Wunschbreite die ganze Zeile, und die Filter stuenden fast immer darunter; mit 0 bricht der Satz
-   neben ihnen um (gemessen: langer Prompt bei 1440, Titel 688 breit, Unterkanten buendig). */
-.up-dk-heldzeile { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap;
+/* KOPF UND FILTER IN EINER ZEILE (13.10.): links der Kopf (Bild, Name, Unterzeile), rechts Kalender
+   und Filterknopf, auf der MITTE des Kopfes ("oben rechts zentriert", zweite Runde -- erst an der
+   Unterkante). Heute im Domain-Drawer; Brand, Prompt und URL tragen ihre Filter in der Meta-Zeile
+   darueber (.up-dk-metazeile). Reicht die Breite nicht, bricht die Zeile und die Filter stehen
+   linksbuendig darunter (space-between laesst ein umgebrochenes Kind links). Der Kopf gibt bis
+   280px nach -- sonst wuerde ein langer Name zerlegt, bevor die Filter weichen. */
+.up-dk-heldzeile { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
   gap: 16px 24px; min-width: 0; }
 .up-dk-heldzeile > :first-child { flex: 1 1 auto; min-width: min(100%, 280px); }
-.up-dk-heldzeile.is-satz > :first-child { flex-basis: 0; }
-/* Bei einem Satz OBEN rechts, nicht an der Unterkante (13.10.: "der Kalender ist nicht genau oben
-   rechts, der ist viel zu weit unten" -- URL- und Prompt-Drawer): der Titel bricht dort ueber
-   mehrere Zeilen um, und unter ihm steht im URL-Drawer noch die Adresse; an der Unterkante sass
-   der Kalender darum zwei bis drei Zeilen tief. */
-.up-dk-heldzeile.is-satz { align-items: flex-start; }
+/* META-ZEILE UND FILTER (13.10. zweite Runde: "Oben rechts zentriert", im URL-Drawer "auf Hoehe des
+   zuletzt-gesehen-Datums"): die Filter stehen in der OBERSTEN Zeile des Kopfes, rechts und mittig
+   zu ihr, nicht neben Name oder Titel darunter. Die Meta-Zeile darf schrumpfen und umbrechen; ist
+   sie leer (:empty in core), stehen die Filter allein oben rechts. Zu schmal: darunter, links. */
+.up-dk-metazeile { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 16px 24px; min-width: 0; }
+.up-dk-metazeile > .up-dk-meta { flex: 1 1 auto; min-width: 0; }
+/* Leere Meta-Zeile (Laden, keine Angaben): ohne sie stuende die Filterreihe als einziges Kind links. */
+.up-dk-metazeile > .up-dk-meta:empty + .up-dk-filterzeile { margin-left: auto; }
 /* Die Filterreihe: 8px wie jede Werkzeugreihe. Mit aktiven Filtern stehen deren Chips im
    Filterknopf-Baustein daneben (ufb bricht selbst um) -- darum darf er schrumpfen, der Kalender
-   nicht. flex-start und nicht flex-end: neben dem Kopf schrumpft die Reihe nie, es aendert dort
-   also nichts; allein unter dem Kopf UND selbst umgebrochen (sehr schmal) stuenden ihre Teile mit
-   flex-end rechts gestaffelt statt linksbuendig (gemessen bei 480). */
+   nicht. flex-start: allein unter dem Kopf UND selbst umgebrochen (sehr schmal) stuenden ihre Teile
+   mit flex-end rechts gestaffelt statt linksbuendig (gemessen bei 480). */
 .up-dk-filterzeile { display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 8px;
   flex: 0 1 auto; min-width: 0; max-width: 100%; }
 .up-dk-filterzeile > .udr-root { flex: 0 0 auto; }
@@ -4313,19 +4312,15 @@
 /* DIE ABSCHNITTSFORM (13.10., Vorbild Domain Detail; "die Borders um die grossen Elemente weg, das
    sieht cleaner aus"). Ein Baustein im Drawer steht ohne Kartenrahmen, Radius und eigene Flaeche
    auf dem Grund des Drawers -- die Luft zwischen den Abschnitten trennt. Gesetzt von der
-   einbettenden Stelle ueber data-form="abschnitte" an der Wurzel des Bausteins (Domain-, Brand-,
-   Prompt-Drawer); Dashboard und Landingpage setzen es nicht und behalten ihre Karten. Erst in drei
+   einbettenden Stelle ueber data-form="abschnitte" an der Wurzel des Bausteins (Domain- und
+   Brand-Drawer, je das grosse Chart oben); Dashboard und Landingpage setzen es nicht und behalten ihre Karten. Erst in drei
    Bausteinen einzeln gebaut, darum hier. Tabellen behalten ihren Kasten wie ueberall in der App --
    darum neben ihnen auch kein Trenner (er laege als zweite Linie neben ihrem Rand).
-   Kurve und Ring: links 0 Polster, damit sie an der Kante der Ueberschrift beginnen; rechts 16, mit
-   dem Spaltenabstand 32 bis zur Tabelle wie vorher (16 + 1 Rand + 16). Untereinander (schmal,
-   maximiert) steht keine Tabelle daneben, dann auch rechts 0. (0,4,0) gegen die Kartenregeln der
-   Bausteine und gegen deren dunkle Randregel (0,3,0, nur die Randfarbe). */
-.up-root[data-form="abschnitte"] :is(.ubd-card, .udd-chartcard, .udd-funnelcard, .vot-box-left, .tcd-unit-left .tcd-box) {
-  border: 0; border-radius: 0; background: transparent; }
-.up-root[data-form="abschnitte"] :is(.ubd-card, .udd-chartcard, .udd-funnelcard) { padding: 0; }
-.up-root[data-form="abschnitte"] :is(.vot-box-left .vot-panel-body, .tcd-unit-left .tcd-panel-body) { padding-left: 0; }
-.up-root[data-form="abschnitte"]:is(.is-narrow, .is-max) :is(.vot-box-left .vot-panel-body, .tcd-unit-left .tcd-panel-body) { padding-right: 0; }
+   NUR die grossen Charts oben (Brand Detail, Domain Detail): Visibility Chart und Top Citations
+   bleiben auch im Drawer in ihren Karten (13.10. zweite Runde, "einfach core").
+   (0,4,0) gegen die Kartenregeln der Bausteine und deren dunkle Randregel (0,3,0). */
+.up-root[data-form="abschnitte"] :is(.ubd-card, .udd-chartcard, .udd-funnelcard) {
+  border: 0; border-radius: 0; background: transparent; padding: 0; }
 .up-dk-held-link:focus-visible { outline: var(--up-focus-w, 2px) solid var(--vc-text); outline-offset: 2px; border-radius: var(--up-r-xs); }
 /* Skelett des Kopfes, in den Massen dessen, was gleich dasteht. */
 .up-dk-sk { display: inline-block; height: 14px; border-radius: var(--up-r-xs); background: var(--vc-sk);
@@ -5528,16 +5523,17 @@
 .up-ph-navunderline { position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--up-accent-ink);
   z-index: 1; transition: left 200ms ease, width 200ms ease; }
 /* DER GEWAEHLTE REITER IN EINEM BEHAELTER (13.10. angefordert: "leichter Field-Background und
-   Border, eher kleines Padding"; Rundung zweite Runde 8 statt 12). Als ::after HINTER dem Reiter
-   (z-index -1 in seinem eigenen Stapel, isolation). Er fuellt den Reiter in der Breite GENAU --
-   die Luft um Zeichen und Schrift ist das Polster des Reiters selbst. So ist der Akzentstrich
-   darunter (makePageNav misst den Reiter) genau so lang wie der Behaelter, und der erste Behaelter
-   beginnt an der Kante des Inhalts statt im 16px-Rand (beides 13.10. angefordert). ::before ist
-   schon die verlaengerte Klickflaeche, darum ::after. */
-.up-ph-navitem.is-selected { position: relative; isolation: isolate; }
-.up-ph-navitem.is-selected::after {
-  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background: var(--vc-heading-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-m); }
+   Border, eher kleines Padding"; Rundung zweite Runde 8 statt 12). Er fuellt den Reiter in der
+   Breite GENAU -- die Luft um Zeichen und Schrift ist das Polster des Reiters selbst. So ist der
+   Akzentstrich darunter genau so lang wie der Behaelter, und der erste Behaelter beginnt an der
+   Kante des Inhalts statt im 16px-Rand (beides 13.10. angefordert).
+   Der Behaelter ist .up-ph-navpille (makePageNav): unter den Reitern, von links nach rechts so breit
+   wie der gewaehlte Reiter -- dieselbe Fahrt wie der Strich (200ms ease) und wie die Pille der
+   Umschalter (.is-gleitend, 200ms ease). Die Reiter liegen darueber (z-index 1). */
+.up-ph-navitem { position: relative; z-index: 1; }
+.up-ph-navpille { position: absolute; top: 0; bottom: 0; left: 0; width: 0; z-index: 0; pointer-events: none;
+  background: var(--vc-heading-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
+  transition: left 200ms ease, width 200ms ease; }
 
 /* ---------- DER KOMPAKTE SEITENKOPF MIT BROTKRUMEN (29.09. angefordert) ----------
    "Aktuell nehmen die mir zu viel Platz ein und sind groesstenteils nicht aligned mit dem Layout
@@ -5651,9 +5647,9 @@
    Behaelter ragte um 10 nach links in den Rand). Der Abstand zwischen den Reitern sinkt um diese
    2 x 8 von 25 auf 12 -- von Schrift zu Schrift bleiben es 28 wie vorher.
    Folge: das erste Reiterzeichen steht 8 weiter rechts als das Krumenzeichen darueber. */
-.up-root:is(.ucs-root, .uad-root, .upi-root, .ubr-root, .uss-root, .ush-root) .up-ph-navitem.is-selected::after,
-.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem.is-selected::after {
-  top: 10px; bottom: 10px; left: 0; right: 0; }
+.up-root:is(.ucs-root, .uad-root, .upi-root, .ubr-root, .uss-root, .ush-root) .up-ph-navpille,
+.up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navpille {
+  top: 10px; bottom: 10px; }
 /* Im SCHMALEN Kopf (is-narrow, unter 768) teilen sich die Reiter die Breite (flex 1 1 0, Inhalt
    mittig) -- dort gibt es keine linke Kante, die unter dem Krumenzeichen stehen koennte. Also die
    alte Geometrie: 4px Luecke und 12px Seitenpolster, sonst laegen die gestreckten Reiter 28px
@@ -5673,11 +5669,7 @@
 .up-root.uss-root.is-narrow .up-ph-navitem,
 .up-root.ush-root.is-narrow .up-ph-navitem,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem { padding: 0 15px 0 12px; }
-/* Schmal hat der Reiter sein Polster selbst (12/15) und die Nachbarn liegen 4 entfernt: der
-   Behaelter fuellt den Reiter, statt in den Nachbarn zu ragen. */
-.up-root.is-narrow:is(.ucs-root, .uad-root, .upi-root, .ubr-root, .uss-root, .ush-root) .up-ph-navitem.is-selected::after,
-.up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem.is-selected::after {
-  left: 0; right: 0; }
+/* Schmal: die Pille folgt dem gestreckten Reiter von selbst (gemessen wird sein Rechteck). */
 .up-root.ucs-root.is-narrow .up-ph-navitem::before,
 .up-root.uad-root.is-narrow .up-ph-navitem::before,
 .up-root.upi-root.is-narrow .up-ph-navitem::before,

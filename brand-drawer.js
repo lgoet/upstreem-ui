@@ -459,20 +459,16 @@
       .split("__UBDR_BRANDLOGO__").join(esc(mk ? str(mk.logo_url) : ""))
       .split("__UBDR_BRAND__").join(esc(mk ? str(mk.name) : ""));
   }
-  /* Setzt data-form="abschnitte" an die Wurzel eines erzeugten Bausteins. Das Markup selbst ist
-     von .drawer_markup.py erzeugt und wird nicht von Hand geaendert -- darum hier, am Anfang der
-     Zeichenkette verankert: nur das erste Element, nie eines darin. */
-  function abschnitte(html) { return String(html).replace(/^<div /, '<div data-form="abschnitte" '); }
   function aufbauen(ctx) {
     var dk = dunkel() ? "yes" : "no";
     ctx.slot.innerHTML =
       '<div class="up-root ubdr-root">' +
         '<div class="ubdr-head up-dk">' +
           '<div class="ubdr-meta up-dk-meta"></div>' +
-          /* Kopf und Filter in EINER Zeile, die Filter oben rechts (13.10., "bei allen Drawern die
-             Filter nach oben rechts" -- dieselbe Anordnung wie im Domain-Drawer, .uddr-heldzeile).
-             Reicht die Breite nicht, rutschen sie unter den Kopf, linksbuendig -- siehe
-             brand-drawer.css. Die Meta-Zeile bleibt darueber in voller Breite. */
+          /* Kopf und Filter in EINER Zeile, die Filter rechts und auf der MITTE von Logo und Name
+             (13.10., zweite Runde "oben rechts zentriert"; .up-dk-heldzeile aus core, wie im
+             Domain-Drawer). Nicht in der Meta-Zeile wie bei Prompt und URL: die ist hier immer
+             leer, und die Filter stuenden allein in einer eigenen Zeile ueber dem Namen. */
           '<div class="up-dk-heldzeile ubdr-heldzeile">' +
           '<div class="up-dk-held ubdr-held">' +
             '<span class="up-dk-held-bild ubdr-logobox"></span>' +
@@ -492,11 +488,11 @@
           '</div>' +
         '</div>' +
         '<div class="ubdr-main">' +
-          /* data-form="abschnitte": Kurve und Doughnut ohne Kartenrahmen, wie Domain Detail im
-             Domain-Drawer (13.10.) -- nur hier im Drawer; dieselben Bausteine auf dem Dashboard
-             und auf der Landingpage behalten ihre Karten. Die Regeln stehen je beim Baustein. */
+          /* data-form="abschnitte" NUR am grossen Chart oben (Brand Detail): ohne Kartenrahmen wie
+             Domain Detail (13.10.). Top Citations bleibt in seiner Karte, so wie core es liefert --
+             "alle Charts aus Visibility Chart oder Top Citations Dashboard in ihren Cards". */
           '<div class="ubdr-teil ubdr-detail"><div class="up-root ubd-root" data-local="yes" data-form="abschnitte" data-instance="' + esc(IDS.ubd) + '" data-isdark="' + dk + '"></div></div>' +
-          '<div class="ubdr-teil ubdr-top">' + abschnitte(einsetzen(MARKUP.tcd)) + '</div>' +
+          '<div class="ubdr-teil ubdr-top">' + einsetzen(MARKUP.tcd) + '</div>' +
           '<div class="ubdr-teil ubdr-resp">' + einsetzen(MARKUP.urt) + '</div>' +
         '</div>' +
         '<div class="ubdr-inaktiv" hidden></div>' +

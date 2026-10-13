@@ -472,9 +472,6 @@
   }
 
   /* ---- Aufbau im Drawer ---- */
-  /* Setzt data-form="abschnitte" an die Wurzel eines erzeugten Bausteins (das Markup ist von
-     .drawer_markup.py erzeugt und bleibt unberuehrt). Am Anfang verankert: nur das erste Element. */
-  function abschnitte(html) { return String(html).replace(/^<div /, '<div data-form="abschnitte" '); }
   function einsetzen(m) {
     var mk = marke();
     return String(m || "").split("__UPRD_VOT__").join(esc(IDS.vot))
@@ -488,30 +485,28 @@
     ctx.slot.innerHTML =
       '<div class="up-root uprd-root">' +
         '<div class="uprd-head up-dk">' +
-          '<div class="uprd-meta up-dk-meta"></div>' +
-          /* Titel und Filter in EINER Zeile, die Filter oben rechts (13.10., "bei allen Drawern die
-             Filter nach oben rechts" -- wie .uddr-heldzeile im Domain-Drawer). Reicht die Breite
-             nicht, rutschen sie unter den Titel, linksbuendig -- siehe prompt-detail.css. Nur
-             Modelle: Topics und Maerkte stehen per Attribut aus (data-*-visible). */
-          '<div class="up-dk-heldzeile is-satz uprd-heldzeile">' +
-          '<h2 class="uprd-titel up-dk-titel"></h2>' +
-          '<div class="up-dk-filterzeile uprd-filterzeile">' +
+          /* Meta-Zeile und Filter in EINER Zeile, die Filter OBEN rechts und mittig zu ihr (13.10.,
+             zweite Runde: "oben rechts zentriert", auf der Hoehe der obersten Zeile statt neben dem
+             Namen). .up-dk-metazeile aus core; zu schmal: die Filter linksbuendig darunter. */
+          '<div class="up-dk-metazeile uprd-metazeile">' +
+            '<div class="uprd-meta up-dk-meta"></div>' +
+            '<div class="up-dk-filterzeile uprd-filterzeile">' +
             '<div class="up-root udr-root uprd-daten" data-instance="' + esc(IDS.daten) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
             '<div class="up-root ufb-root uprd-filterleiste" data-instance="' + esc(IDS.filter) + '"' +
               ' data-models-instance="' + esc(IDS.modelle) + '" data-topics-visible="no" data-markets-visible="no" data-isdark="' + dk + '"></div>' +
             '<div class="up-root umf-root" data-instance="' + esc(IDS.modelle) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
           '</div>' +
           '</div>' +
+          '<h2 class="uprd-titel up-dk-titel"></h2>' +
           /* Die Kennzahlen UNTER dem Kalender: sie gelten fuer den Zeitraum, den er zeigt (wie bei
              URL Detail, 12.10.). */
           '<div class="uprd-kpis up-dk-leiste"></div>' +
         '</div>' +
         '<div class="uprd-main">' +
-          /* data-form="abschnitte": Kurve und Doughnut ohne Kartenrahmen, wie Domain Detail im
-             Domain-Drawer (13.10.) -- nur hier; dieselben Bausteine auf dem Dashboard behalten
-             ihre Karten. Die Tabellen daneben behalten ihren Kasten wie jede Tabelle der App. */
-          '<div class="uprd-teil uprd-vis">' + abschnitte(einsetzen(MARKUP.vot)) + '</div>' +
-          '<div class="uprd-teil uprd-top">' + abschnitte(einsetzen(MARKUP.tcd)) + '</div>' +
+          /* Visibility Chart und Top Citations in ihren Karten, wie core sie liefert (13.10.: "alle
+             Charts aus Visibility Chart oder Top Citations Dashboard in ihren Cards"). */
+          '<div class="uprd-teil uprd-vis">' + einsetzen(MARKUP.vot) + '</div>' +
+          '<div class="uprd-teil uprd-top">' + einsetzen(MARKUP.tcd) + '</div>' +
           '<div class="uprd-teil uprd-resp">' + einsetzen(MARKUP.urt) + '</div>' +
         '</div>' +
         '<div class="uprd-fehler" hidden></div>' +
