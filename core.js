@@ -144,6 +144,25 @@
      Der URL-Schluessel wird wie in urls-table normalisiert ("Product Service" -> product_service),
      citeName() uebersetzt die Bubble-Schreibweisen der Zitationstypen (steht weiter unten, als
      Funktionsdeklaration aber schon hier aufrufbar). */
+  /* DER GRUND DER TYPE-CHIPS EINE SPUR SICHTBARER (14.10., gewuenscht: "minimal mehr Opacity, so
+     dass der Kontrast der Schrift noch stimmt"). 7 Prozent der Typfarbe (fill) in den hellen Grund
+     gemischt, im Dunkeln 7 Prozent in den dunklen. Nachgerechnet fuer jeden Typ in beiden Themen:
+     die Schrift bleibt ueber 4.5:1 (AA fuer 12px). "You" traegt die volle Flaeche und bleibt. */
+  function hexMisch(a, b, t){
+    function teil(h, i){ return parseInt(h.substr(1 + i * 2, 2), 16); }
+    if (!/^#[0-9a-f]{6}$/i.test(a) || !/^#[0-9a-f]{6}$/i.test(b)) return a;
+    var o = "#";
+    for (var i = 0; i < 3; i++){
+      var v = Math.round(teil(a, i) * (1 - t) + teil(b, i) * t);
+      o += (v < 16 ? "0" : "") + v.toString(16);
+    }
+    return o.toUpperCase();
+  }
+  function chipGrund(e, isDark){
+    var grund = isDark ? e.bgDark : e.bg, farbe = isDark ? e.fillDark : e.fill;
+    if (!farbe || grund === farbe) return grund;
+    return hexMisch(grund, farbe, 0.07);
+  }
   function typeStyle(art, raw, isDark){
     var e, dot = null;
     if (art === "citation"){
@@ -156,11 +175,11 @@
     return {
       fill: isDark ? e.fillDark : e.fill,
       ink:  isDark ? e.inkDark  : e.ink,
-      bg:   isDark ? e.bgDark   : e.bg,
+      bg:   chipGrund(e, isDark),
       /* Rahmen in der Grundfarbe (14.10. gewuenscht: "bei Citation- und URL-Types die Border weg,
          bzw. in gleicher Farbe wie der Grund"). Der Rahmen bleibt stehen, damit kein Chip seine
          Groesse aendert -- er ist nur nicht mehr zu sehen. Alle Type-Chips der App lesen bd hier. */
-      bd:   isDark ? e.bgDark   : e.bg,
+      bd:   chipGrund(e, isDark),
       dot:  dot
     };
   }
@@ -371,6 +390,23 @@
       _prefs[k] = (PREF_ERLAUBT[k] && PREF_ERLAUBT[k][v]) ? v : PREF_DEFAULT[k];
     });
     return _prefs;
+  }
+  /* LAENDERNAMEN IN DER SPRACHE DER APP (14.10., gemeldet: "Germany" im deutschen Prompt Research).
+     Die Datenbank liefert die Namen englisch; der Browser kennt jeden Laendercode in jeder Sprache
+     (Intl.DisplayNames), ohne Katalog. Kein zweistelliger Code oder kein Intl: der mitgegebene Name. */
+  var _landNamen = {};
+  function landName(code, rueckfall){
+    code = String(code == null ? "" : code).trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(code)) return rueckfall || code;
+    try {
+      if (window.Intl && Intl.DisplayNames){
+        var sp = getPref("locale") || "en";
+        var dn = _landNamen[sp] || (_landNamen[sp] = new Intl.DisplayNames([sp], { type: "region" }));
+        var n = dn.of(code);
+        if (n && n !== code) return n;
+      }
+    } catch(e){}
+    return rueckfall || code;
   }
   function getPref(name){ var p = prefsLesen(); return p[name] != null ? p[name] : PREF_DEFAULT[name]; }
   function setPref(name, value){
@@ -1164,6 +1200,9 @@
     "No variations recorded for this combination.":
       "Für diese Kombination sind noch keine Variationen erfasst.",
     "No keywords": "Keine Keywords",
+    "Keywords": "Keywords",
+    "Persona": "Persona",
+    "Include prompts that name a brand": "Auch Prompts mit Markennamen",
     "No persona": "Keine Persona",
     "No industries found": "Keine Branchen gefunden",
     "No file selected": "Keine Datei gewählt",
@@ -25472,7 +25511,7 @@
     getMarkets: getMarkets,
     setMarkets: setMarkets,
     setAllMarkets: setAllMarkets,
-    getAllMarkets: getAllMarkets,
+    getAllMarkets: getAllMarkets, landName: landName,
     getDefaultMarket: function(){ return APP.standardMarkt || ""; },
     onAllMarkets: onAllMarkets,
     onMarkets: onMarkets,

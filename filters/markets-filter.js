@@ -222,7 +222,12 @@
     /* alpha2 is the identity. alpha3 is accepted as a fallback only so a payload that ships one
        and not the other still selects; the payload always publishes what keyOf returned. */
     function keyOf(m) { return String((m && (m.alpha2 || m.alpha3)) || "").toUpperCase(); }
-    function nameOf(m) { return String((m && (m.name || m.alpha2)) || ""); }
+    /* In der Sprache der App (14.10., core landName): die DB liefert die Namen englisch. */
+    function nameOf(m) {
+      var roh = String((m && (m.name || m.alpha2)) || "");
+      var UCx = window.UpstreemCore;
+      return m && m.alpha2 && UCx && UCx.landName ? UCx.landName(m.alpha2, roh) : roh;
+    }
     function toNum(v) { var n = Number(v); return isFinite(n) ? n : 0; }
     function isSel(k) { return selected.indexOf(k) >= 0; }
     function byKey(k) {
@@ -235,7 +240,8 @@
         if (!q) return true;
         /* Code and region are searchable alongside the name: people look for "DE" as often as for
            "Germany", and "Europe" is how you find a group of them at once. */
-        return (nameOf(m) + " " + keyOf(m) + " " + String(m.region || "") + " " + String(m.subregion || ""))
+        /* Der englische Name aus der DB bleibt mit suchbar, seit nameOf uebersetzt (14.10.). */
+        return (nameOf(m) + " " + String(m.name || "") + " " + keyOf(m) + " " + String(m.region || "") + " " + String(m.subregion || ""))
                  .toLowerCase().indexOf(q) >= 0;
       });
       list.sort(function (a, b) {

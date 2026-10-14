@@ -691,7 +691,7 @@
       startButton.classList.toggle('is-running', isRunning);
     }
     root.querySelectorAll('.upr-chip, .upr-dd-trigger, .upr-dd-option, .upr-dd-clear, .upr-dd-search').forEach(function(el){ if ('disabled' in el) el.disabled = isRunning; });
-    if (isRunning && settingsPanel){ settingsPanel.classList.remove('is-open'); if (settingsToggle){ settingsToggle.setAttribute('aria-expanded', 'false'); settingsToggle.classList.remove('is-active'); } }
+    if (isRunning && settingsPanel){ settingsPanel.classList.remove('is-open', 'is-steht'); if (settingsToggle){ settingsToggle.setAttribute('aria-expanded', 'false'); settingsToggle.classList.remove('is-active'); } }
     if (tableMenu && !isResults) tableMenuPop.close();
     if (isRunning) startLoaderAnim(); else stopLoaderAnim();
     merke();
@@ -702,7 +702,9 @@
   function volumeLevel(value){ var n = clampVolume(value); if (n === null) return 0; if (n <= 25) return 1; if (n <= 50) return 2; if (n <= 75) return 3; return 4; }
   function renderVolume(value){
     var level = volumeLevel(value);
-    var html = '<div class="upr-volume-wrap" data-tip="Estimated volume: ' + esc(value == null ? 'n/a' : value) + '"><div class="upr-volume-track">';
+    /* Zusammengesetzte Tooltips aus Katalog-Teilen (14.10.: standen im DE-Setting englisch da --
+       die Sprachrunde von core uebersetzt nur ganze, bekannte Saetze). */
+    var html = '<div class="upr-volume-wrap" data-tip="' + esc(tt('Estimated volume:') + ' ' + (value == null ? '–' : value)) + '"><div class="upr-volume-track">';
     for (var i = 1; i <= 4; i++) html += '<span class="upr-volume-seg ' + (i <= level ? 'is-filled level-' + level : '') + '"></span>';
     return html + '</div></div>';
   }
@@ -726,9 +728,15 @@
   /* Ohne Intent-Felder in der Antwort (die DB liefert sie noch nicht) steht ein Strich, damit
      die Spalte nicht nach Fehler aussieht. Nicht klickbar: ueberschrieben wird nach dem Tracken
      in der Prompt-Tabelle. */
+  /* NUR EIN FERTIGER INTENT WIRD ZUM LABEL (14.10., gemeldet: "beim Oeffnen einer alten
+     Recherche gehen alle auf Wird zugeordnet und bleiben da auf ewig"). Ein Vorschlag wird nie
+     nachtraeglich klassifiziert -- das passiert erst, wenn er getrackt ist. intent null mit
+     intent_status null (alte Jobs, oder das Modell lieferte bei mehreren Intents keinen) ist
+     also kein "laeuft noch", sondern "gibt es nicht": ein Strich. */
   function intentZelle(it){
     var z = it && it.zeile;
-    if (!z || !UC.hatIntent || !UC.hatIntent(z) || !UC.intentHtml) return '<span class="upr-cell-empty">–</span>';
+    if (!z || !UC.intentHtml || !UC.intentArt || String(z.intent_status || '') !== 'done' || !UC.intentArt(z.intent))
+      return '<span class="upr-cell-empty">–</span>';
     return UC.intentHtml(z, {});
   }
   function brandedZelle(it){
@@ -746,16 +754,17 @@
         '<span class="up-topicchip-lbl">' + esc(tag.name) + '</span></span>';
     }).join('') + '</div>';
   }
+  function tt(x){ return UC.t ? UC.t(x) : x; }
   function contextPills(meta, withKeywords){
     var flagUrl = getFlagUrlForMarket(meta.market);
-    var marketLabel = meta.market_name || meta.market || 'Market';
-    var keywordsLabel = meta.keywords && meta.keywords.length ? meta.keywords.join(', ') : 'No keywords';
-    var businessLabel = meta.business_model || 'Model n/a';
+    var marketLabel = (UC.landName ? UC.landName(meta.market, meta.market_name) : meta.market_name) || meta.market || tt('Market');
+    var keywordsLabel = meta.keywords && meta.keywords.length ? meta.keywords.join(', ') : tt('No keywords');
+    var businessLabel = meta.business_model ? (MODELL[String(meta.business_model).toLowerCase()] || meta.business_model) : '–';
     var personaLabel = meta.persona || 'No persona';
     return '<span class="upr-context-pill" data-tip="' + esc(marketLabel) + '"><span class="upr-market-flag">' + flagHtml(flagUrl, marketLabel) + '</span><span>' + esc(meta.market || marketLabel) + '</span></span>' +
-      (withKeywords ? '<span class="upr-context-pill is-keywords" data-tip="Keywords: ' + esc(keywordsLabel) + '">' + ICON.tag + '<span>' + esc(keywordsLabel) + '</span></span>' : '') +
-      '<span class="upr-context-pill" data-tip="Business model: ' + esc(businessLabel) + '">' + ICON.briefcase + '<span>' + esc(businessLabel) + '</span></span>' +
-      (personaLabel !== 'No persona' ? '<span class="upr-context-pill" data-tip="Persona: ' + esc(personaLabel) + '">' + ICON.user + '<span>' + esc(personaLabel) + '</span></span>' : '');
+      (withKeywords ? '<span class="upr-context-pill is-keywords" data-tip="' + esc(tt('Keywords') + ': ' + keywordsLabel) + '">' + ICON.tag + '<span>' + esc(keywordsLabel) + '</span></span>' : '') +
+      '<span class="upr-context-pill" data-tip="' + esc(tt('Business model') + ': ' + businessLabel) + '">' + ICON.briefcase + '<span>' + esc(businessLabel) + '</span></span>' +
+      (personaLabel !== 'No persona' ? '<span class="upr-context-pill" data-tip="' + esc(tt('Persona') + ': ' + tt(personaLabelVon(personaLabel))) + '">' + ICON.user + '<span>' + esc(tt(personaLabelVon(personaLabel))) + '</span></span>' : '');
   }
   function renderResultsContext(){
     if (resultsContext) resultsContext.innerHTML = contextPills(currentResearchMeta, true);
@@ -788,6 +797,10 @@
   /* Rechts in der Zeile, als Text und nicht als Pille (10.10.): Markt und Geschaeftsmodell. */
   var MODELL = { b2c: 'B2C', b2b: 'B2B', hybrid: 'Hybrid' };
   function personaText(p){ p = String(p || '').replace(/_/g, ' ').trim(); return p ? p.charAt(0).toUpperCase() + p.slice(1) : ''; }
+  /* Die Persona-Werte mit den Beschriftungen des Menues -- die stehen im Katalog (KMU-Inhaber ...),
+     personaText() allein gaebe "Smb owner". */
+  var PERSONA = { student: 'Student', entrepreneur: 'Entrepreneur', smb_owner: 'SMB owner', parent_family: 'Parent / Family', tech_enthusiast: 'Tech enthusiast' };
+  function personaLabelVon(p){ return PERSONA[String(p || '')] || personaText(p); }
   function historyMeta(item){
     var markt = String(item.market || '').toUpperCase();
     var name = item.market_name || markt;
@@ -839,7 +852,7 @@
       var laeuft = item.status === 'queued' || item.status === 'running';
       var zeile = laeuft
         ? '<span class="upr-history-lauf">' + esc(UC.t ? UC.t('Running') : 'Running') + '</span>'
-        : esc(item.prompt_count || 0) + ' prompts';
+        : esc(Number(item.prompt_count || 0) === 1 ? tt('1 prompt') : tt('{n} prompts').replace('{n}', item.prompt_count || 0));
       /* Die Persona in der Datumszeile, nicht rechts: dort stehen nur Markt und Modell in festen
          Spalten (10.10.), und eine Persona ist zu lang und zu selten fuer eine eigene. */
       var persona = personaText(item.persona);
@@ -1086,6 +1099,22 @@
     syncDropdownOpenState();
     merke();
   }
+  /* NACH OBEN, WENN UNTEN KEIN PLATZ IST (14.10.). Gemessen wird gegen den sichtbaren Teil der
+     Wurzel (sie scrollt selbst) und gegen das Fenster -- das Kleinere zaehlt. Oben haengt das Menue
+     buendig ueber der Box, im selben Abstand wie unten darunter (Menueabstand der App). Die Hoehe
+     des Menues kommt aus seinem eigenen Kasten (offsetHeight, ohne die Aufklapp-Bewegung). */
+  function seiteWaehlen(dd, menu){
+    var box = composerEl || dd;
+    var b = box.getBoundingClientRect(), r = root.getBoundingClientRect(), d = dd.getBoundingClientRect();
+    var unten = Math.min(r.bottom, window.innerHeight) - b.bottom, oben = b.top - Math.max(r.top, 0);
+    var hoch = menu.offsetHeight || 0, abstand = 6;
+    var nachOben = unten < hoch + abstand + 8 && oben > unten;
+    dd.classList.toggle('is-oben', nachOben);
+    /* Beide Lagen aus der Box gerechnet: unter ihrer Unterkante bzw. ueber ihrer Oberkante, je im
+       Menueabstand -- unabhaengig davon, in welcher Reihe des Felds die Pille steht. */
+    menu.style.bottom = nachOben ? Math.round(d.bottom - b.top + abstand) + 'px' : '';
+    menu.style.top = nachOben ? 'auto' : Math.round(b.bottom - d.top + abstand) + 'px';
+  }
   function wireDropdown(dd){
     var trigger = dd.querySelector('.upr-dd-trigger');
     var menu    = dd.querySelector('.upr-dd-menu');
@@ -1103,8 +1132,13 @@
     if (trigger) trigger.addEventListener('click', function(e){
       e.stopPropagation();
       dd.__pop.toggle();
+      if (dd.__pop.isOpen()) seiteWaehlen(dd, menu);
       syncDropdownOpenState();
-      if (search && dd.__pop.isOpen()) setTimeout(function(){ try { search.focus(); } catch(err){} }, 80);
+      /* preventScroll (14.10., gemeldet: "beim Oeffnen scrollt die ganze Komponente nach oben"): der
+         Fokus auf das Suchfeld liess den Browser die Wurzel bis zum Feld scrollen, wenn das Menue
+         unter dem sichtbaren Bereich lag. Jetzt bleibt die Seite stehen, und seiteWaehlen legt das
+         Menue dorthin, wo Platz ist. */
+      if (search && dd.__pop.isOpen()) setTimeout(function(){ try { search.focus({ preventScroll: true }); } catch(err){} }, 80);
     });
     dd.addEventListener('click', function(e){
       var option = e.target.closest('.upr-dd-option');
@@ -1115,7 +1149,7 @@
     if (search && list) search.addEventListener('input', function(){
       var q = search.value.trim().toLowerCase(), visibleCount = 0;
       getOptions().forEach(function(option){
-        var haystack = [option.getAttribute('data-label'), option.getAttribute('data-value'), option.getAttribute('data-alpha2'), option.getAttribute('data-alpha3'), option.textContent].join(' ').toLowerCase();
+        var haystack = [option.getAttribute('data-label'), option.getAttribute('data-name-en'), option.getAttribute('data-value'), option.getAttribute('data-alpha2'), option.getAttribute('data-alpha3'), option.textContent].join(' ').toLowerCase();
         var visible = !q || haystack.indexOf(q) !== -1;
         option.style.display = visible ? '' : 'none';
         if (visible) visibleCount++;
@@ -1131,7 +1165,10 @@
   function renderMarketDropdown(){
     var markets = getMarkets().filter(function(m){ return m && m.alpha2 && m.name; }).map(function(m){
       return { alpha2: String(m.alpha2 || '').toUpperCase(), alpha3: String(m.alpha3 || '').toUpperCase(),
-               name: String(m.name || '').trim(), flag_url: String(m.flag_url || '').trim(), prompt_count: Number(m.prompt_count || 0) };
+               /* Name in der Sprache der App (core landName), die DB liefert ihn englisch. */
+               name: UC.landName ? UC.landName(m.alpha2, String(m.name || '').trim()) : String(m.name || '').trim(),
+               name_en: String(m.name || '').trim(),
+               flag_url: String(m.flag_url || '').trim(), prompt_count: Number(m.prompt_count || 0) };
     });
     var dd = root.querySelector('#upr-market-dd');
     if (!dd) return;
@@ -1139,7 +1176,7 @@
     if (!list) return;
     var sorted = markets.slice().sort(function(a, b){ return (b.prompt_count || 0) - (a.prompt_count || 0) || a.name.localeCompare(b.name); });
     list.innerHTML = sorted.map(function(m, index){
-      return '<button class="upr-dd-option ' + (index === 0 ? 'is-selected' : '') + '" type="button" data-value="' + esc(m.alpha2) + '" data-alpha2="' + esc(m.alpha2) + '" data-alpha3="' + esc(m.alpha3) + '" data-label="' + esc(m.name) + '" data-flag="' + esc(m.flag_url) + '">' +
+      return '<button class="upr-dd-option ' + (index === 0 ? 'is-selected' : '') + '" type="button" data-value="' + esc(m.alpha2) + '" data-name-en="' + esc(m.name_en) + '" data-alpha2="' + esc(m.alpha2) + '" data-alpha3="' + esc(m.alpha3) + '" data-label="' + esc(m.name) + '" data-flag="' + esc(m.flag_url) + '">' +
         '<span class="upr-dd-check">' + ICON.check + '</span>' +
         '<span class="upr-dd-optlabel">' + esc(m.name) + ' <span class="upr-dd-meta">(' + esc(m.alpha2) + ')</span></span>' +
         '<span class="upr-flag">' + flagHtml(m.flag_url, m.name) + '</span></button>';
@@ -1162,8 +1199,17 @@
   /* ---------- wiring ---------- */
   if (textarea){ textarea.addEventListener('input', autoResizeTextarea); autoResizeTextarea(); }
   if (clearInputButton && textarea) clearInputButton.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); textarea.value = ''; textarea.focus(); autoResizeTextarea(); });
+  /* is-steht: die Reihe darf ueberlaufen (ihre Menues), aber erst nach der Bewegung (200ms, CSS);
+     beim Zuklappen sofort weg, und ein offenes Menue darin geht mit zu. */
+  var stehtUhr = null;
   if (settingsToggle && settingsPanel) settingsToggle.addEventListener('click', function(){
     var isOpen = settingsPanel.classList.toggle('is-open');
+    clearTimeout(stehtUhr);
+    if (isOpen) stehtUhr = setTimeout(function(){ if (settingsPanel.classList.contains('is-open')) settingsPanel.classList.add('is-steht'); }, 210);
+    else {
+      settingsPanel.classList.remove('is-steht');
+      Array.prototype.forEach.call(settingsPanel.querySelectorAll('.upr-dd'), function(d){ if (d.__pop) d.__pop.close(); });
+    }
     settingsToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     settingsToggle.setAttribute('aria-label', isOpen ? 'Close research settings' : 'Open research settings');
     settingsToggle.classList.toggle('is-active', isOpen);      // §6a: open trigger keeps its state
