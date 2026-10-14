@@ -827,13 +827,15 @@
     /* Eine Ad oeffnen, wie ein Produkt (produktOeffnen): ist in Bubble ein Empfaenger fuer urdAd
        verdrahtet, entscheidet er. Sonst direkt: den Drawer schliessen, in den Ads-Bereich wechseln
        und dort den Ad-Drawer mit genau diesem Objekt oeffnen -- dafuer braucht es keinen Abruf,
-       das Objekt traegt alle Felder. Ohne Ads-Element auf der Seite bleibt das Ereignis. */
+       das Objekt traegt alle Felder. Nur ohne jede Moeglichkeit zu wechseln bleibt das Ereignis. */
     /* Ads und Shopping bauen sich erst, wenn ihre Ansicht zu sehen ist (messbar). Kam man aus
        einer anderen Ansicht, ohne dort je gewesen zu sein, gab es das Element, aber noch keinen
        Controller -- und der Klick ging an Bubble bzw. ins Leere (Bestand 13.10.). Jetzt: erst
        wechseln, dann bis 4s auf den Controller warten. */
+    /* 12 statt 4s (14.10.): in der Next-App laedt eine Ansicht ihre Dateien erst beim ersten Besuch
+       (ansichten.js) -- kalt und ueber das CDN dauert das bis zu Sekunden, bevor ihr Controller steht. */
     function aufController(sel, schluessel, fn) {
-      var bis = Date.now() + 4000;
+      var bis = Date.now() + 12000;
       (function schau() {
         var el = document.querySelector(sel), c = el && el[schluessel];
         if (c) { fn(c); return; }
@@ -851,8 +853,12 @@
       var ad = adListe.filter(function (x) { return String(x.id) === id; })[0];
       if (!ad) return;
       var fnName = root.getAttribute("data-ad-fn") || "bubble_fn_urdAd";
-      var ar = document.querySelector(".uad-root");
-      if (typeof window[fnName] === "function" || !ar) {
+      /* Nur ein ECHTER Empfaenger (Bubble) entscheidet. Fehlte bisher das Ads-Element -- in der
+         Next-App der Normalfall, solange Ads noch nicht besucht wurde (Laden je Ansicht) --, ging
+         der Klick an Bubble und damit ins Leere (Audit 14.10.). Jetzt wird gewechselt; das laedt die
+         Ansicht, und aufController wartet auf sie. */
+      var kannWechseln = !!(UC.ansichtWechseln || typeof window.usnNavigieren === "function");
+      if (typeof window[fnName] === "function" || !kannWechseln) {
         fire("data-ad-fn", "urdAd", id);
         return;
       }
@@ -964,8 +970,10 @@
       id = String(id || "").trim();
       if (!id) return;
       var fnName = root.getAttribute("data-product-fn") || "bubble_fn_urdProduct";
-      var sh = document.querySelector(".ush-root");
-      if (typeof window[fnName] === "function" || !sh) {
+      /* Wie bei den Ads (adOeffnen): ohne echten Empfaenger wechseln, auch wenn Shopping noch nicht
+         geladen ist -- das Element fehlte dann und der Klick ging ins Leere (14.10.). */
+      var kannWechseln = !!(UC.ansichtWechseln || typeof window.usnNavigieren === "function" || typeof window.showView === "function");
+      if (typeof window[fnName] === "function" || !kannWechseln) {
         fire("data-product-fn", "urdProduct", id);
         return;
       }

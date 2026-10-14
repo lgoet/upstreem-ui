@@ -141,11 +141,28 @@ Bubble-Erinnerungen im Gedächtnis.
 
 - anon-Rechte auf `ingest_*`, `check_rate_limit`, `create_prompt_with_tags`,
   `claim_due_prompt_model_jobs_v1` (AUFRAEUMEN §7) – vorher prüfen, mit welchem Schlüssel n8n schreibt.
-- n8n-Webhooks ohne Auth: `ask-mira-agent`, `mira-message-export-pdf`.
+- n8n-Webhooks ohne Auth `ask-mira-agent`, `mira-message-export-pdf`: Header-Auth ERST NACH dem
+  Abschalten -- Bubble schickt keinen Header (`seiten_db_rueckmeldung_1.md:66-67`).
 
-## 6. Unklar / vorher messen
+## 6. Vor dem Abschalten umziehen (sonst bricht etwas)
+
+- **Logos auf Bubbles CDN:** eigene Logos stehen als `//…cdn.bubble.io/…`-Adressen in der Datenbank
+  (`brands_v1_vertrag.md:111`, gesehen auch in `response_detail_v1_echte_antworten.json`). Wird die
+  Bubble-App geloescht, laden sie womoeglich nicht mehr -> vorher nach Supabase Storage umziehen
+  (DB-Chat + Lukas).
+- **`create-onboarding-checkout`** fuehrt auf die Bubble-Seite `/onboarding-success`.
+- **Muss bleiben:** `get_competition_overview_v24` (nutzt `export_brands_v2`),
+  `create_mira_source_recommendation_v3`, die n8n-Funktionen, der Auth-Hook "Before User Created"
+  (`upstreem-app/lib/anmeldung.ts:15`).
+- **Widersprueche in AUFRAEUMEN:** `get_my_teams_v4` (:247 bleibt, :264 loeschen); `export_brands_v1`
+  hat inzwischen `export_brands_v2` (:57 veraltet).
+
+## 7. Unklar / vorher messen
 
 - `unclipAncestors`: ob Next es braucht.
 - Window-Speicher je instanceId (Bubble-Neuaufbau beim Themenwechsel) – nicht blind entfernen.
 - `{json}`-Entpacken in `rpc()` – nötig, bis die Umschlag-RPCs weg sind.
 - Supabase-Redirect-/Site-URLs und Mail-Vorlagen mit Bubble-Pfaden (nicht aus dem Repo prüfbar).
+- Signup-Code-Reste (`signup_codes` u. a.): ob es sie in Produktion gibt.
+- Nebenbefund (nicht Bubble): Next lud `check-email.css` und `not-found.css`, die es in upstreem-ui
+  nicht gibt (`app/check-email/page.tsx:13`, `app/not-found.tsx:11`).

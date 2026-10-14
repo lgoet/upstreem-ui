@@ -427,7 +427,12 @@
         if (G) { fehlerZeigen(G, ""); sperren(G, knopf); }
         UC.edge(e.name, e.body, { timeoutMs: 30000 }).then(d.antwortPruefen).then(function (erg) {
           if (!erg.ok && weiche && weiche(d, erg)) return;
-          if (!erg.ok && zugangsFehler(d, erg)) { rueckfall(); return; }
+          /* Rueckfall an Bubble -- gibt es dort keinen Empfaenger (Next-App), sagt es die Fehlerzeile
+             statt still nichts zu tun (Audit 14.10.: Klick auf "Get started" blieb folgenlos). */
+          if (!erg.ok && zugangsFehler(d, erg)) {
+            if (!rueckfall()) { var G4 = GATE[instanceId]; if (G4) fehlerZeigen(G4, satz); }
+            return;
+          }
           var url = erg.ok ? d.stripeUrl(erg.daten, art) : "";
           var G2 = GATE[instanceId];
           if (!url) { if (G2) fehlerZeigen(G2, satz); return; }
@@ -467,7 +472,8 @@
         UC.rpc(a.fn, a.params, { timeoutMs: 20000 }).then(function (erg) {
           var z = erg && erg.ok ? d.zuTarife(erg.daten) : null;
           if (z) { plaeneSetzen(z); return; }
-          if (zugangsFehler(d, erg)) { fire("data-plans-fn", "uagPlans", mitTeam({ current_plan_id: "" })); return; }
+          /* Ohne Empfaenger fuer den Rueckfall sofort der Fehlersatz im Fenster, nicht erst nach 8s. */
+          if (zugangsFehler(d, erg)) { if (!fire("data-plans-fn", "uagPlans", mitTeam({ current_plan_id: "" })) && dlg) dlg.setFehler(); return; }
           if (dlg) dlg.setFehler();
         }, function () { if (dlg) dlg.setFehler(); });
         return true;
