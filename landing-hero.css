@@ -3866,3 +3866,92 @@
    (clamp(84px, 12vh, 132px)), und die stehen dort auf ihrer Obergrenze. Ohne die Zeile war der
    eigene Fuss bei 1440x900 gemessen 48px niedriger als der auf der Startseite. */
 .ulh-root.ulh-teil { background: none; --ulh-fh: 20px; }
+
+/* ---------- Die zwei Terminseiten (14.10.) ---------------------------------------------------
+   upstreem.ai/demo und upstreem.ai/contact (framer/UpstreemDemo.tsx, framer/UpstreemContact.tsx):
+   Ueberschrift, Satz, bei Kontakt die Mailadresse, darunter der Kalender von Cal.com. Leiste und
+   Fuss stehen als eigene Komponenten darueber und darunter. Die Masse sind die des Satzes zum
+   Schluss der Startseite (.ulh-stimme), nur die Ueberschrift ist die einer Seite und kein Zitat:
+   Geist 600 wie die h1 im Hero, eine Stufe kleiner -- die Seite soll den Kalender tragen, nicht
+   die Ueberschrift. */
+.ulh-root.ulh-teil[data-ulh-teil="termin"] { background: var(--ulh-grund); }
+.ulh-termin {
+  padding: clamp(56px, calc(8 * var(--ulh-fh)), 104px) 0 clamp(72px, calc(10 * var(--ulh-fh)), 128px);
+}
+.ulh-termin-in { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.ulh-termin-titel {
+  margin: 0;
+  font-size: clamp(34px, 4.4vw, 56px); font-weight: 600; line-height: 1;
+  letter-spacing: -0.02em; color: var(--ulh-text);
+}
+.ulh-termin-sub {
+  margin: clamp(18px, calc(2.4 * var(--ulh-fh)), 26px) 0 0; max-width: 52ch;
+  font-size: 16px; font-weight: 400; line-height: 1.55; letter-spacing: -0.01em;
+  color: var(--ulh-sub);
+}
+/* Satz und Adresse je ein eigenes Element mit Abstand -- kein Trennzeichen dazwischen. */
+.ulh-termin-mail {
+  margin: 14px 0 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
+  font-size: 14px; line-height: 1.5; color: var(--ulh-sub);
+}
+.ulh-termin-mail a, .ulh-termin-fehler a {
+  color: var(--ulh-text); font-weight: 500;
+  text-decoration: underline; text-decoration-color: var(--ulh-border);
+  text-underline-offset: 3px; transition: text-decoration-color 140ms ease;
+}
+.ulh-termin-mail a:hover, .ulh-termin-fehler a:hover { text-decoration-color: currentColor; }
+
+/* Der Kalender. Die Mindesthoehe haelt seinen Platz frei, solange er laedt: ohne sie stuende der
+   Fuss erst unter dem Satz und spraenge dann um gut 500px nach unten. 570 ist die Hoehe, die Cal.com
+   in der Monatsansicht bei 1440 Breite einnimmt (gemessen 14.10. im Pruefstand ter01; mit 640
+   rutschte der Fuss danach um 70px hoch). Steht er, gilt seine eigene Hoehe. */
+.ulh-termin-kal {
+  position: relative; width: 100%; max-width: 1040px;
+  margin-top: clamp(36px, calc(5 * var(--ulh-fh)), 56px);
+  min-height: 570px;
+}
+.ulh-termin-kal.is-da, .ulh-termin-kal.is-fehler { min-height: 0; }
+.ulh-termin-ziel { width: 100%; }
+
+/* Die vier Balken, Vorlage vom Nutzer (uiball, 14.10.): 35px breit, 0.9 davon hoch, 3.5px je
+   Balken, eine Sekunde je Runde, versetzt um je 0.15s. Die Farbe ist die Schrift der Seite. */
+.ulh-termin-lader {
+  position: absolute; top: 160px; left: 50%; translate: -50% 0;
+  display: flex; align-items: center; justify-content: space-between;
+  width: 35px; height: 31.5px;
+}
+.ulh-termin-lader i {
+  width: 3.5px; height: 100%; background: var(--ulh-text);
+  animation: ulhTerminBalken 1s ease-in-out infinite;
+}
+.ulh-termin-lader i:nth-child(1) { animation-delay: -0.45s; }
+.ulh-termin-lader i:nth-child(2) { animation-delay: -0.3s; }
+.ulh-termin-lader i:nth-child(3) { animation-delay: -0.15s; }
+@keyframes ulhTerminBalken {
+  0%, 100% { transform: scaleY(0.3); }
+  50%      { transform: scaleY(1); }
+}
+/* Ein Ladezeichen muss sich bewegen, sonst sieht es aus wie stehengeblieben -- also langsamer,
+   nicht still. */
+@media (prefers-reduced-motion: reduce) { .ulh-termin-lader i { animation-duration: 2.4s; } }
+.ulh-termin-kal.is-da .ulh-termin-lader, .ulh-termin-kal.is-fehler .ulh-termin-lader { display: none; }
+
+/* Kommt der Kalender nicht, steht hier ein Satz mit dem direkten Link: ein roter Satz ohne Kasten,
+   in der Fehlerfarbe der App (--vt-down hell, die Landing ist immer hell). Er erscheint auf zwei
+   Wegen: landing-teile.js setzt .is-fehler (Skript blockiert, Cal.com meldet einen Fehler, 20s ohne
+   Kalender), und OHNE jedes Skript -- landing-teile.js selbst kam nicht an -- holt ihn nach 25s
+   diese Regel hervor. Sonst liefen die Balken dort endlos und saehen aus wie "gleich da". */
+.ulh-termin-fehler {
+  position: absolute; top: 216px; left: 0; right: 0; margin: 0;
+  font-size: 14px; line-height: 1.5; color: #b0200c;
+  visibility: hidden;
+}
+.ulh-termin-kal:not(.is-da) .ulh-termin-fehler { animation: ulhTerminSpaet 1ms 25s forwards; }
+@keyframes ulhTerminSpaet { to { visibility: visible; } }
+.ulh-termin-kal.is-fehler .ulh-termin-fehler { position: static; visibility: visible; animation: none; }
+/* Meldet Cal.com linkFailed, steht im Rahmen schon SEINE Meldung ("Error Code: 404. Cal Link seems
+   to be wrong", gemessen am 14.10. mit einem falschen Link) -- zwei Meldungen uebereinander, eine
+   davon englisch-technisch. Der Rahmen geht dann weg, unser Satz bleibt. Kommt der Kalender nach
+   der Frist doch noch (is-da), steht er wieder da. */
+.ulh-termin-kal.is-fehler:not(.is-da) .ulh-termin-ziel { display: none; }
+.ulh-termin-kal.is-da .ulh-termin-fehler { display: none; }

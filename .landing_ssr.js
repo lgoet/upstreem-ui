@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Schreibt das vorgerenderte Markup der Landingpage in die drei Framer-Komponenten (13.10.).
+/* Schreibt das vorgerenderte Markup der Landingpage in die Framer-Komponenten (13.10., Terminseiten seit 14.10.).
 
    WARUM erzeugt und nicht abgeschrieben: die Texte der Startseite stehen in landing-hero.js, und
    nur dort. Die Framer-Komponenten brauchen dasselbe Markup als HTML, damit Framer es vorrendert
@@ -13,6 +13,8 @@
      stand   die Pruefsumme dazu; landing-hero.js uebernimmt das Markup nur, wenn sie passt
      leiste  leiste()   -> framer/UpstreemTopbar.tsx
      fuss    fuss()     -> framer/UpstreemFooter.tsx
+     demo    termin("demo")     -> framer/UpstreemDemo.tsx     (upstreem.ai/demo, seit 14.10.)
+     kontakt termin("kontakt")  -> framer/UpstreemContact.tsx  (upstreem.ai/contact, seit 14.10.)
    Laeuft die Datei dabei auf ein Dokument, bricht das hier ab -- dann ist ein Teil des Aufbaus
    nicht mehr ohne Browser lauffaehig, und genau das muss er fuer diesen Weg bleiben.
 
@@ -38,14 +40,14 @@ Object.defineProperty(fenster, "document", { get() { abbruch("landing-hero.js gr
 vm.createContext(fenster);
 vm.runInContext(fs.readFileSync(QUELLE, "utf8"), fenster, { filename: "landing-hero.js" });
 const h = fenster.__ulhHtml;
-if (!h || !h.seite || !h.stand || !h.leiste || !h.fuss) abbruch("landing-hero.js hat kein Markup geliefert (__ulhHtml)");
+if (!h || !h.seite || !h.stand || !h.leiste || !h.fuss || !h.demo || !h.kontakt) abbruch("landing-hero.js hat kein Markup geliefert (__ulhHtml)");
 
-/* Drei Wurzeln, je mit dem, was ihre Komponente ausmacht:
+/* Fuenf Wurzeln, je mit dem, was ihre Komponente ausmacht:
    data-ulh-ssr     die Pruefsumme -- landing-hero.js vergleicht und uebernimmt nur bei Gleichheit
    data-ulh-inline  die Seite steht in der Framer-Seite selbst, nicht in einem Rahmen (CSS: die
                     Leiste liegt ueber dem Hero)
-   data-ulh-teil    Leiste oder Fuss als eigene Komponente; landing-hero.js laesst sie aus,
-                    landing-teile.js bindet sie */
+   data-ulh-teil    Leiste, Fuss oder eine Terminseite als eigene Komponente; landing-hero.js
+                    laesst sie aus, landing-teile.js bindet sie */
 const TEILE = {
   "framer/UpstreemLanding.tsx": { name: "SEITE",
     html: '<div class="ulh-root" data-ulh-ssr="' + h.stand + '" data-ulh-inline="">' + h.seite + "</div>" },
@@ -53,6 +55,10 @@ const TEILE = {
     html: '<div class="ulh-root ulh-teil" data-ulh-teil="leiste">' + h.leiste + "</div>" },
   "framer/UpstreemFooter.tsx": { name: "FUSS",
     html: '<div class="ulh-root ulh-teil" data-ulh-teil="fuss">' + h.fuss + "</div>" },
+  "framer/UpstreemDemo.tsx": { name: "TERMIN",
+    html: '<div class="ulh-root ulh-teil" data-ulh-teil="termin">' + h.demo + "</div>" },
+  "framer/UpstreemContact.tsx": { name: "TERMIN",
+    html: '<div class="ulh-root ulh-teil" data-ulh-teil="termin">' + h.kontakt + "</div>" },
 };
 
 const ANFANG = "/* ---- SSR ANFANG (erzeugt von .landing_ssr.js -- nicht von Hand aendern) ---- */\n";

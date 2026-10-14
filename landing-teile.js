@@ -16,6 +16,9 @@
    Klein mit Absicht: auf einer Blogseite soll fuer die Leiste nicht die ganze Landingpage
    (landing-hero.js, rund 540 KB) laden.
 
+   Seit dem 14.10. auch der Kalender der zwei Terminseiten (/demo, /contact; kalenderBinden unten):
+   dieselbe Datei, damit eine Terminseite mit Leiste und Fuss nur EIN Skript des Pins laedt.
+
    Bindet sich selbst an jede .ulh-root mit data-ulh-teil (die eigenen Komponenten). Die Startseite
    (.ulh-root ohne das Attribut) bindet landing-hero.js. */
 (function(){
@@ -151,16 +154,86 @@
     });
   }
 
+  /* ---- Der Kalender der Terminseiten (14.10., /demo und /contact) ----
+     Cal.com, Inline. Name und Link stehen im Markup (data-ulh-cal, data-ulh-cal-ns), damit sie wie
+     jeder Text nur in landing-hero.js stehen. Drei Zustaende am Feld:
+       (keiner)   die Balken laufen
+       is-da      Cal.com meldet linkReady -- der Kalender steht
+       is-fehler  das Skript von Cal.com kam nicht (Werbeblocker, Netz), Cal.com meldet linkFailed,
+                  oder nach 20s steht noch nichts. Dann der Satz mit dem direkten Link.
+     Nie still: ohne einen dieser Zustaende liefen die Balken endlos. */
+  var CAL_SKRIPT = "https://app.cal.com/embed/embed.js";
+  var CAL_FRIST = 20000;
+  var calNr = 0;
+
+  /* Der Vorspann aus dem Embed-Code von Cal.com, Wort fuer Wort (nur let/const zu var, wie der Rest
+     der Datei). Er legt window.Cal als Warteschlange an und haengt beim ersten Aufruf das Skript
+     an; was bis dahin aufgerufen wird, arbeitet Cal.com danach der Reihe nach ab. */
+  function calVorspann(){
+    (function (C, A, L) { var p = function (a, ar) { a.q.push(ar); }; var d = C.document; C.Cal = C.Cal || function () { var cal = C.Cal; var ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { var api = function () { p(api, arguments); }; var namespace = ar[1]; api.q = api.q || []; if(typeof namespace === "string"){cal.ns[namespace] = cal.ns[namespace] || api;p(cal.ns[namespace], ar);p(cal, ["initNamespace", namespace]);} else p(cal, ar); return;} p(cal, ar); }; })(window, CAL_SKRIPT, "init");
+  }
+
+  /* Alle Felder dieses Namens, die noch warten. Gesucht im Dokument und nicht ueber eine
+     gemerkte Liste: Framer baut beim Seitenwechsel neue Wurzeln, die alten haengen dann nirgends. */
+  function calFelder(ns, sel){
+    return document.querySelectorAll('.ulh-termin-kal[data-ulh-cal-ns="' + ns + '"]' + sel);
+  }
+  function calFehler(ns){
+    [].forEach.call(calFelder(ns, ":not(.is-da)"), function(f){ f.classList.add("is-fehler"); });
+  }
+
+  function kalenderBinden(root){
+    var feld = root.querySelector(".ulh-termin-kal[data-ulh-cal]");
+    if (!feld || feld.__ulhKal) return;
+    feld.__ulhKal = true;
+    var link = feld.getAttribute("data-ulh-cal"), ns = feld.getAttribute("data-ulh-cal-ns");
+    var ziel = feld.querySelector(".ulh-termin-ziel");
+    if (!link || !ns || !ziel){ feld.classList.add("is-fehler"); return; }
+    if (!ziel.id) ziel.id = "ulh-cal-" + (++calNr);
+
+    var w = window;
+    calVorspann();
+    var neu = !(w.__ulhCalNs || (w.__ulhCalNs = {}))[ns];
+    if (neu){
+      w.__ulhCalNs[ns] = true;
+      w.Cal("init", ns, { origin: "https://app.cal.com" });
+      /* Das Skript haengt erst jetzt im Kopf (der erste Aufruf oben hat es angelegt). Kommt es
+         nicht, meldet Cal.com nie etwas -- also hier hinhoeren. */
+      var s = document.querySelector('script[src="' + CAL_SKRIPT + '"]');
+      if (s) s.addEventListener("error", function(){ calFehler(ns); });
+      /* Hell, auch wenn das System dunkel steht: die Seite ist immer hell, und ein dunkler
+         Kalender darin saehe aus wie ein fremdes Fenster. Im Embed-Code des Nutzers stand kein
+         Thema, Cal.com folgt dann dem System. */
+      w.Cal.ns[ns]("ui", { theme: "light", hideEventTypeDetails: false, layout: "month_view" });
+      w.Cal.ns[ns]("on", { action: "linkReady", callback: function(){
+        [].forEach.call(calFelder(ns, ""), function(f){
+          if (f.querySelector("iframe")){ f.classList.add("is-da"); f.classList.remove("is-fehler"); }
+        });
+      }});
+      w.Cal.ns[ns]("on", { action: "linkFailed", callback: function(){ calFehler(ns); } });
+    }
+    w.Cal.ns[ns]("inline", {
+      elementOrSelector: "#" + ziel.id,
+      config: { layout: "month_view", useSlotsViewOnSmallScreen: "true", theme: "light" },
+      calLink: link
+    });
+    setTimeout(function(){
+      if (!feld.classList.contains("is-da")) feld.classList.add("is-fehler");
+    }, CAL_FRIST);
+  }
+
   function binden(){
     [].forEach.call(document.querySelectorAll(".ulh-root[data-ulh-teil]"), function(root){
       navLauf(root);
       nachweisBinden(root);
       jahrSetzen(root);
+      kalenderBinden(root);
     });
   }
 
   window.UpstreemLandingTeile = { navLauf: navLauf, nachweisBinden: nachweisBinden,
-                                  jahrSetzen: jahrSetzen, binden: binden };
+                                  jahrSetzen: jahrSetzen, kalenderBinden: kalenderBinden,
+                                  binden: binden };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", binden);
   else binden();

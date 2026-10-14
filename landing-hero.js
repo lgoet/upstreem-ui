@@ -429,12 +429,14 @@
           '</span>' +
         '</p>' +
         '<div class="ulh-cta">' +
-          '<button class="ulh-btn ulh-btn-sec" type="button">Talk to Sales</button> ' +
+          /* Bis zum 14.10. zwei <button> ohne Ziel. Jetzt Links auf die zwei eigenen Seiten
+             (UpstreemContact.tsx, UpstreemDemo.tsx) -- im selben Tab, beide gehoeren zur Website. */
+          '<a class="ulh-btn ulh-btn-sec" href="' + KONTAKT_URL + '">Talk to Sales</a> ' +
           /* Der Pfeil (06.10. angefordert) kommt wie jedes Zeichen der Seite aus core und wird von
              zeichenSetzen() nachgeliefert; sein Platz steht schon vorher (landing-hero.css), damit
              der Knopf nicht breiter springt, wenn er kommt. */
-          '<button class="ulh-btn ulh-btn-pri" type="button">Book a Demo' +
-            '<span class="ulh-btn-pfeil" data-ic="arrowRightLong" data-ic-w="2" aria-hidden="true"></span></button>' +
+          '<a class="ulh-btn ulh-btn-pri" href="' + DEMO_URL + '">Book a Demo' +
+            '<span class="ulh-btn-pfeil" data-ic="arrowRightLong" data-ic-w="2" aria-hidden="true"></span></a>' +
         '</div>' +
       '</div>' +
       /* data-up-keepclip an Ausschnitt und Buehne: core entklammert beim Mount jeder Komponente
@@ -625,7 +627,67 @@
         '<div class="ulh-stimme-knoepfe ulh-auf" style="--auf:2">' +
           '<a class="ulh-btn ulh-btn-pri" target="_blank" rel="noopener"' +
             ' href="https://app.upstreem.ai/signup">' + STIMME_CTA + '</a> ' +
-          '<a class="ulh-btn ulh-btn-sec" href="https://upstreem.ai/contact">' + STIMME_CTA2 + '</a>' +
+          '<a class="ulh-btn ulh-btn-sec" href="' + KONTAKT_URL + '">' + STIMME_CTA2 + '</a>' +
+        '</div>' +
+      '</div>' +
+    '</section>';
+  }
+
+  /* ---------- Die zwei Terminseiten: upstreem.ai/demo und upstreem.ai/contact (14.10.) ----------
+     "Book a Demo" und "Talk to Sales" fuehren auf je eine eigene Seite. Beide tragen DENSELBEN
+     Kalender (Cal.com, Inline); die Kontaktseite nennt dazu die Mailadresse. Das Markup steht hier
+     und nicht in den zwei Framer-Komponenten -- dieselbe Ueberlegung wie bei leiste() und fuss():
+     .landing_ssr.js schreibt es nach framer/UpstreemDemo.tsx und framer/UpstreemContact.tsx, und
+     jeder Text hat genau eine Quelle.
+     Den Kalender setzt landing-teile.js ein (kalenderBinden). Bis er steht, laufen vier Balken;
+     kommt er nicht, steht an ihrer Stelle ein Satz mit dem direkten Link -- nie ein leerer Kasten,
+     der aussieht wie "gleich da". Der Link steht auch im vorgerenderten Markup: ein Crawler ohne
+     JavaScript sieht keinen Kalender, aber er sieht, wohin man bucht. */
+  var DEMO_URL = "https://upstreem.ai/demo";
+  var KONTAKT_URL = "https://upstreem.ai/contact";
+  var KONTAKT_MAIL = "lukas@upstreem.ai";
+  /* Der Termintyp in Cal.com. Im Embed-Code vom Nutzer (14.10.) stand "upstreem-demp" -- der Link
+     liefert 404, und Cal.com zeigt im Rahmen "Cal Link seems to be wrong". Gemessen am 14.10.:
+     cal.com/upstreem/upstreem-demp 404, cal.com/upstreem/upstreem-demo 200 ("upstreem Demo").
+     Wird der Termintyp in Cal.com umbenannt, muss diese Zeile mit. */
+  var CAL_LINK = "upstreem/upstreem-demo";
+  var CAL_NS = "upstreem-demo";
+  var TERMIN = {
+    demo: {
+      titel: "Book a demo",
+      sub: "Pick a time that suits you. We show you what AI answers say about your brand, " +
+        "which sources they draw on, and where you can win."
+    },
+    kontakt: {
+      titel: "Talk to sales",
+      sub: "Questions about plans, onboarding or a custom setup? Book a call with us, " +
+        "or write to us directly."
+    }
+  };
+
+  function termin(art){
+    var t = TERMIN[art];
+    var direkt = "https://cal.com/" + CAL_LINK;
+    return '<section class="ulh-termin" data-art="' + art + '">' +
+      '<div class="ulh-spur ulh-termin-in">' +
+        '<h1 class="ulh-termin-titel">' + t.titel + '</h1>' +
+        '<p class="ulh-termin-sub">' + t.sub + '</p>' +
+        (art === "kontakt"
+          ? '<p class="ulh-termin-mail">' +
+              '<span>Prefer email?</span> ' +
+              '<a href="mailto:' + KONTAKT_MAIL + '">' + KONTAKT_MAIL + '</a>' +
+            '</p>'
+          : '') +
+        '<div class="ulh-termin-kal" data-ulh-cal="' + CAL_LINK + '" data-ulh-cal-ns="' + CAL_NS + '">' +
+          '<div class="ulh-termin-ziel"></div>' +
+          /* Die Balken: Vorlage vom Nutzer (14.10.), hier in den Farben der Seite. */
+          '<div class="ulh-termin-lader" role="status" aria-label="Loading calendar">' +
+            '<i></i><i></i><i></i><i></i>' +
+          '</div>' +
+          '<p class="ulh-termin-fehler">The calendar could not load. ' +
+            '<a href="' + direkt + '" target="_blank" rel="noopener">Book on cal.com</a>' +
+            (art === "kontakt" ? ' or write to <a href="mailto:' + KONTAKT_MAIL + '">' + KONTAKT_MAIL + '</a>.' : '.') +
+          '</p>' +
         '</div>' +
       '</div>' +
     '</section>';
@@ -3426,7 +3488,9 @@
           '<h2 class="ulh-quell-h">' + quellWorte() + '</h2>' +
           /* Derselbe Knopf wie im Hero (.ulh-btn .ulh-btn-sec) -- .ulh-quell-cta traegt nur noch
              den Abstand nach oben und kein zweites Aussehen. */
-          '<a class="ulh-btn ulh-btn-sec ulh-quell-cta ulh-auf" href="#" role="button">' + QUELL_CTA + '</a>' +
+          /* Ziel wie "Start for free" in der Leiste, also auch im neuen Tab (bis 14.10. href="#"). */
+          '<a class="ulh-btn ulh-btn-sec ulh-quell-cta ulh-auf" target="_blank" rel="noopener"' +
+            ' href="https://app.upstreem.ai/signup">' + QUELL_CTA + '</a>' +
         '</div>' +
         /* Der Kasten ist unten offen: er wird angeschnitten, und der Inhalt laeuft weiter. Genau
            das laesst ihn wie eine laufende Seite wirken und nicht wie ein Bildschirmfoto. */
@@ -7743,7 +7807,8 @@
   /* NUR FUER .landing_ssr.js: dort laeuft diese Datei in Node, ohne Dokument, und liefert das
      Markup fuer die Framer-Komponenten -- statt zu starten. Im Browser setzt niemand den Schalter. */
   if (window.__ulhNurHtml){
-    window.__ulhHtml = { seite: seiteHtml(true), stand: standDerSeite(), leiste: leiste(), fuss: fuss() };
+    window.__ulhHtml = { seite: seiteHtml(true), stand: standDerSeite(), leiste: leiste(), fuss: fuss(),
+                         demo: termin("demo"), kontakt: termin("kontakt") };
     return;
   }
 
