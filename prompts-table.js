@@ -3541,13 +3541,16 @@
     }
 
     /* Lazy load: one request per expand, and one more per page turn inside the open group. */
-    function fetchGroupPage(delay){
+    function fetchGroupPage(delay, leise){
       var id = state.expandedGroup;
       if (!id) return;
       var g = (state.groups || []).filter(function(x){ return groupId(x) === id; })[0];
       if (!g) return;
-      state.gLoading = true;
-      if (state.groupsWide) renderGroupWideBody(); else renderGroupBlockOnly(id);
+      /* leise: die stehenden Zeilen bleiben sichtbar, bis die Antwort sie ersetzt (14.10.). */
+      if (!leise){
+        state.gLoading = true;
+        if (state.groupsWide) renderGroupWideBody(); else renderGroupBlockOnly(id);
+      }
       function fireNow(){
         if (state.expandedGroup !== id) return;   // closed again before the delay elapsed
         grpReqSeq += 1;
@@ -3969,7 +3972,8 @@
       if (!thead || thead.querySelector(".up-th-intent")) return;
       var th = document.createElement("div");
       th.className = "up-th up-th-intent";
-      th.textContent = "Intent";
+      /* Wie jeder Spaltenkopf mit Kennzahl: das Info-Zeichen zur Erklaerkarte (14.10.). */
+      th.innerHTML = '<span class="up-th-txt">Intent</span><span class="up-th-info" data-explain="intent">' + UC.icon("info", 2) + '</span>';
       var vor = thead.querySelector(".up-th-market");
       if (vor) thead.insertBefore(th, vor); else thead.appendChild(th);
     })();
@@ -4271,6 +4275,8 @@
     UC.makeExplain({
       root: root, triggerSel: ".up-th-info", getIsDark: function(){ return isDark; },
       html: function(kind){
+        /* Intent: die Karte mit der Customer Journey aus core -- dieselbe wie im Menue. */
+        if (kind === "intent" && UC.intentErklaerHtml) return UC.intentErklaerHtml();
         var info = explainInfo(kind);
         if (!info) return "";
         return '<div class="up-explain-vis">' + explainVisual(kind) + '</div>' +
@@ -5713,14 +5719,17 @@
         state.gruppeBehalten = null;
         var nochDa = behalten && state.groups.some(function(g){ return groupId(g) === behalten; });
         state.expandedGroup = nochDa ? behalten : null;
-        state.gRows = []; state.gTotal = null; state.gLoading = false;
+        /* Bleibt die Gruppe offen, bleiben auch ihre Zeilen stehen, bis die neuen da sind (still,
+           kein Skelett -- fetchGroupPage(0, true) unten). */
+        if (!nochDa){ state.gRows = []; state.gTotal = null; }
+        state.gLoading = false;
         /* Into STORE right here, not only via the render() API's own persist(): this is the ONLY
            place groupsHasData ever becomes true, and a re-render of the Bubble element landing
            between this answer and the next persist() would otherwise boot with no headers and
            ask for them all over again — which is the duplicate-uptGroups case itself. */
         persist();
         renderTable();
-        if (nochDa) fetchGroupPage(0);
+        if (nochDa) fetchGroupPage(0, true);
       },
       setGroupPrompts: function(rows, requestId){
         /* Stale-response guard, same shape as the drilldown's: a slow answer to an older request

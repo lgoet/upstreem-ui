@@ -1249,11 +1249,16 @@
     .up-root[data-theme="dark"] .up-varring-track { stroke: var(--vc-border); }
     .up-root[data-theme="dark"] .up-varring-fill { stroke: var(--up-accent); }
 
-    .up-th-info {
+    .up-th-info, .up-intent-erklaer {
       width: 14px; height: 14px; flex: 0 0 14px; margin-left: auto;
       color: var(--vc-third); opacity: 0; transition: opacity .14s ease;
     }
-    .up-th-info svg { width: 14px; height: 14px; display: block; }
+    .up-th-info svg, .up-intent-erklaer svg { width: 14px; height: 14px; display: block; }
+    /* Im Intent-Menue (14.10.) dasselbe Zeichen, dauerhaft sichtbar wie an "Brand Colors": man
+       soll sehen, DASS es eine Erklaerung gibt. Eigene Klasse, siehe intentMenuHtml. */
+    .up-intent-erklaer { opacity: 1; cursor: pointer; }
+    .up-intent-erklaer:hover { color: var(--vc-text); }
+    .up-intent-kopf { display: flex; align-items: center; gap: 8px; }
     .up-th:hover .up-th-info { opacity: 1; }
     .up-th-info:hover { color: var(--vc-text); }
     /* DIE ERKLAERKARTE -- EIN Bauteil fuer die ganze App (28.09. zusammengefuehrt).
@@ -2541,10 +2546,13 @@
     @media (prefers-reduced-motion: reduce){
       .up-intent.is-pending .up-intent-lbl { background: none; animation: none; -webkit-text-fill-color: currentColor; }
     }
-    /* Der Stift hinter einem selbst gesetzten Wert: 11px, eine Stufe unter dem Zeichen vorne --
-       er ist ein Vermerk zum Wert, kein zweites Zeichen gleichen Rangs. */
-    .up-intent-user { display: inline-flex; color: var(--vc-fourth); }
-    .up-intent-user svg { width: 11px; height: 11px; }
+    /* Vom Nutzer gesetzt (14.10.: UserCog in einem kleinen Chip mit Grund, statt des Stifts): 12px
+       Zeichen, 2px Polster -- ein 16er Kaestchen, Radius --up-r-xs. Der Grund ist eine Mischung
+       aus der Schrift und nicht --up-sel-bg: der klickbare Knopf traegt beim Ueberfahren genau
+       --up-sel-bg, und der Chip waere darin verschwunden. Abstand zum Text: der gap des Labels. */
+    .up-intent-user { display: inline-flex; padding: 2px; border-radius: var(--up-r-xs); color: var(--vc-third);
+      background: color-mix(in srgb, var(--vc-text) 7%, transparent); }
+    .up-intent-user svg { width: 12px; height: 12px; display: block; }
     :is(.up-intent, .up-branded).is-klick { border: 0; background: transparent; padding: 0 6px;
       border-radius: var(--up-r-s); cursor: pointer; transition: background-color var(--up-t-1) ease; }
     :is(.up-intent, .up-branded).is-klick:hover, :is(.up-intent, .up-branded).is-klick[aria-expanded="true"] { background: var(--up-sel-bg); }
@@ -2579,6 +2587,21 @@
        plus "Der KI ueberlassen") breiter als 240 und brach sonst in zwei Zeilen um. */
     .up-intentwrap .up-intentpop { left: 0; right: auto; width: max-content; min-width: 240px; max-width: min(320px, 92vw); pointer-events: none; }
     .up-intentwrap .up-intentpop.is-shown { pointer-events: auto; }
+    /* Die Platte der Intent-Erklaerkarte: die Customer Journey als Weg. Drei Zeilen fuer die Stufen,
+       ein senkrechter Strich verbindet ihre Zeichen (die Reise), "Other" abgesetzt ohne Strich.
+       Farben der Platte (--vc-inverse-bg auf --vc-inverse-ink), der Nebentext gedaempft wie
+       .up-explain-t in der Karte. */
+    .up-intent-reise { display: flex; flex-direction: column; gap: 9px; width: 100%; }
+    .up-intent-reise-st { position: relative; display: grid; grid-template-columns: 16px auto; column-gap: 9px; row-gap: 1px; align-items: center; }
+    .up-intent-reise-ic { grid-row: 1 / span 2; display: inline-flex; align-self: start; padding-top: 2px; }
+    .up-intent-reise-ic svg { width: 16px; height: 16px; display: block; }
+    .up-intent-reise-name { font-size: var(--up-fs-s); font-weight: var(--up-fw-h); line-height: 1.2; }
+    .up-intent-reise-will { font-size: var(--up-fs-xs); line-height: 1.3; color: color-mix(in srgb, var(--vc-inverse-bg) 62%, transparent); }
+    /* Der Weg: von der Mitte eines Zeichens bis zum naechsten -- nicht bei der letzten Stufe und
+       nicht bei "Other". 9px gap + Zeilenhoehe ueberbrueckt top: 22px bis bottom: -9px. */
+    .up-intent-reise-st:not(.is-rest):not(:nth-last-child(2))::before { content: ""; position: absolute; left: 7.5px; top: 21px; bottom: -8px;
+      width: 1px; background: color-mix(in srgb, var(--vc-inverse-bg) 30%, transparent); }
+    .up-intent-reise-st.is-rest { padding-top: 7px; border-top: 1px solid color-mix(in srgb, var(--vc-inverse-bg) 18%, transparent); }
     /* Ausloeser kurz weg (Nachladen): unsichtbar und nicht klickbar, bis er wieder da ist. */
     .up-intentwrap.is-verwaist { visibility: hidden; }
 

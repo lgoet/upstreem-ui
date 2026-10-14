@@ -447,7 +447,11 @@
          ausserhalb des Speichers, und alle zeigten Skelett -- nach einem Neuaufbau der Prompts-Seite
          holt die Seiten-Meta immer frisch, und die Liste fiel aus ihren gespeicherten Daten ins
          Skelett und wieder zurueck (gemessen: Daten, Skelett, Daten). */
-      auftraege.forEach(function (a) { if (o.frisch || !a.imSpeicher) a.ladenAn(); });
+      /* o.leise (14.10.): Nachladen nach einer EIGENEN kleinen Aenderung (ein Intent, Branded) oder
+         nach einer Live-Meldung. Die Tabelle zeigt dann kein Skelett -- der alte Stand bleibt
+         stehen, bis der neue da ist, und tauscht sich still. Ein Skelett fuer einen geaenderten
+         Wert in einer Zeile war gemeldet ("die ganze Tabelle geht sichtbar in den Ladezustand"). */
+      auftraege.forEach(function (a) { if (!o.leise && (o.frisch || !a.imSpeicher)) a.ladenAn(); });
       var vorab = o.vorab ? Promise.resolve(o.vorab).then(null, function () {}) : Promise.resolve();
       return vorab.then(function () {
         return Promise.all(auftraege.map(function (a) { return a.laden(o.frisch); }));
@@ -630,6 +634,10 @@
       lader.leeren();
       if (bereit()) bedarf({ frisch: true, seite: true });
     }
+    function nachAenderungLeise() {
+      lader.leeren();
+      if (bereit()) bedarf({ frisch: true, seite: true, leise: true });
+    }
 
     /* ---- Ereignisse der Prompt-Tabelle ---------------------------------------------------------
        Lokal: "upt-<Name>" (makeFire, Praefix plus Name). Die Tabelle schickt nur, was sich
@@ -797,7 +805,7 @@
              daran (keine Gruppen nach Intent, kein Intent- oder Branded-Filter). Dann nur den
              Speicher leeren -- ein Nachladen waere ein Flackern ohne neuen Inhalt. Nach einem
              Fehler wird immer nachgeladen: dann gilt der Stand der Datenbank. */
-          if (str(d.reload) === "no") lader.leeren(); else nachAenderung();
+          if (str(d.reload) === "no") lader.leeren(); else nachAenderungLeise();
         }, function () { fehlerToast(null, t("The intent could not be saved")); nachAenderung(); });
       });
     }
@@ -1010,7 +1018,7 @@
       intentUhr = setTimeout(function () {
         intentUhr = null;
         if (state.tab !== "allprompts" || !document.contains(root)) return;
-        lader.leeren(); bedarf();
+        lader.leeren(); bedarf({ leise: true });
       }, 600);
     });
 

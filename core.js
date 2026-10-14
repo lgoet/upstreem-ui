@@ -1798,6 +1798,12 @@
     "Branded prompts": "Branded Prompts",
     "Included": "Einbezogen",
     "Your prompts": "Deine Prompts",
+    "What is the intent?": "Was ist der Intent?",
+    "Where the question sits in the customer journey: getting to know a topic, comparing options, or ready to buy. AI sets it, and you can change it.": "Wo die Frage in der Customer Journey steht: ein Thema kennenlernen, Anbieter vergleichen oder kaufen. Die KI ordnet zu, du kannst es ändern.",
+    "Getting to know the topic": "Will das Thema verstehen",
+    "Comparing options": "Vergleicht Anbieter",
+    "Ready to buy or sign up": "Will kaufen oder abschließen",
+    "Login, support and the rest": "Login, Support und der Rest",
 
     /* Intents und Branded (13.10.) */
     "Intent": "Intent",
@@ -4513,6 +4519,9 @@
        ist wortgleich der Katalogeintrag, den die Kachel vorher selbst trug -- so bleibt die
        Uebersetzung, und es gibt ihn nur noch hier. */
     mentions:   { h: "Mentions", t: "How many times the brand was named. Higher means the other numbers rest on more data." },
+    /* Intent (14.10.): die Customer Journey ist der Aufhaenger -- so ausdruecklich bestellt. Der
+       Satz sagt, WO eine Frage auf dem Weg zum Kauf steht; die Platte darueber zeigt den Weg. */
+    intent:     { h: "Intent", t: "Where the question sits in the customer journey: getting to know a topic, comparing options, or ready to buy. AI sets it, and you can change it." },
     share:      { h: "Share", t: "How much of all citations in the period went to this {subject}, plus the change against the previous period." },
     /* Die Zeile "Brand Colors" in der Farbauswahl. Sie steht hier und nicht im Einstellungsfenster,
        weil die Auswahl aus core kommt (colorScaleOptionsHtml) und der Erklaerkasten derselbe ist,
@@ -5804,7 +5813,7 @@
      (Katalog-Kollision). Gelesen wird ueber intentName(). */
   var INTENTE = [
     { key: "informational",  label: "Informational",  de: "Informativ",    icon: "bookOpen" },
-    { key: "recommendation", label: "Recommendation", de: "Kommerziell",   icon: "listTodo" },
+    { key: "recommendation", label: "Recommendation", de: "Kommerziell",   icon: "shoppingBasketAdd02" },
     { key: "transactional",  label: "Transactional",  de: "Transaktional", icon: "creditCard" },
     { key: "other",          label: "Other",          de: "Andere",        icon: "rectangleEllipsis" }
   ];
@@ -5858,7 +5867,7 @@
     if (z.status !== "done") lbl = t(lbl);
     tip = t(tip);
     var innen = icon(ic, 2) + '<span class="up-intent-lbl">' + esc(lbl) + '</span>' +
-      (z.user ? '<span class="up-intent-user" aria-hidden="true">' + icon("squarePen", 2) + '</span>' : "");
+      (z.user ? '<span class="up-intent-user" aria-hidden="true">' + icon("userCog", 2) + '</span>' : "");
     var daten = ' data-intent="' + esc(z.art ? z.art.key : z.status) + '" data-tip="' + esc(tip) + '"';
     if (opts.klick){
       return '<button type="button" class="' + kl + '"' + daten +
@@ -5906,6 +5915,28 @@
     }
     return '<span class="' + kl + '" data-tip="' + esc(tip) + '">' + innen + '</span>';
   }
+  /* DIE PLATTE DER ERKLAERKARTE: die Customer Journey als Weg von oben nach unten, je Stufe Zeichen,
+     Name und was die fragende Person will. Ein Strich verbindet die drei Stufen des Wegs; "Other"
+     steht abgesetzt darunter, es ist keine Stufe. Wird von jeder Erklaerkarte zum Intent benutzt
+     (Spaltenkopf der Tabelle, Menue), also EINE Fassung. */
+  var INTENT_WILL = { informational: "Getting to know the topic", recommendation: "Comparing options",
+                      transactional: "Ready to buy or sign up", other: "Login, support and the rest" };
+  function intentReiseHtml(){
+    return '<div class="up-intent-reise">' + INTENTE.map(function(a){
+      return '<div class="up-intent-reise-st' + (a.key === "other" ? " is-rest" : "") + '">' +
+        '<span class="up-intent-reise-ic">' + icon(a.icon, 2) + '</span>' +
+        '<span class="up-intent-reise-name">' + esc(intentName(a)) + '</span>' +
+        '<span class="up-intent-reise-will">' + esc(t(INTENT_WILL[a.key])) + '</span></div>';
+    }).join("") + '</div>';
+  }
+  function intentErklaerHtml(){
+    var c = explainCopy("intent");
+    if (!c) return "";
+    return '<div class="up-explain-vis">' + intentReiseHtml() + '</div>' +
+      '<div class="up-explain-h">' + esc(c.h) + '</div>' +
+      '<div class="up-explain-t">' + esc(c.t) + '</div>';
+  }
+
   /* Das Menue zum Ueberschreiben, Inhalt fuer eine .up-menu-Huelle. r ist die Zeile (oder bei
      Sammelaktionen null: dann ohne Haken, ohne Herkunft, ohne Branded). Die Herkunft steht unter
      den Werten, nicht als Ueberschrift: sie beantwortet "wer hat das entschieden", und "Reset to
@@ -5915,7 +5946,12 @@
   function intentMenuHtml(r, opts){
     opts = opts || {};
     var z = r ? intentZustand(r) : null;
-    var h = '<div class="up-pop-head">' + esc(t("Intent")) + '</div>' +
+    /* Oben rechts das Info-Zeichen zur Erklaerkarte (14.10.). Bewusst NICHT .up-th-info: die
+       Tabelle meldet .up-th-info in ihrer ganzen Wurzel an, und das Menue haengt darin -- es gaebe
+       zwei Karten. Das Menue meldet seine eigene an (makeIntentMenu). */
+    var h = '<div class="up-pop-head up-intent-kopf"><span>' + esc(t("Intent")) + '</span>' +
+        '<span class="up-intent-erklaer" data-explain="intent" role="button" tabindex="0" aria-label="' +
+          esc(t("What is the intent?")) + '">' + icon("info", 2) + '</span></div>' +
       INTENTE.map(function(a){
         var an = !!(z && z.art && z.art.key === a.key);
         return '<div class="up-pop-opt up-intent-opt' + (an ? " is-active" : "") + '" data-intent-set="' + a.key + '"' +
@@ -5964,6 +6000,11 @@
     wrap.innerHTML = '<div class="up-menu up-intentpop' + (k.menue ? " " + k.menue : "") + '" role="menu" aria-hidden="true"></div>';
     (cfg.root || document.body).appendChild(wrap);
     var menu = wrap.firstChild, opener = null, ziel = null;
+    /* Die Erklaerkarte zum Info-Zeichen im Kopf. Das Thema der Karte folgt der Wurzel, in der das
+       Menue steht. */
+    makeExplain({ root: wrap, triggerSel: ".up-intent-erklaer",
+      getIsDark: function(){ var r = wrap.closest(".up-root"); return !!(r && r.getAttribute("data-theme") === "dark"); },
+      html: function(k){ return k === "intent" ? intentErklaerHtml() : ""; } });
     /* Der Waechter fuer nachZeichnen: NUR solange das Menue offen ist, ein Beobachter auf dem
        Dokument. So muss kein Zeichenweg des Aufrufers (die Tabelle hat ein Dutzend: Seite,
        Gruppen, Seitenliste, aufgeklappte Gruppe, Sammelleiste ...) daran denken. Die Pruefung ist
@@ -15303,11 +15344,11 @@
       return typeof n === "number" ? n : 2;
     }
     var pos = { x:null, y:null }, target = { x:0, y:0 }, running = false, visible = false;
-    /* 0.18 -> 0.5 (13.10., "die Tooltips sind beim Hin-und-her-Hovern laggy"). Mit 0.18 holte der
-       Tooltip je Bild nur ein Fuenftel des Weges auf und hing gemessen im Mittel 105px hinter
-       seinem Ziel (jedes zehnte Bild 190px) -- er wirkte nachgezogen. Mit 0.5 ist er nach drei
-       Bildern da: noch ein weicher Uebergang zwischen zwei Punkten, kein Hinterherlaufen. */
-    var FOLLOW = 0.5;
+    /* 0.31 (14.10.). Die Geschichte: 0.18 war das weiche Gleiten, das gewollt ist, aber beim
+       schnellen Hin-und-her hinterherhing (gemessen im Mittel 105px hinter dem Ziel). 0.5 (13.10.)
+       war direkt, aber das Gleiten war weg -- so nicht gemeint. Bestellt: zwischen beiden, 60 Prozent
+       in Richtung alt: 0.5 + 0.6 x (0.18 - 0.5) = 0.308. */
+    var FOLLOW = 0.31;
     /* Das Tooltip-Element GEMERKT, nicht pro Frame gesucht. Die Schleife lief mit einem
        querySelector pro Frame -- 60 Suchen je Sekunde, in denen sich nichts aendert. */
     var ttEl = null;
@@ -17005,8 +17046,13 @@
                noch 24 Bilder weiter (gemessen). Ohne Animation wird nur gezeichnet, wenn sich der
                Punkt wirklich aendert; Fuehrungslinie und Tooltip folgen trotzdem weich (siehe
                FOLLOW im Tooltip). */
+            /* active 240ms (14.10.): Chart.js animiert den Wechsel des Hover-Punkts sonst 400ms lang
+               und zeichnete beim schnellen Hin-und-her ohne Pause (nach dem Stillstand noch 24
+               Bilder). 0 (13.10.) nahm das weiche Aufgehen der Punkte mit -- bestellt ist der Weg
+               dazwischen, 60 Prozent zurueck Richtung alt: 0 + 0.6 x 400 = 240; die Kurve bleibt die
+               von Chart.js. */
             transitions: { highlight: { animation: { duration: 200, easing: "easeOutQuad" } },
-                           active: { animation: { duration: 0 } } },
+                           active: { animation: { duration: 240 } } },
             interaction: { mode: "index", intersect: false },
             layout: { padding: function(){
               /* Oben Platz fuer die Event-Pins, aber nur, wenn einer im Bild steht -- sonst bleibt
@@ -22458,6 +22504,17 @@
     /* MoreVerticalIcon -- Das senkrechte Dreipunktmenue der Brands Overview */
     moreVertical: '<path d="M11.9967 12.5V12M11.9967 6.5V6M11.9967 18.5V18M12.9967 12.5C12.9967 11.9477 12.549 11.5 11.9967 11.5C11.4444 11.5 10.9967 11.9477 10.9967 12.5C10.9967 13.0523 11.4444 13.5 11.9967 13.5C12.549 13.5 12.9967 13.0523 12.9967 12.5ZM12.9967 6.5C12.9967 5.94772 12.549 5.5 11.9967 5.5C11.4444 5.5 10.9967 5.94772 10.9967 6.5C10.9967 7.05228 11.4444 7.5 11.9967 7.5C12.549 7.5 12.9967 7.05228 12.9967 6.5ZM12.9967 18.5C12.9967 17.9477 12.549 17.5 11.9967 17.5C11.4444 17.5 10.9967 17.9477 10.9967 18.5C10.9967 19.0523 11.4444 19.5 11.9967 19.5C12.549 19.5 12.9967 19.0523 12.9967 18.5Z"/>',
     /* HelpCircleIcon -- Hilfe -- in Create with AI */
+    /* ShoppingBasketAdd02 (Hugeicons) -- Intent "Recommendation"/"Kommerziell" (14.10. gewaehlt). */
+    shoppingBasketAdd02: '<path d="M13 18H21M17 22L17 14"/><path d="M7 7.5V7C7 4.23858 9.23858 2 12 2C14.7614 2 17 4.23858 17 7V7.5"/>' +
+      '<path d="M10 22C7.71999 21.9999 6.57085 21.9917 5.76809 21.2752C4.95603 20.5505 4.75097 19.3264 4.34085 16.8781L3.17786 9.93557C2.98869 8.8063 2.89411 8.24167 3.18537 7.87083C3.47662 7.5 4.01468 7.5 5.09079 7.5H18.9092C19.9853 7.5 20.5234 7.5 20.8146 7.87083C21.1059 8.24167 21.0113 8.8063 20.8221 9.93557L20.4763 12"/>' +
+      '<path d="M4.5 17.5H10"/>',
+    /* AiMagic (Hugeicons) -- "per KI setzen" im Intent-Menue (14.10.). */
+    aiMagic: '<path d="M13.427 8.08396C12.8007 5.84272 12.3226 4 11.0004 4C9.67824 4 9.19964 5.84274 8.5731 8.08399C8.31853 8.99465 8.19125 9.44998 7.82042 9.82077C7.4496 10.1916 6.99434 10.3188 6.08381 10.5732C3.84273 11.1995 2 11.6775 2 13C2 14.3225 3.84273 14.8005 6.08381 15.4268C6.99434 15.6812 7.4496 15.8084 7.82042 16.1792C8.19125 16.55 8.31853 17.0054 8.5731 17.916C9.19964 20.1573 9.67824 22 11.0004 22C12.3226 22 12.8007 20.1573 13.427 17.916C13.6815 17.0054 13.8087 16.5501 14.1795 16.1793C14.5504 15.8085 15.0056 15.6812 15.9162 15.4268C18.1573 14.8005 20 14.3225 20 13C20 11.6775 18.1573 11.1995 15.9162 10.5732C15.0056 10.3188 14.5504 10.1915 14.1795 9.8207C13.8087 9.44986 13.6815 8.99456 13.427 8.08396Z"/>' +
+      '<path d="M19.5 2.9375V4.5M19.5 4.5V6.0625M19.5 4.5H18.25M19.5 4.5H20.75M22 4.5L21.548 4.34934C20.8497 4.11658 20.5006 4.00019 20.2502 3.74981C19.9998 3.49942 19.8834 3.15027 19.6507 2.45198L19.5 2L19.3493 2.45198C19.1166 3.15027 19.0002 3.49942 18.7498 3.74981C18.4994 4.00019 18.1503 4.11658 17.452 4.34934L17 4.5L17.452 4.65066C18.1503 4.88342 18.4994 4.99981 18.7498 5.25019C19.0002 5.50058 19.1166 5.84973 19.3493 6.54802L19.5 7L19.6507 6.54802C19.8834 5.84973 19.9998 5.50058 20.2502 5.25019C20.5006 4.99981 20.8497 4.88342 21.548 4.65066L22 4.5Z"/>',
+    /* UserCog (Lucide) -- vom Nutzer gesetzter Intent (14.10. gewaehlt). */
+    userCog: '<path d="M10 15H6a4 4 0 0 0-4 4v2"/><path d="m14.305 16.53.923-.382"/><path d="m15.228 13.852-.923-.383"/><path d="m16.852 12.228-.383-.923"/>' +
+      '<path d="m16.852 17.772-.383.924"/><path d="m19.148 12.228.383-.923"/><path d="m19.53 18.696-.382-.924"/><path d="m20.772 13.852.924-.383"/>' +
+      '<path d="m20.772 16.148.924.383"/><circle cx="18" cy="15" r="3"/><circle cx="9" cy="7" r="4"/>',
     /* RectangleEllipsis (Lucide) -- Intent "Other" (13.10. vom Nutzer gewaehlt). */
     rectangleEllipsis: '<rect width="20" height="12" x="2" y="6" rx="2"/><path d="M12 12h.01"/><path d="M17 12h.01"/><path d="M7 12h.01"/>',
     helpCircle: '<circle cx="12" cy="12" r="10"/>' +
@@ -25266,6 +25323,7 @@
     intentHtml: intentHtml, brandedHtml: brandedHtml, intentMenuHtml: intentMenuHtml,
     intentsLive: intentsLive, intentFilterGet: intentFilterGet, intentFilterSet: intentFilterSet, intentFilterParams: intentFilterParams,
     makeIntentMenu: makeIntentMenu, intentName: intentName, intentsLiveStart: intentsLiveStart,
+    intentReiseHtml: intentReiseHtml, intentErklaerHtml: intentErklaerHtml,
     relativeTime: relativeTime,
     modelChip: modelChip, modelLogoUrl: modelLogoUrl, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,
     adCardHtml: adCardHtml, adFormatLabel: adFormatLabel, makeSeitenDrawer: makeSeitenDrawer, balkenGrau: balkenGrau,
