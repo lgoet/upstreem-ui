@@ -773,6 +773,10 @@
       market_name: item.market_name || input.market_name || null,
       business_model: item.business_model || input.business_model || null,
       persona: item.persona || input.persona || null,
+      /* Vorgaben der Recherche (audit_14_10): gewaehlte Intents und ob Marken erlaubt waren.
+         Aeltere Jobs: null. */
+      intents: Array.isArray(item.intents) ? item.intents.map(String) : null,
+      branded: item.branded === 'all' || item.branded === 'non_branded' ? item.branded : null,
       prompt_count: Number(item.prompt_count || item.suggested_prompt_count || item.inserted_count || 0),
       created_at: item.created_at || item.finished_at || item.updated_at || null,
       /* Seit dem 09.10. (prompt_research_jobs_v1) stehen auch laufende und gescheiterte Jobs in
@@ -788,8 +792,17 @@
     var markt = String(item.market || '').toUpperCase();
     var name = item.market_name || markt;
     var modell = item.business_model ? (MODELL[String(item.business_model).toLowerCase()] || String(item.business_model)) : '';
+    /* Die Vorgaben (14.10.): je gewaehltem Intent sein Zeichen, bei erlaubten Marken das
+       Brands-Zeichen dahinter -- leise, mit den Namen im Tooltip. Die Spalte steht immer da,
+       auch leer, aus demselben Grund wie die zwei daneben. */
+    var arten = (item.intents || []).map(function(k){ return UC.intentArt ? UC.intentArt(k) : null; }).filter(Boolean);
+    var vorgaben = arten.map(function(a){ return UC.icon ? UC.icon(a.icon, 2) : ''; }).join('') +
+      (item.branded === 'all' && UC.icon ? UC.icon('squareStack', 2) : '');
+    var vorgabenTip = arten.map(function(a){ return UC.intentName ? UC.intentName(a) : a.label; }).join(', ') +
+      (item.branded === 'all' ? (arten.length ? ', ' : '') + (UC.t ? UC.t('Branded prompts') : 'Branded prompts') : '');
+    var vorgabenHtml = '<span class="upr-history-vorgaben"' + (vorgabenTip ? ' data-tip="' + esc(vorgabenTip) + '"' : '') + '>' + vorgaben + '</span>';
     /* Beide Spalten immer, auch leer -- sonst rutschte das Modell in die Spalte des Marktes. */
-    return '<span class="upr-history-markt"' + (markt ? ' data-tip="' + esc(name) + '"' : '') + '>' +
+    return vorgabenHtml + '<span class="upr-history-markt"' + (markt ? ' data-tip="' + esc(name) + '"' : '') + '>' +
         (markt ? '<span class="upr-market-flag">' + flagHtml(getFlagUrlForMarket(markt), name) + '</span>' + esc(markt) : '') + '</span>' +
       '<span' + (modell ? ' data-tip="' + esc(UC.t ? UC.t('Business model') : 'Business model') + '"' : '') + '>' + esc(modell) + '</span>';
   }

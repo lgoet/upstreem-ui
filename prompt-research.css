@@ -785,11 +785,15 @@
    hoechstens "Hybrid". */
 .upr-history-meta {
   grid-area: rechts; justify-self: end;
-  display: grid; grid-template-columns: 44px 44px; align-items: center; column-gap: 12px;
+  /* Vorne die Vorgaben (14.10.): bis zu drei Intent-Zeichen und das Brands-Zeichen, je 14px mit
+     4px Abstand -- 68px. */
+  display: grid; grid-template-columns: 68px 44px 44px; align-items: center; column-gap: 12px;
   font-size: var(--up-fs-s); line-height: 1.3; color: var(--vc-muted); white-space: nowrap;
   transition: opacity var(--up-t-1) var(--up-ease);
 }
 .upr-history-markt { display: inline-flex; align-items: center; gap: 6px; }
+.upr-history-vorgaben { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; color: var(--vc-fourth); }
+.upr-history-vorgaben svg { width: 14px; height: 14px; display: block; }
 .upr-history-headline {
   font-size: 14px; font-weight: 500; line-height: 1.3; letter-spacing: -0.01em; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;
