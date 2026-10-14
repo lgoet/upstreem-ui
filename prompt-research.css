@@ -213,12 +213,24 @@
 }
 .upr-showmore:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
 .upr-showmore svg { width: 13px; height: 13px; display: block; }
-/* So hoch und rund wie der Topic-Chip ("Dot", 24px, Radius 6). */
+/* GEISTER-CHIPS (14.10. abends, gemeldet: "komischer Skeleton Loader"): vorher volle graue Bloecke,
+   die pulsierten -- die echten Chips sind aber nur umrandet und ohne Flaeche, und jedes andere
+   Skelett der App laeuft mit dem Lichtlauf aus core statt zu pulsieren. Jetzt die Form des echten
+   Chips (24px, Radius 6, 1px Rahmen) und darin die Beschriftung als Strich wie .up-sk-lbl aus core:
+   10px in --vc-sk, derselbe Lichtlauf (upskt, 1200ms). */
 .upr-skeleton-chip {
-  height: 24px; border-radius: var(--up-r-s); background: var(--vc-sk); flex-shrink: 0;
-  animation: uprPulse 1.2s ease-in-out infinite;
+  height: var(--up-h-chip); box-sizing: border-box; border: 1px solid var(--vc-border);
+  border-radius: var(--up-r-s); flex-shrink: 0; position: relative; overflow: hidden;
 }
-@keyframes uprPulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+.upr-skeleton-chip::before {
+  content: ""; position: absolute; left: 8px; right: 8px; top: 50%; height: 10px; margin-top: -5px;
+  border-radius: 5px; background: var(--vc-sk);
+}
+.upr-skeleton-chip::after {
+  content: ""; position: absolute; inset: 0;
+  background: var(--up-sk-lauf);
+  transform: translateX(-100%); animation: upskt 1200ms linear infinite;
+}
 
 /* ---------- "View previous researches" ---------- */
 /* Very top right of the component, flush against the true edges -- 0 inset, same as every other
@@ -907,7 +919,7 @@
 @media (prefers-reduced-motion: reduce) {
   /* Das Ladebild regelt seine reduzierte Bewegung selbst (core.css, .up-lb). */
   .upr-float-point, .upr-float-spark,
-  .upr-skeleton-chip, .upr-start-btn.is-running svg { animation: none; }
+  .upr-skeleton-chip::after, .upr-start-btn.is-running svg { animation: none; }
 }
 
 

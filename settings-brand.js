@@ -66,8 +66,11 @@
      Setter. Nur sichtbar und bedienbar ist er nicht. Wieder anschalten heisst: hier auf true,
      sonst nichts. Deshalb steht das an EINER Stelle und nicht als display:none in der CSS --
      unsichtbar allein waere nicht unbenutzbar, der Datei-Dialog liesse sich weiter ueber die
-     Tastatur oeffnen und das Event weiter ausloesen. */
-  var LOGO_UPLOAD = false;
+     Tastatur oeffnen und das Event weiter ausloesen.
+     AN seit 14.10. abends: die Seite (settings-page.js) legt die Datei selbst in Supabase Storage
+     ab (Eimer brand-logos). Gemeldet: "ich kann weiterhin nur den Link einfuegen" -- der Schalter
+     der Seite (LIVE.logoDatei) stand schon auf an, dieser hier nicht. */
+  var LOGO_UPLOAD = true;
   var MAX_LOGO_BYTES = 1024 * 1024;
   /* Deckel fuer die selbst eingetippte Branche. 48 Zeichen sind genug fuer "Industry &
      Manufacturing" mit Luft, und kurz genug, dass die Zeile im Dropdown und im Trigger nicht

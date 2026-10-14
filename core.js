@@ -866,7 +866,7 @@
     "+{n} more": "+{n} weitere",
     /* Der Rest der Topic-Verteilung ueber der Prompt-Tabelle (14.10.). "Sonstige" wie in Diagrammen
        ueblich; "Other" ist schon "Andere" (Geschaeftsmodell). */
-    "Others": "Sonstige", "{n} more topics": "{n} weitere Topics",
+    "Others": "Sonstige", "{n} more topics": "{n} weitere Topics", "{n} more": "{n} weitere",
     "{n} without topic": "{n} ohne Topic",
     "{n} used": "{n} genutzt",
     "{n} left": "{n} frei",
@@ -6020,10 +6020,28 @@
      Zeile beim Eintreffen des Werts nicht springt. Der Stift steht nur hinter einem Wert, den der
      Nutzer selbst gesetzt hat: er sagt "das hat keine KI entschieden", und genau das schuetzt ihn
      vor jeder Neuklassifikation. */
+  /* DER GLANZ LAEUFT DURCH (14.10. abends, gemeldet: "flasht ganz kurz auf, dann faengt sie mit
+     etwas Delay an"). Zwei Ursachen: (1) der Streifen startete 1.2 Textbreiten links ausserhalb
+     (upIntentGlanz rueckwaerts von 220% nach -120%), 0.37s lang war nichts zu sehen; (2) jedes
+     Neuzeichnen der Zeile -- nach "Auto-detect" meldet die DB per Realtime, die Seite laedt nach
+     600ms neu -- baute das Label neu, und die Animation begann von vorn: kurz aufgeblitzt, wieder
+     0.37s nichts. Jetzt merkt sich core je Prompt, seit wann er wartet, und gibt jedem neu
+     gebauten Label die passende negative Verzoegerung: der Glanz laeuft ueber jedes Neuzeichnen
+     weiter und beginnt mit dem Streifen an der Kante. GLANZ_MS = die Dauer aus core.css. */
+  var GLANZ_MS = 1560, GLANZ_VORLAUF = 330;
+  var GLANZ_SEIT = (window.__upIntentGlanz = window.__upIntentGlanz || {});
+  function glanzVerzug(id){
+    if (!id) return GLANZ_VORLAUF;
+    var jetzt = Date.now();
+    if (!GLANZ_SEIT[id]) GLANZ_SEIT[id] = jetzt;
+    return (jetzt - GLANZ_SEIT[id] + GLANZ_VORLAUF) % GLANZ_MS;
+  }
   function intentHtml(r, opts){
     opts = opts || {};
     if (!hatIntent(r)) return "";
     var z = intentZustand(r);
+    var glanzId = String(opts.id || r.prompt_id || r.id || "");
+    if (z.status !== "pending" && glanzId) delete GLANZ_SEIT[glanzId];
     var lbl, ic, tip;
     if (z.status === "done"){
       lbl = intentName(z.art); ic = z.art.icon;
@@ -6038,7 +6056,8 @@
     var kl = "up-intent is-" + z.status + (z.user ? " is-user" : "") + (opts.klick ? " is-klick" : "");
     if (z.status !== "done") lbl = t(lbl);
     tip = t(tip);
-    var innen = icon(ic, 2) + '<span class="up-intent-lbl">' + esc(lbl) + '</span>' +
+    var innen = icon(ic, 2) + '<span class="up-intent-lbl"' +
+        (z.status === "pending" ? ' style="animation-delay:-' + glanzVerzug(glanzId) + 'ms"' : "") + '>' + esc(lbl) + '</span>' +
       (z.user ? '<span class="up-intent-user" aria-hidden="true">' + icon("userCog", 2) + '</span>' : "");
     var daten = ' data-intent="' + esc(z.art ? z.art.key : z.status) + '" data-tip="' + esc(tip) + '"';
     if (opts.klick){

@@ -100,7 +100,7 @@
       "Preferred name": "Bevorzugter Name",
       "Your name": "Dein Name",
       "Change your picture": "Bild wechseln",
-      "Upload a picture — square images look best": "Bild hochladen – quadratische Bilder wirken am besten",
+      "Upload a picture. Square images look best.": "Lade ein Bild hoch. Quadratische Bilder wirken am besten.",
       /* "Theme", "Light", "Dark" und "Display" stehen jetzt in core: das Konto-Menue der
          Seitenleiste braucht sie, und dieses Modul laedt erst nach, wenn das Fenster aufgeht --
          bis dahin gab es fuer die Seitenleiste keinen Eintrag. Hier stehen sie deshalb nicht
@@ -446,7 +446,7 @@
            Bedienung dafuer. Ein Knopf, der aussieht wie ein Verweis und nichts sichtbar tut, ist
            genau das, was gemeldet wurde. */
         '<span class="ums-hint">' +
-          esc(t("Upload a picture — square images look best")) + '</span>' +
+          esc(t("Upload a picture. Square images look best.")) + '</span>' +
       '</div>';
     }
 
@@ -719,7 +719,7 @@
     function avMelden(text, laeuft, gut) {
       var h = M && M.main ? M.main.querySelector(".ums-hint") : null;
       if (!h) return;
-      h.textContent = text ? t(text) : t("Upload a picture — square images look best");
+      h.textContent = text ? t(text) : t("Upload a picture. Square images look best.");
       h.classList.toggle("is-fehler", !!text && !laeuft && !gut);
       h.classList.toggle("is-gut", !!text && !laeuft && !!gut);
       h.classList.toggle("is-laeuft", !!laeuft);
@@ -796,6 +796,7 @@
               }
               avLaeuft = false; avWartend = null;
               profil.avatar = r.url;
+              bildInLeiste(r.url);
               if (offen) zeichnen();
               avMelden(null);
               fireBauen();
@@ -817,7 +818,14 @@
        Ueber den oeffentlichen Setter der Leiste und mit dem, was dort schon steht: ein
        Teil-Payload wuerde E-Mail und Bild loeschen, setUser ersetzt den ganzen Kopf.
        Gibt es keine Leiste (andere Seite, Fenster allein eingebaut), passiert nichts. */
-    function nameInLeiste(v) {
+    /* Dasselbe fuer das Bild (14.10. abends): in Bubble zog der Workflow hinter umsAvatar die Leiste
+       nach, in der App gibt es den nicht -- bis zum Neuladen stuenden dort die Initialen. */
+    function bildInLeiste(url) {
+      var sn = document.querySelector(".usn-bar");
+      var n = sn ? sn.querySelector("[data-acc-name]") : null;
+      nameInLeiste((n && String(n.textContent || "").trim()) || profil.name || "", url);
+    }
+    function nameInLeiste(v, bild) {
       var sn = document.querySelector(".usn-bar");
       if (!sn || typeof window.setSidebarUser !== "function") return;
       var mail = sn.querySelector("[data-acc-mail]");
@@ -825,7 +833,7 @@
       var nutzlast = {
         name: v,
         email: mail ? String(mail.textContent || "").trim() : "",
-        avatar_url: (img && img.getAttribute("src")) || profil.avatar || "",
+        avatar_url: bild || (img && img.getAttribute("src")) || profil.avatar || "",
         user_id: profil.userId || ""
       };
       /* MIT DER INSTANZ-KENNUNG, und zwar je Wurzel einzeln. setSidebarUser nimmt (id,

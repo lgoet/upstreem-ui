@@ -1267,12 +1267,20 @@
 .upt-sum-teil.upt-sum-topics { flex: 1 1 auto; }
 /* ... und darin Balken und Legende bis an den naechsten Teil: topicsEinpassen misst die Breite. */
 .upt-sum-topics .upt-sum-inhalt { flex: 1 1 auto; }
-/* DER BALKEN OBEN, DIE LEGENDE DARUNTER (14.10. abends, prompts-table.js topicsEinpassen): beide
-   ueber die ganze Breite des Teils. 8 + 8 + 16 = 32, so hoch wie der Knopf rechts -- die Leiste
-   behaelt ihre 56px. is-spalte nur mit Inhalt: das Skelett bleibt eine Zeile. */
-.upt-sum-topics .upt-sum-inhalt.is-spalte { flex-direction: column; align-items: stretch; gap: 8px; }
+/* DIREKT BESCHRIFTET (14.10. spaet, Entwurf C; prompts-table.js topicsEinpassen): die Etiketten
+   ueber dem Balken, beide ueber die ganze Breite des Teils. 16 + 6 + 8 = 30, die Leiste behaelt
+   ihre 56px. is-spalte nur mit Inhalt: das Skelett bleibt eine Zeile. */
+.upt-sum-topics .upt-sum-inhalt.is-spalte { flex-direction: column; align-items: stretch; gap: 6px; }
 .upt-sum-topics .upt-sum-inhalt.is-spalte .upt-sum-balken { width: auto; }
-.upt-sum-topics .upt-sum-inhalt.is-spalte .upt-sum-legende { flex: 0 0 auto; }
+/* Dieselben Gewichte (flex-grow im Markup) und dieselbe Fuge wie die Stuecke darunter: jedes
+   Etikett beginnt ueber seinem Stueck. Was nicht passt, gibt es nicht (topicsEinpassen) --
+   overflow ist nur die Absicherung. */
+.upt-sum-lbls { display: flex; gap: 2px; height: 16px; line-height: 16px; font-size: var(--up-fs-s); white-space: nowrap; }
+.upt-sum-lbl { flex-basis: 0; min-width: 0; overflow: hidden; display: flex;
+  transition: opacity var(--up-t-1) var(--up-ease); }
+.upt-sum-lbl-in { flex: 0 0 auto; display: inline-flex; gap: 6px; }
+.upt-sum-lbl .upt-sum-wert { font-weight: var(--up-fw-h); }
+.upt-sum-lbl.is-rest .upt-sum-name, .upt-sum-lbl.is-rest .upt-sum-wert { color: var(--vc-third); }
 .upt-sum .upt-sum-teil[hidden] { display: none; }
 .upt-sum-teil + .upt-sum-teil:not([hidden]) { margin-left: 24px; padding-left: 24px; border-left: 1px solid var(--vc-border); }
 .upt-sum-wort { white-space: nowrap; }
@@ -1282,12 +1290,9 @@
 .upt-sum-balken { display: flex; gap: 2px; width: 160px; height: 8px; flex: 0 0 auto; border-radius: var(--up-r-xs); overflow: hidden; }
 .upt-sum-stueck { flex-basis: 0; min-width: 2px; height: 100%; transition: opacity var(--up-t-1) var(--up-ease); }
 .upt-sum-stueck.is-rest { background: var(--vc-border); }
-/* "Others": derselbe Strich in der Farbe des grauen Stuecks. */
-.upt-sum-andere .upt-sum-strich { background: var(--vc-border); }
 /* Hervorheben beim Zeigen (kpiBauen fokus): das Paar bleibt, der Rest tritt zurueck. */
-.upt-sum-topics .upt-sum-eintrag { transition: opacity var(--up-t-1) var(--up-ease); }
 .upt-sum-topics .upt-sum-inhalt.is-fokus .upt-sum-stueck:not(.is-an),
-.upt-sum-topics .upt-sum-inhalt.is-fokus .upt-sum-eintrag:not(.is-an) { opacity: .35; }
+.upt-sum-topics .upt-sum-inhalt.is-fokus .upt-sum-lbl:not(.is-an) { opacity: .35; }
 /* Passt nicht alles, fallen GANZE Eintraege weg (sie brechen in eine zweite Zeile um, die die
    Hoehe von 16 nicht zeigt) -- abgeschnitten mitten im Namen stuende "Luxu" da. */
 .upt-sum-legende { display: flex; flex-wrap: wrap; align-items: center; gap: 0 16px; min-width: 0; height: 16px; line-height: 16px;

@@ -140,6 +140,10 @@
   /* easeOutQuart, wie Chart.js es fuer Linie und Ring faehrt (600ms, core.js makeLine und
      makeTypeChart). Fuer alles, was im selben Bild wie ein Diagramm einfaehrt (Balken). */
   --up-ease-quart: cubic-bezier(.25, 1, .5, 1);
+  /* Der Lichtlauf ueber Skelett-Platzhaltern (.up-sk-*::after, upskt 1200ms). Als Token, seit ihn
+     auch Bausteine ausserhalb von core brauchen (14.10.: die Geister-Chips in Prompt Research) --
+     vorher stand der Verlauf nur hier, und jede Kopie waere eine eigene Farbe gewesen. */
+  --up-sk-lauf: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.14) 50%, rgba(255,255,255,0) 100%);
 }
 /* ================= AUFTRITT VON SEITE UND ANSICHT (11.10.) ==================================
    Eine Seiten-Komponente (makeAuftritt in core.js, Klasse .up-seite) laesst ihren Inhalt warten,
@@ -3866,7 +3870,7 @@
 .up-sk-pct { height: 10px; background: var(--vc-sk); border-radius: 5px; flex: 0 0 auto; position: relative; overflow: hidden; }
 .up-sk-dot::after, .up-sk-lbl::after, .up-sk-pct::after {
   content: ""; position: absolute; inset: 0;
-  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.14) 50%, rgba(255,255,255,0) 100%);
+  background: var(--up-sk-lauf);
   transform: translateX(-100%); animation: upskt 1200ms linear infinite;
 }
 @media (prefers-reduced-motion: reduce){ .up-sk-dot::after, .up-sk-lbl::after, .up-sk-pct::after { animation: none; } }

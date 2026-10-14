@@ -5294,17 +5294,15 @@
       try { eigene = (UC.getMarkets ? UC.getMarkets() : []) || []; } catch(e){}
       t.hidden = eigene.length < 2;
     }
-    /* DIE VERTEILUNG NACH TOPICS (14.10. abends neu, gemeldet: "bei vielen Topics erkennt man gar
-       nix"). Vorbilder: GitHubs Sprachleiste, Tremor CategoryBar mit Legend, die Leitfaeden zu
-       gestapelten Anteilsbalken (UK Analysis Function: wenige Stuecke, der Rest als "Sonstige",
-       Legende in der Reihenfolge der Stuecke). Daraus:
-         - der Balken ueber die ganze Breite, die Legende DARUNTER, beide absteigend sortiert;
-         - JEDES farbige Stueck hat seinen Eintrag in der Legende. Vorher zeigte der Balken 8 Farben
-           und die Legende 5 Namen -- drei Farben ohne Namen, gemessen bei 1440;
-         - was nicht in die Zeile passt, wird EIN graues Stueck "Others" mit Summe, im Balken wie in
-           der Legende, die Namen im Tooltip;
-         - Zeigen auf einen Eintrag oder ein Stueck hebt beide hervor (kpiBauen).
-       Welche Eintraege passen, entscheidet die Breite (topicsEinpassen) -- der Balken folgt ihr. */
+    /* DIE VERTEILUNG NACH TOPICS. Seit dem 14.10. spaet Entwurf C (aus fuenf Entwuerfen gewaehlt):
+       der Balken ist DIREKT BESCHRIFTET -- Name und Zahl stehen ueber ihrem Stueck, ohne Legende.
+       Vorher (Legende darunter) musste das Auge zwischen Farbe und Name pendeln, und viele
+       Topic-Farben sind einander aehnlich (gemessen: zwei Topics mit derselben Farbe #134e4a).
+         - Eine Farbe bekommt nur, wessen Etikett in sein Stueck passt (topicsEinpassen). Der Rest
+           ist EIN graues Stueck "N more" mit Summe, die Namen im Tooltip.
+         - Etiketten und Stuecke liegen in zwei Flex-Zeilen mit denselben Gewichten und derselben
+           Fuge: jedes Etikett beginnt genau ueber seinem Stueck.
+         - Zeigen auf ein Etikett oder ein Stueck hebt beide hervor (kpiBauen). */
     var kpiT = null;
     function stueckeHtml(teile, rest, restTip){
       var h = teile.map(function(x, i){
@@ -5326,46 +5324,42 @@
       return UC.t("{n} more topics").replace("{n}", UC.fmtTotal(liste.length)) + ": " +
         liste.slice(0, 6).map(function(x){ return x.name + " " + UC.fmtTotal(x.n); }).join(", ") + (liste.length > 6 ? ", …" : "");
     }
-    /* Der Balken zu n sichtbaren Eintraegen: n Farben, der Rest grau. */
-    function topicsBalken(n){
-      var b = kpiZeile ? kpiZeile.querySelector(".upt-sum-topics .upt-sum-balken") : null;
-      if (!b || !kpiT) return;
-      var sig = n + "|" + kpiT.sig;
-      if (b.getAttribute("data-sig") === sig) return;
-      b.setAttribute("data-sig", sig);
-      var restListe = kpiT.liste.slice(n), rest = 0;
-      restListe.forEach(function(x){ rest += x.n; });
-      b.innerHTML = stueckeHtml(kpiT.liste.slice(0, n), rest, restTip(restListe));
+    function etikettHtml(name, wert, i, gewicht, tip, istRest){
+      return '<span class="upt-sum-lbl' + (istRest ? " is-rest" : "") + '" data-i="' + i + '" style="flex-grow:' + gewicht + '" data-tip="' + esc(tip) + '">' +
+        '<span class="upt-sum-lbl-in"><span class="upt-sum-name">' + esc(name) + '</span><span class="upt-sum-wert">' + esc(wert) + '</span></span></span>';
     }
-    /* GANZE EINTRAEGE ODER KEINE, und "Others" muss mit hinein: von hinten weg, bis alles passt.
-       Others traegt die Summe dessen, was nicht dasteht -- seine Breite aendert sich dabei mit,
-       darum wird nach jedem Wegnehmen neu gemessen. */
+    /* k Topics mit Farbe und Etikett, der Rest grau. k = 0: kein Etikett passt (sehr schmal) --
+       dann die Farben ohne Etiketten, die Namen stehen im Tooltip. */
+    function topicsZeichnen(inh, k){
+      var lbls = inh.querySelector(".upt-sum-lbls"), b = inh.querySelector(".upt-sum-balken");
+      var n = k > 0 ? k : Math.min(KPI_ZEIGEN, kpiT.liste.length);
+      var teile = kpiT.liste.slice(0, n), restListe = kpiT.liste.slice(n), rest = 0;
+      restListe.forEach(function(x){ rest += x.n; });
+      var tip = restTip(restListe);
+      lbls.innerHTML = k > 0 ? teile.map(function(x, i){
+          return etikettHtml(x.name, UC.fmtTotal(x.n), i, x.n, x.name + ": " + UC.fmtTotal(x.n), false);
+        }).join("") + (rest > 0 ? etikettHtml(UC.t("{n} more").replace("{n}", UC.fmtTotal(restListe.length)), UC.fmtTotal(rest), "rest", rest, tip, true) : "")
+        : "";
+      b.innerHTML = stueckeHtml(teile, rest, tip);
+    }
+    function etikettenPassen(inh){
+      return Array.prototype.every.call(inh.querySelector(".upt-sum-lbls").children, function(c){
+        return c.firstChild.getBoundingClientRect().width <= c.getBoundingClientRect().width + 0.5;
+      });
+    }
+    /* Von den meisten Topics abwaerts, bis jedes Etikett ganz in sein Stueck passt -- auch "N more",
+       dessen Stueck mit jedem weggenommenen Topic waechst. Nach jedem Zeichnen und bei jeder Breite;
+       ohne Breite (verdeckt) die Hoechstzahl, der naechste Groessenwechsel misst nach. */
     function topicsEinpassen(){
-      var leg = kpiZeile ? kpiZeile.querySelector(".upt-sum-topics .upt-sum-legende") : null;
-      if (!leg || !kpiT) return;
-      var andere = leg.querySelector(".upt-sum-andere");
-      var eintraege = Array.prototype.filter.call(leg.children, function(k){ return k !== andere; });
-      eintraege.forEach(function(k){ k.classList.remove("is-weg"); });
-      function restSetzen(n){
-        if (!andere) return;
-        var restListe = kpiT.liste.slice(n), rest = 0;
-        restListe.forEach(function(x){ rest += x.n; });
-        andere.classList.toggle("is-weg", rest <= 0);
-        andere.querySelector(".upt-sum-wert").textContent = UC.fmtTotal(rest);
-        andere.setAttribute("data-tip", restTip(restListe));
+      var inh = kpiZeile ? kpiZeile.querySelector(".upt-sum-topics .upt-sum-inhalt.is-spalte") : null;
+      if (!inh || !kpiT) return;
+      var breite = inh.clientWidth, sig = breite + "|" + kpiT.sig;
+      if (inh.getAttribute("data-sig") === sig) return;
+      inh.setAttribute("data-sig", sig);
+      for (var k = Math.min(KPI_ZEIGEN, kpiT.liste.length); k >= 0; k--){
+        topicsZeichnen(inh, k);
+        if (!breite || k === 0 || etikettenPassen(inh)) break;
       }
-      var n = eintraege.length;
-      restSetzen(n);
-      if (leg.clientWidth){
-        var lr = leg.getBoundingClientRect();
-        var passt = function(el){ var r = el.getBoundingClientRect(); return r.right <= lr.right + 0.5 && r.top < lr.bottom - 1; };
-        while (n > 0 && !(eintraege.slice(0, n).every(passt) && (!andere || andere.classList.contains("is-weg") || passt(andere)))){
-          n--;
-          eintraege[n].classList.add("is-weg");
-          restSetzen(n);
-        }
-      }
-      topicsBalken(n);
     }
     /* Hoechstens so viele Eintraege je Legende; wie viele davon wirklich stehen, entscheidet die Breite
        (legendeEinpassen). Bis 14.10. hart 3 -- seit das Kontingent im Seitenkopf steht, hat die
@@ -5429,13 +5423,10 @@
       kpiT = { liste: mitZahl, sig: sig };
       /* Ohne Prompts in einem Topic kein Balken und keine Legende -- die Zahl der Topics steht. */
       if (!mitZahl.length){ inh.className = "upt-sum-inhalt"; inh.innerHTML = ""; return; }
-      var zeigen = mitZahl.slice(0, KPI_ZEIGEN);
       inh.className = "upt-sum-inhalt is-spalte";
-      inh.innerHTML = '<span class="upt-sum-balken"></span>' +
-        '<span class="upt-sum-legende">' + zeigen.map(function(x, i){ return eintragHtml(x.farbe, x.name, UC.fmtTotal(x.n), false, i); }).join("") +
-          '<span class="upt-sum-eintrag upt-sum-andere" data-i="rest"><span class="upt-sum-strich"></span>' +
-            '<span class="upt-sum-name">' + esc(UC.t("Others")) + '</span><span class="upt-sum-wert"></span></span>' +
-        '</span>';
+      inh.innerHTML = '<span class="upt-sum-lbls"></span><span class="upt-sum-balken"></span>';
+      /* Neu gebaut heisst neu einpassen -- auch bei gleicher Signatur (nach einem Skelett). */
+      inh.removeAttribute("data-sig");
       legendeEinpassen();
     }
     /* Bleibt fuer render() (die Fusszeile der alten Karte hing an der Gesamtzahl): die Leiste
