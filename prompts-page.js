@@ -810,6 +810,13 @@
        sie der Reihe nach. Eigene Kette, nicht schreibtGerade -- das gehoert den Sammelaktionen
        (Topics, Status, Loeschen), und die sollen nicht hinter einem Intent warten. */
     var intentKette = Promise.resolve();
+    /* UEBERHOLTE WERTE GEHEN NICHT MEHR HINAUS (14.10., Missbrauchspruefung). Wer schnell
+       hintereinander umschaltet, schickte bisher JEDEN Zwischenwert als eigenen Schreibaufruf --
+       zehn Klicks, zehn Aufrufe, zehn Live-Ereignisse an das ganze Team, und "zurueck an die KI"
+       jedes Mal ein KI-Lauf. Jetzt merkt sich die Kette je Ziel (Art + Prompt-Ids) den juengsten
+       Wunsch; ein Wert, der noch wartet, wenn ein neuerer kommt, wird uebersprungen. Was schon
+       laeuft, laeuft zu Ende. Sammelaktionen mit Filter sind nicht betroffen -- dort zaehlt jede. */
+    var intentWunsch = {}, intentNr = 0;
     function schreibeIntent(anfrage, d, satz) {
       if (!team()) return;
       var z = anfrage.__ziel;
@@ -818,7 +825,10 @@
         toast(t("Too many prompts selected"), "error", t("Change up to 1,000 prompts at once, or 500 when ticked one by one."));
         return;
       }
+      var schluessel = z.filter ? "" : anfrage.fn + "|" + z.ids.slice().sort().join(","), nr = ++intentNr;
+      if (schluessel) intentWunsch[schluessel] = nr;
       intentKette = intentKette.then(function () {
+        if (schluessel && intentWunsch[schluessel] !== nr) return null;   /* ueberholt */
         return schreiben(anfrage).then(function (erg) {
           if (!erg.ok) { fehlerToast(erg, t("The intent could not be saved")); nachAenderung(); return; }
           if (satz) {

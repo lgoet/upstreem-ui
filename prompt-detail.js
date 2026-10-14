@@ -109,8 +109,14 @@
     else { d.branded = wert === "yes"; d.branded_source = "user"; }
     kopfZeichnen();
     /* Der Reihe nach (P.intentKette): zwei schnelle Aenderungen duerfen sich nicht ueberholen,
-       sonst gewaenne in der Datenbank zufaellig die langsamere. */
+       sonst gewaenne in der Datenbank zufaellig die langsamere. Ein Wert, der noch wartet, wenn
+       ein neuerer derselben Art kommt, geht gar nicht erst hinaus (14.10., Missbrauchspruefung:
+       jeder Zwischenwert war ein Schreibaufruf und ein Live-Ereignis fuer das ganze Team). */
+    var nr = P.intentNr = (P.intentNr || 0) + 1;
+    P.intentWunsch = P.intentWunsch || {};
+    P.intentWunsch[art + "|" + id] = nr;
     P.intentKette = (P.intentKette || Promise.resolve()).then(function () { return teamWarten(); }).then(function (team) {
+      if (P.intentWunsch[art + "|" + id] !== nr) return { ueberholt: true };
       if (!team) return { ok: false, status: 0 };
       var p = { p_team: team, p_target: "ids", p_ids: [id] };
       if (art === "intent") p.p_intent = wert || null;
@@ -118,6 +124,7 @@
       return UC.rpc(art === "intent" ? "prompt_intent_set_v1" : "prompt_branded_set_v1", p, { timeoutMs: 30000 });
     });
     P.intentKette.then(function (erg) {
+      if (erg && erg.ueberholt) return;
       if (erg && erg.ok) {
         try { window.dispatchEvent(new CustomEvent("up-prompt-intent", { detail: { prompt_id: id } })); } catch (e) {}
         return;
