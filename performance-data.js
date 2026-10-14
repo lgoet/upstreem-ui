@@ -71,7 +71,8 @@
        still veraendern. markeBasis darunter (Marken-Drawer, mit Leiste) nimmt ihn mit. */
     var p = { p_team: str(a.team), p_company: uuid(a.firma), p_tag_ids: uuid(a.topic) ? [uuid(a.topic)] : null };
     if (datum(z.von) && datum(z.bis)) { p.p_date_from = datum(z.von); p.p_date_to = datum(z.bis); }
-    if (art === "kurve") { p.p_mode = "visibility"; p.p_granularity = "day"; }
+    /* Die Stufe kommt seit dem 14.10. mit (z.gran, D/W/M-Schalter im Radar-Detail); ohne Angabe Day. */
+    if (art === "kurve") { p.p_mode = "visibility"; p.p_granularity = z.gran === "week" || z.gran === "month" ? z.gran : "day"; }
     /* Die ganze Liste in einem Aufruf: das Detail blaettert und sucht im Browser (Vertrag 4.3). */
     else { p.p_limit = 1000; p.p_offset = 0; }
     return anfrage(art, p);

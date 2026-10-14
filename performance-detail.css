@@ -88,7 +88,10 @@
 /* Schmal (is-narrow, unter 760 Containerbreite) untereinander. */
 .upd-root.is-narrow .upd-split { display: block; }
 .upd-root.is-narrow .upd-split-r { border-left: 0; border-top: 1px solid var(--vc-border); }
-.upd-chartkopf { display: flex; align-items: center; min-height: var(--up-h-btn); }
+/* Rechts der D/W/M-Schalter (.vc-gran aus core, 14.10.): er ist 26 hoch und passt in die 32er
+   Zeile, die schon stand -- die Kurve darunter behaelt ihre 260, der Kasten waechst nicht. */
+.upd-chartkopf { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--up-h-btn); }
+.upd-chartkopf .upd-gran { flex: 0 0 auto; align-self: center; }   /* core setzt flex-start (Kartenkoepfe mit Untertitel) -- hier eine Zeile, also mittig */
 .upd-chartsec .upd-linewrap { height: 260px; margin-top: 16px; }
 
 .upd-stand-head { font-size: var(--up-fs-m); color: var(--vc-muted); }

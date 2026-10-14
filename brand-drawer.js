@@ -432,6 +432,12 @@
     if ((a || b) && UC.granFuerZeitraum) { var g = UC.granFuerZeitraum(von, bis); if (g) B.ubd.gran = g; }
     return a || b;
   }
+  /* Bei jedem Oeffnen die Stufe aus dem Zeitraum -- wie im Domain-Drawer (granBeimOeffnen dort, 14.10.). */
+  function granBeimOeffnen() {
+    if (!UC.granFuerZeitraum || !B.f.von || !B.f.bis) return;
+    var g = UC.granFuerZeitraum(B.f.von, B.f.bis);
+    if (g) B.ubd.gran = g;
+  }
   function filterAbgleichen() {
     var c = kalender(), r = null;
     try { r = c && c.getRange ? c.getRange() : null; } catch (e) { r = null; }
@@ -660,6 +666,7 @@
       (function warten() {
         if (!kalender() && n++ < 50) { setTimeout(warten, 30); return; }
         filterAbgleichen();
+        granBeimOeffnen();
         alleLaden(false, true);
       })();
     },

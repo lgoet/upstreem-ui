@@ -536,6 +536,13 @@
     if ((a || b) && UC.granFuerZeitraum) { var g = UC.granFuerZeitraum(von, bis); if (g) P.gran = g; }
     return a || b;
   }
+  /* Bei jedem Oeffnen die Stufe aus dem Zeitraum -- wie im Domain-Drawer (granBeimOeffnen dort, 14.10.):
+     sonst blieb bei gleichem Zeitraum die Stufe vom letzten Oeffnen stehen. */
+  function granBeimOeffnen() {
+    if (!UC.granFuerZeitraum || !P.f.von || !P.f.bis) return;
+    var g = UC.granFuerZeitraum(P.f.von, P.f.bis);
+    if (g) P.gran = g;
+  }
   function kalenderLesen() {
     var c = kalender(), r = null;
     try { r = c && c.getRange ? c.getRange() : null; } catch (e) { r = null; }
@@ -756,6 +763,7 @@
       (function warten() {
         if (!kalender() && n++ < 50) { setTimeout(warten, 30); return; }
         kalenderLesen();
+        granBeimOeffnen();
         var m = P.slot && P.slot.querySelector(".umf-root");
         try { if (m && m.__umfCtrl) setzen("modelle", modellAuswahl(m.__umfCtrl.getSelected())); } catch (e) {}
         alleLaden(false, true);

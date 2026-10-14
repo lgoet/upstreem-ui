@@ -190,7 +190,10 @@
       variations: Array.isArray(saved.variations) ? saved.variations : null,
       varQuery: String(saved.varQuery || ""),
       loading: !!saved.loading, hasData: !!saved.hasData, isDark: false,
-      leseFehler: !!saved.leseFehler
+      leseFehler: !!saved.leseFehler,
+      /* Die Stufe der Kurve (14.10., D/W/M wie in jedem anderen Linechart): was die Lieferung sagt
+         (UC.granAusLieferung), bis dahin "day". */
+      gran: saved.gran === "week" || saved.gran === "month" ? saved.gran : "day"
     };
     /* Zwischenlager fuer Daten, die vor der Auswahl eintreffen. Siehe setSelection(). */
     var gemerktVorab = saved.vorab || {};
@@ -205,7 +208,7 @@
         column: state.column, row: state.row, scope: state.scope,
         series: serien(state.series), globalKpis: state.globalKpis, variations: state.variations,
         varQuery: state.varQuery, loading: !!state.loading, hasData: !!state.hasData,
-        leseFehler: !!state.leseFehler,
+        leseFehler: !!state.leseFehler, gran: state.gran,
         vorab: { variations: VORAB.variations, series: serien(VORAB.series), globalKpis: VORAB.globalKpis }
       };
     }
@@ -259,7 +262,15 @@
             '<div class="up-box upd-split">' +
               '<div class="upd-split-l"><div class="upd-stand-head"></div><div class="upd-stand-list"></div></div>' +
               '<div class="upd-split-r upd-chartsec">' +
-                '<div class="upd-chartkopf"><span class="up-heading upd-sec-h">' + esc(t("Visibility over time")) + '</span></div>' +
+                /* Rechts der D/W/M-Schalter aus core (.vc-gran, 14.10.) -- derselbe wie in Brand
+                   Detail und Visibility Chart, gleiche Freigabe (UC.granAvailability). */
+                '<div class="upd-chartkopf"><span class="up-heading upd-sec-h">' + esc(t("Visibility over time")) + '</span>' +
+                  '<div class="vc-gran upd-gran" role="group" aria-label="' + esc(t("Granularity")) + '">' +
+                    [["day", "D", "Day"], ["week", "W", "Week"], ["month", "M", "Month"]].map(function(g){
+                      return '<button class="vc-gran-btn" type="button" data-gran="' + g[0] + '" data-tip="' + esc(t(g[2])) +
+                        '" aria-label="' + esc(t(g[2])) + '">' + esc(g[1]) + '</button>';
+                    }).join("") +
+                  '</div></div>' +
                 '<div class="up-line-wrap upd-linewrap"><canvas class="up-line-canvas"></canvas></div>' +
               '</div>' +
             '</div>' +
@@ -283,6 +294,7 @@
     var elNote    = root.querySelector(".upd-scope-note");
     var lineWrap  = root.querySelector(".upd-linewrap");
     var lineCv    = root.querySelector(".up-line-canvas");
+    var elGran    = root.querySelector(".upd-gran");
     var elVBody   = root.querySelector(".upd-vbody");
     var elSearch  = root.querySelector(".upd-search");
     var elSInput  = root.querySelector(".up-search-input");
@@ -534,7 +546,18 @@
     }
 
     /* ---------------- Kurve ---------------- */
+    /* Aktiver Knopf und Freigabe -- dieselben Schwellen wie ueberall (core). Die aktive Stufe wird
+       nie gesperrt und nie von selbst umgestellt (Regel aus core, 01.10.). */
+    function syncGran(){
+      if (!elGran) return;
+      Array.prototype.forEach.call(elGran.querySelectorAll(".vc-gran-btn"), function(b){
+        b.classList.toggle("is-active", b.getAttribute("data-gran") === state.gran);
+      });
+      var pl = state.series[state.scope];
+      if (UC.granAvailability) UC.granAvailability(elGran, (pl && pl.series) || [], state.gran);
+    }
     function renderChart(){
+      syncGran();
       var payload = state.series[state.scope];
       if (state.loading || (!payload && state.hasData && !state.series.topic && !state.series.global)){
         line.skeleton(); return;
@@ -668,6 +691,23 @@
           company_id: state.company.company_id, topic_id: state.topic.topic_id, scope: next
         });
       }
+    });
+
+    /* D/W/M (14.10.): die Kurve geht in den Ladezustand, die Seite holt sie mit der neuen Stufe
+       (performance-page.js, upd-bubble_fn_updGran). Gesperrt heisst gesperrt, auch per Tastatur. */
+    if (elGran) elGran.addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest("[data-gran]") : null;
+      if (!b || b.classList.contains("is-disabled")) return;
+      var g = b.getAttribute("data-gran");
+      if (g === state.gran || (g !== "day" && g !== "week" && g !== "month")) return;
+      state.gran = g;
+      syncGran();
+      line.skeleton();
+      persist();
+      fire("data-gran-fn", "bubble_fn_updGran", {
+        company_id: state.company ? state.company.company_id : null,
+        topic_id: state.topic ? state.topic.topic_id : null, scope: state.scope, gran: g
+      });
     });
 
     /* Klick auf eine Marke in der Rangliste. Uebergibt NUR die company_id als blanken Text --
@@ -943,6 +983,9 @@
       var scope = payload.scope === "global" ? "global" : "topic";
       if (!state.company){ VORAB.series[scope] = payload; persist(); return; }
       state.series[scope] = payload;
+      /* Die gelieferte Stufe gewinnt (wie in Brand Detail): der Schalter zeigt, was die Kurve zeigt. */
+      var gl = UC.granAusLieferung ? UC.granAusLieferung(payload, payload.series) : null;
+      if (gl && scope === state.scope) state.gran = gl;
       renderChart();
       persist();
       ladezustandPruefen();

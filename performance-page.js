@@ -79,11 +79,19 @@
       uf: gem.uf || { erwaehnt: "all", citationTypen: null, urlTypen: null },
       zeitraum: gem.zeitraum || null,
       eigene: gem.eigene || null,
+      /* Die Stufe der Kurve im Detail (14.10.): beim Oeffnen jeder Zelle aus dem Zeitraum des Radars
+         (UC.granFuerZeitraum, wie SET GRAN auf jeder Seite mit Kalender), danach per D/W/M. */
+      gran: gem.gran || "day",
       fehler: {}
     };
     function persist() {
       gem.team = state.team; gem.auswahl = state.auswahl; gem.detail = state.detail; gem.url = state.url;
-      gem.uf = state.uf; gem.zeitraum = state.zeitraum; gem.eigene = state.eigene;
+      gem.uf = state.uf; gem.zeitraum = state.zeitraum; gem.eigene = state.eigene; gem.gran = state.gran;
+    }
+    function granAusZeitraum() {
+      var z = state.zeitraum || {};
+      var g = UC.granFuerZeitraum && z.von && z.bis ? UC.granFuerZeitraum(z.von, z.bis) : null;
+      state.gran = g || "day";
     }
     var lader = gem.lader || (gem.lader = C.makeLader({
       rufen: function (fn, params, o) { return UC.rpc(fn, params, { signal: o && o.signal, timeoutMs: 30000 }); }
@@ -163,11 +171,21 @@
       var neu = !state.detail || state.detail.firma !== firma || state.detail.topic !== topic;
       state.detail = { firma: firma, topic: topic };
       if (neu) { state.url = tabelleVorgabe(); state.uf = { erwaehnt: "all", citationTypen: null, urlTypen: null }; urlMenueAngleichen(); }
+      /* Bei JEDER Zelle die Startstufe aus dem Zeitraum -- wie die Drawer beim Oeffnen (14.10.). */
+      granAusZeitraum();
       persist();
       detailZeigen(true);
       detailBald();
     });
     an("upd-bubble_fn_updClose", function () { detailZu(); });
+    /* D/W/M im Detail: nur die Kurve neu, Varianten und URLs haengen nicht an der Stufe. */
+    an("upd-bubble_fn_updGran", function (d) {
+      var g = str(d.gran);
+      if ((g !== "day" && g !== "week" && g !== "month") || !state.detail) return;
+      state.gran = g;
+      persist();
+      kurveLaden();
+    });
     an("updCompanyClick", function (d) {
       var id = str(d.company_id).trim();
       if (id && UC.drawerOeffnen) UC.drawerOeffnen("brand", id, "performance");
@@ -312,9 +330,29 @@
       try { window.setPerformanceDetailLoading(ids.upd, "yes"); } catch (e) {}
       detailUhr = setTimeout(function () { detailUhr = null; detailLaden(); }, 80);
     }
+    /* Zeitraum des Radars plus die Stufe -- nur die Kurve kennt sie. */
+    function kurvenZeit() { var z = state.zeitraum || {}; return { von: z.von, bis: z.bis, gran: state.gran }; }
+    /* Nur die Kurve (nach D/W/M): eigener Kanal, die Antwort des juengsten Klicks gewinnt. */
+    function kurveLaden() {
+      if (!state.detail || !bereit()) return;
+      var firma = state.detail.firma, a = D.kurve(zelle(), kurvenZeit());
+      var nr = ++gruppeNr;
+      juengsteJe.kurve = nr;
+      laden("kurve", a).then(function (erg) {
+        if (juengsteJe.kurve !== nr) return;
+        var r = ergebnis(erg, function (d) { return D.zuKurve(d, firma); });
+        if (r.ueberholt) return;
+        if (!r.p) {
+          state.fehler.detail = r.fehler;
+          try { window.renderPerformanceDetail({ instanceId: ids.upd, __parseError: true }); } catch (e) {}
+          return;
+        }
+        try { window.setPerformanceDetailSeries(ids.upd, r.p); } catch (e) {}
+      });
+    }
     function detailLaden() {
       if (!state.detail || !bereit()) return;
-      var z = state.zeitraum || {}, ak = D.kurve(zelle(), z), av = D.varianten(zelle(), z);
+      var z = state.zeitraum || {}, ak = D.kurve(zelle(), kurvenZeit()), av = D.varianten(zelle(), z);
       var firma = state.detail.firma;
       function auftrag(kanal, a, umformen) {
         return {

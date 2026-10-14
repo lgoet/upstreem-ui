@@ -553,6 +553,23 @@
     if ((a || b) && UC.granFuerZeitraum) { var g = UC.granFuerZeitraum(von, bis); if (g) S.udd.gran = g; }
     return a || b;
   }
+  /* BEI JEDEM OEFFNEN die Stufe aus dem Zeitraum (14.10. gemeldet: Kalender "apply all" auf 3M, der
+     Drawer oeffnete mit Day; auf Week gestellt, geschlossen, neu geoeffnet -- wieder Day). zeitraum()
+     setzt sie nur, wenn sich der Zeitraum AENDERT; bleibt er beim naechsten Oeffnen gleich, stand die
+     Stufe vom letzten Mal oder die "day" aus dem Reset der Komponente. Jetzt gilt beim Oeffnen
+     dasselbe wie SET GRAN beim Kalenderwechsel. Ein Klick auf D/W/M danach gilt bis zum naechsten
+     Oeffnen. */
+  function granBeimOeffnen() {
+    /* Den Modus gleich mit: die Komponente merkt sich Citation/URL Share ueber das Neuladen hinweg
+       (window.__uddMode, prefSet), der Drawer begann nach jedem Laden mit "citation". Beim ersten
+       Oeffnen mit gemerktem URL Share fehlten so die URL-Daten (gemessen 14.10.), angeglichen hat
+       das bisher nur zufaellig der Reset beim Oeffnen einer ANDEREN Domain. */
+    var mm = window.__uddMode ? window.__uddMode[IDS.udd] : null;
+    if (mm === "domain" || mm === "citation") S.udd.modus = mm;
+    if (!UC.granFuerZeitraum || !S.f.von || !S.f.bis) return;
+    var g = UC.granFuerZeitraum(S.f.von, S.f.bis);
+    if (g) S.udd.gran = g;
+  }
   function filterAbgleichen() {
     var c = kalender(), r = null;
     try { r = c && c.getRange ? c.getRange() : null; } catch (e) { r = null; }
@@ -666,7 +683,12 @@
     /* Domain Detail meldet Modus (citation | domain) und Stufe -- die Namen, die domain-detail.js
        im lokalen Modus schickt (Praefix "udd" vor dem nackten Namen). */
     an("udduddMode", function (d) {
+      /* Waehrend des Resets beim Oeffnen still: die Komponente meldet dabei "day" (ihr Startwert)
+         und loeste so eine eigene Anfrage mit Day aus -- kam deren Antwort nach der richtigen, stand
+         das Chart auf Day. Gleich danach laedt zeigen() ohnehin alles mit der richtigen Stufe. Den
+         MODUS uebernimmt er weiter (nur die Stufe nicht), damit Drawer und Komponente gleich stehen. */
       var m = str(d.mode) === "domain" ? "domain" : "citation";
+      if (S.imReset) { S.udd.modus = m; return; }
       if (d.gran === "day" || d.gran === "week" || d.gran === "month") S.udd.gran = d.gran;
       if (m === S.udd.modus && !d.gran) return;
       S.udd.modus = m; teilLaden("detail");
@@ -788,7 +810,9 @@
         S.domain = dom; S.zeile = null; S.fehler = "";
         S.urls = urlsStart(); S.urls.order = altU.order; S.urls.limit = altU.limit;
         S.resp = respStart(); S.resp.order = altR.order; S.resp.limit = altR.limit;
+        S.imReset = true;
         try { setter("resetDomainDetail")(IDS.udd); } catch (e) {}
+        S.imReset = false;
         ["resetUrlsTable", "resetResponsesTable"].forEach(function (n, i) {
           try { setter(n)([IDS.uut, IDS.urt][i]); } catch (e) {}
         });
@@ -799,6 +823,7 @@
       (function warten() {
         if (!kalender() && n++ < 50) { setTimeout(warten, 30); return; }
         filterAbgleichen();
+        granBeimOeffnen();
         alleLaden(false, true);
       })();
     },
