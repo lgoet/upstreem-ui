@@ -43,6 +43,14 @@
   /* Neuer Tab nur, wo er gebraucht wird: im Framer-Rahmen bei JEDEM Verweis (sonst bliebe der
      Klick im Rahmen haengen), auf der eigenen Website nur bei fremden Adressen (App, Doku,
      Netzwerke). */
+  /* DIE STARTSEITE, optional mit Anker. Auf /de OHNE Schraegstrich: "/de/#journey" ist ein anderer
+     Pfad als "/de", Next leitet ihn mit 308 auf "/de" um -- jeder Klick auf Chip, Leiste oder Fuss
+     lud die ganze Seite neu, statt zum Abschnitt zu scrollen (gemessen 14.10. im Audit). Auf
+     Englisch (SITE "") und in Framer (eine Domain ohne Pfad) gehoert der Schraegstrich dazu. */
+  function startUrl(anker){
+    var basis = SITE === "" || /^https?:\/\/[^\/]+$/.test(SITE) ? SITE + "/" : SITE;
+    return basis + (anker ? "#" + anker : "");
+  }
   function tab(h){
     return WEBSITE && h.charAt(0) === "/" ? "" : ' target="_blank" rel="noopener"';
   }
@@ -66,6 +74,7 @@
   var DE = {
     /* Leiste und Menue */
     "Language": "Sprache", "Platform": "Plattform", "Resources": "Ressourcen", "Pricing": "Preise", "Log in": "Anmelden",
+    "Menu": "Menü", "Close menu": "Menü schließen", "English": "English", "Deutsch": "Deutsch",
     "Start for free": "Kostenlos starten", "Overview": "Überblick", "What upstreem shows you": "Was upstreem dir zeigt",
     "Which pages answers are built from": "Aus welchen Seiten Antworten entstehen",
     "Mira does the work for you": "Mira erledigt die Arbeit für dich",
@@ -682,7 +691,7 @@
            fuer das Neueste und verlinken es; hier die Customer-Journey-Sektion (#journey). Form und
            Masse des Badges bleiben (30.09.), dazu vorn das dunkle "New" und hinten ein Pfeil. */
         '<p class="ulh-eyebrow">' +
-          '<a class="ulh-chip ulh-chip-link" href="' + SITE + '/#journey">' +
+          '<a class="ulh-chip ulh-chip-link" href="' + startUrl("journey") + '">' +
             '<span class="ulh-chip-in">' +
               '<span class="ulh-chip-neu">' + HERO.neu + '</span>' +
               '<span class="ulh-chip-t">' + HERO.chip + '</span>' +
@@ -854,7 +863,7 @@
       '<span class="ulh-nav-spalte">' + m.spalte + '</span> ' +
       m.eintraege.map(function(e){
         var attr = e.href ? ' href="' + e.href + '"' + tab(e.href)
-                          : ' href="' + SITE + '/#' + e.anker + '" data-ziel="' + e.ziel + '"';
+                          : ' href="' + startUrl(e.anker) + '" data-ziel="' + e.ziel + '"';
         return '<a class="ulh-nav-eintrag"' + attr + '>' +
           '<span class="ulh-nav-e-t">' + e.t + '</span> ' +
           '<span class="ulh-nav-e-s">' + e.s + '</span>' +
@@ -866,7 +875,7 @@
   function leiste(){
     return '<header class="ulh-nav">' +
       '<div class="ulh-spur ulh-nav-in">' +
-        '<a class="ulh-nav-logo" href="' + SITE + '/" aria-label="upstreem">' +
+        '<a class="ulh-nav-logo" href="' + startUrl() + '" aria-label="upstreem">' +
           '<img src="' + WORTMARKE + '" alt="upstreem" width="141" height="20"/>' +
         '</a>' +
         '<nav class="ulh-nav-mitte">' +
@@ -877,7 +886,7 @@
           /* Seit 14.10. der Preisabschnitt der Startseite (#pricing) und keine eigene Seite mehr:
              dieselben Karten standen sonst zweimal und liefen auseinander. upstreem-web leitet
              /pricing dorthin um. */
-          '<a class="ulh-nav-punkt" href="' + SITE + '/#pricing"' + tab(SITE + "/#pricing") + '>Pricing</a>' +
+          '<a class="ulh-nav-punkt" href="' + startUrl("pricing") + '"' + tab(startUrl("pricing")) + '>Pricing</a>' +
         '</nav>' +
         '<div class="ulh-nav-rechts">' +
           /* DER SPRACH-TOGGLE (14.10.), nur auf der eigenen Website (Framer kennt kein /de).
@@ -900,12 +909,62 @@
             ' href="https://app.upstreem.ai/signup?mode=login">Log in</a> ' +
           '<a class="ulh-btn ulh-btn-pri" target="_blank" rel="noopener"' +
             ' href="https://app.upstreem.ai/signup">Start for free</a>' +
+          /* Der Menueknopf, nur schmal (unter 900px, wo die Mitte wegfaellt). Zwei Zeichen
+             uebereinander, getauscht ueber Deckkraft und Groesse -- keine Drehung. Inline und nicht
+             ueber UC.icon: auf den Unterseiten (Blog, Rechtliches) laedt nur landing-teile.js, core
+             ist dort nicht da. Die Pfade sind Feather "menu" und "x". */
+          ' <button class="ulh-nav-menue" type="button" aria-expanded="false" aria-label="Menu">' +
+            '<svg class="ulh-nav-menue-auf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
+              '<line x1="4" y1="8" x2="20" y2="8"></line><line x1="4" y1="16" x2="20" y2="16"></line></svg>' +
+            '<svg class="ulh-nav-menue-zu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">' +
+              '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>' +
+          '</button>' +
         '</div>' +
         '<div class="ulh-nav-pop" aria-hidden="true">' +
           navKarte("platform") + navKarte("resources") +
         '</div>' +
       '</div>' +
+      navMobil() +
     '</header>';
+  }
+
+  /* DAS MENUE AUF DEM TELEFON (14.10. im Audit gefunden: unter 900px fiel die Mitte der Leiste
+     weg, und es gab keinen anderen Weg zu Platform, Resources und Pricing als den Fuss). Dieselben
+     Eintraege wie die zwei Panels (NAV_MENUES), dazu Pricing, die Sprache und die zwei Knoepfe --
+     schmal stehen "Log in" und der Sprachschalter nicht in der Leiste. Das Verhalten (auf, zu,
+     Escape, Sprung zu einer Sektion) steht in landing-teile.js, navLauf. */
+  function navMobil(){
+    var gruppen = ["platform", "resources"].map(function(k){
+      var m = NAV_MENUES[k];
+      return '<div class="ulh-nm-gruppe">' +
+        '<span class="ulh-nm-spalte">' + m.spalte + '</span> ' +
+        m.eintraege.map(function(e){
+          var attr = e.href ? ' href="' + e.href + '"' + tab(e.href)
+                            : ' href="' + startUrl(e.anker) + '" data-ziel="' + e.ziel + '"';
+          return '<a class="ulh-nm-eintrag"' + attr + '>' +
+            '<span class="ulh-nav-e-t">' + e.t + '</span> ' +
+            '<span class="ulh-nav-e-s">' + e.s + '</span>' +
+          '</a>';
+        }).join(" ") +
+      '</div>';
+    }).join(" ");
+    return '<div class="ulh-nav-mobil">' +
+      '<div class="ulh-nm-in">' +
+        gruppen +
+        ' <a class="ulh-nm-eintrag ulh-nm-einzeln" href="' + startUrl("pricing") + '"' + tab(startUrl("pricing")) + '>' +
+          '<span class="ulh-nav-e-t">Pricing</span></a>' +
+        (WEBSITE ? ' <div class="ulh-nm-sprache ulh-sprache" role="group" aria-label="' + T("Language") + '">' +
+            '<a href="/" hreflang="en" lang="en" data-sprache="en"' + (LANG === "en" ? ' class="is-an" aria-current="true"' : '') + '>' +
+              '<img class="ulh-sprache-flagge" src="https://flagcdn.com/gb.svg" alt="" width="16" height="12"/><span>English</span></a>' +
+            '<a href="/de" hreflang="de" lang="de" data-sprache="de"' + (LANG === "de" ? ' class="is-an" aria-current="true"' : '') + '>' +
+              '<img class="ulh-sprache-flagge" src="https://flagcdn.com/de.svg" alt="" width="16" height="12"/><span>Deutsch</span></a>' +
+          '</div>' : '') +
+        ' <div class="ulh-nm-knoepfe">' +
+          '<a class="ulh-btn ulh-btn-sec" target="_blank" rel="noopener" href="https://app.upstreem.ai/signup?mode=login">Log in</a> ' +
+          '<a class="ulh-btn ulh-btn-pri" target="_blank" rel="noopener" href="https://app.upstreem.ai/signup">Start for free</a>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
   }
 
   /* Das Panel, das dem Zeiger folgt, steht seit dem 13.10. in landing-teile.js: dieselbe Leiste
@@ -1197,6 +1256,10 @@
     var von = parseFloat(String(el.textContent || "").replace(",", ".").replace(/[^0-9.]/g, ""));
     if (!isFinite(von)) von = ziel;
     if (el.__uhr) cancelAnimationFrame(el.__uhr);
+    /* Weniger Bewegung: der Preis steht sofort (14.10., Audit). */
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+      el.textContent = preisGeld(ziel); return;
+    }
     var t0 = 0, DAUER = 380;
     (function lauf(ts){
       if (!t0) t0 = ts || 0;
@@ -1214,8 +1277,8 @@
      Seite -- ein Fuss mit toten Verweisen ist schlimmer als keiner. */
   var FUSS_SPALTEN = [
     { t: "Product", e: [
-      { t: "Overview", h: SITE + "/" },
-      { t: "Pricing", h: SITE + "/#pricing" },
+      { t: "Overview", h: startUrl() },
+      { t: "Pricing", h: startUrl("pricing") },
       { t: "Log in", h: "https://app.upstreem.ai/signup?mode=login" }
     ]},
     { t: "Resources", e: [
@@ -1255,7 +1318,7 @@
     return '<footer class="ulh-fuss">' +
       '<div class="ulh-spur ulh-fuss-in">' +
         '<div class="ulh-fuss-marke">' +
-          '<a class="ulh-fuss-logo" href="' + SITE + '/" aria-label="upstreem">' +
+          '<a class="ulh-fuss-logo" href="' + startUrl() + '" aria-label="upstreem">' +
             '<img src="' + WORTMARKE + '" alt="upstreem" width="218" height="31"/>' +
           '</a>' +
           '<div class="ulh-fuss-netz">' +
@@ -3260,6 +3323,7 @@
     if (window.IntersectionObserver){
       var beo = new IntersectionObserver(function(e){
         imBlick = e.some(function(x){ return x.isIntersecting; });
+        if (imBlick && !laeuft) starten();
       }, { rootMargin: "120px" });
       if (lauf) beo.observe(lauf);
       if (orb) beo.observe(orb);
@@ -3314,14 +3378,20 @@
       }
     }
 
+    /* Ausser Sicht fordert die Schleife KEIN weiteres Bild mehr an (14.10., Audit): vorher lief sie
+       weiter und rechnete nur nicht -- ein Aufruf pro Bild fuer nichts. Kommt das Band wieder ins
+       Bild, startet der Beobachter sie neu; vorher = 0, damit sie nicht um die Pause springt. */
+    var laeuft = false;
     function schritt(jetzt){
+      if (!imBlick){ laeuft = false; vorher = 0; return; }
       var dt = vorher ? Math.min(0.05, (jetzt - vorher) / 1000) : 0;   /* 50ms Deckel: nach einem
                                                                           verdeckten Tab nicht springen */
       vorher = jetzt;
       rechnen(dt);
       requestAnimationFrame(schritt);
     }
-    requestAnimationFrame(schritt);
+    function starten(){ laeuft = true; requestAnimationFrame(schritt); }
+    starten();
   }
 
   /* Die zwei Kurven brauchen Chart.js und werden deshalb erst beim Fuellen gezeichnet. */
@@ -4064,6 +4134,17 @@
        gutes Stueck im Bild stehen. */
     var SCHWELLE_GROSS = 0.62;
     var bilder = 0;
+    /* will-change nur WAEHREND der Bewegung (14.10., Audit): es stand dauerhaft an rund 23
+       Stuecken -- ebenso viele Ebenen fuer immer. Nach dem Ende von translate gibt .is-fertig sie
+       frei (landing-hero.css). */
+    function fertigMerken(el){
+      function f(e){
+        if (e.target !== el || e.propertyName !== "translate") return;
+        el.classList.add("is-fertig");
+        el.removeEventListener("transitionend", f);
+      }
+      el.addEventListener("transitionend", f);
+    }
     function alleSofort(){
       stuecke.forEach(function(el){ el.classList.add("is-da"); });
       stuecke.length = 0;
@@ -4076,12 +4157,30 @@
        Druckansicht). Nach drei Sekunden ohne ein einziges Bild ist alles da, ohne Bewegung.
        Kommt spaeter doch ein Bild, laeuft die Schleife weiter -- sie hat dann nichts mehr zu tun. */
     setTimeout(function(){ if (!bilder) alleSofort(); }, 3000);
+    /* NUR MESSEN, WENN SICH ETWAS BEWEGT HAT (14.10., Audit): die Schleife las in jedem Bild die Lage
+       jedes wartenden Stuecks und der Ueberschrift -- auch wenn niemand scrollte, und waehrend die
+       Zaehlwerke im Hero-Fenster schrieben (Lesen nach Schreiben = ein erzwungenes Layout pro Bild).
+       Jetzt gilt: gemessen wird, wenn sich Scrollstand oder Fenstergroesse geaendert haben, und
+       sonst jedes dreissigste Bild (rund zweimal pro Sekunde) -- das faengt Verschiebungen auf, die
+       ohne Scrollen entstehen (Schrift laedt, Bilder kommen). Im Rahmen von Framer misst sie wie
+       bisher jedes Bild: dort scrollt das Fenster darueber, und sein Stand ist von hier nicht zu
+       lesen, ohne zu messen. */
+    var imRahmen = false;
+    try { imRahmen = !!window.frameElement; } catch (e){ imRahmen = true; }
+    var letzter = "", seitVoll = 0;
     (function takt(){
       bilder++;
+      if (root.isConnected === false) return;
+      if (!imRahmen){
+        var stand = window.scrollY + "|" + window.innerWidth + "|" + window.innerHeight;
+        if (stand === letzter && ++seitVoll < 30){ requestAnimationFrame(takt); return; }
+        letzter = stand; seitVoll = 0;
+      }
       for (var i = stuecke.length - 1; i >= 0; i--){
         var l = lage(stuecke[i]);
         var g = stuecke[i].classList.contains("ulh-auf-gross") ? SCHWELLE_GROSS : SCHWELLE;
         if (l.oben < l.hoehe * g){
+          fertigMerken(stuecke[i]);
           stuecke[i].classList.add("is-da");
           stuecke.splice(i, 1);
         }
@@ -4169,6 +4268,11 @@
     var mitte = (l.hoehe - l.hoch) / 2;
     var p = (mitte - l.oben) / (l.hoehe * SATZ_LAUF);
     p = p < 0 ? 0 : (p > 1 ? 1 : p);
+    /* Gleicher Stand wie beim letzten Mal: nichts schreiben (14.10., Audit). Vorher bekam jedes
+       Wort in jedem Bild --t neu gesetzt, und jedes Setzen zeichnet den Text neu. */
+    var pr = Math.round(p * 1000);
+    if (h.__ulhP === pr) return;
+    h.__ulhP = pr;
     var n = buchstaben.length;
     for (var i = 0; i < n; i++){
       /* Die Front ist zwoelf Buchstaben breit -- etwa zwei Woerter. Ein Buchstabe nach dem anderen
@@ -5084,7 +5188,17 @@
     if (root.__ulhTaktAn) return;
     root.__ulhTaktAn = true;
     var i = -1;
+    /* Nur wenn jemand hinsieht (14.10., Audit): der Takt baute alle 3.2s Donut und Antwortkarte neu
+       -- auch mit verdecktem Tab, mit weggescrolltem Hero und unter 1200px, wo die Nebenfenster gar
+       nicht stehen (display: none). Die Szenen im Hauptfenster warten schon so (mitTor); hier fehlte
+       dasselbe Tor. Unter "weniger Bewegung" steht der Takt ganz. */
+    var ruhig = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (ruhig) return;
     setInterval(function(){
+      if (document.hidden || !root.isConnected) return;
+      var fen = root.querySelector(".ulh-fen");
+      if (fen && !fen.offsetParent) return;
+      if (!fensterImBild(root)) return;
       i = (i + 1) % TAKT_MUSTER.length;
       var dran = TAKT_MUSTER[i];
       for (var j = 0; j < dran.length; j++){

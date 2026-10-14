@@ -109,28 +109,80 @@
       b.addEventListener("mouseenter", schliessen);
     });
     nav.addEventListener("mouseleave", schliessen);
+    /* Mit der Tastatur ging das Panel beim Fokus auf, aber nie wieder zu (14.10., Audit): wer
+       weitertabbte, hatte es offen ueber der Seite stehen. Jetzt schliesst es, sobald der Fokus die
+       Leiste verlaesst, und mit Escape. */
+    nav.addEventListener("focusout", function(e){
+      if (!e.relatedTarget || !nav.contains(e.relatedTarget)) schliessen();
+    });
+    nav.addEventListener("keydown", function(e){
+      if (e.key === "Escape" && offen){ schliessen(); }
+    });
     pop.addEventListener("mouseenter", function(){ clearTimeout(uhr); });
 
     /* Die Punkte unter "Platform" fuehren zu Sektionen der Startseite. Steht die Sektion auf DIESER
        Seite, wird weich dorthin gescrollt; sonst (Blog, Preise ...) laeuft der Link ganz normal auf
        die Startseite mit dem Anker (#overview, #sources, #mira) -- vor dem 13.10. stand dort
        href="#", und der Klick tat auf jeder anderen Seite nichts. */
+    function springen(a, e, danach){
+      var ziel = document.querySelector(".ulh-root:not([data-ulh-teil]) " + a.getAttribute("data-ziel"));
+      if (!ziel) return;
+      e.preventDefault();
+      danach();
+      var weg = oben(ziel) - 90;              /* 90px: die Leiste steht im Weg */
+      /* Wer weniger Bewegung will, springt (14.10., Audit). */
+      var art = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+      try {
+        var rahmen = window.frameElement;
+        var w = rahmen ? rahmen.ownerDocument.defaultView : window;
+        w.scrollBy({ top: weg, behavior: art });
+      } catch (err){
+        window.scrollBy({ top: weg, behavior: art });
+      }
+    }
     [].forEach.call(pop.querySelectorAll("[data-ziel]"), function(a){
+      a.addEventListener("click", function(e){ springen(a, e, schliessen); });
+    });
+    mobilLauf(nav, springen);
+  }
+
+  /* ---- Das Menue auf dem Telefon (14.10., im Audit gefunden: unter 900px gab es keinen Weg zu
+     Platform, Resources und Pricing ausser dem Fuss). Knopf und Blatt stehen im Markup der Leiste
+     (landing-hero.js, navMobil); hier nur auf und zu. Ein Blatt unter der Leiste, das von oben
+     einblendet (opacity + transform, die Expo-Kurve der Seite) -- sichtbar wird es ueber
+     visibility, damit es geschlossen auch fuer Tastatur und Vorleser nicht da ist.
+     Zu geht es: mit dem Knopf, mit Escape, mit einem Klick daneben, mit jedem Eintrag, und wenn das
+     Fenster breiter als 900px wird (dort steht die Mitte wieder da). */
+  function mobilLauf(nav, springen){
+    var knopf = nav.querySelector(".ulh-nav-menue"), blatt = nav.querySelector(".ulh-nav-mobil");
+    if (!knopf || !blatt || knopf.__ulhMobil) return;
+    knopf.__ulhMobil = true;
+    var de = (document.documentElement.getAttribute("lang") || "").indexOf("de") === 0;
+    function setzen(auf){
+      blatt.classList.toggle("is-offen", auf);
+      nav.classList.toggle("is-mobil", auf);
+      knopf.setAttribute("aria-expanded", auf ? "true" : "false");
+      knopf.setAttribute("aria-label", auf ? (de ? "Menü schließen" : "Close menu") : (de ? "Menü" : "Menu"));
+    }
+    function offen(){ return blatt.classList.contains("is-offen"); }
+    knopf.addEventListener("click", function(){ setzen(!offen()); });
+    document.addEventListener("keydown", function(e){
+      if (e.key === "Escape" && offen()){ setzen(false); knopf.focus(); }
+    });
+    document.addEventListener("click", function(e){
+      if (offen() && !nav.contains(e.target)) setzen(false);
+    });
+    [].forEach.call(blatt.querySelectorAll("a"), function(a){
       a.addEventListener("click", function(e){
-        var ziel = document.querySelector(".ulh-root:not([data-ulh-teil]) " + a.getAttribute("data-ziel"));
-        if (!ziel) return;
-        e.preventDefault();
-        schliessen();
-        var weg = oben(ziel) - 90;              /* 90px: die Leiste steht im Weg */
-        try {
-          var rahmen = window.frameElement;
-          var w = rahmen ? rahmen.ownerDocument.defaultView : window;
-          w.scrollBy({ top: weg, behavior: "smooth" });
-        } catch (err){
-          window.scrollBy({ top: weg, behavior: "smooth" });
-        }
+        if (a.hasAttribute("data-ziel")) springen(a, e, function(){ setzen(false); });
+        else setzen(false);
       });
     });
+    if (window.matchMedia){
+      var breit = window.matchMedia("(min-width: 901px)");
+      var weg = function(){ if (breit.matches) setzen(false); };
+      if (breit.addEventListener) breit.addEventListener("change", weg); else if (breit.addListener) breit.addListener(weg);
+    }
   }
 
   /* Der Bildnachweis im Fuss: auf- und zuklappen, mit aria-expanded fuer Vorleser. */
