@@ -248,6 +248,9 @@
             '<span>Add <span class="up-ph-addbtn-full">Prompts</span></span></button>' +
           '<button class="up-ph-addbtn up-export upi-addtopic" type="button" data-upi-fuer="topics" aria-label="' + esc(t("Add Topic")) + '">' + PLUS_SVG +
             '<span>Add <span class="up-ph-addbtn-full">Topic</span></span></button>' +
+          /* Holt die ausgeblendete Kennzahlenleiste ueber der Tabelle zurueck (14.10.): nur sichtbar,
+             solange sie zu ist (is-weg) -- und nur auf "All Prompts", wo sie steht. */
+          '<button class="up-ph-iconbtn upi-sumzeigen is-weg" type="button" data-upi-fuer="allprompts" aria-label="' + esc(t("Show summary")) + '" data-tip="' + esc(t("Show summary")) + '">' + (UC.icon ? UC.icon("eye", 2) : "") + '</button>' +
           '<button class="up-ph-iconbtn upi-refresh" type="button" data-upi-fuer="allprompts responses" aria-label="' + esc(t("Refresh")) + '" data-tip="' + esc(t("Refresh Data")) + '">' + REFRESH_SVG + '</button>' +
         '</div>' +
       '</div>' +
@@ -268,6 +271,17 @@
       '</div>';
 
     var elNav = root.querySelector(".upi-nav"), elRefresh = root.querySelector(".upi-refresh");
+    /* Kennzahlenleiste der Tabelle: ihr Stand kommt als Ereignis (upt-sum-stand, prompts-table.js),
+       der Knopf schickt "zeigen" an die Wurzel der Tabelle zurueck. Die Tabelle steht beim ersten
+       Mal womoeglich schon -- dann ihren Stand vom Attribut lesen. */
+    var elSumZeigen = root.querySelector(".upi-sumzeigen");
+    function sumStand(zu){ if (elSumZeigen) elSumZeigen.classList.toggle("is-weg", !zu); }
+    root.addEventListener("upt-sum-stand", function (e) { sumStand(!!(e.detail && e.detail.zu)); });
+    if (elSumZeigen) elSumZeigen.addEventListener("click", function () {
+      var tab = root.querySelector('[data-upi-tab="allprompts"] .up-root[data-sum-zu]');
+      if (tab) tab.dispatchEvent(new CustomEvent("upt-sum-zeigen"));
+    });
+    (function () { var tab = root.querySelector('[data-upi-tab="allprompts"] .up-root[data-sum-zu]'); if (tab) sumStand(tab.getAttribute("data-sum-zu") === "yes"); })();
     var elAdd = root.querySelector(".upi-add"), elAddTopic = root.querySelector(".upi-addtopic");
     var elFilterleiste = root.querySelector(".upi-filterleiste");
     function el(sel) { return root.querySelector(sel); }

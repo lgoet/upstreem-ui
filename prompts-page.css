@@ -13,6 +13,8 @@
 /* hidden gegen das display der Knopf-Regeln aus core: ein Knopf, der zum Reiter nicht gehoert,
    steht nicht da. */
 .upi-root [data-upi-fuer][hidden] { display: none; }
+/* Der Knopf zum Wiedereinblenden der Kennzahlenleiste: nur, solange sie zu ist (prompts-page.js). */
+.upi-root .upi-sumzeigen.is-weg { display: none; }
 .upi-filterzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 16px; }
 .upi-filterzeile > .udr-root { flex: 0 0 auto; }
 .upi-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }

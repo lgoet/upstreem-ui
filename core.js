@@ -858,6 +858,10 @@
     "Distribution by market": "Verteilung nach Märkten",
     "Prompt allowance": "Prompt-Kontingent",
     "{n} topics": "{n} Topics",
+    /* Die Kennzahlenleiste ueber der Prompt-Tabelle (14.10.): Zahl gross, Wort klein daneben. */
+    "topic": "Topic", "topics": "Topics", "market": "Markt", "markets": "Märkte",
+    "of {n} prompts": "von {n} Prompts",
+    "Hide summary": "Übersicht ausblenden", "Show summary": "Übersicht einblenden",
     "{n} markets": "{n} Märkte",
     "+{n} more": "+{n} weitere",
     "{n} without topic": "{n} ohne Topic",

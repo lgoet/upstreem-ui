@@ -5184,527 +5184,233 @@
     }
 
 
-    /* ══ DREI KENNZAHLEN-KARTEN UEBER DER TABELLE ═════════════════════════════════════════════
-       Gebaut HIER und nicht in bubble/prompts_table_bubble.html: die Vorlage ist die Vorlage fuer
-       eine NEUinstallation, ein bereits eingebautes Element bekaeme neues Markup nie. Dasselbe
-       Muster wie die Seitenleiste in ask-mira.
-
-       Die Daten kommen komplett aus den bestehenden Ablagen -- kein neuer Setter fuer Themen oder
-       Maerkte noetig. UC.getTopics()/UC.getMarkets() liefern die Zeilen unveraendert, wie Bubble
-       sie geschickt hat, mit prompt_count. Nur das Kontingent war neu (UC.getQuota, siehe core).
-
-       Die Charts sind die vorhandenen Bauteile: UC.makeBarList fuer die Balken (es hat schon den
-       Modus "Beschriftung links, Balken rechts") und UC.makeTypeChart fuer den Ring. Nachgebaut
-       wird nichts, nur andere Masse -- die stehen in prompts-table.css. */
-    var kpiZeile = null, kpiBars = null, kpiRing = null, kpiAb = [];
-    /* Die drei Karten zeigen beim ERSTEN Aufbau ein Skelett, bis die Tabelle ihre Daten hat --
-       auch wenn die Karten-Daten laengst da sind (Themen und Maerkte liegen beim Seitenaufbau
-       meist schon im Speicher). Grund: drei fertige Karten ueber einer noch ladenden Tabelle
-       lesen sich falsch, als waere die Tabelle haengengeblieben. So gemeldet am 03.09.
-       Nur beim ersten Mal: bei jedem spaeteren Laden (Filter, Seitenwechsel) sind die Karten
-       richtig und sollen stehen bleiben -- sie haengen nicht an der Tabellenabfrage. */
-    /* STEHT DAS SKELETT GERADE? -- nicht "hat es schon einmal gestanden". Der Unterschied ist
-       der ganze Punkt der Aenderung vom 23.09.: frueher war das hier ein Einmal-Tor (kpiWartet),
-       das nach dem ersten Datensatz fuer immer fiel. Danach haingen die drei Karten an drei
-       verschiedenen Ablagen und zeichneten unabhaengig -- also konnte eine im Skelett stehen und
-       die zwei daneben fertig sein. Genau so gemeldet.
-       Der Merker verhindert ausserdem, dass ein zweites Ereignis waehrend desselben
-       Ladevorgangs dieselbe Zeichnung noch einmal setzt: die Skelettbewegung finge sonst von
-       vorne an, und zwar nur in der einen Karte, deren Ablage gerade gefeuert hat. */
+    /* ══ DIE KENNZAHLEN-LEISTE UEBER DER TABELLE (14.10. abends) ════════════════════════════════
+       Vorher drei Karten (Topics-Balken, Markt-Ring, Kontingent), 256px hoch. Gewuenscht: die
+       schmale Leiste aus Entwurf B, "schoen und ordentlich, muss zum Rest 100% passen", ausblendbar,
+       wieder einblendbar ueber einen kleinen Knopf im Seitenkopf. Keine der vergleichbaren
+       Prompt-Listen (Peec, Profound, Otterly) traegt dort Karten -- eine Zeile reicht.
+       GEBAUT AUS DER LEISTE DER DETAIL-DRAWER (.up-dk-leiste, .up-dk-zahl aus core): dieselbe Flaeche,
+       dieselbe Zahl gross mit leisem Wort ("4 brands mentioned"), dieselben Radien und Polster.
+       Drei Teile: Topics (Anteilsbalken in den Topic-Farben, die drei groessten benannt), Maerkte
+       (erst ab zwei -- ein Markt ist keine Verteilung, wie bei der Karte vorher), Kontingent
+       (genutzt von gesamt, mit Balken). Die Datenleitung ist die der Karten: dieselben Ablagen,
+       dasselbe Skelett im Gleichlauf mit der Tabelle (kpiWartend), derselbe Gedanke beim Merken. */
+    var kpiZeile = null, kpiAb = [];
     var kpiSkelettSteht = false;
-    /* Die letzten Nutzlasten der drei Ablagen. Waehrend das Skelett steht, kommen sie schon an --
-       ohne sie zu merken waere die Karte nach dem Warten leer, bis die Ablage ZUFAELLIG noch
-       einmal etwas schickt. Genau die Sorte stiller Ausfall, die hier nicht mehr vorkommen soll. */
     var kpiRohTopics = null, kpiRohMarkets = null, kpiRohQuota = null;
+    var kpiSig = { t: null, m: null, q: null };
+    function teilHtml(kl){
+      return '<div class="upt-sum-teil ' + kl + '">' +
+        '<span class="up-dk-zahl"><span class="up-dk-zahl-n"></span><span class="upt-sum-wort"></span></span>' +
+        '<span class="upt-sum-inhalt"></span></div>';
+    }
     function kpiBauen(){
       if (kpiZeile || !elHead || !elHead.parentNode) return;
       kpiZeile = document.createElement("div");
-      kpiZeile.className = "upt-kpis";
+      kpiZeile.className = "upt-sum";
       kpiZeile.innerHTML =
-        karteHtml("upt-kpi-topics", UC.t("Distribution by topic")) +
-        karteHtml("upt-kpi-markets", UC.t("Distribution by market")) +
-        karteHtml("upt-kpi-quota",   UC.t("Prompt allowance"), true);
+        '<div class="upt-sum-falte"><div class="upt-sum-in up-dk-leiste">' +
+          teilHtml("upt-sum-topics") + teilHtml("upt-sum-markets") + teilHtml("upt-sum-quota") +
+          '<button type="button" class="up-iconbtn upt-sum-zu" data-tip="' + esc(UC.t("Hide summary")) + '" aria-label="' +
+            esc(UC.t("Hide summary")) + '">' + UC.icon("eyeOff", 2) + '</button>' +
+        '</div></div>';
       elHead.parentNode.insertBefore(kpiZeile, elHead);
-      kpiAugeBinden();
-      /* Die Ablagen benachrichtigen, wenn sich etwas aendert. owner ist die Wurzel: Bubble wirft
-         diese Wurzeln staendig weg und baut sie neu, und ohne owner waechst die Abonnentenliste
-         mit jedem Neuaufbau um einen toten Eintrag (siehe onTopics in core). */
+      kpiZeile.querySelector(".upt-sum-zu").addEventListener("click", function(){ kpiZuSetzen(true, true); });
+      /* Der Knopf im Seitenkopf (prompts-page.js) schickt dieses Ereignis an die Wurzel der Tabelle. */
+      root.addEventListener("upt-sum-zeigen", function(){ kpiZuSetzen(false, true); });
+      kpiZuSetzen(kpiZuGelesen(), false);
+      /* owner ist die Wurzel: ohne ihn waechst die Abonnentenliste mit jedem Neubau (onTopics in core). */
       if (UC.onTopics)  kpiAb.push(UC.onTopics(kpiTopics, root));
       if (UC.onMarkets) kpiAb.push(UC.onMarkets(kpiMarkets, root));
       if (UC.onQuota)   kpiAb.push(UC.onQuota(kpiQuota, root));
       kpiTopics(UC.getTopics ? UC.getTopics() : []);
       kpiMarkets(UC.getMarkets ? UC.getMarkets() : []);
-      marktKarte();                       /* auch wenn das Wartetor noch zu ist */
       kpiQuota(UC.getQuota ? UC.getQuota() : null);
     }
-    /* mitAuge: nur die letzte Karte traegt den Umschalter -- er klappt ALLE DREI zu, und drei
-       Knoepfe fuer dieselbe Handlung waeren drei Fragen an den Nutzer, welcher davon was tut.
-       Das Auge selbst ist UC.icon("eye"/"eyeOff"), nicht gezeichnet. */
-    function karteHtml(kl, titel, mitAuge){
-      return '<div class="upt-kpi ' + kl + '">' +
-        '<div class="upt-kpi-head"><span class="upt-kpi-title">' + esc(titel) + '</span>' +
-        '<span class="upt-kpi-note"></span>' +
-        (mitAuge
-          ? '<button type="button" class="upt-kpi-eye" data-kpi-eye ' +
-              'data-tip="' + esc(UC.t("Hide")) + '" aria-label="' + esc(UC.t("Hide")) + '" ' +
-              'aria-expanded="true">' +
-              '<span class="ic-hide">' + UC.icon("eye", 2) + '</span>' +
-              '<span class="ic-show">' + UC.icon("eyeOff", 2) + '</span>' +
-            '</button>'
-          : "") +
-        '</div>' +
-        '<div class="upt-kpi-body"></div>' +
-        '<div class="upt-kpi-foot"><span class="upt-kpi-foot-left"></span>' +
-        '<span class="upt-kpi-foot-right"></span></div></div>';
-    }
-    /* Zugeklappt bleibt zugeklappt -- auch ueber einen RELOAD hinweg (15.09. angefordert).
-       Bis dahin stand der Wert nur am window: das ueberlebte Bubbles Neubau der Wurzel bei jedem
-       Ansichtswechsel, aber keinen Seitenaufbau. Die Begruendung dagegen war, zugeklappte Karten
-       koennten beim naechsten Besuch wie eine verschwundene Funktion wirken -- das Auge steht
-       aber sichtbar in der Zeile und traegt "Show" als Tooltip, also findet man sie wieder.
-       localStorage je Instanz, dasselbe Muster wie rhKey/gKey hier in der Datei. Das window-Feld
-       bleibt als schneller Zwischenspeicher: es beantwortet den Neubau der Wurzel ohne Zugriff
-       auf den Speicher, und beide werden zusammen geschrieben. */
-    /* OFFEN IST DIE VORGABE (10.10. angefordert: "die Cards oben wieder per Default sichtbar"; vom
-       29.09. bis dahin zu). Ohne gemerkten Stand also offen; wer sie zuklappt, behaelt das.
-       Der Schluessel ist NEU (upt_kpizu2__), und das ist noetig: bis hierher schrieb schon der
-       AUFBAU den Stand in den Speicher, nicht erst ein Klick -- unter dem alten Schluessel stand
-       damit bei jedem, der die Seite je geoeffnet hat, ein "no" aus der Zeit, als offen die
-       Vorgabe war. Die neue Vorgabe haette niemanden erreicht. Ab jetzt schreibt nur noch ein
-       Klick (merken), damit eine spaetere Aenderung der Vorgabe nicht wieder daran scheitert. */
-    function kpiKey(){ return "upt_kpizu2__" + instanceId; }
-    function kpiAugeStand(){ return (window.__uptKpiZu = window.__uptKpiZu || {}); }
-    function kpiAugeGelesen(){
-      var w = kpiAugeStand();
+    /* Zu bleibt zu, auch ueber einen Neuladen -- und offen ist die Vorgabe. Neuer Schluessel
+       (upt_sumzu__): der alte der Karten (upt_kpizu2__) gehoerte zu einem anderen Bauteil, und wer
+       die Karten damals zugeklappt hat, soll die neue Leiste trotzdem einmal sehen. Geschrieben wird
+       nur bei einem Klick. */
+    function kpiZuKey(){ return "upt_sumzu__" + instanceId; }
+    function kpiZuGelesen(){
+      var w = (window.__uptSumZu = window.__uptSumZu || {});
       if (Object.prototype.hasOwnProperty.call(w, instanceId)) return !!w[instanceId];
-      try {
-        var v = window.localStorage.getItem(kpiKey());
-        return v == null ? false : v === "yes";
-      } catch(e){ return false; }
+      try { return window.localStorage.getItem(kpiZuKey()) === "yes"; } catch(e){ return false; }
     }
-    function kpiAugeBinden(){
-      var btn = kpiZeile && kpiZeile.querySelector("[data-kpi-eye]");
-      if (!btn) return;
-      kpiAugeSetzen(kpiAugeGelesen(), false);
-      btn.addEventListener("click", function(){
-        kpiAugeSetzen(!kpiZeile.classList.contains("is-hidden-view"), true);
-      });
-    }
-    function kpiAugeSetzen(zu, merken){
-      var btn = kpiZeile && kpiZeile.querySelector("[data-kpi-eye]");
-      if (!kpiZeile || !btn) return;
-      kpiZeile.classList.toggle("is-hidden-view", zu);
-      kpiAugeStand()[instanceId] = zu;
-      if (merken) try { window.localStorage.setItem(kpiKey(), zu ? "yes" : "no"); } catch(e){}
-      btn.setAttribute("aria-expanded", zu ? "false" : "true");
-      var txt = UC.t(zu ? "Show" : "Hide");
-      btn.setAttribute("data-tip", txt);
-      btn.setAttribute("aria-label", txt);
-      /* Der Ring muss nach dem Zuklappen neu messen: sein Canvas haengt an der Kartenhoehe, und
-         Chart.js merkt eine Aenderung des Behaelters nicht von selbst. Nach der Uebergangszeit
-         der CSS (200ms), sonst misst er die halbe Hoehe von unterwegs. */
-      if (kpiRing && kpiRing.resize) setTimeout(function(){ kpiRing.resize(); }, 230);
+    function kpiZuSetzen(zu, merken){
+      if (!kpiZeile) return;
+      kpiZeile.classList.toggle("is-zu", zu);
+      (window.__uptSumZu = window.__uptSumZu || {})[instanceId] = zu;
+      if (merken) try { window.localStorage.setItem(kpiZuKey(), zu ? "yes" : "no"); } catch(e){}
+      root.setAttribute("data-sum-zu", zu ? "yes" : "no");
+      /* An die Seite: sie zeigt im Kopf den Knopf zum Wiedereinblenden, solange die Leiste zu ist. */
+      try { root.dispatchEvent(new CustomEvent("upt-sum-stand", { bubbles: true, detail: { zu: zu } })); } catch(e){}
     }
 
-    /* Solange die Tabelle beim ERSTEN Mal laedt: Skelett in alle drei Karten und sonst nichts.
-       Gibt true zurueck, wenn der Aufrufer aufhoeren soll. */
-    /* EINE STELLE fuer "gibt es mehr als einen Markt", und sie wird aus JEDEM Renderpfad
-       gerufen: Aufbau, Skelett und echtes Zeichnen. Der erste Anlauf entschied nur im echten
-       Zeichnen von kpiMarkets -- und das laeuft nicht, solange das Wartetor zu ist. Bei einem
-       Konto mit einem Markt stand die Karte deshalb waehrend des ganzen Ladens da, und wenn
-       danach kein Markt-Ereignis mehr kam, blieb sie stehen. Zweimal gemeldet. */
-    function marktKarte(){
-      var karte = kpiZeile ? kpiZeile.querySelector(".upt-kpi-markets") : null;
-      if (!karte) return;
-      var eigene = [];
-      try { eigene = (UC.getMarkets ? UC.getMarkets() : []) || []; } catch(e){}
-      karte.hidden = eigene.length < 2;
+    function kpiTeil(kl, teil){ return kpiZeile ? kpiZeile.querySelector("." + kl + " " + teil) : null; }
+    function kpiZahl(kl, n, wort){
+      var z = kpiTeil(kl, ".up-dk-zahl-n"), w = kpiTeil(kl, ".upt-sum-wort");
+      if (z) z.textContent = n;
+      if (w) w.textContent = wort;
     }
-    /* EIN Schalter fuer alle drei Karten, bei JEDEM Ladevorgang -- nicht nur beim ersten.
-       Dasselbe Muster wie Miras Chatliste im power-dashboard: dort entscheidet eine Zeile
-       (state.loading || !state.overview) fuer die ganze Liste, und niemals steht ein Eintrag
-       im Ladezustand und der daneben nicht.
-       state.hasData ist das Signal, das die Tabelle selbst benutzt: es steht, sobald eine
-       Nutzlast angekommen ist -- auch eine leere und auch ein Lesefehler. Genau das ist
-       gemeint, nicht "es sind Zeilen da".
-       WAS DAMIT AUFGEGEBEN WIRD, ausdruecklich: bis zum 23.09. blieben die Karten bei jedem
-       SPAETEREN Laden (Filter, Seitenwechsel) stehen, weil sie an eigenen Ablagen haengen und
-       nicht an der Tabellenabfrage. Das war richtig gedacht und sah trotzdem falsch aus, sobald
-       die Ablagen ungleich feuerten. Gleichlauf schlaegt Standfestigkeit. */
-    /* WORTGLEICH DER AUSDRUCK DER TABELLE. renderTable() zeigt sein Skelett bei
-       "isBusy() ODER !state.hasData" (siehe den Kommentar am Anfangswert von extLoading) -- wer
-       mit der Tabelle gleichlaufen will, nimmt denselben Ausdruck und keinen aehnlichen.
-       state.loading allein reichte NICHT und das war beim ersten Versuch am 23.09. der Fehler:
-       setPromptsTableLoading, also der Weg, auf dem Bubble "loading yes" schickt, setzt
-       state.extLoading -- nicht state.loading. Gemessen: die Tabelle ging in ihre 15
-       Skelettzeilen, die drei Karten blieben auf ihren Daten stehen. isBusy() deckt beide. */
     function kpiWartend(){ return !state.hasData || isBusy(); }
-    /* Das Skelett setzen, aber nur wenn es nicht schon steht -- siehe kpiSkelettSteht. */
     function kpiSkeletteEinmal(){
       if (kpiSkelettSteht) return;
       kpiSkelettSteht = true;
-      kpiSkelette();
+      kpiSig = { t: null, m: null, q: null };
+      ["upt-sum-topics", "upt-sum-markets", "upt-sum-quota"].forEach(function(kl){
+        kpiZahl(kl, "", "");
+        var inh = kpiTeil(kl, ".upt-sum-inhalt");
+        if (inh) inh.innerHTML = '<span class="up-sk-lbl upt-sum-sk-zahl"></span><span class="up-sk-lbl upt-sum-sk-balken"></span>';
+      });
+      marktTeil();
     }
-    function kpiSkelette(){
-      /* Signatur loeschen: nach einem Skelett MUSS das naechste Zeichnen laufen, auch wenn die
-         Daten dieselben sind wie beim letzten echten Zeichnen. EINFAHREN muss es deshalb nicht --
-         das entscheidet kpiGezeigt(). */
-      kpiBarsSig = null; kpiRingSig = null; kpiQuotaSig = null;
-      if (kpiBars) kpiBars.skeleton(5);
-      if (kpiRing) kpiRing.skeleton();
-      var qk = kpiTeil("upt-kpi-quota", "body");
-      if (qk) qk.innerHTML = quotaSkelett();
-      kpiFuss("upt-kpi-topics", "", ""); kpiFuss("upt-kpi-markets", "", "");
-      kpiFuss("upt-kpi-quota", "", "");
-      var n1 = kpiTeil("upt-kpi-topics", "note"), n2 = kpiTeil("upt-kpi-markets", "note"),
-          n3 = kpiTeil("upt-kpi-quota", "note");
-      if (n1) n1.textContent = ""; if (n2) n2.textContent = ""; if (n3) n3.textContent = "";
-      marktKarte();                       /* im Skelett gilt dieselbe Regel */
-    }
-    /* Die zwei Kits werden VOR dem Wartetor gebaut, nicht erst beim ersten echten Zeichnen.
-       Sonst hat kpiSkelette() nichts, womit es zeichnen koennte: gemessen als leere Topics- und
-       Markets-Karte im Ladezustand, waehrend das Kontingent (eigenes Markup) sein Skelett zeigte.
-       Beide Aufbauten sind unveraendert hierher gezogen -- der Koerper ist derselbe. */
-    function kpiKits(){
-      var kTop = kpiTeil("upt-kpi-topics", "body");
-      var kMar = kpiTeil("upt-kpi-markets", "body");
-      if (!kpiBars && kTop){
-        var koerper = kTop;
-        kpiBars = UC.makeBarList({
-          mount: koerper,
-          isDark: function(){ return isDark; },
-          labelCol: function(){ return true; },       /* Beschriftung links, Balken rechts */
-          /* Der Zaehler bekommt eine EIGENE Spalte hinter der Balkenspur. Der erste Anlauf
-             nahm pctOutside -- das setzt den Wert absolut IN die Spur, 16px hinter dem
-             Balkenende, und genau das las der Nutzer als "immer noch im bar selber". Mit der
-             Spalte endet die Spur davor und alle Zahlen stehen untereinander. Die 16px Abstand
-             kommen jetzt aus dem Zeilenabstand in prompts-table.css. */
-          pctCol: 34,
-          fmt: function(v){ return UC.fmtTotal(toNum(v) || 0); }   /* ganze Zahl, kein Prozent */
-        });
-      }
-      if (!kpiRing && kMar){
-        var koerper2 = kMar;
-        kpiRing = UC.makeTypeChart({
-          body: koerper2,
-          isDark: function(){ return isDark; },
-          mode: "donut",
-          /* Ohne Zaehler in der Mitte -- die CSS blendet .up-donut-center aus, total() muss aber
-             etwas liefern, weil makeTypeChart es ruft. */
-          total: function(){ return 0; },
-          decimals: 0,
-          /* Flagge vor den Namen. UC.flagHtml baut ein span mit Bild UND Rueckfallbuchstaben --
-             darum ueber legendPrefix und nicht ueber it.logo, das eine URL erwartet. */
-          legendPrefix: function(it){ return it.alpha2 ? UC.flagHtml(it.alpha2) : ""; },
-          ringPx: 10,          /* 15 Prozent duenner als 12 -- so gemeldet (12 x 0,85 = 10,2) */
-          /* NIE umklappen. GEMESSEN auf der Seite des Nutzers: mit 240 klappte die Karte um --
-             ihr Koerper ist schmaler als das --, und im umgeklappten Modus wird der Ring 220px
-             gross und die Legende wandert UNTER ihn. Genau das war die Meldung "das Chart ist viel
-             zu gross und die Legende rechts fehlt". Hier ist Ring links und Legende rechts
-             ausdruecklich gewuenscht, in jeder Breite: der Ring nimmt 37 Prozent, die Legende den
-             Rest, das traegt auch bei 190px Kartenbreite. */
-          collapseAt: 0
-        });
-      }
-    }
-    /* Laeuft am Ende von render() und damit in BEIDE Richtungen (23.09.): faengt ein Ladevorgang
-       an, gehen alle drei Karten zusammen ins Skelett; ist er vorbei, kommen alle drei zusammen
-       zurueck. Vorher ging es nur einmal und nur heraus. */
+    /* Laeuft am Ende von render(): beginnt ein Ladevorgang, gehen alle drei Teile ins Skelett, ist
+       er vorbei, kommen alle drei zusammen zurueck -- nie steht einer fertig neben einem ladenden. */
     function kpiNachziehen(){
       if (!kpiZeile) return;
       if (kpiWartend()){ kpiSkeletteEinmal(); return; }
-      if (!kpiSkelettSteht) return;              /* schon gezeichnet, nichts zu tun */
+      if (!kpiSkelettSteht) return;
       kpiSkelettSteht = false;
       kpiTopics(kpiRohTopics != null ? kpiRohTopics : (UC.getTopics ? UC.getTopics() : []));
       kpiMarkets(kpiRohMarkets != null ? kpiRohMarkets : (UC.getMarkets ? UC.getMarkets() : []));
       kpiQuota(kpiRohQuota != null ? kpiRohQuota : (UC.getQuota ? UC.getQuota() : null));
     }
-    function kpiTeil(kl, teil){
-      return kpiZeile ? kpiZeile.querySelector("." + kl + " .upt-kpi-" + teil) : null;
+    /* Die Maerkte nur ab zwei eigenen (UC.getMarkets, nicht die Liste aller Maerkte) -- aus jedem
+       Pfad gerufen, auch im Skelett, sonst stuende der Teil bei einem Markt waehrend des Ladens da. */
+    function marktTeil(){
+      var t = kpiZeile ? kpiZeile.querySelector(".upt-sum-markets") : null;
+      if (!t) return;
+      var eigene = [];
+      try { eigene = (UC.getMarkets ? UC.getMarkets() : []) || []; } catch(e){}
+      t.hidden = eigene.length < 2;
     }
-    /* Wie viele Zeilen in eine Karte passen: Koerperhoehe geteilt durch die Zeilenhoehe.
-       DIE 22 WAREN FALSCH. Sie standen fuer "16px Balken + 2x3px Polster" -- aber nicht der
-       Balken bestimmt die Hoehe der Zeile, sondern die hoechste Spalte, und das ist die
-       PROZENTSPALTE: 13px Schrift auf 1.5 sind 19,5px Zeilenfeld. Macht 19,5 + 2x3 = 25,5.
-       Gemessen am 22.09. Folge: kpiPlatz gab 7 zurueck, wo sechs Zeilen hinpassten, die Liste
-       war 178,5px hoch in einem 155,5px hohen Koerper -- und weil der Koerper seinen Inhalt
-       ZENTRIERT, wurden oben UND unten je 11,5px abgeschnitten. Genau so gemeldet.
-       Die Karte hat beim Verkleinern der Balkenliste alles mitgezogen (32 -> 16 Balken,
-       Radius 8 -> 4, Polster 10 -> 5, Abstand 8 -> 4, Zeilenpolster 5 -> 3), nur die
-       Textspalten nicht -- deshalb passt die Rechnung "Balken + Polster" hier nicht. */
-    var KPI_ZEILE_PX = 25.5;
-    /* Gemessen schlaegt gerechnet: steht schon eine Zeile im Baum, gilt IHRE Hoehe. Damit
-       ueberlebt die Rechnung jede spaetere Aenderung an Schriftgroesse, Zeilenhoehe oder
-       Polsterung, ohne dass jemand die Konstante nachzieht. */
-    function kpiZeilenHoehe(){
-      var zeile = kpiZeile && kpiZeile.querySelector(".upt-kpi-topics .up-bar-row");
-      var h = zeile ? zeile.getBoundingClientRect().height : 0;
-      return h > 8 ? h : KPI_ZEILE_PX;
+    /* Der Anteilsbalken: je Eintrag ein Stueck in seiner Farbe, Breite = Anteil an der Summe; was
+       nach den gezeigten kommt, steht als ein graues Stueck dahinter. Tooltip je Stueck: Name und Zahl. */
+    function balkenHtml(teile, rest, summe){
+      if (!(summe > 0)) return "";
+      var h = teile.map(function(x){
+        return '<span class="upt-sum-stueck" style="flex-grow:' + x.n + ';background:' + esc(x.farbe) + '" data-tip="' +
+          esc(x.name + ": " + UC.fmtTotal(x.n)) + '"></span>';
+      }).join("");
+      if (rest > 0) h += '<span class="upt-sum-stueck is-rest" style="flex-grow:' + rest + '"></span>';
+      return '<span class="upt-sum-balken">' + h + '</span>';
     }
-    function kpiPlatz(){
-      var koerper = kpiTeil("upt-kpi-topics", "body");
-      if (!koerper) return 6;
-      var h = koerper.clientHeight;
-      return Math.max(3, Math.min(9, Math.floor((h || 176) / kpiZeilenHoehe())));
+    function eintragHtml(farbeOderChip, name, wert, istChip){
+      return '<span class="upt-sum-eintrag">' +
+        (istChip ? farbeOderChip : '<span class="upt-sum-strich" style="background:' + esc(farbeOderChip) + '"></span>' +
+          '<span class="upt-sum-name">' + esc(name) + '</span>') +
+        '<span class="upt-sum-wert">' + esc(wert) + '</span></span>';
     }
+    var KPI_ZEIGEN = 3;
+    /* GANZE EINTRAEGE ODER KEINE (gemessen bei 1000px: "SUV 33" stand halb da, weil der erste Eintrag
+       einer umbrechenden Zeile nie in die zweite rutscht). Was nicht ganz in die sichtbare Zeile
+       passt, geht weg -- von hinten, bis der Rest passt. Nach jedem Zeichnen und bei jeder Breite. */
+    function legendeEinpassen(){
+      if (!kpiZeile) return;
+      Array.prototype.forEach.call(kpiZeile.querySelectorAll(".upt-sum-legende"), function(leg){
+        var kinder = Array.prototype.slice.call(leg.children);
+        kinder.forEach(function(k){ k.classList.remove("is-weg"); });
+        if (!leg.clientWidth) return;
+        var lr = leg.getBoundingClientRect();
+        for (var i = kinder.length - 1; i >= 0; i--){
+          var r = kinder[i].getBoundingClientRect();
+          if (r.right > lr.right + 0.5 || r.top >= lr.bottom - 1) kinder[i].classList.add("is-weg");
+        }
+      });
+    }
+    if (UC.onResize) UC.onResize(root, legendeEinpassen);
 
     function kpiTopics(rows){
-      var koerper = kpiTeil("upt-kpi-topics", "body");
-      if (!koerper) return;
-      kpiRohTopics = rows;                  /* fuer den Nachzug, wenn die Tabelle fertig ist */
-      kpiKits();
+      kpiRohTopics = rows;
+      if (!kpiZeile) return;
       if (kpiWartend()){ kpiSkeletteEinmal(); return; }
       var liste = Array.isArray(rows) ? rows.filter(Boolean) : [];
-      /* toNum und nicht Number: ein fehlender Zaehler ist null, nicht NaN -- sonst sortiert NaN
-         die Liste durcheinander und "NaN" stuende in der Karte. */
       var mitZahl = liste.map(function(t){
-        return { key: String(t.id == null ? (t.name || "") : t.id),
-                 name: String(t.name == null ? "" : t.name),
-                 color: t.hex_light || t.hex_dark || "#3b82f6",
-                 share: toNum(t.prompt_count) };
-      }).filter(function(x){ return x.share != null && x.share > 0; });
-      mitZahl.sort(function(a, b){ return b.share - a.share || a.name.localeCompare(b.name); });
-
-      var note = kpiTeil("upt-kpi-topics", "note");
-      if (note) note.textContent = liste.length
-        ? UC.t("{n} topics").replace("{n}", UC.fmtTotal(liste.length)) : "";
-
-      if (!liste.length){
-        /* Noch nichts da: das Skelett DER BALKENLISTE, nicht ein eigenes. Ein LEERER
-           Themenspeicher heisst "noch nicht geladen", nicht "keine Themen" --
-           setUpstreemTopics kommt beim Seitenaufbau, oft nach uns. */
-        kpiBarsSig = null;
-        kpiBars.skeleton(5);
-        kpiFuss("upt-kpi-topics", "", "");
-        return;
-      }
-      var platz = kpiPlatz();
-      kpiLetzteTopics = mitZahl;
-      /* Den TATSAECHLICH benutzten Platz merken und nicht in der Fusszeile neu rechnen: die
-         Kartenhoehe kann sich zwischen Zeichnen und Fusszeile geaendert haben (schmale Ansicht),
-         und dann stand "+2 weitere" unter sieben von acht gezeigten Balken. So gemessen. */
-      kpiLetztePlatz = platz;
-      /* Unveraenderte Daten werden NICHT neu gezeichnet. makeBarList laesst die Balken bei jedem
-         render() einfahren, und der Themenspeicher wird auf dieser Seite mehrfach beschickt
-         (die Prompts-Seite haelt viele Kopien derselben Wurzel, ein Setter trifft alle). Sichtbar
-         war das als zwei Einfahr-Animationen hintereinander -- so gemeldet am 03.09.
-         Verglichen wird der fertige, sortierte Auszug samt Platz: sonst bliebe eine Aenderung der
-         Kartenhoehe (schmale Ansicht) unbemerkt. */
-      function auszug(n){
-        var z = mitZahl.slice(0, n);
-        return { zeigen: z, sig: n + "|" + z.map(function(x){
-          return x.key + ":" + x.share + ":" + x.color; }).join(",") };
-      }
-      var a = auszug(platz);
-      if (a.sig !== kpiBarsSig){
-        kpiBarsSig = a.sig;
-        var fahrt = kpiGezeigt().bars !== a.sig;
-        kpiGezeigt().bars = a.sig;
-        kpiBars.render(a.zeigen, { ohneFahrt: !fahrt });
-        /* NACHRECHNEN. Beim allerersten Zeichnen steht noch keine Zeile im Baum, an der sich
-           messen liesse -- da gilt die Konstante. Jetzt steht eine da: passt die gemessene
-           Zeilenhoehe nicht zur Annahme, EINMAL kuerzer zeichnen. Ohne das haette ein
-           kuenftiger Griff an die Schriftgroesse dasselbe Abschneiden wieder zur Folge, nur
-           ohne Meldung. Nur nach unten: ein zu kurzer Auszug steht im Fuss als "+N more". */
-        var echterPlatz = kpiPlatz();
-        if (echterPlatz < platz){
-          platz = echterPlatz;
-          kpiLetztePlatz = platz;
-          a = auszug(platz);
-          kpiBarsSig = a.sig;
-          kpiGezeigt().bars = a.sig;
-          kpiBars.render(a.zeigen, { ohneFahrt: !fahrt });
-        }
-      }
-      kpiTopicsFuss();
-
+        return { key: String(t.id == null ? (t.name || "") : t.id), name: String(t.name == null ? "" : t.name),
+                 farbe: (isDark ? (t.hex_dark || t.hex_light) : (t.hex_light || t.hex_dark)) || "#3b82f6",
+                 n: toNum(t.prompt_count) };
+      }).filter(function(x){ return x.n != null && x.n > 0; });
+      mitZahl.sort(function(a, b){ return b.n - a.n || a.name.localeCompare(b.name); });
+      var sig = (isDark ? "d|" : "h|") + liste.length + "|" + mitZahl.map(function(x){ return x.key + ":" + x.n + ":" + x.farbe; }).join(",");
+      if (sig === kpiSig.t) return;
+      kpiSig.t = sig;
+      kpiZahl("upt-sum-topics", liste.length ? UC.fmtTotal(liste.length) : "", liste.length ? UC.t(liste.length === 1 ? "topic" : "topics") : "");
+      var inh = kpiTeil("upt-sum-topics", ".upt-sum-inhalt");
+      if (!inh) return;
+      /* Ein LEERER Themenspeicher heisst "noch nicht geladen" (setUpstreemTopics kommt oft nach
+         uns): dann das Skelett des Teils statt "0 topics". */
+      if (!liste.length){ inh.innerHTML = '<span class="up-sk-lbl upt-sum-sk-zahl"></span><span class="up-sk-lbl upt-sum-sk-balken"></span>'; return; }
+      var summe = 0; mitZahl.forEach(function(x){ summe += x.n; });
+      var zeigen = mitZahl.slice(0, KPI_ZEIGEN), rest = 0;
+      mitZahl.slice(KPI_ZEIGEN).forEach(function(x){ rest += x.n; });
+      var weitere = mitZahl.length - zeigen.length;
+      inh.innerHTML = balkenHtml(zeigen, rest, summe) +
+        '<span class="upt-sum-legende">' + zeigen.map(function(x){ return eintragHtml(x.farbe, x.name, UC.fmtTotal(x.n)); }).join("") +
+          (weitere > 0 ? '<span class="upt-sum-mehr">' + esc(UC.t("+{n} more").replace("{n}", UC.fmtTotal(weitere))) + '</span>' : '') +
+        '</span>';
+      legendeEinpassen();
     }
-    /* Die Fusszeile GETRENNT, weil sie an einer Zahl haengt, die spaeter kommt als die Themen:
-       state.totalCount steht erst, wenn Bubble die Zeilen geschickt hat, und die Themen sind
-       meist vorher da. render() zieht sie deshalb nach -- ohne die Balken neu zu bauen, denn die
-       haengen nur an den Themen. Genau so gemessen: die Zeile blieb leer, obwohl zehn Prompts
-       kein Thema hatten. */
-    var kpiLetzteTopics = null, kpiLetztePlatz = 0, kpiBarsSig = null, kpiRingSig = null, kpiQuotaSig = null;
-    /* WAS JEDE KARTE SCHON EINMAL GEZEIGT HAT, je Instanz am FENSTER (29.09. spaet). Gemeldet:
-       "beim ersten Pageload zwei direkt aufeinanderfolgende Appear-Animationen". Gemessen mit
-       HEAD: jede Ladephase (Skelett, dann dieselben Daten), jeder Neubau der Wurzel durch Bubble
-       und jede zweite Markt-Nutzlast liess Balken und Ring ein zweites Mal einfahren -- die
-       Signaturen oben sitzen an der Wurzel und werden vom Skelett geloescht. Diese hier nicht:
-       sie beantworten nur "ist das neu", und nur Neues faehrt ein. Dasselbe noch einmal steht
-       sofort da. */
-    function kpiGezeigt(){
-      var w = (window.__uptKpiGezeigt = window.__uptKpiGezeigt || {});
-      return (w[instanceId] = w[instanceId] || {});
-    }
-    function kpiTopicsFuss(){
-      if (!kpiLetzteTopics) return;
-      var rest = kpiLetzteTopics.length - kpiLetztePlatz;
-      var links = rest > 0 ? UC.t("+{n} more").replace("{n}", UC.fmtTotal(rest)) : "";
-      /* Wie viele Prompts kein Thema haben, steht in keinem Speicher: es ist die Gesamtzahl der
-         Prompts minus der Summe aller Themenzaehler. Ohne belegte Gesamtzahl wird die Angabe
-         WEGGELASSEN und nicht geschaetzt -- eine falsche Zahl ist schlimmer als keine. */
-      var summe = 0;
-      for (var i = 0; i < kpiLetzteTopics.length; i++) summe += kpiLetzteTopics[i].share;
-      /* Die Zahl der Prompts OHNE Thema kann diese Komponente nicht zuverlaessig rechnen: ein
-         Prompt kann MEHRERE Themen tragen, also ist die Summe aller Themenzaehler regelmaessig
-         GROESSER als die Gesamtzahl der Prompts. Genau daran ist der erste Anlauf gescheitert --
-         die Bedingung "gesamt >= summe" traf nie zu und die Angabe fiel still weg.
-         Deshalb kommt sie jetzt aus der Nutzlast (without_topic in renderPromptsTable). Nur wenn
-         sie fehlt UND die Summe kleiner als die Gesamtzahl ist, wird sie gerechnet -- das ist der
-         Fall, in dem jeder Prompt hoechstens ein Thema hat. Sonst bleibt sie WEG: eine falsche
-         Zahl ist schlimmer als keine. */
-      var ohne = toNum(state.ohneTopic);
-      if (ohne == null){
-        var gesamt = currentTotal();
-        ohne = (gesamt != null && gesamt >= summe) ? (gesamt - summe) : null;
-      }
-      var rechts = ohne != null && ohne > 0
-        ? UC.t("{n} without topic").replace("{n}", UC.fmtTotal(ohne)) : "";
-      kpiFuss("upt-kpi-topics", links, rechts);
-    }
+    /* Bleibt fuer render() (die Fusszeile der alten Karte hing an der Gesamtzahl): die Leiste
+       braucht sie nicht mehr, der Aufruf dort kostet so nichts. */
+    function kpiTopicsFuss(){}
 
     function kpiMarkets(rows){
       kpiRohMarkets = rows;
-      kpiKits();
+      if (!kpiZeile) return;
+      marktTeil();
       if (kpiWartend()){ kpiSkeletteEinmal(); return; }
-      var koerper = kpiTeil("upt-kpi-markets", "body");
-      if (!koerper) return;
       var liste = Array.isArray(rows) ? rows.filter(Boolean) : [];
-      /* alpha2 ist die Identitaet eines Marktes -- so steht es in markets-filter, und alpha3 ist
-         dort nur der Rueckfall fuer eine Nutzlast, die ihn mitschickt. Die Legende zeigt genau
-         das: Flagge, Alpha-2, Prozentwert. Der volle Name steht im Tooltip des Rings. */
       var mitZahl = liste.map(function(m){
         var a2 = String((m && (m.alpha2 || m.alpha3 || m.code)) || "").toUpperCase();
-        return { key: a2 || String(m.id == null ? (m.name || "") : m.id),
-                 alpha2: a2,
-                 name: a2 || String(m.name == null ? "" : m.name),
-                 voll: String(m.name == null ? a2 : m.name),
-                 anzahl: toNum(m.prompt_count) };
-      }).filter(function(x){ return x.anzahl != null && x.anzahl > 0; });
-      mitZahl.sort(function(a, b){ return b.anzahl - a.anzahl || a.name.localeCompare(b.name); });
-      /* NUR EIN MARKT: die Karte faellt weg, angefordert am 07.09. Ein Ring mit einem einzigen
-         Segment sagt "100% Deutschland" -- das ist keine Verteilung, sondern eine Tautologie, und
-         sie kostet ein Drittel der Zeile. Die Karte wird ausgeblendet und nicht entfernt: kommt
-         spaeter ein zweiter Markt dazu -- beim Wechsel des Teams etwa --, ist sie sofort wieder
-         da, ohne Neuaufbau der Zeile.
-
-         GEZAEHLT WIRD DER STORE, NICHT DIE ZEILEN MIT PROMPTS. Der erste Anlauf nahm mitZahl --
-         das sind die Maerkte MIT Prompts, und bei einem frisch angelegten zweiten Markt ohne
-         Prompts waere die Karte verschwunden, obwohl es zwei Maerkte gibt. Ausdruecklich so
-         angefordert: "der soll einfach in setUpstreemMarkets reinschauen, da wo nicht die
-         Fulllist drin ist". Genau das ist UC.getMarkets() -- getAllMarkets() waere die volle
-         Liste aller existierenden Maerkte, die ist hier nicht gemeint. */
-      marktKarte();
-      /* renderDonut nimmt "share" fuer den Ring UND fuer die Legende (dort durch fmtPct), es muss
-         also der PROZENTWERT sein und nicht die Anzahl -- sonst stuende "29 %" fuer 29 Prompts in
-         der Legende. Genauigkeit 0, wie fuer jeden Doughnut der App festgelegt (CLAUDE.md §2b). */
-      var summeM = 0;
-      for (var mi = 0; mi < mitZahl.length; mi++) summeM += mitZahl[mi].anzahl;
-      mitZahl.forEach(function(x){ x.share = summeM > 0 ? (x.anzahl / summeM) * 100 : 0; });
-      /* Farbe NACH der Sortierung: der groesste Markt bekommt den staerksten Ton. */
-      mitZahl.forEach(function(x, i){ x.color = UC.marktFarbe(i); });
-
-      var note = kpiTeil("upt-kpi-markets", "note");
-      if (note) note.textContent = liste.length
-        ? UC.t("{n} markets").replace("{n}", UC.fmtTotal(liste.length)) : "";
-
-      if (!liste.length){ kpiRingSig = null; kpiRing.skeleton(); return; }
-      /* Dieselben Maerkte noch einmal: nichts tun. Ohne diese Sperre baute jede weitere
-         Markt-Nutzlast den Ring neu, samt Einblendung (gemessen: zwei Nutzlasten, zwei Ringe). */
-      var sigM = mitZahl.map(function(x){ return x.key + ":" + x.anzahl + ":" + x.color; }).join(",");
-      if (sigM === kpiRingSig) return;
-      kpiRingSig = sigM;
-      var fahrtM = kpiGezeigt().ring !== sigM;
-      kpiGezeigt().ring = sigM;
-      kpiRing.renderDonut(mitZahl, { ohneFahrt: !fahrtM });
-    }
-
-    /* ---- Das Skelett der Kontingent-Karte (07.09. angefordert) ----
-       Hier stand `<div class="up-bars-sk">` mit zwei LEEREN Zeilen -- und das ist nichts: die
-       Balkenspur ist .up-bar-sk-track, ein Kind, das makeBarList setzt und das hier nie jemand
-       geschrieben hat. Die Karte zeigte also waehrend des ganzen Ladens einen leeren Kasten,
-       waehrend ihre beiden Nachbarn schimmerten. So gemeldet.
-       Diese Karte hat ihr eigenes Markup (Zahl, Nenner, Balken), also braucht sie ihr eigenes
-       Skelett -- in DERSELBEN Geometrie, damit beim Umschalten nichts springt: der Zahlenblock
-       behaelt seine 38px Zeilenhoehe, der Balken seine 8px unter 16px Abstand. Der Schimmer ist
-       der geteilte aus core (.up-sk-lbl), nicht ein zweiter. */
-    function quotaSkelett(){
-      return '<div class="upt-kpi-quota-sk">' +
-        '<div class="upt-kpi-quota-num">' +
-          '<span class="up-sk-lbl upt-sk-used"></span>' +
-          '<span class="up-sk-lbl upt-sk-total"></span>' +
-        '</div>' +
-        '<span class="up-sk-lbl upt-sk-bar"></span>' +
-      '</div>';
+        return { key: a2, a2: a2, n: toNum(m.prompt_count) };
+      }).filter(function(x){ return x.a2 && x.n != null && x.n > 0; });
+      mitZahl.sort(function(a, b){ return b.n - a.n || a.a2.localeCompare(b.a2); });
+      var sig = liste.length + "|" + mitZahl.map(function(x){ return x.key + ":" + x.n; }).join(",");
+      if (sig === kpiSig.m) return;
+      kpiSig.m = sig;
+      kpiZahl("upt-sum-markets", liste.length ? UC.fmtTotal(liste.length) : "", liste.length ? UC.t(liste.length === 1 ? "market" : "markets") : "");
+      var inh = kpiTeil("upt-sum-markets", ".upt-sum-inhalt");
+      if (!inh) return;
+      var summe = 0; mitZahl.forEach(function(x){ summe += x.n; });
+      var zeigen = mitZahl.slice(0, KPI_ZEIGEN), weitere = mitZahl.length - zeigen.length;
+      /* Prozent ohne Nachkommastelle wie jeder Doughnut der App (CLAUDE.md 2b). */
+      inh.innerHTML = '<span class="upt-sum-legende">' + zeigen.map(function(x){
+          return eintragHtml(UC.marketChip ? UC.marketChip(x.a2) : esc(x.a2), "", UC.fmtPct ? UC.fmtPct(summe > 0 ? x.n / summe * 100 : 0) : "", true);
+        }).join("") +
+        (weitere > 0 ? '<span class="upt-sum-mehr">' + esc(UC.t("+{n} more").replace("{n}", UC.fmtTotal(weitere))) + '</span>' : '') +
+        '</span>';
+      legendeEinpassen();
     }
 
     function kpiQuota(q){
       kpiRohQuota = q;
-      kpiKits();
+      if (!kpiZeile) return;
       if (kpiWartend()){ kpiSkeletteEinmal(); return; }
-      var koerper = kpiTeil("upt-kpi-quota", "body");
-      var karte = kpiZeile ? kpiZeile.querySelector(".upt-kpi-quota") : null;
-      if (!koerper || !karte) return;
-      var note = kpiTeil("upt-kpi-quota", "note");
-      /* toNum, nicht Number: parseLoose macht aus einem leeren Bubble-Wert null, und "null / 150"
-         darf hier nicht stehen (siehe der Kommentar an setQuota in core). */
-      var genutzt = q ? toNum(q.used) : null;
-      var kontingent = q ? toNum(q.total) : null;
-
-      if (note) note.textContent = (q && q.plan)
-        ? UC.t("Plan {name}").replace("{name}", String(q.plan)) : "";
-
-      /* Reihenfolge nach §2: Fehlerzustand VOR dem Skelett. Ein Payload, der da war, aber keine
-         Zahlen trug, ist etwas anderes als "noch nichts da" -- sonst sieht endloses Laden aus wie
-         "gleich da". */
-      /* Dasselbe Kontingent noch einmal: nichts tun -- wie beim Ring (kpiRingSig). */
-      var sigQ = q ? [genutzt, kontingent, q.plan || ""].join("|") : null;
-      if (sigQ != null && sigQ === kpiQuotaSig) return;
-      kpiQuotaSig = sigQ;
+      var genutzt = q ? toNum(q.used) : null, kontingent = q ? toNum(q.total) : null;
+      var sig = q ? [genutzt, kontingent, q.plan || ""].join("|") : "leer";
+      if (sig === kpiSig.q) return;
+      kpiSig.q = sig;
+      var teil = kpiZeile.querySelector(".upt-sum-quota"), inh = kpiTeil("upt-sum-quota", ".upt-sum-inhalt");
+      if (!teil || !inh) return;
+      /* Fehler VOR dem Skelett (CLAUDE.md 2): da, aber ohne Zahlen, ist etwas anderes als "noch nichts". */
       if (q && (genutzt == null || kontingent == null || kontingent <= 0)){
-        koerper.innerHTML = '<div class="up-chart-empty">' +
-          esc(UC.t("The allowance could not be read.")) + '</div>';
-        kpiFuss("upt-kpi-quota", "", "");
-        karte.classList.remove("is-over");
+        kpiZahl("upt-sum-quota", "", "");
+        inh.innerHTML = '<span class="upt-sum-fehler">' + esc(UC.t("The allowance could not be read.")) + '</span>';
+        teil.classList.remove("is-over");
         return;
       }
       if (!q){
-        koerper.innerHTML = quotaSkelett();
-        kpiFuss("upt-kpi-quota", "", "");
+        kpiZahl("upt-sum-quota", "", "");
+        inh.innerHTML = '<span class="up-sk-lbl upt-sum-sk-zahl"></span><span class="up-sk-lbl upt-sum-sk-balken"></span>';
         return;
       }
       var anteil = Math.max(0, Math.min(100, (genutzt / kontingent) * 100));
-      /* Schon einmal gezeigt: der Balken kommt gleich mit seiner Breite, ohne Fahrt. */
-      var fahrtQ = kpiGezeigt().quota !== sigQ;
-      kpiGezeigt().quota = sigQ;
-      koerper.innerHTML =
-        '<div class="upt-kpi-quota-num">' +
-          '<span class="upt-kpi-quota-used">' + esc(UC.fmtTotal(genutzt)) + '</span>' +
-          '<span class="upt-kpi-quota-total">/ ' + esc(UC.fmtTotal(kontingent)) + '</span>' +
-        '</div>' +
-        '<div class="upt-kpi-quota-bar"><div class="upt-kpi-quota-fill"' +
-          (fahrtQ ? '' : ' style="width:' + anteil + '%"') + '></div></div>';
-      karte.classList.toggle("is-over", genutzt > kontingent);
-      /* Die Breite im naechsten Bild, damit die Fahrt sichtbar ist -- ein Wert, der zugleich mit
-         dem Element kommt, springt ohne Uebergang. BEIDE Wege, nicht nur rAF: in einem verdeckten
-         Tab feuert rAF nie, und dann stuende der Balken fuer immer auf 0. Im Harness genau so
-         gemessen (leere Breite). Der zweite Anlauf setzt denselben Wert, das kostet nichts. */
-      var fill = fahrtQ ? koerper.querySelector(".upt-kpi-quota-fill") : null;
-      if (fill){
-        var setzeBreite = function(){ fill.style.width = anteil + "%"; };
-        if (window.requestAnimationFrame) window.requestAnimationFrame(setzeBreite);
-        setTimeout(setzeBreite, 24);
-      }
-      kpiFuss("upt-kpi-quota",
-        UC.t("{n} used").replace("{n}", Math.round(anteil) + " %"),
-        UC.t("{n} left").replace("{n}", UC.fmtTotal(Math.max(0, kontingent - genutzt))));
-    }
-
-    function kpiFuss(kl, links, rechts){
-      var l = kpiZeile ? kpiZeile.querySelector("." + kl + " .upt-kpi-foot-left") : null;
-      var r = kpiZeile ? kpiZeile.querySelector("." + kl + " .upt-kpi-foot-right") : null;
-      if (l) l.textContent = links || "";
-      if (r) r.textContent = rechts || "";
+      kpiZahl("upt-sum-quota", UC.fmtTotal(genutzt), UC.t("of {n} prompts").replace("{n}", UC.fmtTotal(kontingent)));
+      var tip = (q.plan ? UC.t("Plan {name}").replace("{name}", String(q.plan)) + ": " : "") +
+        UC.t("{n} left").replace("{n}", UC.fmtTotal(Math.max(0, kontingent - genutzt)));
+      inh.innerHTML = '<span class="upt-sum-meter" data-tip="' + esc(tip) + '"><span class="upt-sum-meter-fill" style="width:' + anteil + '%"></span></span>';
+      teil.classList.toggle("is-over", genutzt > kontingent);
     }
     kpiBauen();
 
