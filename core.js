@@ -4372,11 +4372,46 @@
       }
       return out.replace(/,\s*([}\]])/g, "$1");            // trailing comma before a closer
     }
+    /* KEIN eval MEHR (14.10., Sicherheitspruefung: "hoch"). Hier stand eval("(" + lesen() + ")") --
+       und was lesen() nicht zu gueltigem JSON reparierte, wurde als Programm ausgefuehrt. Gemessen:
+       ein Feldwert wie  "Text mit "Zitat"}, melde(4), {"x":"y"  fuehrte melde(4) aus. Bei Sitzung und
+       Refresh-Token im localStorage heisst das: Kontouebernahme ueber ein Textfeld.
+       Was eval ueber JSON hinaus las, und was lesen() danach noch uebrig laesst, sind genau zwei
+       Dinge: NACKTE SCHLUESSEL ({ type: "Editorial" }, die Bubble-Vorlage der Top Citations) und
+       LUECKEN in Listen (",," aus leeren Eintraegen einer Bubble-Liste, die eval zu undefined
+       machte und die weiter unten ohnehin herausfallen). Beides uebersetzt jsonAusJs ausserhalb von
+       Zeichenketten; danach liest JSON.parse -- ein Parser, der nie etwas ausfuehrt. Alles andere,
+       was eval als JavaScript verstanden haette (Aufrufe, Ausdruecke), ist jetzt ein Lesefehler. */
+    function jsonAusJs(t){
+      var o = "", i = 0, m = t.length, imStr = false, vorher = "";
+      while (i < m){
+        var z = t.charAt(i);
+        if (imStr){
+          o += z;
+          if (z === "\\" && i + 1 < m){ o += t.charAt(i + 1); i += 2; continue; }
+          if (z === '"') imStr = false;
+          i++; continue;
+        }
+        if (z === '"'){ imStr = true; o += z; vorher = z; i++; continue; }
+        if (/\s/.test(z)){ o += z; i++; continue; }
+        /* Luecke: [ , oder , , oder , ] (das letzte raeumt lesen() schon ab) -> null dazwischen. */
+        if (z === "," && (vorher === "[" || vorher === ",")){ o += "null,"; vorher = ","; i++; continue; }
+        /* Nackter Schluessel: ein Bezeichner nach { oder , dem ein Doppelpunkt folgt. */
+        if ((vorher === "{" || vorher === ",") && /[A-Za-z_$]/.test(z)){
+          var w = /^[A-Za-z_$][\w$]*/.exec(t.slice(i))[0], j = i + w.length;
+          while (j < m && /\s/.test(t.charAt(j))) j++;
+          if (t.charAt(j) === ":"){ o += '"' + w + '"'; vorher = '"'; i += w.length; continue; }
+        }
+        o += z; vorher = z; i++;
+      }
+      return o;
+    }
+    function sicherLesen(){ return JSON.parse(jsonAusJs(lesen())); }
     var parsed;
-    try { parsed = eval("(" + lesen() + ")"); }
+    try { parsed = sicherLesen(); }
     catch(e){
       streng = false;
-      try { parsed = eval("(" + lesen() + ")"); }
+      try { parsed = sicherLesen(); }
       catch(e2){
         if (window.console) console.warn("[UpstreemCore] parseBubbleJson failed:", e.message + " / " + e2.message, raw);
         return [];
@@ -4386,10 +4421,10 @@
       try { return parseBubbleJson(parsed); } catch(e2){ return []; }
     }
     if (parsed && !Array.isArray(parsed) && typeof parsed === "object") return [parsed];
-    /* An empty item in a Bubble list emits `,,`, which eval turns into an ARRAY HOLE — the entry
-       reads back as undefined and every consumer here does `row.something` on it. Callers all
-       expect a list of records, so a hole is never meaningful data; drop it rather than hand out
-       a list that blows up on the first property access. */
+    /* An empty item in a Bubble list emits `,,`, which jsonAusJs turns into null (eval made it an
+       ARRAY HOLE) — every consumer here does `row.something` on it. Callers all expect a list of
+       records, so an empty entry is never meaningful data; drop it rather than hand out a list
+       that blows up on the first property access. */
     return Array.isArray(parsed) ? parsed.filter(function(x){ return x != null; }) : [];
   }
 
