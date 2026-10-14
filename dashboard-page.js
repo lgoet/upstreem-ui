@@ -279,6 +279,14 @@
     root.addEventListener("umf-models", function (e) { if (setzen("modelle", auswahl("modelle", e.detail, "model_keys"))) filterGeaendert(); });
     /* Intent-Filter der App (13.10.): gemeinsamer Stand in core, Ereignis am window. */
     window.addEventListener("up-intentfilter", function () { if (document.contains(root)) filterGeaendert(); });
+    /* Intent oder Branded geaendert (Live, 14.10.): die DB hat ihre Caches schon geleert, die Seite
+       holt still frisch, sobald die Aenderung ihre Zahlen treffen kann (core, onIntentDaten). */
+    if (UC.onIntentDaten) UC.onIntentDaten(function () {
+      function holen() { bedarf({ frisch: true, leise: true }); }
+      /* Geparkt (andere Ansicht offen): erst holen, wenn die Seite wieder zu sehen ist. */
+      if (UC.istSichtbar && !UC.istSichtbar(root) && UC.beiSicht) UC.beiSicht(root, "intentDaten", holen, null, { lang: true });
+      else holen();
+    }, root);
     root.addEventListener("umk-markets", function (e) { if (setzen("maerkte", auswahl("maerkte", e.detail, "market_codes"))) filterGeaendert(); });
     root.addEventListener("utf-topics", function (e) {
       var d = e.detail || {}, l = liste(d.topic_ids);
@@ -478,7 +486,9 @@
          ausserhalb des Speichers, und alle zeigten Skelett -- nach einem Neuaufbau der Prompts-Seite
          holt die Seiten-Meta immer frisch, und die Liste fiel aus ihren gespeicherten Daten ins
          Skelett und wieder zurueck (gemessen: Daten, Skelett, Daten). */
-      auftraege.forEach(function (a) { if (o.frisch || !a.imSpeicher) a.ladenAn(); });
+      /* o.leise: Nachladen nach einer Live-Meldung (Intent/Branded) -- der alte Stand bleibt stehen,
+         bis der neue da ist, kein Skelett. */
+      auftraege.forEach(function (a) { if (!o.leise && (o.frisch || !a.imSpeicher)) a.ladenAn(); });
       var vorab = o.vorab ? Promise.resolve(o.vorab).then(null, function () {}) : Promise.resolve();
       return vorab.then(function () {
         return Promise.all(auftraege.map(function (a) { return a.laden(o.frisch); }));

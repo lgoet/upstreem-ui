@@ -6244,9 +6244,36 @@
     if (!tm || IL.team === tm) return;
     if (IL.abo && IL.abo.stop){ try { IL.abo.stop(); } catch(e){} }
     IL.team = tm;
-    IL.abo = kanal("team_prompts:" + tm, { privat: true, on: { prompt_intents: function(n){
-      try { window.dispatchEvent(new CustomEvent("up-intents-live", { detail: n || {} })); } catch(e){}
-    } } });
+    /* prompt_branded (audit_14_10): Branded von Hand, zurueck an den Abgleich, und bei jeder
+       Aenderung an Marken oder Aliassen -- dann mit prompt_ids null, gemeint ist das ganze Team.
+       Beide Ereignisse gehen als EIN window-Ereignis hinaus, detail.art sagt welches. */
+    function melden(art){ return function(n){
+      var d = {}, k; n = n || {};
+      for (k in n) if (Object.prototype.hasOwnProperty.call(n, k)) d[k] = n[k];
+      d.art = art;
+      try { window.dispatchEvent(new CustomEvent("up-intents-live", { detail: d })); } catch(e){}
+    }; }
+    IL.abo = kanal("team_prompts:" + tm, { privat: true, on: { prompt_intents: melden("intents"), prompt_branded: melden("branded") } });
+  }
+  /* SEITEN MIT ZAHLEN LADEN NACH, WENN INTENT ODER BRANDED SICH AENDERN (14.10., DB-Rueckmeldung
+     audit_14_10 B6: die Datenbank leert die betroffenen Caches im selben Aufruf, "das Dashboard
+     muss selbst neu laden"). fn(detail) kommt gebuendelt (1,5 s -- die KI meldet in Runden zu 50)
+     und nur, wenn die Aenderung die Zahlen dieser Seite treffen kann: Branded immer (p_branded
+     "non_branded" geht an jede Lesefunktion), ein Intent nur bei aktivem Intent-Filter.
+     owner: die Wurzel der Seite; ist sie nicht mehr im Dokument, meldet sich der Hoerer ab. */
+  function onIntentDaten(fn, owner){
+    if (typeof fn !== "function") return;
+    intentsLiveStart();
+    var uhr = null;
+    function hoer(e){
+      if (owner && !document.contains(owner)){ window.removeEventListener("up-intents-live", hoer); return; }
+      if (!intentsLive()) return;
+      var d = (e && e.detail) || {};
+      if (d.art !== "branded" && !intentFilterGet().intents.length) return;
+      clearTimeout(uhr);
+      uhr = setTimeout(function(){ uhr = null; try { fn(d); } catch(err){} }, 1500);
+    }
+    window.addEventListener("up-intents-live", hoer);
   }
 
   /* ---- Intent-Filter der ganzen App (13.10.) ------------------------------------------------
@@ -25510,7 +25537,7 @@
     INTENTE: INTENTE, intentArt: intentArt, hatIntent: hatIntent, intentZustand: intentZustand,
     intentHtml: intentHtml, brandedHtml: brandedHtml, intentMenuHtml: intentMenuHtml,
     intentsLive: intentsLive, intentFilterGet: intentFilterGet, intentFilterSet: intentFilterSet, intentFilterParams: intentFilterParams,
-    makeIntentMenu: makeIntentMenu, intentName: intentName, intentsLiveStart: intentsLiveStart,
+    makeIntentMenu: makeIntentMenu, intentName: intentName, intentsLiveStart: intentsLiveStart, onIntentDaten: onIntentDaten,
     intentReiseHtml: intentReiseHtml, intentErklaerHtml: intentErklaerHtml, brandedErklaerHtml: brandedErklaerHtml,
     relativeTime: relativeTime,
     modelChip: modelChip, modelLogoUrl: modelLogoUrl, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,

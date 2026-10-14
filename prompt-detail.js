@@ -611,8 +611,9 @@
     if (UC.intentsLiveStart) UC.intentsLiveStart();
     if (!s.__intentLive) {
       s.__intentLive = function (e) {
-        var d = e.detail || {}, ids = isArr(d.prompt_ids) ? d.prompt_ids.map(str) : [];
-        if (!P.id || ids.indexOf(String(P.id)) < 0 || !document.contains(s)) return;
+        /* prompt_ids null (prompt_branded nach einer Markenaenderung): das ganze Team, also auch dieser. */
+        var d = e.detail || {}, alle = d.prompt_ids === null, ids = isArr(d.prompt_ids) ? d.prompt_ids.map(str) : [];
+        if (!P.id || (!alle && ids.indexOf(String(P.id)) < 0) || !document.contains(s)) return;
         kopfLeise();
       };
       window.addEventListener("up-intents-live", s.__intentLive);
