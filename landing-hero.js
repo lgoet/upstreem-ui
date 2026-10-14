@@ -73,18 +73,18 @@
   var LANG = window.__ulhLang === "de" ? "de" : "en";
   var DE = {
     /* Leiste und Menue */
-    "Language": "Sprache", "Platform": "Plattform", "Resources": "Ressourcen", "Pricing": "Preise", "Log in": "Anmelden",
+    "Language": "Sprache", "Platform": "Plattform", "Resources": "Ressourcen", "Pricing": "Preise", "Log in": "Einloggen",
     "Menu": "Menü", "Close menu": "Menü schließen", "English": "English", "Deutsch": "Deutsch",
-    "Start for free": "Kostenlos starten", "Overview": "Überblick", "What upstreem shows you": "Was upstreem dir zeigt",
-    "Which pages answers are built from": "Aus welchen Seiten Antworten entstehen",
-    "Mira does the work for you": "Mira erledigt die Arbeit für dich",
-    "Notes on AI search": "Wissen rund um die KI-Suche", "Documentation": "Dokumentation",
-    "How everything works": "So funktioniert alles",
+    "Start for free": "Kostenlos testen", "Overview": "Überblick", "What upstreem shows you": "Alle Funktionen im Überblick",
+    "Which pages answers are built from": "Woher KI-Antworten ihr Wissen beziehen",
+    "Mira does the work for you": "Mira übernimmt die Analyse",
+    "Notes on AI search": "Praxiswissen zur KI-Suche", "Documentation": "Dokumentation",
+    "How everything works": "Anleitungen und Hilfe",
     /* Hero */
-    "New": "Neu", "Customer journey tracking": "Tracking über die Customer Journey",
+    "New": "Neu", "Customer journey tracking": "Customer-Journey-Tracking",
     /* h1 und Unterzeile des Hero bleiben auf Deutsch ENGLISCH (14.10. so entschieden: "lass h1 und
        h2 einfach auf englisch" -- "einfach gemacht" klang uebersetzt). Deshalb stehen sie hier nicht. */
-    "Book a demo": "Demo buchen", "Tracked daily on": "Täglich gemessen in",
+    "Book a demo": "Demo vereinbaren", "Tracked daily on": "Täglich gemessen in",
     /* Team-Fenster und Seitenleiste (Woerter wie im Katalog von core) */
     "New Team": "Neues Team", "Quick Actions": "Schnellaktionen", "Database": "Datenbank",
     "Prompt Insights": "Prompt-Auswertung", "Citations": "Web-Quellen", "Workspace": "Arbeitsbereich",
@@ -97,155 +97,155 @@
     "Open quick actions": "Schnellaktionen öffnen", "Rename": "Umbenennen",
     "Remove from pinned": "Von den Angehefteten entfernen", "Search pages…": "Seiten suchen…", "Close": "Schließen",
     /* Plattform */
-    "From AI answers to your next move": "Von der KI-Antwort zum nächsten Schritt",
+    "From AI answers to your next move": "Von der KI-Antwort zur nächsten Maßnahme",
     "Visibility, prompts, sources and tasks in one place, across ChatGPT, Perplexity, Gemini and Google AI Overviews, every day.":
-      "Sichtbarkeit, Prompts, Quellen und Aufgaben an einem Ort, über ChatGPT, Perplexity, Gemini und Google AI Overviews, jeden Tag.",
-    "See how often AI recommends you": "Sieh, wie oft dich die KI empfiehlt",
+      "Visibility, Prompts, Quellen und Maßnahmen auf einen Blick. Für ChatGPT, Perplexity, Gemini und Google AI Overviews, täglich aktualisiert.",
+    "See how often AI recommends you": "So oft empfiehlt dich die KI",
     "Visibility and position per model, day by day, side by side with your competitors.":
-      "Sichtbarkeit und Position je Modell, Tag für Tag, direkt neben deinen Wettbewerbern.",
-    "Know which buyer questions you win": "Wisse, welche Kauffragen du gewinnst",
+      "Visibility und Rank pro KI-Modell, täglich und direkt im Vergleich mit deinen Wettbewerbern.",
+    "Know which buyer questions you win": "Bei diesen Kauffragen liegst du vorn",
     "Every tracked prompt, grouped by topic, with who gets named and where you land.":
-      "Jeder beobachtete Prompt, nach Thema gruppiert: wer genannt wird und wo du landest.",
+      "Alle Prompts nach Themen gebündelt: Wer genannt wird und auf welchem Platz du landest.",
     "Export": "Exportieren", "Brand Mentions": "Brand-Erwähnungen", "Market": "Markt",
     "Electric": "Elektro", "Comparisons": "Vergleiche", "Charging": "Laden", "Safety": "Sicherheit",
-    "See which pages AI trusts most": "Sieh, welchen Seiten die KI am meisten vertraut",
+    "See which pages AI trusts most": "Diesen Quellen vertraut die KI",
     "The domains and exact URLs the models cite, so you know where to get mentioned next.":
-      "Die Domains und genauen URLs, die die Modelle zitieren. So weißt du, wo du als Nächstes genannt werden musst.",
+      "Die Domains und URLs, die KI-Modelle zitieren. So weißt du, wo sich eine Erwähnung als Nächstes lohnt.",
     "Share": "Anteil", "Type": "Typ", "42 pages": "42 Seiten", "18 pages": "18 Seiten", "63 pages": "63 Seiten",
     "All URL Types": "Alle URL-Typen", "Title": "Titel", "Page": "Seite", "Domain Share": "Domain-Anteil",
-    "Your next moves, ranked by priority": "Deine nächsten Schritte, nach Priorität sortiert",
+    "Your next moves, ranked by priority": "Deine nächsten Schritte, nach Wirkung priorisiert",
     "Every visibility gap becomes a concrete task, with the prompts and numbers behind it.":
-      "Jede Sichtbarkeitslücke wird zur konkreten Aufgabe, mit den Prompts und Zahlen dahinter.",
+      "Aus jeder Visibility-Lücke wird eine konkrete Maßnahme, belegt mit Prompts und Zahlen.",
     "Get the estate into the forbes.com buyer guide": "Den Kombi in den Kaufratgeber von forbes.com bringen",
-    "No page of yours answers the winter range question": "Keine deiner Seiten beantwortet die Frage zur Winterreichweite",
-    "Your charging page is cited, never quoted": "Deine Ladeseite wird zitiert, aber nie wiedergegeben",
-    "Show up in the comparison videos": "In den Vergleichsvideos vorkommen",
-    "Add the model year to the wikipedia entry": "Das Modelljahr im Wikipedia-Eintrag ergänzen",
-    "Answer the leasing thread on motor-talk": "Im Leasing-Thread auf motor-talk antworten",
-    "BMW and Audi are in it. You are not.": "BMW und Audi stehen drin. Du nicht.",
-    "No page of yours answers „what is the real winter range“": "Keine deiner Seiten beantwortet „Wie hoch ist die echte Winterreichweite?“",
-    "214 runs a month, and never one of your pages.": "214 Abfragen im Monat, und nie eine deiner Seiten.",
-    "Your charging page is cited but never quoted": "Deine Ladeseite wird zitiert, aber nie wiedergegeben",
-    "Models reach the page and quote a competitor.": "Die Modelle finden die Seite und zitieren trotzdem einen Wettbewerber.",
-    "Show up in the two comparison videos that decide this class": "In den zwei Vergleichsvideos vorkommen, die diese Klasse entscheiden",
-    "Both rank top three, and both of them name Audi.": "Beide stehen in den Top drei, und beide nennen Audi.",
-    "Track every market in its own language": "Jeden Markt in seiner eigenen Sprache verfolgen",
+    "No page of yours answers the winter range question": "Keine eigene Seite beantwortet die Frage nach der Winterreichweite",
+    "Your charging page is cited, never quoted": "Deine Ladeseite wird verlinkt, aber nie zitiert",
+    "Show up in the comparison videos": "In die Vergleichsvideos kommen",
+    "Add the model year to the wikipedia entry": "Modelljahr im Wikipedia-Eintrag ergänzen",
+    "Answer the leasing thread on motor-talk": "Im Leasing-Thread auf motor-talk mitreden",
+    "BMW and Audi are in it. You are not.": "BMW und Audi sind drin. Du nicht.",
+    "No page of yours answers „what is the real winter range“": "Keine eigene Seite beantwortet „Wie weit komme ich im Winter wirklich?“",
+    "214 runs a month, and never one of your pages.": "214 Abfragen pro Monat, keine einzige mit deiner Seite.",
+    "Your charging page is cited but never quoted": "Deine Ladeseite wird verlinkt, aber nie zitiert",
+    "Models reach the page and quote a competitor.": "Die Modelle finden deine Seite, zitieren aber einen Wettbewerber.",
+    "Show up in the two comparison videos that decide this class": "In die zwei Vergleichsvideos kommen, die in dieser Klasse entscheiden",
+    "Both rank top three, and both of them name Audi.": "Beide stehen in den Top 3, beide nennen Audi.",
+    "Track every market in its own language": "Jeder Markt in seiner Sprache",
     "Prompts in German, French or Italian, asked from each country, with rankings per market.":
-      "Prompts auf Deutsch, Französisch oder Italienisch, aus dem jeweiligen Land gestellt, mit Rankings je Markt.",
-    "See where the models disagree": "Sieh, wo die Modelle sich uneinig sind",
+      "Prompts auf Deutsch, Französisch oder Italienisch, direkt aus dem jeweiligen Land abgefragt, mit Ranking pro Markt.",
+    "See where the models disagree": "Wo sich die KI-Modelle uneinig sind",
     "Your prompts run daily on ChatGPT, Perplexity, Gemini and Google AI Overviews, showing which ones name you and which don't.":
-      "Deine Prompts laufen täglich in ChatGPT, Perplexity, Gemini und Google AI Overviews. Du siehst, welche dich nennen und welche nicht.",
+      "Deine Prompts laufen täglich in ChatGPT, Perplexity, Gemini und Google AI Overviews. So siehst du, welches Modell dich nennt und welches nicht.",
     /* Customer Journey */
-    "Find the step where AI drops you": "Finde den Schritt, an dem dich die KI verliert",
+    "Find the step where AI drops you": "Wo dich die KI in der Customer Journey verliert",
     "Every prompt is sorted by what the buyer wants: learning, comparing or buying. You see your visibility at each step instead of one flattering average.":
-      "Jeder Prompt wird nach dem eingeordnet, was Käufer wollen: sich informieren, vergleichen oder kaufen. Du siehst deine Sichtbarkeit an jedem Schritt statt eines geschönten Durchschnitts.",
-    "Visibility at every step to purchase": "Sichtbarkeit an jedem Schritt bis zum Kauf",
+      "Jeder Prompt wird der Phase zugeordnet, in der Käufer gerade stehen: informieren, vergleichen oder kaufen. So siehst du deine Visibility in jeder Phase statt eines geschönten Durchschnitts.",
+    "Visibility at every step to purchase": "Visibility in jeder Phase bis zum Kauf",
     "Prompts are classified automatically. See where buyers meet you, and where a competitor takes over.":
-      "Prompts werden automatisch eingeordnet. Du siehst, wo Käufer dir begegnen und wo ein Wettbewerber übernimmt.",
+      "Prompts werden automatisch zugeordnet. Du siehst, wo Käufer auf dich treffen und wo die Konkurrenz übernimmt.",
     "Visibility by intent": "Visibility nach Intent",
     "Getting to know the topic": "Will das Thema verstehen", "Comparing options": "Vergleicht Anbieter",
     "Ready to buy or sign up": "Will kaufen oder abschließen",
-    "Branded prompts, kept apart": "Branded Prompts, sauber getrennt",
+    "Branded prompts, kept apart": "Branded Prompts, getrennt ausgewertet",
     "Questions that name you or a competitor stay out of your score. Switch them on to see what buyers hear at the last step.":
-      "Fragen, die dich oder einen Wettbewerber nennen, zählen nicht in deinen Score. Schalte sie zu und sieh, was Käufer im letzten Schritt hören.",
-    "Branded prompts": "Branded Prompts", "Left out of your metrics": "Nicht in deinen Kennzahlen",
-    "Counted in your metrics": "In deinen Kennzahlen enthalten",
+      "Fragen, in denen deine Brand oder ein Wettbewerber vorkommt, verzerren deinen Score nicht. Schalte sie dazu und sieh, wie die KI kurz vor dem Kauf über dich spricht.",
+    "Branded prompts": "Branded Prompts", "Left out of your metrics": "Nicht in den Kennzahlen",
+    "Counted in your metrics": "In den Kennzahlen enthalten",
     /* Shopping & Ads */
     "Beyond classic GEO": "Mehr als klassisches GEO",
     "Shopping results and sponsored placements, tracked on the same prompts as your visibility.":
-      "Shopping-Ergebnisse und bezahlte Platzierungen, gemessen auf denselben Prompts wie deine Sichtbarkeit.",
-    "See which products AI puts first": "Sieh, welche Produkte die KI ganz nach vorn stellt",
+      "Shopping-Ergebnisse und Anzeigen in KI-Antworten, gemessen auf denselben Prompts wie deine Visibility.",
+    "See which products AI puts first": "Diese Produkte empfiehlt die KI zuerst",
     "Position, rating and price for every product the models recommend, yours and your competitors'.":
-      "Position, Bewertung und Preis für jedes Produkt, das die Modelle empfehlen, deine und die deiner Wettbewerber.",
+      "Position, Bewertung und Preis jedes Produkts, das die KI empfiehlt. Deine Produkte und die deiner Wettbewerber.",
     "Products": "Produkte", "Product": "Produkt", "Avg. Position": "Ø Position", "Price": "Preis", "You": "Du",
     "Spot product momentum early": "Produkttrends früh erkennen",
     "See which products gain or lose AI recommendations, and steer content, pricing or ads while the shift is small.":
-      "Sieh, welche Produkte KI-Empfehlungen gewinnen oder verlieren, und steuere Inhalte, Preise oder Anzeigen, solange die Verschiebung noch klein ist.",
+      "Erkenne, welche Produkte KI-Empfehlungen gewinnen oder verlieren, und reagiere mit Content, Preisen oder Anzeigen, bevor aus dem Trend ein Problem wird.",
     "Product Movement": "Produktbewegung",
-    "Largest Visibility changes vs. previous 30 days": "Größte Visibility-Veränderungen gegenüber den 30 Tagen davor",
+    "Largest Visibility changes vs. previous 30 days": "Größte Veränderungen gegenüber den letzten 30 Tagen",
     "Rising": "Steigend", "Declining": "Fallend",
-    "Find out who buys your prompts": "Finde heraus, wer deine Prompts kauft",
+    "Find out who buys your prompts": "Wer Anzeigen auf deine Prompts schaltet",
     "Every advertiser showing ads on your tracked prompts, ranked by share of placements.":
-      "Alle Werbetreibenden mit Anzeigen auf deinen Prompts, nach Anteil der Platzierungen sortiert.",
-    "Read the strategy behind every ad": "Lies die Strategie hinter jeder Anzeige",
+      "Alle Werbetreibenden auf deinen Prompts, sortiert nach Anteil der Platzierungen.",
+    "Read the strategy behind every ad": "Die Strategie hinter jeder Anzeige",
     "What rivals promise, which buyer questions they target and where each click lands, so you can plan your answer.":
-      "Was die Konkurrenz verspricht, auf welche Kauffragen sie zielt und wohin jeder Klick führt. So planst du deine Antwort.",
+      "Was die Konkurrenz verspricht, welche Kauffragen sie besetzt und wohin jeder Klick führt. Die Grundlage für deine Antwort.",
     "Product Ad": "Produktanzeige", "Image Ad": "Bildanzeige", "Competitor": "Wettbewerber",
     /* Events */
-    "Measure what really moved your visibility": "Miss, was deine Sichtbarkeit wirklich bewegt hat",
+    "Measure what really moved your visibility": "Was deine Visibility wirklich bewegt",
     "Log content updates, campaigns and price changes, then measure the impact of each one against a comparison group.":
-      "Erfasse Content-Updates, Kampagnen und Preisänderungen und miss die Wirkung jeder Maßnahme gegen eine Vergleichsgruppe.",
-    "Put every initiative on the timeline": "Jede Maßnahme auf der Zeitachse",
+      "Erfasse Content-Updates, Kampagnen und Preisänderungen und miss ihre Wirkung im Vergleich zu einer Kontrollgruppe.",
+    "Put every initiative on the timeline": "Alle Maßnahmen auf einer Zeitachse",
     "Content updates, campaigns and price changes sit on your visibility chart, so every shift has a known cause.":
-      "Content-Updates, Kampagnen und Preisänderungen stehen direkt in deinem Sichtbarkeits-Chart. So hat jede Veränderung eine bekannte Ursache.",
-    "EX5 autumn campaign": "EX5 Herbstkampagne", "Aug 4, 2026": "4. Aug. 2026", "Brand campaign": "Markenkampagne",
-    "Video and social for the EX5, in five markets.": "Video und Social für den EX5, in fünf Märkten.",
+      "Content-Updates, Kampagnen und Preisänderungen erscheinen direkt im Visibility-Verlauf. So kennst du zu jeder Veränderung die Ursache.",
+    "EX5 autumn campaign": "EX5 Herbstkampagne", "Aug 4, 2026": "4. Aug. 2026", "Brand campaign": "Brand-Kampagne",
+    "Video and social for the EX5, in five markets.": "Video und Social für den EX5 in fünf Märkten.",
     "New lease rates": "Neue Leasingraten", "Sep 1, 2026": "1. Sep. 2026", "Pricing change": "Preisänderung",
     "Lower monthly rates across the EX range.": "Niedrigere Monatsraten für die ganze EX-Reihe.",
     "acme.com/electric relaunch": "Relaunch von acme.com/electric", "Sep 15, 2026": "15. Sep. 2026",
     "Website relaunch": "Website-Relaunch",
     "The new EV hub: range calculator, model comparison and an FAQ for every model.":
-      "Der neue E-Auto-Hub: Reichweitenrechner, Modellvergleich und ein FAQ für jedes Modell.",
-    "Prove the impact of each initiative": "Belege die Wirkung jeder Maßnahme",
+      "Der neue E-Auto-Hub mit Reichweitenrechner, Modellvergleich und FAQ zu jedem Modell.",
+    "Prove the impact of each initiative": "Die Wirkung jeder Maßnahme belegen",
     "Affected prompts from day one, measured against an untouched comparison group, so noise never passes as impact.":
-      "Betroffene Prompts ab dem ersten Tag, gemessen gegen eine unberührte Vergleichsgruppe. So geht Rauschen nie als Wirkung durch.",
-    "Affected prompts": "Betroffene Prompts", "Comparison group": "Vergleichsgruppe",
+      "Betroffene Prompts ab Tag eins, gemessen gegen eine unveränderte Kontrollgruppe. So hältst du Zufall nie für Erfolg.",
+    "Affected prompts": "Betroffene Prompts", "Comparison group": "Kontrollgruppe",
     /* Quellen */
-    "Understand how sources shape answers.": "Verstehe, wie Quellen Antworten prägen.",
+    "Understand how sources shape answers.": "Diese Quellen prägen KI-Antworten.",
     "Which domains the models cite in your market, which of their pages carry the answer, and where your brand is named in them.":
-      "Welche Domains die Modelle in deinem Markt zitieren, welche ihrer Seiten die Antwort tragen und wo deine Marke darin genannt wird.",
+      "Welche Domains die Modelle in deinem Markt zitieren, welche Seiten die Antworten liefern und wo deine Brand dort vorkommt.",
     "Last cited on Aug 18, 2026": "Zuletzt zitiert am 18. Aug. 2026",
     /* Mira */
-    "An analyst, not a dashboard": "Ein Analyst, kein Dashboard",
+    "An analyst, not a dashboard": "Ein Analyst, kein weiteres Dashboard",
     "Ask in your own words and Mira does the work: it reads your prompts, responses and sources, shows where every number comes from, and says what to do next.":
-      "Frag in deinen eigenen Worten, und Mira erledigt die Arbeit: Sie liest deine Prompts, KI-Antworten und Quellen, zeigt, woher jede Zahl kommt, und sagt dir, was als Nächstes zu tun ist.",
-    "Ask instead of digging.": "Fragen statt suchen.",
+      "Stell deine Frage in eigenen Worten, Mira übernimmt den Rest: Sie wertet Prompts, KI-Antworten und Quellen aus, belegt jede Zahl und sagt dir, was als Nächstes zu tun ist.",
+    "Ask instead of digging.": "Fragen statt filtern.",
     "No filters to set, no dashboards to assemble. Ask in plain words and get the answer with the numbers behind it.":
-      "Keine Filter setzen, keine Dashboards zusammenbauen. Frag einfach und bekomm die Antwort mit den Zahlen dahinter.",
-    "It shows its work.": "Sie zeigt ihren Rechenweg.",
+      "Keine Filter, keine Dashboards zum Zusammenklicken. Frag einfach und erhalte die Antwort samt Zahlen.",
+    "It shows its work.": "Jede Zahl mit Beleg.",
     "Every claim carries the prompt, the model and the page it came from. Open any of them and check it yourself.":
-      "Jede Aussage nennt den Prompt, das Modell und die Seite, aus der sie stammt. Öffne jede davon und prüf sie selbst.",
+      "Zu jeder Aussage gibt es Prompt, Modell und Quellseite. Ein Klick genügt, um sie selbst zu prüfen.",
     "It ends in a decision.": "Am Ende steht eine Entscheidung.",
     "Not a chart to interpret: the next step, what it is worth, and where to start.":
-      "Kein Chart zum Deuten, sondern der nächste Schritt: was er bringt und wo du anfängst.",
+      "Kein Chart, das du erst deuten musst, sondern der nächste Schritt: was er bringt und wo du anfängst.",
     /* Why now */
     "900M": "900 Mio.", "1B+": "über 1 Mrd.", "+1,200%": "+1.200%",
-    "Why now": "Warum jetzt", "Search moved.": "Die Suche ist umgezogen.",
+    "Why now": "Warum jetzt", "Search moved.": "Die Suche hat sich verlagert.",
     "Your buyers ask an assistant, and it answers from pages it picked.":
-      "Deine Käufer fragen einen Assistenten, und der antwortet aus Seiten, die er selbst ausgewählt hat.",
-    "weekly ChatGPT users": "wöchentliche ChatGPT-Nutzer",
-    "monthly users of Google's AI Mode": "monatliche Nutzer von Googles AI Mode",
+      "Deine Kunden fragen KI-Assistenten. Und die antworten mit Quellen, die sie selbst auswählen.",
+    "weekly ChatGPT users": "ChatGPT-Nutzer pro Woche",
+    "monthly users of Google's AI Mode": "Nutzer pro Monat im AI Mode von Google",
     "of searches with an AI summary end in a click - against 15% without one":
-      "der Suchen mit KI-Zusammenfassung enden mit einem Klick, ohne Zusammenfassung sind es 15%",
+      "der Suchen mit KI-Übersicht führen zu einem Klick, ohne Übersicht sind es 15%",
     "referral traffic from AI to US retail sites in seven months":
-      "mehr Traffic von KI auf US-Händlerseiten in sieben Monaten",
+      "mehr Besucher aus KI-Plattformen auf US-Shops in sieben Monaten",
     "May 2024": "Mai 2024", "AI Overviews for everyone in the US": "AI Overviews für alle in den USA",
     "May 2025": "Mai 2025", "AI Mode opens to the US": "AI Mode startet in den USA",
     "Oct 2025": "Okt. 2025", "AI Mode goes global": "AI Mode startet weltweit",
     /* Schluss */
-    "See what AI answers": "Sieh, was KI-Antworten", "say about you.": "über dich sagen.",
+    "See what AI answers": "Was sagt die KI", "say about you.": "über dich?",
     "Connect your brand, pick the prompts that matter, and watch the answers as they change. The first report takes minutes.":
-      "Verbinde deine Marke, wähl die Prompts, die zählen, und beobachte, wie sich die Antworten verändern. Der erste Bericht steht in wenigen Minuten.",
+      "Brand anlegen, relevante Prompts auswählen und verfolgen, wie sich die Antworten verändern. Dein erster Report steht nach wenigen Minuten.",
     "Talk to sales": "Sales kontaktieren",
     /* Preise */
-    "Simple plans. Every answer engine.": "Einfache Tarife. Jede Antwortmaschine.",
+    "Simple plans. Every answer engine.": "Klare Tarife. Alle KI-Suchmaschinen.",
     "Every plan tracks ChatGPT, Perplexity and Google AI Overviews, with unlimited seats, unlimited countries and prompts that run every day.":
-      "Jeder Tarif beobachtet ChatGPT, Perplexity und Google AI Overviews, mit unbegrenzten Nutzerplätzen, unbegrenzt vielen Ländern und Prompts, die jeden Tag laufen.",
+      "Jeder Tarif umfasst ChatGPT, Perplexity und Google AI Overviews, unbegrenzt viele Nutzer und Länder sowie täglich aktualisierte Prompts.",
     "Monthly": "Monatlich", "Yearly": "Jährlich", "Billing interval": "Abrechnungszeitraum",
-    "Get started with basic monitoring and analytics": "Der Einstieg mit Basis-Monitoring und Analysen",
+    "Get started with basic monitoring and analytics": "Der Einstieg ins KI-Monitoring",
     "/ month": "/ Monat", "Get started": "Jetzt starten",
-    "Choose which models to track": "Wähle, welche Modelle du beobachtest", "Track multiple models": "Mehrere Modelle beobachten",
-    "Track up to": "Beobachte bis zu", "50 prompts": "50 Prompts", "150 prompts": "150 Prompts", "350 prompts": "350 Prompts",
-    "Prompts executed daily": "Prompts laufen täglich", "Analyze up to": "Analysiere bis zu", "Analyze more than": "Analysiere mehr als",
+    "Choose which models to track": "Modelle frei wählbar", "Track multiple models": "Mehrere Modelle gleichzeitig",
+    "Track up to": "Bis zu", "50 prompts": "50 Prompts", "150 prompts": "150 Prompts", "350 prompts": "350 Prompts",
+    "Prompts executed daily": "Prompts werden täglich abgefragt", "Analyze up to": "Auswertung von bis zu", "Analyze more than": "Auswertung von über",
     "4,650 AI responses per month": "4.650 KI-Antworten pro Monat", "13,500 AI responses per month": "13.500 KI-Antworten pro Monat",
     "30,000 AI responses per month": "30.000 KI-Antworten pro Monat",
     "Unlimited countries / languages": "Unbegrenzt viele Länder und Sprachen",
-    "Unlimited seats for your team": "Unbegrenzte Nutzerplätze für dein Team",
-    "6 brands / competitors": "6 Marken und Wettbewerber", "11 brands / competitors": "11 Marken und Wettbewerber",
-    "16 brands / competitors": "16 Marken und Wettbewerber", "Standard email support": "Standard-Support per E-Mail",
-    "Most popular": "Am beliebtesten", "Advanced monitoring and AI search insights": "Erweitertes Monitoring und Insights zur KI-Suche",
-    "Personal account manager": "Persönlicher Account Manager",
-    "Advanced features for growing businesses": "Erweiterte Funktionen für wachsende Unternehmen",
+    "Unlimited seats for your team": "Unbegrenzt viele Nutzer im Team",
+    "6 brands / competitors": "6 Brands inkl. Wettbewerber", "11 brands / competitors": "11 Brands inkl. Wettbewerber",
+    "16 brands / competitors": "16 Brands inkl. Wettbewerber", "Standard email support": "Support per E-Mail",
+    "Most popular": "Am beliebtesten", "Advanced monitoring and AI search insights": "Erweitertes Monitoring mit tieferen Analysen",
+    "Personal account manager": "Persönlicher Ansprechpartner",
+    "Advanced features for growing businesses": "Für wachsende Unternehmen mit hohen Anforderungen",
     "Prices exclude VAT. Cancel any time.": "Alle Preise zzgl. MwSt. Jederzeit kündbar.",
     /* Fuss */
     "Legal": "Rechtliches", "Terms of service": "AGB", "Privacy policy": "Datenschutz", "Imprint": "Impressum",
@@ -255,20 +255,20 @@
       "Illustrationen der Anzeigen: US Environmental Protection Agency, gemeinfrei, über",
     /* Terminseiten */
     "Pick a time that suits you. We show you what AI answers say about your brand, which sources they draw on, and where you can win.":
-      "Such dir einen Termin aus, der dir passt. Wir zeigen dir, was KI-Antworten über deine Marke sagen, aus welchen Quellen sie schöpfen und wo du gewinnen kannst.",
+      "Wähl einen passenden Termin. Wir zeigen dir, was KI-Antworten über deine Brand sagen, auf welche Quellen sie sich stützen und wo du gewinnen kannst.",
     "What we'll cover": "Was wir uns ansehen",
     "Where AI answers name you, and where they don't": "Wo KI-Antworten dich nennen und wo nicht",
-    "Which sources and competitors shape those answers": "Welche Quellen und Wettbewerber diese Antworten prägen",
-    "Your first opportunities, ranked by impact": "Deine ersten Chancen, nach Wirkung sortiert",
-    "45 minutes, video call": "45 Minuten, per Videocall", "Prefer email?": "Lieber per E-Mail?",
+    "Which sources and competitors shape those answers": "Welche Quellen und Wettbewerber die Antworten prägen",
+    "Your first opportunities, ranked by impact": "Deine ersten Hebel, nach Wirkung sortiert",
+    "45 minutes, video call": "45 Minuten per Video-Call", "Prefer email?": "Lieber per E-Mail?",
     "Contact": "Kontakt",
     "Questions about plans, onboarding or a custom setup? Book a call with us, or write to us directly.":
-      "Fragen zu Tarifen, Onboarding oder einem individuellen Setup? Buch einen Termin mit uns oder schreib uns direkt.",
+      "Fragen zu Tarifen, Onboarding oder einem individuellen Setup? Vereinbare einen Termin oder schreib uns direkt.",
     "Write to us": "Schreib uns",
     "Plans, onboarding, agencies or a custom setup: tell us what you need.":
       "Tarife, Onboarding, Agenturen oder ein individuelles Setup: Sag uns, was du brauchst.",
-    "Or book a call": "Oder buch einen Termin",
-    "The calendar is provided by Cal.com": "Der Kalender kommt von Cal.com",
+    "Or book a call": "Oder vereinbare einen Termin",
+    "The calendar is provided by Cal.com": "Der Kalender wird von Cal.com bereitgestellt",
     "Loading it shares your IP address and browser data with Cal.com, which may set cookies. You can also book directly on cal.com.":
       "Beim Laden werden deine IP-Adresse und Browserdaten an Cal.com übertragen, und Cal.com kann Cookies setzen. Du kannst auch direkt auf cal.com buchen.",
     "Load calendar": "Kalender laden", "Open cal.com": "cal.com öffnen",
@@ -1181,7 +1181,7 @@
         /* Die Ersparnis klappt auf und zu, statt zu erscheinen und zu verschwinden: so schiebt sie
            die Kartenhoehe weich mit, wie im Onboarding. is-on steht schon hier, weil Jahr die
            Vorbelegung ist. */
-        '<div class="ulh-preis-notiz is-on"><span>' + (LANG === "de" ? spar + "% sparen bei jährlicher Zahlung"
+        '<div class="ulh-preis-notiz is-on"><span>' + (LANG === "de" ? spar + "% sparen bei jährlicher Abrechnung"
           : "Save " + spar + "% billed yearly") + '</span></div>' +
         '<a class="ulh-btn ulh-btn-pri ulh-preis-btn" href="' + PREIS_ZIEL + '"' +
           ' target="_blank" rel="noopener">' + PREIS_CTA + '</a>' +
@@ -1383,7 +1383,9 @@
     return '<p>Product photos from Wikimedia Commons: ' +
       ECHTE_PRODUKTE.map(function(p){
         var lz = LIZENZ_URL[p.lizenz] ? a(LIZENZ_URL[p.lizenz], p.lizenz) : p.lizenz;
-        return a("https://commons.wikimedia.org/wiki/File:" + p.seite, "\u201c" + werk(p.seite) + "\u201d") +
+        /* Deutsche Anfuehrungszeichen auf /de (14.10. abends, Textrunde). */
+        return a("https://commons.wikimedia.org/wiki/File:" + p.seite,
+          (LANG === "de" ? "\u201e" : "\u201c") + werk(p.seite) + (LANG === "de" ? "\u201c" : "\u201d")) +
           ' by ' + p.autor + ' (' + lz + ')';
       }).join(", ") + '.</p>' +
       '<p>Ad illustrations: US Environmental Protection Agency, public domain, via ' +
@@ -6414,7 +6416,7 @@
                      die Liste zu lesen; kuerzer als ein Endzustand, weil die Szene weitergeht. */
   var VOR_KLICK_MS = 3200;
   var MIRA_WARTEN = 8000;        /* nach dem Ende des Erscheinens, Bewegung inbegriffen */
-  var MIRA_FRAGE = LANG === "de" ? "Erstelle einen Bericht zur KI-Sichtbarkeit für Q3 2026"
+  var MIRA_FRAGE = LANG === "de" ? "Erstelle einen Visibility-Report für Q3 2026"
     : "Create an AI Visibility Report for Q3 2026";
   var MIRA_ZEICHEN_MS = 34;      /* je Zeichen -- 43 Zeichen ergeben rund 1.5 Sekunden */
   /* Zwei Sekunden zwischen dem letzten Zeichen und dem Abschicken: die Frage soll gelesen werden
@@ -6528,11 +6530,11 @@
              '<td>' + miraNennungen(r.visibility_pct) + '</td></tr>';
     }).join("");
     var ke = tab.filter(function(r){ return r.company_id === "ac"; })[0];
-    if (LANG === "de") return '<h3>Bericht zur KI-Sichtbarkeit, Q3 2026</h3>' +
-      '<table><thead><tr><th>Marke</th><th>Visibility</th><th>Rang</th><th>Sentiment</th>' +
+    if (LANG === "de") return '<h3>Visibility-Report, Q3 2026</h3>' +
+      '<table><thead><tr><th>Brand</th><th>Visibility</th><th>Rank</th><th>Sentiment</th>' +
       '<th>Erwähnungen</th></tr></thead><tbody>' + zeilen + '</tbody></table>' +
       '<p>' + markeChip("ac") + ' beendet das Quartal auf Platz eins, vor ' + markeChip("bm") + ' und ' +
-      markeChip("au") + ': Visibility ' + zahl(ke.visibility_pct, 1) + '%, Rang ' +
+      markeChip("au") + ': Visibility ' + zahl(ke.visibility_pct, 1) + '%, Rank ' +
       zahl(ke.avg_rank, 1) + ', Sentiment ' + ke.sentiment + '. Redaktionelle Quellen tragen ' +
       '<strong>31,4%</strong> aller Quellenangaben, deine eigenen Seiten 9,3%.</p>' +
       '<h4>Was du als Nächstes tun solltest</h4><ul>' +
@@ -6717,7 +6719,7 @@
      vorgesehenen Setzer -- und danach der Text der Kopfzeile ueberschrieben, Zeichen fuer Zeichen.
      Waehrend der Szene zeichnet nichts die Kopfzeile neu; der letzte Schreiber gewinnt.
      Dasselbe Tempo wie die getippte Frage darueber (34ms je Zeichen). */
-  var MIRA_TITEL = LANG === "de" ? "Bericht zur KI-Sichtbarkeit Q3 2026" : "AI Visibility Report Q3 2026";
+  var MIRA_TITEL = LANG === "de" ? "Visibility-Report Q3 2026" : "AI Visibility Report Q3 2026";
   function miraTitelSetzen(root){
     if (window.askMiraSetPreviousChats) window.askMiraSetPreviousChats([
       { id: "lh-chat", title: MIRA_TITEL, updated_at: new Date().toISOString() }

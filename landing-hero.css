@@ -3714,6 +3714,11 @@
 }
 /* Ganz schmal steht der Sprachschalter nicht mehr in der Leiste (dort ist der Platz fuer den
    Menueknopf), sondern als eigene Zeile im Blatt -- mit Namen statt Kuerzeln, 44px hoch. */
+/* Unter 360px passen Logo, "Start for free" und der Menueknopf nicht nebeneinander (gemessen
+   14.10. bei 320: 12px ueber dem Rand). Der Knopf steht dann nur im Menue, dort gross. */
+@media (max-width: 360px) {
+  .ulh-nav-rechts > .ulh-btn-pri { display: none; }
+}
 @media (max-width: 560px) {
   .ulh-nav-rechts > .ulh-sprache { display: none; }
   .ulh-nav-mobil .ulh-nm-sprache { display: flex; height: auto; width: 100%; margin: 14px 0 0; padding: 3px; box-sizing: border-box; }
