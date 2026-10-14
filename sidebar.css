@@ -1167,16 +1167,12 @@
 .usn-pop { position: relative; }
 .usn-bar .usn-menu { width: 300px; min-width: 0; max-width: calc(100vw - 32px); }
 .usn-bar .usn-menu.is-team { top: calc(100% + 6px); bottom: auto; left: 0; right: auto; }
-/* 8px mehr Luft oben -- ausdruecklich angefordert (07.09.). Nur an DIESEM Menue: es beginnt mit
-   einer Ueberschrift, und die sass zu dicht am Rand; die anderen Dropdowns beginnen mit einer
-   Zeile und brauchen es nicht. */
-/* Oben 8px zusaetzlich, unten die Grundpolsterung. Das ist NICHT symmetrisch, und das ist der
-   Punkt: oben beginnt das Menue mit einer Ueberschrift, die Luft ueber sich braucht, unten endet
-   es mit einem Knopf, der seine eigene Hoehe schon mitbringt. Mit 8px auf beiden Seiten stand
-   unten sichtbar mehr Rand als oben -- "8px bottom padding weniger, dann ist top" (08.09.).
-   Die Grundpolsterung kommt aus .up-filter-menu (--up-dd-pad). */
+/* POLSTERUNG WIE JEDES ANDERE DROPDOWN (14.10., "so wie in allen anderen dropdowns auch"): die
+   Grundpolsterung aus .up-filter-menu (--up-dd-pad) ringsum, die Ueberschrift mit den Werten von
+   .up-pop-head aus core. Die 8px Extra oben (07.09.) und 12px unter der Ueberschrift sind weg --
+   gemessen stand der Text 20.7px unter der Kante und 11.8px ueber der ersten Zeile, im
+   Sortier- und Spaltenmenue 13 und 8. */
 .usn-bar .usn-menu.is-acc { top: auto; bottom: calc(100% + 6px); left: 0; right: auto;
-  padding-top: calc(var(--up-dd-pad) + 8px); padding-bottom: var(--up-dd-pad);
   /* DREIMAL WAR DIE POLSTERUNG NICHT DIE URSACHE. Sie steht seit dem 07.09. oben und unten
      gleich da -- und der Logout war trotzdem angeschnitten. Der Grund steckt in .up-filter-menu
      aus core: das Menue ist eine FLEXSPALTE mit max-height 400px, und Flex-Kinder schrumpfen
@@ -1214,25 +1210,13 @@
 .usn-newteam svg { width: 15px; height: 15px; display: block; flex: 0 0 15px; color: var(--vc-muted); }
 /* Abschnitte im Konto-Menue: dieselbe Trennlinie, damit beide Menues gleich lesen. */
 .usn-sec + .usn-sec { border-top: 1px solid var(--up-menu-border); margin-top: var(--up-dd-pad); padding-top: var(--up-dd-pad); }
-/* Impressum, Datenschutz, AGB (14.10.): unter "Log out", hinter derselben Trennlinie. Text auf der
-   Kante der Menuezeilen (deren Polsterung 10px), eine Stufe kleiner und in der dritten Textfarbe
-   -- dieselbe Form wie im Fuss der Anmeldeseite. */
-.usn-recht { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 2px 10px 4px; }
-.usn-sec + .usn-recht { padding-top: calc(var(--up-dd-pad) + 2px); }
-.usn-recht-a {
-  font-size: var(--up-fs-s); color: var(--vc-third); text-decoration: none; border-radius: var(--up-r-xs);
-  transition: color var(--usn-t) var(--usn-ease);
-}
-.usn-recht-a:hover { color: var(--vc-text); }
-.usn-recht-a:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
-/* Abstaende in beiden Panels. core gibt .up-pop-head unten 8px und den Zeilen gar keinen
-   Abstand zueinander -- fuer einen Sorter mit drei Zeilen reicht das, fuer ein Menue mit
-   Abschnitten klebt es. Hier: 12px unter der Ueberschrift, 4px zwischen den Zeilen. Die
-   Aenderung bleibt auf .usn-menu beschraenkt, die Sorter der App behalten ihre Werte. */
+/* Abstaende in beiden Panels: 4px zwischen den Zeilen, wie im Sortiermenue gemessen. Die
+   Ueberschrift behaelt die Polsterung aus core (.up-pop-head, 4 0 8) -- seit 14.10. ohne die
+   12px darunter, siehe .usn-menu.is-acc. */
 /* display: block ist hier der eigentliche Fix. .up-pop-head ist ein span, also inline -- eine
    senkrechte Polsterung an einem Inline-Element vergroessert zwar seinen Kasten, schiebt aber
    nichts weg. Gemessen: mit padding allein blieb der Abstand zur ersten Zeile unveraendert. */
-.usn-menu .up-pop-head { display: block; padding-bottom: 12px; }
+.usn-menu .up-pop-head { display: block; }
 .usn-menu .up-pop-opt + .up-pop-opt { margin-top: 4px; }
 .usn-menu .usn-teamrow + .usn-teamrow { margin-top: 4px; }
 .usn-menu .up-pop-opt svg { width: 15px; height: 15px; display: block; flex: 0 0 15px; color: var(--vc-muted); }

@@ -323,6 +323,12 @@
           ' aria-current="' + (seite === s.key ? "page" : "false") + '">' +
           UC.icon(s.icon, 2) + '<span>' + esc(t(s.label)) + '</span></button>';
       });
+      /* Impressum, Datenschutz, AGB (14.10. abends, vorher im Konto-Menue der Seitenleiste): am Fuss
+         der Navigation, untereinander, in der dritten Textfarbe. Echte Links in einem neuen Tab aus
+         core -- dieselben wie auf der Anmeldeseite. */
+      if (UC.rechtLinksHtml) {
+        out += '<nav class="ums-recht" aria-label="' + esc(t("Legal")) + '">' + UC.rechtLinksHtml("ums-recht-a") + '</nav>';
+      }
       return out;
     }
 

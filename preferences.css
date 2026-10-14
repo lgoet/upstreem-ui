@@ -85,6 +85,20 @@
 .ums-backdrop[data-theme="dark"] .ums-aside .ums-nav.is-on,
 .ums-backdrop[data-theme="dark"] .ums-aside .ums-nav.is-on:hover { background: var(--up-sel-bg); }
 
+/* Rechtliches am Fuss der Navigation (14.10. abends, aus dem Konto-Menue hierher): untereinander,
+   12px in der dritten Textfarbe wie .ums-navhead und auf dessen Textkante (10px). margin-top auto
+   schiebt den Block in der Spalte nach unten. */
+.ums-recht {
+  margin-top: auto; padding: 16px 10px 4px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+}
+.ums-recht-a {
+  font-size: var(--up-fs-s); color: var(--vc-third); text-decoration: none; border-radius: var(--up-r-xs);
+  transition: color var(--up-t-1) var(--up-ease);
+}
+.ums-recht-a:hover { color: var(--vc-text); }
+.ums-recht-a:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+
 /* ---------- Inhalt rechts ---------- */
 .ums-main { flex: 1 1 auto; min-width: 0; height: 100%; overflow-y: auto; padding: 24px 28px 28px; }
 .ums-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 26px; }
@@ -246,6 +260,8 @@
     flex: 0 0 auto; width: auto; height: auto; overflow-y: visible;
     border-right: 0; border-bottom: 1px solid var(--vc-border);
   }
+  /* Oben ueber dem Inhalt kostet jede Zeile Platz: die drei Links nebeneinander. */
+  .ums-recht { margin-top: 0; padding-top: 10px; flex-direction: row; flex-wrap: wrap; gap: 4px 16px; }
   /* Ohne feste Hoehe daneben darf der Inhaltsbereich den Rest nehmen -- 100% waere hier die
      Hoehe der ganzen Karte und schoebe die Navigation wieder hinaus. */
   .ums-main { height: auto; flex: 1 1 auto; min-height: 0; padding: 20px 16px 24px; }

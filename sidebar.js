@@ -1166,12 +1166,9 @@
             '</div>';
           }).join("") +
         '</div>';
-      }).join("") +
-      /* Impressum, Datenschutz, AGB (14.10.) als letzte, leise Zeile: Pflicht von jeder Seite der
-         App aus, aber nichts, was man in diesem Menue sucht. Echte Links in einem neuen Tab, aus
-         core -- dieselben wie auf der Anmeldeseite. */
-      (UC.rechtLinksHtml ? '<nav class="usn-sec usn-recht" aria-label="' + esc(UC.t("Legal")) + '">' +
-        UC.rechtLinksHtml("usn-recht-a") + '</nav>' : "");
+      }).join("");
+      /* Impressum, Datenschutz, AGB stehen seit dem 14.10. abends im Preferences-Fenster (links
+         unter der Navigation, preferences.js) -- nicht mehr hier. */
     }
     /* UC.makePopover aus core: EIN Klick-Zuhoerer fuer die ganze Seite, schliesst jedes andere
        offene Dropdown der App mit, Escape und Fokus inklusive. Selbst gebaut hatte das hier
@@ -1384,10 +1381,6 @@
          laesst sich in Bubble schlecht auf einen Wert abbilden, und die Ereignisse, die beim
          Nutzer schon laufen, tragen alle einen. */
       if (t.closest("[data-newteam]")){ menuZu(); fire("data-newteam-fn", "usnNewTeam", { action: "new_team" }); return; }
-
-      /* Ein Link ins Rechtliche oeffnet einen neuen Tab (der Browser macht das selbst); das Menue
-         geht dabei zu, sonst steht es bei der Rueckkehr noch offen da. */
-      if (t.closest(".usn-recht-a")){ menuZu(); return; }
 
       var ak = t.closest("[data-acc-key]");
       if (ak){
