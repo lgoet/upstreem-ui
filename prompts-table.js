@@ -3107,17 +3107,12 @@
         el.classList.remove("is-visible");
         setTimeout(function(){ el.classList.add("is-visible"); }, GRP_ANIM_MS);
       }
-      head.insertBefore(el, head.firstChild);
+      /* In die erste Zelle des Rasters, nicht an den Kopf selbst -- dort waere es eine eigene
+         Rasterzelle und schoebe jede Kennzahl um eine Spalte nach rechts. */
+      var erste = head.querySelector(".upt-grp-erste") || head;
+      erste.insertBefore(el, erste.firstChild);
     }
 
-    /* KPI cell — same primitives the flat rows use, so a Visibility figure in a group header and
-       one in a row are literally the same widget. */
-    /* Value first, label under it in uppercase — the number is what you scan, the label only
-       tells you which number it is. */
-    function grpKpi(label, html){
-      return '<div class="upt-grp-kpi"><span class="upt-grp-kpi-val">' + html + '</span>' +
-             '<span class="upt-grp-kpi-lbl">' + esc(label) + '</span></div>';
-    }
     /* Shared with renderGroupSidelist() below -- a topic-type group is the SAME .up-topicchip
        the topic popover and the grouping popup draw, a custom group is its colour dot + name, and
        "No topic" is bare text. One function, so the wide view's sidelist can never drift from
@@ -3197,15 +3192,30 @@
          the identical x). Markup itself lives in grpSelectallHtml() -- toggleGroup() patches this
          same element in/out on open/close without a full head re-render (see there for why). */
       var chk = grpSelectallHtml(id, open);
+      /* DER KOPF STEHT AUF DEM RASTER DER ZEILEN (14.10.). Vorher eine Flex-Zeile mit vier
+         gestapelten Kennzahlen (Wert ueber Etikett) am rechten Rand -- sie standen unter "Topics"
+         und "Intent" statt unter ihren eigenen Spalten ("die KPI-Sektion rechts muessen wir ganz
+         gruendlich aufraeumen"). Jetzt eine Zelle je Spalte in --up-cols: Visibility steht unter
+         Visibility, Rang unter Rang, und ein Etikett braucht es nicht mehr -- das sagt der
+         Spaltenkopf darueber, der beim Scrollen angeheftet bleibt. Die Anzahl der Prompts steht
+         als leise Zahl hinter dem Gruppennamen, wie in jeder gruppierten Liste.
+         Spalten, die die Tabelle gerade nicht zeigt, bekommen display:none schon im Markup --
+         applyCols blendet ueber das Praefix "upt-grp" (cellPrefixes) danach mit um, aber nur,
+         wenn sich die Spaltenmenge aendert; ein neu gezeichneter Kopf muss selbst stimmen. */
+      var zuSehen = {};
+      if (colsKit) colsKit.effectiveCols().forEach(function(c){ zuSehen[c.key] = true; });
+      var werte = { visibility: vis, rank: rank, sentiment: sent };
+      var zellen = COLUMNS.map(function(c){
+        return '<div class="upt-grp-zelle upt-grp-td-' + c.key + '"' + (!colsKit || zuSehen[c.key] ? "" : ' style="display:none"') + '>' +
+          (werte[c.key] || "") + '</div>';
+      }).join("");
       return '<div class="upt-grp-head' + (open ? " is-open" : "") +
                '" data-grp="' + esc(id) + '"' +
                ' role="button" tabindex="0" aria-expanded="' + (open ? "true" : "false") + '">' +
-          chk +
-          '<div class="upt-grp-left">' + GRP_CHEV + chip + '</div>' +
-          '<div class="upt-grp-kpis">' +
-            grpKpi("Prompts", counts) + grpKpi("Visibility", vis) +
-            grpKpi("Ø Rank", rank) + grpKpi("Ø Sentiment", sent) +
-          '</div>' +
+          '<div class="upt-grp-erste">' +
+            chk +
+            '<div class="upt-grp-left">' + GRP_CHEV + chip +
+              '<span class="upt-grp-anzahl">' + counts + '</span></div>' +
           /* Seit dem 27.09. auch hier wie in der Seitenleiste: das Menue NUR an Custom Groupings,
              und ohne "Generate More" ("das brauche ich da nicht mehr"). Eine Themengruppe und
              "No topic" hatten nur diesen einen Eintrag -- ohne ihn bleibt kein Menue.
@@ -3215,8 +3225,11 @@
              Custom Groupings nach rechts -- die vier Spalten liefen versetzt.
              Eine EIGENE Klasse und nicht .upt-grp-menuwrap: der Schliesser fuer das offene Menue
              nimmt jeden Klick in einer .upt-grp-menuwrap als Klick "im Menue" und liesse es offen. */
-          (custom ? groupMenuBtnHtml(id, custom, false)
-                  : '<div class="upt-grp-menuslot" aria-hidden="true"></div>') +
+            /* Das Menue nur an Custom Groupings (seit 27.09.). Einen Platzhalter fuer die
+               anderen braucht es nicht mehr: die Kennzahlen stehen im Raster, nicht hinter dem
+               Knopf, und koennen nicht mehr versetzt laufen. */
+            (custom ? groupMenuBtnHtml(id, custom, false) : "") +
+          '</div>' + zellen +
         '</div>';
     }
     /* Group actions -- Edit/Delete, custom groupings only (Generate More is shown nowhere since
@@ -4098,7 +4111,7 @@
         return state.status === "inactive" &&
           (c.key === "brands" || c.key === "visibility" || c.key === "rank" || c.key === "sentiment");
       },
-      rowHeightSwitch: ROW_HEIGHTS, badgeSel: ".upt-cols-badge", cellPrefixes: ["up","upt"],
+      rowHeightSwitch: ROW_HEIGHTS, badgeSel: ".upt-cols-badge", cellPrefixes: ["up","upt","upt-grp"],
       onChange: function(){ render(); }
     });
     var readCols = colsKit.readCols, writeCols = colsKit.writeCols;

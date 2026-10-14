@@ -1816,13 +1816,15 @@
     "Not classified": "Nicht zugeordnet",
     "Set by AI": "Von der KI gesetzt",
     "Set by you": "Von dir gesetzt",
-    "Reset to AI": "Der KI überlassen",
-    "Reset to match": "Automatisch erkennen",
+    "Detected by AI": "Von der KI erkannt",
+    "Auto-detect": "Automatisch erkennen",
     "Set intent": "Intent setzen",
     "Branded": "Branded",
     "Names {names}": "Nennt {names}",
     "Names a tracked brand": "Nennt eine getrackte Marke",
     "Marked as branded by you": "Von dir als branded markiert",
+    "Marked as not branded by you": "Von dir als nicht branded markiert",
+    "Names no tracked brand": "Nennt keine getrackte Marke",
     "The intent is being set. This takes a moment.": "Der Intent wird gerade zugeordnet. Das dauert einen Moment.",
     "The intent couldn't be set automatically. Choose one yourself.": "Der Intent ließ sich nicht automatisch zuordnen. Wähl ihn selbst.",
     "The intent could not be saved": "Der Intent konnte nicht gespeichert werden",
@@ -5945,6 +5947,15 @@
      AI" gibt es nur, wenn es etwas zurueckzugeben gibt.
      data-intent-set="<key>" setzt, data-intent-set="" gibt an die KI zurueck,
      data-branded-set schaltet Branded um (Wert im aria-checked). */
+  function intentHerkunftHtml(user, ruecksprung){
+    return '<div class="up-intent-herkunft' + (user ? " is-user" : "") + '">' +
+      (user ? '<span class="up-intent-user">' + icon("userCog", 2) + '</span>'
+            : '<span class="up-intent-ki">' + icon("aiMagic", 2) + '</span>') +
+      '<span class="up-intent-herkunft-t">' + esc(t(user ? "Set by you" : "Detected by AI")) + '</span>' +
+      (user ? '<button type="button" class="up-intent-reset" ' + ruecksprung + '>' + icon("aiMagic", 2) +
+                '<span>' + esc(t("Auto-detect")) + '</span></button>' : "") +
+    '</div>';
+  }
   function intentMenuHtml(r, opts){
     opts = opts || {};
     var z = r ? intentZustand(r) : null;
@@ -5961,23 +5972,31 @@
           '<span class="up-pop-opt-l">' + icon(a.icon, 2) + '<span>' + esc(intentName(a)) + '</span></span>' +
           '<span class="up-check">' + icon("check", 2) + '</span></div>';
       }).join("");
-    if (z && z.status === "done"){
-      h += '<div class="up-pop-div"></div>' +
-        '<div class="up-intent-herkunft">' + icon(z.user ? "squarePen" : "sparkles", 2) +
-          '<span>' + esc(t(z.user ? "Set by you" : "Set by AI")) + '</span>' +
-          (z.user ? '<button type="button" class="up-intent-reset" data-intent-set="">' + esc(t("Reset to AI")) + '</button>' : "") +
-        '</div>';
-    }
+    /* DIE HERKUNFT ALS PLATTE (14.10., Entwurf A): direkt unter den Werten, ohne Trennlinie --
+       sie gehoert zur Wahl darueber. Von der KI: das KI-Zeichen in der Akzentfarbe. Von Hand:
+       derselbe UserCog-Chip wie am Label, und rechts ein ECHTER Knopf zurueck an die KI
+       ("Auto-detect", wie GrackerAI es nennt -- vorher ein Textknopf "Der KI ueberlassen"). */
+    if (z && z.status === "done") h += intentHerkunftHtml(z.user, 'data-intent-set=""');
     if (r && opts.branded !== false && "branded" in r){
-      var b = r.branded === true;
+      var b = r.branded === true, vonHand = r.branded_source === "user";
+      var namen = (Array.isArray(r.branded_brands) ? r.branded_brands : []).map(function(m){
+        return m && typeof m === "object" ? String(m.name || "").trim() : ""; }).filter(Boolean);
+      /* Die Unterzeile sagt, WARUM der Schalter so steht -- dieselben Saetze wie der Tooltip am
+         Label, plus die zwei Faelle ohne Label (nicht branded). */
+      /* Von Hand AUSgeschaltet schlaegt die Namen: der Abgleich hat sie gefunden, der Nutzer hat
+         trotzdem "nicht branded" gesagt -- "Nennt Mercedes" neben einem Schalter auf aus las sich
+         wie ein Fehler. */
+      var grund = vonHand && !b ? t("Marked as not branded by you")
+        : namen.length ? t("Names {names}").replace("{names}", namen.join(", "))
+        : vonHand ? t("Marked as branded by you")
+        : t(b ? "Names a tracked brand" : "Names no tracked brand");
       h += '<div class="up-pop-div"></div>' +
-        '<div class="up-pop-row" data-branded-set role="menuitemcheckbox" tabindex="0" aria-checked="' + (b ? "true" : "false") + '">' +
-          '<span class="up-pop-label">' + esc(t("Branded")) + '</span>' +
+        '<div class="up-pop-row up-branded-row" data-branded-set role="menuitemcheckbox" tabindex="0" aria-checked="' + (b ? "true" : "false") + '">' +
+          '<span class="up-pop-label"><span>' + esc(t("Branded")) + '</span><span class="up-pop-hint">' + esc(grund) + '</span></span>' +
           '<span class="up-switch' + (b ? " is-on" : "") + '"></span></div>' +
-        (r.branded_source === "user"
-          ? '<div class="up-intent-herkunft">' + icon("squarePen", 2) + '<span>' + esc(t("Set by you")) + '</span>' +
-              '<button type="button" class="up-intent-reset" data-branded-reset>' + esc(t("Reset to match")) + '</button></div>'
-          : "");
+        /* Auch Branded braucht den Weg zurueck, sobald jemand den Schalter umgelegt hat
+           (gewuenscht 14.10.): dieselbe Platte, Ruecksprung an den Abgleich. */
+        (vonHand ? intentHerkunftHtml(true, "data-branded-reset") : "");
     }
     return h;
   }
@@ -6030,7 +6049,7 @@
       opener = null; ziel = null;
     } });
     function zeile(){ return ziel && !ziel.bulk && cfg.zeile ? cfg.zeile(ziel) : null; }
-    function zeichnen(){ menu.innerHTML = intentMenuHtml(zeile()); }
+    function zeichnen(){ menu.innerHTML = intentMenuHtml(zeile()); if (opener) seiteWaehlen(); }
     /* Der Halter bekommt die Kanten des Ausloesers. Gerechnet gegen seinen Elternteil, nicht
        gegen die Wurzel: welches Element positioniert ist, entscheidet der Aufrufer. */
     function anlegen(el){
@@ -6040,6 +6059,19 @@
       wrap.style.top = Math.round(a.top - b.top + bezug.scrollTop) + "px";
       wrap.style.width = Math.round(a.width) + "px";
       wrap.style.height = Math.round(a.height) + "px";
+      seiteWaehlen(a);
+    }
+    /* RECHTS BUENDIG, WENN LINKS KEIN PLATZ IST (14.10.). Seit die Herkunft ein Knopf ist und
+       Branded eine Unterzeile hat, wird das Menue bis 320px breit -- an der Intent-Spalte ganz
+       rechts lief es gemessen 43px aus dem Fenster. Dann haengt es an der RECHTEN Kante des
+       Ausloesers. Gemessen wird die Breite ohne transform (offsetWidth), die Aufklapp-Bewegung
+       verfaelscht sie also nicht. Auch nach jedem Neuzeichnen, denn ein Schalter aendert die
+       Breite (Branded bekommt die Platte mit "Auto-detect"). */
+    function seiteWaehlen(a){
+      a = a || (opener && opener.getBoundingClientRect());
+      if (!a) return;
+      var breite = menu.offsetWidth || 0;
+      wrap.classList.toggle("is-rechts", a.left + breite > (window.innerWidth || 0) - 8 && a.right - breite >= 8);
     }
     /* Woran der Ausloeser nach einem Neuzeichnen wiederzuerkennen ist: das Label einer Zeile an
        seiner Art (Intent oder Branded) und seiner Prompt-Id, der Knopf der Sammelleiste an seinem

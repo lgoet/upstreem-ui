@@ -2570,13 +2570,27 @@
     .up-branded-mehr { font-size: var(--up-fs-xs); color: var(--vc-fourth); font-variant-numeric: tabular-nums; padding-left: 2px; }
     /* Im Menue: das Zeichen vor jedem Wert in derselben Farbe wie am Label, 16px wie die Haken. */
     .up-intent-opt .up-pop-opt-l > svg { width: 16px; height: 16px; flex: 0 0 16px; color: var(--vc-fourth); }
-    /* Die Herkunft unter den Werten: leise Zeile mit Zeichen, rechts der Ruecksprung als Textknopf. */
-    .up-intent-herkunft { display: flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: var(--up-fs-s);
-      font-weight: var(--up-fw-m); color: var(--vc-third); white-space: nowrap; }
-    .up-intent-herkunft > svg { width: 14px; height: 14px; flex: 0 0 14px; color: var(--vc-fourth); }
-    .up-intent-reset { margin-left: auto; border: 0; background: transparent; padding: 4px 6px; margin-right: -6px;
-      border-radius: var(--up-r-s); font: inherit; color: var(--vc-text); cursor: pointer; }
-    .up-intent-reset:hover { background: var(--up-sel-bg); }
+    /* Die Herkunft unter den Werten (14.10., Entwurf A): eine leise Platte im Ton des
+       Tabellenkopfs, ohne Trennlinie darueber -- sie gehoert zur Wahl. 40px hoch wie eine Zeile
+       mit Knopf, damit KI- und Hand-Fall gleich hoch stehen und das Menue beim Wechsel nicht
+       springt. Radius 10 in der 14er-Huelle mit 8 Innenabstand (konzentrisch gerundet). */
+    .up-intent-herkunft { display: flex; align-items: center; gap: 8px; margin-top: 4px; min-height: 40px;
+      box-sizing: border-box; padding: 6px 6px 6px 10px; border-radius: var(--up-r-l); background: var(--vt-head-bg);
+      font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-third); white-space: nowrap; }
+    .up-intent-herkunft-t { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    /* Das KI-Zeichen in der Akzentfarbe (gewuenscht 14.10.: "in der primary accent color"). */
+    .up-intent-ki { display: inline-flex; color: var(--up-accent-ink); }
+    .up-intent-ki svg { width: 14px; height: 14px; display: block; }
+    /* Der Ruecksprung ist ein ECHTER Knopf: die Form von .up-btn-sec auf 28px gezogen (Hoehe aus
+       der Skala, --up-h-seg), weiss auf der grauen Platte und mit der Tiefe e-1, die alles auf
+       der Flaeche traegt. Radius: Platte 10 minus 6 Innenabstand = 4, auf die Stufe 6 gerundet. */
+    .up-intent-reset { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; height: var(--up-h-seg);
+      padding: 0 10px 0 8px; border: 1px solid var(--vc-border); border-radius: var(--up-r-s);
+      background: var(--up-surface); box-shadow: var(--up-e-1); font: inherit; color: var(--vc-text); cursor: pointer; }
+    .up-intent-reset svg { width: 14px; height: 14px; display: block; color: var(--up-accent-ink); }
+    .up-intent-reset:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+    /* Branded mit Unterzeile: der Grund, warum der Schalter so steht. */
+    .up-branded-row .up-pop-label { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     /* Der Halter des Menues (UC.makeIntentMenu): steht absolut genau ueber dem Ausloeser (Lage aus
        JS), die Huelle haengt links buendig darunter. Der Halter faengt keine Klicks, sonst laege
        ein unsichtbarer Kasten ueber dem Label, solange das Menue zu ist. Das Aufklappen nach oben
@@ -2604,6 +2618,8 @@
     .up-intent-reise-st.is-rest { padding-top: 7px; border-top: 1px solid color-mix(in srgb, var(--vc-inverse-bg) 18%, transparent); }
     /* Ausloeser kurz weg (Nachladen): unsichtbar und nicht klickbar, bis er wieder da ist. */
     .up-intentwrap.is-verwaist { visibility: hidden; }
+    /* Am rechten Rand haengt das Menue an der rechten Kante des Ausloesers (UC.makeIntentMenu, seiteWaehlen). */
+    .up-intentwrap.is-rechts .up-intentpop { left: auto; right: 0; transform-origin: top right; }
 
     /* Unten 8 statt 14: derselbe Abstand unter der Ueberschrift wie bei .up-pop-head. Es ist
        dieselbe Rolle, und zwei Werte dafuer waren nur gewachsen. Oben bleiben die 8, die

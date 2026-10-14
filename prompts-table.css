@@ -936,14 +936,29 @@
 .upt-grp { border-bottom: 1px solid var(--vc-border); }
 .upt-grp:last-child { border-bottom: 0; }
 
+/* DER KOPF AUF DEM RASTER DER ZEILEN (14.10., prompts-table.js grpHeadHtml): dieselben Spuren
+   wie .up-row (--up-cols), damit jede Kennzahl genau ueber den Werten ihrer Spalte steht. Die
+   Zellen tragen dieselbe Polsterung wie .up-td (0 16 0 12) und einen DURCHSICHTIGEN linken
+   Rahmen in der Breite der Zellgrenze: so beginnt eine Zahl im Kopf auf dem Pixel, auf dem sie
+   in der Zeile darunter beginnt, ohne dass der Kopf senkrechte Linien bekommt.
+   55px = --up-h-row, eine Zeile der Skala. Vorher 60 fuer zwei gestapelte Zeilen (Wert und
+   Etikett); das Etikett gibt es nicht mehr. */
 .upt-grp-head {
-  display: flex; align-items: center; gap: 12px;
-  height: 60px; padding: 0 16px 0 12px; cursor: pointer;
+  display: grid; grid-template-columns: var(--up-cols); align-items: center;
+  height: var(--up-h-row); cursor: pointer;
   background: var(--vc-bg); user-select: none;
 }
 .upt-grp-head:hover { background: var(--vt-row-hover); }
-.upt-grp-head.is-open { background: var(--vc-heading-bg); }
+.upt-grp-erste { display: flex; align-items: center; gap: 12px; min-width: 0; height: 100%;
+  padding: 0 16px 0 12px; }
+.upt-grp-zelle { display: flex; align-items: center; gap: 10px; min-width: 0; height: 100%; overflow: hidden;
+  padding: 0 16px 0 12px; border-left: 1px solid transparent; }
 .upt-grp-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1 1 auto; position: relative; }
+/* Die Anzahl hinter dem Namen: leise, damit der Name fuehrt, und in Tabellenziffern, damit
+   die Zahlen untereinander nicht tanzen. "+4" (inaktive) eine Stufe leiser. */
+.upt-grp-anzahl { display: inline-flex; align-items: baseline; gap: 4px; flex: 0 0 auto;
+  font-variant-numeric: tabular-nums; }
+.upt-grp-anzahl .up-num { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-third); }
 .upt-grp-chev { width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-muted);
   transition: transform 120ms ease; }
 .upt-grp-head.is-open .upt-grp-chev { transform: rotate(180deg); }
@@ -955,28 +970,10 @@
 .upt-grp-name { font-size: 14px; font-weight: 500; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
-/* flex-shrink:0 auf BEIDEN Ebenen. Ohne das schrumpften die vier Blocks im engen Header auf
-   0 Breite und lagen sichtbar uebereinander. */
-.upt-grp-kpis { display: flex; align-items: center; justify-content: flex-end; gap: 28px;
-  flex: 0 0 auto; min-width: 0; }
-.upt-grp-kpi { display: flex; flex-direction: column; align-items: center; gap: 3px;
-  flex: 0 0 auto; min-width: 76px; }
-.upt-grp-kpi-val { display: inline-flex; align-items: center; gap: 6px; }
-/* Dieselbe Etikett-Behandlung wie im Rest der App (core: .up-label). Stand auf 11px/500 in
-   Versalien mit Sperrung -- siehe die Begruendung dort.
-   In der dritten Schriftfarbe (29.09. angefordert: "Labels unter den Werten alle in dritt font
-   color"). Der Wert darueber ist, was man liest; das Etikett sagt nur, welcher es ist, und tritt
-   damit eine Stufe weiter zurueck als --vc-muted. Gilt in beiden Ansichten, Wide und Inline --
-   es ist dieselbe Gruppenzeile. */
-.upt-grp-kpi-lbl { font-size: 12px; font-weight: 600; color: var(--vc-third); white-space: nowrap; }
 .upt-grp-inactive { font-size: 11px; font-weight: 500; color: var(--vc-fourth); }
-/* All four KPI values (Prompts' .up-num, Visibility's .up-num, Rank's .up-rank-group .up-num,
-   Sentiment's .up-sent-val) forced to the same 13px/500 here -- their shared classes come from
-   core.css at 14px/13px respectively for ordinary table cells, one size too big for a compact
-   header row of four side by side, and that 1px gap between .up-num (14px) and .up-sent-val
-   (core default 13px) read as the group header not quite matching itself across its own KPIs. */
-.upt-grp-kpi-val, .upt-grp-kpi-val .up-num, .upt-grp-kpi-val .up-sent-val {
-  font-size: 13px; font-weight: 500; }
+/* Die Kennzahlen im Kopf sind DIESELBEN Bausteine wie in der Zelle darunter (.up-num,
+   .up-rank-group, UC.sentHtml) und bekommen hier keine eigene Groesse: der Kopf unterscheidet
+   sich durch Grund und Hoehe, nicht durch eine zweite Zahlenschrift. */
 
 /* ---- group actions: Edit/Delete (custom groupings only), one 3-dot menu ----
    Generate More stand bis zum 27.09. mit darin; es wird nirgends mehr gezeigt (prompts-table.js,
@@ -988,19 +985,7 @@
    with four KPIs next to it. Rendered inline only while open (JS: grpActionMenu) -- same "absent
    means closed" pattern the Grouping popover's own custom-groupings row menu already uses, not a
    UC.makePopover instance, since only one of potentially many rows is ever open at a time. */
-/* .upt-grp-menuslot ist der Platzhalter an Gruppen OHNE Menue im Kopf (27.09., prompts-table.js
-   grpHeadHtml). Er steht in denselben zwei Zeilen wie der Knopf, damit Marge und Flex nicht
-   auseinanderlaufen koennen; die Breite ist die des Knopfes (.upt-grp-menubtn, 24px). Damit
-   stehen die Kennzahlen jeder Zeile dort, wo sie mit Knopf stuenden -- Custom Groupings und
-   Themengruppen liegen im Modus "both" untereinander, und ohne den Platz liefen ihre Spalten um
-   40px versetzt. */
-.upt-grp-menuwrap, .upt-grp-menuslot { position: relative; flex: 0 0 auto; }
-.upt-grp-head .upt-grp-menuwrap,
-.upt-grp-head .upt-grp-menuslot { margin-left: 4px; }   /* head's own 12px gap + 4px = 16px to the KPIs */
-.upt-grp-menuslot { width: 24px; }
-/* Ohne Kennzahlen (is-vnarrow, siehe unten) gibt es nichts auszurichten -- dann bekommt der Name
-   der Gruppe den Platz. */
-.up-root.is-vnarrow .upt-grp-menuslot { display: none; }
+.upt-grp-menuwrap { position: relative; flex: 0 0 auto; }
 .upt-grp-menubtn { width: 24px; height: 24px; flex: 0 0 auto; border: 0; border-radius: 7px;
   background: transparent; color: var(--vc-third); cursor: pointer; padding: 0;
   display: inline-flex; align-items: center; justify-content: center;
@@ -1089,34 +1074,22 @@
     color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%),
     color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%));
 }
-.upt-grp-inner { background: var(--vt-head-bg);
-  min-height: 0; overflow: hidden; }
-.up-root[data-theme="dark"] .upt-grp-inner {
-  background: color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%); }
-.upt-grp-inner .up-row { background: var(--vc-bg); }
-/* HIER FEHLTE DER HOVER GANZ -- gemeldet am 07.09.: "bei Grouping yes gibt es gar keinen
-   Hover-Effekt auf den Rows, der Selected-State ist dagegen korrekt". Beides hat denselben Grund:
-   die Regel eine Zeile darueber hat Spezifitaet (0,2,0), genau wie ".up-row:hover" aus core --
-   und sie steht in der spaeter geladenen Datei, also gewinnt sie. Die Auswahl kam durch, weil sie
-   mit ".upt-root .up-row.is-selected" (0,3,0) notiert ist. Das ist dieselbe Falle, die im
-   Kommentar an .is-selected schon beschrieben steht; sie war nur fuer den Hover nicht mitgezogen.
-
-   WARUM --up-sel-bg UND NICHT --vt-row-hover: die Zeilen liegen hier auf --vc-bg, der Kasten
-   drumherum (.upt-grp-inner) traegt --vt-head-bg -- und seit dem 07.09. ist --vt-head-bg
-   derselbe Wert wie --vt-row-hover (beide die Stufe unter der Karte). Ein Hover in
-   --vt-row-hover haette die Zeile also genau auf die Farbe ihres Behaelters gebracht: statt
-   hervorzutreten waere sie darin verschwunden. --up-sel-bg ist die naechste Stufe darunter und
-   damit von beidem unterscheidbar -- gemessen in _h_upt_zeilenlinie.html.
-   Die Auswahl bekommt denselben Wert, sonst waere sie im Behaelter unsichtbar und der Hover
-   deutlicher als der Dauerzustand. */
-.upt-grp-inner .up-row:hover,
-.upt-root .upt-grp-inner .up-row.is-selected,
-.upt-root .upt-grp-inner .up-row.is-selected:hover { background: var(--up-sel-bg); }
+/* DER AUFGEKLAPPTE BEREICH OHNE EIGENEN KASTEN (14.10.). Bis hierher lagen die Zeilen weiss in
+   einem grauen Behaelter (--vt-head-bg), mit einer eigenen, dunkleren Hover-Farbe (--up-sel-bg),
+   weil --vt-row-hover im Grau verschwunden waere. Drei Graustufen uebereinander ("Farben der
+   Hintergruende, Alignments, Gaps"), und im Dunkeln lag --up-sel-bg (#28282c) so nah an der
+   Linienfarbe (#34343a), dass die Trennlinien einer gehoverten Zeile zu verschwinden schienen --
+   so gemeldet ("bei manchen Zellen verschwindet on hover die Top- oder Bottom-Border").
+   Jetzt liegt die geoeffnete Gruppe auf dem Grund der Tabelle wie die flache Liste: dieselben
+   Zeilen, derselbe Hover und dieselbe Auswahl aus core und .upt-root .up-row.is-selected, ohne
+   Sonderregel. Abgesetzt wird die Gruppe allein durch ihren getoenten Kopf. */
+.upt-grp-inner { min-height: 0; overflow: hidden; }
 
 /* Reuses the table's own .up-pagesize / .up-pager / .up-page primitives verbatim, same as the
    domains-table drilldown footer. */
+/* Gleich oben wie unten (vorher 14 und 10) und links auf der Kante der Kaestchen darueber. */
 .upt-grp-foot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  padding: 14px 16px 10px 12px; }
+  padding: 10px 16px 10px 12px; }
 .upt-grp-foot .up-pagesize-seg { height: 28px; }
 .upt-grp-foot .up-pagesize-btn { height: 28px; min-width: 30px; padding: 0 8px; font-size: 12px; }
 .upt-grp-pages { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
@@ -1124,7 +1097,7 @@
 
 /* header skeleton while the group RPC is in flight */
 .upt-grp-sk { display: flex; flex-direction: column; }
-.upt-grp-skrow { height: 60px; border-bottom: 1px solid var(--vc-border);
+.upt-grp-skrow { height: var(--up-h-row); border-bottom: 1px solid var(--vc-border);
   background: var(--vc-sk); opacity: .55; animation: uutpulse 1.2s ease-in-out infinite; }
 .upt-grp-skrow:last-child { border-bottom: 0; }
 
@@ -1244,19 +1217,17 @@
 .upt-group.is-on .upt-group-dot { opacity: 1; }
 .upt-group-note { padding: 6px 10px 8px; font-size: 12px; color: var(--vc-muted); line-height: 1.35; }
 
-@media (max-width: 900px){
-  .upt-grp-kpis { gap: 14px; }
-  .upt-grp-kpi { min-width: 58px; }
-}
-
 /* Auf Mobilbreite bleibt vom Gruppenkopf nur der linke Teil: Chevron und Themenmarke. Die vier
    Kennzahlen (Prompts, Visibility, Rank, Sentiment) sind dort nicht zu klein, sondern zu viel --
    sie draengen den Namen zusammen, um den es in der Zeile geht, und dieselben Zahlen stehen in
    der geoeffneten Gruppe ohnehin pro Zeile.
    is-vnarrow (unter 620px Wurzelbreite) statt einer Bildschirm-Medienabfrage: in Bubble sagt die
    Fensterbreite nichts ueber die Breite DIESES Elements -- die Komponente misst sich selbst
-   (siehe applyResponsive in prompts-table.js). */
-.up-root.is-vnarrow .upt-grp-kpis { display: none; }
+   (siehe applyResponsive in prompts-table.js).
+   Seit der Kopf auf dem Raster steht (14.10.): die Kennzahlzellen fallen weg, und die erste
+   Zelle nimmt die ganze Zeile -- sonst bliebe rechts das leere Raster stehen. */
+.up-root.is-vnarrow .upt-grp-zelle { display: none; }
+.up-root.is-vnarrow .upt-grp-erste { grid-column: 1 / -1; }
 
 
 
