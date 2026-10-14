@@ -653,7 +653,10 @@
        traegt das wechselnde Wort. */
     sub1: "Track how AI search talks about your brand",
     sub2: "and turn every answer into ",
-    worte: ["qualified traffic.", "leads.", "revenue."],
+    /* Die Schleife beginnt bei "leads." (14.10. abends angefordert). Wer die Woerter tauscht, rechnet
+       die feste Breite des Felds neu (landing-hero.css, .ulh-wechsel: Mitte aus kuerzestem und
+       laengstem Wort, in em). */
+    worte: ["leads.", "revenue.", "qualified traffic."],
     nurlesen: "qualified traffic, leads and revenue.",
     start: "Start for free",
     demo: "Book a demo",
@@ -8617,27 +8620,9 @@
     feld.__ulhDreht = true;
     var i = 0;
     for (var a = 0; a < w.length; a++) if (w[a].classList.contains("is-an")) i = a;
-    /* DIE ZWEITE ZEILE STEHT STILL (14.10. abends: "nur dieser Teil passt sich an, die Position der
-       zweiten Zeile bleibt von Anfang an gleich -- ein sauberer Median ueber alle Laengen").
-       Das Feld hat eine FESTE Breite: die Mitte zwischen kuerzestem und laengstem Wort. Damit ist
-       die Zeile immer gleich breit und steht immer an derselben Stelle; das Wort beginnt links im
-       Feld, direkt nach "into". Das laengste ragt um die halbe Spanne rechts hinaus, beim kuerzesten
-       bleibt dieselbe halbe Spanne frei -- die Abweichung von der Mitte ist nach beiden Seiten
-       gleich gross und so klein, wie sie mit einer festen Lage sein kann.
-       (Davor, bis 14.10. abends: das Feld so breit wie das aktuelle Wort -- die Zeile war mittig,
-       sprang aber bei jedem Wechsel; davor so breit wie das laengste -- sie stand links.)
-       Neu gemessen beim Start, nach dem Laden der Schrift und bei jeder Groessenaenderung. */
-    function breite(){
-      var min = Infinity, max = 0;
-      for (var k = 0; k < w.length; k++){
-        var b = w[k].offsetWidth;
-        if (b){ if (b < min) min = b; if (b > max) max = b; }
-      }
-      if (max) feld.style.width = Math.round((min + max) / 2) + "px";
-    }
-    breite();
-    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(breite); } catch (e){}
-    window.addEventListener("resize", breite, { passive: true });
+    /* Die Breite des Felds steht seit dem 14.10. spaet FEST in der CSS (.ulh-wechsel, 5.03em):
+       vom Skript gesetzt, sprang die zweite Zeile rund eine Sekunde nach dem Laden an ihren Platz
+       (gemeldet). In em stimmt sie ab dem ersten Bild, auch bevor die Schrift geladen ist. */
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     setInterval(function(){
       if (document.hidden || !feld.isConnected) return;

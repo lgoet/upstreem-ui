@@ -328,8 +328,14 @@
 .ulh-sub-z { display: block; }
 .ulh-wechsel {
   display: inline-grid; vertical-align: bottom;
-  /* FESTE Breite (treiberDrehen: Mitte zwischen kuerzestem und laengstem Wort), eine Spur so breit
-     wie das Feld -- ohne minmax(0, 1fr) wuechse sie wieder auf das laengste Wort. */
+  /* FESTE Breite: die Mitte zwischen kuerzestem ("leads.") und laengstem Wort ("qualified
+     traffic."), damit die zweite Zeile bei jedem Wort an derselben Stelle steht. In em und nicht vom
+     Skript gemessen: so sprang die Zeile eine Sekunde nach dem Laden (14.10. gemeldet). In Geist 500
+     sind die Woerter 2.78em, 3.96em und 7.28em breit (gemessen bei 16 und 16.9px Schrift, beide
+     Male dieselben Anteile), die Mitte ist (2.78 + 7.28) / 2 = 5.03em. Wer die Woerter aendert
+     (HERO.worte), misst neu.
+     Eine Spur so breit wie das Feld -- ohne minmax(0, 1fr) wuechse sie auf das laengste Wort. */
+  width: 5.03em;
   grid-template-columns: minmax(0, 1fr);
   /* Platz fuer Unterlaengen (g, q). */
   padding-bottom: .12em; margin-bottom: -.12em;
