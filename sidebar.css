@@ -1214,6 +1214,17 @@
 .usn-newteam svg { width: 15px; height: 15px; display: block; flex: 0 0 15px; color: var(--vc-muted); }
 /* Abschnitte im Konto-Menue: dieselbe Trennlinie, damit beide Menues gleich lesen. */
 .usn-sec + .usn-sec { border-top: 1px solid var(--up-menu-border); margin-top: var(--up-dd-pad); padding-top: var(--up-dd-pad); }
+/* Impressum, Datenschutz, AGB (14.10.): unter "Log out", hinter derselben Trennlinie. Text auf der
+   Kante der Menuezeilen (deren Polsterung 10px), eine Stufe kleiner und in der dritten Textfarbe
+   -- dieselbe Form wie im Fuss der Anmeldeseite. */
+.usn-recht { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 2px 10px 4px; }
+.usn-sec + .usn-recht { padding-top: calc(var(--up-dd-pad) + 2px); }
+.usn-recht-a {
+  font-size: var(--up-fs-s); color: var(--vc-third); text-decoration: none; border-radius: var(--up-r-xs);
+  transition: color var(--usn-t) var(--usn-ease);
+}
+.usn-recht-a:hover { color: var(--vc-text); }
+.usn-recht-a:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 /* Abstaende in beiden Panels. core gibt .up-pop-head unten 8px und den Zeilen gar keinen
    Abstand zueinander -- fuer einen Sorter mit drei Zeilen reicht das, fuer ein Menue mit
    Abschnitten klebt es. Hier: 12px unter der Ueberschrift, 4px zwischen den Zeilen. Die

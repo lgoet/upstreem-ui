@@ -1379,6 +1379,11 @@
     "At least 8 characters": "Mindestens 8 Zeichen",
     "At least 8 characters.": "Mindestens 8 Zeichen.",
     "At least {n} characters.": "Mindestens {n} Zeichen.",
+    /* Rechtliches (rechtLinksHtml): so heissen die Seiten auch im Fuss der Website. */
+    "Imprint": "Impressum",
+    "Privacy": "Datenschutz",
+    "Terms": "AGB",
+    "Legal": "Rechtliches",
     "At least {n} characters": "Mindestens {n} Zeichen",
     "Use at most {n} characters.": "Nutze höchstens {n} Zeichen.",
     "That password is too short. Use at least {n} characters.": "Das Passwort ist zu kurz. Nutze mindestens {n} Zeichen.",
@@ -23911,6 +23916,27 @@
      Server per API zu, was die Seite abweist, oder umgekehrt. Bestehende kuerzere Passwoerter bleiben
      gueltig: die Regel gilt nur fuer NEUE (Anmelden prueft keine Laenge). */
   var PASSWORT = { min: 15, max: 72 };
+
+  /* ---- Rechtliches: Impressum, Datenschutz, AGB (14.10.) -------------------------------------
+     Die Texte stehen auf der Website (upstreem-web, content/legal/), nicht in der App: EINE Quelle,
+     die nicht auseinanderlaufen kann. Verlinkt aus der Anmeldung (auth-page) und dem Kontomenue
+     der Leiste (sidebar) -- das Impressum muss von jeder Seite aus leicht erreichbar sein (§ 5
+     DDG), der Datenschutz dort, wo Daten erhoben werden (Art. 13 DSGVO). In der Sprache der App:
+     die Website fuehrt Deutsch unter /de mit denselben Pfaden. Neuer Tab, damit ein halb
+     ausgefuelltes Formular nicht verloren geht; noreferrer, weil die Website nicht wissen muss,
+     von welcher App-Seite jemand kam. */
+  var RECHT = [
+    { label: "Imprint", pfad: "/imprint" },
+    { label: "Privacy", pfad: "/privacy-policy" },
+    { label: "Terms",   pfad: "/terms-of-service" }
+  ];
+  function rechtLinksHtml(klasse){
+    var de = getPref("locale") === "de";
+    return RECHT.map(function(r){
+      return '<a class="' + esc(klasse || "") + '" href="https://upstreem.ai' + (de ? "/de" : "") + r.pfad +
+        '" target="_blank" rel="noopener noreferrer">' + esc(t_(r.label)) + '</a>';
+    }).join("");
+  }
   function pwStaerke(pw){
     pw = String(pw || "");
     if (!pw) return 0;
@@ -25698,7 +25724,7 @@
     plattformTitel: plattformTitel,
     parseLinkedinUrl: parseLinkedinUrl,
     esc: esc,
-    parseBubbleJson: parseBubbleJson, PASSWORT: PASSWORT,
+    parseBubbleJson: parseBubbleJson, PASSWORT: PASSWORT, rechtLinksHtml: rechtLinksHtml,
     readBubble: readBubble, bubbleObjekt: bubbleObjekt, bubbleFehler: bubbleFehler,
     wennBody: wennBody,
     citeName: citeName,

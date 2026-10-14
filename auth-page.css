@@ -396,6 +396,18 @@
   transition: opacity var(--uau-t) var(--uau-ease);
 }
 .uau-foot button:hover { opacity: .7; }
+/* Links die Frage nach dem Konto, rechts Impressum, Datenschutz, AGB (14.10.). Reicht die Breite
+   nicht fuer beides, bricht die Zeile um und das Rechtliche steht darunter, linksbuendig wie die
+   ganze Spalte. Leiser als die Kontozeile (eine Stufe kleiner, dritte Textfarbe): Pflicht, aber
+   nichts, was man auf dieser Seite tun will. */
+.uau-foot { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.uau-recht { display: flex; gap: 14px; }
+.uau-recht-a {
+  font-size: var(--up-fs-s); color: var(--vc-third); text-decoration: none; border-radius: var(--up-r-xs);
+  transition: color var(--uau-t) var(--uau-ease);
+}
+.uau-recht-a:hover { color: var(--vc-text); }
+.uau-recht-a:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
 /* ---------- Einzug beim Seitenaufbau ----------
    Drei Stufen, nicht sieben: Ueberschrift samt Unterzeile, dann der ganze Bedienteil, dann die

@@ -462,8 +462,12 @@
               '</div>' +
             '</div>' +
           '</div>' +
-          '<div class="uau-foot"><span data-foot-txt></span>' +
-            '<button type="button" data-foot-btn></button></div>' +
+          /* Rechts daneben Impressum, Datenschutz, AGB (14.10.): Pflicht auf der Seite, auf der das
+             Konto entsteht; aus core, dieselben Links wie im Kontomenue der Leiste. */
+          '<div class="uau-foot"><span class="uau-foot-l"><span data-foot-txt></span>' +
+            '<button type="button" data-foot-btn></button></span>' +
+            '<nav class="uau-recht" aria-label="' + esc(UC.t("Legal")) + '">' +
+              (UC.rechtLinksHtml ? UC.rechtLinksHtml("uau-recht-a") : "") + '</nav></div>' +
         '</div>' +
         /* Seit dem 07.10. ohne Bild: der graue Verlauf der Landingpage steht ganz in der CSS
            (.uau-panel). data-bg wird nicht mehr gelesen -- ein gesetztes Attribut schadet nicht. */
