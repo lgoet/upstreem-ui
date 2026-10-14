@@ -682,9 +682,9 @@
      und nicht in den zwei Framer-Komponenten -- dieselbe Ueberlegung wie bei leiste() und fuss():
      .landing_ssr.js schreibt es nach framer/UpstreemDemo.tsx und framer/UpstreemContact.tsx, und
      jeder Text hat genau eine Quelle.
-     Den Kalender setzt landing-teile.js ein (kalenderBinden). Bis er steht, laufen vier Balken;
-     kommt er nicht, steht an ihrer Stelle ein Satz mit dem direkten Link -- nie ein leerer Kasten,
-     der aussieht wie "gleich da". Der Link steht auch im vorgerenderten Markup: ein Crawler ohne
+     Den Kalender setzt landing-teile.js ein (kalenderBinden). Die vier Balken, die bis zum 14.10.
+     liefen, sind auf Wunsch weg (sie waren versehentlich geschickt); kommt der Kalender nicht,
+     steht ein Satz mit dem direkten Link da -- nie ein leerer Kasten, der aussieht wie "gleich da". Der Link steht auch im vorgerenderten Markup: ein Crawler ohne
      JavaScript sieht keinen Kalender, aber er sieht, wohin man bucht. */
   var DEMO_URL = SITE + "/demo";
   var KONTAKT_URL = SITE + "/contact";
@@ -697,42 +697,87 @@
   var CAL_NS = "upstreem-demo";
   var TERMIN = {
     demo: {
+      chip: "Demo",
       titel: "Book a demo",
       sub: "Pick a time that suits you. We show you what AI answers say about your brand, " +
-        "which sources they draw on, and where you can win."
+        "which sources they draw on, and where you can win.",
+      infoH: "What we'll cover",
+      punkte: [
+        "Where AI answers name you, and where they don't",
+        "Which sources and competitors shape those answers",
+        "Your first opportunities, ranked by impact"
+      ],
+      fakt: "45 minutes, video call",
+      alt: "Prefer email?"
     },
     kontakt: {
+      chip: "Contact",
       titel: "Talk to sales",
       sub: "Questions about plans, onboarding or a custom setup? Book a call with us, " +
-        "or write to us directly."
+        "or write to us directly.",
+      infoH: "Write to us",
+      infoT: "Plans, onboarding, agencies or a custom setup: tell us what you need.",
+      alt: "Or book a call"
     }
+  };
+  /* Der Hinweis VOR dem Kalender (14.10., Cookie-Einwilligung): der Kalender ist ein Rahmen von
+     Cal.com, und ihn zu laden schickt Daten dorthin. Auf der eigenen Website kommt er deshalb erst
+     nach Zustimmung (landing-teile.js fragt window.upstreemConsent); in Framer gibt es diese
+     Schnittstelle nicht, dort laedt er wie bisher sofort. */
+  var TERMIN_ZUSTIMMUNG = {
+    h: "The calendar is provided by Cal.com",
+    t: "Loading it shares your IP address and browser data with Cal.com, which may set cookies. " +
+       "You can also book directly on cal.com.",
+    laden: "Load calendar",
+    direkt: "Open cal.com"
   };
 
   function termin(art){
-    var t = TERMIN[art];
+    var t = TERMIN[art], z = TERMIN_ZUSTIMMUNG;
     var direkt = "https://cal.com/" + CAL_LINK;
+    var mail = '<a href="mailto:' + KONTAKT_MAIL + '">' + KONTAKT_MAIL + '</a>';
+    /* Die schmale Karte links: bei der Demo, was die halbe Stunde bringt (eine Liste mit Zahlen
+       statt Zeichen -- auf den Unterseiten laeuft core nicht, und ein Zeichen gehoert aus core);
+       beim Kontakt die Mailadresse gross, sie ist dort der zweite Weg. */
+    var info = art === "demo"
+      ? '<h2 class="ulh-termin-h">' + t.infoH + '</h2>' +
+        '<ol class="ulh-termin-liste">' + t.punkte.map(function(x){ return '<li>' + x + '</li>'; }).join("") + '</ol>' +
+        '<p class="ulh-termin-fakt">' + t.fakt + '</p>' +
+        '<p class="ulh-termin-alt"><span>' + t.alt + '</span> ' + mail + '</p>'
+      : '<h2 class="ulh-termin-h">' + t.infoH + '</h2>' +
+        '<p class="ulh-termin-t">' + t.infoT + '</p>' +
+        '<a class="ulh-termin-mailgross" href="mailto:' + KONTAKT_MAIL + '">' + KONTAKT_MAIL + '</a>' +
+        '<p class="ulh-termin-alt ulh-termin-alt-kal">' + t.alt + '</p>';
     return '<section class="ulh-termin" data-art="' + art + '">' +
-      '<div class="ulh-spur ulh-termin-in">' +
-        '<h1 class="ulh-termin-titel">' + t.titel + '</h1>' +
-        '<p class="ulh-termin-sub">' + t.sub + '</p>' +
-        (art === "kontakt"
-          ? '<p class="ulh-termin-mail">' +
-              '<span>Prefer email?</span> ' +
-              '<a href="mailto:' + KONTAKT_MAIL + '">' + KONTAKT_MAIL + '</a>' +
-            '</p>'
-          : '') +
-        '<div class="ulh-termin-kal" data-ulh-cal="' + CAL_LINK + '" data-ulh-cal-ns="' + CAL_NS + '">' +
-          '<div class="ulh-termin-ziel"></div>' +
-          /* Die Balken: Vorlage vom Nutzer (14.10.), hier in den Farben der Seite. */
-          '<div class="ulh-termin-lader" role="status" aria-label="Loading calendar">' +
-            '<i></i><i></i><i></i><i></i>' +
+      /* Der Kopf als Band ueber die ganze Breite (14.10.): unten eine Linie und ein leises
+         Punktraster -- das Raster der Leiste geht damit in der Seite weiter. Dieselbe Form tragen
+         Blog und Rechtsseiten der Website (.ulh-seitenkopf). */
+      '<div class="ulh-seitenkopf"><div class="ulh-spur ulh-seitenkopf-in">' +
+        '<span class="ulh-feat-chip">' + t.chip + '</span>' +
+        '<h1 class="ulh-seitenkopf-h">' + t.titel + '</h1>' +
+        '<p class="ulh-seitenkopf-sub">' + t.sub + '</p>' +
+      '</div></div>' +
+      /* Darunter der Kasten mit den Karten wie auf der Startseite (.ulh-cards-box). */
+      '<div class="ulh-spur"><div class="ulh-cards-box ulh-termin-box"><div class="ulh-cards"><div class="ulh-cards-row">' +
+        '<article class="ulh-card ulh-termin-info" style="--ulh-w:32">' + info + '</article>' +
+        '<article class="ulh-card ulh-termin-kalkarte" style="--ulh-w:68">' +
+          '<div class="ulh-termin-kal" data-ulh-cal="' + CAL_LINK + '" data-ulh-cal-ns="' + CAL_NS + '">' +
+            '<div class="ulh-termin-ziel"></div>' +
+            '<div class="ulh-termin-zustimmung" hidden>' +
+              '<p class="ulh-termin-z-h">' + z.h + '</p>' +
+              '<p class="ulh-termin-z-t">' + z.t + '</p>' +
+              '<div class="ulh-termin-z-knoepfe">' +
+                '<button class="ulh-btn ulh-btn-pri" type="button" data-ulh-cal-erlauben>' + z.laden + '</button> ' +
+                '<a class="ulh-btn ulh-btn-sec" href="' + direkt + '" target="_blank" rel="noopener">' + z.direkt + '</a>' +
+              '</div>' +
+            '</div>' +
+            '<p class="ulh-termin-fehler">The calendar could not load. ' +
+              '<a href="' + direkt + '" target="_blank" rel="noopener">Book on cal.com</a>' +
+              (art === "kontakt" ? ' or write to ' + mail + '.' : '.') +
+            '</p>' +
           '</div>' +
-          '<p class="ulh-termin-fehler">The calendar could not load. ' +
-            '<a href="' + direkt + '" target="_blank" rel="noopener">Book on cal.com</a>' +
-            (art === "kontakt" ? ' or write to <a href="mailto:' + KONTAKT_MAIL + '">' + KONTAKT_MAIL + '</a>.' : '.') +
-          '</p>' +
-        '</div>' +
-      '</div>' +
+        '</article>' +
+      '</div></div></div></div>' +
     '</section>';
   }
 
@@ -909,7 +954,12 @@
       { t: "Terms of service", h: SITE + "/terms-of-service" },
       { t: "Privacy policy", h: SITE + "/privacy-policy" },
       { t: "Imprint", h: SITE + "/imprint" }
-    ]}
+    ].concat(SITE === "" ? [
+      /* Nur auf der eigenen Website (14.10.): dort gibt es eine Einwilligung (Cal.com), und sie
+         muss jederzeit zu aendern sein. Das Skript der Website oeffnet die Einstellungen ueber
+         data-upstreem-consent. In Framer gibt es nichts zu oeffnen, also auch keinen Link. */
+      { t: "Cookie settings", knopf: true }
+    ] : []) }
   ];
   var FUSS_NETZ = [
     { t: "LinkedIn", h: "https://www.linkedin.com/company/upstreem", ic: "linkedin" },
@@ -949,6 +999,8 @@
             return '<div class="ulh-fuss-spalte">' +
               '<span class="ulh-fuss-kopf">' + sp.t + '</span> ' +
               sp.e.map(function(e){
+                if (e.knopf) return '<button class="ulh-fuss-link ulh-fuss-knopf" type="button" data-upstreem-consent>' +
+                  e.t + '</button>';
                 return '<a class="ulh-fuss-link" href="' + e.h + '"' + tab(e.h) + '>' + e.t + '</a>';
               }).join(" ") +
             '</div>';

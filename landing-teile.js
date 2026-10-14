@@ -157,11 +157,12 @@
   /* ---- Der Kalender der Terminseiten (14.10., /demo und /contact) ----
      Cal.com, Inline. Name und Link stehen im Markup (data-ulh-cal, data-ulh-cal-ns), damit sie wie
      jeder Text nur in landing-hero.js stehen. Drei Zustaende am Feld:
-       (keiner)   die Balken laufen
+       (keiner)   er laedt (ohne Ladebalken, 14.10. auf Wunsch weg; die Karte haelt den Platz)
+       is-wartet  auf der eigenen Website: noch keine Einwilligung fuer Cal.com (siehe unten)
        is-da      Cal.com meldet linkReady -- der Kalender steht
        is-fehler  das Skript von Cal.com kam nicht (Werbeblocker, Netz), Cal.com meldet linkFailed,
                   oder nach 20s steht noch nichts. Dann der Satz mit dem direkten Link.
-     Nie still: ohne einen dieser Zustaende liefen die Balken endlos. */
+     Nie still: ohne einen dieser Zustaende stuende ein leerer Kasten da, der wie "gleich da" aussieht. */
   var CAL_SKRIPT = "https://app.cal.com/embed/embed.js";
   var CAL_FRIST = 20000;
   var calNr = 0;
@@ -182,10 +183,41 @@
     [].forEach.call(calFelder(ns, ":not(.is-da)"), function(f){ f.classList.add("is-fehler"); });
   }
 
+  /* ERST NACH EINWILLIGUNG (14.10.). Der Kalender ist ein Rahmen von Cal.com; ihn zu laden schickt
+     IP-Adresse und Browserdaten dorthin. Die eigene Website stellt dafuer window.upstreemConsent
+     bereit (erlaubt(art), setzen({art: true}), Ereignis "upstreem:consent" am Dokument). Fehlt die
+     Schnittstelle -- in Framer --, laedt er wie bisher sofort.
+     Bis zur Zustimmung steht im Feld ein Hinweis mit zwei Wegen: hier laden (das ist zugleich die
+     Einwilligung und wird gemerkt) oder direkt auf cal.com buchen. */
   function kalenderBinden(root){
     var feld = root.querySelector(".ulh-termin-kal[data-ulh-cal]");
     if (!feld || feld.__ulhKal) return;
     feld.__ulhKal = true;
+    var zs = window.upstreemConsent;
+    if (zs && typeof zs.erlaubt === "function" && !zs.erlaubt("extern")){
+      var hinweis = feld.querySelector(".ulh-termin-zustimmung");
+      feld.classList.add("is-wartet");
+      if (hinweis) hinweis.hidden = false;
+      var los = function(){
+        if (!feld.classList.contains("is-wartet")) return;
+        feld.classList.remove("is-wartet");
+        if (hinweis) hinweis.hidden = true;
+        document.removeEventListener("upstreem:consent", nachgefragt);
+        kalenderLaden(feld);
+      };
+      var nachgefragt = function(){ if (zs.erlaubt("extern")) los(); };
+      document.addEventListener("upstreem:consent", nachgefragt);
+      var knopf = feld.querySelector("[data-ulh-cal-erlauben]");
+      if (knopf) knopf.addEventListener("click", function(){
+        if (typeof zs.setzen === "function") zs.setzen({ extern: true });
+        los();
+      });
+      return;
+    }
+    kalenderLaden(feld);
+  }
+
+  function kalenderLaden(feld){
     var link = feld.getAttribute("data-ulh-cal"), ns = feld.getAttribute("data-ulh-cal-ns");
     var ziel = feld.querySelector(".ulh-termin-ziel");
     if (!link || !ns || !ziel){ feld.classList.add("is-fehler"); return; }

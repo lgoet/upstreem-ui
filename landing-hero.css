@@ -3688,6 +3688,9 @@
   .ulh-preis-desc { min-height: 0; }
 }
 
+/* "Cookie settings" ist ein Knopf und kein Link (14.10.): er oeffnet etwas auf der Seite. Er
+   uebernimmt die Form der Links daneben -- hier nur, was ein Knopf von sich aus anders macht. */
+.ulh-fuss-knopf { background: none; border: 0; padding: 0; font: inherit; text-align: left; cursor: pointer; }
 .ulh-fuss {
   position: relative; z-index: 1;
   width: 100vw; margin-left: calc(50% - 50vw);
@@ -3990,93 +3993,121 @@
    eigene Fuss bei 1440x900 gemessen 48px niedriger als der auf der Startseite. */
 .ulh-root.ulh-teil { background: none; --ulh-fh: 20px; }
 
-/* ---------- Die zwei Terminseiten (14.10.) ---------------------------------------------------
-   upstreem.ai/demo und upstreem.ai/contact (framer/UpstreemDemo.tsx, framer/UpstreemContact.tsx):
-   Ueberschrift, Satz, bei Kontakt die Mailadresse, darunter der Kalender von Cal.com. Leiste und
-   Fuss stehen als eigene Komponenten darueber und darunter. Die Masse sind die des Satzes zum
-   Schluss der Startseite (.ulh-stimme), nur die Ueberschrift ist die einer Seite und kein Zitat:
-   Geist 600 wie die h1 im Hero, eine Stufe kleiner -- die Seite soll den Kalender tragen, nicht
-   die Ueberschrift. */
-.ulh-root.ulh-teil[data-ulh-teil="termin"] { background: var(--ulh-grund); }
-.ulh-termin {
-  padding: clamp(56px, calc(8 * var(--ulh-fh)), 104px) 0 clamp(72px, calc(10 * var(--ulh-fh)), 128px);
+/* ---------- Der Kopf der Unterseiten (14.10.) ------------------------------------------------
+   Demo, Contact, Blog und Rechtsseiten der Website: ein Band ueber die ganze Breite mit Chip,
+   Ueberschrift und Satz, unten eine Linie und ein leises Punktraster, das nach unten ausblendet.
+   Damit geht das Raster der Leiste (Schienen, waagerechte Linie) in der Seite weiter -- dieselbe
+   Machart wie der Satz zum Schluss der Startseite (.ulh-stimme), nur leiser. */
+.ulh-seitenkopf {
+  position: relative; z-index: 1;
+  border-bottom: 1px solid var(--ulh-border);
+  background-color: #ffffff;
+  background-image: radial-gradient(circle, var(--ulh-schiene) 1px, transparent 1px);
+  background-size: 8px 8px;
 }
-.ulh-termin-in { display: flex; flex-direction: column; align-items: center; text-align: center; }
-.ulh-termin-titel {
-  margin: 0;
-  font-size: clamp(34px, 4.4vw, 56px); font-weight: 600; line-height: 1;
-  letter-spacing: -0.02em; color: var(--ulh-text);
+/* Das Raster nur unten sichtbar: oben weiss, damit die Ueberschrift auf ruhigem Grund steht. */
+.ulh-seitenkopf::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to bottom, #ffffff 35%, rgba(255, 255, 255, .55) 100%);
 }
-.ulh-termin-sub {
-  margin: clamp(18px, calc(2.4 * var(--ulh-fh)), 26px) 0 0; max-width: 52ch;
-  font-size: 16px; font-weight: 400; line-height: 1.55; letter-spacing: -0.01em;
+.ulh-seitenkopf-in {
+  position: relative; display: flex; flex-direction: column; align-items: flex-start;
+  padding: clamp(56px, 7vw, 96px) 32px clamp(40px, 5vw, 64px);
+}
+.ulh-seitenkopf-h {
+  margin: 0; max-width: 18ch;
+  font-size: clamp(36px, 4.6vw, 60px); font-weight: 600; line-height: 1.02;
+  letter-spacing: -0.03em; color: var(--ulh-text);
+}
+.ulh-seitenkopf-sub {
+  margin: 20px 0 0; max-width: 56ch;
+  font-size: 17px; font-weight: 400; line-height: 1.55; letter-spacing: -0.01em;
   color: var(--ulh-sub);
 }
-/* Satz und Adresse je ein eigenes Element mit Abstand -- kein Trennzeichen dazwischen. */
-.ulh-termin-mail {
-  margin: 14px 0 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
-  font-size: 14px; line-height: 1.5; color: var(--ulh-sub);
+
+/* ---------- Die zwei Terminseiten (14.10.) ---------------------------------------------------
+   upstreem.ai/demo und upstreem.ai/contact: unter dem Kopf der Kasten mit Karten wie auf der
+   Startseite (.ulh-cards-box) -- links schmal, was es gibt, rechts gross der Kalender. */
+.ulh-root.ulh-teil[data-ulh-teil="termin"] { background: none; }
+.ulh-termin-box { margin: 32px 8px clamp(72px, 9vw, 120px); }
+.ulh-termin-info { padding: 28px 28px 26px; }
+.ulh-termin-h { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: -0.015em; color: var(--ulh-text); }
+.ulh-termin-t { margin: 10px 0 0; font-size: 15px; line-height: 1.55; color: var(--ulh-sub); }
+/* Die drei Punkte als nummerierte Liste mit runden Zahlen -- ohne Zeichen, weil core hier nicht
+   laeuft (siehe termin() in landing-hero.js). */
+.ulh-termin-liste { list-style: none; margin: 20px 0 0; padding: 0; counter-reset: ulhTermin; display: flex; flex-direction: column; gap: 14px; }
+.ulh-termin-liste li {
+  counter-increment: ulhTermin; position: relative; padding-left: 36px;
+  font-size: 15px; line-height: 1.45; color: var(--ulh-text);
 }
-.ulh-termin-mail a, .ulh-termin-fehler a {
+.ulh-termin-liste li::before {
+  content: counter(ulhTermin); position: absolute; left: 0; top: -1px;
+  width: 24px; height: 24px; border-radius: 999px; display: grid; place-items: center;
+  background: var(--ulh-kasten); border: 1px solid var(--ulh-border);
+  font-size: 12px; font-weight: 600; color: var(--ulh-text);
+}
+.ulh-termin-fakt { margin: 24px 0 0; padding-top: 18px; border-top: 1px solid var(--ulh-border); font-size: 13.5px; color: var(--ulh-sub); }
+.ulh-termin-alt { margin: 10px 0 0; display: flex; flex-wrap: wrap; gap: 6px; font-size: 13.5px; color: var(--ulh-sub); }
+.ulh-termin-mailgross {
+  display: inline-block; margin-top: 18px;
+  font-size: 20px; font-weight: 500; letter-spacing: -0.01em; color: var(--ulh-text);
+  text-decoration: underline; text-decoration-color: var(--ulh-border); text-underline-offset: 5px;
+  transition: text-decoration-color 140ms ease;
+}
+.ulh-termin-mailgross:hover { text-decoration-color: currentColor; }
+.ulh-termin-alt-kal { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--ulh-border); width: 100%; }
+.ulh-termin-alt a, .ulh-termin-fehler a {
   color: var(--ulh-text); font-weight: 500;
   text-decoration: underline; text-decoration-color: var(--ulh-border);
   text-underline-offset: 3px; transition: text-decoration-color 140ms ease;
 }
-.ulh-termin-mail a:hover, .ulh-termin-fehler a:hover { text-decoration-color: currentColor; }
+.ulh-termin-alt a:hover, .ulh-termin-fehler a:hover { text-decoration-color: currentColor; }
+.ulh-termin-kalkarte { padding: 10px; }
 
 /* Der Kalender. Die Mindesthoehe haelt seinen Platz frei, solange er laedt: ohne sie stuende der
    Fuss erst unter dem Satz und spraenge dann um gut 500px nach unten. 570 ist die Hoehe, die Cal.com
-   in der Monatsansicht bei 1440 Breite einnimmt (gemessen 14.10. im Pruefstand ter01; mit 640
-   rutschte der Fuss danach um 70px hoch). Steht er, gilt seine eigene Hoehe. */
-.ulh-termin-kal {
-  position: relative; width: 100%; max-width: 1040px;
-  margin-top: clamp(36px, calc(5 * var(--ulh-fh)), 56px);
-  min-height: 570px;
-}
+   in der Monatsansicht einnimmt (gemessen 14.10. im Pruefstand ter01). Steht er, gilt seine
+   eigene Hoehe. Ladebalken gibt es keine mehr (14.10.: "brauch ich nicht"). */
+.ulh-termin-kal { position: relative; width: 100%; min-height: 570px; }
 .ulh-termin-kal.is-da, .ulh-termin-kal.is-fehler { min-height: 0; }
 .ulh-termin-ziel { width: 100%; }
 
-/* Die vier Balken, Vorlage vom Nutzer (uiball, 14.10.): 35px breit, 0.9 davon hoch, 3.5px je
-   Balken, eine Sekunde je Runde, versetzt um je 0.15s. Die Farbe ist die Schrift der Seite. */
-.ulh-termin-lader {
-  position: absolute; top: 160px; left: 50%; translate: -50% 0;
-  display: flex; align-items: center; justify-content: space-between;
-  width: 35px; height: 31.5px;
+/* Vor der Einwilligung: ein ruhiger Hinweis mitten in der Karte statt eines leeren Kastens. */
+.ulh-termin-kal.is-wartet { min-height: 420px; display: grid; place-items: center; }
+.ulh-termin-zustimmung[hidden] { display: none; }
+.ulh-termin-zustimmung {
+  max-width: 420px; padding: 24px; text-align: center;
+  display: flex; flex-direction: column; align-items: center;
 }
-.ulh-termin-lader i {
-  width: 3.5px; height: 100%; background: var(--ulh-text);
-  animation: ulhTerminBalken 1s ease-in-out infinite;
-}
-.ulh-termin-lader i:nth-child(1) { animation-delay: -0.45s; }
-.ulh-termin-lader i:nth-child(2) { animation-delay: -0.3s; }
-.ulh-termin-lader i:nth-child(3) { animation-delay: -0.15s; }
-@keyframes ulhTerminBalken {
-  0%, 100% { transform: scaleY(0.3); }
-  50%      { transform: scaleY(1); }
-}
-/* Ein Ladezeichen muss sich bewegen, sonst sieht es aus wie stehengeblieben -- also langsamer,
-   nicht still. */
-@media (prefers-reduced-motion: reduce) { .ulh-termin-lader i { animation-duration: 2.4s; } }
-.ulh-termin-kal.is-da .ulh-termin-lader, .ulh-termin-kal.is-fehler .ulh-termin-lader { display: none; }
+.ulh-termin-z-h { margin: 0; font-size: 16px; font-weight: 600; color: var(--ulh-text); }
+.ulh-termin-z-t { margin: 8px 0 0; font-size: 14px; line-height: 1.55; color: var(--ulh-sub); }
+.ulh-termin-z-knoepfe { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; }
 
 /* Kommt der Kalender nicht, steht hier ein Satz mit dem direkten Link: ein roter Satz ohne Kasten,
-   in der Fehlerfarbe der App (--vt-down hell, die Landing ist immer hell). Er erscheint auf zwei
+   in der Fehlerfarbe der App (--vt-down hell, die Website ist immer hell). Er erscheint auf zwei
    Wegen: landing-teile.js setzt .is-fehler (Skript blockiert, Cal.com meldet einen Fehler, 20s ohne
    Kalender), und OHNE jedes Skript -- landing-teile.js selbst kam nicht an -- holt ihn nach 25s
-   diese Regel hervor. Sonst liefen die Balken dort endlos und saehen aus wie "gleich da". */
+   diese Regel hervor. Wartet der Kalender auf die Einwilligung (is-wartet), ist das kein Fehler. */
 .ulh-termin-fehler {
-  position: absolute; top: 216px; left: 0; right: 0; margin: 0;
+  position: absolute; top: 216px; left: 0; right: 0; margin: 0; padding: 0 24px; text-align: center;
   font-size: 14px; line-height: 1.5; color: #b0200c;
   visibility: hidden;
 }
-.ulh-termin-kal:not(.is-da) .ulh-termin-fehler { animation: ulhTerminSpaet 1ms 25s forwards; }
+.ulh-termin-kal:not(.is-da):not(.is-wartet) .ulh-termin-fehler { animation: ulhTerminSpaet 1ms 25s forwards; }
 @keyframes ulhTerminSpaet { to { visibility: visible; } }
-.ulh-termin-kal.is-fehler .ulh-termin-fehler { position: static; visibility: visible; animation: none; }
+.ulh-termin-kal.is-fehler .ulh-termin-fehler { position: static; visibility: visible; animation: none; padding: 24px; }
+.ulh-termin-kal.is-da .ulh-termin-fehler, .ulh-termin-kal.is-wartet .ulh-termin-fehler { display: none; }
 /* Meldet Cal.com linkFailed, steht im Rahmen schon SEINE Meldung ("Error Code: 404. Cal Link seems
    to be wrong", gemessen am 14.10. mit einem falschen Link) -- zwei Meldungen uebereinander, eine
    davon englisch-technisch. Der Rahmen geht dann weg, unser Satz bleibt. Kommt der Kalender nach
    der Frist doch noch (is-da), steht er wieder da. */
 .ulh-termin-kal.is-fehler:not(.is-da) .ulh-termin-ziel { display: none; }
+
+/* Schmal stehen die zwei Karten untereinander, der Kalender unten. */
+@media (max-width: 860px) {
+  .ulh-termin-box .ulh-cards-row { flex-direction: column; }
+  .ulh-seitenkopf-in { padding-left: 20px; padding-right: 20px; }
+}
 .ulh-termin-kal.is-da .ulh-termin-fehler { display: none; }
 
 
