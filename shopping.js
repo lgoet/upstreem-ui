@@ -1258,7 +1258,9 @@
       return '<span class="ush-haendlerpaar"><span class="ush-haendler-ic">' + UC.icon("store", 2) + '</span><span class="up-varname" title="' + esc(name) + '">' + hl(name, q) + '</span></span>';
     }
     function bildHtml(url, klasse) {
+      /* Gesperrte Hosts ueber die eigene Adresse (core, bildUrl). */
       var u = sichereUrl(url);
+      if (u && UC.bildUrl) u = UC.bildUrl(u);
       return '<span class="ush-bild' + (klasse ? " " + klasse : "") + (u ? " has-img" : "") + '">' +
         '<span class="ush-bild-ph">' + UC.icon("image", 1.8) + '</span>' +
         (u ? '<img src="' + esc(u) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/>' : '') + '</span>';

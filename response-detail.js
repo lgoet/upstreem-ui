@@ -677,6 +677,8 @@
       var id = String(p.source_product_id == null ? "" : p.source_product_id).trim();
       var pos = zahl(p.position);
       var bild = sichereUrl(p.image_url) || sichereUrl(isArr(p.image_urls) ? p.image_urls[0] : "");
+      /* Gesperrte Hosts ueber die eigene Adresse (core, bildUrl). */
+      if (bild && UC.bildUrl) bild = UC.bildUrl(bild);
       /* Erst der Preis im Format der App, sonst was die Antwort schrieb (price_str), sonst der
          Hinweis -- nie eine geratene Zahl. */
       var preis = (UC.fmtGeld ? UC.fmtGeld(p.price, p.currency) : "") || String(p.price_str || "").trim().slice(0, 40);

@@ -1933,7 +1933,7 @@
       pagerSetzen("liste", vorige[schl + "Total"]);
     }
     function vorschauBild(ad, klasse) {
-      var u = sichereUrl(ad.image_url);
+      var u = UC.bildUrl ? UC.bildUrl(sichereUrl(ad.image_url)) : sichereUrl(ad.image_url);
       return '<span class="uad-bild' + (klasse ? " " + klasse : "") + (u ? " has-img" : "") + '"><span class="uad-bild-ph">' + UC.icon("image", 1.8) + '</span>' +
         (u ? '<img src="' + esc(u) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.remove(\'has-img\');this.remove()"/>' : '') + '</span>';
     }
@@ -2032,6 +2032,8 @@
       var fmt = str(ad.ad_format).trim(), titel = str(ad.title).trim(), desc = str(ad.description).trim();
       var preis = (UC.fmtGeld ? UC.fmtGeld(ad.price, ad.currency) : "") || str(ad.price_str).trim().slice(0, 40);
       var bild = sichereUrl(ad.image_url), url = sichereUrl(ad.url), dom = str(ad.landing_domain).trim();
+      /* Ueber die eigene Adresse, wenn der Host gesperrt wird (core, bildUrl). */
+      if (bild && UC.bildUrl) bild = UC.bildUrl(bild);
       var markt = marktCode(ad.market), modell = str(ad.model).trim(), topics = topicListe(ad.topics);
       /* Die Antwort, in der diese Ad stand: prompt_run_id traegt jedes Ad-Objekt (Vertrag), und
          genau das ist die Id des Response-Drawers -- wie "View Response" in Shopping. */

@@ -4916,13 +4916,29 @@
     if (x.indexOf("//") === 0) x = "https:" + x;
     return /^https?:\/\/[^\s"'<>]+$/i.test(x) ? x : "";
   }
+  /* BILDER UEBER DIE EIGENE ADRESSE (14.10., gemeldet: "alle Ads ab dem 12. Oktober haben kein Bild").
+     Seit dem 12.10. liefert OpenAI die Bilder seiner ChatGPT-Anzeigen ueber bzrcdn.openai.com aus, und
+     genau diesen Host sperrt EasyPrivacy (||bzrcdn.openai.com^) -- in uBlock Origin und Brave ab Werk
+     an. Der Server liefert, der Code stimmt; der Werbeblocker im Browser des Nutzers verschluckt das
+     Bild, und die Karte fiel auf das Zeichen zurueck. Abhilfe: Bilder GESPERRTER Hosts gehen ueber eine
+     Route des Gastgebers (upstreem-app app/api/bild, nur diese Hosts, nur Rasterbilder), die er in
+     window.__upBildWeg nennt. Alles andere bleibt direkt -- jeder Umweg kostet den Gastgeber Last.
+     Ohne __upBildWeg (Bubble, aelterer Gastgeber) bleibt die Adresse, wie sie ist. */
+  var BILD_GESPERRT = { "bzrcdn.openai.com": 1, "bzr.openai.com": 1 };
+  function bildUrl(u){
+    var x = String(u == null ? "" : u);
+    var weg = typeof window.__upBildWeg === "string" ? window.__upBildWeg : "";
+    if (!weg || !x) return x;
+    var h = /^https:\/\/([^\/?#:]+)/i.exec(x);
+    return h && BILD_GESPERRT[h[1].toLowerCase()] ? weg + encodeURIComponent(x) : x;
+  }
   function adText(v){ return v == null || typeof v === "object" ? "" : String(v).trim(); }
   function adCardHtml(ad, opts){
     ad = ad && typeof ad === "object" ? ad : {};
     opts = opts || {};
     var id = adText(ad.id), titel = adText(ad.title), desc = adText(ad.description);
     var adv = adText(ad.advertiser_name), fmt = adText(ad.ad_format), dom = adText(ad.landing_domain);
-    var bild = adSichereUrl(ad.image_url), q = opts.q || "";
+    var bild = bildUrl(adSichereUrl(ad.image_url)), q = opts.q || "";
     function mark(x){ return q && typeof highlight === "function" ? highlight(x, q) : esc(x); }
     var preis = fmtGeld(ad.price, ad.currency) || adText(ad.price_str).slice(0, 40);
     var modell = adText(ad.model), markt = adText(ad.market).toUpperCase();
@@ -25647,7 +25663,7 @@
     intentReiseHtml: intentReiseHtml, intentErklaerHtml: intentErklaerHtml, brandedErklaerHtml: brandedErklaerHtml,
     relativeTime: relativeTime,
     modelChip: modelChip, modelLogoUrl: modelLogoUrl, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,
-    adCardHtml: adCardHtml, adFormatLabel: adFormatLabel, makeSeitenDrawer: makeSeitenDrawer, balkenGrau: balkenGrau,
+    adCardHtml: adCardHtml, adFormatLabel: adFormatLabel, bildUrl: bildUrl, makeSeitenDrawer: makeSeitenDrawer, balkenGrau: balkenGrau,
     barLogoErsatz: barLogoErsatz,
     faviconUrl: faviconUrl, topicChipHtml: topicChipHtml, topicEmoji: topicEmoji,
     marketChip: marketChip,
