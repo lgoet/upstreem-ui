@@ -1823,6 +1823,7 @@
     "Names {names}": "Nennt {names}",
     "Names a tracked brand": "Nennt eine getrackte Marke",
     "Marked as branded by you": "Von dir als branded markiert",
+    "Group average": "Durchschnitt der Gruppe",
     "Marked as not branded by you": "Von dir als nicht branded markiert",
     "Names no tracked brand": "Nennt keine getrackte Marke",
     "The intent is being set. This takes a moment.": "Der Intent wird gerade zugeordnet. Das dauert einen Moment.",
@@ -6083,7 +6084,20 @@
       return id == null ? "" : art + '[data-intent-open="' + (window.CSS && CSS.escape ? CSS.escape(id) : id) + '"]';
     }
     var suche = "";
+    /* ZWEITER KLICK AUF DAS LABEL SCHLIESST (14.10., gemeldet: "bleibt auf und glitcht"). Bei den
+       core-Dropdowns steckt der Ausloeser im Halter, dieser hier steht ausserhalb (das Label in
+       der Zelle). Der globale Aussenklick schloss das Menue darum schon beim pointerdown, und der
+       click desselben Drucks oeffnete es gleich wieder. Abgefangen in der Capture-Phase, BEVOR der
+       Aussenklick laeuft: drueckt jemand auf den Ausloeser des offenen Menues (auch einen nach
+       einem Neuzeichnen ersetzten, darum ueber die Kennung), bleibt es beim Schliessen.
+       Am WINDOW, nicht am Dokument: die Dropdown-Registry schliesst schon in der Capture-Phase
+       am Dokument -- gemessen stand das Menue dort bereits auf zu, und der Merker blieb leer. */
+    var zuPerKlick = false;
+    window.addEventListener("pointerdown", function(e){
+      zuPerKlick = !!(pop.isOpen() && suche && e.target && e.target.closest && e.target.closest(suche));
+    }, true);
     function oeffnen(el, z){
+      if (zuPerKlick){ zuPerKlick = false; pop.close(false); return; }
       if (pop.isOpen() && opener === el){ pop.close(false); return; }
       pop.close(false);
       ziel = z || {};
@@ -22598,6 +22612,9 @@
     aiMagic: '<path d="M13.427 8.08396C12.8007 5.84272 12.3226 4 11.0004 4C9.67824 4 9.19964 5.84274 8.5731 8.08399C8.31853 8.99465 8.19125 9.44998 7.82042 9.82077C7.4496 10.1916 6.99434 10.3188 6.08381 10.5732C3.84273 11.1995 2 11.6775 2 13C2 14.3225 3.84273 14.8005 6.08381 15.4268C6.99434 15.6812 7.4496 15.8084 7.82042 16.1792C8.19125 16.55 8.31853 17.0054 8.5731 17.916C9.19964 20.1573 9.67824 22 11.0004 22C12.3226 22 12.8007 20.1573 13.427 17.916C13.6815 17.0054 13.8087 16.5501 14.1795 16.1793C14.5504 15.8085 15.0056 15.6812 15.9162 15.4268C18.1573 14.8005 20 14.3225 20 13C20 11.6775 18.1573 11.1995 15.9162 10.5732C15.0056 10.3188 14.5504 10.1915 14.1795 9.8207C13.8087 9.44986 13.6815 8.99456 13.427 8.08396Z"/>' +
       '<path d="M19.5 2.9375V4.5M19.5 4.5V6.0625M19.5 4.5H18.25M19.5 4.5H20.75M22 4.5L21.548 4.34934C20.8497 4.11658 20.5006 4.00019 20.2502 3.74981C19.9998 3.49942 19.8834 3.15027 19.6507 2.45198L19.5 2L19.3493 2.45198C19.1166 3.15027 19.0002 3.49942 18.7498 3.74981C18.4994 4.00019 18.1503 4.11658 17.452 4.34934L17 4.5L17.452 4.65066C18.1503 4.88342 18.4994 4.99981 18.7498 5.25019C19.0002 5.50058 19.1166 5.84973 19.3493 6.54802L19.5 7L19.6507 6.54802C19.8834 5.84973 19.9998 5.50058 20.2502 5.25019C20.5006 4.99981 20.8497 4.88342 21.548 4.65066L22 4.5Z"/>',
     /* UserCog (Lucide) -- vom Nutzer gesetzter Intent (14.10. gewaehlt). */
+    /* Das Durchschnittszeichen (14.10.): Kreis mit durchgehendem Schraegstrich, wie das
+       Formelzeichen. Feather hat es nicht (dessen "slash" endet am Kreis). */
+    durchschnitt: '<circle cx="12" cy="12" r="7"/><path d="M4 20 20 4"/>',
     userCog: '<path d="M10 15H6a4 4 0 0 0-4 4v2"/><path d="m14.305 16.53.923-.382"/><path d="m15.228 13.852-.923-.383"/><path d="m16.852 12.228-.383-.923"/>' +
       '<path d="m16.852 17.772-.383.924"/><path d="m19.148 12.228.383-.923"/><path d="m19.53 18.696-.382-.924"/><path d="m20.772 13.852.924-.383"/>' +
       '<path d="m20.772 16.148.924.383"/><circle cx="18" cy="15" r="3"/><circle cx="9" cy="7" r="4"/>',

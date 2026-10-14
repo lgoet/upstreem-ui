@@ -1258,7 +1258,18 @@
        soll sehen, DASS es eine Erklaerung gibt. Eigene Klasse, siehe intentMenuHtml. */
     .up-intent-erklaer { opacity: 1; cursor: pointer; }
     .up-intent-erklaer:hover { color: var(--vc-text); }
-    .up-intent-kopf { display: flex; align-items: center; gap: 8px; }
+    /* DER KOPF DES INTENT-MENUES GLEICH WEIT VON OBEN UND RECHTS (14.10., gemeldet: "das Info-
+       Zeichen hat rechts weniger Abstand als oben"). Vorher sass das 14px-Zeichen direkt an der
+       Polsterkante (rechts 8px), oben kamen 4px Kopfpolster und die halbe Zeilenhoehe dazu (13px).
+       Jetzt ein 22px-Feld mit dem Zeichen in der Mitte, Kopf ohne Polster oben: das Zeichen steht
+       oben und rechts je 8 + 4 = 12px von der Kante, und das Feld traegt den Hover der anderen
+       Icon-Knoepfe. 22 = 14 + 2 x 4, Radius 6 aus der Skala. */
+    /* Mit .up-pop-head verbunden: dessen Polster (4 0 8) steht weiter unten in der Datei und
+       gewaenne bei gleicher Spezifitaet. */
+    .up-pop-head.up-intent-kopf { display: flex; align-items: center; gap: 8px; min-height: 22px; padding: 0 0 6px; }
+    .up-intent-kopf .up-intent-erklaer { width: 22px; height: 22px; flex: 0 0 22px; display: grid; place-items: center;
+      border-radius: var(--up-r-s); }
+    .up-intent-kopf .up-intent-erklaer:hover { background: var(--vc-heading-bg); }
     .up-th:hover .up-th-info { opacity: 1; }
     .up-th-info:hover { color: var(--vc-text); }
     /* DIE ERKLAERKARTE -- EIN Bauteil fuer die ganze App (28.09. zusammengefuehrt).
@@ -2575,9 +2586,14 @@
        mit Knopf, damit KI- und Hand-Fall gleich hoch stehen und das Menue beim Wechsel nicht
        springt. Radius 10 in der 14er-Huelle mit 8 Innenabstand (konzentrisch gerundet). */
     .up-intent-herkunft { display: flex; align-items: center; gap: 8px; margin-top: 4px; min-height: 40px;
-      box-sizing: border-box; padding: 6px 6px 6px 10px; border-radius: var(--up-r-l); background: var(--vt-head-bg);
+      box-sizing: border-box; padding: 5px 5px 5px 9px; border-radius: var(--up-r-l);
+      /* Gestrichelt statt getoent (14.10. gewuenscht: "hebt sich besser ab"). Die Polsterung ist
+         um den Rahmen kleiner, damit Inhalt und Hoehe (40) genau stehen bleiben. */
+      border: 1px dashed var(--vc-border);
       font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-third); white-space: nowrap; }
     .up-intent-herkunft-t { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    /* Mehr Luft zwischen "Von dir gesetzt" und dem Knopf (14.10.): 8 Abstand + 12 = 20. */
+    .up-intent-herkunft .up-intent-reset { margin-left: 12px; }
     /* Das KI-Zeichen in der Akzentfarbe (gewuenscht 14.10.: "in der primary accent color"). */
     .up-intent-ki { display: inline-flex; color: var(--up-accent-ink); }
     .up-intent-ki svg { width: 14px; height: 14px; display: block; }
@@ -2599,7 +2615,9 @@
     .up-intentwrap { position: absolute; z-index: 60; pointer-events: none; }
     /* max-content mit 240 als Untergrenze: auf Deutsch ist die Herkunftszeile ("Von dir gesetzt"
        plus "Der KI ueberlassen") breiter als 240 und brach sonst in zwei Zeilen um. */
-    .up-intentwrap .up-intentpop { left: 0; right: auto; width: max-content; min-width: 240px; max-width: min(320px, 92vw); pointer-events: none; }
+    /* Obergrenze 360 (14.10., vorher 320): mit dem Knopf "Automatisch erkennen" und 20px Luft davor
+       wurde "Von dir gesetzt" auf Deutsch zu "Von dir ges..." gekuerzt -- gemessen 330px Bedarf. */
+    .up-intentwrap .up-intentpop { left: 0; right: auto; width: max-content; min-width: 240px; max-width: min(360px, 92vw); pointer-events: none; }
     .up-intentwrap .up-intentpop.is-shown { pointer-events: auto; }
     /* Die Platte der Intent-Erklaerkarte: die Customer Journey als Weg. Drei Zeilen fuer die Stufen,
        ein senkrechter Strich verbindet ihre Zeichen (die Reise), "Other" abgesetzt ohne Strich.

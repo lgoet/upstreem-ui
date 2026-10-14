@@ -959,6 +959,10 @@
 .upt-grp-anzahl { display: inline-flex; align-items: baseline; gap: 4px; flex: 0 0 auto;
   font-variant-numeric: tabular-nums; }
 .upt-grp-anzahl .up-num { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-third); }
+/* Das Durchschnittszeichen vor den Kennzahlen: 12px wie die anderen kleinen Zeichen in Zellen
+   (das # am Rang), Drittfarbe, und 6 statt der 10 Zellabstand bis zur Zahl -- es gehoert zu ihr. */
+.upt-grp-avg { display: inline-flex; flex: 0 0 auto; margin-right: -4px; color: var(--vc-third); }
+.upt-grp-avg svg { width: 12px; height: 12px; display: block; }
 .upt-grp-chev { width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-muted);
   transition: transform 120ms ease; }
 .upt-grp-head.is-open .upt-grp-chev { transform: rotate(180deg); }

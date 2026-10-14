@@ -1385,7 +1385,13 @@
     function brandedWert(){ return state.branded === "yes" ? "branded" : (state.branded === "no" ? "non_branded" : "all"); }
     /* Eine Gruppe in der Intent-Ansicht steht fuer genau einen Wert (group_key). */
     function groupIntents(g){ return g && nachIntent() ? groupId(g) : ""; }
-    function nachIntent(){ return !!state.intentDa && state.groupBy === "intent"; }
+    /* Ob nach Intent gruppiert werden KANN: sobald die Zeilen Intent-Felder tragen ODER der
+       Gastgeber die Intents freigeschaltet hat (Next.js: NEXT_PUBLIC_UP_INTENTS). Nur intentDa
+       reichte nicht (14.10. gemeldet: "bei Pageload steht bei jeder Gruppe Wird zugeordnet"):
+       beim Laden gibt es noch keine Zeilen, die Tabelle meldete der Seite "nach Topic", die Seite
+       lud Topic-Gruppen -- und sobald die Zeilen kamen, zeichnete die Tabelle sie als Intents. */
+    function intentsMoeglich(){ return !!state.intentDa || window.__upIntentsLive === true; }
+    function nachIntent(){ return intentsMoeglich() && state.groupBy === "intent"; }
     function bulkCount(){
       /* Im Filter-Modus zaehlt die Gesamtzahl MINUS der von Hand abgewaehlten. Genau die Zahl,
          die der Server nach dem Abziehen von excluded_ids anfassen wird -- Anzeige und Wirkung
@@ -2645,7 +2651,7 @@
          (.up-dense), derselbe wie die Zeilenhoehe im Spaltenmenue. Eine Wahl schaltet die
          Gruppierung mit ein -- wer "nach Intent" waehlt, will gruppiert sehen. Nur, wenn die
          Zeilen Intents tragen; sonst gibt es nur eine Art und der Schalter waere Attrappe. */
-      var mitIntent = !!state.intentDa;
+      var mitIntent = intentsMoeglich();
       var istIntent = mitIntent && state.groupBy === "intent";
       var h = mitIntent
         ? '<div class="up-pop-head">Group by</div>' +
@@ -3120,9 +3126,12 @@
     function groupChipHtml(g){
       /* Intent-Ansicht: der Kopf ist das Label selbst (ohne Klick -- der Kopf klappt auf). Die
          Gruppe "pending" steht fuer noch nicht zugeordnete Prompts. */
-      if (nachIntent() && UC.intentHtml){
-        var k = groupId(g);
-        return UC.intentHtml(k === "pending" ? { intent_status: "pending" } : { intent: k, intent_status: "done" });
+      /* Nur eine echte Intent-Gruppe wird zum Label. Liegt (etwa nach einem Wechsel, bevor die
+         neuen Gruppen da sind) noch eine Topic-Gruppe im Speicher, bleibt sie ein Topic-Chip --
+         sonst stand bei jeder "Wird zugeordnet". */
+      var k = groupId(g);
+      if (nachIntent() && UC.intentHtml && UC.intentArt && UC.intentArt(k)){
+        return UC.intentHtml({ intent: k, intent_status: "done" });
       }
       var custom = isYes2(g.is_custom), untag = isYes2(g.is_untagged);
       var label = groupLabel(g);
@@ -3204,7 +3213,12 @@
          wenn sich die Spaltenmenge aendert; ein neu gezeichneter Kopf muss selbst stimmen. */
       var zuSehen = {};
       if (colsKit) colsKit.effectiveCols().forEach(function(c){ zuSehen[c.key] = true; });
-      var werte = { visibility: vis, rank: rank, sentiment: sent };
+      /* Vor jeder Kennzahl das Durchschnittszeichen in der Drittfarbe (14.10. gewuenscht): ohne
+         Etikett sieht man sonst nicht, dass es der Wert der GRUPPE ist und kein Prompt. */
+      var schnitt = '<span class="upt-grp-avg" data-tip="' + esc(UC.t("Group average")) + '">' + UC.icon("durchschnitt", 2) + '</span>';
+      /* Ohne Wert ("–") kein Zeichen: ein Durchschnitt von nichts ist keiner. */
+      var werte = { visibility: (visN == null ? "" : schnitt) + vis, rank: (rankN == null ? "" : schnitt) + rank,
+                    sentiment: (sN == null ? "" : schnitt) + sent };
       var zellen = COLUMNS.map(function(c){
         return '<div class="upt-grp-zelle upt-grp-td-' + c.key + '"' + (!colsKit || zuSehen[c.key] ? "" : ' style="display:none"') + '>' +
           (werte[c.key] || "") + '</div>';
@@ -5714,11 +5728,16 @@
       gruppierung: function(){
         var eigene = readCustomGroups().filter(function(g){ return !g.hidden; })
           .map(function(g){ return { key: g.key, tag_ids: g.tag_ids }; });
-        return { an: groupingOn(), modus: groupModeWirksam(), eigene: eigene, nach: state.intentDa ? state.groupBy : "topic" };
+        return { an: groupingOn(), modus: groupModeWirksam(), eigene: eigene, nach: intentsMoeglich() ? state.groupBy : "topic" };
       },
       /* ---- grouped view: the two setters Bubble calls back into ---- */
       setGroups: function(rows){
-        state.groups = Array.isArray(rows) ? rows : [];
+        /* Die Gruppe der noch nicht zugeordneten Prompts (group_key "pending") ist keine Gruppe,
+           die man waehlen soll (14.10.): sie ist ein Zwischenzustand von Sekunden. Ihre Prompts
+           stehen gleich danach in ihrer Intent-Gruppe. */
+        state.groups = (Array.isArray(rows) ? rows : []).filter(function(g){
+          return !(g && String(g.group_key) === "pending");
+        });
         state.groupsHasData = true;
         state.groupsLoading = false;
         state.groupsTimeout = false;
