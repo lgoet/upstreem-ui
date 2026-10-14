@@ -1867,6 +1867,10 @@
     "Your prompts": "Deine Prompts",
     "What is the intent?": "Was ist der Intent?",
     "Where the question sits in the customer journey: getting to know a topic, comparing options, or ready to buy. AI sets it, and you can change it.": "Wo die Frage in der Customer Journey steht: ein Thema kennenlernen, Anbieter vergleichen oder kaufen. Die KI ordnet zu, du kannst es ändern.",
+    "The question is about getting to know a topic: what something is, how it works, what matters. The start of the customer journey.": "Die Frage will ein Thema kennenlernen: was etwas ist, wie es funktioniert, worauf es ankommt. Der Anfang der Customer Journey.",
+    "The question compares options and asks which one to pick: best lists, alternatives, comparisons. The middle of the customer journey.": "Die Frage vergleicht Optionen und will wissen, welche man nehmen soll: Bestenlisten, Alternativen, Vergleiche. Die Mitte der Customer Journey.",
+    "The question is about acting now: price, trial, where to buy, how to sign up. The end of the customer journey.": "Die Frage will jetzt handeln: Preis, Testversion, wo kaufen, wie anmelden. Das Ende der Customer Journey.",
+    "The question has no place in the customer journey, for example login, support or navigation.": "Die Frage hat keinen Platz in der Customer Journey, etwa Login, Support oder Navigation.",
     "Getting to know the topic": "Will das Thema verstehen",
     "Comparing options": "Vergleicht Anbieter",
     "Ready to buy or sign up": "Will kaufen oder abschließen",
@@ -4595,6 +4599,13 @@
     /* Intent (14.10.): die Customer Journey ist der Aufhaenger -- so ausdruecklich bestellt. Der
        Satz sagt, WO eine Frage auf dem Weg zum Kauf steht; die Platte darueber zeigt den Weg. */
     intent:     { h: "Intent", t: "Where the question sits in the customer journey: getting to know a topic, comparing options, or ready to buy. AI sets it, and you can change it." },
+    /* Je Intent eine eigene Karte (14.10., Prompt Research: beim Ueberfahren der Intent-Chips). Der
+       Satz sagt, was fuer eine Frage das ist, mit Beispielen, und wo sie in der Reise steht. Der
+       Titel ist der angezeigte Name (intentName), darum steht h hier nur als Rueckfall. */
+    intent_informational:  { h: "Informational",  t: "The question is about getting to know a topic: what something is, how it works, what matters. The start of the customer journey." },
+    intent_recommendation: { h: "Recommendation", t: "The question compares options and asks which one to pick: best lists, alternatives, comparisons. The middle of the customer journey." },
+    intent_transactional:  { h: "Transactional",  t: "The question is about acting now: price, trial, where to buy, how to sign up. The end of the customer journey." },
+    intent_other:          { h: "Other",          t: "The question has no place in the customer journey, for example login, support or navigation." },
     /* Branded (14.10., eigene Spalte): sagt, was es heisst UND warum es zaehlt -- branded Prompts
        fallen aus den Kennzahlen. */
     branded:    { h: "Branded", t: "The prompt names your brand or a tracked competitor. Branded prompts are left out of the metrics, because they say little about how visible you are on open questions. Detected automatically, and you can change it." },
@@ -6035,9 +6046,11 @@
      (Spaltenkopf der Tabelle, Menue), also EINE Fassung. */
   var INTENT_WILL = { informational: "Getting to know the topic", recommendation: "Comparing options",
                       transactional: "Ready to buy or sign up", other: "Login, support and the rest" };
-  function intentReiseHtml(){
-    return '<div class="up-intent-reise">' + INTENTE.map(function(a){
-      return '<div class="up-intent-reise-st' + (a.key === "other" ? " is-rest" : "") + '">' +
+  /* aktiv: der Schluessel EINES Intents -- dann steht seine Stufe voll da und die anderen treten
+     zurueck (Karte je Intent). Ohne: alle gleich (Karte am Spaltenkopf). */
+  function intentReiseHtml(aktiv){
+    return '<div class="up-intent-reise' + (aktiv ? " has-aktiv" : "") + '">' + INTENTE.map(function(a){
+      return '<div class="up-intent-reise-st' + (a.key === "other" ? " is-rest" : "") + (a.key === aktiv ? " is-aktiv" : "") + '">' +
         '<span class="up-intent-reise-ic">' + icon(a.icon, 2) + '</span>' +
         '<span class="up-intent-reise-name">' + esc(intentName(a)) + '</span>' +
         '<span class="up-intent-reise-will">' + esc(t(INTENT_WILL[a.key])) + '</span></div>';
@@ -6048,6 +6061,16 @@
     if (!c) return "";
     return '<div class="up-explain-vis">' + intentReiseHtml() + '</div>' +
       '<div class="up-explain-h">' + esc(c.h) + '</div>' +
+      '<div class="up-explain-t">' + esc(c.t) + '</div>';
+  }
+  /* Die Karte EINES Intents (14.10., Prompt Research): dasselbe Format wie die am Spaltenkopf --
+     Platte, Titel, Satz aus explainCopy. Die Platte ist dieselbe Reise mit seiner Stufe
+     hervorgehoben, der Titel sein Name, wie er im Chip steht. */
+  function intentEinzelErklaerHtml(key){
+    var a = intentArt(key), c = a ? explainCopy("intent_" + a.key) : null;
+    if (!c) return "";
+    return '<div class="up-explain-vis">' + intentReiseHtml(a.key) + '</div>' +
+      '<div class="up-explain-h">' + esc(intentName(a)) + '</div>' +
       '<div class="up-explain-t">' + esc(c.t) + '</div>';
   }
 
@@ -25663,7 +25686,7 @@
     intentsLive: intentsLive, intentFilterGet: intentFilterGet, intentFilterSet: intentFilterSet, intentFilterParams: intentFilterParams,
     makeIntentMenu: makeIntentMenu, intentName: intentName, intentsLiveStart: intentsLiveStart, onIntentDaten: onIntentDaten,
     rpcMitIntent: rpcMitIntent,
-    intentReiseHtml: intentReiseHtml, intentErklaerHtml: intentErklaerHtml, brandedErklaerHtml: brandedErklaerHtml,
+    intentReiseHtml: intentReiseHtml, intentErklaerHtml: intentErklaerHtml, intentEinzelErklaerHtml: intentEinzelErklaerHtml, brandedErklaerHtml: brandedErklaerHtml,
     relativeTime: relativeTime,
     modelChip: modelChip, modelLogoUrl: modelLogoUrl, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,
     adCardHtml: adCardHtml, adFormatLabel: adFormatLabel, bildUrl: bildUrl, makeSeitenDrawer: makeSeitenDrawer, balkenGrau: balkenGrau,

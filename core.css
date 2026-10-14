@@ -2651,6 +2651,9 @@
     .up-intent-reise-st:not(.is-rest):not(:nth-last-child(2))::before { content: ""; position: absolute; left: 7.5px; top: 21px; bottom: -8px;
       width: 1px; background: color-mix(in srgb, var(--vc-inverse-bg) 30%, transparent); }
     .up-intent-reise-st.is-rest { padding-top: 7px; border-top: 1px solid color-mix(in srgb, var(--vc-inverse-bg) 18%, transparent); }
+    /* Karte EINES Intents: seine Stufe voll, die anderen zurueckgenommen -- der Weg bleibt lesbar,
+       der gemeinte Schritt steht vorn. */
+    .up-intent-reise.has-aktiv .up-intent-reise-st:not(.is-aktiv) { opacity: .4; }
     /* Ausloeser kurz weg (Nachladen): unsichtbar und nicht klickbar, bis er wieder da ist. */
     .up-intentwrap.is-verwaist { visibility: hidden; }
     /* Am rechten Rand haengt das Menue an der rechten Kante des Ausloesers (UC.makeIntentMenu, seiteWaehlen). */

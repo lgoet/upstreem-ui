@@ -1079,6 +1079,8 @@
   function syncDropdownOpenState(){
     setTimeout(function(){
       root.classList.toggle('is-dd-open', !!root.querySelector('.upr-dd.is-open'));
+      /* Ein neuer Wert aendert die Breite seiner Pille -- passt die Reihe noch neben den Regler? */
+      if (typeof einstellungenLage === 'function') einstellungenLage();
     }, 0);
   }
   function setDropdownValue(dd, option){
@@ -1103,17 +1105,36 @@
      Wurzel (sie scrollt selbst) und gegen das Fenster -- das Kleinere zaehlt. Oben haengt das Menue
      buendig ueber der Box, im selben Abstand wie unten darunter (Menueabstand der App). Die Hoehe
      des Menues kommt aus seinem eigenen Kasten (offsetHeight, ohne die Aufklapp-Bewegung). */
+  /* DAS MENUE GEHT IMMER NACH UNTEN AUF (14.10. abends, gemeldet: "wenn es sich oben oeffnet, liegt es
+     ueber dem Eingabefeld -- so nicht gewollt"). Liegt die Box tief im Fenster, wird die LISTE kuerzer
+     (sie scrollt in sich) statt das Menue umzuklappen oder die Seite zu verschieben; erst unter 140px
+     Liste darf das Menue unten ueberstehen, dann scrollt man die Seite selbst. Lage aus der Box
+     gerechnet: unter ihrer Unterkante im Menueabstand, egal in welcher Reihe die Pille steht. */
   function seiteWaehlen(dd, menu){
     var box = composerEl || dd;
-    var b = box.getBoundingClientRect(), r = root.getBoundingClientRect(), d = dd.getBoundingClientRect();
-    var unten = Math.min(r.bottom, window.innerHeight) - b.bottom, oben = b.top - Math.max(r.top, 0);
-    var hoch = menu.offsetHeight || 0, abstand = 6;
-    var nachOben = unten < hoch + abstand + 8 && oben > unten;
-    dd.classList.toggle('is-oben', nachOben);
-    /* Beide Lagen aus der Box gerechnet: unter ihrer Unterkante bzw. ueber ihrer Oberkante, je im
-       Menueabstand -- unabhaengig davon, in welcher Reihe des Felds die Pille steht. */
-    menu.style.bottom = nachOben ? Math.round(d.bottom - b.top + abstand) + 'px' : '';
-    menu.style.top = nachOben ? 'auto' : Math.round(b.bottom - d.top + abstand) + 'px';
+    var b = box.getBoundingClientRect(), d = dd.getBoundingClientRect(), abstand = 6;
+    menu.style.bottom = '';
+    menu.style.top = Math.round(b.bottom - d.top + abstand) + 'px';
+    var liste = menu.querySelector('[data-dd-list]');
+    if (!liste) return;
+    liste.style.maxHeight = '';
+    var platz = (window.innerHeight || 0) - b.bottom - abstand - 12;
+    var ueber = menu.offsetHeight - platz;
+    if (ueber > 0) liste.style.maxHeight = Math.max(140, liste.offsetHeight - ueber) + 'px';
+    /* Reicht auch die kurze Liste nicht (niedriges Fenster, Feld am unteren Rand -- gemessen bei
+       560px: Menue ganz unter der Kante), wird der Scrollbereich weich GENAU so weit geschoben, dass
+       das Menue ganz zu sehen ist. Nur dann: in einem normal hohen Fenster bewegt sich nichts. */
+    var rest = menu.offsetHeight - platz;
+    if (rest > 0){
+      var sc = root.parentElement;
+      while (sc && sc !== document.body){
+        var oy = getComputedStyle(sc).overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && sc.scrollHeight > sc.clientHeight) break;
+        sc = sc.parentElement;
+      }
+      if (!sc || sc === document.body) sc = document.scrollingElement || document.documentElement;
+      try { sc.scrollBy({ top: Math.ceil(rest), behavior: 'smooth' }); } catch(e){ sc.scrollTop += Math.ceil(rest); }
+    }
   }
   function wireDropdown(dd){
     var trigger = dd.querySelector('.upr-dd-trigger');
@@ -1202,7 +1223,30 @@
   /* is-steht: die Reihe darf ueberlaufen (ihre Menues), aber erst nach der Bewegung (200ms, CSS);
      beim Zuklappen sofort weg, und ein offenes Menue darin geht mit zu. */
   var stehtUhr = null;
+  /* NEBEN ODER UNTER DEM REGLER (14.10. abends): die Einstellungen kommen rechts neben dem Regler
+     herein, in derselben Zeile wie der Start. Passen sie dort nicht hin (schmales Fenster, lange
+     Werte), stehen Regler und Start oben und die Einstellungen als eigene Reihe darunter
+     (is-unter). Gemessen an der natuerlichen Breite der Pillen (Summe plus Abstaende) gegen den
+     Platz zwischen Regler und Start -- beides haengt nicht an der Lage, die Messung kippt also nicht
+     hin und her. */
+  var aktionen = settingsPanel ? settingsPanel.parentNode : null;
+  function einstellungenLage(){
+    if (!aktionen || !settingsPanel || !aktionen.clientWidth) return;
+    var reihe = settingsPanel.querySelector('.upr-settings-grid') || settingsPanel;
+    var kinder = Array.prototype.filter.call(reihe.children, function(k){ return k.offsetWidth > 0 || k.querySelector('.upr-dd-trigger'); });
+    var luecke = parseFloat(getComputedStyle(reihe).columnGap) || 4;
+    var brauchen = kinder.reduce(function(n, k){
+      var t = k.querySelector('.upr-dd-trigger') || k;
+      return n + t.scrollWidth;
+    }, 0) + luecke * Math.max(0, kinder.length - 1);
+    var start = aktionen.querySelector('.upr-start-btn');
+    var frei = aktionen.clientWidth - (settingsToggle ? settingsToggle.offsetWidth : 0) - (start ? start.offsetWidth : 0) - 4 * 2 - 12;
+    aktionen.classList.toggle('is-unter', brauchen > frei);
+  }
+  if (aktionen && UC.onResize) UC.onResize(aktionen, einstellungenLage);
+  else window.addEventListener('resize', einstellungenLage);
   if (settingsToggle && settingsPanel) settingsToggle.addEventListener('click', function(){
+    einstellungenLage();
     var isOpen = settingsPanel.classList.toggle('is-open');
     clearTimeout(stehtUhr);
     if (isOpen) stehtUhr = setTimeout(function(){ if (settingsPanel.classList.contains('is-open')) settingsPanel.classList.add('is-steht'); }, 210);
@@ -1391,6 +1435,14 @@
       th.appendChild(s);
     }
   })();
+  /* Erklaerkarte je Intent an den Chips ueber dem Feld (14.10.): dieselbe Karte wie ueberall, aus
+     core (intentEinzelErklaerHtml) -- Platte mit der Reise, Titel = Name im Chip, Satz aus core. */
+  if (UC.makeExplain && UC.intentEinzelErklaerHtml){
+    UC.makeExplain({
+      root: root, triggerSel: '.upr-intentchip[data-explain]', getIsDark: isDark,
+      html: function(key){ return UC.intentEinzelErklaerHtml(key); }
+    });
+  }
   if (UC.makeExplain){
     UC.makeExplain({
       root: root, triggerSel: '.up-th-info', getIsDark: isDark,
@@ -1647,7 +1699,7 @@
       var gewaehlt = getIntents();
       intentReihe.innerHTML = UC.INTENTE.filter(function(a){ return a.key !== 'other'; }).map(function(a){
         var an = gewaehlt.indexOf(a.key) >= 0;
-        return '<button class="up-topicchip upr-intentchip' + (an ? ' is-on' : '') + '" type="button" data-intent-pick="' + esc(a.key) + '" aria-pressed="' + (an ? 'true' : 'false') + '">' +
+        return '<button class="up-topicchip upr-intentchip' + (an ? ' is-on' : '') + '" type="button" data-intent-pick="' + esc(a.key) + '" data-explain="' + esc(a.key) + '" aria-pressed="' + (an ? 'true' : 'false') + '">' +
           (UC.icon ? UC.icon(a.icon, 2) : '') + '<span class="up-topicchip-lbl">' + esc(UC.intentName ? UC.intentName(a) : a.label) + '</span></button>';
       }).join('');
     }

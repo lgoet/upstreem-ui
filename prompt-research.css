@@ -72,9 +72,12 @@
 }
 .upr-root.is-results .upr-shell,
 .upr-root.is-running .upr-shell { min-height: 0; }
-/* A settings dropdown opens downwards inside a scroll box, so the shell needs somewhere to scroll
-   to while one is open. Same trick the standalone used. */
-.upr-root.is-dd-open:not(.is-results):not(.is-running) .upr-shell { padding-bottom: 340px; }
+/* Hier stand bis 14.10. ein Polster von 340px unten, solange ein Menue offen war ("damit die Schale
+   wohin scrollen kann"). Die Schale ist aber eine senkrecht ZENTRIERTE Spalte mit fester
+   Mindesthoehe: das Polster schob den ganzen Inhalt bei jedem Oeffnen um 170px nach oben und beim
+   Schliessen zurueck -- gemeldet als "bei jedem Dropdown ruckt die ganze Komponente". Ein
+   absolut gesetztes Menue zaehlt ohnehin zum scrollbaren Bereich von #main; die Liste passt sich
+   dem Platz an (prompt-research.js, seiteWaehlen). */
 /* Faint graph-paper wash behind the hero. Masked to a soft circle so it never reaches the edges. */
 .upr-shell::before {
   content: "";
@@ -188,8 +191,9 @@
    aufzumachen. 12px Luft ueber und unter ihm. */
 .upr-intents { position: relative; margin-top: 12px; padding-top: 13px; width: min(100%, 620px);
   display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
-.upr-intents::before { content: ""; position: absolute; top: 0; left: 50%; width: 24px; height: 1px;
-  margin-left: -12px; background: var(--vc-border); }
+/* 72 statt 24 breit (14.10. abends: "den Separator 3 mal so gross"). */
+.upr-intents::before { content: ""; position: absolute; top: 0; left: 50%; width: 72px; height: 1px;
+  margin-left: -36px; background: var(--vc-border); }
 .upr-intents:empty { display: none; }
 .upr-intentchip { flex: 0 0 auto; }
 /* Kein Rahmen in Ruhe, beim Ueberfahren und gewaehlt -- den Zustand traegt der Grund. Zwei
@@ -327,8 +331,8 @@
 .upr-composer.has-value .upr-clear-input { display: inline-flex; }
 /* Die Fusszeile: links der Regler, daneben (aufgeklappt) die Einstellungen als Pillen, rechts
    der Start. 4px zwischen den Pillen wie zwischen Knoepfen einer Werkzeugleiste. */
-/* Umbrechend (14.10.): die Einstellungen stehen als EIGENE erste Reihe ueber Regler und Start
-   (order -1, volle Breite), siehe unten. */
+/* Umbrechend (14.10.): im schmalen Feld stehen die Einstellungen als eigene Reihe UNTER Regler und
+   Start (is-unter, order 1, volle Breite), siehe unten. */
 .upr-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0 4px; width: 100%; min-width: 0; }
 .upr-actions .upr-start-btn { margin-left: auto; }
 /* Primary action. Deliberately bigger than core's 32px .up-export: it is the single call to
@@ -384,19 +388,33 @@
    Herabgleiten der Pillen in 200ms (--up-t-2), dieselbe Kurve. Erst wenn die Reihe steht, darf sie
    ueberlaufen (is-steht, JS) -- vorher schnitte sie ihre eigenen Menues ab, danach braucht es das
    Klippen fuer die Bewegung nicht mehr. */
-.upr-settings-panel { order: -1; flex: 0 0 100%; min-width: 0; display: grid; grid-template-rows: 0fr;
-  opacity: 0; pointer-events: none; margin-bottom: 0;
-  transition: grid-template-rows var(--up-t-2) var(--up-ease), opacity var(--up-t-2) var(--up-ease),
-              margin-bottom var(--up-t-2) var(--up-ease); }
-.upr-settings-panel.is-open { grid-template-rows: 1fr; opacity: 1; pointer-events: auto; margin-bottom: 8px; }
-.upr-settings-panel > .upr-settings-inner { min-height: 0; overflow: hidden; transform: translateY(-6px);
+/* DRITTE FASSUNG (14.10. spaet: "rechts neben dem Fader-Knopf rein; wenn die Seite zu schmal wird,
+   unter den Fader-Knopf"). BREIT: in der Fusszeile direkt rechts neben dem Regler, die Spalte
+   waechst von 0 auf ihre Breite (grid-template-columns 0fr -> 1fr), die Pillen gleiten dabei von
+   links herein. Die Hoehe des Felds aendert sich nicht -- die Zeile ist ohnehin so hoch wie der
+   Start. SCHMAL (is-unter, prompt-research.js einstellungenLage): Regler und Start bleiben oben,
+   die Einstellungen kommen als eigene Reihe darunter herein (Zeilen 0fr -> 1fr) -- dieselbe
+   Bewegung wie die zweite Fassung, nur unter statt ueber dem Regler. 200ms (--up-t-2) in beiden. */
+.upr-settings-panel { flex: 0 1 auto; min-width: 0; display: grid; grid-template-columns: 0fr; grid-template-rows: 1fr;
+  opacity: 0; pointer-events: none;
+  transition: grid-template-columns var(--up-t-2) var(--up-ease), grid-template-rows var(--up-t-2) var(--up-ease),
+              opacity var(--up-t-2) var(--up-ease), margin-top var(--up-t-2) var(--up-ease); }
+.upr-settings-panel.is-open { grid-template-columns: 1fr; opacity: 1; pointer-events: auto; }
+.upr-settings-panel > .upr-settings-inner { min-width: 0; min-height: 0; overflow: hidden; transform: translateX(-6px);
   transition: transform var(--up-t-2) var(--up-ease); }
 .upr-settings-panel.is-open > .upr-settings-inner { transform: none; }
 .upr-settings-panel.is-steht > .upr-settings-inner { overflow: visible; }
+.upr-actions.is-unter .upr-settings-panel { order: 1; flex: 0 0 100%; grid-template-columns: 1fr; grid-template-rows: 0fr; margin-top: 0; }
+.upr-actions.is-unter .upr-settings-panel.is-open { grid-template-rows: 1fr; margin-top: 8px; }
+.upr-actions.is-unter .upr-settings-panel > .upr-settings-inner { transform: translateY(-6px); }
+.upr-actions.is-unter .upr-settings-panel.is-open > .upr-settings-inner { transform: none; }
 @media (prefers-reduced-motion: reduce) {
   .upr-settings-panel, .upr-settings-panel > .upr-settings-inner { transition: none; }
 }
-.upr-settings-inner, .upr-settings-grid { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+/* Breit in EINER Zeile (sonst braeche die Reihe in der schmalen Spalte senkrecht um und machte das
+   Feld hoch -- der Fehler der ersten Fassung); darunter darf sie umbrechen. */
+.upr-settings-inner, .upr-settings-grid { display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; }
+.upr-actions.is-unter .upr-settings-inner, .upr-actions.is-unter .upr-settings-grid { flex-wrap: wrap; }
 .upr-field { position: relative; min-width: 0; }
 .upr-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
@@ -421,8 +439,6 @@
    11px tiefer als sonst, dann der Menueabstand der App. Links buendig mit seiner Pille, eigene
    Breite statt der Pillenbreite. */
 .upr-settings-panel .upr-dd-menu { left: 0; right: auto; width: 260px; top: calc(100% + 11px + var(--up-dd-gap)); }
-/* Nach oben (prompt-research.js, seiteWaehlen): bottom setzt das Skript in px, buendig ueber der Box. */
-.upr-settings-panel .upr-dd.is-oben .upr-dd-menu { top: auto; transform-origin: bottom left; }
 .upr-settings-panel .upr-dd[data-name="business_model"] .upr-dd-menu,
 .upr-settings-panel .upr-dd[data-name="persona"] .upr-dd-menu { width: 220px; }
 /* Branded als Schalter-Pille: ein Klick schaltet, ein Menue gibt es nicht. */
