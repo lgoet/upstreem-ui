@@ -290,7 +290,9 @@
       for (var i = 0; i < list.length; i++){
         if (String(list[i].alpha2 || "").toLowerCase() === String(a2).toLowerCase() && list[i].flag_url) return String(list[i].flag_url);
       }
-      return "https://flagcdn.com/" + String(a2).toLowerCase() + ".svg";
+      /* fremdUrl: in der App ueber die eigene Adresse (core, Datenschutz 14.10.). */
+      var u = "https://flagcdn.com/" + String(a2).toLowerCase() + ".svg";
+      return UC.fremdUrl ? UC.fremdUrl(u) : u;
     }
 
     /* Die Marktliste kommt aus dem seitenweiten Core-Store, den setUpstreemMarkets fuellt -- so wie

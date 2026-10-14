@@ -589,9 +589,12 @@
         return u.origin === window.location.origin ? u.pathname + u.search + u.hash : u.href;
       } catch (e) { return roh; }
     }
-    function weiter(was){
+    function weiter(was, teamId){
       var ziel = direkt ? zielAdresse(was) : "";
       if (!ziel) return melden(was);
+      /* Mit Team (nach dem Annehmen): ?teamid= -- app_start nimmt es als Hinweis, Regel 1 des
+         Vertrags (APP_START_V1: Hinweis, wenn Mitglied). */
+      if (teamId) ziel += (ziel.indexOf("?") >= 0 ? "&" : "?") + "teamid=" + encodeURIComponent(teamId);
       try { window.location.assign(ziel); return true; } catch (e) { return false; }
     }
 
@@ -670,6 +673,17 @@
              des Willkommensblocks laeuft weiter. Ohne Element direkt zum Dashboard, dann im
              bisherigen Team. */
           if (teamId && attr("data-team-fn") && fire("data-team-fn", "uivTeam", { team_id: teamId })) return;
+          /* OHNE BUBBLE (direkt, die App; 14.10.): das neue Team selbst aktiv setzen, auf demselben
+             Weg wie der Teamwechsel in Leiste und Teams (core appTeamWechseln: team_switch_v1 merkt es
+             als letztes Team), und mit ?teamid= zum Dashboard. Vorher landete, wer schon ein Team
+             hatte, im alten. Scheitert der Wechsel, trotzdem weiter -- angenommen ist das Team, und
+             ?teamid= macht es fuer diesen Tab aktiv. */
+          if (teamId && direkt){
+            UC.rpc("team_switch_v1", { p_team: teamId }, { timeoutMs: 15000 }).then(function(){
+              if (!weiter("dashboard", teamId)) api.setError(T.klemmt);
+            });
+            return;
+          }
           if (!weiter("dashboard")) api.setError(T.klemmt);
         }, Math.max(0, hakenFertig - Date.now()) + WEITER_MS);
       });

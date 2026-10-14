@@ -771,7 +771,9 @@
     }
     /* 404 mit PGRST202 heisst "Funktion nicht im Schema" -- NICHT jedes 404: PT404 ist ein
        fachliches "nicht gefunden" und bleibt ein Fehlerzustand. */
+    /* Ohne Bubble (die App, UC.ohneBubble): kein Rueckweg, sondern der Fehler, den der Aufrufer schon zeigt (14.10.). */
     function v2Fehlt(erg) {
+      if (UC.ohneBubble && UC.ohneBubble()) return false;
       var f = erg.fehler || {};
       return erg.status === 404 && (f.code === "PGRST202" || /could not find the function/i.test(str(f.message)));
     }

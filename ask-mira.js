@@ -1185,7 +1185,12 @@
   var OPP_DB = { bubble: false };
   function oppTeam(){ var k = window.UpstreemCore; try { return k && k.getTeam ? String(k.getTeam() || '') : ''; } catch(_){ return ''; } }
   function oppKern(){ var k = window.UpstreemCore; return !OPP_DB.bubble && k && typeof k.rpc === 'function' && oppTeam() ? k : null; }
-  function oppOhneRpc(erg){ return !!erg && erg.status === 404 && !!erg.fehler && String(erg.fehler.code || '') === 'PGRST202'; }
+  /* Ohne Bubble (die App, UC.ohneBubble): kein Rueckweg, sondern der Fehler, den der Aufrufer schon zeigt (14.10.). */
+  function oppOhneRpc(erg){
+    var k = window.UpstreemCore;
+    if (k && k.ohneBubble && k.ohneBubble()) return false;
+    return !!erg && erg.status === 404 && !!erg.fehler && String(erg.fehler.code || '') === 'PGRST202';
+  }
   function oppFehlerSatz(erg, vorgabe){
     var m = erg && erg.fehler ? String(erg.fehler.message || '') : '';
     if (/rate_limited/.test(m) || (erg && erg.status === 429)) return L().oppRate;
@@ -7670,16 +7675,18 @@
   // ---- loading-state asset pools ----
   // favicons pool (sources loader). Accepts an array / JSON string. Each item may be a
   // plain domain/url string, or { url|favicon_url|icon_url|src, domain, label|name }.
+  /* fremdUrl: in der App ueber die eigene Adresse (core, Datenschutz 14.10.). */
+  function _fremd(u){ var k = window.UpstreemCore; return u && k && k.fremdUrl ? k.fremdUrl(u) : u; }
   function _normFavicon(it){
     if (it == null) return null;
     if (typeof it === 'string'){
       var s = it.trim(); if (!s) return null;
-      var src = /^https?:\/\//i.test(s) ? s : ('https://www.google.com/s2/favicons?sz=64&domain=' + s);
+      var src = /^https?:\/\//i.test(s) ? s : _fremd('https://www.google.com/s2/favicons?sz=64&domain=' + s);
       return { src: src, label: s };
     }
     var d = it.domain || it.url || '';
     var src2 = it.favicon_url || it.icon_url || it.src || it.url ||
-      (it.domain ? ('https://www.google.com/s2/favicons?sz=64&domain=' + it.domain) : '');
+      (it.domain ? _fremd('https://www.google.com/s2/favicons?sz=64&domain=' + it.domain) : '');
     if (!src2) return null;
     return { src: src2, label: it.label || it.name || d || '' };
   }
@@ -7697,11 +7704,11 @@
     if (typeof it === 'string'){
       var s = it.trim(); if (!s) return null;
       if (/^https?:\/\//i.test(s)) return { src: s, fb_src: '', label: s, color: '' };
-      return { src: 'https://www.google.com/s2/favicons?sz=64&domain=' + s, fb_src: '', label: s, color: '' };   // domain -> favicon (reliable, matches the chat)
+      return { src: _fremd('https://www.google.com/s2/favicons?sz=64&domain=' + s), fb_src: '', label: s, color: '' };   // domain -> favicon (reliable, matches the chat)
     }
     var dom = it.domain || it.website || it.url_domain || '';
     var explicit = it.logo_url || it.logo || it.icon_url || it.image_url || it.image || it.favicon_url || it.src || it.url || '';
-    var favi = dom ? ('https://www.google.com/s2/favicons?sz=64&domain=' + dom) : '';
+    var favi = dom ? _fremd('https://www.google.com/s2/favicons?sz=64&domain=' + dom) : '';
     var src = explicit || favi;
     if (!src) return null;
     return { src: src, fb_src: (explicit && favi && explicit !== favi) ? favi : '', label: it.name || it.label || dom || '', color: it.color || '' };

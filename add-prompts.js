@@ -353,7 +353,9 @@
     for (var i = 0; i < list.length; i++) {
       if (String(list[i].alpha2 || "").toLowerCase() === a2 && list[i].flag_url) return String(list[i].flag_url);
     }
-    return "https://flagcdn.com/" + a2 + ".svg";
+    /* fremdUrl: in der App ueber die eigene Adresse (core, Datenschutz 14.10.). */
+    var u = "https://flagcdn.com/" + a2 + ".svg";
+    return UC.fremdUrl ? UC.fremdUrl(u) : u;
   }
   function topicById(id) {
     var list = UC.getTopics ? UC.getTopics() : [];

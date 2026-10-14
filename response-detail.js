@@ -1250,7 +1250,8 @@
     /* ---- Citations ------------------------------------------------------------------------ */
     function favOf(c) {
       if (c && c.favicon) return String(c.favicon);
-      try { return "https://www.google.com/s2/favicons?domain=" + new URL(c.url).hostname + "&sz=128"; }
+      /* fremdUrl: in der App ueber die eigene Adresse (core, Datenschutz 14.10.). */
+      try { var u = "https://www.google.com/s2/favicons?domain=" + new URL(c.url).hostname + "&sz=128"; return UC.fremdUrl ? UC.fremdUrl(u) : u; }
       catch (e) { return ""; }
     }
     function domainOf(c) {

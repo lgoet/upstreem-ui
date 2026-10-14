@@ -125,8 +125,10 @@
       return d.split(".").every(function (l) { return l.length <= 63; });
     }
 
+    /* fremdUrl: in der App ueber die eigene Adresse (core, Datenschutz 14.10.). */
     function faviconFor(d) {
-      return d ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(d) + "&sz=64" : "";
+      var u = d ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(d) + "&sz=64" : "";
+      return u && UC.fremdUrl ? UC.fremdUrl(u) : u;
     }
 
     /* ---------------------------------------------------------------------

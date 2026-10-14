@@ -632,7 +632,12 @@
     var MAX_SEITEN = 60;
     var BUBBLE_TYP = (window.__uexBubbleTyp = window.__uexBubbleTyp || {});
     function kern(){ var k = window.UpstreemCore; return k && typeof k.rpc === "function" && typeof k.getTeam === "function" && k.getTeam() ? k : null; }
-    function ohneRpc(erg){ return !!erg && erg.status === 404 && !!erg.fehler && String(erg.fehler.code || "") === "PGRST202"; }
+    /* Ohne Bubble (die App, UC.ohneBubble): kein Rueckweg, sondern der Fehler, den der Aufrufer schon zeigt (14.10.). */
+    function ohneRpc(erg){
+      var k = window.UpstreemCore;
+      if (k && k.ohneBubble && k.ohneBubble()) return false;
+      return !!erg && erg.status === 404 && !!erg.fehler && String(erg.fehler.code || "") === "PGRST202";
+    }
     function exportParameter(art, team, offset, limit){
       var p = { p_team: team, p_date_from: isoDate(state.from), p_date_to: isoDate(state.to), p_offset: offset, p_limit: limit };
       /* Die Filter des Drawers (setContext) -- nur dort, wo die Funktion sie kennt. Ein Parameter,
@@ -785,6 +790,10 @@
       if (typeof fn === "function"){
         try { fn(payloadJson); } catch(e){}
       } else {
+        /* NIEMAND EMPFAENGT (14.10.): bis hierher drehte der Knopf 90 s und ging dann still zurueck --
+           in der App, wo es keinen Bubble-Workflow gibt, bei jedem Export, der hierher fiel. Jetzt
+           sofort ein Satz, und der Dialog bleibt offen. */
+        meldenToast("The export didn't work", "error", "Please try again.");
         // Visible on purpose: silently doing nothing here is exactly what made this look like
         // "clicking Export just closes the popup and nothing happens" — the dialog used to close
         // unconditionally regardless of whether Bubble ever received anything. Check that a
@@ -793,15 +802,17 @@
            haette sonst bei jedem Fehlversuch zweihundert Namen in die Konsole geschrieben.
            Die Meldung selbst bleibt: ein Export, der stumm nichts tut, ist der schlimmere Fall.
            Haeufigste Ursache, gemessen: das Element ist unsichtbar -- Bubble veroeffentlicht
-           bubble_fn_* nur fuer sichtbare Elemente. */
-        console.warn("[upstreem-export] " + fnName + " nicht gefunden. Ist das " +
+           bubble_fn_* nur fuer sichtbare Elemente. In der App (ohneBubble) gibt es kein solches
+           Element -- dort sagt es der Satz oben, die Konsole bleibt still. */
+        var kk = window.UpstreemCore;
+        if (!(kk && kk.ohneBubble && kk.ohneBubble())) console.warn("[upstreem-export] " + fnName + " nicht gefunden. Ist das " +
           "JavaScriptToBubble-Element auf dieser Seite SICHTBAR? Unsichtbare Elemente " +
           "veroeffentlichen ihre Funktion nicht.");
       }
       try {
         root.dispatchEvent(new CustomEvent("upstreem-export", { detail: payload, bubbles: true }));
       } catch(e){}
-      setProcessing(true);
+      if (typeof fn === "function") setProcessing(true);
     }
 
     /* ---------------- listeners ---------------- */

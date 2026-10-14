@@ -554,18 +554,14 @@
         });
       });
     });
-    an("usbusbLogoUrl", function (d) {
-      var url = str(d.url).trim();
-      /* Der Baustein hat das neue Logo schon gezeigt. Jeder Ausgang, der NICHT speichert, holt das
-         gespeicherte zurueck -- sonst stuende ein Logo da, das es nicht gibt. */
-      function zurueck() { try { setter("setSettingsBrandLogo")(ids.usb, state.logo || "", ""); } catch (e) {} }
-      if (!teamGleich(str(d.team_id))) { zurueck(); teamGewechselt(); return; }
-      if (D.logoPruefen(url)) { zurueck(); toast(t("This logo link can't be used"), "error", t("Use an image link that starts with https://")); return; }
-      if (!D.live("logo")) { zurueck(); nochNicht(); return; }
+    /* Logo speichern: derselbe Weg fuer einen Link (usbLogoUrl) und eine hochgeladene Datei
+       (usbLogoFile, danach mit der Adresse im Speicher). */
+    function zurueckLogo() { try { setter("setSettingsBrandLogo")(ids.usb, state.logo || "", ""); } catch (e) {} }
+    function logoSpeichern(url) {
       einmal("marke", function () {
         usbLaden(true);
         return schreiben(D.logo(team(), url)).then(function (erg) {
-          if (!erg.ok) { usbLaden(false); zurueck(); fehlerToast(erg, t("The logo could not be saved")); return; }
+          if (!erg.ok) { usbLaden(false); zurueckLogo(); fehlerToast(erg, t("The logo could not be saved")); return; }
           /* Nur das Logo nachziehen (siehe nachSchreibenMarke): Entwuerfe darunter bleiben. */
           var f = flach(erg.daten), neu = f ? D.zuMarke(Object.assign({}, state.markeDaten || {}, f)) : null;
           var logo = neu ? neu.brand.logo : url;
@@ -580,8 +576,43 @@
           kontoSignal();
         });
       });
+    }
+    an("usbusbLogoUrl", function (d) {
+      var url = str(d.url).trim();
+      /* Der Baustein hat das neue Logo schon gezeigt. Jeder Ausgang, der NICHT speichert, holt das
+         gespeicherte zurueck -- sonst stuende ein Logo da, das es nicht gibt. */
+      if (!teamGleich(str(d.team_id))) { zurueckLogo(); teamGewechselt(); return; }
+      if (D.logoPruefen(url)) { zurueckLogo(); toast(t("This logo link can't be used"), "error", t("Use an image link that starts with https://")); return; }
+      if (!D.live("logo")) { zurueckLogo(); nochNicht(); return; }
+      logoSpeichern(url);
     });
-    an("usbusbLogoFile", function () { toast(t("Uploading a file isn't available yet"), "neutral", t("Use a link to the image instead.")); });
+    /* LOGO ALS DATEI (14.10.). In Bubble legte ein Workflow die Datei auf cdn.bubble.io ab und meldete
+       die Adresse zurueck -- in der App gab es dafuer niemanden, nur "noch nicht verfuegbar". Jetzt
+       ueber core (UC.bildHochladen) in Supabase Storage: Eimer brand-logos, Ordner je Team (die
+       Policy laesst nur Admins des Teams schreiben -- DB-Auftrag AN_DB_VOR_UMSTIEG_14_10), dann
+       derselbe Weg wie ein Link. Der Baustein hat Typ (PNG/SVG) und Groesse (1 MB) schon geprueft
+       und schickt die Datei als Data-URL. Bis der Eimer steht, bleibt der Hinweis (D.live). */
+    an("usbusbLogoFile", function (d) {
+      if (!D.live("logoDatei")) { zurueckLogo(); toast(t("Uploading a file isn't available yet"), "neutral", t("Use a link to the image instead.")); return; }
+      if (!teamGleich(str(d.team_id))) { zurueckLogo(); teamGewechselt(); return; }
+      var roh = str(d.data), m = /^data:(image\/(?:png|svg\+xml));base64,([A-Za-z0-9+/=]+)$/.exec(roh);
+      if (!m) { zurueckLogo(); toast(t("The file could not be read."), "error"); return; }
+      var bytes;
+      try { var bin = atob(m[2]); bytes = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i); }
+      catch (e) { zurueckLogo(); toast(t("The file could not be read."), "error"); return; }
+      var pfad = team() + "/logo-" + Date.now() + (m[1] === "image/png" ? ".png" : ".svg");
+      usbLaden(true);
+      UC.bildHochladen({ bucket: D.EIMER.logoDatei, path: pfad, blob: new Blob([bytes], { type: m[1] }), contentType: m[1] }, function (r) {
+        usbLaden(false);
+        if (!r.ok || !r.url) {
+          zurueckLogo();
+          toast(t("The logo could not be uploaded"), "error",
+            r.grund === "too_large" ? t("The file is too large.") : r.grund === "unauthorized" ? t("Only admins can change the logo.") : t("Please try again."));
+          return;
+        }
+        logoSpeichern(r.url);
+      });
+    });
     /* "Edit brand": der Marken-Editor der App (#drawer-companysettings) fuer die EIGENE Marke. */
     an("usbusbEditBrand", function () {
       var z = state.markeDaten ? D.zuMarke(state.markeDaten) : null, id = z ? z.company_id : "";

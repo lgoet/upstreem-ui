@@ -477,9 +477,12 @@
        neue Endungen aussperren, und die Adresse wird ohnehin serverseitig aufgerufen. */
     return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(String(u || "").split(/[\/?#]/)[0]);
   }
+  /* fremdUrl: in der App ueber die eigene Adresse (core, Datenschutz 14.10.). UC steht erst nach
+     uobRun -- vorher bleibt die Adresse, wie sie ist. */
   function favicon(domain) {
     var d = txt(domain);
-    return d ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(d) + "&sz=64" : "";
+    var u = d ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(d) + "&sz=64" : "";
+    return u && UC && UC.fremdUrl ? UC.fremdUrl(u) : u;
   }
   /* Eine fremde Adresse in einem neuen Tab. noopener,noreferrer wie ueberall im Haus: das neue
      Fenster darf weder an window.opener noch an den Verweis auf die Herkunft. Ohne Schema wuerde
@@ -2520,6 +2523,7 @@
       if (kind === "market") {
         return marketList().map(function (m) {
           var flag = "https://flagcdn.com/w40/" + m.code.toLowerCase() + ".png";
+          if (UC && UC.fremdUrl) flag = UC.fremdUrl(flag);
           return { value: m.code, label: m.name + " " + m.code, kurz: m.name, flag: flag,
                    ic: '<img src="' + flag + '" alt="" loading="lazy" ' +
                        'referrerpolicy="no-referrer" onerror="this.remove()"/>' };

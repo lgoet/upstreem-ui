@@ -80,10 +80,16 @@
   var COLORIS_V = "0.25.0";
   var COLORIS_NPM_JS  = "https://cdn.jsdelivr.net/npm/@melloware/coloris@" + COLORIS_V + "/dist/umd/coloris.min.js";
   var COLORIS_NPM_CSS = "https://cdn.jsdelivr.net/npm/@melloware/coloris@" + COLORIS_V + "/dist/coloris.min.css";
+  /* Auch die verkleinerte Fassung und das Register des Laders (14.10.): die App liefert
+     brand-editor.min.js von der eigenen Domain aus. Gesucht wurde nur "brand-editor.js" -- die Basis
+     blieb leer, der Waehler lud vom Wurzelpfad (404), und der npm-Rueckfall ist dort per CSP
+     gesperrt. Gemessen im Pruefstand beim Oeffnen des Marken-Editors. Dieselbe Suche wie uiBasis in
+     core. */
   function eigeneBasis() {
-    var s = document.querySelector('script[src*="brand-editor.js"]');
+    var s = document.querySelector('script[src*="brand-editor.js"], script[src*="brand-editor.min.js"]');
     var u = s && s.getAttribute("src");
-    return u ? String(u).split("?")[0].replace(/[^/]*$/, "") : "";
+    if (!u) { var L = window.__upAssetsLoaded || {}; u = L["brand-editor.js"] || L["brand-editor.min.js"] || ""; }
+    return u ? String(u).split(/[?#]/)[0].replace(/[^/]*$/, "") : "";
   }
   function stilLaden(url) {
     if (document.querySelector('link[data-ube-coloris]')) return;

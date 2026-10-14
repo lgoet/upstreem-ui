@@ -2269,8 +2269,11 @@
     function marketCell(m){
       var code = String(m == null ? "" : m).trim().toUpperCase();
       if (!code) return '<span class="up-num is-empty">–</span>';
+      /* fremdUrl: in der App ueber die eigene Adresse (core, Datenschutz 14.10.). */
+      var flag = "https://flagcdn.com/" + code.toLowerCase() + ".svg";
+      if (UC.fremdUrl) flag = UC.fremdUrl(flag);
       return '<span class="upt-market">' +
-               '<span class="upt-flag"><img src="https://flagcdn.com/' + esc(code.toLowerCase()) + '.svg" alt="" loading="lazy"/></span>' +
+               '<span class="upt-flag"><img src="' + esc(flag) + '" alt="" loading="lazy"/></span>' +
                '<span class="upt-market-code">' + esc(code) + '</span>' +
              '</span>';
     }

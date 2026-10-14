@@ -662,6 +662,9 @@
     }
     var fn = "bubble_fn_" + base;
     if (typeof window[fn] === "function"){ try { window[fn](); } catch(_){} }
+    /* OHNE BUBBLE (die App, 14.10.): "Edit your brand" ohne eigene Marke tat nichts -- der Editor
+       braucht eine. Dann zu Settings, dessen erster Reiter Your Brand ist: dort legt man sie an. */
+    else if (action === "edit_your_brand" && typeof window.usnNavigieren === "function"){ try { window.usnNavigieren("settings"); } catch(_){} }
     try { window.dispatchEvent(new CustomEvent("mira_" + base)); } catch(_){}
   }
   // one distinct event per result category, carrying a single value (id / domain / url)

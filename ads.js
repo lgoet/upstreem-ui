@@ -229,7 +229,9 @@
   }
   /* Fehlt die v2 in der Datenbank? Nur PostgRESTs "Funktion unbekannt" -- ein 404 PT404 (nicht
      gefunden) ist eine echte Antwort und bleibt ein Fehler. */
+  /* Ohne Bubble (die App, UC.ohneBubble): kein Rueckweg, sondern der Fehler, den der Aufrufer schon zeigt (14.10.). */
   function v2Fehlt(erg) {
+    if (UC.ohneBubble && UC.ohneBubble()) return false;
     var f = (erg && erg.fehler) || {};
     return !!erg && !erg.ok && (str(f.code) === "PGRST202" || /could not find the function/i.test(str(f.message)));
   }

@@ -120,7 +120,9 @@
         da[s] = 1;
         var host = "";
         try { host = new URL(u.url).hostname; } catch (e) {}
-        out.push({ type: "url", url: u.url, title: s, favicon: host ? "https://www.google.com/s2/favicons?domain=" + host + "&sz=64" : "" });
+        /* fremdUrl: in der App ueber die eigene Adresse (core, Datenschutz 14.10.). */
+        var fav = host ? "https://www.google.com/s2/favicons?domain=" + host + "&sz=64" : "", k = window.UpstreemCore;
+        out.push({ type: "url", url: u.url, title: s, favicon: fav && k && k.fremdUrl ? k.fremdUrl(fav) : fav });
       });
     });
     return out.slice(0, 8);

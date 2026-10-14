@@ -282,7 +282,7 @@
     var k = String(alpha2 || "").trim().toLowerCase();
     /* flagcdn ist die Flaggenquelle der ganzen App (prompts-table, prompt-research, der
        Markets-Filter) -- eine zweite Quelle waere ein zweiter Stil. */
-    return k.length === 2 ? "https://flagcdn.com/" + k + ".svg" : "";
+    return k.length === 2 ? fremdUrl("https://flagcdn.com/" + k + ".svg") : "";
   }
   function flagHtml(alpha2, cls){
     var url = flagUrl(alpha2);
@@ -1381,6 +1381,12 @@
     "At least {n} characters.": "Mindestens {n} Zeichen.",
     "Please confirm that you are human, then try again.": "Bitte bestätige, dass du ein Mensch bist, und versuch es noch einmal.",
     "The security check did not work. Reload the page and try again.": "Die Sicherheitsprüfung hat nicht geklappt. Lade die Seite neu und versuch es noch einmal.",
+    /* Logo als Datei in Settings (14.10.). */
+    "The logo could not be uploaded": "Das Logo ließ sich nicht hochladen",
+    "Only admins can change the logo.": "Nur Admins können das Logo ändern.",
+    "The file is too large.": "Die Datei ist zu groß.",
+    /* Create with AI, eigene Seiten nicht ladbar (14.10.). */
+    "Your pages could not be loaded. Paste a URL above to add it.": "Deine Seiten ließen sich nicht laden. Füge oben eine URL ein.",
     /* Einbettungen erst nach Zustimmung (url-detail, 14.10.). "Er" ist der Inhalt. */
     "Content from {name}": "Inhalt von {name}",
     "It loads from {firma} once you choose to show it. {firma} then receives your IP address and may set cookies.":
@@ -4866,7 +4872,7 @@
     else h = h.split(/[\/?#]/)[0];
     h = h.replace(/^www\./i, "").replace(/:\d+$/, "").toLowerCase();
     if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(h)) return "";
-    return "https://www.google.com/s2/favicons?domain=" + h + "&sz=" + (sz || 64);
+    return fremdUrl("https://www.google.com/s2/favicons?domain=" + h + "&sz=" + (sz || 64));
   }
 
   /* DER STATISCHE TOPIC-CHIP (.up-topicchip.is-static), der eine Topic ANZEIGT statt sie zu
@@ -5082,7 +5088,7 @@
     var all = getAllMarkets ? getAllMarkets() : null;
     var rec = all && (all[c] || all[c.toLowerCase()]);
     var flag = rec && (rec.flag_url || rec.flag) ? String(rec.flag_url || rec.flag) : "";
-    if (!flag) flag = "https://flagcdn.com/w40/" + c.toLowerCase() + ".png";
+    if (!flag) flag = fremdUrl("https://flagcdn.com/w40/" + c.toLowerCase() + ".png");
     return '<span class="up-market' + (cfg.cls ? " " + cfg.cls : "") + '">' +
              '<span class="up-flag"><img src="' + esc(flag) + '" alt="" loading="lazy"' +
                ' referrerpolicy="no-referrer" onerror="this.remove()"/></span>' +
@@ -5164,7 +5170,7 @@
   }
   function rbFavicon(url, karte){
     if (karte && karte.favicon) return String(karte.favicon);
-    try { return "https://www.google.com/s2/favicons?domain=" + new URL(url).hostname + "&sz=64"; }
+    try { return fremdUrl("https://www.google.com/s2/favicons?domain=" + new URL(url).hostname + "&sz=64"); }
     catch (e) { return ""; }
   }
 
@@ -8377,7 +8383,7 @@
          Palette zu, auch auf einer Seite ohne Palette -- window.MiraQuickActions gibt es dort nicht. */
       var qa = esBruecke();
       var code = erg && erg.fehler ? String(erg.fehler.code || "") : "";
-      if (erg && !erg.ok && erg.status === 404 && code === "PGRST202"){
+      if (erg && !erg.ok && erg.status === 404 && code === "PGRST202" && !ohneBubble()){
         SUCHE.bubble = true;
         var fn = window.bubble_fn_quick_actions_search;
         if (typeof fn === "function"){ try { fn(JSON.stringify(detail)); } catch(e){} }
@@ -10330,7 +10336,7 @@
     if (img.style && img.style.visibility === "hidden") img.style.visibility = "";
     var k = img.closest ? img.closest(FAV_KASTEN) : null;
     if (k && k.style && k.style.visibility === "hidden") k.style.visibility = "";
-    img.setAttribute("src", "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(d) + "&sz=64");
+    img.setAttribute("src", fremdUrl("https://www.google.com/s2/favicons?domain=" + encodeURIComponent(d) + "&sz=64"));
     return true;
   }
 
@@ -15144,8 +15150,8 @@
     return MEHRTEILIGE_TLD[zwei] ? p.slice(-3).join(".") : zwei;
   }
   function favUrl(host){
-    return FAV_PROXY + encodeURIComponent("www.google.com/s2/favicons?domain=" + host + "%26sz=128") +
-           "&w=64&h=64&output=png";
+    return fremdUrl(FAV_PROXY + encodeURIComponent("www.google.com/s2/favicons?domain=" + host + "%26sz=128") +
+           "&w=64&h=64&output=png");
   }
   function rgb2hsl(r, g, b){
     r /= 255; g /= 255; b /= 255;
@@ -15214,12 +15220,14 @@
     img.onerror = function(){ if (erledigt) return; erledigt = true; fertig(null); };
     setTimeout(function(){ if (!erledigt){ erledigt = true; fertig(null); } }, 8000);
     /* Ein Bild vom EIGENEN Ursprung (die App: /fremd/..., siehe fremdUmschreiben) braucht keinen
-       Proxy fuer den CORS-Kopf -- es verschmutzt die Leinwand nicht. */
-    if (u.charAt(0) === "/" && u.charAt(1) !== "/"){ img.src = u; return; }
+       Proxy fuer den CORS-Kopf -- es verschmutzt die Leinwand nicht. Seit dem 14.10. abends steht
+       dort die volle Adresse (fremdBasis), also auch am Ursprung erkennen. */
+    var eigen = ""; try { eigen = window.location.origin + "/"; } catch(e){}
+    if ((u.charAt(0) === "/" && u.charAt(1) !== "/") || (eigen && u.indexOf(eigen) === 0)){ img.src = u; return; }
     /* Das Protokoll muss weg, bevor es in den Proxy geht -- wsrv.nl erwartet die Adresse ohne
        "https://". Eine Adresse ohne Protokoll laeuft unveraendert durch. */
-    img.src = FAV_PROXY + encodeURIComponent(u.replace(/^https?:\/\//i, "")) +
-              "&w=64&h=64&output=png";
+    img.src = fremdUrl(FAV_PROXY + encodeURIComponent(u.replace(/^https?:\/\//i, "")) +
+              "&w=64&h=64&output=png");
   }
   function faviconColor(domainOderUrl, cb){
     var h = favHost(domainOderUrl);
@@ -21848,17 +21856,50 @@
   /* ══ FREMDE BILDER UEBER DIE EIGENE ADRESSE (14.10., Datenschutz) ═══════════════════════════════
      Logos und Favicons kamen direkt von Google (s2/favicons, gstatic faviconV2), Flaggen von
      flagcdn.com, hochgeladene Logos von Bubbles Ablage (cdn.bubble.io) -- jeder Aufruf gab dem
-     Dritten die IP-Adresse des Nutzers. In der App (upstreem-app setzt window.__upFremdWeg =
+     Dritten die IP-Adresse des Nutzers. In der App (upstreem-app setzt window.__upFremdBasis =
      "/fremd/") werden diese Adressen zu /fremd/<host>/...: der Server der App holt das Bild, der
      Dritte sieht nur ihn. Nur der Anfang aendert sich -- "google.com/s2/favicons" steht weiter in
      der Adresse, und jede Erkennung in core (FAV_DIENST, favDomainAusSrc) greift wie vorher.
-     Hier fuer die DATEN (jede rpc- und edge-Antwort, einmal als Text); die Adressen im Code
-     schreibt der Bau der App um (upstreem-app werkzeug/ui_holen.mjs). Ohne __upFremdWeg (Bubble,
-     Website) bleibt alles, wie es ist. */
+     Hier fuer die DATEN (jede rpc- und edge-Antwort, einmal als Text); die Adressen, die der Code
+     selbst baut (Favicon aus der Domain, Flagge aus dem Laendercode, wsrv fuer die Farbe), gehen
+     durch fremdUrl. Ohne __upFremdBasis (Bubble, Website) bleibt alles, wie es ist.
+
+     ABSOLUT (14.10. abends): die erste Fassung schrieb "/fremd/..." relativ, und jede Pruefung auf
+     /^https?:\/\// in core und den Komponenten (Logo-, Flaggen-, Favicon-Felder) warf die Adresse
+     weg -- in der App fehlten alle Favicons und Logos (gemeldet; gemessen auf Brands 16 kaputte
+     Bilder und 22 Buchstaben statt 41 Bildern und 11 Buchstaben). Darum steht jetzt der eigene
+     Ursprung davor, und die Umschreibung im Bau der App (ui_holen.mjs) ist weg. Der Schalter hat
+     einen NEUEN Namen (vorher __upFremdWeg): eine aeltere core, die ihn noch relativ deuten wuerde,
+     kennt diesen nicht und laesst die Adressen direkt -- Gastgeber und Pin duerfen also
+     auseinanderliegen, ohne dass die Bilder wieder verschwinden. */
   var FREMD_BILD = /(?:https?:)?\/\/(www\.google\.com\/s2\/favicons|t\d\.gstatic\.com\/faviconV2|[a-z0-9]+\.cdn\.bubble\.io\/|flagcdn\.com\/)/g;
+  /* Fuer eine einzelne Adresse nur am Anfang: ein Link, der eine dieser Adressen als Parameter
+     traegt, ist kein Bild von dort. */
+  var FREMD_ANFANG = new RegExp("^" + FREMD_BILD.source, "i");
+  /* wsrv.nl in genau der Form aus favUrl/bildFarbe -- die Route der App kennt nur diese. */
+  var FREMD_WSRV = /^https?:\/\/wsrv\.nl\/?\?/i;
+  function fremdBasis(){
+    var w = window.__upFremdBasis;
+    if (!w || typeof w !== "string") return "";
+    if (/^\/[^\/]/.test(w)){ try { w = window.location.origin + w; } catch(e){ return ""; } }
+    return /^https?:\/\/[^\/]+\/(.*\/)?$/i.test(w) ? w : "";
+  }
+  function fremdUrl(u){
+    var b = fremdBasis();
+    /* FREMD_ANFANG fehlt nur, wenn ein Aufruf aus dem Start von core kommt, bevor diese Zeilen
+       gelaufen sind -- dann bleibt die Adresse, wie sie ist. */
+    if (!b || typeof u !== "string" || !u || !FREMD_ANFANG) return u;
+    if (FREMD_WSRV.test(u)) return u.replace(FREMD_WSRV, b + "wsrv.nl?");
+    return u.replace(FREMD_ANFANG, b + "$1");
+  }
+  /* OHNE BUBBLE (14.10.): die App setzt window.__upOhneBubble. Dann gibt es keinen Rueckweg an einen
+     Bubble-Workflow -- wo eine Komponente bei einer fehlenden Funktion (PGRST202) bisher an Bubble
+     ging, zeigt sie in der App ihren Fehler. Vorher lief so ein Rueckweg ins Leere (der Export drehte
+     90 s). In Bubble aendert sich nichts. */
+  function ohneBubble(){ return window.__upOhneBubble === true; }
   function fremdUmschreiben(t){
-    var weg = window.__upFremdWeg;
-    return weg && typeof t === "string" ? t.replace(FREMD_BILD, String(weg) + "$1") : t;
+    var b = fremdBasis();
+    return b && typeof t === "string" ? t.replace(FREMD_BILD, b + "$1") : t;
   }
   function rpc(name, params, opts){
     opts = opts || {};
@@ -25806,7 +25847,7 @@
     parseLinkedinUrl: parseLinkedinUrl,
     esc: esc,
     parseBubbleJson: parseBubbleJson, PASSWORT: PASSWORT, rechtLinksHtml: rechtLinksHtml,
-    pwZeichen: pwZeichen, pwZuLang: pwZuLang,
+    pwZeichen: pwZeichen, pwZuLang: pwZuLang, ohneBubble: ohneBubble, fremdUrl: fremdUrl,
     readBubble: readBubble, bubbleObjekt: bubbleObjekt, bubbleFehler: bubbleFehler,
     wennBody: wennBody,
     citeName: citeName,

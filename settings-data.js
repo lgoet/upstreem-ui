@@ -64,13 +64,19 @@
     meta: true, marke: true, mitglieder: true, einladungen: true, protokoll: true, abo: true, tarife: true,
     /* Schritt 2 (Your Brand speichern) gebaut am 11.10. (settings_v1_brand.sql, Vertrag 12). */
     markeSpeichern: true, logo: true, modelle: true,
+    /* Logo als Datei (14.10.): erst an, wenn der Eimer brand-logos samt Policy steht
+       (AN_DB_VOR_UMSTIEG_14_10, Punkt Dateien). Bis dahin der Hinweis "noch nicht verfuegbar". */
+    logoDatei: false,
     /* Schritte 3 bis 6 gebaut am 11.10. (settings_v1_rest.sql, Vertrag 13; Kasse 9.2/10.5). */
     einladen: true, erneut: true, zurueckziehen: true,
     entfernen: true, rolle: true,
     portal: true, kasse: true,
     verlassen: true, loeschen: true
   };
-  function live(art) { return LIVE[art] === true && !!(FN[art] || EDGE[art]); }
+  /* Speicher-Eimer (Supabase Storage) je Funktion -- das Logo als Datei schreibt keine RPC, sondern in
+     den Speicher, und danach ueber "logo". */
+  var EIMER = { logoDatei: "brand-logos" };
+  function live(art) { return LIVE[art] === true && !!(FN[art] || EDGE[art] || EIMER[art]); }
 
   /* Grenzen, die die Oberflaeche VORAB einhaelt, damit der Nutzer seinen Fehler sofort sieht. Die
      Werte sind der Vorschlag des Auftrags (4.2, 4.4); die DB bestimmt sie endgueltig. */
@@ -245,7 +251,13 @@
     };
   }
   /* Your Brand (6.1): die Form, die renderSettingsBrand liest. Der Teamname kommt aus der Meta. */
-  function absolut(u) { u = str(u).trim(); if (/^\/\//.test(u)) u = "https:" + u; return /^https:\/\//i.test(u) ? u : ""; }
+  /* Auch die eigene Adresse (14.10.): in der App kommen Logos aus Bubbles Ablage ueber
+     <Ursprung>/fremd/... (core fremdUmschreiben) -- auf http://localhost sonst verworfen. */
+  function absolut(u) {
+    u = str(u).trim(); if (/^\/\//.test(u)) u = "https:" + u;
+    var eigen = ""; try { eigen = window.location.origin + "/"; } catch (e) {}
+    return /^https:\/\//i.test(u) || (eigen && u.indexOf(eigen) === 0) ? u : "";
+  }
   /* Vorschlag 6.1: {meta, row:{company_id, name, logo_url, market, business_model, industry, summary,
      limits, markets}}, flach statt unter brand. Die Modelle fehlen dort (Rueckmeldung 2): erwartet
      als row.models in der Zeilenform von get_team_model_settings_v1. Die fruehere Form ({brand,
@@ -396,7 +408,7 @@
     markeSpeichern: markeSpeichern, zusammenfassungZuLang: zusammenfassungZuLang, logo: logo, modelle: modelle,
     einladen: einladen, erneut: erneut, zurueckziehen: zurueckziehen, entfernen: entfernen, rolle: rolle,
     verlassen: verlassen, loeschen: loeschen, portal: portal, kasse: kasse,
-    mailNorm: mailNorm, mailPruefen: mailPruefen, logoPruefen: logoPruefen,
+    mailNorm: mailNorm, mailPruefen: mailPruefen, logoPruefen: logoPruefen, EIMER: EIMER,
     zuMeta: zuMeta, zuMarke: zuMarke, zuMitglieder: zuMitglieder, zuEinladungen: zuEinladungen, zuProtokoll: zuProtokoll,
     zuAbo: zuAbo, zuTarife: zuTarife, zuAustritt: zuAustritt, stripeUrl: stripeUrl,
     antwortPruefen: antwortPruefen, meldung: meldung, hinweis: hinweis, hinweisZahl: hinweisZahl, fehlerArt: fehlerArt, makeLader: makeLader

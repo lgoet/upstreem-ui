@@ -237,9 +237,11 @@
     } catch (e) { return { host: String(url || ""), pfad: "", start: false }; }
   }
   function pfadText(hp) { return hp.start ? t("Homepage") : hp.pfad; }
+  /* fremdUrl: in der App ueber die eigene Adresse (core, Datenschutz 14.10.). */
   function favicon(url) {
     var h = hostPfad(url).host;
-    return h ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(h) + "&sz=64" : "";
+    var u = h ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(h) + "&sz=64" : "";
+    return u && UC.fremdUrl ? UC.fremdUrl(u) : u;
   }
 
   /* Die Analysefenster des Vertrags (3.9): Presets 7 / 30 / 90 / 180 Tage, Standard 30.
@@ -713,7 +715,9 @@
        Ein Tiefenlink wartete bisher mit fire.spaet auf Bubbles Empfaenger; hier wartet er nur
        noch auf das Team (UC.teamWarten), das Bubble beim Seitenaufbau eventuell noch nicht
        gesetzt hat. spaet gilt nur noch fuer den Rueckweg an Bubble. */
+    /* Ohne Bubble (die App, UC.ohneBubble): kein Rueckweg, sondern der Fehler, den der Aufrufer schon zeigt (14.10.). */
     function funktionFehlt(erg) {
+      if (UC.ohneBubble && UC.ohneBubble()) return false;
       var f = (erg && erg.fehler) || {};
       return /PGRST202/.test(String(f.code || "")) ||
         (erg && erg.status === 404 && /could not find the function/i.test(String(f.message || "") + " " + String(f.details || "")));

@@ -294,7 +294,7 @@
       url: "", citation_type: "",
       lead_title: "", lead_domain: "", lead_favicon: "",
       own_brand_name: "", own_brand_summary: "",
-      youUrls: [], youLoaded: false, selectedLinks: [],
+      youUrls: [], youLoaded: false, youFehler: false, selectedLinks: [],
       format: "markdown", schema: false, suggestsOpen: false, inputFocused: false,
       template_url: TEMPLATE_DEFAULT, tags: [], assistant: "chatgpt"
     };
@@ -414,9 +414,11 @@
         return String(u).replace(/^https?:\/\//i, "").replace(/^www\./, "").split(/[\/?#]/)[0];
       }
     }
+    /* fremdUrl: in der App ueber die eigene Adresse (core, Datenschutz 14.10.). */
     function faviconFor(url){
       var d = domainOf(url);
-      return d ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(d) + "&sz=64" : "";
+      var u = d ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(d) + "&sz=64" : "";
+      return u && UC.fremdUrl ? UC.fremdUrl(u) : u;
     }
     function faviconUrl(){ return S.lead_favicon || faviconFor(S.url); }
     function imgHtml(src){
@@ -633,9 +635,29 @@
         root.dispatchEvent(ev);
         lokal = ev.defaultPrevented;
       } catch(e){}
-      if (!lokal && typeof window.bubble_fn_get_you_urls === "function"){
+      if (lokal) return;
+      if (typeof window.bubble_fn_get_you_urls === "function"){
         try { window.bubble_fn_get_you_urls(UID); } catch(e){}
+        return;
       }
+      eigeneUrlsHolen();
+    }
+    /* NIEMAND ANTWORTET (14.10.): in der App ohne Bubble antwortete nur opportunities-page.js -- und die
+       laedt der URL-Drawer nicht. Wer "Create with AI" von dort oeffnete, ohne vorher Opportunities
+       oder das Dashboard gesehen zu haben, sah ein Skelett ohne Ende. Dann selbst ueber core holen,
+       dieselbe Abfrage wie die Seite (opportunities_own_urls_v1, opportunities-data.js). Ein Fehler
+       ist ein Satz, keine leere Liste -- "keine Seiten" und "nicht geladen" sind zweierlei. */
+    function eigeneUrlsHolen(){
+      var tm = UC.getTeam ? UC.getTeam() : "";
+      if (!tm || typeof UC.rpc !== "function"){ S.youFehler = true; setYouUrls([]); return; }
+      UC.rpc("opportunities_own_urls_v1", { p_team: tm, p_limit: 200, p_offset: 0 }, { timeoutMs: 20000 }).then(function(erg){
+        var rows = erg && erg.ok && erg.daten && Array.isArray(erg.daten.rows) ? erg.daten.rows : null;
+        S.youFehler = !rows;
+        setYouUrls((rows || []).filter(function(r){ return r && /^https?:\/\//i.test(String(r.url || "")); }).map(function(r){
+          var f = String(r.favicon || "");
+          return { url: String(r.url), title: String(r.title || ""), favicon: /^https?:\/\//i.test(f) ? f : "" };
+        }));
+      }, function(){ S.youFehler = true; setYouUrls([]); });
     }
     function setYouUrls(data){
       var arr = data;
@@ -688,7 +710,9 @@
       var list = nq ? pool.filter(function(it){ return normKey((it.title || "") + it.url).indexOf(nq) !== -1; }) : pool;
       elBldList.innerHTML = list.length
         ? list.map(rowHtml).join("")
-        : '<div class="uca-bld-empty">No pages found. Paste a URL above to add it.</div>';
+        : (S.youFehler && !nq
+            ? '<div class="uca-bld-empty up-fehlerzeile">' + esc(UC.t("Your pages could not be loaded. Paste a URL above to add it.")) + '</div>'
+            : '<div class="uca-bld-empty">No pages found. Paste a URL above to add it.</div>');
     }
     function renderBuilder(){
       renderBuilderList();

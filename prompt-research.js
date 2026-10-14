@@ -546,11 +546,14 @@
   }
   function makeColor(value, fallback){ var raw = String(value || fallback || '#6b7280').trim(); return raw.charAt(0) === '#' ? raw : '#' + raw; }
   function getMarkets(){ return readJsonScript('upr-markets-json', fallbackMarkets); }
+  /* fremdUrl: in der App ueber die eigene Adresse (core, Datenschutz 14.10.) -- auch fuer flag_url
+     aus den Daten, denn die Rueckfall-Maerkte oben tragen flagcdn fest im Code. */
+  function fremdBild(u){ var k = window.UpstreemCore; return u && k && k.fremdUrl ? k.fremdUrl(u) : u; }
   function getFlagUrlForMarket(market){
     var code = String(market || '').trim().toUpperCase();
     if (!code || code === 'LOCAL') return '';
     var found = getMarkets().find(function(m){ return String(m.alpha2 || '').toUpperCase() === code; });
-    return found && found.flag_url ? String(found.flag_url) : 'https://flagcdn.com/' + code.toLowerCase() + '.svg';
+    return fremdBild(found && found.flag_url ? String(found.flag_url) : 'https://flagcdn.com/' + code.toLowerCase() + '.svg');
   }
   function flagHtml(flagUrl, name){ return flagUrl ? '<img src="' + esc(flagUrl) + '" alt="' + esc(name || 'Flag') + '" loading="lazy">' : ''; }
   function parseKeywords(raw){
@@ -1189,7 +1192,7 @@
                /* Name in der Sprache der App (core landName), die DB liefert ihn englisch. */
                name: UC.landName ? UC.landName(m.alpha2, String(m.name || '').trim()) : String(m.name || '').trim(),
                name_en: String(m.name || '').trim(),
-               flag_url: String(m.flag_url || '').trim(), prompt_count: Number(m.prompt_count || 0) };
+               flag_url: fremdBild(String(m.flag_url || '').trim()), prompt_count: Number(m.prompt_count || 0) };
     });
     var dd = root.querySelector('#upr-market-dd');
     if (!dd) return;
