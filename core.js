@@ -578,6 +578,8 @@
     "Sort, search and settings": "Sortieren, Suchen und Einstellungen",
     /* Tabelle einstellen, Sortiermenue, Reiter -- die Menues, die JEDE Tabelle aus core baut */
     "Columns": "Spalten",
+    "No space": "Kein Platz",
+    "Not enough space at this width. Turn it on and another column makes room.": "Bei dieser Breite ist kein Platz. Schalte sie ein, dann macht eine andere Spalte Platz.",
     "Select all": "Alle auswählen",
     "Row height": "Zeilenhöhe",
     "Comfortable": "Komfortabel",
@@ -6486,12 +6488,36 @@
       catch(e){ return {}; }
     }
     function writeWidths(){ try { window.localStorage.setItem(widthsKey(), JSON.stringify(state.widths)); } catch(e){} }
+    /* VORRANG (14.10.). Gemeldet: "Spalten, die von der Breite ausgeblendet werden, verwirren im
+       Menue". Der Schalter stand auf an, die Spalte war nicht da, und ein Klick schaltete sie
+       AUS -- sichtbar passierte gar nichts. Eingeordnet gegen Notion, Airtable, Linear, Attio und
+       GitHub Projects: dort ist die Auswahl die Wahrheit und die Tabelle scrollt waagerecht. Das
+       geht hier nicht ohne Bruch: ein Kasten mit overflow-x wird zum Scrollbehaelter in BEIDEN
+       Richtungen, und der an der Seite angeheftete Tabellenkopf (.up-sticky) haftet dann nicht
+       mehr. Darum Vorrang statt Scrollen: wer eine Spalte einschaltet, bekommt sie zu sehen, und
+       die unwichtigste andere macht Platz. Die Liste haelt die Reihenfolge der Wuensche, der
+       juengste zuletzt -- reicht der Platz nicht fuer alle, weicht der aelteste zuerst. */
+    function vorrangKey(){ return prefKey(cfg.storePrefix + "_colsvorrang__" + cfg.instanceId); }
+    function readVorrang(){
+      try {
+        var v = JSON.parse(prefGet(vorrangKey()) || "[]");
+        return isArr(v) ? v.filter(function(k){ return COLUMNS.some(function(c){ return c.key === k; }); }) : [];
+      } catch(e){ return []; }
+    }
+    function writeVorrang(){ try { window.localStorage.setItem(vorrangKey(), JSON.stringify(state.colsVorrang)); } catch(e){} }
+    if (!isArr(state.colsVorrang)) state.colsVorrang = readVorrang();
+    function vorrangRang(key){ return state.colsVorrang.indexOf(key); }
 
     function visibleCols(){ return COLUMNS.filter(function(c){ return state.cols[c.key] !== false; }); }
     /* Drop order when the table is too narrow for every column: lowest `prio` goes first.
        Columns without an explicit prio fall back to their declaration order (leftmost = most
-       important), which is the convention every table here already follows. */
-    function prioOf(c){ return c.prio != null ? c.prio : (COLUMNS.length - COLUMNS.indexOf(c)); }
+       important), which is the convention every table here already follows. Eine Spalte mit
+       Vorrang steht ueber allen ohne; untereinander gewinnt der juengere Wunsch. */
+    function prioOf(c){
+      var r = vorrangRang(c.key);
+      if (r >= 0) return 10000 + r;
+      return c.prio != null ? c.prio : (COLUMNS.length - COLUMNS.indexOf(c));
+    }
     /* The width the lead column will actually occupy BEFORE the user ever drags it: its track is
        `minmax(30%, 1.6fr)`, so on a wide container the 30% is what really applies and it is far
        larger than FIRST_MIN. Budgeting against FIRST_MIN alone was the bug that let 8 columns
@@ -6630,7 +6656,10 @@
            prefs to hide it would silently clobber their choice when the view switches back. */
         if (cfg.isHidden && cfg.isHidden(c)) return false;
         if (vnarrow && c.dropAt === "vnarrow") return false;
-        if ((narrow || vnarrow) && c.dropAt === "narrow") return false;
+        /* Vorrang hebt nur die Stufe "narrow" auf. Unter "vnarrow" zeichnen manche Zellen
+           anders (Mobilform), dort bleibt die Absicht der Tabelle stehen. Ob die Spalte dann
+           wirklich Platz hat, entscheidet weiter autoFit. */
+        if ((narrow || vnarrow) && c.dropAt === "narrow" && (vnarrow || vorrangRang(c.key) < 0)) return false;
         return true;
       });
       return autoFit(cols, boxWidth());
@@ -6797,6 +6826,10 @@
          query below finds ANY row missing the current signature, wherever it sits. */
       var rowsStale = !!root.querySelector('.up-row:not([data-up-colsig="' + sigCols + '"])');
       if (sigCols === lastSigCols && !rowsStale) return;
+      /* Aendert die Breite, welche Spalten Platz haben, muss das Menue es mitsagen -- auch wenn
+         es gerade offen ist, waehrend jemand das Fenster zieht. Nur beim Wechsel der Menge,
+         nicht bei jedem Bild. */
+      if (lastSigCols !== null && sigCols !== lastSigCols) populateCols();
       lastSigCols = sigCols;
       COLUMNS.forEach(function(c){
         var sel = [];
@@ -6880,14 +6913,24 @@
         '<button class="up-pop-action' + (off >= 2 ? "" : " is-hidden") + '" type="button" data-colsall>' +
           esc(t_("Select all")) + '</button>' +
       '</div>';
+      /* Der Schalter zeigt, was WIRKLICH zu sehen ist (14.10.), nicht nur die Wahl. Eine
+         gewaehlte Spalte, die die Breite verdraengt, steht auf aus und sagt darunter warum --
+         so tut ein Klick das, was der Schalter verspricht: sie erscheint (siehe toggleCol). */
+      var da = {};
+      effectiveCols().forEach(function(c){ da[c.key] = true; });
+      var zuSehen = listed.filter(function(c){ return da[c.key]; }).length;
       var rows = listed.map(function(c){
-        var on = state.cols[c.key] !== false;
-        var locked = on && vis.length === 1;   // the last visible column can't be turned off
-        return '<div class="up-pop-row' + (locked ? " is-locked" : "") + '" data-col="' + c.key + '">' +
+        var on = !!da[c.key];
+        var platzlos = !on && state.cols[c.key] !== false;
+        var locked = on && zuSehen === 1;   // the last visible column can't be turned off
+        return '<div class="up-pop-row' + (locked ? " is-locked" : "") + (platzlos ? " is-platzlos" : "") + '" data-col="' + c.key + '"' +
+                 (platzlos ? ' data-tip="' + esc(t_("Not enough space at this width. Turn it on and another column makes room.")) + '"' : "") + '>' +
                  /* c.label kommt aus der Komponente. Uebersetzt wird HIER, damit die
                     Spaltenliste jeder Tabelle der App auf einmal mitgeht. */
-                 '<span class="up-pop-label">' + esc(t_(c.label)) + '</span>' +
-                 '<span class="up-switch' + (on ? " is-on" : "") + '" role="switch"></span>' +
+                 '<span class="up-pop-label">' + esc(t_(c.label)) +
+                   (platzlos ? '<span class="up-pop-hint">' + esc(t_("No space")) + '</span>' : "") +
+                 '</span>' +
+                 '<span class="up-switch' + (on ? " is-on" : "") + '" role="switch" aria-checked="' + (on ? "true" : "false") + '"></span>' +
                '</div>';
       }).join("");
       var densePart = cfg.dense
@@ -6922,11 +6965,22 @@
       badge.textContent = show ? String(active) : "";
       badge.classList.toggle("is-visible", show);
     }
-    function refresh(){ writeCols(); populateCols(); applyCols(); syncColsBadge(); }
+    function refresh(){ writeCols(); writeVorrang(); applyCols(); populateCols(); syncColsBadge(); }
+    /* Umschalten nach dem, was zu sehen ist, nicht nach der gespeicherten Wahl: eine gewaehlte,
+       aber verdraengte Spalte wird beim Klick nicht ab-, sondern nach vorn geholt. Ausschalten
+       nimmt ihr den Vorrang mit, sonst kaeme sie beim Wiedereinschalten mit altem Rang zurueck. */
     function toggleCol(key){
-      var on = state.cols[key] !== false;
-      if (on && visibleCols().length === 1) return;   // never hide the last one
-      state.cols[key] = !on;
+      var zuSehen = effectiveCols();
+      var istDa = zuSehen.some(function(c){ return c.key === key; });
+      if (istDa && zuSehen.length === 1) return;   // never hide the last one
+      var r = vorrangRang(key);
+      if (r >= 0) state.colsVorrang.splice(r, 1);
+      if (istDa){
+        state.cols[key] = false;
+      } else {
+        state.cols[key] = true;
+        state.colsVorrang.push(key);
+      }
       refresh();
       if (cfg.onChange) cfg.onChange();
     }

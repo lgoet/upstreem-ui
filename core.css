@@ -2894,6 +2894,11 @@
     .up-pop-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 9px; }
     .up-pop-row:hover { background: var(--vc-heading-bg); }
     .up-pop-label { font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
+    /* Eine gewaehlte Spalte, die die Breite verdraengt (UC.makeColumns, 14.10.): der Name bleibt
+       in der Schrift der anderen, darunter in Nebentext der Grund. Kein eigener Zustand am
+       Schalter -- der steht auf aus, weil die Spalte nicht zu sehen ist. */
+    .up-pop-row.is-platzlos .up-pop-label { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .up-pop-hint { font-size: var(--up-fs-s); font-weight: var(--up-fw-n); color: var(--vc-third); white-space: nowrap; }
     /* DIE AUSGESCHALTETE SCHIENE, und warum sie nicht mehr --vc-border bzw. rgba(42,42,42,.6)
        ist: im Dunkeln war dieser Wert BUCHSTABENGLEICH mit --vc-heading-bg -- also mit dem Grund
        jeder Kopfzeile, jeder Seitenspalte und jedes Menuegrunds, auf dem ein Schalter sitzt. Der
