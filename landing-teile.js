@@ -254,7 +254,30 @@
     }, CAL_FRIST);
   }
 
+  /* Der Sprach-Toggle der Leiste (14.10.): die Ziele zeigen auf DIESELBE Seite in der anderen
+     Sprache (/blog <-> /de/blog), samt Suche in der Adresse. Ein Klick merkt sich die Wahl ein Jahr
+     lang (Cookie upstreem_lang) -- die Website leitet danach nicht mehr nach der Browsersprache um.
+     Das Cookie ist eine vom Besucher selbst getroffene Einstellung und braucht keine Einwilligung. */
+  function spracheBinden(root){
+    var links = root.querySelectorAll("[data-sprache]");
+    if (!links.length) return;
+    var pfad = location.pathname.replace(/^\/de(?=\/|$)/, "") || "/";
+    var such = location.search || "";
+    [].forEach.call(links, function(a){
+      var de = a.getAttribute("data-sprache") === "de";
+      a.setAttribute("href", (de ? "/de" + (pfad === "/" ? "" : pfad) : pfad) + such);
+      if (a.__ulhSprache) return;
+      a.__ulhSprache = true;
+      a.addEventListener("click", function(){
+        try { document.cookie = "upstreem_lang=" + (de ? "de" : "en") + "; path=/; max-age=31536000; SameSite=Lax"; } catch (e){}
+      });
+    });
+  }
+
   function binden(){
+    /* Die Leiste der STARTSEITE ist keine eigene Wurzel (data-ulh-teil fehlt) -- ihr Toggle wird
+       trotzdem gebunden. */
+    spracheBinden(document);
     [].forEach.call(document.querySelectorAll(".ulh-root[data-ulh-teil]"), function(root){
       navLauf(root);
       nachweisBinden(root);
@@ -264,7 +287,7 @@
   }
 
   window.UpstreemLandingTeile = { navLauf: navLauf, nachweisBinden: nachweisBinden,
-                                  jahrSetzen: jahrSetzen, kalenderBinden: kalenderBinden,
+                                  jahrSetzen: jahrSetzen, kalenderBinden: kalenderBinden, spracheBinden: spracheBinden,
                                   binden: binden };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", binden);

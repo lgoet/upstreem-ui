@@ -34,11 +34,274 @@
      auf localhost, statt auf die alte Seite zu springen. Beide Seiten muessen denselben Wert haben,
      sonst passt die Pruefsumme des vorgerenderten Markups nicht (standDerSeite). */
   var SITE = typeof window.__ulhSite === "string" ? window.__ulhSite : "https://upstreem.ai";
+  /* Auf der deutschen Fassung zeigen die Verweise der Website auf /de/... (14.10.). Nur auf der
+     eigenen Website; Framer kennt kein /de. */
+  /* Ob die Seite auf der eigenen Website steht -- unabhaengig von der Sprache (auf Deutsch ist SITE
+     "/de", nicht leer). */
+  var WEBSITE = SITE === "";
+  if (WEBSITE && window.__ulhLang === "de") SITE = "/de";
   /* Neuer Tab nur, wo er gebraucht wird: im Framer-Rahmen bei JEDEM Verweis (sonst bliebe der
      Klick im Rahmen haengen), auf der eigenen Website nur bei fremden Adressen (App, Doku,
      Netzwerke). */
   function tab(h){
-    return SITE === "" && h.charAt(0) === "/" ? "" : ' target="_blank" rel="noopener"';
+    return WEBSITE && h.charAt(0) === "/" ? "" : ' target="_blank" rel="noopener"';
+  }
+
+  /* ---- DIE DEUTSCHE FASSUNG (14.10.) --------------------------------------------------------
+     Die eigene Website setzt window.__ulhLang = "de" auf /de, beim Vorrendern wie im Browser --
+     sonst passt die Pruefsumme nicht (dieselbe Regel wie bei __ulhSite). Framer setzt nichts und
+     bleibt englisch.
+     WIE: die englischen Texte bleiben, wo sie stehen. DE ordnet jedem sichtbaren Text (genau so,
+     wie er als Textknoten im Markup steht) seine deutsche Fassung zu; deHtml() tauscht beim
+     Erzeugen jeden Textknoten und die lesbaren Attribute, die in DE stehen. Was nicht in DE steht,
+     bleibt englisch -- das ist Absicht bei den Prompts (sie stehen in der Sprache ihres Marktes,
+     US-Prompts also englisch, wie in der App), bei Produktnamen und bei den Seitentiteln fremder
+     Quellen. Saetze, in die Chips eingebaut sind (Miras Antworten), haben eine eigene Fassung im
+     Code, weil sich dort die Wortstellung aendert.
+     Die Bedienwoerter in den App-Fenstern uebersetzt core selbst (up_prefs.locale = "de", gesetzt
+     von der Website vor dem Laden von core); hier stehen nur die, die die Landingpage selbst
+     schreibt -- mit denselben Woertern wie im Katalog von core.
+     Ton: du, natuerlich, keine woertliche Uebersetzung ("Talk to sales" ist "Sales kontaktieren"). */
+  var LANG = window.__ulhLang === "de" ? "de" : "en";
+  var DE = {
+    /* Leiste und Menue */
+    "Language": "Sprache", "Platform": "Plattform", "Resources": "Ressourcen", "Pricing": "Preise", "Log in": "Anmelden",
+    "Start for free": "Kostenlos starten", "Overview": "Überblick", "What upstreem shows you": "Was upstreem dir zeigt",
+    "Which pages answers are built from": "Aus welchen Seiten Antworten entstehen",
+    "Mira does the work for you": "Mira erledigt die Arbeit für dich",
+    "Notes on AI search": "Wissen rund um die KI-Suche", "Documentation": "Dokumentation",
+    "How everything works": "So funktioniert alles",
+    /* Hero */
+    "New": "Neu", "Customer journey tracking": "Tracking über die Customer Journey",
+    /* Kurz, damit die erste Zeile wie im Englischen in eine Zeile passt -- "Sichtbarkeit in der
+       KI-Suche" brach bei 1440 in zwei, die h1 stand in drei Zeilen (gemessen 14.10.). */
+    "AI Search Analytics": "KI-Sichtbarkeit", "made simple.": "einfach gemacht.",
+    "Track how AI search talks about your brand and turn every answer into":
+      "Sieh, wie die KI-Suche über deine Marke spricht, und mach aus jeder Antwort",
+    "qualified traffic.": "qualifizierten Traffic.", "leads.": "Leads.", "revenue.": "Umsatz.",
+    "qualified traffic, leads and revenue.": "qualifizierten Traffic, Leads und Umsatz.",
+    "Book a demo": "Demo buchen", "Tracked daily on": "Täglich gemessen in",
+    /* Team-Fenster und Seitenleiste (Woerter wie im Katalog von core) */
+    "New Team": "Neues Team", "Quick Actions": "Schnellaktionen", "Database": "Datenbank",
+    "Prompt Insights": "Prompt-Auswertung", "Citations": "Web-Quellen", "Workspace": "Arbeitsbereich",
+    "Prompt Research": "Prompt Recherche", "Settings": "Einstellungen", "Pinned": "Angepinnt",
+    "Account Settings": "Kontoeinstellungen", "Your Brand": "Deine Brand", "Team Organisation": "Team-Organisation",
+    "Billing": "Abrechnung", "Preferences": "Präferenzen", "Theme": "Design", "Light": "Hell", "Dark": "Dunkel",
+    "Log out": "Abmelden", "URL Types": "URL-Typen", "Article": "Artikel", "Guide": "Leitfaden",
+    "Listicle": "Listenartikel", "Comparison": "Vergleich", "Review": "Testbericht", "Other": "Andere",
+    "Search teams": "Teams suchen", "Clear": "Reset", "Collapse sidebar": "Seitenleiste einklappen",
+    "Open quick actions": "Schnellaktionen öffnen", "Rename": "Umbenennen",
+    "Remove from pinned": "Von den Angehefteten entfernen", "Search pages…": "Seiten suchen…", "Close": "Schließen",
+    /* Plattform */
+    "From AI answers to your next move": "Von der KI-Antwort zum nächsten Schritt",
+    "Visibility, prompts, sources and tasks in one place, across ChatGPT, Perplexity, Gemini and Google AI Overviews, every day.":
+      "Sichtbarkeit, Prompts, Quellen und Aufgaben an einem Ort, über ChatGPT, Perplexity, Gemini und Google AI Overviews, jeden Tag.",
+    "See how often AI recommends you": "Sieh, wie oft dich die KI empfiehlt",
+    "Visibility and position per model, day by day, side by side with your competitors.":
+      "Sichtbarkeit und Position je Modell, Tag für Tag, direkt neben deinen Wettbewerbern.",
+    "Know which buyer questions you win": "Wisse, welche Kauffragen du gewinnst",
+    "Every tracked prompt, grouped by topic, with who gets named and where you land.":
+      "Jeder beobachtete Prompt, nach Thema gruppiert: wer genannt wird und wo du landest.",
+    "Export": "Exportieren", "Brand Mentions": "Brand-Erwähnungen", "Market": "Markt",
+    "Electric": "Elektro", "Comparisons": "Vergleiche", "Charging": "Laden", "Safety": "Sicherheit",
+    "See which pages AI trusts most": "Sieh, welchen Seiten die KI am meisten vertraut",
+    "The domains and exact URLs the models cite, so you know where to get mentioned next.":
+      "Die Domains und genauen URLs, die die Modelle zitieren. So weißt du, wo du als Nächstes genannt werden musst.",
+    "Share": "Anteil", "Type": "Typ", "42 pages": "42 Seiten", "18 pages": "18 Seiten", "63 pages": "63 Seiten",
+    "All URL Types": "Alle URL-Typen", "Title": "Titel", "Page": "Seite", "Domain Share": "Domain-Anteil",
+    "Your next moves, ranked by priority": "Deine nächsten Schritte, nach Priorität sortiert",
+    "Every visibility gap becomes a concrete task, with the prompts and numbers behind it.":
+      "Jede Sichtbarkeitslücke wird zur konkreten Aufgabe, mit den Prompts und Zahlen dahinter.",
+    "Get the estate into the forbes.com buyer guide": "Den Kombi in den Kaufratgeber von forbes.com bringen",
+    "No page of yours answers the winter range question": "Keine deiner Seiten beantwortet die Frage zur Winterreichweite",
+    "Your charging page is cited, never quoted": "Deine Ladeseite wird zitiert, aber nie wiedergegeben",
+    "Show up in the comparison videos": "In den Vergleichsvideos vorkommen",
+    "Add the model year to the wikipedia entry": "Das Modelljahr im Wikipedia-Eintrag ergänzen",
+    "Answer the leasing thread on motor-talk": "Im Leasing-Thread auf motor-talk antworten",
+    "BMW and Audi are in it. You are not.": "BMW und Audi stehen drin. Du nicht.",
+    "No page of yours answers „what is the real winter range“": "Keine deiner Seiten beantwortet „Wie hoch ist die echte Winterreichweite?“",
+    "214 runs a month, and never one of your pages.": "214 Abfragen im Monat, und nie eine deiner Seiten.",
+    "Your charging page is cited but never quoted": "Deine Ladeseite wird zitiert, aber nie wiedergegeben",
+    "Models reach the page and quote a competitor.": "Die Modelle finden die Seite und zitieren trotzdem einen Wettbewerber.",
+    "Show up in the two comparison videos that decide this class": "In den zwei Vergleichsvideos vorkommen, die diese Klasse entscheiden",
+    "Both rank top three, and both of them name Audi.": "Beide stehen in den Top drei, und beide nennen Audi.",
+    "Track every market in its own language": "Jeden Markt in seiner eigenen Sprache verfolgen",
+    "Prompts in German, French or Italian, asked from each country, with rankings per market.":
+      "Prompts auf Deutsch, Französisch oder Italienisch, aus dem jeweiligen Land gestellt, mit Rankings je Markt.",
+    "See where the models disagree": "Sieh, wo die Modelle sich uneinig sind",
+    "Your prompts run daily on ChatGPT, Perplexity, Gemini and Google AI Overviews, showing which ones name you and which don't.":
+      "Deine Prompts laufen täglich in ChatGPT, Perplexity, Gemini und Google AI Overviews. Du siehst, welche dich nennen und welche nicht.",
+    /* Customer Journey */
+    "Find the step where AI drops you": "Finde den Schritt, an dem dich die KI verliert",
+    "Every prompt is sorted by what the buyer wants: learning, comparing or buying. You see your visibility at each step instead of one flattering average.":
+      "Jeder Prompt wird nach dem eingeordnet, was Käufer wollen: sich informieren, vergleichen oder kaufen. Du siehst deine Sichtbarkeit an jedem Schritt statt eines geschönten Durchschnitts.",
+    "Visibility at every step to purchase": "Sichtbarkeit an jedem Schritt bis zum Kauf",
+    "Prompts are classified automatically. See where buyers meet you, and where a competitor takes over.":
+      "Prompts werden automatisch eingeordnet. Du siehst, wo Käufer dir begegnen und wo ein Wettbewerber übernimmt.",
+    "Visibility by intent": "Visibility nach Intent",
+    "Getting to know the topic": "Will das Thema verstehen", "Comparing options": "Vergleicht Anbieter",
+    "Ready to buy or sign up": "Will kaufen oder abschließen",
+    "Biggest gap at Recommendation: BMW is named 1.7 times as often as you.":
+      "Größte Lücke bei Kommerziell: BMW wird 1,7-mal so oft genannt wie du.",
+    "Branded prompts, kept apart": "Branded Prompts, sauber getrennt",
+    "Questions that name you or a competitor stay out of your score. Switch them on to see what buyers hear at the last step.":
+      "Fragen, die dich oder einen Wettbewerber nennen, zählen nicht in deinen Score. Schalte sie zu und sieh, was Käufer im letzten Schritt hören.",
+    "Branded prompts": "Branded Prompts", "Left out of your metrics": "Nicht in deinen Kennzahlen",
+    "Counted in your metrics": "In deinen Kennzahlen enthalten",
+    /* Shopping & Ads */
+    "Beyond classic GEO": "Mehr als klassisches GEO",
+    "Shopping results and sponsored placements, tracked on the same prompts as your visibility.":
+      "Shopping-Ergebnisse und bezahlte Platzierungen, gemessen auf denselben Prompts wie deine Sichtbarkeit.",
+    "See which products AI puts first": "Sieh, welche Produkte die KI ganz nach vorn stellt",
+    "Position, rating and price for every product the models recommend, yours and your competitors'.":
+      "Position, Bewertung und Preis für jedes Produkt, das die Modelle empfehlen, deine und die deiner Wettbewerber.",
+    "Products": "Produkte", "Product": "Produkt", "Avg. Position": "Ø Position", "Price": "Preis", "You": "Du",
+    "Spot product momentum early": "Produkttrends früh erkennen",
+    "See which products gain or lose AI recommendations, and steer content, pricing or ads while the shift is small.":
+      "Sieh, welche Produkte KI-Empfehlungen gewinnen oder verlieren, und steuere Inhalte, Preise oder Anzeigen, solange die Verschiebung noch klein ist.",
+    "Product Movement": "Produktbewegung",
+    "Largest Visibility changes vs. previous 30 days": "Größte Visibility-Veränderungen gegenüber den 30 Tagen davor",
+    "Rising": "Steigend", "Declining": "Fallend",
+    "Find out who buys your prompts": "Finde heraus, wer deine Prompts kauft",
+    "Every advertiser showing ads on your tracked prompts, ranked by share of placements.":
+      "Alle Werbetreibenden mit Anzeigen auf deinen Prompts, nach Anteil der Platzierungen sortiert.",
+    "Read the strategy behind every ad": "Lies die Strategie hinter jeder Anzeige",
+    "What rivals promise, which buyer questions they target and where each click lands, so you can plan your answer.":
+      "Was die Konkurrenz verspricht, auf welche Kauffragen sie zielt und wohin jeder Klick führt. So planst du deine Antwort.",
+    "Product Ad": "Produktanzeige", "Image Ad": "Bildanzeige", "Competitor": "Wettbewerber",
+    /* Events */
+    "Measure what really moved your visibility": "Miss, was deine Sichtbarkeit wirklich bewegt hat",
+    "Log content updates, campaigns and price changes, then measure the impact of each one against a comparison group.":
+      "Erfasse Content-Updates, Kampagnen und Preisänderungen und miss die Wirkung jeder Maßnahme gegen eine Vergleichsgruppe.",
+    "Put every initiative on the timeline": "Jede Maßnahme auf der Zeitachse",
+    "Content updates, campaigns and price changes sit on your visibility chart, so every shift has a known cause.":
+      "Content-Updates, Kampagnen und Preisänderungen stehen direkt in deinem Sichtbarkeits-Chart. So hat jede Veränderung eine bekannte Ursache.",
+    "EX5 autumn campaign": "EX5 Herbstkampagne", "Aug 4, 2026": "4. Aug. 2026", "Brand campaign": "Markenkampagne",
+    "Video and social for the EX5, in five markets.": "Video und Social für den EX5, in fünf Märkten.",
+    "New lease rates": "Neue Leasingraten", "Sep 1, 2026": "1. Sep. 2026", "Pricing change": "Preisänderung",
+    "Lower monthly rates across the EX range.": "Niedrigere Monatsraten für die ganze EX-Reihe.",
+    "acme.com/electric relaunch": "Relaunch von acme.com/electric", "Sep 15, 2026": "15. Sep. 2026",
+    "Website relaunch": "Website-Relaunch",
+    "The new EV hub: range calculator, model comparison and an FAQ for every model.":
+      "Der neue E-Auto-Hub: Reichweitenrechner, Modellvergleich und ein FAQ für jedes Modell.",
+    "Prove the impact of each initiative": "Belege die Wirkung jeder Maßnahme",
+    "Affected prompts from day one, measured against an untouched comparison group, so noise never passes as impact.":
+      "Betroffene Prompts ab dem ersten Tag, gemessen gegen eine unberührte Vergleichsgruppe. So geht Rauschen nie als Wirkung durch.",
+    "Affected prompts": "Betroffene Prompts", "Comparison group": "Vergleichsgruppe",
+    /* Quellen */
+    "Understand how sources shape answers.": "Verstehe, wie Quellen Antworten prägen.",
+    "Which domains the models cite in your market, which of their pages carry the answer, and where your brand is named in them.":
+      "Welche Domains die Modelle in deinem Markt zitieren, welche ihrer Seiten die Antwort tragen und wo deine Marke darin genannt wird.",
+    "Last cited on Aug 18, 2026": "Zuletzt zitiert am 18. Aug. 2026",
+    /* Mira */
+    "An analyst, not a dashboard": "Ein Analyst, kein Dashboard",
+    "Ask in your own words and Mira does the work: it reads your prompts, responses and sources, shows where every number comes from, and says what to do next.":
+      "Frag in deinen eigenen Worten, und Mira erledigt die Arbeit: Sie liest deine Prompts, KI-Antworten und Quellen, zeigt, woher jede Zahl kommt, und sagt dir, was als Nächstes zu tun ist.",
+    "Ask instead of digging.": "Fragen statt suchen.",
+    "No filters to set, no dashboards to assemble. Ask in plain words and get the answer with the numbers behind it.":
+      "Keine Filter setzen, keine Dashboards zusammenbauen. Frag einfach und bekomm die Antwort mit den Zahlen dahinter.",
+    "It shows its work.": "Sie zeigt ihren Rechenweg.",
+    "Every claim carries the prompt, the model and the page it came from. Open any of them and check it yourself.":
+      "Jede Aussage nennt den Prompt, das Modell und die Seite, aus der sie stammt. Öffne jede davon und prüf sie selbst.",
+    "It ends in a decision.": "Am Ende steht eine Entscheidung.",
+    "Not a chart to interpret: the next step, what it is worth, and where to start.":
+      "Kein Chart zum Deuten, sondern der nächste Schritt: was er bringt und wo du anfängst.",
+    /* Why now */
+    "900M": "900 Mio.", "1B+": "über 1 Mrd.", "+1,200%": "+1.200%",
+    "Why now": "Warum jetzt", "Search moved.": "Die Suche ist umgezogen.",
+    "Your buyers ask an assistant, and it answers from pages it picked.":
+      "Deine Käufer fragen einen Assistenten, und der antwortet aus Seiten, die er selbst ausgewählt hat.",
+    "weekly ChatGPT users": "wöchentliche ChatGPT-Nutzer",
+    "monthly users of Google's AI Mode": "monatliche Nutzer von Googles AI Mode",
+    "of searches with an AI summary end in a click - against 15% without one":
+      "der Suchen mit KI-Zusammenfassung enden mit einem Klick, ohne Zusammenfassung sind es 15%",
+    "referral traffic from AI to US retail sites in seven months":
+      "mehr Traffic von KI auf US-Händlerseiten in sieben Monaten",
+    "May 2024": "Mai 2024", "AI Overviews for everyone in the US": "AI Overviews für alle in den USA",
+    "May 2025": "Mai 2025", "AI Mode opens to the US": "AI Mode startet in den USA",
+    "Oct 2025": "Okt. 2025", "AI Mode goes global": "AI Mode startet weltweit",
+    /* Schluss */
+    "See what AI answers": "Sieh, was KI-Antworten", "say about you.": "über dich sagen.",
+    "Connect your brand, pick the prompts that matter, and watch the answers as they change. The first report takes minutes.":
+      "Verbinde deine Marke, wähl die Prompts, die zählen, und beobachte, wie sich die Antworten verändern. Der erste Bericht steht in wenigen Minuten.",
+    "Talk to sales": "Sales kontaktieren",
+    /* Preise */
+    "Simple plans. Every answer engine.": "Einfache Tarife. Jede Antwortmaschine.",
+    "Every plan tracks ChatGPT, Perplexity and Google AI Overviews, with unlimited seats, unlimited countries and prompts that run every day.":
+      "Jeder Tarif beobachtet ChatGPT, Perplexity und Google AI Overviews, mit unbegrenzten Nutzerplätzen, unbegrenzt vielen Ländern und Prompts, die jeden Tag laufen.",
+    "Monthly": "Monatlich", "Yearly": "Jährlich", "Billing interval": "Abrechnungszeitraum",
+    "Get started with basic monitoring and analytics": "Der Einstieg mit Basis-Monitoring und Analysen",
+    "/ month": "/ Monat", "Get started": "Jetzt starten",
+    "Choose which models to track": "Wähle, welche Modelle du beobachtest", "Track multiple models": "Mehrere Modelle beobachten",
+    "Track up to": "Beobachte bis zu", "50 prompts": "50 Prompts", "150 prompts": "150 Prompts", "350 prompts": "350 Prompts",
+    "Prompts executed daily": "Prompts laufen täglich", "Analyze up to": "Analysiere bis zu", "Analyze more than": "Analysiere mehr als",
+    "4,650 AI responses per month": "4.650 KI-Antworten pro Monat", "13,500 AI responses per month": "13.500 KI-Antworten pro Monat",
+    "30,000 AI responses per month": "30.000 KI-Antworten pro Monat",
+    "Unlimited countries / languages": "Unbegrenzt viele Länder und Sprachen",
+    "Unlimited seats for your team": "Unbegrenzte Nutzerplätze für dein Team",
+    "6 brands / competitors": "6 Marken und Wettbewerber", "11 brands / competitors": "11 Marken und Wettbewerber",
+    "16 brands / competitors": "16 Marken und Wettbewerber", "Standard email support": "Standard-Support per E-Mail",
+    "Most popular": "Am beliebtesten", "Advanced monitoring and AI search insights": "Erweitertes Monitoring und Insights zur KI-Suche",
+    "Personal account manager": "Persönlicher Account Manager",
+    "Advanced features for growing businesses": "Erweiterte Funktionen für wachsende Unternehmen",
+    "Prices exclude VAT. Cancel any time.": "Alle Preise zzgl. MwSt. Jederzeit kündbar.",
+    /* Fuss */
+    "See how AI answers talk about your brand.": "Sieh, wie KI-Antworten über deine Marke sprechen.",
+    "Legal": "Rechtliches", "Terms of service": "AGB", "Privacy policy": "Datenschutz", "Imprint": "Impressum",
+    "Cookie settings": "Cookie-Einstellungen", "upstreem. All rights reserved.": "upstreem. Alle Rechte vorbehalten.",
+    "Image credits": "Bildnachweis", "Product photos from Wikimedia Commons:": "Produktfotos von Wikimedia Commons:",
+    "Ad illustrations: US Environmental Protection Agency, public domain, via":
+      "Illustrationen der Anzeigen: US Environmental Protection Agency, gemeinfrei, über",
+    /* Terminseiten */
+    "Pick a time that suits you. We show you what AI answers say about your brand, which sources they draw on, and where you can win.":
+      "Such dir einen Termin aus, der dir passt. Wir zeigen dir, was KI-Antworten über deine Marke sagen, aus welchen Quellen sie schöpfen und wo du gewinnen kannst.",
+    "What we'll cover": "Was wir uns ansehen",
+    "Where AI answers name you, and where they don't": "Wo KI-Antworten dich nennen und wo nicht",
+    "Which sources and competitors shape those answers": "Welche Quellen und Wettbewerber diese Antworten prägen",
+    "Your first opportunities, ranked by impact": "Deine ersten Chancen, nach Wirkung sortiert",
+    "45 minutes, video call": "45 Minuten, per Videocall", "Prefer email?": "Lieber per E-Mail?",
+    "Contact": "Kontakt",
+    "Questions about plans, onboarding or a custom setup? Book a call with us, or write to us directly.":
+      "Fragen zu Tarifen, Onboarding oder einem individuellen Setup? Buch einen Termin mit uns oder schreib uns direkt.",
+    "Write to us": "Schreib uns",
+    "Plans, onboarding, agencies or a custom setup: tell us what you need.":
+      "Tarife, Onboarding, Agenturen oder ein individuelles Setup: Sag uns, was du brauchst.",
+    "Or book a call": "Oder buch einen Termin",
+    "The calendar is provided by Cal.com": "Der Kalender kommt von Cal.com",
+    "Loading it shares your IP address and browser data with Cal.com, which may set cookies. You can also book directly on cal.com.":
+      "Beim Laden werden deine IP-Adresse und Browserdaten an Cal.com übertragen, und Cal.com kann Cookies setzen. Du kannst auch direkt auf cal.com buchen.",
+    "Load calendar": "Kalender laden", "Open cal.com": "cal.com öffnen",
+    "The calendar could not load.": "Der Kalender konnte nicht geladen werden.",
+    "Book on cal.com": "Auf cal.com buchen", "or write to": "oder schreib an"
+  };
+  /* Ein Text auf Deutsch, wenn es ihn gibt -- fuer Werte, die nicht als Markup entstehen
+     (Daten fuer die Setter der App, textContent zur Laufzeit). */
+  function T(s){ return LANG === "de" && Object.prototype.hasOwnProperty.call(DE, s) ? DE[s] : s; }
+  /* Jeder Textknoten und die lesbaren Attribute eines Markups, die in DE stehen. Leerraum um den
+     Text bleibt, wie er war (er traegt die Abstaende zwischen Inline-Elementen). Zwei Muster dazu:
+     "by NAME (" im Bildnachweis und "Photo: ..." im Titel der Fotos. */
+  var DE_ATTR = /\b(aria-label|alt|placeholder|title|data-tip|data-wort)="([^"]*)"/g;
+  function deHtml(h){
+    if (LANG !== "de" || !h) return h;
+    h = h.replace(/>([^<>]+)</g, function(m, t){
+      var k = t.replace(/\s+/g, " ").trim();
+      if (!k) return m;
+      var neu = Object.prototype.hasOwnProperty.call(DE, k) ? DE[k]
+        : /^by .+ \($/.test(k) ? "von " + k.slice(3) : null;
+      if (neu == null) return m;
+      return ">" + t.match(/^\s*/)[0] + neu + t.match(/\s*$/)[0] + "<";
+    });
+    return h.replace(DE_ATTR, function(m, a, v){
+      if (Object.prototype.hasOwnProperty.call(DE, v)) return a + '="' + DE[v] + '"';
+      if (/^Photo: /.test(v)) return a + '="Foto: ' + v.slice(7) + '"';
+      return m;
+    });
+  }
+  /* Zahlen mit Komma auf Deutsch (1,7 statt 1.7) -- dieselbe Schreibweise, die core mit
+     num = "de" zeichnet. */
+  function zahl(v, d){
+    var s = Number(v).toFixed(d == null ? 1 : d);
+    return LANG === "de" ? s.replace(".", ",") : s;
   }
 
   /* Feste Kennungen. Es gibt genau eine Hero-Sektion pro Seite, also braucht keine davon eine
@@ -345,7 +608,7 @@
   }
   function seiteHtml(geruest){
     NUR_GERUEST = !!geruest;
-    try { return seiteBauen(); } finally { NUR_GERUEST = false; }
+    try { return deHtml(seiteBauen()); } finally { NUR_GERUEST = false; }
   }
   /* FNV-1a, 32 Bit. Kein Schutz gegen Absicht, nur gegen Versehen: gleicher Text, gleiche Zahl. */
   function fnv(t){
@@ -625,6 +888,15 @@
           '<a class="ulh-nav-punkt" href="' + SITE + '/#pricing"' + tab(SITE + "/#pricing") + '>Pricing</a>' +
         '</nav>' +
         '<div class="ulh-nav-rechts">' +
+          /* DER SPRACH-TOGGLE (14.10.), nur auf der eigenen Website (Framer kennt kein /de).
+             Zwei Links und kein Knopf: auch ohne Skript fuehren sie in die andere Fassung, und
+             fuer Suchmaschinen sind sie die Verbindung zwischen beiden. Das Ziel ist hier die
+             Startseite der anderen Sprache; landing-teile.js setzt es auf das Gegenstueck der
+             aktuellen Seite und merkt sich die Wahl (Cookie upstreem_lang). */
+          (WEBSITE ? '<div class="ulh-sprache" role="group" aria-label="' + T("Language") + '">' +
+            '<a href="/" hreflang="en" lang="en" data-sprache="en"' + (LANG === "en" ? ' class="is-an" aria-current="true"' : '') + '>EN</a>' +
+            '<a href="/de" hreflang="de" lang="de" data-sprache="de"' + (LANG === "de" ? ' class="is-an" aria-current="true"' : '') + '>DE</a>' +
+          '</div> ' : '') +
           /* Anmelden und Registrieren gehen in einen NEUEN Tab: die Seite ist die Werbung, die
              App ist die Arbeit -- wer sich anmeldet, soll die Seite nicht verlieren. */
           '<a class="ulh-btn ulh-btn-sec" target="_blank" rel="noopener"' +
@@ -825,7 +1097,8 @@
      damit aus 82,5 nicht 83 wird. */
   function preisGeld(v){
     var g = Math.round(v * 10) / 10;
-    return (g % 1 === 0 ? String(g) : g.toFixed(1)) + "\u20ac";
+    /* Deutsch mit Komma und Leerzeichen vor dem Zeichen ("82,5 €"), wie man Preise dort schreibt. */
+    return (g % 1 === 0 ? String(g) : zahl(g, 1)) + (LANG === "de" ? " \u20ac" : "\u20ac");
   }
   function preisZeile(html){
     /* Das Zeichen kommt aus core und wird von zeichenSetzen() nachgeliefert -- zum Zeitpunkt des
@@ -848,7 +1121,8 @@
         /* Die Ersparnis klappt auf und zu, statt zu erscheinen und zu verschwinden: so schiebt sie
            die Kartenhoehe weich mit, wie im Onboarding. is-on steht schon hier, weil Jahr die
            Vorbelegung ist. */
-        '<div class="ulh-preis-notiz is-on"><span>Save ' + spar + '% billed yearly</span></div>' +
+        '<div class="ulh-preis-notiz is-on"><span>' + (LANG === "de" ? spar + "% sparen bei jährlicher Zahlung"
+          : "Save " + spar + "% billed yearly") + '</span></div>' +
         '<a class="ulh-btn ulh-btn-pri ulh-preis-btn" href="' + PREIS_ZIEL + '"' +
           ' target="_blank" rel="noopener">' + PREIS_CTA + '</a>' +
         '<ul class="ulh-preis-liste">' +
@@ -922,7 +1196,8 @@
      mitgefuehrt: so stimmt sie auch, wenn mitten im Zaehlen erneut umgeschaltet wird. 380ms mit
      weichem Ausklang, wie im Onboarding. */
   function preisZaehlen(el, ziel){
-    var von = parseFloat(String(el.textContent || "").replace(/[^0-9.]/g, ""));
+    /* Komma zuerst zum Punkt: auf Deutsch steht "82,5 €", und ohne den Tausch wurde daraus 825. */
+    var von = parseFloat(String(el.textContent || "").replace(",", ".").replace(/[^0-9.]/g, ""));
     if (!isFinite(von)) von = ziel;
     if (el.__uhr) cancelAnimationFrame(el.__uhr);
     var t0 = 0, DAUER = 380;
@@ -954,7 +1229,7 @@
       { t: "Terms of service", h: SITE + "/terms-of-service" },
       { t: "Privacy policy", h: SITE + "/privacy-policy" },
       { t: "Imprint", h: SITE + "/imprint" }
-    ].concat(SITE === "" ? [
+    ].concat(WEBSITE ? [
       /* Nur auf der eigenen Website (14.10.): dort gibt es eine Einwilligung (Cal.com), und sie
          muss jederzeit zu aendern sein. Das Skript der Website oeffnet die Einstellungen ueber
          data-upstreem-consent. In Framer gibt es nichts zu oeffnen, also auch keinen Link. */
@@ -1250,6 +1525,7 @@
      Die Werkzeuge sind die echten Namen aus ask-mira.js (_TOOL_STATE); aus ihnen baut die
      Komponente ihr Arbeitsprotokoll waehrend des Ladens, mit Zeichen und Text je Schritt. */
   function mscFaelle(){
+    if (LANG === "de") return mscFaelleDe();
     return [
       /* DER ERSTE FALL ZEIGT DAS ADD-DROPDOWN (29.09. spaet angefordert: "Add-Dropdown auf, kurz
          ohne Eingabe sichtbar, also der Ruhezustand, dann wird etwas gesucht und gefragt"). wahl
@@ -1307,6 +1583,59 @@
           '<table><thead><tr><th>Source</th><th>Share</th><th>Names</th></tr></thead><tbody>' +
           '<tr><td>' + quelleChip(0) + '</td><td>31.4%</td><td>' + markeChip("bm") + '</td></tr>' +
           '<tr><td>' + quelleChip(1) + '</td><td>18.2%</td><td>' + markeChip("au") + '</td></tr>' +
+          '</tbody></table>' }
+    ];
+  }
+
+  /* Die vier Faelle auf Deutsch (14.10.): dieselben Zahlen, Chips und Werkzeuge, die Saetze neu
+     gebaut -- die Chips stehen mitten im Satz, und die deutsche Wortstellung braucht sie woanders. */
+  function mscFaelleDe(){
+    return [
+      { wahl: "forbes", q: "Was kannst du mir über diese Domain sagen?",
+        titel: "forbes.com im Überblick",
+        werkzeuge: ["citation_overview", "url_detail"],
+        dauer: 16000,
+        belege: [{ id: "ev-d1", type: "domain", entity_id: "d1", domain: "forbes.com",
+                   title: "forbes.com", icon_url: quellzeichen("forbes.com"), action: "open_domain" }],
+        html: '<p>' + miraChip("domain", "d1", "forbes.com") + ' ist eine <strong>redaktionelle</strong> ' +
+          'Quelle und eine der meistzitierten in deinem Markt: <strong>18,4%</strong> aller ' +
+          'Quellenangaben, 2,1 Punkte mehr als zuvor, verteilt auf <strong>42 Seiten</strong>.</p><ul>' +
+          '<li>Die meistzitierte Seite ist der Kaufratgeber auf ' + quelleChip(0) + '. Er nennt ' +
+          markeChip("bm") + ' und ' + markeChip("au") + ', dich nicht.</li>' +
+          '<li>Diese Seite speist fünf deiner Vergleichs-Prompts.</li>' +
+          '</ul><p>' + markeChip("ac") + ' in diesen Ratgeber zu bringen, ist hier deine größte Chance.</p>' },
+
+      { q: "Was sagen die Leute gerade über Acme?",
+        titel: "Sentiment, letzte 30 Tage",
+        werkzeuge: ["brand_overview", "source_mentions_overview"],
+        dauer: 14000,
+        html: '<p>' + markeChip("ac") + ' liegt in den letzten 30 Tagen bei <strong>79 / 100</strong> ' +
+          'Sentiment, 3,1 Punkte mehr. Das Lob ist eindeutig:</p>' +
+          '<p><span data-mira-sentiment="positive">\u201eDer Acme ist auf der Autobahn der leiseste der drei ' +
+          'und der einzige, der in unserem Wintertest seine angegebene Reichweite geschafft hat.\u201c</span></p>' +
+          '<p>Das Zitat stammt aus ' + miraChip("response", "r1", "ChatGPT, 24. Aug.") +
+          '. Die meisten positiven Erwähnungen gehen auf ' + quelleChip(0) + ' zurück.</p>' },
+
+      { q: "Was sollte ich diese Woche zuerst angehen?",
+        titel: "Prioritäten dieser Woche",
+        werkzeuge: ["prompt_insights", "source_recommendations"],
+        dauer: 21000,
+        html: '<p>Drei Dinge, das mit der größten Wirkung zuerst:</p><ul>' +
+          '<li>Bring den Kombi in die Reichweitentests auf ' + quelleChip(0) +
+          '. Sie entscheiden fünf deiner Vergleichs-Prompts.</li>' +
+          '<li>Antworte im Lade-Thread auf ' + quelleChip(1) + '. Dort wird ' + markeChip("bm") +
+          ' genannt, du nicht.</li>' +
+          '<li>Veröffentliche echte Winterreichweiten: dein schwächstes Thema mit <strong>22%</strong>.</li></ul>' +
+          '<p>Geschätzter Effekt: <strong>+5 bis 8 Punkte</strong> in 30 Tagen.</p>' },
+
+      { q: "Welche Quellen entscheiden, wer genannt wird?",
+        titel: "Die Quellen hinter den Antworten",
+        werkzeuge: ["citation_overview", "response_mentions"],
+        dauer: 18000,
+        html: '<p>Zwei Seiten entscheiden das meiste, und keine davon gehört dir:</p>' +
+          '<table><thead><tr><th>Quelle</th><th>Anteil</th><th>Nennt</th></tr></thead><tbody>' +
+          '<tr><td>' + quelleChip(0) + '</td><td>31,4%</td><td>' + markeChip("bm") + '</td></tr>' +
+          '<tr><td>' + quelleChip(1) + '</td><td>18,2%</td><td>' + markeChip("au") + '</td></tr>' +
           '</tbody></table>' }
     ];
   }
@@ -2064,7 +2393,7 @@
   var KRV_MIN = 12, KRV_MAX = 47;      /* Rand oben fuer das Schild, unten fuer die flache Kurve */
   /* Die Monate unter der Kurve (14.10.): ohne sie war es eine Linie im Leeren, mit ihnen ein
      halbes Jahr. Sechs Werte, sechs Monate. */
-  var KRV_MONATE = ["May", "Jun", "Jul", "Aug", "Sep", "Oct"];
+  var KRV_MONATE = LANG === "de" ? ["Mai", "Jun", "Jul", "Aug", "Sep", "Okt"] : ["May", "Jun", "Jul", "Aug", "Sep", "Oct"];
   /* Der Abstand zwischen Punkt und Schild -- der graue Strich dazwischen ist genau so lang. */
   var KRV_ABSTAND = 15;
 
@@ -2442,7 +2771,9 @@
     '</div></div>';
   }
 
-  function visInhalt(art){
+  /* Jede Vorschau geht durch deHtml (deutsche Fassung) -- auch die, die erst zur Laufzeit entstehen. */
+  function visInhalt(art){ return deHtml(visInhaltRoh(art)); }
+  function visInhaltRoh(art){
     /* Vorgerendert (13.10.) steht hier nur ein Platzhalter: die Vorschauen bauen sich zum Teil aus
        core (Chips, Zeichen, Flaggen), und core gibt es beim Vorrendern nicht. Ein Rueckfall ohne
        core saehe anders aus als die Vorschau danach -- und waere fuer einen Crawler ohnehin nur
@@ -3345,8 +3676,8 @@
                                        type: "website_relaunch", color: EVENT_TON, fokus: true }]; }
       });
       linie.render({ labels: d.tage, datasets: [
-        { label: "Affected prompts", __id: "affected", __baseColor: tinte, borderColor: tinte, data: d.betroffen },
-        { label: "Comparison group", __id: "comparison", __baseColor: "#80858e", borderColor: "#80858e", __dash: true, data: d.vergleich }
+        { label: T("Affected prompts"), __id: "affected", __baseColor: tinte, borderColor: tinte, data: d.betroffen },
+        { label: T("Comparison group"), __id: "comparison", __baseColor: "#80858e", borderColor: "#80858e", __dash: true, data: d.vergleich }
       ] });
     }
     /* Wie die Balken: gezeichnet wird, wenn die Karte erscheint -- sonst waere das Aufziehen der
@@ -3456,7 +3787,7 @@
           balken(du, r.du, du.farbe) +
           balken(wett, r.wett, REISE_WETT_FARBE, "is-wett") +
         '</div>' +
-        '<div class="ulh-rs-n">' + r.n + ' prompts</div>' +
+        '<div class="ulh-rs-n">' + r.n + (LANG === "de" ? " Prompts" : " prompts") + '</div>' +
       '</div>';
     }).join('<span class="ulh-rs-pfeil" aria-hidden="true">' + (kern.icon ? kern.icon("chevronRight", 2) : "") + '</span>');
     return '<div class="ulh-rs">' +
@@ -3499,7 +3830,7 @@
       '<div class="ulh-br-zahl">' +
         '<span class="ulh-br-t">' + BRANDED.wert + '</span>' +
         '<span class="ulh-br-wert">' + eine(BRANDED.ohne) + '%</span>' +
-        '<span class="ulh-br-diff">+' + eine(BRANDED.mit - BRANDED.ohne) + ' pts</span>' +
+        '<span class="ulh-br-diff">+' + eine(BRANDED.mit - BRANDED.ohne) + (LANG === "de" ? " Pkt." : " pts") + '</span>' +
       '</div>' +
       '<div class="ulh-br-liste">' + zeilen + '</div>' +
     '</div>';
@@ -3537,7 +3868,7 @@
       mit = !mit;
       br.classList.toggle("is-mit", mit);
       schalter.classList.toggle("is-on", mit);
-      hint.textContent = mit ? BRANDED.an : BRANDED.aus;
+      hint.textContent = T(mit ? BRANDED.an : BRANDED.aus);
       zaehlen(mit ? BRANDED.ohne : BRANDED.mit, mit ? BRANDED.mit : BRANDED.ohne);
     }
     sobaldSichtbar(br, function(an){
@@ -3575,9 +3906,9 @@
      Gegenteil von dem, was gemeint ist ("die echten Quellen deines Marktes"). Die Zahlen sind
      Beispielzahlen und stehen in derselben Groessenordnung wie im Dashboard darueber. */
   var QUELL_CHIP = "Source Insights";
-  var QUELL_H1 = "Understand how sources shape answers.";
-  var QUELL_H2 = "Which domains the models cite in your market, which of their pages carry the " +
-    "answer, and where your brand is named in them.";
+  var QUELL_H1 = T("Understand how sources shape answers.");
+  var QUELL_H2 = T("Which domains the models cite in your market, which of their pages carry the " +
+    "answer, and where your brand is named in them.");
   var QUELL_CTA = "Start for free";
   /* Die Beispiel-Domain ist forbes.com (21.09. angefordert, mit Beispielseiten). Dasselbe
      Argument wie vorher: eine Quelle, die in Antworten ueber Autos wirklich vorkommt, und
@@ -5557,7 +5888,7 @@
      Trendzeichen: |d|, denn UC.trendChip zeigt den Absolutwert und traegt die Richtung im Pfeil. */
   function ganz(v){ return String(Math.round(v)); }
   function ganzProz(v){ return String(Math.round(v)) + "%"; }
-  function eine(v){ return (Math.round(v * 10) / 10).toFixed(1); }
+  function eine(v){ return zahl(Math.round(v * 10) / 10, 1); }
   function proz(v){ var k = window.UpstreemCore; return k ? k.fmtPct(v) : ganzProz(v); }
 
   /* Fuer den Tooltip des Charts: Zahl und Format aus dem TEXT lesen, statt sie festzuschreiben. Die
@@ -5965,7 +6296,8 @@
                      die Liste zu lesen; kuerzer als ein Endzustand, weil die Szene weitergeht. */
   var VOR_KLICK_MS = 3200;
   var MIRA_WARTEN = 8000;        /* nach dem Ende des Erscheinens, Bewegung inbegriffen */
-  var MIRA_FRAGE = "Create an AI Visibility Report for Q3 2026";
+  var MIRA_FRAGE = LANG === "de" ? "Erstelle einen Bericht zur KI-Sichtbarkeit für Q3 2026"
+    : "Create an AI Visibility Report for Q3 2026";
   var MIRA_ZEICHEN_MS = 34;      /* je Zeichen -- 43 Zeichen ergeben rund 1.5 Sekunden */
   /* Zwei Sekunden zwischen dem letzten Zeichen und dem Abschicken: die Frage soll gelesen werden
      koennen, bevor sie weg ist. */
@@ -6070,14 +6402,26 @@
     var tab = tabelle("b");
     var zeilen = tab.slice(0, MIRA_ZEILEN).map(function(r){
       return '<tr><td>' + markeChip(r.company_id) + '</td>' +
-             '<td>' + r.visibility_pct.toFixed(1) + '%</td>' +
+             '<td>' + zahl(r.visibility_pct, 1) + '%</td>' +
              /* Das # vor dem Rang, in der dritten Textfarbe -- wie in der Rangspalte des
                 Dashboards. em ist der Haken dafuer, siehe landing-hero.css. */
-             '<td><em>#</em> ' + r.avg_rank.toFixed(1) + '</td>' +
+             '<td><em>#</em> ' + zahl(r.avg_rank, 1) + '</td>' +
              '<td>' + r.sentiment + '</td>' +
              '<td>' + miraNennungen(r.visibility_pct) + '</td></tr>';
     }).join("");
     var ke = tab.filter(function(r){ return r.company_id === "ac"; })[0];
+    if (LANG === "de") return '<h3>Bericht zur KI-Sichtbarkeit, Q3 2026</h3>' +
+      '<table><thead><tr><th>Marke</th><th>Visibility</th><th>Rang</th><th>Sentiment</th>' +
+      '<th>Erwähnungen</th></tr></thead><tbody>' + zeilen + '</tbody></table>' +
+      '<p>' + markeChip("ac") + ' beendet das Quartal auf Platz eins, vor ' + markeChip("bm") + ' und ' +
+      markeChip("au") + ': Visibility ' + zahl(ke.visibility_pct, 1) + '%, Rang ' +
+      zahl(ke.avg_rank, 1) + ', Sentiment ' + ke.sentiment + '. Redaktionelle Quellen tragen ' +
+      '<strong>31,4%</strong> aller Quellenangaben, deine eigenen Seiten 9,3%.</p>' +
+      '<h4>Was du als Nächstes tun solltest</h4><ul>' +
+      '<li>' + quelleChip(0) + ' nennt ' + markeChip("bm") + ' in jeder Vergleichsantwort, dich nie.</li>' +
+      '<li>' + quelleChip(1) + ' stellt ' + markeChip("au") + ' bei allen fünf Reichweiten-Prompts vor dich.</li>' +
+      '<li>' + miraChip("response", "r1", "Diese Antwort") + ' nennt vier Wettbewerber und lässt dich weg.</li>' +
+      '</ul>';
     return '<h3>AI Visibility Report, Q3 2026</h3>' +
       '<table><thead><tr><th>Brand</th><th>Visibility</th><th>Rank</th><th>Sentiment</th>' +
       '<th>Mentions</th></tr></thead><tbody>' + zeilen + '</tbody></table>' +
@@ -6255,7 +6599,7 @@
      vorgesehenen Setzer -- und danach der Text der Kopfzeile ueberschrieben, Zeichen fuer Zeichen.
      Waehrend der Szene zeichnet nichts die Kopfzeile neu; der letzte Schreiber gewinnt.
      Dasselbe Tempo wie die getippte Frage darueber (34ms je Zeichen). */
-  var MIRA_TITEL = "AI Visibility Report Q3 2026";
+  var MIRA_TITEL = LANG === "de" ? "Bericht zur KI-Sichtbarkeit Q3 2026" : "AI Visibility Report Q3 2026";
   function miraTitelSetzen(root){
     if (window.askMiraSetPreviousChats) window.askMiraSetPreviousChats([
       { id: "lh-chat", title: MIRA_TITEL, updated_at: new Date().toISOString() }
@@ -6879,6 +7223,8 @@
      "Both rank top three, and both of them name Audi.",
      "High", "Which electric SUV would you buy in 2026?", "youtube.com", "UGC_Community", "US", 5, 79.1]
   ];
+  /* Titel und Grund der Chancen sind Aufgaben fuer den Nutzer -- auf Deutsch also deutsch. */
+  CHANCEN.forEach(function(c){ c[3] = T(c[3]); c[4] = T(c[4]); });
 
   var CHANCEN_TYP = { get_listed: "Get listed", create_matching_content: "Create matching content",
                       improve_existing_content: "Improve existing content", build_presence: "Build presence" };
@@ -8268,8 +8614,8 @@
   /* NUR FUER .landing_ssr.js: dort laeuft diese Datei in Node, ohne Dokument, und liefert das
      Markup fuer die Framer-Komponenten -- statt zu starten. Im Browser setzt niemand den Schalter. */
   if (window.__ulhNurHtml){
-    window.__ulhHtml = { seite: seiteHtml(true), stand: standDerSeite(), leiste: leiste(), fuss: fuss(),
-                         demo: termin("demo"), kontakt: termin("kontakt") };
+    window.__ulhHtml = { seite: seiteHtml(true), stand: standDerSeite(), leiste: deHtml(leiste()), fuss: deHtml(fuss()),
+                         demo: deHtml(termin("demo")), kontakt: deHtml(termin("kontakt")) };
     return;
   }
 

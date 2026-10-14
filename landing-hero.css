@@ -3470,6 +3470,20 @@
   transition: background 200ms var(--ulh-ease);
 }
 .ulh-nav.is-offen { background: rgba(255, 255, 255, .94); }
+/* Der Sprach-Toggle (14.10., nur auf der eigenen Website): zwei Kuerzel in einer leisen Pille, das
+   aktive auf weissem Grund wie die gleitende Pille von .up-seg. Hoehe 28 (--up-h-seg), damit er
+   neben den 36er-Knoepfen nicht als dritter Knopf auftritt. */
+.ulh-sprache {
+  display: inline-flex; align-items: center; gap: 2px; height: 28px; padding: 2px; margin-right: 4px;
+  border-radius: 8px; background: var(--ulh-kasten); border: 1px solid var(--ulh-border);
+}
+.ulh-sprache a {
+  display: inline-flex; align-items: center; height: 22px; padding: 0 7px; border-radius: 6px;
+  font-size: 11.5px; font-weight: 600; letter-spacing: .02em; color: var(--ulh-sub); text-decoration: none;
+  transition: color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+.ulh-sprache a:hover { color: var(--ulh-text); }
+.ulh-sprache a.is-an { background: #ffffff; color: var(--ulh-text); box-shadow: 0 1px 2px rgba(11, 13, 24, .08); }
 /* Der Kasten, in dem die Leiste steht, wenn sie in der Seite DARUEBER haengt (landing-hero.js,
    leisteAuslagern). Er traegt .ulh-root, weil die Masse und Farben der Leiste aus dessen Variablen
    kommen -- und diese Regel nimmt ihm alles andere wieder ab: keinen Grund, keinen Ausschnitt,
