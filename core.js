@@ -22420,6 +22420,15 @@
       if (r.status === 401 || r.status === 403) return fertig(false, "unauthorized");
       if (r.status === 413) return fertig(false, "too_large");
       if (r.status === 415) return fertig(false, "wrong_type");
+      /* Supabase Storage meldet viele Fehler als HTTP 400 und traegt den eigentlichen Code im Body
+         ({"statusCode":"403",...}) -- gemessen 14.10., auch der DB-Chat sah RLS so. Ohne diesen Blick
+         hiess eine fehlende Berechtigung "Please try again." statt "Only admins ...". */
+      if (r.status === 400){
+        return r.json().then(function(b){
+          var c = String((b && b.statusCode) || "");
+          fertig(false, c === "401" || c === "403" ? "unauthorized" : c === "413" ? "too_large" : c === "415" ? "wrong_type" : "server");
+        }, function(){ fertig(false, "server"); });
+      }
       if (!r.ok) return fertig(false, "server");
       /* Der Puffer haengt an der URL und nicht am Pfad: der Pfad ist derselbe (x-upsert), also
          wuerde der Browser sonst das alte Bild aus seinem Zwischenspeicher zeigen. */

@@ -64,9 +64,10 @@
     meta: true, marke: true, mitglieder: true, einladungen: true, protokoll: true, abo: true, tarife: true,
     /* Schritt 2 (Your Brand speichern) gebaut am 11.10. (settings_v1_brand.sql, Vertrag 12). */
     markeSpeichern: true, logo: true, modelle: true,
-    /* Logo als Datei (14.10.): erst an, wenn der Eimer brand-logos samt Policy steht
-       (AN_DB_VOR_UMSTIEG_14_10, Punkt Dateien). Bis dahin der Hinweis "noch nicht verfuegbar". */
-    logoDatei: false,
+    /* Logo als Datei (14.10.): an, seit der Eimer brand-logos samt Policy steht (DB-Chat 14.10.
+       abends, storage_brand_logos.sql: owner/admin des Teams, Ordner <team_id>/, im Rollback mit
+       zehn Faellen geprueft; Eimer live per Abruf bestaetigt). */
+    logoDatei: true,
     /* Schritte 3 bis 6 gebaut am 11.10. (settings_v1_rest.sql, Vertrag 13; Kasse 9.2/10.5). */
     einladen: true, erneut: true, zurueckziehen: true,
     entfernen: true, rolle: true,
