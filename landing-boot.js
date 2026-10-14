@@ -232,6 +232,10 @@
      CSS und JS -- anders als die Vorschauen in den Karten ist sie nicht statisch, sie rechnet ihre
      Charts selbst. */
   css("domain-detail.css");
+  /* Unter Domain Detail, wie im Domain-Drawer der App (14.10.): der Umschalter "Pages / URLs" und
+     die URL-Tabelle im Domain-Modus. Beides echte Komponenten, von landing-hero.js gefuellt. */
+  css("view-switch.css");
+  css("urls-table.css");
   css("performance-radar.css");
   /* Sechste Szene: die Shopping-Seite, Komponente ganz (CSS und JS) wie Domain Detail. */
   css("shopping.css");
@@ -254,6 +258,8 @@
   js("page-headers/performance-page-header.js");
   js("performance-radar.js");
   js("domain-detail.js");
+  js("view-switch.js");
+  js("urls-table.js");
   js("shopping.js");
   /* Das Verhalten von Leiste und Fuss (13.10.): dieselbe Datei laden die eigenen Komponenten
      UpstreemTopbar.tsx und UpstreemFooter.tsx auf den anderen Seiten. VOR landing-hero.js, das

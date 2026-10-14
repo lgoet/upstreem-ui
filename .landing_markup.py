@@ -53,6 +53,10 @@ TEILE = [
     # Sechste Szene (06.10.): Shopping. Eine Komponente mit eigenem Kopf (Krumen, Reiter) -- kein
     # eigener Seitenkopf daneben noetig.
     ("ush", "bubble/shopping_bubble.html", "lh-ush"),
+    # Unter Domain Detail (14.10.): wie im Domain-Drawer der App der Umschalter "Pages / URLs" und
+    # die URL-Tabelle im Domain-Modus.
+    ("uvw", "bubble/view_switch_bubble.html", "lh-uvw"),
+    ("uut", "bubble/urls_table_bubble.html", "lh-uut"),
 ]
 
 # Feste Werte fuer die Platzhalter. BRAND_NAME ist eine erfundene Marke -- erfundene Zahlen unter
@@ -76,6 +80,10 @@ ERSATZ = {
     "UPSTREEM_LOGO_DARK": "",
     "UPSTREEM_LOGO": "",
     "EXPORT_INSTANCE_ID": "",
+    # Die URL-Tabelle steht unter Domain Detail, also im Domain-Modus (Anteil an DIESER Domain).
+    "DOMAIN_MODE": "yes",
+    # view_switch_bubble.html schreibt das Thema als Bubble-Ausdruck aus.
+    "[yes/no]": "no",
     "BRAND_NAME": "Acme",
     "BRAND_LOGO_URL": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d10%22%2F%3E%3Cpath%20d%3D%22M29%2015.5%2016.2%2048.5H23.1L25.3%2041.9H38.7L40.9%2048.5H47.8L35%2015.5ZM32%2025.4%2028.9%2034.4H35.1Z%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E",
     # NACH BRAND_LOGO_URL, nie davor: sonst wird aus BRAND_LOGO_URL ein "_URL".
@@ -143,6 +151,8 @@ for schluessel, pfad, kennung in TEILE:
     m = m.replace('data-instance="ROOTID_[dynamic id]"', 'data-instance="%s"' % kennung)
     # Shopping traegt in der Vorlage eine feste Kennung (alle Run-JS-Schritte heissen so).
     m = m.replace('data-instance="shopping_page"', 'data-instance="%s"' % kennung)
+    # Der Umschalter schreibt seine Attribute mit Leerraum um das "=" (view_switch_bubble.html).
+    m = re.sub(r'data-instance\s*=\s*"VIEWSWITCH_\[dynamic id\]"', 'data-instance="%s"' % kennung, m)
     for k, v in ERSATZ.items():
         m = m.replace(k, v)
     # Kein Sticky im Fenster. Der Kopf der Tabelle wuerde sich an den Ausschnitt haengen und ueber
@@ -171,7 +181,11 @@ for schluessel, pfad, kennung in TEILE:
     # Die URL-Typen des Domain Details im Verlauf der Charts (schwarz nach grau) statt in der
     # URL-Typ-Skala der App -- NUR hier (07.10.: "nur in der Landingpage, in der App ganz normal in
     # unseren bestehenden Farben"). domain-detail.js liest das Attribut (typenImVerlauf).
-    m = m.replace('class="up-root udd-root"', 'class="up-root udd-root" data-typfarben="verlauf"')
+    # data-form="abschnitte" (14.10. angefordert: "auf den Stand wie in der Hauptapp"): seit dem
+    # 13.10. steht Domain Detail in der App im Domain-Drawer in Abschnitten statt Karten; die
+    # Landingpage zeigt dieselbe Form. landing-hero.js setzt Kopf und Tabelle des Drawers darum.
+    m = m.replace('class="up-root udd-root"',
+                  'class="up-root udd-root" data-typfarben="verlauf" data-form="abschnitte"')
     # EINE h1 auf der Landingpage (13.10.): die Seitentitel in den Fenstern (Dashboard, Prompt
     # Insights, Opportunities, Performance) sind in der App die h1 ihrer Seite -- auf der Landingpage
     # stuenden damit fuenf h1 neben der echten. Fuer eine Suchmaschine ist das eine Seite mit fuenf
@@ -181,7 +195,8 @@ for schluessel, pfad, kennung in TEILE:
     m = re.sub(r'<h1 class="up-ph-heading">(.*?)</h1>', r'<div class="up-ph-heading">\1</div>', m, flags=re.S)
     # Die Rueckwege nach Bubble fallen weg. Auch mehrzeilig eingerueckt geschrieben, deshalb der
     # Blick auf das ganze Attribut samt fuehrendem Leerraum.
-    m = re.sub(r'\s*data-[a-z0-9-]+-fn="bubble_fn_[^"]*"', "", m)
+    # Auch mit Leerraum um das "=" (view_switch_bubble.html schreibt es so).
+    m = re.sub(r'\s*data-[a-z0-9-]+-fn\s*=\s*"bubble_fn_[^"]*"', "", m)
     # Uebrige Platzhalter melden, statt sie stehen zu lassen: ein IS_SOMETHING im Markup ist ein
     # stiller Fehler -- die Komponente liest es als echten Wert.
     rest = re.findall(r'"[A-Z][A-Z0-9_]{3,}"', m)

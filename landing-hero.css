@@ -675,6 +675,7 @@
   .ulh-root.is-inhalt .tcd-unit-right .tcd-head,
   .ulh-root.is-inhalt .tcd-unit-right .tcd-box,
   .ulh-quell-box.is-da .udd-card,
+  .ulh-quell-box.is-da .ulh-quell-tabellen,
   .ulh-root.is-entering .ulh-frame,
   .ulh-root.is-entering .dph-root,
   .ulh-root.is-entering .vot-unit-left  .vot-head,
@@ -1671,6 +1672,9 @@
 .ulh-quell-box.is-da .udd-funnelcard           { animation: ulhRise 730ms var(--ulh-expo) 330ms backwards; }
 .ulh-quell-box.is-da .udd-row2 .udd-typecard   { animation: ulhRise 730ms var(--ulh-expo) 470ms backwards; }
 .ulh-quell-box.is-da .udd-row2 .udd-modelcard  { animation: ulhRise 730ms var(--ulh-expo) 540ms backwards; }
+/* Die Tabelle als letzte Stufe, nach den unteren beiden Karten. */
+.ulh-quell-box:not(.is-da) .ulh-quell-tabellen { opacity: 0; }
+.ulh-quell-box.is-da .ulh-quell-tabellen       { animation: ulhRise 730ms var(--ulh-expo) 650ms backwards; }
 
 .ulh-quell-kopf { position: relative; z-index: 0; }
 .ulh-quell-kopf > * { position: relative; z-index: 1; }
@@ -1811,13 +1815,22 @@
 /* 8px Einzug links (21.09., dritter Anlauf -- die zwei davor sassen an den falschen Elementen:
    erst an der Kopfzeile der Chartkarte, dann an den Zeilen der URL-Liste. Gemeint war DIESE
    Zeile, die mit dem Zeichen der Domain und ihrem Namen ueber dem Fenster steht. */
-.ulh-quell-dom { display: flex; align-items: center; gap: 12px; padding-left: 8px;
-  margin-bottom: var(--ulh-quell-kopfluft); }
-.ulh-quell-dom .up-logo-box { width: 34px; height: 34px; border-radius: 10px; }
-.ulh-quell-dom .up-logo-box img { width: 32px; height: 32px; border-radius: 9px; }
-.ulh-quell-domtxt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.ulh-quell-domname { font-size: 17px; font-weight: 500; letter-spacing: -0.015em; color: var(--ulh-text); }
-.ulh-quell-domsub { font-size: 13px; font-weight: 400; color: var(--ulh-sub); }
+/* Seit 14.10. der Kopf des Domain-Drawers (.up-dk-heldzeile aus core). Hier steht nur, was der
+   Drawer in domain-drawer.css dazu setzt -- Titel und Chip in einer Zeile --, und der Einzug von
+   8px, den die Zeile vorher schon hatte. Die Masse von Zeichen, Titel und Unterzeile kommen aus
+   core, wie im Drawer. */
+.ulh-quell-held { padding-left: 8px; margin-bottom: var(--ulh-quell-kopfluft); }
+.ulh-quell-titelzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; min-width: 0; }
+.ulh-quell-typ { display: inline-flex; flex: 0 0 auto; }
+.ulh-quell-typ:empty { display: none; }
+
+/* Umschalter und Seiten-Tabelle darunter, wie .uddr-tabellen im Drawer (16px zwischen beiden).
+   Gesperrt wie die Komponente darueber: die Sektion ist ein Bild der App, ein Klick auf Sortieren
+   oder Blaettern fragte Daten an, die hier niemand liefert. */
+.ulh-quell-tabellen {
+  display: flex; flex-direction: column; gap: 16px;
+  margin-top: 24px; pointer-events: none;
+}
 
 /* ---- Die Komponente darin enger stellen ----
    Die App atmet, weil dort eine ganze Seite steht. Hier steht sie in einem Ausschnitt, und
