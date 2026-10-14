@@ -715,8 +715,24 @@
       tags: tags.map(function(t){
         return { tag_id: t.tag_id || t.id || null, name: t.name || t.tag_name || '', emoji: t.emoji || '',
                  hex_light: t.hex_light || t.hex_dark || '#6b7280', hex_dark: t.hex_dark || '' };
-      }).filter(function(t){ return t.name; })
+      }).filter(function(t){ return t.name; }),
+      /* Intent und Branded des Vorschlags (14.10.), roh durchgereicht -- core liest die Felder
+         (intent, intent_status, intent_source, branded, branded_source, branded_brands). */
+      zeile: item
     };
+  }
+  /* Ohne Intent-Felder in der Antwort (die DB liefert sie noch nicht) steht ein Strich, damit
+     die Spalte nicht nach Fehler aussieht. Nicht klickbar: ueberschrieben wird nach dem Tracken
+     in der Prompt-Tabelle. */
+  function intentZelle(it){
+    var z = it && it.zeile;
+    if (!z || !UC.hatIntent || !UC.hatIntent(z) || !UC.intentHtml) return '<span class="upr-cell-empty">–</span>';
+    return UC.intentHtml(z, {});
+  }
+  function brandedZelle(it){
+    var z = it && it.zeile;
+    if (!z || z.branded !== true || !UC.brandedHtml) return '<span class="upr-cell-empty">–</span>';
+    return UC.brandedHtml(z, {});
   }
   /* core's .up-topicchip, the same chip the prompts table and the topics manager draw, instead of
      the standalone's parallel .upr-tag-pill implementation. */
@@ -958,6 +974,8 @@
         return '<div class="up-row" data-prompt-id="' + esc(item.id || '') + '" data-row-index="' + index + '">' +
           '<div class="up-td"><span class="upr-prompt-text">' + esc(item.prompt_text) + '</span></div>' +
           '<div class="up-td">' + renderTags(item.tags) + '</div>' +
+          '<div class="up-td upr-td-intent">' + intentZelle(item) + '</div>' +
+          '<div class="up-td upr-td-branded">' + brandedZelle(item) + '</div>' +
           '<div class="up-td">' + renderVolume(item.estimated_volume) + '</div>' +
           '<div class="up-td upr-td-actions"><div class="upr-row-actions">' +
             /* Schon uebersetzt, Schluessel in data-i18n: sonst mass die Aktionsspur die englische
@@ -1010,7 +1028,8 @@
       suggestionsEl.style.display = '';
     }
     suggestionsEl.innerHTML = visibleTags.map(function(tag){
-      return '<button class="up-topicchip upr-chip" type="button" data-chip="' + esc(tag.name) + '" data-tag-id="' + esc(tag.id || '') + '" style="--ust-tag-color:' + esc(makeColor(tag.hex_light, '#6b6f78')) + ';">' +
+      return '<button class="up-topicchip upr-chip" type="button" data-chip="' + esc(tag.name) + '" data-tag-id="' + esc(tag.id || '') +
+        '" data-color="' + esc(makeColor(tag.hex_light, '#6b6f78')) + '" data-emoji="' + esc(tag.emoji || '') + '" style="--ust-tag-color:' + esc(makeColor(tag.hex_light, '#6b6f78')) + ';">' +
         (tag.emoji ? '<span class="up-topicchip-e">' + esc(tag.emoji) + '</span>' : '') +
         '<span class="up-topicchip-lbl">' + esc(tag.name) + '</span></button>';
     }).join('') +
@@ -1137,7 +1156,8 @@
   root.querySelectorAll('.upr-dd').forEach(wireDropdown);
 
   if (startButton) startButton.addEventListener('click', function(){
-    var payload = { keywords: textarea ? textarea.value.trim() : '', market: state.market, market_alpha2: state.market_alpha2,
+    var payload = { keywords: textarea ? textarea.value.trim() : '', intents: eingabe.intents ? eingabe.intents() : [],
+                    market: state.market, market_alpha2: state.market_alpha2,
                     market_alpha3: state.market_alpha3, market_name: state.market_name, business_model: state.business_model, persona: state.persona };
     updateResearchContext(payload); renderResultsContext();
     if (root.__uprStartLocked) return;
@@ -1299,6 +1319,9 @@
     UC.makeExplain({
       root: root, triggerSel: '.up-th-info', getIsDark: isDark,
       html: function(kind){
+        /* Intent und Branded (14.10.): dieselben Karten wie in der Prompt-Tabelle, aus core. */
+        if (kind === 'intent' && UC.intentErklaerHtml) return UC.intentErklaerHtml();
+        if (kind === 'branded' && UC.brandedErklaerHtml) return UC.brandedErklaerHtml();
         if (kind !== 'volume') return '';
         return '<div class="up-explain-vis"><span class="up-explain-row" style="gap:3px">' +
                  /* Farben in CSS, nicht inline: das leere Segment war auf #e8eaee festgeschrieben und
@@ -1336,9 +1359,9 @@
      start handler reads its value. */
   (function initTagEditor(){
     if (!composerEl || !textarea) return;
-    var TAG_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="upr-inline-tag-ico" aria-hidden="true"><path d="M16.9017 6.12874C18 7.25748 18 9.07416 18 12.7075V14.2925C18 17.9258 18 19.7425 16.9017 20.8713C15.8033 22 14.0355 22 10.5 22C6.96447 22 5.1967 22 4.09835 20.8713C3 19.7425 3 17.9258 3 14.2925V12.7075C3 9.07416 3 7.25748 4.09835 6.12874C5.1967 5 6.96447 5 10.5 5C14.0355 5 15.8033 5 16.9017 6.12874Z"/><path d="M7.5 5.5V10.3693C7.5 11.3046 7.5 11.7722 7.78982 11.9396C8.35105 12.2638 9.4038 11.1823 9.90375 10.8567C10.1937 10.6678 10.3387 10.5734 10.5 10.5734C10.6613 10.5734 10.8063 10.6678 11.0962 10.8567C11.5962 11.1823 12.6489 12.2638 13.2102 11.9396C13.5 11.7722 13.5 11.3046 13.5 10.3693V5.5"/><path d="M9 2H11C15.714 2 18.0711 2 19.5355 3.46447C21 4.92893 21 7.28595 21 12V18"/></svg>';
     var X_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg>';
     function isTag(node){ return node && node.nodeType === 1 && node.classList && node.classList.contains('upr-inline-tag'); }
+    function istIntent(node){ return isTag(node) && node.getAttribute('data-art') === 'intent'; }
     var placeholder = textarea.getAttribute('placeholder') || '';
     var editor = document.createElement('div');
     editor.className = 'upr-tag-editor is-empty';
@@ -1349,10 +1372,15 @@
     textarea.style.display = 'none';
     composerEl.insertBefore(editor, textarea);
 
-    function existingTagValues(){ return Array.prototype.slice.call(editor.querySelectorAll('.upr-inline-tag')).map(function(el){ return String(el.getAttribute('data-tag') || '').toLowerCase(); }); }
+    /* Art und Wert zusammen: "Commercial" als Topic und als Intent sind zwei verschiedene Chips. */
+    function tagSchluessel(art, value){ return (art === 'intent' ? 'intent:' : 'tag:') + String(value || '').trim().toLowerCase(); }
+    function existingTagValues(){ return Array.prototype.slice.call(editor.querySelectorAll('.upr-inline-tag')).map(function(el){ return tagSchluessel(el.getAttribute('data-art'), el.getAttribute('data-tag')); }); }
+    /* Die Begriffe der Recherche -- Intent-Chips gehoeren NICHT dazu, die gehen als eigene Liste
+       an den Start (getIntents). */
     function getValue(){
       var parts = [];
       editor.childNodes.forEach(function(node){
+        if (istIntent(node)) return;
         if (isTag(node)){ var t = String(node.getAttribute('data-tag') || '').trim(); if (t) parts.push(t); }
         else String(node.textContent || '').split(',').forEach(function(s){ s = s.trim(); if (s) parts.push(s); });
       });
@@ -1368,19 +1396,43 @@
       composerEl.classList.toggle('has-value', !empty);
       var val = getValue();
       if (textarea.value !== val) textarea.value = val;
+      try { editor.dispatchEvent(new CustomEvent('upr-tags-geaendert')); } catch(e){}
       merke();
     }
     function placeCaretAfter(node){
       try { var sel = window.getSelection(), r = document.createRange(); r.setStartAfter(node); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); } catch(e){}
     }
-    function buildTag(value){
+    function getIntents(){
+      return Array.prototype.slice.call(editor.querySelectorAll('.upr-inline-tag[data-art="intent"]')).map(function(el){
+        return String(el.getAttribute('data-tag') || '').trim().toLowerCase(); }).filter(Boolean);
+    }
+    /* DER FELD-CHIP AUS CORE (14.10.): derselbe Chip wie die Bezuege in Ask Mira (.up-feldchip),
+       mit Kachel, Name und dauerhaft sichtbarem Kreuz. Die Kachel zeigt bei einer Topic ihr Emoji
+       oder ihren Farbstrich -- vorher stand dort fuer jede Topic dasselbe graue Etikett-Zeichen --,
+       bei einem Intent sein Zeichen. meta: { art: "topic" | "intent", color, emoji }. */
+    function buildTag(value, meta){
+      meta = meta || {};
+      var art = meta.art === 'intent' ? 'intent' : 'topic';
       var span = document.createElement('span');
       span.className = 'upr-inline-tag';
       span.setAttribute('contenteditable', 'false');
       span.setAttribute('data-tag', value);
-      span.innerHTML = '<span class="upr-inline-tag-body">' + TAG_ICON +
-        '<span class="upr-inline-tag-label">' + esc(value) + '</span>' +
-        '<span class="upr-inline-tag-remove" role="button" tabindex="-1" aria-label="Remove tag: ' + esc(value) + '">' + X_ICON + '</span>' +
+      span.setAttribute('data-art', art);
+      if (meta.color) span.setAttribute('data-color', meta.color);
+      if (meta.emoji) span.setAttribute('data-emoji', meta.emoji);
+      var label = value, kachel;
+      if (art === 'intent'){
+        var a = UC.intentArt ? UC.intentArt(value) : null;
+        label = a ? (UC.intentName ? UC.intentName(a) : a.label) : value;
+        kachel = '<span class="up-feldchip-av">' + (a && UC.icon ? UC.icon(a.icon, 2) : '') + '</span>';
+      } else if (meta.emoji){
+        kachel = '<span class="up-feldchip-av"><span class="up-topicchip-e">' + esc(meta.emoji) + '</span></span>';
+      } else {
+        kachel = '<span class="up-feldchip-av is-strich" style="--ust-tag-color:' + esc(makeColor(meta.color, '#6b6f78')) + ';"></span>';
+      }
+      span.innerHTML = '<span class="upr-inline-tag-body up-entchip is-lifted is-static up-feldchip">' + kachel +
+        '<span class="upr-inline-tag-label up-feldchip-lbl">' + esc(label) + '</span>' +
+        '<span class="upr-inline-tag-remove up-feldchip-x" role="button" tabindex="-1" aria-label="' + esc((UC.t ? UC.t('Remove') : 'Remove') + ': ' + label) + '">' + X_ICON + '</span>' +
         '</span><span class="upr-inline-tag-sep">,</span>';
       return span;
     }
@@ -1392,7 +1444,8 @@
       stand: function(){
         var out = [];
         Array.prototype.forEach.call(editor.childNodes, function(n){
-          if (isTag(n)) out.push({ tag: String(n.getAttribute('data-tag') || '') });
+          if (isTag(n)) out.push({ tag: String(n.getAttribute('data-tag') || ''), art: n.getAttribute('data-art') || '',
+                                   color: n.getAttribute('data-color') || '', emoji: n.getAttribute('data-emoji') || '' });
           else if (n.nodeName === 'BR') out.push({ br: 1 });
           else out.push({ text: String(n.textContent || '') });
         });
@@ -1402,23 +1455,24 @@
         editor.innerHTML = '';
         (Array.isArray(liste) ? liste : []).forEach(function(x){
           if (!x) return;
-          if (x.tag != null){ if (String(x.tag).trim()) editor.appendChild(buildTag(String(x.tag))); }
+          if (x.tag != null){ if (String(x.tag).trim()) editor.appendChild(buildTag(String(x.tag), { art: x.art, color: x.color, emoji: x.emoji })); }
           else if (x.br) editor.appendChild(document.createElement('br'));
           else if (x.text) editor.appendChild(document.createTextNode(String(x.text)));
         });
         updateState();
-      }
+      },
+      intents: function(){ return getIntents(); }
     };
     function ensureTrailingText(){
       var last = editor.lastChild;
       if (!last || last.nodeType !== 3){ last = document.createTextNode(' '); editor.appendChild(last); }
       return last;
     }
-    function insertTag(value){
+    function insertTag(value, meta){
       value = String(value || '').trim();
       if (!value){ editor.focus(); return; }
-      if (existingTagValues().indexOf(value.toLowerCase()) !== -1){ editor.focus(); return; }
-      var tag = buildTag(value);
+      if (existingTagValues().indexOf(tagSchluessel(meta && meta.art, value)) !== -1){ editor.focus(); return; }
+      var tag = buildTag(value, meta);
       editor.insertBefore(tag, ensureTrailingText());
       editor.focus(); placeCaretAfter(tag); updateState();
     }
@@ -1490,8 +1544,39 @@
       var chip = e.target.closest && e.target.closest('.upr-chip');
       if (!chip || !suggestionsEl.contains(chip)) return;
       e.stopPropagation(); e.preventDefault();
-      insertTag(chip.getAttribute('data-chip') || chip.textContent.trim());
+      insertTag(chip.getAttribute('data-chip') || chip.textContent.trim(),
+        { art: 'topic', color: chip.getAttribute('data-color') || '', emoji: chip.getAttribute('data-emoji') || '' });
     }, true);
+    /* DIE INTENTS UNTER DEN TOPICS (14.10.): ein Klick setzt den Intent als Chip ins Feld, ein
+       zweiter nimmt ihn wieder heraus. Mehrere gehen -- die Recherche teilt die Zahl der Prompts
+       dann gleichmaessig auf (start-job, intents). "Other" steht nicht zur Wahl: Login, Support
+       und Aehnliches sind keine Fragen, nach denen man recherchiert. */
+    var intentReihe = null;
+    function intentReiheZeichnen(){
+      if (!UC.INTENTE || !suggestionsEl || !suggestionsEl.parentNode) return;
+      if (!intentReihe){
+        intentReihe = document.createElement('div');
+        intentReihe.className = 'upr-intents';
+        intentReihe.setAttribute('aria-label', UC.t ? UC.t('Intent') : 'Intent');
+        suggestionsEl.parentNode.insertBefore(intentReihe, suggestionsEl.nextSibling);
+        intentReihe.addEventListener('click', function(e){
+          var b = e.target.closest && e.target.closest('[data-intent-pick]');
+          if (!b) return;
+          e.preventDefault();
+          var key = b.getAttribute('data-intent-pick');
+          var da = editor.querySelector('.upr-inline-tag[data-art="intent"][data-tag="' + key + '"]');
+          if (da) removeTag(da); else insertTag(key, { art: 'intent' });
+        });
+      }
+      var gewaehlt = getIntents();
+      intentReihe.innerHTML = UC.INTENTE.filter(function(a){ return a.key !== 'other'; }).map(function(a){
+        var an = gewaehlt.indexOf(a.key) >= 0;
+        return '<button class="up-topicchip upr-intentchip' + (an ? ' is-on' : '') + '" type="button" data-intent-pick="' + esc(a.key) + '" aria-pressed="' + (an ? 'true' : 'false') + '">' +
+          (UC.icon ? UC.icon(a.icon, 2) : '') + '<span class="up-topicchip-lbl">' + esc(UC.intentName ? UC.intentName(a) : a.label) + '</span></button>';
+      }).join('');
+    }
+    intentReiheZeichnen();
+    editor.addEventListener('upr-tags-geaendert', intentReiheZeichnen);
     if (clearInputButton) clearInputButton.addEventListener('click', function(){ editor.innerHTML = ''; updateState(); editor.focus(); });
     if (startButton) startButton.addEventListener('click', function(){ editor.innerHTML = ''; updateState(); });
     new MutationObserver(function(){

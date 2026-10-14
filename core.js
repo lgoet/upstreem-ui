@@ -19801,6 +19801,14 @@
     APP.team = String(r.team_id || "");
     appTabTeam(APP.team);
     setUpstreemTeam(APP.team);
+    /* Der Standardmarkt des Teams auch in core abgelegt (14.10.): bisher bekam ihn nur "Prompts
+       hinzufuegen". Prompt Research stand darum auf dem ERSTEN Markt der Liste -- Afghanistan, so
+       gemeldet. Abruf ueber UC.getDefaultMarket(), Aenderung als window-Ereignis. Ein Teamwechsel
+       laedt die Seite neu, der Wert kommt dann mit dem naechsten Start. */
+    if (r.default_market && r.default_market.alpha2){
+      APP.standardMarkt = String(r.default_market.alpha2).toUpperCase();
+      try { window.dispatchEvent(new CustomEvent("up-default-market", { detail: { alpha2: APP.standardMarkt } })); } catch(e){}
+    }
     if (r.default_market && r.default_market.alpha2 && appRuf("setUpstreemDefaultMarket")) window.setUpstreemDefaultMarket(String(r.default_market.alpha2));
     if (appRuf("setAccessGate") && r.access){
       var g = {}; for (var k in r.access) if (Object.prototype.hasOwnProperty.call(r.access, k)) g[k] = r.access[k];
@@ -25412,6 +25420,7 @@
     setMarkets: setMarkets,
     setAllMarkets: setAllMarkets,
     getAllMarkets: getAllMarkets,
+    getDefaultMarket: function(){ return APP.standardMarkt || ""; },
     onAllMarkets: onAllMarkets,
     onMarkets: onMarkets,
     marketsChanged: marketsChanged,

@@ -1926,9 +1926,9 @@
        ergaebe auf 4px Breite zwar dasselbe Bild -- der Browser kuerzt jeden Radius auf die halbe
        Seite --, stuende aber fuer eine Rundung, die nicht gemeint ist, und kippte bei jeder
        anderen Breite in eine volle Kappe. */
-    .up-topicchip::before { content: ""; order: -1; width: 4px; height: 10px; flex: 0 0 4px;
+    .up-topicchip::before, .up-feldchip-av.is-strich::before { content: ""; order: -1; width: 4px; height: 10px; flex: 0 0 4px;
       border-radius: 2px; background: var(--ust-tag-color, var(--vc-fourth)); }
-    [data-theme="dark"] .up-topicchip::before { background: color-mix(in srgb, var(--ust-tag-color, var(--vc-fourth)) 72%, white); }
+    [data-theme="dark"] .up-topicchip::before, [data-theme="dark"] .up-feldchip-av.is-strich::before { background: color-mix(in srgb, var(--ust-tag-color, var(--vc-fourth)) 72%, white); }
     .up-topicchip-e { font-size: 12px; line-height: 1; }
     /* 2b oder 2a ist eine Produktentscheidung (Handoff): mit UC.topicEmoji(false) traegt kein Chip
        der App ein Emoji, ohne dass ein Verbraucher etwas aendert. Vorgabe: mit (2b). */
@@ -4883,6 +4883,30 @@
   background: color-mix(in srgb, var(--vc-heading-bg) 50%, transparent);
   box-shadow: var(--up-e-chip);
 }
+/* ---- Feld-Chip: ein gewaehlter Bezug IM Eingabefeld (14.10.) ------------------------------
+   Der Chip aus Ask Mira (.am-pick-tag), als Baustein fuer jedes Feld, das Chips aufnimmt --
+   zuerst Prompt Research ("genau so wie die Item-Chips, die wir bei Mira haben"). Grund, Rahmen,
+   Radius und Schatten kommen aus .up-entchip.is-lifted, die Masse sind die von Mira, Wert fuer
+   Wert: 28px hoch, 7 Abstand, links 5 und rechts 4 Polster, eine 18er-Kachel links, ein 19er-
+   Kreuz rechts. Drei Klassen im Selektor, weil .up-entchip.is-lifted zwei hat -- Konflikt ueber
+   Spezifitaet, nicht ueber die Ladereihenfolge.
+   Die Kachel traegt, was der Bezug IST: bei einer Topic ihr Emoji oder ihren Farbstrich (dieselbe
+   Marke wie .up-topicchip, 4x10, Radius 2), beim Intent sein Zeichen. Radius 5 = 6 minus 1
+   (konzentrisch in der 7.6er-Ecke des Chips mit 5 Polster, gerundet). */
+.up-feldchip.up-entchip.is-lifted { height: 28px; gap: 7px; padding: 0 4px 0 5px; color: var(--vc-text); vertical-align: middle; }
+.up-feldchip-av { width: 18px; height: 18px; flex: 0 0 auto; border-radius: 5px; overflow: hidden;
+  background: var(--vc-heading-bg); display: flex; align-items: center; justify-content: center; color: var(--vc-third); }
+.up-feldchip-av svg { width: 12px; height: 12px; display: block; }
+.up-feldchip-av .up-topicchip-e { font-size: 12px; line-height: 1; }
+/* Der Farbstrich der Topic steht in der Regel von .up-topicchip::before mit (dieselbe Marke,
+   dieselbe Begruendung fuer Radius 2 dort). */
+.up-feldchip-lbl { min-width: 0; max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.up-feldchip-x { width: 19px; height: 19px; flex: 0 0 auto; border: 0; border-radius: var(--up-r-s); padding: 0;
+  background: transparent; color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+  transition: background var(--up-t-2) ease, color var(--up-t-2) ease; }
+.up-feldchip-x svg { width: 12px; height: 12px; display: block; }
+.up-feldchip-x:hover { color: var(--vc-text); background: color-mix(in srgb, var(--vc-text) 6%, transparent); }
+
 /* Die kleine Fassung (.mqa-mini): 22px statt 26, Radius 6.4. Der Schatten ist derselbe wie beim
    grossen Chip -- die Begruendung steht bei --up-e-chip. */
 .up-entchip.is-lifted.is-sm {

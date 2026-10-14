@@ -58,10 +58,19 @@
         keywords: begriffe(d.keywords),
         market: str(d.market_alpha2 || d.market).trim().toUpperCase(),
         business_model: str(d.business_model).trim() || "b2c",
-        persona: persona || null
+        persona: persona || null,
+        /* Die gewaehlten Intents (14.10.): die Recherche teilt die Zahl der Prompts gleichmaessig
+           auf sie auf. Leer -> null, dann wie bisher ohne Vorgabe. Nur die drei Stufen der
+           Customer Journey -- "other" ist keine Richtung, nach der man recherchiert. */
+        intents: (function () {
+          var l = (isArr(d.intents) ? d.intents : []).map(function (x) { return str(x).trim().toLowerCase(); })
+            .filter(function (x, i, a) { return INTENT_WAHL.indexOf(x) >= 0 && a.indexOf(x) === i; });
+          return l.length ? l : null;
+        })()
       }
     };
   }
+  var INTENT_WAHL = ["informational", "recommendation", "transactional"];
 
   function istLauf(st) { st = str(st).toLowerCase(); return st === "queued" || st === "running"; }
   /* { rows, laufend } -- laufend ist der erste Job in queued/running (pro Team hoechstens einer). */

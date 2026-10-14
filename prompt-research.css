@@ -179,6 +179,15 @@
 /* Die Klasse bleibt als Griff (Klick-Selektor im JS, und .contract_diff.py liest Klassennamen aus
    der CSS): nur, dass der Chip nicht schrumpft. */
 .upr-chip { flex: 0 0 auto; }
+/* DIE INTENTS UNTER DEN TOPICS (14.10.): dieselben Chips aus core, in einer eigenen Reihe 8px
+   unter den Topics -- eine zweite Art Auswahl, nicht noch mehr Themen. Statt des Farbstrichs
+   (der gehoert zur Topic) das Zeichen des Intents, 14px in der leisen Farbe wie am Label. */
+.upr-intents { margin-top: 8px; width: min(100%, 620px); display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.upr-intents:empty { display: none; }
+.upr-intentchip { flex: 0 0 auto; }
+.up-topicchip.upr-intentchip::before { display: none; }   /* ueber Spezifitaet, nicht ueber die Ladereihenfolge */
+.upr-intentchip > svg { width: 14px; height: 14px; flex: 0 0 14px; color: var(--vc-fourth); }
+.upr-intentchip.is-on > svg { color: var(--vc-text); }
 .upr-showmore {
   height: 28px; padding: 0 10px; border: 1px solid var(--vc-border); border-radius: 8px;
   background: var(--vc-bg); color: var(--vc-muted);
@@ -463,28 +472,12 @@
 }
 .upr-tag-editor.is-disabled { opacity: 0.55; pointer-events: none; }
 .upr-inline-tag { display: inline; white-space: nowrap; user-select: none; -webkit-user-select: none; }
-.upr-inline-tag-body {
-  display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 8px; margin-bottom: 4px;
-  border: 1px solid var(--vc-border); border-radius: 8px; background: transparent; color: var(--vc-text);
-  font-size: 13px; font-weight: 500; line-height: 1; vertical-align: middle; max-width: 100%;
-}
-.upr-inline-tag-ico { width: 13px; height: 13px; flex: 0 0 auto; color: var(--vc-fourth); }
-.upr-inline-tag-label { overflow: hidden; text-overflow: ellipsis; max-width: 240px; }
-.upr-inline-tag-sep { color: var(--vc-muted); margin: 0 5px 0 2px; }
-/* The remove control grows out of zero width on hover, so a row of pills does not jitter as the
-   pointer moves across it. */
-.upr-inline-tag-remove {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 0; max-width: 0; height: 14px; opacity: 0; overflow: hidden; margin-left: 0;
-  border-radius: 4px; cursor: pointer; color: var(--vc-muted);
-  transition: max-width 140ms ease, opacity 140ms ease, margin-left 140ms ease, background 140ms ease, color 140ms ease;
-}
-.upr-inline-tag-remove svg { width: 12px; height: 12px; display: block; }
-.upr-inline-tag-body:hover .upr-inline-tag-remove { width: 14px; max-width: 14px; opacity: 1; margin-left: 1px; }
-.upr-inline-tag-remove:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
-@media (hover: none) {
-  .upr-inline-tag-remove { width: 14px; max-width: 14px; opacity: 0.85; margin-left: 1px; }
-}
+/* Der Chip selbst ist seit dem 14.10. der Feld-Chip aus core (.up-feldchip auf .up-entchip.is-lifted,
+   derselbe wie in Ask Mira) -- hier steht nur, wie er im Fliesstext des Feldes sitzt: 4px Luft nach
+   unten fuer die naechste Zeile, 6px nach rechts statt des Kommas (das bleibt fuer Kopieren und
+   Vorlesen im Baum, sichtbar ist es nicht mehr). */
+.upr-inline-tag-body { margin: 0 6px 4px 0; }
+.upr-inline-tag-sep { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
 /* ---------- results ----------
    Fills the root; only the table body scrolls. Nav and toolbar are fixed rows above it. */
@@ -581,7 +574,9 @@
      Dieselbe Loesung wie die Einladungstabelle in team-orga (data-up-locale am <html>, von core
      in jedem Sprachlauf gesetzt). */
   --upr-act-w: 176px;
-  --up-cols: minmax(0, 2.4fr) minmax(0, 1.7fr) 150px var(--upr-act-w);
+  /* Intent und Branded (14.10.) zwischen Tags und Volumen: Intent 150 (das breiteste Label mit
+     Zeichen, ohne Klick-Polster), Branded 150 (der Chip mit drei Favicons und "+N"). */
+  --up-cols: minmax(0, 2.4fr) minmax(0, 1.5fr) 150px 150px 150px var(--upr-act-w);
   flex: 0 0 auto;
 }
 /* Deutsch: "Ignorieren" und "Beobachten" statt "Ignore" und "Track" -- gemessen 221px, plus
@@ -802,19 +797,23 @@
 .upr-fehler > span { text-align: center; padding-top: 8px; }
 
 /* ---------- responsive ---------- */
+/* Spalten seit dem 14.10.: 1 Prompt, 2 Tags, 3 Intent, 4 Branded, 5 Volumen, 6 Aktionen. Zuerst
+   geht Branded (die seltenste Angabe), dann Tags und Intent, zuletzt das Volumen. */
 @media (max-width: 1040px) {
-  .upr-box { --up-cols: minmax(0, 2.2fr) minmax(0, 1.4fr) 120px var(--upr-act-w); }
+  .upr-box { --up-cols: minmax(0, 2.2fr) minmax(0, 1.4fr) 140px 120px var(--upr-act-w); }
+  .upr-box .up-th:nth-child(4), .upr-box .up-td:nth-child(4) { display: none; }
   .upr-results-context { display: none; }
 }
 @media (max-width: 860px) {
   .upr-settings-grid { grid-template-columns: 1fr; }
   .upr-box { --up-cols: minmax(0, 2fr) 110px var(--upr-act-w); }
-  .upr-box .up-th:nth-child(2), .upr-box .up-td:nth-child(2) { display: none; }
+  .upr-box .up-th:nth-child(2), .upr-box .up-td:nth-child(2),
+  .upr-box .up-th:nth-child(3), .upr-box .up-td:nth-child(3) { display: none; }
 }
 @media (max-width: 560px) {
   .upr-composer { grid-template-columns: 1fr; }
   .upr-actions { justify-content: flex-end; }
-  .upr-box .up-th:nth-child(3), .upr-box .up-td:nth-child(3) { display: none; }
+  .upr-box .up-th:nth-child(5), .upr-box .up-td:nth-child(5) { display: none; }
   .upr-side { width: 100%; right: 0; top: 0; bottom: 0; border-radius: 0; border-right: 0; }
 
   /* Icon-only actions. At this width "Ignore"/"Track" cost more than they explain -- the x and the
