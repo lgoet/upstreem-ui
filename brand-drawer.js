@@ -221,14 +221,17 @@
   /* Der Kopf haengt nicht am Zeitraum: einmal je Marke, aus dem Speicher beim Wiederoeffnen.
      Ein FEHLER oder eine inaktive Marke zeichnet sofort: dann gibt es nichts, worauf der Rest
      warten muesste -- die Bausteine sind ohnehin ausgeblendet. */
+  /* Der Kopf haengt seit dem 14.10. am Intent-Filter (first/last seen bzw. last mentioned,
+     audit_14_10) -- also auch sein Speicher: je Filterstand ein Eintrag. */
+  function kopfSchluessel(x) { return x + "|" + JSON.stringify(UC.intentFilterParams ? UC.intentFilterParams() : {}); }
   function kopfAuftrag() {
-    var id = B.id;
+    var id = B.id, ks = kopfSchluessel(id);
     return {
-      kanal: "kopf", imSpeicher: !!B.kopfSpeicher[id],
+      kanal: "kopf", imSpeicher: !!B.kopfSpeicher[ks],
       ladenAn: function () { B.zeile = null; B.fehler = ""; kopfZeichnen(); },
       laden: function (frisch) {
-        if (!frisch && B.kopfSpeicher[id]) {
-          var d0 = B.kopfSpeicher[id];
+        if (!frisch && B.kopfSpeicher[ks]) {
+          var d0 = B.kopfSpeicher[ks];
           return Promise.resolve(function () { B.zeile = d0; B.fehler = ""; kopfZeichnen(); });
         }
         if (B.ab) { try { B.ab.abort(); } catch (e) {} }
@@ -238,14 +241,14 @@
         return teamWarten().then(function (team) {
           if (nr !== B.nr) return null;
           if (!team) return { ok: false, status: 0, fehler: { message: "not authenticated" } };
-          return UC.rpc(FN.kopf, { p_team: team, p_company: id }, { timeoutMs: 60000, signal: ab ? ab.signal : undefined });
+          return (UC.rpcMitIntent || UC.rpc)(FN.kopf, { p_team: team, p_company: id }, { timeoutMs: 60000, signal: ab ? ab.signal : undefined });
         }).then(function (erg) {
           if (!erg || nr !== B.nr) return null;
           var roh = erg.ok ? erg.daten : null;
           if (isArr(roh)) roh = roh.length ? roh[0] : null;
           var d = roh && roh.row && typeof roh.row === "object" ? roh.row : roh;
           if (d && typeof d === "object" && d.name != null) {
-            B.kopfSpeicher[id] = d;
+            B.kopfSpeicher[ks] = d;
             if (str(d.status) === "inactive") { B.zeile = d; B.fehler = ""; kopfZeichnen(); return null; }
             return function () { B.zeile = d; B.fehler = ""; kopfZeichnen(); };
           }
@@ -445,10 +448,12 @@
     } catch (e) {}
   }
   var filterUhr = null;
-  function filterGeaendert() {
+  /* mitKopf: der Intent-Filter trifft seit audit_14_10 auch den Kopf (first/last seen bzw. last
+     mentioned) -- dann laedt er mit; Zeitraum, Modelle, Maerkte und Topics treffen ihn nicht. */
+  function filterGeaendert(mitKopf) {
     B.resp.offset = 0;
     clearTimeout(filterUhr);
-    filterUhr = setTimeout(function () { filterUhr = null; alleLaden(false); }, 120);
+    filterUhr = setTimeout(function () { filterUhr = null; alleLaden(false, !!mitKopf); }, 120);
   }
 
   /* ---- Aufbau im Drawer ---- */
@@ -525,7 +530,7 @@
     /* Intent-Filter der App (13.10.): gemeinsamer Stand in core, Ereignis am window. Einmal je
        Schale -- einsetzen() kann fuer dieselbe Schale erneut laufen. */
     if (!s.__intentHoerer) {
-      s.__intentHoerer = function () { if (document.contains(s)) filterGeaendert(); };
+      s.__intentHoerer = function () { if (document.contains(s)) filterGeaendert(true); };
       window.addEventListener("up-intentfilter", s.__intentHoerer);
     }
     s.addEventListener("umk-markets", function (e) { if (setzen("maerkte", auswahl("maerkte", e.detail, "market_codes"))) filterGeaendert(); });
@@ -624,7 +629,7 @@
   window.addEventListener("upstreemBrandChanged", function (e) {
     var id = str(e.detail && e.detail.company_id).toLowerCase();
     if (!id) return;
-    Object.keys(B.kopfSpeicher).forEach(function (k) { if (k.toLowerCase() === id) delete B.kopfSpeicher[k]; });
+    Object.keys(B.kopfSpeicher).forEach(function (k) { if (k.split("|")[0].toLowerCase() === id) delete B.kopfSpeicher[k]; });
     if (B.id && B.id.toLowerCase() === id) alleLaden(true, true);
   });
 

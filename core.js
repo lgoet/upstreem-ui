@@ -6318,6 +6318,21 @@
   }
   /* Die Parameter fuer einen Aufruf. opts.branded === false: ohne p_branded (Prompts-Tabelle).
      Nicht freigegeben: leer -- dann geht kein einziger neuer Parameter hinaus. */
+  /* EIN AUFRUF MIT DEM INTENT-FILTER, DER NICHT AN EINEM FEHLENDEN PARAMETER STIRBT (14.10.).
+     Fuer Funktionen, die den Filter erst mit einem DB-Stand kennen (domain_detail_v1 und
+     brand_detail_v1 ab audit_14_10): ohne ihn antwortet PostgREST mit 404 PGRST202, und der
+     Drawer-Kopf waere leer. Dann einmal ohne die Filterparameter -- dasselbe wie vorher. */
+  function rpcMitIntent(fn, params, opts){
+    var x = intentFilterParams(), mit = {}, k, hat = false;
+    for (k in params) if (Object.prototype.hasOwnProperty.call(params, k)) mit[k] = params[k];
+    for (k in x) if (Object.prototype.hasOwnProperty.call(x, k)){ mit[k] = x[k]; hat = true; }
+    if (!hat) return rpc(fn, params, opts);
+    return rpc(fn, mit, opts).then(function(erg){
+      var code = erg && erg.fehler ? String(erg.fehler.code || "") : "";
+      if (erg && !erg.ok && erg.status === 404 && code === "PGRST202") return rpc(fn, params, opts);
+      return erg;
+    });
+  }
   function intentFilterParams(opts){
     if (!intentsLive()) return {};
     var f = intentFilterGet(), p = {};
@@ -25539,6 +25554,7 @@
     intentHtml: intentHtml, brandedHtml: brandedHtml, intentMenuHtml: intentMenuHtml,
     intentsLive: intentsLive, intentFilterGet: intentFilterGet, intentFilterSet: intentFilterSet, intentFilterParams: intentFilterParams,
     makeIntentMenu: makeIntentMenu, intentName: intentName, intentsLiveStart: intentsLiveStart, onIntentDaten: onIntentDaten,
+    rpcMitIntent: rpcMitIntent,
     intentReiseHtml: intentReiseHtml, intentErklaerHtml: intentErklaerHtml, brandedErklaerHtml: brandedErklaerHtml,
     relativeTime: relativeTime,
     modelChip: modelChip, modelLogoUrl: modelLogoUrl, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,

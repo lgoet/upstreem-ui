@@ -286,7 +286,7 @@
         if (UC.toast) UC.toast(satz, { kind: "error" });
         return;
       }
-      if (neu) { S.kopfSpeicher[domain] = neu; S.zeile = neu; }
+      if (neu) { S.kopfSpeicher[kopfSchluessel(domain)] = neu; S.zeile = neu; }
       if (UC.toast) UC.toast(t(wahl === "own" ? "This domain now counts as your own site."
         : wahl === "competitor" ? "This domain now counts as a competitor's site."
         : "This domain is detected automatically again."), { kind: "success" });
@@ -340,14 +340,17 @@
     return roh && typeof roh === "object" ? roh : null;
   }
 
+  /* Der Kopf haengt seit dem 14.10. am Intent-Filter (first/last seen bzw. last mentioned,
+     audit_14_10) -- also auch sein Speicher: je Filterstand ein Eintrag. */
+  function kopfSchluessel(x) { return x + "|" + JSON.stringify(UC.intentFilterParams ? UC.intentFilterParams() : {}); }
   function kopfAuftrag() {
-    var dom = S.domain;
+    var dom = S.domain, ks = kopfSchluessel(dom);
     return {
-      kanal: "kopf", imSpeicher: !!S.kopfSpeicher[dom],
+      kanal: "kopf", imSpeicher: !!S.kopfSpeicher[ks],
       ladenAn: function () { S.zeile = null; S.fehler = ""; kopfZeichnen(); },
       laden: function (frisch) {
-        if (!frisch && S.kopfSpeicher[dom]) {
-          var d0 = S.kopfSpeicher[dom];
+        if (!frisch && S.kopfSpeicher[ks]) {
+          var d0 = S.kopfSpeicher[ks];
           return Promise.resolve(function () { S.zeile = d0; S.fehler = ""; kopfZeichnen(); });
         }
         if (S.ab) { try { S.ab.abort(); } catch (e) {} }
@@ -357,12 +360,12 @@
         return teamWarten().then(function (team) {
           if (nr !== S.nr) return null;
           if (!team) return { ok: false, status: 0, fehler: { message: "not authenticated" } };
-          return UC.rpc(FN.kopf, { p_team: team, p_domain: dom }, { timeoutMs: 60000, signal: ab ? ab.signal : undefined });
+          return (UC.rpcMitIntent || UC.rpc)(FN.kopf, { p_team: team, p_domain: dom }, { timeoutMs: 60000, signal: ab ? ab.signal : undefined });
         }).then(function (erg) {
           if (!erg || nr !== S.nr) return null;
           var roh = zeileAus(erg), d = roh && roh.row && typeof roh.row === "object" ? roh.row : null;
           if (d) {
-            S.kopfSpeicher[dom] = d;
+            S.kopfSpeicher[ks] = d;
             return function () { S.zeile = d; S.fehler = ""; kopfZeichnen(); };
           }
           var code = erg.ok ? "" : str((erg.fehler && (erg.fehler.message || erg.fehler.code)) || "");
@@ -566,10 +569,12 @@
     } catch (e) {}
   }
   var filterUhr = null;
-  function filterGeaendert() {
+  /* mitKopf: der Intent-Filter trifft seit audit_14_10 auch den Kopf (first/last seen bzw. last
+     mentioned) -- dann laedt er mit; Zeitraum, Modelle, Maerkte und Topics treffen ihn nicht. */
+  function filterGeaendert(mitKopf) {
     S.resp.offset = 0; S.urls.offset = 0;
     clearTimeout(filterUhr);
-    filterUhr = setTimeout(function () { filterUhr = null; alleLaden(false); }, 120);
+    filterUhr = setTimeout(function () { filterUhr = null; alleLaden(false, !!mitKopf); }, 120);
   }
 
   /* ---- Aufbau ---- */
@@ -647,7 +652,7 @@
     /* Intent-Filter der App (13.10.): gemeinsamer Stand in core, Ereignis am window. Einmal je
        Schale -- einsetzen() kann fuer dieselbe Schale erneut laufen. */
     if (!s.__intentHoerer) {
-      s.__intentHoerer = function () { if (document.contains(s)) filterGeaendert(); };
+      s.__intentHoerer = function () { if (document.contains(s)) filterGeaendert(true); };
       window.addEventListener("up-intentfilter", s.__intentHoerer);
     }
     s.addEventListener("umk-markets", function (e) { if (setzen("maerkte", auswahl("maerkte", e.detail, "market_codes"))) filterGeaendert(); });
