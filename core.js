@@ -6283,7 +6283,10 @@
       var z = ziel;
       if (!z) return;
       var opt = e.target.closest("[data-intent-set]");
-      if (opt){ pop.close(true); if (cfg.onIntent) cfg.onIntent(z, opt.getAttribute("data-intent-set")); return; }
+      /* Das Menue BLEIBT OFFEN (14.10. angefordert: "das soll offen bleiben") und zeigt sofort den
+         neuen Stand -- wie der Branded-Schalter schon. Schliessen tut nur der Aufrufer, wenn sein
+         Bild danach ein anderes ist (Prompt-Tabelle: Gruppen nach Intent, Intent-Filter, Sammelaktion). */
+      if (opt){ if (cfg.onIntent) cfg.onIntent(z, opt.getAttribute("data-intent-set")); if (pop.isOpen()) zeichnen(); return; }
       if (e.target.closest("[data-branded-reset]")){ if (cfg.onBranded) cfg.onBranded(z, ""); zeichnen(); return; }
       var br = e.target.closest("[data-branded-set]");
       if (br){ if (cfg.onBranded) cfg.onBranded(z, br.getAttribute("aria-checked") === "true" ? "no" : "yes"); zeichnen(); }

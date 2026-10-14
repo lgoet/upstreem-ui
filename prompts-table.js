@@ -4049,8 +4049,10 @@
           pl.reload = "yes";
           gruppeMerken();
           fire("data-bulkintent-fn", "uptBulkIntent", pl);
-          /* Wie Status und Loeschen: nach der Handlung ist die Auswahl erledigt. */
+          /* Wie Status und Loeschen: nach der Handlung ist die Auswahl erledigt -- und mit ihr das
+             Menue der Sammelleiste. */
           clearSelection();
+          if (intentMenu) intentMenu.close();
           return;
         }
         zeilenAendern(z.id, function(r){
@@ -4058,7 +4060,10 @@
           else { r.intent = null; r.intent_source = null; r.intent_status = "pending"; }
         });
         var neu = intentNeuLaden();
-        if (neu) gruppeMerken();
+        /* Laedt die Liste nach, wandert die Zeile (Gruppe nach Intent) oder faellt heraus
+           (Intent-Filter) -- dann geht das Menue zu, statt ueber einer Zeile zu stehen, die gleich
+           woanders ist. Sonst bleibt es offen (core, makeIntentMenu). */
+        if (neu){ gruppeMerken(); if (intentMenu) intentMenu.close(); }
         fire("data-intentset-fn", "uptIntentSet", { mode: "ids", ids: String(z.id), count: 1, excluded_ids: "", intent: key, reload: neu ? "yes" : "no" });
       },
       onBranded: function(z, wert){
