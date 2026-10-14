@@ -3484,6 +3484,13 @@
 }
 .ulh-sprache a:hover { color: var(--ulh-text); }
 .ulh-sprache a.is-an { background: #ffffff; color: var(--ulh-text); box-shadow: 0 1px 2px rgba(11, 13, 24, .08); }
+/* Ganz schmal wird es eng: Logo, Toggle und "Kostenlos starten" brauchten bei 375px 6px mehr als
+   da war (gemessen 14.10. auf /de). Toggle und Knopf ruecken zusammen, nichts faellt weg. */
+@media (max-width: 420px) {
+  .ulh-sprache { margin-right: 0; }
+  .ulh-sprache a { padding: 0 5px; }
+  .ulh-nav-rechts .ulh-btn-pri { padding: 0 10px; font-size: 13px; }
+}
 /* Der Kasten, in dem die Leiste steht, wenn sie in der Seite DARUEBER haengt (landing-hero.js,
    leisteAuslagern). Er traegt .ulh-root, weil die Masse und Farben der Leiste aus dessen Variablen
    kommen -- und diese Regel nimmt ihm alles andere wieder ab: keinen Grund, keinen Ausschnitt,
@@ -4222,7 +4229,14 @@
 /* Schmal stehen die drei Stufen untereinander; die Pfeile fallen dann weg (ein Chevron wird nie
    gedreht -- die Reihenfolge von oben nach unten sagt den Weg allein). */
 @media (max-width: 760px) {
-  .ulh-vis-reise { --ulh-vh: 640px; }
+  /* Die drei Stufen untereinander samt Kopf und Hinweis: 705px (gemessen 14.10. bei 375). */
+  .ulh-vis-reise { --ulh-vh: 744px; }
+  .ulh-vis-branded { --ulh-vh: 300px; }
   .ulh-rs-stufen { grid-template-columns: 1fr; gap: 6px; }
   .ulh-rs-pfeil { display: none; }
+  /* Volle Kartenbreite statt der festen 760px aller anderen Vorschauen: dort stehen echte
+     App-Tabellen, die schmal in ihre Telefonansicht klappen wuerden. Diese zwei sind eigene
+     Zeichnungen und stapeln sich -- mit 760px ragten sie 400px aus der Karte (gemessen 14.10.). */
+  .ulh-vis-reise .ulh-vis-in, .ulh-vis-branded .ulh-vis-in { width: 100%; }
+  .ulh-rs, .ulh-br { width: calc(100% - 16px); }
 }

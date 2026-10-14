@@ -73,13 +73,8 @@
     "How everything works": "So funktioniert alles",
     /* Hero */
     "New": "Neu", "Customer journey tracking": "Tracking über die Customer Journey",
-    /* Kurz, damit die erste Zeile wie im Englischen in eine Zeile passt -- "Sichtbarkeit in der
-       KI-Suche" brach bei 1440 in zwei, die h1 stand in drei Zeilen (gemessen 14.10.). */
-    "AI Search Analytics": "KI-Sichtbarkeit", "made simple.": "einfach gemacht.",
-    "Track how AI search talks about your brand and turn every answer into":
-      "Sieh, wie die KI-Suche über deine Marke spricht, und mach aus jeder Antwort",
-    "qualified traffic.": "qualifizierten Traffic.", "leads.": "Leads.", "revenue.": "Umsatz.",
-    "qualified traffic, leads and revenue.": "qualifizierten Traffic, Leads und Umsatz.",
+    /* h1 und Unterzeile des Hero bleiben auf Deutsch ENGLISCH (14.10. so entschieden: "lass h1 und
+       h2 einfach auf englisch" -- "einfach gemacht" klang uebersetzt). Deshalb stehen sie hier nicht. */
     "Book a demo": "Demo buchen", "Tracked daily on": "Täglich gemessen in",
     /* Team-Fenster und Seitenleiste (Woerter wie im Katalog von core) */
     "New Team": "Neues Team", "Quick Actions": "Schnellaktionen", "Database": "Datenbank",
@@ -3779,6 +3774,10 @@
     var stufen = REISE.map(function(r, i){
       var label = kern.intentHtml ? kern.intentHtml({ intent: r.k }) : r.k;
       var trend = kern.trendChip ? kern.trendChip(r.d, { decimals: true }) : "";
+      /* trendChip aus core schreibt den Punkt auch auf Deutsch ("3.1"); hier gilt das Komma. */
+      /* Nur die Zahl am Ende des Chips -- davor steht das SVG des Pfeils, und in dessen Pfad stehen
+         auch Punkte (der erste Versuch traf genau dort). */
+      if (LANG === "de") trend = trend.replace(/(\d)\.(\d+)(%?)<\/span>$/, "$1,$2$3</span>");
       return '<div class="ulh-rs-st' + (r.du < r.wett ? " is-hinten" : "") + '" style="--rs-i:' + i + '">' +
         '<div class="ulh-rs-kopf">' + label + '</div>' +
         '<div class="ulh-rs-will">' + REISE_WILL[r.k] + '</div>' +
@@ -3847,7 +3846,7 @@
       if (ruhig || typeof IntersectionObserver === "undefined"){ fn(true); return; }
       var b = new IntersectionObserver(function(e){
         if (e[0]) fn(e[0].isIntersecting);
-      }, { threshold: 0.35 });
+      }, { threshold: 0.2 });
       b.observe(el);
     }
     sobaldSichtbar(rs, function(an){ if (an) rs.classList.add("is-da"); });
