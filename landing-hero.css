@@ -190,7 +190,12 @@
   margin: 0 auto;
   /* Unten das Doppelte: der Abstand von den Knoepfen zum Fensteranfang war zu knapp.
      06.10.: beides noch einmal groesser ("mehr Luft im Textblock und zur Hero hin"). */
-  padding: clamp(56px, calc(10 * var(--ulh-fh)), 120px) 24px clamp(72px, calc(10 * var(--ulh-fh)), 120px);
+  /* MEHR LUFT (14.10. abends: "wirkt noch etwas zu cramped"). Gemessen bei 1280x860 auf der
+     eigenen Website: die Leiste liegt UEBER dem Textblock (63px), der Chip stand damit nur 57px
+     unter ihr; Knoepfe zu Modellzeile 30, Modellzeile zum Fenster 120. Jetzt oben 14 statt 10
+     Fensterhoehenprozent (Chip rund 90 unter der Leiste), unten zum Fenster 12 statt 10, und die
+     Abstaende im Block je eine Stufe weiter (.ulh-sub, .ulh-cta, .ulh-modelle). */
+  padding: clamp(88px, calc(14 * var(--ulh-fh)), 160px) 24px clamp(80px, calc(12 * var(--ulh-fh)), 136px);
   text-align: center;
 }
 /* Zeilenhoehe UNTER 1 und negative Laufweite: das ist der halbe Effekt. Bei 0.95 und -0.02em liest
@@ -212,7 +217,7 @@
   /* 620 statt 560 (06.10.): mit 19px Schrift brauchte der Satz rund 590px, und "drive" fiel in
      eine eigene Zeile. */
   max-width: 620px;
-  margin: clamp(22px, calc(3 * var(--ulh-fh)), 30px) auto 0;
+  margin: clamp(24px, calc(3.4 * var(--ulh-fh)), 32px) auto 0;
   /* 06.10.: ganz leicht groesser (18 -> 19 oben) und 100 leichter (500 -> 400). */
   font-size: clamp(16px, 1.32vw, 19px);
   font-weight: 400;
@@ -354,6 +359,15 @@
 .ulh-chip-link { text-decoration: none; cursor: pointer; transition: background 160ms ease; }
 .ulh-chip-link:hover { --ulh-chip-ring: #c9ccd2; }
 .ulh-chip-link .ulh-chip-in { gap: 8px; padding: 0 12px 0 4px; }
+/* EIN NORMALER RAND (14.10. abends: "ganz normale Border"). Der Ring stand auf #f3f4f6, halb so
+   kraeftig wie jeder andere Rahmen der Seite, und war auf dem hellen Grund kaum zu sehen -- der
+   Chip wirkte wie eine weisse Flaeche ohne Kante. Jetzt dieselbe Rahmenfarbe wie Karten und
+   Knoepfe. Am Chip selbst gesetzt: ein eigener Wert schlaegt den geerbten von .ulh-root. */
+.ulh-chip-link { --ulh-chip-ring: var(--ulh-border); }
+/* Und ein SCHAERFERER Schatten ("den Schatten bitte schaerfer"): zwei kurze Lagen statt einer
+   weichen -- 1px ohne Unschaerfe-Hof fuer die Kante unten, 2px mit -1px Ausbreitung, damit er
+   nicht seitlich ausfranst. Beide dunkler als die alten 5 Prozent, keine weiter als 3px. */
+.ulh-chip.ulh-chip-link { box-shadow: 0 1px 1px rgba(11, 13, 24, .07), 0 2px 3px -1px rgba(11, 13, 24, .1); }
 .ulh-chip-neu {
   display: inline-flex; align-items: center; height: 22px; padding: 0 8px;
   border-radius: 999px; background: var(--ulh-text); color: #ffffff;
@@ -369,12 +383,20 @@
    die Zeichen 16px -- ein Nachweis, kein zweiter Aufruf. */
 .ulh-modelle {
   display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
-  gap: 10px 18px; margin-top: 30px;
+  gap: 10px 18px; margin-top: clamp(32px, calc(4.8 * var(--ulh-fh)), 48px);
   font-size: 13px; color: var(--ulh-sub);
 }
-.ulh-modelle-t { color: var(--ulh-sub); opacity: .8; }
-.ulh-modell { display: inline-flex; align-items: center; gap: 7px; font-weight: 500; color: #5f636b; }
-.ulh-modell img { width: 16px; height: 16px; border-radius: 4px; display: block; }
+/* LEISER (14.10. abends: "subtiler, graue Logos, alles etwas dimmen"): Satz und Namen in der
+   hellen Farben statt in zwei dunkleren, die Namen ohne 500, die Zeichen ohne Farbe und halb
+   durchsichtig. Ein Nachweis am Rand -- er soll gefunden werden, nicht auffallen. */
+.ulh-modelle-t { color: var(--ulh-sub); }
+/* Die Namen in --ulh-third wie die Zeichen daneben: sie sind hier Teil des Logos, nicht Text, der
+   gelesen werden muss. Der Satz davor bleibt in --ulh-sub, damit er lesbar bleibt (4.5:1). */
+.ulh-modell { display: inline-flex; align-items: center; gap: 7px; font-weight: 400; color: var(--ulh-third); }
+.ulh-modell img { width: 16px; height: 16px; border-radius: 4px; display: block;
+  /* brightness hebt dunkle Kacheln (Perplexity ist ein dunkles Quadrat) an die hellen Zeichen der
+     anderen heran -- ohne sie stand eines als dunkelgrauer Block in der Reihe. */
+  filter: grayscale(1) brightness(1.2); opacity: .55; }
 /* Schmal nur die Zeichen in einer Reihe: mit Namen brach die Zeile bei 375px in drei, und
    "Copilot" stand allein in der letzten. Die Namen bleiben fuer Vorleser und Crawler im Markup. */
 @media (max-width: 560px) {
@@ -389,7 +411,7 @@
 /* ---------- Die zwei Knoepfe ----------
    Masse an attio.com abgelesen: 36px hoch, Radius 10, 14px/500, Polster 0 12px, und zwischen den
    beiden 10px (dort gemessen: der eine endet bei 714, der andere beginnt bei 724). */
-.ulh-cta { display: flex; justify-content: center; gap: 12px; margin-top: clamp(34px, calc(4.6 * var(--ulh-fh)), 44px); }
+.ulh-cta { display: flex; justify-content: center; gap: 12px; margin-top: clamp(36px, calc(5.2 * var(--ulh-fh)), 52px); }
 .ulh-btn {
   display: inline-flex;
   align-items: center;
@@ -733,7 +755,6 @@
   .ulh-root.is-inhalt .tcd-unit-right .tcd-head,
   .ulh-root.is-inhalt .tcd-unit-right .tcd-box,
   .ulh-quell-box.is-da .udd-card,
-  .ulh-quell-box.is-da .ulh-quell-tabellen,
   .ulh-root.is-entering .ulh-frame,
   .ulh-root.is-entering .dph-root,
   .ulh-root.is-entering .vot-unit-left  .vot-head,
@@ -1534,7 +1555,11 @@
    steht -- hier beginnt ein Abschnitt, der gelesen wird, und der beginnt an der Kante der Spur.
    Die Werte der Ueberschrift sind vorgegeben: Geist, 40px, mittleres Gewicht, -0.04em, 1.1. */
 .ulh-feat { position: relative; z-index: 1; padding: clamp(72px, calc(11 * var(--ulh-fh)), 132px) 0 clamp(80px, calc(12 * var(--ulh-fh)), 144px); }
-.ulh-feat-kopf { padding: 0 24px; }
+/* MITTIG seit 14.10. abends ("Die H2 mittig zentrieren"). Die Begruendung fuer links oben (ein
+   Abschnitt beginnt an der Kante der Spur) war eine Entscheidung, keine Messung -- mittig stehen
+   jetzt Chip, Ueberschrift und Unterzeile wie im Hero und in der Quellen-Sektion, und die Seite
+   hat EINE Achse. Die Breitengrenzen bleiben (20ch, 62ch); auto-Raender stellen sie in die Mitte. */
+.ulh-feat-kopf { padding: 0 24px; text-align: center; }
 /* Der Chip ueber der Ueberschrift. Eine Stufe heller als der Pitch-Chip im Team-Fenster oben
    (#1d4ed8): dort steht er auf Weiss in einem kleinen Fenster, hier auf einer hellen Seite neben
    einer 40px-Ueberschrift, und der dunkle Ton wirkte daneben schwer. #3b82f6 ist derselbe blaue
@@ -1552,7 +1577,8 @@
   padding: 0;
   font-size: 40px; font-weight: 500; letter-spacing: -0.04em; line-height: 1.1;
   color: var(--ulh-text);
-  text-align: left;
+  text-align: center;
+  margin-left: auto; margin-right: auto;
   /* Zwei Zeilen gleich lang statt einem einzelnen Wort unten (06.10. spaet, mit den neuen
      Ueberschriften: "From AI answers to your next / move"). */
   text-wrap: balance;
@@ -1562,7 +1588,7 @@
   max-width: 20ch;
 }
 .ulh-feat-sub {
-  margin: 18px 0 0;
+  margin: 18px auto 0;
   padding: 0;
   max-width: 62ch;
   font-size: 16px; font-weight: 400; line-height: 1.55; letter-spacing: -0.01em;
@@ -1734,9 +1760,6 @@
 .ulh-quell-box.is-da .udd-funnelcard           { animation: ulhRise 730ms var(--ulh-expo) 330ms backwards; }
 .ulh-quell-box.is-da .udd-row2 .udd-typecard   { animation: ulhRise 730ms var(--ulh-expo) 470ms backwards; }
 .ulh-quell-box.is-da .udd-row2 .udd-modelcard  { animation: ulhRise 730ms var(--ulh-expo) 540ms backwards; }
-/* Die Tabelle als letzte Stufe, nach den unteren beiden Karten. */
-.ulh-quell-box:not(.is-da) .ulh-quell-tabellen { opacity: 0; }
-.ulh-quell-box.is-da .ulh-quell-tabellen       { animation: ulhRise 730ms var(--ulh-expo) 650ms backwards; }
 
 .ulh-quell-kopf { position: relative; z-index: 0; }
 .ulh-quell-kopf > * { position: relative; z-index: 1; }
@@ -1863,7 +1886,10 @@
 .ulh-quell-panel {
   border: 1px solid var(--ulh-border);
   border-radius: 16px; background: #ffffff;
-  padding: var(--ulh-quell-kopfluft) 8px 8px; overflow: hidden; position: relative;
+  /* Ringsum dasselbe Polster (14.10. abends, "Paddings checken"): gemessen standen oben 21px,
+     seitlich 8 -- die Kurve begann 9px neben dem Rand, das Logo darueber 17. Jetzt beginnen Logo,
+     Kurve, Trichter und die zwei Karten auf einer Kante, so weit vom Rand wie von oben. */
+  padding: var(--ulh-quell-kopfluft) var(--ulh-quell-kopfluft) 8px; overflow: hidden; position: relative;
 }
 /* Die Hoehe ist gemessen und nicht geschaetzt. In 1266px Breite baut die Komponente: 32 Kopfzeile,
    412 Chartkarte (mit der Legende der fuenf URLs), 299 Trichterkarte, 322 fuer die zwei Karten
@@ -1881,18 +1907,11 @@
    Drawer in domain-drawer.css dazu setzt -- Titel und Chip in einer Zeile --, und der Einzug von
    8px, den die Zeile vorher schon hatte. Die Masse von Zeichen, Titel und Unterzeile kommen aus
    core, wie im Drawer. */
-.ulh-quell-held { padding-left: 8px; margin-bottom: var(--ulh-quell-kopfluft); }
+.ulh-quell-held { margin-bottom: var(--ulh-quell-kopfluft); }
 .ulh-quell-titelzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; min-width: 0; }
 .ulh-quell-typ { display: inline-flex; flex: 0 0 auto; }
 .ulh-quell-typ:empty { display: none; }
 
-/* Umschalter und Seiten-Tabelle darunter, wie .uddr-tabellen im Drawer (16px zwischen beiden).
-   Gesperrt wie die Komponente darueber: die Sektion ist ein Bild der App, ein Klick auf Sortieren
-   oder Blaettern fragte Daten an, die hier niemand liefert. */
-.ulh-quell-tabellen {
-  display: flex; flex-direction: column; gap: 16px;
-  margin-top: 24px; pointer-events: none;
-}
 
 /* ---- Die Komponente darin enger stellen ----
    Die App atmet, weil dort eine ganze Seite steht. Hier steht sie in einem Ausschnitt, und
@@ -1906,11 +1925,13 @@
    Deshalb liegt die Sperre an der Wurzel und nicht an den einzelnen Schaltern. Der Tooltip steht
    ohnehin ohne Maus (landing-hero.js setzt ihn). */
 .ulh-quell-app .udd-root { pointer-events: none; }
-/* Kurve LINKS, Trichter RECHTS, die zwei Aufschluesselungen darunter ueber die ganze Breite.
-   Ein Raster und keine Spalten am Elternteil: die Komponente ist eine Spalte aus vier Kaesten,
-   und nur zwei davon sollen sich eine Zeile teilen. */
+/* Kurve OBEN, Trichter DARUNTER, die zwei Aufschluesselungen darunter nebeneinander (14.10.
+   abends angefordert; vorher standen Kurve und Trichter in einer Zeile). Eine Spalte wie die
+   Abschnittsform der Komponente selbst; nur die Aufschluesselungen teilen sich eine Zeile
+   (.udd-row2). 48 statt der 64 der Komponente: hier steht sie in einem Ausschnitt, nicht auf
+   einer ganzen Seite -- dieselbe Ueberlegung wie bei den Kartenpolstern darunter. */
 .ulh-quell-app .udd-root {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: stretch;
+  display: grid; grid-template-columns: 1fr; row-gap: 48px; align-items: stretch;
 }
 /* 50-50 statt 1.15 zu 1: in der App ist die Typkarte breiter, weil dort neben dem Ring die
    Legende mit Prozenten steht und rechts nur vier Balken. Hier stehen beide fuer sich, und
@@ -1922,20 +1943,9 @@
    URL-Liste). Beide sind wieder raus -- sie haben Inhalt verschoben, den niemand verschoben
    haben wollte. Gemeint war die Zeile UEBER dem Fenster; die Einrueckung steht jetzt dort, an
    .ulh-quell-dom. */
-/* Kurve und Trichter teilen sich eine Zeile, und das Raster macht beide Karten gleich hoch. Der
-   Trichter ist von sich aus flacher -- gemessen blieben unter ihm 57px Luft. Statt einer gemessenen
-   Zahl waechst hier die Zeichnung selbst in den Rest der Karte: sie hat preserveAspectRatio="none"
-   (domain-detail.js) und ist genau dafuer gebaut, ihre Hoehe frei anzunehmen. Damit stimmt es auch,
-   wenn die Kurvenkarte morgen anders hoch rechnet. */
-.ulh-quell-app .udd-funnelcard { display: flex; flex-direction: column; }
-.ulh-quell-app .udd-funnel { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
-/* flex-basis 0 UND height 0, mit der Eigenhoehe nur noch als Untergrenze. Mit "auto" hing die
-   Zeile in einer Rueckkopplung: die Zeichnung wuchs in die Karte, die Karte in die Rasterzeile, die
-   Zeile machte die Kurvenkarte hoeher, und die machte wieder mehr Platz fuer die Zeichnung --
-   gemessen 996px hohe Karten und eine 792px hohe Zeichnung. Mit Basis 0 zaehlt die Zeichnung fuer
-   die Eigenhoehe der Karte nicht mehr mit, nur ihre Untergrenze: die Zeilenhoehe entscheidet die
-   Kurvenkarte, und die Zeichnung nimmt, was uebrig ist. */
-.ulh-quell-app .udd-fn-svg { flex: 1 1 0; height: 0; min-height: 132px; }
+/* Hier stand das Strecken des Trichters auf die Hoehe der Kurvenkarte -- beide teilten sich eine
+   Zeile. Seit sie untereinander stehen, hat der Trichter wieder seine eigene Hoehe aus der
+   Komponente. */
 /* Die oberste Zeile faellt weg: darin stehen der Modus-Umschalter (der Modus ist hier gesetzt und
    soll nicht wechseln) und das Zahnrad fuer die Bereiche (hier gibt es nichts einzurichten). */
 .ulh-quell-app .udd-toprow { display: none; }
@@ -2549,10 +2559,7 @@
   .ulh-cards-row { flex-direction: column; }
   .ulh-feat-h { font-size: 32px; max-width: none; }
   .ulh-feat { padding-top: clamp(48px, calc(8 * var(--ulh-fh)), 80px); }
-  /* Dieselbe Schwelle wie bei den Karten: was nebeneinander nicht mehr lesbar ist, geht
-     uebereinander. Kurve und Trichter je 400px breit waeren zwei Briefmarken. */
   .ulh-quell { --ulh-quell-luft: clamp(48px, calc(8 * var(--ulh-fh)), 80px); }
-  .ulh-quell-app .udd-root { grid-template-columns: 1fr; }
   /* NUR hier faellt die gehobene Zeile weg, auf dem breiten Schirm bleibt sie. Zwei Gruende: die
      Karte ist auf schmalen Schirmen selbst angeschnitten, die gehobene Zeile faehrt also aus ihr
      heraus statt in ihr zu stehen -- und auf einem Touchgeraet bleibt der Hover nach dem Tippen
@@ -3266,7 +3273,10 @@
    der ganze Fensterblock in einem Kasten mit "hidden md:block".
    Die Ueberschrift traegt die Sektion auf dem Telefon allein. */
 @media (max-width: 900px) {
-  .ulh-text { padding-bottom: clamp(48px, calc(9 * var(--ulh-fh)), 88px); }
+  /* Oben weniger als auf dem breiten Schirm: dort sind es seit dem 14.10. 14 Fensterhoehen-
+     prozent, auf dem Telefon waeren das 114px unter der Leiste -- der Chip rutschte fast in die
+     Mitte des ersten Bildschirms. */
+  .ulh-text { padding-top: clamp(80px, calc(12 * var(--ulh-fh)), 112px); padding-bottom: clamp(48px, calc(9 * var(--ulh-fh)), 88px); }
 }
 
 /* ---------- Fuenfte Sektion: Mira bei der Arbeit ----------------------------------------------
@@ -3431,7 +3441,7 @@
 .ulh-geo-mk-t { font-weight: 500; color: var(--ulh-text); }
 .ulh-geo-mk-s { color: var(--ulh-sub); }
 .ulh-geo-in { position: relative; z-index: 1; }
-.ulh-geo-kopf { max-width: 640px; }
+.ulh-geo-kopf { max-width: 640px; margin-left: auto; margin-right: auto; }
 /* Die Ueberschrift traegt beide Toene wie die der Quellen: erster Satz dunkel, Rest in der zweiten
    Farbe -- hier ohne Scrolleffekt, denn sie ist kurz und steht neben Zahlen, nicht allein. */
 .ulh-geo-h { max-width: 22ch; }
@@ -3483,12 +3493,27 @@
   transition: color 140ms ease, background 140ms ease, box-shadow 140ms ease;
 }
 .ulh-sprache a:hover { color: var(--ulh-text); }
+/* Die Flagge vor dem Kuerzel (14.10. abends angefordert). 16x12 im Seitenverhaeltnis 4:3 wie die
+   Flaggen der App (core.css .up-flag), ein Haarrand, damit Weiss in der Flagge (England,
+   Deutschland nicht) auf der hellen Pille eine Kante hat. Die nicht gewaehlte etwas leiser. */
+.ulh-sprache a { gap: 5px; position: relative; }
+.ulh-sprache-flagge {
+  width: 16px; height: 12px; border-radius: 3px; object-fit: cover; display: block; flex: 0 0 auto;
+  box-shadow: 0 0 0 1px rgba(11, 13, 24, .08); opacity: .7; transition: opacity 140ms ease;
+}
+.ulh-sprache a:hover .ulh-sprache-flagge, .ulh-sprache a.is-an .ulh-sprache-flagge { opacity: 1; }
 .ulh-sprache a.is-an { background: #ffffff; color: var(--ulh-text); box-shadow: 0 1px 2px rgba(11, 13, 24, .08); }
 /* Ganz schmal wird es eng: Logo, Toggle und "Kostenlos starten" brauchten bei 375px 6px mehr als
    da war (gemessen 14.10. auf /de). Toggle und Knopf ruecken zusammen, nichts faellt weg. */
 @media (max-width: 420px) {
   .ulh-sprache { margin-right: 0; }
-  .ulh-sprache a { padding: 0 5px; }
+  .ulh-sprache a { padding: 0 4px; }
+  /* Schmal nur die Flaggen: mit Kuerzel ragte die Leiste bei 375px 17px ueber den Rand (gemessen
+     14.10.). Das Kuerzel bleibt fuer Vorleser im Markup; lang und hreflang am Link sagen den Rest. */
+  .ulh-sprache-t {
+    position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden;
+    clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+  }
   .ulh-nav-rechts .ulh-btn-pri { padding: 0 10px; font-size: 13px; }
 }
 /* Der Kasten, in dem die Leiste steht, wenn sie in der Seite DARUEBER haengt (landing-hero.js,
@@ -4050,7 +4075,11 @@
    upstreem.ai/demo und upstreem.ai/contact: unter dem Kopf der Kasten mit Karten wie auf der
    Startseite (.ulh-cards-box) -- links schmal, was es gibt, rechts gross der Kalender. */
 .ulh-root.ulh-teil[data-ulh-teil="termin"] { background: none; }
-.ulh-termin-box { margin: 32px 8px clamp(72px, 9vw, 120px); }
+/* Oben 8 wie links und rechts (14.10. abends gemeldet: "das Top-Padding ist groesser als left und
+   right"). Gemessen bei 1600: 32px unter der Linie des Kopfbands, aber 8px zu den Schienen -- der
+   Kasten sass oben locker und seitlich knapp. Das Band endet mit einer Linie wie die Schienen;
+   zu beiden steht der Kasten jetzt gleich weit. */
+.ulh-termin-box { margin: 8px 8px clamp(72px, 9vw, 120px); }
 .ulh-termin-info { padding: 28px 28px 26px; }
 .ulh-termin-h { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: -0.015em; color: var(--ulh-text); }
 .ulh-termin-t { margin: 10px 0 0; font-size: 15px; line-height: 1.55; color: var(--ulh-sub); }

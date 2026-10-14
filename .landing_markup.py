@@ -53,10 +53,6 @@ TEILE = [
     # Sechste Szene (06.10.): Shopping. Eine Komponente mit eigenem Kopf (Krumen, Reiter) -- kein
     # eigener Seitenkopf daneben noetig.
     ("ush", "bubble/shopping_bubble.html", "lh-ush"),
-    # Unter Domain Detail (14.10.): wie im Domain-Drawer der App der Umschalter "Pages / URLs" und
-    # die URL-Tabelle im Domain-Modus.
-    ("uvw", "bubble/view_switch_bubble.html", "lh-uvw"),
-    ("uut", "bubble/urls_table_bubble.html", "lh-uut"),
 ]
 
 # Feste Werte fuer die Platzhalter. BRAND_NAME ist eine erfundene Marke -- erfundene Zahlen unter

@@ -302,8 +302,7 @@
   /* Feste Kennungen. Es gibt genau eine Hero-Sektion pro Seite, also braucht keine davon eine
      laufende Nummer -- und feste Namen machen die Demodaten unten lesbar. */
   var ID = { usn: "lh-usn", dph: "lh-dph", vot: "lh-vot", tcd: "lh-tcd", upt: "lh-upt",
-             urt: "lh-urt", udd: "lh-udd", hph: "lh-hph", uhm: "lh-uhm", ush: "lh-ush",
-             uvw: "lh-uvw", uut: "lh-uut" };
+             urt: "lh-urt", udd: "lh-udd", hph: "lh-hph", uhm: "lh-uhm", ush: "lh-ush" };
 
   /* WARUM DER BLOCK UNTEN NIE VON HAND GETAUSCHT WIRD (28.09. gemeldet: "Export Icons in den
      Buttons sind noch nicht wie in der Hauptapp"). Beim Wechsel des Zeichensatzes am 22.09. sind
@@ -330,9 +329,7 @@
     udd: "<div class=\"up-root udd-root\" data-typfarben=\"verlauf\" data-form=\"abschnitte\" data-instance=\"lh-udd\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand=\"Acme\"></div>",
     hph: "<div class=\"up-root up-ph-root pfph-root\" data-instance=\"lh-hph\" data-cdn-pin=\"\" data-isdark=\"no\" data-brand-name=\"Acme\" data-brand-logo=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20rx%3D%2215%22%20fill%3D%22%230b0d10%22%2F%3E%3Cpath%20d%3D%22M29%2015.5%2016.2%2048.5H23.1L25.3%2041.9H38.7L40.9%2048.5H47.8L35%2015.5ZM32%2025.4%2028.9%2034.4H35.1Z%22%20fill%3D%22%23fff%22%20fill-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E\"><div class=\"up-ph-top\"><div class=\"up-ph-left\"><div class=\"up-ph-meta\"><img class=\"up-ph-metalogo\" alt=\"\" style=\"display:none\"/><span class=\"up-ph-metatxt\"><span class=\"pph-metaname\"></span> Workspace</span></div><div class=\"up-ph-heading\">Performance</div><p class=\"up-ph-desc\">Explore topic performance, compare brands, and uncover strengths and gaps</p></div></div></div>",
     uhm: "<div class=\"up-root uhm-root\" data-instance=\"lh-uhm\" data-cdn-pin=\"\" data-isdark=\"no\"><div class=\"up-head\"><div class=\"up-heading\">Performance Chart</div><div class=\"up-head-tools\"><div class=\"uhm-metric up-seg\" role=\"tablist\" aria-label=\"Metric\"><button class=\"up-seg-btn is-active\" data-metric=\"visibility\" type=\"button\" role=\"tab\" aria-selected=\"true\">Visibility</button><button class=\"up-seg-btn\" data-metric=\"rank\" type=\"button\" role=\"tab\" aria-selected=\"false\">Ranking</button><button class=\"up-seg-btn\" data-metric=\"sentiment\" type=\"button\" role=\"tab\" aria-selected=\"false\">Sentiment</button></div><!-- Der Einstellungsknopf steht ganz rechts, hinter dem Filter. Er stand vorher links davon; core.js ordnet die Leiste zur Laufzeit ohnehin (orderToolbars). --><div class=\"uhm-pick\"><button class=\"uhm-pick-btn up-iconbtn\" type=\"button\" data-tip=\"Brands &amp; Topics\" aria-label=\"Choose brands and topics\"></button><div class=\"uhm-pick-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"uhm-set\"><button class=\"uhm-set-btn up-iconbtn\" type=\"button\" data-tip=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z\"/><path d=\"M8.5 10C7.67157 10 7 9.32843 7 8.5C7 7.67157 7.67157 7 8.5 7C9.32843 7 10 7.67157 10 8.5C10 9.32843 9.32843 10 8.5 10Z\"/><path d=\"M15.5 17C16.3284 17 17 16.3284 17 15.5C17 14.6716 16.3284 14 15.5 14C14.6716 14 14 14.6716 14 15.5C14 16.3284 14.6716 17 15.5 17Z\"/><path d=\"M10 8.5L17 8.5\"/><path d=\"M14 15.5L7 15.5\"/></svg></button><div class=\"uhm-set-menu up-menu\" role=\"menu\" aria-hidden=\"true\"></div></div></div></div><div class=\"uhm-box\"><div class=\"uhm-scroll\"><div class=\"uhm-grid\"></div></div></div></div>",
-    ush: "<div class=\"up-root ush-root\" data-adresse=\"aus\" data-instance=\"lh-ush\"></div>",
-    uvw: "<div class=\"up-root uvw-root\" data-instance=\"lh-uvw\" data-isdark = \"no\" data-cdn-pin = \"\" data-value = \"pages\"></div>",
-    uut: "<div class=\"up-root uut-root\" data-instance=\"lh-uut\" data-cdn-pin=\"\" data-isdark=\"no\" data-domain-mode=\"yes\" data-brand-name=\"Acme\" data-brand-logo=\"\" data-export-instance=\"\" data-sticky=\"no\" data-sticky-top=\"171\"><div class=\"up-head\"><div class=\"up-heading\"><span class=\"up-head-label\">URLs</span><span class=\"up-head-sep\"></span><span class=\"up-head-count\"></span></div><div class=\"up-head-tools\"><button class=\"uut-brand-toggle\" type=\"button\" data-tip=\"Filter for your brand mentions\"><span class=\"uut-brand-toggle-lbl\"><img class=\"uut-brand-logo\" src=\"\" style=\"display:none\" alt=\"\"/><span class=\"uut-brand-label\"></span></span><span class=\"uut-brand-check\"><svg class=\"uut-brand-check-yes\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7\"/></svg><svg class=\"uut-brand-check-no\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20.9922 12L2.99219 12\"/></svg></span></button><div class=\"up-ment\"><button class=\"up-ment-btn\" type=\"button\" data-tip=\"Filter for brand mentions\" aria-haspopup=\"menu\" aria-expanded=\"false\"><span class=\"up-ment-lbl\">All Brands</span><svg class=\"up-ment-chev\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg><svg class=\"up-ment-clear\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button><div class=\"up-ment-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-filter\"><button class=\"up-filter-btn\" type=\"button\" data-tip=\"Filter Citation and URL Types\" aria-haspopup=\"menu\" aria-expanded=\"false\"><span class=\"up-filter-btn-lbl\">All Types</span><svg class=\"up-filter-btn-chev\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg><svg class=\"up-filter-btn-clear\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button><div class=\"up-filter-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-sort\"><button class=\"up-sort-btn up-iconbtn\" type=\"button\" data-tip=\"Sort\" aria-label=\"Sort\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m3 16 4 4 4-4\"/><path d=\"M7 20V4\"/><path d=\"m21 8-4-4-4 4\"/><path d=\"M17 4v16\"/></svg></button><div class=\"up-sort-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><div class=\"up-search\"><button class=\"up-search-btn up-iconbtn\" type=\"button\" data-tip=\"Search\" aria-label=\"Search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 17L21 21\"/><path d=\"M19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19C15.4183 19 19 15.4183 19 11Z\"/></svg></button><div class=\"up-search-box\"><input class=\"up-search-input\" type=\"text\" placeholder=\"Type in url...\" autocomplete=\"off\" spellcheck=\"false\" aria-label=\"Search URLs\"/><button class=\"up-search-clear\" type=\"button\" aria-label=\"Clear search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 6L6.00081 17.9992M17.9992 18L6 6.00085\"/></svg></button></div></div><div class=\"up-cols\"><button class=\"up-cols-btn up-iconbtn\" type=\"button\" data-tip=\"Table Settings\" aria-label=\"Table settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z\"/><path d=\"M8.5 10C7.67157 10 7 9.32843 7 8.5C7 7.67157 7.67157 7 8.5 7C9.32843 7 10 7.67157 10 8.5C10 9.32843 9.32843 10 8.5 10Z\"/><path d=\"M15.5 17C16.3284 17 17 16.3284 17 15.5C17 14.6716 16.3284 14 15.5 14C14.6716 14 14 14.6716 14 15.5C14 16.3284 14.6716 17 15.5 17Z\"/><path d=\"M10 8.5L17 8.5\"/><path d=\"M14 15.5L7 15.5\"/></svg></button><span class=\"uut-cols-badge\"></span><div class=\"up-cols-menu\" role=\"menu\" aria-hidden=\"true\"></div></div><button class=\"up-export\" type=\"button\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 15V3\" /><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\" /><path d=\"m7 10 5 5 5-5\" /></svg><span>Export</span></button></div></div><div class=\"up-box\"><div class=\"up-table\"><div class=\"up-thead\"><div class=\"up-th up-th-domain\">URL<span class=\"up-grip\" data-grip=\"domain\"></span></div><div class=\"up-th up-th-share is-sortable\" data-sortcol=\"share\"><span class=\"up-th-txt\">Share</span><span class=\"up-th-info\" data-explain=\"share\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16V12\"/><path d=\"M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z\"/></svg></span><span class=\"up-thsort\" data-for=\"share\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div><div class=\"up-th up-th-type\">Type<span class=\"up-th-info\" data-explain=\"type\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16V12\"/><path d=\"M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z\"/></svg></span></div><div class=\"up-th up-th-ment\"><img class=\"up-th-brandlogo\" src=\"\" alt=\"\" style=\"display:none\"/><span class=\"up-th-mentlbl\">mentioned</span></div><div class=\"up-th up-th-brands\">Brands mentioned<span class=\"up-th-info\" data-explain=\"brands\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 16V12\"/><path d=\"M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z\"/></svg></span></div><div class=\"up-th up-th-lastseen is-sortable\" data-sortcol=\"last_seen\"><span class=\"up-th-txt\">Last Seen</span><span class=\"up-thsort\" data-for=\"last_seen\"><svg class=\"up-thsort-up\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15\"/></svg><svg class=\"up-thsort-down\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9\"/></svg></span></div><div class=\"up-th uut-th-actions\">Actions</div></div><div class=\"up-tbody\"></div></div></div><div class=\"up-foot\"><div class=\"up-pagesize\"><span class=\"up-pagesize-lbl\">Rows per page</span><div class=\"up-pagesize-seg\" role=\"group\" aria-label=\"Rows per page\"></div></div><div class=\"up-pager\"></div></div></div>"
+    ush: "<div class=\"up-root ush-root\" data-adresse=\"aus\" data-instance=\"lh-ush\"></div>"
   };
   /* ---- MARKUP ENDE ---- */
 
@@ -889,8 +886,13 @@
              Startseite der anderen Sprache; landing-teile.js setzt es auf das Gegenstueck der
              aktuellen Seite und merkt sich die Wahl (Cookie upstreem_lang). */
           (WEBSITE ? '<div class="ulh-sprache" role="group" aria-label="' + T("Language") + '">' +
-            '<a href="/" hreflang="en" lang="en" data-sprache="en"' + (LANG === "en" ? ' class="is-an" aria-current="true"' : '') + '>EN</a>' +
-            '<a href="/de" hreflang="de" lang="de" data-sprache="de"' + (LANG === "de" ? ' class="is-an" aria-current="true"' : '') + '>DE</a>' +
+            /* Mit Flaggen (14.10. angefordert). Die Quelle ist dieselbe wie in core (flagcdn); auf
+               der Website schreibt lib/fremd.ts sie auf /fremd/flag um, der Besucher spricht also
+               mit keinem fremden Server. Englisch als britische Flagge: die Firma sitzt in Europa. */
+            '<a href="/" hreflang="en" lang="en" data-sprache="en"' + (LANG === "en" ? ' class="is-an" aria-current="true"' : '') + '>' +
+              '<img class="ulh-sprache-flagge" src="https://flagcdn.com/gb.svg" alt="" width="16" height="12"/><span class="ulh-sprache-t">EN</span></a>' +
+            '<a href="/de" hreflang="de" lang="de" data-sprache="de"' + (LANG === "de" ? ' class="is-an" aria-current="true"' : '') + '>' +
+              '<img class="ulh-sprache-flagge" src="https://flagcdn.com/de.svg" alt="" width="16" height="12"/><span class="ulh-sprache-t">DE</span></a>' +
           '</div> ' : '') +
           /* Anmelden und Registrieren gehen in einen NEUEN Tab: die Seite ist die Werbung, die
              App ist die Arbeit -- wer sich anmeldet, soll die Seite nicht verlieren. */
@@ -4207,9 +4209,8 @@
              so steht die Palette an EINER Stelle, auch fuer den Teil, den die CSS zeichnet. */
           '<div class="ulh-quell-app up-root" data-theme="light" data-isdark="no" data-up-keepclip' +
             ' style="--ulh-q-trichter: ' + QUELL_FARBEN.trichter + '">' +
+            /* Ohne die URL-Tabelle darunter (14.10. abends: "URLs table nicht anzeigen"). */
             demoTeil("udd") +
-            /* Darunter wie im Drawer: der Umschalter und die Seiten dieser Domain (14.10.). */
-            '<div class="ulh-quell-tabellen">' + demoTeil("uvw") + demoTeil("uut") + '</div>' +
           '</div>' +
         '</div>' +
         '</div>' +
@@ -4368,7 +4369,6 @@
     if (window.setDomainDetail) window.setDomainDetail(ID.udd, JSON.stringify(quellHaupt()));
     if (window.setDomainDetailUrls) window.setDomainDetailUrls(ID.udd, JSON.stringify(quellUrls()));
     quellTypSetzen();
-    quellTabelle();
     /* Der Tooltip soll STEHEN, nicht auf einen Mauszeiger warten -- auf einer Landingpage gibt es
        keinen. Chart.js kennt dafuer setActiveElements; der aeussere Tooltip aus core zeichnet sich
        daraufhin selbst. Der Zeitpunkt: erst nachdem die Komponente ihre Daten gezeichnet hat,
@@ -4572,44 +4572,6 @@
     var label = (UC.typeLabel ? UC.typeLabel(typ, "citation") : "") || typ;
     el.innerHTML = '<span class="up-tag" style="color:' + st.ink + ';background:' + st.bg +
       ';border-color:' + st.bd + '"><span class="up-tag-lbl">' + label + '</span></span>';
-  }
-
-  /* ---- Die Seiten der Domain unter Domain Detail (14.10.) ----
-     Dieselbe Tabelle wie im Domain-Drawer der App: urls-table.js im Domain-Modus, Anteil an den
-     Citations DIESER Domain. Die ersten fuenf Seiten sind die der Kurve (QUELL_SEITEN), damit
-     Chart und Tabelle dieselbe Geschichte erzaehlen; drei weitere zeigen, dass die Liste
-     weitergeht (216 Seiten, wie im Trichter). Felder wie citations-data.js sie liefert (zuUrls). */
-  var QUELL_TABELLE = [
-    { s: 0, ty: "listicle",   a: 24.1, d: 3.2,  m: ["ac", "bm", "te", "au"] },
-    { s: 1, ty: "listicle",   a: 17.3, d: -1.4, m: ["bm", "au", "vo"] },
-    { s: 2, ty: "comparison", a: 12.6, d: 2.1,  m: ["ac", "po", "te"] },
-    { s: 3, ty: "guide",      a: 9.4,  d: 0.6,  m: ["te", "ac"] },
-    { s: 4, ty: "review",     a: 6.8,  d: -0.9, m: ["vo", "au"] },
-    { p: "/electric-suv-range-test-2026", t: "We Drove 12 Electric SUVs Until They Died", ty: "review", a: 5.2, d: 1.7, m: ["te", "bm", "po"] },
-    { p: "/best-ev-charging-apps",        t: "The Best EV Charging Apps, Tested",         ty: "listicle", a: 3.9, d: 0.4, m: [] },
-    { p: "/acme-vs-tesla-model-y",        t: "Acme EV vs. Tesla Model Y: Which To Buy",   ty: "comparison", a: 2.8, d: 2.8, m: ["ac", "te"] }
-  ];
-  function quellTabelle(){
-    if (!window.renderUrlsTable) return;
-    var marke = {};
-    MARKEN.forEach(function(m){ marke[m.id] = m; });
-    var rows = QUELL_TABELLE.map(function(z){
-      var seite = z.s != null ? QUELL_SEITEN[z.s] : z;
-      var genannt = z.m.map(function(id){
-        var m = marke[id];
-        return { name: m.name, company_id: "lh-" + id, favicon_url: m.logo || quellzeichen(m.domain),
-                 logo_url: m.logo || quellzeichen(m.domain), role: id === "ac" ? "own" : "competitor" };
-      });
-      return {
-        url: "https://www." + QUELL_DOMAIN + seite.p, title: seite.t, domain: QUELL_DOMAIN,
-        favicon: quellzeichen(QUELL_DOMAIN), domainshare_pct: z.a, share_delta_pct: z.d,
-        url_type: z.ty, is_mentioned: z.m.indexOf("ac") >= 0, mentions: genannt,
-        mentions_totalcount: genannt.length, last_seen: "2026-08-18"
-      };
-    });
-    window.renderUrlsTable({ instanceId: ID.uut, rows: rows, totalCount: 216, isDark: false,
-                             brand_name: MARKEN[0].name, brand_logo: MARKEN[0].logo || "" });
-    if (window.setUrlsTableLoading) window.setUrlsTableLoading(ID.uut, "no");
   }
 
   /* Der Fensterrahmen, dreimal derselbe. Die drei Punkte sind bei einem echten Fenster in jeder
