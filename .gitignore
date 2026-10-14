@@ -1,1 +1,10 @@
 _tmp_*
+
+# Arbeitsunterlagen bleiben auf der Platte, aber nicht im Repo (14.10., Nach-Audit H2): echte
+# DB-Antworten mit Adressen und Namen von Kunden, Auftraege und Rueckmeldungen an den DB-Chat mit
+# Sicherheitsnotizen, Pruefstaende mit echten Daten. Das Repo traegt nur, was ausgeliefert wird,
+# und die Werkzeuge dafuer.
+bubble/
+testdaten/
+_h_*
+.DS_Store
