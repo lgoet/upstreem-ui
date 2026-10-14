@@ -307,29 +307,84 @@
 }
 .ulh-eyebrow { margin: 0 0 clamp(24px, calc(3.2 * var(--ulh-fh)), 34px); }
 
-/* ---------- Die drei Treiber unter der Unterzeile ----------
-   Eigene Zeile, damit sie zu dritt nebeneinander stehen -- der Umbruch nach "drive" steht im
-   Markup. Seit dem 06.10. OHNE Zeichen und enger zusammen (angefordert): 14px zwischen den drei
-   statt 20, und die Zeile ruckt 4px naeher an den Satz darueber. */
-.ulh-drivers {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  margin-top: 2px;
+/* ---------- Die Unterzeile endet auf einem wechselnden Wort (14.10.) ----------
+   Vorher standen hier drei lose Woerter in einer eigenen Zeile ("Qualified Traffic Leads
+   Revenue"). Jetzt ein Satz; sein letztes Wort wechselt. Alle Woerter liegen im SELBEN Rasterfeld
+   -- das Feld ist so breit wie das laengste, der Satz davor springt nie. Ihr Text ist CSS-Inhalt
+   (attr): fuer Crawler und Vorleser steht der ganze Satz in .ulh-nurlesen. Das Wort in der
+   Textfarbe und 500: es ist die Pointe des Satzes, nicht ein weiteres Wort darin.
+   Bewegung nur ueber opacity und transform (easeOutExpo wie ueberall auf der Seite). */
+/* Ausgeglichen umbrechen: sonst steht das wechselnde Wort allein in der zweiten Zeile (gemessen bei
+   1440: "qualified traffic." als einziges Wort darin). So bricht der Satz nach "your brand". */
+.ulh-sub:has(.ulh-wechsel) { text-wrap: balance; }
+.ulh-wechsel {
+  display: inline-grid; vertical-align: bottom; overflow: hidden;
+  /* Platz fuer Unterlaengen (g, q), sonst schneidet overflow sie ab. */
+  padding-bottom: .12em; margin-bottom: -.12em;
 }
-.ulh-driver {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  /* Gewicht und Farbe wie im Satz darueber -- die drei Treiber sind der zweite Teil DESSELBEN
-     Satzes, kein eigener Rang. Vorher standen sie auf 600 und in --ulh-text, also kraeftiger und
-     dunkler, und lasen sich dadurch wie eine Aufzaehlung fuer sich. */
-  font-weight: 400;
-  color: var(--ulh-sub);
+.ulh-wort {
+  grid-area: 1 / 1; text-align: left; white-space: nowrap;
+  font-weight: 500; color: var(--ulh-text);
+  opacity: 0; transform: translateY(80%);
+  transition: opacity 520ms var(--ulh-ease), transform 760ms var(--ulh-expo);
 }
-.ulh-driver svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--ulh-sub); }
+.ulh-wort::before { content: attr(data-wort); }
+.ulh-wort.is-an  { opacity: 1; transform: none; }
+.ulh-wort.is-weg { opacity: 0; transform: translateY(-80%); }
+@media (prefers-reduced-motion: reduce) { .ulh-wort { transition: none; } }
+/* Fuer das Auge unsichtbar, fuer alle anderen der Satz. */
+.ulh-nurlesen {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* ---------- Die zweite Zeile der h1, zurueckgenommen (14.10.) ----------
+   Erst die Sache, dann die Aufloesung im leisen Ton: ein Verlauf von --ulh-sub nach heller, als
+   Textfuellung. Gleiches Gewicht und gleiche Groesse -- nur die Farbe tritt zurueck. */
+.ulh-h1-leise {
+  background: linear-gradient(90deg, #767a82 0%, #a9adb5 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+
+/* ---------- Der Chip als Ankuendigung (14.10.) ----------
+   Derselbe Badge (32px, Ring, weisse Flaeche), jetzt ein Link: vorn das dunkle "New", hinten ein
+   Pfeil, der beim Hover einen Schritt macht. Der Ring wird beim Hover dunkler -- dieselbe
+   Rueckmeldung wie beim zweiten Knopf. */
+.ulh-chip-link { text-decoration: none; cursor: pointer; transition: background 160ms ease; }
+.ulh-chip-link:hover { --ulh-chip-ring: #c9ccd2; }
+.ulh-chip-link .ulh-chip-in { gap: 8px; padding: 0 12px 0 4px; }
+.ulh-chip-neu {
+  display: inline-flex; align-items: center; height: 22px; padding: 0 8px;
+  border-radius: 999px; background: var(--ulh-text); color: #ffffff;
+  font-size: 11px; font-weight: 600; letter-spacing: .02em;
+}
+.ulh-chip-pfeil { color: var(--ulh-sub); transition: transform 200ms var(--ulh-expo), color 160ms ease; }
+.ulh-chip-pfeil svg { width: 13px; height: 13px; }
+.ulh-chip-link:hover .ulh-chip-pfeil { transform: translateX(2px); color: var(--ulh-text); }
+@media (prefers-reduced-motion: reduce) { .ulh-chip-pfeil { transition: none; } }
+
+/* ---------- Worauf es laeuft (14.10.) ----------
+   Eine leise Zeile unter den Knoepfen: die Antwortmaschinen mit ihren Zeichen. 13px in --ulh-sub,
+   die Zeichen 16px -- ein Nachweis, kein zweiter Aufruf. */
+.ulh-modelle {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+  gap: 10px 18px; margin-top: 30px;
+  font-size: 13px; color: var(--ulh-sub);
+}
+.ulh-modelle-t { color: var(--ulh-sub); opacity: .8; }
+.ulh-modell { display: inline-flex; align-items: center; gap: 7px; font-weight: 500; color: #5f636b; }
+.ulh-modell img { width: 16px; height: 16px; border-radius: 4px; display: block; }
+/* Schmal nur die Zeichen in einer Reihe: mit Namen brach die Zeile bei 375px in drei, und
+   "Copilot" stand allein in der letzten. Die Namen bleiben fuer Vorleser und Crawler im Markup. */
+@media (max-width: 560px) {
+  .ulh-modelle { gap: 10px 12px; }
+  .ulh-modell-n {
+    position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden;
+    clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+  }
+  .ulh-modell img { width: 18px; height: 18px; }
+}
 
 /* ---------- Die zwei Knoepfe ----------
    Masse an attio.com abgelesen: 36px hoch, Radius 10, 14px/500, Polster 0 12px, und zwischen den
@@ -590,14 +645,16 @@
        die Deckkraft blendet 900ms weich auf (--ulh-ease), der Weg rollt 1100ms aus (--ulh-gleit,
        schnell an, lang aus). In einer Kurve fuer beides stuende der Text nach einem Drittel der
        Zeit schon fast voll da -- genau das "fast instant".
-   Das Ende liegt bei 870 + 1100 = 1970ms; ERSCHEINEN_MS in landing-hero.js ist darauf bezogen. */
+   Das Ende liegt seit 14.10. bei 960 + 1100 = 2060ms (die Zeile der Modelle); ERSCHEINEN_MS in landing-hero.js ist darauf bezogen. */
 @keyframes ulhAufblenden { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ulhHochrollen { from { transform: translateY(16px); } to { transform: none; } }
 .ulh-root.is-entering .ulh-eyebrow { animation: ulhAufblenden 900ms var(--ulh-ease) 150ms backwards, ulhHochrollen 1100ms var(--ulh-gleit) 150ms backwards; }
 .ulh-root.is-entering .ulh-h1      { animation: ulhAufblenden 900ms var(--ulh-ease) 330ms backwards, ulhHochrollen 1100ms var(--ulh-gleit) 330ms backwards; }
 .ulh-root.is-entering .ulh-sub     { animation: ulhAufblenden 900ms var(--ulh-ease) 510ms backwards, ulhHochrollen 1100ms var(--ulh-gleit) 510ms backwards; }
-.ulh-root.is-entering .ulh-cta .ulh-btn-sec { animation: ulhAufblenden 900ms var(--ulh-ease) 690ms backwards, ulhHochrollen 1100ms var(--ulh-gleit) 690ms backwards; }
-.ulh-root.is-entering .ulh-cta .ulh-btn-pri { animation: ulhAufblenden 900ms var(--ulh-ease) 870ms backwards, ulhHochrollen 1100ms var(--ulh-gleit) 870ms backwards; }
+/* Seit 14.10. steht der Hauptknopf links, also kommt er zuerst; danach die Zeile der Modelle. */
+.ulh-root.is-entering .ulh-cta .ulh-btn-pri { animation: ulhAufblenden 900ms var(--ulh-ease) 690ms backwards, ulhHochrollen 1100ms var(--ulh-gleit) 690ms backwards; }
+.ulh-root.is-entering .ulh-cta .ulh-btn-sec { animation: ulhAufblenden 900ms var(--ulh-ease) 780ms backwards, ulhHochrollen 1100ms var(--ulh-gleit) 780ms backwards; }
+.ulh-root.is-entering .ulh-modelle          { animation: ulhAufblenden 900ms var(--ulh-ease) 960ms backwards, ulhHochrollen 1100ms var(--ulh-gleit) 960ms backwards; }
 /* ---- STUFE 1: DAS FENSTER, ABER NOCH OHNE DEN INHALT DER DASHBOARD-SEITE --------------------
    Rahmen samt Leiste und Hintergruenden, dann der Seitenkopf. Der Inhalt kommt in Stufe 2 und
    haengt nicht mehr an einer Uhr -- siehe unten.
@@ -666,6 +723,7 @@
   .ulh-root.is-entering .ulh-sub,
   .ulh-root.is-entering .ulh-cta .ulh-btn-sec,
   .ulh-root.is-entering .ulh-cta .ulh-btn-pri,
+  .ulh-root.is-entering .ulh-modelle,
   .ulh-root.is-inhalt .vot-unit-left  .vot-head,
   .ulh-root.is-inhalt .vot-unit-left  .vot-box,
   .ulh-root.is-inhalt .vot-unit-right .vot-head,
@@ -3865,7 +3923,7 @@
       und kaeme noch einmal herein. Unsichtbar bis is-shown, wie im Rahmen, wo er erst mit dem
       Skript entstand. Crawler lesen den Text unabhaengig davon (sie werten keine CSS aus).
       Faellt das Skript aus, setzt landing-hero.js is-shown trotzdem (Aufgeben nach 10 s). */
-.ulh-root[data-ulh-ssr]:not(.is-shown) :is(.ulh-eyebrow, .ulh-h1, .ulh-sub, .ulh-cta) { opacity: 0; }
+.ulh-root[data-ulh-ssr]:not(.is-shown) :is(.ulh-eyebrow, .ulh-h1, .ulh-sub, .ulh-cta, .ulh-modelle) { opacity: 0; }
 /* 3. Die Anker der Leiste (#overview, #sources, #mira) kommen von anderen Seiten: die Sektion
       soll beim Sprung unter der Leiste stehen, nicht dahinter. */
 .ulh-root > section[id] { scroll-margin-top: 63px; }

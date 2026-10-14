@@ -400,6 +400,28 @@
     root.innerHTML = seiteHtml(false);
   }
 
+  /* Die Texte des Hero an einer Stelle (14.10.). */
+  var HERO = {
+    neu: "New",
+    chip: "Customer journey tracking",
+    h1a: "AI Search Analytics",
+    h1b: "made simple.",
+    sub: "Track how AI search talks about your brand and turn every answer into ",
+    worte: ["qualified traffic.", "leads.", "revenue."],
+    nurlesen: "qualified traffic, leads and revenue.",
+    start: "Start for free",
+    demo: "Book a demo",
+    modelle: "Tracked daily on"
+  };
+  var HERO_MODELLE = [
+    { d: "openai.com", n: "ChatGPT" },
+    { d: "perplexity.ai", n: "Perplexity" },
+    { d: "google.com", n: "AI Overviews" },
+    { d: "gemini.google.com", n: "Gemini" },
+    { d: "claude.ai", n: "Claude" },
+    { d: "copilot.cloud.microsoft", n: "Copilot" }
+  ];
+
   function seiteBauen(){
     return (
       /* Die zwei Schienen. Sie laufen ueber die GANZE Seite und nicht je Sektion: die Seite hat
@@ -422,38 +444,58 @@
         '<span class="ulh-bg-grid"></span>' +
       '</div>' +
       '<div class="ulh-text">' +
+        /* DER CHIP KUENDIGT AN (14.10.). Vorher sagte er "Get mentioned in AI search" -- dasselbe wie
+           die Ueberschrift darunter, nur kleiner. Die grossen Seiten nutzen den Platz ueber der h1
+           fuer das Neueste und verlinken es; hier die Customer-Journey-Sektion (#journey). Form und
+           Masse des Badges bleiben (30.09.), dazu vorn das dunkle "New" und hinten ein Pfeil. */
         '<p class="ulh-eyebrow">' +
-          /* Als Badge (30.09.): vorn das Zeichen (Zap, ohne Kreis), dahinter der Satz. Das
-             Zeichen kommt ueber data-ic aus core wie jedes andere auf dieser Seite (zeichenSetzen). */
-          '<span class="ulh-chip"><span class="ulh-chip-in">' +
-            '<span class="ulh-chip-ic" data-ic="zap" data-ic-w="1.9" aria-hidden="true"></span>' +
-            '<span class="ulh-chip-t">Get mentioned in AI search</span></span></span>' +
+          '<a class="ulh-chip ulh-chip-link" href="' + SITE + '/#journey">' +
+            '<span class="ulh-chip-in">' +
+              '<span class="ulh-chip-neu">' + HERO.neu + '</span>' +
+              '<span class="ulh-chip-t">' + HERO.chip + '</span>' +
+              '<span class="ulh-chip-ic ulh-chip-pfeil" data-ic="arrowRight" data-ic-w="2" aria-hidden="true"></span>' +
+            '</span>' +
+          '</a>' +
         '</p>' +
         /* Das Leerzeichen zwischen den zwei Spans sieht niemand (beide sind display: block), es steht
            fuer die, die nur den Text lesen: ohne es heisst die Ueberschrift fuer einen Crawler
-           "AI Search AnalyticsMade simple." (13.10. gemessen). */
-        '<h1 class="ulh-h1"><span>AI Search Analytics</span> <span>Made simple.</span></h1>' +
-        /* Der Umbruch nach "drive" steht hier und nicht in der CSS: die drei Treiber sollen zu
-           dritt in einer Zeile stehen, und das ist eine Aussage ueber den Text, nicht ueber die
-           Breite. Seit dem 06.10. ohne Zeichen davor (angefordert). */
-        /* Die Leerzeichen zwischen den Treibern: dieselbe Ueberlegung wie bei der Ueberschrift. Im
-           Flex-Kasten (.ulh-drivers) faellt Leerraum zwischen den Elementen weg. */
-        '<p class="ulh-sub">Track and optimize your brand’s AI search performance and drive ' +
-          '<span class="ulh-drivers">' +
-            '<span class="ulh-driver">Qualified Traffic</span> ' +
-            '<span class="ulh-driver">Leads</span> ' +
-            '<span class="ulh-driver">Revenue</span>' +
+           "AI Search AnalyticsMade simple." (13.10. gemessen).
+           Seit 14.10. traegt die zweite Zeile .ulh-h1-leise: erst die Sache, dann die Aufloesung in
+           einem zurueckgenommenen Ton -- und "made" klein, es ist die Fortsetzung desselben Satzes. */
+        '<h1 class="ulh-h1"><span>' + HERO.h1a + '</span> <span class="ulh-h1-leise">' + HERO.h1b + '</span></h1>' +
+        /* EIN SATZ STATT EINER AUFZAEHLUNG (14.10.). Vorher standen "Qualified Traffic Leads
+           Revenue" als drei lose Woerter in einer eigenen Zeile. Jetzt endet der Satz auf einem
+           Wort, das wechselt. Die drei Woerter stehen fuer das Auge als CSS-Inhalt (attr) und sind
+           damit fuer Crawler und Vorleser unsichtbar -- die lesen den ganzen Satz aus
+           .ulh-nurlesen und nicht drei Woerter hintereinander. treiberDrehen() schaltet weiter. */
+        '<p class="ulh-sub">' + HERO.sub +
+          '<span class="ulh-wechsel" aria-hidden="true">' +
+            HERO.worte.map(function(w, i){
+              return '<span class="ulh-wort' + (i ? "" : " is-an") + '" data-wort="' + w + '"></span>';
+            }).join("") +
           '</span>' +
+          '<span class="ulh-nurlesen">' + HERO.nurlesen + '</span>' +
         '</p>' +
         '<div class="ulh-cta">' +
-          /* Bis zum 14.10. zwei <button> ohne Ziel. Jetzt Links auf die zwei eigenen Seiten
-             (UpstreemContact.tsx, UpstreemDemo.tsx) -- im selben Tab, beide gehoeren zur Website. */
-          '<a class="ulh-btn ulh-btn-sec" href="' + KONTAKT_URL + '">Talk to Sales</a> ' +
-          /* Der Pfeil (06.10. angefordert) kommt wie jedes Zeichen der Seite aus core und wird von
-             zeichenSetzen() nachgeliefert; sein Platz steht schon vorher (landing-hero.css), damit
-             der Knopf nicht breiter springt, wenn er kommt. */
-          '<a class="ulh-btn ulh-btn-pri" href="' + DEMO_URL + '">Book a Demo' +
-            '<span class="ulh-btn-pfeil" data-ic="arrowRightLong" data-ic-w="2" aria-hidden="true"></span></a>' +
+          /* SELBST STARTEN ZUERST (14.10.). Vorher "Talk to Sales" und "Book a Demo": zwei Knoepfe,
+             die beide zu einem Gespraech fuehren, und keiner zum Produkt. Der Hauptknopf ist jetzt
+             der Selbststart (wie in der Leiste), daneben die Demo. "Talk to sales" steht weiter am
+             Ende der Seite. Der Pfeil (06.10.) kommt aus core (zeichenSetzen), sein Platz steht
+             schon vorher, damit der Knopf nicht breiter springt. */
+          '<a class="ulh-btn ulh-btn-pri" href="https://app.upstreem.ai/signup" target="_blank" rel="noopener">' +
+            HERO.start +
+            '<span class="ulh-btn-pfeil" data-ic="arrowRightLong" data-ic-w="2" aria-hidden="true"></span></a> ' +
+          '<a class="ulh-btn ulh-btn-sec" href="' + DEMO_URL + '">' + HERO.demo + '</a>' +
+        '</div>' +
+        /* WORAUF ES LAEUFT (14.10.): die Antwortmaschinen als leise Zeile unter den Knoepfen. Die
+           Zeichen ueber quellzeichen() wie ueberall auf der Seite; die Auswahl ist die der
+           Umlaufbahnen weiter unten (ORBIT), nicht erfunden. */
+        '<div class="ulh-modelle">' +
+          '<span class="ulh-modelle-t">' + HERO.modelle + '</span> ' +
+          HERO_MODELLE.map(function(m){
+            return '<span class="ulh-modell"><img src="' + quellzeichen(m.d) + '" alt="" width="16" height="16"' +
+              ' referrerpolicy="no-referrer"/><span class="ulh-modell-n">' + m.n + '</span></span>';
+          }).join(" ") +
         '</div>' +
       '</div>' +
       /* data-up-keepclip an Ausschnitt und Buehne: core entklammert beim Mount jeder Komponente
@@ -5599,12 +5641,13 @@
      durch. Ob spaeter der Scrollstand die Szenen treibt, ist Schritt 3 -- dann tauscht nur der
      Ausloeser, nicht der Ablauf. */
   /* Das Ende von STUFE 0 und 1 -- Textblock, Rahmen, Seitenkopf. Seit dem 01.10. endet der
-     Textblock zuletzt: der zweite Knopf faengt bei 870ms an und rollt 1100ms aus, also 1970
-     (landing-hero.css, STUFE 0). Der Seitenkopf ist bei 1170 + 620 = 1790 schon durch.
+     Textblock zuletzt: seit dem 14.10. die Zeile der Antwortmaschinen, die bei 960ms anfaengt und
+     1100ms ausrollt, also 2060 (landing-hero.css, STUFE 0; vorher der zweite Knopf, 1970). Der
+     Seitenkopf ist bei 1170 + 620 = 1790 schon durch.
      is-entering faellt 190ms danach ab -- Reserve fuer einen Frame Verzug beim Klassenwechsel.
      Der INHALT der Dashboard-Seite haengt nicht an dieser Uhr, sondern an is-inhalt
      (inhaltZeigen) -- siehe landing-hero.css. */
-  var ERSCHEINEN_MS = 1970;
+  var ERSCHEINEN_MS = 2060;
   /* Die vier Kaesten der Dashboard-Seite: letzte Stufe 230ms Verzoegerung plus 620ms Lauf. */
   var INHALT_MS = 850;
   /* Mira kommt als EINE Stufe herein, nicht als vier -- also nur der Lauf, ohne Verzoegerungen. */
@@ -7802,6 +7845,33 @@
     root.classList.add("is-entering");
     setTimeout(function(){ root.classList.remove("is-entering"); }, ERSCHEINEN_MS + 190);
     inhaltZeigen(root);
+    /* Das Wort am Ende der Unterzeile wechselt erst, wenn der Text steht. */
+    setTimeout(function(){ treiberDrehen(root); }, ERSCHEINEN_MS);
+  }
+
+  /* ---- DAS WECHSELNDE WORT IN DER UNTERZEILE (14.10.) ----
+     Nur Klassen: is-an (steht), is-weg (faehrt nach oben aus); die Bewegung macht die CSS mit
+     opacity und transform. Alle drei Woerter liegen im selben Rasterfeld, das Feld ist so breit wie
+     das laengste -- der Satz davor springt also nie. Wer keine Bewegung will, sieht das erste Wort
+     und sonst nichts. Laeuft die Seite verdeckt, ruht die Uhr (keine Arbeit im Hintergrund). */
+  var WORT_MS = 2600;
+  function treiberDrehen(root){
+    var feld = root.querySelector(".ulh-wechsel");
+    if (!feld || feld.__ulhDreht) return;
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var w = feld.querySelectorAll(".ulh-wort");
+    if (w.length < 2) return;
+    feld.__ulhDreht = true;
+    var i = 0;
+    setInterval(function(){
+      if (document.hidden || !feld.isConnected) return;
+      var alt = w[i];
+      i = (i + 1) % w.length;
+      for (var k = 0; k < w.length; k++) w[k].classList.remove("is-weg");
+      alt.classList.remove("is-an");
+      alt.classList.add("is-weg");
+      w[i].classList.add("is-an");
+    }, WORT_MS);
   }
 
   /* ---- STUFE 2: DER INHALT KOMMT, WENN ER FERTIG IST -- NICHT, WENN EINE UHR ABLAEUFT --------
