@@ -2563,14 +2563,15 @@
      28px, das Polster fuer das 19px-Kreuz rechts und die 18px-Kachel links. Mit zwei Klassen
      stuende es gegen .up-entchip.is-lifted gleichauf und haenge an der Ladereihenfolge -- und
      die ist laut CLAUDE.md 1 kein Mittel, Konflikte zu loesen. */
-  .am-pick-tag.up-entchip.is-lifted { height: 28px; gap: 7px; padding: 0 4px 0 5px; }
+  /* MASSE, KACHEL, NAME UND KREUZ KOMMEN SEIT DEM 14.10. AUS CORE (.up-feldchip): der Chip ist
+     dort Baustein geworden, damit Prompt Research ihn "genau so" tragen kann. Die Werte dort sind
+     diese hier, Wert fuer Wert (28 hoch, 7 Abstand, 5/4 Polster, 18er-Kachel mit Radius 5, Name
+     40 bis 320, 19er-Kreuz mit Radius 6) -- gemessen vor und nach dem Umzug. Hier bleibt nur,
+     was es NUR in Mira gibt: Einfahren, die Prompt-Kachel, der Rueckfall im Bild. */
   @keyframes amPickIn { from { opacity: 0; transform: translateY(3px) scale(0.97); } to { opacity: 1; transform: none; } }
   .am-pick-tag.is-out { animation: amPickOut 200ms ease both; }
   @keyframes amPickOut { to { opacity: 0; transform: scale(0.94); } }
-  .am-pick-tag-av {
-    width: 18px; height: 18px; flex: 0 0 auto; border-radius: 5px; overflow: hidden;
-    background: var(--am-soft); display: flex; align-items: center; justify-content: center; position: relative;
-  }
+  .am-pick-tag-av { position: relative; }   /* Groesse, Radius und Grund: core .up-feldchip-av */
   .am-pick-tag-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
   /* DIE PROMPT-KACHEL: Grund in der Primaerfarbe, Zeichen in der des jeweils anderen Themes
      (12.09. so angefordert) -- hell auf dunkel im Lichtmodus, dunkel auf hell im Dunkelmodus.
@@ -2584,25 +2585,9 @@
   .am-pick-tag-av.is-fb .am-pick-tag-av-fb { display: flex; }
   .am-pick-tag-av-fb svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.2; }
   .am-pick-tag-av-t { font-size: 11px; font-weight: 600; color: var(--am-muted); }
-  /* EINE Reihe, sonst gekuerzt -- ausdruecklich verlangt. Ein langer URL-Titel oder ein Prompt
-     darf die Zeile nicht sprengen. 320px, damit drei Marken nebeneinander passen und ein
-     einzelner langer Titel trotzdem etwas zu lesen gibt. */
-  /* EINE Reihe, sonst gekuerzt -- ausdruecklich verlangt. 320px ist die Obergrenze: darunter
-     passen drei Marken nebeneinander, darueber kuerzt ein langer URL-Titel oder Prompt.
-     min-width, damit die Kachel im engen Streifen nicht doch noch zusammenfaellt. */
-  .am-pick-tag-lbl { min-width: 40px; max-width: 320px; white-space: nowrap; overflow: hidden;
-    text-overflow: ellipsis; }
-  /* 19px-Kreuz an der Pille. Vorbild ist .am-inline-quote-remove derselben Datei -- dasselbe
-     Kreuz am Zitat, nur dauerhaft sichtbar statt beim Ueberfahren, und auf 200ms gebracht. */
-  .am-pick-tag-x {
-    width: 19px; height: 19px; flex: 0 0 auto; border: 0; border-radius: 6px; padding: 0;
-    background: transparent; color: var(--am-muted); cursor: pointer;
-    display: inline-flex; align-items: center; justify-content: center;
-    transition: background 200ms ease, color 200ms ease;
-  }
-  .am-pick-tag-x svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-  .am-pick-tag-x:hover { color: var(--am-text); background: rgba(0,0,0,0.06); }
-  #ask-mira[data-theme="dark"] .am-pick-tag-x:hover { background: rgba(255,255,255,0.08); }
+  /* Name (eine Reihe, 40 bis 320, gekuerzt) und Kreuz (19px, Hover): core .up-feldchip-lbl/-x.
+     Hier nur der Strich des Kreuzes: Miras Zeichen bringt keine Strichangaben mit. */
+  .am-pick-tag-x svg { fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 
   /* Der einzige Weg, wie ein nach oben aufgehendes Menue auf dem Telefon nicht abgeschnitten
      wird. Unter 720px bekommt .am-composer-area overflow-x: hidden, und nach der

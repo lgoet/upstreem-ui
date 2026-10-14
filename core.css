@@ -4900,7 +4900,7 @@
 .up-feldchip-av .up-topicchip-e { font-size: 12px; line-height: 1; }
 /* Der Farbstrich der Topic steht in der Regel von .up-topicchip::before mit (dieselbe Marke,
    dieselbe Begruendung fuer Radius 2 dort). */
-.up-feldchip-lbl { min-width: 0; max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.up-feldchip-lbl { min-width: 40px; max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .up-feldchip-x { width: 19px; height: 19px; flex: 0 0 auto; border: 0; border-radius: var(--up-r-s); padding: 0;
   background: transparent; color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
   transition: background var(--up-t-2) ease, color var(--up-t-2) ease; }

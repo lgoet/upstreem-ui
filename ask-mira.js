@@ -5542,7 +5542,7 @@
       var istPrompt = String(it.type) === 'prompt';
       var bild = istPrompt ? '' : ((UCg && UCg.entityBild) ? UCg.entityBild(it) : '');
       var lbl  = (UCg && UCg.entityLabel) ? UCg.entityLabel(it) : '';
-      var kl = 'am-pick-tag-av' + (istPrompt ? ' is-prompt' : '') + (bild ? '' : ' is-fb');
+      var kl = 'am-pick-tag-av up-feldchip-av' + (istPrompt ? ' is-prompt' : '') + (bild ? '' : ' is-fb');
       /* DER RUECKFALL LIEGT IN DER HUELLE -av-fb, und zwar IMMER. Hier stand der Buchstabe
          (bei einer Brand) und das Marktkuerzel (bei einem Prompt) NACKT daneben -- also ohne
          die Huelle, die ihn verbirgt, solange ein Bild da ist. Sichtbare Folge: neben dem
@@ -5555,14 +5555,15 @@
             ? '<span class="am-pick-tag-av-t">' + esc(String(lbl).charAt(0).toUpperCase()) + '</span>'
             : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">' + amFormen("globe") + '</svg>');
       var rueck = '<span class="am-pick-tag-av-fb">' + inner + '</span>';
-      return '<span class="am-pick-tag up-entchip is-lifted is-static" data-i="' + i + '">' +
+      /* Der Feld-Chip aus core (.up-feldchip, 14.10.) -- dieselben Klassen wie in Prompt Research. */
+      return '<span class="am-pick-tag up-entchip is-lifted is-static up-feldchip" data-i="' + i + '">' +
         '<span class="' + kl + '">' +
           (bild ? '<img src="' + esc(bild) + '" alt="" loading="lazy" referrerpolicy="no-referrer" ' +
                   'onerror="this.style.display=\'none\';this.parentNode.classList.add(\'is-fb\');">' : '') +
           rueck +
         '</span>' +
-        '<span class="am-pick-tag-lbl">' + esc(lbl) + '</span>' +
-        '<button class="am-pick-tag-x" type="button" aria-label="Remove reference" data-x="' + i + '">' +
+        '<span class="am-pick-tag-lbl up-feldchip-lbl">' + esc(lbl) + '</span>' +
+        '<button class="am-pick-tag-x up-feldchip-x" type="button" aria-label="Remove reference" data-x="' + i + '">' +
           '<svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">' + amFormen("x") + '</svg>' +
         '</button>' +
       '</span>';
