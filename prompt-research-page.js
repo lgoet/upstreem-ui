@@ -285,8 +285,13 @@
         if (!d2 || !str(d2.job_id)) {
           laufEnde();
           var art = D.fehlerArt(erg), frei = D.hinweisZahl(erg);
+          /* hint der Tagesgrenze (missbrauch_14_10): "team" = 30 Recherchen je Team und Tag,
+             "user" = 60 je Nutzer ueber alle Teams. Gezaehlt wird je Berliner Tag. */
+          var wer = erg.fehler ? str(erg.fehler.hint).trim() : "";
           pr("setError", art === "limit"
             ? (frei ? t("Only {n} prompt slots are left in your plan.").replace("{n}", frei) : t("There are no prompt slots left in your plan."))
+            : art === "tag" ? t(wer === "user" ? "You have reached today's limit for researches. You can start new ones tomorrow."
+                                                : "Your team has reached today's limit for researches. You can start new ones tomorrow.")
             : art === "rate" ? t("Too many researches in a short time. Please wait a minute and try again.")
             : art === "nichtDa" ? t("Prompt research is not available yet.")
             : art === "eingabe" ? t("Use 1 to 20 keywords with at most 300 characters in total, and choose a market.")
@@ -332,6 +337,11 @@
             var art = D.fehlerArt(erg), frei = D.hinweisZahl(erg);
             if (art === "limit") satz("Not enough prompt slots", "error",
               frei ? t("Only {n} prompt slots are left in your plan.").replace("{n}", frei) : "There are no prompt slots left in your plan.");
+            /* Seit missbrauch_14_10 zaehlt Tracken in derselben Tagesgrenze wie das Anlegen;
+               hint = heute noch moegliche Prompts. Dieselben Saetze wie auf der Prompts-Seite. */
+            else if (art === "tag") satz("Daily limit reached", "error",
+              frei === 1 ? "You can add or reactivate 1 more prompt today."
+              : frei ? t("You can add or reactivate {n} more prompts today.").replace("{n}", frei) : "You can add or reactivate more prompts tomorrow.");
             else if (art === "rate") satz("Too many changes in a short time", "error", "Wait a minute and try again.");
             else satz("Couldn't save the change", "error", "Try again.");
             return null;
@@ -339,8 +349,20 @@
           var m = erg.daten && erg.daten.meta ? erg.daten.meta : null;
           kontingent(m);
           var n = m ? Number(akzeptieren ? m.accepted : m.ignored) || 0 : 0;
+          /* Vorschlaege, deren Text oder Markt die Pruefung beim Tracken nicht besteht
+             (missbrauch_14_10: too_long, too_short, invalid_text, invalid_market), werden
+             uebersprungen statt den ganzen Aufruf scheitern zu lassen. Ohne Satz saehe das aus,
+             als haette der Klick sie verschluckt. Andere Gruende (schon entschieden) bleiben still. */
+          var unguelt = akzeptieren && erg.daten && Array.isArray(erg.daten.rows) ? erg.daten.rows.filter(function (r) {
+            return r && r.result === "skipped" && /^(too_long|too_short|invalid_text|invalid_market)$/.test(str(r.reason));
+          }).length : 0;
+          /* EIN Toast: die getrackten zuerst, die uebersprungenen im Zusatz -- zwei uebereinander
+             wuerden sich gegenseitig verdecken. */
+          var nichtSatz = unguelt === 1 ? t("1 prompt could not be tracked because its text or market is not valid.")
+            : t("{n} prompts could not be tracked because their text or market is not valid.").replace("{n}", unguelt);
+          if (unguelt && !n) satz("Couldn't track the prompts", "error", nichtSatz);
           if (akzeptieren && n) {
-            satz(n === 1 ? "1 prompt is now tracked" : t("{n} prompts are now tracked").replace("{n}", n));
+            satz(n === 1 ? "1 prompt is now tracked" : t("{n} prompts are now tracked").replace("{n}", n), "success", unguelt ? nichtSatz : "");
             /* Neue Prompts aendern die Zaehler der Maerkte und Themen der App -- dieselben Signale,
                mit denen jede andere Stelle das meldet. */
             if (UC.marketsChanged) UC.marketsChanged();

@@ -89,10 +89,18 @@
        ihr Fehler die Planlimit-Meldung darunter und sagte das Falsche. */
     /* Zwei Tagesgrenzen (DB-Audit 10.10.): Anlegen und Reaktivieren zusammen hoechstens 2 x
        Planlimit (hint = noch erlaubte Zahl), Loeschen hoechstens 20 Auftraege (hint "delete:0"). */
+    /* "Zurueck an die KI" hat eine eigene Tagesgrenze (missbrauch_14_10: 2000 Prompts je Team und
+       Tag, hint = Rest). Vor der allgemeinen Tagesgrenze, deren Satz vom Anlegen spricht. */
+    if (/intent_daily_limit/.test(m)) {
+      return { text: t("Daily limit reached"),
+               desc: n === 1 ? t("AI can detect the intent of 1 more prompt today.")
+                   : n ? t("AI can detect the intent of {n} more prompts today.").replace("{n}", String(n)) : t("AI can detect intents again tomorrow.") };
+    }
     if (/daily_limit/.test(m)) {
       if (/^delete:/.test(h)) return { text: t("Daily limit reached"), desc: t("You can delete more prompts tomorrow.") };
       return { text: t("Daily limit reached"),
-               desc: n ? t("You can add or reactivate {n} more prompts today.").replace("{n}", String(n)) : t("You can add or reactivate more prompts tomorrow.") };
+               desc: n === 1 ? t("You can add or reactivate 1 more prompt today.")
+                   : n ? t("You can add or reactivate {n} more prompts today.").replace("{n}", String(n)) : t("You can add or reactivate more prompts tomorrow.") };
     }
     if (/limit_reached/.test(m)) {
       if (/^topics_/.test(m)) return { text: t("Your team has reached the topic limit"), desc: t("Delete a topic you no longer need to add a new one.") };

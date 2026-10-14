@@ -129,7 +129,14 @@
         try { window.dispatchEvent(new CustomEvent("up-prompt-intent", { detail: { prompt_id: id } })); } catch (e) {}
         return;
       }
-      if (UC.toast) UC.toast(t("The intent could not be saved"), { kind: "error", desc: t("Please try again.") });
+      /* Die Grenzen aus missbrauch_14_10 sagen, wann es wieder geht -- "noch einmal" hiesse
+         sonst sofort, und der naechste Klick scheiterte genauso. */
+      var m = erg && erg.fehler ? String(erg.fehler.message || "") : "", h = erg && erg.fehler ? String(erg.fehler.hint || "").trim() : "";
+      var desc = /intent_daily_limit/.test(m)
+        ? (h === "1" ? t("AI can detect the intent of 1 more prompt today.")
+          : /^\d+$/.test(h) && h !== "0" ? t("AI can detect the intent of {n} more prompts today.").replace("{n}", h) : t("AI can detect intents again tomorrow."))
+        : /rate_limited/.test(m) ? t("Wait a minute and try again.") : t("Please try again.");
+      if (UC.toast) UC.toast(t("The intent could not be saved"), { kind: "error", desc: desc });
       if (P.id === id) alleLaden(true, true);
     }, function () {
       if (UC.toast) UC.toast(t("The intent could not be saved"), { kind: "error", desc: t("Please try again.") });

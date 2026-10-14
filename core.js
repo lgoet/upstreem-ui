@@ -430,8 +430,10 @@
      erlaubt "1,234.56"/"DD.MM.YYYY"/#RRGGBB, die App schreibt en|de, d-mon-y|mon-d-y|d-m-y|iso
      und Akzent-Namen. Zwei unserer Datumsformate haben dort gar kein Gegenstueck -- also kein
      Umrechnen, sondern die Liste in der Datenbank anpassen (sie hat das angeboten, eine Zeile in
-     _app_settings_allowed_v1). Danach VORLIEBEN_DB = true. */
-  var VORLIEBEN_DB = false;
+     _app_settings_allowed_v1). Seit 14.10. an: vor_nextjs_v1_nachtrag1.sql ist eingespielt, die
+     Liste dort ist genau PREF_ERLAUBT (Antwort des DB-Chats, missbrauch_14_10 F4). Nicht gesetzte
+     Werte kommen als null und lassen die Wahl auf dem Geraet stehen. */
+  var VORLIEBEN_DB = true;
   var PREF_DB_KEY = { locale: "locale", num: "number_format", date: "date_format", accent: "accent" };
   var VORLIEBE_VOM_START = { an: false };
   function vorliebeNachDb(name, wert){
@@ -619,6 +621,15 @@
     "The research could not be started. Please try again.": "Die Recherche konnte nicht gestartet werden. Versuch es noch einmal.",
     "The research was deleted.": "Die Recherche wurde gelöscht.",
     "Too many researches in a short time. Please wait a minute and try again.": "Zu viele Recherchen in kurzer Zeit. Warte eine Minute und versuch es dann noch einmal.",
+    /* Tagesgrenzen aus missbrauch_14_10 (30 Recherchen je Team, 60 je Nutzer, 2000 KI-Erkennungen je Team). */
+    "Your team has reached today's limit for researches. You can start new ones tomorrow.": "Dein Team hat das Tageslimit für Recherchen erreicht. Neue kannst du morgen starten.",
+    "You have reached today's limit for researches. You can start new ones tomorrow.": "Du hast das Tageslimit für Recherchen erreicht. Neue kannst du morgen starten.",
+    "1 prompt could not be tracked because its text or market is not valid.": "1 Prompt konnte nicht übernommen werden, weil Text oder Markt ungültig ist.",
+    "{n} prompts could not be tracked because their text or market is not valid.": "{n} Prompts konnten nicht übernommen werden, weil Text oder Markt ungültig ist.",
+    "Couldn't track the prompts": "Die Prompts konnten nicht übernommen werden",
+    "AI can detect the intent of {n} more prompts today.": "Heute kann die KI noch für {n} Prompts den Intent erkennen.",
+    "AI can detect the intent of 1 more prompt today.": "Heute kann die KI noch für 1 Prompt den Intent erkennen.",
+    "AI can detect intents again tomorrow.": "Morgen kann die KI wieder Intents erkennen.",
     "Use 1 to 20 keywords with at most 300 characters in total, and choose a market.": "Nutze 1 bis 20 Begriffe mit zusammen höchstens 300 Zeichen und wähle einen Markt.",
     "You do not have access to this team.": "Du hast keinen Zugriff auf dieses Team.",
     "Show tools": "Werkzeuge zeigen",
@@ -1585,6 +1596,7 @@
     "Daily limit reached": "Tageslimit erreicht",
     "You can add or reactivate more prompts tomorrow.": "Weitere Prompts kannst du morgen hinzufügen oder reaktivieren.",
     "You can add or reactivate {n} more prompts today.": "Heute kannst du noch {n} Prompts hinzufügen oder reaktivieren.",
+    "You can add or reactivate 1 more prompt today.": "Heute kannst du noch 1 Prompt hinzufügen oder reaktivieren.",
     "You can delete more prompts tomorrow.": "Weitere Prompts kannst du morgen löschen.",
     /* ---- Brands als Seiten-Komponente (brands-page.js, 11.10.) ---- */
     "Please try again tomorrow.": "Versuch es morgen noch einmal.",

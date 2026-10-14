@@ -106,6 +106,10 @@
      kann (Vertrag 1 und 14.1). erg ist die Antwort von UC.rpc/UC.edge. */
   function fehlerArt(erg) {
     var f = (erg && erg.fehler) || {}, m = str(f.message), c = str(f.code), s = erg ? erg.status : 0;
+    /* Vor "rate": beide Tagesgrenzen kommen ebenfalls als PT429 (missbrauch_14_10, G) und hiessen
+       sonst "warte eine Minute" -- dabei geht es erst morgen weiter. Start: hint "team"|"user",
+       Tracken (prompts_daily_limit_reached): hint = heute noch moegliche Prompts. */
+    if (/_daily_limit_reached$/.test(m)) return "tag";
     if (/_rate_limited$/.test(m) || c === "PT429" || s === 429) return "rate";
     if (m === "prompt_research_limit_reached" || (c === "PT409" && /limit/.test(m))) return "limit";
     if (m === "prompt_research_not_found" || c === "PT404" || (s === 404 && /not_found/.test(m))) return "weg";
