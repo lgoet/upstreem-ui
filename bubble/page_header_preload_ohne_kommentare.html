@@ -208,9 +208,15 @@
 
     once("chartjs", function(){
       var c = document.createElement("script");
-      c.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+      c.src = base + "vendor/chart-4.4.4/chart.umd.js";
       c.setAttribute("data-upstreem-chartjs", "1");
       c.async = false;
+      c.onerror = function(){
+        var d = document.createElement("script");
+        d.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+        d.setAttribute("data-upstreem-chartjs", "1");
+        document.head.appendChild(d);
+      };
       document.head.appendChild(c);
     });
   }

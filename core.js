@@ -11599,7 +11599,35 @@
     var y = 0.2126 * lin(h.slice(0,2)) + 0.7152 * lin(h.slice(2,4)) + 0.0722 * lin(h.slice(4,6));
     return y > 0.179 ? "#232326" : "#ffffff";
   }
-  var EMOJI_LIB_URL = "https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js";
+  /* ---- Fremdcode aus dem eigenen Paket (14.10.) -----------------------------------------------
+     Chart.js und der Emoji-Waehler liegen in vendor/ dieses Repos (vendor/README.md, unveraendert
+     aus npm, gegen die sha512-Integritaet geprueft) und kommen mit DEMSELBEN Pin wie core -- von
+     jsDelivr (Bubble), von der eigenen Domain (upstreem-app) oder aus dem Pruefstand, je nachdem,
+     woher core selbst kam. Vorher: Chart.js von jsDelivr/npm und der Emoji-Waehler als @^1, also
+     jede neue 1.x-Fassung ungeprueft in der App, samt Daten von jsDelivr.
+     Der Ordner ist der von core.js: zuerst aus dem Skript-Tag (dort steht, woher die Datei
+     WIRKLICH kam -- der Pruefstand leitet um, das Register des Laders nicht), sonst aus dem
+     Register (__upAssetsLoaded). Findet sich keiner, gilt die npm-Adresse, aber mit fester Fassung. */
+  var FREMD = {
+    chart:      ["vendor/chart-4.4.4/chart.umd.js", "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"],
+    emoji:      ["vendor/emoji-picker-element-1.29.1/index.js", "https://cdn.jsdelivr.net/npm/emoji-picker-element@1.29.1/index.js"],
+    emojiDaten: ["vendor/emoji-picker-element-data-1.8.0/en/emojibase/data.json",
+                 "https://cdn.jsdelivr.net/npm/emoji-picker-element-data@1.8.0/en/emojibase/data.json"]
+  };
+  function uiBasis(){
+    var s = document.querySelector('script[src*="/core.js"], script[src*="/core.min.js"]');
+    var u = s ? (s.getAttribute("src") || "") : "";
+    if (!u){ var L = window.__upAssetsLoaded || {}; u = L["core.js"] || L["core.min.js"] || ""; }
+    u = String(u).split(/[?#]/)[0];
+    var i = u.lastIndexOf("/");
+    return i >= 0 ? u.slice(0, i + 1) : "";
+  }
+  function fremd(art){
+    var f = FREMD[art];
+    if (!f) return "";
+    var b = uiBasis();
+    return b ? b + f[0] : f[1];
+  }
   var emojiLibPromise = null;
   function ensureEmojiLib(){
     if (window.customElements && window.customElements.get("emoji-picker")) return;
@@ -11607,9 +11635,13 @@
     emojiLibPromise = true;
     var s = document.createElement("script");
     s.type = "module";
-    s.textContent = 'import "' + EMOJI_LIB_URL + '";';
+    /* src statt eines Inline-Moduls ("import ..."): ein Inline-Skript braucht 'unsafe-inline' in
+       der CSP, eine Datei vom eigenen Ursprung nicht. */
+    s.src = fremd("emoji");
     document.head.appendChild(s);
   }
+  /* Woher der Waehler seine Daten holt. Ohne das Attribut nimmt er seine Vorgabe -- jsDelivr, @^1. */
+  function emojiQuelleAttr(){ return ' data-source="' + esc(fremd("emojiDaten")) + '"'; }
 
   var CLOSE_SVG_TM = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18" /> <path d="m6 6 12 12" /></svg>';
   var SMILE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10V9" /> <path d="M16.472 15a6 6 0 01-8.943 0" /> <path d="M9 10V9" /> <circle cx="12" cy="12" r="10" /></svg>';
@@ -11655,7 +11687,7 @@
       var colorOpen = pickOpen === "color";
       var panel = "";
       if (emojiOpen){
-        panel = '<div class="up-topicmodal-pickpanel"><emoji-picker class="up-topicmodal-emojipicker ' + (getIsDark() ? "dark" : "light") + '"></emoji-picker></div>';
+        panel = '<div class="up-topicmodal-pickpanel"><emoji-picker class="up-topicmodal-emojipicker ' + (getIsDark() ? "dark" : "light") + '"' + emojiQuelleAttr() + '></emoji-picker></div>';
       } else if (colorOpen){
         panel = '<div class="up-topicmodal-pickpanel"><div class="up-topicmodal-colorgrid">' +
           paletteMit(color, palette).map(function(hx){
@@ -15036,7 +15068,7 @@
         return;
       }
       var s = document.createElement("script");
-      s.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+      s.src = fremd("chart");
       s.setAttribute("data-upstreem-chartjs", "1");
       s.onload = function(){ chartAbsichern(); res(); };
       s.onerror = rej;
@@ -25838,7 +25870,7 @@
     watchRoots: watchRoots,
     TOPIC_COLOR_PALETTE: TOPIC_COLOR_PALETTE,
     swatchInk: swatchInk,
-    ensureEmojiLib: ensureEmojiLib,
+    ensureEmojiLib: ensureEmojiLib, emojiQuelleAttr: emojiQuelleAttr, fremd: fremd,
     makeTopicModal: makeTopicModal,
     /* Custom Groupings: ein Speicher, ein Fenster, zwei Orte. */
     cgRead: cgRead,

@@ -410,12 +410,22 @@
     /* Chart.js vorwärmen. Ohne das wird es erst beim ERSTEN Chart-Render geholt -- also mitten im
        Öffnen des ersten Drawers, der einen Chart enthält. Das data-Attribut ist genau das, worauf
        core.js' loadChartJs() prüft: findet es dieses Script schon vor, lädt es nichts nach.
-       Es ist bereits minifiziert, hier gibt es also nichts zu holen. */
+       Es ist bereits minifiziert, hier gibt es also nichts zu holen. Seit dem 14.10. aus vendor/
+       dieses Repos (vendor/README.md) mit demselben Pin statt von jsDelivr/npm. */
     once("chartjs", function(){
       var c = document.createElement("script");
-      c.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+      c.src = base + "vendor/chart-4.4.4/chart.umd.js";
       c.setAttribute("data-upstreem-chartjs", "1");
       c.async = false;
+      /* Ein Pin von vor dem 14.10. hat vendor/ noch nicht: dann wie bisher von jsDelivr. core wartet
+         auf window.Chart, solange ein Skript mit data-upstreem-chartjs da ist -- das zweite traegt
+         das Attribut auch. */
+      c.onerror = function(){
+        var d = document.createElement("script");
+        d.src = "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js";
+        d.setAttribute("data-upstreem-chartjs", "1");
+        document.head.appendChild(d);
+      };
       document.head.appendChild(c);
     });
   }

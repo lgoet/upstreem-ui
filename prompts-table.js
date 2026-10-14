@@ -1437,17 +1437,9 @@
        ~200KB of emoji data just for having the table on the page. Once the custom element is
        defined, any <emoji-picker> already sitting in the DOM upgrades itself automatically — no
        manual re-mounting needed after the fetch resolves. */
-    var EMOJI_LIB_URL = "https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js";
-    var emojiLibPromise = null;
-    function ensureEmojiLib(){
-      if (window.customElements && window.customElements.get("emoji-picker")) return;
-      if (emojiLibPromise) return;
-      emojiLibPromise = true;
-      var s = document.createElement("script");
-      s.type = "module";
-      s.textContent = 'import "' + EMOJI_LIB_URL + '";';
-      document.head.appendChild(s);
-    }
+    /* Seit dem 14.10. aus core (UC.ensureEmojiLib): die Bibliothek liegt fest gepinnt in vendor/ von
+       upstreem-ui statt als @^1 auf jsDelivr, und EINE Stelle laedt sie (vendor/README.md). */
+    function ensureEmojiLib(){ UC.ensureEmojiLib(); }
     /* Lives on document.body, NOT inside the component root: it has to sit bottom-centre of the
        PAGE, and a position:fixed element is positioned against the nearest ancestor that has a
        transform/filter/perspective — which Bubble containers frequently do. Parenting it to body
@@ -1948,7 +1940,7 @@
            emoji-picker-element falls back to the OS's own prefers-color-scheme instead of this
            table's theme, which silently mismatched on any device set to dark. */
         panel = '<div class="upt-topicpickpanel"><emoji-picker class="upt-emojipicker ' +
-          (isDark ? "dark" : "light") + '"></emoji-picker></div>';
+          (isDark ? "dark" : "light") + '"' + (UC.emojiQuelleAttr ? UC.emojiQuelleAttr() : "") + '></emoji-picker></div>';
       } else if (colorOpen){
         panel = '<div class="upt-topicpickpanel"><div class="upt-colorgrid">' +
           TOPIC_COLOR_PALETTE.map(function(hx){
