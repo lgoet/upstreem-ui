@@ -27,6 +27,20 @@
 (function(){
   "use strict";
 
+  /* DIE ADRESSE DER WEBSITE (14.10.). Framer: "https://upstreem.ai" -- dort steht die Seite in
+     einem Rahmen oder einer Komponente, und jeder Verweis braucht die volle Adresse. Die eigene
+     Website (upstreem-web, Next.js) setzt window.__ulhSite = "" VOR dieser Datei, beim Vorrendern
+     wie im Browser: dann sind alle Verweise relativ ("/blog"), und auf localhost bleibt jeder Klick
+     auf localhost, statt auf die alte Seite zu springen. Beide Seiten muessen denselben Wert haben,
+     sonst passt die Pruefsumme des vorgerenderten Markups nicht (standDerSeite). */
+  var SITE = typeof window.__ulhSite === "string" ? window.__ulhSite : "https://upstreem.ai";
+  /* Neuer Tab nur, wo er gebraucht wird: im Framer-Rahmen bei JEDEM Verweis (sonst bliebe der
+     Klick im Rahmen haengen), auf der eigenen Website nur bei fremden Adressen (App, Doku,
+     Netzwerke). */
+  function tab(h){
+    return SITE === "" && h.charAt(0) === "/" ? "" : ' target="_blank" rel="noopener"';
+  }
+
   /* Feste Kennungen. Es gibt genau eine Hero-Sektion pro Seite, also braucht keine davon eine
      laufende Nummer -- und feste Namen machen die Demodaten unten lesbar. */
   var ID = { usn: "lh-usn", dph: "lh-dph", vot: "lh-vot", tcd: "lh-tcd", upt: "lh-upt",
@@ -542,7 +556,7 @@
       { t: "Agentic AEO", s: "Mira does the work for you", ziel: ".ulh-msc", anker: "mira" }
     ]},
     resources: { spalte: "Resources", eintraege: [
-      { t: "Blog", s: "Notes on AI search", href: "https://upstreem.ai/blog" },
+      { t: "Blog", s: "Notes on AI search", href: SITE + "/blog" },
       { t: "Documentation", s: "How everything works", href: "https://docs.upstreem.ai/welcome" }
     ]}
   };
@@ -557,8 +571,8 @@
          stimme() und im Hero. */
       '<span class="ulh-nav-spalte">' + m.spalte + '</span> ' +
       m.eintraege.map(function(e){
-        var attr = e.href ? ' href="' + e.href + '" target="_blank" rel="noopener"'
-                          : ' href="https://upstreem.ai/#' + e.anker + '" data-ziel="' + e.ziel + '"';
+        var attr = e.href ? ' href="' + e.href + '"' + tab(e.href)
+                          : ' href="' + SITE + '/#' + e.anker + '" data-ziel="' + e.ziel + '"';
         return '<a class="ulh-nav-eintrag"' + attr + '>' +
           '<span class="ulh-nav-e-t">' + e.t + '</span> ' +
           '<span class="ulh-nav-e-s">' + e.s + '</span>' +
@@ -570,7 +584,7 @@
   function leiste(){
     return '<header class="ulh-nav">' +
       '<div class="ulh-spur ulh-nav-in">' +
-        '<a class="ulh-nav-logo" href="https://upstreem.ai" aria-label="upstreem">' +
+        '<a class="ulh-nav-logo" href="' + SITE + '/" aria-label="upstreem">' +
           '<img src="' + WORTMARKE + '" alt="upstreem" width="141" height="20"/>' +
         '</a>' +
         '<nav class="ulh-nav-mitte">' +
@@ -578,8 +592,10 @@
             return '<button class="ulh-nav-punkt" type="button" data-menue="' + p.k + '">' +
               p.t + '</button>';
           }).join(" ") + " " +
-          '<a class="ulh-nav-punkt" href="https://upstreem.ai/pricing" target="_blank"' +
-            ' rel="noopener">Pricing</a>' +
+          /* Seit 14.10. der Preisabschnitt der Startseite (#pricing) und keine eigene Seite mehr:
+             dieselben Karten standen sonst zweimal und liefen auseinander. upstreem-web leitet
+             /pricing dorthin um. */
+          '<a class="ulh-nav-punkt" href="' + SITE + '/#pricing"' + tab(SITE + "/#pricing") + '>Pricing</a>' +
         '</nav>' +
         '<div class="ulh-nav-rechts">' +
           /* Anmelden und Registrieren gehen in einen NEUEN Tab: die Seite ist die Werbung, die
@@ -643,8 +659,8 @@
      kommt er nicht, steht an ihrer Stelle ein Satz mit dem direkten Link -- nie ein leerer Kasten,
      der aussieht wie "gleich da". Der Link steht auch im vorgerenderten Markup: ein Crawler ohne
      JavaScript sieht keinen Kalender, aber er sieht, wohin man bucht. */
-  var DEMO_URL = "https://upstreem.ai/demo";
-  var KONTAKT_URL = "https://upstreem.ai/contact";
+  var DEMO_URL = SITE + "/demo";
+  var KONTAKT_URL = SITE + "/contact";
   var KONTAKT_MAIL = "lukas@upstreem.ai";
   /* Der Termintyp in Cal.com. Im Embed-Code vom Nutzer (14.10.) stand "upstreem-demp" -- der Link
      liefert 404, und Cal.com zeigt im Rahmen "Cal Link seems to be wrong". Gemessen am 14.10.:
@@ -713,7 +729,7 @@
      Fassung ihren Rahmen verloren. Also --ulh-* nehmen, wo es einen gibt, sonst var(--vc-x, wert). */
   var PREIS_CHIP = "Pricing";
   var PREIS_H = "Simple plans. Every answer engine.";   /* nicht "One price": es sind drei */
-  var PREIS_SUB = "Every plan tracks ChatGPT, Perplexity and Google AI Overviews \u2014 with unlimited " +
+  var PREIS_SUB = "Every plan tracks ChatGPT, Perplexity and Google AI Overviews, with unlimited " +
     "seats, unlimited countries and prompts that run every day.";
   var PREIS_CTA = "Get started";
   var PREIS_ZIEL = "https://app.upstreem.ai/signup";
@@ -854,18 +870,18 @@
      Seite -- ein Fuss mit toten Verweisen ist schlimmer als keiner. */
   var FUSS_SPALTEN = [
     { t: "Product", e: [
-      { t: "Overview", h: "https://upstreem.ai" },
-      { t: "Pricing", h: "https://upstreem.ai/pricing" },
+      { t: "Overview", h: SITE + "/" },
+      { t: "Pricing", h: SITE + "/#pricing" },
       { t: "Log in", h: "https://app.upstreem.ai/signup?mode=login" }
     ]},
     { t: "Resources", e: [
-      { t: "Blog", h: "https://upstreem.ai/blog" },
+      { t: "Blog", h: SITE + "/blog" },
       { t: "Documentation", h: "https://docs.upstreem.ai/welcome" }
     ]},
     { t: "Legal", e: [
-      { t: "Terms of service", h: "https://upstreem.ai/terms-of-service" },
-      { t: "Privacy policy", h: "https://upstreem.ai/privacy-policy" },
-      { t: "Imprint", h: "https://upstreem.ai/imprint" }
+      { t: "Terms of service", h: SITE + "/terms-of-service" },
+      { t: "Privacy policy", h: SITE + "/privacy-policy" },
+      { t: "Imprint", h: SITE + "/imprint" }
     ]}
   ];
   var FUSS_NETZ = [
@@ -890,7 +906,7 @@
     return '<footer class="ulh-fuss">' +
       '<div class="ulh-spur ulh-fuss-in">' +
         '<div class="ulh-fuss-marke">' +
-          '<a class="ulh-fuss-logo" href="https://upstreem.ai" aria-label="upstreem">' +
+          '<a class="ulh-fuss-logo" href="' + SITE + '/" aria-label="upstreem">' +
             '<img src="' + WORTMARKE + '" alt="upstreem" width="218" height="31"/>' +
           '</a>' +
           '<p class="ulh-fuss-satz">See how AI answers talk about your brand.</p>' +
@@ -906,8 +922,7 @@
             return '<div class="ulh-fuss-spalte">' +
               '<span class="ulh-fuss-kopf">' + sp.t + '</span> ' +
               sp.e.map(function(e){
-                return '<a class="ulh-fuss-link" href="' + e.h + '" target="_blank"' +
-                  ' rel="noopener">' + e.t + '</a>';
+                return '<a class="ulh-fuss-link" href="' + e.h + '"' + tab(e.h) + '>' + e.t + '</a>';
               }).join(" ") +
             '</div>';
           }).join(" ") +
