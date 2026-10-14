@@ -727,7 +727,10 @@
            Zeichen ueber quellzeichen() wie ueberall auf der Seite; die Auswahl ist die der
            Umlaufbahnen weiter unten (ORBIT), nicht erfunden. */
         '<div class="ulh-modelle">' +
-          '<span class="ulh-modelle-t">' + HERO.modelle + '</span> ' +
+          /* Der Satz davor ist seit dem 14.10. abends nicht mehr zu SEHEN ("mach den Text weg, lass
+             die Modelle genauso da") -- fuer Vorleser und Crawler bleibt er, sonst stuenden vier
+             Namen ohne Zusammenhang da. */
+          '<span class="ulh-nurlesen">' + HERO.modelle + '</span> ' +
           HERO_MODELLE.map(function(m){
             return '<span class="ulh-modell"><img src="' + quellzeichen(m.d) + '" alt="" width="16" height="16"' +
               ' referrerpolicy="no-referrer"/><span class="ulh-modell-n">' + m.n + '</span></span>';
@@ -2868,6 +2871,20 @@
   function wikiBild(pfad, breite){
     return WIKI + pfad + "/" + (breite || 330) + "px-" + pfad.slice(pfad.lastIndexOf("/") + 1);
   }
+  /* DIESELBE ADRESSE, ABSOLUT -- fuer alles, was an eine KOMPONENTE geht (14.10. gemeldet: "das
+     Bild des Acme Wall Charger im Produktdetail laedt nicht"). Auf der eigenen Website schreibt
+     lib/fremd.ts upload.wikimedia.org auf /fremd/wm/ um, die Adresse wird also relativ. shopping.js
+     laesst aber nur http(s) durch (sichereUrl) und verwirft "/fremd/..." still -- im Detail und bei
+     den Top-Produkten stand der Platzhalter. Die Zellen der Liste baut die Seite selbst (src
+     relativ, geht), deshalb fiel es dort nicht auf. Nur zur Laufzeit: im Server-Markup bleibt die
+     Adresse, wie sie ist, sonst stimmte die Pruefsumme nicht mehr. */
+  function wikiBildAbs(pfad, breite){
+    var u = wikiBild(pfad, breite);
+    try {
+      if (u.charAt(0) === "/" && window.location && /^https?:$/.test(window.location.protocol)) return window.location.origin + u;
+    } catch (e){}
+    return u;
+  }
   var ECHTE_PRODUKTE = [
     { id: "p1", t: "Tesla Model Y Premium Long Range AWD", m: "te", preis: [49990, 49990],
       bild: "e/e7/Tesla_Model_Y_Premium_%28Facelift%29_%E2%80%93_f_05052026.jpg",
@@ -3724,8 +3741,6 @@
   var REISE_WILL = { informational: "Getting to know the topic", recommendation: "Comparing options",
                      transactional: "Ready to buy or sign up" };
   var REISE_WETT = "bm";
-  /* Dieselbe Farbe wie die BMW-Linie in der ersten Karte (KRV): eine Marke, ein Ton auf der Seite. */
-  var REISE_WETT_FARBE = "#d88225";
   var REISE_HINWEIS = "Biggest gap at Recommendation: BMW is named 1.7 times as often as you.";
 
   /* Branded: Sichtbarkeit ohne und mit Branded-Prompts, und drei Prompts, die eine Marke nennen. */
@@ -3759,49 +3774,52 @@
   }
 
   /* ---- Vorschau: die drei Stufen ----
-     Gebaut zur Laufzeit (visInhalt), mit den Bauteilen aus core: das Intent-Label (intentHtml,
-     Zeichen plus Text wie in der Prompt-Tabelle), der Trend-Chip (trendChip) und die Zeichen.
-     Die Balken wachsen erst, wenn die Karte im Bild ist (is-da, visReiseFuellen). */
+     ALS SAEULEN (14.10. abends, Variante B aus der Leinwand: "cleaner und schoener, die Farben
+     muessen zum Rest passen, schwarz und hellblau gestrichelt, und die kleinen Erklaerungen pro
+     Step"). Je Stufe zwei Saeulen auf einer gemeinsamen Achse (0 bis 60 Prozent): die eigene Marke
+     voll in der Textfarbe wie die Linie der eigenen Marke im Hero, der Wettbewerber als hellblaue
+     gestrichelte Huelle -- er ist der Massstab, nicht die Hauptsache. Darunter das Intent-Label aus
+     core (Zeichen und Name wie in der Prompt-Tabelle) und der Satz der App zur Stufe (REISE_WILL).
+     Die Stufe, in der der Wettbewerber vorn liegt, ist nur an seinem kraeftigeren Wert zu sehen;
+     der Satz darunter sagt es in Worten.
+     Gebaut zur Laufzeit (visInhalt); die Saeulen wachsen erst, wenn die Karte im Bild ist (is-da,
+     visReiseFuellen). */
+  var REISE_MAX = 60;
   function visReise(){
     var kern = window.UpstreemCore || {};
     var du = MARKEN[0], wett = MARKEN.filter(function(m){ return m.id === REISE_WETT; })[0];
-    var max = 60;
-    function balken(m, wert, farbe, kl){
-      return '<div class="ulh-rs-b' + (kl ? " " + kl : "") + '">' +
-        '<img src="' + m.logo + '" alt="" referrerpolicy="no-referrer"/>' +
-        '<span class="ulh-rs-spur"><i style="--rs-w:' + (wert / max * 100).toFixed(1) + '%;background:' + farbe + '"></i></span>' +
-        '<span class="ulh-rs-bw">' + Math.round(wert) + '%</span>' +
+    function saeule(wert, kl, i, j){
+      return '<div class="ulh-rs-s ' + kl + '" style="--rs-i:' + i + ';--rs-j:' + j + '">' +
+        '<span class="ulh-rs-w">' + eine(wert) + '%</span>' +
+        '<span class="ulh-rs-k" style="--rs-h:' + (wert / REISE_MAX * 100).toFixed(1) + '%"></span>' +
       '</div>';
     }
-    var stufen = REISE.map(function(r, i){
-      var label = kern.intentHtml ? kern.intentHtml({ intent: r.k }) : r.k;
-      var trend = kern.trendChip ? kern.trendChip(r.d, { decimals: true }) : "";
-      /* trendChip aus core schreibt den Punkt auch auf Deutsch ("3.1"); hier gilt das Komma. */
-      /* Nur die Zahl am Ende des Chips -- davor steht das SVG des Pfeils, und in dessen Pfad stehen
-         auch Punkte (der erste Versuch traf genau dort). */
-      if (LANG === "de") trend = trend.replace(/(\d)\.(\d+)(%?)<\/span>$/, "$1,$2$3</span>");
-      return '<div class="ulh-rs-st' + (r.du < r.wett ? " is-hinten" : "") + '" style="--rs-i:' + i + '">' +
-        '<div class="ulh-rs-kopf">' + label + '</div>' +
-        '<div class="ulh-rs-will">' + REISE_WILL[r.k] + '</div>' +
-        '<div class="ulh-rs-zahl"><span class="ulh-rs-wert">' + eine(r.du) + '%</span>' + trend + '</div>' +
-        '<div class="ulh-rs-balken">' +
-          balken(du, r.du, du.farbe) +
-          balken(wett, r.wett, REISE_WETT_FARBE, "is-wett") +
-        '</div>' +
-        '<div class="ulh-rs-n">' + r.n + (LANG === "de" ? " Prompts" : " prompts") + '</div>' +
+    var feld = REISE.map(function(r, i){
+      return '<div class="ulh-rs-sp' + (r.du < r.wett ? " is-hinten" : "") + '">' +
+        saeule(r.du, "is-du", i, 0) + saeule(r.wett, "is-wett", i, 1) +
       '</div>';
-    }).join('<span class="ulh-rs-pfeil" aria-hidden="true">' + (kern.icon ? kern.icon("chevronRight", 2) : "") + '</span>');
+    }).join("");
+    var fuss = REISE.map(function(r){
+      var label = kern.intentHtml ? kern.intentHtml({ intent: r.k }) : r.k;
+      return '<div class="ulh-rs-f">' + label + '<span class="ulh-rs-will">' + REISE_WILL[r.k] + '</span></div>';
+    }).join("");
     return '<div class="ulh-rs">' +
       '<div class="ulh-rs-oben">' +
         '<span class="ulh-rs-titel">Visibility by intent</span>' +
         '<span class="ulh-rs-legende">' +
-          '<span><i style="background:' + du.farbe + '"></i>' + du.name + '</span>' +
-          '<span><i style="background:' + REISE_WETT_FARBE + '"></i>' + (wett ? wett.name : "") + '</span>' +
+          '<span><i class="is-du"></i>' + du.name + '</span>' +
+          '<span><i class="is-wett"></i>' + (wett ? wett.name : "") + '</span>' +
         '</span>' +
       '</div>' +
-      '<div class="ulh-rs-stufen">' + stufen + '</div>' +
-      '<div class="ulh-rs-hinweis">' + (kern.icon ? kern.icon("arrowDownRight", 2) : "") +
-        '<span>' + REISE_HINWEIS + '</span></div>' +
+      /* Drei Hilfslinien bei 20, 40 und 60 Prozent, gestrichelt und kaum zu sehen. */
+      '<div class="ulh-rs-feld">' +
+        '<span class="ulh-rs-linie" style="--rs-y:.333"></span>' +
+        '<span class="ulh-rs-linie" style="--rs-y:.667"></span>' +
+        '<span class="ulh-rs-linie" style="--rs-y:1"></span>' +
+        feld +
+      '</div>' +
+      '<div class="ulh-rs-fuss">' + fuss + '</div>' +
+      '<div class="ulh-rs-hinweis">' + REISE_HINWEIS + '</div>' +
     '</div>';
   }
 
@@ -7768,7 +7786,7 @@
     var m = p.m ? handelMarke(p.m) : null;
     var marke = m ? { company_id: "lh-" + p.m, name: m.name, logo_url: m.logo, color: m.farbe, type: p.m === "ac" ? "own" : "competitor" }
                   : { company_id: null, name: p.marke || null, logo_url: null, color: null, type: "other" };
-    return { source_product_id: "lh-" + p.id, title: p.t, listing_title: p.t, brand: marke, image_url: wikiBild(p.bild),
+    return { source_product_id: "lh-" + p.id, title: p.t, listing_title: p.t, brand: marke, image_url: wikiBildAbs(p.bild),
              status: p.vis[0] >= p.vis[1] ? "rising" : "declining",
              visibility: wert(p.vis), observations: wert([Math.round(p.vis[0] * 1.6), Math.round(p.vis[1] * 1.6)]),
              avg_position: wert(p.pos), first_position_rate: wert([r2(Math.max(0, 70 - p.pos[0] * 16)), r2(Math.max(0, 70 - p.pos[1] * 16))]),
@@ -7795,7 +7813,7 @@
       k.type = b.m === "ac" ? "own" : "competitor"; k.rank = i + 1;
       k.share_of_shelf = wert(b.sos); k.presence = wert(b.pres); k.observations = wert(b.obs);
       k.avg_position = wert(b.pos); k.first_position_rate = wert(b.erst); k.products = b.prod;
-      k.top_product = tp ? { source_product_id: "lh-" + tp.id, title: tp.t, image_url: wikiBild(tp.bild), visibility: tp.vis[0] } : null;
+      k.top_product = tp ? { source_product_id: "lh-" + tp.id, title: tp.t, image_url: wikiBildAbs(tp.bild), visibility: tp.vis[0] } : null;
       return k;
     });
     /* Die Linien (im Fenster ausgeblendet, die Komponente zeichnet sie trotzdem): vom Wert "vorher"
@@ -7831,7 +7849,7 @@
       brands_other: { company_id: null, name: null, logo_url: null, color: null, type: "other", rank: null,
                       share_of_shelf: wert([6.1, 7.1]), presence: wert([18.3, 19.0]), observations: wert([14, 15]),
                       avg_position: wert([4.2, 4.0]), first_position_rate: wert([0, 1.2]), products: 1,
-                      top_product: { source_product_id: "lh-p6", title: echtesProdukt("p6").t, image_url: wikiBild(echtesProdukt("p6").bild), visibility: 12.8 } },
+                      top_product: { source_product_id: "lh-p6", title: echtesProdukt("p6").t, image_url: wikiBildAbs(echtesProdukt("p6").bild), visibility: 12.8 } },
       brands_page: { total_count: 5, limit: 25, offset: 0 },
       brands_summary: { tracked_brands_observed: 5, unassigned_share_of_shelf: 6.1, unassigned_products: 1, own_rank: 1,
                         own_share_of_shelf: wert([31.9, 27.4]),

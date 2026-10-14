@@ -389,9 +389,8 @@
 /* LEISER (14.10. abends: "subtiler, graue Logos, alles etwas dimmen"): Satz und Namen in der
    hellen Farben statt in zwei dunkleren, die Namen ohne 500, die Zeichen ohne Farbe und halb
    durchsichtig. Ein Nachweis am Rand -- er soll gefunden werden, nicht auffallen. */
-.ulh-modelle-t { color: var(--ulh-sub); }
 /* Die Namen in --ulh-third wie die Zeichen daneben: sie sind hier Teil des Logos, nicht Text, der
-   gelesen werden muss. Der Satz davor bleibt in --ulh-sub, damit er lesbar bleibt (4.5:1). */
+   gelesen werden muss. Der Satz davor steht nur noch fuer Vorleser im Markup (.ulh-nurlesen). */
 .ulh-modell { display: inline-flex; align-items: center; gap: 7px; font-weight: 400; color: var(--ulh-third); }
 .ulh-modell img { width: 16px; height: 16px; border-radius: 4px; display: block;
   /* brightness hebt dunkle Kacheln (Perplexity ist ein dunkles Quadrat) an die hellen Zeichen der
@@ -4171,55 +4170,69 @@
   background: #ffffff; border: 1px solid var(--ulh-border); border-radius: 12px;
   box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 10px 28px rgba(11, 13, 24, .06);
 }
-.ulh-rs { width: calc(100% - 40px); padding: 16px 18px 14px; }
+.ulh-rs { width: calc(100% - 40px); padding: 16px 18px 16px; }
 .ulh-rs-oben { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .ulh-rs-titel { font-size: 13px; font-weight: 500; color: var(--vc-text, #1f1f1b); }
 .ulh-rs-legende { display: flex; gap: 14px; font-size: 12px; color: var(--vc-muted, #6b6f76); }
 .ulh-rs-legende span { display: inline-flex; align-items: center; gap: 6px; }
-.ulh-rs-legende i { width: 8px; height: 8px; border-radius: 2px; display: block; }
+.ulh-rs-legende i { width: 10px; height: 10px; border-radius: 3px; display: block; box-sizing: border-box; }
 
-/* Die drei Stufen nebeneinander, dazwischen ein leiser Pfeil: der Weg geht von links nach rechts. */
-.ulh-rs-stufen {
-  display: grid; grid-template-columns: 1fr 18px 1fr 18px 1fr; align-items: stretch;
-  gap: 0 8px; margin-top: 14px;
+/* ---- Die Saeulen (14.10. abends, Variante B) ----
+   Eigene Marke voll in der Textfarbe, der Wettbewerber als hellblaue gestrichelte Huelle mit einem
+   Hauch Blau darin: Schwarz und Blau sind die zwei Toene der ganzen Seite (Hero, Chips, Kurven),
+   das Orange der BMW-Linie im Hero haette hier eine dritte Farbe eingefuehrt. */
+.ulh-rs { --rs-du: var(--vc-text, #1f1f1b); --rs-wett: #8db6ee; --rs-wett-grund: rgba(87, 156, 241, .07); }
+.ulh-rs-legende i.is-du { background: var(--rs-du); }
+.ulh-rs-legende i.is-wett { border: 1px dashed var(--rs-wett); background: var(--rs-wett-grund); }
+/* Das Feld: feste Hoehe, die Saeulen stehen auf seiner Unterkante. Oben 26px Luft fuer die Werte
+   ueber der hoechsten Saeule (52.4 von 60 Prozent). */
+.ulh-rs-feld {
+  position: relative; height: 176px; margin-top: 18px; padding-top: 26px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;
+  border-bottom: 1px solid var(--vc-border, #e7e9ec);
 }
-.ulh-rs-pfeil { display: grid; place-items: center; color: var(--vc-fourth, #b3b6bc); }
-.ulh-rs-pfeil svg { width: 14px; height: 14px; }
-.ulh-rs-st {
-  display: flex; flex-direction: column; min-width: 0;
-  padding: 12px 12px 10px; border-radius: 10px;
-  background: var(--vc-heading-bg, #f9f8f9); border: 1px solid transparent;
+.ulh-rs-linie {
+  /* --rs-y als Anteil (0 bis 1) der 150px, in denen die Saeulen stehen (.ulh-rs-s). */
+  position: absolute; left: 0; right: 0; bottom: calc(var(--rs-y) * 150px);
+  border-top: 1px dashed rgba(31, 31, 27, .07); pointer-events: none;
 }
-/* Die Stufe, an der ein Wettbewerber vorbeizieht, ist markiert -- leise, mit dem Rand der
-   Fehlerfarbe der App, nicht mit einer Flaeche. */
-.ulh-rs-st.is-hinten { background: #ffffff; border-color: rgba(176, 32, 12, .22); }
-.ulh-rs-will { margin-top: 6px; font-size: 12px; line-height: 1.35; color: var(--vc-muted, #6b6f76); min-height: 2.7em; }
-.ulh-rs-zahl { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; }
-.ulh-rs-wert {
-  font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1;
-  font-variant-numeric: tabular-nums; color: var(--vc-text, #1f1f1b);
-}
-.ulh-rs-balken { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
-.ulh-rs-b { display: grid; grid-template-columns: 14px 1fr 30px; align-items: center; gap: 7px; }
-.ulh-rs-b img { width: 14px; height: 14px; border-radius: 3px; display: block; }
-.ulh-rs-spur { height: 6px; border-radius: 999px; background: rgba(31, 31, 27, .06); overflow: hidden; }
-/* Die Balken wachsen beim ersten Blick, Stufe fuer Stufe (--rs-i). Breite ueber scaleX und nicht
-   ueber width: kein Layout waehrend der Bewegung. */
-.ulh-rs-spur i {
-  display: block; height: 100%; width: var(--rs-w); border-radius: inherit;
-  transform: scaleX(0); transform-origin: left center;
+.ulh-rs-sp { position: relative; display: flex; justify-content: center; align-items: flex-end; gap: 8px; height: 100%; }
+/* Eine Saeule: oben der Wert, darunter der Koerper. Die Hoehe des Koerpers ist ein Anteil des
+   Feldes OHNE den Platz fuer die Werte -- deshalb steht die Saeule als Spalte mit fester Hoehe. */
+.ulh-rs-s { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 150px; width: 36px; }
+.ulh-rs-s.is-wett { width: 30px; }
+.ulh-rs-k {
+  /* flex 0 0 auto: sonst drueckt der Wert darueber die Saeule zusammen (gemessen 126 statt 131px
+     bei 52.4 von 60) -- der Wert ragt stattdessen in die 26px Luft oben im Feld. */
+  display: block; flex: 0 0 auto; width: 100%; height: var(--rs-h); box-sizing: border-box;
+  border-radius: 6px 6px 3px 3px;
+  transform: scaleY(0); transform-origin: center bottom;
   transition: transform 1100ms var(--ulh-expo);
-  transition-delay: calc(var(--rs-i, 0) * 140ms + 120ms);
+  transition-delay: calc(var(--rs-i, 0) * 140ms + var(--rs-j, 0) * 90ms + 120ms);
 }
-.ulh-rs-b.is-wett .ulh-rs-spur i { transition-delay: calc(var(--rs-i, 0) * 140ms + 220ms); }
-.ulh-rs.is-da .ulh-rs-spur i { transform: none; }
-.ulh-rs-bw { font-size: 11.5px; text-align: right; font-variant-numeric: tabular-nums; color: var(--vc-muted, #6b6f76); }
-.ulh-rs-n { margin-top: 10px; font-size: 11.5px; color: var(--vc-fourth, #9a9ea6); }
+.ulh-rs-s.is-du .ulh-rs-k { background: var(--rs-du); }
+.ulh-rs-s.is-wett .ulh-rs-k { border: 1px dashed var(--rs-wett); border-bottom: 0; background: var(--rs-wett-grund); }
+.ulh-rs-w {
+  margin-bottom: 6px; white-space: nowrap; font-variant-numeric: tabular-nums;
+  opacity: 0; transform: translateY(6px);
+  transition: opacity 500ms var(--ulh-ease), transform 800ms var(--ulh-expo);
+  transition-delay: calc(var(--rs-i, 0) * 140ms + var(--rs-j, 0) * 90ms + 520ms);
+}
+.ulh-rs-s.is-du .ulh-rs-w { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: var(--vc-text, #1f1f1b); }
+.ulh-rs-s.is-wett .ulh-rs-w { font-size: 12px; color: var(--vc-muted, #6b6f76); }
+/* Wo der Wettbewerber vorn liegt, steht sein Wert eine Stufe kraeftiger -- leise, ohne Rahmen. */
+.ulh-rs-sp.is-hinten .ulh-rs-s.is-wett .ulh-rs-w { font-weight: 600; color: #3f7fd6; }
+.ulh-rs.is-da .ulh-rs-k { transform: none; }
+.ulh-rs.is-da .ulh-rs-w { opacity: 1; transform: none; }
+/* Unter jeder Stufe ihr Name (Intent-Label aus core) und der Satz, was der Kaeufer dort will. */
+.ulh-rs-fuss { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.ulh-rs-f { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; min-width: 0; }
+.ulh-rs-f .up-intent { height: 22px; font-size: 13px; }
+.ulh-rs-will { font-size: 12px; line-height: 1.35; color: var(--vc-muted, #6b6f76); }
 .ulh-rs-hinweis {
-  display: flex; align-items: center; gap: 8px; margin-top: 12px;
-  font-size: 12.5px; color: #b0200c;
+  margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--vc-border, #e7e9ec);
+  font-size: 12px; line-height: 1.4; color: var(--vc-muted, #6b6f76); text-align: center;
 }
-.ulh-rs-hinweis svg { width: 15px; height: 15px; flex: 0 0 auto; }
 
 /* Branded: der Schalter der Filterleiste, die Zahl, drei Prompts. */
 .ulh-br { width: calc(100% - 40px); padding: 6px 6px 10px; }
@@ -4253,16 +4266,25 @@
 .ulh-br.is-mit .ulh-br-z { opacity: 1; }
 .ulh-br-p { font-size: 13px; color: var(--vc-text, #1f1f1b); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) {
-  .ulh-rs-spur i, .ulh-br-z, .ulh-br-diff { transition: none; }
+  .ulh-rs-k, .ulh-rs-w, .ulh-br-z, .ulh-br-diff { transition: none; }
 }
-/* Schmal stehen die drei Stufen untereinander; die Pfeile fallen dann weg (ein Chevron wird nie
-   gedreht -- die Reihenfolge von oben nach unten sagt den Weg allein). */
+/* Schmal bleiben die drei Saeulenpaare nebeneinander (der Weg liest sich von links nach rechts),
+   nur schmaler; das Intent-Label darf dann umbrechen. */
 @media (max-width: 760px) {
-  /* Die drei Stufen untereinander samt Kopf und Hinweis: 705px (gemessen 14.10. bei 375). */
-  .ulh-vis-reise { --ulh-vh: 744px; }
+  .ulh-vis-reise { --ulh-vh: 400px; }
   .ulh-vis-branded { --ulh-vh: 300px; }
-  .ulh-rs-stufen { grid-template-columns: 1fr; gap: 6px; }
-  .ulh-rs-pfeil { display: none; }
+  .ulh-rs-feld, .ulh-rs-fuss { gap: 6px; }
+  /* 14px zwischen den Saeulen eines Paars: der Wert ueber der schmalen BMW-Saeule ist breiter als
+     sie und stiess bei 4px an die Nachbarsaeule, bei 10px lagen die Werte Kante an Kante (375px). */
+  .ulh-rs-sp { gap: 14px; }
+  .ulh-rs-s { width: 26px; }
+  .ulh-rs-s.is-wett { width: 20px; }
+  .ulh-rs-s.is-du .ulh-rs-w { font-size: 12px; }
+  .ulh-rs-s.is-wett .ulh-rs-w { font-size: 11px; }
+  /* "Transaktional" passt in 13px nicht in ein Drittel von 280px und wurde gekuerzt. */
+  .ulh-rs-f .up-intent { height: auto; font-size: 12px; text-align: center; }
+  .ulh-rs-f .up-intent-lbl { overflow: visible; }
+  .ulh-rs-f .up-intent > svg { display: none; }
   /* Volle Kartenbreite statt der festen 760px aller anderen Vorschauen: dort stehen echte
      App-Tabellen, die schmal in ihre Telefonansicht klappen wuerden. Diese zwei sind eigene
      Zeichnungen und stapeln sich -- mit 760px ragten sie 400px aus der Karte (gemessen 14.10.). */
