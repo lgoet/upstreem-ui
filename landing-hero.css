@@ -2131,6 +2131,11 @@
    Chart.js gezeichnet hat. Bis dahin sind sie unsichtbar (is-da), sonst saessen sie einen
    Augenblick in der linken oberen Ecke. */
 .ulh-krv { position: relative; height: 100%; }
+/* Seit den Monaten unter der Kurve (14.10.) muss ihr Fuss sichtbar sein: der Ausschnitt beginnt
+   40px tiefer als das Feld (gemessen: Feld 222-622, Karte endet bei 607 -- die Monatsnamen auf
+   Hoehe 398 von 400 lagen unter der Kante). 52px weniger Hoehe, und die Monate stehen 10px ueber
+   dem Rand der Karte. */
+.ulh-vis-linie .ulh-krv { height: calc(100% - 52px); }
 .ulh-krv-canvas { display: block; width: 100%; height: 100%; }
 .ulh-krv-chip {
   position: absolute; opacity: 0; transform: translate(-50%, -100%);
@@ -2159,6 +2164,49 @@
 .ulh-krv-logo { width: 16px; height: 16px; border-radius: 4px; display: block; object-fit: cover; }
 .ulh-krv-name { color: var(--ulh-text); font-weight: 400; }
 .ulh-krv-val { color: var(--ulh-text); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* ---- Die Kurve zeichnet sich ein (14.10.: "mehr Bewegung, professioneller") ----
+   Ablauf, sobald die Karte zu 35% im Bild ist (is-zieht, landing-hero.js):
+     0ms      die Leinwand oeffnet sich von links nach rechts -- Linien, Flaeche und Monate kommen
+              in der Zeitrichtung herein (1600ms, easeOutExpo)
+     700ms    das Schild der fremden Marke
+     1050ms   das Schild der eigenen Marke, wenn ihre Linie fast oben ist
+     1350ms   der Punkt am Ende, danach pulsiert er ruhig weiter
+   Nur clip-path, opacity und transform: nichts davon loest Layout aus. */
+.ulh-krv-canvas { clip-path: inset(0 100% 0 0); }
+.ulh-krv.is-zieht .ulh-krv-canvas {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 1600ms var(--ulh-expo);
+}
+.ulh-krv:not(.is-zieht) .ulh-krv-chip { opacity: 0; }
+@keyframes ulhKrvSchild {
+  from { opacity: 0; transform: translate(-50%, calc(-100% + 8px)); }
+  to   { opacity: 1; transform: translate(-50%, -100%); }
+}
+.ulh-krv.is-zieht .ulh-krv-chip.is-da { animation: ulhKrvSchild 640ms var(--ulh-expo) 700ms backwards; }
+.ulh-krv.is-zieht .ulh-krv-chip.is-da[data-krv="ac"] { animation-delay: 1050ms; }
+
+/* Der Punkt: 8px in der Farbe der Kurve mit weissem Ring, dahinter eine Welle, die sich alle 2.4s
+   ausbreitet und verblasst -- leise genug, um nicht vom Text abzulenken. */
+.ulh-krv-punkt {
+  position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px;
+  border-radius: 999px; background: var(--krv-farbe, #579cf1);
+  box-shadow: 0 0 0 2px #ffffff, 0 1px 3px rgba(11, 13, 24, .18);
+  opacity: 0; pointer-events: none;
+}
+.ulh-krv-punkt::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: var(--krv-farbe, #579cf1); opacity: 0;
+}
+@keyframes ulhKrvPunkt { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: none; } }
+@keyframes ulhKrvWelle { 0% { opacity: .35; transform: scale(1); } 70%, 100% { opacity: 0; transform: scale(3.2); } }
+.ulh-krv.is-zieht .ulh-krv-punkt { opacity: 1; animation: ulhKrvPunkt 520ms var(--ulh-expo) 1350ms backwards; }
+.ulh-krv.is-zieht .ulh-krv-punkt::after { animation: ulhKrvWelle 2400ms cubic-bezier(.2, .6, .35, 1) 1900ms infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .ulh-krv.is-zieht .ulh-krv-canvas { transition: none; }
+  .ulh-krv.is-zieht .ulh-krv-chip.is-da, .ulh-krv.is-zieht .ulh-krv-punkt { animation: none; }
+  .ulh-krv.is-zieht .ulh-krv-punkt::after { animation: none; }
+}
 
 /* ---- Karte 2 und 3: die Tabellen ----
    GERADE und nicht gekippt. Der schraege Blick war eine Runde lang drin und ist wieder heraus: er
