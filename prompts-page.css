@@ -19,6 +19,11 @@
 /* Topics liest keinen Filter -- dort stehen Kalender und Filter nicht. */
 .upi-root[data-upi-reiter="topics"] .upi-filterzeile { display: none; }
 .upi-main { padding: 24px 0 64px; min-width: 0; }
+/* UNTER DEN FILTERN 16 WIE DARUEBER (14.10., gemeldet: "unter Kalender und Filter mehr Luft
+   als von den Filtern zur Linie der Navigation"). Gemessen: Linie bis Filter 16, Filter bis
+   Inhalt 24. Ohne Filterzeile (andere Reiter, Seiten ohne Filter) bleibt es bei 24 unter der
+   Navigation. */
+.upi-root:not([data-upi-reiter="topics"]) .upi-filterzeile ~ .upi-main { padding-top: 16px; }
 .upi-tab { min-width: 0; }
 .upi-root .upi-tab[hidden] { display: none; }
 .up-root .upi-tools .up-ph-addbtn { margin-top: 0; }

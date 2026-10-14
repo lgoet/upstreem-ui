@@ -34,4 +34,9 @@
 /* 48 zwischen den drei Bloecken: drei eigene Auswertungen, also "zwischen Gruppen" nach dem
    Entwurf von Shopping (shopping.css, .ush-seite). */
 .uds-main { display: flex; flex-direction: column; gap: 48px; padding: 24px 0 64px; min-width: 0; }
+/* UNTER DEN FILTERN 16 WIE DARUEBER (14.10., gemeldet: "unter Kalender und Filter mehr Luft
+   als von den Filtern zur Linie der Navigation"). Gemessen: Linie bis Filter 16, Filter bis
+   Inhalt 24. Ohne Filterzeile (andere Reiter, Seiten ohne Filter) bleibt es bei 24 unter der
+   Navigation. */
+.uds-filterzeile ~ .uds-main { padding-top: 16px; }
 .uds-teil { min-width: 0; }

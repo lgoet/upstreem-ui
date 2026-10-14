@@ -14,6 +14,11 @@
 /* 24 zwischen Chart und Tabelle: "innerhalb einer Gruppe" nach dem Entwurf von Shopping -- beide
    gehoeren zur selben Auswahl (der Chart zeigt die ersten sieben Zeilen der Tabelle). */
 .ucs-main { display: flex; flex-direction: column; gap: 24px; padding: 24px 0 64px; min-width: 0; }
+/* UNTER DEN FILTERN 16 WIE DARUEBER (14.10., gemeldet: "unter Kalender und Filter mehr Luft
+   als von den Filtern zur Linie der Navigation"). Gemessen: Linie bis Filter 16, Filter bis
+   Inhalt 24. Ohne Filterzeile (andere Reiter, Seiten ohne Filter) bleibt es bei 24 unter der
+   Navigation. */
+.ucs-filterzeile ~ .ucs-main { padding-top: 16px; }
 .ucs-chart, .ucs-tab { min-width: 0; }
 /* hidden gegen das display der eigenen Regel: der Reiter, der nicht offen ist, steht nicht da. */
 .ucs-root .ucs-tab[hidden] { display: none; }
