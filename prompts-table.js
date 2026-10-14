@@ -25,7 +25,7 @@
   if (!window.__uptBootStubbed){
     window.__uptBootStubbed = true;
     ["renderPromptsTable", "setPromptsTableLoading", "resetPromptsTable", "setPromptsTableTopics", "setPromptsTableBrands",
-     "setPromptsTableGroups", "setPromptsTableGroupPrompts",
+     "setPromptsTableGroups", "setPromptsTableGroupPrompts", "setPromptsTableIntentVisibility",
      "setPromptsTableViewActive"].forEach(function(n){
       window[n] = function(){ __uptBootQueue.push([n, arguments]); };
     });
@@ -5218,6 +5218,9 @@
       kpiZeile.innerHTML =
         karteHtml("upt-kpi-topics", UC.t("Distribution by topic")) +
         karteHtml("upt-kpi-markets", UC.t("Distribution by market")) +
+        /* Visibility je Intent (14.10.): nur, wenn es Intents gibt (freigeschaltet), sonst bleibt
+           die Reihe bei drei Karten. Vor dem Kontingent, das den Umschalter fuer alle traegt. */
+        (window.__upIntentsLive === true ? karteHtml("upt-kpi-intents", UC.t("Visibility by intent")) : "") +
         karteHtml("upt-kpi-quota",   UC.t("Prompt allowance"), true);
       elHead.parentNode.insertBefore(kpiZeile, elHead);
       kpiAugeBinden();
@@ -5347,6 +5350,8 @@
       kpiBarsSig = null; kpiRingSig = null; kpiQuotaSig = null;
       if (kpiBars) kpiBars.skeleton(5);
       if (kpiRing) kpiRing.skeleton();
+      kpiIntentSig = null;
+      if (kpiIntentBars) kpiIntentBars.skeleton(4);
       var qk = kpiTeil("upt-kpi-quota", "body");
       if (qk) qk.innerHTML = quotaSkelett();
       kpiFuss("upt-kpi-topics", "", ""); kpiFuss("upt-kpi-markets", "", "");
@@ -5413,6 +5418,51 @@
       kpiTopics(kpiRohTopics != null ? kpiRohTopics : (UC.getTopics ? UC.getTopics() : []));
       kpiMarkets(kpiRohMarkets != null ? kpiRohMarkets : (UC.getMarkets ? UC.getMarkets() : []));
       kpiQuota(kpiRohQuota != null ? kpiRohQuota : (UC.getQuota ? UC.getQuota() : null));
+      if (kpiRohIntents != null) kpiIntents(kpiRohIntents);
+    }
+    /* VISIBILITY JE INTENT (14.10., "in eine Card ueber der Prompts-Tabelle, nicht aufs
+       Dashboard"). Die Zeilen sind die Gruppen nach Intent (cached_prompts_groups_v1,
+       p_group_by intent) mit denselben Filtern wie die Tabelle -- die Seite gibt sie ueber
+       setPromptsTableIntentVisibility. Dasselbe Bauteil wie die Topic-Karte (UC.makeBarList),
+       Beschriftung mit dem Zeichen des Intents, Wert mit einer Nachkommastelle wie in den Zellen.
+       Alle vier Stufen stehen immer da, auch mit 0 Prompts: die Luecke im Funnel ist die Aussage.
+       "Wird zugeordnet" (pending) ist keine Stufe und faellt weg. Ein Farbton fuer alle: die
+       Stufen sind eine Reihe, keine Kategorien mit eigener Farbe. */
+    var kpiIntentBars = null, kpiIntentSig = null, kpiRohIntents = null;
+    function kpiIntents(rows){
+      var koerper = kpiTeil("upt-kpi-intents", "body");
+      if (!koerper || !UC.INTENTE) return;
+      kpiRohIntents = rows;
+      if (!kpiIntentBars){
+        kpiIntentBars = UC.makeBarList({
+          mount: koerper, isDark: function(){ return isDark; },
+          labelCol: function(){ return true; }, pctCol: 44,
+          fmt: function(v){ return v == null ? "–" : UC.fmtPct(v, 1); }
+        });
+      }
+      if (kpiWartend() || !Array.isArray(rows)){ kpiIntentSig = null; kpiIntentBars.skeleton(4); return; }
+      var je = {};
+      rows.forEach(function(g){ if (g && g.group_key != null) je[String(g.group_key)] = g; });
+      var farbe = isDark ? "#a0a0a0" : "#6b6f78";     /* --vc-third des jeweiligen Themas */
+      var items = UC.INTENTE.map(function(a){
+        var g = je[a.key] || {};
+        var n = toNum(g.prompts_count), v = n ? toNum(g.visibility_pct) : null;
+        return { key: a.key, name: UC.intentName ? UC.intentName(a) : a.label, color: farbe,
+                 /* ersatz = Name des Zeichens: in der Beschriftungsspalte zeichnet makeBarList
+                    das Kaestchen daraus (zeichen gilt nur ohne Spalte). */
+                 ersatz: a.icon, share: v == null ? 0 : v,
+                 wert: v == null ? "–" : UC.fmtPct(v, 1) };
+      });
+      var sig = items.map(function(x){ return x.key + ":" + x.wert; }).join(",") + "|" + isDark;
+      var summe = 0;
+      rows.forEach(function(g){ if (g && String(g.group_key) !== "pending") summe += toNum(g.prompts_count) || 0; });
+      var note = kpiTeil("upt-kpi-intents", "note");
+      if (note) note.textContent = summe ? UC.t("{n} prompts").replace("{n}", UC.fmtTotal(summe)) : "";
+      if (sig === kpiIntentSig) return;
+      kpiIntentSig = sig;
+      var fahrt = kpiGezeigt().intents !== sig;
+      kpiGezeigt().intents = sig;
+      kpiIntentBars.render(items, { ohneFahrt: !fahrt });
     }
     function kpiTeil(kl, teil){
       return kpiZeile ? kpiZeile.querySelector("." + kl + " .upt-kpi-" + teil) : null;
@@ -5749,6 +5799,7 @@
         return { an: groupingOn(), modus: groupModeWirksam(), eigene: eigene, nach: intentsMoeglich() ? state.groupBy : "topic" };
       },
       /* ---- grouped view: the two setters Bubble calls back into ---- */
+      setIntentVisibility: function(rows){ kpiIntents(Array.isArray(rows) ? rows : []); },
       setGroups: function(rows){
         /* Die Gruppe der noch nicht zugeordneten Prompts (group_key "pending") ist keine Gruppe,
            die man waehlen soll (14.10.): sie ist ein Zwischenzustand von Sekunden. Ihre Prompts
@@ -6269,6 +6320,13 @@
     ctrl.setGroups(list);
     return true;
   }
+  function doIntentSicht(id, rows){
+    if (rows === undefined && (Array.isArray(id) || (id && typeof id === "object"))){ rows = id; id = null; }
+    var ctrl = id ? resolve(id) : initRoot(document.querySelector(".upt-root"));
+    if (!ctrl || !ctrl.setIntentVisibility){ warnNoRoot("setPromptsTableIntentVisibility", id); return false; }
+    ctrl.setIntentVisibility(coerceRows(rows));
+    return true;
+  }
   function doGroupPrompts(id, rows, requestId){
     var list = coerceRows(rows);
     var ctrl = id ? resolve(id) : initRoot(document.querySelector(".upt-root"));
@@ -6357,6 +6415,7 @@
     api: { renderPromptsTable: doRender, setPromptsTableLoading: doLoading, resetPromptsTable: doReset,
            setPromptsTableTopics: doTopics, setPromptsTableBrands: doBrands,
            setPromptsTableGroups: doGroups, setPromptsTableGroupPrompts: doGroupPrompts,
+           setPromptsTableIntentVisibility: doIntentSicht,
            setPromptsTableViewActive: doViewActive },
     forwardShape: { renderPromptsTable: "params", resetPromptsTable: "id" }
   });

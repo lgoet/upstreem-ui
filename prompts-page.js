@@ -471,6 +471,7 @@
            ohne Gruppen forderte sie sie im selben Zug noch einmal an. */
         if (state.grp.an) a.push(gruppenAuftrag());
         a.push(listeAuftrag());
+        if (intentKarteNoetig()) a.push(intentKarteAuftrag());
         /* Die Meta einmal je Aufbau, nicht je Sitzung: nach einem Neuaufbau (Themenwechsel) stehen
            Verwaltung und Topic-Editor frisch da und brauchen ihre Topics wieder. */
         if (!seiteDa || o.frisch || o.seite) a.push(seitenAuftrag());
@@ -568,6 +569,8 @@
               if (!g) { fehlerToast(erg, t("The groups could not be loaded")); g = []; }
               eigeneAufraeumen(erg.ok ? D.abgelegteTopics(erg.daten) : []);
               try { setter("setPromptsTableGroups")(ids.upt, g); } catch (e) {}
+              /* Nach Intent gruppiert: dieselbe Antwort fuellt die Karte "Visibility by intent". */
+              if (state.grp.nach === "intent" && erg.ok) { try { setter("setPromptsTableIntentVisibility")(ids.upt, g); } catch (e) {} }
             };
           });
         }
@@ -576,6 +579,29 @@
     /* meta.dropped_tag_ids: Topics, die es nicht mehr gibt, aus den eigenen Gruppierungen im
        Browser streichen (sonst zaehlt eine Gruppe still 0 Prompts). Eine Gruppierung ohne gueltiges
        Topic faellt weg -- die Datenbank hat sie ebenso verworfen. */
+    /* DIE KARTE "VISIBILITY BY INTENT" (14.10.): die Gruppen nach Intent mit denselben Filtern wie
+       die Tabelle. Ist die Tabelle selbst nach Intent gruppiert, kommt die Karte aus deren Antwort
+       (gruppenAuftrag) und hier wird nichts zusaetzlich geholt. Ohne Freischaltung der Intents
+       gibt es die Karte nicht. */
+    function intentKarteNoetig() { return window.__upIntentsLive === true && !(state.grp.an && state.grp.nach === "intent"); }
+    function intentKarteAuftrag() {
+      var s = { status: "active", suche: state.p.suche, erwaehnt: state.p.erwaehnt, firmen: state.p.firmen, branded: state.p.branded };
+      var a = D.gruppen(filterStand(), s, "both", [], "intent");
+      return {
+        kanal: "intentkarte", imSpeicher: lader.ausSpeicher(a) !== undefined,
+        ladenAn: function () {},
+        laden: function (frisch) {
+          return lader.laden("intentkarte", a, { frisch: !!frisch }).then(function (erg) {
+            if (erg.ueberholt) return null;
+            return function () {
+              var g = erg.ok ? D.zuGruppen(erg.daten) : null;
+              /* Ein Fehler hier ist kein Toast wert: die Tabelle steht, nur die Karte bleibt leer. */
+              try { setter("setPromptsTableIntentVisibility")(ids.upt, g || []); } catch (e) {}
+            };
+          });
+        }
+      };
+    }
     function eigeneAufraeumen(weg) {
       if (!weg.length || !UC.cgRead || !UC.cgWrite) return;
       var l = UC.cgRead(), geaendert = false;
