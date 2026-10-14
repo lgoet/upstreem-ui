@@ -1379,6 +1379,8 @@
     "At least 8 characters": "Mindestens 8 Zeichen",
     "At least 8 characters.": "Mindestens 8 Zeichen.",
     "At least {n} characters.": "Mindestens {n} Zeichen.",
+    "Please confirm that you are human, then try again.": "Bitte bestätige, dass du ein Mensch bist, und versuch es noch einmal.",
+    "The security check did not work. Reload the page and try again.": "Die Sicherheitsprüfung hat nicht geklappt. Lade die Seite neu und versuch es noch einmal.",
     /* Rechtliches (rechtLinksHtml): so heissen die Seiten auch im Fuss der Website. */
     "Imprint": "Impressum",
     "Privacy": "Datenschutz",
@@ -24069,6 +24071,13 @@
       return { feld: "email", text: "We could not find an account with this email.", unbekannt: true };
     if (/failed to fetch|networkerror|network request|timed? ?out|timeout/.test(w))
       return { feld: "", text: "We could not reach the server. Check your connection and try again." };
+    /* Die Bot-Pruefung (Turnstile, 14.10.): der Gastgeber meldet captcha_fehlt, wenn der Haken sichtbar
+       und nicht gesetzt ist, captcha_fehler, wenn Turnstile gescheitert ist; Supabase meldet
+       captcha_failed, wenn es das Token nicht annimmt. Nur im ersten Fall hilft ein Klick. */
+    if (/captcha_fehler|captcha_failed|captcha protection/.test(w))
+      return { feld: "", text: "The security check did not work. Reload the page and try again." };
+    if (/captcha/.test(w))
+      return { feld: "", text: "Please confirm that you are human, then try again." };
     return { feld: "", text: "Something went wrong. Please try again." };
   }
 
@@ -24095,6 +24104,11 @@
       '<span class="up-fehlerzeile up-es-err"><span data-es-err="' + n + '"></span></span>' + (o.mehr || '') +
     '</label>';
   }
+  /* PLATZ FUER DIE BOT-PRUEFUNG (14.10., Cloudflare Turnstile): der Gastgeber setzt das Widget hinein,
+     wenn er eine hat (upstreem-app lib/captcha.ts) -- sonst bleibt er leer. Ohne Hoehe, solange
+     Turnstile ohne Klick auskommt (der Normalfall); .is-sichtbar setzt der Gastgeber erst, wenn ein
+     Haken noetig ist. Vor den Hauptknopf, in Anmeldung (auth-page) und "Passwort vergessen". */
+  function captchaPlatzHtml(){ return '<div class="up-captcha" data-captcha-slot></div>'; }
   function esKnopfHtml(o){
     o = o || {};
     return '<button class="up-btn-pri is-lg up-es-cta" type="submit" data-es-cta data-es-auf="' + (o.auf || 3) + '"' +
@@ -25679,7 +25693,7 @@
     leerHtml: leerHtml,
     /* Die Einzelseite (07.10.): Rahmen und Teile der kleinen ganzseitigen Flaechen. */
     makeEinzelseite: makeEinzelseite,
-    esKopfHtml: esKopfHtml, esFeldHtml: esFeldHtml, esKnopfHtml: esKnopfHtml,
+    esKopfHtml: esKopfHtml, esFeldHtml: esFeldHtml, esKnopfHtml: esKnopfHtml, captchaPlatzHtml: captchaPlatzHtml,
     esFehlerHtml: esFehlerHtml, esZurueckHtml: esZurueckHtml, esAttr: esAttr,
     pwStaerke: pwStaerke, pwStaerkeHtml: pwStaerkeHtml, pwStaerkeZeigen: pwStaerkeZeigen,
     authFehler: authFehler, feuerRoh: feuerRoh,

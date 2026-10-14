@@ -99,6 +99,8 @@
           '<div class="up-es-felder" data-es-auf="2">' +
             UC.esFeldHtml({ name: "email", label: T.label, typ: "email", auto: "email", ph: T.ph }) +
           '</div>' +
+          /* Bot-Pruefung vor dem Knopf (core, 14.10.): leer, bis der Gastgeber Turnstile setzt. */
+          (UC.captchaPlatzHtml ? UC.captchaPlatzHtml() : '') +
           UC.esKnopfHtml({ text: T.cta, textBusy: T.ctaBusy }) +
           /* Der Fehler des Formulars direkt unter dem Knopf: roter Satz, kein Kasten. */
           UC.esFehlerHtml() +

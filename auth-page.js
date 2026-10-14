@@ -451,6 +451,9 @@
                     '<span data-check-txt></span></label>' +
                   '<button class="uau-side" type="button" data-side></button>' +
                 '</div>' +
+                /* Bot-Pruefung vor dem Hauptknopf (core, 14.10.): leer und ohne Hoehe, bis der
+                   Gastgeber Turnstile hineinsetzt und ein Haken noetig wird. */
+                (UC.captchaPlatzHtml ? UC.captchaPlatzHtml() : '') +
                 '<button class="uau-primary" type="submit" data-primary>' +
                   '<span class="uau-spin"></span><span data-primary-txt></span></button>' +
                 '<div class="uau-or"><span>or</span></div>' +

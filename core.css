@@ -2338,6 +2338,11 @@
     /* ---------- Knoepfe, Fehlerkasten, leise Wege ---------- */
     /* 24px ueber dem Hauptknopf: nah genug, dass Feld und Knopf eine Gruppe sind. */
     .up-es-cta { width: 100%; margin-top: 24px; }
+    /* Bot-Pruefung (UC.captchaPlatzHtml, 14.10.): ohne Hoehe, solange Turnstile unsichtbar arbeitet --
+       abgeschnitten und nicht display:none, damit das Widget darin laeuft. Braucht es einen Haken,
+       setzt der Gastgeber .is-sichtbar; dann 24px Abstand wie der Hauptknopf darunter. */
+    .up-captcha { height: 0; overflow: hidden; }
+    .up-captcha.is-sichtbar { height: auto; overflow: visible; margin-top: 24px; }
     /* Ein Link ist hier ein Knopf: ohne Unterstrich. */
     .up-es a.up-btn-pri { text-decoration: none; }
     /* Beschaeftigt ist nicht gesperrt: .4 hiesse "geht nicht", .55 ist der Wert der Anmeldeseite.
