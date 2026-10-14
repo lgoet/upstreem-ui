@@ -1396,6 +1396,8 @@
               border-color var(--uob-t) var(--uob-ease);
 }
 .uob-help-calbtn:hover { background: var(--uob-hover); border-color: var(--vc-hover-border); }
+/* Seit 14.10. ein Link (Buchung bei cal.com im neuen Tab) -- ohne Unterstrich, sieht aus wie vorher. */
+a.uob-help-calbtn { text-decoration: none; }
 .uob-help-calbtn svg { width: 14px; height: 14px; display: block; }
 
 /* Schmal: die Tafel legt sich ueber die ganze Breite unter die Kopfzeile. Zur Seite geschoben

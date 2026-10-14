@@ -1381,6 +1381,14 @@
     "At least {n} characters.": "Mindestens {n} Zeichen.",
     "Please confirm that you are human, then try again.": "Bitte bestätige, dass du ein Mensch bist, und versuch es noch einmal.",
     "The security check did not work. Reload the page and try again.": "Die Sicherheitsprüfung hat nicht geklappt. Lade die Seite neu und versuch es noch einmal.",
+    /* Einbettungen erst nach Zustimmung (url-detail, 14.10.). "Er" ist der Inhalt. */
+    "Content from {name}": "Inhalt von {name}",
+    "It loads from {firma} once you choose to show it. {firma} then receives your IP address and may set cookies.":
+      "Er wird erst von {firma} geladen, wenn du ihn anzeigen lässt. {firma} erhält dann deine IP-Adresse und kann Cookies setzen.",
+    "Show content": "Inhalt anzeigen",
+    "Always show content from {name}": "Inhalte von {name} immer anzeigen",
+    "Open on {name}": "Auf {name} öffnen",
+    "Stop showing content from {name} automatically": "Inhalte von {name} nicht mehr automatisch anzeigen",
     /* Rechtliches (rechtLinksHtml): so heissen die Seiten auch im Fuss der Website. */
     "Imprint": "Impressum",
     "Privacy": "Datenschutz",

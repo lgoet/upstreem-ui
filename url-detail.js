@@ -145,9 +145,15 @@
                  ihn: TikToks embed.js laedt rund 200 KB und verarbeitet NUR, was beim Laden schon
                  im Dokument stand -- ein Blockquote, das diese Komponente spaeter einsetzt, bleibt
                  dort leer stehen. Genau daran scheitert das Muster, das in der App bisher stand.
-       script    Instagram und X. Beide haben keinen offenen iframe-Weg. Deshalb wird das Script
-                 einmal geladen und danach ausdruecklich zum Verarbeiten aufgefordert
-                 (instgrm.Embeds.process bzw. twttr.widgets.load) -- ohne das bleibt der Kasten leer.
+       (script   Instagram, X und Facebook liefen bis zum 14.10. ueber ihre eigenen Skripte IN
+                 unserer Seite -- mit Zugriff auf die Sitzung im localStorage (Nach-Audit M2). Seit
+                 dem 14.10. auch sie als Rahmen auf der Seite des Anbieters: Instagram und X melden
+                 ihre Hoehe selbst per postMessage (gemessen: MEASURE bzw. twttr.private.resize),
+                 Facebook nicht -- dort ein fester Rahmen.)
+       ERST NACH ZUSTIMMUNG (Zwei-Klick-Loesung, 14.10.): kein Anbieter laedt, bevor der Nutzer
+                 "Show post" drueckt oder einmal "Always show" gewaehlt hat (je Anbieter gemerkt,
+                 jederzeit zuruecknehmbar). Vorher erfaehrt der Anbieter nichts, auch nicht ueber
+                 oEmbed -- die Abfrage von Titel und Kanal laeuft erst danach.
        oembed    YouTube und TikTok liefern zusaetzlich Titel und Kanal, ohne Schluessel und mit
                  CORS. Gemessen am 23.08.: beide 200 mit Access-Control. Aufrufzahlen stehen dort
                  NICHT -- die gibt es nur ueber die Data API mit Schluessel, und ein Schluessel in
@@ -162,7 +168,7 @@
   }
   var ANBIETER = [
     {
-      key: "youtube", label: "YouTube",
+      key: "youtube", label: "YouTube", firma: "YouTube (Google)",
       passt: function (u) { return /(?:^|\.)youtu\.?be(?:\.com)?\//i.test(u) && !!ytId(u); },
       art: "iframe", ratio: 56.25,
       src: function (u) { return "https://www.youtube-nocookie.com/embed/" + ytId(u) + "?rel=0&modestbranding=1"; },
@@ -179,37 +185,25 @@
       oembed: function (u) { return "https://www.tiktok.com/oembed?url=" + encodeURIComponent(u); }
     },
     {
-      key: "instagram", label: "Instagram",
-      passt: function (u) { return /instagram\.com\/(p|reel|tv)\//i.test(u); },
-      art: "script", skript: "https://www.instagram.com/embed.js",
-      /* utm_source=ig_embed gehoert an den Permalink -- ohne ihn weisen einzelne Posts die
-         Einbettung ab. Steht er schon da, nicht doppelt anhaengen. */
-      markup: function (u) {
-        var link = u.indexOf("utm_source=ig_embed") >= 0 ? u
-                 : u + (u.indexOf("?") >= 0 ? "&" : "?") + "utm_source=ig_embed";
-        return '<blockquote class="instagram-media" data-instgrm-permalink="' + esc(link) +
-               '" data-instgrm-version="14"></blockquote>';
-      },
-      anstossen: function () {
-        try { if (window.instgrm && window.instgrm.Embeds) window.instgrm.Embeds.process(); } catch (e) {}
+      key: "instagram", label: "Instagram", firma: "Instagram (Meta)",
+      passt: function (u) { return /instagram\.com\/(p|reel|tv)\/[A-Za-z0-9_-]+/i.test(u); },
+      /* Die Seite, die Instagrams eigenes embed.js als Rahmen einsetzt. Sie meldet ihre Hoehe als
+         {"type":"MEASURE","details":{"height":N}} (gemessen 14.10.: 1515 fuer ein Reel mit Text). */
+      art: "iframe", hoehe: 640, misst: true,
+      src: function (u) {
+        var m = /instagram\.com\/(p|reel|tv)\/([A-Za-z0-9_-]+)/i.exec(u);
+        return "https://www.instagram.com/" + m[1].toLowerCase() + "/" + m[2] + "/embed/captioned/";
       }
     },
     {
-      key: "x", label: "X",
+      key: "x", label: "X", firma: "X",
       passt: function (u) { return /(?:twitter|x)\.com\/[^\/]+\/status\/\d+/i.test(u); },
-      art: "script", skript: "https://platform.twitter.com/widgets.js",
-      markup: function (u) {
-        return '<blockquote class="twitter-tweet"><a href="' + esc(u) + '"></a></blockquote>';
-      },
-      anstossen: function (el, isDark) {
-        try {
-          if (window.twttr && window.twttr.widgets) {
-            /* Das Thema geht als Attribut mit, sonst steht ein weisser Kasten im dunklen Modus. */
-            var bq = el.querySelector(".twitter-tweet");
-            if (bq) bq.setAttribute("data-theme", isDark ? "dark" : "light");
-            window.twttr.widgets.load(el);
-          }
-        } catch (e) {}
+      /* Die Seite, die widgets.js als Rahmen einsetzt; Thema als Parameter (sonst ein weisser Kasten
+         im Dunkeln), dnt=true gegen Personalisierung. Hoehe per twttr.private.resize (gemessen). */
+      art: "iframe", hoehe: 520, misst: true,
+      src: function (u, isDark) {
+        var id = (/\/status\/(\d+)/.exec(u) || [])[1];
+        return "https://platform.twitter.com/embed/Tweet.html?id=" + id + "&theme=" + (isDark ? "dark" : "light") + "&dnt=true";
       }
     },
     {
@@ -259,7 +253,7 @@
          iframe auf facebook.com/plugins/post.php -- ist Facebooks AELTERER, eigenstaendiger Weg
          und genau der, an dem "Cannot listen to an undefined element" auftrat: das ist ein Fehler
          AUS Facebooks eigenem Code, der IN diesem iframe laeuft, nicht aus unserem.
-         Jetzt der offizielle, aktuelle Weg -- derselbe wie bei Instagram/X: Script einmal laden,
+         Vom 24.08. bis 14.10. der offizielle, aktuelle Weg -- derselbe wie bei Instagram/X: Script einmal laden,
          Markup einsetzen, danach ausdruecklich FB.XFBML.parse() rufen. Ohne das verarbeitet das
          SDK ein spaeter eingefuegtes fb-post-div nicht, exakt dieselbe Falle wie bei TikToks
          embed.js. Keine feste Groesse im Markup -- "Leave empty to use fluid width" laut Doku. */
@@ -268,13 +262,18 @@
       /* Ein Facebook-VIDEO ist wie YouTube ein Bild-/Bewegtbild-Format -- volle Spaltenbreite
          wirkt dort so ueberproportional wie beim YouTube-Embed. Ein normaler Facebook-POST bleibt
          textlastig (siehe Begruendung bei der Breiten-Regel unten) und damit bei 100%. */
-      merkmal: function (u) { return /facebook\.com\/[^\/]+\/videos\//i.test(u) ? "video" : "post"; },
-      art: "script", skript: "https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v19.0",
-      markup: function (u) {
-        return '<div id="fb-root"></div><div class="fb-post" data-href="' + esc(u) + '"></div>';
-      },
-      anstossen: function (el) {
-        try { if (window.FB && window.FB.XFBML) window.FB.XFBML.parse(el); } catch (e) {}
+      /* Seit 14.10. doch wieder der Rahmen auf facebook.com/plugins: das SDK lief IN unserer Seite
+         (Nach-Audit M2). Der Rahmen meldet keine Hoehe -- ein Video steht im Seitenverhaeltnis,
+         ein Beitrag in festem Rahmen mit eigenem Scrollen (lieber scrollen als abschneiden). Der
+         Fehler "Cannot listen to an undefined element" kommt aus Facebooks Code IN seinem Rahmen
+         und erreicht unsere Seite nicht. */
+      firma: "Facebook (Meta)",
+      art: "iframe", hoehe: 640, scrollErlaubt: true,
+      ratioFuer: function (u) { return /facebook\.com\/[^\/]+\/videos\//i.test(u) ? 56.25 : 0; },
+      src: function (u) {
+        var video = /facebook\.com\/[^\/]+\/videos\//i.test(u);
+        return "https://www.facebook.com/plugins/" + (video ? "video" : "post") + ".php?href=" + encodeURIComponent(u) +
+          (video ? "&show_text=false" : "&show_text=true&width=500");
       }
     }
   ];
@@ -286,25 +285,42 @@
     }
     return null;
   }
-  /* Ein fremdes Script genau EINMAL je Seite, egal wie viele Instanzen es anfordern. Zwei
-     widgets.js im Dokument laden beide und ueberschreiben einander. */
-  var GELADEN = {};
-  function skriptLaden(src, fertig) {
-    if (GELADEN[src] === "ok") { fertig(); return; }
-    if (GELADEN[src]) { GELADEN[src].push(fertig); return; }
-    GELADEN[src] = [fertig];
-    var s = document.createElement("script");
-    s.async = true; s.src = src;
-    s.onload = function () {
-      var warteschlange = GELADEN[src]; GELADEN[src] = "ok";
-      if (warteschlange && warteschlange.forEach) warteschlange.forEach(function (f) { try { f(); } catch (e) {} });
-    };
-    s.onerror = function () {
-      var warteschlange = GELADEN[src]; GELADEN[src] = null;
-      if (warteschlange && warteschlange.forEach) warteschlange.forEach(function (f) { try { f(true); } catch (e) {} });
-    };
-    document.head.appendChild(s);
+  /* ZUSTIMMUNG JE ANBIETER (14.10.): "Always show" merkt sich den Anbieter in diesem Browser
+     (prefSet, wie das Thema). Zuruecknehmen geht unter jedem so geladenen Beitrag. */
+  var EXTERN_KEY = "up_extern_ok";
+  function externListe() {
+    try { var o = JSON.parse(UC.prefGet(EXTERN_KEY) || "{}"); return o && typeof o === "object" ? o : {}; }
+    catch (e) { return {}; }
   }
+  function externErlaubt(key) { return externListe()[key] === 1; }
+  function externSetzen(key, an) {
+    var o = externListe();
+    if (an) o[key] = 1; else delete o[key];
+    try { UC.prefSet(EXTERN_KEY, JSON.stringify(o)); } catch (e) {}
+  }
+
+  /* HOEHE AUS DEM RAHMEN: Instagram und X melden sie per postMessage. Nur von genau diesen
+     Urspruengen, nur an den Rahmen, aus dem die Nachricht kam (event.source), und nur in einem
+     vernuenftigen Bereich -- ein fremder Rahmen soll unsere Seite nicht beliebig aufblaehen. EIN
+     Hoerer fuer alle Instanzen. */
+  var HOEHE_AUS = {
+    "https://www.instagram.com": function (o) { return o && o.type === "MEASURE" && o.details ? o.details.height : 0; },
+    "https://platform.twitter.com": function (o) {
+      var e = o && o["twttr.embed"];
+      return e && e.method === "twttr.private.resize" && e.params && e.params[0] ? e.params[0].height : 0;
+    }
+  };
+  window.addEventListener("message", function (ev) {
+    var lesen = HOEHE_AUS[ev.origin];
+    if (!lesen) return;
+    var h = 0;
+    try { h = Number(lesen(typeof ev.data === "string" ? JSON.parse(ev.data) : ev.data)) || 0; } catch (e) { return; }
+    if (!(h >= 80 && h <= 4000)) return;
+    var rahmen = document.querySelectorAll(".uud-frame[data-misst] iframe");
+    for (var i = 0; i < rahmen.length; i++) {
+      if (rahmen[i].contentWindow === ev.source) { rahmen[i].parentNode.style.height = Math.ceil(h) + "px"; return; }
+    }
+  });
 
   /* Balken aus core (.up-tsk-bar: 12px hoch, Radius 4, --vc-sk, uutpulse) -- derselbe Balken, den
      UC.skeletonRows in die Tabellen legt. Nur die Breiten stehen in der CSS, denn sie haengen am
@@ -454,6 +470,8 @@
          es bauen -- mit einer gemerkten Kennung hielte renderEmbed es fuer schon vorhanden. */
       embedKey: "",
       oembed: null,
+      /* Einmal "Show content" gedrueckt: gilt fuer genau diesen Anbieter und diese Adresse. */
+      externJetzt: "",
       /* Getrennt vom Payload gesetzt -- siehe setSummary. */
       summary: gemerkt("summary", "")
     };
@@ -710,49 +728,82 @@
         return;
       }
 
-      var kennung = a.key + "|" + url;
+      /* Erst nach Zustimmung (Zwei-Klick-Loesung, Kopf der Datei): sonst der Platzhalter, und der
+         Anbieter erfaehrt nichts -- auch kein oEmbed. */
+      var dauerhaft = externErlaubt(a.key);
+      var frei = dauerhaft || state.externJetzt === a.key + "|" + url;
+      var kennung = a.key + "|" + url + "|" + (frei ? "frei" : "zu");
       if (state.embedKey === kennung) { schreibeEmbedKopf(a); return; }
       state.embedKey = kennung;
       state.oembed = null;
+      if (!frei) {
+        elEmbed.innerHTML = externHtml(a, url);
+        schreibeEmbedKopf(a);
+        return;
+      }
 
       /* Die Breite je Anbieter (85% YouTube, 50% Instagram, volle Breite sonst, unter 800px
          Wurzelbreite ueberall 100%) steht in der CSS, ueber data-anbieter angesprochen -- nicht
          hier als Inline-Stil. Das JS setzt nur noch Hoehe/Seitenverhaeltnis, die von der Anbieter-
-         KONFIGURATION kommen, keine feste Breite mehr. */
+         KONFIGURATION kommen, keine feste Breite mehr. data-misst: der Rahmen meldet seine Hoehe
+         selbst (Hoerer im Modulkopf), die feste ist nur der Anfang. */
+      var ratio = a.ratioFuer ? a.ratioFuer(url) : a.ratio;
       if (a.art === "iframe") {
-        var stil = a.ratio ? 'style="padding-top:' + a.ratio + '%"' : 'style="height:' + (a.hoehe || 560) + 'px"';
-        elEmbed.innerHTML = '<div class="uud-frame' + (a.ratio ? " is-ratio" : "") + '" data-anbieter="' + a.key + '" ' + stil + '>' +
+        var stil = ratio ? 'style="padding-top:' + ratio + '%"' : 'style="height:' + (a.hoehe || 560) + 'px"';
+        elEmbed.innerHTML = '<div class="uud-frame' + (ratio ? " is-ratio" : "") + '" data-anbieter="' + a.key + '"' +
+          (ratio ? ' data-merkmal="video"' : "") + (a.misst && !ratio ? " data-misst" : "") + ' ' + stil + '>' +
           /* scrolling="no": veraltetes Attribut, aber von jedem Browser weiter beachtet (HTML
              Living Standard fuehrt es als "obsolete but conforming"). Ohne das zeigt ein Anbieter,
              dessen Inhalt hoeher ist als unser fester Rahmen, einen eigenen Scrollbalken IN der
              iframe -- bei fremdem, cross-origin Inhalt kommt CSS da nicht ran, das Attribut schon.
              a.scrollErlaubt (bisher nur Reddit): Abschneiden ist schlimmer als ein Scrollbalken --
              siehe Begruendung am Reddit-Eintrag oben. */
-          '<iframe src="' + esc(a.src(url)) + '" loading="lazy" allowfullscreen scrolling="' +
+          '<iframe src="' + esc(a.src(url, dunkel())) + '" loading="lazy" allowfullscreen scrolling="' +
             (a.scrollErlaubt ? "auto" : "no") + '"' +
             ' referrerpolicy="strict-origin-when-cross-origin"' +
             ' allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"' +
             ' title="' + esc(a.label) + ' embed"></iframe>' +
-        '</div>';
-      } else {
-        var merkmal = a.merkmal ? (a.merkmal(url) || "") : "";
-        elEmbed.innerHTML = '<div class="uud-social" data-anbieter="' + a.key + '"' +
-          (merkmal ? ' data-merkmal="' + esc(merkmal) + '"' : "") + '>' + a.markup(url) + '</div>';
-        var ziel = elEmbed.querySelector(".uud-social");
-        skriptLaden(a.skript, function (fehlgeschlagen) {
-          /* Der Kasten darf nicht leer stehen bleiben, wenn das fremde Script nicht kommt --
-             ein leerer Rahmen sieht aus wie ein Fehler unserer Seite. */
-          if (fehlgeschlagen) {
-            ziel.innerHTML = '<a class="uud-fallback" href="' + esc(url) + '" target="_blank" ' +
-              'rel="noopener noreferrer">Open this ' + esc(a.label) + ' post</a>';
-            return;
-          }
-          try { a.anstossen(ziel, dunkel()); } catch (e) {}
-        });
+        '</div>' +
+        /* Zuruecknehmen dort, wo die Zustimmung wirkt: unter jedem Beitrag, der ohne Klick kam. */
+        (dauerhaft ? '<button type="button" class="uud-extern-aus" data-extern-aus>' +
+          esc(UC.t("Stop showing content from {name} automatically").replace("{name}", a.label)) + '</button>' : "");
       }
       schreibeEmbedKopf(a);
       holeOembed(a, url);
     }
+    /* Der Platzhalter vor der Zustimmung: Bausteine aus core (.up-empty), im Rahmen des Embeds. */
+    function externHtml(a, url) {
+      var firma = a.firma || a.label;
+      return '<div class="uud-frame uud-extern" data-anbieter="' + a.key + '">' +
+        '<div class="up-empty">' +
+          '<div class="up-empty-ic">' + UC.icon("eyeOff", 1.6) + '</div>' +
+          '<div class="up-empty-h">' + esc(UC.t("Content from {name}").replace("{name}", a.label)) + '</div>' +
+          '<div class="up-empty-t">' + esc(UC.t("It loads from {firma} once you choose to show it. {firma} then receives your IP address and may set cookies.").split("{firma}").join(firma)) + '</div>' +
+          '<div class="uud-extern-knoepfe">' +
+            '<button class="up-empty-btn" type="button" data-extern="einmal">' + esc(UC.t("Show content")) + '</button>' +
+            '<button class="up-empty-btn" type="button" data-extern="immer">' + esc(UC.t("Always show content from {name}").replace("{name}", a.label)) + '</button>' +
+          '</div>' +
+          '<a class="uud-extern-link" href="' + esc(url) + '" target="_blank" rel="noopener noreferrer">' +
+            esc(UC.t("Open on {name}").replace("{name}", a.label)) + '</a>' +
+        '</div>' +
+      '</div>';
+    }
+    elEmbed.addEventListener("click", function (e) {
+      var url = txt(d().url), a = anbieterFuer(url);
+      if (!a) return;
+      var ja = e.target.closest("[data-extern]");
+      if (ja) {
+        if (ja.getAttribute("data-extern") === "immer") externSetzen(a.key, true);
+        state.externJetzt = a.key + "|" + url;
+        renderEmbed();
+        return;
+      }
+      if (e.target.closest("[data-extern-aus]")) {
+        externSetzen(a.key, false);
+        state.externJetzt = "";
+        renderEmbed();
+      }
+    });
     function schreibeEmbedKopf(a) {
       var o = state.oembed;
       elEmbedTitle.textContent = a.label;
@@ -1055,7 +1106,7 @@
       reset: function () {
         state.data = null; state.conv = []; state.loading = true; state.fehler = "";
         state.summary = "";
-        state.embedKey = ""; state.oembed = null;
+        state.embedKey = ""; state.oembed = null; state.externJetzt = "";
         elEmbed.innerHTML = "";
         elEmbedTitle.textContent = ""; elEmbedDesc.textContent = "";
         elMents.innerHTML = ""; elMeta.textContent = ""; elSum.textContent = "";

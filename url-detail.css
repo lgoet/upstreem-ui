@@ -117,7 +117,7 @@
    sichtbare Farbe an einer Kante, die der Anbieter selbst schon setzt. Vorher stand hier
    background: var(--vc-heading-bg) UND 12px Radius -- zwei Werte, die von den uebrigen 16px-
    Radien dieser Seite abwichen. */
-.uud-frame, .uud-social {
+.uud-frame {
   border-radius: 16px; border: 1px solid var(--vc-border); overflow: hidden; box-sizing: border-box;
 }
 .uud-frame { position: relative; width: 100%; }
@@ -135,11 +135,16 @@
    (LinkedIn, Reddit, X, Facebook-POSTS -- deren Beitraege sind ohnehin textlastiger, kein Grund
    zu verschmaelern; ein Facebook-VIDEO zaehlt dagegen wie YouTube zur Bewegtbild-Breite unten). */
 .uud-frame[data-anbieter="youtube"] { width: 85%; }
-.uud-social[data-anbieter="instagram"] { width: 50%; }
-.uud-social[data-anbieter="facebook"][data-merkmal="video"] { width: 85%; }
+.uud-frame[data-anbieter="instagram"] { width: 50%; }
+.uud-frame[data-anbieter="facebook"][data-merkmal="video"] { width: 85%; }
+/* Seit 14.10. Rahmen statt Skript (url-detail.js, Kopf): X und ein Facebook-Beitrag zeichnen sich
+   hoechstens so breit wie bestellt (X 550, Facebook width=500) -- breiter staende rechts eine leere
+   Flaeche im Rahmen. */
+.uud-frame[data-anbieter="x"] { max-width: 550px; }
+.uud-frame[data-anbieter="facebook"]:not([data-merkmal="video"]) { max-width: 500px; }
 .uud-root.is-narrow .uud-frame[data-anbieter="youtube"],
-.uud-root.is-narrow .uud-social[data-anbieter="instagram"],
-.uud-root.is-narrow .uud-social[data-anbieter="facebook"][data-merkmal="video"] { width: 100%; }
+.uud-root.is-narrow .uud-frame[data-anbieter="instagram"],
+.uud-root.is-narrow .uud-frame[data-anbieter="facebook"][data-merkmal="video"] { width: 100%; }
 /* TikToks Player ist senkrecht und schmal (325px natuerliche Breite, bis 605px laut TikToks
    eigener oEmbed-Antwort) -- volle Spaltenbreite liess ihn wie einen schmalen Streifen in einem
    viel zu grossen Rahmen wirken: der Rahmen war fast doppelt so breit wie der Player selbst.
@@ -160,31 +165,23 @@
    hinein -- es sah aus, als fehlten die oberen Ecken, statt sie nur abzurunden. */
 .uud-frame[data-anbieter="reddit"] { border: 0; border-radius: 0; }
 
-/* Die Skript-Einbettungen bringen ihre eigene Breite mit und ignorieren sie gern. Der Wrapper
-   zwingt sie in die Spalte, ohne ihnen die Hoehe vorzuschreiben -- die kennt nur der Anbieter. */
-.uud-social { width: 100%; min-height: 220px; }
-/* Die einzige Stelle in dieser Datei mit !important, und sie ist nicht zu vermeiden: Instagram
-   und X schreiben ihre Breite als INLINE-Stil in das eingesetzte Element (min-width:326px,
-   max-width:540px, margin:1px). Ein Inline-Stil schlaegt jeden Selektor -- ueber Spezifitaet ist
-   dagegen nichts auszurichten, das ist die eine Ausnahme, die die Hausregel meint. Ohne diese
-   Zeilen steht der Post links in der Karte statt in ihrer Breite. Dasselbe Problem hat Facebooks
-   SDK mit seinem fb_iframe_widget-Wrapper, deshalb steht er hier mit in der Liste. */
-.uud-social .instagram-media,
-.uud-social .twitter-tweet,
-.uud-social .fb_iframe_widget,
-.uud-social .fb_iframe_widget span {
-  width: 100% !important; max-width: 100% !important; min-width: 0 !important; margin: 0 !important;
+/* ---- Vor der Zustimmung (14.10., Zwei-Klick-Loesung) -------------------------------------------
+   Der Platzhalter steht im Rahmen des Embeds (gleiche Kante, gleiche Breite je Anbieter), der
+   Inhalt ist der Leer-Baustein aus core (.up-empty) mit zwei Knoepfen statt einem. Hoehe aus dem
+   Inhalt, nicht die des spaeteren Beitrags: das waere eine grosse leere Flaeche. */
+.uud-frame.uud-extern { height: auto; }
+.uud-extern-knoepfe { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.uud-extern-link {
+  display: inline-block; margin-top: 12px; font-size: var(--up-fs-s); color: var(--vc-third);
+  text-decoration: none; transition: color var(--up-t-2) var(--up-ease);
 }
-.uud-social iframe { width: 100% !important; border-radius: 16px; }
-/* Kommt das fremde Script nicht durch, steht hier ein Weg nach draussen statt eines leeren
-   Rahmens: ein leerer Kasten sieht aus wie ein Fehler DIESER Seite. */
-.uud-fallback {
-  display: inline-flex; align-items: center; height: 32px; padding: 0 12px; border-radius: 8px;
-  border: 1px solid var(--vc-border); background: var(--vc-bg);
-  font-size: 13px; font-weight: 500; color: var(--vc-text); text-decoration: none;
-  transition: background 160ms cubic-bezier(.4, 0, .2, 1);
+.uud-extern-link:hover { color: var(--vc-text); }
+/* Zuruecknehmen unter einem Beitrag, der ohne Klick kam: leise, wie das Rechtliche im Kontomenue. */
+.uud-extern-aus {
+  margin-top: 8px; padding: 0; border: 0; background: none; cursor: pointer; font: inherit;
+  font-size: var(--up-fs-s); color: var(--vc-third); transition: color var(--up-t-2) var(--up-ease);
 }
-.uud-fallback:hover { background: var(--vc-heading-bg); }
+.uud-extern-aus:hover { color: var(--vc-text); }
 
 /* ---- Fremder Text ----------------------------------------------------------------------------
    Hier stand ein 1px-Strich links neben dem Text, der die Meta-Beschreibung und die
