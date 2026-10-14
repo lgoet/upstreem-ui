@@ -52,7 +52,7 @@
     zurueck:  "Back to sign in",
     pwLeer:   "Please enter a new password.",
     pwKurz:   "At least {n} characters.",
-    pwLang:   "Use at most {n} characters.",
+    pwLang:   "That password is too long. Use a shorter one.",
     pw2Leer:  "Please repeat your new password.",
     pw2Ungl:  "The passwords do not match.",
     neuerLink: "Request a new link",
@@ -131,8 +131,9 @@
       var p1 = String(pw.value || ""), p2 = String(pw2.value || "");
       errs = {};
       if (!p1) errs.password = T.pwLeer;
-      else if (p1.length < MIN_LAENGE) errs.password = UC.t(T.pwKurz).replace("{n}", String(MIN_LAENGE));
-      else if (p1.length > MAX_LAENGE) errs.password = UC.t(T.pwLang).replace("{n}", String(MAX_LAENGE));
+      /* Zeichen wie NIST, das Maximum in Bytes wie Supabase (core pwZeichen/pwZuLang, 14.10.). */
+      else if ((UC.pwZeichen ? UC.pwZeichen(p1) : p1.length) < MIN_LAENGE) errs.password = UC.t(T.pwKurz).replace("{n}", String(MIN_LAENGE));
+      else if (UC.pwZuLang ? UC.pwZuLang(p1) : p1.length > MAX_LAENGE) errs.password = UC.t(T.pwLang);
       if (!p2) errs.confirm = T.pw2Leer;
       else if (p1 && p2 !== p1) errs.confirm = T.pw2Ungl;
       zeige();

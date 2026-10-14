@@ -1385,7 +1385,8 @@
     "Terms": "AGB",
     "Legal": "Rechtliches",
     "At least {n} characters": "Mindestens {n} Zeichen",
-    "Use at most {n} characters.": "Nutze höchstens {n} Zeichen.",
+    /* Zu lang zaehlt in Bytes (pwZuLang) -- eine Zahl in Zeichen stimmte nur ohne Umlaute. */
+    "That password is too long. Use a shorter one.": "Das Passwort ist zu lang. Nutze ein kürzeres.",
     "That password is too short. Use at least {n} characters.": "Das Passwort ist zu kurz. Nutze mindestens {n} Zeichen.",
     "Use upper- and lowercase letters, numbers and a symbol.": "Nutze Groß- und Kleinbuchstaben, Zahlen und ein Sonderzeichen.",
     "Please enter a password.": "Bitte gib ein Passwort ein.",
@@ -23948,6 +23949,13 @@
      Server per API zu, was die Seite abweist, oder umgekehrt. Bestehende kuerzere Passwoerter bleiben
      gueltig: die Regel gilt nur fuer NEUE (Anmelden prueft keine Laenge). */
   var PASSWORT = { min: 15, max: 72 };
+  /* ZAEHLEN wie die Regeln es meinen (Nach-Audit 14.10.): das Minimum in Zeichen, und zwar je
+     Unicode-Codepunkt eines (NIST SP 800-63B-4 3.1.1.2) -- pw.length zaehlt UTF-16-Einheiten, ein
+     Emoji waere zwei. Das Maximum in BYTES, denn so zaehlt Supabase (bcrypt, 72): 40 Umlaute sind 80
+     Bytes und wurden vom Server abgewiesen, waehrend die Seite "hoechstens 72 Zeichen" sagte. */
+  function pwZeichen(pw){ return Array.from(String(pw == null ? "" : pw)).length; }
+  function pwBytes(pw){ return new TextEncoder().encode(String(pw == null ? "" : pw)).length; }
+  function pwZuLang(pw){ return pwBytes(pw) > PASSWORT.max; }
 
   /* ---- Rechtliches: Impressum, Datenschutz, AGB (14.10.) -------------------------------------
      Die Texte stehen auf der Website (upstreem-web, content/legal/), nicht in der App: EINE Quelle,
@@ -23978,7 +23986,7 @@
     if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) p++;
     if (/\d/.test(pw)) p++;
     if (/[^A-Za-z0-9]/.test(pw)) p++;
-    if (pw.length < PASSWORT.min) return 1;
+    if (pwZeichen(pw) < PASSWORT.min) return 1;
     return Math.max(1, Math.min(4, p));
   }
   function pwStaerkeHtml(){
@@ -24027,7 +24035,7 @@
     /* Supabase sagt, WAS fehlt: Laenge (mit der Zahl im Text) oder Zeichenklassen (nur, wenn im
        Dashboard noch "required characters" eingestellt ist) -- zwei Gruende, zwei Saetze. */
     if (/cannot be longer than|too long/.test(w))
-      return { feld: "password", text: t_("Use at most {n} characters.").replace("{n}", String(PASSWORT.max)) };
+      return { feld: "password", text: "That password is too long. Use a shorter one." };
     if (/should contain at least one character|required characters/.test(w))
       return { feld: "password", text: "Use upper- and lowercase letters, numbers and a symbol." };
     if (/weak_password|at least \d+ characters|password is too short/.test(w)){
@@ -25757,6 +25765,7 @@
     parseLinkedinUrl: parseLinkedinUrl,
     esc: esc,
     parseBubbleJson: parseBubbleJson, PASSWORT: PASSWORT, rechtLinksHtml: rechtLinksHtml,
+    pwZeichen: pwZeichen, pwZuLang: pwZuLang,
     readBubble: readBubble, bubbleObjekt: bubbleObjekt, bubbleFehler: bubbleFehler,
     wennBody: wennBody,
     citeName: citeName,

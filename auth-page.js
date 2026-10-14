@@ -127,6 +127,9 @@
   /* Die Passwortregel aus core (UC.PASSWORT); vor core die Werte von dort. */
   function pwMin(){ var U = window.UpstreemCore; return U && U.PASSWORT ? U.PASSWORT.min : 15; }
   function pwMax(){ var U = window.UpstreemCore; return U && U.PASSWORT ? U.PASSWORT.max : 72; }
+  /* Zeichen je Unicode-Codepunkt, zu lang in Bytes -- wie core (pwZeichen/pwZuLang, 14.10.). */
+  function zeichen(pw){ var U = window.UpstreemCore; return U && U.pwZeichen ? U.pwZeichen(pw) : String(pw).length; }
+  function zuLang(pw){ var U = window.UpstreemCore; return U && U.pwZuLang ? U.pwZuLang(pw) : String(pw).length > pwMax(); }
   function staerke(pw){
     pw = String(pw || "");
     if (!pw) return 0;
@@ -136,7 +139,7 @@
     if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) p++;
     if (/\d/.test(pw)) p++;
     if (/[^A-Za-z0-9]/.test(pw)) p++;
-    if (pw.length < pwMin()) return 1;           /* zu kurz bleibt schwach, egal wie bunt */
+    if (zeichen(pw) < pwMin()) return 1;         /* zu kurz bleibt schwach, egal wie bunt */
     /* Ohne Abzug. Mit p-1 landete "Abcdefgh1" -- acht Zeichen, Gross, Klein, Ziffer -- auf
        "Fair", und das ist zu streng: ein Balken, der solide Passwoerter tadelt, erzieht nur
        dazu, ihn zu ignorieren. Jetzt: 8 Zeichen allein "Weak", plus Gross/Klein oder Ziffer
@@ -671,8 +674,8 @@
          kann ein kuerzeres Passwort haben, und dann verweigert die Seite die Anmeldung fuer etwas,
          das der Nutzer gar nicht mehr aendern kann. */
       /* Die Zahlen aus core (UC.PASSWORT, 14.10.: Laenge nach NIST SP 800-63B-4, keine Zeichenklassen). */
-      else if (state.mode === "signup" && pw.length < pwMin()) e.pw = UC.t("At least {n} characters.").replace("{n}", String(pwMin()));
-      else if (state.mode === "signup" && pw.length > pwMax()) e.pw = UC.t("Use at most {n} characters.").replace("{n}", String(pwMax()));
+      else if (state.mode === "signup" && zeichen(pw) < pwMin()) e.pw = UC.t("At least {n} characters.").replace("{n}", String(pwMin()));
+      else if (state.mode === "signup" && zuLang(pw)) e.pw = UC.t("That password is too long. Use a shorter one.");
 
       if (codeAn() && !codeWert()) e.code = "Please enter your registration code.";
 
