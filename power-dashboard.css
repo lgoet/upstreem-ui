@@ -113,6 +113,10 @@
   display: flex; flex-direction: column; justify-content: space-between;
 }
 .upw-root.has-mira .upw-mira-sk { display: none; }
+/* Und unabhaengig von der Klasse, sobald Miras Wurzel im Platz steht (14.10. spaet): die Klasse
+   kommt aus dem Skript, die Wurzel kann einen Takt frueher da sein -- dann stuenden Skelett und
+   Feld uebereinander. */
+.upw-mira:has(> #ask-mira) > .upw-mira-sk { display: none; }
 .upw-mira-sk-row { display: flex; align-items: center; justify-content: space-between; }
 
 /* ---------- Chips ----------

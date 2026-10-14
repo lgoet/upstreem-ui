@@ -867,6 +867,8 @@
     /* Der Rest der Topic-Verteilung ueber der Prompt-Tabelle (14.10.). "Sonstige" wie in Diagrammen
        ueblich; "Other" ist schon "Andere" (Geschaeftsmodell). */
     "Others": "Sonstige", "{n} more topics": "{n} weitere Topics", "{n} more": "{n} weitere",
+    /* Prompt Research, Feld Intent/Persona (14.10. spaet). */
+    "Any intent": "Alle Intents", "{n} intents": "{n} Intents",
     "{n} without topic": "{n} ohne Topic",
     "{n} used": "{n} genutzt",
     "{n} left": "{n} frei",
@@ -14958,6 +14960,20 @@
        muss aber gemountet werden, was vorher geparkt war -- also ein Weg, der ohne Vergleich
        weckt. Er liegt am Fenster, weil core mehrfach ausgewertet werden kann und die Liste dort
        liegt. */
+    /* NUR EINE Komponente wecken (14.10. spaet): ein Baustein, der eine andere Komponente JETZT
+       braucht (das Power Dashboard Miras Feld beim ersten Besuch), wartete sonst bis zu PRUEF_MS
+       auf deren Einrichtung -- gemessen 75ms, in denen nur das Skelett stand. __upWecken weckte
+       alle neunzehn; das hier nur die eine. */
+    if (!window.__upWeckenFuer){
+      window.__upWeckenFuer = function(sel){
+        var g = window.__upRootWatch;
+        if (!g || !g.watchers || !sel) return false;
+        for (var i = 0; i < g.watchers.length; i++){
+          if (g.watchers[i].selector === sel){ try { g.watchers[i].onFound(); } catch(e){} return true; }
+        }
+        return false;
+      };
+    }
     if (!window.__upWecken){
       window.__upWecken = function(){
         var g = window.__upRootWatch;

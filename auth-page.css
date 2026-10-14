@@ -37,7 +37,10 @@
      nicht mehr. Der einzige verbliebene Abstand sind die 16px im Kartenpolster, und die halten
      den Werbeblock rechts vom Bildschirmrand weg. */
   padding: 0;
-  background: var(--vc-bg);
+  /* --up-surface statt --vc-bg (14.10. spaet, gemeldet: "im Darkmode leicht zu hell"): der Grund
+     der App, von html/body und der Einzelseiten (core .up-es, Passwort vergessen, Reset, Check
+     email) und des Onboardings. Hell sind beide Weiss, dunkel war --vc-bg #1c1c1f gegen #101114. */
+  background: var(--up-surface);
   color: var(--vc-text);
   font-family: inherit;
   -webkit-font-smoothing: antialiased;
@@ -52,7 +55,7 @@
   min-height: 100vh;
   display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
   padding: 16px;
-  background: var(--vc-bg);
+  background: var(--up-surface);
   overflow: hidden;
 }
 /* Kein Radius, kein Schatten, kein Seitenverhaeltnis mehr: beides beschrieb eine Karte, die auf

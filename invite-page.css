@@ -30,10 +30,10 @@
      inherit wie in auth-page/onboarding -- bei gleicher Spezifitaet gewinnt dort die spaeter
      geladene Datei, und die Seite erbt dann die Schrift der Bubble-Seite statt Geist. */
   /* DER GRUND DER ANMELDESEITE, schlicht und ohne Flimmerraster (25.09. angefordert: "einfach
-     normale Hintergrundfarbe wie auf Signup"). .uau-root traegt var(--vc-bg) -- im Hellen Weiss,
-     im Dunkeln #1c1c1f --, und genau das steht hier; vorher war es --up-surface wie im Onboarding,
-     im Dunkeln 20 Stufen dunkler als die Anmeldung. */
-  background: var(--vc-bg);
+     normale Hintergrundfarbe wie auf Signup"). Seit dem 14.10. spaet tragen BEIDE --up-surface,
+     den Grund der App (gemeldet: Signup im Dunkeln "leicht zu hell" -- #1c1c1f statt #101114);
+     damit bleibt die Einladung wie die Anmeldung. */
+  background: var(--up-surface);
   padding: clamp(16px, 2.4vh, 24px) var(--uiv-px) clamp(16px, 2.4vh, 28px);
 }
 .uiv-root *::before, .uiv-root *::after { box-sizing: border-box; }

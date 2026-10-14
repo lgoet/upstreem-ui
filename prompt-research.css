@@ -182,28 +182,6 @@
 /* Die Klasse bleibt als Griff (Klick-Selektor im JS, und .contract_diff.py liest Klassennamen aus
    der CSS): nur, dass der Chip nicht schrumpft. */
 .upr-chip { flex: 0 0 auto; }
-/* DIE INTENTS UNTER DEN TOPICS (14.10.): dieselben Chips aus core, in einer eigenen Reihe 8px
-   unter den Topics -- eine zweite Art Auswahl, nicht noch mehr Themen. Statt des Farbstrichs
-   (der gehoert zur Topic) das Zeichen des Intents, 14px in der leisen Farbe wie am Label. */
-/* 14.10. nachgezogen: OHNE Rahmen (die Intents sind eine zweite Art Auswahl und sollen nicht
-   wie weitere Topics aussehen), 12 statt 8 Abstand, und ueber der Reihe ein kurzer Trenner:
-   24px breit, 1px in Linienfarbe, mittig -- er trennt die zwei Arten, ohne eine Flaeche
-   aufzumachen. 12px Luft ueber und unter ihm. */
-.upr-intents { position: relative; margin-top: 12px; padding-top: 13px; width: min(100%, 620px);
-  display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
-/* 72 statt 24 breit (14.10. abends: "den Separator 3 mal so gross"). */
-.upr-intents::before { content: ""; position: absolute; top: 0; left: 50%; width: 72px; height: 1px;
-  margin-left: -36px; background: var(--vc-border); }
-.upr-intents:empty { display: none; }
-.upr-intentchip { flex: 0 0 auto; }
-/* Kein Rahmen in Ruhe, beim Ueberfahren und gewaehlt -- den Zustand traegt der Grund. Zwei
-   Klassen, damit es gegen die Zustaende von .up-topicchip aus core (bis 0,3,0) ueber Spezifitaet
-   gewinnt; :not(.is-static) gleicht deren Gewicht aus. */
-.up-topicchip.upr-intentchip, .up-topicchip.upr-intentchip:not(.is-static):hover,
-.up-topicchip.upr-intentchip.is-on, .up-topicchip.upr-intentchip.is-on:not(.is-static):hover { border-color: transparent; }
-.up-topicchip.upr-intentchip::before { display: none; }   /* ueber Spezifitaet, nicht ueber die Ladereihenfolge */
-.upr-intentchip > svg { width: 14px; height: 14px; flex: 0 0 14px; color: var(--vc-fourth); }
-.upr-intentchip.is-on > svg { color: var(--vc-text); }
 .upr-showmore {
   height: 28px; padding: 0 10px; border: 1px solid var(--vc-border); border-radius: 8px;
   background: var(--vc-bg); color: var(--vc-muted);
@@ -524,6 +502,12 @@
 .upr-dd-check { width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; color: var(--vc-text); opacity: 0; }
 .upr-dd-check svg { width: 12px; height: 12px; display: block; }
 .upr-dd-option.is-selected .upr-dd-check { opacity: 1; }
+/* INTENT UND PERSONA IN EINEM FELD (14.10. spaet, prompt-research.js ipAufbauen): oben der
+   Umschalter aus core (.up-filter-dim), darunter je Reiter seine Liste. Rechts in der Intent-Zeile
+   das Zeichen des Intents, 14px in der leisen Farbe wie am Label der Tabelle. */
+.upr-ip-ic { display: inline-flex; color: var(--vc-fourth); }
+.upr-ip-ic svg { width: 14px; height: 14px; display: block; }
+.upr-dd-list[hidden] { display: none; }
 .upr-dd-meta { color: var(--vc-third); font-size: 11px; margin-left: 3px; }
 .upr-dd-empty, .upr-dd-loading { padding: 14px 8px; color: var(--vc-muted); font-size: 12.5px; text-align: center; }
 .upr-dd-empty { display: none; }

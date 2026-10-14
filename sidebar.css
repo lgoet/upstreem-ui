@@ -156,8 +156,13 @@
   position: fixed; left: 0; top: 0; bottom: 0; z-index: 9900;
   width: var(--usn-w); max-width: none; min-width: 0; height: auto;
   display: flex; flex-direction: column; align-items: stretch;
-  /* Oben knapp, damit die Leiste wirklich oben anfaengt; seitlich und unten bleibt es bei 16. */
-  margin: 0; padding: 8px 16px 16px;
+  /* Oben knapp, damit die Leiste wirklich oben anfaengt; unten 16.
+     SEITLICH 8 (14.10. spaet, gemeldet: "das Padding links/rechts vor allem bei den Menuepunkten
+     etwas zu gross, sollten 16px sein"): gemessen begannen die Zeichen der Menuepunkte 24 bis 27px
+     vom Rand (16 Leiste + 8 Zeile), Logo und Teamlogo aber bei 14 (mit -8px herausgezogen). Jetzt
+     liegt jede Zeile 8px vom Rand und polstert selbst 8 -- jeder Inhalt beginnt bei 16, die
+     Hover-Flaechen haben je Seite 8 Luft. */
+  margin: 0; padding: 8px 8px 16px;
   background: var(--usn-bg); color: var(--vc-text);
   /* Keine Rahmen, keine Schatten -- ausdruecklich so gewollt. Die Flaeche trennt. */
   border: 0; box-shadow: none;
@@ -234,13 +239,13 @@
 }
 
 /* ---------- Team-Kopf ---------- */
-/* Negative Seitenraender: die Leiste polstert mit 16, die Kopfzeile soll aber 8 zu den
-   Kanten haben -- Teamknopf links, Einklapp-Knopf rechts. 16 - 8 = 8.
-   gap: 10 und nicht 16, weil der Team-Knopf rechts noch seine eigenen 6px Polsterung
-   mitbringt: 10 + 6 = die 16, die man zwischen Doppelpfeil und Knopf sieht. Gemessen. */
+/* Seit dem 14.10. spaet polstert die Leiste seitlich nur 8: die Kopfzeile liegt ohne negative
+   Raender 8px von den Kanten -- Teamknopf links, Einklapp-Knopf rechts.
+   gap: 8, weil der Team-Knopf rechts noch seine eigenen 8px Polsterung mitbringt: 8 + 8 = die
+   16, die man zwischen Doppelpfeil und Knopf sieht. */
 /* ---- Markenzeile, die oberste Zeile der Leiste (07.09.) ----
-   Logo links, Einklappknopf rechts. Dieselben -8px Aussenabstand und dieselben 32px Hoehe wie
-   .usn-top darunter: so sitzen Logo und Teamlogo auf DERSELBEN linken Kante und der Knopf auf
+   Logo links, Einklappknopf rechts. Derselbe Aussenabstand (seit 14.10. spaet 0, vorher -8px) und
+   dieselben 32px Hoehe wie .usn-top darunter: so sitzen Logo und Teamlogo auf DERSELBEN linken Kante und der Knopf auf
    derselben rechten. Er wandert mit der Einstellung in die jeweils oberste Zeile -- das macht
    renderBrand in sidebar.js, die Begruendung steht dort.
    DREI ABSTAENDE, EIN WERT. Am 07.09. zweimal nachgemessen -- zuerst waren die zwei um die Linie
@@ -267,7 +272,7 @@
    gemeldet. */
 .usn-brand { display: flex; align-items: flex-start; flex: 0 0 auto;
   min-width: 0; height: 32px; box-sizing: content-box;
-  padding-bottom: 8px; margin: 0 -8px 16px;
+  padding-bottom: 8px; margin: 0 0 16px;
   position: relative;
   /* Eingeklappt stehen Logo und Knopf UEBEREINANDER (72 statt 32 hoch). Die Zeile ist darum
      keine Spalte mehr, die im ersten Bild umbricht (vorher: +48px, alles darunter sprang), sondern
@@ -282,9 +287,9 @@
    SIE GEHT JETZT DURCH, von Kante zu Kante der Leiste (08.09. angefordert: "bitte durchziehen,
    kein Polster links rechts"). Am 07.09. war sie ausdruecklich auf die Breite der
    Menuepunkt-Flaechen gesetzt (16px Einzug), davor lag sie bei 8px. Die Zeile selbst liegt 8px
-   von der Kante -- sie zieht mit -8px aus dem 16px-Polster der Leiste heraus, damit Logo und
-   Teamlogo auf derselben Kante sitzen. Also muss die Linie noch einmal 8px darueber hinaus,
-   je Seite: left und right auf -8px. Gemessen in _h_usn_linie.html.
+   von der Kante (seit 14.10. spaet ueber das 8px-Polster der Leiste, vorher mit -8px aus 16
+   herausgezogen). Also muss die Linie noch einmal 8px darueber hinaus, je Seite: left und
+   right auf -8px. Gemessen in _h_usn_linie.html.
    Warum nicht einfach Polster an die Zeile: das haette den Inhalt mitverschoben, also das Logo
    8px nach rechts. Verlangt war eine kuerzere LINIE, nicht ein verschobenes Logo.
    Die Zeile behaelt trotzdem ihre eine Quelle fuer die drei Abstaende: das Element liegt auf
@@ -335,8 +340,8 @@
 .usn-brand-mark { display: inline-grid; align-items: center; justify-items: start;
   flex: 0 1 auto; min-width: 0; overflow: hidden;
   max-width: calc(100% - 32px);
-  /* 0 6px wie .usn-team: so beginnt der Schriftzug genau ueber dem Teamlogo. */
-  padding: 0 6px;
+  /* 0 8px wie .usn-team: so beginnt der Schriftzug genau ueber dem Teamlogo, bei 16 vom Rand. */
+  padding: 0 8px;
   transition: padding-left var(--usn-fahrt) var(--usn-fahrt-kurve), max-width var(--usn-fahrt) var(--usn-fahrt-kurve);
   /* DIE HOEHE ALS VARIABLE, nicht als Zahl an zwei Stellen. Sie stand hier und noch einmal im
      calc des Aussenabstands unten; seit es eine zweite Fassung des Logos gibt (das Quadrat im
@@ -452,7 +457,7 @@
 }
 .usn-bar.is-mini .usn-brand > .usn-toggle { top: 40px; right: calc((var(--usn-mini) - 2 * 12px - 1px - 32px) / 2); }
 
-.usn-top { display: flex; align-items: center; gap: 10px; margin: 0 -8px; flex: 0 0 auto; min-width: 0;
+.usn-top { display: flex; align-items: center; gap: 8px; margin: 0; flex: 0 0 auto; min-width: 0;
   transition: margin var(--usn-fahrt) var(--usn-fahrt-kurve); }
 /* .check_reinvention meldet .up-seg-btn (Segmented-Control-Knopf) fuer .usn-team und .usn-item.
    Das ist ein Fehlalarm ueber die gemeinsamen Eigenschaften "Knopf ohne Rahmen mit Radius":
@@ -474,7 +479,7 @@
   display: flex; align-items: center; gap: 0;
   /* 32 und nicht 40: derselbe Kasten wie der Einklapp-Knopf daneben, damit beide oben auf
      derselben Kante von 8px sitzen. Das 24er Logo hat darin ringsum 4px Luft. */
-  height: 32px; padding: 0 6px;
+  height: 32px; padding: 0 8px;
   border: 0; border-radius: 12px; background: transparent;
   font: inherit; color: var(--vc-text); cursor: pointer; text-align: left;
   /* max-width 100% statt keiner Grenze: dieselbe Wirkung (flex mit min-width 0 waechst ohnehin
@@ -622,6 +627,8 @@
 .usn-bar .mqa-trigger {
   height: 36px; border-radius: 12px; background: transparent;
   border: 1px solid var(--vc-border); color: var(--vc-muted);
+  /* 7 + 1px Rahmen = 8: das Zeichen beginnt bei 16 vom Rand wie in jeder Zeile (14.10. spaet). */
+  padding-left: 7px;
 }
 /* WEISS im hellen Thema (22.09. angefordert). Transparent nahm den Ton der Leiste an und las
    sich als ausgegraut statt als Eingabefeld -- die Leiste ist im Hellen #f9f8f9, der Ausloeser

@@ -467,7 +467,9 @@
   ];
   /* branded (14.10.): ob die Recherche auch Prompts mit Markennamen vorschlagen darf -- dieselben
      Werte wie der Branded-Filter der App ("non_branded" | "all"), Vorgabe wie dort ohne. */
-  var state = { market: null, market_alpha2: null, market_alpha3: null, market_name: null, business_model: 'b2c', persona: '', branded: 'non_branded' };
+  /* intents (14.10. spaet): die Wahl im Feld "Intent" der Einstellungen (ipAufbauen), mehrere moeglich.
+     Vorher Chips unter den Topics, die einen Baustein ins Eingabefeld setzten. */
+  var state = { market: null, market_alpha2: null, market_alpha3: null, market_name: null, business_model: 'b2c', persona: '', branded: 'non_branded', intents: [] };
   var currentSuggestedPrompts = [];
   var previousResearches = [];
   var suggestionTagsSource = null;
@@ -517,7 +519,7 @@
     STORE[instanceId] = {
       tags: suggestionTagsSource, tagsOffen: suggestionTagsExpanded,
       maerkte: gemerkteMaerkte, markt: state.market, marktWunsch: _pendingMarket,
-      modell: state.business_model, persona: state.persona, branded: state.branded,
+      modell: state.business_model, persona: state.persona, branded: state.branded, intents: state.intents.slice(),
       verlauf: gemerkterVerlauf,
       zustand: root.getAttribute('data-research-state') || 'idle', laufSeit: laufSeit,
       ergebnisse: gemerkteErgebnisse, ergebnisLaedt: ergebnisLaedt,
@@ -569,7 +571,8 @@
       market: meta.market || meta.market_alpha2 || input.market || currentResearchMeta.market,
       market_name: meta.market_name || input.market_name || currentResearchMeta.market_name,
       business_model: meta.business_model || input.business_model || currentResearchMeta.business_model,
-      persona: meta.persona || input.persona || currentResearchMeta.persona
+      persona: meta.persona || input.persona || currentResearchMeta.persona,
+      intents: Array.isArray(meta.intents) ? meta.intents.map(String) : (Array.isArray(input.intents) ? input.intents.map(String) : (currentResearchMeta.intents || []))
     };
   }
 
@@ -767,7 +770,18 @@
     return '<span class="upr-context-pill" data-tip="' + esc(marketLabel) + '"><span class="upr-market-flag">' + flagHtml(flagUrl, marketLabel) + '</span><span>' + esc(meta.market || marketLabel) + '</span></span>' +
       (withKeywords ? '<span class="upr-context-pill is-keywords" data-tip="' + esc(tt('Keywords') + ': ' + keywordsLabel) + '">' + ICON.tag + '<span>' + esc(keywordsLabel) + '</span></span>' : '') +
       '<span class="upr-context-pill" data-tip="' + esc(tt('Business model') + ': ' + businessLabel) + '">' + ICON.briefcase + '<span>' + esc(businessLabel) + '</span></span>' +
-      (personaLabel !== 'No persona' ? '<span class="upr-context-pill" data-tip="' + esc(tt('Persona') + ': ' + tt(personaLabelVon(personaLabel))) + '">' + ICON.user + '<span>' + esc(tt(personaLabelVon(personaLabel))) + '</span></span>' : '');
+      (personaLabel !== 'No persona' ? '<span class="upr-context-pill" data-tip="' + esc(tt('Persona') + ': ' + tt(personaLabelVon(personaLabel))) + '">' + ICON.user + '<span>' + esc(tt(personaLabelVon(personaLabel))) + '</span></span>' : '') +
+      intentPille(meta.intents);
+  }
+  /* Die gewaehlten Intents im Ergebnis (14.10. spaet): eine Pille wie Markt und Persona, mit dem
+     Zeichen des ersten Intents. */
+  function intentPille(liste){
+    liste = Array.isArray(liste) ? liste.filter(Boolean) : [];
+    if (!liste.length) return '';
+    var namen = liste.map(ipName).join(', ');
+    var a = ipIntente().filter(function(x){ return x.key === liste[0]; })[0];
+    return '<span class="upr-context-pill" data-tip="' + esc(tt('Intent') + ': ' + namen) + '">' +
+      (a && UC.icon ? UC.icon(a.icon, 2) : '') + '<span>' + esc(liste.length === 1 ? namen : tt('{n} intents').replace('{n}', String(liste.length))) + '</span></span>';
   }
   function renderResultsContext(){
     if (resultsContext) resultsContext.innerHTML = contextPills(currentResearchMeta, true);
@@ -1090,7 +1104,9 @@
     if (!dd || !option) return;
     var name = dd.getAttribute('data-name');
     var valueEl = dd.querySelector('[data-dd-value]');
-    Array.prototype.forEach.call(dd.querySelectorAll('.upr-dd-option'), function(o){ o.classList.remove('is-selected'); });
+    /* Ohne die Intent-Zeilen (ipAufbauen): die stehen im selben Menue wie die Personas, sind aber
+       eine eigene Mehrfachwahl -- eine Persona-Wahl darf ihre Haken nicht loeschen. */
+    Array.prototype.forEach.call(dd.querySelectorAll('.upr-dd-option:not(.upr-ip-opt)'), function(o){ o.classList.remove('is-selected'); });
     option.classList.add('is-selected');
     var label  = option.getAttribute('data-label') || option.textContent.trim();
     var value  = option.getAttribute('data-value') || '';
@@ -1099,7 +1115,8 @@
     var flag   = option.getAttribute('data-flag') || '';
     if (name) state[name] = value;
     if (name === 'market'){ state.market = value; state.market_alpha2 = alpha2; state.market_alpha3 = alpha3; state.market_name = label; }
-    if (valueEl) valueEl.innerHTML = (flag ? '<span class="upr-flag">' + flagHtml(flag, label) + '</span>' : '') + '<span>' + esc(label) + '</span>';
+    if (name === 'persona' && typeof ipBeschriften === 'function') ipBeschriften();
+    else if (valueEl) valueEl.innerHTML = (flag ? '<span class="upr-flag">' + flagHtml(flag, label) + '</span>' : '') + '<span>' + esc(label) + '</span>';
     if (dd.__pop) dd.__pop.close();
     syncDropdownOpenState();
     merke();
@@ -1166,7 +1183,7 @@
     });
     dd.addEventListener('click', function(e){
       var option = e.target.closest('.upr-dd-option');
-      if (!option || !dd.contains(option)) return;
+      if (!option || !dd.contains(option) || option.classList.contains('upr-ip-opt')) return;
       e.stopPropagation();
       setDropdownValue(dd, option);
     });
@@ -1262,6 +1279,99 @@
     settingsToggle.classList.toggle('is-active', isOpen);      // §6a: open trigger keeps its state
   });
   root.querySelectorAll('.upr-dd').forEach(wireDropdown);
+  /* INTENT UND PERSONA IN EINEM FELD (14.10. spaet, gewuenscht: "anstelle der Personas im Settings-
+     Menue den Intent, ein kombiniertes Dropdown mit einem Umschalter oben: links (Vorgabe) Intent,
+     rechts Persona -- die Personas etwas versteckt"). Das Feld ist das bisherige Persona-Dropdown:
+     oben der Umschalter aus core (.up-filter-dim, wie in den Filtermenues), darunter je Reiter seine
+     Liste. Intents sind eine Mehrfachwahl (die Recherche teilt die Prompts dann auf, start-job
+     intents), die Persona bleibt eine Wahl aus der Liste. Der Knopf nennt beides: "Recommendation",
+     "2 intents, Student". Keine Erklaerkarten an den Intents (so gewuenscht). */
+  var ipDd = root.querySelector('.upr-dd[data-name="persona"]');
+  function ipIntente(){ return (UC.INTENTE || []).filter(function(a){ return a.key !== 'other'; }); }
+  function ipName(key){
+    var a = ipIntente().filter(function(x){ return x.key === key; })[0];
+    return a ? (UC.intentName ? UC.intentName(a) : a.label) : String(key || '');
+  }
+  function ipBeschriften(){
+    var valueEl = ipDd ? ipDd.querySelector('[data-dd-value]') : null;
+    if (!valueEl) return;
+    var teile = [];
+    if (state.intents.length === 1) teile.push(ipName(state.intents[0]));
+    else if (state.intents.length > 1) teile.push(tt('{n} intents').replace('{n}', String(state.intents.length)));
+    if (state.persona) teile.push(tt(personaLabelVon(state.persona)));
+    valueEl.innerHTML = '<span>' + esc(teile.length ? teile.join(', ') : tt('Any intent')) + '</span>';
+  }
+  function ipZeichnen(){
+    if (!ipDd) return;
+    Array.prototype.forEach.call(ipDd.querySelectorAll('.upr-ip-opt'), function(o){
+      var k = o.getAttribute('data-ip-intent') || '';
+      var an = k ? state.intents.indexOf(k) >= 0 : !state.intents.length;
+      o.classList.toggle('is-selected', an);
+      o.setAttribute('aria-selected', an ? 'true' : 'false');
+    });
+    ipBeschriften();
+  }
+  function ipReiter(welcher){
+    if (!ipDd) return;
+    Array.prototype.forEach.call(ipDd.querySelectorAll('[data-ip-tab]'), function(b){
+      var an = b.getAttribute('data-ip-tab') === welcher;
+      b.classList.toggle('is-active', an);
+      b.setAttribute('aria-selected', an ? 'true' : 'false');
+    });
+    Array.prototype.forEach.call(ipDd.querySelectorAll('[data-ip-liste]'), function(l){ l.hidden = l.getAttribute('data-ip-liste') !== welcher; });
+  }
+  (function ipAufbauen(){
+    if (!ipDd || !ipIntente().length) return;
+    var menu = ipDd.querySelector('.upr-dd-menu'), personen = menu ? menu.querySelector('[data-dd-list]') : null;
+    if (!menu || !personen || menu.querySelector('[data-ip-tab]')) return;
+    var etikett = ipDd.parentNode ? ipDd.parentNode.querySelector('.upr-label') : null;
+    if (etikett) etikett.textContent = tt('Intent') + ', ' + tt('Persona');
+    personen.setAttribute('data-ip-liste', 'persona');
+    var schalter = document.createElement('div');
+    schalter.className = 'up-filter-dim upr-ip-dim';
+    schalter.setAttribute('role', 'tablist');
+    schalter.innerHTML = ['intent', 'persona'].map(function(k){
+      return '<button type="button" class="up-filter-dim-btn" role="tab" data-ip-tab="' + k + '">' + esc(tt(k === 'intent' ? 'Intent' : 'Persona')) + '</button>';
+    }).join('');
+    var intente = document.createElement('div');
+    intente.className = 'upr-dd-list';
+    intente.setAttribute('data-ip-liste', 'intent');
+    intente.setAttribute('role', 'listbox');
+    intente.setAttribute('aria-multiselectable', 'true');
+    intente.innerHTML = [{ key: '', name: tt('Any intent'), icon: '' }].concat(ipIntente().map(function(a){
+      return { key: a.key, name: ipName(a.key), icon: a.icon };
+    })).map(function(x){
+      return '<button class="upr-dd-option upr-ip-opt" type="button" role="option" data-ip-intent="' + esc(x.key) + '">' +
+        '<span class="upr-dd-check">' + ICON.check + '</span>' +
+        '<span class="upr-dd-optlabel">' + esc(x.name) + '</span>' +
+        '<span class="upr-ip-ic">' + (x.icon && UC.icon ? UC.icon(x.icon, 2) : '') + '</span></button>';
+    }).join('');
+    menu.insertBefore(schalter, menu.firstChild);
+    menu.insertBefore(intente, personen);
+    schalter.addEventListener('click', function(e){
+      var b = e.target.closest ? e.target.closest('[data-ip-tab]') : null;
+      if (!b) return;
+      e.stopPropagation();
+      ipReiter(b.getAttribute('data-ip-tab'));
+    });
+    intente.addEventListener('click', function(e){
+      var o = e.target.closest ? e.target.closest('.upr-ip-opt') : null;
+      if (!o) return;
+      e.stopPropagation();
+      var k = o.getAttribute('data-ip-intent') || '';
+      if (!k) state.intents = [];
+      else if (state.intents.indexOf(k) >= 0) state.intents = state.intents.filter(function(x){ return x !== k; });
+      else state.intents = state.intents.concat([k]);
+      ipZeichnen();
+      merke();
+      syncDropdownOpenState();
+    });
+    /* Jedes Oeffnen beginnt beim Intent (links, die Vorgabe). */
+    var ausloeser = ipDd.querySelector('.upr-dd-trigger');
+    if (ausloeser) ausloeser.addEventListener('click', function(){ ipReiter('intent'); });
+    ipReiter('intent');
+    ipZeichnen();
+  })();
   /* Branded als Schalter-Pille in der Fusszeile (14.10., Entwurf A): ein Klick schaltet um. */
   var brandedPill = root.querySelector('#upr-branded');
   function brandedZeigen(){
@@ -1438,14 +1548,6 @@
       th.appendChild(s);
     }
   })();
-  /* Erklaerkarte je Intent an den Chips ueber dem Feld (14.10.): dieselbe Karte wie ueberall, aus
-     core (intentEinzelErklaerHtml) -- Platte mit der Reise, Titel = Name im Chip, Satz aus core. */
-  if (UC.makeExplain && UC.intentEinzelErklaerHtml){
-    UC.makeExplain({
-      root: root, triggerSel: '.upr-intentchip[data-explain]', getIsDark: isDark,
-      html: function(key){ return UC.intentEinzelErklaerHtml(key); }
-    });
-  }
   if (UC.makeExplain){
     UC.makeExplain({
       root: root, triggerSel: '.up-th-info', getIsDark: isDark,
@@ -1533,10 +1635,7 @@
     function placeCaretAfter(node){
       try { var sel = window.getSelection(), r = document.createRange(); r.setStartAfter(node); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); } catch(e){}
     }
-    function getIntents(){
-      return Array.prototype.slice.call(editor.querySelectorAll('.upr-inline-tag[data-art="intent"]')).map(function(el){
-        return String(el.getAttribute('data-tag') || '').trim().toLowerCase(); }).filter(Boolean);
-    }
+    function getIntents(){ return state.intents.slice(); }
     /* DER FELD-CHIP AUS CORE (14.10.): derselbe Chip wie die Bezuege in Ask Mira (.up-feldchip),
        mit Kachel, Name und dauerhaft sichtbarem Kreuz. Die Kachel zeigt bei einer Topic ihr Emoji
        oder ihren Farbstrich -- vorher stand dort fuer jede Topic dasselbe graue Etikett-Zeichen --,
@@ -1678,36 +1777,9 @@
       insertTag(chip.getAttribute('data-chip') || chip.textContent.trim(),
         { art: 'topic', color: chip.getAttribute('data-color') || '', emoji: chip.getAttribute('data-emoji') || '' });
     }, true);
-    /* DIE INTENTS UNTER DEN TOPICS (14.10.): ein Klick setzt den Intent als Chip ins Feld, ein
-       zweiter nimmt ihn wieder heraus. Mehrere gehen -- die Recherche teilt die Zahl der Prompts
-       dann gleichmaessig auf (start-job, intents). "Other" steht nicht zur Wahl: Login, Support
-       und Aehnliches sind keine Fragen, nach denen man recherchiert. */
-    var intentReihe = null;
-    function intentReiheZeichnen(){
-      if (!UC.INTENTE || !suggestionsEl || !suggestionsEl.parentNode) return;
-      if (!intentReihe){
-        intentReihe = document.createElement('div');
-        intentReihe.className = 'upr-intents';
-        intentReihe.setAttribute('aria-label', UC.t ? UC.t('Intent') : 'Intent');
-        suggestionsEl.parentNode.insertBefore(intentReihe, suggestionsEl.nextSibling);
-        intentReihe.addEventListener('click', function(e){
-          var b = e.target.closest && e.target.closest('[data-intent-pick]');
-          if (!b) return;
-          e.preventDefault();
-          var key = b.getAttribute('data-intent-pick');
-          var da = editor.querySelector('.upr-inline-tag[data-art="intent"][data-tag="' + key + '"]');
-          if (da) removeTag(da); else insertTag(key, { art: 'intent' });
-        });
-      }
-      var gewaehlt = getIntents();
-      intentReihe.innerHTML = UC.INTENTE.filter(function(a){ return a.key !== 'other'; }).map(function(a){
-        var an = gewaehlt.indexOf(a.key) >= 0;
-        return '<button class="up-topicchip upr-intentchip' + (an ? ' is-on' : '') + '" type="button" data-intent-pick="' + esc(a.key) + '" data-explain="' + esc(a.key) + '" aria-pressed="' + (an ? 'true' : 'false') + '">' +
-          (UC.icon ? UC.icon(a.icon, 2) : '') + '<span class="up-topicchip-lbl">' + esc(UC.intentName ? UC.intentName(a) : a.label) + '</span></button>';
-      }).join('');
-    }
-    intentReiheZeichnen();
-    editor.addEventListener('upr-tags-geaendert', intentReiheZeichnen);
+    /* Die Intents stehen seit dem 14.10. spaet im Feld "Intent" der Einstellungen (ipAufbauen),
+       nicht mehr als Chips unter den Topics -- gemeldet: "keine Intents unter den Topics als Chips,
+       kein Separator, keine Erklaer-Tooltips auf den Intents". */
     if (clearInputButton) clearInputButton.addEventListener('click', function(){ editor.innerHTML = ''; updateState(); editor.focus(); });
     if (startButton) startButton.addEventListener('click', function(){ editor.innerHTML = ''; updateState(); });
     new MutationObserver(function(){
@@ -1794,7 +1866,7 @@
       ? (v.alpha2 || v.alpha3 || v.value || v.market || v.business_model || v.name || '')
       : (v == null ? '' : v)).trim().toLowerCase();
     if (!want) return false;
-    var opts = Array.prototype.slice.call(dd.querySelectorAll('.upr-dd-option'));
+    var opts = Array.prototype.slice.call(dd.querySelectorAll('.upr-dd-option:not(.upr-ip-opt)'));
     for (var i = 0; i < opts.length; i++){
       var o = opts[i];
       var cand = [o.getAttribute('data-alpha2'), o.getAttribute('data-alpha3'),
@@ -1830,6 +1902,8 @@
     state.persona = s;
     var el = root.querySelector('.upr-persona-input, #upr-persona, [data-name="persona"] input');
     if (el && 'value' in el) el.value = s;
+    /* Der Knopf nennt Intent und Persona zusammen (ipBeschriften). */
+    if (!selectDdValue(ipDd, s)) ipBeschriften();
     merke();
   };
 
@@ -1866,13 +1940,16 @@
     if (v.modell != null) state.business_model = v.modell;
     if (v.branded === 'all' || v.branded === 'non_branded'){ state.branded = v.branded; brandedZeigen(); }
     if (v.persona != null) state.persona = v.persona;
+    if (Array.isArray(v.intents)) state.intents = v.intents.map(String);
+    if (typeof ipZeichnen === 'function') ipZeichnen();
     if (Array.isArray(v.verlauf)) renderPreviousResearches(v.verlauf);
     else if (v.listeFehler) api.setHistoryError();
     if (v.kontext && typeof v.kontext === 'object'){
       var k = v.kontext;
       currentResearchMeta = { keywords: Array.isArray(k.keywords) ? k.keywords.slice() : [],
         market: k.market || null, market_name: k.market_name || null,
-        business_model: k.business_model || null, persona: k.persona || null };
+        business_model: k.business_model || null, persona: k.persona || null,
+        intents: Array.isArray(k.intents) ? k.intents.slice() : [] };
     }
     mitTagsSetzen(v.mitTags !== false);
     eingabe.setzen(v.eingabe);

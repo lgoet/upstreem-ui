@@ -614,11 +614,24 @@
          Miras eigene Wache holte sie zurueck. Drei Einblend-Animationen hintereinander, so
          gemeldet. Die Pruefreihe (0/250/800/1800) faengt den kurzen Moment auf, in dem eine
          aufgehende Ansicht ihre Einblendung noch bei null hat. */
-      if (UC.wirklichSichtbar && !UC.wirklichSichtbar(root)) return false;
+      /* AUSSER die eigene Ansicht ist die aktive (14.10. spaet, gemeldet: "beim Hinwechseln ist das
+         Mira-Feld ein paar ms nicht sichtbar"): dann blendet sie gerade EIN, ihre Deckkraft steht
+         noch bei null, und das Ausleihen wartete bis zur Pruefung bei 250ms -- so lange stand nur
+         das Skelett da. Die Deckkraft-Wache bleibt fuer den Fall, fuer den sie gebaut ist: eine
+         Ansicht, die AUSblendet, ist nicht mehr die aktive. */
+      var aktiv = !!(UC.currentView && UC.currentView() === VIEW);
+      if (!aktiv && UC.wirklichSichtbar && !UC.wirklichSichtbar(root)) return false;
       return root.getClientRects().length > 0;
     }
     function miraBereit(){
       return typeof window.askMiraLauncherAttach === "function" && !window.askMiraLauncherAttach.__amStub;
+    }
+    /* Steht Miras Element schon da, ist sie aber noch nicht eingerichtet (erster Besuch: core richtet
+       neue Komponenten gesammelt ein, bis zu 200ms spaeter), sie JETZT einrichten lassen -- nur sie
+       (core, __upWeckenFuer). Gemessen vorher: 75ms nur Skelett, bis Mira bereit war. */
+    function miraWecken(){
+      if (miraBereit() || !window.__upWeckenFuer || !document.getElementById("ask-mira")) return;
+      try { window.__upWeckenFuer("am-root"); } catch(e){}
     }
     function miraHier(){
       var m = document.getElementById("ask-mira");
@@ -653,7 +666,9 @@
     if (UC.onViewChange) UC.onViewChange(function(name){
       /* In die eigene Ansicht: sofort ausleihen, noch bevor Bubble die Gruppe zeigt -- dann
          steht das Feld beim Aufgehen schon da. Die Pruefreihe bestaetigt danach. */
-      if (String(name) === VIEW && miraBereit()) { try { window.askMiraLauncherAttach(elSlot, { view: VIEW }); } catch(e){} }
+      /* ausleihen() statt des nackten Aufrufs: es setzt has-mira im selben Zug -- vorher stand
+         einen Takt lang das Skelett UEBER dem schon eingehaengten Feld und drueckte es nach unten. */
+      if (String(name) === VIEW){ miraWecken(); if (miraBereit()) ausleihen(); }
       pruefen();
       /* Das Brett geht von sich aus nach Hause, sobald eine andere Ansicht dran ist (sein eigener
          onViewChange in opportunities.js) -- hier bleibt nur, es beim Zurueckkommen in DIESE
@@ -1289,6 +1304,9 @@
        nachgezogen werden -- es traegt noch keine is-active/is-off-Klassen. */
     syncMode();
     renderAll();
+    /* Beim ersten Besuch entsteht das Dashboard erst NACH dem Ansichtswechsel: sofort ausleihen,
+       noch vor dem ersten Bild, statt auf die Pruefreihe zu warten. */
+    if (sichtbar()){ miraWecken(); ausleihen(); }
     pruefen();
     /* Nach dem ersten Zeichnen und nicht davor: der Bedarf haengt am wiederhergestellten Bereich,
        und der steht erst nach syncMode() fest.
