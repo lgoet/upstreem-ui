@@ -240,6 +240,9 @@
         '<div class="up-ph-left"><h1 class="up-ph-heading">' + esc(t("Prompt Insights")) + '</h1>' +
           '<p class="up-ph-desc">' + esc(t("Manage Prompts, Topics and monitor latest Responses")) + '</p></div>' +
         '<div class="upi-tools">' +
+          /* Das Kontingent (14.10.): Ring aus core und "84 of 100 prompts", siehe quotaZeigen. */
+          '<span class="upi-quota is-leer"><span class="upi-quota-ring"></span>' +
+            '<span class="upi-quota-text"><span class="upi-quota-zahl up-num"></span><span class="upi-quota-wort"></span></span></span>' +
           /* Derselbe Knopf wie im bisherigen Kopf, und das Etikett ENGLISCH wie dort: kurz "Add",
              breit "Add Prompts". Die Sprachumschaltung von core (knopfEtikett) baut es aus dem
              GANZEN englischen Satz neu ("Prompts hinzufuegen"). Hier vorab Stueck fuer Stueck
@@ -282,6 +285,39 @@
       if (tab) tab.dispatchEvent(new CustomEvent("upt-sum-zeigen"));
     });
     (function () { var tab = root.querySelector('[data-upi-tab="allprompts"] .up-root[data-sum-zu]'); if (tab) sumStand(tab.getAttribute("data-sum-zu") === "yes"); })();
+    /* DAS KONTINGENT IM KOPF (14.10., auf Wunsch aus der Kennzahlenleiste der Tabelle hierher, damit
+       die Verteilung nach Topics dort mehr Platz hat): der Ring aus core (UC.variationRing, derselbe
+       wie in der Variations-Tabelle), gruen bis das Kontingent erreicht ist, dann rot; daneben
+       "84 of 100 prompts", der Tarif und der Rest im Tooltip. Die Zahlen aus core (onQuota), derselbe
+       Speicher, den die Leiste las. Ohne Daten steht nichts da (der Kopf springt dabei nicht: die
+       Knoepfe stehen rechts, das Kontingent waechst nach links). Ein unlesbares Kontingent sagt es,
+       statt zu verschwinden (CLAUDE.md 2). Auf allen drei Reitern -- es gehoert zur Seite. */
+    var elQuota = root.querySelector(".upi-quota");
+    function quotaZeigen(q) {
+      if (!elQuota) return;
+      var genutzt = q ? num(q.used) : null, gesamt = q ? num(q.total) : null;
+      var zahl = elQuota.querySelector(".upi-quota-zahl"), wort = elQuota.querySelector(".upi-quota-wort");
+      var ring = elQuota.querySelector(".upi-quota-ring");
+      elQuota.classList.toggle("is-leer", !q);
+      if (!q) return;
+      var kaputt = genutzt == null || gesamt == null || gesamt <= 0;
+      elQuota.classList.toggle("is-fehler", kaputt);
+      if (kaputt) {
+        ring.innerHTML = UC.variationRing ? UC.variationRing(0) : "";
+        zahl.textContent = "–"; wort.textContent = "";
+        elQuota.setAttribute("data-tip", t("The allowance could not be read."));
+        elQuota.classList.remove("is-voll");
+        return;
+      }
+      ring.innerHTML = UC.variationRing ? UC.variationRing(Math.min(100, genutzt / gesamt * 100)) : "";
+      zahl.textContent = UC.fmtTotal ? UC.fmtTotal(genutzt) : String(genutzt);
+      wort.textContent = t("of {n} prompts").replace("{n}", UC.fmtTotal ? UC.fmtTotal(gesamt) : String(gesamt));
+      elQuota.classList.toggle("is-voll", genutzt >= gesamt);
+      elQuota.setAttribute("data-tip", (q.plan ? t("Plan {name}").replace("{name}", str(q.plan)) + ": " : "") +
+        t("{n} left").replace("{n}", UC.fmtTotal ? UC.fmtTotal(Math.max(0, gesamt - genutzt)) : String(Math.max(0, gesamt - genutzt))));
+    }
+    if (UC.onQuota) UC.onQuota(quotaZeigen, root);
+    quotaZeigen(UC.getQuota ? UC.getQuota() : null);
     var elAdd = root.querySelector(".upi-add"), elAddTopic = root.querySelector(".upi-addtopic");
     var elFilterleiste = root.querySelector(".upi-filterleiste");
     function el(sel) { return root.querySelector(sel); }

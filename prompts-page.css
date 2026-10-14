@@ -10,6 +10,21 @@
 /* Die Knoepfe oben rechts: so viele, wie der Reiter braucht, mit dem Abstand des alten Kopfs
    (prompts-page-header.css, .pph-topright). */
 .upi-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+/* Das Kontingent im Kopf (14.10., prompts-page.js quotaZeigen): Ring aus core (.up-varring) und die
+   Zahl in der Schrift von .up-num, das Wort leise wie in den Leisten. 8px mehr Abstand zu den
+   Knoepfen: es ist eine Angabe, kein Knopf der Reihe. */
+.upi-quota { display: inline-flex; align-items: center; gap: 8px; margin-right: 8px; white-space: nowrap; }
+.upi-quota.is-leer { display: none; }
+.upi-quota-text { display: inline-flex; align-items: baseline; gap: 4px; font-size: var(--up-fs-m); }
+.upi-quota-zahl { color: var(--vc-text); font-weight: var(--up-fw-m); }
+.upi-quota-wort { color: var(--vc-third); }
+.upi-quota.is-fehler .upi-quota-zahl { color: var(--vt-down); }
+/* Gruen bis zum Limit, rot ab dem Limit. Spezifitaet ueber die Dunkel-Regel von core
+   (.up-root[data-theme="dark"] .up-varring-fill, 0,3,0) -- sonst gewaenne im Dunkeln der Akzent. */
+.up-root.upi-root .upi-quota .up-varring-fill { stroke: var(--vt-up); }
+.up-root.upi-root .upi-quota.is-voll .up-varring-fill { stroke: var(--vt-down); }
+/* Schmal: Ring und Zahl, das Wort steht im Tooltip (wie die Knoepfe ihr zweites Wort ablegen). */
+.up-root.is-narrow .upi-quota-wort { display: none; }
 /* hidden gegen das display der Knopf-Regeln aus core: ein Knopf, der zum Reiter nicht gehoert,
    steht nicht da. */
 .upi-root [data-upi-fuer][hidden] { display: none; }

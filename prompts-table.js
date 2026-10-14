@@ -5183,14 +5183,15 @@
        Prompt-Listen (Peec, Profound, Otterly) traegt dort Karten -- eine Zeile reicht.
        GEBAUT AUS DER LEISTE DER DETAIL-DRAWER (.up-dk-leiste, .up-dk-zahl aus core): dieselbe Flaeche,
        dieselbe Zahl gross mit leisem Wort ("4 brands mentioned"), dieselben Radien und Polster.
-       Drei Teile: Topics (Anteilsbalken in den Topic-Farben, die drei groessten benannt), Maerkte
-       (erst ab zwei -- ein Markt ist keine Verteilung, wie bei der Karte vorher), Kontingent
-       (genutzt von gesamt, mit Balken). Die Datenleitung ist die der Karten: dieselben Ablagen,
+       Zwei Teile: Topics (Anteilsbalken in den Topic-Farben, die groessten benannt) und Maerkte
+       (erst ab zwei -- ein Markt ist keine Verteilung, wie bei der Karte vorher). Das Kontingent
+       stand hier als dritter Teil und steht seit dem 14.10. im Seitenkopf (prompts-page.js, Ring
+       aus core) -- auf Wunsch, damit die Verteilung nach Topics mehr Platz hat. Die Datenleitung ist die der Karten: dieselben Ablagen,
        dasselbe Skelett im Gleichlauf mit der Tabelle (kpiWartend), derselbe Gedanke beim Merken. */
     var kpiZeile = null, kpiAb = [];
     var kpiSkelettSteht = false;
-    var kpiRohTopics = null, kpiRohMarkets = null, kpiRohQuota = null;
-    var kpiSig = { t: null, m: null, q: null };
+    var kpiRohTopics = null, kpiRohMarkets = null;
+    var kpiSig = { t: null, m: null };
     function teilHtml(kl){
       return '<div class="upt-sum-teil ' + kl + '">' +
         '<span class="up-dk-zahl"><span class="up-dk-zahl-n"></span><span class="upt-sum-wort"></span></span>' +
@@ -5202,7 +5203,7 @@
       kpiZeile.className = "upt-sum";
       kpiZeile.innerHTML =
         '<div class="upt-sum-falte"><div class="upt-sum-in up-dk-leiste">' +
-          teilHtml("upt-sum-topics") + teilHtml("upt-sum-markets") + teilHtml("upt-sum-quota") +
+          teilHtml("upt-sum-topics") + teilHtml("upt-sum-markets") +
           '<button type="button" class="up-iconbtn upt-sum-zu" data-tip="' + esc(UC.t("Hide summary")) + '" aria-label="' +
             esc(UC.t("Hide summary")) + '">' + UC.icon("eyeOff", 2) + '</button>' +
         '</div></div>';
@@ -5214,10 +5215,8 @@
       /* owner ist die Wurzel: ohne ihn waechst die Abonnentenliste mit jedem Neubau (onTopics in core). */
       if (UC.onTopics)  kpiAb.push(UC.onTopics(kpiTopics, root));
       if (UC.onMarkets) kpiAb.push(UC.onMarkets(kpiMarkets, root));
-      if (UC.onQuota)   kpiAb.push(UC.onQuota(kpiQuota, root));
       kpiTopics(UC.getTopics ? UC.getTopics() : []);
       kpiMarkets(UC.getMarkets ? UC.getMarkets() : []);
-      kpiQuota(UC.getQuota ? UC.getQuota() : null);
     }
     /* Zu bleibt zu, auch ueber einen Neuladen -- und offen ist die Vorgabe. Neuer Schluessel
        (upt_sumzu__): der alte der Karten (upt_kpizu2__) gehoerte zu einem anderen Bauteil, und wer
@@ -5249,8 +5248,8 @@
     function kpiSkeletteEinmal(){
       if (kpiSkelettSteht) return;
       kpiSkelettSteht = true;
-      kpiSig = { t: null, m: null, q: null };
-      ["upt-sum-topics", "upt-sum-markets", "upt-sum-quota"].forEach(function(kl){
+      kpiSig = { t: null, m: null };
+      ["upt-sum-topics", "upt-sum-markets"].forEach(function(kl){
         kpiZahl(kl, "", "");
         var inh = kpiTeil(kl, ".upt-sum-inhalt");
         if (inh) inh.innerHTML = '<span class="up-sk-lbl upt-sum-sk-zahl"></span><span class="up-sk-lbl upt-sum-sk-balken"></span>';
@@ -5266,7 +5265,6 @@
       kpiSkelettSteht = false;
       kpiTopics(kpiRohTopics != null ? kpiRohTopics : (UC.getTopics ? UC.getTopics() : []));
       kpiMarkets(kpiRohMarkets != null ? kpiRohMarkets : (UC.getMarkets ? UC.getMarkets() : []));
-      kpiQuota(kpiRohQuota != null ? kpiRohQuota : (UC.getQuota ? UC.getQuota() : null));
     }
     /* Die Maerkte nur ab zwei eigenen (UC.getMarkets, nicht die Liste aller Maerkte) -- aus jedem
        Pfad gerufen, auch im Skelett, sonst stuende der Teil bei einem Markt waehrend des Ladens da. */
@@ -5294,20 +5292,38 @@
           '<span class="upt-sum-name">' + esc(name) + '</span>') +
         '<span class="upt-sum-wert">' + esc(wert) + '</span></span>';
     }
-    var KPI_ZEIGEN = 3;
+    /* Hoechstens so viele Eintraege je Legende; wie viele davon wirklich stehen, entscheidet die Breite
+       (legendeEinpassen). Bis 14.10. hart 3 -- seit das Kontingent im Seitenkopf steht, hat die
+       Leiste Platz fuer mehr Topics, und der soll genutzt werden. */
+    var KPI_ZEIGEN = 8;
     /* GANZE EINTRAEGE ODER KEINE (gemessen bei 1000px: "SUV 33" stand halb da, weil der erste Eintrag
        einer umbrechenden Zeile nie in die zweite rutscht). Was nicht ganz in die sichtbare Zeile
-       passt, geht weg -- von hinten, bis der Rest passt. Nach jedem Zeichnen und bei jeder Breite. */
+       passt, geht weg -- von hinten, bis der Rest UND "+N more" passen. "+N more" zaehlt danach genau,
+       was nicht dasteht: was ueber KPI_ZEIGEN hinausging (data-weitere) plus was die Breite nahm.
+       Nach jedem Zeichnen und bei jeder Breite. */
     function legendeEinpassen(){
       if (!kpiZeile) return;
       Array.prototype.forEach.call(kpiZeile.querySelectorAll(".upt-sum-legende"), function(leg){
-        var kinder = Array.prototype.slice.call(leg.children);
-        kinder.forEach(function(k){ k.classList.remove("is-weg"); });
+        var mehr = leg.querySelector(".upt-sum-mehr");
+        var basis = mehr ? (toNum(mehr.getAttribute("data-weitere")) || 0) : 0;
+        var eintraege = Array.prototype.filter.call(leg.children, function(k){ return k !== mehr; });
+        eintraege.forEach(function(k){ k.classList.remove("is-weg"); });
+        function mehrSetzen(n){
+          if (!mehr) return;
+          mehr.classList.toggle("is-weg", n <= 0);
+          mehr.textContent = UC.t("+{n} more").replace("{n}", UC.fmtTotal(n));
+        }
+        mehrSetzen(basis);
         if (!leg.clientWidth) return;
         var lr = leg.getBoundingClientRect();
-        for (var i = kinder.length - 1; i >= 0; i--){
-          var r = kinder[i].getBoundingClientRect();
-          if (r.right > lr.right + 0.5 || r.top >= lr.bottom - 1) kinder[i].classList.add("is-weg");
+        function passt(el){ var r = el.getBoundingClientRect(); return r.right <= lr.right + 0.5 && r.top < lr.bottom - 1; }
+        var weg = 0;
+        for (var i = eintraege.length - 1; i >= 0; i--){
+          var stehen = eintraege.slice(0, i + 1);
+          if (stehen.every(passt) && (!mehr || mehr.classList.contains("is-weg") || passt(mehr))) break;
+          eintraege[i].classList.add("is-weg");
+          weg++;
+          mehrSetzen(basis + weg);
         }
       });
     }
@@ -5339,7 +5355,7 @@
       var weitere = mitZahl.length - zeigen.length;
       inh.innerHTML = balkenHtml(zeigen, rest, summe) +
         '<span class="upt-sum-legende">' + zeigen.map(function(x){ return eintragHtml(x.farbe, x.name, UC.fmtTotal(x.n)); }).join("") +
-          (weitere > 0 ? '<span class="upt-sum-mehr">' + esc(UC.t("+{n} more").replace("{n}", UC.fmtTotal(weitere))) + '</span>' : '') +
+          '<span class="upt-sum-mehr" data-weitere="' + weitere + '"></span>' +
         '</span>';
       legendeEinpassen();
     }
@@ -5370,40 +5386,11 @@
       inh.innerHTML = '<span class="upt-sum-legende">' + zeigen.map(function(x){
           return eintragHtml(UC.marketChip ? UC.marketChip(x.a2) : esc(x.a2), "", UC.fmtPct ? UC.fmtPct(summe > 0 ? x.n / summe * 100 : 0) : "", true);
         }).join("") +
-        (weitere > 0 ? '<span class="upt-sum-mehr">' + esc(UC.t("+{n} more").replace("{n}", UC.fmtTotal(weitere))) + '</span>' : '') +
+        '<span class="upt-sum-mehr" data-weitere="' + weitere + '"></span>' +
         '</span>';
       legendeEinpassen();
     }
 
-    function kpiQuota(q){
-      kpiRohQuota = q;
-      if (!kpiZeile) return;
-      if (kpiWartend()){ kpiSkeletteEinmal(); return; }
-      var genutzt = q ? toNum(q.used) : null, kontingent = q ? toNum(q.total) : null;
-      var sig = q ? [genutzt, kontingent, q.plan || ""].join("|") : "leer";
-      if (sig === kpiSig.q) return;
-      kpiSig.q = sig;
-      var teil = kpiZeile.querySelector(".upt-sum-quota"), inh = kpiTeil("upt-sum-quota", ".upt-sum-inhalt");
-      if (!teil || !inh) return;
-      /* Fehler VOR dem Skelett (CLAUDE.md 2): da, aber ohne Zahlen, ist etwas anderes als "noch nichts". */
-      if (q && (genutzt == null || kontingent == null || kontingent <= 0)){
-        kpiZahl("upt-sum-quota", "", "");
-        inh.innerHTML = '<span class="upt-sum-fehler">' + esc(UC.t("The allowance could not be read.")) + '</span>';
-        teil.classList.remove("is-over");
-        return;
-      }
-      if (!q){
-        kpiZahl("upt-sum-quota", "", "");
-        inh.innerHTML = '<span class="up-sk-lbl upt-sum-sk-zahl"></span><span class="up-sk-lbl upt-sum-sk-balken"></span>';
-        return;
-      }
-      var anteil = Math.max(0, Math.min(100, (genutzt / kontingent) * 100));
-      kpiZahl("upt-sum-quota", UC.fmtTotal(genutzt), UC.t("of {n} prompts").replace("{n}", UC.fmtTotal(kontingent)));
-      var tip = (q.plan ? UC.t("Plan {name}").replace("{name}", String(q.plan)) + ": " : "") +
-        UC.t("{n} left").replace("{n}", UC.fmtTotal(Math.max(0, kontingent - genutzt)));
-      inh.innerHTML = '<span class="upt-sum-meter" data-tip="' + esc(tip) + '"><span class="upt-sum-meter-fill" style="width:' + anteil + '%"></span></span>';
-      teil.classList.toggle("is-over", genutzt > kontingent);
-    }
     kpiBauen();
 
     if (state.query){ elSearchIn.value = state.query; elSearch.classList.add("is-open", "has-text"); }

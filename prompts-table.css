@@ -1262,7 +1262,11 @@
    bleiben ganz -- gemessen bei 1000: schrumpfte das Kontingent mit, ragte sein Balken 27px aus der
    Leiste. */
 .upt-sum-teil { display: flex; align-items: center; gap: 16px; min-width: 0; flex: 0 0 auto; }
-.upt-sum-teil.upt-sum-topics { flex: 0 1 auto; }
+/* Topics nimmt den Platz, den das Kontingent frei gemacht hat (seit 14.10. im Seitenkopf): die
+   Legende passt dann mehr ganze Eintraege ein (legendeEinpassen). */
+.upt-sum-teil.upt-sum-topics { flex: 1 1 auto; }
+/* ... und darin die Legende bis an den naechsten Teil: legendeEinpassen misst ihre Breite. */
+.upt-sum-topics .upt-sum-inhalt, .upt-sum-topics .upt-sum-legende { flex: 1 1 auto; }
 .upt-sum .upt-sum-teil[hidden] { display: none; }
 .upt-sum-teil + .upt-sum-teil:not([hidden]) { margin-left: 24px; padding-left: 24px; border-left: 1px solid var(--vc-border); }
 .upt-sum-wort { white-space: nowrap; }
@@ -1285,10 +1289,6 @@
 .upt-sum-legende > .is-weg { display: none; }
 /* Das Kontingent: der Balken der alten Karte (gruen, ueber dem Kontingent rot), auf dem Grau der
    Leiste in der Rahmenfarbe statt im Grund -- sonst verschwaende die Spur. */
-.upt-sum-meter { width: 120px; height: 8px; flex: 0 0 auto; border-radius: 4px; background: var(--vc-border); overflow: hidden; }
-.upt-sum-meter-fill { display: block; height: 100%; border-radius: 4px; background: var(--vt-up); }
-.upt-sum-quota.is-over .upt-sum-meter-fill { background: var(--vt-down); }
-.upt-sum-fehler { font-size: var(--up-fs-s); color: var(--vt-down); white-space: nowrap; }
 .upt-sum-zu { margin-left: auto; flex: 0 0 auto; color: var(--vc-third); }
 /* Skelett in den Massen dessen, was gleich dasteht: Zahl 22 hoch, Balken 8. */
 .upt-sum .upt-sum-sk-zahl { width: 28px; height: 20px; border-radius: var(--up-r-xs); flex: 0 0 auto; }
