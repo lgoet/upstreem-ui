@@ -414,8 +414,8 @@
      Selbst gezeichnet und als data:-Adresse: rechtlich eindeutig, kein Abruf, nichts, was fehlen
      kann. GEPRUEFT bei 120, 40, 24 und 15px, auf hellem und auf dunklem Grund.
      ES IST DASSELBE ZEICHEN AN ALLEN STELLEN: MARKEN[0] (Chart, Tabellen, Chips), TEAMS[0]
-     (Umschalter) und BRAND_LOGO_URL in .landing_markup.py (Seitenkoepfe). Wer es tauscht,
-     tauscht es an zwei Orten -- hier und dort. */
+     (Umschalter), BRAND_LOGO_URL in .landing_markup.py (Seitenkoepfe) und landing-bilder/acme.svg
+     (Branded-Label, das nur http(s) annimmt). Wer es tauscht, tauscht es an drei Orten. */
   var ACME_LOGO = "data:image/svg+xml," + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' +
     '<rect width="64" height="64" rx="15" fill="#0b0d10"/>' +
@@ -649,7 +649,10 @@
     chip: "Customer journey tracking",
     h1a: "AI Search Analytics",
     h1b: "made simple.",
-    sub: "Track how AI search talks about your brand and turn every answer into ",
+    /* Zwei feste Zeilen (14.10. abends angefordert): die erste endet nach "brand", die zweite
+       traegt das wechselnde Wort. */
+    sub1: "Track how AI search talks about your brand",
+    sub2: "and turn every answer into ",
     worte: ["qualified traffic.", "leads.", "revenue."],
     nurlesen: "qualified traffic, leads and revenue.",
     start: "Start for free",
@@ -710,12 +713,13 @@
            Wort, das wechselt. Die drei Woerter stehen fuer das Auge als CSS-Inhalt (attr) und sind
            damit fuer Crawler und Vorleser unsichtbar -- die lesen den ganzen Satz aus
            .ulh-nurlesen und nicht drei Woerter hintereinander. treiberDrehen() schaltet weiter. */
-        '<p class="ulh-sub">' + HERO.sub +
+        '<p class="ulh-sub"><span class="ulh-sub-z">' + HERO.sub1 + '</span> ' +
+          '<span class="ulh-sub-z">' + HERO.sub2 +
           '<span class="ulh-wechsel" aria-hidden="true">' +
             HERO.worte.map(function(w, i){
               return '<span class="ulh-wort' + (i ? "" : " is-an") + '" data-wort="' + w + '"></span>';
             }).join("") +
-          '</span>' +
+          '</span></span>' +
           '<span class="ulh-nurlesen">' + HERO.nurlesen + '</span>' +
         '</p>' +
         '<div class="ulh-cta">' +
@@ -2937,13 +2941,13 @@
      den Top-Produkten stand der Platzhalter. Die Zellen der Liste baut die Seite selbst (src
      relativ, geht), deshalb fiel es dort nicht auf. Nur zur Laufzeit: im Server-Markup bleibt die
      Adresse, wie sie ist, sonst stimmte die Pruefsumme nicht mehr. */
-  function wikiBildAbs(pfad, breite){
-    var u = wikiBild(pfad, breite);
+  function absolut(u){
     try {
-      if (u.charAt(0) === "/" && window.location && /^https?:$/.test(window.location.protocol)) return window.location.origin + u;
+      if (u && u.charAt(0) === "/" && u.charAt(1) !== "/" && window.location && /^https?:$/.test(window.location.protocol)) return window.location.origin + u;
     } catch (e){}
     return u;
   }
+  function wikiBildAbs(pfad, breite){ return absolut(wikiBild(pfad, breite)); }
   var ECHTE_PRODUKTE = [
     { id: "p1", t: "Tesla Model Y Premium Long Range AWD", m: "te", preis: [49990, 49990],
       bild: "e/e7/Tesla_Model_Y_Premium_%28Facelift%29_%E2%80%93_f_05052026.jpg",
@@ -3814,9 +3818,12 @@
      fast immer hoch und sagt nichts -- interessant ist, WIE die Antwort ueber die Marke spricht.
      Ganze Note auf 0-100 wie ueberall in der App (CLAUDE.md 2b). Die Geschichte bleibt: mit den
      Branded-Prompts sieht der Wert besser aus, weil Fragen nach der eigenen Marke freundlicher
-     beantwortet werden -- darum stehen sie getrennt. */
+     beantwortet werden -- darum stehen sie getrennt.
+     58 und 73 (14.10. abends, vorher 64 und 72): beide lagen in derselben Farbstufe der App
+     (61-75, sentColor), der Balken davor haette beim Umschalten nie die Farbe gewechselt. Jetzt
+     geht es von grau (41-60) nach gruen (61-75). */
   var BRANDED = {
-    ohne: 64, mit: 72,
+    ohne: 58, mit: 73,
     schalter: "Branded prompts",
     aus: "Left out of your metrics", an: "Counted in your metrics",
     wert: "Sentiment",
@@ -3905,9 +3912,18 @@
     var marke = {};
     MARKEN.forEach(function(m){ marke[m.id] = m; });
     var zeilen = BRANDED.prompts.map(function(p){
+      /* DIE ECHTEN ZEICHEN (14.10. abends gemeldet: "da stehen nur Kaesten mit Anfangsbuchstaben").
+         brandedHtml in core nimmt nur http(s) an -- die Favicons sind auf der Website aber auf
+         /fremd/fav umgeschrieben (relativ), und Acmes Zeichen ist eine data:-Adresse. Beides fiel
+         auf den Buchstaben zurueck. Also absolut, und Acme als Datei neben dieser
+         (landing-bilder/acme.svg, dasselbe Zeichen wie ACME_LOGO -- wer eines tauscht, tauscht
+         beide). */
       var chip = kern.brandedHtml ? kern.brandedHtml({
         branded: true,
-        branded_brands: p.m.map(function(id){ return { name: marke[id].name, logo_url: marke[id].logo }; })
+        branded_brands: p.m.map(function(id){
+          var logo = id === "ac" ? nebenDatei("landing-bilder/acme.svg") : marke[id].logo;
+          return { name: marke[id].name, logo_url: absolut(logo) };
+        })
       }) : "";
       return '<div class="ulh-br-z"><span class="ulh-br-p">' + p.t + '</span>' + chip + '</div>';
     }).join("");
@@ -3919,7 +3935,9 @@
       '</div>' +
       '<div class="ulh-br-zahl">' +
         '<span class="ulh-br-t">' + BRANDED.wert + '</span>' +
-        '<span class="ulh-br-wert">' + Math.round(BRANDED.ohne) + '</span>' +
+        /* Der Sentiment-Baustein der App (UC.sentHtml: Balken in der Farbe des Werts, davor die
+           ganze Zahl), hier gross. Farbe und Zahl wechseln beim Umlegen (visReiseFuellen). */
+        '<span class="ulh-br-wert">' + (kern.sentHtml ? kern.sentHtml(BRANDED.ohne) : Math.round(BRANDED.ohne)) + '</span>' +
         '<span class="ulh-br-diff">+' + Math.round(BRANDED.mit - BRANDED.ohne) + (LANG === "de" ? " Pkt." : " pts") + '</span>' +
       '</div>' +
       '<div class="ulh-br-liste">' + zeilen + '</div>' +
@@ -3942,7 +3960,10 @@
     }
     sobaldSichtbar(rs, function(an){ if (an) rs.classList.add("is-da"); });
     if (!br) return true;
-    var wert = br.querySelector(".ulh-br-wert"), hint = br.querySelector(".ulh-br-hint");
+    var wert = br.querySelector(".ulh-br-wert .up-sent-val") || br.querySelector(".ulh-br-wert");
+    var balken = br.querySelector(".ulh-br-wert .up-sent-dot");
+    var kern = window.UpstreemCore || {};
+    var hint = br.querySelector(".ulh-br-hint");
     var schalter = br.querySelector(".up-switch"), sichtbar = false, mit = false, uhr = null;
     function zaehlen(von, bis){
       if (ruhig){ wert.textContent = String(Math.round(bis)); return; }
@@ -3960,6 +3981,9 @@
       schalter.classList.toggle("is-on", mit);
       hint.textContent = T(mit ? BRANDED.an : BRANDED.aus);
       zaehlen(mit ? BRANDED.ohne : BRANDED.mit, mit ? BRANDED.mit : BRANDED.ohne);
+      /* Die Farbe springt auf die des Zielwerts; den Weg dorthin gleitet die CSS (gleiche Dauer
+         wie das Zaehlen, landing-hero.css .ulh-br-wert .up-sent-dot). */
+      if (balken && kern.sentColor) balken.style.background = kern.sentColor(mit ? BRANDED.mit : BRANDED.ohne);
     }
     sobaldSichtbar(br, function(an){
       sichtbar = an;
@@ -8591,28 +8615,27 @@
     feld.__ulhDreht = true;
     var i = 0;
     for (var a = 0; a < w.length; a++) if (w[a].classList.contains("is-an")) i = a;
-    /* DAS FELD SO BREIT WIE DAS AKTUELLE WORT (14.10. gemeldet: "der Satz steht links, nicht
-       mittig"). Vorher war das Feld immer so breit wie das LAENGSTE Wort ("qualified traffic."):
-       stand "revenue." darin, hing rechts unsichtbarer Leerraum an der Zeile, und der mittig
-       gesetzte Satz sah linksbuendig aus. Jetzt misst die Breite das Wort, das gerade steht, und
-       gleitet beim Wechsel mit (landing-hero.css, .ulh-wechsel) -- die Zeile zentriert sich
-       dabei neu. Sofort (ohne Uebergang) beim Start, wenn die Schrift fertig geladen ist und wenn
-       sich das Fenster aendert: dort soll nichts sichtbar nachgleiten. */
-    function breite(sofort){
-      var b = w[i].offsetWidth;
-      if (!b) return;
-      if (sofort){
-        feld.style.transition = "none";
-        feld.style.width = b + "px";
-        void feld.offsetWidth;
-        feld.style.transition = "";
-      } else {
-        feld.style.width = b + "px";
+    /* DIE ZWEITE ZEILE STEHT STILL (14.10. abends: "nur dieser Teil passt sich an, die Position der
+       zweiten Zeile bleibt von Anfang an gleich -- ein sauberer Median ueber alle Laengen").
+       Das Feld hat eine FESTE Breite: die Mitte zwischen kuerzestem und laengstem Wort. Damit ist
+       die Zeile immer gleich breit und steht immer an derselben Stelle; das Wort beginnt links im
+       Feld, direkt nach "into". Das laengste ragt um die halbe Spanne rechts hinaus, beim kuerzesten
+       bleibt dieselbe halbe Spanne frei -- die Abweichung von der Mitte ist nach beiden Seiten
+       gleich gross und so klein, wie sie mit einer festen Lage sein kann.
+       (Davor, bis 14.10. abends: das Feld so breit wie das aktuelle Wort -- die Zeile war mittig,
+       sprang aber bei jedem Wechsel; davor so breit wie das laengste -- sie stand links.)
+       Neu gemessen beim Start, nach dem Laden der Schrift und bei jeder Groessenaenderung. */
+    function breite(){
+      var min = Infinity, max = 0;
+      for (var k = 0; k < w.length; k++){
+        var b = w[k].offsetWidth;
+        if (b){ if (b < min) min = b; if (b > max) max = b; }
       }
+      if (max) feld.style.width = Math.round((min + max) / 2) + "px";
     }
-    breite(true);
-    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ breite(true); }); } catch (e){}
-    window.addEventListener("resize", function(){ breite(true); }, { passive: true });
+    breite();
+    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(breite); } catch (e){}
+    window.addEventListener("resize", breite, { passive: true });
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     setInterval(function(){
       if (document.hidden || !feld.isConnected) return;
@@ -8622,7 +8645,6 @@
       alt.classList.remove("is-an");
       alt.classList.add("is-weg");
       w[i].classList.add("is-an");
-      breite(false);
     }, WORT_MS);
   }
 

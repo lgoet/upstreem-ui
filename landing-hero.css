@@ -323,23 +323,25 @@
    Bewegung nur ueber opacity und transform (easeOutExpo wie ueberall auf der Seite). */
 /* Ausgeglichen umbrechen: sonst steht das wechselnde Wort allein in der zweiten Zeile (gemessen bei
    1440: "qualified traffic." als einziges Wort darin). So bricht der Satz nach "your brand". */
-.ulh-sub:has(.ulh-wechsel) { text-wrap: balance; }
+/* Zwei feste Zeilen (14.10. abends): jede ein eigener Block, mittig. Bricht eine auf sehr schmalen
+   Schirmen doch um, dann innerhalb ihrer selbst -- die Teilung bleibt. */
+.ulh-sub-z { display: block; }
 .ulh-wechsel {
-  display: inline-grid; vertical-align: bottom; overflow: hidden;
-  /* Eine Spur, so breit wie das Feld -- und das Feld so breit wie das aktuelle Wort (treiberDrehen
-     setzt width). Ohne minmax(0, 1fr) wuerde die Spur wieder auf das laengste Wort wachsen. */
+  display: inline-grid; vertical-align: bottom;
+  /* FESTE Breite (treiberDrehen: Mitte zwischen kuerzestem und laengstem Wort), eine Spur so breit
+     wie das Feld -- ohne minmax(0, 1fr) wuechse sie wieder auf das laengste Wort. */
   grid-template-columns: minmax(0, 1fr);
-  /* Platz fuer Unterlaengen (g, q), sonst schneidet overflow sie ab. */
+  /* Platz fuer Unterlaengen (g, q). */
   padding-bottom: .12em; margin-bottom: -.12em;
-  /* Die Breite gleitet mit dem Wortwechsel; die Zeile zentriert sich dabei neu. Dieselbe Kurve
-     und Dauer wie das Wort selbst (transform 760ms expo). */
-  transition: width 760ms var(--ulh-expo);
+  /* Senkrecht schneiden (das Wort kommt von unten und geht nach oben), waagrecht NICHT: das
+     laengste Wort ragt um die halbe Spanne ueber das Feld hinaus und muss ganz zu sehen sein.
+     overflow kann das nicht (hidden in einer Richtung macht die andere zu auto), clip-path schon. */
+  clip-path: inset(0 -100vw 0 0);
 }
-@media (prefers-reduced-motion: reduce) { .ulh-wechsel { transition: none; } }
 .ulh-wort {
-  /* justify-self: center statt dehnen: so misst offsetWidth das Wort selbst (die Breite fuer das
-     Feld), und ein laengeres Wort ragt beim Hereinkommen gleichmaessig nach beiden Seiten. */
-  grid-area: 1 / 1; justify-self: center; text-align: left; white-space: nowrap;
+  /* Links im Feld, direkt hinter "into" -- und justify-self: start statt dehnen, damit offsetWidth
+     das Wort selbst misst. */
+  grid-area: 1 / 1; justify-self: start; text-align: left; white-space: nowrap;
   font-weight: 500; color: var(--ulh-text);
   opacity: 0; transform: translateY(80%);
   transition: opacity 520ms var(--ulh-ease), transform 760ms var(--ulh-expo);
@@ -4367,6 +4369,15 @@
   font-size: 30px; font-weight: 600; letter-spacing: -0.02em; line-height: 1;
   font-variant-numeric: tabular-nums; color: var(--vc-text, #1f1f1b);
 }
+/* Der Sentiment-Baustein der App in Gross (14.10. abends: "das korrekte Sentiment-Styling aus der
+   Hauptapp, mit dem Shape davor, der sich smooth in Farbe aendert"). Faktor auf alles (CLAUDE.md
+   1): in der Zelle steht 3x12 neben 14px, hier steht die Zahl in 30px -- Faktor gut 2, also
+   6x26 und 12px Abstand. Die Zahl erbt Groesse und Schnitt von .ulh-br-wert. Die Farbe gleitet in
+   derselben Zeit, in der die Zahl zaehlt (700ms). */
+.ulh-br-wert .up-sent { gap: 12px; }
+.ulh-br-wert .up-sent-dot { width: 6px; height: 26px; transition: background-color 700ms var(--ulh-ease); }
+.ulh-br-wert .up-sent-val { font-size: inherit; font-weight: inherit; letter-spacing: inherit; }
+@media (prefers-reduced-motion: reduce) { .ulh-root .ulh-br-wert .up-sent-dot { transition: none; } }
 /* "+16.6 pts" erscheint nur, solange Branded mitzaehlt: es ist der geschoente Teil. */
 .ulh-br-diff {
   font-size: 12px; font-weight: 500; color: #b0200c; font-variant-numeric: tabular-nums;
@@ -4383,6 +4394,10 @@
 }
 .ulh-br-z:last-child { border-bottom: 0; }
 .ulh-br.is-mit .ulh-br-z { opacity: 1; }
+/* Das Branded-Label aus core behaelt seine volle Breite ("Branded" plus Zeichen); kuerzen darf
+   nur der Prompt davor (14.10. abends gemessen: das Label stand als "Brand..." da). */
+.ulh-br-z .up-branded { flex: 0 0 auto; }
+.ulh-br-z .up-branded-lbl { overflow: visible; }
 .ulh-br-p { font-size: 13px; color: var(--vc-text, #1f1f1b); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) {
   .ulh-rs-k, .ulh-rs-w, .ulh-br-z, .ulh-br-diff { transition: none; }
