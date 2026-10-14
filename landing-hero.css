@@ -1676,6 +1676,10 @@
    Seiten. Ueber [data-ulh-vis] wie dort, zwei Klassen gegen eine. */
 .ulh-vis[data-ulh-vis="domains"] { --ulh-vs: 0.66; --ulh-vh: 440px; }
 .ulh-vis-chancen { --ulh-vs: 0.82; --ulh-vh: 344px; }
+/* Die Customer Journey (14.10.): beide Vorschauen in voller Groesse, gleich hoch, damit die Reihe
+   gerade steht. 372px fassen die drei Stufen samt Hinweis und rechts Schalter, Zahl und drei
+   Prompts (gemessen). */
+.ulh-vis-reise, .ulh-vis-branded { --ulh-vs: 1; --ulh-vh: 372px; }
 /* ---------- Dritte Sektion: die Quellen -------------------------------------------------------
    Der Kopf steht mittig und ist der groesste Text der Seite -- er traegt die Aussage der Sektion
    allein, ohne Karte darum. Zwei Toene in EINEM Satz: der erste Teil dunkel, der Rest in der
@@ -4074,3 +4078,106 @@
    der Frist doch noch (is-da), steht er wieder da. */
 .ulh-termin-kal.is-fehler:not(.is-da) .ulh-termin-ziel { display: none; }
 .ulh-termin-kal.is-da .ulh-termin-fehler { display: none; }
+
+
+/* ---------- Die Customer Journey: Intents und Branded (14.10.) --------------------------------
+   Zwei Fenster auf dem Punktraster, wie die Domain- und die Produktkarte: weiss, Haarrand, Radius
+   12, der leise Schatten der Karten. Darin die Bauteile aus core (Intent-Label, Branded-Chip,
+   Trend-Chip, Schalter); hier steht nur die Anordnung. Alle Bewegung ueber transform und opacity. */
+.ulh-rs, .ulh-br {
+  position: relative; z-index: 1;
+  margin: 18px auto 0; max-width: 100%;
+  background: #ffffff; border: 1px solid var(--ulh-border); border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(11, 13, 24, .04), 0 10px 28px rgba(11, 13, 24, .06);
+}
+.ulh-rs { width: calc(100% - 40px); padding: 16px 18px 14px; }
+.ulh-rs-oben { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ulh-rs-titel { font-size: 13px; font-weight: 500; color: var(--vc-text, #1f1f1b); }
+.ulh-rs-legende { display: flex; gap: 14px; font-size: 12px; color: var(--vc-muted, #6b6f76); }
+.ulh-rs-legende span { display: inline-flex; align-items: center; gap: 6px; }
+.ulh-rs-legende i { width: 8px; height: 8px; border-radius: 2px; display: block; }
+
+/* Die drei Stufen nebeneinander, dazwischen ein leiser Pfeil: der Weg geht von links nach rechts. */
+.ulh-rs-stufen {
+  display: grid; grid-template-columns: 1fr 18px 1fr 18px 1fr; align-items: stretch;
+  gap: 0 8px; margin-top: 14px;
+}
+.ulh-rs-pfeil { display: grid; place-items: center; color: var(--vc-fourth, #b3b6bc); }
+.ulh-rs-pfeil svg { width: 14px; height: 14px; }
+.ulh-rs-st {
+  display: flex; flex-direction: column; min-width: 0;
+  padding: 12px 12px 10px; border-radius: 10px;
+  background: var(--vc-heading-bg, #f9f8f9); border: 1px solid transparent;
+}
+/* Die Stufe, an der ein Wettbewerber vorbeizieht, ist markiert -- leise, mit dem Rand der
+   Fehlerfarbe der App, nicht mit einer Flaeche. */
+.ulh-rs-st.is-hinten { background: #ffffff; border-color: rgba(176, 32, 12, .22); }
+.ulh-rs-will { margin-top: 6px; font-size: 12px; line-height: 1.35; color: var(--vc-muted, #6b6f76); min-height: 2.7em; }
+.ulh-rs-zahl { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; }
+.ulh-rs-wert {
+  font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--vc-text, #1f1f1b);
+}
+.ulh-rs-balken { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.ulh-rs-b { display: grid; grid-template-columns: 14px 1fr 30px; align-items: center; gap: 7px; }
+.ulh-rs-b img { width: 14px; height: 14px; border-radius: 3px; display: block; }
+.ulh-rs-spur { height: 6px; border-radius: 999px; background: rgba(31, 31, 27, .06); overflow: hidden; }
+/* Die Balken wachsen beim ersten Blick, Stufe fuer Stufe (--rs-i). Breite ueber scaleX und nicht
+   ueber width: kein Layout waehrend der Bewegung. */
+.ulh-rs-spur i {
+  display: block; height: 100%; width: var(--rs-w); border-radius: inherit;
+  transform: scaleX(0); transform-origin: left center;
+  transition: transform 1100ms var(--ulh-expo);
+  transition-delay: calc(var(--rs-i, 0) * 140ms + 120ms);
+}
+.ulh-rs-b.is-wett .ulh-rs-spur i { transition-delay: calc(var(--rs-i, 0) * 140ms + 220ms); }
+.ulh-rs.is-da .ulh-rs-spur i { transform: none; }
+.ulh-rs-bw { font-size: 11.5px; text-align: right; font-variant-numeric: tabular-nums; color: var(--vc-muted, #6b6f76); }
+.ulh-rs-n { margin-top: 10px; font-size: 11.5px; color: var(--vc-fourth, #9a9ea6); }
+.ulh-rs-hinweis {
+  display: flex; align-items: center; gap: 8px; margin-top: 12px;
+  font-size: 12.5px; color: #b0200c;
+}
+.ulh-rs-hinweis svg { width: 15px; height: 15px; flex: 0 0 auto; }
+
+/* Branded: der Schalter der Filterleiste, die Zahl, drei Prompts. */
+.ulh-br { width: calc(100% - 40px); padding: 6px 6px 10px; }
+.ulh-br-schalter { padding: 10px 12px; border-radius: 9px; background: var(--vc-heading-bg, #f9f8f9); cursor: default; }
+/* Name und Unterzeile untereinander, wie im Menue der App -- ausserhalb des Menues kennt core diese
+   Anordnung nicht, gemessen liefen beide in einer Zeile ineinander ("Branded promptsLeft out"). */
+.ulh-br-schalter .up-pop-label { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.ulh-br-schalter .up-pop-label > span:first-child { font-size: 13px; font-weight: 500; color: var(--vc-text, #1f1f1b); }
+.ulh-br-hint { font-size: 12px; color: var(--vc-muted, #6b6f76); transition: opacity 200ms ease; }
+.ulh-br-zahl { display: flex; align-items: baseline; gap: 10px; padding: 16px 12px 10px; }
+.ulh-br-t { font-size: 12.5px; color: var(--vc-muted, #6b6f76); }
+.ulh-br-wert {
+  font-size: 30px; font-weight: 600; letter-spacing: -0.02em; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--vc-text, #1f1f1b);
+}
+/* "+16.6 pts" erscheint nur, solange Branded mitzaehlt: es ist der geschoente Teil. */
+.ulh-br-diff {
+  font-size: 12px; font-weight: 500; color: #b0200c; font-variant-numeric: tabular-nums;
+  opacity: 0; transform: translateY(4px);
+  transition: opacity 320ms var(--ulh-ease), transform 420ms var(--ulh-expo);
+}
+.ulh-br.is-mit .ulh-br-diff { opacity: 1; transform: none; }
+.ulh-br-liste { display: flex; flex-direction: column; border-top: 1px solid var(--vc-border, #e7e9ec); margin: 0 6px; }
+.ulh-br-z {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 6px; border-bottom: 1px solid var(--vc-border, #e7e9ec);
+  /* Aus der Wertung heisst: treten zurueck. Mit Branded kommen sie nach vorn. */
+  opacity: .42; transition: opacity 360ms var(--ulh-ease);
+}
+.ulh-br-z:last-child { border-bottom: 0; }
+.ulh-br.is-mit .ulh-br-z { opacity: 1; }
+.ulh-br-p { font-size: 13px; color: var(--vc-text, #1f1f1b); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (prefers-reduced-motion: reduce) {
+  .ulh-rs-spur i, .ulh-br-z, .ulh-br-diff { transition: none; }
+}
+/* Schmal stehen die drei Stufen untereinander; die Pfeile fallen dann weg (ein Chevron wird nie
+   gedreht -- die Reihenfolge von oben nach unten sagt den Weg allein). */
+@media (max-width: 760px) {
+  .ulh-vis-reise { --ulh-vh: 640px; }
+  .ulh-rs-stufen { grid-template-columns: 1fr; gap: 6px; }
+  .ulh-rs-pfeil { display: none; }
+}

@@ -542,6 +542,7 @@
       '</div>' +
       '</section>' +
       merkmale() +
+      reise() +
       handel() +
       ereignisse() +
       quellen() +
@@ -2406,6 +2407,8 @@
     if (art === "regal" || art === "werber") return '<div class="ulh-balken" data-ulh-balken="' + art + '"></div>';
     if (art === "anzeigen") return visAnzeigen();
     if (art === "eventkarte") return visEventKarte();
+    if (art === "reise") return visReise();
+    if (art === "branded") return visBranded();
     if (art === "eventkurve") return '<div class="ulh-evk" data-ulh-evk><div class="ulh-evk-wrap"><canvas class="up-line-canvas"></canvas></div><div class="up-legend"></div></div>';
     return "";
   }
@@ -3305,6 +3308,193 @@
     });
     mo.observe(karte, { attributes: true, attributeFilter: ["class"] });
   }
+  /* ---------- Die Customer Journey: Intents und Branded (14.10.) ------------------------------
+     Zwischen den Karten der Plattform und Shopping & Ads. Eine Reihe wie bei Events, nur
+     gespiegelt: links gross der Intent ueber die Customer Journey, rechts klein Branded.
+     Was die Recherche ergab (14.10., Profound, Peec, Scrunch, HubSpot/xFunnel, Evertune, Ahrefs,
+     Otterly, Semrush): niemand zeigt die Stufen auf seiner Startseite -- keine Grafik, keine Zahl je
+     Stufe, alles bleibt Filter-Prosa. Und Branded ist ueberall nur ein Filter, ohne zu sagen, warum
+     es zaehlt. Hier steht beides als Bild mit Zahlen, und die Geschichte dazu: stark beim
+     Recherchieren, weg beim Vergleichen.
+     DIE BEGRIFFE SIND DIE DER APP und keine erfundenen Phasen: Informational, Recommendation,
+     Transactional (core, INTENTE; "Other" ist keine Stufe und steht hier nicht). Branded heisst wie
+     in der App: der Prompt nennt die eigene Marke oder einen getrackten Wettbewerber, und solche
+     Prompts zaehlen standardmaessig nicht in die Auswertung (Schalter "Branded prompts" in der
+     Filterleiste). "Nur Branded" gibt es im Produkt nicht, also steht es hier auch nicht. */
+  var REISE_CHIP = "Customer Journey";
+  var REISE_H = "Find the step where AI drops you";
+  var REISE_SUB = "Every prompt is sorted by what the buyer wants: learning, comparing or buying. " +
+    "You see your visibility at each step instead of one flattering average.";
+  var REISEKARTEN = [
+    { breit: 60, vis: "reise", muster: true,
+      h: "Visibility at every step to purchase",
+      p: "Prompts are classified automatically. See where buyers meet you, and where a competitor takes over." },
+    { breit: 40, vis: "branded", muster: "versetzt",
+      h: "Branded prompts, kept apart",
+      p: "Questions that name you or a competitor stay out of your score. Switch them on to see what buyers hear at the last step." }
+  ];
+  /* Die Zahlen erzaehlen EINE Geschichte: Acme fuehrt, solange gelernt wird, und verliert, sobald
+     verglichen wird -- dort zieht BMW vorbei. d ist die Veraenderung zum Vorzeitraum (Punkte). */
+  var REISE = [
+    { k: "informational",  du: 52.4, wett: 31.0, n: 86,  d: 3.1 },
+    { k: "recommendation", du: 23.8, wett: 41.2, n: 124, d: -2.4 },
+    { k: "transactional",  du: 9.1,  wett: 27.5, n: 38,  d: -0.8 }
+  ];
+  /* Die Saetze der App zu den Stufen (core, INTENT_WILL) -- hier dieselben Worte. */
+  var REISE_WILL = { informational: "Getting to know the topic", recommendation: "Comparing options",
+                     transactional: "Ready to buy or sign up" };
+  var REISE_WETT = "bm";
+  /* Dieselbe Farbe wie die BMW-Linie in der ersten Karte (KRV): eine Marke, ein Ton auf der Seite. */
+  var REISE_WETT_FARBE = "#d88225";
+  var REISE_HINWEIS = "Biggest gap at Recommendation: BMW is named 1.7 times as often as you.";
+
+  /* Branded: Sichtbarkeit ohne und mit Branded-Prompts, und drei Prompts, die eine Marke nennen. */
+  var BRANDED = {
+    ohne: 24.6, mit: 41.2,
+    schalter: "Branded prompts",
+    aus: "Left out of your metrics", an: "Counted in your metrics",
+    wert: "Visibility",
+    prompts: [
+      { t: "Acme EV or Tesla Model Y for a family?", m: ["ac", "te"] },
+      { t: "Is the BMW iX worth the price in 2026?", m: ["bm"] },
+      { t: "How far does the Acme EV go in winter?", m: ["ac"] }
+    ]
+  };
+
+  function reise(){
+    return '<section class="ulh-feat ulh-handel ulh-reise" id="journey">' +
+      '<div class="ulh-spur">' +
+        '<div class="ulh-feat-kopf ulh-auf">' +
+          '<span class="ulh-feat-chip">' + REISE_CHIP + '</span>' +
+          '<h2 class="ulh-feat-h">' + REISE_H + '</h2>' +
+          '<p class="ulh-feat-sub">' + REISE_SUB + '</p>' +
+        '</div>' +
+        '<div class="ulh-cards-box">' +
+          '<div class="ulh-cards">' +
+            '<div class="ulh-cards-row">' + merkmalKarte(REISEKARTEN[0], 0) + merkmalKarte(REISEKARTEN[1], 1) + '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</section>';
+  }
+
+  /* ---- Vorschau: die drei Stufen ----
+     Gebaut zur Laufzeit (visInhalt), mit den Bauteilen aus core: das Intent-Label (intentHtml,
+     Zeichen plus Text wie in der Prompt-Tabelle), der Trend-Chip (trendChip) und die Zeichen.
+     Die Balken wachsen erst, wenn die Karte im Bild ist (is-da, visReiseFuellen). */
+  function visReise(){
+    var kern = window.UpstreemCore || {};
+    var du = MARKEN[0], wett = MARKEN.filter(function(m){ return m.id === REISE_WETT; })[0];
+    var max = 60;
+    function balken(m, wert, farbe, kl){
+      return '<div class="ulh-rs-b' + (kl ? " " + kl : "") + '">' +
+        '<img src="' + m.logo + '" alt="" referrerpolicy="no-referrer"/>' +
+        '<span class="ulh-rs-spur"><i style="--rs-w:' + (wert / max * 100).toFixed(1) + '%;background:' + farbe + '"></i></span>' +
+        '<span class="ulh-rs-bw">' + Math.round(wert) + '%</span>' +
+      '</div>';
+    }
+    var stufen = REISE.map(function(r, i){
+      var label = kern.intentHtml ? kern.intentHtml({ intent: r.k }) : r.k;
+      var trend = kern.trendChip ? kern.trendChip(r.d, { decimals: true }) : "";
+      return '<div class="ulh-rs-st' + (r.du < r.wett ? " is-hinten" : "") + '" style="--rs-i:' + i + '">' +
+        '<div class="ulh-rs-kopf">' + label + '</div>' +
+        '<div class="ulh-rs-will">' + REISE_WILL[r.k] + '</div>' +
+        '<div class="ulh-rs-zahl"><span class="ulh-rs-wert">' + eine(r.du) + '%</span>' + trend + '</div>' +
+        '<div class="ulh-rs-balken">' +
+          balken(du, r.du, du.farbe) +
+          balken(wett, r.wett, REISE_WETT_FARBE, "is-wett") +
+        '</div>' +
+        '<div class="ulh-rs-n">' + r.n + ' prompts</div>' +
+      '</div>';
+    }).join('<span class="ulh-rs-pfeil" aria-hidden="true">' + (kern.icon ? kern.icon("chevronRight", 2) : "") + '</span>');
+    return '<div class="ulh-rs">' +
+      '<div class="ulh-rs-oben">' +
+        '<span class="ulh-rs-titel">Visibility by intent</span>' +
+        '<span class="ulh-rs-legende">' +
+          '<span><i style="background:' + du.farbe + '"></i>' + du.name + '</span>' +
+          '<span><i style="background:' + REISE_WETT_FARBE + '"></i>' + (wett ? wett.name : "") + '</span>' +
+        '</span>' +
+      '</div>' +
+      '<div class="ulh-rs-stufen">' + stufen + '</div>' +
+      '<div class="ulh-rs-hinweis">' + (kern.icon ? kern.icon("arrowDownRight", 2) : "") +
+        '<span>' + REISE_HINWEIS + '</span></div>' +
+    '</div>';
+  }
+
+  /* ---- Vorschau: Branded ----
+     Oben der Schalter aus der Filterleiste der App (.up-pop-row mit .up-switch, dieselben Worte),
+     darunter die Sichtbarkeit und drei Prompts mit dem Branded-Chip aus core (brandedHtml: das
+     Wort und die Favicons der genannten Marken). brandedLauf legt den Schalter im Takt um: die Zahl
+     zaehlt mit, die drei Zeilen kommen dazu oder treten zurueck -- so sieht man, warum Branded den
+     Score schoent. */
+  function visBranded(){
+    var kern = window.UpstreemCore || {};
+    var marke = {};
+    MARKEN.forEach(function(m){ marke[m.id] = m; });
+    var zeilen = BRANDED.prompts.map(function(p){
+      var chip = kern.brandedHtml ? kern.brandedHtml({
+        branded: true,
+        branded_brands: p.m.map(function(id){ return { name: marke[id].name, logo_url: marke[id].logo }; })
+      }) : "";
+      return '<div class="ulh-br-z"><span class="ulh-br-p">' + p.t + '</span>' + chip + '</div>';
+    }).join("");
+    return '<div class="ulh-br">' +
+      '<div class="up-pop-row ulh-br-schalter">' +
+        '<span class="up-pop-label"><span>' + BRANDED.schalter + '</span>' +
+          '<span class="up-pop-hint ulh-br-hint">' + BRANDED.aus + '</span></span>' +
+        '<span class="up-switch"></span>' +
+      '</div>' +
+      '<div class="ulh-br-zahl">' +
+        '<span class="ulh-br-t">' + BRANDED.wert + '</span>' +
+        '<span class="ulh-br-wert">' + eine(BRANDED.ohne) + '%</span>' +
+        '<span class="ulh-br-diff">+' + eine(BRANDED.mit - BRANDED.ohne) + ' pts</span>' +
+      '</div>' +
+      '<div class="ulh-br-liste">' + zeilen + '</div>' +
+    '</div>';
+  }
+
+  /* Wachsen und Umlegen, sobald man hinsieht. Beides nur einmal angelegt; der Takt des Schalters
+     ruht, solange die Karte nicht im Bild oder die Seite verdeckt ist. */
+  function visReiseFuellen(root){
+    var rs = root.querySelector(".ulh-rs"), br = root.querySelector(".ulh-br");
+    if (!rs || rs.__ulhVoll) return false;
+    rs.__ulhVoll = true;
+    var ruhig = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function sobaldSichtbar(el, fn){
+      if (ruhig || typeof IntersectionObserver === "undefined"){ fn(true); return; }
+      var b = new IntersectionObserver(function(e){
+        if (e[0]) fn(e[0].isIntersecting);
+      }, { threshold: 0.35 });
+      b.observe(el);
+    }
+    sobaldSichtbar(rs, function(an){ if (an) rs.classList.add("is-da"); });
+    if (!br) return true;
+    var wert = br.querySelector(".ulh-br-wert"), hint = br.querySelector(".ulh-br-hint");
+    var schalter = br.querySelector(".up-switch"), sichtbar = false, mit = false, uhr = null;
+    function zaehlen(von, bis){
+      if (ruhig){ wert.textContent = eine(bis) + "%"; return; }
+      var t0 = performance.now(), dauer = 700;
+      (function schritt(jetzt){
+        var f = Math.min(1, (jetzt - t0) / dauer), e = 1 - Math.pow(1 - f, 4);
+        wert.textContent = eine(von + (bis - von) * e) + "%";
+        if (f < 1) requestAnimationFrame(schritt);
+      })(t0);
+    }
+    function umlegen(){
+      if (!sichtbar || document.hidden) return;
+      mit = !mit;
+      br.classList.toggle("is-mit", mit);
+      schalter.classList.toggle("is-on", mit);
+      hint.textContent = mit ? BRANDED.an : BRANDED.aus;
+      zaehlen(mit ? BRANDED.ohne : BRANDED.mit, mit ? BRANDED.mit : BRANDED.ohne);
+    }
+    sobaldSichtbar(br, function(an){
+      sichtbar = an;
+      if (an && !uhr && !ruhig){ uhr = setInterval(umlegen, 3200); setTimeout(umlegen, 900); }
+    });
+    return true;
+  }
+
   function ereignisse(){
     return '<section class="ulh-feat ulh-handel ulh-events">' +
       '<div class="ulh-spur">' +
@@ -5221,6 +5411,7 @@
       visModelleFuellen(w);
       visBalkenFuellen(w);
       visEventKurveFuellen(w);
+      visReiseFuellen(w);
       ulhTakt(w);
       quellFuellen();
       /* NUR BEIM ERSTEN FUELLEN (28.09. gemessen): fuellen() laeuft am Ende JEDES Zyklus erneut
