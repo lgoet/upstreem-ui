@@ -8586,11 +8586,34 @@
   function treiberDrehen(root){
     var feld = root.querySelector(".ulh-wechsel");
     if (!feld || feld.__ulhDreht) return;
-    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     var w = feld.querySelectorAll(".ulh-wort");
     if (w.length < 2) return;
     feld.__ulhDreht = true;
     var i = 0;
+    for (var a = 0; a < w.length; a++) if (w[a].classList.contains("is-an")) i = a;
+    /* DAS FELD SO BREIT WIE DAS AKTUELLE WORT (14.10. gemeldet: "der Satz steht links, nicht
+       mittig"). Vorher war das Feld immer so breit wie das LAENGSTE Wort ("qualified traffic."):
+       stand "revenue." darin, hing rechts unsichtbarer Leerraum an der Zeile, und der mittig
+       gesetzte Satz sah linksbuendig aus. Jetzt misst die Breite das Wort, das gerade steht, und
+       gleitet beim Wechsel mit (landing-hero.css, .ulh-wechsel) -- die Zeile zentriert sich
+       dabei neu. Sofort (ohne Uebergang) beim Start, wenn die Schrift fertig geladen ist und wenn
+       sich das Fenster aendert: dort soll nichts sichtbar nachgleiten. */
+    function breite(sofort){
+      var b = w[i].offsetWidth;
+      if (!b) return;
+      if (sofort){
+        feld.style.transition = "none";
+        feld.style.width = b + "px";
+        void feld.offsetWidth;
+        feld.style.transition = "";
+      } else {
+        feld.style.width = b + "px";
+      }
+    }
+    breite(true);
+    try { if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ breite(true); }); } catch (e){}
+    window.addEventListener("resize", function(){ breite(true); }, { passive: true });
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     setInterval(function(){
       if (document.hidden || !feld.isConnected) return;
       var alt = w[i];
@@ -8599,6 +8622,7 @@
       alt.classList.remove("is-an");
       alt.classList.add("is-weg");
       w[i].classList.add("is-an");
+      breite(false);
     }, WORT_MS);
   }
 

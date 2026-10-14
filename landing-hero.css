@@ -326,11 +326,20 @@
 .ulh-sub:has(.ulh-wechsel) { text-wrap: balance; }
 .ulh-wechsel {
   display: inline-grid; vertical-align: bottom; overflow: hidden;
+  /* Eine Spur, so breit wie das Feld -- und das Feld so breit wie das aktuelle Wort (treiberDrehen
+     setzt width). Ohne minmax(0, 1fr) wuerde die Spur wieder auf das laengste Wort wachsen. */
+  grid-template-columns: minmax(0, 1fr);
   /* Platz fuer Unterlaengen (g, q), sonst schneidet overflow sie ab. */
   padding-bottom: .12em; margin-bottom: -.12em;
+  /* Die Breite gleitet mit dem Wortwechsel; die Zeile zentriert sich dabei neu. Dieselbe Kurve
+     und Dauer wie das Wort selbst (transform 760ms expo). */
+  transition: width 760ms var(--ulh-expo);
 }
+@media (prefers-reduced-motion: reduce) { .ulh-wechsel { transition: none; } }
 .ulh-wort {
-  grid-area: 1 / 1; text-align: left; white-space: nowrap;
+  /* justify-self: center statt dehnen: so misst offsetWidth das Wort selbst (die Breite fuer das
+     Feld), und ein laengeres Wort ragt beim Hereinkommen gleichmaessig nach beiden Seiten. */
+  grid-area: 1 / 1; justify-self: center; text-align: left; white-space: nowrap;
   font-weight: 500; color: var(--ulh-text);
   opacity: 0; transform: translateY(80%);
   transition: opacity 520ms var(--ulh-ease), transform 760ms var(--ulh-expo);
