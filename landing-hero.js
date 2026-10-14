@@ -136,8 +136,6 @@
     "Visibility by intent": "Visibility nach Intent",
     "Getting to know the topic": "Will das Thema verstehen", "Comparing options": "Vergleicht Anbieter",
     "Ready to buy or sign up": "Will kaufen oder abschließen",
-    "Biggest gap at Recommendation: BMW is named 1.7 times as often as you.":
-      "Größte Lücke bei Kommerziell: BMW wird 1,7-mal so oft genannt wie du.",
     "Branded prompts, kept apart": "Branded Prompts, sauber getrennt",
     "Questions that name you or a competitor stay out of your score. Switch them on to see what buyers hear at the last step.":
       "Fragen, die dich oder einen Wettbewerber nennen, zählen nicht in deinen Score. Schalte sie zu und sieh, was Käufer im letzten Schritt hören.",
@@ -241,7 +239,6 @@
     "Advanced features for growing businesses": "Erweiterte Funktionen für wachsende Unternehmen",
     "Prices exclude VAT. Cancel any time.": "Alle Preise zzgl. MwSt. Jederzeit kündbar.",
     /* Fuss */
-    "See how AI answers talk about your brand.": "Sieh, wie KI-Antworten über deine Marke sprechen.",
     "Legal": "Rechtliches", "Terms of service": "AGB", "Privacy policy": "Datenschutz", "Imprint": "Impressum",
     "Cookie settings": "Cookie-Einstellungen", "upstreem. All rights reserved.": "upstreem. Alle Rechte vorbehalten.",
     "Image credits": "Bildnachweis", "Product photos from Wikimedia Commons:": "Produktfotos von Wikimedia Commons:",
@@ -1261,7 +1258,6 @@
           '<a class="ulh-fuss-logo" href="' + SITE + '/" aria-label="upstreem">' +
             '<img src="' + WORTMARKE + '" alt="upstreem" width="218" height="31"/>' +
           '</a>' +
-          '<p class="ulh-fuss-satz">See how AI answers talk about your brand.</p>' +
           '<div class="ulh-fuss-netz">' +
             FUSS_NETZ.map(function(n){
               return '<a class="ulh-fuss-ic" href="' + n.h + '" target="_blank" rel="noopener"' +
@@ -3726,7 +3722,7 @@
     { breit: 60, vis: "reise", muster: true,
       h: "Visibility at every step to purchase",
       p: "Prompts are classified automatically. See where buyers meet you, and where a competitor takes over." },
-    { breit: 40, vis: "branded", muster: "versetzt",
+    { breit: 40, vis: "branded", muster: "linien",
       h: "Branded prompts, kept apart",
       p: "Questions that name you or a competitor stay out of your score. Switch them on to see what buyers hear at the last step." }
   ];
@@ -3741,14 +3737,19 @@
   var REISE_WILL = { informational: "Getting to know the topic", recommendation: "Comparing options",
                      transactional: "Ready to buy or sign up" };
   var REISE_WETT = "bm";
-  var REISE_HINWEIS = "Biggest gap at Recommendation: BMW is named 1.7 times as often as you.";
 
   /* Branded: Sichtbarkeit ohne und mit Branded-Prompts, und drei Prompts, die eine Marke nennen. */
+  /* SENTIMENT STATT VISIBILITY (14.10. abends, zweimal angemahnt: "die Metrik ist nicht
+     Visibility, wenn dann Sentiment"). Sichtbarkeit in Prompts, die die Marke selbst nennen, ist
+     fast immer hoch und sagt nichts -- interessant ist, WIE die Antwort ueber die Marke spricht.
+     Ganze Note auf 0-100 wie ueberall in der App (CLAUDE.md 2b). Die Geschichte bleibt: mit den
+     Branded-Prompts sieht der Wert besser aus, weil Fragen nach der eigenen Marke freundlicher
+     beantwortet werden -- darum stehen sie getrennt. */
   var BRANDED = {
-    ohne: 24.6, mit: 41.2,
+    ohne: 64, mit: 72,
     schalter: "Branded prompts",
     aus: "Left out of your metrics", an: "Counted in your metrics",
-    wert: "Visibility",
+    wert: "Sentiment",
     prompts: [
       { t: "Acme EV or Tesla Model Y for a family?", m: ["ac", "te"] },
       { t: "Is the BMW iX worth the price in 2026?", m: ["bm"] },
@@ -3780,8 +3781,9 @@
      voll in der Textfarbe wie die Linie der eigenen Marke im Hero, der Wettbewerber als hellblaue
      gestrichelte Huelle -- er ist der Massstab, nicht die Hauptsache. Darunter das Intent-Label aus
      core (Zeichen und Name wie in der Prompt-Tabelle) und der Satz der App zur Stufe (REISE_WILL).
-     Die Stufe, in der der Wettbewerber vorn liegt, ist nur an seinem kraeftigeren Wert zu sehen;
-     der Satz darunter sagt es in Worten.
+     Die Stufe, in der der Wettbewerber vorn liegt, ist an seinem kraeftigeren Wert zu sehen. Ein
+     Satz darunter ("Biggest gap at ...") ist am 14.10. abends wieder raus: er wurde abgeschnitten
+     und war nicht gewollt -- die Saeulen sagen es allein.
      Gebaut zur Laufzeit (visInhalt); die Saeulen wachsen erst, wenn die Karte im Bild ist (is-da,
      visReiseFuellen). */
   var REISE_MAX = 60;
@@ -3819,7 +3821,6 @@
         feld +
       '</div>' +
       '<div class="ulh-rs-fuss">' + fuss + '</div>' +
-      '<div class="ulh-rs-hinweis">' + REISE_HINWEIS + '</div>' +
     '</div>';
   }
 
@@ -3848,8 +3849,8 @@
       '</div>' +
       '<div class="ulh-br-zahl">' +
         '<span class="ulh-br-t">' + BRANDED.wert + '</span>' +
-        '<span class="ulh-br-wert">' + eine(BRANDED.ohne) + '%</span>' +
-        '<span class="ulh-br-diff">+' + eine(BRANDED.mit - BRANDED.ohne) + (LANG === "de" ? " Pkt." : " pts") + '</span>' +
+        '<span class="ulh-br-wert">' + Math.round(BRANDED.ohne) + '</span>' +
+        '<span class="ulh-br-diff">+' + Math.round(BRANDED.mit - BRANDED.ohne) + (LANG === "de" ? " Pkt." : " pts") + '</span>' +
       '</div>' +
       '<div class="ulh-br-liste">' + zeilen + '</div>' +
     '</div>';
@@ -3874,11 +3875,11 @@
     var wert = br.querySelector(".ulh-br-wert"), hint = br.querySelector(".ulh-br-hint");
     var schalter = br.querySelector(".up-switch"), sichtbar = false, mit = false, uhr = null;
     function zaehlen(von, bis){
-      if (ruhig){ wert.textContent = eine(bis) + "%"; return; }
+      if (ruhig){ wert.textContent = String(Math.round(bis)); return; }
       var t0 = performance.now(), dauer = 700;
       (function schritt(jetzt){
         var f = Math.min(1, (jetzt - t0) / dauer), e = 1 - Math.pow(1 - f, 4);
-        wert.textContent = eine(von + (bis - von) * e) + "%";
+        wert.textContent = String(Math.round(von + (bis - von) * e));
         if (f < 1) requestAnimationFrame(schritt);
       })(t0);
     }

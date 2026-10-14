@@ -2408,6 +2408,16 @@
   -webkit-mask-image: radial-gradient(ellipse 66% 64% at 60% 58%, #000 42%, transparent 100%);
   mask-image: radial-gradient(ellipse 66% 64% at 60% 58%, #000 42%, transparent 100%);
 }
+/* SENKRECHTE LINIEN (14.10. abends, hinter Branded: "nicht die Punkte, sondern das vertikale
+   Grid wie im Hero, aber in Grau"). Dieselbe Machart wie .ulh-bg-grid im Hero -- 1px alle 8px,
+   nur senkrecht --, in der Punktfarbe der anderen Muster statt in Weiss, und mit der Blende der
+   versetzten Punkte, damit es zur Kante hin auslaeuft wie die anderen. */
+.ulh-vis-muster.is-linien {
+  background-image: repeating-linear-gradient(to right, var(--ulh-punkt) 0 1px, transparent 1px 8px);
+  background-size: auto; background-position: 0 0;
+  -webkit-mask-image: radial-gradient(ellipse 66% 64% at 50% 58%, #000 42%, transparent 100%);
+  mask-image: radial-gradient(ellipse 66% 64% at 50% 58%, #000 42%, transparent 100%);
+}
 /* Die Vorschau liegt UEBER dem Muster. Platz rundherum, damit vom Muster etwas zu sehen ist
    (ungeskaliert, also mal 0.66 auf dem Schirm). */
 .ulh-vis[data-ulh-vis="domains"] .ulh-vis-in { position: relative; z-index: 1; padding: 24px 36px 0; box-sizing: border-box; }
@@ -3752,7 +3762,6 @@
    dreht sie um, statt eine zweite Datei zu fuehren, die auseinanderlaufen kann. 31px, damit das
    Zeichen darin auf denselben 26 steht wie vorher das einzelne. */
 .ulh-fuss-logo img { display: block; height: 31px; width: auto; filter: invert(1); }
-.ulh-fuss-satz { margin: 0; font-size: 13.5px; line-height: 1.5; color: #9a9a9a; max-width: 30ch; }
 .ulh-fuss-netz { display: flex; gap: 8px; margin-top: 4px; }
 .ulh-fuss-ic {
   width: 32px; height: 32px; border-radius: 9px;
@@ -4229,10 +4238,6 @@
 .ulh-rs-f { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; min-width: 0; }
 .ulh-rs-f .up-intent { height: 22px; font-size: 13px; }
 .ulh-rs-will { font-size: 12px; line-height: 1.35; color: var(--vc-muted, #6b6f76); }
-.ulh-rs-hinweis {
-  margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--vc-border, #e7e9ec);
-  font-size: 12px; line-height: 1.4; color: var(--vc-muted, #6b6f76); text-align: center;
-}
 
 /* Branded: der Schalter der Filterleiste, die Zahl, drei Prompts. */
 .ulh-br { width: calc(100% - 40px); padding: 6px 6px 10px; }
