@@ -18947,6 +18947,40 @@
     h.removeAttribute("data-up-vorab-seit");
     return isFinite(t) && t >= 0 ? t : -1;
   }
+  /* DIE REITER DES PLATZHALTERS (14.10., gemeldet: "beim Wechsel liegt ueber der Subpage-Navigation
+     kurz etwas Graues"). Vorher standen dort graue Balken, weil "nur die Seite ihre Namen kennt" --
+     beim Tausch sprangen sie dann auf die echten Reiter. Jetzt zeichnet der Platzhalter die Leiste
+     mit DEMSELBEN makePageNav und denselben Eintraegen wie die Seite, also auf den Pixel gleich;
+     der Tausch ist unsichtbar. Gewaehlt ist der erste Reiter: der Platzhalter steht nur beim ersten
+     Besuch, und da beginnt jede Seite dort (Merker und Adresse gibt es erst danach).
+     Die Listen sind ABGESCHRIEBEN aus den Seiten (prompts-page.js, citations-page.js,
+     brands-page.js REITER; shopping.js, ads.js SEITEN; settings-page.js reiter()) -- aendert sich
+     dort ein Reiter, hier mitziehen. Schluessel ist der Seitenname, den der Gastgeber ohnehin
+     schickt (upstreem-app, lib/ansichten.ts). Kennt die Liste eine Seite nicht, steht die Leiste
+     leer mit ihrer Grundlinie: lieber nichts als ein falsches Detail. */
+  var VORAB_REITER = {
+    "Prompt Insights": function(){ return [{ value: "allprompts", label: "All Prompts", icon: "" }, { value: "responses", label: "Responses", icon: "" }, { value: "topics", label: "Topics", icon: "" }]; },
+    "Citations": function(){ return [
+      { value: "domains", label: "Domains", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /> <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /> <path d="M2 12h20" /></svg>' },
+      { value: "urls", label: "URLs", icon: icon("linkFeather", 2) }]; },
+    "Brands": function(){ return [{ value: "tracked", label: "Tracked", icon: "" }, { value: "discover", label: "Discover", icon: "" }]; },
+    "Shopping": function(){ return [
+      { value: "overview", label: "Overview", icon: icon("dashboardSquare", 2) }, { value: "products", label: "Products", icon: icon("stackStar", 2) },
+      { value: "brands", label: "Brands", icon: icon("squareStack", 2) }, { value: "merchants", label: "Merchants", icon: icon("store", 2) }]; },
+    "Ads": function(){ return [
+      { value: "overview", label: "Overview", icon: icon("dashboardSquare", 2) }, { value: "advertisers", label: "Advertisers", icon: icon("bank", 2) },
+      { value: "library", label: "Ad Library", icon: icon("album", 2) }]; },
+    /* Your Brand traegt das Logo der eigenen Marke, sonst das Paket -- dieselbe Wahl wie logoUrl() der
+       Seite, soweit sie vor deren Daten moeglich ist (die Marken der App liegen schon vor). */
+    "Settings": function(){
+      var u = "", l = typeof getBrands === "function" ? getBrands() : [];
+      for (var i = 0; i < l.length; i++) if (l[i] && l[i].role === "own" && l[i].logo_url){ u = String(l[i].logo_url); break; }
+      return [
+        { value: "preferences", label: "Your Brand", icon: u ? '<img class="uss-navlogo" src="' + esc(u) + '" alt="" onerror="this.style.display=&quot;none&quot;"/>'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /> <path d="m3.3 7 8.7 5 8.7-5" /> <path d="M12 22V12" /></svg>' },
+        { value: "team", label: "Team Organisation", icon: icon("users", 2) },
+        { value: "billing", label: "Billing", icon: icon("dollarSign", 2) }]; }
+  };
   function seitenVorab(root, cfg){
     if (!root) return null;
     cfg = cfg || {};
@@ -18957,9 +18991,8 @@
       (mitKopf ? '<div class="up-ph-top uvb-pagehead"><div class="up-ph-left"><h1 class="up-ph-heading">' +
         esc(t_(cfg.name)) + '</h1></div></div>' : '') +
       /* cfg.reiter: so viele Reiter hat die Seite (0 = keine Reiterleiste) -- Leiste und Grundlinie
-         stehen dann schon, wo die Seite sie zeichnet. */
-      (mitKopf && cfg.reiter > 0 ? '<div class="up-ph-nav uvb-nav" aria-hidden="true">' +
-        new Array(Math.min(8, cfg.reiter | 0) + 1).join('<span class="up-ph-navitem"><span class="uvb-sk is-reiter"></span></span>') + '</div>' : '') +
+         stehen dann schon, wo die Seite sie zeichnet; die Reiter selbst setzt makePageNav unten. */
+      (mitKopf && cfg.reiter > 0 ? '<div class="up-ph-nav uvb-nav" aria-hidden="true"></div>' : '') +
       /* Das Skelett: eine Filterzeile (zwei Knoepfe in Knopfhoehe) und zwei Karten -- das, womit
          jede Seite darunter beginnt. Keine Nachbildung einer bestimmten Seite: es wird in jedem
          Fall durch die echte ersetzt, und ein falsches Detail fiele mehr auf als keines. */
@@ -18969,6 +19002,12 @@
         '<div class="uvb-karte"><span class="uvb-sk is-titel"></span></div>' +
       '</div>';
     if (THEME.value != null) applyThemeTo(root, THEME.value === "dark");
+    /* Erst die Reiter, dann die Krume -- dieselbe Reihenfolge wie jede Seite (makePageCrumbs zieht
+       den Strich der Reiter nach, wenn es das Polster der Wurzel aendert). */
+    var vorabNav = root.querySelector(".uvb-nav"), liste = VORAB_REITER[cfg.name];
+    if (vorabNav && liste){
+      try { makePageNav(root, { nav: vorabNav, storeKey: "vorab|" + cfg.name, pages: liste() }); } catch(e){ vorabNav.innerHTML = ""; }
+    }
     if (mitKopf) makePageCrumbs(root, { icon: cfg.icon, name: cfg.name, marke: cfg.marke, komponente: true });
     return root;
   }

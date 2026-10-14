@@ -5867,20 +5867,23 @@
    Behaelter ragte um 10 nach links in den Rand). Der Abstand zwischen den Reitern sinkt um diese
    2 x 8 von 25 auf 12 -- von Schrift zu Schrift bleiben es 28 wie vorher.
    Folge: das erste Reiterzeichen steht 8 weiter rechts als das Krumenzeichen darueber. */
-.up-root:is(.ucs-root, .uad-root, .upi-root, .ubr-root, .uss-root, .ush-root) .up-ph-navpille,
+.up-root:is(.ucs-root, .uad-root, .upi-root, .ubr-root, .uss-root, .ush-root, .uvb-root) .up-ph-navpille,
 .up-ph-root:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navpille {
   top: 10px; bottom: 10px; }
 /* Im SCHMALEN Kopf (is-narrow, unter 768) teilen sich die Reiter die Breite (flex 1 1 0, Inhalt
    mittig) -- dort gibt es keine linke Kante, die unter dem Krumenzeichen stehen koennte. Also die
    alte Geometrie: 4px Luecke und 12px Seitenpolster, sonst laegen die gestreckten Reiter 28px
    auseinander. Und keine verlaengerte Klickflaeche: bei 4px Luecke griffe sie 10px in den
-   Nachbarn, und der spaetere Nachbar liegt oben -- ein Klick rechts in Reiter 1 waehlte Reiter 2. */
+   Nachbarn, und der spaetere Nachbar liegt oben -- ein Klick rechts in Reiter 1 waehlte Reiter 2.
+   Der Platzhalter (.uvb-root) steht mit in den Listen, seit er die echten Reiter zeichnet (14.10.):
+   sonst lagen seine Reiter im schmalen Fenster 12 statt 4 auseinander und sprangen beim Tausch. */
 .up-root.ucs-root.is-narrow .up-ph-nav,
 .up-root.uad-root.is-narrow .up-ph-nav,
 .up-root.upi-root.is-narrow .up-ph-nav,
 .up-root.ubr-root.is-narrow .up-ph-nav,
 .up-root.uss-root.is-narrow .up-ph-nav,
 .up-root.ush-root.is-narrow .up-ph-nav,
+.up-root.uvb-root.is-narrow .up-ph-nav,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-nav { gap: 4px; }
 .up-root.ucs-root.is-narrow .up-ph-navitem,
 .up-root.uad-root.is-narrow .up-ph-navitem,
@@ -5888,6 +5891,7 @@
 .up-root.ubr-root.is-narrow .up-ph-navitem,
 .up-root.uss-root.is-narrow .up-ph-navitem,
 .up-root.ush-root.is-narrow .up-ph-navitem,
+.up-root.uvb-root.is-narrow .up-ph-navitem,
 .up-ph-root.is-narrow:is(.dph-root, .pph-root, .cph-root, .bph-root, .pfph-root, .oph-root, .sph-root) .up-ph-navitem { padding: 0 15px 0 12px; }
 /* Schmal: die Pille folgt dem gestreckten Reiter von selbst (gemessen wird sein Rechteck). */
 .up-root.ucs-root.is-narrow .up-ph-navitem::before,
@@ -5962,8 +5966,9 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 .uvb-root .uvb-pagehead { padding: 8px 0; animation: uvb-auf var(--up-t-auftritt) var(--up-ease-expo) both; }
 /* Die Reiterleiste der Seiten mit Reitern (Prompts, Citations, Brands, Shopping, Ads, Settings):
    Hoehe und Grundlinie aus den Listen oben (.up-root.uvb-root .up-ph-nav/-navitem), die Reiter
-   selbst nur als Balken -- ihre Namen kennt erst die Seite. */
-.uvb-root .uvb-nav { animation: uvb-auf var(--up-t-auftritt) var(--up-ease-expo) 50ms both; }
+   seit dem 14.10. die echten (core.js VORAB_REITER) statt grauer Balken. Ohne Klick: bis die Seite
+   steht, hat ein Reiter nichts zu oeffnen. */
+.uvb-root .uvb-nav { animation: uvb-auf var(--up-t-auftritt) var(--up-ease-expo) 50ms both; pointer-events: none; }
 .uvb-main { display: flex; flex-direction: column; gap: 16px; padding-top: 16px;
   animation: uvb-auf var(--up-t-auftritt) var(--up-ease-expo) 100ms both; }
 .uvb-zeile { display: flex; gap: 8px; }
@@ -5971,7 +5976,6 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 .uvb-sk.is-knopf { width: 112px; height: var(--up-h-btn); }
 .uvb-sk.is-knopf.is-kurz { width: 88px; }
 .uvb-sk.is-titel { width: 132px; height: 12px; border-radius: var(--up-r-xs); }
-.uvb-sk.is-reiter { width: 72px; height: 12px; border-radius: var(--up-r-xs); }
 .uvb-karte { box-sizing: border-box; height: 240px; padding: 20px; border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); }
 .uvb-karte.is-gross { height: 360px; }
 @keyframes uvb-auf { from { opacity: 0; transform: translateY(10px); } }
