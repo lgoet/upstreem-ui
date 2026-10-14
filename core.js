@@ -574,6 +574,17 @@
     "Filter brands": "Brands filtern",
     "Filter": "Filtern",
     "Research settings": "Recherche einstellen",
+    /* Fehlermeldungen der Prompt-Research-Seite (Audit 14.10.: standen nur englisch da). */
+    "Choose a market in the research settings.": "Wähle in den Einstellungen einen Markt.",
+    "Enter at least one keyword to start a research.": "Gib mindestens einen Begriff ein, um eine Recherche zu starten.",
+    "Prompt research is not available yet.": "Prompt Research ist noch nicht verfügbar.",
+    "The research could not be loaded. Please try again.": "Die Recherche konnte nicht geladen werden. Versuch es noch einmal.",
+    "The research could not be started. Please reload the page.": "Die Recherche konnte nicht gestartet werden. Lade die Seite neu.",
+    "The research could not be started. Please try again.": "Die Recherche konnte nicht gestartet werden. Versuch es noch einmal.",
+    "The research was deleted.": "Die Recherche wurde gelöscht.",
+    "Too many researches in a short time. Please wait a minute and try again.": "Zu viele Recherchen in kurzer Zeit. Warte eine Minute und versuch es dann noch einmal.",
+    "Use 1 to 20 keywords with at most 300 characters in total, and choose a market.": "Nutze 1 bis 20 Begriffe mit zusammen höchstens 300 Zeichen und wähle einen Markt.",
+    "You do not have access to this team.": "Du hast keinen Zugriff auf dieses Team.",
     "Show tools": "Werkzeuge zeigen",
     "Hide tools": "Werkzeuge ausblenden",
     /* Der Knopf, der die Werkzeugleiste ueber einer Tabelle aufklappt (06.10.): "Filtern" tut die

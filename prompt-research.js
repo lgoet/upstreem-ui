@@ -465,7 +465,9 @@
     { alpha2: 'US', alpha3: 'USA', name: 'United States', flag_url: 'https://flagcdn.com/us.svg', prompt_count: 0 },
     { alpha2: 'GB', alpha3: 'GBR', name: 'United Kingdom', flag_url: 'https://flagcdn.com/gb.svg', prompt_count: 0 }
   ];
-  var state = { market: null, market_alpha2: null, market_alpha3: null, market_name: null, business_model: 'b2c', persona: '' };
+  /* branded (14.10.): ob die Recherche auch Prompts mit Markennamen vorschlagen darf -- dieselben
+     Werte wie der Branded-Filter der App ("non_branded" | "all"), Vorgabe wie dort ohne. */
+  var state = { market: null, market_alpha2: null, market_alpha3: null, market_name: null, business_model: 'b2c', persona: '', branded: 'non_branded' };
   var currentSuggestedPrompts = [];
   var previousResearches = [];
   var suggestionTagsSource = null;
@@ -515,7 +517,7 @@
     STORE[instanceId] = {
       tags: suggestionTagsSource, tagsOffen: suggestionTagsExpanded,
       maerkte: gemerkteMaerkte, markt: state.market, marktWunsch: _pendingMarket,
-      modell: state.business_model, persona: state.persona,
+      modell: state.business_model, persona: state.persona, branded: state.branded,
       verlauf: gemerkterVerlauf,
       zustand: root.getAttribute('data-research-state') || 'idle', laufSeit: laufSeit,
       ergebnisse: gemerkteErgebnisse, ergebnisLaedt: ergebnisLaedt,
@@ -1154,11 +1156,26 @@
     settingsToggle.classList.toggle('is-active', isOpen);      // §6a: open trigger keeps its state
   });
   root.querySelectorAll('.upr-dd').forEach(wireDropdown);
+  /* Branded als Schalter-Pille in der Fusszeile (14.10., Entwurf A): ein Klick schaltet um. */
+  var brandedPill = root.querySelector('#upr-branded');
+  function brandedZeigen(){
+    if (!brandedPill) return;
+    var an = state.branded === 'all';
+    brandedPill.setAttribute('aria-pressed', an ? 'true' : 'false');
+    var sw = brandedPill.querySelector('.up-switch');
+    if (sw) sw.classList.toggle('is-on', an);
+  }
+  if (brandedPill) brandedPill.addEventListener('click', function(){
+    state.branded = state.branded === 'all' ? 'non_branded' : 'all';
+    brandedZeigen(); merke();
+  });
+  brandedZeigen();
 
   if (startButton) startButton.addEventListener('click', function(){
     var payload = { keywords: textarea ? textarea.value.trim() : '', intents: eingabe.intents ? eingabe.intents() : [],
                     market: state.market, market_alpha2: state.market_alpha2,
-                    market_alpha3: state.market_alpha3, market_name: state.market_name, business_model: state.business_model, persona: state.persona };
+                    market_alpha3: state.market_alpha3, market_name: state.market_name, business_model: state.business_model, persona: state.persona,
+                    branded: state.branded };
     updateResearchContext(payload); renderResultsContext();
     if (root.__uprStartLocked) return;
     root.__uprStartLocked = true; setTimeout(function(){ root.__uprStartLocked = false; }, 1200);
@@ -1733,6 +1750,7 @@
     selectDdValue(root.querySelector('.upr-dd[data-name="persona"]'), v.persona);
     /* Direkt gesetzt, falls der Wert zu keiner Option passt (setPersona nimmt freien Text). */
     if (v.modell != null) state.business_model = v.modell;
+    if (v.branded === 'all' || v.branded === 'non_branded'){ state.branded = v.branded; brandedZeigen(); }
     if (v.persona != null) state.persona = v.persona;
     if (Array.isArray(v.verlauf)) renderPreviousResearches(v.verlauf);
     else if (v.listeFehler) api.setHistoryError();

@@ -59,6 +59,9 @@
         market: str(d.market_alpha2 || d.market).trim().toUpperCase(),
         business_model: str(d.business_model).trim() || "b2c",
         persona: persona || null,
+        /* Ob Vorschlaege eine Marke nennen duerfen (14.10., Schalter in den Einstellungen):
+           "non_branded" (Vorgabe, wie der Filter der App) oder "all". */
+        branded: str(d.branded) === "all" ? "all" : "non_branded",
         /* Die gewaehlten Intents (14.10.): die Recherche teilt die Zahl der Prompts gleichmaessig
            auf sie auf. Leer -> null, dann wie bisher ohne Vorgabe. Nur die drei Stufen der
            Customer Journey -- "other" ist keine Richtung, nach der man recherchiert. */
