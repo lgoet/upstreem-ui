@@ -1837,7 +1837,6 @@
     "Names {names}": "Nennt {names}",
     "Names a tracked brand": "Nennt eine getrackte Marke",
     "Marked as branded by you": "Von dir als branded markiert",
-    "Visibility by intent": "Visibility nach Intent",
     "Not branded": "Nicht branded",
     "What does branded mean?": "Was heißt branded?",
     "The prompt names your brand or a tracked competitor. Branded prompts are left out of the metrics, because they say little about how visible you are on open questions. Detected automatically, and you can change it.": "Der Prompt nennt deine Marke oder einen getrackten Wettbewerber. Branded Prompts fließen nicht in die Kennzahlen ein, weil sie wenig darüber sagen, wie sichtbar du bei offenen Fragen bist. Wird automatisch erkannt, du kannst es ändern.",

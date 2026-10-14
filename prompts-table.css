@@ -1363,26 +1363,24 @@
 .upt-kpi-body, .upt-kpi-foot { transition: opacity 200ms ease; }
 
 /* ---- Karte 1: Balkenliste nach Topics ----
-   Seit dem 14.10. gelten dieselben Masse fuer die Karte "Visibility by intent" (.upt-kpi-intents):
-   dasselbe Bauteil, dieselbe Karte, also dieselbe Balkenform.
    UC.makeBarList baut die Liste, hier stehen nur die abweichenden Masse. Die Vorgabe in core ist
    32px Balkenhoehe; hier sind es 16, also gehen ALLE zusammenhaengenden Werte im selben
    Verhaeltnis mit (§1): Radius 8 -> 4, Innenabstand 10 -> 5, Abstand 8 -> 4, Zeilenpolster 5 -> 3.
    Die Beschriftungsspalte bleibt bei 148px: sie haengt an der Textlaenge, nicht an der
    Balkenhoehe -- damit fangen alle Balken auf derselben Breite an, genau wie gewuenscht. */
-:is(.upt-kpi-topics, .upt-kpi-intents) .up-bar-track { height: 16px; border-radius: 4px; }
-:is(.upt-kpi-topics, .upt-kpi-intents) .up-bar-fill { border-radius: 4px; padding: 0 5px; gap: 4px; }
-:is(.upt-kpi-topics, .upt-kpi-intents) .up-bar-row { padding: 3px 0; }
+.upt-kpi-topics .up-bar-track { height: 16px; border-radius: 4px; }
+.upt-kpi-topics .up-bar-fill { border-radius: 4px; padding: 0 5px; gap: 4px; }
+.upt-kpi-topics .up-bar-row { padding: 3px 0; }
 /* Namen und Zaehler in der Sekundaerfarbe (07.09. angefordert). Die Vorgabe in core ist die
    volle Textfarbe -- richtig fuer eine Balkenliste, die eine Seite fuer sich ist. Hier ist die
    Liste eine KENNZAHLENKARTE neben zwei anderen: die Aussage traegt der Balken, die Beschriftung
    sagt nur, welcher es ist. Nur an dieser Karte, damit der Radar und das Detail ihre Werte
    behalten. */
-:is(.upt-kpi-topics, .upt-kpi-intents) .up-bar-labeltxt { font-size: 12px; color: var(--vc-muted); }
+.upt-kpi-topics .up-bar-labeltxt { font-size: 12px; color: var(--vc-muted); }
 /* Der Zaehler rechts: eigene Spalte mit fester Breite, damit die Zahlen untereinander stehen.
    tabular-nums, sonst wandern die Ziffern -- dieselbe Regel wie bei .uto-when. */
 /* Die Wertspalte (cfg.pctCol) mit 16px Abstand zur Balkenspur -- so angefordert. */
-:is(.upt-kpi-topics, .upt-kpi-intents) .up-bar-pctcol { margin-left: 16px; color: var(--vc-muted); }
+.upt-kpi-topics .up-bar-pctcol { margin-left: 16px; color: var(--vc-muted); }
 /* Der aufgehellte Sonderwert im Dunkeln (rgba(255,255,255,0.92)) ist entfallen: er war die
    dunkle Entsprechung der vollen Textfarbe, und die gilt hier nicht mehr. --vc-muted traegt
    beide Themen selbst -- mit einer Spezifitaet von (0,4,0) haette die alte Regel die neue sonst
