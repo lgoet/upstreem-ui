@@ -10177,7 +10177,8 @@
      aus dem DOM nimmt, laesst dort ein this.parentNode auf null laufen -- eine neue Fehlerzeile
      in der Konsole, statt einer weniger. Nach dem Zug ist das Feld frei, und ein von dort
      gesetztes visibility:hidden wird gleich mit zurueckgenommen. */
-  var FAV_DIENST = /gstatic\.com\/faviconV2|google\.com\/s2\/favicons|wsrv\.nl\/\?url=/i;
+  /* wsrv.nl auch ohne Schraegstrich vor dem "?": so schreibt die App es (/fremd/wsrv.nl?url=, 14.10.). */
+  var FAV_DIENST = /gstatic\.com\/faviconV2|google\.com\/s2\/favicons|wsrv\.nl\/?\?url=/i;
   var FAV_KASTEN = ".up-fav, .up-logo-box, .up-stack-item, .up-ment-logo, .uhm-logo, .uab-fav, .up-es-av";
   var FAV_KLASSE = { "up-company-favicon": 1, "combo-filter-favicon": 1, "up-ment-logo": 1,
                      "usn-fav": 1, "uca-src-fav": 1 };
@@ -10282,7 +10283,7 @@
     src = String(src || ""); var m;
     if (FAV_S2.test(src)) return "";
     if ((m = /gstatic\.com\/faviconV2[^#]*[?&]url=([^&#]+)/i.exec(src))) return favHost(decodeURIComponent(m[1]));
-    if ((m = /wsrv\.nl\/\?[^#]*url=([^&#]+)/i.exec(src))) return favDomainAusSrc(decodeURIComponent(m[1]));
+    if ((m = /wsrv\.nl\/?\?[^#]*url=([^&#]+)/i.exec(src))) return favDomainAusSrc(decodeURIComponent(m[1]));
     if ((m = /icons\.duckduckgo\.com\/ip[23]\/([^\/?#]+)\.ico/i.exec(src))) return favHost(m[1]);
     if ((m = /icon\.horse\/icon\/([^\/?#]+)/i.exec(src))) return favHost(m[1]);
     if ((m = /logo\.clearbit\.com\/([^\/?#]+)/i.exec(src))) return favHost(m[1]);
@@ -15212,6 +15213,9 @@
     img.onload = function(){ if (erledigt) return; erledigt = true; fertig(dominantVon(img)); };
     img.onerror = function(){ if (erledigt) return; erledigt = true; fertig(null); };
     setTimeout(function(){ if (!erledigt){ erledigt = true; fertig(null); } }, 8000);
+    /* Ein Bild vom EIGENEN Ursprung (die App: /fremd/..., siehe fremdUmschreiben) braucht keinen
+       Proxy fuer den CORS-Kopf -- es verschmutzt die Leinwand nicht. */
+    if (u.charAt(0) === "/" && u.charAt(1) !== "/"){ img.src = u; return; }
     /* Das Protokoll muss weg, bevor es in den Proxy geht -- wsrv.nl erwartet die Adresse ohne
        "https://". Eine Adresse ohne Protokoll laeuft unveraendert durch. */
     img.src = FAV_PROXY + encodeURIComponent(u.replace(/^https?:\/\//i, "")) +
@@ -21841,6 +21845,21 @@
     }
     return d;
   }
+  /* ══ FREMDE BILDER UEBER DIE EIGENE ADRESSE (14.10., Datenschutz) ═══════════════════════════════
+     Logos und Favicons kamen direkt von Google (s2/favicons, gstatic faviconV2), Flaggen von
+     flagcdn.com, hochgeladene Logos von Bubbles Ablage (cdn.bubble.io) -- jeder Aufruf gab dem
+     Dritten die IP-Adresse des Nutzers. In der App (upstreem-app setzt window.__upFremdWeg =
+     "/fremd/") werden diese Adressen zu /fremd/<host>/...: der Server der App holt das Bild, der
+     Dritte sieht nur ihn. Nur der Anfang aendert sich -- "google.com/s2/favicons" steht weiter in
+     der Adresse, und jede Erkennung in core (FAV_DIENST, favDomainAusSrc) greift wie vorher.
+     Hier fuer die DATEN (jede rpc- und edge-Antwort, einmal als Text); die Adressen im Code
+     schreibt der Bau der App um (upstreem-app werkzeug/ui_holen.mjs). Ohne __upFremdWeg (Bubble,
+     Website) bleibt alles, wie es ist. */
+  var FREMD_BILD = /(?:https?:)?\/\/(www\.google\.com\/s2\/favicons|t\d\.gstatic\.com\/faviconV2|[a-z0-9]+\.cdn\.bubble\.io\/|flagcdn\.com\/)/g;
+  function fremdUmschreiben(t){
+    var weg = window.__upFremdWeg;
+    return weg && typeof t === "string" ? t.replace(FREMD_BILD, String(weg) + "$1") : t;
+  }
   function rpc(name, params, opts){
     opts = opts || {};
     name = String(name == null ? "" : name);
@@ -21886,7 +21905,7 @@
           return r.text().then(function(t){ clearTimeout(uhr); return { r: r, t: t }; });
         }).then(function(x){
           var d;
-          try { d = x.t ? JSON.parse(x.t) : null; } catch(e){ d = undefined; }
+          try { d = x.t ? JSON.parse(fremdUmschreiben(x.t)) : null; } catch(e){ d = undefined; }
           if (x.r.ok){
             var aus = d === undefined ? undefined : rpcUmschlag(d);
             if (aus === undefined) return { ok: false, status: x.r.status, fehler: { code: "", message: "unreadable_response", hint: "", details: "" } };
@@ -21963,7 +21982,7 @@
           return r.text().then(function(t){
             clearTimeout(uhr);
             var d;
-            try { d = t ? JSON.parse(t) : null; } catch(e){ d = undefined; }
+            try { d = t ? JSON.parse(fremdUmschreiben(t)) : null; } catch(e){ d = undefined; }
             if (r.ok){
               if (d === undefined) return { ok: false, status: r.status, fehler: { code: "", message: "unreadable_response", hint: "", details: "" } };
               return { ok: true, status: r.status, daten: d };
