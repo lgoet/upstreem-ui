@@ -5212,6 +5212,22 @@
         '</div></div>';
       elHead.parentNode.insertBefore(kpiZeile, elHead);
       kpiZeile.querySelector(".upt-sum-zu").addEventListener("click", function(){ kpiZuSetzen(true, true); });
+      /* Zeigen auf einen Eintrag oder ein Stueck hebt beide hervor und blendet den Rest ab (Tremor
+         CategoryBar/Legend, 14.10.): bei vielen Topics findet das Auge so die Farbe zum Namen. */
+      var tp = kpiZeile.querySelector(".upt-sum-topics");
+      function fokus(i){
+        var inh = tp.querySelector(".upt-sum-inhalt");
+        if (!inh) return;
+        inh.classList.toggle("is-fokus", i != null);
+        Array.prototype.forEach.call(inh.querySelectorAll("[data-i]"), function(el){
+          el.classList.toggle("is-an", i != null && el.getAttribute("data-i") === i);
+        });
+      }
+      tp.addEventListener("mouseover", function(e){
+        var el = e.target && e.target.closest ? e.target.closest("[data-i]") : null;
+        fokus(el && tp.contains(el) ? el.getAttribute("data-i") : null);
+      });
+      tp.addEventListener("mouseleave", function(){ fokus(null); });
       /* Der Knopf im Seitenkopf (prompts-page.js) schickt dieses Ereignis an die Wurzel der Tabelle. */
       root.addEventListener("upt-sum-zeigen", function(){ kpiZuSetzen(false, true); });
       kpiZuSetzen(kpiZuGelesen(), false);
@@ -5255,7 +5271,7 @@
       ["upt-sum-topics", "upt-sum-markets"].forEach(function(kl){
         kpiZahl(kl, "", "");
         var inh = kpiTeil(kl, ".upt-sum-inhalt");
-        if (inh) inh.innerHTML = '<span class="up-sk-lbl upt-sum-sk-zahl"></span><span class="up-sk-lbl upt-sum-sk-balken"></span>';
+        if (inh){ inh.className = "upt-sum-inhalt"; inh.innerHTML = '<span class="up-sk-lbl upt-sum-sk-zahl"></span><span class="up-sk-lbl upt-sum-sk-balken"></span>'; }
       });
       marktTeil();
     }
@@ -5278,22 +5294,78 @@
       try { eigene = (UC.getMarkets ? UC.getMarkets() : []) || []; } catch(e){}
       t.hidden = eigene.length < 2;
     }
-    /* Der Anteilsbalken: je Eintrag ein Stueck in seiner Farbe, Breite = Anteil an der Summe; was
-       nach den gezeigten kommt, steht als ein graues Stueck dahinter. Tooltip je Stueck: Name und Zahl. */
-    function balkenHtml(teile, rest, summe){
-      if (!(summe > 0)) return "";
-      var h = teile.map(function(x){
-        return '<span class="upt-sum-stueck" style="flex-grow:' + x.n + ';background:' + esc(x.farbe) + '" data-tip="' +
+    /* DIE VERTEILUNG NACH TOPICS (14.10. abends neu, gemeldet: "bei vielen Topics erkennt man gar
+       nix"). Vorbilder: GitHubs Sprachleiste, Tremor CategoryBar mit Legend, die Leitfaeden zu
+       gestapelten Anteilsbalken (UK Analysis Function: wenige Stuecke, der Rest als "Sonstige",
+       Legende in der Reihenfolge der Stuecke). Daraus:
+         - der Balken ueber die ganze Breite, die Legende DARUNTER, beide absteigend sortiert;
+         - JEDES farbige Stueck hat seinen Eintrag in der Legende. Vorher zeigte der Balken 8 Farben
+           und die Legende 5 Namen -- drei Farben ohne Namen, gemessen bei 1440;
+         - was nicht in die Zeile passt, wird EIN graues Stueck "Others" mit Summe, im Balken wie in
+           der Legende, die Namen im Tooltip;
+         - Zeigen auf einen Eintrag oder ein Stueck hebt beide hervor (kpiBauen).
+       Welche Eintraege passen, entscheidet die Breite (topicsEinpassen) -- der Balken folgt ihr. */
+    var kpiT = null;
+    function stueckeHtml(teile, rest, restTip){
+      var h = teile.map(function(x, i){
+        return '<span class="upt-sum-stueck" data-i="' + i + '" style="flex-grow:' + x.n + ';background:' + esc(x.farbe) + '" data-tip="' +
           esc(x.name + ": " + UC.fmtTotal(x.n)) + '"></span>';
       }).join("");
-      if (rest > 0) h += '<span class="upt-sum-stueck is-rest" style="flex-grow:' + rest + '"></span>';
-      return '<span class="upt-sum-balken">' + h + '</span>';
+      if (rest > 0) h += '<span class="upt-sum-stueck is-rest" data-i="rest" style="flex-grow:' + rest + '" data-tip="' + esc(restTip) + '"></span>';
+      return h;
     }
-    function eintragHtml(farbeOderChip, name, wert, istChip){
-      return '<span class="upt-sum-eintrag">' +
+    function eintragHtml(farbeOderChip, name, wert, istChip, i){
+      return '<span class="upt-sum-eintrag"' + (i != null ? ' data-i="' + i + '"' : "") + '>' +
         (istChip ? farbeOderChip : '<span class="upt-sum-strich" style="background:' + esc(farbeOderChip) + '"></span>' +
           '<span class="upt-sum-name">' + esc(name) + '</span>') +
         '<span class="upt-sum-wert">' + esc(wert) + '</span></span>';
+    }
+    /* "8 more topics: Kombi 12, Coupe 8, ..." -- die ersten sechs beim Namen. */
+    function restTip(liste){
+      if (!liste.length) return "";
+      return UC.t("{n} more topics").replace("{n}", UC.fmtTotal(liste.length)) + ": " +
+        liste.slice(0, 6).map(function(x){ return x.name + " " + UC.fmtTotal(x.n); }).join(", ") + (liste.length > 6 ? ", …" : "");
+    }
+    /* Der Balken zu n sichtbaren Eintraegen: n Farben, der Rest grau. */
+    function topicsBalken(n){
+      var b = kpiZeile ? kpiZeile.querySelector(".upt-sum-topics .upt-sum-balken") : null;
+      if (!b || !kpiT) return;
+      var sig = n + "|" + kpiT.sig;
+      if (b.getAttribute("data-sig") === sig) return;
+      b.setAttribute("data-sig", sig);
+      var restListe = kpiT.liste.slice(n), rest = 0;
+      restListe.forEach(function(x){ rest += x.n; });
+      b.innerHTML = stueckeHtml(kpiT.liste.slice(0, n), rest, restTip(restListe));
+    }
+    /* GANZE EINTRAEGE ODER KEINE, und "Others" muss mit hinein: von hinten weg, bis alles passt.
+       Others traegt die Summe dessen, was nicht dasteht -- seine Breite aendert sich dabei mit,
+       darum wird nach jedem Wegnehmen neu gemessen. */
+    function topicsEinpassen(){
+      var leg = kpiZeile ? kpiZeile.querySelector(".upt-sum-topics .upt-sum-legende") : null;
+      if (!leg || !kpiT) return;
+      var andere = leg.querySelector(".upt-sum-andere");
+      var eintraege = Array.prototype.filter.call(leg.children, function(k){ return k !== andere; });
+      eintraege.forEach(function(k){ k.classList.remove("is-weg"); });
+      function restSetzen(n){
+        if (!andere) return;
+        var restListe = kpiT.liste.slice(n), rest = 0;
+        restListe.forEach(function(x){ rest += x.n; });
+        andere.classList.toggle("is-weg", rest <= 0);
+        andere.querySelector(".upt-sum-wert").textContent = UC.fmtTotal(rest);
+        andere.setAttribute("data-tip", restTip(restListe));
+      }
+      var n = eintraege.length;
+      restSetzen(n);
+      if (leg.clientWidth){
+        var lr = leg.getBoundingClientRect();
+        var passt = function(el){ var r = el.getBoundingClientRect(); return r.right <= lr.right + 0.5 && r.top < lr.bottom - 1; };
+        while (n > 0 && !(eintraege.slice(0, n).every(passt) && (!andere || andere.classList.contains("is-weg") || passt(andere)))){
+          n--;
+          eintraege[n].classList.add("is-weg");
+          restSetzen(n);
+        }
+      }
+      topicsBalken(n);
     }
     /* Hoechstens so viele Eintraege je Legende; wie viele davon wirklich stehen, entscheidet die Breite
        (legendeEinpassen). Bis 14.10. hart 3 -- seit das Kontingent im Seitenkopf steht, hat die
@@ -5303,10 +5375,12 @@
        einer umbrechenden Zeile nie in die zweite rutscht). Was nicht ganz in die sichtbare Zeile
        passt, geht weg -- von hinten, bis der Rest UND "+N more" passen. "+N more" zaehlt danach genau,
        was nicht dasteht: was ueber KPI_ZEIGEN hinausging (data-weitere) plus was die Breite nahm.
-       Nach jedem Zeichnen und bei jeder Breite. */
+       Nach jedem Zeichnen und bei jeder Breite. So nur noch fuer die Maerkte; die Topics fassen den
+       Rest seit dem 14.10. abends als "Others" zusammen (topicsEinpassen). */
     function legendeEinpassen(){
       if (!kpiZeile) return;
-      Array.prototype.forEach.call(kpiZeile.querySelectorAll(".upt-sum-legende"), function(leg){
+      topicsEinpassen();
+      Array.prototype.forEach.call(kpiZeile.querySelectorAll(".upt-sum-markets .upt-sum-legende"), function(leg){
         var mehr = leg.querySelector(".upt-sum-mehr");
         var basis = mehr ? (toNum(mehr.getAttribute("data-weitere")) || 0) : 0;
         var eintraege = Array.prototype.filter.call(leg.children, function(k){ return k !== mehr; });
@@ -5351,14 +5425,16 @@
       if (!inh) return;
       /* Ein LEERER Themenspeicher heisst "noch nicht geladen" (setUpstreemTopics kommt oft nach
          uns): dann das Skelett des Teils statt "0 topics". */
-      if (!liste.length){ inh.innerHTML = '<span class="up-sk-lbl upt-sum-sk-zahl"></span><span class="up-sk-lbl upt-sum-sk-balken"></span>'; return; }
-      var summe = 0; mitZahl.forEach(function(x){ summe += x.n; });
-      var zeigen = mitZahl.slice(0, KPI_ZEIGEN), rest = 0;
-      mitZahl.slice(KPI_ZEIGEN).forEach(function(x){ rest += x.n; });
-      var weitere = mitZahl.length - zeigen.length;
-      inh.innerHTML = balkenHtml(zeigen, rest, summe) +
-        '<span class="upt-sum-legende">' + zeigen.map(function(x){ return eintragHtml(x.farbe, x.name, UC.fmtTotal(x.n)); }).join("") +
-          '<span class="upt-sum-mehr" data-weitere="' + weitere + '"></span>' +
+      if (!liste.length){ kpiT = null; inh.className = "upt-sum-inhalt"; inh.innerHTML = '<span class="up-sk-lbl upt-sum-sk-zahl"></span><span class="up-sk-lbl upt-sum-sk-balken"></span>'; return; }
+      kpiT = { liste: mitZahl, sig: sig };
+      /* Ohne Prompts in einem Topic kein Balken und keine Legende -- die Zahl der Topics steht. */
+      if (!mitZahl.length){ inh.className = "upt-sum-inhalt"; inh.innerHTML = ""; return; }
+      var zeigen = mitZahl.slice(0, KPI_ZEIGEN);
+      inh.className = "upt-sum-inhalt is-spalte";
+      inh.innerHTML = '<span class="upt-sum-balken"></span>' +
+        '<span class="upt-sum-legende">' + zeigen.map(function(x, i){ return eintragHtml(x.farbe, x.name, UC.fmtTotal(x.n), false, i); }).join("") +
+          '<span class="upt-sum-eintrag upt-sum-andere" data-i="rest"><span class="upt-sum-strich"></span>' +
+            '<span class="upt-sum-name">' + esc(UC.t("Others")) + '</span><span class="upt-sum-wert"></span></span>' +
         '</span>';
       legendeEinpassen();
     }

@@ -864,6 +864,9 @@
     "Hide summary": "Übersicht ausblenden", "Show summary": "Übersicht einblenden",
     "{n} markets": "{n} Märkte",
     "+{n} more": "+{n} weitere",
+    /* Der Rest der Topic-Verteilung ueber der Prompt-Tabelle (14.10.). "Sonstige" wie in Diagrammen
+       ueblich; "Other" ist schon "Andere" (Geschaeftsmodell). */
+    "Others": "Sonstige", "{n} more topics": "{n} weitere Topics",
     "{n} without topic": "{n} ohne Topic",
     "{n} used": "{n} genutzt",
     "{n} left": "{n} frei",

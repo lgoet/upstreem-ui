@@ -240,9 +240,11 @@
         '<div class="up-ph-left"><h1 class="up-ph-heading">' + esc(t("Prompt Insights")) + '</h1>' +
           '<p class="up-ph-desc">' + esc(t("Manage Prompts, Topics and monitor latest Responses")) + '</p></div>' +
         '<div class="upi-tools">' +
-          /* Das Kontingent (14.10.): Ring aus core und "84 of 100 prompts", siehe quotaZeigen. */
-          '<span class="upi-quota is-leer"><span class="upi-quota-ring"></span>' +
-            '<span class="upi-quota-text"><span class="upi-quota-zahl up-num"></span><span class="upi-quota-wort"></span></span></span>' +
+          /* Das Kontingent (14.10.): "84 of 100 prompts" und DAHINTER der Ring aus core (so verlangt,
+             14.10. abends), siehe quotaZeigen. */
+          '<span class="upi-quota is-leer">' +
+            '<span class="upi-quota-text"><span class="upi-quota-zahl up-num"></span><span class="upi-quota-wort"></span></span>' +
+            '<span class="upi-quota-ring"></span></span>' +
           /* Derselbe Knopf wie im bisherigen Kopf, und das Etikett ENGLISCH wie dort: kurz "Add",
              breit "Add Prompts". Die Sprachumschaltung von core (knopfEtikett) baut es aus dem
              GANZEN englischen Satz neu ("Prompts hinzufuegen"). Hier vorab Stueck fuer Stueck

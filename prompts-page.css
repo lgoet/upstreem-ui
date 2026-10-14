@@ -14,6 +14,10 @@
    Zahl in der Schrift von .up-num, das Wort leise wie in den Leisten. 8px mehr Abstand zu den
    Knoepfen: es ist eine Angabe, kein Knopf der Reihe. */
 .upi-quota { display: inline-flex; align-items: center; gap: 8px; margin-right: 8px; white-space: nowrap; }
+/* Die Huelle des Rings als Flex, nicht als Zeilenkasten (14.10. abends, gemeldet: "nicht mittig"):
+   als Block trug sie Zeilenhoehe und Unterlaenge mit, 26.9 hoch fuer einen 22.4er Ring -- der Ring
+   sass 2.3px ueber der Mitte von Text und Knoepfen. */
+.upi-quota-ring { display: flex; align-items: center; }
 .upi-quota.is-leer { display: none; }
 .upi-quota-text { display: inline-flex; align-items: baseline; gap: 4px; font-size: var(--up-fs-m); }
 .upi-quota-zahl { color: var(--vc-text); font-weight: var(--up-fw-m); }
