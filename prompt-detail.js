@@ -160,7 +160,9 @@
        Tabelle, hier ohne Menue -- ueberschrieben wird in der Tabelle, der Drawer zeigt den Stand. */
     if (UC.hatIntent && UC.hatIntent(d)) {
       teile.push(UC.intentHtml(d, { klick: true, id: P.id }));
-      if (UC.brandedHtml && d.branded === true) teile.push(UC.brandedHtml(d, { klick: true, id: P.id }));
+      /* Branded hat seit dem 14.10. ein eigenes Menue. Nicht branded steht darum ein leiser
+         Ausloeser "Not branded" da -- sonst gaebe es hier keinen Weg, es zu setzen. */
+      if (UC.brandedHtml) teile.push(UC.brandedHtml(d, { klick: true, id: P.id, leer: "text" }));
     }
     /* Pausiert steht vor dem letzten Lauf: es erklaert, warum der alt ist. Das Tarif-Limit nennt
        den Grund, weil der Nutzer dort etwas tun kann. */

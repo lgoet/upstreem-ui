@@ -1503,6 +1503,10 @@
    unteren Fensterrand klappt es nach OBEN auf (is-oben). */
 .upt-intentwrap.is-oben .upt-intentpop { top: auto; bottom: calc(100% + var(--up-dd-gap)); transform-origin: bottom left; }
 .upt-intentzelle { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: calc(100% + 6px); margin-left: -6px; }
+/* Branded-Spalte (14.10.): der Chip steht mit seinem Grund an der Spaltenkante wie jeder andere
+   Zellinhalt; nur der leere Strich hat ein Polster ohne Grund und wird um dieses verschoben. */
+.upt-brandedzelle { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; }
+.upt-brandedzelle .up-branded.is-leer { margin-left: -6px; }
 /* Der Umschalter Topic / Intent ganz oben im Gruppieren-Menue: Segmentstreifen aus core, hier
    nur der Abstand zur Zeile darunter, den der Trenner nicht stellt. */
 .upt-grpby { margin-bottom: 2px; }

@@ -157,7 +157,10 @@
       fill: isDark ? e.fillDark : e.fill,
       ink:  isDark ? e.inkDark  : e.ink,
       bg:   isDark ? e.bgDark   : e.bg,
-      bd:   isDark ? e.bdDark   : e.bd,
+      /* Rahmen in der Grundfarbe (14.10. gewuenscht: "bei Citation- und URL-Types die Border weg,
+         bzw. in gleicher Farbe wie der Grund"). Der Rahmen bleibt stehen, damit kein Chip seine
+         Groesse aendert -- er ist nur nicht mehr zu sehen. Alle Type-Chips der App lesen bd hier. */
+      bd:   isDark ? e.bgDark   : e.bg,
       dot:  dot
     };
   }
@@ -1823,6 +1826,9 @@
     "Names {names}": "Nennt {names}",
     "Names a tracked brand": "Nennt eine getrackte Marke",
     "Marked as branded by you": "Von dir als branded markiert",
+    "Not branded": "Nicht branded",
+    "What does branded mean?": "Was heißt branded?",
+    "The prompt names your brand or a tracked competitor. Branded prompts are left out of the metrics, because they say little about how visible you are on open questions. Detected automatically, and you can change it.": "Der Prompt nennt deine Marke oder einen getrackten Wettbewerber. Branded Prompts fließen nicht in die Kennzahlen ein, weil sie wenig darüber sagen, wie sichtbar du bei offenen Fragen bist. Wird automatisch erkannt, du kannst es ändern.",
     "Group average": "Durchschnitt der Gruppe",
     "Marked as not branded by you": "Von dir als nicht branded markiert",
     "Names no tracked brand": "Nennt keine getrackte Marke",
@@ -4527,6 +4533,9 @@
     /* Intent (14.10.): die Customer Journey ist der Aufhaenger -- so ausdruecklich bestellt. Der
        Satz sagt, WO eine Frage auf dem Weg zum Kauf steht; die Platte darueber zeigt den Weg. */
     intent:     { h: "Intent", t: "Where the question sits in the customer journey: getting to know a topic, comparing options, or ready to buy. AI sets it, and you can change it." },
+    /* Branded (14.10., eigene Spalte): sagt, was es heisst UND warum es zaehlt -- branded Prompts
+       fallen aus den Kennzahlen. */
+    branded:    { h: "Branded", t: "The prompt names your brand or a tracked competitor. Branded prompts are left out of the metrics, because they say little about how visible you are on open questions. Detected automatically, and you can change it." },
     share:      { h: "Share", t: "How much of all citations in the period went to this {subject}, plus the change against the previous period." },
     /* Die Zeile "Brand Colors" in der Farbauswahl. Sie steht hier und nicht im Einstellungsfenster,
        weil die Auswahl aus core kommt (colorScaleOptionsHtml) und der Erklaerkasten derselbe ist,
@@ -5886,7 +5895,23 @@
      faellt ein Favicon aus, steht der Anfangsbuchstabe da (dasselbe Verhalten wie brandStack). */
   function brandedHtml(r, opts){
     opts = opts || {};
-    if (!r || r.branded !== true) return "";
+    if (!r) return "";
+    /* NICHT BRANDED (14.10., Branded hat eine eigene Spalte und ein eigenes Menue): ohne opts.leer
+       nichts -- der Normalfall braucht kein Label. Mit opts.leer ein leiser Ausloeser fuer das
+       Menue, sonst gaebe es keinen Weg, einen Prompt von Hand als branded zu markieren:
+         "strich"  ein "–" wie jede leere Zelle (Tabellenspalte),
+         "text"    Zeichen und "Not branded" (Kopf des Prompt-Details, wo ein Strich allein
+                   nichts sagt). */
+    if (r.branded !== true){
+      if (!opts.klick || !opts.leer || !("branded" in r)) return "";
+      var leerTip = r.branded_source === "user" ? t("Marked as not branded by you") : t("Names no tracked brand");
+      var leerInnen = opts.leer === "text"
+        ? icon("squareStack", 2) + '<span class="up-branded-lbl">' + esc(t("Not branded")) + '</span>'
+        : '<span class="up-branded-lbl">–</span>';
+      return '<button type="button" class="up-branded is-leer is-klick' + (r.branded_source === "user" ? " is-user" : "") +
+        '" data-tip="' + esc(leerTip) + '" data-intent-open="' + esc(opts.id == null ? "" : opts.id) +
+        '" aria-haspopup="menu" aria-label="' + esc(t("Branded")) + '">' + leerInnen + '</button>';
+    }
     var marken = (Array.isArray(r.branded_brands) ? r.branded_brands : []).filter(function(m){
       return m && typeof m === "object" && (m.name || m.logo_url || m.favicon_url);
     });
@@ -5911,9 +5936,15 @@
     /* Keine Marke erkannt (von Hand auf branded gesetzt, DB-Rueckmeldung: dann ist die Liste leer):
        das Zeichen von "Brands" aus der Seitenleiste (squareStack) VOR dem Wort, damit das Label
        nicht nackt dasteht und dieselbe Form hat wie das Intent-Label daneben (Zeichen plus Text). */
-    var innen = (favs ? "" : icon("squareStack", 2)) +
-      '<span class="up-branded-lbl">' + esc(t("Branded")) + '</span>' +
-      (favs ? '<span class="up-branded-favs">' + favs + (rest > 0 ? '<span class="up-branded-mehr">+' + rest + '</span>' : "") + '</span>' : "");
+    /* EIGENER CHIP (14.10.): hellgrauer Grund, "Branded", ein senkrechter Strich, dahinter die
+       Favicons der genannten Marken. Ohne erkannte Marke ODER von Hand gesetzt steht hinter dem
+       Strich das Brands-Zeichen der Seitenleiste -- von Hand heisst, der Abgleich hat es nicht
+       entschieden, also gehoeren seine Logos nicht dorthin. */
+    var zeichen = (favs && r.branded_source !== "user")
+      ? '<span class="up-branded-favs">' + favs + (rest > 0 ? '<span class="up-branded-mehr">+' + rest + '</span>' : "") + '</span>'
+      : icon("squareStack", 2);
+    var innen = '<span class="up-branded-lbl">' + esc(t("Branded")) + '</span>' +
+      '<span class="up-branded-sep" aria-hidden="true"></span>' + zeichen;
     if (opts.klick){
       return '<button type="button" class="' + kl + '" data-tip="' + esc(tip) + '" data-intent-open="' +
         esc(opts.id == null ? "" : opts.id) + '" aria-haspopup="menu">' + innen + '</button>';
@@ -5957,8 +5988,13 @@
                 '<span>' + esc(t("Auto-detect")) + '</span></button>' : "") +
     '</div>';
   }
+  /* opts.nur (14.10.): "branded" zeichnet NUR das Branded-Menue (eigenes Label, eigene Spalte),
+     "intent" nur die Werte. Ohne Angabe beides wie bisher -- fuer Aufrufer, die noch ein Label
+     fuer beides haben. */
   function intentMenuHtml(r, opts){
     opts = opts || {};
+    if (opts.nur === "branded") return brandedMenuHtml(r);
+    if (opts.nur === "intent") opts.branded = false;
     var z = r ? intentZustand(r) : null;
     /* Oben rechts das Info-Zeichen zur Erklaerkarte (14.10.). Bewusst NICHT .up-th-info: die
        Tabelle meldet .up-th-info in ihrer ganzen Wurzel an, und das Menue haengt darin -- es gaebe
@@ -5980,17 +6016,9 @@
     if (z && z.status === "done") h += intentHerkunftHtml(z.user, 'data-intent-set=""');
     if (r && opts.branded !== false && "branded" in r){
       var b = r.branded === true, vonHand = r.branded_source === "user";
-      var namen = (Array.isArray(r.branded_brands) ? r.branded_brands : []).map(function(m){
-        return m && typeof m === "object" ? String(m.name || "").trim() : ""; }).filter(Boolean);
-      /* Die Unterzeile sagt, WARUM der Schalter so steht -- dieselben Saetze wie der Tooltip am
-         Label, plus die zwei Faelle ohne Label (nicht branded). */
-      /* Von Hand AUSgeschaltet schlaegt die Namen: der Abgleich hat sie gefunden, der Nutzer hat
-         trotzdem "nicht branded" gesagt -- "Nennt Mercedes" neben einem Schalter auf aus las sich
-         wie ein Fehler. */
-      var grund = vonHand && !b ? t("Marked as not branded by you")
-        : namen.length ? t("Names {names}").replace("{names}", namen.join(", "))
-        : vonHand ? t("Marked as branded by you")
-        : t(b ? "Names a tracked brand" : "Names no tracked brand");
+      /* Die Unterzeile sagt, WARUM der Schalter so steht (brandedGrund, dieselben Saetze wie der
+         Tooltip am Label). */
+      var grund = brandedGrund(r);
       h += '<div class="up-pop-div"></div>' +
         '<div class="up-pop-row up-branded-row" data-branded-set role="menuitemcheckbox" tabindex="0" aria-checked="' + (b ? "true" : "false") + '">' +
           '<span class="up-pop-label"><span>' + esc(t("Branded")) + '</span><span class="up-pop-hint">' + esc(grund) + '</span></span>' +
@@ -6000,6 +6028,40 @@
         (vonHand ? intentHerkunftHtml(true, "data-branded-reset") : "");
     }
     return h;
+  }
+
+  /* Das Branded-Menue (14.10.): Kopf mit Info-Zeichen wie beim Intent, der Schalter mit dem
+     Grund als Unterzeile, und -- von Hand gesetzt -- die Platte mit "Automatisch erkennen". */
+  function brandedGrund(r){
+    var b = r.branded === true, vonHand = r.branded_source === "user";
+    var namen = (Array.isArray(r.branded_brands) ? r.branded_brands : []).map(function(m){
+      return m && typeof m === "object" ? String(m.name || "").trim() : ""; }).filter(Boolean);
+    return vonHand && !b ? t("Marked as not branded by you")
+      : namen.length ? t("Names {names}").replace("{names}", namen.join(", "))
+      : vonHand ? t("Marked as branded by you")
+      : t(b ? "Names a tracked brand" : "Names no tracked brand");
+  }
+  function brandedMenuHtml(r){
+    var h = '<div class="up-pop-head up-intent-kopf"><span>' + esc(t("Branded")) + '</span>' +
+        '<span class="up-intent-erklaer" data-explain="branded" role="button" tabindex="0" aria-label="' +
+          esc(t("What does branded mean?")) + '">' + icon("info", 2) + '</span></div>';
+    if (!r || !("branded" in r)) return h;
+    var b = r.branded === true;
+    return h +
+      '<div class="up-pop-row up-branded-row" data-branded-set role="menuitemcheckbox" tabindex="0" aria-checked="' + (b ? "true" : "false") + '">' +
+        '<span class="up-pop-label"><span>' + esc(t("Branded")) + '</span><span class="up-pop-hint">' + esc(brandedGrund(r)) + '</span></span>' +
+        '<span class="up-switch' + (b ? " is-on" : "") + '"></span></div>' +
+      (r.branded_source === "user" ? intentHerkunftHtml(true, "data-branded-reset") : "");
+  }
+  /* Die Erklaerkarte zu Branded: auf der Platte der Chip selbst, wie er in der Tabelle steht. */
+  function brandedErklaerHtml(){
+    var c = explainCopy("branded");
+    if (!c) return "";
+    return '<div class="up-explain-vis"><span class="up-branded">' +
+        '<span class="up-branded-lbl">' + esc(t("Branded")) + '</span><span class="up-branded-sep"></span>' + icon("squareStack", 2) +
+      '</span></div>' +
+      '<div class="up-explain-h">' + esc(c.h) + '</div>' +
+      '<div class="up-explain-t">' + esc(c.t) + '</div>';
   }
 
   /* ---- Das Menue zum Ueberschreiben, als Baustein (13.10.) -----------------------------------
@@ -6026,7 +6088,7 @@
        Menue steht. */
     makeExplain({ root: wrap, triggerSel: ".up-intent-erklaer",
       getIsDark: function(){ var r = wrap.closest(".up-root"); return !!(r && r.getAttribute("data-theme") === "dark"); },
-      html: function(k){ return k === "intent" ? intentErklaerHtml() : ""; } });
+      html: function(k){ return k === "intent" ? intentErklaerHtml() : k === "branded" ? brandedErklaerHtml() : ""; } });
     /* Der Waechter fuer nachZeichnen: NUR solange das Menue offen ist, ein Beobachter auf dem
        Dokument. So muss kein Zeichenweg des Aufrufers (die Tabelle hat ein Dutzend: Seite,
        Gruppen, Seitenliste, aufgeklappte Gruppe, Sammelleiste ...) daran denken. Die Pruefung ist
@@ -6050,7 +6112,9 @@
       opener = null; ziel = null;
     } });
     function zeile(){ return ziel && !ziel.bulk && cfg.zeile ? cfg.zeile(ziel) : null; }
-    function zeichnen(){ menu.innerHTML = intentMenuHtml(zeile()); if (opener) seiteWaehlen(); }
+    /* Welches Menue: am Branded-Label das Branded-Menue, sonst die Intent-Werte (14.10. getrennt). */
+    var art = "intent";
+    function zeichnen(){ menu.innerHTML = intentMenuHtml(zeile(), { nur: art }); if (opener) seiteWaehlen(); }
     /* Der Halter bekommt die Kanten des Ausloesers. Gerechnet gegen seinen Elternteil, nicht
        gegen die Wurzel: welches Element positioniert ist, entscheidet der Aufrufer. */
     function anlegen(el){
@@ -6101,6 +6165,7 @@
       if (pop.isOpen() && opener === el){ pop.close(false); return; }
       pop.close(false);
       ziel = z || {};
+      art = el.classList.contains("up-branded") ? "branded" : "intent";
       zeichnen();
       anlegen(el);
       wrap.classList.toggle("is-oben", !!ziel.bulk);
@@ -25426,7 +25491,7 @@
     intentHtml: intentHtml, brandedHtml: brandedHtml, intentMenuHtml: intentMenuHtml,
     intentsLive: intentsLive, intentFilterGet: intentFilterGet, intentFilterSet: intentFilterSet, intentFilterParams: intentFilterParams,
     makeIntentMenu: makeIntentMenu, intentName: intentName, intentsLiveStart: intentsLiveStart,
-    intentReiseHtml: intentReiseHtml, intentErklaerHtml: intentErklaerHtml,
+    intentReiseHtml: intentReiseHtml, intentErklaerHtml: intentErklaerHtml, brandedErklaerHtml: brandedErklaerHtml,
     relativeTime: relativeTime,
     modelChip: modelChip, modelLogoUrl: modelLogoUrl, markenChip: markenChip, ansichtHalten: ansichtHalten, makeHaendlerFilter: makeHaendlerFilter,
     adCardHtml: adCardHtml, adFormatLabel: adFormatLabel, makeSeitenDrawer: makeSeitenDrawer, balkenGrau: balkenGrau,

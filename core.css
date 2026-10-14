@@ -2536,7 +2536,11 @@
        (gemessen im Pruefstand pi03: 100 statt 106px). */
     .up-intent, .up-branded { display: inline-flex; align-items: center; gap: 6px; height: var(--up-h-chip);
       min-width: 0; max-width: 100%; box-sizing: border-box; font-family: inherit; font-size: var(--up-fs-s);
-      font-weight: var(--up-fw-m); line-height: 1; color: var(--vc-muted); white-space: nowrap; }
+      font-weight: var(--up-fw-m); line-height: 1; color: var(--vc-text); white-space: nowrap; }
+    /* Schrift in der Hauptfarbe (14.10., Pruefauftrag "zu klein?"): gemessen stehen Topic- und
+       Branded-Chip in der Tabelle mit 12px in der Hauptfarbe, das Intent-Label mit 12px in Grau --
+       gleich gross, aber eine Stufe schwaecher, und darum las es sich kleiner. Das Zeichen bleibt
+       leise (--vc-fourth), Laden und "nicht zugeordnet" bleiben grau. */
     .up-intent > svg, .up-branded > svg { width: 14px; height: 14px; flex: 0 0 14px; color: var(--vc-fourth); }
     .up-intent-lbl, .up-branded-lbl { overflow: hidden; text-overflow: ellipsis; }
     .up-intent.is-pending, .up-intent.is-failed { color: var(--vc-fourth); }
@@ -2568,6 +2572,19 @@
       border-radius: var(--up-r-s); cursor: pointer; transition: background-color var(--up-t-1) ease; }
     :is(.up-intent, .up-branded).is-klick:hover, :is(.up-intent, .up-branded).is-klick[aria-expanded="true"] { background: var(--up-sel-bg); }
     :is(.up-intent, .up-branded).is-klick:focus-visible { outline: var(--up-focus-w, 2px) solid var(--vc-text); outline-offset: 0; }
+    /* BRANDED ALS EIGENER CHIP (14.10., eigene Spalte statt neben dem Intent): hellgrauer Grund
+       (--up-sel-bg), 8px Polster, Radius 6 aus der Skala, Schrift in der Hauptfarbe -- es ist eine
+       Aussage ueber den Prompt, kein leiser Status. Zwischen Wort und Zeichen ein senkrechter
+       Strich, 12px hoch wie die Zeichen daneben. Klickbar wird der Grund beim Ueberfahren eine
+       Stufe dunkler, statt wie das Intent-Label erst einen Grund zu bekommen. */
+    .up-branded { padding: 0 8px; border-radius: var(--up-r-s); background: var(--up-sel-bg); color: var(--vc-text); }
+    :is(.up-branded).is-klick { padding: 0 8px; background: var(--up-sel-bg); }
+    :is(.up-branded).is-klick:hover, :is(.up-branded).is-klick[aria-expanded="true"] {
+      background: color-mix(in srgb, var(--vc-text) 10%, var(--up-sel-bg)); }
+    .up-branded-sep { flex: 0 0 1px; width: 1px; height: 12px; background: color-mix(in srgb, var(--vc-text) 18%, transparent); }
+    /* Nicht branded: ohne Chip, nur der leise Ausloeser fuer das Menue ("–" oder "Not branded"). */
+    :is(.up-branded).is-leer, :is(.up-branded).is-leer.is-klick { background: transparent; color: var(--vc-fourth); padding: 0 6px; }
+    :is(.up-branded).is-leer.is-klick:hover, :is(.up-branded).is-leer.is-klick[aria-expanded="true"] { background: var(--up-sel-bg); }
     /* Branded: das Wort und die Favicons der genannten Marken. 14px mit Radius 4 -- die kleinste
        Logostufe, die als Logo noch lesbar ist; der Anfangsbuchstabe liegt darunter und wird nur
        sichtbar, wenn das Bild ausfaellt (has-img faellt dann weg). */

@@ -415,12 +415,14 @@
     { key: "topics",     label: "Topics",          w: "minmax(12%, 1.3fr)", min: 150, dropAt: "vnarrow", prio: 60 },
     /* Reference data, never needs to eat spare row width -- capped at 128px same as Rank/Sentiment,
        not left on a %/fr leash that grows it back out on a wide screen. */
-    /* Intent (13.10.): Label plus, falls branded, das Branded-Label mit den genannten Marken.
-       264 = gemessen im Pruefstand pi03: "Recommendation" mit Zeichen 130 (Polster 2x6, davon 6
-       ueber -6px Aussenabstand ausgeglichen), 12 Abstand, "Branded" mit drei Favicons 95 -- 237,
-       dazu 12 + 16 Zellpolster. Mit 150 stand "Informatio…" und "Reco… B…" da.
-       Gezeigt nur, wenn die Zeilen ueberhaupt Intent-Felder tragen (isHidden). */
-    { key: "intent",     label: "Intent",          w: "minmax(264px, 1.2fr)", min: 264, dropAt: "narrow",  prio: 35 },
+    /* Intent und Branded in ZWEI Spalten (14.10., gemeldet: "Branded nicht in derselben Spalte,
+       die Intent-Spalte ist so immer ultra gross, weil immer Platz fuer Branded gelassen wird").
+       Intent: das breiteste Label ("Recommendation" mit Zeichen und UserCog-Chip) 152px, dazu
+       12 + 16 Zellpolster minus 6 Ausgleich -- 176. Branded: der Chip mit drei Favicons und "+N"
+       146px plus Zellpolster -- 172. Beide sind Nebenspalten (prio unter Topics) und gezeigt nur,
+       wenn die Zeilen Intent-Felder tragen (isHidden). */
+    { key: "intent",     label: "Intent",          w: "minmax(176px, 1fr)", min: 176, dropAt: "narrow",  prio: 35 },
+    { key: "branded",    label: "Branded",         w: "minmax(172px, 1fr)", min: 172, dropAt: "narrow",  prio: 30 },
     { key: "market",     label: "Market",          w: "minmax(90px, 128px)", min: 90,  dropAt: "narrow",  prio: 20 },
     { key: "created",    label: "Created",         w: "minmax(10%, 0.7fr)",min: 110, dropAt: "narrow",  prio: 10 }
   ];
@@ -2244,6 +2246,7 @@
         { logo:true, logoStyle:"border-radius:999px", cls:"upt-td-brands" },
         { w:90,  cls:"upt-td-topics" },
         { w:96,  cls:"upt-td-intent" },
+        { w:72,  cls:"upt-td-branded" },
         { w:60,  cls:"upt-td-market" },
         { w:76,  cls:"upt-td-created" }
       ]});
@@ -2257,14 +2260,19 @@
       return '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(v) + '</span></span>';
     }
     function sentCell(v){ return UC.sentHtml(v); }
-    /* Intent und Branded in einer Zelle: zwei Antworten auf "was fuer eine Frage ist das", und
-       Branded allein waere eine Spalte, die in den meisten Zeilen leer bleibt. Beide klickbar --
-       derselbe Klick oeffnet dasselbe Menue (Ueberschreiben, Branded-Schalter). */
+    /* Intent und Branded je in ihrer eigenen Spalte (14.10.), jedes Label oeffnet sein eigenes
+       Menue (core, makeIntentMenu waehlt es am Label). */
     function intentCell(r){
       if (!UC.intentHtml || !UC.hatIntent || !UC.hatIntent(r)) return '<span class="up-num is-empty">–</span>';
       var id = String(r.prompt_id == null ? "" : r.prompt_id);
-      return '<span class="upt-intentzelle">' + UC.intentHtml(r, { klick: true, id: id }) +
-        (UC.brandedHtml ? UC.brandedHtml(r, { klick: true, id: id }) : "") + '</span>';
+      return '<span class="upt-intentzelle">' + UC.intentHtml(r, { klick: true, id: id }) + '</span>';
+    }
+    /* Nicht branded: ein klickbarer Strich wie jede leere Zelle -- sonst gaebe es keinen Weg, einen
+       Prompt von Hand als branded zu markieren. */
+    function brandedCell(r){
+      if (!UC.brandedHtml || !r || !("branded" in r)) return '<span class="up-num is-empty">–</span>';
+      var id = String(r.prompt_id == null ? "" : r.prompt_id);
+      return '<span class="upt-brandedzelle">' + UC.brandedHtml(r, { klick: true, id: id, leer: "strich" }) + '</span>';
     }
     function marketCell(m){
       var code = String(m == null ? "" : m).trim().toUpperCase();
@@ -2458,6 +2466,7 @@
         '<div class="up-td upt-td-brands">' + UC.brandStack(r.top_mentions, r.companies_preview_totalcount) + '</div>' +
         '<div class="up-td upt-td-topics">' + topicsCell(id, r.tags) + '</div>' +
         '<div class="up-td upt-td-intent">' + intentCell(r) + '</div>' +
+        '<div class="up-td upt-td-branded">' + brandedCell(r) + '</div>' +
         '<div class="up-td upt-td-market">' + marketCell(r.market) + '</div>' +
         '<div class="up-td upt-td-created"><span class="upt-date">' + esc(fmtDate(r.created_at)) + '</span></div>' +
       '</div>';
@@ -4003,6 +4012,11 @@
       th.innerHTML = '<span class="up-th-txt">Intent</span><span class="up-th-info" data-explain="intent">' + UC.icon("info", 2) + '</span>';
       var vor = thead.querySelector(".up-th-market");
       if (vor) thead.insertBefore(th, vor); else thead.appendChild(th);
+      /* Branded als eigene Spalte direkt dahinter (14.10.), mit eigener Erklaerkarte. */
+      var thB = document.createElement("div");
+      thB.className = "up-th up-th-branded";
+      thB.innerHTML = '<span class="up-th-txt">Branded</span><span class="up-th-info" data-explain="branded">' + UC.icon("info", 2) + '</span>';
+      if (vor) thead.insertBefore(thB, vor); else thead.appendChild(thB);
     })();
     function zeileZu(id){
       var alle = (state.rows || []).concat(state.gRows || []);
@@ -4017,6 +4031,9 @@
       if (!r) return;
       Array.prototype.forEach.call(root.querySelectorAll('.up-row[data-id="' + (window.CSS && CSS.escape ? CSS.escape(String(id)) : String(id)) + '"] .upt-td-intent'), function(td){
         td.innerHTML = intentCell(r);
+      });
+      Array.prototype.forEach.call(root.querySelectorAll('.up-row[data-id="' + (window.CSS && CSS.escape ? CSS.escape(String(id)) : String(id)) + '"] .upt-td-branded'), function(td){
+        td.innerHTML = brandedCell(r);
       });
       persist();
     }
@@ -4121,7 +4138,7 @@
          Removed from the grid template rather than hidden with CSS — a hidden cell would leave its
          track behind and knock the row out of line. */
       isHidden: function(c){
-        if (c.key === "intent" && !state.intentDa) return true;
+        if ((c.key === "intent" || c.key === "branded") && !state.intentDa) return true;
         return state.status === "inactive" &&
           (c.key === "brands" || c.key === "visibility" || c.key === "rank" || c.key === "sentiment");
       },
@@ -4304,6 +4321,7 @@
       html: function(kind){
         /* Intent: die Karte mit der Customer Journey aus core -- dieselbe wie im Menue. */
         if (kind === "intent" && UC.intentErklaerHtml) return UC.intentErklaerHtml();
+        if (kind === "branded" && UC.brandedErklaerHtml) return UC.brandedErklaerHtml();
         var info = explainInfo(kind);
         if (!info) return "";
         return '<div class="up-explain-vis">' + explainVisual(kind) + '</div>' +
