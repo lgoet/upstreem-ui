@@ -45,13 +45,14 @@
   var T = {
     h1:       "Set a new password",
     pw:       "New password",
-    pwPh:     "At least 8 characters",
+    pwPh:     "At least {n} characters",
     pw2:      "Confirm password",
     cta:      "Reset password",
     ctaBusy:  "Resetting password",
     zurueck:  "Back to sign in",
     pwLeer:   "Please enter a new password.",
-    pwKurz:   "At least 8 characters.",
+    pwKurz:   "At least {n} characters.",
+    pwLang:   "Use at most {n} characters.",
     pw2Leer:  "Please repeat your new password.",
     pw2Ungl:  "The passwords do not match.",
     neuerLink: "Request a new link",
@@ -59,8 +60,9 @@
     doneSub:  "Sign in with your new password.",
     doneCta:  "Sign in"
   };
-  /* Dieselbe Regel wie beim Anlegen auf der Anmeldeseite: ein neues Passwort ist ein neues Passwort. */
-  var MIN_LAENGE = 8;
+  /* Dieselbe Regel wie beim Anlegen auf der Anmeldeseite, aus core (UC.PASSWORT, 14.10.: Laenge nach
+     NIST SP 800-63B-4, keine Zeichenklassen). Die Zahlen setzt der Controller ein, sobald core da ist. */
+  var MIN_LAENGE = 15, MAX_LAENGE = 72;
 
   /* Je Instanz, was einen Neuaufbau ueberleben muss: ob das Passwort schon gesetzt ist. Die
      Passwoerter selbst NICHT -- die gehoeren in kein Fenster-Objekt. */
@@ -68,6 +70,7 @@
 
   function makeController(root){
     var UC = window.UpstreemCore, esc = UC.esc;
+    if (UC.PASSWORT){ MIN_LAENGE = UC.PASSWORT.min; MAX_LAENGE = UC.PASSWORT.max; }
     var MISSING = ["makeEinzelseite", "esKopfHtml", "esFeldHtml", "esKnopfHtml", "esFehlerHtml",
                    "esZurueckHtml", "esAttr", "adressParameter", "adressFehlerWeg", "authFehler",
                    "feuerRoh", "mailOk", "pwStaerkeHtml", "pwStaerkeZeigen"]
@@ -103,7 +106,7 @@
           '<input class="urp-user" type="email" name="username" autocomplete="username" tabindex="-1"' +
             ' aria-hidden="true" readonly value="' + esc(mail) + '"/>' +
           '<div class="up-es-felder" data-es-auf="2">' +
-            UC.esFeldHtml({ name: "password", label: T.pw, typ: "password", auto: "new-password", ph: T.pwPh,
+            UC.esFeldHtml({ name: "password", label: T.pw, typ: "password", auto: "new-password", ph: UC.t(T.pwPh).replace("{n}", String(MIN_LAENGE)),
                             mehr: UC.pwStaerkeHtml() }) +
             UC.esFeldHtml({ name: "confirm", label: T.pw2, typ: "password", auto: "new-password" }) +
           '</div>' +
@@ -128,7 +131,8 @@
       var p1 = String(pw.value || ""), p2 = String(pw2.value || "");
       errs = {};
       if (!p1) errs.password = T.pwLeer;
-      else if (p1.length < MIN_LAENGE) errs.password = T.pwKurz;
+      else if (p1.length < MIN_LAENGE) errs.password = UC.t(T.pwKurz).replace("{n}", String(MIN_LAENGE));
+      else if (p1.length > MAX_LAENGE) errs.password = UC.t(T.pwLang).replace("{n}", String(MAX_LAENGE));
       if (!p2) errs.confirm = T.pw2Leer;
       else if (p1 && p2 !== p1) errs.confirm = T.pw2Ungl;
       zeige();
@@ -136,8 +140,13 @@
       if (erste){ try { erste.focus(); } catch(e){} return; }
       /* Das Passwort als ROHER Wert -- es darf jedes Zeichen enthalten, auch Anfuehrungszeichen,
          und die schnitten eine Regex-Extraktion aus einem JSON in Bubble mittendrin ab. */
-      UC.feuerRoh(root, "data-submit-fn", "bubble_fn_urpSubmit", p1, "reset-password");
+      /* ERST der Ladezustand, DANN das Ereignis (14.10.). Ein Wirt, der im selben Aufruf antwortet
+         (Next.js, ohne Umweg ueber einen Bubble-Workflow), hob ihn sonst mit busy(false) auf, BEVOR er
+         gesetzt war: der Knopf stand auf "Resetting password", und die Bremse ersetzte den richtigen
+         Satz spaeter durch "That took longer than expected". Erreicht das Ereignis niemanden, ist
+         das ein Fehler im UI statt eines Ladens bis zur Bremse. */
       seite.busy(true);
+      if (!UC.feuerRoh(root, "data-submit-fn", "bubble_fn_urpSubmit", p1, "reset-password")) fehlerZeigen("");
     }
     pw.addEventListener("input", function(){
       UC.pwStaerkeZeigen(staerke, pw.value);
@@ -151,6 +160,18 @@
     pw2.addEventListener("input", function(){
       if (errs.confirm && (!pw2.value || pw2.value === pw.value)){ delete errs.confirm; zeige(); }
     });
+
+    function fehlerZeigen(roh){
+      seite.busy(false);
+      if (state.fertig){ state.fertig = false; merken(); seite.fertig(false); }
+      var f = UC.authFehler(roh, "reset");
+      /* Eine Serverantwort ersetzt die vorige ganz: ein Feldfehler vom letzten Versuch stuende
+         sonst neben dem neuen Satz und widerspraeche ihm. */
+      errs = {};
+      if (f.feld === "password"){ errs.password = f.text; zeige(); try { pw.focus(); } catch(e){} }
+      else zeige(f.text, f.aktion === "neuerLink" ? { text: T.neuerLink, href: neuerLinkHref } : null);
+      return true;
+    }
 
     function zeigeFertig(titel, text){
       seite.busy(false);
@@ -181,17 +202,7 @@
         zeigeFertig(titel ? String(titel) : "", text ? String(text) : "");
         return true;
       },
-      setError: function(roh){
-        seite.busy(false);
-        if (state.fertig){ state.fertig = false; merken(); seite.fertig(false); }
-        var f = UC.authFehler(roh, "reset");
-        /* Eine Serverantwort ersetzt die vorige ganz: ein Feldfehler vom letzten Versuch stuende
-           sonst neben dem neuen Satz und widerspraeche ihm. */
-        errs = {};
-        if (f.feld === "password"){ errs.password = f.text; zeige(); try { pw.focus(); } catch(e){} }
-        else zeige(f.text, f.aktion === "neuerLink" ? { text: T.neuerLink, href: neuerLinkHref } : null);
-        return true;
-      }
+      setError: fehlerZeigen
     };
   }
 

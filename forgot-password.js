@@ -127,8 +127,11 @@
       state.mail = m; merken();
       /* Die Adresse als ROHER Wert: in Bubble ist "This JavaScriptToBubble's value" dann schon die
          Adresse, ohne Auslesen. */
-      UC.feuerRoh(root, "data-submit-fn", "bubble_fn_ufpSubmit", m, "forgot-password");
+      /* ERST der Ladezustand, DANN das Ereignis (14.10.): ein Wirt, der im selben Aufruf antwortet,
+         hob ihn sonst auf, bevor er gesetzt war -- der Knopf drehte bis zur Bremse. Ohne Empfaenger
+         ein Fehler im UI statt eines Ladens. */
       seite.busy(true);
+      if (!UC.feuerRoh(root, "data-submit-fn", "bubble_fn_ufpSubmit", m, "forgot-password")) fehlerZeigen("");
       wiederZeigen();
     }
     feld.addEventListener("input", function(){
@@ -150,8 +153,8 @@
     }
     knopfWieder.addEventListener("click", function(){
       if (knopfWieder.disabled || !state.mail) return;
-      UC.feuerRoh(root, "data-submit-fn", "bubble_fn_ufpSubmit", state.mail, "forgot-password");
       seite.busy(true);
+      if (!UC.feuerRoh(root, "data-submit-fn", "bubble_fn_ufpSubmit", state.mail, "forgot-password")) fehlerZeigen("");
       wiederZeigen();
     });
 
@@ -168,6 +171,20 @@
         (state.mail ? T.doneMit.replace("{mail}", state.mail) : T.doneOhne);
       if (erstesMal) seite.fertig(true);
       wiederStarten();
+    }
+
+    function fehlerZeigen(roh){
+      var f = UC.authFehler(roh, "forgot");
+      /* NIE verraten, ob es das Konto gibt: "user not found" wird dieselbe Bestaetigung wie ein
+         Erfolg. */
+      if (f.unbekannt){ zeigeFertig(); return true; }
+      seite.busy(false);
+      /* Kam der Fehler nach einem "Resend", steht die Bestaetigung noch da. Der Satz gehoert dann
+         dorthin, wo jemand hinsieht: zurueck ins Formular, mit der Adresse im Feld. */
+      zurueckInsFormular();
+      if (f.feld === "email") seite.fehler({ email: f.text }, "");
+      else seite.fehler(null, f.text);
+      return true;
     }
 
     function zurueckInsFormular(){
@@ -192,19 +209,7 @@
         zeigeFertig(titel ? String(titel) : "", text ? String(text) : "");
         return true;
       },
-      setError: function(roh){
-        var f = UC.authFehler(roh, "forgot");
-        /* NIE verraten, ob es das Konto gibt: "user not found" wird dieselbe Bestaetigung wie ein
-           Erfolg. */
-        if (f.unbekannt){ zeigeFertig(); return true; }
-        seite.busy(false);
-        /* Kam der Fehler nach einem "Resend", steht die Bestaetigung noch da. Der Satz gehoert dann
-           dorthin, wo jemand hinsieht: zurueck ins Formular, mit der Adresse im Feld. */
-        zurueckInsFormular();
-        if (f.feld === "email") seite.fehler({ email: f.text }, "");
-        else seite.fehler(null, f.text);
-        return true;
-      }
+      setError: fehlerZeigen
     };
   }
 

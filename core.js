@@ -1378,6 +1378,11 @@
     "Your password": "Dein Passwort",
     "At least 8 characters": "Mindestens 8 Zeichen",
     "At least 8 characters.": "Mindestens 8 Zeichen.",
+    "At least {n} characters.": "Mindestens {n} Zeichen.",
+    "At least {n} characters": "Mindestens {n} Zeichen",
+    "Use at most {n} characters.": "Nutze höchstens {n} Zeichen.",
+    "That password is too short. Use at least {n} characters.": "Das Passwort ist zu kurz. Nutze mindestens {n} Zeichen.",
+    "Use upper- and lowercase letters, numbers and a symbol.": "Nutze Groß- und Kleinbuchstaben, Zahlen und ein Sonderzeichen.",
     "Please enter a password.": "Bitte gib ein Passwort ein.",
     "Please enter an email address.": "Bitte gib eine E-Mail-Adresse ein.",
     "Please enter your email address.": "Bitte gib deine E-Mail-Adresse ein.",
@@ -23893,9 +23898,19 @@
   }
 
   /* ---- Passwortstaerke: die Regel und die Anzeige der Anmeldeseite (auth-page.js staerke) ------
-     8 Zeichen allein "Weak", dazu Gross/Klein oder Ziffer "Fair", beides "Good", dazu Laenge oder
-     Sonderzeichen "Strong". Unter 8 bleibt es schwach, egal wie bunt. */
+     Unter der Mindestlaenge (PASSWORT.min, darunter) immer "Weak", egal wie bunt. Darueber zaehlen
+     Laenge und Vielfalt: Kleinbuchstaben allein "Fair", dazu eines von Gross/Klein, Ziffer,
+     Sonderzeichen "Good", zwei davon "Strong". Ein Hinweis, keine Regel -- verlangt wird nur die Laenge (NIST: keine
+     Zusammensetzungsregeln). */
   var PW_STUFEN = ["", "Weak", "Fair", "Good", "Strong"];
+  /* DIE PASSWORTREGEL, EINE STELLE fuer Registrierung und Reset (14.10., Sicherheitspruefung):
+     Laenge statt Zeichenklassen. NIST SP 800-63B-4 (3.1.1.2): mindestens 15 Zeichen, wenn das Passwort
+     der einzige Faktor ist (die App hat kein MFA), und Zusammensetzungsregeln SHALL NOT; mindestens 64
+     Zeichen zulassen -- 72 ist die Grenze von Supabase (bcrypt). Dieselben Zahlen muessen im
+     Supabase-Dashboard stehen (Minimum length 15, "No required characters"), sonst laesst der
+     Server per API zu, was die Seite abweist, oder umgekehrt. Bestehende kuerzere Passwoerter bleiben
+     gueltig: die Regel gilt nur fuer NEUE (Anmelden prueft keine Laenge). */
+  var PASSWORT = { min: 15, max: 72 };
   function pwStaerke(pw){
     pw = String(pw || "");
     if (!pw) return 0;
@@ -23905,7 +23920,7 @@
     if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) p++;
     if (/\d/.test(pw)) p++;
     if (/[^A-Za-z0-9]/.test(pw)) p++;
-    if (pw.length < 8) return 1;
+    if (pw.length < PASSWORT.min) return 1;
     return Math.max(1, Math.min(4, p));
   }
   function pwStaerkeHtml(){
@@ -23951,8 +23966,16 @@
       return { feld: "password", text: "Choose a password you have not used before." };
     if (/pwned|known to be weak|easy to guess|data breach/.test(w))
       return { feld: "password", text: "This password appeared in a data breach. Please choose a different one." };
-    if (/weak_password|at least \d+ characters|should contain at least|password is too short/.test(w))
-      return { feld: "password", text: "That password is too weak. Use at least 8 characters with letters and numbers." };
+    /* Supabase sagt, WAS fehlt: Laenge (mit der Zahl im Text) oder Zeichenklassen (nur, wenn im
+       Dashboard noch "required characters" eingestellt ist) -- zwei Gruende, zwei Saetze. */
+    if (/cannot be longer than|too long/.test(w))
+      return { feld: "password", text: t_("Use at most {n} characters.").replace("{n}", String(PASSWORT.max)) };
+    if (/should contain at least one character|required characters/.test(w))
+      return { feld: "password", text: "Use upper- and lowercase letters, numbers and a symbol." };
+    if (/weak_password|at least \d+ characters|password is too short/.test(w)){
+      var lmin = /at least (\d+) characters/.exec(w);
+      return { feld: "password", text: t_("That password is too short. Use at least {n} characters.").replace("{n}", lmin ? lmin[1] : String(PASSWORT.min)) };
+    }
     if (/otp_expired|flow_state_expired|bad_code_verifier|link is invalid|has expired|expired or is invalid|invalid or has expired/.test(w))
       return { feld: "", text: reset ? "This reset link has expired or was already used." : "This link has expired or was already used.",
                aktion: reset ? "neuerLink" : "" };
@@ -25675,7 +25698,7 @@
     plattformTitel: plattformTitel,
     parseLinkedinUrl: parseLinkedinUrl,
     esc: esc,
-    parseBubbleJson: parseBubbleJson,
+    parseBubbleJson: parseBubbleJson, PASSWORT: PASSWORT,
     readBubble: readBubble, bubbleObjekt: bubbleObjekt, bubbleFehler: bubbleFehler,
     wennBody: wennBody,
     citeName: citeName,

@@ -61,7 +61,7 @@
       hallo: "Hey there,", h1: "Let’s get you set up",
       sub: "Sign up to win AI Search.",
       check: "Send me product updates", side: "",
-      pwHint: "At least 8 characters",
+      pwHint: "At least {n} characters",
       cta: "Create account", ctaBusy: "Creating account",
       footTxt: "Already have an account?", footLink: "Sign in"
     }
@@ -124,6 +124,9 @@
 
   /* Vier Stufen. Laenge zaehlt doppelt, weil sie mehr bringt als jede Zeichenklasse: aus acht
      Zeichen mit Sonderzeichen wird schneller ein Treffer als aus sechzehn Kleinbuchstaben. */
+  /* Die Passwortregel aus core (UC.PASSWORT); vor core die Werte von dort. */
+  function pwMin(){ var U = window.UpstreemCore; return U && U.PASSWORT ? U.PASSWORT.min : 15; }
+  function pwMax(){ var U = window.UpstreemCore; return U && U.PASSWORT ? U.PASSWORT.max : 72; }
   function staerke(pw){
     pw = String(pw || "");
     if (!pw) return 0;
@@ -133,7 +136,7 @@
     if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) p++;
     if (/\d/.test(pw)) p++;
     if (/[^A-Za-z0-9]/.test(pw)) p++;
-    if (pw.length < 8) return 1;                 /* zu kurz bleibt schwach, egal wie bunt */
+    if (pw.length < pwMin()) return 1;           /* zu kurz bleibt schwach, egal wie bunt */
     /* Ohne Abzug. Mit p-1 landete "Abcdefgh1" -- acht Zeichen, Gross, Klein, Ziffer -- auf
        "Fair", und das ist zu streng: ein Balken, der solide Passwoerter tadelt, erzieht nur
        dazu, ihn zu ignorieren. Jetzt: 8 Zeichen allein "Weak", plus Gross/Klein oder Ziffer
@@ -399,7 +402,7 @@
                   '<label class="uau-field">' +
                     '<span class="uau-label">Password</span>' +
                     '<input class="up-field uau-input" type="password" name="password" ' +
-                      'autocomplete="current-password" placeholder="At least 8 characters" data-f-pw/>' +
+                      'autocomplete="current-password" placeholder="Your password" data-f-pw/>' +
                     '<span class="uau-err"><span data-e-pw></span></span>' +
                     '<span class="uau-strength" data-strength><div><span class="uau-strength-in">' +
                       '<span class="uau-bars">' +
@@ -520,10 +523,10 @@
          erzeugen -- und der Nutzer legt ein Konto mit einem Passwort an, das er anderswo schon
          benutzt. */
       elPw.setAttribute("autocomplete", state.mode === "signup" ? "new-password" : "current-password");
-      /* "At least 8 characters" ist eine Anforderung an ein NEUES Passwort. Im Login steht sie
+      /* "At least 15 characters" ist eine Anforderung an ein NEUES Passwort. Im Login steht sie
          wie eine Bedingung fuers Anmelden da -- wer ein aelteres, kuerzeres Passwort hat, liest
          dort, dass er sich nicht anmelden kann. */
-      elPw.setAttribute("placeholder", t.pwHint);
+      elPw.setAttribute("placeholder", UC.t(t.pwHint).replace("{n}", String(pwMin())));
       elNameWrap.classList.toggle("is-on", state.mode === "signup");
       /* Ein ausgeblendetes Feld darf nicht per Tabulator erreichbar bleiben. */
       elName.disabled = state.mode !== "signup";
@@ -663,7 +666,9 @@
       /* Die Laengenregel gilt nur beim Anlegen. Im Login waere sie falsch: ein bestehendes Konto
          kann ein kuerzeres Passwort haben, und dann verweigert die Seite die Anmeldung fuer etwas,
          das der Nutzer gar nicht mehr aendern kann. */
-      else if (state.mode === "signup" && pw.length < 8) e.pw = "At least 8 characters.";
+      /* Die Zahlen aus core (UC.PASSWORT, 14.10.: Laenge nach NIST SP 800-63B-4, keine Zeichenklassen). */
+      else if (state.mode === "signup" && pw.length < pwMin()) e.pw = UC.t("At least {n} characters.").replace("{n}", String(pwMin()));
+      else if (state.mode === "signup" && pw.length > pwMax()) e.pw = UC.t("Use at most {n} characters.").replace("{n}", String(pwMax()));
 
       if (codeAn() && !codeWert()) e.code = "Please enter your registration code.";
 
@@ -712,7 +717,8 @@
     }
 
     function sendeJetzt(){
-      fire("data-submit-fn", "uauSubmit", {
+      /* Ohne Empfaenger (14.10.): sofort ein Satz statt eines Knopfs, der bis zur Bremse dreht. */
+      var getroffen = fire("data-submit-fn", "uauSubmit", {
         mode: state.mode,
         /* Immer dabei, auch leer. Ein Feld, das mal da ist und mal nicht, zwingt jeden
            Bubble-Workflow zu einer Fallunterscheidung beim Auslesen -- leer heisst schlicht
@@ -731,6 +737,11 @@
         email: String(elMail.value || "").trim(),
         opt_in: elCheck.checked ? "yes" : "no"
       });
+      if (!getroffen){
+        state.formErr = "Something went wrong. Please try again.";
+        setBusy(false);
+        zeigeFehler();
+      }
     }
 
     /* Der Modus, der VERLANGT war -- aus Adresse, Attribut oder Klick. Er bleibt gemerkt, weil
@@ -748,7 +759,7 @@
       if (m === "signup" && !state.token) m = "login";
       if (m === state.mode) return;
       state.mode = m;
-      /* Fehler des anderen Modus mitnehmen waere falsch -- "At least 8 characters" gilt im Login
+      /* Fehler des anderen Modus mitnehmen waere falsch -- "At least 15 characters" gilt im Login
          nicht, und ein roter Rahmen ohne Anlass ist eine Fehlermeldung ohne Fehler. */
       state.errs = {}; state.formErr = "";
       render();
