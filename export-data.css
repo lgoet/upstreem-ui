@@ -39,7 +39,7 @@
   .uex-btn {
     display: inline-flex; align-items: center; gap: 8px;
     height: 32px; padding: 0 8px;
-    border: 0; border-radius: 8px;
+    border: 0; border-radius: var(--up-r-m);
     background: var(--up-accent); color: var(--up-accent-fg);
     font: inherit; font-size: 12px; font-weight: 560; line-height: 1;
     white-space: nowrap; cursor: pointer; outline: 0;
@@ -99,7 +99,7 @@
   .uex-spin {
     display: inline-block;
     width: 16px; height: 16px; flex: 0 0 16px;
-    border-radius: 999px; border: 2px solid rgba(255,255,255,0.35); border-top-color: currentColor;
+    border-radius: var(--up-r-voll); border: 2px solid rgba(255,255,255,0.35); border-top-color: currentColor;
     animation: uex-spin 0.7s linear infinite;
   }
   @keyframes uex-spin { to { transform: rotate(360deg); } }
@@ -138,7 +138,7 @@
     position: relative;
     display: flex; align-items: center; gap: 10px;
     min-height: 46px; padding: 12px 38px 12px 14px;
-    border: 1px solid var(--vc-border); border-radius: 12px;
+    border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
     background: var(--vc-bg); color: var(--vc-text);
     font: inherit; font-size: 13.5px; font-weight: 520; line-height: 1.15;
     text-align: left; cursor: pointer; outline: 0;
@@ -149,7 +149,7 @@
   .uex-opt-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .uex-opt-check {
     position: absolute; top: 50%; right: 14px; transform: translateY(-50%);
-    width: 16px; height: 16px; border-radius: 999px;
+    width: 16px; height: 16px; border-radius: var(--up-r-voll);
     background: var(--up-accent); color: var(--up-accent-fg);
     display: none; align-items: center; justify-content: center;
   }
@@ -178,7 +178,8 @@
   }
   .uex-custom-btn { pointer-events: none; }   /* visual only — the slot above handles input */
   /* hover has to come from the wrapper, since the button itself never sees the pointer */
-  .uex-custom-wrap:hover .uex-custom-btn { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+  /* Menue-Ausloeser (Kalender) nach Geist, 15.10.: Flaeche plus eine Stufe kraeftigere Kante. */
+  .uex-custom-wrap:hover .uex-custom-btn { border-color: var(--up-knopf-rand-hover); background: var(--up-knopf-hover); }
   /* Der Picker oeffnet sein Panel 4px unter seinem TRIGGER. Der ist fest 32px hoch, dieser Knopf
      ist hoeher -- das Panel begann also im Knopf und ueberlappte ihn. Den Trigger auf die volle
      Knopfgroesse zu ziehen legt das Panel exakt 4px darunter. */
@@ -210,7 +211,7 @@
 
   .uex-summary {
     margin-top: 18px; padding: 12px 14px;
-    border-radius: 12px; background: var(--vc-heading-bg);
+    border-radius: var(--up-r-2xl); background: var(--vc-heading-bg);
     color: var(--vc-muted); font-size: 12px; line-height: 1.5;
   }
   .uex-summary b { color: var(--vc-text); font-weight: 600; }
@@ -219,7 +220,7 @@
   .uex-foot { flex: 0 0 auto; padding: 16px; border-top: 1px solid var(--vc-border); background: var(--up-surface); }
   .uex-submit {
     width: 100%; height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
-    border: 1px solid var(--up-accent); border-radius: 12px;
+    border: 1px solid var(--up-accent); border-radius: var(--up-r-l);
     background: var(--up-accent); color: var(--up-accent-fg);
     font: inherit; font-size: 14.5px; font-weight: 580; cursor: pointer;
     transition: opacity var(--uex-t) var(--uex-ease);
@@ -229,12 +230,13 @@
   .uex-secondary { display: flex; gap: 8px; margin-top: 8px; }
   .uex-cancel {
     flex: 1 1 0; height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-    border: 1px solid var(--vc-border); border-radius: 12px;
+    border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
     background: var(--vc-bg); color: var(--vc-muted);
     font: inherit; font-size: 13px; font-weight: 520; cursor: pointer;
     transition: background var(--uex-t) var(--uex-ease), color var(--uex-t) var(--uex-ease), border-color var(--uex-t) var(--uex-ease);
   }
-  .uex-cancel:hover { background: var(--vc-heading-bg); color: var(--vc-text); border-color: var(--vc-hover-border); }
+  /* Geist-Sekundaerknopf (15.10.): nur die Flaeche, der Rand bleibt. */
+  .uex-cancel:hover { background: var(--up-knopf-hover); color: var(--vc-text); }
 
   @media (max-width: 560px) {
     .uex-overlay { padding: 0; }

@@ -82,7 +82,7 @@
 .uau-themebtn {
   width: 32px; height: 32px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
-  border: 0; border-radius: 8px; background: transparent; color: var(--vc-muted);
+  border: 0; border-radius: var(--up-r-m); background: transparent; color: var(--vc-muted);
   cursor: pointer; padding: 0;
   transition: background var(--uau-t) var(--uau-ease), color var(--uau-t) var(--uau-ease);
 }
@@ -148,7 +148,7 @@
 .uau-label { font-size: 12px; font-weight: 600; color: var(--vc-muted); }
 .uau-input {
   height: 40px; width: 100%;
-  border: 1px solid var(--vc-border); border-radius: 12px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
   background: var(--vc-bg); padding: 0 14px;
   font-family: inherit; font-size: 14px; color: var(--vc-text);
   outline: none;
@@ -247,7 +247,7 @@
 .uau-strength-in { padding: 8px 0; display: flex; align-items: center; gap: 10px; }
 .uau-bars { display: flex; gap: 4px; flex: 1 1 auto; }
 .uau-bar {
-  height: 4px; flex: 1 1 0; border-radius: 999px; background: var(--vc-sk);
+  height: 4px; flex: 1 1 0; border-radius: var(--up-r-voll); background: var(--vc-sk);
   transition: background var(--uau-t) var(--uau-ease);
 }
 /* Vier Stufen, vier Farben. Die Balken fuellen sich von links, damit die Staerke auch ohne den
@@ -294,7 +294,7 @@
 .uau-check input {
   appearance: none; -webkit-appearance: none;
   width: 16px; height: 16px; margin: 0; flex: 0 0 auto; cursor: pointer;
-  border: 1px solid var(--vc-border); border-radius: 5px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-xs);
   /* background-color einzeln, NICHT als background-Kurzform: mit einem var() darin liess sich
      die Farbe im ungehakten Zustand nicht mehr zuruecksetzen -- gemessen blieb das Kaestchen
      dunkel, obwohl nur die :checked-Regel sie setzt. */
@@ -347,7 +347,7 @@
      32px hier und an .uau-opts: Passwortfeld, Einwilligung und Hauptknopf stehen damit gleich
      weit auseinander, und der Block hebt sich vom dichteren Feldstapel darueber ab. */
   margin-top: 32px; height: 40px; width: 100%;
-  border: 0; border-radius: 12px;
+  border: 0; border-radius: var(--up-r-l);
   background: var(--up-accent); color: var(--up-accent-fg);
   font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: -.01em;
   cursor: pointer;
@@ -360,7 +360,7 @@
 .uau-primary:disabled { opacity: .55; cursor: default; }
 .uau-google {
   margin-top: clamp(12px, 2vh, 18px); height: 40px; width: 100%;
-  border: 1px solid var(--vc-border); border-radius: 12px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
   background: var(--vc-bg); color: var(--vc-text);
   font-family: inherit; font-size: 14px; font-weight: 600;
   cursor: pointer;
@@ -481,7 +481,7 @@
    Kasten auf ihm zu liegen. Seit dem 07.10. mit weniger Blau und einen Hauch heller -- an beiden
    Stellen zugleich (Begruendung und alte Werte in landing-hero.css an .ulh-bg-foto). */
 .uau-panel {
-  border-radius: 32px; overflow: hidden; position: relative;
+  border-radius: var(--up-r-3xl); overflow: hidden; position: relative;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: clamp(16px, 1.8vw, 26px); text-align: center;
   padding: clamp(32px, 4vw, 64px) clamp(28px, 3.6vw, 56px);
@@ -582,7 +582,7 @@
 .uau-prompt {
   margin-top: clamp(4px, .8vw, 10px); width: 100%; max-width: 520px;
   display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
-  border: 1px solid var(--vc-border); border-radius: 999px; background: var(--vc-bg);
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-voll); background: var(--vc-bg);
   padding: clamp(7px, .7vw, 10px);
   padding-left: clamp(16px, 1.5vw, 22px);
   /* e-3: der Balken schwebt frei ueber der Seite (28.09.; vorher zwei Lagen mit Blaustich,
@@ -611,10 +611,10 @@
   width: clamp(34px, 2.9vw, 42px); height: clamp(34px, 2.9vw, 42px);
   display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; border: 0;
 }
-.uau-mic { background: transparent; border-radius: 11px; color: var(--vc-text); }
+.uau-mic { background: transparent; border-radius: var(--up-r-xl); color: var(--vc-text); }
 .uau-mic svg { width: 56%; height: 56%; display: block; }
 .uau-send { border-radius: 50%; background: var(--up-accent); color: var(--up-accent-fg);
-  box-shadow: var(--up-e-1, 0 1px 3px rgba(0,0,0,.16)); }
+  box-shadow: var(--up-e-1); }
 .uau-send svg { width: 52%; height: 52%; display: block; }
 .uau-panel-f { font-size: clamp(12px, .95vw, 14px); font-weight: 500; color: var(--vc-muted); }
 

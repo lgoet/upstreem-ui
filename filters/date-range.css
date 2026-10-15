@@ -21,7 +21,7 @@
 .udr-trigger {
   display: inline-flex; align-items: center; gap: 8px;
   height: 32px; padding: 0 10px;
-  border: 1px solid var(--vc-border); border-radius: 8px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vc-bg); color: var(--vc-muted);
   font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
   white-space: nowrap; cursor: pointer; outline: 0;
@@ -29,11 +29,12 @@
 }
 /* Hover and "panel is open" are deliberately the same state -- the open panel is the affordance,
    a second distinct colour for it just reads as a third button style. */
+/* Geist-Menue-Ausloeser (15.10.): Flaeche plus eine Stufe kraeftigere Kante statt --vc-hover-border (core, --up-knopf-*). */
 .udr-trigger:hover,
 .udr-wrap.is-open .udr-trigger {
-  color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+  color: var(--vc-text); background: var(--up-knopf-hover); border-color: var(--up-knopf-rand-hover);
 }
-.udr-trigger:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
+.udr-trigger:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
 /* Im Dunkeln ohne Flaeche im RUHEZUSTAND: --vc-bg (#1b1b1b) liegt heller als der Seitengrund, der
    Knopf sass als hellerer Block in der Werkzeugzeile. Nur der Ruhezustand -- Hover und "Panel
    offen" behalten ihre Flaeche, sonst bleibt vom Knopf keine Rueckmeldung ausser dem Rahmen.
@@ -115,7 +116,7 @@
 }
 .udr-preset {
   display: flex; align-items: center; width: 100%; height: 36px; padding: 0 8px;
-  border: 0; border-radius: 12px; background: transparent; color: var(--vc-text);
+  border: 0; border-radius: var(--up-r-s); background: transparent; color: var(--vc-text);
   font-family: inherit; font-size: 13.5px; font-weight: 500; text-align: left; cursor: pointer;
 }
 .udr-preset + .udr-preset { margin-top: 2px; }
@@ -153,7 +154,7 @@
    gedaempfte Zeile der App. */
 .udr-reset {
   display: flex; align-items: center; width: 100%; height: 36px; margin-top: auto; padding: 0 8px;
-  border: 0; border-radius: 12px; background: transparent; color: var(--vc-muted);
+  border: 0; border-radius: var(--up-r-s); background: transparent; color: var(--vc-muted);
   font-family: inherit; font-size: 13.5px; font-weight: 500; text-align: left; cursor: pointer;
 }
 .udr-reset:hover { background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); color: var(--vc-text); }
@@ -174,7 +175,7 @@
 .udr-month-title { color: var(--vc-text); font-size: 14px; font-weight: 500; }
 .udr-nav {
   position: absolute; top: 6px; display: flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px;
+  width: 32px; height: 32px; padding: 0; border: 0; border-radius: var(--up-r-m);
   background: transparent; color: var(--vc-muted); cursor: pointer;
 }
 .udr-nav:hover:not(:disabled) { background: var(--vc-heading-bg); color: var(--vc-text); }
@@ -194,7 +195,7 @@
 .udr-grid { display: grid; grid-template-columns: repeat(7, 40px); grid-auto-rows: 36px; row-gap: 4px; padding: 0 4px 4px; }
 .udr-day {
   display: flex; align-items: center; justify-content: center;
-  width: 40px; height: 36px; padding: 0; border: 1px solid transparent; border-radius: 8px;
+  width: 40px; height: 36px; padding: 0; border: 1px solid transparent; border-radius: var(--up-r-m);
   background: transparent; color: var(--vc-text);
   font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer; outline: 0;
   transition: background-color 90ms ease, color 90ms ease, border-color 90ms ease;
@@ -215,7 +216,7 @@
   border-color: var(--vc-text); background: var(--vc-text); color: var(--vc-bg);
   border-radius: 0;
 }
-/* ---- NUR DIE SICHTBAREN AUSSENECKEN, 12px -------------------------------------------------
+/* ---- NUR DIE SICHTBAREN AUSSENECKEN, 8px (Geist-Skala seit 15.10., vorher 12) -----------
    Eine Ecke ist sichtbar, wenn auf dieser Seite nichts Gefaerbtes anschliesst. Genau das
    entscheiden is-edge-l / is-edge-r, und die setzt das JS beim Bauen des Rasters: der linke Nachbar
    IN DERSELBEN ZEILE ist ungefaerbt (oder es ist die erste Spalte) -> linke Ecken; rechts
@@ -226,8 +227,8 @@
    Warum im JS und nicht per :has(+ …) in CSS: das Raster ueberspringt Platzhalter fremder Monate
    (die sind nie gefaerbt), und das JS kennt beim Bauen ohnehin schon jede Zelle. Ein
    Geschwister-Selektor waere eine zweite Wahrheit ueber dasselbe. */
-.udr-day.is-edge-l { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
-.udr-day.is-edge-r { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+.udr-day.is-edge-l { border-top-left-radius: var(--up-r-l); border-bottom-left-radius: var(--up-r-l); }
+.udr-day.is-edge-r { border-top-right-radius: var(--up-r-l); border-bottom-right-radius: var(--up-r-l); }
 /* HEUTE BLEIBT ROT, ABER LESBAR AUF JEDEM GRUND (01.10. gemeldet: "die rote Schrift am heutigen
    Tag ist kaum lesbar, wenn im Lightmode der schwarze Hintergrund um den Tag liegt"). Gemessen
    gegen die 4,5 fuer kleine Schrift:
@@ -294,7 +295,7 @@
      Zeile. Eine Zeile mit Dauerflaeche sieht ausserdem aus wie dauerhaft ausgewaehlt -- neben
      Preset-Zeilen, die ihre Flaeche genau dann bekommen, wenn sie gewaehlt sind. Der Kontrast
      gehoert an .up-switch selbst, siehe core.css. */
-  border: 0; border-radius: 8px; background: transparent;
+  border: 0; border-radius: var(--up-r-xl); background: transparent;
   font-family: inherit; text-align: left; cursor: pointer;
 }
 /* Die Trennlinie liegt IN der Luecke ueber der Zeile und nicht als border-top am Element: als

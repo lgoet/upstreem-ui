@@ -70,9 +70,10 @@
     /* Panel shell + row/dot/trend classes all now live in core.css's .up-explain-* — this table
        used to carry its own byte-identical uut-explain-* copy. Only the URL-type pill stays local:
        no other table's explainer needs a coloured chip like this. */
-    .uut-explain-chip { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 7px;
+    /* Klein (Geist-Badge sm) aus core, 15.10. */
+    .uut-explain-chip { display: inline-flex; align-items: center;
       border: 1px solid transparent; box-sizing: border-box;
-      font-size: 11px; font-weight: 500; white-space: nowrap; }
+      white-space: nowrap; }
 
     /* ---------- pagination ---------- */
     
@@ -199,7 +200,7 @@
    zwei Werte fuehrt --vc-text-invert. Die Dunkel-Regel faellt damit weg. (22.09.) */
 .uut-cols-badge {
       position: absolute; top: -3px; right: -3px; z-index: 2;
-      min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+      min-width: 16px; height: 16px; padding: 0 4px; border-radius: var(--up-r-voll);
       background: var(--vc-text); color: var(--vc-text-invert);
       font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
       display: none; align-items: center; justify-content: center;
@@ -252,18 +253,18 @@
     
 
     /* ---------- brand mentioned toggle ---------- */
-    .uut-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px;
+    .uut-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: var(--up-r-m);
       background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; font-family: inherit; }
     .uut-brand-toggle.is-visible { display: inline-flex; }
     .uut-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
     .uut-brand-toggle.is-yes, .uut-brand-toggle.is-no { background: var(--vc-heading-bg); }
     .uut-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-    .uut-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg); }
+    .uut-brand-check { width: 16px; height: 16px; border-radius: var(--up-r-xs); border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg); }
     .uut-brand-check svg { width: 11px; height: 11px; display: none; }
     .uut-brand-toggle.is-yes .uut-brand-check, .uut-brand-toggle.is-no .uut-brand-check { background: var(--up-accent); border-color: var(--up-accent); }
     .uut-brand-toggle.is-yes .uut-brand-check .uut-brand-check-yes { display: block; }
     .uut-brand-toggle.is-no .uut-brand-check .uut-brand-check-no { display: block; }
-    .uut-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }
+    .uut-brand-logo { width: 16px; height: 16px; border-radius: var(--up-r-xs); flex: 0 0 auto; display: block; object-fit: cover; }
     .uut-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
 
     /* ---------- table ---------- */
@@ -334,9 +335,9 @@
     
     
 
-    .uut-logo-box { width: 24px; height: 24px; border-radius: 8px; background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto;
+    .uut-logo-box { width: 24px; height: 24px; border-radius: var(--up-r-m); background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto;
       display: inline-flex; align-items: center; justify-content: center; position: relative; }
-    .uut-logo-box img { width: 22px; height: 22px; border-radius: 7px; object-fit: cover; display: block; }
+    .uut-logo-box img { width: 22px; height: 22px; border-radius: calc(var(--up-r-m) - 1px); object-fit: cover; display: block; }
     /* Letter fallback: a broken/missing favicon used to leave an empty square, which reads as a
        loading glitch. The initial keeps every row visually complete. */
     .uut-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
@@ -375,10 +376,11 @@
     .uut-used { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; font-variant-numeric: tabular-nums; }
     .uut-date { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
     /* Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke. Kein Nachbau von .up-planpill (meldet .check_reinvention.py wegen des Rahmens): das ist der Typ-Chip aus STYLEGUIDE 1a/1b, Masse wie .up-tag. */
-    .uut-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
+    /* Form, Groesse, Schrift und Polster seit 15.10. aus dem Geist-Badge in core (.up-tag). */
+    .uut-tag { display: inline-flex; align-items: center;
       border: 1px solid transparent; box-sizing: border-box;
-      font-size: 12px; font-weight: 500; white-space: nowrap; max-width: 100%; overflow: hidden; }
-    .uut-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
+      white-space: nowrap; max-width: 100%; overflow: hidden; }
+    .uut-tag-dot { width: 6px; height: 6px; border-radius: var(--up-r-voll); flex: 0 0 auto; }
     .uut-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
     .uut-trend { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
     .uut-trend svg { width: 16px; height: 16px; display: block; }

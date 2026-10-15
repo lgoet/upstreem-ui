@@ -46,7 +46,7 @@
 .ubo-status-tag:empty { display: none; }
 
 .ubo-box {
-  border: 1px solid var(--vc-border); background: var(--vc-bg); border-radius: 16px;
+  border: 1px solid var(--vc-border); background: var(--vc-bg); border-radius: var(--up-r-2xl);
   overflow: hidden; display: flex; flex-direction: column;
 }
 .ubo-box-chart { height: 427px; }
@@ -159,8 +159,8 @@
 .ubo-mx-canvas { display: block; }
 /* Skeleton + empty state: the wrap owns both so the canvas can stay untouched underneath. */
 .ubo-mx-wrap.is-sk::after {
-  content: ""; position: absolute; inset: 8px; border-radius: 12px;
-  background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite;
+  content: ""; position: absolute; inset: 8px; border-radius: var(--up-r-s);
+  background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung);
 }
 .ubo-mx-wrap.is-empty::after {
   content: "No data"; position: absolute; inset: 0;
@@ -182,9 +182,9 @@
      "#" der Rangzeile rendert in voller Textstaerke statt gedaempft. */
   --vt-logo-bg: #ffffff; --vc-third: #9e9e9e;
   position: fixed; left: 0; top: 0; z-index: 100050; pointer-events: none;
-  min-width: 208px; padding: 10px 12px; border-radius: 10px;
+  min-width: 208px; padding: 10px 12px; border-radius: var(--up-r-l);
   background: var(--vc-bg); border: 1px solid var(--vc-border);
-  box-shadow: var(--up-e-2, 0 10px 28px rgba(0,0,0,.16));
+  box-shadow: var(--up-e-2);
   color: var(--vc-text); font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   opacity: 0; transition: opacity 120ms ease;
@@ -241,7 +241,7 @@
    der Dreipunkt-Knopf einer Zeile, 28 im Quadrat in der 55er Zeile, kein Knopf eines Umschalters
    -- er steht allein, hat keine Schiene und keine Pille. */
 .ubo-actbtn {
-  width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent;
+  width: 28px; height: 28px; border: 0; border-radius: var(--up-r-m); background: transparent;
   color: var(--vc-muted); cursor: pointer; padding: 0;
   display: inline-flex; align-items: center; justify-content: center;
   transition: color 120ms ease, background 120ms ease;
@@ -258,8 +258,8 @@
   --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-border: #dcdbdd; --vc-bg: #ffffff; --vc-heading-bg: #f9f8f9;
   --up-sel-bg: #f4f2f4;   /* .up-pop-opt faerbt sich sonst beim Ueberfahren nicht */
   position: fixed; z-index: 100050; min-width: 200px; padding: 6px;
-  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 12px;
-  box-shadow: var(--up-e-2, 0 10px 28px rgba(0,0,0,.14));
+  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius);
+  box-shadow: var(--up-e-2);
   color: var(--vc-text); font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   opacity: 0; transform: translateY(-4px) scale(.985); pointer-events: none;

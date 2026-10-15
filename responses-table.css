@@ -26,13 +26,13 @@
    — same muted dash every table in the app uses. See core.css. ---------- */
 
 /* ---------- brand mentioned toggle (mirrors uut-brand-toggle in urls-table.css) ---------- */
-.urt-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px;
+.urt-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: var(--up-r-m);
   background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; font-family: inherit; }
 .urt-brand-toggle.is-visible { display: inline-flex; }
 .urt-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
 .urt-brand-toggle.is-yes, .urt-brand-toggle.is-no { background: var(--vc-heading-bg); }
 .urt-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-.urt-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg); }
+.urt-brand-check { width: 16px; height: 16px; border-radius: var(--up-r-xs); border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg); }
 .urt-brand-check svg { width: 11px; height: 11px; display: none; }
 .urt-brand-toggle.is-yes .urt-brand-check, .urt-brand-toggle.is-no .urt-brand-check { background: var(--up-accent); border-color: var(--up-accent); }
 .urt-brand-toggle.is-yes .urt-brand-check .urt-brand-check-yes { display: block; }
@@ -46,7 +46,7 @@
 .urt-brand-toggle.is-spotlight {
   pointer-events: none; cursor: default; opacity: 0.55;
 }
-.urt-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }
+.urt-brand-logo { width: 16px; height: 16px; border-radius: var(--up-r-xs); flex: 0 0 auto; display: block; object-fit: cover; }
 .urt-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
 
 /* ---------- date ----------
@@ -79,9 +79,9 @@
 .up-root.is-vnarrow .up-row .urt-model-chip { gap: 0; }
 .up-root.is-vnarrow .up-row .urt-model-chip .up-ment-name { display: none; }
 .up-root.is-vnarrow .up-row .urt-model-chip .up-ment-logo {
-  width: 20px; height: 20px; border-radius: 6px; padding: 1px;
+  width: 20px; height: 20px; border-radius: var(--up-r-s); padding: 1px;
 }
-.up-root.is-vnarrow .up-row .urt-model-chip .up-ment-logo img { width: 100%; height: 100%; border-radius: 4px; }
+.up-root.is-vnarrow .up-row .urt-model-chip .up-ment-logo img { width: 100%; height: 100%; border-radius: calc(var(--up-r-s) - 1px); }
 
 /* ---------- mentioned? column header ----------
    The logo is fixed-size and the label must be the part that gives way; without min-width:0 the
@@ -116,7 +116,7 @@
    zwei Werte fuehrt --vc-text-invert. Die Dunkel-Regel faellt damit weg. (22.09.) */
 .urt-cols-badge {
   position: absolute; top: -3px; right: -3px; z-index: 2;
-  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: var(--up-r-voll);
   background: var(--vc-text); color: var(--vc-text-invert);
   font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
   display: none; align-items: center; justify-content: center;
@@ -131,11 +131,11 @@
 /* a filter is silently destructive, so an applied range gets a dot the way the cols badge does */
 .urt-fader.is-active .urt-fader-btn::after {
   content: ""; position: absolute; top: 5px; right: 5px; width: 6px; height: 6px;
-  border-radius: 999px; background: var(--up-accent); box-shadow: 0 0 0 2px var(--up-surface);
+  border-radius: var(--up-r-voll); background: var(--up-accent); box-shadow: 0 0 0 2px var(--up-surface);
 }
 
 .urt-fader-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; width: 268px; padding: 14px;
-  border-radius: 12px; background: var(--up-surface); border: 1px solid var(--vc-border);
+  border-radius: var(--up-dd-radius); background: var(--up-surface); border: 1px solid var(--vc-border);
   /* e-2: ein Menue am Ausloeser (28.09.; vorher ein eigener Wert 0 12px 32px). */
   box-shadow: var(--up-e-2); opacity: 0; pointer-events: none; transform: translateY(-4px) scale(.985);
   transition: opacity 140ms ease, transform 140ms ease; }
@@ -153,28 +153,48 @@
    Two native <input type=range> stacked on one track. The inputs themselves are transparent and
    pointer-events:none; only the thumbs take the pointer, which is what lets both handles live on
    the same strip without one input's full-width hit area blocking the other. */
-.urt-slider { position: relative; height: 18px; }
-.urt-slider-track { position: absolute; top: 7px; left: 0; right: 0; height: 4px; border-radius: 999px; background: var(--vc-switch-bg); }
-/* Die Dunkel-Regel fuer .urt-slider-track stand hier und schrieb #232326 hin -- genau das,
-   was var(--vc-switch-bg) in der Zeile darueber im dunklen Thema ohnehin liefert. (22.09.) */
-.urt-slider-fill { position: absolute; top: 7px; height: 4px; border-radius: 999px; background: var(--up-accent); }
-.urt-range { position: absolute; top: 0; left: 0; width: 100%; height: 18px; margin: 0; background: transparent;
+/* ---- DER GEIST-SLIDER (15.10.) ----
+   vercel.com/geist/slider, am 15.10. ausgelesen: Bahn 8px hoch und voll gerundet (Gray 200), die
+   Fuellung in voller Bahnhoehe, der Griff ein stehender Riegel 6x14 mit Radius 1, weiss mit 1px
+   Ring (Gray Alpha 500). Kein Hover; beim Ziehen und mit Tastaturfokus 1.2-fach (100ms), der Fokus
+   dazu als 2px-Ring im Abstand 2. Die Trefferflaeche des Griffs ist dort 8px groesser als er
+   selbst (after:-inset-2).
+   UNSERE FARBEN: Bahn --vc-border (im grauen Hell ist das Vercels #ebebeb, also genau Gray 200),
+   Fuellung --up-accent wie bisher, Griff --up-surface wie bisher, Ring die eine Stufe kraeftigere
+   Kante aus core (hell #c8c6c8 gegen Geists #c9c9c9), Fokus --up-focus.
+   DIE TREFFERFLAECHE: 6x14 allein waeren kaum zu greifen. Der Griff traegt darum ringsum 6px
+   durchsichtigen Rand (--urt-griff-rand; Geist: 8), sichtbar sind nur die 6x14 darin -- Grund und
+   Ring liegen innen (background-clip, inset-Schatten), der Fokusring mit negativem Abstand um sie.
+   Der Radius steht darum auf Rand + 1: innen bleibt genau Geists 1px (ein Radius wird an der
+   Innenkante um die Randbreite kleiner). Die Dauer 120 (--up-t-1) statt Geists 100 -- die Skala.
+   Und damit die MITTE des Griffs an den Enden genau auf dem Bahnende steht wie bei Geist, ragen
+   die beiden Eingabefelder um je einen halben Griff ueber die Bahn hinaus (--urt-griff-halb). Die
+   Fuellung rechnet in Prozent der Bahn (faderFillStyle, JS unveraendert) und trifft damit jetzt
+   genau die Griffmitte; vorher lag sie bis zu 7px daneben.
+   Werte, Schritte, Ereignisse und Zeigerfang: unveraendert. */
+.urt-slider { position: relative; height: 18px; --urt-griff-rand: 6px; --urt-griff-halb: calc(3px + var(--urt-griff-rand)); }
+.urt-slider-track { position: absolute; top: 5px; left: 0; right: 0; height: 8px; border-radius: var(--up-r-voll); background: var(--vc-border); }
+.urt-slider-fill { position: absolute; top: 5px; height: 8px; border-radius: var(--up-r-voll); background: var(--up-accent); }
+.urt-range { position: absolute; top: 0; left: calc(var(--urt-griff-halb) * -1); width: calc(100% + var(--urt-griff-halb) * 2);
+  height: 18px; margin: 0; background: transparent;
   -webkit-appearance: none; appearance: none; pointer-events: none; }
 .urt-range:focus { outline: none; }
-/* Der Reglerknopf liegt auf der Bahn wie der Knopf eines Schalters: e-1, derselbe Wert wie
-   .up-switch::after (28.09.; vorher 0 1px 3px .18). */
-.urt-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; pointer-events: auto;
-  width: 14px; height: 14px; border-radius: 999px; background: var(--up-surface); border: 2px solid var(--up-accent);
-  cursor: grab; box-shadow: var(--up-e-1); transition: transform 120ms ease, box-shadow 120ms ease; }
+.urt-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; pointer-events: auto; box-sizing: border-box;
+  width: calc(6px + 2 * var(--urt-griff-rand)); height: calc(14px + 2 * var(--urt-griff-rand));
+  border: var(--urt-griff-rand) solid transparent; border-radius: calc(var(--urt-griff-rand) + 1px);
+  background: var(--up-surface); background-clip: padding-box; box-shadow: inset 0 0 0 1px var(--up-knopf-rand-hover);
+  cursor: grab; transition: transform var(--up-t-1) ease; }
 .urt-range::-moz-range-thumb { pointer-events: auto; box-sizing: border-box;
-  width: 14px; height: 14px; border-radius: 999px; background: var(--up-surface); border: 2px solid var(--up-accent);
-  cursor: grab; box-shadow: var(--up-e-1); transition: transform 120ms ease, box-shadow 120ms ease; }
-.urt-range:hover::-webkit-slider-thumb { transform: scale(1.12); }
-.urt-range:hover::-moz-range-thumb { transform: scale(1.12); }
-.urt-range:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.12); box-shadow: 0 0 0 4px var(--vc-heading-bg); }
-.urt-range:active::-moz-range-thumb { cursor: grabbing; transform: scale(1.12); box-shadow: 0 0 0 4px var(--vc-heading-bg); }
-.urt-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--vc-heading-bg); }
-.urt-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(--vc-heading-bg); }
+  width: calc(6px + 2 * var(--urt-griff-rand)); height: calc(14px + 2 * var(--urt-griff-rand));
+  border: var(--urt-griff-rand) solid transparent; border-radius: calc(var(--urt-griff-rand) + 1px);
+  background: var(--up-surface); background-clip: padding-box; box-shadow: inset 0 0 0 1px var(--up-knopf-rand-hover);
+  cursor: grab; transition: transform var(--up-t-1) ease; }
+.urt-range:active::-webkit-slider-thumb { cursor: grabbing; transform: scale(1.2); }
+.urt-range:active::-moz-range-thumb { cursor: grabbing; transform: scale(1.2); }
+.urt-range:focus-visible::-webkit-slider-thumb { transform: scale(1.2);
+  outline: var(--up-focus-w) solid var(--up-focus); outline-offset: calc(var(--up-knopf-fokus-abstand) - var(--urt-griff-rand)); }
+.urt-range:focus-visible::-moz-range-thumb { transform: scale(1.2);
+  outline: var(--up-focus-w) solid var(--up-focus); outline-offset: calc(var(--up-knopf-fokus-abstand) - var(--urt-griff-rand)); }
 .urt-range::-webkit-slider-runnable-track { background: transparent; border: 0; }
 .urt-range::-moz-range-track { background: transparent; border: 0; }
 
@@ -183,14 +203,12 @@
 
 .urt-fader-foot { display: flex; align-items: center; gap: 8px; margin-top: 18px;
   padding-top: 14px; border-top: 1px solid var(--vc-border); }
-.urt-fader-reset { height: 32px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: 8px;
+.urt-fader-reset { height: 32px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; flex: 0 0 auto; }
-/* A BORDERED secondary button's hover also brightens its border (see .up-topicmodal-pickbtn in
-   core.css) — a plain color+background swap is the convention for a borderless .up-iconbtn, which
-   is what got copied here instead. Without the border-color change the outline never visibly
-   reacted to hover, only the fill. */
-.urt-fader-reset:hover { color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
-.urt-fader-apply { flex: 1 1 auto; height: 32px; border: 0; border-radius: 8px;
+/* Geist-Sekundaerknopf (15.10.): beim Ueberfahren nur die Flaeche, der Rand bleibt -- vorher zog
+   der Rand auf --vc-hover-border (core, --up-knopf-*). */
+.urt-fader-reset:hover { color: var(--vc-text); background: var(--up-knopf-hover); }
+.urt-fader-apply { flex: 1 1 auto; height: 32px; border: 0; border-radius: var(--up-r-m);
   background: var(--up-accent); color: var(--up-accent-fg); font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
 .urt-fader-apply:hover { opacity: .92; }
 
@@ -270,8 +288,9 @@
    4px-Ring (box-shadow an .up-stack-vis, der ABSTAND zum Nachbarn). Der Ring steht in keinem
    Rechteck, ist aber gemalt -- ohne diesen Einzug liegt er beim letzten Chip 4px IM Polster, und
    das "+N" schliesst hart mit der Polsterkante ab. Gemessen: 4px drueber ohne "+N", 0px mit dem
-   Einzug. Damit hat auch das "+N" dieselbe Luft wie der Ring der Chips. */
-.urt-card-citations { margin-left: auto; padding-right: 4px; }
+   Einzug. Damit hat auch das "+N" dieselbe Luft wie der Ring der Chips.
+   Seit 15.10. ist der Ring 1px (Geist-AvatarGroup, core --up-stack-ring-w), also der Einzug auch. */
+.urt-card-citations { margin-left: auto; padding-right: var(--up-stack-ring-w); }
 .urt-card-ment { flex: 0 0 auto; }
 /* "Deine Marke erwaehnt": runde Marke im Gruen der App, getoent statt voll (Entwurf). Zwei Klassen
    gegen .up-ment-cell.is-yes .up-ment-badge aus core. */
@@ -291,10 +310,10 @@
 
 /* skeleton cards */
 .urt-card-sk { pointer-events: none; }
-.urt-sk { display: block; border-radius: 5px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
-.urt-sk-chip { width: 96px; height: 18px; border-radius: 6px; }
+.urt-sk { display: block; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
+.urt-sk-chip { width: 96px; height: 18px; border-radius: var(--up-r-s); }
 .urt-sk-date { width: 56px; height: 12px; }
-.urt-sk-line { height: 12px; margin-top: 10px; border-radius: 5px; }
+.urt-sk-line { height: 12px; margin-top: 10px; border-radius: var(--up-sk-r); }
 
 
 

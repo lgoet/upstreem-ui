@@ -107,8 +107,8 @@
          mehr, sonst laufen zwei Fassungen desselben Wortes auseinander. */
       "System follows the setting of your operating system.":
         "System übernimmt die Einstellung deines Betriebssystems.",
-      "Light has a gray page with white content areas. Legacy Light keeps the previous all-white look. System follows your operating system.":
-        "Hell hat eine graue Seite mit weißen Inhaltsflächen. Hell (klassisch) behält das bisherige, ganz weiße Aussehen. System folgt deinem Betriebssystem.",
+      "Light, dark, or the same as your operating system.":
+        "Hell, dunkel oder wie dein Betriebssystem.",
       "General": "Allgemein",
       "How upstreem looks across the whole app": "Wie upstreem in der ganzen App aussieht",
       "Appearance": "Darstellung",
@@ -164,15 +164,13 @@
        pref_theme -- dort lag es schon, bevor es dieses Fenster gab, und das Konto-Menue der
        Seitenleiste schreibt in denselben Schluessel. Zwei Speicherorte fuer eine Einstellung
        waeren zwei Wahrheiten. */
-    /* VIER WAHLEN SEIT DEM 15.10.: "Light" ist das graue Hell nach Vercel (graue Seite, weisse
-       Inhaltsflaechen), "Legacy Light" das Hell bis dahin. Die Werte sind die von
-       UC.setUpstreemThemeOption -- dahinter stehen zwei Einstellungen (Thema und light_style),
-       hier eine Zeile. Reihenfolge wie bestellt: das bisherige zuerst. */
+    /* SEIT DEM 15.10. ABENDS DREI WAHLEN UND DER GEIST-SCHALTER (UC.themeSchalterHtml): "Das Hell
+       klassisch faellt weg", "bitte den Theme Switcher uebernehmen". Die Liste bleibt fuer den
+       Rueckfall auf eine aeltere core ohne Schalter -- dann steht hier wieder das Auswahlmenue. */
     var THEMEN = [
-      { wert: "legacy-light", name: "Legacy Light" },
+      { wert: "system", name: "System" },
       { wert: "light",  name: "Light" },
-      { wert: "dark",   name: "Dark" },
-      { wert: "system", name: "System" }
+      { wert: "dark",   name: "Dark" }
     ];
     /* Die Akzentfarben. Die Werte selbst liegen in core.css (html[data-accent]), hier steht nur,
        was man SIEHT -- der Punkt vor dem Namen.
@@ -270,6 +268,13 @@
         if (sel) { e.stopPropagation(); menueOeffnen(sel); return; }
         var opt = e.target.closest("[data-ums-set]");
         if (opt) { setzen(opt.getAttribute("data-ums-set"), opt.getAttribute("data-ums-val")); return; }
+        /* Der Themenschalter aus core (15.10. abends): derselbe Weg wie die Zeilen des Menues davor. */
+        var tw = e.target.closest("[data-up-themawahl]");
+        if (tw) {
+          var wahl = tw.getAttribute("data-up-themawahl");
+          if (wahl !== themaJetzt()) setzen("theme", wahl);
+          return;
+        }
         var sc = e.target.closest("[data-scale]");
         if (sc) { schemaSetzen(sc.getAttribute("data-scale")); return; }
         /* Der Zwei-Wege-Schalter aus core traegt data-linewidth, nicht data-ums-toggle -- es ist
@@ -415,9 +420,10 @@
       return '<div class="ums-sec">' +
         '<h3 class="ums-sectitle">' + esc(t("Appearance")) + '</h3>' +
         '<div class="ums-secline"></div>' +
-        zeileHtml("Theme", "Light has a gray page with white content areas. Legacy Light keeps the " +
-          "previous all-white look. System follows your operating system.",
-          selHtml("theme", THEMEN, themaJetzt())) +
+        /* Der Schalter in der Grundgroesse (32px): Geist "use the default size on a settings page". */
+        zeileHtml("Theme", "Light, dark, or the same as your operating system.",
+          UC.themeSchalterHtml ? UC.themeSchalterHtml({ wahl: themaJetzt() })
+                               : selHtml("theme", THEMEN, themaJetzt())) +
         zeileHtml("Accent color", "The color of buttons, switches, checks and the selected page in the navigation. Logos, favicons and charts keep their own colors, except with Default + Blue: everything as in Default, charts in blue.",
           selHtml("accent", AKZENTE, UC.getPref("accent"))) +
         zeileHtml("Show upstreem branding", "",
@@ -497,11 +503,9 @@
       '</div>';
     }
     function themaJetzt() {
-      /* Die Wahl mit dem hellen Stil (legacy-light/light/dark/system). Eine aeltere core ohne die
-         Funktion kennt nur das bisherige Hell -- dort ist "light" also "legacy-light". */
+      /* light / dark / system -- seit dem 15.10. abends gibt es nur noch ein Hell. */
       if (UC.getUpstreemThemeOption) return UC.getUpstreemThemeOption();
-      var c = UC.getUpstreemThemeChoice ? UC.getUpstreemThemeChoice() : "system";
-      return c === "light" ? "legacy-light" : c;
+      return UC.getUpstreemThemeChoice ? UC.getUpstreemThemeChoice() : "system";
     }
     function schemaName(key) {
       /* "Brand Colors" und nicht mehr "Default": Vorgabe ist jetzt Tableau, und "Default" waere
@@ -591,7 +595,7 @@
         /* Der Weg von core, derselbe, den das Konto-Menue der Seitenleiste geht: er faerbt jede
            Wurzel der Seite um, merkt die Wahl und loest "System" nach der Systemeinstellung auf. */
         if (UC.setUpstreemThemeOption) UC.setUpstreemThemeOption(wert);
-        else if (window.setUpstreemTheme) window.setUpstreemTheme(wert === "legacy-light" ? "light" : wert);
+        else if (window.setUpstreemTheme) window.setUpstreemTheme(wert);
       } else if (name === "locale") {
         /* ---- SPRACHWECHSEL: SCHREIBEN UND NEU LADEN, OHNE JEDEN LAUF ----------------------
            Gemeldet am 10.09. mit RESULT_CODE_HUNG -- die Seite HAENGT, sie wirft nicht. Das ist

@@ -22,18 +22,18 @@
 /* ---------- brand mentioned (quick toggle) ----------
    Same off -> yes -> no -> off pattern as urls-table/domains-table (a 3rd copy now — worth
    moving into core if a 4th table ever needs it). Hidden until data-brand-name is actually set. */
-.upt-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px;
+.upt-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: var(--up-r-m);
   border: 0; background: transparent; color: var(--vc-muted); cursor: pointer; font-family: inherit; }
 .upt-brand-toggle.is-visible { display: inline-flex; }
 .upt-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
 .upt-brand-toggle.is-yes, .upt-brand-toggle.is-no { background: var(--vc-heading-bg); }
 .upt-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-.upt-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg); }
+.upt-brand-check { width: 16px; height: 16px; border-radius: var(--up-r-xs); border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg); }
 .upt-brand-check svg { width: 11px; height: 11px; display: none; }
 .upt-brand-toggle.is-yes .upt-brand-check, .upt-brand-toggle.is-no .upt-brand-check { background: var(--up-accent); border-color: var(--up-accent); }
 .upt-brand-toggle.is-yes .upt-brand-check .upt-brand-check-yes { display: block; }
 .upt-brand-toggle.is-no .upt-brand-check .upt-brand-check-no { display: block; }
-.upt-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }
+.upt-brand-logo { width: 16px; height: 16px; border-radius: var(--up-r-xs); flex: 0 0 auto; display: block; object-fit: cover; }
 .upt-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
 
 /* ---------- active-columns count badge on the columns (gear) button ----------
@@ -43,7 +43,7 @@
    to the gear icon instead of a small pill. */
 .upt-cols-badge {
   position: absolute; top: -3px; right: -3px; z-index: 2;
-  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: var(--up-r-voll);
   background: var(--vc-text); color: var(--vc-text-invert);
   font-family: inherit; font-size: 11px; font-weight: 600; line-height: 1;
   display: none; align-items: center; justify-content: center;
@@ -56,7 +56,7 @@
    check when active. Indeterminate (header, some-but-not-all selected) gets a dash instead. */
 .upt-check {
   position: relative;
-  width: var(--upt-check-size); height: var(--upt-check-size); border-radius: 5px;
+  width: var(--upt-check-size); height: var(--upt-check-size); border-radius: var(--up-r-xs);
   border: 1.5px solid var(--vc-border); flex: 0 0 auto; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; color: var(--up-accent-fg);
   /* Timing aus core (--up-cb-t), damit alle Kaestchen der App gleich schnell sind. Vorher hatte
@@ -309,7 +309,7 @@
      die sich so deutlich vom Seitengrund abhebt, braucht keine Kontur. */
   background: #e0e0e0;
   border: 0;
-  box-shadow: var(--up-e-3, 0 14px 34px rgba(0,0,0,0.14));
+  box-shadow: var(--up-e-3);
   font-family: Geist, Inter, system-ui, -apple-system, sans-serif;
   color: var(--vc-text);
   opacity: 0; pointer-events: none;
@@ -366,7 +366,7 @@
      HELLE Fokusfarbe -- beim Tausch der beiden Paletten mitgewandert und nicht mitgedreht. */
   --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
   background: #1f1f1b;
-  box-shadow: var(--up-e-3, 0 14px 34px rgba(0,0,0,0.6));
+  box-shadow: var(--up-e-3);
 }
 /* Same dim treatment the table itself gets from .up-root.is-reloading (core.css) — this bar lives
    outside .up-root on document.body, so it needs its own copy rather than inheriting that rule.
@@ -406,7 +406,7 @@
 .upt-bulkbar-seg { flex: 0 0 auto; display: flex; align-items: center; padding: 0 12px; }
 .upt-bulkbar-ic {
   width: 32px; height: 32px; flex: 0 0 auto; padding: 0; border: 0; background: transparent;
-  border-radius: 8px; cursor: pointer; color: var(--vc-text);
+  border-radius: var(--up-r-m); cursor: pointer; color: var(--vc-text);
   display: inline-flex; align-items: center; justify-content: center;
   transition: background 120ms var(--up-ease), color 120ms var(--up-ease);
 }
@@ -498,7 +498,7 @@
    has no rule under it but shares the value so the panel's internal rhythm stays even. */
 .upt-topichead { display: flex; align-items: center; gap: 8px; padding: 0 0 var(--upt-sep-gap); }
 .upt-topicsearch-wrap { flex: 1 1 auto; min-width: 0; display: flex; align-items: center;
-  height: 32px; padding: 0 4px 0 10px; border-radius: 9px;
+  height: 32px; padding: 0 4px 0 10px; border-radius: var(--up-r-m);
   border: 1px solid var(--vc-border); background: transparent; }
 .upt-topicsearch-wrap:focus-within { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
 .upt-topicsearch-in { flex: 1 1 auto; min-width: 0; height: 100%; padding: 0;
@@ -514,7 +514,7 @@
 /* Same rest/hover idiom as every other button in here (transparent -> --vc-heading-bg on hover,
    e.g. .up-iconbtn/.upt-topicsearch-clear) — it used to sit permanently grey with only its text
    darkening on hover, which read as "no hover feedback" next to buttons that visibly light up. */
-.upt-topicreset { flex: 0 0 auto; height: 32px; padding: 0 12px; border-radius: 8px; border: 0;
+.upt-topicreset { flex: 0 0 auto; height: 32px; padding: 0 12px; border-radius: var(--up-r-m); border: 0;
   background: transparent; color: var(--vc-muted); cursor: pointer;
   font-family: inherit; font-size: 12px; font-weight: 500; white-space: nowrap; }
 .upt-topicreset:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
@@ -542,18 +542,20 @@
    the empty state would otherwise sit — together with the start of the fuller tag creator this
    table will need later: an emoji and a color picked right alongside the name. */
 .upt-topiccreate-row { flex: 0 0 100%; display: flex; align-items: center; gap: 8px; }
-.upt-topiccreate { flex: 1 1 auto; min-width: 0; height: 34px; padding: 0 12px; border-radius: 9px;
+.upt-topiccreate { flex: 1 1 auto; min-width: 0; height: 34px; padding: 0 12px; border-radius: var(--up-r-m);
   border: 1px dashed var(--vc-border); background: transparent; color: var(--vc-text);
   cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 500; text-align: left;
   display: inline-flex; align-items: center; gap: 8px; overflow: hidden; }
-.upt-topiccreate:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+/* Geist-Sekundaerknopf (15.10.): beim Ueberfahren nur die Flaeche, der Rand bleibt (core, --up-knopf-*). */
+.upt-topiccreate:hover { background: var(--up-knopf-hover); }
 .upt-topiccreate svg { width: 13px; height: 13px; display: block; flex: 0 0 auto; color: var(--vc-muted); }
 .upt-topiccreate strong { font-weight: 600; }
-.upt-topiccreate-pick { flex: 0 0 auto; width: 34px; height: 34px; padding: 0; border-radius: 9px;
+.upt-topiccreate-pick { flex: 0 0 auto; width: 34px; height: 34px; padding: 0; border-radius: var(--up-r-m);
   border: 1px solid var(--vc-border); background: transparent; cursor: pointer; font-size: 16px; line-height: 1;
   color: var(--vc-muted); display: inline-flex; align-items: center; justify-content: center; }
+/* Geist-Menue-Ausloeser (15.10.): Flaeche plus eine Stufe kraeftigere Kante statt --vc-hover-border (core, --up-knopf-*). */
 .upt-topiccreate-pick:hover, .upt-topiccreate-pick.is-open {
-  border-color: var(--vc-hover-border); background: var(--vc-heading-bg);
+  border-color: var(--up-knopf-rand-hover); background: var(--up-knopf-hover);
 }
 .upt-topiccreate-pick svg { width: 16px; height: 16px; display: block; }
 .upt-topiccreate-swatch { width: 16px; height: 16px; border-radius: 50%; display: block;
@@ -573,10 +575,10 @@
   --num-columns: 16;
   --emoji-size: 1.25rem;
   --emoji-padding: 0.35rem;
-  --border-radius: 10px;
+  --border-radius: var(--up-r-l);
   --border-color: var(--vc-border);
   --background: transparent;
-  --input-border-radius: 9px;
+  --input-border-radius: var(--up-r-m);
   --input-border-color: var(--vc-border);
   --input-font-size: 13px;
   --indicator-color: var(--vc-text);
@@ -636,7 +638,7 @@
    (10.10. angefordert), sonst die Tinte der gewaehlten Akzentfarbe. */
 .upt-root { --upt-chip-ink: var(--up-chart-ink, var(--up-accent-ink)); }
 .upt-selcount { display: inline-flex; align-items: center; gap: 6px; height: 24px;
-  padding: 0; border-radius: 7px; background: color-mix(in srgb, var(--upt-chip-ink) 10%, transparent);
+  padding: 0; border-radius: var(--up-r-s); background: color-mix(in srgb, var(--upt-chip-ink) 10%, transparent);
   font-size: 12px; font-weight: 500; color: var(--upt-chip-ink); white-space: nowrap; flex: 0 0 auto;
   margin-left: 0; margin-right: 0; max-width: 0; opacity: 0; overflow: hidden; pointer-events: none;
   transform: translateX(-6px);
@@ -700,7 +702,7 @@
    Every metric in Visibility/Rank/Sentiment is about this one brand's performance on the
    prompt, so the header names it once instead of repeating it per row. */
 /* 17 wie .up-th-brandlogo in core, seit der Kopfschrift 14 (15.10. spaet, 16 x 14/13 = 17.2). */
-.upt-th-brandlogo { width: 17px; height: 17px; border-radius: 4px; flex: 0 0 auto; display: none; object-fit: cover; }
+.upt-th-brandlogo { width: 17px; height: 17px; border-radius: var(--up-r-xs); flex: 0 0 auto; display: none; object-fit: cover; }
 
 /* Column explainer visuals: panel shell + row/dot/trend classes all now live in core.css's
    .up-explain-* — this table used to carry its own byte-identical upt-explain-* copy. */
@@ -751,7 +753,7 @@
    matching every other reveal in this app) actually needs to exist, for the wide-view toggle. */
 .upt-grp-sidepanel { display: none; }
 .up-root.is-grouped .upt-grp-sidepanel { display: flex; flex-direction: column; flex: 0 0 auto;
-  width: 0; min-width: 0; opacity: 0; overflow: hidden; border: 1px solid transparent; border-radius: 16px;   /* matches .up-box's own radius */
+  width: 0; min-width: 0; opacity: 0; overflow: hidden; border: 1px solid transparent; border-radius: var(--up-r-2xl);   /* matches .up-box's own radius */
   transition: width 200ms ease, opacity 120ms ease, border-color 200ms ease; }
 /* 20% of a genuinely narrow root can be well under a usable list width -- never below 256px.
    (Below the point where even 256px + a usable table no longer both fit, prompts-table.js itself
@@ -786,7 +788,7 @@
   background-image: linear-gradient(var(--vt-head-bg), var(--vt-head-bg));
   background-color: var(--vc-bg);
   border: 1px solid var(--vc-border);
-  border-top-left-radius: 16px; border-top-right-radius: 16px;
+  border-top-left-radius: var(--up-r-2xl); border-top-right-radius: var(--up-r-2xl);
 }
 /* Same corner-mask trick as .up-thead's own -- the rounded top corners are transparent by nature,
    so the sidelist's straight side border shows through them as rows scroll behind the pinned head
@@ -806,7 +808,7 @@
    x-only, but kept for the same documented reasoning as .up-tbody). */
 .up-sticky .upt-grp-sidelist {
   border: 1px solid var(--vc-border); border-top: none;
-  border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;
+  border-bottom-left-radius: var(--up-r-2xl); border-bottom-right-radius: var(--up-r-2xl);
   overflow-x: clip;
 }
 /* position:sticky only ever sticks against the nearest ancestor whose OWN overflow is not
@@ -997,7 +999,7 @@
    means closed" pattern the Grouping popover's own custom-groupings row menu already uses, not a
    UC.makePopover instance, since only one of potentially many rows is ever open at a time. */
 .upt-grp-menuwrap { position: relative; flex: 0 0 auto; }
-.upt-grp-menubtn { width: 24px; height: 24px; flex: 0 0 auto; border: 0; border-radius: 7px;
+.upt-grp-menubtn { width: 24px; height: 24px; flex: 0 0 auto; border: 0; border-radius: var(--up-r-s);
   background: transparent; color: var(--vc-third); cursor: pointer; padding: 0;
   display: inline-flex; align-items: center; justify-content: center;
   transition: color 120ms ease, background 120ms ease; }
@@ -1109,7 +1111,7 @@
 /* header skeleton while the group RPC is in flight */
 .upt-grp-sk { display: flex; flex-direction: column; }
 .upt-grp-skrow { height: var(--up-h-row); border-bottom: 1px solid var(--vc-border);
-  background: var(--vc-sk); opacity: .55; animation: uutpulse 1.2s ease-in-out infinite; }
+  background: var(--vc-sk) var(--up-sk-verlauf); opacity: .55; animation: var(--up-sk-bewegung); }
 .upt-grp-skrow:last-child { border-bottom: 0; }
 
 /* ---------- grouping dropdown ----------
@@ -1141,13 +1143,13 @@
 .upt-grpctl-main, .upt-grpctl-chev { display: inline-flex; align-items: center; border: 0; margin: 0;
   background: transparent; font-family: inherit; cursor: pointer; color: var(--vc-muted);
   transition: background var(--up-t-1) ease, color var(--up-t-1) ease; }
-.upt-grpctl-main { gap: 8px; padding: 0 11px 0 9px; border-radius: 7px 0 0 7px;
+.upt-grpctl-main { gap: 8px; padding: 0 11px 0 9px; border-radius: calc(var(--up-r-m) - 1px) 0 0 calc(var(--up-r-m) - 1px);
   font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 1; white-space: nowrap; }
 .upt-grpctl-chev { justify-content: center; width: 28px; padding: 0; border-left: 1px solid var(--vc-border);
-  border-radius: 0 7px 7px 0; color: var(--vc-third); }
+  border-radius: 0 calc(var(--up-r-m) - 1px) calc(var(--up-r-m) - 1px) 0; color: var(--vc-third); }
 .upt-grpctl-chev svg { width: 14px; height: 14px; display: block; }
 .upt-grpctl-main:hover:not(:disabled), .upt-grpctl-chev:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
-.upt-grpctl .upt-check { --upt-check-size: 16px; border-radius: 5px; pointer-events: none; }
+.upt-grpctl .upt-check { --upt-check-size: 16px; border-radius: var(--up-r-xs); pointer-events: none; }
 .upt-grpctl .upt-check svg { width: 11px; height: 11px; }
 .upt-grpctl .upt-check::before { content: none; }
 .upt-grpctl-main:hover:not(:disabled) .upt-check:not(.is-checked) { border-color: var(--vc-third); }
@@ -1205,7 +1207,7 @@
    custom-group list (not above it — a view filter belongs after the list it filters), so its own
    gap is a top margin rather than a divider line, which would have read as a second heading. */
 .upt-group-onlycustom { display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  width: 100%; height: 32px; padding: 0 8px; margin: 10px 0 0; border-radius: 8px; cursor: pointer;
+  width: 100%; height: 32px; padding: 0 8px; margin: 10px 0 0; border-radius: var(--up-r-m); cursor: pointer;
   color: var(--vc-muted); }
 .upt-group-onlycustom:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
 .upt-group-onlycustom.is-yes, .upt-group-onlycustom.is-no { background: var(--vc-heading-bg); color: var(--vc-text); }
@@ -1316,7 +1318,7 @@
 .upt-sum-zu { margin-left: 24px; flex: 0 0 auto; color: var(--vc-third); }
 /* Skelett in den Massen dessen, was gleich dasteht: Zahl 22 hoch, Balken 8. */
 .upt-sum .upt-sum-sk-zahl { width: 28px; height: 20px; border-radius: var(--up-r-xs); flex: 0 0 auto; }
-.upt-sum .upt-sum-sk-balken { width: 120px; height: 8px; border-radius: 4px; flex: 0 0 auto; }
+.upt-sum .upt-sum-sk-balken { width: 120px; height: 8px; border-radius: var(--up-r-voll); flex: 0 0 auto; }
 /* Schmal: dieselbe Reihenfolge wie bei den Karten (04.09.): unter 860 gehen die Maerkte, ganz
    schmal duerfen die Teile untereinander, ohne Strich. Die Grenzen sind die der Tabelle
    (applyResponsive). Die Legende der Topics bleibt seit dem 14.10. abends: sie steht unter dem

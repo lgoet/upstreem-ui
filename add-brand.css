@@ -49,7 +49,7 @@
 .uab-in {
   width: 100%; height: 40px; box-sizing: border-box;
   padding: 0 12px;
-  border: 1px solid var(--vc-border); border-radius: 9px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
   background: var(--up-surface); color: var(--vc-text);
   font-family: inherit; font-size: 14px; line-height: 1;
   outline: 0; transition: border-color 120ms ease, box-shadow 120ms ease;
@@ -64,7 +64,7 @@
 .uab-inwrap.has-icon .uab-in { padding-left: 40px; }
 .uab-fav {
   position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
-  width: 20px; height: 20px; border-radius: 5px; overflow: hidden;
+  width: 20px; height: 20px; border-radius: var(--up-r-xs); overflow: hidden;
   display: flex; align-items: center; justify-content: center;
   color: var(--vc-third); pointer-events: none;
 }
@@ -92,7 +92,7 @@
    Der Rahmen macht sie als Block lesbar, ohne dass die Karte dafuer wachsen muesste. */
 .uab-formerr {
   display: none;
-  padding: 10px 12px; border-radius: 9px;
+  padding: 10px 12px; border-radius: var(--up-r-m);
   border: 1px solid var(--vt-down); background: rgba(176,32,12,0.06);
   color: var(--vt-down); font-size: 12.5px; font-weight: 500; line-height: 1.45;
 }
@@ -124,12 +124,13 @@
 .uab-card.is-saving .uab-save:disabled { background: var(--up-accent); color: var(--up-accent-fg); opacity: .9; }
 @media (prefers-reduced-motion: reduce) { .uab-spin { animation-duration: 2s; } }
 .uab-cancel {
-  height: 32px; padding: 0 16px; border: 1px solid var(--vc-border); border-radius: 9px;
+  height: 32px; padding: 0 16px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: transparent; color: var(--vc-text); cursor: pointer;
   font-family: inherit; font-size: 12.5px; font-weight: 600;
   transition: background 120ms ease, border-color 120ms ease;
 }
-.uab-cancel:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+/* Geist-Sekundaerknopf (15.10.): beim Ueberfahren nur die Flaeche, der Rand bleibt (core, --up-knopf-*). */
+.uab-cancel:hover { background: var(--up-knopf-hover); }
 /* Der Add-Knopf ist .up-topicmodal-save aus core -- hier steht nur, dass er nicht per margin-left
    nach rechts geschoben wird, das macht hier justify-content der Fusszeile. */
 .uab-foot .up-topicmodal-save { margin-left: 0; }

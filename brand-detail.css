@@ -27,7 +27,7 @@
   /* 16px wie .up-box in core -- das ist der Radius jedes aeusseren Containers in dieser App.
      Die 12px hier waren mein eigener Wert. Dass diese Regel Rahmen, Hintergrund und Radius
      selbst setzt statt .up-box zu benutzen, ist ein Nachbau; siehe die Notiz unten. */
-  border: 1px solid var(--vc-border); border-radius: 16px; background: var(--vc-bg);
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); background: var(--vc-bg);
   /* Rundum 16px -- dasselbe Mass, mit dem der Variations-Abschnitt im Radar-Detail polstert.
      Vorher standen hier 20px an den Seiten und unten; im Variations-Modus ergab das einen
      anderen Rand als auf der Radar-Seite, obwohl es dieselbe Tabelle ist. */
@@ -36,7 +36,7 @@
 .ubd-head { display: flex; align-items: center; gap: 12px; min-height: 32px; }
 .ubd-title { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; }
 /* 4px Radius wie das Logo in der Meta-Zeile der Seitenkoepfe -- dasselbe Bauteil, dieselbe Kante. */
-.ubd-logo { width: 18px; height: 18px; border-radius: 4px; object-fit: cover; flex: 0 0 auto; display: block; }
+.ubd-logo { width: 18px; height: 18px; border-radius: var(--up-r-xs); object-fit: cover; flex: 0 0 auto; display: block; }
 .ubd-heading {
   font-size: 14px; font-weight: 500; color: var(--vc-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -61,8 +61,8 @@
    12px hoch ist und neben einer 23px-Zahl verloren waere. Die Breiten sind grob so gewaehlt,
    wie die echten Werte ausfallen ("34.3%" und ein Trend-Chip), damit beim Eintreffen der Daten
    moeglichst wenig springt. */
-.ubd-kpi-val .up-tsk-bar   { height: 24px; width: 88px; border-radius: 6px; }
-.ubd-kpi-trend .up-tsk-bar { height: 18px; width: 58px; border-radius: 5px; }
+.ubd-kpi-val .up-tsk-bar   { height: 24px; width: 88px; border-radius: var(--up-r-s); }
+.ubd-kpi-trend .up-tsk-bar { height: 18px; width: 58px; border-radius: var(--up-r-xs); }
 /* Sentiment steht seit dem 29.09. ohne Kasten (core: Balken 3x12 + Zahl) -- die Zahl ist damit
    eine Kennzahl wie jede andere und bekommt dieselbe Groesse wie Visibility und Rank hier. Die
    Pillenrechnung (Faktor 17/13 auf Hoehe, Polster, Radius, Punkt) faellt mit dem Kasten weg; der

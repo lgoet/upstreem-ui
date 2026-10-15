@@ -105,13 +105,13 @@
    Abstaenden wie unten, damit beim Eintreffen der Daten nichts an eine andere Stelle faehrt.
    Zwei Klassen, damit die Masse gegen .up-tsk-bar gewinnen, ohne auf die Ladereihenfolge zu
    bauen. */
-.up-tsk-bar.uiv-sk-eyebrow { display: block; width: 180px; height: 12px; border-radius: 6px; margin-block: 4px; }
-.up-tsk-logo.uiv-sk-logo   { display: block; width: 64px; height: 64px; border-radius: 16px; margin-top: 20px; }
-.up-tsk-bar.uiv-sk-name    { display: block; width: 220px; max-width: 80%; height: 32px; border-radius: 8px; margin-top: 24px; }
-.up-tsk-bar.uiv-sk-cta     { display: block; width: 100%; height: 40px; border-radius: 12px; margin-top: 38px; }
+.up-tsk-bar.uiv-sk-eyebrow { display: block; width: 180px; height: 12px; border-radius: var(--up-r-voll); margin-block: 4px; }
+.up-tsk-logo.uiv-sk-logo   { display: block; width: 64px; height: 64px; border-radius: var(--up-r-2xl); margin-top: 20px; }
+.up-tsk-bar.uiv-sk-name    { display: block; width: 220px; max-width: 80%; height: 32px; border-radius: var(--up-r-m); margin-top: 24px; }
+.up-tsk-bar.uiv-sk-cta     { display: block; width: 100%; height: 40px; border-radius: var(--up-r-l); margin-top: 38px; }
 /* Die Kontozeile nur, wenn es sie gleich auch geben wird -- sonst waechst die Spalte beim
    Eintreffen um ihre Hoehe, und die ganze Mitte rueckt ein Stueck nach oben. */
-.up-tsk-bar.uiv-sk-who     { display: none; width: 200px; max-width: 70%; height: 10px; border-radius: 5px; margin-top: 21px; }
+.up-tsk-bar.uiv-sk-who     { display: none; width: 200px; max-width: 70%; height: 10px; border-radius: var(--up-r-voll); margin-top: 21px; }
 .uiv-root.has-who .up-tsk-bar.uiv-sk-who { display: block; }
 /* Das Skelett blendet beim Aufbau ein, statt aufzuspringen. */
 @keyframes uiv-fade { from { opacity: 0; } }
@@ -130,16 +130,16 @@
    Bildradius ist konzentrisch gerechnet (16 - 1 - 3 = 12). */
 .uiv-brand-logo {
   position: relative; flex: 0 0 auto;
-  width: 64px; height: 64px; border-radius: 16px;
+  width: 64px; height: 64px; border-radius: var(--up-r-2xl);
   background: var(--vc-bg); border: 1px solid var(--vc-border);
   box-shadow: var(--up-e-1);
   display: grid; place-items: center; overflow: hidden;
 }
 .uiv-root[data-theme="dark"] .uiv-brand-logo { border-color: transparent; background: var(--vt-logo-bg); }
 .uiv-brand-logo > * { grid-area: 1 / 1; }
-.uiv-brand-logo img { width: 56px; height: 56px; border-radius: 12px; object-fit: contain; display: block; }
+.uiv-brand-logo img { width: 56px; height: 56px; border-radius: var(--up-r-xl); object-fit: contain; display: block; }
 /* Ein kleines Favicon steht in seiner eigenen Groesse und wird nicht hochgerechnet. */
-.uiv-brand-logo.is-klein img { width: 32px; height: 32px; border-radius: 6px; }
+.uiv-brand-logo.is-klein img { width: 32px; height: 32px; border-radius: var(--up-r-s); }
 /* Der Buchstabe liegt IMMER darunter; ein Bild, das ausfaellt, gibt ihn frei. Solange eines da
    ist, bleibt er weg -- ein durchsichtiges Logo zeigte ihn sonst durch. */
 .uiv-brand-ltr { font-size: 28px; line-height: 1; font-weight: 600; color: var(--vc-third); }
@@ -240,7 +240,7 @@
 .uiv-notyou {
   margin-left: 8px;
   font: inherit; font-weight: 600; color: var(--vc-text);
-  background: none; border: 0; padding: 0; cursor: pointer; border-radius: 4px;
+  background: none; border: 0; padding: 0; cursor: pointer; border-radius: var(--up-r-xs);
   transition: opacity var(--up-t-2) var(--up-ease);
 }
 .uiv-notyou:hover { opacity: .7; }
@@ -269,7 +269,7 @@
 /* Der Kreisel wie in Mira (.am-act-spinner): der Lauf in der Primaerschrift, die Bahn ein
    Viertel davon. Er kommt NACH dem Satz, sonst stehen zwei Bewegungen gleichzeitig im Bild. */
 .uiv-welcome-spin {
-  margin-top: 28px; width: 20px; height: 20px; flex: 0 0 auto; border-radius: 999px;
+  margin-top: 28px; width: 20px; height: 20px; flex: 0 0 auto; border-radius: var(--up-r-voll);
   color: var(--vc-text);
   border: 2px solid color-mix(in srgb, currentColor 28%, transparent);
   border-top-color: currentColor;

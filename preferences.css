@@ -66,7 +66,7 @@
    die HALBE Staerke des Grundtons -- so bleiben "worauf zeige ich" und "wo bin ich"
    unterscheidbar, ohne einen zweiten Ton zu erfinden. */
 .ums-nav {
-  min-height: 36px; height: 36px; padding: 0 8px; border-radius: 12px; gap: 10px;
+  min-height: 36px; height: 36px; padding: 0 8px; border-radius: var(--up-r-m); gap: 10px;
   font-size: 13.5px; font-weight: 500; color: var(--vc-text); background: transparent;
   transition: background 120ms cubic-bezier(.4,0,.2,1), color 120ms cubic-bezier(.4,0,.2,1);
 }
@@ -84,6 +84,13 @@
   background: color-mix(in srgb, var(--up-sel-bg) 50%, transparent); }
 .ums-backdrop[data-theme="dark"] .ums-aside .ums-nav.is-on,
 .ums-backdrop[data-theme="dark"] .ums-aside .ums-nav.is-on:hover { background: var(--up-sel-bg); }
+/* IM GRAUEN HELL der Gewaehlt-Zustand der Navigation aus core (15.10. abends: "rgba(0,0,0,.05) ist die
+   Farbe fuer selected states ... und da auch bitte weiterhin eine Border"): Grund --up-wahl-bg, Rand
+   --up-wahl-rand als Ring innen, wie in der Seitenleiste (sidebar.css) -- die Zeile hat keinen Rand,
+   ein echter wuerde ihren Inhalt um einen Pixel verschieben. (0,6,1) schlaegt die Regeln darueber. */
+html[data-up-hell="grau"] .ums-backdrop:not([data-theme="dark"]) .ums-aside .ums-nav.is-on,
+html[data-up-hell="grau"] .ums-backdrop:not([data-theme="dark"]) .ums-aside .ums-nav.is-on:hover {
+  background: var(--up-wahl-bg); box-shadow: inset 0 0 0 1px var(--up-wahl-rand); }
 
 /* Rechtliches am Fuss der Navigation (14.10. abends, aus dem Konto-Menue hierher): untereinander,
    12px in der dritten Textfarbe wie .ums-navhead und auf dessen Textkante (10px). margin-top auto
@@ -137,16 +144,17 @@
 .ums-sel {
   display: inline-flex; align-items: center; gap: 8px;
   height: 32px; padding: 0 10px;
-  border: 1px solid var(--vc-border); border-radius: 8px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vc-bg); color: var(--vc-muted);
   font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
   white-space: nowrap; cursor: pointer; outline: 0;
   transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
 }
+/* Geist-Menue-Ausloeser (15.10.): Flaeche plus eine Stufe kraeftigere Kante statt --vc-hover-border (core, --up-knopf-*). */
 .ums-sel:hover, .ums-selwrap.is-open .ums-sel {
-  color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+  color: var(--vc-text); background: var(--up-knopf-hover); border-color: var(--up-knopf-rand-hover);
 }
-.ums-sel:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
+.ums-sel:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
 .ums-sel-val { color: var(--vc-text); }
 .ums-sel svg { width: 16px; height: 16px; flex: 0 0 16px; display: block; color: var(--vc-text); }
 /* Das Menue haengt RECHTS am Knopf: er steht am rechten Rand der Zeile, ein linksbuendiges Menue
@@ -188,7 +196,7 @@
    Radius, Zeiger", und die hat jedes anklickbare Bild. Ein .up-iconbtn mit 72px und 999px Radius
    waere kein Icon-Knopf mehr, sondern nur noch dieser Fall unter fremdem Namen. */
 .ums-avatar {
-  position: relative; width: 72px; height: 72px; border-radius: 999px; flex: 0 0 72px;
+  position: relative; width: 72px; height: 72px; border-radius: var(--up-r-voll); flex: 0 0 72px;
   background: var(--vt-logo-bg); border: 1px solid var(--vc-border); padding: 0;
   display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
   font-size: 24px; font-weight: 500; color: var(--vc-muted); user-select: none;
@@ -226,7 +234,7 @@
 
 .ums-in {
   width: 100%; max-width: 320px; height: 40px; padding: 0 12px; box-sizing: border-box;
-  border: 1px solid var(--vc-border); border-radius: 10px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
   background: var(--vc-bg); color: var(--vc-text);
   font-family: inherit; font-size: 14px; font-weight: 400; outline: 0;
   transition: border-color 120ms ease, box-shadow 120ms ease;

@@ -14,17 +14,18 @@
 .utf-trigger {
   display: inline-flex; align-items: center; gap: 8px;
   height: 32px; padding: 0 10px;
-  border: 1px solid var(--vc-border); border-radius: 8px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vc-bg); color: var(--vc-muted);
   font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
   white-space: nowrap; cursor: pointer; outline: 0;
   transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
 }
+/* Geist-Menue-Ausloeser (15.10.): Flaeche plus eine Stufe kraeftigere Kante statt --vc-hover-border (core, --up-knopf-*). */
 .utf-trigger:hover,
 .utf-wrap.is-open .utf-trigger {
-  color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+  color: var(--vc-text); background: var(--up-knopf-hover); border-color: var(--up-knopf-rand-hover);
 }
-.utf-trigger:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
+.utf-trigger:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
 .utf-trigger svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: var(--vc-text); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 /* The label is the value, so it carries the primary colour while the rest of the button stays
    muted -- same relationship the date-range trigger has. */
@@ -38,13 +39,13 @@
 .utf-chev { margin-left: -2px; }
 /* Exactly one topic selected: show its own dot instead of a count, so the trigger names the
    filter rather than merely counting it. */
-.utf-trigger-dot { width: 8px; height: 8px; border-radius: 999px; flex: 0 0 8px; }
+.utf-trigger-dot { width: 8px; height: 8px; border-radius: var(--up-r-voll); flex: 0 0 8px; }
 /* Zaehler-Badge ab zwei Auswahlen. Gefuellte Scheibe in der Primaerfarbe, die Zahl darin in der
    Flaeche des jeweils ANDEREN Themes -- also hell auf dunkel und dunkel auf hell, dieselbe
    Umkehrung die die Checkbox im Panel macht. Feste 16px, damit der Trigger bei 2 und bei 12
    gleich breit bleibt. */
 .utf-count {
-  flex: 0 0 16px; width: 16px; height: 16px; border-radius: 999px;
+  flex: 0 0 16px; width: 16px; height: 16px; border-radius: var(--up-r-voll);
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--vc-text); color: var(--up-menu-bg);
   font-size: 10px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums;
@@ -73,7 +74,8 @@
 .utf-menu.is-right { left: auto; right: 0; }
 /* Open and "has a selection" both mark the trigger through its border, the way the app already
    signals an active filter -- no separate accent colour. */
-.utf-wrap.is-open .utf-trigger, .utf-root.has-sel .utf-trigger { border-color: var(--vc-hover-border); color: var(--vc-text); }
+/* Offen steht seit 15.10. im Hover oben (Geist); gewaehlt behaelt seine dunkle Kante. */
+.utf-root.has-sel .utf-trigger { border-color: var(--vc-hover-border); color: var(--vc-text); }
 /* The chevron does NOT rotate on open. It has been asked for repeatedly that dropdowns in this
    app do not do that, and there is no state here the arrow needs to carry -- the open panel is
    already the affordance. */
@@ -88,19 +90,20 @@
 .utf-sort { position: relative; flex: 0 0 auto; }
 .utf-sort-btn {
   display: grid; place-items: center; width: 32px; height: 32px; padding: 0;
-  border: 1px solid transparent; border-radius: 8px;
+  border: 1px solid transparent; border-radius: var(--up-r-m);
   background: var(--vc-heading-bg); color: var(--vc-muted); cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
 }
-.utf-sort-btn:hover, .utf-sort.is-open .utf-sort-btn { border-color: var(--vc-hover-border); color: var(--vc-text); }
+/* Schon mit Flaeche in Ruhe: der Hover zeigt nur die eine Stufe kraeftigere Kante (Geist, 15.10.). */
+.utf-sort-btn:hover, .utf-sort.is-open .utf-sort-btn { border-color: var(--up-knopf-rand-hover); color: var(--vc-text); }
 .utf-sort-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .utf-clear {
-  flex: 0 0 auto; height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px;
+  flex: 0 0 auto; height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: var(--up-r-m);
   background: var(--vc-heading-bg); color: var(--vc-text);
   font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease;
 }
-.utf-clear:hover { border-color: var(--vc-hover-border); }
+.utf-clear:hover { border-color: var(--up-knopf-rand-hover); }
 /* Nothing selected means nothing to clear. */
 .utf-root:not(.has-sel) .utf-clear { display: none; }
 
@@ -135,7 +138,7 @@
 .utf-opt.is-checked, .utf-opt.is-cursor { background: var(--up-sel-bg); }
 .utf-opt-main { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; }
 /* Rounded SQUARE, 11px — a topic looks like this everywhere else in the product. */
-.utf-opt-dot { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 4px; background: var(--utf-tc, var(--vc-muted)); }
+.utf-opt-dot { flex: 0 0 auto; width: 10px; height: 10px; border-radius: var(--up-r-xs); background: var(--utf-tc, var(--vc-muted)); }
 .utf-opt-emoji { flex: 0 0 auto; font-size: 13px; line-height: 1; }
 /* 13px, dasselbe Mass wie die Zeilen des More-Filters-Dropdowns (.ufb-row). Vorher 14 -- und
    sobald beide Kaesten nebeneinander stehen, sieht man den einen Pixel: die Liste wirkte groesser
@@ -172,11 +175,12 @@
    Menuegrund, ein Hover darin waere unsichtbar gewesen. */
 .utf-grpbtn {
   position: relative; display: grid; place-items: center; width: 32px; height: 32px; padding: 0;
-  border: 1px solid var(--vc-border); border-radius: 8px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: transparent; color: var(--vc-text); cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease;
 }
-.utf-grpbtn:hover { background: var(--up-sel-bg); border-color: var(--vc-hover-border); }
+/* Geist-Sekundaerknopf (15.10.): nur die Flaeche, der Rand bleibt. */
+.utf-grpbtn:hover { background: var(--up-sel-bg); }
 .utf-grpbtn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
 /* Geometry copied from prompts-table's .upt-group-dot, down to the 6px and the corner offset. */
 .utf-grpbtn-dot { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%;
@@ -208,13 +212,13 @@
 
 /* Ohne eigene Flaeche, dieselbe Begruendung wie am Knopf darueber. */
 .utf-new {
-  height: 32px; padding: 0 11px; border: 1px solid var(--vc-border); border-radius: 8px;
+  height: 32px; padding: 0 11px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: transparent; color: var(--vc-text);
   display: inline-flex; align-items: center; gap: 6px;
   font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease;
 }
-.utf-new:hover { background: var(--up-sel-bg); border-color: var(--vc-hover-border); }
+.utf-new:hover { background: var(--up-sel-bg); }
 .utf-new svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 @media (max-width: 560px) {

@@ -30,7 +30,10 @@ GRUNDLINIE = os.path.join(HIER, ".skala_grundlinie.json")
 # daneben sind die der Token, damit man beim Suchen beides findet.
 # Die Basis der Radien. Die konzentrischen Kinder (Basis minus 1, siehe unten) kommen
 # rechnerisch dazu und stehen deshalb nicht in der Liste.
-RADIUS_BASIS = {4, 6, 8, 10, 12, 16, 32}
+# SEIT DEM 15.10. DIE STUFEN VON GEIST (Vercels Designsystem, core.css "Radius"): 4, 6, 8, 12, 16.
+# Vorher {4, 6, 8, 10, 12, 16, 32} plus 14 fuer die Menues -- 10, 14 und 32 gibt es nicht mehr,
+# das Menue traegt jetzt 12 wie die Karte (Geist material-menu). Kinder sind damit 3, 5, 7, 11, 15.
+RADIUS_BASIS = {4, 6, 8, 12, 16}
 
 SKALA = {
     "font-size":     ({"11px", "12px", "13px", "14px", "16px", "22px", "28px"},
@@ -48,8 +51,9 @@ SKALA = {
     # richtige Werte als Fehler; wer die "repariert" haette, haette die App verschlechtert.
     # (Die Regel steht im STYLEGUIDE Zeile 424 und ist in der Fachliteratur die Standardformel:
     # innen = aussen minus Abstand.)
-    "border-radius": (set(), "--up-r-xs/s/m/l/xl/2xl/voll, deren konzentrische Kinder"
-                             " (Basis minus 1) und --up-dd-radius (14px) fuer Menues"),
+    "border-radius": (set(), "4/6/8/12/16 (--up-r-xs/s/m/l/xl/2xl/3xl, Geist), deren"
+                             " konzentrische Kinder (Basis minus 1), --up-r-voll und"
+                             " --up-dd-radius (12px) fuer Menues"),
     # 1ms gehoert dazu und ist kein Ausrutscher: das ist der uebliche Kniff in
     # @media (prefers-reduced-motion: reduce) -- nicht 0, damit transitionend noch feuert.
     "dauer":         ({"0ms", "1ms", "120ms", "200ms", "260ms"},
@@ -116,8 +120,8 @@ def einzelwerte(roh):
 
 
 def radius_ok(w):
-    """Auf der Basis, ein konzentrisches Kind davon (Basis minus 1), voll rund, oder der
-    Menuetoken. Alles andere ist eine Abweichung."""
+    """Auf der Basis, ein konzentrisches Kind davon (Basis minus 1) oder voll rund. Der
+    Menuetoken (12) liegt seit dem 15.10. auf der Basis. Alles andere ist eine Abweichung."""
     if w.lower() in ("999px", "9999px", "50%"):
         return True
     m = re.match(r"^(\d+(?:\.\d+)?)px$", w, re.I)
@@ -127,7 +131,7 @@ def radius_ok(w):
     if v != int(v):            # Nachkommastelle: immer falsch, daher kommen 3.23 und 7.04
         return False
     v = int(v)
-    return v in RADIUS_BASIS or (v + 1) in RADIUS_BASIS or v == 14   # 14 = --up-dd-radius
+    return v in RADIUS_BASIS or (v + 1) in RADIUS_BASIS
 
 
 def pruefe(pfad):

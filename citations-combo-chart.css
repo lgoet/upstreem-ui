@@ -37,8 +37,8 @@
   display: flex; flex-direction: column;
   transition: height 200ms ease, opacity 200ms ease;
 }
-.combo-box-left  { border-radius: 16px; }
-.combo-box-right { border-radius: 16px; }
+.combo-box-left  { border-radius: var(--up-r-2xl); }
+.combo-box-right { border-radius: var(--up-r-2xl); }
 .combo-panel-body { flex: 1 1 auto; min-height: 0; padding: 16px; position: relative; display: flex; flex-direction: column; transition: opacity 200ms ease; }
 .combo-box-left .combo-panel-body { padding-top: 24px; }   /* extra breathing room above the line chart */
 /* Line Width only — no color scale here, that stays exclusive to visibility-chart. Trigger shell
@@ -108,8 +108,8 @@
 .combo-filter-menu {
   position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
   min-width: 230px; max-width: 300px; max-height: 340px; overflow-y: auto;
-  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 12px;
-  box-shadow: var(--up-e-2, 0 10px 28px rgba(0,0,0,.14)); padding: 6px;
+  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius);
+  box-shadow: var(--up-e-2); padding: 6px;
   opacity: 0; pointer-events: none; transform: translateY(-4px);
   transition: opacity .14s ease, transform .14s ease;
 }
@@ -120,19 +120,19 @@
 /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
    Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
 .combo-filter-title { font-size: 12px; font-weight: 600; color: var(--vc-third); }
-.combo-filter-toggle { border: 0; background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+.combo-filter-toggle { border: 0; background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer; padding: 2px 4px; border-radius: var(--up-r-s); }
 /* --vc-text wie .up-pop-action in core, NICHT --cc-primary. Das Mintgruen ist die Farbe der
    Chart-Linie dieses Bauteils und hat mit einer Interaktion nichts zu tun -- "Auswahl
    aufheben" ist in jedem anderen Dropdown der App ein leiser Text, der beim Ueberfahren
    auf die Textfarbe geht. Gemeldet am 22.09. */
 .combo-filter-toggle:hover { color: var(--vc-text); background: transparent; }
-.combo-filter-item { display: flex; align-items: center; gap: 10px; padding: 7px 9px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--vc-text); }
+.combo-filter-item { display: flex; align-items: center; gap: 10px; padding: 7px 9px; border-radius: var(--up-r-m); cursor: pointer; font-size: 13px; color: var(--vc-text); }
 .combo-filter-item:hover { background: var(--vc-heading-bg); }
-.combo-filter-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
+.combo-filter-check { width: 16px; height: 16px; border-radius: var(--up-r-xs); border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
 .combo-filter-check svg { width: 11px; height: 11px; display: none; }
 .combo-filter-item.is-checked .combo-filter-check { background: var(--cc-fltclr, #14b8a6); border-color: var(--cc-fltclr, #14b8a6); }
 .combo-filter-item.is-checked .combo-filter-check svg { display: block; }
-.combo-filter-favicon { width: 16px; height: 16px; min-width: 16px; border-radius: 4px; object-fit: cover; flex: 0 0 auto; }
+.combo-filter-favicon { width: 16px; height: 16px; min-width: 16px; border-radius: var(--up-r-xs); object-fit: cover; flex: 0 0 auto; }
 .combo-filter-dot { width: 10px; height: 10px; min-width: 10px; border-radius: 3px; flex: 0 0 auto; }
 .combo-filter-name { flex: 1 1 auto; min-width: 0; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .combo-filter-empty { padding: 10px; font-size: 12px; color: var(--vc-muted); text-align: center; }

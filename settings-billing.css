@@ -53,7 +53,7 @@
 .ubl-sectext > .ubl-err:not(.is-on) { display: none; }
 
 /* ---------- Tabelle (Schale wie team-orga .uto-table) ---------- */
-.ubl-table { border: 1px solid var(--vc-border); border-radius: 12px; background: var(--vc-bg); min-width: 0;
+.ubl-table { border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); background: var(--vc-bg); min-width: 0;
   --up-cols: 200px minmax(0, 1fr); }
 .ubl-table .up-thead { height: 45px; flex: 0 0 45px; }
 /* Die eine Kopfzelle ueber beide Spalten -- sie ist die Ueberschrift der Tabelle. */
@@ -64,8 +64,8 @@
 .ubl-table .up-row { height: 52px; flex: 0 0 52px; cursor: default; }
 .ubl-table .up-row:hover { background: transparent; }
 .ubl-table .up-row:last-child { border-bottom: 0; }
-.ubl-table > .up-thead { border-top-left-radius: 11px; border-top-right-radius: 11px; }
-.ubl-table > *:last-child { border-bottom-left-radius: 11px; border-bottom-right-radius: 11px; }
+.ubl-table > .up-thead { border-top-left-radius: calc(var(--up-r-2xl) - 1px); border-top-right-radius: calc(var(--up-r-2xl) - 1px); }
+.ubl-table > *:last-child { border-bottom-left-radius: calc(var(--up-r-2xl) - 1px); border-bottom-right-radius: calc(var(--up-r-2xl) - 1px); }
 
 /* DIE FLACHE TABELLE (core, data-flach="yes", 15.10.; settings-billing.js gibt der Schale dann
    .up-box). Kopf 48 mit 13/500, Linie darunter, Rahmen nur oben und unten kommen aus core. Hier
