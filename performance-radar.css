@@ -299,8 +299,9 @@
 }
 .uhm-tip.is-on { opacity: 1; }
 /* Grund und Rand seit dem 15.10. aus den Marken einer schwebenden Schicht (core, Geist). */
+/* Schrift im Dunkeln nach Geist (16.10.): Wert fuer Wert getauscht (#e0e0e0 -> #ededed, #a0a0a0 -> #a1a1a1), Flaeche am <body> mit eigener Leiter. */
 .uhm-tip[data-theme="dark"] {
-  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: var(--up-menu-border);
+  --vc-text: #ededed; --vc-muted: #a1a1a1; --vc-third: #808080; --vc-border: var(--up-menu-border);
   --vc-bg: var(--up-menu-bg); --vt-logo-bg: #e0e0e0;
 }
 .uhm-tip * { box-sizing: border-box; }

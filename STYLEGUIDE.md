@@ -162,8 +162,8 @@ darf sich nicht ändern. Das dunkle Thema überschreibt sie nur unter `html[data
 ### Dark (`.up-root[data-theme="dark"]`, seit 15.10. Geist)
 | Rolle | Variable | Wert | Geist | bis 15.10. |
 |---|---|---|---|---|
-| Primär-Fontfarbe | `--vc-text` | `#e0e0e0` | (unverändert, wie Light) | |
-| Zweite / dritte / vierte Stufe | `--vc-muted` / `--vc-third` / `--vc-fourth` | `#c9cbd0` / `#a0a0a0` / `#6c717a` | `#a0a0a0` ≈ Gray 900 | |
+| Primär-Fontfarbe | `--vc-text` | `#ededed` | Gray 1000 (seit 16.10.; vorher `#e0e0e0`) | |
+| Zweite / dritte / vierte Stufe | `--vc-muted` / `--vc-third` / `--vc-fourth` | `#c9c9c9` / `#a1a1a1` / `#7d7d7d` | neutral statt blaustichig (seit 16.10., vorher `#c9cbd0` / `#a0a0a0` / `#6c717a`): `--vc-third` Gray 900, `--vc-fourth` Gray 800 (4,7:1 auf `#0a0a0a`); `--vc-muted` hat bei Geist keine Stufe, derselbe Wert ohne Blaustich. Nur unter `html[data-up-dunkel]`; Menüs und Tooltips mit eigener Leiter Wert für Wert getauscht | |
 | Border | `--vc-border` | `#2e2e2e` | Gray 400 | `#34343a` |
 | Inhalt: Karte, Tabelle, Chart, Drawer | `--vc-bg` | `#0a0a0a` | Background 1 | `#1c1c1f` |
 | Seitengrund (Seite, Seitenleiste, Kopf) | `--up-surface` | `#000000` | Background 2 | `#101114` |

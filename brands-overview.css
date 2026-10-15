@@ -197,7 +197,8 @@
 /* Seit dem 15.10. (Dunkel nach Geist) Grund und Rand aus den Marken einer schwebenden Schicht
    (core, dunkler Block an :root -- er erreicht dieses Element, weil es data-theme selbst traegt)
    statt einer Kopie der Linear-Werte: Background 1 und Gray 500. */
-.ubo-mxtip[data-theme="dark"] { --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: var(--up-menu-border); --vc-bg: var(--up-menu-bg);
+/* Schrift im Dunkeln nach Geist (16.10.): Wert fuer Wert getauscht (#e0e0e0 -> #ededed, #a0a0a0 -> #a1a1a1), Flaeche am <body> mit eigener Leiter. */
+.ubo-mxtip[data-theme="dark"] { --vc-text: #ededed; --vc-muted: #a1a1a1; --vc-border: var(--up-menu-border); --vc-bg: var(--up-menu-bg);
   --vt-logo-bg: #e0e0e0; --vc-third: #808080; }
 .ubo-mxtip * { box-sizing: border-box; }
 .ubo-mxtip-head { display: flex; align-items: center; gap: 8px; }
@@ -275,7 +276,8 @@
    Marken des dunklen Blocks an :root, die dieses Element erreicht; die zwei Flaechen ueber die
    gleichwertigen Marken (Hover einer Zeile, gewaehlter Chip), weil die helle Grundregel oben
    --vc-heading-bg und --up-sel-bg selbst setzt und ein Verweis auf sich selbst ungueltig waere. */
-.ubo-actmenu[data-theme="dark"] { --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: var(--up-menu-border);
+/* Schrift im Dunkeln nach Geist (16.10.): Wert fuer Wert getauscht (#e0e0e0 -> #ededed, #a0a0a0 -> #a1a1a1), Flaeche am <body> mit eigener Leiter. */
+.ubo-actmenu[data-theme="dark"] { --vc-text: #ededed; --vc-muted: #a1a1a1; --vc-border: var(--up-menu-border);
   --vc-bg: var(--up-menu-bg); --vc-heading-bg: var(--vt-row-hover-solid); --up-sel-bg: var(--up-chip-an); }
 .ubo-actmenu * { box-sizing: border-box; }
 @media (prefers-reduced-motion: reduce){ .ubo-actmenu { transition-duration: 1ms; } }

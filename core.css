@@ -1099,6 +1099,21 @@
       --up-wahl-bg: rgba(255,255,255,.06);
       --up-wahl-rand: rgba(255,255,255,.03);
     }
+    /* DIE SCHRIFT IM DUNKELN NACH GEIST (16.10., Nutzer: "Dark: ja, stell mal bitte auf Geist um").
+       Neutral statt der leicht blaustichigen Leiter (#e0e0e0 / #c9cbd0 / #a0a0a0 / #6c717a):
+         --vc-text    #ededed  Geist Gray 1000, Primaertext
+         --vc-muted   #c9c9c9  zwischen 1000 und 900 -- Geist hat dort keine Stufe, die App braucht
+                               aber vier; derselbe Wert wie vorher, nur ohne Blaustich
+         --vc-third   #a1a1a1  Geist Gray 900, Sekundaertext
+         --vc-fourth  #7d7d7d  Geist Gray 800 (vorher #6c717a, auf #0a0a0a 4.0:1, jetzt 4.7:1)
+       NUR unter html[data-up-dunkel]: dunkle Elemente im Licht (die Bulk-Leiste) bleiben, wie sie
+       sind. Hier fuer jede .up-root (0,3,1 schlaegt den dunklen Block an .up-root, 0,2,0); die
+       Flaechen am <body> bekommen dieselben Werte im Geist-Block an :root weiter unten. Menues
+       und Tooltips mit EIGENER Leiter (z. B. --vc-muted #a0a0a0 im Tooltip) sind Wert fuer Wert
+       getauscht: #e0e0e0 -> #ededed, #c9cbd0 -> #c9c9c9, #a0a0a0 -> #a1a1a1, #6c717a -> #7d7d7d. */
+    html[data-up-dunkel="geist"] .up-root[data-theme="dark"] {
+      --vc-text: #ededed; --vc-muted: #c9c9c9; --vc-third: #a1a1a1; --vc-fourth: #7d7d7d;
+    }
     /* Der Grund hinter allem. Das Kopf-Skript malt ihn im Dunkeln #101114 (kopf.css,
        html[data-up-pagetheme="dark"] body, 0,1,2); hier (0,2,2) wie beim grauen Hell. */
     html[data-up-dunkel="geist"]:not([data-up-hell]),
@@ -2525,6 +2540,7 @@
      NICHT hier: --up-surface. Der Seitengrund wechselt im Dunkeln zwischen Seite und Inhalt (Block
      "SEITE UND INHALT") und muss von der Wurzel geerbt werden, nicht neu gesetzt. */
   :where(html[data-up-dunkel="geist"]) [data-theme="dark"] {
+    --vc-text: #ededed; --vc-muted: #c9c9c9; --vc-third: #a1a1a1; --vc-fourth: #7d7d7d;
     --up-sel-bg: #1f1f1f; --vc-border: #2e2e2e; --vc-heading-bg: #1a1a1a;
     --up-chip-rand-hover: #454545; --up-chip-an: #1f1f1f; --up-chip-an-hover: #292929; --up-chip-rand-an-hover: rgba(255,255,255,.24);
     --vc-bg: #0a0a0a; --vc-field: #0a0a0a; --vc-sk: #1a1a1a;
@@ -3325,7 +3341,7 @@
          dieses Menues (.up-scale-menu, 0,1,0) steht weiter unten in der Datei als jener Block
          (ebenfalls 0,1,0) und gewaenne sonst ueber die Reihenfolge -- gemessen am 15.10. am Topic-
          Fenster, das dieselbe Bauart hat: die Seitenspalte stand hell im dunklen Fenster. */
-      --vc-text: #e0e0e0; --vc-muted: #c9cbd0; --vc-third: #a0a0a0; --vc-fourth: #6c717a; --vc-border: #454545;
+      --vc-text: #ededed; --vc-muted: #c9c9c9; --vc-third: #a1a1a1; --vc-fourth: #7d7d7d; --vc-border: #454545;
       --vc-heading-bg: #1a1a1a; --vc-hover-border: #707070; --vc-bg: #0a0a0a; --up-switch-off: #454545;
       --vc-switch-bg: #1a1a1a; --vc-switch-border: #2e2e2e;
       --vc-switch-rail: rgba(255,255,255,.06); --vc-switch-pill: rgba(255,255,255,.09);
@@ -6281,7 +6297,7 @@
      Skelett Gray 100. Alle vier stehen HIER, weil die helle Grundregel dieser Karte sie selbst
      setzt -- eine geerbte Marke verliert gegen jede eigene Deklaration. Gemessen am 15.10., als sie
      hier fehlten: die Seitenspalte der Preferences stand in #f9f8f9 im dunklen Fenster. */
-  --vc-text: #e0e0e0; --vc-muted: #c9cbd0; --vc-third: #a0a0a0; --vc-fourth: #6c717a; --vc-border: #454545;
+  --vc-text: #ededed; --vc-muted: #c9c9c9; --vc-third: #a1a1a1; --vc-fourth: #7d7d7d; --vc-border: #454545;
   --vc-heading-bg: #1a1a1a; --vc-hover-border: #707070; --up-surface: #0a0a0a; --vc-sk: #1a1a1a; --up-switch-off: #454545;
   --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
 }
