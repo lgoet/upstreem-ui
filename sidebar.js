@@ -193,13 +193,15 @@
        Die Begruendung in core.js an "preference" (Fader = filtern, Regler = einstellen)
        gilt fuer den Satz weiter; hier wiegt schwerer, dass Knopf und Ziel zusammengehoeren. */
     { items: [{ key: "prefswin", label: "Preferences", icon: "settings2" }] },
-    /* Seit dem 15.10. vier Zeilen: "Light" ist das graue Hell nach Vercel, "Legacy Light" das Hell bis
-       dahin -- dieselben Werte wie im Einstellungsfenster (UC.setUpstreemThemeOption). */
+    /* DAS THEMA ALS GEIST-SCHALTER (15.10. abends: "bitte den Theme Switcher uebernehmen. Das Hell
+       klassisch faellt weg"). Eine Zeile "Theme" mit dem kleinen Schalter rechts (UC.themeSchalterHtml,
+       24px -- Geist: "small for dense chrome ... dropdowns"), statt der Liste mit Haken. Die drei
+       Eintraege bleiben als Daten stehen -- der Rueckfall fuer eine aeltere core ohne Schalter zeichnet
+       sie wie bisher als Zeilen. "Legacy Light" ist weg. */
     { head: "Theme", theme: true, items: [
-      { key: "legacy-light", label: "Legacy Light" },
+      { key: "system", label: "System" },
       { key: "light",  label: "Light"  },
-      { key: "dark",   label: "Dark"   },
-      { key: "system", label: "System" }
+      { key: "dark",   label: "Dark"   }
     ]},
     { items: [{ key: "logout", label: "Log out", icon: "logOut" }] }
   ];
@@ -1117,11 +1119,9 @@
     /* Aus core, seit das Einstellungsfenster dieselbe Frage stellt. Hier standen dieselben
        fuenf Zeilen ein zweites Mal. */
     function themaJetzt(){
-      /* Die Wahl mit dem hellen Stil. Eine aeltere core ohne die Funktion kennt nur das bisherige
-         Hell -- dort ist "light" also "legacy-light". */
+      /* light / dark / system -- seit dem 15.10. abends gibt es nur noch ein Hell. */
       if (UC.getUpstreemThemeOption) return UC.getUpstreemThemeOption();
-      var c = UC.getUpstreemThemeChoice ? UC.getUpstreemThemeChoice() : "system";
-      return c === "light" ? "legacy-light" : c;
+      return UC.getUpstreemThemeChoice ? UC.getUpstreemThemeChoice() : "system";
     }
     function renderTeamMenu(){
       var such = state.suche.toLowerCase();
@@ -1158,6 +1158,16 @@
     function renderAccMenu(){
       var th = themaJetzt();
       elAccMenu.innerHTML = KONTO.map(function(s){
+        /* Der Themenschalter aus core: eine Zeile, Beschriftung links wie jede Menuezeile, der
+           Schalter rechts. Ohne UC.themeSchalterHtml (aeltere core) die Liste wie bisher. */
+        if (s.theme && UC.themeSchalterHtml){
+          return '<div class="usn-sec">' +
+            '<div class="up-pop-opt usn-themezeile">' +
+              '<span class="up-pop-opt-l">' + esc(UC.t(s.head)) + '</span>' +
+              UC.themeSchalterHtml({ klein: true, wahl: th }) +
+            '</div>' +
+          '</div>';
+        }
         return '<div class="usn-sec">' +
           (s.head ? '<span class="up-pop-head">' + esc(UC.t(s.head)) + '</span>' : "") +
           s.items.map(function(it){
@@ -1389,6 +1399,21 @@
          Nutzer schon laufen, tragen alle einen. */
       if (t.closest("[data-newteam]")){ menuZu(); fire("data-newteam-fn", "usnNewTeam", { action: "new_team" }); return; }
 
+      /* Der Themenschalter im Konto-Menue (15.10. abends, Geist): derselbe Weg wie die Zeilen davor --
+         core setzt Thema und Stil, das Menue zeichnet sich neu (die Flaeche faehrt an die neue
+         Stelle, segLauf kennt den Schalter am Schluessel), und usnTheme geht unveraendert hinaus:
+         value light|dark|system, option dasselbe (es gibt keine zweite helle Zeile mehr). */
+      var tw = t.closest("[data-up-themawahl]");
+      if (tw && elAccMenu.contains(tw)){
+        var wahl = tw.getAttribute("data-up-themawahl");
+        if (wahl !== themaJetzt()){
+          if (UC.setUpstreemThemeOption) UC.setUpstreemThemeOption(wahl);
+          else if (window.setUpstreemTheme) window.setUpstreemTheme(wahl);
+          renderAccMenu(); renderNav();
+          fire("data-theme-fn", "usnTheme", { value: wahl, option: wahl });
+        }
+        return;
+      }
       var ak = t.closest("[data-acc-key]");
       if (ak){
         var key = ak.getAttribute("data-acc-key");

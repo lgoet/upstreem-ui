@@ -311,7 +311,8 @@
 .usb-dlg {
   --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-third: #9e9e9e; --vc-border: #dcdbdd;
   --vc-heading-bg: #f9f8f9; --vc-hover-border: #6f6f6f; --up-surface: #ffffff;
-  --vt-down: #b0200c;
+  /* --vt-down stand hier als eigene Kopie (hell #b0200c, dunkel #c8321c). Seit dem 15.10. kommt es
+     von :root bzw. vom dunklen Schleier ([data-theme="dark"]) aus core -- Geist Red 900. */
   /* Ohne diese drei traegt das Feld im Dialog keinen Fokusring: die Karte haengt am body, also
      ausserhalb von .up-root, wo die Tokens definiert sind, und var(--up-focus) waere leer. */
   --up-focus: #4A9EFF; --up-focus-ring: rgba(74,158,255,0.20); --up-focus-w: 2px;
@@ -325,7 +326,6 @@
 .usb-dlg-backdrop[data-theme="dark"] .usb-dlg {
   --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #3e3e44;
   --vc-heading-bg: #232326; --vc-hover-border: #707070; --up-surface: #1c1c1f;
-  --vt-down: #c8321c;
   --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
 }
 @media (prefers-reduced-motion: reduce){ .usb-dlg-backdrop, .usb-dlg { transition-duration: 1ms; } }
@@ -438,13 +438,11 @@
 /* Bleibt die Rueckmeldung aus, faellt die Sperre nach 12s von selbst -- und dann muss dastehen,
    warum. Ohne diese Zeile saehe die entsperrte Komponente aus wie ein normal gespeicherter
    Zustand, obwohl niemand weiss, ob geschrieben wurde.
-   Gelbtoene direkt statt aus --vc-*: die Palette hat keinen Warnton, und einer aus --vc-neg waere
-   ein Fehler, den es hier nicht gibt. Es ist ein Hinweis, kein Absturz. */
+   Ein Warnton und kein Rot aus --vc-neg: es ist ein Hinweis, kein Absturz. Seit dem 15.10. aus
+   core (Geist, die Note "warning": Grund Amber 100, Rand Amber 400) -- vorher Gelbtoene direkt,
+   weil die Palette keinen Warnton hatte. Die Schrift bleibt --vc-text: der Satz ist Inhalt. */
 .usb-stuck {
   margin: 0 0 12px; padding: 9px 12px; border-radius: 9px;
-  border: 1px solid rgba(180, 130, 20, .28); background: rgba(232, 176, 48, .10);
+  border: 1px solid var(--vc-warn-border); background: var(--vc-warn-bg);
   color: var(--vc-text); font-size: 12.5px; line-height: 1.45;
-}
-.usb-root[data-theme="dark"] .usb-stuck {
-  border-color: rgba(232, 176, 48, .30); background: rgba(232, 176, 48, .12);
 }

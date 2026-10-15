@@ -256,9 +256,10 @@
       /* DER TOAST (10.10., Handoff Stil 1a "Inverted"): die umgekehrte Karte wie die Erklaerkarte --
          hell eine dunkle Flaeche, dunkel eine helle (10.10. korrigiert: "invertiert heisst, im
          Darkmode hell"; die erste Fassung blieb nach dem Handoff in beiden Themen dunkel).
-         Der Zustand steht nur im Zeichen. Auf der dunklen Flaeche ist das Fehler-Rot heller als
-         --vt-down: #d25d5d erreicht auf #1f1f1b nur 3.9:1, #ff7a66 traegt. Erfolg ist dort das
-         --vt-up des dunklen Themas; auf der hellen Flaeche (Dunkel-Thema) die Werte des hellen. */
+         Der Zustand steht nur im Zeichen, und zwar in den Werten des ANDEREN Themas: auf der
+         dunklen Flaeche Geist Green 900 und Red 900 der dunklen Skala (seit 15.10., vorher #60d25d
+         und #ff7a66) -- gemessen auf #1f1f1b 7.3:1 und 5.6:1. Auf der hellen Flaeche (Dunkel-Thema)
+         die der hellen Skala. */
       --vc-toast-bg: var(--vc-inverse-bg);
       /* Die Schrift ist die des ANDEREN Themas (10.10.: "immer in Fontfarbe des je anderen
          Themes, nicht weiss und schwarz"): Titel #e0e0e0 (--vc-text dunkel), Untertitel und
@@ -266,12 +267,44 @@
          Thema unten traegt spiegelbildlich die hellen Werte. */
       --vc-toast-ink: #e0e0e0;
       --vc-toast-sub: #a0a0a0;
-      --vc-toast-ok: #60d25d;
-      --vc-toast-fehler: #ff7a66;
+      --vc-toast-ok: #62c073;
+      --vc-toast-fehler: #ff6166;
       --vc-toast-neutral: #a0a0a0;
       --vc-toast-flaeche: rgba(255,255,255,.10);
       --vc-toast-flaeche-hover: rgba(255,255,255,.18);
       --vc-toast-zu: #6c717a;
+      /* ---- DIE ZUSTANDSFARBEN NACH GEIST (15.10.) -------------------------------------------
+         "Chartfarben, Trend Chips, das Gruen vom Prompt Quota etc.: Nimm fuer das alles bitte das
+         Geist Design System, das ist das neue System fuer diese Sachen." Die Werte sind Vercels
+         eigene, ausgelesen am 15.10. aus dem Stylesheet von vercel.com/geist/colors (--ds-*-value an
+         :root fuer hell, an .dark-theme fuer dunkel; die sRGB-Fassung, die Geist auf Bildschirmen
+         ohne P3 zeigt -- die P3-Fassung in oklch() liest Chart.js nicht).
+         GEISTS EIGENE ROLLENVERTEILUNG, uebernommen statt nachgebaut ("Colors 1-10"):
+             100-300  Grund einer Komponente      400-600  Rahmen
+             700-800  kraeftige Flaeche           900      Text und Zeichen (Sekundaer)
+         Also: Schrift in Farbe immer Stufe 900, eine Flaeche (Ring, Punkt, Balken) 700, die Notiz
+         100 mit Rand 400 -- genau so baut Geist seine Note (geist-new-error: Red 900 auf Red 100,
+         Rand Red 400) und seine Gauge (Green 700, Amber 700, Red 800).
+         AN :root UND NICHT AN .up-root, aus demselben Grund wie die Tiefen oben: Tooltips, Dialoge
+         und Menues haengen am <body>. Bis heute trugen vier davon eigene Kopien von --vt-up/-down
+         (performance-radar, settings-brand), weil die Marke an .up-root dort nicht ankam.
+         Gemessen (WCAG, Text 12-13px braucht 4.5):
+             --vt-up     Green 900 #297a3a   auf Weiss 5.33, auf #fafafa 5.11   (vorher #2ea84a: 3.08)
+             --vt-down   Red 900   #cb2a2f   auf Weiss 5.37, auf #fafafa 5.14   (vorher #b0200c: 6.87)
+             --vc-warn   Amber 900 #a35200   auf Weiss 5.58, auf Amber 100 5.20 */
+      --vt-up: #297a3a;   --vt-down: #cb2a2f;
+      /* Die FLAECHE in diesen Farben: der Ring des Prompt-Kontingents, der Punkt "Active", ein
+         Balken. Geist Gauge: Green 700 im Normalfall, Red 800 als Fehlerstufe, Amber 700 als
+         Warnung. Eine Grafik braucht 3:1 (WCAG 1.4.11): Green 700 auf Weiss 3.10. */
+      --vt-up-flaeche: #45a557;   --vt-down-flaeche: #da2f35;   --vt-warn-flaeche: #ffb224;
+      /* Die Notiz (Geist Note): Text 900, Grund 100, Rand 400. --vc-pos/--vc-neg standen bis heute
+         nirgends -- auth-page, onboarding und .up-formerr lebten von Rueckfallwerten, je mit eigenem
+         Rot (#c8412e) und Gruen (#2e9e63). Jetzt loesen sie auf. */
+      --vc-pos: var(--vt-up);     --vc-pos-bg: #effbef;
+      --vc-neg: var(--vt-down);   --vc-neg-bg: #fff0f0;   --vc-neg-border: #fdd8d8;
+      /* Der Hinweis, der kein Fehler ist (settings-brand .usb-stuck, "Speichern bleibt aus"). Bis
+         heute ohne Marke: "die Palette hat keinen Warnton". Geist hat einen. */
+      --vc-warn: #a35200;         --vc-warn-bg: #fff6e5;  --vc-warn-border: #ffdd8f;
 }
 [data-theme="dark"], .up-root[data-theme="dark"] {
       /* Die vier Tiefen im dunklen Thema. Sie sind NICHT die hellen mit mehr Deckkraft, auch
@@ -296,12 +329,27 @@
       --vc-toast-bg: var(--vc-inverse-bg);
       --vc-toast-ink: var(--vc-inverse-ink);
       --vc-toast-sub: #6b6f78;
-      --vc-toast-ok: #2ea84a;
-      --vc-toast-fehler: #b0200c;
+      /* Geist Green 900 und Red 900 der HELLEN Skala, wie --vt-up/--vt-down im hellen Block (15.10.):
+         auf #eeedef 4.57:1 und 4.60:1. */
+      --vc-toast-ok: #297a3a;
+      --vc-toast-fehler: #cb2a2f;
       --vc-toast-neutral: #6b6f78;
       --vc-toast-flaeche: rgba(31,31,27,.08);
       --vc-toast-flaeche-hover: rgba(31,31,27,.14);
       --vc-toast-zu: #80858e;
+      /* Die Zustandsfarben nach Geist, dunkle Skala (Begruendung im hellen Block). Gemessen auf der
+         Karte #1c1c1f: --vt-up Green 900 7.53, --vt-down Red 900 5.79, --vc-warn Amber 900 8.05
+         (vorher #60d25d und #d25d5d). Die Flaechen 700/800 sind bei Geist in beiden Themen dieselben
+         Toene; Red 800 dunkel ist #d93036 statt #da2f35. */
+      --vt-up: #62c073;   --vt-down: #ff6166;
+      --vt-up-flaeche: #45a557;   --vt-down-flaeche: #d93036;   --vt-warn-flaeche: #ffb224;
+      /* --vc-pos/--vc-neg noch einmal, obwohl es dieselbe Formel ist wie hell: ein var() in einer
+         Marke wird dort aufgeloest, wo sie DEKLARIERT ist. Ein dunkles Element am <body>, das keine
+         .up-root ist (#ask-mira, der Schleier von settings-brand), erbte sonst den schon
+         aufgeloesten hellen Wert von :root. */
+      --vc-pos: var(--vt-up);   --vc-pos-bg: #0b2212;
+      --vc-neg: var(--vt-down); --vc-neg-bg: #2a1314;   --vc-neg-border: #671e21;
+      --vc-warn: #f2a20d;     --vc-warn-bg: #291800;  --vc-warn-border: #573300;
 }
 .up-root {
       /* --vc-muted ist um vier Einheiten dunkler als vorher (#6f737c), und das ist KEINE neue
@@ -509,12 +557,13 @@
          einmal fuer sich allein geflickt (.upw-chip-ic, --vc-bg). */
       --vt-logo-ink: var(--vc-muted);
       --vt-row-hover-solid: #f9f8f9;
-      --vt-up: #2ea84a; --vt-down: #b0200c;
+      /* --vt-up/--vt-down stehen seit dem 15.10. im Block an :root weiter oben (Geist, "DIE
+         ZUSTANDSFARBEN NACH GEIST") -- hier nicht noch einmal, sonst waeren es zwei Orte. */
       /* Die Flaeche eines Gefahr-Knopfs (Loeschen im Dialog, 10.10.: "schoen rot") und die Schrift
-         darauf. Dasselbe Rot wie --vt-down hier, und zwar in BEIDEN Themen: das hellere Rot des
-         dunklen Themas (#d25d5d) traegt weisse Schrift nur mit rund 3,4:1, dieses mit 6,6:1. Darum
-         steht das Paar nur hier und nicht noch einmal im dunklen Block. */
-      --vc-danger: #b0200c; --vc-danger-fg: #ffffff;
+         darauf. Seit dem 15.10. Geists eigener Gefahr-Knopf (geist-new-error-fill): Red 800 mit
+         weisser Schrift, 4.73:1 (vorher #b0200c, 6.87). Geist fuehrt Red 800 in beiden Themen fast
+         gleich (#da2f35 / #d93036), darum steht das Paar weiter nur hier. */
+      --vc-danger: #da2f35; --vc-danger-fg: #ffffff;
       /* Markenauszeichnung im Antworttext. Die Farbe ist die der alten Response-Elemente,
          wortgleich uebernommen -- Orange, nicht das Gruen der Trendpfeile: eine Marke im Text ist
          keine Bewertung. Der Hintergrund liegt 10 Prozentpunkte unter dem ersten Ansatz (8 -> 6,
@@ -690,7 +739,7 @@
          --vc-text und --vc-bg kam. */
       --up-accent: #e0e0e0; --up-accent-fg: #1b1b1b; --up-accent-ink: #e0e0e0;
       --vt-row-hover-solid: #232326;
-      --vt-up: #60d25d; --vt-down: #d25d5d;
+      /* --vt-up/--vt-down dunkel: seit dem 15.10. im dunklen Block an :root (Geist). */
       /* Im Dunkeln ein aufgehellter Ton mit weniger Deckung -- auch das wortgleich aus den alten
          Elementen. Der Hintergrund darf hier etwas mehr tragen, sonst verschwindet er im Grund. */
       --vt-brand: rgba(255, 190, 60, 0.85);
@@ -754,11 +803,19 @@
     html[data-accent="terrakotta"] .up-root[data-theme="dark"] { --up-accent: #D97757; --up-accent-fg: #1f1f1b; --up-accent-ink: #D97757; }
 
     /* ================= DAS GRAUE HELL ("Light", 15.10.) ===========================================
-       Seit dem 15.10. gibt es zwei helle Themen. "Legacy Light" ist das Hell bis dahin und steht
-       unveraendert in den Bloecken oben; "Light" ist dieses hier, nach Vercel: die SEITE grau --
+       DAS EINZIGE HELL DER APP (15.10. abends: "Das Hell klassisch faellt weg als Design"). Die Wahl
+       heisst nur noch Light / Dark / System; "Legacy Light" ist als Wahl entfernt, eine gespeicherte
+       Vorliebe "legacy" wird beim Lesen zu Light (core.js prefsLesen). Nach Vercel: die SEITE grau --
        Seitengrund, Seitenleiste, Seitenkopf, Reiterzeile --, die INHALTSFLAECHEN weiss -- Tabellen,
-       Karten, Charts, Drawer, Menues. core.js setzt data-up-hell="grau" ans <html>, aber nur,
-       solange hell gemalt wird (hellAnwenden); im Dunkeln steht das Attribut nicht.
+       Karten, Charts, Drawer, Menues. core.js setzt data-up-hell="grau" ans <html>, sobald hell
+       gemalt wird (hellAnwenden) -- ohne Vorliebe, ohne Bedingung; im Dunkeln steht es nicht.
+       WARUM DIE BLOECKE OBEN NICHT SELBST GRAU SIND, sondern dieser hier sie ueberschreibt: ohne das
+       Attribut sieht man sie noch an zwei Stellen, und an beiden ist das richtig. (1) Die Landingpage
+       laedt core, ist aber kein Dashboard -- hellAnwenden laesst sie aus (__upApp.landing), ihre
+       Fenster bleiben weiss wie bisher. (2) Das erste Bild der App, bevor das Kopf-Skript oder core
+       das Attribut gesetzt hat. Ueberschrieben werden fuenf Marken (--up-surface, --vc-border,
+       --vc-switch-border, --vc-heading-bg, --vc-field) -- alles andere gilt in beiden unveraendert,
+       eine zweite helle Palette gibt es nicht.
 
        DIE WERTE SIND VERCELS EIGENE, ausgelesen am 15.10. aus vercel.com/geist (helles Thema,
        --ds-*-value an :root) und gegengeprueft an zwei Seiten mit App-Rahmen:
@@ -790,6 +847,21 @@
     html[data-up-hell="grau"] {
       --up-seite-grau: #fafafa;   /* Vercel Background 2 */
       --up-kante-grau: #ebebeb;   /* Vercel Gray 400, Default border */
+      /* DER GEWAEHLTE ZUSTAND DER NAVIGATION (15.10. abends angefordert: "rgba(0, 0, 0, 0.05) ist die
+         Farbe fuer selected states -- Sidebar-selektierte Menues, in den Nav-/Subpage-Navigationen
+         die Backgrounds der Container. Und da auch bitte weiterhin eine Border!").
+         Der Grund ist Geist Gray Alpha 100 (#0000000d = 5,1 % Schwarz) -- genau der Ton, den Geists
+         eigene Seitennavigation fuer den gewaehlten Eintrag traegt (vercel.com/geist, gewaehlter
+         Punkt links: bg-gray-alpha-100).
+         Der RAND ist Gray Alpha 400 (#00000014 = 8 % Schwarz), Geists "Default border" in der
+         durchscheinenden Fassung. Durchscheinend und nicht das feste Gray 400 (#ebebeb), weil der
+         Grund durchscheint: auf der Seite (#fafafa) ergibt er #eeeeee, und ein fester Rand #ebebeb
+         laege darauf nur 3 Stufen dunkler -- unsichtbar. Der durchscheinende liegt ueber dem Grund
+         (background-clip: border-box) und ergibt #dbdbdb, 19 Stufen Abstand; auf einem weissen
+         Fenster (Preferences) dasselbe Verhaeltnis. Geist selbst sagt dazu: "Gray-alpha only when
+         the background should show through" -- hier tut er es. 1px wie jeder Rand der App. */
+      --up-wahl-bg: rgba(0,0,0,.05);
+      --up-wahl-rand: rgba(0,0,0,.08);
     }
     /* Der Grund hinter allem (html/body). Das Kopf-Skript der App malt ihn weiss (kopf.css,
        html[data-up-pagetheme="light"] body, 0,1,2); hier eine Stufe spezifischer (0,2,2) statt
@@ -854,11 +926,12 @@
     /* Die Karten der Opportunities tragen 2 % Schwarz ueber dem Grund (--uo-col-bg) -- auf der grauen
        Seite ein grauer Kasten auf Grau. Im grauen Hell sind sie Inhalt und damit weiss. */
     html[data-up-hell="grau"] .up-root.uo-root:not([data-theme="dark"]) { --uo-col-bg: var(--vc-bg); }
-    /* Der gewaehlte Reiter wie bei Vercel: ein grauer Fleck ohne Rahmen. Die Vorgabe (Kopfzeilengrund
-       #f9f8f9 mit Rahmen) laege auf #fafafa fast ohne Unterschied, nur der Rahmen bliebe. 8 % der
-       Schrift auf #fafafa ergeben #e8e8e7 -- Vercel misst 8 % Schwarz, #e6e6e6. */
+    /* Der gewaehlte Reiter: der Gewaehlt-Ton der Navigation (--up-wahl-bg, 5 % Schwarz) MIT Rand
+       (--up-wahl-rand). Die Vorgabe (Kopfzeilengrund #f9f8f9) laege auf #fafafa ohne Unterschied.
+       Bis zum 15.10. abends stand hier ein Fleck aus 8 % der Schrift OHNE Rahmen -- zurueckgenommen:
+       "weiterhin eine Border". Die Breite (1px) kommt aus der Grundregel von .up-ph-navpille. */
     html[data-up-hell="grau"] .up-root:not([data-theme="dark"]) .up-ph-navpille {
-      background: color-mix(in srgb, var(--vc-text) 8%, transparent); border-color: transparent;
+      background: var(--up-wahl-bg); border-color: var(--up-wahl-rand);
     }
 
     /* ---------- Fokus-Ring fuer Eingabefelder ----------
@@ -1488,8 +1561,12 @@
     /* Die Sentiment-Vorschau (UC.sentHtml) in der Zeile: Zahl in Schrift und Farbe der Zeile, wie
        "18.4%" daneben -- die Karte haengt ausserhalb von .up-root, --vc-text loest dort nicht auf. */
     .up-explain-row .up-sent-val { font-size: inherit; color: inherit; }
-    .up-explain-up { color: #2ea84a; }
-    .up-explain-down { color: #b0200c; }
+    /* Die Trendfarben der Probe aus den Marken (15.10., Geist): die Platte steht im Thema der Seite
+       (hell Weiss, dunkel #1f1f1b), und die Karte traegt ihr Thema als data-theme -- --vt-up und
+       --vt-down kommen damit vom :root- bzw. dunklen Block. Vorher je zwei feste Werte, im Dunkeln
+       eigene Tailwind-Toene (#6ee7b7, #fca5a5), die es nirgends sonst gab. */
+    .up-explain-up { color: var(--vt-up); }
+    .up-explain-down { color: var(--vt-down); }
     /* Matches the real .up-stack-item/.up-stack-vis chip exactly (28x28, radius 8, 4px ring) —
        this sample must look like the actual table cell, not an older circular approximation of it. */
     /* Ohne Rahmen, seit der echte Chip keinen mehr hat -- die Zeile darueber verspricht, dass
@@ -1499,8 +1576,6 @@
     .up-explain-dot { width: 28px; height: 28px; border-radius: 8px; background: #eeedef;
       border: 0; box-shadow: 0 0 0 4px var(--vc-inverse-ink); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #6f6f6f; }
     .up-explain-more { background: #f0f0f0; }
-    .up-explain[data-theme="dark"] .up-explain-up { color: #6ee7b7; }
-    .up-explain[data-theme="dark"] .up-explain-down { color: #fca5a5; }
     .up-explain[data-theme="dark"] .up-explain-dot { background: #28282c; border-color: #4a4a4a; color: #b8b8b8; }
     .up-explain[data-theme="dark"] .up-explain-more { background: #2c2c2c; }
 
@@ -5206,6 +5281,41 @@
 [data-theme="dark"] .tcl-seg-btn.is-active,
 [data-theme="dark"] .ubo-yaxis-btn.is-active, [data-theme="dark"] .tcd-mode-btn.is-active,
 [data-theme="dark"] .upt-status-btn.is-active, [data-theme="dark"] .udt-sub-disp-btn.is-active { background: var(--vc-switch-pill); border-color: var(--vc-switch-border); }
+
+/* ---------- DER THEMENSCHALTER NACH GEIST (15.10., UC.themeSchalterHtml) ----------
+   "Bitte den Theme Switcher uebernehmen" -- Geists Theme Switcher (vercel.com/geist/theme-switcher),
+   Mass fuer Mass aus seinem Markup gelesen: ein Streifen, voll gerundet, drei runde Knoepfe System /
+   Light / Dark nur mit Zeichen (16px), aussen ein 1px-Ring statt einer Schiene; der gewaehlte Knopf
+   eine helle Flaeche mit eigenem 1px-Ring (Gray 400) und einem Hauch Schatten (0 1px 2px). Zwei
+   Groessen wie dort: 32 (Einstellungsseite, "use the default size on a settings page") und 24
+   ("small for dense chrome ... dropdowns") -- hier --up-h-btn und --up-h-chip.
+   EIN .up-seg UND KEIN NACHBAU: der Streifen ist der gleitende Umschalter aus core (segLauf misst
+   .is-active, die Flaeche ist das ::before). Hier steht nur, was Geist anders macht als die
+   Grundform: rund statt Radius 8, keine Schiene, die Ringe aussen. Alles ueber .up-root davor --
+   die Grundregeln stehen eine Spezifitaetsstufe tiefer, entschieden wird nicht ueber die Reihenfolge.
+   DIE RINGE LIEGEN AUSSEN (box-shadow), wie bei Geist: so fallen Ring des Streifens und Ring der
+   Flaeche oben und unten auf dieselbe Linie, statt nebeneinander zwei Pixel zu zeichnen.
+   Farben aus den Marken der Umschalter: beide Ringe --vc-switch-border, die Flaeche --vc-switch-pill --
+   im grauen Hell #ebebeb und #ffffff, also genau Geists Gray 400 und Background 100. Nicht
+   --vc-border fuer den aeusseren Ring: das Einstellungsfenster setzt es auf seine dunklere
+   Fensterlinie (#dcdbdd), und dann stuenden zwei verschiedene Ringe uebereinander. */
+.up-root .up-seg.up-themesw { height: var(--up-h-btn); padding: 0; gap: 0; border-radius: var(--up-r-voll);
+  background: transparent; box-shadow: 0 0 0 1px var(--vc-switch-border); }
+.up-root .up-seg.up-themesw.is-klein { height: var(--up-h-chip); }
+.up-root .up-seg.up-themesw::before { border: 0; border-radius: var(--up-r-voll);
+  box-shadow: 0 0 0 1px var(--vc-switch-border), var(--up-e-1); }
+.up-root .up-seg.up-themesw .up-seg-btn { width: var(--up-h-btn); height: var(--up-h-btn); padding: 0;
+  border: 0; border-radius: var(--up-r-voll); color: var(--vc-third); }
+.up-root .up-seg.up-themesw.is-klein .up-seg-btn { width: var(--up-h-chip); height: var(--up-h-chip); }
+.up-root .up-seg.up-themesw .up-seg-btn svg { width: 16px; height: 16px; color: inherit; }
+.up-root .up-seg.up-themesw .up-seg-btn:hover,
+.up-root .up-seg.up-themesw .up-seg-btn.is-active { color: var(--vc-text); }
+/* Bevor core gemessen hat (oder wo der Streifen abgeschaltet ist), traegt der gewaehlte Knopf die
+   Flaeche selbst -- dieselbe wie das ::before. Danach gibt er sie ab (.is-gleitend > button). */
+.up-root .up-seg.up-themesw:not(.is-gleitend) .up-seg-btn.is-active {
+  background: var(--vc-switch-pill); box-shadow: 0 0 0 1px var(--vc-switch-border), var(--up-e-1); }
+.up-root .up-seg.up-themesw .up-seg-btn:focus-visible { outline: 0;
+  box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
 /* ---------- "X mentioned?" yes/no cell ----------
    Shared by urls-table and responses-table (both had their own byte-identical copy under a local

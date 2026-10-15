@@ -725,8 +725,10 @@
              in dieser App "gut" heisst. */
           /* up-pille: eine Plakette mit Rahmen wie der Tarif daneben -- kein Messwert, also
              nicht der rahmenlose Sentiment-Balken (29.09.). */
+          /* Der Punkt ist eine FLAECHE und traegt darum Geists Green 700 (--vt-up-flaeche, 15.10.),
+             nicht die Schriftstufe 900 von --vt-up. */
           return '<span class="up-sent up-pille uts-active">' +
-                   '<span class="up-sent-dot" style="background:var(--vt-up)"></span>' +
+                   '<span class="up-sent-dot" style="background:var(--vt-up-flaeche, var(--vt-up))"></span>' +
                    '<span class="up-sent-val">' + esc(UC.t("Active")) + '</span>' +
                  '</span>';
         }

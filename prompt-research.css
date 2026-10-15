@@ -621,7 +621,8 @@
 .upr-menu-item svg { width: 16px; height: 16px; flex: 0 0 auto; display: block; }
 /* Siehe core: --vt-down traegt im Dunkeln #d25d5d, das Literal hier zeigte dort das helle Rot. */
 .upr-menu-item.is-danger { color: var(--vt-down, #b0200c); }
-.upr-menu-item.is-danger:hover { background: color-mix(in srgb, #b0200c 8%, transparent); }
+/* Der Grund aus der Marke statt aus dem alten Rot (15.10., Geist Red 900 -- im Dunkeln das hellere). */
+.upr-menu-item.is-danger:hover { background: color-mix(in srgb, var(--vt-down) 8%, transparent); }
 /* Column widths for core's .up-thead/.up-row grid. Prompt gets the room, actions a fixed lane.
    No scrollport here any more: the page scrolls, so core's .up-sticky .up-box (overflow:visible)
    applies and the column header pins to the viewport under the toolbar instead of to this box. */
