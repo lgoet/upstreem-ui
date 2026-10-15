@@ -97,10 +97,11 @@
          16  ganzseitige Flaeche (material-fullscreen)
      Gegenueber vorher (4/6/8/10/12/16/32) ist das ueberall eine Stufe kleiner: 8 -> 6,
      10 und 12 -> 8, 14 und 16 -> 12, 32 -> 16. Gemessen am 15.10. VOR dem Umbau: 956 Angaben,
-     davon 809 als feste Zahl in 38 Werten (8px allein 160-mal, 9px 48-mal, 12px 71-mal fuer
-     Knopf, Feld, Tabelle und Menue zugleich) und nur 147 ueber ein Token. Seitdem laeuft jede
-     Angabe ueber ein Token; fest stehen nur noch 0, 50 %, die Haarlinien unter 4 (Flaggen 3,
-     Markierungsstriche 2 und 1) und die em-Werte in Miras Text.
+     davon 735 mit fester Zahl in 36 Werten (8px allein 160-mal, 9px 48-mal, 12px 71-mal fuer
+     Knopf, Feld, Tabelle und Menue zugleich) und nur 152 ueber ein Token. Danach 811 ueber ein
+     Token; fest stehen nur noch 0, 50 %, die Haarlinien unter 4 (Flaggen 3, Markierungsstriche
+     2 und 1), die em-Werte in Miras Text und drei Skelett- bzw. Command-Menu-Werte, die deren
+     eigene Arbeit sind (skeleton.css, .mqa-enter, logoStyle der Tabellenskelette).
      Zwei Stufen tragen denselben Wert, weil zwei alte Rollen auf dieselbe Geist-Stufe fallen:
      s = xs (Chip und Punkt, beide 4) und xl = l (Karte innen und Kachel, beide 8). Die Namen
      bleiben getrennt -- sie sagen, WAS gerundet wird, und eine spaetere Abweichung kostet dann
