@@ -3678,11 +3678,18 @@
          antwortet mit dem Satz des Drawers; ein Knopf, der einem owner faelschlich fehlt, waere
          schlimmer (dieselbe Abwaegung wie prompts-data.js).
          Die Rolle des Hosts aus per_target (je Ziel); das oberste host_role nur, wenn per_target
-         den Host nicht fuehrt -- bei EINEM Host ist das erste gueltige Ziel dann ohnehin seins. */
+         den Host nicht fuehrt -- bei EINEM Host ist das erste gueltige Ziel dann ohnehin seins.
+         NICHT NEBEN EINEM TIPPFEHLER (Nutzer 16.10.): steht fuer diesen Host oben "Did you mean
+         ...?" (tipps, also similar_host der Datenbank), ist er wahrscheinlich vertippt.
+         domain_classify_v1 prueft nicht, ob die Domain je zitiert wurde, und gilt rueckwirkend --
+         ein Klick truege die falsch geschriebene Domain dauerhaft als eigene ein. Nach "Use {host}"
+         oder einer anderen Eingabe fragt die Vorschau neu, und fuer das dann eingetragene Ziel gilt
+         wieder diese Regel. Verglichen wird ueber den Host wie bei tipps selbst (www weg, klein). */
       var darf = typeof d.can_classify === "boolean" ? d.can_classify : (UC.teamRolle ? UC.teamRolle() : "") !== "member";
+      var vertippt = !!h1 && tipps.some(function (v) { return v.alt === h1; });
       var hostRolle = d.host_role, je1 = pts.filter(function (pt) { return pt.host && String(pt.host) === h1; });
       if (je1.length) hostRolle = je1.some(function (pt) { return pt.host_role === "own"; }) ? "own" : je1[0].host_role;
-      if (h1 && darf && hostRolle !== "own" && !(p.eigen && p.eigen[h1])) {
+      if (h1 && darf && !vertippt && hostRolle !== "own" && !(p.eigen && p.eigen[h1])) {
         html += '<div class="uev-vz-eigen"><span>' + esc(ersetze(t("{host} doesn't count as your domain yet."), { host: h1 })) + '</span>' +
           '<button type="button" class="up-btn-sec uev-vz-eigenbtn" data-eigen-host="' + esc(h1) + '"' + (p.eigenLaeuft ? ' disabled' : '') + '>' +
             (p.eigenLaeuft ? '<span class="up-modal-spin"></span>' : '') + '<span>' + esc(t("Count as your domain")) + '</span></button></div>';
