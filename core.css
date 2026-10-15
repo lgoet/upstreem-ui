@@ -4856,13 +4856,16 @@
    Schalter. An = is-soft (leichter Grund, wie oben), aus = gestrichelter Rand ohne Grund in der
    vierten Schriftfarbe: "gibt es, ist aber nicht zu sehen". Hoehe, Radius und Rand bleiben die des
    Chips. */
-.up-spaltchips { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 0 4px; }
+/* 10 seitlich wie jede Zeile eines Dropdowns (.up-pop-row) -- die Chips stehen auf der Textkante. */
+.up-spaltchips { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 10px 4px; }
 .up-entchip.up-spaltchip { padding: 0 10px; font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-text); }
 .up-entchip.up-spaltchip.is-aus { border-style: dashed; background: transparent; color: var(--vc-fourth); }
 .up-entchip.up-spaltchip.is-aus:hover { color: var(--vc-text); border-color: var(--vc-hover-border); }
 .up-entchip.up-spaltchip.is-locked { cursor: default; }
 /* Eine Zeile "Name ........ Bedienelement" in einem Dropdown (Row height, Grouping im Display-Menue). */
-.up-pop-feld { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; }
+.up-pop-feld { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; padding: 0 10px; }
+/* Der Kopf ueber Feldern und Chips steht auf derselben Kante wie sie (sonst 0 seitlich). */
+.up-pop-head.up-pop-head-feld { padding-left: 10px; padding-right: 10px; }
 /* Der Segmentstreifen darin steht RECHTS neben einem Namen, also so breit wie sein Inhalt statt
    der ganzen Zeile, und 28 hoch (--up-h-seg) statt 34 -- Schiene UND Knoepfe zusammen, sonst
    stoesst die Pille an den Rand. Radius 8 bleibt. */

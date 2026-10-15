@@ -110,9 +110,12 @@
      Im Dunkeln bleibt es bei --up-sel-bg (siehe unten): dort ist heller richtig. */
   --usn-sel: color-mix(in srgb, var(--vc-text) 7%, transparent);
   /* Die AKTIVE Zeile hat einen eigenen Wert, weil sie nicht dasselbe leisten muss wie der
-     Hover: sie steht dauerhaft da. 7% waren dafuer zu kraeftig -- 5% von #1f1f1b auf der jetzt
-     weissen Leiste ergeben rund #f2f2f2. Der Hover bleibt bei seinen 7%, sonst verschwindet er. */
-  --usn-akt: color-mix(in srgb, var(--vc-text) 5%, transparent);
+     Hover: sie steht dauerhaft da. 7% waren dafuer einmal zu kraeftig -- auf der damals WEISSEN
+     Leiste. Auf der grauen (#f9f8f9) ergaben 5% nur noch #eeedee: Helligkeitsabstand dL* 4,1,
+     Kontrast 1,11 -- gemeldet 15.10. als "etwas zu gering". Zum Vergleich die Notion-nahen Token
+     (8% auf #f9f8f7): dL* 5,4. Jetzt 7%: #eae9e9, dL* 5,3, Kontrast 1,14 (gemessen). Der Hover einer Zeile ist die Haelfte von
+     --usn-sel (3,5%) und bleibt damit klar darunter. */
+  --usn-akt: color-mix(in srgb, var(--vc-text) 7%, transparent);
   font-family: inherit;
   -webkit-font-smoothing: antialiased;
   box-sizing: border-box;

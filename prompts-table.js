@@ -399,9 +399,14 @@
        150 hier liessen die Visibility-Spalte neben den beiden 128er wie eine andere Art Spalte
        aussehen. Deckel und Mindestbreite von Sentiment uebernommen -- Rank hat mit 90 dieselbe
        Deckelung, nur eine tiefere Untergrenze. */
-    { key: "visibility", label: "Visibility",      w: "minmax(120px, 128px)", min: 120, prio: 70 },
-    { key: "rank",       label: "Rank",            w: "minmax(90px, 128px)",  min: 90,  dropAt: "vnarrow", prio: 40 },
-    { key: "sentiment",  label: "Sentiment",       w: "minmax(120px, 128px)", min: 120, dropAt: "narrow",  prio: 30 },
+    /* MINDESTBREITE NACH DEM KOPF (15.10., gemeldet: "Rank steht als R..., Visibility als
+       Visi..."): ein Kopf traegt Wort, Info-Zeichen, Sortierpfeile und 28px Polster, Visibility
+       dazu das Logo der Marke. Gemessen: Visibility braucht 137, Rank 98, Sentiment 125 -- die
+       alten Untergrenzen (120/90/120) und der Deckel 128 lagen darunter. Jetzt je etwas darueber;
+       der Deckel waechst mit, damit die drei Kennzahlspalten nebeneinander gleich wirken. */
+    { key: "visibility", label: "Visibility",      w: "minmax(144px, 152px)", min: 144, prio: 70 },
+    { key: "rank",       label: "Rank",            w: "minmax(108px, 136px)", min: 108, dropAt: "vnarrow", prio: 40 },
+    { key: "sentiment",  label: "Sentiment",       w: "minmax(132px, 144px)", min: 132, dropAt: "narrow",  prio: 30 },
     /* 178px, same as urls-table's identical column: 4 × 32px avatars (−6px overlap each) plus
        the "+N" label plus the cell's own 28px padding, with headroom for the hover spread.
        A %-based floor let it collapse below that and clipped the stack. */
@@ -2697,6 +2702,12 @@
       btn.setAttribute("aria-label", "Switch to list view");
       btn.innerHTML = SIDEBAR_ICON;
       elHeading.insertBefore(btn, elHeading.firstChild);
+      /* In der einen Leiste ist die Ueberschrift ausgeblendet -- und mit ihr dieser Knopf, der
+         einzige Weg zurueck zur Gruppenliste, wenn sie zu ist (15.10. gemeldet). Er steht dort
+         links im Kopf der Spalte "Prompt", wo vorher "Prompts" stand. Sein Klick wird vor dem
+         Sortieren der Spalte abgefangen (data-grp-widebtn, siehe Klickweg). */
+      var thPrompt = LEISTE ? root.querySelector(".up-thead .up-th-prompt") : null;
+      if (thPrompt) thPrompt.insertBefore(btn, thPrompt.firstChild);
     })();
 
     function populateGroupMenu(){
@@ -4470,8 +4481,11 @@
       if (!elDispFuss){
         elDispFuss = document.createElement("div");
         elDispFuss.className = "upt-disp-fuss";
+        /* Eine volle Menuezeile wie "Reset Filters" der Filterleiste (.up-optrow), keine kleine
+           Textaktion -- so endet das Menue mit derselben Luft wie jedes andere Dropdown. */
         elDispFuss.innerHTML = '<div class="up-pop-div"></div>' +
-          '<button class="up-pop-action upt-disp-reset" type="button" data-disp-reset>Reset to default</button>';
+          '<button class="up-optrow upt-disp-reset" type="button" data-disp-reset>' +
+            '<span>Reset to default</span><span class="upt-disp-reset-ic">' + UC.icon("refreshCw", 2) + '</span></button>';
       }
       return elDispFuss;
     }
@@ -5022,6 +5036,14 @@
         search.cancel(); runSearch();
         state.softReload = false;
         fire("data-brand-fn", "uptBrand", { brand_mentioned: "" });
+        /* In der einen Leiste stehen alle Filter im Menue "Filters" -- "Reset Filters" im
+           Leerzustand muss auch die leeren (15.10. gemeldet: blieben stehen). Ueber den Reset der
+           Filterleiste: jeder Filter leert sich ueber seinen eigenen Weg und meldet sich, auch
+           Prompt type und die Markenfilter dieser Tabelle; die Seite laedt einmal (buendelt). */
+        if (LEISTE){
+          var fb = root.querySelector(".upt-scope .ufb-root");
+          if (fb && fb.__ufbCtrl && typeof fb.__ufbCtrl.reset === "function"){ try { fb.__ufbCtrl.reset(); } catch(e2){} }
+        }
         return;
       }
 

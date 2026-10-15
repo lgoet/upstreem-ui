@@ -1397,7 +1397,20 @@
    6px Luecke) gilt hier nicht -- vier Klassen schlagen ihre zwei. */
 .upt-group-menu.upt-disp-grp .up-pop-feld .up-dense { display: inline-flex; gap: 0; }
 .upt-group-menu.upt-disp-grp .up-pop-feld .up-dense-btn { flex: 0 0 auto; }
-.upt-disp-fuss { display: flex; flex-direction: column; align-items: flex-start; }
+/* POLSTER WIE JEDES ANDERE DROPDOWN (15.10. gemeldet: links, rechts und unten zu knapp): das Menue
+   selbst traegt --up-dd-pad (8), jede Zeile darin nochmal 10 seitlich wie .up-pop-row -- die Texte
+   stehen damit auf derselben Kante wie in Sortier- und Spaltenmenue. Die Bausteine aus core
+   (.up-pop-feld, Spalten-Chips, Kopf) bringen das selbst mit; hier die Teile der Gruppierung. */
+.upt-group-menu.upt-disp-grp .upt-group-new { width: calc(100% - 20px); margin: 4px 10px 0; }
+.upt-group-menu.upt-disp-grp .upt-group-onlycustom { margin-left: 10px; margin-right: 10px; }
+/* Der Fuss als volle Menuezeile ("Reset Filters" der Filterleiste als Vorbild): 34 hoch, Text
+   auf der Zeilenkante, Zeichen rechts, Sekundaerfarbe bis zum Ueberfahren. */
+.upt-disp-fuss { display: flex; flex-direction: column; }
+.up-optrow.upt-disp-reset { min-height: 34px; padding: 0 10px; justify-content: space-between;
+  font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); }
+.up-optrow.upt-disp-reset:hover { color: var(--vc-text); }
+.upt-disp-reset-ic { display: inline-flex; flex: 0 0 16px; width: 16px; height: 16px; }
+.upt-disp-reset-ic svg { width: 16px; height: 16px; display: block; }
 /* Telefon: so breit wie das Fenster erlaubt, und das Menue scrollt in sich. */
 .upt-root[data-leiste="yes"].is-vnarrow .up-cols-menu { width: min(340px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow-y: auto; }
 
@@ -1405,25 +1418,6 @@
    aus core (.up-seg.is-lg: Schiene und Knoepfe 32, Polster 16). Die Pille misst core selbst. */
 .upt-root[data-leiste="yes"] .upt-status { height: var(--up-h-btn); }
 .upt-root[data-leiste="yes"] .upt-status-btn { height: var(--up-h-btn); padding: 0 16px; }
-
-/* Export wie in Entwurf B: leiser Knopf ohne Flaeche (Zeichen und Wort in der Sekundaerfarbe,
-   beim Ueberfahren der Grund der Werkzeugknoepfe). Gilt nur fuer den Export DIESER Leiste --
-   .up-export traegt auch der Kopfknopf "Add Prompts" der Seite. Fuenf Klassen schlagen die dunkle
-   Regel von core. */
-.up-root.upt-root[data-leiste="yes"] .up-head-tools .up-export { background: transparent; color: var(--vc-muted); opacity: 1;
-  font-size: var(--up-fs-m); font-weight: var(--up-fw-m); padding: 0 10px; transition: background-color 120ms ease, color 120ms ease; }
-.up-root.upt-root[data-leiste="yes"] .up-head-tools .up-export:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
-
-/* Die Tabelle ueber die VOLLE BREITE der Ansicht (15.10., "wie man das aus anderen SaaS kennt"):
-   der Kasten greift um den Rand der Ansicht nach aussen (16 links und rechts, .wirt-ansicht der
-   App), die Kopfzeile und jede Zeile holen ihn innen wieder herein. So laufen die Linien zwischen
-   den Zeilen und der Grund beim Ueberfahren bis an die Kanten, und der Inhalt steht buendig mit der
-   Leiste darueber. Die Spaltenbreiten rechnet das Spalten-Kit an der Tabellenwurzel -- deren
-   Breite ist genau der Innenraum der Zeilen, also passt es. */
-.upt-root[data-leiste="yes"] { --upt-auslauf: 16px; }
-.upt-root[data-leiste="yes"] .up-box { margin-left: calc(-1 * var(--upt-auslauf)); margin-right: calc(-1 * var(--upt-auslauf)); }
-.upt-root[data-leiste="yes"] .up-thead,
-.upt-root[data-leiste="yes"] .up-tbody > .up-row { padding-left: var(--upt-auslauf); padding-right: var(--upt-auslauf); }
 
 /* Die Kopfzeile flacher (15.10.: "die Grids stehen gefuehlt etwas ab" -- die senkrechten Linien
    ragten 14px ueber den Text): 36 statt 45. Der klebende Kopf einer offenen Gruppe und der Kopf der

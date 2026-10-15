@@ -2675,6 +2675,11 @@
     "is all of": "ist alles von",
     "None": "Keine",
     "Reset to default": "Zurücksetzen",
+    /* Gespeicherte Filter im Menue "Filters" (15.10.). */
+    "Saved filters": "Gespeicherte Filter",
+    "Save current filters": "Aktuelle Filter speichern",
+    "Name for these filters": "Name für diese Filter",
+    "Delete {name}": "{name} löschen",
     /* Das Konto-Menue der Seitenleiste (07.09. ausdruecklich angefordert). */
     "Account Settings": "Kontoeinstellungen",
     "System": "System",
@@ -7334,7 +7339,7 @@
                        '" type="button" data-rowheight="' + o.key + '">' + esc(t_(o.label)) + '</button>';
               }).join("") + '</div></div><div class="up-pop-div"></div>'
           : "";
-        menu.innerHTML = hoehe + head + chips;
+        menu.innerHTML = hoehe + head.replace('class="up-pop-head up-pop-head-row"', 'class="up-pop-head up-pop-head-row up-pop-head-feld"') + chips;
       } else {
         menu.innerHTML = head + rows + densePart + rowHeightPart;
       }

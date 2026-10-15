@@ -477,7 +477,8 @@
 .ufb-chip-teil + .ufb-chip-teil { border-left: 1px solid var(--vc-border); }
 .ufb-chip-name { padding-left: 10px; color: var(--vc-muted); }
 .ufb-chip-op { color: var(--vc-third); font-weight: var(--up-fw-n); }
-.ufb-chip-wert { color: var(--vc-text); min-width: 0; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+/* 280: zwei Modellnamen wie "Google AI Overviews" passen, bei 220 waren beide gekuerzt (gemessen 15.10.). */
+.ufb-chip-wert { color: var(--vc-text); min-width: 0; max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
 /* Vier Klassen: die Regel fuer das X im Chip oben hat drei (.up-entchip.ufb-chip .ufb-chip-x). */
 .up-entchip.ufb-chip.is-teile .ufb-chip-x { align-self: stretch; height: auto; flex-basis: 28px; width: 28px; border-radius: 0;
   border-left: 1px solid var(--vc-border); }
@@ -490,3 +491,49 @@
   background: var(--vt-logo-bg); flex: 0 0 auto; }
 .ufb-bild img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ufb-chip-ic .ufb-bild { width: 14px; height: 14px; }
+
+/* Die Werte im dreiteiligen Chip mit ihrem Bild davor (wertHtml, 15.10.): der farbige Strich eines
+   Topics in der Form der Tabelle (3x12, rund), Logo, Flagge und Intent-Zeichen auf 14 wie das
+   Zeichen des Chips. Zwischen zwei Werten 8px statt eines Kommas -- das Bild trennt schon. */
+.ufb-chip-wert { display: inline-flex; align-items: center; gap: 8px; }
+.ufb-wert-eins { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.ufb-wert-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ufb-wert-farbe { flex: 0 0 3px; width: 3px; height: 12px; border-radius: var(--up-r-voll); }
+.ufb-wert-emoji { font-size: var(--up-fs-s); line-height: 1; }
+.ufb-wert-bild { flex: 0 0 auto; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; }
+.ufb-wert-bild img, .ufb-wert-bild svg { width: 100%; height: 100%; display: block; }
+/* Die Flagge behaelt ihr Seitenverhaeltnis; Rundung und Rand bringt sie aus markets-filter.css mit. */
+.ufb-wert-bild.umk-opt-flag { width: 16px; height: 12px; }
+.ufb-wert-bild svg { color: var(--vc-third); }
+.ufb-wert-mehr { color: var(--vc-third); }
+
+/* "Clear All" in der grossen Form als Chip mit leichtem Grund (15.10. verlangt): Hoehe, Radius und
+   Rand der Chips daneben, Grund --vc-heading-bg wie .up-entchip.is-soft. */
+.ufb-root[data-form="gross"] .ufb-clear {
+  height: 32px; padding: 0 10px; border: 1px solid var(--vc-border); border-radius: 8px;
+  background: var(--vc-heading-bg); color: var(--vc-muted); font-size: var(--up-fs-m);
+  transition: color 120ms ease, border-color 120ms ease;
+}
+.ufb-root[data-form="gross"] .ufb-clear:hover { color: var(--vc-text); border-color: var(--vc-hover-border); }
+.up-root[data-theme="dark"] .ufb-root[data-form="gross"] .ufb-clear,
+.up-root[data-theme="dark"].ufb-root[data-form="gross"] .ufb-clear { border-color: transparent; }
+
+/* Gespeicherte Filter (gesp*, 15.10.): nur in der grossen Form. Kopf in der Art von "Mentioned
+   brands", Zeilen als .up-optrow wie "Reset Filters", das X wie am Chip. Das Namensfeld ist das
+   Suchfeld der Marken-Dropdowns (.up-ment-search) mit "Save" daneben. */
+.ufb-gesp { display: none; }
+.ufb-root[data-form="gross"] .ufb-gesp { display: block; }
+.ufb-root[data-form="gross"] .ufb-gesp.is-leer { display: none; }
+.ufb-gesp-kopf { padding: 4px 9px 6px; font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-third); }
+.ufb-gesp-zeile { display: flex; align-items: center; gap: 4px; }
+.ufb-gesp-laden { flex: 1 1 auto; min-width: 0; min-height: 34px; padding: 0 9px; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); }
+.ufb-gesp-neu { min-height: 34px; padding: 0 9px; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); }
+.ufb-gesp-neu:hover { color: var(--vc-text); }
+.ufb-gesp-neu[hidden], .ufb-gesp-feld[hidden] { display: none; }
+.ufb-gesp-ic { flex: 0 0 16px; width: 16px; height: 16px; display: inline-flex; color: var(--vc-muted); }
+.ufb-gesp-ic svg { width: 16px; height: 16px; display: block; }
+.ufb-gesp-nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ufb-gesp-zeile .ufb-gesp-weg { flex: 0 0 24px; width: 24px; height: 24px; margin-right: 5px; }
+.ufb-gesp-feld { display: flex; align-items: center; gap: 6px; padding: 4px 9px 2px; }
+.ufb-gesp-feld .ufb-gesp-name { flex: 1 1 auto; min-width: 0; margin: 0; }
+.ufb-gesp-feld .ufb-gesp-sichern { flex: 0 0 auto; }

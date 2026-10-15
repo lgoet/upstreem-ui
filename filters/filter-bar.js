@@ -603,6 +603,20 @@
                   '</button>' +
                 '</div>' +
               '</div>' +
+              /* GESPEICHERTE FILTER (15.10., nur in der grossen Form -- filter-bar.css blendet den
+                 Abschnitt sonst aus): die Auswahl aller Filter dieses Menues unter einem Namen, im
+                 localStorage dieses Nutzers, keine Datenbank. Siehe gesp* unten. */
+              '<div class="ufb-gesp">' +
+                '<div class="ufb-div"></div>' +
+                '<div class="ufb-gesp-kopf">Saved filters</div>' +
+                '<div class="ufb-gesp-liste"></div>' +
+                '<button class="up-optrow ufb-gesp-neu" type="button" data-gesp-neu>' +
+                  '<span class="ufb-gesp-ic">' + UC.icon("bookmarkPlus", 2) + '</span><span>Save current filters</span></button>' +
+                '<div class="ufb-gesp-feld" hidden>' +
+                  '<input class="up-ment-search ufb-gesp-name" type="text" maxlength="40" placeholder="Name" aria-label="Name for these filters" autocomplete="off" spellcheck="false"/>' +
+                  '<button class="up-btn-sec ufb-gesp-sichern" type="button" data-gesp-sichern>Save</button>' +
+                '</div>' +
+              '</div>' +
               /* EINE Schale fuer alle drei Filter, nicht eine je Zeile. Sie rueckt an die offene
                  Zeile und nimmt deren Hoehe an -- der weisse Kasten bleibt beim Wechsel sichtbar
                  und rutscht, statt aus- und wieder einzublenden. Das Verhalten steht in
@@ -964,6 +978,38 @@
       }
       /* Die Bedingung im Chip der grossen Form: ein Wert "is", mehrere "is any of" -- ausser bei
          Topics im Modus "and" (Prompts, die ALLE gewaehlten Topics tragen): "is all of". */
+      /* DAS BILD VOR JEDEM WERT im Chip der grossen Form (15.10., wie Entwurf B): bei Topics der
+         farbige Strich (oder das Emoji des Topics), bei Models das Logo, bei Markets die Flagge, bei
+         Intent das Zeichen, bei den Marken das Logo. Genommen wird es aus der Zeile des Filters
+         selbst -- dieselbe Quelle wie der Name (namen()), also kein zweiter Renderer. */
+      var WERT_BILD = { models: ".umf-opt-logo", markets: ".umk-opt-flag", intents: ".uif-opt-main > svg", brands: ".up-ment-logo" };
+      function wertBild(f, id) {
+        var w = eingezogen[f.key];
+        if (!w) return "";
+        var row = null;
+        try { row = w.querySelector(f.opt + '[' + f.keyAttr + '="' + cssEsc(id) + '"]'); } catch (e) { row = null; }
+        if (!row) return "";
+        if (f.key === "topics") {
+          var em = row.querySelector(".utf-opt-emoji");
+          if (em) return '<span class="ufb-wert-emoji">' + esc(em.textContent) + '</span>';
+          var farbe = String(row.style.getPropertyValue("--utf-tc") || "").trim();
+          return /^#[0-9a-f]{3,8}$/i.test(farbe) ? '<span class="ufb-wert-farbe" style="background:' + farbe + '"></span>' : "";
+        }
+        var sel = WERT_BILD[f.key];
+        var b = sel ? row.querySelector(sel) : null;
+        if (!b) return "";
+        var k = b.cloneNode(true);
+        k.classList.add("ufb-wert-bild");
+        return k.outerHTML;
+      }
+      function wertHtml(f) {
+        var ids = auswahl(f), nm = namen(f);
+        var teile = ids.slice(0, CHIP_NAMEN).map(function (id, i) {
+          return '<span class="ufb-wert-eins">' + wertBild(f, id) + '<span class="ufb-wert-name">' + esc(nm[i] || id) + '</span></span>';
+        });
+        if (ids.length > CHIP_NAMEN) teile.push('<span class="ufb-wert-mehr">+' + (ids.length - CHIP_NAMEN) + '</span>');
+        return teile.join("");
+      }
       function bedingung(f) {
         if (auswahl(f).length <= 1) return "is";
         if (f.key === "topics") {
@@ -1008,7 +1054,7 @@
           if (klick) innen = '<button class="ufb-chip-auf" type="button" data-chip-open="' + esc(f.key) + '" aria-haspopup="menu">' +
             '<span class="ufb-chip-teil ufb-chip-name"><span class="ufb-chip-ic">' + zeichenVon(f) + '</span>' + esc(tr(chipVon(f))) + '</span>' +
             '<span class="ufb-chip-teil ufb-chip-op">' + esc(tr(bedingung(f))) + '</span>' +
-            '<span class="ufb-chip-teil ufb-chip-wert">' + esc(c.wert) + '</span>' +
+            '<span class="ufb-chip-teil ufb-chip-wert">' + wertHtml(f) + '</span>' +
           '</button>';
           teile.push('<span class="up-entchip is-static ufb-chip' + (klick ? " is-klick is-teile" : "") + '" data-chip="' + esc(f.key) + '">' +
             innen +
@@ -1044,12 +1090,116 @@
       var vomChip = false;
       function hinein() { return schmal() || vomChip; }
 
+      /* ---------------- gespeicherte Filter (15.10.) ----------------
+         "bitte eine Moeglichkeit, die Filterauswahl zu speichern -- im localStorage reicht, keine
+         DB-Aktion". Gespeichert wird die Auswahl JEDES Filters dieses Menues (bei Topics auch der
+         Modus and/or), unter dem Schluessel dieser Leiste und des Nutzers (UC.prefKey). Laden
+         setzt jeden Filter ueber seinen eigenen Weg: still setzen, dann dasselbe Ereignis, das ein
+         Klick im Filter ausloest (Vorbild ads.js topicWaehlen) -- Intent und die Filter der
+         Prompt-Tabelle melden sich beim Setzen selbst. Die Seite laedt danach einmal (sie buendelt). */
+      var GESP_KEY = UC.prefKey ? UC.prefKey("ufb_gespeichert__" + instanceId) : "ufb_gespeichert__" + instanceId;
+      var GESP_MAX = 20;
+      function gespLesen() {
+        var roh = UC.prefGet ? UC.prefGet(GESP_KEY) : null, l = null;
+        try { l = JSON.parse(roh || "[]"); } catch (e) { l = []; }
+        return Array.isArray(l) ? l.filter(function (x) { return x && typeof x.name === "string" && x.werte && typeof x.werte === "object"; }) : [];
+      }
+      function gespSchreiben(l) { if (UC.prefSet) UC.prefSet(GESP_KEY, JSON.stringify(l)); }
+      function normCsv(v) { return String(v || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean).sort().join(","); }
+      function topicsModus() {
+        var w = eingezogen.topics, c = w && w.__utfCtrl, sel = null;
+        try { sel = c && typeof c.getSelected === "function" ? c.getSelected() : null; } catch (e) { sel = null; }
+        return sel && sel.tag_mode === "and" ? "and" : "or";
+      }
+      function aktuelleWerte() {
+        var w = {};
+        liste.forEach(function (f) { w[f.key] = auswahl(f).join(","); });
+        if (w.topics) w.topics_mode = topicsModus();
+        return w;
+      }
+      function gespGleich(a) {
+        var jetzt = aktuelleWerte();
+        return liste.every(function (f) { return normCsv(a[f.key]) === normCsv(jetzt[f.key]); }) &&
+          (!jetzt.topics || (a.topics_mode || "or") === jetzt.topics_mode);
+      }
+      function setzenMitEreignis(f, csv, modus) {
+        var w = eingezogen[f.key], c = w && w[f.ctrl];
+        if (!c || typeof c.setSelected !== "function") return;
+        if (f.key === "topics" && modus && typeof c.setMode === "function") { try { c.setMode(modus); } catch (e) {} }
+        try { c.setSelected(csv); } catch (e) {}
+        if (f.key !== "topics" && f.key !== "models" && f.key !== "markets") return;
+        var sel = {};
+        try { sel = c.getSelected() || {}; } catch (e) { sel = {}; }
+        var d = { instance_id: String(w.getAttribute("data-instance") || ""), count: normCsv(csv) ? normCsv(csv).split(",").length : 0 };
+        Object.keys(sel).forEach(function (k) { d[k] = sel[k]; });
+        try { w.dispatchEvent(new CustomEvent(f.evt, { bubbles: true, detail: d })); } catch (e) {}
+      }
+      function gespLaden(i) {
+        var e = gespLesen()[i];
+        if (!e) return;
+        liste.forEach(function (f) {
+          var soll = String(e.werte[f.key] || "");
+          var modus = f.key === "topics" ? (e.werte.topics_mode === "and" ? "and" : "or") : null;
+          var gleich = normCsv(soll) === normCsv(auswahl(f).join(","));
+          if (gleich && (f.key !== "topics" || !soll || modus === topicsModus())) return;
+          setzenMitEreignis(f, soll, modus);
+        });
+        spiegelnAlle();
+        render();
+      }
+      function gespWeg(i) {
+        var l = gespLesen();
+        if (!l[i]) return;
+        l.splice(i, 1);
+        gespSchreiben(l);
+        gespZeichnen();
+      }
+      function gespFeld(an) {
+        var feld = root.querySelector(".ufb-gesp-feld"), neu = root.querySelector(".ufb-gesp-neu");
+        if (!feld) return;
+        feld.hidden = !an;
+        if (neu) neu.hidden = !!an;
+        if (an) { var inp = feld.querySelector(".ufb-gesp-name"); if (inp) { inp.value = ""; try { inp.focus(); } catch (e) {} } }
+      }
+      function gespSichern() {
+        var inp = root.querySelector(".ufb-gesp-name");
+        var l = gespLesen();
+        var name = String(inp && inp.value || "").trim() || (tr("Filters") + " " + (l.length + 1));
+        l = l.filter(function (x) { return x.name !== name; });
+        l.push({ name: name, werte: aktuelleWerte() });
+        if (l.length > GESP_MAX) l = l.slice(l.length - GESP_MAX);
+        gespSchreiben(l);
+        gespFeld(false);
+        gespZeichnen();
+      }
+      function gespZeichnen() {
+        var box = root.querySelector(".ufb-gesp");
+        if (!box) return;
+        var l = gespLesen(), an = aktiv().length > 0;
+        var el = box.querySelector(".ufb-gesp-liste");
+        el.innerHTML = l.map(function (x, i) {
+          var akt = gespGleich(x.werte);
+          return '<div class="ufb-gesp-zeile' + (akt ? " is-aktiv" : "") + '">' +
+            '<button class="up-optrow ufb-gesp-laden" type="button" data-gesp-laden="' + i + '">' +
+              '<span class="ufb-gesp-ic">' + (akt ? UC.icon("check", 2.4) : "") + '</span>' +
+              '<span class="ufb-gesp-nm">' + esc(x.name) + '</span></button>' +
+            '<button class="ufb-chip-x ufb-gesp-weg" type="button" data-gesp-weg="' + i + '" aria-label="' +
+              esc(tr("Delete {name}").split("{name}").join(x.name)) + '">' + UC.icon("x", 2.6) + '</button>' +
+          '</div>';
+        }).join("");
+        /* Speichern nur, wenn etwas gesetzt ist; der ganze Abschnitt nur, wenn es etwas zu zeigen gibt. */
+        var neu = box.querySelector(".ufb-gesp-neu"), feld = box.querySelector(".ufb-gesp-feld");
+        if (neu && feld && feld.hidden) neu.hidden = !an;
+        box.classList.toggle("is-leer", !l.length && !an);
+      }
+
       /* ---------------- render ---------------- */
       function render() {
         var an = aktiv().length > 0 || brandedAn();
         root.classList.toggle("has-filters", an);
         root.classList.toggle("ohne-branded", !brandedHier());
         zeilenStand();
+        gespZeichnen();
         brandedSyncen();
         renderChips();
         /* Umbrechen haengt NUR an der Seitenbreite; das Hineingehen auch am Oeffnen vom Chip. Beides
@@ -1295,6 +1445,12 @@
         }
         var cx = e.target.closest("[data-chip-clear]");
         if (cx) { einenLeeren(cx.getAttribute("data-chip-clear")); return; }
+        if (e.target.closest("[data-gesp-neu]")) { e.stopPropagation(); gespFeld(true); return; }
+        if (e.target.closest("[data-gesp-sichern]")) { e.stopPropagation(); gespSichern(); return; }
+        var gw = e.target.closest("[data-gesp-weg]");
+        if (gw) { e.stopPropagation(); gespWeg(+gw.getAttribute("data-gesp-weg")); return; }
+        var gl = e.target.closest("[data-gesp-laden]");
+        if (gl) { e.stopPropagation(); gespLaden(+gl.getAttribute("data-gesp-laden")); pop.close(true); return; }
         var co = e.target.closest("[data-chip-open]");
         if (co) {
           var k = co.getAttribute("data-chip-open");
@@ -1320,6 +1476,9 @@
       /* Branded aendert sich auch von einer ANDEREN Leiste aus (gemeinsamer Stand in core). */
       window.addEventListener("up-intentfilter", function () { if (document.contains(root)) render(); });
       root.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && e.target && e.target.classList && e.target.classList.contains("ufb-gesp-name")) {
+          e.preventDefault(); gespSichern(); return;
+        }
         if (e.key !== "Enter" && e.key !== " ") return;
         var z = e.target.closest && e.target.closest("[data-ufb-branded]");
         if (!z) return;
