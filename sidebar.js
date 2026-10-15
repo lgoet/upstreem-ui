@@ -511,6 +511,37 @@
         '<div class="up-filter-menu usn-menu is-acc" data-acc-menu aria-hidden="true" data-up-noescape></div>' +
       '</div>';
 
+    /* ---- Der Umschalter im Seitenkopf (16.10. angefordert) ----
+       "Sidebar-Button im Mobile: in die richtige Topbar, ganz links, nicht floaten." Den Knopf
+       baut core in jeden Seitenkopf (UC.seitenleistenKnopfEinsetzen, core.css "DER UMSCHALTER
+       DER SEITENLEISTE"); diese Leiste sagt nur, wann er zu sehen ist, und hoert auf seinen Klick.
+       modusMelden schreibt den Modus an <html> -- dieselben Namen wie mode im usnState-Payload.
+       An <html> und nicht an der Leiste: der Knopf steht in den Seiten, nicht in ihr. */
+    function modusMelden(m){
+      try {
+        var html = document.documentElement;
+        if (html.getAttribute("data-usn-modus") !== m) html.setAttribute("data-usn-modus", m);
+      } catch(e){}
+    }
+    /* Der schwebende Knopf (.usn-fab) bleibt als RUECKFALL: er erscheint nur noch, wenn die offene
+       Ansicht keinen Umschalter im Kopf zeigt -- eine Seite ohne Seitenkopf haette auf dem Telefon
+       sonst keinen Weg zur Navigation. Heute hat jede Ansicht einen; gezaehlt wird trotzdem, weil
+       eine neue Ansicht ohne Kopf sonst still in der Sackgasse endet.
+       Gesucht in der offenen Ansicht (.view-on, Kopf-Skript): die geparkten stehen mit Deckkraft 0
+       weiter im Layout, ihre Knoepfe haetten Rechtecke. getClientRects und nicht istSichtbar --
+       die Ansicht blendet mit Deckkraft 0 ein, und in genau dem Moment stuende sonst kurz der
+       schwebende Knopf da. Rechnet nur im hint-Zustand, also nur auf dem Telefon. */
+    function kopfKnopfDa(){
+      var v = document.querySelector('[id^="view-"].view-on');
+      var l = (v || document).querySelectorAll(".up-ph-seitenleiste");
+      for (var i = 0; i < l.length; i++) if (l[i].getClientRects().length) return true;
+      return false;
+    }
+    function fabPruefen(){
+      var an = state.klasse === "hint" && !state.offen && !kopfKnopfDa();
+      fab.classList.toggle("is-on", an);
+    }
+
     /* Zustand VOR dem Einhaengen setzen. Sonst steht die Leiste einen Frame lang auf ihrer
        Grundbreite von 250px und faellt danach auf 64 -- sichtbar als kurzes Aufklappen bei jedem
        Neuaufbau des Elements, und Bubble baut es bei jeder Navigation neu.
@@ -522,6 +553,9 @@
       var k = w >= BREIT ? "wide" : (w >= MINI ? "mini" : "hint");
       if (k === "hint") bar.classList.add("is-hidden");
       else if (k === "mini" || state.eingeklappt) bar.classList.add("is-mini");
+      /* Der Modus an <html> schon hier (16.10., siehe modusMelden): der Umschalter im Seitenkopf
+         haengt daran und soll im selben Bild wie die Leiste stehen, nicht erst nach anwenden(). */
+      modusMelden(k === "wide" && state.eingeklappt ? "mini" : k);
     })();
     document.body.appendChild(scrim);
     document.body.appendChild(bar);
@@ -620,9 +654,13 @@
       if (mini && state.umbenennen){ state.umbenennen = null; renderNav(); }
       bar.classList.toggle("is-mini", mini);
       bar.classList.toggle("is-hidden", hint && !state.offen);
+      /* Der Modus an <html> fuer den Umschalter im Seitenkopf (modusMelden oben) -- VOR
+         fabPruefen, das ihn ueber die Sichtbarkeit dieser Knoepfe mitliest. */
+      modusMelden(hint ? "hint" : (mini ? "mini" : "wide"));
       /* Der Knopf verschwindet, sobald die Leiste draussen ist: sonst laege er auf dem
-         Team-Logo, und zum Schliessen gibt es den Schleier daneben. */
-      fab.classList.toggle("is-on", hint && !state.offen);
+         Team-Logo, und zum Schliessen gibt es den Schleier daneben. Und er erscheint nur noch,
+         wo der Seitenkopf keinen Umschalter hat (fabPruefen). */
+      fabPruefen();
       scrim.classList.toggle("is-on", hint && state.offen);
 
       /* Beim Wechsel zwischen wide und mini fahren die zugeklappten Gruppen auf (eingeklappt ist
@@ -1545,6 +1583,29 @@
 
     fab.addEventListener("click", function(){ state.offen = !state.offen; anwenden(); });
     scrim.addEventListener("click", function(){ state.offen = false; anwenden(); });
+    /* Der Umschalter im Seitenkopf (core, seitenleistenKnopf) meldet seinen Klick an window.
+       Dasselbe wie der Klick auf den schwebenden Knopf -- nur im hint-Zustand, sonst ist er nicht
+       zu sehen. Eine Leiste, die nicht mehr im Dokument steht (Bubble hat sie neu gebaut, die
+       neue hoert selbst zu), tut nichts. */
+    function kopfKlick(){
+      if (!bar.isConnected || state.klasse !== "hint") return;
+      state.offen = !state.offen;
+      anwenden();
+    }
+    /* Ein Kopf ist dazugekommen (core meldet es) oder die Ansicht wechselt: schwebenden Knopf
+       neu entscheiden. Nach dem Wechsel und nicht davor -- onViewChange meldet, bevor showView
+       die Ansicht umschaltet; Zurueck/Vor schaltet ohne showView (popstate). Gesammelt in EINEN
+       Lauf: beim Seitenaufbau melden sich bis zu 14 Koepfe im selben Takt, und fabPruefen misst
+       (im hint-Zustand) ein Layout. */
+    var kopfUhr = null;
+    function kopfNeu(){
+      if (kopfUhr) return;
+      kopfUhr = setTimeout(function(){ kopfUhr = null; if (bar.isConnected) fabPruefen(); }, 0);
+    }
+    window.addEventListener("up-seitenleiste", kopfKlick);
+    window.addEventListener("up-seitenleiste-knopf", kopfNeu);
+    window.addEventListener("popstate", kopfNeu);
+    var ansichtAus = UC.onViewChange ? UC.onViewChange(kopfNeu) : null;
     /* Klick daneben und Escape fuer die Menues macht makePopover. Hier bleibt nur die
        ausgefahrene Leiste auf dem Telefon -- und die erst, wenn kein Menue mehr offen ist,
        sonst raeumt ein Escape beides auf einmal weg. */
@@ -2054,6 +2115,13 @@
       },
       destroy: function(){
         [bar, fab, scrim].forEach(function(el){ if (el.parentNode) el.parentNode.removeChild(el); });
+        /* Ohne Leiste hat der Umschalter im Seitenkopf nichts mehr zu oeffnen. */
+        window.removeEventListener("up-seitenleiste", kopfKlick);
+        window.removeEventListener("up-seitenleiste-knopf", kopfNeu);
+        window.removeEventListener("popstate", kopfNeu);
+        if (kopfUhr){ clearTimeout(kopfUhr); kopfUhr = null; }
+        if (typeof ansichtAus === "function") ansichtAus();
+        try { document.documentElement.removeAttribute("data-usn-modus"); } catch(e){}
         root.__usnController = null;
       }
     };

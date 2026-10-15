@@ -1684,6 +1684,46 @@ Suchfelds und bei jeder Label-Änderung eines Trigger-Buttons. Hilfsfunktionen, 
 Labels setzen, dürfen deshalb **keine frühen `return`s** haben, sonst läuft die
 Neumessung nur in einem der Zweige.
 
+### Seitenleiste auf dem Telefon: der Umschalter im Seitenkopf (seit 16.10.)
+
+„Sidebar-Button im Mobile: in die richtige Topbar, ganz links, nicht floaten.“ Bis zum 16.10.
+schwebte im hint-Zustand ein eigener Knopf (`.usn-fab`, fixed bei 0/32, 32 × 36, Schatten e-3)
+über der Seite – seit die Leiste der Tabellen auch auf dem Telefon klebt, lag er auf der linken
+unteren Ecke ihres ersten Knopfs. Jetzt:
+
+```
+Wann          nur im hint-Zustand der Seitenleiste (Fenster unter 500, Leiste ganz weg);
+              sidebar.js schreibt den Zustand an <html> (data-usn-modus = hint | mini | wide,
+              dieselben Namen wie mode in usnState). Desktop und Tablet: display none, kein Platz
+Wo            erstes Kind der Kopfzeile (.up-ph-top), vor der Krume – gesetzt von
+              UC.makePageCrumbs, also in JEDEM Seitenkopf samt Platzhalter (seitenVorab);
+              Mira (eigener Kopf) setzt ihn per UC.seitenleistenKnopfEinsetzen(zeile, vorKind)
+              vor ihr erstes Kind in .am-hero-inner. Nur in einer Ansicht ([id^="view-"]) – im
+              Schaufenster der Landingpage nicht
+Knopf         .up-ph-iconbtn (32 × 32, Radius --up-r-m, Zeichen 15, Fokusring) wie Refresh und
+              Docs in derselben Zeile, Zeichen panelLeft (1.8), aria-label "Open navigation";
+              kein Schatten, scrollt mit der Kopfzeile weg (nur die Leiste klebt)
+Lage          Box 8 vom Rand (--up-ph-rand-r, wie die Knöpfe rechts), Zeichen damit bei 16 –
+              auf der Kante, an der sonst das Krumenzeichen steht; 8 zur Krume, Krumenzeichen
+              bei 48. Vertikal mittig in der 48er-Zeile (8–40). Mira: in ihrem Kopf bei 32/16,
+              gespiegelt zu "Chats" (32 vom rechten Rand), Farbe wie dieses (--am-muted-2),
+              Fokusring innen (der Kopf kappt seitlich)
+Klick         CustomEvent "up-seitenleiste" an window -> sidebar.js wie bisher der eigene Knopf:
+              auf/zu, Schleier, Escape, Klick daneben unverändert
+Platz         die Krume wächst in den freien Platz (sonst verteilt space-between sie in die
+              Mitte); Hinzufügen-Knöpfe zeigen ihre kurze Fassung, wo die Wurzel kein is-narrow
+              hat (Opportunities: "Look for"); reicht es nicht, fällt der Name der ersten
+              Krumenstufe weg, das Zeichen bleibt (.is-knapp, gemessen mit Range in
+              krumeEinpassen): "Zeichen > All Prompts"
+Rückfall      .usn-fab bleibt, erscheint aber nur, wenn die offene Ansicht (.view-on) keinen
+              sichtbaren Kopfknopf hat – eine Seite ohne Kopf landet sonst in der Sackgasse
+```
+
+Gemessen 375/390/430, alle 13 Seiten über die Seitenleiste geöffnet: Knopf 8/8 32 × 32, Mitte
+gleich Krume und rechten Knöpfen, keine Überlappung in der Kopfzeile, keine abgeschnittene Krume,
+die klebende Leiste nirgends mehr überdeckt (vorher traf `elementFromPoint` bei 21/43 und 26/46
+den schwebenden Knopf). Desktop 1440: alle Kopfzeilen auf den Zehntelpixel wie vorher.
+
 ### Sticky Table-Header (nur wenn die Komponente direkt injiziert ist)
 
 Ein seitenweit klebender Header ist nur möglich, wenn die Komponente **direkt in die
@@ -2453,6 +2493,7 @@ Komponente wirklich zusätzlich hat (eine Zeilenhöhe, eine Index-Zelle, ein Act
 | Klebender Fuß (8e) – auch Leiste und Spaltenkopf auf dem Telefon (8b) | `data-kleb-fuss="yes"` an der Wurzel (mit `UC.makeSticky`), direkt `UC.klebFuss(root)` |
 | Gesamtzeile (8e) | `UC.makeZaehlZeile({ root, nach, praefix, instanceId, spalten, laedt, anzahl, rechnen, quelle, cols })`, darunter `UC.makeSumZeile`, `UC.sumPaarHtml` |
 | Offenes Band (8f) | `UC.bandTeile(band, teile)` (mit `teile.auge`), `UC.bandAus(band, aus, { id, setzen })` setzt den Umschalter im Seitenkopf, `UC.bandSchalterHtml({ aus, id, klein })`, `UC.bandAusGemerkt(id)`, `UC.bandAusMerken(id, aus)` |
+| Umschalter der Seitenleiste im Kopf (10) | kommt mit `UC.makePageCrumbs`; ein eigener Kopf ohne Krume: `UC.seitenleistenKnopfEinsetzen(zeile, vorKind)` |
 | Bubble-Klempnerei: Root-Registry, iframe-Forwarder, Wheel, Init-Kaskade, Stub-Replay | `UC.makeMount({rootClass, ctrlProp, resolveLocal, queue, initRoot, api, forwardShape})` |
 
 CSS dazu kommt aus `core.css`: `.up-root`, `.up-head*`, `.up-iconbtn`, `.up-thead/.up-row/.up-th/.up-td`,
