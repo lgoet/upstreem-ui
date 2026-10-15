@@ -1173,8 +1173,9 @@
          Die Seitenleiste traegt keinen (sidebar.css), wie im Licht.
          Eine Stufe ruhiger (15.10. abends) bleibt der Wert, nur der Grund steigt: auf der Seite
          (#0a0a0a) #191919, der Rand darueber #202020; auf dem Inhalt (#0f0f0f) #1d1d1d. In den
-         Preferences liegt die Wahl auf der Seitenspalte (--vc-heading-bg, gemessen #1f1f1f, vorher
-         #1a1a1a) und ergibt dort #2c2c2c (vorher #282828). */
+         Preferences und in Miras Einstellungen liegt die Wahl seit dem 16.10. auf dem Seitengrund
+         (die Spalte traegt --up-seite-dunkel, preferences.css) und ergibt wie in der Seitenleiste
+         #191919; bis dahin auf der Kopfflaeche #1f1f1f, dort #2c2c2c. */
       --up-wahl-bg: rgba(255,255,255,.06);
       --up-wahl-rand: rgba(255,255,255,.03);
     }
@@ -6770,7 +6771,9 @@
      setzt -- eine geerbte Marke verliert gegen jede eigene Deklaration. Gemessen am 15.10., als sie
      hier fehlten: die Seitenspalte der Preferences stand in #f9f8f9 im dunklen Fenster.
      Eine Stufe ruhiger (15.10. abends): Grund #0f0f0f, Rand #333333, leise Flaeche #1f1f1f,
-     Skelett #1e1e1e; der Schalter aus bleibt #454545. */
+     Skelett #1e1e1e; der Schalter aus bleibt #454545. Die Seitenspalte der Preferences (und von
+     Miras Einstellungen) traegt seit dem 16.10. nicht mehr die leise Flaeche, sondern den
+     Seitengrund wie die Seitenleiste der App (preferences.css, .ums-aside). */
   --vc-text: #ededed; --vc-muted: #c9c9c9; --vc-third: #a1a1a1; --vc-fourth: #7d7d7d; --vc-border: #333333;
   --vc-heading-bg: #1f1f1f; --vc-hover-border: #707070; --up-surface: #0f0f0f; --vc-sk: #1e1e1e; --up-switch-off: #454545;
   --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);

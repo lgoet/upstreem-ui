@@ -49,6 +49,18 @@
   padding: 16px 12px; overflow-y: auto;
   display: flex; flex-direction: column; gap: 2px;
 }
+/* DIE SPALTE TRAEGT DEN SEITENGRUND, in beiden Themen (16.10. geprueft: "entsprechen die Farben
+   unseren Darkmode-Hintergrundfarben?"). Sie ist die Seitenleiste dieses Fensters -- dieselbe Liste,
+   dieselben Zustaende wie .usn-item --, also auch derselbe Grund wie die Seitenleiste der App
+   (sidebar.css, --usn-bg). Gemessen vorher: hell #f9f8f9 (die alte Kopfflaeche der Karte, eine
+   Stufe neben dem Grau #fafafa), dunkel #1f1f1f -- die Hover- und Kopfflaeche, 16 Stufen UEBER dem
+   Inhalt (#0f0f0f), waehrend sie im Licht darunter liegt. Damit stand im Dunkeln ein hellgrauer
+   Block neben der Seitenleiste in #0a0a0a. Jetzt beide Themen gleich gebaut: Spalte = Seite (#fafafa
+   / #0a0a0a), Inhalt = Karte (#fff / #0f0f0f), 5 Stufen dazwischen, die Kante rechts trennt.
+   Nur mit den Markern am <html>: ohne sie (Landingpage, erstes Bild) gibt es die Seitentoene nicht,
+   dort bleibt die Kopfflaeche oben. (0,4,1) gegen die Grundregel und die Mira-Fassung (0,2,0). */
+html[data-up-hell="grau"] .ums-backdrop:not([data-theme="dark"]) .ums-aside { background: var(--up-seite-grau); }
+html[data-up-dunkel="geist"] .ums-backdrop[data-theme="dark"] .ums-aside { background: var(--up-seite-dunkel); }
 /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
    Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
 .ums-navhead {
@@ -97,6 +109,14 @@ html[data-up-hell="grau"] .ums-backdrop:not([data-theme="dark"]) .ums-aside .ums
 html[data-up-dunkel="geist"] .ums-backdrop[data-theme="dark"] .ums-aside .ums-nav.is-on,
 html[data-up-dunkel="geist"] .ums-backdrop[data-theme="dark"] .ums-aside .ums-nav.is-on:hover {
   background: var(--up-wahl-bg); box-shadow: inset 0 0 0 1px var(--up-wahl-rand); }
+/* Der Hover im Dunkeln nach Geist wie im Licht und wie in der Seitenleiste (sidebar.css: Zeile die
+   Haelfte von 7 % der Schrift). Die Regel oben (--up-sel-bg zur Haelfte) war fuer die deckende Leiter
+   gedacht und ergab gemessen #212121 auf der alten Spalte (#1f1f1f, 2 Stufen -- unsichtbar), auf dem
+   Seitengrund #171717, praktisch gleich dem Gewaehlten (#191919). So: Hover #121212, gewaehlt #191919,
+   wie in der Seitenleiste (im Licht #f2f2f2 und #ededed auf #fafafa). (0,6,1); das Gewaehlte unter dem
+   Zeiger behaelt seinen Grund ueber die Regel darueber (0,7,1). */
+html[data-up-dunkel="geist"] .ums-backdrop[data-theme="dark"] .ums-aside .ums-nav:hover {
+  background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); }
 
 /* Rechtliches am Fuss der Navigation (14.10. abends, aus dem Konto-Menue hierher): untereinander,
    12px in der dritten Textfarbe wie .ums-navhead und auf dessen Textkante (10px). margin-top auto
@@ -201,9 +221,14 @@ html[data-up-dunkel="geist"] .ums-backdrop[data-theme="dark"] .ums-aside .ums-na
    selbst der Inhalt ist; was es mit dem Icon-Knopf teilt, ist die Schnittmenge "feste Groesse,
    Radius, Zeiger", und die hat jedes anklickbare Bild. Ein .up-iconbtn mit 72px und 999px Radius
    waere kein Icon-Knopf mehr, sondern nur noch dieser Fall unter fremdem Namen. */
+/* Der Grund ist der des Namensfeldes daneben (--vc-bg), nicht --vt-logo-bg (16.10.): das ist die
+   Kachel fuer FREMDE Logos und bleibt im Dunkeln hell (#e0e0e0), damit dunkle Markenzeichen lesbar
+   sind. Hier stand damit ohne Bild eine helle Scheibe im dunklen Fenster, und der Buchstabe darauf
+   (--vc-muted #c9c9c9) war kaum zu lesen (gerechnet 1,25:1). Im Licht sind beide Werte #fff -- dort
+   aendert sich nichts. */
 .ums-avatar {
   position: relative; width: 72px; height: 72px; border-radius: var(--up-r-voll); flex: 0 0 72px;
-  background: var(--vt-logo-bg); border: 1px solid var(--vc-border); padding: 0;
+  background: var(--vc-bg); border: 1px solid var(--vc-border); padding: 0;
   display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
   font-size: 24px; font-weight: 500; color: var(--vc-muted); user-select: none;
   cursor: pointer; font-family: inherit;

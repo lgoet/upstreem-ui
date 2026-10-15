@@ -137,9 +137,17 @@ Alpha 400; Secondary-Knopf Background 1, Hover Gray 200, Rand Gray 400.
 `--up-wahl-rand: rgba(255,255,255,.03)`. Durchscheinend statt deckend wie im Light, weil dieselbe
 Stufe auf `#000` (Seitenleiste) und `#0a0a0a` (Preferences) sichtbar bleiben muss; auf der Seite
 ergibt sie `#0f0f0f` -- in L* derselbe Schritt wie `#ededed` auf `#fafafa` (4,1 gegen 4,3).
-Seit „eine Stufe ruhiger“ auf der Seite `#0a0a0a` → `#191919`, in der Seitenspalte der Preferences
-(`#1f1f1f`) → `#2c2c2c`.
+Seit „eine Stufe ruhiger“ auf der Seite `#0a0a0a` → `#191919`.
 Seitenleiste ohne Rand, Sub-Navigation, Preferences, Events-Arten und gedrückte Knöpfe mit dem Hauch.
+
+**Die Seitenspalte der Preferences und von Miras Einstellungen** (`.ums-aside`, 16.10.) trägt den
+Seitengrund wie die Seitenleiste der App: Light `--up-seite-grau` (`#fafafa`), Dark
+`--up-seite-dunkel` (`#0a0a0a`); der Inhalt rechts ist die Karte (`#fff` / `#0f0f0f`). Gewählt und
+Hover sind die der Seitenleiste: Light `#ededed` / `#f2f2f2`, Dark `#191919` / `#121212` (Hover =
+3,5 % der Schrift, in beiden Themen), dazu der Hauch Rand am Gewählten. Bis zum 16.10. stand die
+Spalte auf der Kopffläche der Karte (`--vc-heading-bg`): Light `#f9f8f9`, Dark `#1f1f1f` -- im
+Dunkeln also 16 Stufen ÜBER dem Inhalt statt darunter, die Wahl dort `#2c2c2c`, der Hover `#212121`
+(2 Stufen, unsichtbar).
 
 **Dunkle Elemente im Light** (die Bulk-Leiste der Prompts-Tabelle ist im Light eine dunkle Leiste)
 lesen weiter die alte Zeile `[data-theme="dark"]` an `:root` mit den Linear-Werten -- das Light
