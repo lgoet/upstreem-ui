@@ -472,7 +472,9 @@
       if (!CHART_MODES[state.mode]) return;
       /* Der Fehlerfall kommt VOR dem Skelett: sonst laeuft der Ladezustand endlos weiter und
          sieht aus wie "gleich da", obwohl nichts mehr kommt. */
-      if (state.fehler) { line.empty(state.fehler); return; }
+      /* state.fehler ist ein Lese- oder Ladefehler (oder die abgelaufene Warte-Uhr): der knappe
+         Text, nie der Leerzustand -- leer und kaputt sind zwei Dinge (15.10.). */
+      if (state.fehler) { line.meldung(state.fehler); return; }
       if (istLaden() || !state.hasData) { line.skeleton(); return; }
       var p = state.series;
       /* Eine Serie aus einem anderen Modus kann hier nur noch stehen, wenn setSeries den Modus
@@ -486,7 +488,7 @@
         /* Muster, und die Beschriftung bleibt gross: Visibility, Ranking und Sentiment sind
            Glossarwoerter, kein Kleinschreiben. Vorher stand hier toLowerCase() -- im Deutschen
            waere daraus "warte auf visibility-Daten" geworden. */
-        if (!letzteKurve) line.empty(UC.t("Waiting for {mode} data.")
+        if (!letzteKurve) line.meldung(UC.t("Waiting for {mode} data.")
                                        .replace("{mode}", modeOf(state.mode).label));
         return;
       }

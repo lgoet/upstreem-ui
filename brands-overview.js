@@ -489,6 +489,7 @@
          noch da, wenn danach wieder echte Daten gezeichnet werden -- und ein zweites empty()
          haengte einen zweiten Kasten darunter. */
       var em = wrap.querySelector(".up-line-empty"); if (em) em.parentNode.removeChild(em);
+      var lz = wrap.querySelector(".up-chart-leer"); if (lz) lz.parentNode.removeChild(lz);
     }
     function skeleton(){
       destroy();
@@ -496,11 +497,22 @@
     }
     /* Gegenstueck zu skeleton(): der Zustand "es kam etwas an, aber es war unlesbar". Ohne das
        gab es im Landscape-Modus nur Skelett oder Zeichnung -- ein zerrissener Payload haette
-       also weitergeladen. Gleicher Kasten und gleiche Klasse wie in UC.makeLine.empty. */
-    function empty(msg){
+       also weitergeladen. Gleicher Kasten und gleiche Klasse wie in UC.makeLine.meldung. */
+    function meldung(msg){
       destroy();
       wrap.classList.remove("is-sk");
       wrap.insertAdjacentHTML("beforeend", '<div class="up-line-empty">' + UC.esc(msg || "No data") + '</div>');
+    }
+    /* Keine Marke mit beiden Werten: der Leerzustand der Charts aus core (15.10.), ueber der
+       ganzen Flaeche wie in UC.makeLine. Vorher stand hier ein ::after "No data" in 13px, ohne
+       Uebersetzung. Das Zeichen sind die vier Felder der Landschaft (dashboardSquare; layoutGrid
+       ist das Rautenzeichen der Gitteransicht und laese sich wie das Rang-# der Tabellen). */
+    function empty(){
+      destroy();
+      wrap.classList.remove("is-sk");
+      if (UC.chartLeerHtml) wrap.insertAdjacentHTML("beforeend", UC.chartLeerHtml({
+        icon: "dashboardSquare", gefiltert: !!(cfg.gefiltert && cfg.gefiltert())
+      }));
     }
     function render(rows){
       if (!isOwner()) return;
@@ -530,8 +542,8 @@
 
       var existing = window.Chart.getChart ? window.Chart.getChart(canvas) : null;
       if (existing) existing.destroy();
-      if (!pts.length){ chart = null; wrap.classList.add("is-empty"); return; }
-      wrap.classList.remove("is-empty");
+      if (!pts.length){ chart = null; empty(); return; }
+      var lz = wrap.querySelector(".up-chart-leer"); if (lz) lz.parentNode.removeChild(lz);
 
       var t = theme();
       var maxVis = Math.max.apply(null, pts.map(function(p){ return p.x; }).concat([0]));
@@ -577,7 +589,7 @@
       });
     }
     function resize(){ if (chart){ try { chart.resize(); } catch(e){} } }
-    return { render: render, skeleton: skeleton, empty: empty, destroy: destroy, resize: resize,
+    return { render: render, skeleton: skeleton, empty: empty, meldung: meldung, destroy: destroy, resize: resize,
              redraw: function(){ if (lastRows) render(lastRows); } };
   }
 
@@ -855,10 +867,14 @@
       wrap: lineWrap, canvas: lineCanvas, legend: legendEl,
       isDark: darkNow, isOwner: isOwner, gran: function(){ return curGran; },
       /* Eine Nachkommastelle -- vorgegeben. */
-      decimals: 1
+      decimals: 1,
+      /* Der Leerzustand sagt "No matching data", wenn die Seite gefiltert geladen hat (15.10.,
+         Feld gefiltert im Payload; ohne das Feld gilt ungefiltert). */
+      gefiltert: function(){ return !!state.gefiltert; }
     });
     var matrix = makeMatrix({
       wrap: mxWrap, canvas: mxCanvas, isDark: darkNow, isOwner: isOwner,
+      gefiltert: function(){ return !!state.gefiltert; },
       getYAxis: function(){ return yAxis; },
       onPick: function(id){ fireRaw("data-rowclick-fn", "uboRowClick", id); }
     });
@@ -921,8 +937,8 @@
          Tabelle daneben den Fehler schon zeigt. */
       if (state.leseFehler){
         root.classList.remove("is-line-loading"); scaleKit.close();
-        if (chartMode === "landscape"){ line.destroy(); matrix.empty("The data could not be read."); return; }
-        matrix.destroy(); line.empty("The data could not be read."); return;
+        if (chartMode === "landscape"){ line.destroy(); matrix.meldung("The data could not be read."); return; }
+        matrix.destroy(); line.meldung("The data could not be read."); return;
       }
       var loading = state.loading || !state.hasLine || state.linePending;
       root.classList.toggle("is-line-loading", loading);
@@ -2058,6 +2074,7 @@
         /* Nur eine echte Lieferung loescht den Vermerk -- ein reiner Theme-Render darf ihn nicht
            wegraeumen, sonst stuende danach der Leerzustand statt des Fehlers. */
         if (params.rows != null || params.series != null || params.table != null) state.leseFehler = false;
+        if (params.gefiltert != null) state.gefiltert = isYes(params.gefiltert);
         if (params.isDark != null){
           /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
              in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst

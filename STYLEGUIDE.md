@@ -1419,6 +1419,42 @@ in einem Tabellenkörper oder `.up-box`. Gefiltert bringt der Baustein die Lupe,
 und den Räum-Knopf mit; im Ruhefall gibt es kein Standardsymbol. Bis 15.10. Zeichen 28px ohne
 Kachel, Titel 14, Satz 12.5.
 
+### Die Chart-Fassung (`UC.chartLeerHtml`, seit 15.10.)
+
+Jeder leere Chart trägt denselben Leerzustand, gezeichnet von den Bausteinen selbst:
+`makeLine().empty()`, `makeTypeChart().empty()` (auch über `renderDonut`/`renderBars` mit leeren
+Daten) und `makeBarList().render([])`. Eine Komponente muss ihn nicht kennen. Flächen ohne diese
+Bausteine (Landschaft in brands-overview, Heatmap des Performance Radar) rufen
+`UC.chartLeerHtml({ titel, text, icon, gefiltert, fluss })` selbst.
+
+```
+Text       Titel "No data yet", Satz "Data will appear here once responses are collected for
+           this period."; gefiltert "No matching data" mit Lupe und "Try changing the filters
+           or the date range." Kein Knopf (im Chart hängt niemand an data-clearall).
+           Wer den Grund genauer kennt, gibt den Satz mit: empty({ text: "No URL types for
+           this period." }).
+Zeichen    Linie chartSpline, Ring donut, Balken chartBarDec, Landschaft und Heatmap
+           dashboardSquare (layoutGrid ist das Rautenzeichen der Gitteransicht, liest sich wie #)
+Lage       Hülle .up-chart-leer absolut über der GANZEN Chartfläche (inset 0), Inhalt senkrecht
+           mittig, Polster 16 24. Die Fläche behält die Höhe des Charts, die Seite springt nicht.
+Größe      nach der Fläche (Container-Query an der Hülle), nicht nach dem Aufrufer:
+             ab 220 hoch     Kachel, Titel, Satz (bis 202 mit Polster)
+             unter 220       Kachel und Titel, Abstand 16 (126)
+             unter 130       nur der Titel (56)
+             unter 280 breit ohne Satz
+Fluss      fluss: true für Flächen ohne eigene Höhe (Balkenliste): im Fluss, Polster 24,
+           immer kompakt (Kachel und Titel, 142)
+Wirt       makeTypeChart setzt .up-chart-leer-wirt (nur position: relative), solange der
+           Zustand im Körper steht; die Linie braucht nichts, .up-line-wrap ist positioniert
+```
+
+**Leer ist nicht kaputt.** Ein Lese- oder Ladefehler im Chart bleibt der knappe Text von vorher:
+`meldung("…")` an makeLine und makeTypeChart. `empty("Text")` mit einer Zeichenkette ist aus
+demselben Grund dasselbe wie `meldung` — ältere Aufrufer, die dort einen Fehler hineinreichen,
+zeigen weiter keinen Leerzustand. Gefiltert kommt aus `cfg.gefiltert()` der Bausteine; die
+Seiten (Dashboard, Brands, Citations) schicken dafür `gefiltert` im Payload, berechnet mit
+`UC.seitenFilterAktiv(f)` (Modelle, Märkte, Topics, Intent-Filter; der Zeitraum zählt nicht).
+
 ---
 
 ## 10. Layout-Verhalten (Responsive)

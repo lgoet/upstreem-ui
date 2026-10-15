@@ -175,7 +175,10 @@
       isDark: darkNow, isOwner: isOwner,
       gran: function(){ return curGran; },
       /* Ohne Nachkommastellen -- vorgegeben. Der Standard des Kits waere zwei. */
-      decimals: 0
+      decimals: 0,
+      /* Der Leerzustand sagt "No matching data", wenn die Seite gefiltert geladen hat (15.10.,
+         Feld gefiltert im Payload; ohne das Feld gilt ungefiltert). */
+      gefiltert: function(){ return !!state.gefiltert; }
     });
 
     /* ---------- render (two independent halves) ---------- */
@@ -213,7 +216,7 @@
       if (!isOwner()) return;
       /* Der Lesefehler schlaegt den Ladezustand: sonst dreht die Kurve weiter, waehrend die
          Tabelle daneben den Fehler schon zeigt. */
-      if (state.leseFehler){ root.classList.remove("is-line-loading"); closeScaleMenu(); line.empty("The data could not be read."); return; }
+      if (state.leseFehler){ root.classList.remove("is-line-loading"); closeScaleMenu(); line.meldung("The data could not be read."); return; }
       var loading = state.loading || !state.hasLine || state.linePending;
       /* The gear button (and, if it was somehow open when a reload started, its dropdown) has no
          business being reachable over a skeleton — there's nothing to configure yet. Plain
@@ -971,6 +974,7 @@
         /* Nur eine echte Lieferung loescht den Vermerk -- ein reiner Theme-Render darf ihn
            nicht wegraeumen, sonst stuende danach "No data" statt des Fehlers. */
         if (params.table != null || params.rows != null || params.series != null) state.leseFehler = false;
+        if (params.gefiltert != null) state.gefiltert = isYes(params.gefiltert);
         var __tbl = (params.table != null) ? params.table : (params.brands != null) ? params.brands : params.rows;
         if (__tbl != null){ state.tableRows = Array.isArray(__tbl) ? __tbl : []; state.hasTable = true; }
         if (params.series != null){

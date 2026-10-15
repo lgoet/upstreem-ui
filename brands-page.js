@@ -423,6 +423,8 @@
                 } else {
                   if (!state.firmen) { state.autoFirmen = (p.companies || []).map(function (c) { return c.company_id; }); persist(); }
                   p.instanceId = ids.ubo; p.isDark = isDark();
+                  /* Gefiltert geladen: ein leeres Ergebnis sagt dann "No matching data" (15.10.). */
+                  p.gefiltert = UC.seitenFilterAktiv ? UC.seitenFilterAktiv(f) : false;
                   if (state.meta && state.meta.inaktivZahl != null) p.totalCountInactive = state.meta.inaktivZahl;
                   try { setter("renderBrandsOverview")(p); } catch (err) {}
                 }
