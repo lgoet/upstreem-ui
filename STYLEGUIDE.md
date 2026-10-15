@@ -810,6 +810,25 @@ JS-Scroll-Listener nachgezogen (gegen `overflow:hidden`-Clipping). Ergebnis: das
 sprang beim Scrollen, weil JS-Repositioning immer eine Frame zu spät kommt. Verworfen. Details,
 Trade-off und die verbindliche Regel stehen in **Abschnitt 14**.
 
+### Untermenüs (`UC.makeSubmenu`, `.up-submenu`): Lage an der Inhaltsfläche (seit 16.10.)
+
+Gemessen wird nicht am Fenster, sondern an der **Inhaltsfläche** (`UC.inhaltsFlaeche`): rechts der
+Seitenleiste (`--up-sidebar-w`, die Leiste liegt `position: fixed` über dem vollbreiten `#main`)
+und vor der Innenkante von `#main`, je 8 Rand. Reihenfolge der Lagen:
+
+```
+1  rechts, volle Breite (300, --up-sub-w)       der Winkel der Zeile zeigt dorthin
+2  links, volle Breite                          .is-flipleft
+3  Seite mit mehr Platz, schmaler bis 220       --up-sub-platz   (1024 mit offener Leiste: 259)
+4  rechts in 220, über das Panel geschoben      --up-sub-schub   (920 mit offener Leiste: 61 px)
+```
+
+Geschoben wird nur nach **rechts**: dort liegen die Werte der Zeilen, links die Namen, auf die man
+zeigt, um die Zeile zu wechseln. „Unter dem Eintrag“ ist verworfen, weil es die Zeilen darunter ganz
+zudeckt. Die Lage bleibt beim Zugehen stehen (kein Sprung beim Ausblenden) und wird beim nächsten
+Öffnen neu gemessen. Unter 768 Seitenbreite gilt weiter das Hineingehen (`.is-drill`). Das Panel
+der Filterleiste rechnet seine eigene Lage an derselben Fläche.
+
 ### Staging-Semantik: Apply committet, Schließen verwirft
 
 Dropdowns **mit Apply-Button** (Typ-Filter, Mentioned-Brands) behandeln die
