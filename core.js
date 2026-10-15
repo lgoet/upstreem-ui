@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261143;
+  var BUILD = 20261144;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -15469,7 +15469,18 @@
      weiter, bis sie wieder zu sehen ist.
      cfg.kopf / cfg.fuss: Leiste und Pagination der Tabelle (ihre Groesse verschiebt Oberkante
      bzw. Rest). Rueckgabe { planen }: die Komponente ruft planen() nach jedem Zeichnen, das die
-     Pagination ein- oder ausblenden kann; hoechstens einmal je Bild. */
+     Pagination ein- oder ausblenden kann; hoechstens einmal je Bild.
+     cfg.seiteZuerst (15.10. spaet, Prompt Insights; gemeldet: "da ist ja Topbar, Navigation und
+     Filterbar sticky oben ... davor soll alles scrollen. So ist es auf den anderen Views ja
+     auch"): der Kasten wird nicht auf den Platz UNTER dem Seitenkopf bemessen, sondern auf den
+     Platz unter der GEKLEBTEN Leiste. Dann scrollt #main genau so weit, bis die Leiste an ihrer
+     Klebkante steht -- Seitenkopf und Reiter gehen weg wie auf jeder anderen Seite --, und ab da
+     scrollt nur noch der Kasten, die Pagination steht unten. Ohne das scrollte #main gar nicht,
+     und alles ueber der Tabelle stand wie angeheftet (b882286 bis hier). Der Rad-Uebergang unten
+     gehoert dazu: ohne ihn finge der Kasten das Rad schon in Ruhe ab, und der Seitenkopf ginge
+     ueber der Tabelle nie weg.
+     cfg.rollt: Selektor weiterer Flaechen der Wurzel, die wie der Kasten in sich scrollen (die
+     Gruppenliste der Prompt-Tabelle) -- dort gilt derselbe Rad-Uebergang. */
   /* DIE FILTER DER EINEN LEISTE (15.10., zuerst in der Prompt-Tabelle, abends nach core gehoben
      fuer Responses und alle weiteren Tabellen). Eine Tabelle hat Filter, die DATEN aendern ("<Marke>
      mentioned?", Mentioned brands, Rank, Sentiment ...). In der einen Leiste stehen sie nicht mehr
@@ -15791,6 +15802,49 @@
       _h = null;
       if (root.classList.contains("is-festhoehe")) root.classList.remove("is-festhoehe");
       root.style.removeProperty("--up-flach-box-h");
+      radPruefen();
+    }
+    /* DER RAD-UEBERGANG (cfg.seiteZuerst). Der Kasten ist dann ein Scrollbereich in einer Seite,
+       die selbst noch scrollen kann: ohne Eingriff naehme der Browser das Rad ueber der Tabelle
+       fuer den Kasten, und der Seitenkopf bliebe stehen, bis die letzte Zeile erreicht ist.
+       Solange #main noch Weg hat, geht ein Rad nach UNTEN deshalb an #main, der Rest desselben
+       Schritts an den Kasten (gemessen 1100x800: eine Raste von 100 -> 96 an #main, 4 an den
+       Kasten). Danach greift nichts mehr ein: der naechste Radschritt ist ein gewoehnlicher
+       Scrollvorgang im Kasten. Nach OBEN braucht es nichts: steht der Kasten oben, reicht der
+       Browser das Rad selbst an #main weiter (overscroll-behavior: auto, core.css
+       "Scroll-Chaining schuetzen").
+       Der Zuhoerer haengt NUR, solange #main noch Weg hat. Ein nicht-passiver Radzuhoerer laesst
+       jedes Rad ueber der Wurzel erst durch das Skript laufen, und im Normalfall (Kopf weg,
+       Tabelle scrollt) soll es ungebremst bleiben. Nur ueber dem Kasten (und cfg.rollt), nicht
+       ueber Leiste und Menues: ein offenes Menue mit Liste scrollt in sich. Horizontal, mit Shift
+       oder Strg (Zoom) bleibt alles beim Browser. */
+    var _rad = false, _radSc = null;
+    var RAD_ZIEL = ".up-box" + (cfg.rollt ? ", " + cfg.rollt : "");
+    function rad(e){
+      if (e.defaultPrevented || e.ctrlKey || e.shiftKey) return;
+      var ziel = e.target && e.target.closest ? e.target.closest(RAD_ZIEL) : null;
+      if (!ziel || !root.contains(ziel)) return;
+      var sc = scroller();
+      if (!sc) return;
+      var dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? sc.clientHeight : 1);
+      if (!(dy > 0) || Math.abs(e.deltaX) > dy) return;
+      var rest = sc.scrollHeight - sc.clientHeight - sc.scrollTop;
+      if (rest < 1) return;
+      e.preventDefault();
+      var schritt = Math.min(dy, rest);
+      sc.scrollTop += schritt;
+      if (ziel === box && dy - schritt >= 1) box.scrollTop += dy - schritt;
+    }
+    function radPruefen(){
+      if (!cfg.seiteZuerst) return;
+      var sc = root.isConnected ? scroller() : null;
+      if (_radSc && _radSc !== sc){ _radSc.removeEventListener("scroll", radPruefen); _radSc = null; }
+      if (sc && !_radSc){ _radSc = sc; sc.addEventListener("scroll", radPruefen, { passive: true }); }
+      var an = !!sc && root.classList.contains("is-festhoehe") && sc.scrollHeight - sc.clientHeight - sc.scrollTop >= 1;
+      if (an === _rad) return;
+      _rad = an;
+      if (an) root.addEventListener("wheel", rad, { passive: false });
+      else root.removeEventListener("wheel", rad, { passive: false });
     }
     function messen(){
       if (!root.isConnected) return;
@@ -15834,18 +15888,38 @@
       var boxUnten = box.getBoundingClientRect().bottom - kante;
       root.style.paddingBottom = pb0;
       var unten = Math.max(0, ende - extra - boxUnten);
+      /* cfg.seiteZuerst: um wie viel #main scrollen darf, bis die Leiste klebt. Die Leiste wird
+         dafuer kurz aus dem Kleben genommen (position static, im selben Zug zurueck wie das
+         Polster oben): klebt sie gerade, zeigte ihr Rechteck die Klebstelle statt ihrer Lage im
+         Fluss, und die Strecke kaeme zu kurz heraus. Die Klebkante ist Polster des Scrollbereichs
+         plus top der Leiste ("sticky top" misst gegen die Polsterkante, siehe syncDeckstreifen). */
+      var weg = 0;
+      var kopf = cfg.seiteZuerst && cfg.kopf && cfg.kopf.isConnected ? cfg.kopf : null;
+      if (kopf){
+        var kcs = null, scPad = 0;
+        try { kcs = window.getComputedStyle(kopf); scPad = parseFloat(window.getComputedStyle(sc).paddingTop) || 0; } catch(e){}
+        if (kcs && kcs.position === "sticky"){
+          var kTop = parseFloat(kcs.top) || 0, kPos0 = kopf.style.position;
+          kopf.style.position = "static";
+          var kopfOben = kopf.getBoundingClientRect().top - kante;
+          kopf.style.position = kPos0;
+          weg = Math.max(0, kopfOben - scPad - kTop);
+        }
+      }
       /* Die Oberkante zaehlt mit dem Kasten in seiner JETZIGEN Hoehe nicht -- oben haengt nur
          vom Inhalt darueber ab. Abgerundet auf 1/64 px (die Layout-Einheit des Browsers), nicht
          auf ganze Pixel: die Oberkante liegt oft auf einem Bruchteil (gemessen 160,04), und ganze
          Pixel liessen dann knapp einen Pixel frei unter der Pagination. Zu viel darf es nicht
-         sein, sonst scrollt #main um diesen Rest. */
-      var h = Math.floor((sc.clientHeight - oben - unten) * 64) / 64;
+         sein, sonst scrollt #main um diesen Rest (mit seiteZuerst: ueber die Klebkante hinaus,
+         und die Leiste schoebe sich ueber die Linie des Kastens). */
+      var h = Math.floor((sc.clientHeight + weg - oben - unten) * 64) / 64;
       if (!(h >= MIN)){ aus(); return; }
       if (_h == null || Math.abs(h - _h) >= 0.5 / 64){ _h = h; root.style.setProperty("--up-flach-box-h", h + "px"); }
       /* Beim ersten Einschalten noch einmal messen: die Seite darf mit is-festhoehe ihr Polster
          unter der Tabelle zuruecknehmen (prompts-page.css tut es), und dieser Platz gehoert dann
          dem Kasten. Das zweite Mal findet die Klasse schon vor -- keine Schleife. */
       if (!root.classList.contains("is-festhoehe")){ root.classList.add("is-festhoehe"); planen(); }
+      radPruefen();
     }
     _plan = rafThrottle(messen);
     /* Was die Oberkante oder den Rest darunter verschiebt: die Leiste (Chips brechen um), der

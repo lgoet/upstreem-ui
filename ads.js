@@ -103,6 +103,14 @@
     if (s.indexOf("//") === 0) s = "https:" + s;
     return /^https?:\/\/[^\s"'<>]+$/i.test(s) ? s : "";
   }
+  /* Der Export-Knopf der Leisten: dasselbe Markup wie in Prompt Insights und den Tabellen
+     (.up-export aus core, Feather "download"). Nicht UC.icon("download") -- das ist ein anderes
+     Zeichen, und der Knopf soll auf jeder Seite gleich aussehen. */
+  function exportKnopfHtml() {
+    return '<button class="up-export uad-export" type="button" aria-label="' + esc(t("Export")) + '"><svg viewBox="0 0 24 24" aria-hidden="true">' +
+      '<path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></svg>' +
+      '<span>' + esc(t("Export")) + '</span></button>';
+  }
 
   /* ---- Zahlen (CLAUDE.md 2b): Prozent mit einer Stelle, Anzahlen ganz ----------------------------
      PLAUSIBEL ODER GAR NICHT, wie in Shopping: ein Anteil von 250 % oder 1e21 Auftritte ist kein
@@ -382,6 +390,8 @@
         '<div class="up-root utf-root" data-instance="' + esc(idTopics) + '" data-local="yes" data-isdark="' + dunkelAttr + '"></div>' +
         '<div class="up-root umf-root" data-instance="' + esc(idModelle) + '" data-local="yes" data-isdark="' + dunkelAttr + '"></div>' +
         '<div class="up-root umk-root" data-instance="' + esc(idMaerkte) + '" data-local="yes" data-isdark="' + dunkelAttr + '"></div>' +
+        /* EXPORT rechts in der Filterzeile (16.10.), Form wie in Prompt Insights (.up-export aus core). */
+        exportKnopfHtml() +
       '</div>' +
       '<div class="uad-main"></div>';
     var elMain = root.querySelector(".uad-main"), elNav = root.querySelector(".uad-nav");
@@ -2399,6 +2409,57 @@
       } catch (e) {}
       if (UC.legacyCopy && UC.legacyCopy(text)) fertig();
     }
+
+    /* ---- Export (16.10.) ---------------------------------------------------------------------
+       Der Knopf oeffnet den Export-Dialog der App (export-data.js) mit den Datensaetzen von Ads,
+       vorgewaehlt nach Reiter, und gibt ihm Zeitraum und Filter der Seite mit. Die Parameter je
+       Datensatz sind die der Liste (Auftrag bubble/shopping_ads_export_db_auftrag_16_10.md) ohne
+       Team und Zeitraum -- die setzt der Dialog aus seiner eigenen Auswahl. Eine Suche geht nur von
+       dem Reiter mit, auf dem sie steht. Im Advertiser Detail gelten Ad Library und Prompts with Ads
+       fuer DIESEN Werbetreibenden (das zeigt die Seite). Ob es die Funktionen schon gibt, prueft
+       der Dialog selbst. */
+    function exportKennung() {
+      var k = str(root.getAttribute("data-export-instance")).trim();
+      if (k && !/^[A-Z_]{3,}$/.test(k)) return k;
+      var e = document.querySelector(".uex-root[data-instance]");
+      k = e ? str(e.getAttribute("data-instance")).trim() : "";
+      return k && !/^[A-Z_]{3,}$/.test(k) ? k : "";
+    }
+    function exportKontext() {
+      var s = state.seite, f = state.filter, lb = state.library;
+      var grund = grundBody();
+      delete grund.p_team; delete grund.p_date_from; delete grund.p_date_to;
+      function neu(extra) { return mit(mit({}, grund), extra || {}); }
+      var detail = s === "advertiser" && str(state.advertiser).trim() ? { p_advertisers: [str(state.advertiser).trim()] } : {};
+      var advSuche = s === "advertisers" ? suchText(state.advertisers.suche) : null;
+      /* Die Suche der Bibliothek gilt in beiden Modi (libAnfrage und promptAnfrage lesen sie). */
+      var libSuche = s === "library" ? suchText(lb.suche) : null;
+      var basis = filterAktiv();
+      return {
+        export_type: s === "library" ? (lb.modus === "prompts" ? "ads_prompts" : "ads_library") : s === "advertiser" ? "ads_library" : "ads_advertisers",
+        date_from: f.von || "", date_to: f.bis || "", preset: f.preset || "",
+        params: {
+          ads_advertisers: neu({ p_search: advSuche, p_sort: orderOf("advertisers", state.advertisers) }),
+          ads_library: neu(mit(mit({}, detail), { p_search: libSuche })),
+          ads_prompts: neu(mit(mit({}, detail), { p_search: libSuche, p_sort: orderOf("prompts", state.prompts) }))
+        },
+        filter_aktiv: {
+          ads_advertisers: basis || !!advSuche,
+          ads_library: basis || !!libSuche || !!detail.p_advertisers,
+          ads_prompts: basis || !!libSuche || !!detail.p_advertisers
+        }
+      };
+    }
+    function exportOeffnen() {
+      var k = exportKennung(), auf = false;
+      if (k && typeof window.upstreemExportOpen === "function") {
+        try { auf = window.upstreemExportOpen(k, exportKontext()) !== false; } catch (e) { auf = false; }
+      }
+      /* Kein stilles Nichts: ohne Dialog auf der Seite sagt es der Knopf. */
+      if (!auf && UC.toast) UC.toast(t("Export isn't available on this page"), { kind: "neutral" });
+    }
+    var elExport = root.querySelector(".uad-export");
+    if (elExport) elExport.addEventListener("click", function (e) { e.preventDefault(); exportOeffnen(); });
 
     /* ---- Klicks ---------------------------------------------------------------------------------- */
     root.addEventListener("click", function (e) {

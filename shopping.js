@@ -107,6 +107,14 @@
     var s = str(u).trim();
     return /^data:image\/(png|jpe?g|gif|webp|svg\+xml)[;,]/i.test(s) ? s : sichereUrl(s);
   }
+  /* Der Export-Knopf der Leisten: dasselbe Markup wie in Prompt Insights und den Tabellen
+     (.up-export aus core, Feather "download"). Nicht UC.icon("download") -- das ist ein anderes
+     Zeichen, und der Knopf soll auf jeder Seite gleich aussehen. */
+  function exportKnopfHtml() {
+    return '<button class="up-export ush-export" type="button" aria-label="' + esc(t("Export")) + '"><svg viewBox="0 0 24 24" aria-hidden="true">' +
+      '<path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></svg>' +
+      '<span>' + esc(t("Export")) + '</span></button>';
+  }
 
   /* ---- Zahlen, wie sie die Uebergabe festlegt (Abschnitt 4) --------------------------------
      Prozent mit einer Stelle, Position mit einer Stelle hinter der Raute, Anzahlen ganz. */
@@ -480,6 +488,9 @@
         '<div class="up-root utf-root" data-instance="' + esc(idTopics) + '" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
         '<div class="up-root umf-root" data-instance="' + esc(idModelle) + '" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
         '<div class="up-root umk-root" data-instance="' + esc(idMaerkte) + '" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
+        /* EXPORT rechts in der Filterzeile (16.10.), Form wie in Prompt Insights (.up-export aus
+           core). Nicht auf der Landingpage (ohneAdresse): dort gibt es keinen Export-Dialog. */
+        (ohneAdresse ? '' : exportKnopfHtml()) +
       '</div>' +
       '<div class="ush-main"></div>';
     var elMain = root.querySelector(".ush-main"), elNav = root.querySelector(".ush-nav");
@@ -2861,6 +2872,60 @@
       spaltenAnwenden("detail");
       pagerSetzen("detail", vorige.aufTotal);
     }
+
+    /* ---- Export (16.10.) ---------------------------------------------------------------------
+       Der Knopf oeffnet den Export-Dialog der App (export-data.js) mit den Datensaetzen von
+       Shopping, vorgewaehlt nach Reiter, und gibt ihm Zeitraum und Filter der Seite mit. Die
+       Parameter je Datensatz sind die der Liste (Auftrag bubble/shopping_ads_export_db_auftrag_16_10.md)
+       ohne Team und Zeitraum -- die setzt der Dialog aus seiner eigenen Auswahl. Was die Filterzeile
+       gerade NICHT zeigt, geht nicht mit: die Filter der Produkttabelle und jede Suche nur auf ihrem
+       Reiter, wie die Chips. Ob es die Funktionen schon gibt, prueft der Dialog selbst. */
+    function exportKennung() {
+      var k = str(root.getAttribute("data-export-instance")).trim();
+      if (k && !/^[A-Z_]{3,}$/.test(k)) return k;
+      var e = document.querySelector(".uex-root[data-instance]");
+      k = e ? str(e.getAttribute("data-instance")).trim() : "";
+      return k && !/^[A-Z_]{3,}$/.test(k) ? k : "";
+    }
+    function exportKontext() {
+      var s = state.seite, f = state.filter, tb = state.products, aufProd = s === "products";
+      var grund = grundBody();
+      delete grund.p_team; delete grund.p_date_from; delete grund.p_date_to;
+      function neu(extra) { return mit(mit({}, grund), extra || {}); }
+      var prod = aufProd ? {
+        p_segment: { you: 1, competition: 1, other: 1 }[tb.seg] ? tb.seg : null,
+        p_search: suchText(tb.suche), p_merchant: tb.haendler ? str(tb.haendler) : null,
+        p_company_id: tb.marke && tb.marke.id ? str(tb.marke.id) : null } : {};
+      var detail = s === "detail" && state.produktId;
+      var basis = filterAktiv();
+      return {
+        export_type: { products: "shop_products", brands: "shop_brands", merchants: "shop_merchants", detail: "shop_appearances" }[s] || "shop_products",
+        date_from: f.von || "", date_to: f.bis || "", preset: f.preset || "",
+        params: {
+          shop_products: neu(mit(mit({}, prod), { p_order: orderOf("products", tb) })),
+          shop_brands: neu({ p_search: s === "brands" ? suchText(state.brands.suche) : null, p_order: orderOf("brands", state.brands) }),
+          shop_merchants: neu({ p_search: s === "merchants" ? suchText(state.merchants.suche) : null, p_order: orderOf("merchants", state.merchants) }),
+          /* Im Product Detail die Auftritte DIESES Produkts (die Tabelle Recent Appearances). */
+          shop_appearances: neu(detail ? { p_source_product_id: str(state.produktId) } : prod)
+        },
+        filter_aktiv: {
+          shop_products: basis || !!(prod.p_segment || prod.p_search || prod.p_merchant || prod.p_company_id),
+          shop_brands: basis || !!(s === "brands" && suchText(state.brands.suche)),
+          shop_merchants: basis || !!(s === "merchants" && suchText(state.merchants.suche)),
+          shop_appearances: basis || !!detail || !!(prod.p_segment || prod.p_search || prod.p_merchant || prod.p_company_id)
+        }
+      };
+    }
+    function exportOeffnen() {
+      var k = exportKennung(), auf = false;
+      if (k && typeof window.upstreemExportOpen === "function") {
+        try { auf = window.upstreemExportOpen(k, exportKontext()) !== false; } catch (e) { auf = false; }
+      }
+      /* Kein stilles Nichts: ohne Dialog auf der Seite sagt es der Knopf. */
+      if (!auf && UC.toast) UC.toast(t("Export isn't available on this page"), { kind: "neutral" });
+    }
+    var elExport = root.querySelector(".ush-export");
+    if (elExport) elExport.addEventListener("click", function (e) { e.preventDefault(); exportOeffnen(); });
 
     /* ---- Klicks ---------------------------------------------------------------------------------- */
     root.addEventListener("click", function (e) {

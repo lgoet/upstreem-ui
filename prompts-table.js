@@ -5737,10 +5737,13 @@
 
     /* FESTE HOEHE, NUR DIE TABELLE SCROLLT (15.10., nur die eine Leiste): der Baustein steht seit
        dem Abend in core (UC.makeFestHoehe, dort die Begruendung jeder Messung). Die Seite nimmt
-       mit is-festhoehe ihr Polster unter der Tabelle zurueck (prompts-page.css). */
+       mit is-festhoehe ihr Polster unter der Tabelle zurueck (prompts-page.css).
+       seiteZuerst (15.10. spaet, gemeldet: "Topbar, Navigation und Filterbar sticky oben ... davor
+       soll alles scrollen"): Seitenkopf und Reiter scrollen weg, bis die Leiste klebt, erst dann
+       scrollt nur der Kasten. Die Gruppenliste scrollt in sich wie der Kasten (rollt). */
     var _fest = null;
     function festPlanen(){ if (_fest) _fest.planen(); }
-    if (LEISTE && UC.makeFestHoehe) _fest = UC.makeFestHoehe(root, { kopf: elHead, fuss: elFoot });
+    if (LEISTE && UC.makeFestHoehe) _fest = UC.makeFestHoehe(root, { kopf: elHead, fuss: elFoot, seiteZuerst: true, rollt: ".upt-grp-sidepanel" });
 
     function render(){
       renderTable(); renderCount(); syncHeadSorters(); syncColsBadge(); syncSelectAll(); syncBrand();
