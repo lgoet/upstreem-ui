@@ -269,8 +269,24 @@
       rows: r.map(promptZeile),
       totalCount: aktiv, totalCountInactive: inaktiv,
       without_topic: num(c.untagged_active),
+      summary: zuSumme(m.summary),
       total: total == null ? r.length : total
     };
+  }
+  /* meta.summary fuer die Gesamtzeile der Tabelle (15.10., Auftrag
+     bubble/prompts_summary_db_auftrag.md): gewichtete Gesamtwerte, Median und Zaehlwerte ueber
+     ALLE Prompts unter denselben Filtern wie die Zeilen. Nur die bestellten Felder, jedes als Zahl
+     oder null -- ein fehlendes oder unlesbares Feld wird null und in der Zeile "–", nie 0. Fehlt
+     der ganze Block (heute immer), null: die Tabelle zeigt die Anzahl trotzdem. */
+  var SUMME_FELDER = ["visibility_pct", "median_visibility", "prompts_zero_vis",
+                      "avg_rank", "median_rank", "rank1_count",
+                      "avg_sentiment", "median_sentiment", "sentiment_below_50",
+                      "prompts_no_runs", "branded_count"];
+  function zuSumme(s) {
+    if (!s || typeof s !== "object" || isArr(s)) return null;
+    var o = {};
+    SUMME_FELDER.forEach(function (k) { o[k] = num(s[k]); });
+    return o;
   }
   /* Die Zeilen einer aufgeklappten Gruppe: group_total_count auf jeder Zeile (prompts-table.js
      liest es von der ersten). total_count bleibt WEG -- die Tabelle wuerde damit ihre Kopfzahl

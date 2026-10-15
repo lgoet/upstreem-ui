@@ -689,6 +689,11 @@
       rows: Array.isArray(saved.rows) ? saved.rows : [],
       totalCount: saved.totalCount != null ? saved.totalCount : null,
       ohneTopic: saved.ohneTopic != null ? saved.ohneTopic : null,
+      /* meta.summary der Liste (15.10., die Gesamtzeile): gewichtete Gesamtwerte, Median und
+         Zaehlwerte ueber ALLE Prompts unter den Filtern -- rechnen kann die Tabelle das nicht, sie
+         kennt nur ihre Seite. null, solange die Datenbank es nicht schickt; die Zeile zeigt dann
+         "–". Mit gemerkt, damit ein Neuaufbau (Themenwechsel) nicht mit Strichen beginnt. */
+      summe: (saved.summe && typeof saved.summe === "object") ? saved.summe : null,
       hasData: !!saved.hasData,
       /* Der Lesefehler mit (27.09.: Themenwechsel -> Bubble baut das Element neu). Ohne ihn hiess
          ein Neuaufbau nach einem kaputten Payload "hasData, keine Zeilen" -- und das ist der
@@ -871,7 +876,7 @@
         branded: state.branded, intentDa: state.intentDa,
         brands: state.brands, mentionSel: state.mentionSel, mentionApplied: state.mentionApplied,
         status: state.status, topics: state.topics,
-        rows: state.rows, totalCount: state.totalCount, ohneTopic: state.ohneTopic, hasData: state.hasData,
+        rows: state.rows, totalCount: state.totalCount, ohneTopic: state.ohneTopic, summe: state.summe, hasData: state.hasData,
         leseFehler: !!state.leseFehler,
         flatAsked: state.flatAsked,
         groups: state.groups, groupsHasData: state.groupsHasData
@@ -3630,7 +3635,9 @@
          grouped-headers RPC but never the flat prompts one). ensureFlatDataForAllPrompts() below
          asks for it the same way a manual search would -- see its own comment for why that's safe
          to reuse instead of needing a new event. */
-      if (!state.expandedGroup){ ensureFlatDataForAllPrompts(); renderFlatBody(); return; }
+      /* Die Gesamtzeile wechselt mit: "All Prompts" zeigt die Summe aller, eine Gruppe ihre eigene
+         (renderSumme). Dieser Weg laeuft auch ohne renderTable (Klick in der Liste). */
+      if (!state.expandedGroup){ ensureFlatDataForAllPrompts(); renderFlatBody(); renderSumme(); return; }
       var body;
       if (state.gLoading || state.gRows == null) body = skeletonRows(state.gPageSize);
       else if (!state.gRows.length) body = '<div class="up-empty-mini">No prompts in this group</div>';
@@ -3638,6 +3645,7 @@
       elTbody.innerHTML = body + (state.gLoading ? "" : grpFootHtml());
       applyCols();
       initTopicsCells();
+      renderSumme();
     }
     /* Thin wide-view wrapper around toggleGroup(): same state transition, same fetchGroupPage()
        call, same "click the open one again to close" / "switch straight to a different one"
@@ -4012,8 +4020,9 @@
          group) even while it might be hidden -- syncFlatFootVisibility() is belt-and-suspenders on
          top of the .up-root.is-grouped .up-foot{display:none} CSS rule for exactly that reason. */
       syncFlatFootVisibility();
-      if (grouped){ renderGroups(); return; }
+      if (grouped){ renderGroups(); renderSumme(); return; }
       renderFlatBody();
+      renderSumme();
     }
     function renderCount(){
       elHeading.classList.add("has-count");
@@ -4355,7 +4364,8 @@
         return state.status === "inactive" &&
           (c.key === "brands" || c.key === "visibility" || c.key === "rank" || c.key === "sentiment");
       },
-      rowHeightSwitch: ROW_HEIGHTS, badgeSel: ".upt-cols-badge", cellPrefixes: ["up","upt","upt-grp"],
+      /* "up-sum": die Zellen der Gesamtzeile (UC.makeSumZeile) gehen mit ihren Spalten. */
+      rowHeightSwitch: ROW_HEIGHTS, badgeSel: ".upt-cols-badge", cellPrefixes: ["up","upt","upt-grp","up-sum"],
       /* In der einen Leiste ist dieses Menue "Display": oben die Gruppierung, darunter wie bisher
          Spalten und Zeilenhoehe. */
       vorspann: LEISTE ? dispGruppe : null, nachspann: LEISTE ? dispFuss : null,
@@ -4385,11 +4395,29 @@
         elDispFuss.className = "upt-disp-fuss";
         /* Eine volle Menuezeile wie "Reset Filters" der Filterleiste (.up-optrow), keine kleine
            Textaktion -- so endet das Menue mit derselben Luft wie jedes andere Dropdown. */
-        elDispFuss.innerHTML = '<div class="up-pop-div"></div>' +
+        /* Darueber der Schalter fuer die Gesamtzeile (15.10.: "uebers Display soll man diese untere
+           Row immer ausblenden koennen"): eine Zeile mit Schalter wie "Descending" im Sortiermenue
+           (.up-pop-row, core). Nur, wo es die Zeile gibt (die eine Leiste, siehe sumKit). */
+        elDispFuss.innerHTML = (UC.makeSumZeile ?
+          '<div class="up-pop-div"></div>' +
+          '<div class="up-pop-row upt-disp-summe" data-disp-summe>' +
+            '<span class="up-pop-label">' + esc(t("Summary row")) + '</span>' +
+            '<span class="up-switch" role="switch" aria-checked="false"></span></div>' : "") +
+          '<div class="up-pop-div"></div>' +
           '<button class="up-optrow upt-disp-reset" type="button" data-disp-reset>' +
             '<span>Reset to default</span><span class="upt-disp-reset-ic">' + UC.icon("refreshCw", 2) + '</span></button>';
       }
+      dispSummeSync();
       return elDispFuss;
+    }
+    /* Der Schalter zeigt, ob die Zeile an ist. sumWahl kann hier noch fehlen: populateCols laeuft
+       schon beim Aufbau, bevor die Gesamtzeile weiter unten steht -- dann gilt die Vorgabe (an). */
+    function dispSummeSync(){
+      var sw = elDispFuss && elDispFuss.querySelector("[data-disp-summe] .up-switch");
+      if (!sw) return;
+      var an = sumWahl ? sumWahl.an !== false : true;
+      sw.classList.toggle("is-on", an);
+      sw.setAttribute("aria-checked", an ? "true" : "false");
     }
     var readCols = colsKit.readCols, writeCols = colsKit.writeCols;
     var readWidths = colsKit.readWidths, writeWidths = colsKit.writeWidths;
@@ -4618,6 +4646,148 @@
     function closePops(except){
       [elSort, elCols, elMent, elGrpWrap, elGrpSideSort].forEach(function(p){ if (p && p !== except) setPopOpen(p, false); });
     }
+
+    /* ══ DIE GESAMTZEILE (15.10., Baustein UC.makeSumZeile aus core) ══════════════════════════
+       Bestellt nach der Empfehlung vom 15.10.: eine feste Zeile ueber der Pagination. Links die
+       Anzahl (wie der Zaehler im Kopf), dazu "without data" und der Anteil Branded, solange Platz
+       ist (core bricht die Paare um und schneidet ab -- nie ein halbes). Branded hat seit dem
+       15.10. keine eigene Spalte mehr, der Chip steht in der Prompt-Zelle; also steht auch sein
+       Zaehlwert dort. Visibility, Rank, Sentiment: der gewichtete Gesamtwert, ueber ein kleines
+       Menue Median oder ein Zaehlwert. Topics: "without topic" (meta.counts.untagged_active, das
+       die Tabelle schon als state.ohneTopic fuehrt). Brand Mentions, Intent, Market, Created
+       bleiben leer -- fuer sie gibt es keine Summe, die etwas aussagt.
+       Nur mit der einen Leiste (data-leiste): Bubble und die Landingpage behalten ihre Tabelle,
+       und der Schalter dafuer steht im Display-Menue, das es nur dort gibt.
+       Die Felder von meta.summary (Auftrag bubble/prompts_summary_db_auftrag.md) in feld, ihr
+       Format in art (CLAUDE.md 2b). kurz steht in der Zelle, label im Menue und im Tooltip. */
+    var SUM_MODI = {
+      visibility: [
+        { key: "avg",    label: "Weighted average",  kurz: "avg",      feld: "visibility_pct",     art: "pct" },
+        { key: "median", label: "Median",            kurz: "median",   feld: "median_visibility",  art: "pct" },
+        { key: "zahl",   label: "Prompts at 0%",     kurz: "at 0%",    feld: "prompts_zero_vis",   art: "anzahl" }
+      ],
+      rank: [
+        { key: "avg",    label: "Weighted average",  kurz: "avg",      feld: "avg_rank",           art: "rang" },
+        { key: "median", label: "Median",            kurz: "median",   feld: "median_rank",        art: "rang" },
+        { key: "zahl",   label: "Prompts at rank 1", kurz: "at #1",    feld: "rank1_count",        art: "anzahl" }
+      ],
+      sentiment: [
+        { key: "avg",    label: "Weighted average",  kurz: "avg",      feld: "avg_sentiment",      art: "note" },
+        { key: "median", label: "Median",            kurz: "median",   feld: "median_sentiment",   art: "note" },
+        { key: "zahl",   label: "Prompts below 50",  kurz: "below 50", feld: "sentiment_below_50", art: "anzahl" }
+      ]
+    };
+    var SUM_STD = { an: true, visibility: "avg", rank: "avg", sentiment: "avg" };
+    /* Die Wahl je Spalte und der Schalter: ein Geraet, eine Vorliebe (prefKey, wie Spalten und
+       Zeilenhoehe), dazu der window-Speicher je Instanz -- ein Themenwechsel baut die Tabelle neu,
+       und sie soll danach dieselbe Zeile zeigen, ohne erst die Ablage zu lesen. Keine Datenbank. */
+    function sumKey(){ return UC.prefKey ? UC.prefKey("upt_summe__" + instanceId) : ("upt_summe__" + instanceId); }
+    function sumLesen(){
+      var o = {}, k;
+      for (k in SUM_STD) o[k] = SUM_STD[k];
+      var roh = (window.__uptSumme || {})[instanceId];
+      if (!roh){
+        try {
+          roh = JSON.parse((UC.prefGet ? UC.prefGet(sumKey()) : window.localStorage.getItem(sumKey())) || "null");
+        } catch(e){ roh = null; }
+      }
+      if (roh && typeof roh === "object"){
+        if (roh.an === false) o.an = false;
+        Object.keys(SUM_MODI).forEach(function(sp){
+          if (SUM_MODI[sp].some(function(m){ return m.key === roh[sp]; })) o[sp] = roh[sp];
+        });
+      }
+      return o;
+    }
+    var sumWahl = sumLesen();
+    function sumSchreiben(){
+      var kopie = {}, k;
+      for (k in sumWahl) kopie[k] = sumWahl[k];
+      (window.__uptSumme = window.__uptSumme || {})[instanceId] = kopie;
+      try { window.localStorage.setItem(sumKey(), JSON.stringify(kopie)); } catch(e){}
+    }
+    var sumKit = (LEISTE && UC.makeSumZeile) ? UC.makeSumZeile({
+      root: root, nach: elTbody, group: POP_GROUP,
+      onWahl: function(spalte, modus){
+        if (!SUM_MODI[spalte]) return;
+        sumWahl[spalte] = modus;
+        sumSchreiben();
+        renderSumme();
+      }
+    }) : null;
+    function sumAnSetzen(an){
+      sumWahl.an = !!an;
+      sumSchreiben();
+      if (sumKit) sumKit.zeigen(sumWahl.an);
+      dispSummeSync();
+      /* Mit wenigen Zeilen ist der Kasten kuerzer als sein Hoechstmass und die Pagination rueckt
+         mit; der Platz darueber aendert sich nicht -- trotzdem einmal neu messen, wie nach jedem
+         Ein- und Ausblenden unter der Tabelle. */
+      festPlanen();
+    }
+    function renderSumme(){
+      if (!sumKit) return;
+      var aktiv = state.status !== "inactive";
+      var sicht = {};
+      if (colsKit) colsKit.effectiveCols().forEach(function(c){ sicht[c.key] = true; });
+      /* Dieselbe Bedingung wie das Skelett der flachen Tabelle (renderFlatBody): ein leises
+         Nachladen (Sortieren, Blaettern) aendert keine Summe, die Werte bleiben stehen wie die
+         Zeilen; ein hartes (Suche, Filter, Status) zeigt Skelett im Gleichlauf. */
+      var laedt = !state.hasData || (isBusy() && !(state.softReload && state.rows.length));
+      /* Im Listenmodus der Gruppierung zeigt der Kasten EINE Gruppe -- dann sind es ihre Zahlen,
+         nicht die aller Prompts (das waere eine Summe ueber Zeilen, die man nicht sieht). Was es
+         fuer eine Gruppe gibt, steht in ihrem Kopf (Anzahl, gewichtete Mittel aus
+         cached_prompts_groups_v1). Median und Zaehlwerte gibt es je Gruppe nicht: "–". Inline
+         gruppiert (und mit "All Prompts" in der Liste) zeigt der Kasten alle Gruppen, und die
+         Zeile ist die Gesamtzeile ueber alle Prompts. */
+      var g = null;
+      if (groupingOn() && state.groupsWide && state.expandedGroup){
+        g = (state.groups || []).filter(function(x){ return groupId(x) === state.expandedGroup; })[0] || null;
+      }
+      var S = state.summe || {};
+      var n;
+      if (g){
+        laedt = !!state.groupsLoading || !state.groupsHasData;
+        /* Die Anzahl aus derselben Quelle wie die Mittelwerte daneben (der Gruppenkopf, dieselbe
+           Zahl wie in der Liste links); die Zeilenzahl der Gruppe nur, wenn der Kopf keine hat. */
+        n = toNum(g.prompts_count);
+        if (n == null && !state.gLoading) n = toNum(state.gTotal);
+      } else {
+        var tot = currentTotal();
+        n = tot != null ? tot : ((state.hasData && state.rows.length) ? state.rows.length : null);
+        /* Ein unlesbarer Payload hat keine Anzahl -- die im Speicher ist die eines anderen Stands. */
+        if (state.leseFehler){ n = null; S = {}; }
+      }
+      var erste = UC.sumPaarHtml(n, "count", "anzahl");
+      if (!g && aktiv){
+        erste += UC.sumPaarHtml(S.prompts_no_runs, "without data", "anzahl");
+        /* Nur, wenn die Zeilen Branded kennen (wie Spalte und Filter, state.intentDa) -- vorher
+           waere die Zahl eine Aussage ueber ein Feld, das es noch nicht gibt. */
+        if (state.intentDa) erste += UC.sumPaarHtml(S.branded_count, "branded", "anzahl");
+      }
+      var gWert = g ? { visibility: g.visibility_pct, rank: g.avg_rank, sentiment: g.avg_sentiment } : null;
+      var zellen = COLUMNS.map(function(c){
+        var z = { key: c.key };
+        /* Inaktive Prompts laufen nicht: nur die Anzahl (die Kennzahlspalten sind dort ohnehin
+           aus dem Raster). */
+        if (!aktiv) return z;
+        var modi = SUM_MODI[c.key];
+        if (modi){
+          var m = modi.filter(function(x){ return x.key === sumWahl[c.key]; })[0] || modi[0];
+          var v = g ? (m.key === "avg" ? gWert[c.key] : null) : S[m.feld];
+          z.html = UC.sumPaarHtml(v, m.kurz, m.art);
+          z.tip = m.label;
+          z.sk = 56;
+          z.menu = { wahl: m.key, optionen: modi.map(function(x){ return { key: x.key, label: x.label }; }) };
+        } else if (c.key === "topics" && !g){
+          z.html = UC.sumPaarHtml(state.leseFehler ? null : state.ohneTopic, "without topic", "anzahl");
+          z.sk = 90;
+        }
+        return z;
+      });
+      sumKit.zeichnen({ laedt: laedt, ersteSk: 84, erste: erste, sichtbar: sicht, zellen: zellen });
+    }
+    if (sumKit){ sumKit.zeigen(sumWahl.an); renderSumme(); }
 
     /* grpActionMenu's own outside-click-close -- it isn't nested inside any single makePopover
        wrap (unlike grpRowMenu, which lives inside the Grouping popover and closes for free when
@@ -5036,8 +5206,20 @@
       if (e.target.closest("[data-disp-reset]")){
         if (state.grouped) toggleGrouping();
         setRowHeight("default");
+        /* Die Gesamtzeile gehoert zur Vorgabe: an, und in jeder Spalte wieder der Gesamtwert. */
+        if (sumKit){
+          var stdKopie = {}, sk;
+          for (sk in SUM_STD) stdKopie[sk] = SUM_STD[sk];
+          sumWahl = stdKopie;
+          sumAnSetzen(true);
+          renderSumme();
+        }
         selectAllCols();
         populateCols();
+        return;
+      }
+      if (e.target.closest("[data-disp-summe]")){
+        sumAnSetzen(!(sumWahl && sumWahl.an !== false));
         return;
       }
       var rhBtn = e.target.closest("[data-rowheight]");
@@ -5902,7 +6084,7 @@
            und das Skelett laeuft endlos weiter. Genau so gemessen am 24.08. mit einem
            abgeschnittenen Payload. Ein Ladezustand muss IMMER enden (CLAUDE.md §2). */
         if (params.__parseError){
-          state.leseFehler = true; state.rows = []; state.hasData = true;
+          state.leseFehler = true; state.rows = []; state.hasData = true; state.summe = null;
           state.loading = false; state.softReload = false; endSoftReload();
           state.extLoading = false;
           state.letzteNutzlast = null;   /* Objekt je Schluesselsatz */
@@ -6025,6 +6207,12 @@
            gern anders heisst als der Schluessel im Kopf des Entwicklers. */
         var _ot = params.without_topic != null ? params.without_topic : params.withoutTopic;
         if (_ot != null) state.ohneTopic = toNum(_ot);
+        /* meta.summary fuer die Gesamtzeile (15.10.). Kommt mit jeder Lieferung der Liste; fehlt es
+           in einer Lieferung MIT Zeilen, gilt der alte Stand fuer diese Filter nicht mehr -- dann
+           null und die Zeile zeigt "–", nie die Zahlen eines anderen Filters. */
+        if (params.summary !== undefined){
+          state.summe = (params.summary && typeof params.summary === "object" && !Array.isArray(params.summary)) ? params.summary : null;
+        } else if (params.rows != null) state.summe = null;
         if (params.brands != null){
           var _b = Array.isArray(params.brands) ? params.brands : [];
           if (_b.length) state.brands = _b;   // an empty list is a failed/not-yet-loaded fetch, not "no brands"
