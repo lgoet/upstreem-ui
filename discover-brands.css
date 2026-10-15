@@ -164,3 +164,9 @@
   .udb-total { margin-left: 0; width: 100%; order: 3; }
   .udb-root .up-head { flex-wrap: wrap; height: auto; row-gap: 8px; }
 }
+
+/* DIE FESTE SPUR der Zahlen (core.css, --up-spur, 15.10.): Visibility wie sie in der Zelle steht
+   (gerundet, ganze Prozent), Mentions als Anzahl. Die Zahl steht darin rechts, Kopf und Zelle
+   bleiben links. */
+.udb-root .up-td-vis { --up-spur: var(--up-spur-pct0); }
+.udb-root .up-td-mentions { --up-spur: var(--up-spur-anzahl); }

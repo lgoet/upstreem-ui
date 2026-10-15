@@ -264,6 +264,11 @@
    Grundpolsterung von .up-td bleiben links. */
 .uud-cbrand { flex: 1 1 auto; min-width: 0; padding-right: 64px; }
 .uud-cnum { flex: 0 0 108px; justify-content: flex-end; }
+/* DIE FESTE SPUR der Quote (core.css, --up-spur, 15.10.): Prozent mit einer Stelle (UC.fmtPct(v, 1)).
+   Die Spalte steht hier schon immer am rechten Rand, die Kanten fluchteten also bereits -- die
+   Zuordnung haelt das Format trotzdem fest, damit diese Zahl dieselbe Spur hat wie jede andere
+   Quote mit einer Stelle, falls die Spalte einmal links steht. */
+.uud-root .uud-cnum { --up-spur: var(--up-spur-pct1); }
 .uud-cname { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 /* Shape und Zahl kommen aus core (UC.sentHtml mit opts.text, seit dem 29.09.): Balken 3x12 in

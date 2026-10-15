@@ -177,6 +177,11 @@
 .uev-markt .uev-td-zahl, .uev-markt .uev-th-zahl { flex: 0 0 140px; min-width: 0; }
 .uev-urls .uev-td-zahl, .uev-urls .uev-th-zahl { flex: 0 0 140px; min-width: 0; }
 .uev-urls .uev-td-beob, .uev-urls .uev-th-beob { flex: 0 0 210px; }
+/* DIE FESTE SPUR der Zahlen (core.css, --up-spur, 15.10.): Before und After (Visibility bzw. Global
+   share) stehen als Prozent mit einer Stelle (wertHtml, UC.fmtPct(v, 1)) -- die Zahl steht in
+   ihrer Spur rechts, Kopf und Zelle bleiben links (das ist keine Rechtsbuendigkeit der Spalte).
+   Change und First cited tragen keine .up-num, die Zuordnung laeuft dort ins Leere. */
+.uev-markt .uev-td-zahl, .uev-urls .uev-td-zahl { --up-spur: var(--up-spur-pct1); }
 /* Die erste Spalte nie schmaler als ihr Inhalt braucht -- bei 800px Fensterbreite blieb von der
    URL-Spalte nur das Favicon (03.10. gesehen). Reicht der Platz nicht, scrollt die Tabelle in
    ihrem Rahmen (Spezifikation 87): Kopf und Koerper so breit wie die Summe der Spalten, der
