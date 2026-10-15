@@ -194,7 +194,7 @@ muss.
 | Spaltenbreite | Flach wächst jede fr-Spalte höchstens bis min + 32; am Ende wächst nur die erste | `deckeln()` in makeColumns |
 | Platzmangel | Spalten weichen nach ihrer `art`, nie nach einer Zahl je Datei; Share/Visibility (`anteil`) nie; eine angeklickte Spalte bleibt, dafür weicht die nächst unwichtigere | `SPALTEN_ART` in core |
 | Gesamtzeile | Links nur der Count, Werte rechtsbündig, von Haus aus keine Berechnung („+ Calculation“), Ø-Zeichen statt „avg“. Berechnungen laden **getrennt** von der Liste, Skelett nur in der Zelle. Kein Median bei Kennzahlen; einzige Ausnahme der Preis in Shopping und Ads | `UC.makeZaehlZeile` (`cfg.rechnen`, `cfg.quelle`) |
-| Band | Chart oben als Band; ausgeblendet ist es **ganz** weg, „Show chart“ in der Topbar holt es zurück; Luft über und unter der Leiste einheitlich nach dem Vorbild der Prompts-Tabelle | `.up-band*`, `UC.bandTeile`, `UC.bandAus`, `--up-band-luft` |
+| Band | Chart oben als Band; ausgeblendet ist es **ganz** weg. Ein und aus über den **Umschalter im Seitenkopf** (immer da, zwei Zeichen: Chart und Tabelle / nur Tabelle, Form des Themenschalters) – kein Auge am Band, kein „Show chart“. Luft über und unter der Leiste einheitlich nach dem Vorbild der Prompts-Tabelle | `.up-band*`, `UC.bandTeile`, `UC.bandAus`, `UC.bandSchalterHtml`, `--up-band-luft` |
 
 Neue Tabellen bekommen Kopfzeichen über `UC.kopfZeichenHtml` und je Spalte eine `art`.
 

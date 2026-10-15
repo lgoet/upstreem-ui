@@ -1327,10 +1327,16 @@ nur unter `data-flach="yes"`.
 Teile einer Komponente (das Markup steckt oft in eingebauten Elementen).
 
 **Ausgeblendet ist das Band ganz weg** (`.is-band-aus`): keine Restzeile, keine Linie; eine
-Hülle, die nur das Band trägt, fällt mit. `UC.bandAus(band, aus, { id, zeigen, tip })` setzt dann
-im Seitenkopf (`.up-ph-top`) einen Zeichenknopf **„Show chart“** (`chartSpline`) vor die anderen
-Zeichenknöpfe; eingeblendet ist er weg. Der Zustand wird über das Neuladen gemerkt
-(`up_band_aus__<id>`). So lassen sich die Charts in Citations und Brands ganz ausblenden.
+Hülle, die nur das Band trägt, fällt mit. Ein und aus schaltet der **Umschalter im Seitenkopf**
+(`.up-seg.up-bandsw`, `UC.bandSchalterHtml({ aus, id, klein })`), den
+`UC.bandAus(band, aus, { id, setzen })` immer setzt (seit 16.10., Nutzer: „Switcher nur mit 2
+Icons, aber entspanntem Padding“, kein Auge): zwei Felder nur mit Zeichen, „Chart and table“
+(`chartSpline`) und „Table only“ (`listIcon`), Name als aria-label und Tooltip, radiogroup. Form
+und Maße wie der Themenschalter (dieselben Regeln): Kapseln 40 × 32; auf dem Telefon
+(`is-vnarrow`) rund 32 × 32, und der Hinzufügen-Knopf daneben zeigt dort nur sein Zeichen. Er
+steht vor den Knöpfen des Kopfs. Das Auge der Komponente (`bandTeile`, `teile.auge`) weicht,
+solange er steht; ohne Seitenkopf (Bubble) bleibt es. Der Zustand wird über das Neuladen gemerkt
+(`up_band_aus__<id>`). Bis 16.10. ein Auge am Band und „Show chart“ im Kopf.
 
 **Die Zeile unter dem Band:** zwischen Unterkante des Bandes und der Leiste bzw. Überschrift der
 Tabelle stehen **16px** (`--up-band-luft`). Vorbild ist Prompt Insights: Linie der Navigation bis
