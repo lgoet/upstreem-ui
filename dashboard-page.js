@@ -654,6 +654,8 @@
               } else {
                 if (!state.vis.firmen) { state.autoFirmen = p.companies.map(function (c) { return c.company_id; }); persist(); }
                 p.instanceId = ids.vot; p.isDark = isDark();
+                /* Gefiltert geladen: ein leeres Ergebnis sagt dann "No matching data" (15.10.). */
+                p.gefiltert = UC.seitenFilterAktiv ? UC.seitenFilterAktiv(f) : false;
                 try { setter("renderVisibilityChart")(p); } catch (err) {}
               }
               /* Der Chart haelt einen AUSDRUECKLICH gesetzten Ladezustand, bis er ebenso
@@ -681,6 +683,7 @@
               } else {
                 var mk = marke();
                 p.instanceId = ids.tcd; p.isDark = isDark();
+                p.gefiltert = UC.seitenFilterAktiv ? UC.seitenFilterAktiv(f) : false;
                 if (mk) p.brand = { id: str(mk.company_id || mk.id), name: str(mk.name), logo: str(mk.logo_url) };
                 try { setter("renderTopCitations")(p); } catch (err) {}
               }

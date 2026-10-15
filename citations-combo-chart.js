@@ -297,7 +297,10 @@
       isDark: darkNow, isOwner: isOwner,
       gran: function(){ return curGran; },
       /* Eine Nachkommastelle -- vorgegeben, fuer Linie und Doughnut derselbe Wert. */
-      decimals: 1
+      decimals: 1,
+      /* Der Leerzustand sagt "No matching data", wenn die Seite gefiltert geladen hat (15.10.,
+         Feld gefiltert im Payload; ohne das Feld gilt ungefiltert). */
+      gefiltert: function(){ return !!state.gefiltert; }
     });
     var typeChart = UC.makeTypeChart({
       decimals: 1,
@@ -306,14 +309,15 @@
       chartMode: function(){ return state.chartMode; },
       total: function(){ return state.total; },
       centerLabel: "Citations",
-      collapseHost: donutRoot
+      collapseHost: donutRoot,
+      gefiltert: function(){ return !!state.gefiltert; }
     });
 
     /* ---------- render (two independent halves) ---------- */
     function renderDonutSide(){
       if (!isOwner()) return;
       /* Der Lesefehler kommt VOR dem Skelett -- sonst sieht endloses Laden aus wie "gleich da". */
-      if (state.leseFehler){ topTotal.style.display = "none"; typeChart.empty("The data could not be read."); }
+      if (state.leseFehler){ topTotal.style.display = "none"; typeChart.meldung("The data could not be read."); }
       else if (state.loading || !state.hasData){ topTotal.style.display = "none"; typeChart.skeleton(); }
       else if (state.chartMode === "bar"){ topTotal.style.display = "flex"; topTotalN.textContent = fmtTotal(state.total); typeChart.renderBars(state.prepped); }
       else { topTotal.style.display = "none"; typeChart.renderDonut(state.prepped); }
@@ -322,7 +326,7 @@
       if (!isOwner()) return;
       /* Der Lesefehler schlaegt den Ladezustand: sonst dreht die Kurve weiter, waehrend der
          Doughnut daneben den Fehler schon zeigt. */
-      if (state.leseFehler){ root.classList.remove("is-line-loading"); if (settingsOpen) closeSettingsMenu(); line.empty("The data could not be read."); return; }
+      if (state.leseFehler){ root.classList.remove("is-line-loading"); if (settingsOpen) closeSettingsMenu(); line.meldung("The data could not be read."); return; }
       var loading = state.loading || !state.hasLine || state.linePending;
       /* The gear button (and its dropdown, if it was somehow open when a reload started) has no
          business being reachable over a skeleton — nothing to configure yet. */
@@ -696,6 +700,7 @@
         /* Nur eine echte Lieferung loescht den Vermerk -- ein reiner Theme-Render darf ihn nicht
            wegraeumen, sonst stuende danach ein leerer Chart statt des Fehlers. */
         if (params.series != null || params.types != null || params.rows != null) state.leseFehler = false;
+        if (params.gefiltert != null) state.gefiltert = isYes(params.gefiltert);
         /* Debug-only, permanent: stash the exact object this call received on the root element
            itself, so it can be inspected from the console at any later time with zero timing
            risk — no need to wrap the render function and hope a fresh call happens while watching.

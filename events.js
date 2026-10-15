@@ -1852,7 +1852,7 @@
       if (!linie) return;
       var a = dieAnalyse();
       segSetzen();
-      if (!a) { if (state.analyseFehler && !state.analyseLaden) linie.empty(t("This event could not be loaded.")); else linie.skeleton(); return; }
+      if (!a) { if (state.analyseFehler && !state.analyseLaden) linie.meldung(t("This event could not be loaded.")); else linie.skeleton(); return; }
       var tr = isArr(a.trend) ? a.trend : [];
       if (!tr.length) { linie.empty(); return; }
       var feld = state.metrik;
@@ -2166,7 +2166,7 @@
            schon, hier also leer statt ein drittes Mal). */
         var fehler = state.analyseFehler && !state.analyseLaden;
         kpis.innerHTML = fehler ? "" : [0, 1, 2, 3].map(function () { return UC.kpiKarteSkelett("uev-kpi"); }).join("");
-        if (linie2) { if (fehler) linie2.empty(t("This event could not be loaded.")); else linie2.skeleton(); }
+        if (linie2) { if (fehler) linie2.meldung(t("This event could not be loaded.")); else linie2.skeleton(); }
         platz.innerHTML = fehler ? "" : '<div class="up-vartable uev-zielurls">' + kopf + '<div class="up-tbody up-vbody">' +
           (UC.skeletonRows ? UC.skeletonRows({ count: 3, rowClass: "up-row up-vrow", cellClass: "up-td",
             cols: [{ w: 160, jitter: 40, logo: true, cls: "up-var-name uev-td-url" }, { w: 80, cls: "uev-td-zahl uev-td-beob" }, { w: 40, cls: "uev-td-zahl" }, { w: 30, cls: "uev-td-zahl" }, { w: 30, cls: "uev-td-zahl" }] }) : "") +
@@ -2178,7 +2178,9 @@
         /* Die Analyse ist da, kennt dieses Ziel aber nicht (v2 ohne targets[], oder das Ziel ist
            gerade erst dazugekommen und der Cache noch alt): ein Satz statt erfundener Nullen. */
         kpis.innerHTML = "";
-        if (linie2) linie2.empty(t("The analysis for this rule isn't available yet."));
+        /* Noch keine Auswertung ist ein Leerzustand, kein Fehler (15.10.): der Leerzustand der
+           Charts aus core mit diesem Satz. Der Schluessel steht im Katalog dieser Datei. */
+        if (linie2) linie2.empty({ text: "The analysis for this rule isn't available yet." });
         platz.innerHTML = "";
         seitenStand(n, null);
         return;
