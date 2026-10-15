@@ -4679,10 +4679,12 @@
       else if (state.ansicht === "detail") anleitungStarten("d1", true);
       else anleitungStarten("kopf", true);
     }
+    /* Das Zeichen ist das der Anleitung im Onboarding (libraryBig, das offene Buch) -- 15.10. spaet:
+       vorher signpost, das schon den Intent der Prompts traegt ("ist das gleiche wie fuer Intents"). */
     function anleitungKnopf() {
       var an = !!(anleitung && anleitung.laeuft());
       return '<button type="button" class="up-iconbtn uev-anl-toggle" aria-pressed="' + an + '" aria-label="' + esc(t("Step-by-step guide")) + '"' +
-        ' data-tip="' + esc(t(an ? "Hide guide" : "Show guide")) + '">' + UC.icon("signpost", 2) + '</button>';
+        ' data-tip="' + esc(t(an ? "Hide guide" : "Show guide")) + '">' + UC.icon("libraryBig", 2) + '</button>';
     }
     function anleitungKnopfSync() {
       var b = elAktion && elAktion.querySelector(".uev-anl-toggle");

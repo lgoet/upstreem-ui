@@ -935,9 +935,17 @@
          laege darauf nur 3 Stufen dunkler -- unsichtbar. Der durchscheinende liegt ueber dem Grund
          (background-clip: border-box) und ergibt #dbdbdb, 19 Stufen Abstand; auf einem weissen
          Fenster (Preferences) dasselbe Verhaeltnis. Geist selbst sagt dazu: "Gray-alpha only when
-         the background should show through" -- hier tut er es. 1px wie jeder Rand der App. */
-      --up-wahl-bg: rgba(0,0,0,.05);
-      --up-wahl-rand: rgba(0,0,0,.08);
+         the background should show through" -- hier tut er es. 1px wie jeder Rand der App.
+         15.10. SPAET NACHGEZOGEN ("die selected States ... sind mir zu dunkel, mach das so wie auf
+         meinem Screenshot also die Farbe", Screenshot von Geists Seitennavigation): der Grund ist
+         genau die Farbe des Screenshots, #ededed, jetzt deckend -- auf #fafafa derselbe Ton wie die
+         5 % vorher, auf weissen Fenstern (Preferences) aber nicht mehr heller als in der Leiste.
+         Zu dunkel war der RAND: 8 % ueber dem Grund ergaben #dadada, eine harte Kontur, die Geists
+         Vorbild nicht hat. Jetzt 3 % ueber #ededed = #e6e6e6 -- ein Hauch dunkler als der Grund, der
+         Rand bleibt also (abgenommen: "weiterhin eine Border"), nur nicht mehr als Strich. Die
+         Seitenleiste traegt seither gar keinen (sidebar.css). */
+      --up-wahl-bg: #ededed;
+      --up-wahl-rand: rgba(0,0,0,.03);
     }
     /* Der Grund hinter allem (html/body). Das Kopf-Skript der App malt ihn weiss (kopf.css,
        html[data-up-pagetheme="light"] body, 0,1,2); hier eine Stufe spezifischer (0,2,2) statt
@@ -5537,9 +5545,13 @@
 .up-root .up-seg.up-themesw.is-klein { height: var(--up-h-chip); }
 .up-root .up-seg.up-themesw::before { border: 0; border-radius: var(--up-r-voll);
   box-shadow: 0 0 0 1px var(--vc-switch-border), var(--up-e-1); }
-.up-root .up-seg.up-themesw .up-seg-btn { width: var(--up-h-btn); height: var(--up-h-btn); padding: 0;
+/* MEHR LUFT IN DEN DREI FELDERN (15.10. spaet: "den Theme Switcher besser stylen, mehr Padding in den
+   3 Bereichen"): die Knoepfe sind nicht mehr rund (Breite = Hoehe), sondern Kapseln mit Polster
+   12 bzw. 8 neben dem 16er-Zeichen -- 40 x 32 und 32 x 24. Die gleitende Flaeche misst den Knopf
+   (segLauf) und wird damit von selbst zur Kapsel. */
+.up-root .up-seg.up-themesw .up-seg-btn { width: auto; height: var(--up-h-btn); padding: 0 12px;
   border: 0; border-radius: var(--up-r-voll); color: var(--vc-third); }
-.up-root .up-seg.up-themesw.is-klein .up-seg-btn { width: var(--up-h-chip); height: var(--up-h-chip); }
+.up-root .up-seg.up-themesw.is-klein .up-seg-btn { width: auto; height: var(--up-h-chip); padding: 0 8px; }
 .up-root .up-seg.up-themesw .up-seg-btn svg { width: 16px; height: 16px; color: inherit; }
 .up-root .up-seg.up-themesw .up-seg-btn:hover,
 .up-root .up-seg.up-themesw .up-seg-btn.is-active { color: var(--vc-text); }

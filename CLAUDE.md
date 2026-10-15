@@ -186,7 +186,7 @@ muss.
 | Thema | Regel | Wo |
 |---|---|---|
 | Thema | Nur **Light, Dark, System**. „Hell klassisch“/Legacy Light gibt es nicht mehr. Light ist wie bei Vercel: Seite, Seitenleiste und Leisten grau, Tabellen, Inhalte und Charts weiß | `html[data-up-hell="grau"]` aus `hellAnwenden()`, `UC.themeSchalterHtml` |
-| Auswahl | Gewählte Zustände im Light rgba(0,0,0,.05) **mit** Rand | `--up-wahl-bg`, `--up-wahl-rand` |
+| Auswahl | Gewählte Zustände im Light `#ededed` (Geists Seitennavigation). Seitenleiste **ohne** Rand, Sub-Navigation, Preferences und gedrückte Knöpfe mit einem Hauch Rand (3 %) | `--up-wahl-bg`, `--up-wahl-rand` |
 | Knopf-Hover | Nur die Fläche ändert sich, der Rand bleibt; Fokus 2px-Outline mit 2px Abstand | `--up-knopf-hover`, `--up-knopf-rand-hover`, `--up-knopf-fokus-abstand` |
 | Suchfeld | Geist-Search-Input in **unserem** Blau; Esc-Schild; erstes Escape leert, zweites schließt | `.up-search` |
 | Command Menu | Geist-Aufbau, aber **ohne Linie unter dem Suchfeld** (ausdrücklicher Wunsch) | `quick-actions.css` |
