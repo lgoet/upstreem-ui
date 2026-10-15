@@ -87,18 +87,21 @@ ist die Farbe dieser Fläche. Ohne das Attribut (Landingpage, erstes Bild vor de
 gelten die Werte der linken Spalte.
 
 **Gewählter Zustand im Light** (Seitenleiste, Reiter der Sub-Navigation `.up-ph-navpille`,
-Navigation im Preferences-Fenster): Grund **und** Rand, nie nur ein Fleck.
+Navigation im Preferences-Fenster, gedrückte Knöpfe): die Farbe aus Geists Seitennavigation.
 
 ```
---up-wahl-bg:   rgba(0,0,0,.05)   Geist Gray Alpha 100
---up-wahl-rand: rgba(0,0,0,.08)   Geist Gray Alpha 400, 1px
+--up-wahl-bg:   #ededed           deckend, die Farbe des Vorbilds (Screenshot des Nutzers)
+--up-wahl-rand: rgba(0,0,0,.03)   1px, über dem Grund #e6e6e6
 ```
 
-Durchscheinend und nicht fest: der Grund ergibt auf `#fafafa` `#eeeeee`, ein fester Rand
-`#ebebeb` läge darauf nur 3 Stufen dunkler; der durchscheinende Rand über dem Grund ergibt
-`#dbdbdb`. Wo ein echter Rand die Zeile um einen Pixel verschöbe (Seitenleiste, `.usn-item`),
-steht er als `box-shadow: inset 0 0 0 1px var(--up-wahl-rand)`. Nur das Gewählte trägt den
-Rand, der Hover nicht. Ausdrücklich angefordert: „da auch bitte weiterhin eine Border“.
+- **Seitenleiste ohne Rand** (15.10. spät: „die Sidebar Nav Items ohne Border im selected
+  State!“): nur der Grund, wie bei Geist.
+- **Sub-Navigation, Preferences, gedrückte Knöpfe** behalten einen Rand („weiterhin eine
+  Border“), aber nur einen Hauch dunkler als der Grund. Wo ein echter Rand die Zeile um einen
+  Pixel verschöbe, steht er als `box-shadow: inset 0 0 0 1px var(--up-wahl-rand)`.
+- Bis 15.10. spät: Grund 5 % Schwarz und Rand 8 % darüber, zusammen `#dadada`. Das war die harte
+  Kontur, die der Nutzer „zu dunkel“ fand; der Grund selbst war schon fast `#ededed`.
+- Nur das Gewählte trägt den Rand, der Hover nicht.
 
 **Themenschalter** nach Geist: `UC.themeSchalterHtml({ klein, wahl })`, siehe Abschnitt 5.
 
@@ -200,41 +203,35 @@ Weiß bei 3.08 und damit unter AA. Jetzt auf Weiß 5.33 und 5.37.
 
 ---
 
-## 1a. Citation-Type-Farben (Stand 15.10., Geist)
+## 1a. Citation-Type-Farben (Stand 15.10.)
 
-Quelle der Werte: `CITE_TYPE` und `TYPE_OTHER` in `core.js`. Die Zuordnung der Farbtöne ist die
-von Variante D (13.10., Branchenkonvention: Competition rot, Brand Platforms orange, Editorial
-blau, UGC türkis, Knowledge-Base violett, Institutional grau); die **Werte** kommen seit dem
-15.10. abends aus Geists Skalen und nach Geists Rollen:
+Quelle der Werte: `CITE_TYPE` und `TYPE_OTHER` in `core.js`. Zuordnung und **Werte** sind die von
+Variante D (13.10., Branchenkonvention: Competition rot, Brand Platforms orange, Editorial blau, UGC
+türkis, Knowledge-Base violett, Institutional schiefergrau). Der Geist-Umbau vom 15.10. abends hatte
+sie kurz auf Geists Skalen gestellt; auf Wunsch des Nutzers sind die **Farben wieder die von
+vorher** („nur die Chip-Form und Abmessungen“), die Form ist das Geist-Badge (unten).
 
-```
-fill   Stufe 700 ("high contrast background"), bei Geist in beiden Themen derselbe Ton
-       -> fill = fillDark. Brand Platforms Amber 800 (Orange statt Gelb), Institutional
-       Gray 800 / dunkel Gray 900.
-ink    Stufe 900 ("text and icons"); Institutional Gray 1000, Uncategorized Gray 900
-bg     Stufe 200 (Geist: "on smaller UI elements like badges, use Color 2 or 3")
-bd     = bg. Der Rand ist seit dem 14.10. unsichtbar, er hält nur die Größe.
-```
-
-| Citation Type | fill | fillDark | ink | inkDark | bg = bd | bgDark = bdDark |
+| Citation Type | fill | fillDark | ink | inkDark | bg | bgDark |
 |---|---|---|---|---|---|---|
-| Editorial | `#0072F5` | `#0072F5` | `#0068D6` | `#52A8FF` | `#EBF5FF` | `#10233D` |
-| UGC / Community | `#12A594` | `#12A594` | `#067A6E` | `#0AC7B4` | `#E5FAF6` | `#062822` |
-| Knowledge-Base | `#8E4EC6` | `#8E4EC6` | `#7820BC` | `#BF7AF0` | `#F9F1FE` | `#2E1938` |
-| Brand Platforms | `#FF990A` | `#FF990A` | `#A35200` | `#F2A20D` | `#FFF4D6` | `#331B00` |
-| Institutional | `#7D7D7D` | `#A1A1A1` | `#171717` | `#EDEDED` | `#EBEBEB` | `#1F1F1F` |
-| Competition | `#E5484D` | `#E5484D` | `#CB2A2F` | `#FF6166` | `#FFEBEB` | `#3C1618` |
+| Editorial | `#7493C7` | `#8BA6D1` | `#375587` | `#B4CCF2` | `#F0F7FF` | `#1D232E` |
+| UGC / Community | `#49A1AB` | `#6DB2B9` | `#00636D` | `#9CD6DD` | `#EAFBFD` | `#162628` |
+| Knowledge-Base | `#9688C1` | `#A79CCC` | `#594A82` | `#CDC3EE` | `#F7F5FF` | `#23212C` |
+| Brand Platforms | `#BB845F` | `#C8997B` | `#7B461E` | `#EAC1A6` | `#FFF4EC` | `#2B2019` |
+| Institutional | `#8195A6` | `#97A7B5` | `#455868` | `#BECDDA` | `#F3F7FB` | `#1F2327` |
+| Competition | `#C17E78` | `#CD948F` | `#803F3B` | `#EFBCB7` | `#FFF2F1` | `#2D1F1D` |
 | You | `#1F1F1B` | `#E0E0E0` | `#FFFFFF` | `#1B1B1B` | `#1F1F1B` | `#E0E0E0` |
-| Fallback / Uncategorized | `#A8A8A8` | `#7D7D7D` | `#4C4C4C` | `#A1A1A1` | `#F2F2F2` | `#1A1A1A` |
+| Fallback / Uncategorized | `#9E9E9E` | `#808080` | `#5F636B` | `#A8A8A8` | `#F5F5F5` | `#262626` |
 
-- **fill**: Flächen in Charts (Doughnut, Balken, Legendenpunkt).
-- **ink, bg**: Schrift und Grund des Chips. Kein Beimischen der Typfarbe in den Grund mehr (vom
-  14.10. bis 15.10. waren es 7 %): gemischt fiele die Schrift bei Red unter 4.5.
+- **fill**: Flächen in Charts (Doughnut, Balken, Legendenpunkt) und der Punkt im URL-Chip.
+- **ink, bg**: Schrift und Grund des Chips. In den Grund werden 7 % der Typfarbe (`fill`)
+  gemischt (`chipGrund`/`hexMisch`, seit 14.10.: „minimal mehr Opacity, so dass der Kontrast der
+  Schrift noch stimmt“). Der Rand liegt in der Grundfarbe und ist damit unsichtbar; `bd` steht nur
+  noch in den Daten.
 - **You** trägt die Akzentfarbe des Themes (Abschnitt 1) und ist als einziger Chip invertiert.
 - **Lesen** immer über `UC.typeStyle("citation" | "url", roh, isDark)` → `{ fill, ink, bg, bd, dot }`; Ringe und Legenden über `UC.typeColor` (= `fill`). Keine Komponente hält eine eigene Kopie.
 
-**Kontrast** Schrift auf Chip-Grund (WCAG, im Code nachgerechnet): Typen hell 4.69 (Red) bis
-6.97 (Purple), dunkel 5.25 bis 7.67; Rückfall 7.67 / 6.74.
+**Kontrast** Schrift auf Grund (WCAG, Kopfkommentar in `core.js`): Typen hell 6.6 bis 7.1, dunkel
+9.5 bis 9.7; Rückfall 5.5 / 6.4; You 16.5 / 13. Die 7-%-Beimischung hält alle über 4.5.
 
 **Chip-Form: ein Geist-Badge** (seit 15.10., `core.css` „DER TYP-CHIP IST EIN GEIST-BADGE“).
 EINE Regel für jeden Citation- und URL-Type-Chip (`.up-tag`, `.up-filter-tag`, `.udt-tag`,
@@ -262,42 +259,41 @@ Aliase auf dem Weg zu diesen Keys (`CITE_ALIAS`/`citeName()`): `Brand_Platform`/
 
 ---
 
-## 1b. URL-Type-Farben (Stand 15.10., Geist)
+## 1b. URL-Type-Farben (Stand 15.10.)
 
-Quelle: `URL_FAMILY` und `URL_TYPE` in `core.js`. Es gibt **drei Chip-Farben**, eine je Familie
-(Geist-Stufe 900 auf 200): Commercial Amber, Editorial Blue, Reference Purple, also dieselben
-Töne wie Brand Platforms, Editorial und Knowledge-Base in 1a. Die Typen unterscheiden sich im
-Chip durch die Beschriftung und durch den **Punkt**, der die Chart-Fläche des Typs trägt.
+Quelle: `URL_FAMILY` und `URL_TYPE` in `core.js`, Werte von Variante D (13.10.), seit dem 15.10.
+spät wieder in Kraft (siehe 1a). Es gibt **drei Chip-Farben**, eine je Familie, dieselben Töne wie
+Brand Platforms, Editorial und Knowledge-Base in 1a. Die Typen unterscheiden sich im Chip durch die
+Beschriftung und durch den **Punkt**, der die Chart-Fläche des Typs trägt.
 
 **Chip je Familie**
 
-| Familie | ink | inkDark | bg = bd | bgDark = bdDark |
+| Familie | ink | inkDark | bg | bgDark |
 |---|---|---|---|---|
-| Commercial | `#A35200` | `#F2A20D` | `#FFF4D6` | `#331B00` |
-| Editorial | `#0068D6` | `#52A8FF` | `#EBF5FF` | `#10233D` |
-| Reference, community, media | `#7820BC` | `#BF7AF0` | `#F9F1FE` | `#2E1938` |
-| Fallback | `#4C4C4C` | `#A1A1A1` | `#F2F2F2` | `#1A1A1A` |
+| Commercial | `#7B461E` | `#EAC1A6` | `#FFF4EC` | `#2B2019` |
+| Editorial | `#375587` | `#B4CCF2` | `#F0F7FF` | `#1D232E` |
+| Reference, community, media | `#594A82` | `#CDC3EE` | `#F7F5FF` | `#23212C` |
+| Fallback | `#5F636B` | `#A8A8A8` | `#F5F5F5` | `#262626` |
 
-**Fläche je Typ** (Chart und Chip-Punkt): Geists Stufen der Familie, nach OKLCH-Helligkeit
-gewählt, damit die Staffel stetig läuft.
+**Fläche je Typ** (Chart und Chip-Punkt):
 
 | Typ | Familie | fill | fillDark |
 |---|---|---|---|
-| Homepage | Commercial | `#4E2009` | `#FEF3DC` |
-| Product / Service | Commercial | `#A35200` | `#FFB224` |
-| Marketplace | Commercial | `#FF990A` | `#FF990A` |
-| Company Info | Commercial | `#FFC96B` | `#6B4105` |
-| Article | Editorial | `#00254C` | `#EBF6FF` |
-| Listicle | Editorial | `#0062D1` | `#52A8FF` |
-| Guide | Editorial | `#0072F5` | `#0090FF` |
-| Comparison | Editorial | `#52AEFF` | `#0062D1` |
-| Review | Editorial | `#99CEFF` | `#0A4380` |
-| Documentation | Reference | `#2E004C` | `#F8EDFC` |
-| Forum | Reference | `#763DA9` | `#BF7AF0` |
-| Directory | Reference | `#8E4EC6` | `#8E4EC6` |
-| Video | Reference | `#BF89EC` | `#763DA9` |
-| Social Post | Reference | `#D5B1F1` | `#5F2E85` |
-| Uncategorized | Fallback | `#A8A8A8` | `#7D7D7D` |
+| Homepage | Commercial | `#845738` | `#F1C7AC` |
+| Product / Service | Commercial | `#A57656` | `#D2AA8F` |
+| Marketplace | Commercial | `#C89675` | `#B48D73` |
+| Company Info | Commercial | `#EBB896` | `#977158` |
+| Article | Editorial | `#4A648E` | `#BAD2F9` |
+| Listicle | Editorial | `#607BA7` | `#A4BCE2` |
+| Guide | Editorial | `#7793C1` | `#8FA6CB` |
+| Comparison | Editorial | `#8FACDB` | `#7A90B4` |
+| Review | Editorial | `#A8C6F5` | `#667B9E` |
+| Documentation | Reference | `#665A8A` | `#D3CAF5` |
+| Forum | Reference | `#7D71A2` | `#BDB4DE` |
+| Directory | Reference | `#9589BC` | `#A79EC7` |
+| Video | Reference | `#AEA2D6` | `#9188B1` |
+| Social Post | Reference | `#C7BBF0` | `#7C749B` |
+| Uncategorized | Fallback | `#9E9E9E` | `#808080` |
 
 Hell gestaffelt von dunkel nach hell, im Dark Mode **gegenläufig** von hell nach dunkel, damit der
 erste (meist größte) Typ einer Familie in beiden Themes am stärksten wirkt.
@@ -636,6 +632,8 @@ UC.themeSchalterHtml({ klein, wahl })  -> .up-seg.up-themesw[.is-klein], role="r
 Reihenfolge     System (Zeichen computer), Light (sun), Dark (moon); nur Zeichen 16px,
                 Name als aria-label und Tooltip
 Größe           32 (--up-h-btn, Preferences) / 24 (--up-h-chip, .is-klein, Konto-Menü)
+Knopf           Kapsel mit Polster neben dem Zeichen: 40 x 32 (0 12px) / 32 x 24 (0 8px),
+                seit 15.10. spät ("mehr Padding in den 3 Bereichen"); vorher rund 32 / 24
 Form            voll rund, keine Schiene; außen ein 1px-Ring --vc-switch-border (box-shadow)
 Gewählt         Fläche --vc-switch-pill mit eigenem 1px-Ring --vc-switch-border und --up-e-1
 Farben          Ruhe --vc-third, Hover und gewählt --vc-text
@@ -1476,6 +1474,9 @@ Karte          min(640px, 94vw) breit, max. 82vh, Radius 12 (--up-r-2xl), 1px --
 Eingabezeile   Polster 12px 16px 13px, min. 53 hoch, Abstand 12; Lupe 16; Feld 28 hoch,
                16/400 (Geist 18, unter 16 zoomt iOS); rechts die Taste "Esc"
                (.mqa-kbd im Menü: 20 hoch, Polster 0 4px, Radius 4, 1px-Ring, 12/400)
+Auslöser       das "⌘K" am Quick-Actions-Knopf der Seitenleiste in einem kleinen Kasten:
+               20 hoch, Polster 0 5px, 1px --vc-border, Radius 4 (--up-r-xs), ohne Grund,
+               Schrift --vc-third (15.10. spät; vorher ohne Rand)
 Gruppenkopf    36 hoch, Polster 0 8px, 13/400, --vc-third
 Eintrag        mindestens 36 hoch, Polster 4px 8px, Abstand 12, Radius 6 (--up-r-m);
                aktiv: 5 % der Schriftfarbe als Grund (color-mix)

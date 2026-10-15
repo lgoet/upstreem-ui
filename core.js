@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261137;
+  var BUILD = 20261138;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -38,40 +38,27 @@
        ink  / inkDark    Schrift im Chip
        bg   / bgDark     Grund des Chips (dunkel GETOENT, nicht mehr flach #242424)
        bd   / bdDark     Rand des Chips, 1px
-     Bis zum 15.10. (vor Geist, die gueltigen Werte stehen im Absatz darunter) lag der Kontrast
-     Schrift auf Grund (WCAG, nachgerechnet) bei: Typen hell 6.6 bis 7.1, dunkel 9.5 bis 9.7;
+     Kontrast Schrift auf Grund (WCAG, nachgerechnet): Typen hell 6.6 bis 7.1, dunkel 9.5 bis 9.7;
      Rueckfall 5.5 / 6.4; You 16.5 / 13. Gelesen wird ueber typeStyle() weiter unten.
      STYLEGUIDE 1a/1b fuehrt dieselben Werte als Tabelle.
-     SEIT DEM 15.10. ABENDS GEIST ("Chartfarben ... Nimm fuer das alles bitte das Geist Design System
-     zur Hand"). Dieselbe Zuordnung der Farbtoene, jetzt aus Geists Skalen (vercel.com/geist/colors,
-     sRGB-Fassung) und nach Geists Rollen:
-       fill  Stufe 700 ("high contrast background"), bei Geist in beiden Themen derselbe Ton --
-             darum fill = fillDark. Brand Platforms nimmt Amber 800 (Orange) statt 700 (Gelb), die
-             Konvention der Branche ist Orange; Institutional ist Gray 800 / dunkel Gray 900, weil
-             Geist kein Schiefergrau hat und der Rueckfall unten das hellere Gray traegt.
-       ink   Stufe 900 ("text and icons"), Uncategorized Gray 900, Institutional Gray 1000 -- wie
-             Geists Badge "gray-subtle".
-       bg    Stufe 200 ("On smaller UI elements like badges, you can use Color 2 or Color 3").
-             Nicht Geists gerechnete Badge-Flaeche (L .94): auf der stand die Schrift bei 4.43 bis
-             4.47 und damit unter AA; auf Stufe 200 hell 4.69 (Red) bis 6.97 (Purple), dunkel 5.25
-             bis 7.67 -- nachgerechnet je Typ.
-       bd    = bg (der Rand ist seit dem 14.10. unsichtbar, typeStyle liest bd wie bisher). */
+     ZURUECK AUF DIESE FARBEN (15.10. spaet, Nutzer: "Die Farben der Citation und URL Chips solltest
+     du nicht aendern, nur die Chip-Form und Abmessungen"). Der Geist-Umbau desselben Abends
+     (dad5c83) hatte Typ- und URL-Farben samt Beimischung auf Geists Skalen gestellt; Form und
+     Masse der Badges (b6f2d5b, core.css) bleiben, nur die Farben sind wieder die von vorher. */
   var CITE_TYPE = {
-    "Editorial":       { fill:"#0072F5", fillDark:"#0072F5", ink:"#0068D6", inkDark:"#52A8FF", bg:"#EBF5FF", bgDark:"#10233D", bd:"#EBF5FF", bdDark:"#10233D" },
-    "UGC / Community": { fill:"#12A594", fillDark:"#12A594", ink:"#067A6E", inkDark:"#0AC7B4", bg:"#E5FAF6", bgDark:"#062822", bd:"#E5FAF6", bdDark:"#062822" },
-    "Knowledge-Base":  { fill:"#8E4EC6", fillDark:"#8E4EC6", ink:"#7820BC", inkDark:"#BF7AF0", bg:"#F9F1FE", bgDark:"#2E1938", bd:"#F9F1FE", bdDark:"#2E1938" },
-    "Brand Platforms": { fill:"#FF990A", fillDark:"#FF990A", ink:"#A35200", inkDark:"#F2A20D", bg:"#FFF4D6", bgDark:"#331B00", bd:"#FFF4D6", bdDark:"#331B00" },
-    "Institutional":   { fill:"#7D7D7D", fillDark:"#A1A1A1", ink:"#171717", inkDark:"#EDEDED", bg:"#EBEBEB", bgDark:"#1F1F1F", bd:"#EBEBEB", bdDark:"#1F1F1F" },
-    "Competition":     { fill:"#E5484D", fillDark:"#E5484D", ink:"#CB2A2F", inkDark:"#FF6166", bg:"#FFEBEB", bgDark:"#3C1618", bd:"#FFEBEB", bdDark:"#3C1618" },
+    "Editorial":       { fill:"#7493C7", fillDark:"#8BA6D1", ink:"#375587", inkDark:"#B4CCF2", bg:"#F0F7FF", bgDark:"#1D232E", bd:"#D0E3FF", bdDark:"#2C384D" },
+    "UGC / Community": { fill:"#49A1AB", fillDark:"#6DB2B9", ink:"#00636D", inkDark:"#9CD6DD", bg:"#EAFBFD", bgDark:"#162628", bd:"#BFEBF0", bdDark:"#1C3E42" },
+    "Knowledge-Base":  { fill:"#9688C1", fillDark:"#A79CCC", ink:"#594A82", inkDark:"#CDC3EE", bg:"#F7F5FF", bgDark:"#23212C", bd:"#E3DCFD", bdDark:"#39344B" },
+    "Brand Platforms": { fill:"#BB845F", fillDark:"#C8997B", ink:"#7B461E", inkDark:"#EAC1A6", bg:"#FFF4EC", bgDark:"#2B2019", bd:"#FADAC6", bdDark:"#483224" },
+    "Institutional":   { fill:"#8195A6", fillDark:"#97A7B5", ink:"#455868", inkDark:"#BECDDA", bg:"#F3F7FB", bgDark:"#1F2327", bd:"#D8E3ED", bdDark:"#313940" },
+    "Competition":     { fill:"#C17E78", fillDark:"#CD948F", ink:"#803F3B", inkDark:"#EFBCB7", bg:"#FFF2F1", bgDark:"#2D1F1D", bd:"#FED6D2", bdDark:"#4B302D" },
     /* You traegt die Akzentfarbe des Themes (STYLEGUIDE 1: Akzent ist die Schriftfarbe) und ist
        als einziger Chip invertiert, damit die eigene Seite in jeder Liste sofort auffaellt. In
        Charts ist You damit die Textfarbe des Themes. */
     "You":             { fill:"#1F1F1B", fillDark:"#E0E0E0", ink:"#FFFFFF", inkDark:"#1B1B1B", bg:"#1F1F1B", bgDark:"#E0E0E0", bd:"#1F1F1B", bdDark:"#E0E0E0" }
   };
-  /* Rueckfall fuer unbekannte Typen und "Uncategorized", fuer Citation UND URL. Geist Gray (15.10.):
-     Flaeche 600 hell / 800 dunkel -- leiser als Institutional, aber im Dunkeln noch 4.1:1 auf der
-     Karte; Schrift 900 auf Grund 100 (7.67 / 6.74). */
-  var TYPE_OTHER = { fill:"#A8A8A8", fillDark:"#7D7D7D", ink:"#4C4C4C", inkDark:"#A1A1A1", bg:"#F2F2F2", bgDark:"#1A1A1A", bd:"#F2F2F2", bdDark:"#1A1A1A" };
+  /* Rueckfall fuer unbekannte Typen und "Uncategorized", fuer Citation UND URL. */
+  var TYPE_OTHER = { fill:"#9E9E9E", fillDark:"#808080", ink:"#5F636B", inkDark:"#A8A8A8", bg:"#F5F5F5", bgDark:"#262626", bd:"#E0E2E6", bdDark:"#3A3A3A" };
   /* Wer nur EINEN Wert je Typ liest (Ring, Legende, typeColor, ask-mira, Landingpage), bekommt die
      Chart-Flaeche. Die Namen bleiben, weil sie an UC haengen und von aussen gelesen werden. */
   var CITE_COLOR = {}, CITE_COLOR_DARK = {};
@@ -118,37 +105,26 @@
      (meist groesste) Typ einer Familie in beiden Themen am staerksten wirkt.
      Die Familientoene sind die der Zitationstypen: commercial = Brand Platforms,
      editorial = Editorial, reference = Knowledge-Base. */
-  /* SEIT DEM 15.10. ABENDS GEIST (siehe CITE_TYPE): Chip je Familie Stufe 900 auf Stufe 200 --
-     commercial Amber, editorial Blue, reference Purple. Die Flaechen sind Geists Stufen der Familie,
-     nach OKLCH-Helligkeit ausgewaehlt, damit die Staffel stetig laeuft (gemessen):
-         hell, dunkel nach hell     Amber 1000 900 800 500            L .31 .53 .77 .87
-                                    Blue  1000 800 700 600 500        L .27 .52 .58 .73 .83
-                                    Purple 1000 800 700 600 500       L .24 .48 .56 .72 .81
-         dunkel, hell nach dunkel   Amber 1000 700 800 500            L .97 .82 .77 .42
-                                    Blue  1000 900 600 800 500        L .97 .72 .65 .52 .39
-                                    Purple 1000 900 700 800 500       L .96 .70 .56 .48 .41
-     Hell Blue 900 fehlt, weil er fast gleich 800 ist (#0068d6 / #0062d1); dunkel Purple 600, weil
-     Geist ihn dort gleich 700 fuehrt. */
   var URL_FAMILY = {
-    commercial: { ink:"#A35200", inkDark:"#F2A20D", bg:"#FFF4D6", bgDark:"#331B00", bd:"#FFF4D6", bdDark:"#331B00" },
-    editorial:  { ink:"#0068D6", inkDark:"#52A8FF", bg:"#EBF5FF", bgDark:"#10233D", bd:"#EBF5FF", bdDark:"#10233D" },
-    reference:  { ink:"#7820BC", inkDark:"#BF7AF0", bg:"#F9F1FE", bgDark:"#2E1938", bd:"#F9F1FE", bdDark:"#2E1938" }
+    commercial: { ink:"#7B461E", inkDark:"#EAC1A6", bg:"#FFF4EC", bgDark:"#2B2019", bd:"#FADAC6", bdDark:"#483224" },
+    editorial:  { ink:"#375587", inkDark:"#B4CCF2", bg:"#F0F7FF", bgDark:"#1D232E", bd:"#D0E3FF", bdDark:"#2C384D" },
+    reference:  { ink:"#594A82", inkDark:"#CDC3EE", bg:"#F7F5FF", bgDark:"#23212C", bd:"#E3DCFD", bdDark:"#39344B" }
   };
   var URL_TYPE = {
-    homepage:        { label:"Homepage",          family:"commercial", fill:"#4E2009", fillDark:"#FEF3DC" },
-    product_service: { label:"Product / Service", family:"commercial", fill:"#A35200", fillDark:"#FFB224" },
-    marketplace:     { label:"Marketplace",       family:"commercial", fill:"#FF990A", fillDark:"#FF990A" },
-    company_info:    { label:"Company Info",      family:"commercial", fill:"#FFC96B", fillDark:"#6B4105" },
-    article:         { label:"Article",           family:"editorial",  fill:"#00254C", fillDark:"#EBF6FF" },
-    listicle:        { label:"Listicle",          family:"editorial",  fill:"#0062D1", fillDark:"#52A8FF" },
-    guide:           { label:"Guide",             family:"editorial",  fill:"#0072F5", fillDark:"#0090FF" },
-    comparison:      { label:"Comparison",        family:"editorial",  fill:"#52AEFF", fillDark:"#0062D1" },
-    review:          { label:"Review",            family:"editorial",  fill:"#99CEFF", fillDark:"#0A4380" },
-    documentation:   { label:"Documentation",     family:"reference",  fill:"#2E004C", fillDark:"#F8EDFC" },
-    forum:           { label:"Forum",             family:"reference",  fill:"#763DA9", fillDark:"#BF7AF0" },
-    directory:       { label:"Directory",         family:"reference",  fill:"#8E4EC6", fillDark:"#8E4EC6" },
-    video:           { label:"Video",             family:"reference",  fill:"#BF89EC", fillDark:"#763DA9" },
-    social_post:     { label:"Social Post",       family:"reference",  fill:"#D5B1F1", fillDark:"#5F2E85" }
+    homepage:        { label:"Homepage",          family:"commercial", fill:"#845738", fillDark:"#F1C7AC" },
+    product_service: { label:"Product / Service", family:"commercial", fill:"#A57656", fillDark:"#D2AA8F" },
+    marketplace:     { label:"Marketplace",       family:"commercial", fill:"#C89675", fillDark:"#B48D73" },
+    company_info:    { label:"Company Info",      family:"commercial", fill:"#EBB896", fillDark:"#977158" },
+    article:         { label:"Article",           family:"editorial",  fill:"#4A648E", fillDark:"#BAD2F9" },
+    listicle:        { label:"Listicle",          family:"editorial",  fill:"#607BA7", fillDark:"#A4BCE2" },
+    guide:           { label:"Guide",             family:"editorial",  fill:"#7793C1", fillDark:"#8FA6CB" },
+    comparison:      { label:"Comparison",        family:"editorial",  fill:"#8FACDB", fillDark:"#7A90B4" },
+    review:          { label:"Review",            family:"editorial",  fill:"#A8C6F5", fillDark:"#667B9E" },
+    documentation:   { label:"Documentation",     family:"reference",  fill:"#665A8A", fillDark:"#D3CAF5" },
+    forum:           { label:"Forum",             family:"reference",  fill:"#7D71A2", fillDark:"#BDB4DE" },
+    directory:       { label:"Directory",         family:"reference",  fill:"#9589BC", fillDark:"#A79EC7" },
+    video:           { label:"Video",             family:"reference",  fill:"#AEA2D6", fillDark:"#9188B1" },
+    social_post:     { label:"Social Post",       family:"reference",  fill:"#C7BBF0", fillDark:"#7C749B" }
   };
   /* Die Chipwerte der Familie in jeden Typ kopieren, damit ein Leser nur EIN Objekt braucht.
      c / cDark bleiben als Name fuer die Chip-Schrift: so hiessen die Felder bis zum 13.10., und
@@ -172,15 +148,24 @@
      Der URL-Schluessel wird wie in urls-table normalisiert ("Product Service" -> product_service),
      citeName() uebersetzt die Bubble-Schreibweisen der Zitationstypen (steht weiter unten, als
      Funktionsdeklaration aber schon hier aufrufbar). */
-  /* DER GRUND DER TYPE-CHIPS. Vom 14.10. bis zum 15.10. abends wurden hier 7 Prozent der Typfarbe
-     in den Grund gemischt ("minimal mehr Opacity, so dass der Kontrast der Schrift noch stimmt").
-     Seit Geist ist der Grund Geists Stufe 200 ohne Beimischung: gemischt mit den kraeftigen
-     Flaechen (Stufe 700) traefe er Geists Wert nicht mehr, und die Schrift fiele bei Red unter 4.5.
-     Die dunklere Stufe 300 ginge auch nur bis auf Red (4.497 -- knapp unter AA); also 200 fuer
-     alle. Der Preis, gemessen in OKLCH: Editorial L .966 statt .952, eine Spur heller als bis
-     heute. "You" traegt die volle Flaeche und bleibt. */
+  /* DER GRUND DER TYPE-CHIPS EINE SPUR SICHTBARER (14.10., gewuenscht: "minimal mehr Opacity, so
+     dass der Kontrast der Schrift noch stimmt"). 7 Prozent der Typfarbe (fill) in den hellen Grund
+     gemischt, im Dunkeln 7 Prozent in den dunklen. Nachgerechnet fuer jeden Typ in beiden Themen:
+     die Schrift bleibt ueber 4.5:1 (AA fuer 12px). "You" traegt die volle Flaeche und bleibt. */
+  function hexMisch(a, b, t){
+    function teil(h, i){ return parseInt(h.substr(1 + i * 2, 2), 16); }
+    if (!/^#[0-9a-f]{6}$/i.test(a) || !/^#[0-9a-f]{6}$/i.test(b)) return a;
+    var o = "#";
+    for (var i = 0; i < 3; i++){
+      var v = Math.round(teil(a, i) * (1 - t) + teil(b, i) * t);
+      o += (v < 16 ? "0" : "") + v.toString(16);
+    }
+    return o.toUpperCase();
+  }
   function chipGrund(e, isDark){
-    return isDark ? e.bgDark : e.bg;
+    var grund = isDark ? e.bgDark : e.bg, farbe = isDark ? e.fillDark : e.fill;
+    if (!farbe || grund === farbe) return grund;
+    return hexMisch(grund, farbe, 0.07);
   }
   function typeStyle(art, raw, isDark){
     var e, dot = null;
