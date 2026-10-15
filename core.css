@@ -6970,7 +6970,8 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    dasselbe Raster wie .up-row (--up-cols) und dasselbe Zellpolster wie .up-td (0 16 0 12). Anders
    als die Zeilen traegt sie SENKRECHTE LINIEN an den Zellgrenzen und steht in den Spalten
    RECHTSBUENDIG (beides bestellt, 15.10. spaet): eine Rechenzeile unter der Tabelle wie bei
-   Attio, die Anzahl links bleibt links.
+   Attio. Auch die Anzahl steht rechts in IHRER Zelle, der ersten ("das x gesamt auch rechts
+   buendig") -- links heisst: in der linken Zelle, nicht an ihrer linken Kante.
    Hoehe wie Kopf und Fuss der flachen Tabelle (--up-flach-h, 48), ohne data-flach dieselben 48.
    Oben eine Linie; die letzte Zeile darueber hat keine (.up-tbody > .up-row:last-child), also
    steht nie eine doppelte. Die Linie ist ein Schatten nach innen wie unter dem Kopf der flachen
@@ -6998,7 +6999,6 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
   overflow: hidden; padding: 0 16px 0 12px; border-left: 1px solid var(--vc-border);
 }
 .up-sumzelle:first-child { border-left: none; }
-.up-sumzelle.up-sumzelle-erste { justify-content: flex-start; }
 /* Die erste Zelle traegt heute nur die Anzahl ("102 count"); kann aber mehrere Paare tragen, und
    dann nur, solange sie ganz passen: die Reihe ist eine Zeile hoch, und was nicht mehr daneben passt, bricht in
    eine zweite um, die abgeschnitten ist. Kein Messen, und nie ein halbes Paar. 24 hoch, weil ein
