@@ -1278,7 +1278,23 @@
           '<span class="ubo-head-count up-head-count"></span>';
         uboHead.insertBefore(h, uboHead.firstChild);
       }
+      /* VARIANTE A (16.10., Leinwand "Citations Seitenaufbau", fuer Tracked gewaehlt): die Leiste
+         steht OBEN, ueber dem Chart -- sie traegt Kalender und Filter der Seite (brands-page.js),
+         und die gelten fuer Chart UND Tabelle. Der Kopf der Tabelleneinheit wandert dafuer an den
+         Anfang der Wurzel, der Chart bleibt dahinter, der Kasten danach (core, bandUnterLeiste).
+         Geklebt wird unten ueber makeSticky (applyResponsive). Nur in der einen Leiste; Bubble
+         behaelt Chart oben, Tabelle mit eigenem Kopf darunter. */
+      if (LEISTE && UC.bandUnterLeiste){
+        var chartEinheit = root.querySelector(":scope > .ubo-unit-chart");
+        if (chartEinheit) UC.bandUnterLeiste(root, chartEinheit, { kopf: uboHead });
+      }
     })();
+    /* Die Leiste klebt wie jede Tabelle der App (core makeSticky, ab 1000 breit): sie oben bei
+       --up-sticky-top (die Seite setzt 16), der Spaltenkopf direkt unter ihr, der Chart dazwischen
+       scrollt weg. data-kleb-fuss der Seite haengt sich daran (klebender Fuss). Ohne die eine
+       Leiste (Bubble) klebt hier weiter nichts -- wie bisher. */
+    var leisteKopf = LEISTE ? root.querySelector(":scope > .ubo-head.up-head") : null;
+    var _sticky = (leisteKopf && UC.makeSticky) ? UC.makeSticky(root, leisteKopf) : null;
     function setHeadCount(){
       var hr = root.querySelector(".ubo-heading-table");
       var cn = root.querySelector(".ubo-head-count");
@@ -1659,6 +1675,9 @@
         if (!inMenu && !onOpener) closePops(null);
       });
       root.addEventListener("click", function(e){
+        /* Kalender und Filter der Seite stehen in der Leiste (Variante A, brands-page.js): ihre
+           Klicks gehoeren ihnen, nicht dieser Tabelle (wie prompts-table.js). */
+        if (e.target.closest(".up-leiste-scope .up-root, .up-ff")) return;
         if (e.target.closest(".ubo-addbrand")){ e.stopPropagation(); neueMarke(); return; }
         var thSort = e.target.closest("[data-sortcol]");
         if (thSort){ headSortClick(thSort.getAttribute("data-sortcol")); return; }
@@ -1998,6 +2017,13 @@
       root.__uboRespT = setTimeout(function(){ line.resize(); matrix.resize(); }, 160);
     }
     if (UC.onResize) UC.onResize(root, applyResponsive);
+    /* Kleben (siehe leisteKopf oben): beim Aufbau und am Ende jeder Fensteraenderung, wie
+       domains-table.js -- nicht je Bild, applySticky misst die Leiste. */
+    if (_sticky){
+      if (UC.aufResize) UC.aufResize(_sticky.applySticky);
+      else window.addEventListener("resize", UC.rafThrottle(_sticky.applySticky));
+      _sticky.applySticky();
+    }
     /* The legend re-flows itself (balanced rows) only when asked to, and it also owns the
        "hide me below 500px page width" decision — so without a relayout on resize a legend that
        was hidden once (e.g. the window was briefly narrow while the page was still loading) stays

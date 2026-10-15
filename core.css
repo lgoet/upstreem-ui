@@ -4104,6 +4104,83 @@
     .up-ff-menu { pointer-events: none; }
     .up-ff-list.is-panel { display: none; }
 
+    /* ---------- DIE LEISTE UEBER DEM BAND (.has-leistenband, UC.bandUnterLeiste, 16.10.) ----------
+       Variante A der Leinwand "Citations Seitenaufbau", fuer Citations und Brands > Tracked
+       gewaehlt: in der Wurzel der Tabelle steht die eine Leiste oben, darunter das Band (Chart),
+       darunter der Kasten. Die Leiste klebt (makeSticky), Kopf, Reiter und Chart scrollen weg, der
+       Spaltenkopf klebt direkt unter ihr (--up-thead-off ist ihre Hoehe).
+       Abstaende wie ueberall: die Leiste haelt unten ihre 16 (Polster klebend, Rand in Ruhe), das
+       Band traegt seine 16 darunter selbst (DIE ZEILE UNTER DEM BAND). Der Stapel der Wurzel faellt
+       dafuer auf 0 -- Brands stapelt Chart und Tabelle mit 24, das stuende sonst zusaetzlich
+       zwischen Leiste und Band. (0,4,0): schlaegt den Stapel der Komponente (0,3,0). */
+    .up-root.up-root[data-flach="yes"].has-leistenband { --up-stapel-luft: 0px; }
+    /* Eine Linie unter der Leiste, NUR solange sie klebt (.is-geklebt, klebPruefenAlle): dann
+       laeuft der Chart unter ihr weg, bzw. sie ist die obere Kante des Spaltenkopfs. In Ruhe steht
+       darunter die Linie des Bandes. Eingeblendet, nicht geschaltet. */
+    .up-root.has-leistenband.up-sticky > .up-head::after {
+      content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; pointer-events: none;
+      background: var(--vc-border); opacity: 0; transition: opacity var(--up-t-2) var(--up-ease-expo);
+    }
+    .up-root.has-leistenband.up-sticky.is-geklebt > .up-head::after { opacity: 1; }
+
+    /* ---------- DER KLEBENDE FUSS (data-kleb-fuss="yes", core.js klebFuss, 16.10.) ----------
+       Gesamtzeile und Pagination kleben unten am Scrollbereich, sobald die Tabelle den Bildschirm
+       fuellt (ihr Spaltenkopf klebt), und fahren dabei herein; am Ende der Tabelle stehen sie an
+       ihrem Platz. Die Zustaende setzt core.js, hier steht nur, wie sie aussehen:
+         .is-fuss-an          sticky (Gesamtzeile ueber der Pagination: --up-fuss-unter)
+         .is-fuss-weg         unten hinaus gefahren (--up-fuss-weg, beide als ein Block)
+         .is-fuss-still       ohne Uebergang (Startpunkt einer Fahrt, Rueckkehr in den Fluss)
+         .is-fuss-klebt       klebt wirklich (Platz unter dem Bild): Schatten nach oben
+         .is-fuss-ohne-summe  ohne Gesamtzeile traegt die Pagination den Schatten
+       z 4 wie die Gesamtzeile mit fester Hoehe: unter dem klebenden Kopf (5) und der Leiste (6),
+       ueber den Zeilen. Der Grund deckt (die Zeilen laufen darunter durch). */
+    .up-fuss-marke { display: block; flex: none; height: 0; margin: 0; pointer-events: none; }
+    /* Die Pagination laeuft rechts mit aus wie links (DIE FLACHE TABELLE): klebend laufen die
+       Zeilen darunter durch und stuenden sonst in den 16 rechts neben ihr im Bild. Das Polster gibt
+       den Platz zurueck, die Knoepfe bleiben, wo sie waren -- und immer, nicht erst klebend: beim
+       Einrasten aendert sich so kein Mass. */
+    .up-root.up-root[data-flach="yes"][data-kleb-fuss="yes"] > .up-foot {
+      margin-right: calc(-1 * var(--up-flach-aus)); padding-right: var(--up-flach-aus);
+    }
+    .up-root[data-kleb-fuss="yes"] > .up-foot { position: relative; }
+    .up-root[data-kleb-fuss="yes"] .up-box .up-sumrow,
+    .up-root[data-kleb-fuss="yes"] > .up-foot {
+      transition: transform var(--up-t-3) var(--up-ease-expo), opacity var(--up-t-2) var(--up-ease-expo);
+    }
+    .up-root[data-kleb-fuss="yes"].is-fuss-an .up-box .up-sumrow {
+      position: sticky; bottom: var(--up-fuss-unter, 0px); z-index: 4;
+    }
+    /* Die Linie ueber der Pagination fuellt den 1px zwischen beiden (die Linie des Kastens, die
+       klebend fehlt); ohne Gesamtzeile ist sie die Kante der Pagination. */
+    .up-root[data-kleb-fuss="yes"].is-fuss-an > .up-foot {
+      position: sticky; bottom: 0; z-index: 4; background: var(--up-surface);
+      box-shadow: 0 -1px 0 var(--vc-border);
+    }
+    .up-root[data-kleb-fuss="yes"].is-fuss-weg .up-box .up-sumrow,
+    .up-root[data-kleb-fuss="yes"].is-fuss-weg > .up-foot {
+      transform: translateY(var(--up-fuss-weg, 120px)); opacity: 0;
+    }
+    .up-root[data-kleb-fuss="yes"].is-fuss-still .up-box .up-sumrow,
+    .up-root[data-kleb-fuss="yes"].is-fuss-still > .up-foot { transition: none; }
+    /* Der Schatten: die Tiefe einer frei schwebenden Leiste (--up-e-3, "Leiste, Kasten"), aber
+       nach OBEN -- die Ebene liegt deckungsgleich auf dem Teil und ist gespiegelt (scaleY(-1)), so
+       wirft derselbe Wert nach oben statt nach unten, ohne eine zweite Zahl. Nur Deckkraft blendet. */
+    .up-root[data-kleb-fuss="yes"] .up-box .up-sumrow::before,
+    .up-root[data-kleb-fuss="yes"] > .up-foot::before {
+      content: ""; position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none;
+      box-shadow: var(--up-e-3); transform: scaleY(-1); opacity: 0;
+      transition: opacity var(--up-t-2) var(--up-ease-expo);
+    }
+    .up-root[data-kleb-fuss="yes"].is-fuss-klebt .up-box .up-sumrow::before,
+    .up-root[data-kleb-fuss="yes"].is-fuss-klebt.is-fuss-ohne-summe > .up-foot::before { opacity: 1; }
+    @media (prefers-reduced-motion: reduce){
+      .up-root[data-kleb-fuss="yes"] .up-box .up-sumrow,
+      .up-root[data-kleb-fuss="yes"] > .up-foot,
+      .up-root[data-kleb-fuss="yes"] .up-box .up-sumrow::before,
+      .up-root[data-kleb-fuss="yes"] > .up-foot::before,
+      .up-root.has-leistenband.up-sticky > .up-head::after { transition: none; }
+    }
+
     /* ---------- DAS OFFENE BAND (.up-band unter data-flach="yes", 15.10.) ----------
        Variante A der Vorschau zur Citations-Seite, vom Nutzer gewaehlt und danach auf Brands,
        Shopping und Ads uebertragen -- dort viermal fast gleich lokal gebaut, darum hierher gehoben,
