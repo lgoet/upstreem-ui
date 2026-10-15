@@ -397,8 +397,11 @@
       if (!w) return;
       var stacked = root.classList.contains("is-narrow");
       var rootW = root.clientWidth || 0;
-      tableEl.classList.toggle("tct-hide-used", stacked && rootW > 0 && rootW < 700);
-      tableEl.classList.toggle("tct-hide-type", stacked && rootW > 0 && rootW < 500);
+      /* Erst Type, dann Used (15.10. spaet, dieselbe Reihenfolge wie jede Tabelle der App, siehe
+         SPALTEN_ART in core.js): Type ist ein Merkmal und weicht vor einer Zaehlspalte. Vorher
+         ging Used zuerst. Share bleibt immer. */
+      tableEl.classList.toggle("tct-hide-type", stacked && rootW > 0 && rootW < 700);
+      tableEl.classList.toggle("tct-hide-used", stacked && rootW > 0 && rootW < 500);
       checkTrendFit();
     }
     var tableEmptyGraceTimer = null;

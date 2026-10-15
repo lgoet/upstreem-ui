@@ -7421,6 +7421,10 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    Zuerst weicht die Bezeichnung dahinter (flex-shrink 1000 gegen 1), dann der Name mit "…". */
 .up-sumwert.is-text { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .up-sumpaar > .up-sumlabel { flex: 0 1000 auto; }
+/* Das Durchschnittszeichen statt "avg" (sumPaarHtml): 13 wie die Schrift der Bezeichnung, in ihrer
+   Farbe, weicht nie (ein halbes Zeichen liest sich nicht). */
+.up-sumpaar > .up-sumlabel.up-sumavg { flex: 0 0 auto; display: inline-flex; align-items: center; }
+.up-sumavg svg { width: 13px; height: 13px; display: block; }
 .up-sumknopf:hover, .up-sumrow.is-open .up-sumknopf.is-offen { background: var(--vc-heading-bg); }
 .up-sumknopf:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .up-sumchev { display: inline-flex; align-items: center; flex: 0 0 12px; width: 12px; height: var(--up-h-seg); color: var(--vc-fourth); }
