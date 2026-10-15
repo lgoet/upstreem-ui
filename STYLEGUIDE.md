@@ -1118,7 +1118,10 @@ UC.kopfZeichen(th, name)   setzt es als erstes Kind in einen vorhandenen Kopf, n
 
 **Tabellenköpfe im Drawer** (seit 15.10. spät, `core.css` „DIE TABELLENKOEPFE IM DRAWER“): jede
 Tabelle in einem Drawer (`.up-kdr`, `[id^="drawer-"]`) trägt den Kopf der Seitentabellen, behält
-aber ihren Kasten mit Rand und Radius 12 — sie wird **nicht** flach.
+aber ihren Kasten mit Rand und Radius 12 — sie wird **nicht** flach. **Im Dunkeln** (nach Geist)
+behält der Kasten im Drawer seinen Rand `--vc-border` (`#2e2e2e`): Drawer und Kasten sind dort beide
+`#0a0a0a`, ohne Rand wäre er unsichtbar (`core.css` „IM DRAWER NACH GEIST BLEIBT DER RAND“). Klebend
+zeichnen Kopf und Körper den Rand, der Kasten bleibt durchsichtig wie im Light.
 
 ```
 Höhe     48 (var(--up-flach-h, 48px)), in beiden Themen; vorher 45, Conversion (URL-Drawer)

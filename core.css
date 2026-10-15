@@ -3734,6 +3734,29 @@
       border-left-width: 0; border-right-width: 0;
     }
 
+    /* ---------- IM DRAWER NACH GEIST BLEIBT DER RAND (16.10.) ----------
+       Das Kriterium oben ("der Rand darf nur dort weg, wo die Fuellung die Flaeche schon von
+       ihrem Grund trennt") gilt im Dunkeln nach Geist im Drawer NICHT mehr: Drawer und Kasten sind
+       beide Background 1 (#0a0a0a), ohne Rand war der Kasten unsichtbar (gemeldet vom Drawer-
+       Umbau: Responses, URLs, Conversion, Brand Editor). Geist traegt hier seinen 1px-Ring --
+       also Farbe UND Breite zurueck, links und rechts mit, und zwar fuer Kasten, Kopf und Koerper
+       der klebenden Tabelle zugleich (siehe "an den SEITEN Breite 0": schon 1px Unterschied
+       zwischen Kopf und Koerper verschiebt die Spalten).
+       Nicht hier: .vot-box und .tcd-box -- im Drawer stehen sie im gemeinsamen Kasten mit eigenem
+       Rand (DAS BAND IM KASTEN); ein Rand mehr waere eine doppelte Linie. Und .ubd-card/.udd-card
+       sind im Drawer seit dem 13.10. rahmenlos. Nur unter html[data-up-dunkel]: ohne den Marker
+       (Landingpage, erstes Bild) liegt der Drawer noch auf dem alten Grund. */
+    /* Klebend zeichnen Kopf und Koerper den Rand, der Kasten bleibt durchsichtig wie im Hellen
+       (gemessen 16.10.: hell .up-box 1px rgba(0,0,0,0), Kopf und Koerper 1px #ebebeb) -- darum
+       .up-box nur ohne .up-sticky darueber, sonst stuende im Dunkeln eine doppelte Linie. Am Kasten
+       selbst gefragt (:not(.up-sticky .up-box)) und nicht an einer .up-root davor: auch die Huelle
+       des Drawers ist eine dunkle .up-root, und die ist nie klebend. */
+    html[data-up-dunkel="geist"] :is(.up-kdr, [id^="drawer-"]) .up-root[data-theme="dark"] .up-box:not(.up-sticky .up-box),
+    html[data-up-dunkel="geist"] :is(.up-kdr, [id^="drawer-"]) .up-root[data-theme="dark"] :is(.up-vartable, .uto-table, .ube-table, .urd-card, .urd-cite-card, .urt-card),
+    html[data-up-dunkel="geist"] :is(.up-kdr, [id^="drawer-"]) .up-root[data-theme="dark"].up-sticky :is(.up-thead, .up-tbody) {
+      border-color: var(--vc-border); border-left-width: 1px; border-right-width: 1px;
+    }
+
     /* ---------- Rang-/Indexspalte ("#") ----------
        Die feste, nie ausblendbare Spalte ganz links, die UC.makeColumns ueber cfg.leadWidth als
        eigenen Track anlegt. Stand bis eben nur in brands-overview.css; discover-brands ist der
