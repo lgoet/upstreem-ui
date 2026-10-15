@@ -13,7 +13,8 @@
   var __uutBootQueue = window.__uutBootQueue = window.__uutBootQueue || [];
   if (!window.__uutBootStubbed){
     window.__uutBootStubbed = true;
-    ["renderUrlsTable", "setUrlsTableLoading", "resetUrlsTable", "setUrlsTableBrands", "setUrlsTableFilters"].forEach(function(n){
+    ["renderUrlsTable", "setUrlsTableLoading", "resetUrlsTable", "setUrlsTableBrands", "setUrlsTableFilters",
+     "setUrlsTableSummenQuelle"].forEach(function(n){
       window[n] = function(){ __uutBootQueue.push([n, arguments]); };
     });
   }
@@ -35,6 +36,23 @@
   function uutRun(){
   var UC = window.UpstreemCore;
   var CITE_COLOR = UC.CITE_COLOR, CITE_ALIAS = UC.CITE_ALIAS, ALL_CITATION_TYPES = UC.ALL_CITATION_TYPES, URL_TYPE = UC.URL_TYPE, ALL_URL_TYPES = UC.ALL_URL_TYPES, OTHER_LIGHT = UC.OTHER_LIGHT, OTHER_DARK = UC.OTHER_DARK, CHIP_BG_DARK = UC.CHIP_BG_DARK, MONTHS = UC.MONTHS, DEBOUNCE = UC.DEBOUNCE, MIN = UC.MIN, SORT_DEBOUNCE = UC.SORT_DEBOUNCE, PAGE_SIZES = UC.PAGE_SIZES, DEFAULT_PAGE_SIZE = UC.DEFAULT_PAGE_SIZE, fmtTotal = UC.fmtTotal, isYes = UC.isYes, highlight = UC.highlight, redditTitleHtml = UC.redditTitleHtml, esc = UC.esc, citeName = UC.citeName, tint = UC.tint, toNum = UC.toNum, fmt1 = UC.fmt1, fmtInt = UC.fmtInt, fmtDate = UC.fmtDate, foldDiacritics = UC.foldDiacritics, germanExpand = UC.germanExpand, resolveBubbleFn = UC.resolveBubbleFn, TREND_UP = UC.TREND_UP, TREND_DOWN = UC.TREND_DOWN, CHECK_SVG = UC.CHECK_SVG, COPY_SVG = UC.COPY_SVG, GOTO_SVG = UC.GOTO_SVG, DONE_SVG = UC.DONE_SVG, EXT_SVG = UC.EXT_SVG, STORE = UC.STORE, LOADING_EXPLICIT = UC.LOADING_EXPLICIT;
+  /* Die Quelle der Summen je Instanz (15.10. spaet, setUrlsTableSummenQuelle): { sig, holen } der
+     Seite, die die Tabelle fuellt. Modulweit -- ein Neuaufbau der Tabelle findet sie hier. */
+  var SUMMEN_QUELLE = (window.__uutSummenQuelle = window.__uutSummenQuelle || {});
+  /* Die Bezeichnungen der Berechnungen (Gesamtzeile). DER KATALOG IST EINER FUER DIE GANZE APP:
+     "brands" steht in core. Hier auch, was domains-table.js braucht ("Top 10 share", "Active last
+     7 days", "New this period" und ihre kurzen Formen): auf der Citations-Seite laden beide, und
+     diese Datei laedt auch ohne die andere. "Mention rate" und "Brands seen" stehen gleichlautend
+     in responses-table.js -- die laedt in anderen Ansichten, ohne diese Datei; gehoeren nach core. */
+  if (UC.addMessages) UC.addMessages("de", {
+    "Your URLs": "Eigene URLs", "yours": "eigene",
+    "Top 10 share": "Anteil der Top 10", "top 10": "Top 10",
+    "Largest URL type": "Größter URL-Typ", "largest": "größter",
+    "Mention rate": "Erwähnungsrate", "mention rate": "Erwähnungsrate",
+    "Avg. brands per URL": "Ø Brands je URL", "per URL": "je URL", "Brands seen": "Gesehene Brands",
+    "Active last 7 days": "Aktiv in den letzten 7 Tagen", "active": "aktiv",
+    "New this period": "Neu im Zeitraum", "new": "neu"
+  });
 
   /* Hideable columns. Domain and Actions are deliberately absent — the table makes no sense
      without the domain, and the row actions are the point of the Actions cell. */
@@ -987,13 +1005,48 @@
       return null;
     }
 
-    /* DIE GESAMTZEILE (15.10., core UC.makeZaehlZeile, wie Responses): vorerst nur die Anzahl
-       links -- dieselbe Zahl wie bisher im Kopf, der in der einen Leiste wegfaellt, also die
-       Gesamtzahl des Servers. Nur in der einen Leiste; ausblendbar ueber Display. */
+    /* DIE GESAMTZEILE (15.10., core UC.makeZaehlZeile, wie Responses): links die Anzahl --
+       dieselbe Zahl wie bisher im Kopf, der in der einen Leiste wegfaellt, also die Gesamtzahl des
+       Servers. Nur in der einen Leiste; ausblendbar ueber Display.
+       DIE BERECHNUNGEN JE SPALTE (15.10. spaet, vom Nutzer abgenommen). feld: Schluessel der
+       Antwort von cached_citations_urls_summary_v1 (Auftrag bubble/summen_db_auftrag_15_10.md, 4),
+       art: Format nach CLAUDE.md 2b, kurz: Bezeichnung in der Zelle, label: im Menue und im
+       Tooltip. Nie ueber die sichtbare Seite gerechnet; die Werte kommen ueber die Quelle der Seite
+       (setUrlsTableSummenQuelle), ohne sie steht bei einer gewaehlten Berechnung "–" (core). */
+    var SUM_RECHNEN = {
+      share: [
+        { key: "eigen",   label: "Your URLs",           kurz: "yours",        feld: "own_share_pct",      art: "pct" },
+        { key: "top10",   label: "Top 10 share",        kurz: "top 10",       feld: "top10_share_pct",    art: "pct" }
+      ],
+      type: [
+        /* Der Name wie im Chip der Zelle (UC.typLabel), der Anteil statt kurz dahinter. */
+        { key: "groesst", label: "Largest URL type",    kurz: "largest",      feld: "top_url_type",       art: "text",
+          name: function(k){ return UC.typLabel ? UC.typLabel(k, "url") : k; }, anteil: "top_url_type_share" }
+      ],
+      ment: [
+        { key: "quote",   label: "Mention rate",        kurz: "mention rate", feld: "mention_rate_pct",   art: "pct" }
+      ],
+      brands: [
+        { key: "jeurl",   label: "Avg. brands per URL", kurz: "per URL",      feld: "avg_brands_per_url", art: "rang" },
+        { key: "gesehen", label: "Brands seen",         kurz: "brands",       feld: "brands_seen",        art: "anzahl" }
+      ],
+      lastseen: [
+        { key: "woche",   label: "Active last 7 days",  kurz: "active",       feld: "active_last_7d",     art: "anzahl" },
+        { key: "neu",     label: "New this period",     kurz: "new",          feld: "new_in_period",      art: "anzahl" }
+      ]
+    };
+    function summenQuelle(){ var q = SUMMEN_QUELLE[instanceId]; return q && typeof q.holen === "function" ? q : null; }
     var zaehl = (LEISTE && UC.makeZaehlZeile) ? UC.makeZaehlZeile({
       root: root, nach: elTbody, instanceId: instanceId, praefix: "uut",
       cols: function(){ return typeof colsKit !== "undefined" ? colsKit : null; },
       spalten: function(){ return COLUMNS.map(function(c){ return c.key; }); },
+      rechnen: SUM_RECHNEN,
+      /* Zur Laufzeit gelesen: die Seite setzt ihre Quelle erst, wenn sie laedt. Ohne Quelle ist der
+         Filterstand "" -- kommt sie, ist er ein anderer, und core holt. */
+      quelle: {
+        sig: function(){ var q = summenQuelle(); return q && typeof q.sig === "function" ? "q|" + q.sig() : ""; },
+        holen: function(felder){ var q = summenQuelle(); return q ? q.holen(felder) : null; }
+      },
       anzahl: function(){
         if (state.leseFehler) return null;
         return state.totalCount != null ? state.totalCount : (state.hasData ? state.rows.length : null);
@@ -1769,7 +1822,10 @@
            teardown.) The explainer IS per instance, so that one does get removed. */
         if (explain.parentNode) explain.parentNode.removeChild(explain);
         if (root.__uutController === this) root.__uutController = null;
-      }
+      },
+      /* Die Quelle der Summen ist neu (setUrlsTableSummenQuelle): neu zeichnen, damit eine schon
+         gewaehlte Berechnung jetzt geholt wird. */
+      summeNeu: function(){ if (zaehl) zaehl.zeichnen(); return true; }
     };
   }
 
@@ -1837,6 +1893,17 @@
     var ctrl = id ? resolve(id) : null;
     return ctrl && ctrl.setFilters ? ctrl.setFilters(o || {}) : false;
   }
+  /* Die Quelle der Summen der Gesamtzeile (15.10. spaet), wie setResponsesTableSummenQuelle:
+     { sig(), holen(felder) } der Seite -- sig ist ihr Filterstand ohne Seite und Sortierung, holen
+     ein Promise auf das Objekt mit den Feldern (oder null). Nur in der App (eine Funktion geht nicht
+     durch einen Run-JS-Schritt). Gemerkt je Instanz; jede vorhandene Kopie zeichnet neu. */
+  function doSummenQuelle(id, q){
+    id = String(id == null ? "" : id).trim();
+    if (!id) return false;
+    if (q && typeof q.holen === "function") SUMMEN_QUELLE[id] = q; else delete SUMMEN_QUELLE[id];
+    rootsWithId(id).forEach(function(r){ var c = r.__uutController; if (c && c.summeNeu) c.summeNeu(); });
+    return true;
+  }
   function doBrands(id, brands){
     var list = brands;
     if (typeof list === "string"){ try { list = JSON.parse(list); } catch(e){ list = []; } }
@@ -1859,7 +1926,7 @@
     queue: "__uutBootQueue",
     initRoot: initRoot,
     api: { renderUrlsTable: doRender, setUrlsTableLoading: doLoading, resetUrlsTable: doReset, setUrlsTableBrands: doBrands,
-           setUrlsTableFilters: doFilters },
+           setUrlsTableFilters: doFilters, setUrlsTableSummenQuelle: doSummenQuelle },
     forwardShape: { renderUrlsTable: "params", resetUrlsTable: "id" }
   });
   function rootsWithId(id){ return mount.rootsWithId(id); }

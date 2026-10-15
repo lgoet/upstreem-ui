@@ -4705,10 +4705,10 @@
     UC.addMessages && UC.addMessages("de", {
       "Prompts mentioned": "Prompts mit Erwähnung", "mentioned": "erwähnt",
       "Prompts in top 3": "Prompts in den Top 3", "in top 3": "in Top 3",
-      "Topics used": "Genutzte Topics", "topics": "Topics",
+      "Topics used": "Genutzte Topics",
       "Avg. brands per prompt": "Ø Marken je Prompt", "per prompt": "je Prompt",
       "Competitors seen": "Gesehene Wettbewerber", "competitors": "Wettbewerber",
-      "Most common intent": "Häufigster Intent", "Markets used": "Genutzte Märkte", "markets": "Märkte",
+      "Most common intent": "Häufigster Intent", "Markets used": "Genutzte Märkte",
       "Most common market": "Häufigster Markt", "Added last 7 days": "Neu in 7 Tagen", "last 7 days": "in 7 Tagen"
     });
     /* "aus" ist die Wahl "None": keine Berechnung, die Zelle zeigt "+ Calculation". */

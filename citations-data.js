@@ -41,7 +41,11 @@
     domains: "cached_citations_domains_v1",
     urls: "cached_citations_urls_v1",
     domainUrls: "cached_citations_domain_urls_v1",
-    clear: "clear_citations_cache_v1"
+    clear: "clear_citations_cache_v1",
+    /* Die Berechnungen der Gesamtzeilen (15.10. spaet, Auftrag bubble/summen_db_auftrag_15_10.md,
+       3 und 4): je Tabelle eine EIGENE Abfrage neben der Liste. */
+    domainsSumme: "cached_citations_domains_summary_v1",
+    urlsSumme: "cached_citations_urls_summary_v1"
   };
   var ORDER = {
     domains: ["share_desc", "share_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "last_used_asc",
@@ -110,6 +114,46 @@
     }));
   }
   function clear(team) { return { art: "clear", fn: FN.clear, params: { p_team: str(team) }, sig: "" }; }
+
+  /* ---- Die Berechnungen der Gesamtzeile (15.10. spaet) -------------------------------------------
+     Dieselben Filter wie die Liste derselben Tabelle, aber OHNE Sortierung und Seite: Blaettern und
+     Sortieren aendern keine Summe (Auftrag 3 und 4: "wie die Liste ohne p_order, p_limit,
+     p_offset"). p_fields: nur, was die Tabelle gerade zeigt -- bekannte Namen, einmal, sortiert,
+     damit dieselbe Wahl dieselbe Signatur hat und den Speicher des Laders trifft.
+     summeFelder und summeLesen sind allgemein: die Responses (dashboard-data.js) lesen ihre Summe
+     ueber dieselben zwei Wege. */
+  var SUMME_FELDER = {
+    domains: ["own_share_pct", "top10_share_pct", "citations_total", "avg_citations_per_domain",
+              "top_type", "top_type_share", "types_used", "active_last_7d", "new_in_period"],
+    urls: ["own_share_pct", "top10_share_pct", "top_url_type", "top_url_type_share", "mention_rate_pct",
+           "avg_brands_per_url", "brands_seen", "active_last_7d", "new_in_period"]
+  };
+  var SUMME_TEXT = ["top_type", "top_url_type"];
+  function summeFelder(felder, erlaubt) {
+    var l = (isArr(felder) ? felder : []).map(str).filter(function (x) { return isArr(erlaubt) && erlaubt.indexOf(x) >= 0; });
+    return l.filter(function (x, i) { return l.indexOf(x) === i; }).sort();
+  }
+  function summe(art, f, t, felder) {
+    art = art === "urls" ? "urls" : "domains";
+    t = t || {};
+    return anfrage(art + "Summe", mit(basis(f, art), { p_search: sucheVon(t.suche), p_fields: summeFelder(felder, SUMME_FELDER[art]) }));
+  }
+  /* Die Antwort (Auftrag 0.8): EIN Objekt mit genau den bestellten Feldern. Zahlen als Zahl oder
+     null, Namen und Tage als Text oder null -- ein fehlendes oder unlesbares Feld bleibt weg und wird
+     in der Zeile "–", nie 0. Nimmt auch { summary: {...} } und eine Liste mit einem Objekt (eine
+     RPC, die eine Tabelle zurueckgibt). Unlesbar: null, die gewaehlten Zellen zeigen "–". */
+  function summeLesen(d, felder, text) {
+    var s = d && typeof d === "object" && !isArr(d) && d.summary && typeof d.summary === "object" ? d.summary : d;
+    if (isArr(s) && s.length === 1 && s[0] && typeof s[0] === "object") s = s[0];
+    if (!s || typeof s !== "object" || isArr(s)) return null;
+    var o = {};
+    (isArr(felder) ? felder : []).forEach(function (k) {
+      if (!Object.prototype.hasOwnProperty.call(s, k)) return;
+      o[k] = isArr(text) && text.indexOf(k) >= 0 ? (str(s[k]).trim() ? str(s[k]).trim() : null) : num(s[k]);
+    });
+    return o;
+  }
+  function zuSumme(art, d) { return summeLesen(d, SUMME_FELDER[art === "urls" ? "urls" : "domains"], SUMME_TEXT); }
 
   /* ---- Antworten in die Form der Bausteine -----------------------------------------------------
      Nichts wird nachgerechnet: was die DB null nennt, bleibt null (Strich in der Zelle). */
@@ -233,6 +277,11 @@
     o = o || {};
     var rufen = o.rufen, MAX = o.max || 60, wieder = o.wiederholen || WIEDERHOLEN;
     var cache = {}, reihe = [], laufend = {}, zaehler = 0;
+    /* stand zaehlt das Leeren (15.10. spaet). Die Gesamtzeilen merken ihre Summen selbst je
+       Filterstand (core, makeZaehlZeile); nach einem Aktualisieren ist der Filterstand derselbe, die
+       Zahlen sind es nicht. Die Seiten nehmen stand in die Signatur ihrer Summe -- ein Leeren ist so
+       auch fuer die Gesamtzeile ein neuer Stand, und sie holt frisch. */
+    var stand = 0;
     function merken(sig, d) {
       cache[sig] = d;
       var i = reihe.indexOf(sig);
@@ -289,7 +338,8 @@
     return {
       laden: laden, abbrechen: abbrechen,
       laeuft: function (kanal) { return !!laufend[kanal]; },
-      leeren: function () { cache = {}; reihe = []; },
+      leeren: function () { cache = {}; reihe = []; stand++; },
+      stand: function () { return stand; },
       ausSpeicher: function (a) { return a && a.sig && Object.prototype.hasOwnProperty.call(cache, a.sig) ? cache[a.sig] : undefined; }
     };
   }
@@ -297,6 +347,7 @@
   window.UpstreemCitationsDaten = {
     FN: FN, ORDER: ORDER,
     overview: overview, domains: domains, urls: urls, domainUrls: domainUrls, clear: clear,
+    summe: summe, zuSumme: zuSumme, summeFelder: summeFelder, summeLesen: summeLesen,
     zuCombo: zuCombo, zuDomains: zuDomains, zuUrls: zuUrls, zuDrilldown: zuDrilldown,
     fehlerArt: fehlerArt, makeLader: makeLader
   };

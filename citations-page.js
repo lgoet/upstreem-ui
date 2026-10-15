@@ -496,8 +496,32 @@
         }
       };
     }
+    /* DIE BERECHNUNGEN DER GESAMTZEILEN (15.10. spaet). Je Tabelle eine EIGENE Abfrage neben der
+       Liste (cached_citations_domains_summary_v1 / _urls_summary_v1), geholt von der Tabelle selbst
+       (core, makeZaehlZeile): nur, was gewaehlt ist, je Filterstand einmal, mit eigenem Skelett in
+       der Zelle -- Chart und Zeilen warten nie darauf. Die Seite gibt ihr die Quelle: dieselben
+       Filter wie die Liste (state.f und die Suche der Tabelle), ohne Seite und Sortierung. sig
+       traegt den Stand des Laders: nach "Aktualisieren" (Speicher geleert) gilt die Summe als neu,
+       obwohl sich der Filter nicht geaendert hat. Kanal je Signatur MIT p_fields, wie in
+       prompts-page.js: zwei kurz nacheinander gewaehlte Berechnungen brechen sich nicht ab. */
+    function summenQuelle(art) {
+      return {
+        sig: function () { return (lader.stand ? lader.stand() : 0) + "|" + D.summe(art, filterStand(), tabStand(art), []).sig; },
+        holen: function (felder) {
+          if (!team() || !D.summe) return null;
+          var a = D.summe(art, filterStand(), tabStand(art), felder);
+          if (!a.params.p_fields.length) return null;
+          return lader.laden("summe|" + a.sig, a).then(function (erg) { return erg.ok ? D.zuSumme(art, erg.daten) : null; });
+        }
+      };
+    }
+    var summen = { domains: summenQuelle("domains"), urls: summenQuelle("urls") };
     function tabellenAuftrag(art) {
       var a = tabellenAnfrage(art), s = tabStand(art), id = art === "urls" ? ids.uut : ids.udt;
+      /* Die Quelle vor jedem Laden setzen: ein Neuaufbau der Tabelle findet sie im Speicher ihrer
+         Instanz, und sie steht, bevor die ersten Zeilen kommen. */
+      var sq = art === "urls" ? "setUrlsTableSummenQuelle" : "setDomainsTableSummenQuelle";
+      try { if (typeof window[sq] === "function") window[sq](id, summen[art]); } catch (e) {}
       var render = art === "urls" ? "renderUrlsTable" : "renderDomainsTable", laed = art === "urls" ? "setUrlsTableLoading" : "setDomainsTableLoading";
       var reqId = s.requestId;
       return {

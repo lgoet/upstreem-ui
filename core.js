@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261126;
+  var BUILD = 20261127;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -26358,7 +26358,8 @@
      englische Text und wird hier uebersetzt, wie die Spaltennamen in makeColumns. */
   function sumPaarHtml(v, label, art){
     var txt = sumWertText(v, art);
-    return '<span class="up-sumpaar"><span class="up-sumwert' + (txt == null ? " is-leer" : "") + '">' +
+    var istText = art === "text" || art === "datum";
+    return '<span class="up-sumpaar"><span class="up-sumwert' + (txt == null ? " is-leer" : "") + (istText ? " is-text" : "") + '">' +
       esc(txt == null ? "–" : txt) + '</span>' +
       (label ? '<span class="up-sumlabel">' + esc(t_(label)) + '</span>' : "") + '</span>';
   }
