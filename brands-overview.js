@@ -1800,9 +1800,90 @@
        Die Anzahl ist die des offenen Reiters, mit der Suche: die Tabelle laedt alle Marken auf
        einmal, die Suche filtert hier im Browser. Ohne Suche die Gesamtzahl des Servers, sonst die
        gefundenen Zeilen. Unlesbar heisst "–", nie 0. */
+    /* DIE BERECHNUNGEN (15.10. spaet, vom Nutzer abgenommen, "bitte exakt so umsetzen"): die
+       Tabelle hat alle Marken des Reiters im Browser, also rechnet sie selbst (lokal) -- ueber
+       genau die Zeilen, die sie zeigt (gezeigteZeilen: Reiter und Suche), nicht ueber eine Seite.
+       Nur die drei Kennzahlspalten; im Reiter Inactive gibt es sie nicht (spalten unten liefert
+       dort nur "deactivated"), also auch keine Berechnung. Leere Menge oder kein Wert: null, die
+       Zelle zeigt "–" (core sumPaarHtml), nie 0.
+       Bewusst NICHT: "Your position" -- "sieht man eh, brauch ich nicht". */
+    function zahlenVon(feld){
+      return gezeigteZeilen().map(function(r){ return UC.toNum(r[feld]); })
+        .filter(function(v){ return v != null; });
+    }
+    function mittelVon(feld){
+      var l = zahlenVon(feld);
+      return l.length ? l.reduce(function(a, b){ return a + b; }, 0) / l.length : null;
+    }
+    function kleinsterVon(feld){
+      var l = zahlenVon(feld);
+      return l.length ? Math.min.apply(null, l) : null;
+    }
+    /* Die eigene Marke: die Zeilen tragen is_own (dashboard-data.js, marke()). Fehlt es in allen
+       Zeilen (ein aelterer Payload), gilt die Marke mit role "own" aus der Markenablage der App
+       (setUpstreemBrands) -- dieselben zwei Schreibweisen wie in power-dashboard.js. */
+    function istEigene(r){
+      return !!r && (r.is_own === true || UC.isYes(r.is_own) || String(r.role || "").toLowerCase() === "own");
+    }
+    function eigeneZeile(rows){
+      for (var i = 0; i < rows.length; i++) if (istEigene(rows[i])) return rows[i];
+      var ablage = UC.getBrands ? UC.getBrands() : [], id = null;
+      for (var j = 0; j < ablage.length; j++) if (istEigene(ablage[j])){ id = String(ablage[j].company_id); break; }
+      if (id == null) return null;
+      for (var k = 0; k < rows.length; k++) if (String(rows[k].company_id) === id) return rows[k];
+      return null;
+    }
+    /* Abstand der eigenen Marke zur Marke mit der hoechsten Visibility, in Prozentpunkten; steht
+       sie selbst vorn, 0. Ist sie nicht unter den gezeigten Zeilen (Suche), gibt es keinen
+       Abstand -- "–". */
+    function abstandZurSpitze(){
+      var rows = gezeigteZeilen(), eigen = eigeneZeile(rows);
+      var v = eigen ? UC.toNum(eigen.visibility_pct) : null;
+      if (v == null) return null;
+      return Math.max(0, Math.max.apply(null, zahlenVon("visibility_pct")) - v);
+    }
+    /* "4 / 2": Marken mit Trend nach oben und nach unten in DIESER Kennzahl. Gezaehlt wird, was
+       die Zelle als Pfeil zeigt: UC.trendChip laesst eine Aenderung weg, die auf ihre Stellen
+       gerundet 0 ist (Visibility ganzzahlig, Rang und Sentiment eine Stelle) -- dieselbe Regel
+       hier, sonst stuende unten eine 5, wo oben vier Pfeile stehen. Beim Rang ist weniger
+       besser: ein sinkender Rang zaehlt als steigend (umgekehrt). Traegt keine Zeile einen
+       Trend, "–" statt "0 / 0". */
+    function steigendFallend(feld, stellen, umgekehrt){
+      var hoch = 0, runter = 0, mitTrend = 0, f = Math.pow(10, stellen);
+      gezeigteZeilen().forEach(function(r){
+        var d = UC.toNum(r[feld]);
+        if (d == null) return;
+        mitTrend++;
+        if (Math.round(Math.abs(d) * f) / f === 0) return;
+        if ((d > 0) !== !!umgekehrt) hoch++; else runter++;
+      });
+      return mitTrend ? UC.fmtTotal(hoch) + " / " + UC.fmtTotal(runter) : null;
+    }
+    UC.addMessages && UC.addMessages("de", {
+      "Gap to leader": "Abstand zur Spitze", "to leader": "zur Spitze",
+      "Rising / falling": "Steigend / fallend", "rising / falling": "steigend / fallend"
+    });
+    var RECHNEN = {
+      visibility: [
+        { key: "avg",    label: "Average",          kurz: "avg",              art: "pct",  lokal: function(){ return mittelVon("visibility_pct"); } },
+        { key: "spitze", label: "Gap to leader",    kurz: "to leader",        art: "pct",  lokal: abstandZurSpitze },
+        { key: "trend",  label: "Rising / falling", kurz: "rising / falling", art: "text", lokal: function(){ return steigendFallend("visibility_delta_pct", 0, false); } }
+      ],
+      ranking: [
+        { key: "avg",    label: "Average",          kurz: "avg",              art: "rang", lokal: function(){ return mittelVon("avg_rank"); } },
+        { key: "best",   label: "Best",             kurz: "best",             art: "rang", lokal: function(){ return kleinsterVon("avg_rank"); } },
+        { key: "trend",  label: "Rising / falling", kurz: "rising / falling", art: "text", lokal: function(){ return steigendFallend("avg_rank_delta", 1, true); } }
+      ],
+      sentiment: [
+        { key: "avg",    label: "Average",          kurz: "avg",              art: "note", lokal: function(){ return mittelVon("sentiment"); } },
+        { key: "lowest", label: "Lowest",           kurz: "lowest",           art: "note", lokal: function(){ return kleinsterVon("sentiment"); } },
+        { key: "trend",  label: "Rising / falling", kurz: "rising / falling", art: "text", lokal: function(){ return steigendFallend("sentiment_delta", 1, false); } }
+      ]
+    };
     var zaehl = (LEISTE && UC.makeZaehlZeile) ? UC.makeZaehlZeile({
       root: root, nach: tableEl, instanceId: instanceId, praefix: "ubo", group: POP_GROUP,
       cols: function(){ return colsKit; },
+      rechnen: RECHNEN,
       /* In der Reihenfolge der Spalten. Die "#"-Spur davor und die Aktionsspur dahinter haben
          keine Zelle: die erste Zelle (die Anzahl) ueberspannt "#" und Brand (brands-overview.css),
          die Aktionsspur bleibt leer. */

@@ -495,11 +495,113 @@
       /* DIE GESAMTZEILE (15.10. abends, core UC.makeZaehlZeile): vorerst nur die Anzahl links,
          so bestellt -- die Teams, die die Suche gerade zeigt (diese Tabelle blaettert lokal, die
          Liste ist ganz geladen). Nur in der flachen Fassung; ausblendbar ueber Display. */
+      /* DIE BERECHNUNGEN (15.10. spaet, vom Nutzer abgenommen, "bitte exakt so umsetzen"): alle
+         Teams liegen im Browser (teams-page laedt bis 10 x 100), also rechnet die Tabelle selbst --
+         ueber gefiltert(), die Teams der Suche auf ALLEN Seiten, nicht ueber die gezeigte Seite.
+         Leere Menge oder kein Wert: null, die Zelle zeigt "–" (core sumPaarHtml), nie 0. */
+      function summeVon(feld) {
+        var s = 0, n = 0;
+        gefiltert().forEach(function (r) { if (r[feld] != null) { s += r[feld]; n++; } });
+        return n ? s : null;
+      }
+      /* Genutzt durch Grenze, beide als Summe -- und nur ueber Teams, die BEIDES tragen: ein Team
+         ohne Grenze truege sonst seine Nutzung in den Zaehler und nichts in den Nenner. Grenze 0
+         in Summe heisst: es gibt keinen Anteil ("–"). */
+      function kontingentVon(genutzt, grenze) {
+        var u = 0, g = 0;
+        gefiltert().forEach(function (r) {
+          if (r[genutzt] != null && r[grenze] != null) { u += r[genutzt]; g += r[grenze]; }
+        });
+        return g > 0 ? u / g * 100 : null;
+      }
+      function amLimit() {
+        var n = 0, mit = 0;
+        gefiltert().forEach(function (r) {
+          if (r.promptsUsed == null || r.promptsLimit == null) return;
+          mit++;
+          if (r.promptsUsed >= r.promptsLimit) n++;
+        });
+        return mit ? n : null;
+      }
+      /* Der Tarif so, wie die Pille ihn zeigt (UC.planAnzeige: "Legacy Free" heisst "Developer
+         Access") -- gezaehlt wird auch danach, sonst stuenden zwei Rohnamen derselben Pille
+         getrennt. Gleichstand: der Tarif, der die Zahl zuerst erreicht hat, in der Reihenfolge der
+         Tabelle -- so springt der Wert nicht, wenn sich nichts geaendert hat. */
+      function haeufigsterTarif() {
+        var zahl = {}, best = null;
+        gefiltert().forEach(function (r) {
+          if (!r.plan) return;
+          var name = UC.planAnzeige ? UC.planAnzeige(r.plan) : r.plan;
+          zahl[name] = (zahl[name] || 0) + 1;
+          if (best == null || zahl[name] > zahl[best]) best = name;
+        });
+        return best;
+      }
+      /* Im Testzeitraum heisst access_state "trialing" (Vertrag E 6.1, app.team_access) -- die
+         Datenbank weiss es, die Oberflaeche raet nicht aus Datumswerten (wie access-gate.js).
+         Traegt keine Zeile das Feld, "–": dann ist es nicht geliefert, und 0 waere eine Aussage. */
+      function inTestphase() {
+        var n = 0, mit = 0;
+        gefiltert().forEach(function (r) {
+          if (!r.zugang) return;
+          mit++;
+          if (r.zugang === "trialing") n++;
+        });
+        return mit ? n : null;
+      }
+      function zeitVon(r) { var z = Date.parse(r.created); return isFinite(z) ? z : null; }
+      function neuestes() {
+        var best = null, bestZeit = null;
+        gefiltert().forEach(function (r) {
+          var z = zeitVon(r);
+          if (z != null && (bestZeit == null || z > bestZeit)) { bestZeit = z; best = r.created; }
+        });
+        return best;
+      }
+      /* Die letzten 30 Tage rollend ab jetzt (30 x 24 Stunden), wie "Added last 7 days" der
+         Prompt-Tabelle -- kein Kalendermonat. */
+      function neuIn30Tagen() {
+        var grenze = Date.now() - 30 * 86400000, n = 0, mit = 0;
+        gefiltert().forEach(function (r) {
+          var z = zeitVon(r);
+          if (z == null) return;
+          mit++;
+          if (z >= grenze) n++;
+        });
+        return mit ? n : null;
+      }
+      UC.addMessages && UC.addMessages("de", {
+        "Quota used": "Genutztes Kontingent", "of quota": "vom Kontingent",
+        "Teams at limit": "Teams am Limit", "at limit": "am Limit",
+        "Most common plan": "Häufigster Tarif",
+        "Trials": "In der Testphase", "in trial": "in Testphase",
+        "New last 30 days": "Neu in 30 Tagen", "last 30 days": "in 30 Tagen"
+      });
+      var RECHNEN = {
+        prompts: [
+          { key: "summe",  label: "Total",            kurz: "total",        art: "anzahl", lokal: function () { return summeVon("promptsUsed"); } },
+          { key: "quote",  label: "Quota used",       kurz: "of quota",     art: "pct",    lokal: function () { return kontingentVon("promptsUsed", "promptsLimit"); } },
+          { key: "limit",  label: "Teams at limit",   kurz: "at limit",     art: "anzahl", lokal: amLimit }
+        ],
+        brands: [
+          { key: "summe",  label: "Total",            kurz: "total",        art: "anzahl", lokal: function () { return summeVon("brandsUsed"); } },
+          { key: "quote",  label: "Quota used",       kurz: "of quota",     art: "pct",    lokal: function () { return kontingentVon("brandsUsed", "brandsLimit"); } }
+        ],
+        plan: [
+          { key: "haeufig", label: "Most common plan", kurz: "most common", art: "text",   lokal: haeufigsterTarif },
+          { key: "test",    label: "Trials",           kurz: "in trial",    art: "anzahl", lokal: inTestphase }
+        ],
+        created: [
+          { key: "neu",    label: "Newest",           kurz: "newest",       art: "datum",  lokal: neuestes },
+          { key: "monat",  label: "New last 30 days", kurz: "last 30 days", art: "anzahl", lokal: neuIn30Tagen }
+        ]
+      };
       var zaehl = (root.getAttribute("data-flach") === "yes" && UC.makeZaehlZeile) ? UC.makeZaehlZeile({
         /* Hinter .up-table und nicht hinter .up-tbody: diese Tabelle schreibt Kopf und Koerper bei
            jedem Zeichnen neu (renderTable, innerHTML) -- eine Zeile darin waere jedes Mal weg. */
         root: root, nach: root.querySelector("[data-table]"), instanceId: instanceId, praefix: "uts",
         cols: function () { return colsKit; },
+        rechnen: RECHNEN,
         spalten: function () { return COLUMNS.map(function (c) { return c.key; }); },
         anzahl: function () { return state.parseError ? null : (state.hasData ? gefiltert().length : null); },
         laedt: function () { return !!state.busy || !state.hasData; },
@@ -540,6 +642,10 @@
             promptsUsed: toNum(r.prompts_active), promptsLimit: toNum(r.prompts_limit),
             brandsUsed: toNum(r.competitors_tracked), brandsLimit: toNum(r.competitors_limit),
             created: r.created_at == null ? "" : String(r.created_at),
+            /* Der Zugang laut app.team_access (Vertrag E 6.1): active, no_plan, past_due,
+               trialing, trial_ended, unpaid, ended. Gebraucht fuer "Trials" in der
+               Gesamtzeile; leer heisst "nicht mitgeliefert", nicht "kein Testzeitraum". */
+            zugang: r.access_state == null ? "" : String(r.access_state).trim().toLowerCase(),
             total: toNum(r.total_count)
           };
         });
