@@ -7192,6 +7192,12 @@
         var minW = LEAD() + (pinned ? firstPx : FIRST_MIN);
         cols.forEach(function(c){ minW += colMin(c.key); });
         if (!cfg.noActions && !root.classList.contains("is-t2")) minW += ACTIONS_MIN_F();
+        /* Flach (data-flach) tragen Kopf und Zeilen zusaetzlich das Auslauf-Polster (rechts 16),
+           und das liegt AUSSERHALB der Spuren. Ohne den Abzug wie in boxWidth war der Inhalt des
+           Scrollkastens genau um dieses Polster zu schmal: am Ende des Scrollwegs liefen die Spuren
+           ins Polster, die letzte Spalte stand an der Fensterkante (gemessen 15.10. in Shopping,
+           Top Products bei 1100: Abstand rechts 0 statt 16). Ohne data-flach ist er 0. */
+        minW += breiteAbzug();
         root.style.setProperty("--up-cols-min", minW + "px");
       }
       /* The track list goes on the ROOT as --up-cols; core.css has .up-thead/.up-row read it via

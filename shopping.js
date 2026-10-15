@@ -1084,7 +1084,12 @@
       /* Der Abschnitt ist eine eigene .up-root: die Suchuebernahme aus core (offene Suche nimmt auf
          schmaler Breite die ganze Kopfzeile, is-searchtakeover) haengt an ".up-root" -- ohne die
          Klasse stand bei 400px die offene Suche neben den Segmenten und ragte 44px hinaus. */
-      return '<section class="up-root ush-sek ush-tab" data-sek="' + name + '">' +
+      /* data-flach (15.10., core.css "DIE FLACHE TABELLE"): ohne Kasten, Linien bis an die Kanten,
+         Kopf und Fuss 48. Am Abschnitt und nicht an der Seite: dort tragen auch Diagramm, Balken,
+         Held und Kennzahlen-Fehler .up-box und blieben sonst nicht mehr Kasten. Der Abschnitt ist
+         zugleich die Wurzel von UC.makeColumns (spaltenFuer) -- dort liest das Kit den Abzug fuer
+         das Auslauf-Polster -- und traegt den Fuss. */
+      return '<section class="up-root ush-sek ush-tab" data-flach="yes" data-sek="' + name + '">' +
         '<div class="up-head ush-head">' +
           '<span class="up-heading ush-heading"><span class="up-head-label">' + esc(t(titel)) + '</span>' +
             '<span class="up-head-sep"></span><span class="up-head-count"></span></span>' +
@@ -1132,7 +1137,11 @@
           '<section class="ush-sek" data-sek="landscape"></section>' +
           '<section class="ush-sek" data-sek="topprodukte"></section>' +
           '<div class="ush-zwei">' +
-            '<section class="ush-sek" data-sek="bewegung"></section>' +
+            /* Product Movement ist eine Liste im Raster der Tabellen und wird mit ihnen flach. Die
+               flache Tabelle braucht eine .up-root mit data-flach ueber ihrem Kasten; die Seite
+               selbst kann das nicht sein (Diagramm, Balken). Neben den Balken laeuft sie nicht
+               aus (shopping.css, .ush-zwei). */
+            '<section class="up-root ush-sek" data-flach="yes" data-sek="bewegung"></section>' +
             '<section class="ush-sek" data-sek="verteilung"></section>' +
           '</div>' +
         '</div>';
@@ -1323,24 +1332,29 @@
        min ist die Untergrenze der Spur UND die Zahl, mit der das Kit den Abwurf rechnet -- beide
        muessen gleich sein (teams.js). Die Werte sind die gemessenen Minima der festen Raster von
        vorher (04.10.: Kopf mit Erklaer- und Sortierzeichen ohne Ellipse).
-       prio: die KLEINSTE faellt zuerst. sk: der Balken der Skelettzeile. */
+       prio: die KLEINSTE faellt zuerst. sk: der Balken der Skelettzeile.
+       o.flach: Untergrenze in der flachen Tabelle (UC.makeColumns minFlach/wFlach, 15.10.). Ihre
+       Kopfschrift ist 13/500 statt 12/400, und so brauchten mehrere Koepfe mehr als ihr min
+       (gemessen bei 1100 mit dem Klon des Kopfs, Erklaer- und Sortierzeichen mitgezaehlt, z. B.
+       "First Position Rate" mit Sortierung 179,8 bei 176). Der Wert liegt 2 bis 4 darueber. */
     function sp(key, label, min, fr, prio, sk, o) {
       o = o || {};
-      return { key: key, label: label, w: "minmax(" + min + "px," + fr + "fr)", min: min, prio: prio, sk: sk, sort: o.sort, info: o.info };
+      return { key: key, label: label, w: "minmax(" + min + "px," + fr + "fr)", min: min, prio: prio, sk: sk, sort: o.sort, info: o.info,
+               minFlach: o.flach, wFlach: o.flach ? "minmax(" + o.flach + "px," + fr + "fr)" : null };
     }
     var TABELLEN = {
       landscape: { erste: { label: "Brand", min: 220, sk: { w: 110, logo: true } }, spalten: [
         sp("share", "Share of Shelf", 154, 1.2, 90, 60, { info: "share" }),
         sp("presence", "Presence", 120, 1, 80, 44, { info: "presence" }),
         sp("products", "Products", 104, 0.8, 50, 30),
-        sp("pos", "Avg. Position", 124, 1, 70, 36, { info: "pos" }),
-        sp("first", "First Position Rate", 156, 1.1, 40, 44, { info: "firstBrand" }),
+        sp("pos", "Avg. Position", 124, 1, 70, 36, { info: "pos", flach: 130 }),
+        sp("first", "First Position Rate", 156, 1.1, 40, 44, { info: "firstBrand", flach: 162 }),
         sp("change", "Change", 110, 0.9, 60, 40)] },
       topprodukte: { erste: { label: "Product", min: 260, sk: { w: 160, logo: true } }, spalten: [
         sp("vis", "Visibility", 130, 1.1, 90, 60, { info: "vis" }),
-        sp("pos", "Avg. Position", 126, 0.9, 80, 36, { info: "pos" }),
-        sp("obs", "Observations", 128, 0.9, 70, 30, { info: "obs" }),
-        sp("first", "First Position Rate", 156, 1.1, 50, 44, { info: "firstProd" }),
+        sp("pos", "Avg. Position", 126, 0.9, 80, 36, { info: "pos", flach: 130 }),
+        sp("obs", "Observations", 128, 0.9, 70, 30, { info: "obs", flach: 132 }),
+        sp("first", "First Position Rate", 156, 1.1, 50, 44, { info: "firstProd", flach: 162 }),
         sp("rating", "Rating", 92, 0.7, 40, 30),
         /* 148: eine Preisspanne ("€19.62–€21.62") braucht 105px Text plus 28 Polster; mit 128/130
            lief sie 4,5px in das rechte Polster (06.10. gemessen). Was laenger ist, kuerzt core. */
@@ -1348,32 +1362,32 @@
       products: { erste: { label: "Product", min: 280, sort: "title", sk: { w: 170, logo: true } }, spalten: [
         sp("brand", "Brand", 160, 1.2, 85, { w: 70, logo: true }),
         sp("vis", "Visibility", 124, 1, 90, 60, { sort: "visibility", info: "vis" }),
-        sp("obs", "Observations", 148, 1, 70, 30, { sort: "observations", info: "obs" }),
-        sp("pos", "Avg. Position", 144, 1, 80, 36, { sort: "avg_position", info: "pos" }),
-        sp("first", "First Position Rate", 176, 1.1, 50, 44, { sort: "first_position_rate", info: "firstProd" }),
+        sp("obs", "Observations", 148, 1, 70, 30, { sort: "observations", info: "obs", flach: 152 }),
+        sp("pos", "Avg. Position", 144, 1, 80, 36, { sort: "avg_position", info: "pos", flach: 150 }),
+        sp("first", "First Position Rate", 176, 1.1, 50, 44, { sort: "first_position_rate", info: "firstProd", flach: 182 }),
         sp("price", "Price", 148, 1.1, 60, 60, { sort: "price", info: "price" }),
         sp("rating", "Rating", 92, 0.7, 30, 30, { sort: "rating" }),
         sp("merchants", "Merchants", 128, 1.1, 40, 70),
         sp("seen", "Last Seen", 120, 0.9, 20, 60, { sort: "last_seen" })] },
       brands: { erste: { label: "Brand", min: 220, sort: "name", sk: { w: 110, logo: true } }, spalten: [
-        sp("share", "Share of Shelf", 154, 1.2, 90, 60, { sort: "share_of_shelf", info: "share" }),
-        sp("presence", "Presence", 126, 0.9, 80, 44, { sort: "presence", info: "presence" }),
-        sp("products", "Products", 104, 0.8, 60, 30, { sort: "products" }),
-        sp("obs", "Observations", 148, 0.9, 50, 36, { sort: "observations", info: "obs" }),
-        sp("pos", "Avg. Position", 144, 1, 70, 36, { sort: "avg_position", info: "pos" }),
-        sp("first", "First Position Rate", 176, 1.1, 40, 44, { sort: "first_position_rate", info: "firstBrand" }),
+        sp("share", "Share of Shelf", 154, 1.2, 90, 60, { sort: "share_of_shelf", info: "share", flach: 158 }),
+        sp("presence", "Presence", 126, 0.9, 80, 44, { sort: "presence", info: "presence", flach: 128 }),
+        sp("products", "Products", 104, 0.8, 60, 30, { sort: "products", flach: 106 }),
+        sp("obs", "Observations", 148, 0.9, 50, 36, { sort: "observations", info: "obs", flach: 152 }),
+        sp("pos", "Avg. Position", 144, 1, 70, 36, { sort: "avg_position", info: "pos", flach: 150 }),
+        sp("first", "First Position Rate", 176, 1.1, 40, 44, { sort: "first_position_rate", info: "firstBrand", flach: 182 }),
         sp("change", "Change", 110, 0.9, 65, 40, { sort: "share_of_shelf_delta" }),
         sp("top", "Top Product", 240, 1.8, 30, { w: 140, logo: true })] },
       merchants: { erste: { label: "Merchant", min: 240, sort: "name", sk: { w: 120, logo: true } }, spalten: [
         sp("share", "Share", 150, 1.2, 90, 60, { sort: "observations", info: "merchant" }),
-        sp("products", "Products", 104, 0.8, 80, 30, { sort: "products" }),
-        sp("obs", "Observations", 148, 1.1, 70, 50, { sort: "observations", info: "obs" }),
-        sp("pos", "Avg. Product Position", 192, 1.1, 60, 36, { sort: "avg_position", info: "pos" }),
+        sp("products", "Products", 104, 0.8, 80, 30, { sort: "products", flach: 106 }),
+        sp("obs", "Observations", 148, 1.1, 70, 50, { sort: "observations", info: "obs", flach: 152 }),
+        sp("pos", "Avg. Product Position", 192, 1.1, 60, 36, { sort: "avg_position", info: "pos", flach: 200 }),
         sp("firstseen", "First Seen", 120, 1, 30, 60, { sort: "first_seen" }),
         sp("seen", "Last Seen", 120, 1, 40, 60, { sort: "last_seen" })] },
       dhaendler: { erste: { label: "Merchant", min: 220, sk: { w: 120, logo: true } }, spalten: [
         sp("share", "Share", 124, 1, 90, 40, { info: "merchant" }),
-        sp("obs", "Observations", 128, 1, 80, 30, { info: "obs" }),
+        sp("obs", "Observations", 128, 1, 80, 30, { info: "obs", flach: 132 }),
         sp("price", "Price", 160, 1.2, 70, 60, { info: "price" })] },
       /* Recent Appearances: die erste Spalte ist ein Datum (120 Untergrenze). Dahinter die
          Knopfspalte "View Response", gemessen (UC.makeAktionsSpur) statt geschaetzt. */
@@ -1449,9 +1463,10 @@
     }
     /* Die Tabellen der Uebersicht und des Details ohne Werkzeugleiste: Kopf einmal, darunter eine
        eigene Wurzel fuer das Kit. Dicht (55) wie bisher -- sie sind Vorschauen, und ohne Zahnrad
-       gibt es keinen Schalter, der sie aufziehen koennte. */
+       gibt es keinen Schalter, der sie aufziehen koennte. Flach wie die ganzen Tabellen (tabSek):
+       die Wurzel des Kits traegt data-flach, also auch ihr Leer- und Skelettkasten. */
     function vorschauPlatz(el, name, kopf) {
-      if (!el.querySelector(".ush-vorschau")) el.innerHTML = kopf + '<div class="up-root ush-vorschau is-dense"><div class="ush-tabelle"></div></div>';
+      if (!el.querySelector(".ush-vorschau")) el.innerHTML = kopf + '<div class="up-root ush-vorschau is-dense" data-flach="yes"><div class="ush-tabelle"></div></div>';
       var w = el.querySelector(".ush-vorschau");
       spaltenFuer(name, w);
       return w.querySelector(".ush-tabelle");

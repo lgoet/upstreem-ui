@@ -95,6 +95,30 @@
 .ush-root.is-narrow .ush-head .up-head-tools { margin-left: 0; }
 .ush-scope { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 12px; }
 
+/* ---- DIE FLACHE TABELLE (15.10.) -------------------------------------------------------------------
+   Alle Tabellen der Seite sind flach (data-flach="yes" an Abschnitt bzw. Vorschau-Wurzel, core.css
+   "DIE FLACHE TABELLE"): kein Kasten, Linien bis an die Kanten, Kopf und Fuss 48, Kopfschrift
+   13/500. Hier steht nur, was die Bausteine dieser Seite dazu brauchen. */
+/* Neben den Balken (Product Movement in .ush-zwei) kein Auslauf: der Kasten liefe sonst 16px in
+   die Spaltenluecke und stiesse an den Balkenkasten. Schmal (is-narrow, unter 768) steht .ush-zwei
+   sicher einspaltig (zwei Spalten erst ab 440 + 16 + 440), dann laeuft die Liste aus wie die
+   Tabellen darueber. Zwischen 768 und 896 ist sie einspaltig und laeuft trotzdem nicht aus: CSS
+   kennt die Spaltenzahl eines auto-fit-Rasters nicht, und eine Container-Abfrage braeuchte
+   Containment an .ush-zwei, das einen Stapelkontext ueber den Inhalt legt. */
+.ush-root:not(.is-narrow) .ush-zwei .up-root[data-flach="yes"] { --up-flach-aus: 0px; }
+/* Die stehende erste Spalte (.up-colscroll aus core) hat einen eigenen deckenden Grund, damit beim
+   waagerechten Scrollen nichts durchscheint -- im Kasten den der Karte (--vc-bg) und im Kopf den
+   Kopfgrund. Flach liegt die Tabelle auf der Seite (--up-surface): der alte Grund stuende dunkel
+   als hellerer Streifen da, und im Kopf als grauer Block in der Kopfzeile. Die Linie unter dem
+   Kopf zieht flach der Kopf als Schatten nach innen -- die deckende erste Kopfzelle liegt darueber
+   und braucht die Linie darum selbst, neben ihrem Trenner nach rechts.
+   Ohne .up-root davor (0,5,0): die angepinnte Zeile (0,6,0, oben) behaelt ihren Grund durch
+   Spezifitaet, nicht durch die Reihenfolge. */
+[data-flach="yes"] .up-colscroll .up-row > .up-td:first-child { background: var(--up-surface); }
+[data-flach="yes"] .up-colscroll .up-row:not(.is-angepinnt):hover > .up-td:first-child { background: var(--vt-row-hover); }
+[data-flach="yes"] .up-colscroll .up-thead > .up-th:first-child {
+  background: var(--up-surface); box-shadow: 1px 0 0 var(--vc-border), inset 0 -1px 0 var(--vc-border); }
+
 
 /* Zellinhalte */
 .ush-zweizeilig { display: flex; flex-direction: column; gap: 2px; min-width: 0; }

@@ -1043,8 +1043,12 @@
           '<div class="up-pager"></div>' +
         '</div>';
     }
-    function tabSek(titel, werkzeuge, ohnePager, sekName) {
-      return '<section class="up-root uad-sek uad-tab" data-sek="' + (sekName || "tabelle") + '">' +
+    /* data-flach (15.10., core.css "DIE FLACHE TABELLE"): ohne Kasten, Linien bis an die Kanten,
+       Kopf und Fuss 48 -- am Abschnitt, der zugleich Wurzel von UC.makeColumns ist und den Fuss
+       traegt, nicht an der Seite (Diagramm, Balken, Held bleiben Kasten). ohneFlach: das Raster
+       der Ad Cards ist keine Tabelle; flach liefe sein Fuss 16px vor den Karten aus. */
+    function tabSek(titel, werkzeuge, ohnePager, sekName, ohneFlach) {
+      return '<section class="up-root uad-sek uad-tab"' + (ohneFlach ? '' : ' data-flach="yes"') + ' data-sek="' + (sekName || "tabelle") + '">' +
         kopf(titel, { tools: werkzeuge }) +
         '<div class="up-root uad-tabwurzel"><div class="uad-tabelle"></div></div>' +
         (ohnePager ? '' : fussHtml()) +
@@ -1090,7 +1094,7 @@
           (istAds ? segHtml("uad-ansicht", [["grid", "Grid", "layoutGrid"], ["list", "List", "listIcon"]], lb.ansicht, true) : '') +
           sucheHtml(istAds ? "Search ads, advertisers, campaigns…" : "Search prompts…", istAds ? "Search ads" : "Search prompts") +
           (istAds && lb.ansicht === "grid" ? '' : spaltenKnopf());
-        html = '<div class="uad-seite" data-seite="library">' + tabSek(istAds ? "Ads" : "Prompts", werkzeuge) + '</div>';
+        html = '<div class="uad-seite" data-seite="library">' + tabSek(istAds ? "Ads" : "Prompts", werkzeuge, false, "", istAds && lb.ansicht === "grid") + '</div>';
       }
       elMain.innerHTML = html;
       geruest = geruestSchluessel();
@@ -1140,15 +1144,21 @@
     /* Die Spalten jeder Tabelle laufen ueber UC.makeColumns wie in Shopping: Ziehgriff an der ersten
        Spalte, bei Tabellen mit Werkzeugleiste das Zahnrad, und nie faellt eine Spalte der Breite
        wegen weg (cfg.scrollen): ist es zu eng, scrollt der Kasten, die erste Spalte bleibt stehen.
-       Mindestbreiten aus den festen Rastern des Entwurfs. prio: die kleinste faellt zuerst. */
+       Mindestbreiten aus den festen Rastern des Entwurfs. prio: die kleinste faellt zuerst.
+       o.flach: Untergrenze in der flachen Tabelle (UC.makeColumns minFlach/wFlach, 15.10.). Ihre
+       Kopfschrift ist 13/500 statt 12/400; gemessen bei 1100 mit dem Klon des Kopfs (Erklaer- und
+       Sortierzeichen mitgezaehlt) brauchten fuenf Koepfe mehr als ihr min, z. B. "Appearances"
+       mit Sortierung und Erklaerung 149 bei 132 (schon mit 12/400 waren es 140,9). Der Wert liegt
+       2 bis 4 darueber. */
     function sp(key, label, min, fr, prio, sk, o) {
       o = o || {};
-      return { key: key, label: label, w: "minmax(" + min + "px," + fr + "fr)", min: min, prio: prio, sk: sk, sort: o.sort, info: o.info };
+      return { key: key, label: label, w: "minmax(" + min + "px," + fr + "fr)", min: min, prio: prio, sk: sk, sort: o.sort, info: o.info,
+               minFlach: o.flach, wFlach: o.flach ? "minmax(" + o.flach + "px," + fr + "fr)" : null };
     }
     var TABELLEN = {
       advertisers: { erste: { label: "Advertiser", min: 240, sort: "advertiser_name", sk: { w: 120, logo: true } }, spalten: [
         sp("share", "Ad Share", 130, 1.1, 90, 60, { sort: "ad_appearances", info: "share" }),
-        sp("n", "Appearances", 132, 1, 85, 30, { sort: "ad_appearances", info: "appearances" }),
+        sp("n", "Appearances", 132, 1, 85, 30, { sort: "ad_appearances", info: "appearances", flach: 152 }),
         sp("prompts", "Prompts", 104, 0.8, 70, 30, { sort: "prompt_count" }),
         sp("topics", "Topics", 100, 0.8, 60, 30, { sort: "topic_count" }),
         /* 150: zwei Markt-Chips (Flagge 18, Code, Abstand 10) und "+N" muessen nebeneinander passen. */
@@ -1156,10 +1166,13 @@
         sp("formats", "Formats", 140, 1, 30, 60),
         sp("first", "First Seen", 120, 0.9, 20, 60, { sort: "first_seen" }),
         sp("last", "Last Seen", 120, 0.9, 50, 60, { sort: "last_seen" })] },
-      topics: { erste: { label: "Topic", min: 180, sort: "topic_name", sk: { w: 110 } }, spalten: [
-        sp("cov", "Ad Coverage", 140, 1, 90, 60, { sort: "ad_coverage", info: "coverage" }),
-        sp("advs", "Advertisers", 112, 0.8, 80, 30, { sort: "advertiser_count" }),
-        sp("n", "Appearances", 122, 0.8, 70, 30, { sort: "ad_appearances" })] },
+      /* Topic 160 statt 180 (15.10.): flach brauchen die drei Zahlenkoepfe zusammen 30 mehr (o.flach).
+         Neben den Balken hat die Tabelle bei 1440 genau 571 -- mit 180 waeren es 584 gewesen, und
+         sie scrollte um 13px. 160 laesst dem Topic-Namen 136 Text, die Spalte waechst mit 1.6fr. */
+      topics: { erste: { label: "Topic", min: 160, sort: "topic_name", sk: { w: 110 } }, spalten: [
+        sp("cov", "Ad Coverage", 140, 1, 90, 60, { sort: "ad_coverage", info: "coverage", flach: 150 }),
+        sp("advs", "Advertisers", 112, 0.8, 80, 30, { sort: "advertiser_count", flach: 122 }),
+        sp("n", "Appearances", 122, 0.8, 70, 30, { sort: "ad_appearances", flach: 132 })] },
       dprompts: { erste: { label: "Prompt", min: 280, sk: { w: 180 } }, spalten: [
         sp("topic", "Topic", 160, 1.2, 60, 80),
         sp("n", "Appearances", 122, 0.8, 90, 30),
@@ -1173,7 +1186,7 @@
         sp("seen", "Observed", 112, 0.8, 90, 60)] },
       lprompts: { erste: { label: "Prompt", min: 300, sort: "prompt_text", sk: { w: 180 } }, spalten: [
         sp("topic", "Topic", 160, 1.2, 60, 80),
-        sp("cov", "Ad Coverage", 144, 1, 90, 60, { sort: "ad_coverage", info: "coverage" }),
+        sp("cov", "Ad Coverage", 144, 1, 90, 60, { sort: "ad_coverage", info: "coverage", flach: 150 }),
         sp("advs", "Advertisers", 126, 0.8, 70, 30, { sort: "advertiser_count" }),
         sp("n", "Appearances", 132, 0.8, 80, 30, { sort: "ad_appearances" }),
         sp("last", "Last Ad Seen", 132, 0.9, 50, 60, { sort: "last_ad_seen" })] }
@@ -1233,10 +1246,11 @@
       try { e.kit.applyCols(); e.kit.syncColsBadge(); } catch (x) {}
     }
     /* Die Vorschau-Tabellen ohne Werkzeugleiste (Topics with Ads, Prompts im Detail): Kopf einmal,
-       darunter eine eigene Wurzel fuer das Kit, dicht (55) wie die Vorschauen in Shopping. */
+       darunter eine eigene Wurzel fuer das Kit, dicht (55) wie die Vorschauen in Shopping. Flach
+       wie die ganzen Tabellen (tabSek), an der Wurzel des Kits. */
     function vorschauPlatz(el, name) {
       var platz = el.querySelector(".uad-vorschauplatz");
-      if (!platz.querySelector(".uad-vorschau")) platz.innerHTML = '<div class="up-root uad-vorschau is-dense"><div class="uad-tabelle"></div></div>';
+      if (!platz.querySelector(".uad-vorschau")) platz.innerHTML = '<div class="up-root uad-vorschau is-dense" data-flach="yes"><div class="uad-tabelle"></div></div>';
       var w = platz.querySelector(".uad-vorschau");
       spaltenFuer(name, w);
       return w.querySelector(".uad-tabelle");
