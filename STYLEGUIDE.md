@@ -857,7 +857,7 @@ Menüs mit 6er-Polster (Zeilenmenüs der Gruppen, Brands-Aktionen) runden ihre Z
   border:1.5px solid var(--vc-border); color: var(--up-accent-fg); }
 .up-filter-item.is-checked .up-filter-check { background: var(--up-accent); border-color: var(--up-accent); }
 /* Seit 16.10.: die LEERE Checkbox zeigt den Hover ihrer Zeile mit */
-.up-filter-item:not(.is-checked):not(.is-disabled):not([aria-disabled="true"]):is(:hover, :focus-visible, .is-cursor)
+.up-filter-item:not(.is-checked):not(.is-disabled):not([aria-disabled="true"]):not(:disabled):is(:hover, :focus-visible, .is-cursor)
   .up-filter-check { border-color: var(--vc-third); }
 ```
 **Hover der leeren Checkbox (16.10.).** Der Zeilen-Hover (`--vc-heading-bg`) liegt fast im Ton

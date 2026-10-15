@@ -2067,15 +2067,16 @@
     .up-filter-item.is-checked .up-filter-check { background: var(--up-accent); border-color: var(--up-accent); }
     /* DIE LEERE CHECKBOX ZEIGT DEN HOVER IHRER ZEILE MIT (16.10. angefordert). Die Zeile geht
        beim Ueberfahren auf --vc-heading-bg, und das liegt fast im Ton des Rands (--vc-border):
-       gemessen Rand 228/226/228 auf Grund 244/242/244 -- das leere Kaestchen verschwand genau in
-       dem Moment, in dem man auf die Zeile zeigt. Darum geht der Rand dann auf --vc-third, wie in
-       der Prompt-Tabelle (.up-row:hover .upt-check, prompts-table.css); weich ueber den Uebergang,
-       den .up-filter-check schon traegt.
+       gemessen hell Rand 235 auf Grund 242-244, dunkel 34 auf 31-36 -- das leere Kaestchen
+       verschwand genau in dem Moment, in dem man auf die Zeile zeigt. Darum geht der Rand dann
+       auf --vc-third, wie in der Prompt-Tabelle (.up-row:hover .upt-check, prompts-table.css);
+       weich ueber den Uebergang, den .up-filter-check schon traegt.
        Eine Regel fuer jedes Dropdown mit dieser Checkbox. Gewaehlte Zeilen behalten ihren
-       Akzentrand; gesperrte (.is-disabled, aria-disabled) haben keinen Hover und bekommen auch
-       hier keinen. Tastatur: :focus-visible an Zeilen mit tabindex, .is-cursor in Topics, Models
-       und Markets -- dort bleibt der Fokus im Suchfeld, die Pfeiltasten setzen die Klasse. */
-    .up-filter-item:not(.is-checked):not(.is-disabled):not([aria-disabled="true"]):is(:hover, :focus-visible, .is-cursor) .up-filter-check { border-color: var(--vc-third); }
+       Akzentrand; gesperrte (.is-disabled, aria-disabled, ein Knopf mit disabled) haben keinen
+       Hover und bekommen auch hier keinen. Tastatur: :focus-visible an Zeilen mit tabindex,
+       .is-cursor in Topics, Models und Markets -- dort bleibt der Fokus im Suchfeld, die
+       Pfeiltasten setzen die Klasse. */
+    .up-filter-item:not(.is-checked):not(.is-disabled):not([aria-disabled="true"]):not(:disabled):is(:hover, :focus-visible, .is-cursor) .up-filter-check { border-color: var(--vc-third); }
     /* Gewaehlte Zeile traegt den App-Selected-Ton -- im Types-Dropdown immer, in einer
        Marken-Liste nur auf Ansage.
 
