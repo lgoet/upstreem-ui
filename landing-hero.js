@@ -4109,7 +4109,7 @@
      Wort um, weil jeder Buchstabe ein eigenes Inline-Element ist. */
   function quellWorte(){
     return (QUELL_H1 + " " + QUELL_H2).split(/\s+/).map(function(w){
-      return '<span class="ulh-qwort">' + w.split("").map(function(c){
+      return '<span class="ulh-qwort" aria-hidden="true">' + w.split("").map(function(c){
         return '<span class="ulh-qw">' + (c === "&" ? "&amp;" : c) + '</span>';
       }).join("") + '</span>';
     }).join(" ");
@@ -4328,7 +4328,10 @@
           /* Derselbe blaue Chip wie ueber der Ueberschrift der Karten (.ulh-feat-chip) -- eine
              Sektion, ein Chip. Er bringt seinen Abstand nach unten selbst mit (18px). */
           '<span class="ulh-feat-chip ulh-auf">' + QUELL_CHIP + '</span>' +
-          '<h2 class="ulh-quell-h">' + quellWorte() + '</h2>' +
+          /* aria-label mit dem ganzen Satz (15.10., SEO-Audit): der sichtbare Text ist Buchstabe fuer
+             Buchstabe in Spans zerlegt (der Farbverlauf beim Scrollen). Vorleser und einfache
+             Text-Extraktoren lesen so den Satz und nicht 140 Einzelteile. */
+          '<h2 class="ulh-quell-h" aria-label="' + (QUELL_H1 + " " + QUELL_H2).replace(/"/g, "&quot;") + '">' + quellWorte() + '</h2>' +
           /* Derselbe Knopf wie im Hero (.ulh-btn .ulh-btn-sec) -- .ulh-quell-cta traegt nur noch
              den Abstand nach oben und kein zweites Aussehen. */
           /* Ziel wie "Start for free" in der Leiste, also auch im neuen Tab (bis 14.10. href="#"). */
@@ -8752,7 +8755,15 @@
   if (window.__ulhNurHtml){
     window.__ulhHtml = { seite: seiteHtml(true), stand: standDerSeite(), leiste: deHtml(leiste()), fuss: deHtml(fuss()),
                          demo: deHtml(termin("demo")), kontakt: deHtml(termin("kontakt")),
-                         preise: deHtml(preisSeite()) };
+                         preise: deHtml(preisSeite()),
+                         /* Die Tarife als Daten (15.10., SEO-Audit): upstreem-web baut daraus die
+                            Angebote in den strukturierten Daten und die Preiszeilen in llms.txt --
+                            aus derselben Quelle wie die Karten, damit nichts veraltet. */
+                         tarife: JSON.stringify(TARIFE.map(function(t){
+                           return { name: t.name, monat: t.mon, jahrMonat: Math.round(t.jahr / 12 * 100) / 100,
+                                    jahr: t.jahr, prompts: Number(t.prompts), antworten: Number(String(t.antworten).replace(/,/g, "")),
+                                    marken: Number(t.marken), beschreibung: T(t.desc) };
+                         })) };
     return;
   }
 
