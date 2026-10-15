@@ -207,7 +207,7 @@
    Das Logo ist .up-logo-box aus core, nur groesser: Radius 12, das Bild darin 11 (konzentrisch). */
 .uad-held { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; min-width: 0; }
 .uad-held-logo.up-logo-box { width: 44px; height: 44px; flex: 0 0 44px; border-radius: var(--up-r-xl); }
-.uad-held-logo.up-logo-box img { width: 42px; height: 42px; border-radius: 11px; }
+.uad-held-logo.up-logo-box img { width: 42px; height: 42px; border-radius: calc(var(--up-r-xl) - 1px); }
 .uad-held-logo .up-logo-ltr { font-size: var(--up-fs-xl); }
 .uad-held-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .uad-held-text > .up-tsk-bar { display: block; }

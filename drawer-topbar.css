@@ -76,7 +76,7 @@
 /* 18px statt der 24 aus core: die Platte sitzt in einer 32px-Zeile. Erst 20, am 07.09. um zwei
    Pixel verkleinert. Alle zusammenhaengenden Werte gehen im selben Verhaeltnis mit (§1):
    Radius 8 -> 6, Bild 22 -> 16, Buchstabe 11 -> 9. */
-.utb-root .up-logo-box.utb-logo { width: 18px; height: 18px; flex: 0 0 18px; border-radius: 6px; }
+.utb-root .up-logo-box.utb-logo { width: 18px; height: 18px; flex: 0 0 18px; border-radius: var(--up-r-s); }
 /* IM DUNKELN OHNE PLATTE (07.09. angefordert). --vt-logo-bg ist dort #e0e0e0, also eine helle
    Flaeche -- in den Tabellen ist sie richtig, weil ein dunkles Logo darauf sonst verschwindet.
    Hier ist sie ein weisser Fleck von 18px in einer 32px-Leiste, und das faellt mehr auf als ein
@@ -89,7 +89,7 @@
    statt grau, also gar nicht da. */
 .up-root[data-theme="dark"] .utb-root .up-logo-box.utb-logo:not(.is-sk),
 .up-root[data-theme="dark"].utb-root .up-logo-box.utb-logo:not(.is-sk) { background: transparent; }
-.utb-root .up-logo-box.utb-logo img { width: 16px; height: 16px; border-radius: 5px; }
+.utb-root .up-logo-box.utb-logo img { width: 16px; height: 16px; border-radius: calc(var(--up-r-s) - 1px); }
 .utb-root .up-logo-box.utb-logo .up-logo-ltr { font-size: 9px; }
 
 /* ---- Prompt und Response tragen ein Zeichen statt eines Bildes (07.09. angefordert) ----
@@ -159,7 +159,7 @@
    Skelett ueber dem Kreuz wuerde behaupten, man koenne den Drawer noch nicht schliessen.
    Alle drei tragen dieselbe Hoehe wie ihr Inhalt, damit die Zeile beim Ankommen der Daten nicht
    springt: der Typ 12px wie seine Schrift (siehe .utb-crumb), die Platte ihre eigenen 18. */
-.utb-sk { display: inline-block; border-radius: 4px; background: var(--vc-sk); }
+.utb-sk { display: inline-block; border-radius: var(--up-r-xs); background: var(--vc-sk); }
 .utb-sk-type { width: 34px; height: 12px; }
 .utb-sk-name { width: 140px; max-width: 100%; height: 12px; }
 /* Die Logoplatte im Ladezustand: ihre Groesse und Rundung behaelt sie (die Regel oben), nur ihr

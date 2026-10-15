@@ -85,7 +85,7 @@
    position:relative, weil das Dreipunktmenue absolut daran haengt (core.css .up-cg-rowmenu). */
 .utm-cg-row {
   position: relative; display: flex; align-items: center; gap: 10px;
-  min-height: 40px; padding: 0 8px 0 10px; border-radius: 9px;
+  min-height: 40px; padding: 0 8px 0 10px; border-radius: var(--up-r-l);
   transition: background 120ms ease;
 }
 .utm-cg-row:hover, .utm-cg-row.is-menuopen { background: var(--up-sel-bg); }

@@ -130,7 +130,7 @@
    Ueber .up-entchip.ufb-chip und nicht ueber .ufb-chip allein: die Hoehe kommt aus core, und
    gegen core gewinnt die Spezifitaet, nicht die Ladereihenfolge. */
 .up-entchip.ufb-chip { height: 32px; padding: 0 6px 0 10px; }
-.up-entchip.ufb-chip .ufb-chip-x { flex-basis: 20px; width: 20px; height: 20px; border-radius: 6px; }
+.up-entchip.ufb-chip .ufb-chip-x { flex-basis: 20px; width: 20px; height: 20px; border-radius: var(--up-r-s); }
 /* IM DUNKELN OHNE FLAECHE (30.09. angefordert), wie der More-Filters-Knopf daneben
    (.up-root[data-theme="dark"] .ufb-btn): dort liegt --vc-bg eine Stufe ueber dem Grund der
    Leiste und steht als Kasten da. Hell bleibt es beim Grund aus core -- Weiss auf Weiss. */
@@ -161,7 +161,7 @@
    im Feld. */
 .ufb-chip-x {
   display: inline-flex; align-items: center; justify-content: center; flex: 0 0 18px;
-  width: 18px; height: 18px; padding: 0; border: 0; border-radius: 5px;
+  width: 18px; height: 18px; padding: 0; border: 0; border-radius: var(--up-r-xs);
   background: transparent; color: var(--vc-third); cursor: pointer; outline: 0;
   transition: color 120ms ease, background-color 120ms ease;
 }
@@ -180,7 +180,7 @@
   transition: color 120ms ease;
 }
 .ufb-clear:hover { color: var(--vc-text); }
-.ufb-clear:focus-visible { box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); border-radius: 6px; }
+.ufb-clear:focus-visible { box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); border-radius: var(--up-r-s); }
 
 /* Ohne aktiven Filter gibt es weder Strich noch Chips noch Clear All -- und zwar display: none
    und nicht bloss durchsichtig, sonst belegt die leere Leiste weiter ihre Breite. */
@@ -462,7 +462,7 @@
 .up-entchip.ufb-chip.is-klick { cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; }
 .up-entchip.ufb-chip.is-klick:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
 .up-root[data-theme="dark"] .up-entchip.ufb-chip.is-klick:hover { background: var(--vc-heading-bg); }
-.ufb-chip-auf:focus-visible { box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); border-radius: 6px; }
+.ufb-chip-auf:focus-visible { box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); border-radius: var(--up-r-s); }
 
 /* Ohne den Branded-Schalter des Intent-Filters (data-branded-visible="no"): auf All Prompts gilt
    er nicht, dort hat die Tabelle ihren eigenen (Prompt type). */
@@ -525,7 +525,7 @@
 /* "Clear All" in der grossen Form als Chip mit leichtem Grund (15.10. verlangt): Hoehe, Radius und
    Rand der Chips daneben, Grund --vc-heading-bg wie .up-entchip.is-soft. */
 .ufb-root[data-form="gross"] .ufb-clear {
-  height: 32px; padding: 0 10px; border: 1px solid var(--vc-border); border-radius: 8px;
+  height: 32px; padding: 0 10px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vc-heading-bg); color: var(--vc-muted); font-size: var(--up-fs-m);
   transition: color 120ms ease, border-color 120ms ease;
 }

@@ -178,7 +178,7 @@
   padding: 14px 16px; border-radius: var(--up-r-2xl); border: 1px solid var(--vc-border); background: var(--vc-bg);
   box-sizing: border-box; }
 .urd-cc-head { display: flex; align-items: center; gap: 8px; min-width: 0; margin-bottom: 10px; }
-.urd-cc-fav { width: 18px; height: 18px; border-radius: 5px; flex: 0 0 auto; object-fit: cover;
+.urd-cc-fav { width: 18px; height: 18px; border-radius: var(--up-r-xs); flex: 0 0 auto; object-fit: cover;
   display: block; background: var(--vt-logo-bg); }
 /* Die Domain ist ein eigenes Ziel, also braucht sie ihr eigenes Hover-Zeichen: Textfarbe und
    Unterstreichung. Ein Hintergrund waere hier falsch -- die Karte darunter hat schon einen. */
@@ -198,7 +198,7 @@
 .urd-cc-domain:hover, .urd-cr-domain:hover { color: var(--vc-text);
   text-decoration: underline; text-underline-offset: 2px; }
 .urd-cc-domain:focus-visible, .urd-cr-domain:focus-visible { outline: 2px solid var(--vc-text);
-  outline-offset: 2px; border-radius: 4px; }
+  outline-offset: 2px; border-radius: var(--up-r-xs); }
 /* Der Titel ist der Wert der Karte: zwei Zeilen, dann gekuerzt. */
 .urd-cc-title { font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.4;
   letter-spacing: -0.01em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
@@ -216,7 +216,7 @@
 /* Die Nummer der Quelle (v2) vor dem Favicon, an Kachel und Zeile -- dieselbe Zahl wie am Zitat im
    Text (.up-rb-cite-nr aus core). 18px, Radius 5 (konzentrisch zur 6er-Stufe). */
 .urd-nr { flex: 0 0 auto; min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box;
-  border-radius: 5px; background: var(--vc-heading-bg); color: var(--vc-muted); font-size: var(--up-fs-xs);
+  border-radius: var(--up-r-xs); background: var(--vc-heading-bg); color: var(--vc-muted); font-size: var(--up-fs-xs);
   font-weight: 600; line-height: 18px; text-align: center; font-variant-numeric: tabular-nums; }
 
 /* Liste: keine Rasterlinien, keine Spalten. Eine Quellenliste, wie man sie aus Chatbots kennt --
@@ -224,11 +224,11 @@
    ein Strich je Zeile ergibt bei zwoelf Quellen zwoelf Linien und liest sich als Tabelle. */
 .urd-cites-list { display: flex; flex-direction: column; gap: 4px; }
 .urd-cite-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px;
-  border-radius: 10px; cursor: pointer; min-width: 0; box-sizing: border-box;
+  border-radius: var(--up-r-m); cursor: pointer; min-width: 0; box-sizing: border-box;
   transition: background 120ms ease; }
 .urd-cite-row:hover { background: var(--vt-row-hover); }
 .urd-cite-row:focus-visible { outline: 2px solid var(--vc-text); outline-offset: -2px; }
-.urd-cr-fav { width: 20px; height: 20px; border-radius: 6px; flex: 0 0 auto; object-fit: cover;
+.urd-cr-fav { width: 20px; height: 20px; border-radius: var(--up-r-s); flex: 0 0 auto; object-fit: cover;
   display: block; background: var(--vt-logo-bg); }
 .urd-cr-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
 .urd-cr-title { font-size: 13.5px; font-weight: 500; color: var(--vc-text); line-height: 1.35;
@@ -260,16 +260,17 @@
 .urd-cr-ments .up-stack-item + .up-stack-item { margin-left: 4px; }
 /* 26px Chip statt 28: Faktor 26/28 auf Radius (8 -> 7.4). Rahmen 1px und Polsterung 2px kommen
    aus core und bleiben -- ein Pixel skaliert nicht sinnvoll auf 0.93. Bild also 26 - 2 - 4 = 20px,
-   Bildradius 7.4 - 3 = 4.4. */
+   Bildradius 7.4 - 3 = 4.4. Seit dem 15.10. wie der Chip in core (Geist-Skala): 6 und 6 - 3 = 3 --
+   der Faktor 26/28 aendert auf dieser Stufe nichts, das ergaebe 5.6 und 2.6. */
 .urd-cc-foot .up-stack-vis, .urd-cr-ments .up-stack-vis {
-  border-radius: 7px; box-shadow: none; border: 1px solid var(--vc-border); }
+  border-radius: var(--up-r-m); box-shadow: none; border: 1px solid var(--vc-border); }
 /* Im Dunkeln kein Rahmen: die Logokachel ist dort selbst hell und traegt die Form allein --
    dieselbe Entscheidung wie beim Marken-Chip in den Mentions und beim Zitations-Chip im Text.
    Ein Marken-Chip soll nicht an drei Orten drei Rahmen-Regeln haben. */
 .up-root[data-theme="dark"] .urd-cc-foot .up-stack-vis,
 .up-root[data-theme="dark"] .urd-cr-ments .up-stack-vis {
   border-color: transparent; background-clip: padding-box; }
-.urd-cc-foot .up-stack-item img, .urd-cr-ments .up-stack-item img { border-radius: 4px; }
+.urd-cc-foot .up-stack-item img, .urd-cr-ments .up-stack-item img { border-radius: calc(var(--up-r-m) - 3px); }
 /* Ohne Ueberlappung gibt es nichts auseinanderzuschieben: das SEITLICHE Wegruecken der Nachbarn
    faellt weg, sonst zappelt die ganze Reihe, wenn man ueber einen Chip faehrt.
    Das Anheben bleibt -- und zwar auf JEDEM Chip. Vorher hob nur der erste: core gibt dem ersten
@@ -308,15 +309,15 @@
    Ton aus core (--vc-sk), Puls aus core (uutpulse, 1.2s) -- der Kommentar behauptete das vorher
    schon, aber die Regel holte nur die Farbe: die Bloecke standen still und lasen sich als grauer
    Kasten, nicht als "laedt". */
-.urd-sk { display: block; background: var(--vc-sk); border-radius: 8px;
+.urd-sk { display: block; background: var(--vc-sk); border-radius: var(--up-r-m);
   animation: uutpulse 1.2s ease-in-out infinite; }
 .urd-sk-prompt { height: 28px; width: 72%; margin-bottom: 6px; }
 .urd-sk-prompt2 { height: 28px; width: 44%; }
 .urd-sk-tag { display: inline-block; height: 24px; width: 96px; border-radius: var(--up-r-m); }
 .urd-sk-mn { display: inline-block; height: 22px; width: 22px; border-radius: var(--up-r-s); }
-.urd-sk-kpi { height: 18px; width: 108px; border-radius: 6px; }
+.urd-sk-kpi { height: 18px; width: 108px; border-radius: var(--up-r-s); }
 .urd-sk-ment { height: var(--up-mc, 40px); width: 148px; border-radius: var(--up-r-l); }
-.urd-sk-line { height: 14px; margin-bottom: 10px; border-radius: 6px; }
+.urd-sk-line { height: 14px; margin-bottom: 10px; border-radius: var(--up-r-s); }
 /* Ueberschrift im Skelett: 18px hoch statt 14 und Radius im selben Verhaeltnis (6 -> 7.7). 36px Luft
    darueber, 10px darunter -- so steht eine Ueberschrift auch im fertigen Text: naeher am Absatz, der
    ihr folgt, als an dem, der ihr vorausgeht. Der erste Abschnitt hat keine Ueberschrift, also
@@ -442,7 +443,7 @@
 /* Bild: quadratisch auf der Kopfflaeche, contain -- ein Produkt wird nie beschnitten. multiply im
    Hellen: Produktfotos stehen fast immer freigestellt auf Weiss, und Weiss auf Grau haette eine
    Kante. */
-.urd-pc-media { position: relative; aspect-ratio: 1 / 1; border-radius: var(--up-r-m);
+.urd-pc-media { position: relative; aspect-ratio: 1 / 1; border-radius: var(--up-r-s);
   background: var(--vc-heading-bg); overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .urd-pc-media img { width: 100%; height: 100%; object-fit: contain; display: block; padding: 16px;
   box-sizing: border-box; mix-blend-mode: multiply; }

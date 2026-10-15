@@ -32,7 +32,7 @@
 .usb-secsub { font-size: 13px; font-weight: 400; color: var(--vc-third); margin: 0; line-height: 1.45; }
 
 /* ---------- Karte ---------- */
-.usb-card { border: 1px solid var(--vc-border); border-radius: 16px; background: var(--vc-bg); padding: 4px 16px; }
+.usb-card { border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); background: var(--vc-bg); padding: 4px 16px; }
 .usb-div { height: 1px; background: var(--vc-border); margin: 0 -16px; }
 /* "Delete Team" samt Trennlinie nur fuer Owner (27.09., settings-brand.js istOwner). Die Klasse
    setzt render() aus data-user-role; ohne sie bleibt beides weg. :not() hebt die Spezifitaet ueber
@@ -59,7 +59,7 @@
 .usb-savehint { font-size: 12px; color: var(--vc-third); margin-right: auto; }
 .usb-savehint.is-dirty { color: var(--vc-text); }
 .usb-savebtn {
-  height: 32px; padding: 0 14px; border-radius: 9px; cursor: pointer; white-space: nowrap;
+  height: 32px; padding: 0 14px; border-radius: var(--up-r-m); cursor: pointer; white-space: nowrap;
   border: 0; background: var(--up-accent); color: var(--up-accent-fg);
   font: inherit; font-size: 13px; font-weight: 500; transition: opacity 120ms ease;
 }
@@ -78,7 +78,7 @@
    eingeklappte Link-Weg. Nebeneinander konkurrierten Bild und Knopf um dieselbe Blickzeile. */
 .usb-logoctl { flex-direction: column; align-items: flex-start; gap: 12px; }
 .usb-logoprev {
-  width: 56px; height: 56px; flex: 0 0 56px; border-radius: 12px; overflow: hidden;
+  width: 56px; height: 56px; flex: 0 0 56px; border-radius: var(--up-r-xl); overflow: hidden;
   border: 1px solid var(--vc-border); background: var(--vc-heading-bg); display: grid; place-items: center;
 }
 .usb-logoprev img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -115,7 +115,7 @@
 /* Ein ganz normales Eingabefeld: 1px Rahmen in der Rahmenfarbe, sonst nichts. .up-field brachte
    hier einen zu schweren Rahmen mit, weil es fuer die Suchfelder in den Menues gedacht ist. */
 .usb-urlin { flex: 1 1 auto; height: 32px; width: 240px; min-width: 0; padding: 0 10px;
-  border: 1px solid var(--vc-border); border-radius: 9px; background: transparent;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: transparent;
   color: var(--vc-text); font: inherit; font-size: 13px; }
 .usb-urlin::placeholder { color: var(--vc-third); }
 /* Hover kommt aus core (Hover der Eingabefelder, 13.10.). */
@@ -128,7 +128,7 @@
 .usb-models { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 0 0 16px; }
 .usb-model {
   display: flex; align-items: center; gap: 10px; text-align: left; width: 100%;
-  height: 56px; padding: 0 12px; border-radius: 12px; cursor: pointer;
+  height: 56px; padding: 0 12px; border-radius: var(--up-r-xl); cursor: pointer;
   border: 1px solid var(--vc-border); background: transparent; color: var(--vc-text);
   font: inherit; transition: border-color 120ms ease, background 120ms ease, opacity 120ms ease;
 }
@@ -149,7 +149,7 @@
 .usb-model.is-fixed:hover { border-color: var(--vc-hover-border); }
 .usb-model:focus-visible { outline: 0; border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .usb-model-logo {
-  width: 28px; height: 28px; flex: 0 0 28px; border-radius: 8px; overflow: hidden;
+  width: 28px; height: 28px; flex: 0 0 28px; border-radius: var(--up-r-m); overflow: hidden;
   /* KEIN --vt-logo-bg. Das Token ist fuer Markenlogos gedacht, die oft transparent sind und eine
      helle Unterlage brauchen -- im Dark Mode ist es darum #e0e0e0. Die Modell-Logos hier bringen
      ihren eigenen Hintergrund mit; eine helle Kachel darunter sticht heraus wie ein Fehler. */
@@ -167,7 +167,7 @@
    Die Werte sind die von .uca-ai-check dort, unveraendert uebernommen: 16px, voll rund, Flaeche
    in der Akzentfarbe, Zeichen in --up-accent-fg, das svg 11 statt 16px -- sonst stiesse es an
    den Rand des Plaettchens. */
-.usb-model-check { flex: 0 0 16px; width: 16px; height: 16px; border-radius: 999px;
+.usb-model-check { flex: 0 0 16px; width: 16px; height: 16px; border-radius: var(--up-r-voll);
   background: var(--up-accent); color: var(--up-accent-fg);
   display: inline-flex; align-items: center; justify-content: center;
   opacity: 0; transition: opacity 120ms ease; }
@@ -236,7 +236,7 @@
 .usb-ddcustom-clear svg { width: 13px; height: 13px; display: block; }
 .usb-ddcustom-clear:hover { color: var(--vc-text); }
 .usb-ddcustom-in:not(:placeholder-shown) ~ .usb-ddcustom-clear { display: inline-flex; }
-.usb-ddcustom-add { flex: 0 0 auto; height: 32px; padding: 0 14px; border: 0; border-radius: 8px;
+.usb-ddcustom-add { flex: 0 0 auto; height: 32px; padding: 0 14px; border: 0; border-radius: var(--up-r-m);
   background: var(--up-accent); color: var(--up-accent-fg); font: inherit; font-size: 13px; font-weight: 500;
   line-height: 1; cursor: pointer; }
 .usb-ddcustom-add:disabled { opacity: .35; cursor: default; }
@@ -254,13 +254,13 @@
 /* Das Markenlogo vor der Ueberschrift: der Block heisst "<Marke> Summary", also gehoert das
    Zeichen der Marke davor, so wie in der Meta-Zeile des Seitenkopfs. */
 .usb-sumtitlerow { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.usb-sumlogo { width: 18px; height: 18px; flex: 0 0 18px; border-radius: 4px; object-fit: cover;
+.usb-sumlogo { width: 18px; height: 18px; flex: 0 0 18px; border-radius: var(--up-r-xs); object-fit: cover;
   display: block; }
 .usb-sumlogo.is-empty { display: none; }
 .usb-sumwrap { position: relative; }
 /* Farben ausdruecklich aus den Tokens. Ohne sie nimmt das textarea die Browser-Vorgabe -- also
    weiss, auch im Dark Mode. Rahmen und Fokusring wie bei jedem anderen Feld der App. */
-.usb-sumin { width: 100%; min-height: 132px; padding: 10px 12px; border-radius: 10px;
+.usb-sumin { width: 100%; min-height: 132px; padding: 10px 12px; border-radius: var(--up-r-xl);
   border: 1px solid var(--vc-border); background: var(--vc-bg); color: var(--vc-text);
   font-family: inherit; font-size: 13.5px; line-height: 1.55; resize: vertical; display: block;
   outline: 0; transition: border-color 150ms ease, box-shadow 150ms ease; }
@@ -285,7 +285,7 @@
 .usb-card-danger { border-color: color-mix(in srgb, var(--vt-down) 32%, var(--vc-border)); }
 .usb-dangerbtn {
   display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px;
-  border-radius: 9px; cursor: pointer; white-space: nowrap;
+  border-radius: var(--up-r-m); cursor: pointer; white-space: nowrap;
   border: 1px solid color-mix(in srgb, var(--vt-down) 40%, var(--vc-border));
   background: transparent; color: var(--vt-down); font: inherit; font-size: 13px; font-weight: 500;
   transition: background 120ms ease, border-color 120ms ease;
@@ -316,9 +316,9 @@
      ausserhalb von .up-root, wo die Tokens definiert sind, und var(--up-focus) waere leer. */
   --up-focus: #4A9EFF; --up-focus-ring: rgba(74,158,255,0.20); --up-focus-w: 2px;
   width: 100%; max-width: 440px; max-height: calc(100vh - 48px); overflow: hidden auto;
-  border-radius: 16px; background: var(--up-surface); border: 1px solid var(--vc-border);
+  border-radius: var(--up-r-2xl); background: var(--up-surface); border: 1px solid var(--vc-border);
   color: var(--vc-text); font-family: Geist, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  box-shadow: var(--up-e-4, 0 18px 48px rgba(0,0,0,.18));
+  box-shadow: var(--up-e-4);
   transform: translateY(6px) scale(.985); transition: transform 160ms ease;
 }
 .usb-dlg-backdrop.is-shown .usb-dlg { transform: translateY(0) scale(1); }
@@ -339,7 +339,7 @@
 .usb-dlg-title { font-size: 22px; font-weight: 500; color: #fff; margin: 0; line-height: 1.2;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .usb-dlg-close {
-  flex: 0 0 32px; width: 32px; height: 32px; margin-right: -6px; border: 0; border-radius: 8px;
+  flex: 0 0 32px; width: 32px; height: 32px; margin-right: -6px; border: 0; border-radius: var(--up-r-m);
   background: transparent; color: rgba(255,255,255,.82); cursor: pointer;
   display: grid; place-items: center; transition: background 120ms ease, color 120ms ease;
 }
@@ -351,12 +351,12 @@
 .usb-dlg-field { display: flex; flex-direction: column; gap: 8px; }
 .usb-dlg-lbl { font-size: 13px; color: var(--vc-muted); }
 .usb-dlg-lbl b { color: var(--vc-text); font-weight: 500; }
-.usb-dlg-in { height: 36px; padding: 0 12px; border-radius: 9px; font: inherit; font-size: 13.5px;
+.usb-dlg-in { height: 36px; padding: 0 12px; border-radius: var(--up-r-m); font: inherit; font-size: 13.5px;
   border: 1px solid var(--vc-border); background: transparent; color: var(--vc-text); }
 .usb-dlg-in:focus { outline: 0; border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .usb-dlg-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .usb-dlg-go {
-  height: 32px; padding: 0 14px; border-radius: 9px; cursor: pointer; white-space: nowrap;
+  height: 32px; padding: 0 14px; border-radius: var(--up-r-m); cursor: pointer; white-space: nowrap;
   border: 1px solid var(--vt-down); background: var(--vt-down); color: #fff;
   font: inherit; font-size: 13.5px; font-weight: 500; transition: background 120ms ease, opacity 120ms ease;
 }
@@ -402,11 +402,11 @@
 .usb-root.is-loading .usb-skelbox { position: relative; clip-path: inset(0 round 8px); }
 .usb-root.is-loading .usb-skelbox > * { visibility: hidden; }
 .usb-root.is-loading .usb-skelbox::before {
-  content: ""; position: absolute; inset: 0; border-radius: 8px;
+  content: ""; position: absolute; inset: 0; border-radius: var(--up-r-m);
   background: var(--vc-sk); overflow: hidden;
 }
 .usb-root.is-loading .usb-skelbox::after {
-  content: ""; position: absolute; inset: 0; border-radius: 8px;
+  content: ""; position: absolute; inset: 0; border-radius: var(--up-r-m);
   background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.16) 50%, rgba(255,255,255,0) 100%);
   transform: translateX(-100%); animation: upskt 1200ms linear infinite;
 }
@@ -441,7 +441,7 @@
    Gelbtoene direkt statt aus --vc-*: die Palette hat keinen Warnton, und einer aus --vc-neg waere
    ein Fehler, den es hier nicht gibt. Es ist ein Hinweis, kein Absturz. */
 .usb-stuck {
-  margin: 0 0 12px; padding: 9px 12px; border-radius: 9px;
+  margin: 0 0 12px; padding: 9px 12px; border-radius: var(--up-r-m);
   border: 1px solid rgba(180, 130, 20, .28); background: rgba(232, 176, 48, .10);
   color: var(--vc-text); font-size: 12.5px; line-height: 1.45;
 }

@@ -45,7 +45,7 @@
 .uap-close {
   margin: -8px -8px 0 0; margin-left: auto;
   width: 32px; height: 32px; flex: 0 0 32px;
-  border: 0; border-radius: 9px; background: transparent; color: var(--vc-muted);
+  border: 0; border-radius: var(--up-r-m); background: transparent; color: var(--vc-muted);
   display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
   transition: background 120ms ease, color 120ms ease;
 }
@@ -81,7 +81,7 @@
 .uap-input {
   width: 100%; box-sizing: border-box; resize: none; overflow-y: auto;
   min-height: 80px; max-height: 200px; padding: 10px 44px 10px 12px;
-  border: 1px solid var(--vc-border); border-radius: 10px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
   background: var(--vc-bg); color: var(--vc-text);
   font: inherit; font-size: 13.5px; line-height: 1.45;
   transition: border-color 120ms ease;
@@ -92,7 +92,7 @@
 /* Bottom right of the field, not centred: it belongs to the end of what is being typed. */
 .uap-enter {
   position: absolute; right: 8px; bottom: 8px;
-  width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--vc-border);
+  width: 28px; height: 28px; border-radius: var(--up-r-m); border: 1px solid var(--vc-border);
   background: var(--vc-bg); color: var(--vc-muted); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
   transition: border-color 120ms ease, color 120ms ease;
@@ -104,7 +104,7 @@
 
 .uap-drop {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
-  padding: 22px 16px; border-radius: 12px; cursor: pointer;
+  padding: 22px 16px; border-radius: var(--up-r-xl); cursor: pointer;
   border: 1.5px dashed var(--vc-border); background: var(--vc-bg);
   color: var(--vc-muted); text-align: center;
   transition: border-color 120ms ease, background 120ms ease;
@@ -120,7 +120,7 @@
 .uap-tmpl {
   margin-top: 10px; height: 32px; padding: 0 10px 0 8px;
   display: inline-flex; align-items: center; gap: 6px;
-  border: 1px solid var(--vc-border); border-radius: 9px; background: transparent;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: transparent;
   color: var(--vc-muted); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
   transition: border-color 120ms ease, color 120ms ease;
 }
@@ -282,7 +282,7 @@
 .uap-trigger {
   display: inline-flex; align-items: center; gap: 8px;
   height: 32px; padding: 0 10px;
-  border: 1px solid var(--vc-border); border-radius: 8px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vc-bg); color: var(--vc-muted);
   font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
   white-space: nowrap; cursor: pointer; outline: 0;
@@ -309,7 +309,7 @@
    colour, the number in the menu surface colour, fixed 16px so the trigger stays the same width
    at 2 and at 12. */
 .uap-count {
-  flex: 0 0 16px; width: 16px; height: 16px; border-radius: 999px;
+  flex: 0 0 16px; width: 16px; height: 16px; border-radius: var(--up-r-voll);
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--vc-text); color: var(--up-menu-bg);
   font-size: 10px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums;
@@ -366,14 +366,14 @@
 .uap-noopt { padding: 14px 8px; font-size: 13px; color: var(--vc-third); text-align: center; }
 
 .uap-cancel {
-  height: 32px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--vc-border);
+  height: 32px; padding: 0 14px; border-radius: var(--up-r-m); border: 1px solid var(--vc-border);
   background: transparent; color: var(--vc-muted);
   font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer;
   transition: border-color 120ms ease, color 120ms ease;
 }
 .uap-cancel:hover { border-color: var(--vc-hover-border); color: var(--vc-text); }
 .uap-save {
-  height: 32px; padding: 0 20px; border: 0; border-radius: 9px;
+  height: 32px; padding: 0 20px; border: 0; border-radius: var(--up-r-m);
   background: var(--up-accent); color: var(--up-accent-fg); cursor: pointer;
   font-family: inherit; font-size: 12.5px; font-weight: 600; transition: opacity 120ms ease;
 }
@@ -385,7 +385,7 @@
    primary action squeezed to three characters is worse than one on its own line. */
 @media (max-width: 560px) {
   .uap-backdrop { padding: 12px; align-items: flex-end; }
-  .uap-card { max-height: calc(100vh - 24px); gap: 24px; border-radius: 16px; }
+  .uap-card { max-height: calc(100vh - 24px); gap: 24px; border-radius: var(--up-r-2xl); }
   .uap-title { font-size: 19px; }
   .uap-sub { font-size: 14px; }
   .uap-foot { flex-direction: column; align-items: stretch; gap: 10px; }

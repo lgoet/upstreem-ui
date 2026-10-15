@@ -39,7 +39,7 @@
   flex: 1 1 auto; min-height: 0; height: 487px;
   border: 1px solid var(--vc-border); background: var(--vc-bg); overflow: hidden;
   display: flex; flex-direction: column; position: relative; transition: background 200ms ease;
-  border-radius: 16px;
+  border-radius: var(--up-r-2xl);
 }
 .tcd-root.is-max .tcd-box, .tcd-root.is-narrow .tcd-box { height: 487px; }
 /* Kopfleiste und Kartenrand im Dunkeln stehen jetzt in core.css und gelten fuer JEDE Tabelle und
@@ -111,7 +111,7 @@
    (JS toggles is-visible, see syncFilterBadge). display:none by default rather than
    opacity/visibility: an invisible-but-present 32px control would still eat hover/click area and
    throw off the toolbar's flex gap even when nothing is filtered. */
-.tcd-chart-reset { display: none; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 0; border-radius: 8px;
+.tcd-chart-reset { display: none; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 0; border-radius: var(--up-r-m);
   background: transparent; color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; flex: 0 0 auto; }
 .tcd-chart-reset.is-visible { display: inline-flex; }
 .tcd-chart-reset svg { width: 14px; height: 14px; flex: 0 0 14px; display: block; }
@@ -173,10 +173,10 @@
 /* Der Trend an der LINKEN Zellkante (15.10. spaet, wie core: "die Trends ueberall links"). */
 .tct-td > .up-trend { order: -1; margin-right: auto; }
 /* Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke. Kein Nachbau von .up-planpill (meldet .check_reinvention.py wegen des Rahmens): das ist der Typ-Chip aus STYLEGUIDE 1a/1b, Masse wie .up-tag. */
-.tct-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
+.tct-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: var(--up-r-s);
   border: 1px solid transparent; box-sizing: border-box;
   font-size: 12px; font-weight: 500; white-space: nowrap; max-width: 100%; overflow: hidden; }
-.tct-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
+.tct-tag-dot { width: 6px; height: 6px; border-radius: var(--up-r-voll); flex: 0 0 auto; }
 .tct-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
 
 /* ================= filter (fader) dropdown — trigger + badge stay local; the panel itself
@@ -188,7 +188,7 @@
    zwei Werte fuehrt --vc-text-invert. Die Dunkel-Regel faellt damit weg. (22.09.) */
 .tcd-filter-badge {
   position: absolute; top: -3px; right: -3px; z-index: 2;
-  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: var(--up-r-voll);
   background: var(--vc-text); color: var(--vc-text-invert);
   font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
   display: none; align-items: center; justify-content: center;
@@ -198,19 +198,19 @@
 .tcd-filter.is-open .tcd-filter-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
 
 /* "Brand mentioned?" — its own toolbar element, left of the filter button */
-.tcd-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px;
+.tcd-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: var(--up-r-m);
   background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; font-family: inherit; }
 .tcd-brand-toggle.is-visible { display: inline-flex; }
 .tcd-root.tcd-hide-brand .tcd-brand-toggle { display: none !important; }
 .tcd-brand-toggle:hover { background: var(--vc-heading-bg); }
 .tcd-brand-toggle.is-yes, .tcd-brand-toggle.is-no { background: var(--vc-heading-bg); }
 .tcd-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-.tcd-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg); }
+.tcd-brand-check { width: 16px; height: 16px; border-radius: var(--up-r-xs); border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg); }
 .tcd-brand-check svg { width: 11px; height: 11px; display: none; }
 .tcd-brand-toggle.is-yes .tcd-brand-check, .tcd-brand-toggle.is-no .tcd-brand-check { background: var(--up-accent); border-color: var(--up-accent); }
 .tcd-brand-toggle.is-yes .tcd-brand-check .tcd-brand-check-yes { display: block; }
 .tcd-brand-toggle.is-no .tcd-brand-check .tcd-brand-check-no { display: block; }
-.tcd-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }
+.tcd-brand-logo { width: 16px; height: 16px; border-radius: var(--up-r-xs); flex: 0 0 auto; display: block; object-fit: cover; }
 .tcd-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
 
 /* the chart body the type-chart kit renders into (the kit styles its own contents) */
@@ -230,7 +230,7 @@
 .tcd-chart-reset {
   display: none; align-items: center; gap: 6px;
   height: 28px; padding: 0 10px;
-  border: 1px solid var(--vc-border); border-radius: 8px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vc-bg); color: var(--vc-muted);
   font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
   cursor: pointer; white-space: nowrap;

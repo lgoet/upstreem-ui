@@ -178,7 +178,7 @@
    data-tip am Knopf und das aria-label fuer Vorlesesoftware -- die Beschriftung geht also nicht
    verloren, sie steht nur nicht mehr dauerhaft da. */
 .uob-link {
-  width: 32px; height: 32px; padding: 0; border: 0; border-radius: 8px; background: transparent;
+  width: 32px; height: 32px; padding: 0; border: 0; border-radius: var(--up-r-m); background: transparent;
   color: var(--vc-muted); font-family: inherit; font-size: 13px; font-weight: 500;
   display: inline-flex; align-items: center; justify-content: center; gap: 0; cursor: pointer;
   white-space: nowrap;
@@ -213,7 +213,7 @@
 .uob-themebtn {
   width: 32px; height: 32px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
-  border: 0; border-radius: 8px; background: transparent; color: var(--vc-muted);
+  border: 0; border-radius: var(--up-r-m); background: transparent; color: var(--vc-muted);
   cursor: pointer; padding: 0; margin-left: 4px;
   transition: background var(--uob-t) var(--uob-ease), color var(--uob-t) var(--uob-ease);
 }
@@ -245,13 +245,13 @@
      Mit 5 + 2 + 10 + 15 ist er genau die 32 der Zeile, die Kopfzeile bleibt 48 hoch. */
   padding: 5px 16px 0;
 }
-.uob-rail-line { position: relative; height: 2px; border-radius: 999px; background: var(--vc-sk); }
+.uob-rail-line { position: relative; height: 2px; border-radius: var(--up-r-voll); background: var(--vc-sk); }
 /* Eine Flaeche, kein Verlauf. Hier stand kurz einer, der den Abschnitt bis Competitors
    ausblasste, weil Brand gesperrt ist -- zurueckgenommen: die Sperre sagen der Punkt und die
    Beschriftung, und die Linie ist Fortschritt und nicht Zustand. Zwei Aussagen auf einem
    Strich sind eine zu viel. */
 .uob-rail-fill {
-  position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; width: 0;
+  position: absolute; left: 0; top: 0; bottom: 0; border-radius: var(--up-r-voll); width: 0;
   background: var(--up-accent);
   transition: width var(--uob-t) var(--uob-ease);
 }
@@ -314,7 +314,7 @@
   transition: left var(--uob-t) var(--uob-ease);
 }
 .uob-rail-hit.is-link { cursor: pointer; }
-.uob-rail-hit:focus-visible { outline: 0; border-radius: 10px;
+.uob-rail-hit:focus-visible { outline: 0; border-radius: var(--up-r-l);
   box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .uob-rail-dots, .uob-rail-labels { pointer-events: none; }
 /* Der Hover faerbt Text UND Punkt, egal wo in der Flaeche der Zeiger steht. is-hot setzt das
@@ -421,7 +421,7 @@
    Bildradius 6 -> 6.5. Nur das Bild zu vergroessern haette die Luft zum Rahmen von 2px auf 1px
    halbiert -- das Favicon haette am Rand geklebt. */
 .uob-ident-logo {
-  width: 30px; height: 30px; flex: 0 0 auto; border-radius: 9px;
+  width: 30px; height: 30px; flex: 0 0 auto; border-radius: var(--up-r-m);
   background: var(--vc-bg); border: 1px solid var(--vc-border);
   display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
   font-size: 12px; font-weight: 600; color: var(--vc-muted);
@@ -448,7 +448,7 @@
 .uob-kachel-globus svg { width: 62%; height: 62%; display: block; }
 .has-img > .uob-kachel-globus { display: none; }
 
-.uob-ident-logo img { width: 26px; height: 26px; border-radius: 6.5px; display: block; object-fit: contain; }
+.uob-ident-logo img { width: 26px; height: 26px; border-radius: var(--up-r-s); display: block; object-fit: contain; }
 .uob-ident-logo.has-img { font-size: 0; }
 .uob-ident-txt { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .uob-ident-name { font-size: 14px; font-weight: 600; color: var(--vc-text);
@@ -522,7 +522,7 @@
 .uob-opt { font-size: 11.5px; font-weight: 500; color: var(--vc-third); }
 .uob-input {
   height: 40px; width: 100%;
-  border: 1px solid var(--vc-border); border-radius: 12px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
   background: var(--vc-bg); padding: 0 14px;
   font-family: inherit; font-size: 14px; color: var(--vc-text);
   outline: none;
@@ -535,7 +535,7 @@
 .uob-input.has-fav { padding-right: 42px; }
 .uob-fav {
   position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-  width: 20px; height: 20px; border-radius: 5px; overflow: hidden;
+  width: 20px; height: 20px; border-radius: var(--up-r-xs); overflow: hidden;
   display: flex; align-items: center; justify-content: center;
   color: var(--vc-third); pointer-events: none;
 }
@@ -587,7 +587,7 @@
 .uob-select {
   height: 40px; width: 100%;
   display: inline-flex; align-items: center; gap: 10px;
-  border: 1px solid var(--vc-border); border-radius: 12px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
   background: var(--vc-bg); padding: 0 12px 0 14px;
   font-family: inherit; font-size: 14px; color: var(--vc-text); text-align: left;
   cursor: pointer; outline: none;
@@ -722,7 +722,7 @@
    Das Polster liegt IM Element und nicht als gap dazwischen, sonst faerbt der Hover nur den
    Text und laesst einen Streifen daneben ungefaerbt. */
 .uob-item.is-plain {
-  border: 0; border-radius: 8px; background: transparent;
+  border: 0; border-radius: var(--up-r-m); background: transparent;
   padding: 11px 12px; min-height: 0; width: 100%;
   margin: 0 0 4px; align-items: center;
 }
@@ -733,7 +733,7 @@
 .uob-item {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
   padding: 10px 14px; min-height: 56px;
-  border: 1px solid var(--vc-border); border-radius: 12px; background: var(--vc-bg);
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--vc-bg);
   font-family: inherit; cursor: pointer; outline: none;
   transition: border-color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
 }
@@ -766,7 +766,7 @@
 /* Geometrie exakt .up-filter-check aus core, nur eine Stufe groesser (16 -> 18, Radius 5 -> 5.6,
    Haken 11 -> 12.4): die Zeile ist 56px hoch statt 28, ein 16er-Kaestchen verschwindet darin. */
 .uob-check {
-  width: 18px; height: 18px; flex: 0 0 auto; border-radius: 6px;
+  width: 18px; height: 18px; flex: 0 0 auto; border-radius: var(--up-r-s);
   border: 1.5px solid var(--vc-border); background: var(--vc-bg);
   display: inline-flex; align-items: center; justify-content: center;
   transition: background var(--uob-t) var(--uob-ease), border-color var(--uob-t) var(--uob-ease);
@@ -787,7 +787,7 @@
 /* Markenkachel in der Zeile: dieselbe Kachel wie oben im Markenkopf, eine Stufe kleiner
    (28 -> 24, Radius 8 -> 7, Bild 24 -> 20). */
 .uob-item-logo {
-  width: 26px; height: 26px; flex: 0 0 auto; border-radius: 7px;
+  width: 26px; height: 26px; flex: 0 0 auto; border-radius: var(--up-r-m);
   background: var(--vt-logo-bg); border: 1px solid var(--vc-border);
   display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
   font-size: 11px; font-weight: 600; color: var(--vc-muted);
@@ -803,7 +803,7 @@
      Flaeche kein Token gibt, das in beiden Modi dunkel bleibt. */
   --vc-text: #1f1f1b; --vc-muted: #6b6f78;
 }
-.uob-item-logo img { width: 22px; height: 22px; border-radius: 5px; display: block; object-fit: contain; }
+.uob-item-logo img { width: 22px; height: 22px; border-radius: var(--up-r-s); display: block; object-fit: contain; }
 /* Im Dunkeln kein Rahmen, sondern die helle Flaeche --vt-logo-bg -- dieselbe Loesung wie bei
    jeder Logokachel der Hauptapp (.up-ment-logo). Ein Rahmen um ein dunkles Favicon auf dunklem
    Grund macht daraus einen leeren Kasten; die helle Flaeche gibt dem Logo einen Grund, auf dem
@@ -821,7 +821,7 @@
 .uob-link-out { align-self: flex-start; max-width: 100%; cursor: pointer;
   transition: color var(--uob-t) var(--uob-ease); }
 .uob-link-out:hover { color: var(--vc-text); text-decoration: underline; text-underline-offset: 2px; }
-.uob-link-out:focus-visible { outline: 0; border-radius: 4px;
+.uob-link-out:focus-visible { outline: 0; border-radius: var(--up-r-xs);
   box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 /* Prompts brechen um und werden NIE gekuerzt: ein halber Prompt ist keine Entscheidungsgrundlage.
    Deshalb hier kein nowrap und keine feste Zeilenzahl. */
@@ -847,7 +847,7 @@
 .uob-add {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
   padding: 6px 12px; min-height: 40px; margin: 0 0 4px;
-  border: 0; border-radius: 8px; background: transparent;
+  border: 0; border-radius: var(--up-r-l); background: transparent;
   font-family: inherit; font-size: 14px; font-weight: 500; color: var(--vc-third);
   cursor: pointer; outline: none;
   transition: background var(--uob-t) var(--uob-ease), color var(--uob-t) var(--uob-ease),
@@ -872,7 +872,7 @@
 /* Ebenfalls kein .up-iconbtn: 22px, sitzt IN der Zeile des eigenen Themas und gehoert zu ihr.
    Ein 32px-Knopf daneben wuerde die Zeile aufblasen und sich wichtiger machen als ihr Inhalt. */
 .uob-newdel {
-  flex: 0 0 auto; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 6px;
+  flex: 0 0 auto; width: 22px; height: 22px; padding: 0; border: 0; border-radius: var(--up-r-s);
   background: transparent; color: var(--vc-third); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
   transition: color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
@@ -884,10 +884,10 @@
    Kein Kreis: die App zeichnet Themen ueberall als abgerundetes Quadrat (.up-sent-dot,
    .up-cg-swatch), und ein Kreis waere hier ein zweiter Formenkanon. */
 .uob-swatch {
-  width: 12px; height: 12px; flex: 0 0 auto; border-radius: 4px;
+  width: 12px; height: 12px; flex: 0 0 auto; border-radius: var(--up-r-xs);
   background: var(--uob-sw, var(--vc-third));
 }
-.uob-swatch.is-lg { width: 16px; height: 16px; border-radius: 5px; }
+.uob-swatch.is-lg { width: 16px; height: 16px; border-radius: var(--up-r-xs); }
 
 /* ---------- Prompts nach Thema ----------
    Ein Prompt kann zu mehreren Themen gehoeren. Er wird trotzdem GENAU EINMAL aufgefuehrt, unter
@@ -912,7 +912,7 @@
    einer Ueberschrift und darf sie nicht ueberstimmen. */
 .uob-group-all {
   margin-left: auto; flex: 0 0 auto;
-  background: none; border: 0; padding: 2px 4px; margin-right: -4px; border-radius: 6px;
+  background: none; border: 0; padding: 2px 4px; margin-right: -4px; border-radius: var(--up-r-s);
   font: inherit; font-size: 11.5px; font-weight: 500; color: var(--vc-third); cursor: pointer;
   transition: color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
 }
@@ -927,7 +927,7 @@
 .uob-load { display: flex; flex-direction: column; align-items: center; text-align: center;
   width: 100%; min-width: 0; }
 .uob-load-logo {
-  width: 56px; height: 56px; border-radius: 16px;
+  width: 56px; height: 56px; border-radius: var(--up-r-2xl);
   background: var(--vc-bg); border: 1px solid var(--vc-border);
   display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
   font-size: 20px; font-weight: 600; color: var(--vc-muted);
@@ -936,7 +936,7 @@
      Schatten der App liest sich das falsch, und genau so wurde es gemeldet. Eine Kachel mit
      Rahmen auf ruhigem Grund braucht keine Erhebung. */
 }
-.uob-load-logo img { width: 40px; height: 40px; border-radius: 10px; display: block; object-fit: contain; }
+.uob-load-logo img { width: 40px; height: 40px; border-radius: var(--up-r-s); display: block; object-fit: contain; }
 .uob-load-logo.has-img { font-size: 0; }
 /* Beide kuerzen statt umzubrechen: ein Markenname darf lang sein (gemessen mit 100 Zeichen),
    aber er darf nicht das Bild auseinanderziehen, auf das der Nutzer vierzig Sekunden schaut.
@@ -952,10 +952,10 @@
    Dauer ist laenger als --uob-t, weil dieser Balken nichts umschaltet, sondern laeuft. */
 .uob-bar {
   margin-top: clamp(20px, 3.4vh, 30px); width: 100%; max-width: 320px;
-  height: 3px; border-radius: 999px; background: var(--vc-sk); overflow: hidden;
+  height: 3px; border-radius: var(--up-r-voll); background: var(--vc-sk); overflow: hidden;
 }
 .uob-bar-fill {
-  height: 100%; width: 0; border-radius: 999px; background: var(--up-accent);
+  height: 100%; width: 0; border-radius: var(--up-r-voll); background: var(--up-accent);
   transition: width 620ms linear;
 }
 .uob-phases {
@@ -1020,7 +1020,7 @@
    Polsterung und Radius von .uob-input (12px Radius, 14px waagerecht), damit es in derselben
    Familie steht wie die Felder der Seite. */
 .uob-res-note {
-  margin: 12px 0 0; padding: 10px 14px; border-radius: 12px;
+  margin: 12px 0 0; padding: 10px 14px; border-radius: var(--up-r-xl);
   background: var(--vc-field);
   display: grid; gap: 2px;
   font-size: 12.5px; line-height: 1.5; color: var(--vc-third); text-align: center;
@@ -1047,7 +1047,7 @@
    zur ersten Textzeile. Oben angeschlagen sass es sichtbar zu hoch, weil der Text zwei Zeilen
    hat und das Zeichen nur eine. */
 .uob-phase {
-  display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 10px;
+  display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: var(--up-r-m);
   transition: background var(--uob-t) var(--uob-ease), opacity var(--uob-t) var(--uob-ease);
   opacity: .4;
 }
@@ -1098,8 +1098,8 @@
 
 /* Der zweite, kurze Ladezustand: dieselbe Kachel, ein Satz, dieselbe Spur -- aber keine Phasen.
    Zehn Sekunden brauchen keine Gliederung, sie brauchen nur ein Zeichen, dass es weitergeht. */
-.uob-load.is-compact .uob-load-logo { width: 44px; height: 44px; border-radius: 13px; }
-.uob-load.is-compact .uob-load-logo img { width: 30px; height: 30px; border-radius: 8px; }
+.uob-load.is-compact .uob-load-logo { width: 44px; height: 44px; border-radius: var(--up-r-xl); }
+.uob-load.is-compact .uob-load-logo img { width: 30px; height: 30px; border-radius: var(--up-r-s); }
 
 /* Die gewaehlten Themen als Marken, waehrend die Prompts entstehen. Das ist WORTGLEICH die
    Marke aus prompt-research (.upr-tl-tag) -- dieselben 24px Hoehe, Radius 8, 11.5px/500,
@@ -1137,7 +1137,7 @@
    einer Preisseite 822 Pixel Seitenhoehe bei 760 Pixel Fenster. */
 .uob-plan {
   position: relative; display: flex; flex-direction: column; text-align: left;
-  padding: 16px 16px 18px; border: 1px solid var(--vc-border); border-radius: 16px;
+  padding: 16px 16px 18px; border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl);
   background: var(--vc-bg); font-family: inherit; cursor: pointer; outline: none;
   transition: border-color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease),
               box-shadow var(--uob-t) var(--uob-ease);
@@ -1148,9 +1148,9 @@
    ist nichts zu waehlen. */
 .uob-plan.is-skel { cursor: default; gap: 10px; }
 .uob-plan.is-skel:hover { border-color: var(--vc-border); }
-.uob-sk-name  { width: 44%; height: 13px; border-radius: 5px; }
-.uob-sk-preis { width: 62%; height: 26px; border-radius: 7px; margin: 6px 0 4px; }
-.uob-sk-z     { width: 88%; height: 9px;  border-radius: 4px; }
+.uob-sk-name  { width: 44%; height: 13px; border-radius: var(--up-r-xs); }
+.uob-sk-preis { width: 62%; height: 26px; border-radius: var(--up-r-m); margin: 6px 0 4px; }
+.uob-sk-z     { width: 88%; height: 9px;  border-radius: var(--up-r-xs); }
 .uob-sk-z.is-kurz { width: 64%; }
 .uob-plan.is-on {
   border-color: var(--up-accent);
@@ -1158,7 +1158,7 @@
 }
 .uob-plan:focus-visible { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .uob-plan-tag {
-  position: absolute; top: -9px; left: 18px; height: 18px; padding: 0 8px; border-radius: 999px;
+  position: absolute; top: -9px; left: 18px; height: 18px; padding: 0 8px; border-radius: var(--up-r-voll);
   background: var(--up-accent); color: var(--up-accent-fg);
   font-size: 10.5px; font-weight: 600; letter-spacing: .02em;
   display: inline-flex; align-items: center;
@@ -1208,7 +1208,7 @@
   transition: max-width var(--uob-t) var(--uob-ease);
 }
 .uob-back {
-  height: 40px; padding: 0 14px; border: 0; border-radius: 12px; background: transparent;
+  height: 40px; padding: 0 14px; border: 0; border-radius: var(--up-r-l); background: transparent;
   color: var(--vc-muted); font-family: inherit; font-size: 14px; font-weight: 500;
   display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
   transition: color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease),
@@ -1224,7 +1224,7 @@
    Formular, hier steht er neben Zurueck. */
 .uob-next {
   height: 40px; min-width: 148px; padding: 0 20px;
-  border: 0; border-radius: 12px;
+  border: 0; border-radius: var(--up-r-l);
   background: var(--up-accent); color: var(--up-accent-fg);
   font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: -.01em;
   cursor: pointer;
@@ -1293,7 +1293,7 @@
   /* Der Rahmen einer schwebenden Schicht, nicht der einer Karte: --up-menu-border. Dieselbe
      Korrektur wie an den sechs anderen Stellen der App, die eine eigene Schicht aufmachen --
      auf einem dunklen Grund loest sich ein Kartenrahmen auf. */
-  border: 1px solid var(--up-menu-border); border-radius: 14px;
+  border: 1px solid var(--up-menu-border); border-radius: var(--up-r-2xl);
   background: var(--vc-bg);
   /* Derselbe Schatten wie der Drawer der Hauptapp (uo-drawer, ohne Punkt geschrieben: .contract_snapshot.py
      sucht Klassennamen im Rohtext und nimmt sonst auch die aus Kommentaren in den Vertrag
@@ -1322,7 +1322,7 @@
    ein Kreuz. Die Geometrie ist die von .uob-newdel weiter oben, damit die zwei kleinen
    Wegklick-Knoepfe dieser Seite gleich gross sind. */
 .uob-help-x {
-  width: 24px; height: 24px; flex: 0 0 auto; padding: 0; border: 0; border-radius: 6px;
+  width: 24px; height: 24px; flex: 0 0 auto; padding: 0; border: 0; border-radius: var(--up-r-s);
   background: transparent; color: var(--vc-third); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
   transition: color var(--uob-t) var(--uob-ease), background var(--uob-t) var(--uob-ease);
@@ -1388,7 +1388,7 @@
 .uob-help-cal { padding-top: 16px; border-top: 1px solid var(--vc-border); }
 .uob-help-calbtn {
   margin-top: 10px;
-  height: 32px; padding: 0 11px; border: 1px solid var(--vc-border); border-radius: 10px;
+  height: 32px; padding: 0 11px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: transparent; color: var(--vc-text);
   font-family: inherit; font-size: 13px; font-weight: 500;
   display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
@@ -1527,7 +1527,7 @@ a.uob-help-calbtn { text-decoration: none; }
 
 /* ---------- sehr schmal ---------- */
 .uob-root.is-vnarrow .uob-item { padding: 10px 12px; gap: 10px; }
-.uob-root.is-vnarrow .uob-load-logo { width: 48px; height: 48px; border-radius: 14px; }
+.uob-root.is-vnarrow .uob-load-logo { width: 48px; height: 48px; border-radius: var(--up-r-xl); }
 .uob-root.is-vnarrow .uob-load-logo img { width: 34px; height: 34px; }
 
 /* Wer Bewegung abgestellt hat, bekommt die Zustaende trotzdem -- nur ohne Weg dorthin. Ueber die

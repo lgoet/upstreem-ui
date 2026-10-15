@@ -20,7 +20,7 @@
    16; 12 ist die Stufe der Kopfkacheln) und innen konzentrisch 11, Buchstabe 16 -> 18.9, auf der
    Skala 22 (die Vorlage setzt ihn ebenso auf 22). Das Skelett in denselben Massen. */
 .uddr-head .up-dk-logo.up-logo-box { width: 52px; height: 52px; flex: 0 0 52px; border-radius: var(--up-r-xl); }
-.uddr-head .up-dk-logo.up-logo-box img { width: 50px; height: 50px; border-radius: 11px; }
+.uddr-head .up-dk-logo.up-logo-box img { width: 50px; height: 50px; border-radius: calc(var(--up-r-xl) - 1px); }
 .uddr-head .up-dk-logo .up-logo-ltr { font-size: var(--up-fs-2xl); }
 .uddr-head .up-dk-sk.is-logo { width: 52px; height: 52px; }
 .uddr-teil { min-width: 0; }

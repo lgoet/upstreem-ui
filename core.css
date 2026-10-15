@@ -86,32 +86,48 @@
   --up-fw-h:  600;     /* Ueberschrift, aktiver Zustand               (172) */
   --up-fw-b:  700;     /* echtes Fett: Treffermarkierung, <strong>          */
 
-  /* Radius. Sechs Stufen plus rund -- und DIE HAELFTE DER ARBEIT MACHT DIE KONZENTRIK.
-     Nachgezaehlt ueber alle 763 Radiusangaben der App:
-         443  liegen auf der Basis unten
-         185  liegen auf Basis minus 1 -- das sind KEINE Abweichungen, sondern die
-              konzentrischen Kinder: ein Element mit 1px Rahmen in einer 8er-Ecke braucht
-              innen 7, sonst laeuft der Spalt zwischen beiden Rundungen ungleich breit.
-              Die Regel steht seit langem im STYLEGUIDE (Zeile 424: "Logo-Box 24x24px,
-              radius 8px, Bild 22x22px radius 7px"), sie hatte nur keinen Namen.
-          69  sind voll rund
-          35  sind wirklich krumm (3.23, 4.28, 7.04, 8.9 ...) -- nur DIE sind der Fehler,
-              und sie kommen aus der Skalierungsregel in §1 ohne Raster zum Einrasten.
-     DIE FORMEL, die die Fachliteratur uebereinstimmend nennt: innen = aussen minus Abstand.
-     Also `calc(var(--up-r-m) - 1px)` bei 1px Rahmen -- oder eben 7px hingeschrieben, was
-     dasselbe ist und lesbarer bleibt. .check_skala.py laesst Basis minus 1 durch. */
-  --up-r-xs:   4px;    /* Punkt, Haken, Plakette -- das Kleinste       (66) */
-  --up-r-s:    6px;    /* Chip, Pille, kleines Feld                    (64) */
-  --up-r-m:    8px;    /* Knopf, Eingabe, Segment, Logoplatte         (180) */
-  --up-r-l:   10px;    /* Kachel, Vorschaubild                         (35) */
-  --up-r-xl:  12px;    /* Karte innen, Drawer-Kopf                     (58) */
-  --up-r-2xl: 16px;    /* Chart-Box, Modal, grosse Karte               (31) */
-  --up-r-3xl: 32px;    /* GROSSE WEICHE FLAECHE -- Miras Eingabefeld, ihr Auswahlpanel, die
-                          schwebende Massenleiste. Nicht "Pille": diese Flaechen sind mehrere
-                          hundert Pixel hoch, 32 ist dort eine bewusst weiche Ecke und kein
-                          Rundlauf. Eigene Stufe statt Ausnahme, weil die Rolle ueber die App
-                          verteilt rund zehnmal vorkommt.                        (10) */
-  --up-r-voll: 999px;  /* alles, was ganz rund ist                     (69) */
+  /* Radius. SEIT DEM 15.10. DIE STUFEN VON GEIST (vercel.com/geist/materials und die
+     Komponentenseiten, gemessen am 15.10.): 4, 6, 8, 12, 16 und rund -- nichts dazwischen.
+     Geist ordnet die Stufe nach Rolle und Hoehe, nicht nach Gefuehl:
+          4  Checkbox (16px), Knopf 24px, die Knoepfe IN einem Segment
+          6  Knopf und Feld 32-36px, Menuezeile (--ds-popover-row-radius), einzeiliger Tooltip
+             (material-tooltip), Segment-Kapsel -- die "Alltagsstufe" (material-base/-small)
+          8  Knopf und Feld ab 40px, mehrzeiliger Tooltip, Vorschaukachel
+         12  Karte (material-medium/-large), Menue (material-menu), Dialog, Toast
+         16  ganzseitige Flaeche (material-fullscreen)
+     Gegenueber vorher (4/6/8/10/12/16/32) ist das ueberall eine Stufe kleiner: 8 -> 6,
+     10 und 12 -> 8, 14 und 16 -> 12, 32 -> 16. Gemessen am 15.10. VOR dem Umbau: 956 Angaben,
+     davon 809 als feste Zahl in 38 Werten (8px allein 160-mal, 9px 48-mal, 12px 71-mal fuer
+     Knopf, Feld, Tabelle und Menue zugleich) und nur 147 ueber ein Token. Seitdem laeuft jede
+     Angabe ueber ein Token; fest stehen nur noch 0, 50 %, die Haarlinien unter 4 (Flaggen 3,
+     Markierungsstriche 2 und 1) und die em-Werte in Miras Text.
+     Zwei Stufen tragen denselben Wert, weil zwei alte Rollen auf dieselbe Geist-Stufe fallen:
+     s = xs (Chip und Punkt, beide 4) und xl = l (Karte innen und Kachel, beide 8). Die Namen
+     bleiben getrennt -- sie sagen, WAS gerundet wird, und eine spaetere Abweichung kostet dann
+     eine Zeile statt einer Suche durch 40 Dateien.
+     DIE KONZENTRIK BLEIBT: innen = aussen minus Abstand, danach auf die naechste Stufe. Ein Bild
+     mit 1px Rahmen in einer 6er-Ecke traegt `calc(var(--up-r-m) - 1px)`, die Menuezeile im
+     12er-Menue mit 8 Polster 4 (s), das Bild im Logo-Stapel (Rahmen 1 + Polster 2)
+     `calc(var(--up-r-m) - 3px)`. .check_skala.py laesst Basis minus 1 durch und rechnet calc()
+     nicht nach.
+     ALTE ZAHLEN IN KOMMENTAREN: wo ein Kommentar aelter als der 15.10. einen Radius nennt
+     ("32px, Radius 8", "Radius 12 wie .uob-input"), meint er die alte Skala. Die Zuordnung ist
+     die oben: 4 -> 4, 6 -> 4, 8 und 9 -> 6, 10 bis 12 -> 8, 14 bis 18 -> 12, 32 -> 16; die Rolle
+     (Knopf, Feld, Menue, Karte) kann eine Angabe davon abweichend auf ihre Geist-Stufe gezogen
+     haben -- massgeblich ist die Regel, nicht der Kommentar. */
+  --up-r-xs:   4px;    /* Punkt, Haken, Checkbox, Plakette, Knopf im Segment               */
+  --up-r-s:    4px;    /* Chip, Tag, Knopf bis 24px -- Geist: Knopf 24px (vorher 6)      */
+  --up-r-m:    6px;    /* Knopf, Feld 32-36px, Segment, Logoplatte, Menuezeile (vorher 8) */
+  --up-r-l:    8px;    /* Knopf und Feld ab 40px, Kachel, Tooltip mehrzeilig (vorher 10)  */
+  --up-r-xl:   8px;    /* Karte innen, grosse Logoplatte, Vorschaubild      (vorher 12)   */
+  --up-r-2xl: 12px;    /* Karte, Box, Tabelle, Dialog, Toast, Erklaerkarte (vorher 16)    */
+  --up-r-3xl: 16px;    /* GROSSE FLAECHE -- Geist material-fullscreen; heute das Anmeldefeld
+                          (.uau-panel, vorher 32)                                           */
+  --up-r-voll: 999px;  /* alles, was ganz rund ist                                          */
+  /* Das Menue (Geist material-menu, 12). Steht seit dem 15.10. AUCH hier an :root und nicht nur
+     an .up-root: die Menues von Mira, der Antwortansicht und der Fader haengen teils am <body>,
+     und ein unaufgeloestes var() in border-radius ist keine Rundung, sondern eine scharfe Ecke. */
+  --up-dd-radius: 12px;
 
   /* Hoehen der Bedienelemente. Vier Stufen, eine Zeilenhoehe -- und das ist die Leiter, die
      GitHub Primer unabhaengig davon fuehrt (24/28/32/40/48). Dass beide auf dieselben vier
@@ -212,36 +228,45 @@
    [data-theme="light"] steht in der hellen Liste, damit ein Element, das sein Thema selbst traegt
    (die Erklaerkarte, ein Menue), auch in einem dunklen Vorfahren hell aufloest statt zu erben. */
 :root, .up-root, [data-theme="light"] {
-      /* Tiefe. Vier Stufen, EINE Schattenfarbe -- es aendern sich nur Versatz und Unschaerfe.
-         Vier ist auch, was Atlassian fuehrt (sunken, default, raised, overlay); Material und
-         Carbon fahren eine 0..24-Leiter, die aber fuer eine App dieser Groesse Zierrat ist.
-         --up-dd-shadow bleibt daneben bestehen: die Menues tragen ihn seit langem, und
-         e-2 ist absichtlich derselbe Ton, damit beides nebeneinander stimmt.
-         DIE ROLLEN (28.09., beim Aufraeumen von 42 Einzelwerten festgelegt):
-             e-1  liegt auf der Flaeche: Knopf, Feld, Regler, Chip, Kachel
-             e-2  haengt an einem Ausloeser: Menue, Popover, Tooltip, Erklaerkarte, Hover-Anhub
-             e-3  schwebt frei ueber dem Inhalt: Leiste, hervorgehobener Kasten
-             e-4  liegt ueber einem Schleier: Dialog, Palette, Benachrichtigung */
-      --up-e-1: 0 1px 2px rgba(0,0,0,.06);
-      --up-e-2: 0 10px 28px rgba(0,0,0,.14);   /* = --up-dd-shadow, hell */
-      --up-e-3: 0 14px 34px rgba(0,0,0,.16);
-      --up-e-4: 0 20px 48px rgba(0,0,0,.20);
+      /* Tiefe. SEIT DEM 15.10. DIE SCHATTEN VON GEIST (vercel.com/geist/materials, die Werte aus
+         Vercels eigenem Stylesheet, --ds-shadow-* an :root und an .dark-theme, gemessen am 15.10.).
+         Vorher war jede Stufe EINE breite Lage (0 10px 28px .14 und so fort); Geist baut jede aus
+         zwei bis drei schmalen Lagen mit negativer Streuung -- die naechste Lage zeichnet die Kante,
+         die fernste das Schweben, und keine faerbt den Grund daneben grau. Das ist der Unterschied
+         zwischen "liegt etwas hoeher" und "hat einen Hof".
+         Geists Werte tragen zusaetzlich einen 1px-Ring als Rahmen (--ds-shadow-border-base). Der
+         fehlt hier mit Absicht: jedes Bauteil der App hat seinen Rahmen schon als border, ein Ring
+         dazu waere eine zweite Linie um denselben Kasten.
+         --up-dd-shadow IST e-2 (var), nicht mehr dieselbe Zahl an einem zweiten Ort.
+         DIE ROLLEN (28.09., beim Aufraeumen von 42 Einzelwerten festgelegt) und ihre Geist-Stufe:
+             e-1  liegt auf der Flaeche: Knopf, Feld, Regler, Kachel     Geist small
+             e-2  haengt an einem Ausloeser: Menue, Popover, Tooltip,    Geist menu (= xl)
+                  Erklaerkarte, Hover-Anhub
+             e-3  schwebt frei ueber dem Inhalt: Leiste, Kasten          Geist modal (= 2xl)
+             e-4  liegt ueber einem Schleier: Dialog, Palette, Toast     Geist modal-elevated */
+      --up-e-1: 0 2px 2px rgba(0,0,0,.04);
+      --up-e-2: 0 1px 1px rgba(0,0,0,.02), 0 4px 8px -4px rgba(0,0,0,.04), 0 16px 24px -8px rgba(0,0,0,.06);
+      --up-e-3: 0 1px 1px rgba(0,0,0,.02), 0 8px 16px -4px rgba(0,0,0,.04), 0 24px 32px -8px rgba(0,0,0,.06);
+      --up-e-4: 0 32px 72px -12px rgba(0,0,0,.06), 0 8px 32px -12px rgba(0,0,0,.08), 0 8px 24px -12px rgba(0,0,0,.12);
       /* DIE FUENFTE TIEFE: SEITLICH (23.09.). Die vier Stufen darueber werfen nach UNTEN --
          fuer eine Schublade, die von rechts einfaehrt, ist das die falsche Richtung. Der Wert
          stand bis heute vier Mal einzeln in den Dateien (Opportunity-Karte, Prompt Research,
          Onboarding-Hilfe, Mira als Drawer), zweimal mit .15 und zweimal mit .18 -- vier
-         Schubladen, die nebeneinander nie zu sehen sind und deshalb auseinanderliefen. */
-      --up-e-drawer: -12px 0 32px rgba(0,0,0,.15);
+         Schubladen, die nebeneinander nie zu sehen sind und deshalb auseinanderliefen.
+         Seit dem 15.10. Geists Sheet-Schatten (modal-elevated), um 90 Grad gedreht: dieselben drei
+         Lagen, der Versatz auf der x-Achse statt der y-Achse -- Geist selbst legt den Abwaerts-
+         Schatten auch an ein Seitenblatt, dort faellt er aber unten aus dem Fenster und die Kante
+         links bliebe ohne Tiefe. Die Kante selbst ist der border-left der Drawer. */
+      --up-e-drawer: -32px 0 72px -12px rgba(0,0,0,.06), -8px 0 32px -12px rgba(0,0,0,.08), -8px 0 24px -12px rgba(0,0,0,.12);
       /* DIE SECHSTE TIEFE: DER GEHOBENE CHIP (28.09.). Zwei Lagen, und das ist keine Verzierung:
-         die dichte Lage (1px) zeichnet die Kante, die weiche (4px) hebt den Chip ab -- eine Lage
-         kann nur eines davon. Der Grund des Chips ist dafuer auf die Haelfte zurueckgenommen
-         (quick-actions.css, .mqa-chip): der Schatten TRAEGT die Abgrenzung. e-1 hat eine Lage bei
-         6 Prozent und haette den Chip auf der Eingabezeile verschwinden lassen.
+         die dichte Lage zeichnet die Kante, die weiche hebt den Chip ab -- eine Lage kann nur
+         eines davon. Der Grund des Chips ist dafuer auf die Haelfte zurueckgenommen
+         (quick-actions.css, .mqa-chip): der Schatten TRAEGT die Abgrenzung.
          Der Wert stand achtmal einzeln da (core .up-entchip.is-lifted, quick-actions .mqa-chip und
-         .mqa-mini, je hell und dunkel). Die kleine Fassung hatte die weiche Lage einen Pixel enger
-         (1px 3px) -- sie traegt jetzt denselben Wert; "nicht staerker schweben als der grosse",
-         die Bedingung von damals, haelt damit weiterhin. */
-      --up-e-chip: 0 1px 1px rgba(0,0,0,.13), 0 2px 4px rgba(0,0,0,.07);
+         .mqa-mini, je hell und dunkel).
+         Seit dem 15.10. Geist medium ("further raised"): ebenfalls zwei Lagen, die dichte 2px, die
+         weiche 8px mit -8px Streuung, die nur unter dem Chip austritt. */
+      --up-e-chip: 0 2px 2px rgba(0,0,0,.04), 0 8px 8px -8px rgba(0,0,0,.04);
       /* DIE UMGEKEHRTE KARTE (28.09.): Grund und Tinte der Erklaerkarte (.up-explain), die sich
          gegen das Thema dreht -- hell eine dunkle Karte, dunkel eine helle. Sie stand fuenfmal
          als Literal da (core, domains-table, visibility-chart, quick-actions, create-with-ai),
@@ -274,20 +299,22 @@
       --vc-toast-zu: #6c717a;
 }
 [data-theme="dark"], .up-root[data-theme="dark"] {
-      /* Die vier Tiefen im dunklen Thema. Sie sind NICHT die hellen mit mehr Deckkraft, auch
-         wenn die Zahlen so aussehen: auf dunklem Grund traegt ein Schatten kaum, deshalb liegt
-         die Arbeit dort beim helleren Rahmen (--vc-border, --up-menu-border), und der Schatten
-         setzt nur die Kante ab. Mehr als .32 macht daraus einen Fleck.
+      /* Die Tiefen im dunklen Thema, wie Geist sie an .dark-theme fuehrt (15.10.): auf dunklem
+         Grund traegt ein Schatten kaum, deshalb liegt die Arbeit dort beim helleren Rahmen
+         (--vc-border, --up-menu-border). Geist zieht im Dunkeln NUR die flachen Stufen an --
+         small und medium, also e-1 und der Chip, von 4 auf 16 bzw. 32 Prozent, damit die Kante
+         auf dem dunklen Grund ueberhaupt ankommt. Menue, Modal und Seitenblatt behalten dort
+         dieselben Zahlen wie im Hellen; sie stehen hier trotzdem ausgeschrieben, damit ein
+         Element mit data-theme="dark" in einer hellen Wurzel nicht still die helle Fassung erbt.
          Die Masse selbst -- Schrift, Radius, Hoehe, Dauer -- stehen NICHT noch einmal hier:
          die aendern sich mit dem Thema nicht, und ein zweiter Satz waere ein zweiter Ort zum
          Auseinanderlaufen. */
-      --up-e-1: 0 1px 2px rgba(0,0,0,.24);
-      --up-e-2: 0 10px 28px rgba(0,0,0,.32);
-      --up-e-3: 0 14px 34px rgba(0,0,0,.38);
-      --up-e-4: 0 20px 48px rgba(0,0,0,.46);
-      /* Dunkel kraeftiger, dieselbe Staffelung wie bei den vier Stufen darueber. */
-      --up-e-drawer: -12px 0 32px rgba(0,0,0,.42);
-      --up-e-chip: 0 1px 1px rgba(0,0,0,.24), 0 2px 4px rgba(0,0,0,.16);
+      --up-e-1: 0 1px 2px rgba(0,0,0,.16);
+      --up-e-2: 0 1px 1px rgba(0,0,0,.02), 0 4px 8px -4px rgba(0,0,0,.04), 0 16px 24px -8px rgba(0,0,0,.06);
+      --up-e-3: 0 1px 1px rgba(0,0,0,.02), 0 8px 16px -4px rgba(0,0,0,.04), 0 24px 32px -8px rgba(0,0,0,.06);
+      --up-e-4: 0 32px 72px -12px rgba(0,0,0,.06), 0 8px 32px -12px rgba(0,0,0,.08), 0 8px 24px -12px rgba(0,0,0,.12);
+      --up-e-drawer: -32px 0 72px -12px rgba(0,0,0,.06), -8px 0 32px -12px rgba(0,0,0,.08), -8px 0 24px -12px rgba(0,0,0,.12);
+      --up-e-chip: 0 2px 2px rgba(0,0,0,.32), 0 8px 8px -8px rgba(0,0,0,.16);
       /* Die Erklaerkarte im Dunkeln: heller Grund, die Schrift im Ton der hellen Karte. */
       --vc-inverse-bg: #eeedef;
       --vc-inverse-ink: #1f1f1b;
@@ -410,12 +437,17 @@
       --up-evm-rand: #cdd1d6; --up-evm-linie: #9aa1ab;
       /* Dropdown-Geometrie. Vorher hatte jedes Panel eigene Werte -- 12 vs 14 Radius, 6 vs 8
          Padding, 6 vs 8 Abstand zum Trigger. Keiner davon war eine Design-Entscheidung, es waren
-         Kopien die auseinandergelaufen sind. Eine Zahl je Groesse, hier. */
-      --up-dd-radius: 14px; --up-dd-pad: 8px; --up-dd-gap: 6px;
+         Kopien die auseinandergelaufen sind. Eine Zahl je Groesse, hier.
+         Radius 12 seit dem 15.10. (Geist material-menu, vorher 14) -- derselbe Wert wie an :root
+         im Massblock oben, hier noch einmal, weil Komponenten ihn an ihrer Wurzel neu setzen. */
+      --up-dd-radius: 12px; --up-dd-pad: 8px; --up-dd-gap: 6px;
       /* Der Abstand NUR zwischen einem Dropdown und seinem Untermenue. Eigener Wert, weil
          --up-dd-gap auch den Abstand vom Trigger zum Panel setzt -- der bleibt 6. */
       --up-sub-gap: 4px;
-      --up-dd-shadow: 0 10px 28px rgba(0,0,0,.14);
+      /* Der Schatten der Menues IST e-2 (die Tiefe von allem, was an einem Ausloeser haengt).
+         Bis zum 15.10. stand hier dieselbe Zahl noch einmal als Literal -- zwei Orte fuer einen
+         Wert, die beim naechsten Umbau auseinandergelaufen waeren. */
+      --up-dd-shadow: var(--up-e-2);
       --vc-switch-bg: #f9f8f9; --vc-switch-border: #e4e2e4; --vc-third: #6b6f78; --vc-fourth: #80858e;
       /* Die PILLE auf der Schiene -- das Gegenstueck zu --vc-switch-rail. Sie stand als
          Literal an sieben Stellen, jede mit einer eigenen Dunkel-Regel daneben (#ffffff und
@@ -629,7 +661,7 @@
          Entscheidung und keine Folge dieser hier. */
       --up-menu-bg: #232326; --up-sel-bg: #28282c; --up-menu-border: #3e3e44;
       --up-chip-rand-hover: #4a4a52; --up-chip-an: #26262a; --up-chip-an-hover: #2c2c30; --up-chip-rand-an-hover: #5a5a62;
-      --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32);
+      --up-dd-shadow: var(--up-e-2);   /* die dunkle e-2, siehe den hellen Block */
       /* Event-Pins im Dunkeln: dieselben Stufen auf der dunklen Leiter -- der Rand eine Stufe
          ueber --up-menu-border, die Linie auf --vc-fourth (#6c717a), damit sie wie hell hinter
          den Daten bleibt und nicht heller als die Achsenschrift wird. */
@@ -1128,7 +1160,7 @@
       .udt-sub-search-x, .upt-topicsearch-clear, .upt-grp-sidesearch-clear,
       .usb-ddcustom-clear, .upt-selcount-clear) {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 32px; height: 32px; border: 0; border-radius: 8px;
+      width: 32px; height: 32px; border: 0; border-radius: var(--up-r-m);
       background: transparent; color: var(--vc-third); cursor: pointer; padding: 0; flex: 0 0 auto; position: relative;
     }
     .up-root[data-theme="dark"] :is(.up-iconbtn,
@@ -1175,15 +1207,15 @@
        DAS ZEICHEN WAECHST RELATIV MIT, und das ist kein Versehen: 16/32 = 0.50, aber
        13/20 = 0.65. Ein kleiner Knopf braucht ein verhaeltnismaessig groesseres Zeichen, sonst
        verschwindet es. Die gemessenen Werte bleiben. */
-    .up-iconbtn.is-28, .udt-actbtn, .uut-actbtn { width: 28px; height: 28px; border-radius: 7px; }
+    .up-iconbtn.is-28, .udt-actbtn, .uut-actbtn { width: 28px; height: 28px; border-radius: var(--up-r-m); }
     :is(.up-iconbtn.is-28, .udt-actbtn, .uut-actbtn) svg { width: 15px; height: 15px; }
 
-    .up-iconbtn.is-24, .am-prev-mini, .upr-clear-input { width: 24px; height: 24px; border-radius: 6px; }
+    .up-iconbtn.is-24, .am-prev-mini, .upr-clear-input { width: 24px; height: 24px; border-radius: var(--up-r-s); }
     :is(.up-iconbtn.is-24, .am-prev-mini, .upr-clear-input) svg { width: 14px; height: 14px; }
 
     .up-iconbtn.is-20,
     .udt-sub-search-x, .upt-topicsearch-clear, .upt-grp-sidesearch-clear,
-    .usb-ddcustom-clear, .upt-selcount-clear { width: 20px; height: 20px; border-radius: 5px; }
+    .usb-ddcustom-clear, .upt-selcount-clear { width: 20px; height: 20px; border-radius: var(--up-r-xs); }
     :is(.up-iconbtn.is-20,
         .udt-sub-search-x, .upt-topicsearch-clear, .upt-grp-sidesearch-clear,
         .usb-ddcustom-clear, .upt-selcount-clear) svg { width: 13px; height: 13px; }
@@ -1209,7 +1241,7 @@
     .up-quietbtn {
       position: relative; flex: 0 0 auto;
       display: inline-flex; align-items: center; gap: 7px;
-      height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: transparent;
+      height: 32px; padding: 0 8px; border: 0; border-radius: var(--up-r-m); background: transparent;
       color: var(--vc-text); font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
       white-space: nowrap; cursor: pointer; outline: 0;
       transition: background-color 120ms ease, color 120ms ease;
@@ -1226,7 +1258,7 @@
     /* export: a real filled button, identical to the one in the export popup component */
     .up-export {
       display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px;
-      border: 0; border-radius: 8px; background: var(--up-accent); color: var(--up-accent-fg);
+      border: 0; border-radius: var(--up-r-m); background: var(--up-accent); color: var(--up-accent-fg);
       font: inherit; font-size: 12px; font-weight: 560; line-height: 1;
       white-space: nowrap; cursor: pointer; outline: 0; flex: 0 0 auto;
       transition: opacity .14s ease;
@@ -1258,7 +1290,7 @@
     /* The clear button's slot is ALWAYS reserved (visibility, not display), so text never shifts
        when the x appears. */
     .up-search-clear {
-      flex: 0 0 24px; width: 24px; height: 24px; border: 0; border-radius: 7px; background: transparent;
+      flex: 0 0 24px; width: 24px; height: 24px; border: 0; border-radius: var(--up-r-s); background: transparent;
       color: var(--vc-muted); cursor: pointer; padding: 0; margin-left: 4px;
       display: inline-flex; align-items: center; justify-content: center;
       visibility: hidden;
@@ -1305,7 +1337,7 @@
        Detail stellen sie offen auf die Seite -- gemessen im Dunkeln: Zeilen durchsichtig, also
        Seitengrund #101114 statt der Kastenflaeche #1c1c1f daneben. Jetzt dieselbe Flaeche wie
        .up-box, und im Dunkeln dieselbe Kante (siehe die zwei Listen weiter unten). */
-    .up-vartable { border: 1px solid var(--vc-border); border-radius: 16px; overflow: hidden; background: var(--vc-bg); }
+    .up-vartable { border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); overflow: hidden; background: var(--vc-bg); }
     /* Mit .up-vartable davor, weil .up-row aus core dieselbe Spezifitaet haette und dann die
        Ladereihenfolge entscheiden wuerde -- STYLEGUIDE: nie ueber die Reihenfolge gewinnen. */
     .up-vartable .up-row.up-vrow { height: 55px; flex: 0 0 55px; }
@@ -1424,7 +1456,7 @@
          schmaler als die der Tabellen (226 statt 232) und trugen im Dunkeln einen schwarzen
          Rahmen um den hellen Grund. core.js setzt margin und inset schon zurueck, den Rahmen
          nicht. Aus demselben Grund steht color hier: sonst gilt CanvasText aus derselben Quelle. */
-      border: 0; border-radius: 14px;
+      border: 0; border-radius: var(--up-r-2xl);
       background: var(--vc-inverse-bg); color: var(--vc-inverse-ink);
       box-shadow: var(--up-e-2);
       /* Ausdruecklich links: die Quick Actions haengen die Karte in ihren Schleier, und was
@@ -1475,7 +1507,7 @@
        damit alles darauf die Schrift erbt, statt sie Zeile fuer Zeile zu setzen. */
     .up-explain-vis {
       background: var(--vc-inverse-ink); color: var(--vc-inverse-bg);
-      border-radius: 9px; padding: 11px 12px;
+      border-radius: var(--up-r-s); padding: 11px 12px;
       display: flex; flex-direction: column; gap: 7px; align-items: flex-start;
       margin-bottom: 9px; min-height: 46px; justify-content: center;
     }
@@ -1490,13 +1522,13 @@
     .up-explain-row .up-sent-val { font-size: inherit; color: inherit; }
     .up-explain-up { color: #2ea84a; }
     .up-explain-down { color: #b0200c; }
-    /* Matches the real .up-stack-item/.up-stack-vis chip exactly (28x28, radius 8, 4px ring) —
+    /* Matches the real .up-stack-item/.up-stack-vis chip exactly (28x28, radius --up-r-m, 4px ring) —
        this sample must look like the actual table cell, not an older circular approximation of it. */
     /* Ohne Rahmen, seit der echte Chip keinen mehr hat -- die Zeile darueber verspricht, dass
        diese Probe aussieht wie die Zelle. */
     /* Der 4px-Ring ist die Farbe der Platte (Tinte der Karte), damit sich die Punkte gegenseitig
        ausschneiden wie in der Zelle -- er folgt der Platte jetzt ueber das Token, auch im Dunkeln. */
-    .up-explain-dot { width: 28px; height: 28px; border-radius: 8px; background: #eeedef;
+    .up-explain-dot { width: 28px; height: 28px; border-radius: var(--up-r-m); background: #eeedef;
       border: 0; box-shadow: 0 0 0 4px var(--vc-inverse-ink); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #6f6f6f; }
     .up-explain-more { background: #f0f0f0; }
     .up-explain[data-theme="dark"] .up-explain-up { color: #6ee7b7; }
@@ -1516,8 +1548,8 @@
     .up-pagesize { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; }
     .up-pagesize-lbl { font-size: 12px; font-weight: 400; color: var(--vc-muted); white-space: nowrap; }
     .up-pagesize-seg { display: inline-flex; align-items: center; gap: 0; height: 32px; padding: 0;
-      background: var(--vc-switch-rail); border-radius: 8px; }
-    .up-pagesize-btn { height: 32px; min-width: 34px; padding: 0 9px; border: 1px solid transparent; border-radius: 8px;
+      background: var(--vc-switch-rail); border-radius: var(--up-r-m); }
+    .up-pagesize-btn { height: 32px; min-width: 34px; padding: 0 9px; border: 1px solid transparent; border-radius: var(--up-r-m);
       background: transparent; color: var(--vc-muted); cursor: pointer;
       font: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       display: inline-flex; align-items: center; justify-content: center; }
@@ -1528,7 +1560,7 @@
     .up-pager { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; margin-left: auto; }
     .up-pager-info { font-size: 12px; font-weight: 400; color: var(--vc-muted); white-space: nowrap; margin-right: 8px; }
     .up-page {
-      min-width: 32px; height: 32px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px;
+      min-width: 32px; height: 32px; padding: 0 8px; border: 1px solid transparent; border-radius: var(--up-r-m);
       background: transparent; color: var(--vc-muted); cursor: pointer;
       font: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
@@ -1555,7 +1587,7 @@
        without opening the menu */
     .up-filter-btn {
       display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px;
-      border: 1px solid transparent; border-radius: 8px; background: transparent;
+      border: 1px solid transparent; border-radius: var(--up-r-m); background: transparent;
       color: var(--vc-text); font: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       cursor: pointer; white-space: nowrap; max-width: 220px;
     }
@@ -1589,8 +1621,8 @@
     .up-filter-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
     .up-root[data-theme="dark"] .up-filter-menu { background: var(--up-menu-bg); }
     .up-filter-dim { flex: 0 0 auto; margin: 2px 2px 8px; display: inline-flex; padding: 0; gap: 0;
-      background: var(--vc-switch-rail); border-radius: 8px; border: 0; height: 32px; width: 100%; }
-    .up-filter-dim-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+      background: var(--vc-switch-rail); border-radius: var(--up-r-m); border: 0; height: 32px; width: 100%; }
+    .up-filter-dim-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: var(--up-r-m); background: transparent;
       color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       display: inline-flex; align-items: center; justify-content: center; flex: 1 1 50%; }
     .up-filter-dim-btn:hover { color: var(--vc-text); }
@@ -1604,14 +1636,14 @@
        und Zeilen 9px. Gemeldet am 22.09. mit Bild. */
     .up-filter-head { flex: 0 0 auto; height: 26px; display: flex; align-items: center; justify-content: space-between; padding: 0; margin-bottom: 6px; }
     /* Werte siehe .up-label weiter unten -- hier stand dieselbe Kombination ein zweites Mal. */
-    .up-filter-reset { border: 0; background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer; padding: 2px 4px; border-radius: 6px; }
+    .up-filter-reset { border: 0; background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 11px; font-weight: 500; cursor: pointer; padding: 2px 4px; border-radius: var(--up-r-s); }
     .up-filter-reset:hover { color: var(--vc-text); }
     /* 4px between rows in every dropdown list. Was 2px here and something different in each
        component -- one number, one place. */
     .up-filter-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
-    .up-filter-item { display: flex; align-items: center; gap: 10px; padding: 6px 9px; border-radius: 8px; cursor: pointer; min-width: 0; }
+    .up-filter-item { display: flex; align-items: center; gap: 10px; padding: 6px 9px; border-radius: var(--up-r-s); cursor: pointer; min-width: 0; }
     .up-filter-item:hover { background: var(--vc-heading-bg); }
-    .up-filter-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg);
+    .up-filter-check { width: 16px; height: 16px; border-radius: var(--up-r-xs); border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg);
       transition: background-color var(--up-cb-t) var(--up-cb-ease), border-color var(--up-cb-t) var(--up-cb-ease); }
     /* display:block, not inline: an inline SVG sits on the text baseline, which pushes the tick a
        little low inside the 16px box -- the "not quite vertically centred" report. block + the
@@ -1639,7 +1671,7 @@
     /* the dropdown shows the SAME chip the table uses — identical to TopCitations, so a type
        looks the same wherever it appears */
     /* Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke. */
-    .up-filter-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
+    .up-filter-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: var(--up-r-s);
       border: 1px solid transparent; box-sizing: border-box;
       font-size: 12px; font-weight: 500; white-space: nowrap; max-width: 100%; overflow: hidden; }
     .up-filter-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
@@ -1662,7 +1694,7 @@
     .up-ment { position: relative; flex: 0 0 auto; }
     .up-ment-btn {
       display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px;
-      border: 1px solid transparent; border-radius: 8px; background: transparent;
+      border: 1px solid transparent; border-radius: var(--up-r-m); background: transparent;
       color: var(--vc-text); font: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       cursor: pointer; white-space: nowrap; max-width: 200px;
     }
@@ -1694,8 +1726,8 @@
     /* Linksbuendig, wenn rechtsbuendig links aus dem Bild liefe (makeAuswahlFilter misst das). */
     .up-ment-menu.is-links { right: auto; left: 0; }
     .up-root[data-theme="dark"] .up-ment-menu { background: var(--up-menu-bg); }
-    .up-ment-logo { width: 18px; height: 18px; border-radius: 5px; flex: 0 0 auto; background: var(--vt-logo-bg); padding: 1px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; }
-    .up-ment-logo img { width: 16px; height: 16px; border-radius: 4px; object-fit: cover; display: block; }
+    .up-ment-logo { width: 18px; height: 18px; border-radius: var(--up-r-xs); flex: 0 0 auto; background: var(--vt-logo-bg); padding: 1px; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; }
+    .up-ment-logo img { width: 16px; height: 16px; border-radius: calc(var(--up-r-xs) - 1px); object-fit: cover; display: block; }
     .up-ment-name { font-size: 13px; font-weight: 500; color: var(--vc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
     /* Die Anzahl eines Eintrags im Auswahl-Filter (makeAuswahlFilter, item.zahl): rechts aussen,
        leise, Tabellenziffern -- sie ordnet ein, sie ist nicht der Eintrag. */
@@ -1705,7 +1737,7 @@
     /* Brand search inside the dropdown, plus a capped list so ~10.5 rows show and the 11th peeks. */
     .up-ment-search {
       width: 100%; height: 32px; margin: 2px 0 6px; padding: 0 10px; box-sizing: border-box; flex: 0 0 auto;
-      border: 1px solid var(--vc-border); border-radius: 8px; background: var(--vc-bg);
+      border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: var(--vc-bg);
       color: var(--vc-text); font: inherit; font-size: 13px; outline: 0;
     }
     .up-ment-search::placeholder { color: var(--vc-third); }
@@ -1716,7 +1748,7 @@
     .up-ment-searchwrap .up-ment-search { margin: 0; padding-right: 34px; }
     .up-ment-searchclear {
       position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-      width: 20px; height: 20px; border: 0; border-radius: 6px; background: transparent;
+      width: 20px; height: 20px; border: 0; border-radius: var(--up-r-s); background: transparent;
       color: var(--vc-muted); cursor: pointer; padding: 0; display: none; align-items: center; justify-content: center;
     }
     .up-ment-searchclear svg { width: 13px; height: 13px; display: block; }
@@ -1914,7 +1946,7 @@
        switch -- those are multi-select lists where a filled row per entry is too busy. */
     .up-optrow {
       display: flex; align-items: center; gap: 8px; width: 100%;
-      border: 0; border-radius: 8px; background: transparent; color: var(--vc-text);
+      border: 0; border-radius: var(--up-r-s); background: transparent; color: var(--vc-text);
       font-family: inherit; text-align: left; cursor: pointer;
     }
     .up-optrow:hover, .up-optrow.is-on { background: var(--up-sel-bg); }
@@ -1963,7 +1995,7 @@
        --vc-hover-border. Der Chevron dreht sich nicht. */
     .up-ddtrigger {
       display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px;
-      border: 1px solid var(--vc-border); border-radius: 8px; background: var(--vc-bg);
+      border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: var(--vc-bg);
       color: var(--vc-muted); font-family: inherit; font-size: 13px; font-weight: 500;
       line-height: 1; white-space: nowrap; cursor: pointer; outline: 0;
       transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
@@ -1992,7 +2024,7 @@
     .up-ddsearch { position: relative; flex: 1 1 auto; min-width: 0; }
     .up-ddsearch-in {
       width: 100%; height: 32px; box-sizing: border-box; padding: 0 36px 0 11px;
-      border: 1px solid var(--vc-border); border-radius: 8px;
+      border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
       background: var(--vc-bg); color: var(--vc-text);
       font-family: inherit; font-size: 12.5px; outline: none;
       transition: border-color 150ms ease, background 150ms ease;
@@ -2008,7 +2040,7 @@
     .up-ddsearch-x {
       position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
       display: none; place-items: center; width: 20px; height: 20px; padding: 0;
-      border: 0; border-radius: 5px; background: transparent; color: var(--vc-third); cursor: pointer;
+      border: 0; border-radius: var(--up-r-xs); background: transparent; color: var(--vc-third); cursor: pointer;
     }
     .up-ddsearch-x svg { width: 11px; height: 11px; display: block; fill: none; stroke: currentColor; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; }
     .up-ddsearch-x:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
@@ -2215,7 +2247,7 @@
     /* Seit dem 06.10. VOR dem Punkt (Handoff: "it sits before the dot"), ohne Abstand nach links. */
     .up-topicchip-check { display: inline-flex; align-items: center; justify-content: center; order: -2;
       width: 14px; height: 14px; flex: 0 0 auto; margin: 0;
-      border-radius: 4px; border: 1.5px solid color-mix(in srgb, currentColor 32%, transparent);
+      border-radius: var(--up-r-xs); border: 1.5px solid color-mix(in srgb, currentColor 32%, transparent);
       background: transparent; color: inherit;
       transition: background-color var(--up-cb-t) var(--up-cb-ease),
                   border-color var(--up-cb-t) var(--up-cb-ease); }
@@ -2242,7 +2274,7 @@
     /* ---------- secondary button ----------
        Extracted from prompts-table's .upt-topicadd, which was the only place it existed. Solid
        border, plain surface, real hover -- the app's "second action next to a primary one". */
-    .up-btn-sec { height: 32px; padding: 0 14px; border-radius: 9px;
+    .up-btn-sec { height: 32px; padding: 0 14px; border-radius: var(--up-r-m);
       border: 1px solid var(--vc-border); background: transparent; color: var(--vc-text);
       cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 500;
       display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
@@ -2275,7 +2307,7 @@
     .up-btn-pri,
     .up-filter-submit,
     .up-topicmodal-save,
-    .upt-topicapply { height: 32px; padding: 0 14px; border-radius: 9px; white-space: nowrap;
+    .upt-topicapply { height: 32px; padding: 0 14px; border-radius: var(--up-r-m); white-space: nowrap;
       border: 0; background: var(--up-accent); color: var(--up-accent-fg);
       font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
       display: inline-flex; align-items: center; justify-content: center; gap: 7px;
@@ -2304,7 +2336,7 @@
        zusammen (Hoehe, Polster, Radius, Abstand, Schrift, Zeichen).
        Die zwei bestehenden Kopien bleiben vorerst, wie sie sind -- sie tragen exakt diese Werte. */
     .up-btn-pri.is-lg, .up-btn-sec.is-lg {
-      height: 40px; padding: 0 20px; border-radius: 12px; gap: 9px;
+      height: 40px; padding: 0 20px; border-radius: var(--up-r-l); gap: 9px;
       font-size: 14px; font-weight: 600; letter-spacing: -.01em; }
     .up-btn-pri.is-lg svg, .up-btn-sec.is-lg svg { width: 15px; height: 15px; }
 
@@ -2324,7 +2356,7 @@
     .up-formerr > * { overflow: hidden; min-height: 0; }
     .up-formerr.is-on { grid-template-rows: 1fr; opacity: 1; margin-top: 18px; }
     .up-formerr-in {
-      padding: 10px 12px; border-radius: 10px;
+      padding: 10px 12px; border-radius: var(--up-r-l);
       border: 1px solid var(--vc-neg-border, rgba(200, 60, 60, .28));
       background: var(--vc-neg-bg, rgba(200, 60, 60, .08));
       font-size: 13px; line-height: 1.45; color: var(--vc-text); text-align: left;
@@ -2436,7 +2468,7 @@
     .up-es-label + * { margin-top: 7px; }
     .up-es-input {
       height: 40px; width: 100%; padding: 0 14px;
-      border: 1px solid var(--vc-border); border-radius: 12px; background: var(--vc-bg);
+      border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--vc-bg);
       font-family: inherit; font-size: 14px; color: var(--vc-text); outline: none;
       transition: border-color var(--up-t-2) var(--up-ease), box-shadow var(--up-t-2) var(--up-ease);
     }
@@ -2459,7 +2491,7 @@
     .up-pwst-in { padding-top: 8px; display: flex; align-items: center; gap: 10px; }
     .up-pwst-bars { display: flex; gap: 4px; flex: 1 1 auto; }
     .up-pwst-bar {
-      height: 4px; flex: 1 1 0; border-radius: 999px; background: var(--vc-sk);
+      height: 4px; flex: 1 1 0; border-radius: var(--up-r-voll); background: var(--vc-sk);
       transition: background var(--up-t-2) var(--up-ease);
     }
     /* Vier Stufen, vier Farben -- dieselben wie auf der Anmeldeseite. */
@@ -2514,7 +2546,7 @@
     .up-es-zurueck:hover:not(:disabled) { color: var(--vc-text); }
     .up-es-zurueck:disabled { color: var(--vc-third); cursor: default; }
     .up-es-zurueck svg { width: 14px; height: 14px; display: block; }
-    .up-es-zurueck:focus-visible { outline: 0; border-radius: 4px; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+    .up-es-zurueck:focus-visible { outline: 0; border-radius: var(--up-r-xs); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
     /* ---------- Einzug ----------
        Wie auf der Anmeldeseite, nur leiser: 8px Weg statt 18 -- auf einer Seite mit drei Zeilen
@@ -2553,7 +2585,7 @@
        eine Wartezeit vor der Handlung, um die es in der Zeile geht. */
     .up-rowbtn, .ubo-editbtn {
       margin-left: auto; flex: 0 0 auto;
-      height: 24px; padding: 0 8px; border-radius: 7px; gap: 6px;
+      height: 24px; padding: 0 8px; border-radius: var(--up-r-s); gap: 6px;
       font-size: 12px; color: var(--vc-muted);
       opacity: 0; pointer-events: none;
       transition: opacity 200ms ease, color 140ms ease, border-color 140ms ease, background 140ms ease;
@@ -2594,7 +2626,7 @@
     .up-sort.is-open .up-sort-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
     .up-pop-head-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 18px; }   /* reserve the Select-all button height up front so nothing resizes */
     .up-pop-action { border: 0; background: transparent; color: var(--vc-muted); font-family: inherit;
-      font-size: 11px; font-weight: 500; cursor: pointer; padding: 2px 4px; border-radius: 6px; text-transform: none; letter-spacing: 0; }
+      font-size: 11px; font-weight: 500; cursor: pointer; padding: 2px 4px; border-radius: var(--up-r-s); text-transform: none; letter-spacing: 0; }
     .up-pop-action:hover { color: var(--vc-text); }
     .up-pop-action.is-hidden { visibility: hidden; pointer-events: none; }
     /* ---- DIE ETIKETT-BEHANDLUNG (21.09.) --------------------------------------------------
@@ -2647,7 +2679,7 @@
        Im dunklen Thema sind es 3.97:1. Die Etiketten sollen zuruecktreten und nur den Abschnitt
        markieren; der Inhalt darunter traegt die Aussage und steht auf --vc-text.
        Wer das drehen will, aendert diese eine Zeile -- alle sechs Etiketten haengen daran. */
-    .up-pop-opt { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 9px; cursor: pointer; font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
+    .up-pop-opt { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: var(--up-r-s); cursor: pointer; font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
     /* Hover UND selected tragen denselben Ton (--up-sel-bg, 55%/60%): eine Zeile auf die man zeigt
        und eine die gewaehlt ist meinen beide "diese hier", zwei verschiedene Graus nebeneinander
        lesen sich als zwei Bedeutungen. Vorher hatte selected ueberhaupt keinen Hintergrund, nur den
@@ -2820,11 +2852,11 @@
        .up-dense-btn ist ABSICHTLICH nicht dabei: das ist der waagerechte Segmentstreifen
        (siehe .up-dense bei den Segmentleisten), dort waere ein senkrechter Abstand sinnlos. */
     :is(.up-pop-opt, .up-pop-row) + :is(.up-pop-opt, .up-pop-row) { margin-top: 4px; }
-    .up-dense { display: inline-flex; width: 100%; padding: 0; gap: 0; background: var(--vc-switch-rail); border-radius: 8px; height: 34px; }
+    .up-dense { display: inline-flex; width: 100%; padding: 0; gap: 0; background: var(--vc-switch-rail); border-radius: var(--up-r-m); height: 34px; }
     /* 0 8px: die Beschriftung steht nicht mehr auf der Kante ihrer Haelfte. Wirkt dort, wo der
        Schalter sich nach seinem Inhalt richtet (die Zeile im Einstellungsfenster); in einem
        Chart-Menue hat .up-dense width:100%, dort bleibt die Breite wie sie war. */
-    .up-dense-btn { flex: 1 1 50%; padding: 0 8px; height: 34px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+    .up-dense-btn { flex: 1 1 50%; padding: 0 8px; height: 34px; border: 1px solid transparent; border-radius: var(--up-r-m); background: transparent;
       color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
     .up-dense-btn svg { width: 15px; height: 15px; }
@@ -2857,7 +2889,7 @@
        this app's one universal light/dark palette (core.css's own .up-root tokens above) rather
        than per component, so every consumer's menu looks and themes identically by construction. */
     .vot-scale-btn, .ccl-settings-btn, .ubo-scale-btn {
-      width: 28px; height: 28px; border-radius: 8px; z-index: 5;
+      width: 28px; height: 28px; border-radius: var(--up-r-m); z-index: 5;
       border: 0; background: transparent; color: var(--vc-third);
       cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center;
       opacity: 0; pointer-events: none;
@@ -2912,7 +2944,7 @@
       --vc-heading-bg: #f9f8f9; --vc-hover-border: #6f6f6f; --vc-bg: #ffffff;
       --vc-switch-bg: #f9f8f9; --vc-switch-border: #e4e2e4; --vc-switch-pill: #ffffff;
       --vc-switch-rail: #f2f2f2;   /* fehlte -- siehe die dunkle Fassung darunter */
-      --up-dd-radius: 14px; --up-dd-pad: 8px; --up-dd-shadow: 0 10px 28px rgba(0,0,0,.14);
+      --up-dd-radius: 12px; --up-dd-pad: 8px; --up-dd-shadow: var(--up-e-2);
       --up-sel-bg: #f4f2f4;
       position: fixed; z-index: 100050; width: 248px;
       background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius);
@@ -2942,7 +2974,7 @@
          Die Schiene fehlte hier ganz -- .up-dense darin malte seine Bahn aus einer Marke, die an
          diesem Menue nicht aufloeste, also gar nicht. */
       --vc-switch-rail: rgba(255,255,255,.055); --vc-switch-pill: rgba(255,255,255,.07);
-      --up-dd-shadow: 0 10px 28px rgba(0,0,0,.32); --up-sel-bg: #28282c;
+      --up-dd-shadow: var(--up-e-2); --up-sel-bg: #28282c;
     }
     /* .up-dense-btn.is-active's own dark override above is scoped to .up-root — this menu lives
        outside it, so the Line Width switch needs its own copy of the same colors. */
@@ -2978,13 +3010,13 @@
    .up-seg/.cc-seg weiter unten: sein Markup liegt in der von Hand eingefuegten Bubble-Seite, ein
    Umbenennen wuerde sie zerlegen. Vorher stand eine wortgleiche Kopie in citations-combo-chart.css
    -- und jede Aenderung hier (Mindestbreite, Farbe) erreichte ihn deshalb nicht. */
-.vc-gran, .cc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-rail); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: flex-start; }
+.vc-gran, .cc-gran { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-rail); border-radius: var(--up-r-m); border: 0; height: 26px; flex: 0 0 auto; align-self: flex-start; }
 /* Im Combo-Chart steht er in einer Zeile mit Knoepfen und deshalb mittig. */
 .cc-gran { align-self: center; }
 /* min-width 26 = die Hoehe: mit den kurzen Beschriftungen D, W und M (core.js, stampGran) ist
    ein Knopf sonst so breit wie sein Buchstabe, und W waere breiter als D -- der Umschalter
    huepfte beim Wechsel. Quadratisch stehen die drei ruhig nebeneinander. */
-    .vc-gran-btn, .cc-gran-btn { height: 26px; min-width: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+    .vc-gran-btn, .cc-gran-btn { height: 26px; min-width: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: var(--up-r-m); background: transparent;
       color: var(--vc-muted); cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1;
       display: inline-flex; align-items: center; justify-content: center; }
     .vc-gran-btn:hover, .cc-gran-btn:hover { color: var(--vc-text); }
@@ -2993,7 +3025,7 @@
     .up-root[data-theme="dark"] .cc-gran-btn.is-active { background: var(--vc-switch-pill); border-color: var(--vc-switch-border); }
     .vc-gran-btn.is-disabled, .cc-gran-btn.is-disabled { opacity: 0.4; pointer-events: none; cursor: default; }
 
-    .up-scale-opt { display: flex; flex-direction: column; gap: 8px; padding: 9px 10px; border-radius: 9px; cursor: pointer; }
+    .up-scale-opt { display: flex; flex-direction: column; gap: 8px; padding: 9px 10px; border-radius: var(--up-r-s); cursor: pointer; }
     .up-scale-opt:hover, .up-scale-opt.is-active { background: var(--up-sel-bg); }
     /* 4px zwischen den Zeilen wie an jedem Dropdown aus core (.up-optrow + .up-optrow) -- ohne
        stiessen zwei getoente Zeilen (Hover und gewaehlt) Kante an Kante aneinander. */
@@ -3087,7 +3119,7 @@
       border: 2px solid var(--vc-bg); margin-left: -6px; }
     .up-scale-dot:first-child { margin-left: 0; }
 
-    .up-pop-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 9px; }
+    .up-pop-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: var(--up-r-s); }
     .up-pop-row:hover { background: var(--vc-heading-bg); }
     .up-pop-label { font-size: 13.5px; font-weight: 500; color: var(--vc-text); }
     /* Eine gewaehlte Spalte, die die Breite verdraengt (UC.makeColumns, 14.10.): der Name bleibt
@@ -3113,7 +3145,7 @@
        Deshalb steht im Bestand ringsum ueberall ein fester Wert je Thema -- das war kein Zufall.
        Die Zahlen sind die gemessenen Mischungen von vorher: #d6d6d4 liegt 41 Stufen unter Weiss
        und 31 unter dem Kopfzeilengrund, #444 liegt 41 ueber dem dunklen Panelgrund. */
-    .up-switch { width: 38px; height: 22px; border-radius: 999px; background: var(--up-switch-off, #d6d6d4); position: relative; flex: 0 0 auto; transition: background 160ms ease; cursor: pointer; }
+    .up-switch { width: 38px; height: 22px; border-radius: var(--up-r-voll); background: var(--up-switch-off, #d6d6d4); position: relative; flex: 0 0 auto; transition: background 160ms ease; cursor: pointer; }
     /* [data-theme="dark"] auf IRGENDEINEM Vorfahren, nicht nur auf .up-root -- genau wie beim
        Topic-Chip weiter oben. Ein Schalter steht auch in einem Portal am Koerper (das
        Einstellungs-Popover von Opportunities zum Beispiel), und das ist keine .up-root. Solange
@@ -3128,7 +3160,7 @@
     /* Der Knopf: e-1 ohne Rueckfall (28.09.). In den Menues am <body> galt bisher der Rueckfall
        0 1px 2px .2 -- dreimal so kraeftig wie derselbe Schalter in einer Wurzel. Seit die Tiefen an
        :root stehen, sehen beide gleich aus. */
-    .up-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 999px; background: #fff; box-shadow: var(--up-e-1); transition: transform 160ms ease; }
+    .up-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: var(--up-r-voll); background: #fff; box-shadow: var(--up-e-1); transition: transform 160ms ease; }
     .up-switch.is-on { background: var(--up-accent); }
     /* dark base .up-switch rule out-specifies .up-switch.is-on, so the ON track needs an
        explicit dark rule — otherwise it stays the dark off-colour.
@@ -3160,7 +3192,7 @@
     
 
     /* ---------- table ---------- */
-    .up-box { border: 1px solid var(--vc-border); background: var(--vc-bg); border-radius: 16px; overflow: hidden; }
+    .up-box { border: 1px solid var(--vc-border); background: var(--vc-bg); border-radius: var(--up-r-2xl); overflow: hidden; }
     /* ---------- sticky header (default on >=1000px page width, off via data-sticky="no") ----------
        Both the component head and the column header stick to the scrolling ancestor. overflow:hidden
        on .up-box would trap the column header, so in sticky mode it becomes visible and the visible
@@ -3216,7 +3248,7 @@
       background-image: linear-gradient(var(--vt-head-bg), var(--vt-head-bg));
       background-color: var(--vc-bg);
       border: 1px solid var(--vc-border); border-bottom: none;
-      border-top-left-radius: 16px; border-top-right-radius: 16px;
+      border-top-left-radius: var(--up-r-2xl); border-top-right-radius: var(--up-r-2xl);
     }
     /* The rounded top corners are transparent by nature, so the body's straight side border shows
        through them as it scrolls behind the pinned header (the little vertical stub). These two
@@ -3231,7 +3263,7 @@
     .up-sticky .up-thead::after  { right: -1px; background: radial-gradient(circle at bottom left,  rgba(0,0,0,0) 16px, var(--up-surface) 16.5px); }
     .up-sticky .up-tbody {
       border: 1px solid var(--vc-border); border-top: none;
-      border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;
+      border-bottom-left-radius: var(--up-r-2xl); border-bottom-right-radius: var(--up-r-2xl);
       /* clip, not hidden: visually identical (still clips row backgrounds to the rounded corner),
          but per spec `clip` does not establish a scroll container the way `hidden`/`auto`/`scroll`
          do -- and a scroll-container ancestor is exactly what breaks position:sticky for anything
@@ -3818,13 +3850,13 @@
     .up-empty-ic svg { width: 28px; height: 28px; display: block; }
     .up-empty-h { font-size: 14px; font-weight: 500; color: var(--vc-text); margin-bottom: 4px; }
     .up-empty-t { font-size: 12.5px; color: var(--vc-muted); margin-bottom: 14px; }
-    .up-empty-btn { height: 32px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: 8px;
+    .up-empty-btn { height: 32px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
       background: transparent; color: var(--vc-text); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; }
     .up-empty-btn:hover { background: var(--vc-heading-bg); }
     .up-row.up-tsk { cursor: default; }
     .up-row.up-tsk:hover { background: transparent; }
-    .up-tsk-bar { display: inline-block; height: 12px; border-radius: 4px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
-    .up-tsk-logo { display: inline-block; width: 24px; height: 24px; border-radius: 8px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; flex: 0 0 auto; }
+    .up-tsk-bar { display: inline-block; height: 12px; border-radius: var(--up-r-xs); background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+    .up-tsk-logo { display: inline-block; width: 24px; height: 24px; border-radius: var(--up-r-m); background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; flex: 0 0 auto; }
     @keyframes uutpulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
     /* SKELETTE, DIE NIEMAND SIEHT, STEHEN STILL (13.10.): beim Start baut die App alle Ansichten und
        Drawer mit Skeletten -- gemessen 1280 Endlos-Animationen, rund 1090 davon in geparkten
@@ -3881,7 +3913,7 @@
     .up-tip {
       position: fixed; z-index: 2147483640; box-sizing: border-box;
       height: 24px; display: inline-flex; align-items: center; padding: 0 9px;
-      border-radius: 6px; background: #1f1f1b; color: #ffffff;
+      border-radius: var(--up-r-m); background: #1f1f1b; color: #ffffff;
       font-family: Geist, system-ui, sans-serif; font-size: 12px; font-weight: 500; line-height: 1;
       white-space: nowrap; pointer-events: none;
       /* e-2, die Tiefe von allem, was an einem Ausloeser haengt -- dieselbe wie die Erklaerkarte,
@@ -3925,7 +3957,8 @@
       box-sizing: border-box; pointer-events: auto;
       display: flex; align-items: flex-start; gap: 10px;
       width: fit-content; max-width: min(420px, calc(100vw - 32px)); min-height: 44px;
-      padding: 12px 12px 12px 14px; border-radius: var(--up-r-xl);
+      /* Radius der Kartenstufe (12, Geist Toast; bis 15.10. --up-r-xl = 12, das jetzt 8 ist). */
+      padding: 12px 12px 12px 14px; border-radius: var(--up-r-2xl);
       background: var(--vc-toast-bg); color: var(--vc-toast-ink); box-shadow: var(--up-e-4);
       opacity: 0; transform: translateY(24px) scale(.96);
       transition: opacity var(--up-t-2) var(--up-ease-auf), transform var(--up-t-2) var(--up-ease-auf);
@@ -4035,7 +4068,7 @@
 .up-line-sk .sk-lc-stroke { fill: none; stroke: var(--vc-sk); stroke-width: 1.875; stroke-linecap: round; }
 .up-line-sk .sk-lc-shimmer-path { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: upskt-path 1200ms linear infinite; stroke: rgba(255,255,255,var(--shimmer)); fill: none; stroke-width: 2.25; stroke-linecap: round; }
 .up-line-sk .sk-lc-xaxis { display: flex; justify-content: space-between; flex-shrink: 0; padding: 0 1px; }
-.up-line-sk .sk-lc-xlabel { height: 8px; width: 24px; background: var(--vc-sk); border-radius: 4px; position: relative; overflow: hidden; }
+.up-line-sk .sk-lc-xlabel { height: 8px; width: 24px; background: var(--vc-sk); border-radius: var(--up-r-voll); position: relative; overflow: hidden; }
 .up-line-sk .sk-lc-xlabel::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,var(--shimmer)) 50%, rgba(255,255,255,0) 100%); transform: translateX(-100%); animation: upskt 1200ms linear infinite; }
 @keyframes upskt { 100% { transform: translateX(100%); } }
 @keyframes upskt-path { 0% { stroke-dashoffset: 1000; } 100% { stroke-dashoffset: -1000; } }
@@ -4047,7 +4080,7 @@
 .up-legend .up-company-rows { width: 100%; height: auto; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; row-gap: 8px; box-sizing: border-box; }
 .up-legend .up-company-row { width: 100%; min-height: 24px; display: flex; align-items: center; justify-content: center; column-gap: var(--up-column-gap, 16px); box-sizing: border-box; overflow: hidden; min-width: 0; }
 .up-legend .up-company-item { height: 24px; padding: 2px 8px; border: 0; background: transparent; display: inline-flex; align-items: center; justify-content: flex-start; flex: 0 1 auto; min-width: 0; box-sizing: border-box; white-space: nowrap; transition: opacity 200ms ease; }
-.up-legend .up-company-color { width: 10px; height: 10px; min-width: 10px; min-height: 10px; border-radius: 4px; flex: 0 0 auto; }
+.up-legend .up-company-color { width: 10px; height: 10px; min-width: 10px; min-height: 10px; border-radius: var(--up-r-xs); flex: 0 0 auto; }
 /* Vergleichsreihe (Event-Detail): das Feld gestrichelt umrandet statt gefuellt -- wie ihre Linie.
    Die Farbe kommt inline als border-color. */
 .up-legend .up-company-color.is-dash { background: transparent; border: 2px dashed; box-sizing: border-box; }
@@ -4090,12 +4123,14 @@
 
 /* DIE KARTE -- eine fuer einen Pin und fuer einen Stapel. Rechts oben am Marker: 20px rechts der
    Mitte des letzten Pins, 3px ueber seiner Oberkante; an der Kante spiegelt makeLine sie nach links
-   (.is-links). Schatten wie in der Vorgabe (0 4px 14px .08) -- zwischen --up-e-1 und --up-e-2, die
-   beide nicht passen. Erscheint bei Hover, Fokus oder nach einem Tipp (.is-offen), 120ms Einblenden. */
+   (.is-links). Erscheint bei Hover, Fokus oder nach einem Tipp (.is-offen), 120ms Einblenden.
+   Schatten e-2 wie jede Karte am Ausloeser (15.10.): die Vorgabe (0 4px 14px .08) lag zwischen
+   den alten e-1 und e-2, die beide nicht passten -- das heutige e-2 (Geist menu, drei schmale Lagen
+   bis 6 Prozent) ist genau diese leise Stufe, und das Dunkel trug es schon. */
 .up-evm-karte { position: absolute; z-index: 5; left: calc(20px + (var(--n, 1) - 1) * 16px); top: -13px; white-space: nowrap;
   min-width: 190px; padding: 6px; display: flex; flex-direction: column; gap: 2px;
   background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
-  box-shadow: 0 4px 14px rgba(17,24,39,.08);
+  box-shadow: var(--up-e-2);
   opacity: 0; visibility: hidden; pointer-events: none;
   transition: opacity var(--up-t-1) ease, visibility 0s linear var(--up-t-1); }
 .up-root[data-theme="dark"] .up-evm-karte { background: var(--up-menu-bg); border-color: var(--up-menu-border); box-shadow: var(--up-e-2); }
@@ -4113,16 +4148,16 @@
 /* Datum links in der vierten Schriftfarbe, die Zahl rechts eine Stufe kraeftiger in der dritten
    (03.10.) -- sie ist die Auskunft, das Datum die Einordnung. */
 .up-evm-zeitraum { padding-left: 4px; font-size: var(--up-fs-xs); color: var(--vc-fourth); font-variant-numeric: tabular-nums; }
-.up-evm-zahl { font-size: var(--up-fs-xs); color: var(--vc-third); background: var(--up-sel-bg); border-radius: 5px; padding: 2px 6px; }
+.up-evm-zahl { font-size: var(--up-fs-xs); color: var(--vc-third); background: var(--up-sel-bg); border-radius: var(--up-r-xs); padding: 2px 6px; }
 .up-evm-zeile { display: flex; align-items: center; gap: 8px; width: 100%; padding: 5px 6px; margin: 0;
-  border: 0; border-radius: 5px; background: none; font: inherit; text-align: left; cursor: pointer; }
+  border: 0; border-radius: var(--up-r-xs); background: none; font: inherit; text-align: left; cursor: pointer; }
 .up-evm-zeile:hover, .up-evm-zeile:focus-visible { background: var(--up-sel-bg); outline: none; }
 .up-evm-zeile-name { flex: 1 1 auto; margin-right: 12px; font-size: var(--up-fs-s); font-weight: 500; color: var(--vc-text); }
 /* Die Daten der Zeilen wie das Datum im Kopf: vierte Schriftfarbe statt der Farbe der Hilfslinie
    (die lag neben der Skala der Schriftfarben). */
 .up-evm-zeile-datum { flex: 0 0 auto; font-size: var(--up-fs-xs); color: var(--vc-fourth); font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce){ .up-evm-karte { transition: none; } }
-.up-legend .up-company-favicon { width: 16px; height: 16px; min-width: 16px; min-height: 16px; border-radius: 4px; object-fit: cover; display: block; flex: 0 0 auto; }
+.up-legend .up-company-favicon { width: 16px; height: 16px; min-width: 16px; min-height: 16px; border-radius: var(--up-r-xs); object-fit: cover; display: block; flex: 0 0 auto; }
 .up-legend .up-company-name { font-family: Geist, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px; font-weight: 500; line-height: 16px; color: var(--vc-text); white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis; flex: 1 1 auto; min-width: 0; }
 .up-root.is-narrow .up-legend .up-company-name { max-width: 90px; }
 .up-legend .up-company-inner-gap { width: 8px; height: 1px; flex: 0 0 8px; }
@@ -4141,12 +4176,12 @@
 .up-donut-center .lbl { font-size: 14px; font-weight: 400; color: var(--vc-third); margin-top: 8px; line-height: 1; }
 .up-donut-legend { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .up-donut-legend-row { display: flex; align-items: center; gap: 10px; }
-.up-donut-legend-row.is-clickable { cursor: pointer; margin: -4px -6px; padding: 4px 6px; border-radius: 6px; transition: background 120ms ease; }
+.up-donut-legend-row.is-clickable { cursor: pointer; margin: -4px -6px; padding: 4px 6px; border-radius: var(--up-r-s); transition: background 120ms ease; }
 .up-donut-legend-row.is-clickable:hover { background: var(--vc-heading-bg); }
-.up-donut-legend-chip { width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto; }
+.up-donut-legend-chip { width: 12px; height: 12px; border-radius: var(--up-r-xs); flex: 0 0 auto; }
 /* Das Logo in der Legende: zwischen Farbfleck und Name, mit derselben Luecke wie der Fleck sie
    zum Namen hat. 14px, damit es neben dem 10px-Fleck und dem 13px-Text nicht dominiert. */
-.up-donut-legend-logo { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto;
+.up-donut-legend-logo { width: 14px; height: 14px; border-radius: var(--up-r-xs); flex: 0 0 auto;
   object-fit: cover; display: block; }
 .up-donut-legend-name { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; flex: 1 1 auto; min-width: 0; }
 .up-donut-legend-pct { font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap; flex: 0 0 auto; }
@@ -4162,7 +4197,7 @@
   flex: 0 0 148px; width: 148px; display: inline-flex; align-items: center; gap: 8px;
   min-width: 0; padding-right: 12px; box-sizing: border-box;
 }
-.up-bar-logo { width: 16px; height: 16px; flex: 0 0 16px; border-radius: 4px; object-fit: contain; display: block; }
+.up-bar-logo { width: 16px; height: 16px; flex: 0 0 16px; border-radius: var(--up-r-xs); object-fit: contain; display: block; }
 .up-bar-labeltxt {
   font-size: 12px; font-weight: 500; color: var(--vc-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
@@ -4189,10 +4224,10 @@
    rather than two different directions depending on which grey element you're looking at. */
 .up-bar-row.is-dimmed:hover .up-bar-fill { filter: brightness(0.94); }
 .up-bar-row:hover .up-bar-track { background: color-mix(in srgb, var(--vc-heading-bg) 100%, black 6%); }
-.up-bar-track { flex: 1; height: 32px; background: var(--vc-heading-bg); border-radius: 8px; overflow: visible; position: relative; min-width: 0; transition: background 120ms ease; }
+.up-bar-track { flex: 1; height: 32px; background: var(--vc-heading-bg); border-radius: var(--up-r-m); overflow: visible; position: relative; min-width: 0; transition: background 120ms ease; }
 /* Einfahrt wie Linie und Ring (11.10.): dieselbe Dauer, dieselbe Kurve. Vorher .5s mit
    (.4,0,.2,1) -- ein langsam anfahrender Verlauf, der neben der Linie wie ein Ruck aussah. */
-.up-bar-fill { height: 100%; border-radius: 8px; transition: width var(--up-t-auftritt) var(--up-ease-quart), filter 120ms ease; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; min-width: 0; gap: 8px; overflow: hidden; }
+.up-bar-fill { height: 100%; border-radius: var(--up-r-m); transition: width var(--up-t-auftritt) var(--up-ease-quart), filter 120ms ease; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; min-width: 0; gap: 8px; overflow: hidden; }
 .up-bar-name { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity .18s ease; }
 .up-bar-pct { font-size: 11px; font-weight: 600; white-space: nowrap; flex: 0 0 auto; transition: opacity .18s ease; }
 /* shown instead of the inside labels when the bar is too short to hold them */
@@ -4259,9 +4294,9 @@
 .up-root[data-theme="dark"] .up-sk-g1 { stop-color: #555555; }
 .up-sk-legend { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .up-sk-row { display: flex; align-items: center; gap: 10px; }
-.up-sk-dot { width: 12px; height: 12px; border-radius: 4px; background: var(--vc-sk); flex: 0 0 auto; position: relative; overflow: hidden; }
-.up-sk-lbl { height: 10px; background: var(--vc-sk); border-radius: 5px; position: relative; overflow: hidden; }
-.up-sk-pct { height: 10px; background: var(--vc-sk); border-radius: 5px; flex: 0 0 auto; position: relative; overflow: hidden; }
+.up-sk-dot { width: 12px; height: 12px; border-radius: var(--up-r-xs); background: var(--vc-sk); flex: 0 0 auto; position: relative; overflow: hidden; }
+.up-sk-lbl { height: 10px; background: var(--vc-sk); border-radius: var(--up-r-voll); position: relative; overflow: hidden; }
+.up-sk-pct { height: 10px; background: var(--vc-sk); border-radius: var(--up-r-voll); flex: 0 0 auto; position: relative; overflow: hidden; }
 .up-sk-dot::after, .up-sk-lbl::after, .up-sk-pct::after {
   content: ""; position: absolute; inset: 0;
   background: var(--up-sk-lauf);
@@ -4280,7 +4315,7 @@
    20 Spur + 2x3 Polster = 26, dieselbe Zeile wie daneben. Damit springt beim Wechsel vom
    Skelett zur Liste auch nichts mehr. */
 .up-bar-sk-row { display: flex; align-items: center; padding: 3px 0; }
-.up-bar-sk-track { display: block; height: 20px; border-radius: 6px; background: var(--vc-sk); position: relative; overflow: hidden; }
+.up-bar-sk-track { display: block; height: 20px; border-radius: var(--up-r-s); background: var(--vc-sk); position: relative; overflow: hidden; }
 .up-bar-sk-track::after {
   content: ""; position: absolute; inset: 0;
   background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.14) 50%, rgba(255,255,255,0) 100%);
@@ -4314,7 +4349,7 @@
    zwei Werte fuehrt --vc-text-invert. Die Dunkel-Regel faellt damit weg. (22.09.) */
 .up-badge, .ubo-filter-badge, .ubo-cols-badge, .udb-cols-badge, .combo-filter-badge {
   position: absolute; top: -3px; right: -3px; z-index: 2;
-  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: var(--up-r-voll);
   background: var(--vc-text); color: var(--vc-text-invert);
   font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
   display: none; align-items: center; justify-content: center;
@@ -4337,9 +4372,9 @@
 }
 .up-badge.is-dot.is-visible { display: block; opacity: 1; }
 
-.up-logo-box { width: 24px; height: 24px; border-radius: 8px; background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto;
+.up-logo-box { width: 24px; height: 24px; border-radius: var(--up-r-m); background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center; position: relative; }
-.up-logo-box img { width: 22px; height: 22px; border-radius: 7px; object-fit: cover; display: block; }
+.up-logo-box img { width: 22px; height: 22px; border-radius: calc(var(--up-r-m) - 1px); object-fit: cover; display: block; }
 .up-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
 .up-logo-box.has-img .up-logo-ltr { display: none; }
 /* EIN ZEICHEN STATT DES ANFANGSBUCHSTABENS (06.10., Ads: "Werbetreibende ohne Logo zeigen das
@@ -4370,7 +4405,7 @@
 .up-fan-c {
   position: absolute; left: calc(50% - 16px); top: 4px; width: 32px; height: 32px; box-sizing: border-box;
   display: flex; align-items: center; justify-content: center; overflow: hidden;
-  border-radius: var(--up-r-l); background: var(--vt-logo-bg); color: var(--vt-logo-ink, var(--vc-muted));
+  border-radius: var(--up-r-m); background: var(--vt-logo-bg); color: var(--vt-logo-ink, var(--vc-muted));
   /* Der Rand der Laderkachel, aus der die Karte kommt (.am-tload-logo: 1px --am-border, und das
      ist --vc-border). Beim Umzug nach core fehlte er -- 29.09. spaet: "waren nicht vorher Borders
      um die Cards? bitte wieder hin". box-sizing border-box: die Karte bleibt 32. */
@@ -4558,10 +4593,10 @@
 .up-root.is-vnarrow .up-row-goto { display: none; }
 
 /* type/citation chip. Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke. */
-.up-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
+.up-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: var(--up-r-s);
   border: 1px solid transparent; box-sizing: border-box;
   font-size: 12px; font-weight: 500; white-space: nowrap; max-width: 100%; overflow: hidden; }
-.up-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
+.up-tag-dot { width: 6px; height: 6px; border-radius: var(--up-r-voll); flex: 0 0 auto; }
 .up-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
 
 /* Visibility / Rank / Sentiment metric cells — shared by visibility-chart's Top Brands table
@@ -4638,7 +4673,7 @@
    die Farbe je Marke -- vorher lebte die Form nur in team-orga, und die Events bauten sich eine
    zweite. Masse unveraendert von dort: 20 hoch, Polster 7, Radius 7, Schrift 11/600. "You" in
    der Akzent-Tinte mit 10 Prozent Flaeche; am Standard ein leises Grau mit fast schwarzer Schrift. */
-.up-marke { flex: 0 0 auto; height: 20px; padding: 0 7px; border-radius: 7px; max-width: 100%;
+.up-marke { flex: 0 0 auto; height: 20px; padding: 0 7px; border-radius: var(--up-r-s); max-width: 100%;
   font-size: var(--up-fs-xs); font-weight: var(--up-fw-h); letter-spacing: .02em; line-height: 20px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .up-you { background: color-mix(in srgb, var(--up-accent-ink) 10%, transparent); color: var(--up-accent-ink); }
@@ -4694,7 +4729,8 @@
 .up-karte-klick:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; }
 
 /* DIE AD CARD (05.10., Ads V1, core.js adCardHtml): die Produktkarte des Response Detail (.urd-pc)
-   als Baustein fuer Anzeigen. Polster 8, Radius 16, innen 8 am Bild (konzentrisch); Text 14/6/6,
+   als Baustein fuer Anzeigen. Polster 8, Radius 16, innen 8 am Bild (konzentrisch; seit 15.10.
+   Geist-Skala: Karte 12, Bild 12 - 8 = 4, in .urd-pc ebenso); Text 14/6/6,
    Fuss unten buendig (margin-top auto). Hover, Druck und Fokus kommen seit dem 13.10. aus
    .up-karte-klick (oben), die adCardHtml mitgibt -- vorher hob sich die Karte um 2px mit
    --up-e-chip. Das Raster (.up-adgrid) fuellt, was da ist, ab 240px je Karte. */
@@ -4704,7 +4740,7 @@
   font: inherit; color: inherit; }
 /* Das Werbemittel: 16:10 auf der Kopfflaeche, contain -- ein Banner wird nie beschnitten. Ohne
    Polster und ohne multiply (anders als ein Produktfoto steht ein Banner nicht auf Weiss frei). */
-.up-adcard-media { position: relative; aspect-ratio: 16 / 10; border-radius: var(--up-r-m); background: var(--vc-heading-bg);
+.up-adcard-media { position: relative; aspect-ratio: 16 / 10; border-radius: var(--up-r-s); background: var(--vc-heading-bg);
   overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .up-adcard-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
 .up-adcard-ph { display: inline-flex; color: var(--vc-fourth); }
@@ -4905,7 +4941,7 @@
 .up-dk-held { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .up-dk-held-bild { display: inline-flex; flex: 0 0 auto; }
 .up-dk-logo.up-logo-box { width: 44px; height: 44px; flex: 0 0 44px; border-radius: var(--up-r-xl); }
-.up-dk-logo.up-logo-box img { width: 42px; height: 42px; border-radius: 11px; }
+.up-dk-logo.up-logo-box img { width: 42px; height: 42px; border-radius: calc(var(--up-r-xl) - 1px); }
 .up-dk-logo .up-logo-ltr { font-size: var(--up-fs-xl); }
 .up-dk-held-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 auto; }
 /* Die leise Zeile unter dem Titel: 13 in der zweiten Textfarbe; ist sie ein Knopf, wird sie beim
@@ -5055,7 +5091,7 @@
    core gar nicht tragen -- ein ungezieltes querySelector eines Kits wuerde ihn sonst fuer das
    eigene Element halten. In domains-table.css bleibt nur seine Groesse. */
 .up-seg, .cc-seg, .ubo-seg, .tcl-seg,
-.ubo-yaxis, .tcd-mode, .upt-status, .udt-sub-dispseg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-rail); border-radius: 8px; border: 0; height: 26px; flex: 0 0 auto; align-self: center; }
+.ubo-yaxis, .tcd-mode, .upt-status, .udt-sub-dispseg { display: inline-flex; padding: 0; gap: 0; background: var(--vc-switch-rail); border-radius: var(--up-r-m); border: 0; height: 26px; flex: 0 0 auto; align-self: center; }
 .tcl-seg { align-self: flex-start; }
 
 /* ---- Der gleitende Umschalter --------------------------------------------------------------
@@ -5081,7 +5117,7 @@
   content: ""; position: absolute; left: 0; top: 0; z-index: 0; box-sizing: border-box;
   width: var(--up-seg-w, 0); height: var(--up-seg-h, 100%);
   transform: translate(var(--up-seg-x, 0), var(--up-seg-y, 0));
-  border-radius: 8px; background: var(--vc-switch-pill); border: 1px solid var(--vc-switch-border);
+  border-radius: var(--up-r-m); background: var(--vc-switch-pill); border: 1px solid var(--vc-switch-border);
   opacity: 0; pointer-events: none;
 }
 /* Sichtbar und beweglich erst, wenn core gemessen hat. Die Deckkraft faehrt NICHT mit: sonst
@@ -5176,7 +5212,7 @@
 /* Die Knoepfe der vier Aliase vom 27.09. (siehe die Grundregel oben) stehen in jeder dieser Regeln
    mit: .ubo-yaxis-btn, .tcd-mode-btn, .upt-status-btn, .udt-sub-disp-btn. */
 .up-seg-btn, .cc-seg-btn, .ubo-seg-btn, .tcl-seg-btn,
-.ubo-yaxis-btn, .tcd-mode-btn, .upt-status-btn, .udt-sub-disp-btn { height: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+.ubo-yaxis-btn, .tcd-mode-btn, .upt-status-btn, .udt-sub-disp-btn { height: 26px; padding: 0 8px; border: 1px solid transparent; border-radius: var(--up-r-m); background: transparent;
   color: var(--vc-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
   gap: 7px; font-family: inherit; font-size: 12px; font-weight: 500; line-height: 1; }
 .up-seg-btn svg, .cc-seg-btn svg, .ubo-seg-btn svg, .tcl-seg-btn svg,
@@ -5217,14 +5253,14 @@
    also hierher -- die alten .uut-*-Klassen bleiben als Alias, damit dort kein Markup anzufassen ist.
    Werte unveraendert: 32px hoch wie jeder Kopfzeilen-Knopf, Radius 8, Kaestchen 16px mit Radius 5. */
 .up-brandtoggle, .uut-brand-toggle { display: none; align-items: center; justify-content: space-between;
-  gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px; background: transparent; border: 0;
+  gap: 10px; height: 32px; padding: 0 8px; border-radius: var(--up-r-m); background: transparent; border: 0;
   cursor: pointer; flex: 0 0 auto; font-family: inherit; }
 .up-brandtoggle.is-visible, .uut-brand-toggle.is-visible { display: inline-flex; }
 .up-brandtoggle:hover, .uut-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
 .up-brandtoggle.is-yes, .up-brandtoggle.is-no,
 .uut-brand-toggle.is-yes, .uut-brand-toggle.is-no { background: var(--vc-heading-bg); }
 .up-brandtoggle-lbl, .uut-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-.up-brandcheck, .uut-brand-check { width: 16px; height: 16px; border-radius: 5px;
+.up-brandcheck, .uut-brand-check { width: 16px; height: 16px; border-radius: var(--up-r-xs);
   border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center;
   justify-content: center; flex: 0 0 auto; }
 .up-brandcheck svg, .uut-brand-check svg { width: 11px; height: 11px; display: none; }
@@ -5248,7 +5284,7 @@
 .uut-brand-toggle.is-yes .uut-brand-check .uut-brand-check-yes { display: block; }
 .up-brandtoggle.is-no .up-brandcheck .up-brandcheck-no,
 .uut-brand-toggle.is-no .uut-brand-check .uut-brand-check-no { display: block; }
-.up-brandlogo, .uut-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto;
+.up-brandlogo, .uut-brand-logo { width: 16px; height: 16px; border-radius: var(--up-r-xs); flex: 0 0 auto;
   display: block; object-fit: cover; }
 .up-brandlabel, .uut-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text);
   white-space: nowrap; }
@@ -5261,7 +5297,7 @@
    einer mit Emoji in derselben Zeile gleich hoch stehen. Links weniger Polsterung als rechts, weil
    das Logo dort schon Rand mitbringt. Hover kommt aus .up-chiphover -- dieselbe Klasse, die die
    Themen-Chips tragen. */
-.up-entchip { height: 28px; padding: 0 10px 0 5px; border-radius: 8px; display: inline-flex;
+.up-entchip { height: 28px; padding: 0 10px 0 5px; border-radius: var(--up-r-m); display: inline-flex;
   align-items: center; gap: 8px; cursor: pointer; font-family: inherit;
   border: 1px solid var(--vc-border); background: var(--vc-bg);
   white-space: nowrap; overflow: hidden; min-width: 0; max-width: 100%; box-sizing: border-box; }
@@ -5336,7 +5372,7 @@
    stehen nur noch dort, die dunkle Fassung kommt mit dem Thema. quick-actions.css liest dasselbe
    Token und traegt die alten Werte nur noch als Rueckfall fuer Seiten ohne core. */
 .up-entchip.is-lifted {
-  height: 26px; gap: 6.5px; padding: 0 6.5px 0 9.75px; border-radius: 7.6px;
+  height: 26px; gap: 6.5px; padding: 0 6.5px 0 9.75px; border-radius: var(--up-r-m);
   font-size: 12.5px; font-weight: 500;
   background: color-mix(in srgb, var(--vc-heading-bg) 50%, transparent);
   box-shadow: var(--up-e-chip);
@@ -5352,7 +5388,7 @@
    Marke wie .up-topicchip, 4x10, Radius 2), beim Intent sein Zeichen. Radius 5 = 6 minus 1
    (konzentrisch in der 7.6er-Ecke des Chips mit 5 Polster, gerundet). */
 .up-feldchip.up-entchip.is-lifted { height: 28px; gap: 7px; padding: 0 4px 0 5px; color: var(--vc-text); vertical-align: middle; }
-.up-feldchip-av { width: 18px; height: 18px; flex: 0 0 auto; border-radius: 5px; overflow: hidden;
+.up-feldchip-av { width: 18px; height: 18px; flex: 0 0 auto; border-radius: var(--up-r-xs); overflow: hidden;
   background: var(--vc-heading-bg); display: flex; align-items: center; justify-content: center; color: var(--vc-third); }
 .up-feldchip-av svg { width: 12px; height: 12px; display: block; }
 .up-feldchip-av .up-topicchip-e { font-size: 12px; line-height: 1; }
@@ -5368,7 +5404,7 @@
 /* Die kleine Fassung (.mqa-mini): 22px statt 26, Radius 6.4. Der Schatten ist derselbe wie beim
    grossen Chip -- die Begruendung steht bei --up-e-chip. */
 .up-entchip.is-lifted.is-sm {
-  height: 22px; gap: 5.5px; padding: 0 5.5px 0 8.25px; border-radius: 6.4px; font-size: 11px;
+  height: 22px; gap: 5.5px; padding: 0 5.5px 0 8.25px; border-radius: var(--up-r-s); font-size: 11px;
 }
 
 /* ---- Mention-Liste ---------------------------------------------------------------------------
@@ -5439,7 +5475,7 @@
   letter-spacing: 0.02em; white-space: nowrap; }
 
 .up-ment-cell { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: var(--vc-muted); }
-.up-ment-badge { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto;
+.up-ment-badge { width: 14px; height: 14px; border-radius: var(--up-r-xs); flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center; }
 /* The glyph is the SURFACE colour, not a hardcoded white: on dark the badge is a light tint and
    a white glyph would vanish into it. 8px, not 9: a 14px badge minus a 9px glyph splits into a
@@ -5459,7 +5495,7 @@
    bis zum Wort, wo vor "Visibility" in der Prompt-Tabelle 6 stehen. Die flache Tabelle hatte das
    schon abgestellt ("die 5px fehlten der breiteren Kopfschrift"); seit jeder Kopf dieselbe Schrift
    traegt, gilt es fuer jeden -- sonst stuende das Logo im Drawer anders als auf der Seite. */
-.up-th-brandlogo { width: 17px; height: 17px; border-radius: 4px; flex: 0 0 auto; object-fit: cover; }
+.up-th-brandlogo { width: 17px; height: 17px; border-radius: var(--up-r-xs); flex: 0 0 auto; object-fit: cover; }
 
 /* ---------- brand-mention chip stack ----------
    Overlapping 32px circles. Shared by urls-table's Brands mentioned column and prompts-table's
@@ -5501,12 +5537,13 @@
    (--vt-logo-bg), der Rahmen die Kante -- im Hellen in --vc-border, im Dunkeln in der Plattenfarbe,
    wo er mit ihr verschmilzt und der Chip damit aussieht wie vorher, nur einen Pixel groesser
    umrandet. Eine Geometrie fuer beide Themen.
-   Rechnung: 28px Chip - 2x1 Rahmen - 2x2 Polsterung = 22px Bild, Bildradius 8 - 3 = 5.
+   Rechnung: 28px Chip - 2x1 Rahmen - 2x2 Polsterung = 22px Bild, Bildradius 8 - 3 = 5
+   (seit 15.10. auf der Geist-Skala: Chip --up-r-m = 6, Bild 6 - 3 = 3).
    Der 4px-Ring aus box-shadow bleibt unberuehrt: das ist der ABSTAND zum Nachbarn, nicht die
    Kante des Chips. */
 .up-stack-vis {
   display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 100%;
-  border-radius: 8px; padding: 2px; background: var(--vt-logo-bg); box-shadow: 0 0 0 4px var(--vc-bg);
+  border-radius: var(--up-r-m); padding: 2px; background: var(--vt-logo-bg); box-shadow: 0 0 0 4px var(--vc-bg);
   border: 1px solid var(--vc-border);
   transition: transform .16s ease;
   /* Bezug fuer den Globus des Favicon-Rueckfalls (siehe .up-fav weiter oben). In Ruhe traegt die
@@ -5554,7 +5591,7 @@
 .up-row:hover .up-stack-vis { box-shadow: 0 0 0 4px var(--vt-row-hover-solid, var(--vc-bg));
   --up-stack-ring: var(--vt-row-hover-solid, var(--vc-bg)); }
 /* 5 statt 7: der Chip hat jetzt 1px Rahmen und 2px Polsterung, das Bild sitzt also 3px innen. */
-.up-stack-item img { width: 100%; height: 100%; border-radius: 5px; object-fit: contain; display: block; }
+.up-stack-item img { width: 100%; height: 100%; border-radius: calc(var(--up-r-m) - 3px); object-fit: contain; display: block; }
 .up-stack-ltr { font-size: 10px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
 .up-stack-item.has-img .up-stack-ltr { display: none; }
 /* plain text, no circle: the overflow count is a label, not another brand */
@@ -5614,11 +5651,13 @@
 /* Compact mode shrinks the mentioned-brand logos ~20% and scales every gap/shift to match. */
 .up-root.is-dense .up-stack-item { width: 24.64px; height: 24.64px; flex: 0 0 24.64px; }
 /* Dichte Zeilen: Faktor 0.88 auf alles (24.64 statt 28). Polsterung 2 -> 1.76, Rahmen bleibt 1px,
-   also sitzt das Bild 2.76px innen und der Bildradius ist 7.04 - 2.76 = 4.28. */
-.up-root.is-dense .up-stack-vis { border-radius: 7.04px; padding: 1.76px; box-shadow: 0 0 0 3.52px var(--vc-bg); }
+   also sitzt das Bild 2.76px innen und der Bildradius ist 7.04 - 2.76 = 4.28.
+   Seit dem 15.10. auf der Skala gerundet statt gerechnet: 0.88 x 6 = 5.3 -> 5 (m minus 1), das
+   Bild 5 - 2.76 = 2.2 -> 3 wie im normalen Chip -- ein Bruchteil darunter ist auf 20px nicht zu sehen. */
+.up-root.is-dense .up-stack-vis { border-radius: calc(var(--up-r-m) - 1px); padding: 1.76px; box-shadow: 0 0 0 3.52px var(--vc-bg); }
 .up-root.is-dense .up-row:hover .up-stack-vis { box-shadow: 0 0 0 3.52px var(--vt-row-hover-solid, var(--vc-bg));
   --up-stack-ring: var(--vt-row-hover-solid, var(--vc-bg)); }
-.up-root.is-dense .up-stack-item img { border-radius: 4.28px; }
+.up-root.is-dense .up-stack-item img { border-radius: calc(var(--up-r-m) - 3px); }
 .up-root.is-dense .up-stack-ltr { font-size: 8.8px; }
 .up-root.is-dense .up-stack-item + .up-stack-item { margin-left: -3.52px; }
 .up-root.is-dense .up-stack-more { margin-left: 7.04px; }
@@ -5680,7 +5719,7 @@
   --up-focus: #4A9EFF; --up-focus-ring: rgba(74,158,255,0.20); --up-focus-w: 2px;
   width: 100%; max-width: 420px; max-height: calc(100vh - 48px); overflow-y: auto;
   background: var(--up-surface); border: 1px solid var(--vc-border);
-  border-radius: 18px;
+  border-radius: var(--up-r-2xl);
   /* Ohne Rueckfall (28.09.): die Tiefen stehen jetzt an :root, das Token loest auch hier am body
      auf. Bis dahin galt hier der Rueckfall (0 20px 48px .22) statt e-4, dunkel wie hell. */
   box-shadow: var(--up-e-4);
@@ -5716,7 +5755,7 @@
    Ein Rahmen, der erst beim Ueberfahren erscheint, laesst den Knopf springen und ist im ganzen
    Rest der App nirgends so; der Hover ist ueberall nur Flaeche + Primaerfarbe (siehe .up-iconbtn).
    .up-topicmodal-close bleibt als Zweitname bestehen, damit bestehendes Markup weiterlaeuft. */
-.up-popup-close, .up-topicmodal-close { flex: 0 0 auto; width: 32px; height: 32px; margin: -8px -8px 0 0; border: 0; border-radius: 9px;
+.up-popup-close, .up-topicmodal-close { flex: 0 0 auto; width: 32px; height: 32px; margin: -8px -8px 0 0; border: 0; border-radius: var(--up-r-m);
   background: transparent; color: var(--vc-muted); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
   transition: background .14s ease, color .14s ease; }
@@ -5740,13 +5779,13 @@
    die sechste auf rgb(107,111,120). Eine zweite Deklaration derselben Rolle ist genau die
    Sorte Abweichung, gegen die der ganze Umbau laeuft.
    Sechs Verwender in drei Dialogen: Name, Appearance, Topics, Group name, Prompt, Topics. */
-.up-topicmodal-name { height: 36px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: 9px;
+.up-topicmodal-name { height: 36px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: transparent; color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; width: 100%; }
 .up-topicmodal-name:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
 /* Appearance row: emoji + color trigger buttons. */
 .up-topicmodal-approw { display: flex; align-items: center; gap: 8px; }
-.up-topicmodal-pickbtn { flex: 0 0 auto; width: 36px; height: 36px; padding: 0; border-radius: 9px;
+.up-topicmodal-pickbtn { flex: 0 0 auto; width: 36px; height: 36px; padding: 0; border-radius: var(--up-r-m);
   border: 1px solid var(--vc-border); background: transparent; cursor: pointer; font-size: 17px; line-height: 1;
   color: var(--vc-muted); display: inline-flex; align-items: center; justify-content: center; }
 .up-topicmodal-pickbtn svg { width: 17px; height: 17px; display: block; }
@@ -5755,7 +5794,7 @@
 
 .up-topicmodal-pickpanel { margin-top: 10px; }
 .up-topicmodal-colorgrid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; }
-.up-topicmodal-colorcell { width: 100%; aspect-ratio: 1 / 1; padding: 0; border: 1px solid transparent; border-radius: 8px;
+.up-topicmodal-colorcell { width: 100%; aspect-ratio: 1 / 1; padding: 0; border: 1px solid transparent; border-radius: var(--up-r-m);
   background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
   transition: background 120ms ease, border-color 120ms ease; }
 .up-topicmodal-colorcell:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
@@ -5769,13 +5808,13 @@
 .up-topicmodal-emojipicker {
   width: 100%; height: 268px;
   --num-columns: 8; --emoji-size: 1.25rem; --emoji-padding: 0.35rem;
-  --border-radius: 10px; --border-color: var(--vc-border); --background: transparent;
-  --input-border-radius: 9px; --input-border-color: var(--vc-border); --input-font-size: 12.5px;
+  --border-radius: var(--up-r-l); --border-color: var(--vc-border); --background: transparent;
+  --input-border-radius: var(--up-r-m); --input-border-color: var(--vc-border); --input-font-size: 12.5px;
   --indicator-color: var(--vc-text); --outline-color: var(--vc-hover-border);
 }
 
 .up-topicmodal-foot { display: flex; align-items: center; gap: 10px; }
-.up-topicmodal-delete { height: 32px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--vc-border);
+.up-topicmodal-delete { height: 32px; padding: 0 14px; border-radius: var(--up-r-m); border: 1px solid var(--vc-border);
   background: transparent; color: var(--vc-muted); font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
 /* --vt-down MIT Rueckfall, und der Rueckfall ist kein Schoenheitsfehler: der Schleier dieses
    Dialogs wird an vier Stellen gebaut und nur an zwei davon mit .up-root (preferences.js und
@@ -5970,7 +6009,7 @@
    angenommen, --vt-brand fuer eingeladen, die dritte Farbe fuer zurueckgezogen. Kein Rot: eine
    zurueckgezogene Einladung ist kein Fehler, sondern eine Entscheidung. */
 .up-log-evwrap { display: flex; align-items: center; gap: 7px; min-width: 0; }
-.up-log-dot { flex: 0 0 6px; width: 6px; height: 6px; border-radius: 999px; background: var(--vc-third); }
+.up-log-dot { flex: 0 0 6px; width: 6px; height: 6px; border-radius: var(--up-r-voll); background: var(--vc-third); }
 .up-log-dot.is-ok { background: var(--vt-up); }
 .up-log-dot.is-off { background: var(--vc-third); }
 .up-log-dot.is-new { background: var(--vt-brand, var(--vc-muted)); }
@@ -6085,7 +6124,7 @@
   width: 15px; height: 15px; display: block; flex: 0 0 auto; object-fit: cover;
   /* 4px, damit das Logo nicht als scharfkantiges Quadrat neben dem runden Rest der Zeile sitzt.
      Deckt auch den eingebauten Seitenkopf in prompt-research ab -- der nutzt dieselbe Klasse. */
-  border-radius: 4px;
+  border-radius: var(--up-r-xs);
   filter: grayscale(1) contrast(0.30) brightness(1.43);
 }
 .up-ph-metatxt { font-size: 12px; font-weight: 500; color: var(--vc-third); line-height: 1; }
@@ -6139,7 +6178,7 @@
    font-size: 0 gehoert nur hier hin: es loescht eine Beschriftung, die im neuen Markup gar nicht
    mehr vorkommt. Bei .up-ph-iconbtn waere es eine Regel gegen ein Problem, das es dort nicht gibt. */
 .up-ph-iconbtn, .dph-docsbtn { display: inline-flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent;
+  width: 32px; height: 32px; border: 0; border-radius: var(--up-r-m); background: transparent;
   color: var(--vc-muted); cursor: pointer; padding: 0; flex: 0 0 auto;
   transition: color 120ms ease, background-color 120ms ease; }
 .dph-docsbtn { font-size: 0; line-height: 0; }
@@ -6625,7 +6664,7 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 .up-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
 .up-scroll::-webkit-scrollbar-track { background: var(--up-scroll-track, transparent); }
 .up-scroll::-webkit-scrollbar-thumb { background: var(--up-scroll-thumb, var(--vc-border));
-  border-radius: 999px; }
+  border-radius: var(--up-r-voll); }
 .up-scroll::-webkit-scrollbar-thumb:hover { background: var(--up-scroll-thumb-hover, var(--vc-hover-border)); }
 .up-scroll::-webkit-scrollbar-corner { background: transparent; }
 
@@ -6668,7 +6707,7 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 .upt-gm-search, .up-cgm-search { position: relative; display: none; align-items: center; }
 .upt-gm-search.is-open, .up-cgm-search.is-open { display: flex; }
 .upt-gm-right, .up-cgm-right { display: inline-flex; align-items: center; gap: 8px; }
-.upt-gm-searchbtn, .up-cgm-searchbtn { width: 26px; height: 26px; border: 0; border-radius: 7px; padding: 0;
+.upt-gm-searchbtn, .up-cgm-searchbtn { width: 26px; height: 26px; border: 0; border-radius: var(--up-r-m); padding: 0;
   background: transparent; color: var(--vc-muted); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; }
 .upt-gm-searchbtn svg, .up-cgm-searchbtn svg { width: 14px; height: 14px; display: block; }
@@ -6676,13 +6715,13 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 /* Expanded list scrolls instead of growing without limit — 100 topics must not push the footer
    off screen. */
 .upt-gm-list.is-scroll, .up-cgm-list.is-scroll { max-height: 240px; overflow-y: auto; }
-.upt-gm-more, .up-cgm-more { width: 100%; height: 30px; border: 0; border-radius: 8px; background: transparent;
+.upt-gm-more, .up-cgm-more { width: 100%; height: 30px; border: 0; border-radius: var(--up-r-m); background: transparent;
   color: var(--vc-muted); font-family: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; }
 .upt-gm-more:hover, .up-cgm-more:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
 .upt-gm-search-in, .up-cgm-search-in { flex: 1 1 auto; height: 36px; padding: 0 34px 0 12px; border: 1px solid var(--vc-border);
-  border-radius: 9px; background: transparent; color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; }
+  border-radius: var(--up-r-m); background: transparent; color: var(--vc-text); font: inherit; font-size: 14px; outline: 0; }
 .upt-gm-search-in:focus, .up-cgm-search-in:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
-.upt-gm-clear, .up-cgm-clear { position: absolute; right: 6px; width: 20px; height: 20px; border: 0; border-radius: 6px;
+.upt-gm-clear, .up-cgm-clear { position: absolute; right: 6px; width: 20px; height: 20px; border: 0; border-radius: var(--up-r-s);
   padding: 0; background: transparent; color: var(--vc-muted); cursor: pointer;
   display: none; align-items: center; justify-content: center; }
 .upt-gm-clear.is-on, .up-cgm-clear.is-on { display: inline-flex; }
@@ -6692,7 +6731,7 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 
 .upt-gm-namerow, .up-cgm-namerow { display: flex; align-items: center; gap: 8px; }
 .upt-gm-colorwrap, .up-cgm-colorwrap { flex: 0 0 auto; }
-.upt-gm-dotbtn, .up-cgm-dotbtn { width: 36px; height: 36px; padding: 0; border-radius: 9px; border: 1px solid var(--vc-border);
+.upt-gm-dotbtn, .up-cgm-dotbtn { width: 36px; height: 36px; padding: 0; border-radius: var(--up-r-m); border: 1px solid var(--vc-border);
   background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .upt-gm-dotbtn:hover, .up-cgm-dotbtn:hover, .upt-gm-colorwrap.is-open .upt-gm-dotbtn, .up-cgm-colorwrap.is-open .up-cgm-dotbtn { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
 .upt-gm-dot, .up-cgm-dot { width: 16px; height: 16px; border-radius: 50%; display: block; border: 1px solid rgba(0,0,0,.14); }
@@ -6715,7 +6754,7 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    button-sized surface, instead of a small dot you have to aim at.
    Transparent border reserved at rest (not added on hover) so the hover state doesn't shift
    the swatch by the border's own width. */
-.upt-colorcell, .up-cgm-colorcell { width: 34px; height: 34px; padding: 0; border: 1px solid transparent; border-radius: 8px;
+.upt-colorcell, .up-cgm-colorcell { width: 34px; height: 34px; padding: 0; border: 1px solid transparent; border-radius: var(--up-r-m);
   background: transparent; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
   transition: background 120ms ease, border-color 120ms ease; }
@@ -6743,14 +6782,14 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    Zeile zum Platzhalter). Vorher hingen die an .upt-group-item, also am Zeilentyp des Popovers --
    im topics-manager ist die Zeile eine andere, die Regeln sind dieselben. Beide Orte setzen die
    Klasse zusaetzlich zu ihrer eigenen. */
-.upt-grp-cdot, .up-cg-dot { width: 8px; height: 8px; border-radius: 4px; flex: 0 0 auto; display: block; }
+.upt-grp-cdot, .up-cg-dot { width: 8px; height: 8px; border-radius: var(--up-r-voll); flex: 0 0 auto; display: block; }
 
 /* Auge und Kebab: 24x24, gedaempft, erscheinen erst beim Hover der Zeile -- eine Aktionszeile, in
    der bei Ruhe alle Symbole stehen, liest sich unruhiger als der Rest. Ein verstecktes Grouping
    bleibt trotzdem als versteckt erkennbar (gedimmter Name und Punkt weiter unten). */
 .upt-group-eye, .up-cg-eye,
 .upt-group-more, .up-cg-more { width: 24px; height: 24px; flex: 0 0 auto; border: 0;
-  border-radius: 6px; padding: 0; background: transparent; color: var(--vc-muted); cursor: pointer;
+  border-radius: var(--up-r-s); padding: 0; background: transparent; color: var(--vc-muted); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
   opacity: 0; transition: opacity 120ms ease, color 120ms ease, background 120ms ease; }
 .upt-group-eye svg, .up-cg-eye svg,
@@ -6775,6 +6814,10 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    das am kompaktesten sein soll, der groesste Abstand der App. */
 /* 32px, flach, nicht aus Polsterung gerechnet -- jede Menuezeile dieser App ist 32px hoch. */
 .upt-group-rowmenu .up-pop-opt, .up-cg-rowmenu .up-pop-opt { justify-content: flex-start; height: 32px; padding: 0 10px; font-size: 13px; }
+/* Die Zeile sitzt konzentrisch im Menue (15.10., Geist-Skala): Menue 12 minus Polster. Die Menues
+   mit --up-dd-pad (8) tragen sie deshalb mit 4 (.up-pop-opt oben), diese beiden und das Aktions-
+   menue der Brands-Uebersicht haben 6 Polster und damit 6 -- genau Geists Menue (12, 6, 6). */
+.upt-group-rowmenu .up-pop-opt, .up-cg-rowmenu .up-pop-opt, .ubo-actmenu .up-pop-opt { border-radius: var(--up-r-m); }
 /* Gefahrenrot ueber den Token, wie in prompts-table.css. Dort steht die Kopie dieses Menues
    ("Byte-for-byte the Grouping popover's own row menu"), und die ist am 21.09. umgestellt
    worden -- die beiden waeren im dunklen Thema sonst auseinandergelaufen: hier #b0200c, dort
@@ -6788,14 +6831,14 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    Escape) kann die Zeile also nicht halb umgebaut hinterlassen. NICHT animiert: ein pulsendes
    Skelett liest sich als "laedt", und das ist es nicht. */
 .up-cg-row.is-draggable { cursor: grab; }
-.up-cg-row.is-dragging { border: 1px solid var(--vc-border); border-radius: 8px; cursor: grabbing; }
+.up-cg-row.is-dragging { border: 1px solid var(--vc-border); border-radius: var(--up-r-m); cursor: grabbing; }
 .up-cg-row.is-dragging > .up-cg-dot,
 .up-cg-row.is-dragging > .up-pop-label,
 .up-cg-row.is-dragging > .up-cg-eye,
 .up-cg-row.is-dragging > .up-cg-more { display: none; }
 .upt-group-sk-dot, .up-cg-sk-dot,
-.upt-group-sk-text, .up-cg-sk-text { display: none; background: var(--vc-border); border-radius: 4px; }
-.up-cg-row.is-dragging > .up-cg-sk-dot { display: block; width: 8px; height: 8px; border-radius: 4px; flex: 0 0 auto; }
+.upt-group-sk-text, .up-cg-sk-text { display: none; background: var(--vc-border); border-radius: var(--up-r-xs); }
+.up-cg-row.is-dragging > .up-cg-sk-dot { display: block; width: 8px; height: 8px; border-radius: var(--up-r-voll); flex: 0 0 auto; }
 .up-cg-row.is-dragging > .up-cg-sk-text { display: block; width: 45%; height: 12px; }
 /* Greifhand und keine Textauswahl, solange irgendwo gezogen wird: ohne draggable-Attribut faellt
    auch die Auswahlsperre des Browsers weg, und der Zeiger markiert die Namen. */
@@ -6836,7 +6879,7 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 
 /* ---- Tabellen (Werte 1:1 aus ask-mira) ---- */
 .up-rb-tablewrap { display: block; width: 100%; max-width: 100%; overflow-x: auto; margin: 20px 0;
-  border: 1px solid var(--vc-border); border-radius: 10px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
   -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
 .up-rb-table { border-collapse: collapse; width: 100%; font-size: 13.5px; table-layout: auto; }
 .up-rb-table thead th { text-align: left; font-weight: 600; color: var(--vc-muted);
@@ -6864,7 +6907,7 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    dunkel so nah am Kartenrand, dass er als zweite Kante liest. Also je Thema das, was traegt.
    Der Grund steht in der Dunkel-Regel weiter unten, hier ist er durchsichtig. */
 .up-rb-cite { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 7px;
-  margin: 0 1px; border: 1px solid var(--vc-border); border-radius: 7px; background: transparent;
+  margin: 0 1px; border: 1px solid var(--vc-border); border-radius: var(--up-r-s); background: transparent;
   vertical-align: middle; cursor: pointer; max-width: 100%; box-sizing: border-box; line-height: 1;
   transition: background 120ms ease, border-color 120ms ease; }
 .up-rb-cite:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
@@ -6874,7 +6917,7 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 .up-rb-cite:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
 /* 14 statt 13, und der Radius zieht im selben Verhaeltnis mit (3 * 14/13 = 3.23). Der Chip ist
    24px hoch, das Bild passt also weiter hinein, ohne an den Rahmen zu stossen. */
-.up-rb-cite-fav { width: 14px; height: 14px; border-radius: 3.23px; flex: 0 0 auto;
+.up-rb-cite-fav { width: 14px; height: 14px; border-radius: 3px; flex: 0 0 auto;
   object-fit: cover; display: block; }
 /* Die Nummer der Quelle (respBody cfg.nummern, 05.10.): dieselbe Zahl wie an der Kachel im
    Abschnitt "Citations". 16px im 24px-Chip, Radius 4 -- konzentrisch zu den 7 des Chips bei 3px
@@ -6894,7 +6937,7 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    Zeile gleich hoch stehen. */
 /* Grund und Rahmen wie beim einzelnen Zitations-Chip -- beide gehoeren zur selben Familie. */
 .up-rb-cgroup { display: inline-flex; align-items: center; gap: 7px; height: 24px; padding: 0 8px 0 6px;
-  margin: 0 1px; border: 1px solid var(--vc-border); border-radius: 7px; background: transparent;
+  margin: 0 1px; border: 1px solid var(--vc-border); border-radius: var(--up-r-s); background: transparent;
   vertical-align: middle; cursor: pointer; box-sizing: border-box; line-height: 1; white-space: nowrap;
   transition: background 120ms ease, border-color 120ms ease; }
 .up-rb-cgroup:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
@@ -6907,7 +6950,7 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    Der Rahmen in Hintergrundfarbe trennt die Bilder, sonst verschmelzen zwei aehnliche Favicons. */
 /* 15 statt 14, Radius mit (4 * 15/14 = 4.29). Der Rahmen in Hintergrundfarbe bleibt bei 1.5px --
    er trennt die gestapelten Bilder und haengt nicht an ihrer Groesse. */
-.up-rb-cg-fav { width: 15px; height: 15px; border-radius: 4.29px; object-fit: cover; display: block;
+.up-rb-cg-fav { width: 15px; height: 15px; border-radius: var(--up-r-xs); object-fit: cover; display: block;
   box-shadow: 0 0 0 1.5px var(--vc-bg); background: var(--vt-logo-bg); }
 .up-rb-cg-fav + .up-rb-cg-fav { margin-left: -4px; }
 .up-rb-cgroup:hover .up-rb-cg-fav { box-shadow: 0 0 0 1.5px var(--vc-heading-bg); }
@@ -6918,14 +6961,14 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    Text, hier stehen Favicon und Titel je Zeile und man muss sie anklicken koennen. */
 .up-rb-glist { position: absolute; z-index: 40; min-width: 240px; max-width: 380px;
   background: var(--up-surface, var(--vc-bg)); border: 1px solid var(--vc-border);
-  border-radius: 11px; box-shadow: var(--up-e-2); padding: 5px;
+  border-radius: var(--up-dd-radius); box-shadow: var(--up-e-2); padding: 5px;
   display: none; flex-direction: column; gap: 1px; }
 .up-rb-glist.is-open { display: flex; }
 .up-rb-glist button { display: flex; align-items: center; gap: 9px; width: 100%; border: 0;
   background: transparent; font: inherit; font-size: 13px; text-align: left; padding: 7px 8px;
-  border-radius: 8px; cursor: pointer; color: var(--vc-text); min-width: 0; }
+  border-radius: var(--up-r-m); cursor: pointer; color: var(--vc-text); min-width: 0; }
 .up-rb-glist button:hover { background: var(--vc-heading-bg); }
-.up-rb-glist img { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 16px; object-fit: cover;
+.up-rb-glist img { width: 16px; height: 16px; border-radius: var(--up-r-xs); flex: 0 0 16px; object-fit: cover;
   display: block; background: var(--vt-logo-bg); }
 .up-rb-glist span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
@@ -6944,13 +6987,13 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    Der Pixelversatz vorher war fuer EINE Schriftgroesse gerechnet und verrutschte bei jeder anderen.
    line-height: 1 im Chip, damit seine eigene Schrift die Chiphoehe nicht noch einmal aufblaeht. */
 .up-rb-brand { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 8px;
-  margin: 0 1px; border: 2px dashed var(--vt-brand-border); border-radius: 8px;
+  margin: 0 1px; border: 2px dashed var(--vt-brand-border); border-radius: var(--up-r-m);
   background: var(--vt-brand-bg); vertical-align: middle; cursor: pointer; white-space: nowrap;
   line-height: 1; box-sizing: border-box;
   transition: background 120ms ease, border-color 120ms ease; }
 .up-rb-brand:hover { background: var(--vt-brand-bg-hover); border-color: var(--vt-brand-border-hover); }
 .up-rb-brand:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
-.up-rb-brand-ic { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto; object-fit: cover;
+.up-rb-brand-ic { width: 14px; height: 14px; border-radius: var(--up-r-xs); flex: 0 0 auto; object-fit: cover;
   display: block; }
 .up-rb-brand-txt { font-size: 13.5px; font-weight: 600; color: var(--vc-text); line-height: 1; }
 
@@ -7154,7 +7197,7 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 .up-plans.is-narrow .up-plan-desc { min-height: 0; }
 .up-plan {
   position: relative; display: flex; flex-direction: column; text-align: left; min-width: 0;
-  padding: 28px 26px 30px; border: 1px solid var(--vc-border); border-radius: 16px;
+  padding: 28px 26px 30px; border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl);
   background: var(--vc-bg); color: var(--vc-text); box-shadow: var(--up-e-1);
 }
 /* Zweiter Ring statt 2px Rahmen, sonst spraenge der Inhalt um einen Pixel gegen die Nachbarn
@@ -7162,7 +7205,7 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    makePlans: der Tarif des Nutzers, sonst die mittlere. */
 .up-plan.is-ring { border-color: var(--up-accent); box-shadow: 0 0 0 1px var(--up-accent), var(--up-e-1); }
 .up-plan-tag {
-  position: absolute; top: -11px; left: 26px; height: 22px; padding: 0 10px; border-radius: 999px;
+  position: absolute; top: -11px; left: 26px; height: 22px; padding: 0 10px; border-radius: var(--up-r-voll);
   background: var(--up-accent); color: var(--up-accent-fg);
   font-size: 11px; font-weight: 600; letter-spacing: .02em; white-space: nowrap;
   display: inline-flex; align-items: center;
@@ -7190,7 +7233,7 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    ruhige Flaeche und ohne Zeiger, weil es hier nichts zu kaufen gibt. Der Haken in der Tinte der
    Akzentfarbe, wie die You-Marke in team-orga. */
 .up-plan-mine {
-  width: 100%; height: 40px; padding: 0 20px; border-radius: 12px; gap: 9px;
+  width: 100%; height: 40px; padding: 0 20px; border-radius: var(--up-r-l); gap: 9px;
   border: 1px solid var(--vc-border); background: var(--vc-heading-bg); color: var(--vc-text);
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 14px; font-weight: 600; letter-spacing: -.01em; white-space: nowrap;
@@ -7212,9 +7255,9 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 .up-plan-sk-name { width: 44%; height: 16px; }
 .up-plan-sk-desc { width: 86%; height: 12px; }
 .up-plan-sk-desc.is-kurz { width: 58%; }
-.up-plan-sk-amt  { width: 52%; height: 38px; border-radius: 8px; margin-top: 16px; }
+.up-plan-sk-amt  { width: 52%; height: 38px; border-radius: var(--up-r-xl); margin-top: 16px; }
 .up-plan-sk-note { width: 46%; height: 12px; }
-.up-plan-sk-btn  { width: 100%; height: 40px; border-radius: 12px; margin-top: 14px; }
+.up-plan-sk-btn  { width: 100%; height: 40px; border-radius: var(--up-r-l); margin-top: 14px; }
 .up-plan-sk-z    { width: 88%; height: 12px; }
 .up-plan-sk-btn + .up-plan-sk-z { margin-top: 16px; }
 .up-plan-sk-z.is-kurz { width: 64%; }

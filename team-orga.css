@@ -63,7 +63,7 @@
    schneidet genau das ab. Die runden Ecken kommen stattdessen von den Zeilen selbst (unten): die
    Zeilen haben ohnehin keinen eigenen Grund, nur der Kasten hat einen -- nur beim Ueberfahren
    entsteht eine Flaeche, und die muss an den Ecken mitgerundet werden. */
-.uto-table { border: 1px solid var(--vc-border); border-radius: 12px;
+.uto-table { border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl);
   background: var(--vc-bg); min-width: 0; }
 /* Die Kopfzeile traegt .up-thead und NICHT .up-row. Das ist der zweite Fehler von vorher: core
    gibt beiden Klassen dasselbe Raster (".up-thead, .up-row { display: grid }"), .up-row bringt
@@ -81,8 +81,8 @@
 .uto-table .up-row:last-child { border-bottom: 0; }
 /* Die Ecken, die vorher der Ausschnitt gemacht hat. Am Kopf oben, an der letzten Zeile unten --
    damit die Hoverflaeche nicht ueber die Rundung des Kastens hinauslaeuft. */
-.uto-table > .up-thead { border-top-left-radius: 11px; border-top-right-radius: 11px; }
-.uto-table > *:last-child { border-bottom-left-radius: 11px; border-bottom-right-radius: 11px; }
+.uto-table > .up-thead { border-top-left-radius: calc(var(--up-r-2xl) - 1px); border-top-right-radius: calc(var(--up-r-2xl) - 1px); }
+.uto-table > *:last-child { border-bottom-left-radius: calc(var(--up-r-2xl) - 1px); border-bottom-right-radius: calc(var(--up-r-2xl) - 1px); }
 
 /* DIE FLACHE TABELLE (core, data-flach="yes", 15.10.; team-orga.js gibt den Schalen dann .up-box).
    Kopf 48 mit 13/500, die Linie darunter, Rahmen nur oben und unten, kein Grund und das Polster
@@ -216,7 +216,7 @@
    vorgegeben) -- er wechselt sein Zeichen, chevron-down zu chevron-up. */
 .uto-logtoggle { display: inline-flex; align-items: center; gap: 6px; padding: 0;
   border: 0; background: transparent; cursor: pointer; color: inherit; font: inherit; }
-.uto-logtoggle:focus-visible { outline: 0; border-radius: 6px;
+.uto-logtoggle:focus-visible { outline: 0; border-radius: var(--up-r-s);
   box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .uto-logtoggle svg { width: 16px; height: 16px; display: block; color: var(--vc-muted); }
 .uto-logbox[hidden] { display: none; }
@@ -249,7 +249,7 @@
 .uto-hint { font-size: 12.5px; font-weight: 400; color: var(--vc-third); line-height: 1.4; }
 .uto-in {
   width: 100%; height: 44px; padding: 0 12px; box-sizing: border-box;
-  border: 1px solid var(--vc-border); border-radius: 10px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
   background: var(--vc-bg); color: var(--vc-text);
   font-family: inherit; font-size: 14px; font-weight: 400; outline: 0;
   transition: border-color 120ms ease, box-shadow 120ms ease;

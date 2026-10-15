@@ -17,7 +17,7 @@
 .umf-trigger {
   display: inline-flex; align-items: center; gap: 8px;
   height: 32px; padding: 0 10px;
-  border: 1px solid var(--vc-border); border-radius: 8px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vc-bg); color: var(--vc-muted);
   font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
   white-space: nowrap; cursor: pointer; outline: 0;
@@ -46,7 +46,7 @@
    colour of the OTHER theme — the same inversion the checkbox in the panel makes. Fixed 16px so
    the trigger stays the same width at 2 and at 12. */
 .umf-count {
-  flex: 0 0 16px; width: 16px; height: 16px; border-radius: 999px;
+  flex: 0 0 16px; width: 16px; height: 16px; border-radius: var(--up-r-voll);
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--vc-text); color: var(--up-menu-bg);
   font-size: 10px; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums;
@@ -60,8 +60,8 @@
    letter instead of a broken-image glyph — the img hides itself on error and reveals what was
    always there. Both layers share the tile box, hence the absolute positioning. */
 .umf-logo { position: relative; display: inline-flex; flex: 0 0 auto; overflow: hidden; }
-.umf-opt-logo { width: 18px; height: 18px; border-radius: 5px; }
-.umf-trigger-logo { width: 16px; height: 16px; border-radius: 4px; }
+.umf-opt-logo { width: 18px; height: 18px; border-radius: var(--up-r-xs); }
+.umf-trigger-logo { width: 16px; height: 16px; border-radius: var(--up-r-xs); }
 .umf-logo-fb {
   position: absolute; inset: 0; display: grid; place-items: center;
   background: var(--vc-heading-bg); color: var(--vc-third);
@@ -99,14 +99,14 @@
 .umf-sort { position: relative; flex: 0 0 auto; }
 .umf-sort-btn {
   display: grid; place-items: center; width: 32px; height: 32px; padding: 0;
-  border: 1px solid transparent; border-radius: 8px;
+  border: 1px solid transparent; border-radius: var(--up-r-m);
   background: var(--vc-heading-bg); color: var(--vc-muted); cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 .umf-sort-btn:hover, .umf-sort.is-open .umf-sort-btn { border-color: var(--vc-hover-border); color: var(--vc-text); }
 .umf-sort-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .umf-clear {
-  flex: 0 0 auto; height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px;
+  flex: 0 0 auto; height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: var(--up-r-m);
   background: var(--vc-heading-bg); color: var(--vc-text);
   font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease;

@@ -16455,11 +16455,11 @@
            Kasten mit der alten Ecke (CLAUDE.md 1). Die Spalte darunter faellt von 16 auf 14 --
            zwei Pixel, die der Name dazubekommt. */
         var icon = ds.__favicon
-          ? '<img src="' + esc(ds.__favicon) + '" width="14" height="14" style="border-radius:3.5px;display:block;object-fit:cover"/>'
+          ? '<img src="' + esc(ds.__favicon) + '" width="14" height="14" style="border-radius:calc(var(--up-r-xs) - 1px);display:block;object-fit:cover"/>'
           : ds.__dash
             /* Vergleichsreihe: dasselbe Feld, gestrichelt umrandet statt gefuellt -- wie ihre Linie. */
-            ? '<span style="width:14px;height:14px;border-radius:3.5px;border:2px dashed ' + ds.__baseColor + ';box-sizing:border-box;display:block"></span>'
-            : '<span style="width:14px;height:14px;border-radius:3.5px;background:' + ds.__baseColor + ';display:block"></span>';
+            ? '<span style="width:14px;height:14px;border-radius:calc(var(--up-r-xs) - 1px);border:2px dashed ' + ds.__baseColor + ';box-sizing:border-box;display:block"></span>'
+            : '<span style="width:14px;height:14px;border-radius:calc(var(--up-r-xs) - 1px);background:' + ds.__baseColor + ';display:block"></span>';
         /* HIER steht der Wert des Linechart-Tooltips -- nicht in makeDonutTooltip, wo ich ihn
            zuerst gesucht habe. fmtPct haengt fest ein Prozentzeichen an; Rang und Sentiment
            sind keine Prozentwerte. Ohne Angabe bleibt es bei fmtPct, damit sich fuer die
@@ -16499,7 +16499,7 @@
       }).join("");
       if (neuGezeichnet){
         el.innerHTML =
-          '<div style="background:' + boxBg + ';color:' + textColor + ';' + boxBorder + 'border-radius:16px;padding:10px 12px;font-family:' + ff + ';font-size:13px;line-height:1.35;' + boxShadow + 'white-space:nowrap;min-width:220px;max-width:420px;">' +
+          '<div style="background:' + boxBg + ';color:' + textColor + ';' + boxBorder + 'border-radius:var(--up-r-l);padding:10px 12px;font-family:' + ff + ';font-size:13px;line-height:1.35;' + boxShadow + 'white-space:nowrap;min-width:220px;max-width:420px;">' +
             '<div style="color:' + mutedColor + ';font-size:11px">' + esc(chartDateTitle(dayLabel, getGran ? getGran() : "day")) + '</div>' +
             rows +
           '</div>';
@@ -18510,7 +18510,7 @@
         var boxBorder = dark ? "border:1px solid #3e3e44;" : "border:1px solid #dcdbdd;";
         var boxShadow = "box-shadow:var(--up-e-2);";   /* wie am Linien-Tooltip oben */
         var mutedColor = dark ? "#8a8a8a" : "#6b6f78";
-        kBox.style.cssText = "background:" + boxBg + ";color:" + textColor + ";" + boxBorder + "border-radius:16px;padding:12px 14px;font-family:Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:13px;line-height:1.35;" + boxShadow + "white-space:nowrap;";
+        kBox.style.cssText = "background:" + boxBg + ";color:" + textColor + ";" + boxBorder + "border-radius:var(--up-r-l);padding:12px 14px;font-family:Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:13px;line-height:1.35;" + boxShadow + "white-space:nowrap;";
         kTitle.style.cssText = "display:flex;align-items:center;gap:6px;font-weight:600;margin-bottom:6px;";
         kSub.style.cssText = "color:" + mutedColor + ";font-size:11px;";
         kVal.style.cssText = "color:" + textColor + ";";
@@ -18544,7 +18544,7 @@
       if (kennung !== letzteKennung){
         letzteKennung = kennung;
         kDot.style.cssText = isUrlMode
-          ? "width:6px;height:6px;border-radius:999px;flex:0 0 auto;background:" + sliceColor + ";display:inline-block;"
+          ? "width:6px;height:6px;border-radius:var(--up-r-voll);flex:0 0 auto;background:" + sliceColor + ";display:inline-block;"
           : "display:none;";
         kLbl.style.color = nameColor;
         kLbl.textContent = chart.data.labels[i] || "";

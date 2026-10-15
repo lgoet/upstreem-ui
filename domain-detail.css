@@ -52,7 +52,7 @@
    Werte 1:1 aus .ubd-card: 16px Radius wie jeder aeussere Container der App, 1px Rahmen,
    16px Polsterung rundum. */
 .udd-card {
-  border: 1px solid var(--vc-border); border-radius: 16px; background: var(--vc-bg);
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); background: var(--vc-bg);
   padding: 16px; width: 100%; box-sizing: border-box;
 }
 
@@ -104,8 +104,8 @@
 .udd-kpi-val { font-size: 23px; line-height: 1.15; letter-spacing: -0.4px; }
 .udd-kpi-val .up-num { font-size: inherit; font-weight: 500; letter-spacing: inherit;
   font-variant-numeric: tabular-nums; }
-.udd-kpi-val .up-tsk-bar   { height: 24px; width: 88px; border-radius: 6px; }
-.udd-kpi-trend .up-tsk-bar { height: 18px; width: 58px; border-radius: 5px; }
+.udd-kpi-val .up-tsk-bar   { height: 24px; width: 88px; border-radius: var(--up-r-s); }
+.udd-kpi-trend .up-tsk-bar { height: 18px; width: 58px; border-radius: var(--up-r-xs); }
 
 /* ---- Kurve -----------------------------------------------------------------------------------
    260px wie in brand-detail. Im Domain-Share-Modus faellt die KPI-Zeile weg, und die Kurve nimmt
@@ -177,8 +177,8 @@
 /* Skelett, solange nichts da ist: Kopfzeile und Flaeche als zwei Balken, Ton und Pulsieren aus
    core (--vc-sk). */
 .udd-fn-sk { display: flex; flex-direction: column; gap: 12px; }
-.udd-fn-sk-head { display: block; height: 58px; border-radius: 8px; background: var(--vc-sk); }
-.udd-fn-sk-body { display: block; height: 132px; border-radius: 8px; background: var(--vc-sk); }
+.udd-fn-sk-head { display: block; height: 58px; border-radius: var(--up-r-xl); background: var(--vc-sk); }
+.udd-fn-sk-body { display: block; height: 132px; border-radius: var(--up-r-xl); background: var(--vc-sk); }
 
 /* ---- Zeile: Typ-Split und Model Breakdown --------------------------------------------------
    Beide Karten gleich hoch (Vorgabe): align-items: stretch, nicht center. Die Ueberschriften

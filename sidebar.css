@@ -491,7 +491,7 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
   /* 32 und nicht 40: derselbe Kasten wie der Einklapp-Knopf daneben, damit beide oben auf
      derselben Kante von 8px sitzen. Das 24er Logo hat darin ringsum 4px Luft. */
   height: 32px; padding: 0 8px;
-  border: 0; border-radius: 12px; background: transparent;
+  border: 0; border-radius: var(--up-r-m); background: transparent;
   font: inherit; color: var(--vc-text); cursor: pointer; text-align: left;
   /* max-width 100% statt keiner Grenze: dieselbe Wirkung (flex mit min-width 0 waechst ohnehin
      nicht ueber die Zeile), aber ein Wert, von dem aus die Breite eingeklappt auf 32 fahren kann.
@@ -529,8 +529,8 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
    (22 -> 21) und dessen Radius (7 -> 6.7) -- ein Bauteil ist ein Paket aus Massen, und wer eines
    davon aendert, zieht die anderen im selben Verhaeltnis nach. */
 .usn-teamlogo { flex: 0 0 23px; display: inline-flex; }
-.usn-teamlogo .up-logo-box { width: 23px; height: 23px; flex: 0 0 23px; border-radius: 7.7px; }
-.usn-teamlogo .up-logo-box img { width: 21px; height: 21px; border-radius: 6.7px; }
+.usn-teamlogo .up-logo-box { width: 23px; height: 23px; flex: 0 0 23px; border-radius: var(--up-r-s); }
+.usn-teamlogo .up-logo-box img { width: 21px; height: 21px; border-radius: calc(var(--up-r-s) - 1px); }
 /* Nie umbrechen, nie herausragen: schrumpfen und mit Auslassungspunkten enden. min-width: 0
    ist dafuer Pflicht -- ein Flex-Kind schrumpft sonst nicht unter seine Inhaltsbreite, und der
    Name schoebe den Doppelpfeil aus der Leiste heraus. */
@@ -561,8 +561,11 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
    steht. Diese Regel faerbt den Trigger eines offenen Dropdowns -- der Einklapp-Knopf ist aber
    nur ein Geschwister des Team-Knopfes im selben Wrapper, kein Trigger. Ohne das wurde er
    primaerfarben, sobald der Team-Schalter offen war. */
-/* Radius 12 wie alle Flaechen der Leiste -- das Kit gibt .up-iconbtn 8 mit. */
-.usn-bar .up-iconbtn { border-radius: 12px; }
+/* Radius wie alle Flaechen der Leiste. Bis zum 15.10. 12 (das Kit gab .up-iconbtn 8 mit); seit der
+   Geist-Skala tragen Eintrag, Team-Schalter und dieser Knopf -- alle 32 bis 36 hoch -- die
+   Knopfstufe 6, also wieder dasselbe wie das Kit. Die Regel bleibt, damit die Leiste ihre Rundung
+   an EINER Stelle zieht, falls sie wieder abweichen soll. */
+.usn-bar .up-iconbtn { border-radius: var(--up-r-m); }
 /* Zweitfarbe und nicht Drittfarbe (22.09. angefordert). Der Umschalter war der leiseste
    Punkt der Leiste -- leiser als die Ueberschriften darunter, obwohl er ein Bedienelement ist
    und die keine sind. Dieselbe Aenderung steht an Miras Umschalter (ask-mira.css). */
@@ -954,10 +957,11 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
    1px Polsterung und KEINEN Rahmen, der helle Rand ist also genau einen Pixel breit. Mit 1.6px
    Polsterung plus 1px Rahmen waren es 2.6px, und im Dunkeln (Platte #e0e0e0 auf #1b1b1b) ist jeder
    Pixel davon zu sehen -- daher der zu dicke weisse Rand.
-   Faktor 22/24 auf die Werte der Box: Radius 8 -> 7.3, Bildradius 7 -> 6.4. Die Polsterung bleibt
+   Faktor 22/24 auf die Werte der Box: Radius 8 -> 7.3, Bildradius 7 -> 6.4 (seit 15.10. Geist-
+   Skala: 22px ist die Chip-Stufe, also 4 und innen 4 - 1 = 3). Die Polsterung bleibt
    bei 1px, sie IST der Rand; ein Bruchteil davon waere kein sichtbarer Ring mehr. */
-.usn-chips .up-stack-vis { border-radius: 7.3px; padding: 1px; border: 0; }
-.usn-chips .up-stack-item img { border-radius: 6.4px; }
+.usn-chips .up-stack-vis { border-radius: var(--up-r-s); padding: 1px; border: 0; }
+.usn-chips .up-stack-item img { border-radius: calc(var(--up-r-s) - 1px); }
 .usn-chips .up-stack-ltr { font-size: 7.9px; }
 /* Eingeklappt steht das Zeichen ueber das Polster links mittig, nicht ueber eine Zentrierung
    (13.10., Begruendung bei .usn-txt oben): (39px Inhalt - 22px Zeichenspalte) / 2 = 8.5, also bei
@@ -978,7 +982,7 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
    Solange die Daten nicht da sind, steht an ihrer Stelle ein Balken -- kein leerer Platz und
    kein Fragezeichen. Geometrie und Ton wie die Tabellenskelette in core: --vc-sk, Radius 6,
    dieselbe Wanderung. */
-.usn-sk { display: block; border-radius: 6px; background: var(--vc-sk); position: relative; overflow: hidden; }
+.usn-sk { display: block; border-radius: var(--up-r-s); background: var(--vc-sk); position: relative; overflow: hidden; }
 .usn-sk::after {
   content: ""; position: absolute; inset: 0;
   background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
@@ -986,12 +990,12 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
 }
 .usn-bar[data-theme="dark"] .usn-sk::after { background: linear-gradient(90deg, transparent, rgba(255,255,255,.10), transparent); }
 @keyframes usn-sk-lauf { to { transform: translateX(100%); } }
-.usn-teamlogo .usn-sk { width: 23px; height: 23px; border-radius: 7.7px; }
+.usn-teamlogo .usn-sk { width: 23px; height: 23px; border-radius: var(--up-r-s); }
 .usn-teamname .usn-sk { width: 96px; height: 13px; }
 .usn-av .usn-sk { width: 30px; height: 30px; border-radius: 50%; }
 .usn-acc-name .usn-sk { width: 92px; height: 12px; }
 .usn-acc-mail .usn-sk { width: 116px; height: 10px; margin-top: 3px; }
-.usn-sk-chips { width: 58px; height: 14px; border-radius: 7px; }
+.usn-sk-chips { width: 58px; height: 14px; border-radius: var(--up-r-voll); }
 .usn-count .usn-sk { width: 22px; height: 11px; }
 /* Im Mini-Zustand traegt nur das Logo bzw. der Kreis ein Skelett -- die Textbalken liegen in
    Elementen, die dort ohnehin auf Breite 0 stehen. */
@@ -1016,15 +1020,15 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
    Bildradius 6.4 -- dieselben Werte wie die Chips darueber, dasselbe Vorbild .up-logo-box. Das
    Bild waechst dabei von 15.6 auf 20px und liegt auf der hellen Platte, die es in den Tabellen
    auch hat. Der sichtbare Rand ist ein Pixel. */
-.usn-pin-ic .up-logo-box { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 7.3px;
+.usn-pin-ic .up-logo-box { width: 22px; height: 22px; flex: 0 0 22px; border-radius: var(--up-r-s);
   padding: 1px; border: 0; }
-.usn-pin-ic .up-logo-box img { width: 100%; height: 100%; border-radius: 6.4px; }
+.usn-pin-ic .up-logo-box img { width: 100%; height: 100%; border-radius: calc(var(--up-r-s) - 1px); }
 .usn-pin-ic .up-logo-ltr { font-size: 7.9px; }
 /* Dasselbe Bauteil noch eine Stufe kleiner: im Konto-Menue sind die Icons 15px (siehe
    .usn-menu .up-pop-opt svg weiter unten), nicht 17. Faktor 15/24 auf ALLE Werte:
    Radius 8 -> 5, Bild 22 -> 13.75, Bildradius 7 -> 4.4, Buchstabe 11 -> 7. */
-.usn-menu .up-logo-box.usn-acc-logo { width: 15px; height: 15px; flex: 0 0 15px; border-radius: 5px; padding: 1px; }
-.usn-menu .up-logo-box.usn-acc-logo img { width: 13.75px; height: 13.75px; border-radius: 4.4px; }
+.usn-menu .up-logo-box.usn-acc-logo { width: 15px; height: 15px; flex: 0 0 15px; border-radius: var(--up-r-xs); padding: 1px; }
+.usn-menu .up-logo-box.usn-acc-logo img { width: 13.75px; height: 13.75px; border-radius: calc(var(--up-r-xs) - 1px); }
 .usn-menu .up-logo-box.usn-acc-logo .up-logo-ltr { font-size: 7px; }
 .usn-pin-x {
   flex: 0 0 14px; width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center;
@@ -1081,7 +1085,7 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
 .usn-pin.is-renaming { cursor: default; }
 .usn-pin-in {
   flex: 1 1 auto; min-width: 0; height: 26px; box-sizing: border-box; padding: 0 9px;
-  border: 1px solid var(--vc-border); border-radius: 6.5px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vc-bg); color: var(--vc-text);
   font-family: inherit; font-size: 13.5px; font-weight: 500; outline: none;
   transition: border-color 150ms ease, background 150ms ease;
@@ -1096,7 +1100,7 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
 .usn-pin { cursor: pointer; }
 .usn-bar.is-pindrag { cursor: grabbing; }
 .usn-bar.is-pindrag .usn-pin { cursor: grabbing; }
-.usn-pin-sk-ic, .usn-pin-sk-txt { display: none; background: var(--vc-border); border-radius: 4px; }
+.usn-pin-sk-ic, .usn-pin-sk-txt { display: none; background: var(--vc-border); border-radius: var(--up-r-xs); }
 .usn-pin.is-dragging { border: 1px solid var(--vc-border); }
 /* Beim Ziehen tritt der Platzhalter an die Stelle des Inhalts. Der echte Inhalt geht weg, statt
    nur durchscheinend zu werden: ein halbdurchsichtiger Name neben einem grauen Balken waere
@@ -1105,7 +1109,7 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
 .usn-pin.is-dragging > .usn-txt,
 .usn-pin.is-dragging > .usn-pin-edit,
 .usn-pin.is-dragging > .usn-pin-x { display: none; }
-.usn-pin.is-dragging > .usn-pin-sk-ic { display: block; width: 17px; height: 17px; border-radius: 5px; flex: 0 0 17px; }
+.usn-pin.is-dragging > .usn-pin-sk-ic { display: block; width: 17px; height: 17px; border-radius: var(--up-r-xs); flex: 0 0 17px; }
 .usn-pin.is-dragging > .usn-pin-sk-txt { display: block; width: 55%; height: 12px; }
 /* Waehrend des Ziehens keine Textauswahl -- sonst markiert der Zeiger die Namen. */
 .usn-bar.is-pindrag, .usn-bar.is-pindrag * { user-select: none; -webkit-user-select: none; }
@@ -1125,7 +1129,7 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
 .usn-accwrap { flex: 0 0 auto; margin-top: 32px; }
 .usn-acc {
   width: 100%; display: flex; align-items: center; gap: 10px;
-  padding: 8px; border: 0; border-radius: 12px; background: transparent;
+  padding: 8px; border: 0; border-radius: var(--up-r-m); background: transparent;
   font: inherit; color: var(--vc-text); cursor: pointer; text-align: left;
   /* overflow: Name, Adresse und das Mehr-Zeichen bleiben eingeklappt im Fluss (siehe unten) und
      werden am Knopf abgeschnitten. */
@@ -1214,7 +1218,7 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
 .usn-none { padding: 14px 10px; font-size: 13px; color: var(--vc-muted); }
 
 /* Teamzeile: 64px, Logo links, Name ueber Domain, Haken rechts. */
-.usn-teamrow { display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 10px; border-radius: 12px; }
+.usn-teamrow { display: flex; align-items: center; gap: 12px; height: 64px; padding: 0 10px; border-radius: var(--up-r-l); }
 .usn-teamrow-txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .usn-teamrow-name { font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .usn-teamrow-dom { font-size: 12px; color: var(--vc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1222,7 +1226,7 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
 .usn-menu-foot { flex: 0 0 auto; border-top: 1px solid var(--up-menu-border); margin-top: var(--up-dd-pad); padding-top: var(--up-dd-pad); }
 .usn-newteam {
   width: 100%; display: flex; align-items: center; gap: 9px;
-  padding: 9px 10px; border: 0; border-radius: 12px; background: transparent;
+  padding: 9px 10px; border: 0; border-radius: var(--up-r-m); background: transparent;
   font: inherit; font-size: 13.5px; font-weight: 500; color: var(--vc-text); cursor: pointer;
   transition: background var(--usn-t) var(--usn-ease);
 }
@@ -1264,7 +1268,7 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
      selbst zu ihrem oberen Rand haelt. */
   position: fixed; left: 0; top: 32px; z-index: 9902;
   width: 32px; height: 36px; min-width: 0;
-  border-radius: 0 12px 12px 0; border: 0; padding: 0;
+  border-radius: 0 var(--up-r-m) var(--up-r-m) 0; border: 0; padding: 0;
   background: var(--usn-bg); color: var(--vc-text); cursor: pointer;
   align-items: center; justify-content: center;
   display: none;

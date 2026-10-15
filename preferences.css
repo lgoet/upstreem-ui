@@ -66,7 +66,7 @@
    die HALBE Staerke des Grundtons -- so bleiben "worauf zeige ich" und "wo bin ich"
    unterscheidbar, ohne einen zweiten Ton zu erfinden. */
 .ums-nav {
-  min-height: 36px; height: 36px; padding: 0 8px; border-radius: 12px; gap: 10px;
+  min-height: 36px; height: 36px; padding: 0 8px; border-radius: var(--up-r-m); gap: 10px;
   font-size: 13.5px; font-weight: 500; color: var(--vc-text); background: transparent;
   transition: background 120ms cubic-bezier(.4,0,.2,1), color 120ms cubic-bezier(.4,0,.2,1);
 }
@@ -137,7 +137,7 @@
 .ums-sel {
   display: inline-flex; align-items: center; gap: 8px;
   height: 32px; padding: 0 10px;
-  border: 1px solid var(--vc-border); border-radius: 8px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vc-bg); color: var(--vc-muted);
   font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
   white-space: nowrap; cursor: pointer; outline: 0;
@@ -188,7 +188,7 @@
    Radius, Zeiger", und die hat jedes anklickbare Bild. Ein .up-iconbtn mit 72px und 999px Radius
    waere kein Icon-Knopf mehr, sondern nur noch dieser Fall unter fremdem Namen. */
 .ums-avatar {
-  position: relative; width: 72px; height: 72px; border-radius: 999px; flex: 0 0 72px;
+  position: relative; width: 72px; height: 72px; border-radius: var(--up-r-voll); flex: 0 0 72px;
   background: var(--vt-logo-bg); border: 1px solid var(--vc-border); padding: 0;
   display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
   font-size: 24px; font-weight: 500; color: var(--vc-muted); user-select: none;
@@ -226,7 +226,7 @@
 
 .ums-in {
   width: 100%; max-width: 320px; height: 40px; padding: 0 12px; box-sizing: border-box;
-  border: 1px solid var(--vc-border); border-radius: 10px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
   background: var(--vc-bg); color: var(--vc-text);
   font-family: inherit; font-size: 14px; font-weight: 400; outline: 0;
   transition: border-color 120ms ease, box-shadow 120ms ease;

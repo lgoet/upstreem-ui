@@ -108,7 +108,7 @@
         /* "+N" ist der "+N"-Chip aus core (.up-topicchip.is-mehr: ohne Punkt, enger, leiser). */
         '.ust-cell .upt-zmehr.upt-zmehr{flex:0 0 auto;user-select:none;}',
         '.ust-cell[data-theme="dark"] .ust-empty{color:#555;}',
-        '.ust-topics-popup.ust-topics-popup{position:fixed;z-index:2147483000;display:none;pointer-events:none;max-width:320px;padding:10px;border:1px solid #d9dde3;border-radius:12px;background:#fff;box-shadow:var(--up-e-2);font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
+        '.ust-topics-popup.ust-topics-popup{position:fixed;z-index:2147483000;display:none;pointer-events:none;max-width:320px;padding:10px;border:1px solid #d9dde3;border-radius:var(--up-r-l);background:#fff;box-shadow:var(--up-e-2);font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
         '.ust-topics-popup .ust-popup-inner{display:flex;flex-wrap:wrap;gap:8px;}',
         /* Border brightened vs. the plain --vc-border dark value (#353535) — against this popup's
            #151515 background that reads as barely-there/blurry. Same #454545 fix already applied

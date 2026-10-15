@@ -108,7 +108,7 @@
    zur naechsten Reihe (den Chips) kommt jetzt allein aus deren eigenem margin-top. */
 .upw-mira { position: relative; }
 .upw-mira-sk {
-  height: 133px; border-radius: var(--up-r-2xl, 16px); border: 1px solid var(--vc-border); background: var(--vc-bg);
+  height: 133px; border-radius: var(--up-r-2xl); border: 1px solid var(--vc-border); background: var(--vc-bg);
   padding: 20px 16px 16px; box-sizing: border-box;
   display: flex; flex-direction: column; justify-content: space-between;
 }
@@ -165,7 +165,7 @@
    Zentriert wird ueber align-items/justify-content auf beiden Achsen -- gemessen sitzt das
    Zeichen mit demselben Abstand an allen vier Kanten. */
 .upw-chip-ic {
-  flex: 0 0 17px; width: 17px; height: 17px; border-radius: 4.25px;
+  flex: 0 0 17px; width: 17px; height: 17px; border-radius: var(--up-r-xs);
   display: inline-flex; align-items: center; justify-content: center; line-height: 0;
   background: var(--up-accent); color: var(--up-accent-fg); overflow: hidden;
 }
@@ -198,7 +198,7 @@
    (die Flaeche braucht sie). So ist der Inhaltskasten in BEIDEN Themen 15px, das Bild genau
    15x15, die Luft 1/1/1/1, und die sichtbare Flaeche misst in beiden Themen volle 17x17 --
    dieselbe Kantenlaenge wie die Akzentplatten. */
-.up-logo-box.upw-chip-ic { width: 17px; height: 17px; flex: 0 0 17px; border-radius: 4.25px;
+.up-logo-box.upw-chip-ic { width: 17px; height: 17px; flex: 0 0 17px; border-radius: var(--up-r-xs);
   box-sizing: border-box; background: transparent; border: 1px solid var(--vc-border); padding: 0; }
 [data-theme="dark"] .up-logo-box.upw-chip-ic { border: 0; padding: 1px; background: var(--vc-text); }
 /* 15px Bild in einem 16px-Kasten: das 1px Polster aus core gibt genau 14 her, das Bild deckt es
@@ -209,7 +209,7 @@
    "das Logo bitte 1x1px kleiner als der bg"). Bei 16px Kante sind das 14 -- im Hellen bleibt
    damit der 1px Rahmen frei sichtbar, im Dunkeln ein 1px Saum der hellen Flaeche ringsum. Der
    Radius zieht im selben Verhaeltnis mit (4 * 14/16 = 3,5). */
-.up-logo-box.upw-chip-ic img { width: 15px; height: 15px; border-radius: 3.75px; }
+.up-logo-box.upw-chip-ic img { width: 15px; height: 15px; border-radius: calc(var(--up-r-xs) - 1px); }
 .up-logo-box.upw-chip-ic .up-logo-ltr { font-size: 8.5px; color: var(--vc-text); }
 [data-theme="dark"] .up-logo-box.upw-chip-ic .up-logo-ltr { color: var(--vc-bg); }
 /* Der alte Emoji-Schluessel: unsere drei Chips tragen keinen mehr, ein Bubble mit eigenen Chips
@@ -325,7 +325,7 @@
 .upw-chatlist { display: flex; flex-direction: column; }
 .upw-chat {
   display: flex; align-items: center; gap: 12px; height: var(--upw-chatrow); padding: 0 8px;
-  margin: 0 -8px; width: calc(100% + 16px); border: 0; border-radius: 9px; background: transparent;
+  margin: 0 -8px; width: calc(100% + 16px); border: 0; border-radius: var(--up-r-m); background: transparent;
   color: var(--vc-text); font-family: inherit; text-align: left; cursor: pointer;
 }
 .upw-chat:hover { background: var(--vt-row-hover); }
@@ -503,7 +503,7 @@
      unten wieder herein. Zwei Zahlen fuer dieselbe Zeile waeren eine Quelle mehr, die
      auseinanderlaeuft. */
   display: flex; align-items: center; gap: 40px; height: 36px; padding: 0 8px;
-  margin: 0 -8px; border-radius: 9px; cursor: pointer;
+  margin: 0 -8px; border-radius: var(--up-r-m); cursor: pointer;
 }
 /* Platzziffer, Zeichen und Name behalten ihre alten 10px -- vergroessert werden sollte der
    Abstand VOR dem Prozentwert, nicht der im Zeilenkopf. Der negative Rand nimmt die Differenz
@@ -649,9 +649,9 @@
    = 13. Vorher stand hier 13 in einem 14er Kasten, also nur einen halben Pixel je Seite --
    dieselbe Regel an zwei Orten mit zwei verschiedenen Zahlen. */
 .upw-root.is-vnarrow .upw-chip-emoji { font-size: 13.5px; }
-.upw-root.is-vnarrow .upw-chip-ic { flex: 0 0 15px; width: 15px; height: 15px; border-radius: 3.2px; }
+.upw-root.is-vnarrow .upw-chip-ic { flex: 0 0 15px; width: 15px; height: 15px; border-radius: 3px; }
 .upw-root.is-vnarrow .upw-chip-ic svg { width: 10.5px; height: 10.5px; }
-.upw-root.is-vnarrow .up-logo-box.upw-chip-ic img { width: 13px; height: 13px; border-radius: 2.75px; }
+.upw-root.is-vnarrow .up-logo-box.upw-chip-ic img { width: 13px; height: 13px; border-radius: calc(var(--up-r-xs) - 1px); }
 
 /* Die Logoplatte im Ladezustand: ohne Flaeche und ohne Rahmen, in BEIDEN Themen. Gemeldet fuer
    den Dunkelmodus (dort ist die Flaeche hell und stach heraus), im Hellen ist sie zwar leiser,
@@ -662,18 +662,18 @@
 
 /* ---------- Skelett ----------
    Farbe und Pulsieren aus core (--vc-sk, uutpulse), wie .up-tsk-bar. */
-.upw-sk { display: block; background: var(--vc-sk); border-radius: 6px; animation: uutpulse 1.2s ease-in-out infinite; }
+.upw-sk { display: block; background: var(--vc-sk); border-radius: var(--up-r-s); animation: uutpulse 1.2s ease-in-out infinite; }
 .upw-sk-line  { width: 46%; height: 12px; }
-.upw-sk-dot   { width: 28px; height: 28px; border-radius: 9px; }
-.upw-sk-send  { width: 32px; height: 32px; border-radius: 999px; }
+.upw-sk-dot   { width: 28px; height: 28px; border-radius: var(--up-r-m); }
+.upw-sk-send  { width: 32px; height: 32px; border-radius: var(--up-r-voll); }
 /* Der Platzhalter der Sprechblase in der Chatzeile -- dieselben 16px wie das Zeichen, das dort
    gleich stehen wird, sonst springt die Zeile beim Eintreffen der Liste. */
-.upw-sk-ic    { width: 16px; height: 16px; border-radius: 5px; flex: 0 0 auto; }
+.upw-sk-ic    { width: 16px; height: 16px; border-radius: var(--up-r-xs); flex: 0 0 auto; }
 /* Der graue Balken IN einer Listenzeile. Die Breite kommt vom Markup (je Zeile eine andere,
    damit es nicht wie ein Raster aussieht), die Hoehe von hier -- 11px ist die Hoehe des Textes,
    den er vertritt. Der Logokasten bekommt seinen Balken quadratisch. */
 .upw-sk-bar   { height: 11px; }
-.upw-li.is-sk .up-logo-box .upw-sk-ava { width: 100%; height: 100%; border-radius: 7px; display: block; }
+.upw-li.is-sk .up-logo-box .upw-sk-ava { width: 100%; height: 100%; border-radius: var(--up-r-s); display: block; }
 /* Im Skelett ist die Zeile nicht klickbar und braucht keinen Zeiger -- sie steht schon auf
    cursor: default (.upw-li.is-sk weiter oben). Hier nur: der Balken im Namen nimmt die Breite,
    die das Markup vorgibt, und nicht die des Kastens. */

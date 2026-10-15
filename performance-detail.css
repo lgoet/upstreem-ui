@@ -53,7 +53,7 @@
   height: var(--upd-klebe, 16px); background: var(--up-surface); pointer-events: none; }
 .upd-held-logo { display: inline-flex; flex: 0 0 auto; }
 .upd-held-logobox.up-logo-box { width: 44px; height: 44px; flex: 0 0 44px; border-radius: var(--up-r-xl); }
-.upd-held-logobox.up-logo-box img { width: 42px; height: 42px; border-radius: 11px; }
+.upd-held-logobox.up-logo-box img { width: 42px; height: 42px; border-radius: calc(var(--up-r-xl) - 1px); }
 .upd-held-logobox .up-logo-ltr { font-size: var(--up-fs-xl); }
 .upd-held-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 auto; }
 .upd-held-name { margin: 0; font-size: var(--up-fs-2xl); font-weight: var(--up-fw-m); line-height: 1.2; letter-spacing: -0.4px;
@@ -106,7 +106,7 @@
 .upd-stand-idx { flex: 0 0 16px; text-align: right; margin-right: 4px;
   font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-third); font-variant-numeric: tabular-nums; }
 .upd-stand-logo.up-logo-box { width: 22px; height: 22px; flex: 0 0 22px; border-radius: var(--up-r-s); }
-.upd-stand-logo.up-logo-box img { width: 20px; height: 20px; border-radius: 5px; }
+.upd-stand-logo.up-logo-box img { width: 20px; height: 20px; border-radius: calc(var(--up-r-s) - 1px); }
 .upd-stand-logo .up-logo-ltr { font-size: var(--up-fs-xs); }
 .upd-stand-name { flex: 1 1 auto; min-width: 0; font-size: var(--up-fs-m); color: var(--vc-muted);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

@@ -118,7 +118,7 @@
    background: var(--vc-heading-bg) UND 12px Radius -- zwei Werte, die von den uebrigen 16px-
    Radien dieser Seite abwichen. */
 .uud-frame {
-  border-radius: 16px; border: 1px solid var(--vc-border); overflow: hidden; box-sizing: border-box;
+  border-radius: var(--up-r-2xl); border: 1px solid var(--vc-border); overflow: hidden; box-sizing: border-box;
 }
 .uud-frame { position: relative; width: 100%; }
 .uud-frame.is-ratio { height: 0; }
@@ -228,7 +228,7 @@
 .uud-hinweis { font-size: var(--up-fs-m); color: var(--vc-muted); line-height: 1.45; min-width: 0; }
 .uud-fehler {
   order: -1;
-  padding: 10px 12px; border-radius: 10px;
+  padding: 10px 12px; border-radius: var(--up-r-l);
   border: 1px solid var(--vc-neg-border, rgba(200, 60, 60, .28));
   background: var(--vc-neg-bg, rgba(200, 60, 60, .08));
   font-size: 13px; line-height: 1.45; color: var(--vc-text);
@@ -244,7 +244,7 @@
 /* Nur so breit wie ihr Inhalt, aber nie schmaler als ein Drittel der Seite: zwei Spalten in
    voller Breite lassen die Quote am rechten Rand allein stehen, und eine Tabelle, die auf zwei
    kurze Namen zusammenschrumpft, sieht aus wie ein Rest. */
-.uud-ctable { border: 1px solid var(--vc-border); border-radius: 12px; overflow: hidden;
+.uud-ctable { border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); overflow: hidden;
   width: fit-content; min-width: 33%; max-width: 100%; }
 /* .check_reinvention.py meldet die naechste Zeile als gesprengtes Bauteil: sie setzt display
    und laesst grid-template-columns stehen. Genau das ist hier richtig und core macht es an
@@ -301,7 +301,7 @@
 .uud-root.is-loading .uud-sk { display: flex; }
 .uud-root.is-loading .uud-text { display: none; }
 .uud-root.is-loading .uud-kpi-val::before {
-  content: ""; display: block; width: 56px; height: 15px; border-radius: 6px;
+  content: ""; display: block; width: 56px; height: 15px; border-radius: var(--up-r-s);
   background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite;
 }
 .uud-root.is-loading .uud-kpi-val > * { display: none; }
