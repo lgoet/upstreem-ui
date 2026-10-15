@@ -65,7 +65,10 @@
          vorher. */
       { key: "share",    label: "Share",     w: "minmax(13%, 150px)",   min: 130, art: "anteil" },
       { key: "used",     label: "Used",      w: "minmax(11%, 1fr)",     min: 100, dropAt: "vnarrow", art: "zaehl" },
-      { key: "type",     label: "Type",      w: "minmax(11%, 1fr)",     min: 118, dropAt: "vnarrow", art: "typ" },
+      /* Type 126 statt 118 (15.10. spaet): das Geist-Badge (Polster 12, voll rund) braucht fuer
+         "UGC / Community" 157 -- flach waechst die Spalte nur bis min + 32, bei 118 also 150, und
+         das Etikett war um 6.6 gekuerzt (gemessen bei 1440). */
+      { key: "type",     label: "Type",      w: "minmax(11%, 1fr)",     min: 126, dropAt: "vnarrow", art: "typ" },
       /* Flach (core, Kopfschrift 13/500, 15.10.) braucht "Last Seen" mit Sortierpfeilen 110 samt
          Zellrand; die alte Untergrenze 104 kuerzte. Seit 15.10. spaet traegt jeder Kopf 14/500,
          auch im Drawer: gemessen 115.7 mit Sortierpfeilen 15, also EINE Untergrenze 118. */
