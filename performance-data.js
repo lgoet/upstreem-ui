@@ -49,28 +49,58 @@
   function anfrage(art, params) { return { art: art, fn: FN[art], params: params, sig: FN[art] + "|" + JSON.stringify(params) }; }
 
   /* ---- Anfragen ---------------------------------------------------------------------------------
-     a: { team, firmen[] | null, topics[] | null }. Ohne Liste nimmt die DB die Top 12 je Achse
+     a: { team, firmen[] | null, topics[] | null, f }. Ohne Liste nimmt die DB die Top 12 je Achse
      (Vorgabe 12/12, Vertrag 4.1) -- dieselbe Obergrenze, die das Auswahlfenster des Radars hat.
-     Mit Liste gelten genau diese, in dieser Reihenfolge. Ein Zeitraum geht nicht mit: die Seite hat
-     keinen Kalender, die DB rechnet die letzten 30 Tage nach Berliner Kalender. */
+     Mit Liste gelten genau diese, in dieser Reihenfolge.
+     FILTERSTAND (15.10. abends, Kalender und Filterleiste auf der Seite): a.f wie in
+     dashboard-data.js, { von, bis, modelle[], maerkte[], topics[], tagmode } -- Vertrag 4.1 kennt
+     p_date_from/p_date_to, p_models, p_markets, p_tag_ids, p_tagmode. Ohne Zeitraum rechnet die DB
+     die letzten 30 Tage nach Berliner Kalender (der Rueckfall, wenn date-range.js fehlt). */
   function radar(a) {
     a = a || {};
     var p = { p_team: str(a.team) };
     var f = uuids(a.firmen), t = uuids(a.topics);
     if (f) p.p_companies = f; else p.p_company_limit = 12;
     if (t) p.p_topics = t; else p.p_topic_limit = 12;
-    return anfrage("radar", p);
+    return anfrage("radar", filterDazu(p, a.f));
+  }
+  /* Nur was gesetzt ist, geht hinaus: der Radar liegt im Cache der DB, und ein leerer Filter soll
+     dieselbe Signatur ergeben wie vorher. Der Intent-Filter der App kommt mit (Vertrag
+     intents_13_10: performance_radar_v1 kennt p_intents/p_branded) -- die Seite zeigt ihn jetzt in
+     ihrer Leiste, er veraendert ihre Zahlen also nicht mehr still. */
+  function filterDazu(p, f) {
+    f = f || {};
+    if (datum(f.von) && datum(f.bis)) { p.p_date_from = datum(f.von); p.p_date_to = datum(f.bis); }
+    var m = texte(f.modelle), k = texte(f.maerkte), t = uuids(f.topics);
+    if (m) p.p_models = m;
+    if (k) p.p_markets = k;
+    if (t) { p.p_tag_ids = t; p.p_tagmode = f.tagmode === "and" ? "and" : "or"; }
+    return intentDazu(p);
+  }
+  /* Die Topics einer ZELLE: ihr eigenes, und bei "and" dazu alle der Filterleiste -- dann zaehlt
+     der Radar nur Laeufe, die jedes gewaehlte Topic tragen, und das Detail derselben Zelle soll
+     dieselben Laeufe zaehlen. Bei "or" bleibt es das eine Topic der Zelle. */
+  function zellTopics(topic, f) {
+    var eigen = uuid(topic) ? [uuid(topic)] : null, t = f ? uuids(f.topics) : null;
+    if (!eigen) return { ids: null, modus: "or" };
+    if (t && f.tagmode === "and") return { ids: uuids(t.concat(eigen)), modus: "and" };
+    return { ids: eigen, modus: "or" };
   }
   /* Kurve und Varianten einer Zelle: Marke auf EINEM Topic (Vertrag 4.2/4.3: p_tag_ids =
      [topic_id]). Der Zeitraum kommt aus dem meta des Radars -- so zeigt das Detail dieselben Tage
-     wie die Zelle, auch wenn Mitternacht zwischen beiden Aufrufen lag. */
+     wie die Zelle, auch wenn Mitternacht zwischen beiden Aufrufen lag. Modelle, Maerkte und der
+     Intent-Filter kommen aus a.f, dem Stand der Filterleiste (15.10. abends; bis dahin hatte die
+     Seite keine Leiste, und die Zelle nahm bewusst keinen Filter mit). */
   function zelle(art, a, z) {
     a = a || {}; z = z || {};
-    /* KEIN Intent-Filter hier (13.10.): Radar und Zelle stehen auf der Performance-Seite, und die
-       hat keine Filterleiste. Ein Filter, den man auf der Seite nicht sieht, darf ihre Zahlen nicht
-       still veraendern. markeBasis darunter (Marken-Drawer, mit Leiste) nimmt ihn mit. */
-    var p = { p_team: str(a.team), p_company: uuid(a.firma), p_tag_ids: uuid(a.topic) ? [uuid(a.topic)] : null };
+    var f = a.f || {}, zt = zellTopics(a.topic, f);
+    var p = { p_team: str(a.team), p_company: uuid(a.firma), p_tag_ids: zt.ids };
+    if (zt.modus === "and") p.p_tagmode = "and";
     if (datum(z.von) && datum(z.bis)) { p.p_date_from = datum(z.von); p.p_date_to = datum(z.bis); }
+    var m = texte(f.modelle), k = texte(f.maerkte);
+    if (m) p.p_models = m;
+    if (k) p.p_markets = k;
+    intentDazu(p);
     /* Die Stufe kommt seit dem 14.10. mit (z.gran, D/W/M-Schalter im Radar-Detail); ohne Angabe Day. */
     if (art === "kurve") { p.p_mode = "visibility"; p.p_granularity = z.gran === "week" || z.gran === "month" ? z.gran : "day"; }
     /* Die ganze Liste in einem Aufruf: das Detail blaettert und sucht im Browser (Vertrag 4.3). */
@@ -117,18 +147,20 @@
   function clear(team) { return { art: "clear", fn: FN.clear, params: { p_team: str(team) }, sig: "" }; }
 
   /* Die URL-Tabelle einer Zelle als Filterstand fuer UpstreemCitationsDaten.urls: Topic und Marke
-     fest, dazu, was die Tabelle selbst einstellt. Der Zeitraum MUSS mit: ohne ihn rechnet
-     cached_citations_urls_v1 seine eigene Vorgabe, und die ist nicht die des Radars. */
+     fest, dazu, was die Tabelle selbst einstellt, und Modelle und Maerkte der Filterleiste (a.f).
+     Der Zeitraum MUSS mit: ohne ihn rechnet cached_citations_urls_v1 seine eigene Vorgabe, und die
+     ist nicht die des Radars. Den Intent-Filter haengt citations-data.js selbst an. */
   function urlFilter(a, z, t) {
     a = a || {}; z = z || {}; t = t || {};
+    var f = a.f || {}, zt = zellTopics(a.topic, f);
     return {
       team: str(a.team), von: datum(z.von) || "", bis: datum(z.bis) || "",
-      topics: uuid(a.topic) ? [uuid(a.topic)] : null, tagmode: "or",
+      topics: zt.ids, tagmode: zt.modus,
       marken: uuid(a.firma) ? [uuid(a.firma)] : null,
       erwaehnt: t.erwaehnt === "yes" || t.erwaehnt === "no" ? t.erwaehnt : "all",
       citationTypen: isArr(t.citationTypen) && t.citationTypen.length ? t.citationTypen : null,
       urlTypen: isArr(t.urlTypen) && t.urlTypen.length ? t.urlTypen : null,
-      modelle: null, maerkte: null
+      modelle: texte(f.modelle), maerkte: texte(f.maerkte)
     };
   }
 

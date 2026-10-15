@@ -496,7 +496,10 @@
       else window.addEventListener("resize", UC.rafThrottle(klebenUndPlanen));
       sticky.applySticky();
       if (root.getAttribute("data-festhoehe") === "yes" && UC.makeFestHoehe)
-        _fest = UC.makeFestHoehe(root, { kopf: root.querySelector(".up-head"), fuss: root.querySelector(".up-foot") });
+        /* seiteZuerst (16.10., wie Prompts und Responses): der Seitenkopf scrollt weg, bis die Leiste
+           klebt; erst dann scrollt nur der Kasten. Ohne die Option hatte #main keinen Scrollweg und der
+           Kopf stand still (gemeldet fuer Prompt Insights, hier dasselbe Bild). */
+        _fest = UC.makeFestHoehe(root, { kopf: root.querySelector(".up-head"), fuss: root.querySelector(".up-foot"), seiteZuerst: true });
 
       /* DIE GESAMTZEILE (15.10. abends, core UC.makeZaehlZeile): vorerst nur die Anzahl links,
          so bestellt -- die Teams, die die Suche gerade zeigt (diese Tabelle blaettert lokal, die

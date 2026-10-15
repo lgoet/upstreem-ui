@@ -749,7 +749,8 @@
     "No citations for {alt}. AI answers cite this page as {url}.": "Keine Zitate für {alt}. KI-Antworten zitieren diese Seite als {url}.",
     "Use {url}": "{url} verwenden",
     "We haven't seen this domain in your citations. Did you mean {host}?": "Diese Domain kommt in deinen Zitaten nicht vor. Meintest du {host}?",
-    "Use {host}": "{host} verwenden",
+    "We haven't seen {alt} in your citations. Did you mean {host}?": "{alt} kommt in deinen Zitaten nicht vor. Meintest du {host}?",
+    "Use {host}": "{host} verwenden", "Similar domain": "Ähnliche Domain",
     "This subdomain hasn't been cited yet. It will be counted from its first citation.": "Diese Subdomain wurde noch nicht zitiert. Sie zählt ab dem ersten Zitat.",
     "This domain hasn't been cited yet. It will be counted from its first citation.": "Diese Domain wurde noch nicht zitiert. Sie zählt ab dem ersten Zitat.",
     "No cited page matches yet. Matching pages count from their first citation.": "Noch passt keine zitierte Seite. Passende Seiten zählen ab ihrem ersten Zitat.",
@@ -877,8 +878,10 @@
      Funktion erkennt PostgREST an PGRST202, eine fehlende Edge Function das Gateway von Supabase
      an 404 NOT_FOUND ("Requested function was not found"), eine ohne Gate an 503 not_configured
      (siehe edgeFehlt); jede andere Antwort heisst "da" -- auch die 400 invalid_input, mit der die
-     Function die leere url ablehnt (ohne Abruf und ohne Zaehlung im Ratenlimit, index.ts V3).
-     Netzfehler und Zeitablauf heissen "noch unbekannt" -- dann wird beim naechsten Oeffnen noch
+     Function die leere url ablehnt (ohne Abruf und ohne Zaehlung im Ratenlimit, bestaetigt im
+     Nachtrag 15.10. fuer Version 4: "das bleibt so").
+     Netzfehler, Zeitablauf und bei der Edge Function ein anderer 5xx (502 edge_failed) heissen
+     "noch unbekannt" -- dann wird beim naechsten Oeffnen noch
      einmal gefragt, und bis dahin gilt der Rueckfall. NICHT ueber UC.ohneBubble: das ist kein
      Rueckweg an Bubble, sondern die Frage, was die Datenbank kann. */
   var ZIELE_DA = { stand: null, laeuft: null }, SITEMAP_DA = { stand: null, laeuft: null };
@@ -887,13 +890,15 @@
     return !!erg && !erg.ok && (/PGRST202/.test(String(f.code || "")) ||
       (erg.status === 404 && /could not find the function/i.test(String(f.message || "") + " " + String(f.details || ""))));
   }
-  /* "Fehlt" heisst auch 503 not_configured (Rueckmeldung 15.10., Abschnitt 0 und 7): die Function
-     ist deployt, aber ihr Gate (impact_event_sitemap_gate_v1 aus events_ziele_v1.sql) fehlt --
-     jeder Abruf scheitert. Der Pruefaufruf mit leerer url sieht das NICHT: die deployte Fassung
-     (Version 3, index.ts) lehnt die leere url mit 400 invalid_input ab, bevor sie das Gate fragt.
-     Darum bietet die Oberflaeche die Sitemap nur zusammen mit den Zielen an (sitemapDa verlangt
-     zieleDa -- Gate und Vorschau kommen aus derselben Datei), und eine 503 beim echten Abruf
-     nimmt den Knopf fuer den Rest der Seite weg (smLaden). */
+  /* "Fehlt" heisst auch 503 not_configured. Laut Nachtrag 15.10. (Abschnitt 2, sitemap-lesen
+     Version 4) hat sie genau zwei Ursachen: detail "env" -- die Umgebung der Function fehlt; das
+     prueft sie als Erstes, vor JWT und Eingabe, also sieht es auch der Pruefaufruf mit leerer url
+     --, oder detail "events_ziele_v1.sql missing" -- das Gate fehlt; das kommt erst nach der
+     Eingabepruefung, der Pruefaufruf sieht es also nicht (seit events_ziele_v1.sql eingespielt
+     ist, nur noch nach dessen Rueckweg). Beide heissen: jeder Abruf scheitert. Unterschieden wird
+     nicht, detail zeigt die Oberflaeche nie. Darum bietet sie die Sitemap nur zusammen mit den
+     Zielen an (sitemapDa verlangt zieleDa -- Gate und Vorschau kommen aus derselben Datei), und
+     eine 503 beim echten Abruf nimmt den Knopf fuer den Rest der Seite weg (smLaden). */
   function edgeFehlt(erg) {
     var f = (erg && erg.fehler) || {};
     if (!erg || erg.ok) return false;
@@ -997,10 +1002,14 @@
     return x ? x.host : "";
   }
   /* Zwei Hosts, die sich nur um einen Tippfehler unterscheiden (hoechstens zwei Zeichen) --
-     fuer "Did you mean ...?" bei 0 Treffern. */
+     fuer "Did you mean ...?", solange die Datenbank selbst keinen Vorschlag macht (vor
+     events_ziele_v2.sql, siehe tippVorschlaege). Eine Unterdomain des anderen ist kein
+     Tippfehler: m.lee-up.de liegt zwei Zeichen von lee-up.de entfernt und waere sonst ein
+     falscher Vorschlag. */
   function aehnlich(a, b) {
     a = String(a || ""); b = String(b || "");
     if (!a || !b || a === b || Math.abs(a.length - b.length) > 2) return false;
+    if (a.slice(-(b.length + 1)) === "." + b || b.slice(-(a.length + 1)) === "." + a) return false;
     var m = [], i, j;
     for (i = 0; i <= a.length; i++) { m[i] = [i]; }
     for (j = 0; j <= b.length; j++) m[0][j] = j;
@@ -1008,6 +1017,50 @@
       m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
     }
     return m[a.length][b.length] <= 2;
+  }
+  /* "DID YOU MEAN ...?" (15.10. spaet, Nachtrag der Datenbank Abschnitt 3): je Host, den das Team
+     nie zitiert hat, hoechstens EIN Vorschlag { alt, neu } -- in der Reihenfolge der Ziele.
+     Unbekannt ist ein Host laut per_target[].host_known (je Ziel); das oberste host_known gilt nur
+     fuer das erste gueltige Ziel (Nachtrag 4.2) und zaehlt nur, wenn per_target fehlt und alle
+     Ziele denselben Host haben (h1).
+     MIT events_ziele_v2.sql schlaegt die Datenbank selbst vor: Grund similar_host, Domains des
+     Teams im Abstand <= 2, je Ziel bis 3, sortiert nach Abstand, dann Zitaten -- genommen wird der
+     erste, dessen target_input zu einem Ziel mit diesem Host gehoert. Ueber den HOST und nicht nur
+     ueber die eine Eingabe: die Datenbank fuehrt jede URL nur einmal (distinct je URL), zwei Ziele
+     auf demselben vertippten Host (bwm.de/a, bwm.de) bekommen den Vorschlag also nur am ersten.
+     Ob die Antwort von v2 kommt, sagt can_classify (steht nur dort) oder ein near_misses-Eintrag
+     mit host/distance. Dann gilt NUR der Vorschlag der Datenbank -- sie kennt alle zitierten
+     Domains, die Oberflaeche nur die bis zu fuenf Beinahe-Treffer.
+     VOR v2 der alte Weg: ein Beinahe-Treffer (other_host, also dieselbe Hauptdomain) hoechstens
+     zwei Zeichen vom Host entfernt. Er findet nur Tippfehler in der Unterdomain
+     (ratgebr.lee-up.de); einen in der Hauptdomain (lee-upp.de) sieht er nicht. */
+  function tippVorschlaege(d, h1) {
+    var nahAlle = isArr(d.near_misses) ? d.near_misses.filter(Boolean) : [];
+    var pts = isArr(d.per_target) ? d.per_target.filter(Boolean) : [];
+    var mitDb = typeof d.can_classify === "boolean" || nahAlle.some(function (x) { return x.distance !== undefined || x.host !== undefined; });
+    function hostVon(s) {
+      for (var i = 0; i < pts.length; i++) if (String(pts[i].input) === String(s) && pts[i].host) return String(pts[i].host);
+      var z = zerlegen(s);
+      return z ? z.host : "";
+    }
+    var unbek = [];
+    if (pts.length) pts.forEach(function (pt) {
+      var h = pt.host ? String(pt.host) : hostVon(pt.input);
+      if (pt.host_known === false && pt.valid !== false && !pt.error && h && unbek.indexOf(h) < 0) unbek.push(h);
+    });
+    else if (d.host_known === false && h1) unbek.push(h1);
+    var aus = [];
+    unbek.forEach(function (h) {
+      var neu = "";
+      nahAlle.forEach(function (x) {
+        if (neu) return;
+        var passt = x.target_input == null || hostVon(x.target_input) === h;
+        if (mitDb) { if (x.reason === "similar_host" && x.target_input != null && passt && x.host && String(x.host) !== h) neu = String(x.host); }
+        else if (x.url && passt) { var nh = hostPfad(x.url).host; if (aehnlich(nh, h)) neu = nh; }
+      });
+      if (neu) aus.push({ alt: h, neu: neu });
+    });
+    return aus;
   }
 
   /* ============================================================================================
@@ -1452,6 +1505,10 @@
        sie EINMAL je Lieferung des Speichers aus list_impact_events_v3 (Liste ohne Umschlag, in der
        Datenbank 3 ms) und legt sie nur hier ab. Bringt eine Zeile des Speichers target_count
        selbst mit, faellt der Aufruf von allein weg; fehlt v3 (PGRST202), fuer den Rest der Seite.
+       Seit dem Nachtrag 15.10. (Abschnitt 1) liefert team_context_v1 beide Felder mit
+       events_ziele_v2.sql, in derselben Form wie list_impact_events_v3 -- danach laeuft der
+       Aufruf nicht mehr. Ein Event ohne Ziele traegt dann target_count 0, auch das zaehlt als
+       "geliefert".
        Scheitert er, bleibt die Karte wie bisher -- dann ohne Ziele, aber nie mit erfundenen. */
     var LISTE3 = { seq: -1, laeuft: false, fehlt: false, je: {} };
     function liste3Holen() {
@@ -2207,7 +2264,13 @@
           /* Ein Tag ohne Lauf (runs 0) hat KEINE Zahl: citations kommt dort als null (Vertrag
              Abschnitt 5, wie v2), und die neuen URLs dieses Tages sind ebenso keine Beobachtung.
              __luecken aus core: die Linie bricht dort ab, statt den Tag zu ueberbruecken -- eine
-             Luecke statt einer 0 und statt eines erfundenen Verlaufs. */
+             Luecke statt einer 0 und statt eines erfundenen Verlaufs. Vor events_ziele_v2.sql
+             kam new_urls dort als 0, seitdem als null (Nachtrag 15.10., Abschnitt 4.1); beides
+             wird hier zur Luecke.
+             MIT FILTER (Markt, Intent, Modelle) folgen runs und citations dem Filter, new_urls
+             aber der ganzen Kohorte: eine neue URL kann auf einen Tag ohne gefilterten Lauf fallen.
+             Sie fehlt dann im Verlauf, zaehlt aber in new_urls_before/after. Die Kachel "New URLs"
+             nimmt deshalb diese beiden Felder und nie die Summe der Tagesreihe. */
           var ohneLauf = function (p) { return num(p.runs) === 0; };
           linie2.render({ labels: tage.map(function (p) { return String(p.day).slice(0, 10); }), datasets: [
             { label: t("Citation count"), __id: "zitate", __baseColor: tinte, borderColor: tinte, __luecken: true, data: tage.map(function (p) { return ohneLauf(p) ? null : num(p.citations); }) },
@@ -3385,7 +3448,10 @@
             (ci != null ? '<span class="uev-vz-wert">' + esc(ersetze(t(ci === 1 ? "{n} citation" : "{n} citations"), { n: zahl(ci) })) + '</span>' : '') + '</div>';
         }).join("") + '</div>';
       }
-      var nahAlle = isArr(d.near_misses) ? d.near_misses.filter(function (x) { return x && x.url; }) : [];
+      /* similar_host (v2) zeigt auf eine DOMAIN: dort darf url fehlen (die Datenbank nimmt die
+         meistzitierte URL der Domain, sonst die zuletzt zitierte -- und fuehrt den Eintrag ueber
+         die Domain weiter, wenn es keine gibt). */
+      var nahAlle = isArr(d.near_misses) ? d.near_misses.filter(function (x) { return x && (x.url || (x.reason === "similar_host" && x.host)); }) : [];
       var nah = nahAlle.slice(0, 5), pts = isArr(d.per_target) ? d.per_target.filter(Boolean) : [];
       var hosts = {};
       l.forEach(function (z) { var h = zielHost(z); if (h) hosts[h] = 1; });
@@ -3409,27 +3475,40 @@
         return '<p class="uev-vz-satz"><span>' + esc(ersetze(t("No citations for {alt}. AI answers cite this page as {url}."), { alt: urlZeigen(v.alt), url: urlZeigen(v.neu) })) + '</span>' +
           '<button type="button" class="up-quietbtn uev-vz-statt" data-variante-alt="' + esc(v.alt) + '" data-variante-neu="' + esc(v.neu) + '">' + esc(ersetze(t("Use {url}"), { url: urlZeigen(v.neu) })) + '</button></p>';
       }).join("");
-      if (!n && variantenHtml) html += variantenHtml;
+      /* Tippfehler im Host: je unbekanntem Host ein Vorschlag (tippVorschlaege, 15.10. spaet) --
+         wie die Schreibweisen oben auch dann, wenn ein anderes Ziel schon trifft. Bei EINEM Host
+         der Satz wie bisher ("this domain"), bei mehreren nennt er den Host. */
+      var tipps = tippVorschlaege(d, h1);
+      var tippHtml = tipps.map(function (v) {
+        var satz = h1 ? ersetze(t("We haven't seen this domain in your citations. Did you mean {host}?"), { host: v.neu })
+          : ersetze(t("We haven't seen {alt} in your citations. Did you mean {host}?"), { alt: v.alt, host: v.neu });
+        return '<p class="uev-vz-satz"><span>' + esc(satz) + '</span>' +
+          '<button type="button" class="up-quietbtn uev-vz-statt" data-statt-alt="' + esc(v.alt) + '" data-statt-neu="' + esc(v.neu) + '">' + esc(ersetze(t("Use {host}"), { host: v.neu })) + '</button></p>';
+      }).join("");
+      var leiseHtml = '<p class="uev-vz-satz is-leise">' + esc(t("Only pages that AI answers to your tracked prompts cite can be counted.")) + '</p>';
+      if (!n && (variantenHtml || tippHtml)) html += variantenHtml + tippHtml + (tippHtml ? leiseHtml : "");
       else if (!n) {
-        /* Null Treffer: je Fall ein eigener Satz (Entscheidung des Nutzers 15.10.). */
-        var vertippt = "";
-        if (d.host_known === false && h1) nah.forEach(function (x) { var nh = hostPfad(x.url).host; if (!vertippt && aehnlich(nh, h1)) vertippt = nh; });
+        /* Null Treffer: je Fall ein eigener Satz (Entscheidung des Nutzers 15.10.). "Diese Domain
+           wurde noch nicht zitiert" nur bei EINEM Host und nach per_target -- das oberste
+           host_known gilt nur fuer das erste gueltige Ziel (Nachtrag 4.2); bei mehreren Hosts
+           stand dort bis 15.10. "This domain", obwohl nur der erste gemeint war. */
+        var jeH1 = h1 ? pts.filter(function (pt) { return pt.host && String(pt.host) === h1 && !pt.error; }) : [];
+        var h1Neu = !!h1 && (jeH1.length ? jeH1.some(function (pt) { return pt.host_known === false; }) : d.host_known === false);
         var satz;
-        if (vertippt) satz = '<span>' + esc(ersetze(t("We haven't seen this domain in your citations. Did you mean {host}?"), { host: vertippt })) + '</span>' +
-          '<button type="button" class="up-quietbtn uev-vz-statt" data-statt-alt="' + esc(h1) + '" data-statt-neu="' + esc(vertippt) + '">' + esc(ersetze(t("Use {host}"), { host: vertippt })) + '</button>';
-        else if (d.host_known === false && h1 && h1.split(".").length > 2) satz = esc(t("This subdomain hasn't been cited yet. It will be counted from its first citation."));
-        else if (d.host_known === false) satz = esc(t("This domain hasn't been cited yet. It will be counted from its first citation."));
+        if (h1Neu && h1.split(".").length > 2) satz = esc(t("This subdomain hasn't been cited yet. It will be counted from its first citation."));
+        else if (h1Neu) satz = esc(t("This domain hasn't been cited yet. It will be counted from its first citation."));
         else satz = esc(t("No cited page matches yet. Matching pages count from their first citation."));
-        html += '<p class="uev-vz-satz">' + satz + '</p>' +
-          '<p class="uev-vz-satz is-leise">' + esc(t("Only pages that AI answers to your tracked prompts cite can be counted.")) + '</p>';
-      } else html += variantenHtml;
+        html += '<p class="uev-vz-satz">' + satz + '</p>' + leiseHtml;
+      } else html += variantenHtml + tippHtml;
       if (nah.length) {
-        /* Die drei Gruende der Datenbank (Abschnitt 4), je ein eigenes Etikett. Bei url_variant
-           steht die Adresse mit www und Schema da -- ohne sie saehe sie aus wie das Ziel selbst. */
-        var GRUND = { path_boundary: "Not under this path", url_variant: "Other spelling", other_host: "Other host" };
+        /* Die Gruende der Datenbank (Abschnitt 4, dazu similar_host aus v2), je ein eigenes
+           Etikett. Bei url_variant steht die Adresse mit www und Schema da -- ohne sie saehe sie aus
+           wie das Ziel selbst. Bei similar_host nur die Domain: um sie geht es, die URL dahinter ist
+           nur ihr meistzitiertes Beispiel. */
+        var GRUND = { path_boundary: "Not under this path", url_variant: "Other spelling", other_host: "Other host", similar_host: "Similar domain" };
         html += '<div class="uev-vz-titel">' + esc(t("Similar, but not matching")) + '</div><div class="uev-vz-liste is-leise">' + nah.map(function (x) {
-          var hp = hostPfad(x.url), txt = x.reason === "url_variant" ? urlZeigen(x.url) : hp.host + (hp.start ? "" : hp.pfad);
-          return '<div class="uev-vz-reihe"><span class="uev-vz-url" title="' + esc(x.url || "") + '">' + esc(txt) + '</span>' +
+          var hp = hostPfad(x.url), txt = x.reason === "similar_host" ? String(x.host || hp.host) : x.reason === "url_variant" ? urlZeigen(x.url) : hp.host + (hp.start ? "" : hp.pfad);
+          return '<div class="uev-vz-reihe"><span class="uev-vz-url" title="' + esc(x.url || x.host || "") + '">' + esc(txt) + '</span>' +
             (GRUND[x.reason] ? '<span class="uev-vz-wert">' + esc(t(GRUND[x.reason])) + '</span>' : '') + '</div>';
         }).join("") + '</div>';
       }
@@ -3437,15 +3516,19 @@
          EINEN Host -- bei mehreren sagt die Vorschau nicht, welcher gemeint ist. Eingestuft wird
          genau dieser Host, auch bei host_all: jede Unterdomain ist eine eigene domain_norm, die
          Einstufung gilt nur fuer sie (Rueckmeldung Abschnitt 8.1).
-         NUR FUER owner UND admin (Abschnitt 8.2, wie can_override im Domain-Drawer): die Rolle aus
-         dem App-Start (UC.teamRolle). Unbekannt ("" -- Bubble, Start gescheitert) heisst anbieten:
-         die Datenbank prueft selbst und antwortet mit dem Satz des Drawers; ein Knopf, der einem
-         owner faelschlich fehlt, waere schlimmer (dieselbe Abwaegung wie prompts-data.js).
-         Die Rolle des Hosts aus per_target (je Ziel), sonst aus der Antwort im Ganzen. */
-      var rolle = UC.teamRolle ? UC.teamRolle() : "";
+         NUR FUER owner UND admin (Abschnitt 8.2, wie can_override im Domain-Drawer). Seit
+         events_ziele_v2.sql entscheidet die Datenbank: can_classify in der Antwort der Vorschau
+         (Nachtrag Abschnitt 5, true fuer owner/admin nach der Regel von domain_classify_v1). Fehlt
+         das Feld (vor v2), gilt wie bisher die Rolle aus dem App-Start (UC.teamRolle); unbekannt
+         ("" -- Bubble, Start gescheitert) heisst dort anbieten: die Datenbank prueft selbst und
+         antwortet mit dem Satz des Drawers; ein Knopf, der einem owner faelschlich fehlt, waere
+         schlimmer (dieselbe Abwaegung wie prompts-data.js).
+         Die Rolle des Hosts aus per_target (je Ziel); das oberste host_role nur, wenn per_target
+         den Host nicht fuehrt -- bei EINEM Host ist das erste gueltige Ziel dann ohnehin seins. */
+      var darf = typeof d.can_classify === "boolean" ? d.can_classify : (UC.teamRolle ? UC.teamRolle() : "") !== "member";
       var hostRolle = d.host_role, je1 = pts.filter(function (pt) { return pt.host && String(pt.host) === h1; });
       if (je1.length) hostRolle = je1.some(function (pt) { return pt.host_role === "own"; }) ? "own" : je1[0].host_role;
-      if (h1 && rolle !== "member" && hostRolle !== "own" && !(p.eigen && p.eigen[h1])) {
+      if (h1 && darf && hostRolle !== "own" && !(p.eigen && p.eigen[h1])) {
         html += '<div class="uev-vz-eigen"><span>' + esc(ersetze(t("{host} doesn't count as your domain yet."), { host: h1 })) + '</span>' +
           '<button type="button" class="up-btn-sec uev-vz-eigenbtn" data-eigen-host="' + esc(h1) + '"' + (p.eigenLaeuft ? ' disabled' : '') + '>' +
             (p.eigenLaeuft ? '<span class="up-modal-spin"></span>' : '') + '<span>' + esc(t("Count as your domain")) + '</span></button></div>';
@@ -3485,21 +3568,30 @@
         vzAnfordern(p, true);
       });
     }
-    /* "Did you mean ...?": den Host in Eingabe und Liste ersetzen. */
+    /* "Did you mean ...?" -> "Use {host}": in jedem Ziel mit dem Host alt den Host durch neu
+       ersetzen, in der Liste und im Feld. Art, Pfad, Schema und www bleiben (youtube.con/watch als
+       Pfad wird youtube.com/watch als Pfad). Ersetzt wird genau der Host vorn in der Eingabe, ohne
+       Ruecksicht auf Gross/Klein -- bis 15.10. ersetzte ein reines Textersetzen auch denselben
+       Text an anderer Stelle (abwm.de neben bwm.de) und liess HTTPS://BWM.DE stillschweigend
+       stehen. Wird ein Ziel dadurch zu einem, das schon in der Liste steht, bleibt es einmal. */
+    function hostTauschen(s, alt, neu) {
+      var m = /^((?:https?:\/\/)?(?:\*\.)?(?:www\.)?)([^\/?#\s]+)([\s\S]*)$/i.exec(String(s == null ? "" : s));
+      return m && m[2].toLowerCase() === alt ? m[1] + neu + m[3] : null;
+    }
     function hostErsetzen(p, alt, neu) {
       if (!p || !alt || !neu) return;
-      var art = leseArt(p.e);
+      var da = {};
       p.e.ziele = p.e.ziele.map(function (z) {
         if (zielHost(z) !== alt) return z;
-        var x = zielBauen(String(z.input).replace(alt, neu), z.kind);
-        return x.fehler ? z : x;
-      });
-      if (p.e.eingabe && p.e.eingabe.indexOf(alt) >= 0) {
-        p.e.eingabe = p.e.eingabe.split(alt).join(neu);
+        var s = hostTauschen(z.input, alt, neu), x = s == null ? null : zielBauen(s, z.kind);
+        return !x || x.fehler ? z : x;
+      }).filter(function (z) { if (da[z.key]) return false; da[z.key] = 1; return true; });
+      var tl = eingabeTeile(p.e.eingabe), neuTl = tl.map(function (s) { var x = hostTauschen(s, alt, neu); return x == null ? s : x; });
+      if (neuTl.join("\n") !== tl.join("\n")) {
+        p.e.eingabe = neuTl.join("\n");
         var inp = im(".uev-zielein");
-        if (inp) inp.value = p.e.eingabe;
+        if (inp) { inp.value = p.e.eingabe; feldHoehe(inp); }
       }
-      void art;
       zieleZeigen(p);
     }
     /* "Use <Schreibweise>" (url_variant, 15.10.): das url-Ziel mit der Eingabe alt durch die
@@ -3550,7 +3642,12 @@
       invalid_input: "Please enter a valid sitemap link or domain.",
       unauthorized: "Please sign in again.",
       forbidden: "You don't have permission to do that.",
-      not_configured: "Loading a sitemap isn't available right now."
+      not_configured: "Loading a sitemap isn't available right now.",
+      /* 502 edge_failed (sitemap-lesen Version 4, Nachtrag 15.10. Abschnitt 2): ein unerwarteter
+         Fehler in der Function, jetzt mit CORS statt als stummer Abbruch. Fuer den Nutzer heisst
+         das nur "noch einmal versuchen" -- der Knopf bleibt, detail (der technische Grund) steht
+         nie da. */
+      edge_failed: "The sitemap could not be loaded. Please try again."
     };
     /* 429 rate_limited traegt retry_after in Sekunden (20 Abrufe je Stunde und Team, 10 je Minute
        und Nutzer) -- der Satz nennt die Wartezeit in ganzen Minuten, aufgerundet. */
@@ -4783,7 +4880,13 @@
         var b = SITEMAP_DA.stand != null || !UC.edge ? null : (SITEMAP_DA.laeuft || (SITEMAP_DA.laeuft =
           UC.edge("sitemap-lesen", { team_id: tm, url: "" }, { timeoutMs: 15000 }).then(function (erg) {
             SITEMAP_DA.laeuft = null;
-            if (edgeFehlt(erg)) SITEMAP_DA.stand = false; else if (!unbekannt(erg)) SITEMAP_DA.stand = true;
+            /* Ein 5xx ausser 503 not_configured (sitemap-lesen Version 4: 502 edge_failed bei einem
+               unerwarteten Fehler, etwa wenn die Pruefung des JWT scheitert) heisst "noch
+               unbekannt", nicht "da": bis Version 3 brach derselbe Fall ohne CORS ab, der Browser
+               sah einen Netzfehler (status 0), und dann wurde beim naechsten Oeffnen neu gefragt.
+               Ein Knopf, der nur auf eine kaputte Function zeigt, waere das Gegenteil von "nichts
+               zeigen, was nicht funktioniert". */
+            if (edgeFehlt(erg)) SITEMAP_DA.stand = false; else if (!unbekannt(erg) && !(erg.status >= 500)) SITEMAP_DA.stand = true;
           })));
         return Promise.all([a, b]);
       }).then(function () {
