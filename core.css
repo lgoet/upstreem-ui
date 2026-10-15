@@ -7527,6 +7527,45 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 .up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead, .uss-pagehead, .uvb-pagehead) { align-items: center; min-height: var(--up-h-btn); position: relative;
   margin-left: calc(-1 * var(--up-ph-kopfzug-l, 0px)); margin-right: calc(-1 * var(--up-ph-kopfzug-r, 0px)); }
 
+/* ---------- DER UMSCHALTER DER SEITENLEISTE IN DER KOPFZEILE (16.10.) ----------
+   "Sidebar-Button im Mobile: in die richtige Topbar, ganz links, nicht floaten" -- an der Stelle
+   des schwebenden .usn-fab (sidebar.css). core.js (seitenleistenKnopf) setzt ihn in JEDEN
+   Seitenkopf als erstes Kind der Kopfzeile, Mira (mira-page.js) in ihren eigenen Kopf. Zu sehen
+   ist er nur, wenn die Seitenleiste ganz ausgeblendet ist: sidebar.js schreibt ihren Zustand an
+   <html> (data-usn-modus, heute "hint" unter 500px Fensterbreite). Ohne Seitenleiste auf der
+   Seite steht das Attribut nicht da, und der Knopf bleibt weg.
+   Zwei Klassen gegen das display von .up-ph-iconbtn: ueber die Spezifitaet, nicht die Stelle. */
+.up-ph-iconbtn.up-ph-seitenleiste { display: none; }
+html[data-usn-modus="hint"] .up-ph-iconbtn.up-ph-seitenleiste { display: inline-flex; }
+/* LAGE IN DER KOPFZEILE. Der Knopf steht links so, wie die Knoepfe rechts stehen: 8 vom Rand der
+   Gruppe (--up-ph-rand-r), in der 48er-Zeile also 8 ueber, unter und neben sich. Sein Zeichen
+   (16 in 32) steht damit bei 16 -- auf der Kante, an der ohne ihn das Krumenzeichen stand und
+   an der die Bloecke darunter beginnen. Die Kopfzeile beginnt bei --up-ph-rand-l (16), also
+   zieht er sich um die Differenz nach aussen; ohne Messung gelten dieselben Vorgaben.
+   Rechts nimmt er die halbe Luecke der Zeile (16) zurueck: zur Krume stehen 8 wie zwischen den
+   Knoepfen rechts (.up-head-tools), von Zeichen zu Zeichen damit 16.
+   Die Krume WAECHST in den freien Platz: .up-ph-top verteilt mit space-between, und mit drei
+   Kindern stuende sie sonst in der Mitte zwischen Knopf und Werkzeugen. Nur, solange der Knopf
+   zu sehen ist -- auf dem Desktop bleibt die Zeile, wie sie war. */
+html[data-usn-modus="hint"] .up-ph-top > .up-ph-iconbtn.up-ph-seitenleiste {
+  margin-left: calc(var(--up-ph-rand-r, 8px) - var(--up-ph-rand-l, 16px)); margin-right: -8px; }
+html[data-usn-modus="hint"] .up-ph-top > .up-ph-seitenleiste + * { flex: 1 1 auto; min-width: 0; }
+/* DIE UEBRIGEN MACHEN PLATZ ("natuerlich machen die Elemente darin dann Platz fuer den Button").
+   Gemessen bei 375 mit dem Knopf: "Opportunities" endete in "Opportuniti..." neben "Look for new
+   Opportunities", "Prompt Insights > All Prompts" in "Prompt ... > All Pr...". Zwei Stufen:
+   1. Ein Hinzufuegen-Knopf zeigt seine kurze Fassung (.up-ph-addbtn-kurz, knopfEtikett), wie
+      sonst im schmalen Kopf (is-narrow). Nur, wo die Wurzel KEINEN schmalen Kopf hat: is-narrow
+      setzt nur makePageNav bzw. widthTiers, und Seiten ohne Reiter (Opportunities, Performance)
+      hatten ihn auf dem Telefon nie. Wo er gesetzt ist, entscheiden weiter dessen Regeln -- auch
+      die, die den Knopf ganz auf sein Zeichen bringen (is-vnarrow, Brands und Prompt Insights);
+      eine Kurzfassung von hier wuerde sie wieder aufmachen.
+   2. Reicht das nicht, faellt der Name der ERSTEN Krumenstufe weg und ihr Zeichen bleibt
+      (.is-knapp, gemessen von krumeEinpassen in core.js): "Zeichen > All Prompts". Die Stufe, auf
+      der man steht, bleibt immer ausgeschrieben. */
+html[data-usn-modus="hint"] .up-root:not(.is-narrow) > .up-ph-top:has(> .up-ph-seitenleiste) .up-ph-addbtn .up-ph-addbtn-full { display: none; }
+html[data-usn-modus="hint"] .up-root:not(.is-narrow) > .up-ph-top:has(> .up-ph-seitenleiste) .up-ph-addbtn .up-ph-addbtn-kurz { display: inline; }
+html[data-usn-modus="hint"] .up-ph-heading.is-knapp > .up-ph-crumb:first-child:not(.is-akt) :is(.up-ph-crumbname, .up-ph-crumbmarke) { display: none; }
+
 /* ---------- DIE LUFT UNTER DEM SEITENKOPF (15.10. spaet) ----------
    Von der Linie des Kopfes bzw. der Reiterleiste bis zur ersten Zeile darunter stehen 16
    (--up-band-luft), auf jeder Seite und in jedem Reiter: dieselbe Luft wie ueber und unter der

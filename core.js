@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261152;
+  var BUILD = 20261153;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -13128,6 +13128,56 @@
     return { selectPage: selectPage, positionUnderline: positionUnderline };
   }
 
+  /* ---------- Der Umschalter der Seitenleiste im Seitenkopf (16.10. angefordert) ----------
+     "Sidebar-Button im Mobile: in die richtige Topbar, ganz links, nicht floaten. Die Elemente
+     darin machen Platz." Bis hierher schwebte auf dem Telefon ein eigener Knopf der Seitenleiste
+     (.usn-fab, fixed bei 0/32) ueber der Seite -- seit die Leiste der Tabellen auch dort oben
+     klebt, lag er auf der linken unteren Ecke ihres ersten Knopfs.
+     Jetzt steht er im Fluss der Kopfzeile: erstes Kind von .up-ph-top, vor der Krume, und er
+     scrollt mit ihr weg. Gezeigt wird er nur, wenn die Seitenleiste ganz ausgeblendet ist
+     (sidebar.js setzt html[data-usn-modus="hint"], heute unter 500px Fensterbreite); auf dem
+     Desktop ist er display: none und nimmt keinen Platz.
+     Der Klick geht als Ereignis an window und nicht an eine Funktion der Seitenleiste: core
+     laedt vor sidebar.js und kennt sie nicht, und ein Ereignis an window erreicht sie auch dann,
+     wenn eine Seite Klicks in ihrem Kopf anhaelt. Die Leiste macht damit, was ihr eigener
+     Knopf machte (auf, zu, Schleier, Escape -- alles dort).
+     .up-ph-iconbtn wie Refresh und Docs in derselben Zeile; das Zeichen ist das der Leiste
+     (panelLeft), in der Strichstaerke der Nachbarn (1.8, dashboard-page.js). Das Etikett bleibt
+     englisch wie die ganze Seitenleiste (sidebar.js, kein Katalog). */
+  function seitenleistenKnopf(){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "up-ph-iconbtn up-ph-seitenleiste";
+    b.setAttribute("aria-label", "Open navigation");
+    b.innerHTML = icon("panelLeft", 1.8);
+    b.addEventListener("click", function(){
+      try { window.dispatchEvent(new CustomEvent("up-seitenleiste", { detail: { aktion: "umschalten" } })); } catch(e){}
+    });
+    /* Der Seitenleiste sagen, dass es in einer Ansicht jetzt einen Kopfknopf gibt -- sie zeigt
+       ihren schwebenden Knopf nur noch, wo keiner ist (sidebar.js kopfKnopfDa). Einen Takt
+       spaeter: der Knopf wird erst nach dieser Rueckgabe eingehaengt. */
+    setTimeout(function(){
+      try { window.dispatchEvent(new CustomEvent("up-seitenleiste-knopf")); } catch(e){}
+    }, 0);
+    return b;
+  }
+  /* Haengt den Umschalter vor das Kind von zeile, das el enthaelt. Nur in einer Ansicht der App
+     ([id^="view-"]): die Landingpage fuehrt Seitenkopf und Seitenleiste im Schaufenster, nimmt dort
+     der Leiste ihre Telefon-Handhaben ab (landing-hero.js leisteHolen) und haelt sie eingeklappt --
+     ein Umschalter in ihrem Kopf haette nichts zu oeffnen. Einmal je Zeile. */
+  function seitenleistenKnopfEinsetzen(zeile, el){
+    if (!zeile || !el || !zeile.contains(el) || zeile === el) return null;
+    if (!zeile.closest || !zeile.closest('[id^="view-"]')) return null;
+    var da = zeile.querySelector(":scope > .up-ph-seitenleiste");
+    if (da) return da;
+    var vor = el;
+    while (vor.parentNode && vor.parentNode !== zeile) vor = vor.parentNode;
+    if (vor.parentNode !== zeile) return null;
+    var b = seitenleistenKnopf();
+    zeile.insertBefore(b, vor);
+    return b;
+  }
+
   /* ---------- Brotkrumen im Seitenkopf (29.09. angefordert) ----------
      "in der heading oben auch so kleine breadcrumbs, je nach dem wo in der page navigation man
      sich aktuell befindet": das Zeichen der Seite, ihr Name, ein Chevron und die Unterseite.
@@ -13208,6 +13258,29 @@
                 letzte, i + 1, !!klicks[i + 1]);
       });
       h.innerHTML = html;
+      krumeEinpassen();
+    }
+    /* DIE KRUME MACHT PLATZ FUER DEN UMSCHALTER DER SEITENLEISTE (16.10.). Steht er links in der
+       Zeile (nur auf dem Telefon, html[data-usn-modus="hint"]), fehlen der Krume 32px -- gemessen
+       bei 375 endete "Prompt Insights > All Prompts" in "Prompt ... > All Pr...". Dann faellt
+       zuerst der NAME der ersten Stufe weg, ihr Zeichen bleibt: "Zeichen > All Prompts". Gemessen
+       und nicht an einer Breite festgemacht (wie makePageNav einpassen): wo die ganze Krume passt,
+       bleibt sie ganz. Gekuerzt heisst: der Text eines Namens ist breiter als sein Kasten, mit
+       Range gemessen (scrollWidth rundet, und das "..." steht schon bei 0,09px Ueberhang).
+       Nur im hint-Zustand gemessen -- sonst wird nur die Klasse geloescht, die CSS greift dort
+       ohnehin nicht, und der Desktop rechnet nichts dazu. Eine einzelne Stufe (Dashboard,
+       Opportunities) hat nichts abzugeben und bleibt, wie sie ist. */
+    function krumeEinpassen(){
+      if (!h.isConnected) return;
+      var war = h.classList.contains("is-knapp");
+      var hint = document.documentElement.getAttribute("data-usn-modus") === "hint";
+      if (!hint || h.querySelectorAll(".up-ph-crumb").length < 2){ if (war) h.classList.remove("is-knapp"); return; }
+      if (war) h.classList.remove("is-knapp");
+      var zuViel = [].some.call(h.querySelectorAll(".up-ph-crumbname"), function(n){
+        var rg = document.createRange(); rg.selectNodeContents(n);
+        return rg.getBoundingClientRect().width > n.getBoundingClientRect().width + 0.01;
+      });
+      if (zuViel) h.classList.add("is-knapp");
     }
     h.addEventListener("click", function(e){
       var b = e.target && e.target.closest ? e.target.closest("[data-up-krume]") : null;
@@ -13228,7 +13301,16 @@
       if (nav && nav.__upStrichNeu) nav.__upStrichNeu();
     }
     root.classList.add("has-crumbs");
+    /* Der Umschalter der Seitenleiste ganz links in der Kopfzeile (seitenleistenKnopf oben) -- hier,
+       weil JEDER Seitenkopf der App durch diese Funktion geht, auch der Platzhalter einer Ansicht
+       (seitenVorab): der Knopf steht also schon, bevor die Seite selbst da ist, und springt nicht.
+       VOR dem ersten Zeichnen, damit krumeEinpassen schon mit ihm misst. */
+    seitenleistenKnopfEinsetzen(h.closest ? h.closest(".up-ph-top") : null, h);
     zeichnen();
+    /* Erscheint oder verschwindet der Umschalter (Fensterbreite, oder die Seitenleiste meldet ihren
+       Zustand erst nach diesem Aufbau), aendert sich die Breite der Huelle um die Krume, nicht die
+       der Wurzel -- also dort beobachten. */
+    if (onResize && h.parentNode && h.parentNode !== root) onResize(h.parentNode, krumeEinpassen);
     if (quelle && window.MutationObserver){
       new MutationObserver(zeichnen).observe(quelle, { subtree: true, childList: true, characterData: true,
         attributes: true, attributeFilter: ["class", "aria-selected"] });
@@ -16272,8 +16354,11 @@
         else if (!willAus && typeof sw.__zeigen === "function") sw.__zeigen();
       });
       /* Vor den ersten Knopf des Kopfs, und zwar an den Anfang seiner Huelle: steht er direkt im
-         Kopf (Citations), davor; steht er in einer Werkzeuggruppe (Brands), als ihr erstes Kind. */
-      var erster = kopf.querySelector(".up-ph-addbtn, .up-ph-iconbtn");
+         Kopf (Citations), davor; steht er in einer Werkzeuggruppe (Brands), als ihr erstes Kind.
+         Der Umschalter der Seitenleiste zaehlt nicht mit (16.10.): er traegt dieselbe Klasse wie
+         die Knoepfe rechts, steht aber links vor der Krume -- als "erster Knopf" gelesen landete
+         der Bandschalter gemessen bei 375 vor ihm, ganz links in der Zeile. */
+      var erster = kopf.querySelector(".up-ph-addbtn, .up-ph-iconbtn:not(.up-ph-seitenleiste)");
       if (!erster || !erster.parentNode) kopf.appendChild(sw);
       else if (erster.parentNode === kopf) kopf.insertBefore(sw, erster);
       else erster.parentNode.insertBefore(sw, erster.parentNode.firstChild);
@@ -28452,6 +28537,7 @@
     cgDelete: cgDelete,
     makePageNav: makePageNav,
     makePageCrumbs: makePageCrumbs,
+    seitenleistenKnopfEinsetzen: seitenleistenKnopfEinsetzen,
     makePageHeaderMeta: makePageHeaderMeta,
     syncTheme: syncTheme,
     themeOnly: themeOnly,
