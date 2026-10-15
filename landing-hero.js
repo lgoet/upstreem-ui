@@ -787,7 +787,15 @@
               /* data-up-kopfrahmen (29.09. spaet): die Seite ist fuer den Seitenkopf, was in der
                  App die Bubble-Gruppe ist -- er misst gegen sie und steht damit wie dort: Inhalt
                  16 links und 8 rechts vom Rand, die Linien bis an die Kante (UC.makePageCrumbs). */
-              '<div class="ulh-seiten">' +
+              /* id="main" (16.10.): in der App ist #main der Scrollbereich der Seite, und mehrere
+                 Komponenten messen gegen ihn. Mira vor allem: ohne #main nahm sie die Hoehe des
+                 BROWSERFENSTERS (ask-mira.js, seitenHoehe) und war bei einem niedrigen Fenster
+                 kuerzer als dieses hier -- gemessen bei 640px Hoehe endete sie 121px vor ihrer
+                 letzten Nachricht, die Antwort brach unter der Audi-Zeile ab. Mit #main ist sie so
+                 hoch wie diese Flaeche, bei jeder Fensterhoehe. Dasselbe gilt fuer den klebenden
+                 Fuss und makeFestHoehe in core: sie suchen ihren Scroller zuerst hier und nicht
+                 mehr in der Landingpage darum herum. */
+              '<div class="ulh-seiten" id="main">' +
                 '<div class="ulh-seite ulh-main" data-up-kopfrahmen>' +
                   demoTeil("dph") + demoTeil("vot") + demoTeil("tcd") +
                 '</div>' +
@@ -1886,6 +1894,12 @@
          Seite nicht mehr. Hier bedient niemand etwas, also braucht auch nichts den Fokus. Vor
          core.js, damit es fuer jeden Aufruf gilt, auch fuer einen beim Start. */
       '<script>HTMLElement.prototype.focus=function(){};<\/script>' +
+      /* Dieselben zwei Marken wie in landing-boot.js, VOR core.js (16.10.): ohne sie hielt core
+         das Rahmendokument fuer die App, setzte das graue Light-Thema (hellAnwenden,
+         data-up-hell="grau") und malte den Grund der Fenster #fafafa statt weiss -- gemessen am
+         <body> des Rahmens. */
+      '<script>window.__upThemeBooted=true;window.__upApp={aktiv:false,laeuft:true,team:"",start:null,' +
+        'themaVonStart:false,nachStart:0,landing:true};<\/script>' +
       '<script src="' + basis + 'core.js"><\/script>' +
       '<script src="' + basis + 'ask-mira.js"><\/script>' +
       '<script>' +
@@ -2772,7 +2786,7 @@
             'data-ic="x" data-ic-w="2.2"></button>' +
         '</div>' +
         '<div class="udt-sub-head"><span>Page</span><span class="udt-sub-h-num">Domain Share</span>' +
-        '<span>Type</span><span></span></div>' +
+        '<span>Type</span></div>' +
         '<div class="udt-sub-list">' +
         VIS_DOM_URLS.map(function(u){
           var titel = (kern && kern.redditTitleHtml ? kern.redditTitleHtml(u.url, d.dom) : null) || u.url;
@@ -2784,7 +2798,6 @@
             '</span>' +
             '<span class="udt-sub-share">' + proz(u.anteil) + '</span>' +
             '<span class="udt-sub-type">' + tag(u.typ, "url") + '</span>' +
-            '<span class="udt-sub-goto">' + (kern && kern.GOTO_SVG ? kern.GOTO_SVG : "") + '</span>' +
           '</div>';
         }).join("") +
         '</div>' +
@@ -5479,6 +5492,41 @@
      Der Beobachter sieht jede neue Wurzel und jede Aenderung an data-theme und stellt das helle
      Thema wieder her. Eine Schleife entsteht daraus nicht: hellHalten schreibt nur, wenn der Wert
      wirklich falsch ist. */
+  /* DIE PILLE DER REITER IN UNVERKLEINERTEN MASSEN (16.10. gemeldet: "bei Shopping sind alle
+     Subpage-Navigations-Tabs kaputt, der Text clippt aus den Containern"). makePageNav in core
+     setzt Pille und Unterstrich des gewaehlten Reiters aus getBoundingClientRect -- das ist das
+     Mass NACH dem transform der Buehne, geschrieben wird es aber als CSS-px INNERHALB der Buehne.
+     Bei einem Faktor um 0.71 war die Pille gemessen 70.6px breit unter einem 99px breiten Reiter
+     und nach links versetzt; die Schrift stand ueber ihren Rand hinaus. In der App gibt es keinen
+     transform, dort stimmt die Rechnung. Hier wird sie nachgezogen, sobald core schreibt: aus
+     offsetLeft/offsetWidth, die vom transform unberuehrt sind (die Leiste ist position: relative
+     und damit offsetParent der Reiter). Geschrieben wird nur, was abweicht -- sonst weckte jede
+     eigene Zeile den Beobachter erneut. */
+  function reiterRichten(nav){
+    var item = nav.querySelector(".up-ph-navitem.is-selected");
+    if (!item) return;
+    var left = item.offsetLeft + "px", width = item.offsetWidth + "px";
+    [nav.querySelector(".up-ph-navpille"), nav.querySelector(".up-ph-navunderline")].forEach(function(el){
+      if (!el) return;
+      if (el.style.left !== left) el.style.left = left;
+      if (el.style.width !== width) el.style.width = width;
+    });
+  }
+  function reiterBewachen(root){
+    if (!window.MutationObserver) return;
+    var app = root.querySelector(".ulh-app");
+    if (!app) return;
+    function alle(){ [].forEach.call(app.querySelectorAll(".up-ph-nav"), reiterRichten); }
+    new MutationObserver(function(liste){
+      for (var i = 0; i < liste.length; i++){
+        var nav = liste[i].target.closest && liste[i].target.closest(".up-ph-nav");
+        if (nav && app.contains(nav)) reiterRichten(nav);
+        else if (liste[i].type === "childList") { alle(); return; }
+      }
+    }).observe(app, { childList: true, subtree: true, attributes: true, attributeFilter: ["style", "class"] });
+    alle();
+  }
+
   function hellBewachen(root){
     if (!window.MutationObserver) return;
     var laeuft = false;
@@ -5944,6 +5992,7 @@
         w.__ulhDauerAn = true;
         auftritte(w);
         hellBewachen(w);
+        reiterBewachen(w);
       }
       navLauf(w);
       leisteAuslagern(w);
@@ -7155,7 +7204,15 @@
       /* Created UND Topics weg, dafuer bleiben Sentiment und Market. Topics ist die Spalte, die im
          Schaustueck am wenigsten sagt -- die Gruppierung links nennt die Themen ohnehin -- und sie
          ist mit ihren 150px die einzige, deren Wegfall Platz fuer die zwei Kennzahlen macht. */
-      ls.setItem("upt_cols__" + ID.upt, JSON.stringify({ created: false, topics: false }));
+      /* 16.10.: dieselben drei Spalten wie bisher (Prompt, Visibility, Brand Mentions; gemessen am
+         Stand 476722b: 466/128/292, alle Zeilen einzeilig 56px). Seit core die Spalten nach ihrer
+         Art weichen laesst (SPALTEN_ART) und die Mindestbreiten fuer den 14px-Kopf neu gemessen
+         sind, standen dort Visibility und Rank, und Brand Mentions (Art "marken") wich als erste.
+         Mit Rank UND Brand Mentions blieben dem Prompt 363px, die Fragen brachen zweizeilig um
+         (Zeilen 63 statt 56). Also Rank, Sentiment und Market ausdruecklich weg: die Logos der
+         Marken sind im Schaustueck das Aussagekraeftigste dieser Tabelle. */
+      ls.setItem("upt_cols__" + ID.upt, JSON.stringify({ created: false, topics: false, rank: false,
+        sentiment: false, market: false }));
       /* Die Werkzeugleiste angepinnt: sie steht offen und faehrt nicht beim Ueberfahren heraus.
          "1" ist der Wert, den UC.makeTools dafuer liest (prefKey upt_tools__<id>). */
       ls.setItem("upt_tools__" + ID.upt, "1");
