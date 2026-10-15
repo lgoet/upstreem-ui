@@ -971,9 +971,12 @@
       // never hide a focused element from assistive tech — move focus out FIRST
       if (overlay.contains(document.activeElement)){
         try {
-          if (lastFocus && lastFocus.isConnected) lastFocus.focus({ preventScroll: true });
-          else if (btn) btn.focus({ preventScroll: true });
-          else document.activeElement.blur();
+          /* Zurueck auf den Ausloeser -- aber nur, wenn er ausserhalb liegt und fokussierbar ist.
+             Kam das Oeffnen aus einem Skript (Fokus auf body) oder lag er selbst im Dialog, blieb
+             der Fokus sonst auf einem Knopf im verdeckten Dialog stehen (gemessen 16.10.). */
+          var ziel = lastFocus && lastFocus.isConnected && lastFocus !== document.body && !overlay.contains(lastFocus) ? lastFocus : btn;
+          if (ziel) ziel.focus({ preventScroll: true });
+          if (overlay.contains(document.activeElement)) document.activeElement.blur();
         } catch(e){ try { document.activeElement.blur(); } catch(e2){} }
       }
       overlay.classList.remove("is-open", "is-shown");
