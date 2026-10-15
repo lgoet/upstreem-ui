@@ -253,9 +253,6 @@
             '<span>Add <span class="up-ph-addbtn-full">Prompts</span></span></button>' +
           '<button class="up-ph-addbtn up-export upi-addtopic" type="button" data-upi-fuer="topics" aria-label="' + esc(t("Add Topic")) + '">' + PLUS_SVG +
             '<span>Add <span class="up-ph-addbtn-full">Topic</span></span></button>' +
-          /* Holt die ausgeblendete Kennzahlenleiste ueber der Tabelle zurueck (14.10.): nur sichtbar,
-             solange sie zu ist (is-weg) -- und nur auf "All Prompts", wo sie steht. */
-          '<button class="up-ph-iconbtn upi-sumzeigen is-weg" type="button" data-upi-fuer="allprompts" aria-label="' + esc(t("Show summary")) + '" data-tip="' + esc(t("Show summary")) + '">' + (UC.icon ? UC.icon("eye", 2) : "") + '</button>' +
           '<button class="up-ph-iconbtn upi-refresh" type="button" data-upi-fuer="allprompts responses" aria-label="' + esc(t("Refresh")) + '" data-tip="' + esc(t("Refresh Data")) + '">' + REFRESH_SVG + '</button>' +
         '</div>' +
       '</div>' +
@@ -264,7 +261,12 @@
         '<div class="up-root udr-root upi-daten" data-instance="' + esc(ids.daten) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
         '<div class="up-root ufb-root upi-filterleiste" data-instance="' + esc(ids.filter) + '" data-topics-instance="' + esc(ids.topics) + '"' +
           ' data-models-instance="' + esc(ids.modelle) + '" data-markets-instance="' + esc(ids.maerkte) + '"' +
-          ' data-topics-visible="' + (state.grp.an ? "no" : "yes") + '" data-isdark="' + dk + '"></div>' +
+          ' data-topics-visible="' + (state.grp.an ? "no" : "yes") + '" data-isdark="' + dk + '"' +
+          /* Die Filter der Prompt-Tabelle (15.10.): Prompt type, "<Marke> mentioned", Mentioned
+             brands. Gebaut von prompts-table.js unter diesen Ids, nur auf All Prompts sichtbar
+             (filterzeileStellen unten). */
+          ' data-ptype-instance="' + esc(ids.upt) + '_ptype" data-mention-instance="' + esc(ids.upt) + '_mention"' +
+          ' data-brands-instance="' + esc(ids.upt) + '_brands"' + leisteAttr() + '></div>' +
         '<div class="up-root utf-root" data-instance="' + esc(ids.topics) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
         '<div class="up-root umf-root" data-instance="' + esc(ids.modelle) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
         '<div class="up-root umk-root" data-instance="' + esc(ids.maerkte) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
@@ -276,17 +278,26 @@
       '</div>';
 
     var elNav = root.querySelector(".upi-nav"), elRefresh = root.querySelector(".upi-refresh");
-    /* Kennzahlenleiste der Tabelle: ihr Stand kommt als Ereignis (upt-sum-stand, prompts-table.js),
-       der Knopf schickt "zeigen" an die Wurzel der Tabelle zurueck. Die Tabelle steht beim ersten
-       Mal womoeglich schon -- dann ihren Stand vom Attribut lesen. */
-    var elSumZeigen = root.querySelector(".upi-sumzeigen");
-    function sumStand(zu){ if (elSumZeigen) elSumZeigen.classList.toggle("is-weg", !zu); }
-    root.addEventListener("upt-sum-stand", function (e) { sumStand(!!(e.detail && e.detail.zu)); });
-    if (elSumZeigen) elSumZeigen.addEventListener("click", function () {
-      var tab = root.querySelector('[data-upi-tab="allprompts"] .up-root[data-sum-zu]');
-      if (tab) tab.dispatchEvent(new CustomEvent("upt-sum-zeigen"));
-    });
-    (function () { var tab = root.querySelector('[data-upi-tab="allprompts"] .up-root[data-sum-zu]'); if (tab) sumStand(tab.getAttribute("data-sum-zu") === "yes"); })();
+    /* DIE EINE LEISTE DER PROMPT-TABELLE (15.10., Entwurf D mit den Chips aus C). Auf All Prompts
+       stehen Kalender und Filterleiste nicht mehr ueber der Tabelle, sondern IN ihrem Kopf, links
+       neben Active/Inactive -- rechts davon nur noch Suche, Sortierer, Display und Export.
+       Die Tabelle erfaehrt es ueber data-leiste="yes" (vor ihrem Aufbau gesetzt: sie richtet sich
+       erst einen Takt spaeter ueber watchRoots ein). Auf Responses steht die Filterzeile wie
+       bisher ueber der Tabelle -- nur die Prompt-Tabelle hat die neue Leiste, so bestellt. */
+    var elFilterzeile = root.querySelector(".upi-filterzeile");
+    var elUpt = root.querySelector('[data-upi-tab="allprompts"] .upt-root');
+    if (elUpt) elUpt.setAttribute("data-leiste", "yes");
+    function leisteScope() {
+      var kopf = elUpt && elUpt.querySelector(".up-head");
+      if (!kopf) return null;
+      var s = kopf.querySelector(".upt-scope");
+      if (!s) {
+        s = document.createElement("div");
+        s.className = "upt-scope";
+        kopf.insertBefore(s, kopf.firstChild);
+      }
+      return s;
+    }
     /* DAS KONTINGENT IM KOPF (14.10., auf Wunsch aus der Kennzahlenleiste der Tabelle hierher, damit
        die Verteilung nach Topics dort mehr Platz hat): der Ring aus core (UC.variationRing, derselbe
        wie in der Variations-Tabelle), gruen bis das Kontingent erreicht ist, dann rot; daneben
@@ -355,8 +366,42 @@
         else window.history.replaceState(window.history.state, "", neu);
       } catch (e) {}
     }
+    /* Was an der Filterleiste je Reiter wechselt: die drei Filter der Prompt-Tabelle (auf
+       Responses gelten sie nicht -- ausgeblendet, nicht geleert), die grosse Form mit klickbaren
+       Chips, und der Branded-Schalter des Intent-Filters, der fuer die Liste der Prompt-Tabelle
+       nicht gilt (sie hat Prompt type). Als Text fuer den ersten Aufbau und als Attribute danach. */
+    function leisteWerte() {
+      var p = state.tab === "allprompts";
+      return { "data-ptype-visible": p ? "yes" : "no", "data-mention-visible": p ? "yes" : "no",
+               "data-brands-visible": p ? "yes" : "no", "data-form": p ? "gross" : null, "data-branded-visible": p ? "no" : null };
+    }
+    function leisteAttr() {
+      var w = leisteWerte();
+      return Object.keys(w).filter(function (k) { return w[k] != null; })
+        .map(function (k) { return " " + k + '="' + w[k] + '"'; }).join("");
+    }
+    function filterzeileStellen() {
+      if (!elFilterzeile) return;
+      var inTabelle = state.tab === "allprompts";
+      var scope = inTabelle ? leisteScope() : null;
+      if (scope) {
+        if (elFilterzeile.parentNode !== scope) scope.appendChild(elFilterzeile);
+      } else {
+        var main = root.querySelector(".upi-main");
+        if (elFilterzeile.parentNode !== root || elFilterzeile.nextSibling !== main) root.insertBefore(elFilterzeile, main);
+      }
+      elFilterzeile.classList.toggle("is-in-tabelle", !!scope);
+      root.classList.toggle("upi-mit-leiste", !!scope);
+      if (!elFilterleiste) return;
+      var w = leisteWerte();
+      Object.keys(w).forEach(function (k) {
+        if (w[k] == null) { if (elFilterleiste.hasAttribute(k)) elFilterleiste.removeAttribute(k); }
+        else if (elFilterleiste.getAttribute(k) !== w[k]) elFilterleiste.setAttribute(k, w[k]);
+      });
+    }
     function reiterZeigen() {
       root.querySelectorAll(".upi-tab").forEach(function (x) { x.hidden = x.getAttribute("data-upi-tab") !== state.tab; });
+      filterzeileStellen();
       /* Die Knoepfe des Kopfs je Reiter (hidden, nicht nur CSS: ein versteckter Knopf soll auch
          nicht per Tastatur erreichbar sein). */
       root.querySelectorAll("[data-upi-fuer]").forEach(function (b) {

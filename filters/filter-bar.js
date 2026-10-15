@@ -118,8 +118,44 @@
     { key: "intents", label: "Intent", attr: "data-intents-instance", visAttr: "data-intents-visible", rootSel: ".uif-root",
       ctrl: "__uifCtrl", selKey: "intent_keys", opt: ".uif-opt", keyAttr: "data-key",
       nameSel: ".uif-opt-name", clearSel: ".uif-chev-x", evt: "uif-intents", chip: "Intent", icon: "signpost",
-      fnAttrs: [], fnMarke: "uif" }
+      fnAttrs: [], fnMarke: "uif" },
+    /* DIE FILTER DER PROMPT-TABELLE (15.10.): Prompt type, "<Marke> mentioned" und Mentioned brands.
+       Sie standen bisher als eigene Knoepfe in der Werkzeugleiste der Tabelle -- dort, wo nur
+       Ansicht stehen soll. Jetzt ziehen sie wie die vier oben in dieses Menue. Gebaut werden sie
+       von prompts-table.js (dort liegt ihr Zustand und ihr Ereignis), in derselben Form wie der
+       Intent-Filter: Wurzel, Trigger mit Beschriftung und X, Panel mit .up-filter-item-Zeilen,
+       Controller mit getSelected, aufsteigendes Ereignis.
+       Eingetragen sind sie NUR, wo eine Seite ihr Attribut setzt (gewuenscht() unten) -- heute
+       allein die Seite Prompt Insights. Jede andere Leiste der App sieht davon nichts.
+         behalten  ausgeblendet heisst hier NICHT geleert: die Seite blendet sie auf dem Reiter
+                   Responses aus, wo sie nicht gelten, und beim Zurueckwechseln muss die Auswahl
+                   noch stehen. Topics dagegen wird beim Ausblenden geleert (Gruppierung, siehe
+                   verstecktGeleert). */
+    { key: "ptype", label: "Prompt type", attr: "data-ptype-instance", visAttr: "data-ptype-visible", rootSel: ".upt-ff-ptype",
+      ctrl: "__uptfCtrl", selKey: "sel", opt: ".upt-ff-opt", keyAttr: "data-key",
+      nameSel: ".upt-ff-name", clearSel: ".upt-ff-x", evt: "upt-ff", chip: "Prompt type", icon: "flag",
+      behalten: true, fnAttrs: [], fnMarke: "upt" },
+    { key: "mention", label: "Brand mentioned", attr: "data-mention-instance", visAttr: "data-mention-visible", rootSel: ".upt-ff-mention",
+      ctrl: "__uptfCtrl", selKey: "sel", opt: ".upt-ff-opt", keyAttr: "data-key",
+      nameSel: ".upt-ff-name", clearSel: ".upt-ff-x", evt: "upt-ff", chip: "Brand", icon: "megaphone",
+      behalten: true, fnAttrs: [], fnMarke: "upt" },
+    { key: "brands", label: "Mentioned brands", attr: "data-brands-instance", visAttr: "data-brands-visible", rootSel: ".upt-ff-brands",
+      ctrl: "__uptfCtrl", selKey: "sel", opt: ".upt-ff-opt", keyAttr: "data-key",
+      nameSel: ".upt-ff-name", clearSel: ".upt-ff-x", evt: "upt-ff", chip: "Brands", icon: "store",
+      behalten: true, fnAttrs: [], fnMarke: "upt" }
   ];
+  /* Trigger und Chevron je Filter. Bisher standen die vier Klassen woertlich an drei Stellen
+     (Spiegel, Beobachter, Chevron-Ausnahme); mit den Filtern der Prompt-Tabelle waeren es sieben
+     gewesen. Abgeleitet aus dem Praefix der Wurzel: .utf-root -> .utf-trigger / utf-chev. */
+  function praefixVon(f) { return f.rootSel.indexOf(".upt-ff") === 0 ? "upt-ff" : f.rootSel.replace(/^\./, "").replace(/-root$/, ""); }
+  var TRIG_SEL = FILTERS.map(function (f) { return "." + praefixVon(f) + "-trigger"; })
+    .filter(function (s, i, a) { return a.indexOf(s) === i; }).join(", ");
+  var CHEV_KLASSEN = FILTERS.map(function (f) { return praefixVon(f) + "-chev"; })
+    .filter(function (s, i, a) { return a.indexOf(s) === i; });
+  var SUCHE_X = FILTERS.map(function (f) { return "." + praefixVon(f) + "-search-x"; })
+    .filter(function (s, i, a) { return a.indexOf(s) === i; }).join(", ");
+  var SUCHE_IN = FILTERS.map(function (f) { return "." + praefixVon(f) + "-search-in"; })
+    .filter(function (s, i, a) { return a.indexOf(s) === i; }).join(", ");
   /* Wie viele Namen ein Chip zeigt, bevor er auf "+N" zusammenfasst. Zwei: bei drei Namen ist der
      Chip breiter als der Knopf davor, und dann liest man die Leiste nicht mehr, sondern buchstabiert
      sie. */
@@ -327,6 +363,30 @@
          nicht an. */
       function nurAusgeblendet(f) { return gewuenscht().indexOf(f) >= 0 && !sichtbarLaut(f); }
       function idVon(f) { return String(root.getAttribute(f.attr) || "").trim(); }
+      /* DIE GROSSE FORM (15.10., Seite Prompt Insights): jede Zeile "Name ........ Wert" statt des
+         Spiegels, und die Chips oeffnen beim Klick ihr Untermenue. Eingeschaltet ueber
+         data-form="gross" an dieser Wurzel -- ohne das Attribut bleibt alles wie bisher. */
+      function gross() { return root.getAttribute("data-form") === "gross"; }
+      /* Beschriftung, Chip-Bezug und Leerwert darf die WURZEL des Filters mitbringen: "Mercedes
+         Benz mentioned" kennt nur die Tabelle, nicht diese Leiste. */
+      function attrVon(f, name) {
+        var w = eingezogen[f.key];
+        var v = w ? String(w.getAttribute(name) || "").trim() : "";
+        return v;
+      }
+      function labelVon(f) { return attrVon(f, "data-ufb-label") || f.label; }
+      function chipVon(f) { return attrVon(f, "data-ufb-chip") || f.chip; }
+      function leerVon(f) { return attrVon(f, "data-ufb-leer") || "All"; }
+      /* Ein Filter kann sich selbst abmelden (data-ufb-aus="yes"), ohne ausgeblendet zu sein: die
+         Tabelle tut das fuer Prompt type und die Markenfilter in der Inactive-Ansicht, wo sie
+         keine Spalte haben. Keine Zeile, kein Chip -- und die Auswahl bleibt stehen. */
+      function ausGemeldet(f) { return attrVon(f, "data-ufb-aus") === "yes"; }
+      /* Der Branded-Schalter des Intent-Filters gilt fuer die Liste der Prompt-Tabelle nicht (sie
+         hat ihren eigenen, Prompt type). Die Seite blendet ihn dort aus. */
+      function brandedHier() {
+        var v = String(root.getAttribute("data-branded-visible") || "").trim().toLowerCase();
+        return !(v === "no" || v === "false" || v === "0");
+      }
       /* Was schon geklagt bzw. gemeldet wurde -- je Filter einmal, damit die Konsole nicht bei
          jedem Lauf dasselbe wiederholt. */
       var gemeldet = {};
@@ -601,6 +661,10 @@
                      '<span class="ufb-mirror" data-mirror>' +
                        '<span class="ufb-mirror-fallback">' + esc(f.label) + '</span>' +
                      '</span>' +
+                     /* Die grosse Form (gross() oben): Name links, Wert rechts. Gefuellt in
+                        spiegeln(), gezeigt nur mit data-form="gross" (filter-bar.css). */
+                     '<span class="ufb-row-lbl">' + esc(f.label) + '</span>' +
+                     '<span class="ufb-row-wert"></span>' +
                      '<span class="ufb-caret">' + UC.icon("chevronRight", 2) + '</span>' +
                    '</button>' +
                  '</div>';
@@ -643,6 +707,16 @@
         var etwasNeu = false;
         liste.forEach(function (f) {
           var host = elSub && elSub.querySelector('[data-sub-host="' + f.key + '"]');
+          /* Die Huellen entstehen beim Aufbau, aus der DAMALIGEN Liste. Ein Filter, der erst
+             spaeter sichtbar wird (data-<filter>-visible kippt auf ja), hatte keine -- und wurde
+             nie eingezogen. Fiel auf mit den Filtern der Prompt-Tabelle, die auf dem Reiter
+             Responses ausgeblendet starten. */
+          if (!host && elSub) {
+            host = document.createElement("div");
+            host.className = "up-subhost ufb-host";
+            host.setAttribute("data-sub-host", f.key);
+            elSub.appendChild(host);
+          }
           if (!host) return;
           var da = eingezogen[f.key];
           var w = null;
@@ -694,15 +768,7 @@
           /* Ein Filter, der hier ankommt, war womoeglich draussen -- siehe nachziehen. */
           nachziehen(f);
         });
-        var sichtbar = 0;
-        liste.forEach(function (f) {
-          var wrap = elRows.querySelector('.up-subwrap[data-sub="' + f.key + '"]');
-          if (!wrap) return;
-          var leer = !eingezogen[f.key];
-          wrap.classList.toggle("is-leer", leer);
-          if (!leer) sichtbar++;
-        });
-        elRows.classList.toggle("is-empty", sichtbar === 0);
+        zeilenStand();
         /* Der Hinweis BENENNT, was fehlt. "These filters are not on this page yet" allein liess
            den Nutzer im Dunkeln -- und die Antwort ist immer eine von zwei: die Id passt nicht,
            oder das Filterelement ist in Bubble ausgeblendet und darum gar nicht im Dokument. */
@@ -716,6 +782,19 @@
         }
         if (etwasNeu) { spiegelnAlle(); render(); }
       }
+      /* Welche Zeilen stehen: eingezogen und nicht selbst abgemeldet (ausGemeldet). Auch aus
+         render() gerufen, weil sich die Abmeldung ohne Einziehen aendert (Active/Inactive). */
+      function zeilenStand() {
+        var sichtbar = 0;
+        liste.forEach(function (f) {
+          var wrap = elRows.querySelector('.up-subwrap[data-sub="' + f.key + '"]');
+          if (!wrap) return;
+          var leer = !eingezogen[f.key] || ausGemeldet(f);
+          wrap.classList.toggle("is-leer", leer);
+          if (!leer) sichtbar++;
+        });
+        elRows.classList.toggle("is-empty", sichtbar === 0);
+      }
 
       /* Der Spiegel: das Innere des Triggers, ohne dessen Chevron. Woertlich uebernommen und nicht
          nachgebaut -- der Filter rendert dort schon "Punkt + Name" bei einer Auswahl und
@@ -725,8 +804,18 @@
         var wrap = elRows.querySelector('.up-subwrap[data-sub="' + f.key + '"]');
         var ziel = wrap && wrap.querySelector("[data-mirror]");
         if (!ziel) return;
-        var trig = w && w.querySelector(".utf-trigger, .umf-trigger, .umk-trigger, .uif-trigger");
-        if (!trig) { ziel.innerHTML = '<span class="ufb-mirror-fallback">' + esc(f.label) + "</span>"; return; }
+        /* Beschriftung und Wert der grossen Form (data-form="gross", 15.10.) -- dort steht die Zeile
+           als "Name ........ Wert" statt als Spiegel. Beide immer mitschreiben; welche Form zu
+           sehen ist, entscheidet die CSS. */
+        var lblEl = wrap.querySelector(".ufb-row-lbl"), wertEl = wrap.querySelector(".ufb-row-wert");
+        if (lblEl) lblEl.textContent = tr(labelVon(f));
+        if (wertEl) {
+          var cw = chipText(f);
+          wertEl.textContent = cw ? cw.wert : tr(leerVon(f));
+          wertEl.classList.toggle("is-gesetzt", !!cw);
+        }
+        var trig = w && w.querySelector(TRIG_SEL);
+        if (!trig) { ziel.innerHTML = '<span class="ufb-mirror-fallback">' + esc(labelVon(f)) + "</span>"; return; }
         var teile = [];
         Array.prototype.forEach.call(trig.children, function (c) {
           /* Ihr eigener Chevron bleibt draussen: die Zeile hat ihren eigenen, und der zeigt nach
@@ -736,8 +825,7 @@
              Zeile stand damit ein Modell-Logo statt des Zeichens fuer "Models". Ein SVG als
              direktes Kind ist bei topics das Zeichen, bei models/markets steckt es in
              .umf-trigger-ic / .umk-trigger-ic. */
-          if (c.classList && (c.classList.contains("utf-chev") || c.classList.contains("umf-chev") ||
-                              c.classList.contains("umk-chev") || c.classList.contains("uif-chev"))) return;
+          if (c.classList && CHEV_KLASSEN.some(function (k) { return c.classList.contains(k); })) return;
           /* Der Zeichenhalter der Filter (.umf-trigger-ic / .umk-trigger-ic) traegt ZWEI Dinge,
              je nach Zustand: ohne oder mit mehreren Auswahlen das Zeichen des Filters, bei genau
              einer das LOGO des Modells bzw. die FLAGGE des Marktes. Das Zeichen waere hier
@@ -755,7 +843,7 @@
           teile.push(c.cloneNode(true));
         });
         ziel.innerHTML = "";
-        if (!teile.length) { ziel.innerHTML = '<span class="ufb-mirror-fallback">' + esc(f.label) + "</span>"; return; }
+        if (!teile.length) { ziel.innerHTML = '<span class="ufb-mirror-fallback">' + esc(labelVon(f)) + "</span>"; return; }
         teile.forEach(function (t) { ziel.appendChild(t); });
       }
       function spiegelnAlle() { liste.forEach(spiegeln); }
@@ -764,7 +852,7 @@
          dann neu. Ein Beobachter je Filter statt eines Pollings. */
       function spiegelBeobachten(f, w) {
         if (!window.MutationObserver || w.__ufbObs) return;
-        var trig = w.querySelector(".utf-trigger, .umf-trigger, .umk-trigger, .uif-trigger");
+        var trig = w.querySelector(TRIG_SEL);
         if (!trig) return;
         w.__ufbObs = new MutationObserver(function () { spiegeln(f); render(); });
         w.__ufbObs.observe(trig, { childList: true, subtree: true, characterData: true,
@@ -829,11 +917,11 @@
         if (window.CSS && CSS.escape) return CSS.escape(t);
         return t.replace(/["\\]/g, "\\$&");
       }
-      function aktiv() { return liste.filter(function (f) { return auswahl(f).length > 0; }); }
+      function aktiv() { return liste.filter(function (f) { return !ausGemeldet(f) && auswahl(f).length > 0; }); }
       /* Branded mitgezaehlt (13.10.)? Das ist die Abweichung von der Vorgabe und damit ein Filter,
          der sichtbar sein muss: als Chip und fuer Reset/Clear All. */
       function brandedAn() {
-        return !!(intentsHier(root) && UC.intentFilterGet && UC.intentFilterGet().branded === "all");
+        return !!(intentsHier(root) && brandedHier() && UC.intentFilterGet && UC.intentFilterGet().branded === "all");
       }
       function brandedSyncen() {
         var z = root.querySelector("[data-ufb-branded]");
@@ -866,7 +954,11 @@
       function tr(s) { return UC.t ? UC.t(s) : s; }
       function renderChips() {
         var teile = [];
+        /* In der grossen Form ist der Chip selbst ein Knopf: ein Klick oeffnet SEIN Untermenue
+           direkt darunter (oeffnen() unten), das X leert wie bisher. */
+        var klick = gross();
         liste.forEach(function (f) {
+          if (ausGemeldet(f)) return;
           var c = chipText(f);
           if (!c) return;
           /* DAS ZEICHEN DES FILTERS VORNE (24.09. angefordert, mit dem Sortier-Chip als Vorbild:
@@ -878,13 +970,17 @@
              "Clear Models" steht in keinem Katalog, nur "Clear {filter}". Also hier uebersetzen
              und den Namen DANACH einsetzen, selbst schon uebersetzt. Der Bezug vorne ("Model: ")
              aus demselben Grund. */
-          var name = tr(f.label);
+          var name = tr(labelVon(f));
           var tip = tr("Clear {filter}").split("{filter}").join(name);
           var aria = tr("Clear {filter} filter").split("{filter}").join(name);
-          teile.push('<span class="up-entchip is-static ufb-chip" data-chip="' + esc(f.key) + '">' +
-            '<span class="ufb-chip-ic">' + UC.icon(f.icon, 2) + '</span>' +
-            '<span class="ufb-chip-lbl"><span class="ufb-chip-key">' + esc(tr(c.key)) + ': </span>' +
-            esc(c.wert) + '</span>' +
+          var innen = '<span class="ufb-chip-ic">' + UC.icon(f.icon, 2) + '</span>' +
+            '<span class="ufb-chip-lbl"><span class="ufb-chip-key">' + esc(tr(chipVon(f))) + ': </span>' +
+            esc(c.wert) + '</span>';
+          /* Klickbar: Zeichen und Text stecken in einem EIGENEN Knopf neben dem X -- ein Knopf im
+             Knopf waere fuer Tastatur und Vorleser eine Sache statt zwei. */
+          if (klick) innen = '<button class="ufb-chip-auf" type="button" data-chip-open="' + esc(f.key) + '" aria-haspopup="menu">' + innen + '</button>';
+          teile.push('<span class="up-entchip is-static ufb-chip' + (klick ? " is-klick" : "") + '" data-chip="' + esc(f.key) + '">' +
+            innen +
             '<button class="ufb-chip-x" type="button" data-chip-clear="' + esc(f.key) + '" ' +
               'aria-label="' + esc(aria) + '" data-tip="' + esc(tip) + '">' +
               UC.icon("x", 2.6) + '</button>' +
@@ -911,18 +1007,27 @@
          war. Gemessen an der SEITENbreite und nicht an der eigenen: dieses Element ist in einer
          Werkzeugzeile ohnehin schmal, die Frage ist, wie viel Platz die Seite hat. */
       function schmal() { return UC.getPageWidth() < SCHMAL; }
+      /* Vom Chip geoeffnet (grosse Form): das Untermenue geht HINEIN statt seitlich heraus, direkt
+         unter dem Chip -- wie ein Dropdown dieses einen Filters. "Back" fuehrt zu allen Filtern.
+         Zurueck auf false beim Schliessen (onClose des Panels). */
+      var vomChip = false;
+      function hinein() { return schmal() || vomChip; }
 
       /* ---------------- render ---------------- */
       function render() {
         var an = aktiv().length > 0 || brandedAn();
         root.classList.toggle("has-filters", an);
+        root.classList.toggle("ohne-branded", !brandedHier());
+        zeilenStand();
         brandedSyncen();
         renderChips();
-        var eng = schmal();
-        root.classList.toggle("is-wrap", eng);
+        /* Umbrechen haengt NUR an der Seitenbreite; das Hineingehen auch am Oeffnen vom Chip. Beides
+           an einem Wert liess die Leiste beim Klick auf einen Chip umbrechen -- der Chip sprang eine
+           Zeile tiefer, und das Panel stand an seiner alten Stelle (gemessen 15.10.). */
+        root.classList.toggle("is-wrap", schmal());
         /* is-drill setzt auch UC.makeSubmenu -- hier noch einmal, damit die Klasse auch dann
            stimmt, wenn das Panel noch nie offen war. Derselbe Wert aus derselben Funktion. */
-        elMenu.classList.toggle("is-drill", eng);
+        elMenu.classList.toggle("is-drill", hinein());
         if (sub) sub.sync();
       }
 
@@ -931,11 +1036,14 @@
         wrap: elMore, menu: elMenu, opener: elBtn, group: "ufb-" + instanceId,
         /* makePopover setzt aria-hidden am Menue, aber nicht aria-expanded am Knopf -- das
            gehoert dem Aufrufer, weil nur er weiss, welches Element der Ausloeser ist. */
-        onClose: function () { sub.close(); elBtn.setAttribute("aria-expanded", "false"); lageSpaeterLoesen(); }
+        onClose: function () { sub.close(); vomChip = false; elBtn.setAttribute("aria-expanded", "false"); lageSpaeterLoesen(); }
       });
       elBtn.addEventListener("click", function (e) {
         e.stopPropagation();
         if (pop.isOpen()) { pop.close(false); return; }
+        /* Nach einem Oeffnen vom Chip steht noch is-drill am Panel, bis render() laeuft -- und die
+           Messung unten nimmt die Breite des Panels. Nur dann einmal vorher richtigstellen. */
+        if (elMenu.classList.contains("is-drill") !== hinein()) elMenu.classList.toggle("is-drill", hinein());
         /* Kippt an der rechten Fensterkante auf rechts ausgerichtet. Einmal beim Oeffnen, nicht
            beim Scrollen: das Panel ist absolut und wandert mit seinem Knopf mit.
            GEMESSEN am 03.09.: diese Entscheidung stand in der DevTools-Aufnahme des Nutzers mit
@@ -969,16 +1077,23 @@
          core. Auf breiten Seiten aendert sich nichts -- dort passt eine der zwei Lagen immer.
          Gelesen wird VOR jedem Schreiben (siehe oben, 718ms am 03.09.), geschrieben danach;
          die Lage steht inline (left), damit sie die Regeln der zwei Klassen schlaegt. */
-      function lageMessen() {
+      /* anker (15.10.): ein Chip statt des Knopfs -- das Panel steht dann unter dem Chip, links an
+         seiner Kante (oder rechts an seiner, wenn links kein Platz ist), und bei umbrochener Leiste
+         unter SEINER Zeile statt unter der des Knopfs. */
+      function lageMessen(anker) {
         var vw = window.innerWidth || document.documentElement.clientWidth || 0;
         var r = elMore.getBoundingClientRect();
         if (!vw || !r.width) return null;
+        var a = anker ? anker.getBoundingClientRect() : null;
         var breite = elMenu.offsetWidth, rand = vw < 500 ? 16 : 8;
         /* "left: 0" zaehlt ab der Polsterkante der Schale, also plus ihr Rahmen. */
-        var start = r.left + elMore.clientLeft, links = start;
-        if (links + breite > vw - rand) links = r.right - elMore.clientLeft - breite;
+        var start = r.left + elMore.clientLeft, links = a ? a.left : start;
+        if (links + breite > vw - rand) links = (a ? a.right : r.right - elMore.clientLeft) - breite;
         links = Math.max(rand, Math.min(links, vw - rand - breite));
-        return { versatz: Math.round(links - start), kippen: links < start };
+        /* Senkrecht nur fuer den Chip: steht er tiefer als der Knopf (umbrochene Leiste), rueckt
+           das Panel um genau diesen Abstand nach unten. top der CSS bleibt sonst unberuehrt. */
+        var tiefer = a ? Math.round(a.bottom - r.bottom) : 0;
+        return { versatz: Math.round(links - start), kippen: !a && links < start, tiefer: tiefer > 0 ? tiefer : 0 };
       }
       var lageUhr = null;
       function lageSetzen(l) {
@@ -986,7 +1101,36 @@
         if (!l) return;
         elMenu.style.left = l.versatz + "px";
         elMenu.style.right = "auto";
+        elMenu.style.marginTop = l.tiefer ? l.tiefer + "px" : "";
         elMenu.classList.toggle("is-right", l.kippen);
+      }
+      /* EINEN Filter direkt oeffnen: das Panel auf, dessen Untermenue festgestellt. Vom Chip aus
+         (anker) im Hineingehen und unter dem Chip, sonst wie der Klick auf "Filters". */
+      function oeffnen(key, anker) {
+        var f = byKey(key);
+        if (!f) return;
+        if (pop.isOpen()) pop.close(false);
+        clearTimeout(lageUhr); lageUhr = null;
+        vomChip = !!anker;
+        einziehen();
+        liste.forEach(nachziehen);
+        spiegelnAlle();
+        render();
+        /* render() schreibt die Chips NEU -- der Chip, auf den geklickt wurde, haengt danach nicht
+           mehr im Dokument und misst 0 (das Panel stand am linken Fensterrand, gemessen 15.10.).
+           Also den frischen Chip desselben Filters nehmen. */
+        if (anker) anker = elChips.querySelector('.ufb-chip[data-chip="' + cssEsc(key) + '"]') || null;
+        /* Hier NACH render() gemessen (anders als beim Knopf): erst render() setzt is-drill, und
+           daran haengt die Breite des Panels, nach der sich die Lage richtet. Ein einzelner Klick,
+           kein Pfad, der bei jeder Bewegung laeuft. */
+        var lage = lageMessen(anker);
+        /* Die Lage VOR dem Oeffnen: makePopover hebt das Panel beim Oeffnen in die oberste Ebene
+           (position: fixed) und rechnet seine Stelle EINMAL aus der Ruhelage. Danach gesetzt,
+           landete das Panel am linken Fensterrand statt unter dem Chip (gemessen: left 8). */
+        lageSetzen(lage);
+        pop.open();
+        elBtn.setAttribute("aria-expanded", "true");
+        sub.open(key, true);
       }
       /* Nach dem Schliessen gilt die gemessene Lage nicht mehr: rueckt der Knopf spaeter (ein
          laengerer Kalendertext, eine andere Breite), stand das unsichtbare Panel mit der alten
@@ -998,7 +1142,7 @@
         lageUhr = setTimeout(function () {
           lageUhr = null;
           if (pop.isOpen()) return;
-          elMenu.style.left = ""; elMenu.style.right = "";
+          elMenu.style.left = ""; elMenu.style.right = ""; elMenu.style.marginTop = "";
           elMenu.classList.remove("is-right");
         }, 300);
       }
@@ -1007,7 +1151,7 @@
          Verweildauer, Feststellen per Klick, Umklappen und das Hineingehen auf schmalen Seiten
          kommen komplett aus UC.makeSubmenu. */
       var sub = UC.makeSubmenu({
-        panel: elMenu, rowSel: ".up-subwrap", keyAttr: "data-sub", drill: schmal,
+        panel: elMenu, rowSel: ".up-subwrap", keyAttr: "data-sub", drill: hinein,
         /* EINE SEKUNDE NACHLAUF STATT DER 260ms DES KITS (24.09. angefordert: "wenn man ueber Topics hovert,
            das Dropdown daneben aufgeht und man dann rueberhovert, soll es offen bleiben, auch
            wenn der Nutzer mal ein paar hundert Millisekunden nicht darauf hovert").
@@ -1032,8 +1176,8 @@
           var f = byKey(key);
           var w = f && eingezogen[f.key];
           if (!w) return;
-          var x = w.querySelector(".utf-search-x, .umf-search-x, .umk-search-x");
-          var feld = w.querySelector(".utf-search-in, .umf-search-in, .umk-search-in");
+          var x = w.querySelector(SUCHE_X);
+          var feld = w.querySelector(SUCHE_IN);
           if (x && feld && String(feld.value || "")) { try { x.click(); } catch (e) {} }
         }
       });
@@ -1114,6 +1258,19 @@
         }
         var cx = e.target.closest("[data-chip-clear]");
         if (cx) { einenLeeren(cx.getAttribute("data-chip-clear")); return; }
+        var co = e.target.closest("[data-chip-open]");
+        if (co) {
+          var k = co.getAttribute("data-chip-open");
+          /* Zweiter Klick auf denselben Chip schliesst nur -- das Panel ist zu diesem Zeitpunkt
+             schon zu (die Popover-Registry schliesst bei pointerdown ausserhalb), darum gemerkt. */
+          if (chipZu === k) { chipZu = null; return; }
+          oeffnen(k, co.closest(".ufb-chip") || co);
+        }
+      });
+      var chipZu = null;
+      root.addEventListener("pointerdown", function (e) {
+        var co = e.target.closest && e.target.closest("[data-chip-open]");
+        chipZu = co && pop.isOpen() && vomChip && sub.current() === co.getAttribute("data-chip-open") ? co.getAttribute("data-chip-open") : null;
       });
 
       /* ---------------- auf Aenderungen der Filter hoeren ----------------
@@ -1153,7 +1310,7 @@
          die Zeile zu verstecken. */
       function verstecktGeleert() {
         FILTERS.forEach(function (f) {
-          if (!nurAusgeblendet(f)) return;
+          if (!nurAusgeblendet(f) || f.behalten) return;
           /* Streng suchen: lieber nichts leeren als das Falsche. */
           var w = eingezogen[f.key] || findeWurzel(f, true);
           if (!w || !w.classList.contains("has-sel")) return;
@@ -1192,10 +1349,12 @@
         render();
       }
       if (window.MutationObserver) {
-        var sichtBeob = new MutationObserver(function () { sichtStellen(); });
+        /* data-form und data-branded-visible (15.10.) schaltet die Seite Prompt Insights je Reiter
+           um -- danach Zeilen und Chips in der passenden Form. */
+        var sichtBeob = new MutationObserver(function () { sichtStellen(); spiegelnAlle(); render(); });
         try {
           sichtBeob.observe(root, { attributes: true, subtree: false,
-            attributeFilter: FILTERS.map(function (f) { return f.visAttr; }) });
+            attributeFilter: FILTERS.map(function (f) { return f.visAttr; }).concat(["data-form", "data-branded-visible"]) });
         } catch (e) {}
       }
 
@@ -1226,7 +1385,9 @@
            Element neu rendert statt nur das Attribut zu setzen. */
         pruefeSicht: function () { try { sichtStellen(); } catch (e) {} },
         setTheme: function (t) { if (UC.setUpstreemTheme) UC.setUpstreemTheme(t); },
-        render: render
+        render: render,
+        /* Einen Filter von aussen oeffnen (Panel auf, sein Untermenue festgestellt). */
+        oeffnen: function (key) { try { oeffnen(key, null); } catch (e) {} }
       };
       root.__ufbCtrl = ctrl;
       if (WURZELN.indexOf(root) < 0) WURZELN.push(root);

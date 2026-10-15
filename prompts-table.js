@@ -618,6 +618,18 @@
     var elPager     = root.querySelector(".up-pager");
     var elCols      = root.querySelector(".up-cols");
     var elColsMenu  = root.querySelector(".up-cols-menu");
+    /* DIE EINE LEISTE (15.10., Entwurf D mit den Chips aus C): die Seite Prompt Insights setzt
+       data-leiste="yes" und schiebt ihren Kalender und ihre Filterleiste in den Kopf dieser
+       Tabelle (.upt-scope). Dann gilt:
+         links  was die DATEN aendert: Active/Inactive, Kalender, "Filters" mit allen Filtern als
+                Untermenue (auch Prompt type, "<Marke> mentioned" und Mentioned brands, die bisher
+                hier rechts standen), dahinter die Chips der gesetzten Filter
+         rechts was nur die ANSICHT aendert: Suche, Sortierer, Display (Spalten, Zeilenhoehe,
+                Gruppierung), Export
+       Keine Kennzahlenleiste darueber, kein Werkzeug-Klappmenue (nur vier Knoepfe), keine
+       Breitenstufen, die Knoepfe wegnehmen. Ohne das Attribut (Bubble, Landingpage) bleibt alles,
+       wie es war. */
+    var LEISTE = root.getAttribute("data-leiste") === "yes";
 
     /* Mentioned-brands multi-select — built from JS the same reason the header explainer icons
        are: the markup is a hand copy the CDN pin never touches, and this table simply never had
@@ -923,6 +935,9 @@
        Same off -> yes -> no -> off cycle as urls-table/domains-table. Visible only once
        data-brand-name is actually filled in (Bubble's placeholder text otherwise shows through). */
     function syncBrand(){
+      /* Die Marke kann nach dem Aufbau kommen (Attribut) -- dann auch der Filter "<Marke> mentioned"
+         der einen Leiste. */
+      ffSync();
       var name = root.getAttribute("data-brand-name") || "";
       var logo = root.getAttribute("data-brand-logo") || "";
       var valid = name && name !== "BRAND_NAME";
@@ -1245,7 +1260,19 @@
     (function(){
       var elStatus = root.querySelector(".upt-status");
       var elExport = root.querySelector(".up-export");
-      if (elStatus && elHeadTools && elStatus.parentNode !== elHeadTools){
+      /* In der einen Leiste steht Active/Inactive VORNE links: es wechselt die Menge der Prompts
+         (eigene Spalten, keine Gruppierung, andere Sammelaktionen), gehoert also zu dem, was die
+         Daten aendert -- als Umschalter und nicht als Filter im Menue, wie bei Peec, Polaris und
+         GitLab. Die Seite haengt ihren Kalender und ihre Filter dahinter in dieselbe .upt-scope. */
+      if (LEISTE && elStatus && elHead){
+        var scope = elHead.querySelector(".upt-scope");
+        if (!scope){
+          scope = document.createElement("div");
+          scope.className = "upt-scope";
+          elHead.insertBefore(scope, elHead.firstChild);
+        }
+        scope.insertBefore(elStatus, scope.firstChild);
+      } else if (elStatus && elHeadTools && elStatus.parentNode !== elHeadTools){
         if (elExport && elExport.parentNode === elHeadTools) elHeadTools.insertBefore(elStatus, elExport);
         else elHeadTools.appendChild(elStatus);
       }
@@ -2261,6 +2288,18 @@
     }
     /* Nicht branded: ein klickbarer Strich wie jede leere Zelle -- sonst gaebe es keinen Weg, einen
        Prompt von Hand als branded zu markieren. */
+    /* BRANDED IN DER PROMPT-ZELLE statt in einer eigenen Spalte (15.10. angefordert): derselbe Chip
+       aus core (UC.brandedHtml -- "Branded", Strich, die Logos der genannten Marken, oder das
+       Brands-Zeichen, wenn keine erkannt ist oder der Nutzer es gesetzt hat), rechts in der Zelle.
+       NUR bei einem branded Prompt -- sonst steht hier nichts und die Zelle haelt keinen Platz
+       frei. Klickbar wie in der Spalte: data-intent-open oeffnet das Branded-Menue (makeIntentMenu),
+       die Zeile reagiert darauf nicht. Einen nicht branded Prompt markiert man ueber das
+       Prompt-Detail (dort steht "Not branded" als Ausloeser). */
+    function promptMarkeHtml(r){
+      if (!UC.brandedHtml || !r || r.branded !== true) return "";
+      var id = String(r.prompt_id == null ? "" : r.prompt_id);
+      return '<span class="upt-prompt-marke">' + UC.brandedHtml(r, { klick: true, id: id }) + '</span>';
+    }
     function brandedCell(r){
       if (!UC.brandedHtml || !r || !("branded" in r)) return '<span class="up-num is-empty">–</span>';
       var id = String(r.prompt_id == null ? "" : r.prompt_id);
@@ -2453,6 +2492,7 @@
           '<span class="upt-prompt-wrap">' +
             '<span class="upt-prompt-text">' + highlight(text, state.query) + '</span>' +
           '</span>' +
+          promptMarkeHtml(r) +
           '<span class="up-row-goto">' + GOTO_SVG + '</span>' +
         '</div>' +
         '<div class="up-td upt-td-visibility">' + visCell(r.visibility_pct) + '</div>' +
@@ -2556,6 +2596,18 @@
       else if (elCols && elCols.parentNode === elHeadTools) elHeadTools.insertBefore(elGrpWrap, elCols);
       else elHeadTools.appendChild(elGrpWrap);
       elGrpMenu = elGrpWrap.querySelector(".upt-group-menu");
+      /* In der einen Leiste ist Gruppieren eine Ansichtseinstellung wie Spalten und Zeilenhoehe
+         und steht darum im Display-Menue (oben, als eigener Abschnitt; siehe vorspann am
+         Spalten-Kit). Derselbe Inhalt (populateGroupMenu), dieselben Klickwege -- die haengen an
+         .upt-group-menu irgendwo in dieser Tabelle, nicht an seinem Popover. Der Knopf
+         "Group Prompts" bleibt im Markup (syncGroupBtn), ist aber per CSS weg. */
+      if (LEISTE){
+        elGrpWrap.removeChild(elGrpMenu);
+        elGrpMenu = document.createElement("div");
+        elGrpMenu.className = "upt-group-menu upt-disp-grp";
+        elGrpMenu.setAttribute("role", "group");
+        elGrpMenu.setAttribute("aria-label", "Grouping");
+      }
     })();
     /* The popover itself is wired further down, next to the other dropdowns — POP_GROUP does not
        exist yet at this point in the file. */
@@ -4030,6 +4082,15 @@
       Array.prototype.forEach.call(root.querySelectorAll('.up-row[data-id="' + (window.CSS && CSS.escape ? CSS.escape(String(id)) : String(id)) + '"] .upt-td-branded'), function(td){
         td.innerHTML = brandedCell(r);
       });
+      /* Der Chip in der Prompt-Zelle: weg, neu, oder ersetzt -- je nachdem, ob der Prompt jetzt
+         branded ist. */
+      Array.prototype.forEach.call(root.querySelectorAll('.up-row[data-id="' + (window.CSS && CSS.escape ? CSS.escape(String(id)) : String(id)) + '"] .upt-td-prompt'), function(td){
+        var alt = td.querySelector(".upt-prompt-marke");
+        if (alt) alt.parentNode.removeChild(alt);
+        var h = promptMarkeHtml(r);
+        var wrap = td.querySelector(".upt-prompt-wrap");
+        if (h && wrap) wrap.insertAdjacentHTML("afterend", h);
+      });
       persist();
     }
     /* Das Menue ist der Baustein aus core (UC.makeIntentMenu) -- dasselbe wie im Prompt-Detail.
@@ -4072,7 +4133,10 @@
            Filter bleibt es offen (der Schalter ist ein Schalter) und es wird nichts nachgeladen:
            die Zeile zeigt den neuen Stand schon, und sonst haengt nichts auf dem Schirm daran. */
         var neu = !!state.branded;
-        if (neu && intentMenu) intentMenu.close();
+        /* Nicht mehr branded: der Chip, an dem das Menue haengt, ist aus der Zeile verschwunden --
+           also zu, statt ueber einer leeren Stelle zu stehen. */
+        var r2 = zeileZu(z.id);
+        if ((neu || (r2 && r2.branded !== true)) && intentMenu) intentMenu.close();
         fire("data-brandedset-fn", "uptBrandedSet", { mode: "ids", ids: String(z.id), count: 1, excluded_ids: "", branded: wert, reload: neu ? "yes" : "no" });
       }
     }) : null;
@@ -4127,8 +4191,196 @@
     }
     syncBranded();
 
+    /* ---------------- die Filter der einen Leiste (15.10.) ----------------
+       Prompt type, "<Marke> mentioned" und Mentioned brands als Filterwurzeln in der Form, die
+       filters/filter-bar.js einzieht (wie dort der Intent-Filter): Wurzel .upt-ff, Trigger mit
+       Beschriftung und X (nie zu sehen, nur Quelle fuer die Leiste), Panel mit .up-filter-item-
+       Zeilen aus core, Controller __uptfCtrl, aufsteigendes Ereignis "upt-ff". Der ZUSTAND bleibt
+       hier (state.branded, state.brandMentioned, state.mentionApplied) und die Ereignisse an die
+       Seite sind dieselben wie von den alten Knoepfen (uptBranded, uptBrand, uptMentioned).
+       Jede Wahl gilt sofort -- auch bei den Marken, wo das alte Dropdown ein "Apply" hatte: alle
+       anderen Filter der Leiste wirken sofort, und die Seite buendelt schnelle Klicks (80ms).
+       Bis zum Einziehen und nach dem Heimweg stehen sie in einer versteckten Huelle dieser
+       Tabelle. */
+    function ffT(x){ return UC.t ? UC.t(x) : x; }
+    function brandedText(){ return state.branded === "yes" ? "branded" : (state.branded === "no" ? "non_branded" : "all"); }
+    function brandedSetzen(v){
+      v = v === "yes" || v === "no" ? v : "";
+      if (v === state.branded) return;
+      state.branded = v;
+      state.page = 1;
+      persist(); syncBranded(); renderPager();
+      state.softReload = false; endSoftReload(); invalidateSelectAll();
+      fire("data-branded-fn", "uptBranded", { branded: brandedText() });
+      if (groupingOn()) fetchGroups();
+      refreshOpenGroupIfAny();
+    }
+    function brandSetzen(v){
+      v = v === "yes" || v === "no" ? v : "";
+      if (v === state.brandMentioned) return;
+      state.brandMentioned = v;
+      state.page = 1;
+      persist(); syncBrand(); renderPager();
+      state.softReload = false; endSoftReload(); invalidateSelectAll();
+      fire("data-brand-fn", "uptBrand", { brand_mentioned: state.brandMentioned });
+      refreshOpenGroupIfAny();
+    }
+    function mentionSetzen(next){
+      state.mentionSel = JSON.parse(JSON.stringify(next));
+      submitMent();
+    }
+    function markeName(){
+      var n = root.getAttribute("data-brand-name") || "";
+      return n && n !== "BRAND_NAME" ? n : "";
+    }
+    function markenId(b){ return String(b.company_id != null ? b.company_id : (b.id != null ? b.id : (b.brand_id != null ? b.brand_id : b.name))); }
+    var FF_ARTEN = {
+      ptype: {
+        label: function(){ return ffT("Prompt type"); }, chip: function(){ return ffT("Prompt type"); }, leer: "All",
+        optionen: function(){ return [{ key: "yes", name: ffT("Branded") }, { key: "no", name: ffT("Non-branded") }]; },
+        auswahl: function(){ return state.branded ? [state.branded] : []; },
+        /* Wie der alte Knopf: erst mit Intent-/Branded-Feldern in den Zeilen, nie in Inactive. */
+        aus: function(){ return !state.intentDa || state.status === "inactive"; },
+        setzen: function(l){ brandedSetzen(l.length ? l[l.length - 1] : ""); }, einzeln: true
+      },
+      mention: {
+        label: function(){ return ffT("{brand} mentioned?").replace("{brand}", markeName()); },
+        chip: function(){ return markeName(); }, leer: "Any",
+        optionen: function(){ return [{ key: "yes", name: ffT("Mentioned") }, { key: "no", name: ffT("Not mentioned") }]; },
+        auswahl: function(){ return state.brandMentioned ? [state.brandMentioned] : []; },
+        aus: function(){ return !markeName(); },
+        setzen: function(l){ brandSetzen(l.length ? l[l.length - 1] : ""); }, einzeln: true
+      },
+      brands: {
+        label: function(){ return ffT("Mentioned brands"); }, chip: function(){ return ffT("Brands"); }, leer: "All",
+        optionen: function(){
+          return (state.brands || []).map(function(b){
+            return { key: markenId(b), name: String(b.name != null ? b.name : markenId(b)),
+                     logo: String(b.logo_url != null ? b.logo_url : (b.logo != null ? b.logo : (b.favicon != null ? b.favicon : ""))) };
+          });
+        },
+        auswahl: function(){ return Object.keys(state.mentionApplied || {}).filter(function(k){ return state.mentionApplied[k]; }); },
+        aus: function(){ return !(state.brands || []).length; },
+        setzen: function(l){ var n = {}; l.forEach(function(k){ n[k] = true; }); mentionSetzen(n); }, suche: true
+      }
+    };
+    var ffWurzeln = {};
+    function ffBauen(){
+      var heim = document.createElement("div");
+      heim.className = "upt-ff-heim";
+      heim.hidden = true;
+      root.appendChild(heim);
+      Object.keys(FF_ARTEN).forEach(function(key){
+        var a = FF_ARTEN[key];
+        var w = document.createElement("div");
+        w.className = "up-root upt-ff upt-ff-" + key;
+        w.setAttribute("data-instance", instanceId + "_" + key);
+        w.setAttribute("data-local", "yes");
+        if (root.getAttribute("data-theme")) w.setAttribute("data-theme", root.getAttribute("data-theme"));
+        w.setAttribute("data-ufb-leer", a.leer);
+        w.innerHTML =
+          '<div class="upt-ff-wrap">' +
+            '<button class="upt-ff-trigger" type="button" tabindex="-1" aria-hidden="true">' +
+              '<span class="upt-ff-label"></span>' +
+              '<span class="upt-ff-chev"><span class="upt-ff-x" role="button" tabindex="-1" aria-label="Clear selection">' + UC.icon("x", 2.2) + '</span></span>' +
+            '</button>' +
+            '<div class="upt-ff-menu" role="dialog">' +
+              (a.suche
+                /* Suchfeld und Leerzeile der Markenliste aus core (UC.mentFilter sucht darin). */
+                ? '<div class="up-ment-searchwrap"><input class="up-ment-search upt-ff-search-in" type="text" placeholder="' + esc(ffT("Search brands...")) + '" autocomplete="off" spellcheck="false" aria-label="' + esc(ffT("Search brands")) + '"/>' +
+                  '<button class="up-ment-searchclear upt-ff-search-x" type="button" aria-label="' + esc(ffT("Clear brand search")) + '">' + UC.icon("x", 2.2) + '</button></div>'
+                : '') +
+              '<div class="up-filter-list upt-ff-list' + (a.suche ? " up-ment-list" : "") + ' is-fill-checked" role="listbox"' + (a.einzeln ? "" : ' aria-multiselectable="true"') + '></div>' +
+            '</div>' +
+          '</div>';
+        w.addEventListener("click", function(e){
+          if (e.target.closest(".upt-ff-x")){ e.stopPropagation(); a.setzen([]); ffSync(); return; }
+          if (e.target.closest(".upt-ff-search-x")){
+            var si = w.querySelector(".upt-ff-search-in");
+            if (si){ si.value = ""; UC.mentFilter(w, ""); try { si.focus(); } catch(e2){} }
+            return;
+          }
+          var r = e.target.closest(".upt-ff-opt");
+          if (!r) return;
+          var k = r.getAttribute("data-key"), l = a.auswahl().slice(), i = l.indexOf(k);
+          if (a.einzeln) l = i >= 0 ? [] : [k];
+          else if (i >= 0) l.splice(i, 1); else l.push(k);
+          a.setzen(l);
+          ffSync();
+        });
+        w.addEventListener("keydown", function(e){
+          if (e.key !== "Enter" && e.key !== " ") return;
+          var r = e.target.closest && e.target.closest(".upt-ff-opt");
+          if (!r) return;
+          e.preventDefault(); r.click();
+        });
+        if (a.suche) w.addEventListener("input", function(e){
+          if (e.target && e.target.classList && e.target.classList.contains("upt-ff-search-in")) UC.mentFilter(w, "");
+        });
+        w.__uptfCtrl = {
+          getSelected: function(){ return { sel: a.auswahl().join(",") }; },
+          setSelected: function(csv){ a.setzen(String(csv == null ? "" : csv).split(",").map(function(x){ return x.trim(); }).filter(Boolean)); ffSync(); },
+          sync: function(){ ffZeichnen(key); }
+        };
+        ffWurzeln[key] = w;
+        heim.appendChild(w);
+      });
+    }
+    /* Liste neu nur, wenn sich die Optionen geaendert haben (die Marken kommen spaeter) -- sonst
+       nur die Haken. Ein Neuschreiben bei jedem Klick verloere die Suche in der Markenliste. */
+    function ffZeichnen(key){
+      var w = ffWurzeln[key], a = FF_ARTEN[key];
+      if (!w) return;
+      var opts = a.optionen(), sel = a.auswahl();
+      var liste = w.querySelector(".upt-ff-list");
+      var sig = opts.map(function(o){ return o.key + "|" + o.name; }).join(",");
+      if (liste.getAttribute("data-sig") !== sig){
+        liste.setAttribute("data-sig", sig);
+        liste.innerHTML = opts.map(function(o){
+          return '<div class="up-filter-item upt-ff-opt" role="option" tabindex="0" aria-selected="false" data-key="' + esc(o.key) + '"' +
+              (a.suche ? ' data-brand="' + esc(o.key) + '" data-name="' + esc(o.name.toLowerCase()) + '"' : "") + '>' +
+            '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
+            (a.suche ? '<span class="up-ment-logo">' + (o.logo ? '<img src="' + esc(o.logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/>' : "") + '</span>' : "") +
+            '<span class="upt-ff-name' + (a.suche ? " up-ment-name" : "") + '">' + esc(o.name) + '</span>' +
+          '</div>';
+        }).join("") + (a.suche ? '<div class="up-ment-noresult" style="display:none">' + esc(ffT("No matches")) + '</div>' : "");
+        if (a.suche) UC.mentFilter(w, "");
+      }
+      Array.prototype.forEach.call(liste.querySelectorAll(".upt-ff-opt"), function(r){
+        var an = sel.indexOf(r.getAttribute("data-key")) >= 0;
+        r.classList.toggle("is-checked", an);
+        r.setAttribute("aria-selected", an ? "true" : "false");
+      });
+      w.classList.toggle("has-sel", sel.length > 0);
+      w.setAttribute("data-ufb-label", a.label());
+      w.setAttribute("data-ufb-chip", a.chip());
+      if (a.aus()) w.setAttribute("data-ufb-aus", "yes"); else w.removeAttribute("data-ufb-aus");
+      var namen = opts.filter(function(o){ return sel.indexOf(o.key) >= 0; }).map(function(o){ return o.name; });
+      w.querySelector(".upt-ff-label").textContent = namen.length ? namen.join(", ") : a.label();
+    }
+    /* Alle drei auf Stand bringen und der Leiste Bescheid sagen. Gerufen nach jeder eigenen Wahl
+       und aus render() -- dort aendert sich, was von aussen kommt (Marken, Intent-Felder, Status,
+       ein Zuruecksetzen). Das Ereignis nur, wenn sich am Sichtbaren etwas geaendert hat: render()
+       laeuft oft, und jedes Ereignis laesst die Leiste neu zeichnen. */
+    var ffStand = "";
+    function ffSync(){
+      if (!LEISTE || !ffWurzeln) return;
+      var neu = Object.keys(ffWurzeln).map(function(key){
+        ffZeichnen(key);
+        var w = ffWurzeln[key];
+        return key + ":" + FF_ARTEN[key].auswahl().join(",") + ":" + (w.getAttribute("data-ufb-aus") || "") + ":" +
+               (w.getAttribute("data-ufb-label") || "") + ":" + w.querySelector(".upt-ff-list").getAttribute("data-sig");
+      }).join("|");
+      if (neu === ffStand) return;
+      ffStand = neu;
+      var w0 = ffWurzeln.ptype;
+      try { if (w0) w0.dispatchEvent(new CustomEvent("upt-ff", { bubbles: true, detail: {} })); } catch(e){}
+    }
+    if (LEISTE){ ffBauen(); ffSync(); }
+
     /* ---------------- columns / pager / sort (core) ---------------- */
     var PROMPT_MIN = 260;
+    var elDispGrp = null;   /* Huelle der Gruppierung im Display-Menue, siehe dispGruppe */
     var colsKit = UC.makeColumns({
       root: root, state: state, columns: COLUMNS,
       storePrefix: "upt", instanceId: instanceId,
@@ -4138,13 +4390,42 @@
          Removed from the grid template rather than hidden with CSS — a hidden cell would leave its
          track behind and knock the row out of line. */
       isHidden: function(c){
-        if ((c.key === "intent" || c.key === "branded") && !state.intentDa) return true;
+        /* Branded als Spalte gibt es nicht mehr (15.10.): der Chip steht in der Prompt-Zelle (siehe
+           promptMarkeHtml). Raus aus dem Raster UND aus der Spaltenliste im Display-Menue. */
+        if (c.key === "branded") return true;
+        if (c.key === "intent" && !state.intentDa) return true;
         return state.status === "inactive" &&
           (c.key === "brands" || c.key === "visibility" || c.key === "rank" || c.key === "sentiment");
       },
       rowHeightSwitch: ROW_HEIGHTS, badgeSel: ".upt-cols-badge", cellPrefixes: ["up","upt","upt-grp"],
+      /* In der einen Leiste ist dieses Menue "Display": oben die Gruppierung, darunter wie bisher
+         Spalten und Zeilenhoehe. */
+      vorspann: LEISTE ? dispGruppe : null,
       onChange: function(){ render(); }
     });
+    function dispGruppe(){
+      if (!elGrpMenu) return null;
+      if (!elDispGrp){
+        elDispGrp = document.createElement("div");
+        elDispGrp.className = "upt-disp-grpwrap";
+        elDispGrp.appendChild(elGrpMenu);
+        var trenner = document.createElement("div");
+        trenner.className = "up-pop-div";
+        elDispGrp.appendChild(trenner);
+      }
+      populateGroupMenu();
+      /* Spalten und Zeilenhoehe in EINE Huelle, damit sie NEBEN der Gruppierung stehen koennen
+         (prompts-table.css). Untereinander war das Menue 862px hoch, gemessen -- hoeher als ein
+         Laptopfenster. Die Klickwege des Spalten-Kits haengen an data-col / data-rowheight und
+         finden ihre Zeilen ueber closest(), die Huelle stoert sie nicht. */
+      if (elColsMenu){
+        var spalten = document.createElement("div");
+        spalten.className = "upt-disp-spalten";
+        while (elColsMenu.firstChild) spalten.appendChild(elColsMenu.firstChild);
+        elColsMenu.appendChild(spalten);
+      }
+      return elDispGrp;
+    }
     var readCols = colsKit.readCols, writeCols = colsKit.writeCols;
     var readWidths = colsKit.readWidths, writeWidths = colsKit.writeWidths;
     var visibleCols = colsKit.visibleCols, effectiveCols = colsKit.effectiveCols;
@@ -4332,7 +4613,8 @@
 
     /* ---------------- dropdowns ---------------- */
     var POP_GROUP = "upt-" + instanceId;
-    if (elGrpWrap && elGrpMenu){
+    /* In der einen Leiste hat die Gruppierung kein eigenes Popover -- sie steht im Display-Menue. */
+    if (elGrpWrap && elGrpMenu && !LEISTE){
       grpPop = UC.makePopover({
         wrap: elGrpWrap, menu: elGrpMenu,
         opener: elGrpWrap.querySelector(".upt-group-btn"), group: POP_GROUP
@@ -4349,6 +4631,12 @@
     function setPopOpen(pop, open){
       var h = popOf(pop); if (!h) return;
       if (open) h.open(); else h.close(false);
+    }
+    /* Das Menue, in dem die Gruppierung steht, schliessen -- ihr eigenes Popover oder, in der
+       einen Leiste, das Display-Menue (siehe LEISTE oben). */
+    function grpMenuZu(){
+      if (grpPop) grpPop.close(false);
+      else if (LEISTE) setPopOpen(elCols, false);
     }
     function closePops(except){
       [elSort, elCols, elMent, elGrpWrap, elGrpSideSort].forEach(function(p){ if (p && p !== except) setPopOpen(p, false); });
@@ -4376,6 +4664,11 @@
       var inMenu = e.target.closest(".up-sort-menu, .up-cols-menu, .up-ment-menu, .upt-group-menu, .upt-grp-sidesort-menu");
       var onOpener = e.target.closest(".up-sort-btn, .up-cols-btn, .up-ment-btn, .upt-group-btn, .upt-grp-sidesort-btn");
       if (!inMenu && !onOpener) closePops();
+      /* Was in der einen Leiste aus der Seite in diesen Kopf zieht (Kalender, Filterleiste samt
+         eingezogener Filter) und die eigenen Filterwurzeln (.upt-ff) bedienen sich selbst. Ohne
+         diese Zeile griffen die allgemeinen Zweige unten zu -- [data-brand] etwa haette einen Klick
+         in der Markenliste der Filterleiste als Klick im alten Marken-Dropdown gezaehlt. */
+      if (e.target.closest(".upt-scope .up-root, .upt-ff")) return;
 
       /* --- grouping: trigger, dropdown, accordion --- */
       if (e.target.closest(".upt-group-btn")){
@@ -4439,7 +4732,7 @@
         if (ge){
           var ek = ge.getAttribute("data-grp-edit");
           grpRowMenu = null;
-          if (grpPop) grpPop.close(false);
+          grpMenuZu();
           openGroupModal(UC.cgFind(ek));
           return;
         }
@@ -4453,7 +4746,7 @@
           return;
         }
         if (e.target.closest("[data-grp-new]")){
-          if (grpPop) grpPop.close(false);
+          grpMenuZu();
           openGroupModal();
           return;
         }
@@ -4987,6 +5280,9 @@
     function headGap(){ return UC.headGap(elHeading, elHeadTools, elSearch, SEARCH_OPEN_WIDTH); }
     function fitToolbar(){
       if (!elHeading || !elHeadTools) return;
+      /* Die eine Leiste nimmt keine Knoepfe weg: sie bricht um (links die Daten, darunter rechts
+         die Ansicht), siehe prompts-table.css. */
+      if (LEISTE){ for (var q = 0; q < TOOLBAR_TIERS.length; q++) root.classList.remove(TOOLBAR_TIERS[q]); return; }
       if (root.classList.contains("is-searchtakeover")) return;
       for (var r = 0; r < TOOLBAR_TIERS.length; r++) root.classList.remove(TOOLBAR_TIERS[r]);
       for (var i = 0; i < TOOLBAR_TIERS.length; i++){
@@ -5176,6 +5472,8 @@
          state.hasData ihren neuen Wert haben. Kostet nichts, wenn sich nichts geaendert hat:
          kpiNachziehen prueft den Merker. */
       kpiNachziehen();
+      /* Die Filter der einen Leiste auf Stand (Marken, Intent-Felder, Status, Zuruecksetzen). */
+      ffSync();
     }
 
 
@@ -5461,7 +5759,9 @@
       legendeEinpassen();
     }
 
-    kpiBauen();
+    /* Die Kennzahlenleiste (Topics, Maerkte) gibt es in der einen Leiste nicht mehr (15.10.
+       angefordert: "Die Bar mit Marktverteilung und Topicverteilung bitte entfernen"). */
+    if (!LEISTE) kpiBauen();
 
     if (state.query){ elSearchIn.value = state.query; elSearch.classList.add("is-open", "has-text"); }
     populateSort(); populateCols(); populateMent(); render();
@@ -5483,7 +5783,8 @@
        Ansichtseinstellungen -- sie nehmen keine Zeile weg, und man sieht ihnen an der Tabelle an,
        dass sie an sind. Die Gruppierung war zuerst drin; sie liegt im localStorage, also haette
        jeder, der sie einmal einschaltet, die Leiste fuer immer offen. */
-    var toolGroup = UC.makeToolGroup ? UC.makeToolGroup({
+    /* Nicht in der einen Leiste: dort stehen rechts nur vier Knoepfe, und die bleiben stehen. */
+    var toolGroup = (!LEISTE && UC.makeToolGroup) ? UC.makeToolGroup({
       root: root, tools: elHeadTools,
       keep: '[role="tablist"], .up-seg, .up-dense, .up-export, .upt-grpctl',
       filterActive: function(){

@@ -208,7 +208,9 @@
    fest #28282c war, und nach dem Anheben der Schiene im Dunkeln unsichtbar (auf der Karte 0.1
    Stufen) bzw. im Menue UNTER der Schiene (-6.9). Der Kasten steht im Bubble-Markup, darum der
    Alias und keine neue Klasse. */
-.up-root.is-searchtakeover .upt-status { display: none; }
+/* Nicht in der einen Leiste: dort steht der Umschalter links in einer eigenen Zeile und nimmt der
+   Suche keinen Platz. */
+.upt-root:not([data-leiste="yes"]).is-searchtakeover .upt-status { display: none; }
 /* "(Inactive)" qualifier before the "Prompts" heading label -- built once in JS (see the same
    IIFE above), text never changes, only its visibility does. Secondary/muted, matching the
    existing .up-head-count treatment right next to it, not the heading's own full-strength text
@@ -675,20 +677,24 @@
    another child of a flex row that already carries its own margin-left:auto, so once its hidden
    siblings (brand-toggle/sort/cols/export) drop out at this width, it naturally ends up right-
    aligned wherever the remaining visible children (search, then this) land. */
-.up-root.is-vnarrow .upt-brand-toggle,
-.up-root.is-vnarrow .up-sort,
-.up-root.is-vnarrow .up-cols,
+/* :not([data-leiste="yes"]) (15.10.): die eine Leiste nimmt keine Knoepfe weg, sie bricht um --
+   rechts stehen dort nur noch Suche, Sortierer, Display und Export. An .upt-root und nicht an
+   .up-root: die Seite Prompt Insights ist selbst ein .up-root mit is-vnarrow, aber ohne das
+   Attribut -- ueber sie als Vorfahren griff die Regel trotzdem (gemessen auf 375px). */
+.upt-root:not([data-leiste="yes"]).is-vnarrow .upt-brand-toggle,
+.upt-root:not([data-leiste="yes"]).is-vnarrow .up-sort,
+.upt-root:not([data-leiste="yes"]).is-vnarrow .up-cols,
 /* :not(.up-ph-addbtn) (10.10.): gemeint ist der Export-Knopf DIESER Leiste. Ohne die Ausnahme traf
    die Regel jeden Kopfknopf einer schmalen Seite, die die Tabelle einbettet (Prompt Insights:
    "Add Prompts" im schmalen Fenster weg, gemessen display none). */
-.up-root.is-vnarrow .up-export:not(.up-ph-addbtn) { display: none !important; }
-.up-root.is-vnarrow .up-head { flex-wrap: nowrap; }
+.upt-root:not([data-leiste="yes"]).is-vnarrow .up-export:not(.up-ph-addbtn) { display: none !important; }
+.upt-root:not([data-leiste="yes"]).is-vnarrow .up-head { flex-wrap: nowrap; }
 /* Selection active on mobile: the switcher would otherwise fight the selected-count chip for the
    same slot, so it steps aside and the chip (already living inside .up-heading, right after the
    label) effectively takes over that role — the heading stretches to fill the row and pushes the
    chip out to the same right-aligned position the switcher just vacated. */
-.up-root.is-vnarrow.is-bulk .upt-status { display: none; }
-.up-root.is-vnarrow.is-bulk .up-heading { flex: 1 1 auto; justify-content: space-between; }
+.upt-root:not([data-leiste="yes"]).is-vnarrow.is-bulk .upt-status { display: none; }
+.upt-root:not([data-leiste="yes"]).is-vnarrow.is-bulk .up-heading { flex: 1 1 auto; justify-content: space-between; }
 
 /* ---------- Visibility column header: tracked-brand logo ----------
    Every metric in Visibility/Rank/Sentiment is about this one brand's performance on the
@@ -1341,3 +1347,91 @@
 /* Der Umschalter Topic / Intent ganz oben im Gruppieren-Menue: Segmentstreifen aus core, hier
    nur der Abstand zur Zeile darunter, den der Trenner nicht stellt. */
 .upt-grpby { margin-bottom: 2px; }
+
+/* ==========================================================================================
+   DIE EINE LEISTE (15.10.) -- nur mit data-leiste="yes" (Seite Prompt Insights, siehe den Kopf von
+   LEISTE in prompts-table.js). Entwurf D mit den Chips aus C von der Design-Leinwand.
+   ========================================================================================== */
+
+/* Der Kopf: links was die Daten aendert (.upt-scope: Active/Inactive, Kalender, Filters, Chips),
+   rechts was nur die Ansicht aendert (.up-head-tools). Er BRICHT UM statt Knoepfe wegzunehmen --
+   oben bleiben die Werkzeuge an der ersten Zeile, wenn die Chips links zwei Zeilen brauchen.
+   Die Hoehe kommt aus dem Inhalt; core misst sie fuer den klebenden Tabellenkopf
+   (--up-thead-off) und misst bei jeder Groessenaenderung neu. */
+.upt-root[data-leiste="yes"] .up-head { height: auto; min-height: 32px; flex-wrap: wrap; align-items: flex-start; row-gap: 8px; column-gap: 16px; }
+.upt-root[data-leiste="yes"].up-sticky .up-head { height: auto; }
+.upt-root[data-leiste="yes"] .upt-scope { flex: 1 1 480px; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.upt-root[data-leiste="yes"] .up-head-tools { flex: 0 0 auto; margin-left: auto; min-height: 32px; }
+/* Auf dem Telefon je eine volle Zeile: oben die Daten, darunter rechtsbuendig die Ansicht. So
+   hat auch die aufgeklappte Suche (is-searchtakeover) die ganze Breite. */
+.upt-root[data-leiste="yes"].is-vnarrow .upt-scope { flex-basis: 100%; }
+.upt-root[data-leiste="yes"].is-vnarrow .up-head-tools { flex: 1 1 100%; justify-content: flex-end; }
+
+/* Was aus dem Kopf verschwindet: Ueberschrift mit Zaehler (die Zahl steht im Seitenkopf und am
+   Seitenwechsler unten), die drei Filterknoepfe (jetzt im Menue "Filters") und "Group Prompts"
+   (jetzt im Display-Menue). Die Elemente bleiben im Markup -- ihr Zustand wird weiter gepflegt. */
+.upt-root[data-leiste="yes"] .up-heading,
+.upt-root[data-leiste="yes"] .up-head-tools > .upt-brand-toggle,
+.upt-root[data-leiste="yes"] .up-head-tools > .up-ment,
+.upt-root[data-leiste="yes"] .up-head-tools > .upt-grpctl { display: none; }
+
+/* Die Filterwurzeln der Leiste (.upt-ff, gebaut in prompts-table.js): ihr Trigger ist nie zu
+   sehen -- die Zeile im Menue "Filters" ist der Ausloeser. Die Zeilenhoehe wie die anderen
+   Untermenues der Leiste (.uif-opt, .umf-opt: 34). Das Panel selbst stellt filter-bar.css in den
+   Fluss, wie bei den anderen eingezogenen Filtern. */
+.upt-ff-heim { display: none; }
+.upt-ff-trigger { display: none; }
+.upt-ff-opt { min-height: 34px; }
+.upt-ff-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
+
+/* Display (das Menue am Zahnrad-Knopf): links die Gruppierung, rechts Spalten und Zeilenhoehe.
+   NEBENEINANDER, weil untereinander 862px herauskamen (gemessen, ohne eine einzige eigene
+   Gruppierung) -- mehr als ein Laptopfenster hoch. Nebeneinander sind es so viele wie die
+   laengere Spalte, die Spaltenliste.
+   Die Gruppierung bringt ihr eigenes Polster und ihre 340px Mindestbreite aus ihrem Popover mit;
+   hier ist das Menue der Kasten, also beides weg. Die Trennlinie zwischen beiden steht senkrecht
+   statt waagerecht (die waagerechte aus dispGruppe bleibt fuer das Telefon). */
+.upt-root[data-leiste="yes"] .up-cols-menu { width: auto; display: flex; align-items: flex-start; }
+.upt-disp-grpwrap { flex: 0 0 272px; min-width: 0; padding-right: 12px; margin-right: 12px; border-right: 1px solid var(--vc-border); }
+.upt-disp-grpwrap > .up-pop-div { display: none; }
+.upt-disp-spalten { flex: 0 0 230px; min-width: 0; }
+.upt-group-menu.upt-disp-grp { width: auto; min-width: 0; max-width: none; padding: 0; }
+/* Telefon: untereinander, so breit wie das Fenster erlaubt, und das Menue scrollt in sich. */
+.upt-root[data-leiste="yes"].is-vnarrow .up-cols-menu {
+  flex-direction: column; align-items: stretch; width: min(320px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px); overflow-y: auto;
+}
+.upt-root[data-leiste="yes"].is-vnarrow .upt-disp-grpwrap { flex: 0 0 auto; padding-right: 0; margin-right: 0; border-right: 0; }
+.upt-root[data-leiste="yes"].is-vnarrow .upt-disp-grpwrap > .up-pop-div { display: block; }
+.upt-root[data-leiste="yes"].is-vnarrow .upt-disp-spalten { flex: 0 0 auto; }
+
+/* Die Tabelle ohne Kasten (15.10. angefordert): kein Rahmen aussen herum, kein Grund hinter der
+   Kopfzeile -- die Linien zwischen den Zeilen und Spalten bleiben. Der Rahmen wird farblos und
+   nicht 0, damit keine Spalte springt (dieselbe Ueberlegung wie im Dunkel-Block von core).
+   Der Grund der Kopfzeile ist die SEITENFARBE (--up-surface) und nicht durchsichtig: im
+   Sticky-Modus laufen die Zeilen darunter durch, eine durchsichtige Kopfzeile liesse sie sehen.
+   Die Ecken-Masken des Sticky-Kopfs gehoeren zu den runden Ecken, die es hier nicht mehr gibt.
+   .up-root.upt-root davor: gegen die Regeln von core gewinnt die Spezifitaet, auch gegen die
+   dunklen (.up-root[data-theme="dark"].up-sticky .up-thead). */
+.up-root.upt-root[data-leiste="yes"] .up-box { border-color: transparent; border-radius: 0; background: transparent; }
+.up-root.upt-root[data-leiste="yes"] .up-table { background: transparent; }
+.up-root.upt-root[data-leiste="yes"] .up-thead { background: var(--up-surface); }
+.up-root.upt-root[data-leiste="yes"].up-sticky .up-thead {
+  background-image: none; background-color: var(--up-surface);
+  border-color: transparent; border-radius: 0;
+}
+.up-root.upt-root[data-leiste="yes"].up-sticky .up-thead::before,
+.up-root.upt-root[data-leiste="yes"].up-sticky .up-thead::after { display: none; }
+.up-root.upt-root[data-leiste="yes"].up-sticky .up-tbody { border-color: transparent; border-radius: 0; }
+
+/* Der Branded-Chip in der Prompt-Zelle (15.10., prompts-table.js promptMarkeHtml): rechts in der
+   Zelle, fest so breit wie er ist -- der Text nimmt den Rest und bricht davor um. Steht kein Chip
+   da, gibt es kein Element und damit keinen freien Platz. Form und Hover kommen aus core
+   (.up-branded). */
+.upt-prompt-marke { flex: 0 0 auto; display: inline-flex; align-items: center; }
+/* Schmal (is-narrow, unter 860): nur die Logos bzw. das Brands-Zeichen, ohne "Branded" und Strich.
+   Der Chip nahm sonst bis zu 106px einer Zelle, deren Text dann auf drei Woerter schrumpfte
+   (gemessen: 34px Text). Was er bedeutet, sagt der Hinweis beim Ueberfahren ("Names ...",
+   "Marked as branded by you"). */
+.upt-root.is-narrow .upt-prompt-marke .up-branded-lbl,
+.upt-root.is-narrow .upt-prompt-marke .up-branded-sep { display: none; }

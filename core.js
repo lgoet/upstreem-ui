@@ -2664,6 +2664,11 @@
     "mentioned": "erwähnt",
     "Mentioned?": "Erwähnt?",
     "Mentioned": "Erwähnt",
+    /* Die Filter der Prompt-Tabelle im Menue "Filters" (15.10., die eine Leiste). "Branded" und
+       "Non-branded" bleiben englisch wie Brand und Visibility. */
+    "Not mentioned": "Nicht erwähnt",
+    "Prompt type": "Prompt-Typ",
+    "Any": "Beliebig",
     /* Das Konto-Menue der Seitenleiste (07.09. ausdruecklich angefordert). */
     "Account Settings": "Kontoeinstellungen",
     "System": "System",
@@ -7303,6 +7308,15 @@
           '</div>'
         : "";
       menu.innerHTML = head + rows + densePart + rowHeightPart;
+      /* cfg.vorspann (15.10.): ein Element, das die Tabelle OBEN ins Menue stellt -- die
+         Prompt-Tabelle stellt dort ihre Gruppierung hinein, wenn das Menue ihr "Display" ist.
+         Ein ELEMENT und kein HTML: es traegt seinen eigenen Zustand und seine Klickwege und wird
+         nach jedem Neuschreiben nur wieder eingehaengt. Ohne cfg.vorspann aendert sich nichts. */
+      if (typeof cfg.vorspann === "function"){
+        var vor = null;
+        try { vor = cfg.vorspann(); } catch(e){ vor = null; }
+        if (vor) menu.insertBefore(vor, menu.firstChild);
+      }
     }
     function syncColsBadge(){
       var badge = cfg.badgeSel ? root.querySelector(cfg.badgeSel) : null;

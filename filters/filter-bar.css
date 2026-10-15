@@ -276,20 +276,21 @@
    Zeile), und sein Panel steht im Fluss statt absolut an einem Trigger, den es nicht mehr gibt.
    Angefasst wird nur die POSITIONIERUNG und die Sichtbarkeit -- Rahmen, Polster, Liste,
    Suchfeld, Fusszeile und jede Farbe darin bleiben, wie der Filter sie baut. */
-.ufb-sub .utf-trigger, .ufb-sub .umf-trigger, .ufb-sub .umk-trigger, .ufb-sub .uif-trigger { display: none; }
+.ufb-sub .utf-trigger, .ufb-sub .umf-trigger, .ufb-sub .umk-trigger, .ufb-sub .uif-trigger,
+.ufb-sub .upt-ff-trigger { display: none; }
 /* Wurzel und Huelle des Filters tragen in ihrer eigenen CSS eine FESTE Hoehe von 32px -- die des
    Triggers, weil in einer Werkzeugleiste genau das ihr Kasten ist und das Panel darueber
    hinausfliegt. Hier IST das Panel der Inhalt, also muss die Hoehe dem Inhalt folgen. Gemessen,
    bevor das hier stand: Huelle 268x32, Panel darin 268x289 -- das Panel hing 257px aus seinem
    eigenen Elternteil heraus, und das Untermenue war 49px hoch statt 297.
    width: max-content an der Wurzel gilt hier ebenso nicht: die Breite gibt das Untermenue vor. */
-.ufb-sub .utf-root, .ufb-sub .umf-root, .ufb-sub .umk-root, .ufb-sub .uif-root {
+.ufb-sub .utf-root, .ufb-sub .umf-root, .ufb-sub .umk-root, .ufb-sub .uif-root, .ufb-sub .upt-ff {
   display: block; width: 100%; max-width: none; height: auto;
 }
-.ufb-sub .utf-wrap, .ufb-sub .umf-wrap, .ufb-sub .umk-wrap, .ufb-sub .uif-wrap {
+.ufb-sub .utf-wrap, .ufb-sub .umf-wrap, .ufb-sub .umk-wrap, .ufb-sub .uif-wrap, .ufb-sub .upt-ff-wrap {
   display: block; position: static; height: auto; width: 100%;
 }
-.ufb-sub .utf-menu, .ufb-sub .umf-menu, .ufb-sub .umk-menu, .ufb-sub .uif-menu {
+.ufb-sub .utf-menu, .ufb-sub .umf-menu, .ufb-sub .umk-menu, .ufb-sub .uif-menu, .ufb-sub .upt-ff-menu {
   position: static; top: auto; left: auto; right: auto;
   opacity: 1; transform: none;
   /* Kein zweiter Rahmen und kein zweiter Schatten: das Untermenue aus core bringt beides schon
@@ -303,7 +304,7 @@
   padding: 0;
 }
 /* Und kein eigener Abstand: das Untermenue polstert schon. */
-.ufb-sub > .utf-root, .ufb-sub > .umf-root, .ufb-sub > .umk-root, .ufb-sub > .uif-root { margin: 0; }
+.ufb-sub > .utf-root, .ufb-sub > .umf-root, .ufb-sub > .umk-root, .ufb-sub > .uif-root, .ufb-sub > .upt-ff { margin: 0; }
 
 /* ── pointer-events ───────────────────────────────────────────────────────────────────────────
    Hier stand einmal der Fehler hinter "sobald man auf das Unterdropdown hovert, wechselt das
@@ -336,7 +337,8 @@
 .ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .utf-menu,
 .ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .umf-menu,
 .ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .umk-menu,
-.ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .uif-menu { pointer-events: auto; }
+.ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .uif-menu,
+.ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .upt-ff-menu { pointer-events: auto; }
 /* Die Huelle traegt keine eigene Geometrie -- sie ist nur der Schalter zwischen den drei
    Inhalten. */
 .ufb-host { min-width: 0; }
@@ -413,3 +415,52 @@
 /* Der Branded-Schalter im Panel: eine Zeile wie in jedem Menue aus core (.up-pop-row). */
 .ufb-branded { cursor: pointer; }
 .ufb-branded:hover { background: var(--up-sel-bg); }
+
+/* ---------- Die grosse Form (15.10., Seite Prompt Insights) ----------
+   Eingeschaltet ueber data-form="gross" an der Wurzel; jede andere Leiste der App bleibt, wie sie
+   ist. Vorbild ist Entwurf D der Design-Leinwand: jede Zeile "Name ........ Wert", der Wert in der
+   dritten Farbe, solange nichts gewaehlt ist ("All"), und in der Primaerfarbe, sobald etwas gilt.
+   Der Spiegel des Filter-Triggers ist in dieser Form aus -- er zeigt ENTWEDER den Namen ODER den
+   Wert, und hier stehen beide. */
+.ufb-row-lbl, .ufb-row-wert { display: none; }
+.ufb-root[data-form="gross"] .ufb-mirror { display: none; }
+.ufb-root[data-form="gross"] .ufb-row-lbl {
+  display: block; flex: 1 1 auto; min-width: 0; color: var(--vc-text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Der Wert bekommt hoechstens die Haelfte der Zeile: ein langer Markenname darf den Namen der
+   Zeile nicht verdraengen, der sagt, WAS gefiltert wird. */
+.ufb-root[data-form="gross"] .ufb-row-wert {
+  display: block; flex: 0 1 auto; max-width: 50%; min-width: 0; margin-left: 12px;
+  color: var(--vc-third); font-weight: 400;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ufb-root[data-form="gross"] .ufb-row-wert.is-gesetzt { color: var(--vc-text); font-weight: 500; }
+/* 248 trug Spiegel ODER Name; Name UND Wert brauchen mehr. 320, weil "<Marke> mentioned?" der
+   laengste Name ist: bei 300 wurden Name UND Wert abgeschnitten ("Mercedes Benz menti...",
+   "Mentio...", gemessen 15.10.). Das ist zugleich die Breite des Hineingehens. Nicht im
+   Hineingehen: dort gilt die Breite der Seite. */
+.ufb-root[data-form="gross"] .ufb-menu.ufb-menu:not(.is-drill) { width: 320px; }
+
+/* Klickbare Chips: Zeichen und Text sind ein eigener Knopf (ufb-chip-auf), das X bleibt daneben.
+   Der Knopf traegt keine eigene Form -- die Form ist der Chip. Beim Ueberfahren bekommt der CHIP
+   den Grund und den Rand des Knopfs "Filters" daneben (.ufb-btn:hover), damit beide gleich
+   antworten. */
+.ufb-chip-auf {
+  display: inline-flex; align-items: center; gap: 6px; min-width: 0; height: 100%;
+  padding: 0; margin: 0; border: 0; background: transparent; color: inherit;
+  font: inherit; cursor: pointer; outline: 0;
+}
+.up-entchip.ufb-chip.is-klick { cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; }
+.up-entchip.ufb-chip.is-klick:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+.up-root[data-theme="dark"] .up-entchip.ufb-chip.is-klick:hover { background: var(--vc-heading-bg); }
+.ufb-chip-auf:focus-visible { box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); border-radius: 6px; }
+
+/* Ohne den Branded-Schalter des Intent-Filters (data-branded-visible="no"): auf All Prompts gilt
+   er nicht, dort hat die Tabelle ihren eigenen (Prompt type). */
+.ufb-root.ohne-branded .ufb-branded,
+.ufb-root.ohne-branded .ufb-branded-div { display: none; }
+/* Im Untermenue EINES Filters (vom Chip geoeffnet, oder auf dem Telefon hineingegangen) gehoert
+   "Reset Filters" nicht zwischen "Back" und die Optionen -- es leert ALLE Filter, und dort steht
+   man in einem. Auf der Liste aller Filter (nach "Back") steht es wieder da. */
+.ufb-root[data-form="gross"] .ufb-menu.is-inside .ufb-resetbox { display: none; }
