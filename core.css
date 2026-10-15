@@ -4346,6 +4346,41 @@
     .up-leer .up-empty-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--up-h-btn);
       padding: 0 12px; border-radius: var(--up-r-m); background: var(--vc-bg); font-size: var(--up-fs-l); font-weight: var(--up-fw-m); }
     .up-leer .up-empty-btn:hover { background: var(--vc-heading-bg); }
+    /* ---- DER LEERZUSTAND IM CHART (15.10., chartLeerHtml in core.js) ----------------------------
+       Derselbe Leerzustand wie oben, aber in einer Huelle, die ueber der GANZEN Chartflaeche liegt
+       (absolut, inset 0) und ein Groessen-Container ist. Die Flaeche behaelt dadurch die Hoehe des
+       Charts -- der Zustand bestimmt sie nicht, die Seite springt nicht -- und der Inhalt sitzt
+       senkrecht mittig darin. Die 48 Polster von oben weichen hier der Mitte; 16 bleiben, damit
+       nichts an die Kante stoesst.
+       Was nicht passt, faellt weg, gestaffelt nach der gemessenen Flaeche statt nach dem Aufrufer:
+         voll       Kachel 54, 24, Titel 24, 8, Satz 20-60   = 130-170, mit Polster bis 202
+         unter 220  ohne Satz, Abstand 16: Kachel und Titel  = 94, mit Polster 126
+         unter 130  nur der Titel                            = 24, mit Polster 56
+       Unter 280 Breite faellt der Satz ebenfalls weg: dort braucht er vier Zeilen und waere hoeher
+       als die volle Form oben rechnet.
+       Der Wirt (makeTypeChart setzt .up-chart-leer-wirt, solange der Zustand in ihm steht) braucht
+       nur die Positionierung; seine Hoehe hat er aus seiner Karte. Die Linie braucht nichts, ihr
+       .up-line-wrap ist schon positioniert.
+       is-fluss: fuer Flaechen ohne eigene Hoehe (Balkenliste). Kein Container, kein absolut -- der
+       Zustand steht im Fluss und bringt seine Hoehe selbst mit, immer in der kompakten Form
+       (Kachel und Titel, 24 Polster: 142). Balkenlisten stehen in schmalen Kaesten und Spalten;
+       mit Satz waeren es bis zu 220, also mehr als die Liste mit ihren Zeilen meist braucht. */
+    .up-chart-leer-wirt { position: relative; }
+    .up-chart-leer { position: absolute; inset: 0; z-index: 1; container: up-chart-leer / size; }
+    .up-chart-leer > .up-empty.up-leer { box-sizing: border-box; height: 100%; padding: 16px 24px; justify-content: center; }
+    @container up-chart-leer (max-height: 219px) {
+      .up-chart-leer > .up-empty.up-leer { gap: 16px; }
+      .up-chart-leer .up-empty-t { display: none; }
+    }
+    @container up-chart-leer (max-width: 279px) {
+      .up-chart-leer .up-empty-t { display: none; }
+    }
+    @container up-chart-leer (max-height: 129px) {
+      .up-chart-leer .up-empty-ic { display: none; }
+    }
+    .up-chart-leer.is-fluss { position: static; container-type: normal; }
+    .up-chart-leer.is-fluss > .up-empty.up-leer { height: auto; padding: 24px; gap: 16px; }
+    .up-chart-leer.is-fluss .up-empty-t { display: none; }
     .up-row.up-tsk { cursor: default; }
     .up-row.up-tsk:hover { background: transparent; }
     .up-tsk-bar { display: inline-block; height: 12px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
@@ -8179,3 +8214,24 @@ html[data-up-hell="grau"] .up-root:not([data-theme="dark"]) :is(.up-ph-iconbtn, 
 html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up-iconbtn)[aria-pressed="true"],
 html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up-iconbtn)[aria-pressed="true"]:hover {
   background: var(--up-wahl-bg); box-shadow: inset 0 0 0 1px var(--up-wahl-rand); }
+
+/* ================= DIE UMGEKEHRTE KARTE: NEBENSCHRIFT UND GLANZ (16.10., Benachrichtigung) =====
+   Eigener Block fuer die schwebende Benachrichtigung (notification-card.css, Variante C "Invers"
+   der Leinwand "Notification Varianten"). Zwei Werte, die die umgekehrte Karte bisher nicht hatte;
+   an denselben Selektoren wie --vc-inverse-bg/-ink oben, damit sie auch am <body> aufloesen.
+   --vc-inverse-sub  die Nebenschrift (Bezeichnung, Text, Zweitknopf, X). Im Hellen derselbe Wert
+                     wie --vc-toast-sub. Im Dunkeln NICHT --vc-toast-sub (#6b6f78): auf #eeedef sind
+                     das 4.32:1 und damit unter den 4.5, die 13px-Text braucht; #5f636b aus der
+                     Vorlage hat 5.17:1. Gerechnet mit den WCAG-Leuchtdichten.
+   --vc-inverse-glanz  der Lichtstreifen, der einmal ueber die Karte wandert. Licht ist in beiden
+                     Themen weiss -- kein vorhandenes Token traegt Weiss in beiden (--vc-inverse-ink
+                     ist im Dunkeln #1f1f1b). Auf der dunklen Karte ein Hauch (9%), auf der hellen
+                     kraeftig (75%), sonst ist er auf #eeedef nicht zu sehen. Werte der Vorlage. */
+:root, .up-root, [data-theme="light"] {
+  --vc-inverse-sub: #a0a0a0;
+  --vc-inverse-glanz: rgba(255,255,255,.09);
+}
+[data-theme="dark"], .up-root[data-theme="dark"] {
+  --vc-inverse-sub: #5f636b;
+  --vc-inverse-glanz: rgba(255,255,255,.75);
+}

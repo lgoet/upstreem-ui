@@ -246,6 +246,9 @@
       total: function(){ return state.chartTotal; },
       centerLabel: "Citations",
       collapseHost: root,
+      /* Der Leerzustand sagt "No matching data", wenn die Seite gefiltert geladen hat (15.10.,
+         Feld gefiltert im Payload; ohne das Feld gilt ungefiltert). */
+      gefiltert: function(){ return !!state.gefiltert; },
       /* this component's chart box has the toolbar above it inside the same root, so the bar list
          has to subtract that before deciding how many bars fit */
       availHeight: function(){
@@ -305,7 +308,7 @@
       if (state.listenFehler){
         chartGrace.clear();
         if (topTotal) topTotal.style.display = "none";
-        typeChart.empty("The data could not be read.");
+        typeChart.meldung("The data could not be read.");
         syncChartSwitch();
         return;
       }
@@ -1026,6 +1029,7 @@
         if (params.totalCountDomain != null) state.totalCountDomain = params.totalCountDomain;
         if (params.totalCountUrl != null) state.totalCountUrl = params.totalCountUrl;
         if (params.citations_total != null) state.chartTotal = params.citations_total;
+        if (params.gefiltert != null) state.gefiltert = isYes(params.gefiltert);
         /* brand kommt aus demselben Run-JS-Step und damit durch dieselben Backticks wie die
            Listen -- ein Markenname mit " zerlegt den Text genauso. Also durch dieselbe geteilte
            Reparatur; parseBubbleJson verpackt ein einzelnes Objekt in ein Array. */

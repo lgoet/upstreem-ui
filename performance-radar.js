@@ -906,9 +906,15 @@
       /* Zwei verschiedene Aussagen im selben Kasten: "es gibt nichts" und "es kam etwas an,
          aber es war unlesbar". Ohne die zweite las sich ein zerrissener Payload als sauberes
          leeres Ergebnis. */
+      /* Leer: der Leerzustand der Charts aus core (15.10.) ueber der ganzen .uhm-empty, die ihre
+         220 Hoehe behaelt -- vorher stand dort "No data" in 13px. Das Zeichen sind Kacheln wie die
+         Zellen der Matrix (dashboardSquare; layoutGrid ist das Rautenzeichen der Gitteransicht).
+         Gefiltert ist, was auch die Werkzeugleiste gefiltert nennt (auswahlEingeschraenkt). */
       elGrid.innerHTML = state.leseFehler
         ? UC.leseFehlerHtml("the radar")
-        : '<div class="uhm-empty">No data</div>';
+        : '<div class="uhm-empty up-chart-leer-wirt">' + (UC.chartLeerHtml
+            ? UC.chartLeerHtml({ icon: "dashboardSquare", gefiltert: auswahlEingeschraenkt() })
+            : UC.esc(UC.t ? UC.t("No data") : "No data")) + '</div>';
       state.layoutKey = "";
     }
 
@@ -1555,13 +1561,14 @@
 
        filterActive: gefiltert ist, wenn die angewandte Auswahl kleiner ist als das, was es gibt.
        Solange alles gewaehlt ist, sieht der Nutzer alles -- dann gibt es nichts offenzuhalten. */
+    function auswahlEingeschraenkt(){
+      var t = (state.topics || []).length, c = (state.companies || []).length;
+      if (!t || !c) return false;
+      return (state.appliedTopics || []).length < t || (state.appliedCompanies || []).length < c;
+    }
     var toolGroup = UC.makeToolGroup ? UC.makeToolGroup({
       root: root, tools: elTools,
-      filterActive: function(){
-        var t = (state.topics || []).length, c = (state.companies || []).length;
-        if (!t || !c) return false;
-        return (state.appliedTopics || []).length < t || (state.appliedCompanies || []).length < c;
-      },
+      filterActive: auswahlEingeschraenkt,
       prefKey: UC.prefKey ? UC.prefKey("uhm_tools__" + instanceId) : null,
       tip: "Brands, topics and settings"
     }) : null;

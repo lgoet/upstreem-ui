@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261141;
+  var BUILD = 20261142;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -1293,6 +1293,12 @@
     "No URL types for this period.": "Keine URL-Typen für diesen Zeitraum.",
     "No model data for this period.": "Keine Modelldaten für diesen Zeitraum.",
     "No citation share for this period.": "Kein Citation-Anteil für diesen Zeitraum.",
+    /* Der Leerzustand der Charts (chartLeerHtml, 15.10.) */
+    "No data yet": "Noch keine Daten",
+    "No matching data": "Keine passenden Daten",
+    "Data will appear here once responses are collected for this period.":
+      "Sobald für diesen Zeitraum KI-Antworten vorliegen, erscheinen hier die Daten.",
+    "Try changing the filters or the date range.": "Ändere die Filter oder den Zeitraum.",
     "No citations for this response.": "Keine Web-Quellen zu dieser Response.",
     "No citations match this filter.": "Keine Web-Quellen passen zu diesem Filter.",
     "No topics match your search.": "Keine Topics passen zu deiner Suche.",
@@ -6627,6 +6633,17 @@
     if (f.intents.length) p.p_intents = f.intents.slice();
     if (!opts || opts.branded !== false) p.p_branded = f.branded;
     return p;
+  }
+  /* STEHT AUF DER SEITE EIN DATENFILTER? (15.10., fuer den Leerzustand der Charts: "No matching
+     data" mit der Lupe statt "No data yet".) f ist der Filterstand der Seiten (dashboard-,
+     brands-, citations-page: modelle, maerkte, topics), dazu der Intent-Filter der App. Der
+     Zeitraum zaehlt nicht -- einen gibt es immer --, Branded auch nicht: "non_branded" ist die
+     Vorgabe, keine Wahl des Nutzers. Steht in core, weil drei Seiten dieselbe Frage stellen. */
+  function seitenFilterAktiv(f){
+    f = f || {};
+    function voll(x){ return !!(x && x.length); }
+    if (voll(f.modelle) || voll(f.maerkte) || voll(f.topics)) return true;
+    return intentsLive() && intentFilterGet().intents.length > 0;
   }
 
   /* Loading skeleton rows for a grid table.
@@ -17305,7 +17322,7 @@
     var mount = cfg.mount;
     var isDark = cfg.isDark || function(){ return false; };
     var fmt = cfg.fmt || function(v){ return fmtPct(v); };
-    var letzte = null, letzteSig = null, ro = null;
+    var letzte = null, letzteSig = null, ro = null, letzteLeer = null;
 
     /* opts.ohneFahrt (29.09. spaet): die Balken stehen sofort auf ihrer Breite, statt von 0
        einzufahren. Fuer einen Aufrufer, der DIESELBEN Daten ein zweites Mal zeichnet -- nach
@@ -17314,6 +17331,9 @@
     function zeichnen(items, opts){
       if (!mount) return;
       letzte = items;
+      /* Der Text des Leerzustands gehoert zu dieser Zeichnung: redraw() (Themenwechsel) reicht
+         ihn wieder mit, sonst stuende danach der Standardtitel da. */
+      letzteLeer = (opts && opts.leer) || null;
       var ohneFahrt = !!(opts && opts.ohneFahrt);
       /* DIESELBEN BALKEN EIN ZWEITES MAL (06.10., Ads: "die Barcharts triggern doppelte
          Appear-Animationen"). Eine Seite zeichnet bei jeder Antwort und jedem Store-Nachtrag neu,
@@ -17327,7 +17347,17 @@
       if (!ohneFahrt && sig === letzteSig && mount.querySelector(".up-bar-row")) ohneFahrt = true;
       letzteSig = sig;
       var d = (items || []).slice().filter(Boolean);
-      if (!d.length){ mount.innerHTML = '<div class="up-chart-empty">No data</div>'; return; }
+      /* Leer: der Leerzustand nach Geist (chartLeerHtml) im FLUSS -- die Liste hat keine eigene
+         Hoehe, sie waechst mit ihren Zeilen, also traegt der Zustand seine. opts.leer reicht
+         Titel, Satz oder gefiltert durch; cfg.gefiltert() gilt, wenn der Aufrufer nichts sagt. */
+      if (!d.length){
+        var lo = letzteLeer || {};
+        mount.innerHTML = chartLeerHtml({
+          fluss: true, titel: lo.titel, text: lo.text, icon: lo.icon || "chartBarDec",
+          gefiltert: lo.gefiltert != null ? !!lo.gefiltert : !!(cfg.gefiltert && cfg.gefiltert())
+        });
+        return;
+      }
       var spalte = cfg.labelCol ? !!cfg.labelCol() : false;
       var maxName = 0;
       /* Traegt irgendein Eintrag ein Logo oder Zeichen, bekommt jeder das Kaestchen (barLogoHtml). */
@@ -17470,7 +17500,7 @@
       for (var i = 0; i < (n || 4); i++) zeilen += '<div class="up-bar-sk-row"><span class="up-bar-sk-track" style="width:' + (92 - i * 14) + '%"></span></div>';
       mount.innerHTML = '<div class="up-bars-sk">' + zeilen + '</div>';
     }
-    return { render: zeichnen, skeleton: skelett, redraw: function(){ if (letzte) zeichnen(letzte); } };
+    return { render: zeichnen, skeleton: skelett, redraw: function(){ if (letzte) zeichnen(letzte, { leer: letzteLeer }); } };
   }
 
   /* ---------- DER LOGO-FAECHER (UC.makeFaecher, 29.09. -- aus ask-mira nach core) ----------
@@ -18361,6 +18391,7 @@
     function clearExtras(){
       var sk = wrap.querySelector(".up-line-sk"); if (sk) sk.remove();
       var em = wrap.querySelector(".up-line-empty"); if (em) em.remove();
+      var lz = wrap.querySelector(".up-chart-leer"); if (lz) lz.remove();
     }
     function destroy(){
       if (sizeIv){ clearInterval(sizeIv); sizeIv = null; }
@@ -18453,7 +18484,24 @@
       wrap.insertAdjacentHTML("beforeend", lineSkeletonHtml());
       if (cfg.watermark !== false) injectWatermark(wrap);
     }
-    function empty(msg){
+    /* empty(opt): der Leerzustand nach Geist (chartLeerHtml), opt = { titel, text, icon,
+       gefiltert }; ohne opt.gefiltert fragt er cfg.gefiltert(). Das Wasserzeichen geht dabei weg:
+       es saesse genau hinter Kachel und Titel. render() und skeleton() setzen es wieder ein.
+       empty("Text") ist der knappe Text von frueher und dasselbe wie meldung("Text") -- so
+       zeigen Aufrufer, die hier einen FEHLER hineinreichen ("The data could not be read."), weiter
+       keinen Leerzustand. Leer und kaputt sehen nie gleich aus (CLAUDE.md 2). */
+    function empty(opt){
+      if (typeof opt === "string"){ meldung(opt); return; }
+      opt = opt || {};
+      stand++;
+      destroy(); clearExtras(); clearLegend();
+      var wm = wrap.querySelector(".upstreem-watermark"); if (wm) wm.remove();
+      wrap.insertAdjacentHTML("beforeend", chartLeerHtml({
+        titel: opt.titel, text: opt.text, icon: opt.icon || "chartSpline",
+        gefiltert: opt.gefiltert != null ? !!opt.gefiltert : !!(cfg.gefiltert && cfg.gefiltert())
+      }));
+    }
+    function meldung(msg){
       stand++;
       destroy(); clearExtras(); clearLegend();
       wrap.insertAdjacentHTML("beforeend", '<div class="up-line-empty">' + esc(msg || t_("No data")) + '</div>');
@@ -18716,7 +18764,7 @@
         if (!isOwner()) return;
         var alive = false;
         try { alive = !!(window.Chart && window.Chart.getChart && canvas && window.Chart.getChart(canvas)); } catch(e){}
-        if (alive || wrap.querySelector(".up-line-empty")) return;
+        if (alive || wrap.querySelector(".up-line-empty, .up-chart-leer")) return;
         if (attempts++ >= 12) return;
         buildWhenSized(built, meinStand);
         verifyT = setTimeout(check, 250);
@@ -18805,6 +18853,7 @@
       updateColors: updateColors,
       skeleton: skeleton,
       empty: empty,
+      meldung: meldung,
       destroy: destroy,
       relayoutLegend: legendLayout,
       /* exposed because a component can drive the same highlight from outside the legend —
@@ -19134,6 +19183,9 @@
       if (chart){ try { chart.destroy(); } catch(e){} chart = null; }
       var cv = body.querySelector("canvas");
       if (cv && window.Chart && window.Chart.getChart){ var ex = window.Chart.getChart(cv); if (ex) try { ex.destroy(); } catch(e){} }
+      /* Der Wirt traegt seine Positionierung nur, solange der Leerzustand in ihm steht (empty
+         unten) -- danach haengen Ring, Balken und Tooltip wieder an dem, woran sie vorher hingen. */
+      body.classList.remove("up-chart-leer-wirt");
     }
     /* below collapseAt the legend drops under the doughnut instead of sitting beside it — mirrored
        onto .up-donut-sk too (when the skeleton is what's currently showing) so the loading circle
@@ -19148,7 +19200,21 @@
       if (sk) sk.classList.toggle("is-collapsed", collapsed);
     }
     function skeleton(){ destroy(); body.innerHTML = (cfg.chartMode && cfg.chartMode() === "bar") ? barSkeletonHtml() : donutSkeletonHtml(); }
-    function empty(msg){ destroy(); body.innerHTML = '<div class="up-chart-empty">' + esc(msg || t_("No data")) + '</div>'; }
+    /* empty(opt) zeichnet den Leerzustand nach Geist (chartLeerHtml) ueber die ganze Flaeche des
+       Koerpers; das Zeichen folgt dem Modus (Ring oder Balken). empty("Text") und meldung("Text")
+       sind der knappe Text von frueher -- fuer Lese- und Ladefehler, siehe makeLine. */
+    function empty(opt){
+      if (typeof opt === "string"){ meldung(opt); return; }
+      opt = opt || {};
+      destroy();
+      var balken = cfg.chartMode && cfg.chartMode() === "bar";
+      body.innerHTML = chartLeerHtml({
+        titel: opt.titel, text: opt.text, icon: opt.icon || (balken ? "chartBarDec" : "donut"),
+        gefiltert: opt.gefiltert != null ? !!opt.gefiltert : !!(cfg.gefiltert && cfg.gefiltert())
+      });
+      body.classList.add("up-chart-leer-wirt");
+    }
+    function meldung(msg){ destroy(); body.innerHTML = '<div class="up-chart-empty">' + esc(msg || t_("No data")) + '</div>'; }
     function isEmpty(d){ return !d.length || d.every(function(x){ return !(Number(x.share) > 0); }); }
 
     /* opts.ohneFahrt: ohne die 200ms-Einblendung von Chart.js -- derselbe Fall wie bei
@@ -19167,7 +19233,7 @@
       d = d || [];
       letzteZeichnung = { art: "donut", daten: d };
       lastKeys = keysOf(d); lastMode = "donut";
-      if (isEmpty(d)){ empty(); return; }
+      if (isEmpty(d)){ empty({ icon: "donut" }); return; }
       body.innerHTML =
         '<div class="up-donut-layout">' +
           '<div class="up-donut-wrap"><canvas></canvas>' +
@@ -19280,7 +19346,7 @@
       destroy();
       letzteZeichnung = { art: "bars", daten: d };
       d = (d || []).slice().sort(function(a, b){ return b.share - a.share; });
-      if (isEmpty(d)){ empty(); return; }
+      if (isEmpty(d)){ empty({ icon: "chartBarDec" }); return; }
       lastKeys = keysOf(d); lastMode = "bar";
       var mitLogos = d.some(function(it){ return !!(it.logo || it.ersatz || it.flagge != null); });
       body.innerHTML = '<div class="up-bars">' + d.map(function(it){
@@ -19407,6 +19473,7 @@
       updateColors: updateColors,
       skeleton: skeleton,
       empty: empty,
+      meldung: meldung,
       destroy: destroy,
       applyCollapse: applyCollapse,
       resize: function(){ try { if (chart) chart.resize(); } catch(e){} },
@@ -25108,6 +25175,45 @@
     '</div>';
   }
 
+  /* ---- DER LEERZUSTAND IM CHART (15.10., "Empty States: ja natuerlich, warum denn nicht?") -----
+     Bis hierher stand in jedem leeren Chart der nackte Text "No data" (.up-line-empty in makeLine,
+     .up-chart-empty in makeTypeChart und makeBarList), waehrend Tabellen und Listen daneben schon
+     den Leerzustand nach Geist trugen. Jetzt zeichnen die drei Bausteine selbst diesen Zustand --
+     ein Ort, und jeder Chart der App zieht mit, ohne dass eine Komponente ihn kennen muss.
+
+     Gestalt: DIESELBE wie leerHtml (Kachel 54, Titel 16/500, Satz 14), nur ohne Knopf -- im Chart
+     haengt niemand an data-clearall, ein Knopf waere tot. Der Text ist fest vorgegeben, weil ein
+     Chart, anders als eine Tabelle, fast immer aus demselben Grund leer ist: im Zeitraum gab es
+     keine Antworten. Wer es genauer weiss (domain-detail: "No URL types for this period."),
+     gibt den Satz mit.
+
+     GROESSE NACH FLAECHE, nicht nach Aufrufer. Die Huelle .up-chart-leer liegt ueber der ganzen
+     Chartflache (position absolute, inset 0) und ist ein Groessen-Container; core.css blendet
+     ueber @container aus, was nicht mehr hineinpasst: unter 220 Hoehe faellt der Satz weg, unter
+     130 auch die Kachel. Damit sitzt der Zustand senkrecht mittig in der Flaeche, deren Hoehe er
+     NICHT bestimmt -- die bleibt die des Charts, also kein Sprung der Seite. Und es gibt keinen
+     Schwellwert in Javascript, der in einem verdeckten Drawer 0 misst.
+     fluss: fuer Flaechen ohne eigene Hoehe (die Balkenliste waechst mit ihren Zeilen). Dort waere
+     eine absolute Huelle 0 hoch; im Fluss steht die kompakte Form (Kachel und Titel) mit eigenem
+     Polster.
+
+     Leer ist NICHT kaputt (CLAUDE.md 2): ein Lese- oder Ladefehler bleibt der knappe Text der
+     Bausteine (meldung() an makeLine und makeTypeChart), nie diese Kachel. */
+  var CHART_LEER_SATZ = "Data will appear here once responses are collected for this period.";
+  function chartLeerHtml(opt){
+    opt = opt || {};
+    var gef = !!opt.gefiltert;
+    return '<div class="up-chart-leer' + (opt.fluss ? " is-fluss" : "") + '">' + leerHtml({
+      gefiltert: gef,
+      titel: opt.titel != null ? opt.titel : (gef ? "No matching data" : "No data yet"),
+      text: opt.text != null ? opt.text : (gef ? "Try changing the filters or the date range." : CHART_LEER_SATZ),
+      /* Ohne Angabe das Zeichen der Linie: chartSpline steht in ICON_PATHS. Gefiltert gewinnt in
+         leerHtml ohnehin die Lupe. */
+      icon: opt.icon || "chartSpline",
+      knopf: ""
+    }) + '</div>';
+  }
+
   /* ══ EINZELSEITE: der Rahmen der kleinen ganzseitigen Flaechen (07.10.) ═══════════════════════
      Vier Seiten, die bis dahin reine Bubble-Seiten waren, sind je eine EIGENE Komponente:
      check-email (uce), forgot-password (ufp), reset-password (urp), not-found (unf). Sie teilen
@@ -27402,6 +27508,9 @@
     makeToolGroup: makeToolGroup,
     leseFehlerHtml: leseFehlerHtml,
     leerHtml: leerHtml,
+    /* Der Leerzustand eines Charts (15.10.): fuer Flaechen, die keinen der Chart-Bausteine
+       benutzen (Landschaft in brands-overview, Heatmap des Performance Radar). */
+    chartLeerHtml: chartLeerHtml,
     /* Die Einzelseite (07.10.): Rahmen und Teile der kleinen ganzseitigen Flaechen. */
     makeEinzelseite: makeEinzelseite,
     esKopfHtml: esKopfHtml, esFeldHtml: esFeldHtml, esKnopfHtml: esKnopfHtml, captchaPlatzHtml: captchaPlatzHtml,
@@ -27538,6 +27647,7 @@
     INTENTE: INTENTE, intentArt: intentArt, hatIntent: hatIntent, intentZustand: intentZustand,
     intentHtml: intentHtml, brandedHtml: brandedHtml, intentMenuHtml: intentMenuHtml,
     intentsLive: intentsLive, intentFilterGet: intentFilterGet, intentFilterSet: intentFilterSet, intentFilterParams: intentFilterParams,
+    seitenFilterAktiv: seitenFilterAktiv,
     makeIntentMenu: makeIntentMenu, intentName: intentName, intentsLiveStart: intentsLiveStart, onIntentDaten: onIntentDaten,
     rpcMitIntent: rpcMitIntent,
     intentReiseHtml: intentReiseHtml, intentErklaerHtml: intentErklaerHtml, intentEinzelErklaerHtml: intentEinzelErklaerHtml, brandedErklaerHtml: brandedErklaerHtml,

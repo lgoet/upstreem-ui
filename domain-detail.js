@@ -712,12 +712,14 @@
     function istLaden() { return !!state.loading; }
 
     function renderChart() {
-      if (state.fehler) { line.empty(state.fehler); return; }
+      /* state.fehler ist ein Lese- oder Ladefehler (oder die abgelaufene Warte-Uhr): der knappe
+         Text, nie der Leerzustand -- leer und kaputt sind zwei Dinge (15.10.). */
+      if (state.fehler) { line.meldung(state.fehler); return; }
       if (istLaden() || !state.hasData) { line.skeleton(); return; }
 
       if (state.mode === "citation") {
         var reihe = isArr(state.share) ? state.share : [];
-        if (!reihe.length) { line.empty("No citation share for this period."); return; }
+        if (!reihe.length) { line.empty({ text: "No citation share for this period." }); return; }
         var id = (state.header && (state.header.domain || state.header.id)) || "domain";
         var punkte = reihe.map(function (p) {
           return { company_id: id, day: p.day, share_pct: num(p.share_pct) };
@@ -736,10 +738,10 @@
          ueber die Daten. Vorher stand hier nur die Aussage -- ein Klick auf "Domain Share"
          zeigte "No URL data for this period.", solange der Workflow lief, also genau in dem
          Moment, in dem noch niemand etwas ueber die Daten wissen konnte. */
-      if (state.urlsError) { line.empty(state.urlsError); return; }
+      if (state.urlsError) { line.meldung(state.urlsError); return; }
       if (urlWartet()) { line.skeleton(); return; }
       var pts = state.urls && isArr(state.urls.points) ? state.urls.points : [];
-      if (!pts.length) { line.empty("No URL data for this period."); return; }
+      if (!pts.length) { line.empty({ text: "No URL data for this period." }); return; }
       /* Eine Farbe je URL aus der ruhigen Familie (siehe ruhig()). Die Reihenfolge richtet sich
          nach dem Gesamtanteil: die staerkste Kurve traegt den Akzent und immer dieselbe Farbe,
          statt bei jedem Neuladen zu springen. Ab der sechsten URL beginnt die Familie von vorn,
@@ -866,7 +868,7 @@
       if (state.fehler) { elTypeBody.innerHTML = '<div class="up-chart-empty">' + esc(state.fehler) + "</div>"; return; }
       if (istLaden() || !isArr(state.types)) { typeChart.skeleton(); return; }
       var vorbereitet = UC.prepTypeData("url", state.types, isDark);
-      if (!vorbereitet.length) { typeChart.empty("No URL types for this period."); return; }
+      if (!vorbereitet.length) { typeChart.empty({ text: "No URL types for this period." }); return; }
       /* DIE URL-TYPEN IM VERLAUF DES CHARTS -- seit dem 07.10. NUR AUF DER LANDINGPAGE
          (typenImVerlauf, siehe oben); die App behaelt die Farben aus prepTypeData. Die Anforderung
          vom 06.10. ("nur das Model-Breakdown-Chart ist im richtigen Farbverlauf, der Rest nicht")
@@ -1034,10 +1036,13 @@
 
     function renderBars() {
       if (!modelDonut) return;
-      if (state.fehler) { modelDonut.empty(state.fehler); return; }
+      if (state.fehler) { modelDonut.meldung(state.fehler); return; }
       if (istLaden() || !isArr(state.model)) { modelDonut.skeleton(); return; }
       var mi = modelItems();
-      if (!mi.length) { modelDonut.empty("No model data for this period."); return; }
+      if (!mi.length) {
+        modelDonut.empty({ text: "No model data for this period.", icon: state.modelMode === "bar" ? "chartBarDec" : "donut" });
+        return;
+      }
       if (state.modelMode === "bar") modelDonut.renderBars(mi);
       else modelDonut.renderDonut(mi);
     }
