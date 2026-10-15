@@ -6770,6 +6770,332 @@
     return { show: show, hide: hide, el: el };
   }
 
+  /* ══ DIE ANLEITUNG (15.10., zuerst fuer Impact Events) ══════════════════════════════════════
+     Eine Fuehrung Schritt fuer Schritt, angeheftet an Elemente der Seite. Gewuenscht als Baustein,
+     "der ins Design System passt" -- also KEINE neue Kartenform, sondern die Erklaerkarte der App
+     (.up-explain: die umgekehrte Karte, oben die helle Platte mit einem Beispiel, Titel, ein Satz;
+     Hausregel der Erklaerkarten), dazu genau das, was eine Fuehrung zusaetzlich braucht: "2 of 5",
+     Back / Next bzw. Done und "Skip guide".
+     LAGE: neben dem Element mit Spitze, in der Reihenfolge der Seiten, die der Schritt nennt
+     (Vorgabe rechts, links, unten, oben). Passt keine, liegt sie unten am Fenster ("dock", ohne
+     Spitze und ohne Platte): so verdeckt sie das Element nicht, um das es geht -- auf dem Telefon
+     und neben einem Popup, das die Breite fuellt, ist das die einzige Stelle, an der sie nichts
+     zudeckt, was man gerade ausfuellen soll (ihre eigenen Back/Next ersetzen dort den Fuss des
+     Popups). Ohne sichtbares Element mittig ohne Spitze -- nie an einer Stelle, die es nicht gibt.
+     rahmen: fuer links/rechts zaehlt die Kante dieses Elements statt der des Ziels -- ein Feld in
+     einem Popup bekommt die Karte NEBEN das Popup, nicht in dessen Polster.
+     Sie folgt beim Scrollen (jeder Scroll-Behaelter, Einfangphase) und bei Groessenwechseln von
+     Fenster, Element und Karte -- gerechnet einmal pro Bild (einmalProBild, laeuft auch dort, wo
+     rAF ruht).
+     TOP LAYER statt z-index (wie makeExplain): die Karte liegt ueber Popups, Drawern und Menues,
+     ohne dass irgendein z-index der Seite angefasst wird. Bei jedem Schritt frisch nach oben --
+     ein Menue, das inzwischen geoeffnet wurde, liegt sonst darueber.
+     TASTATUR: Escape beendet die Fuehrung -- und NUR sie (Zuhoerer am window in der Einfangphase,
+     also vor dem Escape eines offenen Popups; ein zweites Escape schliesst dann das Popup). Steht
+     ein Menue offen, gehoert Escape dem Menue. Pfeil rechts/links blaettern, aber nur, wenn der
+     Fokus in der Karte oder auf nichts steht -- in einem Feld bewegen Pfeile die Schreibmarke.
+     FOKUS: start(i, { fokus: true }) (vom Nutzer ausgeloest) setzt ihn auf den Hauptknopf und gibt
+     ihn am Ende zurueck; eine Fuehrung, die von selbst mitlaeuft, nimmt niemandem das Feld weg.
+     Blaettern ueber die Knoepfe behaelt den Fokus auf dem entsprechenden Knopf.
+     cfg: { schritte: [{ id, ziel: Element | Funktion -> Element, rahmen: Element | Funktion,
+              titel, text (englisch, uebersetzt ueber den Katalog; auch als Funktion),
+              vis: HTML | Funktion (die helle Platte), seiten: ["rechts", ...],
+              mount: Element | Funktion (wohin die Karte gehaengt wird, Vorgabe <body>),
+              knopf: Beschriftung des Hauptknopfs (Vorgabe Next bzw. Done im letzten),
+              weiter: Funktion(api) statt "naechster Schritt", weiterAus: Funktion -> true sperrt,
+              zurueck: false (kein Back) | Funktion(api) }],
+            getIsDark, onEnde(grund, index), onSchritt(index, schritt) }
+     grund: "fertig" (Done), "skip" (Skip guide), "esc", oder was der Aufrufer stop() mitgibt.
+     Rueckgabe { start(i, opts), zeige(i, opts), stop(grund), neu(), laeuft(), index(),
+                 indexVon(id), el }. Gezaehlt wird ab dem Schritt, mit dem start() begann. */
+  function makeAnleitung(cfg){
+    cfg = cfg || {};
+    var schritte = cfg.schritte || [];
+    var kennung = "upanl-" + Math.random().toString(36).slice(2, 8);
+    var el = document.createElement("div");
+    el.className = "up-explain up-anleitung";
+    el.setAttribute("role", "dialog");
+    el.setAttribute("aria-modal", "false");
+    el.setAttribute("aria-labelledby", kennung + "-h");
+    el.setAttribute("aria-describedby", kennung + "-t");
+    var idx = -1, ab = 0, offen = false, rueckFokus = null, ro = null, beobachtet = null, zuT = null;
+    var RAND = 8, ABSTAND = 12;
+    var lageBald = einmalProBild(lage, "anleitung");
+    function dunkel(){ try { return !!(cfg.getIsDark && cfg.getIsDark()); } catch(e){ return false; } }
+    function wert(x){ return typeof x === "function" ? x() : x; }
+    function ziel(){
+      var s = schritte[idx];
+      if (!s) return null;
+      var z = null;
+      try { z = wert(s.ziel); } catch(e){ z = null; }
+      return z && z.nodeType === 1 && z.isConnected ? z : null;
+    }
+    /* Sichtbar heisst hier: im Baum, mit einem Kasten, nicht versteckt. Deckkraft zaehlt NICHT --
+       ein Popup blendet beim Oeffnen 180ms lang ueber die Deckkraft ein, und genau dann zeigt die
+       Fuehrung ihren ersten Schritt. */
+    function sichtbar(z){
+      if (!z || !z.getClientRects || !z.getClientRects().length) return false;
+      if (typeof z.checkVisibility === "function"){
+        try { if (!z.checkVisibility({ visibilityProperty: true, checkVisibilityCSS: true })) return false; } catch(e){}
+      }
+      var r = z.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    }
+    function obenRein(){
+      if (typeof el.showPopover !== "function") return;
+      try {
+        if (el.hasAttribute("popover")){ try { el.hidePopover(); } catch(e2){} }
+        el.setAttribute("popover", "manual");
+        el.showPopover();
+        el.style.margin = "0"; el.style.right = "auto"; el.style.bottom = "auto";
+      } catch(e){ el.removeAttribute("popover"); }
+    }
+    function obenRaus(){
+      if (!el.hasAttribute("popover")) return;
+      try { el.hidePopover(); } catch(e){}
+      el.removeAttribute("popover");
+    }
+    function zeichnen(){
+      var s = schritte[idx], letzter = idx === schritte.length - 1;
+      var n = idx - ab + 1, gesamt = schritte.length - ab;
+      var zurueck = idx > ab && s.zurueck !== false;
+      var aus = false;
+      try { aus = typeof s.weiterAus === "function" && !!s.weiterAus(); } catch(e){}
+      var vis = "";
+      try { vis = wert(s.vis) || ""; } catch(e){ vis = ""; }
+      el.setAttribute("data-theme", dunkel() ? "dark" : "light");
+      var html =
+        (vis ? '<div class="up-explain-vis up-anl-vis">' + vis + '</div>' : '') +
+        '<div class="up-anl-zahl">' + esc(t_("{n} of {total}").replace("{n}", String(n)).replace("{total}", String(gesamt))) + '</div>' +
+        '<div class="up-explain-h" id="' + kennung + '-h">' + esc(t_(wert(s.titel) || "")) + '</div>' +
+        '<div class="up-explain-t" id="' + kennung + '-t">' + esc(t_(wert(s.text) || "")) + '</div>' +
+        '<div class="up-anl-fuss">' +
+          (letzter ? '' : '<button type="button" class="up-anl-skip" data-anl="skip">' + esc(t_("Skip guide")) + '</button>') +
+          '<span class="up-anl-knoepfe">' +
+            (zurueck ? '<button type="button" class="up-anl-btn" data-anl="zurueck">' + esc(t_("Back")) + '</button>' : '') +
+            '<button type="button" class="up-anl-btn is-pri" data-anl="weiter"' + (aus ? ' disabled' : '') + '>' +
+              esc(t_(s.knopf || (letzter ? "Done" : "Next"))) + '</button>' +
+          '</span>' +
+        '</div>';
+      /* neu() laeuft bei jedem Tastendruck im Popup (der Hauptknopf folgt "Continue") -- gleicher
+         Inhalt wird nicht neu gesetzt, sonst flackerte die Karte und verloere den Hover. */
+      if (html !== el.__anlHtml){ el.innerHTML = html; el.__anlHtml = html; }
+    }
+    /* Den Fokus auf denselben Knopf wie vorher (er ist neu gezeichnet), sonst auf den Hauptknopf;
+       ist der gesperrt, auf die Karte selbst. */
+    function fokussieren(art){
+      var b = (art && el.querySelector('[data-anl="' + art + '"]:not(:disabled)')) || el.querySelector('[data-anl="weiter"]:not(:disabled)');
+      try {
+        if (b) b.focus({ preventScroll: true });
+        else { el.setAttribute("tabindex", "-1"); el.focus({ preventScroll: true }); }
+      } catch(e){}
+    }
+    function mountVon(s){
+      var m = null;
+      try { m = wert(s.mount); } catch(e){ m = null; }
+      return m && m.nodeType === 1 && m.isConnected ? m : document.body;
+    }
+    function beobachten(z){
+      if (typeof ResizeObserver === "undefined") return;
+      if (!ro){ ro = new ResizeObserver(function(){ lageBald(); }); ro.observe(el); }
+      if (beobachtet === z) return;
+      if (beobachtet){ try { ro.unobserve(beobachtet); } catch(e){} }
+      beobachtet = z;
+      if (z){ try { ro.observe(z); } catch(e){} }
+    }
+    function lage(){
+      if (!offen) return;
+      var z = ziel();
+      if (z !== beobachtet) beobachten(z);
+      var vw = window.innerWidth || document.documentElement.clientWidth;
+      var vh = window.innerHeight || document.documentElement.clientHeight;
+      el.style.left = "0px"; el.style.top = "0px";
+      el.classList.remove("is-flipped");
+      el.removeAttribute("data-seite");
+      var w = el.offsetWidth, h = el.offsetHeight;
+      if (!z || !sichtbar(z)){
+        el.setAttribute("data-seite", "mitte");
+        el.style.left = Math.max(RAND, Math.round((vw - w) / 2)) + "px";
+        el.style.top = Math.max(RAND, Math.round((vh - h) / 2)) + "px";
+        return;
+      }
+      var r = z.getBoundingClientRect(), rr = null;
+      try { rr = wert(schritte[idx].rahmen); } catch(e){ rr = null; }
+      var rx = rr && rr.nodeType === 1 && sichtbar(rr) ? rr.getBoundingClientRect() : r;
+      var platz = { rechts: vw - rx.right - ABSTAND - RAND, links: rx.left - ABSTAND - RAND,
+                    unten: vh - r.bottom - ABSTAND - RAND, oben: r.top - ABSTAND - RAND };
+      var passt = { rechts: platz.rechts >= w, links: platz.links >= w, unten: platz.unten >= h, oben: platz.oben >= h };
+      var reihe = schritte[idx].seiten || ["rechts", "links", "unten", "oben"];
+      var seite = reihe.filter(function(x){ return passt[x]; })[0] || "dock";
+      function klemmen(v, lo, hi){ return Math.max(lo, Math.min(v, hi)); }
+      var left, top;
+      if (seite === "dock"){
+        el.setAttribute("data-seite", "dock");
+        w = el.offsetWidth; h = el.offsetHeight;
+        el.style.left = Math.max(RAND, Math.round((vw - w) / 2)) + "px";
+        el.style.top = Math.max(RAND, Math.round(vh - h - RAND)) + "px";
+        return;
+      }
+      if (seite === "rechts" || seite === "links"){
+        left = seite === "rechts" ? rx.right + ABSTAND : rx.left - ABSTAND - w;
+        top = klemmen(r.top + r.height / 2 - h / 2, RAND, vh - h - RAND);
+        el.style.setProperty("--up-caret-y", Math.round(klemmen(r.top + r.height / 2 - top, 18, h - 18)) + "px");
+      } else {
+        top = seite === "unten" ? r.bottom + ABSTAND : r.top - ABSTAND - h;
+        top = klemmen(top, RAND, Math.max(RAND, vh - h - RAND));
+        left = klemmen(r.left + r.width / 2 - w / 2, RAND, Math.max(RAND, vw - w - RAND));
+        el.style.setProperty("--up-caret", Math.round(klemmen(r.left + r.width / 2 - left, 20, w - 20)) + "px");
+        if (seite === "oben") el.classList.add("is-flipped");
+      }
+      el.setAttribute("data-seite", seite);
+      el.style.left = Math.round(left) + "px";
+      el.style.top = Math.round(top) + "px";
+    }
+    /* Liegt das Element ausserhalb des Sichtbaren (im Popup weiter unten, in der Seite unter dem
+       Rand) oder klebt es am Rand, wird es vor dem Zeigen in die Mitte geholt -- sonst fehlte der
+       Karte daneben der Platz (gemessen: ein Abschnittskopf an der Unterkante, die Karte musste
+       darueber und deckte den Inhalt davor zu). Wer ganz zu sehen ist, bleibt, wo er ist. */
+    function hereinholen(z){
+      if (!z || !z.getBoundingClientRect || !z.scrollIntoView) return;
+      var r = z.getBoundingClientRect(), vh = window.innerHeight || document.documentElement.clientHeight;
+      if (r.top < RAND || r.bottom > vh - 3 * RAND){ try { z.scrollIntoView({ block: r.height > vh / 2 ? "start" : "center", inline: "nearest" }); } catch(e){} }
+    }
+    function menueOffen(){
+      for (var i = 0; i < POPOVERS.length; i++){
+        var p = POPOVERS[i];
+        if (p.wrap && p.wrap.classList && p.wrap.classList.contains("is-open") && document.contains(p.wrap)) return true;
+      }
+      return false;
+    }
+    function feldFokus(a){
+      if (!a || a === document.body) return false;
+      var tag = String(a.tagName || "").toLowerCase();
+      return tag === "input" || tag === "textarea" || tag === "select" || !!a.isContentEditable ||
+        /^(radio|slider|spinbutton|listbox|option|menuitem|tab|switch|combobox)$/.test(String(a.getAttribute && a.getAttribute("role") || ""));
+    }
+    function taste(e){
+      if (!offen) return;
+      if (e.key === "Escape"){
+        if (menueOffen()) return;
+        e.preventDefault(); e.stopPropagation();
+        if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+        stop("esc");
+        return;
+      }
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      var a = document.activeElement;
+      if (!(el.contains(a) || !a || a === document.body) || (feldFokus(a) && !el.contains(a))) return;
+      var b = el.querySelector(e.key === "ArrowRight" ? '[data-anl="weiter"]' : '[data-anl="zurueck"]');
+      if (!b || b.disabled) return;
+      e.preventDefault();
+      klick(b.getAttribute("data-anl"), true);
+    }
+    function aufScroll(){ lageBald(); }
+    function anmelden(){
+      window.addEventListener("keydown", taste, true);
+      window.addEventListener("scroll", aufScroll, { capture: true, passive: true });
+      window.addEventListener("resize", aufScroll);
+    }
+    function abmelden(){
+      window.removeEventListener("keydown", taste, true);
+      window.removeEventListener("scroll", aufScroll, { capture: true, passive: true });
+      window.removeEventListener("resize", aufScroll);
+      if (ro){ try { ro.disconnect(); } catch(e){} ro = null; beobachtet = null; }
+    }
+    function zeige(i, opts){
+      opts = opts || {};
+      if (i < 0 || i >= schritte.length) return false;
+      var a = document.activeElement, fokusDrin = el.contains(a);
+      var art = fokusDrin && a.getAttribute ? a.getAttribute("data-anl") : "";
+      clearTimeout(zuT);
+      idx = i;
+      var s = schritte[i], m = mountVon(s);
+      if (el.parentNode !== m) m.appendChild(el);
+      zeichnen();
+      obenRein();
+      if (!offen){ offen = true; anmelden(); }
+      el.classList.add("is-on");
+      var z = ziel();
+      if (opts.hereinholen !== false) hereinholen(z);
+      lage();
+      if (opts.fokus || fokusDrin) fokussieren(opts.fokus === true ? "" : art);
+      if (typeof cfg.onSchritt === "function"){ try { cfg.onSchritt(i, s); } catch(e){} }
+      return true;
+    }
+    function start(i, opts){
+      opts = opts || {};
+      ab = Math.max(0, Math.min(i || 0, schritte.length - 1));
+      if (opts.fokus && !el.contains(document.activeElement)) rueckFokus = document.activeElement;
+      return zeige(ab, opts);
+    }
+    function stop(grund){
+      if (!offen) return;
+      var zAlt = ziel();
+      offen = false;
+      var fokusDrin = el.contains(document.activeElement);
+      abmelden();
+      el.classList.remove("is-on");
+      /* Aus dem Top Layer und aus dem Baum erst nach der Ueberblendung von .up-explain (140ms). */
+      zuT = setTimeout(function(){ if (offen) return; obenRaus(); if (el.parentNode) el.parentNode.removeChild(el); }, 200);
+      /* Der Fokus geht dorthin zurueck, woher er kam -- lief die Fuehrung von selbst mit, an das
+         Element des Schritts (oder das erste bedienbare darin), damit Tastatur und Vorleser im
+         Popup bleiben statt auf der Seite dahinter zu landen. */
+      if (fokusDrin){
+        var r = rueckFokus, FOKUSBAR = 'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex="0"]';
+        if (!(r && r.focus && document.contains(r) && r !== document.body) && zAlt)
+          r = zAlt.matches && zAlt.matches(FOKUSBAR) ? zAlt : (zAlt.querySelector && zAlt.querySelector(FOKUSBAR));
+        try { if (r && r.focus && document.contains(r)) r.focus({ preventScroll: true }); else document.activeElement.blur(); } catch(e){}
+      }
+      rueckFokus = null;
+      var war = idx;
+      idx = -1;
+      if (typeof cfg.onEnde === "function"){ try { cfg.onEnde(grund || "stop", war); } catch(e){} }
+    }
+    function klick(art, perTaste){
+      var s = schritte[idx];
+      if (!s) return;
+      if (art === "skip"){ stop("skip"); return; }
+      if (art === "zurueck"){
+        if (typeof s.zurueck === "function") s.zurueck(api);
+        else zeige(idx - 1, { fokus: perTaste ? true : undefined });
+        return;
+      }
+      if (art === "weiter"){
+        if (typeof s.weiter === "function"){ s.weiter(api); return; }
+        if (idx >= schritte.length - 1){ stop("fertig"); return; }
+        zeige(idx + 1, { fokus: perTaste ? true : undefined });
+      }
+    }
+    el.addEventListener("click", function(e){
+      var b = e.target.closest && e.target.closest("[data-anl]");
+      if (!b || b.disabled || !el.contains(b)) return;
+      e.stopPropagation();
+      klick(b.getAttribute("data-anl"), false);
+    });
+    var api = {
+      el: el, start: start, zeige: zeige, stop: stop,
+      /* Neu zeichnen und neu legen -- nach einer Aenderung, die den Hauptknopf sperrt oder frei
+         gibt, oder wenn das Element neu gebaut wurde. Der Fokus bleibt auf seinem Knopf. */
+      neu: function(){
+        if (!offen) return;
+        var a = document.activeElement, art = el.contains(a) && a.getAttribute ? a.getAttribute("data-anl") : "";
+        zeichnen();
+        lage();
+        if (art) fokussieren(art);
+      },
+      laeuft: function(){ return offen; },
+      index: function(){ return idx; },
+      indexVon: function(id){ for (var i = 0; i < schritte.length; i++) if (schritte[i].id === id) return i; return -1; }
+    };
+    return api;
+  }
+  addMessages("de", {
+    /* Die Knoepfe der Anleitung (UC.makeAnleitung). "Back" und "Done" kennt der Katalog schon. */
+    "Next": "Weiter",
+    "Skip guide": "Überspringen",
+    "{n} of {total}": "{n} von {total}"
+  });
+
   /* ==========================================================================================
      TABLE CHROME — columns, pagination, header sorting
      ==========================================================================================
@@ -27081,7 +27407,7 @@
     makeSoftReload: makeSoftReload,
     legacyCopy: legacyCopy,
     makeEmptyGrace: makeEmptyGrace,
-    makeExplain: makeExplain,
+    makeExplain: makeExplain, makeAnleitung: makeAnleitung,
     STORE: STORE,
     LOADING_EXPLICIT: LOADING_EXPLICIT,
     makeTooltips: makeTooltips,

@@ -7380,3 +7380,74 @@ span.up-sumadd { height: var(--up-h-seg); cursor: default; }
 .up-root.is-vnarrow .up-sumzelle:not(:first-child) { display: none; }
 .up-root.is-vnarrow .up-sumzelle:first-child { grid-column: 1 / -1; }
 .up-root.is-vnarrow .up-sumreihe .up-sumpaar + .up-sumpaar { display: none; }
+
+/* ══ DIE ANLEITUNG (15.10., UC.makeAnleitung) ═══════════════════════════════════════════════════
+   Die Erklaerkarte der App (.up-explain: Grund, Tinte, Radius, Polster, Tiefe e-2, die helle Platte,
+   Titel 14.5/600, Satz 13.5) mit dem, was eine Fuehrung braucht. Nur was ANDERS ist, steht hier:
+   breiter (zwei Knoepfe und ein Satz brauchen mehr als 248), klickbar (die Erklaerkarte laesst
+   Klicks durch), ohne den Versatz beim Einblenden (sie springt von Schritt zu Schritt an eine
+   neue Stelle -- ein Gleiten von 4px dort waere Unruhe), und die Spitze auch links und rechts.
+   Knoepfe in der Sprache des Toasts, der zweiten umgekehrten Karte: Flaeche --vc-toast-flaeche,
+   Hoehe 28 (--up-h-seg), Radius 6 = 14 - 8 (konzentrisch zum Polster der Karte). Der Hauptknopf
+   ist die Platte noch einmal: Grund in der Tinte der Karte, Schrift in ihrem Grund. */
+.up-explain.up-anleitung { width: 296px; max-width: calc(100vw - 16px); transform: none; }
+/* Klickbar nur, solange sie zu sehen ist -- beim Ausblenden (140ms) faengt sie nichts mehr ab. */
+.up-explain.up-anleitung.is-on { pointer-events: auto; }
+.up-anleitung:focus { outline: 0; }
+.up-anleitung .up-anl-zahl {
+  padding: 0 3px; margin-bottom: 4px; font-size: var(--up-fs-xs); font-weight: var(--up-fw-m); line-height: 1.3;
+  color: color-mix(in srgb, var(--vc-inverse-ink) 55%, transparent); font-variant-numeric: tabular-nums;
+}
+.up-anl-fuss { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.up-anl-knoepfe { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; flex: 0 0 auto; }
+.up-anl-btn {
+  height: var(--up-h-seg); padding: 0 12px; border: 0; border-radius: var(--up-r-s);
+  background: var(--vc-toast-flaeche); color: var(--vc-inverse-ink);
+  font-family: inherit; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 1; white-space: nowrap; cursor: pointer;
+  transition: background var(--up-t-1) var(--up-ease);
+}
+.up-anl-btn:hover { background: var(--vc-toast-flaeche-hover); }
+.up-anl-btn.is-pri { background: var(--vc-inverse-ink); color: var(--vc-inverse-bg); }
+.up-anl-btn.is-pri:hover { background: color-mix(in srgb, var(--vc-inverse-ink) 86%, var(--vc-inverse-bg)); }
+.up-anl-btn:disabled, .up-anl-btn:disabled:hover { opacity: .45; cursor: default; background: var(--vc-toast-flaeche); }
+.up-anl-btn.is-pri:disabled, .up-anl-btn.is-pri:disabled:hover { background: var(--vc-inverse-ink); }
+/* "Skip guide" leise wie der Satz darueber (68 Prozent der Tinte) -- die Nebenhandlung. Das
+   Polster links holt die Schrift auf die Kante des Satzes (der steht mit 3px Polster). */
+.up-anl-skip {
+  height: var(--up-h-seg); padding: 0 6px; margin-left: -3px; border: 0; border-radius: var(--up-r-s); background: transparent;
+  color: color-mix(in srgb, var(--vc-inverse-ink) 68%, transparent);
+  font-family: inherit; font-size: var(--up-fs-s); font-weight: var(--up-fw-m); line-height: 1; white-space: nowrap; cursor: pointer;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  transition: background var(--up-t-1) var(--up-ease), color var(--up-t-1) var(--up-ease);
+}
+.up-anl-skip:hover { color: var(--vc-inverse-ink); background: var(--vc-toast-flaeche); }
+.up-anl-btn:focus-visible, .up-anl-skip:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: 1px; }
+/* Die Spitze: unten (Karte unter dem Element) ist die von .up-explain, oben .is-flipped von dort.
+   Links und rechts neu, in denselben Massen gedreht (12 breit, 11 tief, 6 ueber der Kante). */
+.up-explain.up-anleitung[data-seite="rechts"]::before {
+  top: var(--up-caret-y, 50%); left: -6px; transform: translateY(-50%);
+  border-top: 12px solid transparent; border-bottom: 12px solid transparent;
+  border-right: 11px solid var(--vc-inverse-bg); border-left: 0;
+}
+.up-explain.up-anleitung[data-seite="links"]::before {
+  top: var(--up-caret-y, 50%); left: auto; right: -6px; transform: translateY(-50%);
+  border-top: 12px solid transparent; border-bottom: 12px solid transparent;
+  border-left: 11px solid var(--vc-inverse-bg); border-right: 0;
+}
+/* Mittig (kein Element) und unten angedockt (kein Platz daneben): ohne Spitze -- sie zeigte ins
+   Leere. Angedockt ohne Platte: die Karte soll dort so wenig wie moeglich zudecken. */
+.up-explain.up-anleitung[data-seite="mitte"]::before, .up-explain.up-anleitung[data-seite="dock"]::before { display: none; }
+.up-anleitung[data-seite="dock"] .up-anl-vis { display: none; }
+.up-explain.up-anleitung[data-seite="dock"] { box-shadow: var(--up-e-3); }
+@media (prefers-reduced-motion: reduce) { .up-anl-btn, .up-anl-skip { transition: none; } }
+
+/* EIN ZEICHENKNOPF IM SEITENKOPF, DER EINEN ZUSTAND HAT (15.10., "Guide" der Events): gedrueckt
+   steht er auf der Flaeche einer gewaehlten Zeile (--up-sel-bg) in der Schriftfarbe -- der Knopf
+   zeigt den Zustand, das Zeichen bleibt Strich (keine gefuellten Zeichen). */
+/* Beide Zeichenknoepfe des Kopfs: .up-ph-iconbtn (die Seiten) und .up-iconbtn (Events, Info).
+   Zwei Klassen gegen deren :hover -- gedrueckt bleibt gedrueckt, auch unter dem Zeiger. */
+:is(.up-ph-iconbtn, .up-iconbtn)[aria-pressed="true"],
+:is(.up-ph-iconbtn, .up-iconbtn)[aria-pressed="true"]:hover { background: var(--up-sel-bg); color: var(--vc-text); }
+/* Im Dunkeln setzt core die Zeichenfarbe von .up-iconbtn ueber .up-root[data-theme="dark"] (drei
+   Klassen) -- die Farbe des gedrueckten Zustands braucht dort eine Stufe mehr. */
+.up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up-iconbtn)[aria-pressed="true"] { color: var(--vc-text); }
