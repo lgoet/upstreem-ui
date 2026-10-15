@@ -63,6 +63,14 @@
    Breitenklasse traegt hier die Seite, nicht der Abschnitt). */
 .uad-root.is-vnarrow .uad-sek[data-leiste="yes"] > .uad-head .up-leiste-scope { flex-basis: 100%; }
 .uad-root.is-vnarrow .uad-sek[data-leiste="yes"] > .uad-head .up-head-tools { flex: 1 1 100%; justify-content: flex-end; }
+/* IM BAND AUF DEM TELEFON (15.10. gemessen bei 375: "Ad Coverage" 5.8 unter der Linie, "Advertiser
+   Share" und "Topics with Ads" 0 -- gemeldet: "Top ist hier und da zu klein"). Die Werkzeuge
+   nehmen hier eine eigene Zeile (oben), die Ueberschriftzeile wird zweizeilig und braucht dieselbe
+   Luft wie in core die zweizeilige Bandueberschrift (.up-band-head.is-zweizeilig: 16 ueber der
+   Schrift, 8 unter den Werkzeugen). Ohne Werkzeuge gibt es keine zweite Zeile: der leere Behaelter
+   nahm sonst die volle Zeile mit und schob die Ueberschrift nach oben. */
+.uad-root.is-vnarrow .up-band .uad-head > .up-head-tools:empty { display: none; }
+.uad-root.is-vnarrow .up-band .uad-head.up-band-head:has(> .up-head-tools:not(:empty)) { padding-top: 16px; padding-bottom: 8px; }
 
 /* ---- Kennzahlen --------------------------------------------------------------------------------- */
 .uad-kpi .up-kpi-label { display: inline-flex; align-items: center; gap: 6px; }
