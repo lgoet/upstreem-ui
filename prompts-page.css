@@ -49,6 +49,11 @@
 .upi-root:not([data-upi-reiter="topics"]) .upi-filterzeile ~ .upi-main { padding-top: 16px; }
 /* Dieselben 16 zur Linie, wenn die Filter im Kopf der Prompt-Tabelle stehen. */
 .upi-root.upi-mit-leiste .upi-main { padding-top: 16px; }
+/* Steht die Prompt-Tabelle auf fester Hoehe (is-festhoehe, prompts-table.js festHoehe), scrollt
+   die Seite nicht mehr, und die 64 unter dem Inhalt waeren ein leerer Streifen unter der
+   Pagination. 8 bleiben, damit die Knoepfe nicht an der Fensterkante stehen. Nur fuer den
+   sichtbaren Reiter: der Prompt-Reiter behaelt die Klasse, auch wenn ein anderer offen ist. */
+.upi-root .upi-main:has(> .upi-tab:not([hidden]) > .upt-root.is-festhoehe) { padding-bottom: 8px; }
 .upi-tab { min-width: 0; }
 .upi-root .upi-tab[hidden] { display: none; }
 .up-root .upi-tools .up-ph-addbtn { margin-top: 0; }

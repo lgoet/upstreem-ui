@@ -417,7 +417,11 @@
     /* Topics is the column people actually manage, so it's the one that gets to keep growing --
        Visibility/Rank/Sentiment/Market are all hard-capped now (see their own w: above/below), so
        any spare row width flows to Topics (and Brands/Created's own smaller fr shares) instead. */
-    { key: "topics",     label: "Topics",          w: "minmax(12%, 1.3fr)", min: 150, dropAt: "vnarrow", prio: 60 },
+    /* Untergrenze 200 statt 12% bzw. 150 (15.10., "Topics etwas groessere min width"): ein Chip
+       wird ganz gezeigt oder gar nicht, und bei 169px stand bei zwei Topics nur noch "+2" in der
+       Zelle. Gemessen: ein Chip mittlerer Laenge ("Luxury Sedans" 112) plus "+1" plus Abstand plus
+       28 Zellpolster braucht knapp 200. */
+    { key: "topics",     label: "Topics",          w: "minmax(200px, 1.3fr)", min: 200, dropAt: "vnarrow", prio: 60 },
     /* Reference data, never needs to eat spare row width -- capped at 128px same as Rank/Sentiment,
        not left on a %/fr leash that grows it back out on a wide screen. */
     /* Intent und Branded in ZWEI Spalten (14.10., gemeldet: "Branded nicht in derselben Spalte,
@@ -4441,6 +4445,10 @@
       root: root, state: state, columns: COLUMNS,
       storePrefix: "upt", instanceId: instanceId,
       firstKey: "prompt", firstMin: PROMPT_MIN, noActions: true,
+      /* Die eine Leiste: der Kasten laeuft je 16 ueber die Ansicht hinaus (--upt-aus in
+         prompts-table.css), die Zeilen nehmen es als Polster zurueck. Dem Raster bleiben also 32
+         weniger, als der Kasten breit ist. Steht --upt-aus anders, muss diese Zahl mit. */
+      breiteAbzug: LEISTE ? 32 : 0,
       /* Inactive prompts aren't being run, so there's nothing to show for any of these — no brand
          mentions, and no visibility/rank/sentiment either (those numbers come from the same runs).
          Removed from the grid template rather than hidden with CSS — a hidden cell would leave its
@@ -4494,6 +4502,18 @@
     var visibleCols = colsKit.visibleCols, effectiveCols = colsKit.effectiveCols;
     var layoutKeys = colsKit.layoutKeys, colMin = colsKit.colMin;
     var applyCols = colsKit.applyCols, startResize = colsKit.startResize;
+    /* DIE SPALTEN FOLGEN DEM KASTEN, NICHT NUR DER WURZEL (15.10.). Die Spaltenwahl rechnet mit
+       der Breite von .up-box, und die aendert sich mit der Gruppenliste, ohne dass die Wurzel
+       breiter oder schmaler wird: Liste auf -- Kasten 934 statt 1190 (gemessen bei 1440). Der
+       Waechter in core verwirft dann zwar die gemerkte Breite, aber neu gerechnet wurde nur bei
+       einer Groessenaenderung der WURZEL. Gemessen, auch im alten Stand: Gruppierung mit Liste an
+       und wieder aus, und die flache Tabelle blieb um die Spalte aermer, die neben der Liste nicht
+       gepasst hatte (Intent), bis zum naechsten Fensterzug. applyCols tut nichts, wenn sich am
+       Raster nichts aendert. */
+    (function(){
+      var b = root.querySelector(".up-box");
+      if (b && UC.beobachteGroesse) UC.beobachteGroesse(b, function(){ applyCols(); });
+    })();
     var populateCols = colsKit.populateCols, toggleCol = colsKit.toggleCol;
     var selectAllCols = colsKit.selectAllCols, syncColsBadge = colsKit.syncColsBadge;
     state.cols = colsKit.readCols();
@@ -5522,9 +5542,95 @@
        Vorfahrenkette hoch. In der Messung des Nutzers standen dahinter 703 rAF-Anmeldungen und
        446 Lesezugriffe allein fuer syncTheadOffset. Am Ende der Bewegung reicht es -- die Leiste
        klebt waehrend des Ziehens ohnehin da, wo sie war. */
-    if (UC.aufResize) UC.aufResize(function(){ _sticky.applySticky(); });
-    else window.addEventListener("resize", UC.rafThrottle(function(){ _sticky.applySticky(); }));
+    if (UC.aufResize) UC.aufResize(function(){ _sticky.applySticky(); festPlanen(); });
+    else window.addEventListener("resize", UC.rafThrottle(function(){ _sticky.applySticky(); festPlanen(); }));
     _sticky.applySticky();
+
+    /* FESTE HOEHE, NUR DIE TABELLE SCROLLT (15.10., nur die eine Leiste -- CSS unter
+       is-festhoehe in prompts-table.css). Der Kasten bekommt als Hoechstmass genau den Platz
+       zwischen seiner Oberkante und dem unteren Rand des Scrollbereichs der Seite, abzueglich
+       allem, was darunter noch steht (Pagination, Polster der Seite). Dann scrollt #main nicht
+       mehr, sondern nur der Kasten, und die Pagination steht unten fest.
+       WAS DARUNTER STEHT, WIRD GEMESSEN, NICHT ADDIERT: Polster, Raender und Mindesthoehen der
+       Seitenhuellen lassen sich nicht zuverlaessig aufsummieren (eine Huelle mit min-height hat
+       leeren Rest, der nicht zaehlen darf). Darum bekommt die Wurzel fuer die Messung kurz ein
+       grosses Polster unten: der Inhalt des Scrollbereichs laeuft damit sicher ueber, und sein
+       Ende minus Polster minus Unterkante des Kastens ist genau der Rest. Polster und nicht
+       min-height am Kasten: das setzte dessen eigene Scrollstellung auf 0 zurueck, und ein Rand
+       koennte mit dem eines Vorfahren zusammenfallen. Zurueckgesetzt wird im selben Zug, vor dem
+       naechsten Bild -- zu sehen ist davon nichts, und kein Groessenwaechter bekommt es mit.
+       Nur mit klebendem Kopf (ab 1000 breit, core makeSticky): darunter scrollt die Seite wie
+       bisher, auf dem Telefon waere ein Scrollbereich im Scrollbereich eine Falle fuer den Daumen.
+       Unter FEST_MIN Platz (niedriges Fenster) ebenfalls die Seite -- ein Guckloch von drei
+       Zeilen ist schlechter als eine Seite, die scrollt. Geparkte Ansicht: nichts aendern, der
+       alte Wert gilt weiter, bis sie wieder zu sehen ist. */
+    var _festPlan = null, _festH = null, FEST_MIN = 240;
+    function festPlanen(){ if (_festPlan) _festPlan(); }
+    if (LEISTE){
+      var elBoxFest = root.querySelector(".up-box");
+      /* Der Kasten ist jetzt ein Scrollbereich: die schmale Leiste aus core statt der des
+         Systems (auf Windows sonst 17px grau neben der letzten Spalte). */
+      if (elBoxFest) elBoxFest.classList.add("up-scroll");
+      var festScroller = function(){
+        var m = document.getElementById("main");
+        if (m && m.contains(root)) return m;
+        var el = root.parentElement, n = 0, oy;
+        while (el && el !== document.body && el !== document.documentElement && n++ < 40){
+          try { oy = window.getComputedStyle(el).overflowY; } catch(e){ return null; }
+          if (oy === "auto" || oy === "scroll") return el;
+          el = el.parentElement;
+        }
+        return null;
+      };
+      var festAus = function(){
+        _festH = null;
+        if (root.classList.contains("is-festhoehe")) root.classList.remove("is-festhoehe");
+        root.style.removeProperty("--upt-box-h");
+      };
+      var festMessen = function(){
+        if (!elBoxFest || !root.isConnected) return;
+        if (!root.classList.contains("up-sticky")){ festAus(); return; }
+        /* messbar und nicht istSichtbar: die Ansicht blendet mit Deckkraft 0 auf, und genau in
+           dem Moment meldet sich der Groessenwaechter -- danach kommt kein Anlass mehr. Messen
+           geht bei Deckkraft 0 sehr wohl, nur in einer geparkten Ansicht nicht. */
+        if (UC.messbar && !UC.messbar(root)) return;
+        var sc = festScroller();
+        if (!sc){ festAus(); return; }
+        var scR = sc.getBoundingClientRect();
+        var kante = scR.top + (sc.clientTop || 0) - sc.scrollTop;   /* Oberkante des Inhalts */
+        var oben = elBoxFest.getBoundingClientRect().top - kante;
+        var extra = Math.max(600, Math.round((window.innerHeight || 800) * 2));
+        var pb0 = root.style.paddingBottom, pbW = 0;
+        try { pbW = parseFloat(window.getComputedStyle(root).paddingBottom) || 0; } catch(e){}
+        root.style.paddingBottom = (pbW + extra) + "px";
+        var ende = sc.scrollHeight;
+        var boxUnten = elBoxFest.getBoundingClientRect().bottom - kante;
+        root.style.paddingBottom = pb0;
+        var unten = Math.max(0, ende - extra - boxUnten);
+        /* Die Oberkante zaehlt mit dem Kasten in seiner JETZIGEN Hoehe nicht -- oben haengt nur
+           vom Inhalt darueber ab. Abgerundet: ein halber Pixel zu viel liesse #main um einen
+           Pixel scrollen. */
+        var h = Math.floor(sc.clientHeight - oben - unten);
+        if (!(h >= FEST_MIN)){ festAus(); return; }
+        if (h !== _festH){ _festH = h; root.style.setProperty("--upt-box-h", h + "px"); }
+        /* Beim ersten Einschalten noch einmal messen: die Seite nimmt mit is-festhoehe ihr
+           Polster unter der Tabelle zurueck (prompts-page.css), und dieser Platz gehoert dann dem
+           Kasten. Das zweite Mal findet die Klasse schon vor -- keine Schleife. */
+        if (!root.classList.contains("is-festhoehe")){ root.classList.add("is-festhoehe"); festPlanen(); }
+      };
+      _festPlan = UC.rafThrottle(festMessen);
+      /* Was die Oberkante oder den Rest darunter verschiebt: die Leiste (Chips brechen um), der
+         Fuss (bricht um, verschwindet mit der Gruppierung), der Scrollbereich selbst (Fenster). */
+      if (window.ResizeObserver){
+        var festRO = new ResizeObserver(function(){ festPlanen(); });
+        if (elHead) festRO.observe(elHead);
+        if (elFoot) festRO.observe(elFoot);
+        var festSc = festScroller();
+        if (festSc) festRO.observe(festSc);
+      }
+      window.addEventListener("resize", festPlanen, { passive: true });
+      festPlanen();
+    }
 
     function render(){
       renderTable(); renderCount(); syncHeadSorters(); syncColsBadge(); syncSelectAll(); syncBrand();
@@ -5557,6 +5663,9 @@
       kpiNachziehen();
       /* Die Filter der einen Leiste auf Stand (Marken, Intent-Felder, Status, Zuruecksetzen). */
       ffSync();
+      /* Gruppierung an oder aus, Ladezustand, ein anderer Reiter: alles, was die Pagination
+         ein- oder ausblendet, aendert den Platz des Kastens. Hoechstens einmal je Bild. */
+      festPlanen();
     }
 
 

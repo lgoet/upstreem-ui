@@ -6978,7 +6978,21 @@
        Die Breite kann sich nur aendern, wenn der Kasten seine Groesse aendert -- und genau das
        meldet ein Groessenwaechter, ohne dass jemand messen muss. */
     var _bwWert = null, _bwEl = null, _bwRoBreite = null;
+    /* cfg.breiteAbzug (15.10.): Pixel des Kastens, die dem Raster NICHT zur Verfuegung stehen.
+       prompts-table laesst den Kasten in der einen Leiste links und rechts um je 16 ueber die
+       Ansicht hinauslaufen (die Linien gehen bis an die Kanten) und gibt das jeder Zeile als
+       Polster zurueck. Gemessen am Kasten allein haette autoFit 32px zu viel gesehen und Spalten
+       behalten, die nicht mehr passen. Zahl oder Funktion; ohne Angabe 0, also fuer jede andere
+       Tabelle wie bisher. Gemessen und gemerkt wird weiter der Kasten selbst. */
+    function breiteAbzug(){
+      var v = (typeof cfg.breiteAbzug === "function") ? cfg.breiteAbzug() : cfg.breiteAbzug;
+      return (typeof v === "number" && v > 0) ? v : 0;
+    }
     function boxWidth(){
+      var w = boxWidthRoh();
+      return w ? Math.max(0, w - breiteAbzug()) : w;
+    }
+    function boxWidthRoh(){
       var box = root.querySelector(".up-box") || root;
       if (_bwWert != null && _bwEl === box) return _bwWert;
       if (window.ResizeObserver && !box.__upBwRO){
@@ -7215,7 +7229,9 @@
       var first = thead.children[LEAD() ? 1 : 0];
       if (!first) return;
       var wA = first.getBoundingClientRect().width;
-      var total = thead.getBoundingClientRect().width;
+      /* Ohne das Auslauf-Polster (cfg.breiteAbzug, siehe boxWidth) -- sonst durfte die erste
+         Spalte genau um dieses Polster zu weit wachsen. */
+      var total = thead.getBoundingClientRect().width - breiteAbzug();
       var others = layoutKeys().slice(1).reduce(function(sum, k){ return sum + colMin(k); }, 0);
       /* Has to subtract the same `reserve` fudge autoFit's own budget does (see autoFit above) —
          without it this let the drag go `reserve` px further than autoFit actually tolerates, so
