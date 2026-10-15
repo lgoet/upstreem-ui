@@ -32,7 +32,7 @@
 /* hidden muss gegen die eigenen display-Regeln gewinnen: .ush-sek, .ush-scope und .up-foot setzen
    display, und jede Autorenregel schlaegt das hidden des Browsers. Ohne das blieb der Pager bei
    0 Treffern stehen und der leere Scope-Platz hielt 8px Rand. */
-.ush-root .ush-sek[hidden], .ush-root .ush-scope[hidden], .ush-root .ush-foot[hidden] { display: none; }
+.ush-root .ush-sek[hidden], .ush-root .ush-zwei[hidden], .ush-root .ush-scope[hidden], .ush-root .ush-foot[hidden] { display: none; }
 .ush-sec-head .up-sec-h { gap: 6px; }
 .ush-root.is-narrow .ush-sec-head { flex-wrap: wrap; }
 
@@ -69,6 +69,52 @@
 .ush-seite[data-seite="detail"] .ush-linewrap { height: 240px; }
 .ush-chartnote { margin: 0 0 8px; font-size: var(--up-fs-s); color: var(--vc-third); }
 
+/* ---- DAS OFFENE BAND (15.10., Variante A wie der Chart der Citations-Seite) -----------------------
+   Diagramme, Balken, der Held des Produkts und "Where this product appears" stehen nicht mehr im
+   Kasten, sondern in einem Band (shopping.js bandAuf): bis an die Kanten um --up-flach-aus, oben
+   und unten je eine Linie, an den Seiten keine; die Ueberschrift samt Werkzeugen ist die erste
+   Zeile IM Band, 48 hoch wie Kopf und Fuss der flachen Tabelle (--up-flach-h), ohne Linie zum
+   Inhalt darunter. Dieselbe Bauart und dieselben Masse wie citations-combo-chart.css "DAS OFFENE
+   BAND" -- die Masse setzt core an .up-root[data-flach="yes"], darum traegt das Band dasselbe
+   Attribut wie die Tabelle.
+   .ush-root davor (0,5,0): schlaegt die flache Tabelle aus core (.up-root.up-root[data-flach]
+   .up-box, 0,4,0) und die dunkle Kartenregel ohne die Ladereihenfolge. */
+.ush-root .up-root.ush-band[data-flach="yes"] {
+  /* width auto: .up-root traegt 100%, mit 100% wuerde der Auslauf das Band nur verschieben. */
+  width: auto; margin-left: calc(-1 * var(--up-flach-aus)); margin-right: calc(-1 * var(--up-flach-aus));
+  border-top: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border);
+}
+/* Die Ueberschriftzeile: das Polster gibt den Auslauf zurueck, Ueberschrift und Inhalt stehen
+   buendig mit Filterzeile und Tabellen. min-height, damit ein schmal umbrechender Umschalter die
+   Zeile wachsen laesst statt zu ueberlaufen. In den Einheiten von .ush-zwei polstert die Einheit. */
+.ush-root .up-root.ush-band[data-flach="yes"] > .ush-sec-head { min-height: var(--up-flach-h); margin-bottom: 0; padding: 0 var(--up-flach-aus); }
+.ush-root .up-root.ush-zwei[data-flach="yes"] > .ush-sek > .ush-sec-head { min-height: var(--up-flach-h); margin-bottom: 0; }
+/* Der Kasten wird zur Flaeche: kein Rahmen, kein Radius, kein Grund, kein Auslauf. Oben 8 statt 16:
+   die 48er Ueberschriftzeile bringt den Abstand zur Linie schon mit (wie Citations). */
+.ush-root .up-root.ush-band[data-flach="yes"] > .up-box,
+.ush-root .up-root.ush-zwei[data-flach="yes"] > .ush-sek > .ush-balkenbox {
+  border-width: 0; border-radius: 0; background: transparent; margin-left: 0; margin-right: 0;
+}
+.ush-root .up-root.ush-band[data-flach="yes"] > .ush-chartbox,
+.ush-root .up-root.ush-band[data-flach="yes"] > .ush-balkenbox { padding: 8px var(--up-flach-aus) 16px; }
+.ush-root .up-root.ush-zwei[data-flach="yes"] > .ush-sek > .ush-balkenbox { padding: 8px 0 16px; }
+/* Die Liste Product Movement in ihrer Einheit: flach wie die Tabellen, laeuft bis an die Raender
+   der Einheit (Kante der Seite bzw. Trennlinie). Unten ohne eigene Linie -- die Unterkante des
+   Bandes liegt direkt darunter, zwei Linien stuenden sonst als eine 2px-Linie da. */
+.ush-root .up-root.ush-zwei[data-flach="yes"] > .ush-sek > .up-box:not(.ush-balkenbox) { border-bottom-width: 0; }
+/* Der Held: Bild und Fakten oben, Kennzahlen darunter, beides in eigenen Polstern -- der Kasten
+   selbst traegt keins. Links steht das Bild auf der Kante des Inhalts (--up-flach-aus), die erste
+   Kennzahl mit ihrem eigenen Polster 16 ebenso; die Linie zwischen beiden laeuft bis an die Kanten.
+   Der Fehlerzustand steht ohne Kasten im Band. */
+.ush-root .up-root.ush-heroband[data-flach="yes"] > .up-box { padding: 0; }
+.ush-heroband .ush-hero-oben { padding: 24px var(--up-flach-aus); }
+/* Where this product appears: drei Spalten unter der Ueberschriftzeile, die Linien zwischen ihnen
+   von der Ueberschriftzeile bis zur Unterkante des Bandes (der Kasten hat kein Polster, die Spalten
+   polstern selbst). Gestapelt (is-narrow) liegt die Linie oben und laeuft bis an die Kanten. */
+.ush-root .up-root.ush-band[data-flach="yes"] > .ush-wo { padding: 0; }
+.ush-band > .ush-wo .ush-wo-spalte { padding: 8px var(--up-flach-aus) 16px; }
+.ush-root.is-narrow .ush-band > .ush-wo .ush-wo-spalte + .ush-wo-spalte { padding-top: 16px; }
+
 /* ---- Tabellen --------------------------------------------------------------------------------------
    Das Raster aus core (.up-thead/.up-row); die Spuren setzt UC.makeColumns als --up-cols an die
    Wurzel der Tabelle, im Scrollmodus (cfg.scrollen) dazu --up-cols-min: die Summe der
@@ -92,20 +138,16 @@
 .ush-tabwurzel { width: 100%; }
 .ush-head .up-head-tools { flex-wrap: wrap; justify-content: flex-end; }
 .ush-root.is-narrow .ush-head { height: auto; flex-wrap: wrap; row-gap: 8px; }
-.ush-root.is-narrow .ush-head .up-head-tools { margin-left: 0; }
+/* Nur mit Ueberschrift: dort rutschen die Werkzeuge schmal unter sie, an den linken Rand. In der
+   einen Leiste (data-leiste) gibt es keine Ueberschrift, die Werkzeuge bleiben rechts (core). */
+.ush-root.is-narrow .ush-tab:not([data-leiste="yes"]) .ush-head .up-head-tools { margin-left: 0; }
+/* Nur im Rueckfall ohne die Filter der Leiste (shopping.js scopeZeigen): die Wahl als Chip. */
 .ush-scope { display: flex; flex-wrap: wrap; gap: 8px; margin: -4px 0 12px; }
 
 /* ---- DIE FLACHE TABELLE (15.10.) -------------------------------------------------------------------
    Alle Tabellen der Seite sind flach (data-flach="yes" an Abschnitt bzw. Vorschau-Wurzel, core.css
    "DIE FLACHE TABELLE"): kein Kasten, Linien bis an die Kanten, Kopf und Fuss 48, Kopfschrift
    13/500. Hier steht nur, was die Bausteine dieser Seite dazu brauchen. */
-/* Neben den Balken (Product Movement in .ush-zwei) kein Auslauf: der Kasten liefe sonst 16px in
-   die Spaltenluecke und stiesse an den Balkenkasten. Schmal (is-narrow, unter 768) steht .ush-zwei
-   sicher einspaltig (zwei Spalten erst ab 440 + 16 + 440), dann laeuft die Liste aus wie die
-   Tabellen darueber. Zwischen 768 und 896 ist sie einspaltig und laeuft trotzdem nicht aus: CSS
-   kennt die Spaltenzahl eines auto-fit-Rasters nicht, und eine Container-Abfrage braeuchte
-   Containment an .ush-zwei, das einen Stapelkontext ueber den Inhalt legt. */
-.ush-root:not(.is-narrow) .ush-zwei .up-root[data-flach="yes"] { --up-flach-aus: 0px; }
 /* Die stehende erste Spalte (.up-colscroll aus core) hat einen eigenen deckenden Grund, damit beim
    waagerechten Scrollen nichts durchscheint -- im Kasten den der Karte (--vc-bg) und im Kopf den
    Kopfgrund. Flach liegt die Tabelle auf der Seite (--up-surface): der alte Grund stuende dunkel
@@ -118,6 +160,49 @@
 [data-flach="yes"] .up-colscroll .up-row:not(.is-angepinnt):hover > .up-td:first-child { background: var(--vt-row-hover); }
 [data-flach="yes"] .up-colscroll .up-thead > .up-th:first-child {
   background: var(--up-surface); box-shadow: 1px 0 0 var(--vc-border), inset 0 -1px 0 var(--vc-border); }
+/* Die Gesamtzeile (UC.makeZaehlZeile) steht im Scrollkasten hinter den Zeilen und scrollt mit:
+   ihre erste Zelle steht wie die der Zeilen, mit demselben deckenden Grund (der Grund der Zeile,
+   --up-surface aus core) und demselben Trenner nach rechts. Die Linie ueber der Zeile zieht core
+   als Schatten nach innen an der Zeile -- die deckende Zelle liegt darueber und zieht sie darum
+   selbst, wie die erste Kopfzelle die unter dem Kopf. */
+.ush-root .up-colscroll .up-sumrow > .up-sumzelle:first-child {
+  position: sticky; left: 0; z-index: 1; background: var(--up-surface);
+  box-shadow: 1px 0 0 var(--vc-border), inset 0 1px 0 var(--vc-border); }
+/* Telefon: core legt die erste Zelle dort ueber die ganze Zeile (nur die Anzahl). In der
+   Scrolltabelle ist die Zeile so breit wie alle Spalten -- eine so breite Zelle kann nicht stehen
+   bleiben und scrollte mit der Zahl aus dem Bild. In ihrer Spur steht sie wie die Zellen darueber. */
+.ush-root.is-vnarrow .up-colscroll .up-sumrow > .up-sumzelle:first-child { grid-column: auto; }
+/* DIE FESTE SPUR (core.css, --up-spur, 15.10.): jede Zahlenspalte bekommt die Spur ihres Formats,
+   die Zahl steht darin rechts, Kopf und Zelle bleiben links; ein Trend oder Ring dahinter beginnt
+   in jeder Zeile auf demselben Pixel. Die Schluessel sind dieselben in allen Tabellen der Seite:
+     Prozent mit einer Stelle  Share, Presence, Visibility, First Position Rate   --up-spur-pct1
+     Anzahl                    Observations, Products                             --up-spur-anzahl
+     eine Stelle               Avg. Position, Position (ganz, "#2"), Rating (5.0) --up-spur-rang
+     Preis                     Price                                              lokal, siehe unten
+   Daten (Last Seen, First Seen) sind keine Zahlen in diesem Sinn: ihre Breite haengt am Monat und am
+   Format des Nutzers, sie bleiben links wie Text. */
+.ush-root :is(.up-td-share, .up-td-presence, .up-td-vis, .up-td-first) { --up-spur: var(--up-spur-pct1); }
+.ush-root :is(.up-td-obs, .up-td-products) { --up-spur: var(--up-spur-anzahl); }
+.ush-root :is(.up-td-pos, .up-td-position, .up-td-rating) { --up-spur: var(--up-spur-rang); }
+/* PREIS: core hat (noch) kein Token. 57 ist "€000.00" in der Zellschrift (14/500, Tabellenziffern),
+   gemessen 56,18 und aufgerundet wie die Token in core -- die Preise der Antworten liegen fast alle
+   unter tausend. Eine Spanne ("€19.62–€21.62", 103,5) und ein Preis mit Waehrungscode ("CHF 12.00",
+   68,7) sind breiter und sprengen ihre Spur, wie es core fuer Ausreisser vorsieht. */
+.ush-root .up-td-price { --up-spur: 57px; }
+/* Die beiden Werte, die nur EINE Wahl kennen, brauchen kein "Select all" -- es waehlte den letzten
+   Eintrag der Liste. Mit einer Wahl heisst der Knopf "Reset" und bleibt. */
+.up-ff-shbrand:not(.has-sel) [data-ff-alle], .up-ff-shmerchant:not(.has-sel) [data-ff-alle] { display: none; }
+/* Haendler haben kein Logo: ohne das leere Logofeld stehen die Namen buendig mit dem Haken. */
+.up-ff-shmerchant .up-ment-logo { display: none; }
+/* Display (das Menue am Zahnrad, makeColumns cfg.form "chips"): 340 breit wie in der Prompt-Tabelle
+   -- mit den 230 der anderen Menues brach "Row height" in zwei Zeilen. Telefon: so breit wie das
+   Fenster erlaubt. */
+.ush-root .ush-tab .up-cols-menu { width: 340px; }
+.ush-root.is-vnarrow .ush-tab .up-cols-menu { width: min(340px, calc(100vw - 32px)); }
+/* Im Produkt-Detail traegt die Preiszelle zwei Zeilen (letzter Preis, darunter die Spanne): ohne
+   das stuende die erste ueber die ganze Zelle gestreckt und damit am rechten Rand statt in ihrer
+   Spur. */
+.ush-root .up-td-price .ush-zweizeilig { align-items: flex-start; }
 
 
 /* Zellinhalte */
@@ -178,7 +263,16 @@
 /* GLEICH HOCH (05.10.: "Produktbewegung und Haendlerverteilung sollen immer die gleiche Hoehe
    haben"). Die Kaesten fuellen ihre Zelle, die Balken stehen mittig im hoeheren Kasten. Mehr
    Balken gaebe es nur von der RPC: merchant_distribution liefert fuenf und den Rest. */
-.ush-zwei { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr)); gap: 48px 16px; align-items: stretch; }
+/* Seit dem 15.10. EIN offenes Band mit zwei Einheiten (siehe "DAS OFFENE BAND" oben): die
+   Trennlinie ist die 1px-Luecke des Rasters, durch die der Grund des Bandes (die Linienfarbe)
+   scheint -- nebeneinander senkrecht, gestapelt waagerecht. So braucht die Linie die Spaltenzahl
+   des auto-fit-Rasters nicht zu kennen (CSS kennt sie nicht, und eine Container-Abfrage braeuchte
+   Containment an .ush-zwei -- das legte einen Stapelkontext ueber den Inhalt). Die Einheiten
+   decken mit dem Grund der Seite. 472 = die 440 Inhalt von vorher plus das Polster der Einheit
+   (2 x --up-flach-aus). .up-root davor: .up-root setzt selbst display flex. */
+.up-root.ush-zwei { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(472px, 100%), 1fr)); gap: 1px; align-items: stretch;
+  background: var(--vc-border); }
+.ush-zwei > .ush-sek { padding: 0 var(--up-flach-aus); background: var(--up-surface); }
 .ush-zwei > .ush-sek > .up-box { flex: 1 1 auto; }
 .ush-zwei .ush-balkenbox { display: flex; flex-direction: column; justify-content: center; }
 .ush-bewegung .up-thead.ush-gruppenkopf { display: flex; }

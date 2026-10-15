@@ -44,11 +44,18 @@
 .uad-root .uad-kpi .up-th-info, .uad-root .uad-head .up-th-info { margin-left: 0; }
 .uad-root .uad-kpi:hover .up-th-info, .uad-root .uad-head:hover .up-th-info { opacity: 1; }
 .uad-root.is-narrow .uad-head { height: auto; flex-wrap: wrap; row-gap: 8px; }
-.uad-root.is-narrow .uad-head .up-head-tools { margin-left: 0; }
-/* Telefon: die Werkzeuge der Ad Library (zwei Auswahlen, zwei Umschalter, Suche -- zusammen gut
-   440px) passen nicht in 343. Dort nehmen sie eine eigene volle Zeile und brechen darin um;
-   gemessen standen sie vorher 116px ueber den Rand. */
-.uad-root.is-vnarrow .uad-head .up-head-tools { flex: 1 1 100%; min-width: 0; justify-content: flex-start; }
+/* Nur mit Ueberschrift: dort rutschen die Werkzeuge schmal unter sie, an den linken Rand. In der
+   einen Leiste (data-leiste: Advertisers, Ad Library) gibt es keine Ueberschrift, die Werkzeuge
+   bleiben rechts und brechen dort um (core.css "DIE EINE LEISTE"). */
+.uad-root.is-narrow .uad-sek:not([data-leiste="yes"]) > .uad-head .up-head-tools { margin-left: 0; }
+/* Telefon: Werkzeuge, die neben der Ueberschrift keinen Platz haben, nehmen eine eigene volle
+   Zeile und brechen darin um. */
+.uad-root.is-vnarrow .uad-sek:not([data-leiste="yes"]) > .uad-head .up-head-tools { flex: 1 1 100%; min-width: 0; justify-content: flex-start; }
+/* In der einen Leiste auf dem Telefon: links der Umschalter Ads/Prompts ueber die volle Breite,
+   darunter rechtsbuendig die Ansicht (wie core es fuer .is-vnarrow an der Tabelle vorsieht -- die
+   Breitenklasse traegt hier die Seite, nicht der Abschnitt). */
+.uad-root.is-vnarrow .uad-sek[data-leiste="yes"] > .uad-head .up-leiste-scope { flex-basis: 100%; }
+.uad-root.is-vnarrow .uad-sek[data-leiste="yes"] > .uad-head .up-head-tools { flex: 1 1 100%; justify-content: flex-end; }
 
 /* ---- Kennzahlen --------------------------------------------------------------------------------- */
 .uad-kpi .up-kpi-label { display: inline-flex; align-items: center; gap: 6px; }
@@ -60,10 +67,46 @@
 .uad-linewrap { position: relative; height: 280px; }
 .uad-seite[data-seite="advertiser"] .uad-linewrap { height: 220px; }
 
+/* ---- DAS OFFENE BAND (15.10., Variante A wie der Chart der Citations-Seite) -----------------------
+   Die Diagramme (Ad Coverage, Activity) und die Balken des Advertiser Share stehen nicht mehr im
+   Kasten, sondern in einem Band (ads.js bandAuf): bis an die Kanten um --up-flach-aus, oben und
+   unten je eine Linie, an den Seiten keine; die Ueberschrift samt Werkzeugen ist die erste Zeile
+   IM Band, 48 hoch wie Kopf und Fuss der flachen Tabelle (--up-flach-h), ohne Linie zum Inhalt
+   darunter. Dieselbe Bauart und dieselben Masse wie citations-combo-chart.css "DAS OFFENE BAND"
+   und shopping.css -- die Masse setzt core an .up-root[data-flach="yes"].
+   .uad-root davor (0,5,0): schlaegt die flache Tabelle aus core (.up-root.up-root[data-flach]
+   .up-box, 0,4,0) und die dunkle Kartenregel ohne die Ladereihenfolge. */
+.uad-root .up-root.uad-band[data-flach="yes"] {
+  /* width auto: .up-root traegt 100%, mit 100% wuerde der Auslauf das Band nur verschieben. */
+  width: auto; margin-left: calc(-1 * var(--up-flach-aus)); margin-right: calc(-1 * var(--up-flach-aus));
+  border-top: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border);
+}
+/* Die Ueberschriftzeile: 48 statt der 32 der Werkzeugzeile, ohne ihren Abstand nach unten; das
+   Polster gibt den Auslauf zurueck. height auto und min-height: ein schmal umbrechender Kopf
+   waechst. In den Einheiten von .uad-zwei polstert die Einheit. */
+.uad-root .up-root.uad-band[data-flach="yes"] > .uad-head { height: auto; min-height: var(--up-flach-h); margin-bottom: 0; padding: 0 var(--up-flach-aus); }
+.uad-root .up-root.uad-zwei[data-flach="yes"] > .uad-sek > .uad-head { height: auto; min-height: var(--up-flach-h); margin-bottom: 0; }
+/* Der Kasten wird zur Flaeche: kein Rahmen, kein Radius, kein Grund, kein Auslauf. Oben 8: die
+   48er Ueberschriftzeile bringt den Abstand zur Linie schon mit (wie Citations). */
+.uad-root .up-root.uad-band[data-flach="yes"] > .up-box,
+.uad-root .up-root.uad-zwei[data-flach="yes"] > .uad-sek > .uad-balkenbox {
+  border-width: 0; border-radius: 0; background: transparent; margin-left: 0; margin-right: 0;
+}
+.uad-root .up-root.uad-band[data-flach="yes"] > .uad-chartbox { padding: 8px var(--up-flach-aus) 16px; }
+.uad-root .up-root.uad-zwei[data-flach="yes"] > .uad-sek > .uad-balkenbox { padding: 8px 0 16px; }
+
 /* ---- Overview: zwei Spalten gleicher Hoehe (Entwurf: align-items stretch, die Balken duerfen
-   unten Luft behalten). Unter 420 + 420 + 16 eine Spalte. min(), damit ein Telefon nicht 420px
-   erzwingt und waagerecht scrollt. */
-.uad-zwei { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 48px 16px; align-items: stretch; }
+   unten Luft behalten). min(), damit ein Telefon nicht 420px erzwingt und waagerecht scrollt.
+   Seit dem 15.10. EIN offenes Band mit zwei Einheiten (siehe "DAS OFFENE BAND"): die Trennlinie
+   ist die 1px-Luecke des Rasters, durch die der Grund des Bandes (die Linienfarbe) scheint --
+   nebeneinander senkrecht, gestapelt waagerecht. So muss die Linie die Spaltenzahl des
+   auto-fit-Rasters nicht kennen (CSS kennt sie nicht, und eine Container-Abfrage braeuchte
+   Containment an .uad-zwei -- das legte einen Stapelkontext um die Menues der Kopfzeile). Die
+   Einheiten decken mit dem Grund der Seite. 452 = die 420 Inhalt von vorher plus das Polster der
+   Einheit (2 x --up-flach-aus). .up-root davor: .up-root setzt selbst display flex. */
+.up-root.uad-zwei { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(452px, 100%), 1fr)); gap: 1px; align-items: stretch;
+  background: var(--vc-border); }
+.uad-zwei > .uad-sek { padding: 0 var(--up-flach-aus); background: var(--up-surface); }
 .uad-zwei > .uad-sek > .up-box, .uad-zwei .uad-vorschauplatz { flex: 1 1 auto; }
 .uad-zwei .uad-vorschauplatz, .uad-zwei .uad-vorschau, .uad-zwei .uad-vorschau > .uad-tabelle { display: flex; flex-direction: column; }
 .uad-zwei .uad-vorschau, .uad-zwei .uad-vorschau > .uad-tabelle, .uad-zwei .uad-vorschau > .uad-tabelle > .up-box { flex: 1 1 auto; }
@@ -81,14 +124,11 @@
    bzw. Vorschau-Wurzel, core.css "DIE FLACHE TABELLE"): kein Kasten, Linien bis an die Kanten,
    Kopf und Fuss 48, Kopfschrift 13/500. Hier steht nur, was die Bausteine dieser Seite dazu
    brauchen. */
-/* Topics with Ads steht in .uad-zwei neben den Balken: dort kein Auslauf, der Kasten liefe sonst
-   16px in die Spaltenluecke und stiesse an den Balkenkasten. Schmal (is-narrow, unter 768) steht
-   .uad-zwei sicher einspaltig (zwei Spalten erst ab 420 + 16 + 420), dann laeuft die Tabelle aus
-   wie jede andere -- auf dem Telefon stuende sie sonst als einzige 16px vor den Kanten. Zwischen
-   768 und 856 ist sie einspaltig und laeuft trotzdem nicht aus: CSS kennt die Spaltenzahl eines
-   auto-fit-Rasters nicht, und eine Container-Abfrage braeuchte Containment an .uad-zwei -- das
-   legt einen Stapelkontext um die Menues der Kopfzeile (Zahnrad, Suche). */
-.uad-root:not(.is-narrow) .uad-zwei .up-root[data-flach="yes"] { --up-flach-aus: 0px; }
+/* Topics with Ads steht als Einheit im offenen Band neben den Balken: ihr Kasten laeuft bis an die
+   Raender der Einheit (Trennlinie bzw. Kante der Seite), ihr Fuss steht ueber der Unterkante des
+   Bandes. Ohne Fuss (keine Treffer, Fehler) liegt der Kasten direkt auf der Unterkante -- dann ohne
+   eigene Linie, sonst stuenden zwei als eine 2px-Linie da. */
+.uad-root .up-root.uad-zwei[data-flach="yes"] > .uad-tab:has(> .uad-foot[hidden]) .up-box { border-bottom-width: 0; }
 /* Die stehende erste Spalte (.up-colscroll aus core) deckt mit eigenem Grund -- im Kasten mit dem
    der Karte (--vc-bg), im Kopf mit dem Kopfgrund. Flach liegt die Tabelle auf der Seite
    (--up-surface): der alte Grund stuende dunkel als hellerer Streifen da, im Kopf als grauer
@@ -100,6 +140,35 @@
 [data-flach="yes"] .up-colscroll .up-row:not(.is-offen):hover > .up-td:first-child { background: var(--vt-row-hover); }
 [data-flach="yes"] .up-colscroll .up-thead > .up-th:first-child {
   background: var(--up-surface); box-shadow: 1px 0 0 var(--vc-border), inset 0 -1px 0 var(--vc-border); }
+/* Die Gesamtzeile (UC.makeZaehlZeile) steht im Scrollkasten hinter den Zeilen und scrollt mit:
+   ihre erste Zelle steht wie die der Zeilen, mit demselben deckenden Grund (--up-surface) und
+   demselben Trenner nach rechts. Die Linie ueber der Zeile zieht core als Schatten nach innen an
+   der Zeile -- die deckende Zelle liegt darueber und zieht sie darum selbst. */
+.uad-root .up-colscroll .up-sumrow > .up-sumzelle:first-child {
+  position: sticky; left: 0; z-index: 1; background: var(--up-surface);
+  box-shadow: 1px 0 0 var(--vc-border), inset 0 1px 0 var(--vc-border); }
+/* Telefon: core legt die erste Zelle dort ueber die ganze Zeile (nur die Anzahl). In der
+   Scrolltabelle ist die Zeile so breit wie alle Spalten -- eine so breite Zelle kann nicht stehen
+   bleiben und scrollte mit der Zahl aus dem Bild. In ihrer Spur steht sie wie die Zellen darueber. */
+.uad-root.is-vnarrow .up-colscroll .up-sumrow > .up-sumzelle:first-child { grid-column: auto; }
+/* DIE FESTE SPUR (core.css, --up-spur, 15.10.): jede Zahlenspalte bekommt die Spur ihres Formats,
+   die Zahl steht darin rechts, Kopf und Zelle bleiben links; ein Ring dahinter beginnt in jeder
+   Zeile auf demselben Pixel. Die Schluessel sind dieselben in allen Tabellen der Seite:
+     Prozent mit einer Stelle  Ad Share, Ad Coverage                                 --up-spur-pct1
+     Anzahl                    Appearances, Prompts, Topics (Zahl), Advertisers (Zahl) --up-spur-anzahl
+     Preis                     Price                                                 lokal, wie Shopping
+   Daten (First Seen, Last Seen, Observed) bleiben links wie Text: ihre Breite haengt am Monat
+   und am Format des Nutzers. */
+.uad-root :is(.up-td-share, .up-td-cov) { --up-spur: var(--up-spur-pct1); }
+.uad-root :is(.up-td-n, .up-td-prompts, .up-td-topics, .up-td-advs) { --up-spur: var(--up-spur-anzahl); }
+/* PREIS: core hat (noch) kein Token; 57 ist "€000.00" in der Zellschrift, gemessen 56,18 (siehe
+   shopping.css). Laengere Preise sprengen ihre Spur, wie es core fuer Ausreisser vorsieht. */
+.uad-root .up-td-price { --up-spur: 57px; }
+/* Display (das Menue am Zahnrad, makeColumns cfg.form "chips"): 340 breit wie in der Prompt-Tabelle
+   -- mit den 230 der anderen Menues brach "Row height" in zwei Zeilen. Telefon: so breit wie das
+   Fenster erlaubt. */
+.uad-root .uad-tab .up-cols-menu { width: 340px; }
+.uad-root.is-vnarrow .uad-tab .up-cols-menu { width: min(340px, calc(100vw - 32px)); }
 .uad-titel { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
 .uad-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); }
 .uad-zweizeilig { display: flex; flex-direction: column; gap: 2px; min-width: 0; }

@@ -164,7 +164,39 @@
     { key: "rsent", label: "Sentiment", attr: "data-rsent-instance", visAttr: "data-rsent-visible", rootSel: ".up-ff-rsent",
       ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
       nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Sentiment", icon: "smile",
-      behalten: true, fnAttrs: [], fnMarke: "urt" }
+      behalten: true, fnAttrs: [], fnMarke: "urt" },
+    /* DIE FILTER VON SHOPPING UND ADS (15.10., dieselbe eine Leiste): was dort die DATEN aendert und
+       bisher als Knopf in der Werkzeugleiste einer Tabelle stand, steht jetzt als Zeile hier. Gebaut
+       von shopping.js bzw. ads.js ueber UC.makeLeistenFilter (core); der Zustand und die Anfrage
+       bleiben in der Komponente. Eigene Schluessel, weil jede Seite ihre eigene Auswahl hat.
+         shsegment/shbrand/shmerchant  Products: Segment (You, Competition, Other), Marke, Haendler --
+                                       je eine Wahl, wie die RPC sie kennt (p_segment, p_company_id,
+                                       p_merchant); sichtbar nur auf dem Reiter Products
+         adadv/adformat                Ads: Advertisers und Ad Format, mehrere Wahlen (p_advertisers,
+                                       p_ad_formats); sie gelten fuer jede Seite der Ads und stehen
+                                       darum auf jeder (Advertisers nicht im Detail eines Advertisers,
+                                       die RPC uebergeht ihn dort)
+       behalten wie oben: ausgeblendet heisst nicht geleert. */
+    { key: "shsegment", label: "Segment", attr: "data-shsegment-instance", visAttr: "data-shsegment-visible", rootSel: ".up-ff-shsegment",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Segment", icon: "swords",
+      behalten: true, fnAttrs: [], fnMarke: "ush" },
+    { key: "shbrand", label: "Brand", attr: "data-shbrand-instance", visAttr: "data-shbrand-visible", rootSel: ".up-ff-shbrand",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Brand", icon: "squareStack",
+      behalten: true, fnAttrs: [], fnMarke: "ush" },
+    { key: "shmerchant", label: "Merchant", attr: "data-shmerchant-instance", visAttr: "data-shmerchant-visible", rootSel: ".up-ff-shmerchant",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Merchant", icon: "store",
+      behalten: true, fnAttrs: [], fnMarke: "ush" },
+    { key: "adadv", label: "Advertisers", attr: "data-adadv-instance", visAttr: "data-adadv-visible", rootSel: ".up-ff-adadv",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Advertiser", icon: "bank",
+      behalten: true, fnAttrs: [], fnMarke: "uad" },
+    { key: "adformat", label: "Ad Format", attr: "data-adformat-instance", visAttr: "data-adformat-visible", rootSel: ".up-ff-adformat",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Format", icon: "image",
+      behalten: true, fnAttrs: [], fnMarke: "uad" }
   ];
   /* Trigger und Chevron je Filter. Bisher standen die vier Klassen woertlich an drei Stellen
      (Spiegel, Beobachter, Chevron-Ausnahme); mit den Filtern der Prompt-Tabelle waeren es sieben
