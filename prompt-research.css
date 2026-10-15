@@ -386,21 +386,48 @@
    Start. SCHMAL (is-unter, prompt-research.js einstellungenLage): Regler und Start bleiben oben,
    die Einstellungen kommen als eigene Reihe darunter herein (Zeilen 0fr -> 1fr) -- dieselbe
    Bewegung wie die zweite Fassung, nur unter statt ueber dem Regler. 200ms (--up-t-2) in beiden. */
+/* VIERTE FASSUNG: AUFTRITT OHNE WISCHEN (15.10., gemeldet: "beim Klick ca. 200ms nix, dann plopp,
+   die Settings-Bar ist drin. Disappear funktioniert gut"). Gemessen (Pruefstand 3003, echte
+   Bilder, 1512 breit): die Bewegung lief, aber zu sehen war vom Oeffnen in den ersten 74ms
+   hoechstens 9 % (Deckkraft mal freigegebene Breite), die Haelfte erst nach 123ms; das Schliessen
+   war nach 37ms zur Haelfte weg. Der Grund ist ein Produkt aus drei Kurven: die Spur 0fr -> 1fr
+   sitzt in einem Flex-Kind, dessen Breite selbst aus ihr folgt -- das Kind wird f breit, die Spur
+   darin f davon, also f hoch 2 (gemessen 293 Kind, 200 Spur bei f 0.68). Mal der Deckkraft f ist
+   das f hoch 3, und --up-ease faehrt langsam an. Beim Oeffnen also fast nichts und dann alles auf
+   einmal, beim Schliessen (1 - f) hoch 3 -- vorne steil, darum sah das gut aus.
+   Jetzt getrennt: der PLATZ springt (breit sieht man ihn nicht -- der Start steht mit margin-left
+   auto rechts, nichts rueckt), sichtbar sind nur Deckkraft und 6px Gleiten, beides easeOutExpo
+   (--up-ease-expo, die Kurve der Seitenauftritte). Beim Oeffnen ist die Spalte sofort voll, beim
+   Schliessen wird sie erst nach dem Ausblenden frei (Dauer 0, Verzoegerung = Dauer der Blende).
+   KEIN visibility: hidden im zugeklappten Zustand -- gemessen startete die Blende damit ein Bild
+   spaeter (0 % bei 23ms, 45 % bei 42ms; ohne 43 % bei 22ms), und Warten nach dem Klick ist genau,
+   was gemeldet war. Schmal (is-unter) muss das Feld wirklich wachsen: die Zeile 0fr -> 1fr bleibt,
+   mit derselben Kurve, und geklippt wird am Panel, dessen Hoehe linear f folgt -- der Innenteil
+   haengt oben (align-self: start) und wird nicht mehr auf f hoch 2 gequetscht. Die Verzoegerungen
+   stehen als transition-delay, damit is-open nur sie umstellt und die Liste der Eigenschaften an
+   einer Stelle bleibt. */
 .upr-settings-panel { flex: 0 1 auto; min-width: 0; display: grid; grid-template-columns: 0fr; grid-template-rows: 1fr;
   opacity: 0; pointer-events: none;
-  transition: grid-template-columns var(--up-t-2) var(--up-ease), grid-template-rows var(--up-t-2) var(--up-ease),
-              opacity var(--up-t-2) var(--up-ease), margin-top var(--up-t-2) var(--up-ease); }
-.upr-settings-panel.is-open { grid-template-columns: 1fr; opacity: 1; pointer-events: auto; }
+  transition-property: opacity, grid-template-columns, grid-template-rows, margin-top;
+  transition-duration: var(--up-t-2), 0s, var(--up-t-2), var(--up-t-2);
+  transition-timing-function: var(--up-ease-expo);
+  transition-delay: 0s, var(--up-t-2), 0s, 0s; }
+.upr-settings-panel.is-open { grid-template-columns: 1fr; opacity: 1; pointer-events: auto;
+  transition-delay: 0s; }
 .upr-settings-panel > .upr-settings-inner { min-width: 0; min-height: 0; overflow: hidden; transform: translateX(-6px);
-  transition: transform var(--up-t-2) var(--up-ease); }
+  transition: transform var(--up-t-2) var(--up-ease-expo); }
 .upr-settings-panel.is-open > .upr-settings-inner { transform: none; }
 .upr-settings-panel.is-steht > .upr-settings-inner { overflow: visible; }
-.upr-actions.is-unter .upr-settings-panel { order: 1; flex: 0 0 100%; grid-template-columns: 1fr; grid-template-rows: 0fr; margin-top: 0; }
+.upr-actions.is-unter .upr-settings-panel { order: 1; flex: 0 0 100%; grid-template-columns: 1fr; grid-template-rows: 0fr; margin-top: 0;
+  overflow: hidden; }
 .upr-actions.is-unter .upr-settings-panel.is-open { grid-template-rows: 1fr; margin-top: 8px; }
-.upr-actions.is-unter .upr-settings-panel > .upr-settings-inner { transform: translateY(-6px); }
+.upr-actions.is-unter .upr-settings-panel.is-steht { overflow: visible; }
+.upr-actions.is-unter .upr-settings-panel > .upr-settings-inner { transform: translateY(-6px); align-self: start; }
 .upr-actions.is-unter .upr-settings-panel.is-open > .upr-settings-inner { transform: none; }
+/* Ohne Bewegung springt alles, auch die Spalte (transition-property none). Eine Klasse
+   mehr als die Grundregeln, damit das ueber Spezifitaet gewinnt und nicht ueber die Reihenfolge. */
 @media (prefers-reduced-motion: reduce) {
-  .upr-settings-panel, .upr-settings-panel > .upr-settings-inner { transition: none; }
+  .upr-actions .upr-settings-panel, .upr-actions .upr-settings-panel > .upr-settings-inner { transition: none; }
 }
 /* Breit in EINER Zeile (sonst braeche die Reihe in der schmalen Spalte senkrecht um und machte das
    Feld hoch -- der Fehler der ersten Fassung); darunter darf sie umbrechen. */
