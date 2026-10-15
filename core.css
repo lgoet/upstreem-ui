@@ -7770,7 +7770,8 @@ span.up-sumadd { height: var(--up-h-seg); cursor: default; }
    Klicks durch), ohne den Versatz beim Einblenden (sie springt von Schritt zu Schritt an eine
    neue Stelle -- ein Gleiten von 4px dort waere Unruhe), und die Spitze auch links und rechts.
    Knoepfe in der Sprache des Toasts, der zweiten umgekehrten Karte: Flaeche --vc-toast-flaeche,
-   Hoehe 28 (--up-h-seg), Radius 6 = 14 - 8 (konzentrisch zum Polster der Karte). Der Hauptknopf
+   Hoehe 28 (--up-h-seg), Radius --up-r-s = Radius der Karte (--up-r-2xl) minus ihr Polster 8,
+   konzentrisch -- auf der Geist-Skala 12 - 8 = 4. Der Hauptknopf
    ist die Platte noch einmal: Grund in der Tinte der Karte, Schrift in ihrem Grund. */
 .up-explain.up-anleitung { width: 296px; max-width: calc(100vw - 16px); transform: none; }
 /* Klickbar nur, solange sie zu sehen ist -- beim Ausblenden (140ms) faengt sie nichts mehr ab. */

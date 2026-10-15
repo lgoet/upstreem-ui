@@ -7040,15 +7040,21 @@
       klick(b.getAttribute("data-anl"), true);
     }
     function aufScroll(){ lageBald(); }
+    /* Das Thema wechselt, waehrend die Karte steht (gemessen 15.10.: sie blieb in der Farbe des
+       alten Themas): neu zeichnen, nachdem die Wurzeln ihr Thema haben (darum ein Takt spaeter). */
+    var themaAb = null;
+    function aufThema(){ setTimeout(function(){ if (offen){ el.__anlHtml = ""; zeichnen(); lage(); } }, 0); }
     function anmelden(){
       window.addEventListener("keydown", taste, true);
       window.addEventListener("scroll", aufScroll, { capture: true, passive: true });
       window.addEventListener("resize", aufScroll);
+      if (!themaAb && typeof onTheme === "function") themaAb = onTheme(aufThema);
     }
     function abmelden(){
       window.removeEventListener("keydown", taste, true);
       window.removeEventListener("scroll", aufScroll, { capture: true, passive: true });
       window.removeEventListener("resize", aufScroll);
+      if (themaAb){ try { themaAb(); } catch(e){} themaAb = null; }
       if (ro){ try { ro.disconnect(); } catch(e){} ro = null; beobachtet = null; }
     }
     function zeige(i, opts){

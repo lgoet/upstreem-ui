@@ -399,7 +399,7 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 
 /* ---- ZIELE (15.10.): Schritt 3 "What should we track?" und der Add-Dialog -------------------
    Die Wahl steht wie die Topics in Schritt 2 in einem Feldkasten (Rand wie die Eingabefelder,
-   Radius 10, Polster 6), die Zeilen sind die Zeilen der Filter aus core in der Bauart einer
+   --up-r-l, Polster 6), die Zeilen sind die Zeilen der Filter aus core in der Bauart einer
    Radiogruppe: Punkt, Zeichen, Titel, darunter die Schreibweise der Regel. Gewaehlt traegt die
    Zeile die Flaeche einer gewaehlten Zeile (--up-sel-bg) und der Punkt den Ring in der
    Akzentfarbe -- dieselbe Sprache wie das Kaestchen der Topics daneben. */
