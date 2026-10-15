@@ -233,7 +233,8 @@
        BAND", UC.bandTeile) -- die Wurzel ist das Band, die zwei Einheiten stehen mit der
        Trennlinie aus core nebeneinander. Hier standen bis zum 15.10. die eigenen Regeln dafuer. */
     var BAND = root.getAttribute("data-flach") === "yes" && !!UC.bandTeile;
-    if (BAND) UC.bandTeile(root, { zwei: true, einheit: ".combo-unit", kopf: ".combo-head", flaeche: ".combo-box", inhalt: ".combo-panel-body" });
+    if (BAND) UC.bandTeile(root, { zwei: true, einheit: ".combo-unit", kopf: ".combo-head", flaeche: ".combo-box", inhalt: ".combo-panel-body",
+      auge: ".combo-hide" });
     /* OR two independent loading signals (data-processing/data-processing2), same convention as
        the other three chart/table components. */
     function readProcessing(){
@@ -398,14 +399,34 @@
     var hideBtns = Array.prototype.slice.call(root.querySelectorAll(".combo-hide"));
     if (hideBtns.length && inner){
       var HIDDEN = (window.__ccHidden = window.__ccHidden || {});
-      /* ALS BAND (15.10.): ausgeblendet ist es ganz weg, der Knopf zum Einblenden steht im Kopf
-         der Seite (UC.bandAus) und geht denselben Weg wie dieser Knopf hier. Dazu ueber das
-         Neuladen hinaus gemerkt -- der Speicher am Fenster bleibt der erste. */
+      /* ALS BAND (15.10.): ausgeblendet ist es ganz weg. Seit dem 15.10. spaet schaltet der
+         Umschalter im Kopf der Seite (UC.bandAus) in BEIDE Richtungen, und das Auge hier weicht,
+         solange er steht (bandTeile oben, teile.auge). Umschalter und Auge gehen denselben Weg,
+         hiddenSetzen -- dieselbe Blende, derselbe Speicher. Dazu ueber das Neuladen hinaus
+         gemerkt -- der Speicher am Fenster bleibt der erste. */
       if (BAND && HIDDEN[instanceId] == null && UC.bandAusGemerkt && UC.bandAusGemerkt(instanceId)) HIDDEN[instanceId] = true;
+      var hiddenSetzen = function(collapsed){
+        collapsed = !!collapsed;
+        root.classList.toggle("is-hidden-view", collapsed);
+        HIDDEN[instanceId] = collapsed;
+        if (BAND && UC.bandAusMerken) UC.bandAusMerken(instanceId, collapsed);
+        bandStellen();
+        hideBtns.forEach(function(b){
+          b.setAttribute("data-tip", collapsed ? "Show" : "Hide");
+          b.setAttribute("aria-label", collapsed ? "Show" : "Hide");
+        });
+        if (collapsed){
+          root.classList.remove("is-max");
+          if (maxBtn){ maxBtn.setAttribute("data-tip","Maximize"); maxBtn.setAttribute("aria-label","Maximize"); }
+        }
+        setTimeout(function(){
+          typeChart.resize(); line.resize(); line.relayoutLegend();
+        }, 230);
+      };
       var bandStellen = function(){
         if (!BAND || !UC.bandAus) return;
         UC.bandAus(root, root.classList.contains("is-hidden-view"), { id: instanceId,
-          zeigen: function(){ if (root.classList.contains("is-hidden-view")) hideBtns[0].click(); } });
+          setzen: function(aus){ if (!!aus !== root.classList.contains("is-hidden-view")) hiddenSetzen(aus); } });
       };
       if (HIDDEN[instanceId]){ root.classList.add("is-hidden-view"); }
       bandStellen();
@@ -413,19 +434,7 @@
         if (hideBtn.getAttribute("data-cc-bound") === "1") return;
         hideBtn.setAttribute("data-cc-bound", "1");
         hideBtn.addEventListener("click", function(){
-          var collapsed = root.classList.toggle("is-hidden-view");
-          HIDDEN[instanceId] = collapsed;
-          if (BAND && UC.bandAusMerken) UC.bandAusMerken(instanceId, collapsed);
-          bandStellen();
-          hideBtn.setAttribute("data-tip", collapsed ? "Show" : "Hide");
-          hideBtn.setAttribute("aria-label", collapsed ? "Show" : "Hide");
-          if (collapsed){
-            root.classList.remove("is-max");
-            if (maxBtn){ maxBtn.setAttribute("data-tip","Maximize"); maxBtn.setAttribute("aria-label","Maximize"); }
-          }
-          setTimeout(function(){
-            typeChart.resize(); line.resize(); line.relayoutLegend();
-          }, 230);
+          hiddenSetzen(!root.classList.contains("is-hidden-view"));
         });
       });
     }
