@@ -18014,22 +18014,25 @@
     return { el: el, zeigen: zeigen };
   }
 
-  /* ---------- DAS LADEBILD FUER LANGE LAEUFE (30.09., zweite Fassung 01.10.) ----------
-     EIN Ladebild fuer alle langen Laeufe: Opportunities (Suche), Prompt Research (Recherche) und
-     Explore Brands (Scan). Bis zum 01.10. trugen die zwei letzten je eine eigene Kopie -- und die
-     drei sahen verschieden aus ("das ist ein core-Thema").
-     DIE FORM kommt vom Ladebild in Explore Brands (01.10.: "nimm den als Grundlage"): Kachel mit
-     dem Zeichen der Seite in der Mitte, darunter Titel und wechselnde Statuszeile. Geaendert, wie
-     gewuenscht: die Kachel schwebt nicht mehr auf und ab, und die zwei pulsierenden Ringe sind EIN
-     duenner Kreis, auf dem ein Bogen umlaeuft -- ein Spinner. Er ist das einzige, was sich bewegt,
-     und damit das Zeichen "hier wird gearbeitet".
-     KEIN BALKEN MEHR. Er lief auf einer erfundenen Kurve gegen 92 Prozent -- kein Lauf hier kennt
+  /* ---------- DAS LADEBILD FUER LANGE LAEUFE (30.09., zweite Fassung 01.10., dritte 16.10.) ----------
+     EIN Ladebild fuer alle langen Laeufe: Opportunities (Suche), Prompt Research (Recherche),
+     Explore Brands (Scan) und die Sitemap im Anlegen-Dialog der Events. Bis zum 01.10. trugen zwei
+     davon je eine eigene Kopie -- und sie sahen verschieden aus ("das ist ein core-Thema").
+     DIE FORM kommt vom Ladebild in Explore Brands (01.10.: "nimm den als Grundlage"): das Zeichen
+     der Seite in der Mitte eines Kreises, darunter Titel und wechselnde Statuszeile. Die zwei
+     pulsierenden Ringe von damals sind EIN duenner Kreis, auf dem ein Bogen umlaeuft -- ein Spinner.
+     Er ist das einzige, was sich dreht, und damit das Zeichen "hier wird gearbeitet".
+     SEIT DEM 16.10. ENTSCHLACKT (Variante A): keine Kachel mehr um das Zeichen, Kreis 48 statt 72,
+     Bogen in Textfarbe, die Statuszeile blendet ueber statt zu schieben. Die Masse stehen in
+     core.css am Ladebild.
+     KEIN BALKEN. Er lief auf einer erfundenen Kurve gegen 92 Prozent -- kein Lauf hier kennt
      seinen Fortschritt, und ein Balken behauptet einen.
      cfg:  icon     Name aus UC.icon: das Zeichen, das die Seite im Seitenkopf traegt
            name     der Titel, sub die leisere Zeile darunter (leer = keine)
            saetze   die wechselnde Statuszeile -- ein Feld oder eine Funktion, die es beim Start
                     liefert (prompt-research legt seine Liste erst nach dem Bauen an)
            satzMs   Wechsel der Statuszeile (2800)
+           kompakt  die kleine Form fuer einen Teilschritt in einem Dialog (Kreis 40, Zeichen 16)
      start(seit)  seit wird angenommen und nicht mehr gebraucht (es gibt keinen Balken, der an
                   einer Stelle weiterfahren muesste) -- die Aufrufer bleiben, wie sie sind.
      stop()       der Bogen schliesst sich zum vollen Kreis, das Drehen haelt an: "fertig". Wer
@@ -18041,7 +18044,7 @@
     cfg = cfg || {};
     if (!host) return null;
     var el = document.createElement("div");
-    el.className = "up-lb";
+    el.className = "up-lb" + (cfg.kompakt ? " is-kompakt" : "");
     el.setAttribute("role", "status");
     el.setAttribute("aria-live", "polite");
     function zeile(klasse, text){
@@ -18049,12 +18052,13 @@
         esc(text ? t_(text) : "") + '</div>';
     }
     /* pathLength 100: der Bogen ist damit in Prozent des Umfangs angegeben (CSS, stroke-dasharray)
-       und haengt nicht am Radius. */
+       und haengt nicht am Radius. viewBox 48 wie der Kreis in voller Groesse: dort ist eine Einheit
+       ein Pixel; r 23.25 ist der Rand minus halber Strich (1.5). */
     el.innerHTML =
       '<div class="up-lb-mark">' +
-        '<svg class="up-lb-spin" viewBox="0 0 72 72" aria-hidden="true">' +
-          '<circle class="up-lb-spur" cx="36" cy="36" r="35"/>' +
-          '<circle class="up-lb-bogen" cx="36" cy="36" r="35" pathLength="100"/>' +
+        '<svg class="up-lb-spin" viewBox="0 0 48 48" aria-hidden="true">' +
+          '<circle class="up-lb-spur" cx="24" cy="24" r="23.25"/>' +
+          '<circle class="up-lb-bogen" cx="24" cy="24" r="23.25" pathLength="100"/>' +
         '</svg>' +
         '<span class="up-lb-tile">' + (cfg.icon ? icon(cfg.icon, 2) : "") + '</span>' +
       '</div>' +

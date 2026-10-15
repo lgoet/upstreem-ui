@@ -644,8 +644,8 @@ Hebung weg (`scale(.99)`), bei `prefers-reduced-motion` gibt es keine Hebung.
 
 Eine Karte mit Schatten in Ruhe gibt es nur noch an einer Stelle: die Tarifkarte (`.up-plan`,
 `--up-e-1`), die am 28.09. samt Schatten von der Landingpage übernommen wurde. Zeichen-Kacheln
-(`.up-lb-tile`, `.uev-avatar`) sind keine Karten und behalten `--up-e-1`. (`.unc-tile` gibt es
-seit dem 16.10. nicht mehr, siehe §49.)
+(`.uev-avatar`) sind keine Karten und behalten `--up-e-1`. (`.unc-tile` gibt es seit dem 16.10.
+nicht mehr, siehe §49; `.up-lb-tile` trägt seit dem 16.10. keine Kachel mehr, siehe §9b.)
 
 ---
 
@@ -1574,6 +1574,55 @@ Widerspruch zum Zähler in Top Citations bleiben der knappe Text.
 eine Tabelle, die im Leerzustand nur ihren Kopf neu zeichnet, hat keine Zeile, an der die
 Prüfung „ungestempelt" anschlagen könnte, und zeigte bei 375 alle Kopfzellen (Brands: sechs
 Zellen auf vier Spuren, zweite Rasterzeile).
+
+---
+
+## 9b. Das Ladebild langer Läufe (`UC.makeLadebild`, Variante A seit 16.10.)
+
+Ein Baustein für jeden Lauf, der Sekunden dauert und seinen Fortschritt nicht kennt: Explore
+Brands (Scan), Prompt Research (Recherche), Opportunities (Suche) und die Sitemap im
+Anlegen-Dialog der Events. Keine Seite trägt eine eigene Kopie; die Träger (`.udb-loading`,
+`.uo-suche`, `.upr-loading-inner`, `.uev-sm-lb`) geben nur Fläche und Abstand.
+
+Am 16.10. gewählt: **Variante A, entschlackt** (Nutzer: „Loader: bitte Variante A, entschlackt").
+Die Form vom 01.10. bleibt, ohne das, was sie schwer machte:
+
+| Teil | Wert | vorher |
+|---|---|---|
+| Zeichen | das Seitenzeichen aus dem Seitenkopf, 20px, `--vc-muted`, **ohne Kachel** | Kachel 44 mit Verlauf, Rand, `--up-e-1` |
+| Kreis | 48 (`--up-lb-ring`), Strich 1.5px, Bogen ein Fünftel, 1s je Umlauf | 72 |
+| Bogen / Spur | `--vc-text` / `--vc-border` | `--up-accent` / `--vc-border` |
+| Titel | 14/500 auf 20, `--vc-text`, 16 unter dem Kreis | 14/500, Zeilenhöhe normal |
+| Unterzeile | 13, `--vc-third`, 2 darunter, nur wenn sie etwas sagt | gleich |
+| Statuszeile | 13 auf 19 (feste Höhe), `--vc-third`, 4 darunter | `--vc-muted`, 6 darunter |
+| Wechsel | nur Deckkraft: 200ms aus, Tausch nach 240ms, 200ms ein (`--up-t-2`, `--up-ease-auf`) | schob 95 % nach oben |
+| Auftritt | Deckkraft 260ms (`--up-t-3`, `--up-ease-expo`) | `ease` |
+| Kompakt (`cfg.kompakt`) | Kreis 40, Zeichen 16, Strich 1.8 Einheiten (= 1.5px), Titel 12 unter dem Kreis | wie ganzseitig |
+
+```js
+UC.makeLadebild(host, { icon: "compass", name: "Scanning your AI answers", saetze: [...], kompakt: false })
+// -> { el, start, stop, laeuft, name, sub }
+```
+
+Höhe: ganzseitig 107 (48 + 16 + 20 + 4 + 19), mit Unterzeile 126, kompakt 95. Das SVG rechnet
+in 48er Einheiten (Radius 23.25 = Rand minus halber Strich), der Bogen über `pathLength="100"`
+in Prozent des Umfangs. `stop()` schließt den Bogen in 260ms zum vollen Kreis und hält das
+Drehen an; wer danach umschaltet, wartet (Opportunities 400ms).
+
+**Titel und Unterzeile machen den Träger nicht breiter** (`width: 0; min-width: 100%`): ohne
+Umbruch wäre ihre Mindestbreite die ganze Zeile, und ein Träger, der sich nach dem Inhalt richtet,
+wuchs mit. Bei 375 schoben drei lange Schlagworte in Prompt Research `#main` um 138px über den
+Rand; jetzt kürzt der Titel mit „…".
+
+Nicht: kein Fortschrittsbalken (kein Lauf hier kennt seinen Fortschritt), kein Schweben, kein
+Pulsieren, keine zweite Bewegung neben dem Spinner. `prefers-reduced-motion`: kein Auftritt,
+Spinner langsamer (2.4s, ein stehender Spinner sagt „hängt"), Statuszeile wechselt hart.
+
+**Erst nach 300ms zeigen, mindestens 500ms stehen lassen** (Vercel Web Interface Guidelines) ist
+bewusst **nicht** umgesetzt: die Mindestzeit verlangte, dass `stop()` wartet und jeder Aufrufer
+seinen Inhalt erst danach zeigt (Events ersetzt den Inhalt im selben Aufruf, Explore Brands blendet
+den Träger im selben Takt aus). Die Verzögerung allein verschöbe das Aufblitzen nur. Wer es
+nachrüstet: `stop(fertig)` mit Rückruf, die vier Aufrufer warten darauf.
 
 ---
 

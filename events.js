@@ -3974,8 +3974,9 @@
       if (sm.laeuft) {
         if (!inh.querySelector(".up-lb")) {
           inh.innerHTML = '<div class="uev-sm-lb"></div>';
+          /* kompakt: ein Teilschritt im Dialog, kein ganzer Bildschirm (Kreis 40 statt 48, core 16.10.). */
           sm.lb = UC.makeLadebild ? UC.makeLadebild(inh.querySelector(".uev-sm-lb"), { icon: "tickets", name: "Reading your sitemap",
-            saetze: ["Looking for your sitemap…", "Reading pages…", "Sorting pages into folders…"] }) : null;
+            saetze: ["Looking for your sitemap…", "Reading pages…", "Sorting pages into folders…"], kompakt: true }) : null;
           if (sm.lb) sm.lb.start();
         }
         return;
