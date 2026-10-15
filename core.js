@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261148;
+  var BUILD = 20261150;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -10933,6 +10933,11 @@
       kasten.classList.remove("has-img");
       if (kasten.style && kasten.style.visibility === "hidden") kasten.style.visibility = "";
       if (img && img.parentNode) img.parentNode.removeChild(img);
+      /* Die Kachel der Suchzeile (entityAvatar) zeigt ihren Rueckfall nur mit is-fb. Ihr eigenes
+         onerror setzt es -- aber Googles Platzhalter LAEDT (16px, gemessen 16.10. mit Status 404
+         und Bild) und kommt nur ueber favPlatzhalter hierher: das Bild war weg, der Rueckfall
+         blieb unsichtbar, und die Kachel stand leer da. */
+      if (kasten.classList.contains("up-es-av")) kasten.classList.add("is-fb");
       var zeigtSchon = kasten.classList.contains("up-fav") || kasten.querySelector(FAV_BUCHSTABE);
       if (!zeigtSchon) kasten.classList.add("up-globus-an");
       return;
@@ -18222,22 +18227,25 @@
     return { el: el, zeigen: zeigen };
   }
 
-  /* ---------- DAS LADEBILD FUER LANGE LAEUFE (30.09., zweite Fassung 01.10.) ----------
-     EIN Ladebild fuer alle langen Laeufe: Opportunities (Suche), Prompt Research (Recherche) und
-     Explore Brands (Scan). Bis zum 01.10. trugen die zwei letzten je eine eigene Kopie -- und die
-     drei sahen verschieden aus ("das ist ein core-Thema").
-     DIE FORM kommt vom Ladebild in Explore Brands (01.10.: "nimm den als Grundlage"): Kachel mit
-     dem Zeichen der Seite in der Mitte, darunter Titel und wechselnde Statuszeile. Geaendert, wie
-     gewuenscht: die Kachel schwebt nicht mehr auf und ab, und die zwei pulsierenden Ringe sind EIN
-     duenner Kreis, auf dem ein Bogen umlaeuft -- ein Spinner. Er ist das einzige, was sich bewegt,
-     und damit das Zeichen "hier wird gearbeitet".
-     KEIN BALKEN MEHR. Er lief auf einer erfundenen Kurve gegen 92 Prozent -- kein Lauf hier kennt
+  /* ---------- DAS LADEBILD FUER LANGE LAEUFE (30.09., zweite Fassung 01.10., dritte 16.10.) ----------
+     EIN Ladebild fuer alle langen Laeufe: Opportunities (Suche), Prompt Research (Recherche),
+     Explore Brands (Scan) und die Sitemap im Anlegen-Dialog der Events. Bis zum 01.10. trugen zwei
+     davon je eine eigene Kopie -- und sie sahen verschieden aus ("das ist ein core-Thema").
+     DIE FORM kommt vom Ladebild in Explore Brands (01.10.: "nimm den als Grundlage"): das Zeichen
+     der Seite in der Mitte eines Kreises, darunter Titel und wechselnde Statuszeile. Die zwei
+     pulsierenden Ringe von damals sind EIN duenner Kreis, auf dem ein Bogen umlaeuft -- ein Spinner.
+     Er ist das einzige, was sich dreht, und damit das Zeichen "hier wird gearbeitet".
+     SEIT DEM 16.10. ENTSCHLACKT (Variante A): keine Kachel mehr um das Zeichen, Kreis 48 statt 72,
+     Bogen in Textfarbe, die Statuszeile blendet ueber statt zu schieben. Die Masse stehen in
+     core.css am Ladebild.
+     KEIN BALKEN. Er lief auf einer erfundenen Kurve gegen 92 Prozent -- kein Lauf hier kennt
      seinen Fortschritt, und ein Balken behauptet einen.
      cfg:  icon     Name aus UC.icon: das Zeichen, das die Seite im Seitenkopf traegt
            name     der Titel, sub die leisere Zeile darunter (leer = keine)
            saetze   die wechselnde Statuszeile -- ein Feld oder eine Funktion, die es beim Start
                     liefert (prompt-research legt seine Liste erst nach dem Bauen an)
            satzMs   Wechsel der Statuszeile (2800)
+           kompakt  die kleine Form fuer einen Teilschritt in einem Dialog (Kreis 40, Zeichen 16)
      start(seit)  seit wird angenommen und nicht mehr gebraucht (es gibt keinen Balken, der an
                   einer Stelle weiterfahren muesste) -- die Aufrufer bleiben, wie sie sind.
      stop()       der Bogen schliesst sich zum vollen Kreis, das Drehen haelt an: "fertig". Wer
@@ -18249,7 +18257,7 @@
     cfg = cfg || {};
     if (!host) return null;
     var el = document.createElement("div");
-    el.className = "up-lb";
+    el.className = "up-lb" + (cfg.kompakt ? " is-kompakt" : "");
     el.setAttribute("role", "status");
     el.setAttribute("aria-live", "polite");
     function zeile(klasse, text){
@@ -18257,12 +18265,13 @@
         esc(text ? t_(text) : "") + '</div>';
     }
     /* pathLength 100: der Bogen ist damit in Prozent des Umfangs angegeben (CSS, stroke-dasharray)
-       und haengt nicht am Radius. */
+       und haengt nicht am Radius. viewBox 48 wie der Kreis in voller Groesse: dort ist eine Einheit
+       ein Pixel; r 23.25 ist der Rand minus halber Strich (1.5). */
     el.innerHTML =
       '<div class="up-lb-mark">' +
-        '<svg class="up-lb-spin" viewBox="0 0 72 72" aria-hidden="true">' +
-          '<circle class="up-lb-spur" cx="36" cy="36" r="35"/>' +
-          '<circle class="up-lb-bogen" cx="36" cy="36" r="35" pathLength="100"/>' +
+        '<svg class="up-lb-spin" viewBox="0 0 48 48" aria-hidden="true">' +
+          '<circle class="up-lb-spur" cx="24" cy="24" r="23.25"/>' +
+          '<circle class="up-lb-bogen" cx="24" cy="24" r="23.25" pathLength="100"/>' +
         '</svg>' +
         '<span class="up-lb-tile">' + (cfg.icon ? icon(cfg.icon, 2) : "") + '</span>' +
       '</div>' +
@@ -24512,6 +24521,14 @@
     folders:  '<path d="M16.2627 10.5H7.73725C5.15571 10.5 3.86494 10.5 3.27143 11.3526C2.67793 12.2052 3.11904 13.4258 4.00126 15.867L5.08545 18.867C5.54545 20.1398 5.77545 20.7763 6.2889 21.1381C6.80235 21.5 7.47538 21.5 8.82143 21.5H15.1786C16.5246 21.5 17.1976 21.5 17.7111 21.1381C18.2245 20.7763 18.4545 20.1398 18.9146 18.867L19.9987 15.867C20.881 13.4258 21.3221 12.2052 20.7286 11.3526C20.1351 10.5 18.8443 10.5 16.2627 10.5Z"/>' +
              '<path d="M19 8C19 7.53406 19 7.30109 18.9239 7.11732C18.8224 6.87229 18.6277 6.67761 18.3827 6.57612C18.1989 6.5 17.9659 6.5 17.5 6.5H6.5C6.03406 6.5 5.80109 6.5 5.61732 6.57612C5.37229 6.67761 5.17761 6.87229 5.07612 7.11732C5 7.30109 5 7.53406 5 8"/>' +
              '<path d="M16.5 4C16.5 3.53406 16.5 3.30109 16.4239 3.11732C16.3224 2.87229 16.1277 2.67761 15.8827 2.57612C15.6989 2.5 15.4659 2.5 15 2.5H9C8.53406 2.5 8.30109 2.5 8.11732 2.57612C7.87229 2.67761 7.67761 2.87229 7.57612 3.11732C7.5 3.30109 7.5 3.53406 7.5 4"/>',
+    /* Hugeicons FolderTree (16.10. vom Nutzer fuer "Load from sitemap" in den Events bestimmt,
+       statt folders). Pfade woertlich aus @hugeicons/core-free-icons@4.3.5
+       (dist/esm/FolderTreeIcon.js, ueber jsDelivr und unpkg gelesen, beide gleich), nicht
+       nachgezeichnet: ein Ordner oben, einer unten, die Linie des Baums links. */
+    folderTree: '<path d="M12 7V5.33333C12 4.55608 12 4.16746 12.1405 3.86607C12.2896 3.54646 12.5465 3.28958 12.8661 3.14054C13.1675 3 13.5561 3 14.3333 3C14.7406 3 14.9443 3 15.1321 3.04949C15.3321 3.10217 15.519 3.19563 15.6811 3.324C15.8334 3.44459 15.9556 3.6075 16.2 3.93333L17 5H18.5C19.4346 5 19.9019 5 20.25 5.20096C20.478 5.33261 20.6674 5.52197 20.799 5.75C21 6.09808 21 6.56538 21 7.5C21 8.43462 21 8.90192 20.799 9.25C20.6674 9.47803 20.478 9.66739 20.25 9.79904C19.9019 10 19.4346 10 18.5 10H15C13.5858 10 12.8787 10 12.4393 9.56066C12 9.12132 12 8.41421 12 7Z"/>' +
+                '<path d="M12 18V16.3333C12 15.5561 12 15.1675 12.1405 14.8661C12.2896 14.5465 12.5465 14.2896 12.8661 14.1405C13.1675 14 13.5561 14 14.3333 14C14.7406 14 14.9443 14 15.1321 14.0495C15.3321 14.1022 15.519 14.1956 15.6811 14.324C15.8334 14.4446 15.9556 14.6075 16.2 14.9333L17 16H18.5C19.4346 16 19.9019 16 20.25 16.201C20.478 16.3326 20.6674 16.522 20.799 16.75C21 17.0981 21 17.5654 21 18.5C21 19.4346 21 19.9019 20.799 20.25C20.6674 20.478 20.478 20.6674 20.25 20.799C19.9019 21 19.4346 21 18.5 21H15C13.5858 21 12.8787 21 12.4393 20.5607C12 20.1213 12 19.4142 12 18Z"/>' +
+                '<path d="M8 7H7C6.07003 7 5.60504 7 5.22354 6.89778C4.18827 6.62038 3.37962 5.81173 3.10222 4.77646C3 4.39496 3 3.92997 3 3"/>' +
+                '<path d="M3 3V13C3 14.8692 3 15.8038 3.40192 16.5C3.66523 16.9561 4.04394 17.3348 4.5 17.5981C5.19615 18 6.13077 18 8 18"/>',
     listTodo: '<path d="M12 21C15.7497 21 17.6246 21 18.9389 20.0451C19.3634 19.7367 19.7367 19.3634 20.0451 18.9389C21 17.6246 21 15.7497 21 12C21 8.25027 21 6.3754 20.0451 5.06107C19.7367 4.6366 19.3634 4.26331 18.9389 3.95491C17.6246 3 15.7497 3 12 3C8.25027 3 6.3754 3 5.06107 3.95491C4.6366 4.26331 4.26331 4.6366 3.95491 5.06107C3 6.3754 3 8.25027 3 12C3 15.7497 3 17.6246 3.95491 18.9389C4.26331 19.3634 4.6366 19.7367 5.06107 20.0451C6.3754 21 8.25027 21 12 21Z"/>' +
               '<path d="M12 7V11M17 7V17M7 7V14"/>',
     /* Lucide "database-search" -- der Zylinder mit der Lupe unten rechts. Uebertragen und
