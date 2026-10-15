@@ -2086,22 +2086,32 @@ Bis 15.10. war das offene Feld randlos und transparent (Notion-Stil), Text 14/50
 Geist-Avataren (vercel.com/geist/avatar):
 
 ```
-Chip          .up-stack-item 28×28; sichtbare Ebene .up-stack-vis ist ein KREIS wie Geists
-              Avatar (rounded-full, innen 1px-Ring): Radius --up-r-voll, 1px --vc-border (im
-              Dark ebenfalls, als Ring), 3px Polster, Platte --vt-logo-bg (im Dark nur unter dem
-              Logo). Das Logo ein 20er Quadrat mit Radius 4 (--up-r-xs), ganz im Kreis (Ecke 12.5
-              vom Mittelpunkt, Kreis innen 13), nichts abgeschnitten. Dicht: Polster 2.64, Logo 17.36.
+Chip          .up-stack-item 32×32 (--up-stack-gr = --up-h-btn, seit 15.10. nachts; vorher 28);
+              sichtbare Ebene .up-stack-vis ist ein KREIS wie Geists Avatar (rounded-full, innen
+              1px-Ring): Radius --up-r-voll, 1px --vc-border (im Dark ebenfalls, als Ring), 4px
+              Polster, Platte --vt-logo-bg (im Dark nur unter dem Logo). Das Logo ein 22er Quadrat
+              mit Radius 4 (--up-r-xs), ganz im Kreis (Ecke 13.9 vom Mittelpunkt, Kreis innen 15;
+              im Dark mit 1px Plattenrand 14.9), nichts abgeschnitten. Buchstabe 11 (--up-fs-xs).
               Bis 15.10. spät: abgerundetes Quadrat Radius 6 mit 22er Bild ("ein Logo ist kein
               Porträt") -- vom Nutzer verworfen: "das solltest du vom Geist-System-Avatar nutzen".
-Überlappung   --up-stack-ueber 4px (dicht 3.52) wie vor dem 15.10.; Geists 0.3 × Größe (8) war
-              dem Nutzer zu eng ("etwas zu nah beieinander ... so wie es vorher war")
-Ring          --up-stack-ring-w 1px in der Zeilenfarbe (folgt dem Zeilen-Hover); bis 15.10.
-              4px, die den Abstand malten
+Überlappung   --up-stack-ueber 5px, Schritt 27 (vorher 4 und 24 bei 28). Vom Nachfolger verdeckt:
+              Überlappung + Ring = 8 von 32 (25 %; vorher 5 von 28 = 18 %). Geists 0.3 × Größe
+              (8 bei 28, verdeckt 9 = 32 %) war dem Nutzer zu eng ("etwas zu nah beieinander").
+              5 + 3 = 8 = das Spreizen beim Hover: der angefasste Chip reicht mit seinem Ring genau
+              an die Nachbarn heran, ohne in sie zu schneiden.
+Ring          --up-stack-ring-w 3px in der Zeilenfarbe -- der sichtbare ABSTAND zwischen zwei
+              Chips (folgt Zeilen- und Karten-Hover). Bis 15.10. 4px, am 15.10. kurz 1px
+              (Haarstrich, vom Nutzer zurückgeholt: "wieder ein sichtbares Gap ... wie es vorher
+              ja auch gab")
+Dicht         Faktor 0.88 über die drei Marken an .up-root.is-dense: 28.16, Überlappung 4.4,
+              Ring 2.64; Polster 3.52, Logo 19.12, "+N" 11
 Reihenfolge   das ERSTE Mitglied liegt oben (--up-stack-z absteigend, von brandStack gesetzt);
               isolation: isolate hält die Stufen im Stapel, unter dem klebenden Tabellenkopf
-"+N"          .up-stack-more: ein Kreis in Chipgröße (min. 28, Polster 0 4px), unterlappt wie
-              ein Mitglied und liegt zuunterst; Grund --up-sel-bg, 1px --vc-border, 11/600 in
+"+N"          .up-stack-more: ein Kreis in Chipgröße (min. 32, Polster 0 5px), unterlappt wie
+              ein Mitglied und liegt zuunterst; Grund --up-sel-bg, 1px --vc-border, 12/600 in
               --vc-muted; bis 15.10. reiner Text 12/500
+Eigene Maße   Response Detail (.urd-cc-foot, .urd-cr-ments): Reihe statt Stapel, 26er Chip mit
+              Polster 3 und "+N" 11 fest in response-detail.css; Leiste (.usn-chips, ungenutzt): 22
 ```
 
 **Hover-Verhalten unverändert** (gemessen):

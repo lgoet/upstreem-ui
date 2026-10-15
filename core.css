@@ -6204,11 +6204,36 @@
                    --vc-border). Das Logo bleibt ein Logo: ein 20er Quadrat mit Radius 4 in der
                    Platte, das ganz in den Kreis passt (Ecke bei 12.5 vom Mittelpunkt, Kreis innen
                    13) -- nichts wird abgeschnitten. Vorher 22er Bild im abgerundeten Quadrat.
-     Ueberlappung  wieder 4 wie vor dem 15.10. (dicht 3.52). Geists 0.3 x Groesse (8) lag zu eng. */
-:root { --up-stack-ueber: 4px; --up-stack-ring-w: 1px; }
+     Ueberlappung  wieder 4 wie vor dem 15.10. (dicht 3.52). Geists 0.3 x Groesse (8) lag zu eng.
+   NACHGEZOGEN 15.10. nachts (Nutzer: "eine Stufe groesser und bitte wieder ein sichtbares Gap
+   zwischen den Elementen, wie es vorher ja auch gab, und minimal kleiner den Abstand zwischen den
+   Elementen"):
+     Groesse       32 statt 28 -- die naechste Stufe der Hoehen-Skala (--up-h-btn). Faktor 32/28 auf
+                   alles, dann auf die Stufe: Polster 3 -> 4, Logo 22 (32 - 2 Rahmen - 2 x 4) mit
+                   Radius 4 (--up-r-xs; 4.57 liegt naeher an 4 als an 6). Ecke des Logos 13.9 vom
+                   Mittelpunkt, Kreis innen 15 -- im Dunkeln mit dem 1px-Plattenrand 14.9, passt
+                   auch dort. Bei 24er Logo (Polster 3) laege die Ecke mit Radius 4 bei 15.3, also
+                   im Rahmen. Buchstabe 10 -> 11 (--up-fs-xs), "+N" 11 -> 12 (--up-fs-s): eine
+                   Stufe ueber dem Buchstaben wie vorher.
+     Ring          3 statt 1: der sichtbare ABSTAND zwischen zwei Chips, in der Grundfarbe. Vor dem
+                   15.10. waren es 4 bei 28 -- 3 ist der Teil davon, der neben dem Haarstrich-Rand
+                   des Kreises noch als Luecke liest und nicht als zweite Linie.
+     Ueberlappung  5 statt 4, Schritt 27 statt 24. Verdeckt wird vom Nachfolger jetzt Ueberlappung
+                   plus Ring = 8 von 32 (25 %, vorher 5 von 28 = 18 %, Geists 9 von 28 = 32 % war
+                   "zu nah") -- die Chips ruecken also sichtbar zusammen, Schritt durch Groesse 0.84
+                   statt 0.86. Und 5 + 3 = 8 ist genau das Spreizen beim Hover: der angefasste Chip
+                   kommt mit seinem Ring genau bis an die Nachbarn, ohne in sie zu schneiden -- das
+                   Hover-Verhalten (8/16, 3px Anheben) bleibt dadurch Wert fuer Wert, wie es war.
+     Dicht         Faktor 0.88 ueber dieselben drei Marken (.up-root.is-dense weiter unten), nicht
+                   je Regel: 28.16, Ueberlappung 4.4, Ring 2.64 -- 4.4 + 2.64 = 7.04, das dichte
+                   Spreizen. Der Ring zieht seit heute mit, er ist kein Haarstrich mehr. */
+/* --up-stack-gr: die Chipgroesse als EINE Marke, weil Chip, "+N" und das dichte Mass sie teilen.
+   Aus der Hoehen-Skala, die ebenfalls an :root steht (Kopf dieser Datei) -- so loest sie auch fuer
+   einen Stapel ausserhalb einer .up-root auf. */
+:root { --up-stack-gr: var(--up-h-btn); --up-stack-ueber: 5px; --up-stack-ring-w: 3px; }
 .up-stack { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; isolation: isolate; }
 .up-stack-item {
-  width: 28px; height: 28px; flex: 0 0 28px;
+  width: var(--up-stack-gr); height: var(--up-stack-gr); flex: 0 0 var(--up-stack-gr);
   display: inline-flex; align-items: center; justify-content: center;
   position: relative; cursor: default; z-index: var(--up-stack-z, auto);
 }
@@ -6239,10 +6264,11 @@
    Rechnung: 28px Chip - 2x1 Rahmen - 2x2 Polsterung = 22px Bild, Bildradius 8 - 3 = 5
    (seit 15.10. auf der Geist-Skala: Chip --up-r-m = 6, Bild 6 - 3 = 3).
    Der 4px-Ring aus box-shadow bleibt unberuehrt: das ist der ABSTAND zum Nachbarn, nicht die
-   Kante des Chips. */
+   Kante des Chips.
+   Seit 15.10. nachts: 32er Kreis, 1px Rahmen, 4px Polster, also 22er Logo; Ring 3 (Kopf des Blocks). */
 .up-stack-vis {
   display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 100%;
-  border-radius: var(--up-r-voll); padding: 3px; background: var(--vt-logo-bg); box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg);
+  border-radius: var(--up-r-voll); padding: 4px; background: var(--vt-logo-bg); box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg);
   border: 1px solid var(--vc-border);
   transition: transform .16s ease;
   /* Bezug fuer den Globus des Favicon-Rueckfalls (siehe .up-fav weiter oben). In Ruhe traegt die
@@ -6302,23 +6328,27 @@
 .up-karte-klick:is(:hover, .is-hl) :is(.up-stack-vis, .up-stack-more) {
   --up-stack-ring: color-mix(in srgb, var(--vc-bg) 50%, var(--up-knopf-hover));
   box-shadow: 0 0 0 var(--up-stack-ring-w) var(--up-stack-ring); }
-/* Das Logo im Kreis: 28 - 2 Rahmen - 2 x 3 Polster = 20, Radius 4 (--up-r-xs), siehe Kopf des Blocks. */
+/* Das Logo im Kreis: 32 - 2 Rahmen - 2 x 4 Polster = 22, Radius 4 (--up-r-xs), siehe Kopf des Blocks.
+   Der Buchstabe 11 (vorher 10 bei 28: Faktor 32/28 ergibt 11.4, die Stufe darunter liegt naeher). */
 .up-stack-item img { width: 100%; height: 100%; border-radius: var(--up-r-xs); object-fit: contain; display: block; }
-.up-stack-ltr { font-size: 10px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
+.up-stack-ltr { font-size: var(--up-fs-xs); font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
 .up-stack-item.has-img .up-stack-ltr { display: none; }
 /* "+N" NACH GEIST (15.10.; vorher reiner Text 12/500 mit 8px Abstand): ein Kreis in Chipgroesse,
    der wie ein weiteres Mitglied um die Ueberlappung unter den letzten Chip greift und zuunterst liegt
    (Geist z-index 0). Geist: Gray 100 mit 1px Gray 400, Schrift 10/600 -- hier unsere Toene (Grund
    --up-sel-bg, Kante --vc-border, Schrift --vc-muted) und 11 statt 10 (die Skala beginnt bei 11).
    min-width statt width: eine dreistellige Zahl darf ihn zur Pille ziehen, statt abzuschneiden.
-   Der 1px-Ring in der Zeilenfarbe wie an jedem Chip, beim Ueberfahren der Zeile mit. */
+   Der 1px-Ring in der Zeilenfarbe wie an jedem Chip, beim Ueberfahren der Zeile mit.
+   Seit 15.10. nachts mit dem Chip eine Stufe groesser: Kreis 32 (--up-stack-gr), Ring 3, Polster
+   4 -> 5 (Faktor 32/28 = 4.57), Schrift 11 -> 12 (12.6 gerechnet; 12 haelt den Abstand von einer
+   Stufe zum Buchstaben im Chip, der auf 11 steht). */
 .up-stack-more {
   position: relative; z-index: 0; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
-  min-width: 28px; height: 28px; padding: 0 4px; margin-left: calc(var(--up-stack-ueber) * -1);
+  min-width: var(--up-stack-gr); height: var(--up-stack-gr); padding: 0 5px; margin-left: calc(var(--up-stack-ueber) * -1);
   border: 1px solid var(--vc-border); border-radius: var(--up-r-voll); background: var(--up-sel-bg);
   box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg);
-  font-size: var(--up-fs-xs); font-weight: var(--up-fw-h); line-height: 1; color: var(--vc-muted);
+  font-size: var(--up-fs-s); font-weight: var(--up-fw-h); line-height: 1; color: var(--vc-muted);
   white-space: nowrap; font-variant-numeric: tabular-nums;
   transition: transform .16s ease;
 }
@@ -6374,19 +6404,17 @@
 .up-root.is-dense .up-stack.is-spread-left .up-stack-item:has(~ .up-stack-item:hover) .up-stack-vis { transform: translateX(-14.08px); }
 .up-root.is-dense .up-stack.is-spread-left .up-stack-item:has(~ .up-stack-item.is-last:hover) .up-stack-vis { transform: translateX(-7.04px); }
 /* Compact mode shrinks the mentioned-brand logos ~20% and scales every gap/shift to match. */
-.up-root.is-dense .up-stack-item { width: 24.64px; height: 24.64px; flex: 0 0 24.64px; }
-/* Dichte Zeilen: Faktor 0.88 auf alles (24.64 statt 28). Polsterung 2 -> 1.76, Rahmen bleibt 1px,
-   also sitzt das Bild 2.76px innen und der Bildradius ist 7.04 - 2.76 = 4.28.
-   Seit dem 15.10. spaet ein Kreis wie der normale Chip: Polster 0.88 x 3 = 2.64, das Logo also
-   24.64 - 2 - 5.28 = 17.36 mit Radius 4 -- passt in den Kreis (Ecke 10.6 vom Mittelpunkt, innen 11.3). */
-/* Der Ring bleibt 1px (Geist: ein Haarstrich in jeder Groesse), nur die Ueberlappung zieht mit. */
-.up-root.is-dense .up-stack-vis { border-radius: var(--up-r-voll); padding: 2.64px; box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg); }
-.up-root.is-dense .up-row:hover .up-stack-vis { box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vt-row-hover-solid, var(--vc-bg));
-  --up-stack-ring: var(--vt-row-hover-solid, var(--vc-bg)); }
-.up-root.is-dense .up-stack-item img { border-radius: var(--up-r-xs); }
-.up-root.is-dense .up-stack-ltr { font-size: 8.8px; }
-.up-root.is-dense .up-stack-item + .up-stack-item { margin-left: calc(var(--up-stack-ueber) * -0.88); }
-.up-root.is-dense .up-stack-more { min-width: calc(28px * 0.88); height: calc(28px * 0.88); margin-left: calc(var(--up-stack-ueber) * -0.88); }
+/* Dichte Zeilen: Faktor 0.88 auf alles. Seit 15.10. nachts ueber die drei Marken des Stapels statt
+   je Regel -- Groesse 32 -> 28.16, Ueberlappung 5 -> 4.4, Ring 3 -> 2.64 --, damit Chip, "+N",
+   Ring, Zeilen-Hover und der Einzug der Karte (.urt-card-citations) EINEN Wert lesen. Vorher stand
+   der Ring hier als eigene box-shadow-Regel, die mit (0,3,0) auch den Ring der gehoverten Karte
+   schlug; die Zeile brauchte dafuer eine zweite Hover-Regel. Beides faellt weg.
+   Polster 4 -> 3.52, Logo also 28.16 - 2 - 7.04 = 19.12 mit Radius 4 -- Ecke 11.9 vom
+   Mittelpunkt, Kreis innen 13.08. Buchstabe 11 x 0.88, "+N" 12 x 0.88 = 10.6 -> 11 (Stufe). */
+.up-root.is-dense { --up-stack-gr: calc(var(--up-h-btn) * 0.88); --up-stack-ueber: calc(5px * 0.88); --up-stack-ring-w: calc(3px * 0.88); }
+.up-root.is-dense .up-stack-vis { padding: calc(4px * 0.88); }
+.up-root.is-dense .up-stack-ltr { font-size: calc(var(--up-fs-xs) * 0.88); }
+.up-root.is-dense .up-stack-more { padding: 0 calc(5px * 0.88); font-size: var(--up-fs-xs); }
 .up-root.is-dense .up-stack-item:hover .up-stack-vis { transform: translateX(7.04px) translateY(-3px); }
 .up-root.is-dense .up-stack-item:first-child:hover .up-stack-vis { transform: translateY(-3px); }
 .up-root.is-dense .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
