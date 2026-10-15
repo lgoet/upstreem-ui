@@ -429,15 +429,17 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-ziel > .uev-ergebnis:not(:has(.uev-urlwahl, .uev-vz:not([hidden]):not(:empty))),
 .uev-ziel > .uev-sm-ort:empty { display: none; }
 .uev-ergebnis { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-/* Der Kopf des Feldes: links das Etikett, rechts "Load from sitemap" als leiser Knopf. Er ist 24
-   hoch (Rolle nach Hoehe: Radius 4, Schrift 12 wie das Etikett) und ragt oben und unten ueber
-   die Zeile des Etiketts hinaus, ohne sie hoeher zu machen -- das Feld steht darunter im selben
-   Abstand wie unter jedem anderen Etikett. Rechts -8: der Text schliesst mit der Kante des
-   Add-Knopfs ab, nur die Hoverflaeche ragt um das Polster hinaus. */
+/* Der Kopf des Feldes: links das Etikett, rechts "Load from sitemap" als leiser Knopf, 24 hoch
+   (Rolle nach Hoehe: Radius 4, Schrift 12 wie das Etikett). Seit dem 16.10. steht er mit seiner
+   GANZEN Hoehe in der Zeile, wie der Knopf neben dem Etikett in core (.up-cgm-labelrow): bis dahin
+   ragte er mit -4 oben und unten ueber die Zeile hinaus, seine Flaeche endete 4 ueber dem Feld
+   und sein Text 8.5 ueber dem Add-Knopf (Nutzer: "quasi direkt auf dem Inputfeld, sieht cramped
+   aus"). Jetzt 8 bis zum Feld, der Abstand jedes Feldes unter seinem Kopf. Rechts -8: der Text
+   schliesst mit der Kante des Add-Knopfs ab, nur die Hoverflaeche ragt um das Polster hinaus. */
 .uev-zielkopf { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-width: 0; }
 .uev-sm-knopfzeile { display: inline-flex; min-width: 0; }
 .uev-sm-knopfzeile[hidden] { display: none; }
-.uev-zielkopf .up-quietbtn { height: var(--up-h-chip); margin: -4px -8px -4px 0; border-radius: var(--up-r-s); font-size: var(--up-fs-s); }
+.uev-zielkopf .up-quietbtn { height: var(--up-h-chip); margin: 0 -8px 0 0; border-radius: var(--up-r-s); font-size: var(--up-fs-s); }
 .uev-zielkopf .up-quietbtn svg { width: 14px; height: 14px; flex-basis: 14px; color: var(--vc-third); }
 /* Die Wahl der Art: die Zeilen der Filter aus core in der Bauart einer Radiogruppe -- Punkt,
    Zeichen, Titel, darunter die Schreibweise der Regel. Gewaehlt traegt die Zeile die Flaeche einer
@@ -505,6 +507,8 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-schreibweise:empty { display: none; }
 .uev-schreib-lbl, .uev-schreib-satz { color: var(--vc-third); }
 .uev-schreibweise .uev-notation { max-width: 100%; }
+/* Mehr eingefuegt, als frei ist (16.10.): der Grund in eigener Zeile unter der Schreibweise. */
+.uev-schreibweise .uev-ziel-fehler { flex-basis: 100%; }
 /* 24 hoch -> Radius 4 (Rolle nach Hoehe, Geist): der leise Knopf aus core ist fuer 32 gerundet. */
 .uev-schreibweise .up-quietbtn { height: var(--up-h-chip); border-radius: var(--up-r-s); }
 /* Die Fehlerzeile unter dem Feld: zu ist sie 0 hoch. core gibt ihrem Text 5 Polster, die eine
@@ -519,6 +523,9 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
    Art, die Schreibweise und die Zahl der Treffer aus der Vorschau. */
 .uev-ziel-ic { flex: 0 0 auto; display: inline-flex; color: var(--vc-third); }
 .uev-ziel-ic svg { width: 16px; height: 16px; }
+/* Das Favicon an der Stelle eines 16er-Zeichens (16.10.: Chip in Schritt 4, Host im Sitemap-Baum).
+   16 hoch -> Radius 4 (Rolle nach Hoehe). */
+.uev-fav { display: block; flex: 0 0 auto; width: 16px; height: 16px; border-radius: var(--up-r-xs); }
 .uev-urlwahl .uev-notation { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); }
 .uev-ziel-n { flex: 0 0 auto; font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; }
 .uev-ziel-fehler { flex: 0 1 auto; min-width: 0; font-size: var(--up-fs-s); color: var(--vt-down); }
@@ -570,6 +577,10 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-sm-inhalt:empty { display: none; }
 .uev-sm-lb { padding: 16px 0 8px; }
 .uev-sm-quelle { overflow-wrap: anywhere; }
+/* Woher die Seiten kommen und wie viele noch gehen (16.10.): zwei Saetze, die zusammengehoeren --
+   4 zwischen ihnen statt der 12 zwischen den Teilen des Waehlers. */
+.uev-sm-saetze { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.uev-sm-deckel[hidden] { display: none; }
 .uev-sm-inhalt .uev-sm-suchw { margin: 0; }
 /* Die Zeilen ruecken um ihr Polster (6) nach aussen, wie Topics und Arten: der Pfeil des obersten
    Ordners steht an der Kante von Feld und Suche, nur die Hoverflaeche reicht darueber (15.10.
@@ -584,21 +595,32 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-sm-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); color: var(--vc-text); }
 .uev-sm-angaben { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 12px; font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .uev-sm-reihe .uev-sm-alle { display: none; height: var(--up-h-chip); border-radius: var(--up-r-s); font-size: var(--up-fs-s); }
-.uev-sm-reihe.is-ordner:hover .uev-sm-angaben, .uev-sm-reihe.is-ordner:focus-within .uev-sm-angaben { display: none; }
+/* Getauscht wird nur, wo etwas zum Tauschen steht (:has, 16.10.): ein gewaehlter, gesperrter
+   oder voller Ordner behaelt beim Ueberfahren Zahl und Datum, statt eine leere Stelle zu zeigen. */
+.uev-sm-reihe.is-ordner:is(:hover, :focus-within):has(.uev-sm-alle) .uev-sm-angaben { display: none; }
 .uev-sm-reihe.is-ordner:hover .uev-sm-alle, .uev-sm-reihe.is-ordner:focus-within .uev-sm-alle { display: inline-flex; }
+/* Passen die Seiten nicht mehr hinein (16.10.), steht an der Stelle von "Select all in folder" der
+   Hinweis, den Ordner selbst zu waehlen: leiser Text, kein Knopf -- ein Klick darauf trifft die
+   Zeile und waehlt damit genau diesen Ordner. Polster 8 wie der Knopf, den er vertritt. */
+.uev-sm-reihe .uev-sm-alle.is-nein { align-items: center; padding: 0 8px; color: var(--vc-third); white-space: nowrap; }
+/* Als eigene Zeile (Touch) darf er umbrechen: tief eingerueckt reichte er bei 375 sonst ueber den
+   Rand des Baums hinaus. */
+.uev-sm-alle-reihe.is-nein { align-items: center; height: auto; min-height: var(--up-h-seg); padding: 4px 8px; color: var(--vc-third); }
 /* Ohne Zeiger kein Ueberfahren: dort steht "Select all in folder" als eigene Zeile unter dem
    aufgeklappten Ordner (in der Zeile selbst blieb dem Namen bei 375 gemessen 0px). */
 .uev-sm-alle-reihe { display: none; align-self: flex-start; margin-left: calc(var(--uev-tiefe, 0) * 16px + 32px); height: var(--up-h-seg); font-size: var(--up-fs-s); }
 @media (hover: none) {
   .uev-sm-reihe.is-ordner .uev-sm-alle, .uev-sm-reihe.is-ordner:focus-within .uev-sm-alle { display: none; }
-  .uev-sm-reihe.is-ordner:focus-within .uev-sm-angaben { display: inline-flex; }
+  .uev-sm-reihe.is-ordner:is(:hover, :focus-within):has(.uev-sm-alle) .uev-sm-angaben { display: inline-flex; }
   .uev-sm-alle-reihe { display: inline-flex; }
 }
 /* Telefon: das Datum weicht, die Zahl der Seiten bleibt -- der Name braucht den Platz. */
 @media (max-width: 520px) { .uev-sm-reihe .uev-sm-datum { display: none; } }
-/* In einem gewaehlten Ordner: gewaehlt, aber nicht einzeln zu aendern. */
-.uev-sm-reihe.is-gedeckt { opacity: .55; cursor: default; }
-.uev-sm-reihe.is-gedeckt:hover { background: transparent; }
+/* In einem gewaehlten Ordner (oder schon getrackt): gewaehlt, aber nicht einzeln zu aendern.
+   Voll (16.10.): passt nicht mehr hinein -- ebenso gedaempft, aber ohne Haken; der Grund steht im
+   Tooltip und im Satz ueber dem Baum. */
+.uev-sm-reihe.is-gedeckt, .uev-sm-reihe.is-voll { opacity: .55; cursor: default; }
+.uev-sm-reihe.is-gedeckt:hover, .uev-sm-reihe.is-voll:hover { background: transparent; }
 .uev-sm-mehr { align-self: flex-start; margin-left: calc(var(--uev-tiefe, 0) * 16px + 32px); height: var(--up-h-seg); font-size: var(--up-fs-s); }
 .uev-sm-fuss { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .uev-sm-zahl { font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; }
