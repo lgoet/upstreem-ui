@@ -248,7 +248,14 @@
     "{product} gained the most Visibility ({delta}).": "{product} hat am meisten Visibility gewonnen ({delta}).",
     "{product} lost the most Visibility ({delta}).": "{product} hat am meisten Visibility verloren ({delta}).",
     "{rate} of AI responses showed shopping products.": "{rate} der KI-Antworten haben Shopping-Produkte gezeigt.",
-    "Your products appeared in {presence} of these results.": "Deine Produkte erschienen in {presence} dieser Ergebnisse."
+    "Your products appeared in {presence} of these results.": "Deine Produkte erschienen in {presence} dieser Ergebnisse.",
+    /* Die Berechnungen der Gesamtzeilen (15.10. spaet). "Average", "Total", "Median" und ihre
+       kurzen Formen stehen in core. "Range"/"range" gleichlautend in responses-table.js, "yours" in
+       urls-table.js, "Top 3 share"/"top 3" in ads.js -- die laden in anderen Ansichten, ohne diese
+       Datei; gehoeren nach core. */
+    "Range": "Spanne", "range": "Spanne", "Merchants used": "Genutzte Händler", "merchants": "Händler",
+    "Your share": "Eigener Anteil", "yours": "eigene", "Top 3 share": "Anteil der Top 3", "top 3": "Top 3",
+    "Rising / falling": "Steigend / fallend", "rising / falling": "steigend / fallend"
   });
 
   /* Die Erklaerkarten (UC.makeExplain), Texte aus dem Entwurf (TIPS) mit den zwei First Position
@@ -762,6 +769,73 @@
     function meAnfrage(tb) {
       var b = mit(grundBody(), { p_search: suchText(tb.suche), p_order: orderOf("merchants", tb), p_limit: limitOf(tb), p_offset: offsetOf(tb) });
       return { kanal: "merchants", body: b, sig: sigVon(b) };
+    }
+    /* ---- Die Berechnungen der Gesamtzeilen (15.10. spaet) ---------------------------------------
+       Je Tabelle eine EIGENE Abfrage neben der Liste (Auftrag bubble/summen_db_auftrag_15_10.md, 5),
+       geholt von der Gesamtzeile selbst (core, makeZaehlZeile): nur, was gewaehlt ist, je
+       Filterstand einmal, mit eigenem Skelett in der Zelle -- die Zeilen warten nie darauf. Der Body
+       ist der der Liste OHNE Sortierung und Seite, also aendern Blaettern und Sortieren die
+       Signatur nicht. summenStand zaehlt reset(): danach gilt dieselbe Signatur als neu, und die
+       Summe kommt frisch wie die Liste. Kein Rueckweg ueber Bubble -- die Summen gibt es nur in der
+       App; fehlt die Funktion, steht "–" (core), und es wird nicht wiederholt. */
+    var SUMME_FN = { products: "cached_shopping_products_summary_v2", brands: "cached_shopping_brands_summary_v2",
+                     merchants: "cached_shopping_merchants_summary_v2" };
+    var SUMME_FELDER = {
+      products: ["avg_visibility_pct", "observations_total", "avg_position", "avg_first_position_rate_pct",
+                 "price_median", "price_min", "price_max", "price_currency", "avg_rating", "merchants_used"],
+      brands: ["own_share_pct", "top3_share_pct", "products_total", "observations_total", "avg_position",
+               "rising_count", "falling_count"],
+      merchants: ["top3_share_pct", "products_total", "observations_total", "avg_position"]
+    };
+    var summenStand = 0;
+    function summeBody(s) {
+      if (s === "products") {
+        var b = mit({}, prodAnfrage().body);
+        delete b.p_order; delete b.p_limit; delete b.p_offset;
+        return b;
+      }
+      if (s === "brands") return mit(grundBody(), { p_brand_search: suchText(state.brands.suche) });
+      return mit(grundBody(), { p_search: suchText(state.merchants.suche) });
+    }
+    /* Die Antwort: ein Objekt mit genau den bestellten Feldern (Auftrag 0.8), Zahlen als Zahl oder
+       null, die Waehrung als Code -- nie 0 fuer "nichts". Auch { summary: {...} } und eine Liste mit
+       einem Objekt. Unlesbar: null, die gewaehlten Zellen zeigen "–". */
+    function summeLesen(d, felder) {
+      var x = d && typeof d === "object" && !isArr(d) && d.summary && typeof d.summary === "object" ? d.summary : d;
+      if (isArr(x) && x.length === 1 && x[0] && typeof x[0] === "object") x = x[0];
+      if (!x || typeof x !== "object" || isArr(x)) return null;
+      var o = {};
+      felder.forEach(function (k) {
+        if (!Object.prototype.hasOwnProperty.call(x, k)) return;
+        o[k] = k === "price_currency" ? (str(x[k]).trim() || null) : num(x[k]);
+      });
+      return o;
+    }
+    /* Gelesene Summen je Anfrage (Funktion + ganzer Body samt p_fields und summenStand): die
+       Gesamtzeile merkt sich ihre Werte nur, solange es SIE gibt, und zeichnen() baut den Abschnitt
+       bei jedem Reiterwechsel und jedem Theme neu -- gemessen holte ein redraw() dieselbe Summe
+       sonst ein zweites Mal. Nur Gelesenes; ein Fehler wird beim naechsten Aufbau einmal neu
+       versucht, nicht in einer Schleife. Die juengsten 30. */
+    var summenSpeicher = {}, summenReihe = [];
+    function summenQuelle(s) {
+      return {
+        sig: function () { return summenStand + "|" + sigVon(summeBody(s)); },
+        holen: function (felder) {
+          if (!direktWeg() || !team() || !SUMME_FN[s]) return null;
+          var fl = (isArr(felder) ? felder : []).filter(function (f, i, l) { return SUMME_FELDER[s].indexOf(f) >= 0 && l.indexOf(f) === i; }).sort();
+          if (!fl.length) return null;
+          var body = mit(summeBody(s), { p_fields: fl }), k = summenStand + "|" + SUMME_FN[s] + "|" + sigVon(body);
+          if (summenSpeicher[k]) return Promise.resolve(summenSpeicher[k]);
+          return Promise.resolve(UC.rpc(SUMME_FN[s], body, { timeoutMs: WARTE_MS })).then(function (erg) {
+            var d = erg && erg.ok ? summeLesen(erg.daten, SUMME_FELDER[s]) : null;
+            if (d) {
+              summenSpeicher[k] = d; summenReihe.push(k);
+              while (summenReihe.length > 30) delete summenSpeicher[summenReihe.shift()];
+            }
+            return d;
+          }, function () { return null; });
+        }
+      };
     }
     /* Die Signatur ist der ganze Body, MIT p_team (13.10.). Bis dahin fehlte das Team darin ("es
        wechselt nur mit einem Seitenaufbau") -- seit die App das Team ohne Neuladen wechselt
@@ -2090,6 +2164,53 @@
        (innerHTML), wird DIESELBE Zeile danach wieder hinter den neuen Koerper gehaengt -- ein
        Neubau je Zeichnen haette jedes Mal ein neues Popover angelegt. Ohne Koerper (Leer- und
        Fehlerzustand) bleibt sie draussen; der Zustand sagt dann selbst, was ist. */
+    /* DIE BERECHNUNGEN JE SPALTE (15.10. spaet, vom Nutzer abgenommen: "exakt so umsetzen"; Median
+       nur beim Preis). feld: Schluessel der Antwort (SUMME_FELDER oben), art: Format nach CLAUDE.md
+       2b, kurz: Bezeichnung in der Zelle (klein wie in der Prompt-Tabelle), label: im Menue und im
+       Tooltip. Der Preis steht wie in seiner Zelle (geld, preisSpanne: "€19.62–€21.62"), die
+       Waehrung kommt mit (price_currency). Nie ueber die sichtbare Seite gerechnet. */
+    function preisText(v, c) { return geld(v, c) || null; }
+    var SUM_RECHNEN = {
+      products: {
+        vis: [{ key: "avg", label: "Average", kurz: "avg", feld: "avg_visibility_pct", art: "pct" }],
+        obs: [{ key: "summe", label: "Total", kurz: "total", feld: "observations_total", art: "anzahl" }],
+        pos: [{ key: "avg", label: "Average", kurz: "avg", feld: "avg_position", art: "rang" }],
+        first: [{ key: "avg", label: "Average", kurz: "avg", feld: "avg_first_position_rate_pct", art: "pct" }],
+        price: [
+          { key: "median", label: "Median", kurz: "median", feld: "price_median", felder: ["price_currency"], art: "text",
+            wert: function (d) { return preisText(d.price_median, d.price_currency); } },
+          { key: "spanne", label: "Range", kurz: "range", felder: ["price_min", "price_max", "price_currency"], art: "text",
+            wert: function (d) {
+              var a = preisText(d.price_min, d.price_currency), b = preisText(d.price_max, d.price_currency);
+              if (!a || !b || num(d.price_min) === num(d.price_max)) return a || b;
+              return a + "–" + b;
+            } }
+        ],
+        rating: [{ key: "avg", label: "Average", kurz: "avg", feld: "avg_rating", art: "rang" }],
+        merchants: [{ key: "genutzt", label: "Merchants used", kurz: "merchants", feld: "merchants_used", art: "anzahl" }]
+      },
+      brands: {
+        share: [
+          { key: "eigen", label: "Your share", kurz: "yours", feld: "own_share_pct", art: "pct" },
+          { key: "top3", label: "Top 3 share", kurz: "top 3", feld: "top3_share_pct", art: "pct" }
+        ],
+        products: [{ key: "summe", label: "Total", kurz: "total", feld: "products_total", art: "anzahl" }],
+        obs: [{ key: "summe", label: "Total", kurz: "total", feld: "observations_total", art: "anzahl" }],
+        pos: [{ key: "avg", label: "Average", kurz: "avg", feld: "avg_position", art: "rang" }],
+        /* "4 / 2": Marken mit steigendem und mit fallendem Share gegenueber dem Vorzeitraum. */
+        change: [{ key: "richtung", label: "Rising / falling", kurz: "rising / falling", felder: ["rising_count", "falling_count"], art: "text",
+          wert: function (d) {
+            var a = anzahlWert(d.rising_count), b = anzahlWert(d.falling_count);
+            return a == null || b == null ? null : ganz(a) + " / " + ganz(b);
+          } }]
+      },
+      merchants: {
+        share: [{ key: "top3", label: "Top 3 share", kurz: "top 3", feld: "top3_share_pct", art: "pct" }],
+        products: [{ key: "summe", label: "Total", kurz: "total", feld: "products_total", art: "anzahl" }],
+        obs: [{ key: "summe", label: "Total", kurz: "total", feld: "observations_total", art: "anzahl" }],
+        pos: [{ key: "avg", label: "Average", kurz: "avg", feld: "avg_position", art: "rang" }]
+      }
+    };
     var zaehl = null, zaehlStand = null;
     function zaehlEinhaengen(w) {
       var tab = sek("tabelle"), tbody = w.querySelector(".up-tbody"), s = state.seite;
@@ -2100,7 +2221,10 @@
           cols: function () { var e = spalten[s]; return e ? e.kit : null; },
           spalten: function () { return TABELLEN[s].spalten.map(function (c) { return c.key; }); },
           anzahl: function () { return typeof zaehlStand === "number" ? zaehlStand : null; },
-          laedt: function () { return zaehlStand === "laedt"; }
+          laedt: function () { return zaehlStand === "laedt"; },
+          /* Recent Appearances (detail) hat keine Berechnungen: dort nur die Anzahl. */
+          rechnen: SUM_RECHNEN[s] || null,
+          quelle: SUM_RECHNEN[s] ? summenQuelle(s) : null
         });
         zaehl = { tab: tab, kit: kit, el: tbody.parentNode.querySelector(":scope > .up-sumrow") };
       } else if (zaehl.el && zaehl.el.previousElementSibling !== tbody) {
@@ -2841,6 +2965,7 @@
       setDetail: function (raw, f) { return antwort("detail", raw, f); },
       setMerchants: function (raw, f) { return antwort("merchants", raw, f); },
       reset: function () {
+        summenStand++;
         state.cache = { overview: {}, products: {}, detail: {}, merchants: {} };
         state.reihe = { overview: [], products: [], detail: [], merchants: [] };
         state.fehler = {};

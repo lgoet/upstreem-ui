@@ -10,7 +10,7 @@
     window.__urtBootStubbed = true;
     ["renderResponsesTable", "setResponsesTableLoading", "resetResponsesTable",
      "setResponsesTableModels", "setResponsesTableBrands",
-     "setResponsesTableBrand"].forEach(function(n){
+     "setResponsesTableBrand", "setResponsesTableSummenQuelle"].forEach(function(n){
       window[n] = function(){ __urtBootQueue.push([n, arguments]); };
     });
   }
@@ -66,6 +66,26 @@
      der Schalter sagt das ("BMW mentioned?", fest angehakt) -- die Spalte bleibt bei der eigenen
      Marke (own_mentioned). Ohne Eintrag hier gilt wie bisher die Marke der Spalte. */
   var SPOT_BRAND = (window.__urtSpotBrand = window.__urtSpotBrand || {});
+  /* Die Quelle der Summen je Instanz (15.10. spaet, setResponsesTableSummenQuelle): { sig, holen }
+     der Seite, die die Tabelle fuellt. Modulweit aus demselben Grund wie oben -- ein Neuaufbau der
+     Tabelle (Theme) findet sie hier, ohne dass die Seite sie neu setzen muss. */
+  var SUMMEN_QUELLE = (window.__urtSummenQuelle = window.__urtSummenQuelle || {});
+  /* Die Bezeichnungen der Berechnungen (Gesamtzeile). DER KATALOG IST EINER FUER DIE GANZE APP:
+     hier nur, was weder core noch eine Komponente DIESER Ansicht schon fuehrt ("Average Rank",
+     "Average Sentiment", "Mentioned", "avg", "at #1", "below 50", "brands", "most common" stehen in
+     core, "last 7 days" in prompts-table, die mit dieser Tabelle laedt). Gleichlautend auch in
+     urls-table.js ("Mention rate", "Brands seen") und ads.js ("Models used", "models"), in
+     shopping.js ("Range") -- jene laden in anderen Ansichten, ohne diese Datei; gehoeren nach core. */
+  if (UC.addMessages) UC.addMessages("de", {
+    "Mention rate": "Erwähnungsrate", "mention rate": "Erwähnungsrate",
+    "Below 50": "Unter 50", "At #1": "Auf #1",
+    "Avg. brands per response": "Ø Brands je KI-Antwort", "per response": "je KI-Antwort",
+    "Brands seen": "Gesehene Brands",
+    "Avg. citations per response": "Ø Web-Quellen je KI-Antwort",
+    "Responses with citations": "KI-Antworten mit Web-Quellen", "with citations": "mit Web-Quellen",
+    "Models used": "Genutzte Modelle", "models": "Modelle", "Most common model": "Häufigstes Modell",
+    "Range": "Spanne", "range": "Spanne", "Last 7 days": "Letzte 7 Tage"
+  });
 
   /* Table mode only — the card grid has no columns/row-height to configure, so the whole
      Table-Settings gear hides itself in Cards mode (see render()). "Prompt" is the firstKey,
@@ -1201,14 +1221,77 @@
     function ffSync(){ if (ffKit) ffKit.sync(); }
     if (LEISTE && UC.makeLeistenFilter){ ffKit = UC.makeLeistenFilter(root, { instanceId: instanceId, arten: FF_ARTEN }); ffSync(); }
 
-    /* DIE GESAMTZEILE (15.10. abends, core UC.makeZaehlZeile): vorerst nur die Anzahl links
-       ("8.6k count"), so bestellt. Dieselbe Zahl wie bisher im Kopf (renderCount), der in der
-       einen Leiste wegfaellt -- die Gesamtzahl des Servers, nicht die Zeilen der Seite. Nur in
-       der einen Leiste; ausblendbar ueber Display. */
+    /* DIE GESAMTZEILE (15.10. abends, core UC.makeZaehlZeile): links die Anzahl ("8.6k count").
+       Dieselbe Zahl wie bisher im Kopf (renderCount), der in der einen Leiste wegfaellt -- die
+       Gesamtzahl des Servers, nicht die Zeilen der Seite. Nur in der einen Leiste; ausblendbar
+       ueber Display.
+       DIE BERECHNUNGEN JE SPALTE (15.10. spaet, vom Nutzer abgenommen: "exakt so umsetzen"). feld:
+       Schluessel der Antwort von cached_dashboard_responses_summary_v1 (Auftrag
+       bubble/summen_db_auftrag_15_10.md, 2), art: Format nach CLAUDE.md 2b, kurz: Bezeichnung in der
+       Zelle (klein wie in der Prompt-Tabelle), label: im Menue und im Tooltip. Gerechnet wird NIE
+       ueber die sichtbare Seite -- sie kennt hoechstens 100 von allen Antworten. Die Werte kommen
+       ueber die Quelle der Seite (setResponsesTableSummenQuelle); ohne Quelle, oder solange die
+       Datenbank die Funktion nicht hat, steht bei einer gewaehlten Berechnung "–" (core). */
+    function tagSpanne(a, b){
+      var x = a ? fmtDate(a) : "", y = b ? fmtDate(b) : "";
+      if (!x || x === "–") x = "";
+      if (!y || y === "–") y = "";
+      if (!x || !y) return x || y || null;
+      if (x === y) return x;
+      /* "08. Oct – 14. Oct": das Jahr faellt am Anfang weg, wenn beide Tage im selben stehen, und am
+         Ende auch, wenn es das laufende ist (wie die Spanne in shopping.js, dort nur am Anfang). */
+      var JAHR = /,? \d{4}$/, ja = /^(\d{4})/.exec(String(a)), jb = /^(\d{4})/.exec(String(b));
+      if (ja && jb && ja[1] === jb[1]){
+        x = x.replace(JAHR, "");
+        if (String(new Date().getFullYear()) === jb[1]) y = y.replace(JAHR, "");
+      }
+      return x + " – " + y;
+    }
+    var SUM_RECHNEN = {
+      mentioned: [
+        { key: "quote",   label: "Mention rate",      kurz: "mention rate", feld: "mention_rate_pct",   art: "pct" },
+        { key: "zahl",    label: "Mentioned",         kurz: "mentioned",    feld: "mentioned_count",    art: "anzahl" }
+      ],
+      sentiment: [
+        { key: "avg",     label: "Average Sentiment", kurz: "avg",          feld: "avg_sentiment",      art: "note" },
+        { key: "unter50", label: "Below 50",          kurz: "below 50",     feld: "sentiment_below_50", art: "anzahl" }
+      ],
+      rank: [
+        { key: "avg",     label: "Average Rank",      kurz: "avg",          feld: "avg_rank",           art: "rang" },
+        { key: "eins",    label: "At #1",             kurz: "at #1",        feld: "rank1_count",        art: "anzahl" }
+      ],
+      brands: [
+        { key: "jeantwort", label: "Avg. brands per response", kurz: "per response", feld: "avg_brands_per_response", art: "rang" },
+        { key: "gesehen", label: "Brands seen",       kurz: "brands",       feld: "brands_seen",        art: "anzahl" }
+      ],
+      citations: [
+        { key: "jeantwort", label: "Avg. citations per response", kurz: "per response", feld: "avg_citations_per_response", art: "rang" },
+        { key: "mit",     label: "Responses with citations", kurz: "with citations", feld: "responses_with_citations_pct", art: "pct" }
+      ],
+      model: [
+        { key: "genutzt", label: "Models used",       kurz: "models",       feld: "models_used",        art: "anzahl" },
+        /* Der Name wie im Chip der Zelle (modelLabel), der Anteil statt kurz dahinter. */
+        { key: "haeufig", label: "Most common model", kurz: "most common",  feld: "top_model",          art: "text",
+          name: function(k){ return modelLabel(modelInfo(k), k) || null; }, anteil: "top_model_share" }
+      ],
+      date: [
+        { key: "spanne",  label: "Range",             kurz: "range",        felder: ["first_date", "last_date"], art: "text",
+          wert: function(d){ return tagSpanne(d.first_date, d.last_date); } },
+        { key: "woche",   label: "Last 7 days",       kurz: "last 7 days",  feld: "responses_last_7d",  art: "anzahl" }
+      ]
+    };
+    function summenQuelle(){ var q = SUMMEN_QUELLE[instanceId]; return q && typeof q.holen === "function" ? q : null; }
     var zaehl = (LEISTE && UC.makeZaehlZeile) ? UC.makeZaehlZeile({
       root: root, nach: elTbody, instanceId: instanceId, praefix: "urt",
       cols: function(){ return typeof colsKit !== "undefined" ? colsKit : null; },
       spalten: function(){ return COLUMNS.map(function(c){ return c.key; }); },
+      rechnen: SUM_RECHNEN,
+      /* Zur Laufzeit gelesen: die Seite setzt ihre Quelle erst, wenn sie laedt. Ohne Quelle ist der
+         Filterstand "" -- kommt sie, ist er ein anderer, und core holt. */
+      quelle: {
+        sig: function(){ var q = summenQuelle(); return q && typeof q.sig === "function" ? "q|" + q.sig() : ""; },
+        holen: function(felder){ var q = summenQuelle(); return q ? q.holen(felder) : null; }
+      },
       anzahl: function(){
         if (state.leseFehler) return null;
         return state.totalCount != null ? state.totalCount : (state.hasData ? state.rows.length : null);
@@ -1817,6 +1900,9 @@
         persist(); populateSort(); populateFader(); render();
         return true;
       },
+      /* Die Quelle der Summen ist neu (setResponsesTableSummenQuelle): neu zeichnen, damit eine
+         schon gewaehlte Berechnung jetzt geholt wird. */
+      summeNeu: function(){ if (zaehl) zaehl.zeichnen(); return true; },
       destroy: function(){
         if (root.__urtController === this) root.__urtController = null;
       }
@@ -1894,6 +1980,18 @@
     ctrl.update({ brands: list });
     return true;
   }
+  /* Die Quelle der Summen der Gesamtzeile (15.10. spaet): { sig(), holen(felder) } der Seite, die
+     diese Tabelle fuellt -- sig ist ihr Filterstand ohne Seite und Sortierung, holen liefert ein
+     Promise auf das Objekt mit den Feldern (oder null). Keine Bubble-Form: eine Funktion geht nicht
+     durch einen Run-JS-Schritt, und die Summen gibt es nur in der App. Gemerkt je Instanz, auch
+     bevor die Wurzel steht; jede vorhandene Kopie zeichnet neu. null nimmt die Quelle weg. */
+  function doSummenQuelle(id, q){
+    id = String(id == null ? "" : id).trim();
+    if (!id) return false;
+    if (q && typeof q.holen === "function") SUMMEN_QUELLE[id] = q; else delete SUMMEN_QUELLE[id];
+    rootsWithId(id).forEach(function(r){ var c = r.__urtController; if (c && c.summeNeu) c.summeNeu(); });
+    return true;
+  }
 
   var mount = UC.makeMount({
     /* onMount: makeMount replays Bubble's queued render* calls while it is still
@@ -1910,7 +2008,8 @@
          setResponsesTableBrand (Einzahl) ist die EIGENE Marke -- Name und Logo im Spaltenkopf und
          im Schalter. Zwei Namen, die sich um einen Buchstaben unterscheiden, sind eine Falle; der
          Kommentar steht deshalb hier und in der Bubble-Doku. */
-      setResponsesTableBrand: doBrand
+      setResponsesTableBrand: doBrand,
+      setResponsesTableSummenQuelle: doSummenQuelle
     },
     forwardShape: { renderResponsesTable: "params", resetResponsesTable: "id" }
   });

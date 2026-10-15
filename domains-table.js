@@ -14,7 +14,7 @@
   if (!window.__udtBootStubbed){
     window.__udtBootStubbed = true;
     ["renderDomainsTable", "setDomainsTableLoading", "resetDomainsTable", "setDomainsTableBrands",
-     "setDomainsTablePages", "setDomainsTableFilters"].forEach(function(n){
+     "setDomainsTablePages", "setDomainsTableFilters", "setDomainsTableSummenQuelle"].forEach(function(n){
       window[n] = function(){ __udtBootQueue.push([n, arguments]); };
     });
   }
@@ -42,6 +42,18 @@
      would let a domains-table instance's persisted state collide with a urls-table instance's. */
   var STORE = (window.__udtStore = window.__udtStore || {});
   var LOADING_EXPLICIT = (window.__udtLoadingExplicit = window.__udtLoadingExplicit || {});
+  /* Die Quelle der Summen je Instanz (15.10. spaet, setDomainsTableSummenQuelle): { sig, holen }
+     der Seite, die die Tabelle fuellt. Modulweit wie STORE -- ein Neuaufbau findet sie hier. */
+  var SUMMEN_QUELLE = (window.__udtSummenQuelle = window.__udtSummenQuelle || {});
+  /* Die Bezeichnungen der Berechnungen (Gesamtzeile). DER KATALOG IST EINER FUER DIE GANZE APP:
+     hier nur, was nur diese Tabelle braucht. "Total", "total", "avg" stehen in core; "Top 10
+     share", "Active last 7 days", "New this period" und ihre kurzen Formen in urls-table.js, die
+     auf der Citations-Seite immer mitlaedt. */
+  if (UC.addMessages) UC.addMessages("de", {
+    "Your domains": "Eigene Domains", "Total citations": "Zitierungen gesamt",
+    "Average per domain": "Ø je Domain", "Largest type": "Größter Typ",
+    "Types used": "Genutzte Typen", "types": "Typen"
+  });
 
   /* Hideable columns. Domain and Actions are deliberately absent — the table makes no sense
      without the domain, and the row actions are the point of the Actions cell. */
@@ -1238,15 +1250,47 @@
       return null;
     }
 
-    /* DIE GESAMTZEILE (15.10., core UC.makeZaehlZeile, wie Responses): vorerst nur die Anzahl
-       links. Dieselbe Zahl wie bisher im Kopf (renderCount), der in der einen Leiste wegfaellt --
-       die Gesamtzahl des Servers, nicht die Zeilen der Seite. Nur in der einen Leiste; ausblendbar
-       ueber Display. Sie steht HINTER dem Koerper: der Drilldown lebt in ihm und schiebt sie nur
-       nach unten. */
+    /* DIE GESAMTZEILE (15.10., core UC.makeZaehlZeile, wie Responses): links die Anzahl. Dieselbe
+       Zahl wie bisher im Kopf (renderCount), der in der einen Leiste wegfaellt -- die Gesamtzahl des
+       Servers, nicht die Zeilen der Seite. Nur in der einen Leiste; ausblendbar ueber Display. Sie
+       steht HINTER dem Koerper: der Drilldown lebt in ihm und schiebt sie nur nach unten.
+       DIE BERECHNUNGEN JE SPALTE (15.10. spaet, vom Nutzer abgenommen). feld: Schluessel der
+       Antwort von cached_citations_domains_summary_v1 (Auftrag bubble/summen_db_auftrag_15_10.md,
+       3), art: Format nach CLAUDE.md 2b, kurz: Bezeichnung in der Zelle, label: im Menue und im
+       Tooltip. Nie ueber die sichtbare Seite gerechnet; die Werte kommen ueber die Quelle der Seite
+       (setDomainsTableSummenQuelle), ohne sie steht bei einer gewaehlten Berechnung "–" (core). */
+    var SUM_RECHNEN = {
+      share: [
+        { key: "eigen",   label: "Your domains",       kurz: "yours",   feld: "own_share_pct",            art: "pct" },
+        { key: "top10",   label: "Top 10 share",       kurz: "top 10",  feld: "top10_share_pct",          art: "pct" }
+      ],
+      used: [
+        { key: "summe",   label: "Total citations",    kurz: "total",   feld: "citations_total",          art: "anzahl" },
+        { key: "avg",     label: "Average per domain", kurz: "avg",     feld: "avg_citations_per_domain", art: "rang" }
+      ],
+      type: [
+        /* Der Name wie im Chip der Zelle (UC.typLabel), der Anteil statt kurz dahinter. */
+        { key: "groesst", label: "Largest type",       kurz: "largest", feld: "top_type",                 art: "text",
+          name: function(k){ return UC.typLabel ? UC.typLabel(k, "citation") : k; }, anteil: "top_type_share" },
+        { key: "genutzt", label: "Types used",         kurz: "types",   feld: "types_used",               art: "anzahl" }
+      ],
+      lastseen: [
+        { key: "woche",   label: "Active last 7 days", kurz: "active",  feld: "active_last_7d",           art: "anzahl" },
+        { key: "neu",     label: "New this period",    kurz: "new",     feld: "new_in_period",            art: "anzahl" }
+      ]
+    };
+    function summenQuelle(){ var q = SUMMEN_QUELLE[instanceId]; return q && typeof q.holen === "function" ? q : null; }
     var zaehl = (LEISTE && UC.makeZaehlZeile) ? UC.makeZaehlZeile({
       root: root, nach: elTbody, instanceId: instanceId, praefix: "udt",
       cols: function(){ return typeof colsKit !== "undefined" ? colsKit : null; },
       spalten: function(){ return COLUMNS.map(function(c){ return c.key; }); },
+      rechnen: SUM_RECHNEN,
+      /* Zur Laufzeit gelesen: die Seite setzt ihre Quelle erst, wenn sie laedt. Ohne Quelle ist der
+         Filterstand "" -- kommt sie, ist er ein anderer, und core holt. */
+      quelle: {
+        sig: function(){ var q = summenQuelle(); return q && typeof q.sig === "function" ? "q|" + q.sig() : ""; },
+        holen: function(felder){ var q = summenQuelle(); return q ? q.holen(felder) : null; }
+      },
       anzahl: function(){
         if (state.leseFehler) return null;
         return state.totalCount != null ? state.totalCount : (state.hasData ? state.rows.length : null);
@@ -2070,6 +2114,9 @@
         persist(); populateSort(); populateFilter(); render();
         return true;
       },
+      /* Die Quelle der Summen ist neu (setDomainsTableSummenQuelle): neu zeichnen, damit eine schon
+         gewaehlte Berechnung jetzt geholt wird. */
+      summeNeu: function(){ if (zaehl) zaehl.zeichnen(); return true; },
       destroy: function(){
         if (explain.parentNode) explain.parentNode.removeChild(explain);
         if (root.__udtController === this) root.__udtController = null;
@@ -2123,6 +2170,17 @@
     var ctrl = id ? resolve(id) : null;
     return ctrl && ctrl.setFilters ? ctrl.setFilters(o || {}) : false;
   }
+  /* Die Quelle der Summen der Gesamtzeile (15.10. spaet), wie setResponsesTableSummenQuelle:
+     { sig(), holen(felder) } der Seite -- sig ist ihr Filterstand ohne Seite und Sortierung, holen
+     ein Promise auf das Objekt mit den Feldern (oder null). Nur in der App (eine Funktion geht nicht
+     durch einen Run-JS-Schritt). Gemerkt je Instanz; jede vorhandene Kopie zeichnet neu. */
+  function doSummenQuelle(id, q){
+    id = String(id == null ? "" : id).trim();
+    if (!id) return false;
+    if (q && typeof q.holen === "function") SUMMEN_QUELLE[id] = q; else delete SUMMEN_QUELLE[id];
+    rootsWithId(id).forEach(function(r){ var c = r.__udtController; if (c && c.summeNeu) c.summeNeu(); });
+    return true;
+  }
   function doBrands(id, brands){
     var list = brands;
     if (typeof list === "string"){ try { list = JSON.parse(list); } catch(e){ list = []; } }
@@ -2173,7 +2231,8 @@
     queue: "__udtBootQueue",
     initRoot: initRoot,
     api: { renderDomainsTable: doRender, setDomainsTableLoading: doLoading, resetDomainsTable: doReset,
-           setDomainsTableBrands: doBrands, setDomainsTablePages: doPages, setDomainsTableFilters: doFilters },
+           setDomainsTableBrands: doBrands, setDomainsTablePages: doPages, setDomainsTableFilters: doFilters,
+           setDomainsTableSummenQuelle: doSummenQuelle },
     forwardShape: { renderDomainsTable: "params", resetDomainsTable: "id" }
   });
   function rootsWithId(id){ return mount.rootsWithId(id); }
