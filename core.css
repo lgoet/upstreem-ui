@@ -3649,6 +3649,9 @@
     /* ---------- table ---------- */
     .up-box { border: 1px solid var(--vc-border); background: var(--vc-bg); border-radius: var(--up-r-2xl); overflow: hidden; }
     /* ---------- sticky header (default on >=1000px page width, off via data-sticky="no") ----------
+       Seit dem 16.10. auch darunter, aber nur fuer die eine Leiste (data-leiste) und Tabellen mit
+       klebendem Fuss (data-kleb-fuss): dort kleben Leiste und Spaltenkopf auf dem Telefon wie breit
+       (makeSticky, applySticky); der Fuss bleibt dort im Fluss (klebFuss, klebBreit).
        Both the component head and the column header stick to the scrolling ancestor. overflow:hidden
        on .up-box would trap the column header, so in sticky mode it becomes visible and the visible
        border moves onto the header and body (see below). Backgrounds must be OPAQUE or rows bleed
@@ -4165,9 +4168,11 @@
     .up-root.has-leistenband.up-sticky.is-geklebt > .up-head::after { opacity: 1; }
 
     /* ---------- DER KLEBENDE FUSS (data-kleb-fuss="yes", core.js klebFuss, 16.10.) ----------
-       Gesamtzeile und Pagination kleben unten am Scrollbereich, sobald die Tabelle den Bildschirm
-       fuellt (ihr Spaltenkopf klebt), und fahren dabei herein; am Ende der Tabelle stehen sie an
-       ihrem Platz. Die Zustaende setzt core.js, hier steht nur, wie sie aussehen:
+       Gesamtzeile und Pagination kleben unten am Scrollbereich, sobald die Tabelle die untere
+       Haelfte des Bildes einnimmt (hinaus erst wieder ueber 70 %, core.js FUSS_REIN/FUSS_RAUS,
+       16.10. abends), und fahren dabei herein; am Ende der Tabelle stehen sie an ihrem Platz. Nur
+       ab 1000 breit -- auf dem Telefon nie. Die Marke steht als Kind der Wurzel vor der
+       Pagination. Die Zustaende setzt core.js, hier steht nur, wie sie aussehen:
          .is-fuss-an          sticky (Gesamtzeile ueber der Pagination: --up-fuss-unter)
          .is-fuss-weg         unten hinaus gefahren (--up-fuss-weg, beide als ein Block)
          .is-fuss-still       ohne Uebergang (Startpunkt einer Fahrt, Rueckkehr in den Fluss)
@@ -4572,6 +4577,59 @@
     .up-tab-leer { --up-tab-leer-zeile: 72px; position: relative; flex: 1 1 auto; min-width: 0;
       min-height: calc(var(--up-tab-leer-zeilen, 4) * var(--up-tab-leer-zeile)); }
     .up-root.is-dense .up-tab-leer, .up-vartable .up-tab-leer { --up-tab-leer-zeile: var(--up-h-row); }
+    /* ---- DER LEERZUSTAND IM BAND MIT ZWEI EINHEITEN (15.10. spaet: "ja natuerlich alignen") ----
+       Zwei Leerzustaende nebeneinander sassen verschieden hoch und in verschiedener Form, weil jeder
+       ueber SEINER Teilflaeche lag: der Chart ueber der Zeichenflaeche, der Doughnut unter seiner
+       Kopfzeile, die Tabelle unter ihrem Tabellenkopf, die Balkenliste im Fluss oben und immer
+       kompakt. Gemessen bei 1440 (Versatz der Mitten): Ads 108 und kompakt gegen voll, Shopping
+       kompakt gegen voll (Oberkanten 24), Dashboard Visibility 34 und Top Citations 28, Citations 21.
+       Im Band mit zwei Einheiten liegt die Ebene darum ueber dem GANZEN KASTEN der Einheit, dem Kind
+       unter der Ueberschriftzeile: der reicht in beiden Einheiten von derselben Linie bis an die
+       Unterkante des Bandes (das Raster bzw. die Zeile dehnt beide). Gleiche Flaeche heisst gleiche
+       Mitte, und die Stufe (voll, kompakt, nur Titel) kommt aus denselben Container-Queries oben mit
+       derselben Groesse -- egal ob Chart, Doughnut, Balkenliste oder Tabelle. Was zwischen Kasten
+       und Ebene positioniert war (Zeichenflaeche, Wirt des Doughnuts, Huelle der Tabelle, Panels der
+       Komponenten), steht dafuer statisch, aber nur solange die Ebene darin steht: gefuellt greift
+       keine dieser Regeln.
+       DER TABELLENKOPF bleibt unter der Ebene bedienbar (pointer-events none; die Ebene traegt
+       keinen Knopf). Damit der volle Zustand ihn nie beruehrt, ist die Huelle der Tabelle hier
+       mindestens 220 hoch: mit dem Kopf (49) wird der Kasten 269, der volle Zustand (bis 170 mit
+       dreizeiligem Satz) laesst oben 49 frei. Die Tabellen der Baender liegen ohnehin darueber
+       (Top Brands und Top Citations 440, Topics with Ads 275, Product Movement 288).
+       DIE BALKENLISTE wird hier eine Ebene wie die anderen. is-fluss setzt Satz und Abstand fest
+       (kompakt); beides wird nur ueber dieselben Grenzen zurueckgenommen, ab denen die Ebene sie
+       sonst zeigt (220 hoch, 280 breit). Ihre Huelle .up-bars-leer (makeBarList) haelt die Hoehe
+       ihres Skeletts -- Zeilen x 26 (.up-bar-sk-row: Spur 20, Polster 2 x 3) --, damit sie
+       gestapelt, ohne Nachbarn, nicht auf ihr Polster zusammenfaellt und zwischen Laden und Leer
+       nichts springt.
+       Nur .up-band-zwei: ein Band aus einer Einheit (Brands, die Diagramme ueber Shopping und Ads)
+       hat keinen Nachbarn und bleibt, wie es ist; ohne data-flach (Bubble) greift ohnehin nichts.
+       Spezifitaet (0,6,0) und mehr: schlaegt die Positionen der Bausteine (.up-line-wrap,
+       .up-chart-leer-wirt, .up-tab-leer) und der Komponenten ohne die Ladereihenfolge. */
+    :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) > .up-band-einheit > :has(.up-chart-leer) {
+      position: relative;
+    }
+    :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) > .up-band-einheit > :has(.up-chart-leer) :has(.up-chart-leer) {
+      position: static;
+    }
+    :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) > .up-band-einheit > :has(.up-chart-leer) .up-chart-leer {
+      position: absolute; inset: 0; container: up-chart-leer / size; pointer-events: none;
+    }
+    :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) > .up-band-einheit > :has(.up-chart-leer) .up-chart-leer > .up-empty.up-leer {
+      height: 100%; padding: 16px 24px;
+    }
+    @container up-chart-leer (min-height: 220px) {
+      :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) .up-chart-leer.is-fluss > .up-empty.up-leer { gap: 24px; }
+    }
+    @container up-chart-leer (min-height: 220px) and (min-width: 280px) {
+      :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) .up-chart-leer.is-fluss .up-empty-t { display: block; }
+    }
+    :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) .up-tab-leer {
+      min-height: max(220px, calc(var(--up-tab-leer-zeilen, 4) * var(--up-tab-leer-zeile)));
+    }
+    :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) .up-bars-leer {
+      min-height: calc(var(--up-bars-leer-zeilen, 5) * 26px);
+    }
     .up-row.up-tsk { cursor: default; }
     .up-row.up-tsk:hover { background: transparent; }
     .up-tsk-bar { display: inline-block; height: 12px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }

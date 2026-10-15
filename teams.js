@@ -495,7 +495,12 @@
       if (UC.aufResize) UC.aufResize(klebenUndPlanen);
       else window.addEventListener("resize", UC.rafThrottle(klebenUndPlanen));
       sticky.applySticky();
-      if (root.getAttribute("data-festhoehe") === "yes" && UC.makeFestHoehe)
+      /* Der klebende Fuss gewinnt (16.10. abends): die Teams-Seite setzt seitdem data-kleb-fuss
+         statt data-festhoehe -- EIN Scrollbereich wie Citations, Brands und Prompt Insights, die
+         Leiste klebt oben, Gesamtzeile und Pagination unten (core klebFuss). Mit fester Hoehe
+         stockte der Hochscroll an der ersten Zeile, bis eine neue Geste die Seite mitnahm.
+         data-festhoehe allein behaelt seine Bedeutung fuer einen Gastgeber, der es so will. */
+      if (root.getAttribute("data-festhoehe") === "yes" && root.getAttribute("data-kleb-fuss") !== "yes" && UC.makeFestHoehe)
         /* seiteZuerst (16.10., wie Prompts und Responses): der Seitenkopf scrollt weg, bis die Leiste
            klebt; erst dann scrollt nur der Kasten. Ohne die Option hatte #main keinen Scrollweg und der
            Kopf stand still (gemeldet fuer Prompt Insights, hier dasselbe Bild). */

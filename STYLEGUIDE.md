@@ -1111,7 +1111,10 @@ Kopf und Fuß  48 hoch (--up-flach-h). Linie unter dem Kopf als inset-Schatten, 
               --up-surface (deckend, weil er kleben kann)
 Pagination    Knöpfe in der 28er Form (--up-h-seg)
 Feste Höhe    UC.makeFestHoehe(root, cfg): nur der Kasten scrollt, Leiste oben und Pagination
-              unten stehen; nur mit klebendem Kopf (ab 1000 breit), nie unter 240px Platz
+              unten stehen; nur mit klebendem Kopf (ab 1000 breit), nie unter 240px Platz.
+              Seit 16.10. von KEINER Seite mehr benutzt (Hochscroll stockte an Zeile 1, siehe
+              8e): All Prompts, Responses und Teams kleben über den klebenden Fuß. Der Baustein
+              bleibt für den Vertrag (data-festhoehe ohne data-kleb-fuss)
 ```
 Im grauen Light (Abschnitt 1) wird der Kasten der flachen Tabelle weiß, bleibt aber flach: kein
 Rahmen, kein Radius. Das ist auch Vercels Bild (die Inhaltsfläche läuft bis an den Fensterrand).
@@ -1205,9 +1208,16 @@ Aufbau         in der Wurzel der Tabelle: Leiste (.up-head) – Band – Kasten
 Filterzeile    die Seite hängt sie in .up-leiste-scope (display: contents, wie Prompt Insights)
 Reiterwechsel  Filterzeile und Band wandern zur Tabelle des Reiters (das Element, nicht eine
                Kopie: Zustand und Handler bleiben); die Werkzeuge bleiben in ihrer Tabelle
-Kleben         makeSticky wie jede Tabelle, ab 1000 breit: Kopf, Reiter und Chart scrollen weg,
-               die Leiste klebt bei --up-sticky-top (16), der Spaltenkopf direkt darunter
-               (--up-thead-off = gemessene Höhe der Leiste), das Band scrollt dazwischen weg
+Kleben         makeSticky wie jede Tabelle: Kopf, Reiter und Chart scrollen weg, die Leiste
+               klebt bei --up-sticky-top (16), der Spaltenkopf direkt darunter
+               (--up-thead-off = gemessene Höhe der Leiste), das Band scrollt dazwischen weg.
+               Seit 16.10. AUCH UNTER 1000 (Telefon), für jede Wurzel mit data-leiste oder
+               data-kleb-fuss: Leiste und Spaltenkopf kleben, der Fuß nie (8e). Der Spaltenkopf
+               geht dort ohne Bruch mit, weil schmal Spalten weichen statt waagrecht zu scrollen
+               (gemessen 375: scrollWidth = clientWidth in allen sechs Tabellen)
+Höhe Telefon   375x812: Leiste klebt 16–104 (zwei Zeilen, Citations, Responses), 16–144 (drei
+               Zeilen, All Prompts, Brands), 16–64 (Teams); Spaltenkopf darunter 48 – oben
+               stehen damit 152 (19 %), 192 (24 %) bzw. 112 (14 %) fest
 Linie          unter der Leiste NUR, solange sie klebt (.is-geklebt), eingeblendet (--up-t-2)
 Abstände       Leiste 16 unten, Band 16 unten; der Stapel der Wurzel fällt auf 0
 ```
@@ -1333,29 +1343,44 @@ Der Schalter „Summary row“ steht im Display-Menü; Schalter und Wahl je Spal
 gemerkt (`<praefix>_summe__<instanceId>`). Die Zellen tragen `up-sum-td-<Spalte>` und blenden
 mit ihren Spalten aus. Topics with Ads (Ads Overview) hat bewusst keine Gesamtzeile.
 
-**Der klebende Fuß** (`data-kleb-fuss="yes"` an der Wurzel, seit 16.10., zuerst Citations und
-Brands › Tracked). Gesamtzeile und Pagination kleben unten am Scrollbereich, **sobald die Tabelle
-den Bildschirm füllt** – also sobald ihr Spaltenkopf klebt. Solange Kopf, Reiter oder Chart zu
-sehen sind, stehen sie an ihrem Platz am Ende der Tabelle; am Ende geben sie von selbst dorthin
-zurück. Ein Scrollbereich, kein zweiter wie bei fester Höhe. Jede Tabelle mit `UC.makeSticky`
-bekommt ihn über das Attribut (applySticky richtet ihn ein, `UC.klebFuss(root)` direkt).
+**Der klebende Fuß** (`data-kleb-fuss="yes"` an der Wurzel, seit 16.10.; einheitlich auf
+Citations, Brands › Tracked, All Prompts, Responses und Teams). Gesamtzeile und Pagination kleben
+unten am Scrollbereich, **sobald die Tabelle die untere Hälfte des Bildes einnimmt**. Solange der
+Chart den größten Teil zeigt, stehen sie an ihrem Platz am Ende der Tabelle; am Ende geben sie
+von selbst dorthin zurück. EIN Scrollbereich (#main), kein zweiter wie bei fester Höhe. Jede
+Tabelle mit `UC.makeSticky` bekommt ihn über das Attribut (applySticky richtet ihn ein,
+`UC.klebFuss(root)` direkt). Dasselbe Muster wie Airtables Summary Bar und Attios Calculations
+unter der Tabelle: die Zusammenfassung bleibt unten im Bild, solange die Tabelle läuft.
 
 ```
-Wann           nur mit klebendem Kopf (.up-sticky, ab 1000 breit); darunter klebt nichts
-Herein         fängt die Tabelle an zu füllen, während ihr Ende unter dem Bild liegt: Fahrt von
-               unten, transform + opacity, --up-t-3 / --up-t-2, easeOutExpo (--up-ease-expo)
-Hinaus         füllt sie nicht mehr (zurück zum Chart): dieselbe Fahrt nach unten, ERST DANACH
-               zurück in den Fluss (dort liegt er unter dem Bild); Umkehr mittendrin kehrt von
-               der Stelle um (Übergänge, keine Keyframes)
+Wann           nur ab 1000 breit (klebBreit); auf dem Telefon klebt der Fuß NIE, dort nur
+               Leiste und Spaltenkopf (8b)
+Schwelle       Oberkante der Tabelle (.up-table) im sichtbaren Teil des Scrollbereichs: herein
+               bei höchstens 50 %, hinaus erst über 70 % (Hysterese, FUSS_REIN/FUSS_RAUS) –
+               gemessen Citations 1440x900 herein bei scrollTop 190, hinaus bei 8 (vorher beides
+               ~578: 5px zurück nahmen ihn weg), 1100x800 herein 585, hinaus 423
+Erster Blick   Seite geladen, Reiter gewechselt, Karten- zurück zur Tabellenansicht: der Fuß
+               steht sofort, wo er hingehört, ohne Fahrt (All Prompts liegt schon beim Laden
+               über der Schwelle)
+Herein         kommt die Tabelle über die Schwelle, während ihr Ende unter dem Bild liegt: Fahrt
+               von unten, transform + opacity, --up-t-3 / --up-t-2, easeOutExpo (--up-ease-expo)
+Hinaus         fällt sie unter die Schwelle (zurück zum Chart): dieselbe Fahrt nach unten, ERST
+               DANACH zurück in den Fluss (dort liegt er unter dem Bild); Umkehr mittendrin
+               kehrt von der Stelle um (Übergänge, keine Keyframes)
 Ende           Wechsel ohne Bewegung (sticky selbst); beide Teile lösen sich im selben Bild
 Weg            --up-fuss-weg: Höhe beider Teile + 24, aber nie mehr als Inhalt unter ihrem Platz
                steht (sonst verlängert die Fahrt die Seite, der Balken zuckt; gemessen 57px)
 Lage           Pagination bottom 0, Gesamtzeile darüber (--up-fuss-unter = Pagination + Linie);
                die Linie dazwischen zeichnet die Pagination (0 -1px 0 --vc-border)
 Grund          deckend: Gesamtzeile wie bisher, Pagination --up-surface; sie läuft rechts mit aus
-Schatten       NUR wenn er wirklich klebt (.is-fuss-klebt; Marke .up-fuss-marke unter dem
-               Kasten liest den natürlichen Platz): --up-e-3 nach oben gespiegelt, auf dem
-               obersten Teil (ohne Gesamtzeile die Pagination, .is-fuss-ohne-summe)
+Schatten       NUR wenn er wirklich klebt (.is-fuss-klebt; die Marke .up-fuss-marke, ein Kind
+               der Wurzel direkt vor der Pagination, liest den natürlichen Platz – vor der
+               Pagination und nicht hinter dem Kasten, weil der in der Gruppenspalte von
+               All Prompts in einer Zeile neben der Gruppenliste steht): --up-e-3 nach oben
+               gespiegelt, auf dem obersten Teil (ohne Gesamtzeile die Pagination,
+               .is-fuss-ohne-summe)
+Gruppenspalte  All Prompts mit is-groups-wide: die Gruppenliste steht im Fluss neben dem Kasten
+               (kein eigener Scrollbereich mehr), ihr Kopf klebt neben dem Spaltenkopf
 z              4 (unter Spaltenkopf 5 und Leiste 6)
 Bewegung aus   prefers-reduced-motion: dieselben Zustände ohne Fahrt
 ```
@@ -1529,7 +1554,7 @@ Größe      nach der Fläche (Container-Query an der Hülle), nicht nach dem Au
              unter 130       nur der Titel (56)
              unter 280 breit ohne Satz
 Fluss      fluss: true für Flächen ohne eigene Höhe (Balkenliste): im Fluss, Polster 24,
-           immer kompakt (Kachel und Titel, 142)
+           immer kompakt (Kachel und Titel, 142) — außer im Band mit zwei Einheiten (unten)
 Wirt       makeTypeChart setzt .up-chart-leer-wirt (nur position: relative), solange der
            Zustand im Körper steht; die Linie braucht nichts, .up-line-wrap ist positioniert
 ```
@@ -1578,6 +1603,37 @@ Widerspruch zum Zähler in Top Citations bleiben der knappe Text.
 eine Tabelle, die im Leerzustand nur ihren Kopf neu zeichnet, hat keine Zeile, an der die
 Prüfung „ungestempelt" anschlagen könnte, und zeigte bei 375 alle Kopfzellen (Brands: sechs
 Zellen auf vier Spuren, zweite Rasterzeile).
+
+### Zwei Leerzustände in einem Band (seit 15.10. spät)
+
+In einem Band mit zwei Einheiten (`.up-band-zwei`: Visibility Chart und Top Citations auf dem
+Dashboard und in den Drawern, Citations, Shopping, Ads) sitzen beide Leerzustände **gleich**:
+gleiche Höhe, gleiche Stufe, mittig — egal ob Chart, Doughnut, Balkenliste oder Tabelle. Vorher
+lag jeder über seiner Teilfläche (Zeichenfläche, Körper unter dem Doughnut-Kopf, Tabelle unter
+ihrem Kopf, Balkenliste oben im Fluss und immer kompakt); gemessen bei 1440 standen die Mitten
+bis 108 auseinander (Ads), dazu kompakt neben voll.
+
+```
+Fläche     der GANZE Kasten der Einheit: ihr Kind unter der Überschriftzeile. Er reicht in beiden
+           Einheiten von derselben Linie bis an die Unterkante des Bandes, also gleiche Mitte und
+           gleiche Container-Größe (Stufe). Was dazwischen positioniert war (.up-line-wrap,
+           .up-chart-leer-wirt, .up-tab-leer, Panels der Komponenten), steht statisch, solange
+           die Ebene darin steht — gefüllt greift keine Regel
+Kopf       der Tabellenkopf liegt unter der Ebene und bleibt bedienbar (pointer-events none);
+           .up-tab-leer ist im Band mindestens 220, der volle Zustand lässt über sich 49 frei
+Balken     die Balkenliste wird im Band eine Ebene wie die anderen (Stufe nach Fläche statt
+           immer kompakt). Ihre Hülle .up-bars-leer hält die Höhe des letzten Skeletts
+           (Zeilen x 26), gestapelt springt nichts. Außerhalb eines Bandes unverändert (is-fluss)
+Gestapelt  jede Einheit ist ihre eigene Zeile und mittig in ihrem Kasten; die Stufe folgt dort
+           ihrer eigenen Höhe (Balkenliste 154/180: kompakt, Tabelle voll)
+Nur zwei   ein Band aus einer Einheit (Brands, die Diagramme über Shopping und Ads) hat keinen
+           Nachbarn und bleibt, wie es ist; ohne data-flach (Bubble) greift nichts
+```
+
+Product Movement (Shopping) zeigt „Not enough history yet" seitdem über `UC.tabelleLeerHtml`
+(4 Zeilen, wie sein Skelett) statt `UC.leerHtml` im Fluss: das Band sprang beim Laden um 42.
+Steht nur eine Einheit leer neben einer gefüllten, sitzt ihr Zustand ebenfalls mittig im ganzen
+Kasten (vorher: Balkenliste kompakt oben).
 
 ---
 
@@ -2392,9 +2448,9 @@ Komponente wirklich zusätzlich hat (eine Zeilenhöhe, eine Index-Zelle, ein Act
 | Themenschalter (5) | `UC.themeSchalterHtml({ klein, wahl })` |
 | Kopfzeichen im Spaltenkopf (8a) | `UC.kopfZeichenHtml(name)`, `UC.kopfZeichen(th, name)` |
 | Filter der einen Leiste (8b) | `UC.makeLeistenFilter(root, { instanceId, arten })` |
-| Feste Höhe der flachen Tabelle (8a) | `UC.makeFestHoehe(root, { min, kopf, fuss })` |
+| Feste Höhe der flachen Tabelle (8a, seit 16.10. ungenutzt – stattdessen der klebende Fuß) | `UC.makeFestHoehe(root, { min, kopf, fuss })` |
 | Leiste über dem Band (8b) | `UC.bandUnterLeiste(root, band, { kopf })` |
-| Klebender Fuß (8e) | `data-kleb-fuss="yes"` an der Wurzel (mit `UC.makeSticky`), direkt `UC.klebFuss(root)` |
+| Klebender Fuß (8e) – auch Leiste und Spaltenkopf auf dem Telefon (8b) | `data-kleb-fuss="yes"` an der Wurzel (mit `UC.makeSticky`), direkt `UC.klebFuss(root)` |
 | Gesamtzeile (8e) | `UC.makeZaehlZeile({ root, nach, praefix, instanceId, spalten, laedt, anzahl, rechnen, quelle, cols })`, darunter `UC.makeSumZeile`, `UC.sumPaarHtml` |
 | Offenes Band (8f) | `UC.bandTeile(band, teile)` (mit `teile.auge`), `UC.bandAus(band, aus, { id, setzen })` setzt den Umschalter im Seitenkopf, `UC.bandSchalterHtml({ aus, id, klein })`, `UC.bandAusGemerkt(id)`, `UC.bandAusMerken(id, aus)` |
 | Bubble-Klempnerei: Root-Registry, iframe-Forwarder, Wheel, Init-Kaskade, Stub-Replay | `UC.makeMount({rootClass, ctrlProp, resolveLocal, queue, initRoot, api, forwardShape})` |
@@ -2610,6 +2666,57 @@ nicht mehr. Chips koennen auch ausserhalb des Komponenten-Roots leben (z.B. in d
 Bulk-Action-Bar am `document.body`); diese Leiste fuehrt die Marken deshalb selbst mit.
 
 Genutzt von: prompts-table (Topics-Zelle, Topics-Editor in der Bulk-Bar).
+
+## 27a. Der Export-Dialog: Variante D „Schnellweg aus dem Kontext“ (seit 16.10.)
+
+`export-data.js`/`.css` (Präfix `uex`), vom Nutzer aus vier Varianten gewählt. Vorbilder: Vercel Logs
+(exportiert, was man gerade sieht), Airtable und Attio (die Ansicht ist der Export), Ahrefs
+(Zeilengrenze vorab genannt). Der Dialog öffnet **vorbelegt** mit dem Datensatz der Seite, dem Filter
+des Drawers und dem Zeitraum; ein Klick (Enter) genügt.
+
+**Hülle** aus §27 (`.up-topicmodal-backdrop/-card/-head/-title`, `.up-popup-close`), Breite **440**,
+Kopf 16/16/0, Inhalt 20/16/16 (im Lauf und fertig 24/16/20), Fuß 0/16/16; der Inhalt rollt
+(`.uex-body`, in core in der Liste der Popup-Rollflächen), Kopf und Fuß stehen. Am Telefon bleibt es
+eine Karte mit 16 Rand und `max-height: calc(100dvh - 32px)`, kein Vollbild.
+
+**Kopf:** „Export {Datensatz}“, darunter „From {Bereich}“ (Prompt Insights, Citations, Brands, Shopping,
+Ads -- der Bereich des Datensatzes) und, wo ein Filter mitgeht, „, filtered to“ plus Chip. Der Chip
+ist `.up-entchip.is-static` auf der Chip-Stufe 24 (Polster 8/2, Abstand 6, Radius 4, Grund
+`--up-sel-bg`, kein Rahmen, kein Punkt), Zeichen 12, Kreuz `.up-iconbtn.is-20`. Er steht nur, wo der
+Filter für den gewählten Datensatz wirklich gilt (`FILTER` in export-data.js, dieselbe Liste wie
+`exportParameter`): Domain des Domain-Drawers für URLs und Responses, Adresse des URL-Drawers,
+Prompt und Marke (Name über `filter_label` in `setContext`). Die Filter von Shopping und Ads:
+„From Shopping, with [Page filters]“, ohne Kreuz (sie stehen in der Leiste der Seite).
+
+**Die Liste der Wahlen:** Rahmen 1, Radius 8, Zeilen ≥ 44 mit Etikett (72, `--vc-third`), Wert
+(500), Nebenangabe (12, `--vc-third`, Ellipse) und „Edit“/„Done“ (12/500, `--vc-muted`). Jede
+Zeile klappt **im Dialog** auf:
+- **Data**: die Datensätze der Gruppe als `.up-pop-opt` mit `.up-check`, `role="radio"`, Pfeiltasten.
+- **Date range**: die vier Presets mit ihrem Zeitraum als Nebenangabe, dazu „Custom range“. Der
+  Kalender aus `filters/date-range.js` kann nicht eingebettet aufklappen (kein Inline-Modus); „Custom
+  range“ öffnet darum sein Feld unter der Zeile (core hebt es in die oberste Ebene). Der unsichtbare
+  Auslöser liegt über der Zeile und nimmt den Mausklick, mit der Tastatur steht man auf der Zeile.
+- **Columns**: die Spalten aus `export_columns_v1` als Checkliste aus core (`.up-filter-*`); die
+  Abwahl ist eine Einstellung je Spaltensatz und bleibt. Keine Spalte gewählt: Knopf gesperrt, Satz
+  „Choose at least one column.“
+- **Format**: fest „CSV“, ohne Edit (es gibt nur eins).
+
+Darunter der Hinweis (Zeichen 14, 12/16, `--vc-third`): „Safe to open in Excel and Sheets. Up to
+{Seitengröße × 60} rows.“, bzw. „Exports for … are coming soon.“; ein Fehler steht **allein** als
+roter Satz (`.up-fehlerzeile`, kein Kasten, kein Toast).
+
+**Läuft:** die große Zahl 28/500 mit „of N rows“ (N = `total_count`, gedeckelt auf die Grenze), ein
+Balken 6 hoch in `--up-accent` auf `--up-sel-bg` -- nur mit echter Gesamtzahl, sonst keiner --,
+„Page k of n. Closing this window stops the export.“ Fuß: „Cancel export“ (`.up-btn-sec.is-lg` mit
+`.up-btn-spin`). Schließen, Escape, Schleier und Cancel brechen ab (Laufnummer: späte Antworten
+verfallen).
+
+**Fertig:** `checkCircle` in `--vt-up`, „N rows exported“ 16/600, die Datei als Kachel (Rahmen 1,
+Radius 8, Mono 12 für den Namen, Größe aus `Blob.size`), Fuß zweispaltig „Download again“ |
+„Done“. Gekürzt (60 Seiten erreicht): Satz darunter.
+
+**Knöpfe** nur aus core in der großen Stufe (`.up-btn-pri.is-lg`, `.up-btn-sec.is-lg`); gesperrt ist
+der core-Knopf im disabled-Zustand (40 %). Der Bubble-Weg (ohne Team) wartet wie bisher mit Kreisel.
 
 ## 28. Der `*/`-in-CSS-Kommentar-Bug — PFLICHTCHECK vor jedem CSS-Commit
 
