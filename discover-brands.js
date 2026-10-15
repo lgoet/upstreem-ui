@@ -77,19 +77,21 @@
      passt nicht in das Modell des Kits") war schlicht falsch: cfg.leadWidth existiert genau fuer
      diesen Fall, der Kommentar in core.js nennt woertlich brands-overviews "#"-Rangzelle.
 
-     `prio` ist die Abwurfreihenfolge des Kits: kleinste Zahl faellt zuerst. Domain vor Mentioned
-     Count, wie vorgegeben. */
+     Die Abwurfreihenfolge sagt `art` (unten): Domain vor Mentioned Count, wie vorgegeben. */
   /* `min` MUSS die Untergrenze aus `w` sein, nicht kleiner. Das Kit rechnet beim Abwerfen mit
      `min`, das Raster bodenet aber bei der Zahl aus `w` -- stehen da verschiedene Werte, glaubt
      die Rechnung, es passe noch, waehrend die Spuren schon breiter sind als der Kasten. Ich hatte
      100/120/140 gegen 112/132/150 stehen: gemessen 5px Ueberlauf bei 700px Breite, und zwar genau
      die Differenz. Core beschreibt denselben Fehler im Kommentar zu minNarrow. */
+  /* `art` statt prio (15.10. spaet, SPALTEN_ART in core, fuer alle Tabellen gleich): Domain ist ein
+     Merkmal wie Type und weicht zuerst, dann Mentioned Count (Zaehlspalte); Visibility nie. Die
+     Reihenfolge ist dieselbe wie vorher, neu ist nur, dass Visibility nicht mehr fallen kann. */
   var COLUMNS = [
-    { key: "vis",      label: "Visibility",      w: "minmax(112px, 0.7fr)", min: 112, prio: 30 },
+    { key: "vis",      label: "Visibility",      w: "minmax(112px, 0.7fr)", min: 112, art: "anteil" },
     /* 145 statt 132 (15.10. spaet): mit der Kopfschrift 14/500 braucht "Mentioned Count" samt
        Sortierpfeil und Zellrand gemessen 141.7. */
-    { key: "mentions", label: "Mentioned Count", w: "minmax(145px, 0.8fr)", min: 145, prio: 20 },
-    { key: "domain",   label: "Domain",          w: "minmax(150px, 1fr)",   min: 150, prio: 10 }
+    { key: "mentions", label: "Mentioned Count", w: "minmax(145px, 0.8fr)", min: 145, art: "zaehl" },
+    { key: "domain",   label: "Domain",          w: "minmax(150px, 1fr)",   min: 150, art: "typ" }
   ];
   var IDX_W = 44;        // feste Breite der "#"-Spalte, wie in brands-overview
   /* Breite der Track-Spalte. Feste Zahlen, keine inhaltsabhaengige Spur: Kopf und Zeilen sind

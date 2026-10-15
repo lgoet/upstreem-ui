@@ -6846,12 +6846,41 @@
      cfg: { root, state, columns, storePrefix, instanceId, firstKey, firstMin, actionsMin,
             dense, badgeSel, cellPrefixes, onChange, scrollen }
        scrollen   — no column drops for width; the table scrolls sideways instead (see autoFit)
-       columns    — [{key, label, w, min, dropAt}]; `w` is the responsive track, `dropAt` is
-                    "narrow" | "vnarrow" (the breakpoint at which the column stops being shown)
+       columns    — [{key, label, w, min, dropAt, art}]; `w` is the responsive track, `dropAt` is
+                    "narrow" | "vnarrow" (the breakpoint at which the column stops being shown),
+                    `art` die Spaltenart aus SPALTEN_ART (Reihenfolge des Wegfallens, siehe dort)
        firstKey   — the leading column that becomes a fixed px track once dragged ("domain")
        dense      — show the Comfortable/Compact switch in the menu
        cellPrefixes — class prefixes to toggle per column, e.g. ["up","uut"]
      state is the component's own object; this mutates state.cols / state.widths / state.dense. */
+  /* ---------- DIE RANGFOLGE NACH SPALTENART (15.10. spaet) ----------
+     Gemeldet: "wenn man mehr Columns auswaehlt als wegen Width moeglich, muessen die Columns der
+     Prioritaet fuer den User ausblenden" -- zuerst Datum/Erstellt, dann Intent, Markt, Topics,
+     Citations, Typ, Brand Mentions, dann langsam die Kennzahlen, Sentiment vor Rank; Share und
+     Visibility nie. Bis dahin pflegte jede Tabelle eigene prio-Zahlen, und die liefen
+     auseinander: in der Prompt-Tabelle stand Sentiment auf 30 und Intent auf 35, Sentiment fiel
+     also als dritte Spalte, vor Intent, Rank, Brand Mentions und Topics.
+     Jetzt sagt eine Spalte nur noch, WAS sie ist (`art`), und die Reihenfolge steht einmal hier.
+     Die kleinste Zahl faellt zuerst. Was der Nutzer nicht genannt hat, ist eingeordnet:
+       zaehl     Zaehl- und Zusatzspalten (Used, Mentioned Count, Active Prompts ...): nach Brand
+                 Mentions, vor den Kennzahlen -- eine Menge, keine Bewertung.
+       kpi       weitere Kennzahlen ohne eigene Stufe (Presence, First Position Rate): zwischen
+                 Sentiment und Rank, also "nach Sentiment, vor Rank" wie gesagt.
+       erwaehnt  "Mentioned?" -- die Zeilenform von Visibility (Visibility IST der Anteil der
+                 Antworten mit Mentioned? = ja), Sentiment und Rank gibt es nur, wenn sie ja ist.
+                 Darum faellt sie als letzte, nach Rank; "nie" bleibt beim Wort des Nutzers.
+     anteil (Share, Visibility) faellt nie der Breite wegen (wie `keep`). Die Wahl des Nutzers im
+     Menue gilt weiter: ausschalten kann er auch sie.
+     Innerhalb einer Art entscheidet `prio`, wenn eine Spalte sie traegt, sonst die Stelle: die
+     linke bleibt laenger. Eine Spalte OHNE art behaelt ihre alte prio -- eine Tabelle stellt
+     ganz um oder gar nicht; gemischt fiele jede Spalte ohne Art vor allen mit Art.
+     Der Vorrang vom 14.10. (ein Klick auf eine verdraengte Spalte im Menue, siehe vorrangKey)
+     steht weiter ueber jeder Art: die angeklickte Spalte erscheint, Platz machen die anderen in
+     dieser Reihenfolge. */
+  var SPALTEN_ART = {
+    datum: 1, intent: 2, markt: 3, topics: 4, citations: 5, typ: 6, marken: 7,
+    zaehl: 8, sentiment: 9, kpi: 10, rang: 11, erwaehnt: 12, anteil: null
+  };
   function makeColumns(cfg){
     var root = cfg.root, state = cfg.state, COLUMNS = cfg.columns;
     var FIRST = cfg.firstKey || "domain";
@@ -6917,15 +6946,23 @@
     function vorrangRang(key){ return state.colsVorrang.indexOf(key); }
 
     function visibleCols(){ return COLUMNS.filter(function(c){ return state.cols[c.key] !== false; }); }
-    /* Drop order when the table is too narrow for every column: lowest `prio` goes first.
+    /* Drop order when the table is too narrow for every column: lowest value goes first.
        Columns without an explicit prio fall back to their declaration order (leftmost = most
        important), which is the convention every table here already follows. Eine Spalte mit
-       Vorrang steht ueber allen ohne; untereinander gewinnt der juengere Wunsch. */
+       Vorrang steht ueber allen ohne; untereinander gewinnt der juengere Wunsch.
+       Mit `art` (SPALTEN_ART) zaehlt zuerst die Art, prio bzw. die Stelle nur innerhalb einer Art:
+       Art mal 1000 plus Unterrang -- prio und Stelle bleiben weit unter 1000. Der Vorrang liegt
+       mit 1e6 ueber jeder Art. */
     function prioOf(c){
       var r = vorrangRang(c.key);
-      if (r >= 0) return 10000 + r;
-      return c.prio != null ? c.prio : (COLUMNS.length - COLUMNS.indexOf(c));
+      if (r >= 0) return 1e6 + r;
+      var unter = c.prio != null ? c.prio : (COLUMNS.length - COLUMNS.indexOf(c));
+      var a = (c.art && SPALTEN_ART[c.art] != null) ? SPALTEN_ART[c.art] : null;
+      return a != null ? a * 1000 + unter : unter;
     }
+    /* Nie der Breite wegen: `keep` (die Tabelle erklaert die Spalte fuer unverzichtbar) oder die
+       Art anteil (Share, Visibility). Beides nur fuer autoFit -- die Wahl im Menue gilt weiter. */
+    function nieWeg(c){ return !!c.keep || c.art === "anteil"; }
     /* The width the lead column will actually occupy BEFORE the user ever drags it: its track is
        `minmax(30%, 1.6fr)`, so on a wide container the 30% is what really applies and it is far
        larger than FIRST_MIN. Budgeting against FIRST_MIN alone was the bug that let 8 columns
@@ -7000,7 +7037,11 @@
          still count toward `need`, so they squeeze the droppable ones instead of being squeezed.
          Filtered out of the candidate list rather than skipped inside the loop so the loop can
          never spin on a column it refuses to drop. */
-      var byPrio = cols.filter(function(c){ return !c.keep; })
+      /* Die Art anteil gilt wie keep (nieWeg). Passt danach selbst der Rest nicht -- erste Spalte
+         samt der nie wegfallenden --, bleibt es dabei: die erste Spur gibt bis zu ihrem Anteil
+         (firstFloor, meist 30 Prozent) nach, erst darunter laeuft das Raster ueber den Kasten.
+         Dasselbe galt schon immer fuer die LETZTE Spalte (kept > 1 unten). */
+      var byPrio = cols.filter(function(c){ return !nieWeg(c); })
                        .sort(function(a, b){ return prioOf(a) - prioOf(b); });
       var dropped = {}, kept = cols.length;
       for (var i = 0; i < byPrio.length && need > budget && kept > 1; i++){
