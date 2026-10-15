@@ -649,12 +649,35 @@
       });
     }
 
+    /* ---- Die Berechnungen der Gesamtzeile (15.10. spaet) -----------------------------------------
+       EIGENE Abfrage neben der Liste, nie vor ihr: die Zeilen warten nicht auf eine Summe ("nicht die
+       gesamte Tabelle im Skeleton, wenn man unten eine groessere Berechnung baut"). Was gerade
+       gewaehlt ist, fragt die Seite bei der Tabelle ab (summeFelder) -- ohne Wahl keine Anfrage.
+       Ohne Seite und Sortierung in der Signatur: Blaettern und Sortieren treffen den Speicher. */
+    function summeFelder() {
+      var t = el(".upt-root"), c = t && t.__uptController;
+      try { return c && c.summeFelder ? c.summeFelder() : []; } catch (e) { return []; }
+    }
+    function summeLaden(frisch) {
+      if (state.tab !== "allprompts" || state.p.status === "inactive" || !bereit()) return;
+      var f = summeFelder();
+      if (!f.length) return;
+      var a = D.summe(filterStand(), state.p, f);
+      if (lader.ausSpeicher(a) === undefined || frisch) { try { setter("setPromptsTableSumme")(ids.upt, { laedt: true }); } catch (e) {} }
+      lader.laden("summe", a, { frisch: !!frisch }).then(function (erg) {
+        if (erg.ueberholt) return;
+        var d = erg.ok ? D.zuSumme(erg.daten) : null;
+        try { setter("setPromptsTableSumme")(ids.upt, d ? { daten: d } : { fehler: true }); } catch (e) {}
+      });
+    }
     function listeAuftrag() {
       var a = D.liste(filterStand(), state.p), reqId = state.p.requestId, status = state.p.status;
       return {
         kanal: "liste", imSpeicher: lader.ausSpeicher(a) !== undefined,
         ladenAn: function () { try { setter("setPromptsTableLoading")(ids.upt, "yes"); } catch (e) {} },
         laden: function (frisch) {
+          /* Die Summe startet MIT der Liste und laeuft fuer sich (kein return, kein Warten). */
+          summeLaden(frisch);
           return lader.laden("liste", a, { frisch: !!frisch }).then(function (erg) {
             if (erg.ueberholt) return null;
             return function () {
@@ -666,9 +689,6 @@
                 if (z.totalCount != null) p.totalCount = z.totalCount;
                 if (z.totalCountInactive != null) p.totalCountInactive = z.totalCountInactive;
                 if (z.without_topic != null) p.without_topic = z.without_topic;
-                /* Immer mitgeben, auch als null: eine Lieferung ohne summary heisst "fuer diese
-                   Filter unbekannt", und die Tabelle darf dann nicht die Zahlen der vorigen zeigen. */
-                p.summary = z.summary || null;
                 if (reqId != null) p.requestId = reqId;
                 try { setter("renderPromptsTable")(p); } catch (e) {}
               }
@@ -767,6 +787,13 @@
        Lokal: "upt-<Name>" (makeFire, Praefix plus Name). Die Tabelle schickt nur, was sich
        geaendert hat -- den Rest haelt diese Seite (state.p), wie bisher die Custom States in Bubble. */
     function an(name, fn) { root.addEventListener(name, function (e) { fn(e.detail || {}); }); }
+    /* Eine Berechnung gewaehlt oder abgewaehlt: nur die Summe holen, die Liste bleibt stehen. */
+    an("upt-uptSumme", function () { summeLaden(false); });
+    /* Das Plus im Kopf der Prompt-Spalte (15.10. spaet, wie bei Brands): derselbe Dialog wie
+       "Add Prompts" oben, derselbe Speicherweg. */
+    an("upt-uptAddPrompts", function () {
+      if (typeof window.openAddPrompts === "function") window.openAddPrompts({ onSubmit: anlegen });
+    });
     an("upt-uptSearch", function (d) {
       state.p.suche = str(d.query); state.p.offset = 0;
       state.p.requestId = d.requestId != null ? d.requestId : null;

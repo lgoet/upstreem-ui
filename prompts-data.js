@@ -39,6 +39,10 @@
 
   var FN = {
     liste: "cached_prompts_list_v1",
+    /* Die Berechnungen der Gesamtzeile (15.10. spaet): EIGENE Abfrage, nicht meta der Liste -- "nicht
+       die gesamte Tabelle im Skeleton, wenn man unten eine groessere Berechnung baut". Auftrag
+       bubble/prompts_summary_db_auftrag.md. */
+    summe: "cached_prompts_summary_v1",
     gruppen: "cached_prompts_groups_v1",
     seite: "prompts_page_meta_v1",
     anlegen: "prompts_add_v1",
@@ -136,6 +140,16 @@
     return anfrage("gruppen", q);
   }
   function seite(team) { return anfrage("seite", { p_team: str(team) }); }
+  /* Die Berechnungen der Gesamtzeile: dieselben Filter wie die Liste (Status, Suche, Marken,
+     Branded, Topics, Intents, Zeitraum, Modelle, Maerkte), aber OHNE Sortierung und Seite -- Blaettern
+     und Sortieren aendern keine Summe und treffen damit den Speicher des Laders. p_fields: nur, was
+     die Tabelle gerade zeigt (SUMME_FELDER), sortiert, damit dieselbe Wahl dieselbe Signatur hat. */
+  function summe_(f, s, felder) {
+    s = s || {};
+    var fl = (isArr(felder) ? felder : []).filter(function (x) { return SUMME_FELDER.indexOf(x) >= 0; });
+    fl = fl.filter(function (x, i) { return fl.indexOf(x) === i; }).sort();
+    return anfrage("summe", mit(brandedParam(mit(basis(f), tabelle(s)), s.branded), { p_fields: fl }));
+  }
 
   /* ---- Schreiben -------------------------------------------------------------------------------
      Ohne Signatur: Schreibanfragen gehen nie in den Speicher des Laders. */
@@ -269,23 +283,30 @@
       rows: r.map(promptZeile),
       totalCount: aktiv, totalCountInactive: inaktiv,
       without_topic: num(c.untagged_active),
-      summary: zuSumme(m.summary),
       total: total == null ? r.length : total
     };
   }
-  /* meta.summary fuer die Gesamtzeile der Tabelle (15.10., Auftrag
-     bubble/prompts_summary_db_auftrag.md): gewichtete Gesamtwerte, Median und Zaehlwerte ueber
-     ALLE Prompts unter denselben Filtern wie die Zeilen. Nur die bestellten Felder, jedes als Zahl
-     oder null -- ein fehlendes oder unlesbares Feld wird null und in der Zeile "–", nie 0. Fehlt
-     der ganze Block (heute immer), null: die Tabelle zeigt die Anzahl trotzdem. */
-  var SUMME_FELDER = ["visibility_pct", "median_visibility", "prompts_zero_vis",
-                      "avg_rank", "median_rank", "rank1_count",
-                      "avg_sentiment", "median_sentiment", "sentiment_below_50",
-                      "prompts_no_runs", "branded_count"];
-  function zuSumme(s) {
+  /* Die Antwort von cached_prompts_summary_v1 fuer die Gesamtzeile (15.10. spaet, Auftrag
+     bubble/prompts_summary_db_auftrag.md): Werte ueber ALLE Prompts unter denselben Filtern wie die
+     Zeilen. Zahlen als Zahl oder null, Namen (top_intent, top_market) und Tage (newest_created) als
+     Text -- ein fehlendes oder unlesbares Feld wird null und in der Zeile "–", nie 0. Nimmt das
+     Objekt selbst oder { summary: {...} }. Unlesbar: null (die Zeile zeigt "–"). */
+  var SUMME_FELDER = ["visibility_pct", "prompts_mentioned", "prompts_zero_vis",
+                      "avg_rank", "rank1_count", "rank_top3_count",
+                      "avg_sentiment", "sentiment_below_50",
+                      "topics_used", "avg_brands_per_prompt", "competitors_seen",
+                      "top_intent", "top_intent_share", "markets_used", "top_market", "top_market_share",
+                      "newest_created", "added_last_7d"];
+  var SUMME_TEXT = ["top_intent", "top_market", "newest_created"];
+  function zuSumme(d) {
+    var s = d && typeof d === "object" && !isArr(d) && d.summary && typeof d.summary === "object" ? d.summary : d;
+    if (isArr(s) && s.length === 1 && s[0] && typeof s[0] === "object") s = s[0];
     if (!s || typeof s !== "object" || isArr(s)) return null;
     var o = {};
-    SUMME_FELDER.forEach(function (k) { o[k] = num(s[k]); });
+    SUMME_FELDER.forEach(function (k) {
+      if (!Object.prototype.hasOwnProperty.call(s, k)) return;
+      o[k] = SUMME_TEXT.indexOf(k) >= 0 ? (s[k] == null || str(s[k]).trim() === "" ? null : str(s[k])) : num(s[k]);
+    });
     return o;
   }
   /* Die Zeilen einer aufgeklappten Gruppe: group_total_count auf jeder Zeile (prompts-table.js
@@ -396,7 +417,7 @@
 
   window.UpstreemPromptsDaten = {
     FN: FN, ORDER: ORDER, GRENZE: GRENZE,
-    liste: liste_, gruppen: gruppen, seite: seite,
+    liste: liste_, gruppen: gruppen, seite: seite, summe: summe_, zuSumme: zuSumme, SUMME_FELDER: SUMME_FELDER,
     anlegen: anlegen, topicsSetzen: topicsSetzen, sammel: sammel,
     topicSpeichern: topicSpeichern, topicLoeschen: topicLoeschen, aktualisieren: aktualisieren,
     intentSetzen: intentSetzen, brandedSetzen: brandedSetzen, INTENTE: INTENTE,

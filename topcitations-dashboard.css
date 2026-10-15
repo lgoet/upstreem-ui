@@ -115,10 +115,12 @@
 .tct-table.tct-hide-type .tct-th-type, .tct-table.tct-hide-type .tct-td-type { display: none; }
 .tct-table.tct-hide-type.tct-hide-used .tct-thead, .tct-table.tct-hide-type.tct-hide-used .tct-row { grid-template-columns: 44px minmax(120px,1fr) 30%; }
 .tct-thead { height: 45px; flex: 0 0 45px; background: var(--vt-head-bg); }
-.tct-th { font-size: 12px; font-weight: 400; color: var(--vc-muted); padding: 0 16px 0 8px; height: 100%;
+/* Kopfschrift 14/500 wie jeder Tabellenkopf der App (core .up-root .up-th, 15.10. spaet);
+   vorher 12/400. Das Rautenzeichen waechst im selben Verhaeltnis mit: 12 x 14/12 = 14. */
+.tct-th { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); color: var(--vc-muted); padding: 0 16px 0 8px; height: 100%;
   display: flex; align-items: center; border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
 .tct-th-idx { justify-content: center; padding: 0; }
-.tct-th-idx svg { width: 12px; height: 12px; color: var(--vc-third); display: block; }
+.tct-th-idx svg { width: 14px; height: 14px; color: var(--vc-third); display: block; }
 .tct-th:last-child { border-right: none; }
 .tct-tbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .tct-row { height: 55px; flex: 0 0 55px; cursor: pointer; }
@@ -145,6 +147,13 @@
 .tcd-root .tct-td-share { --up-spur: var(--up-spur-pct0); }
 .tcd-root .tct-td-used { --up-spur: var(--up-spur-anzahl); }
 .tct-td .tct-num, .tct-td .tct-used { min-width: var(--up-spur, 0); text-align: right; font-variant-numeric: tabular-nums; }
+/* RECHTSBUENDIG, DER TREND LINKS DAVOR (core.css, 15.10. spaet): der Wert an der rechten Zellkante,
+   der Trend per order davor, Abstand --up-spur-abstand -- wie .up-td in core, das diese Zellen nicht
+   erreicht. Zu eng heisst: der Trend laeuft nach links ins Polster, die Zahl bleibt an der Kante --
+   checkTrendFit() misst darum die linke Kante des Trends (siehe dort). */
+.tcd-root .tct-td-share, .tcd-root .tct-td-used { justify-content: flex-end; column-gap: var(--up-spur-abstand); }
+/* Der Trend an der LINKEN Zellkante (15.10. spaet, wie core: "die Trends ueberall links"). */
+.tct-td > .up-trend { order: -1; margin-right: auto; }
 /* Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke. Kein Nachbau von .up-planpill (meldet .check_reinvention.py wegen des Rahmens): das ist der Typ-Chip aus STYLEGUIDE 1a/1b, Masse wie .up-tag. */
 .tct-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
   border: 1px solid transparent; box-sizing: border-box;

@@ -540,10 +540,16 @@
    ueberall gleich, die Ziffern standen aber versetzt ("3.6%" endete 23px vor dem Trend, "41.6%"
    16px). Jetzt wie in jeder Tabellenzelle: die Zahl steht rechts in der Spur ihres Formats
    (Prozent mit einer Stelle, --up-spur-pct1 = 49, die Breite von "100.0%"), Komma unter Komma,
-   und der Abstand zum Trend ist der von .up-td, 10px -- nicht mehr der zufaellige Rest des
-   Feldes. Die Spalte zieht wieder mit: 49 + 10 + 62 = 121. */
-.upw-li-val { flex: 0 0 121px; display: inline-flex; align-items: center; gap: 10px; }
+   und ein fester Abstand zum Trend -- nicht mehr der zufaellige Rest des Feldes. */
+/* RECHTSBUENDIG, DER TREND LINKS DAVOR (core.css, 15.10. spaet: "Zahlen rechtsbuendig auf einer
+   Spur, Trends links davon mit gap, minimal mehr gap"): die Zahl an der rechten Kante der Spalte,
+   der Trend per order davor, Abstand --up-spur-abstand (12). Eine Zeile ohne Trend hat ihre Zahl
+   damit an derselben Kante wie alle anderen. Die Spalte zieht mit: 49 + 12 + 62 = 123. */
+.upw-li-val { flex: 0 0 123px; display: inline-flex; align-items: center; justify-content: flex-end;
+  column-gap: var(--up-spur-abstand); }
 .upw-li-val > .up-num { flex: 0 0 auto; min-width: var(--up-spur-pct1); text-align: right; }
+/* Der Trend an der LINKEN Kante des Wertfelds (15.10. spaet, wie core: "die Trends ueberall links"). */
+.upw-li-val > .up-trend { order: -1; margin-right: auto; }
 /* Die eigene Marke traegt ihren Namen fetter -- dasselbe Mittel, mit dem die grossen Tabellen sie
    hervorheben, nur ohne deren Zeilenflaeche. */
 .upw-li.is-own .upw-li-name { font-weight: 600; }

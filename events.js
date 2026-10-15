@@ -874,7 +874,14 @@
     /* Der Intent-Filter der App gehoert in die Signatur (13.10.): sonst zeigte ein Wechsel die
        gemerkte Analyse des vorigen Filters. */
     function intentP() { return UC.intentFilterParams ? UC.intentFilterParams() : {}; }
-    function analyseSig() { return [state.eventId, state.fenster, (state.modelle || []).join(","), (state.maerkte || []).join(","), JSON.stringify(intentP())].join("|"); }
+    /* EIN Schluessel fuer Ablegen (setAnalysis) und Finden (dieAnalyse) -- 15.10.: seit dem
+       13.10. kam der Intent-Filter nur beim Finden dazu, abgelegt wurde ohne ihn. Die Antwort kam
+       an, wurde nie gefunden, und das Detail blieb im Skelett (gemeldet: "Responses kommen an, aber
+       es bleibt im Skeleton"). id und fen sind die der Antwort, ohne sie die aktuellen. */
+    function analyseSig(id, fen) {
+      return [id != null ? id : state.eventId, fen != null ? fen : state.fenster, (state.modelle || []).join(","),
+              (state.maerkte || []).join(","), JSON.stringify(intentP())].join("|");
+    }
     function dieAnalyse() { return state.analyse[analyseSig()] || null; }
     function listeEvent(id) {
       var l = UC.getEvents ? UC.getEvents() : [];
@@ -3224,7 +3231,7 @@
         /* Unter dem Schluessel ablegen, fuer den sie bestellt war: Event, Fenster, Filter. Eine
            Antwort fuer ein anderes Fenster (spaete Antwort nach schnellem Umschalten) ueberschreibt
            so nicht die aktuelle. */
-        var sig = [id, fen, (state.modelle || []).join(","), (state.maerkte || []).join(",")].join("|");
+        var sig = analyseSig(id, fen);
         state.analyse[sig] = a;
         persist();
         if (state.ansicht === "detail" && state.eventId === id) renderDetail();

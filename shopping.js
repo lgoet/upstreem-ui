@@ -174,7 +174,7 @@
      Komponenten, Filter) gemessen: 0 Kollisionen; "Change" und der Zeitueberschreitungs-Satz
      stehen gleichlautend auch in events.js und bleiben hier, weil events keine Grundlage ist. */
   if (UC.addMessages) UC.addMessages("de", {
-    "Shopping": "Shopping", "Beta": "Beta", "Merchant": "Händler",
+    "Shopping": "Shopping", "Beta": "Beta", "Merchant": "Händler", "Segment": "Segment",
     "Shopping Performance": "Shopping-Performance", "How your brand and competitors appear in AI shopping results": "Wie deine Marke und Wettbewerber in KI-Shopping-Ergebnissen erscheinen",
     "Brand Landscape": "Markenlandschaft", "Top brands by Share of Shelf": "Die stärksten Marken nach Share of Shelf",
     "Top Products": "Top-Produkte", "Most visible products across all brands": "Die sichtbarsten Produkte über alle Marken",
@@ -449,16 +449,27 @@
     root.classList.add("up-sidebar-clear");
     var idDaten = instanceId + "_dates", idFilter = instanceId + "_filters", idModelle = instanceId + "_models",
         idMaerkte = instanceId + "_markets", idTopics = instanceId + "_topics";
+    /* DIE FILTER DER PRODUKTTABELLE IM MENUE "Filters" (15.10., wie Prompt Insights): Segment, Marke
+       und Haendler aendern die DATEN der Tabelle und stehen darum nicht mehr als Knoepfe in ihrer
+       Werkzeugleiste, sondern als Zeilen im Menue der Filterzeile -- gebaut weiter unten ueber
+       UC.makeLeistenFilter (Eintraege shsegment/shbrand/shmerchant in filters/filter-bar.js). Die
+       grosse Form (data-form="gross"): Name und Wert je Zeile, die Chips oeffnen ihr Untermenue.
+       Sichtbar nur auf dem Reiter Products (leisteStellen), ausgeblendet heisst NICHT geleert. */
+    var ID_FF = { shsegment: instanceId + "_shsegment", shbrand: instanceId + "_shbrand", shmerchant: instanceId + "_shmerchant" };
     root.innerHTML =
       '<div class="up-ph-top ush-pagehead">' +
         '<div class="up-ph-left"><h1 class="up-ph-heading">' + esc(t("Shopping")) + '</h1>' +
           '<p class="up-ph-desc">' + esc(t("How your brand and competitors appear in AI shopping results")) + '</p></div>' +
       '</div>' +
       '<div class="up-ph-nav ush-nav" role="tablist"></div>' +
-      '<div class="ush-filterzeile">' +
+      /* up-leiste-fluss (core): Filters, jeder Chip und Clear All stehen einzeln in der Zeile neben dem
+         Kalender und brechen dort um -- dieselbe Filterzeile ueber einem Band wie auf Citations. */
+      '<div class="ush-filterzeile up-leiste-fluss">' +
         '<div class="up-root udr-root ush-daten" data-instance="' + esc(idDaten) + '" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
         '<div class="up-root ufb-root ush-filterleiste" data-instance="' + esc(idFilter) + '" data-topics-instance="' + esc(idTopics) + '"' +
-          ' data-models-instance="' + esc(idModelle) + '" data-markets-instance="' + esc(idMaerkte) + '" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
+          ' data-models-instance="' + esc(idModelle) + '" data-markets-instance="' + esc(idMaerkte) + '" data-form="gross"' +
+          Object.keys(ID_FF).map(function (k) { return ' data-' + k + '-instance="' + esc(ID_FF[k]) + '" data-' + k + '-visible="no"'; }).join("") +
+          ' data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
         '<div class="up-root utf-root" data-instance="' + esc(idTopics) + '" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
         '<div class="up-root umf-root" data-instance="' + esc(idModelle) + '" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
         '<div class="up-root umk-root" data-instance="' + esc(idMaerkte) + '" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
@@ -621,6 +632,80 @@
       }
       state.products.suche = ""; state.products.seg = "all"; state.products.marke = null; state.products.haendler = null;
       persist();
+      ffSync();
+    }
+
+    /* ---- Die Filter der Produkttabelle in der Filterzeile (15.10.) -----------------------------
+       Bauart wie responses-table.js ("die Filter der einen Leiste"): core baut je Filter die Wurzel,
+       die filter-bar einzieht (UC.makeLeistenFilter), der ZUSTAND bleibt hier in state.products --
+       derselbe, den vorher die Knoepfe der Werkzeugleiste setzten, also dieselbe Anfrage
+       (p_segment, p_company_id, p_merchant). Die Wurzeln haengen an DIESER Wurzel und nicht am
+       Abschnitt der Tabelle: der wird bei jedem Reiterwechsel neu gebaut, die Filterzeile nicht.
+       Jede Wahl gilt sofort wie alle anderen Filter der Leiste. */
+    var ladeUhr = null;
+    /* Mehrere Wahlen in einem Zug ("Clear All" leert jeden Filter einzeln) sind EINE Anfrage: ohne
+       die Buendelung ginge je Filter eine hinaus, und jede wartete auf die vorige. */
+    function bedarfBald() {
+      if (ladeUhr) return;
+      ladeUhr = setTimeout(function () { ladeUhr = null; bedarf(); }, 0);
+    }
+    function prodFilter(feld, wert) {
+      var tb = state.products;
+      if (JSON.stringify(tb[feld] == null ? null : tb[feld]) === JSON.stringify(wert == null ? null : wert)) { ffSync(); return; }
+      tb[feld] = wert; tb.page = 1;
+      if (pager.products) pager.products.st.page = 1;
+      persist(); zeichnen(); bedarfBald();
+    }
+    function einmal(l) { var da = {}; return l.filter(function (x) { if (da[x]) return false; da[x] = 1; return true; }); }
+    var FF_ARTEN = {
+      shsegment: {
+        label: function () { return t("Segment"); }, chip: function () { return t("Segment"); }, leer: "All", einzeln: true,
+        optionen: function () { return [{ key: "you", name: t("You") }, { key: "competition", name: t("Competition") }, { key: "other", name: t("Other") }]; },
+        auswahl: function () { var s = state.products.seg; return s && s !== "all" ? [s] : []; },
+        setzen: function (l) { var k = l.length ? str(l[l.length - 1]) : "all"; prodFilter("seg", { you: 1, competition: 1, other: 1 }[k] ? k : "all"); }
+      },
+      shbrand: {
+        label: function () { return t("Brand"); }, chip: function () { return t("Brand"); }, leer: "All", einzeln: true, suche: true, titel: "Brands",
+        optionen: function () { return markenListe().map(function (x) { return { key: x.key, name: x.label, logo: x.logo }; }); },
+        auswahl: function () { var m = state.products.marke; return m && m.id ? [str(m.id)] : []; },
+        setzen: function (l) {
+          var k = l.length ? str(l[l.length - 1]) : "";
+          var hit = k ? markenListe().filter(function (x) { return x.key === k; })[0] : null;
+          prodFilter("marke", k ? { id: k, name: hit ? hit.label : "" } : null);
+        }
+      },
+      shmerchant: {
+        label: function () { return t("Merchant"); }, chip: function () { return t("Merchant"); }, leer: "All", einzeln: true, suche: true, titel: "Merchants",
+        optionen: function () { return einmal(haendlerListe()).map(function (n) { return { key: n, name: n }; }); },
+        auswahl: function () { return state.products.haendler ? [str(state.products.haendler)] : []; },
+        setzen: function (l) { prodFilter("haendler", l.length ? str(l[l.length - 1]) : null); }
+      }
+    };
+    var ffKit = UC.makeLeistenFilter ? UC.makeLeistenFilter(root, { instanceId: instanceId, arten: FF_ARTEN }) : null;
+    function ffSync() { if (ffKit) { try { ffKit.sync(); } catch (e) {} } }
+    /* Die Suche der Haendlerliste sucht Haendler, nicht Marken: core schreibt "Search brands..."
+       in jede durchsuchbare Liste (makeLeistenFilter kennt noch keinen eigenen Platzhalter). */
+    (function () {
+      var si = root.querySelector(".up-ff-shmerchant .up-ff-search-in");
+      if (!si) return;
+      si.setAttribute("placeholder", t("Search merchants…"));
+      si.setAttribute("aria-label", t("Search merchants"));
+    })();
+    ffSync();
+    /* Die Haendlerliste kommt wie bisher beim ersten Aufklappen (haendlerHolen): ein Klick in die
+       Filterzeile auf dem Reiter Products holt die 100 meistgenannten -- dieselbe Anfrage wie
+       vorher am Haendler-Knopf, nur einmal je Filterstand. */
+    root.querySelector(".ush-filterleiste").addEventListener("click", function () {
+      if (state.seite === "products") haendlerHolen();
+    }, true);
+    /* Welche Filter die Filterzeile je Reiter zeigt: die drei der Produkttabelle nur auf Products. */
+    function leisteStellen() {
+      var fb = root.querySelector(".ush-filterleiste"), an = state.seite === "products" ? "yes" : "no";
+      if (!fb) return;
+      Object.keys(ID_FF).forEach(function (k) {
+        var a = "data-" + k + "-visible";
+        if (fb.getAttribute(a) !== an) fb.setAttribute(a, an);
+      });
     }
 
     /* ---- Anfragen ------------------------------------------------------------------------------
@@ -982,10 +1067,14 @@
     /* ============================================================================================
        Zeichnen
        ============================================================================================ */
-    var geruest = null, linie = null, pager = {}, sucheKit = {}, sortKit = {}, balken = {}, markenFilter = null, haendlerFilter = null;
+    var geruest = null, linie = null, pager = {}, sucheKit = {}, sortKit = {}, balken = {};
     function zeichnen() {
       if (root.isConnected === false) return;
       var s = state.seite;
+      /* Die Filter der Produkttabelle: sichtbar je Reiter, Liste und Haken auf Stand (die Marken-
+         und Haendlernamen kommen mit den Antworten). sync meldet nur, was sich geaendert hat. */
+      leisteStellen();
+      ffSync();
       /* Der ganze-Seite-Zustand: keine Shopping-Ergebnisse oder Shopping fuer diese Modelle gar
          nicht verfuegbar (Uebergabe 5). Er steht ueber allem anderen, auch ueber dem Detail. */
       var meta = metaJetzt();
@@ -1043,7 +1132,7 @@
 
     function aufraeumen() {
       if (linie && linie.destroy) { try { linie.destroy(); } catch (e) {} }
-      linie = null; pager = {}; sucheKit = {}; sortKit = {}; balken = {}; markenFilter = null; haendlerFilter = null; spalten = {};
+      linie = null; pager = {}; sucheKit = {}; sortKit = {}; balken = {}; spalten = {}; zaehl = null;
     }
     function sek(name) { return elMain.querySelector('[data-sek="' + name + '"]'); }
     /* Abschnittskopf aus core (.up-sec-head), wie im Event-Detail. */
@@ -1080,7 +1169,24 @@
         '<p class="ush-chartnote" hidden>' + esc(t("Lower is better: position 1 sits at the top of the chart.")) + '</p>' +
         '<div class="ush-linewrap"><canvas></canvas></div><div class="up-legend ush-legende"></div></div>';
     }
-    function tabSek(name, titel, suchePlatz) {
+    /* DAS OFFENE BAND (15.10., Variante A wie der Chart der Citations-Seite, citations-combo-chart.css
+       "DAS OFFENE BAND"): Diagramm, Balken und Held stehen nicht mehr im Kasten, sondern in einem
+       Band bis an die Kanten, oben und unten eine Linie, die Ueberschrift samt Werkzeugen als
+       erste Zeile IM Band. Dasselbe Attribut wie die flache Tabelle (data-flach an einer .up-root):
+       die Masse --up-flach-aus und --up-flach-h setzt core dort, fuer jede Komponente gleich.
+       Die Regeln stehen in shopping.css unter "DAS OFFENE BAND". */
+    function bandAuf(name, klasse) {
+      return '<section class="up-root ush-sek ush-band' + (klasse ? " " + klasse : "") + '" data-flach="yes"' +
+        (isDark() ? ' data-theme="dark"' : '') + (name ? ' data-sek="' + name + '"' : '') + '>';
+    }
+    /* o.leiste: DIE EINE LEISTE (core.css, data-leiste) -- die Ueberschrift faellt weg, rechts stehen
+       Suche und Display, der Kopf bricht um statt Knoepfe wegzunehmen. Nur, wo die Tabelle das
+       Einzige auf ihrem Reiter ist (Products) oder unter Diagramm und Kennzahlen steht, deren
+       Reiter sie benennt (Brands, Merchants); Recent Appearances im Produkt-Detail behaelt ihre
+       Ueberschrift -- dort steht sie unter Merchants und "Where this product appears", und ohne
+       sie hiesse die Tabelle nichts. Die Zahl steht in beiden Faellen in der Gesamtzeile. */
+    function tabSek(name, titel, suchePlatz, o) {
+      o = o || {};
       /* Der Abschnitt ist eine eigene .up-root: die Suchuebernahme aus core (offene Suche nimmt auf
          schmaler Breite die ganze Kopfzeile, is-searchtakeover) haengt an ".up-root" -- ohne die
          Klasse stand bei 400px die offene Suche neben den Segmenten und ragte 44px hinaus. */
@@ -1089,14 +1195,15 @@
          Held und Kennzahlen-Fehler .up-box und blieben sonst nicht mehr Kasten. Der Abschnitt ist
          zugleich die Wurzel von UC.makeColumns (spaltenFuer) -- dort liest das Kit den Abzug fuer
          das Auslauf-Polster -- und traegt den Fuss. */
-      return '<section class="up-root ush-sek ush-tab" data-flach="yes" data-sek="' + name + '">' +
+      return '<section class="up-root ush-sek ush-tab" data-flach="yes"' + (o.leiste ? ' data-leiste="yes"' : '') +
+          (isDark() ? ' data-theme="dark"' : '') + ' data-sek="' + name + '">' +
         '<div class="up-head ush-head">' +
           '<span class="up-heading ush-heading"><span class="up-head-label">' + esc(t(titel)) + '</span>' +
             '<span class="up-head-sep"></span><span class="up-head-count"></span></span>' +
           '<div class="up-head-tools ush-tools">' + (suchePlatz || '') + spaltenKnopf() + '</div>' +
         '</div>' +
         '<div class="ush-scope" hidden></div>' +
-        '<div class="up-root ush-tabwurzel"><div class="ush-tabelle"></div></div>' +
+        '<div class="up-root ush-tabwurzel"' + (isDark() ? ' data-theme="dark"' : '') + '><div class="ush-tabelle"></div></div>' +
         '<div class="up-foot ush-foot">' +
           '<div class="up-pagesize"><span class="up-pagesize-lbl">' + esc(t("Rows per page")) + '</span>' +
             '<div class="up-pagesize-seg" role="group" aria-label="' + esc(t("Rows per page")) + '"></div></div>' +
@@ -1128,7 +1235,7 @@
           '<div class="ush-gruppe">' +
             '<div data-sek="summary"></div>' +
             '<div class="up-kpiband is-4 is-offen ush-kpis" data-sek="kpis"></div>' +
-            '<section class="ush-sek" data-sek="chart">' +
+            bandAuf("chart") +
               sekKopf("Shopping Performance", t("How your brand and competitors appear in AI shopping results"),
                 segHtml("ush-metrik", [["presence", "Brand Presence"], ["share_of_shelf", "Share of Shelf"], ["avg_position", "Avg. Position"], ["first_position_rate", "First Position Rate"]], state.ovMetrik)) +
               chartHtml() +
@@ -1136,12 +1243,12 @@
           '</div>' +
           '<section class="ush-sek" data-sek="landscape"></section>' +
           '<section class="ush-sek" data-sek="topprodukte"></section>' +
-          '<div class="ush-zwei">' +
-            /* Product Movement ist eine Liste im Raster der Tabellen und wird mit ihnen flach. Die
-               flache Tabelle braucht eine .up-root mit data-flach ueber ihrem Kasten; die Seite
-               selbst kann das nicht sein (Diagramm, Balken). Neben den Balken laeuft sie nicht
-               aus (shopping.css, .ush-zwei). */
-            '<section class="up-root ush-sek" data-flach="yes" data-sek="bewegung"></section>' +
+          /* Product Movement und Merchant Distribution als EIN Band mit zwei Einheiten und einer
+             senkrechten Linie dazwischen (gestapelt waagerecht, shopping.css "DAS OFFENE BAND").
+             Product Movement ist eine Liste im Raster der Tabellen und bleibt flach: die flache
+             Tabelle braucht eine .up-root mit data-flach ueber ihrem Kasten. */
+          '<div class="up-root ush-zwei ush-band" data-flach="yes"' + (isDark() ? ' data-theme="dark"' : '') + ' data-sek="zwei">' +
+            '<section class="up-root ush-sek" data-flach="yes"' + (isDark() ? ' data-theme="dark"' : '') + ' data-sek="bewegung"></section>' +
             '<section class="ush-sek" data-sek="verteilung"></section>' +
           '</div>' +
         '</div>';
@@ -1149,35 +1256,38 @@
         html = '<div class="ush-seite" data-seite="brands">' +
           '<div class="ush-gruppe">' +
             '<div class="up-kpiband is-4 is-offen ush-kpis" data-sek="kpis"></div>' +
-            '<section class="ush-sek" data-sek="chart">' +
+            bandAuf("chart") +
               sekKopf("Brand Performance", t("How the top brands develop in AI shopping results"),
                 segHtml("ush-metrik", [["share_of_shelf", "Share of Shelf"], ["presence", "Presence"], ["avg_position", "Avg. Position"], ["first_position_rate", "First Position Rate"]], state.brMetrik)) +
               chartHtml() +
             '</section>' +
           '</div>' +
-          tabSek("tabelle", "Brands", sucheHtml("Search brands…", "Search brands")) +
+          tabSek("tabelle", "Brands", sucheHtml("Search brands…", "Search brands"), { leiste: true }) +
         '</div>';
       } else if (s === "products") {
+        /* Segment, Marke und Haendler stehen seit dem 15.10. im Menue "Filters" (FF_ARTEN oben). */
         html = '<div class="ush-seite" data-seite="products">' +
-          tabSek("tabelle", "Products", '<span class="ush-markenplatz"></span><span class="ush-haendlerplatz"></span><span class="ush-segplatz"></span>' + sucheHtml("Search products…", "Search products")) +
+          tabSek("tabelle", "Products", sucheHtml("Search products…", "Search products"), { leiste: true }) +
         '</div>';
       } else if (s === "merchants") {
         html = '<div class="ush-seite" data-seite="merchants">' +
           '<div class="ush-gruppe">' +
             '<div class="up-kpiband is-offen ush-kpis" data-sek="kpis"></div>' +
-            '<section class="ush-sek" data-sek="balken"></section>' +
+            bandAuf("balken") + '</section>' +
           '</div>' +
-          tabSek("tabelle", "Merchants", sucheHtml("Search merchants…", "Search merchants")) +
+          tabSek("tabelle", "Merchants", sucheHtml("Search merchants…", "Search merchants"), { leiste: true }) +
         '</div>';
       } else if (s === "detail") {
+        /* Der Held (Bild, Fakten, Kennzahlen) ist ein Band ohne Ueberschriftzeile: sein Name ist
+           der Produkttitel darin. */
         html = '<div class="ush-seite" data-seite="detail">' +
-          '<div data-sek="hero"></div>' +
-          '<section class="ush-sek" data-sek="chart">' +
+          bandAuf("hero", "ush-heroband") + '</section>' +
+          bandAuf("chart") +
             sekKopf("Product Performance", t("How this product appears in AI shopping results over time"),
               segHtml("ush-metrik", [["visibility", "Visibility"], ["avg_position", "Avg. Position"], ["observations", "Observations"]], state.dMetrik)) +
             chartHtml() +
           '</section>' +
-          '<section class="ush-sek" data-sek="wo"></section>' +
+          bandAuf("wo") + '</section>' +
           '<section class="ush-sek" data-sek="dhaendler"></section>' +
           tabSek("tabelle", "Recent Appearances", "") +
         '</div>';
@@ -1336,7 +1446,10 @@
        o.flach: Untergrenze in der flachen Tabelle (UC.makeColumns minFlach/wFlach, 15.10.). Ihre
        Kopfschrift ist 13/500 statt 12/400, und so brauchten mehrere Koepfe mehr als ihr min
        (gemessen bei 1100 mit dem Klon des Kopfs, Erklaer- und Sortierzeichen mitgezaehlt, z. B.
-       "First Position Rate" mit Sortierung 179,8 bei 176). Der Wert liegt 2 bis 4 darueber. */
+       "First Position Rate" mit Sortierung 179,8 bei 176). Der Wert liegt 2 bis 4 darueber.
+       Nachgemessen mit der Kopfschrift 14/500 und Info/Sortierpfeil 15 (15.10. spaet, Klon des
+       Kopfs, samt Zellrand): z. B. "First Position Rate" mit Sortierung 190.4, ohne 169.4,
+       "Avg. Product Position" 209.9, "Observations" 158.0 / 137.0. Wieder 3 darueber. */
     function sp(key, label, min, fr, prio, sk, o) {
       o = o || {};
       return { key: key, label: label, w: "minmax(" + min + "px," + fr + "fr)", min: min, prio: prio, sk: sk, sort: o.sort, info: o.info,
@@ -1347,47 +1460,47 @@
         sp("share", "Share of Shelf", 154, 1.2, 90, 60, { info: "share" }),
         sp("presence", "Presence", 120, 1, 80, 44, { info: "presence" }),
         sp("products", "Products", 104, 0.8, 50, 30),
-        sp("pos", "Avg. Position", 124, 1, 70, 36, { info: "pos", flach: 130 }),
-        sp("first", "First Position Rate", 156, 1.1, 40, 44, { info: "firstBrand", flach: 162 }),
+        sp("pos", "Avg. Position", 124, 1, 70, 36, { info: "pos", flach: 137 }),
+        sp("first", "First Position Rate", 156, 1.1, 40, 44, { info: "firstBrand", flach: 173 }),
         sp("change", "Change", 110, 0.9, 60, 40)] },
       topprodukte: { erste: { label: "Product", min: 260, sk: { w: 160, logo: true } }, spalten: [
         sp("vis", "Visibility", 130, 1.1, 90, 60, { info: "vis" }),
-        sp("pos", "Avg. Position", 126, 0.9, 80, 36, { info: "pos", flach: 130 }),
-        sp("obs", "Observations", 128, 0.9, 70, 30, { info: "obs", flach: 132 }),
-        sp("first", "First Position Rate", 156, 1.1, 50, 44, { info: "firstProd", flach: 162 }),
+        sp("pos", "Avg. Position", 126, 0.9, 80, 36, { info: "pos", flach: 137 }),
+        sp("obs", "Observations", 128, 0.9, 70, 30, { info: "obs", flach: 140 }),
+        sp("first", "First Position Rate", 156, 1.1, 50, 44, { info: "firstProd", flach: 173 }),
         sp("rating", "Rating", 92, 0.7, 40, 30),
         /* 148: eine Preisspanne ("€19.62–€21.62") braucht 105px Text plus 28 Polster; mit 128/130
            lief sie 4,5px in das rechte Polster (06.10. gemessen). Was laenger ist, kuerzt core. */
         sp("price", "Price", 148, 1, 60, 50, { info: "price" })] },
       products: { erste: { label: "Product", min: 280, sort: "title", sk: { w: 170, logo: true } }, spalten: [
         sp("brand", "Brand", 160, 1.2, 85, { w: 70, logo: true }),
-        sp("vis", "Visibility", 124, 1, 90, 60, { sort: "visibility", info: "vis" }),
-        sp("obs", "Observations", 148, 1, 70, 30, { sort: "observations", info: "obs", flach: 152 }),
-        sp("pos", "Avg. Position", 144, 1, 80, 36, { sort: "avg_position", info: "pos", flach: 150 }),
-        sp("first", "First Position Rate", 176, 1.1, 50, 44, { sort: "first_position_rate", info: "firstProd", flach: 182 }),
+        sp("vis", "Visibility", 124, 1, 90, 60, { sort: "visibility", info: "vis", flach: 130 }),
+        sp("obs", "Observations", 148, 1, 70, 30, { sort: "observations", info: "obs", flach: 161 }),
+        sp("pos", "Avg. Position", 144, 1, 80, 36, { sort: "avg_position", info: "pos", flach: 158 }),
+        sp("first", "First Position Rate", 176, 1.1, 50, 44, { sort: "first_position_rate", info: "firstProd", flach: 194 }),
         sp("price", "Price", 148, 1.1, 60, 60, { sort: "price", info: "price" }),
-        sp("rating", "Rating", 92, 0.7, 30, 30, { sort: "rating" }),
+        sp("rating", "Rating", 92, 0.7, 30, 30, { sort: "rating", flach: 96 }),
         sp("merchants", "Merchants", 128, 1.1, 40, 70),
         sp("seen", "Last Seen", 120, 0.9, 20, 60, { sort: "last_seen" })] },
       brands: { erste: { label: "Brand", min: 220, sort: "name", sk: { w: 110, logo: true } }, spalten: [
-        sp("share", "Share of Shelf", 154, 1.2, 90, 60, { sort: "share_of_shelf", info: "share", flach: 158 }),
-        sp("presence", "Presence", 126, 0.9, 80, 44, { sort: "presence", info: "presence", flach: 128 }),
-        sp("products", "Products", 104, 0.8, 60, 30, { sort: "products", flach: 106 }),
-        sp("obs", "Observations", 148, 0.9, 50, 36, { sort: "observations", info: "obs", flach: 152 }),
-        sp("pos", "Avg. Position", 144, 1, 70, 36, { sort: "avg_position", info: "pos", flach: 150 }),
-        sp("first", "First Position Rate", 176, 1.1, 40, 44, { sort: "first_position_rate", info: "firstBrand", flach: 182 }),
+        sp("share", "Share of Shelf", 154, 1.2, 90, 60, { sort: "share_of_shelf", info: "share", flach: 168 }),
+        sp("presence", "Presence", 126, 0.9, 80, 44, { sort: "presence", info: "presence", flach: 136 }),
+        sp("products", "Products", 104, 0.8, 60, 30, { sort: "products", flach: 112 }),
+        sp("obs", "Observations", 148, 0.9, 50, 36, { sort: "observations", info: "obs", flach: 161 }),
+        sp("pos", "Avg. Position", 144, 1, 70, 36, { sort: "avg_position", info: "pos", flach: 158 }),
+        sp("first", "First Position Rate", 176, 1.1, 40, 44, { sort: "first_position_rate", info: "firstBrand", flach: 194 }),
         sp("change", "Change", 110, 0.9, 65, 40, { sort: "share_of_shelf_delta" }),
         sp("top", "Top Product", 240, 1.8, 30, { w: 140, logo: true })] },
       merchants: { erste: { label: "Merchant", min: 240, sort: "name", sk: { w: 120, logo: true } }, spalten: [
         sp("share", "Share", 150, 1.2, 90, 60, { sort: "observations", info: "merchant" }),
-        sp("products", "Products", 104, 0.8, 80, 30, { sort: "products", flach: 106 }),
-        sp("obs", "Observations", 148, 1.1, 70, 50, { sort: "observations", info: "obs", flach: 152 }),
-        sp("pos", "Avg. Product Position", 192, 1.1, 60, 36, { sort: "avg_position", info: "pos", flach: 200 }),
+        sp("products", "Products", 104, 0.8, 80, 30, { sort: "products", flach: 112 }),
+        sp("obs", "Observations", 148, 1.1, 70, 50, { sort: "observations", info: "obs", flach: 161 }),
+        sp("pos", "Avg. Product Position", 192, 1.1, 60, 36, { sort: "avg_position", info: "pos", flach: 213 }),
         sp("firstseen", "First Seen", 120, 1, 30, 60, { sort: "first_seen" }),
         sp("seen", "Last Seen", 120, 1, 40, 60, { sort: "last_seen" })] },
       dhaendler: { erste: { label: "Merchant", min: 220, sk: { w: 120, logo: true } }, spalten: [
         sp("share", "Share", 124, 1, 90, 40, { info: "merchant" }),
-        sp("obs", "Observations", 128, 1, 80, 30, { info: "obs", flach: 132 }),
+        sp("obs", "Observations", 128, 1, 80, 30, { info: "obs", flach: 140 }),
         sp("price", "Price", 160, 1.2, 70, 60, { info: "price" })] },
       /* Recent Appearances: die erste Spalte ist ein Datum (120 Untergrenze). Dahinter die
          Knopfspalte "View Response", gemessen (UC.makeAktionsSpur) statt geschaetzt. */
@@ -1395,7 +1508,7 @@
         sp("model", "Model", 150, 1.2, 90, { w: 70, logo: true }),
         sp("market", "Market", 90, 0.7, 50, 30),
         sp("topic", "Topic", 160, 1.4, 40, 80),
-        sp("position", "Position", 100, 0.8, 70, 30, { info: "pos" }),
+        sp("position", "Position", 100, 0.8, 70, 30, { info: "pos", flach: 106 }),
         sp("price", "Price", 110, 0.9, 60, 40, { info: "price" }),
         sp("merchant", "Merchant", 180, 1.4, 80, { w: 90, logo: true })] }
     };
@@ -1421,22 +1534,33 @@
        Werkzeugleiste -- das Zahnrad stehen. Neu nur mit einer neuen Wurzel (ein Seitenwechsel baut
        das Geruest neu). Die Zeilenhoehe je Tabelle im Browser wie in urls-table. */
     var spalten = {};
+    var HOEHEN = [{ key: "default", label: "Default" }, { key: "compact", label: "Compact" }];
     function dichteSchluessel(name) { return "ush_dense__" + instanceId + "__" + name; }
     function spaltenFuer(name, wurzel) {
       var e = spalten[name];
       if (e && e.wurzel === wurzel) return e;
       if (!UC.makeColumns || !wurzel) return null;
-      var d = TABELLEN[name], st = { cols: {}, widths: {}, dense: false }, aktPx = 0;
+      var d = TABELLEN[name], st = { cols: {}, widths: {}, dense: false, rowHeight: "default" }, aktPx = 0;
       var mitMenue = !!wurzel.querySelector(".up-cols-menu");
+      /* DAS MENUE AM ZAHNRAD IST "Display" (15.10., wie Prompt- und Responses-Tabelle): oben die
+         Zeilenhoehe als beschriftete Knoepfe, darunter die Spalten als Chips (makeColumns
+         cfg.form "chips"), unten der Schalter der Gesamtzeile. Die Zeilenhoehe kommt dort nur ueber
+         rowHeightSwitch -- Default (72) und Compact (55) sind dieselben zwei Stufen wie bisher
+         Comfortable/Compact, gemerkt unter demselben Schluessel (dichteSchluessel). */
       var kit = UC.makeColumns({
         root: wurzel, state: st, columns: d.spalten, storePrefix: "ush", instanceId: instanceId + "__" + name,
         firstKey: "erste", firstMin: d.erste.min, firstFloor: d.floor, noActions: !d.aktion, scrollen: true,
         actionsMin: function () { return aktPx || 150; },
-        dense: mitMenue, badgeSel: ".ush-cols-badge", cellPrefixes: ["up"]
+        form: mitMenue ? "chips" : null, rowHeightSwitch: mitMenue ? HOEHEN : null,
+        /* Zur Laufzeit gelesen: die Gesamtzeile entsteht erst mit dem ersten Koerper (zaehlEinhaengen). */
+        nachspann: mitMenue ? function () { return zaehl && zaehl.tab === wurzel ? zaehl.kit.schalter() : null; } : null,
+        /* "up-sum": die Zellen der Gesamtzeile gehen mit ihren Spalten. */
+        badgeSel: ".ush-cols-badge", cellPrefixes: ["up", "up-sum"]
       });
       st.cols = kit.readCols(); st.widths = kit.readWidths();
       if (mitMenue) {
         try { st.dense = window.localStorage.getItem(dichteSchluessel(name)) === "1"; } catch (x) {}
+        st.rowHeight = st.dense ? "compact" : "default";
         wurzel.classList.toggle("is-dense", st.dense);
       }
       e = spalten[name] = { wurzel: wurzel, kit: kit, st: st, spur: null };
@@ -1449,7 +1573,7 @@
     function dichteSetzen(name, an) {
       var e = spalten[name];
       if (!e) return;
-      e.st.dense = !!an;
+      e.st.dense = !!an; e.st.rowHeight = an ? "compact" : "default";
       try { window.localStorage.setItem(dichteSchluessel(name), an ? "1" : "0"); } catch (x) {}
       e.wurzel.classList.toggle("is-dense", !!an);
       if (e.spur) { try { e.spur.messen(); } catch (x2) {} }
@@ -1466,7 +1590,7 @@
        gibt es keinen Schalter, der sie aufziehen koennte. Flach wie die ganzen Tabellen (tabSek):
        die Wurzel des Kits traegt data-flach, also auch ihr Leer- und Skelettkasten. */
     function vorschauPlatz(el, name, kopf) {
-      if (!el.querySelector(".ush-vorschau")) el.innerHTML = kopf + '<div class="up-root ush-vorschau is-dense" data-flach="yes"><div class="ush-tabelle"></div></div>';
+      if (!el.querySelector(".ush-vorschau")) el.innerHTML = kopf + '<div class="up-root ush-vorschau is-dense" data-flach="yes"' + (isDark() ? ' data-theme="dark"' : '') + '><div class="ush-tabelle"></div></div>';
       var w = el.querySelector(".ush-vorschau");
       spaltenFuer(name, w);
       return w.querySelector(".ush-tabelle");
@@ -1521,9 +1645,13 @@
         sek("summary").innerHTML = "";
         sek("kpis").innerHTML = '<div class="ush-kpifehler">' + fehlerKasten(a) + '</div>';
         ["landscape", "topprodukte", "bewegung", "verteilung"].forEach(function (n) { sek(n).innerHTML = ""; });
+        /* Das Band von Movement und Distribution hat ohne Inhalt nur noch seine Linien -- es geht
+           ganz weg, statt als leerer Streifen dazustehen. */
+        sek("zwei").hidden = true;
         if (linie) linie.empty(t("Shopping data could not be loaded"));
         return;
       }
+      sek("zwei").hidden = false;
       zeichneSummary(d);
       zeichneKpis(d);
       zeichneChart();
@@ -1828,40 +1956,9 @@
       if (UC.makePager) pager[s] = { st: pst, kit: UC.makePager({ root: tab, state: pst, onChange: function () {
         tb.page = pst.page; tb.pageSize = pst.pageSize; persist(); zeichneTabelle(); bedarf();
       } }) };
-      /* DIE MARKEN-AUSWAHL (05.10. angefordert: "kein Selected Brands Dropdown"). Der Marken-Filter
-         der anderen Tabellen aus core (UC.makeAuswahlFilter), als Einzelauswahl: die RPC kennt genau
-         eine Marke (p_company_id). Er ersetzt den Chip "Brand: ..." -- ein Klick auf eine Marke in
-         Brands oder in der Landscape setzt dieselbe Auswahl, und hier ist sie zu sehen und zu aendern. */
-      if (s === "products" && UC.makeAuswahlFilter) {
-        var mp = tab.querySelector(".ush-markenplatz");
-        markenFilter = UC.makeAuswahlFilter({
-          einzeln: true, klasse: "ush-markenfilter", titel: "Brands", alle: "All Brands", suche: "Search brands…", leer: "No brands yet",
-          items: markenListe, gewaehlt: tb.marke && tb.marke.id ? [str(tb.marke.id)] : [],
-          onChange: function (keys) {
-            var k = keys && keys.length ? str(keys[0]) : "";
-            var hit = markenListe().filter(function (x) { return x.key === k; })[0];
-            tb.marke = k ? { id: k, name: hit ? hit.label : "" } : null;
-            tb.page = 1; pst.page = 1; persist(); zeichneTabelle(); bedarf();
-          }
-        });
-        if (mp) mp.appendChild(markenFilter.el);
-      }
-      /* DIE HAENDLER-AUSWAHL (05.10.: "es gibt auch einen Merchant-Filter, mach ein Selected
-         Merchants Dropdown, leg das in den Core"): UC.makeHaendlerFilter, Einzelauswahl wie die
-         RPC (p_merchant). Ersetzt den Chip "Merchant: ...". Die Namen kommen aus allem, was schon
-         geladen ist; beim ersten Aufklappen holt er die ersten 100 Haendler nach (haendlerHolen). */
-      if (s === "products" && UC.makeHaendlerFilter) {
-        var hp = tab.querySelector(".ush-haendlerplatz");
-        haendlerFilter = UC.makeHaendlerFilter({
-          klasse: "ush-haendlerfilter", namen: haendlerListe, gewaehlt: tb.haendler ? [str(tb.haendler)] : [],
-          onOpen: haendlerHolen,
-          onChange: function (namen) {
-            tb.haendler = namen && namen.length ? str(namen[0]) : null;
-            tb.page = 1; pst.page = 1; persist(); zeichneTabelle(); bedarf();
-          }
-        });
-        if (hp) hp.appendChild(haendlerFilter.el);
-      }
+      /* Marke, Haendler und Segment der Produkte (05.10. als Knoepfe hier gebaut) stehen seit dem
+         15.10. als Zeilen im Menue "Filters" der Filterzeile (FF_ARTEN oben) -- sie aendern die
+         Daten, und in die Werkzeugleiste gehoert nur, was die Ansicht aendert. */
       /* Das Zahnrad: Spalten und Zeilenhoehe aus UC.makeColumns, bedient wie in teams.js. */
       var spe = spaltenFuer(s, tab), cw = tab.querySelector(".up-cols");
       if (spe && cw && UC.makePopover) {
@@ -1874,8 +1971,8 @@
         });
         cm.addEventListener("click", function (e) {
           if (e.target.closest("[data-colsall]")) { spe.kit.selectAllCols(); return; }
-          var dn = e.target.closest("[data-dense]");
-          if (dn) { dichteSetzen(s, dn.getAttribute("data-dense") === "1"); spe.kit.populateCols(); return; }
+          var rh = e.target.closest("[data-rowheight]");
+          if (rh) { dichteSetzen(s, rh.getAttribute("data-rowheight") === "compact"); spe.kit.populateCols(); return; }
           var cr = e.target.closest("[data-col]");
           if (cr) spe.kit.toggleCol(cr.getAttribute("data-col"));
         });
@@ -1893,17 +1990,9 @@
         if (pg && k) { k.goToPage(Number(pg.getAttribute("data-page"))); return; }
         var so = e.target.closest(".up-th.is-sortable[data-sort]");
         if (so && sortKit[s]) { sortKit[s].headSortClick(so.getAttribute("data-sort")); return; }
-        var sg = e.target.closest(".ush-segplatz [data-wert]");
-        if (sg) {
-          var w = sg.getAttribute("data-wert");
-          if (w !== state.products.seg) { state.products.seg = w; state.products.page = 1; pst.page = 1; persist(); zeichneTabelle(); bedarf(); }
-          return;
-        }
+        /* Das X eines Chips im Rueckfall ohne die Filter der Leiste (scopeZeigen). */
         var sc = e.target.closest("[data-ush-scopeweg]");
-        if (sc) {
-          if (sc.getAttribute("data-ush-scopeweg") === "marke") state.products.marke = null; else state.products.haendler = null;
-          state.products.page = 1; pst.page = 1; persist(); zeichneTabelle(); bedarf();
-        }
+        if (sc) prodFilter(sc.getAttribute("data-ush-scopeweg") === "marke" ? "marke" : "haendler", null);
       });
       /* Sortierung ueber die Spaltenkoepfe (UC.makeHeadSort): das Feld und die Richtung ergeben
          zusammen genau einen Wert der Uebergabe. */
@@ -1964,6 +2053,9 @@
     function zaehlerSetzen(n) {
       var tab = sek("tabelle"), h = tab && tab.querySelector(".ush-heading"), z = tab && tab.querySelector(".up-head-count");
       if (!h || !z) return;
+      /* Seit dem 15.10. steht die Zahl in der Gesamtzeile unter der Tabelle (zaehlEinhaengen) und im
+         Pager ("1-15 of 440"); eine dritte im Kopf von Recent Appearances wiederholte sie nur. */
+      if (UC.makeZaehlZeile) n = null;
       h.classList.toggle("has-count", num(n) != null);
       z.textContent = num(n) != null ? ganz(n) : "";
     }
@@ -1980,11 +2072,44 @@
        .up-root der Tabelle). Ohne alte Zeilen steht das Skelett. */
     var vorige = {};
     function tabWurzel() { var tab = sek("tabelle"); return tab && tab.querySelector(".ush-tabwurzel"); }
-    function tabInhalt(html, dimmen) {
+    /* zahl: die Gesamtzahl fuer die Gesamtzeile -- eine Zahl, null (unlesbar, unbekannt) oder
+       "laedt" (Skelett). */
+    function tabInhalt(html, dimmen, zahl) {
       var w = tabWurzel();
       if (!w) return;
       w.classList.toggle("is-reloading", !!dimmen);
       w.querySelector(".ush-tabelle").innerHTML = html;
+      zaehlStand = zahl === undefined ? null : zahl;
+      zaehlEinhaengen(w);
+    }
+    /* DIE GESAMTZEILE (15.10. abends, core UC.makeZaehlZeile): unter den Zeilen jeder ganzen
+       Tabelle (Products, Brands, Merchants, Recent Appearances) vorerst nur die Anzahl links --
+       die Gesamtzahl des Servers (total_count), nicht die Zeilen der Seite; ein Lesefehler ist
+       "–". Ausblendbar ueber Display ("Summary row"), gemerkt je Tabelle. Die Vorschauen der
+       Uebersicht und des Details bekommen keine: sie zeigen die ersten Eintraege, und "View all"
+       fuehrt zur ganzen Tabelle mit ihrer Zahl.
+       DIE ZEILE STEHT IM SCROLLKASTEN, hinter .up-tbody in .up-colscroll-innen: so scrollt sie mit
+       den Spalten waagerecht mit. Weil tabInhalt den Kasten bei jedem Zeichnen neu schreibt
+       (innerHTML), wird DIESELBE Zeile danach wieder hinter den neuen Koerper gehaengt -- ein
+       Neubau je Zeichnen haette jedes Mal ein neues Popover angelegt. Ohne Koerper (Leer- und
+       Fehlerzustand) bleibt sie draussen; der Zustand sagt dann selbst, was ist. */
+    var zaehl = null, zaehlStand = null;
+    function zaehlEinhaengen(w) {
+      var tab = sek("tabelle"), tbody = w.querySelector(".up-tbody"), s = state.seite;
+      if (!tab || !tbody || !UC.makeZaehlZeile) return;
+      if (!zaehl || zaehl.tab !== tab) {
+        var kit = UC.makeZaehlZeile({
+          root: tab, nach: tbody, instanceId: instanceId + "__" + s, praefix: "ush",
+          cols: function () { var e = spalten[s]; return e ? e.kit : null; },
+          spalten: function () { return TABELLEN[s].spalten.map(function (c) { return c.key; }); },
+          anzahl: function () { return typeof zaehlStand === "number" ? zaehlStand : null; },
+          laedt: function () { return zaehlStand === "laedt"; }
+        });
+        zaehl = { tab: tab, kit: kit, el: tbody.parentNode.querySelector(":scope > .up-sumrow") };
+      } else if (zaehl.el && zaehl.el.previousElementSibling !== tbody) {
+        tbody.parentNode.insertBefore(zaehl.el, tbody.nextSibling);
+      }
+      zaehl.kit.zeichnen();
     }
 
     /* ---- Products --------------------------------------------------------------------------------- */
@@ -1996,31 +2121,13 @@
       var tab = sek("tabelle");
       if (!tab) return;
       var tb = state.products, a = prodAnfrage(), d = daten(a), meta = d && d.meta;
-      /* Die Segmente mit ihren Zaehlern (segment_counts: Suche, Haendler und Marke beruecksichtigt,
-         das gewaehlte Segment nicht). */
-      var sc = d && d.segment_counts && typeof d.segment_counts === "object" ? d.segment_counts : (vorige.segCounts || null);
-      if (d && d.segment_counts) vorige.segCounts = d.segment_counts;
-      var segPlatz = tab.querySelector(".ush-segplatz");
-      if (segPlatz) {
-        segPlatz.innerHTML = segHtml("ush-segmente", [["all", "All", sc ? ganz(sc.all) : null], ["you", "You", sc ? ganz(sc.you) : null],
-          ["competition", "Competition", sc ? ganz(sc.competition) : null], ["other", "Other", sc ? ganz(sc.other) : null]], tb.seg);
-      }
-      if (markenFilter) {
-        var soll = tb.marke && tb.marke.id ? [str(tb.marke.id)] : [];
-        if (soll.join() !== markenFilter.gewaehlt().join()) markenFilter.setGewaehlt(soll);
-      }
-      if (haendlerFilter) {
-        var sollH = tb.haendler ? [str(tb.haendler)] : [];
-        if (sollH.join() !== haendlerFilter.gewaehlt().join()) haendlerFilter.setGewaehlt(sollH);
-        else haendlerFilter.neu();
-      }
       scopeZeigen(tab);
       zaehlerSetzen(d ? anzahlWert(d.total_count) : null);
       var kopf = kopfAus("products");
       if (!d) {
         if (fehlerVon(a)) { tabInhalt('<div class="up-box">' + fehlerKasten(a) + '</div>'); pagerSetzen("products", null); return; }
-        if (vorige.prod && vorige.prodFilter === filterSig()) { tabInhalt(vorige.prod, true); spaltenAnwenden("products"); pagerSetzen("products", vorige.prodTotal, true); sortSync("products"); return; }
-        tabInhalt(tabelleHtml(kopf, skelettAus("products", 6), "ush-produkte"));
+        if (vorige.prod && vorige.prodFilter === filterSig()) { tabInhalt(vorige.prod, true, vorige.prodTotal); spaltenAnwenden("products"); pagerSetzen("products", vorige.prodTotal, true); sortSync("products"); return; }
+        tabInhalt(tabelleHtml(kopf, skelettAus("products", 6), "ush-produkte"), false, "laedt");
         spaltenAnwenden("products"); pagerSetzen("products", null, true); sortSync("products");
         return;
       }
@@ -2037,7 +2144,7 @@
       var html = tabelleHtml(kopf, rows.map(function (p) { return prodZeile(p, meta, tb.suche); }).join(""), "ush-produkte ush-klickbar");
       vorige.prod = html; vorige.prodTotal = gesamt(d.total_count, tb, rows.length); vorige.prodFilter = filterSig();
       zaehlerSetzen(vorige.prodTotal);
-      tabInhalt(html);
+      tabInhalt(html, false, vorige.prodTotal);
       spaltenAnwenden("products");
       pagerSetzen("products", vorige.prodTotal);
       sortSync("products");
@@ -2064,7 +2171,6 @@
         td("seen", '<span class="up-num">' + esc(datum(p.last_seen)) + '</span>') +
       '</div>';
     }
-    /* Der Bezug aus einem Klick (Marke oder Haendler) als Chip, wie die Chips der Filterleiste. */
     /* Die Marken fuer die Auswahl: die getrackten Marken der App (Markenspeicher), dazu jede Marke
        aus einer schon geladenen Uebersicht und die gerade gewaehlte -- so steht nie eine Id statt
        eines Namens im Knopf. Alphabetisch. */
@@ -2116,16 +2222,17 @@
        denselben Filtern -- dieselbe Anfrage wie die Merchants-Tabelle mit 100 Zeilen, also auch
        derselbe Workflow (shopMerchants). Liegt sie schon vor oder laeuft sie, passiert nichts. */
     var HAENDLER_LISTE = { suche: "", order: "observations_desc", page: 1, pageSize: 100 };
-    function haendlerHolen() {
-      var a = meAnfrage(HAENDLER_LISTE);
-      if (state.cache.merchants[a.sig] || unterwegs.merchants || state.fehler[a.kanal + a.sig]) return;
-      senden(a);
-    }
+    /* RUECKFALL OHNE DIE FILTER DER LEISTE (core zu alt, ohne UC.makeLeistenFilter): dann gibt es
+       keine Zeilen im Menue "Filters", und eine Wahl aus einem Klick (Marke in Brands, Haendler in
+       den Balken) waere unsichtbar und nicht mehr aufzuheben. Dann steht sie als Chip ueber der
+       Tabelle, mit X -- wie vor dem 05.10. Mit den Filtern der Leiste bleibt der Platz leer. */
     function scopeZeigen(tab) {
       var el = tab.querySelector(".ush-scope"), tb = state.products, teile = [];
-      /* Die Marke zeigt die Marken-Auswahl in der Werkzeugleiste; nur ohne sie (core zu alt) ein Chip. */
-      if (tb.marke && tb.marke.id && !markenFilter) teile.push(["marke", "Brand", str(tb.marke.name) || "–", "squareStack"]);
-      if (tb.haendler && !haendlerFilter) teile.push(["haendler", "Merchant", str(tb.haendler), "store"]);
+      if (!el) return;
+      if (!ffKit) {
+        if (tb.marke && tb.marke.id) teile.push(["marke", "Brand", str(tb.marke.name) || "–", "squareStack"]);
+        if (tb.haendler) teile.push(["haendler", "Merchant", str(tb.haendler), "store"]);
+      }
       el.hidden = !teile.length;
       el.innerHTML = teile.map(function (x) {
         return '<span class="up-entchip is-static ufb-chip ush-scopechip">' +
@@ -2133,6 +2240,11 @@
           '<span class="ufb-chip-lbl"><span class="ufb-chip-key">' + esc(t(x[1])) + ': </span>' + esc(x[2]) + '</span>' +
           '<button class="ufb-chip-x" type="button" data-ush-scopeweg="' + x[0] + '" aria-label="' + esc(t("Clear")) + '" data-tip="' + esc(t("Clear")) + '">' + UC.icon("x", 2.6) + '</button></span>';
       }).join("");
+    }
+    function haendlerHolen() {
+      var a = meAnfrage(HAENDLER_LISTE);
+      if (state.cache.merchants[a.sig] || unterwegs.merchants || state.fehler[a.kanal + a.sig]) return;
+      senden(a);
     }
 
     /* ---- Brands ----------------------------------------------------------------------------------- */
@@ -2176,8 +2288,8 @@
       var kopf = kopfAus("brands");
       if (!d) {
         if (fehlerVon(a)) { tabInhalt('<div class="up-box">' + fehlerKasten(a) + '</div>'); pagerSetzen("brands", null); return; }
-        if (vorige.marke && vorige.markeFilter === filterSig()) { tabInhalt(vorige.marke, true); spaltenAnwenden("brands"); pagerSetzen("brands", vorige.markeTotal, true); sortSync("brands"); return; }
-        tabInhalt(tabelleHtml(kopf, skelettAus("brands", 6)));
+        if (vorige.marke && vorige.markeFilter === filterSig()) { tabInhalt(vorige.marke, true, vorige.markeTotal); spaltenAnwenden("brands"); pagerSetzen("brands", vorige.markeTotal, true); sortSync("brands"); return; }
+        tabInhalt(tabelleHtml(kopf, skelettAus("brands", 6)), false, "laedt");
         spaltenAnwenden("brands"); pagerSetzen("brands", null, true); sortSync("brands");
         return;
       }
@@ -2196,7 +2308,7 @@
       var html = tabelleHtml(kopf, zeilen + (andere ? markenZeile(mit({}, mit(andere, { type: "other" })), meta, true) : ""), "ush-marken ush-klickbar");
       vorige.marke = html; vorige.markeTotal = gesamt(bp && bp.total_count, state.brands, l.length); vorige.markeFilter = filterSig();
       zaehlerSetzen(vorige.markeTotal);
-      tabInhalt(html);
+      tabInhalt(html, false, vorige.markeTotal);
       spaltenAnwenden("brands");
       pagerSetzen("brands", vorige.markeTotal);
       sortSync("brands");
@@ -2283,8 +2395,8 @@
       var kopf = kopfAus("merchants");
       if (!d) {
         if (fehlerVon(a)) { tabInhalt('<div class="up-box">' + fehlerKasten(a) + '</div>'); pagerSetzen("merchants", null); return; }
-        if (vorige.me && vorige.meFilter === filterSig()) { tabInhalt(vorige.me, true); spaltenAnwenden("merchants"); pagerSetzen("merchants", vorige.meTotal, true); sortSync("merchants"); return; }
-        tabInhalt(tabelleHtml(kopf, skelettAus("merchants", 6)));
+        if (vorige.me && vorige.meFilter === filterSig()) { tabInhalt(vorige.me, true, vorige.meTotal); spaltenAnwenden("merchants"); pagerSetzen("merchants", vorige.meTotal, true); sortSync("merchants"); return; }
+        tabInhalt(tabelleHtml(kopf, skelettAus("merchants", 6)), false, "laedt");
         spaltenAnwenden("merchants"); pagerSetzen("merchants", null, true); sortSync("merchants");
         return;
       }
@@ -2311,7 +2423,7 @@
       }).join(""), "ush-haendler ush-klickbar");
       vorige.me = html; vorige.meTotal = gesamt(d.total_count, state.merchants, l.length); vorige.meFilter = filterSig();
       zaehlerSetzen(vorige.meTotal);
-      tabInhalt(html);
+      tabInhalt(html, false, vorige.meTotal);
       spaltenAnwenden("merchants");
       pagerSetzen("merchants", vorige.meTotal);
       sortSync("merchants");
@@ -2555,8 +2667,8 @@
       var kopf = kopfAus("detail");
       if (!d) {
         if (fehlerVon(a)) { tabInhalt(""); pagerSetzen("detail", null); return; }
-        if (vorige.auf && vorige.aufProdukt === state.produktId && vorige.aufFilter === filterSig()) { tabInhalt(vorige.auf, true); spaltenAnwenden("detail"); pagerSetzen("detail", vorige.aufTotal, true); return; }
-        tabInhalt(tabelleHtml(kopf, skelettAus("detail", 5)));
+        if (vorige.auf && vorige.aufProdukt === state.produktId && vorige.aufFilter === filterSig()) { tabInhalt(vorige.auf, true, vorige.aufTotal); spaltenAnwenden("detail"); pagerSetzen("detail", vorige.aufTotal, true); return; }
+        tabInhalt(tabelleHtml(kopf, skelettAus("detail", 5)), false, "laedt");
         spaltenAnwenden("detail"); pagerSetzen("detail", null, true);
         return;
       }
@@ -2592,7 +2704,7 @@
       }).join(""), "ush-auftritte");
       vorige.auf = html; vorige.aufTotal = gesamt(ap.total_count, state.auftritte, rows.length); vorige.aufProdukt = state.produktId; vorige.aufFilter = filterSig();
       zaehlerSetzen(vorige.aufTotal);
-      tabInhalt(html);
+      tabInhalt(html, false, vorige.aufTotal);
       spaltenAnwenden("detail");
       pagerSetzen("detail", vorige.aufTotal);
     }

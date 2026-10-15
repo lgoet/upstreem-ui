@@ -175,13 +175,21 @@
    Zahlen stehen fest. Zahlen tabellarisch, aber NICHT rechtsbuendig (abgelehnt, siehe Notiz). */
 .uev-td-marke, .uev-td-url { gap: 10px; }
 .uev-markt .uev-td-zahl, .uev-markt .uev-th-zahl { flex: 0 0 140px; min-width: 0; }
-.uev-urls .uev-td-zahl, .uev-urls .uev-th-zahl { flex: 0 0 140px; min-width: 0; }
+/* 160 statt 140 (15.10. spaet): mit der Kopfschrift 14/500 braucht "Global share before" samt
+   Polster und Zellrand gemessen 156.7 -- bei 140 stand es gekuerzt. */
+.uev-urls .uev-td-zahl, .uev-urls .uev-th-zahl { flex: 0 0 160px; min-width: 0; }
 .uev-urls .uev-td-beob, .uev-urls .uev-th-beob { flex: 0 0 210px; }
 /* DIE FESTE SPUR der Zahlen (core.css, --up-spur, 15.10.): Before und After (Visibility bzw. Global
    share) stehen als Prozent mit einer Stelle (wertHtml, UC.fmtPct(v, 1)) -- die Zahl steht in
    ihrer Spur rechts, Kopf und Zelle bleiben links (das ist keine Rechtsbuendigkeit der Spalte).
    Change und First cited tragen keine .up-num, die Zuordnung laeuft dort ins Leere. */
 .uev-markt .uev-td-zahl, .uev-urls .uev-td-zahl { --up-spur: var(--up-spur-pct1); }
+/* RECHTSBUENDIG (core.css, 15.10. spaet): Before und After stellt core schon an die rechte Kante
+   (die Zelle hat eine .up-num). Change traegt NUR einen Trend, und den erkennt die Regel aus core
+   nicht als Zahlzelle -- er stuende links, waehrend die zwei Werte daneben rechts stehen. Hier
+   rueckt er mit, ebenso die Skelett-Balken der Zahlenspalten, damit das Skelett dieselbe Tabelle
+   ankuendigt. First cited ist ein Chip, kein Wert, und bleibt links. */
+.uev-markt .uev-td-zahl, .uev-urls .uev-td-zahl:not(.uev-td-beob) { justify-content: flex-end; }
 /* Die erste Spalte nie schmaler als ihr Inhalt braucht -- bei 800px Fensterbreite blieb von der
    URL-Spalte nur das Favicon (03.10. gesehen). Reicht der Platz nicht, scrollt die Tabelle in
    ihrem Rahmen (Spezifikation 87): Kopf und Koerper so breit wie die Summe der Spalten, der
@@ -196,7 +204,8 @@
 .uev-markt .up-vbody, .uev-urls .up-vbody { max-height: none; overflow-y: visible; }
 /* hidden muss gegen display: flex der Fusszeile aus core gewinnen -- wie in ads.css. */
 .uev-root .uev-foot[hidden] { display: none; }
-.uev-urls > .up-thead, .uev-urls > .up-tbody { min-width: 860px; }
+/* 920 = 220 URL + 210 First cited + 3 x 160 + 10, wie vorher 860 mit 3 x 140. */
+.uev-urls > .up-thead, .uev-urls > .up-tbody { min-width: 920px; }
 .uev-markt > .up-thead, .uev-markt > .up-tbody { min-width: 600px; }
 .uev-url-txt { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
 .uev-url-host { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

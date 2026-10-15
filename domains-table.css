@@ -261,9 +261,10 @@
   font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* Die feste Spur auch hier (15.10.): der Anteil im Drilldown ist eine Zelle des eigenen Rasters
    (keine .up-td), also greift die Regel aus core nicht -- dieselbe Ausnahme wie die Gruppenkoepfe
-   der Prompt-Tabelle. justify-self start: sonst zoege das Raster die Zelle auf die ganze Spalte,
-   und "rechts" hiesse am Ende der Spalte statt am Ende der Spur. */
-.udt-subrow .udt-sub-share { --up-spur: var(--up-spur-pct1); justify-self: start; min-width: var(--up-spur); text-align: right; }
+   der Prompt-Tabelle. justify-self end (15.10. spaet, vorher start): die Zahlen stehen jetzt an der
+   rechten Kante ihrer Spalte (core, "RECHTSBUENDIG, DER TREND LINKS DAVOR"), und der Anteil hier
+   gehoert unter sie. */
+.udt-subrow .udt-sub-share { --up-spur: var(--up-spur-pct1); justify-self: end; min-width: var(--up-spur); text-align: right; }
 .udt-sub-date { font-size: 13px; font-weight: 500; color: var(--vc-muted); white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }
 /* One step under urls-table's .uut-tag (24px/12px) - same chip, quieter, because here it is a

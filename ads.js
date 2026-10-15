@@ -351,16 +351,26 @@
     var idDaten = instanceId + "_dates", idFilter = instanceId + "_filters", idModelle = instanceId + "_models",
         idMaerkte = instanceId + "_markets", idTopics = instanceId + "_topics";
     var dunkelAttr = isDark() ? "yes" : "no";
+    /* ADVERTISERS UND AD FORMAT IM MENUE "Filters" (15.10., wie Prompt Insights): sie aendern die
+       DATEN jeder Seite der Ads (p_advertisers, p_ad_formats) und standen bisher als Auswahlknoepfe
+       nur in der Werkzeugleiste der Ad Library -- auf Overview und Advertisers wirkten sie dann
+       unsichtbar weiter. Jetzt Zeilen im Menue der Filterzeile mit Chip, auf jeder Seite (gebaut
+       weiter unten ueber UC.makeLeistenFilter, Eintraege adadv/adformat in filters/filter-bar.js).
+       Grosse Form (data-form="gross"): Name und Wert je Zeile, die Chips oeffnen ihr Untermenue. */
+    var ID_FF = { adadv: instanceId + "_adadv", adformat: instanceId + "_adformat" };
     root.innerHTML =
       '<div class="up-ph-top uad-pagehead">' +
         '<div class="up-ph-left"><h1 class="up-ph-heading">' + esc(t("Ads")) + '</h1>' +
           '<p class="up-ph-desc">' + esc(t("Observed advertisements inside tracked AI responses")) + '</p></div>' +
       '</div>' +
       '<div class="up-ph-nav uad-nav" role="tablist"></div>' +
-      '<div class="uad-filterzeile">' +
+      /* up-leiste-fluss (core): Filters, jeder Chip und Clear All stehen einzeln in der Zeile neben dem
+         Kalender und brechen dort um -- dieselbe Filterzeile ueber einem Band wie auf Citations. */
+      '<div class="uad-filterzeile up-leiste-fluss">' +
         '<div class="up-root udr-root uad-daten" data-instance="' + esc(idDaten) + '" data-local="yes" data-isdark="' + dunkelAttr + '"></div>' +
         '<div class="up-root ufb-root uad-filterleiste" data-instance="' + esc(idFilter) + '" data-topics-instance="' + esc(idTopics) + '"' +
-          ' data-models-instance="' + esc(idModelle) + '" data-markets-instance="' + esc(idMaerkte) + '" data-isdark="' + dunkelAttr + '"></div>' +
+          ' data-models-instance="' + esc(idModelle) + '" data-markets-instance="' + esc(idMaerkte) + '" data-form="gross"' +
+          ' data-adadv-instance="' + esc(ID_FF.adadv) + '" data-adformat-instance="' + esc(ID_FF.adformat) + '" data-isdark="' + dunkelAttr + '"></div>' +
         '<div class="up-root utf-root" data-instance="' + esc(idTopics) + '" data-local="yes" data-isdark="' + dunkelAttr + '"></div>' +
         '<div class="up-root umf-root" data-instance="' + esc(idModelle) + '" data-local="yes" data-isdark="' + dunkelAttr + '"></div>' +
         '<div class="up-root umk-root" data-instance="' + esc(idMaerkte) + '" data-local="yes" data-isdark="' + dunkelAttr + '"></div>' +
@@ -529,6 +539,71 @@
       state.adFilter = { advertisers: [], formate: [] };
       state.advertisers.suche = ""; state.library.suche = "";
       persist();
+      ffSync();
+    }
+
+    /* ---- Advertisers und Ad Format in der Filterzeile (15.10.) ---------------------------------
+       Bauart wie responses-table.js ("die Filter der einen Leiste"): core baut je Filter die Wurzel,
+       die filter-bar einzieht (UC.makeLeistenFilter), der ZUSTAND bleibt in state.adFilter --
+       derselbe, den vorher die Auswahlknoepfe der Library setzten, also dieselben Anfragen. Die
+       Wurzeln haengen an DIESER Wurzel, nicht am Abschnitt der Tabelle: der wird bei jedem
+       Reiterwechsel neu gebaut, die Filterzeile nicht. Jede Wahl gilt sofort wie alle anderen
+       Filter der Leiste (vorher mit "Apply"). Die Eintraege kommen aus get_ads_filter_options
+       (optionenListe), ihre Zaehler nicht: das Menue der Leiste zeigt Namen. */
+    var ladeUhr = null;
+    /* Mehrere Wahlen in einem Zug ("Clear All" leert jeden Filter einzeln) sind EINE Anfrage je
+       Kanal: ohne die Buendelung ginge je Filter eine hinaus, und jede wartete auf die vorige. */
+    function bedarfBald() {
+      if (ladeUhr) return;
+      ladeUhr = setTimeout(function () { ladeUhr = null; bedarf(); }, 0);
+    }
+    function adFilterSetzen(feld, keys) {
+      var neu = (keys || []).map(str).filter(Boolean);
+      if (JSON.stringify(state.adFilter[feld] || []) === JSON.stringify(neu)) { ffSync(); return; }
+      state.adFilter[feld] = neu;
+      state.advertisers.page = 1; state.library.page = 1; state.prompts.page = 1; state.offen = {};
+      persist(); zeichnen(); bedarfBald();
+    }
+    var FF_ARTEN = {
+      adadv: {
+        label: function () { return t("Advertisers"); }, chip: function () { return t("Advertiser"); }, leer: "All", suche: true, titel: "Advertisers",
+        optionen: function () { return optionenListe("advertisers").map(function (o) { return { key: o.key, name: o.label, logo: o.logo || "" }; }); },
+        auswahl: function () { return (state.adFilter.advertisers || []).slice(); },
+        setzen: function (l) { adFilterSetzen("advertisers", l); }
+      },
+      adformat: {
+        label: function () { return t("Ad Format"); }, chip: function () { return t("Format"); }, leer: "All",
+        optionen: function () { return optionenListe("ad_formats").map(function (o) { return { key: o.key, name: o.label }; }); },
+        auswahl: function () { return (state.adFilter.formate || []).slice(); },
+        setzen: function (l) { adFilterSetzen("formate", l); }
+      }
+    };
+    var ffKit = UC.makeLeistenFilter ? UC.makeLeistenFilter(root, { instanceId: instanceId, arten: FF_ARTEN }) : null;
+    function ffSync() { if (ffKit) { try { ffKit.sync(); } catch (e) {} } }
+    /* Die Suche der Liste sucht Werbetreibende, nicht Marken: core schreibt "Search brands..." in
+       jede durchsuchbare Liste (makeLeistenFilter kennt noch keinen eigenen Platzhalter). */
+    (function () {
+      var si = root.querySelector(".up-ff-adadv .up-ff-search-in");
+      if (!si) return;
+      si.setAttribute("placeholder", t("Search advertisers…"));
+      si.setAttribute("aria-label", t("Search advertisers"));
+    })();
+    ffSync();
+    /* Die Eintraege kommen mit get_ads_filter_options, die bisher nur die Library lud. Jetzt stehen
+       die zwei Filter auf jeder Seite: ein Klick in die Filterzeile holt sie, wo sie noch fehlen --
+       einmal je Zeitraum, sie haengen nur an ihm (Vertrag). Kein Laden beim Seitenaufbau. */
+    function optionenHolen() {
+      var a = optAnfrage();
+      if (state.cache.optionen[a.sig] || unterwegs.optionen || state.fehler[a.kanal + a.sig]) return;
+      if (direkt(a.kanal) && !team()) return;
+      senden(a);
+    }
+    root.querySelector(".uad-filterleiste").addEventListener("click", function () { optionenHolen(); }, true);
+    /* Advertisers gilt im Detail eines Advertisers nicht (die RPC uebergeht ihn dort, Vertrag):
+       ausgeblendet, nicht geleert. Ad Format gilt ueberall. */
+    function leisteStellen() {
+      var fb = root.querySelector(".uad-filterleiste"), an = state.seite === "advertiser" ? "no" : "yes";
+      if (fb && fb.getAttribute("data-adadv-visible") !== an) fb.setAttribute("data-adadv-visible", an);
     }
 
     /* ---- Anfragen -------------------------------------------------------------------------------
@@ -767,9 +842,8 @@
       }
       persist();
       zeichnen();
-      /* Die zwei Auswahlen der Library zeigen die Optionen -- frueher nur aus setOptionen erneuert,
-         jetzt hier, damit der direkte Weg sie genauso erreicht (13.10.). */
-      if (kanal === "optionen") { if (advFilter) advFilter.neu(); if (fmtFilter) fmtFilter.neu(); }
+      /* Die Eintraege der zwei Filter (Advertisers, Ad Format) kommen mit den Optionen: zeichnen()
+         oben bringt sie ueber ffSync auf Stand, auf dem direkten Weg wie ueber den Setter. */
       bedarf();
       return !!ok;
     }
@@ -964,14 +1038,17 @@
     /* ============================================================================================
        Zeichnen
        ============================================================================================ */
-    var geruest = null, linie = null, pager = {}, sucheKit = {}, sortKit = {}, balken = null, spalten = {},
-        advFilter = null, fmtFilter = null;
+    var geruest = null, linie = null, pager = {}, sucheKit = {}, sortKit = {}, balken = null, spalten = {};
     function geruestSchluessel() {
       var s = state.seite;
       return s === "library" ? s + "|" + state.library.modus + "|" + (state.library.modus === "ads" ? state.library.ansicht : "") : s;
     }
     function zeichnen() {
       if (root.isConnected === false) return;
+      /* Die zwei Filter der Filterzeile: sichtbar je Seite, Liste und Haken auf Stand (die Namen
+         kommen mit den Optionen). sync meldet der Leiste nur, was sich geaendert hat. */
+      leisteStellen();
+      ffSync();
       var g = geruestSchluessel();
       if (geruest !== g) baueGeruest();
       var s = state.seite;
@@ -982,7 +1059,7 @@
     }
     function aufraeumen() {
       if (linie && linie.destroy) { try { linie.destroy(); } catch (e) {} }
-      linie = null; pager = {}; sucheKit = {}; sortKit = {}; balken = null; spalten = {}; advFilter = null; fmtFilter = null;
+      linie = null; pager = {}; sucheKit = {}; sortKit = {}; balken = null; spalten = {}; zaehl = {};
     }
     function sek(name) { return elMain.querySelector('[data-sek="' + name + '"]'); }
     /* Der Abschnittskopf des Entwurfs ist die Werkzeugzeile aus core (.up-head): Ueberschrift 14/500,
@@ -990,7 +1067,9 @@
     function kopf(titel, o) {
       o = o || {};
       var mitZahl = o.zahl != null && o.zahl !== "";
-      return '<div class="up-head uad-head">' +
+      /* o.scope: links im Kopf der einen Leiste, was die DATEN der Tabelle wechselt (core.css
+         .up-leiste-scope) -- in der Library der Umschalter Ads/Prompts. */
+      return '<div class="up-head uad-head">' + (o.scope ? '<div class="up-leiste-scope uad-scope">' + o.scope + '</div>' : '') +
         '<span class="up-heading uad-heading' + (mitZahl ? " has-count" : "") + '"><span class="up-head-label">' + esc(t(titel)) + '</span>' +
           (o.info ? info(o.info) : '') +
           '<span class="up-head-sep"></span><span class="up-head-count">' + (mitZahl ? esc(o.zahl) : '') + '</span></span>' +
@@ -1020,6 +1099,18 @@
       if (UC.segJetzt) { try { UC.segJetzt(el); } catch (e) {} }
     }
     function chartHtml() { return '<div class="up-box uad-chartbox"><div class="uad-linewrap"><canvas></canvas></div></div>'; }
+    /* DAS OFFENE BAND (15.10., Variante A wie der Chart der Citations-Seite, citations-combo-chart.css
+       "DAS OFFENE BAND"): die Diagramme und die Balken des Advertiser Share stehen nicht mehr im
+       Kasten, sondern in einem Band bis an die Kanten, oben und unten eine Linie, die Ueberschrift
+       samt Werkzeugen als erste Zeile IM Band. Dasselbe Attribut wie die flache Tabelle (data-flach
+       an einer .up-root): die Masse --up-flach-aus und --up-flach-h setzt core dort. Regeln in
+       ads.css unter "DAS OFFENE BAND". data-theme gleich mit: der Theme-Waechter von core stempelt
+       eine neue innere Wurzel nur, wenn das Thema fest "dark" gewaehlt ist, nicht bei "System". */
+    function dunkel() { return isDark() ? ' data-theme="dark"' : ''; }
+    function bandAuf(name, klasse) {
+      return '<section class="up-root uad-sek uad-band' + (klasse ? " " + klasse : "") + '" data-flach="yes"' + dunkel() +
+        (name ? ' data-sek="' + name + '"' : '') + '>';
+    }
     function spaltenKnopf() {
       return '<div class="up-cols">' +
         '<button type="button" class="up-iconbtn up-cols-btn" data-tip="' + esc(t("Table Settings")) + '" aria-label="' + esc(t("Table settings")) + '">' +
@@ -1047,10 +1138,18 @@
        Kopf und Fuss 48 -- am Abschnitt, der zugleich Wurzel von UC.makeColumns ist und den Fuss
        traegt, nicht an der Seite (Diagramm, Balken, Held bleiben Kasten). ohneFlach: das Raster
        der Ad Cards ist keine Tabelle; flach liefe sein Fuss 16px vor den Karten aus. */
-    function tabSek(titel, werkzeuge, ohnePager, sekName, ohneFlach) {
-      return '<section class="up-root uad-sek uad-tab"' + (ohneFlach ? '' : ' data-flach="yes"') + ' data-sek="' + (sekName || "tabelle") + '">' +
-        kopf(titel, { tools: werkzeuge }) +
-        '<div class="up-root uad-tabwurzel"><div class="uad-tabelle"></div></div>' +
+    /* o.leiste: DIE EINE LEISTE (core.css, data-leiste) -- die Ueberschrift faellt weg, rechts stehen
+       Ansicht, Suche und Display, links (o.scope) was die Daten der Tabelle wechselt; der Kopf
+       bricht um statt Knoepfe wegzunehmen. Nur, wo die Tabelle das Einzige auf ihrem Reiter ist
+       (Advertisers, Ad Library) -- Topics with Ads auf der Overview behaelt ihre Ueberschrift: dort
+       steht sie neben Advertiser Share und ueber Recent Ads, und ohne sie hiesse die Tabelle nichts.
+       Die Zahl steht in der Gesamtzeile bzw. (Raster der Karten) im Pager. */
+    function tabSek(titel, werkzeuge, ohnePager, sekName, ohneFlach, o) {
+      o = o || {};
+      return '<section class="up-root uad-sek uad-tab"' + (ohneFlach ? '' : ' data-flach="yes"') + (o.leiste ? ' data-leiste="yes"' : '') + dunkel() +
+          ' data-sek="' + (sekName || "tabelle") + '">' +
+        kopf(titel, { tools: werkzeuge, scope: o.scope }) +
+        '<div class="up-root uad-tabwurzel"' + dunkel() + '><div class="uad-tabelle"></div></div>' +
         (ohnePager ? '' : fussHtml()) +
       '</section>';
     }
@@ -1061,13 +1160,15 @@
         html = '<div class="uad-seite" data-seite="overview">' +
           '<div class="uad-gruppe">' +
             '<div class="up-kpiband is-4 is-offen uad-kpis" data-sek="kpis"></div>' +
-            '<section class="uad-sek" data-sek="chart">' + kopf("Ad Coverage") + chartHtml() + '</section>' +
+            bandAuf("chart") + kopf("Ad Coverage") + chartHtml() + '</section>' +
           '</div>' +
-          '<div class="uad-zwei">' +
+          /* Advertiser Share und Topics with Ads als EIN Band mit zwei Einheiten und einer Linie
+             dazwischen (senkrecht, gestapelt waagerecht; ads.css "DAS OFFENE BAND"). */
+          '<div class="up-root uad-zwei uad-band" data-flach="yes"' + dunkel() + ' data-sek="zwei">' +
             '<section class="uad-sek" data-sek="anteil">' + kopf("Advertiser Share", { info: "share", tools: leiserKnopf("View all", 'data-uad-ziel="advertisers"') }) +
               '<div class="up-box uad-balkenbox"><div class="uad-balkenplatz"></div></div></section>' +
             /* Topics with Ads als ganze Tabelle wie alle anderen (06.10. angefordert): Suche und
-               Zahnrad in der Kopfzeile, Seiten darunter. */
+               Display in der Kopfzeile, Seiten darunter. */
             tabSek("Topics with Ads", sucheHtml("Search topics…", "Search topics") + spaltenKnopf(), false, "topics") +
           '</div>' +
           '<section class="uad-sek" data-sek="recent">' + kopf("Recent Ads", { tools: leiserKnopf("Open Ad Library", 'data-uad-ziel="library"') }) +
@@ -1075,26 +1176,30 @@
         '</div>';
       } else if (s === "advertisers") {
         html = '<div class="uad-seite" data-seite="advertisers">' +
-          tabSek("Advertisers", sucheHtml("Search advertisers…", "Search advertisers") + spaltenKnopf()) +
+          tabSek("Advertisers", sucheHtml("Search advertisers…", "Search advertisers") + spaltenKnopf(), false, "", false, { leiste: true }) +
         '</div>';
       } else if (s === "advertiser") {
         html = '<div class="uad-seite" data-seite="advertiser">' +
           '<div class="uad-gruppe">' +
             '<div data-sek="held"></div>' +
             '<div class="up-kpiband is-4 is-offen uad-kpis" data-sek="kpis"></div>' +
-            '<section class="uad-sek" data-sek="chart">' + kopf("Activity", { tools: segHtml("uad-metrik", [["n", "Appearances"], ["share", "Ad Share"]], state.dMetrik) }) + chartHtml() + '</section>' +
+            bandAuf("chart") + kopf("Activity", { tools: segHtml("uad-metrik", [["n", "Appearances"], ["share", "Ad Share"]], state.dMetrik) }) + chartHtml() + '</section>' +
           '</div>' +
           '<section class="uad-sek" data-sek="dprompts">' + kopf("Prompts") + '<div class="uad-vorschauplatz"></div></section>' +
           '<section class="uad-sek" data-sek="dads"></section>' +
         '</div>';
       } else if (s === "library") {
+        /* Advertisers und Ad Format stehen seit dem 15.10. im Menue "Filters" (FF_ARTEN oben).
+           Ads/Prompts bleibt ein Umschalter, kein Filter: er schraenkt nicht ein, er wechselt, WAS
+           die Tabelle listet (eine andere RPC, andere Spalten) -- links im Kopf wie Active/Inactive
+           der Prompt-Tabelle, in der Hoehe der Knoepfe daneben (is-lg, 32). Grid/List aendert nur
+           die Ansicht und steht rechts. */
         var lb = state.library, istAds = lb.modus !== "prompts";
-        var werkzeuge = '<span class="uad-advplatz"></span><span class="uad-fmtplatz"></span>' +
-          segHtml("uad-modus", [["ads", "Ads"], ["prompts", "Prompts"]], istAds ? "ads" : "prompts") +
-          (istAds ? segHtml("uad-ansicht", [["grid", "Grid", "layoutGrid"], ["list", "List", "listIcon"]], lb.ansicht, true) : '') +
+        var werkzeuge = (istAds ? segHtml("uad-ansicht", [["grid", "Grid", "layoutGrid"], ["list", "List", "listIcon"]], lb.ansicht, true) : '') +
           sucheHtml(istAds ? "Search ads, advertisers, campaigns…" : "Search prompts…", istAds ? "Search ads" : "Search prompts") +
           (istAds && lb.ansicht === "grid" ? '' : spaltenKnopf());
-        html = '<div class="uad-seite" data-seite="library">' + tabSek(istAds ? "Ads" : "Prompts", werkzeuge, false, "", istAds && lb.ansicht === "grid") + '</div>';
+        html = '<div class="uad-seite" data-seite="library">' + tabSek(istAds ? "Ads" : "Prompts", werkzeuge, false, "", istAds && lb.ansicht === "grid",
+          { leiste: true, scope: segHtml("is-lg uad-modus", [["ads", "Ads"], ["prompts", "Prompts"]], istAds ? "ads" : "prompts") }) + '</div>';
       }
       elMain.innerHTML = html;
       geruest = geruestSchluessel();
@@ -1149,7 +1254,11 @@
        Kopfschrift ist 13/500 statt 12/400; gemessen bei 1100 mit dem Klon des Kopfs (Erklaer- und
        Sortierzeichen mitgezaehlt) brauchten fuenf Koepfe mehr als ihr min, z. B. "Appearances"
        mit Sortierung und Erklaerung 149 bei 132 (schon mit 12/400 waren es 140,9). Der Wert liegt
-       2 bis 4 darueber. */
+       2 bis 4 darueber.
+       Nachgemessen mit der Kopfschrift 14/500 und Info/Sortierpfeil 15 (15.10. spaet, Klon des
+       Kopfs samt Zellrand): "Appearances" mit beidem 157.2, nur sortierbar 136.2, "Ad Coverage"
+       154.6, "Advertisers" 124.8, "Last Ad Seen" 136.9, "Ad Share" 130.6, "Prompts" 105.4.
+       Wieder 3 bis 4 darueber. */
     function sp(key, label, min, fr, prio, sk, o) {
       o = o || {};
       return { key: key, label: label, w: "minmax(" + min + "px," + fr + "fr)", min: min, prio: prio, sk: sk, sort: o.sort, info: o.info,
@@ -1157,9 +1266,9 @@
     }
     var TABELLEN = {
       advertisers: { erste: { label: "Advertiser", min: 240, sort: "advertiser_name", sk: { w: 120, logo: true } }, spalten: [
-        sp("share", "Ad Share", 130, 1.1, 90, 60, { sort: "ad_appearances", info: "share" }),
-        sp("n", "Appearances", 132, 1, 85, 30, { sort: "ad_appearances", info: "appearances", flach: 152 }),
-        sp("prompts", "Prompts", 104, 0.8, 70, 30, { sort: "prompt_count" }),
+        sp("share", "Ad Share", 130, 1.1, 90, 60, { sort: "ad_appearances", info: "share", flach: 134 }),
+        sp("n", "Appearances", 132, 1, 85, 30, { sort: "ad_appearances", info: "appearances", flach: 161 }),
+        sp("prompts", "Prompts", 104, 0.8, 70, 30, { sort: "prompt_count", flach: 109 }),
         sp("topics", "Topics", 100, 0.8, 60, 30, { sort: "topic_count" }),
         /* 150: zwei Markt-Chips (Flagge 18, Code, Abstand 10) und "+N" muessen nebeneinander passen. */
         sp("markets", "Markets", 150, 1, 40, 50),
@@ -1168,11 +1277,14 @@
         sp("last", "Last Seen", 120, 0.9, 50, 60, { sort: "last_seen" })] },
       /* Topic 160 statt 180 (15.10.): flach brauchen die drei Zahlenkoepfe zusammen 30 mehr (o.flach).
          Neben den Balken hat die Tabelle bei 1440 genau 571 -- mit 180 waeren es 584 gewesen, und
-         sie scrollte um 13px. 160 laesst dem Topic-Namen 136 Text, die Spalte waechst mit 1.6fr. */
-      topics: { erste: { label: "Topic", min: 160, sort: "topic_name", sk: { w: 110 } }, spalten: [
-        sp("cov", "Ad Coverage", 140, 1, 90, 60, { sort: "ad_coverage", info: "coverage", flach: 150 }),
-        sp("advs", "Advertisers", 112, 0.8, 80, 30, { sort: "advertiser_count", flach: 122 }),
-        sp("n", "Appearances", 122, 0.8, 70, 30, { sort: "ad_appearances", flach: 132 })] },
+         sie scrollte um 13px. 160 laesst dem Topic-Namen 136 Text, die Spalte waechst mit 1.6fr.
+         150 statt 160 (15.10. spaet): mit der Kopfschrift 14/500 wuchsen die drei Zahlenkoepfe um
+         weitere 22 (158 + 128 + 140), und bei 1440 scrollte die Tabelle um 7px (gemessen 602 in
+         595). 150 laesst dem Namen 122 Text und 3px Luft. */
+      topics: { erste: { label: "Topic", min: 150, sort: "topic_name", sk: { w: 110 } }, spalten: [
+        sp("cov", "Ad Coverage", 140, 1, 90, 60, { sort: "ad_coverage", info: "coverage", flach: 158 }),
+        sp("advs", "Advertisers", 112, 0.8, 80, 30, { sort: "advertiser_count", flach: 128 }),
+        sp("n", "Appearances", 122, 0.8, 70, 30, { sort: "ad_appearances", flach: 140 })] },
       dprompts: { erste: { label: "Prompt", min: 280, sk: { w: 180 } }, spalten: [
         sp("topic", "Topic", 160, 1.2, 60, 80),
         sp("n", "Appearances", 122, 0.8, 90, 30),
@@ -1186,10 +1298,10 @@
         sp("seen", "Observed", 112, 0.8, 90, 60)] },
       lprompts: { erste: { label: "Prompt", min: 300, sort: "prompt_text", sk: { w: 180 } }, spalten: [
         sp("topic", "Topic", 160, 1.2, 60, 80),
-        sp("cov", "Ad Coverage", 144, 1, 90, 60, { sort: "ad_coverage", info: "coverage", flach: 150 }),
-        sp("advs", "Advertisers", 126, 0.8, 70, 30, { sort: "advertiser_count" }),
-        sp("n", "Appearances", 132, 0.8, 80, 30, { sort: "ad_appearances" }),
-        sp("last", "Last Ad Seen", 132, 0.9, 50, 60, { sort: "last_ad_seen" })] }
+        sp("cov", "Ad Coverage", 144, 1, 90, 60, { sort: "ad_coverage", info: "coverage", flach: 158 }),
+        sp("advs", "Advertisers", 126, 0.8, 70, 30, { sort: "advertiser_count", flach: 128 }),
+        sp("n", "Appearances", 132, 0.8, 80, 30, { sort: "ad_appearances", flach: 140 }),
+        sp("last", "Last Ad Seen", 132, 0.9, 50, 60, { sort: "last_ad_seen", flach: 140 })] }
     };
     function kopfAus(name) {
       var d = TABELLEN[name];
@@ -1208,25 +1320,36 @@
     }
     function td(key, html) { return '<div class="up-td up-td-' + key + '">' + html + '</div>'; }
     function leerZelle() { return '<span class="up-num is-empty">–</span>'; }
+    var HOEHEN = [{ key: "default", label: "Default" }, { key: "compact", label: "Compact" }];
     function dichteSchluessel(name) { return "uad_dense__" + instanceId + "__" + name; }
     function spaltenFuer(name, wurzel) {
       var e = spalten[name];
       if (e && e.wurzel === wurzel) return e;
       if (!UC.makeColumns || !wurzel) return null;
-      var d = TABELLEN[name], st = { cols: {}, widths: {}, dense: false };
+      var d = TABELLEN[name], st = { cols: {}, widths: {}, dense: false, rowHeight: "default" };
       var mitMenue = !!wurzel.querySelector(".up-cols-menu");
       /* Topics with Ads IMMER kompakt (06.10. abends: "ohne komfortablen Modus") -- das Zahnrad
          zeigt dort nur die Spalten, keine Zeilenhoehe. */
       var immerDicht = name === "topics";
+      /* DAS MENUE AM ZAHNRAD IST "Display" (15.10., wie Prompt- und Responses-Tabelle): oben die
+         Zeilenhoehe als beschriftete Knoepfe, darunter die Spalten als Chips (makeColumns
+         cfg.form "chips"), unten der Schalter der Gesamtzeile. Die Zeilenhoehe kommt dort nur ueber
+         rowHeightSwitch -- Default (72) und Compact (55), dieselben zwei Stufen wie bisher, gemerkt
+         unter demselben Schluessel (dichteSchluessel). */
       var kit = UC.makeColumns({
         root: wurzel, state: st, columns: d.spalten, storePrefix: "uad", instanceId: instanceId + "__" + name,
         firstKey: "erste", firstMin: d.erste.min, noActions: true, scrollen: true,
-        dense: mitMenue && !immerDicht, badgeSel: ".uad-cols-badge", cellPrefixes: ["up"]
+        form: mitMenue ? "chips" : null, rowHeightSwitch: mitMenue && !immerDicht ? HOEHEN : null,
+        /* Zur Laufzeit gelesen: die Gesamtzeile entsteht erst mit dem ersten Koerper (zaehlEinhaengen). */
+        nachspann: mitMenue ? function () { var z = zaehl[name]; return z && z.tab === wurzel ? z.kit.schalter() : null; } : null,
+        /* "up-sum": die Zellen der Gesamtzeile gehen mit ihren Spalten. */
+        badgeSel: ".uad-cols-badge", cellPrefixes: ["up", "up-sum"]
       });
       st.cols = kit.readCols(); st.widths = kit.readWidths();
       if (immerDicht) { st.dense = true; wurzel.classList.add("is-dense"); }
       else if (mitMenue) {
         try { st.dense = window.localStorage.getItem(dichteSchluessel(name)) === "1"; } catch (x) {}
+        st.rowHeight = st.dense ? "compact" : "default";
         wurzel.classList.toggle("is-dense", st.dense);
       }
       e = spalten[name] = { wurzel: wurzel, kit: kit, st: st };
@@ -1236,7 +1359,7 @@
     function dichteSetzen(name, an) {
       var e = spalten[name];
       if (!e) return;
-      e.st.dense = !!an;
+      e.st.dense = !!an; e.st.rowHeight = an ? "compact" : "default";
       try { window.localStorage.setItem(dichteSchluessel(name), an ? "1" : "0"); } catch (x) {}
       e.wurzel.classList.toggle("is-dense", !!an);
     }
@@ -1250,7 +1373,7 @@
        wie die ganzen Tabellen (tabSek), an der Wurzel des Kits. */
     function vorschauPlatz(el, name) {
       var platz = el.querySelector(".uad-vorschauplatz");
-      if (!platz.querySelector(".uad-vorschau")) platz.innerHTML = '<div class="up-root uad-vorschau is-dense" data-flach="yes"><div class="uad-tabelle"></div></div>';
+      if (!platz.querySelector(".uad-vorschau")) platz.innerHTML = '<div class="up-root uad-vorschau is-dense" data-flach="yes"' + dunkel() + '><div class="uad-tabelle"></div></div>';
       var w = platz.querySelector(".uad-vorschau");
       spaltenFuer(name, w);
       return w.querySelector(".uad-tabelle");
@@ -1308,8 +1431,12 @@
         sek("topics").querySelector(".uad-tabelle").innerHTML = "";
         topicsPager(null);
         sek("recent").querySelector(".uad-karten").innerHTML = "";
+        /* Das Band von Advertiser Share und Topics hat ohne Inhalt nur noch seine Koepfe und Linien --
+           es geht ganz weg, statt als leerer Streifen dazustehen. */
+        sek("zwei").hidden = true;
         return;
       }
+      sek("zwei").hidden = false;
       zeichneOvKpis(d);
       zeichneOvChart(d);
       zeichneAnteil(d);
@@ -1417,8 +1544,8 @@
         });
         cm.addEventListener("click", function (e) {
           if (e.target.closest("[data-colsall]")) { spe.kit.selectAllCols(); return; }
-          var dn = e.target.closest("[data-dense]");
-          if (dn) { dichteSetzen("topics", dn.getAttribute("data-dense") === "1"); spe.kit.populateCols(); return; }
+          var rh = e.target.closest("[data-rowheight]");
+          if (rh) { dichteSetzen("topics", rh.getAttribute("data-rowheight") === "compact"); spe.kit.populateCols(); return; }
           var cr = e.target.closest("[data-col]");
           if (cr) spe.kit.toggleCol(cr.getAttribute("data-col"));
         });
@@ -1480,9 +1607,11 @@
       if (!el) return;
       var platz = el.querySelector(".uad-tabelle");
       if (topicsSort) { try { topicsSort.syncHeadSorters(); } catch (e) {} }
-      if (!d) { zahlSetzen(el, null); platz.innerHTML = tabelleHtml(kopfAus("topics"), skelettAus("topics", 5)); spaltenAnwenden("topics"); topicsPager(null); if (topicsSort) topicsSort.syncHeadSorters(); return; }
+      var tw = el.querySelector(".uad-tabwurzel");
+      if (!d) { zahlSetzen(el, null); platz.innerHTML = tabelleHtml(kopfAus("topics"), skelettAus("topics", 5)); zaehlEinhaengen("topics", el, tw, "laedt"); spaltenAnwenden("topics"); topicsPager(null); if (topicsSort) topicsSort.syncHeadSorters(); return; }
       var alle = topicsListe(d), tt = state.topicsTab, gr = tt.pageSize || GROESSE;
-      zahlSetzen(el, alle.length);
+      /* Die Zahl steht seit dem 15.10. in der Gesamtzeile und im Pager, nicht mehr dazu im Kopf. */
+      zahlSetzen(el, UC.makeZaehlZeile ? null : alle.length);
       if (!alle.length) {
         var gesucht = !!str(tt.suche).trim();
         platz.innerHTML = '<div class="up-box">' + (gesucht
@@ -1503,6 +1632,7 @@
           td("n", ganzHtml(x.ad_appearances)) +
         '</div>';
       }).join(""), "uad-klickbar");
+      zaehlEinhaengen("topics", el, tw, alle.length);
       spaltenAnwenden("topics");
       if (topicsSort) topicsSort.syncHeadSorters();
       topicsPager(alle.length);
@@ -1539,8 +1669,8 @@
       var kopfH = kopfAus("advertisers");
       if (!d) {
         if (fehlerVon(a)) { tabInhalt('<div class="up-box">' + fehlerKasten(a) + '</div>'); pagerSetzen("advertisers", null); return; }
-        if (vorige.adv && vorige.advFilter === filterSig()) { tabInhalt(vorige.adv, true); spaltenAnwenden("advertisers"); pagerSetzen("advertisers", vorige.advTotal, true); sortSync(); return; }
-        tabInhalt(tabelleHtml(kopfH, skelettAus("advertisers", 6)));
+        if (vorige.adv && vorige.advFilter === filterSig()) { tabInhalt(vorige.adv, true, vorige.advTotal); spaltenAnwenden("advertisers"); pagerSetzen("advertisers", vorige.advTotal, true); sortSync(); return; }
+        tabInhalt(tabelleHtml(kopfH, skelettAus("advertisers", 6)), false, "laedt");
         spaltenAnwenden("advertisers"); pagerSetzen("advertisers", null, true); sortSync();
         return;
       }
@@ -1575,7 +1705,7 @@
       }).join(""), "uad-klickbar");
       vorige.adv = html; vorige.advTotal = gesamt(d.total_count, tb, l.length); vorige.advFilter = filterSig();
       zahlSetzen(tab, vorige.advTotal);
-      tabInhalt(html);
+      tabInhalt(html, false, vorige.advTotal);
       spaltenAnwenden("advertisers");
       pagerSetzen("advertisers", vorige.advTotal);
       sortSync();
@@ -1586,11 +1716,48 @@
     function tbName() { return state.seite === "advertisers" ? "advertisers" : state.library.modus === "prompts" ? "lprompts" : "liste"; }
     function tbState() { return state.seite === "advertisers" ? state.advertisers : state.library.modus === "prompts" ? state.prompts : state.library; }
     function tabWurzel() { var tab = sek("tabelle"); return tab && tab.querySelector(".uad-tabwurzel"); }
-    function tabInhalt(html, dimmen) {
+    /* zahl: die Gesamtzahl fuer die Gesamtzeile -- eine Zahl, null (unlesbar, unbekannt) oder
+       "laedt" (Skelett). */
+    function tabInhalt(html, dimmen, zahl) {
       var w = tabWurzel();
       if (!w) return;
       w.classList.toggle("is-reloading", !!dimmen);
       w.querySelector(".uad-tabelle").innerHTML = html;
+      zaehlEinhaengen(tbName(), sek("tabelle"), w, zahl);
+    }
+    /* DIE GESAMTZEILE (15.10. abends, core UC.makeZaehlZeile): unter den Zeilen jeder ganzen
+       Tabelle (Advertisers, die Liste und die Prompts der Library, Topics with Ads) vorerst nur die
+       Anzahl links -- die Gesamtzahl des Servers (total_count; bei Topics with Ads, die in der
+       Komponente blaettern, die Zahl der Treffer), nicht die Zeilen der Seite; ein Lesefehler ist
+       "–". Ausblendbar ueber Display ("Summary row"), gemerkt je Tabelle. Das Raster der Karten ist
+       keine Tabelle (die Zahl steht dort im Pager), die Prompts im Advertiser-Detail sind eine
+       Vorschau ohne Pager.
+       DIE ZEILE STEHT IM SCROLLKASTEN, hinter .up-tbody in .up-colscroll-innen: so scrollt sie mit
+       den Spalten waagerecht mit. Weil der Kasten bei jedem Zeichnen neu geschrieben wird
+       (innerHTML), wird DIESELBE Zeile danach wieder hinter den neuen Koerper gehaengt -- ein
+       Neubau je Zeichnen haette jedes Mal ein neues Popover angelegt. Ohne Koerper (Leer- und
+       Fehlerzustand) bleibt sie draussen; der Zustand sagt dann selbst, was ist. */
+    var zaehl = {};
+    function zaehlEinhaengen(name, tab, w, zahl) {
+      if (!UC.makeZaehlZeile || !tab || !w || !TABELLEN[name]) return;
+      var z = zaehl[name];
+      if (z && z.tab === tab) z.stand = zahl;
+      var tbody = w.querySelector(".up-tbody");
+      if (!tbody) return;
+      if (!z || z.tab !== tab) {
+        z = zaehl[name] = { tab: tab, stand: zahl };
+        z.kit = UC.makeZaehlZeile({
+          root: tab, nach: tbody, instanceId: instanceId + "__" + name, praefix: "uad",
+          cols: function () { var e = spalten[name]; return e ? e.kit : null; },
+          spalten: function () { return TABELLEN[name].spalten.map(function (c) { return c.key; }); },
+          anzahl: function () { return typeof z.stand === "number" ? z.stand : null; },
+          laedt: function () { return z.stand === "laedt"; }
+        });
+        z.el = tbody.parentNode.querySelector(":scope > .up-sumrow");
+      } else if (z.el && z.el.previousElementSibling !== tbody) {
+        tbody.parentNode.insertBefore(z.el, tbody.nextSibling);
+      }
+      z.kit.zeichnen();
     }
     /* Die Gesamtzahl: total_count, und ist der kaputt oder fehlt, was sicher da ist -- Versatz plus
        gelieferte Zeilen. Zaehler im Kopf und Pager zeigen dieselbe Zahl. */
@@ -1611,27 +1778,9 @@
       if (UC.makePager) pager.tab = { st: pst, kit: UC.makePager({ root: tab, state: pst, onChange: function () {
         tb.page = pst.page; tb.pageSize = pst.pageSize; persist(); zeichnen(); bedarf();
       } }) };
-      /* Die zwei Auswahlen der Ad Library: der Auswahl-Filter aus core in der Bauart "All Brands"
-         (Entwurf: Pattern von brands-overview), mit Apply. Die Eintraege und ihre Zahlen kommen aus
-         get_ads_filter_options_v1; ein gewaehlter Wert, den die Optionen nicht (mehr) kennen,
-         bleibt in der Liste, damit er abgewaehlt werden kann. */
-      if (istLib && UC.makeAuswahlFilter) {
-        advFilter = UC.makeAuswahlFilter({
-          klasse: "uad-advfilter", titel: "Advertisers", alle: "All advertisers", mehrere: "{n} advertisers",
-          suche: "Search advertisers…", leer: "No advertisers yet",
-          items: function () { return optionenListe("advertisers"); }, gewaehlt: state.adFilter.advertisers || [],
-          onChange: function (keys) { state.adFilter.advertisers = keys.slice(); filterGeaendert(); }
-        });
-        fmtFilter = UC.makeAuswahlFilter({
-          klasse: "uad-fmtfilter", titel: "Ad Format", alle: "All formats", mehrere: "{n} formats",
-          suche: "Search…", leer: "No formats yet",
-          items: function () { return optionenListe("ad_formats"); }, gewaehlt: state.adFilter.formate || [],
-          onChange: function (keys) { state.adFilter.formate = keys.slice(); filterGeaendert(); }
-        });
-        var ap = tab.querySelector(".uad-advplatz"), fp = tab.querySelector(".uad-fmtplatz");
-        if (ap) ap.appendChild(advFilter.el);
-        if (fp) fp.appendChild(fmtFilter.el);
-      }
+      /* Advertisers und Ad Format (05.10. als Auswahlknoepfe hier gebaut) stehen seit dem 15.10.
+         als Zeilen im Menue "Filters" der Filterzeile (FF_ARTEN oben): sie aendern die Daten jeder
+         Seite, und in die Werkzeugleiste gehoert nur, was die Ansicht aendert. */
       /* Das Zahnrad: Spalten und Zeilenhoehe aus UC.makeColumns, bedient wie in Shopping. Das Raster
          der Karten hat keins (keine Spalten). */
       var mitTabelle = !(istLib && state.library.modus === "ads" && state.library.ansicht === "grid");
@@ -1646,8 +1795,8 @@
         });
         cm.addEventListener("click", function (e) {
           if (e.target.closest("[data-colsall]")) { spe.kit.selectAllCols(); return; }
-          var dn = e.target.closest("[data-dense]");
-          if (dn) { dichteSetzen(name, dn.getAttribute("data-dense") === "1"); spe.kit.populateCols(); return; }
+          var rh = e.target.closest("[data-rowheight]");
+          if (rh) { dichteSetzen(name, rh.getAttribute("data-rowheight") === "compact"); spe.kit.populateCols(); return; }
           var cr = e.target.closest("[data-col]");
           if (cr) spe.kit.toggleCol(cr.getAttribute("data-col"));
         });
@@ -1914,8 +2063,6 @@
     function zeichneLibrary() {
       var tab = sek("tabelle");
       if (!tab) return;
-      if (advFilter) advFilter.setGewaehlt(state.adFilter.advertisers || []);
-      if (fmtFilter) fmtFilter.setGewaehlt(state.adFilter.formate || []);
       if (state.library.modus === "prompts") zeichneLibPrompts(tab);
       else zeichneLibAds(tab);
     }
@@ -1931,8 +2078,8 @@
       var schl = "lib" + (grid ? "g" : "l");
       if (!d) {
         if (fehlerVon(a)) { tabInhalt('<div class="up-box">' + fehlerKasten(a) + '</div>'); pagerSetzen("liste", null); return; }
-        if (vorige[schl] && vorige[schl + "Filter"] === filterSig()) { tabInhalt(vorige[schl], true); if (!grid) spaltenAnwenden("liste"); pagerSetzen("liste", vorige[schl + "Total"], true); return; }
-        tabInhalt(grid ? '<div class="up-adgrid">' + kartenSkelett(8) + '</div>' : tabelleHtml(kopfAus("liste"), skelettAus("liste", 6)));
+        if (vorige[schl] && vorige[schl + "Filter"] === filterSig()) { tabInhalt(vorige[schl], true, vorige[schl + "Total"]); if (!grid) spaltenAnwenden("liste"); pagerSetzen("liste", vorige[schl + "Total"], true); return; }
+        tabInhalt(grid ? '<div class="up-adgrid">' + kartenSkelett(8) + '</div>' : tabelleHtml(kopfAus("liste"), skelettAus("liste", 6)), false, "laedt");
         if (!grid) spaltenAnwenden("liste");
         pagerSetzen("liste", null, true);
         return;
@@ -1944,7 +2091,7 @@
       else html = tabelleHtml(kopfAus("liste"), l.map(function (x) { return listenZeile(x, q); }).join(""), "uad-klickbar");
       vorige[schl] = html; vorige[schl + "Total"] = gesamt(d.total_count, lb, l.length); vorige[schl + "Filter"] = filterSig();
       zahlSetzen(tab, vorige[schl + "Total"]);
-      tabInhalt(html);
+      tabInhalt(html, false, vorige[schl + "Total"]);
       if (!grid) spaltenAnwenden("liste");
       pagerSetzen("liste", vorige[schl + "Total"]);
     }
@@ -1973,8 +2120,8 @@
       var kopfH = kopfAus("lprompts");
       if (!d) {
         if (fehlerVon(a)) { tabInhalt('<div class="up-box">' + fehlerKasten(a) + '</div>'); pagerSetzen("lprompts", null); return; }
-        if (vorige.lp && vorige.lpFilter === filterSig()) { tabInhalt(vorige.lp, true); spaltenAnwenden("lprompts"); pagerSetzen("lprompts", vorige.lpTotal, true); sortSync(); return; }
-        tabInhalt(tabelleHtml(kopfH, skelettAus("lprompts", 6)));
+        if (vorige.lp && vorige.lpFilter === filterSig()) { tabInhalt(vorige.lp, true, vorige.lpTotal); spaltenAnwenden("lprompts"); pagerSetzen("lprompts", vorige.lpTotal, true); sortSync(); return; }
+        tabInhalt(tabelleHtml(kopfH, skelettAus("lprompts", 6)), false, "laedt");
         spaltenAnwenden("lprompts"); pagerSetzen("lprompts", null, true); sortSync();
         return;
       }
@@ -1995,7 +2142,7 @@
       }).join(""), "uad-klickbar");
       vorige.lp = html; vorige.lpTotal = gesamt(d.total_count, tb, l.length); vorige.lpFilter = filterSig();
       zahlSetzen(tab, vorige.lpTotal);
-      tabInhalt(html);
+      tabInhalt(html, false, vorige.lpTotal);
       spaltenAnwenden("lprompts");
       pagerSetzen("lprompts", vorige.lpTotal);
       sortSync();

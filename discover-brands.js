@@ -86,7 +86,9 @@
      die Differenz. Core beschreibt denselben Fehler im Kommentar zu minNarrow. */
   var COLUMNS = [
     { key: "vis",      label: "Visibility",      w: "minmax(112px, 0.7fr)", min: 112, prio: 30 },
-    { key: "mentions", label: "Mentioned Count", w: "minmax(132px, 0.8fr)", min: 132, prio: 20 },
+    /* 145 statt 132 (15.10. spaet): mit der Kopfschrift 14/500 braucht "Mentioned Count" samt
+       Sortierpfeil und Zellrand gemessen 141.7. */
+    { key: "mentions", label: "Mentioned Count", w: "minmax(145px, 0.8fr)", min: 145, prio: 20 },
     { key: "domain",   label: "Domain",          w: "minmax(150px, 1fr)",   min: 150, prio: 10 }
   ];
   var IDX_W = 44;        // feste Breite der "#"-Spalte, wie in brands-overview

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261118;
+  var BUILD = 20261126;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -7110,7 +7110,10 @@
        (data-flach="yes"). Die flache Tabelle setzt die Kopfschrift auf 13/500 statt 12/400, und
        ein Kopf braucht dann mehr Platz (gemessen in Responses: "Mentioned?" 122 statt der 116 der
        Spalte, Sentiment 131 statt 120). Nur fuer die flache Fassung, damit dieselbe Tabelle in
-       einem Drawer mit der kleinen Kopfschrift nicht frueher Spalten verliert. */
+       einem Drawer mit der kleinen Kopfschrift nicht frueher Spalten verliert.
+       Seit 15.10. spaet traegt JEDER Kopf 14/500 (core.css .up-root .up-th), auch im Drawer --
+       Responses, URLs, Domains und Brands Overview haben darum wieder EINE Untergrenze (min).
+       minFlach bleibt fuer Tabellen, die eine eigene flache Untergrenze fuehren (Shopping, Ads). */
     function istFlach(){ return root.getAttribute("data-flach") === "yes"; }
     function colMin(key){
       if (key === FIRST) return FIRST_MIN;
@@ -7127,6 +7130,55 @@
       }
       if (c.wFlach && istFlach()) return c.wFlach;
       return c.w;
+    }
+    /* AM ENDE WAECHST NUR DIE ERSTE SPALTE (15.10. spaet: "eine vernuenftige max width pro
+       KPI-Spalte, damit die nicht zu riesig werden -- am Ende soll nur noch die erste Spalte
+       groesser werden"). In der flachen Tabelle hat jede andere fr-Spalte eine Obergrenze: ihre
+       Mindestbreite plus DECKEL_SPIEL. Die Mindestbreiten sind am Inhalt gemessen (Kopf 13/500,
+       Zahl, Trend), 32 darueber ist Luft, kein Leerraum zwischen Trend und Zahl.
+       Warum gerechnet und nicht einfach minmax(min, max) in die Spur: das Raster fuellt Spuren mit
+       fester Obergrenze ZUERST bis zu ihr und gibt der fr-Spur der ersten Spalte erst den Rest --
+       gemessen in Responses bei 1440 stand der Prompt dann auf seiner Untergrenze (211 statt der
+       bisherigen Breite). Hier waechst alles anteilig wie bisher (fr), bis eine Spalte ihre Grenze
+       erreicht; nur DIE wird gedeckelt, der Rest verteilt sich weiter -- am Ende auf die erste.
+       Spuren mit Grenze in px (Prompt-Tabelle: Visibility 148-152) bleiben, wie sie sind.
+       Gerechnet wie das Raster: Anteil je fr, eine Spalte unter ihrer Untergrenze steht fest auf
+       ihr, eine ueber ihrer Grenze auf der Grenze, bis nichts mehr kippt.
+       Eine Untergrenze in PROZENT ("minmax(13%, 150px)", Share in Domains und URLs) waechst mit dem
+       Fenster und hebelt jede Grenze aus (gemessen bei 2200: Share 251) -- flach gilt dafuer die
+       gemessene Mindestbreite in px (colMin), dieselbe, mit der autoFit rechnet. */
+    var DECKEL_SPIEL = 32;
+    function deckeln(cols, tracks, cw){
+      if (!cw || !istFlach() || root.classList.contains("is-vnarrow")) return tracks;
+      var aussen = LEAD() + ((!cfg.noActions && !root.classList.contains("is-t2")) ? ACTIONS_MIN_F() : 0);
+      var rest = cw - aussen;
+      var teile = [{ i: -1, fr: 1.6, min: cfg.scrollen ? FIRST_MIN : firstFloor() * cw, max: null }];
+      var out = tracks.slice();
+      cols.forEach(function(c, i){
+        var m = /^minmax\(\s*([^,]+),\s*([^)]+)\)$/.exec(String(tracks[i] || ""));
+        var hoch = m ? m[2].trim() : "";
+        var f = /^([\d.]+)fr$/.exec(hoch), px = /^([\d.]+)px$/.exec(hoch), mn = colMin(c.key);
+        if (m && /%$/.test(m[1].trim())) out[i] = "minmax(" + mn + "px, " + hoch + ")";
+        if (f) teile.push({ i: i, fr: parseFloat(f[1]), min: mn, max: mn + DECKEL_SPIEL });
+        else rest -= px ? Math.max(mn, parseFloat(px[1])) : mn;
+      });
+      var offen = teile.slice(), gedeckelt = [];
+      for (var runde = 0; runde < teile.length + 1; runde++){
+        var sumFr = 0;
+        offen.forEach(function(x){ sumFr += x.fr; });
+        if (!sumFr) break;
+        var einheit = rest / sumFr;
+        var kippt = offen.filter(function(x){ return x.fr * einheit < x.min || (x.max != null && x.fr * einheit > x.max); });
+        if (!kippt.length) break;
+        kippt.forEach(function(x){
+          var unten = x.fr * einheit < x.min;
+          rest -= unten ? x.min : x.max;
+          if (!unten) gedeckelt.push(x);
+        });
+        offen = offen.filter(function(x){ return kippt.indexOf(x) < 0; });
+      }
+      gedeckelt.forEach(function(x){ if (x.i >= 0) out[x.i] = "minmax(" + x.min + "px, " + x.max + "px)"; });
+      return out;
     }
     /* see applyCols(): the two halves are guarded separately because they change at different
        rates — the track template on every width change, the visible column set only when a
@@ -7210,9 +7262,10 @@
       parts.push(pinned ? firstPx + "px"
         : cfg.scrollen ? "minmax(" + FIRST_MIN + "px, 1.6fr)"
         : "minmax(" + Math.round(firstFloor() * 1000) / 10 + "%, 1.6fr)");
-      cols.forEach(function(c){
-        parts.push(pinned ? "minmax(" + colMin(c.key) + "px, 1fr)" : colTrack(c));
-      });
+      var spuren = cols.map(function(c){ return pinned ? "minmax(" + colMin(c.key) + "px, 1fr)" : colTrack(c); });
+      /* Gezogene erste Spalte: die anderen fuellen den Rest, wie bisher ohne Deckel. */
+      if (!pinned) spuren = deckeln(cols, spuren, cw);
+      spuren.forEach(function(t){ parts.push(t); });
       if (!cfg.noActions && !root.classList.contains("is-t2")){
         /* FESTE Spur, kein minmax(...,auto). `auto` heisst "so breit wie der Inhalt", und .up-thead
            und jede .up-row sind EIGENE Grid-Container: jeder loest sein `auto` aus dem eigenen
@@ -7673,6 +7726,25 @@
       root.classList.remove("is-reloading");
     }
     return { begin: begin, end: end };
+  }
+
+  /* ---------- kopfZeichen ----------
+     DAS ZEICHEN VOR EINEM SPALTENKOPF (15.10.): zuerst nur in der Prompt-Tabelle ("Brand
+     Mentions", "Topics"), dann in Responses ("Citations"), Domains und URLs ("Type") und Brands
+     Overview ("Brand") -- also hierher, eine Klasse (.up-th-ic in core.css) und ein Weg.
+     kopfZeichenHtml(name) liefert das Markup fuer Koepfe, die als Zeichenkette gebaut werden;
+     kopfZeichen(th, name) setzt es in einen vorhandenen Kopf, als erstes Kind und nur einmal --
+     ein Kopf aus festem Markup wird nicht neu gezeichnet, ein zweiter Aufruf darf nichts doppeln.
+     aria-hidden: das Wort daneben sagt schon alles, ein Vorleser soll nicht "globe Citations"
+     sagen. Ein unbekannter Name ergibt kein Zeichen (icon() liefert ""), keine leere Huelle. */
+  function kopfZeichenHtml(name){
+    var svg = icon(name, 2);
+    return svg ? '<span class="up-th-ic" aria-hidden="true">' + svg + '</span>' : "";
+  }
+  function kopfZeichen(th, name){
+    if (!th || th.querySelector(".up-th-ic")) return;
+    var html = kopfZeichenHtml(name);
+    if (html) th.insertAdjacentHTML("afterbegin", html);
   }
 
   /* ---------- makeHeadSort ----------
@@ -23609,6 +23681,13 @@
           '<path d="M15 9V19M19 9V19"/>' +
           '<path d="M21.3518 9H2.64822C2.29022 9 2 8.70651 2 8.34447C2 8.12259 2.11099 7.91577 2.29495 7.79485L8.73007 3.56485C10.3171 2.52162 11.1107 2 12 2C12.8893 2 13.6829 2.52162 15.2699 3.56485L21.7051 7.79485C21.889 7.91577 22 8.12259 22 8.34447C22 8.70651 21.7098 9 21.3518 9Z"/>' +
           '<path d="M21.0397 20.2929L20.3519 19.5858C20.0707 19.2968 19.9301 19.1522 19.7514 19.0761C19.5726 19 19.3738 19 18.9762 19H5.02382C4.62621 19 4.4274 19 4.24863 19.0761C4.06987 19.1522 3.92929 19.2968 3.64814 19.5858L2.9603 20.2929C2.25356 21.0194 1.9002 21.3827 2.02456 21.6913C2.14893 22 2.64867 22 3.64814 22H20.3519C21.3513 22 21.8511 22 21.9754 21.6913C22.0998 21.3827 21.7464 21.0194 21.0397 20.2929Z"/>',
+    /* DropdownFieldTypeIcon (15.10. angefordert: das Zeichen vor dem Spaltenkopf "Type", der
+       Zitationsart in Domains und URLs). Woertlich aus @hugeicons/core-free-icons@4.3.5
+       (dist/esm/DropdownFieldTypeIcon.js), wie die Shopping- und Ads-Zeichen darueber. */
+    dropdownFieldType: '<path d="M18 4H6C4.59987 4 3.8998 4 3.36502 4.27248C2.89462 4.51217 2.51217 4.89462 2.27248 5.36502C2 5.8998 2 6.59987 2 8C2 9.40013 2 10.1002 2.27248 10.635C2.51217 11.1054 2.89462 11.4878 3.36502 11.7275C3.8998 12 4.59987 12 6 12H18C19.4001 12 20.1002 12 20.635 11.7275C21.1054 11.4878 21.4878 11.1054 21.7275 10.635C22 10.1002 22 9.40013 22 8C22 6.59987 22 5.8998 21.7275 5.36502C21.4878 4.89462 21.1054 4.51217 20.635 4.27248C20.1002 4 19.4001 4 18 4Z"/>' +
+                       '<path d="M18 7.00002C18 7.00002 16.527 9 16 9C15.4729 9 14 7 14 7"/>' +
+                       '<path d="M2 16H14"/>' +
+                       '<path d="M2 20H14"/>',
     /* Lucide mail (lucide-static 0.460.0) -- das zwanzigste Zeichen im Event-Popup: ein Newsletter
        ist ein haeufiges Event, und mit 20 stehen zwei volle Reihen zu zehn (03.10. angefordert). */
     mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
@@ -26190,14 +26269,17 @@
   /* ══ DIE GESAMTZEILE EINER TABELLE (UC.makeSumZeile, UC.sumPaarHtml, 15.10.) ═══════════════
      Eine feste Zeile unter den Zeilen und ueber der Pagination (Empfehlung vom 15.10., vom Nutzer
      bestellt). Links steht IMMER und NUR die Anzahl ("102 count") -- das gilt fuer jede Tabelle der
-     App, darum liegt es hier. In den Spalten steht von Haus aus KEINE Berechnung, sondern "+ Add"
-     (15.10. spaet: "per default nix an calculations"); was der Nutzer dort waehlt, steht als Paar
+     App, darum liegt es hier. In den Spalten steht von Haus aus KEINE Berechnung, sondern
+     "+ Calculation" (15.10. spaet: "per default nix an calculations"; erst "+ Add", umbenannt:
+     "sonst denkt man, man kann da was hinzufuegen"); was der Nutzer dort waehlt, steht als Paar
      aus Wert und Bezeichnung (CSS und Begruendung der Masse in core.css, "DIE GESAMTZEILE EINER
      TABELLE").
-     "+ Add" hat zwei Formen: mit spec.zellen[i].menu ein Knopf, der das Menue der Spalte oeffnet
-     (die Tabelle setzt dann keinen html und menu.wahl auf ihre "keine"-Wahl); ohne menu ein
+     "+ Calculation" hat zwei Formen: mit spec.zellen[i].menu ein Knopf, der das Menue der Spalte
+     oeffnet (die Tabelle setzt dann keinen html und menu.wahl auf ihre "keine"-Wahl); ohne menu ein
      blosser Text -- die Spalte hat noch keine Berechnung, und ein Knopf, der nichts tut, waere
      einer zu viel. Ganz leer bleibt eine Zelle nur mit leer: true.
+     JEDE ZELLE LAEDT FUER SICH (zellen[i].laedt): eine Berechnung vom Server haengt nie an der
+     Tabelle -- sie hat ihr eigenes Skelett, und die Zeilen warten nicht auf sie.
      WAS DIE TABELLE NICHT RECHNET: sie kennt nur ihre Seite (hoechstens 100 Zeilen). Gewichtete
      Gesamtwerte, Median und Zaehlwerte ueber alle Seiten kommen vom Server, die Zeile zeigt nur an.
      Fehlt ein Wert, steht "–" und nie 0 (sumPaarHtml).
@@ -26224,13 +26306,34 @@
     "Prompts at rank 1": "Prompts auf Rang 1",
     "Prompts below 50": "Prompts unter 50",
     "Prompts without topic": "Prompts ohne Topic",
-    "Add calculation": "Berechnung hinzufügen",
+    "Calculation": "Berechnung",
+    "Choose a calculation": "Berechnung wählen",
+    /* Bezeichnungen, die mehrere Tabellen fuer ihre Berechnungen brauchen (15.10. spaet): hier
+       EINMAL, damit keine Komponente sie neu eintraegt (addMessages ist app-weit). Menue gross,
+       Zelle klein. */
+    "Average": "Durchschnitt",
+    "Total": "Summe",
+    "Best": "Bester Wert",
+    "Lowest": "Niedrigster Wert",
+    "Most common": "Am häufigsten",
+    "Average Visibility": "Durchschnittliche Visibility",
+    "Average Rank": "Durchschnittlicher Rank",
+    "Average Sentiment": "Durchschnittliches Sentiment",
+    "total": "Summe",
+    "best": "bester",
+    "lowest": "niedrigster",
+    "newest": "neuester",
+    "most common": "am häufigsten",
     "Summary row": "Summenzeile"
   });
   /* Ein Wert der Zeile als Text, nach den Formaten von CLAUDE.md 2b. art: "anzahl" (ganze Zahl,
      dieselbe Form wie der Zaehler im Tabellenkopf), "pct" (Visibility, eine Stelle), "rang" (immer
      eine Stelle, auch bei glatt 3), "note" (Sentiment, ganzzahlig). null heisst "kein Wert". */
   function sumWertText(v, art){
+    /* "text": ein Name (haeufigstes Modell, groesster Typ), "datum": ein Tag wie in den Datumsspalten
+       (fmtDate, nach der Vorliebe des Nutzers). Leer heisst "kein Wert". */
+    if (art === "text") return v == null || String(v).trim() === "" ? null : String(v);
+    if (art === "datum") return v == null || v === "" ? null : (fmtDate(v) || null);
     var n = toNum(v);
     if (n == null) return null;
     if (art === "pct") return fmtPct(n, 1);
@@ -26302,7 +26405,7 @@
       return true;
     }
     function skBalken(w){ return w ? '<span class="up-tsk-bar" style="width:' + Math.round(w) + 'px"></span>' : ""; }
-    var ADD_INNEN = icon("plus", 2) + '<span>' + esc(t_("Add")) + '</span>';
+    var ADD_INNEN = icon("plus", 2) + '<span>' + esc(t_("Calculation")) + '</span>';
     function zellenHtml(s){
       var sicht = s.sichtbar || null;
       var out = '<div class="up-sumzelle up-sumzelle-erste">' +
@@ -26310,7 +26413,7 @@
       (s.zellen || []).forEach(function(z){
         if (!z || !z.key) return;
         var inhalt = "";
-        if (s.laedt && z.sk) inhalt = skBalken(z.sk);
+        if ((s.laedt && z.sk) || z.laedt) inhalt = skBalken(z.sk || 56);
         else if (z.leer) inhalt = "";
         else if (z.menu && z.html && !s.laedt){
           inhalt = '<button type="button" class="up-sumknopf" data-sum-menu="' + esc(z.key) + '" aria-haspopup="menu" aria-expanded="false"' +
@@ -26319,7 +26422,7 @@
         } else if (z.html && !s.laedt) inhalt = z.html;
         else if (z.menu){
           inhalt = '<button type="button" class="up-sumknopf up-sumadd" data-sum-menu="' + esc(z.key) + '" aria-haspopup="menu" aria-expanded="false"' +
-            ' aria-label="' + esc(t_("Add calculation")) + '">' + ADD_INNEN + '</button>';
+            ' aria-label="' + esc(t_("Choose a calculation")) + '">' + ADD_INNEN + '</button>';
         } else inhalt = '<span class="up-sumadd">' + ADD_INNEN + '</span>';
         out += '<div class="up-sumzelle up-sum-td-' + esc(z.key) + '"' +
           (!sicht || sicht[z.key] ? "" : ' style="display:none"') + '>' + inhalt + '</div>';
@@ -26396,22 +26499,36 @@
   }
 
   /* DIE ZAEHLZEILE (15.10. abends): die Gesamtzeile (makeSumZeile) fuer jede weitere Tabelle --
-     vorerst nur mit der Anzahl links ("102 count"), so bestellt: "erstmal mit dem Count links".
-     In den Spalten steht "+ Add" als blosser Text (keine Berechnung angeboten, siehe makeSumZeile).
-     Die Prompt-Tabelle hat ihre reichere Fassung (Kennzahlen mit Menue) selbst gebaut; hier die
-     Teile, die sonst jede Tabelle einzeln verdrahten muesste:
+     links die Anzahl ("102 count"), in den Spalten "+ Calculation". Die Prompt-Tabelle hat ihre
+     reichere Fassung (Gruppen, eigene Datenquelle) selbst gebaut; hier die Teile, die sonst jede
+     Tabelle einzeln verdrahten muesste:
        - die Zeile hinter dem Koerper (cfg.nach, meist .up-tbody), Skelett im Gleichlauf
-         (cfg.laedt), eine leere Zelle je Spalte (cfg.spalten), damit das Raster steht; die
-         Zellen verschwinden mit ihren Spalten, wenn die Tabelle "up-sum" in ihren cellPrefixes
-         von makeColumns fuehrt;
+         (cfg.laedt), eine Zelle je Spalte (cfg.spalten), damit das Raster steht; die Zellen
+         verschwinden mit ihren Spalten, wenn die Tabelle "up-sum" in ihren cellPrefixes von
+         makeColumns fuehrt;
        - der Schalter "Summary row" fuer das Display-Menue (schalter() an makeColumns
          cfg.nachspann haengen): "uebers Display soll man diese untere Row immer ausblenden
          koennen" -- gilt fuer jede Tabelle mit dieser Zeile;
        - das Merken je Nutzer: localStorage ueber prefKey(<praefix>_summe__<instanceId>) und ein
-         window-Speicher je Schluessel (ein Neuaufbau beim Themenwechsel liest ihn).
+         window-Speicher je Schluessel (ein Neuaufbau beim Themenwechsel liest ihn) -- der Schalter
+         und, seit dem 15.10. spaet, die Wahl je Spalte;
+       - DIE BERECHNUNGEN (15.10. spaet): cfg.rechnen = { <Spalte>: [{ key, label, kurz, art,
+         feld | wert(daten) | lokal(), name(wert), anteil, felder }] }. name macht aus einem
+         Schluessel einen Namen (Intent, Modell), anteil ist das Feld mit dem Anteil in %, der dann
+         statt kurz dahinter steht ("Informational 42%"), felder sind weitere Felder, die wert()
+         braucht (ein Bereich aus zwei Feldern). Eine Spalte mit Eintraegen bekommt "+ Calculation" als
+         Knopf mit Menue ("None" zuerst, von Haus aus gewaehlt), eine ohne den blossen Text.
+         lokal(): die Tabelle hat alle Zeilen im Browser und rechnet selbst (Brands, Teams).
+         Sonst kommt der Wert vom Server: cfg.quelle = { sig() (der Filterstand als Text),
+         holen(felder) -> Promise<Objekt|null> }. Geholt wird NUR, was gewaehlt ist, und NUR
+         dann; getrennt von der Tabelle (die Zeilen warten nie darauf, "nicht die gesamte Tabelle
+         im Skeleton, wenn man unten eine groessere Berechnung baut"), mit eigenem Skelett in der
+         Zelle; je Filterstand einmal, Blaettern und Sortieren aendern sig nicht und holen nichts.
+         Scheitert es, steht "–" (sumPaarHtml), und die naechste Aenderung versucht es neu.
      Die Anzahl kommt von der Tabelle (cfg.anzahl, die Gesamtzahl ihres Servers, nicht die
      Zeilen der Seite); null wird "–", nie 0 (sumPaarHtml).
      cfg.onUmschalten(an): danach z. B. die feste Hoehe neu planen. */
+  var SUM_AUS = "aus";
   function makeZaehlZeile(cfg){
     cfg = cfg || {};
     var key = prefKey((cfg.praefix || "up") + "_summe__" + (cfg.instanceId || ""));
@@ -26421,7 +26538,31 @@
       try { var roh = window.localStorage.getItem(key); if (roh) stand = JSON.parse(roh); } catch(e){ stand = null; }
     }
     var an = !(stand && stand.an === false);
-    var kit = makeSumZeile({ root: cfg.root, nach: cfg.nach, group: cfg.group || null });
+    var rechnen = (cfg.rechnen && typeof cfg.rechnen === "object") ? cfg.rechnen : {};
+    function optionVon(spalte, k){
+      var l = isArr(rechnen[spalte]) ? rechnen[spalte] : [];
+      for (var i = 0; i < l.length; i++) if (l[i] && l[i].key === k) return l[i];
+      return null;
+    }
+    /* Nur Wahlen, die es (noch) gibt: eine umbenannte oder gestrichene Berechnung faellt still auf
+       "None" zurueck, statt eine leere Zelle mit Menue zu zeigen. */
+    var wahl = {};
+    if (stand && stand.wahl && typeof stand.wahl === "object"){
+      Object.keys(stand.wahl).forEach(function(sp){ if (optionVon(sp, stand.wahl[sp])) wahl[sp] = stand.wahl[sp]; });
+    }
+    function merken(){
+      var o = { an: an, wahl: wahl };
+      speicher[key] = o;
+      try { window.localStorage.setItem(key, JSON.stringify(o)); } catch(e){}
+    }
+    var kit = makeSumZeile({ root: cfg.root, nach: cfg.nach, group: cfg.group || null,
+      onWahl: function(spalte, modus){
+        if (modus === SUM_AUS) delete wahl[spalte];
+        else if (optionVon(spalte, modus)) wahl[spalte] = modus;
+        else return;
+        merken();
+        zeichnen();
+      } });
     if (!kit.el) return { zeichnen: function(){}, schalter: function(){ return null; }, an: function(){ return false; }, setzen: function(){} };
     kit.zeigen(an);
     var schalterEl = null;
@@ -26433,10 +26574,11 @@
     }
     function setzen(v){
       an = !!v;
-      speicher[key] = { an: an };
-      try { window.localStorage.setItem(key, JSON.stringify({ an: an })); } catch(e){}
+      merken();
       kit.zeigen(an);
       schalterSync();
+      /* Wieder eingeblendet: was ausgeblendet nicht geholt wurde, jetzt holen. */
+      if (an) zeichnen(false);
       if (typeof cfg.onUmschalten === "function"){ try { cfg.onUmschalten(an); } catch(e){} }
     }
     /* Eine Menuezeile mit Schalter wie "Descending" im Sortiermenue (.up-pop-row), mit Trenner
@@ -26457,17 +26599,97 @@
       schalterSync();
       return schalterEl;
     }
-    function zeichnen(){
+    /* ---- Werte vom Server: je Filterstand ein Speicher mit den schon geholten Feldern. ---- */
+    var quelle = cfg.quelle && typeof cfg.quelle.holen === "function" ? cfg.quelle : null;
+    var vorrat = {}, vorratReihe = [], unterwegs = {};
+    function sigJetzt(){ try { return quelle && typeof quelle.sig === "function" ? String(quelle.sig()) : ""; } catch(e){ return ""; } }
+    function eintrag(sig){
+      if (!vorrat[sig]){
+        vorrat[sig] = { daten: {}, hat: {}, gescheitert: {} };
+        vorratReihe.push(sig);
+        /* Fuenf Filterstaende genuegen fuer Hin und Her; mehr waere Speicher ohne Nutzen. */
+        while (vorratReihe.length > 5) delete vorrat[vorratReihe.shift()];
+      }
+      return vorrat[sig];
+    }
+    function serverFelder(){
+      var f = [];
+      Object.keys(wahl).forEach(function(sp){
+        var o = optionVon(sp, wahl[sp]);
+        if (!o || typeof o.lokal === "function") return;
+        [o.feld, o.anteil].concat(isArr(o.felder) ? o.felder : []).forEach(function(x){
+          if (x && f.indexOf(x) < 0) f.push(x);
+        });
+      });
+      return f.sort();
+    }
+    function holenWennNoetig(){
+      if (!quelle) return;
+      var sig = sigJetzt(), e = eintrag(sig);
+      var fehlt = serverFelder().filter(function(f){ return !e.hat[f] && !e.gescheitert[f] && !unterwegs[sig + "|" + f]; });
+      if (!fehlt.length) return;
+      fehlt.forEach(function(f){ unterwegs[sig + "|" + f] = true; });
+      var p;
+      try { p = quelle.holen(fehlt.slice()); } catch(err){ p = null; }
+      Promise.resolve(p).then(function(d){
+        var ziel = vorrat[sig];
+        fehlt.forEach(function(f){
+          delete unterwegs[sig + "|" + f];
+          if (!ziel) return;
+          /* Ein gescheiterter Abruf gilt fuer DIESEN Filterstand als gescheitert ("–") und wird
+             nicht bei jedem Zeichnen der Tabelle wiederholt -- die Tabelle zeichnet oft, und eine
+             fehlende Funktion waere sonst eine Anfrage je Zeichnen. Ein neuer Filterstand oder
+             eine neue Wahl versucht es wieder. */
+          if (d && typeof d === "object"){ ziel.hat[f] = true; ziel.daten[f] = d[f]; }
+          else ziel.gescheitert[f] = true;
+        });
+        zeichnen(true);
+      }, function(){
+        var ziel = vorrat[sig];
+        fehlt.forEach(function(f){ delete unterwegs[sig + "|" + f]; if (ziel) ziel.gescheitert[f] = true; });
+        zeichnen(true);
+      });
+    }
+    function zeichnen(ausAntwort){
       var sicht = {}, kitCols = typeof cfg.cols === "function" ? cfg.cols() : null;
       if (kitCols && typeof kitCols.effectiveCols === "function"){
         try { kitCols.effectiveCols().forEach(function(c){ sicht[c.key] = true; }); } catch(e){}
       }
-      var zellen = (typeof cfg.spalten === "function" ? (cfg.spalten() || []) : []).map(function(k){ return { key: k }; });
+      var sig = quelle ? sigJetzt() : "", e = quelle ? eintrag(sig) : null;
+      var tabelleLaedt = !!(typeof cfg.laedt === "function" && cfg.laedt());
+      var zellen = (typeof cfg.spalten === "function" ? (cfg.spalten() || []) : []).map(function(k){
+        var z = { key: k }, l = rechnen[k];
+        if (!isArr(l) || !l.length) return z;
+        var o = optionVon(k, wahl[k]);
+        z.menu = { wahl: o ? o.key : SUM_AUS,
+          optionen: [{ key: SUM_AUS, label: "None" }].concat(l.map(function(x){ return { key: x.key, label: x.label }; })) };
+        if (!o) return z;
+        var v = null, kurz = o.kurz;
+        if (typeof o.lokal === "function"){ try { v = o.lokal(); } catch(err){ v = null; } }
+        else if (e){
+          var noetig = [o.feld].concat(isArr(o.felder) ? o.felder : []).filter(Boolean);
+          var offenF = noetig.filter(function(f){ return !e.hat[f] && !e.gescheitert[f]; });
+          if (offenF.length){ z.laedt = true; z.sk = 56; }
+          else if (typeof o.wert === "function"){ try { v = o.wert(e.daten); } catch(err){ v = null; } }
+          else v = e.daten[o.feld];
+          if (v != null && typeof o.name === "function"){ try { v = o.name(v); } catch(err){} }
+          if (v != null && o.anteil){ var an_ = toNum(e.daten[o.anteil]); if (an_ != null) kurz = fmtPct(an_, 0); }
+        }
+        z.html = sumPaarHtml(v, kurz, o.art);
+        z.tip = o.label;
+        z.sk = z.sk || 56;
+        return z;
+      });
       var n = typeof cfg.anzahl === "function" ? cfg.anzahl() : null;
-      kit.zeichnen({ laedt: !!(typeof cfg.laedt === "function" && cfg.laedt()), ersteSk: 84,
+      kit.zeichnen({ laedt: tabelleLaedt, ersteSk: 84,
         erste: sumPaarHtml(n, "count", "anzahl"), sichtbar: sicht, zellen: zellen });
+      /* Erst nach dem Zeichnen holen -- und nicht aus der Antwort heraus (die bringt alles, was
+         bestellt war). Waehrend die Tabelle selbst laedt, ist ihr Filterstand der neue, die Zahl
+         also schon richtig zu holen; holen ist unabhaengig von den Zeilen. */
+      if (!ausAntwort && an) holenWennNoetig();
     }
-    return { zeichnen: zeichnen, schalter: schalter, an: function(){ return an; }, setzen: setzen };
+    return { zeichnen: function(){ zeichnen(false); }, schalter: schalter, an: function(){ return an; }, setzen: setzen,
+             wahl: function(){ var o = {}; Object.keys(wahl).forEach(function(k){ o[k] = wahl[k]; }); return o; } };
   }
 
 
@@ -26477,6 +26699,8 @@
     LEER_NOTBREMSE_MS: LEER_NOTBREMSE_MS,
     icon: icon,
     iconFormen: iconFormen,
+    kopfZeichen: kopfZeichen,
+    kopfZeichenHtml: kopfZeichenHtml,
     /* Der Nachzug auch nach aussen: er laeuft von selbst mit jedem Wurzel-Lauf, aber ein
        Bauteil, das sein Markup selbst nachtraeglich einsetzt, kann ihn so gezielt anstossen --
        und ein Prueftand kann ihn messen. */
