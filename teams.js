@@ -398,7 +398,10 @@
         storePrefix: "uts", instanceId: instanceId,
         firstKey: "team", firstMin: 210,
         actionsMin: function () { return root.classList.contains("is-narrow") ? ACT_NARROW : ACT_WIDE; },
-        badgeSel: ".uts-cols-badge", cellPrefixes: ["up", "uts"],
+        /* "up-sum": die Zellen der Gesamtzeile (UC.makeZaehlZeile) gehen mit ihren Spalten; der
+           Schalter "Summary row" unten im Display-Menue (nur flach, wo es die Zeile gibt). */
+        badgeSel: ".uts-cols-badge", cellPrefixes: ["up", "uts", "up-sum"],
+        nachspann: function () { return zaehl ? zaehl.schalter() : null; },
         onChange: function () { renderTable(); }
       });
       state.cols = colsKit.readCols();
@@ -488,6 +491,20 @@
       sticky.applySticky();
       if (root.getAttribute("data-festhoehe") === "yes" && UC.makeFestHoehe)
         _fest = UC.makeFestHoehe(root, { kopf: root.querySelector(".up-head"), fuss: root.querySelector(".up-foot") });
+
+      /* DIE GESAMTZEILE (15.10. abends, core UC.makeZaehlZeile): vorerst nur die Anzahl links,
+         so bestellt -- die Teams, die die Suche gerade zeigt (diese Tabelle blaettert lokal, die
+         Liste ist ganz geladen). Nur in der flachen Fassung; ausblendbar ueber Display. */
+      var zaehl = (root.getAttribute("data-flach") === "yes" && UC.makeZaehlZeile) ? UC.makeZaehlZeile({
+        /* Hinter .up-table und nicht hinter .up-tbody: diese Tabelle schreibt Kopf und Koerper bei
+           jedem Zeichnen neu (renderTable, innerHTML) -- eine Zeile darin waere jedes Mal weg. */
+        root: root, nach: root.querySelector("[data-table]"), instanceId: instanceId, praefix: "uts",
+        cols: function () { return colsKit; },
+        spalten: function () { return COLUMNS.map(function (c) { return c.key; }); },
+        anzahl: function () { return state.parseError ? null : (state.hasData ? gefiltert().length : null); },
+        laedt: function () { return !!state.busy || !state.hasData; },
+        onUmschalten: function () { festPlanen(); }
+      }) : null;
 
       /* ---------------- welches Team ist das aktuelle ----------------
          Drei Quellen, in dieser Reihenfolge: der Payload (ausdruecklich und damit am staerksten),
@@ -734,6 +751,7 @@
            echten Text, Suchfeld auf- oder zugeklappt). Ohne das Nachmessen bleibt der
            Spaltenkopf am alten Versatz kleben. */
         if (root.classList.contains("up-sticky")) sticky.syncTheadOffset();
+        if (zaehl) zaehl.zeichnen();
         /* Der Fuss blendet waehrend des Ladens aus (is-onepage) und kommt mit den Daten zurueck --
            beides aendert den Platz unter dem Kasten. Hoechstens einmal je Bild (core). */
         festPlanen();
