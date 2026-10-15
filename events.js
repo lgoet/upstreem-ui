@@ -398,6 +398,25 @@
     p_url: "Please enter a valid URL.", p_urls: "Please enter a valid URL.",
     p_targets: "One of the targets can't be used. Please check the address."
   };
+  /* impact_event_invalid_target sagt im hint, WELCHES Ziel nicht geht und WARUM (Rueckmeldung
+     15.10., Abschnitt 3): "p_targets[i]: <grund>" bzw. "p_urls[i]: <grund>", i ab 0. Je Grund ein
+     Satz fuer den Nutzer; die Vorschau nennt dieselben Gruende in per_target[].error (dort dazu
+     too_many_targets fuer alles ab dem 51. Eintrag). */
+  var ZIEL_GRUND = {
+    input_required: "Please enter an address.",
+    input_too_long: "This address is too long.",
+    unknown_kind: "This kind of target isn't supported.",
+    invalid_url: "Please enter a valid URL.",
+    invalid_host: "Please enter a valid domain.",
+    unexpected_path: "A domain can't include a path. Use a path rule instead.",
+    path_required: "Please add a path, e.g. example.com/blog.",
+    invalid_entry: "One of the targets can't be used. Please check the address.",
+    too_many_targets: "An event can track at most 50 targets."
+  };
+  function zielHint(h) {
+    var m = /^(p_targets|p_urls)\[(\d+)\]\s*:\s*([a-z_]+)/.exec(String(h == null ? "" : h).trim());
+    return m ? { feld: m[1], i: +m[2], grund: m[3] } : null;
+  }
   /* ---- Der Klick-Dummy (data-demo="yes", 03.10. angefordert) -----------------------------
      Die Beispieldaten liegen in einer eigenen Datei neben dieser und kommen nur, wenn eine
      Komponente sie will -- 100 KB, die sonst jede Seite der App mitlaedt. Der Pfad ist der dieser
@@ -517,6 +536,9 @@
        einzige Stelle, die sagt, welche. Es ist die Eingabe des Nutzers; gezeigt wird sie als Text. */
     if (c === "impact_event_invalid_url" && h && !/^p_/.test(h)) return ersetze(t("This URL can't be used: {url}"), { url: h });
     if (c === "impact_event_invalid_target" && h && !/^p_/.test(h)) return ersetze(t("This can't be used: {wert}"), { wert: h });
+    /* Der Grund aus "p_targets[i]: <grund>". Welches Ziel, sagt das Popup dazu (feldFehlerZeigen). */
+    var zh = c === "impact_event_invalid_target" ? zielHint(h) : null;
+    if (zh) return t(ZIEL_GRUND[zh.grund] || FEHLER.impact_event_invalid_target);
     return t(FEHLER[c] || "Something went wrong. Please try again.");
   }
   /* Welches Feld eines Popups einen Fehler beheben kann: zuerst nach hint (dem Feld, das der
@@ -710,11 +732,22 @@
     "Added to tracking": "Zum Tracking hinzugefügt",
     "{n} path": "{n} Pfad", "{n} paths": "{n} Pfade", "{n} domain": "{n} Domain", "{n} domains": "{n} Domains",
     "{n} target": "{n} Ziel", "{n} targets": "{n} Ziele",
+    /* Rueckmeldung der Datenbank (15.10. spaet): Gruende eines ungueltigen Ziels, Doppelte */
+    "Please enter an address.": "Gib bitte eine Adresse ein.",
+    "This address is too long.": "Diese Adresse ist zu lang.",
+    "This kind of target isn't supported.": "Diese Art von Ziel wird nicht unterstützt.",
+    "A domain can't include a path. Use a path rule instead.": "Eine Domain kann keinen Pfad enthalten. Nimm stattdessen eine Pfad-Regel.",
+    "These targets are already part of the event.": "Diese Ziele gehören schon zum Event.",
+    "{n} target was already tracked.": "{n} Ziel wurde schon getrackt.",
+    "{n} targets were already tracked.": "{n} Ziele wurden schon getrackt.",
     /* Live-Vorschau */
     "Checking the last {n} days…": "Die letzten {n} Tage werden geprüft…", "Last {n} days:": "Letzte {n} Tage:",
     "{n} URL matches": "{n} URL passt", "{n} URLs match": "{n} URLs passen",
     "{n} citation": "{n} Zitat", "{n} citations": "{n} Zitate", "in {n} prompt": "in {n} Prompt", "in {n} prompts": "in {n} Prompts",
-    "Similar, but not matching": "Ähnlich, aber nicht passend", "Other host": "Anderer Host", "Other path": "Anderer Pfad",
+    "Similar, but not matching": "Ähnlich, aber nicht passend", "Other host": "Anderer Host",
+    "Not under this path": "Nicht unter diesem Pfad", "Other spelling": "Andere Schreibweise",
+    "No citations for {alt}. AI answers cite this page as {url}.": "Keine Zitate für {alt}. KI-Antworten zitieren diese Seite als {url}.",
+    "Use {url}": "{url} verwenden",
     "We haven't seen this domain in your citations. Did you mean {host}?": "Diese Domain kommt in deinen Zitaten nicht vor. Meintest du {host}?",
     "Use {host}": "{host} verwenden",
     "This subdomain hasn't been cited yet. It will be counted from its first citation.": "Diese Subdomain wurde noch nicht zitiert. Sie zählt ab dem ersten Zitat.",
@@ -738,6 +771,10 @@
     "The sitemap could not be loaded. Please try again.": "Die Sitemap konnte nicht geladen werden. Versuch es bitte noch einmal.",
     "{n} pages from {source}": "{n} Seiten aus {source}", "Only the first {n} pages could be read.": "Nur die ersten {n} Seiten ließen sich lesen.",
     "This sitemap lists no pages.": "Diese Sitemap listet keine Seiten.", "{n} page": "{n} Seite",
+    "Please enter a valid sitemap link or domain.": "Gib bitte einen gültigen Sitemap-Link oder eine Domain ein.",
+    "Loading a sitemap isn't available right now.": "Das Laden einer Sitemap ist gerade nicht verfügbar.",
+    "Too many sitemap requests. Please try again in 1 minute.": "Zu viele Sitemap-Abrufe. Versuch es bitte in 1 Minute noch einmal.",
+    "Too many sitemap requests. Please try again in {n} minutes.": "Zu viele Sitemap-Abrufe. Versuch es bitte in {n} Minuten noch einmal.",
     "Newest change": "Jüngste Änderung", "Select all in folder": "Alle im Ordner auswählen",
     "Track everything under {path}": "Alles unter {path} tracken", "Included in the folder": "Im Ordner enthalten",
     "Show {n} more": "{n} weitere zeigen", "No matching pages": "Keine passenden Seiten", "Add selection": "Auswahl übernehmen",
@@ -750,6 +787,8 @@
     "Citation count": "Zitate", "Before and after the event": "Vor und nach dem Event",
     "Share of all citations": "Anteil an allen Zitaten", "New URLs": "Neue URLs", "First cited after the event": "Erstmals nach dem Event zitiert",
     "Citations after": "Zitate nachher",
+    "First cited, before and after the event": "Erstmals zitiert, vor und nach dem Event",
+    "Showing the newest {n} URLs": "Angezeigt werden die neuesten {n} URLs",
     "No cited pages yet": "Noch keine zitierten Seiten",
     "Pages that match this rule appear here as soon as an AI cites them.": "Passende Seiten erscheinen hier, sobald eine KI sie zitiert.",
     "The analysis for this rule isn't available yet.": "Die Auswertung für diese Regel ist noch nicht verfügbar.",
@@ -836,7 +875,9 @@
      oder Detail -- mit einem Aufruf, der nichts aendert: die Vorschau mit leerer Zielliste, die
      Edge Function mit leerer Adresse (sie lehnt die ab, ohne etwas abzurufen). Eine fehlende
      Funktion erkennt PostgREST an PGRST202, eine fehlende Edge Function das Gateway von Supabase
-     an 404 NOT_FOUND ("Requested function was not found"); jede andere Antwort heisst "da".
+     an 404 NOT_FOUND ("Requested function was not found"), eine ohne Gate an 503 not_configured
+     (siehe edgeFehlt); jede andere Antwort heisst "da" -- auch die 400 invalid_input, mit der die
+     Function die leere url ablehnt (ohne Abruf und ohne Zaehlung im Ratenlimit, index.ts V3).
      Netzfehler und Zeitablauf heissen "noch unbekannt" -- dann wird beim naechsten Oeffnen noch
      einmal gefragt, und bis dahin gilt der Rueckfall. NICHT ueber UC.ohneBubble: das ist kein
      Rueckweg an Bubble, sondern die Frage, was die Datenbank kann. */
@@ -846,9 +887,18 @@
     return !!erg && !erg.ok && (/PGRST202/.test(String(f.code || "")) ||
       (erg.status === 404 && /could not find the function/i.test(String(f.message || "") + " " + String(f.details || ""))));
   }
+  /* "Fehlt" heisst auch 503 not_configured (Rueckmeldung 15.10., Abschnitt 0 und 7): die Function
+     ist deployt, aber ihr Gate (impact_event_sitemap_gate_v1 aus events_ziele_v1.sql) fehlt --
+     jeder Abruf scheitert. Der Pruefaufruf mit leerer url sieht das NICHT: die deployte Fassung
+     (Version 3, index.ts) lehnt die leere url mit 400 invalid_input ab, bevor sie das Gate fragt.
+     Darum bietet die Oberflaeche die Sitemap nur zusammen mit den Zielen an (sitemapDa verlangt
+     zieleDa -- Gate und Vorschau kommen aus derselben Datei), und eine 503 beim echten Abruf
+     nimmt den Knopf fuer den Rest der Seite weg (smLaden). */
   function edgeFehlt(erg) {
     var f = (erg && erg.fehler) || {};
-    return !!erg && !erg.ok && erg.status === 404 &&
+    if (!erg || erg.ok) return false;
+    if (erg.status === 503 && String(f.message || "") === "not_configured") return true;
+    return erg.status === 404 &&
       (String(f.code || "") === "NOT_FOUND" || /requested function was not found/i.test(String(f.message || "")));
   }
   function unbekannt(erg) { return !erg || erg.status === 0 || erg.status === 401; }
@@ -899,9 +949,19 @@
     if (z.schema || z.query) return "url";
     return "path";
   }
-  function urlTextSchluessel(s) {
-    return String(s || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/#.*$/, "").replace(/\/+$/, "");
+  /* Der Schluessel einer URL wie url_norm_v1 der Datenbank (Rueckmeldung 15.10., Abschnitt 1):
+     Host klein, Fragment und "/" am Ende weg -- www und Schema BLEIBEN. Ein url-Ziel trifft nur
+     genau seine Schreibweise; https://lee-up.de/solar und https://www.lee-up.de/solar sind zwei
+     Ziele (gemessen von der Datenbank: 0 gegen 210 Zitate). Bis 15.10. strich die Oberflaeche www
+     und Schema und hielt beide fuer dasselbe -- die zweite liess sich dann nicht hinzufuegen. */
+  function urlSchluessel(s) {
+    s = String(s == null ? "" : s).trim().replace(/#.*$/, "");
+    var m = /^(https?:\/\/)?([^\/?#]*)(.*)$/i.exec(s);
+    return (m[1] || "https://").toLowerCase() + m[2].toLowerCase() + m[3].replace(/\/+$/, "");
   }
+  /* So steht ein url-Ziel da: ohne "https://" (der Normalfall), aber MIT www und mit "http://" --
+     genau das unterscheidet zwei Schreibweisen, und nur die eine trifft. */
+  function urlZeigen(s) { return urlSchluessel(s).replace(/^https:\/\//, ""); }
   /* Ein Eintrag als Ziel der gewaehlten Art. { kind, input, key, zeigen } oder { fehler }. */
   function zielBauen(text, art) {
     var z = zerlegen(text);
@@ -909,7 +969,7 @@
     if (art === "url") {
       var u = (z.schema ? z.roh : "https://" + z.roh).replace(/#.*$/, "");
       if (u.length > 2048) return { fehler: "host", roh: z.roh };
-      return { kind: "url", input: u, key: "url|" + urlTextSchluessel(u), zeigen: z.host + (z.pfad || "") + (z.query || "") };
+      return { kind: "url", input: u, key: "url|" + urlSchluessel(u), zeigen: urlZeigen(u) };
     }
     if (art === "path") {
       if (!z.pfad) return { fehler: "pfad", roh: z.roh };
@@ -929,8 +989,10 @@
     x.id = t.id; x.db = t;
     return x;
   }
-  /* Der Host einer Eingabe, wie die Vorschau ihn einstuft ("Count as your domain"). */
+  /* Der Host einer Eingabe, wie die Vorschau ihn einstuft ("Count as your domain"). Ein Ziel aus
+     der Datenbank bringt ihn seit get_impact_event_v3 selbst mit (targets[].host, 15.10.). */
   function zielHost(z) {
+    if (z && z.db && z.db.host) return String(z.db.host);
     var x = z && zerlegen(z.input);
     return x ? x.host : "";
   }
@@ -1121,7 +1183,13 @@
       }
       if (kanal === "uevDelete") { loeschFehler(txt); return; }
       if (kanal === "uevRemoveUrl") { urlWegFehler(txt); return; }
-      if (kanal === "uevRemoveTarget") { zielWegFehler(txt); return; }
+      if (kanal === "uevRemoveTarget") {
+        zielWegFehler(txt);
+        /* impact_event_target_not_found: das Ziel ist schon weg (anderer Tab, Kollege) -- das
+           Detail neu laden, sonst stuende sein Abschnitt mit dem Knopf weiter da. */
+        if (code === "impact_event_target_not_found" && state.ansicht === "detail" && kx.eventId === state.eventId) detailAnfordern();
+        return;
+      }
       if (popup && popup === kx.popup && popupFehlerKam(txt, code, hint)) return;
       if (UC.toast) UC.toast(txt, { kind: "error" });
     }
@@ -1377,6 +1445,46 @@
        "ich seh nur Skeleton Loader"). Im Klick-Dummy kommt die Liste aus der Datei, dort keine Uhr. */
     var LISTE_WARTE_MS = 25000, listeUhrId = null;
     function listeGeladen() { return !!(UC.eventsStand && UC.eventsStand().geladen); }
+    /* WAS EIN EVENT TRACKT, IN DER UEBERSICHT (15.10. spaet, Rueckmeldung Abschnitt 2). Die Karten
+       lesen den Event-Speicher (team_context_v1.events), und der bleibt laut Datenbank OHNE
+       target_count/target_kinds -- ein Event mit nur einem Pfad stuende dort als "URLs 0". Bis die
+       Datenbank die beiden Felder auch dort liefert (Rueckfrage vom 15.10.), holt die Uebersicht
+       sie EINMAL je Lieferung des Speichers aus list_impact_events_v3 (Liste ohne Umschlag, in der
+       Datenbank 3 ms) und legt sie nur hier ab. Bringt eine Zeile des Speichers target_count
+       selbst mit, faellt der Aufruf von allein weg; fehlt v3 (PGRST202), fuer den Rest der Seite.
+       Scheitert er, bleibt die Karte wie bisher -- dann ohne Ziele, aber nie mit erfundenen. */
+    var LISTE3 = { seq: -1, laeuft: false, fehlt: false, je: {} };
+    function liste3Holen() {
+      if (demo || !UC.rpc || LISTE3.fehlt || LISTE3.laeuft || ZIELE_DA.stand === false) return;
+      var st = listenStand(), l = UC.getEvents ? UC.getEvents() : [];
+      if (!st.geladen || !l.length || LISTE3.seq === st.seq) return;
+      if (l.some(function (ev) { return ev && ev.target_count != null; })) return;
+      LISTE3.laeuft = true; LISTE3.seq = st.seq;
+      teamHolen().then(function (tm) {
+        return tm ? UC.rpc("list_impact_events_v3", { p_team: tm }, { timeoutMs: 15000 }) : null;
+      }).then(function (erg) {
+        LISTE3.laeuft = false;
+        if (!erg) { LISTE3.seq = -1; return; }
+        if (fehltFn(erg)) { LISTE3.fehlt = true; return; }
+        if (!erg.ok || !isArr(erg.daten)) { if (unbekannt(erg)) LISTE3.seq = -1; return; }
+        var je = {};
+        erg.daten.forEach(function (r) {
+          if (r && r.id != null && num(r.target_count) != null && isArr(r.target_kinds)) je[String(r.id)] = { target_count: num(r.target_count), target_kinds: r.target_kinds };
+        });
+        LISTE3.je = je;
+        if (root.isConnected !== false && state.ansicht === "uebersicht") renderListe();
+      });
+    }
+    /* Eine Zeile des Speichers mit den Zielen aus list_impact_events_v3 -- als Kopie, die Zeile
+       gehoert dem Speicher in core. */
+    function mitZielen(ev) {
+      var z = ev && LISTE3.je[String(ev.id)];
+      if (!z || ev.target_count != null) return ev;
+      var k = {};
+      for (var f in ev) if (Object.prototype.hasOwnProperty.call(ev, f)) k[f] = ev[f];
+      k.target_count = z.target_count; k.target_kinds = z.target_kinds;
+      return k;
+    }
     function listeUhr() {
       if (listeUhrId || demo || state.listeZeitUm) return;
       listeUhrId = setTimeout(listeAblauf, LISTE_WARTE_MS);
@@ -1444,8 +1552,9 @@
       /* Nicht l.map(karteHtml): map reicht den Index als zweites Argument durch, und das ist der
          Schalter vorschau -- jede Karte ab der zweiten kam als nicht klickbare Vorschau heraus
          (im Pruefstand am 03.10. gefunden: nur die erste Karte oeffnete das Detail). */
-      elListe.innerHTML = '<div class="uev-karten">' + l.map(function (ev) { return karteHtml(ev, false); }).join("") + '</div>';
+      elListe.innerHTML = '<div class="uev-karten">' + l.map(function (ev) { return karteHtml(mitZielen(ev), false); }).join("") + '</div>';
       rasterSetzen(l.length);
+      liste3Holen();
     }
     function rasterSetzen(n) {
       var k = elListe && elListe.querySelector(".uev-karten, .uev-karten-sk");
@@ -1605,7 +1714,7 @@
        die Beschreibung und der Umfang mit betonten Zahlen. Ein Kasten, kein lose stehender Text. */
     function renderKopf() {
       var el = elMain.querySelector('[data-sek="kopf"]');
-      var d = dieDetail() || listeEvent(state.eventId);
+      var d = dieDetail() || mitZielen(listeEvent(state.eventId));
       if (!d) {
         el.innerHTML = state.detailFehler
           ? '<div class="uev-fehlerkopf">' + (UC.leseFehlerHtml ? UC.leseFehlerHtml("event") : esc(t("This event could not be loaded."))) +
@@ -2002,6 +2111,8 @@
           /* is-4 aus core: vier Kennzahlen in einer Reihe, schmal zwei mal zwei. */
           '<div class="up-kpiband is-offen is-4 uev-zielkpis"></div>' +
           '<div class="up-box uev-chartbox uev-zielchart"><div class="up-line-wrap uev-linewrap uev-ziel-linie"><canvas></canvas></div><div class="up-legend uev-legende"></div></div>' +
+          /* cited_urls_truncated (15.10.): die Tabelle traegt hoechstens 200 URLs, die neuesten. */
+          '<div class="uev-hinweise uev-ziel-hinweis" hidden></div>' +
           '<div class="uev-ziel-tab"><div class="uev-tabinhalt"></div>' + fussHtml() + '</div>' +
         '</div>';
       host.appendChild(sek);
@@ -2043,7 +2154,12 @@
     }
     function zielFuellen(sek, zt, z, a) {
       var kpis = sek.querySelector(".uev-zielkpis"), linie2 = zielLinien[zt.id], platz = sek.querySelector(".uev-tabinhalt");
-      var n = "ziel-" + zt.id;
+      var n = "ziel-" + zt.id, hinweis = sek.querySelector(".uev-ziel-hinweis");
+      var mehr = !!(z && z.cited_urls_truncated === true && isArr(z.cited_urls) && z.cited_urls.length);
+      if (hinweis) {
+        hinweis.hidden = !mehr;
+        hinweis.innerHTML = mehr ? '<span class="uev-angabe">' + UC.icon("info", 2) + '<span>' + esc(ersetze(t("Showing the newest {n} URLs"), { n: zahl(z.cited_urls.length) })) + '</span></span>' : "";
+      }
       var kopf = tabKopf("URL", [{ t: "First cited", k: "uev-th-beob" }, { t: "Citations after" }, { t: "Prompts" }, { t: "Models" }]);
       if (!a) {
         /* Die Analyse laeuft noch (oder ist gescheitert -- das sagen Kennzahlen und Diagramm oben
@@ -2074,7 +2190,11 @@
         UC.kpiKarte({ label: "Citation count", vorherHtml: zahlWert(z.citations_before), wertHtml: zahlWert(z.citations_after), fussHtml: esc(t("Before and after the event")), klasse: "uev-kpi" }),
         UC.kpiKarte({ label: "Share of all citations", vorherHtml: wertHtml("visibility", sb), wertHtml: wertHtml("visibility", sa),
           trendHtml: sb != null && sa != null ? trendHtml("visibility", sa - sb) : "", klasse: "uev-kpi" }),
-        UC.kpiKarte({ label: "New URLs", wertHtml: zahlWert(z.new_urls_after), fussHtml: esc(t("First cited after the event")), klasse: "uev-kpi" })
+        /* new_urls_before (15.10.): wie die Zitate vorher und nachher -- so sieht man, ob nach dem
+           Event mehr neue Seiten zitiert wurden als davor. Ohne das Feld wie bisher nur nachher. */
+        num(z.new_urls_before) != null
+          ? UC.kpiKarte({ label: "New URLs", vorherHtml: zahlWert(z.new_urls_before), wertHtml: zahlWert(z.new_urls_after), fussHtml: esc(t("First cited, before and after the event")), klasse: "uev-kpi" })
+          : UC.kpiKarte({ label: "New URLs", wertHtml: zahlWert(z.new_urls_after), fussHtml: esc(t("First cited after the event")), klasse: "uev-kpi" })
       ].join("");
       var tage = isArr(z.daily) ? z.daily : [];
       if (linie2) {
@@ -2082,9 +2202,14 @@
         else {
           var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : token("--vc-text", "#1f1f1b");
           var grau = token("--vc-fourth", "#80858e");
+          /* Ein Tag ohne Lauf (runs 0) hat KEINE Zahl: citations kommt dort als null (Vertrag
+             Abschnitt 5, wie v2), und die neuen URLs dieses Tages sind ebenso keine Beobachtung.
+             __luecken aus core: die Linie bricht dort ab, statt den Tag zu ueberbruecken -- eine
+             Luecke statt einer 0 und statt eines erfundenen Verlaufs. */
+          var ohneLauf = function (p) { return num(p.runs) === 0; };
           linie2.render({ labels: tage.map(function (p) { return String(p.day).slice(0, 10); }), datasets: [
-            { label: t("Citation count"), __id: "zitate", __baseColor: tinte, borderColor: tinte, data: tage.map(function (p) { return num(p.citations); }) },
-            { label: t("New URLs"), __id: "neu", __baseColor: grau, borderColor: grau, __dash: true, data: tage.map(function (p) { return num(p.new_urls); }) }
+            { label: t("Citation count"), __id: "zitate", __baseColor: tinte, borderColor: tinte, __luecken: true, data: tage.map(function (p) { return ohneLauf(p) ? null : num(p.citations); }) },
+            { label: t("New URLs"), __id: "neu", __baseColor: grau, borderColor: grau, __dash: true, __luecken: true, data: tage.map(function (p) { return ohneLauf(p) ? null : num(p.new_urls); }) }
           ] });
         }
       }
@@ -3053,7 +3178,7 @@
       var d = state.detail[p.eventId];
       if (!d) return false;
       if (isArr(d.targets) && d.targets.some(function (x) { var y = zielAusDb(x); return y && y.key === z.key; })) return true;
-      return z.kind === "url" && isArr(d.urls) && d.urls.some(function (u) { return "url|" + urlTextSchluessel(u.url) === z.key; });
+      return z.kind === "url" && isArr(d.urls) && d.urls.some(function (u) { return "url|" + urlSchluessel(u.url) === z.key; });
     }
     function zielGewaehlt(p, z) { return p.e.ziele.some(function (x) { return x.key === z.key; }); }
     function schlechtText(z) {
@@ -3170,8 +3295,12 @@
       if (!e.ziele.length || e.zielArt === "marke") { el.innerHTML = ""; return; }
       el.innerHTML = '<div class="uev-urlwahl-liste">' + e.ziele.map(function (z, i) {
         var pt = je[z.kind + "|" + z.input], n = pt ? num(pt.matched_url_count) : null;
+        /* Der Grund steht am Ziel selbst (15.10.): aus der Antwort des Servers (p.zielFehler, hint
+           "p_targets[i]: <grund>") oder aus der Vorschau (per_target[].error, dieselben Gruende). */
+        var sf = p.zielFehler && p.zielFehler.key === z.key ? p.zielFehler.satz : "";
         var zahlTxt = z.kind !== "url" && !zieleDa() ? '<span class="uev-ziel-fehler">' + esc(fehlerText("impact_event_targets_unavailable")) + '</span>'
-          : pt && pt.error ? '<span class="uev-ziel-fehler">' + esc(fehlerText("impact_event_invalid_target")) + '</span>'
+          : sf ? '<span class="uev-ziel-fehler">' + esc(sf) + '</span>'
+          : pt && pt.error ? '<span class="uev-ziel-fehler">' + esc(t(ZIEL_GRUND[pt.error] || FEHLER.impact_event_invalid_target)) + '</span>'
           : n != null ? '<span class="uev-ziel-n">' + esc(ersetze(t(n === 1 ? "{n} URL" : "{n} URLs"), { n: zahl(n) })) + '</span>' : '';
         return '<div class="uev-urlwahl">' +
           '<span class="uev-ziel-ic">' + UC.icon(ART_ZEICHEN[z.kind] || "link", 2) + '</span>' +
@@ -3254,11 +3383,32 @@
             (ci != null ? '<span class="uev-vz-wert">' + esc(ersetze(t(ci === 1 ? "{n} citation" : "{n} citations"), { n: zahl(ci) })) + '</span>' : '') + '</div>';
         }).join("") + '</div>';
       }
-      var nah = isArr(d.near_misses) ? d.near_misses.slice(0, 5) : [];
+      var nahAlle = isArr(d.near_misses) ? d.near_misses.filter(function (x) { return x && x.url; }) : [];
+      var nah = nahAlle.slice(0, 5), pts = isArr(d.per_target) ? d.per_target.filter(Boolean) : [];
       var hosts = {};
       l.forEach(function (z) { var h = zielHost(z); if (h) hosts[h] = 1; });
       var hl = Object.keys(hosts), h1 = hl.length === 1 ? hl[0] : "";
-      if (!n) {
+      /* DIESELBE SEITE IN ANDERER SCHREIBWEISE (Rueckmeldung 15.10., Abschnitt 1 und 4): ein
+         url-Ziel trifft nur genau seine Schreibweise. Hat es 0 Treffer und meldet die Vorschau
+         dieselbe Seite mit Zitaten als url_variant (http/https, mit oder ohne www bzw. "/" am
+         Ende), bietet sie diese Schreibweise an -- wie "Use {host}" bei einem Tippfehler. Echtes
+         Beispiel der Datenbank: https://lee-up.de/solar 0, https://www.lee-up.de/solar 210. */
+      var varianten = [];
+      pts.forEach(function (pt) {
+        if (pt.kind !== "url" || pt.error || num(pt.matched_url_count) !== 0) return;
+        var best = null;
+        nahAlle.forEach(function (x) {
+          if (x.reason === "url_variant" && String(x.target_input) === String(pt.input) && num(x.citations) > 0 &&
+              (!best || num(x.citations) > num(best.citations))) best = x;
+        });
+        if (best && !varianten.some(function (v) { return v.alt === String(pt.input); })) varianten.push({ alt: String(pt.input), neu: String(best.url) });
+      });
+      var variantenHtml = varianten.map(function (v) {
+        return '<p class="uev-vz-satz"><span>' + esc(ersetze(t("No citations for {alt}. AI answers cite this page as {url}."), { alt: urlZeigen(v.alt), url: urlZeigen(v.neu) })) + '</span>' +
+          '<button type="button" class="up-quietbtn uev-vz-statt" data-variante-alt="' + esc(v.alt) + '" data-variante-neu="' + esc(v.neu) + '">' + esc(ersetze(t("Use {url}"), { url: urlZeigen(v.neu) })) + '</button></p>';
+      }).join("");
+      if (!n && variantenHtml) html += variantenHtml;
+      else if (!n) {
         /* Null Treffer: je Fall ein eigener Satz (Entscheidung des Nutzers 15.10.). */
         var vertippt = "";
         if (d.host_known === false && h1) nah.forEach(function (x) { var nh = hostPfad(x.url).host; if (!vertippt && aehnlich(nh, h1)) vertippt = nh; });
@@ -3270,18 +3420,30 @@
         else satz = esc(t("No cited page matches yet. Matching pages count from their first citation."));
         html += '<p class="uev-vz-satz">' + satz + '</p>' +
           '<p class="uev-vz-satz is-leise">' + esc(t("Only pages that AI answers to your tracked prompts cite can be counted.")) + '</p>';
-      }
+      } else html += variantenHtml;
       if (nah.length) {
-        var GRUND = { other_host: "Other host", other_path: "Other path" };
+        /* Die drei Gruende der Datenbank (Abschnitt 4), je ein eigenes Etikett. Bei url_variant
+           steht die Adresse mit www und Schema da -- ohne sie saehe sie aus wie das Ziel selbst. */
+        var GRUND = { path_boundary: "Not under this path", url_variant: "Other spelling", other_host: "Other host" };
         html += '<div class="uev-vz-titel">' + esc(t("Similar, but not matching")) + '</div><div class="uev-vz-liste is-leise">' + nah.map(function (x) {
-          var hp = hostPfad(x.url);
-          return '<div class="uev-vz-reihe"><span class="uev-vz-url" title="' + esc(x.url || "") + '">' + esc(hp.host + (hp.start ? "" : hp.pfad)) + '</span>' +
+          var hp = hostPfad(x.url), txt = x.reason === "url_variant" ? urlZeigen(x.url) : hp.host + (hp.start ? "" : hp.pfad);
+          return '<div class="uev-vz-reihe"><span class="uev-vz-url" title="' + esc(x.url || "") + '">' + esc(txt) + '</span>' +
             (GRUND[x.reason] ? '<span class="uev-vz-wert">' + esc(t(GRUND[x.reason])) + '</span>' : '') + '</div>';
         }).join("") + '</div>';
       }
       /* "Count as your domain" (Nutzer 15.10.: "JA, das soll direkt angeboten werden"): nur fuer
-         EINEN Host -- bei mehreren sagt die Vorschau nicht, welcher gemeint ist. */
-      if (h1 && d.host_role !== "own" && !(p.eigen && p.eigen[h1])) {
+         EINEN Host -- bei mehreren sagt die Vorschau nicht, welcher gemeint ist. Eingestuft wird
+         genau dieser Host, auch bei host_all: jede Unterdomain ist eine eigene domain_norm, die
+         Einstufung gilt nur fuer sie (Rueckmeldung Abschnitt 8.1).
+         NUR FUER owner UND admin (Abschnitt 8.2, wie can_override im Domain-Drawer): die Rolle aus
+         dem App-Start (UC.teamRolle). Unbekannt ("" -- Bubble, Start gescheitert) heisst anbieten:
+         die Datenbank prueft selbst und antwortet mit dem Satz des Drawers; ein Knopf, der einem
+         owner faelschlich fehlt, waere schlimmer (dieselbe Abwaegung wie prompts-data.js).
+         Die Rolle des Hosts aus per_target (je Ziel), sonst aus der Antwort im Ganzen. */
+      var rolle = UC.teamRolle ? UC.teamRolle() : "";
+      var hostRolle = d.host_role, je1 = pts.filter(function (pt) { return pt.host && String(pt.host) === h1; });
+      if (je1.length) hostRolle = je1.some(function (pt) { return pt.host_role === "own"; }) ? "own" : je1[0].host_role;
+      if (h1 && rolle !== "member" && hostRolle !== "own" && !(p.eigen && p.eigen[h1])) {
         html += '<div class="uev-vz-eigen"><span>' + esc(ersetze(t("{host} doesn't count as your domain yet."), { host: h1 })) + '</span>' +
           '<button type="button" class="up-btn-sec uev-vz-eigenbtn" data-eigen-host="' + esc(h1) + '"' + (p.eigenLaeuft ? ' disabled' : '') + '>' +
             (p.eigenLaeuft ? '<span class="up-modal-spin"></span>' : '') + '<span>' + esc(t("Count as your domain")) + '</span></button></div>';
@@ -3338,6 +3500,27 @@
       void art;
       zieleZeigen(p);
     }
+    /* "Use <Schreibweise>" (url_variant, 15.10.): das url-Ziel mit der Eingabe alt durch die
+       zitierte Schreibweise ersetzen -- in der Liste oder, wenn es noch im Feld steht, dort. Stand
+       die neue Schreibweise schon in der Liste, bleibt sie einmal. */
+    function urlErsetzen(p, alt, neu) {
+      if (!p || !alt || !neu) return;
+      var kAlt = "url|" + urlSchluessel(alt), x = zielBauen(neu, "url");
+      if (x.fehler) return;
+      var drin = false, da = {};
+      p.e.ziele = p.e.ziele.map(function (z) { if (z.kind === "url" && z.key === kAlt) { drin = true; return x; } return z; })
+        .filter(function (z) { if (da[z.key]) return false; da[z.key] = 1; return true; });
+      if (!drin && leseArt(p.e) === "url") {
+        var tl = eingabeTeile(p.e.eingabe), neuTl = tl.map(function (s) { var z = zielBauen(s, "url"); return !z.fehler && z.key === kAlt ? neu : s; });
+        if (neuTl.join("\n") !== tl.join("\n")) {
+          p.e.eingabe = neuTl.join("\n");
+          var inp = im(".uev-zielein");
+          if (inp) { inp.value = p.e.eingabe; feldHoehe(inp); }
+        }
+      }
+      if (p.zielFehler && p.zielFehler.key === kAlt) p.zielFehler = null;
+      zieleZeigen(p);
+    }
 
     /* ---- DER SITEMAP-WAEHLER (Edge Function sitemap-lesen, Vertrag Abschnitt 6) -------------
        In Schritt 3 und im Add-Dialog, unter dem Eingabefeld. Gelesen wird ueber den Weg der App
@@ -3358,8 +3541,23 @@
       rate_limited: "Too many sitemap requests. Please wait a while and try again.",
       network: "We could not reach the server. Check your connection and try again.",
       leer: "Please enter a sitemap link or a domain.",
-      ungueltig: "Please enter a valid domain."
+      ungueltig: "Please enter a valid domain.",
+      /* Die HTTP-Antworten der Function (Rueckmeldung 15.10., Abschnitt 7). detail zeigt die
+         Oberflaeche NIE: laut Vertrag nur zur Fehlersuche, und Entwicklertexte gehoeren nicht ins
+         UI. 401 und 403 sagen dasselbe wie dieselben Codes der RPCs. */
+      invalid_input: "Please enter a valid sitemap link or domain.",
+      unauthorized: "Please sign in again.",
+      forbidden: "You don't have permission to do that.",
+      not_configured: "Loading a sitemap isn't available right now."
     };
+    /* 429 rate_limited traegt retry_after in Sekunden (20 Abrufe je Stunde und Team, 10 je Minute
+       und Nutzer) -- der Satz nennt die Wartezeit in ganzen Minuten, aufgerundet. */
+    function smWarteText(s) {
+      s = num(s);
+      if (!s || s <= 0) return smFehlerText("rate_limited");
+      var min = Math.max(1, Math.ceil(s / 60));
+      return ersetze(t(min === 1 ? "Too many sitemap requests. Please try again in 1 minute." : "Too many sitemap requests. Please try again in {n} minutes."), { n: zahl(min) });
+    }
     var SM_SEITEN = 50, SM_MEHR = 100, SM_TREFFER = 200;
     function smVorschlag(p) {
       var r = eingabeTeile(p.e.eingabe), z = r.length ? zerlegen(r[0]) : null;
@@ -3392,6 +3590,7 @@
       var inp = im(".uev-sm-ein"), url = String(inp ? inp.value : p.sm.url || "").trim();
       p.sm.url = url;
       var z = zerlegen(url);
+      if (!sitemapDa()) { p.sm.fehler = smFehlerText("not_configured"); smZeichnen(p); return; }
       if (!url) { p.sm.fehler = smFehlerText("leer"); smZeichnen(p); return; }
       if (!z || !hostOk(z.host)) { p.sm.fehler = smFehlerText("ungueltig"); smZeichnen(p); return; }
       p.sm.laeuft = true; p.sm.fehler = ""; p.sm.antwort = null;
@@ -3408,9 +3607,17 @@
           p.sm.antwort = d;
           smBaum(p, d.urls);
         } else {
-          var code = d && d.ok === false ? String(d.error || "") : String((erg && erg.fehler && erg.fehler.message) || "");
-          if (edgeFehlt(erg)) { SITEMAP_DA.stand = false; code = ""; }
-          p.sm.fehler = smFehlerText(code);
+          var fe = (erg && erg.fehler) || {};
+          var code = d && d.ok === false ? String(d.error || "") : String(fe.message || "");
+          /* Function weg (404) oder ohne Gate (503 not_configured): fuer den Rest der Seite kein
+             Knopf mehr, im offenen Waehler der Satz dazu, "Load" gesperrt. */
+          if (edgeFehlt(erg)) {
+            SITEMAP_DA.stand = false; code = "not_configured";
+            var kz0 = im(".uev-sm-knopfzeile");
+            if (kz0) kz0.parentNode.removeChild(kz0);
+            schreibweiseZeigen(p);
+          }
+          p.sm.fehler = code === "rate_limited" ? smWarteText(fe.retry_after) : smFehlerText(code);
         }
         smZeichnen(p);
       });
@@ -3544,7 +3751,7 @@
       fe.firstChild.textContent = sm.fehler || "";
       fe.classList.toggle("is-on", !!sm.fehler);
       var knopf = ort.querySelector(".uev-sm-laden");
-      knopf.disabled = !!sm.laeuft;
+      knopf.disabled = !!sm.laeuft || !sitemapDa();
       var inh = ort.querySelector(".uev-sm-inhalt");
       if (sm.laeuft) {
         if (!inh.querySelector(".up-lb")) {
@@ -3736,7 +3943,7 @@
          60) -- OBEN, weil sie genau das ist, was jemand gerade eingefuegt hat. Dasselbe wie der
          Knopf "Add" daneben, an der Stelle, an der man nach der Suche hinsieht. */
       var neuZ = zielBauen(q, "url"), neu = neuZ.fehler || !/\./.test(q) ? "" : neuZ.input;
-      if (neu && !treffer.some(function (it) { return "url|" + urlTextSchluessel(it.url) === neuZ.key; })) {
+      if (neu && !treffer.some(function (it) { return "url|" + urlSchluessel(it.url) === neuZ.key; })) {
         var zn = zustand(neu);
         html += '<button type="button" class="up-es-row uev-neuziel' + (zn.klasse ? " " + zn.klasse : "") + '" data-neu-url="' + esc(neu) + '">' +
           (UC.entityAvatar ? UC.entityAvatar("", UC.icon("plus", 2), false, "up-es") : "") +
@@ -4010,8 +4217,11 @@
          sonst wie bisher als p_urls an v2. "Brand metrics only" schickt keines von beiden, auch
          wenn vorher Ziele eingetragen waren -- es gilt, was gewaehlt ist. */
       var mit = e.zielArt && e.zielArt !== "marke" ? e.ziele : [];
-      if (mit.length && zieleDa()) { delete b.p_urls; b.p_targets = mit.map(function (z) { return { kind: z.kind, input: z.input }; }); }
-      else if (mit.length) b.p_urls = mit.filter(function (z) { return z.kind === "url"; }).map(function (z) { return z.input; });
+      /* p.gesendet: dieselbe Reihenfolge wie p_targets bzw. p_urls -- der hint eines Fehlers
+         ("p_targets[i]: ...") zeigt so auf das Ziel in der Liste. */
+      p.zielFehler = null; p.gesendet = null;
+      if (mit.length && zieleDa()) { delete b.p_urls; b.p_targets = mit.map(function (z) { return { kind: z.kind, input: z.input }; }); p.gesendet = mit.slice(); }
+      else if (mit.length) { p.gesendet = mit.filter(function (z) { return z.kind === "url"; }); b.p_urls = p.gesendet.map(function (z) { return z.input; }); }
       if (!vorabPruefen(p, b)) return;
       warten(p, "anlegen");
       rufen("uevCreate", b, { popup: p }, false, !!b.p_targets);
@@ -4051,6 +4261,7 @@
       if (zieleDa()) {
         var schon = d && isArr(d.targets) ? d.targets.length : 0;
         if (schon + p.e.ziele.length > ZIEL_MAX) { feldFehlerZeigen(p, "impact_event_too_many_targets", "", fehlerText("impact_event_too_many_targets")); return; }
+        p.zielFehler = null; p.gesendet = p.e.ziele.slice();
         warten(p, "ziel");
         rufen("uevAddTarget", { p_event_id: p.eventId, p_targets: p.e.ziele.map(function (z) { return { kind: z.kind, input: z.input }; }) }, { popup: p });
         return;
@@ -4139,7 +4350,13 @@
         oeffnen(id, true, false, true);
         if (anlInsDetail) setTimeout(function () { anlInsDetail = false; anleitungZeige("d1"); }, 60);
       }
-      else if (UC.toast) UC.toast(t(art === "url" ? "URL added" : art === "ziel" ? "Added to tracking" : "Event updated"));
+      else if (UC.toast) {
+        /* add_impact_event_target_v1 ueberspringt, was schon da ist, und sagt wie viele
+           (skipped_duplicates, Rueckmeldung Abschnitt 3) -- das steht als zweite Zeile dabei. */
+        var sd = art === "ziel" ? num(d.skipped_duplicates) : null;
+        UC.toast(t(art === "url" ? "URL added" : art === "ziel" ? "Added to tracking" : "Event updated"),
+          sd > 0 ? { desc: ersetze(t(sd === 1 ? "{n} target was already tracked." : "{n} targets were already tracked."), { n: zahl(sd) }) } : undefined);
+      }
     }
     /* Welcher Schritt einen Fehler beheben kann -- dorthin springt das Popup, die Meldung bleibt. */
     var FEHLER_SCHRITT = {
@@ -4154,6 +4371,14 @@
        unten bleibt dann leer), sonst direkt. Hat das Popup das Feld nicht (ein Topic-Fehler im
        Bearbeiten), steht sie in der Fehlerzeile des Popups. */
     function feldFehlerZeigen(p, code, hint, txt) {
+      /* WELCHES Ziel (15.10.): "p_targets[i]: <grund>" zeigt auf den i-ten gesendeten Eintrag
+         (p.gesendet, in derselben Reihenfolge wie p_targets). Der Grund steht am Ziel in der
+         Liste, am Feld mit dessen Schreibweise davor. */
+      var zh = code === "impact_event_invalid_target" ? zielHint(hint) : null;
+      var gz = zh && p.gesendet ? p.gesendet[zh.i] : null;
+      if (gz) { p.zielFehler = { key: gz.key, satz: txt }; txt = gz.zeigen + ": " + txt; }
+      /* Alle schon da (impact_event_target_duplicate): bei mehreren Zielen in der Mehrzahl. */
+      if (code === "impact_event_target_duplicate" && p.gesendet && p.gesendet.length > 1) txt = t("These targets are already part of the event.");
       var f = feldVonFehler(code, hint);
       var n = p.art === "anlegen" ? (FELD_SCHRITT[f] || FEHLER_SCHRITT[code] || 0) : 0;
       if (n && n !== p.schritt) schritt(n, true);
@@ -4162,6 +4387,7 @@
         if (p.e.zielArt && p.e.zielArt !== "url" && p.e.zielArt !== "marke") p.e.zielArt = "url";
         zieleZeigen(p, true);
       }
+      if (gz) zielListeZeigen(p);
       if (!feldFehler(f, txt)) p.api.fehler(txt);
     }
     function popupFehlerKam(txt, code, hint) {
@@ -4415,6 +4641,8 @@
       if (eb) { if (!eb.disabled) alsEigeneZaehlen(p, eb.getAttribute("data-eigen-host")); return; }
       var st = x.closest("[data-statt-alt]");
       if (st) { hostErsetzen(p, st.getAttribute("data-statt-alt"), st.getAttribute("data-statt-neu")); return; }
+      var va = x.closest("[data-variante-alt]");
+      if (va) { urlErsetzen(p, va.getAttribute("data-variante-alt"), va.getAttribute("data-variante-neu")); return; }
       /* ---- Sitemap ---- */
       var sa = x.closest(".uev-sm-auf");
       if (sa) { smOeffnen(p, sa.getAttribute("data-sm-url") || "", !!sa.getAttribute("data-sm-url")); return; }

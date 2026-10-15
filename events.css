@@ -561,6 +561,10 @@ html[data-up-hell="grau"] .up-root:not([data-theme="dark"]) .uev-art.is-on:hover
 .uev-ziele[hidden] { display: none; }
 .uev-ziel-h { gap: 8px; min-width: 0; }
 .uev-ziel-block { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+/* "Showing the newest 200 URLs" (cited_urls_truncated): die Angabe wie die Hinweise im Kopf
+   (.uev-hinweise). Ohne Kuerzung steht sie nicht da -- und darf dann keine Luecke im Abstand der
+   Spalte lassen; .uev-hinweise setzt display und schlaegt damit das hidden des Browsers. */
+.uev-ziel-hinweis[hidden] { display: none; }
 .uev-zielsek .uev-zielweg { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
 .uev-zielsek .uev-zielweg svg { width: 14px; height: 14px; }
 .uev-linewrap.uev-ziel-linie { height: 220px; }

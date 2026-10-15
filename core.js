@@ -21180,6 +21180,12 @@
     if (appRuf("setUpstreemProfile")) window.setUpstreemProfile({ display_name: u.display_name, avatar_url: u.avatar_url, user_id: u.id });
     if (!r) return null;
     APP.team = String(r.team_id || "");
+    /* Die Rolle im aktiven Team (15.10., Vertrag App-Start: owner | admin | member). Bisher ging
+       sie nur an Bubble (appMelden); die Events brauchen sie, weil "Count as your domain" laut
+       Datenbank nur owner und admin anbieten soll (domain_classify_v1, wie can_override im
+       Domain-Drawer). Abruf ueber UC.teamRolle(); leer heisst unbekannt (Bubble, Start
+       gescheitert). */
+    APP.rolle = /^(owner|admin|member)$/.test(String(r.role || "")) ? String(r.role) : "";
     appTabTeam(APP.team);
     setUpstreemTeam(APP.team);
     /* Der Standardmarkt des Teams auch in core abgelegt (14.10.): bisher bekam ihn nur "Prompts
@@ -23039,6 +23045,10 @@
      ging, zeigt sie in der App ihren Fehler. Vorher lief so ein Rueckweg ins Leere (der Export drehte
      90 s). In Bubble aendert sich nichts. */
   function ohneBubble(){ return window.__upOhneBubble === true; }
+  /* Die Rolle im aktiven Team aus dem App-Start (siehe appAnwenden): "owner" | "admin" | "member",
+     "" solange unbekannt. Die Datenbank prueft jedes Recht selbst -- das hier entscheidet nur, was
+     die Oberflaeche anbietet. */
+  function teamRolle(){ return (window.__upApp && window.__upApp.rolle) || ""; }
   function fremdUmschreiben(t){
     var b = fremdBasis();
     return b && typeof t === "string" ? t.replace(FREMD_BILD, b + "$1") : t;
@@ -23174,10 +23184,15 @@
             /* Die Edge Functions der Settings (create-team-checkout, 11.10.) antworten mit
                {success:false, error:<code>, code, hint} -- der Code steht in error, nicht in
                message. Ohne diesen Rueckfall kaeme nur "http_409" an, und die Seite koennte
-               "Abo laeuft schon, Portal oeffnen" nicht von einem echten Fehler unterscheiden. */
+               "Abo laeuft schon, Portal oeffnen" nicht von einem echten Fehler unterscheiden.
+               retry_after (15.10., sitemap-lesen: 429 mit Sekunden bis zum naechsten freien
+               Abruf): ohne das Feld koennte der Satz an den Nutzer keine Wartezeit nennen. null,
+               wenn es fehlt oder keine Zahl ist. */
+            var warten = Number(f.retry_after);
             return { ok: false, status: r.status, fehler: {
               code: String(f.code || ""), message: String(f.message || f.error || ("http_" + r.status)),
-              hint: String(f.hint || ""), details: String(f.details || "") } };
+              hint: String(f.hint || ""), details: String(f.details || ""),
+              retry_after: f.retry_after != null && isFinite(warten) && warten > 0 ? warten : null } };
           });
         }, function(e){
           clearTimeout(uhr);
@@ -27455,7 +27470,7 @@
     parseLinkedinUrl: parseLinkedinUrl,
     esc: esc,
     parseBubbleJson: parseBubbleJson, PASSWORT: PASSWORT, rechtLinksHtml: rechtLinksHtml,
-    pwZeichen: pwZeichen, pwZuLang: pwZuLang, ohneBubble: ohneBubble, fremdUrl: fremdUrl,
+    pwZeichen: pwZeichen, pwZuLang: pwZuLang, ohneBubble: ohneBubble, teamRolle: teamRolle, fremdUrl: fremdUrl,
     readBubble: readBubble, bubbleObjekt: bubbleObjekt, bubbleFehler: bubbleFehler,
     wennBody: wennBody,
     citeName: citeName,
