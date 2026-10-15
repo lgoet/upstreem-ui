@@ -71,6 +71,58 @@
 .combo-root.is-hidden-view .combo-filter,
 .combo-root.is-hidden-view .combo-maximize { opacity: 0.4; pointer-events: none; }
 
+/* ---------- DAS OFFENE BAND (data-flach="yes" an der Wurzel, 15.10.) ----------
+   Die Form der flachen Tabelle aus core (core.css "DIE FLACHE TABELLE"), uebertragen auf den
+   Chart: Variante A der Vorschau zur Citations-Seite, vom Nutzer gewaehlt. Kein Kasten, der
+   Bereich laeuft links und rechts um --up-flach-aus bis an die Kanten, oben und unten je eine
+   Linie, an den Seiten keine. Die Ueberschriften samt Werkzeugen sind die erste Zeile IM Band,
+   48 hoch wie Kopf und Fuss der Tabelle darunter (--up-flach-h), und es steht keine Linie
+   zwischen Ueberschrift und Diagramm. Zwischen Linie und Torte eine senkrechte Linie von Kante
+   zu Kante des Bandes.
+   WARUM DASSELBE ATTRIBUT WIE DIE TABELLE und kein eigenes: die beiden Masse setzt core an
+   .up-root[data-flach="yes"], fuer jede Komponente gleich -- ein eigenes Attribut muesste sie
+   ein zweites Mal festlegen, und dann liefen Band und Tabelle bei der naechsten Aenderung
+   auseinander. Alle uebrigen Regeln des core-Blocks gehen an Teile einer Tabelle (.up-box,
+   .up-thead, .up-row, .up-foot, .up-head), die es in diesem Chart nicht gibt; was das Band
+   braucht, steht hier. Gesetzt wird das Attribut nur von der Citations-Seite
+   (.citations_markup.py), die Bubble-Vorlage bleibt im Kasten.
+   Spezifitaet .up-root.combo-root[data-flach="yes"] (0,3,0) und mehr: schlaegt die Regeln oben
+   und die dunkle Kartenregel aus core (.up-root[data-theme="dark"] .combo-box) ohne die
+   Ladereihenfolge. Das !important der ausgeblendeten Kaesten (height 0) bleibt staerker, so
+   klappt das Band beim Ausblenden auf seine Ueberschriftzeile zusammen. */
+.up-root.combo-root[data-flach="yes"] {
+  /* width auto: .up-root traegt 100%, mit 100% wuerde der Auslauf das Band nur verschieben
+     statt verbreitern. */
+  gap: 0; width: auto;
+  margin-left: calc(-1 * var(--up-flach-aus)); margin-right: calc(-1 * var(--up-flach-aus));
+  border-top: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border);
+}
+/* Das Polster gibt den Auslauf zurueck: Ueberschrift und Diagramm stehen dort, wo sie im Kasten
+   standen, buendig mit Filterzeile und Tabellenleiste. */
+.up-root.combo-root[data-flach="yes"] .combo-unit { padding: 0 var(--up-flach-aus); }
+.up-root.combo-root[data-flach="yes"] .combo-unit-left { border-right: 1px solid var(--vc-border); }
+.up-root.combo-root[data-flach="yes"] .combo-head { height: var(--up-flach-h); margin-bottom: 0; }
+/* Der Kasten wird zur Flaeche: kein Rahmen, kein Radius, kein eigener Grund, auch im Dunkeln
+   nicht (dort trug bisher die Fuellung --vc-bg die Karte). 412 statt 430: die Ueberschrift steht
+   jetzt im Band, die Zeichenflaeche links bleibt mit 388 so hoch wie bisher
+   (430 - 2 Rahmen - 24 - 16 = 412 - 8 - 16). */
+.up-root.combo-root[data-flach="yes"] .combo-box {
+  border-width: 0; border-radius: 0; background: transparent; height: 412px;
+}
+/* Seitlich kein Polster mehr, das hat jetzt die Einheit; oben 8 statt 24, weil die 48er
+   Ueberschriftzeile den Abstand zur Linie schon mitbringt. */
+.up-root.combo-root[data-flach="yes"] .combo-panel-body,
+.up-root.combo-root[data-flach="yes"] .combo-box-left .combo-panel-body { padding: 8px 0 16px; }
+/* Gestapelt (Maximieren, schmal): die senkrechte Linie wird zur waagerechten, die 32 Luft
+   zwischen den Kaesten entfallen -- die Linie trennt. Hoehen je 16 weniger als im Kasten aus
+   demselben Grund wie oben (Ueberschrift im Band, Zeichenflaeche gleich). */
+.up-root.combo-root[data-flach="yes"]:is(.is-max, .is-narrow) { gap: 0; }
+.up-root.combo-root[data-flach="yes"]:is(.is-max, .is-narrow) .combo-unit-left {
+  border-right: 0; border-bottom: 1px solid var(--vc-border);
+}
+.up-root.combo-root[data-flach="yes"]:is(.is-max, .is-narrow) .combo-box-left { height: 384px; }
+.up-root.combo-root[data-flach="yes"]:is(.is-max, .is-narrow) .combo-box-right { height: 324px; }
+
 /* icon swaps */
 .combo-maximize .ic-min { display: none; }
 .combo-root.is-max .combo-maximize .ic-max { display: none; }
