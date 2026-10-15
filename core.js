@@ -26309,6 +26309,80 @@
     };
   }
 
+  /* DIE ZAEHLZEILE (15.10. abends): die Gesamtzeile (makeSumZeile) fuer jede weitere Tabelle --
+     vorerst nur mit der Anzahl links ("102 count"), so bestellt: "erstmal mit dem Count links".
+     Die Prompt-Tabelle hat ihre reichere Fassung (Kennzahlen mit Menue) selbst gebaut; hier die
+     Teile, die sonst jede Tabelle einzeln verdrahten muesste:
+       - die Zeile hinter dem Koerper (cfg.nach, meist .up-tbody), Skelett im Gleichlauf
+         (cfg.laedt), eine leere Zelle je Spalte (cfg.spalten), damit das Raster steht; die
+         Zellen verschwinden mit ihren Spalten, wenn die Tabelle "up-sum" in ihren cellPrefixes
+         von makeColumns fuehrt;
+       - der Schalter "Summary row" fuer das Display-Menue (schalter() an makeColumns
+         cfg.nachspann haengen): "uebers Display soll man diese untere Row immer ausblenden
+         koennen" -- gilt fuer jede Tabelle mit dieser Zeile;
+       - das Merken je Nutzer: localStorage ueber prefKey(<praefix>_summe__<instanceId>) und ein
+         window-Speicher je Schluessel (ein Neuaufbau beim Themenwechsel liest ihn).
+     Die Anzahl kommt von der Tabelle (cfg.anzahl, die Gesamtzahl ihres Servers, nicht die
+     Zeilen der Seite); null wird "–", nie 0 (sumPaarHtml).
+     cfg.onUmschalten(an): danach z. B. die feste Hoehe neu planen. */
+  function makeZaehlZeile(cfg){
+    cfg = cfg || {};
+    var key = prefKey((cfg.praefix || "up") + "_summe__" + (cfg.instanceId || ""));
+    var speicher = (window.__upSumme = window.__upSumme || {});
+    var stand = speicher[key];
+    if (stand == null){
+      try { var roh = window.localStorage.getItem(key); if (roh) stand = JSON.parse(roh); } catch(e){ stand = null; }
+    }
+    var an = !(stand && stand.an === false);
+    var kit = makeSumZeile({ root: cfg.root, nach: cfg.nach, group: cfg.group || null });
+    if (!kit.el) return { zeichnen: function(){}, schalter: function(){ return null; }, an: function(){ return false; }, setzen: function(){} };
+    kit.zeigen(an);
+    var schalterEl = null;
+    function schalterSync(){
+      var sw = schalterEl && schalterEl.querySelector(".up-switch");
+      if (!sw) return;
+      sw.classList.toggle("is-on", an);
+      sw.setAttribute("aria-checked", an ? "true" : "false");
+    }
+    function setzen(v){
+      an = !!v;
+      speicher[key] = { an: an };
+      try { window.localStorage.setItem(key, JSON.stringify({ an: an })); } catch(e){}
+      kit.zeigen(an);
+      schalterSync();
+      if (typeof cfg.onUmschalten === "function"){ try { cfg.onUmschalten(an); } catch(e){} }
+    }
+    /* Eine Menuezeile mit Schalter wie "Descending" im Sortiermenue (.up-pop-row), mit Trenner
+       darueber -- dieselbe Zeile wie in der Prompt-Tabelle. */
+    function schalter(){
+      if (!schalterEl){
+        schalterEl = document.createElement("div");
+        schalterEl.className = "up-zaehl-schalter";
+        schalterEl.innerHTML = '<div class="up-pop-div"></div>' +
+          '<div class="up-pop-row" data-sum-schalter><span class="up-pop-label">' + esc(t("Summary row")) + '</span>' +
+          '<span class="up-switch" role="switch" aria-checked="false"></span></div>';
+        schalterEl.addEventListener("click", function(e){
+          if (!e.target.closest || !e.target.closest("[data-sum-schalter]")) return;
+          e.stopPropagation();
+          setzen(!an);
+        });
+      }
+      schalterSync();
+      return schalterEl;
+    }
+    function zeichnen(){
+      var sicht = {}, kitCols = typeof cfg.cols === "function" ? cfg.cols() : null;
+      if (kitCols && typeof kitCols.effectiveCols === "function"){
+        try { kitCols.effectiveCols().forEach(function(c){ sicht[c.key] = true; }); } catch(e){}
+      }
+      var zellen = (typeof cfg.spalten === "function" ? (cfg.spalten() || []) : []).map(function(k){ return { key: k }; });
+      var n = typeof cfg.anzahl === "function" ? cfg.anzahl() : null;
+      kit.zeichnen({ laedt: !!(typeof cfg.laedt === "function" && cfg.laedt()), ersteSk: 84,
+        erste: sumPaarHtml(n, "count", "anzahl"), sichtbar: sicht, zellen: zellen });
+    }
+    return { zeichnen: zeichnen, schalter: schalter, an: function(){ return an; }, setzen: setzen };
+  }
+
 
   var API = {
     BUILD: BUILD,
@@ -26680,7 +26754,7 @@
     lineWidthSwitchHtml: lineWidthSwitchHtml, colorScaleOptionsHtml: colorScaleOptionsHtml,
     flagHtml: flagHtml, flagUrl: flagUrl, wireFlags: wireFlags,
     /* Die Gesamtzeile einer Tabelle (15.10., siehe makeSumZeile). */
-    makeSumZeile: makeSumZeile, sumPaarHtml: sumPaarHtml
+    makeSumZeile: makeSumZeile, sumPaarHtml: sumPaarHtml, makeZaehlZeile: makeZaehlZeile
   };
 
   /* ---- Verdraengungssperre -------------------------------------------------------------------

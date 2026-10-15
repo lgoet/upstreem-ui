@@ -743,7 +743,11 @@
          Wer noch tiefer will, muss an eine ANDERE Mindestbreite -- die zwei dicksten sind
          Citations (216) und Brand Mentions (178). Das ist eine eigene Entscheidung. */
       firstShare: 0.18,
-      rowHeightSwitch: ROW_HEIGHTS, badgeSel: ".urt-cols-badge", cellPrefixes: ["up","urt"],
+      /* "up-sum": die Zellen der Gesamtzeile (UC.makeZaehlZeile) gehen mit ihren Spalten. */
+      rowHeightSwitch: ROW_HEIGHTS, badgeSel: ".urt-cols-badge", cellPrefixes: ["up","urt","up-sum"],
+      /* Unten im Display-Menue der Schalter fuer die Gesamtzeile (nur in der einen Leiste, wo es
+         die Zeile gibt). Zur Laufzeit gelesen: die Zeile entsteht erst weiter unten. */
+      nachspann: LEISTE ? function(){ return zaehl ? zaehl.schalter() : null; } : null,
       /* In der einen Leiste heisst das Menue "Display": Spalten als Chips wie in der
          Prompt-Tabelle (makeColumns cfg.form "chips"). */
       form: LEISTE ? "chips" : null,
@@ -1197,6 +1201,22 @@
     function ffSync(){ if (ffKit) ffKit.sync(); }
     if (LEISTE && UC.makeLeistenFilter){ ffKit = UC.makeLeistenFilter(root, { instanceId: instanceId, arten: FF_ARTEN }); ffSync(); }
 
+    /* DIE GESAMTZEILE (15.10. abends, core UC.makeZaehlZeile): vorerst nur die Anzahl links
+       ("8.6k count"), so bestellt. Dieselbe Zahl wie bisher im Kopf (renderCount), der in der
+       einen Leiste wegfaellt -- die Gesamtzahl des Servers, nicht die Zeilen der Seite. Nur in
+       der einen Leiste; ausblendbar ueber Display. */
+    var zaehl = (LEISTE && UC.makeZaehlZeile) ? UC.makeZaehlZeile({
+      root: root, nach: elTbody, instanceId: instanceId, praefix: "urt",
+      cols: function(){ return typeof colsKit !== "undefined" ? colsKit : null; },
+      spalten: function(){ return COLUMNS.map(function(c){ return c.key; }); },
+      anzahl: function(){
+        if (state.leseFehler) return null;
+        return state.totalCount != null ? state.totalCount : (state.hasData ? state.rows.length : null);
+      },
+      laedt: function(){ return isBusy() || !state.hasData; },
+      onUmschalten: function(){ festPlanen(); }
+    }) : null;
+
     /* ---------------- export ---------------- */
     function openExport(){
       var id = String(root.getAttribute("data-export-instance") || "").trim();
@@ -1442,6 +1462,7 @@
       if (root.classList.contains("up-sticky")) syncTheadOffset();
       festPlanen();
       ffSync();
+      if (zaehl) zaehl.zeichnen();
     }
 
     if (state.query){ elSearchIn.value = state.query; elSearch.classList.add("is-open", "has-text"); }
