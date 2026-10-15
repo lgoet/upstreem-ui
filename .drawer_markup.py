@@ -67,8 +67,14 @@ ERSATZ_MUSTER = {
 }
 
 # Zusaetzliche Attribute je Teil, an die Wurzel gehaengt.
+# Visibility Chart und Top Citations als Band wie auf dem Dashboard (data-flach, core.css "DAS
+# OFFENE BAND"), im Drawer aber in EINEM Kasten mit Rand und einer durchgehenden Trennlinie
+# zwischen Chart und Tabelle (core.css "DAS BAND IM KASTEN", 15.10. spaet: "als ein Container mit
+# Border, bzw. einen durchgehenden Separator mittig"). Vorher zwei Kaesten nebeneinander.
 ZUSATZ = {
     "urt": ' data-merken="yes"',
+    "vot": ' data-flach="yes"',
+    "tcd": ' data-flach="yes"',
 }
 
 

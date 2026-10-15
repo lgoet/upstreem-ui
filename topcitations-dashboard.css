@@ -65,6 +65,17 @@
 }
 .up-root.tcd-root[data-flach="yes"] .tct-table { background: transparent; }
 .up-root.tcd-root[data-flach="yes"] .tct-thead { height: var(--up-flach-h); flex-basis: var(--up-flach-h); background: transparent; }
+/* IM DRAWER steht das Band in einem Kasten (core.css "DAS BAND IM KASTEN", 15.10. spaet), wie
+   Visibility over Time (visibility-chart.css): die Tabelle rundet an der Ecke des Kastens
+   konzentrisch mit (12 minus 1 Rand), im Dunkeln behaelt ihr Kopf seinen Grund. */
+:is(.up-kdr, [id^="drawer-"]) .up-root.tcd-root[data-flach="yes"] .tcd-unit-right > .tcd-box { border-radius: 0 0 calc(var(--up-r-2xl) - 1px) 0; }
+:is(.up-kdr, [id^="drawer-"]) .up-root.tcd-root[data-flach="yes"]:is(.is-narrow, .is-max) .tcd-unit-right > .tcd-box {
+  border-radius: 0 0 calc(var(--up-r-2xl) - 1px) calc(var(--up-r-2xl) - 1px); }
+:is(.up-kdr, [id^="drawer-"]) .up-root.tcd-root[data-flach="yes"][data-theme="dark"] .tct-thead { background: var(--vt-head-bg); }
+/* Faellt Used weg (schmal), ist Share die letzte sichtbare Spalte, aber nicht :last-child -- ihre
+   Linie rechts laege neben dem Rand des Kastens (wie bei Top Brands, visibility-chart.css). Der
+   Kopf von Share traegt keine eigene Klasse, darum die Stelle. */
+:is(.up-kdr, [id^="drawer-"]) .tcd-root .tct-table.tct-hide-used :is(.tct-thead > .tct-th:nth-child(4), .tct-td-share) { border-right: 0; }
 
 /* ---------- icon buttons (32x32) — local, see file header for why ---------- */
 /* dark button tooltip (own implementation — see file header) */

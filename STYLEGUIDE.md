@@ -1116,6 +1116,22 @@ UC.kopfZeichen(th, name)   setzt es als erstes Kind in einen vorhandenen Kopf, n
 `aria-hidden`: das Wort daneben sagt alles. Neue Tabellen bekommen ihr Kopfzeichen über
 `UC.kopfZeichenHtml` und je Spalte eine `art` (Abschnitt 8d).
 
+**Tabellenköpfe im Drawer** (seit 15.10. spät, `core.css` „DIE TABELLENKOEPFE IM DRAWER“): jede
+Tabelle in einem Drawer (`.up-kdr`, `[id^="drawer-"]`) trägt den Kopf der Seitentabellen, behält
+aber ihren Kasten mit Rand und Radius 12 — sie wird **nicht** flach.
+
+```
+Höhe     48 (var(--up-flach-h, 48px)), in beiden Themen; vorher 45, Conversion (URL-Drawer)
+         und Variations (Brand-Drawer) 40
+Grund    im Light die Fläche der Tabelle (--vc-bg), kein --vt-head-bg mehr; deckend, weil der
+         Kopf der Responses klebt. Nur über html[data-up-hell="grau"], nie über
+         :not([data-theme="dark"]) an .up-root (das träfe eine Hülle ohne Thema über einer
+         dunklen Tabelle)
+Dunkel   behält seinen Kopfgrund (--vt-head-bg)
+Gilt für Responses, URLs, Conversion, Variations, Brand-Editor (Alias, Tracking); Top Brands und
+         Top Citations bekommen dasselbe als Band im Kasten (Abschnitt 8f)
+```
+
 ---
 
 ## 8b. Die eine Leiste (`data-leiste="yes"`, seit 15.10.)
@@ -1300,6 +1316,27 @@ und unter der Filterzeile wieder 16 (Abschnitt 3, „Maße“; seit 15.10. spät
 ohne Filterzeile).
 
 Im grauen Light ist das Band Inhalt und damit weiß wie die flache Tabelle.
+
+**Das Band im Kasten (Drawer, seit 15.10. spät):** Visibility Chart und Top Citations stehen im
+Drawer als Band (`data-flach="yes"` aus `.drawer_markup.py`), aber in **einem** Kasten mit
+**einer** durchgehenden Trennlinie zwischen Chart und Tabelle — „als ein Container mit Border,
+bzw. einen durchgehenden Separator mittig“. Vorher zwei Karten mit Überschrift darüber und 16
+Luft dazwischen. Innen alles wie das offene Band (Überschriftzeile 48, Fläche, flache Tabelle mit
+Linie unter der Überschriftzeile, Tabellenkopf 48 ohne Grund).
+
+```
+Kasten       1px --vc-border, Radius --up-r-2xl (12), Grund --vc-bg, kein Auslauf
+Trennlinie   der Rand der zweiten Einheit: nebeneinander links (Top Citations bei 35 %),
+             gestapelt (.is-narrow, .is-max) oben; über die volle Höhe bzw. Breite
+Ecken        overflow bleibt sichtbar (Menüs der Überschriftzeile); die Tabelle rundet an der
+             Ecke des Kastens selbst mit 11 (unten rechts, gestapelt beide unteren)
+Dunkel       der Rand bleibt (Drawer und Kasten tragen beide Background 1, die Füllung trennt
+             nicht); Tabellenkopf behält --vt-head-bg; die Trennlinie bleibt
+Luft         die 16 unter dem Band (--up-band-luft) gilt im Drawer nicht, der Stapel hält 64
+Schmal       fällt die letzte Spalte weg, verliert die dann letzte sichtbare ihre Linie rechts
+             (sonst doppelt neben dem Rand des Kastens)
+```
+Nur im Drawer-Kontext; auf den Seiten bleibt das Band offen.
 
 ---
 

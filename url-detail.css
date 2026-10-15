@@ -257,7 +257,10 @@
    ergab zwei Linien uebereinander -- gemessen 1px unten plus 1px oben, also eine 2px dicke
    Gridline. Die letzte Zeile bekommt ihre untere Linie vom Rahmen der Tabelle geschluckt. */
 .uud-ctable .up-row.uud-crow:last-child { border-bottom: 0; }
-.uud-ctable .up-row.uud-crow:hover { background: var(--vc-heading-bg); }
+/* Hover wie jede Tabellenzeile der App (.up-row:hover, --vt-row-hover; 15.10. spaet): hier stand
+   --vc-heading-bg, im Hellen #f2f2f2 statt #f9f8f9 -- die einzige Tabelle im Drawer mit einem
+   dunkleren Hover. Im Dunkeln sind beide #232326, dort aendert sich nichts. */
+.uud-ctable .up-row.uud-crow:hover { background: var(--vt-row-hover); }
 .uud-ctable .up-row.uud-crow:focus-visible { outline: 2px solid var(--vc-text); outline-offset: -2px; }
 /* 64px rechts: der Abstand zur Quote gehoert zur Markenspalte, nicht als Luecke dazwischen --
    so bleibt er auch dann stehen, wenn die Tabelle auf ihre Mindestbreite geht. Die 12px
@@ -269,7 +272,10 @@
    Zuordnung haelt das Format trotzdem fest, damit diese Zahl dieselbe Spur hat wie jede andere
    Quote mit einer Stelle, falls die Spalte einmal links steht. */
 .uud-root .uud-cnum { --up-spur: var(--up-spur-pct1); }
-.uud-cname { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
+/* 14/500 wie der Markenname in Top Brands und Top Citations (.vt-brand-name, .tct-name; 15.10.
+   spaet): hier standen 13.5 -- ein halber Pixel kleiner als jeder andere Name in einer
+   Drawer-Tabelle und neben der Skala (--up-fs-l). */
+.uud-cname { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); color: var(--vc-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 /* Shape und Zahl kommen aus core (UC.sentHtml mit opts.text, seit dem 29.09.): Balken 3x12 in
    der Farbe der Bewertung, die Zahl in der Primaerfarbe -- ein farbiger Zahlenwert laese sich als

@@ -4149,8 +4149,76 @@
        Kopf .up-head (16). Gemessen vorher: Ueberschrift bis Tabelle 14, Leiste bis Tabelle 16. */
     .up-sec-head:has(+ .up-root[data-flach="yes"]) { margin-bottom: var(--up-band-luft); }
 
+    /* ---------- DAS BAND IM KASTEN (Drawer, 15.10. spaet) ----------
+       "Elemente wie Visibility Chart oder Top Citations Dashboard als ein Container mit Border, bzw.
+       einen durchgehenden Separator mittig". Im Drawer stehen beide als Band (data-flach aus
+       .drawer_markup.py) -- dieselben Teile wie auf dem Dashboard: Ueberschriftzeile 48 in der
+       Einheit, Flaeche, rechts die flache Tabelle mit der Linie unter der Ueberschriftzeile. Dazu
+       kommt nur der Kasten, und der Auslauf faellt weg. Vorher zwei Kaesten mit der Ueberschrift
+       darueber und 16 Luft dazwischen.
+         - Rand 1px --vc-border, Radius --up-r-2xl (12) wie jede Karte, eigener Grund --vc-bg.
+         - Die Trennlinie ist der Rand der zweiten Einheit (nebeneinander links, gestapelt oben),
+           nicht die 1px-Luecke des offenen Bandes: die braucht deckende Einheiten auf einem Grund
+           in Linienfarbe, und deckende Einheiten mit eckigen Ecken stuenden ueber die runden des
+           Kastens hinaus. So bleiben die Einheiten durchsichtig und von Kante zu Kante hoch.
+         - overflow bleibt sichtbar: die Menues der Ueberschriftzeile (Sortierung, Filter) haengen
+           position:absolute in der Wurzel und waeren sonst abgeschnitten. Was an eine Ecke reicht
+           (die Tabelle unten rechts, gestapelt unten), rundet selbst konzentrisch mit 11 -- in der
+           Komponente, sie kennt ihre Teile.
+       Heute stehen nur Baender, die selbst die Wurzel sind, in einem Drawer (vot, tcd); gestapelt
+       heisst dort .is-narrow oder .is-max an der Wurzel.
+       Nur im Drawer (.up-kdr aus core, [id^="drawer-"] die Bubble-Gruppen): auf den Seiten bleibt
+       das Band offen. Spezifitaet (0,5,0) und mehr: schlaegt das Band (0,4,0) und den Grund der
+       Einheiten (0,5,0) ohne die Ladereihenfolge. */
+    :is(.up-kdr, [id^="drawer-"]) .up-root.up-root[data-flach="yes"].up-band {
+      margin-left: 0; margin-right: 0;
+      border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); background: var(--vc-bg);
+    }
+    :is(.up-kdr, [id^="drawer-"]) .up-root.up-root[data-flach="yes"].up-band-zwei { gap: 0; }
+    :is(.up-kdr, [id^="drawer-"]) .up-root.up-root[data-flach="yes"].up-band-zwei > .up-band-einheit { background: transparent; }
+    :is(.up-kdr, [id^="drawer-"]) .up-root.up-root[data-flach="yes"].up-band-zwei > .up-band-einheit + .up-band-einheit {
+      border-left: 1px solid var(--vc-border);
+    }
+    :is(.up-kdr, [id^="drawer-"]) .up-root.up-root[data-flach="yes"].up-band-zwei:is(.is-narrow, .is-max) > .up-band-einheit + .up-band-einheit {
+      border-left: 0; border-top: 1px solid var(--vc-border);
+    }
+    /* Im Dunkeln BLEIBT der Rand (bewusst keine Ausnahme wie in "Dark: kein Rand um die aeusseren
+       Flaechen"): dessen Kriterium ist, dass die Fuellung den Kasten vom Grund trennt -- im Dunkeln
+       nach Geist (15.10.) tragen Drawer und Kasten beide Background 1 (#0a0a0a, gemessen), ohne
+       Rand waere vom Kasten nur die Trennlinie zu sehen. */
+    /* Die Luft unter dem Band (DIE ZEILE UNTER DEM BAND, oben) gilt dem offenen Band vor einer
+       Leiste. Im Drawer haelt der Stapel seine Abstaende selbst (64 zwischen den Abschnitten);
+       ohne das stuenden unter Top Citations 80 statt 64. Dieselbe Form wie oben, eine Stufe
+       spezifischer, und nur hier: keine Huelle im Drawer traegt einen eigenen Rand unten. */
+    :is(.up-kdr, [id^="drawer-"]) :is(.up-band, :has(> .up-band:last-child)):has(+ :not(.up-band)):not(:has(+ * > .up-band:first-child)) {
+      margin-bottom: 0;
+    }
 
-    
+    /* ---------- DIE TABELLENKOEPFE IM DRAWER (15.10. spaet) ----------
+       "Bei den Tabellen die Heading Rows in gleicher Height und ohne Background im Lightmode": der
+       Kopf jeder Tabelle im Drawer wie der der Seitentabellen -- 48 hoch (--up-flach-h; ohne
+       data-flach dieselben 48 wie .up-band-head) und im Hellen ohne eigenen Grund. Vorher 45
+       (Responses, URLs, Brand Editor) bzw. 40 (Conversion im URL-Drawer, Variations im
+       Brand-Drawer), alle auf --vt-head-bg (#f9f8f9). Die Tabellen BEHALTEN ihren Kasten mit Rand
+       und Radius -- nur der Kopf aendert sich. Top Brands und Top Citations bekommen dasselbe als
+       Band (visibility-chart.css, topcitations-dashboard.css).
+       "Ohne Grund" heisst die Flaeche der Tabelle (--vc-bg) und nicht durchsichtig: der klebende
+       Kopf der Responses muss decken, sonst laufen die Zeilen beim Scrollen darunter durch. Der
+       Kurzschluss background (statt -color) nimmt auch den Verlauf des klebenden Kopfes mit
+       (.up-sticky .up-thead malt --vt-head-bg als background-image).
+       Hell nur ueber html[data-up-hell="grau"] (core setzt es allein im Hellen, hellAnwenden) und
+       nicht ueber :not([data-theme="dark"]) an .up-root: das traefe auch eine Huelle ohne Thema
+       (.uprd-root) ueber einer dunklen Tabelle. Das Dunkel behaelt seinen Kopfgrund, nur die Hoehe
+       gilt in beiden Themen.
+       (0,4,0) und (0,5,1): schlaegt die Kopfhoehen der Kastentabellen (.ube-table, .uud-ctable,
+       .up-vartable, je 0,3,0) und den klebenden Kopf (0,2,0) ohne die Ladereihenfolge. */
+    :is(.up-kdr, [id^="drawer-"]) .up-root.up-root .up-thead {
+      height: var(--up-flach-h, 48px); flex: 0 0 var(--up-flach-h, 48px);
+    }
+    html[data-up-hell="grau"] :is(.up-kdr, [id^="drawer-"]) .up-root.up-root .up-thead { background: var(--vc-bg); }
+
+
+
     /* Letter fallback: a broken/missing favicon used to leave an empty square, which reads as a
        loading glitch. The initial keeps every row visually complete. */
 
@@ -5450,7 +5518,8 @@
    Bausteinen einzeln gebaut, darum hier. Tabellen behalten ihren Kasten wie ueberall in der App --
    darum neben ihnen auch kein Trenner (er laege als zweite Linie neben ihrem Rand).
    NUR die grossen Charts oben (Brand Detail, Domain Detail): Visibility Chart und Top Citations
-   bleiben auch im Drawer in ihren Karten (13.10. zweite Runde, "einfach core").
+   stehen im Drawer seit 15.10. spaet als EIN Kasten mit Trennlinie (DAS BAND IM KASTEN, oben bei
+   den Baendern) -- vorher je zwei Karten (13.10. zweite Runde, "einfach core").
    (0,4,0) gegen die Kartenregeln der Bausteine und deren dunkle Randregel (0,3,0). */
 .up-root[data-form="abschnitte"] :is(.ubd-card, .udd-chartcard, .udd-funnelcard) {
   border: 0; border-radius: 0; background: transparent; padding: 0; }

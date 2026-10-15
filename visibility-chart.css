@@ -72,6 +72,22 @@
 .up-root.vot-root[data-flach="yes"] .vt-table { background: transparent; }
 /* Der Kopf wie der der flachen Tabelle: 48 hoch (--up-flach-h), ohne eigenen Grund. */
 .up-root.vot-root[data-flach="yes"] .vt-thead { height: var(--up-flach-h); flex-basis: var(--up-flach-h); background: transparent; }
+/* IM DRAWER steht das Band in einem Kasten (core.css "DAS BAND IM KASTEN", 15.10. spaet). Die
+   Tabelle reicht dort an seine Ecke unten rechts (gestapelt: an beide unteren) und rundet
+   konzentrisch mit -- 12 minus 1 Rand. Ihr overflow:hidden schneidet damit auch den Hover der
+   letzten Zeile an der Rundung ab. */
+:is(.up-kdr, [id^="drawer-"]) .up-root.vot-root[data-flach="yes"] .vot-box-right { border-radius: 0 0 calc(var(--up-r-2xl) - 1px) 0; }
+:is(.up-kdr, [id^="drawer-"]) .up-root.vot-root[data-flach="yes"]:is(.is-narrow, .is-max) .vot-box-right {
+  border-radius: 0 0 calc(var(--up-r-2xl) - 1px) calc(var(--up-r-2xl) - 1px); }
+/* "Ohne Background im Lightmode": im Dunkeln behaelt der Kopf im Drawer seinen Grund wie vorher im
+   Kasten (dort arbeitet die Farbumstellung) -- so wie die Koepfe der anderen Drawer-Tabellen
+   (core "DIE TABELLENKOEPFE IM DRAWER"). Die Seite (Dashboard) bleibt, wie sie ist. */
+:is(.up-kdr, [id^="drawer-"]) .up-root.vot-root[data-flach="yes"][data-theme="dark"] .vt-thead { background: var(--vt-head-bg); }
+/* Schmal fallen Sentiment und Ranking weg (display:none, trendFit/Breitenstufen). Die dann letzte
+   sichtbare Spalte ist nicht :last-child und behielt ihre Linie rechts -- direkt neben dem Rand
+   des Kastens, eine 2px-Kante (gemessen bei 375: Zelle endet auf 358, Rand innen auf 358). */
+:is(.up-kdr, [id^="drawer-"]) .vot-root .vt-table.vt-hide-sentiment:not(.vt-hide-rank) :is(.vt-th-ranking, .vt-td-ranking),
+:is(.up-kdr, [id^="drawer-"]) .vot-root .vt-table.vt-hide-sentiment.vt-hide-rank :is(.vt-th-visibility, .vt-td-visibility) { border-right: 0; }
 
 /* maximize icon swap */
 .vot-maximize .ic-min { display: none; }
