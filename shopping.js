@@ -462,7 +462,9 @@
           '<p class="up-ph-desc">' + esc(t("How your brand and competitors appear in AI shopping results")) + '</p></div>' +
       '</div>' +
       '<div class="up-ph-nav ush-nav" role="tablist"></div>' +
-      '<div class="ush-filterzeile">' +
+      /* up-leiste-fluss (core): Filters, jeder Chip und Clear All stehen einzeln in der Zeile neben dem
+         Kalender und brechen dort um -- dieselbe Filterzeile ueber einem Band wie auf Citations. */
+      '<div class="ush-filterzeile up-leiste-fluss">' +
         '<div class="up-root udr-root ush-daten" data-instance="' + esc(idDaten) + '" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
         '<div class="up-root ufb-root ush-filterleiste" data-instance="' + esc(idFilter) + '" data-topics-instance="' + esc(idTopics) + '"' +
           ' data-models-instance="' + esc(idModelle) + '" data-markets-instance="' + esc(idMaerkte) + '" data-form="gross"' +

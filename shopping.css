@@ -16,7 +16,10 @@
 .ush-root .ush-pagehead { padding: 8px 0; }
 .ush-filterzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 16px; }
 /* Kalender fest, die Filterleiste nimmt den Rest (ihre Chips brauchen den Platz). Ohne das stand
-   die Leiste als volle Breite unter dem Kalender. */
+   die Leiste als volle Breite unter dem Kalender.
+   Seit dem 15.10. loest .up-leiste-fluss (core, an der Zeile) die Leiste auf: Filters, Chips und
+   Clear All stehen einzeln neben dem Kalender. Die Regel fuer .ufb-root greift dann nicht mehr und
+   bleibt fuer einen core ohne die Klasse. */
 .ush-filterzeile > .udr-root { flex: 0 0 auto; }
 .ush-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
 .ush-main { padding: 24px 0 64px; }

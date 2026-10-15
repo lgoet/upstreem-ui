@@ -19,7 +19,10 @@
 .uad-root { display: block; }
 .uad-root .uad-pagehead { padding: 8px 0; }
 .uad-filterzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 16px; }
-/* Kalender fest, die Filterleiste nimmt den Rest (ihre Chips brauchen den Platz), wie Shopping. */
+/* Kalender fest, die Filterleiste nimmt den Rest (ihre Chips brauchen den Platz), wie Shopping.
+   Seit dem 15.10. loest .up-leiste-fluss (core, an der Zeile) die Leiste auf: Filters, Chips und
+   Clear All stehen einzeln neben dem Kalender. Die Regel fuer .ufb-root greift dann nicht mehr und
+   bleibt fuer einen core ohne die Klasse. */
 .uad-filterzeile > .udr-root { flex: 0 0 auto; }
 .uad-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
 .uad-main { padding: 24px 0 64px; }

@@ -364,7 +364,9 @@
           '<p class="up-ph-desc">' + esc(t("Observed advertisements inside tracked AI responses")) + '</p></div>' +
       '</div>' +
       '<div class="up-ph-nav uad-nav" role="tablist"></div>' +
-      '<div class="uad-filterzeile">' +
+      /* up-leiste-fluss (core): Filters, jeder Chip und Clear All stehen einzeln in der Zeile neben dem
+         Kalender und brechen dort um -- dieselbe Filterzeile ueber einem Band wie auf Citations. */
+      '<div class="uad-filterzeile up-leiste-fluss">' +
         '<div class="up-root udr-root uad-daten" data-instance="' + esc(idDaten) + '" data-local="yes" data-isdark="' + dunkelAttr + '"></div>' +
         '<div class="up-root ufb-root uad-filterleiste" data-instance="' + esc(idFilter) + '" data-topics-instance="' + esc(idTopics) + '"' +
           ' data-models-instance="' + esc(idModelle) + '" data-markets-instance="' + esc(idMaerkte) + '" data-form="gross"' +
