@@ -76,6 +76,10 @@
    Bildschirms, und das Polster stellt im Dashboard die Sektion drumherum. */
 .uo-root.is-launcher { min-height: 0; padding: 0; }
 .uo-root.is-launcher .uo-head { display: none; }
+/* Mit der Leiste geht ihr Deck (core .up-kleb-deck, 16.10.): seine Raender rechnen mit der Leiste,
+   ohne sie stuenden 65px mehr und ein 17px-Streifen ueber dem Brett (gemessen, solange
+   --up-thead-off noch nicht auf 0 steht). */
+.uo-root.is-launcher .up-kleb-deck { display: none; }
 
 /* ---------- board ---------- */
 .uo-stage { flex: 1 1 auto; position: relative; }

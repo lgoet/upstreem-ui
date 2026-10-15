@@ -3711,6 +3711,55 @@
          bleibt beim bisherigen Wert. */
       height: var(--up-sticky-cover, var(--up-sticky-top)); background: var(--up-surface);
     }
+    /* DAS DECK UEBER DER KLEBENDEN LEISTE (16.10.): "hier und da Rows hinter der klebenden Topbar,
+       in den 16 px zwischen den Knoepfen und der Oberkante des Bildschirms". Der Streifen oben
+       haengt an .is-geklebt, und die Klasse setzt JS im Scroll-Takt -- gemessen zweimal zu spaet:
+       (1) nach einem Sprung (Ende-Taste, Scrollbalken, schneller Wurf) steht die Leiste schon,
+       bevor der naechste Durchlauf die Klasse setzt -- 24 von 27 Messpunkten im Streifen trafen
+       Zeilen; scrollt der Compositor selbst, sieht man das ein Bild und laenger; (2) dauerhaft,
+       wenn applySticky waehrend des Klebens lief (Nachlauf der Kopfsuche, Groessenwechsel, ein
+       neuer Seitenkopf): die gelernte Ruhelage war dann eine geklebte, und nach etwas
+       Zurueckscrollen fiel die Klasse weg, obwohl die Leiste weiter klebte (24 Treffer bis oben).
+       DAS DECK braucht keinen Zustand. Zwei leere Kaesten direkt VOR der Leiste (core.js
+       klebDeckStellen), selbst sticky, mit derselben Flaeche: in Ruhe liegen sie deckungsgleich
+       UNTER der Leiste (gleiche Ebene 6, im Baum davor -- die Leiste malt darueber), uebermalen
+       also nichts. Klebt die Leiste, scrollen sie noch um ihre eigene Hoehe mit und rasten dann
+       direkt ueber ihr ein, bis zur Oberkante des Scrollbereichs. Das macht sticky selbst, auf
+       dem Compositor, im selben Bild wie die Leiste -- ohne Klasse, ohne Bildverzug. Eine Zeile
+       kann dort erst ankommen, wenn sie Leiste und Spaltenkopf hinter sich hat; das Deck ist
+       spaetestens nach seiner Hoehe (hoechstens die der Leiste) oben.
+       ZWEI Kaesten, weil jeder hoechstens so hoch sein darf wie die Leiste (sonst schaute er in
+       Ruhe unter ihr heraus): auf den Seiten reicht der untere (16 + 1), im Drawer liegen 72 ueber
+       der Leiste (56 Polster unter dem Glaskopf + 16), dort nimmt der obere den Rest. Das 1px mehr
+       liegt ausserhalb des Scrollbereichs (abgeschnitten) und sorgt dafuer, dass das Deck klebend
+       immer hoeher steht als die Leiste -- daran liest klebPruefenAlle, ob sie klebt.
+       Am Ende der Wurzel gehen die Kaesten MIT der Leiste: ihr Abstand unten (--up-thead-off, die
+       Hoehe der Leiste) zaehlt fuer sticky mit, die Leiste nimmt ihn mit einem Rand oben zurueck --
+       in der Summe aendert sich keine Lage. Bis 2 x Leistenhoehe deckt das Deck allein; was
+       darueber liegt, deckt weiter der Streifen oben.
+       Der Elternteil der Leiste ist in allen Tabellen eine Flex-Spalte (gemessen 16.10., auch die
+       Buehne von Prompt Research): dort fallen Raender nicht zusammen. In einem Block-Elternteil
+       fielen sie mit einem positiven Rand unter dem Vorgaenger zusammen -- dann hier nachsehen. */
+    .up-sticky {
+      --up-deck-zone: calc(var(--up-sticky-cover, var(--up-sticky-top)) + 1px);
+      --up-deck-u: min(var(--up-deck-zone), var(--up-thead-off));
+      --up-deck-o: min(max(calc(var(--up-deck-zone) - var(--up-deck-u)), 0px), var(--up-thead-off));
+    }
+    .up-kleb-deck { display: none; }
+    .up-sticky .up-kleb-deck {
+      display: block; flex: none; position: sticky; z-index: 6; pointer-events: auto;
+      background: var(--up-surface);
+    }
+    .up-sticky .up-kleb-deck:not(.is-oben) {
+      height: var(--up-deck-u); top: calc(var(--up-sticky-top) - var(--up-deck-u));
+      margin-top: calc(-1 * (var(--up-deck-o) + var(--up-deck-u) + var(--up-thead-off)));
+      margin-bottom: var(--up-thead-off);
+    }
+    .up-sticky .up-kleb-deck.is-oben {
+      height: var(--up-deck-o); top: calc(var(--up-sticky-top) - var(--up-deck-u) - var(--up-deck-o));
+      margin-bottom: calc(var(--up-deck-u) + var(--up-thead-off));
+    }
+    .up-sticky .up-kleb-deck + .up-head { margin-top: calc(-1 * (var(--up-deck-u) + var(--up-thead-off))); }
     /* In sticky mode the box's visible border is dropped (kept transparent so layout doesn't
        shift) and drawn on the header and body instead. Both span the full width and align exactly,
        so there's no 1px offset between a header sitting inside the box border and the box's own
@@ -4094,6 +4143,11 @@
     .up-root.up-root[data-flach="yes"].up-sticky .up-head {
       margin-left: calc(-1 * var(--up-flach-aus)); margin-right: calc(-1 * var(--up-flach-aus));
       padding-left: var(--up-flach-aus); padding-right: var(--up-flach-aus);
+    }
+    /* Das Deck darueber (.up-kleb-deck, 16.10.) genau so breit wie die Leiste: schmaler liesse es
+       links und rechts je 16 frei, breiter schaute es in Ruhe neben ihr heraus. */
+    .up-root.up-root[data-flach="yes"].up-sticky .up-kleb-deck {
+      margin-left: calc(-1 * var(--up-flach-aus)); margin-right: calc(-1 * var(--up-flach-aus));
     }
     /* Der Fuss: 48 hoch direkt unter der unteren Linie, links mit auslaufend auf der Kante der
        ersten Zelle (12), die Knoepfe in der 28er Form (--up-h-seg), je 10 darueber und darunter.

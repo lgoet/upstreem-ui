@@ -1232,9 +1232,27 @@ Kleben         makeSticky wie jede Tabelle: Kopf, Reiter und Chart scrollen weg,
 Höhe Telefon   375x812: Leiste klebt 16–104 (zwei Zeilen, Citations, Responses), 16–144 (drei
                Zeilen, All Prompts, Brands), 16–64 (Teams); Spaltenkopf darunter 48 – oben
                stehen damit 152 (19 %), 192 (24 %) bzw. 112 (14 %) fest
-Linie          unter der Leiste NUR, solange sie klebt (.is-geklebt), eingeblendet (--up-t-2)
+Deck           über der klebenden Leiste bis zur Oberkante des Scrollbereichs (16.10.): zwei
+               leere sticky-Kästen .up-kleb-deck direkt VOR der Leiste (core klebDeckStellen),
+               Fläche --up-surface, Ebene 6. In Ruhe liegen sie deckungsgleich unter der Leiste
+               und übermalen nichts; klebt sie, rasten sie über ihr ein – im selben Bild, ohne
+               Klasse und ohne JS im Scroll-Takt. Je Kasten höchstens so hoch wie die Leiste:
+               Seiten 16 + 1, Drawer 72 + 1 (48 und 25, unter dem Glaskopf mit). Am Ende der
+               Wurzel gehen sie mit der Leiste; keine Lage ändert sich
+Linie          unter der Leiste NUR, solange sie klebt (.is-geklebt: das Deck steht höher als
+               die Leiste – keine gelernte Ruhelage mehr), eingeblendet (--up-t-2)
 Abstände       Leiste 16 unten, Band 16 unten; der Stapel der Wurzel fällt auf 0
 ```
+
+Warum das Deck und nicht mehr der Streifen allein (16.10., „hier und da Rows hinter der klebenden
+Topbar, in den 16 px über den Knöpfen“): der Streifen `.is-geklebt .up-head::before` hängt an
+einer Klasse, die JS im Scroll-Takt setzt. Nach einem Sprung (Ende-Taste, Scrollbalken, schneller
+Wurf) klebte die Leiste, bevor die Klasse kam, und nach jedem applySticky während des Klebens
+(Nachlauf der Kopfsuche bis 4,8 s nach dem Laden, Größenwechsel, ein neuer Seitenkopf) lernte die
+Probe eine geklebte Lage als Ruhe – beim Zurückscrollen fiel die Klasse weg, obwohl die Leiste
+weiter klebte. Gemessen vorher 24–45 Treffer auf Zeilen bzw. Chart in diesem Streifen, nachher 0
+(Seiten, Drawer, 1440/1100/375, hell/dunkel, auch mit entfernter Klasse). Der Streifen bleibt für
+das, was über 2 x Leistenhöhe hinausgeht.
 
 Warum in der Wurzel der Tabelle und nicht als Leiste der Seite: Domains, URLs und Brands
 hängen Klicks, Suche, Tooltips und Menüs an ihre Wurzel (`ownsTarget`, `root.contains`); ein
@@ -1395,7 +1413,7 @@ Schatten       NUR wenn er wirklich klebt (.is-fuss-klebt; die Marke .up-fuss-ma
                .is-fuss-ohne-summe)
 Gruppenspalte  All Prompts mit is-groups-wide: die Gruppenliste steht im Fluss neben dem Kasten
                (kein eigener Scrollbereich mehr), ihr Kopf klebt neben dem Spaltenkopf
-z              4 (unter Spaltenkopf 5 und Leiste 6)
+z              4 (unter Spaltenkopf 5, Leiste 6 und dem Deck über ihr, 6 – 8b)
 Bewegung aus   prefers-reduced-motion: dieselben Zustände ohne Fahrt
 ```
 
@@ -1798,6 +1816,10 @@ Deshalb im Sticky-Modus zusätzlich `height: 48px` (32 Inhalt + 16 Padding).
 **6. Zeilen hinter einer transparenten Topbar.** Ist die Seiten-Topbar transparent,
 scrollen Zeilen dahinter durch. Der Kopf bekommt ein opakes `::before`, das von seiner
 Oberkante bis zur Viewport-Oberkante reicht (`height: var(--udt-sticky-top)`).
+
+> **Stand 16.10.:** Ein Streifen, der nur mit einer Klasse malt, deckt ein Bild zu spät oder gar
+> nicht (8b). In core deckt heute das **Deck** `.up-kleb-deck`: sticky-Kästen direkt vor der
+> Leiste, in Ruhe unter ihr verborgen, klebend über ihr – reines sticky, kein Zustand.
 
 **7. Border NICHT auf die Box, sondern auf Kopf/Body.** Sitzt der Spaltenkopf 1px
 innerhalb der Box-Border, überdeckt sein opaker Hintergrund die gerade obere
