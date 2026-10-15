@@ -7071,6 +7071,12 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
   transition: background var(--up-t-1) ease;
 }
 .up-sumknopf::before { content: ""; flex: 0 0 0px; width: 0; height: var(--up-h-seg); margin-right: -4px; }
+/* DAS PAAR PASST SICH DEM KNOPF AN (15.10. spaet): ein Paar, das breiter ist als der Knopf, brach
+   als Ganzes in die abgeschnittene zweite Zeile -- 66px tief in der 48er Zelle, NICHTS war zu
+   sehen, nicht einmal der Wert (gemessen in Teams: "Developer Access most common" in 172px, in
+   Brands "Rising / falling" bei 143px). Begrenzt auf die Knopfbreite bleibt es in der ersten Zeile:
+   der Wert steht ganz (flex 0 0 auto), die Bezeichnung kuerzt mit Auslassungspunkten. */
+.up-sumknopf > .up-sumpaar { max-width: 100%; }
 .up-sumknopf:hover, .up-sumrow.is-open .up-sumknopf.is-offen { background: var(--vc-heading-bg); }
 .up-sumknopf:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .up-sumchev { display: inline-flex; align-items: center; flex: 0 0 12px; width: 12px; height: var(--up-h-seg); color: var(--vc-fourth); }
