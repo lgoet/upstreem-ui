@@ -530,7 +530,6 @@
           '<span class="udt-sk-bar udt-sk-share"></span>' +
           '<span class="udt-sk-bar udt-sk-type"></span>' +
           '<span class="udt-sk-bar udt-sk-date"></span>' +
-          '<span></span>' +
         '</div>';
       var out = "";
       for (var i = 0; i < (count || SUB_SKELETON_ROWS); i++) out += one;
@@ -603,7 +602,6 @@
         '<span class="udt-sub-h-num">Domain Share</span>' +
         '<span>Type</span>' +
         '<span>Last Seen</span>' +
-        '<span></span>' +
       '</div>';
     }
     function subFootHtml(total, cur, pageCount, from, shown){
@@ -670,7 +668,8 @@
         '<span class="' + shareCls + '">' + shareTxt + '</span>' +
         '<span class="udt-sub-type">' + urlTagHtml(u.url_type) + '</span>' +
         '<span class="udt-sub-date">' + esc(fmtDate(u.last_seen)) + '</span>' +
-        '<span class="udt-sub-goto">' + GOTO_SVG + '</span>' +
+        /* Kein Pfeil am Ende mehr (16.10., kein hereingleitendes Zeichen in Tabellen): Kopf,
+           Skelett und Raster (--udt-subcols) haben ihre fuenfte Spalte mit ihm verloren. */
       '</div>';
     }
     var subTypeOpen = false, subEnter = false, subReqSeq = 0;

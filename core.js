@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261153;
+  var BUILD = 20261154;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -6061,11 +6061,11 @@
       /* is-last marks the final CHIP (a "+N" badge may follow it, so :last-child will not do).
          The left-spread hover rules need to target it, and CSS forbids :has() inside :has() —
          which is what an inline "item not followed by another item" selector would require. */
-      /* --up-stack-z: das ERSTE Mitglied liegt oben (Geist-AvatarGroup, 15.10.) -- absteigende
-         Stufen, die core.css als z-index liest. Als Variable und nicht als z-index im style: so
-         behaelt die Hover-Regel (.up-stack-item:hover, z-index 20) das letzte Wort. */
+      /* Keine Stufe je Chip (16.10.): vom 15. zum 16.10. lag als Geist-AvatarGroup das ERSTE Mitglied
+         oben (--up-stack-z); seit der Rueckkehr zu den Logoplatten wieder der spaetere, also die
+         Reihenfolge im Dokument. */
       return '<span class="up-stack-item' + (favGlobus ? " up-fav" : "") + (logo ? " has-img" : "") + (mi === last ? " is-last" : "") +
-             '" style="--up-stack-z:' + (shown.length - mi) + '" data-brandtip="' + esc(tip) + '">' +
+             '" data-brandtip="' + esc(tip) + '">' +
                '<span class="up-stack-vis">' +
                  '<span class="up-stack-ltr">' + esc(initial) + '</span>' +
                  (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
