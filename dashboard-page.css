@@ -36,10 +36,7 @@
    Citations gleicht core das auf --up-band-luft aus, die Ueberschriftzeile der Responses steht 16
    unter seiner Linie wie die Leiste in Prompt Insights (core.css "DIE ZEILE UNTER DEM BAND");
    zwischen den zwei Baendern bleiben die 48. */
-.uds-main { display: flex; flex-direction: column; --up-stapel-luft: 48px; gap: var(--up-stapel-luft); padding: 24px 0 64px; min-width: 0; }
-/* UNTER DEN FILTERN 16 WIE DARUEBER (14.10., gemeldet: "unter Kalender und Filter mehr Luft
-   als von den Filtern zur Linie der Navigation"). Gemessen: Linie bis Filter 16, Filter bis
-   Inhalt 24. Ohne Filterzeile (andere Reiter, Seiten ohne Filter) bleibt es bei 24 unter der
-   Navigation. */
-.uds-filterzeile ~ .uds-main { padding-top: 16px; }
+/* Die Luft ueber und unter .uds-main steht in core ("DIE LUFT UNTER DEM SEITENKOPF"): 16 unter der
+   Filterzeile wie ueber ihr, 64 unten. */
+.uds-main { display: flex; flex-direction: column; --up-stapel-luft: 48px; gap: var(--up-stapel-luft); min-width: 0; }
 .uds-teil { min-width: 0; }

@@ -499,6 +499,8 @@ Markierungsstriche 2 und 1) und die em-Werte in Miras Text.
 
 | Kontext | Wert |
 |---|---|
+| Luft unter Seitenkopf bzw. Reiterleiste bis zur ersten Zeile | **16px** (`--up-band-luft`), auf jeder Seite und in jedem Reiter; mit Filterzeile 16 über und 16 unter ihr. Seitenende 64. Eine Regel in core (`:is(.ucs-main, .uds-main, .upi-main, …)`, „DIE LUFT UNTER DEM SEITENKOPF“), seit 15.10. spät; vorher 24 ohne Filterzeile (Topics, Opportunities, Performance, Settings) |
+| Kartenraster (Ad Cards `.up-adgrid`, Response-Karten `.urt-cards`) | **16px** (Response-Karten bis 15.10. 14); Events bewusst 20 (Kartenentwurf 03.10.) |
 | Gap zwischen linkem/rechtem Chart-Unit | **16px** |
 | Gap im gestapelten (mobilen) Modus | **32px** |
 | Head-Höhe (über jeder Chart-Box) | 32px, `margin-bottom: 16px` |
@@ -1210,7 +1212,10 @@ zur Leiste 16, Leiste bis zum Tabellenkopf 16. Vorher je Seite anders (24 in Cit
 Brands, 48 in Shopping und Ads). Ein Stapel setzt seinen Abstand als `--up-stapel-luft`
 (`gap: var(--up-stapel-luft)`), die Regel gleicht ihn auf die 16 aus; darum setzt jede Seite mit
 Band die Variable. Zwischen zwei Bändern bleibt der Blockabstand. Eine Abschnittsüberschrift
-direkt über einer flachen Tabelle hält ebenfalls 16.
+direkt über einer flachen Tabelle hält ebenfalls 16. **Über** der ersten Zeile einer Seite
+dieselben 16: von der Linie des Seitenkopfs bzw. der Reiterleiste bis zur Filterzeile oder Leiste,
+und unter der Filterzeile wieder 16 (Abschnitt 3, „Maße“; seit 15.10. spät in jedem Reiter, auch
+ohne Filterzeile).
 
 Im grauen Light ist das Band Inhalt und damit weiß wie die flache Tabelle.
 

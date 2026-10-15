@@ -44,14 +44,12 @@
 .upi-filterzeile.is-in-tabelle { display: contents; }
 /* Topics liest keinen Filter -- dort stehen Kalender und Filter nicht. */
 .upi-root[data-upi-reiter="topics"] .upi-filterzeile { display: none; }
-.upi-main { padding: 24px 0 64px; min-width: 0; }
-/* UNTER DEN FILTERN 16 WIE DARUEBER (14.10., gemeldet: "unter Kalender und Filter mehr Luft
-   als von den Filtern zur Linie der Navigation"). Gemessen: Linie bis Filter 16, Filter bis
-   Inhalt 24. Ohne Filterzeile (andere Reiter, Seiten ohne Filter) bleibt es bei 24 unter der
-   Navigation. */
-.upi-root:not([data-upi-reiter="topics"]) .upi-filterzeile ~ .upi-main { padding-top: 16px; }
-/* Dieselben 16 zur Linie, wenn die Filter im Kopf der Prompt-Tabelle stehen. */
-.upi-root.upi-mit-leiste .upi-main { padding-top: 16px; }
+/* Die Luft ueber und unter .upi-main steht in core ("DIE LUFT UNTER DEM SEITENKOPF"): 16 zur Linie
+   der Reiter bzw. unter der Filterzeile, in jedem Reiter -- Topics stand bis 15.10. bei 24 und
+   damit 8px tiefer als All Prompts und Responses. Die Klasse .upi-mit-leiste (prompts-page.js
+   setzt sie weiter, wenn die Filter im Kopf der Prompt-Tabelle stehen) brauchte dafuer eine eigene
+   Regel mit denselben 16; die ist mit der Regel in core entfallen. */
+.upi-main { min-width: 0; }
 /* Steht die Prompt-Tabelle auf fester Hoehe (is-festhoehe, UC.makeFestHoehe in core), scrollt
    die Seite nicht mehr, und die 64 unter dem Inhalt waeren ein leerer Streifen unter der
    Pagination. 0 und nicht 8 (15.10. nachgereicht: "der Inhalt ist zu weit oben"): die

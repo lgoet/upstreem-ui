@@ -219,8 +219,11 @@
    however many min-width columns fit the container regardless of how many cards there actually
    are, which routinely left an orphaned last row (e.g. 6 cards at a width that fits 4 -> 4+2).
    applyCardCols only ever picks a column count that divides the card count evenly, growing the
-   cards WIDER instead — never a short last row. */
-.urt-cards { display: none; grid-template-columns: repeat(var(--urt-cols, 1), 1fr); gap: 14px; }
+   cards WIDER instead — never a short last row.
+   Luecke 16 (15.10. spaet, vorher 14): derselbe Abstand wie im Raster der Ad Cards (.up-adgrid in
+   core) und auf dem 4er-Raster; responses-table.js rechnet die Spalten mit derselben Zahl
+   (KARTEN_LUECKE). */
+.urt-cards { display: none; grid-template-columns: repeat(var(--urt-cols, 1), 1fr); gap: 16px; }
 .up-root.is-cards-view .urt-cards { display: grid; }
 .up-root.is-cards-view .up-box { display: none; }   /* .up-box wraps .up-thead + .up-tbody */
 /* Flache Tabelle (core, data-flach): der Fuss laeuft links mit dem Kasten aus und beginnt auf der

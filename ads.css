@@ -25,12 +25,8 @@
    bleibt fuer einen core ohne die Klasse. */
 .uad-filterzeile > .udr-root { flex: 0 0 auto; }
 .uad-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
-.uad-main { padding: 24px 0 64px; }
-/* UNTER DEN FILTERN 16 WIE DARUEBER (14.10., gemeldet: "unter Kalender und Filter mehr Luft
-   als von den Filtern zur Linie der Navigation"). Gemessen: Linie bis Filter 16, Filter bis
-   Inhalt 24. Ohne Filterzeile (andere Reiter, Seiten ohne Filter) bleibt es bei 24 unter der
-   Navigation. */
-.uad-filterzeile ~ .uad-main { padding-top: 16px; }
+/* Die Luft ueber und unter .uad-main steht in core ("DIE LUFT UNTER DEM SEITENKOPF"): 16 unter der
+   Filterzeile wie ueber ihr, 64 unten. */
 
 /* 48 zwischen Bloecken als --up-stapel-luft: unter einem Band (oder einer Gruppe, die mit einem
    endet) gleicht core das auf --up-band-luft aus, die Zeile darunter steht 16 unter der Linie wie

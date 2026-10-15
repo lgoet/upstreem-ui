@@ -7,9 +7,9 @@
 
 .uss-root { display: block; }
 .uss-root .uss-pagehead { padding: 8px 0; }
-/* Derselbe Abstand unter den Reitern wie bei Brands (.ubr-main) -- dort steht davor noch die
-   Filterzeile, hier folgt der Inhalt direkt. */
-.uss-main { padding: 24px 0 64px; min-width: 0; }
+/* Unter den Reitern 16 bis zum ersten Abschnitt, unten 64 -- wie auf jeder Seite (core, "DIE
+   LUFT UNTER DEM SEITENKOPF"; bis 15.10. 24). */
+.uss-main { min-width: 0; }
 .uss-tab { min-width: 0; }
 /* Die flachen Tabellen der Reiter Team Organisation und Billing (data-flach, settings-page.js)
    laufen NICHT bis an die Kanten (--up-flach-aus 0 statt der 16 aus core). Der Auslauf ist fuer

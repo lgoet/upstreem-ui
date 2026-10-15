@@ -6815,6 +6815,21 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 .up-ph-top:is(.uts-pagehead, .upr-pagehead, .uev-pagehead, .ush-pagehead, .uad-pagehead, .ucs-pagehead, .uds-pagehead, .upf-pagehead, .uop-pagehead, .upi-pagehead, .ubr-pagehead, .uss-pagehead, .uvb-pagehead) { align-items: center; min-height: var(--up-h-btn); position: relative;
   margin-left: calc(-1 * var(--up-ph-kopfzug-l, 0px)); margin-right: calc(-1 * var(--up-ph-kopfzug-r, 0px)); }
 
+/* ---------- DIE LUFT UNTER DEM SEITENKOPF (15.10. spaet) ----------
+   Von der Linie des Kopfes bzw. der Reiterleiste bis zur ersten Zeile darunter stehen 16
+   (--up-band-luft), auf jeder Seite und in jedem Reiter: dieselbe Luft wie ueber und unter der
+   Leiste der Prompt-Tabelle, dem Vorbild ("dass die Paddings top/bottom einheitlich sind").
+   Steht eine Filterzeile dazwischen, traegt sie ihre 16 ueber sich selbst, und der Inhalt folgt
+   16 unter ihr. Bis hierher stand in jeder der neun Seiten eine eigene Zeile mit 24 und in sechs
+   davon eine zweite, die das unter der Filterzeile auf 16 zuruecksetzte -- ohne Filterzeile
+   blieben 24 (Topics, Opportunities, Performance, Settings), mit ihr und in den Seiten mit
+   eigenem Kopf (Teams, Events: 16 unter dem Kopf) 16. Gemessen 15.10.: der Reiter Topics stand
+   8px tiefer als All Prompts und Responses daneben, und unter dem Platzhalter (.uvb-main, 16)
+   sprang der Inhalt beim Tausch um 8. Unten 64 wie bisher; eine Seite mit fester Hoehe nimmt
+   sie selbst zurueck (prompts-page.css). */
+:is(.ucs-main, .uds-main, .upi-main, .ubr-main, .ush-main, .uad-main, .uop-main, .upf-main, .uss-main) {
+  padding: var(--up-band-luft) 0 64px; }
+
 /* ---------- DER PLATZHALTER EINER ANSICHT (.uvb-*, core.js seitenVorab, 13.10. abends) ----------
    Steht, solange die Dateien einer Ansicht beim ersten Besuch laden (Next.js-App), statt einer
    leeren Flaeche. Der Kopf steht oben in den Listen der Seitenkoepfe -- dieselbe Geometrie wie

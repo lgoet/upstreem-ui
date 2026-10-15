@@ -1379,9 +1379,12 @@
        that forces fewer columns than the width could hold, the 1fr track spreads the difference
        into wider cards instead, per instruction — never more, narrower columns to force a fit. */
     var kartenKompakt = false;
+    /* Die Luecke des Kartenrasters, wie .urt-cards in responses-table.css (15.10. spaet 16 statt
+       14, dasselbe wie das Raster der Ad Cards). Beide Stellen hier rechnen mit ihr. */
+    var KARTEN_LUECKE = 16;
     function computeCardCols(width, count){
       if (!count || count < 1) return 1;
-      var gap = 14;
+      var gap = KARTEN_LUECKE;
       var maxCols = Math.max(1, Math.floor((width + gap) / (CARD_MIN_W + gap)));
       maxCols = Math.min(maxCols, count);
       for (var n = maxCols; n > 1; n--){
@@ -1399,7 +1402,7 @@
       /* KOMPAKT unter 400px Kartenbreite (Kartenentwurf 13.10.): kleinere Masse und hoechstens drei
          Quellen statt fuenf. Die Zahl der Chips steht im Markup ("+N" muss stimmen), also zeichnet
          ein Wechsel die Karten neu -- nur beim Wechsel, nicht bei jeder Breitenaenderung. */
-      var kompakt = (w - 14 * (cols - 1)) / cols < 400;
+      var kompakt = (w - KARTEN_LUECKE * (cols - 1)) / cols < 400;
       elCards.classList.toggle("is-kompakt", kompakt);
       if (kompakt !== kartenKompakt){
         kartenKompakt = kompakt;

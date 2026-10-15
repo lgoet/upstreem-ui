@@ -14,12 +14,9 @@
 .ubr-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
 /* Die Filterzeile gilt fuer beide Reiter: Discover kennt Zeitraum, Models, Markets und Topics
    (Vertrag Brands v1, 6.1). */
-.ubr-main { padding: 24px 0 64px; min-width: 0; }
-/* UNTER DEN FILTERN 16 WIE DARUEBER (14.10., gemeldet: "unter Kalender und Filter mehr Luft
-   als von den Filtern zur Linie der Navigation"). Gemessen: Linie bis Filter 16, Filter bis
-   Inhalt 24. Ohne Filterzeile (andere Reiter, Seiten ohne Filter) bleibt es bei 24 unter der
-   Navigation. */
-.ubr-filterzeile ~ .ubr-main { padding-top: 16px; }
+/* Die Luft ueber und unter .ubr-main steht in core ("DIE LUFT UNTER DEM SEITENKOPF"): 16 unter der
+   Filterzeile wie ueber ihr, 64 unten. */
+.ubr-main { min-width: 0; }
 .ubr-tab { min-width: 0; }
 .ubr-root .ubr-tab[hidden] { display: none; }
 .up-root .ubr-tools .up-ph-addbtn { margin-top: 0; }

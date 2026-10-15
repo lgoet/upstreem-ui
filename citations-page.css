@@ -16,12 +16,9 @@
    --up-stapel-luft: unter dem Band gleicht core das auf --up-band-luft (16) aus, die Leiste steht
    16 unter seiner Linie wie in Prompt Insights unter der Navigation (core.css "DIE ZEILE UNTER
    DEM BAND"). */
-.ucs-main { display: flex; flex-direction: column; --up-stapel-luft: 24px; gap: var(--up-stapel-luft); padding: 24px 0 64px; min-width: 0; }
-/* UNTER DEN FILTERN 16 WIE DARUEBER (14.10., gemeldet: "unter Kalender und Filter mehr Luft
-   als von den Filtern zur Linie der Navigation"). Gemessen: Linie bis Filter 16, Filter bis
-   Inhalt 24. Ohne Filterzeile (andere Reiter, Seiten ohne Filter) bleibt es bei 24 unter der
-   Navigation. */
-.ucs-filterzeile ~ .ucs-main { padding-top: 16px; }
+/* Die Luft ueber und unter .ucs-main steht in core ("DIE LUFT UNTER DEM SEITENKOPF"): 16 unter der
+   Filterzeile wie ueber ihr, 64 unten. */
+.ucs-main { display: flex; flex-direction: column; --up-stapel-luft: 24px; gap: var(--up-stapel-luft); min-width: 0; }
 .ucs-chart, .ucs-tab { min-width: 0; }
 /* hidden gegen das display der eigenen Regel: der Reiter, der nicht offen ist, steht nicht da. */
 .ucs-root .ucs-tab[hidden] { display: none; }
