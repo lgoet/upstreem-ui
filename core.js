@@ -15607,6 +15607,105 @@
     liste.forEach(function(z){ fussStellen(z.w, z.fuellt, z.unten, z.bereit); });
   }
 
+  /* DIE ANGEKLICKTE ZEILE BLEIBT STEHEN (16.10.). Gemeldet an der Domains-Tabelle: oben ein
+     offener Drilldown mit 15 URLs, weiter unten einer mit 5 geoeffnet -- der obere schliesst
+     (richtig), aber die Hoehe, die oben wegfaellt, zieht die angeklickte Zeile mit nach oben, oft
+     unter die klebende Leiste oder ganz aus dem Bild (gemessen 1440x900: 600 -> 15, Leiste endet
+     bei 112). Dieselbe Bauart hat die Gruppenansicht der Prompt-Tabelle.
+     WARUM DER BROWSER DAS NICHT SELBST AUFFAENGT: seine Scroll-Verankerung (overflow-anchor) ist
+     am einen Scrollbereich abgeschaltet -- der Wirt setzt #main { overflow-anchor: none }
+     (kopf.css), weil sie beim Laden der Ansichten staendig nachkorrigierte. Und eingeschaltet
+     waehlte sie oft den falschen Anker: das erste sichtbare Element von oben, und das liegt hier
+     meist IM Drilldown, der gerade entfernt wird -- ein entfernter Anker korrigiert nichts.
+     Also fuer genau diese eine Aenderung von Hand: Lage der Zeile vorher lesen, aendern, dieselbe
+     Lage danach lesen und den Scrollbereich um den Unterschied schieben -- im selben Zug, bevor
+     das naechste Bild gemalt wird, es springt also nichts. Geschoben wird der naechste Vorfahre,
+     der wirklich scrollt (#main, im Drawer sein Koerper), sonst das Dokument.
+     Danach MINDESTENS: die Oberkante steht unter Leiste und Spaltenkopf, wenn die kleben -- fuer
+     eine halb unter dem Kopf angeklickte Zeile und eine per Tab erreichte (der Browser rollt beim
+     Fokus nur ins Bild, nicht unter den klebenden Kopf).
+     el muss im Fluss stehen und darf nicht selbst kleben: ein klebendes Element meldet die Lage,
+     an der es klebt, nicht die, an der es steht (die offene Gruppe der Prompt-Tabelle klebt --
+     dort wird ihr Abschnitt gehalten). */
+  function scrollerVon(el){
+    var a = el.parentElement, oy;
+    while (a && a !== document.body && a !== document.documentElement){
+      try { oy = window.getComputedStyle(a).overflowY; } catch(e){ break; }
+      if ((oy === "auto" || oy === "scroll" || oy === "overlay") && a.scrollHeight > a.clientHeight + 1) return a;
+      a = a.parentElement;
+    }
+    return document.scrollingElement || document.documentElement;
+  }
+  /* Die Kante, unter der eine Zeile zu sehen ist: Unterkante von Leiste und Spaltenkopf der
+     eigenen Tabelle, solange sie kleben, sonst der obere Rand des Scrollbereichs. Ein Kopf, der
+     gerade nicht klebt, steht im Fluss ueber der Zeile und verschiebt die Kante nicht. */
+  function klebKante(el, sc){
+    var oben = sc === (document.scrollingElement || document.documentElement) ? 0
+             : sc.getBoundingClientRect().top + (sc.clientTop || 0);
+    var root = el.closest ? el.closest(".up-root") : null;
+    if (!root) return oben;
+    Array.prototype.forEach.call(root.querySelectorAll(".up-head, .up-thead"), function(k){
+      if (!k.getClientRects().length) return;
+      var p = "";
+      try { p = window.getComputedStyle(k).position; } catch(e){}
+      if (p === "sticky" || p === "fixed") oben = Math.max(oben, k.getBoundingClientRect().bottom);
+    });
+    return oben;
+  }
+  /* AM ENDE DER SEITE reicht der Inhalt im ersten Bild oft nicht: schliesst der vorige Aufklapper
+     UNTER der Zeile, waechst der neue erst ab Hoehe 0 (grid-template-rows 0fr -> 1fr), und der
+     Browser zieht den Scrollbereich auf sein neues Ende -- die Zeile sackt ab (gemessen Prompt
+     Insights 1440x900: +43). Fuer die Dauer der Bewegung bekommt die Tabelle darum unten genau
+     den fehlenden Rand; danach ist der neue Aufklapper gewachsen und traegt die Lage selbst.
+     Reicht auch sein volles Mass nicht (nichts mehr darunter), sinkt die Zeile am Ende der
+     Bewegung um den Rest -- nach unten, also weiter im Bild. Gemerkt an der Wurzel, damit ein
+     zweiter Klick waehrend der Bewegung den Rand nicht doppelt nimmt und der alte Wert sicher
+     zurueckkommt. Uhr statt rAF: im verdeckten Fenster laeuft kein rAF, der Rand bliebe stehen. */
+  function haltRand(el, px, dauer){
+    var root = el.closest ? el.closest(".up-root") : null;
+    if (!root || !(px > 0)) return;
+    var r = root.__upHaltRand;
+    if (!r){
+      var basis = 0;
+      try { basis = parseFloat(window.getComputedStyle(root).marginBottom) || 0; } catch(e){}
+      r = root.__upHaltRand = { alt: root.style.marginBottom, basis: basis, px: 0, uhr: 0 };
+    }
+    r.px += px;
+    root.style.marginBottom = (r.basis + r.px) + "px";
+    clearTimeout(r.uhr);
+    r.uhr = setTimeout(function(){
+      root.style.marginBottom = r.alt;
+      if (root.__upHaltRand === r) root.__upHaltRand = null;
+    }, (dauer || 0) + 40);
+  }
+  /* o.dauer: wie lange die Bewegung des neuen Aufklappers laeuft (ms) -- nur dann gibt es den
+     Rand am Seitenende. */
+  function zeileHalten(el, aendern, o){
+    o = o || {};
+    if (!el || !el.isConnected || !el.getBoundingClientRect){ aendern(); return; }
+    /* Die Kante VOR der Aenderung, an der der Nutzer die Zeile gesehen hat. Was oben wegfaellt,
+       rueckt den Tabellenanfang nur naeher an die gehaltene Zeile: loest sich der Kopf dadurch,
+       steht er im Fluss UEBER ihr und verdeckt nichts. Klebt er vorher nicht, klebt er danach
+       erst recht nicht. */
+    var sc = scrollerVon(el), vor = el.getBoundingClientRect().top, kante = klebKante(el, sc);
+    aendern();
+    if (!el.isConnected) return;
+    var d = el.getBoundingClientRect().top - vor;
+    /* Halb unter dem klebenden Kopf: so weit zurueck, dass die Oberkante frei steht. */
+    var frei = Math.min(0, vor - kante);
+    /* Nach oben begrenzt die 0: fiel ueber der Zeile mehr weg, als darueber gescrollt war, steht
+       sie danach hoeher -- im Fluss unter einem Kopf, der dann nicht mehr klebt, also im Bild. */
+    var ziel = Math.max(0, sc.scrollTop + d + frei);
+    /* Der Rand auch dann, wenn nichts zu schieben ist: der Browser zieht den Scrollbereich nicht
+       immer schon beim Lesen auf sein neues Ende, sondern erst beim naechsten Bild -- dann stuende
+       die Zeile jetzt richtig und saenke danach ab. */
+    var fehlt = ziel - (sc.scrollHeight - sc.clientHeight);
+    if (fehlt > 0.5 && o.dauer) haltRand(el, Math.ceil(fehlt), o.dauer);
+    if (Math.abs(sc.scrollTop - ziel) < 0.5) return;
+    /* instant: ein scroll-behavior: smooth am Bereich liesse die Zeile sonst sichtbar wandern. */
+    try { sc.scrollTo({ top: ziel, left: sc.scrollLeft, behavior: "instant" }); } catch(e){ sc.scrollTop = ziel; }
+  }
+
   /* DIE LEISTE UEBER DEM BAND (16.10., Variante A der Leinwand "Citations Seitenaufbau", fuer
      Citations und Brands > Tracked gewaehlt). Die eine Leiste einer Tabelle (data-leiste="yes",
      ihr .up-head) steht OBEN, ueber dem Chart: links Kalender und Filter, die fuer Chart UND
@@ -28271,6 +28370,8 @@
     makeLeistenFilter: makeLeistenFilter,
     bandTeile: bandTeile, bandAus: bandAus, bandAusGemerkt: bandAusGemerkt, bandAusMerken: bandAusMerken,
     bandUnterLeiste: bandUnterLeiste, klebFuss: klebFuss,
+    /* Aufklapper in Tabellen (Drilldown, Gruppe): die angeklickte Zeile bleibt stehen. */
+    zeileHalten: zeileHalten,
     bandSchalterHtml: bandSchalterHtml,
     rafThrottle: rafThrottle,
     einmalProBild: einmalProBild,
