@@ -20,3 +20,7 @@
 .ubr-tab { min-width: 0; }
 .ubr-root .ubr-tab[hidden] { display: none; }
 .up-root .ubr-tools .up-ph-addbtn { margin-top: 0; }
+/* Der Umschalter des Bandes (UC.bandAus setzt ihn an den Anfang von .ubr-tools) gilt dem Chart von
+   Tracked. Discover hat keinen Chart -- dort stuende ein Schalter, der nichts Sichtbares tut. Die
+   Knoepfe daneben bleiben stehen: die Gruppe ist rechtsbuendig, es faellt nur das linke Stueck weg. */
+.ubr-root[data-ubr-reiter="discover"] .ubr-tools > .up-bandsw { display: none; }

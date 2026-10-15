@@ -4141,15 +4141,31 @@
     /* AUSGEBLENDET IST DAS BAND GANZ WEG (15.10.: "gehen die ganz weg und lassen sich ueber einen
        dann kommenden Button in der Topbar wieder einblenden"). Keine Restzeile, keine Linie; eine
        Huelle, die nur das Band traegt (Citations, .ucs-chart), faellt mit weg -- sonst stuende
-       ihr Abstand im Stapel als Luecke da. Den Knopf zum Einblenden setzt UC.bandAus in den
-       Seitenkopf. */
+       ihr Abstand im Stapel als Luecke da. Ein- und ausgeblendet wird seit dem 15.10. spaet ueber
+       den Umschalter, den UC.bandAus in den Seitenkopf setzt (.up-bandsw, immer da). */
     :is(.up-root.up-root[data-flach="yes"].up-band, .up-root.up-root[data-flach="yes"] .up-band).up-band.is-band-aus { display: none; }
     .up-root :has(> .up-band.is-band-aus:only-child) { display: none; }
-    /* Der Knopf im Seitenkopf: steht er direkt im Kopf (Citations, Aktualisieren ist dort ein
+    /* Mit dem Umschalter im Kopf weicht das eigene Auge des Bandes ("Nicht ueber so ein Eye-Icon").
+       Nur dann: ohne Seitenkopf setzt bandAus kein .is-band-schalter, und das Auge bleibt der Weg. */
+    :is(.up-root.up-root[data-flach="yes"].up-band, .up-root.up-root[data-flach="yes"] .up-band).is-band-schalter .up-band-auge { display: none; }
+    /* Der Umschalter im Seitenkopf: steht er direkt im Kopf (Citations, Aktualisieren ist dort ein
        eigenes Kind), rueckt er an die Werkzeuge rechts, 8 vor ihnen wie zwischen den Knoepfen
        einer Werkzeuggruppe (.uds-tools, .ubr-tools) -- der Kopf selbst haelt 16 Abstand. In einer
-       Werkzeuggruppe steht er ohnehin richtig. */
-    .up-ph-top > .up-band-zeigen { margin-left: auto; margin-right: -8px; }
+       Werkzeuggruppe steht er ohnehin richtig. .up-band-zeigen ist der Knopf "Show chart" von
+       vorher; den setzt core nicht mehr, die Klasse bleibt fuer den Vertrag stehen. */
+    .up-ph-top > :is(.up-bandsw, .up-band-zeigen) { margin-left: auto; margin-right: -8px; }
+    /* Auf dem Telefon (is-vnarrow, Wurzel unter 500) werden die Kapseln rund, 32 x 32 statt 40 x 32:
+       gemessen 15.10. bei 375 auf Brands fehlten der Krumenzeile ("Brands > Tracked", 146) neben
+       Umschalter, "Add" und Aktualisieren gut 2px, sie endete in "Bran... > Track...". Die 16 machen
+       daraus 14 Luft. Hoehe, Radius und Zeichen bleiben -- nur das Polster neben dem Zeichen faellt
+       auf 8, die Form des Themenschalters vor dem 15.10. spaet. */
+    .up-root.is-vnarrow .up-ph-top .up-seg.up-bandsw .up-seg-btn { padding: 0 8px; }
+    /* Und der Hinzufuegen-Knopf daneben wird zu seinem Zeichen, wie Export in der Werkzeugleiste
+       (.is-w0): auf Deutsch ist seine schmale Fassung "Hinzufuegen" 105 breit, gemessen 15.10. bei
+       375 blieb von "Brands > Beobachtet" nur "B... > Beob...". Ohne die Worte 32 x 32 (das Polster
+       0 8 hat .up-export schon), der Name bleibt als aria-label. Nur in einem Kopf mit Umschalter --
+       ohne ihn hatte die Zeile die Luft, und der Knopf behaelt sein Wort. */
+    .up-root.is-vnarrow .up-ph-top:has(.up-bandsw) .up-ph-addbtn span { display: none; }
 
     /* ---------- DIE ZEILE UNTER DEM BAND (15.10.) ----------
        Zwischen der Unterkante eines Bandes und der Zeile darunter (Leiste oder Ueberschrift einer
@@ -5852,26 +5868,32 @@
    im grauen Hell #ebebeb und #ffffff, also genau Geists Gray 400 und Background 100. Nicht
    --vc-border fuer den aeusseren Ring: das Einstellungsfenster setzt es auf seine dunklere
    Fensterlinie (#dcdbdd), und dann stuenden zwei verschiedene Ringe uebereinander. */
-.up-root .up-seg.up-themesw { height: var(--up-h-btn); padding: 0; gap: 0; border-radius: var(--up-r-voll);
+/* DERSELBE SCHALTER IM SEITENKOPF (15.10. spaet, UC.bandSchalterHtml): der Umschalter des Bandes
+   mit zwei Feldern, Chart und Tabelle / nur Tabelle ("Switcher nur mit 2 Icons, aber entspanntem
+   Padding"). Er steht in JEDER Regel hier mit drin und hat keine eigene -- zwei Schalter dieser
+   Form, die auseinanderlaufen koennen, waeren ein Nachbau (CLAUDE.md 1). :is() mit zwei Klassen
+   haelt die Spezifitaet bei einer Klasse, also genau dort, wo sie vorher stand. 32 hoch wie die
+   Knoepfe des Seitenkopfs (.up-ph-iconbtn, .up-ph-addbtn). */
+.up-root .up-seg:is(.up-themesw, .up-bandsw) { height: var(--up-h-btn); padding: 0; gap: 0; border-radius: var(--up-r-voll);
   background: transparent; box-shadow: 0 0 0 1px var(--vc-switch-border); }
-.up-root .up-seg.up-themesw.is-klein { height: var(--up-h-chip); }
-.up-root .up-seg.up-themesw::before { border: 0; border-radius: var(--up-r-voll);
+.up-root .up-seg:is(.up-themesw, .up-bandsw).is-klein { height: var(--up-h-chip); }
+.up-root .up-seg:is(.up-themesw, .up-bandsw)::before { border: 0; border-radius: var(--up-r-voll);
   box-shadow: 0 0 0 1px var(--vc-switch-border), var(--up-e-1); }
 /* MEHR LUFT IN DEN DREI FELDERN (15.10. spaet: "den Theme Switcher besser stylen, mehr Padding in den
    3 Bereichen"): die Knoepfe sind nicht mehr rund (Breite = Hoehe), sondern Kapseln mit Polster
    12 bzw. 8 neben dem 16er-Zeichen -- 40 x 32 und 32 x 24. Die gleitende Flaeche misst den Knopf
    (segLauf) und wird damit von selbst zur Kapsel. */
-.up-root .up-seg.up-themesw .up-seg-btn { width: auto; height: var(--up-h-btn); padding: 0 12px;
+.up-root .up-seg:is(.up-themesw, .up-bandsw) .up-seg-btn { width: auto; height: var(--up-h-btn); padding: 0 12px;
   border: 0; border-radius: var(--up-r-voll); color: var(--vc-third); }
-.up-root .up-seg.up-themesw.is-klein .up-seg-btn { width: auto; height: var(--up-h-chip); padding: 0 8px; }
-.up-root .up-seg.up-themesw .up-seg-btn svg { width: 16px; height: 16px; color: inherit; }
-.up-root .up-seg.up-themesw .up-seg-btn:hover,
-.up-root .up-seg.up-themesw .up-seg-btn.is-active { color: var(--vc-text); }
+.up-root .up-seg:is(.up-themesw, .up-bandsw).is-klein .up-seg-btn { width: auto; height: var(--up-h-chip); padding: 0 8px; }
+.up-root .up-seg:is(.up-themesw, .up-bandsw) .up-seg-btn svg { width: 16px; height: 16px; color: inherit; }
+.up-root .up-seg:is(.up-themesw, .up-bandsw) .up-seg-btn:hover,
+.up-root .up-seg:is(.up-themesw, .up-bandsw) .up-seg-btn.is-active { color: var(--vc-text); }
 /* Bevor core gemessen hat (oder wo der Streifen abgeschaltet ist), traegt der gewaehlte Knopf die
    Flaeche selbst -- dieselbe wie das ::before. Danach gibt er sie ab (.is-gleitend > button). */
-.up-root .up-seg.up-themesw:not(.is-gleitend) .up-seg-btn.is-active {
+.up-root .up-seg:is(.up-themesw, .up-bandsw):not(.is-gleitend) .up-seg-btn.is-active {
   background: var(--vc-switch-pill); box-shadow: 0 0 0 1px var(--vc-switch-border), var(--up-e-1); }
-.up-root .up-seg.up-themesw .up-seg-btn:focus-visible { outline: 0;
+.up-root .up-seg:is(.up-themesw, .up-bandsw) .up-seg-btn:focus-visible { outline: 0;
   box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
 /* ---------- "X mentioned?" yes/no cell ----------

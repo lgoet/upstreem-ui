@@ -899,8 +899,10 @@
     "Dismiss": "Ausblenden",
     "Show": "Zeigen",
     "Hide": "Ausblenden",
-    /* Der Knopf im Seitenkopf, der ein ausgeblendetes Band zurueckholt (UC.bandAus, 15.10.). */
-    "Show chart": "Chart einblenden",
+    /* Der Umschalter des Bandes im Seitenkopf (UC.bandSchalterHtml, 15.10. spaet). Er ersetzt den
+       Knopf "Show chart", der nur im ausgeblendeten Zustand erschien. */
+    "Chart and table": "Chart und Tabelle",
+    "Table only": "Nur Tabelle",
     "Open in new tab": "In neuem Tab öffnen",
 
     /* ── Filter auf Brand-Erwähnungen (vier Tabellen teilen diese Texte) ───────────────────── */
@@ -15631,30 +15633,77 @@
      nicht und sollen es auch nicht (ohne data-flach greift ohnehin keine Regel).
        teile.zwei     true: zwei Einheiten mit Trennlinie (.up-band-zwei)
        teile.selbst   true: das Band ist zugleich seine einzige Einheit (Brands)
-       teile.einheit, .kopf, .flaeche, .inhalt   Selektoren, relativ zum Band */
+       teile.einheit, .kopf, .flaeche, .inhalt   Selektoren, relativ zum Band
+       teile.auge     Selektor des eigenen Knopfs zum Ausblenden: er weicht, sobald der Umschalter
+                      im Seitenkopf steht (bandAus) -- ohne Seitenkopf bleibt er der einzige Weg */
   function bandTeile(band, teile){
     if (!band || !band.classList) return null;
     teile = teile || {};
     band.classList.add("up-band");
     if (teile.zwei) band.classList.add("up-band-zwei");
     if (teile.selbst) band.classList.add("up-band-einheit");
-    [["einheit", "up-band-einheit"], ["kopf", "up-band-head"], ["flaeche", "up-band-flaeche"], ["inhalt", "up-band-inhalt"]].forEach(function(p){
+    [["einheit", "up-band-einheit"], ["kopf", "up-band-head"], ["flaeche", "up-band-flaeche"], ["inhalt", "up-band-inhalt"],
+     ["auge", "up-band-auge"]].forEach(function(p){
       if (!teile[p[0]]) return;
       try { [].forEach.call(band.querySelectorAll(teile[p[0]]), function(el){ el.classList.add(p[1]); }); } catch(e){}
     });
     return band;
   }
+  /* DER UMSCHALTER DES BANDES (15.10. spaet: "Mach oben in die Topbar einen Switcher zum Ein- und
+     Ausschalten der Charts. Nicht ueber so ein Eye-Icon. Switcher nur mit 2 Icons, aber
+     entspanntem Padding"). Vorher stand am Band ein Auge und, nur solange es aus war, im Kopf ein
+     Knopf "Show chart" -- zwei Bedienungen an zwei Orten fuer dieselbe Wahl, und die eine erschien
+     und verschwand.
+     DER THEMENSCHALTER IN ZWEI FELDERN und kein Nachbau: .up-seg mit der gleitenden Flaeche
+     (segLauf), die Form steht in core.css an denselben Regeln wie .up-themesw -- Kapseln mit
+     Polster neben dem Zeichen, 40 x 32 (32 hoch wie die Knoepfe des Seitenkopfs) bzw. 32 x 24.
+     Zwei sich ausschliessende Wahlen, also radiogroup/radio wie dort; der Name je Knopf als
+     aria-label und Tooltip.
+     Die Zeichen: chartSpline (ein Verlauf mit Achse -- dasselbe wie bisher am Knopf "Show chart")
+     fuer Chart und Tabelle, listIcon (drei Zeilen) fuer nur die Tabelle. Kein Auge: das sagt
+     "verbergen", nicht "was steht da". Und nicht layoutGrid -- das ist in Ads die Kachelansicht.
+     opts.aus  true: "Table only" gewaehlt; opts.id  Kennung des Bandes; opts.klein  die 24er-Form */
+  var BAND_WAHLEN = [
+    { key: "an",  label: "Chart and table", zeichen: "chartSpline" },
+    { key: "aus", label: "Table only",      zeichen: "listIcon" }
+  ];
+  function bandSchalterHtml(opts){
+    opts = opts || {};
+    var aus = !!opts.aus;
+    return '<div class="up-seg up-bandsw' + (opts.klein ? " is-klein" : "") + '" role="radiogroup" aria-label="' + esc(t_("Layout")) + '"' +
+      (opts.id != null ? ' data-band="' + esc(String(opts.id)) + '"' : "") + '>' +
+      BAND_WAHLEN.map(function(w){
+        var an = (w.key === "aus") === aus, name = t_(w.label);
+        return '<button type="button" class="up-seg-btn' + (an ? " is-active" : "") + '" role="radio" aria-checked="' + (an ? "true" : "false") + '"' +
+          ' data-up-bandwahl="' + w.key + '" aria-label="' + esc(name) + '" data-tip="' + esc(name) + '">' +
+          icon(w.zeichen, 1.5) + '</button>';
+      }).join("") +
+    '</div>';
+  }
+  /* Die Wahl an einem stehenden Umschalter nachziehen. Die Flaeche faehrt von selbst: segLauf misst
+     .is-active nach jedem Klick, und ein frisch eingehaengter Umschalter wird beim Einhaengen
+     gemessen (der Beobachter weiter unten). */
+  function bandSchalterStellen(sw, aus){
+    [].forEach.call(sw.querySelectorAll("[data-up-bandwahl]"), function(b){
+      var an = (b.getAttribute("data-up-bandwahl") === "aus") === !!aus;
+      if (b.classList.contains("is-active") !== an) b.classList.toggle("is-active", an);
+      b.setAttribute("aria-checked", an ? "true" : "false");
+    });
+  }
   /* bandAus: ein Band GANZ ausblenden (15.10.: "Wenn man bei Citations oder bei Brands die Charts
-     ausblendet, gehen die ganz weg und lassen sich ueber einen dann kommenden Button in der
-     Topbar wieder einblenden"). Ausgeblendet steht im Kopf der Seite (.up-ph-top) ein Zeichenknopf
-     wie Aktualisieren daneben (.up-ph-iconbtn), eingeblendet ist er weg. Der Zustand gehoert der
-     Komponente: sie ruft das bei jedem Wechsel und beim Aufbau, und o.zeigen ist IHR Weg zurueck
-     (derselbe wie ihr eigener Knopf -- dieselben Ereignisse, derselbe Speicher).
-     Ohne Seitenkopf (ein Band ausserhalb einer Seite) gibt es keinen Weg zurueck: dann tut die
-     Funktion nichts und meldet false -- die Komponente klappt wie bisher zusammen.
-       o.id     Kennung des Bandes (mehrere Baender auf einer Seite)
-       o.zeigen Rueckruf des Knopfs
-       o.tip    Beschriftung, Vorgabe "Show chart" */
+     ausblendet, gehen die ganz weg"). Seit dem 15.10. spaet steht dafuer im Kopf der Seite
+     (.up-ph-top) IMMER der Umschalter oben (bandSchalterHtml), an und aus -- nicht mehr ein Knopf,
+     der nur im ausgeblendeten Zustand erscheint. Er steht als Erstes vor den Knoepfen des Kopfs:
+     direkt im Kopf vor Aktualisieren (Citations), sonst am Anfang ihrer Huelle (Brands: vor
+     "Add Brand") -- die Ansicht vor den Handlungen, wie bei Geist.
+     Der Zustand gehoert der Komponente: sie ruft das bei jedem Wechsel und beim Aufbau, und
+     o.setzen(aus) ist IHR Weg (derselbe wie ihr eigener Knopf -- dieselben Ereignisse, derselbe
+     Speicher). Das Band bekommt dazu .is-band-schalter: ihr Auge (bandTeile, teile.auge) weicht.
+     Ohne Seitenkopf (ein Band ausserhalb einer Seite) gibt es keinen Umschalter: dann tut die
+     Funktion nichts und meldet false -- die Komponente klappt wie bisher mit ihrem Auge zusammen.
+       o.id      Kennung des Bandes (mehrere Baender auf einer Seite)
+       o.setzen  Rueckruf des Umschalters mit dem gewuenschten Zustand (true = aus)
+       o.zeigen  der Rueckruf von bisher (nur Einblenden), gilt, solange o.setzen fehlt */
   function bandAus(band, aus, o){
     o = o || {};
     if (!band || !band.parentElement) return false;
@@ -15667,30 +15716,33 @@
       if (kopf) break;
       el = el.parentElement;
     }
-    if (!kopf){ band.classList.remove("is-band-aus"); return false; }
+    if (!kopf){ band.classList.remove("is-band-aus"); band.classList.remove("is-band-schalter"); return false; }
     var id = String(o.id || "band");
-    var knopf = null;
-    [].forEach.call(kopf.querySelectorAll(".up-band-zeigen"), function(b){ if (b.getAttribute("data-band") === id) knopf = b; });
+    var sw = null;
+    [].forEach.call(kopf.querySelectorAll(".up-bandsw"), function(s){ if (s.getAttribute("data-band") === id) sw = s; });
     band.classList.toggle("is-band-aus", !!aus);
-    if (aus && !knopf){
-      var wort = t(o.tip || "Show chart");
-      knopf = document.createElement("button");
-      knopf.type = "button";
-      knopf.className = "up-ph-iconbtn up-band-zeigen";
-      knopf.setAttribute("data-band", id);
-      knopf.setAttribute("data-tip", wort);
-      knopf.setAttribute("aria-label", wort);
-      knopf.innerHTML = icon("chartSpline", 1.8);
-      knopf.addEventListener("click", function(){ if (typeof knopf.__zeigen === "function") knopf.__zeigen(); });
-      /* Vor dem ersten Zeichenknopf des Kopfs (Aktualisieren, Docs): dort, wo die Werkzeuge der
-         Seite stehen, und in derselben Huelle wie sie. */
-      var vor = kopf.querySelector(".up-ph-iconbtn:not(.up-band-zeigen)");
-      if (vor && vor.parentNode) vor.parentNode.insertBefore(knopf, vor); else kopf.appendChild(knopf);
+    band.classList.add("is-band-schalter");
+    if (!sw){
+      var huelle = document.createElement("div");
+      huelle.innerHTML = bandSchalterHtml({ id: id, aus: !!aus });
+      sw = huelle.firstChild;
+      sw.addEventListener("click", function(e){
+        var b = e.target && e.target.closest ? e.target.closest("[data-up-bandwahl]") : null;
+        if (!b || !sw.contains(b) || b.classList.contains("is-active")) return;
+        var willAus = b.getAttribute("data-up-bandwahl") === "aus";
+        if (typeof sw.__setzen === "function") sw.__setzen(willAus);
+        else if (!willAus && typeof sw.__zeigen === "function") sw.__zeigen();
+      });
+      /* Vor den ersten Knopf des Kopfs, und zwar an den Anfang seiner Huelle: steht er direkt im
+         Kopf (Citations), davor; steht er in einer Werkzeuggruppe (Brands), als ihr erstes Kind. */
+      var erster = kopf.querySelector(".up-ph-addbtn, .up-ph-iconbtn");
+      if (!erster || !erster.parentNode) kopf.appendChild(sw);
+      else if (erster.parentNode === kopf) kopf.insertBefore(sw, erster);
+      else erster.parentNode.insertBefore(sw, erster.parentNode.firstChild);
     }
-    if (knopf){
-      knopf.__zeigen = o.zeigen;
-      if (!aus && knopf.parentNode) knopf.parentNode.removeChild(knopf);
-    }
+    sw.__setzen = o.setzen;
+    sw.__zeigen = o.zeigen;
+    bandSchalterStellen(sw, !!aus);
     return true;
   }
   /* Gemerkt ueber das Neuladen hinaus (der Speicher der Komponenten lebt am Fenster und war nach
@@ -27710,6 +27762,7 @@
     makeFestHoehe: makeFestHoehe,
     makeLeistenFilter: makeLeistenFilter,
     bandTeile: bandTeile, bandAus: bandAus, bandAusGemerkt: bandAusGemerkt, bandAusMerken: bandAusMerken,
+    bandSchalterHtml: bandSchalterHtml,
     rafThrottle: rafThrottle,
     einmalProBild: einmalProBild,
     onResize: onResize,

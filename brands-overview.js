@@ -698,7 +698,7 @@
          des Charts ist das Band und zugleich seine einzige Einheit. */
       if (root.getAttribute("data-flach") === "yes" && UC.bandTeile && chartBox && chartBox.parentElement.classList.contains("ubo-unit-chart"))
         UC.bandTeile(chartBox.parentElement, { selbst: true, kopf: ":scope > .ubo-head", flaeche: ":scope > .ubo-box-chart",
-          inhalt: ":scope > .ubo-box-chart > .ubo-panel-body" });
+          inhalt: ":scope > .ubo-box-chart > .ubo-panel-body", auge: ".ubo-hide" });
     }
     ensureChrome();
 
@@ -841,17 +841,30 @@
     /* Chart hidden/shown survives a Bubble re-render of the markup, per instance — exactly the
        window.__ccHidden shape citations-combo-chart uses for its own Hide button. */
     var HIDDEN_STORE = (window.__uboHidden = window.__uboHidden || {});
-    /* ALS BAND (data-flach, Seite Brands, 15.10.): ausgeblendet ist der Chart ganz weg, der Knopf
-       zum Einblenden steht im Kopf der Seite (UC.bandAus) und geht denselben Weg wie das Auge im
-       Chart. Dazu ueber das Neuladen hinaus gemerkt -- der Speicher am Fenster bleibt der erste. */
+    /* ALS BAND (data-flach, Seite Brands, 15.10.): ausgeblendet ist der Chart ganz weg. Seit dem
+       15.10. spaet schaltet der Umschalter im Kopf der Seite (UC.bandAus) in BEIDE Richtungen,
+       und das Auge im Chart weicht, solange er steht (bandTeile, teile.auge). Umschalter und Auge
+       gehen denselben Weg, chartAusSetzen. Dazu ueber das Neuladen hinaus gemerkt -- der Speicher
+       am Fenster bleibt der erste. */
     var bandEl = root.querySelector(".ubo-unit-chart.up-band");
     if (bandEl && HIDDEN_STORE[instanceId] == null && UC.bandAusGemerkt && UC.bandAusGemerkt(instanceId)) HIDDEN_STORE[instanceId] = true;
     function bandStellen(){
       if (!bandEl || !UC.bandAus) return;
-      UC.bandAus(bandEl, root.classList.contains("is-hidden-view"), { id: instanceId, zeigen: function(){
-        var auge = root.querySelector(".ubo-hide");
-        if (auge && root.classList.contains("is-hidden-view")) auge.click();
+      UC.bandAus(bandEl, root.classList.contains("is-hidden-view"), { id: instanceId, setzen: function(aus){
+        if (!!aus !== root.classList.contains("is-hidden-view")) chartAusSetzen(!!aus);
       } });
+    }
+    /* Hide/Show the chart container -- same toggle, same persistence shape and the same
+       post-toggle resize as citations-combo-chart's hiddenSetzen. line und matrix entstehen weiter
+       unten; gerufen wird das erst nach dem Aufbau. */
+    function chartAusSetzen(collapsed){
+      root.classList.toggle("is-hidden-view", collapsed);
+      HIDDEN_STORE[instanceId] = collapsed;
+      if (bandEl && UC.bandAusMerken) UC.bandAusMerken(instanceId, collapsed);
+      bandStellen();
+      var hb = root.querySelector(".ubo-hide");
+      if (hb){ hb.setAttribute("data-tip", collapsed ? "Show" : "Hide"); hb.setAttribute("aria-label", collapsed ? "Show" : "Hide"); }
+      setTimeout(function(){ line.resize(); line.relayoutLegend && line.relayoutLegend(); matrix.resize(); }, 230);
     }
     var INIT_COMPANIES = (window.__uboInitCompanies = window.__uboInitCompanies || {});
     var USER_FILTERED  = (window.__uboUserFiltered = window.__uboUserFiltered || {});
@@ -1688,17 +1701,10 @@
           toggleSearch();
           return;
         }
-        /* Hide/Show the chart container — same toggle, same persistence shape and the same
-           post-toggle resize as citations-combo-chart's .combo-hide. */
+        /* Hide/Show the chart container (chartAusSetzen, derselbe Weg wie der Umschalter im
+           Seitenkopf). */
         if (e.target.closest(".ubo-hide")){
-          var hb = e.target.closest(".ubo-hide");
-          var collapsed = root.classList.toggle("is-hidden-view");
-          HIDDEN_STORE[instanceId] = collapsed;
-          if (bandEl && UC.bandAusMerken) UC.bandAusMerken(instanceId, collapsed);
-          bandStellen();
-          hb.setAttribute("data-tip", collapsed ? "Show" : "Hide");
-          hb.setAttribute("aria-label", collapsed ? "Show" : "Hide");
-          setTimeout(function(){ line.resize(); line.relayoutLegend && line.relayoutLegend(); matrix.resize(); }, 230);
+          chartAusSetzen(!root.classList.contains("is-hidden-view"));
           return;
         }
         var ya = e.target.closest("[data-yaxis]");
