@@ -3455,10 +3455,12 @@
        them out of the header's grid flow. */
     .up-sticky .up-thead::before,
     .up-sticky .up-thead::after {
-      content: ""; position: absolute; top: -1px; width: 16px; height: 16px; pointer-events: none; z-index: 2;
+      content: ""; position: absolute; top: -1px; width: var(--up-r-2xl); height: var(--up-r-2xl); pointer-events: none; z-index: 2;
     }
-    .up-sticky .up-thead::before { left: -1px;  background: radial-gradient(circle at bottom right, rgba(0,0,0,0) 16px, var(--up-surface) 16.5px); }
-    .up-sticky .up-thead::after  { right: -1px; background: radial-gradient(circle at bottom left,  rgba(0,0,0,0) 16px, var(--up-surface) 16.5px); }
+    /* Groesse und Bogen aus --up-r-2xl, dem Radius des Kopfes: bis 15.10. standen hier 16 fest, und
+       mit dem Kopf auf Geists 12 liess das Eckstueck zwischen beiden Boegen einen Streifen frei. */
+    .up-sticky .up-thead::before { left: -1px;  background: radial-gradient(circle at bottom right, rgba(0,0,0,0) var(--up-r-2xl), var(--up-surface) calc(var(--up-r-2xl) + .5px)); }
+    .up-sticky .up-thead::after  { right: -1px; background: radial-gradient(circle at bottom left,  rgba(0,0,0,0) var(--up-r-2xl), var(--up-surface) calc(var(--up-r-2xl) + .5px)); }
     .up-sticky .up-tbody {
       border: 1px solid var(--vc-border); border-top: none;
       border-bottom-left-radius: var(--up-r-2xl); border-bottom-right-radius: var(--up-r-2xl);
@@ -4160,7 +4162,9 @@
       transition: opacity .14s ease, transform .14s ease;
     }
     /* wider, wrapping variant for the full URL title (which can be long) */
-    .up-tip.is-wide { height: auto; white-space: normal; max-width: 340px; padding: 6px 9px; line-height: 1.35; align-items: flex-start; }
+    /* Mehrzeilig 8 statt 6 (Geist, 15.10.): die Rollenregel der Ecken -- einzeilig 6, mehrzeilig 8 --
+       galt bis dahin nur fuer die Chart-Tooltips. */
+    .up-tip.is-wide { height: auto; white-space: normal; max-width: 340px; padding: 6px 9px; line-height: 1.35; align-items: flex-start; border-radius: var(--up-r-l); }
     .up-tip.is-on { opacity: 1; transform: translateY(0); }
     /* Rechts angesetzt bekommt der Chip KEINE Verschiebung: er sitzt auf der Mitte des
        Ausloesers, und die Grundregel oben wuerde ihn um 4px nach unten schieben. Den Wert setzt
@@ -7626,10 +7630,10 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 /* ---------- DIE GESAMTZEILE EINER TABELLE (.up-sumrow, UC.makeSumZeile, 15.10.) ----------
    Eine feste Zeile unter den Zeilen und ueber der Pagination (Empfehlung vom 15.10., vom Nutzer
    bestellt). Links NUR die Anzahl, in den Spalten eine Berechnung, die der Nutzer waehlt -- von
-   Haus aus keine: dort steht "+ Add" (15.10. spaet: "per default nix an calculations"). Jede
+   Haus aus keine: dort steht "+ Calculation" (15.10. spaet: "per default nix an calculations"; erst "+ Add", umbenannt, "sonst denkt man, man kann da was hinzufuegen"). Jede
    Angabe ist ein Paar: der Wert in der Primaerfarbe und eine Stufe groesser als die Zellenschrift
    (16 statt der 14 von .up-num), dann Abstand, dann die Bezeichnung in der VIERTFARBE, ebenso
-   "+ Add" und das Zeichen am Knopf ("alles was in dritt color ist -> in viert color").
+   "+ Calculation" und das Zeichen am Knopf ("alles was in dritt color ist -> in viert color").
    Primaerfarbe heisst hier --up-accent-ink: die Akzentfarbe als SCHRIFT auf dem Seitengrund,
    nicht --up-accent (die Flaeche, siehe die Akzente oben).
    Vorbild der Geometrie ist der Gruppenkopf der Prompt-Tabelle (prompts-table.css, .upt-grp-head):
@@ -7682,7 +7686,7 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 }
 /* MITTIG statt auf der Grundlinie (15.10. spaet: "den Count selber mittig zentrieren"): auf der
    gemeinsamen Grundlinie stand die 16er Zahl gemessen 2.2px ueber der Zeilenmitte, das 13er Wort
-   und "+ Add" daneben auf ihr. */
+   und "+ Calculation" daneben auf ihr. */
 .up-sumwert {
   flex: 0 0 auto; font-size: var(--up-fs-xl); font-weight: var(--up-fw-h);
   color: var(--up-accent-ink); font-variant-numeric: tabular-nums;
@@ -7694,7 +7698,7 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
   min-width: 0; overflow: hidden; text-overflow: ellipsis;
   font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-fourth);
 }
-/* Eine Zelle mit Auswahl (Gesamtwert, Median, Zaehlwert): das Paar ist der Knopf. Polster und
+/* Eine Zelle mit Auswahl (Gesamtwert, Durchschnitt, Zaehlwert): das Paar ist der Knopf. Polster und
    Gegenrand gleich gross, damit der Wert auf der Kante der Spalte bleibt und der Knopf keinen
    Platz im Raster nimmt -- die Flaeche beim Ueberfahren laeuft 6 in das Zellpolster. Das Zeichen
    dahinter dreht sich nie (Hausregel), es sagt nur, dass hier eine Auswahl ist.
@@ -7731,7 +7735,7 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 .up-sumknopf:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .up-sumchev { display: inline-flex; align-items: center; flex: 0 0 12px; width: 12px; height: var(--up-h-seg); color: var(--vc-fourth); }
 .up-sumchev svg { width: 12px; height: 12px; display: block; }
-/* "+ Add": eine Spalte ohne gewaehlte Berechnung. Als Knopf (.up-sumknopf.up-sumadd), wo die
+/* "+ Calculation": eine Spalte ohne gewaehlte Berechnung. Als Knopf (.up-sumknopf.up-sumadd), wo die
    Tabelle Berechnungen anbietet -- er oeffnet dasselbe Menue wie ein gewaehlter Wert. Wo sie noch
    keine hat, steht dasselbe Bild als blosser Text (span.up-sumadd, "erstmal nur ein + icon,
    dahinter ein Add"): kein Ueberfahren, kein Zeiger, weil kein Klick etwas taete. Zeichen 12 wie
@@ -7743,7 +7747,7 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 span.up-sumadd { height: var(--up-h-seg); cursor: default; }
 .up-sumadd svg { flex: 0 0 12px; width: 12px; height: 12px; display: block; }
 /* Als Knopf gegen font/color: inherit von .up-sumknopf -- ueber zwei Klassen, nicht ueber die
-   Reihenfolge. Kein Umbruch und keine Stuetze: "+ Add" ist ein Stueck, es gibt kein Zeichen, das
+   Reihenfolge. Kein Umbruch und keine Stuetze: "+ Calculation" ist ein Stueck, es gibt kein Zeichen, das
    zuerst weichen koennte. */
 .up-sumknopf.up-sumadd {
   flex-wrap: nowrap; gap: 4px;

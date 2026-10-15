@@ -38,7 +38,8 @@
        ink  / inkDark    Schrift im Chip
        bg   / bgDark     Grund des Chips (dunkel GETOENT, nicht mehr flach #242424)
        bd   / bdDark     Rand des Chips, 1px
-     Kontrast Schrift auf Grund (WCAG, nachgerechnet): Typen hell 6.6 bis 7.1, dunkel 9.5 bis 9.7;
+     Bis zum 15.10. (vor Geist, die gueltigen Werte stehen im Absatz darunter) lag der Kontrast
+     Schrift auf Grund (WCAG, nachgerechnet) bei: Typen hell 6.6 bis 7.1, dunkel 9.5 bis 9.7;
      Rueckfall 5.5 / 6.4; You 16.5 / 13. Gelesen wird ueber typeStyle() weiter unten.
      STYLEGUIDE 1a/1b fuehrt dieselben Werte als Tabelle.
      SEIT DEM 15.10. ABENDS GEIST ("Chartfarben ... Nimm fuer das alles bitte das Geist Design System

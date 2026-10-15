@@ -34,7 +34,7 @@
      es gar nicht bekommen. */
   --am-text: var(--vc-text); --am-muted: var(--vc-muted); --am-muted-2: var(--vc-third);
   --am-muted-3: var(--vc-fourth);
-  --am-up: #2ea84a; --am-down: #b0200c;
+  --am-up: #297a3a; --am-down: #cb2a2f;
   --am-border: #e5e7eb; --am-border-strong: #d9dde3;
   --am-soft: #f7f8fa; --am-soft-2: #f3f4f6;
   /* --am-card is the PANEL surface and stays fully opaque -- the open panel has to be readable
@@ -83,7 +83,7 @@
 #mira-quick-actions[data-theme="dark"], .mqa-overlay[data-theme="dark"] {
   --am-text: var(--vc-text); --am-muted: var(--vc-muted); --am-muted-2: var(--vc-third);
   --am-muted-3: var(--vc-fourth);
-  --am-up: #60d25d; --am-down: #d25d5d;
+  --am-up: #62c073; --am-down: #ff6166;
   --am-border: #3e3e44; --am-border-strong: #34343a;
   --am-soft: #28282c; --am-soft-2: #ffffff0d; --am-card: #232326; --am-trigger-bg: #1a1a1a;
   --am-overlay: rgba(0,0,0,0.55);
@@ -294,7 +294,9 @@
 /* --am-up/--am-down statt vier Literalen. Die Werte sind dieselben wie --vt-up/--vt-down in
    core, aber diese Datei ist eigenstaendig und sieht core nicht (siehe ihren Kopf) -- also eine
    EIGENE Marke mit denselben Werten, nicht die fremde. Die zwei Dunkel-Regeln fallen damit weg:
-   die Marke steht in beiden Paletten dieser Datei. (22.09.) */
+   die Marke steht in beiden Paletten dieser Datei. (22.09.) Seit dem 15.10. abends Geists Werte wie
+   --vt-up/--vt-down (hell #297a3a/#cb2a2f, dunkel #62c073/#ff6166); beim Umbau der Farben war
+   diese Kopie zunaechst auf den alten stehen geblieben. */
 .mqa-trend.is-up   { color: var(--am-up); }
 .mqa-trend.is-down { color: var(--am-down); }
 .mqa-trend.is-flat { color: var(--am-muted-2); }
