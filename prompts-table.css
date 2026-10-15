@@ -1421,7 +1421,9 @@
 .upt-root .upt-td-visibility, .upt-root .upt-grp-td-visibility { --up-spur: var(--up-spur-pct0); }
 .upt-root .upt-td-rank, .upt-root .upt-grp-td-rank { --up-spur: var(--up-spur-rang); }
 .upt-root .upt-td-sentiment, .upt-root .upt-grp-td-sentiment { --up-spur: var(--up-spur-note); }
-.upt-grp-zelle .up-num, .upt-grp-zelle .up-sent-val { min-width: var(--up-spur, 0); text-align: right; }
+/* Nur die direkte Zahl (15.10. spaet, wie core): in Rang und Sentiment schob die Spur die Zahl von
+   ihrem Zeichen weg. */
+.upt-grp-zelle > .up-num { min-width: var(--up-spur, 0); text-align: right; }
 /* Rechts in der Zelle wie die Zahlen darunter (core, "RECHTSBUENDIG, DER TREND LINKS DAVOR",
    15.10. spaet) -- das Durchschnittszeichen bleibt mit seinem Abstand vor dem Wert. */
 .upt-grp-zelle:has(> .up-num, > .up-rank-group, > .up-sent:not(.up-pille)) { justify-content: flex-end; }

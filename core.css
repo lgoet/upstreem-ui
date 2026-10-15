@@ -4334,17 +4334,19 @@
    Trend oder ohne"). min-width und nicht width: ein Ausreisser jenseits der Skala sprengt die
    Spur seiner Zeile, statt abgeschnitten zu werden. Die Zahl direkt in der Zelle bekommt die Spur
    in der Regel darueber (dort stand min-width 0; eine zweite Regel gleicher Spezifitaet haette
-   ueber die Reihenfolge entschieden), jede tiefer verschachtelte hier (Rang hinter dem #-Zeichen,
-   eine Zahl in einer Huelle wie "12 / 20") -- ".up-td * >" trifft genau die, deren Elternteil
-   NICHT die Zelle selbst ist, also nie dieselbe Zahl wie die Regel darueber. Sentiment ueber
-   seinen Wert. */
-.up-td * > .up-num, .up-td .up-sent-val { min-width: var(--up-spur, 0); text-align: right; }
-/* RECHTSBUENDIG, DER TREND LINKS DAVOR (15.10. spaet: "Zahlen rechtsbuendig auf einer Spur, Trends
-   links davon mit gap"). Eine Zahlzelle -- direktes Kind ist eine Zahl (.up-num), ein Rang
-   (.up-rank-group) oder Sentiment (.up-sent) -- stellt ihren Inhalt an die rechte Kante, der Trend
-   kommt per order VOR den Wert. Die Zahl behaelt ihre Spur: sie endet in jeder Zeile auf derselben
-   Kante, und weil die Spur ihre Breite festlegt, endet auch jeder Trend auf demselben Pixel. Es ist
-   dieselbe Kante wie die der Gesamtzeile darunter (.up-sumzelle, rechtsbuendig, Polster 16).
+   ueber die Reihenfolge entschieden).
+   NUR DIE DIREKTE ZAHL (15.10. spaet, vorher auch jede verschachtelte): in einer Huelle -- Rang
+   hinter dem #-Zeichen, Sentiment hinter seinem Balken -- schob die Spur die Zahl von ihrem Zeichen
+   weg (gemessen "# 1": 24 statt 4, Balken bis "83": 15 statt 6; "das bitte wieder so wie vorher").
+   Seit die Zahl an der rechten Zellkante steht, braucht es dort keine Spur mehr: die Kante ist fuer
+   alle Zeilen dieselbe, und Zeichen und Zahl bleiben ein Stueck. */
+/* RECHTSBUENDIG, DER TREND LINKS (15.10. spaet: "Zahlen rechtsbuendig auf einer Spur"; danach
+   "die Trends bitte ueberall links, statt nur mit gap rechts"). Eine Zahlzelle -- direktes Kind
+   ist eine Zahl (.up-num), ein Rang (.up-rank-group) oder Sentiment (.up-sent) -- stellt ihren Wert
+   an die rechte Kante, der Trend steht per order VOR ihm und per margin-right:auto an der LINKEN
+   Kante der Zelle: in jeder Zeile beginnt er auf demselben Pixel, egal wie breit Zahl oder Trend
+   sind. Die 12 (--up-spur-abstand) sind der kleinste Abstand, wenn es eng wird. Die rechte Kante
+   ist dieselbe wie die der Gesamtzeile darunter (.up-sumzelle, rechtsbuendig, Polster 16).
    Am Inhalt erkannt (:has) und nicht an der Spaltenklasse: die Spur ordnet jede Komponente selbst
    zu, die Ausrichtung soll ueberall dieselbe sein. Ohne .up-pille: Plan- und Status-Pillen bauen
    auf .up-sent auf (Teams, gemessen), sind aber Text. Eine Zahl in einer Huelle ("102 / 150")
@@ -4356,7 +4358,7 @@
 /* Der Abstand 12 nur zwischen Zeiger und Zahl -- Trend oder der Ring der Variationen
    (.up-varring) --, nicht zwischen einer Zahl und ihrem Zusatz ("of 120", .up-var-cnt: 6). */
 .up-td.up-td:has(> :where(.up-trend, .up-varring)) { column-gap: var(--up-spur-abstand); }
-.up-td > :where(.up-trend, .up-varring) { order: -1; }
+.up-td > :where(.up-trend, .up-varring) { order: -1; margin-right: auto; }
 .up-rank-group { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 .up-hash { width: 12px; height: 12px; color: var(--vc-third); flex: 0 0 auto; display: block; }
 /* ---------- SENTIMENT OHNE KASTEN (29.09. angefordert) ----------
@@ -7025,17 +7027,21 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 /* Die erste Zelle traegt heute nur die Anzahl ("102 count"); kann aber mehrere Paare tragen, und
    dann nur, solange sie ganz passen: die Reihe ist eine Zeile hoch, und was nicht mehr daneben passt, bricht in
    eine zweite um, die abgeschnitten ist. Kein Messen, und nie ein halbes Paar. 24 hoch, weil ein
-   Paar aus 16er und 13er Schrift auf gemeinsamer Grundlinie gut 21 braucht. Der Zeilenabstand
+   Paar aus 16er und 13er Schrift gut 21 braucht (seit 15.10. mittig, nicht auf der Grundlinie,
+   siehe .up-sumpaar). Der Zeilenabstand
    von 24 schiebt die zweite Zeile ganz unter die Kante: ohne ihn begann sie bei 21 in einem 24
    hohen Kasten, also 3px im Bild (gemessen). Die Anzahl steht vorn und faellt damit als letzte. */
 .up-sumreihe {
-  display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 16px; row-gap: 24px;
+  display: flex; flex-wrap: wrap; align-items: center; column-gap: 16px; row-gap: 24px;
   height: 24px; min-width: 0; overflow: hidden;
 }
 .up-sumpaar {
-  display: inline-flex; align-items: baseline; gap: 6px; min-width: 0; flex: 0 1 auto;
+  display: inline-flex; align-items: center; gap: 6px; min-width: 0; flex: 0 1 auto;
   white-space: nowrap; line-height: 20px;
 }
+/* MITTIG statt auf der Grundlinie (15.10. spaet: "den Count selber mittig zentrieren"): auf der
+   gemeinsamen Grundlinie stand die 16er Zahl gemessen 2.2px ueber der Zeilenmitte, das 13er Wort
+   und "+ Add" daneben auf ihr. */
 .up-sumwert {
   flex: 0 0 auto; font-size: var(--up-fs-xl); font-weight: var(--up-fw-h);
   color: var(--up-accent-ink); font-variant-numeric: tabular-nums;

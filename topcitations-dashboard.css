@@ -150,7 +150,8 @@
    erreicht. Zu eng heisst: der Trend laeuft nach links ins Polster, die Zahl bleibt an der Kante --
    checkTrendFit() misst darum die linke Kante des Trends (siehe dort). */
 .tcd-root .tct-td-share, .tcd-root .tct-td-used { justify-content: flex-end; column-gap: var(--up-spur-abstand); }
-.tct-td > .up-trend { order: -1; }
+/* Der Trend an der LINKEN Zellkante (15.10. spaet, wie core: "die Trends ueberall links"). */
+.tct-td > .up-trend { order: -1; margin-right: auto; }
 /* Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke. Kein Nachbau von .up-planpill (meldet .check_reinvention.py wegen des Rahmens): das ist der Typ-Chip aus STYLEGUIDE 1a/1b, Masse wie .up-tag. */
 .tct-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
   border: 1px solid transparent; box-sizing: border-box;

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261122;
+  var BUILD = 20261123;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -7085,6 +7085,55 @@
       if (c.wFlach && istFlach()) return c.wFlach;
       return c.w;
     }
+    /* AM ENDE WAECHST NUR DIE ERSTE SPALTE (15.10. spaet: "eine vernuenftige max width pro
+       KPI-Spalte, damit die nicht zu riesig werden -- am Ende soll nur noch die erste Spalte
+       groesser werden"). In der flachen Tabelle hat jede andere fr-Spalte eine Obergrenze: ihre
+       Mindestbreite plus DECKEL_SPIEL. Die Mindestbreiten sind am Inhalt gemessen (Kopf 13/500,
+       Zahl, Trend), 32 darueber ist Luft, kein Leerraum zwischen Trend und Zahl.
+       Warum gerechnet und nicht einfach minmax(min, max) in die Spur: das Raster fuellt Spuren mit
+       fester Obergrenze ZUERST bis zu ihr und gibt der fr-Spur der ersten Spalte erst den Rest --
+       gemessen in Responses bei 1440 stand der Prompt dann auf seiner Untergrenze (211 statt der
+       bisherigen Breite). Hier waechst alles anteilig wie bisher (fr), bis eine Spalte ihre Grenze
+       erreicht; nur DIE wird gedeckelt, der Rest verteilt sich weiter -- am Ende auf die erste.
+       Spuren mit Grenze in px (Prompt-Tabelle: Visibility 148-152) bleiben, wie sie sind.
+       Gerechnet wie das Raster: Anteil je fr, eine Spalte unter ihrer Untergrenze steht fest auf
+       ihr, eine ueber ihrer Grenze auf der Grenze, bis nichts mehr kippt.
+       Eine Untergrenze in PROZENT ("minmax(13%, 150px)", Share in Domains und URLs) waechst mit dem
+       Fenster und hebelt jede Grenze aus (gemessen bei 2200: Share 251) -- flach gilt dafuer die
+       gemessene Mindestbreite in px (colMin), dieselbe, mit der autoFit rechnet. */
+    var DECKEL_SPIEL = 32;
+    function deckeln(cols, tracks, cw){
+      if (!cw || !istFlach() || root.classList.contains("is-vnarrow")) return tracks;
+      var aussen = LEAD() + ((!cfg.noActions && !root.classList.contains("is-t2")) ? ACTIONS_MIN_F() : 0);
+      var rest = cw - aussen;
+      var teile = [{ i: -1, fr: 1.6, min: cfg.scrollen ? FIRST_MIN : firstFloor() * cw, max: null }];
+      var out = tracks.slice();
+      cols.forEach(function(c, i){
+        var m = /^minmax\(\s*([^,]+),\s*([^)]+)\)$/.exec(String(tracks[i] || ""));
+        var hoch = m ? m[2].trim() : "";
+        var f = /^([\d.]+)fr$/.exec(hoch), px = /^([\d.]+)px$/.exec(hoch), mn = colMin(c.key);
+        if (m && /%$/.test(m[1].trim())) out[i] = "minmax(" + mn + "px, " + hoch + ")";
+        if (f) teile.push({ i: i, fr: parseFloat(f[1]), min: mn, max: mn + DECKEL_SPIEL });
+        else rest -= px ? Math.max(mn, parseFloat(px[1])) : mn;
+      });
+      var offen = teile.slice(), gedeckelt = [];
+      for (var runde = 0; runde < teile.length + 1; runde++){
+        var sumFr = 0;
+        offen.forEach(function(x){ sumFr += x.fr; });
+        if (!sumFr) break;
+        var einheit = rest / sumFr;
+        var kippt = offen.filter(function(x){ return x.fr * einheit < x.min || (x.max != null && x.fr * einheit > x.max); });
+        if (!kippt.length) break;
+        kippt.forEach(function(x){
+          var unten = x.fr * einheit < x.min;
+          rest -= unten ? x.min : x.max;
+          if (!unten) gedeckelt.push(x);
+        });
+        offen = offen.filter(function(x){ return kippt.indexOf(x) < 0; });
+      }
+      gedeckelt.forEach(function(x){ if (x.i >= 0) out[x.i] = "minmax(" + x.min + "px, " + x.max + "px)"; });
+      return out;
+    }
     /* see applyCols(): the two halves are guarded separately because they change at different
        rates — the track template on every width change, the visible column set only when a
        column actually drops in or out. */
@@ -7167,9 +7216,10 @@
       parts.push(pinned ? firstPx + "px"
         : cfg.scrollen ? "minmax(" + FIRST_MIN + "px, 1.6fr)"
         : "minmax(" + Math.round(firstFloor() * 1000) / 10 + "%, 1.6fr)");
-      cols.forEach(function(c){
-        parts.push(pinned ? "minmax(" + colMin(c.key) + "px, 1fr)" : colTrack(c));
-      });
+      var spuren = cols.map(function(c){ return pinned ? "minmax(" + colMin(c.key) + "px, 1fr)" : colTrack(c); });
+      /* Gezogene erste Spalte: die anderen fuellen den Rest, wie bisher ohne Deckel. */
+      if (!pinned) spuren = deckeln(cols, spuren, cw);
+      spuren.forEach(function(t){ parts.push(t); });
       if (!cfg.noActions && !root.classList.contains("is-t2")){
         /* FESTE Spur, kein minmax(...,auto). `auto` heisst "so breit wie der Inhalt", und .up-thead
            und jede .up-row sind EIGENE Grid-Container: jeder loest sein `auto` aus dem eigenen
