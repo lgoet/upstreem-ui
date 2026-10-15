@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261125;
+  var BUILD = 20261126;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -7067,7 +7067,10 @@
        (data-flach="yes"). Die flache Tabelle setzt die Kopfschrift auf 13/500 statt 12/400, und
        ein Kopf braucht dann mehr Platz (gemessen in Responses: "Mentioned?" 122 statt der 116 der
        Spalte, Sentiment 131 statt 120). Nur fuer die flache Fassung, damit dieselbe Tabelle in
-       einem Drawer mit der kleinen Kopfschrift nicht frueher Spalten verliert. */
+       einem Drawer mit der kleinen Kopfschrift nicht frueher Spalten verliert.
+       Seit 15.10. spaet traegt JEDER Kopf 14/500 (core.css .up-root .up-th), auch im Drawer --
+       Responses, URLs, Domains und Brands Overview haben darum wieder EINE Untergrenze (min).
+       minFlach bleibt fuer Tabellen, die eine eigene flache Untergrenze fuehren (Shopping, Ads). */
     function istFlach(){ return root.getAttribute("data-flach") === "yes"; }
     function colMin(key){
       if (key === FIRST) return FIRST_MIN;
@@ -7680,6 +7683,25 @@
       root.classList.remove("is-reloading");
     }
     return { begin: begin, end: end };
+  }
+
+  /* ---------- kopfZeichen ----------
+     DAS ZEICHEN VOR EINEM SPALTENKOPF (15.10.): zuerst nur in der Prompt-Tabelle ("Brand
+     Mentions", "Topics"), dann in Responses ("Citations"), Domains und URLs ("Type") und Brands
+     Overview ("Brand") -- also hierher, eine Klasse (.up-th-ic in core.css) und ein Weg.
+     kopfZeichenHtml(name) liefert das Markup fuer Koepfe, die als Zeichenkette gebaut werden;
+     kopfZeichen(th, name) setzt es in einen vorhandenen Kopf, als erstes Kind und nur einmal --
+     ein Kopf aus festem Markup wird nicht neu gezeichnet, ein zweiter Aufruf darf nichts doppeln.
+     aria-hidden: das Wort daneben sagt schon alles, ein Vorleser soll nicht "globe Citations"
+     sagen. Ein unbekannter Name ergibt kein Zeichen (icon() liefert ""), keine leere Huelle. */
+  function kopfZeichenHtml(name){
+    var svg = icon(name, 2);
+    return svg ? '<span class="up-th-ic" aria-hidden="true">' + svg + '</span>' : "";
+  }
+  function kopfZeichen(th, name){
+    if (!th || th.querySelector(".up-th-ic")) return;
+    var html = kopfZeichenHtml(name);
+    if (html) th.insertAdjacentHTML("afterbegin", html);
   }
 
   /* ---------- makeHeadSort ----------
@@ -23589,6 +23611,13 @@
           '<path d="M15 9V19M19 9V19"/>' +
           '<path d="M21.3518 9H2.64822C2.29022 9 2 8.70651 2 8.34447C2 8.12259 2.11099 7.91577 2.29495 7.79485L8.73007 3.56485C10.3171 2.52162 11.1107 2 12 2C12.8893 2 13.6829 2.52162 15.2699 3.56485L21.7051 7.79485C21.889 7.91577 22 8.12259 22 8.34447C22 8.70651 21.7098 9 21.3518 9Z"/>' +
           '<path d="M21.0397 20.2929L20.3519 19.5858C20.0707 19.2968 19.9301 19.1522 19.7514 19.0761C19.5726 19 19.3738 19 18.9762 19H5.02382C4.62621 19 4.4274 19 4.24863 19.0761C4.06987 19.1522 3.92929 19.2968 3.64814 19.5858L2.9603 20.2929C2.25356 21.0194 1.9002 21.3827 2.02456 21.6913C2.14893 22 2.64867 22 3.64814 22H20.3519C21.3513 22 21.8511 22 21.9754 21.6913C22.0998 21.3827 21.7464 21.0194 21.0397 20.2929Z"/>',
+    /* DropdownFieldTypeIcon (15.10. angefordert: das Zeichen vor dem Spaltenkopf "Type", der
+       Zitationsart in Domains und URLs). Woertlich aus @hugeicons/core-free-icons@4.3.5
+       (dist/esm/DropdownFieldTypeIcon.js), wie die Shopping- und Ads-Zeichen darueber. */
+    dropdownFieldType: '<path d="M18 4H6C4.59987 4 3.8998 4 3.36502 4.27248C2.89462 4.51217 2.51217 4.89462 2.27248 5.36502C2 5.8998 2 6.59987 2 8C2 9.40013 2 10.1002 2.27248 10.635C2.51217 11.1054 2.89462 11.4878 3.36502 11.7275C3.8998 12 4.59987 12 6 12H18C19.4001 12 20.1002 12 20.635 11.7275C21.1054 11.4878 21.4878 11.1054 21.7275 10.635C22 10.1002 22 9.40013 22 8C22 6.59987 22 5.8998 21.7275 5.36502C21.4878 4.89462 21.1054 4.51217 20.635 4.27248C20.1002 4 19.4001 4 18 4Z"/>' +
+                       '<path d="M18 7.00002C18 7.00002 16.527 9 16 9C15.4729 9 14 7 14 7"/>' +
+                       '<path d="M2 16H14"/>' +
+                       '<path d="M2 20H14"/>',
     /* Lucide mail (lucide-static 0.460.0) -- das zwanzigste Zeichen im Event-Popup: ein Newsletter
        ist ein haeufiges Event, und mit 20 stehen zwei volle Reihen zu zehn (03.10. angefordert). */
     mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
@@ -26600,6 +26629,8 @@
     LEER_NOTBREMSE_MS: LEER_NOTBREMSE_MS,
     icon: icon,
     iconFormen: iconFormen,
+    kopfZeichen: kopfZeichen,
+    kopfZeichenHtml: kopfZeichenHtml,
     /* Der Nachzug auch nach aussen: er laeuft von selbst mit jedem Wurzel-Lauf, aber ein
        Bauteil, das sein Markup selbst nachtraeglich einsetzt, kann ihn so gezielt anstossen --
        und ein Prueftand kann ihn messen. */

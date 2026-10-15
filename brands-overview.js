@@ -757,12 +757,14 @@
     /* minFlach/wFlach (15.10.): in der flachen Fassung (core, Kopfschrift 13/500) brauchen die
        Koepfe samt Sortierpfeil, Info-Zeichen und 1px Zellrand gemessen 120.6 (Visibility), 118.8
        (Ranking) und 132 (Sentiment) -- alle drei ueber ihrer alten Untergrenze, an der Grenze
-       waeren sie gekuerzt. Je 2 bis 3 darueber, wie in Responses. Nur flach: dieselbe Tabelle in
-       Bubble behaelt 12/400 und ihre Werte. */
+       waeren sie gekuerzt. Je 2 bis 3 darueber, wie in Responses.
+       Seit 15.10. spaet traegt jeder Kopf 14/500 (core .up-root .up-th) -- EINE Untergrenze,
+       gemessen mit Info und Sortierpfeil 15 samt Zellrand: Visibility 126.6, Ranking 124.7,
+       Sentiment 138.8. Wieder 2 bis 3 darueber. */
     var COLS_ALL = [
-      { key: "visibility", label: "Visibility", w: "minmax(120px, 1fr)", min: 120, wFlach: "minmax(123px, 1fr)", minFlach: 123, prio: 30 },
-      { key: "ranking",    label: "Ranking",    w: "minmax(112px, 1fr)", min: 112, wFlach: "minmax(121px, 1fr)", minFlach: 121, prio: 20 },
-      { key: "sentiment",  label: "Sentiment",  w: "minmax(120px, 1fr)", min: 120, wFlach: "minmax(134px, 1fr)", minFlach: 134, prio: 10 },
+      { key: "visibility", label: "Visibility", w: "minmax(129px, 1fr)", min: 129, prio: 30 },
+      { key: "ranking",    label: "Ranking",    w: "minmax(127px, 1fr)", min: 127, prio: 20 },
+      { key: "sentiment",  label: "Sentiment",  w: "minmax(141px, 1fr)", min: 141, prio: 10 },
       /* Inactive-only, and the inverse of the three above — see cfg.isHidden below. */
       { key: "deactivated", label: "Deactivated", w: "minmax(140px, 0.8fr)", min: 140, prio: 5 }
     ];
@@ -1000,8 +1002,12 @@
        Spalte kuerzen, und der Knopf behaelt seine Breite. */
     var ADD_BRAND_BTN = '<button class="up-iconbtn is-24 ubo-addbrand" type="button" data-tip="Add brand" ' +
       'aria-label="Add brand">' + UC.icon("plus", 2) + '</button>';
+    /* DAS ZEICHEN VOR "Brand" (15.10. angefordert): squareStack, mit dem die Seitenleiste
+       Brands fuehrt -- dasselbe wie vor "Brand Mentions" in der Prompt-Tabelle (UC.kopfZeichenHtml,
+       .up-th-ic aus core). Hier als Zeichenkette, weil der Kopf mit jedem Zeichnen neu entsteht. */
     function brandHeadHtml(){
-      return '<div class="up-th up-th-brand"><span class="up-th-txt">Brand</span>' + ADD_BRAND_BTN + '</div>';
+      return '<div class="up-th up-th-brand">' + (UC.kopfZeichenHtml ? UC.kopfZeichenHtml("squareStack") : "") +
+        '<span class="up-th-txt">Brand</span>' + ADD_BRAND_BTN + '</div>';
     }
     /* Liegt add-brand.js auf der Seite, oeffnet es seinen Dialog und feuert das Add-Event selbst --
        dieselbe Reihenfolge wie im Brands-Seitenkopf. Ohne die Datei ein eigenes Ereignis, damit der

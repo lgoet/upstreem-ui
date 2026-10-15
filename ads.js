@@ -1254,7 +1254,11 @@
        Kopfschrift ist 13/500 statt 12/400; gemessen bei 1100 mit dem Klon des Kopfs (Erklaer- und
        Sortierzeichen mitgezaehlt) brauchten fuenf Koepfe mehr als ihr min, z. B. "Appearances"
        mit Sortierung und Erklaerung 149 bei 132 (schon mit 12/400 waren es 140,9). Der Wert liegt
-       2 bis 4 darueber. */
+       2 bis 4 darueber.
+       Nachgemessen mit der Kopfschrift 14/500 und Info/Sortierpfeil 15 (15.10. spaet, Klon des
+       Kopfs samt Zellrand): "Appearances" mit beidem 157.2, nur sortierbar 136.2, "Ad Coverage"
+       154.6, "Advertisers" 124.8, "Last Ad Seen" 136.9, "Ad Share" 130.6, "Prompts" 105.4.
+       Wieder 3 bis 4 darueber. */
     function sp(key, label, min, fr, prio, sk, o) {
       o = o || {};
       return { key: key, label: label, w: "minmax(" + min + "px," + fr + "fr)", min: min, prio: prio, sk: sk, sort: o.sort, info: o.info,
@@ -1262,9 +1266,9 @@
     }
     var TABELLEN = {
       advertisers: { erste: { label: "Advertiser", min: 240, sort: "advertiser_name", sk: { w: 120, logo: true } }, spalten: [
-        sp("share", "Ad Share", 130, 1.1, 90, 60, { sort: "ad_appearances", info: "share" }),
-        sp("n", "Appearances", 132, 1, 85, 30, { sort: "ad_appearances", info: "appearances", flach: 152 }),
-        sp("prompts", "Prompts", 104, 0.8, 70, 30, { sort: "prompt_count" }),
+        sp("share", "Ad Share", 130, 1.1, 90, 60, { sort: "ad_appearances", info: "share", flach: 134 }),
+        sp("n", "Appearances", 132, 1, 85, 30, { sort: "ad_appearances", info: "appearances", flach: 161 }),
+        sp("prompts", "Prompts", 104, 0.8, 70, 30, { sort: "prompt_count", flach: 109 }),
         sp("topics", "Topics", 100, 0.8, 60, 30, { sort: "topic_count" }),
         /* 150: zwei Markt-Chips (Flagge 18, Code, Abstand 10) und "+N" muessen nebeneinander passen. */
         sp("markets", "Markets", 150, 1, 40, 50),
@@ -1273,11 +1277,14 @@
         sp("last", "Last Seen", 120, 0.9, 50, 60, { sort: "last_seen" })] },
       /* Topic 160 statt 180 (15.10.): flach brauchen die drei Zahlenkoepfe zusammen 30 mehr (o.flach).
          Neben den Balken hat die Tabelle bei 1440 genau 571 -- mit 180 waeren es 584 gewesen, und
-         sie scrollte um 13px. 160 laesst dem Topic-Namen 136 Text, die Spalte waechst mit 1.6fr. */
-      topics: { erste: { label: "Topic", min: 160, sort: "topic_name", sk: { w: 110 } }, spalten: [
-        sp("cov", "Ad Coverage", 140, 1, 90, 60, { sort: "ad_coverage", info: "coverage", flach: 150 }),
-        sp("advs", "Advertisers", 112, 0.8, 80, 30, { sort: "advertiser_count", flach: 122 }),
-        sp("n", "Appearances", 122, 0.8, 70, 30, { sort: "ad_appearances", flach: 132 })] },
+         sie scrollte um 13px. 160 laesst dem Topic-Namen 136 Text, die Spalte waechst mit 1.6fr.
+         150 statt 160 (15.10. spaet): mit der Kopfschrift 14/500 wuchsen die drei Zahlenkoepfe um
+         weitere 22 (158 + 128 + 140), und bei 1440 scrollte die Tabelle um 7px (gemessen 602 in
+         595). 150 laesst dem Namen 122 Text und 3px Luft. */
+      topics: { erste: { label: "Topic", min: 150, sort: "topic_name", sk: { w: 110 } }, spalten: [
+        sp("cov", "Ad Coverage", 140, 1, 90, 60, { sort: "ad_coverage", info: "coverage", flach: 158 }),
+        sp("advs", "Advertisers", 112, 0.8, 80, 30, { sort: "advertiser_count", flach: 128 }),
+        sp("n", "Appearances", 122, 0.8, 70, 30, { sort: "ad_appearances", flach: 140 })] },
       dprompts: { erste: { label: "Prompt", min: 280, sk: { w: 180 } }, spalten: [
         sp("topic", "Topic", 160, 1.2, 60, 80),
         sp("n", "Appearances", 122, 0.8, 90, 30),
@@ -1291,10 +1298,10 @@
         sp("seen", "Observed", 112, 0.8, 90, 60)] },
       lprompts: { erste: { label: "Prompt", min: 300, sort: "prompt_text", sk: { w: 180 } }, spalten: [
         sp("topic", "Topic", 160, 1.2, 60, 80),
-        sp("cov", "Ad Coverage", 144, 1, 90, 60, { sort: "ad_coverage", info: "coverage", flach: 150 }),
-        sp("advs", "Advertisers", 126, 0.8, 70, 30, { sort: "advertiser_count" }),
-        sp("n", "Appearances", 132, 0.8, 80, 30, { sort: "ad_appearances" }),
-        sp("last", "Last Ad Seen", 132, 0.9, 50, 60, { sort: "last_ad_seen" })] }
+        sp("cov", "Ad Coverage", 144, 1, 90, 60, { sort: "ad_coverage", info: "coverage", flach: 158 }),
+        sp("advs", "Advertisers", 126, 0.8, 70, 30, { sort: "advertiser_count", flach: 128 }),
+        sp("n", "Appearances", 132, 0.8, 80, 30, { sort: "ad_appearances", flach: 140 }),
+        sp("last", "Last Ad Seen", 132, 0.9, 50, 60, { sort: "last_ad_seen", flach: 140 })] }
     };
     function kopfAus(name) {
       var d = TABELLEN[name];
