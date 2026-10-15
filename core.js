@@ -14325,6 +14325,100 @@
              gepinnt: function(){ return gepinnt; }, sync: anwenden, drill: drill };
   }
 
+  /* ---- DIE SEITENSPERRE (15.10.) -------------------------------------------------------------
+     Gemeldet: "Wenn man auf einem Popup scrollt, scrollt irgendwann auch die Hauptseite dahinter."
+     Zwei Wege fuehren dahin, und beide sind zu:
+       1. Eine Liste ist an ihrem Ende, und das Rad geht an die naechste Rollflaeche weiter. Dagegen
+          steht overscroll-behavior: contain an jeder Rollflaeche eines Popups (core.css, bei der
+          Ruecksetzregel fuer overscroll-behavior).
+       2. Das Rad ueber dem Schleier, ueber Kopf oder Fuss einer Karte -- Flaechen, die selbst
+          nicht rollen. Dagegen steht diese Sperre: solange ein modales Popup offen ist, rollt
+          #main nicht (Klasse up-seitensperre, overflow: hidden).
+     DER ZUSTAND WIRD ABGELESEN, NICHT GEZAEHLT. Ein Zaehler, den jedes Popup selbst hoch- und
+     wieder herunterzaehlt, ist so gut wie sein schwaechster Schliesspfad: vergisst einer das
+     Herunterzaehlen (Neuaufbau beim Themenwechsel, ein Schliessen am eigenen Code vorbei), steht
+     die Seite danach fest -- und das waere schlimmer als der gemeldete Fehler. Hier wird bei jeder
+     Aenderung nachgezaehlt, wie viele modale Popups gerade am <body> offen sind: mehrere
+     uebereinander halten die Sperre, das letzte gibt sie frei, ein vergessenes gibt es nicht.
+     Beobachtet werden nur die Popup-Wurzeln am <body> und an ihnen nur das class-Attribut (bei
+     Create with AI auch darunter, dort sitzt das Overlay eine Ebene tiefer) -- kein Beobachter
+     ueber die ganze Seite, keine Komponente muss etwas melden.
+     Die Drawer des Kopf-Skripts sperren selbst (drawer-locked) und stehen darum NICHT in der
+     Liste. Liegt deren Sperre schon, misst die Rinne 0, und es kommt nichts doppelt.
+     DIE RINNE: overflow: hidden nimmt eine klassische Bildlaufleiste weg (Windows, macOS mit
+     Maus: rund 15px), und der Inhalt spraenge um ihre Breite nach rechts. Darum wird vor dem
+     Sperren gemessen und die Breite freigehalten -- nur wenn wirklich eine Leiste stand; eine
+     Seite ohne Leiste bekaeme sonst eine Rinne und spraenge nach links.
+     Gesperrt wird nur #main. Ohne #main (Landingpage, Anmeldung, Onboarding) bleibt alles, wie es
+     ist: dort oeffnet keines dieser Popups, und die Landingpage gehoert nicht in diese Regel. */
+  var SPERR_WURZEL = ".up-topicmodal-backdrop, .mqa-overlay, .uca-portal, .usb-dlg-backdrop, " +
+                     ".up-sdrawer-host, .uo-portal, .usn-scrim";
+  var SPERR_OFFEN = ["body > .up-topicmodal-backdrop.is-shown", "body > .mqa-overlay.is-open",
+                     "body > .uca-portal .uca-overlay.is-open", "body > .usb-dlg-backdrop.is-shown",
+                     "body > .up-sdrawer-host.is-open", "body > .uo-portal.detail-open",
+                     "body > .usn-scrim.is-on"].join(", ");
+  /* Am window und nicht im Modul: wird core.js ein zweites Mal ausgefuehrt, darf kein zweiter
+     Beobachter entstehen, und die gesperrte Flaeche muss die zweite Fassung kennen. */
+  var SPERRE = window.__upSeitenSperre || (window.__upSeitenSperre = { el: null, obs: null });
+  function sperreLoesen(el){
+    el.classList.remove("up-seitensperre", "up-sperre-rinne");
+    el.style.removeProperty("--up-sperre-rinne");
+  }
+  function seitenSperreAbgleichen(){
+    var offen = 0;
+    try { offen = document.querySelectorAll(SPERR_OFFEN).length; } catch(e){}
+    var main = document.getElementById("main");
+    if (offen && main){
+      if (SPERRE.el === main) return offen;
+      if (SPERRE.el) sperreLoesen(SPERRE.el);
+      /* Breite der Leiste = Aussen- minus Innenbreite minus Rahmen. Gemessen VOR dem Sperren,
+         danach ist sie weg. Steht die Drawer-Sperre schon, ist sie 0 -- richtig so. */
+      var rinne = 0;
+      try {
+        var cs = window.getComputedStyle(main);
+        rinne = main.offsetWidth - main.clientWidth -
+                (parseFloat(cs.borderLeftWidth) || 0) - (parseFloat(cs.borderRightWidth) || 0);
+        /* #main als Rollbereich merken, BEVOR er auf hidden geht. unclipAncestors haelt einen
+           Vorfahren mit overflow: hidden fuer einen blossen Beschnitt und schreibt ihm ein
+           overflow: visible ins style-Attribut -- an #main hiesse das: die Seite rollt nach dem
+           Schliessen nie wieder. Dagegen steht dort das Gedaechtnis (window.__upScrollRegions);
+           bindet sich eine Komponente erst ein, waehrend ein Popup offen ist (Zugangssperre beim
+           Start), haette es #main sonst nie rollend gesehen. */
+        if (/^(auto|scroll|overlay)$/.test(cs.overflowY) && typeof WeakSet === "function"){
+          (window.__upScrollRegions = window.__upScrollRegions || new WeakSet()).add(main);
+        }
+      } catch(e){}
+      if (rinne > 0.5){
+        main.style.setProperty("--up-sperre-rinne", rinne + "px");
+        main.classList.add("up-sperre-rinne");
+      }
+      main.classList.add("up-seitensperre");
+      SPERRE.el = main;
+    } else if (!offen && SPERRE.el){
+      sperreLoesen(SPERRE.el);
+      SPERRE.el = null;
+    }
+    return offen;
+  }
+  function sperreBeobachten(el){
+    if (!SPERRE.obs || !el || el.nodeType !== 1 || !el.matches(SPERR_WURZEL)) return;
+    SPERRE.obs.observe(el, { attributes: true, attributeFilter: ["class"], subtree: el.matches(".uca-portal") });
+  }
+  if (!SPERRE.obs && window.MutationObserver){
+    SPERRE.obs = new MutationObserver(function(muts){
+      for (var i = 0; i < muts.length; i++){
+        var neu = muts[i].addedNodes;
+        for (var j = 0; j < neu.length; j++) sperreBeobachten(neu[j]);
+      }
+      seitenSperreAbgleichen();
+    });
+    wennBody(function(body){
+      SPERRE.obs.observe(body, { childList: true });
+      for (var k = 0; k < body.children.length; k++) sperreBeobachten(body.children[k]);
+      seitenSperreAbgleichen();
+    });
+  }
+
   /* ---- EIN ALLGEMEINES POPUP (02.10., Impact Events) ---------------------------------------
      Bisher baute jedes Popup sein DOM, sein Oeffnen, sein Escape und seinen Schleier selbst --
      gemeinsam war nur die Huelle aus core.css (.up-topicmodal-*). Hier die Logik dazu, einmal:
@@ -27448,6 +27542,7 @@
     getEvents: getEvents, setEvents: setEvents, onEvents: onEvents, eventsStand: eventsStand, eventsChanged: eventsChanged,
     EVENT_TYPEN: EVENT_TYPEN, eventTyp: eventTyp, eventOeffnen: eventOeffnen,
     kpiKarte: kpiKarte, kpiKarteSkelett: kpiKarteSkelett, makeModal: makeModal,
+    seitenSperreAbgleichen: seitenSperreAbgleichen,
     sparkHtml: sparkHtml, zahlZaehlen: zahlZaehlen, zaehlHtml: zaehlHtml, hochzaehlen: hochzaehlen,
     storeStand: storeStand,
     getQuota: getQuota,

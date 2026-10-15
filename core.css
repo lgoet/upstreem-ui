@@ -713,8 +713,49 @@
    `auto` ist der Browser-Default — das hier stellt also nur wieder her, was ohne die fremde Regel
    ohnehin gaelte, und kann fuer sich genommen nichts kaputt machen.
    Doppeltes `.up-root` nur wegen Spezifitaet: (0,2,0) schlaegt `[id*="..."] *` (0,1,0) unabhaengig
-   von der Ladereihenfolge, weil beide Seiten `!important` verwenden. */
-.up-root.up-root, .up-root.up-root * { overscroll-behavior: auto !important; }
+   von der Ladereihenfolge, weil beide Seiten `!important` verwenden.
+
+   AUSGENOMMEN: DIE ROLLFLAECHEN DER POPUPS (15.10.). Gemeldet: "Wenn man auf einem Popup scrollt,
+   scrollt irgendwann auch die Hauptseite dahinter." Die Regel oben traf auch die Flaechen, auf
+   die `contain` wirklich gehoert -- und weil sie `!important` traegt, war jede solche Angabe
+   darunter tot. Gemessen: .up-kdr-koerper deklariert contain und rechnete auto; die Liste von
+   Mentioned brands im Filtermenue der Citations (auto) gab das Rad an ihrem Ende an #main weiter,
+   #main sprang von 0 auf 300.
+   Die Liste hier ist die EINE Stelle dafuer. Nur Flaechen, die selbst rollen (Listen in Menues,
+   Koerper und Karten der Dialoge, Koerper der Drawer) -- nie ein Panel oder eine Zeile mit
+   overflow: hidden: an einer Zeile mit Auslassungspunkten versickerte das Rad sonst wieder genau
+   so wie oben beschrieben, nur innerhalb der Liste.
+   :where() traegt keine Spezifitaet bei: die Ruecksetzregel bleibt bei (0,2,0), und die
+   contain-Regel bei (0,0,0) -- jede eigene Angabe einer Komponente gewinnt weiterhin. Ein neues
+   Popup mit eigener Rollflaeche traegt sich in BEIDE Listen ein (sie sind gleich). */
+.up-root.up-root, .up-root.up-root *:not(:where(
+  .up-topicmodal-card, .uex-body, .uca-body, .uca-bld-list, .uca-how, .ums-aside, .ums-main,
+  .am-set-aside, .am-set-main, .uap-list, .uap-list-opts, .upt-gm-list, .up-cgm-list, .upt-topiclist,
+  .up-kdr-koerper, .up-sdrawer-body, .uo-m-body,
+  .up-filter-list, .utf-list, .umf-list, .umk-list, .upr-dd-list, .combo-filter-menu,
+  .am-rep-range-menu, .am-pick-scroll, .up-cols-menu, .usn-menu, .usn-teamlist, .uob-help-body,
+  .uev-urltreffer, .uev-sm-baum)) { overscroll-behavior: auto !important; }
+:where(
+  .up-topicmodal-card, .uex-body, .uca-body, .uca-bld-list, .uca-how, .ums-aside, .ums-main,
+  .am-set-aside, .am-set-main, .uap-list, .uap-list-opts, .upt-gm-list, .up-cgm-list, .upt-topiclist,
+  .up-kdr-koerper, .up-sdrawer-body, .uo-m-body,
+  .up-filter-list, .utf-list, .umf-list, .umk-list, .upr-dd-list, .combo-filter-menu,
+  .am-rep-range-menu, .am-pick-scroll, .up-cols-menu, .usn-menu, .usn-teamlist, .uob-help-body,
+  .uev-urltreffer, .uev-sm-baum) { overscroll-behavior: contain; }
+/* DIE SEITENSPERRE (15.10.), gesetzt von core.js (seitenSperreAbgleichen), solange ein modales
+   Popup am body offen ist. Sie deckt, was contain nicht kann: das Rad ueber dem Schleier und ueber
+   Kopf und Fuss einer Karte, die selbst nicht rollen. Wie die Sperre des Kopf-Skripts fuer seine
+   Drawer (drawer-locked) nur overflow -- keine Ebene, keine Lage, nichts, was einen
+   Stapelkontext aufmacht. #main davor: die Wirt-Regel fuer #main (overflow-y: auto) traegt eine
+   Kennung, und gegen die gewinnt eine Klasse allein nicht.
+   Die Rinne nur, wenn vorher eine klassische Leiste stand (core.js misst): sonst sprang der Inhalt
+   beim Oeffnen um ihre Breite nach rechts. Ohne scrollbar-gutter (Safari vor 18.2) haelt ein
+   Polster in derselben Breite den Platz. */
+#main.up-seitensperre { overflow: hidden; }
+#main.up-seitensperre.up-sperre-rinne { scrollbar-gutter: stable; }
+@supports not (scrollbar-gutter: stable) {
+  #main.up-seitensperre.up-sperre-rinne { padding-right: var(--up-sperre-rinne, 0px); }
+}
     .up-root[data-theme="dark"] {
       /* ================= DAS DUNKEL NACH GEIST (15.10.) =========================================
          Gemeldet: "Darkmode: Da passen jetzt die Farben nicht wirklich ... sieht sehr off und uebel
