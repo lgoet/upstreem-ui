@@ -442,8 +442,9 @@
    is-hl ist derselbe Zustand, von aussen gesetzt: Wort im Text und Karte heben einander hervor
    (produktHervor). Die klickbare Karte holt ihn aus core (.up-karte-klick.is-hl); die statische
    ohne Produkt-Id traegt die Klasse nicht, reagiert also nicht auf den Zeiger, soll beim Wort aber
-   genauso aussehen -- daher hier dieselben zwei Werte wie in core. */
-.urd-pc.is-static.is-hl { border-color: color-mix(in srgb, var(--vc-border) 86%, var(--vc-text)); box-shadow: var(--up-e-1); }
+   genauso aussehen -- daher hier dieselbe Toenung wie in core (seit 15.10. Geists Hover: nur die
+   Flaeche, Rand und Schatten bleiben; vorher Rand plus --up-e-1). */
+.urd-pc.is-static.is-hl { background-image: linear-gradient(var(--up-karte-hover), var(--up-karte-hover)); }
 
 /* Bild: quadratisch auf der Kopfflaeche, contain -- ein Produkt wird nie beschnitten. multiply im
    Hellen: Produktfotos stehen fast immer freigestellt auf Weiss, und Weiss auf Grau haette eine

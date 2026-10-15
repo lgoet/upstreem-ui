@@ -202,9 +202,10 @@
    wie alles ringsum und haing nur am Rahmen. Jetzt hebt sie sich um zwoelf Stufen ab, ohne eine
    zweite Ebene aufzumachen. */
 /* Hover, Druck und Fokus: .up-karte-klick aus core (13.10., "alle Cards wie im Card Mode" der
-   Responses-Tabelle). Vorher faerbte der Hover die Flaeche (--vt-row-hover) -- jetzt bleibt sie
-   ruhig, der Rand wird eine Spur kraeftiger und die Karte bekommt die Tiefe --up-e-1. Die Zeilen
-   der Listenansicht (.uo-row) sind Zeilen, keine Karten, und behalten ihren Hover. */
+   Responses-Tabelle). Seit dem 15.10. ist das Geists Hover: die Flaeche toent sich um einen halben
+   Schritt, Rand und Schatten bleiben (13. bis 15.10. Rand kraeftiger plus --up-e-1). Die Toenung
+   liegt ueber dem Grund, darum bleibt der durchscheinende --uo-col-bg im Dunkeln erhalten. Die
+   Zeilen der Listenansicht (.uo-row) sind Zeilen, keine Karten, und behalten ihren Hover. */
 .uo-card {
   position: relative; background: var(--uo-col-bg); border: 1px solid var(--vc-border);
   border-radius: var(--up-r-2xl); padding: 16px; user-select: none;

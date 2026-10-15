@@ -532,7 +532,7 @@ und `[data-theme]`, erreichen also auch, was am `<body>` hängt. **Kein Rückfal
 
 | Token | Rolle | Geist | Light |
 |---|---|---|---|
-| `--up-e-1` | liegt auf der Fläche: Knopf, Feld, Regler, Kachel | small | `0 2px 2px rgba(0,0,0,.04)` |
+| `--up-e-1` | liegt auf der Fläche: Knopf, Feld, Regler, Zeichen-Kachel (keine Karte, siehe unten) | small | `0 2px 2px rgba(0,0,0,.04)` |
 | `--up-e-2` | hängt an einem Auslöser: Menü, Popover, Tooltip, Erklärkarte, Hover-Anhub | menu | `0 1px 1px rgba(0,0,0,.02), 0 4px 8px -4px rgba(0,0,0,.04), 0 16px 24px -8px rgba(0,0,0,.06)` |
 | `--up-e-3` | schwebt frei über dem Inhalt: Leiste, Kasten | modal | `0 1px 1px rgba(0,0,0,.02), 0 8px 16px -4px rgba(0,0,0,.04), 0 24px 32px -8px rgba(0,0,0,.06)` |
 | `--up-e-4` | liegt über einem Schleier: Dialog, Palette, **Toast** | modal-elevated | `0 32px 72px -12px rgba(0,0,0,.06), 0 8px 32px -12px rgba(0,0,0,.08), 0 8px 24px -12px rgba(0,0,0,.12)` |
@@ -547,6 +547,42 @@ dunklen Block ausgeschrieben); die Kante tragen dort die helleren Rahmen.
 `--up-dd-shadow` **ist** `var(--up-e-2)`, nicht mehr eine eigene Zahl. Bis 15.10. war jede Stufe
 eine breite Lage (Menüs `0 10px 28px rgba(0,0,0,.14)`, Tooltips `0 4px 14px rgba(0,0,0,.18)`);
 diese Werte gelten nirgends mehr.
+
+### Karten: ruhend ohne Schatten, Hover nur die Fläche (seit 15.10.)
+
+Gemessen am 15.10. auf vercel.com. Geist legt eine ruhende Karte als `material-base` an:
+1px-Ring (hell `rgba(0,0,0,.08)`, dunkel `rgba(255,255,255,.145)`), **kein Schatten**, und schreibt
+dazu „base for resting cards, small–large for raised content“. Dieselbe Form an jeder Karte, die
+Vercel öffentlich zeigt: Fieldset (`material-base`), Marketplace-Kachel, Docs-Karte, Vorlagen-Karte,
+Tarifspalte. Beim Überfahren bekommt keine davon einen Schatten, und der Rand bleibt:
+
+| Vercel | Ruhe | Hover |
+|---|---|---|
+| Marketplace-Kachel | Ring, kein Schatten | Fläche `#fff` → `#f9f9f9` (Hälfte von Gray 100), dunkel `#0a0a0a` → `#0e0e0e` |
+| Docs-Karte | Rand 1px, kein Schatten | Fläche → Background 200 (`#fafafa`) |
+| Vorlagen-Karte | Rand 1px, kein Schatten | nur ein Pfeil blendet ein |
+
+Bei uns heißt das:
+
+| Karte | Ruhe | Hover (`.up-karte-klick`) |
+|---|---|---|
+| Event, Opportunity, Antwort (Card Mode), Produkt, Quelle, Ad Card, Recent Ad | `1px solid var(--vc-border)`, Radius 12, **kein Schatten** | Fläche einen halben Schritt zur Hover-Fläche, Rand und Schatten bleiben |
+| Kasten, Hero, Chart-Kasten, Einstellungs-Karte (`.up-box`, `.usb-card`) | wie oben | — (nicht klickbar) |
+| Kennzahlen im Band, flache Tabelle, offenes Band | flach, ohne Kasten | — |
+| Erklärkarte, Menü, Popover | schwebt: `--up-e-2` | — |
+| Benachrichtigung, Toast, Dialog | `--up-e-4` | — |
+
+Die Tönung ist `--up-karte-hover` (core, an `:root`, `.up-root`, `[data-theme]`):
+`color-mix(in srgb, var(--up-knopf-hover) 50%, transparent)`, als Ebene **über** dem Grund
+(`background-image: linear-gradient(var(--up-karte-hover), var(--up-karte-hover))`), nicht an
+seiner Stelle. Auf Weiß ergibt das genau Geists `#f9f9f9`; der durchscheinende Grund der
+Opportunity-Karte im Dunkeln (`--uo-col-bg`) bleibt erhalten. Druck (`scale(.99)`) und Fokus
+(2px-Outline, 2px Abstand) sind unverändert. Vom 13. bis 15.10. war der Hover „Rand eine Spur
+kräftiger plus `--up-e-1`“.
+
+Eine Karte mit Schatten in Ruhe gibt es nur noch an einer Stelle: die Tarifkarte (`.up-plan`,
+`--up-e-1`), die am 28.09. samt Schatten von der Landingpage übernommen wurde. Zeichen-Kacheln
+(`.up-lb-tile`, `.unc-tile`, `.uev-avatar`) sind keine Karten und behalten `--up-e-1`.
 
 ---
 

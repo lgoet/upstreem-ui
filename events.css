@@ -61,6 +61,10 @@
 /* Der Ring im Kartengrund trennt das Profilbild vom Band wie in der Vorlage; der Schatten der
    Kachel faellt hier weg, er laege unter dem Ring und machte ihn grau. */
 .uev-karte .uev-avatar { margin: -24px 0 16px; box-shadow: 0 0 0 4px var(--vc-bg); }
+/* Im Hover toent sich der Kartengrund (core, .up-karte-klick, seit 15.10. Geists Hover) -- der
+   Ring zieht mit, sonst stuende um das Profilbild ein weisser Hof auf dem getoenten Grund. Dieselbe
+   Toenung als obere Lage ueber dem bisherigen Ring ergibt genau den Ton der Karte. */
+.uev-karte.up-karte-klick:is(:hover, .is-hl) .uev-avatar { box-shadow: 0 0 0 4px var(--up-karte-hover), 0 0 0 4px var(--vc-bg); }
 .uev-karte-titel { margin: 0; max-width: 100%; font-size: var(--up-fs-xl); font-weight: var(--up-fw-m); letter-spacing: -0.01em; line-height: 1.3;
   color: var(--vc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .uev-karte-meta { margin-top: 6px; }

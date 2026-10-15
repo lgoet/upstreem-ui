@@ -4983,20 +4983,33 @@
    Response-Table Card Mode"). Vorher hatte jede Karte ihren eigenen: die Antwortkarte Rand plus
    --up-e-1, die Quellenkachel eine gefaerbte Flaeche, Produkt- und Ad Card ein Anheben um 2px mit
    --up-e-chip, die Event-Karte --vc-hover-border, die Opportunity-Karte Rand plus Flaeche.
-   Die Werte sind die der Antwortkarte (.urt-card, Kartenentwurf 13.10.): der Rand eine Spur
-   kraeftiger -- derselbe Ton wie der Hover der Eingabefelder --, die Tiefe einer Flaeche (--up-e-1;
-   --up-e-2 war "viel zu krass", das ist der Schatten der Menues), beim Druck 1 Prozent kleiner.
+   Vom 13. bis 15.10. waren die Werte die der Antwortkarte (.urt-card, Kartenentwurf 13.10.): der
+   Rand eine Spur kraeftiger plus --up-e-1, beim Druck 1 Prozent kleiner.
+   SEIT DEM 15.10. DER HOVER VON GEIST, am 15.10. auf vercel.com gemessen. Eine ruhende Karte ist
+   dort material-base ("base for resting cards", vercel.com/geist/materials): Ring 1px, KEIN
+   Schatten -- deshalb hat auch hier keine Karte einen, und das ist Absicht, kein Verlust. Beim
+   Ueberfahren bekommt keine klickbare Karte einen Schatten, und der Rand bleibt: die Kachel im
+   Marketplace toent ihre Flaeche (#fff -> #f9f9f9, die halbe Gray 100), die Karte der Docs geht
+   auf Background 200, die Vorlagen-Karte zeigt nur einen Pfeil. Dieselbe Regel wie beim Knopf
+   (Knopf-Zustaende nach Geist, oben): nur die Flaeche aendert sich.
+   Die Toenung liegt als EBENE ueber dem Grund der Karte (background-image), nicht an seiner
+   Stelle: die Opportunity-Karte traegt im Dunkeln einen durchscheinenden Grund (--uo-col-bg,
+   5 Prozent Weiss), den eine feste Farbe ersetzen wuerde. Die halb durchsichtige Hover-Flaeche
+   ergibt auf Weiss genau Geists #f9f9f9 und auf jedem anderen Grund den halben Schritt dorthin.
+   Ein Verlauf laesst sich nicht ueberblenden -- Geist blendet in 80 ms, das ist von sofort nicht
+   zu unterscheiden. Druck und Fokus bleiben, wie sie waren.
    Geometrie (Radius, Polster, Rand, Flaeche) bleibt bei der Karte -- hier steht NUR der Zustand.
    Im Dunkeln nimmt die Randliste oben einigen Karten den Rand ((0,3,0) gegen (0,2,0) hier): die
-   behalten ihn auch im Hover nicht und zeigen nur die Tiefe, genau wie die Antwortkarte.
-   is-hl ist derselbe Zustand, von aussen gesetzt (Produktkarte und ihr Wort im Antworttext).
+   zeigen im Hover ebenfalls nur die Toenung.
+   is-hl ist derselbe Zustand, von aussen gesetzt (Produktkarte und ihr Wort im Antworttext); die
+   statische Produktkarte ohne diese Klasse holt sich --up-karte-hover in response-detail.css.
    Markup: die Klasse an jede klickbare Karte, NICHT an Skelett, Vorschau oder statische Fassung --
    die reagieren nicht und brauchen so auch keine Ruecknahme. Traeger am 13.10.: .urt-card,
    .urd-cite-card, .urd-pc (mit Produkt-Id), .up-adcard (adCardHtml), .uad-auf-ad, .uev-karte,
    .uo-card. */
-.up-karte-klick { cursor: pointer;
-  transition: box-shadow var(--up-t-2) var(--up-ease), border-color var(--up-t-2) var(--up-ease), transform var(--up-t-1) var(--up-ease); }
-.up-karte-klick:hover, .up-karte-klick.is-hl { border-color: color-mix(in srgb, var(--vc-border) 86%, var(--vc-text)); box-shadow: var(--up-e-1); }
+:root, .up-root, [data-theme] { --up-karte-hover: color-mix(in srgb, var(--up-knopf-hover) 50%, transparent); }
+.up-karte-klick { cursor: pointer; transition: transform var(--up-t-1) var(--up-ease); }
+.up-karte-klick:hover, .up-karte-klick.is-hl { background-image: linear-gradient(var(--up-karte-hover), var(--up-karte-hover)); }
 .up-karte-klick:active { transform: scale(.99); }
 .up-karte-klick:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; }
 
@@ -5910,12 +5923,20 @@
               var(--up-stack-ring, var(--vc-bg));
 }
 /* only the gap-ring follows the row hover colour; the circle fill stays the (light-in-dark) logo bg.
-   Die Karte (.urt-card) gehoert seit dem Kartenentwurf vom 13.10. NICHT mehr hierher: sie wechselt
-   beim Hover ihre Flaeche nicht mehr (nur Rand und Schatten). Mit der Regel bekam jeder Chip einer
-   gehoverten Karte einen Ring in der Hover-Farbe der Tabellenzeile -- gemeldet als "Border um die
-   Brand- und Citation-Chips". */
+   Die Karte (.urt-card) gehoert seit dem Kartenentwurf vom 13.10. NICHT hierher: mit dieser Regel
+   bekam jeder Chip einer gehoverten Karte einen Ring in der Hover-Farbe der TABELLENZEILE --
+   gemeldet als "Border um die Brand- und Citation-Chips". */
 .up-row:hover .up-stack-vis { box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vt-row-hover-solid, var(--vc-bg));
   --up-stack-ring: var(--vt-row-hover-solid, var(--vc-bg)); }
+/* Seit dem 15.10. toent sich die klickbare Karte beim Hover doch wieder (Geists Hover, siehe
+   .up-karte-klick) -- dann muss der Ring genau den Ton der Karte tragen, sonst stuende jetzt ein
+   weisser Ring auf dem getoenten Grund, dasselbe Bild wie im Bericht oben, nur umgekehrt. Deckend
+   gerechnet (die halbe Hover-Flaeche auf --vc-bg, dem Grund der Antwortkarte), weil der Folgechip
+   im Dunkeln mit --up-stack-ring den Vorgaenger ZUDECKEN muss; ein durchscheinender Ton liesse ihn
+   durch. Auch das "+N". */
+.up-karte-klick:is(:hover, .is-hl) :is(.up-stack-vis, .up-stack-more) {
+  --up-stack-ring: color-mix(in srgb, var(--vc-bg) 50%, var(--up-knopf-hover));
+  box-shadow: 0 0 0 var(--up-stack-ring-w) var(--up-stack-ring); }
 /* 5 statt 7: der Chip hat jetzt 1px Rahmen und 2px Polsterung, das Bild sitzt also 3px innen. */
 .up-stack-item img { width: 100%; height: 100%; border-radius: calc(var(--up-r-m) - 3px); object-fit: contain; display: block; }
 .up-stack-ltr { font-size: 10px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
