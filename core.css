@@ -3590,6 +3590,26 @@
        Werkzeuggruppe steht er ohnehin richtig. */
     .up-ph-top > .up-band-zeigen { margin-left: auto; margin-right: -8px; }
 
+    /* ---------- DIE ZEILE UNTER DEM BAND (15.10.) ----------
+       Zwischen der Unterkante eines Bandes und der Zeile darunter (Leiste oder Ueberschrift einer
+       Tabelle) steht --up-band-luft (16) -- derselbe Abstand wie in Prompt Insights von der Linie
+       der Navigation zur Leiste, und dieselbe Luft wie von der Leiste zum Tabellenkopf (.up-head,
+       16 Polster unten). Vorher je Seite anders: 24 (Citations, Brands), 48 (Shopping, Ads).
+       Gilt fuer ein Band und fuer eine Gruppe, die mit einem Band endet (Shopping: Kennzahlen und
+       Diagramm), sofern danach kein weiteres Band kommt -- zwischen zwei Baendern bleibt der
+       Abstand zwischen Bloecken. Der Stapel setzt seinen Abstand als --up-stapel-luft (gap:
+       var(--up-stapel-luft)); der Rand gleicht ihn hier auf die 16 aus. Ein Stapel ohne die
+       Variable bekommt die 16 obendrauf -- darum setzt jede Seite mit Band sie.
+       Kein :has() im :has(): das verwirft der Browser samt der ganzen Regel (gemessen, die erste
+       Fassung schloss so auch Gruppen aus, die mit einem Band BEGINNEN -- die gibt es nicht). */
+    :is(.up-band, :has(> .up-band:last-child)):has(+ :not(.up-band)) {
+      margin-bottom: calc(var(--up-band-luft) - var(--up-stapel-luft, 0px));
+    }
+    /* Und darunter dieselbe Luft: eine Abschnittsueberschrift (.up-sec-head, Shopping) direkt ueber
+       einer flachen Tabelle haelt bis zu deren Linie 16 statt ihrer 14 -- wie die Leiste und der
+       Kopf .up-head (16). Gemessen vorher: Ueberschrift bis Tabelle 14, Leiste bis Tabelle 16. */
+    .up-sec-head:has(+ .up-root[data-flach="yes"]) { margin-bottom: var(--up-band-luft); }
+
 
     
     /* Letter fallback: a broken/missing favicon used to leave an empty square, which reads as a

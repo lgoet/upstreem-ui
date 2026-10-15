@@ -32,7 +32,11 @@
    Navigation. */
 .uad-filterzeile ~ .uad-main { padding-top: 16px; }
 
-.uad-seite { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
+/* 48 zwischen Bloecken als --up-stapel-luft: unter einem Band (oder einer Gruppe, die mit einem
+   endet) gleicht core das auf --up-band-luft aus, die Zeile darunter steht 16 unter der Linie wie
+   in Prompt Insights (core.css "DIE ZEILE UNTER DEM BAND"). Die Gruppe setzt die Variable nicht --
+   sie liest so die 48 ihres Stapels. */
+.uad-seite { display: flex; flex-direction: column; --up-stapel-luft: 48px; gap: var(--up-stapel-luft); min-width: 0; }
 .uad-gruppe { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
 .uad-sek { display: flex; flex-direction: column; min-width: 0; }
 /* hidden muss gegen die eigenen display-Regeln gewinnen (.uad-sek, .up-kpiband und .up-foot setzen
