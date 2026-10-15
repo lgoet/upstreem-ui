@@ -2530,7 +2530,8 @@
             '<span class="upt-prompt-text">' + highlight(text, state.query) + '</span>' +
           '</span>' +
           promptMarkeHtml(r) +
-          '<span class="up-row-goto">' + GOTO_SVG + '</span>' +
+          /* Kein Zeilenpfeil mehr (16.10., .up-row-goto in core): er belegte 16px plus Abstand
+             auch unsichtbar, die bekommt jetzt der Prompt-Text. */
         '</div>' +
         '<div class="up-td upt-td-visibility">' + visCell(r.visibility_pct) + '</div>' +
         '<div class="up-td upt-td-rank">' + rankCell(r.avg_rank) + '</div>' +

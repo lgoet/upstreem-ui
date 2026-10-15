@@ -114,6 +114,14 @@
     root.style.display = "contents";
     root.innerHTML = String(MARKUP.am || "").split("__UMI_AM__").join(esc(instanceId + "_mira"))
       .split("__UMI_DARK__").join(isDark() ? "yes" : "no");
+    /* DER UMSCHALTER DER SEITENLEISTE (16.10.): Mira hat keinen Seitenkopf aus core, ihre oberste
+       Zeile ist .am-hero-inner ("Chats" rechts, im Chat Zurueck und Name). Dort ganz links derselbe
+       Knopf wie in jedem Seitenkopf -- sichtbar nur, wenn die Seitenleiste ganz ausgeblendet ist
+       (core.css). Hier und nicht in ask-mira.js: nur die Seite steht in einer Ansicht der App; im
+       Power Dashboard (Launcher) ist Miras Kopf ohnehin ausgeblendet. Die Vorlage bleibt, wie
+       .mira_markup.py sie erzeugt. */
+    var heroZeile = root.querySelector(".am-hero-inner");
+    if (heroZeile && UC.seitenleistenKnopfEinsetzen) UC.seitenleistenKnopfEinsetzen(heroZeile, heroZeile.firstElementChild);
     /* Sichtbarkeit an Mira selbst messen: eine Huelle ohne Kasten ist nie "sichtbar". */
     /* Mira wird festgehalten, sobald sie einmal gefunden ist (10.10.): das Power Dashboard leiht
        sie beim Seitenaufbau aus und haengt sie in seinen Platz. Danach steht sie NICHT mehr in
