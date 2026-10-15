@@ -387,8 +387,8 @@
    gar nichts: die Seite zeigte die alten Werte weiter, und man konnte nicht unterscheiden, ob sie
    noch stimmen oder gerade neu geholt werden.
    Gebaut als Ueberlagerung, nicht als Ersatzmarkup: jede Zeile behaelt ihre echte Hoehe, also
-   springt beim Umschalten nichts. --vc-sk und die upskt-Animation sind dieselben wie in den
-   Tabellen-Skeletten. */
+   springt beim Umschalten nichts. Ton und Bewegung sind dieselben wie in den Tabellen-Skeletten:
+   --vc-sk mit dem Geist-Schimmer aus core (15.10., vorher der Lichtlauf upskt als ::after). */
 /* clip-path, weil der Schimmer (::after) mit translateX(-100%) STARTET, also eine ganze
    Kastenbreite links neben seinem Kasten, und von dort quer hinueberlaeuft. Nichts schnitt ihn
    ab -- das overflow:hidden am ::before wirkt nur auf dessen eigenen Inhalt, nicht auf den
@@ -403,12 +403,7 @@
 .usb-root.is-loading .usb-skelbox > * { visibility: hidden; }
 .usb-root.is-loading .usb-skelbox::before {
   content: ""; position: absolute; inset: 0; border-radius: 8px;
-  background: var(--vc-sk); overflow: hidden;
-}
-.usb-root.is-loading .usb-skelbox::after {
-  content: ""; position: absolute; inset: 0; border-radius: 8px;
-  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.16) 50%, rgba(255,255,255,0) 100%);
-  transform: translateX(-100%); animation: upskt 1200ms linear infinite;
+  background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); overflow: hidden;
 }
 /* Die Ueberschriften und Beschreibungen bleiben stehen: sie sind fest, nicht geladen. Nur was vom
    Server kommt, wird verdeckt. */
@@ -420,8 +415,7 @@
 .usb-models { padding-bottom: 16px; }
 /* Die Skelettflaeche deckt inset:0 ab, also auch dieses Padding -- sie muss ausdruecklich 16px
    frueher enden, sonst liegt sie weiterhin Kante an Kante auf dem Separator. */
-.usb-root.is-loading .usb-models.usb-skelbox::before,
-.usb-root.is-loading .usb-models.usb-skelbox::after { bottom: 16px; }
+.usb-root.is-loading .usb-models.usb-skelbox::before { bottom: 16px; }
 
 /* Waehrend gespeichert wird, ist die ganze Seite gesperrt. Die eigentliche Sperre ist das
    inert-Attribut, das JS setzt -- es nimmt Klicks UND Tastaturfokus. Diese Regel ist der

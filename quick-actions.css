@@ -10,6 +10,23 @@
    page-level singleton (one #mira-quick-actions, not a per-instance .up-root component), and it
    already carried its own complete token set before the migration. Keeping its own --am-* scope
    means it never needs core.css loaded at all. */
+/* ---- DAS COMMAND MENU VON GEIST (15.10., angefordert: "nutze da bitte das Command Menu von Geist,
+   bzw. passe Quick Actions so an") ------------------------------------------------------------
+   Gelesen an vercel.com/geist/command-menu, an den berechneten Stilen des geoeffneten Beispiels
+   (1280 breit): Schleier = Seitengrund zu 80 %, ohne Unschaerfe; die Karte 640 breit, 15 % von
+   oben, Radius 12, Einblenden mit scale(.96) und Deckkraft; die Eingabezeile 12 Polster (+4
+   innen), Feld 28 hoch, darunter eine 1px-Linie, rechts "Esc" als Taste (20 hoch, 4 Polster, 12px,
+   Radius 4, 1px Ring); die Liste 8 Polster; Gruppenkopf 36 hoch, 8 seitlich, 13px, Schnitt 400,
+   Sekundaerfarbe; Eintrag mindestens 36 hoch, 8 seitlich, 12 Abstand, Radius 6, 14px, der aktive
+   mit 5 bis 6 Prozent Schriftfarbe als Grund; Nachsatz rechts in der Sekundaerfarbe; Trenner 1px
+   ueber die volle Breite mit 8 darueber und darunter; "keine Treffer" 30 Polster, 14px, mittig.
+   Tastatur bei Geist: Pfeile, Enter, Esc -- das kann diese Palette schon (onKey in
+   quick-actions.js), es bleibt unveraendert. Eine Fusszeile mit Tastenhinweisen HAT Geist nicht;
+   der einzige Hinweis ist die Esc-Taste in der Eingabezeile, und so steht es hier auch.
+   Bewusst abweichend: Feldschrift 16 statt 18 (Skala, und unter 16 zoomt iOS), Nachsatz 13 statt
+   14 (die Ergebniszeilen tragen eine zweite Zeile, ein 14er-Nachsatz stuende gleich laut daneben),
+   die Ergebniszeilen bleiben zweizeilig (Titel und Adresse), und die Lupe bleibt (auf dem Telefon
+   ausdruecklich gewollt, siehe max-width 560). Funktion, Suchquellen und Ereignisse: unberuehrt. */
 #mira-quick-actions, .mqa-overlay {
   /* AUF DIE KERN-TOKEN ZEIGEN, nicht abschreiben (24.09.). Hier standen eigene Werte -- und
      eine eigene dritte Stufe (#9ca3af hell, #6f6f6f dunkel) neben der von core. Damit lief
@@ -26,7 +43,10 @@
      button AND the panel, so the whole popup went translucent. Keep the two separate. */
   --am-card: #ffffff;
   --am-trigger-bg: rgba(255,255,255,0.60);
-  --am-overlay: rgba(17,18,20,0.30);
+  /* Der Schleier nach Geist: der Grund zu 80 %, die Seite tritt zurueck statt dunkel zu werden.
+     Aus --am-card gemischt (weiss), damit hier keine neue Farbe steht. Dunkel bleibt der bisherige
+     Wert -- dort IST der Seitengrund fast schwarz, und 55 % Schwarz kommt Geists 80 % #0a0a0a nahe. */
+  --am-overlay: color-mix(in srgb, var(--am-card) 80%, transparent);
   /* Die Palette liegt ueber einem Schleier, also die vierte Tiefe aus core (28.09.; vorher ein
      eigener Zweilagen-Wert). Ohne core.css auf der Seite gilt der bisherige Wert als Rueckfall. */
   --am-shadow: var(--up-e-4, 0 24px 64px rgba(17,18,20,0.18), 0 6px 16px rgba(17,18,20,0.07));
@@ -104,34 +124,39 @@
      ihre Inhaltsgroesse und deckte den Rest der Seite nicht mehr ab -- im Harness gemessen, sie
      tauchte im Trefferstapel der Bildschirmmitte gar nicht mehr auf. */
   position: fixed; inset: 0; width: auto; height: auto;
-  max-width: none; max-height: none; margin: 0; padding: 12vh 16px 16px;
+  max-width: none; max-height: none; margin: 0; padding: 15vh 16px 16px;
   border: 0; background: var(--am-overlay); overflow: visible;
 }
 .mqa-overlay[popover]:not(:popover-open) { display: none; }
 
 .mqa-overlay {
   position: fixed; inset: 0; z-index: 2147483000; display: none;
-  align-items: flex-start; justify-content: center; padding: 12vh 16px 16px;
-  background: var(--am-overlay); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  align-items: flex-start; justify-content: center; padding: 15vh 16px 16px;
+  /* Ohne Unschaerfe (Geist): der Schleier allein nimmt die Seite zurueck. 15vh wie Geists top-[15%]. */
+  background: var(--am-overlay);
   font-family: var(--mqa-font); touch-action: none;
 }
-.mqa-overlay.is-open { display: flex; animation: mqaFade .14s ease both; }
+.mqa-overlay.is-open { display: flex; animation: mqaFade var(--up-t-3, 260ms) ease both; }
 @keyframes mqaFade { from { opacity: 0; } to { opacity: 1; } }
 .mqa-modal {
-  width: min(600px, 94vw); max-height: 82vh; display: flex; flex-direction: column; overflow: hidden;
-  background: var(--am-card); border: 1px solid var(--am-border); border-radius: 16px; box-shadow: var(--am-shadow);
-  animation: mqaPop .16s cubic-bezier(.22,1,.36,1) both; touch-action: none;
+  width: min(640px, 94vw); max-height: 82vh; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--am-card); border: 1px solid var(--am-border); border-radius: var(--up-r-xl, 12px); box-shadow: var(--am-shadow);
+  /* Geists Kurve (cubic-bezier(.175,.885,.32,1.1), ein Hauch Ueberschwingen) aus scale(.96); die
+     Dauer ist die Flaechenstufe aus core (260 statt Geists 300). */
+  animation: mqaPop var(--up-t-3, 260ms) cubic-bezier(.175,.885,.32,1.1) both; touch-action: none;
 }
-@keyframes mqaPop { from { opacity: 0; transform: translateY(-8px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes mqaPop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
 
 /* ---------- search ---------- */
-/* Ohne Linie unter dem Suchfeld. DAS war der Strich, der nach zwei Runden noch stand: er kam
-   nicht von einem .mqa-sep, sondern als border-bottom vom Suchfeld selbst. Getrennt wird jetzt
-   ueber den Abstand darunter (siehe .mqa-recent-wrap und .mqa-actions-wrap, je 18px oben). */
-.mqa-search { display: flex; align-items: center; gap: 11px; padding: 0 14px; height: 54px; flex: 0 0 auto; }
-.mqa-search-ic { width: 18px; height: 18px; flex: 0 0 auto; fill: none; stroke: var(--am-muted-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* OHNE LINIE UNTER DEM SUCHFELD -- auch nach Geist (15.10.): Geists Command Menu trennt die
+   Eingabezeile mit einer Linie, aber "ohne Linie" ist eine fruehere, zweimal nachgeschaerfte
+   Ansage des Nutzers, und die gilt, bis er sie aufhebt. Sonst Geists Masse: Polster 12 oben und
+   unten und 16 seitlich (Geist: 12 plus 4 innen), Abstand 12; die Zeile ist 12 + 28 + 12 = 52,
+   dazu 1px Luft, wo die Linie stuende, damit die Liste darunter nicht springt. */
+.mqa-search { display: flex; align-items: center; gap: 12px; padding: 12px 16px 13px; min-height: 53px; flex: 0 0 auto; }
+.mqa-search-ic { width: 16px; height: 16px; flex: 0 0 auto; fill: none; stroke: var(--am-muted-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .mqa-inputwrap { position: relative; flex: 1 1 auto; min-width: 60px; display: flex; align-items: center; }
-.mqa-input { flex: 1 1 auto; min-width: 60px; border: 0; outline: 0; background: transparent; color: var(--am-text); font-family: var(--mqa-font); font-size: 15px; font-weight: 450; letter-spacing: -0.01em; padding: 0; touch-action: auto; position: relative; z-index: 1; }
+.mqa-input { flex: 1 1 auto; min-width: 60px; height: var(--up-h-seg, 28px); border: 0; outline: 0; background: transparent; color: var(--am-text); font-family: var(--mqa-font); font-size: var(--up-fs-xl, 16px); font-weight: 400; letter-spacing: -0.01em; padding: 0; touch-action: auto; position: relative; z-index: 1; }
 .mqa-input::placeholder { color: var(--am-muted-3); }
 /* ---------- der Logo-Faecher unter dem Suchfeld (29.09. spaet, siehe syncFan) ----------
    Der Faecher ist der Baustein aus core (UC.makeFaecher, .up-fan-* in core.css) -- die Palette
@@ -162,7 +187,7 @@
 /* placeholder: only while the field is empty */
 .mqa-ph {
   position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-  font-size: 15px; font-weight: 450; letter-spacing: -0.01em; white-space: nowrap;
+  font-size: var(--up-fs-xl, 16px); font-weight: 400; letter-spacing: -0.01em; white-space: nowrap;
   color: var(--am-muted-2); pointer-events: none; z-index: 0;
 }
 .mqa-ph.is-hidden, .mqa-ph-cmd.is-hidden { display: none; }
@@ -255,7 +280,7 @@
   display: inline-flex; align-items: center; justify-content: center;
   color: var(--am-muted); font-size: 12px; font-weight: 600;
 }
-.mqa-cmd-hint { flex: 0 0 auto; color: var(--am-muted-2); font-size: 12px; margin-left: auto; white-space: nowrap; }
+.mqa-cmd-hint { flex: 0 0 auto; color: var(--am-muted-2); font-size: var(--up-fs-m, 13px); margin-left: auto; white-space: nowrap; }
 
 /* metric on a result row (e.g. visibility for /top) */
 .mqa-metric {
@@ -274,7 +299,13 @@
 .mqa-trend.is-down { color: var(--am-down); }
 .mqa-trend.is-flat { color: var(--am-muted-2); }
 .mqa-metric-lbl { font-weight: 450; color: var(--am-muted-2); margin-right: 4px; }
-.mqa-esc { flex: 0 0 auto; text-transform: uppercase; }
+.mqa-esc { flex: 0 0 auto; text-transform: capitalize; }   /* "Esc" wie bei Geist */
+/* Die Taste nach Geist (die Esc-Taste der Eingabezeile): 20 hoch, 4 Polster, 12px, Schnitt 400,
+   Radius 4, 1px Ring statt Rahmen, Grund der Karte, Schrift in der Textfarbe. Nur im Menue -- das
+   Kuerzel am Ausloeser in der Seitenleiste bleibt, wie es ist. */
+.mqa-overlay .mqa-kbd { height: 20px; min-width: 20px; padding: 0 4px; border: 0; border-radius: var(--up-r-xs, 4px);
+  box-shadow: 0 0 0 1px var(--am-border); background: var(--am-card); color: var(--am-text);
+  font-size: var(--up-fs-s, 12px); font-weight: 400; letter-spacing: 0; }
 .mqa-esc.is-hidden, .mqa-clear.is-hidden, .mqa-fav.is-hidden { display: none; }
 /* replaces the esc hint as soon as there's something to clear */
 .mqa-clear {
@@ -337,20 +368,20 @@
      aufgeklappter Abschnitt, eine Liste, die laenger wird). Auf macOS liegt die Leiste ueber
      dem Inhalt, dort aendert die Zeile nichts. Gleiche Ursache wie die versetzten
      Spaltentitel in Performance Detail, nur ohne Tabellenkopf daneben. */
-.mqa-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y !important; padding: 6px 6px 0; scrollbar-gutter: stable; }
+.mqa-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; touch-action: pan-y !important; padding: 8px 8px 0; scrollbar-gutter: stable; }
 .mqa-modal:not(.has-results) .mqa-scroll { display: none; }   /* nothing above -> no empty gap */
 /* Oben 18 statt 6: die Trenner sind weg, den Abstand macht jetzt der Abstand -- zweimal
    nachgeschaerft, auf Ansage. Unten und an den Seiten bleibt es bei 6, sonst waechst das Panel
    nach unten mit. */
-.mqa-actions-wrap { flex: 0 0 auto; padding: 18px 6px 6px; }
+.mqa-actions-wrap { flex: 0 0 auto; padding: 18px 8px 8px; }   /* seitlich 8 wie Geists Liste */
 
 .mqa-scroll::-webkit-scrollbar { width: 10px; }
 .mqa-scroll::-webkit-scrollbar-thumb { background: var(--am-border-strong); border: 3px solid var(--am-card); border-radius: 999px; }
 .mqa-results:empty { display: none; }
 
 /* ---------- groups + rows ---------- */
-.mqa-group { padding: 4px 0 2px; }
-.mqa-results .mqa-group + .mqa-group { margin-top: 9px; }   /* more air between categories */
+/* Die Gruppen stehen ohne eigenen Abstand untereinander: die Luft kommt aus dem 36er-Kopf (Geist). */
+.mqa-group { padding: 0; }
 /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
    Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
 /* --am-muted-2 und NICHT var(--vc-third): diese Datei ist eigenstaendig, sie kennt core.css
@@ -368,15 +399,22 @@
    Ueberschrift klebte am ersten Ergebnis. Mit 8 sind es 16; der eine Pixel Unterschied kommt
    aus dem Zeilenpolster dieser Liste (8 statt 9) und ist ihr eigener Rhythmus.
    Oben bleibt 6: das ist der Abstand zur vorigen Gruppe und haengt an .mqa-group. */
-.mqa-group-head { padding: 6px 10px 8px; font-size: 12px; font-weight: 600; color: var(--am-muted-2); }
+/* Seit dem 15.10. Geists Gruppenkopf: 36 hoch, Text senkrecht mittig, 8 seitlich, 13px, Schnitt
+   400. Die Farbe bleibt die dritte Stufe (Begruendung oben) -- im Dunkeln ist das Geists gray-900
+   auf den Wert genau (#a0a0a0). */
+.mqa-group-head { display: flex; align-items: center; height: 36px; padding: 0 8px; font-size: var(--up-fs-m, 13px); font-weight: 400; color: var(--am-muted-2); }
+/* Der Eintrag nach Geist: mindestens 36 hoch, 8 seitlich, 12 Abstand, Radius 6. Polster 4 oben und
+   unten, damit eine Ergebniszeile mit Titel UND Adresse darin Platz hat, ohne zu wachsen. */
 .mqa-row, .mqa-action {
-  display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; border: 0; background: transparent;
-  padding: 8px 10px; border-radius: 10px; cursor: pointer; font-family: var(--mqa-font); color: var(--am-text);
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 36px; text-align: left; border: 0; background: transparent;
+  padding: 4px 8px; border-radius: var(--up-r-s, 6px); cursor: pointer; font-family: var(--mqa-font); color: var(--am-text);
   user-select: none; -webkit-user-select: none; transition: background .12s ease;
 }
-.mqa-row.is-active, .mqa-action.is-active { background: var(--am-soft); }
+/* Der aktive Eintrag wie bei Geist (gray-alpha-100: 5 % Schwarz hell, 6 % Weiss dunkel), hier aus
+   der Schriftfarbe gemischt -- dieselbe Richtung in beiden Themen, ohne neue Farbe. */
+.mqa-row.is-active, .mqa-action.is-active { background: color-mix(in srgb, var(--am-text) 5%, transparent); }
 .mqa-av {
-  width: 30px; height: 30px; flex: 0 0 auto; border-radius: 8px; overflow: hidden; background: var(--am-soft-2);
+  width: 24px; height: 24px; flex: 0 0 auto; border-radius: var(--up-r-s, 6px); overflow: hidden; background: var(--am-soft-2);
   border: 1px solid var(--am-border); display: inline-flex; align-items: center; justify-content: center; position: relative;
 }
 .mqa-av img { width: 100%; height: 100%; object-fit: cover; display: block; -webkit-user-drag: none; user-select: none; pointer-events: none; }
@@ -390,13 +428,15 @@
 .mqa-av-fb svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .mqa-av-t { font-size: 12px; font-weight: 600; color: var(--am-muted); letter-spacing: 0.01em; }
 .mqa-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.mqa-primary { font-size: 13.5px; font-weight: 500; color: var(--am-text); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 14/20 und Schnitt 400 wie Geists Eintrag (text-sm); die Treffermarkierung (.mqa-hl, 700) steht
+   damit noch deutlicher ab. */
+.mqa-primary { font-size: var(--up-fs-l, 14px); line-height: 20px; font-weight: 400; color: var(--am-text); letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mqa-secondary { font-size: 12px; color: var(--am-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Der Plattform-Vorsatz einer URL ("r/cars", "Post", "Article") und sein Trenner: leise wie in der
    URL-Tabelle (.up-reddit-sub, dort --vc-third). Hier --am-muted-2, dieselbe Farbe ueber die
    Marken der Palette, weil --vc-third ausserhalb von .up-root nicht aufloest. */
 .mqa-plattform { color: var(--am-muted-2); }
-.mqa-type { flex: 0 0 auto; font-size: 11px; font-weight: 500; color: var(--am-muted-2); letter-spacing: 0.01em; }
+.mqa-type { flex: 0 0 auto; font-size: var(--up-fs-m, 13px); font-weight: 400; color: var(--am-muted-2); letter-spacing: 0; }
 .mqa-enter { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 5px; border: 1px solid var(--am-border); background: var(--am-card); color: var(--am-muted); opacity: 0; pointer-events: none; transition: opacity .1s ease; }
 .mqa-enter svg { width: 13px; height: 13px; display: block; }
 .mqa-row.is-active .mqa-enter, .mqa-action.is-active .mqa-enter { opacity: 1; }
@@ -453,11 +493,13 @@
 .mqa-rowmenu-opt-ic { flex: 0 0 auto; width: 15px; height: 15px; display: inline-flex; color: var(--am-muted); }
 .mqa-rowmenu-opt-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; display: block; }
 
-/* action icon: plain 16px glyph in primary color, no card, tight gap to the label */
-.mqa-action { gap: 10px; }
+/* action icon: plain 16px glyph in primary color, no card. Abstand 12 wie jeder Geist-Eintrag.
+   Die Hoehe 36 kommt hier aus dem Polster (8 + 20 + 8) und nicht aus min-height: die Eintraege
+   stehen in .mqa-fade, und dessen Kinder tragen min-height: 0, damit das Aufklappen auf 0 faehrt. */
+.mqa-action { gap: 12px; padding-top: 8px; padding-bottom: 8px; }
 .mqa-action-ic { width: 16px; height: 16px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; color: var(--am-text); }
 .mqa-action-ic svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.mqa-action-hint { flex: 0 0 auto; font-size: 11.5px; color: var(--am-muted-2); }
+.mqa-action-hint { flex: 0 0 auto; font-size: var(--up-fs-m, 13px); color: var(--am-muted-2); }
 
 /* separator */
 .mqa-ct-dot { flex: 0 0 auto; width: 6px; height: 6px; border-radius: 999px; display: inline-block; }
@@ -465,16 +507,18 @@
 .mqa-hl { background: transparent; color: inherit; font-weight: 700; padding: 0; }
 .mqa-primary .mqa-hl { font-weight: 700; }   /* titles sit at 500, so the match needs a bit more */
 /* recently viewed: same row, a touch smaller */
-.mqa-row.is-mini { padding: 6px 10px; gap: 9px; }
-.mqa-row.is-mini .mqa-av { width: 22px; height: 22px; }
-.mqa-row.is-mini .mqa-primary { font-size: 12.5px; }
-.mqa-row.is-mini .mqa-secondary { font-size: 11px; }
-.mqa-sep { height: 1px; margin: 6px 8px; background: var(--am-border); }
+.mqa-row.is-mini { gap: 12px; }
+.mqa-row.is-mini .mqa-av { width: 20px; height: 20px; }
+.mqa-row.is-mini .mqa-primary { font-size: var(--up-fs-m, 13px); }
+.mqa-row.is-mini .mqa-secondary { font-size: var(--up-fs-xs, 11px); }
+/* Geists Trenner: 1px, 8 darueber und darunter, ueber die volle Breite der Liste (deren 8 Polster
+   heraus). */
+.mqa-sep { height: 1px; margin: 8px -8px; background: var(--am-border); }
 
 /* ---------- recent searches ---------- */
 /* Oben 18 wie im Block darunter: diese Liste steht direkt unter dem Suchfeld und trug bisher den
    Trenner. Der ist weg, den Abstand macht jetzt der Abstand. */
-.mqa-recent-wrap { flex: 0 0 auto; padding: 18px 6px 0; }
+.mqa-recent-wrap { flex: 0 0 auto; padding: 18px 8px 0; }
 .mqa-recent-wrap:empty { display: none; }
 .mqa-recent-ic { flex: 0 0 auto; width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; color: var(--am-muted-2); }
 .mqa-recent-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -597,24 +641,29 @@
 .mqa-tip[data-theme="dark"] .mqa-tip-key { background: #232326; border-color: #4a4a4a; }
 .mqa-modal:not(.has-results) .mqa-sep { display: none; }   /* no separator when there are no results/skeleton above */
 
-/* ---------- skeleton ---------- */
-.mqa-skel-row { display: flex; align-items: center; gap: 11px; padding: 8px 10px; }
-.mqa-skel-av { width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto; }
+/* ---------- skeleton ----------
+   Das Skelett aus core nach Geist (15.10.): Glanz (--up-sk-verlauf) und Bewegung (--up-sk-bewegung)
+   von dort. Nur der Grund ist eigen: --vc-sk loest am <body> nicht auf (es steht an .up-root), also
+   6 % Schriftfarbe auf der Karte -- hell gerechnet #f1f1f1, Geists gray-100 ist #f2f2f2. Ohne
+   core.css auf der Seite tragen die Rueckfaelle dasselbe Bild (Glanz aus der Schriftfarbe,
+   mqaSkel faehrt dieselbe Strecke). Zeilen in der Geometrie der Eintraege oben (24er-Kachel). */
+.mqa-skel-row { display: flex; align-items: center; gap: 12px; min-height: 36px; padding: 4px 8px; }
+.mqa-skel-av { width: 24px; height: 24px; border-radius: var(--up-r-s, 6px); flex: 0 0 auto; }
 .mqa-skel-lines { flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px; }
-.mqa-skel-line { height: 9px; border-radius: 5px; }
+.mqa-skel-line { height: 9px; border-radius: var(--up-sk-r, 5px); }
 .mqa-skel-av, .mqa-skel-line {
-  background: linear-gradient(90deg,
-    color-mix(in srgb, var(--am-text) 7%, transparent) 25%,
-    color-mix(in srgb, var(--am-text) 14%, transparent) 37%,
-    color-mix(in srgb, var(--am-text) 7%, transparent) 63%);
-  background-size: 300% 100%; animation: mqaSkel 1.3s ease infinite;
+  background: color-mix(in srgb, var(--am-text) 6%, var(--am-card))
+    var(--up-sk-verlauf, linear-gradient(90deg, rgba(0,0,0,0) 0%, color-mix(in srgb, var(--am-text) 3%, transparent) 50%, rgba(0,0,0,0) 100%) 0 0 / 150% 100% repeat-x);
+  animation: var(--up-sk-bewegung, mqaSkel 1.5s ease-in-out infinite);
 }
-@keyframes mqaSkel { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+@keyframes mqaSkel { from { background-position: 300% 0; } to { background-position: 0 0; } }
 
 /* ---------- empty / error ---------- */
-.mqa-empty { padding: 30px 16px 26px; text-align: center; color: var(--am-muted); font-size: 12.5px; }
-.mqa-empty-title { font-size: 13.5px; font-weight: 550; color: var(--am-text); }
-.mqa-empty-sub { margin-top: 4px; font-size: 12.5px; color: var(--am-muted); }
+/* Wie Geists "No results found": 30 oben und unten, 14/20, mittig, die Aussage in der Textfarbe,
+   der Rest in der Sekundaerfarbe. Texte unveraendert. */
+.mqa-empty { padding: 30px 16px; text-align: center; color: var(--am-muted); font-size: var(--up-fs-l, 14px); line-height: 20px; }
+.mqa-empty-title { font-size: var(--up-fs-l, 14px); font-weight: 500; color: var(--am-text); }
+.mqa-empty-sub { margin-top: 4px; font-size: var(--up-fs-l, 14px); color: var(--am-muted); }
 .mqa-error .mqa-empty-title { color: #b4451f; }
 
 @media (max-width: 560px) {
@@ -640,7 +689,7 @@
 /* Die Eintraege sind Nachschlagewerk, nicht Handlung: sie treten hinter die Actions zurueck --
    Sekundaerfarbe und ein Punkt kleiner als die 13.5px der uebrigen Zeilen. Aufgeklappt ist der
    Eintrag das, was man gerade liest, und kommt nach vorn. */
-.mqa-ref-item .mqa-primary { font-size: 12.5px; color: var(--am-muted); transition: color .14s ease; }
+.mqa-ref-item .mqa-primary { font-size: var(--up-fs-m, 13px); color: var(--am-muted); transition: color .14s ease; }
 .mqa-ref-item.is-open .mqa-primary { color: var(--am-text); }
 .mqa-ref-chev { flex: 0 0 auto; display: inline-flex; align-items: center; color: var(--am-muted-2); transition: transform .16s ease; }
 .mqa-ref-chev svg { width: 14px; height: 14px; display: block; }

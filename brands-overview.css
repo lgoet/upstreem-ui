@@ -160,7 +160,7 @@
 /* Skeleton + empty state: the wrap owns both so the canvas can stay untouched underneath. */
 .ubo-mx-wrap.is-sk::after {
   content: ""; position: absolute; inset: 8px; border-radius: 12px;
-  background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite;
+  background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung);
 }
 .ubo-mx-wrap.is-empty::after {
   content: "No data"; position: absolute; inset: 0;

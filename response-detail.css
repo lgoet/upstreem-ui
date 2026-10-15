@@ -305,11 +305,11 @@
 .urd-brandwrap { display: inline-flex; align-items: center; }
 
 /* ---- Skelette ----
-   Ton aus core (--vc-sk), Puls aus core (uutpulse, 1.2s) -- der Kommentar behauptete das vorher
-   schon, aber die Regel holte nur die Farbe: die Bloecke standen still und lasen sich als grauer
-   Kasten, nicht als "laedt". */
-.urd-sk { display: block; background: var(--vc-sk); border-radius: 8px;
-  animation: uutpulse 1.2s ease-in-out infinite; }
+   Ton und Bewegung aus core (--vc-sk, seit dem 15.10. der Geist-Schimmer statt des Pulses) -- die
+   Regel holte frueher nur die Farbe: die Bloecke standen still und lasen sich als grauer Kasten,
+   nicht als "laedt". */
+.urd-sk { display: block; background: var(--vc-sk) var(--up-sk-verlauf); border-radius: 8px;
+  animation: var(--up-sk-bewegung); }
 .urd-sk-prompt { height: 28px; width: 72%; margin-bottom: 6px; }
 .urd-sk-prompt2 { height: 28px; width: 44%; }
 .urd-sk-tag { display: inline-block; height: 24px; width: 96px; border-radius: var(--up-r-m); }

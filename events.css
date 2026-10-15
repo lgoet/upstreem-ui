@@ -52,9 +52,10 @@
 /* Mit Titelbild (03.10.): das Motiv deckt das Band, Bild und senkrechte Lage kommen inline
    (coverStil); bis es geladen ist, steht die leise Flaeche darunter. */
 .uev-karte-band.has-cover, .uev-hero-band.has-cover { background-color: var(--vc-heading-bg); background-size: cover; background-repeat: no-repeat; }
-/* Bis das Motiv geladen ist: das Skelett aus core (Flaeche --vc-sk, Puls uutpulse wie .up-tsk-bar),
-   im Band wie in den Kacheln des Pickers. */
-.uev-karte-band.has-cover.is-laedt, .uev-hero-band.has-cover.is-laedt, .uev-cover.is-laedt { background-color: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+/* Bis das Motiv geladen ist: das Skelett aus core (Flaeche --vc-sk, Geist-Schimmer wie .up-tsk-bar),
+   im Band wie in den Kacheln des Pickers. Als Kurzschreibweise, damit Groesse und Wiederholung des
+   Schimmers die von has-cover (cover, no-repeat) abloesen, solange geladen wird. */
+.uev-karte-band.has-cover.is-laedt, .uev-hero-band.has-cover.is-laedt, .uev-cover.is-laedt { background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
 @media (prefers-reduced-motion: reduce) { .uev-karte-band.has-cover.is-laedt, .uev-hero-band.has-cover.is-laedt, .uev-cover.is-laedt { animation: none; } }
 .uev-karte-body { flex: 1 1 auto; display: flex; flex-direction: column; align-items: flex-start; padding: 0 12px 12px; min-width: 0; }
 /* Der Ring im Kartengrund trennt das Profilbild vom Band wie in der Vorlage; der Schatten der
@@ -111,11 +112,12 @@
 .uev-mehrbtn { width: var(--up-h-seg); height: var(--up-h-seg); }
 .uev-mehrmenu { width: 180px; }
 
-/* Skelett: dieselbe Flaeche wie jedes Skelett der App (--vc-sk). */
-.uev-sk { display: block; height: 12px; border-radius: var(--up-r-xs); background: var(--vc-sk); }
+/* Skelett: dieselbe Flaeche wie jedes Skelett der App (--vc-sk), seit dem 15.10. mit dem
+   Geist-Schimmer aus core -- vorher standen diese Balken als einzige still. */
+.uev-sk { display: block; height: 12px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
 .uev-sk-titel { height: 16px; }
-.uev-sk-band { background: var(--vc-sk); }
-.uev-avatar.uev-sk-avatar { background: var(--vc-sk); border-color: transparent; box-shadow: none; }
+.uev-sk-band { background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
+.uev-avatar.uev-sk-avatar { background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); border-color: transparent; box-shadow: none; }
 /* In der Karte behaelt das Skelett den Ring -- sonst laufen Band und Kachel, beide in --vc-sk, zu
    einem Fleck zusammen. */
 .uev-karte .uev-avatar.uev-sk-avatar { box-shadow: 0 0 0 4px var(--vc-bg); }

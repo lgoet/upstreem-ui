@@ -1109,7 +1109,7 @@
 /* header skeleton while the group RPC is in flight */
 .upt-grp-sk { display: flex; flex-direction: column; }
 .upt-grp-skrow { height: var(--up-h-row); border-bottom: 1px solid var(--vc-border);
-  background: var(--vc-sk); opacity: .55; animation: uutpulse 1.2s ease-in-out infinite; }
+  background: var(--vc-sk) var(--up-sk-verlauf); opacity: .55; animation: var(--up-sk-bewegung); }
 .upt-grp-skrow:last-child { border-bottom: 0; }
 
 /* ---------- grouping dropdown ----------

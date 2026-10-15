@@ -75,8 +75,8 @@
 .uud-link-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .uud-root .uud-link[hidden] { display: none; }
 /* Skelett des Kopfes, in den Massen dessen, was gleich dasteht. */
-.uud-skz { display: inline-block; height: 14px; border-radius: var(--up-r-xs); background: var(--vc-sk);
-  animation: uutpulse 1.2s ease-in-out infinite; }
+.uud-skz { display: inline-block; height: 14px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf);
+  animation: var(--up-sk-bewegung); }
 .uud-skz.is-m { width: 132px; } .uud-skz.is-s { width: 88px; }
 .uud-skz.is-titel { display: block; width: 72%; height: 28px; margin-bottom: 6px; }
 .uud-skz.is-titel2 { display: block; width: 44%; height: 28px; }
@@ -276,8 +276,8 @@
    Warnung, nicht als Messwert. Hier stand ein eigener runder 6px-Punkt. */
 
 /* ---- Ladezustand -----------------------------------------------------------------------------
-   Kein eigenes Skelett-Markup: die Abschnitte stehen bereits, sie bekommen nur den Puls von core
-   (uutpulse, derselbe Name und dieselbe Dauer wie an jedem Skelettbalken der App) auf ihre
+   Kein eigenes Skelett-Markup: die Abschnitte stehen bereits, sie bekommen nur das Skelett von
+   core (seit dem 15.10. der Geist-Schimmer, derselbe wie an jedem Skelettbalken der App) auf ihre
    Flaechen. Ein zweiter Aufbau nur fuers Laden waere ein zweiter Aufbau, den jemand pflegen muss. */
 .uud-root.is-loading .uud-mrow,
 .uud-root.is-loading .uud-sect-embed,
@@ -302,7 +302,7 @@
 .uud-root.is-loading .uud-text { display: none; }
 .uud-root.is-loading .uud-kpi-val::before {
   content: ""; display: block; width: 56px; height: 15px; border-radius: 6px;
-  background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite;
+  background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung);
 }
 .uud-root.is-loading .uud-kpi-val > * { display: none; }
 

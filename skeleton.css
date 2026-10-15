@@ -1,6 +1,6 @@
 /* upstreem skeleton.css — das Ladeskelett als eigene Komponente (Praefix `usk`).
-   Braucht core.css: die Farbe (--vc-sk) und die Pulsbewegung (uutpulse) kommen von dort und
-   werden hier NICHT nachgebaut. Wer den Ton aendern will, aendert ihn in core -- dann ziehen
+   Braucht core.css: die Farbe (--vc-sk) und die Bewegung (seit dem 15.10. das Geist-Skelett,
+   --up-sk-verlauf / --up-sk-bewegung) kommen von dort und werden hier NICHT nachgebaut. Wer den Ton aendern will, aendert ihn in core -- dann ziehen
    alle Skelette der App mit, auch die in den Tabellen und Charts. */
 
 /* DIE WURZEL FUELLT IHREN KASTEN, und zwar ohne eine eigene Groesse mitzubringen. Genau das
@@ -27,8 +27,7 @@
 .usk-block {
   display: block; width: 100%; height: 100%;
   border-radius: var(--usk-radius, 12px);
-  background: var(--vc-sk);
-  animation: uutpulse 1.2s ease-in-out infinite;
+  background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung);
 }
 
 /* ---- Die Zeilen ---------------------------------------------------------------------------
@@ -38,9 +37,8 @@
    .up-tsk-bar in core, damit ein Skelett hier so aussieht wie eines in einer Tabelle. */
 .usk-rows { display: flex; flex-direction: column; gap: 10px; height: 100%; }
 .usk-line {
-  height: 12px; flex: 0 0 auto; border-radius: 4px;
-  background: var(--vc-sk);
-  animation: uutpulse 1.2s ease-in-out infinite;
+  height: 12px; flex: 0 0 auto; border-radius: var(--up-sk-r);
+  background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung);
 }
 /* Die letzte Zeile kuerzer: ein Textblock endet mitten in der Zeile, und ein Skelett, das
    unten buendig abschliesst, liest sich als Tabelle statt als Text. */
@@ -56,8 +54,7 @@
 .usk-card { display: flex; align-items: flex-start; gap: 12px; height: 100%; }
 .usk-tile {
   width: 34px; height: 34px; flex: 0 0 auto; border-radius: 8px;
-  background: var(--vc-sk);
-  animation: uutpulse 1.2s ease-in-out infinite;
+  background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung);
 }
 .usk-card .usk-rows { flex: 1 1 auto; min-width: 0; }
 
