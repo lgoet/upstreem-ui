@@ -546,14 +546,16 @@
   border: 1px dashed var(--vc-border); background: transparent; color: var(--vc-text);
   cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 500; text-align: left;
   display: inline-flex; align-items: center; gap: 8px; overflow: hidden; }
-.upt-topiccreate:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+/* Geist-Sekundaerknopf (15.10.): beim Ueberfahren nur die Flaeche, der Rand bleibt (core, --up-knopf-*). */
+.upt-topiccreate:hover { background: var(--up-knopf-hover); }
 .upt-topiccreate svg { width: 13px; height: 13px; display: block; flex: 0 0 auto; color: var(--vc-muted); }
 .upt-topiccreate strong { font-weight: 600; }
 .upt-topiccreate-pick { flex: 0 0 auto; width: 34px; height: 34px; padding: 0; border-radius: 9px;
   border: 1px solid var(--vc-border); background: transparent; cursor: pointer; font-size: 16px; line-height: 1;
   color: var(--vc-muted); display: inline-flex; align-items: center; justify-content: center; }
+/* Geist-Menue-Ausloeser (15.10.): Flaeche plus eine Stufe kraeftigere Kante statt --vc-hover-border (core, --up-knopf-*). */
 .upt-topiccreate-pick:hover, .upt-topiccreate-pick.is-open {
-  border-color: var(--vc-hover-border); background: var(--vc-heading-bg);
+  border-color: var(--up-knopf-rand-hover); background: var(--up-knopf-hover);
 }
 .upt-topiccreate-pick svg { width: 16px; height: 16px; display: block; }
 .upt-topiccreate-swatch { width: 16px; height: 16px; border-radius: 50%; display: block;

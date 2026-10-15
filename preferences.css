@@ -143,10 +143,11 @@
   white-space: nowrap; cursor: pointer; outline: 0;
   transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
 }
+/* Geist-Menue-Ausloeser (15.10.): Flaeche plus eine Stufe kraeftigere Kante statt --vc-hover-border (core, --up-knopf-*). */
 .ums-sel:hover, .ums-selwrap.is-open .ums-sel {
-  color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+  color: var(--vc-text); background: var(--up-knopf-hover); border-color: var(--up-knopf-rand-hover);
 }
-.ums-sel:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
+.ums-sel:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
 .ums-sel-val { color: var(--vc-text); }
 .ums-sel svg { width: 16px; height: 16px; flex: 0 0 16px; display: block; color: var(--vc-text); }
 /* Das Menue haengt RECHTS am Knopf: er steht am rechten Rand der Zeile, ein linksbuendiges Menue

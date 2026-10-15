@@ -20,11 +20,12 @@
   white-space: nowrap; cursor: pointer; outline: 0;
   transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
 }
+/* Geist-Menue-Ausloeser (15.10.): Flaeche plus eine Stufe kraeftigere Kante statt --vc-hover-border (core, --up-knopf-*). */
 .utf-trigger:hover,
 .utf-wrap.is-open .utf-trigger {
-  color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+  color: var(--vc-text); background: var(--up-knopf-hover); border-color: var(--up-knopf-rand-hover);
 }
-.utf-trigger:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
+.utf-trigger:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
 .utf-trigger svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: var(--vc-text); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 /* The label is the value, so it carries the primary colour while the rest of the button stays
    muted -- same relationship the date-range trigger has. */
@@ -73,7 +74,8 @@
 .utf-menu.is-right { left: auto; right: 0; }
 /* Open and "has a selection" both mark the trigger through its border, the way the app already
    signals an active filter -- no separate accent colour. */
-.utf-wrap.is-open .utf-trigger, .utf-root.has-sel .utf-trigger { border-color: var(--vc-hover-border); color: var(--vc-text); }
+/* Offen steht seit 15.10. im Hover oben (Geist); gewaehlt behaelt seine dunkle Kante. */
+.utf-root.has-sel .utf-trigger { border-color: var(--vc-hover-border); color: var(--vc-text); }
 /* The chevron does NOT rotate on open. It has been asked for repeatedly that dropdowns in this
    app do not do that, and there is no state here the arrow needs to carry -- the open panel is
    already the affordance. */
@@ -92,7 +94,8 @@
   background: var(--vc-heading-bg); color: var(--vc-muted); cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
 }
-.utf-sort-btn:hover, .utf-sort.is-open .utf-sort-btn { border-color: var(--vc-hover-border); color: var(--vc-text); }
+/* Schon mit Flaeche in Ruhe: der Hover zeigt nur die eine Stufe kraeftigere Kante (Geist, 15.10.). */
+.utf-sort-btn:hover, .utf-sort.is-open .utf-sort-btn { border-color: var(--up-knopf-rand-hover); color: var(--vc-text); }
 .utf-sort-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .utf-clear {
   flex: 0 0 auto; height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px;
@@ -100,7 +103,7 @@
   font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease;
 }
-.utf-clear:hover { border-color: var(--vc-hover-border); }
+.utf-clear:hover { border-color: var(--up-knopf-rand-hover); }
 /* Nothing selected means nothing to clear. */
 .utf-root:not(.has-sel) .utf-clear { display: none; }
 
@@ -176,7 +179,8 @@
   background: transparent; color: var(--vc-text); cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease;
 }
-.utf-grpbtn:hover { background: var(--up-sel-bg); border-color: var(--vc-hover-border); }
+/* Geist-Sekundaerknopf (15.10.): nur die Flaeche, der Rand bleibt. */
+.utf-grpbtn:hover { background: var(--up-sel-bg); }
 .utf-grpbtn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
 /* Geometry copied from prompts-table's .upt-group-dot, down to the 6px and the corner offset. */
 .utf-grpbtn-dot { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%;
@@ -214,7 +218,7 @@
   font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease;
 }
-.utf-new:hover { background: var(--up-sel-bg); border-color: var(--vc-hover-border); }
+.utf-new:hover { background: var(--up-sel-bg); }
 .utf-new svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 @media (max-width: 560px) {

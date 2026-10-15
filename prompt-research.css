@@ -189,7 +189,8 @@
   font-family: inherit; font-size: 12px; line-height: 1; font-weight: 500; cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
-.upr-showmore:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
+/* Geist-Sekundaerknopf (15.10.): beim Ueberfahren nur die Flaeche, der Rand bleibt (core, --up-knopf-*). */
+.upr-showmore:hover { background: var(--up-knopf-hover); color: var(--vc-text); }
 .upr-showmore svg { width: 13px; height: 13px; display: block; }
 /* GEISTER-CHIPS (14.10. abends, gemeldet: "komischer Skeleton Loader"): vorher volle graue Bloecke,
    die pulsierten -- die echten Chips sind aber nur umrandet und ohne Flaeche, und jedes andere
@@ -236,7 +237,7 @@
   font-family: inherit; font-size: 12.5px; line-height: 1; font-weight: 500; cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
-.upr-secondary-btn:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
+.upr-secondary-btn:hover { background: var(--up-knopf-hover); color: var(--vc-text); }
 /* The history buttons carry the primary colour on label AND icon (the icon's stroke is
    currentColor, so one declaration covers both) -- same as Mira's "All Chats" opposite them.
    Scoped to the two history triggers rather than put on .upr-secondary-btn itself: that class is
@@ -443,8 +444,9 @@
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   transition: border-color 160ms ease, background 160ms ease;
 }
-.upr-dd-trigger:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
-.upr-dd.is-open .upr-dd-trigger { border-color: var(--vc-hover-border); }   /* §6a */
+/* Geist-Menue-Ausloeser (15.10.): Flaeche plus eine Stufe kraeftigere Kante statt --vc-hover-border (core, --up-knopf-*). */
+.upr-dd-trigger:hover { border-color: var(--up-knopf-rand-hover); background: var(--up-knopf-hover); }
+.upr-dd.is-open .upr-dd-trigger { border-color: var(--up-knopf-rand-hover); }   /* §6a */
 .upr-dd-value { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .upr-dd-chevron { width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-muted); transition: transform 160ms ease; }
 /* KEINE DREHUNG (22.09.). Ein Chevron, das sich beim Oeffnen umdreht, ist in dieser App
@@ -592,7 +594,7 @@
   font-family: inherit; font-size: 12.5px; line-height: 1; font-weight: 500; cursor: pointer; white-space: nowrap;
   transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
 }
-.upr-switchbtn:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
+.upr-switchbtn:hover { background: var(--up-knopf-hover); color: var(--vc-text); }
 .upr-switchbtn.is-on { color: var(--vc-text); }
 .upr-switchbtn .up-switch { width: 28px; height: 16px; }
 .upr-switchbtn .up-switch::after { width: 12px; height: 12px; }
@@ -710,7 +712,7 @@
 }
 .upr-row-btn svg { width: 14px; height: 14px; display: block; flex: 0 0 auto; }
 .upr-row-btn.is-ignore { padding: 0 10px; border: 1px solid var(--vc-border); background: var(--vc-bg); color: var(--vc-muted); }
-.upr-row-btn.is-ignore:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); color: var(--vc-text); }
+.upr-row-btn.is-ignore:hover { background: var(--up-knopf-hover); color: var(--vc-text); }
 .upr-row-btn.is-accept { padding: 0 12px; border: 1px solid var(--up-accent); background: var(--up-accent); color: var(--up-accent-fg); }
 .upr-row-btn.is-accept:hover { opacity: .9; }
 

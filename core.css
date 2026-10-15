@@ -909,6 +909,29 @@
       border-color: color-mix(in srgb, var(--vc-border) 86%, var(--vc-text));
     }
 
+    /* ---------- Knopf-Zustaende nach Geist (15.10.) ----------
+       Vorher zog jeder umrandete Knopf und jeder Menue-Ausloeser beim Ueberfahren seinen Rand auf
+       --vc-hover-border (#6f6f6f hell, #707070 dunkel) -- "recht dunkel". Geist macht es anders,
+       am 15.10. aus vercel.com/geist/button, /menu und /select ausgelesen (Werte im Hellen):
+         Sekundaerknopf    Ruhe Rand Gray 400; Hover NUR die Flaeche (Gray 100), der Rand bleibt.
+         Menue-Ausloeser   Hover Flaeche Gray 100 UND der Rand eine Stufe kraeftiger (Gray Alpha
+                           400 -> 500, 8 -> 21 Prozent Schwarz) -- dieselbe Stufe wie Select/Input.
+         Gedrueckt         nichts Eigenes (data-pressed aendert weder Flaeche noch Rand noch Groesse).
+         Tastaturfokus     2px Abstand in der Grundfarbe, dann 2px in der Fokusfarbe.
+       Die TOENE bleiben unsere: die Flaeche ist --vc-heading-bg (im grauen Hell ist das ohnehin
+       Vercels #f2f2f2), die kraeftigere Kante ist dieselbe Mischung wie beim Hover der Eingabefelder
+       darueber (Rand 86, Schrift 14), der Fokus steht in --up-focus. Der Fokus als outline mit
+       Abstand und nicht als box-shadow: so ist der Abstand durchsichtig und braucht keine Grundfarbe,
+       die auf einer Karte, im Menue und auf der grauen Seite jedesmal eine andere waere.
+       An JEDEM Element neu ausgewertet, das eine eigene Palette traegt ([data-theme], Portale am
+       <body>): ein Token, der var() enthaelt, wird dort berechnet, wo er steht -- nur an .up-root
+       definiert, truege ein Menue mit eigenem Rand den Ton der Wurzel. */
+    :root, .up-root, [data-theme] {
+      --up-knopf-hover: var(--vc-heading-bg);
+      --up-knopf-rand-hover: color-mix(in srgb, var(--vc-border) 86%, var(--vc-text));
+      --up-knopf-fokus-abstand: 2px;
+    }
+
     /* ---------- toolbar ---------- */
     .up-head { display: flex; align-items: center; height: 32px; margin-bottom: 16px; gap: 8px; }
     .up-heading { display: inline-flex; align-items: center; font-size: 14px; font-weight: 500; color: var(--vc-text); line-height: 1.2; white-space: nowrap; }
@@ -1237,8 +1260,14 @@
     /* ---------- search (slides out from the magnifier) ---------- */
     .up-search { display: inline-flex; align-items: center; flex: 0 0 auto; position: relative; }
     /* Magnifier stays on the left; when opened, the box grows to its right and, because the tools
-       are right-aligned, the whole search shifts left. Active = primary color, no background. */
-    .up-search.is-open .up-search-btn { color: var(--vc-text); background: transparent; }
+       are right-aligned, the whole search shifts left. Seit 15.10. ist die offene Lupe das Praefix
+       des Geist-Suchfelds (Block "GEIST-SEARCH-INPUT" weiter unten): 14px, 12px vom Rand, in der
+       Farbe des Platzhalters, ohne Flaeche. Die Lage gilt ab (0,3,0); Farbe und Flaeche stehen mit
+       .up-root davor auf (0,4,0) -- .up-iconbtn:not(.is-quiet):hover wiegt selbst schon (0,3,0), und
+       gleich schwer hiesse: die Reihenfolge entscheidet. */
+    .up-search.is-open .up-search-btn { justify-content: flex-start; padding-left: 12px; }
+    .up-root .up-search.is-open .up-search-btn { color: var(--vc-third); background: transparent; }
+    .up-search.is-open .up-search-btn svg { width: 14px; height: 14px; }
     .up-search-box {
       width: 0; opacity: 0; pointer-events: none; overflow: hidden;
       display: flex; align-items: center; position: relative;
@@ -1253,8 +1282,8 @@
       font: inherit; font-size: 13px; outline: 0;
     }
     .up-search-input::placeholder { color: var(--vc-third); }
-    /* Active (open) search reads a touch larger/bolder — applies to typed text and placeholder. */
-    .up-search.is-open .up-search-input { font-size: 14px; font-weight: 500; }
+    /* Offen: Geist-Schrift 14/400 (bis 15.10. 14/500), Text ab 38px vom Feldrand (32 Lupe + 2 + 4). */
+    .up-search.is-open .up-search-input { padding-left: 4px; font-size: var(--up-fs-l); font-weight: var(--up-fw-n); }
     /* The clear button's slot is ALWAYS reserved (visibility, not display), so text never shifts
        when the x appears. */
     .up-search-clear {
@@ -1281,6 +1310,45 @@
     .up-root.is-searchtakeover .up-search-box { width: auto; flex: 1 1 auto; }
     .up-root.is-searchtakeover .up-heading { display: none; }             /* search owns the whole row */
     .up-root.is-searchtakeover .up-search-clear { visibility: visible; }  /* far-right X closes/resets search */
+
+    /* ---- DAS OFFENE SUCHFELD IST DER GEIST-SEARCH-INPUT (15.10.) ----
+       Gewuenscht: "den Search-Input uebernehmen, nur halt mit meinem Blau, sonst aber genau das
+       Verhalten". vercel.com/geist/search-input und /input, am 15.10. ausgelesen:
+         Feld      1px Kante (Gray Alpha 400, als box-shadow), Radius 6, Grund Background 100;
+                   klein 32 hoch -- die Werkzeugleiste ist 32 hoch (mittel waere 36).
+         Lupe      INNEN links: 14px, Farbe des Platzhalters (Gray 700), 12px vom Rand; der Text
+                   beginnt bei 38px. Schrift 14/400.
+         Hover     die Kante eine Stufe kraeftiger (Alpha 400 -> 500).
+         Fokus     1px Kante plus 4px weicher Ring (Geist: Alpha 600 und 16 Prozent Schwarz).
+         Leeren    hat das Feld Text, steht rechts das Tastenschild "Esc" (20 hoch, 12/500, Radius 4,
+                   1px Rand) als Knopf, der leert; die Taste Escape leert ebenso (core.js, gleich
+                   nach makeSearch). Auf Touch blendet Geist es aus -- hier bleibt dort das X, denn
+                   in der Uebernahme der Zeile (schmal) schliesst es die Suche.
+       UNSER BLAU: Fokuskante --up-focus, Ring --up-focus-ring -- dieselben wie an jedem Feld der App.
+       DER AUFBAU BLEIBT (Lupe .up-search-btn + Kasten, Aufziehen aus der Lupe): offen legt sich
+       der Rahmen um BEIDE, die Lupe wird damit zum Praefix des Feldes. Die Breite bleibt
+       32 + 2 + 200 -- damit rechnet die Werkzeugleiste ("200px box + 2px margin", urls-table). */
+    .up-search.is-open {
+      border-radius: var(--up-r-s); background: var(--vc-bg);
+      box-shadow: 0 0 0 1px var(--vc-border);
+      transition: box-shadow var(--up-t-1) ease;
+    }
+    .up-search.is-open:hover:not(:focus-within) { box-shadow: 0 0 0 1px var(--up-knopf-rand-hover); }
+    .up-search.is-open:focus-within { box-shadow: 0 0 0 1px var(--up-focus), 0 0 0 4px var(--up-focus-ring); }
+    @media (pointer: fine) {
+      .up-search .up-search-clear {
+        flex: 0 0 auto; width: auto; height: var(--up-h-btn); margin-left: 0; padding: 0 10px 0 6px;
+        border-radius: 0 var(--up-r-s) var(--up-r-s) 0; color: var(--vc-muted);
+      }
+      .up-search .up-search-clear svg { display: none; }
+      .up-search .up-search-clear::before {
+        content: "Esc"; display: inline-flex; align-items: center; justify-content: center;
+        height: 20px; min-width: 20px; padding: 0 4px; box-sizing: border-box;
+        border-radius: var(--up-r-xs); background: var(--vc-bg); box-shadow: 0 0 0 1px var(--vc-border);
+        font-size: var(--up-fs-s); font-weight: var(--up-fw-m); line-height: 1;
+      }
+      .up-search .up-search-clear:hover { background: transparent; color: var(--vc-text); }
+    }
 
     /* ---------- column info icon + explainer tooltip ---------- */
     
@@ -1639,9 +1707,10 @@
     /* the dropdown shows the SAME chip the table uses — identical to TopCitations, so a type
        looks the same wherever it appears */
     /* Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke. */
-    .up-filter-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
+    /* Form, Groesse und Schrift seit 15.10. aus dem Geist-Badge (Regel bei .up-tag). */
+    .up-filter-tag { display: inline-flex; align-items: center;
       border: 1px solid transparent; box-sizing: border-box;
-      font-size: 12px; font-weight: 500; white-space: nowrap; max-width: 100%; overflow: hidden; }
+      white-space: nowrap; max-width: 100%; overflow: hidden; }
     .up-filter-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
     /* Nur noch die Lage -- Aussehen kommt aus .up-btn-pri weiter unten.
        flex: 0 0 auto ist PFLICHT (25.09. gemeldet: "Anwenden im URL-Type-Reiter nur 16px hoch").
@@ -1959,8 +2028,10 @@
        Die Form ist: [Icon] [Beschriftung] [Chevron], zusammengepackt und nur so breit wie sein
        Inhalt. NICHT ein breiter Kasten mit dem Chevron am rechten Rand -- das ist ein
        Formular-Select und sieht in dieser App an keiner Stelle so aus.
-       Rahmen sichtbar, Grundfarbe --vc-muted, im Hover und offen --vc-heading-bg mit
-       --vc-hover-border. Der Chevron dreht sich nicht. */
+       Rahmen sichtbar, Grundfarbe --vc-muted, im Hover und offen die Flaeche und die eine Stufe
+       kraeftigere Kante des Geist-Menue-Ausloesers (--up-knopf-*, 15.10.; vorher --vc-hover-border).
+       Gewaehlt (has-sel) behaelt seine dunkle Kante -- das ist ein Zustand, kein Hover. Der Chevron
+       dreht sich nicht. */
     .up-ddtrigger {
       display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px;
       border: 1px solid var(--vc-border); border-radius: 8px; background: var(--vc-bg);
@@ -1969,11 +2040,13 @@
       transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
     }
     .up-ddtrigger:hover,
-    .up-ddwrap.is-open .up-ddtrigger,
+    .up-ddwrap.is-open .up-ddtrigger {
+      color: var(--vc-text); background: var(--up-knopf-hover); border-color: var(--up-knopf-rand-hover);
+    }
     .up-ddwrap.has-sel .up-ddtrigger {
       color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
     }
-    .up-ddtrigger:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
+    .up-ddtrigger:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
     .up-ddtrigger svg { width: 16px; height: 16px; flex: 0 0 16px; display: block; }
     .up-ddtrigger-ic { display: inline-flex; align-items: center; flex: 0 0 auto; }
     .up-ddtrigger-ic img { width: 20px; height: 14px; border-radius: 3px; object-fit: cover; display: block; }
@@ -2247,7 +2320,10 @@
       cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 500;
       display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
     .up-btn-sec svg { width: 14px; height: 14px; display: block; }
-    .up-btn-sec:hover { color: var(--vc-text); border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+    /* Geist-Sekundaerknopf (15.10.): beim Ueberfahren nur die Flaeche, der Rand bleibt; Fokus als
+       Ring mit Abstand. Werte und Begruendung bei den Knopf-Zustaenden oben (--up-knopf-*). */
+    .up-btn-sec:hover { color: var(--vc-text); background: var(--up-knopf-hover); }
+    .up-btn-sec:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
     .up-btn-sec:disabled { opacity: .45; cursor: default; }
     .up-btn-sec:disabled:hover { border-color: var(--vc-border); background: transparent; }
 
@@ -2763,7 +2839,8 @@
       padding: 0 10px 0 8px; border: 1px solid var(--vc-border); border-radius: var(--up-r-s);
       background: var(--up-surface); box-shadow: var(--up-e-1); font: inherit; color: var(--vc-text); cursor: pointer; }
     .up-intent-reset svg { width: 14px; height: 14px; display: block; color: var(--up-accent-ink); }
-    .up-intent-reset:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+    /* Hover wie der Geist-Sekundaerknopf (15.10.): nur die Flaeche, der Rand bleibt. */
+    .up-intent-reset:hover { background: var(--up-knopf-hover); }
     /* Branded mit Unterzeile: der Grund, warum der Schalter so steht. */
     .up-branded-row .up-pop-label { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     /* Der Halter des Menues (UC.makeIntentMenu): steht absolut genau ueber dem Ausloeser (Lage aus
@@ -4557,12 +4634,42 @@
 .up-row:hover .up-row-goto { opacity: 1; transform: translateX(0); transition-delay: 220ms; }
 .up-root.is-vnarrow .up-row-goto { display: none; }
 
-/* type/citation chip. Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke. */
-.up-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
+/* type/citation chip. Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke.
+   Form, Groesse, Schrift und Polster seit 15.10. aus dem Geist-Badge direkt darunter. */
+.up-tag { display: inline-flex; align-items: center;
   border: 1px solid transparent; box-sizing: border-box;
-  font-size: 12px; font-weight: 500; white-space: nowrap; max-width: 100%; overflow: hidden; }
+  white-space: nowrap; max-width: 100%; overflow: hidden; }
 .up-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
 .up-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- DER TYP-CHIP IST EIN GEIST-BADGE (15.10.) ----------
+   Gewuenscht: "die Badges nutzen fuer Citation-Type-Chips und URL-Type-Chips, aber unsere Farben
+   und Opacitys beibehalten". vercel.com/geist/badge, am 15.10. ausgelesen: voll gerundet, Schnitt
+   500, Tabellenziffern, keine eigene Kante. Drei Groessen:
+       sm  20 hoch, Polster 8, Schrift 11, Sperrung 0.2px, Abstand 4
+       md  24 hoch, Polster 12, Schrift 12, Abstand 5     <- die Zeile einer Tabelle (wie bisher 24)
+       lg  32 hoch, Polster 12, Schrift 14, Abstand 6     (in der App nicht gebraucht)
+   EINE Regel fuer jeden Citation- und URL-Type-Chip, statt sieben gleichlautender Kopien in fuenf
+   Dateien (Tabellen, Drilldown, Erklaerkarten, Filtermenue, Drawer, Dashboard). Die Komponenten
+   behalten nur, was nicht Form ist (Lage, Kuerzung). FARBEN BLEIBEN WIE SIE SIND: Schrift, Grund,
+   Rand und Punkt kommen weiter inline aus UC.typeStyle -- der Rand in der Grundfarbe ist
+   unsichtbar und haelt die Groesse, genau wie bisher.
+   Der Punkt des URL-Typs steht an der Stelle von Geists Zeichen (das dort 14px misst und 4 nach
+   links ins Polster rueckt) -- ein 6px-Punkt braucht das nicht, er sitzt einfach im Polster. */
+:root {
+  --up-badge-h: var(--up-h-chip); --up-badge-px: 12px; --up-badge-gap: 5px; --up-badge-fs: var(--up-fs-s);
+  --up-badge-h-s: 20px; --up-badge-px-s: 8px; --up-badge-gap-s: 4px; --up-badge-fs-s: var(--up-fs-xs); --up-badge-ls-s: 0.2px;
+}
+:is(.up-tag, .up-filter-tag, .udt-tag, .uut-tag, .tct-tag) {
+  height: var(--up-badge-h); padding: 0 var(--up-badge-px); gap: var(--up-badge-gap);
+  border-radius: var(--up-r-voll); font-size: var(--up-badge-fs); font-weight: var(--up-fw-m);
+  line-height: 1; font-variant-numeric: tabular-nums;
+}
+:is(.udt-sub-tag, .udt-explain-chip, .uut-explain-chip) {
+  height: var(--up-badge-h-s); padding: 0 var(--up-badge-px-s); gap: var(--up-badge-gap-s);
+  border-radius: var(--up-r-voll); font-size: var(--up-badge-fs-s); font-weight: var(--up-fw-m);
+  letter-spacing: var(--up-badge-ls-s); line-height: 1; font-variant-numeric: tabular-nums;
+}
 
 /* Visibility / Rank / Sentiment metric cells — shared by visibility-chart's Top Brands table
    and prompts-table's Sentiment/Rank/Visibility columns. */
@@ -5471,13 +5578,28 @@
    stalls the page for a couple of seconds (see .up-row for the same reasoning). The hover
    lift/spread stays on .up-stack-vis's transform, which is cheap and only ever touches one
    row's stack at a time. */
-.up-stack { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; }
+/* ---- DER STAPEL IST EINE GEIST-AVATAR-GROUP (15.10.) ----
+   Gewuenscht: "die Avatars fuer Brand-Mention-Chips und Citation-Chips: die Standard-Group-
+   Ueberlappungs-Settings aus dem Design System, nur das gesamte Hover-/Highlight-Verhalten exakt
+   beibehalten". vercel.com/geist/avatar, am 15.10. ausgelesen (AvatarGroup, overlap "auto"):
+     Ueberlappung  0.3 x Groesse, gerundet (16 -> 5, 24 -> 7, 32 -> 10, 48 -> 14); bei 28 also 8
+                   (vorher 4), im dichten Modus 0.88 x 8 = 7.04 wie jedes Mass dort.
+     Ring          jedes Mitglied 1px in der Grundfarbe (vorher 4px, die den Abstand malten).
+     Reihenfolge   das ERSTE Mitglied liegt oben (z-index absteigend; brandStack schreibt die Stufe
+                   als --up-stack-z an jeden Chip). isolation haelt diese Stufen im Stapel -- sie
+                   duerfen nicht ueber einen klebenden Tabellenkopf steigen.
+     "+N"          ein Kreis in Chipgroesse, der wie ein Mitglied unterlappt (Regel bei .up-stack-more).
+   Groesse (28), Form (Radius 8 -- ein Logo ist kein Portraet), Platte und Rahmen bleiben.
+   UNVERAENDERT: Anheben 3px, Spreizen 8/16 (gespiegelt bei is-spread-left), nach vorn beim
+   Ueberfahren, Tooltip (data-brandtip am unbeweglichen Kasten), Ring in der Hoverfarbe der Zeile. */
+:root { --up-stack-ueber: 8px; --up-stack-ring-w: 1px; }
+.up-stack { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; isolation: isolate; }
 .up-stack-item {
   width: 28px; height: 28px; flex: 0 0 28px;
   display: inline-flex; align-items: center; justify-content: center;
-  position: relative; cursor: default;
+  position: relative; cursor: default; z-index: var(--up-stack-z, auto);
 }
-.up-stack-item + .up-stack-item { margin-left: -4px; }
+.up-stack-item + .up-stack-item { margin-left: calc(var(--up-stack-ueber) * -1); }
 /* Hit-testing lives on .up-stack-item, which never moves — only its inner .up-stack-vis animates
    on hover. With the outer box empty and static, neighbouring items' hover boundaries never move,
    so crossing from one logo to the next always fires a clean mouseout/mouseover pair — the
@@ -5506,7 +5628,7 @@
    Kante des Chips. */
 .up-stack-vis {
   display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 100%;
-  border-radius: 8px; padding: 2px; background: var(--vt-logo-bg); box-shadow: 0 0 0 4px var(--vc-bg);
+  border-radius: 8px; padding: 2px; background: var(--vt-logo-bg); box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg);
   border: 1px solid var(--vc-border);
   transition: transform .16s ease;
   /* Bezug fuer den Globus des Favicon-Rueckfalls (siehe .up-fav weiter oben). In Ruhe traegt die
@@ -5541,8 +5663,11 @@
    Die Ringfarbe ist eine Marke (--up-stack-ring), weil sie den Ring der Zeile begleiten muss:
    beim Hover der Zeile, im dichten Modus und in der Leiste (sidebar.css) setzen die Regeln des
    Rings sie mit. Nur Folgechips: der erste liegt ueber nichts, und die einzelnen Kacheln in
-   performance-detail (ohne Ring) bleiben durchsichtig wie am 27.09. bestellt. */
-.up-root[data-theme="dark"] .up-stack-item + .up-stack-item .up-stack-vis {
+   performance-detail (ohne Ring) bleiben durchsichtig wie am 27.09. bestellt.
+   SEIT 15.10. UMGEKEHRT (Geist: das erste Mitglied liegt oben): jetzt liegt der VORGAENGER ueber
+   seinem Nachfolger, also malt er die Flaeche -- jeder Chip, hinter dem noch etwas steht (ein Chip,
+   das "+N" oder der Anhang), daher :not(:last-child). Ein einzelner Chip bleibt durchsichtig. */
+.up-root[data-theme="dark"] .up-stack-item:not(:last-child) .up-stack-vis {
   background: linear-gradient(var(--vt-logo-bg), var(--vt-logo-bg)) content-box,
               var(--up-stack-ring, var(--vc-bg));
 }
@@ -5551,18 +5676,29 @@
    beim Hover ihre Flaeche nicht mehr (nur Rand und Schatten). Mit der Regel bekam jeder Chip einer
    gehoverten Karte einen Ring in der Hover-Farbe der Tabellenzeile -- gemeldet als "Border um die
    Brand- und Citation-Chips". */
-.up-row:hover .up-stack-vis { box-shadow: 0 0 0 4px var(--vt-row-hover-solid, var(--vc-bg));
+.up-row:hover .up-stack-vis { box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vt-row-hover-solid, var(--vc-bg));
   --up-stack-ring: var(--vt-row-hover-solid, var(--vc-bg)); }
 /* 5 statt 7: der Chip hat jetzt 1px Rahmen und 2px Polsterung, das Bild sitzt also 3px innen. */
 .up-stack-item img { width: 100%; height: 100%; border-radius: 5px; object-fit: contain; display: block; }
 .up-stack-ltr { font-size: 10px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
 .up-stack-item.has-img .up-stack-ltr { display: none; }
-/* plain text, no circle: the overflow count is a label, not another brand */
+/* "+N" NACH GEIST (15.10.; vorher reiner Text 12/500 mit 8px Abstand): ein Kreis in Chipgroesse,
+   der wie ein weiteres Mitglied um die Ueberlappung unter den letzten Chip greift und zuunterst liegt
+   (Geist z-index 0). Geist: Gray 100 mit 1px Gray 400, Schrift 10/600 -- hier unsere Toene (Grund
+   --up-sel-bg, Kante --vc-border, Schrift --vc-muted) und 11 statt 10 (die Skala beginnt bei 11).
+   min-width statt width: eine dreistellige Zahl darf ihn zur Pille ziehen, statt abzuschneiden.
+   Der 1px-Ring in der Zeilenfarbe wie an jedem Chip, beim Ueberfahren der Zeile mit. */
 .up-stack-more {
-  margin-left: 8px; flex: 0 0 auto;
-  font-size: 12px; font-weight: 500; color: var(--vc-muted); white-space: nowrap;
+  position: relative; z-index: 0; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+  min-width: 28px; height: 28px; padding: 0 4px; margin-left: calc(var(--up-stack-ueber) * -1);
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-voll); background: var(--up-sel-bg);
+  box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg);
+  font-size: var(--up-fs-xs); font-weight: var(--up-fw-h); line-height: 1; color: var(--vc-muted);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
   transition: transform .16s ease;
 }
+.up-row:hover .up-stack-more { box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vt-row-hover-solid, var(--vc-bg)); }
 /* Der Anhang hinter dem Stapel (brandStack opts.tailHtml). Dieselbe Uebergangszeit wie das "+N",
    damit beide zusammen gehen und nicht zwei Bewegungen zu sehen sind. Der Abstand kommt aus dem
    Fuss, der ihn vorher als eigenes Kind hatte -- 8px, wie die Luecke in .urt-card-footleft. */
@@ -5573,8 +5709,10 @@
 /* Hovering a logo lifts it, brings it to front, and opens a gap on both sides — created by
    shifting the hovered item's visual layer and everything AFTER it to the right. Items BEFORE
    it never move (so the first brand can't drift left). Following items shift twice as far so
-   their gaps to each other stay at the default: they don't squash together. */
-.up-stack-item:hover { z-index: 3; }
+   their gaps to each other stay at the default: they don't squash together.
+   z-index 20 seit 15.10.: ueber jeder Stufe des Stapels (--up-stack-z, hoechstens so viele wie
+   Chips, max 12) -- isolation am Stapel haelt die Zahl dort drin. */
+.up-stack-item:hover { z-index: 20; }
 .up-stack-item:hover .up-stack-vis { transform: translateX(8px) translateY(-3px); }
 .up-stack-item:first-child:hover .up-stack-vis { transform: translateY(-3px); }
 .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
@@ -5615,13 +5753,14 @@
 .up-root.is-dense .up-stack-item { width: 24.64px; height: 24.64px; flex: 0 0 24.64px; }
 /* Dichte Zeilen: Faktor 0.88 auf alles (24.64 statt 28). Polsterung 2 -> 1.76, Rahmen bleibt 1px,
    also sitzt das Bild 2.76px innen und der Bildradius ist 7.04 - 2.76 = 4.28. */
-.up-root.is-dense .up-stack-vis { border-radius: 7.04px; padding: 1.76px; box-shadow: 0 0 0 3.52px var(--vc-bg); }
-.up-root.is-dense .up-row:hover .up-stack-vis { box-shadow: 0 0 0 3.52px var(--vt-row-hover-solid, var(--vc-bg));
+/* Der Ring bleibt 1px (Geist: ein Haarstrich in jeder Groesse), nur die Ueberlappung zieht mit. */
+.up-root.is-dense .up-stack-vis { border-radius: 7.04px; padding: 1.76px; box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg); }
+.up-root.is-dense .up-row:hover .up-stack-vis { box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vt-row-hover-solid, var(--vc-bg));
   --up-stack-ring: var(--vt-row-hover-solid, var(--vc-bg)); }
 .up-root.is-dense .up-stack-item img { border-radius: 4.28px; }
 .up-root.is-dense .up-stack-ltr { font-size: 8.8px; }
-.up-root.is-dense .up-stack-item + .up-stack-item { margin-left: -3.52px; }
-.up-root.is-dense .up-stack-more { margin-left: 7.04px; }
+.up-root.is-dense .up-stack-item + .up-stack-item { margin-left: calc(var(--up-stack-ueber) * -0.88); }
+.up-root.is-dense .up-stack-more { min-width: calc(28px * 0.88); height: calc(28px * 0.88); margin-left: calc(var(--up-stack-ueber) * -0.88); }
 .up-root.is-dense .up-stack-item:hover .up-stack-vis { transform: translateX(7.04px) translateY(-3px); }
 .up-root.is-dense .up-stack-item:first-child:hover .up-stack-vis { transform: translateY(-3px); }
 .up-root.is-dense .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
@@ -5750,7 +5889,8 @@
   border: 1px solid var(--vc-border); background: transparent; cursor: pointer; font-size: 17px; line-height: 1;
   color: var(--vc-muted); display: inline-flex; align-items: center; justify-content: center; }
 .up-topicmodal-pickbtn svg { width: 17px; height: 17px; display: block; }
-.up-topicmodal-pickbtn:hover, .up-topicmodal-pickbtn.is-open { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+/* Menue-Ausloeser nach Geist (15.10.): Flaeche plus eine Stufe kraeftigere Kante statt --vc-hover-border. */
+.up-topicmodal-pickbtn:hover, .up-topicmodal-pickbtn.is-open { border-color: var(--up-knopf-rand-hover); background: var(--up-knopf-hover); }
 .up-topicmodal-pickswatch { width: 17px; height: 17px; border-radius: 50%; display: block; border: 1px solid rgba(0,0,0,.14); }
 
 .up-topicmodal-pickpanel { margin-top: 10px; }
@@ -5815,7 +5955,8 @@
    was ein mehrzeiliges Feld und ein Auswahlknopf anders brauchen. */
 .up-topicmodal-name.up-modal-text { display: block; height: auto; min-height: 76px; padding: 9px 12px; line-height: 1.45; resize: vertical; }
 .up-topicmodal-name.up-modal-wahl { display: flex; align-items: center; gap: 8px; text-align: left; cursor: pointer; }
-.up-modal-wahl:hover { border-color: var(--vc-hover-border); }
+/* Ein Auswahlfeld: Hover wie Geist-Select (15.10.), nur die Kante eine Stufe kraeftiger. */
+.up-modal-wahl:hover { border-color: var(--up-knopf-rand-hover); }
 .up-modal-wahl-ic, .up-modal-wahl-chev { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
 .up-modal-wahl-ic svg { width: 16px; height: 16px; }
 .up-modal-wahl-chev svg { width: 14px; height: 14px; }
@@ -6694,7 +6835,8 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 .upt-gm-colorwrap, .up-cgm-colorwrap { flex: 0 0 auto; }
 .upt-gm-dotbtn, .up-cgm-dotbtn { width: 36px; height: 36px; padding: 0; border-radius: 9px; border: 1px solid var(--vc-border);
   background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-.upt-gm-dotbtn:hover, .up-cgm-dotbtn:hover, .upt-gm-colorwrap.is-open .upt-gm-dotbtn, .up-cgm-colorwrap.is-open .up-cgm-dotbtn { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+/* Menue-Ausloeser nach Geist (15.10.): Flaeche plus eine Stufe kraeftigere Kante. */
+.upt-gm-dotbtn:hover, .up-cgm-dotbtn:hover, .upt-gm-colorwrap.is-open .upt-gm-dotbtn, .up-cgm-colorwrap.is-open .up-cgm-dotbtn { border-color: var(--up-knopf-rand-hover); background: var(--up-knopf-hover); }
 .upt-gm-dot, .up-cgm-dot { width: 16px; height: 16px; border-radius: 50%; display: block; border: 1px solid rgba(0,0,0,.14); }
 /* Centered (same reasoning as .upt-topicpickpanel above: a left-aligned grid under a full-width
    row looks like it fell over) and smooth: max-height/opacity animate together on open, driven by

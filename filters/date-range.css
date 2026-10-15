@@ -29,11 +29,12 @@
 }
 /* Hover and "panel is open" are deliberately the same state -- the open panel is the affordance,
    a second distinct colour for it just reads as a third button style. */
+/* Geist-Menue-Ausloeser (15.10.): Flaeche plus eine Stufe kraeftigere Kante statt --vc-hover-border (core, --up-knopf-*). */
 .udr-trigger:hover,
 .udr-wrap.is-open .udr-trigger {
-  color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+  color: var(--vc-text); background: var(--up-knopf-hover); border-color: var(--up-knopf-rand-hover);
 }
-.udr-trigger:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
+.udr-trigger:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
 /* Im Dunkeln ohne Flaeche im RUHEZUSTAND: --vc-bg (#1b1b1b) liegt heller als der Seitengrund, der
    Knopf sass als hellerer Block in der Werkzeugzeile. Nur der Ruhezustand -- Hover und "Panel
    offen" behalten ihre Flaeche, sonst bleibt vom Knopf keine Rueckmeldung ausser dem Rahmen.

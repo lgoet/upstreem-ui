@@ -173,9 +173,10 @@
 /* Der Trend an der LINKEN Zellkante (15.10. spaet, wie core: "die Trends ueberall links"). */
 .tct-td > .up-trend { order: -1; margin-right: auto; }
 /* Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke. Kein Nachbau von .up-planpill (meldet .check_reinvention.py wegen des Rahmens): das ist der Typ-Chip aus STYLEGUIDE 1a/1b, Masse wie .up-tag. */
-.tct-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
+/* Form, Groesse, Schrift und Polster seit 15.10. aus dem Geist-Badge in core (.up-tag). */
+.tct-tag { display: inline-flex; align-items: center;
   border: 1px solid transparent; box-sizing: border-box;
-  font-size: 12px; font-weight: 500; white-space: nowrap; max-width: 100%; overflow: hidden; }
+  white-space: nowrap; max-width: 100%; overflow: hidden; }
 .tct-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
 .tct-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
 
@@ -237,7 +238,8 @@
   transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 .tcd-chart-reset.is-visible { display: inline-flex; }
-.tcd-chart-reset:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
+/* Geist-Sekundaerknopf (15.10.): beim Ueberfahren nur die Flaeche, der Rand bleibt (core, --up-knopf-*). */
+.tcd-chart-reset:hover { background: var(--up-knopf-hover); color: var(--vc-text); }
 .tcd-chart-reset svg { width: 13px; height: 13px; flex: 0 0 13px; display: block; }
 
 /* Abschnittsform im Drawer (data-form="abschnitte"): aus core (13.10.). */

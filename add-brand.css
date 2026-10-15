@@ -129,7 +129,8 @@
   font-family: inherit; font-size: 12.5px; font-weight: 600;
   transition: background 120ms ease, border-color 120ms ease;
 }
-.uab-cancel:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+/* Geist-Sekundaerknopf (15.10.): beim Ueberfahren nur die Flaeche, der Rand bleibt (core, --up-knopf-*). */
+.uab-cancel:hover { background: var(--up-knopf-hover); }
 /* Der Add-Knopf ist .up-topicmodal-save aus core -- hier steht nur, dass er nicht per margin-left
    nach rechts geschoben wird, das macht hier justify-content der Fusszeile. */
 .uab-foot .up-topicmodal-save { margin-left: 0; }

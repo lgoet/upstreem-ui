@@ -224,12 +224,12 @@
     font-size: 13px; font-weight: 500; cursor: pointer; flex: 0 0 auto;
     transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
   }
-  /* Die Hover-Kante kommt aus --vc-hover-border (#6f6f6f hell, #707070 dunkel) -- so steht
-     es in dieser Datei seit jeher an .am-scroll-bottom und .am-ask-sel. Die uebrigen
-     fuenfzehn Stellen trugen das helle Literal, und dafuer standen daneben fuenf eigene
-     Dunkel-Regeln. Die sind jetzt weg: die Marke traegt beide Werte. Der Rueckfall bleibt,
-     weil Miras Dialoge am <body> haengen koennen. (22.09.) */
-  .am-ghost-btn:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); color: var(--am-text); }
+  /* Die Hover-Kante kam aus --vc-hover-border (#6f6f6f hell, #707070 dunkel; 22.09.). Seit
+     15.10. gilt Geist (core, --up-knopf-*): Knoepfe zeigen beim Ueberfahren nur die Flaeche,
+     Menue-Ausloeser dazu die eine Stufe kraeftigere Kante --up-knopf-rand-hover. Die Marken
+     stehen auch an :root, erreichen also Miras Dialoge am <body>. */
+  /* Seit 15.10. ohne Hover-Kante: Geist-Sekundaerknopf, nur die Flaeche (core, --up-knopf-*). */
+  .am-ghost-btn:hover { background: var(--am-soft); color: var(--am-text); }
   .am-ghost-btn .am-ic { width: 15px; height: 15px; }
   /* Das Zeichen im Knopf ist die Seitenleiste aus core (panelLeft), GESPIEGELT: die Liste der
      Chats faehrt von rechts herein, die Leiste der App von links. Ersetzt wird das SVG der
@@ -878,7 +878,7 @@
     font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
     display: inline-flex; align-items: center; gap: 7px; transition: background 120ms ease, border-color 120ms ease;
   }
-  #ask-mira .am-opp-showmore:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); }
+  #ask-mira .am-opp-showmore:hover { background: var(--am-soft); }
 
   /* action buttons (Create / Confirm) — primary button matching the Opportunities CTA */
   #ask-mira .am-msg-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
@@ -892,7 +892,7 @@
   #ask-mira .am-cta:hover { opacity: 0.88; }
   #ask-mira .am-cta:active { transform: translateY(1px); }
   #ask-mira .am-cta.is-secondary { background: var(--am-card); color: var(--am-text); border-color: var(--am-border-strong); box-shadow: none; }
-  #ask-mira .am-cta.is-secondary:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); opacity: 1; }
+  #ask-mira .am-cta.is-secondary:hover { background: var(--am-soft); opacity: 1; }
 
   /* Thinking / loading */
   /* Waehrend des Ladens steht das Arbeitsprotokoll an genau der Stelle, an der es spaeter ueber der
@@ -1306,7 +1306,7 @@
     font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; flex: 0 0 auto;
     transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
   }
-  .am-gallery-back:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); color: var(--am-text); }
+  .am-gallery-back:hover { background: var(--am-soft); color: var(--am-text); }
   .am-gallery-back svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   /* Der Zurueck-Knopf traegt in JEDER Kategorie kein Wort mehr, also ist er quadratisch: 24x24,
      kein Polster, kein Zwischenraum. Radius 8 statt 9 -- auf 24px Kante wirkt 9 fast rund.
@@ -1344,9 +1344,10 @@
     color: var(--am-text); font-family: inherit; font-size: 13px; font-weight: 500;
     transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
   }
-  .am-rep-range:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); }
+  /* Menue-Ausloeser nach Geist (15.10.): die Kante nur eine Stufe kraeftiger (core, --up-knopf-rand-hover). */
+  .am-rep-range:hover { background: var(--am-soft); border-color: var(--up-knopf-rand-hover); }
   .am-rep-range-wrap.is-open .am-rep-range,
-  .am-rep-range-wrap.is-open .am-rep-range:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); color: var(--am-text); box-shadow: none; }
+  .am-rep-range-wrap.is-open .am-rep-range:hover { background: var(--am-soft); border-color: var(--up-knopf-rand-hover); color: var(--am-text); box-shadow: none; }
   #ask-mira[data-theme="dark"] .am-rep-range-wrap.is-open .am-rep-range,
   #ask-mira[data-theme="dark"] .am-rep-range-wrap.is-open .am-rep-range:hover { background: var(--am-soft); }
 
@@ -1638,7 +1639,7 @@
      rgba(42,42,42,0.6) -- also durchsichtig. Der runde Knopf schwebt ueber dem Chat, und beim
      Ueberfahren schien der Text darunter durch ihn hindurch. --vt-row-hover-solid ist das
      deckende Paar aus core, genau fuer diesen Fall (#f4f2f4 hell, #242424 dunkel). */
-  .am-scroll-bottom:hover { background: var(--vt-row-hover-solid, var(--am-soft)); border-color: var(--vc-hover-border, #6f6f6f); }
+  .am-scroll-bottom:hover { background: var(--vt-row-hover-solid, var(--am-soft)); }
   .am-scroll-bottom svg { width: 17px; height: 17px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
   /* "new message" state -> the button stretches into a labelled pill */
   .am-scroll-label { display: none; font-size: 13px; font-weight: 600; line-height: 1; }
@@ -1705,7 +1706,7 @@
   /* model selector (right side) — matches the standard ghost-button trigger */
   .am-model { position: relative; flex: 0 0 auto; }
   .am-model-btn { display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 11px 0 14px; border: 1px solid var(--am-border); border-radius: 11px; background: var(--am-card); color: var(--am-muted); font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 120ms ease, border-color 120ms ease, color 120ms ease; }
-  .am-model-btn:hover, .am-model.is-open .am-model-btn { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); color: var(--am-text); }
+  .am-model-btn:hover, .am-model.is-open .am-model-btn { background: var(--am-soft); border-color: var(--up-knopf-rand-hover); color: var(--am-text); }
   .am-model-ic { width: 20px; height: 20px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; color: inherit; }
   .am-model-ic svg { width: 20px; height: 20px; display: block; }
   .am-model-name { letter-spacing: -0.01em; }
@@ -1868,7 +1869,7 @@
      dieselbe Sache schon mehrfach war.
      --vt-row-hover-solid ist das DECKENDE Paar aus core, genau fuer diesen Fall (#f4f2f4 hell,
      #242424 dunkel). Aussehen und Kontrast bleiben, nur die Durchsicht ist weg. */
-  .am-ask-sel:hover { background: var(--vt-row-hover-solid, var(--am-soft)); border-color: var(--vc-hover-border, #6f6f6f); }
+  .am-ask-sel:hover { background: var(--vt-row-hover-solid, var(--am-soft)); }
   .am-ask-sel .am-ic { width: 14px; height: 14px; }
   @keyframes amAskSelIn { from { opacity: 0; transform: translate(-50%, calc(-100% + 4px)); } to { opacity: 1; transform: translate(-50%, -100%); } }
 
@@ -3040,7 +3041,7 @@
   }
   .am-set-backdrop .ums-sel:hover,
   .am-set-backdrop .ums-selwrap.is-open .ums-sel {
-    color: var(--am-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+    color: var(--am-text); background: var(--up-knopf-hover); border-color: var(--up-knopf-rand-hover);
   }
   .am-set-backdrop .ums-sel-val { color: var(--am-text); }
   .am-set-backdrop .ums-sel svg { width: 16px; height: 16px; flex: 0 0 16px; display: block;
@@ -3269,8 +3270,8 @@
     display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
     transition: background 120ms ease, border-color 120ms ease;
   }
-  .am-settings-btn:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); }
-  .am-settings-btn.is-open { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); }
+  .am-settings-btn:hover { background: var(--am-soft); border-color: var(--up-knopf-rand-hover); }
+  .am-settings-btn.is-open { background: var(--am-soft); border-color: var(--up-knopf-rand-hover); }
   .am-settings-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-hl-panel {
     margin: 0 16px; border: 1px solid transparent; border-radius: 12px; box-sizing: border-box;
@@ -3293,9 +3294,9 @@
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
     transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
   }
-  .am-dd-trigger:hover { border-color: var(--vc-hover-border, #6f6f6f); background: var(--am-soft); }
+  .am-dd-trigger:hover { border-color: var(--up-knopf-rand-hover); background: var(--am-soft); }
   .am-dd.is-open .am-dd-trigger,
-  .am-dd.is-open .am-dd-trigger:hover { border-color: var(--vc-hover-border, #6f6f6f); background: var(--am-card); box-shadow: none; }
+  .am-dd.is-open .am-dd-trigger:hover { border-color: var(--up-knopf-rand-hover); background: var(--am-card); box-shadow: none; }
   #ask-mira[data-theme="dark"] .am-dd-trigger:hover { background: #232326; }
   #ask-mira[data-theme="dark"] .am-dd.is-open .am-dd-trigger,
   #ask-mira[data-theme="dark"] .am-dd.is-open .am-dd-trigger:hover { background: var(--am-card); box-shadow: none; }
@@ -3325,7 +3326,7 @@
   #ask-mira[data-theme="dark"] .am-dd-opt:hover { background: #232326; }
   #ask-mira[data-theme="dark"] .am-dd-opt.is-selected { background: #252525; }
   #ask-mira[data-theme="dark"] .am-dd-opt.is-selected .am-dd-check { background: #e0e0e0; border-color: #e0e0e0; color: var(--vc-text-invert); }
-  .am-newchat:hover { background: var(--am-soft); border-color: var(--vc-hover-border, #6f6f6f); }
+  .am-newchat:hover { background: var(--am-soft); }
   #ask-mira .am-newchat .am-ic { width: 14px; height: 14px; }
   .am-prev-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 6px 10px 16px; display: flex; flex-direction: column; gap: 2px; }
   /* "Show all 42" / "Show less" unter einem Projekt. Kein eigenes Bauteil: es ist dieselbe Zeile
@@ -3726,7 +3727,7 @@
     display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
     transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
   }
-  .am-ct-back:hover { background: var(--am-soft); color: var(--am-text); border-color: var(--vc-hover-border, #6f6f6f); }
+  .am-ct-back:hover { background: var(--am-soft); color: var(--am-text); }
   .am-ct-back svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-ct-name {
     display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%;
@@ -3764,7 +3765,7 @@
     display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--am-muted);
     transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
   }
-  .am-ct-mini:hover { background: var(--am-soft); color: var(--am-text); border-color: var(--vc-hover-border, #6f6f6f); }
+  .am-ct-mini:hover { background: var(--am-soft); color: var(--am-text); }
   .am-ct-mini svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-chat-titlebar.is-editing .am-ct-name, .am-chat-titlebar.is-editing .am-ct-chev { display: none; }
   .am-chat-titlebar.is-editing .am-ct-input, .am-chat-titlebar.is-editing .am-ct-edit-actions { display: inline-flex; }

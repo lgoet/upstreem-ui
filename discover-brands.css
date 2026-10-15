@@ -40,7 +40,8 @@
   white-space: nowrap; cursor: pointer; outline: 0; flex: 0 0 auto;
   transition: background .14s ease, border-color .14s ease, color .14s ease;
 }
-.udb-matched:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); color: var(--vc-text); }
+/* Geist-Sekundaerknopf (15.10.): beim Ueberfahren nur die Flaeche, der Rand bleibt (core, --up-knopf-*). */
+.udb-matched:hover { background: var(--up-knopf-hover); color: var(--vc-text); }
 .udb-matched.is-on { color: var(--vc-text); }
 .udb-cb {
   width: 16px; height: 16px; flex: 0 0 16px; border-radius: 5px;

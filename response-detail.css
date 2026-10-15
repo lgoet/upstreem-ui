@@ -130,7 +130,7 @@
    Pfeil dreht sich beim Oeffnen nicht. Offen sieht er aus wie beim Ueberfahren. */
 .urd-hlbtn.up-btn-sec { gap: 6px; padding: 0 12px; font-size: var(--up-fs-m); color: var(--vc-muted); }
 .urd-hlbtn.up-btn-sec:hover { color: var(--vc-text); }
-.urd-hlwrap.is-open .urd-hlbtn.up-btn-sec { color: var(--vc-text); border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+.urd-hlwrap.is-open .urd-hlbtn.up-btn-sec { color: var(--vc-text); background: var(--up-knopf-hover); }
 .urd-hlbtn svg { width: 15px; height: 15px; flex: 0 0 15px; display: block; }
 .urd-hlchev { display: inline-flex; }
 .urd-hlbtn .urd-hlchev svg { width: 14px; height: 14px; flex: 0 0 14px; }
@@ -270,6 +270,11 @@
 .up-root[data-theme="dark"] .urd-cr-ments .up-stack-vis {
   border-color: transparent; background-clip: padding-box; }
 .urd-cc-foot .up-stack-item img, .urd-cr-ments .up-stack-item img { border-radius: 4px; }
+/* Das "+N" ist seit 15.10. in core ein Kreis, der wie ein Mitglied des Stapels unter den letzten
+   Chip greift (Geist-AvatarGroup). In dieser REIHE steht es wie ein weiterer Chip: 26px, 4px Abstand,
+   ohne Ring -- dieselben Werte wie die Chips hier. */
+.urd-cc-foot .up-stack-more, .urd-cr-ments .up-stack-more {
+  min-width: 26px; height: 26px; margin-left: 4px; box-shadow: none; }
 /* Ohne Ueberlappung gibt es nichts auseinanderzuschieben: das SEITLICHE Wegruecken der Nachbarn
    faellt weg, sonst zappelt die ganze Reihe, wenn man ueber einen Chip faehrt.
    Das Anheben bleibt -- und zwar auf JEDEM Chip. Vorher hob nur der erste: core gibt dem ersten

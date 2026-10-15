@@ -211,7 +211,8 @@
   font: inherit; font-size: 13.5px; font-weight: 560; cursor: pointer;
   transition: background .14s ease, border-color .14s ease;
 }
-.uca-apply:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+/* Geist-Sekundaerknopf (15.10.): beim Ueberfahren nur die Flaeche, der Rand bleibt (core, --up-knopf-*). */
+.uca-apply:hover { background: var(--up-knopf-hover); }
 
 .uca-suggests { display: none; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 11px; }
 .uca-suggests.is-open { display: flex; }
@@ -246,7 +247,7 @@
   padding: 13px 14px; border: 1px solid var(--vc-border); border-radius: 12px; background: var(--up-surface);
   color: var(--vc-text); font: inherit; cursor: pointer; transition: border-color .14s ease, background .14s ease;
 }
-.uca-links-entry:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+.uca-links-entry:hover { background: var(--up-knopf-hover); }
 .uca-portal[data-theme="dark"] .uca-links-entry { background: transparent; }
 .uca-portal[data-theme="dark"] .uca-links-entry:hover { background: var(--vc-heading-bg); }
 .uca-links-ic { width: 30px; height: 30px; flex: 0 0 auto; border-radius: 8px; background: var(--vc-heading-bg); color: var(--vc-text); display: inline-flex; align-items: center; justify-content: center; }
@@ -355,7 +356,7 @@
   transition: background .14s ease, color .14s ease, border-color .14s ease;
 }
 .uca-ghost svg { width: 15px; height: 15px; }
-.uca-ghost:hover { background: var(--vc-heading-bg); color: var(--vc-text); border-color: var(--vc-hover-border); }
+.uca-ghost:hover { background: var(--up-knopf-hover); color: var(--vc-text); }
 
 /* ---------- Link-Builder (fuellt dieselbe Karte) ---------- */
 .uca-builder { display: none; flex-direction: column; min-height: 0; flex: 1 1 auto; padding: 18px 22px 20px; }

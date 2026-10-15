@@ -634,7 +634,8 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
    Abstaende oben in der Leiste haengen an dieser Hoehe und duerfen sich nicht verschieben.
    Geprueft in _h_usn_kopfgaps.html.
    Der Hover behaelt seine Flaeche UND bekommt die kraeftigere Kante dazu, wie jeder andere
-   umrandete Trigger des Hauses (.udr-trigger, .utf-trigger): --vc-hover-border. */
+   umrandete Trigger des Hauses (.udr-trigger, .utf-trigger): seit 15.10. die eine Stufe aus core
+   (--up-knopf-rand-hover, Geist-Menue-Ausloeser) statt --vc-hover-border. */
 .usn-bar .mqa-trigger {
   /* Radius 8 wie die Menuepunkte darunter (15.10.). */
   height: 36px; border-radius: var(--up-r-m); background: transparent;
@@ -655,7 +656,7 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
    fuer .up-iconbtn. */
 .usn-bar .mqa-trigger:hover {
   background: var(--usn-sel); color: var(--vc-text);
-  border-color: var(--vc-hover-border);
+  border-color: var(--up-knopf-rand-hover);
 }
 /* Waehrend des Aufklappens ist der Knopf einen Moment zu schmal fuer "Quick Actions" plus
    Tastenkuerzel -- der Text brach dann sichtbar in eine zweite Zeile um und der Knopf wuchs mit.

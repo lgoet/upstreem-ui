@@ -178,7 +178,8 @@
   }
   .uex-custom-btn { pointer-events: none; }   /* visual only — the slot above handles input */
   /* hover has to come from the wrapper, since the button itself never sees the pointer */
-  .uex-custom-wrap:hover .uex-custom-btn { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
+  /* Menue-Ausloeser (Kalender) nach Geist, 15.10.: Flaeche plus eine Stufe kraeftigere Kante. */
+  .uex-custom-wrap:hover .uex-custom-btn { border-color: var(--up-knopf-rand-hover); background: var(--up-knopf-hover); }
   /* Der Picker oeffnet sein Panel 4px unter seinem TRIGGER. Der ist fest 32px hoch, dieser Knopf
      ist hoeher -- das Panel begann also im Knopf und ueberlappte ihn. Den Trigger auf die volle
      Knopfgroesse zu ziehen legt das Panel exakt 4px darunter. */
@@ -234,7 +235,8 @@
     font: inherit; font-size: 13px; font-weight: 520; cursor: pointer;
     transition: background var(--uex-t) var(--uex-ease), color var(--uex-t) var(--uex-ease), border-color var(--uex-t) var(--uex-ease);
   }
-  .uex-cancel:hover { background: var(--vc-heading-bg); color: var(--vc-text); border-color: var(--vc-hover-border); }
+  /* Geist-Sekundaerknopf (15.10.): nur die Flaeche, der Rand bleibt. */
+  .uex-cancel:hover { background: var(--up-knopf-hover); color: var(--vc-text); }
 
   @media (max-width: 560px) {
     .uex-overlay { padding: 0; }

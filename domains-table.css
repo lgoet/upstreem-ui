@@ -59,9 +59,10 @@
 
 /* ---------- citation-type chip (single palette — domains have no url-type dimension) ---------- */
 /* Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke. */
-.udt-tag { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 7px;
+/* Form, Groesse, Schrift und Polster seit 15.10. aus dem Geist-Badge in core (.up-tag). */
+.udt-tag { display: inline-flex; align-items: center;
   border: 1px solid transparent; box-sizing: border-box;
-  font-size: 12px; font-weight: 500; white-space: nowrap; max-width: 100%; overflow: hidden; }
+  white-space: nowrap; max-width: 100%; overflow: hidden; }
 .udt-tag-lbl { overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------- share trend chip ---------- */
@@ -90,9 +91,10 @@
    Karte, Platte, Titel, Text, Zeile und Trendfarben sind core's .up-explain-* (seit 28.09.; hier
    stand eine wortgleiche udt-explain-Kopie mit zwoelf festen Farben). Lokal bleibt nur der Chip
    des Zitationstyps -- dieselbe Aufteilung wie .uut-explain-chip in urls-table. */
-.udt-explain-chip { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 7px;
+/* Klein (Geist-Badge sm) aus core, 15.10. */
+.udt-explain-chip { display: inline-flex; align-items: center;
   border: 1px solid transparent; box-sizing: border-box;
-  font-size: 11px; font-weight: 500; white-space: nowrap; }
+  white-space: nowrap; }
 
 /* ---------- active-columns count badge (mirrors urls-table's uut-cols-badge) ---------- */
 /* --vc-text-invert statt zweier Literale: der Grund traegt schon var(--vc-text), die Schrift
@@ -270,9 +272,10 @@
 /* One step under urls-table's .uut-tag (24px/12px) - same chip, quieter, because here it is a
    secondary attribute of a row whose subject is the page title.
    Rahmen 1px seit 13.10. wie jeder Typ-Chip (STYLEGUIDE 1b); kein Nachbau von .up-planpill. */
-.udt-sub-tag { display: inline-flex; align-items: center; gap: 5px; height: 23px; padding: 0 9px;
+/* Seit 15.10. das kleine Geist-Badge (sm, 20px) aus core: eine Stufe unter dem der Tabelle. */
+.udt-sub-tag { display: inline-flex; align-items: center;
   border: 1px solid transparent;
-  border-radius: 7px; font-size: 11px; font-weight: 500; max-width: 100%; box-sizing: border-box; }
+  max-width: 100%; box-sizing: border-box; }
 .udt-sub-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
 .udt-sub-tag-lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Arrow appears on row hover, same delayed slide-in as the domain row's own goto arrow, so the
@@ -334,7 +337,8 @@
   padding: 0 8px; border: 1px solid var(--vc-border); border-radius: 8px;
   background: transparent; width: 200px; box-sizing: border-box;
   transition: border-color 120ms ease; }
-.udt-sub-search:hover { border-color: var(--vc-hover-border); }
+/* Feld-Hover wie Geist-Input (15.10.): die Kante eine Stufe kraeftiger, nicht #6f6f6f. */
+.udt-sub-search:hover { border-color: var(--up-knopf-rand-hover); }
 .udt-sub-search:focus-within { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
 .udt-sub-search-ic { width: 15px; height: 15px; flex: 0 0 15px; color: var(--vc-muted); }
 .udt-sub-search-ic svg { width: 15px; height: 15px; display: block; }

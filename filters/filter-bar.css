@@ -56,19 +56,23 @@
        color           var(--vc-muted)
        padding         0 10px
 
-   Und sein Hover-/Offen-Zustand ebenso wortgleich: Rahmen auf --vc-hover-border, Flaeche
-   --vc-heading-bg, Schrift --vc-text. Die beiden stehen nebeneinander in derselben Zeile; jeder
+   Und sein Hover-/Offen-Zustand ebenso wortgleich: seit 15.10. der Geist-Menue-Ausloeser aus core
+   (Flaeche --up-knopf-hover, Kante --up-knopf-rand-hover, vorher --vc-hover-border), Schrift
+   --vc-text. Die beiden stehen nebeneinander in derselben Zeile; jeder
    abweichende Pixel faellt dort auf, deshalb die Zahlen von dort und nicht von .up-btn-sec (das
    hat Radius 9 und 12.5px Schrift). */
 .ufb-btn { flex: 0 0 auto; padding: 0 10px;
   border: 1px solid var(--vc-border); background: var(--vc-bg); color: var(--vc-muted); }
+/* Geist-Menue-Ausloeser (15.10.): Flaeche plus eine Stufe kraeftigere Kante statt --vc-hover-border (core, --up-knopf-*). */
 .ufb-btn:hover, .ufb-more.is-open .ufb-btn {
-  color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+  color: var(--vc-text); background: var(--up-knopf-hover); border-color: var(--up-knopf-rand-hover);
 }
 /* Der Fokusring des Datumsfilters, wortgleich -- der fehlte hier. Beim Durchtabben durch die
    Werkzeugzeile bekam der Nachbar einen Ring und dieser Knopf nicht, und im Dunkeln ist das der
    einzige Hinweis, wo der Fokus steht. */
-.ufb-btn:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
+/* box-shadow: none nimmt den weichen Ring von .up-quietbtn:focus-visible (core) weg -- der Knopf
+   traegt beide Klassen, und Geist kennt nur den einen Ring mit Abstand. */
+.ufb-btn:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); box-shadow: none; }
 /* Ohne Flaeche im Dunkeln, dieselbe Regel wie am Datumsfilter (date-range.css) -- die beiden
    stehen nebeneinander in derselben Zeile. Hover und "Panel offen" behalten ihre. */
 .up-root[data-theme="dark"] .ufb-btn { background: transparent; }
@@ -460,7 +464,7 @@
   font: inherit; cursor: pointer; outline: 0;
 }
 .up-entchip.ufb-chip.is-klick { cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; }
-.up-entchip.ufb-chip.is-klick:hover { background: var(--vc-heading-bg); border-color: var(--vc-hover-border); }
+.up-entchip.ufb-chip.is-klick:hover { background: var(--up-knopf-hover); border-color: var(--up-knopf-rand-hover); }
 .up-root[data-theme="dark"] .up-entchip.ufb-chip.is-klick:hover { background: var(--vc-heading-bg); }
 .ufb-chip-auf:focus-visible { box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); border-radius: 6px; }
 
@@ -529,7 +533,7 @@
   background: var(--vc-heading-bg); color: var(--vc-muted); font-size: var(--up-fs-m);
   transition: color 120ms ease, border-color 120ms ease;
 }
-.ufb-root[data-form="gross"] .ufb-clear:hover { color: var(--vc-text); border-color: var(--vc-hover-border); }
+.ufb-root[data-form="gross"] .ufb-clear:hover { color: var(--vc-text); border-color: var(--up-knopf-rand-hover); }
 .up-root[data-theme="dark"] .ufb-root[data-form="gross"] .ufb-clear,
 .up-root[data-theme="dark"].ufb-root[data-form="gross"] .ufb-clear { border-color: transparent; }
 

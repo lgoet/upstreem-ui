@@ -23,11 +23,12 @@
   white-space: nowrap; cursor: pointer; outline: 0;
   transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
 }
+/* Geist-Menue-Ausloeser (15.10.): Flaeche plus eine Stufe kraeftigere Kante statt --vc-hover-border (core, --up-knopf-*). */
 .umf-trigger:hover,
 .umf-wrap.is-open .umf-trigger {
-  color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+  color: var(--vc-text); background: var(--up-knopf-hover); border-color: var(--up-knopf-rand-hover);
 }
-.umf-trigger:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
+.umf-trigger:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
 .umf-trigger svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: var(--vc-text); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 /* The icon slot swaps between the stack glyph and a model logo, so it needs a fixed box — without
    it the trigger jumps a pixel or two when the selection goes from one model to two. */
@@ -89,7 +90,8 @@
 .umf-menu.is-right { left: auto; right: 0; }
 /* Open and "has a selection" both mark the trigger through its border, the way the app already
    signals an active filter — no separate accent colour. */
-.umf-wrap.is-open .umf-trigger, .umf-root.has-sel .umf-trigger { border-color: var(--vc-hover-border); color: var(--vc-text); }
+/* Offen steht seit 15.10. im Hover oben (Geist); gewaehlt behaelt seine dunkle Kante. */
+.umf-root.has-sel .umf-trigger { border-color: var(--vc-hover-border); color: var(--vc-text); }
 /* The chevron does NOT rotate on open. Dropdowns in this app do not do that. */
 
 /* ---------- search row: input, sorter, Clear ---------- */
@@ -103,7 +105,8 @@
   background: var(--vc-heading-bg); color: var(--vc-muted); cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
 }
-.umf-sort-btn:hover, .umf-sort.is-open .umf-sort-btn { border-color: var(--vc-hover-border); color: var(--vc-text); }
+/* Schon mit Flaeche in Ruhe: der Hover zeigt nur die eine Stufe kraeftigere Kante (Geist, 15.10.). */
+.umf-sort-btn:hover, .umf-sort.is-open .umf-sort-btn { border-color: var(--up-knopf-rand-hover); color: var(--vc-text); }
 .umf-sort-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .umf-clear {
   flex: 0 0 auto; height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px;
@@ -111,7 +114,7 @@
   font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
   transition: background 150ms ease, border-color 150ms ease;
 }
-.umf-clear:hover { border-color: var(--vc-hover-border); }
+.umf-clear:hover { border-color: var(--up-knopf-rand-hover); }
 /* Nothing selected means nothing to clear. */
 .umf-root:not(.has-sel) .umf-clear { display: none; }
 

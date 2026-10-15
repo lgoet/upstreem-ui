@@ -95,10 +95,11 @@
   width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--vc-border);
   background: var(--vc-bg); color: var(--vc-muted); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
-  transition: border-color 120ms ease, color 120ms ease;
+  transition: background-color 120ms ease, color 120ms ease;
 }
 .uap-enter[hidden] { display: none; }
-.uap-enter:hover { border-color: var(--vc-hover-border); color: var(--vc-text); }
+/* Geist-Sekundaerknopf (15.10.): beim Ueberfahren nur die Flaeche, der Rand bleibt (core, --up-knopf-*). */
+.uap-enter:hover { background: var(--up-knopf-hover); color: var(--vc-text); }
 .uap-enter svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor;
   stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -122,9 +123,10 @@
   display: inline-flex; align-items: center; gap: 6px;
   border: 1px solid var(--vc-border); border-radius: 9px; background: transparent;
   color: var(--vc-muted); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
-  transition: border-color 120ms ease, color 120ms ease;
+  transition: background-color 120ms ease, color 120ms ease;
 }
-.uap-tmpl:hover { border-color: var(--vc-hover-border); color: var(--vc-text); }
+/* Geist-Sekundaerknopf (15.10.): beim Ueberfahren nur die Flaeche, der Rand bleibt (core, --up-knopf-*). */
+.uap-tmpl:hover { background: var(--up-knopf-hover); color: var(--vc-text); }
 .uap-tmpl svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor;
   stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
@@ -288,10 +290,11 @@
   white-space: nowrap; cursor: pointer; outline: 0;
   transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
 }
+/* Geist-Menue-Ausloeser (15.10.): Flaeche plus eine Stufe kraeftigere Kante statt --vc-hover-border (core, --up-knopf-*). */
 .uap-trigger:hover, .uap-pickwrap.is-open .uap-trigger {
-  color: var(--vc-text); background: var(--vc-heading-bg); border-color: var(--vc-hover-border);
+  color: var(--vc-text); background: var(--up-knopf-hover); border-color: var(--up-knopf-rand-hover);
 }
-.uap-trigger:focus-visible { border-color: var(--vc-hover-border); box-shadow: 0 0 0 2px var(--vc-heading-bg); }
+.uap-trigger:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
 .uap-trigger svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: var(--vc-text);
   stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 /* Open and "has a selection" both mark the trigger through its border, the way the app already
@@ -369,9 +372,10 @@
   height: 32px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--vc-border);
   background: transparent; color: var(--vc-muted);
   font: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer;
-  transition: border-color 120ms ease, color 120ms ease;
+  transition: background-color 120ms ease, color 120ms ease;
 }
-.uap-cancel:hover { border-color: var(--vc-hover-border); color: var(--vc-text); }
+/* Geist-Sekundaerknopf (15.10.): beim Ueberfahren nur die Flaeche, der Rand bleibt (core, --up-knopf-*). */
+.uap-cancel:hover { background: var(--up-knopf-hover); color: var(--vc-text); }
 .uap-save {
   height: 32px; padding: 0 20px; border: 0; border-radius: 9px;
   background: var(--up-accent); color: var(--up-accent-fg); cursor: pointer;

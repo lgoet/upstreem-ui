@@ -5374,8 +5374,9 @@
       gesamt = stack.__upStackTotal;
     }
     var sichtbar = items.length;
-    /* Von hinten wegnehmen, bis es passt. Ein Chip ueberlappt den vorigen um 4px (up-stack-item
-       + up-stack-item hat margin-left -4), deshalb wird gemessen und nicht gerechnet. */
+    /* Von hinten wegnehmen, bis es passt. Ein Chip ueberlappt den vorigen (core.css,
+       --up-stack-ueber; in einer Reihe wie response-detail gar nicht), deshalb wird gemessen und
+       nicht gerechnet. */
     while (sichtbar > 1 && stack.scrollWidth > platz){
       sichtbar--;
       items[sichtbar].style.display = "none";
@@ -6010,8 +6011,11 @@
       /* is-last marks the final CHIP (a "+N" badge may follow it, so :last-child will not do).
          The left-spread hover rules need to target it, and CSS forbids :has() inside :has() —
          which is what an inline "item not followed by another item" selector would require. */
+      /* --up-stack-z: das ERSTE Mitglied liegt oben (Geist-AvatarGroup, 15.10.) -- absteigende
+         Stufen, die core.css als z-index liest. Als Variable und nicht als z-index im style: so
+         behaelt die Hover-Regel (.up-stack-item:hover, z-index 20) das letzte Wort. */
       return '<span class="up-stack-item' + (favGlobus ? " up-fav" : "") + (logo ? " has-img" : "") + (mi === last ? " is-last" : "") +
-             '" data-brandtip="' + esc(tip) + '">' +
+             '" style="--up-stack-z:' + (shown.length - mi) + '" data-brandtip="' + esc(tip) + '">' +
                '<span class="up-stack-vis">' +
                  '<span class="up-stack-ltr">' + esc(initial) + '</span>' +
                  (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
@@ -8015,6 +8019,29 @@
       setLatest: function(id){ latestReqId = id; },
       cancel: function(){ clearTimeout(debTimer); }
     };
+  }
+
+  /* ESCAPE LEERT ZUERST (15.10., Geist-Search-Input: "Automatically clears the input if escape is
+     pressed"). Steht Text im Suchfeld der Werkzeugleiste, nimmt Escape nur den Text -- und zwar
+     ueber den Leeren-Knopf der Komponente (.up-search-clear), also mit genau deren Ablauf: Wert,
+     Zustand, Merken, neue Anfrage, der Fokus bleibt im Feld. Erst ein leeres Feld schliesst die
+     Suche, wie es jede Komponente schon tut. In der Uebernahme der Zeile (schmal) schliesst der
+     Knopf selbst und setzt zurueck -- das ist dann dasselbe, was Escape vorher tat.
+     EINMAL am Dokument und in der Erfassungsphase, nicht in makeSearch: jede Komponente haengt
+     ihren eigenen keydown an das Feld (Escape = schliessen), und manche Suchfelder stehen in
+     Vorlagen ohne makeSearch-Lauf. Die Erfassung am Dokument laeuft vor allen. */
+  if (!window.__upSucheEscLeert){
+    window.__upSucheEscLeert = true;
+    document.addEventListener("keydown", function(e){
+      if (e.key !== "Escape" || e.isComposing) return;
+      var t = e.target;
+      if (!t || !t.classList || !t.classList.contains("up-search-input") || !t.value) return;
+      var feld = t.closest(".up-search"), x = feld && feld.querySelector(".up-search-clear");
+      if (!x) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      x.click();
+    }, true);
   }
 
   /* ==========================================================================================
