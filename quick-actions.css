@@ -80,16 +80,25 @@
    er richtig: die Hover-Kante des geschlossenen Knopfes, fuer die er sonst noch galt, gibt es
    seit dem 07.09. nicht mehr. Ein Umbenennen waere eine Aenderung an einem Namen, den fremdes
    Markup kennen koennte -- den Wert zu erklaeren ist billiger. */
+/* SEIT DEM 15.10. GEIST (Dunkel nach Geist, core.css): die Zuordnung oben gilt weiter, nur stehen
+   die Marken jetzt auf Geists dunkler Skala -- und weil diese Palette am <body> haengt, wo der
+   dunkle Block an :root sie erreicht, als var() statt als Kopie:
+       --am-card          = --up-menu-bg      #0a0a0a  Background 1 (Geists Command Menu)
+       --am-border        = --up-menu-border  #454545  Gray 500
+       --am-soft          = --up-sel-bg       #1f1f1f  Gray 200
+       --am-border-strong = --vc-border       #2e2e2e  Gray 400 (Rollbalken)
+       --am-trigger-bg    = --vc-field        #0a0a0a  der Knopf steht in der Seitenleiste (#000)
+                                                       wie ein Geist-Feld, mit Rand. Vorher #1a1a1a. */
 #mira-quick-actions[data-theme="dark"], .mqa-overlay[data-theme="dark"] {
   --am-text: var(--vc-text); --am-muted: var(--vc-muted); --am-muted-2: var(--vc-third);
   --am-muted-3: var(--vc-fourth);
   --am-up: #62c073; --am-down: #ff6166;
-  --am-border: #3e3e44; --am-border-strong: #34343a;
-  --am-soft: #28282c; --am-soft-2: #ffffff0d; --am-card: #232326; --am-trigger-bg: #1a1a1a;
+  --am-border: var(--up-menu-border); --am-border-strong: var(--vc-border);
+  --am-soft: var(--up-sel-bg); --am-soft-2: #ffffff0d; --am-card: var(--up-menu-bg); --am-trigger-bg: var(--vc-field);
   --am-overlay: rgba(0,0,0,0.55);
   --am-shadow: var(--up-e-4, 0 24px 64px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.4));
   --am-inv-bg: var(--vc-inverse-bg, #eeedef); --am-inv-ink: var(--vc-inverse-ink, #1f1f1b);
-  --am-hover-bg: #28282c;
+  --am-hover-bg: var(--up-sel-bg);
 }
 #mira-quick-actions, #mira-quick-actions *, #mira-quick-actions *::before, #mira-quick-actions *::after,
 .mqa-overlay, .mqa-overlay *, .mqa-overlay *::before, .mqa-overlay *::after { box-sizing: border-box; }

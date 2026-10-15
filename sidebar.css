@@ -153,6 +153,21 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
    Screenshot von Geists Seitennavigation): nur der Grund. Der Ring innen ist weg; Seitennavigation,
    Preferences und gedrueckte Knoepfe behalten ihren (leiseren) Rand aus core. */
 html[data-up-hell="grau"] .usn-bar:not([data-theme="dark"]) { --usn-akt: var(--up-wahl-bg); }
+/* DAS DUNKEL NACH GEIST (15.10., core.css "DAS DUNKEL NACH GEIST: SEITE UND INHALT"): dieselbe
+   Leiste wie im grauen Hell, gespiegelt. Grund ist der Seitengrund (Background 2, #000) -- nicht
+   ueber --up-surface, denn die Leiste ist ein Portal, und Portale setzen ihn im Dunkeln jetzt auf
+   die Inhaltsflaeche zurueck. Gewaehlt ist Gray Alpha 100 ohne Rand, wie Geists Seitennavigation.
+   Der Hover kommt wieder aus der Ueberlagerung der Schriftfarbe (Grundregel oben, 7 %, die Zeile
+   die Haelfte davon) statt aus --up-sel-bg: der Hover muss UNTER dem Gewaehlten bleiben, und
+   --up-sel-bg (Gray 200, #1f1f1f) laege mit der Haelfte schon auf dessen Hoehe. Gemessen auf #000:
+   Hover der Zeile #080808, gewaehlt #0f0f0f -- im Licht #f2f2f2 und #ededed auf #fafafa. */
+html[data-up-dunkel="geist"] .usn-bar[data-theme="dark"],
+html[data-up-dunkel="geist"] .usn-fab[data-theme="dark"],
+html[data-up-dunkel="geist"] .usn-scrim[data-theme="dark"] {
+  --usn-bg: var(--up-seite-dunkel);
+  --usn-sel: color-mix(in srgb, var(--vc-text) 7%, transparent);
+  --usn-akt: var(--up-wahl-bg);
+}
 /* Seit die Leiste denselben Ton traegt wie die Seite, braucht sie eine Kante -- sonst gibt es
    keine Grenze mehr zwischen Navigation und Inhalt. Angefordert am 08.09. fuer das Dunkle; seit
    dem 07.09. traegt die Leiste auch im Hellen die Seitenfarbe, also gilt die Kante dort genauso.

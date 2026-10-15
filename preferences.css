@@ -91,6 +91,12 @@
 html[data-up-hell="grau"] .ums-backdrop:not([data-theme="dark"]) .ums-aside .ums-nav.is-on,
 html[data-up-hell="grau"] .ums-backdrop:not([data-theme="dark"]) .ums-aside .ums-nav.is-on:hover {
   background: var(--up-wahl-bg); box-shadow: inset 0 0 0 1px var(--up-wahl-rand); }
+/* Im Dunkeln nach Geist (15.10.) derselbe Zustand: Gray Alpha 100 mit dem Hauch Rand (core.css,
+   --up-wahl-bg im Block "DAS DUNKEL NACH GEIST"). Vorher --up-sel-bg, also eine deckende Stufe,
+   die neben der Seitenleiste anders aussah als dort. */
+html[data-up-dunkel="geist"] .ums-backdrop[data-theme="dark"] .ums-aside .ums-nav.is-on,
+html[data-up-dunkel="geist"] .ums-backdrop[data-theme="dark"] .ums-aside .ums-nav.is-on:hover {
+  background: var(--up-wahl-bg); box-shadow: inset 0 0 0 1px var(--up-wahl-rand); }
 
 /* Rechtliches am Fuss der Navigation (14.10. abends, aus dem Konto-Menue hierher): untereinander,
    12px in der dritten Textfarbe wie .ums-navhead und auf dessen Textkante (10px). margin-top auto
