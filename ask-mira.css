@@ -62,11 +62,11 @@
        Schimmer war damit eine flache Flaeche geworden, und zwar in genau der Farbe der aktiven
        Zeile (.am-prev-item.is-active). Ein neuer Chat IST die aktive Zeile: das Skelett stand da,
        gleiche Farbe auf gleicher Farbe.
-       Jetzt die Toene, die jedes andere Skelett der App traegt: --vc-sk als dunkle Stufe,
-       --vc-heading-bg als helle. Die dunkle ist auf dem Grund der aktiven Zeile sichtbar, die
-       helle laeuft als Glanz darueber -- in beiden Themen. */
+       Jetzt der Ton, den jedes andere Skelett der App traegt: --vc-sk als Grund, der auf der
+       aktiven Zeile sichtbar ist. Der Glanz darueber kommt seit dem 15.10. aus core
+       (--up-sk-verlauf, Geist-Skelett); --am-sk-b, der helle Gegenton des alten Verlaufs, ist
+       damit entfallen. */
     --am-sk-a: var(--vc-sk);
-    --am-sk-b: var(--vc-heading-bg);
     --am-primary: var(--vc-text);
     --am-user-bg: var(--vc-heading-bg);
     --am-user-text: var(--vc-text);
@@ -351,14 +351,16 @@
   .am-user-more:hover { color: var(--am-text); text-decoration: underline; }
   /* voice message: skeleton lines imitating text while the transcript is pending */
   .am-user-skel { display: flex; flex-direction: column; gap: 8px; padding: 3px 0; min-width: 120px; }
+  /* Das Skelett nach Geist (15.10., core --up-sk-bewegung): Kachel 150 %, Glanz in der Mitte, um
+     eine Kachel nach rechts. Die Toene bleiben die der Blase (aus --am-user-text), weil sie im
+     hohen Kontrast dunkel ist und der Glanz aus core dort verschwaende; der Glanz geht wie bei
+     Geist zur Schriftfarbe hin. amUserSkel bleibt fuer den Vertrag stehen. */
   .am-user-skel-line {
-    height: 10px; border-radius: 5px;
-    background: linear-gradient(90deg,
-      color-mix(in srgb, var(--am-user-text) 11%, transparent) 25%,
-      color-mix(in srgb, var(--am-user-text) 22%, transparent) 37%,
-      color-mix(in srgb, var(--am-user-text) 11%, transparent) 63%);
-    background-size: 300% 100%;
-    animation: amUserSkel 1.4s ease infinite;
+    height: 10px; border-radius: var(--up-sk-r, 5px);
+    background: color-mix(in srgb, var(--am-user-text) 11%, transparent)
+      linear-gradient(90deg, rgba(0,0,0,0) 0%, color-mix(in srgb, var(--am-user-text) 8%, transparent) 50%, rgba(0,0,0,0) 100%)
+      0 0 / 150% 100% repeat-x;
+    animation: var(--up-sk-bewegung);
   }
   @keyframes amUserSkel { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
   .am-thought {
@@ -2490,8 +2492,9 @@
   .am-pick-sk { display: flex; align-items: center; gap: 11px; padding: 8px 10px; }
   .am-pick-sk-av { width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto; }
   .am-pick-sk-lines { flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px; }
-  .am-pick-sk-line { height: 9px; border-radius: 5px; }
-  .am-pick-sk-av, .am-pick-sk-line { background: var(--vc-sk, #eeedef); animation: amPickSk 1.2s ease-in-out infinite; }
+  .am-pick-sk-line { height: 9px; border-radius: var(--up-sk-r, 5px); }
+  /* Skelett aus core nach Geist (15.10.); amPickSk bleibt fuer den Vertrag stehen. */
+  .am-pick-sk-av, .am-pick-sk-line { background: var(--vc-sk, #eeedef) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
   @keyframes amPickSk { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
 
   /* ---- Die uebernommenen Treffer im Feld -----------------------------------------------
@@ -3386,16 +3389,22 @@
   }
   @keyframes amSkelPuls { 0%, 100% { opacity: 1 } 50% { opacity: .5 } }
   .am-prev-skel { display: flex; flex-direction: column; gap: 2px; padding: 2px 0; }
-  .am-prev-skel-head { height: 10px; width: 34%; border-radius: 5px; margin: 8px 8px 6px; }
+  .am-prev-skel-head { height: 10px; width: 34%; border-radius: var(--up-sk-r); margin: 8px 8px 6px; }
   .am-prev-skel-row { height: 34px; display: flex; align-items: center; padding: 0 8px; }
-  .am-prev-skel-line { height: 10px; border-radius: 5px; display: block; }
-  .am-prev-skel-head, .am-prev-skel-line { background: linear-gradient(90deg, var(--am-sk-a) 25%, var(--am-sk-b) 50%, var(--am-sk-a) 75%); background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite; }
+  .am-prev-skel-line { height: 10px; border-radius: var(--up-sk-r); display: block; }
+  /* Die Chat-Skelette nach Geist (15.10.): Grund --am-sk-a (= --vc-sk), Glanz und Bewegung aus core
+     (--up-sk-verlauf, --up-sk-bewegung). Vorher lief hier ein eigener Verlauf zum HELLEREN
+     --vc-heading-bg; bei Geist geht der Glanz zur Schrift hin, also im Hellen dunkler.
+     amSkelShimmer bleibt fuer den Vertrag stehen. */
+  .am-prev-skel-head, .am-prev-skel-line { background: var(--am-sk-a) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
   /* chat-loading skeleton (shown while a clicked chat is still loading) */
   .am-msg-skel .am-bubble { min-width: 130px; }
-  .am-skel-line { display: block; height: 13px; border-radius: 6px; margin: 0 0 10px; background: linear-gradient(90deg, var(--am-sk-a) 25%, var(--am-sk-b) 50%, var(--am-sk-a) 75%); background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite; }
+  .am-skel-line { display: block; height: 13px; border-radius: var(--up-sk-r); margin: 0 0 10px; background: var(--am-sk-a) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
   .am-skel-line:last-child { margin-bottom: 0; }
-  .am-msg-skel.is-user .am-skel-line { background: linear-gradient(90deg, rgba(255,255,255,0.35) 25%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.35) 75%); background-size: 300% 100%; }
-  #ask-mira[data-theme="dark"] .am-msg-skel.is-user .am-skel-line { background: linear-gradient(90deg, rgba(255,255,255,0.12) 25%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0.12) 75%); background-size: 300% 100%; }
+  /* In der Blase des Nutzers bleiben die Toene der Blase (Weiss darueber); Kachel und Lauf wie
+     oben, also dieselbe Bewegung. */
+  .am-msg-skel.is-user .am-skel-line { background: linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.35) 100%) 0 0 / 150% 100% repeat-x; }
+  #ask-mira[data-theme="dark"] .am-msg-skel.is-user .am-skel-line { background: linear-gradient(90deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0.12) 100%) 0 0 / 150% 100% repeat-x; }
 
   /* ---- top-level sections (Projects / Recents) ---- */
   .am-prev-section { display: flex; flex-direction: column; }
@@ -3506,9 +3515,9 @@
      (28282c auf 232326) -- das ist "man erkennt es nicht". --vc-border steht 21 bzw. 17 Stufen
      davon ab und ist in beiden Themen klar zu sehen. */
   .am-prev-item.is-untitled .am-prev-item-title {
-    flex: 0 0 auto; width: 104px; height: 11px; border-radius: 6px;
-    background: linear-gradient(90deg, var(--vc-border) 25%, var(--am-sk-b) 50%, var(--vc-border) 75%);
-    background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite;
+    flex: 0 0 auto; width: 104px; height: 11px; border-radius: var(--up-sk-r);
+    /* Grund --vc-border (Begruendung oben), Glanz und Bewegung nach Geist aus core (15.10.). */
+    background: var(--vc-border) var(--up-sk-verlauf); animation: var(--up-sk-bewegung);
   }
   @media (prefers-reduced-motion: reduce){
     .am-prev-item.is-untitled .am-prev-item-title { animation: none; }
@@ -3737,8 +3746,7 @@
   .am-ct-text { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; max-width: 46vw; }
   .am-ct-skeleton {
     display: none; width: 168px; height: 24px; border-radius: 7px;
-    background: linear-gradient(90deg, var(--am-sk-a) 25%, var(--am-sk-b) 50%, var(--am-sk-a) 75%);
-    background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite;
+    background: var(--am-sk-a) var(--up-sk-verlauf); animation: var(--up-sk-bewegung);
   }
   .am-chat-titlebar.is-loading .am-ct-name { cursor: default; }
   .am-chat-titlebar.is-loading .am-ct-name:hover { background: transparent; }

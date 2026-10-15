@@ -661,8 +661,9 @@
 .up-logo-box.upw-sk-box { background: transparent; border: 0; box-shadow: none; }
 
 /* ---------- Skelett ----------
-   Farbe und Pulsieren aus core (--vc-sk, uutpulse), wie .up-tsk-bar. */
-.upw-sk { display: block; background: var(--vc-sk); border-radius: 6px; animation: uutpulse 1.2s ease-in-out infinite; }
+   Farbe und Schimmer aus core (--vc-sk, Geist-Skelett seit dem 15.10.), wie .up-tsk-bar. Die
+   Balken tragen Geists Radius (--up-sk-r); Punkt, Senden, Zeichen und Logo behalten ihre Form. */
+.upw-sk { display: block; background: var(--vc-sk) var(--up-sk-verlauf); border-radius: var(--up-sk-r); animation: var(--up-sk-bewegung); }
 .upw-sk-line  { width: 46%; height: 12px; }
 .upw-sk-dot   { width: 28px; height: 28px; border-radius: 9px; }
 .upw-sk-send  { width: 32px; height: 32px; border-radius: 999px; }

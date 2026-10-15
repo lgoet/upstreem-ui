@@ -294,7 +294,7 @@
 .ush-hero-bild img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .ush-hero-bild .ush-bild-ph svg { width: 40px; height: 40px; }
 .ush-hero-bild.has-img .ush-bild-ph { display: none; }
-.ush-hero-bild.is-sk { background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+.ush-hero-bild.is-sk { background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
 /* Eine Reihe, die waagerecht blaettert (05.10.); die Pfeile (.up-iconbtn.is-20 aus core) nur, wenn
    sie ueberlaeuft. 20 + 4 + 184 + 4 + 20 = 232: genau vier ganze Vorschaubilder (4 x 40 + 3 x 8),
    so gewuenscht -- mit is-28 waren es dreieinhalb. Ohne Pfeile passen fuenf (5 x 40 + 4 x 8). */

@@ -166,7 +166,36 @@
      auch Bausteine ausserhalb von core brauchen (14.10.: die Geister-Chips in Prompt Research) --
      vorher stand der Verlauf nur hier, und jede Kopie waere eine eigene Farbe gewesen. */
   --up-sk-lauf: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.14) 50%, rgba(255,255,255,0) 100%);
+  /* DAS SKELETT NACH GEIST (15.10., angefordert: "Skeletons aus dem Design-System holen").
+     Gelesen an vercel.com/geist/skeleton, an den berechneten Stilen des Beispiels: ein Verlauf
+     gray-100 -> gray-200 -> gray-100 auf einer dreimal so breiten Flaeche, deren Kachel die Haelfte
+     davon ist und um eine Kachel nach rechts wandert -- 1.5s ease-in-out, endlos
+     (Keyframes loading-skeleton, bei 100 % translate(-50%), rueckwaerts gespielt). Radius 5px
+     (rounded-[5px]); voll rund fuer Avatare, eckig fuer Bildkacheln.
+     Hier dieselbe Bewegung OHNE ::after: die Kachel ist 150 % breit und faehrt per
+     background-position um ihre eigene Breite -- gleiches Bild, aber kein position und kein
+     overflow am Element. overflow: hidden an einem inline-block verschoebe dessen Grundlinie, und
+     damit jede Tabellenzeile, in der ein Skelettbalken steht.
+     Bis heute gab es ZWEI Skelette nebeneinander: das Pulsieren (uutpulse, Deckkraft 1 -> .45) an
+     Tabellen und Karten und den Lichtlauf (upskt, weisser Streifen) an den Diagrammen. Beide
+     gehen auf diese eine Form; ihre Keyframes bleiben stehen (Vertrag), sie tragen nur nichts
+     mehr.
+     So nutzt es eine Komponente:
+         background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung);
+     oder gleich die Klasse .up-skelett. Die Grundfarbe bleibt --vc-sk und wird erst am Element
+     aufgeloest; --up-sk-verlauf ist nur der Glanz darueber und haengt am Thema (siehe die Bloecke
+     mit den Tiefen). Bei reduzierter Bewegung steht der Verlauf still (Regel nach diesem Block). */
+  --up-sk-r: 5px;
+  /* Dauer und Kurve einzeln, weil der Schimmer in den Diagramm-Skeletten (svg, .up-sk-wisch) eine
+     eigene Strecke faehrt, aber im selben Takt laufen muss. */
+  --up-sk-dauer: 1.5s;
+  --up-sk-kurve: ease-in-out;
+  --up-sk-bewegung: up-sk-geist var(--up-sk-dauer) var(--up-sk-kurve) infinite;
 }
+/* Ein Token statt einer Regel je Skelett: jede Komponente liest --up-sk-bewegung, also haelt diese
+   eine Zeile alle an. Der Verlauf bleibt stehen (Geist: animated={false} zeigt denselben Verlauf
+   ohne Bewegung). */
+@media (prefers-reduced-motion: reduce) { :root { --up-sk-bewegung: none; } }
 /* ================= AUFTRITT VON SEITE UND ANSICHT (11.10.) ==================================
    Eine Seiten-Komponente (makeAuftritt in core.js, Klasse .up-seite) laesst ihren Inhalt warten,
    bis Stylesheets und erste Daten da sind -- hoechstens einige hundert Millisekunden. Bis dahin
@@ -272,6 +301,17 @@
       --vc-toast-flaeche: rgba(255,255,255,.10);
       --vc-toast-flaeche-hover: rgba(255,255,255,.18);
       --vc-toast-zu: #6c717a;
+      /* DER GLANZ DES SKELETTS (15.10., Geist gray-100 -> gray-200). Im Hellen eine Spur DUNKLER
+         als der Grund, im Dunkeln eine Spur heller -- an vercel.com gemessen 242 -> 235 (hell) und
+         26 -> 31 (dunkel). Auf --vc-sk (#eeedef / #28282c) sind das 3 Prozent Schwarz und 2.5
+         Prozent Weiss: dieselben 7 und 5 Stufen. Ein Glanz ueber dem Grund statt eines Verlaufs
+         zwischen zwei Festfarben, damit die Grundfarbe am Element aufgeloest wird (--vc-sk) und
+         dieser Teil trotzdem auch am <body> gilt. Lage, Groesse und Wiederholung stehen mit drin,
+         also setzt eine Regel nur noch die Grundfarbe davor (siehe --up-sk-bewegung).
+         Steht in BEIDEN Themenbloecken: ein Token, das ein anderes liest, wird dort ausgerechnet,
+         wo es deklariert ist -- stuende es nur hier, erbte ein dunkles Portal den hellen Glanz. */
+      --up-sk-glanz: rgba(0,0,0,.03);
+      --up-sk-verlauf: linear-gradient(90deg, rgba(0,0,0,0) 0%, var(--up-sk-glanz) 50%, rgba(0,0,0,0) 100%) 0 0 / 150% 100% repeat-x;
 }
 [data-theme="dark"], .up-root[data-theme="dark"] {
       /* Die vier Tiefen im dunklen Thema. Sie sind NICHT die hellen mit mehr Deckkraft, auch
@@ -302,6 +342,9 @@
       --vc-toast-flaeche: rgba(31,31,27,.08);
       --vc-toast-flaeche-hover: rgba(31,31,27,.14);
       --vc-toast-zu: #80858e;
+      /* Der Glanz des Skeletts im Dunkeln: Weiss statt Schwarz (Begruendung im hellen Block). */
+      --up-sk-glanz: rgba(255,255,255,.025);
+      --up-sk-verlauf: linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--up-sk-glanz) 50%, rgba(255,255,255,0) 100%) 0 0 / 150% 100% repeat-x;
 }
 .up-root {
       /* --vc-muted ist um vier Einheiten dunkler als vorher (#6f737c), und das ist KEINE neue
@@ -935,7 +978,7 @@
        Schalter rechts daneben beim Wechsel von 102 auf 9 ein Stueck wandert, ist der Preis dafuer. */
     .up-head-count { display: none; margin-left: 8px; }
     .up-heading.has-count .up-head-count { display: inline-flex; }
-    .up-zaehler.is-sk, .up-head-count.is-sk { color: transparent; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+    .up-zaehler.is-sk, .up-head-count.is-sk { color: transparent; background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
     .up-head-tools { display: flex; align-items: center; gap: 8px; margin-left: auto; flex: 0 0 auto; }
 
     /* ── Einklappbare Werkzeuggruppe ─────────────────────────────────────────────────────────
@@ -3821,10 +3864,45 @@
     .up-empty-btn { height: 32px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: 8px;
       background: transparent; color: var(--vc-text); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer; }
     .up-empty-btn:hover { background: var(--vc-heading-bg); }
+    /* ---- DER LEERZUSTAND NACH GEIST (15.10., angefordert: "nutze die Empty States") -------------
+       Gelesen an vercel.com/geist/empty-state (berechnete Stile des Beispiels "Blank Slate" und
+       "Informational"): eine Spalte, mittig, 24 zwischen Zeichen, Textblock und Aktion; das Zeichen
+       32px in einer Kachel mit 10 Polster und 1px Rahmen (54x54, Radius 8, Grund der Karte, Farbe
+       wie der Beschreibungstext); Titel 16/24, Schnitt 500, Laufweite -0.32px; Beschreibung 14/20 in
+       der Sekundaerfarbe, 8 unter dem Titel; beide hoechstens 340 breit und ausgeglichen umbrochen.
+       Die Aktion ist ein Sekundaerknopf (Grund der Karte, 1px Kante, Radius 6, Schrift 14/500).
+       Polster 48 oben und unten wie bei Geist; seitlich 24 statt 70, weil der Baustein auch in
+       schmalen Drawern und Karten steht -- die 340 Hoechstbreite des Textes macht dort die Arbeit.
+       KEIN eigener Rahmen um das Ganze, anders als bei Geist: der Leerzustand steht in dieser App
+       fast immer schon in einem (Tabellenkoerper, .up-box), und ein Rahmen im Rahmen waere ein
+       Kasten zu viel.
+       NUR AN .up-leer, das UC.leerHtml setzt. UC.leseFehlerHtml baut dasselbe .up-empty, und der
+       Fehlerzustand bleibt bewusst, wie er ist (Auftrag: Fehlerzustaende nicht anfassen). */
+    .up-empty.up-leer { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+    .up-leer .up-empty-ic { box-sizing: border-box; width: 54px; height: 54px; margin: 0; padding: 10px;
+      display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+      border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: var(--vc-bg); color: var(--vc-muted); }
+    .up-leer .up-empty-ic svg { width: 32px; height: 32px; }
+    .up-leer .up-empty-txt { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .up-leer .up-empty-h { max-width: 340px; margin: 0; font-size: var(--up-fs-xl); line-height: 24px;
+      font-weight: var(--up-fw-m); letter-spacing: -0.02em; text-wrap: balance; }
+    .up-leer .up-empty-t { max-width: 340px; margin: 0; font-size: var(--up-fs-l); line-height: 20px; text-wrap: balance; }
+    .up-leer .up-empty-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--up-h-btn);
+      padding: 0 12px; border-radius: var(--up-r-s); background: var(--vc-bg); font-size: var(--up-fs-l); font-weight: var(--up-fw-m); }
+    .up-leer .up-empty-btn:hover { background: var(--vc-heading-bg); }
     .up-row.up-tsk { cursor: default; }
     .up-row.up-tsk:hover { background: transparent; }
-    .up-tsk-bar { display: inline-block; height: 12px; border-radius: 4px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
-    .up-tsk-logo { display: inline-block; width: 24px; height: 24px; border-radius: 8px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; flex: 0 0 auto; }
+    .up-tsk-bar { display: inline-block; height: 12px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
+    .up-tsk-logo { display: inline-block; width: 24px; height: 24px; border-radius: 8px; background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); flex: 0 0 auto; }
+    /* Die eine Skelettklasse (Geist, siehe --up-sk-bewegung oben): Grund, Glanz, Radius, Bewegung.
+       Groesse und Lage bringt das Element selbst mit. */
+    .up-skelett { background: var(--vc-sk) var(--up-sk-verlauf); border-radius: var(--up-sk-r); animation: var(--up-sk-bewegung); }
+    /* Die Kachel ist 150 % breit; von 300 % nach 0 faehrt sie um genau eine Kachelbreite nach rechts
+       (bei background-position p gilt: Versatz = p mal (Breite minus Kachel) = p mal -50 %). Danach
+       steht wieder dasselbe Bild -- ein nahtloser Lauf wie Geists translate(-50%) in reverse. */
+    @keyframes up-sk-geist { from { background-position: 300% 0; } to { background-position: 0 0; } }
+    /* uutpulse traegt seit dem 15.10. kein Skelett mehr (alle auf up-sk-geist). Die Keyframes
+       bleiben stehen: sie stehen im Vertrag, und eine Komponente auf einem aelteren Pin nennt sie. */
     @keyframes uutpulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
     /* SKELETTE, DIE NIEMAND SIEHT, STEHEN STILL (13.10.): beim Start baut die App alle Ansichten und
        Drawer mit Skeletten -- gemessen 1280 Endlos-Animationen, rund 1090 davon in geparkten
@@ -4021,25 +4099,28 @@
   background-image: url("https://tgdossbsevnonssyuewp.supabase.co/storage/v1/object/public/BRANDSTYLES/upstreem-lockup-e0e0e0.svg");
 }
 .up-line-canvas { display: block; width: 100% !important; height: 100% !important; }
-.up-line-empty { position: absolute; left: 0; right: 0; top: 58%; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--vc-muted); }
+/* Schrift der Leerzeilen nach Geist (15.10.): copy-14, also 14/20 in der Sekundaerfarbe -- so steht
+   der knappe Leerzustand auch im Command Menu von Geist ("No results found"). */
+.up-line-empty { position: absolute; left: 0; right: 0; top: 58%; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; font-size: var(--up-fs-l); line-height: 20px; color: var(--vc-muted); }
 
-/* line skeleton: shimmering grid + a sweeping stroke along a fake series path */
-.up-line-sk { position: absolute; inset: 0; pointer-events: none; --shimmer: .14; }
+/* line skeleton: grid, axis labels and a fake series path. Seit dem 15.10. mit dem Schimmer nach
+   Geist (--up-sk-verlauf, siehe oben) statt des weissen Lichtlaufs: die Raster- und Achsenbalken
+   tragen ihn als Hintergrund, die Kurve ueber einen maskierten Streifen (.up-sk-wisch, wie der
+   Ring). */
+.up-line-sk { position: absolute; inset: 0; pointer-events: none; }
 .up-line-sk .sk-linechart { width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; padding: 32px; }
 .up-line-sk .sk-lc-grid { flex: 1; position: relative; display: flex; flex-direction: column; justify-content: space-between; }
-.up-line-sk .sk-lc-hline { height: 1px; background: var(--vc-sk); border-radius: 1px; position: relative; overflow: hidden; }
-.up-line-sk .sk-lc-hline::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,var(--shimmer)) 50%, rgba(255,255,255,0) 100%); transform: translateX(-100%); animation: upskt 1200ms linear infinite; }
+.up-line-sk .sk-lc-hline { height: 1px; background: var(--vc-sk) var(--up-sk-verlauf); border-radius: 1px; position: relative; overflow: hidden; animation: var(--up-sk-bewegung); }
 .up-line-sk .sk-lc-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .up-line-sk .sk-lc-astop0 { stop-color: var(--vc-sk); stop-opacity: .5; }
 .up-line-sk .sk-lc-astop1 { stop-color: var(--vc-sk); stop-opacity: 0; }
 .up-line-sk .sk-lc-stroke { fill: none; stroke: var(--vc-sk); stroke-width: 1.875; stroke-linecap: round; }
-.up-line-sk .sk-lc-shimmer-path { stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: upskt-path 1200ms linear infinite; stroke: rgba(255,255,255,var(--shimmer)); fill: none; stroke-width: 2.25; stroke-linecap: round; }
 .up-line-sk .sk-lc-xaxis { display: flex; justify-content: space-between; flex-shrink: 0; padding: 0 1px; }
-.up-line-sk .sk-lc-xlabel { height: 8px; width: 24px; background: var(--vc-sk); border-radius: 4px; position: relative; overflow: hidden; }
-.up-line-sk .sk-lc-xlabel::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,var(--shimmer)) 50%, rgba(255,255,255,0) 100%); transform: translateX(-100%); animation: upskt 1200ms linear infinite; }
+.up-line-sk .sk-lc-xlabel { height: 8px; width: 24px; background: var(--vc-sk) var(--up-sk-verlauf); border-radius: var(--up-sk-r); position: relative; overflow: hidden; animation: var(--up-sk-bewegung); }
+/* upskt und upskt-path tragen seit dem 15.10. nichts mehr (Lichtlauf und Strich-Schimmer sind dem
+   Geist-Skelett gewichen); sie bleiben fuer den Vertrag stehen. */
 @keyframes upskt { 100% { transform: translateX(100%); } }
 @keyframes upskt-path { 0% { stroke-dashoffset: 1000; } 100% { stroke-dashoffset: -1000; } }
-@media (prefers-reduced-motion: reduce){ .up-line-sk .sk-lc-hline::after, .up-line-sk .sk-lc-xlabel::after, .up-line-sk .sk-lc-shimmer-path { animation: none; } }
 
 /* ---------- line legend (balanced rows, hover-dims the other series) ---------- */
 .up-legend { width: 100%; height: auto; box-sizing: border-box; overflow: visible; --up-column-gap: 16px; margin-top: 12px; flex: 0 0 auto; }
@@ -4130,7 +4211,7 @@
 .up-legend .up-company-measure { position: absolute; left: -99999px; top: -99999px; visibility: hidden; pointer-events: none; display: flex; column-gap: var(--up-column-gap, 16px); width: auto; height: auto; overflow: visible; }
 
 /* ---------- doughnut ---------- */
-.up-chart-empty { font-size: 13px; color: var(--vc-muted); text-align: center; padding: 40px 0; }
+.up-chart-empty { font-size: var(--up-fs-l); line-height: 20px; color: var(--vc-muted); text-align: center; padding: 40px 0; }
 .up-donut-layout { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 28px; width: 100%; }
 .up-donut-wrap { position: relative; flex: 0 0 auto; width: min(52%, 200px); aspect-ratio: 1 / 1; }
 .up-donut-wrap canvas { width: 100% !important; height: 100% !important; }
@@ -4249,25 +4330,28 @@
 .up-sk-chart svg { width: 100%; height: 100%; display: block; object-fit: contain; }
 /* Der Schimmer im Ringskelett per CSS statt SMIL (13.10.): ein <animateTransform> tickt im
    Hauptthread in jedem Bild, auch geparkt und in einer 0x0-Huelle, und animation-play-state haelt
-   es nicht an. Sechs Ringe kosteten in Ruhe 1.4 s von 5 s (1x CPU). Dieselbe Strecke wie vorher
-   (-60 bis 160 in 1.2 s), jetzt anhaltbar mit der Regel oben. */
-.up-sk-chart .up-sk-wisch { animation: upskwisch 1.2s linear infinite; }
-@keyframes upskwisch { from { transform: translateX(-60px); } to { transform: translateX(160px); } }
+   es nicht an. Sechs Ringe kosteten in Ruhe 1.4 s von 5 s (1x CPU).
+   SEIT DEM 15.10. NACH GEIST, und dabei repariert: der Streifen trug die Maske selbst, und eine
+   Maske faehrt mit der Verschiebung ihres Elements mit -- er zeigte also immer dasselbe Stueck
+   Ring, und das lag links neben dem Ring (x -60 bis -10): man sah nichts. Jetzt sitzt die Maske an
+   einer Gruppe, und nur der Streifen darin faehrt. Der Streifen ist zwei Geist-Kacheln breit
+   (Glanz bei 25 und 75 Prozent, sonst durchsichtig) und faehrt um die Haelfte seiner Breite,
+   also um genau eine Kachel: dasselbe Bild wie --up-sk-verlauf an einem Balken, im selben Takt.
+   transform-box: fill-box macht die 50 % zur Haelfte des Streifens, egal wie breit er ist --
+   der Ring hat 300 Einheiten, die Linie 1380. */
+.up-sk-wisch { transform-box: fill-box; animation: upskwisch var(--up-sk-dauer) var(--up-sk-kurve) infinite; }
+@keyframes upskwisch { from { transform: translateX(0); } to { transform: translateX(50%); } }
+@media (prefers-reduced-motion: reduce){ .up-sk-wisch { animation: none; } }
 .up-sk-ring { stroke: var(--vc-sk); }
-.up-sk-g0 { stop-color: var(--vc-sk); }
-.up-sk-g1 { stop-color: #ffffff; }
-.up-root[data-theme="dark"] .up-sk-g1 { stop-color: #555555; }
+/* Die Stopps tragen den Glanz aus core (--up-sk-glanz) und nur seine Deckkraft wechselt: so
+   laeuft der Verlauf ohne grauen Saum aus, in beiden Themen. */
+.up-sk-g0 { stop-color: var(--up-sk-glanz); stop-opacity: 0; }
+.up-sk-g1 { stop-color: var(--up-sk-glanz); stop-opacity: 1; }
 .up-sk-legend { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .up-sk-row { display: flex; align-items: center; gap: 10px; }
-.up-sk-dot { width: 12px; height: 12px; border-radius: 4px; background: var(--vc-sk); flex: 0 0 auto; position: relative; overflow: hidden; }
-.up-sk-lbl { height: 10px; background: var(--vc-sk); border-radius: 5px; position: relative; overflow: hidden; }
-.up-sk-pct { height: 10px; background: var(--vc-sk); border-radius: 5px; flex: 0 0 auto; position: relative; overflow: hidden; }
-.up-sk-dot::after, .up-sk-lbl::after, .up-sk-pct::after {
-  content: ""; position: absolute; inset: 0;
-  background: var(--up-sk-lauf);
-  transform: translateX(-100%); animation: upskt 1200ms linear infinite;
-}
-@media (prefers-reduced-motion: reduce){ .up-sk-dot::after, .up-sk-lbl::after, .up-sk-pct::after { animation: none; } }
+.up-sk-dot { width: 12px; height: 12px; border-radius: 4px; background: var(--vc-sk) var(--up-sk-verlauf); flex: 0 0 auto; position: relative; overflow: hidden; animation: var(--up-sk-bewegung); }
+.up-sk-lbl { height: 10px; background: var(--vc-sk) var(--up-sk-verlauf); border-radius: var(--up-sk-r); position: relative; overflow: hidden; animation: var(--up-sk-bewegung); }
+.up-sk-pct { height: 10px; background: var(--vc-sk) var(--up-sk-verlauf); border-radius: var(--up-sk-r); flex: 0 0 auto; position: relative; overflow: hidden; animation: var(--up-sk-bewegung); }
 
 /* ---------- bar-mode skeleton (same shimmer, shaped like .up-bar-track rows) ---------- */
 .up-bars-sk { display: flex; flex-direction: column; gap: 0; width: 100%; pointer-events: none; }
@@ -4280,13 +4364,9 @@
    20 Spur + 2x3 Polster = 26, dieselbe Zeile wie daneben. Damit springt beim Wechsel vom
    Skelett zur Liste auch nichts mehr. */
 .up-bar-sk-row { display: flex; align-items: center; padding: 3px 0; }
-.up-bar-sk-track { display: block; height: 20px; border-radius: 6px; background: var(--vc-sk); position: relative; overflow: hidden; }
-.up-bar-sk-track::after {
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.14) 50%, rgba(255,255,255,0) 100%);
-  transform: translateX(-100%); animation: upskt 1200ms linear infinite;
-}
-@media (prefers-reduced-motion: reduce){ .up-bar-sk-track::after { animation: none; } }
+/* Radius 6 wie die echte Spur (.up-bar-track), nicht Geists 5: das Skelett haelt die Form dessen,
+   was gleich dort steht. */
+.up-bar-sk-track { display: block; height: 20px; border-radius: 6px; background: var(--vc-sk) var(--up-sk-verlauf); position: relative; overflow: hidden; animation: var(--up-sk-bewegung); }
 
 /* ==========================================================================================
    TABLE PRIMITIVES — shared cell furniture
@@ -4840,7 +4920,7 @@
 .up-kdr-werkzeuge, .up-kdr-eigen { flex: 0 0 auto; display: flex; align-items: center; gap: 4px; }
 .up-kdr-eigen:empty { display: none; }
 .up-kdr-sk { display: inline-block; vertical-align: middle; width: 132px; height: 12px;
-  border-radius: var(--up-r-xs); background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+  border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
 
 /* Der Koerper rollt, die Seite darunter nicht (overscroll-behavior: am Ende des Inhalts lief
    das Rollen sonst auf #main weiter, trotz der Sperre des Kopf-Skripts auf iOS).
@@ -4955,8 +5035,8 @@
   border: 0; border-radius: 0; background: transparent; padding: 0; }
 .up-dk-held-link:focus-visible { outline: var(--up-focus-w, 2px) solid var(--vc-text); outline-offset: 2px; border-radius: var(--up-r-xs); }
 /* Skelett des Kopfes, in den Massen dessen, was gleich dasteht. */
-.up-dk-sk { display: inline-block; height: 14px; border-radius: var(--up-r-xs); background: var(--vc-sk);
-  animation: uutpulse 1.2s ease-in-out infinite; }
+.up-dk-sk { display: inline-block; height: 14px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf);
+  animation: var(--up-sk-bewegung); }
 .up-dk-sk.is-logo { width: 44px; height: 44px; border-radius: var(--up-r-xl); }
 .up-dk-sk.is-titel { display: block; width: 240px; max-width: 100%; height: 28px; }
 .up-dk-sk.is-s { width: 120px; }
@@ -5645,8 +5725,9 @@
 .up-chiphover:hover { background: var(--vt-row-hover-solid); color: var(--up-accent-ink); box-shadow: none; }
 
 /* compact "No data" line for tables that live in a fixed-height box and have no room for the
-   full illustrated empty state */
-.up-empty-mini { padding: 24px; text-align: center; color: var(--vc-muted); font-size: 13px; }
+   full illustrated empty state. Schrift seit dem 15.10. nach Geist (copy-14, 14/20), wie
+   .up-chart-empty; das Polster bleibt -- die Kaesten, in denen sie steht, haben ihre Hoehe. */
+.up-empty-mini { padding: 24px; text-align: center; color: var(--vc-muted); font-size: var(--up-fs-l); line-height: 20px; }
 
 /* ============================================================
    Topic create/edit modal (UC.makeTopicModal) — STYLEGUIDE §27's reference implementation, moved
@@ -6004,7 +6085,9 @@
 .up-kpi-foot .up-trend { font-size: inherit; }
 .up-kpi-foot .up-trend svg { width: 14px; height: 14px; }
 .up-kpi.is-sk { gap: 10px; }
-.up-kpi-sk { display: block; height: 12px; border-radius: var(--up-r-xs); background: var(--vc-sk); }
+/* Seit dem 15.10. mit dem Geist-Schimmer: vorher stand die Kachel als einziges Skelett der Seite
+   still neben pulsierenden Tabellenzeilen. */
+.up-kpi-sk { display: block; height: 12px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
 .up-kpi-sk-l { width: 40%; } .up-kpi-sk-v { width: 70%; height: 24px; } .up-kpi-sk-f { width: 55%; }
 
 /* ======================================================================
@@ -6437,10 +6520,10 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 .uvb-main { display: flex; flex-direction: column; gap: 16px; padding-top: 16px;
   animation: uvb-auf var(--up-t-auftritt) var(--up-ease-expo) 100ms both; }
 .uvb-zeile { display: flex; gap: 8px; }
-.uvb-sk { display: block; background: var(--vc-sk); border-radius: var(--up-r-m); animation: uutpulse 1.2s ease-in-out infinite; }
+.uvb-sk { display: block; background: var(--vc-sk) var(--up-sk-verlauf); border-radius: var(--up-r-m); animation: var(--up-sk-bewegung); }
 .uvb-sk.is-knopf { width: 112px; height: var(--up-h-btn); }
 .uvb-sk.is-knopf.is-kurz { width: 88px; }
-.uvb-sk.is-titel { width: 132px; height: 12px; border-radius: var(--up-r-xs); }
+.uvb-sk.is-titel { width: 132px; height: 12px; border-radius: var(--up-sk-r); }
 .uvb-karte { box-sizing: border-box; height: 240px; padding: 20px; border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); }
 .uvb-karte.is-gross { height: 360px; }
 @keyframes uvb-auf { from { opacity: 0; transform: translateY(10px); } }

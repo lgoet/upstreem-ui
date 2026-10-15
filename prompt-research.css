@@ -195,19 +195,15 @@
    die pulsierten -- die echten Chips sind aber nur umrandet und ohne Flaeche, und jedes andere
    Skelett der App laeuft mit dem Lichtlauf aus core statt zu pulsieren. Jetzt die Form des echten
    Chips (24px, Radius 6, 1px Rahmen) und darin die Beschriftung als Strich wie .up-sk-lbl aus core:
-   10px in --vc-sk, derselbe Lichtlauf (upskt, 1200ms). */
+   10px in --vc-sk. Seit dem 15.10. mit dem Geist-Schimmer aus core (--up-sk-verlauf) auf dem Strich
+   selbst statt des Lichtlaufs ueber den ganzen Chip. */
 .upr-skeleton-chip {
   height: var(--up-h-chip); box-sizing: border-box; border: 1px solid var(--vc-border);
   border-radius: var(--up-r-s); flex-shrink: 0; position: relative; overflow: hidden;
 }
 .upr-skeleton-chip::before {
   content: ""; position: absolute; left: 8px; right: 8px; top: 50%; height: 10px; margin-top: -5px;
-  border-radius: 5px; background: var(--vc-sk);
-}
-.upr-skeleton-chip::after {
-  content: ""; position: absolute; inset: 0;
-  background: var(--up-sk-lauf);
-  transform: translateX(-100%); animation: upskt 1200ms linear infinite;
+  border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung);
 }
 
 /* ---------- "View previous researches" ---------- */
@@ -903,7 +899,7 @@
 @media (prefers-reduced-motion: reduce) {
   /* Das Ladebild regelt seine reduzierte Bewegung selbst (core.css, .up-lb). */
   .upr-float-point, .upr-float-spark,
-  .upr-skeleton-chip::after, .upr-start-btn.is-running svg { animation: none; }
+  .upr-skeleton-chip::before, .upr-start-btn.is-running svg { animation: none; }
 }
 
 

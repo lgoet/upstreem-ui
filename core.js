@@ -16524,6 +16524,11 @@
     };
   }
 
+  /* Die Stopps des Geist-Schimmers fuer die svg-Skelette (Ring und Kurve): zwei Kacheln, je mit
+     dem Glanz in der Mitte -- dasselbe Bild wie --up-sk-verlauf an einem Balken, nur als Verlauf
+     ueber einen Streifen, der doppelt so breit ist wie eine Kachel (core.css, .up-sk-wisch). */
+  var SK_GLANZ_STOPS = '<stop offset="0%" class="up-sk-g0"/><stop offset="25%" class="up-sk-g1"/>' +
+    '<stop offset="50%" class="up-sk-g0"/><stop offset="75%" class="up-sk-g1"/><stop offset="100%" class="up-sk-g0"/>';
   function lineSkeletonHtml(){
     var hlines = "", xlabels = "", i;
     /* RASTER_N + 1 Striche, nicht vier: die Skelettstriche liegen mit justify-content: space-between
@@ -16533,14 +16538,20 @@
     for (i = 0; i < RASTER_N + 1; i++) hlines += '<div class="sk-lc-hline"></div>';
     for (i = 0; i < 6; i++) xlabels += '<div class="sk-lc-xlabel"></div>';
     var d = "M0,125 C60,115 100,70 150,58 C200,46 230,90 280,74 C330,58 390,22 460,14";
-    var agId = "up-sk-ag-" + Math.random().toString(36).slice(2);
+    var u = Math.random().toString(36).slice(2);
+    var agId = "up-sk-ag-" + u, mId = "up-sk-lm-" + u, gId = "up-sk-lg-" + u;
+    /* Der Schimmer auf der Kurve nach Geist (15.10.), wie am Ring (donutSkeletonHtml): ein Streifen
+       aus zwei Kacheln (je 1.5 mal die Breite, 690 bei 460), maskiert auf den Strich, faehrt um eine
+       Kachel. Die Maske haengt an der GRUPPE, nicht am Streifen -- sonst fuehre sie mit. */
     return '<div class="up-line-sk"><div class="sk-linechart">' +
       '<div class="sk-lc-grid">' + hlines +
         '<svg class="sk-lc-svg" viewBox="0 0 460 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">' +
-          '<defs><linearGradient id="' + agId + '" x1="0" y1="0" x2="0" y2="1"><stop class="sk-lc-astop0" offset="0%"/><stop class="sk-lc-astop1" offset="100%"/></linearGradient></defs>' +
+          '<defs><linearGradient id="' + agId + '" x1="0" y1="0" x2="0" y2="1"><stop class="sk-lc-astop0" offset="0%"/><stop class="sk-lc-astop1" offset="100%"/></linearGradient>' +
+            '<mask id="' + mId + '"><path d="' + d + '" fill="none" stroke="white" stroke-width="1.875" stroke-linecap="round"/></mask>' +
+            '<linearGradient id="' + gId + '" x1="0" y1="0" x2="1" y2="0">' + SK_GLANZ_STOPS + '</linearGradient></defs>' +
           '<path d="' + d + ' L460,160 L0,160 Z" fill="url(#' + agId + ')"/>' +
           '<path class="sk-lc-stroke" d="' + d + '"/>' +
-          '<path class="sk-lc-shimmer-path" d="' + d + '"/>' +
+          '<g mask="url(#' + mId + ')"><rect class="up-sk-wisch" x="-690" y="0" width="1380" height="160" fill="url(#' + gId + ')"></rect></g>' +
         '</svg>' +
       '</div>' +
       '<div class="sk-lc-xaxis">' + xlabels + '</div>' +
@@ -18594,10 +18605,13 @@
     return '<div class="up-donut-sk">' +
       '<div class="up-sk-chart"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' +
         '<defs><mask id="' + mId + '"><circle cx="50" cy="50" r="38" fill="none" stroke="white" stroke-width="7"/></mask>' +
-        '<linearGradient id="' + gId + '" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" class="up-sk-g0"/><stop offset="50%" class="up-sk-g1"/><stop offset="100%" class="up-sk-g0"/></linearGradient></defs>' +
+        '<linearGradient id="' + gId + '" x1="0" y1="0" x2="1" y2="0">' + SK_GLANZ_STOPS + '</linearGradient></defs>' +
         '<circle cx="50" cy="50" r="38" fill="none" class="up-sk-ring" stroke-width="7"/>' +
-        /* Bewegt per CSS (.up-sk-wisch), nicht per SMIL -- siehe core.css bei .up-sk-chart (13.10.). */
-        '<rect class="up-sk-wisch" x="-60" y="0" width="50" height="100" fill="url(#' + gId + ')" mask="url(#' + mId + ')"></rect>' +
+        /* Bewegt per CSS (.up-sk-wisch), nicht per SMIL -- siehe core.css bei .up-sk-chart (13.10.).
+           Seit dem 15.10. nach Geist: zwei Kacheln zu 150 (1.5 mal die Breite von 100), die Maske an
+           der Gruppe statt am Streifen -- am Streifen fuhr sie mit, und der Schimmer lag neben dem
+           Ring (core.css, Begruendung bei .up-sk-wisch). */
+        '<g mask="url(#' + mId + ')"><rect class="up-sk-wisch" x="-150" y="0" width="300" height="100" fill="url(#' + gId + ')"></rect></g>' +
       '</svg></div>' +
       '<div class="up-sk-legend">' + legend + '</div>' +
     '</div>';
@@ -24566,10 +24580,16 @@
     var sym   = opt.icon === false ? false
               : (gef ? (opt.iconGefiltert || "search") : (opt.icon || false));
     var knopf = opt.knopf != null ? opt.knopf : (gef ? "Clear filters" : "");
-    return '<div class="up-empty' + (opt.klasse ? " " + opt.klasse : "") + '">' +
+    /* up-leer: die Gestalt nach Geist (15.10., core.css "DER LEERZUSTAND NACH GEIST"). Titel und
+       Satz stehen in einer eigenen Huelle (.up-empty-txt), weil Geist zwischen ihnen 8 laesst und
+       um sie herum 24 -- zwei Abstaende, die nur mit einer Gruppe ohne Gegenrand gehen.
+       leseFehlerHtml darueber bekommt die Klasse NICHT: der Fehlerzustand bleibt, wie er ist. */
+    return '<div class="up-empty up-leer' + (opt.klasse ? " " + opt.klasse : "") + '">' +
       (sym === false ? "" : '<div class="up-empty-ic">' + icon(sym, 1.6) + '</div>') +
-      '<div class="up-empty-h">' + esc(t_(titel)) + '</div>' +
-      (text ? '<div class="up-empty-t">' + esc(t_(text)) + '</div>' : "") +
+      '<div class="up-empty-txt">' +
+        '<div class="up-empty-h">' + esc(t_(titel)) + '</div>' +
+        (text ? '<div class="up-empty-t">' + esc(t_(text)) + '</div>' : "") +
+      '</div>' +
       (knopf ? '<button class="up-empty-btn" type="button" ' + (opt.knopfAttr || "data-clearall") +
                '>' + esc(t_(knopf)) + '</button>' : "") +
     '</div>';

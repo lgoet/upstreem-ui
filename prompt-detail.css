@@ -36,8 +36,8 @@
 .uprd-kpis .up-kpi:hover .up-th-info { opacity: 1; }
 
 /* Skelett des Kopfes, in den Massen dessen, was gleich dasteht (wie URL Detail). */
-.uprd-skz { display: inline-block; height: 14px; border-radius: var(--up-r-xs); background: var(--vc-sk);
-  animation: uutpulse 1.2s ease-in-out infinite; }
+.uprd-skz { display: inline-block; height: 14px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf);
+  animation: var(--up-sk-bewegung); }
 .uprd-skz.is-m { width: 132px; }
 .uprd-skz.is-s { width: 88px; }
 .uprd-skz.is-titel { display: block; width: 72%; height: 28px; margin-bottom: 6px; }

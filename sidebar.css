@@ -976,15 +976,10 @@ html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--
 
 /* ---------- Skelette ----------
    Solange die Daten nicht da sind, steht an ihrer Stelle ein Balken -- kein leerer Platz und
-   kein Fragezeichen. Geometrie und Ton wie die Tabellenskelette in core: --vc-sk, Radius 6,
-   dieselbe Wanderung. */
-.usn-sk { display: block; border-radius: 6px; background: var(--vc-sk); position: relative; overflow: hidden; }
-.usn-sk::after {
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
-  transform: translateX(-100%); animation: usn-sk-lauf 1.4s ease-in-out infinite;
-}
-.usn-bar[data-theme="dark"] .usn-sk::after { background: linear-gradient(90deg, transparent, rgba(255,255,255,.10), transparent); }
+   kein Fragezeichen. Ton und Bewegung wie die Tabellenskelette in core: --vc-sk mit dem
+   Geist-Schimmer (15.10.; vorher ein eigener weisser Lauf als ::after, je Thema ein Wert), Radius
+   der Balken wie Geist (--up-sk-r). usn-sk-lauf traegt nichts mehr und bleibt fuer den Vertrag. */
+.usn-sk { display: block; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); position: relative; overflow: hidden; }
 @keyframes usn-sk-lauf { to { transform: translateX(100%); } }
 .usn-teamlogo .usn-sk { width: 23px; height: 23px; border-radius: 7.7px; }
 .usn-teamname .usn-sk { width: 96px; height: 13px; }

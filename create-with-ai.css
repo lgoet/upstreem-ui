@@ -419,9 +419,10 @@
 .uca-bld-skel { width: 100%; display: flex; align-items: center; gap: 11px; margin-bottom: 2px; padding: 8px 10px; }
 .uca-bld-skel-fav { width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto; }
 .uca-bld-skel-lines { flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px; }
-.uca-bld-skel-l1 { height: 11px; width: 60%; border-radius: 4px; }
-.uca-bld-skel-l2 { height: 10px; width: 40%; border-radius: 4px; }
-.uca-skel { background: var(--vc-sk); animation: ucaShimmer 1.2s ease-in-out infinite; }
+.uca-bld-skel-l1 { height: 11px; width: 60%; border-radius: var(--up-sk-r); }
+.uca-bld-skel-l2 { height: 10px; width: 40%; border-radius: var(--up-sk-r); }
+/* Das Skelett aus core nach Geist (15.10.); ucaShimmer bleibt fuer den Vertrag stehen. */
+.uca-skel { background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
 @keyframes ucaShimmer { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
 
 /* ---------- How-Panel ---------- */
