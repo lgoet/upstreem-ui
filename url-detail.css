@@ -75,8 +75,8 @@
 .uud-link-txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .uud-root .uud-link[hidden] { display: none; }
 /* Skelett des Kopfes, in den Massen dessen, was gleich dasteht. */
-.uud-skz { display: inline-block; height: 14px; border-radius: var(--up-r-xs); background: var(--vc-sk);
-  animation: uutpulse 1.2s ease-in-out infinite; }
+.uud-skz { display: inline-block; height: 14px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf);
+  animation: var(--up-sk-bewegung); }
 .uud-skz.is-m { width: 132px; } .uud-skz.is-s { width: 88px; }
 .uud-skz.is-titel { display: block; width: 72%; height: 28px; margin-bottom: 6px; }
 .uud-skz.is-titel2 { display: block; width: 44%; height: 28px; }
@@ -118,7 +118,7 @@
    background: var(--vc-heading-bg) UND 12px Radius -- zwei Werte, die von den uebrigen 16px-
    Radien dieser Seite abwichen. */
 .uud-frame {
-  border-radius: 16px; border: 1px solid var(--vc-border); overflow: hidden; box-sizing: border-box;
+  border-radius: var(--up-r-2xl); border: 1px solid var(--vc-border); overflow: hidden; box-sizing: border-box;
 }
 .uud-frame { position: relative; width: 100%; }
 .uud-frame.is-ratio { height: 0; }
@@ -228,7 +228,7 @@
 .uud-hinweis { font-size: var(--up-fs-m); color: var(--vc-muted); line-height: 1.45; min-width: 0; }
 .uud-fehler {
   order: -1;
-  padding: 10px 12px; border-radius: 10px;
+  padding: 10px 12px; border-radius: var(--up-r-l);
   border: 1px solid var(--vc-neg-border, rgba(200, 60, 60, .28));
   background: var(--vc-neg-bg, rgba(200, 60, 60, .08));
   font-size: 13px; line-height: 1.45; color: var(--vc-text);
@@ -244,7 +244,7 @@
 /* Nur so breit wie ihr Inhalt, aber nie schmaler als ein Drittel der Seite: zwei Spalten in
    voller Breite lassen die Quote am rechten Rand allein stehen, und eine Tabelle, die auf zwei
    kurze Namen zusammenschrumpft, sieht aus wie ein Rest. */
-.uud-ctable { border: 1px solid var(--vc-border); border-radius: 12px; overflow: hidden;
+.uud-ctable { border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); overflow: hidden;
   width: fit-content; min-width: 33%; max-width: 100%; }
 /* .check_reinvention.py meldet die naechste Zeile als gesprengtes Bauteil: sie setzt display
    und laesst grid-template-columns stehen. Genau das ist hier richtig und core macht es an
@@ -276,8 +276,8 @@
    Warnung, nicht als Messwert. Hier stand ein eigener runder 6px-Punkt. */
 
 /* ---- Ladezustand -----------------------------------------------------------------------------
-   Kein eigenes Skelett-Markup: die Abschnitte stehen bereits, sie bekommen nur den Puls von core
-   (uutpulse, derselbe Name und dieselbe Dauer wie an jedem Skelettbalken der App) auf ihre
+   Kein eigenes Skelett-Markup: die Abschnitte stehen bereits, sie bekommen nur das Skelett von
+   core (seit dem 15.10. der Geist-Schimmer, derselbe wie an jedem Skelettbalken der App) auf ihre
    Flaechen. Ein zweiter Aufbau nur fuers Laden waere ein zweiter Aufbau, den jemand pflegen muss. */
 .uud-root.is-loading .uud-mrow,
 .uud-root.is-loading .uud-sect-embed,
@@ -301,8 +301,8 @@
 .uud-root.is-loading .uud-sk { display: flex; }
 .uud-root.is-loading .uud-text { display: none; }
 .uud-root.is-loading .uud-kpi-val::before {
-  content: ""; display: block; width: 56px; height: 15px; border-radius: 6px;
-  background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite;
+  content: ""; display: block; width: 56px; height: 15px; border-radius: var(--up-r-s);
+  background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung);
 }
 .uud-root.is-loading .uud-kpi-val > * { display: none; }
 

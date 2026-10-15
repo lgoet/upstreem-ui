@@ -20,8 +20,8 @@
    in der Tabelle und gehoert damit in dieselbe Zeile wie der Titel. */
 .udb-total { font-size: 13px; font-weight: 400; color: var(--vc-muted); white-space: nowrap;
   margin-left: 12px; flex: 0 0 auto; }
-.udb-total.is-sk { width: 168px; height: 13px; border-radius: 4px; background: var(--vc-sk);
-  animation: uutpulse 1.2s ease-in-out infinite; }
+.udb-total.is-sk { width: 168px; height: 13px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf);
+  animation: var(--up-sk-bewegung); }
 /* Stand der Daten ("bis gestern", Vertrag Brands v1 10.2): leiser als die Zahl davor, mit Abstand
    statt Trennzeichen. */
 .udb-total-stand { margin-left: 8px; color: var(--vc-third); }
@@ -34,7 +34,7 @@
    haben wie die beiden. */
 .udb-matched {
   display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px;
-  border: 1px solid var(--vc-border); border-radius: 8px;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vc-bg); color: var(--vc-muted);
   font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
   white-space: nowrap; cursor: pointer; outline: 0; flex: 0 0 auto;
@@ -44,7 +44,7 @@
 .udb-matched:hover { background: var(--up-knopf-hover); color: var(--vc-text); }
 .udb-matched.is-on { color: var(--vc-text); }
 .udb-cb {
-  width: 16px; height: 16px; flex: 0 0 16px; border-radius: 5px;
+  width: 16px; height: 16px; flex: 0 0 16px; border-radius: var(--up-r-xs);
   border: 1px solid var(--vc-border); background: var(--vc-bg);
   display: inline-flex; align-items: center; justify-content: center; color: transparent;
   /* Timing aus core, damit alle Kaestchen der App gleich schnell sind. */
@@ -57,7 +57,7 @@
    sein und nicht als echte Marke. Die Platte darunter (.up-explain-vis) ist in beiden Themes
    hell, die Farbe ist darum fest und nicht aus den Theme-Tokens. */
 .udb-explain-logo {
-  width: 18px; height: 18px; flex: 0 0 18px; border-radius: 5px;
+  width: 18px; height: 18px; flex: 0 0 18px; border-radius: var(--up-r-xs);
   display: inline-flex; align-items: center; justify-content: center;
   background: #f0f0ef; color: var(--vc-third);
 }
@@ -103,7 +103,7 @@
 .udb-dom { font-size: 13px; color: var(--vc-muted); white-space: nowrap; overflow: hidden;
   text-overflow: ellipsis; min-width: 0; }
 .udb-go {
-  width: 22px; height: 22px; flex: 0 0 22px; border: 0; border-radius: 6px; padding: 0;
+  width: 22px; height: 22px; flex: 0 0 22px; border: 0; border-radius: var(--up-r-s); padding: 0;
   background: transparent; color: var(--vc-third); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
   opacity: 0; transition: opacity .14s ease, color .14s ease, background .14s ease;
@@ -118,7 +118,7 @@
 /* ---------- Track-Knopf ---------- */
 .udb-track {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  height: 30px; padding: 0 12px; border: 0; border-radius: 8px;
+  height: 30px; padding: 0 12px; border: 0; border-radius: var(--up-r-m);
   background: var(--up-accent); color: var(--up-accent-fg);
   font-family: inherit; font-size: 12.5px; font-weight: 600; line-height: 1;
   cursor: pointer; outline: 0; white-space: nowrap;
@@ -156,7 +156,7 @@
   /* Dieselben 16px wie der Tabellenkasten. Im Sticky-Modus nimmt .up-sticky dem Kasten sein
      overflow:hidden, die Flaeche wird also nicht mehr von aussen rund geschnitten und muss ihren
      Radius selbst mitbringen. */
-  border-radius: 16px;
+  border-radius: var(--up-r-2xl);
 }
 .udb-root.is-loading .up-table, .udb-root.is-loading .up-empty { display: none; }
 

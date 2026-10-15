@@ -62,11 +62,11 @@
        Schimmer war damit eine flache Flaeche geworden, und zwar in genau der Farbe der aktiven
        Zeile (.am-prev-item.is-active). Ein neuer Chat IST die aktive Zeile: das Skelett stand da,
        gleiche Farbe auf gleicher Farbe.
-       Jetzt die Toene, die jedes andere Skelett der App traegt: --vc-sk als dunkle Stufe,
-       --vc-heading-bg als helle. Die dunkle ist auf dem Grund der aktiven Zeile sichtbar, die
-       helle laeuft als Glanz darueber -- in beiden Themen. */
+       Jetzt der Ton, den jedes andere Skelett der App traegt: --vc-sk als Grund, der auf der
+       aktiven Zeile sichtbar ist. Der Glanz darueber kommt seit dem 15.10. aus core
+       (--up-sk-verlauf, Geist-Skelett); --am-sk-b, der helle Gegenton des alten Verlaufs, ist
+       damit entfallen. */
     --am-sk-a: var(--vc-sk);
-    --am-sk-b: var(--vc-heading-bg);
     --am-primary: var(--vc-text);
     --am-user-bg: var(--vc-heading-bg);
     --am-user-text: var(--vc-text);
@@ -81,7 +81,7 @@
     --am-accent: #7c5cff;
     --am-accent-2: #4f8bff;
     --am-accent-soft: rgba(124,92,255,0.10);
-    --am-radius: 16px;
+    --am-radius: var(--up-r-2xl);
   }
   #ask-mira {
     width: 100%;
@@ -202,13 +202,13 @@
     font-feature-settings: "liga" 1, "calt" 1;
   }
   .am-status-pill {
-    height: 22px; padding: 0 9px; border-radius: 8px;
+    height: 22px; padding: 0 9px; border-radius: var(--up-r-m);
     border: 0; background: var(--am-soft-2);
     display: inline-flex; align-items: center; gap: 6px;
     font-size: 11px; font-weight: 600; color: var(--am-muted);
   }
   .am-status-dot {
-    width: 6px; height: 6px; border-radius: 999px; background: #2ec27e;
+    width: 6px; height: 6px; border-radius: var(--up-r-voll); background: #2ec27e;
     box-shadow: 0 0 0 0 rgba(46,194,126,0.5); animation: amDotPulse 2s ease-in-out infinite;
   }
   #ask-mira.is-loading .am-status-dot { background: var(--am-primary); box-shadow: 0 0 0 0 rgba(31,31,27,0.4); }
@@ -219,7 +219,7 @@
 
   .am-ghost-btn {
     height: 32px; padding: 0 12px; border: 1px solid var(--am-border);
-    border-radius: 9px; background: var(--am-card); color: var(--am-muted);
+    border-radius: var(--up-r-m); background: var(--am-card); color: var(--am-muted);
     display: inline-flex; align-items: center; gap: 8px;
     font-size: 13px; font-weight: 500; cursor: pointer; flex: 0 0 auto;
     transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
@@ -296,7 +296,7 @@
 
   .am-bubble {
     max-width: min(100%, 782px); min-width: 0;
-    padding: 12px 15px; border-radius: 14px;
+    padding: 12px 15px; border-radius: var(--up-r-2xl);
     font-size: 16px; line-height: 1.7; position: relative;
   }
   .am-msg.is-assistant .am-bubble {
@@ -306,7 +306,7 @@
   }
   .am-msg.is-user .am-bubble {
     background: var(--am-user-bg); color: var(--am-user-text);
-    border-top-right-radius: 5px;
+    border-top-right-radius: var(--up-r-xs);
   }
   /* HOHER KONTRAST FUER DIE BLASEN DES NUTZERS (19.09. angefordert): Flaeche in der Schriftfarbe,
      Schrift darauf in der Schriftfarbe des ANDEREN Themas. Zwei Token genuegen -- jede Regel der
@@ -351,14 +351,16 @@
   .am-user-more:hover { color: var(--am-text); text-decoration: underline; }
   /* voice message: skeleton lines imitating text while the transcript is pending */
   .am-user-skel { display: flex; flex-direction: column; gap: 8px; padding: 3px 0; min-width: 120px; }
+  /* Das Skelett nach Geist (15.10., core --up-sk-bewegung): Kachel 150 %, Glanz in der Mitte, um
+     eine Kachel nach rechts. Die Toene bleiben die der Blase (aus --am-user-text), weil sie im
+     hohen Kontrast dunkel ist und der Glanz aus core dort verschwaende; der Glanz geht wie bei
+     Geist zur Schriftfarbe hin. amUserSkel bleibt fuer den Vertrag stehen. */
   .am-user-skel-line {
-    height: 10px; border-radius: 5px;
-    background: linear-gradient(90deg,
-      color-mix(in srgb, var(--am-user-text) 11%, transparent) 25%,
-      color-mix(in srgb, var(--am-user-text) 22%, transparent) 37%,
-      color-mix(in srgb, var(--am-user-text) 11%, transparent) 63%);
-    background-size: 300% 100%;
-    animation: amUserSkel 1.4s ease infinite;
+    height: 10px; border-radius: var(--up-sk-r, 5px);
+    background: color-mix(in srgb, var(--am-user-text) 11%, transparent)
+      linear-gradient(90deg, rgba(0,0,0,0) 0%, color-mix(in srgb, var(--am-user-text) 8%, transparent) 50%, rgba(0,0,0,0) 100%)
+      0 0 / 150% 100% repeat-x;
+    animation: var(--up-sk-bewegung);
   }
   @keyframes amUserSkel { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
   .am-thought {
@@ -379,7 +381,7 @@
   .am-msg.am-typing:hover .am-msg-actions, .am-msg.am-typing .am-msg-actions { opacity: 0 !important; pointer-events: none !important; }
   .am-act-btn {
     position: relative;
-    width: 28px; height: 28px; border: 0; border-radius: 7px; padding: 0;
+    width: 28px; height: 28px; border: 0; border-radius: var(--up-r-m); padding: 0;
     background: transparent; color: var(--am-muted-2); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
     transition: background 120ms ease, color 120ms ease;
@@ -393,7 +395,7 @@
      weg; data-tip an den Knoepfen bleibt, das ist der Haken fuer den Chip von core. */
   /* export-pending spinner (shown instead of the download icon while a PDF export is running) */
   .am-act-spinner {
-    width: 14px; height: 14px; border-radius: 999px; display: inline-block;
+    width: 14px; height: 14px; border-radius: var(--up-r-voll); display: inline-block;
     border: 2px solid color-mix(in srgb, currentColor 28%, transparent);
     border-top-color: currentColor;
     animation: amSpin 720ms linear infinite;
@@ -428,7 +430,7 @@
   .am-fq-item {
     display: flex; align-items: flex-start; gap: 8px;
     width: 100%; margin: 0; padding: 0;
-    border: 0; background: none; border-radius: 6px;
+    border: 0; background: none; border-radius: var(--up-r-s);
     font: inherit; font-size: 14px; line-height: 1.5;
     text-align: left; color: var(--am-muted);
     cursor: pointer;
@@ -487,7 +489,7 @@
   #ask-mira .am-logo-wrap[data-type="prompt"] .am-inline-logo,
   #ask-mira .am-logo-wrap[data-type="brand"] .am-inline-logo,
   #ask-mira .am-logo-wrap[data-type="competitor"] .am-inline-logo {
-    width: 20px; height: 20px; border-radius: 6px;
+    width: 20px; height: 20px; border-radius: var(--up-r-s);
   }
   .am-logo-wrap .am-inline-ic { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; margin: 0 5px 0 0; vertical-align: middle; color: var(--am-muted); pointer-events: none; }
   .am-logo-wrap .am-inline-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -511,7 +513,7 @@
   #ask-mira:is([data-citation="icon"], [data-citation="favicon"]) .am-logo-wrap[data-type="prompt"],
   .am-set-backdrop[data-citation="icon"] .am-logo-wrap[data-type="domain"] {
     display: inline-flex; align-items: center; vertical-align: middle; max-width: 100%; min-width: 0;
-    margin: 2px 0; background: var(--am-soft-2); border-radius: 8px; padding: 0 6px;
+    margin: 2px 0; background: var(--am-soft-2); border-radius: var(--up-r-m); padding: 0 6px;
     /* DER CHIP IST HOEHER ALS SEIN INHALT (18.09.: "sodass die auch wirklich im grauen Container
        liegen"). Vorher bestimmte der Inhalt die Hoehe: 22px Bild in einem 22px Chip, also null
        Luft oben und unten -- das Favicon SASS nicht im Grau, es WAR das Grau.
@@ -544,7 +546,7 @@
   .am-set-backdrop[data-response="logo"] .am-logo-wrap[data-type="response"],
   .am-set-backdrop[data-response="icon"] .am-logo-wrap[data-type="response"] {
     display: inline-flex; align-items: center; vertical-align: middle; max-width: 100%; min-width: 0;
-    background: var(--am-soft-2); border-radius: 8px; padding: 1px 8px 1px 4px; margin: 2px 0 2px 8px;
+    background: var(--am-soft-2); border-radius: var(--up-r-m); padding: 1px 8px 1px 4px; margin: 2px 0 2px 8px;
   }
   #ask-mira[data-response="logo"] p > .am-logo-wrap[data-type="response"]:first-child,
   #ask-mira[data-response="icon"] p > .am-logo-wrap[data-type="response"]:first-child,
@@ -555,7 +557,7 @@
   #ask-mira [data-mira-sentiment] .am-logo-wrap[data-type="response"],
   #ask-mira [data-mira-source-signal] .am-logo-wrap[data-type="response"] { background: none; padding: 0; border-radius: 0; margin-left: 6px; }
   .am-logo-wrap[data-type="response"] .am-resp-ic {
-    width: 17px; height: 17px; border-radius: 4px; margin-right: 6px; flex: 0 0 auto;
+    width: 17px; height: 17px; border-radius: var(--up-r-xs); margin-right: 6px; flex: 0 0 auto;
     display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
     background: none; border: 0;
   }
@@ -572,7 +574,7 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px;
   }
   .am-inline-logo {
-    width: 24px; height: 24px; border-radius: 8px; object-fit: cover;
+    width: 24px; height: 24px; border-radius: var(--up-r-m); object-fit: cover;
     display: inline-block; vertical-align: middle;
     background: var(--am-soft); border: 1px solid var(--am-border);
     pointer-events: none; user-select: none; -webkit-user-drag: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: pan-x pan-y;
@@ -583,12 +585,12 @@
     background: var(--am-soft-2); border-color: var(--am-border); object-fit: initial;
   }
 
-  .am-table-scroll { display: block; width: 100%; max-width: 100%; overflow-x: auto; margin: 24px 0 22px; border-radius: 10px; border: 1px solid var(--am-border); -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
+  .am-table-scroll { display: block; width: 100%; max-width: 100%; overflow-x: auto; margin: 24px 0 22px; border-radius: var(--up-r-l); border: 1px solid var(--am-border); -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
   /* URL choice popover (Visit vs. Open Detail Page) — styled like the tooltip */
   .am-url-pop {
     position: absolute; z-index: 60; min-width: 168px; max-width: 280px;
     background: var(--am-bg); border: 1px solid var(--am-border-strong);
-    border-radius: 11px; box-shadow: var(--am-shadow); padding: 5px;
+    border-radius: var(--up-dd-radius); box-shadow: var(--am-shadow); padding: 5px;
     display: none; flex-direction: column; gap: 2px;
     font-family: inherit; opacity: 0; transform: translateY(-2px);
     transition: opacity .12s ease, transform .12s ease;
@@ -598,7 +600,7 @@
     display: flex; align-items: center; gap: 9px; width: 100%;
     border: 0; background: transparent; color: var(--am-text);
     font: inherit; font-size: 14px; text-align: left; padding: 8px 10px;
-    border-radius: 8px; cursor: pointer; white-space: nowrap; line-height: 1.2;
+    border-radius: var(--up-r-m); cursor: pointer; white-space: nowrap; line-height: 1.2;
   }
   .am-url-pop button:hover { background: var(--am-soft); }
   .am-url-pop button.is-primary { font-weight: 600; }
@@ -610,7 +612,7 @@
   .am-url-pop button > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .am-url-pop button.is-primary svg { color: var(--am-text); }
   /* "Add as opportunity" action button (rendered inline in content) */
-  .am-oppc-btn { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px 0 10px; margin: 3px 0; border: 1px solid var(--am-border); border-radius: 9px; background: var(--am-card); color: var(--am-text); font-family: inherit; font-size: 13px; font-weight: 550; letter-spacing: -0.01em; cursor: pointer; vertical-align: middle; -webkit-user-select: none; user-select: none; transition: background .14s ease, border-color .14s ease, color .14s ease; }
+  .am-oppc-btn { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px 0 10px; margin: 3px 0; border: 1px solid var(--am-border); border-radius: var(--up-r-m); background: var(--am-card); color: var(--am-text); font-family: inherit; font-size: 13px; font-weight: 550; letter-spacing: -0.01em; cursor: pointer; vertical-align: middle; -webkit-user-select: none; user-select: none; transition: background .14s ease, border-color .14s ease, color .14s ease; }
   .am-oppc-btn:hover:not(:disabled) { background: var(--am-soft); border-color: var(--am-border-strong); }
   .am-oppc-btn:disabled { cursor: default; }
   .am-oppc-ic { width: 15px; height: 15px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; }
@@ -626,7 +628,7 @@
   .am-opps-inline.is-in { opacity: 1; transform: none; }
   .am-oppc-spin { animation: amOppcSpin .7s linear infinite; transform-origin: 50% 50%; }
   @keyframes amOppcSpin { to { transform: rotate(360deg); } }
-  .am-toast { position: absolute; left: 50%; bottom: 92px; transform: translate(-50%, 8px); z-index: 90; max-width: min(90%, 440px); padding: 10px 14px; border-radius: 12px; background: var(--am-text); color: var(--am-card); font-size: 13px; font-weight: 500; line-height: 1.35; box-shadow: var(--up-e-2, 0 12px 30px rgba(0,0,0,0.2)); opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; text-align: center; }
+  .am-toast { position: absolute; left: 50%; bottom: 92px; transform: translate(-50%, 8px); z-index: 90; max-width: min(90%, 440px); padding: 10px 14px; border-radius: var(--up-r-2xl); background: var(--am-text); color: var(--am-card); font-size: 13px; font-weight: 500; line-height: 1.35; box-shadow: var(--up-e-4); opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease; text-align: center; }
   .am-toast.is-on { opacity: 1; transform: translate(-50%, 0); }
   .am-url-pop button svg { width: 15px; height: 15px; flex: 0 0 auto; color: var(--am-muted); stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-url-pop .am-url-pop-sub { color: var(--am-muted); font-size: 12px; }
@@ -738,7 +740,7 @@
   /* when evidence chips are present, double the gap to the hover action bar (6px flex gap + 6px = 12px) */
   .am-msg-main:has(.am-evidence) .am-msg-actions { margin-top: 6px; }
   .am-ev-pill {
-    height: 26px; padding: 0 10px 0 8px; border-radius: 8px;
+    height: 26px; padding: 0 10px 0 8px; border-radius: var(--up-r-m);
     display: inline-flex; align-items: center; gap: 6px;
     font-size: 12px; font-weight: 500; white-space: nowrap;
     border: 1px solid var(--am-border);
@@ -770,37 +772,37 @@
   }
   #ask-mira .uo-card {
     position: relative; background: var(--uo-card); border: 1px solid var(--uo-border);
-    border-radius: 14px; padding: 18px; cursor: default; user-select: text;
+    border-radius: var(--up-r-2xl); padding: 18px; cursor: default; user-select: text;
   }
   #ask-mira .uo-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 13px; }
   #ask-mira .uo-card-topright { display: inline-flex; align-items: center; gap: 10px; flex: 0 0 auto; }
   /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
      Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
-  #ask-mira .uo-eyebrow { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 8px; background: var(--uo-soft-2); font-size: 12px; font-weight: 600; color: var(--uo-muted); min-width: 0; max-width: 100%; }
+  #ask-mira .uo-eyebrow { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: var(--up-r-s); background: var(--uo-soft-2); font-size: 12px; font-weight: 600; color: var(--uo-muted); min-width: 0; max-width: 100%; }
   #ask-mira .uo-eyebrow svg { width: 12px; height: 12px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   #ask-mira .uo-eyebrow span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #ask-mira .uo-status { position: relative; flex: 0 0 auto; }
-  #ask-mira .uo-status-btn { height: 24px; padding: 0 7px 0 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; border: 1px solid var(--uo-border); color: var(--uo-muted); background: var(--uo-soft); white-space: nowrap; cursor: pointer; font-family: inherit; transition: background .14s, border-color .14s, color .14s; }
+  #ask-mira .uo-status-btn { height: 24px; padding: 0 7px 0 10px; border-radius: var(--up-r-s); display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; border: 1px solid var(--uo-border); color: var(--uo-muted); background: var(--uo-soft); white-space: nowrap; cursor: pointer; font-family: inherit; transition: background .14s, border-color .14s, color .14s; }
   #ask-mira .uo-status-btn:hover { background: var(--uo-soft-2); border-color: var(--uo-border-strong); color: var(--uo-text); }
   #ask-mira .uo-status.is-open .uo-status-btn { background: var(--uo-soft-2); border-color: var(--uo-border-strong); color: var(--uo-text); }
   #ask-mira .uo-status-label { line-height: 1; }
   #ask-mira .uo-status-chev { width: 12px; height: 12px; margin-left: 1px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: var(--am-muted-3); transition: transform .16s ease; }
-  #ask-mira .uo-status-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 40; min-width: 168px; padding: 5px; border: 1px solid var(--uo-border); border-radius: 12px; background: var(--uo-card); box-shadow: var(--up-e-3, 0 14px 34px rgba(0,0,0,0.13)); opacity: 0; transform: translateY(-4px) scale(0.98); transform-origin: top right; pointer-events: none; transition: opacity .14s ease, transform .14s ease; }
+  #ask-mira .uo-status-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 40; min-width: 168px; padding: 5px; border: 1px solid var(--uo-border); border-radius: var(--up-dd-radius); background: var(--uo-card); box-shadow: var(--up-e-2); opacity: 0; transform: translateY(-4px) scale(0.98); transform-origin: top right; pointer-events: none; transition: opacity .14s ease, transform .14s ease; }
   #ask-mira .uo-status.is-open .uo-status-menu { opacity: 1; transform: none; pointer-events: auto; }
-  #ask-mira .uo-status-opt { width: 100%; height: 32px; padding: 0 9px; border: 0; border-radius: 8px; background: transparent; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 550; color: var(--uo-text); cursor: pointer; font-family: inherit; text-align: left; }
+  #ask-mira .uo-status-opt { width: 100%; height: 32px; padding: 0 9px; border: 0; border-radius: var(--up-r-m); background: transparent; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 550; color: var(--uo-text); cursor: pointer; font-family: inherit; text-align: left; }
   #ask-mira .uo-status-opt:hover { background: var(--uo-soft); }
   #ask-mira .uo-status-menu .uo-status-dot { width: 7px; height: 7px; }
-  #ask-mira .uo-status-dot { width: 7px; height: 7px; border-radius: 999px; background: var(--uo-stat, var(--uo-muted-2)); flex: 0 0 auto; }
+  #ask-mira .uo-status-dot { width: 7px; height: 7px; border-radius: var(--up-r-voll); background: var(--uo-stat, var(--uo-muted-2)); flex: 0 0 auto; }
   #ask-mira .uo-pot { display: inline-flex; align-items: center; flex: 0 0 auto; }
   #ask-mira .uo-pot-bars { display: flex; align-items: center; gap: 3px; }
-  #ask-mira .uo-pot-bar { width: 5px; height: 15px; border-radius: 4px; background: var(--uo-border-strong); }
+  #ask-mira .uo-pot-bar { width: 5px; height: 15px; border-radius: var(--up-r-xs); background: var(--uo-border-strong); }
   #ask-mira .uo-pot-bar.is-on { background-image: linear-gradient(90deg, var(--uo-pot-a), var(--uo-pot-b)); background-size: 29px 100%; background-repeat: no-repeat; }
   #ask-mira .uo-pot-bar.is-on.p1 { background-position: 0 0; } #ask-mira .uo-pot-bar.is-on.p2 { background-position: -8px 0; }
   #ask-mira .uo-pot-bar.is-on.p3 { background-position: -16px 0; } #ask-mira .uo-pot-bar.is-on.p4 { background-position: -24px 0; }
   #ask-mira .uo-card-title { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.34; letter-spacing: -0.015em; color: var(--uo-text); }
   #ask-mira .uo-card-reason { margin: 9px 0 0; font-size: 13px; line-height: 1.55; color: var(--uo-muted); }
   #ask-mira .uo-source { display: flex; align-items: center; gap: 11px; margin-top: 18px; min-width: 0; }
-  #ask-mira .uo-fav { width: 26px; height: 26px; border-radius: 7px; flex: 0 0 auto; object-fit: cover; background: var(--uo-soft-2); border: 1px solid var(--uo-border); }
+  #ask-mira .uo-fav { width: 26px; height: 26px; border-radius: var(--up-r-m); flex: 0 0 auto; object-fit: cover; background: var(--uo-soft-2); border: 1px solid var(--uo-border); }
   #ask-mira .uo-fav-fb { display: none; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--uo-muted); background: var(--uo-soft-2); border: 1px solid var(--uo-border); }
   #ask-mira .uo-source-meta { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
   #ask-mira .uo-source-title { font-size: 13px; font-weight: 500; color: var(--uo-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
@@ -809,7 +811,7 @@
      Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
   #ask-mira .uo-sec { margin: 18px 0 11px; font-size: 12px; font-weight: 600; color: var(--am-muted-2); }
   #ask-mira .uo-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
-  #ask-mira .uo-kpi { border: 1px solid var(--uo-border); border-radius: 12px; background: var(--uo-card); padding: 12px 13px; min-width: 0; }
+  #ask-mira .uo-kpi { border: 1px solid var(--uo-border); border-radius: var(--up-r-2xl); background: var(--uo-card); padding: 12px 13px; min-width: 0; }
   #ask-mira .uo-kpi-label { font-size: 11px; color: var(--uo-muted); font-weight: 500; }
   #ask-mira .uo-kpi-val { margin-top: 6px; font-size: 16px; font-weight: 550; letter-spacing: -0.02em; color: var(--uo-text); display: flex; align-items: center; flex-wrap: wrap; gap: 4px 7px; }
   /* --vt-up/--vt-down statt der hellen Werte: im Dunkeln stehen dort #60d25d und #d25d5d, und
@@ -839,18 +841,18 @@
   /* ---- list rows (1:1 with the Opportunities list mode) — default collapsed view ---- */
   #ask-mira .uo-row {
     display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px;
-    background: var(--uo-card); border: 1px solid var(--uo-border); border-radius: 12px;
+    background: var(--uo-card); border: 1px solid var(--uo-border); border-radius: var(--up-r-xl);
     padding: 12px 15px; cursor: pointer; transition: border-color 120ms ease, background 120ms ease;
   }
   #ask-mira .uo-row:hover { border-color: var(--uo-hover-border); background: var(--uo-hover-bg); }
   #ask-mira .uo-row-main { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
   #ask-mira .uo-row-title { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: var(--uo-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #ask-mira .uo-row-sub { display: flex; align-items: center; gap: 8px; min-width: 0; }
-  #ask-mira .uo-row-sub .uo-fav, #ask-mira .uo-row-sub .uo-fav-fb { width: 18px; height: 18px; border-radius: 5px; }
+  #ask-mira .uo-row-sub .uo-fav, #ask-mira .uo-row-sub .uo-fav-fb { width: 18px; height: 18px; border-radius: var(--up-r-xs); }
   #ask-mira .uo-row-domain { font-size: 12px; color: var(--uo-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #ask-mira .uo-row-right { display: flex; align-items: center; gap: 16px; flex: 0 0 auto; }
   #ask-mira .uo-row-tags { display: flex; gap: 6px; }
-  #ask-mira .uo-dot-sep { width: 3px; height: 3px; border-radius: 999px; background: var(--uo-muted-2); flex: 0 0 auto; }
+  #ask-mira .uo-dot-sep { width: 3px; height: 3px; border-radius: var(--up-r-voll); background: var(--uo-muted-2); flex: 0 0 auto; }
 
   /* expand/collapse: row by default; clicking the row reveals the full card */
   #ask-mira .am-opp-item .am-opp-card-wrap { overflow: hidden; max-height: 600px; opacity: 1; transition: max-height 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 120ms ease; }
@@ -874,7 +876,7 @@
   #ask-mira .am-opps:not(.am-opp-run) { margin-bottom: 54px; }   /* no Show more button (<4 cards) -> 2 extra line breaks below the last card */
   #ask-mira .am-opp-showmore {
     align-self: flex-start; height: 32px; padding: 0 14px; border: 1px solid var(--am-border);
-    border-radius: 9px; background: var(--am-card); color: var(--am-text);
+    border-radius: var(--up-r-m); background: var(--am-card); color: var(--am-text);
     font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer;
     display: inline-flex; align-items: center; gap: 7px; transition: background 120ms ease, border-color 120ms ease;
   }
@@ -883,7 +885,7 @@
   /* action buttons (Create / Confirm) — primary button matching the Opportunities CTA */
   #ask-mira .am-msg-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
   #ask-mira .am-cta {
-    height: 40px; padding: 0 18px; border: 1px solid var(--am-primary); border-radius: 9px;
+    height: 40px; padding: 0 18px; border: 1px solid var(--am-primary); border-radius: var(--up-r-l);
     background: var(--am-primary); color: var(--am-bg);
     font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap;
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -983,7 +985,7 @@
   /* Mira selbst: Kasten in der ersten Textfarbe, Zeichen darin in der Flaechenfarbe -- also in
      beiden Themen der kraeftigste Gegensatz, den das Thema hat. */
   .am-run-ic.is-mira {
-    border-radius: 7px; background: var(--am-text); color: var(--am-bg);
+    border-radius: var(--up-r-s); background: var(--am-text); color: var(--am-bg);
   }
   .am-run-ic.is-mira svg { width: 12px; height: 12px; }
   .am-run-step.is-done .am-run-ic.is-mira { color: var(--am-bg); }
@@ -1037,7 +1039,7 @@
      Polster, Radius und Bildmasse im selben Verhaeltnis (8*20/24, 22*20/24, 7*20/24). Ohne die
      Platte verschwanden dunkle Logos im Dunkeln -- deshalb ist sie appweit hell, in BEIDEN Themen. */
   .am-run-lead .am-tload-logo, .am-run-lead .am-tload-ai {
-    width: 20px; height: 20px; border-radius: 7px; font-size: 11px;
+    width: 20px; height: 20px; border-radius: var(--up-r-s); font-size: 11px;
     background: var(--vt-logo-bg); border: 1px solid var(--am-border); padding: 1px;
     /* Der Trennring des Stapels. 2px, wie bei den Punkten der Skala -- er haengt nicht an der
        Groesse der Bilder, sondern soll die Naht zwischen ihnen sichtbar halten. */
@@ -1052,7 +1054,7 @@
   .am-run-lead > *:nth-child(5) { z-index: 1; }
   .am-run-lead > * { position: relative; }
   .am-run-lead .am-tload-logo img, .am-run-lead .am-tload-ai img {
-    width: 100%; height: 100%; border-radius: 6px; object-fit: contain;
+    width: 100%; height: 100%; border-radius: var(--up-r-s); object-fit: contain;
   }
   .up-root[data-theme="dark"] .am-run-lead .am-tload-logo,
   .up-root[data-theme="dark"] .am-run-lead .am-tload-ai { border-color: transparent; background-clip: padding-box; }
@@ -1064,14 +1066,14 @@
   }
 
   /* brand + favicon chip = exactly the inline-logo style (24px, radius 8, soft bg, border, cover) */
-  .am-tload-logo { width: 24px; height: 24px; border-radius: 8px; background: var(--am-soft); border: 1px solid var(--am-border); overflow: hidden; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; font-size: 11px; font-weight: 600; }
+  .am-tload-logo { width: 24px; height: 24px; border-radius: var(--up-r-m); background: var(--am-soft); border: 1px solid var(--am-border); overflow: hidden; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; font-size: 11px; font-weight: 600; }
   .am-tload-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .am-tload-logo.is-fb { background: var(--fb,#9ca3af) !important; border-radius: 6px; }
+  .am-tload-logo.is-fb { background: var(--fb,#9ca3af) !important; border-radius: var(--up-r-s); }
   .am-tload-logo.is-fb img { display: none; }
   /* AI model = resp-ic style (transparent, no box, contain) */
-  .am-tload-ai { width: 24px; height: 24px; border-radius: 8px; overflow: hidden; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; background: transparent; color: #fff; font-size: 11px; font-weight: 600; }
-  .am-tload-ai img { width: 24px; height: 24px; object-fit: contain; display: block; border-radius: 8px; }
-  .am-tload-ai.is-fb { background: var(--fb,#9ca3af) !important; border-radius: 8px; }
+  .am-tload-ai { width: 24px; height: 24px; border-radius: var(--up-r-m); overflow: hidden; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; background: transparent; color: #fff; font-size: 11px; font-weight: 600; }
+  .am-tload-ai img { width: 24px; height: 24px; object-fit: contain; display: block; border-radius: var(--up-r-m); }
+  .am-tload-ai.is-fb { background: var(--fb,#9ca3af) !important; border-radius: var(--up-r-m); }
   .am-tload-ai.is-fb img { display: none; }
   @media (prefers-reduced-motion: reduce){
     .am-run-step, .am-run-lead > *, .am-run-spin { transition: none !important; }
@@ -1173,14 +1175,14 @@
   #ask-mira .am-suggested.is-catclosed .am-sugg-fold { grid-template-rows: 0fr; }
   /* mobile quick actions (hidden on desktop, shown via the mobile media query) */
   .am-quick { display: none; grid-template-columns: 1fr; gap: 2px; margin-top: 4px; }
-  .am-quick-item { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; padding: 10px 8px; border: 0; border-radius: 10px; background: transparent; color: var(--am-text); font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 120ms ease; }
+  .am-quick-item { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; padding: 10px 8px; border: 0; border-radius: var(--up-r-m); background: transparent; color: var(--am-text); font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 120ms ease; }
   .am-quick-item:active { background: var(--am-soft); }
   .am-quick-ic { width: 16px; height: 16px; flex: 0 0 auto; color: var(--am-muted); display: inline-flex; align-items: center; justify-content: center; }
   .am-quick-ic svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-quick-label { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
   #ask-mira.has-messages .am-quick { display: none !important; }
   .am-suggest-card {
-    text-align: left; border: 1px solid var(--am-border); border-radius: 12px;
+    text-align: left; border: 1px solid var(--am-border); border-radius: var(--up-r-2xl);
     background: transparent; padding: 13px 14px; cursor: pointer;
     display: flex; align-items: center; gap: 11px; min-width: 0;
     color: var(--am-text); font-size: 14px; font-weight: 500; line-height: 1.4;
@@ -1218,7 +1220,7 @@
      gemeint. Die Zahlen stehen gemessen im Kommentar am Hover. */
   .am-cat-card {
     position: relative; overflow: hidden;
-    text-align: left; border-radius: 12px;
+    text-align: left; border-radius: var(--up-r-2xl);
     /* OHNE Grund, dafuer ein Rahmen mit halber Deckkraft (09.09.). color-mix statt opacity:
        opacity haette das ganze Element durchsichtig gemacht, samt Zeichen und Text. */
     border: 1px solid color-mix(in srgb, var(--vc-border) 50%, transparent);
@@ -1231,7 +1233,7 @@
   .am-cat-card-full { width: 100%; margin-bottom: 10px; }
   /* the Reporting category card is styled exactly like a report card (taller, with a subheading) */
   .am-cat-card-report { padding: 12px 13px 12px 76px; align-items: center; }
-  .am-cat-card-report .am-cat-ic { left: 20px; top: 12px; width: 42px; height: 58px; border-radius: 10px; padding-top: 11px; }
+  .am-cat-card-report .am-cat-ic { left: 20px; top: 12px; width: 42px; height: 58px; border-radius: var(--up-r-l); padding-top: 11px; }
   .am-cat-card-report .am-cat-ic svg { width: 16px; height: 16px; }
   .am-cat-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
   .am-cat-label { font-size: 14px; font-weight: 600; color: var(--am-text); line-height: 1.2; }
@@ -1272,7 +1274,7 @@
      and is clipped by the card (same logic as the report cards); absolute -> no extra card height */
   .am-cat-ic {
     position: absolute; left: 15px; top: 8px;
-    width: 34px; height: 46px; border-radius: 8px;
+    width: 34px; height: 46px; border-radius: var(--up-r-l);
     display: flex; align-items: flex-start; justify-content: center; padding-top: 8px;
     background: var(--am-card); border: 1px solid var(--am-border); color: var(--am-muted);
     /* Ruht auf der Karte: e-1. Beim Ueberfahren hebt sie sich: e-2 (28.09.; vorher zwei eigene
@@ -1287,7 +1289,7 @@
   .am-cat-card:hover .am-cat-ic { transform: rotate(-4deg) scale(1.02); box-shadow: var(--up-e-chip); color: var(--am-text); }
   .am-cat-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .am-cat-name { flex: 1 1 auto; min-width: 0; }
-  #ask-mira[data-theme="dark"] .am-cat-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: var(--up-e-1, 0 1px 4px rgba(0,0,0,.28)); }
+  #ask-mira[data-theme="dark"] .am-cat-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: var(--up-e-1); }
   #ask-mira[data-theme="dark"] .am-cat-card:hover .am-cat-ic { background: rgba(53,54,56,0.3); color: var(--am-text); box-shadow: var(--up-e-2); }
   /* Das Chevron rueckt beim Ueberfahren 4px nach rechts. transform und nicht margin: ein
      transform laesst den Browser nicht neu umbrechen, die Karte darum bleibt also ruhig.
@@ -1301,7 +1303,7 @@
 
   .am-gallery-head { display: flex; align-items: center; gap: 16px; margin: 0 0 20px; }
   .am-gallery-back {
-    height: 32px; padding: 0 11px 0 8px; border: 1px solid var(--am-border); border-radius: 9px;
+    height: 32px; padding: 0 11px 0 8px; border: 1px solid var(--am-border); border-radius: var(--up-r-m);
     background: var(--am-card); color: var(--am-muted); display: inline-flex; align-items: center; gap: 5px;
     font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; flex: 0 0 auto;
     transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
@@ -1312,8 +1314,8 @@
      kein Polster, kein Zwischenraum. Radius 8 statt 9 -- auf 24px Kante wirkt 9 fast rund.
      (Angefangen am 20.09. nur im Reporting-Kopf, wo der Platz knapp ist; noch am selben Tag auf
      alle uebrigen Kategorien nachgezogen, damit die Kopfzeile ueberall dieselbe ist.) */
-  .am-gallery-back-ic { width: 24px; height: 24px; padding: 0; gap: 0; border-radius: 8px; justify-content: center; }
-  .am-gallery-cat-ic { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 8px; background: var(--am-soft); border: 1px solid var(--am-border); color: var(--am-text); }
+  .am-gallery-back-ic { width: 24px; height: 24px; padding: 0; gap: 0; border-radius: var(--up-r-s); justify-content: center; }
+  .am-gallery-cat-ic { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; border-radius: var(--up-r-m); background: var(--am-soft); border: 1px solid var(--am-border); color: var(--am-text); }
   .am-gallery-cat-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-gallery-cat-title { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; color: var(--am-text); }
   .am-gallery-sub { margin-top: 24px; }
@@ -1324,7 +1326,7 @@
   .am-gallery-prompts { display: flex; flex-direction: column; gap: 2px; }
   .am-gallery-prompt {
     text-align: left; border: 0; background: transparent; cursor: pointer; width: 100%;
-    display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 9px; margin: 0 -10px;
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: var(--up-r-m); margin: 0 -10px;
     color: var(--am-text); font-family: inherit; font-size: 14px; font-weight: 450; line-height: 1.45;
     transition: none;
   }
@@ -1340,7 +1342,7 @@
   .am-rep-range-wrap { position: relative; flex: 0 0 auto; }
   .am-rep-range {
     display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px;
-    border: 1px solid var(--am-border); border-radius: 8px; background: var(--am-card); cursor: pointer;
+    border: 1px solid var(--am-border); border-radius: var(--up-r-m); background: var(--am-card); cursor: pointer;
     color: var(--am-text); font-family: inherit; font-size: 13px; font-weight: 500;
     transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
   }
@@ -1387,13 +1389,13 @@
   .am-rep-range-menu {
     position: absolute; top: calc(100% + var(--up-dd-gap)); right: 0; min-width: 184px; z-index: 60;
     background: var(--up-menu-bg); border: 1px solid var(--up-menu-border); border-radius: var(--up-dd-radius);
-    box-shadow: var(--up-e-2, 0 12px 32px rgba(0,0,0,0.14)); padding: var(--up-dd-pad);
+    box-shadow: var(--up-e-2); padding: var(--up-dd-pad);
     opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
     transition: opacity 120ms ease, transform 120ms ease; max-height: 320px; overflow-y: auto;
   }
   .am-rep-range-wrap.is-open .am-rep-range-menu { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
   .am-rep-range-opt {
-    width: 100%; min-height: 34px; border: 0; border-radius: 8px; background: transparent; color: var(--am-text);
+    width: 100%; min-height: 34px; border: 0; border-radius: var(--up-r-s); background: transparent; color: var(--am-text);
     padding: 0 9px; display: flex; align-items: center; gap: 8px; cursor: pointer;
     font-family: inherit; font-size: 14px; font-weight: 500; text-align: left;
   }
@@ -1424,7 +1426,7 @@
   .am-rep-card {
     position: relative; overflow: hidden;
     display: flex; align-items: center; gap: 13px; width: 100%; text-align: left;
-    border-radius: 12px;
+    border-radius: var(--up-r-2xl);
     /* wie bei den Kategoriekarten: kein Grund, ein halber Rahmen */
     border: 1px solid color-mix(in srgb, var(--vc-border) 50%, transparent);
     background: transparent;
@@ -1444,7 +1446,7 @@
      bottom edge and is clipped by the card (absolute so it never changes the card height) */
   .am-rep-ic {
     position: absolute; left: 20px; top: 12px;
-    width: 42px; height: 58px; border-radius: 10px;
+    width: 42px; height: 58px; border-radius: var(--up-r-l);
     display: flex; align-items: flex-start; justify-content: center; padding-top: 11px;
     background: var(--am-card); border: 1px solid var(--am-border); color: var(--am-muted);
     /* Wie .am-cat-ic: ruht auf e-1, hebt sich beim Ueberfahren auf e-2 (28.09.). */
@@ -1467,7 +1469,7 @@
   /* edit affordance: appears on the right after ~1s of hover (is-editable added via JS), replacing the chevron */
   .am-rep-edit {
     position: absolute; right: 12px; top: 50%; transform: translateY(-50%); z-index: 2;
-    display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px;
+    display: grid; place-items: center; width: 26px; height: 26px; border-radius: var(--up-r-m);
     color: var(--am-muted); background: var(--am-card); border: 1px solid var(--am-border);
     opacity: 0; pointer-events: none; cursor: pointer;
     transition: opacity 120ms ease, color 120ms ease, background 120ms ease, border-color 120ms ease;
@@ -1482,7 +1484,7 @@
   /* Die zwei dunklen Sonderzeilen fuer die Reportkarte sind weg: --am-bg und
      --vt-row-hover-solid drehen sich mit dem Thema, und #2a2a2a war deckend, aber zu hell --
      dieselbe Meldung wie bei den Kategoriekarten. */
-  #ask-mira[data-theme="dark"] .am-rep-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: var(--up-e-1, 0 1px 4px rgba(0,0,0,.28)); }
+  #ask-mira[data-theme="dark"] .am-rep-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: var(--up-e-1); }
   #ask-mira[data-theme="dark"] .am-rep-card:hover .am-rep-ic { background: rgba(53,54,56,0.3); color: var(--am-text); box-shadow: var(--up-e-2); }
 
   /* ===================== COMPOSER ===================== */
@@ -1607,8 +1609,8 @@
   .am-msgnav-vor {
     position: absolute; right: calc(100% + 12px); top: 50%;
     width: 300px; padding: 11px 13px;
-    border: 1px solid var(--am-border); border-radius: 12px; background: var(--am-card);
-    box-shadow: var(--up-e-3, 0 14px 34px rgba(0,0,0,0.13));
+    border: 1px solid var(--am-border); border-radius: var(--up-r-2xl); background: var(--am-card);
+    box-shadow: var(--up-e-2);
     opacity: 0; pointer-events: none;
     transform: translateY(-50%) translateX(6px);
     transition: opacity 120ms ease, transform 120ms ease;
@@ -1624,10 +1626,10 @@
     margin-top: 5px; font-size: 12px; font-weight: 400; color: var(--am-muted); line-height: 1.5;
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   }
-  #ask-mira[data-theme="dark"] .am-msgnav-vor { box-shadow: var(--up-e-3, 0 14px 34px rgba(0,0,0,0.55)); }
+  #ask-mira[data-theme="dark"] .am-msgnav-vor { box-shadow: var(--up-e-2); }
   .am-scroll-bottom {
     position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, 6px);
-    height: 36px; width: 36px; border-radius: 999px; cursor: pointer;
+    height: 36px; width: 36px; border-radius: var(--up-r-voll); cursor: pointer;
     border: 1px solid var(--am-border-strong); background: var(--am-card); color: var(--am-text);
     display: flex; align-items: center; justify-content: center; gap: 0; padding: 0;
     box-sizing: border-box; white-space: nowrap; box-shadow: var(--am-shadow);
@@ -1659,7 +1661,7 @@
     /* MIT dem Feld (09.09. auf 32, 30.09. auf 16). Der Kommentar sagte schon immer
        "deckungsgleich mit dem Feld darin", und genau deshalb muss dieser Wert mitwandern: stuenden
        beide verschieden, schauten die Ecken des einen hinter dem anderen hervor. */
-    background: #f9f8f9; border-radius: var(--up-r-2xl, 16px); padding: 0;
+    background: #f9f8f9; border-radius: var(--up-r-2xl); padding: 0;
     transition: background 200ms ease, padding-bottom 300ms cubic-bezier(.4,0,.2,1);
   }
   .am-composer-shell.is-settings-open { padding-bottom: 16px; }   /* grey only overhangs while the tray is open */
@@ -1697,7 +1699,7 @@
   #ask-mira.is-flash .am-detail-dd { pointer-events: none; }
   .am-detail-tip {
     position: absolute; bottom: calc(100% + 9px); left: 0; z-index: 80; white-space: nowrap;
-    padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 500;
+    padding: 6px 10px; border-radius: var(--up-r-l); font-size: 12px; font-weight: 500;
     background: var(--am-text); color: var(--am-card); box-shadow: var(--up-e-2);   /* ein Tooltip: e-2 (28.09.; vorher 0 6px 18px) */
     opacity: 0; transform: translateY(3px); pointer-events: none; transition: opacity .14s ease, transform .14s ease;
   }
@@ -1705,15 +1707,15 @@
   .am-settings-panel.has-tip { overflow: visible; }
   /* model selector (right side) — matches the standard ghost-button trigger */
   .am-model { position: relative; flex: 0 0 auto; }
-  .am-model-btn { display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 11px 0 14px; border: 1px solid var(--am-border); border-radius: 11px; background: var(--am-card); color: var(--am-muted); font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 120ms ease, border-color 120ms ease, color 120ms ease; }
+  .am-model-btn { display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 11px 0 14px; border: 1px solid var(--am-border); border-radius: var(--up-r-l); background: var(--am-card); color: var(--am-muted); font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 120ms ease, border-color 120ms ease, color 120ms ease; }
   .am-model-btn:hover, .am-model.is-open .am-model-btn { background: var(--am-soft); border-color: var(--up-knopf-rand-hover); color: var(--am-text); }
   .am-model-ic { width: 20px; height: 20px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; color: inherit; }
   .am-model-ic svg { width: 20px; height: 20px; display: block; }
   .am-model-name { letter-spacing: -0.01em; }
   .am-model-chev { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: var(--am-muted-3); transition: transform .16s ease; }
-  .am-model-menu { position: absolute; bottom: calc(100% + 8px); right: 0; z-index: 60; width: 300px; max-width: 78vw; padding: 6px; border: 1px solid var(--am-border); border-radius: 14px; background: var(--am-card); box-shadow: var(--up-e-2); opacity: 0; transform: translateY(6px) scale(0.98); transform-origin: bottom right; pointer-events: none; transition: opacity .15s ease, transform .15s ease; }
+  .am-model-menu { position: absolute; bottom: calc(100% + 8px); right: 0; z-index: 60; width: 300px; max-width: 78vw; padding: 6px; border: 1px solid var(--am-border); border-radius: var(--up-dd-radius); background: var(--am-card); box-shadow: var(--up-e-2); opacity: 0; transform: translateY(6px) scale(0.98); transform-origin: bottom right; pointer-events: none; transition: opacity .15s ease, transform .15s ease; }
   .am-model.is-open .am-model-menu { opacity: 1; transform: none; pointer-events: auto; }
-  .am-model-opt { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; border: 0; background: transparent; padding: 0 10px; border-radius: 10px; cursor: pointer; font-family: inherit; color: var(--am-text); transition: background .12s ease; }
+  .am-model-opt { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; border: 0; background: transparent; padding: 0 10px; border-radius: var(--up-r-m); cursor: pointer; font-family: inherit; color: var(--am-text); transition: background .12s ease; }
   .am-model-opt + .am-model-opt { margin-top: 8px; }
   .am-model-opt[data-model="pro"] { height: 64px; }
   .am-model-opt[data-model="flash"] { height: 64px; }
@@ -1739,18 +1741,18 @@
   .am-detail-label { font-size: 12px; font-weight: 600; color: var(--am-muted); }
   .am-segmented {
     position: relative; display: inline-flex; padding: 3px;
-    border: 1px solid var(--am-border); border-radius: 10px; background: var(--am-soft);
+    border: 1px solid var(--am-border); border-radius: var(--up-r-m); background: var(--am-soft);
   }
   .am-seg {
     position: relative; z-index: 2; height: 28px; padding: 0 14px; border: 0;
     background: transparent; color: var(--am-muted); font-size: 13px; font-weight: 600;
-    cursor: pointer; border-radius: 7px; transition: color 120ms ease;
+    cursor: pointer; border-radius: var(--up-r-s); transition: color 120ms ease;
   }
   .am-seg.is-active { color: var(--am-text); }
   .am-seg-thumb {
     position: absolute; z-index: 1; top: 3px; left: 3px; height: 28px;
-    border-radius: 7px; background: var(--am-card); border: 1px solid var(--am-border);
-    box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.06));
+    border-radius: var(--up-r-s); background: var(--am-card); border: 1px solid var(--am-border);
+    box-shadow: var(--up-e-1);
     transition: transform 200ms cubic-bezier(0.22,0.61,0.36,1), width 200ms cubic-bezier(0.22,0.61,0.36,1);
   }
 
@@ -1760,7 +1762,7 @@
        Vom 09.09. an stand hier 32, ebenfalls auf Wunsch. Schale (.am-composer-shell), Add-Panel
        (.am-pick-panel) und das Skelett in power-dashboard.css ziehen mit -- alle vier muessen
        dieselbe Zahl tragen, sonst springt oder blitzt eine Ecke. */
-    border: 1px solid var(--am-border-strong); border-radius: var(--up-r-2xl, 16px);
+    border: 1px solid var(--am-border-strong); border-radius: var(--up-r-2xl);
     background: var(--am-card); box-shadow: var(--am-shadow-sm);
     /* Links, rechts und unten 8 statt 16 (15.09. angefordert). Oben bleibt es bei 16, weil dort
        das Eingabefeld sitzt und genau das seinen Platz NICHT aendern soll.
@@ -1835,7 +1837,7 @@
   .am-inline-quote { display: inline; max-width: 100%; user-select: none; -webkit-user-select: none; }
   .am-inline-quote-body {
     display: inline-flex; align-items: center; gap: 2px; max-width: 100%;
-    height: 26px; padding: 0 8px 0 10px; border-radius: 9px;
+    height: 26px; padding: 0 8px 0 10px; border-radius: var(--up-r-m);
     background: var(--am-soft-2); border: 1px solid var(--am-border);
     color: var(--am-muted); font-size: 13px; line-height: 1; vertical-align: middle;
   }
@@ -1843,7 +1845,7 @@
   .am-inline-quote-remove {
     display: inline-flex; align-items: center; justify-content: center;
     width: 0; max-width: 0; height: 15px; opacity: 0; overflow: hidden; margin-left: 0;
-    border-radius: 5px; cursor: pointer; color: var(--am-muted);
+    border-radius: var(--up-r-xs); cursor: pointer; color: var(--am-muted);
     transition: max-width 120ms ease, opacity 120ms ease, margin-left 120ms ease, background 120ms ease, color 120ms ease;
   }
   .am-inline-quote-remove svg { width: 12px !important; height: 12px !important; min-width: 12px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
@@ -1854,7 +1856,7 @@
   /* floating Ask-Mira button above a text selection */
   .am-ask-sel {
     position: absolute; z-index: 30; transform: translate(-50%, -100%);
-    height: 32px; padding: 0 11px; border-radius: 9px;
+    height: 32px; padding: 0 11px; border-radius: var(--up-r-m);
     border: 1px solid var(--am-border-strong); background: var(--am-card); color: var(--am-text);
     box-shadow: var(--up-e-2); cursor: pointer;   /* haengt an der Auswahl wie ein Tooltip: e-2 (28.09.) */
     display: none; align-items: center; gap: 6px;
@@ -1941,7 +1943,7 @@
        1px transparenter Rand bleibt STEHEN: sonst springt die Zeile um 2px, sobald irgendwann
        wieder einer gesetzt wird. */
     display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 9px 0 10px;
-    border: 1px solid transparent; border-radius: 10px; background: transparent;
+    border: 1px solid transparent; border-radius: var(--up-r-l); background: transparent;
     color: var(--am-muted); font-family: inherit; font-size: 13px; font-weight: 400;
     cursor: pointer; max-width: 100%;
     transition: background 200ms ease, color 200ms ease;
@@ -1977,7 +1979,7 @@
        in derselben Knopfzeile waere genau die Drift, die die Farbleiter in core beendet hat.
        Der Schatten ist seit dem 28.09. --up-e-2 wie bei .am-model-menu -- hier stand, ein
        eigener Wert sei der dieser Komponente; vereinheitlicht wurde auf Anforderung. */
-    border: 1px solid var(--up-menu-border, var(--am-border)); border-radius: 14px;
+    border: 1px solid var(--up-menu-border, var(--am-border)); border-radius: var(--up-dd-radius);
     background: var(--up-menu-bg, var(--am-card)); box-shadow: var(--up-e-2);
     opacity: 0; transform: translateY(6px) scale(0.98); transform-origin: bottom right;
     pointer-events: none; transition: opacity 200ms ease, transform 200ms ease;
@@ -1989,7 +1991,7 @@
      die Schaltflaeche und ihr Kopf als EIN Stueck lesbar bleiben. */
   .am-eff-head {
     display: flex; align-items: center; gap: 8px; width: 100%; height: 30px; padding: 0 4px;
-    border: 0; border-radius: 8px; background: transparent; color: var(--am-text);
+    border: 0; border-radius: var(--up-r-m); background: transparent; color: var(--am-text);
     font-family: inherit; font-size: 14px; font-weight: 600;
     cursor: pointer; transition: background 200ms ease;
   }
@@ -2041,7 +2043,7 @@
   /* Oben 0: die 8px kommen jetzt vom Rand des Rumpfes, sonst stuenden 10px da. */
   .am-eff-slider { padding: 0 6px; }
   .am-eff-track {
-    position: relative; height: 28px; border-radius: 999px; cursor: pointer;
+    position: relative; height: 28px; border-radius: var(--up-r-voll); cursor: pointer;
     background: var(--up-switch-off, #d6d6d4); overflow: hidden;
     transition: background 200ms ease;
   }
@@ -2059,14 +2061,14 @@
      right: auto, weil inset: 0 sonst beide Kanten festnagelt und eine Breite nichts bewirkt. */
   .am-eff-fill {
     position: absolute; top: 0; bottom: 0; left: 0; right: auto; width: 0;
-    border-radius: 999px; background: var(--up-blau, #3b82f6);
+    border-radius: var(--up-r-voll); background: var(--up-blau, #3b82f6);
     transition: width 200ms ease;
   }
   /* Der Verlauf fuer Ultra liegt als EIGENE Schicht darueber und wird eingeblendet. Ein
      Umschalten des background-image liesse sich nicht animieren -- ein Verlauf ist kein Wert,
      zwischen dem der Browser rechnen kann. */
   .am-eff-ultra {
-    position: absolute; inset: 0; border-radius: 999px; opacity: 0;
+    position: absolute; inset: 0; border-radius: var(--up-r-voll); opacity: 0;
     /* DREI STOPPS und nicht zwei. Der Browser rechnet einen Verlauf in sRGB, und diese Gerade
        schneidet den Bogen, den OKLCh zwischen Blau und Lila zieht -- die Mitte waere um vier
        Prozent matter als beide Enden, und zwar genau dort, wo man hinsieht. Der Stopp in der
@@ -2082,7 +2084,7 @@
      stehen. Von links nach rechts staerker: links ganz weg, ab etwa der Mitte voll da.
      Beide Schreibweisen, weil -webkit-mask in Safari noch die einzige ist, die greift. */
   .am-eff-dots {
-    position: absolute; inset: 0; border-radius: 999px; color: #ffffff; pointer-events: none;
+    position: absolute; inset: 0; border-radius: var(--up-r-voll); color: #ffffff; pointer-events: none;
     -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.25) 30%,
       rgba(0,0,0,0.7) 60%, #000 100%);
     mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.25) 30%,
@@ -2096,7 +2098,7 @@
      Weiss mit 0.85 auf der Fuellung misst 3.09 gegen das Blau und 3.28 gegen das Lila; 0.55
      waere mit 2.14 durchgefallen. */
   .am-eff-dot {
-    position: absolute; top: 50%; width: 4px; height: 4px; margin-top: -2px; border-radius: 999px;
+    position: absolute; top: 50%; width: 4px; height: 4px; margin-top: -2px; border-radius: var(--up-r-voll);
     background: var(--vc-muted); pointer-events: none; transition: background 200ms ease;
   }
   .am-eff-dot.is-fill { background: rgba(255,255,255,0.85); }
@@ -2114,14 +2116,14 @@
      Fuellung aus DERSELBEN gerundeten Zahl -- sie koennen nicht mehr auseinanderlaufen. Die
      Rundung der Fuellung (14) und die des Daumens (11) plus Einzug (3) bleiben konzentrisch. */
   .am-eff-thumb {
-    position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 999px;
-    background: #ffffff; box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.2)); pointer-events: none;
+    position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: var(--up-r-voll);
+    background: #ffffff; box-shadow: var(--up-e-1); pointer-events: none;
     transition: transform 200ms ease;
   }
   /* Weiss in BEIDEN Themen, und das ist gerechnet: der dunkle Daumen der Schalterfamilie
      (#e0e0e0) misst auf dem Verlauf 2.79 gegen das Blau und 2.97 gegen das Lila -- beides unter
      den 3.0, die WCAG 1.4.11 fuer ein Bedienelement verlangt. Weiss schafft 3.68 und 3.92. */
-  #ask-mira[data-theme="dark"] .am-eff-thumb { box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.45)); }
+  #ask-mira[data-theme="dark"] .am-eff-thumb { box-shadow: var(--up-e-1); }
   .am-eff-track:focus-visible { outline: none; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
   /* Die Beschriftungen stehen UNTER der Schiene und nicht darauf. Gerechnet: weisser Text auf
@@ -2163,7 +2165,7 @@
   .am-eff-models { padding: 0; }
   .am-eff-opt {
     display: flex; align-items: center; gap: 10px; width: 100%; min-height: 42px; padding: 6px 8px;
-    border: 0; border-radius: 10px; background: transparent; color: var(--am-text);
+    border: 0; border-radius: var(--up-r-s); background: transparent; color: var(--am-text);
     font-family: inherit; text-align: left; cursor: pointer; transition: background 200ms ease;
   }
   .am-eff-opt + .am-eff-opt { margin-top: 4px; }
@@ -2214,7 +2216,7 @@
        weiter unten auf 0 gesetzt. */
     position: absolute; bottom: calc(100% + 8px); left: 0; right: 0; z-index: 60;
     box-sizing: border-box; display: flex; flex-direction: column; padding: 16px;
-    border: 1px solid var(--up-menu-border, var(--am-border)); border-radius: var(--up-r-2xl, 16px);
+    border: 1px solid var(--up-menu-border, var(--am-border)); border-radius: var(--up-r-2xl);
     background: var(--up-menu-bg, var(--am-card)); box-shadow: 0 -2px 16px rgba(0,0,0,0.06);
     /* AUSNAHME von den Tiefen (28.09. geprueft): das Panel liegt 8px neben dem Eingabefeld und
        bildet mit ihm ein Paar, sein Schatten wirft darum vom Feld WEG (hier nach oben, im Dashboard
@@ -2364,14 +2366,14 @@
   .am-pick-chip .am-pick-chip-pre { color: var(--am-text); font-weight: 500; }
   .am-pick-chip .am-pick-chip-v { color: var(--am-text); font-weight: 400;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .am-pick-chip-dot { width: 7px; height: 7px; border-radius: 999px; flex: 0 0 auto; }
+  .am-pick-chip-dot { width: 7px; height: 7px; border-radius: var(--up-r-voll); flex: 0 0 auto; }
   /* Die Angabe, WELCHE Dimension gemeint ist, steht leiser als ihr Wert -- "Market" erklaert,
      "DE" ist die Aussage. */
   .am-pick-chip-pre { color: var(--am-text); }
   .am-pick-chip-v { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* Auch das Kreuz aus der Palette (.mqa-chip-x): 16px, Radius 4, gedaempfte Farbe. */
   .am-pick-chip-x {
-    width: 16px; height: 16px; flex: 0 0 auto; border: 0; border-radius: 4px; padding: 0;
+    width: 16px; height: 16px; flex: 0 0 auto; border: 0; border-radius: var(--up-r-xs); padding: 0;
     background: transparent; color: var(--am-muted-2); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
     transition: background 200ms ease, color 200ms ease;
@@ -2396,7 +2398,7 @@
     padding: 6px 10px 4px; font-size: 12px; font-weight: 600; color: var(--am-muted-2);
   }
   .am-pick-cav {
-    width: 22px; height: 22px; flex: 0 0 auto; border-radius: 6px; overflow: hidden;
+    width: 22px; height: 22px; flex: 0 0 auto; border-radius: var(--up-r-s); overflow: hidden;
     display: flex; align-items: center; justify-content: center;
     background: var(--am-soft); color: var(--am-muted-2);
     font-size: 13px; font-weight: 600;
@@ -2415,13 +2417,13 @@
   .am-pick-list:empty { display: none; }
   .am-pick-row {
     display: flex; align-items: center; gap: 11px; width: 100%; padding: 8px 10px;
-    border: 0; border-radius: 10px; background: transparent; cursor: pointer;
+    border: 0; border-radius: var(--up-r-m); background: transparent; cursor: pointer;
     font-family: inherit; text-align: left; transition: background 200ms ease;
   }
   .am-pick-row:hover, .am-pick-row.is-active { background: var(--up-sel-bg, var(--am-soft)); }
   .am-pick-row.is-taken { opacity: 0.45; pointer-events: none; }
   .am-pick-av {
-    width: 30px; height: 30px; flex: 0 0 auto; border-radius: 8px; overflow: hidden;
+    width: 30px; height: 30px; flex: 0 0 auto; border-radius: var(--up-r-m); overflow: hidden;
     border: 1px solid var(--am-border); background: var(--am-soft-2); position: relative;
     display: flex; align-items: center; justify-content: center;
   }
@@ -2489,10 +2491,11 @@
   @media (prefers-reduced-motion: reduce){ .up-iconbtn.am-pick-clearbtn { transition: none; } }
 
   .am-pick-sk { display: flex; align-items: center; gap: 11px; padding: 8px 10px; }
-  .am-pick-sk-av { width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto; }
+  .am-pick-sk-av { width: 30px; height: 30px; border-radius: var(--up-r-m); flex: 0 0 auto; }
   .am-pick-sk-lines { flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px; }
-  .am-pick-sk-line { height: 9px; border-radius: 5px; }
-  .am-pick-sk-av, .am-pick-sk-line { background: var(--vc-sk, #eeedef); animation: amPickSk 1.2s ease-in-out infinite; }
+  .am-pick-sk-line { height: 9px; border-radius: var(--up-sk-r, 5px); }
+  /* Skelett aus core nach Geist (15.10.); amPickSk bleibt fuer den Vertrag stehen. */
+  .am-pick-sk-av, .am-pick-sk-line { background: var(--vc-sk, #eeedef) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
   @keyframes amPickSk { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
 
   /* ---- Die uebernommenen Treffer im Feld -----------------------------------------------
@@ -2580,7 +2583,7 @@
      hier keine feste Farbe. 4px Radius statt der 5px der Bildkacheln, ebenfalls angefordert.
      Die Flaggenvariante an der Pille ist damit weg: seit dem 12.09. traegt jeder Prompt das
      Zeichen, und niemand setzt is-flag hier noch (in der Auswahlliste darueber schon). */
-  .am-pick-tag-av.is-prompt { border-radius: 4px; background: var(--am-text); }
+  .am-pick-tag-av.is-prompt { border-radius: var(--up-r-xs); background: var(--am-text); }
   .am-pick-tag-av.is-prompt .am-pick-tag-av-fb { color: var(--am-card); }
   .am-pick-tag-av-fb { display: none; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--am-muted); }
   .am-pick-tag-av.is-fb .am-pick-tag-av-fb { display: flex; }
@@ -2607,7 +2610,7 @@
 
   /* icon button — prompt research .upr-icon-button */
   .am-icon-action {
-    width: 40px; height: 40px; border: 0; border-radius: 11px;
+    width: 40px; height: 40px; border: 0; border-radius: var(--up-r-xl);
     background: transparent; color: var(--am-text); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
     transition: background 120ms ease, color 120ms ease;
@@ -2622,7 +2625,7 @@
   #ask-mira .am-composer.is-v2 .am-icon-action { background: transparent; position: relative; }
   #ask-mira .am-composer.is-v2 .am-icon-action::before {
     content: ""; position: absolute; top: 50%; left: 50%; width: 32px; height: 32px;
-    margin: -16px 0 0 -16px; border-radius: 9px; background: transparent;
+    margin: -16px 0 0 -16px; border-radius: var(--up-r-m); background: transparent;
     transition: background 200ms ease; pointer-events: none;
   }
   #ask-mira .am-composer.is-v2 .am-icon-action:hover { background: transparent; color: var(--am-text); }
@@ -2646,17 +2649,17 @@
        gewaehlten Akzentfarbe (Indigo, Azur, ...) stand der Knopf bisher als einziger grau da. */
     background: var(--up-accent); color: var(--up-accent-fg); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center; position: relative;
-    box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.12));
+    box-shadow: var(--up-e-1);
     transition: background 120ms ease, transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease;
   }
   /* Hover wie core (.up-btn-pri): dieselbe Farbe, leicht zurueckgenommen -- eine feste zweite Farbe
      (hier stand #585855, im Dunkeln #a0a0a0) passte zu keiner Akzentfarbe ausser der alten. */
   .am-send:not(:disabled):hover { opacity: .88; box-shadow: none; }
   .am-send:active { transform: scale(0.95); }
-  .am-send:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.08)); }
+  .am-send:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: var(--up-e-1); }
   .am-ic-send { width: 18px; height: 18px; }
   .am-send-spinner {
-    display: none; width: 16px; height: 16px; border-radius: 999px;
+    display: none; width: 16px; height: 16px; border-radius: var(--up-r-voll);
     /* currentColor = --up-accent-fg des Knopfes (27.09.): der Kreisel steht auf der Akzentfarbe und
        nimmt deren Schriftfarbe, statt --am-bg, das nur zur alten Textfarben-Flaeche passte. */
     border: 2px solid color-mix(in srgb, currentColor 35%, transparent); border-top-color: currentColor;
@@ -2701,9 +2704,11 @@
   .am-rec-btn .am-ic { width: 18px; height: 18px; }
   .am-rec-cancel { background: var(--am-soft-2); color: var(--am-text); }
   .am-rec-cancel:hover { background: #e9e9ec; }
-  .am-rec-confirm { background: var(--am-primary); color: var(--am-bg); box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.12)); }
+  .am-rec-confirm { background: var(--am-primary); color: var(--am-bg); box-shadow: var(--up-e-1); }
   .am-rec-confirm:hover { background: #585855; box-shadow: none; }
-  .am-rec-note { max-width: 920px; margin: 8px auto 0; width: 100%; text-align: center; font-size: 12px; line-height: 1.4; color: #b0200c; display: none; }
+  /* Die Fehlerzeile der Spracheingabe in --vt-down (15.10., Geist Red 900) statt des festen alten
+     Rots -- im Dunkeln stand hier dasselbe dunkle #b0200c auf dunklem Grund. */
+  .am-rec-note { max-width: 920px; margin: 8px auto 0; width: 100%; text-align: center; font-size: 12px; line-height: 1.4; color: var(--vt-down); display: none; }
   .am-rec-note.is-on { display: block; animation: amRecIn 160ms ease both; }
   #ask-mira[data-theme="dark"] .am-rec-cancel:hover { background: #2f2f2f; }
   #ask-mira[data-theme="dark"] .am-rec-confirm:hover { background: #a0a0a0; box-shadow: none; }
@@ -2842,7 +2847,7 @@
      nicht gibt. */
   .am-mini-btn {
     width: 100%; height: 36px; display: flex; align-items: center; justify-content: center;
-    border: 0; border-radius: 12px; background: transparent; padding: 0;
+    border: 0; border-radius: var(--up-r-m); background: transparent; padding: 0;
     color: var(--am-muted); cursor: pointer;
     transition: background 120ms ease, color 120ms ease;
   }
@@ -2946,7 +2951,7 @@
     padding: 10px 10px 6px; font-size: 12px; font-weight: 600; color: var(--am-muted-2);
   }
   .am-set-backdrop .ums-nav, .am-set-backdrop .am-set-nav {
-    min-height: 36px; height: 36px; padding: 0 8px; border-radius: 12px; gap: 10px;
+    min-height: 36px; height: 36px; padding: 0 8px; border-radius: var(--up-r-m); gap: 10px;
     font-size: 14px; font-weight: 500; color: var(--am-text); background: transparent;
     transition: background 120ms cubic-bezier(.4,0,.2,1), color 120ms cubic-bezier(.4,0,.2,1);
   }
@@ -3033,7 +3038,7 @@
   .am-set-backdrop .ums-selwrap { position: relative; display: inline-flex; }
   .am-set-backdrop .ums-sel {
     display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px;
-    border: 1px solid var(--vc-border); border-radius: 8px;
+    border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
     background: var(--vc-bg); color: var(--am-muted);
     font-family: inherit; font-size: 13px; font-weight: 500; line-height: 1;
     white-space: nowrap; cursor: pointer; outline: 0;
@@ -3079,7 +3084,7 @@
      seine eigene Gewichtung. */
   .am-set-backdrop .am-set-demo {
     height: 40px; display: flex; align-items: center; padding: 0 12px; margin: 0 0 16px;
-    border-radius: 10px; background: var(--am-soft); border: 0;
+    border-radius: var(--up-r-xl); background: var(--am-soft); border: 0;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 11px; letter-spacing: -0.01em; line-height: 1.5;
     color: var(--am-text); overflow: hidden;
@@ -3097,7 +3102,7 @@
      Nur hier im Fenster -- in der Antwort bleibt alles, wie es ist. */
   .am-set-backdrop .am-set-demo .am-inline-logo,
   .am-set-backdrop .am-set-demo .am-logo-wrap[data-type="response"] .am-resp-ic {
-    width: 18px; height: 18px; flex: 0 0 18px; border-radius: 4px;
+    width: 18px; height: 18px; flex: 0 0 18px; border-radius: var(--up-r-xs);
   }
   .am-set-backdrop .am-set-demo .am-logo-wrap[data-type="response"] .am-resp-ic img {
     width: 16px; height: 16px;
@@ -3210,7 +3215,7 @@
   .am-side-logo .am-wordmark { font-size: 22px; letter-spacing: -0.01em; }
   .am-prev-title { margin: 0; font-size: 14px; font-weight: 600; }
   .am-icon-btn {
-    width: 34px; height: 34px; border: 1px solid transparent; border-radius: 10px;
+    width: 34px; height: 34px; border: 1px solid transparent; border-radius: var(--up-r-m);
     background: transparent; color: var(--am-muted); cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center;
     transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
@@ -3218,7 +3223,7 @@
   .am-icon-btn:hover { background: var(--am-soft); color: var(--am-text); border-color: var(--am-border); }
   .am-newchat {
     margin: 14px 16px 6px; height: 32px; border: 1px solid var(--am-border);
-    border-radius: 8px; background: var(--am-card); color: var(--am-text);
+    border-radius: var(--up-r-m); background: var(--am-card); color: var(--am-text);
     display: inline-flex; align-items: center; justify-content: center; gap: 7px;
     font-size: 13px; font-weight: 600; cursor: pointer;
     transition: background 120ms ease, border-color 120ms ease;
@@ -3266,7 +3271,7 @@
   .am-lauf { display: inline-block; white-space: nowrap; will-change: transform; }
   .am-settings-btn {
     flex: 0 0 auto; width: 32px; height: 32px; border: 1px solid var(--am-border);
-    border-radius: 8px; background: var(--am-card); color: var(--am-text);
+    border-radius: var(--up-r-m); background: var(--am-card); color: var(--am-text);
     display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
     transition: background 120ms ease, border-color 120ms ease;
   }
@@ -3274,7 +3279,7 @@
   .am-settings-btn.is-open { background: var(--am-soft); border-color: var(--up-knopf-rand-hover); }
   .am-settings-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-hl-panel {
-    margin: 0 16px; border: 1px solid transparent; border-radius: 12px; box-sizing: border-box;
+    margin: 0 16px; border: 1px solid transparent; border-radius: var(--up-r-2xl); box-sizing: border-box;
     background: var(--am-card); padding: 0 14px; display: flex; flex-direction: column; gap: 12px;
     max-height: 0; opacity: 0; overflow: hidden;
     transition: max-height 200ms ease, opacity 200ms ease, padding 200ms ease, margin-bottom 200ms ease,
@@ -3289,7 +3294,7 @@
   .am-dd { position: relative; width: 100%; }
   .am-dd-trigger {
     width: 100%; height: 32px; box-sizing: border-box;
-    border: 1px solid var(--am-border); border-radius: 8px; background: var(--am-card); color: var(--am-text);
+    border: 1px solid var(--am-border); border-radius: var(--up-r-m); background: var(--am-card); color: var(--am-text);
     padding: 0 11px; font-size: 13px; font-weight: 500; outline: none; cursor: pointer;
     display: flex; align-items: center; justify-content: space-between; gap: 10px;
     transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
@@ -3304,14 +3309,14 @@
   .am-dd-chev { width: 16px; height: 16px; flex: 0 0 auto; color: var(--am-muted-2); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 120ms ease; }
   .am-dd-menu {
     position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 100;
-    background: var(--am-card); border: 1px solid var(--am-border); border-radius: 14px;
-    box-shadow: var(--up-e-2, 0 10px 30px rgba(0,0,0,0.10)); padding: 8px;
+    background: var(--am-card); border: 1px solid var(--am-border); border-radius: var(--up-dd-radius);
+    box-shadow: var(--up-e-2); padding: 8px;
     opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
     transition: opacity 120ms ease, transform 120ms ease;
   }
   .am-dd.is-open .am-dd-menu { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
   .am-dd-opt {
-    width: 100%; min-height: 34px; border: 0; border-radius: 8px; background: transparent; color: var(--am-text);
+    width: 100%; min-height: 34px; border: 0; border-radius: var(--up-r-s); background: transparent; color: var(--am-text);
     padding: 0 8px; display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 8px;
     text-align: left; cursor: pointer; font-size: 14px; font-weight: 500;
   }
@@ -3334,7 +3339,7 @@
      .am-prev-item, hier steht nur, was anders ist. */
   .am-prev-mehr {
     display: block; width: 100%; text-align: left; border: 0; background: transparent;
-    padding: 0 8px; height: 32px; border-radius: 9px; cursor: pointer;
+    padding: 0 8px; height: 32px; border-radius: var(--up-r-m); cursor: pointer;
     font-family: inherit; font-size: 13px; font-weight: 500; color: var(--am-muted-2);
     transition: color 120ms ease, background-color 120ms ease;
   }
@@ -3382,26 +3387,32 @@
     background-position:
       8px 8px, 8px 36px, 8px 72px, 8px 108px, 8px 144px, 8px 180px, 8px 216px, 8px 252px;
     background-repeat: no-repeat;
-    border-radius: 5px;
+    border-radius: var(--up-r-xs);
     animation: amSkelPuls 1.25s ease-in-out infinite;
   }
   @keyframes amSkelPuls { 0%, 100% { opacity: 1 } 50% { opacity: .5 } }
   .am-prev-skel { display: flex; flex-direction: column; gap: 2px; padding: 2px 0; }
-  .am-prev-skel-head { height: 10px; width: 34%; border-radius: 5px; margin: 8px 8px 6px; }
+  .am-prev-skel-head { height: 10px; width: 34%; border-radius: var(--up-sk-r); margin: 8px 8px 6px; }
   .am-prev-skel-row { height: 34px; display: flex; align-items: center; padding: 0 8px; }
-  .am-prev-skel-line { height: 10px; border-radius: 5px; display: block; }
-  .am-prev-skel-head, .am-prev-skel-line { background: linear-gradient(90deg, var(--am-sk-a) 25%, var(--am-sk-b) 50%, var(--am-sk-a) 75%); background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite; }
+  .am-prev-skel-line { height: 10px; border-radius: var(--up-sk-r); display: block; }
+  /* Die Chat-Skelette nach Geist (15.10.): Grund --am-sk-a (= --vc-sk), Glanz und Bewegung aus core
+     (--up-sk-verlauf, --up-sk-bewegung). Vorher lief hier ein eigener Verlauf zum HELLEREN
+     --vc-heading-bg; bei Geist geht der Glanz zur Schrift hin, also im Hellen dunkler.
+     amSkelShimmer bleibt fuer den Vertrag stehen. */
+  .am-prev-skel-head, .am-prev-skel-line { background: var(--am-sk-a) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
   /* chat-loading skeleton (shown while a clicked chat is still loading) */
   .am-msg-skel .am-bubble { min-width: 130px; }
-  .am-skel-line { display: block; height: 13px; border-radius: 6px; margin: 0 0 10px; background: linear-gradient(90deg, var(--am-sk-a) 25%, var(--am-sk-b) 50%, var(--am-sk-a) 75%); background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite; }
+  .am-skel-line { display: block; height: 13px; border-radius: var(--up-sk-r); margin: 0 0 10px; background: var(--am-sk-a) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
   .am-skel-line:last-child { margin-bottom: 0; }
-  .am-msg-skel.is-user .am-skel-line { background: linear-gradient(90deg, rgba(255,255,255,0.35) 25%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.35) 75%); background-size: 300% 100%; }
-  #ask-mira[data-theme="dark"] .am-msg-skel.is-user .am-skel-line { background: linear-gradient(90deg, rgba(255,255,255,0.12) 25%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0.12) 75%); background-size: 300% 100%; }
+  /* In der Blase des Nutzers bleiben die Toene der Blase (Weiss darueber); Kachel und Lauf wie
+     oben, also dieselbe Bewegung. */
+  .am-msg-skel.is-user .am-skel-line { background: linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.35) 100%) 0 0 / 150% 100% repeat-x; }
+  #ask-mira[data-theme="dark"] .am-msg-skel.is-user .am-skel-line { background: linear-gradient(90deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0.12) 100%) 0 0 / 150% 100% repeat-x; }
 
   /* ---- top-level sections (Projects / Recents) ---- */
   .am-prev-section { display: flex; flex-direction: column; }
   .am-prev-section + .am-prev-section { margin-top: 10px; }
-  .am-prev-sec-head { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border-radius: 8px; cursor: pointer; user-select: none; }
+  .am-prev-sec-head { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 8px; border-radius: var(--up-r-m); cursor: pointer; user-select: none; }
   .am-prev-sec-head:hover { background: var(--am-soft); }
   .am-prev-sec-chev { display: inline-flex; flex: 0 0 auto; color: var(--am-muted); }
   .am-prev-sec-chev svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 120ms ease; }
@@ -3410,17 +3421,17 @@
      Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
   .am-prev-sec-label { font-size: 12px; font-weight: 600; color: var(--am-muted-2); flex: 0 0 auto; }
   .am-prev-sec-spacer { flex: 1 1 auto; }
-  .am-prev-add-proj { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: var(--am-muted); cursor: pointer; padding: 0; opacity: 0; transition: opacity 120ms ease, background 120ms ease; }
+  .am-prev-add-proj { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 0; border-radius: var(--up-r-s); background: transparent; color: var(--am-muted); cursor: pointer; padding: 0; opacity: 0; transition: opacity 120ms ease, background 120ms ease; }
   .am-prev-sec-head:hover .am-prev-add-proj { opacity: 1; }
   .am-prev-add-proj:hover { background: var(--am-soft-2); color: var(--am-text); }
   .am-prev-add-proj svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-prev-sec-body { display: flex; flex-direction: column; gap: 2px; padding-top: 2px; }
   .am-prev-section.is-collapsed .am-prev-sec-body { display: none; }
-  .am-prev-section[data-section="recents"].is-drop-target .am-prev-sec-head { background: var(--am-soft-2); box-shadow: inset 0 0 0 2px var(--am-muted-2); border-radius: 8px; }
+  .am-prev-section[data-section="recents"].is-drop-target .am-prev-sec-head { background: var(--am-soft-2); box-shadow: inset 0 0 0 2px var(--am-muted-2); border-radius: var(--up-r-m); }
 
   /* ---- project folders ---- */
   .am-prev-project { display: flex; flex-direction: column; }
-  .am-prev-proj-head { display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 8px; border-radius: 8px; cursor: pointer; user-select: none; }
+  .am-prev-proj-head { display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 8px; border-radius: var(--up-r-m); cursor: pointer; user-select: none; }
   .am-prev-proj-head:hover { background: var(--am-soft); }
   .am-prev-proj-head.is-drop-target { background: var(--am-soft-2); box-shadow: inset 0 0 0 2px var(--am-muted-2); }
   .am-prev-proj-folder { display: inline-flex; flex: 0 0 auto; color: var(--am-muted); }
@@ -3429,7 +3440,7 @@
   .am-prev-project.is-collapsed .am-prev-proj-folder .am-fo { display: none; }
   .am-prev-project.is-collapsed .am-prev-proj-folder .am-fc { display: inline-flex; }
   .am-prev-proj-title { font-size: 13px; font-weight: 600; color: var(--am-text); flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .am-prev-proj-input { flex: 1 1 auto; min-width: 0; height: 26px; box-sizing: border-box; font-size: 13px; font-weight: 600; color: var(--am-text); font-family: inherit; background: var(--am-bg); border: 1px solid var(--am-border-strong); border-radius: 6px; padding: 0 6px; outline: none; display: none; }
+  .am-prev-proj-input { flex: 1 1 auto; min-width: 0; height: 26px; box-sizing: border-box; font-size: 13px; font-weight: 600; color: var(--am-text); font-family: inherit; background: var(--am-bg); border: 1px solid var(--am-border-strong); border-radius: var(--up-r-m); padding: 0 6px; outline: none; display: none; }
   .am-prev-proj-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
   .am-prev-proj-actions, .am-prev-proj-edit-actions { display: none; flex: 0 0 auto; align-items: center; gap: 2px; }
   .am-prev-proj-head:hover .am-prev-proj-actions { display: inline-flex; }
@@ -3442,7 +3453,7 @@
   /* ---- compact chat item ---- */
   .am-prev-item {
     display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
-    border: 0; border-radius: 8px; background: transparent; padding: 0 8px; height: 34px; cursor: pointer;
+    border: 0; border-radius: var(--up-r-m); background: transparent; padding: 0 8px; height: 34px; cursor: pointer;
   }
   /* Die Zeile fuer den Chat, dessen Kennung noch nicht da ist (siehe renderPrevious): kein
      Ziel fuer den Zeiger, kein Aufleuchten beim Ueberfahren -- es gibt nichts zu oeffnen. */
@@ -3507,9 +3518,9 @@
      (28282c auf 232326) -- das ist "man erkennt es nicht". --vc-border steht 21 bzw. 17 Stufen
      davon ab und ist in beiden Themen klar zu sehen. */
   .am-prev-item.is-untitled .am-prev-item-title {
-    flex: 0 0 auto; width: 104px; height: 11px; border-radius: 6px;
-    background: linear-gradient(90deg, var(--vc-border) 25%, var(--am-sk-b) 50%, var(--vc-border) 75%);
-    background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite;
+    flex: 0 0 auto; width: 104px; height: 11px; border-radius: var(--up-sk-r);
+    /* Grund --vc-border (Begruendung oben), Glanz und Bewegung nach Geist aus core (15.10.). */
+    background: var(--vc-border) var(--up-sk-verlauf); animation: var(--up-sk-bewegung);
   }
   @media (prefers-reduced-motion: reduce){
     .am-prev-item.is-untitled .am-prev-item-title { animation: none; }
@@ -3518,7 +3529,7 @@
     flex: 1 1 auto; min-width: 0; height: 26px; box-sizing: border-box;
     font-size: 13px; font-weight: 500; color: var(--am-text);
     font-family: inherit; background: var(--am-bg); border: 1px solid var(--am-border-strong);
-    border-radius: 6px; padding: 0 6px; outline: none; display: none;
+    border-radius: var(--up-r-m); padding: 0 6px; outline: none; display: none;
   }
   .am-prev-item-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
   .am-prev-actions, .am-prev-edit-actions { display: none; flex: 0 0 auto; align-items: center; gap: 2px; }
@@ -3559,14 +3570,14 @@
   .am-cm {
     position: fixed; z-index: 2147483600; min-width: 184px;
     width: max-content; max-width: calc(100vw - 16px);
-    background: var(--am-card); border: 1px solid var(--am-border); border-radius: 14px;
-    box-shadow: var(--up-e-2, 0 10px 30px rgba(0,0,0,0.14)); padding: 6px;
+    background: var(--am-card); border: 1px solid var(--am-border); border-radius: var(--up-dd-radius);
+    box-shadow: var(--up-e-2); padding: 6px;
     opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
     transition: opacity 120ms ease, transform 120ms ease;
   }
   .am-cm.is-open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
   .am-cm-opt {
-    width: 100%; min-height: 34px; border: 0; border-radius: 8px; background: transparent; color: var(--am-text);
+    width: 100%; min-height: 34px; border: 0; border-radius: var(--up-r-m); background: transparent; color: var(--am-text);
     padding: 0 9px; display: flex; align-items: center; gap: 9px;
     text-align: left; cursor: pointer; font-size: 14px; font-weight: 500; font-family: inherit;
   }
@@ -3589,8 +3600,8 @@
        beiden Karten klebten aneinander und lasen sich als eine Form.
        6 + 6 + 1 = 13 ergibt echte 6px Luft zur Menuekante. */
     position: absolute; top: -6px; right: calc(100% + 13px); min-width: 188px; max-width: 230px;
-    background: var(--am-card); border: 1px solid var(--am-border); border-radius: 14px;
-    box-shadow: var(--up-e-2, 0 10px 30px rgba(0,0,0,0.14)); padding: 6px;
+    background: var(--am-card); border: 1px solid var(--am-border); border-radius: var(--up-dd-radius);
+    box-shadow: var(--up-e-2); padding: 6px;
     opacity: 0; transform: translateX(4px) scale(0.985); pointer-events: none;
     transition: opacity 120ms ease, transform 120ms ease; z-index: 2;
   }
@@ -3611,7 +3622,7 @@
   #ask-mira .am-chat::-webkit-scrollbar-thumb,
   #ask-mira .am-prev-list::-webkit-scrollbar-thumb,
   #ask-mira .am-textarea::-webkit-scrollbar-thumb,
-  #ask-mira .am-table-scroll::-webkit-scrollbar-thumb { background: var(--am-border-strong); border-radius: 999px; }
+  #ask-mira .am-table-scroll::-webkit-scrollbar-thumb { background: var(--am-border-strong); border-radius: var(--up-r-voll); }
   #ask-mira .am-chat::-webkit-scrollbar-thumb:hover { background: var(--am-muted-2); }
 
   /* ===================== ANIMATIONS ===================== */
@@ -3723,7 +3734,7 @@
        darin 16 -> 12 (Regel darunter). Ein kleinerer Kasten mit dem alten Radius und dem alten
        Zeichen waere eine gesprengte Pille. */
     width: 24px; height: 24px; flex: 0 0 auto; margin-right: 2px;   /* +2px flex gap = 4px to the name */
-    border: 1px solid var(--am-border); border-radius: 7px; background: var(--am-card); color: var(--am-muted);
+    border: 1px solid var(--am-border); border-radius: var(--up-r-s); background: var(--am-card); color: var(--am-muted);
     display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
     transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
   }
@@ -3731,15 +3742,14 @@
   .am-ct-back svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .am-ct-name {
     display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%;
-    height: 30px; padding: 0 9px; border: 0; border-radius: 8px; background: transparent;
+    height: 30px; padding: 0 9px; border: 0; border-radius: var(--up-r-m); background: transparent;
     cursor: pointer; font-family: inherit; color: var(--am-text); transition: background 120ms ease;
   }
   .am-ct-name:hover { background: var(--am-soft); }
   .am-ct-text { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; max-width: 46vw; }
   .am-ct-skeleton {
-    display: none; width: 168px; height: 24px; border-radius: 7px;
-    background: linear-gradient(90deg, var(--am-sk-a) 25%, var(--am-sk-b) 50%, var(--am-sk-a) 75%);
-    background-size: 300% 100%; animation: amSkelShimmer 1.25s ease-in-out infinite;
+    display: none; width: 168px; height: 24px; border-radius: var(--up-r-s);
+    background: var(--am-sk-a) var(--up-sk-verlauf); animation: var(--up-sk-bewegung);
   }
   .am-chat-titlebar.is-loading .am-ct-name { cursor: default; }
   .am-chat-titlebar.is-loading .am-ct-name:hover { background: transparent; }
@@ -3747,7 +3757,7 @@
   .am-chat-titlebar.is-loading .am-ct-skeleton { display: inline-block; }
   .am-chat-titlebar.is-loading .am-ct-chev { display: none; }
   .am-ct-chev {
-    width: 28px; height: 28px; flex: 0 0 auto; border: 0; border-radius: 8px; background: transparent;
+    width: 28px; height: 28px; flex: 0 0 auto; border: 0; border-radius: var(--up-r-m); background: transparent;
     display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--am-muted);
     transition: background 120ms ease, color 120ms ease;
   }
@@ -3755,13 +3765,13 @@
   .am-ct-chev svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
   .am-ct-input {
     display: none; height: 30px; min-width: 0; flex: 0 1 380px;
-    padding: 0 10px; border: 1px solid var(--am-border-strong); border-radius: 8px;
+    padding: 0 10px; border: 1px solid var(--am-border-strong); border-radius: var(--up-r-m);
     background: var(--am-card); color: var(--am-text); font-size: 14px; font-weight: 600; font-family: inherit; outline: none;
   }
   .am-ct-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); outline: 0; }
   .am-ct-edit-actions { display: none; align-items: center; gap: 5px; margin-left: 6px; }   /* +2px flex gap = 8px from the input */
   .am-ct-mini {
-    width: 28px; height: 28px; flex: 0 0 auto; border: 1px solid var(--am-border); border-radius: 8px; background: var(--am-card);
+    width: 28px; height: 28px; flex: 0 0 auto; border: 1px solid var(--am-border); border-radius: var(--up-r-m); background: var(--am-card);
     display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--am-muted);
     transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
   }
@@ -3999,8 +4009,8 @@
    soll sich unten oeffnen, nicht oben"). Nur OHNE Nachrichten: im Chat steht das Feld unten, und
    darunter ist kein Platz. pickDeckel rechnet in beiden Faellen den Platz nach unten. */
 #ask-mira.up-root:is(.is-launcher, .is-pick-unten:not(.has-messages)) .am-pick-panel { top: calc(100% + 8px); bottom: auto; transform-origin: top center;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
+  box-shadow: var(--up-e-2); }
 #ask-mira.up-root:is(.is-launcher, .is-pick-unten:not(.has-messages)):not(.is-pick-open) .am-pick-panel { transform: translateY(-6px) scale(0.99); }
-#ask-mira.up-root:is(.is-launcher, .is-pick-unten:not(.has-messages))[data-theme="dark"] .am-pick-panel { box-shadow: 0 2px 16px rgba(0,0,0,0.3); }
+#ask-mira.up-root:is(.is-launcher, .is-pick-unten:not(.has-messages))[data-theme="dark"] .am-pick-panel { box-shadow: var(--up-e-2); }
 #ask-mira.up-root.is-launcher .am-eff-menu { top: calc(100% + 8px); bottom: auto; transform-origin: top right; }
 #ask-mira.up-root.is-launcher .am-eff:not(.is-open) .am-eff-menu { transform: translateY(-6px) scale(0.98); }

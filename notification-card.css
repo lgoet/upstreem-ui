@@ -22,7 +22,7 @@
 .unc-card {
   position: fixed; right: 8px; bottom: 8px; z-index: 2147483500;
   width: 424px; box-sizing: border-box; overflow: hidden;
-  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px;
+  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl);
   /* e-4, die Tiefe von allem, was ueber der ganzen Seite liegt (28.09. vereinheitlicht). Hier
      standen vier eigene Lagen je Thema -- eine Kante ohne Versatz, damit die Karte oben und rechts
      nicht kantig abgeschnitten wirkt, und drei nach unten. Die Kante zeichnet jetzt der Rahmen
@@ -100,7 +100,7 @@
 }
 /* Das X ist kleiner als der Standard-Icon-Knopf (32px): in einer 40px-Zeile waere der zu
    wuchtig. Radius 7 statt 8, damit er bei 24px nicht rund wirkt. */
-.unc-card .up-iconbtn.unc-x { width: 24px; height: 24px; border-radius: 7px; }
+.unc-card .up-iconbtn.unc-x { width: 24px; height: 24px; border-radius: var(--up-r-s); }
 .unc-card .up-iconbtn.unc-x svg { width: 11px; height: 11px; }
 
 /* ---- Rumpf -----------------------------------------------------------------------------------
@@ -119,7 +119,7 @@
    dieser Karte, und ein im Dark Mode helles Feld waere ein zweiter Akzent neben dem Knopf.
    Die Lichtkante innen laesst die Flaeche gewoelbt wirken statt aufgeklebt. */
 .unc-tile {
-  flex: 0 0 auto; width: 44px; height: 44px; border-radius: 11px; box-sizing: border-box;
+  flex: 0 0 auto; width: 44px; height: 44px; border-radius: var(--up-r-xl); box-sizing: border-box;
   display: grid; place-items: center; color: var(--vc-text);   /* war #1f1f1f -- eine Ziffer neben --vc-text */
   background: linear-gradient(150deg, #ffffff 0%, #efeeeb 100%);
   border: 1px solid rgba(31,31,31,0.11);
@@ -172,7 +172,7 @@
 /* Der zweite Knopf ist die leise Antwort: kein Rahmen, keine Flaeche, bis man darauf zeigt.
    .up-btn-sec bringt Hoehe, Schrift und Radius mit -- hier fallen nur Rahmen und Farbe weg. */
 .unc-foot .up-btn-sec.unc-second {
-  height: 28px; padding: 0 10px; border-radius: 8px;
+  height: 28px; padding: 0 10px; border-radius: var(--up-r-m);
   border-color: transparent; background: transparent; color: var(--vc-muted);
   font-size: 12.5px;
 }
@@ -184,7 +184,7 @@
    statt .up-btn: das setzt Dinge, die auf einem Link nicht greifen (appearance, font-family). */
 .unc-primary {
   display: inline-flex; align-items: center; justify-content: center;
-  height: 28px; padding: 0 13px; border-radius: 8px; box-sizing: border-box;
+  height: 28px; padding: 0 13px; border-radius: var(--up-r-m); box-sizing: border-box;
   font-family: inherit; font-size: 12.5px; font-weight: 500; line-height: 1;
   text-decoration: none; cursor: pointer; white-space: nowrap;
   border: 1px solid var(--vc-border); background: var(--vc-bg); color: var(--vc-text);

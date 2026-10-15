@@ -70,15 +70,21 @@
      die einzige Spalte, die keine Entscheidung stuetzt. Dann die Marken, dann die Prompts. Der
      Tarif bleibt am laengsten: er sagt, warum die Kontingente so aussehen, wie sie aussehen.
      `dropAt: "narrow"` beim Datum ist der Boden fuer diese Absicht -- auf einem schmalen
-     Bildschirm nie ein Datum, auch wenn es rechnerisch noch passen wuerde. */
+     Bildschirm nie ein Datum, auch wenn es rechnerisch noch passen wuerde.
+     Seit 15.10. spaet sagt das `art` statt prio (SPALTEN_ART in core, fuer alle Tabellen gleich):
+     Created ist ein Datum, die beiden Kontingente sind Zaehlspalten (innerhalb der Art weicht die
+     rechte zuerst, also Brands vor Prompts -- wie vorher). Der Tarif ist ein Merkmal (typ), traegt
+     aber keep: nach der allgemeinen Reihenfolge wiche er VOR den Zaehlspalten, und mobil bliebe
+     dann Active Prompts (140, ohne minNarrow) neben Team und Aktion stehen -- das passt bei 320px
+     nicht, die Pille mit minNarrow 100 schon. Die Reihenfolge ist damit dieselbe wie vorher. */
   var COLUMNS = [
-    { key: "prompts", label: "Active Prompts", w: "minmax(140px, 0.9fr)", min: 140, prio: 30 },
-    { key: "brands",  label: "Active Brands",  w: "minmax(132px, 0.8fr)", min: 132, prio: 20 },
+    { key: "prompts", label: "Active Prompts", w: "minmax(140px, 0.9fr)", min: 140, art: "zaehl" },
+    { key: "brands",  label: "Active Brands",  w: "minmax(132px, 0.8fr)", min: 132, art: "zaehl" },
     /* minNarrow 100: mobil bleibt der Tarif die einzige Spalte neben dem Team, und mit 140
        reichte der Platz bei 320px nicht mehr fuer die Aktionsspalte. Die Pille kuerzt dort mit
        Auslassungspunkten (core.css .up-planpill). */
-    { key: "plan",    label: "Plan",           w: "minmax(140px, 1fr)",   min: 140, minNarrow: 100, prio: 40 },
-    { key: "created", label: "Created",        w: "minmax(120px, 0.8fr)", min: 120, prio: 10, dropAt: "narrow" }
+    { key: "plan",    label: "Plan",           w: "minmax(140px, 1fr)",   min: 140, minNarrow: 100, art: "typ", keep: true },
+    { key: "created", label: "Created",        w: "minmax(120px, 0.8fr)", min: 120, art: "datum", dropAt: "narrow" }
   ];
 
   /* Breite der Aktionsspalte. Feste Zahlen, keine inhaltsabhaengige Spur: Kopf und Zeilen sind
@@ -719,8 +725,10 @@
              in dieser App "gut" heisst. */
           /* up-pille: eine Plakette mit Rahmen wie der Tarif daneben -- kein Messwert, also
              nicht der rahmenlose Sentiment-Balken (29.09.). */
+          /* Der Punkt ist eine FLAECHE und traegt darum Geists Green 700 (--vt-up-flaeche, 15.10.),
+             nicht die Schriftstufe 900 von --vt-up. */
           return '<span class="up-sent up-pille uts-active">' +
-                   '<span class="up-sent-dot" style="background:var(--vt-up)"></span>' +
+                   '<span class="up-sent-dot" style="background:var(--vt-up-flaeche, var(--vt-up))"></span>' +
                    '<span class="up-sent-val">' + esc(UC.t("Active")) + '</span>' +
                  '</span>';
         }

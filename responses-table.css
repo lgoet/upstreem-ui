@@ -26,13 +26,13 @@
    — same muted dash every table in the app uses. See core.css. ---------- */
 
 /* ---------- brand mentioned toggle (mirrors uut-brand-toggle in urls-table.css) ---------- */
-.urt-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px;
+.urt-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: var(--up-r-m);
   background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; font-family: inherit; }
 .urt-brand-toggle.is-visible { display: inline-flex; }
 .urt-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
 .urt-brand-toggle.is-yes, .urt-brand-toggle.is-no { background: var(--vc-heading-bg); }
 .urt-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-.urt-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg); }
+.urt-brand-check { width: 16px; height: 16px; border-radius: var(--up-r-xs); border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg); }
 .urt-brand-check svg { width: 11px; height: 11px; display: none; }
 .urt-brand-toggle.is-yes .urt-brand-check, .urt-brand-toggle.is-no .urt-brand-check { background: var(--up-accent); border-color: var(--up-accent); }
 .urt-brand-toggle.is-yes .urt-brand-check .urt-brand-check-yes { display: block; }
@@ -46,7 +46,7 @@
 .urt-brand-toggle.is-spotlight {
   pointer-events: none; cursor: default; opacity: 0.55;
 }
-.urt-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }
+.urt-brand-logo { width: 16px; height: 16px; border-radius: var(--up-r-xs); flex: 0 0 auto; display: block; object-fit: cover; }
 .urt-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
 
 /* ---------- date ----------
@@ -79,9 +79,9 @@
 .up-root.is-vnarrow .up-row .urt-model-chip { gap: 0; }
 .up-root.is-vnarrow .up-row .urt-model-chip .up-ment-name { display: none; }
 .up-root.is-vnarrow .up-row .urt-model-chip .up-ment-logo {
-  width: 20px; height: 20px; border-radius: 6px; padding: 1px;
+  width: 20px; height: 20px; border-radius: var(--up-r-s); padding: 1px;
 }
-.up-root.is-vnarrow .up-row .urt-model-chip .up-ment-logo img { width: 100%; height: 100%; border-radius: 4px; }
+.up-root.is-vnarrow .up-row .urt-model-chip .up-ment-logo img { width: 100%; height: 100%; border-radius: calc(var(--up-r-s) - 1px); }
 
 /* ---------- mentioned? column header ----------
    The logo is fixed-size and the label must be the part that gives way; without min-width:0 the
@@ -116,7 +116,7 @@
    zwei Werte fuehrt --vc-text-invert. Die Dunkel-Regel faellt damit weg. (22.09.) */
 .urt-cols-badge {
   position: absolute; top: -3px; right: -3px; z-index: 2;
-  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: var(--up-r-voll);
   background: var(--vc-text); color: var(--vc-text-invert);
   font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
   display: none; align-items: center; justify-content: center;
@@ -131,11 +131,11 @@
 /* a filter is silently destructive, so an applied range gets a dot the way the cols badge does */
 .urt-fader.is-active .urt-fader-btn::after {
   content: ""; position: absolute; top: 5px; right: 5px; width: 6px; height: 6px;
-  border-radius: 999px; background: var(--up-accent); box-shadow: 0 0 0 2px var(--up-surface);
+  border-radius: var(--up-r-voll); background: var(--up-accent); box-shadow: 0 0 0 2px var(--up-surface);
 }
 
 .urt-fader-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60; width: 268px; padding: 14px;
-  border-radius: 12px; background: var(--up-surface); border: 1px solid var(--vc-border);
+  border-radius: var(--up-dd-radius); background: var(--up-surface); border: 1px solid var(--vc-border);
   /* e-2: ein Menue am Ausloeser (28.09.; vorher ein eigener Wert 0 12px 32px). */
   box-shadow: var(--up-e-2); opacity: 0; pointer-events: none; transform: translateY(-4px) scale(.985);
   transition: opacity 140ms ease, transform 140ms ease; }
@@ -203,12 +203,12 @@
 
 .urt-fader-foot { display: flex; align-items: center; gap: 8px; margin-top: 18px;
   padding-top: 14px; border-top: 1px solid var(--vc-border); }
-.urt-fader-reset { height: 32px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: 8px;
+.urt-fader-reset { height: 32px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: transparent; color: var(--vc-muted); font-family: inherit; font-size: 12.5px; font-weight: 500; cursor: pointer; flex: 0 0 auto; }
 /* Geist-Sekundaerknopf (15.10.): beim Ueberfahren nur die Flaeche, der Rand bleibt -- vorher zog
    der Rand auf --vc-hover-border (core, --up-knopf-*). */
 .urt-fader-reset:hover { color: var(--vc-text); background: var(--up-knopf-hover); }
-.urt-fader-apply { flex: 1 1 auto; height: 32px; border: 0; border-radius: 8px;
+.urt-fader-apply { flex: 1 1 auto; height: 32px; border: 0; border-radius: var(--up-r-m);
   background: var(--up-accent); color: var(--up-accent-fg); font-family: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
 .urt-fader-apply:hover { opacity: .92; }
 
@@ -310,10 +310,10 @@
 
 /* skeleton cards */
 .urt-card-sk { pointer-events: none; }
-.urt-sk { display: block; border-radius: 5px; background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
-.urt-sk-chip { width: 96px; height: 18px; border-radius: 6px; }
+.urt-sk { display: block; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
+.urt-sk-chip { width: 96px; height: 18px; border-radius: var(--up-r-s); }
 .urt-sk-date { width: 56px; height: 12px; }
-.urt-sk-line { height: 12px; margin-top: 10px; border-radius: 5px; }
+.urt-sk-line { height: 12px; margin-top: 10px; border-radius: var(--up-sk-r); }
 
 
 

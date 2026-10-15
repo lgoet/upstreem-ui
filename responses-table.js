@@ -94,8 +94,12 @@
      the cells come from the markup. If the two disagree, every track lands on the wrong column —
      which is exactly what made Citations render narrower than Brand Mentions. This order must stay
      identical to the .up-th order in bubble/responses_table_bubble.html (after the Prompt column,
-     which is `firstKey` and not listed here). `prio` is independent of this order and controls
-     drop order when the table runs out of width. */
+     which is `firstKey` and not listed here). `art` is independent of this order and controls
+     drop order when the table runs out of width (SPALTEN_ART in core, seit 15.10. spaet fuer alle
+     Tabellen gleich): Date, Citations, Model, Brand Mentions, Sentiment, Rank, zuletzt Mentioned? --
+     die Zeilenform von Visibility. Sentiment und Rank darum dropAt "vnarrow" statt "narrow": die
+     Stufe narrow (Tabelle unter 860) nahm beide weg, waehrend Citations, Model und Brand Mentions
+     blieben. Mobil (vnarrow) ist alles wie vorher. */
   var COLUMNS = [
     /* 116 und nicht 110: gemessen bei 12px/400 ist "Mentioned?" 65px breit, dazu 28px Polster der
        Zelle (16 rechts, 12 links) und 21px fuer das Markenlogo davor (16 + 5 Abstand) -- macht
@@ -110,15 +114,15 @@
        die zweite Untergrenze fuer die flache Fassung ist damit hinfaellig, es gilt eine. Gemessen
        (Klon des Kopfs, Logo 17, Info und Sortierpfeil 15, samt Zellrand): "Mentioned?" 129.4,
        Sentiment 138.8, Rank 105.1. Wieder 2 bis 3 darueber. */
-    { key: "mentioned",  label: "Mentioned?",     w: "minmax(132px, 0.6fr)",  min: 132, dropAt: "vnarrow", prio: 30 },
-    { key: "sentiment",  label: "Sentiment",      w: "minmax(141px, 1fr)",    min: 141, dropAt: "narrow",  prio: 70 },
-    { key: "rank",       label: "Rank",           w: "minmax(108px, 1fr)",    min: 108, dropAt: "narrow",  prio: 60 },
+    { key: "mentioned",  label: "Mentioned?",     w: "minmax(132px, 0.6fr)",  min: 132, dropAt: "vnarrow", art: "erwaehnt" },
+    { key: "sentiment",  label: "Sentiment",      w: "minmax(141px, 1fr)",    min: 141, dropAt: "vnarrow", art: "sentiment" },
+    { key: "rank",       label: "Rank",           w: "minmax(108px, 1fr)",    min: 108, dropAt: "vnarrow", art: "rang" },
     /* Brand Mentions shows 4 chips + "+N" (178px, the app-wide figure). Citations shows FIVE chips
        and its "+N" routinely runs to 5 digits (+23266), so it gets a strictly wider floor and a
        larger fr share — with equal fr both columns end up the same width regardless of the mins. */
-    { key: "brands",     label: "Brand Mentions", w: "minmax(178px, 1fr)",    min: 178, dropAt: "vnarrow", prio: 50 },
-    { key: "citations",  label: "Citations",      w: "minmax(216px, 1.25fr)", min: 216, dropAt: "vnarrow", prio: 40 },
-    /* keep + no dropAt: Model is one of the two columns (with Prompt, the fixed lead) that must
+    { key: "brands",     label: "Brand Mentions", w: "minmax(178px, 1fr)",    min: 178, dropAt: "vnarrow", art: "marken" },
+    { key: "citations",  label: "Citations",      w: "minmax(216px, 1.25fr)", min: 216, dropAt: "vnarrow", art: "citations" },
+    /* No dropAt: Model is one of the two columns (with Prompt, the fixed lead) that must
        survive even in mobile mode. Two different floors, because the cell renders two different
        things: 160px on desktop is the full chip measured, not guessed — 12+16 cell padding, 2px
        border, 16px chip padding, an 18px logo and its 8px gap leave 88px for the name, and the
@@ -127,9 +131,13 @@
        long display_name still truncates — that tail case is what the chip's data-tip is for.)
        minNarrow 44 is the mobile rendering: responses-table.css collapses the chip to a bare
        32px logo below the vnarrow breakpoint. */
-    { key: "model",      label: "Model",          w: "minmax(160px, 0.8fr)",  min: 160, minNarrow: 48, keep: true, prio: 20 },
+    /* Kein keep mehr (15.10. spaet): Model ist eine Merkmalsspalte wie Type (art "typ") und weicht
+       nach der Vorgabe des Nutzers vor Brand Mentions und den Kennzahlen. Mobil aendert das
+       nichts: unter vnarrow haben alle anderen Spalten ihr dropAt, Model steht dort allein, und
+       autoFit wirft die letzte Spalte nie ab (kept > 1). */
+    { key: "model",      label: "Model",          w: "minmax(160px, 0.8fr)",  min: 160, minNarrow: 48, art: "typ" },
     /* 120 = 28px cell padding + the widest relative-time string ("59 minutes ago", 88px). */
-    { key: "date",       label: "Date",           w: "minmax(120px, 0.6fr)",  min: 120, dropAt: "narrow",  prio: 10 }
+    { key: "date",       label: "Date",           w: "minmax(120px, 0.6fr)",  min: 120, dropAt: "narrow",  art: "datum" }
   ];
   var ROW_HEIGHTS = [
     { key: "default", label: "Default", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 6.5C7 5.09554 7 4.39331 7.33706 3.88886C7.48298 3.67048 7.67048 3.48298 7.88886 3.33706C8.39331 3 9.09554 3 10.5 3H18.5C19.9045 3 20.6067 3 21.1111 3.33706C21.3295 3.48298 21.517 3.67048 21.6629 3.88886C22 4.39331 22 5.09554 22 6.5C22 7.90446 22 8.60669 21.6629 9.11114C21.517 9.32952 21.3295 9.51702 21.1111 9.66294C20.6067 10 19.9045 10 18.5 10H10.5C9.09554 10 8.39331 10 7.88886 9.66294C7.67048 9.51702 7.48298 9.32952 7.33706 9.11114C7 8.60669 7 7.90446 7 6.5Z"/><path d="M7 17.5C7 16.0955 7 15.3933 7.33706 14.8889C7.48298 14.6705 7.67048 14.483 7.88886 14.3371C8.39331 14 9.09554 14 10.5 14H18.5C19.9045 14 20.6067 14 21.1111 14.3371C21.3295 14.483 21.517 14.6705 21.6629 14.8889C22 15.3933 22 16.0955 22 17.5C22 18.9045 22 19.6067 21.6629 20.1111C21.517 20.3295 21.3295 20.517 21.1111 20.6629C20.6067 21 19.9045 21 18.5 21H10.5C9.09554 21 8.39331 21 7.88886 20.6629C7.67048 20.517 7.48298 20.3295 7.33706 20.1111C7 19.6067 7 18.9045 7 17.5Z"/><path d="M2 9L3.53318 10.5858C4.17772 11.2525 4.5 11.5858 4.5 12C4.5 12.4142 4.17773 12.7475 3.53318 13.4142L2 15"/></svg>' },

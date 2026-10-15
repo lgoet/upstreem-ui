@@ -95,7 +95,7 @@
    ab. Die Ziel-Markierung beim Ziehen bleibt: dort ist eine Flaeche eine Aussage. */
 .uo-col {
   flex: 1 1 0; min-width: 300px; display: flex; flex-direction: column;
-  background: transparent; border: 0; border-radius: 16px; padding-bottom: 12px;
+  background: transparent; border: 0; border-radius: var(--up-r-2xl); padding-bottom: 12px;
   transition: background 140ms ease, box-shadow 140ms ease;
 }
 /* Drop target: the lane tints and gets an inset ring rather than a real border, so the column does
@@ -166,7 +166,7 @@
    sitzt im 2px-Ring, die Mitte bleibt der Untergrund. Ueber einen inneren Schatten und nicht
    ueber einen Rahmen -- ein Rahmen wuerde den Kreis bei krummer Skalierung wieder ausfransen,
    dieselbe Falle wie bei den Topic-Chips. */
-.uo-col-dot { width: 10px; height: 10px; border-radius: 999px; flex: 0 0 auto; }
+.uo-col-dot { width: 10px; height: 10px; border-radius: var(--up-r-voll); flex: 0 0 auto; }
 .uo-col-dot.is-hollow { background: transparent !important; box-shadow: inset 0 0 0 2px currentColor; }
 /* Same 14px/500 as .up-heading -- a column title is a heading, and the standalone version's
    13.5px/600 was the single biggest reason the board read as a different app. */
@@ -184,7 +184,7 @@
 }
 
 .uo-col-empty {
-  margin-top: 8px; padding: 22px 12px; border: 1px dashed var(--vc-border); border-radius: 12px;
+  margin-top: 8px; padding: 22px 12px; border: 1px dashed var(--vc-border); border-radius: var(--up-r-xl);
   text-align: center; color: var(--vc-third); font-size: 13px;
 }
 
@@ -207,7 +207,7 @@
    der Listenansicht (.uo-row) sind Zeilen, keine Karten, und behalten ihren Hover. */
 .uo-card {
   position: relative; background: var(--uo-col-bg); border: 1px solid var(--vc-border);
-  border-radius: 16px; padding: 16px; user-select: none;
+  border-radius: var(--up-r-2xl); padding: 16px; user-select: none;
 }
 /* ACHTUNG, hier stand der erste Anlauf dieser Aenderungen -- und er war wirkungslos: die
    Originalregeln fuer .uo-eyebrow, .uo-card-reason, .uo-source-title und .uo-source-domain
@@ -230,7 +230,7 @@
    Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
 .uo-eyebrow {
   display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0;
-  border-radius: 8px; background: transparent; color: var(--vc-third);
+  border-radius: var(--up-r-s); background: transparent; color: var(--vc-third);
   font-size: 12px; font-weight: 600;
   min-width: 0; max-width: 100%;
 }
@@ -293,7 +293,7 @@
    Gerechnet: 5 -> 4, 15 -> 12, Radius 4 -> 3.2, Abstand 3 -> 2.4, und der Verlauf 4*4 + 3*2.4
    = 23.2px statt 29. Die Versaetze sind die Startpunkte der Balken darin: i * (4 + 2.4). */
 .uo-pot-bars { display: flex; align-items: center; gap: 2.4px; }
-.uo-pot-bar { width: 4px; height: 12px; border-radius: 3.2px; background: var(--vc-border); }
+.uo-pot-bar { width: 4px; height: 12px; border-radius: 3px; background: var(--vc-border); }
 .uo-pot-bar.is-on {
   background-image: linear-gradient(90deg, var(--uo-pot-a), var(--uo-pot-b));
   background-size: 23.2px 100%; background-repeat: no-repeat;
@@ -336,19 +336,19 @@
 .uo-list-rows { display: flex; flex-direction: column; gap: 8px; }
 .uo-row {
   display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px;
-  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 12px;
+  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-xl);
   padding: 12px 15px; cursor: pointer; transition: border-color 140ms ease, background 140ms ease;
 }
 .uo-row:hover { border-color: var(--vc-hover-border); background: var(--vt-row-hover); }
 .uo-row-main { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
 .uo-row-title { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .uo-row-sub { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.uo-row-sub .up-logo-box { width: 18px; height: 18px; border-radius: 5px; }
-.uo-row-sub .up-logo-box img { width: 16px; height: 16px; border-radius: 4px; }
+.uo-row-sub .up-logo-box { width: 18px; height: 18px; border-radius: var(--up-r-xs); }
+.uo-row-sub .up-logo-box img { width: 16px; height: 16px; border-radius: calc(var(--up-r-xs) - 1px); }
 .uo-row-domain { font-size: 12px; color: var(--vc-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .uo-row-right { display: flex; align-items: center; gap: 16px; flex: 0 0 auto; }
 .uo-row-tags { display: flex; gap: 6px; }
-.uo-dot-sep { width: 3px; height: 3px; border-radius: 999px; background: var(--vc-third); flex: 0 0 auto; }
+.uo-dot-sep { width: 3px; height: 3px; border-radius: var(--up-r-voll); background: var(--vc-third); flex: 0 0 auto; }
 
 /* ---------- detail drawer ----------
    A right-hand slide-in panel: new to this component (core has a centred modal, §27, which is the
@@ -395,7 +395,7 @@
      all round. The 110% slide still clears the viewport with the inset in place. */
   position: fixed; top: 6px; right: 6px; bottom: 6px; z-index: 9904; width: min(720px, 86%);
   display: none; flex-direction: column;
-  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px;
+  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl);
   box-shadow: var(--up-e-drawer); overflow: hidden;
   transform: translateX(110%); transition: transform 180ms ease-in;
   will-change: transform; backface-visibility: hidden;
@@ -428,8 +428,8 @@
   display: flex; align-items: flex-start; gap: 16px; }
 .uo-m-actions { order: 1; flex: 0 0 auto; margin: -4px -4px 0 0; display: inline-flex; align-items: center; gap: 4px; }
 .uo-m-source { flex: 1 1 auto; display: flex; align-items: center; gap: 10px; min-width: 0; }
-.uo-m-source .up-logo-box { width: 38px; height: 38px; border-radius: 10px; }
-.uo-m-source .up-logo-box img { width: 36px; height: 36px; border-radius: 9px; }
+.uo-m-source .up-logo-box { width: 38px; height: 38px; border-radius: var(--up-r-xl); }
+.uo-m-source .up-logo-box img { width: 36px; height: 36px; border-radius: calc(var(--up-r-l) - 1px); }
 .uo-m-source-meta { min-width: 0; }
 .uo-m-source-title { font-size: 14px; font-weight: 500; color: var(--vc-text); display: flex; align-items: center; gap: 7px; min-width: 0; }
 /* Ein Titel ohne Leerzeichen (eine URL als Seitentitel) hat keine Stelle zum Umbrechen und haelt
@@ -448,7 +448,7 @@
      Spaltentitel in Performance Detail, nur ohne Tabellenkopf daneben. */
 .uo-m-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 20px 16px 24px; scrollbar-gutter: stable; }
 .uo-m-body::-webkit-scrollbar { width: 8px; }
-.uo-m-body::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: 999px; }
+.uo-m-body::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: var(--up-r-voll); }
 .uo-m-eyebrow { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .uo-m-titlerow { display: flex; align-items: flex-start; gap: 10px; }
 .uo-m-title { margin: 12px 0 0; flex: 1 1 auto; min-width: 0; font-size: 20px; font-weight: 500; line-height: 1.28; letter-spacing: -0.02em; color: var(--vc-text); }
@@ -530,16 +530,16 @@
 .uo-m-foot .up-seg-btn { flex: 1 1 0; }
 /* Full-width primary action. .up-export supplies the fill and hover; only the drawer-footer size
    (44px, wider radius) is local -- a footer CTA is a different weight from a toolbar button. */
-.uo-cta { width: 100%; height: 44px; border-radius: 12px; font-size: 14px; justify-content: center; gap: 8px; }
+.uo-cta { width: 100%; height: 44px; border-radius: var(--up-r-l); font-size: 14px; justify-content: center; gap: 8px; }
 .uo-cta svg { width: 18px; height: 18px; }
 
 /* ---------- skeleton ----------
-   Uses core's --vc-sk token and uutpulse keyframes, the same loading treatment every table shows,
-   instead of the local shimmer gradient the standalone version animated. */
-.uo-skel { background: var(--vc-sk); border-radius: 6px; animation: uutpulse 1.2s ease-in-out infinite; }
+   Uses core's skeleton (--vc-sk plus the Geist shimmer, --up-sk-verlauf / --up-sk-bewegung since
+   15.10.), the same loading treatment every table shows. */
+.uo-skel { background: var(--vc-sk) var(--up-sk-verlauf); border-radius: var(--up-r-s); animation: var(--up-sk-bewegung); }
 /* Dieselbe Flaeche wie die Karte (--uo-col-bg). Hier stand --vc-bg, und im Dunkeln war das
    Skelett damit heller als die Karte, die es ersetzt. */
-.uo-skel-card { background: var(--uo-col-bg); border: 1px solid var(--vc-border); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; }
+.uo-skel-card { background: var(--uo-col-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); padding: 16px; display: flex; flex-direction: column; }
 /* Eine Textzeile des Skeletts: ein Kasten so hoch wie die ZEILE des Textes, den sie vertritt,
    der Balken darin senkrecht mittig. Die Hoehe kommt NICHT aus einer Zahl, sondern aus einem
    unsichtbaren Zeichen (::before) in derselben Schriftgroesse und Zeilenhoehe wie das Original:
@@ -552,35 +552,35 @@
 .uo-skel-z::before { content: "\200b"; width: 0; overflow: hidden; }
 .uo-skel-z > .uo-skel { max-width: 100%; }
 .uo-skel-z.is-eyebrow { height: 24px; font-size: 11px; }
-.uo-skel-z.is-eyebrow > .uo-skel { height: 10px; border-radius: 4px; }
+.uo-skel-z.is-eyebrow > .uo-skel { height: 10px; border-radius: var(--up-sk-r); }
 .uo-skel-z.is-title   { font-size: 15px; line-height: 1.35; }
-.uo-skel-z.is-title > .uo-skel { height: 12px; border-radius: 5px; }
+.uo-skel-z.is-title > .uo-skel { height: 12px; border-radius: var(--up-sk-r); }
 .uo-skel-z.is-stitle  { font-size: 13px; font-weight: 500; }
-.uo-skel-z.is-stitle > .uo-skel { height: 10px; border-radius: 4px; }
+.uo-skel-z.is-stitle > .uo-skel { height: 10px; border-radius: var(--up-sk-r); }
 .uo-skel-z.is-sdomain { font-size: 12px; }
-.uo-skel-z.is-sdomain > .uo-skel { height: 9px; border-radius: 4px; }
+.uo-skel-z.is-sdomain > .uo-skel { height: 9px; border-radius: var(--up-sk-r); }
 .uo-skel-meta { flex: 1 1 auto; }
 /* Die Balken rechts oben: dieselbe Gesamtbreite wie die vier echten (4 * 4 + 3 * 2.4). */
-.uo-skel-pot { width: 23.2px; height: 12px; border-radius: 3.2px; }
+.uo-skel-pot { width: 23.2px; height: 12px; border-radius: 3px; }
 /* Die Listenzeile: dieselbe Schale wie .uo-row, ohne Zeiger und ohne Hover -- es gibt nichts
    zu oeffnen. Schriftgroessen wie dort: Titel 14px, Unterzeile 12px neben einer 18px-Kachel. */
 .uo-skel-row {
   display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 16px;
-  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 12px; padding: 12px 15px;
+  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-xl); padding: 12px 15px;
 }
 .uo-skel-z.is-rtitle { font-size: 14px; font-weight: 500; }
-.uo-skel-z.is-rtitle > .uo-skel { height: 11px; border-radius: 4px; }
+.uo-skel-z.is-rtitle > .uo-skel { height: 11px; border-radius: var(--up-sk-r); }
 .uo-skel-z.is-rsub { font-size: 12px; }
-.uo-skel-z.is-rsub > .uo-skel { height: 9px; border-radius: 4px; }
-.uo-skel-rfav { width: 18px; height: 18px; border-radius: 5px; flex: 0 0 auto; }
-.uo-skel-chip { width: 124px; height: 24px; border-radius: 8px; }
+.uo-skel-z.is-rsub > .uo-skel { height: 9px; border-radius: var(--up-sk-r); }
+.uo-skel-rfav { width: 18px; height: 18px; border-radius: var(--up-r-xs); flex: 0 0 auto; }
+.uo-skel-chip { width: 124px; height: 24px; border-radius: var(--up-r-m); }
 .uo-skel-title { width: 100%; height: 14px; margin-top: 14px; }
 .uo-skel-title.short { width: 62%; margin-top: 8px; }
-.uo-skel-text { width: 100%; height: 11px; border-radius: 5px; margin-top: 14px; }
+.uo-skel-text { width: 100%; height: 11px; border-radius: var(--up-sk-r); margin-top: 14px; }
 .uo-skel-text.short { width: 78%; margin-top: 7px; }
 .uo-skel-source { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
-.uo-skel-fav { width: 24px; height: 24px; border-radius: 8px; flex: 0 0 auto; }
-.uo-skel-source .uo-skel-line { flex: 1 1 auto; max-width: 60%; height: 12px; border-radius: 5px; }
+.uo-skel-fav { width: 24px; height: 24px; border-radius: var(--up-r-m); flex: 0 0 auto; }
+.uo-skel-source .uo-skel-line { flex: 1 1 auto; max-width: 60%; height: 12px; border-radius: var(--up-sk-r); }
 .uo-skel-tags { display: flex; gap: 6px; margin-top: 16px; }
 /* So hoch und rund wie der Topic-Chip ("Dot", 24px, Radius 6), sonst ruckt es beim Ankommen. */
 .uo-skel-tag { width: 98px; height: 24px; border-radius: var(--up-r-s); }

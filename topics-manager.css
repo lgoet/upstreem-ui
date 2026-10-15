@@ -30,10 +30,10 @@
    hier bleibt nur, dass sie nicht schrumpft. */
 .utm-topicchip-count { flex: 0 0 auto; }
 
-/* Loading skeleton: same shape as the real chip, filled with the shared skeleton pulse instead of
-   inventing a new one (.up-tsk / uutpulse are already core.css globals). */
-.utm-topicchip.up-tsk { border-color: transparent; background: var(--vc-sk); color: transparent;
-  animation: uutpulse 1.2s ease-in-out infinite; pointer-events: none; cursor: default; }
+/* Loading skeleton: same shape as the real chip, filled with the shared skeleton from core.css
+   instead of inventing a new one (since 15.10. the Geist shimmer, --up-sk-verlauf/-bewegung). */
+.utm-topicchip.up-tsk { border-color: transparent; background: var(--vc-sk) var(--up-sk-verlauf); color: transparent;
+  animation: var(--up-sk-bewegung); pointer-events: none; cursor: default; }
 
 /* ---------- topbar responsive ----------
    Only two tiers: is-w1 hides Sort (core.css, generic). is-w0 shrinks Add-Topic to icon-only —
@@ -85,7 +85,7 @@
    position:relative, weil das Dreipunktmenue absolut daran haengt (core.css .up-cg-rowmenu). */
 .utm-cg-row {
   position: relative; display: flex; align-items: center; gap: 10px;
-  min-height: 40px; padding: 0 8px 0 10px; border-radius: 9px;
+  min-height: 40px; padding: 0 8px 0 10px; border-radius: var(--up-r-l);
   transition: background 120ms ease;
 }
 .utm-cg-row:hover, .utm-cg-row.is-menuopen { background: var(--up-sel-bg); }

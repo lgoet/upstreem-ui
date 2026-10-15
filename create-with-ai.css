@@ -29,7 +29,7 @@
    genau das, was hier nie entscheiden darf. Mit .uca-root davor gewinnen diese Werte immer.
    Die Zahlen sind die von .up-export; wer dort etwas aendert, aendert es hier mit. */
 .uca-root .uca-trigger {
-  height: 32px; padding: 0 8px; gap: 8px; border-radius: 8px;
+  height: 32px; padding: 0 8px; gap: 8px; border-radius: var(--up-r-m);
   font-size: 12px; font-weight: 560; letter-spacing: normal; line-height: 1;
 }
 
@@ -90,7 +90,7 @@
   position: relative; width: min(600px, 100%); max-height: min(92vh, 900px);
   display: flex; flex-direction: column;
   background: var(--vc-bg); color: var(--vc-text);
-  border: 1px solid var(--vc-border); border-radius: 18px; box-shadow: var(--up-e-4); overflow: hidden;
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); box-shadow: var(--up-e-4); overflow: hidden;
   transform: translateY(8px) scale(.985); opacity: 0;
   transition: transform .24s cubic-bezier(.22,1,.36,1), opacity .2s ease;
 }
@@ -117,7 +117,7 @@
 .uca-action-ic { width: 19px; height: 19px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; color: var(--vc-text); }
 .uca-action-ic svg { width: 19px; height: 19px; }
 .uca-help {
-  width: 26px; height: 26px; border: 0; border-radius: 8px; background: transparent;
+  width: 26px; height: 26px; border: 0; border-radius: var(--up-r-m); background: transparent;
   color: var(--vc-third); cursor: pointer; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center;
   transition: color .14s ease, background .14s ease;
@@ -137,12 +137,12 @@
      Spaltentitel in Performance Detail, nur ohne Tabellenkopf daneben. */
 .uca-body { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: 22px 22px 12px; scrollbar-gutter: stable; }
 .uca-body::-webkit-scrollbar { width: 10px; }
-.uca-body::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: 999px; border: 3px solid var(--vc-bg); }
+.uca-body::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: var(--up-r-voll); border: 3px solid var(--vc-bg); }
 
 /* Quelle: Favicon links, Titel ueber Domain. Keine Karte, kein Trenner. */
 .uca-source { display: flex; align-items: center; gap: 12px; }
 .uca-fav {
-  width: 34px; height: 34px; flex: 0 0 auto; border-radius: 8px; overflow: hidden;
+  width: 34px; height: 34px; flex: 0 0 auto; border-radius: var(--up-r-m); overflow: hidden;
   display: flex; align-items: center; justify-content: center; color: var(--vc-third);
 }
 .uca-fav img { width: 100%; height: 100%; object-fit: contain; display: block; }
@@ -161,7 +161,7 @@
 .uca-input-wrap { position: relative; flex: 1 1 auto; min-width: 0; }
 .uca-input {
   width: 100%; height: 40px; padding: 0 38px 0 14px;
-  border: 1px solid var(--vc-border); border-radius: 12px; background: var(--up-surface);
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--up-surface);
   color: var(--vc-text); font-size: 14px; outline: none;
   transition: border-color .14s ease, background .14s ease;
 }
@@ -195,7 +195,7 @@
 
 .uca-bulb {
   position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
-  width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent;
+  width: 28px; height: 28px; border: 0; border-radius: var(--up-r-m); background: transparent;
   color: var(--vc-third); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
   opacity: 0; pointer-events: none; transition: opacity .14s ease, color .14s ease, background .14s ease;
 }
@@ -206,7 +206,7 @@
 @media (hover: none) { .uca-bulb { opacity: 1; pointer-events: auto; } }
 
 .uca-apply {
-  flex: 0 0 auto; height: 40px; padding: 0 18px; border-radius: 12px;
+  flex: 0 0 auto; height: 40px; padding: 0 18px; border-radius: var(--up-r-l);
   border: 1px solid var(--vc-border); background: var(--up-surface); color: var(--vc-text);
   font: inherit; font-size: 13.5px; font-weight: 560; cursor: pointer;
   transition: background .14s ease, border-color .14s ease;
@@ -217,7 +217,7 @@
 .uca-suggests { display: none; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 11px; }
 .uca-suggests.is-open { display: flex; }
 .uca-suggest {
-  display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 8px;
+  display: inline-flex; align-items: center; padding: 4px 10px; border-radius: var(--up-r-m);
   border: 0; background: transparent; color: var(--vc-muted);
   font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
   transition: background .14s ease, color .14s ease;
@@ -229,12 +229,12 @@
 .uca-tags:empty { margin-top: 0; }
 .uca-tag {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 6px 6px 6px 12px; border-radius: 8px; background: var(--vc-heading-bg); border: 1px solid var(--vc-border);
+  padding: 6px 6px 6px 12px; border-radius: var(--up-r-m); background: var(--vc-heading-bg); border: 1px solid var(--vc-border);
   color: var(--vc-text); font-size: 12.5px; font-weight: 500; animation: ucaTagIn .18s ease;
 }
 @keyframes ucaTagIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
 .uca-tag-x {
-  width: 20px; height: 20px; border-radius: 6px; border: 0; background: transparent; cursor: pointer;
+  width: 20px; height: 20px; border-radius: var(--up-r-s); border: 0; background: transparent; cursor: pointer;
   color: var(--vc-muted); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
   transition: background .14s ease, color .14s ease;
 }
@@ -244,13 +244,13 @@
 /* ---------- Interne Links ---------- */
 .uca-links-entry {
   width: 100%; margin-top: 26px; display: flex; align-items: center; gap: 12px; text-align: left;
-  padding: 13px 14px; border: 1px solid var(--vc-border); border-radius: 12px; background: var(--up-surface);
+  padding: 13px 14px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: var(--up-surface);
   color: var(--vc-text); font: inherit; cursor: pointer; transition: border-color .14s ease, background .14s ease;
 }
 .uca-links-entry:hover { background: var(--up-knopf-hover); }
 .uca-portal[data-theme="dark"] .uca-links-entry { background: transparent; }
 .uca-portal[data-theme="dark"] .uca-links-entry:hover { background: var(--vc-heading-bg); }
-.uca-links-ic { width: 30px; height: 30px; flex: 0 0 auto; border-radius: 8px; background: var(--vc-heading-bg); color: var(--vc-text); display: inline-flex; align-items: center; justify-content: center; }
+.uca-links-ic { width: 30px; height: 30px; flex: 0 0 auto; border-radius: var(--up-r-m); background: var(--vc-heading-bg); color: var(--vc-text); display: inline-flex; align-items: center; justify-content: center; }
 .uca-links-ic svg { width: 16px; height: 16px; }
 .uca-links-meta { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 2px; }
 .uca-links-title { font-size: 13.5px; font-weight: 580; line-height: 1.2; }
@@ -303,7 +303,7 @@
   padding: 0; border: 0; background: transparent; color: var(--vc-text); font: inherit; cursor: pointer;
 }
 .uca-cb {
-  width: 18px; height: 18px; flex: 0 0 auto; margin-top: 1px; border-radius: 6px;
+  width: 18px; height: 18px; flex: 0 0 auto; margin-top: 1px; border-radius: var(--up-r-s);
   border: 1px solid var(--vc-border); background: var(--up-surface);
   display: inline-flex; align-items: center; justify-content: center; color: transparent;
   /* Timing aus core, damit alle Kaestchen der App gleich schnell sind. */
@@ -320,19 +320,19 @@
 .uca-assistants { display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; gap: 12px; }
 .uca-assistant {
   display: flex; align-items: center; gap: 12px; height: 100%;
-  padding: 15px 46px 15px 15px; border: 1px solid var(--vc-border); border-radius: 14px; background: var(--up-surface);
+  padding: 15px 46px 15px 15px; border: 1px solid var(--vc-border); border-radius: var(--up-r-xl); background: var(--up-surface);
   color: var(--vc-text); font: inherit; cursor: pointer; text-align: left; position: relative;
   transition: border-color .14s ease, background .14s ease;
 }
 .uca-assistant:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
 .uca-assistant.is-selected { border-color: var(--vc-hover-border); background: var(--up-surface); }
-.uca-ai-logo { width: 32px; height: 32px; flex: 0 0 auto; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.uca-ai-logo { width: 32px; height: 32px; flex: 0 0 auto; border-radius: var(--up-r-m); overflow: hidden; display: flex; align-items: center; justify-content: center; }
 .uca-ai-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .uca-ai-meta { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .uca-ai-name { font-size: 14px; font-weight: 580; line-height: 1.15; }
 .uca-ai-desc { font-size: 11.5px; color: var(--vc-muted); line-height: 1.3; }
 .uca-ai-check {
-  position: absolute; top: 50%; right: 14px; transform: translateY(-50%); width: 16px; height: 16px; border-radius: 999px;
+  position: absolute; top: 50%; right: 14px; transform: translateY(-50%); width: 16px; height: 16px; border-radius: var(--up-r-voll);
   background: var(--up-accent); color: var(--up-accent-fg); display: none; align-items: center; justify-content: center;
 }
 .uca-ai-check svg { width: 11px; height: 11px; }
@@ -342,7 +342,7 @@
 .uca-foot { flex: 0 0 auto; padding: 18px 22px 22px; border-top: 1px solid var(--vc-border); background: var(--vc-bg); }
 .uca-primary {
   width: 100%; height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
-  border: 0; border-radius: 12px; background: var(--up-accent); color: var(--up-accent-fg);
+  border: 0; border-radius: var(--up-r-l); background: var(--up-accent); color: var(--up-accent-fg);
   font: inherit; font-size: 14.5px; font-weight: 580; cursor: pointer; transition: opacity .14s ease;
 }
 .uca-primary:hover { opacity: .9; }
@@ -351,7 +351,7 @@
 .uca-secondary { display: flex; gap: 10px; margin-top: 18px; }
 .uca-ghost {
   flex: 1 1 0; height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-  border: 1px solid var(--vc-border); border-radius: 12px; background: var(--up-surface); color: var(--vc-muted);
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--up-surface); color: var(--vc-muted);
   font: inherit; font-size: 13px; font-weight: 520; cursor: pointer;
   transition: background .14s ease, color .14s ease, border-color .14s ease;
 }
@@ -364,7 +364,7 @@
 .uca-modal.uca-in-builder .uca-builder { display: flex; }
 .uca-bld-head { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .uca-bld-back {
-  width: 32px; height: 32px; border-radius: 8px; border: 0; background: transparent; color: var(--vc-text);
+  width: 32px; height: 32px; border-radius: var(--up-r-m); border: 0; background: transparent; color: var(--vc-text);
   cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
   transition: background .14s ease;
 }
@@ -374,7 +374,7 @@
 .uca-bld-explain { flex: 0 0 auto; font-size: 12px; line-height: 1.5; color: var(--vc-muted); margin-bottom: 14px; }
 .uca-bld-search { flex: 0 0 auto; display: flex; gap: 8px; margin-bottom: 12px; }
 .uca-bld-input {
-  flex: 1 1 auto; min-width: 0; height: 40px; padding: 0 14px; border: 1px solid var(--vc-border); border-radius: 12px;
+  flex: 1 1 auto; min-width: 0; height: 40px; padding: 0 14px; border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
   background: var(--up-surface); color: var(--vc-text); font-size: 14px; outline: none;
   transition: border-color .14s ease, background .14s ease;
 }
@@ -387,23 +387,23 @@
 /* Hover kommt aus core (Hover der Eingabefelder, 13.10.). */
 .uca-bld-input.uca-bld-input:focus { border-color: var(--up-focus); box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); background: var(--up-surface); outline: 0; }
 .uca-bld-add {
-  flex: 0 0 auto; height: 40px; padding: 0 16px; border-radius: 12px; border: 0;
+  flex: 0 0 auto; height: 40px; padding: 0 16px; border-radius: var(--up-r-l); border: 0;
   background: var(--up-accent); color: var(--up-accent-fg); font: inherit; font-size: 13.5px; font-weight: 560;
   cursor: pointer; transition: opacity .14s ease;
 }
 .uca-bld-add:hover { opacity: .9; }
 .uca-bld-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
 .uca-bld-list::-webkit-scrollbar { width: 10px; }
-.uca-bld-list::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: 999px; border: 3px solid var(--vc-bg); }
+.uca-bld-list::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: var(--up-r-voll); border: 3px solid var(--vc-bg); }
 .uca-bld-row {
   width: 100%; display: flex; align-items: center; gap: 11px; text-align: left; margin-bottom: 2px;
-  padding: 8px 10px; border: 0; border-radius: 10px; background: transparent;
+  padding: 8px 10px; border: 0; border-radius: var(--up-r-m); background: transparent;
   color: var(--vc-text); font: inherit; cursor: pointer; position: relative; transition: background .12s ease;
 }
 .uca-bld-row:hover { background: var(--vc-heading-bg); }
 .uca-bld-row.is-selected { background: var(--up-sel-bg); }
 .uca-bld-row.is-disabled { opacity: .4; pointer-events: none; }
-.uca-bld-fav { width: 30px; height: 30px; flex: 0 0 auto; border-radius: 8px; overflow: hidden; background: var(--vc-heading-bg); border: 1px solid var(--vc-border); display: flex; align-items: center; justify-content: center; color: var(--vc-third); }
+.uca-bld-fav { width: 30px; height: 30px; flex: 0 0 auto; border-radius: var(--up-r-m); overflow: hidden; background: var(--vc-heading-bg); border: 1px solid var(--vc-border); display: flex; align-items: center; justify-content: center; color: var(--vc-third); }
 .uca-bld-fav img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .uca-bld-fav svg { width: 15px; height: 15px; }
 .uca-bld-fav, .uca-bld-meta, .uca-bld-check { pointer-events: none; }
@@ -418,11 +418,12 @@
 .uca-bld-row.is-selected .uca-bld-check { display: inline-flex; }
 .uca-bld-empty { font-size: 12.5px; color: var(--vc-muted); padding: 8px 10px; }
 .uca-bld-skel { width: 100%; display: flex; align-items: center; gap: 11px; margin-bottom: 2px; padding: 8px 10px; }
-.uca-bld-skel-fav { width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto; }
+.uca-bld-skel-fav { width: 30px; height: 30px; border-radius: var(--up-r-m); flex: 0 0 auto; }
 .uca-bld-skel-lines { flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px; }
-.uca-bld-skel-l1 { height: 11px; width: 60%; border-radius: 4px; }
-.uca-bld-skel-l2 { height: 10px; width: 40%; border-radius: 4px; }
-.uca-skel { background: var(--vc-sk); animation: ucaShimmer 1.2s ease-in-out infinite; }
+.uca-bld-skel-l1 { height: 11px; width: 60%; border-radius: var(--up-sk-r); }
+.uca-bld-skel-l2 { height: 10px; width: 40%; border-radius: var(--up-sk-r); }
+/* Das Skelett aus core nach Geist (15.10.); ucaShimmer bleibt fuer den Vertrag stehen. */
+.uca-skel { background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
 @keyframes ucaShimmer { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
 
 /* ---------- How-Panel ---------- */

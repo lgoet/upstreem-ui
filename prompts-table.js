@@ -108,7 +108,7 @@
         /* "+N" ist der "+N"-Chip aus core (.up-topicchip.is-mehr: ohne Punkt, enger, leiser). */
         '.ust-cell .upt-zmehr.upt-zmehr{flex:0 0 auto;user-select:none;}',
         '.ust-cell[data-theme="dark"] .ust-empty{color:#555;}',
-        '.ust-topics-popup.ust-topics-popup{position:fixed;z-index:2147483000;display:none;pointer-events:none;max-width:320px;padding:10px;border:1px solid #d9dde3;border-radius:12px;background:#fff;box-shadow:var(--up-e-2);font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
+        '.ust-topics-popup.ust-topics-popup{position:fixed;z-index:2147483000;display:none;pointer-events:none;max-width:320px;padding:10px;border:1px solid #d9dde3;border-radius:var(--up-r-l);background:#fff;box-shadow:var(--up-e-2);font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
         '.ust-topics-popup .ust-popup-inner{display:flex;flex-wrap:wrap;gap:8px;}',
         /* Border brightened vs. the plain --vc-border dark value (#353535) — against this popup's
            #151515 background that reads as barely-there/blurry. Same #454545 fix already applied
@@ -391,10 +391,15 @@
     /* Visibility/Sentiment carry more header furniture now (logo/info-icon/sorter) than a plain
        label — a %-based responsive floor let them shrink below what that furniture needs at
        narrow widths, so both use a px floor instead, matching Rank's own min. */
-    /* `prio` = survival order when the table is too narrow to show everything (higher survives
-       longer, see UC.makeColumns' autoFit). Deliberately NOT the same as left-to-right order:
-       Topics outranks Rank and Sentiment because it is the column this table is actually managed
-       by, while Market/Created are reference data you can live without on a laptop screen. */
+    /* `art` = welche Spalte bei Platzmangel zuerst weicht (UC.makeColumns, SPALTEN_ART in core).
+       Seit 15.10. spaet fuer alle Tabellen dieselbe Reihenfolge, vom Nutzer vorgegeben: Created,
+       Intent (samt Branded), Market, Topics, Brand Mentions, Sentiment, Rank -- Visibility nie.
+       Vorher stand Topics hier ueber Rank und Sentiment (die Spalte, nach der die Tabelle gepflegt
+       wird); die Vorgabe ist juenger und gilt.
+       Sentiment darum dropAt "vnarrow" statt "narrow": die Stufe narrow (Tabelle unter 860, also
+       ein Laptopfenster um 1100) nahm Sentiment weg, waehrend Topics und Brand Mentions blieben --
+       gegen die Reihenfolge. Ein dropAt "narrow" darf nur eine Spalte tragen, die unter jeder
+       Spalte ohne es steht (hier Created, Intent, Market). Mobil (vnarrow) bleibt alles, wie es war. */
     /* Genauso breit wie Rank und Sentiment: alle drei sind eine Kennzahl in einer Zelle, und die
        150 hier liessen die Visibility-Spalte neben den beiden 128er wie eine andere Art Spalte
        aussehen. Deckel und Mindestbreite von Sentiment uebernommen -- Rank hat mit 90 dieselbe
@@ -411,16 +416,16 @@
        Kopfs mit max-content): Visibility 149.6, Rank 105.1, Sentiment 138.8, Market 96.5,
        Created 102.2 -- Visibility und Sentiment lagen ueber ihrer Untergrenze, Rank und Market
        hatten unter 3 Luft. Wieder je 6 bis 8 darueber, die Deckel wachsen mit. */
-    { key: "visibility", label: "Visibility",      w: "minmax(156px, 160px)", min: 156, prio: 70 },
-    { key: "rank",       label: "Rank",            w: "minmax(112px, 136px)", min: 112, dropAt: "vnarrow", prio: 40 },
-    { key: "sentiment",  label: "Sentiment",       w: "minmax(145px, 152px)", min: 145, dropAt: "narrow",  prio: 30 },
+    { key: "visibility", label: "Visibility",      w: "minmax(156px, 160px)", min: 156, art: "anteil" },
+    { key: "rank",       label: "Rank",            w: "minmax(112px, 136px)", min: 112, dropAt: "vnarrow", art: "rang" },
+    { key: "sentiment",  label: "Sentiment",       w: "minmax(145px, 152px)", min: 145, dropAt: "vnarrow", art: "sentiment" },
     /* 178px, same as urls-table's identical column: 4 × 32px avatars (−6px overlap each) plus
        the "+N" label plus the cell's own 28px padding, with headroom for the hover spread.
        A %-based floor let it collapse below that and clipped the stack. */
     /* No dropAt was a real bug, not a deliberate "always show" — every other column has one, and
        leaving this the sole exception meant the narrowest tier still showed Prompt + Visibility
        + Brand Mentions instead of just the two columns that are supposed to survive down there. */
-    { key: "brands",     label: "Brand Mentions",  w: "minmax(178px, 1fr)", min: 178, dropAt: "vnarrow", prio: 50 },
+    { key: "brands",     label: "Brand Mentions",  w: "minmax(178px, 1fr)", min: 178, dropAt: "vnarrow", art: "marken" },
     /* Topics is the column people actually manage, so it's the one that gets to keep growing --
        Visibility/Rank/Sentiment/Market are all hard-capped now (see their own w: above/below), so
        any spare row width flows to Topics (and Brands/Created's own smaller fr shares) instead. */
@@ -428,19 +433,19 @@
        wird ganz gezeigt oder gar nicht, und bei 169px stand bei zwei Topics nur noch "+2" in der
        Zelle. Gemessen: ein Chip mittlerer Laenge ("Luxury Sedans" 112) plus "+1" plus Abstand plus
        28 Zellpolster braucht knapp 200. */
-    { key: "topics",     label: "Topics",          w: "minmax(200px, 1.3fr)", min: 200, dropAt: "vnarrow", prio: 60 },
+    { key: "topics",     label: "Topics",          w: "minmax(200px, 1.3fr)", min: 200, dropAt: "vnarrow", art: "topics" },
     /* Reference data, never needs to eat spare row width -- capped at 128px same as Rank/Sentiment,
        not left on a %/fr leash that grows it back out on a wide screen. */
     /* Intent und Branded in ZWEI Spalten (14.10., gemeldet: "Branded nicht in derselben Spalte,
        die Intent-Spalte ist so immer ultra gross, weil immer Platz fuer Branded gelassen wird").
        Intent: das breiteste Label ("Recommendation" mit Zeichen und UserCog-Chip) 152px, dazu
        12 + 16 Zellpolster minus 6 Ausgleich -- 176. Branded: der Chip mit drei Favicons und "+N"
-       146px plus Zellpolster -- 172. Beide sind Nebenspalten (prio unter Topics) und gezeigt nur,
+       146px plus Zellpolster -- 172. Beide sind Nebenspalten (Art intent, weichen vor Topics) und gezeigt nur,
        wenn die Zeilen Intent-Felder tragen (isHidden). */
-    { key: "intent",     label: "Intent",          w: "minmax(176px, 1fr)", min: 176, dropAt: "narrow",  prio: 35 },
-    { key: "branded",    label: "Branded",         w: "minmax(172px, 1fr)", min: 172, dropAt: "narrow",  prio: 30 },
-    { key: "market",     label: "Market",          w: "minmax(104px, 128px)", min: 104, dropAt: "narrow",  prio: 20 },
-    { key: "created",    label: "Created",         w: "minmax(10%, 0.7fr)",min: 110, dropAt: "narrow",  prio: 10 }
+    { key: "intent",     label: "Intent",          w: "minmax(176px, 1fr)", min: 176, dropAt: "narrow",  art: "intent" },
+    { key: "branded",    label: "Branded",         w: "minmax(172px, 1fr)", min: 172, dropAt: "narrow",  art: "intent" },
+    { key: "market",     label: "Market",          w: "minmax(104px, 128px)", min: 104, dropAt: "narrow",  art: "markt" },
+    { key: "created",    label: "Created",         w: "minmax(10%, 0.7fr)",min: 110, dropAt: "narrow",  art: "datum" }
   ];
   var ROW_HEIGHTS = [
     { key: "default", label: "Default", icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 6.5C7 5.09554 7 4.39331 7.33706 3.88886C7.48298 3.67048 7.67048 3.48298 7.88886 3.33706C8.39331 3 9.09554 3 10.5 3H18.5C19.9045 3 20.6067 3 21.1111 3.33706C21.3295 3.48298 21.517 3.67048 21.6629 3.88886C22 4.39331 22 5.09554 22 6.5C22 7.90446 22 8.60669 21.6629 9.11114C21.517 9.32952 21.3295 9.51702 21.1111 9.66294C20.6067 10 19.9045 10 18.5 10H10.5C9.09554 10 8.39331 10 7.88886 9.66294C7.67048 9.51702 7.48298 9.32952 7.33706 9.11114C7 8.60669 7 7.90446 7 6.5Z"/><path d="M7 17.5C7 16.0955 7 15.3933 7.33706 14.8889C7.48298 14.6705 7.67048 14.483 7.88886 14.3371C8.39331 14 9.09554 14 10.5 14H18.5C19.9045 14 20.6067 14 21.1111 14.3371C21.3295 14.483 21.517 14.6705 21.6629 14.8889C22 15.3933 22 16.0955 22 17.5C22 18.9045 22 19.6067 21.6629 20.1111C21.517 20.3295 21.3295 20.517 21.1111 20.6629C20.6067 21 19.9045 21 18.5 21H10.5C9.09554 21 8.39331 21 7.88886 20.6629C7.67048 20.517 7.48298 20.3295 7.33706 20.1111C7 19.6067 7 18.9045 7 17.5Z"/><path d="M2 9L3.53318 10.5858C4.17772 11.2525 4.5 11.5858 4.5 12C4.5 12.4142 4.17773 12.7475 3.53318 13.4142L2 15"/></svg>' },

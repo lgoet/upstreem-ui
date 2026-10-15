@@ -58,15 +58,18 @@
   /* Hideable columns. Domain and Actions are deliberately absent — the table makes no sense
      without the domain, and the row actions are the point of the Actions cell. */
   var COLUMNS = [
-      /* `prio` = survival order when too narrow to fit everything (higher survives longer, see
-         UC.makeColumns' autoFit). */
-      { key: "share",    label: "Share",     w: "minmax(13%, 150px)",   min: 130, prio: 40 },
-      { key: "used",     label: "Used",      w: "minmax(11%, 1fr)",     min: 100, dropAt: "narrow",  prio: 20 },
-      { key: "type",     label: "Type",      w: "minmax(11%, 1fr)",     min: 118, dropAt: "vnarrow", prio: 30 },
+      /* `art` = welche Spalte bei Platzmangel zuerst weicht (SPALTEN_ART in core, seit 15.10.
+         spaet fuer alle Tabellen gleich): Last Seen, Type, Used (eine Zaehlspalte, weicht nach
+         Type -- vorher umgekehrt). Share faellt der Breite wegen nie. Used darum dropAt
+         "vnarrow" statt "narrow": die Stufe narrow nahm Used vor Type weg. Mobil (vnarrow) wie
+         vorher. */
+      { key: "share",    label: "Share",     w: "minmax(13%, 150px)",   min: 130, art: "anteil" },
+      { key: "used",     label: "Used",      w: "minmax(11%, 1fr)",     min: 100, dropAt: "vnarrow", art: "zaehl" },
+      { key: "type",     label: "Type",      w: "minmax(11%, 1fr)",     min: 118, dropAt: "vnarrow", art: "typ" },
       /* Flach (core, Kopfschrift 13/500, 15.10.) braucht "Last Seen" mit Sortierpfeilen 110 samt
          Zellrand; die alte Untergrenze 104 kuerzte. Seit 15.10. spaet traegt jeder Kopf 14/500,
          auch im Drawer: gemessen 115.7 mit Sortierpfeilen 15, also EINE Untergrenze 118. */
-      { key: "lastseen", label: "Last Seen", w: "minmax(118px, 0.7fr)", min: 118, dropAt: "vnarrow", prio: 10 }
+      { key: "lastseen", label: "Last Seen", w: "minmax(118px, 0.7fr)", min: 118, dropAt: "vnarrow", art: "datum" }
   ];
 
   /* ORDER maps each (field, direction) pair onto the single value the RPC expects in p_order.

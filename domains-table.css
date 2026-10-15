@@ -5,24 +5,24 @@
    in core.css under .up-* — this file only carries domains-table's own visuals under .udt-*. */
 
 /* ---------- brand mentioned toggle (mirrors urls-table's uut-brand-toggle) ---------- */
-.udt-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px;
+.udt-brand-toggle { display: none; align-items: center; justify-content: space-between; gap: 10px; height: 32px; padding: 0 8px; border-radius: var(--up-r-m);
   background: transparent; border: 0; cursor: pointer; flex: 0 0 auto; font-family: inherit; }
 .udt-brand-toggle.is-visible { display: inline-flex; }
 .udt-brand-toggle:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
 .udt-brand-toggle.is-yes, .udt-brand-toggle.is-no { background: var(--vc-heading-bg); }
 .udt-brand-toggle-lbl { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
-.udt-brand-check { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg); }
+.udt-brand-check { width: 16px; height: 16px; border-radius: var(--up-r-xs); border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--up-accent-fg); }
 .udt-brand-check svg { width: 11px; height: 11px; display: none; }
 .udt-brand-toggle.is-yes .udt-brand-check, .udt-brand-toggle.is-no .udt-brand-check { background: var(--up-accent); border-color: var(--up-accent); }
 .udt-brand-toggle.is-yes .udt-brand-check .udt-brand-check-yes { display: block; }
 .udt-brand-toggle.is-no .udt-brand-check .udt-brand-check-no { display: block; }
-.udt-brand-logo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: block; object-fit: cover; }
+.udt-brand-logo { width: 16px; height: 16px; border-radius: var(--up-r-xs); flex: 0 0 auto; display: block; object-fit: cover; }
 .udt-brand-label { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
 
 /* ---------- domain cell: favicon/logo box + name + "N pages" (core's .up-pages) ---------- */
-.udt-logo-box { width: 24px; height: 24px; border-radius: 8px; background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto;
+.udt-logo-box { width: 24px; height: 24px; border-radius: var(--up-r-m); background: var(--vt-logo-bg); padding: 1px; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center; position: relative; }
-.udt-logo-box img { width: 22px; height: 22px; border-radius: 7px; object-fit: cover; display: block; }
+.udt-logo-box img { width: 22px; height: 22px; border-radius: calc(var(--up-r-m) - 1px); object-fit: cover; display: block; }
 /* Letter fallback: a broken/missing favicon used to leave an empty square, which reads as a
    loading glitch. The initial keeps every row visually complete. */
 .udt-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
@@ -102,7 +102,7 @@
    zwei Werte fuehrt --vc-text-invert. Die Dunkel-Regel faellt damit weg. (22.09.) */
 .udt-cols-badge {
   position: absolute; top: -3px; right: -3px; z-index: 2;
-  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+  min-width: 16px; height: 16px; padding: 0 4px; border-radius: var(--up-r-voll);
   background: var(--vc-text); color: var(--vc-text-invert);
   font-family: inherit; font-size: 10px; font-weight: 600; line-height: 1;
   display: none; align-items: center; justify-content: center;
@@ -147,7 +147,7 @@
   /* align-self, because .udt-dom-wrap is a COLUMN flex: without it the button stretches to the
      wrap's full width and the hover background reads as a bar hanging off the label. */
   align-self: flex-start;
-  padding: 5px 6px; margin: -5px -6px; border-radius: 6px;
+  padding: 5px 6px; margin: -5px -6px; border-radius: var(--up-r-s);
   background: transparent; cursor: pointer; font: inherit; font-size: 12px; font-weight: 400;
   color: var(--vc-third); white-space: nowrap; transition: color 120ms ease, background 120ms ease; }
 .udt-pagesbtn:hover { color: var(--vc-text); background: var(--vc-heading-bg); }
@@ -250,10 +250,10 @@
 .udt-subrow:focus-visible { outline: 2px solid var(--vc-hover-border); outline-offset: -2px; }
 
 .udt-sub-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.udt-sub-logo { width: 21px; height: 21px; border-radius: 6px; background: var(--vt-logo-bg);
+.udt-sub-logo { width: 21px; height: 21px; border-radius: var(--up-r-s); background: var(--vt-logo-bg);
   padding: 1px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center;
   position: relative; overflow: hidden; box-sizing: border-box; }
-.udt-sub-logo img { width: 19px; height: 19px; border-radius: 5px; object-fit: cover; display: block; }
+.udt-sub-logo img { width: 19px; height: 19px; border-radius: calc(var(--up-r-s) - 1px); object-fit: cover; display: block; }
 .udt-sub-ltr { font-size: 10px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); text-transform: uppercase; }
 .udt-sub-logo.has-img .udt-sub-ltr { display: none; }
 .udt-sub-title { min-width: 0; max-width: 620px; font-size: 13.5px; font-weight: 500;
@@ -276,7 +276,7 @@
 .udt-sub-tag { display: inline-flex; align-items: center;
   border: 1px solid transparent;
   max-width: 100%; box-sizing: border-box; }
-.udt-sub-tag-dot { width: 6px; height: 6px; border-radius: 999px; flex: 0 0 auto; }
+.udt-sub-tag-dot { width: 6px; height: 6px; border-radius: var(--up-r-voll); flex: 0 0 auto; }
 .udt-sub-tag-lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Arrow appears on row hover, same delayed slide-in as the domain row's own goto arrow, so the
    two levels of the table announce clickability identically. */
@@ -328,13 +328,13 @@
    Zwei Klassen: die Aliasregeln in core haben eine, gewonnen wird ueber die Spezifitaet.
    Die gleitende Pille (::before, core) zieht die Rundung jetzt mit. Sie stand auf den 8px aus
    core, waehrend Schiene und Knoepfe 6 hatten -- eine 8er-Pille in einer 6er-Schiene. */
-.udt-sub-tools .udt-sub-dispseg { height: 24px; border-radius: 6px; }
-.udt-sub-tools .udt-sub-dispseg::before { border-radius: 6px; }
-.udt-sub-tools .udt-sub-disp-btn { height: 24px; min-width: 34px; border-radius: 6px; }
+.udt-sub-tools .udt-sub-dispseg { height: 24px; border-radius: var(--up-r-s); }
+.udt-sub-tools .udt-sub-dispseg::before { border-radius: var(--up-r-s); }
+.udt-sub-tools .udt-sub-disp-btn { height: 24px; min-width: 34px; border-radius: var(--up-r-s); }
 .udt-sub-closebtn { margin-left: auto; flex: 0 0 auto; }
 
 .udt-sub-search { display: inline-flex; align-items: center; gap: 6px; height: 32px;
-  padding: 0 8px; border: 1px solid var(--vc-border); border-radius: 8px;
+  padding: 0 8px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: transparent; width: 200px; box-sizing: border-box;
   transition: border-color 120ms ease; }
 /* Feld-Hover wie Geist-Input (15.10.): die Kante eine Stufe kraeftiger, nicht #6f6f6f. */
@@ -369,17 +369,17 @@
    resize or reflow when the data lands, which a single generic stripe always did. */
 .udt-subrow.is-sk { cursor: default; background: transparent; }
 .udt-subrow.is-sk:hover { background: transparent; }
-.udt-sk-logo { width: 21px; height: 21px; border-radius: 6px; flex: 0 0 auto;
-  background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
-.udt-sk-bar { height: 12px; border-radius: 6px; background: var(--vc-sk);
-  animation: uutpulse 1.2s ease-in-out infinite; }
+.udt-sk-logo { width: 21px; height: 21px; border-radius: var(--up-r-s); flex: 0 0 auto;
+  background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
+.udt-sk-bar { height: 12px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf);
+  animation: var(--up-sk-bewegung); }
 .udt-sk-title { flex: 0 0 auto; width: 42%; min-width: 90px; }
 .udt-subrow.is-sk:nth-child(2) .udt-sk-title { width: 56%; }
 .udt-subrow.is-sk:nth-child(3) .udt-sk-title { width: 33%; }
 .udt-subrow.is-sk:nth-child(4) .udt-sk-title { width: 48%; }
 .udt-subrow.is-sk:nth-child(5) .udt-sk-title { width: 38%; }
 .udt-sk-share { width: 44px; }
-.udt-sk-type { width: 76px; height: 20px; border-radius: 7px; }
+.udt-sk-type { width: 76px; height: 20px; border-radius: var(--up-r-s); }
 .udt-sk-date { width: 62px; }
 
 /* ---------- narrow ----------

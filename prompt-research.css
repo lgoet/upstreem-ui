@@ -121,7 +121,7 @@
 .upr-research-mark { display: none !important; }
 .upr-research-mark-aus { width: 156px; height: 106px; position: relative; display: grid; place-items: center; margin-bottom: 16px; }
 .upr-research-orb {
-  width: 56px; height: 56px; border-radius: 18px;
+  width: 56px; height: 56px; border-radius: var(--up-r-2xl);
   background: linear-gradient(180deg, var(--vc-bg), var(--vc-heading-bg));
   border: 1px solid var(--vc-border);
   /* e-3 wie sein Zwilling .udb-core in discover-brands (28.09.; vorher der alte Kartenschatten
@@ -129,10 +129,10 @@
   box-shadow: var(--up-e-3);
   display: grid; place-items: center; position: relative; z-index: 2; color: var(--vc-text);
 }
-.upr-research-orb::after { content: ""; position: absolute; inset: 9px; border-radius: 13px; border: 1px solid var(--vc-border); pointer-events: none; }
+.upr-research-orb::after { content: ""; position: absolute; inset: 9px; border-radius: var(--up-r-l); border: 1px solid var(--vc-border); pointer-events: none; }
 .upr-research-orb svg { width: 22px; height: 22px; display: block; }
 .upr-float-point, .upr-float-spark { position: absolute; pointer-events: none; color: var(--vc-third); opacity: 0.52; z-index: 1; }
-.upr-float-point { width: 5px; height: 5px; border-radius: 999px; background: var(--vc-third); animation: uprDriftPoint 6.4s ease-in-out infinite; }
+.upr-float-point { width: 5px; height: 5px; border-radius: var(--up-r-voll); background: var(--vc-third); animation: uprDriftPoint 6.4s ease-in-out infinite; }
 .upr-float-point.p1 { left: 18px; top: 34px; animation-delay: 0s; }
 .upr-float-point.p2 { right: 20px; top: 24px; width: 4px; height: 4px; opacity: 0.42; animation-delay: 1.2s; }
 .upr-float-point.p3 { left: 38px; bottom: 18px; width: 3px; height: 3px; opacity: 0.38; animation-delay: 2.1s; }
@@ -183,7 +183,7 @@
    der CSS): nur, dass der Chip nicht schrumpft. */
 .upr-chip { flex: 0 0 auto; }
 .upr-showmore {
-  height: 28px; padding: 0 10px; border: 1px solid var(--vc-border); border-radius: 8px;
+  height: 28px; padding: 0 10px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vc-bg); color: var(--vc-muted);
   display: inline-flex; align-items: center; gap: 6px;
   font-family: inherit; font-size: 12px; line-height: 1; font-weight: 500; cursor: pointer;
@@ -196,19 +196,15 @@
    die pulsierten -- die echten Chips sind aber nur umrandet und ohne Flaeche, und jedes andere
    Skelett der App laeuft mit dem Lichtlauf aus core statt zu pulsieren. Jetzt die Form des echten
    Chips (24px, Radius 6, 1px Rahmen) und darin die Beschriftung als Strich wie .up-sk-lbl aus core:
-   10px in --vc-sk, derselbe Lichtlauf (upskt, 1200ms). */
+   10px in --vc-sk. Seit dem 15.10. mit dem Geist-Schimmer aus core (--up-sk-verlauf) auf dem Strich
+   selbst statt des Lichtlaufs ueber den ganzen Chip. */
 .upr-skeleton-chip {
   height: var(--up-h-chip); box-sizing: border-box; border: 1px solid var(--vc-border);
   border-radius: var(--up-r-s); flex-shrink: 0; position: relative; overflow: hidden;
 }
 .upr-skeleton-chip::before {
   content: ""; position: absolute; left: 8px; right: 8px; top: 50%; height: 10px; margin-top: -5px;
-  border-radius: 5px; background: var(--vc-sk);
-}
-.upr-skeleton-chip::after {
-  content: ""; position: absolute; inset: 0;
-  background: var(--up-sk-lauf);
-  transform: translateX(-100%); animation: upskt 1200ms linear infinite;
+  border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung);
 }
 
 /* ---------- "View previous researches" ---------- */
@@ -231,7 +227,7 @@
 .upr-results-stage > .upr-results-nav { display: none; }
 /* Secondary button, same shape as core's .up-empty-btn so it reads as one family. */
 .upr-secondary-btn {
-  height: 32px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: 8px;
+  height: 32px; padding: 0 12px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vc-bg); color: var(--vc-muted);
   display: inline-flex; align-items: center; gap: 8px;
   font-family: inherit; font-size: 12.5px; line-height: 1; font-weight: 500; cursor: pointer;
@@ -338,7 +334,7 @@
   width: 32px; height: 32px; padding: 0; border: 0; border-radius: 50%; flex: 0 0 auto;
   background: var(--up-accent); color: var(--up-accent-fg);
   display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
-  box-shadow: var(--up-e-1, 0 1px 2px rgba(0,0,0,0.12));
+  box-shadow: var(--up-e-1);
   transition: opacity 160ms ease, box-shadow 160ms ease;
 }
 .upr-start-btn > span { display: none; }   /* die Beschriftung, siehe oben */
@@ -438,7 +434,7 @@
   /* 32px wie jeder andere Ausloeser der App (22.09. angefordert) -- hier standen 40, und
      damit war dieser Bereich der einzige mit einer eigenen Hoehe. Der Radius geht im selben
      Verhaeltnis mit (§1): 11 auf 32/40, also 9. */
-  width: 100%; height: 32px; border: 1px solid var(--vc-border); border-radius: 9px;
+  width: 100%; height: 32px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vc-bg); color: var(--vc-text); padding: 0 11px;
   font-family: inherit; font-size: 13px; font-weight: 500; outline: none; cursor: pointer;
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -462,8 +458,8 @@
 .upr-flag img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .upr-dd-menu {
   position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 60;
-  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 12px;
-  box-shadow: var(--up-e-2, 0 10px 30px rgba(0,0,0,0.10)); padding: 8px;
+  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius);
+  box-shadow: var(--up-e-2); padding: 8px;
   opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
   transition: opacity 140ms ease, transform 140ms ease;
 }
@@ -473,7 +469,7 @@
 .upr-dd-search-wrap { position: relative; }
 .upr-dd-search-wrap svg { position: absolute; right: 10px; top: 9px; width: 16px; height: 16px; color: var(--vc-third); pointer-events: none; }
 .upr-dd-search {
-  width: 100%; height: 34px; border: 1px solid var(--vc-border); border-radius: 8px;
+  width: 100%; height: 34px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vc-bg); color: var(--vc-text); padding: 0 32px 0 10px; font-size: 12.5px; outline: none;
 }
 /* outline: none ohne Ersatz war eine Sackgasse: prompt-research.js fokussiert dieses Feld 80ms
@@ -485,16 +481,16 @@
 }
 .upr-dd-search::placeholder { color: var(--vc-third); }
 .upr-dd-clear {
-  height: 32px; border: 0; border-radius: 9px; padding: 0 10px;
+  height: 32px; border: 0; border-radius: var(--up-r-m); padding: 0 10px;
   background: var(--vc-heading-bg); color: var(--vc-text);
   font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
 }
 .upr-dd-clear:hover { color: var(--vc-text); }
 .upr-dd-list { max-height: 246px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding-right: 2px; }
 .upr-dd-list::-webkit-scrollbar { width: 6px; }
-.upr-dd-list::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: 999px; }
+.upr-dd-list::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: var(--up-r-voll); }
 .upr-dd-option {
-  width: 100%; min-height: 34px; border: 0; border-radius: 8px; background: transparent; color: var(--vc-text);
+  width: 100%; min-height: 34px; border: 0; border-radius: var(--up-r-s); background: transparent; color: var(--vc-text);
   padding: 0 8px; display: grid; grid-template-columns: 16px 1fr auto; align-items: center; gap: 8px;
   text-align: left; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 500;
 }
@@ -568,7 +564,7 @@
 .upr-results-context { min-width: 0; display: flex; align-items: center; gap: 7px; margin-left: 12px; overflow: hidden; }
 .upr-context-pill {
   height: 28px; max-width: 200px; padding: 0 10px;
-  border: 1px solid var(--vc-border); border-radius: 8px; background: var(--vc-bg); color: var(--vc-muted);
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: var(--vc-bg); color: var(--vc-muted);
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 12px; line-height: 1; font-weight: 500;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto;
@@ -588,7 +584,7 @@
 /* "Accept with Tags": core's .up-switch in a bordered pill, the same shape the toolbar toggles
    elsewhere use. */
 .upr-switchbtn {
-  height: 32px; padding: 0 8px 0 10px; border: 1px solid var(--vc-border); border-radius: 8px;
+  height: 32px; padding: 0 8px 0 10px; border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
   background: var(--vc-bg); color: var(--vc-muted);
   display: inline-flex; align-items: center; gap: 8px;
   font-family: inherit; font-size: 12.5px; line-height: 1; font-weight: 500; cursor: pointer; white-space: nowrap;
@@ -603,7 +599,7 @@
 .upr-spinner { width: 32px; height: 32px; display: none; align-items: center; justify-content: center; flex: 0 0 auto; }
 .upr-root.is-action-loading .upr-spinner { display: inline-flex; }
 .upr-spinner::after {
-  content: ""; width: 14px; height: 14px; border-radius: 999px;
+  content: ""; width: 14px; height: 14px; border-radius: var(--up-r-voll);
   border: 2px solid var(--vc-border); border-top-color: var(--vc-text);
   animation: uprSpin 720ms linear infinite;
 }
@@ -623,7 +619,8 @@
 .upr-menu-item svg { width: 16px; height: 16px; flex: 0 0 auto; display: block; }
 /* Siehe core: --vt-down traegt im Dunkeln #d25d5d, das Literal hier zeigte dort das helle Rot. */
 .upr-menu-item.is-danger { color: var(--vt-down, #b0200c); }
-.upr-menu-item.is-danger:hover { background: color-mix(in srgb, #b0200c 8%, transparent); }
+/* Der Grund aus der Marke statt aus dem alten Rot (15.10., Geist Red 900 -- im Dunkeln das hellere). */
+.upr-menu-item.is-danger:hover { background: color-mix(in srgb, var(--vt-down) 8%, transparent); }
 /* Column widths for core's .up-thead/.up-row grid. Prompt gets the room, actions a fixed lane.
    No scrollport here any more: the page scrolls, so core's .up-sticky .up-box (overflow:visible)
    applies and the column header pins to the viewport under the toolbar instead of to this box. */
@@ -669,7 +666,7 @@
    Jetzt verhaelt sich der Kopf wie in jeder anderen Tabelle der App: ab 1000px klebt er ueber core,
    darunter steht er oben im Kasten und scrollt mit. */
 .upr-box::-webkit-scrollbar { width: 10px; }
-.upr-box::-webkit-scrollbar-thumb { background: var(--vc-border); border: 3px solid var(--vc-bg); border-radius: 999px; }
+.upr-box::-webkit-scrollbar-thumb { background: var(--vc-border); border: 3px solid var(--vc-bg); border-radius: var(--up-r-voll); }
 .upr-box .up-row { cursor: default; }
 .upr-box .up-row:hover { background: var(--vt-row-hover); }
 .upr-th-icon { width: 14px; height: 14px; margin-right: 6px; flex: 0 0 auto; display: block; }
@@ -706,7 +703,7 @@
 .upr-row-btn { flex: 0 0 auto; }
 .upr-row-btn > span { white-space: nowrap; }
 .upr-row-btn {
-  height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 32px; border-radius: var(--up-r-m); display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   font-family: inherit; font-size: 12.5px; line-height: 1; font-weight: 500; cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease, color 160ms ease, opacity 160ms ease;
 }
@@ -778,7 +775,7 @@
 .upr-side {
   position: fixed; top: 6px; right: 6px; bottom: 6px; z-index: 9904; width: min(520px, 92%);
   display: none; flex-direction: column;
-  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 16px;
+  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl);
   box-shadow: var(--up-e-drawer); overflow: hidden;
   transform: translateX(110%); transition: transform 180ms ease-in;
   will-change: transform; backface-visibility: hidden;
@@ -803,10 +800,10 @@
      Spaltentitel in Performance Detail, nur ohne Tabellenkopf daneben. */
 .upr-side-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 8px; scrollbar-gutter: stable; }
 .upr-side-body::-webkit-scrollbar { width: 8px; }
-.upr-side-body::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: 999px; }
+.upr-side-body::-webkit-scrollbar-thumb { background: var(--vc-border); border-radius: var(--up-r-voll); }
 .upr-history-item {
   position: relative;
-  border-radius: 12px; padding: 12px; cursor: pointer;
+  border-radius: var(--up-r-m); padding: 12px; cursor: pointer;
   /* ZWEI SPALTEN (10.10., dritte Fassung, so angeordnet): links Titel und Datum, rechts aussen
      Markt und Modell. Beim Hover blenden Markt und Modell aus, und an GENAU IHRER STELLE stehen
      die zwei Knoepfe -- beide liegen in derselben Rasterzelle, rechtsbuendig. Nichts verdeckt
@@ -905,7 +902,7 @@
 @media (prefers-reduced-motion: reduce) {
   /* Das Ladebild regelt seine reduzierte Bewegung selbst (core.css, .up-lb). */
   .upr-float-point, .upr-float-spark,
-  .upr-skeleton-chip::after, .upr-start-btn.is-running svg { animation: none; }
+  .upr-skeleton-chip::before, .upr-start-btn.is-running svg { animation: none; }
 }
 
 
