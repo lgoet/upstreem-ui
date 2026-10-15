@@ -856,7 +856,21 @@ Menüs mit 6er-Polster (Zeilenmenüs der Gruppen, Brands-Aktionen) runden ihre Z
 .up-filter-check { width:16px; height:16px; border-radius: var(--up-r-xs);   /* 4 */
   border:1.5px solid var(--vc-border); color: var(--up-accent-fg); }
 .up-filter-item.is-checked .up-filter-check { background: var(--up-accent); border-color: var(--up-accent); }
+/* Seit 16.10.: die LEERE Checkbox zeigt den Hover ihrer Zeile mit */
+.up-filter-item:not(.is-checked):not(.is-disabled):not([aria-disabled="true"]):is(:hover, :focus-visible, .is-cursor)
+  .up-filter-check { border-color: var(--vc-third); }
 ```
+**Hover der leeren Checkbox (16.10.).** Der Zeilen-Hover (`--vc-heading-bg`) liegt fast im Ton
+des Rands (`--vc-border`): gemessen hell 235 auf 242–244, dunkel 34 auf 31–36 – das leere
+Kästchen verschwand genau beim Zeigen. Darum geht sein Rand beim Hover der Zeile auf
+`--vc-third`, wie in der Prompt-Tabelle (`.up-row:hover .upt-check:not(.is-checked)`); weich
+über `--up-cb-t`. Gewählte Kästchen behalten den Akzent, gesperrte Zeilen bekommen nichts.
+Dieselbe Wirkung für die Tastatur: `:focus-visible` an Zeilen mit `tabindex`, `.is-cursor` in
+Topics/Models/Markets. Eine Regel in core für jedes Dropdown mit `.up-filter-check`; die kleine
+Fassung im Themen-Chip (`.up-topicchip-check`) zieht beim Hover des Chips gleich mit (nicht in
+einer vollen `.up-topiclist.is-full`), das eigene Kästchen im Domain-Filter des
+Citation-Share-Charts (`.combo-filter-check`) ebenso. Wer eine neue Checkbox-Liste baut, nimmt `.up-filter-item` und
+bekommt das mit.
 
 ---
 

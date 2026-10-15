@@ -2065,6 +2065,17 @@
       transition: opacity var(--up-cb-t) var(--up-cb-ease), transform var(--up-cb-t) var(--up-cb-ease); }
     .up-filter-item.is-checked .up-filter-check svg { opacity: 1; transform: scale(1); }
     .up-filter-item.is-checked .up-filter-check { background: var(--up-accent); border-color: var(--up-accent); }
+    /* DIE LEERE CHECKBOX ZEIGT DEN HOVER IHRER ZEILE MIT (16.10. angefordert). Die Zeile geht
+       beim Ueberfahren auf --vc-heading-bg, und das liegt fast im Ton des Rands (--vc-border):
+       gemessen Rand 228/226/228 auf Grund 244/242/244 -- das leere Kaestchen verschwand genau in
+       dem Moment, in dem man auf die Zeile zeigt. Darum geht der Rand dann auf --vc-third, wie in
+       der Prompt-Tabelle (.up-row:hover .upt-check, prompts-table.css); weich ueber den Uebergang,
+       den .up-filter-check schon traegt.
+       Eine Regel fuer jedes Dropdown mit dieser Checkbox. Gewaehlte Zeilen behalten ihren
+       Akzentrand; gesperrte (.is-disabled, aria-disabled) haben keinen Hover und bekommen auch
+       hier keinen. Tastatur: :focus-visible an Zeilen mit tabindex, .is-cursor in Topics, Models
+       und Markets -- dort bleibt der Fokus im Suchfeld, die Pfeiltasten setzen die Klasse. */
+    .up-filter-item:not(.is-checked):not(.is-disabled):not([aria-disabled="true"]):is(:hover, :focus-visible, .is-cursor) .up-filter-check { border-color: var(--vc-third); }
     /* Gewaehlte Zeile traegt den App-Selected-Ton -- im Types-Dropdown immer, in einer
        Marken-Liste nur auf Ansage.
 
@@ -2703,6 +2714,10 @@
       transition: opacity var(--up-cb-t) var(--up-cb-ease),
                   transform var(--up-cb-t) var(--up-cb-ease); }
     .up-topicchip-check.is-on svg { opacity: 1; transform: scale(1); }
+    /* Der Hover der leeren Checkbox wie an .up-filter-check (16.10., Begruendung dort): der Chip
+       ist hier die Zeile, sein Rand geht beim Ueberfahren auf --vc-third. Eine volle Themenliste
+       (.up-topiclist.is-full) nimmt nichts mehr an, ihre Chips bekommen ihn darum nicht. */
+    .up-topicchip:not(.is-static):not(.is-on):not(.up-topiclist.is-full *):is(:hover, :focus-visible) .up-topicchip-check { border-color: var(--vc-third); }
     /* Im Dunkeln (06.10.): die Toenungs-Regeln (22 / 34 Prozent) sind mit dem "Dot" entfallen --
        Grund und Rand kommen aus Token, die das Thema selbst dreht; eigen bleibt nur der Punkt
        (oben). [data-theme="dark"] an JEDEM Vorfahren reicht dafuer, auch an den Flaechen am body
