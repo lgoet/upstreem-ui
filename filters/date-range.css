@@ -78,6 +78,10 @@
 .udr-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 /* Flipped to the right edge when a left-aligned panel would leave the viewport. Set once on open,
    never on scroll -- see the note above. */
+/* Zugleich die RUHELAGE (16.10.): geschlossen traegt das Panel is-right, schon im Markup und
+   wieder nach dem Ausblenden (ruheSpaeter in date-range.js). Linksbuendig ragte das unsichtbare
+   Panel auf 1100px Breite bis 1216 und machte #main seitlich scrollbar; was links hinausragt,
+   zaehlt beim Scrollen nicht. */
 .udr-menu.is-right { left: auto; right: 0; }
 .udr-menu, .udr-menu * { -webkit-user-select: none; user-select: none; }
 
