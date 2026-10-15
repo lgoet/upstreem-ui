@@ -14885,6 +14885,170 @@
      cfg.kopf / cfg.fuss: Leiste und Pagination der Tabelle (ihre Groesse verschiebt Oberkante
      bzw. Rest). Rueckgabe { planen }: die Komponente ruft planen() nach jedem Zeichnen, das die
      Pagination ein- oder ausblenden kann; hoechstens einmal je Bild. */
+  /* DIE FILTER DER EINEN LEISTE (15.10., zuerst in der Prompt-Tabelle, abends nach core gehoben
+     fuer Responses und alle weiteren Tabellen). Eine Tabelle hat Filter, die DATEN aendern ("<Marke>
+     mentioned?", Mentioned brands, Rank, Sentiment ...). In der einen Leiste stehen sie nicht mehr
+     als Knoepfe in ihrer Werkzeugleiste -- dort steht nur, was die Ansicht aendert --, sondern als
+     Zeilen im Menue "Filters" der Seite (filters/filter-bar.js, grosse Form), mit Chip dahinter.
+     Dieser Baustein baut je Filter eine Wurzel in der Form, die filter-bar einzieht: .up-ff mit
+     .up-ff-<key>, unsichtbarem Trigger (Beschriftung und X), Panel mit .up-filter-item-Zeilen aus
+     core, Controller __upffCtrl, aufsteigendem Ereignis "up-ff". Der ZUSTAND bleibt in der Tabelle:
+     jede Art bringt ihre Lese- und Schreibfunktionen mit, die Tabelle feuert dieselben Ereignisse
+     an die Seite wie vorher ihre Knoepfe.
+     cfg.instanceId: Praefix der Wurzel-Ids (<instanceId>_<key>), die Seite traegt sie in
+       data-<key>-instance der Filterleiste ein.
+     cfg.arten[key]: { label(), chip(), leer, optionen() -> [{key, name, logo?}], auswahl() -> [keys],
+       aus() (dann meldet sich der Filter ab, ohne ausgeblendet zu sein), bild()? (Logo statt
+       Zeichen in Zeile und Chip), setzen(keys), einzeln? (eine Wahl), suche? (Suchfeld wie die
+       Markenliste, mit "Select all"/"Reset" im Kopf), titel? (Kopf der Suche),
+       panel?(element, geaendert) -> { name() } fuer eigenen Inhalt statt einer Liste (Regler):
+       der Inhalt kommt in das Panel, und eine unsichtbare Zeile mit Schluessel "bereich" traegt
+       den Namen der aktuellen Wahl fuer den Chip ("1–3"); auswahl() liefert dann ["bereich"]
+       oder [], setzen([]) setzt zurueck }.
+     Bis zum Einziehen und nach dem Heimweg stehen die Wurzeln in einer versteckten Huelle der
+     Tabelle. Rueckgabe { sync() }: nach jeder eigenen Wahl und aus dem Zeichnen der Tabelle
+     rufen -- das Ereignis geht nur hinaus, wenn sich am Sichtbaren etwas geaendert hat. */
+  function makeLeistenFilter(root, cfg){
+    cfg = cfg || {};
+    var arten = cfg.arten || {}, wurzeln = {}, panels = {}, stand = "";
+    function tt(x){ return t(x); }
+    var heim = document.createElement("div");
+    heim.className = "up-ff-heim";
+    heim.hidden = true;
+    root.appendChild(heim);
+    Object.keys(arten).forEach(function(key){
+      var a = arten[key];
+      var w = document.createElement("div");
+      w.className = "up-root up-ff up-ff-" + key;
+      w.setAttribute("data-instance", (cfg.instanceId || "") + "_" + key);
+      w.setAttribute("data-local", "yes");
+      if (root.getAttribute("data-theme")) w.setAttribute("data-theme", root.getAttribute("data-theme"));
+      w.setAttribute("data-ufb-leer", a.leer || "All");
+      w.innerHTML =
+        '<div class="up-ff-wrap">' +
+          '<button class="up-ff-trigger" type="button" tabindex="-1" aria-hidden="true">' +
+            '<span class="up-ff-label"></span>' +
+            '<span class="up-ff-chev"><span class="up-ff-x" role="button" tabindex="-1" aria-label="Clear selection">' + icon("x", 2.2) + '</span></span>' +
+          '</button>' +
+          '<div class="up-ff-menu" role="dialog">' +
+            /* Kopfzeile wie im alten Marken-Dropdown: Titel, dazu "Select all", solange nichts
+               gewaehlt ist, sonst "Reset" -- der Text wechselt in zeichnen(). */
+            (a.suche ? '<div class="up-filter-head"><span class="up-filter-title">' + esc(tt(a.titel || "Mentioned brands")) + '</span>' +
+              '<button class="up-pop-action" type="button" data-ff-alle>' + esc(tt("Select all")) + '</button></div>' : '') +
+            (a.suche
+              /* Suchfeld und Leerzeile der Markenliste aus core (mentFilter sucht darin). */
+              ? '<div class="up-ment-searchwrap"><input class="up-ment-search up-ff-search-in" type="text" placeholder="' + esc(tt("Search brands...")) + '" autocomplete="off" spellcheck="false" aria-label="' + esc(tt("Search brands")) + '"/>' +
+                '<button class="up-ment-searchclear up-ff-search-x" type="button" aria-label="' + esc(tt("Clear brand search")) + '">' + icon("x", 2.2) + '</button></div>'
+              : '') +
+            (a.panel ? '<div class="up-ff-panel"></div>' : '') +
+            '<div class="up-filter-list up-ff-list' + (a.suche ? " up-ment-list" : "") + (a.panel ? " is-panel" : "") + ' is-fill-checked" role="listbox"' + (a.einzeln ? "" : ' aria-multiselectable="true"') + '></div>' +
+          '</div>' +
+        '</div>';
+      w.addEventListener("click", function(e){
+        if (e.target.closest(".up-ff-x")){ e.stopPropagation(); a.setzen([]); sync(); return; }
+        if (e.target.closest("[data-ff-alle]")){
+          /* Wie im alten Dropdown: ohne Auswahl alle, mit Auswahl keine. Wirkt sofort. */
+          a.setzen(a.auswahl().length ? [] : a.optionen().map(function(o){ return o.key; }));
+          sync();
+          return;
+        }
+        if (e.target.closest(".up-ff-search-x")){
+          var si = w.querySelector(".up-ff-search-in");
+          if (si){ si.value = ""; mentFilter(w, ""); try { si.focus(); } catch(e2){} }
+          return;
+        }
+        var r = e.target.closest(".up-ff-opt");
+        if (!r || a.panel) return;
+        var k = r.getAttribute("data-key"), l = a.auswahl().slice(), i = l.indexOf(k);
+        if (a.einzeln) l = i >= 0 ? [] : [k];
+        else if (i >= 0) l.splice(i, 1); else l.push(k);
+        a.setzen(l);
+        sync();
+      });
+      w.addEventListener("keydown", function(e){
+        if (e.key !== "Enter" && e.key !== " ") return;
+        var r = e.target.closest && e.target.closest(".up-ff-opt");
+        if (!r) return;
+        e.preventDefault(); r.click();
+      });
+      if (a.suche) w.addEventListener("input", function(e){
+        if (e.target && e.target.classList && e.target.classList.contains("up-ff-search-in")) mentFilter(w, "");
+      });
+      w.__upffCtrl = {
+        getSelected: function(){ return { sel: a.auswahl().join(",") }; },
+        setSelected: function(csv){ a.setzen(String(csv == null ? "" : csv).split(",").map(function(x){ return x.trim(); }).filter(Boolean)); sync(); },
+        sync: function(){ zeichnen(key); }
+      };
+      wurzeln[key] = w;
+      heim.appendChild(w);
+      if (a.panel) panels[key] = a.panel(w.querySelector(".up-ff-panel"), function(){ sync(); }) || {};
+    });
+    /* Liste neu nur, wenn sich die Optionen geaendert haben (die Marken kommen spaeter) -- sonst
+       nur die Haken. Ein Neuschreiben bei jedem Klick verloere die Suche in der Markenliste. */
+    function zeichnen(key){
+      var w = wurzeln[key], a = arten[key];
+      if (!w) return;
+      var p = panels[key];
+      var opts = a.panel
+        ? (a.auswahl().length ? [{ key: "bereich", name: p && p.name ? p.name() : "" }] : [])
+        : a.optionen();
+      var sel = a.auswahl();
+      var liste = w.querySelector(".up-ff-list");
+      var sig = opts.map(function(o){ return o.key + "|" + o.name; }).join(",");
+      if (liste.getAttribute("data-sig") !== sig){
+        liste.setAttribute("data-sig", sig);
+        liste.innerHTML = opts.map(function(o){
+          return '<div class="up-filter-item up-ff-opt" role="option" tabindex="0" aria-selected="false" data-key="' + esc(o.key) + '"' +
+              (a.suche ? ' data-brand="' + esc(o.key) + '" data-name="' + esc(String(o.name).toLowerCase()) + '"' : "") + '>' +
+            '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
+            (a.suche ? '<span class="up-ment-logo">' + (o.logo ? '<img src="' + esc(o.logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/>' : "") + '</span>' : "") +
+            '<span class="up-ff-name' + (a.suche ? " up-ment-name" : "") + '">' + esc(o.name) + '</span>' +
+          '</div>';
+        }).join("") + (a.suche ? '<div class="up-ment-noresult" style="display:none">' + esc(tt("No matches")) + '</div>' : "");
+        if (a.suche) mentFilter(w, "");
+      }
+      Array.prototype.forEach.call(liste.querySelectorAll(".up-ff-opt"), function(r){
+        var an = sel.indexOf(r.getAttribute("data-key")) >= 0;
+        r.classList.toggle("is-checked", an);
+        r.setAttribute("aria-selected", an ? "true" : "false");
+      });
+      if (p && p.zeichnen) p.zeichnen();
+      w.classList.toggle("has-sel", sel.length > 0);
+      var alle = w.querySelector("[data-ff-alle]");
+      if (alle){
+        alle.textContent = tt(sel.length ? "Reset" : "Select all");
+        alle.classList.toggle("is-hidden", !opts.length);
+      }
+      /* Ein Bild statt des Zeichens in Menuezeile und Chip: bei "<Marke> mentioned?" das Logo der
+         eigenen Marke. */
+      var bild = a.bild ? a.bild() : "";
+      if (bild) w.setAttribute("data-ufb-bild", bild); else w.removeAttribute("data-ufb-bild");
+      w.setAttribute("data-ufb-label", a.label());
+      w.setAttribute("data-ufb-chip", a.chip());
+      if (a.aus && a.aus()) w.setAttribute("data-ufb-aus", "yes"); else w.removeAttribute("data-ufb-aus");
+      var namen = opts.filter(function(o){ return sel.indexOf(o.key) >= 0; }).map(function(o){ return o.name; });
+      w.querySelector(".up-ff-label").textContent = namen.length ? namen.join(", ") : a.label();
+    }
+    /* Alle auf Stand bringen und der Leiste Bescheid sagen. Das Ereignis nur, wenn sich am
+       Sichtbaren etwas geaendert hat: das Zeichnen der Tabelle laeuft oft, und jedes Ereignis
+       laesst die Leiste neu zeichnen. */
+    function sync(){
+      var keys = Object.keys(wurzeln);
+      if (!keys.length) return;
+      var neu = keys.map(function(key){
+        zeichnen(key);
+        var w = wurzeln[key];
+        return key + ":" + arten[key].auswahl().join(",") + ":" + (w.getAttribute("data-ufb-aus") || "") + ":" +
+               (w.getAttribute("data-ufb-label") || "") + ":" + (w.getAttribute("data-ufb-bild") || "") + ":" +
+               w.querySelector(".up-ff-list").getAttribute("data-sig");
+      }).join("|");
+      if (neu === stand) return;
+      stand = neu;
+      try { wurzeln[keys[0]].dispatchEvent(new CustomEvent("up-ff", { bubbles: true, detail: {} })); } catch(e){}
+    }
+    return { sync: sync };
+  }
+
   function makeFestHoehe(root, cfg){
     cfg = cfg || {};
     var MIN = cfg.min || 240;
@@ -23201,6 +23365,9 @@
     /* Flag02Icon -- Der unbekannte Treffertyp in Miras Quellenliste: eine Fahne als Platzhalter */
     flag: '<path d="M4 7L4 21"/>' +
           '<path d="M11.7576 3.90865C8.45236 2.22497 5.85125 3.21144 4.55426 4.2192C4.32048 4.40085 4.20358 4.49167 4.10179 4.69967C4 4.90767 4 5.10138 4 5.4888V14.7319C4.9697 13.6342 7.87879 11.9328 11.7576 13.9086C15.224 15.6744 18.1741 14.9424 19.5697 14.1795C19.7633 14.0737 19.8601 14.0207 19.9301 13.9028C20 13.7849 20 13.6569 20 13.4009V5.87389C20 5.04538 20 4.63113 19.8027 4.48106C19.6053 4.33099 19.1436 4.459 18.2202 4.71504C16.64 5.15319 14.3423 5.22532 11.7576 3.90865Z"/>',
+    /* Hash (Lucide) -- Rank: dasselbe Zeichen wie vor jeder Rang-Zahl (HASH_ICON), seit dem 15.10.
+       auch als Zeile "Rank" im Menue "Filters" der Responses-Tabelle. */
+    hash: '<line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/>',
     /* SmileIcon -- Sentiment -- in Miras Vorschlaegen und in den Schnellfragen */
     smile: '<circle cx="12" cy="12" r="10"/><path d="M8 15C8.91212 16.2144 10.3643 17 12 17C13.6357 17 15.0879 16.2144 16 15"/>' +
            '<path d="M15.625 8.387V8.91649M8.375 8.387V8.91649M8.75 8.75C8.75 8.33579 8.58211 8 8.375 8C8.16789 8 8 8.33579 8 8.75C8 9.16421 8.16789 9.5 8.375 9.5C8.58211 9.5 8.75 9.16421 8.75 8.75ZM16 8.75C16 8.33579 15.8321 8 15.625 8C15.4179 8 15.25 8.33579 15.25 8.75C15.25 9.16421 15.4179 9.5 15.625 9.5C15.8321 9.5 16 9.16421 16 8.75Z"/>',
@@ -26229,6 +26396,7 @@
     spracheLauf: spracheLauf,
     makeSticky: makeSticky,
     makeFestHoehe: makeFestHoehe,
+    makeLeistenFilter: makeLeistenFilter,
     rafThrottle: rafThrottle,
     einmalProBild: einmalProBild,
     onResize: onResize,

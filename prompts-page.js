@@ -266,7 +266,12 @@
              brands. Gebaut von prompts-table.js unter diesen Ids, nur auf All Prompts sichtbar
              (filterzeileStellen unten). */
           ' data-ptype-instance="' + esc(ids.upt) + '_ptype" data-mention-instance="' + esc(ids.upt) + '_mention"' +
-          ' data-brands-instance="' + esc(ids.upt) + '_brands"' + leisteAttr() + '></div>' +
+          ' data-brands-instance="' + esc(ids.upt) + '_brands"' +
+          /* Und die der Responses-Tabelle (15.10. abends, dieselbe eine Leiste): Marke erwaehnt,
+             erwaehnte Marken, Rank, Sentiment -- gebaut von responses-table.js, nur auf dem Reiter
+             Responses sichtbar. */
+          ' data-rmention-instance="' + esc(ids.urt) + '_rmention" data-rbrands-instance="' + esc(ids.urt) + '_rbrands"' +
+          ' data-rrank-instance="' + esc(ids.urt) + '_rrank" data-rsent-instance="' + esc(ids.urt) + '_rsent"' + leisteAttr() + '></div>' +
         '<div class="up-root utf-root" data-instance="' + esc(ids.topics) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
         '<div class="up-root umf-root" data-instance="' + esc(ids.modelle) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
         '<div class="up-root umk-root" data-instance="' + esc(ids.maerkte) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
@@ -287,13 +292,21 @@
     var elFilterzeile = root.querySelector(".upi-filterzeile");
     var elUpt = root.querySelector('[data-upi-tab="allprompts"] .upt-root');
     if (elUpt) elUpt.setAttribute("data-leiste", "yes");
+    /* Seit dem 15.10. abends auch Responses: Ueberschrift weg, Kalender und Filterleiste im Kopf,
+       Markenschalter, "All Brands" und der Regler als Zeilen im Menue "Filters". */
+    var elUrt = root.querySelector('[data-upi-tab="responses"] .urt-root');
+    if (elUrt) elUrt.setAttribute("data-leiste", "yes");
+    /* Die Huelle links im Kopf der Tabelle des Reiters (core: .up-leiste-scope). Die
+       Prompt-Tabelle legt ihre selbst an (Active/Inactive steht darin) und traegt dazu ihren
+       eigenen Griff .upt-scope. */
     function leisteScope() {
-      var kopf = elUpt && elUpt.querySelector(".up-head");
+      var tab = state.tab === "responses" ? elUrt : (state.tab === "allprompts" ? elUpt : null);
+      var kopf = tab && tab.querySelector(".up-head");
       if (!kopf) return null;
-      var s = kopf.querySelector(".upt-scope");
+      var s = kopf.querySelector(".up-leiste-scope");
       if (!s) {
         s = document.createElement("div");
-        s.className = "upt-scope";
+        s.className = (tab === elUpt ? "upt-scope " : "urt-scope ") + "up-leiste-scope";
         kopf.insertBefore(s, kopf.firstChild);
       }
       return s;
@@ -371,9 +384,12 @@
        Chips, und der Branded-Schalter des Intent-Filters, der fuer die Liste der Prompt-Tabelle
        nicht gilt (sie hat Prompt type). Als Text fuer den ersten Aufbau und als Attribute danach. */
     function leisteWerte() {
-      var p = state.tab === "allprompts";
+      var p = state.tab === "allprompts", r = state.tab === "responses";
       return { "data-ptype-visible": p ? "yes" : "no", "data-mention-visible": p ? "yes" : "no",
-               "data-brands-visible": p ? "yes" : "no", "data-form": p ? "gross" : null, "data-branded-visible": p ? "no" : null };
+               "data-brands-visible": p ? "yes" : "no",
+               "data-rmention-visible": r ? "yes" : "no", "data-rbrands-visible": r ? "yes" : "no",
+               "data-rrank-visible": r ? "yes" : "no", "data-rsent-visible": r ? "yes" : "no",
+               "data-form": p || r ? "gross" : null, "data-branded-visible": p ? "no" : null };
     }
     function leisteAttr() {
       var w = leisteWerte();
@@ -382,7 +398,7 @@
     }
     function filterzeileStellen() {
       if (!elFilterzeile) return;
-      var inTabelle = state.tab === "allprompts";
+      var inTabelle = state.tab === "allprompts" || state.tab === "responses";
       var scope = inTabelle ? leisteScope() : null;
       if (scope) {
         if (elFilterzeile.parentNode !== scope) scope.appendChild(elFilterzeile);

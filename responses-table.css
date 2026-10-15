@@ -308,3 +308,11 @@
 .up-root.is-w1 .urt-fader-btn .up-tip-lbl { display: none; }
 .up-root.is-w3 .urt-brand-toggle { display: none !important; }
 .up-root.is-w2 .urt-fader { display: none !important; }
+
+/* DIE EINE LEISTE (15.10. abends, data-leiste="yes" von der Seite Prompt Insights): das Layout des
+   Kopfs steht in core (DIE EINE LEISTE), die Ueberschrift faellt dort weg. Hier gehen die drei
+   Filterknoepfe -- sie stehen jetzt als Zeilen im Menue "Filters" (responses-table.js, Filter der
+   einen Leiste). Die Elemente bleiben im Markup, ihr Zustand wird weiter gepflegt. */
+.urt-root[data-leiste="yes"] .up-head-tools > .urt-brand-toggle,
+.urt-root[data-leiste="yes"] .up-head-tools > .up-ment,
+.urt-root[data-leiste="yes"] .up-head-tools > .urt-fader { display: none; }

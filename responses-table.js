@@ -178,6 +178,14 @@
     var elCols      = root.querySelector(".up-cols");
     var elColsMenu  = root.querySelector(".up-cols-menu");
     var elFader     = root.querySelector(".urt-fader");
+    /* DIE EINE LEISTE (15.10. abends, wie die Prompt-Tabelle): die Seite Prompt Insights setzt
+       data-leiste="yes" und haengt ihre Filterzeile links in den Kopf (core: .up-leiste-scope).
+       Dann faellt die Ueberschrift mit Zaehler weg, und was DATEN aendert -- Markenschalter,
+       "All Brands", der Regler fuer Rank und Sentiment -- steht als Zeile im Menue "Filters"
+       (UC.makeLeistenFilter unten), nicht mehr als Knopf rechts. Rechts bleibt, was nur die
+       Ansicht aendert: Sortierer, Suche, Display, Tabelle/Karten, Export. Ohne das Attribut
+       (Dashboard, Drawer, Bubble) bleibt alles, wie es war. */
+    var LEISTE = root.getAttribute("data-leiste") === "yes";
 
     /* Normalise the toolbar onto the shared core classes.
        The markup is a hand copy the CDN pin never touches, so anything defined ONLY there drifts
@@ -736,6 +744,9 @@
          Citations (216) und Brand Mentions (178). Das ist eine eigene Entscheidung. */
       firstShare: 0.18,
       rowHeightSwitch: ROW_HEIGHTS, badgeSel: ".urt-cols-badge", cellPrefixes: ["up","urt"],
+      /* In der einen Leiste heisst das Menue "Display": Spalten als Chips wie in der
+         Prompt-Tabelle (makeColumns cfg.form "chips"). */
+      form: LEISTE ? "chips" : null,
       onChange: function(){ render(); }
     });
     var applyCols = colsKit.applyCols, startResize = colsKit.startResize;
@@ -1063,6 +1074,129 @@
       fire("data-brand-fn", "urtBrand", { brand_mentioned: state.brandMentioned });
     }
 
+    /* ---------------- die Filter der einen Leiste (15.10. abends) ----------------
+       Markenschalter, "All Brands" und der Regler als Zeilen im Menue "Filters" der Seite
+       (filters/filter-bar.js, Eintraege rmention/rbrands/rrank/rsent), gebaut von core
+       (UC.makeLeistenFilter). Der ZUSTAND bleibt hier, und die Ereignisse an die Seite sind
+       dieselben wie von den alten Knoepfen (urtBrand, urtMentioned, urtFilter). Jede Wahl gilt
+       sofort -- auch bei den Marken (vorher "Apply") und beim Regler (gilt beim Loslassen):
+       alle anderen Filter der Leiste wirken sofort. Rank und Sentiment behalten ihren freien
+       Bereich -- der Regler steht im Panel des Filters, der Chip zeigt "1–3". */
+    function ffT(x){ return UC.t ? UC.t(x) : x; }
+    function markeOk(n){ return n && !/^[A-Z_]{3,}$/.test(n) ? n : ""; }
+    function markenIdR(b){ return String(b.company_id != null ? b.company_id : (b.id != null ? b.id : (b.brand_id != null ? b.brand_id : b.name))); }
+    function brandSetzen(v){
+      v = v === "yes" || v === "no" ? v : "";
+      if (v === state.brandMentioned) return;
+      state.brandMentioned = v;
+      state.tablePage = 1; state.cardPage = 1; state.page = 1;
+      state.softReload = false; dim.end();
+      persist(); syncBrand(); renderPager();
+      fire("data-brand-fn", "urtBrand", { brand_mentioned: state.brandMentioned });
+    }
+    function bereichSetzen(kind, lo, hi){
+      if (kind === "rank"){ state.rankMin = lo; state.rankMax = hi; }
+      else { state.sentMin = lo; state.sentMax = hi; }
+      state.rankFilterActive = !(state.rankMin === RANK_MIN && state.rankMax === RANK_MAX);
+      state.sentFilterActive = !(state.sentMin === SENT_MIN && state.sentMax === SENT_MAX);
+      seedFaderDrafts();
+      state.tablePage = 1; state.cardPage = 1; state.page = 1;
+      state.softReload = false; dim.end();
+      persist(); syncFaderBadge(); renderPager();
+      fire("data-filter-fn", "urtFilter", {
+        rank_min: state.rankMin, rank_max: state.rankMax, rank_active: state.rankFilterActive,
+        sent_min: state.sentMin, sent_max: state.sentMax, sent_active: state.sentFilterActive
+      });
+    }
+    /* Der Regler eines Bereichs als Panel (core: cfg.arten[key].panel): derselbe Abschnitt wie im
+       alten Popover (sectionHtml, .urt-slider -- seine CSS gilt ueberall, auch im Menue der
+       Leiste), gilt beim Loslassen ("change"). Waehrend der Nutzer zieht, schreibt zeichnen()
+       nicht dazwischen. */
+    function bereichPanel(kind){
+      return function(el, geaendert){
+        var isRank = kind === "rank", lo = isRank ? RANK_MIN : SENT_MIN, hi = isRank ? RANK_MAX : SENT_MAX;
+        var fmt = isRank ? rankLabel : String;
+        function werte(){ return isRank ? [state.rankMin, state.rankMax] : [state.sentMin, state.sentMax]; }
+        function bauen(){
+          var v = werte();
+          el.innerHTML = sectionHtml(kind, esc(ffT(isRank ? "Rank" : "Sentiment")), lo, hi, v[0], v[1], fmt);
+          var sl = el.querySelector(".urt-slider");
+          var loIn = sl.querySelector(".urt-range-lo"), hiIn = sl.querySelector(".urt-range-hi");
+          var fill = sl.querySelector(".urt-slider-fill"), val = el.querySelector(".urt-fader-val");
+          function lesen(){
+            var pair = clampPair(Number(loIn.value), Number(hiIn.value), lo, hi);
+            loIn.value = pair[0]; hiIn.value = pair[1];
+            fill.setAttribute("style", faderFillStyle(pair[0], pair[1], lo, hi));
+            /* Stehen beide Griffe oben am Ende, liegt der untere oben -- sonst liesse sich der
+               Bereich nicht mehr oeffnen (dieselbe Ueberlegung wie im alten Popover). */
+            var atTop = pair[0] === hi;
+            loIn.style.zIndex = atTop ? 4 : 3;
+            hiIn.style.zIndex = atTop ? 3 : 4;
+            if (val) val.innerHTML = fmt(pair[0]) + '<span class="urt-fader-dash">–</span>' + fmt(pair[1]);
+            return pair;
+          }
+          [loIn, hiIn].forEach(function(inp){
+            inp.addEventListener("input", lesen);
+            inp.addEventListener("change", function(){ var p = lesen(); bereichSetzen(kind, p[0], p[1]); geaendert(); });
+            /* Zeiger festhalten: sonst endet ein Zug ausserhalb des Menues als Klick daneben und
+               schliesst es mitten im Ziehen. */
+            inp.addEventListener("pointerdown", function(e){ try { inp.setPointerCapture(e.pointerId); } catch(err){} });
+          });
+          lesen();
+        }
+        bauen();
+        return {
+          name: function(){ var v = werte(); return fmt(v[0]) + "–" + fmt(v[1]); },
+          zeichnen: function(){
+            if (el.contains(document.activeElement)) return;
+            var v = werte(), loIn = el.querySelector(".urt-range-lo"), hiIn = el.querySelector(".urt-range-hi");
+            if (loIn && hiIn && Number(loIn.value) === v[0] && Number(hiIn.value) === v[1]) return;
+            bauen();
+          }
+        };
+      };
+    }
+    var FF_ARTEN = {
+      rmention: {
+        label: function(){ return ffT("{brand} mentioned?").replace("{brand}", markeOk(markeJetzt().name)); },
+        chip: function(){ return markeOk(markeJetzt().name); }, leer: "Any",
+        optionen: function(){ return [{ key: "yes", name: ffT("Mentioned") }, { key: "no", name: ffT("Not mentioned") }]; },
+        auswahl: function(){ return state.brandMentioned ? [state.brandMentioned] : []; },
+        aus: function(){ return !markeOk(markeJetzt().name); },
+        bild: function(){ var l = markeJetzt().logo || ""; return l && !/^[A-Z_]{3,}$/.test(l) ? l : ""; },
+        setzen: function(l){ brandSetzen(l.length ? l[l.length - 1] : ""); }, einzeln: true
+      },
+      rbrands: {
+        label: function(){ return ffT("Mentioned brands"); }, chip: function(){ return ffT("Brands"); }, leer: "All",
+        optionen: function(){
+          return (state.brands || []).map(function(b){
+            return { key: markenIdR(b), name: String(b.name != null ? b.name : markenIdR(b)),
+                     logo: String(b.logo_url != null ? b.logo_url : (b.logo != null ? b.logo : (b.favicon != null ? b.favicon : ""))) };
+          });
+        },
+        auswahl: function(){ return Object.keys(state.mentionApplied || {}).filter(function(k){ return state.mentionApplied[k]; }); },
+        aus: function(){ return !(state.brands || []).length; },
+        setzen: function(l){ var n = {}; l.forEach(function(k){ n[k] = true; }); state.mentionSel = n; submitMent(); }, suche: true
+      },
+      rrank: {
+        label: function(){ return ffT("Rank"); }, chip: function(){ return ffT("Rank"); }, leer: "Any",
+        optionen: function(){ return []; },
+        auswahl: function(){ return state.rankFilterActive ? ["bereich"] : []; },
+        setzen: function(l){ if (!l.length) bereichSetzen("rank", RANK_MIN, RANK_MAX); },
+        panel: bereichPanel("rank")
+      },
+      rsent: {
+        label: function(){ return ffT("Sentiment"); }, chip: function(){ return ffT("Sentiment"); }, leer: "Any",
+        optionen: function(){ return []; },
+        auswahl: function(){ return state.sentFilterActive ? ["bereich"] : []; },
+        setzen: function(l){ if (!l.length) bereichSetzen("sentiment", SENT_MIN, SENT_MAX); },
+        panel: bereichPanel("sentiment")
+      }
+    };
+    var ffKit = null;
+    function ffSync(){ if (ffKit) ffKit.sync(); }
+    if (LEISTE && UC.makeLeistenFilter){ ffKit = UC.makeLeistenFilter(root, { instanceId: instanceId, arten: FF_ARTEN }); ffSync(); }
+
     /* ---------------- export ---------------- */
     function openExport(){
       var id = String(root.getAttribute("data-export-instance") || "").trim();
@@ -1105,6 +1239,9 @@
     function headGap(){ return UC.headGap(elHeading, elHeadTools, elSearch, SEARCH_OPEN_WIDTH); }
     function fitToolbar(){
       if (!elHeading || !elHeadTools) return;
+      /* Die Stufen nehmen Knoepfe weg, wenn die Ueberschrift neben den Werkzeugen keinen Platz
+         hat -- in der einen Leiste gibt es keine Ueberschrift, der Kopf bricht um. */
+      if (LEISTE) return;
       if (root.classList.contains("is-searchtakeover")) return;
       for (var r = 0; r < TOOLBAR_TIERS.length; r++) root.classList.remove(TOOLBAR_TIERS[r]);
       for (var i = 0; i < TOOLBAR_TIERS.length; i++){
@@ -1304,6 +1441,7 @@
       renderPageSize(); renderPager(); applyCols(); syncMentLabel(); syncViewSwitch(); applyResponsive();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
       festPlanen();
+      ffSync();
     }
 
     if (state.query){ elSearchIn.value = state.query; elSearch.classList.add("is-open", "has-text"); }
@@ -1320,7 +1458,10 @@
        .up-seg. Im Markup traegt er noch "up-dense" mit role="group", zur Laufzeit baut ihn diese
        Datei aber als "urt-viewswitch up-seg" neu -- deshalb faengt ihn nur eine Liste, die BEIDE
        kennt, und die steht genau einmal in core. */
-    var toolGroup = UC.makeToolGroup ? UC.makeToolGroup({
+    /* In der einen Leiste keine einklappbare Werkzeuggruppe: rechts stehen nur noch wenige
+       Knoepfe der Ansicht, und der Kopf bricht um, statt Knoepfe wegzunehmen (wie die
+       Prompt-Tabelle). */
+    var toolGroup = (!LEISTE && UC.makeToolGroup) ? UC.makeToolGroup({
       root: root, tools: elHeadTools,
       filterActive: function(){ return anyFilterActive(); },
       prefKey: UC.prefKey ? UC.prefKey("urt_tools__" + instanceId) : null
@@ -1367,6 +1508,14 @@
         fire("data-mentioned-fn", "urtMentioned", { brands: "" });
         fire("data-brand-fn", "urtBrand", { brand_mentioned: "" });
         fire("data-filter-fn", "urtFilter", { rank_min: RANK_MIN, rank_max: RANK_MAX, rank_active: false, sent_min: SENT_MIN, sent_max: SENT_MAX, sent_active: false });
+        /* In der einen Leiste steht die Filterleiste der Seite im Kopf dieser Tabelle: "Reset
+           filters" im Leerzustand raeumt ALLES, auch Topics, Models, Markets und Intent (wie in
+           der Prompt-Tabelle). */
+        if (LEISTE){
+          var fbR = root.querySelector(".up-leiste-scope .ufb-root");
+          if (fbR && fbR.__ufbCtrl && typeof fbR.__ufbCtrl.reset === "function"){ try { fbR.__ufbCtrl.reset(); } catch(e2){} }
+        }
+        ffSync();
         return;
       }
 

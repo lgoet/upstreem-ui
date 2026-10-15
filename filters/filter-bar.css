@@ -277,20 +277,20 @@
    Angefasst wird nur die POSITIONIERUNG und die Sichtbarkeit -- Rahmen, Polster, Liste,
    Suchfeld, Fusszeile und jede Farbe darin bleiben, wie der Filter sie baut. */
 .ufb-sub .utf-trigger, .ufb-sub .umf-trigger, .ufb-sub .umk-trigger, .ufb-sub .uif-trigger,
-.ufb-sub .upt-ff-trigger { display: none; }
+.ufb-sub .up-ff-trigger { display: none; }
 /* Wurzel und Huelle des Filters tragen in ihrer eigenen CSS eine FESTE Hoehe von 32px -- die des
    Triggers, weil in einer Werkzeugleiste genau das ihr Kasten ist und das Panel darueber
    hinausfliegt. Hier IST das Panel der Inhalt, also muss die Hoehe dem Inhalt folgen. Gemessen,
    bevor das hier stand: Huelle 268x32, Panel darin 268x289 -- das Panel hing 257px aus seinem
    eigenen Elternteil heraus, und das Untermenue war 49px hoch statt 297.
    width: max-content an der Wurzel gilt hier ebenso nicht: die Breite gibt das Untermenue vor. */
-.ufb-sub .utf-root, .ufb-sub .umf-root, .ufb-sub .umk-root, .ufb-sub .uif-root, .ufb-sub .upt-ff {
+.ufb-sub .utf-root, .ufb-sub .umf-root, .ufb-sub .umk-root, .ufb-sub .uif-root, .ufb-sub .up-ff {
   display: block; width: 100%; max-width: none; height: auto;
 }
-.ufb-sub .utf-wrap, .ufb-sub .umf-wrap, .ufb-sub .umk-wrap, .ufb-sub .uif-wrap, .ufb-sub .upt-ff-wrap {
+.ufb-sub .utf-wrap, .ufb-sub .umf-wrap, .ufb-sub .umk-wrap, .ufb-sub .uif-wrap, .ufb-sub .up-ff-wrap {
   display: block; position: static; height: auto; width: 100%;
 }
-.ufb-sub .utf-menu, .ufb-sub .umf-menu, .ufb-sub .umk-menu, .ufb-sub .uif-menu, .ufb-sub .upt-ff-menu {
+.ufb-sub .utf-menu, .ufb-sub .umf-menu, .ufb-sub .umk-menu, .ufb-sub .uif-menu, .ufb-sub .up-ff-menu {
   position: static; top: auto; left: auto; right: auto;
   opacity: 1; transform: none;
   /* Kein zweiter Rahmen und kein zweiter Schatten: das Untermenue aus core bringt beides schon
@@ -304,7 +304,7 @@
   padding: 0;
 }
 /* Und kein eigener Abstand: das Untermenue polstert schon. */
-.ufb-sub > .utf-root, .ufb-sub > .umf-root, .ufb-sub > .umk-root, .ufb-sub > .uif-root, .ufb-sub > .upt-ff { margin: 0; }
+.ufb-sub > .utf-root, .ufb-sub > .umf-root, .ufb-sub > .umk-root, .ufb-sub > .uif-root, .ufb-sub > .up-ff { margin: 0; }
 
 /* ── pointer-events ───────────────────────────────────────────────────────────────────────────
    Hier stand einmal der Fehler hinter "sobald man auf das Unterdropdown hovert, wechselt das
@@ -338,7 +338,14 @@
 .ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .umf-menu,
 .ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .umk-menu,
 .ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .uif-menu,
-.ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .upt-ff-menu { pointer-events: auto; }
+.ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .up-ff-menu { pointer-events: auto; }
+/* Eigener Inhalt im Panel eines Leistenfilters (.up-ff-panel, core makeLeistenFilter: die Regler
+   fuer Rank und Sentiment) zusaetzlich UNSICHTBAR, solange nicht beides offen ist. Die Griffe eines
+   Schiebereglers setzen sich selbst auf pointer-events: auto (.urt-range::-webkit-slider-thumb --
+   so lassen sich zwei uebereinanderliegende Regler greifen), und ein auto am Kind hebt jedes none
+   der Vorfahren auf. visibility nimmt sie mit aus dem Treffertest. */
+.ufb-sub .up-ff-panel { visibility: hidden; }
+.ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .up-ff-panel { visibility: visible; }
 /* Die Huelle traegt keine eigene Geometrie -- sie ist nur der Schalter zwischen den drei
    Inhalten. */
 .ufb-host { min-width: 0; }

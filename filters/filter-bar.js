@@ -131,23 +131,46 @@
                    Responses aus, wo sie nicht gelten, und beim Zurueckwechseln muss die Auswahl
                    noch stehen. Topics dagegen wird beim Ausblenden geleert (Gruppierung, siehe
                    verstecktGeleert). */
-    { key: "ptype", label: "Prompt type", attr: "data-ptype-instance", visAttr: "data-ptype-visible", rootSel: ".upt-ff-ptype",
-      ctrl: "__uptfCtrl", selKey: "sel", opt: ".upt-ff-opt", keyAttr: "data-key",
-      nameSel: ".upt-ff-name", clearSel: ".upt-ff-x", evt: "upt-ff", chip: "Prompt type", icon: "flag",
+    { key: "ptype", label: "Prompt type", attr: "data-ptype-instance", visAttr: "data-ptype-visible", rootSel: ".up-ff-ptype",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Prompt type", icon: "flag",
       behalten: true, fnAttrs: [], fnMarke: "upt" },
-    { key: "mention", label: "Brand mentioned", attr: "data-mention-instance", visAttr: "data-mention-visible", rootSel: ".upt-ff-mention",
-      ctrl: "__uptfCtrl", selKey: "sel", opt: ".upt-ff-opt", keyAttr: "data-key",
-      nameSel: ".upt-ff-name", clearSel: ".upt-ff-x", evt: "upt-ff", chip: "Brand", icon: "megaphone",
+    { key: "mention", label: "Brand mentioned", attr: "data-mention-instance", visAttr: "data-mention-visible", rootSel: ".up-ff-mention",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Brand", icon: "megaphone",
       behalten: true, fnAttrs: [], fnMarke: "upt" },
-    { key: "brands", label: "Mentioned brands", attr: "data-brands-instance", visAttr: "data-brands-visible", rootSel: ".upt-ff-brands",
-      ctrl: "__uptfCtrl", selKey: "sel", opt: ".upt-ff-opt", keyAttr: "data-key",
-      nameSel: ".upt-ff-name", clearSel: ".upt-ff-x", evt: "upt-ff", chip: "Brands", icon: "squareStack",
-      behalten: true, fnAttrs: [], fnMarke: "upt" }
+    { key: "brands", label: "Mentioned brands", attr: "data-brands-instance", visAttr: "data-brands-visible", rootSel: ".up-ff-brands",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Brands", icon: "squareStack",
+      behalten: true, fnAttrs: [], fnMarke: "upt" },
+    /* DIE FILTER DER RESPONSES-TABELLE (15.10. abends, gleiche eine Leiste): "<Marke> mentioned",
+       Mentioned brands, Rank und Sentiment -- bisher Markenschalter, "All Brands" und der Regler
+       in ihrer Werkzeugleiste. Gebaut von responses-table.js ueber UC.makeLeistenFilter (core),
+       eigene Eintraege statt derselben wie oben: beide Tabellen stehen auf derselben Seite, und
+       ihre Auswahl ist je Reiter eine andere. Rank und Sentiment tragen statt einer Liste ihren
+       Regler im Panel (panel in makeLeistenFilter), der Chip zeigt den Bereich ("1–3"). */
+    { key: "rmention", label: "Brand mentioned", attr: "data-rmention-instance", visAttr: "data-rmention-visible", rootSel: ".up-ff-rmention",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Brand", icon: "megaphone",
+      behalten: true, fnAttrs: [], fnMarke: "urt" },
+    { key: "rbrands", label: "Mentioned brands", attr: "data-rbrands-instance", visAttr: "data-rbrands-visible", rootSel: ".up-ff-rbrands",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Brands", icon: "squareStack",
+      behalten: true, fnAttrs: [], fnMarke: "urt" },
+    { key: "rrank", label: "Rank", attr: "data-rrank-instance", visAttr: "data-rrank-visible", rootSel: ".up-ff-rrank",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Rank", icon: "hash",
+      behalten: true, fnAttrs: [], fnMarke: "urt" },
+    { key: "rsent", label: "Sentiment", attr: "data-rsent-instance", visAttr: "data-rsent-visible", rootSel: ".up-ff-rsent",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Sentiment", icon: "smile",
+      behalten: true, fnAttrs: [], fnMarke: "urt" }
   ];
   /* Trigger und Chevron je Filter. Bisher standen die vier Klassen woertlich an drei Stellen
      (Spiegel, Beobachter, Chevron-Ausnahme); mit den Filtern der Prompt-Tabelle waeren es sieben
      gewesen. Abgeleitet aus dem Praefix der Wurzel: .utf-root -> .utf-trigger / utf-chev. */
-  function praefixVon(f) { return f.rootSel.indexOf(".upt-ff") === 0 ? "upt-ff" : f.rootSel.replace(/^\./, "").replace(/-root$/, ""); }
+  /* Die Filter der einen Leiste (.up-ff-<key>, core makeLeistenFilter) teilen EINEN Praefix. */
+  function praefixVon(f) { return f.rootSel.indexOf(".up-ff") === 0 ? "up-ff" : f.rootSel.replace(/^\./, "").replace(/-root$/, ""); }
   var TRIG_SEL = FILTERS.map(function (f) { return "." + praefixVon(f) + "-trigger"; })
     .filter(function (s, i, a) { return a.indexOf(s) === i; }).join(", ");
   var CHEV_KLASSEN = FILTERS.map(function (f) { return praefixVon(f) + "-chev"; })
@@ -982,7 +1005,7 @@
          farbige Strich (oder das Emoji des Topics), bei Models das Logo, bei Markets die Flagge, bei
          Intent das Zeichen, bei den Marken das Logo. Genommen wird es aus der Zeile des Filters
          selbst -- dieselbe Quelle wie der Name (namen()), also kein zweiter Renderer. */
-      var WERT_BILD = { models: ".umf-opt-logo", markets: ".umk-opt-flag", intents: ".uif-opt-main > svg", brands: ".up-ment-logo" };
+      var WERT_BILD = { models: ".umf-opt-logo", markets: ".umk-opt-flag", intents: ".uif-opt-main > svg", brands: ".up-ment-logo", rbrands: ".up-ment-logo" };
       function wertBild(f, id) {
         var w = eingezogen[f.key];
         if (!w) return "";

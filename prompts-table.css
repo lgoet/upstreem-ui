@@ -1358,31 +1358,18 @@
    oben bleiben die Werkzeuge an der ersten Zeile, wenn die Chips links zwei Zeilen brauchen.
    Die Hoehe kommt aus dem Inhalt; core misst sie fuer den klebenden Tabellenkopf
    (--up-thead-off) und misst bei jeder Groessenaenderung neu. */
-.upt-root[data-leiste="yes"] .up-head { height: auto; min-height: 32px; flex-wrap: wrap; align-items: flex-start; row-gap: 8px; column-gap: 16px; }
-.upt-root[data-leiste="yes"].up-sticky .up-head { height: auto; }
-.upt-root[data-leiste="yes"] .upt-scope { flex: 1 1 480px; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.upt-root[data-leiste="yes"] .up-head-tools { flex: 0 0 auto; margin-left: auto; min-height: 32px; }
-/* Auf dem Telefon je eine volle Zeile: oben die Daten, darunter rechtsbuendig die Ansicht. So
-   hat auch die aufgeklappte Suche (is-searchtakeover) die ganze Breite. */
-.upt-root[data-leiste="yes"].is-vnarrow .upt-scope { flex-basis: 100%; }
-.upt-root[data-leiste="yes"].is-vnarrow .up-head-tools { flex: 1 1 100%; justify-content: flex-end; }
+/* Das Kopf-Layout selbst (umbrechen, .up-leiste-scope, Ueberschrift weg, die Filterleiste fliesst
+   mit) steht seit dem 15.10. abends in core.css unter "DIE EINE LEISTE". */
 
 /* Was aus dem Kopf verschwindet: Ueberschrift mit Zaehler (die Zahl steht im Seitenkopf und am
    Seitenwechsler unten), die drei Filterknoepfe (jetzt im Menue "Filters") und "Group Prompts"
    (jetzt im Display-Menue). Die Elemente bleiben im Markup -- ihr Zustand wird weiter gepflegt. */
-.upt-root[data-leiste="yes"] .up-heading,
 .upt-root[data-leiste="yes"] .up-head-tools > .upt-brand-toggle,
 .upt-root[data-leiste="yes"] .up-head-tools > .up-ment,
 .upt-root[data-leiste="yes"] .up-head-tools > .upt-grpctl { display: none; }
 
-/* Die Filterwurzeln der Leiste (.upt-ff, gebaut in prompts-table.js): ihr Trigger ist nie zu
-   sehen -- die Zeile im Menue "Filters" ist der Ausloeser. Die Zeilenhoehe wie die anderen
-   Untermenues der Leiste (.uif-opt, .umf-opt: 34). Das Panel selbst stellt filter-bar.css in den
-   Fluss, wie bei den anderen eingezogenen Filtern. */
-.upt-ff-heim { display: none; }
-.upt-ff-trigger { display: none; }
-.upt-ff-opt { min-height: 34px; }
-.upt-ff-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
+/* Die Filterwurzeln der Leiste (.up-ff) baut seit dem 15.10. abends core (makeLeistenFilter),
+   ihre Regeln stehen in core.css unter "DIE EINE LEISTE". */
 
 /* Display (das Menue am Zahnrad-Knopf), Entwurf B (15.10. gewaehlt): EINE Spalte -- oben die Zeile
    "Grouping" (None / Topic / Intent) mit den eigenen Gruppierungen darunter, dann "Row height",
@@ -1493,8 +1480,4 @@
    zweite Zeile, sobald zwei Chips nicht mehr neben den Kalender passten (gemessen 1440 breit,
    zwei Chips). Der Trennstrich zwischen Knopf und Chips gehoert zur Leiste als Block -- hier
    trennt der Abstand. "Filters" selbst (.ufb-more) bleibt ein Kasten: an ihm haengt das Menue. */
-.upt-root[data-leiste="yes"] .upt-scope .ufb-root,
-.upt-root[data-leiste="yes"] .upt-scope .ufb-bar,
-.upt-root[data-leiste="yes"] .upt-scope .ufb-root.has-filters .ufb-chips { display: contents; }
-.upt-root[data-leiste="yes"] .upt-scope .ufb-sep { display: none; }
-.upt-root[data-leiste="yes"] .upt-scope .ufb-clear { margin-left: 0; }
+/* (Die Regeln dazu stehen seit dem 15.10. abends in core.css unter "DIE EINE LEISTE".) */

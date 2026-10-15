@@ -1284,7 +1284,9 @@
         var scope = elHead.querySelector(".upt-scope");
         if (!scope){
           scope = document.createElement("div");
-          scope.className = "upt-scope";
+          /* up-leiste-scope: das Layout steht in core (DIE EINE LEISTE), upt-scope bleibt der
+             Griff dieser Datei und der Seite. */
+          scope.className = "upt-scope up-leiste-scope";
           elHead.insertBefore(scope, elHead.firstChild);
         }
         scope.insertBefore(elStatus, scope.firstChild);
@@ -4251,9 +4253,9 @@
 
     /* ---------------- die Filter der einen Leiste (15.10.) ----------------
        Prompt type, "<Marke> mentioned" und Mentioned brands als Filterwurzeln in der Form, die
-       filters/filter-bar.js einzieht (wie dort der Intent-Filter): Wurzel .upt-ff, Trigger mit
+       filters/filter-bar.js einzieht (wie dort der Intent-Filter): Wurzel .up-ff, Trigger mit
        Beschriftung und X (nie zu sehen, nur Quelle fuer die Leiste), Panel mit .up-filter-item-
-       Zeilen aus core, Controller __uptfCtrl, aufsteigendes Ereignis "upt-ff". Der ZUSTAND bleibt
+       Zeilen aus core, Controller __upffCtrl, aufsteigendes Ereignis "up-ff". Der ZUSTAND bleibt
        hier (state.branded, state.brandMentioned, state.mentionApplied) und die Ereignisse an die
        Seite sind dieselben wie von den alten Knoepfen (uptBranded, uptBrand, uptMentioned).
        Jede Wahl gilt sofort -- auch bei den Marken, wo das alte Dropdown ein "Apply" hatte: alle
@@ -4326,139 +4328,12 @@
         setzen: function(l){ var n = {}; l.forEach(function(k){ n[k] = true; }); mentionSetzen(n); }, suche: true
       }
     };
-    var ffWurzeln = {};
-    function ffBauen(){
-      var heim = document.createElement("div");
-      heim.className = "upt-ff-heim";
-      heim.hidden = true;
-      root.appendChild(heim);
-      Object.keys(FF_ARTEN).forEach(function(key){
-        var a = FF_ARTEN[key];
-        var w = document.createElement("div");
-        w.className = "up-root upt-ff upt-ff-" + key;
-        w.setAttribute("data-instance", instanceId + "_" + key);
-        w.setAttribute("data-local", "yes");
-        if (root.getAttribute("data-theme")) w.setAttribute("data-theme", root.getAttribute("data-theme"));
-        w.setAttribute("data-ufb-leer", a.leer);
-        w.innerHTML =
-          '<div class="upt-ff-wrap">' +
-            '<button class="upt-ff-trigger" type="button" tabindex="-1" aria-hidden="true">' +
-              '<span class="upt-ff-label"></span>' +
-              '<span class="upt-ff-chev"><span class="upt-ff-x" role="button" tabindex="-1" aria-label="Clear selection">' + UC.icon("x", 2.2) + '</span></span>' +
-            '</button>' +
-            '<div class="upt-ff-menu" role="dialog">' +
-              /* Kopfzeile wie im alten Marken-Dropdown (15.10. verlangt): Titel, dazu "Select all",
-                 solange nichts gewaehlt ist, sonst "Reset" -- der Text wechselt in ffZeichnen. */
-              (a.suche ? '<div class="up-filter-head"><span class="up-filter-title">' + esc(ffT("Mentioned brands")) + '</span>' +
-                '<button class="up-pop-action" type="button" data-ff-alle>' + esc(ffT("Select all")) + '</button></div>' : '') +
-              (a.suche
-                /* Suchfeld und Leerzeile der Markenliste aus core (UC.mentFilter sucht darin). */
-                ? '<div class="up-ment-searchwrap"><input class="up-ment-search upt-ff-search-in" type="text" placeholder="' + esc(ffT("Search brands...")) + '" autocomplete="off" spellcheck="false" aria-label="' + esc(ffT("Search brands")) + '"/>' +
-                  '<button class="up-ment-searchclear upt-ff-search-x" type="button" aria-label="' + esc(ffT("Clear brand search")) + '">' + UC.icon("x", 2.2) + '</button></div>'
-                : '') +
-              '<div class="up-filter-list upt-ff-list' + (a.suche ? " up-ment-list" : "") + ' is-fill-checked" role="listbox"' + (a.einzeln ? "" : ' aria-multiselectable="true"') + '></div>' +
-            '</div>' +
-          '</div>';
-        w.addEventListener("click", function(e){
-          if (e.target.closest(".upt-ff-x")){ e.stopPropagation(); a.setzen([]); ffSync(); return; }
-          if (e.target.closest("[data-ff-alle]")){
-            /* Wie im alten Dropdown: ohne Auswahl alle, mit Auswahl keine. Wirkt sofort. */
-            a.setzen(a.auswahl().length ? [] : a.optionen().map(function(o){ return o.key; }));
-            ffSync();
-            return;
-          }
-          if (e.target.closest(".upt-ff-search-x")){
-            var si = w.querySelector(".upt-ff-search-in");
-            if (si){ si.value = ""; UC.mentFilter(w, ""); try { si.focus(); } catch(e2){} }
-            return;
-          }
-          var r = e.target.closest(".upt-ff-opt");
-          if (!r) return;
-          var k = r.getAttribute("data-key"), l = a.auswahl().slice(), i = l.indexOf(k);
-          if (a.einzeln) l = i >= 0 ? [] : [k];
-          else if (i >= 0) l.splice(i, 1); else l.push(k);
-          a.setzen(l);
-          ffSync();
-        });
-        w.addEventListener("keydown", function(e){
-          if (e.key !== "Enter" && e.key !== " ") return;
-          var r = e.target.closest && e.target.closest(".upt-ff-opt");
-          if (!r) return;
-          e.preventDefault(); r.click();
-        });
-        if (a.suche) w.addEventListener("input", function(e){
-          if (e.target && e.target.classList && e.target.classList.contains("upt-ff-search-in")) UC.mentFilter(w, "");
-        });
-        w.__uptfCtrl = {
-          getSelected: function(){ return { sel: a.auswahl().join(",") }; },
-          setSelected: function(csv){ a.setzen(String(csv == null ? "" : csv).split(",").map(function(x){ return x.trim(); }).filter(Boolean)); ffSync(); },
-          sync: function(){ ffZeichnen(key); }
-        };
-        ffWurzeln[key] = w;
-        heim.appendChild(w);
-      });
-    }
-    /* Liste neu nur, wenn sich die Optionen geaendert haben (die Marken kommen spaeter) -- sonst
-       nur die Haken. Ein Neuschreiben bei jedem Klick verloere die Suche in der Markenliste. */
-    function ffZeichnen(key){
-      var w = ffWurzeln[key], a = FF_ARTEN[key];
-      if (!w) return;
-      var opts = a.optionen(), sel = a.auswahl();
-      var liste = w.querySelector(".upt-ff-list");
-      var sig = opts.map(function(o){ return o.key + "|" + o.name; }).join(",");
-      if (liste.getAttribute("data-sig") !== sig){
-        liste.setAttribute("data-sig", sig);
-        liste.innerHTML = opts.map(function(o){
-          return '<div class="up-filter-item upt-ff-opt" role="option" tabindex="0" aria-selected="false" data-key="' + esc(o.key) + '"' +
-              (a.suche ? ' data-brand="' + esc(o.key) + '" data-name="' + esc(o.name.toLowerCase()) + '"' : "") + '>' +
-            '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
-            (a.suche ? '<span class="up-ment-logo">' + (o.logo ? '<img src="' + esc(o.logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/>' : "") + '</span>' : "") +
-            '<span class="upt-ff-name' + (a.suche ? " up-ment-name" : "") + '">' + esc(o.name) + '</span>' +
-          '</div>';
-        }).join("") + (a.suche ? '<div class="up-ment-noresult" style="display:none">' + esc(ffT("No matches")) + '</div>' : "");
-        if (a.suche) UC.mentFilter(w, "");
-      }
-      Array.prototype.forEach.call(liste.querySelectorAll(".upt-ff-opt"), function(r){
-        var an = sel.indexOf(r.getAttribute("data-key")) >= 0;
-        r.classList.toggle("is-checked", an);
-        r.setAttribute("aria-selected", an ? "true" : "false");
-      });
-      w.classList.toggle("has-sel", sel.length > 0);
-      var alle = w.querySelector("[data-ff-alle]");
-      if (alle){
-        alle.textContent = ffT(sel.length ? "Reset" : "Select all");
-        alle.classList.toggle("is-hidden", !opts.length);
-      }
-      /* Ein Bild statt des Zeichens in Menuezeile und Chip (15.10.): bei "<Marke> mentioned?" das
-         Logo der eigenen Marke. */
-      var bild = a.bild ? a.bild() : "";
-      if (bild) w.setAttribute("data-ufb-bild", bild); else w.removeAttribute("data-ufb-bild");
-      w.setAttribute("data-ufb-label", a.label());
-      w.setAttribute("data-ufb-chip", a.chip());
-      if (a.aus()) w.setAttribute("data-ufb-aus", "yes"); else w.removeAttribute("data-ufb-aus");
-      var namen = opts.filter(function(o){ return sel.indexOf(o.key) >= 0; }).map(function(o){ return o.name; });
-      w.querySelector(".upt-ff-label").textContent = namen.length ? namen.join(", ") : a.label();
-    }
-    /* Alle drei auf Stand bringen und der Leiste Bescheid sagen. Gerufen nach jeder eigenen Wahl
-       und aus render() -- dort aendert sich, was von aussen kommt (Marken, Intent-Felder, Status,
-       ein Zuruecksetzen). Das Ereignis nur, wenn sich am Sichtbaren etwas geaendert hat: render()
-       laeuft oft, und jedes Ereignis laesst die Leiste neu zeichnen. */
-    var ffStand = "";
-    function ffSync(){
-      if (!LEISTE || !ffWurzeln) return;
-      var neu = Object.keys(ffWurzeln).map(function(key){
-        ffZeichnen(key);
-        var w = ffWurzeln[key];
-        return key + ":" + FF_ARTEN[key].auswahl().join(",") + ":" + (w.getAttribute("data-ufb-aus") || "") + ":" +
-               (w.getAttribute("data-ufb-label") || "") + ":" + (w.getAttribute("data-ufb-bild") || "") + ":" +
-               w.querySelector(".upt-ff-list").getAttribute("data-sig");
-      }).join("|");
-      if (neu === ffStand) return;
-      ffStand = neu;
-      var w0 = ffWurzeln.ptype;
-      try { if (w0) w0.dispatchEvent(new CustomEvent("upt-ff", { bubbles: true, detail: {} })); } catch(e){}
-    }
-    if (LEISTE){ ffBauen(); ffSync(); }
+    /* Gebaut werden die drei Wurzeln seit dem 15.10. abends von core (UC.makeLeistenFilter): die
+       Responses-Tabelle braucht dieselbe Form, und zwei Kopien desselben Baus waeren zwei
+       Wahrheiten ueber dieselbe Leiste. Hier bleiben Zustand und Ereignisse (FF_ARTEN oben). */
+    var ffKit = null;
+    function ffSync(){ if (ffKit) ffKit.sync(); }
+    if (LEISTE && UC.makeLeistenFilter){ ffKit = UC.makeLeistenFilter(root, { instanceId: instanceId, arten: FF_ARTEN }); ffSync(); }
 
     /* ---------------- columns / pager / sort (core) ---------------- */
     var PROMPT_MIN = 260;
@@ -4770,7 +4645,7 @@
          eingezogener Filter) und die eigenen Filterwurzeln (.upt-ff) bedienen sich selbst. Ohne
          diese Zeile griffen die allgemeinen Zweige unten zu -- [data-brand] etwa haette einen Klick
          in der Markenliste der Filterleiste als Klick im alten Marken-Dropdown gezaehlt. */
-      if (e.target.closest(".upt-scope .up-root, .upt-ff")) return;
+      if (e.target.closest(".upt-scope .up-root, .up-ff")) return;
 
       /* --- grouping: trigger, dropdown, accordion --- */
       if (e.target.closest(".upt-group-btn")){

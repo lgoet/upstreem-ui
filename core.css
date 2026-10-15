@@ -3427,6 +3427,48 @@
     .up-root.up-root[data-flach="yes"].is-festhoehe .up-box { max-height: var(--up-flach-box-h); overflow: auto; overscroll-behavior: contain; }
     .up-root.up-root[data-flach="yes"].is-festhoehe .up-thead { position: sticky; top: 0; z-index: 5; }
 
+    /* ---------- DIE EINE LEISTE (data-leiste="yes" an .up-root einer Tabelle, 15.10.) ----------
+       Zuerst in der Prompt-Tabelle, abends nach core gehoben fuer Responses und weitere Tabellen.
+       Der Kopf der Tabelle traegt links, was die DATEN aendert (.up-leiste-scope: Status,
+       Kalender, "Filters", Chips -- die Seite haengt ihre Filterzeile hinein), rechts, was nur die
+       ANSICHT aendert (.up-head-tools: Suche, Sortierer, Display, Export). Er BRICHT UM statt
+       Knoepfe wegzunehmen; die Hoehe kommt aus dem Inhalt (makeSticky misst sie). Die Ueberschrift
+       mit Zaehler faellt weg -- die Zahl steht im Seitenkopf bzw. in der Gesamtzeile. */
+    .up-root[data-leiste="yes"] .up-head { height: auto; min-height: 32px; flex-wrap: wrap; align-items: flex-start; row-gap: 8px; column-gap: 16px; }
+    .up-root[data-leiste="yes"].up-sticky .up-head { height: auto; }
+    .up-root[data-leiste="yes"] .up-leiste-scope { flex: 1 1 480px; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .up-root[data-leiste="yes"] .up-head-tools { flex: 0 0 auto; margin-left: auto; min-height: 32px; }
+    .up-root[data-leiste="yes"] .up-heading { display: none; }
+    /* Telefon: je eine volle Zeile, oben die Daten, darunter rechtsbuendig die Ansicht. */
+    .up-root[data-leiste="yes"].is-vnarrow .up-leiste-scope { flex-basis: 100%; }
+    .up-root[data-leiste="yes"].is-vnarrow .up-head-tools { flex: 1 1 100%; justify-content: flex-end; }
+    /* Die Filterleiste der Seite fliesst in der Leiste MIT: ihre Huellen loesen sich auf, und
+       "Filters", jeder Chip und "Clear All" stehen einzeln in der Reihe und brechen dort um. Als
+       ein Block rutschte die ganze Leiste samt "Filters" in eine zweite Zeile, sobald zwei Chips
+       nicht mehr neben den Kalender passten. "Filters" selbst (.ufb-more) bleibt ein Kasten: an
+       ihm haengt das Menue. */
+    .up-root[data-leiste="yes"] .up-leiste-scope .ufb-root,
+    .up-root[data-leiste="yes"] .up-leiste-scope .ufb-bar,
+    .up-root[data-leiste="yes"] .up-leiste-scope .ufb-root.has-filters .ufb-chips { display: contents; }
+    .up-root[data-leiste="yes"] .up-leiste-scope .ufb-sep { display: none; }
+    .up-root[data-leiste="yes"] .up-leiste-scope .ufb-clear { margin-left: 0; }
+    /* Die Filterwurzeln der Leiste (.up-ff, makeLeistenFilter in core.js): ihr Trigger ist nie zu
+       sehen -- die Zeile im Menue "Filters" ist der Ausloeser. Die Zeilenhoehe wie die anderen
+       Untermenues der Leiste (.uif-opt, .umf-opt: 34). Das Panel stellt filter-bar.css in den
+       Fluss. Eigener Inhalt (Regler, .up-ff-panel) bekommt das Polster eines Menues; die
+       unsichtbare Liste darunter traegt dann nur den Namen der Wahl fuer den Chip. */
+    .up-ff-heim { display: none; }
+    .up-ff-trigger { display: none; }
+    .up-ff-opt { min-height: 34px; }
+    .up-ff-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
+    .up-ff-panel { padding: 12px 10px 14px; min-width: 240px; }
+    /* Zu ist das Panel NIE treffbar -- wie die Panels der anderen Filter (.uif-menu usw.), die das
+       in ihrer eigenen CSS tun. filter-bar.css gibt ihm auto nur, solange Menue UND Untermenue
+       wirklich offen sind. Ohne diese Grundregel blieb ein zugeklapptes Panel unsichtbar, aber
+       klickbar (gemessen 15.10.: elementFromPoint ueber der Responses-Tabelle traf den Regler). */
+    .up-ff-menu { pointer-events: none; }
+    .up-ff-list.is-panel { display: none; }
+
     
     /* Letter fallback: a broken/missing favicon used to leave an empty square, which reads as a
        loading glitch. The initial keeps every row visually complete. */
