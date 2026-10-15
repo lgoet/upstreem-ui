@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261129;
+  var BUILD = 20261130;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -26429,9 +26429,14 @@
   function sumPaarHtml(v, label, art){
     var txt = sumWertText(v, art);
     var istText = art === "text" || art === "datum";
+    /* "avg" steht als DURCHSCHNITTSZEICHEN da, nicht als Wort (15.10. spaet: "anstelle von 'Schnitt'
+       lieber das Durchschnittszeichen") -- dasselbe Zeichen wie vor den Werten der Gruppenkoepfe der
+       Prompt-Tabelle. Vorgelesen wird es als "Average". */
+    var lab = "";
+    if (label === "avg") lab = '<span class="up-sumlabel up-sumavg" role="img" aria-label="' + esc(t_("Average")) + '">' + icon("durchschnitt", 2) + '</span>';
+    else if (label) lab = '<span class="up-sumlabel">' + esc(t_(label)) + '</span>';
     return '<span class="up-sumpaar"><span class="up-sumwert' + (txt == null ? " is-leer" : "") + (istText ? " is-text" : "") + '">' +
-      esc(txt == null ? "–" : txt) + '</span>' +
-      (label ? '<span class="up-sumlabel">' + esc(t_(label)) + '</span>' : "") + '</span>';
+      esc(txt == null ? "–" : txt) + '</span>' + lab + '</span>';
   }
   /* cfg: { root, nach (das Element, hinter dem die Zeile steht, ueblich .up-tbody), group (die
      Popover-Gruppe der Tabelle), onWahl(spalte, modus) }.
