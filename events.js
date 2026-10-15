@@ -1715,7 +1715,7 @@
         legendeImmer: true,
         /* Gefiltert leer (Models, Markets, Intent): der Leerzustand mit Lupe, "No matching data"
            (core, chartLeerHtml) -- leer wegen des Filters ist etwas anderes als noch keine Daten. */
-        gefiltert: gefiltert,
+        gefiltert: analyseGefiltert,
         markers: chartMarker,
         onMarker: function (id) { if (id && id !== state.eventId) oeffnen(id, true); }
       });
@@ -1763,8 +1763,11 @@
       analyseAnfordern(); renderDetail();
     }
     /* Schraenkt ein Filter die Analyse ein? Models und Markets aus der Leiste des Details, dazu der
-       Intent-Filter der App -- dieselbe Frage, die die Seiten an UC.seitenFilterAktiv stellen. */
-    function gefiltert() {
+       Intent-Filter der App -- dieselbe Frage, die die Seiten an UC.seitenFilterAktiv stellen.
+       NICHT "gefiltert" nennen: so heisst schon die Liste der Uebersicht (oben), und eine zweite
+       Funktionsdeklaration gleichen Namens im selben Bereich ueberschreibt die erste still -- am
+       16.10. bekam die Uebersicht dadurch true statt der Liste und zeigte "No matching events". */
+    function analyseGefiltert() {
       return UC.seitenFilterAktiv ? UC.seitenFilterAktiv({ modelle: state.modelle, maerkte: state.maerkte })
         : !!((state.modelle && state.modelle.length) || (state.maerkte && state.maerkte.length));
     }
