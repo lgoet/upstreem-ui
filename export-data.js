@@ -19,13 +19,54 @@
 (function(){
   "use strict";
 
+  /* gruppe (16.10.): der Dialog zeigt nur die Datensaetze EINER Gruppe -- die des gewaehlten Typs.
+     "" sind die Datensaetze von Prompts, Citations und Brands; Shopping und Ads oeffnen ihn mit
+     ihren eigenen (export_type aus ihrer Gruppe), und nach dem Schliessen gilt wieder der letzte
+     Typ der Grundgruppe (stammTyp) -- ein spaeteres Oeffnen ohne Typ zeigt nie Shopping. */
   var TYPES = [
-    { value: "prompts",     label: "Prompts"   },
-    { value: "prompt_runs", label: "Responses" },
-    { value: "domains",     label: "Domains"   },
-    { value: "urls",        label: "URLs"      },
-    { value: "brands",      label: "Brands"    }
+    { value: "prompts",     label: "Prompts",   gruppe: "" },
+    { value: "prompt_runs", label: "Responses", gruppe: "" },
+    { value: "domains",     label: "Domains",   gruppe: "" },
+    { value: "urls",        label: "URLs",      gruppe: "" },
+    { value: "brands",      label: "Brands",    gruppe: "" },
+    { value: "shop_products",    label: "Products",         gruppe: "shopping" },
+    { value: "shop_brands",      label: "Brands",           gruppe: "shopping" },
+    { value: "shop_merchants",   label: "Merchants",        gruppe: "shopping" },
+    { value: "shop_appearances", label: "Appearances",      gruppe: "shopping" },
+    { value: "ads_advertisers",  label: "Advertisers",      gruppe: "ads" },
+    { value: "ads_library",      label: "Ad Library",       gruppe: "ads" },
+    /* kachel: der Name auf der Kachel, wo label nicht passt. "Prompts with Ads" braucht 112px Text,
+       die Kachel hat bei drei Spalten 103 (gemessen 16.10.) -- "Prompts" ist das Wort des
+       Umschalters Ads | Prompts in der Ad Library; die Zusammenfassung nennt den ganzen Namen. */
+    { value: "ads_prompts",      label: "Prompts with Ads", kachel: "Prompts", gruppe: "ads" }
   ];
+  /* Der Satz, solange es die Exporte einer Gruppe noch nicht gibt. Ganz ohne Technik: der Nutzer
+     kann nichts tun ausser warten, und genau das sagt er. */
+  var GRUPPEN = {
+    shopping: { bald: "Exports for Shopping are coming soon." },
+    ads: { bald: "Exports for Ads are coming soon." }
+  };
+  function typVon(v){ for (var i = 0; i < TYPES.length; i++) if (TYPES[i].value === v) return TYPES[i]; return null; }
+  function gruppeVon(v){ var x = typVon(v); return x ? x.gruppe : ""; }
+  /* Die Texte, die es nur hier gibt. Die Namen der Datensaetze stehen schon in ads.js -- mit
+     demselben Wert, damit der Dialog auch dann deutsch ist, wenn Ads nie geladen wurde. Kein
+     Schluessel aus core (Katalog-Kollision). Eingetragen beim ersten Controller, nicht beim Laden:
+     diese Datei kommt ohne core aus, und steht sie im Loader vor core, waere der Katalog sonst leer. */
+  var katalogDa = false;
+  function katalog(){
+    var C = window.UpstreemCore;
+    if (katalogDa || !C || !C.addMessages) return;
+    katalogDa = true;
+    C.addMessages("de", {
+      "Exports for Shopping are coming soon.": "Exporte für Shopping kommen bald.",
+      "Exports for Ads are coming soon.": "Exporte für Ads kommen bald.",
+      "This export is coming soon.": "Dieser Export kommt bald.",
+      "Current page filters apply.": "Es gelten die aktuellen Filter der Seite.",
+      "Advertisers": "Werbetreibende", "Ad Library": "Anzeigenbibliothek",
+      "Prompts with Ads": "Prompts mit Ads", "Appearances": "Auftritte"
+    });
+  }
+  function tr(x){ var C = window.UpstreemCore; return C && C.t ? C.t(x) : x; }
   /* Keys are deliberately the SAME strings the date range picker uses for its own presets,
      so syncing the two is a straight pass-through with nothing to translate. */
   var PRESETS = [
@@ -117,6 +158,13 @@
 
   /* State that must survive Bubble rebuilding the element, keyed by instanceId. */
   var STORE = (window.__uexStore = window.__uexStore || {});
+  /* Welche Exporte von Shopping und Ads es gibt (pruefen im Controller), je Spaltenschluessel:
+     { stand: true | false | null, spalten, laeuft }. Am window, fuer alle Controller und ueber
+     einen Neuaufbau hinweg; jede Antwort zeichnet offene Dialoge neu (Ereignis uex-verfuegbar). */
+  var DA = (window.__uexDa = window.__uexDa || {});
+  function daGeaendert(){
+    try { window.dispatchEvent(new CustomEvent("uex-verfuegbar")); } catch(e){}
+  }
 
   function makeController(root){
     var instanceId = root.getAttribute("data-instance") || "default";
@@ -131,6 +179,7 @@
     var isDark = dunkelJetzt(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
 
+    katalog();
     var today = startOfDay(new Date());
     var state = {
       type: normType(root.getAttribute("data-export-type")) || saved.type || TYPES[0].value,
@@ -139,8 +188,20 @@
       from: parseIso(saved.from) || addDays(today, -6),
       to: parseIso(saved.to) || today,
       open: false,
-      processing: false
+      processing: false,
+      /* Kontext einer Seite mit eigener Gruppe (Shopping, Ads; setContext): die Parameter je Typ
+         und ob davon Filter der Seite sind. Wie url/domain nur fuer DIESEN Export, beim
+         Schliessen geleert. */
+      params: {}, filterAktiv: {}, zeitVonSeite: false
     };
+    if (gruppeVon(state.type)) state.type = TYPES[0].value;
+    state.stammTyp = state.type;
+    /* Jeder Typwechsel hierueber: ein Typ der Grundgruppe wird der, zu dem der Dialog nach einem
+       Shopping- oder Ads-Export zurueckkehrt. */
+    function typSetzen(v){
+      state.type = v;
+      if (!gruppeVon(v)) state.stammTyp = v;
+    }
 
     function normType(v){
       var s = String(v == null ? "" : v).trim().toLowerCase();
@@ -156,7 +217,7 @@
     }
     function persist(){
       STORE[instanceId] = {
-        type: state.type, token: state.token, preset: state.preset,
+        type: state.stammTyp, token: state.token, preset: state.preset,
         from: isoDate(state.from), to: isoDate(state.to)
       };
     }
@@ -265,10 +326,11 @@
     }
 
     function renderTypes(){
-      elTypes.innerHTML = TYPES.map(function(t){
+      var g = gruppeVon(state.type);
+      elTypes.innerHTML = TYPES.filter(function(t){ return t.gruppe === g; }).map(function(t){
         return '<button class="uex-opt' + (t.value === state.type ? " is-active" : "") +
                '" type="button" data-type="' + esc(t.value) + '">' +
-               '<span class="uex-opt-label">' + esc(t.label) + '</span>' + CHECK_SVG + '</button>';
+               '<span class="uex-opt-label">' + esc(tr(t.kachel || t.label)) + '</span>' + CHECK_SVG + '</button>';
       }).join("");
     }
     function renderPresets(){
@@ -285,11 +347,18 @@
         : "Custom range";
     }
     function renderSummary(){
-      var label = TYPES.filter(function(t){ return t.value === state.type; })[0];
+      var label = typVon(state.type);
+      /* Fehlt der Export noch (Shopping, Ads), steht statt der Zusammenfassung der Satz, und der
+         Knopf ruht -- kein Fehler, kein Klick ins Leere. */
+      var bald = baldSatz(state.type);
+      if (bald){ elSummary.textContent = bald; knopfStand(); return; }
       elSummary.innerHTML =
-        "Exporting <b>" + esc(label ? label.label : state.type) + "</b> from <b>" +
+        "Exporting <b>" + esc(label ? tr(label.label) : state.type) + "</b> from <b>" +
         esc(prettyDate(state.from)) + "</b> to <b>" + esc(prettyDate(state.to)) +
-        "</b> &mdash; <b>" + dayCount(state.from, state.to) + "</b> days.";
+        "</b> &mdash; <b>" + dayCount(state.from, state.to) + "</b> days." +
+        /* Die Seite gibt ihre Filter mit (setContext params) -- dann sagt es der Dialog. */
+        (state.filterAktiv[state.type] ? " " + esc(tr("Current page filters apply.")) : "");
+      knopfStand();
     }
     /* renderAll zeichnet Typen, Voreinstellungen und Zusammenfassung -- also den GANZEN Inhalt
        des Dialogs. Am Aufruf beim Oeffnen stand ein leerer Faenger ohne Rueckfall: warf hier
@@ -490,6 +559,13 @@
       }
       var cal = findCalendar();
       if (!cal) return;
+      /* Ein freier Zeitraum, den die SEITE mitgegeben hat (Shopping, Ads), kam nicht vom Picker --
+         er wird ihm gegeben, still, und danach gilt wieder, was der Picker sagt (in seine Grenzen
+         gezogen). */
+      if (state.zeitVonSeite && cal.__udrCtrl && typeof cal.__udrCtrl.setRange === "function"){
+        try { cal.__udrCtrl.setRange(isoDate(state.from), isoDate(state.to), false); } catch(e){}
+      }
+      state.zeitVonSeite = false;
       var f = parseIso(cal.getAttribute("data-date-from"));
       var t = parseIso(cal.getAttribute("data-date-to"));
       if (f && t){ state.from = f; state.to = t; renderAll(); }
@@ -553,6 +629,7 @@
       /* Still, aus demselben Grund. Der Dialog oeffnet, und fehlt der Kalender, steht das
          als Hinweis unter dem Custom-Knopf. */
       catch(e){}
+      pruefen();
       renderAll();
       lastFocus = document.activeElement;
       overlay.inert = false;
@@ -568,6 +645,9 @@
       if (!state.open) return;
       /* Der Filter des Drawers gilt nur fuer DIESEN Export (siehe setContext). */
       state.url = ""; state.domain = ""; state.promptId = ""; state.brandId = "";
+      /* Ebenso Kontext und Gruppe von Shopping und Ads: danach gilt wieder die Grundgruppe. */
+      state.params = {}; state.filterAktiv = {}; state.zeitVonSeite = false;
+      if (gruppeVon(state.type)) state.type = state.stammTyp;
       // never hide a focused element from assistive tech — move focus out FIRST
       if (overlay.contains(document.activeElement)){
         try {
@@ -592,7 +672,7 @@
       elBody.classList.toggle("is-processing", state.processing);
       elClose.disabled = state.processing;
       elCancel.disabled = state.processing;
-      elSubmit.disabled = state.processing;
+      knopfStand();
       elSubmitIcon.innerHTML = state.processing ? SPINNER_SVG : EXPORT_SVG;
       elSubmitText.textContent = state.processing ? "Exporting…" : "Export";
       if (state.processing){
@@ -625,8 +705,70 @@
       prompt_runs: { fn: "export_responses_v1",         spalten: "responses", seite: 2000 },
       domains:     { fn: "export_citations_domains_v1", spalten: "domains",   seite: 10000 },
       urls:        { fn: "export_citations_urls_v1",    spalten: "urls",      seite: 5000 },
-      brands:      { fn: "export_brands_v2",            spalten: "brands",    seite: 500 }
+      brands:      { fn: "export_brands_v2",            spalten: "brands",    seite: 500 },
+      /* SHOPPING UND ADS (16.10., Auftrag bubble/shopping_ads_export_db_auftrag_16_10.md). neu: kein
+         Rueckweg an Bubble (die Seiten gibt es dort nicht), und ob es den Export gibt, fragt der
+         Dialog beim Oeffnen export_columns_v1 (pruefen unten). Parameter: die der Seite (params). */
+      shop_products:    { fn: "export_shopping_products_v1",    spalten: "shopping_products",    seite: 2000, neu: true, datei: "shopping-products" },
+      shop_brands:      { fn: "export_shopping_brands_v1",      spalten: "shopping_brands",      seite: 1000, neu: true, datei: "shopping-brands" },
+      shop_merchants:   { fn: "export_shopping_merchants_v1",   spalten: "shopping_merchants",   seite: 2000, neu: true, datei: "shopping-merchants" },
+      shop_appearances: { fn: "export_shopping_appearances_v1", spalten: "shopping_appearances", seite: 5000, neu: true, datei: "shopping-appearances" },
+      ads_advertisers:  { fn: "export_ads_advertisers_v1",      spalten: "ads_advertisers",      seite: 2000, neu: true, datei: "ads-advertisers" },
+      ads_library:      { fn: "export_ads_library_v1",          spalten: "ads_library",          seite: 1000, neu: true, datei: "ads-library" },
+      ads_prompts:      { fn: "export_ads_prompts_v1",          spalten: "ads_prompts",          seite: 2000, neu: true, datei: "ads-prompts" }
     };
+    /* ---- GIBT ES DEN EXPORT SCHON? (16.10.) -------------------------------------------------------
+       Fuer die Typen mit neu fragt der Dialog beim Oeffnen export_columns_v1 nach den Spalten jedes
+       Typs seiner Gruppe: ein Aufruf, der keine Daten liest und nicht ins Ratenlimit der Exporte
+       zaehlt. Kennt die Datenbank den Export nicht, antwortet sie 400 exports_invalid_param mit hint
+       "p_export: ..." (vor_nextjs_v1.sql) -- dann "kommt bald" statt eines Fehlers. Ebenso 404
+       PGRST202 (Funktion fehlt ganz) und, beim Export selbst, PGRST202 der Datenfunktion. Alles
+       andere (Netz, Zeitablauf, 5xx) heisst "unbekannt": der Knopf geht, und beim naechsten Oeffnen
+       wird neu gefragt. Gemerkt fuer das Seitenleben und alle Controller (DA am window) -- ist das
+       SQL eingespielt, gilt es nach einem Neuladen ohne weitere Aenderung.
+       Waehrend der Frage ruht der Knopf (laeuft): sonst waere er erst klickbar und dann nicht. */
+    function spaltenAus(erg){
+      var r = erg && erg.ok && erg.daten && Array.isArray(erg.daten.rows) ? erg.daten.rows : null;
+      r = r ? r.filter(function(c){ return c && c.key; }) : null;
+      return r && r.length ? r : null;
+    }
+    function exportFehlt(erg){
+      if (!erg || erg.ok) return false;
+      var f = erg.fehler || {}, m = String(f.message || ""), h = String(f.hint || "");
+      if (String(f.code || "") === "PGRST202" ||
+          (erg.status === 404 && /could not find the function/i.test(m + " " + String(f.details || "")))) return true;
+      return erg.status === 400 && /exports_invalid_param/.test(m) && /p_export/.test(h);
+    }
+    function daVon(art){
+      var cfg = EXPORTE ? EXPORTE[art] : null;
+      if (!cfg || !cfg.neu) return null;
+      return DA[cfg.spalten] || (DA[cfg.spalten] = { stand: null, spalten: null, laeuft: false });
+    }
+    function pruefen(){
+      var g = gruppeVon(state.type), k = kern();
+      if (!g || !k) return;
+      TYPES.forEach(function(x){
+        if (x.gruppe !== g) return;
+        var e = daVon(x.value), cfg = EXPORTE[x.value];
+        if (!e || e.stand !== null || e.laeuft) return;
+        e.laeuft = true;
+        function fertig(){ e.laeuft = false; daGeaendert(); }
+        k.rpc("export_columns_v1", { p_export: cfg.spalten }, { timeoutMs: 20000 }).then(function(erg){
+          var r = spaltenAus(erg);
+          if (r){ e.stand = true; e.spalten = r; }
+          else if (exportFehlt(erg)) e.stand = false;
+          fertig();
+        }, fertig);
+      });
+    }
+    function gesperrt(art){ var e = daVon(art); return !!e && (e.stand === false || e.laeuft); }
+    function baldSatz(art){
+      var e = daVon(art), g = gruppeVon(art);
+      if (!e || e.stand !== false) return "";
+      var alle = TYPES.every(function(x){ var d = x.gruppe === g ? daVon(x.value) : null; return !d || d.stand === false; });
+      return tr(alle && GRUPPEN[g] ? GRUPPEN[g].bald : "This export is coming soon.");
+    }
+    function knopfStand(){ elSubmit.disabled = state.processing || gesperrt(state.type); }
     /* Obergrenze an Seiten je Export: die Datenbank erlaubt 60 Seiten je Minute und Typ. Mehr als
        das passt nicht in einen Lauf, und eine Schleife ohne Ende waere der schlimmere Fehler. */
     var MAX_SEITEN = 60;
@@ -652,6 +794,17 @@
       } else if (art === "urls"){
         if (state.domain) p.p_domain = String(state.domain);
         if (state.brandId) p.p_brand = String(state.brandId);
+      } else if (EXPORTE[art] && EXPORTE[art].neu){
+        /* Shopping und Ads: die Parameter der Seite (setContext params), in den Namen der Liste.
+           Team, Zeitraum und Seite gehoeren dem Dialog und werden nie ueberschrieben; null heisst
+           "kein Filter" und bleibt draussen -- jede Funktion hat dafuer ihren Standardwert, und ein
+           Name weniger ist ein Grund weniger fuer PGRST202. */
+        var x = state.params[art] || {};
+        Object.keys(x).forEach(function(n){
+          if (!/^p_[a-z0-9_]+$/.test(n) || Object.prototype.hasOwnProperty.call(p, n)) return;
+          if (x[n] == null || (Array.isArray(x[n]) && !x[n].length)) return;
+          p[n] = x[n];
+        });
       }
       return p;
     }
@@ -695,8 +848,11 @@
     /* true: die Komponente exportiert selbst. false: Bubble-Weg. */
     function exportSelbst(){
       var art = state.type, cfg = EXPORTE[art], k = kern();
-      if (!cfg || !k || BUBBLE_TYP[art]) return false;
+      if (!cfg || !k || (!cfg.neu && BUBBLE_TYP[art])) return false;
       var team = k.getTeam(), zeilen = [], seiten = 0, spalten = null;
+      /* neu (Shopping, Ads): was pruefen schon weiss, gilt; fehlt der Export, steht der Satz im
+         Dialog statt eines Fehlers. Einen Bubble-Weg gibt es fuer diese Typen nicht. */
+      var da = daVon(art);
       setProcessing(true);
       function fertig(){ setProcessing(false); }
       function scheitern(erg){
@@ -705,17 +861,22 @@
         meldenToast(s[0], "error", s[1]);
       }
       function auchBubble(){ BUBBLE_TYP[art] = true; fertig(); fireExportBubble(); }
+      function fehlt(){ da.stand = false; fertig(); daGeaendert(); }
+      if (da && da.stand === true && da.spalten){ spalten = da.spalten; seite(0); return true; }
       k.rpc("export_columns_v1", { p_export: cfg.spalten }, { timeoutMs: 20000 }).then(function(erg){
-        if (ohneRpc(erg)) { auchBubble(); return; }
-        var r = erg && erg.ok && erg.daten && Array.isArray(erg.daten.rows) ? erg.daten.rows : null;
-        if (!r || !r.length) { scheitern(erg); return; }
-        spalten = r.filter(function(c){ return c && c.key; });
+        if (da && exportFehlt(erg)) { fehlt(); return; }
+        if (!da && ohneRpc(erg)) { auchBubble(); return; }
+        var r = spaltenAus(erg);
+        if (!r) { scheitern(erg); return; }
+        if (da){ da.stand = true; da.spalten = r; }
+        spalten = r;
         seite(0);
       }, scheitern);
       function seite(offset){
         if (!state.processing) return;            /* Dialog geschlossen: abgebrochen */
         k.rpc(cfg.fn, exportParameter(art, team, offset, cfg.seite), { timeoutMs: 120000 }).then(function(erg){
-          if (ohneRpc(erg)) { auchBubble(); return; }
+          if (da && exportFehlt(erg)) { fehlt(); return; }
+          if (!da && ohneRpc(erg)) { auchBubble(); return; }
           var d = erg && erg.ok ? erg.daten : null;
           if (!d || !Array.isArray(d.rows)) { scheitern(erg); return; }
           zeilen = zeilen.concat(d.rows);
@@ -725,7 +886,7 @@
             seite(Number(m.offset || offset) + Number(m.limit || cfg.seite));
             return;
           }
-          var typName = (TYPES.filter(function(x){ return x.value === art; })[0] || { label: art }).label;
+          var typName = cfg.datei || (typVon(art) || { label: art }).label;
           var name = "upstreem-" + typName.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + isoDate(state.from) + "-" + isoDate(state.to) + ".csv";
           herunterladen(csvBauen(spalten, zeilen), name);
           setProcessing(false);
@@ -738,7 +899,10 @@
     }
     function fireExport(){
       if (state.processing) return;   // already sent, ignore a repeat click
+      if (gesperrt(state.type)) return;
       if (exportSelbst()) return;
+      /* Shopping und Ads gibt es nur in der App: ohne core oder Team kein Bubble-Weg, sondern ein Satz. */
+      if (EXPORTE[state.type] && EXPORTE[state.type].neu){ meldenToast("The export didn't work", "error", "Please try again."); return; }
       fireExportBubble();
     }
     function fireExportBubble(){
@@ -824,7 +988,7 @@
       // click on the backdrop (not inside the dialog) closes
       if (!elDialog.contains(e.target)){ closePopup(); return; }
       var typeBtn = e.target.closest("[data-type]");
-      if (typeBtn){ state.type = typeBtn.getAttribute("data-type"); persist(); renderAll(); return; }
+      if (typeBtn){ typSetzen(typeBtn.getAttribute("data-type")); pruefen(); persist(); renderAll(); return; }
       var presetBtn = e.target.closest("[data-preset]");
       if (presetBtn){ applyPreset(presetBtn.getAttribute("data-preset")); return; }
       if (e.target.closest(".uex-close") || e.target.closest(".uex-cancel")){ closePopup(); return; }
@@ -842,6 +1006,10 @@
       }
     });
 
+    /* Eine Antwort von pruefen (oder ein fehlender Export beim Klick) zeichnet den offenen Dialog
+       neu -- auch wenn ein anderer Controller gefragt hat. */
+    window.addEventListener("uex-verfuegbar", function(){ if (state.open) renderAll(); });
+
     new MutationObserver(syncTheme).observe(root, {
       attributes: true, attributeFilter: ["data-isdark"]
     });
@@ -851,7 +1019,7 @@
 
     new MutationObserver(function(){
       var t = normType(root.getAttribute("data-export-type"));
-      if (t && t !== state.type){ state.type = t; persist(); renderAll(); }
+      if (t && t !== state.type){ typSetzen(t); persist(); renderAll(); }
       var tok = root.getAttribute("data-token");
       if (tok != null && tok !== "EXPORT_ACCESSTOKEN" && tok !== state.token){ state.token = tok; persist(); }
     }).observe(root, { attributes: true, attributeFilter: ["data-export-type", "data-token"] });
@@ -891,7 +1059,7 @@
         }
         opts = opts || {};
         var t = normType(opts.export_type != null ? opts.export_type : opts.type);
-        if (t) state.type = t;
+        if (t) typSetzen(t);
         var tok = (opts.export_accesstoken != null) ? opts.export_accesstoken : opts.token;
         if (tok != null) state.token = String(tok);
         /* EIN FILTER AUF EINE ADRESSE ODER DOMAIN (12.10., URL-Drawer: export_responses_v1 kennt
@@ -903,6 +1071,27 @@
         state.domain = opts.domain != null ? String(opts.domain) : "";
         state.promptId = opts.prompt_id != null ? String(opts.prompt_id) : "";
         state.brandId = opts.brand_id != null ? String(opts.brand_id) : "";
+        /* SHOPPING UND ADS (16.10.): params je Typ der Gruppe (die Filter der Seite in den Namen der
+           Liste), filter_aktiv je Typ (ob die Zusammenfassung "Current page filters apply." sagt)
+           und der Zeitraum der Seite als Vorgabe. Bei jedem Aufruf neu gesetzt, auch auf leer, und
+           beim Schliessen geleert (closePopup) -- ein Kontext gilt fuer DIESEN Export. */
+        state.params = {}; state.filterAktiv = {};
+        var pr = opts.params && typeof opts.params === "object" ? opts.params : {};
+        Object.keys(pr).forEach(function(n){
+          if (gruppeVon(n) && pr[n] && typeof pr[n] === "object" && !Array.isArray(pr[n])) state.params[n] = pr[n];
+        });
+        var fa = opts.filter_aktiv && typeof opts.filter_aktiv === "object" ? opts.filter_aktiv : {};
+        Object.keys(fa).forEach(function(n){ if (typVon(n)) state.filterAktiv[n] = fa[n] === true; });
+        /* Ein Preset der Seite ist dasselbe Preset hier (gleiche Schluessel wie der Kalender); ein
+           freier Zeitraum wird beim Oeffnen in den Picker gegeben (syncCalendarToState). */
+        var zf = parseIso(opts.date_from), zt = parseIso(opts.date_to);
+        if (zf && zt && zf.getTime() <= zt.getTime()){
+          var pk = String(opts.preset == null ? "" : opts.preset);
+          var istPreset = PRESETS.some(function(x){ return x.key === pk; });
+          state.preset = istPreset ? pk : "custom";
+          state.from = zf; state.to = zt;
+          state.zeitVonSeite = !istPreset;
+        }
         persist(); renderAll();
         return true;
       },
