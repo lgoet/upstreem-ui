@@ -229,8 +229,11 @@
       '<div class="up-ph-nav uss-nav" role="tablist"></div>' +
       '<div class="uss-main">' +
         '<div class="uss-tab" data-uss-tab="preferences"><div class="up-root usb-root" data-local="yes" data-instance="' + esc(ids.usb) + '" data-isdark="' + dk + '"></div></div>' +
-        '<div class="uss-tab" data-uss-tab="team"><div class="up-root uto-root" data-local="yes" data-instance="' + esc(ids.uto) + '" data-isdark="' + dk + '" data-team="' + esc(team()) + '"></div></div>' +
-        '<div class="uss-tab" data-uss-tab="billing"><div class="up-root ubl-root" data-local="yes" data-instance="' + esc(ids.ubl) + '" data-isdark="' + dk + '" data-team="' + esc(team()) + '"></div></div>' +
+        /* data-flach (15.10.): Mitglieder, Einladungen, Protokoll und die Billing-Tabelle in der
+           flachen Fassung aus core -- ohne Kasten, Linien oben und unten, Kopf 48. Ohne Auslauf an
+           die Kanten (settings-page.css). Keine feste Hoehe: mehrere Tabellen untereinander. */
+        '<div class="uss-tab" data-uss-tab="team"><div class="up-root uto-root" data-flach="yes" data-local="yes" data-instance="' + esc(ids.uto) + '" data-isdark="' + dk + '" data-team="' + esc(team()) + '"></div></div>' +
+        '<div class="uss-tab" data-uss-tab="billing"><div class="up-root ubl-root" data-flach="yes" data-local="yes" data-instance="' + esc(ids.ubl) + '" data-isdark="' + dk + '" data-team="' + esc(team()) + '"></div></div>' +
       '</div>';
 
     var elNav = root.querySelector(".uss-nav");

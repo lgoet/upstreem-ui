@@ -651,6 +651,18 @@
       });
       /* The table container needs core's .up-table for its frame/background. */
       if (tableEl && !tableEl.classList.contains("up-table")) tableEl.classList.add("up-table");
+      /* DIE FLACHE TABELLE (core, data-flach="yes" am Markup der Brands-Seite, 15.10.): die
+         Regeln in core greifen am Kasten der Tabelle ueber .up-box -- ohne Rahmen an den Seiten,
+         bis an die Kanten, jede Zeile rechts mit dem Auslauf-Polster. Der Kasten hier heisst
+         .ubo-box und war nie .up-box; ohne die Klasse stuenden Kopf (den core erfasst) und
+         Zeilen (die es nur im .up-box erfasst) um das Polster gegeneinander versetzt. Nur am
+         Kasten der TABELLE: der Chart darueber bleibt seine Karte. Die Grundregel von .up-box
+         (Rahmen, Grund, Radius 16, overflow hidden) ist dieselbe wie die von .ubo-box, im Kasten
+         aendert sich also ausser der flachen Fassung nichts. Und vor makeColumns: boxWidth misst
+         dann diesen Kasten statt der Wurzel. */
+      var tabBox = tableEl && tableEl.parentElement;
+      if (root.getAttribute("data-flach") === "yes" && tabBox && tabBox.classList.contains("ubo-box"))
+        tabBox.classList.add("up-box");
     }
     ensureChrome();
 
@@ -723,10 +735,15 @@
     /* Column model in the shape UC.makeColumns expects (w / min / prio), so this table gets the
        same width behaviour as every other one: drag the Brand column, columns drop by prio when
        the box genuinely runs out of room, both persisted per instance. */
+    /* minFlach/wFlach (15.10.): in der flachen Fassung (core, Kopfschrift 13/500) brauchen die
+       Koepfe samt Sortierpfeil, Info-Zeichen und 1px Zellrand gemessen 120.6 (Visibility), 118.8
+       (Ranking) und 132 (Sentiment) -- alle drei ueber ihrer alten Untergrenze, an der Grenze
+       waeren sie gekuerzt. Je 2 bis 3 darueber, wie in Responses. Nur flach: dieselbe Tabelle in
+       Bubble behaelt 12/400 und ihre Werte. */
     var COLS_ALL = [
-      { key: "visibility", label: "Visibility", w: "minmax(120px, 1fr)", min: 120, prio: 30 },
-      { key: "ranking",    label: "Ranking",    w: "minmax(112px, 1fr)", min: 112, prio: 20 },
-      { key: "sentiment",  label: "Sentiment",  w: "minmax(120px, 1fr)", min: 120, prio: 10 },
+      { key: "visibility", label: "Visibility", w: "minmax(120px, 1fr)", min: 120, wFlach: "minmax(123px, 1fr)", minFlach: 123, prio: 30 },
+      { key: "ranking",    label: "Ranking",    w: "minmax(112px, 1fr)", min: 112, wFlach: "minmax(121px, 1fr)", minFlach: 121, prio: 20 },
+      { key: "sentiment",  label: "Sentiment",  w: "minmax(120px, 1fr)", min: 120, wFlach: "minmax(134px, 1fr)", minFlach: 134, prio: 10 },
       /* Inactive-only, and the inverse of the three above — see cfg.isHidden below. */
       { key: "deactivated", label: "Deactivated", w: "minmax(140px, 0.8fr)", min: 140, prio: 5 }
     ];

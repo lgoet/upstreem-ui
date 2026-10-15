@@ -73,6 +73,11 @@ for schluessel, pfad, kennung in TEILE:
     m = m.replace('data-sticky-top="171"', 'data-sticky-top="16"')
     m = re.sub(r'\s*data-[a-z0-9-]+-fn="bubble_fn_[^"]*"', "", m)
     zusatz = ' data-local="yes"'
+    # Brands Overview mit der flachen Tabelle aus core (15.10., data-flach): ohne Kasten, bis an
+    # die Kanten, Kopf 48. Hier und nicht in der Vorlage: dieselbe Komponente in einer
+    # Bubble-Gruppe behaelt ihren Kasten. Keine feste Hoehe -- ueber der Tabelle steht der Chart.
+    if schluessel == "ubo":
+        zusatz += ' data-flach="yes"'
     m = re.sub(r'(<div class="up-root [^"]*")', lambda mm: mm.group(1) + zusatz, m, count=1)
     if 'data-instance="%s"' % kennung not in m:
         print("ABBRUCH -- data-instance in %s nicht ersetzt" % pfad)

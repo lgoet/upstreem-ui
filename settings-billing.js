@@ -189,6 +189,10 @@
         return UC.themeParam(root.getAttribute("data-isdark")) || root.getAttribute("data-theme") === "dark";
       }
 
+      /* DIE FLACHE TABELLE (core, data-flach="yes" am Markup der Settings-Seite, 15.10.): wie in
+         team-orga bekommt die Schale nur in der flachen Fassung .up-box, an dem die Regeln von
+         core greifen -- immer gesetzt, entschiede die Ladereihenfolge zwischen Radius 16 und 12. */
+      var kastenKl = root.getAttribute("data-flach") === "yes" ? " up-box" : "";
       root.innerHTML =
         '<div class="ubl-body">' +
           '<section class="ubl-sec">' +
@@ -206,7 +210,7 @@
               '<button class="up-btn-pri ubl-manage" type="button" data-ubl-manage>' +
                 UC.icon("creditCard", 2) + '<span data-ubl-managelbl></span></button>' +
             '</div>' +
-            '<div class="ubl-table" data-ubl-table></div>' +
+            '<div class="ubl-table' + kastenKl + '" data-ubl-table></div>' +
           '</section>' +
         '</div>';
 

@@ -84,6 +84,19 @@
 .uto-table > .up-thead { border-top-left-radius: 11px; border-top-right-radius: 11px; }
 .uto-table > *:last-child { border-bottom-left-radius: 11px; border-bottom-right-radius: 11px; }
 
+/* DIE FLACHE TABELLE (core, data-flach="yes", 15.10.; team-orga.js gibt den Schalen dann .up-box).
+   Kopf 48 mit 13/500, die Linie darunter, Rahmen nur oben und unten, kein Grund und das Polster
+   der Zeilen kommen aus core. Hier stehen nur die zwei Dinge, die diese Schalen anders haben:
+   - KEIN overflow: hidden an Mitgliedern und Einladungen, auch nicht von .up-box -- die
+     Begruendung steht oben an .uto-table (das Zeilenmenue faehrt aus der Zeile heraus). Das
+     Protokoll behaelt sein eigenes overflow aus core (.up-logtab, es scrollt ab 14 Zeilen).
+   - die runden Ecken an Kopf und letzter Zeile gehoeren zum Kasten mit Radius 12; ohne Kasten
+     wuerde die Hoverflaeche der letzten Zeile unten rund enden, zwischen zwei geraden Linien. */
+.uto-root[data-flach="yes"] .uto-members,
+.uto-root[data-flach="yes"] .uto-invites { overflow: visible; }
+.uto-root[data-flach="yes"] .uto-table > .up-thead,
+.uto-root[data-flach="yes"] .uto-table > *:last-child { border-radius: 0; }
+
 /* Die Spalten. Name traegt den Namen UND die "You"-Marke, darf also wachsen; E-Mail ebenso.
    Joined At ist ein Datum fester Laenge, Role ein Chip, Actions ein 32px-Knopf plus Polster. */
 .uto-members { --up-cols: minmax(0, 1.1fr) minmax(0, 1.2fr) 130px 108px 64px; }

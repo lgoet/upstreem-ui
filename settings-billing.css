@@ -67,6 +67,15 @@
 .ubl-table > .up-thead { border-top-left-radius: 11px; border-top-right-radius: 11px; }
 .ubl-table > *:last-child { border-bottom-left-radius: 11px; border-bottom-right-radius: 11px; }
 
+/* DIE FLACHE TABELLE (core, data-flach="yes", 15.10.; settings-billing.js gibt der Schale dann
+   .up-box). Kopf 48 mit 13/500, Linie darunter, Rahmen nur oben und unten kommen aus core. Hier
+   nur, was die Schale anders hat als .up-box: kein Ausschnitt (die Schale hatte nie einen, wie
+   ihr Vorbild in team-orga -- .up-box braechte overflow: hidden mit), und ohne Kasten keine
+   runden Ecken an Kopf und letzter Zeile. */
+.ubl-root[data-flach="yes"] .ubl-table { overflow: visible; }
+.ubl-root[data-flach="yes"] .ubl-table > .up-thead,
+.ubl-root[data-flach="yes"] .ubl-table > *:last-child { border-radius: 0; }
+
 /* Die Bezeichnung in der leiseren Farbe, der Wert in der vollen -- dieselbe Rangfolge wie Datum
    und Name in team-orga. Zahlen in fester Ziffernbreite, aber LINKSBUENDIG (so vorgegeben).
    Drei Klassen: .ubl-table .up-td setzt die Textfarbe schon mit zweien, ein blosses .ubl-key

@@ -472,12 +472,22 @@
         if (!st || st === "171" || st === "171px") root.setAttribute("data-sticky-top", "16");
       })();
       var sticky = UC.makeSticky(root, root.querySelector(".up-head"));
+      /* FESTE HOEHE (15.10.): nur wo der Gastgeber es will (data-festhoehe="yes", die Teams-Seite
+         -- dort ist diese Tabelle das ganze Element, wie die Prompt-Tabelle in ihrem Reiter). Dann
+         scrollt nur der Kasten, Leiste und Pagination stehen (UC.makeFestHoehe in core). Nach
+         applySticky geplant: die feste Hoehe gilt nur mit klebender Leiste, und die Klasse dafuer
+         setzt applySticky im selben Zug. */
+      var _fest = null;
+      function festPlanen() { if (_fest) _fest.planen(); }
+      function klebenUndPlanen() { sticky.applySticky(); festPlanen(); }
       /* Nicht an jedem Bild: applySticky misst die Kopfzeile und laeuft die Vorfahrenkette hoch.
          Am Ende der Bewegung reicht -- die Leiste klebt waehrend des Ziehens ohnehin da, wo sie
          war. */
-      if (UC.aufResize) UC.aufResize(sticky.applySticky);
-      else window.addEventListener("resize", UC.rafThrottle(sticky.applySticky));
+      if (UC.aufResize) UC.aufResize(klebenUndPlanen);
+      else window.addEventListener("resize", UC.rafThrottle(klebenUndPlanen));
       sticky.applySticky();
+      if (root.getAttribute("data-festhoehe") === "yes" && UC.makeFestHoehe)
+        _fest = UC.makeFestHoehe(root, { kopf: root.querySelector(".up-head"), fuss: root.querySelector(".up-foot") });
 
       /* ---------------- welches Team ist das aktuelle ----------------
          Drei Quellen, in dieser Reihenfolge: der Payload (ausdruecklich und damit am staerksten),
@@ -724,6 +734,9 @@
            echten Text, Suchfeld auf- oder zugeklappt). Ohne das Nachmessen bleibt der
            Spaltenkopf am alten Versatz kleben. */
         if (root.classList.contains("up-sticky")) sticky.syncTheadOffset();
+        /* Der Fuss blendet waehrend des Ladens aus (is-onepage) und kommt mit den Daten zurueck --
+           beides aendert den Platz unter dem Kasten. Hoechstens einmal je Bild (core). */
+        festPlanen();
         /* Den gezeigten Stand fuer einen Neuaufbau merken (siehe STORE). Hier und nicht an jeder
            Aenderung einzeln: Payload, Laden, Reset, Suche, Seite und Seitengroesse enden alle in
            render(). */

@@ -398,6 +398,14 @@
         return UC.themeParam(root.getAttribute("data-isdark")) || root.getAttribute("data-theme") === "dark";
       }
 
+      /* DIE FLACHE TABELLE (core, data-flach="yes" am Markup der Settings-Seite, 15.10.): die
+         Regeln in core greifen am Kasten ueber .up-box (ohne Rahmen an den Seiten, Kopf 48 mit
+         13/500, Linie unter dem Kopf, jede Zeile rechts mit dem Auslauf-Polster). Die Schalen
+         hier heissen .uto-table und waren nie .up-box -- nur in der flachen Fassung bekommen sie
+         die Klasse dazu. Immer gesetzt, stuende der Radius 16 von .up-box gegen die 12 der Schale
+         und ihr overflow hidden gegen die Zeilenmenues, und welche Regel gewinnt, entschiede die
+         Ladereihenfolge. Was dabei abzustellen ist, steht in team-orga.css. */
+      var kastenKl = root.getAttribute("data-flach") === "yes" ? " up-box" : "";
       root.innerHTML =
         /* Der Lesefehler steht VOR dem Koerper und nicht darin: er ersetzt die ganze Seite, weil
            bei einem unlesbaren Payload keine der drei Abschnitte etwas Wahres zeigen kann. */
@@ -413,7 +421,7 @@
               '<button class="up-export uto-secbtn" type="button" data-uto-invite>' +
                 UC.icon("userPlus", 2) + '<span>Invite new Members</span></button>' +
             '</div>' +
-            '<div class="uto-table uto-members" data-uto-members></div>' +
+            '<div class="uto-table uto-members' + kastenKl + '" data-uto-members></div>' +
           '</div>' +
 
           '<div class="uto-sec">' +
@@ -423,7 +431,7 @@
                 '<p class="uto-secsub">Invitations that have been sent but not accepted yet</p>' +
               '</div>' +
             '</div>' +
-            '<div class="uto-table uto-invites" data-uto-invites></div>' +
+            '<div class="uto-table uto-invites' + kastenKl + '" data-uto-invites></div>' +
           '</div>' +
 
           '<div class="uto-sec">' +
@@ -441,7 +449,7 @@
               '<span class="up-zaehler uto-seccount" data-uto-logcount></span>' +
             '</div>' +
             '<div class="uto-logbox" data-uto-logbox hidden>' +
-              '<div class="uto-table uto-log up-logtab" data-uto-log></div>' +
+              '<div class="uto-table uto-log up-logtab' + kastenKl + '" data-uto-log></div>' +
             '</div>' +
           '</div>' +
 
