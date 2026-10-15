@@ -4063,19 +4063,22 @@
        KEIN eigener Rahmen um das Ganze, anders als bei Geist: der Leerzustand steht in dieser App
        fast immer schon in einem (Tabellenkoerper, .up-box), und ein Rahmen im Rahmen waere ein
        Kasten zu viel.
+       RADIEN NACH DER GEIST-SKALA (15.10. spaet): Kachel 8 = --up-r-l, Knopf 6 = --up-r-m. Gebaut
+       wurde das noch auf der alten Skala (m = 8, s = 6); mit dem Umbau der Ecken waren beide still
+       eine Stufe zu klein geworden.
        NUR AN .up-leer, das UC.leerHtml setzt. UC.leseFehlerHtml baut dasselbe .up-empty, und der
        Fehlerzustand bleibt bewusst, wie er ist (Auftrag: Fehlerzustaende nicht anfassen). */
     .up-empty.up-leer { display: flex; flex-direction: column; align-items: center; gap: 24px; }
     .up-leer .up-empty-ic { box-sizing: border-box; width: 54px; height: 54px; margin: 0; padding: 10px;
       display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
-      border: 1px solid var(--vc-border); border-radius: var(--up-r-m); background: var(--vc-bg); color: var(--vc-muted); }
+      border: 1px solid var(--vc-border); border-radius: var(--up-r-l); background: var(--vc-bg); color: var(--vc-muted); }
     .up-leer .up-empty-ic svg { width: 32px; height: 32px; }
     .up-leer .up-empty-txt { display: flex; flex-direction: column; align-items: center; gap: 8px; }
     .up-leer .up-empty-h { max-width: 340px; margin: 0; font-size: var(--up-fs-xl); line-height: 24px;
       font-weight: var(--up-fw-m); letter-spacing: -0.02em; text-wrap: balance; }
     .up-leer .up-empty-t { max-width: 340px; margin: 0; font-size: var(--up-fs-l); line-height: 20px; text-wrap: balance; }
     .up-leer .up-empty-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--up-h-btn);
-      padding: 0 12px; border-radius: var(--up-r-s); background: var(--vc-bg); font-size: var(--up-fs-l); font-weight: var(--up-fw-m); }
+      padding: 0 12px; border-radius: var(--up-r-m); background: var(--vc-bg); font-size: var(--up-fs-l); font-weight: var(--up-fw-m); }
     .up-leer .up-empty-btn:hover { background: var(--vc-heading-bg); }
     .up-row.up-tsk { cursor: default; }
     .up-row.up-tsk:hover { background: transparent; }
