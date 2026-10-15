@@ -1229,6 +1229,10 @@
 .ulh-app .upt-grp-sidecount,
 .ulh-app .upt-selcount-n,
 .ulh-app .upt-status-btn { font-size: 11px; }
+/* Die Zeichen vor dem Wort im Spaltenkopf (core seit 15.10.: UC.kopfZeichen, 15px zu 14px Schrift)
+   ziehen mit der Schrift mit: 15 x 11/14 = 11.8, also 12. Mit 15 standen sie neben dem 11px-Wort
+   und dem 11px-Rautenzeichen wie ein Fremdkoerper. */
+.ulh-app .up-th-ic svg { width: 12px; height: 12px; }
 
 /* Die Werkzeugleiste der Prompts-Tabelle steht OFFEN und faehrt nicht beim Ueberfahren heraus.
    Angepinnt wird sie ueber die Einstellung (upt_tools__..., siehe landing-hero.js) -- hier faellt
@@ -1278,10 +1282,14 @@
 /* Der Vorhang der Chancen-Schublade blendet nur das BRETT ab, nicht die Seitenleiste. In der App
    ist er "position: fixed; inset: 0" und deckt das ganze Fenster -- dort ist das richtig, denn dort
    IST das Fenster die Seite. Hier steht die App in einem Bild, und eine weichgezeichnete Navigation
-   sieht aus, als waere sie kaputt. 185px sind gemessen: die Leiste ist 180 breit und sitzt 5px
-   innerhalb der Buehne, und die Buehne ist der Bezugsrahmen des Vorhangs (sie traegt das
-   transform). */
-.ulh-app .uo-scrim { left: 185px; }
+   sieht aus, als waere sie kaputt.
+   Bis zum 16.10. stand hier left: 185px, gemessen an einer 180px breiten Leiste. Mit dem neuen
+   core ist die Leiste breiter, und der Vorhang begann rund 30px INNERHALB der Navigation -- die
+   rechte Kante der Leiste war unscharf, mit einer harten Naht mitten darin (gemeldet: "der Blur
+   sieht komisch aus"). Jetzt haengt er an keiner Zahl mehr: die Seite selbst ist der Bezugsrahmen
+   (contain macht sie zum Rahmen fuer position: fixed), der Vorhang deckt genau sie, und die
+   Schublade steht 6px von IHREN Kanten wie in der App vom Fenster. */
+.ulh-app .ulh-chancen { contain: layout paint; }
 /* Das Brett steht buendig mit allem anderen im Fenster. In der App traegt seine Wurzel 16px
    Polster links und rechts; der Seitenkopf darueber und die Prompts-Tabelle haben keines, und
    damit begann das Brett 16px weiter rechts als alles andere -- gemessen 319 gegen 303. */
@@ -1506,7 +1514,20 @@
 .ulh-app .ulh-shop [data-sek="chart"],
 .ulh-app .ulh-shop [data-sek="landscape"],
 .ulh-app .ulh-shop .ush-zwei { display: none; }
+/* Seit dem 15.10. ist .ush-zwei ein Band-Raster aus core (up-root up-band-raster data-flach), und
+   core zeigt es mit .up-root.up-root[data-flach="yes"].up-band-raster:not([hidden]) -- Spezifitaet
+   (0,5,0) gegen (0,3,0) oben. Product Movement und Merchant Distribution standen damit wieder im
+   Fenster (gemessen 808 x 247). Diese Regel liegt eine Stufe darueber. */
+.ulh-app .ulh-shop .up-root.up-root.ush-zwei[data-sek="zwei"] { display: none; }
 .ulh-app .ulh-shop .ush-vorschau.is-dense .up-tbody .up-row { height: 72px; flex: 0 0 72px; }
+/* DAS PRODUKTFOTO IM DETAIL FUELLT SEINEN RAHMEN (16.10. gemeldet: "gib dem Bild ordentliche
+   abgerundete Ecken"). In der App steht ein Produktbild mit 12px Polster und object-fit: contain
+   auf --vt-logo-bg -- gedacht fuer freigestellte Shopbilder auf weissem Grund. Das Foto hier ist
+   eine Aufnahme mit eigenem Hintergrund (330 x 247): eingepasst stand es als Rechteck mit harten
+   Ecken in einem Rahmen, der auf der weissen Karte gar nicht zu sehen ist. Ohne Polster und mit
+   cover fuellt es den Rahmen, und dessen Rundung (--up-r-xl, overflow: hidden) ist die des Fotos. */
+.ulh-app .ulh-shop .ush-hero-bild.has-img { padding: 0; }
+.ulh-app .ulh-shop .ush-hero-bild.has-img img { object-fit: cover; }
 /* DER AUFTRITT DER SHOPPING-SEITE (06.10. spaet: "erst oberer Teil, dann die Tabelle Row fuer
    Row, wie z.B. bei Prompts Table"). Derselbe Bau wie .ulh-prompts.is-kommt, mit denselben Zahlen:
    die Seite selbst steigt NICHT, ihre Teile tun es nacheinander -- Seitenkopf und Reiter 0,
@@ -2470,8 +2491,10 @@
 .ulh-rahmen-in .ulh-vis-tab .up-thead { border-radius: 0; }
 /* Die Spaltenkoepfe wie in der App (.up-th aus core, 45px). */
 .ulh-vis[data-ulh-vis="domains"] .ulh-vis-dom .up-thead { height: 45px; flex-basis: 45px; letter-spacing: normal; }
-/* Die Seitenliste ohne Last Seen: vier Spuren statt fuenf (domains-table.css hat fuenf). */
-.ulh-vis[data-ulh-vis="domains"] .udt-subrows { --udt-subcols: minmax(0, 1fr) 112px 128px 34px; }
+/* Die Seitenliste ohne Last Seen und ohne Zeilenpfeil: drei Spuren. Der Pfeil (.udt-sub-goto) ist
+   seit dem 16.10. auch in der App stillgelegt; seine 34px blieben hier als leere Spalte rechts
+   stehen, die Zeile baut ihn nicht mehr. */
+.ulh-vis[data-ulh-vis="domains"] .udt-subrows { --udt-subcols: minmax(0, 1fr) 112px 128px; }
 /* Alle Hervorhebungen noch einmal halb so schnell: 476 -> 714ms. Und eine andere Kurve, denn
    daran lag das Hektische: --ulh-aus (.1, 1, .2, 1) startet mit voller Geschwindigkeit und klingt
    nur aus -- der Anfang war der Ruck. --ulh-weich ist an beiden Enden flach, die Zeile setzt sich
@@ -2943,12 +2966,9 @@
 .ulh-fen-antwort .ulh-fen-view.is-blende { opacity: 0; translate: 0 -8px; }
 
 /* Die Schublade bleibt IM Fenster: opportunities.js haengt Vorhang und Schublade bei
-   data-portal="inline" in den Root statt in den <body>, und ihr position: fixed bezieht sich damit
-   auf die Buehne (sie traegt das transform).
-   RUNDUM 12px. Vorher waren nur die linken Ecken rund -- gedacht als "sie sitzt buendig an der
-   rechten Kante des Fensters". Gemessen sitzt sie das nicht: 12px Abstand rechts, 38 oben, 10
-   unten. Eine Karte, die frei im Fenster steht und rechts eckig ist, sieht abgeschnitten aus. */
-.ulh-app .uo-modal { border-radius: 12px; }
+   data-portal="inline" in den Root statt in den <body>; ihr Bezugsrahmen ist die Chancen-Seite
+   (contain, siehe oben). Die runden Ecken bringt sie seit dem 15.10. selbst mit (core: frei
+   stehende Karte, --up-r-2xl) -- hier stand dafuer eine eigene Regel. */
 
 /* Die vier Lichter im Hintergrundbild von Mira fallen weg. Gemeint war das unten rechts (core
    setzt sie auf 94/74, 94/0.5, 20/85 und -3/19 Prozent) -- entfernt wird die ganze Ebene und
