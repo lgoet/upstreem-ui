@@ -262,7 +262,8 @@
 /* 15.10. (Dunkel nach Geist): die Schale traegt dunkel wieder dieselbe Marke wie hell
    (--vc-heading-bg, jetzt Gray 100 #1a1a1a) -- --vc-bg ist seit heute Background 1 (#0a0a0a) und
    damit genau die Farbe des Feldes darin; Schale und Feld waeren eins geworden. Die eigene
-   dunkle Schalenregel ist deshalb weg. */
+   dunkle Schalenregel ist deshalb weg. Seit "eine Stufe ruhiger" (15.10. abends) Schale
+   #1f1f1f, Feld #0f0f0f -- derselbe Abstand, nur aus core. */
 .up-root[data-theme="dark"].upr-root .upr-dd-trigger { background: var(--vc-field); }
 /* Dark: Feldfarbe statt Seitenfarbe, und im Ruhezustand kein Rand -- dieselbe Aenderung wie am
    Eingabefeld von Mira, aus demselben Grund. --up-surface ist #121212, die Farbe der SEITE; das

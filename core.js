@@ -609,7 +609,8 @@
       else document.documentElement.removeAttribute("data-up-hell");
       /* DAS GEGENSTUECK FUERS DUNKEL (15.10., "Dark nach Geist"): dieselbe Aufteilung wie im grauen
          Hell -- Seite, Seitenleiste und Leisten in Geists Background 2 (#000), Inhalt in Background 1
-         (#0a0a0a). Die Werte stehen in core.css an jedem [data-theme="dark"]; das Attribut braucht
+         (#0a0a0a); seit "eine Stufe ruhiger" (15.10. abends) Seite #0a0a0a, Inhalt #0f0f0f.
+         Die Werte stehen in core.css an jedem [data-theme="dark"]; das Attribut braucht
          es fuer zwei Dinge, die eine Wurzel nicht erreicht: den Seitengrund (html/body, den sonst das
          Kopf-Skript in #101114 malt) und die Regeln, die Inhaltsflaechen vom Seitengrund trennen.
          Ein EIGENER Name und kein zweiter Wert von data-up-hell: das Attribut heisst "hell", und
@@ -16436,8 +16437,9 @@
     if (!selectedKeys.length) return prepped;
     var selSet = {};
     selectedKeys.forEach(function(k){ selSet[k] = true; });
-    /* Dunkel Geists Gray 300 (15.10.; vorher Linears #28282c, eine Stufe Blaustich). */
-    var grey = isDark ? "#292929" : "#e4e2e4";
+    /* Dunkel Geists Gray 300 (15.10.; vorher Linears #28282c, eine Stufe Blaustich). Seit "eine
+       Stufe ruhiger" (15.10. abends) #2e2e2e: derselbe Abstand (+31) ueber dem Inhalt #0f0f0f. */
+    var grey = isDark ? "#2e2e2e" : "#e4e2e4";
     return prepped.map(function(it){
       return (it.key != null && selSet[it.key]) ? it : { key: it.key, name: it.name, share: it.share, color: grey, __dimmed: true, __realColor: it.color };
     });
@@ -18379,13 +18381,17 @@
                  sehen beide Charts das erste Mal gleich aus. */
     function themeColors(){
       return isDark()
-        ? { text:"#e0e0e0", muted:"#a0a0a0", border:"#2e2e2e", bg:"#0a0a0a", grid:"rgba(255,255,255,0.09)" }
+        ? { text:"#e0e0e0", muted:"#a0a0a0", border:"#222222", bg:"#0f0f0f", grid:"rgba(255,255,255,0.06)" }
         /* bg ist die FUELLUNG der Datenpunkte, also die Farbe der Karte, auf der das Chart liegt
            -- im Dunkeln seit dem 15.10. Geists Background 1 (#0a0a0a, vorher #1c1c1f: ein grauer
            Ring in jeder Linie auf dem neuen Grund), im Hellen seit dem 07.09. #f9f8f9 und nicht
            mehr Weiss. Ein weisser Punktkern auf einer getoenten Karte waere ein heller Fleck in
            jeder Linie. Die Achse dunkel Geists Default border #2e2e2e (vorher #34343a), das Raster
-           bleibt 9 % Weiss -- das ist Geists Gray Alpha 200 und auf #0a0a0a #1f1f1f, Gray 200. */
+           bleibt 9 % Weiss -- das ist Geists Gray Alpha 200 und auf #0a0a0a #1f1f1f, Gray 200.
+           EINE STUFE RUHIGER (15.10. abends, core.css am dunklen .up-root): Punktkern = Inhalt
+           #0f0f0f, Achse = Linie #222222 (8 % Weiss auf dem Inhalt). Das Raster geht auf 6 %
+           (#1d1d1d) mit: bei 9 % laege es mit #252525 UEBER der Achse, und es soll schwaecher
+           sein als sie (siehe oben) -- vorher 14 Stufen darunter, jetzt 5, wie im Hellen (4). */
         : { text:"#1f1f1b", muted:"#6b6f78", border:"#e4e2e4", bg:"#ffffff", grid:"rgba(0,0,0,0.09)" };
     }
     function clearExtras(){

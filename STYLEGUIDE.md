@@ -110,6 +110,14 @@ aus“): dieselben Rollen mit Geists dunkler Skala. Seite, Seitenleiste, Topbars
 Vercel-Dashboard. Vorher lag im Dunkeln alles auf einem Grund (`#101114`), getrennt nur durch
 Ränder, in Linears blaustichigen Tönen neben neutralen Resten aus älteren Zeiten.
 
+**Eine Stufe ruhiger** (15.10. spät, „das Dunkel wirkt zu dolle“; Vorbild ist das Dunkel der
+Design-Leinwand der Benachrichtigungen): dieselben Rollen und Geists Abstände, die ganze Leiter
+angehoben. **Seite `#0a0a0a`, Inhalt `#0f0f0f`, Linie `#222222`** (8 % Weiß auf dem Inhalt, deckend
+gerechnet, weil `--vc-border` auch als Fläche und in `color-mix` steht). Hover und Auswahl ziehen im
+selben Abstand mit (+16 / +21 / +31 über dem Inhalt), der Rand schwebender Schichten wird eine Stufe
+leiser (`#333333`, Geists Ring 14,5 % auf dem Inhalt). Unverändert: die Schrift, der ausgeschaltete
+Schalter (`#454545`) und alles Durchscheinende (Gewählt, Schiene, Pille).
+
 ```
 hellAnwenden() (core.js)   setzt html[data-up-dunkel="geist"], sobald dunkel gemalt wird;
                            eigener Name, nicht ein zweiter Wert von data-up-hell
@@ -129,6 +137,8 @@ Alpha 400; Secondary-Knopf Background 1, Hover Gray 200, Rand Gray 400.
 `--up-wahl-rand: rgba(255,255,255,.03)`. Durchscheinend statt deckend wie im Light, weil dieselbe
 Stufe auf `#000` (Seitenleiste) und `#0a0a0a` (Preferences) sichtbar bleiben muss; auf der Seite
 ergibt sie `#0f0f0f` -- in L* derselbe Schritt wie `#ededed` auf `#fafafa` (4,1 gegen 4,3).
+Seit „eine Stufe ruhiger“ auf der Seite `#0a0a0a` → `#191919`, in der Seitenspalte der Preferences
+(`#1f1f1f`) → `#2c2c2c`.
 Seitenleiste ohne Rand, Sub-Navigation, Preferences, Events-Arten und gedrückte Knöpfe mit dem Hauch.
 
 **Dunkle Elemente im Light** (die Bulk-Leiste der Prompts-Tabelle ist im Light eine dunkle Leiste)
@@ -159,30 +169,38 @@ darf sich nicht ändern. Das dunkle Thema überschreibt sie nur unter `html[data
 | Fokus / Fokusring | `--up-focus` / `--up-focus-ring` | `#4A9EFF` / `rgba(74,158,255,0.20)`, Breite `--up-focus-w` 2px |
 | Gefahr-Knopf | `--vc-danger` / `--vc-danger-fg` | `#da2f35` (Geist Red 800) / `#ffffff` |
 
-### Dark (`.up-root[data-theme="dark"]`, seit 15.10. Geist)
+### Dark (`.up-root[data-theme="dark"]`, seit 15.10. Geist, eine Stufe ruhiger)
+Spalte „Geist“ nennt die Stufe, deren ROLLE der Wert trägt; seit „eine Stufe ruhiger“ (15.10.
+spät) liegt jeder Wert eine Stufe über Geists eigenem (der steht in Klammern), die Abstände sind
+dieselben. „bis 15.10.“ ist der Stand vor Geist (Linear).
+
 | Rolle | Variable | Wert | Geist | bis 15.10. |
 |---|---|---|---|---|
 | Primär-Fontfarbe | `--vc-text` | `#ededed` | Gray 1000 (seit 16.10.; vorher `#e0e0e0`) | |
-| Zweite / dritte / vierte Stufe | `--vc-muted` / `--vc-third` / `--vc-fourth` | `#c9c9c9` / `#a1a1a1` / `#7d7d7d` | neutral statt blaustichig (seit 16.10., vorher `#c9cbd0` / `#a0a0a0` / `#6c717a`): `--vc-third` Gray 900, `--vc-fourth` Gray 800 (4,7:1 auf `#0a0a0a`); `--vc-muted` hat bei Geist keine Stufe, derselbe Wert ohne Blaustich. Nur unter `html[data-up-dunkel]`; Menüs und Tooltips mit eigener Leiter Wert für Wert getauscht | |
-| Border | `--vc-border` | `#2e2e2e` | Gray 400 | `#34343a` |
-| Inhalt: Karte, Tabelle, Chart, Drawer | `--vc-bg` | `#0a0a0a` | Background 1 | `#1c1c1f` |
-| Seitengrund (Seite, Seitenleiste, Kopf) | `--up-surface` | `#000000` | Background 2 | `#101114` |
-| Hover-/Heading-Background | `--vc-heading-bg` | `#1a1a1a` | Gray 100 | `#232326` |
-| Skeleton-Grundfarbe | `--vc-sk` | `#1a1a1a` (Glanz bis `#1f1f1f`) | Gray 100 → 200 | `#28282c` |
-| Menü / Auswahl / Menürand | `--up-menu-bg` / `--up-sel-bg` / `--up-menu-border` | `#0a0a0a` / `#1f1f1f` / `#454545` | Bg 1 / Gray 200 / Gray 500 | `#232326` / `#28282c` / `#3e3e44` |
+| Zweite / dritte / vierte Stufe | `--vc-muted` / `--vc-third` / `--vc-fourth` | `#c9c9c9` / `#a1a1a1` / `#7d7d7d` | neutral statt blaustichig (seit 16.10., vorher `#c9cbd0` / `#a0a0a0` / `#6c717a`): `--vc-third` Gray 900, `--vc-fourth` Gray 800 (4,8:1 auf `#0a0a0a`, seit „eine Stufe ruhiger“ 4,7:1 auf dem Inhalt `#0f0f0f`); `--vc-muted` hat bei Geist keine Stufe, derselbe Wert ohne Blaustich. Nur unter `html[data-up-dunkel]`; Menüs und Tooltips mit eigener Leiter Wert für Wert getauscht | |
+| Border, Linie | `--vc-border` | `#222222` | Gray 400 (`#2e2e2e`); 8 % Weiß auf `#0f0f0f`, deckend | `#34343a` |
+| Inhalt: Karte, Tabelle, Chart, Drawer | `--vc-bg` | `#0f0f0f` | Background 1 (`#0a0a0a`) | `#1c1c1f` |
+| Seitengrund (Seite, Seitenleiste, Kopf) | `--up-surface`, `--up-seite-dunkel` | `#0a0a0a` | Background 2 (`#000000`) | `#101114` |
+| Hover-/Heading-Background | `--vc-heading-bg` | `#1f1f1f` | Gray 100 (`#1a1a1a`), +16 über dem Inhalt | `#232326` |
+| Skeleton-Grundfarbe | `--vc-sk` | `#1e1e1e` (Glanz 2,5 % Weiß, bis `#242424`) | wie die Leinwand (Geist: Gray 100 → 200) | `#28282c` |
+| Menü / Auswahl / Menürand | `--up-menu-bg` / `--up-sel-bg` / `--up-menu-border` | `#0f0f0f` / `#242424` / `#333333` | Bg 1 / Gray 200 (+21) / Geists Ring 14,5 % (`#0a0a0a` / `#1f1f1f` / `#454545`) | `#232326` / `#28282c` / `#3e3e44` |
 | Schiene / Pille | `--vc-switch-rail` / `--vc-switch-pill` | `rgba(255,255,255,.06)` / `rgba(255,255,255,.09)` | Gray Alpha 100 / 200 | `.055` / `.07` |
-| Switch-Fläche / -Rand / Aus-Schiene | `--vc-switch-bg` / `--vc-switch-border` / `--up-switch-off` | `#1a1a1a` / `#2e2e2e` / `#454545` | Gray 100 / 400 / 500 | `#232326` / `#34343a` / `#444444` |
-| Eingabefeld | `--vc-field` | `#0a0a0a` (mit Rand) | Background 1 | `#232326` |
-| Tabellen-Head-BG / Row-Hover | `--vt-head-bg` / `--vt-row-hover(-solid)` | `#0a0a0a` / `#1a1a1a` | Bg 1 / Gray 100 | `#232326` / `#232326` |
-| Chips: gewählt / gewählt+Hover / Rand Hover / Rand gewählt+Hover | `--up-chip-an` / `-an-hover` / `--up-chip-rand-hover` / `-rand-an-hover` | `#1f1f1f` / `#292929` / `#454545` / `rgba(255,255,255,.24)` | Gray 200 / 300 / 500 / Alpha 500 | `#26262a` / `#2c2c30` / `#4a4a52` / `#5a5a62` |
+| Switch-Fläche / -Rand / Aus-Schiene | `--vc-switch-bg` / `--vc-switch-border` / `--up-switch-off` | `#1f1f1f` / `#222222` / `#454545` | Gray 100 / 400 / 500 (`#1a1a1a` / `#2e2e2e` / Aus unverändert) | `#232326` / `#34343a` / `#444444` |
+| Eingabefeld | `--vc-field` | `#0f0f0f` (mit Rand) | Background 1 (`#0a0a0a`) | `#232326` |
+| Tabellen-Head-BG / Row-Hover | `--vt-head-bg` / `--vt-row-hover(-solid)` | `#0f0f0f` / `#1f1f1f` | Bg 1 / Gray 100 (`#0a0a0a` / `#1a1a1a`) | `#232326` / `#232326` |
+| Chips: gewählt / gewählt+Hover / Rand Hover / Rand gewählt+Hover | `--up-chip-an` / `-an-hover` / `--up-chip-rand-hover` / `-rand-an-hover` | `#242424` / `#2e2e2e` / `#333333` / `rgba(255,255,255,.24)` | Gray 200 / 300 / Ring / Alpha 500 (`#1f1f1f` / `#292929` / `#454545`) | `#26262a` / `#2c2c30` / `#4a4a52` / `#5a5a62` |
+| Event-Pin-Rand | `--up-evm-rand` | `#333333` | wie der Menürand (`#454545`) | `#4a4a52` |
 | Gewählt (Navigation) | `--up-wahl-bg` / `--up-wahl-rand` | `rgba(255,255,255,.06)` / `rgba(255,255,255,.03)` | Gray Alpha 100 | (Seitenleiste `#28282c`) |
 | Logo-Box-BG | `--vt-logo-bg` | `#e0e0e0` | | |
 | Akzent | `--up-accent` / `--up-accent-fg` | `#e0e0e0` / `#1b1b1b` | (unverändert) | |
 | Fokus / Fokusring | `--up-focus` / `--up-focus-ring` | `#6DB2FF` / `rgba(109,178,255,0.28)` | | |
 
-Die Linien-Charts lesen im Dunkeln Achse `#2e2e2e` und Punktkern `#0a0a0a` (`themeColors` in
-core.js); ihre Tooltips tragen `--up-menu-bg`/`--up-menu-border` und die Schriftstufen statt
-eigener Werte (`#232326`, `#e6e6e6`, `#8a8a8a`).
+Die Linien-Charts lesen im Dunkeln Achse `#222222`, Punktkern `#0f0f0f` und Raster 6 % Weiß
+(`themeColors` in core.js; bis „eine Stufe ruhiger“ `#2e2e2e`, `#0a0a0a`, 9 % -- das Raster ging mit,
+weil es schwächer als die Achse bleiben soll: 9 % lägen auf `#0f0f0f` mit `#252525` über ihr). Das
+Dimm-Grau abgewählter Doughnut-Segmente ist `#2e2e2e` (vorher `#292929`, +31 über dem Inhalt). Die
+Tooltips tragen `--up-menu-bg`/`--up-menu-border` und die Schriftstufen statt eigener Werte
+(`#232326`, `#e6e6e6`, `#8a8a8a`).
 
 ### Zustandsfarben nach Geist (seit 15.10., an `:root`)
 
