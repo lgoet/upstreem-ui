@@ -17676,6 +17676,10 @@
     var isDark = cfg.isDark || function(){ return false; };
     var fmt = cfg.fmt || function(v){ return fmtPct(v); };
     var letzte = null, letzteSig = null, ro = null, letzteLeer = null;
+    /* Wie viele Zeilen das letzte Skelett hatte (15.10. spaet): der Leerzustand im Band mit zwei
+       Einheiten haelt dessen Hoehe (core.css "DER LEERZUSTAND IM BAND MIT ZWEI EINHEITEN"). Ohne
+       Skelett davor bleibt die Angabe weg, die CSS nimmt dann 5. */
+    var letzteSkZeilen = null;
 
     /* opts.ohneFahrt (29.09. spaet): die Balken stehen sofort auf ihrer Breite, statt von 0
        einzufahren. Fuer einen Aufrufer, der DIESELBEN Daten ein zweites Mal zeichnet -- nach
@@ -17702,13 +17706,17 @@
       var d = (items || []).slice().filter(Boolean);
       /* Leer: der Leerzustand nach Geist (chartLeerHtml) im FLUSS -- die Liste hat keine eigene
          Hoehe, sie waechst mit ihren Zeilen, also traegt der Zustand seine. opts.leer reicht
-         Titel, Satz oder gefiltert durch; cfg.gefiltert() gilt, wenn der Aufrufer nichts sagt. */
+         Titel, Satz oder gefiltert durch; cfg.gefiltert() gilt, wenn der Aufrufer nichts sagt.
+         Die Huelle .up-bars-leer ist ausserhalb eines Bandes ein schlichter Block ohne Regel; im
+         Band mit zwei Einheiten haelt sie die Hoehe des Skeletts, und der Zustand liegt dort wie
+         jeder andere ueber dem ganzen Kasten (core.css, 15.10. spaet). */
       if (!d.length){
         var lo = letzteLeer || {};
-        mount.innerHTML = chartLeerHtml({
+        mount.innerHTML = '<div class="up-bars-leer"' +
+          (letzteSkZeilen ? ' style="--up-bars-leer-zeilen:' + letzteSkZeilen + '"' : "") + '>' + chartLeerHtml({
           fluss: true, titel: lo.titel, text: lo.text, icon: lo.icon || "chartBarDec",
           gefiltert: lo.gefiltert != null ? !!lo.gefiltert : !!(cfg.gefiltert && cfg.gefiltert())
-        });
+        }) + '</div>';
         return;
       }
       var spalte = cfg.labelCol ? !!cfg.labelCol() : false;
@@ -17850,6 +17858,7 @@
     function skelett(n){
       if (!mount) return;
       var zeilen = "";
+      letzteSkZeilen = Math.max(1, Math.round(toNum(n) || 4));
       for (var i = 0; i < (n || 4); i++) zeilen += '<div class="up-bar-sk-row"><span class="up-bar-sk-track" style="width:' + (92 - i * 14) + '%"></span></div>';
       mount.innerHTML = '<div class="up-bars-sk">' + zeilen + '</div>';
     }

@@ -1525,7 +1525,7 @@ Größe      nach der Fläche (Container-Query an der Hülle), nicht nach dem Au
              unter 130       nur der Titel (56)
              unter 280 breit ohne Satz
 Fluss      fluss: true für Flächen ohne eigene Höhe (Balkenliste): im Fluss, Polster 24,
-           immer kompakt (Kachel und Titel, 142)
+           immer kompakt (Kachel und Titel, 142) — außer im Band mit zwei Einheiten (unten)
 Wirt       makeTypeChart setzt .up-chart-leer-wirt (nur position: relative), solange der
            Zustand im Körper steht; die Linie braucht nichts, .up-line-wrap ist positioniert
 ```
@@ -1574,6 +1574,37 @@ Widerspruch zum Zähler in Top Citations bleiben der knappe Text.
 eine Tabelle, die im Leerzustand nur ihren Kopf neu zeichnet, hat keine Zeile, an der die
 Prüfung „ungestempelt" anschlagen könnte, und zeigte bei 375 alle Kopfzellen (Brands: sechs
 Zellen auf vier Spuren, zweite Rasterzeile).
+
+### Zwei Leerzustände in einem Band (seit 15.10. spät)
+
+In einem Band mit zwei Einheiten (`.up-band-zwei`: Visibility Chart und Top Citations auf dem
+Dashboard und in den Drawern, Citations, Shopping, Ads) sitzen beide Leerzustände **gleich**:
+gleiche Höhe, gleiche Stufe, mittig — egal ob Chart, Doughnut, Balkenliste oder Tabelle. Vorher
+lag jeder über seiner Teilfläche (Zeichenfläche, Körper unter dem Doughnut-Kopf, Tabelle unter
+ihrem Kopf, Balkenliste oben im Fluss und immer kompakt); gemessen bei 1440 standen die Mitten
+bis 108 auseinander (Ads), dazu kompakt neben voll.
+
+```
+Fläche     der GANZE Kasten der Einheit: ihr Kind unter der Überschriftzeile. Er reicht in beiden
+           Einheiten von derselben Linie bis an die Unterkante des Bandes, also gleiche Mitte und
+           gleiche Container-Größe (Stufe). Was dazwischen positioniert war (.up-line-wrap,
+           .up-chart-leer-wirt, .up-tab-leer, Panels der Komponenten), steht statisch, solange
+           die Ebene darin steht — gefüllt greift keine Regel
+Kopf       der Tabellenkopf liegt unter der Ebene und bleibt bedienbar (pointer-events none);
+           .up-tab-leer ist im Band mindestens 220, der volle Zustand lässt über sich 49 frei
+Balken     die Balkenliste wird im Band eine Ebene wie die anderen (Stufe nach Fläche statt
+           immer kompakt). Ihre Hülle .up-bars-leer hält die Höhe des letzten Skeletts
+           (Zeilen x 26), gestapelt springt nichts. Außerhalb eines Bandes unverändert (is-fluss)
+Gestapelt  jede Einheit ist ihre eigene Zeile und mittig in ihrem Kasten; die Stufe folgt dort
+           ihrer eigenen Höhe (Balkenliste 154/180: kompakt, Tabelle voll)
+Nur zwei   ein Band aus einer Einheit (Brands, die Diagramme über Shopping und Ads) hat keinen
+           Nachbarn und bleibt, wie es ist; ohne data-flach (Bubble) greift nichts
+```
+
+Product Movement (Shopping) zeigt „Not enough history yet" seitdem über `UC.tabelleLeerHtml`
+(4 Zeilen, wie sein Skelett) statt `UC.leerHtml` im Fluss: das Band sprang beim Laden um 42.
+Steht nur eine Einheit leer neben einer gefüllten, sitzt ihr Zustand ebenfalls mittig im ganzen
+Kasten (vorher: Balkenliste kompakt oben).
 
 ---
 
