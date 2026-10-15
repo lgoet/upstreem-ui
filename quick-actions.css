@@ -88,7 +88,10 @@
        --am-soft          = --up-sel-bg       #1f1f1f  Gray 200
        --am-border-strong = --vc-border       #2e2e2e  Gray 400 (Rollbalken)
        --am-trigger-bg    = --vc-field        #0a0a0a  der Knopf steht in der Seitenleiste (#000)
-                                                       wie ein Geist-Feld, mit Rand. Vorher #1a1a1a. */
+                                                       wie ein Geist-Feld, mit Rand. Vorher #1a1a1a.
+   Seit "eine Stufe ruhiger" (15.10. abends) dieselben Marken eine Stufe hoeher: Karte und Knopf
+   #0f0f0f (Leiste #0a0a0a), Rand #333333, weich #242424, Rollbalken #222222. Hier selbst steht
+   kein Wert -- sie kommen aus core. */
 #mira-quick-actions[data-theme="dark"], .mqa-overlay[data-theme="dark"] {
   --am-text: var(--vc-text); --am-muted: var(--vc-muted); --am-muted-2: var(--vc-third);
   --am-muted-3: var(--vc-fourth);

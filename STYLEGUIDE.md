@@ -110,6 +110,14 @@ aus“): dieselben Rollen mit Geists dunkler Skala. Seite, Seitenleiste, Topbars
 Vercel-Dashboard. Vorher lag im Dunkeln alles auf einem Grund (`#101114`), getrennt nur durch
 Ränder, in Linears blaustichigen Tönen neben neutralen Resten aus älteren Zeiten.
 
+**Eine Stufe ruhiger** (15.10. spät, „das Dunkel wirkt zu dolle“; Vorbild ist das Dunkel der
+Design-Leinwand der Benachrichtigungen): dieselben Rollen und Geists Abstände, die ganze Leiter
+angehoben. **Seite `#0a0a0a`, Inhalt `#0f0f0f`, Linie `#222222`** (8 % Weiß auf dem Inhalt, deckend
+gerechnet, weil `--vc-border` auch als Fläche und in `color-mix` steht). Hover und Auswahl ziehen im
+selben Abstand mit (+16 / +21 / +31 über dem Inhalt), der Rand schwebender Schichten wird eine Stufe
+leiser (`#333333`, Geists Ring 14,5 % auf dem Inhalt). Unverändert: die Schrift, der ausgeschaltete
+Schalter (`#454545`) und alles Durchscheinende (Gewählt, Schiene, Pille).
+
 ```
 hellAnwenden() (core.js)   setzt html[data-up-dunkel="geist"], sobald dunkel gemalt wird;
                            eigener Name, nicht ein zweiter Wert von data-up-hell
@@ -129,6 +137,8 @@ Alpha 400; Secondary-Knopf Background 1, Hover Gray 200, Rand Gray 400.
 `--up-wahl-rand: rgba(255,255,255,.03)`. Durchscheinend statt deckend wie im Light, weil dieselbe
 Stufe auf `#000` (Seitenleiste) und `#0a0a0a` (Preferences) sichtbar bleiben muss; auf der Seite
 ergibt sie `#0f0f0f` -- in L* derselbe Schritt wie `#ededed` auf `#fafafa` (4,1 gegen 4,3).
+Seit „eine Stufe ruhiger“ auf der Seite `#0a0a0a` → `#191919`, in der Seitenspalte der Preferences
+(`#1f1f1f`) → `#2c2c2c`.
 Seitenleiste ohne Rand, Sub-Navigation, Preferences, Events-Arten und gedrückte Knöpfe mit dem Hauch.
 
 **Dunkle Elemente im Light** (die Bulk-Leiste der Prompts-Tabelle ist im Light eine dunkle Leiste)
@@ -159,30 +169,38 @@ darf sich nicht ändern. Das dunkle Thema überschreibt sie nur unter `html[data
 | Fokus / Fokusring | `--up-focus` / `--up-focus-ring` | `#4A9EFF` / `rgba(74,158,255,0.20)`, Breite `--up-focus-w` 2px |
 | Gefahr-Knopf | `--vc-danger` / `--vc-danger-fg` | `#da2f35` (Geist Red 800) / `#ffffff` |
 
-### Dark (`.up-root[data-theme="dark"]`, seit 15.10. Geist)
+### Dark (`.up-root[data-theme="dark"]`, seit 15.10. Geist, eine Stufe ruhiger)
+Spalte „Geist“ nennt die Stufe, deren ROLLE der Wert trägt; seit „eine Stufe ruhiger“ (15.10.
+spät) liegt jeder Wert eine Stufe über Geists eigenem (der steht in Klammern), die Abstände sind
+dieselben. „bis 15.10.“ ist der Stand vor Geist (Linear).
+
 | Rolle | Variable | Wert | Geist | bis 15.10. |
 |---|---|---|---|---|
 | Primär-Fontfarbe | `--vc-text` | `#ededed` | Gray 1000 (seit 16.10.; vorher `#e0e0e0`) | |
-| Zweite / dritte / vierte Stufe | `--vc-muted` / `--vc-third` / `--vc-fourth` | `#c9c9c9` / `#a1a1a1` / `#7d7d7d` | neutral statt blaustichig (seit 16.10., vorher `#c9cbd0` / `#a0a0a0` / `#6c717a`): `--vc-third` Gray 900, `--vc-fourth` Gray 800 (4,7:1 auf `#0a0a0a`); `--vc-muted` hat bei Geist keine Stufe, derselbe Wert ohne Blaustich. Nur unter `html[data-up-dunkel]`; Menüs und Tooltips mit eigener Leiter Wert für Wert getauscht | |
-| Border | `--vc-border` | `#2e2e2e` | Gray 400 | `#34343a` |
-| Inhalt: Karte, Tabelle, Chart, Drawer | `--vc-bg` | `#0a0a0a` | Background 1 | `#1c1c1f` |
-| Seitengrund (Seite, Seitenleiste, Kopf) | `--up-surface` | `#000000` | Background 2 | `#101114` |
-| Hover-/Heading-Background | `--vc-heading-bg` | `#1a1a1a` | Gray 100 | `#232326` |
-| Skeleton-Grundfarbe | `--vc-sk` | `#1a1a1a` (Glanz bis `#1f1f1f`) | Gray 100 → 200 | `#28282c` |
-| Menü / Auswahl / Menürand | `--up-menu-bg` / `--up-sel-bg` / `--up-menu-border` | `#0a0a0a` / `#1f1f1f` / `#454545` | Bg 1 / Gray 200 / Gray 500 | `#232326` / `#28282c` / `#3e3e44` |
+| Zweite / dritte / vierte Stufe | `--vc-muted` / `--vc-third` / `--vc-fourth` | `#c9c9c9` / `#a1a1a1` / `#7d7d7d` | neutral statt blaustichig (seit 16.10., vorher `#c9cbd0` / `#a0a0a0` / `#6c717a`): `--vc-third` Gray 900, `--vc-fourth` Gray 800 (4,8:1 auf `#0a0a0a`, seit „eine Stufe ruhiger“ 4,7:1 auf dem Inhalt `#0f0f0f`); `--vc-muted` hat bei Geist keine Stufe, derselbe Wert ohne Blaustich. Nur unter `html[data-up-dunkel]`; Menüs und Tooltips mit eigener Leiter Wert für Wert getauscht | |
+| Border, Linie | `--vc-border` | `#222222` | Gray 400 (`#2e2e2e`); 8 % Weiß auf `#0f0f0f`, deckend | `#34343a` |
+| Inhalt: Karte, Tabelle, Chart, Drawer | `--vc-bg` | `#0f0f0f` | Background 1 (`#0a0a0a`) | `#1c1c1f` |
+| Seitengrund (Seite, Seitenleiste, Kopf) | `--up-surface`, `--up-seite-dunkel` | `#0a0a0a` | Background 2 (`#000000`) | `#101114` |
+| Hover-/Heading-Background | `--vc-heading-bg` | `#1f1f1f` | Gray 100 (`#1a1a1a`), +16 über dem Inhalt | `#232326` |
+| Skeleton-Grundfarbe | `--vc-sk` | `#1e1e1e` (Glanz 2,5 % Weiß, bis `#242424`) | wie die Leinwand (Geist: Gray 100 → 200) | `#28282c` |
+| Menü / Auswahl / Menürand | `--up-menu-bg` / `--up-sel-bg` / `--up-menu-border` | `#0f0f0f` / `#242424` / `#333333` | Bg 1 / Gray 200 (+21) / Geists Ring 14,5 % (`#0a0a0a` / `#1f1f1f` / `#454545`) | `#232326` / `#28282c` / `#3e3e44` |
 | Schiene / Pille | `--vc-switch-rail` / `--vc-switch-pill` | `rgba(255,255,255,.06)` / `rgba(255,255,255,.09)` | Gray Alpha 100 / 200 | `.055` / `.07` |
-| Switch-Fläche / -Rand / Aus-Schiene | `--vc-switch-bg` / `--vc-switch-border` / `--up-switch-off` | `#1a1a1a` / `#2e2e2e` / `#454545` | Gray 100 / 400 / 500 | `#232326` / `#34343a` / `#444444` |
-| Eingabefeld | `--vc-field` | `#0a0a0a` (mit Rand) | Background 1 | `#232326` |
-| Tabellen-Head-BG / Row-Hover | `--vt-head-bg` / `--vt-row-hover(-solid)` | `#0a0a0a` / `#1a1a1a` | Bg 1 / Gray 100 | `#232326` / `#232326` |
-| Chips: gewählt / gewählt+Hover / Rand Hover / Rand gewählt+Hover | `--up-chip-an` / `-an-hover` / `--up-chip-rand-hover` / `-rand-an-hover` | `#1f1f1f` / `#292929` / `#454545` / `rgba(255,255,255,.24)` | Gray 200 / 300 / 500 / Alpha 500 | `#26262a` / `#2c2c30` / `#4a4a52` / `#5a5a62` |
+| Switch-Fläche / -Rand / Aus-Schiene | `--vc-switch-bg` / `--vc-switch-border` / `--up-switch-off` | `#1f1f1f` / `#222222` / `#454545` | Gray 100 / 400 / 500 (`#1a1a1a` / `#2e2e2e` / Aus unverändert) | `#232326` / `#34343a` / `#444444` |
+| Eingabefeld | `--vc-field` | `#0f0f0f` (mit Rand) | Background 1 (`#0a0a0a`) | `#232326` |
+| Tabellen-Head-BG / Row-Hover | `--vt-head-bg` / `--vt-row-hover(-solid)` | `#0f0f0f` / `#1f1f1f` | Bg 1 / Gray 100 (`#0a0a0a` / `#1a1a1a`) | `#232326` / `#232326` |
+| Chips: gewählt / gewählt+Hover / Rand Hover / Rand gewählt+Hover | `--up-chip-an` / `-an-hover` / `--up-chip-rand-hover` / `-rand-an-hover` | `#242424` / `#2e2e2e` / `#333333` / `rgba(255,255,255,.24)` | Gray 200 / 300 / Ring / Alpha 500 (`#1f1f1f` / `#292929` / `#454545`) | `#26262a` / `#2c2c30` / `#4a4a52` / `#5a5a62` |
+| Event-Pin-Rand | `--up-evm-rand` | `#333333` | wie der Menürand (`#454545`) | `#4a4a52` |
 | Gewählt (Navigation) | `--up-wahl-bg` / `--up-wahl-rand` | `rgba(255,255,255,.06)` / `rgba(255,255,255,.03)` | Gray Alpha 100 | (Seitenleiste `#28282c`) |
 | Logo-Box-BG | `--vt-logo-bg` | `#e0e0e0` | | |
 | Akzent | `--up-accent` / `--up-accent-fg` | `#e0e0e0` / `#1b1b1b` | (unverändert) | |
 | Fokus / Fokusring | `--up-focus` / `--up-focus-ring` | `#6DB2FF` / `rgba(109,178,255,0.28)` | | |
 
-Die Linien-Charts lesen im Dunkeln Achse `#2e2e2e` und Punktkern `#0a0a0a` (`themeColors` in
-core.js); ihre Tooltips tragen `--up-menu-bg`/`--up-menu-border` und die Schriftstufen statt
-eigener Werte (`#232326`, `#e6e6e6`, `#8a8a8a`).
+Die Linien-Charts lesen im Dunkeln Achse `#222222`, Punktkern `#0f0f0f` und Raster 6 % Weiß
+(`themeColors` in core.js; bis „eine Stufe ruhiger“ `#2e2e2e`, `#0a0a0a`, 9 % -- das Raster ging mit,
+weil es schwächer als die Achse bleiben soll: 9 % lägen auf `#0f0f0f` mit `#252525` über ihr). Das
+Dimm-Grau abgewählter Doughnut-Segmente ist `#2e2e2e` (vorher `#292929`, +31 über dem Inhalt). Die
+Tooltips tragen `--up-menu-bg`/`--up-menu-border` und die Schriftstufen statt eigener Werte
+(`#232326`, `#e6e6e6`, `#8a8a8a`).
 
 ### Zustandsfarben nach Geist (seit 15.10., an `:root`)
 
@@ -626,7 +644,8 @@ Hebung weg (`scale(.99)`), bei `prefers-reduced-motion` gibt es keine Hebung.
 
 Eine Karte mit Schatten in Ruhe gibt es nur noch an einer Stelle: die Tarifkarte (`.up-plan`,
 `--up-e-1`), die am 28.09. samt Schatten von der Landingpage übernommen wurde. Zeichen-Kacheln
-(`.up-lb-tile`, `.unc-tile`, `.uev-avatar`) sind keine Karten und behalten `--up-e-1`.
+(`.up-lb-tile`, `.uev-avatar`) sind keine Karten und behalten `--up-e-1`. (`.unc-tile` gibt es
+seit dem 16.10. nicht mehr, siehe §49.)
 
 ---
 
@@ -1108,10 +1127,16 @@ UC.kopfZeichen(th, name)   setzt es als erstes Kind in einen vorhandenen Kopf, n
 
 | Spalte | Zeichen |
 |---|---|
-| Brand Mentions, Brand (Brands Overview) | `squareStack` (wie Brands in der Seitenleiste) |
+| Brand Mentions, Brand (Brands Overview, Top Brands im Visibility Chart) | `squareStack` (wie Brands in der Seitenleiste) |
 | Topics | `tags` |
 | Citations (Responses) | `globe` (wie Citations in der Seitenleiste) |
-| Type (Domains, URLs) | `dropdownFieldType` |
+| Type (Domains, URLs, Top Citations) | `dropdownFieldType` |
+
+Dieselbe Spalte trägt in jeder Tabelle dasselbe Zeichen, und nur, wenn die Seitentabelle eins
+hat: Visibility, Rank/Ranking, Sentiment, Share, Used, Domain und URL tragen keins. Top Brands
+(`.vt-th-brand`) und Top Citations (`.tct-th-type`) sind keine `.up-th`; der Kopf mit Zeichen
+bekommt dort den Abstand der Seitentabellen (`gap: 6px`) selbst, nur dieser eine Kopf, weil das
+Info-Zeichen der anderen mit `margin-left: auto` steht.
 
 `aria-hidden`: das Wort daneben sagt alles. Neue Tabellen bekommen ihr Kopfzeichen über
 `UC.kopfZeichenHtml` und je Spalte eine `art` (Abschnitt 8d).
@@ -1163,6 +1188,31 @@ der Werkzeugleiste, sondern als Zeilen im Menü „Filters“ mit Chip dahinter.
 Filter eine Wurzel `.up-ff.up-ff-<key>` (unsichtbarer Trigger, Panel mit `.up-filter-item`,
 Zeilen mindestens 34 hoch, eigener Inhalt wie ein Regler in `.up-ff-panel` mit `12px 10px 14px`
 Polster). Der Zustand bleibt in der Tabelle; sie feuert dieselben Ereignisse wie vorher ihre Knöpfe.
+
+**Die Leiste über dem Band** (seit 16.10., Variante A der Leinwand „Citations Seitenaufbau“, für
+Citations und Brands › Tracked gewählt). Steht ein Chart über der Tabelle, steht die eine Leiste
+**über dem Chart**: Kalender und Filter gelten für Chart und Tabelle, und sie bleiben beim
+Scrollen greifbar. Es gibt keine eigene Filterzeile mehr und keine halbleere Werkzeugleiste der
+Tabelle.
+
+```
+Aufbau         in der Wurzel der Tabelle: Leiste (.up-head) – Band – Kasten
+               UC.bandUnterLeiste(root, band, { kopf }) stellt um, setzt .has-leistenband
+Filterzeile    die Seite hängt sie in .up-leiste-scope (display: contents, wie Prompt Insights)
+Reiterwechsel  Filterzeile und Band wandern zur Tabelle des Reiters (das Element, nicht eine
+               Kopie: Zustand und Handler bleiben); die Werkzeuge bleiben in ihrer Tabelle
+Kleben         makeSticky wie jede Tabelle, ab 1000 breit: Kopf, Reiter und Chart scrollen weg,
+               die Leiste klebt bei --up-sticky-top (16), der Spaltenkopf direkt darunter
+               (--up-thead-off = gemessene Höhe der Leiste), das Band scrollt dazwischen weg
+Linie          unter der Leiste NUR, solange sie klebt (.is-geklebt), eingeblendet (--up-t-2)
+Abstände       Leiste 16 unten, Band 16 unten; der Stapel der Wurzel fällt auf 0
+```
+
+Warum in der Wurzel der Tabelle und nicht als Leiste der Seite: Domains, URLs und Brands
+hängen Klicks, Suche, Tooltips und Menüs an ihre Wurzel (`ownsTarget`, `root.contains`); ein
+Werkzeug außerhalb wäre tot. Dafür ignorieren die drei Tabellen Klicks in fremden Bausteinen in
+ihrer Wurzel (`.up-band, .up-leiste-scope .up-root, .up-ff`, wie prompts-table.js) – sonst griffe
+etwa `[data-brand]` einer Markenzeile im Menü „Filters“ als Wahl der eigenen Markenliste.
 
 ---
 
@@ -1279,6 +1329,33 @@ Der Schalter „Summary row“ steht im Display-Menü; Schalter und Wahl je Spal
 gemerkt (`<praefix>_summe__<instanceId>`). Die Zellen tragen `up-sum-td-<Spalte>` und blenden
 mit ihren Spalten aus. Topics with Ads (Ads Overview) hat bewusst keine Gesamtzeile.
 
+**Der klebende Fuß** (`data-kleb-fuss="yes"` an der Wurzel, seit 16.10., zuerst Citations und
+Brands › Tracked). Gesamtzeile und Pagination kleben unten am Scrollbereich, **sobald die Tabelle
+den Bildschirm füllt** – also sobald ihr Spaltenkopf klebt. Solange Kopf, Reiter oder Chart zu
+sehen sind, stehen sie an ihrem Platz am Ende der Tabelle; am Ende geben sie von selbst dorthin
+zurück. Ein Scrollbereich, kein zweiter wie bei fester Höhe. Jede Tabelle mit `UC.makeSticky`
+bekommt ihn über das Attribut (applySticky richtet ihn ein, `UC.klebFuss(root)` direkt).
+
+```
+Wann           nur mit klebendem Kopf (.up-sticky, ab 1000 breit); darunter klebt nichts
+Herein         fängt die Tabelle an zu füllen, während ihr Ende unter dem Bild liegt: Fahrt von
+               unten, transform + opacity, --up-t-3 / --up-t-2, easeOutExpo (--up-ease-expo)
+Hinaus         füllt sie nicht mehr (zurück zum Chart): dieselbe Fahrt nach unten, ERST DANACH
+               zurück in den Fluss (dort liegt er unter dem Bild); Umkehr mittendrin kehrt von
+               der Stelle um (Übergänge, keine Keyframes)
+Ende           Wechsel ohne Bewegung (sticky selbst); beide Teile lösen sich im selben Bild
+Weg            --up-fuss-weg: Höhe beider Teile + 24, aber nie mehr als Inhalt unter ihrem Platz
+               steht (sonst verlängert die Fahrt die Seite, der Balken zuckt; gemessen 57px)
+Lage           Pagination bottom 0, Gesamtzeile darüber (--up-fuss-unter = Pagination + Linie);
+               die Linie dazwischen zeichnet die Pagination (0 -1px 0 --vc-border)
+Grund          deckend: Gesamtzeile wie bisher, Pagination --up-surface; sie läuft rechts mit aus
+Schatten       NUR wenn er wirklich klebt (.is-fuss-klebt; Marke .up-fuss-marke unter dem
+               Kasten liest den natürlichen Platz): --up-e-3 nach oben gespiegelt, auf dem
+               obersten Teil (ohne Gesamtzeile die Pagination, .is-fuss-ohne-summe)
+z              4 (unter Spaltenkopf 5 und Leiste 6)
+Bewegung aus   prefers-reduced-motion: dieselben Zustände ohne Fahrt
+```
+
 ---
 
 ## 8f. Das offene Band (`.up-band*`, seit 15.10.)
@@ -1302,10 +1379,16 @@ nur unter `data-flach="yes"`.
 Teile einer Komponente (das Markup steckt oft in eingebauten Elementen).
 
 **Ausgeblendet ist das Band ganz weg** (`.is-band-aus`): keine Restzeile, keine Linie; eine
-Hülle, die nur das Band trägt, fällt mit. `UC.bandAus(band, aus, { id, zeigen, tip })` setzt dann
-im Seitenkopf (`.up-ph-top`) einen Zeichenknopf **„Show chart“** (`chartSpline`) vor die anderen
-Zeichenknöpfe; eingeblendet ist er weg. Der Zustand wird über das Neuladen gemerkt
-(`up_band_aus__<id>`). So lassen sich die Charts in Citations und Brands ganz ausblenden.
+Hülle, die nur das Band trägt, fällt mit. Ein und aus schaltet der **Umschalter im Seitenkopf**
+(`.up-seg.up-bandsw`, `UC.bandSchalterHtml({ aus, id, klein })`), den
+`UC.bandAus(band, aus, { id, setzen })` immer setzt (seit 16.10., Nutzer: „Switcher nur mit 2
+Icons, aber entspanntem Padding“, kein Auge): zwei Felder nur mit Zeichen, „Chart and table“
+(`chartSpline`) und „Table only“ (`listIcon`), Name als aria-label und Tooltip, radiogroup. Form
+und Maße wie der Themenschalter (dieselben Regeln): Kapseln 40 × 32; auf dem Telefon
+(`is-vnarrow`) rund 32 × 32, und der Hinzufügen-Knopf daneben zeigt dort nur sein Zeichen. Er
+steht vor den Knöpfen des Kopfs. Das Auge der Komponente (`bandTeile`, `teile.auge`) weicht,
+solange er steht; ohne Seitenkopf (Bubble) bleibt es. Der Zustand wird über das Neuladen gemerkt
+(`up_band_aus__<id>`). Bis 16.10. ein Auge am Band und „Show chart“ im Kopf.
 
 **Die Zeile unter dem Band:** zwischen Unterkante des Bandes und der Leiste bzw. Überschrift der
 Tabelle stehen **16px** (`--up-band-luft`). Vorbild ist Prompt Insights: Linie der Navigation bis
@@ -1417,6 +1500,80 @@ Kein eigener Rahmen um das Ganze (anders als bei Geist): der Leerzustand steht f
 in einem Tabellenkörper oder `.up-box`. Gefiltert bringt der Baustein die Lupe, „No matching …“
 und den Räum-Knopf mit; im Ruhefall gibt es kein Standardsymbol. Bis 15.10. Zeichen 28px ohne
 Kachel, Titel 14, Satz 12.5.
+
+### Die Chart-Fassung (`UC.chartLeerHtml`, seit 15.10.)
+
+Jeder leere Chart trägt denselben Leerzustand, gezeichnet von den Bausteinen selbst:
+`makeLine().empty()`, `makeTypeChart().empty()` (auch über `renderDonut`/`renderBars` mit leeren
+Daten) und `makeBarList().render([])`. Eine Komponente muss ihn nicht kennen. Flächen ohne diese
+Bausteine (Landschaft in brands-overview, Heatmap des Performance Radar) rufen
+`UC.chartLeerHtml({ titel, text, icon, gefiltert, fluss })` selbst.
+
+```
+Text       Titel "No data yet", Satz "Data will appear here once responses are collected for
+           this period."; gefiltert "No matching data" mit Lupe und "Try changing the filters
+           or the date range." Kein Knopf (im Chart hängt niemand an data-clearall).
+           Wer den Grund genauer kennt, gibt den Satz mit: empty({ text: "No URL types for
+           this period." }).
+Zeichen    Linie chartSpline, Ring donut, Balken chartBarDec, Landschaft und Heatmap
+           dashboardSquare (layoutGrid ist das Rautenzeichen der Gitteransicht, liest sich wie #)
+Lage       Hülle .up-chart-leer absolut über der GANZEN Chartfläche (inset 0), Inhalt senkrecht
+           mittig, Polster 16 24. Die Fläche behält die Höhe des Charts, die Seite springt nicht.
+Größe      nach der Fläche (Container-Query an der Hülle), nicht nach dem Aufrufer:
+             ab 220 hoch     Kachel, Titel, Satz (bis 202 mit Polster)
+             unter 220       Kachel und Titel, Abstand 16 (126)
+             unter 130       nur der Titel (56)
+             unter 280 breit ohne Satz
+Fluss      fluss: true für Flächen ohne eigene Höhe (Balkenliste): im Fluss, Polster 24,
+           immer kompakt (Kachel und Titel, 142)
+Wirt       makeTypeChart setzt .up-chart-leer-wirt (nur position: relative), solange der
+           Zustand im Körper steht; die Linie braucht nichts, .up-line-wrap ist positioniert
+```
+
+**Leer ist nicht kaputt.** Ein Lese- oder Ladefehler im Chart bleibt der knappe Text von vorher:
+`meldung("…")` an makeLine und makeTypeChart. `empty("Text")` mit einer Zeichenkette ist aus
+demselben Grund dasselbe wie `meldung` — ältere Aufrufer, die dort einen Fehler hineinreichen,
+zeigen weiter keinen Leerzustand. Gefiltert kommt aus `cfg.gefiltert()` der Bausteine; die
+Seiten (Dashboard, Brands, Citations) schicken dafür `gefiltert` im Payload, berechnet mit
+`UC.seitenFilterAktiv(f)` (Modelle, Märkte, Topics, Intent-Filter; der Zeitraum zählt nicht).
+
+### Die Tabellen-Fassung (`UC.tabelleLeerHtml`, seit 15.10.)
+
+Kleine Tabellen und Listen neben einem Chart tragen denselben Zustand wie der Chart, nicht mehr
+das knappe „No data" (`.up-empty-mini`). `UC.tabelleLeerHtml({ titel, text, icon, gefiltert,
+zeilen })` ist `chartLeerHtml` in einer Hülle, die der absoluten Fläche ihre Höhe gibt.
+
+```
+Text       wie im Chart: "No data yet" / gefiltert "No matching data" mit Lupe; ein Satz, den
+           die Tabelle genauer kennt, wird der Satz ("No variations recorded for this brand.")
+Fläche     .up-tab-leer: min-height = zeilen x Zeilenhöhe, also genau die Fläche des Skeletts
+           davor (kein Sprung zwischen Laden und Leer); flex 1, in einem Band fester Höhe bis an
+           dessen Unterkante. Ohne zeilen 4 (220, volle Form)
+Zeile      --up-tab-leer-zeile: 72 wie .up-row, dicht (is-dense) und .up-vrow 55 (--up-h-row);
+           eigene Zeilen setzt die Komponente: Top Brands und Top Citations 55, Brands Overview
+           56, Agentic-Listen 36
+Größe      die Stufen der Chart-Fassung: ab 220 voll, darunter Zeichen und Titel, unter 130 nur
+           der Titel, unter 280 breit ohne Satz
+Kopf       bleibt stehen wie beim Skelett. In Shopping und Ads steht der Zustand NEBEN dem
+           Spaltenscroller (Kopf darin, Zustand darunter im Kasten): bei 375 ist der Kopf dort
+           bis 1096 breit, der Zustand sitzt mittig über dem Sichtbaren
+Zeichen    das des Spaltenkopfs bzw. der Sache: squareStack (Marken, Varianten), domain
+           (Domains/URLs), stackStar (Produkte), store (Händler), messageCircle (Auftritte),
+           tags (Topics), zap (Prompts)
+```
+
+Verwender: Top Brands (visibility-chart), Top Domains/URLs (topcitations-dashboard), Brands
+Overview (auch Suche und Reiter Inactive, dort ohne Satz), die zwei Agentic-Listen
+(power-dashboard), Brand Landscape, Top Products, Merchants und Recent Appearances (shopping),
+Topics with Ads und Prompts des Werbetreibenden (ads), die Variantentabelle (`UC.variationRows`
+in brand-detail und performance-detail). Die Ads-Kacheln des Werbetreibenden tragen den vollen
+`UC.leerHtml` wie „Recent Ads" der Übersicht (Kacheln, keine Zeilen). Lesefehler und der
+Widerspruch zum Zähler in Top Citations bleiben der knappe Text.
+
+`makeColumns` stempelt seit demselben Tag auch den Kopf (`data-up-colsig` an `.up-thead`):
+eine Tabelle, die im Leerzustand nur ihren Kopf neu zeichnet, hat keine Zeile, an der die
+Prüfung „ungestempelt" anschlagen könnte, und zeigte bei 375 alle Kopfzellen (Brands: sechs
+Zellen auf vier Spuren, zweite Rasterzeile).
 
 ---
 
@@ -2025,22 +2182,32 @@ Bis 15.10. war das offene Feld randlos und transparent (Notion-Stil), Text 14/50
 Geist-Avataren (vercel.com/geist/avatar):
 
 ```
-Chip          .up-stack-item 28×28; sichtbare Ebene .up-stack-vis ist ein KREIS wie Geists
-              Avatar (rounded-full, innen 1px-Ring): Radius --up-r-voll, 1px --vc-border (im
-              Dark ebenfalls, als Ring), 3px Polster, Platte --vt-logo-bg (im Dark nur unter dem
-              Logo). Das Logo ein 20er Quadrat mit Radius 4 (--up-r-xs), ganz im Kreis (Ecke 12.5
-              vom Mittelpunkt, Kreis innen 13), nichts abgeschnitten. Dicht: Polster 2.64, Logo 17.36.
+Chip          .up-stack-item 32×32 (--up-stack-gr = --up-h-btn, seit 15.10. nachts; vorher 28);
+              sichtbare Ebene .up-stack-vis ist ein KREIS wie Geists Avatar (rounded-full, innen
+              1px-Ring): Radius --up-r-voll, 1px --vc-border (im Dark ebenfalls, als Ring), 4px
+              Polster, Platte --vt-logo-bg (im Dark nur unter dem Logo). Das Logo ein 22er Quadrat
+              mit Radius 4 (--up-r-xs), ganz im Kreis (Ecke 13.9 vom Mittelpunkt, Kreis innen 15;
+              im Dark mit 1px Plattenrand 14.9), nichts abgeschnitten. Buchstabe 11 (--up-fs-xs).
               Bis 15.10. spät: abgerundetes Quadrat Radius 6 mit 22er Bild ("ein Logo ist kein
               Porträt") -- vom Nutzer verworfen: "das solltest du vom Geist-System-Avatar nutzen".
-Überlappung   --up-stack-ueber 4px (dicht 3.52) wie vor dem 15.10.; Geists 0.3 × Größe (8) war
-              dem Nutzer zu eng ("etwas zu nah beieinander ... so wie es vorher war")
-Ring          --up-stack-ring-w 1px in der Zeilenfarbe (folgt dem Zeilen-Hover); bis 15.10.
-              4px, die den Abstand malten
+Überlappung   --up-stack-ueber 5px, Schritt 27 (vorher 4 und 24 bei 28). Vom Nachfolger verdeckt:
+              Überlappung + Ring = 8 von 32 (25 %; vorher 5 von 28 = 18 %). Geists 0.3 × Größe
+              (8 bei 28, verdeckt 9 = 32 %) war dem Nutzer zu eng ("etwas zu nah beieinander").
+              5 + 3 = 8 = das Spreizen beim Hover: der angefasste Chip reicht mit seinem Ring genau
+              an die Nachbarn heran, ohne in sie zu schneiden.
+Ring          --up-stack-ring-w 3px in der Zeilenfarbe -- der sichtbare ABSTAND zwischen zwei
+              Chips (folgt Zeilen- und Karten-Hover). Bis 15.10. 4px, am 15.10. kurz 1px
+              (Haarstrich, vom Nutzer zurückgeholt: "wieder ein sichtbares Gap ... wie es vorher
+              ja auch gab")
+Dicht         Faktor 0.88 über die drei Marken an .up-root.is-dense: 28.16, Überlappung 4.4,
+              Ring 2.64; Polster 3.52, Logo 19.12, "+N" 11
 Reihenfolge   das ERSTE Mitglied liegt oben (--up-stack-z absteigend, von brandStack gesetzt);
               isolation: isolate hält die Stufen im Stapel, unter dem klebenden Tabellenkopf
-"+N"          .up-stack-more: ein Kreis in Chipgröße (min. 28, Polster 0 4px), unterlappt wie
-              ein Mitglied und liegt zuunterst; Grund --up-sel-bg, 1px --vc-border, 11/600 in
+"+N"          .up-stack-more: ein Kreis in Chipgröße (min. 32, Polster 0 5px), unterlappt wie
+              ein Mitglied und liegt zuunterst; Grund --up-sel-bg, 1px --vc-border, 12/600 in
               --vc-muted; bis 15.10. reiner Text 12/500
+Eigene Maße   Response Detail (.urd-cc-foot, .urd-cr-ments): Reihe statt Stapel, 26er Chip mit
+              Polster 3 und "+N" 11 fest in response-detail.css; Leiste (.usn-chips, ungenutzt): 22
 ```
 
 **Hover-Verhalten unverändert** (gemessen):
@@ -2216,13 +2383,16 @@ Komponente wirklich zusätzlich hat (eine Zeilenhöhe, eine Index-Zelle, ein Act
 | Suche (Slide-out, Debounce, requestId-Schutz) | `UC.makeSearch({root, box, input, state, prefix, onRender, onFire, …})` |
 | Skelett-Zeilen, Trend-Chip, Leer-Schonfrist, Spalten-Erklärer | `UC.skeletonRows`, `UC.trendChip`, `UC.makeEmptyGrace`, `UC.makeExplain` |
 | Leerzustand nach Geist (9a) | `UC.leerHtml({ gefiltert, was, icon, titel, text, knopf, mini })` |
+| Leerzustand im Chart / in der Tabelle daneben (9a) | `UC.chartLeerHtml({ titel, text, icon, gefiltert, fluss })`, `UC.tabelleLeerHtml({ …, zeilen })` |
 | Sentiment (Balken + Zahl) | `UC.sentHtml(v)`, Farbe `UC.sentColor(v)` |
 | Themenschalter (5) | `UC.themeSchalterHtml({ klein, wahl })` |
 | Kopfzeichen im Spaltenkopf (8a) | `UC.kopfZeichenHtml(name)`, `UC.kopfZeichen(th, name)` |
 | Filter der einen Leiste (8b) | `UC.makeLeistenFilter(root, { instanceId, arten })` |
 | Feste Höhe der flachen Tabelle (8a) | `UC.makeFestHoehe(root, { min, kopf, fuss })` |
+| Leiste über dem Band (8b) | `UC.bandUnterLeiste(root, band, { kopf })` |
+| Klebender Fuß (8e) | `data-kleb-fuss="yes"` an der Wurzel (mit `UC.makeSticky`), direkt `UC.klebFuss(root)` |
 | Gesamtzeile (8e) | `UC.makeZaehlZeile({ root, nach, praefix, instanceId, spalten, laedt, anzahl, rechnen, quelle, cols })`, darunter `UC.makeSumZeile`, `UC.sumPaarHtml` |
-| Offenes Band (8f) | `UC.bandTeile(band, teile)`, `UC.bandAus(band, aus, { id, zeigen, tip })`, `UC.bandAusGemerkt(id)`, `UC.bandAusMerken(id, aus)` |
+| Offenes Band (8f) | `UC.bandTeile(band, teile)` (mit `teile.auge`), `UC.bandAus(band, aus, { id, setzen })` setzt den Umschalter im Seitenkopf, `UC.bandSchalterHtml({ aus, id, klein })`, `UC.bandAusGemerkt(id)`, `UC.bandAusMerken(id, aus)` |
 | Bubble-Klempnerei: Root-Registry, iframe-Forwarder, Wheel, Init-Kaskade, Stub-Replay | `UC.makeMount({rootClass, ctrlProp, resolveLocal, queue, initRoot, api, forwardShape})` |
 
 CSS dazu kommt aus `core.css`: `.up-root`, `.up-head*`, `.up-iconbtn`, `.up-thead/.up-row/.up-th/.up-td`,
@@ -3309,3 +3479,38 @@ weiter angezeigt, aber die Gruppenliste der Tabelle kam leer zurück.
 `makeFire` in core.js stellt `team_id` deshalb voran. Der Schwanz jedes Payloads bleibt damit
 byte-identisch zu dem Stand, bevor es Team-Scoping gab. Wer ein weiteres globales Feld ergänzt,
 macht es genauso.
+
+## 49. Die schwebende Benachrichtigung (`notification-card`, Präfix `unc`, seit 16.10.)
+
+Variante C „Invers“ der Leinwand „Notification Varianten“: die schmale Karte in der Sprache von
+`UC.toast`, **umgekehrt zum Thema** (im Hellen dunkel, im Dunkeln hell), die Seite dahinter behält
+ihr Thema. Vorher (bis 15.10.): 424 breit, weiß, Kopfzeile mit Logo, Zeichenkachel, Zierlinien.
+
+| Teil | Wert |
+|---|---|
+| Lage | `position: fixed`, rechts und unten **16**, unter 480px Breite links/rechts 16, unten 8, volle Breite |
+| Karte | 360 breit, Polster `14 10 14 16`, `gap 12`, Radius `--up-r-2xl` (12), Rand 1px in der Flächenfarbe, `--up-e-4` |
+| Farben | Fläche `--vc-inverse-bg`, Schrift `--vc-inverse-ink`, Nebenschrift `--vc-inverse-sub`, Hover-Fläche `--vc-toast-flaeche` |
+| Zeichen | eigene Spalte 18×20, `UC.icon(name, 1.5)` in 18px, Strich |
+| Bezeichnung | Geist Mono 12/20, 500, Nebenschrift, normale Schreibung |
+| Titel / Text | 14/20 600 (−0.01em) / 13/20 400 Nebenschrift; 4 Abstand, 4 über dem Titel |
+| Knöpfe | linksbündig, 14 darüber, `gap 8`, Hauptknopf zuerst; beide `.up-btn-sec` (32, Radius 6) mit Polster 12 und 13px |
+| Hauptknopf | gefüllt (`--vc-inverse-ink` als Fläche) bei feature, announcement, security, whats_new; umrandet (Tinte zu 22 %) bei maintenance, tip |
+| Zweitknopf | nur Text in der Nebenschrift, Fläche erst beim Hover |
+| X | `.up-iconbtn.is-24` (Radius 4 nach Geist), 2px über der ersten Zeile |
+
+**Bewegung.** Karte 1 s easeOutExpo (`--up-ease-expo`) aus 12px und `scale(.985)`; Zeichen und
+Bezeichnung, Titel und Text, Knöpfe folgen mit 100, 200, 300 ms Verzögerung (6px Weg). Ab 600 ms
+läuft der Glanz (`--vc-inverse-glanz`) einmal schräg über die Karte, 1.6 s,
+`cubic-bezier(.45,.05,.3,1)`. Nur `opacity` und `transform`. Eine **neue** Nachricht (andere id)
+spielt die Einblendung neu ab, dieselbe noch einmal nicht. Bei `prefers-reduced-motion` keine
+Bewegung und kein Glanz.
+
+**Thema zur Laufzeit.** Die Karte hängt am `<body>` und trägt `data-theme` selbst. Sie folgt
+`UC.onTheme` und einem Beobachter auf `data-theme`/`data-isdark` der Wurzel; vorher blieb sie bis
+zum nächsten Datensatz im alten Thema.
+
+**Zu lange Knopfbeschriftung** bricht in eine zweite Zeile um; ein einzelner Knopf, der allein
+nicht passt, kürzt mit Auslassung.
+
+`data-logo` wird weiter angenommen (Vertrag), aber nicht mehr gezeichnet.

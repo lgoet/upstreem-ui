@@ -750,15 +750,38 @@
          DER RAHMEN: Geists Default border, Gray 400 #2e2e2e -- im Licht steht an derselben Stelle
          Gray 400 der hellen Skala (#ebebeb). Linears #34343a war blaustichig und mit 52 Stufen
          Helligkeit auf #101114 der hellste Rahmen beider Themen; #2e2e2e liegt auf dem Inhalt 36,
-         auf der Seite 46 Stufen ueber dem Grund. */
-      --vc-text: #e0e0e0; --vc-muted: #c9cbd0; --vc-border: #2e2e2e;
+         auf der Seite 46 Stufen ueber dem Grund.
+         EINE STUFE RUHIGER (15.10. abends). Gemeldet: das Dunkel wirkt "zu dolle". Gefallen hat
+         das Dunkel der Design-Leinwand der Benachrichtigungen (Grund, angedeutete Tabellen mit
+         Skelett): Seite #0a0a0a, Inhalt #0f0f0f, Linien 8 % Weiss. Beschlossen: "Es bleibt bei
+         Geists Stufen, nur eine Stufe ruhiger" -- dieselben Rollen, dieselben ABSTAENDE zwischen
+         den Stufen, die ganze Leiter angehoben. Zugeordnet je Rolle, nicht je Wert (#1f1f1f war
+         Auswahl und ist jetzt Hover; #454545 ist Rand UND ausgeschalteter Schalter):
+             Seite, Seitenleiste, Kopf      #000000 -> #0a0a0a   Geists Background 1 wird Seite
+             Inhalt, Menue, Feld, Dialog    #0a0a0a -> #0f0f0f
+             Linie, Rand                    #2e2e2e -> #222222   8 % Weiss auf dem Inhalt, DECKEND
+                                                                 gerechnet: --vc-border steht auch als
+                                                                 Flaeche und in color-mix
+             Hover, Kopf- und leise Flaeche #1a1a1a -> #1f1f1f   +16 ueber dem Inhalt wie vorher
+             Auswahl, gewaehlter Chip       #1f1f1f -> #242424   +21
+             aktiv (Chip ueberfahren)       #292929 -> #2e2e2e   +31
+             Rand einer schwebenden Schicht #454545 -> #333333   Geists Ring (14,5 % Weiss) auf
+                                                                 dem Inhalt, eine Stufe leiser
+             Skelett                        #1a1a1a -> #1e1e1e   wie die Leinwand; Glanz unveraendert
+                                                                 2,5 % Weiss, also bis #242424
+         UNVERAENDERT: die vier Schriftstufen, der ausgeschaltete Schalter (#454545, er muss als
+         Bedienelement lesbar bleiben) und alles Durchscheinende (Gewaehlt 6 %, Schiene, Pille) --
+         das zieht mit seinem Grund von selbst mit. Die Linie liegt jetzt auf dem Inhalt 19, auf
+         der Seite 24 Stufen ueber dem Grund. */
+      --vc-text: #e0e0e0; --vc-muted: #c9cbd0; --vc-border: #222222;
       /* Gegenstueck zum hellen Thema: dort steht hier #e0e0e0, hier der Textton von dort. */
       --vc-text-invert: #1f1f1b;
       /* Inhalt Background 1, Seite Background 2, Kopfzeilen- und Hoverflaeche Gray 100 (im grauen
          Hell steht dort Gray 100 der hellen Skala, #f2f2f2), Skelett Gray 100 -- Geists Skeleton
          laeuft im Dunkeln von Gray 100 nach Gray 200, und genau das ergibt der Glanz oben
-         (2,5 % Weiss auf #1a1a1a = #1f1f1f). */
-      --vc-bg: #0a0a0a; --vc-heading-bg: #1a1a1a; --vc-sk: #1a1a1a; --up-surface: #000000;
+         (2,5 % Weiss auf #1a1a1a = #1f1f1f). Seit "eine Stufe ruhiger" je eine Stufe hoeher:
+         Inhalt #0f0f0f, Seite #0a0a0a, Kopf/Hover #1f1f1f, Skelett #1e1e1e (Glanz bis #242424). */
+      --vc-bg: #0f0f0f; --vc-heading-bg: #1f1f1f; --vc-sk: #1e1e1e; --up-surface: #0a0a0a;
       /* ---- DIE DUNKLE LEITER (08.09.) -- ABGELOEST AM 15.10. DURCH GEIST (siehe oben) ---------
          Bleibt als Geschichte stehen, weil sie erklaert, warum Menue und Auswahl getrennte Stufen
          sind -- das gilt weiter, nur mit Geists Werten.
@@ -795,17 +818,22 @@
          eine Stufe darunter. Menuegrund und Auswahl liegen damit 21 Stufen auseinander.
          Chips: gewaehlt = Auswahl (wie hell), gewaehlt und ueberfahren Gray 300 ("Active
          background"), die Raender Gray 500 und Gray Alpha 500 (#ffffff3d, auf #292929 = #5c5c5c --
-         der Ton, den #5a5a62 vorher ohne Blaustich hatte). */
-      --up-menu-bg: #0a0a0a; --up-sel-bg: #1f1f1f; --up-menu-border: #454545;
-      --up-chip-rand-hover: #454545; --up-chip-an: #1f1f1f; --up-chip-an-hover: #292929; --up-chip-rand-an-hover: rgba(255,255,255,.24);
+         der Ton, den #5a5a62 vorher ohne Blaustich hatte).
+         Eine Stufe ruhiger (15.10. abends): Menue #0f0f0f, Auswahl #242424, aktiv #2e2e2e, Rand
+         der schwebenden Schicht #333333 statt Gray 500 -- Geists Ring selbst (14,5 % Weiss auf
+         #0f0f0f = #323232). Der Hover einer Menuezeile (6 % auf #0f0f0f) ergibt #1d1d1d. */
+      --up-menu-bg: #0f0f0f; --up-sel-bg: #242424; --up-menu-border: #333333;
+      --up-chip-rand-hover: #333333; --up-chip-an: #242424; --up-chip-an-hover: #2e2e2e; --up-chip-rand-an-hover: rgba(255,255,255,.24);
       --up-dd-shadow: var(--up-e-2);   /* die dunkle e-2, siehe den hellen Block */
       /* Event-Pins im Dunkeln: dieselben Stufen auf der dunklen Leiter -- der Rand eine Stufe
          ueber --up-menu-border, die Linie auf --vc-fourth (#6c717a), damit sie wie hell hinter
          den Daten bleibt und nicht heller als die Achsenschrift wird. */
-      --up-evm-rand: #454545; --up-evm-linie: #6c717a;
+      --up-evm-rand: #333333; --up-evm-linie: #6c717a;
       /* Die vier Tiefen im dunklen Thema stehen seit dem 28.09. im Block vor .up-root, an
-         [data-theme="dark"] -- dort erreichen sie auch, was am <body> haengt. */
-      --vc-switch-bg: #1a1a1a; --vc-switch-border: #2e2e2e; --vc-third: #a0a0a0; --vc-fourth: #6c717a;
+         [data-theme="dark"] -- dort erreichen sie auch, was am <body> haengt.
+         Schalterflaeche und -rand eine Stufe ruhiger (15.10. abends) wie Kopf und Linie:
+         #1f1f1f und #222222 statt #1a1a1a und #2e2e2e. */
+      --vc-switch-bg: #1f1f1f; --vc-switch-border: #222222; --vc-third: #a0a0a0; --vc-fourth: #6c717a;
       /* Die Pille hebt ihre Schiene noch einmal an, statt einen festen Ton zu tragen -- sie muss
          der Schiene folgen, die das seit dem 27.09. auch tut (Begruendung bei --vc-switch-rail).
          Der feste Ton #28282c laege im Menue UNTER der angehobenen Schiene (40 gegen 47).
@@ -813,7 +841,7 @@
          darueber -- der gewaehlte Reiter im dunklen Dashboard-Bild von Vercel traegt genau diese
          Stufe (gemessen 22 auf #000). Vorher 5,5 und 7 %. */
       --vc-switch-pill: rgba(255,255,255,.09);
-      --up-switch-off: #454545;   /* Gray 500; siehe hell */
+      --up-switch-off: #454545;   /* Gray 500; siehe hell. Bleibt auch "eine Stufe ruhiger": Bedienelement */
       /* Die Textfassung des Blau-Lila-Paares, hier HERAUFgedreht statt herunter -- der Text
          steht auf --vc-field #2a2a2a. Gerechnet: 4.61 und 5.07, beide ueber den 4.5 aus AA.
          Die Flaechentoene --up-blau und --up-lila erben absichtlich aus dem hellen Block: eine
@@ -845,8 +873,9 @@
       --vc-switch-rail: rgba(255,255,255,.06);
       /* Eingabefelder wie Geists Input: Background 1 mit Rand (gemessen #0a0a0a, Ring Gray Alpha
          400). Im grauen Hell genauso (--vc-field = --vc-bg, weiss mit Rand). Vorher #232326 --
-         ein Feld, das heller war als jedes Menue, in dem es stand. */
-      --vc-field: #0a0a0a;
+         ein Feld, das heller war als jedes Menue, in dem es stand. Seit 15.10. abends der Inhalt
+         eine Stufe ruhiger, #0f0f0f. */
+      --vc-field: #0f0f0f;
       /* Die Kopfleiste jeder Tabelle: eine Stufe HELLER als die Tabellenflaeche (--vc-bg
          #1b1b1b), nicht dunkler. Hier stand #121212 -- die Farbe der SEITE, die Leiste sass
          damit optisch hinter der Karte statt darauf. #242424 steht ohnehin in dieser Palette
@@ -863,13 +892,14 @@
          Tabelle (Geists Table: Kopf durchsichtig, darunter Gray 400 als Linie). Die flachen
          Tabellen taten das schon (ihr Kopf ist --up-surface); mit #232326 hier standen die
          Kaesten auf dem Dashboard als einzige mit hellem Kopf da. Der Hover einer Zeile ist Gray
-         100 -- Geists Hover auf Background 1. */
-      --vt-head-bg: #0a0a0a; --vt-logo-bg: #e0e0e0; --vt-row-hover: #1a1a1a;
+         100 -- Geists Hover auf Background 1. Eine Stufe ruhiger (15.10. abends): Kopf = Inhalt
+         #0f0f0f, Hover #1f1f1f, derselbe Abstand von 16. */
+      --vt-head-bg: #0f0f0f; --vt-logo-bg: #e0e0e0; --vt-row-hover: #1f1f1f;
       --vt-logo-ink: var(--vc-text-invert);
       /* Die Vorgabe der Akzentfarbe im Dunkeln -- wieder buchstabengleich das, was vorher aus
          --vc-text und --vc-bg kam. */
       --up-accent: #e0e0e0; --up-accent-fg: #1b1b1b; --up-accent-ink: #e0e0e0;
-      --vt-row-hover-solid: #1a1a1a;
+      --vt-row-hover-solid: #1f1f1f;
       /* --vt-up/--vt-down dunkel: seit dem 15.10. im dunklen Block an :root (Geist). */
       /* Im Dunkeln ein aufgehellter Ton mit weniger Deckung -- auch das wortgleich aus den alten
          Elementen. Der Hintergrund darf hier etwas mehr tragen, sonst verschwindet er im Grund. */
@@ -1078,6 +1108,8 @@
        Spezifitaet plus eins, nur mit Geists dunkler Skala (Herleitung am dunklen .up-root-Block):
            Seite, Seitenleiste, Seitenkopf, Reiterzeile    Background 2   #000000  (--up-surface)
            Tabellen, Karten, Charts, Drawer, Menues        Background 1   #0a0a0a  (--vc-bg)
+       Seit "eine Stufe ruhiger" (15.10. abends, Herleitung am dunklen .up-root-Block) Seite
+       #0a0a0a und Inhalt #0f0f0f -- dieselbe Aufteilung, 5 Stufen statt 10 dazwischen.
        Bis heute lag im Dunkeln alles auf EINEM Grund (#101114): Tabelle, Kopf, Chart und
        Seitenleiste in derselben Farbe, getrennt nur durch Raender. Im Licht ist der Inhalt weiss
        auf grauer Seite -- hier ist er jetzt eine Spur heller als die schwarze Seite, wie bei Vercel.
@@ -1085,7 +1117,9 @@
        Landingpage. Ohne das Attribut (Landingpage, erstes Bild) gelten nur die Marken am dunklen
        .up-root -- dann liegt wie bisher alles auf dem Seitengrund, nur schon in Geists Toenen. */
     html[data-up-dunkel="geist"] {
-      --up-seite-dunkel: #000000;   /* Vercel Background 2, dunkel */
+      /* Vercel Background 2 war #000; seit "eine Stufe ruhiger" (15.10. abends) Background 1 als
+         Seite, wie die Leinwand der Benachrichtigungen. */
+      --up-seite-dunkel: #0a0a0a;
       /* DER GEWAEHLTE ZUSTAND DER NAVIGATION IM DUNKELN: Geists Gray Alpha 100 (#ffffff0f, 6 %
          Weiss) -- genau der Ton, den Geists eigene Seitennavigation im Dunkeln fuer den gewaehlten
          Punkt traegt (vercel.com/geist, gemessen rgba(255,255,255,.06)). Er ist das Spiegelbild der
@@ -1095,7 +1129,11 @@
          Skalen: deckend #0f0f0f laege auf einem Fenster in Background 1 (#0a0a0a, Preferences) nur
          5 Stufen ueber dem Grund; durchscheinend sind es dort #191919, auf der Seite #0f0f0f.
          Der Rand ist der Hauch des Lichts (3 %) in Weiss: ueber dem Grund #171717 statt #0f0f0f.
-         Die Seitenleiste traegt keinen (sidebar.css), wie im Licht. */
+         Die Seitenleiste traegt keinen (sidebar.css), wie im Licht.
+         Eine Stufe ruhiger (15.10. abends) bleibt der Wert, nur der Grund steigt: auf der Seite
+         (#0a0a0a) #191919, der Rand darueber #202020; auf dem Inhalt (#0f0f0f) #1d1d1d. In den
+         Preferences liegt die Wahl auf der Seitenspalte (--vc-heading-bg, gemessen #1f1f1f, vorher
+         #1a1a1a) und ergibt dort #2c2c2c (vorher #282828). */
       --up-wahl-bg: rgba(255,255,255,.06);
       --up-wahl-rand: rgba(255,255,255,.03);
     }
@@ -2538,15 +2576,18 @@
      :where() haelt die Spezifitaet bei (0,1,0) wie die Zeile darueber -- jede Wurzel
      (.up-root[data-theme="dark"], 0,2,0) und jede eigene Palette gewinnt weiterhin.
      NICHT hier: --up-surface. Der Seitengrund wechselt im Dunkeln zwischen Seite und Inhalt (Block
-     "SEITE UND INHALT") und muss von der Wurzel geerbt werden, nicht neu gesetzt. */
+     "SEITE UND INHALT") und muss von der Wurzel geerbt werden, nicht neu gesetzt.
+     Seit "eine Stufe ruhiger" (15.10. abends) dieselben Werte wie am dunklen .up-root, Rolle fuer
+     Rolle: Inhalt #0f0f0f, Linie #222222, Kopf/Hover #1f1f1f, Auswahl #242424, aktiv #2e2e2e, Rand
+     der schwebenden Schicht #333333, Skelett #1e1e1e; der Schalter aus bleibt #454545. */
   :where(html[data-up-dunkel="geist"]) [data-theme="dark"] {
     --vc-text: #ededed; --vc-muted: #c9c9c9; --vc-third: #a1a1a1; --vc-fourth: #7d7d7d;
-    --up-sel-bg: #1f1f1f; --vc-border: #2e2e2e; --vc-heading-bg: #1a1a1a;
-    --up-chip-rand-hover: #454545; --up-chip-an: #1f1f1f; --up-chip-an-hover: #292929; --up-chip-rand-an-hover: rgba(255,255,255,.24);
-    --vc-bg: #0a0a0a; --vc-field: #0a0a0a; --vc-sk: #1a1a1a;
-    --up-menu-bg: #0a0a0a; --up-menu-border: #454545;
-    --vt-row-hover-solid: #1a1a1a; --vc-hover-border: #707070;
-    --vc-switch-bg: #1a1a1a; --vc-switch-border: #2e2e2e; --up-switch-off: #454545;
+    --up-sel-bg: #242424; --vc-border: #222222; --vc-heading-bg: #1f1f1f;
+    --up-chip-rand-hover: #333333; --up-chip-an: #242424; --up-chip-an-hover: #2e2e2e; --up-chip-rand-an-hover: rgba(255,255,255,.24);
+    --vc-bg: #0f0f0f; --vc-field: #0f0f0f; --vc-sk: #1e1e1e;
+    --up-menu-bg: #0f0f0f; --up-menu-border: #333333;
+    --vt-row-hover-solid: #1f1f1f; --vc-hover-border: #707070;
+    --vc-switch-bg: #1f1f1f; --vc-switch-border: #222222; --up-switch-off: #454545;
     --vc-switch-rail: rgba(255,255,255,.06); --vc-switch-pill: rgba(255,255,255,.09);
   }
   .up-root {
@@ -3340,12 +3381,14 @@
          ALLE Werte muessen HIER stehen und nicht nur im dunklen Block an :root: die helle Grundregel
          dieses Menues (.up-scale-menu, 0,1,0) steht weiter unten in der Datei als jener Block
          (ebenfalls 0,1,0) und gewaenne sonst ueber die Reihenfolge -- gemessen am 15.10. am Topic-
-         Fenster, das dieselbe Bauart hat: die Seitenspalte stand hell im dunklen Fenster. */
-      --vc-text: #ededed; --vc-muted: #c9c9c9; --vc-third: #a1a1a1; --vc-fourth: #7d7d7d; --vc-border: #454545;
-      --vc-heading-bg: #1a1a1a; --vc-hover-border: #707070; --vc-bg: #0a0a0a; --up-switch-off: #454545;
-      --vc-switch-bg: #1a1a1a; --vc-switch-border: #2e2e2e;
+         Fenster, das dieselbe Bauart hat: die Seitenspalte stand hell im dunklen Fenster.
+         Eine Stufe ruhiger (15.10. abends, Herleitung am dunklen .up-root): Grund #0f0f0f, Rand
+         #333333, Kopf/Hover #1f1f1f, Auswahl #242424, Schalterrand #222222; aus bleibt #454545. */
+      --vc-text: #ededed; --vc-muted: #c9c9c9; --vc-third: #a1a1a1; --vc-fourth: #7d7d7d; --vc-border: #333333;
+      --vc-heading-bg: #1f1f1f; --vc-hover-border: #707070; --vc-bg: #0f0f0f; --up-switch-off: #454545;
+      --vc-switch-bg: #1f1f1f; --vc-switch-border: #222222;
       --vc-switch-rail: rgba(255,255,255,.06); --vc-switch-pill: rgba(255,255,255,.09);
-      --up-dd-shadow: var(--up-e-2); --up-sel-bg: #1f1f1f;
+      --up-dd-shadow: var(--up-e-2); --up-sel-bg: #242424;
     }
     /* .up-dense-btn.is-active's own dark override above is scoped to .up-root — this menu lives
        outside it, so the Line Width switch needs its own copy of the same colors. */
@@ -3737,8 +3780,8 @@
     /* ---------- IM DRAWER NACH GEIST BLEIBT DER RAND (16.10.) ----------
        Das Kriterium oben ("der Rand darf nur dort weg, wo die Fuellung die Flaeche schon von
        ihrem Grund trennt") gilt im Dunkeln nach Geist im Drawer NICHT mehr: Drawer und Kasten sind
-       beide Background 1 (#0a0a0a), ohne Rand war der Kasten unsichtbar (gemeldet vom Drawer-
-       Umbau: Responses, URLs, Conversion, Brand Editor). Geist traegt hier seinen 1px-Ring --
+       beide Background 1 (#0a0a0a, seit 15.10. abends beide #0f0f0f), ohne Rand war der Kasten
+       unsichtbar (gemeldet vom Drawer-Umbau: Responses, URLs, Conversion, Brand Editor). Geist traegt hier seinen 1px-Ring --
        also Farbe UND Breite zurueck, links und rechts mit, und zwar fuer Kasten, Kopf und Koerper
        der klebenden Tabelle zugleich (siehe "an den SEITEN Breite 0": schon 1px Unterschied
        zwischen Kopf und Koerper verschiebt die Spalten).
@@ -4061,6 +4104,83 @@
     .up-ff-menu { pointer-events: none; }
     .up-ff-list.is-panel { display: none; }
 
+    /* ---------- DIE LEISTE UEBER DEM BAND (.has-leistenband, UC.bandUnterLeiste, 16.10.) ----------
+       Variante A der Leinwand "Citations Seitenaufbau", fuer Citations und Brands > Tracked
+       gewaehlt: in der Wurzel der Tabelle steht die eine Leiste oben, darunter das Band (Chart),
+       darunter der Kasten. Die Leiste klebt (makeSticky), Kopf, Reiter und Chart scrollen weg, der
+       Spaltenkopf klebt direkt unter ihr (--up-thead-off ist ihre Hoehe).
+       Abstaende wie ueberall: die Leiste haelt unten ihre 16 (Polster klebend, Rand in Ruhe), das
+       Band traegt seine 16 darunter selbst (DIE ZEILE UNTER DEM BAND). Der Stapel der Wurzel faellt
+       dafuer auf 0 -- Brands stapelt Chart und Tabelle mit 24, das stuende sonst zusaetzlich
+       zwischen Leiste und Band. (0,4,0): schlaegt den Stapel der Komponente (0,3,0). */
+    .up-root.up-root[data-flach="yes"].has-leistenband { --up-stapel-luft: 0px; }
+    /* Eine Linie unter der Leiste, NUR solange sie klebt (.is-geklebt, klebPruefenAlle): dann
+       laeuft der Chart unter ihr weg, bzw. sie ist die obere Kante des Spaltenkopfs. In Ruhe steht
+       darunter die Linie des Bandes. Eingeblendet, nicht geschaltet. */
+    .up-root.has-leistenband.up-sticky > .up-head::after {
+      content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; pointer-events: none;
+      background: var(--vc-border); opacity: 0; transition: opacity var(--up-t-2) var(--up-ease-expo);
+    }
+    .up-root.has-leistenband.up-sticky.is-geklebt > .up-head::after { opacity: 1; }
+
+    /* ---------- DER KLEBENDE FUSS (data-kleb-fuss="yes", core.js klebFuss, 16.10.) ----------
+       Gesamtzeile und Pagination kleben unten am Scrollbereich, sobald die Tabelle den Bildschirm
+       fuellt (ihr Spaltenkopf klebt), und fahren dabei herein; am Ende der Tabelle stehen sie an
+       ihrem Platz. Die Zustaende setzt core.js, hier steht nur, wie sie aussehen:
+         .is-fuss-an          sticky (Gesamtzeile ueber der Pagination: --up-fuss-unter)
+         .is-fuss-weg         unten hinaus gefahren (--up-fuss-weg, beide als ein Block)
+         .is-fuss-still       ohne Uebergang (Startpunkt einer Fahrt, Rueckkehr in den Fluss)
+         .is-fuss-klebt       klebt wirklich (Platz unter dem Bild): Schatten nach oben
+         .is-fuss-ohne-summe  ohne Gesamtzeile traegt die Pagination den Schatten
+       z 4 wie die Gesamtzeile mit fester Hoehe: unter dem klebenden Kopf (5) und der Leiste (6),
+       ueber den Zeilen. Der Grund deckt (die Zeilen laufen darunter durch). */
+    .up-fuss-marke { display: block; flex: none; height: 0; margin: 0; pointer-events: none; }
+    /* Die Pagination laeuft rechts mit aus wie links (DIE FLACHE TABELLE): klebend laufen die
+       Zeilen darunter durch und stuenden sonst in den 16 rechts neben ihr im Bild. Das Polster gibt
+       den Platz zurueck, die Knoepfe bleiben, wo sie waren -- und immer, nicht erst klebend: beim
+       Einrasten aendert sich so kein Mass. */
+    .up-root.up-root[data-flach="yes"][data-kleb-fuss="yes"] > .up-foot {
+      margin-right: calc(-1 * var(--up-flach-aus)); padding-right: var(--up-flach-aus);
+    }
+    .up-root[data-kleb-fuss="yes"] > .up-foot { position: relative; }
+    .up-root[data-kleb-fuss="yes"] .up-box .up-sumrow,
+    .up-root[data-kleb-fuss="yes"] > .up-foot {
+      transition: transform var(--up-t-3) var(--up-ease-expo), opacity var(--up-t-2) var(--up-ease-expo);
+    }
+    .up-root[data-kleb-fuss="yes"].is-fuss-an .up-box .up-sumrow {
+      position: sticky; bottom: var(--up-fuss-unter, 0px); z-index: 4;
+    }
+    /* Die Linie ueber der Pagination fuellt den 1px zwischen beiden (die Linie des Kastens, die
+       klebend fehlt); ohne Gesamtzeile ist sie die Kante der Pagination. */
+    .up-root[data-kleb-fuss="yes"].is-fuss-an > .up-foot {
+      position: sticky; bottom: 0; z-index: 4; background: var(--up-surface);
+      box-shadow: 0 -1px 0 var(--vc-border);
+    }
+    .up-root[data-kleb-fuss="yes"].is-fuss-weg .up-box .up-sumrow,
+    .up-root[data-kleb-fuss="yes"].is-fuss-weg > .up-foot {
+      transform: translateY(var(--up-fuss-weg, 120px)); opacity: 0;
+    }
+    .up-root[data-kleb-fuss="yes"].is-fuss-still .up-box .up-sumrow,
+    .up-root[data-kleb-fuss="yes"].is-fuss-still > .up-foot { transition: none; }
+    /* Der Schatten: die Tiefe einer frei schwebenden Leiste (--up-e-3, "Leiste, Kasten"), aber
+       nach OBEN -- die Ebene liegt deckungsgleich auf dem Teil und ist gespiegelt (scaleY(-1)), so
+       wirft derselbe Wert nach oben statt nach unten, ohne eine zweite Zahl. Nur Deckkraft blendet. */
+    .up-root[data-kleb-fuss="yes"] .up-box .up-sumrow::before,
+    .up-root[data-kleb-fuss="yes"] > .up-foot::before {
+      content: ""; position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none;
+      box-shadow: var(--up-e-3); transform: scaleY(-1); opacity: 0;
+      transition: opacity var(--up-t-2) var(--up-ease-expo);
+    }
+    .up-root[data-kleb-fuss="yes"].is-fuss-klebt .up-box .up-sumrow::before,
+    .up-root[data-kleb-fuss="yes"].is-fuss-klebt.is-fuss-ohne-summe > .up-foot::before { opacity: 1; }
+    @media (prefers-reduced-motion: reduce){
+      .up-root[data-kleb-fuss="yes"] .up-box .up-sumrow,
+      .up-root[data-kleb-fuss="yes"] > .up-foot,
+      .up-root[data-kleb-fuss="yes"] .up-box .up-sumrow::before,
+      .up-root[data-kleb-fuss="yes"] > .up-foot::before,
+      .up-root.has-leistenband.up-sticky > .up-head::after { transition: none; }
+    }
+
     /* ---------- DAS OFFENE BAND (.up-band unter data-flach="yes", 15.10.) ----------
        Variante A der Vorschau zur Citations-Seite, vom Nutzer gewaehlt und danach auf Brands,
        Shopping und Ads uebertragen -- dort viermal fast gleich lokal gebaut, darum hierher gehoben,
@@ -4141,15 +4261,31 @@
     /* AUSGEBLENDET IST DAS BAND GANZ WEG (15.10.: "gehen die ganz weg und lassen sich ueber einen
        dann kommenden Button in der Topbar wieder einblenden"). Keine Restzeile, keine Linie; eine
        Huelle, die nur das Band traegt (Citations, .ucs-chart), faellt mit weg -- sonst stuende
-       ihr Abstand im Stapel als Luecke da. Den Knopf zum Einblenden setzt UC.bandAus in den
-       Seitenkopf. */
+       ihr Abstand im Stapel als Luecke da. Ein- und ausgeblendet wird seit dem 15.10. spaet ueber
+       den Umschalter, den UC.bandAus in den Seitenkopf setzt (.up-bandsw, immer da). */
     :is(.up-root.up-root[data-flach="yes"].up-band, .up-root.up-root[data-flach="yes"] .up-band).up-band.is-band-aus { display: none; }
     .up-root :has(> .up-band.is-band-aus:only-child) { display: none; }
-    /* Der Knopf im Seitenkopf: steht er direkt im Kopf (Citations, Aktualisieren ist dort ein
+    /* Mit dem Umschalter im Kopf weicht das eigene Auge des Bandes ("Nicht ueber so ein Eye-Icon").
+       Nur dann: ohne Seitenkopf setzt bandAus kein .is-band-schalter, und das Auge bleibt der Weg. */
+    :is(.up-root.up-root[data-flach="yes"].up-band, .up-root.up-root[data-flach="yes"] .up-band).is-band-schalter .up-band-auge { display: none; }
+    /* Der Umschalter im Seitenkopf: steht er direkt im Kopf (Citations, Aktualisieren ist dort ein
        eigenes Kind), rueckt er an die Werkzeuge rechts, 8 vor ihnen wie zwischen den Knoepfen
        einer Werkzeuggruppe (.uds-tools, .ubr-tools) -- der Kopf selbst haelt 16 Abstand. In einer
-       Werkzeuggruppe steht er ohnehin richtig. */
-    .up-ph-top > .up-band-zeigen { margin-left: auto; margin-right: -8px; }
+       Werkzeuggruppe steht er ohnehin richtig. .up-band-zeigen ist der Knopf "Show chart" von
+       vorher; den setzt core nicht mehr, die Klasse bleibt fuer den Vertrag stehen. */
+    .up-ph-top > :is(.up-bandsw, .up-band-zeigen) { margin-left: auto; margin-right: -8px; }
+    /* Auf dem Telefon (is-vnarrow, Wurzel unter 500) werden die Kapseln rund, 32 x 32 statt 40 x 32:
+       gemessen 15.10. bei 375 auf Brands fehlten der Krumenzeile ("Brands > Tracked", 146) neben
+       Umschalter, "Add" und Aktualisieren gut 2px, sie endete in "Bran... > Track...". Die 16 machen
+       daraus 14 Luft. Hoehe, Radius und Zeichen bleiben -- nur das Polster neben dem Zeichen faellt
+       auf 8, die Form des Themenschalters vor dem 15.10. spaet. */
+    .up-root.is-vnarrow .up-ph-top .up-seg.up-bandsw .up-seg-btn { padding: 0 8px; }
+    /* Und der Hinzufuegen-Knopf daneben wird zu seinem Zeichen, wie Export in der Werkzeugleiste
+       (.is-w0): auf Deutsch ist seine schmale Fassung "Hinzufuegen" 105 breit, gemessen 15.10. bei
+       375 blieb von "Brands > Beobachtet" nur "B... > Beob...". Ohne die Worte 32 x 32 (das Polster
+       0 8 hat .up-export schon), der Name bleibt als aria-label. Nur in einem Kopf mit Umschalter --
+       ohne ihn hatte die Zeile die Luft, und der Knopf behaelt sein Wort. */
+    .up-root.is-vnarrow .up-ph-top:has(.up-bandsw) .up-ph-addbtn span { display: none; }
 
     /* ---------- DIE ZEILE UNTER DEM BAND (15.10.) ----------
        Zwischen der Unterkante eines Bandes und der Zeile darunter (Leiste oder Ueberschrift einer
@@ -4207,8 +4343,8 @@
     }
     /* Im Dunkeln BLEIBT der Rand (bewusst keine Ausnahme wie in "Dark: kein Rand um die aeusseren
        Flaechen"): dessen Kriterium ist, dass die Fuellung den Kasten vom Grund trennt -- im Dunkeln
-       nach Geist (15.10.) tragen Drawer und Kasten beide Background 1 (#0a0a0a, gemessen), ohne
-       Rand waere vom Kasten nur die Trennlinie zu sehen. */
+       nach Geist (15.10.) tragen Drawer und Kasten beide Background 1 (#0a0a0a, gemessen; seit "eine
+       Stufe ruhiger" beide #0f0f0f), ohne Rand waere vom Kasten nur die Trennlinie zu sehen. */
     /* Die Luft unter dem Band (DIE ZEILE UNTER DEM BAND, oben) gilt dem offenen Band vor einer
        Leiste. Im Drawer haelt der Stapel seine Abstaende selbst (64 zwischen den Abschnitten);
        ohne das stuenden unter Top Citations 80 statt 64. Dieselbe Form wie oben, eine Stufe
@@ -4346,6 +4482,55 @@
     .up-leer .up-empty-btn { display: inline-flex; align-items: center; justify-content: center; height: var(--up-h-btn);
       padding: 0 12px; border-radius: var(--up-r-m); background: var(--vc-bg); font-size: var(--up-fs-l); font-weight: var(--up-fw-m); }
     .up-leer .up-empty-btn:hover { background: var(--vc-heading-bg); }
+    /* ---- DER LEERZUSTAND IM CHART (15.10., chartLeerHtml in core.js) ----------------------------
+       Derselbe Leerzustand wie oben, aber in einer Huelle, die ueber der GANZEN Chartflaeche liegt
+       (absolut, inset 0) und ein Groessen-Container ist. Die Flaeche behaelt dadurch die Hoehe des
+       Charts -- der Zustand bestimmt sie nicht, die Seite springt nicht -- und der Inhalt sitzt
+       senkrecht mittig darin. Die 48 Polster von oben weichen hier der Mitte; 16 bleiben, damit
+       nichts an die Kante stoesst.
+       Was nicht passt, faellt weg, gestaffelt nach der gemessenen Flaeche statt nach dem Aufrufer:
+         voll       Kachel 54, 24, Titel 24, 8, Satz 20-60   = 130-170, mit Polster bis 202
+         unter 220  ohne Satz, Abstand 16: Kachel und Titel  = 94, mit Polster 126
+         unter 130  nur der Titel                            = 24, mit Polster 56
+       Unter 280 Breite faellt der Satz ebenfalls weg: dort braucht er vier Zeilen und waere hoeher
+       als die volle Form oben rechnet.
+       Der Wirt (makeTypeChart setzt .up-chart-leer-wirt, solange der Zustand in ihm steht) braucht
+       nur die Positionierung; seine Hoehe hat er aus seiner Karte. Die Linie braucht nichts, ihr
+       .up-line-wrap ist schon positioniert.
+       is-fluss: fuer Flaechen ohne eigene Hoehe (Balkenliste). Kein Container, kein absolut -- der
+       Zustand steht im Fluss und bringt seine Hoehe selbst mit, immer in der kompakten Form
+       (Kachel und Titel, 24 Polster: 142). Balkenlisten stehen in schmalen Kaesten und Spalten;
+       mit Satz waeren es bis zu 220, also mehr als die Liste mit ihren Zeilen meist braucht. */
+    .up-chart-leer-wirt { position: relative; }
+    .up-chart-leer { position: absolute; inset: 0; z-index: 1; container: up-chart-leer / size; }
+    .up-chart-leer > .up-empty.up-leer { box-sizing: border-box; height: 100%; padding: 16px 24px; justify-content: center; }
+    @container up-chart-leer (max-height: 219px) {
+      .up-chart-leer > .up-empty.up-leer { gap: 16px; }
+      .up-chart-leer .up-empty-t { display: none; }
+    }
+    @container up-chart-leer (max-width: 279px) {
+      .up-chart-leer .up-empty-t { display: none; }
+    }
+    @container up-chart-leer (max-height: 129px) {
+      .up-chart-leer .up-empty-ic { display: none; }
+    }
+    .up-chart-leer.is-fluss { position: static; container-type: normal; }
+    .up-chart-leer.is-fluss > .up-empty.up-leer { height: auto; padding: 24px; gap: 16px; }
+    .up-chart-leer.is-fluss .up-empty-t { display: none; }
+    /* ---- DER LEERZUSTAND IN DER TABELLE NEBEN DEM CHART (15.10., tabelleLeerHtml in core.js) ----
+       Die Huelle gibt dem absoluten .up-chart-leer seine Flaeche: so hoch wie das Skelett der
+       Tabelle (Zeilen x Zeilenhoehe, die Zahl setzt der Aufrufer), damit zwischen Laden und Leer
+       nichts springt. flex 1: in einer Tabelle mit fester Hoehe (Top Brands, Top Citations: Band
+       aus Kopf und acht Zeilen) waechst sie bis an die Unterkante, der Zustand steht mittig in der
+       ganzen Flaeche. Die Stufen nach Groesse kommen unveraendert aus den Container-Queries oben.
+       DIE ZEILENHOEHE folgt der Zeile, die das Skelett zeichnet: .up-row ist 72, dicht 55
+       (--up-h-row) -- dieselben zwei Regeln wie bei .up-row weiter oben, also zieht ein Wechsel
+       der Dichte die Flaeche mit. Tabellen mit eigener Zeile setzen --up-tab-leer-zeile in ihrer
+       CSS (Top Brands und Top Citations 55, Brands Overview 56, Agentic-Listen 36), die
+       Variantentabelle hier (.up-vrow, 55). */
+    .up-tab-leer { --up-tab-leer-zeile: 72px; position: relative; flex: 1 1 auto; min-width: 0;
+      min-height: calc(var(--up-tab-leer-zeilen, 4) * var(--up-tab-leer-zeile)); }
+    .up-root.is-dense .up-tab-leer, .up-vartable .up-tab-leer { --up-tab-leer-zeile: var(--up-h-row); }
     .up-row.up-tsk { cursor: default; }
     .up-row.up-tsk:hover { background: transparent; }
     .up-tsk-bar { display: inline-block; height: 12px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
@@ -5817,26 +6002,32 @@
    im grauen Hell #ebebeb und #ffffff, also genau Geists Gray 400 und Background 100. Nicht
    --vc-border fuer den aeusseren Ring: das Einstellungsfenster setzt es auf seine dunklere
    Fensterlinie (#dcdbdd), und dann stuenden zwei verschiedene Ringe uebereinander. */
-.up-root .up-seg.up-themesw { height: var(--up-h-btn); padding: 0; gap: 0; border-radius: var(--up-r-voll);
+/* DERSELBE SCHALTER IM SEITENKOPF (15.10. spaet, UC.bandSchalterHtml): der Umschalter des Bandes
+   mit zwei Feldern, Chart und Tabelle / nur Tabelle ("Switcher nur mit 2 Icons, aber entspanntem
+   Padding"). Er steht in JEDER Regel hier mit drin und hat keine eigene -- zwei Schalter dieser
+   Form, die auseinanderlaufen koennen, waeren ein Nachbau (CLAUDE.md 1). :is() mit zwei Klassen
+   haelt die Spezifitaet bei einer Klasse, also genau dort, wo sie vorher stand. 32 hoch wie die
+   Knoepfe des Seitenkopfs (.up-ph-iconbtn, .up-ph-addbtn). */
+.up-root .up-seg:is(.up-themesw, .up-bandsw) { height: var(--up-h-btn); padding: 0; gap: 0; border-radius: var(--up-r-voll);
   background: transparent; box-shadow: 0 0 0 1px var(--vc-switch-border); }
-.up-root .up-seg.up-themesw.is-klein { height: var(--up-h-chip); }
-.up-root .up-seg.up-themesw::before { border: 0; border-radius: var(--up-r-voll);
+.up-root .up-seg:is(.up-themesw, .up-bandsw).is-klein { height: var(--up-h-chip); }
+.up-root .up-seg:is(.up-themesw, .up-bandsw)::before { border: 0; border-radius: var(--up-r-voll);
   box-shadow: 0 0 0 1px var(--vc-switch-border), var(--up-e-1); }
 /* MEHR LUFT IN DEN DREI FELDERN (15.10. spaet: "den Theme Switcher besser stylen, mehr Padding in den
    3 Bereichen"): die Knoepfe sind nicht mehr rund (Breite = Hoehe), sondern Kapseln mit Polster
    12 bzw. 8 neben dem 16er-Zeichen -- 40 x 32 und 32 x 24. Die gleitende Flaeche misst den Knopf
    (segLauf) und wird damit von selbst zur Kapsel. */
-.up-root .up-seg.up-themesw .up-seg-btn { width: auto; height: var(--up-h-btn); padding: 0 12px;
+.up-root .up-seg:is(.up-themesw, .up-bandsw) .up-seg-btn { width: auto; height: var(--up-h-btn); padding: 0 12px;
   border: 0; border-radius: var(--up-r-voll); color: var(--vc-third); }
-.up-root .up-seg.up-themesw.is-klein .up-seg-btn { width: auto; height: var(--up-h-chip); padding: 0 8px; }
-.up-root .up-seg.up-themesw .up-seg-btn svg { width: 16px; height: 16px; color: inherit; }
-.up-root .up-seg.up-themesw .up-seg-btn:hover,
-.up-root .up-seg.up-themesw .up-seg-btn.is-active { color: var(--vc-text); }
+.up-root .up-seg:is(.up-themesw, .up-bandsw).is-klein .up-seg-btn { width: auto; height: var(--up-h-chip); padding: 0 8px; }
+.up-root .up-seg:is(.up-themesw, .up-bandsw) .up-seg-btn svg { width: 16px; height: 16px; color: inherit; }
+.up-root .up-seg:is(.up-themesw, .up-bandsw) .up-seg-btn:hover,
+.up-root .up-seg:is(.up-themesw, .up-bandsw) .up-seg-btn.is-active { color: var(--vc-text); }
 /* Bevor core gemessen hat (oder wo der Streifen abgeschaltet ist), traegt der gewaehlte Knopf die
    Flaeche selbst -- dieselbe wie das ::before. Danach gibt er sie ab (.is-gleitend > button). */
-.up-root .up-seg.up-themesw:not(.is-gleitend) .up-seg-btn.is-active {
+.up-root .up-seg:is(.up-themesw, .up-bandsw):not(.is-gleitend) .up-seg-btn.is-active {
   background: var(--vc-switch-pill); box-shadow: 0 0 0 1px var(--vc-switch-border), var(--up-e-1); }
-.up-root .up-seg.up-themesw .up-seg-btn:focus-visible { outline: 0;
+.up-root .up-seg:is(.up-themesw, .up-bandsw) .up-seg-btn:focus-visible { outline: 0;
   box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
 /* ---------- "X mentioned?" yes/no cell ----------
@@ -6126,11 +6317,36 @@
                    --vc-border). Das Logo bleibt ein Logo: ein 20er Quadrat mit Radius 4 in der
                    Platte, das ganz in den Kreis passt (Ecke bei 12.5 vom Mittelpunkt, Kreis innen
                    13) -- nichts wird abgeschnitten. Vorher 22er Bild im abgerundeten Quadrat.
-     Ueberlappung  wieder 4 wie vor dem 15.10. (dicht 3.52). Geists 0.3 x Groesse (8) lag zu eng. */
-:root { --up-stack-ueber: 4px; --up-stack-ring-w: 1px; }
+     Ueberlappung  wieder 4 wie vor dem 15.10. (dicht 3.52). Geists 0.3 x Groesse (8) lag zu eng.
+   NACHGEZOGEN 15.10. nachts (Nutzer: "eine Stufe groesser und bitte wieder ein sichtbares Gap
+   zwischen den Elementen, wie es vorher ja auch gab, und minimal kleiner den Abstand zwischen den
+   Elementen"):
+     Groesse       32 statt 28 -- die naechste Stufe der Hoehen-Skala (--up-h-btn). Faktor 32/28 auf
+                   alles, dann auf die Stufe: Polster 3 -> 4, Logo 22 (32 - 2 Rahmen - 2 x 4) mit
+                   Radius 4 (--up-r-xs; 4.57 liegt naeher an 4 als an 6). Ecke des Logos 13.9 vom
+                   Mittelpunkt, Kreis innen 15 -- im Dunkeln mit dem 1px-Plattenrand 14.9, passt
+                   auch dort. Bei 24er Logo (Polster 3) laege die Ecke mit Radius 4 bei 15.3, also
+                   im Rahmen. Buchstabe 10 -> 11 (--up-fs-xs), "+N" 11 -> 12 (--up-fs-s): eine
+                   Stufe ueber dem Buchstaben wie vorher.
+     Ring          3 statt 1: der sichtbare ABSTAND zwischen zwei Chips, in der Grundfarbe. Vor dem
+                   15.10. waren es 4 bei 28 -- 3 ist der Teil davon, der neben dem Haarstrich-Rand
+                   des Kreises noch als Luecke liest und nicht als zweite Linie.
+     Ueberlappung  5 statt 4, Schritt 27 statt 24. Verdeckt wird vom Nachfolger jetzt Ueberlappung
+                   plus Ring = 8 von 32 (25 %, vorher 5 von 28 = 18 %, Geists 9 von 28 = 32 % war
+                   "zu nah") -- die Chips ruecken also sichtbar zusammen, Schritt durch Groesse 0.84
+                   statt 0.86. Und 5 + 3 = 8 ist genau das Spreizen beim Hover: der angefasste Chip
+                   kommt mit seinem Ring genau bis an die Nachbarn, ohne in sie zu schneiden -- das
+                   Hover-Verhalten (8/16, 3px Anheben) bleibt dadurch Wert fuer Wert, wie es war.
+     Dicht         Faktor 0.88 ueber dieselben drei Marken (.up-root.is-dense weiter unten), nicht
+                   je Regel: 28.16, Ueberlappung 4.4, Ring 2.64 -- 4.4 + 2.64 = 7.04, das dichte
+                   Spreizen. Der Ring zieht seit heute mit, er ist kein Haarstrich mehr. */
+/* --up-stack-gr: die Chipgroesse als EINE Marke, weil Chip, "+N" und das dichte Mass sie teilen.
+   Aus der Hoehen-Skala, die ebenfalls an :root steht (Kopf dieser Datei) -- so loest sie auch fuer
+   einen Stapel ausserhalb einer .up-root auf. */
+:root { --up-stack-gr: var(--up-h-btn); --up-stack-ueber: 5px; --up-stack-ring-w: 3px; }
 .up-stack { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; isolation: isolate; }
 .up-stack-item {
-  width: 28px; height: 28px; flex: 0 0 28px;
+  width: var(--up-stack-gr); height: var(--up-stack-gr); flex: 0 0 var(--up-stack-gr);
   display: inline-flex; align-items: center; justify-content: center;
   position: relative; cursor: default; z-index: var(--up-stack-z, auto);
 }
@@ -6161,10 +6377,11 @@
    Rechnung: 28px Chip - 2x1 Rahmen - 2x2 Polsterung = 22px Bild, Bildradius 8 - 3 = 5
    (seit 15.10. auf der Geist-Skala: Chip --up-r-m = 6, Bild 6 - 3 = 3).
    Der 4px-Ring aus box-shadow bleibt unberuehrt: das ist der ABSTAND zum Nachbarn, nicht die
-   Kante des Chips. */
+   Kante des Chips.
+   Seit 15.10. nachts: 32er Kreis, 1px Rahmen, 4px Polster, also 22er Logo; Ring 3 (Kopf des Blocks). */
 .up-stack-vis {
   display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 100%;
-  border-radius: var(--up-r-voll); padding: 3px; background: var(--vt-logo-bg); box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg);
+  border-radius: var(--up-r-voll); padding: 4px; background: var(--vt-logo-bg); box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg);
   border: 1px solid var(--vc-border);
   transition: transform .16s ease;
   /* Bezug fuer den Globus des Favicon-Rueckfalls (siehe .up-fav weiter oben). In Ruhe traegt die
@@ -6224,23 +6441,27 @@
 .up-karte-klick:is(:hover, .is-hl) :is(.up-stack-vis, .up-stack-more) {
   --up-stack-ring: color-mix(in srgb, var(--vc-bg) 50%, var(--up-knopf-hover));
   box-shadow: 0 0 0 var(--up-stack-ring-w) var(--up-stack-ring); }
-/* Das Logo im Kreis: 28 - 2 Rahmen - 2 x 3 Polster = 20, Radius 4 (--up-r-xs), siehe Kopf des Blocks. */
+/* Das Logo im Kreis: 32 - 2 Rahmen - 2 x 4 Polster = 22, Radius 4 (--up-r-xs), siehe Kopf des Blocks.
+   Der Buchstabe 11 (vorher 10 bei 28: Faktor 32/28 ergibt 11.4, die Stufe darunter liegt naeher). */
 .up-stack-item img { width: 100%; height: 100%; border-radius: var(--up-r-xs); object-fit: contain; display: block; }
-.up-stack-ltr { font-size: 10px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
+.up-stack-ltr { font-size: var(--up-fs-xs); font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
 .up-stack-item.has-img .up-stack-ltr { display: none; }
 /* "+N" NACH GEIST (15.10.; vorher reiner Text 12/500 mit 8px Abstand): ein Kreis in Chipgroesse,
    der wie ein weiteres Mitglied um die Ueberlappung unter den letzten Chip greift und zuunterst liegt
    (Geist z-index 0). Geist: Gray 100 mit 1px Gray 400, Schrift 10/600 -- hier unsere Toene (Grund
    --up-sel-bg, Kante --vc-border, Schrift --vc-muted) und 11 statt 10 (die Skala beginnt bei 11).
    min-width statt width: eine dreistellige Zahl darf ihn zur Pille ziehen, statt abzuschneiden.
-   Der 1px-Ring in der Zeilenfarbe wie an jedem Chip, beim Ueberfahren der Zeile mit. */
+   Der 1px-Ring in der Zeilenfarbe wie an jedem Chip, beim Ueberfahren der Zeile mit.
+   Seit 15.10. nachts mit dem Chip eine Stufe groesser: Kreis 32 (--up-stack-gr), Ring 3, Polster
+   4 -> 5 (Faktor 32/28 = 4.57), Schrift 11 -> 12 (12.6 gerechnet; 12 haelt den Abstand von einer
+   Stufe zum Buchstaben im Chip, der auf 11 steht). */
 .up-stack-more {
   position: relative; z-index: 0; flex: 0 0 auto;
   display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
-  min-width: 28px; height: 28px; padding: 0 4px; margin-left: calc(var(--up-stack-ueber) * -1);
+  min-width: var(--up-stack-gr); height: var(--up-stack-gr); padding: 0 5px; margin-left: calc(var(--up-stack-ueber) * -1);
   border: 1px solid var(--vc-border); border-radius: var(--up-r-voll); background: var(--up-sel-bg);
   box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg);
-  font-size: var(--up-fs-xs); font-weight: var(--up-fw-h); line-height: 1; color: var(--vc-muted);
+  font-size: var(--up-fs-s); font-weight: var(--up-fw-h); line-height: 1; color: var(--vc-muted);
   white-space: nowrap; font-variant-numeric: tabular-nums;
   transition: transform .16s ease;
 }
@@ -6296,19 +6517,17 @@
 .up-root.is-dense .up-stack.is-spread-left .up-stack-item:has(~ .up-stack-item:hover) .up-stack-vis { transform: translateX(-14.08px); }
 .up-root.is-dense .up-stack.is-spread-left .up-stack-item:has(~ .up-stack-item.is-last:hover) .up-stack-vis { transform: translateX(-7.04px); }
 /* Compact mode shrinks the mentioned-brand logos ~20% and scales every gap/shift to match. */
-.up-root.is-dense .up-stack-item { width: 24.64px; height: 24.64px; flex: 0 0 24.64px; }
-/* Dichte Zeilen: Faktor 0.88 auf alles (24.64 statt 28). Polsterung 2 -> 1.76, Rahmen bleibt 1px,
-   also sitzt das Bild 2.76px innen und der Bildradius ist 7.04 - 2.76 = 4.28.
-   Seit dem 15.10. spaet ein Kreis wie der normale Chip: Polster 0.88 x 3 = 2.64, das Logo also
-   24.64 - 2 - 5.28 = 17.36 mit Radius 4 -- passt in den Kreis (Ecke 10.6 vom Mittelpunkt, innen 11.3). */
-/* Der Ring bleibt 1px (Geist: ein Haarstrich in jeder Groesse), nur die Ueberlappung zieht mit. */
-.up-root.is-dense .up-stack-vis { border-radius: var(--up-r-voll); padding: 2.64px; box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg); }
-.up-root.is-dense .up-row:hover .up-stack-vis { box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vt-row-hover-solid, var(--vc-bg));
-  --up-stack-ring: var(--vt-row-hover-solid, var(--vc-bg)); }
-.up-root.is-dense .up-stack-item img { border-radius: var(--up-r-xs); }
-.up-root.is-dense .up-stack-ltr { font-size: 8.8px; }
-.up-root.is-dense .up-stack-item + .up-stack-item { margin-left: calc(var(--up-stack-ueber) * -0.88); }
-.up-root.is-dense .up-stack-more { min-width: calc(28px * 0.88); height: calc(28px * 0.88); margin-left: calc(var(--up-stack-ueber) * -0.88); }
+/* Dichte Zeilen: Faktor 0.88 auf alles. Seit 15.10. nachts ueber die drei Marken des Stapels statt
+   je Regel -- Groesse 32 -> 28.16, Ueberlappung 5 -> 4.4, Ring 3 -> 2.64 --, damit Chip, "+N",
+   Ring, Zeilen-Hover und der Einzug der Karte (.urt-card-citations) EINEN Wert lesen. Vorher stand
+   der Ring hier als eigene box-shadow-Regel, die mit (0,3,0) auch den Ring der gehoverten Karte
+   schlug; die Zeile brauchte dafuer eine zweite Hover-Regel. Beides faellt weg.
+   Polster 4 -> 3.52, Logo also 28.16 - 2 - 7.04 = 19.12 mit Radius 4 -- Ecke 11.9 vom
+   Mittelpunkt, Kreis innen 13.08. Buchstabe 11 x 0.88, "+N" 12 x 0.88 = 10.6 -> 11 (Stufe). */
+.up-root.is-dense { --up-stack-gr: calc(var(--up-h-btn) * 0.88); --up-stack-ueber: calc(5px * 0.88); --up-stack-ring-w: calc(3px * 0.88); }
+.up-root.is-dense .up-stack-vis { padding: calc(4px * 0.88); }
+.up-root.is-dense .up-stack-ltr { font-size: calc(var(--up-fs-xs) * 0.88); }
+.up-root.is-dense .up-stack-more { padding: 0 calc(5px * 0.88); font-size: var(--up-fs-xs); }
 .up-root.is-dense .up-stack-item:hover .up-stack-vis { transform: translateX(7.04px) translateY(-3px); }
 .up-root.is-dense .up-stack-item:first-child:hover .up-stack-vis { transform: translateY(-3px); }
 .up-root.is-dense .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
@@ -6388,9 +6607,11 @@
      einer schwebenden Schicht (Gray 500), die leise Flaeche (Seitenspalte der Preferences) und das
      Skelett Gray 100. Alle vier stehen HIER, weil die helle Grundregel dieser Karte sie selbst
      setzt -- eine geerbte Marke verliert gegen jede eigene Deklaration. Gemessen am 15.10., als sie
-     hier fehlten: die Seitenspalte der Preferences stand in #f9f8f9 im dunklen Fenster. */
-  --vc-text: #ededed; --vc-muted: #c9c9c9; --vc-third: #a1a1a1; --vc-fourth: #7d7d7d; --vc-border: #454545;
-  --vc-heading-bg: #1a1a1a; --vc-hover-border: #707070; --up-surface: #0a0a0a; --vc-sk: #1a1a1a; --up-switch-off: #454545;
+     hier fehlten: die Seitenspalte der Preferences stand in #f9f8f9 im dunklen Fenster.
+     Eine Stufe ruhiger (15.10. abends): Grund #0f0f0f, Rand #333333, leise Flaeche #1f1f1f,
+     Skelett #1e1e1e; der Schalter aus bleibt #454545. */
+  --vc-text: #ededed; --vc-muted: #c9c9c9; --vc-third: #a1a1a1; --vc-fourth: #7d7d7d; --vc-border: #333333;
+  --vc-heading-bg: #1f1f1f; --vc-hover-border: #707070; --up-surface: #0f0f0f; --vc-sk: #1e1e1e; --up-switch-off: #454545;
   --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
 }
 @media (prefers-reduced-motion: reduce){ .up-topicmodal-backdrop, .up-topicmodal-card { transition-duration: 1ms; } }
@@ -8179,3 +8400,24 @@ html[data-up-hell="grau"] .up-root:not([data-theme="dark"]) :is(.up-ph-iconbtn, 
 html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up-iconbtn)[aria-pressed="true"],
 html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up-iconbtn)[aria-pressed="true"]:hover {
   background: var(--up-wahl-bg); box-shadow: inset 0 0 0 1px var(--up-wahl-rand); }
+
+/* ================= DIE UMGEKEHRTE KARTE: NEBENSCHRIFT UND GLANZ (16.10., Benachrichtigung) =====
+   Eigener Block fuer die schwebende Benachrichtigung (notification-card.css, Variante C "Invers"
+   der Leinwand "Notification Varianten"). Zwei Werte, die die umgekehrte Karte bisher nicht hatte;
+   an denselben Selektoren wie --vc-inverse-bg/-ink oben, damit sie auch am <body> aufloesen.
+   --vc-inverse-sub  die Nebenschrift (Bezeichnung, Text, Zweitknopf, X). Im Hellen derselbe Wert
+                     wie --vc-toast-sub. Im Dunkeln NICHT --vc-toast-sub (#6b6f78): auf #eeedef sind
+                     das 4.32:1 und damit unter den 4.5, die 13px-Text braucht; #5f636b aus der
+                     Vorlage hat 5.17:1. Gerechnet mit den WCAG-Leuchtdichten.
+   --vc-inverse-glanz  der Lichtstreifen, der einmal ueber die Karte wandert. Licht ist in beiden
+                     Themen weiss -- kein vorhandenes Token traegt Weiss in beiden (--vc-inverse-ink
+                     ist im Dunkeln #1f1f1b). Auf der dunklen Karte ein Hauch (9%), auf der hellen
+                     kraeftig (75%), sonst ist er auf #eeedef nicht zu sehen. Werte der Vorlage. */
+:root, .up-root, [data-theme="light"] {
+  --vc-inverse-sub: #a0a0a0;
+  --vc-inverse-glanz: rgba(255,255,255,.09);
+}
+[data-theme="dark"], .up-root[data-theme="dark"] {
+  --vc-inverse-sub: #5f636b;
+  --vc-inverse-glanz: rgba(255,255,255,.75);
+}

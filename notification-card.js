@@ -16,10 +16,18 @@
 
    ── Was aus core kommt ──────────────────────────────────────────────────────────
    UC.makeMount, UC.makeFire, UC.parseLoose, UC.esc, UC.isYes   das uebliche Geruest
-   UC.icon                          die fuenf Typ-Symbole plus das x
-   .up-iconbtn / .up-btn / .up-btn-sec   die drei Knopfarten
+   UC.icon                          die Typ-Symbole plus das x (Strich, nie gefuellt)
+   UC.onTheme                       das Thema zur Laufzeit (siehe syncTheme)
+   .up-iconbtn.is-24 / .up-btn-sec  das X und die Geometrie beider Knoepfe
 
-   Neu ist hier nur die Karte selbst: ihre Groesse, die drei Zeilen und die Einblendung. */
+   ── Das Aussehen (16.10., Variante C "Invers" der Leinwand "Notification Varianten") ──
+   Die schmale Karte (360) in der Sprache von UC.toast: umgekehrt zum Thema, im Hellen dunkel,
+   im Dunkeln hell -- die Seite dahinter behaelt ihr Thema. Links eine Spalte fuer das Zeichen,
+   rechts Bezeichnung, Titel, Text und darunter linksbuendig die Knoepfe; das X oben rechts.
+   Kein Kopf mehr und damit KEIN LOGO: data-logo wird weiter angenommen (Vertrag, eine bestehende
+   Verdrahtung darf nicht brechen), aber nicht mehr gezeichnet -- in allen vier Entwuerfen hat die
+   Karte kein Logo, und auf der umgekehrten Flaeche haette der dunkle Schriftzug im Hellen eine
+   zweite Fassung gebraucht. Neu ist hier nur die Karte selbst: Masse, Glanz und Einblendung. */
 (function () {
   "use strict";
 
@@ -142,43 +150,29 @@
   function shell() {
     return '' +
       '<div class="unc-card" role="status" aria-live="polite" tabindex="-1">' +
-        /* Drei Zierschichten unter dem Inhalt, alle ohne Mauszeiger-Ereignisse: der weiche
-           Verlauf oben rechts, die feinen senkrechten Linien und die Lichtkante an der
-           Oberkante. Sie stehen im Markup und nicht als Pseudo-Elemente, weil drei Schichten
-           mit ::before/::after nicht gehen. */
-        '<span class="unc-wash" aria-hidden="true"></span>' +
-        /* Sieben geschwungene Haarlinien, je 55px auf x versetzt, von unten links nach oben
-           rechts. preserveAspectRatio="none" laesst sie mit der Karte mitziehen, statt bei einer
-           anderen Breite abzuschneiden -- die Karte ist 424 breit, die viewBox 384. */
-        '<svg class="unc-rules" aria-hidden="true" width="100%" height="100%" ' +
-              'viewBox="0 0 384 200" preserveAspectRatio="none">' +
-          [-40, 15, 70, 125, 180, 235, 290].map(function (x) {
-            return '<path d="M' + x + ' 215 C ' + (x + 110) + ' 175, ' + (x + 182) + ' 102, ' +
-                   (x + 230) + ' -20"/>';
-          }).join("") +
-        '</svg>' +
-        '<span class="unc-hair" aria-hidden="true"></span>' +
-
-        '<div class="unc-head">' +
-          '<img class="unc-logo" alt="upstreem" onerror="this.style.display=&quot;none&quot;"/>' +
-          '<button class="up-iconbtn unc-x" type="button" aria-label="Dismiss">' +
-            (UC.icon ? UC.icon("x", 1.6) : "") +
-          '</button>' +
-        '</div>' +
-
-        '<div class="unc-body">' +
-          '<span class="unc-tile" aria-hidden="true"></span>' +
-          '<div class="unc-txt">' +
-            '<span class="unc-type"></span>' +
+        /* Der Glanz: ein Lichtstreifen, der einmal schraeg ueber die Karte wandert. Eine eigene
+           Lage unter dem Inhalt (die Teile danach stehen mit position:relative darueber), ohne
+           Mauszeiger-Ereignisse; der Streifen selbst ist ihr ::before. */
+        '<span class="unc-glanz" aria-hidden="true"></span>' +
+        /* Die Zeichenspalte: 18 breit, 20 hoch -- die Hoehe einer Textzeile, damit das Zeichen
+           mittig auf der Bezeichnung daneben sitzt. */
+        '<span class="unc-ic" aria-hidden="true"></span>' +
+        '<div class="unc-txt">' +
+          '<span class="unc-type"></span>' +
+          '<div class="unc-copy">' +
             '<span class="unc-title"></span>' +
             '<span class="unc-desc"></span>' +
           '</div>' +
+          /* Hauptknopf zuerst: die Knoepfe stehen linksbuendig unter dem Text, also liest man von
+             links -- die Handlung vor dem Wegklicken. Beide tragen die Geometrie von .up-btn-sec. */
+          '<div class="unc-foot">' +
+            '<a class="up-btn-sec unc-primary" target="_blank" rel="noopener noreferrer"></a>' +
+            '<button class="up-btn-sec unc-second" type="button"></button>' +
+          '</div>' +
         '</div>' +
-
-        '<div class="unc-foot">' +
-          '<button class="up-btn-sec unc-second" type="button"></button>' +
-          '<a class="unc-primary" target="_blank" rel="noopener noreferrer"></a>' +
-        '</div>' +
+        '<button class="up-iconbtn is-24 unc-x" type="button" aria-label="Dismiss">' +
+          (UC.icon ? UC.icon("x", 1.6) : "") +
+        '</button>' +
       '</div>';
   }
 
@@ -225,36 +219,53 @@
 
 
     /* Das Thema steht als data-theme auf der Wurzel; die Karte haengt jetzt daneben und wuerde die
-       Dark-Mode-Regeln nicht erben. Also spiegeln, und zwar bei jedem Render: Bubble schaltet das
-       Attribut zur Laufzeit um. */
+       Dark-Mode-Regeln nicht erben. Also spiegeln. */
     function syncTheme() {
       /* UC.themeParam statt isYes: kennt core ein Thema, gewinnt core. */
       var dunkel = root.getAttribute("data-theme") === "dark" || UC.themeParam(root.getAttribute("data-isdark"));
+      var soll = dunkel ? "dark" : "light";
       /* Das Thema gehoert an den Traeger: dort sitzt up-root, von dort erben die --vc-Variablen
          nach innen. An der Karte selbst hat up-root ihre Geometrie zerstoert. */
-      traeger.setAttribute("data-theme", dunkel ? "dark" : "light");
-      /* Dasselbe Attribut zusaetzlich an der Karte. Der Traeger traegt up-root und damit die
-         --vc-Variablen; die Karte braucht es fuer ihre eigenen Dark-Regeln. Mit dem Selektor ueber
-         den Traeger (.up-root[data-theme="dark"] .unc-primary) gewann in der App die schwaechere
-         Regel, obwohl der Selektor nachweislich passte und spaeter stand -- warum, habe ich nicht
-         geklaert. Am Element selbst gibt es keine Kette, die schiefgehen kann. */
-      elCard.setAttribute("data-theme", dunkel ? "dark" : "light");
+      if (traeger.getAttribute("data-theme") !== soll) traeger.setAttribute("data-theme", soll);
+      /* Dasselbe Attribut zusaetzlich an der Karte: an ihr loesen die umgekehrten Token
+         (--vc-inverse-*, --vc-toast-*) auf, core fuehrt sie an [data-theme="light"] und
+         [data-theme="dark"]. Steht es dort, gewinnt es gegen alles, was der Traeger vererbt. */
+      if (elCard.getAttribute("data-theme") !== soll) elCard.setAttribute("data-theme", soll);
     }
-    var elLogo   = karte.querySelector(".unc-logo");
-    var elTile   = karte.querySelector(".unc-tile");
+    /* DAS THEMA ZUR LAUFZEIT (16.10.). Bis heute lief syncTheme nur in render(), also nur, wenn
+       neue Daten kamen. Gemessen: nach setUpstreemTheme("dark") stand der Traeger auf dark (core
+       stempelt jedes .up-portal), die Karte selbst aber weiter auf light -- und weil sie das
+       Attribut selbst traegt, loeste sie gegen den Traeger hell auf. Eine halb gedrehte Karte:
+       Grund aus dem Traeger dunkel, Hauptknopf hell.
+       Zwei Wege hinein, wie bei den Seiten in core (es-Seite): UC.onTheme fuer den Wechsel ueber
+       core, ein Beobachter an der Wurzel fuer Bubble, das data-isdark direkt umschreibt. Haengt
+       der Traeger nicht mehr im Dokument (die Wurzel wurde neu eingehaengt, siehe oben), meldet
+       sich das Abo selbst ab -- sonst sammelte jeder Seitenwechsel ein totes Abo an. */
+    var themaAb = null, themaWache = null;
+    function themaAbbauen() {
+      if (themaAb) { themaAb(); themaAb = null; }
+      if (themaWache) { themaWache.disconnect(); themaWache = null; }
+    }
+    function aufThema() {
+      if (!traeger.isConnected) { themaAbbauen(); return; }
+      syncTheme();
+    }
+    if (typeof UC.onTheme === "function") themaAb = UC.onTheme(aufThema);
+    if (window.MutationObserver) {
+      themaWache = new MutationObserver(aufThema);
+      themaWache.observe(root, { attributes: true, attributeFilter: ["data-theme", "data-isdark"] });
+    }
+    var elIc     = karte.querySelector(".unc-ic");
     var elType   = karte.querySelector(".unc-type");
     var elTitle  = karte.querySelector(".unc-title");
     var elDesc   = karte.querySelector(".unc-desc");
     var elSecond = karte.querySelector(".unc-second");
     var elPrim   = karte.querySelector(".unc-primary");
 
-    var state = { list: [], aktuell: null, weg: {}, weckerId: 0 };
+    /* gezeigt: die id der Karte, deren Einblendung zuletzt lief (siehe render). */
+    var state = { list: [], aktuell: null, weg: {}, weckerId: 0, gezeigt: null };
 
     var fire = UC.makeFire ? UC.makeFire(root, instanceId) : function () {};
-
-    function logoQuelle() {
-      return root.getAttribute("data-logo") || "";
-    }
 
     /* Zeigt die naechste Nachricht, die noch nicht weggeklickt wurde. Das `weg`-Verzeichnis lebt
        nur in dieser Sitzung: die dauerhafte Ablage macht der Workflow serverseitig, sonst kaeme
@@ -277,10 +288,16 @@
         state.weckerId = setTimeout(function () { state.weckerId = 0; render(); }, wartet);
       }
 
-      if (!n) { root.classList.remove("is-open"); elCard.classList.remove("is-shown"); return; }
+      if (!n) {
+        root.classList.remove("is-open"); elCard.classList.remove("is-shown");
+        state.gezeigt = null;
+        return;
+      }
 
       var t = typOf(n.notification_type);
-      elTile.innerHTML = UC.icon ? UC.icon(t.icon, 1.5) : "";
+      /* 1.5 wie in der Vorlage: das Zeichen steht mit 18px groesser als die 16 der Knoepfe, mit
+         dem Standardstrich 2 wirkte es neben der 12px-Bezeichnung zu schwer. */
+      elIc.innerHTML = UC.icon ? UC.icon(t.icon, 1.5) : "";
       elType.textContent = t.label;
       elTitle.textContent = String(n.title == null ? "" : n.title);
       /* body kommt mit \n aus dem RPC. textContent macht daraus kein <br>, also die Zeilen
@@ -298,39 +315,29 @@
       if (url) { elPrim.setAttribute("href", url); elPrim.setAttribute("target", "_blank"); }
       else { elPrim.removeAttribute("href"); elPrim.removeAttribute("target"); }
       elPrim.style.display = String(n.cta_label == null ? "" : n.cta_label).trim() ? "" : "none";
-      /* Zwei getrennte Klassen statt einer, die im Dark Mode ueberschrieben wird: eine
-         .unc-card[data-theme="dark"] .unc-primary.is-dark-Regel hat in der App nachweislich NICHT
-         gewonnen, obwohl sie spaeter stand, staerker war und der Selektor laut matches() passte.
-         Woran das lag, konnte ich nicht klaeren. Ohne konkurrierende Regeln kann es nicht mehr
-         schiefgehen: welche Klasse gilt, entscheidet hier das JS. */
-      /* Die drei Farben des gefuellten Knopfs stehen hier und nicht in der CSS. Grund, gemessen
-         und nicht vermutet: eine Regel .unc-primary.is-solid-inv mit rgb(224,224,224) war im
-         Stylesheet, matchte das Element laut matches(), stand spaeter und war spezifischer -- und
-         getComputedStyle gab trotzdem den Wert der schwaecheren Regel zurueck. Dasselbe zuvor mit
-         [data-theme="dark"] als Vorfahre und mit var(--vc-text). Woran es liegt, habe ich nicht
-         gefunden; ein Inline-Wert schlaegt jede Regel und laesst der Kaskade keine Gelegenheit.
-         Nur der gefuellte Knopf ist betroffen -- der umrandete kommt weiter aus der CSS. */
-      var dunkelJetzt = root.getAttribute("data-theme") === "dark" || UC.themeParam(root.getAttribute("data-isdark"));
-      if (t.dunkel) {
-        var flaeche = dunkelJetzt ? "#e0e0e0" : "#1f1f1f";
-        elPrim.style.background = flaeche;
-        elPrim.style.borderColor = flaeche;
-        elPrim.style.color = dunkelJetzt ? "#1f1f1b" : "#ffffff";
-        elPrim.style.boxShadow = dunkelJetzt ? "none" : "inset 0 1px 0 rgba(255,255,255,0.16)";
-      } else {
-        elPrim.style.background = "";
-        elPrim.style.borderColor = "";
-        elPrim.style.color = "";
-        elPrim.style.boxShadow = "";
-      }
-
-      var lg = logoQuelle();
-      if (lg) { elLogo.setAttribute("src", lg); elLogo.style.display = ""; }
-      else { elLogo.style.display = "none"; }
+      /* Gefuellt oder umrandet, je Typ wie bisher (TYPEN.dunkel). Die Farben kommen jetzt ganz
+         aus der CSS, aus den umgekehrten Token -- sie drehen mit dem data-theme der Karte und
+         damit auch beim Wechsel zur Laufzeit. Bis heute standen sie fuer den gefuellten Knopf
+         inline hier, mit der Begruendung, eine Klassenregel habe laut getComputedStyle nicht
+         gewonnen. Das war sehr wahrscheinlich die Messfalle mit der haengenden Transition im
+         verdeckten Fenster (der Knopf trug transition: background 140ms): der berechnete Wert
+         bleibt dort auf dem Startwert stehen. Inline-Farben haetten den Laufzeitwechsel des
+         Themas wieder nicht mitgemacht. */
+      elPrim.classList.toggle("is-solid", !!t.dunkel);
+      elPrim.classList.toggle("is-line", !t.dunkel);
 
       syncTheme();
       root.classList.add("is-open");
-      /* Die Karte haengt nicht mehr unter der Wurzel, also traegt sie die Sichtbarkeit selbst. */
+      /* Die Karte haengt nicht mehr unter der Wurzel, also traegt sie die Sichtbarkeit selbst.
+         Eine NEUE Nachricht (andere id) bekommt die Einblendung neu: die Animationen der Teile
+         starten nur, wenn das Element aus display:none zurueckkommt. Ohne das kaeme die zweite
+         Karte nach dem Wegklicken der ersten ohne Staffel und ohne Glanz. Dieselbe Nachricht
+         noch einmal (ein Refresh mit denselben Daten) spielt nichts ab -- die Karte steht schon. */
+      if (state.gezeigt !== n.id && elCard.classList.contains("is-shown")) {
+        elCard.classList.remove("is-shown");
+        void elCard.offsetWidth;   /* den Zustand ohne Karte einmal berechnen lassen */
+      }
+      state.gezeigt = n.id;
       elCard.classList.add("is-shown");
     }
 
@@ -409,7 +416,10 @@
       reset: function () { state.list = []; state.weg = {}; render(); },
       /* Beim Abbau die Karte mitnehmen -- sie haengt am body und bliebe sonst stehen, wenn
          Bubble die Wurzel entfernt. */
-      destroy: function () { if (traeger && traeger.parentNode) traeger.parentNode.removeChild(traeger); }
+      destroy: function () {
+        themaAbbauen();
+        if (traeger && traeger.parentNode) traeger.parentNode.removeChild(traeger);
+      }
     };
 
     root.__uncController = ctrl;

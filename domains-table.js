@@ -169,8 +169,9 @@
        data-leiste="yes". Dann faellt die Ueberschrift mit Zaehler weg (die Anzahl steht in der
        Gesamtzeile unten), und was DATEN aendert -- Markenschalter, "All Brands", Citation Types --
        steht als Zeile im Menue "Filters" der Seite (UC.makeLeistenFilter unten), nicht mehr als
-       Knopf rechts. Anders als dort steht die Filterleiste nicht IM Kopf, sondern ueber dem Band:
-       sie gilt fuer Chart und Tabelle zugleich. Rechts bleibt, was nur die Ansicht aendert:
+       Knopf rechts. Seit dem 16.10. (Variante A) steht die Filterleiste wie dort IM Kopf, und
+       der Kopf steht ueber dem Band (die Seite stellt um, core bandUnterLeiste): sie gilt fuer
+       Chart und Tabelle zugleich. Rechts bleibt, was nur die Ansicht aendert:
        Sortierer, Suche, Display, Export. Der Drilldown behaelt seine eigenen Filter -- sie gelten
        fuer EINE Domain, nicht fuer die Seite. Ohne das Attribut (Drawer, Bubble) bleibt alles,
        wie es war. */
@@ -1504,6 +1505,11 @@
     }
     document.addEventListener("click", function(e){
       if (!ownsTarget(e.target)) return;
+      /* FREMDE BAUSTEINE IN DER WURZEL (16.10., Variante A der Citations-Seite): der Chart steht
+         als Band zwischen Leiste und Kasten, Kalender und Filter der Seite in der Leiste. Ihre
+         Klicks gehoeren ihnen -- ohne das griffe etwa [data-brand] einer Markenzeile im Menue
+         "Filters" weiter unten als Wahl der eigenen Markenliste. Wie prompts-table.js. */
+      if (e.target.closest && e.target.closest(".up-band, .up-leiste-scope .up-root, .up-ff")) return;
 
       /* The drilldown's toolbar is handled FIRST, before anything else in this listener.
          Its type filter deliberately reuses the core .up-filter-btn / .up-filter-menu /

@@ -750,7 +750,8 @@
     "No citations for {alt}. AI answers cite this page as {url}.": "Keine Zitate für {alt}. KI-Antworten zitieren diese Seite als {url}.",
     "Use {url}": "{url} verwenden",
     "We haven't seen this domain in your citations. Did you mean {host}?": "Diese Domain kommt in deinen Zitaten nicht vor. Meintest du {host}?",
-    "Use {host}": "{host} verwenden",
+    "We haven't seen {alt} in your citations. Did you mean {host}?": "{alt} kommt in deinen Zitaten nicht vor. Meintest du {host}?",
+    "Use {host}": "{host} verwenden", "Similar domain": "Ähnliche Domain",
     "This subdomain hasn't been cited yet. It will be counted from its first citation.": "Diese Subdomain wurde noch nicht zitiert. Sie zählt ab dem ersten Zitat.",
     "This domain hasn't been cited yet. It will be counted from its first citation.": "Diese Domain wurde noch nicht zitiert. Sie zählt ab dem ersten Zitat.",
     "No cited page matches yet. Matching pages count from their first citation.": "Noch passt keine zitierte Seite. Passende Seiten zählen ab ihrem ersten Zitat.",
@@ -826,6 +827,17 @@
       "Mit Hinzufügen oben auf der Seite ergänzt du jederzeit Seiten oder Regeln.",
     "{n} new URLs after the event": "{n} neue URLs nach dem Event"
   });
+  /* 15.10. nachts: Leerzustaende des Details. Gegen alle Kataloge geprueft (Katalog-Kollision);
+     "No data yet" und "Add" stehen in core und werden nur benutzt. */
+  if (UC.addMessages) UC.addMessages("de", {
+    "Nothing tracked yet": "Noch nichts getrackt",
+    "Add pages, paths or domains to see which of them AI answers cite after the event.":
+      "Füg Seiten, Pfade oder Domains hinzu, um zu sehen, welche davon KI-Antworten nach dem Event zitieren.",
+    "No competitors to compare yet": "Noch keine Wettbewerber zum Vergleichen",
+    "Competitors you track appear here with their visibility before and after the event.":
+      "Wettbewerber, die du trackst, erscheinen hier mit ihrer Visibility vor und nach dem Event.",
+    "This page opens once an AI answer cites it.": "Diese Seite lässt sich öffnen, sobald eine KI-Antwort sie zitiert."
+  });
 
   /* Spaltenzahl der Karten: nach dem PLATZ (wie response-detail.spalten -- dieselben Schwellen,
      dieselbe Begruendung: ein springendes Raster ist schlimmer als eine kurze letzte Reihe). */
@@ -878,8 +890,10 @@
      Funktion erkennt PostgREST an PGRST202, eine fehlende Edge Function das Gateway von Supabase
      an 404 NOT_FOUND ("Requested function was not found"), eine ohne Gate an 503 not_configured
      (siehe edgeFehlt); jede andere Antwort heisst "da" -- auch die 400 invalid_input, mit der die
-     Function die leere url ablehnt (ohne Abruf und ohne Zaehlung im Ratenlimit, index.ts V3).
-     Netzfehler und Zeitablauf heissen "noch unbekannt" -- dann wird beim naechsten Oeffnen noch
+     Function die leere url ablehnt (ohne Abruf und ohne Zaehlung im Ratenlimit, bestaetigt im
+     Nachtrag 15.10. fuer Version 4: "das bleibt so").
+     Netzfehler, Zeitablauf und bei der Edge Function ein anderer 5xx (502 edge_failed) heissen
+     "noch unbekannt" -- dann wird beim naechsten Oeffnen noch
      einmal gefragt, und bis dahin gilt der Rueckfall. NICHT ueber UC.ohneBubble: das ist kein
      Rueckweg an Bubble, sondern die Frage, was die Datenbank kann. */
   var ZIELE_DA = { stand: null, laeuft: null }, SITEMAP_DA = { stand: null, laeuft: null };
@@ -888,13 +902,15 @@
     return !!erg && !erg.ok && (/PGRST202/.test(String(f.code || "")) ||
       (erg.status === 404 && /could not find the function/i.test(String(f.message || "") + " " + String(f.details || ""))));
   }
-  /* "Fehlt" heisst auch 503 not_configured (Rueckmeldung 15.10., Abschnitt 0 und 7): die Function
-     ist deployt, aber ihr Gate (impact_event_sitemap_gate_v1 aus events_ziele_v1.sql) fehlt --
-     jeder Abruf scheitert. Der Pruefaufruf mit leerer url sieht das NICHT: die deployte Fassung
-     (Version 3, index.ts) lehnt die leere url mit 400 invalid_input ab, bevor sie das Gate fragt.
-     Darum bietet die Oberflaeche die Sitemap nur zusammen mit den Zielen an (sitemapDa verlangt
-     zieleDa -- Gate und Vorschau kommen aus derselben Datei), und eine 503 beim echten Abruf
-     nimmt den Knopf fuer den Rest der Seite weg (smLaden). */
+  /* "Fehlt" heisst auch 503 not_configured. Laut Nachtrag 15.10. (Abschnitt 2, sitemap-lesen
+     Version 4) hat sie genau zwei Ursachen: detail "env" -- die Umgebung der Function fehlt; das
+     prueft sie als Erstes, vor JWT und Eingabe, also sieht es auch der Pruefaufruf mit leerer url
+     --, oder detail "events_ziele_v1.sql missing" -- das Gate fehlt; das kommt erst nach der
+     Eingabepruefung, der Pruefaufruf sieht es also nicht (seit events_ziele_v1.sql eingespielt
+     ist, nur noch nach dessen Rueckweg). Beide heissen: jeder Abruf scheitert. Unterschieden wird
+     nicht, detail zeigt die Oberflaeche nie. Darum bietet sie die Sitemap nur zusammen mit den
+     Zielen an (sitemapDa verlangt zieleDa -- Gate und Vorschau kommen aus derselben Datei), und
+     eine 503 beim echten Abruf nimmt den Knopf fuer den Rest der Seite weg (smLaden). */
   function edgeFehlt(erg) {
     var f = (erg && erg.fehler) || {};
     if (!erg || erg.ok) return false;
@@ -998,10 +1014,14 @@
     return x ? x.host : "";
   }
   /* Zwei Hosts, die sich nur um einen Tippfehler unterscheiden (hoechstens zwei Zeichen) --
-     fuer "Did you mean ...?" bei 0 Treffern. */
+     fuer "Did you mean ...?", solange die Datenbank selbst keinen Vorschlag macht (vor
+     events_ziele_v2.sql, siehe tippVorschlaege). Eine Unterdomain des anderen ist kein
+     Tippfehler: m.lee-up.de liegt zwei Zeichen von lee-up.de entfernt und waere sonst ein
+     falscher Vorschlag. */
   function aehnlich(a, b) {
     a = String(a || ""); b = String(b || "");
     if (!a || !b || a === b || Math.abs(a.length - b.length) > 2) return false;
+    if (a.slice(-(b.length + 1)) === "." + b || b.slice(-(a.length + 1)) === "." + a) return false;
     var m = [], i, j;
     for (i = 0; i <= a.length; i++) { m[i] = [i]; }
     for (j = 0; j <= b.length; j++) m[0][j] = j;
@@ -1009,6 +1029,50 @@
       m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
     }
     return m[a.length][b.length] <= 2;
+  }
+  /* "DID YOU MEAN ...?" (15.10. spaet, Nachtrag der Datenbank Abschnitt 3): je Host, den das Team
+     nie zitiert hat, hoechstens EIN Vorschlag { alt, neu } -- in der Reihenfolge der Ziele.
+     Unbekannt ist ein Host laut per_target[].host_known (je Ziel); das oberste host_known gilt nur
+     fuer das erste gueltige Ziel (Nachtrag 4.2) und zaehlt nur, wenn per_target fehlt und alle
+     Ziele denselben Host haben (h1).
+     MIT events_ziele_v2.sql schlaegt die Datenbank selbst vor: Grund similar_host, Domains des
+     Teams im Abstand <= 2, je Ziel bis 3, sortiert nach Abstand, dann Zitaten -- genommen wird der
+     erste, dessen target_input zu einem Ziel mit diesem Host gehoert. Ueber den HOST und nicht nur
+     ueber die eine Eingabe: die Datenbank fuehrt jede URL nur einmal (distinct je URL), zwei Ziele
+     auf demselben vertippten Host (bwm.de/a, bwm.de) bekommen den Vorschlag also nur am ersten.
+     Ob die Antwort von v2 kommt, sagt can_classify (steht nur dort) oder ein near_misses-Eintrag
+     mit host/distance. Dann gilt NUR der Vorschlag der Datenbank -- sie kennt alle zitierten
+     Domains, die Oberflaeche nur die bis zu fuenf Beinahe-Treffer.
+     VOR v2 der alte Weg: ein Beinahe-Treffer (other_host, also dieselbe Hauptdomain) hoechstens
+     zwei Zeichen vom Host entfernt. Er findet nur Tippfehler in der Unterdomain
+     (ratgebr.lee-up.de); einen in der Hauptdomain (lee-upp.de) sieht er nicht. */
+  function tippVorschlaege(d, h1) {
+    var nahAlle = isArr(d.near_misses) ? d.near_misses.filter(Boolean) : [];
+    var pts = isArr(d.per_target) ? d.per_target.filter(Boolean) : [];
+    var mitDb = typeof d.can_classify === "boolean" || nahAlle.some(function (x) { return x.distance !== undefined || x.host !== undefined; });
+    function hostVon(s) {
+      for (var i = 0; i < pts.length; i++) if (String(pts[i].input) === String(s) && pts[i].host) return String(pts[i].host);
+      var z = zerlegen(s);
+      return z ? z.host : "";
+    }
+    var unbek = [];
+    if (pts.length) pts.forEach(function (pt) {
+      var h = pt.host ? String(pt.host) : hostVon(pt.input);
+      if (pt.host_known === false && pt.valid !== false && !pt.error && h && unbek.indexOf(h) < 0) unbek.push(h);
+    });
+    else if (d.host_known === false && h1) unbek.push(h1);
+    var aus = [];
+    unbek.forEach(function (h) {
+      var neu = "";
+      nahAlle.forEach(function (x) {
+        if (neu) return;
+        var passt = x.target_input == null || hostVon(x.target_input) === h;
+        if (mitDb) { if (x.reason === "similar_host" && x.target_input != null && passt && x.host && String(x.host) !== h) neu = String(x.host); }
+        else if (x.url && passt) { var nh = hostPfad(x.url).host; if (aehnlich(nh, h)) neu = nh; }
+      });
+      if (neu) aus.push({ alt: h, neu: neu });
+    });
+    return aus;
   }
 
   /* ============================================================================================
@@ -1453,6 +1517,10 @@
        sie EINMAL je Lieferung des Speichers aus list_impact_events_v3 (Liste ohne Umschlag, in der
        Datenbank 3 ms) und legt sie nur hier ab. Bringt eine Zeile des Speichers target_count
        selbst mit, faellt der Aufruf von allein weg; fehlt v3 (PGRST202), fuer den Rest der Seite.
+       Seit dem Nachtrag 15.10. (Abschnitt 1) liefert team_context_v1 beide Felder mit
+       events_ziele_v2.sql, in derselben Form wie list_impact_events_v3 -- danach laeuft der
+       Aufruf nicht mehr. Ein Event ohne Ziele traegt dann target_count 0, auch das zaehlt als
+       "geliefert".
        Scheitert er, bleibt die Karte wie bisher -- dann ohne Ziele, aber nie mit erfundenen. */
     var LISTE3 = { seq: -1, laeuft: false, fehlt: false, je: {} };
     function liste3Holen() {
@@ -1622,10 +1690,14 @@
             '<div class="up-box uev-chartbox"><div class="up-line-wrap uev-linewrap"><canvas></canvas></div>' +
               '<div class="up-legend uev-legende"></div></div>' +
           '</section>' +
-          '<section class="uev-sek" data-sek="markt"></section>' +
-          /* Die Regel-Ziele (15.10.): je Ziel ein eigener Abschnitt, gebaut in renderZiele. */
+          /* DIE ZIELE DIREKT UNTER DEM CHART, VOR DER MARKTBEWEGUNG (15.10. nachts angefordert:
+             "die URL-/Quellen-Sektion direkt unters Chart und ueber Marktbewegung"). Was das Event
+             trackt, gehoert zu seiner Wirkung oben; der Markt ist der Blick nach aussen danach.
+             Untereinander wie bisher: erst die Regel-Ziele (je Ziel ein Abschnitt, renderZiele),
+             dann die URL-Ziele. */
           '<div class="uev-ziele" data-sek="ziele" hidden></div>' +
           '<section class="uev-sek" data-sek="urls"></section>' +
+          '<section class="uev-sek" data-sek="markt"></section>' +
           '<section class="uev-sek" data-sek="scope"></section>' +
           '<section class="uev-sek uev-sek-resp" data-sek="resp"></section>' +
         '</div>';
@@ -1641,6 +1713,9 @@
         /* Die Legende IMMER (04.10.): erst sie sagt, welche Linie die betroffenen Prompts und
            welche die Vergleichsgruppe ist -- unabhaengig von "Legende zeigen" in den Preferences. */
         legendeImmer: true,
+        /* Gefiltert leer (Models, Markets, Intent): der Leerzustand mit Lupe, "No matching data"
+           (core, chartLeerHtml) -- leer wegen des Filters ist etwas anderes als noch keine Daten. */
+        gefiltert: gefiltert,
         markers: chartMarker,
         onMarker: function (id) { if (id && id !== state.eventId) oeffnen(id, true); }
       });
@@ -1686,6 +1761,12 @@
       if (alt === (liste || []).join(",") && (state[feld] == null) === (liste == null)) return;
       state[feld] = liste; persist();
       analyseAnfordern(); renderDetail();
+    }
+    /* Schraenkt ein Filter die Analyse ein? Models und Markets aus der Leiste des Details, dazu der
+       Intent-Filter der App -- dieselbe Frage, die die Seiten an UC.seitenFilterAktiv stellen. */
+    function gefiltert() {
+      return UC.seitenFilterAktiv ? UC.seitenFilterAktiv({ modelle: state.modelle, maerkte: state.maerkte })
+        : !!((state.modelle && state.modelle.length) || (state.maerkte && state.maerkte.length));
     }
     function segSetzen() {
       var fb = elMain.querySelectorAll(".uev-fenster [data-fenster]");
@@ -1831,7 +1912,10 @@
       var leer = !(a.cohort && num(a.cohort.comparable_prompt_count) > 0);
       el.innerHTML = METRIKEN.map(function (m) {
         var teile = leer ? { wertHtml: '<span class="up-num is-empty">–</span>' } : kpiTeile(m.key, a);
-        if (leer && m.key === "visibility") teile.fussHtml = esc(t("No comparable data yet"));
+        /* Der Satz unter JEDER Kachel (15.10. nachts): bis dahin stand er nur unter Visibility, und
+           Rank und Sentiment zeigten einen nackten Strich ohne Grund. Der Strich bleibt -- er ist der
+           Wert einer Kachel ohne Zahl (Vertrag 5: "KPI-Karten - und Noch keine vergleichbaren Daten"). */
+        if (leer) teile.fussHtml = esc(t("No comparable data yet"));
         teile.label = m.label;
         /* Die drei Kennzahlen in EINEM Kasten: das Kennzahlen-Band aus core (.up-kpiband am
            Behaelter, 04.10.), senkrechte Linien ueber die volle Hoehe. */
@@ -1849,11 +1933,15 @@
       try { v = String(getComputedStyle(root).getPropertyValue(name) || "").trim(); } catch (e) {}
       return v || sonst;
     }
+    /* Traegt irgendeine Reihe wenigstens einen Wert? (null ist eine Luecke, kein Wert.) */
+    function mitWert(ds) {
+      return ds.some(function (x) { return isArr(x.data) && x.data.some(function (v) { return v != null; }); });
+    }
     function renderChart() {
       if (!linie) return;
       var a = dieAnalyse();
       segSetzen();
-      if (!a) { if (state.analyseFehler && !state.analyseLaden) linie.empty(t("This event could not be loaded.")); else linie.skeleton(); return; }
+      if (!a) { if (state.analyseFehler && !state.analyseLaden) linie.meldung(t("This event could not be loaded.")); else linie.skeleton(); return; }
       var tr = isArr(a.trend) ? a.trend : [];
       if (!tr.length) { linie.empty(); return; }
       var feld = state.metrik;
@@ -1872,6 +1960,10 @@
         ds.push({ label: t("Comparison"), __id: "comparison", __baseColor: grau, borderColor: grau,
                   __dash: true, data: tr.map(function (p) { return num(p["comparison_" + feld]); }) });
       }
+      /* Tage ohne einen einzigen Wert (alle Laeufe 0, oder die Marke hat in der gewaehlten Kennzahl
+         nie einen -- Rank ohne Erwaehnung): sonst ein leeres Achsenkreuz mit dem Pin, eine leere
+         Flaeche statt eines Leerzustands (gemessen 15.10. nachts: 61 Tage, 0 Punkte). */
+      if (!mitWert(ds)) { linie.empty(); return; }
       linie.render({ labels: tr.map(function (p) { return String(p.day).slice(0, 10); }), datasets: ds });
     }
 
@@ -1980,9 +2072,18 @@
         seitenStand("markt", null);
         return;
       }
-      /* Ohne Wettbewerber faellt der Abschnitt weg (Spezifikation 85) -- eine Tabelle mit nur der
-         eigenen Zeile ist kein Markt. */
-      if (!(isArr(a.competitors) && a.competitors.length)) { platz.innerHTML = ""; seitenStand("markt", null); el.hidden = true; return; }
+      /* Ohne Wettbewerber keine Tabelle (Spezifikation 85) -- eine Tabelle mit nur der eigenen
+         Zeile ist kein Markt. Aber auch kein Verschwinden mehr (15.10. nachts): der Abschnitt hatte
+         eben noch sein Skelett gezeigt, und ein Skelett, das wortlos wieder geht, sieht aus wie ein
+         Fehler -- und alles darunter rutschte hoch. Stattdessen der Leerzustand aus core im Kasten,
+         wie bei den Zielen. Der Satz nennt beide Gruende ohne sie zu unterscheiden: keine
+         Wettbewerber getrackt, oder noch keiner in diesen Prompts gesehen. */
+      if (!(isArr(a.competitors) && a.competitors.length)) {
+        seitenStand("markt", null);
+        platz.innerHTML = sekKopf(titel, desc) + '<div class="up-box uev-leerbox">' +
+          UC.leerHtml({ icon: "squareStack", titel: "No competitors to compare yet", text: "Competitors you track appear here with their visibility before and after the event." }) + '</div>';
+        return;
+      }
       var reihen = [];
       if (a.affected) reihen.push({ du: true, m: a.affected });
       a.competitors.forEach(function (c) { reihen.push({ m: c }); });
@@ -1993,7 +2094,7 @@
           /* Ohne Vorher-Wert steht vorher ein Strich und kein Trend -- und kein "Neu getrackt"
              (03.10.: "ein Wert ohne Vorher-Wert ist nicht gleich neu getrackt"). */
           var aend = num(v.before) == null ? "" : trendHtml("visibility", v.delta);
-          /* Die Zeile oeffnet die Marke im Drawer der App (04.10.), wie die URL-Zeilen darunter ihr
+          /* Die Zeile oeffnet die Marke im Drawer der App (04.10.), wie die URL-Zeilen darueber ihr
              URL-Detail -- openDrawer("brand", company_id), derselbe Weg wie url-detail und das
              Power Dashboard. Kein Bubble-Workflow noetig. */
           var cid = r.m.company_id != null ? String(r.m.company_id) : "";
@@ -2011,7 +2112,9 @@
        die Spalte heisst schon "First cited", der Chip sagt nur noch wann. Nie "noch nie zitiert"
        (Vertrag 5): gezaehlt wird nur in den betroffenen Prompts des eigenen Teams. Zitiert in der
        Schriftfarbe, nicht zitiert zurueckgenommen -- der Text sagt es, die Farbe stuetzt nur. */
-    function beobachtung(o) {
+    /* still: die Zeile oeffnet nichts (urlZitiert) -- dann sagt der Chip am Zeiger in einem Satz,
+       warum (15.10. nachts). Derselbe Chip, dasselbe Wort wie in jeder anderen Zeile. */
+    function beobachtung(o, still) {
       o = o || {};
       var st = o.status, txt, ja = true;
       /* day_number zaehlt die Tage NACH dem Event (Vertrag 3.9: 0 = Event-Tag) -- darum "After 10
@@ -2023,33 +2126,73 @@
           : ersetze(t(n === 1 ? "After 1 day ({date})" : "After {n} days ({date})"), { n: zahl(n), date: datum(o.first_observed_day) });
       } else if (st === "not_observed_within_6_months") { txt = t("Not within 6 months"); ja = false; }
       else { txt = t("Not yet"); ja = false; }
-      return '<span class="up-marke is-leise uev-beob' + (ja ? " is-ja" : "") + '">' + esc(txt) + '</span>';
+      return '<span class="up-marke is-leise uev-beob' + (ja ? " is-ja" : "") + '"' +
+        (still ? ' data-tip="' + esc(t("This page opens once an AI answer cites it.")) + '"' : '') + '>' + esc(txt) + '</span>';
+    }
+    /* IST DIESE URL SCHON ZITIERT? (15.10. nachts: "Klick auf eine noch nicht zitierte URL oeffnet
+       einen leeren, scheiternden URL-Detail-Drawer"). Das URL-Detail kennt nur Seiten, die das
+       eigene Team zitiert hat (url_detail_v1 sonst url_not_found). Zitiert heisst darum: nach dem
+       Event beobachtet (first_observed_prompt_run_id, Vertrag 3.9 "Klickbar"), in einem der beiden
+       Fenster in Laeufen gesehen (runs_with_url, global_share), in den 183 Tagen davor zitiert
+       (observed_before_event) -- oder dem Team schon beim Hinzufuegen bekannt (team_kannte_url).
+       Ohne Eintrag in der Analyse (laedt noch, gescheitert, Cache aelter als die URL) zaehlt nur das
+       letzte; eine URL, von der niemand weiss, ob es sie zu oeffnen gibt, oeffnet nicht. */
+    function urlZitiert(u, an) {
+      if (u && u.team_kannte_url === true) return true;
+      if (!an) return false;
+      var o = an.observation || {}, r = an.runs_with_url || {}, g = an.global_share || {};
+      return !!o.first_observed_prompt_run_id || o.observed_before_event === true ||
+        num(r.before) > 0 || num(r.after) > 0 || num(g.before) > 0 || num(g.after) > 0;
     }
     function renderUrls() {
       var el = elMain.querySelector('[data-sek="urls"]'), d = dieDetail(), a = dieAnalyse();
       var platz = tabInhalt("urls");
-      if (!d) { platz.innerHTML = ""; seitenStand("urls", null); return; }
+      /* Ohne Detail kein Abschnitt (statt einer leeren Flaeche mit 40 Abstand darueber): der Kopf
+         zeigt sein Skelett, und die Ziele kommen mit dem Detail. */
+      if (!d) { platz.innerHTML = ""; seitenStand("urls", null); el.hidden = true; return; }
       var urls = isArr(d.urls) ? d.urls : [];
-      /* Ohne URLs keine leere Analyse-Tabelle (Spezifikation 42) -- der Leerzustand aus core mit
-         dem Weg, eine anzulegen. Mit URLs steht "Add URL" schon im Seitenkopf: kein zweiter Knopf. */
       if (!urls.length) {
         seitenStand("urls", null);
-        platz.innerHTML = sekKopf("Affected URLs", "") +
-          UC.leerHtml({ mini: true, icon: "link", titel: "No URLs added yet", text: "Add pages, articles or external sources associated with this event.",
-            knopf: "Add URL", knopfAttr: "data-uev-addurl" });
+        /* Nur Regel-Ziele: die stehen als eigene Abschnitte direkt darueber. Ein "No URLs added yet"
+           darunter laese sich, als fehle etwas -- der Abschnitt faellt weg. */
+        if (regelZiele(d).length) { platz.innerHTML = ""; el.hidden = true; return; }
+        el.hidden = false;
+        /* Gar kein Ziel: keine leere Analyse-Tabelle (Spezifikation 42), sondern der Leerzustand
+           nach Geist im Kasten mit dem Weg, eines anzulegen. Bis 15.10. stand hier die Mini-Form,
+           und die laesst Satz und Knopf weg -- uebrig blieb eine graue Zeile ohne Ausweg. Der Knopf
+           ist derselbe wie oben im Seitenkopf: ohne Ziele in der Datenbank "Add URL", sonst "Add". */
+        var regeln = zieleDa();
+        platz.innerHTML = sekKopf("Affected URLs", "") + '<div class="up-box uev-leerbox">' +
+          UC.leerHtml({ icon: "link", titel: regeln ? "Nothing tracked yet" : "No URLs added yet",
+            text: regeln ? "Add pages, paths or domains to see which of them AI answers cite after the event."
+                         : "Add pages, articles or external sources associated with this event.",
+            knopf: regeln ? "Add" : "Add URL", knopfAttr: "data-uev-addurl" }) + '</div>';
         return;
       }
+      el.hidden = false;
       var proId = {};
       (a && isArr(a.urls) ? a.urls : []).forEach(function (u) { proId[u.id] = u; });
+      /* Gescheitert ist die Analyse nur, wenn sie nicht mehr laedt -- dann Striche statt Skelett:
+         ein Skelett, das nie endet, sieht aus wie "gleich da" (CLAUDE.md 2). Den Fehler selbst sagen
+         Kennzahlen und Diagramm oben. */
+      var kaputt = !a && state.analyseFehler && !state.analyseLaden;
       var ab = seitenStand("urls", urls.length);
       platz.innerHTML = sekKopf("Affected URLs", "Pages, articles or external sources associated with this event. Global share is measured in the affected prompts.") +
         '<div class="up-vartable uev-urls">' +
           tabKopf("URL", [{ t: "First cited", k: "uev-th-beob", info: "zitiert" }, { t: "Global share before" }, { t: "Global share after" }, { t: "Change" }]) +
           '<div class="up-tbody up-vbody">' + urls.slice(ab.von, ab.bis).map(function (u) {
             var an = proId[u.id], hp = hostPfad(u.url), gs = an && an.global_share ? an.global_share : null;
-            var sk = '<span class="up-tsk-bar"></span>';
-            /* Die ganze Zeile oeffnet das URL-Detail (03.10.), "Remove" faengt seinen Klick selbst ab. */
-            return '<div class="up-row up-vrow uev-urlzeile" data-url-id="' + esc(u.id) + '" data-url="' + esc(u.url) + '" role="link" tabindex="0">' +
+            /* Ohne Eintrag: laedt die Analyse noch, das Skelett; ist sie da, kennt die URL aber
+               nicht (gerade hinzugefuegt, Cache aelter), oder ist sie gescheitert, Striche -- und bei
+               einer vorhandenen Analyse "Not yet" wie jede nicht beobachtete URL. */
+            var sk = !a && !kaputt ? '<span class="up-tsk-bar"></span>' : '<span class="up-num is-empty">–</span>';
+            var zit = urlZitiert(u, an);
+            var beob = an ? beobachtung(an.observation, !zit) : a ? beobachtung({}, !zit) : sk;
+            /* Die ganze Zeile oeffnet das URL-Detail (03.10.), "Remove" faengt seinen Klick selbst ab.
+               NICHT ZITIERT (15.10. nachts): eine stille Zeile -- keine Rolle, kein Tab-Halt, kein
+               Zeiger, kein Hover-Grund (uev-urlstill in events.css). Der Klick-Weg sucht
+               .uev-urlzeile und geht an ihr vorbei; "Remove" bleibt am Hover der Zeile. */
+            return '<div class="up-row up-vrow ' + (zit ? 'uev-urlzeile' : 'uev-urlstill') + '" data-url-id="' + esc(u.id) + '" data-url="' + esc(u.url) + '"' + (zit ? ' role="link" tabindex="0"' : '') + '>' +
               /* Der Zeilenknopf sitzt in der ersten Zelle und erscheint am Hover der Zeile -- das
                  Bauteil .up-btn-sec.up-rowbtn aus core, wie "Edit" in brands-overview. Nur "Remove":
                  der Knopf "Responses" filterte die Tabelle darunter und war unverstaendlich (03.10.). */
@@ -2058,7 +2201,7 @@
                 '<span class="uev-url-pfad" title="' + esc(u.url) + '">' + esc(pfadText(hp)) + '</span></span>' +
                 '<button type="button" class="up-btn-sec up-rowbtn uev-urlweg" data-url-id="' + esc(u.id) + '" aria-label="' + esc(t("Remove")) + '">' + UC.icon("trash", 2) + '<span>' + esc(t("Remove")) + '</span></button>' +
               '</div>' +
-              '<div class="up-td uev-td-zahl uev-td-beob">' + (an ? beobachtung(an.observation) : sk) + '</div>' +
+              '<div class="up-td uev-td-zahl uev-td-beob">' + beob + '</div>' +
               '<div class="up-td uev-td-zahl">' + (an ? wertHtml("visibility", gs && gs.before) : sk) + '</div>' +
               '<div class="up-td uev-td-zahl">' + (an ? wertHtml("visibility", gs && gs.after) : sk) + '</div>' +
               '<div class="up-td uev-td-zahl">' + (an ? trendHtml("visibility", gs && gs.delta) : sk) + '</div>' +
@@ -2089,6 +2232,16 @@
       for (j = 0; j < l.length; j++) if (l[j] && l[j].value != null && String(l[j].value) === String(zt.value)) return l[j];
       return l.length === alle.length ? l[i] : null;
     }
+    /* Ein Ziel ohne ein einziges Zitat im ganzen Zeitraum: keine zitierte Seite, keine Zitate
+       vorher oder nachher, keine neue URL, kein Tag mit Zitaten. matched_url_count wie die Kachel
+       "Cited URLs": aus der Auswertung, sonst aus dem Detail. Eine 0 dort ist dann keine Messung,
+       die man zeigen muss, sondern "noch nichts da" (15.10. nachts). */
+    function zielOhneZitate(z, zt) {
+      var mc = z.matched_url_count != null ? num(z.matched_url_count) : num(zt && zt.matched_url_count);
+      if (mc > 0 || (isArr(z.cited_urls) && z.cited_urls.length)) return false;
+      if (num(z.citations_before) > 0 || num(z.citations_after) > 0 || num(z.new_urls_before) > 0 || num(z.new_urls_after) > 0) return false;
+      return !(isArr(z.daily) && z.daily.some(function (p) { return num(p && p.citations) > 0 || num(p && p.new_urls) > 0; }));
+    }
     var ART_SATZ = {
       path: "Everything under this path, including pages added later.",
       host: "Every page on this domain, including pages added later.",
@@ -2115,6 +2268,10 @@
           /* cited_urls_truncated (15.10.): die Tabelle traegt hoechstens 200 URLs, die neuesten. */
           '<div class="uev-hinweise uev-ziel-hinweis" hidden></div>' +
           '<div class="uev-ziel-tab"><div class="uev-tabinhalt"></div>' + fussHtml() + '</div>' +
+          /* Der Leerzustand des ganzen Ziels (zielFuellen, is-leer am Block): statt Kennzahlen,
+             Verlauf und Tabelle. Die drei bleiben stehen, nur verborgen -- das Diagramm ueberlebt so
+             den Wechsel zurueck, sobald das erste Zitat kommt. */
+          '<div class="up-box uev-leerbox uev-zielleer"></div>' +
         '</div>';
       host.appendChild(sek);
       var n = "ziel-" + zt.id;
@@ -2162,12 +2319,22 @@
         hinweis.innerHTML = mehr ? '<span class="uev-angabe">' + UC.icon("info", 2) + '<span>' + esc(ersetze(t("Showing the newest {n} URLs"), { n: zahl(z.cited_urls.length) })) + '</span></span>' : "";
       }
       var kopf = tabKopf("URL", [{ t: "First cited", k: "uev-th-beob" }, { t: "Citations after" }, { t: "Prompts" }, { t: "Models" }]);
+      /* EIN Leerzustand fuer das ganze Ziel statt vier Nullen, einer flachen Linie und einer grauen
+         Zeile (15.10. nachts gemessen: so sah ein Ziel ohne ein einziges Zitat aus). html "" zeigt
+         Kennzahlen, Verlauf und Tabelle wie bisher. */
+      var block = sek.querySelector(".uev-ziel-block"), leerEl = sek.querySelector(".uev-zielleer");
+      function leerZeigen(html) {
+        if (block) block.classList.toggle("is-leer", !!html);
+        if (leerEl) leerEl.innerHTML = html || "";
+      }
+      var zeichen = ART_ZEICHEN[zt.kind] || "link";
+      leerZeigen("");
       if (!a) {
         /* Die Analyse laeuft noch (oder ist gescheitert -- das sagen Kennzahlen und Diagramm oben
            schon, hier also leer statt ein drittes Mal). */
         var fehler = state.analyseFehler && !state.analyseLaden;
         kpis.innerHTML = fehler ? "" : [0, 1, 2, 3].map(function () { return UC.kpiKarteSkelett("uev-kpi"); }).join("");
-        if (linie2) { if (fehler) linie2.empty(t("This event could not be loaded.")); else linie2.skeleton(); }
+        if (linie2) { if (fehler) linie2.meldung(t("This event could not be loaded.")); else linie2.skeleton(); }
         platz.innerHTML = fehler ? "" : '<div class="up-vartable uev-zielurls">' + kopf + '<div class="up-tbody up-vbody">' +
           (UC.skeletonRows ? UC.skeletonRows({ count: 3, rowClass: "up-row up-vrow", cellClass: "up-td",
             cols: [{ w: 160, jitter: 40, logo: true, cls: "up-var-name uev-td-url" }, { w: 80, cls: "uev-td-zahl uev-td-beob" }, { w: 40, cls: "uev-td-zahl" }, { w: 30, cls: "uev-td-zahl" }, { w: 30, cls: "uev-td-zahl" }] }) : "") +
@@ -2175,13 +2342,19 @@
         seitenStand(n, null);
         return;
       }
-      if (!z) {
-        /* Die Analyse ist da, kennt dieses Ziel aber nicht (v2 ohne targets[], oder das Ziel ist
-           gerade erst dazugekommen und der Cache noch alt): ein Satz statt erfundener Nullen. */
+      if (!z || zielOhneZitate(z, zt)) {
+        /* !z: die Analyse ist da, kennt dieses Ziel aber nicht (v2 ohne targets[], oder das Ziel
+           ist gerade erst dazugekommen und der Cache noch alt) -- ein Satz statt erfundener Nullen.
+           Noch keine Auswertung ist ein Leerzustand, kein Fehler (15.10.). Sonst: ausgewertet, aber
+           noch kein einziges Zitat. Beide im Leerzustand aus core mit dem Zeichen der Regel, wie im
+           Kopf des Abschnitts; die Saetze sind die, die hier schon im Katalog standen ("No data yet"
+           aus core) -- kein neuer Schluessel fuer dieselbe Aussage. */
         kpis.innerHTML = "";
-        if (linie2) linie2.empty(t("The analysis for this rule isn't available yet."));
         platz.innerHTML = "";
         seitenStand(n, null);
+        leerZeigen(UC.leerHtml(!z
+          ? { icon: zeichen, titel: "No data yet", text: "The analysis for this rule isn't available yet." }
+          : { icon: zeichen, titel: "No cited pages yet", text: "Pages that match this rule appear here as soon as an AI cites them." }));
         return;
       }
       function zahlWert(v) { v = num(v); return v == null ? '<span class="up-num is-empty">\u2013</span>' : '<span class="up-num">' + esc(zahl(v)) + '</span>'; }
@@ -2199,14 +2372,22 @@
       ].join("");
       var tage = isArr(z.daily) ? z.daily : [];
       if (linie2) {
-        if (!tage.length) linie2.empty();
+        /* Ohne Tage oder nur mit Tagen ohne Lauf (alles null): der Leerzustand der Charts, nicht ein
+           leeres Achsenkreuz (wie renderChart). */
+        if (!tage.some(function (p) { return num(p.runs) !== 0 && (num(p.citations) != null || num(p.new_urls) != null); })) linie2.empty();
         else {
           var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : token("--vc-text", "#1f1f1b");
           var grau = token("--vc-fourth", "#80858e");
           /* Ein Tag ohne Lauf (runs 0) hat KEINE Zahl: citations kommt dort als null (Vertrag
              Abschnitt 5, wie v2), und die neuen URLs dieses Tages sind ebenso keine Beobachtung.
              __luecken aus core: die Linie bricht dort ab, statt den Tag zu ueberbruecken -- eine
-             Luecke statt einer 0 und statt eines erfundenen Verlaufs. */
+             Luecke statt einer 0 und statt eines erfundenen Verlaufs. Vor events_ziele_v2.sql
+             kam new_urls dort als 0, seitdem als null (Nachtrag 15.10., Abschnitt 4.1); beides
+             wird hier zur Luecke.
+             MIT FILTER (Markt, Intent, Modelle) folgen runs und citations dem Filter, new_urls
+             aber der ganzen Kohorte: eine neue URL kann auf einen Tag ohne gefilterten Lauf fallen.
+             Sie fehlt dann im Verlauf, zaehlt aber in new_urls_before/after. Die Kachel "New URLs"
+             nimmt deshalb diese beiden Felder und nie die Summe der Tagesreihe. */
           var ohneLauf = function (p) { return num(p.runs) === 0; };
           linie2.render({ labels: tage.map(function (p) { return String(p.day).slice(0, 10); }), datasets: [
             { label: t("Citation count"), __id: "zitate", __baseColor: tinte, borderColor: tinte, __luecken: true, data: tage.map(function (p) { return ohneLauf(p) ? null : num(p.citations); }) },
@@ -2216,8 +2397,11 @@
       }
       var urls = isArr(z.cited_urls) ? z.cited_urls : [];
       if (!urls.length) {
+        /* Zitate im Zeitraum, aber keine einzelne Seite in der Liste (selten -- ohne jedes Zitat
+           steht oben schon der Leerzustand des Ziels): die Mini-Form aus core, im Kasten an der
+           Stelle der Tabelle, damit sie nicht frei unter dem Diagramm schwebt. */
         seitenStand(n, null);
-        platz.innerHTML = UC.leerHtml({ mini: true, icon: "link", titel: "No cited pages yet", text: "Pages that match this rule appear here as soon as an AI cites them." });
+        platz.innerHTML = '<div class="up-box uev-leerbox">' + UC.leerHtml({ mini: true, titel: "No cited pages yet" }) + '</div>';
         return;
       }
       var ab = seitenStand(n, urls.length), ev = dieDetail() || {};
@@ -3415,7 +3599,10 @@
             (ci != null ? '<span class="uev-vz-wert">' + esc(ersetze(t(ci === 1 ? "{n} citation" : "{n} citations"), { n: zahl(ci) })) + '</span>' : '') + '</div>';
         }).join("") + '</div>';
       }
-      var nahAlle = isArr(d.near_misses) ? d.near_misses.filter(function (x) { return x && x.url; }) : [];
+      /* similar_host (v2) zeigt auf eine DOMAIN: dort darf url fehlen (die Datenbank nimmt die
+         meistzitierte URL der Domain, sonst die zuletzt zitierte -- und fuehrt den Eintrag ueber
+         die Domain weiter, wenn es keine gibt). */
+      var nahAlle = isArr(d.near_misses) ? d.near_misses.filter(function (x) { return x && (x.url || (x.reason === "similar_host" && x.host)); }) : [];
       var nah = nahAlle.slice(0, 5), pts = isArr(d.per_target) ? d.per_target.filter(Boolean) : [];
       var hosts = {};
       l.forEach(function (z) { var h = zielHost(z); if (h) hosts[h] = 1; });
@@ -3439,27 +3626,40 @@
         return '<p class="uev-vz-satz"><span>' + esc(ersetze(t("No citations for {alt}. AI answers cite this page as {url}."), { alt: urlZeigen(v.alt), url: urlZeigen(v.neu) })) + '</span>' +
           '<button type="button" class="up-quietbtn uev-vz-statt" data-variante-alt="' + esc(v.alt) + '" data-variante-neu="' + esc(v.neu) + '">' + esc(ersetze(t("Use {url}"), { url: urlZeigen(v.neu) })) + '</button></p>';
       }).join("");
-      if (!n && variantenHtml) html += variantenHtml;
+      /* Tippfehler im Host: je unbekanntem Host ein Vorschlag (tippVorschlaege, 15.10. spaet) --
+         wie die Schreibweisen oben auch dann, wenn ein anderes Ziel schon trifft. Bei EINEM Host
+         der Satz wie bisher ("this domain"), bei mehreren nennt er den Host. */
+      var tipps = tippVorschlaege(d, h1);
+      var tippHtml = tipps.map(function (v) {
+        var satz = h1 ? ersetze(t("We haven't seen this domain in your citations. Did you mean {host}?"), { host: v.neu })
+          : ersetze(t("We haven't seen {alt} in your citations. Did you mean {host}?"), { alt: v.alt, host: v.neu });
+        return '<p class="uev-vz-satz"><span>' + esc(satz) + '</span>' +
+          '<button type="button" class="up-quietbtn uev-vz-statt" data-statt-alt="' + esc(v.alt) + '" data-statt-neu="' + esc(v.neu) + '">' + esc(ersetze(t("Use {host}"), { host: v.neu })) + '</button></p>';
+      }).join("");
+      var leiseHtml = '<p class="uev-vz-satz is-leise">' + esc(t("Only pages that AI answers to your tracked prompts cite can be counted.")) + '</p>';
+      if (!n && (variantenHtml || tippHtml)) html += variantenHtml + tippHtml + (tippHtml ? leiseHtml : "");
       else if (!n) {
-        /* Null Treffer: je Fall ein eigener Satz (Entscheidung des Nutzers 15.10.). */
-        var vertippt = "";
-        if (d.host_known === false && h1) nah.forEach(function (x) { var nh = hostPfad(x.url).host; if (!vertippt && aehnlich(nh, h1)) vertippt = nh; });
+        /* Null Treffer: je Fall ein eigener Satz (Entscheidung des Nutzers 15.10.). "Diese Domain
+           wurde noch nicht zitiert" nur bei EINEM Host und nach per_target -- das oberste
+           host_known gilt nur fuer das erste gueltige Ziel (Nachtrag 4.2); bei mehreren Hosts
+           stand dort bis 15.10. "This domain", obwohl nur der erste gemeint war. */
+        var jeH1 = h1 ? pts.filter(function (pt) { return pt.host && String(pt.host) === h1 && !pt.error; }) : [];
+        var h1Neu = !!h1 && (jeH1.length ? jeH1.some(function (pt) { return pt.host_known === false; }) : d.host_known === false);
         var satz;
-        if (vertippt) satz = '<span>' + esc(ersetze(t("We haven't seen this domain in your citations. Did you mean {host}?"), { host: vertippt })) + '</span>' +
-          '<button type="button" class="up-quietbtn uev-vz-statt" data-statt-alt="' + esc(h1) + '" data-statt-neu="' + esc(vertippt) + '">' + esc(ersetze(t("Use {host}"), { host: vertippt })) + '</button>';
-        else if (d.host_known === false && h1 && h1.split(".").length > 2) satz = esc(t("This subdomain hasn't been cited yet. It will be counted from its first citation."));
-        else if (d.host_known === false) satz = esc(t("This domain hasn't been cited yet. It will be counted from its first citation."));
+        if (h1Neu && h1.split(".").length > 2) satz = esc(t("This subdomain hasn't been cited yet. It will be counted from its first citation."));
+        else if (h1Neu) satz = esc(t("This domain hasn't been cited yet. It will be counted from its first citation."));
         else satz = esc(t("No cited page matches yet. Matching pages count from their first citation."));
-        html += '<p class="uev-vz-satz">' + satz + '</p>' +
-          '<p class="uev-vz-satz is-leise">' + esc(t("Only pages that AI answers to your tracked prompts cite can be counted.")) + '</p>';
-      } else html += variantenHtml;
+        html += '<p class="uev-vz-satz">' + satz + '</p>' + leiseHtml;
+      } else html += variantenHtml + tippHtml;
       if (nah.length) {
-        /* Die drei Gruende der Datenbank (Abschnitt 4), je ein eigenes Etikett. Bei url_variant
-           steht die Adresse mit www und Schema da -- ohne sie saehe sie aus wie das Ziel selbst. */
-        var GRUND = { path_boundary: "Not under this path", url_variant: "Other spelling", other_host: "Other host" };
+        /* Die Gruende der Datenbank (Abschnitt 4, dazu similar_host aus v2), je ein eigenes
+           Etikett. Bei url_variant steht die Adresse mit www und Schema da -- ohne sie saehe sie aus
+           wie das Ziel selbst. Bei similar_host nur die Domain: um sie geht es, die URL dahinter ist
+           nur ihr meistzitiertes Beispiel. */
+        var GRUND = { path_boundary: "Not under this path", url_variant: "Other spelling", other_host: "Other host", similar_host: "Similar domain" };
         html += '<div class="uev-vz-titel">' + esc(t("Similar, but not matching")) + '</div><div class="uev-vz-liste is-leise">' + nah.map(function (x) {
-          var hp = hostPfad(x.url), txt = x.reason === "url_variant" ? urlZeigen(x.url) : hp.host + (hp.start ? "" : hp.pfad);
-          return '<div class="uev-vz-reihe"><span class="uev-vz-url" title="' + esc(x.url || "") + '">' + esc(txt) + '</span>' +
+          var hp = hostPfad(x.url), txt = x.reason === "similar_host" ? String(x.host || hp.host) : x.reason === "url_variant" ? urlZeigen(x.url) : hp.host + (hp.start ? "" : hp.pfad);
+          return '<div class="uev-vz-reihe"><span class="uev-vz-url" title="' + esc(x.url || x.host || "") + '">' + esc(txt) + '</span>' +
             (GRUND[x.reason] ? '<span class="uev-vz-wert">' + esc(t(GRUND[x.reason])) + '</span>' : '') + '</div>';
         }).join("") + '</div>';
       }
@@ -3467,15 +3667,19 @@
          EINEN Host -- bei mehreren sagt die Vorschau nicht, welcher gemeint ist. Eingestuft wird
          genau dieser Host, auch bei host_all: jede Unterdomain ist eine eigene domain_norm, die
          Einstufung gilt nur fuer sie (Rueckmeldung Abschnitt 8.1).
-         NUR FUER owner UND admin (Abschnitt 8.2, wie can_override im Domain-Drawer): die Rolle aus
-         dem App-Start (UC.teamRolle). Unbekannt ("" -- Bubble, Start gescheitert) heisst anbieten:
-         die Datenbank prueft selbst und antwortet mit dem Satz des Drawers; ein Knopf, der einem
-         owner faelschlich fehlt, waere schlimmer (dieselbe Abwaegung wie prompts-data.js).
-         Die Rolle des Hosts aus per_target (je Ziel), sonst aus der Antwort im Ganzen. */
-      var rolle = UC.teamRolle ? UC.teamRolle() : "";
+         NUR FUER owner UND admin (Abschnitt 8.2, wie can_override im Domain-Drawer). Seit
+         events_ziele_v2.sql entscheidet die Datenbank: can_classify in der Antwort der Vorschau
+         (Nachtrag Abschnitt 5, true fuer owner/admin nach der Regel von domain_classify_v1). Fehlt
+         das Feld (vor v2), gilt wie bisher die Rolle aus dem App-Start (UC.teamRolle); unbekannt
+         ("" -- Bubble, Start gescheitert) heisst dort anbieten: die Datenbank prueft selbst und
+         antwortet mit dem Satz des Drawers; ein Knopf, der einem owner faelschlich fehlt, waere
+         schlimmer (dieselbe Abwaegung wie prompts-data.js).
+         Die Rolle des Hosts aus per_target (je Ziel); das oberste host_role nur, wenn per_target
+         den Host nicht fuehrt -- bei EINEM Host ist das erste gueltige Ziel dann ohnehin seins. */
+      var darf = typeof d.can_classify === "boolean" ? d.can_classify : (UC.teamRolle ? UC.teamRolle() : "") !== "member";
       var hostRolle = d.host_role, je1 = pts.filter(function (pt) { return pt.host && String(pt.host) === h1; });
       if (je1.length) hostRolle = je1.some(function (pt) { return pt.host_role === "own"; }) ? "own" : je1[0].host_role;
-      if (h1 && rolle !== "member" && hostRolle !== "own" && !(p.eigen && p.eigen[h1])) {
+      if (h1 && darf && hostRolle !== "own" && !(p.eigen && p.eigen[h1])) {
         html += '<div class="uev-vz-eigen"><span>' + esc(ersetze(t("{host} doesn't count as your domain yet."), { host: h1 })) + '</span>' +
           '<button type="button" class="up-btn-sec uev-vz-eigenbtn" data-eigen-host="' + esc(h1) + '"' + (p.eigenLaeuft ? ' disabled' : '') + '>' +
             (p.eigenLaeuft ? '<span class="up-modal-spin"></span>' : '') + '<span>' + esc(t("Count as your domain")) + '</span></button></div>';
@@ -3515,21 +3719,30 @@
         vzAnfordern(p, true);
       });
     }
-    /* "Did you mean ...?": den Host in Eingabe und Liste ersetzen. */
+    /* "Did you mean ...?" -> "Use {host}": in jedem Ziel mit dem Host alt den Host durch neu
+       ersetzen, in der Liste und im Feld. Art, Pfad, Schema und www bleiben (youtube.con/watch als
+       Pfad wird youtube.com/watch als Pfad). Ersetzt wird genau der Host vorn in der Eingabe, ohne
+       Ruecksicht auf Gross/Klein -- bis 15.10. ersetzte ein reines Textersetzen auch denselben
+       Text an anderer Stelle (abwm.de neben bwm.de) und liess HTTPS://BWM.DE stillschweigend
+       stehen. Wird ein Ziel dadurch zu einem, das schon in der Liste steht, bleibt es einmal. */
+    function hostTauschen(s, alt, neu) {
+      var m = /^((?:https?:\/\/)?(?:\*\.)?(?:www\.)?)([^\/?#\s]+)([\s\S]*)$/i.exec(String(s == null ? "" : s));
+      return m && m[2].toLowerCase() === alt ? m[1] + neu + m[3] : null;
+    }
     function hostErsetzen(p, alt, neu) {
       if (!p || !alt || !neu) return;
-      var art = leseArt(p.e);
+      var da = {};
       p.e.ziele = p.e.ziele.map(function (z) {
         if (zielHost(z) !== alt) return z;
-        var x = zielBauen(String(z.input).replace(alt, neu), z.kind);
-        return x.fehler ? z : x;
-      });
-      if (p.e.eingabe && p.e.eingabe.indexOf(alt) >= 0) {
-        p.e.eingabe = p.e.eingabe.split(alt).join(neu);
+        var s = hostTauschen(z.input, alt, neu), x = s == null ? null : zielBauen(s, z.kind);
+        return !x || x.fehler ? z : x;
+      }).filter(function (z) { if (da[z.key]) return false; da[z.key] = 1; return true; });
+      var tl = eingabeTeile(p.e.eingabe), neuTl = tl.map(function (s) { var x = hostTauschen(s, alt, neu); return x == null ? s : x; });
+      if (neuTl.join("\n") !== tl.join("\n")) {
+        p.e.eingabe = neuTl.join("\n");
         var inp = im(".uev-zielein");
-        if (inp) inp.value = p.e.eingabe;
+        if (inp) { inp.value = p.e.eingabe; feldHoehe(inp); }
       }
-      void art;
       zieleZeigen(p);
     }
     /* "Use <Schreibweise>" (url_variant, 15.10.): das url-Ziel mit der Eingabe alt durch die
@@ -3580,7 +3793,12 @@
       invalid_input: "Please enter a valid sitemap link or domain.",
       unauthorized: "Please sign in again.",
       forbidden: "You don't have permission to do that.",
-      not_configured: "Loading a sitemap isn't available right now."
+      not_configured: "Loading a sitemap isn't available right now.",
+      /* 502 edge_failed (sitemap-lesen Version 4, Nachtrag 15.10. Abschnitt 2): ein unerwarteter
+         Fehler in der Function, jetzt mit CORS statt als stummer Abbruch. Fuer den Nutzer heisst
+         das nur "noch einmal versuchen" -- der Knopf bleibt, detail (der technische Grund) steht
+         nie da. */
+      edge_failed: "The sitemap could not be loaded. Please try again."
     };
     /* 429 rate_limited traegt retry_after in Sekunden (20 Abrufe je Stunde und Team, 10 je Minute
        und Nutzer) -- der Satz nennt die Wartezeit in ganzen Minuten, aufgerundet. */
@@ -4833,7 +5051,13 @@
         var b = SITEMAP_DA.stand != null || !UC.edge ? null : (SITEMAP_DA.laeuft || (SITEMAP_DA.laeuft =
           UC.edge("sitemap-lesen", { team_id: tm, url: "" }, { timeoutMs: 15000 }).then(function (erg) {
             SITEMAP_DA.laeuft = null;
-            if (edgeFehlt(erg)) SITEMAP_DA.stand = false; else if (!unbekannt(erg)) SITEMAP_DA.stand = true;
+            /* Ein 5xx ausser 503 not_configured (sitemap-lesen Version 4: 502 edge_failed bei einem
+               unerwarteten Fehler, etwa wenn die Pruefung des JWT scheitert) heisst "noch
+               unbekannt", nicht "da": bis Version 3 brach derselbe Fall ohne CORS ab, der Browser
+               sah einen Netzfehler (status 0), und dann wurde beim naechsten Oeffnen neu gefragt.
+               Ein Knopf, der nur auf eine kaputte Function zeigt, waere das Gegenteil von "nichts
+               zeigen, was nicht funktioniert". */
+            if (edgeFehlt(erg)) SITEMAP_DA.stand = false; else if (!unbekannt(erg) && !(erg.status >= 500)) SITEMAP_DA.stand = true;
           })));
         return Promise.all([a, b]);
       }).then(function () {

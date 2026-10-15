@@ -194,7 +194,8 @@ muss.
 | Spaltenbreite | Flach wächst jede fr-Spalte höchstens bis min + 32; am Ende wächst nur die erste | `deckeln()` in makeColumns |
 | Platzmangel | Spalten weichen nach ihrer `art`, nie nach einer Zahl je Datei; Share/Visibility (`anteil`) nie; eine angeklickte Spalte bleibt, dafür weicht die nächst unwichtigere | `SPALTEN_ART` in core |
 | Gesamtzeile | Links nur der Count, Werte rechtsbündig, von Haus aus keine Berechnung („+ Calculation“), Ø-Zeichen statt „avg“. Berechnungen laden **getrennt** von der Liste, Skelett nur in der Zelle. Kein Median bei Kennzahlen; einzige Ausnahme der Preis in Shopping und Ads | `UC.makeZaehlZeile` (`cfg.rechnen`, `cfg.quelle`) |
-| Band | Chart oben als Band; ausgeblendet ist es **ganz** weg, „Show chart“ in der Topbar holt es zurück; Luft über und unter der Leiste einheitlich nach dem Vorbild der Prompts-Tabelle | `.up-band*`, `UC.bandTeile`, `UC.bandAus`, `--up-band-luft` |
+| Band | Chart oben als Band; ausgeblendet ist es **ganz** weg. Ein und aus über den **Umschalter im Seitenkopf** (immer da, zwei Zeichen: Chart und Tabelle / nur Tabelle, Form des Themenschalters) – kein Auge am Band, kein „Show chart“. Luft über und unter der Leiste einheitlich nach dem Vorbild der Prompts-Tabelle | `.up-band*`, `UC.bandTeile`, `UC.bandAus`, `UC.bandSchalterHtml`, `--up-band-luft` |
+| Kleben (16.10.) | Seitenkopf und Reiter scrollen weg, erst die Leiste klebt. Steht ein Chart über der Tabelle (Citations, Brands › Tracked), steht die **eine** Leiste darüber und klebt; Gesamtzeile und Pagination kleben unten erst, wenn die Tabelle den Bildschirm füllt (ihr Kopf klebt), Fahrt nur über transform/opacity. Prompts, Responses und Teams laufen noch über eine feste Kastenhöhe | `UC.bandUnterLeiste`, `.has-leistenband`, `data-kleb-fuss="yes"` (`UC.klebFuss`), `UC.makeFestHoehe({ seiteZuerst })` |
 
 Neue Tabellen bekommen Kopfzeichen über `UC.kopfZeichenHtml` und je Spalte eine `art`.
 
@@ -238,6 +239,9 @@ Der **Leerzustand** hat seit dem 22.09. ebenfalls einen Baustein: `UC.leerHtml({
 icon, titel, text, knopf, mini })`. Gefiltert bringt er Lupe, "No matching …" und den Räum-Knopf
 mit; der Satz für den Ruhefall kommt vom Aufrufer. Kein Symbol ohne Angabe — ein geratener Name
 liefert eine leere Hülle und damit ein Loch über der Überschrift.
+Leere Charts zeigen `UC.chartLeerHtml`, leere Tabellen neben einem Chart `UC.tabelleLeerHtml({ titel,
+text, icon, gefiltert, zeilen })` (seit 16.10.): dieselbe Form, mindestens so hoch wie das Skelett davor –
+sonst springt die Fläche beim Wechsel von Laden zu Leer.
 
 Zahlenfelder immer durch `num()`/`toNum()` (gibt `null` statt `NaN`), Listen durch `isArr()` prüfen,
 bevor `.map()` darauf läuft. Ein `undefined.map` reißt den ganzen Run-JS-Step mit — also auch die
