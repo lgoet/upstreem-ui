@@ -47,6 +47,10 @@ Der Fehler, der sich in dieser Sitzung dreimal wiederholt hat:
 .xyz-kpi .up-planpill .up-sent-dot { width: 7px; height: 7px; border-radius: 2.5px; }
 ```
 
+Das Beispiel ist älter als die Skalen (§1c). Heute gilt: erst mit dem Faktor rechnen, dann jede
+Größe auf ihre Stufe runden – hier Schrift 16 (`--up-fs-xl`) statt 15, Radius nicht mitgerechnet,
+sondern nach Rolle (28 hoch → 6, `var(--up-r-m)`).
+
 Sentiment selbst hat seit dem 29.09. **keinen** Kasten mehr: Balken 3×12 plus Zahl in der Schrift
 von `.up-num`, Markup nur aus `UC.sentHtml(v)`. Dort zieht ein Kontext nur die Schrift der Zahl mit.
 
@@ -144,7 +148,7 @@ Was man dabei wissen muss:
 
 - **Tiefe nach Rolle, nicht nach Auge** (Stand 06.10.): `e-1` liegt auf der Fläche (Knopf,
   Feld, Kachel), `e-2` hängt an einem Auslöser (Menü, Popover, jeder Tooltip, Erklärkarte),
-  `e-3` schwebt frei über dem Inhalt (Leiste, ihr Knopf), `e-4` liegt über einem Schleier
+  `e-3` schwebt frei über dem Inhalt (Auswahlleiste, schwebender Knopf, freier Kasten), `e-4` liegt über einem Schleier
   (Dialog, Palette, Toast); dazu `e-drawer` (wirft seitlich) und `e-chip` (gehobener Chip). Die
   umgekehrte Karte (hell dunkel, dunkel hell) trägt `--vc-inverse-bg`/`--vc-inverse-ink`. Alle
   stehen auch an `:root` und erreichen damit, was an `<body>` hängt. `--up-dd-shadow` ist e-2.
@@ -189,7 +193,7 @@ muss.
 | Zahlen in Zellen | Rechtsbündig in fester Spur, Trend an der **linken** Zellkante; Rang-„#“ und Sentiment-Balken bleiben mit 4/6 an der Zahl | `--up-spur-*`, `--up-spur-abstand` (12) |
 | Spaltenbreite | Flach wächst jede fr-Spalte höchstens bis min + 32; am Ende wächst nur die erste | `deckeln()` in makeColumns |
 | Platzmangel | Spalten weichen nach ihrer `art`, nie nach einer Zahl je Datei; Share/Visibility (`anteil`) nie; eine angeklickte Spalte bleibt, dafür weicht die nächst unwichtigere | `SPALTEN_ART` in core |
-| Gesamtzeile | Links nur der Count, Werte rechtsbündig, von Haus aus keine Berechnung („+ Calculation“), Ø-Zeichen statt „avg“. Berechnungen laden **getrennt** von der Liste, Skelett nur in der Zelle, kein Median | `UC.makeZaehlZeile` (`cfg.rechnen`, `cfg.quelle`) |
+| Gesamtzeile | Links nur der Count, Werte rechtsbündig, von Haus aus keine Berechnung („+ Calculation“), Ø-Zeichen statt „avg“. Berechnungen laden **getrennt** von der Liste, Skelett nur in der Zelle. Kein Median bei Kennzahlen; einzige Ausnahme der Preis in Shopping und Ads | `UC.makeZaehlZeile` (`cfg.rechnen`, `cfg.quelle`) |
 | Band | Chart oben als Band; ausgeblendet ist es **ganz** weg, „Show chart“ in der Topbar holt es zurück; Luft über und unter der Leiste einheitlich nach dem Vorbild der Prompts-Tabelle | `.up-band*`, `UC.bandTeile`, `UC.bandAus`, `--up-band-luft` |
 
 Neue Tabellen bekommen Kopfzeichen über `UC.kopfZeichenHtml` und je Spalte eine `art`.
@@ -441,7 +445,10 @@ eingebautes Element nicht — das muss dort von Hand nachgezogen werden, und das
 - **Keine Mittelpunkte (·) als Trenner** in der UI (03.10. eingefuehrt: "ich hasse die"). Teile
   einer Zeile werden durch Abstand getrennt -- je ein eigenes Element mit `gap` --, in reinem Text
   (aria-label, Tooltip, Satz) durch Komma, Doppelpunkt oder Klammer.
-- Icons kommen aus Feather über `UC.icon(name, strokeWidth)` — nie selbst gezeichnet. Ausnahme nur
-  dort, wo `UC` nachweislich nicht im Scope ist; dann mit Begründung im Kommentar.
+- Icons kommen aus `UC.icon(name, strokeWidth)` — nie selbst gezeichnet. Der Satz ist seit dem
+  22.09. **Hugeicons** 4.3.5 (stroke-rounded), einzelne Zeichen aus Lucide; Feather gibt es nicht
+  mehr. Ein neues Zeichen wird in `ICON_PATHS` aufgenommen, nach dem Bild gewählt, nicht nach dem
+  Namen. Ausnahme nur dort, wo `UC` nachweislich nicht im Scope ist; dann mit Begründung im
+  Kommentar.
 - Keine Debug-Ausgaben in der ausgelieferten App.
 - Fremde Bubble-Vorfahren nie im `z-index` anfassen (hat am 11.08. die App lahmgelegt).

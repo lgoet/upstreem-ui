@@ -359,10 +359,15 @@ verbunden mit einem Gedankenstrich und Leerzeichen:
 18. Jul 2026 – 24. Jul 2026
 ```
 
-**Prozentwerte:** eine Nachkommastelle, immer ausgeschrieben — `23.8%`, nicht `23.81%`
-oder `24%`. Fehlender Wert → `–`.
+**Nachkommastellen je Kennzahl** legt CLAUDE.md §2b fest, nicht eine Regel für alle Prozente:
+Visibility und Share of Voice in Zellen 1 (`UC.fmtPct(v, 1)` → `34.3%`), Rank immer 1 (`3.0`),
+Sentiment und Mention Count 0, Trend 1. Chart-Tooltips je Chart (ebenda). Bewusste Ausnahme:
+der Visibility Chart (Top Brands) zeigt Visibility und Trend ganzzahlig. Fehlender Wert → `–`.
+Bis zum 15.10. stand hier „Prozentwerte immer eine Nachkommastelle“, das widersprach `UC.fmtPct`
+(Standard 0) und §2b.
 
-**Ganze Zahlen** (Counts): ohne Nachkommastellen, ohne Tausender-Trennzeichen — `1403`.
+**Ganze Zahlen** (Counts): ohne Nachkommastellen; unter 1000 als Ganzzahl (`999`), ab 1000 im
+Kompaktformat darunter (`1.4k`), nie mit Tausender-Trennzeichen.
 
 **Counts in Tabellenzellen und Überschriften — Kompaktformat.** Jede Zahl, die eine
 Menge zählt (Total-Count neben der Überschrift, „Used", Treffer, Zeilen), nutzt
@@ -869,7 +874,8 @@ Es gibt **zwei unterschiedliche Tooltip-Typen** im System:
   box-shadow: var(--up-e-2);              /* Tiefe "haengt an einem Ausloeser" */
   opacity: 0; transform: translateY(4px); transition: opacity .14s ease, transform .14s ease;
 }
-.up-tip.is-wide { height: auto; white-space: normal; max-width: 340px; padding: 6px 9px; line-height: 1.35; }
+.up-tip.is-wide { height: auto; white-space: normal; max-width: 340px; padding: 6px 9px; line-height: 1.35;
+                 border-radius: var(--up-r-l); }   /* 8, Geist: mehrzeiliger Tooltip (seit 15.10.) */
 ```
 Farben: BG `#1f1f1b` / Text `#ffffff`, in beiden Themes; nur ein Tooltip, das selbst
 `data-theme="dark"` trägt, wird hell (`#f0f0f0`, Schrift `--vc-text-invert`).
@@ -1413,10 +1419,9 @@ Padding-Box, 1px zu weit innen), und der Farbübergang muss **hinter** der Borde
 (16px, nicht 15.5px), sonst wird die runde Border selbst überdeckt.
 
 > **Stand 15.10.:** In core heißt das heute `.up-sticky .up-thead::before/::after` und füllt mit
-> `--up-surface` statt `--vc-bg`. Der klebende Kopf rundet seit dem Radius-Umbau mit
-> `--up-r-2xl` (12), die Eckstücke stehen im Code aber noch auf **16** (Größe und Verlauf). Die
-> Regel heißt: Eckstück = Radius des Kopfes, Verlauf ab genau diesem Radius. Offen, bis es im
-> Code nachgezogen ist.
+> `--up-surface` statt `--vc-bg`. Größe und Verlauf kommen seit dem 15.10. aus `--up-r-2xl`, dem
+> Radius des Kopfes (heute 12; vorher standen dort 16 fest). Die Regel: Eckstück = Radius des
+> Kopfes, Verlauf ab genau diesem Radius, Übergang `calc(var(--up-r-2xl) + .5px)`.
 
 **Alternative (garantiert sauber):** interner Scroll — Box mit `max-height` +
 `overflow: hidden` (runde Ecken) + `overflow-y: auto`, Spaltenkopf klebt an der Box.
@@ -1489,9 +1494,9 @@ Adresse), die Lupe bleibt. Eine Fußzeile mit Tastenhinweisen hat Geist nicht, h
 Tastatur (Pfeile, Enter, Esc), Suche und Ereignisse sind unverändert.
 
 - Scrollbar-Thumb: `var(--am-border-strong)`, voll rund, 3px „Border“ in Kartenfarbe (schwebender Thumb)
-- Trend-Farben: eigene Marken `--am-up`/`--am-down`. Im Code stehen dort noch die Werte vor
-  Geist (hell `#2ea84a`/`#b0200c`, dunkel `#60d25d`/`#d25d5d`); laut ihrem eigenen Kommentar
-  sollen sie `--vt-up`/`--vt-down` gleichen (Abschnitt 1). Offen.
+- Trend-Farben: eigene Marken `--am-up`/`--am-down` (die Datei sieht core nicht), mit denselben
+  Werten wie `--vt-up`/`--vt-down` nach Geist: hell `#297a3a`/`#cb2a2f`, dunkel `#62c073`/`#ff6166`
+  (seit 15.10.; vorher `#2ea84a`/`#b0200c` und `#60d25d`/`#d25d5d`).
 
 ---
 
@@ -1967,7 +1972,7 @@ applySticky();   /* einmal sofort */
   Zeilenkante durchlugt.
 - **Ecken oben:** Die Radial-Eckstücke, die das Dreieck außerhalb der Rundung füllen,
   nutzen `var(--up-surface)` (Seitenfarbe), **nicht** `--vc-bg`: sonst guckt im Dark ein
-  helleres Dreieck raus. Größe = Radius des Kopfes (heute 12, im Code noch 16, siehe §10).
+  helleres Dreieck raus. Größe = Radius des Kopfes, aus `--up-r-2xl` (heute 12, siehe §10).
 
 ## 21. Dark-Mode — zwei Fallen, die Zeit kosten
 
