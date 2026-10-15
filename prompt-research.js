@@ -332,7 +332,7 @@
   [60, 250, 700, 1500, 3000].forEach(function(ms){ setTimeout(fernrohrSetzen, ms); });
 
   /* DAS LADEBILD kommt seit dem 01.10. aus core (UC.makeLadebild) -- dasselbe wie in Opportunities
-     und Explore Brands: Kachel mit dem Teleskop im umlaufenden Kreis, Titel, Unterzeile,
+     und Explore Brands: das Teleskop im umlaufenden Kreis (seit 16.10. ohne Kachel), Titel, Unterzeile,
      Statuszeile. Vorher stand hier die Fassung aus dem Onboarding mit einem Balken auf einer
      erfundenen Kurve.
      Gebaut wird im JS und nicht in der Vorlage: eine Vorlagenaenderung erreicht ein schon
@@ -649,7 +649,7 @@
     }
     batch();
   }
-  /* Kachelzeile des Ladebilds: was gesucht wird, und wo. Ohne Schlagworte bleibt der Name die
+  /* Titelzeile des Ladebilds: was gesucht wird, und wo. Ohne Schlagworte bleibt der Name die
      Ueberschrift der Seite -- behauptet wird nichts, was nicht dasteht. */
   function ladebildFuellen(lb){
     var kws = (currentResearchMeta && Array.isArray(currentResearchMeta.keywords)) ? currentResearchMeta.keywords : [];

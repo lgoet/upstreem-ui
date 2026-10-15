@@ -761,7 +761,7 @@
 .upr-loading-inner { width: min(100%, 620px); display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; }
 
 /* ---------- Das Ladebild ----------
-   Kachel, Titel (die Schlagworte), Unterzeile (der Markt) und Statuszeile kommen seit dem 01.10.
+   Zeichen, Titel (die Schlagworte), Unterzeile (der Markt) und Statuszeile kommen seit dem 01.10.
    aus core (UC.makeLadebild, .up-lb) -- dasselbe Bild wie in Opportunities und Explore Brands.
    Vorher stand hier die Fassung aus dem Onboarding mit Balken; der Balken lief auf einer erfundenen
    Kurve, denn eine Recherche kennt ihren Fortschritt nicht. Eigen ist nur, was es genau hier gibt:
