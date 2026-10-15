@@ -806,8 +806,14 @@
          auf der grauen Seite vom Grund nicht zu unterscheiden, nur der Rahmen bliebe. */
       --vc-field: var(--vc-bg);
     }
+    /* Eine WURZEL IN einer weissen Flaeche setzt den Grund ebenfalls zurueck -- sonst stellte die Regel
+       darueber in jeder inneren .up-root wieder das Grau her (gemessen 15.10.: die Einheit
+       "Product Movement" im Shopping-Band, eine eigene .up-root, stand grau im weissen Band).
+       Drawer, Portale und Bubble-Drawer, die Baender und Kaesten unten. (0,4,1) gegen (0,3,1). */
     html[data-up-hell="grau"] .up-root:is(.up-kdr, .up-portal):not([data-theme="dark"]),
-    html[data-up-hell="grau"] :is(.up-kdr, .up-portal, [id^="drawer-"]) .up-root:not([data-theme="dark"]) {
+    html[data-up-hell="grau"] :is(.up-kdr, .up-portal, [id^="drawer-"]) .up-root:not([data-theme="dark"]),
+    html[data-up-hell="grau"] :is(.combo-root, .uad-band, .ush-band)[data-flach="yes"] .up-root:not([data-theme="dark"]),
+    html[data-up-hell="grau"] :is(.up-box, .ubo-unit-chart, .upt-grp-sidepanel) .up-root:not([data-theme="dark"]) {
       --up-surface: var(--vc-bg);
     }
     /* DIE FLACHE TABELLE BLEIBT FLACH UND WIRD WEISS: kein Kasten, keine Rundung, oben und unten die
@@ -820,21 +826,29 @@
       background: var(--up-surface);
     }
     /* Dasselbe fuer die uebrigen Flaechen, die heute durchsichtig auf der Seite liegen und im
-       Weiss der Seite nie einen eigenen Grund brauchten -- gefunden im Pruefstand, Seite fuer Seite:
-         .up-band                    das offene Band aus core (wird gerade aus den zwei Bandformen
-                                     unten zusammengefuehrt; die Regel greift, sobald es die Klasse gibt)
-         .combo-root[data-flach]     das Chart-Band auf Citations (die Wurzel IST das Band)
-         .ubo-unit-chart             das Chart-Band auf Brands (die erste Einheit der Wurzel), nur
-                                     flach -- im Kasten liegt die Ueberschrift ueber der Karte auf
-                                     der Seite, und die Karte (.ubo-box) ist schon weiss
-         .upt-grp-sidepanel          die Gruppenspalte links neben der Prompt-Tabelle (flach und im
-                                     Kasten: beide Male steht sie neben dem weissen Tabellenkasten)
-       Die Kopfzeilen IM Band (Ueberschrift, D/W/M) stehen damit auf Weiss, wie die Kopfzeile einer
-       Tabelle; die Werkzeugzeile darueber (Kalender, Filters) bleibt auf der Seite. */
-    html[data-up-hell="grau"] .up-root:not([data-theme="dark"]) :is(.up-band, .upt-grp-sidepanel),
-    html[data-up-hell="grau"] .up-root.ubo-root[data-flach="yes"]:not([data-theme="dark"]) .ubo-unit-chart,
-    html[data-up-hell="grau"] .up-root.combo-root[data-flach="yes"]:not([data-theme="dark"]) {
+       Weiss der Seite nie einen eigenen Grund brauchten -- gefunden im Pruefstand, Seite fuer Seite.
+       DIE OFFENEN BAENDER (data-flach an der Wurzel, die Wurzel zieht die zwei Linien):
+         .combo-root    Citations, das Chart-Band
+         .uad-band      Ads: Ad Coverage, Activity, der Held
+         .ush-band      Shopping: Performance, der Produkt-Held, Where this product appears
+       Die zwei Baender mit ZWEI Einheiten (.uad-zwei, .ush-zwei) bekommen nur das Token: ihr Grund
+       ist die Linienfarbe, die durch die 1px-Luecke des Rasters scheint, und die Einheiten decken
+       mit --up-surface -- weiss gemalt waere die Trennlinie weg.
+       DAZU:
+         .ubo-unit-chart      Brands, das Chart-Band (die erste Einheit der Wurzel), nur flach --
+                              im Kasten steht die Ueberschrift auf der Seite, die Karte ist weiss
+         .upt-grp-sidepanel   die Gruppenspalte neben der Prompt-Tabelle, flach wie im Kasten
+       Die Kopfzeilen IM Band (Ueberschrift, D/W/M) stehen damit auf Weiss wie die Kopfzeile einer
+       Tabelle; die Werkzeugzeile darueber (Kalender, Filters) bleibt auf der Seite.
+       Kommt das gemeinsame Band aus core (in Arbeit), gehoert seine Klasse in beide Listen hier. */
+    html[data-up-hell="grau"] .up-root:is(.combo-root, .uad-band, .ush-band)[data-flach="yes"]:not([data-theme="dark"]),
+    html[data-up-hell="grau"] .up-root:not([data-theme="dark"]) .upt-grp-sidepanel,
+    html[data-up-hell="grau"] .up-root.ubo-root[data-flach="yes"]:not([data-theme="dark"]) .ubo-unit-chart {
       --up-surface: var(--vc-bg);
+    }
+    html[data-up-hell="grau"] .up-root:is(.combo-root, .uad-band, .ush-band)[data-flach="yes"]:not(.uad-zwei, .ush-zwei, [data-theme="dark"]),
+    html[data-up-hell="grau"] .up-root:not([data-theme="dark"]) .upt-grp-sidepanel,
+    html[data-up-hell="grau"] .up-root.ubo-root[data-flach="yes"]:not([data-theme="dark"]) .ubo-unit-chart {
       background: var(--up-surface);
     }
     /* Die Karten der Opportunities tragen 2 % Schwarz ueber dem Grund (--uo-col-bg) -- auf der grauen
