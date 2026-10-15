@@ -156,5 +156,10 @@
 
 /* DIE FESTE SPUR der Zahlen (core.css, --up-spur, 15.10.): Active Prompts und Active Brands als
    Anzahl (fmtInt, bis vierstellig) -- die Zahl vor "/ Grenze" steht darin rechts, damit die
-   Schraegstriche untereinander stehen. */
-.uts-root .up-td-prompts, .uts-root .up-td-brands { --up-spur: var(--up-spur-anzahl); }
+   Schraegstriche untereinander stehen.
+   Seit dem 15.10. spaet stehen Zahlen RECHTS in der Zelle (core, "RECHTSBUENDIG, DER TREND LINKS
+   DAVOR"); core erkennt die Zahl hier nicht, weil sie in der Huelle .uts-quota steckt. Damit die
+   Schraegstriche trotzdem untereinander bleiben, bekommt auch die Grenze eine feste Breite:
+   "/ 1,000" passt hinein (gemessen "/ 150" 33.45, "/ 10" 25.49, je Ziffer rund 8). */
+.uts-root .up-td-prompts, .uts-root .up-td-brands { --up-spur: var(--up-spur-anzahl); justify-content: flex-end; }
+.uts-root .uts-quota-lim { min-width: calc(var(--up-spur-anzahl) + 8px); }
