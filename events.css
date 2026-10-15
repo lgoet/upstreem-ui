@@ -394,3 +394,169 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-gesperrt { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: var(--up-h-chip); padding: 0 8px;
   border-radius: var(--up-r-s); background: var(--up-sel-bg); color: var(--vc-muted); font-size: var(--up-fs-s); font-weight: var(--up-fw-m); }
 .uev-gesperrt svg { width: 13px; height: 13px; flex: 0 0 auto; color: var(--vc-third); }
+
+/* ---- ZIELE (15.10.): Schritt 3 "What should we track?" und der Add-Dialog -------------------
+   Die Wahl steht wie die Topics in Schritt 2 in einem Feldkasten (Rand wie die Eingabefelder,
+   Radius 10, Polster 6), die Zeilen sind die Zeilen der Filter aus core in der Bauart einer
+   Radiogruppe: Punkt, Zeichen, Titel, darunter die Schreibweise der Regel. Gewaehlt traegt die
+   Zeile die Flaeche einer gewaehlten Zeile (--up-sel-bg) und der Punkt den Ring in der
+   Akzentfarbe -- dieselbe Sprache wie das Kaestchen der Topics daneben. */
+.uev-ziel { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.uev-arten { display: flex; flex-direction: column; gap: 2px; padding: 6px; border: 1px solid var(--vc-border); border-radius: var(--up-r-l); }
+.uev-art { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; padding: 8px 10px; border: 0; border-radius: var(--up-r-m);
+  background: transparent; color: var(--vc-text); font: inherit; text-align: left; cursor: pointer;
+  transition: background var(--up-t-1) var(--up-ease); }
+.uev-art:hover { background: var(--vc-heading-bg); }
+.uev-art.is-on, .uev-art.is-on:hover { background: var(--up-sel-bg); }
+.uev-art:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+/* Der Punkt: 16 wie das Kaestchen der Filter (.up-filter-check), Rand 1.5 wie dort; gewaehlt ein
+   Ring von 5 in der Akzentfarbe -- innen bleibt ein Punkt von 6 im Grund. */
+.uev-art-punkt { flex: 0 0 auto; width: 16px; height: 16px; box-sizing: border-box; border-radius: var(--up-r-voll);
+  border: 1.5px solid var(--vc-border); background: var(--vc-bg); transition: border var(--up-t-1) var(--up-ease); }
+.uev-art.is-on .uev-art-punkt { border: 5px solid var(--up-accent); }
+.uev-art-ic { flex: 0 0 auto; display: inline-flex; color: var(--vc-third); }
+.uev-art-ic svg { width: 16px; height: 16px; }
+.uev-art.is-on .uev-art-ic { color: var(--vc-text); }
+.uev-art-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.uev-art-t { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 1.35; }
+.uev-art-s { font-size: var(--up-fs-s); line-height: 1.35; color: var(--vc-third); }
+/* Die Schreibweise einer Regel (lee-up.de/blog/*): in der Schrift der App, Ziffern gleich breit --
+   sie ist das, was die Regel trifft, kein Code. */
+.uev-notation { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--vc-text); }
+.uev-notation.is-leise { color: var(--vc-third); }
+.uev-art-bsp { font-size: var(--up-fs-s); line-height: 1.35; }
+/* Der Schalter "Include all subdomains" unter seiner Zeile, eingerueckt bis zum Text darueber
+   (10 Polster + 16 Punkt + 10 Abstand + 16 Zeichen + 10 Abstand = 62). */
+.uev-unter { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 10px 6px 62px; }
+.uev-unter-lbl { font-size: var(--up-fs-m); color: var(--vc-muted); }
+.uev-unter .up-switch:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: 2px; }
+.uev-arthinweis[hidden] { display: none; }
+
+/* Das Eingabefeld: ein mehrzeiliges Namensfeld (eine Liste laesst sich einfuegen), einzeilig 36 hoch
+   wie jedes Feld des Popups, waechst bis fuenf Zeilen. Das Zeichen bleibt auf der ersten Zeile. */
+.uev-zieleingabe { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.uev-zielzeile { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+.uev-zielzeile .uev-urlsuche { flex: 1 1 auto; min-width: 0; }
+.uev-zieleingabe .up-topicmodal-name.uev-zielein { display: block; height: auto; min-height: 36px; max-height: 116px;
+  padding: 8px 12px 8px 34px; line-height: 18px; resize: none; overflow-y: auto; }
+.uev-zieleingabe .uev-urlsuche-ic { top: 18px; }
+/* Der Knopf ist 32 hoch (.up-btn-sec), das Feld 36: 2px Versatz setzt ihn mittig zur ersten Zeile,
+   auch wenn das Feld waechst. */
+.uev-zielzeile .uev-zielhinzu { flex: 0 0 auto; margin-top: 2px; }
+.uev-schreibweise { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: var(--up-h-chip); font-size: var(--up-fs-s); color: var(--vc-third); }
+.uev-schreibweise:empty { display: none; }
+.uev-schreib-lbl, .uev-schreib-satz { color: var(--vc-third); }
+.uev-schreibweise .uev-notation { max-width: 100%; }
+.uev-sm-knopfzeile { display: flex; }
+.uev-sm-knopfzeile[hidden] { display: none; }
+.uev-sm-knopfzeile .up-quietbtn { margin-left: -8px; }
+.uev-schreibweise .up-quietbtn { height: var(--up-h-chip); }
+.uev-ziel .uev-feldfehler { margin-top: -8px; }
+
+/* Die Liste der Ziele: die Liste der URLs von vorher (.uev-urlwahl), je Ziel das Zeichen seiner
+   Art, die Schreibweise und die Zahl der Treffer aus der Vorschau. */
+.uev-ziel-ic { flex: 0 0 auto; display: inline-flex; color: var(--vc-third); }
+.uev-ziel-ic svg { width: 16px; height: 16px; }
+.uev-urlwahl .uev-notation { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); }
+.uev-ziel-n { flex: 0 0 auto; font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; }
+.uev-ziel-fehler { flex: 0 1 auto; min-width: 0; font-size: var(--up-fs-s); color: var(--vt-down); }
+.uev-zielliste:empty { display: none; }
+
+/* Die Live-Vorschau: im selben Feldkasten wie die Wahl. Ein Satz oben, darunter Beispiele und
+   aehnliche Adressen als leise Zeilen, zuletzt das Angebot "Count as your domain". */
+.uev-vz { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--vc-border); border-radius: var(--up-r-l); font-size: var(--up-fs-m); }
+.uev-vz[hidden] { display: none; }
+.uev-vz .up-fehlerzeile > span { padding-top: 0; }
+.uev-vz-laeuft { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--vc-third); }
+.uev-vz-laeuft .up-modal-spin { display: inline-block; flex: 0 0 auto; }
+.uev-vz-kopf { margin: 0; line-height: 1.45; color: var(--vc-muted); }
+.uev-vz-zeit { color: var(--vc-third); }
+.uev-vz-n { color: var(--vc-text); font-weight: var(--up-fw-m); font-variant-numeric: tabular-nums; }
+.uev-vz-liste { display: flex; flex-direction: column; gap: 2px; }
+.uev-vz-reihe { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-width: 0; font-size: var(--up-fs-s); line-height: 1.5; }
+.uev-vz-url { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--vc-muted); }
+.uev-vz-wert { flex: 0 0 auto; color: var(--vc-third); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.uev-vz-liste.is-leise .uev-vz-url { color: var(--vc-third); }
+.uev-vz-titel { margin-top: 4px; font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-third); }
+.uev-vz-satz { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; line-height: 1.45; color: var(--vc-muted); }
+.uev-vz-satz.is-leise { font-size: var(--up-fs-s); color: var(--vc-third); }
+.uev-vz-satz .up-quietbtn { height: var(--up-h-chip); }
+.uev-vz-eigen { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding-top: 10px;
+  border-top: 1px solid var(--vc-border); color: var(--vc-muted); }
+.uev-vz-eigenbtn .up-modal-spin { display: inline-block; }
+
+/* ---- DER SITEMAP-WAEHLER --------------------------------------------------------------------
+   Ein Feldkasten wie Wahl und Vorschau. Der Baum sind die Zeilen der Filter aus core
+   (.up-filter-item mit .up-filter-check -- gewaehlt ist gewaehlt wie in jedem Filter), je Ebene
+   16px eingerueckt. Rechts Zahl der Seiten und juengstes lastmod; beim Ueberfahren steht an
+   ihrer Stelle "Select all in folder" (Hover-Tausch wie in den Listen der App, nie darueber). */
+.uev-sm { display: flex; flex-direction: column; gap: 12px; padding: 12px; border: 1px solid var(--vc-border); border-radius: var(--up-r-l); min-width: 0; }
+.uev-sm-kopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -4px -4px -4px 0; }
+.uev-sm-titel { display: inline-flex; align-items: center; gap: 8px; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
+.uev-sm-titel svg { width: 16px; height: 16px; color: var(--vc-third); }
+.uev-sm-zeile { display: flex; align-items: center; gap: 8px; }
+.uev-sm-zeile .uev-sm-ein { flex: 1 1 auto; min-width: 0; }
+.uev-sm-zeile .uev-sm-laden { flex: 0 0 auto; }
+/* Die Fehlerzeile klappt auf 0 zu -- der Abstand der Gruppe davor darf dann nicht stehen bleiben. */
+.uev-sm .uev-sm-fehler { margin-top: -12px; }
+.uev-sm-inhalt { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.uev-sm-inhalt:empty { display: none; }
+.uev-sm-lb { padding: 16px 0 8px; }
+.uev-sm-quelle { overflow-wrap: anywhere; }
+.uev-sm-inhalt .uev-sm-suchw { margin: 0; }
+.uev-sm-baum { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; gap: 2px; margin: 0 -6px; padding: 0 6px; }
+.uev-sm-baum .uev-sm-reihe { padding-left: calc(6px + var(--uev-tiefe, 0) * 16px); min-height: 36px; }
+.uev-sm-reihe:focus-visible { outline: 0; box-shadow: inset 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+.uev-sm-reihe .uev-sm-klapp { color: var(--vc-third); }
+.uev-sm-auf-platz { flex: 0 0 20px; width: 20px; }
+.uev-sm-ic { flex: 0 0 auto; display: inline-flex; color: var(--vc-third); }
+.uev-sm-ic svg { width: 16px; height: 16px; }
+.uev-sm-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); color: var(--vc-text); }
+.uev-sm-angaben { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 12px; font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.uev-sm-reihe .uev-sm-alle { display: none; height: var(--up-h-chip); font-size: var(--up-fs-s); }
+.uev-sm-reihe.is-ordner:hover .uev-sm-angaben, .uev-sm-reihe.is-ordner:focus-within .uev-sm-angaben { display: none; }
+.uev-sm-reihe.is-ordner:hover .uev-sm-alle, .uev-sm-reihe.is-ordner:focus-within .uev-sm-alle { display: inline-flex; }
+/* Ohne Zeiger kein Ueberfahren: dort steht "Select all in folder" als eigene Zeile unter dem
+   aufgeklappten Ordner (in der Zeile selbst blieb dem Namen bei 375 gemessen 0px). */
+.uev-sm-alle-reihe { display: none; align-self: flex-start; margin-left: calc(var(--uev-tiefe, 0) * 16px + 32px); height: var(--up-h-seg); font-size: var(--up-fs-s); }
+@media (hover: none) {
+  .uev-sm-reihe.is-ordner .uev-sm-alle, .uev-sm-reihe.is-ordner:focus-within .uev-sm-alle { display: none; }
+  .uev-sm-reihe.is-ordner:focus-within .uev-sm-angaben { display: inline-flex; }
+  .uev-sm-alle-reihe { display: inline-flex; }
+}
+/* Telefon: das Datum weicht, die Zahl der Seiten bleibt -- der Name braucht den Platz. */
+@media (max-width: 520px) { .uev-sm-reihe .uev-sm-datum { display: none; } }
+/* In einem gewaehlten Ordner: gewaehlt, aber nicht einzeln zu aendern. */
+.uev-sm-reihe.is-gedeckt { opacity: .55; cursor: default; }
+.uev-sm-reihe.is-gedeckt:hover { background: transparent; }
+.uev-sm-mehr { align-self: flex-start; margin-left: calc(var(--uev-tiefe, 0) * 16px + 32px); height: var(--up-h-seg); font-size: var(--up-fs-s); }
+.uev-sm-fuss { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.uev-sm-zahl { font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; }
+
+/* Schritt 4: was getrackt wird, kurz. */
+.uev-pruefliste { display: flex; flex-wrap: wrap; gap: 6px 16px; min-width: 0; }
+.uev-pruefziel { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; font-size: var(--up-fs-m); }
+.uev-pruefmarke { display: inline-flex; align-items: center; gap: 6px; font-size: var(--up-fs-m); color: var(--vc-muted); }
+.uev-pruefmarke svg { width: 16px; height: 16px; color: var(--vc-third); }
+
+/* ---- DIE REGEL-ZIELE IM DETAIL ---------------------------------------------------------------
+   Je Regel ein Abschnitt in den Massen der anderen: 40 zwischen den Abschnitten wie .uev-detail,
+   16 zwischen Kennzahlen, Verlauf und Tabelle wie im Steuerblock oben. Der Verlauf ist kleiner
+   als das Diagramm der Marke (220 statt 300) -- er ist eine Ergaenzung, nicht die Aussage. */
+.uev-ziele { display: flex; flex-direction: column; gap: 40px; min-width: 0; }
+.uev-ziele[hidden] { display: none; }
+.uev-ziel-h { gap: 8px; min-width: 0; }
+.uev-ziel-block { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.uev-zielsek .uev-zielweg { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.uev-zielsek .uev-zielweg svg { width: 14px; height: 14px; }
+.uev-linewrap.uev-ziel-linie { height: 220px; }
+.uev-zielurls .uev-td-zahl, .uev-zielurls .uev-th-zahl { flex: 0 0 120px; min-width: 0; }
+.uev-zielurls .uev-td-beob, .uev-zielurls .uev-th-beob { flex: 0 0 150px; }
+.uev-zielurls .uev-td-zahl { --up-spur: var(--up-spur-anzahl); }
+.uev-zielurls .up-var-name, .uev-zielurls .up-th-vname { min-width: 220px; }
+.up-vartable.uev-zielurls { overflow-x: auto; }
+.uev-zielurls .up-vbody { max-height: none; overflow-y: visible; }
+/* 750 = 220 URL + 150 First cited + 3 x 120 + 20. */
+.uev-zielurls > .up-thead, .uev-zielurls > .up-tbody { min-width: 750px; }
+.uev-zielurls .up-row.uev-zitzeile { cursor: pointer; }
+.uev-root.is-narrow .uev-zielsek .uev-sec-head { flex-wrap: wrap; }

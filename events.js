@@ -26,6 +26,13 @@
        uevAddUrl        add_impact_event_url_v2                 setDetail (Popup)
        uevRemoveUrl     remove_impact_event_url_v2              setDetail (Bestaetigung)
        uevDelete        delete_impact_event_v2                  setGeloescht
+     ZIELE (15.10., bubble/events_ziele_db_auftrag_15_10.md): Detail und Analyse fragen zuerst
+     get_impact_event_v3 / cached_impact_event_analysis_v3 und fallen still auf v2 zurueck; Anlegen
+     mit Zielen geht an create_impact_event_v3, "Add" an add_impact_event_target_v1, eine Regel
+     entfernen an remove_impact_event_target_v1. Direkt, ohne Kanal: die Vorschau
+     (preview_impact_event_targets_v1), "Count as your domain" (domain_classify_v1) und die Sitemap
+     (Edge Function sitemap-lesen, UC.edge). Was davon fehlt, bietet die Oberflaeche nicht an
+     (ZIELE_DA, SITEMAP_DA).
      Fehler kommen als HTTP-Fehler, message = Code, hint = Feld (siehe fehlerText/FELD_VON_HINT).
      RUECKWEG: fehlt eine v2-Funktion noch (404 PGRST202), geht DIESER Kanal fuer den Rest der
      Sitzung wieder als Bubble-Ereignis hinaus (uevDetail, uevCreate, ... mit dem fertigen
@@ -186,9 +193,35 @@
     if (ev.scope_mode === "all") l.push({ text: t("All active Prompts") });
     else if (num(ev.selected_topic_count) != null) l.push({ n: num(ev.selected_topic_count), eins: "{n} Topic", viele: "{n} Topics" });
     if (num(ev.affected_prompt_count) != null) l.push({ n: num(ev.affected_prompt_count), eins: "{n} Prompt", viele: "{n} Prompts" });
-    var u = num(ev.affected_url_count != null ? ev.affected_url_count : (isArr(ev.urls) ? ev.urls.length : null));
-    if (u) l.push({ n: u, eins: "{n} URL", viele: "{n} URLs" });
+    var z = zieleZaehlen(ev);
+    if (z.regeln) z.teile.forEach(function (x) { l.push(x); });
+    else if (z.urls) l.push({ n: z.urls, eins: "{n} URL", viele: "{n} URLs" });
     return l;
+  }
+  /* Was ein Event trackt, gezaehlt nach Art (15.10.): aus targets[] des Details, aus
+     target_count/target_kinds der Liste (list_impact_events_v3) oder -- wie bisher -- aus den
+     URLs. teile: je Art eine Angabe ("1 path", "2 URLs"); regeln: ob eine Regel dabei ist. */
+  var ART_ZAHL = { url: ["{n} URL", "{n} URLs"], path: ["{n} path", "{n} paths"], host: ["{n} domain", "{n} domains"], host_all: ["{n} domain", "{n} domains"] };
+  function zieleZaehlen(ev) {
+    var urls = num(ev.affected_url_count != null ? ev.affected_url_count : (isArr(ev.urls) ? ev.urls.length : null));
+    var je = {}, regeln = false, gesamt = null;
+    if (isArr(ev.targets)) {
+      gesamt = ev.targets.length;
+      ev.targets.forEach(function (x) { var k = String(x && x.kind || ""); if (!ART_ZAHL[k]) return; je[k === "host_all" ? "host" : k] = (je[k === "host_all" ? "host" : k] || 0) + 1; if (k !== "url") regeln = true; });
+    } else if (isArr(ev.target_kinds) && num(ev.target_count) != null) {
+      gesamt = num(ev.target_count);
+      regeln = ev.target_kinds.some(function (k) { return k && k !== "url"; });
+      /* Nur eine Art: die ganze Zahl gehoert ihr ("1 path"). Gemischt sagt die Liste nicht, wie
+         viele je Art -- dann "3 targets". */
+      if (ev.target_kinds.length === 1 && ART_ZAHL[ev.target_kinds[0]]) je[ev.target_kinds[0] === "host_all" ? "host" : ev.target_kinds[0]] = gesamt;
+    }
+    var teile = [];
+    if (regeln) {
+      var arten = Object.keys(je);
+      if (arten.length) ["path", "host", "url"].forEach(function (k) { if (je[k]) teile.push({ n: je[k], eins: ART_ZAHL[k][0], viele: ART_ZAHL[k][1] }); });
+      else if (gesamt) teile.push({ n: gesamt, eins: "{n} target", viele: "{n} targets" });
+    }
+    return { regeln: regeln, teile: teile, urls: urls, gesamt: gesamt };
   }
   /* Als reiner Text (Tooltips, Vorlesen): mit Komma. */
   function umfang(ev) {
@@ -217,10 +250,16 @@
   function kennzahlenHtml(ev) {
     var tc = num(ev.selected_topic_count), pc = num(ev.affected_prompt_count);
     var uc = num(ev.affected_url_count != null ? ev.affected_url_count : (isArr(ev.urls) ? ev.urls.length : null));
+    /* Mit einer Regel (15.10.) heisst die dritte Zelle "Tracking" und sagt, was getrackt wird
+       ("1 path" statt "0 URLs", Vertrag Abschnitt 2). Nur URLs: wie bisher. */
+    var zz = zieleZaehlen(ev);
+    var dritte = zz.regeln ? ["Tracking", zz.teile.length === 1 ? ersetze(t(zz.teile[0].n === 1 ? zz.teile[0].eins : zz.teile[0].viele), { n: zahl(zz.teile[0].n) })
+        : ersetze(t(zz.gesamt === 1 ? "{n} target" : "{n} targets"), { n: zahl(zz.gesamt) })]
+      : ["URLs", uc != null ? zahl(uc) : "\u2013"];
     var zellen = [
       ["Topics", ev.scope_mode === "all" ? t("All") : (tc != null ? zahl(tc) : "\u2013")],
       ["Prompts", pc != null ? zahl(pc) : "\u2013"],
-      ["URLs", uc != null ? zahl(uc) : "\u2013"]
+      dritte
     ];
     return '<dl class="uev-stats">' + zellen.map(function (z) {
       return '<div class="uev-stat"><dt>' + esc(t(z[0])) + '</dt><dd>' + esc(z[1]) + '</dd></div>';
@@ -265,13 +304,15 @@
      (--vc-inverse-ink) -- dreht also mit hell und dunkel. Das Zeichen im Pin kommt aus core. */
   var VIS_VGL = "M8,92 C17.2,91.7 44.7,89.8 63,90 C81.3,90.2 99.7,92.8 118,93 C136.3,93.2 154.7,91.5 173,91 C191.3,90.5 209.7,90 228,90 C246.3,90 264.7,91 283,91 C301.3,91 319.7,90 338,90 C356.3,90 374.7,91 393,91 C411.3,91 438.8,90.2 448,90";
   var VIS_BET = "M8,79 C17.2,78.7 44.7,76.8 63,77 C81.3,77.2 99.7,79.8 118,80 C136.3,80.2 154.7,78.5 173,78 C191.3,77.5 209.7,79 228,77 C246.3,75 264.7,69.7 283,66 C301.3,62.3 319.7,58.5 338,55 C356.3,51.5 374.7,48 393,45 C411.3,42 438.8,38.3 448,37";
+  /* Ein Stueck Linie fuer eine Legende: durchgezogen (betroffene Prompts) oder gestrichelt
+     (Vergleichsgruppe). In der Zeichnung der Seite und in der Anleitung (15.10.). */
+  function legLinie(gestrichelt) {
+    return '<svg class="uev-vis-linie" viewBox="0 0 18 4" aria-hidden="true"><line x1="1" y1="2" x2="17" y2="2" stroke="currentColor" stroke-width="2" stroke-linecap="round"' +
+      (gestrichelt ? ' stroke-dasharray="3 3" stroke-opacity=".55"' : '') + '/></svg>';
+  }
   function seiteZeichnung() {
     var pin = UC.iconFormen ? UC.iconFormen("tickets") : "";
     var grund = 'style="fill:var(--vc-inverse-ink)"';
-    function legLinie(gestrichelt) {
-      return '<svg class="uev-vis-linie" viewBox="0 0 18 4" aria-hidden="true"><line x1="1" y1="2" x2="17" y2="2" stroke="currentColor" stroke-width="2" stroke-linecap="round"' +
-        (gestrichelt ? ' stroke-dasharray="3 3" stroke-opacity=".55"' : '') + '/></svg>';
-    }
     return '<div class="up-explain-vis uev-seite-vis">' +
       '<svg class="uev-vis-chart" viewBox="0 0 456 124" aria-hidden="true">' +
         '<defs><linearGradient id="uevVisFlaeche" x1="0" y1="0" x2="0" y2="1">' +
@@ -334,7 +375,14 @@
        p_tagmode noch nicht. Am Feld der Topics, mit dem, was jetzt geht. */
     "impact_event_tagmode_unavailable": "Matching all topics isn't available yet. Switch to Or to continue.",
     "timeout": "This is taking longer than expected. Please try again.",
-    "network": "We could not reach the server. Check your connection and try again."
+    "network": "We could not reach the server. Check your connection and try again.",
+    /* Ziele (15.10., Vertrag Abschnitt 3). impact_event_targets_unavailable ist wieder unserer:
+       Ziele gewaehlt, aber die Datenbank kennt create_impact_event_v3 noch nicht. */
+    "impact_event_invalid_target": "One of the targets can't be used. Please check the address.",
+    "impact_event_too_many_targets": "An event can track at most 50 targets.",
+    "impact_event_target_duplicate": "This target is already part of the event.",
+    "impact_event_target_not_found": "This target is no longer part of the event.",
+    "impact_event_targets_unavailable": "Rules aren't available yet. Please use specific URLs instead."
   };
   /* impact_event_invalid_param nennt das Feld in hint -- je Feld ein eigener Satz, damit am Feld
      steht, WAS nicht passt. */
@@ -347,7 +395,8 @@
     p_cover: "Please choose a different cover image.",
     p_tagmode: "Please choose Or or And.",
     p_event_date: "The date must be within the last 6 months.",
-    p_url: "Please enter a valid URL.", p_urls: "Please enter a valid URL."
+    p_url: "Please enter a valid URL.", p_urls: "Please enter a valid URL.",
+    p_targets: "One of the targets can't be used. Please check the address."
   };
   /* ---- Der Klick-Dummy (data-demo="yes", 03.10. angefordert) -----------------------------
      Die Beispieldaten liegen in einer eigenen Datei neben dieser und kommen nur, wenn eine
@@ -467,15 +516,18 @@
     /* E1b: beim Anlegen steht in hint die URL selbst, die nicht ging -- bei mehreren ist das die
        einzige Stelle, die sagt, welche. Es ist die Eingabe des Nutzers; gezeigt wird sie als Text. */
     if (c === "impact_event_invalid_url" && h && !/^p_/.test(h)) return ersetze(t("This URL can't be used: {url}"), { url: h });
+    if (c === "impact_event_invalid_target" && h && !/^p_/.test(h)) return ersetze(t("This can't be used: {wert}"), { wert: h });
     return t(FEHLER[c] || "Something went wrong. Please try again.");
   }
   /* Welches Feld eines Popups einen Fehler beheben kann: zuerst nach hint (dem Feld, das der
      Server nennt), sonst nach dem Code. */
   var FELD_VON_HINT = { p_name: "name", p_description: "text", p_event_type: "typ", p_icon: "aussehen", p_color: "aussehen",
-    p_cover: "cover", p_event_date: "datum", p_tag_ids: "topics", p_tagmode: "topics", p_scope_mode: "topics", p_urls: "urls", p_url: "urls" };
+    p_cover: "cover", p_event_date: "datum", p_tag_ids: "topics", p_tagmode: "topics", p_scope_mode: "topics", p_urls: "ziele", p_url: "ziele", p_targets: "ziele" };
+  /* "ziele" (15.10.): URLs und Regeln stehen in EINEM Feld, Schritt 3 bzw. im Add-Dialog. */
   var FELD_VON_CODE = { impact_event_name_required: "name", impact_event_invalid_date: "datum",
     impact_event_topics_required: "topics", impact_event_invalid_topics: "topics", impact_event_tagmode_unavailable: "topics", impact_event_no_active_prompts: "topics",
-    impact_event_invalid_url: "urls", impact_event_url_duplicate: "urls", impact_event_too_many_urls: "urls" };
+    impact_event_invalid_url: "ziele", impact_event_url_duplicate: "ziele", impact_event_too_many_urls: "ziele",
+    impact_event_invalid_target: "ziele", impact_event_too_many_targets: "ziele", impact_event_target_duplicate: "ziele", impact_event_targets_unavailable: "ziele" };
   function feldVonFehler(code, hint) {
     var c = String(code == null ? "" : code), h = String(hint == null ? "" : hint);
     if (c === "impact_event_invalid_param" || FELD_VON_CODE[c]) return FELD_VON_HINT[h] || FELD_VON_CODE[c] || "";
@@ -625,6 +677,115 @@
     "Your team has reached the limit of 200 events. Delete an event to create a new one.":
       "Dein Team hat die Grenze von 200 Events erreicht. Lösch ein Event, um ein neues anzulegen."
   });
+  /* 15.10.: Ziele, Sitemap, Auswertung je Regel, Anleitung. Jeder Schluessel gegen alle Kataloge
+     geprueft (Katalog-Kollision): keiner steht schon in core oder einer anderen Komponente. */
+  if (UC.addMessages) UC.addMessages("de", {
+    /* Schritte und Ziele */
+    "Step {n} of 4": "Schritt {n} von 4", "Tracking": "Tracking", "Check and create": "Prüfen und anlegen",
+    "What should we track?": "Was sollen wir tracken?", "Choose what to track.": "Wähl aus, was getrackt werden soll.",
+    "Brand metrics only": "Nur Markenwerte", "Visibility, rank and sentiment": "Visibility, Rank und Sentiment",
+    "Specific URLs": "Bestimmte URLs", "Everything under a path": "Alles unter einem Pfad",
+    "Whole domain or subdomain": "Ganze Domain oder Subdomain", "Include all subdomains": "Alle Subdomains einbeziehen",
+    "Path": "Pfad", "Domain and subdomains": "Domain und Subdomains", "e.g.": "z. B.", "and {n} more": "und {n} weitere",
+    "Search your URLs or paste links": "Eigene URLs durchsuchen oder Links einfügen",
+    "Paste a URL, a path or a domain": "URL, Pfad oder Domain einfügen",
+    "Paste a path, e.g. example.com/blog": "Pfad einfügen, z. B. example.com/blog",
+    "Paste a domain, e.g. blog.example.com": "Domain einfügen, z. B. blog.example.com",
+    "Enter a domain like example.com.": "Gib eine Domain wie example.com ein.",
+    "Please add a path, e.g. example.com/blog.": "Gib bitte einen Pfad an, z. B. example.com/blog.",
+    "Please enter a valid domain.": "Gib bitte eine gültige Domain ein.",
+    "This can't be used: {wert}": "Das lässt sich nicht verwenden: {wert}",
+    "This target is already in the list.": "Dieses Ziel steht schon in der Liste.",
+    "Add one URL at a time.": "Füg eine URL nach der anderen hinzu.",
+    "This looks like a sitemap.": "Das sieht nach einer Sitemap aus.",
+    "This looks like a sitemap. Please add the pages or the domain instead.": "Das sieht nach einer Sitemap aus. Füg stattdessen die Seiten oder die Domain hinzu.",
+    "Rules count retroactively, also for pages that were cited before you add them.":
+      "Regeln zählen rückwirkend, auch für Seiten, die schon vor dem Hinzufügen zitiert wurden.",
+    "One of the targets can't be used. Please check the address.": "Eines der Ziele lässt sich nicht verwenden. Prüf bitte die Adresse.",
+    "An event can track at most 50 targets.": "Ein Event kann höchstens 50 Ziele tracken.",
+    "This target is already part of the event.": "Dieses Ziel gehört schon zum Event.",
+    "This target is no longer part of the event.": "Dieses Ziel gehört nicht mehr zum Event.",
+    "Rules aren't available yet. Please use specific URLs instead.": "Regeln sind noch nicht verfügbar. Nimm bitte stattdessen bestimmte URLs.",
+    "You can add {n} more targets to this event.": "Du kannst diesem Event noch {n} Ziele hinzufügen.",
+    "Added to tracking": "Zum Tracking hinzugefügt",
+    "{n} path": "{n} Pfad", "{n} paths": "{n} Pfade", "{n} domain": "{n} Domain", "{n} domains": "{n} Domains",
+    "{n} target": "{n} Ziel", "{n} targets": "{n} Ziele",
+    /* Live-Vorschau */
+    "Checking the last {n} days…": "Die letzten {n} Tage werden geprüft…", "Last {n} days:": "Letzte {n} Tage:",
+    "{n} URL matches": "{n} URL passt", "{n} URLs match": "{n} URLs passen",
+    "{n} citation": "{n} Zitat", "{n} citations": "{n} Zitate", "in {n} prompt": "in {n} Prompt", "in {n} prompts": "in {n} Prompts",
+    "Similar, but not matching": "Ähnlich, aber nicht passend", "Other host": "Anderer Host", "Other path": "Anderer Pfad",
+    "We haven't seen this domain in your citations. Did you mean {host}?": "Diese Domain kommt in deinen Zitaten nicht vor. Meintest du {host}?",
+    "Use {host}": "{host} verwenden",
+    "This subdomain hasn't been cited yet. It will be counted from its first citation.": "Diese Subdomain wurde noch nicht zitiert. Sie zählt ab dem ersten Zitat.",
+    "This domain hasn't been cited yet. It will be counted from its first citation.": "Diese Domain wurde noch nicht zitiert. Sie zählt ab dem ersten Zitat.",
+    "No cited page matches yet. Matching pages count from their first citation.": "Noch passt keine zitierte Seite. Passende Seiten zählen ab ihrem ersten Zitat.",
+    "Only pages that AI answers to your tracked prompts cite can be counted.": "Zählen können nur Seiten, die KI-Antworten auf deine getrackten Prompts zitieren.",
+    "{host} doesn't count as your domain yet.": "{host} zählt noch nicht als deine Domain.",
+    "Count as your domain": "Als deine Domain zählen",
+    "The preview could not be loaded.": "Die Vorschau konnte nicht geladen werden.",
+    /* Sitemap */
+    "Load from sitemap": "Aus Sitemap laden", "Sitemap link or domain": "Sitemap-Link oder Domain", "Load": "Laden",
+    "Reading your sitemap": "Deine Sitemap wird gelesen", "Looking for your sitemap…": "Sitemap wird gesucht…",
+    "Reading pages…": "Seiten werden gelesen…", "Sorting pages into folders…": "Seiten werden nach Ordnern sortiert…",
+    "We couldn't find a sitemap there. Try the full link to your sitemap.xml.": "Dort haben wir keine Sitemap gefunden. Versuch den vollständigen Link zu deiner sitemap.xml.",
+    "The website took too long to answer. Please try again later.": "Die Website hat zu lange gebraucht. Versuch es bitte später noch einmal.",
+    "This sitemap is too large to read. Try one of the smaller sitemaps it lists.": "Diese Sitemap ist zu groß. Versuch eine der kleineren Sitemaps, die sie auflistet.",
+    "This file isn't a sitemap we can read. Check that the link points to a sitemap.xml.": "Diese Datei ist keine lesbare Sitemap. Prüf, ob der Link auf eine sitemap.xml zeigt.",
+    "This address can't be read. Please use the public address of your website.": "Diese Adresse lässt sich nicht lesen. Nimm bitte die öffentliche Adresse deiner Website.",
+    "Too many sitemap requests. Please wait a while and try again.": "Zu viele Sitemap-Abrufe. Warte bitte eine Weile und versuch es dann noch einmal.",
+    "Please enter a sitemap link or a domain.": "Gib bitte einen Sitemap-Link oder eine Domain ein.",
+    "The sitemap could not be loaded. Please try again.": "Die Sitemap konnte nicht geladen werden. Versuch es bitte noch einmal.",
+    "{n} pages from {source}": "{n} Seiten aus {source}", "Only the first {n} pages could be read.": "Nur die ersten {n} Seiten ließen sich lesen.",
+    "This sitemap lists no pages.": "Diese Sitemap listet keine Seiten.", "{n} page": "{n} Seite",
+    "Newest change": "Jüngste Änderung", "Select all in folder": "Alle im Ordner auswählen",
+    "Track everything under {path}": "Alles unter {path} tracken", "Included in the folder": "Im Ordner enthalten",
+    "Show {n} more": "{n} weitere zeigen", "No matching pages": "Keine passenden Seiten", "Add selection": "Auswahl übernehmen",
+    "Expand": "Aufklappen", "Collapse": "Zuklappen",
+    /* Auswertung je Regel */
+    "Everything under this path, including pages added later.": "Alles unter diesem Pfad, auch Seiten, die später dazukommen.",
+    "Every page on this domain, including pages added later.": "Jede Seite dieser Domain, auch Seiten, die später dazukommen.",
+    "Every page on this domain and its subdomains, including pages added later.": "Jede Seite dieser Domain und ihrer Subdomains, auch Seiten, die später dazukommen.",
+    "Cited URLs": "Zitierte URLs", "In the whole period": "Im gesamten Zeitraum",
+    "Citation count": "Zitate", "Before and after the event": "Vor und nach dem Event",
+    "Share of all citations": "Anteil an allen Zitaten", "New URLs": "Neue URLs", "First cited after the event": "Erstmals nach dem Event zitiert",
+    "Citations after": "Zitate nachher",
+    "No cited pages yet": "Noch keine zitierten Seiten",
+    "Pages that match this rule appear here as soon as an AI cites them.": "Passende Seiten erscheinen hier, sobald eine KI sie zitiert.",
+    "The analysis for this rule isn't available yet.": "Die Auswertung für diese Regel ist noch nicht verfügbar.",
+    "Remove this target from the event?": "Dieses Ziel aus dem Event entfernen?",
+    "Only the rule is removed. Pages and their citations stay untouched.": "Nur die Regel wird entfernt. Seiten und ihre Zitate bleiben unberührt.",
+    "Remove target": "Ziel entfernen",
+    /* Anleitung */
+    "Step-by-step guide": "Schritt-für-Schritt-Anleitung", "Show guide": "Anleitung zeigen", "Hide guide": "Anleitung ausblenden",
+    "Create an event": "Leg ein Event an",
+    "An event marks a change, such as a relaunch or a campaign, and Upstreem compares your AI results before and after it.":
+      "Ein Event markiert eine Änderung, etwa einen Relaunch oder eine Kampagne, und Upstreem vergleicht deine AI-Ergebnisse davor und danach.",
+    "Name, date and type": "Name, Datum und Typ",
+    "The date is the comparison point: Upstreem compares the days before it with the days after it.":
+      "Das Datum ist der Vergleichspunkt: Upstreem vergleicht die Tage davor mit den Tagen danach.",
+    "Which prompts are affected?": "Welche Prompts sind betroffen?",
+    "These prompts are fixed when you create the event, and your other prompts form a comparison group that shows what would have happened anyway.":
+      "Diese Prompts werden beim Anlegen festgehalten, und deine übrigen Prompts bilden eine Vergleichsgruppe, die zeigt, was ohnehin passiert wäre.",
+    "A rule like example.com/blog/* also counts new articles once an AI cites them, and you can load your sitemap or count a domain as yours right here.":
+      "Eine Regel wie example.com/blog/* zählt auch neue Artikel, sobald eine KI sie zitiert, und hier kannst du deine Sitemap laden oder eine Domain als deine zählen.",
+    "Pick the pages that belong to this change, or keep it to brand metrics.":
+      "Wähl die Seiten, die zu dieser Änderung gehören, oder bleib bei den Markenwerten.",
+    "Check the preview and create the event, since date and prompts can't be changed later.":
+      "Prüf die Vorschau und leg das Event an, denn Datum und Prompts lassen sich später nicht mehr ändern.",
+    "Before and after": "Vorher und nachher",
+    "Each number shows how your brand moved since the event, and vs. comparison shows how much more than in your other prompts.":
+      "Jede Zahl zeigt, wie sich deine Marke seit dem Event bewegt hat, und vs. Vergleich, um wie viel mehr als in deinen übrigen Prompts.",
+    "Compared with the rest": "Im Vergleich zum Rest",
+    "The solid line shows the affected prompts and the dashed line the comparison group, so a gap that opens after the event is its effect.":
+      "Die durchgezogene Linie zeigt die betroffenen Prompts, die gestrichelte die Vergleichsgruppe: Eine Lücke, die sich nach dem Event öffnet, ist seine Wirkung.",
+    "What you track": "Was du trackst",
+    "Here you see which of your pages AI answers cited after the event, including new pages that match your rules.":
+      "Hier siehst du, welche deiner Seiten KI-Antworten nach dem Event zitiert haben, auch neue Seiten, die zu deinen Regeln passen.",
+    "Add pages or rules at any time with Add at the top of the page.":
+      "Mit Hinzufügen oben auf der Seite ergänzt du jederzeit Seiten oder Regeln.",
+    "{n} new URLs after the event": "{n} neue URLs nach dem Event"
+  });
 
   /* Spaltenzahl der Karten: nach dem PLATZ (wie response-detail.spalten -- dieselben Schwellen,
      dieselbe Begruendung: ein springendes Raster ist schlimmer als eine kurze letzte Reihe). */
@@ -642,20 +803,150 @@
      im Rueckweg den Namen des Bubble-Elements traegt. ms: laenger als die Analyse (E9: 3,4 s
      ungecacht) braucht keine; die Schreibwege so lang wie die Warte-Uhr der Popups (WARTE_MS),
      damit die RPC endet, bevor das Popup "dauert zu lange" sagt. */
+  /* ZIELE (15.10., bubble/events_ziele_db_auftrag_15_10.md): fn3 ist die Fassung mit Zielen.
+     v3immer: Lesekanaele fragen zuerst v3 und fallen bei fehlender Funktion still auf v2 zurueck
+     (dieselben Parameter, nur ohne targets[] in der Antwort). Schreibkanaele nehmen fn3 nur, wenn
+     der Aufruf Ziele traegt (rufen(..., v3)). nurDirekt: kein Rueckweg an Bubble -- die Kanaele
+     gibt es erst seit der App. */
   var KANAL = {
-    uevDetail:       { fn: "get_impact_event_v2",             attr: "data-detail-fn",    ms: 20000 },
-    uevAnalysis:     { fn: "cached_impact_event_analysis_v2", attr: "data-analysis-fn",  ms: 24000 },
+    uevDetail:       { fn: "get_impact_event_v2",             fn3: "get_impact_event_v3", v3immer: true, attr: "data-detail-fn", ms: 20000 },
+    uevAnalysis:     { fn: "cached_impact_event_analysis_v2", fn3: "cached_impact_event_analysis_v3", v3immer: true, attr: "data-analysis-fn", ms: 24000 },
     uevScopePreview: { fn: "preview_impact_event_scope_v2",   attr: "data-preview-fn",   ms: 20000 },
-    uevCreate:       { fn: "create_impact_event_v2",          attr: "data-create-fn",    ms: 24000, schreibt: true },
+    uevCreate:       { fn: "create_impact_event_v2",          fn3: "create_impact_event_v3", attr: "data-create-fn", ms: 24000, schreibt: true },
     uevUpdate:       { fn: "update_impact_event_v2",          attr: "data-update-fn",    ms: 24000, schreibt: true },
     uevAddUrl:       { fn: "add_impact_event_url_v2",         attr: "data-addurl-fn",    ms: 24000, schreibt: true },
     uevRemoveUrl:    { fn: "remove_impact_event_url_v2",      attr: "data-removeurl-fn", ms: 24000, schreibt: true },
-    uevDelete:       { fn: "delete_impact_event_v2",          attr: "data-delete-fn",    ms: 24000, schreibt: true }
+    uevDelete:       { fn: "delete_impact_event_v2",          attr: "data-delete-fn",    ms: 24000, schreibt: true },
+    uevAddTarget:    { fn: "add_impact_event_target_v1",      attr: "", ms: 24000, schreibt: true, nurDirekt: true },
+    uevRemoveTarget: { fn: "remove_impact_event_target_v1",   attr: "", ms: 24000, schreibt: true, nurDirekt: true }
   };
   /* Kanaele, deren v2-Funktion es (noch) nicht gibt -- je Seitenaufruf gemerkt, fuer alle
      Wurzeln. Nach einem Neuladen wird wieder zuerst v2 versucht: ist das SQL inzwischen
      eingespielt, laeuft der neue Weg ohne Zutun. */
   var RUECKFALL = {};
+  /* Dasselbe fuer v3: ein Lesekanal, dessen v3 fehlt, fragt fuer den Rest der Sitzung gleich v2. */
+  var RUECKFALL3 = {};
+
+  /* ---- WAS DIE DATENBANK SCHON KANN (15.10.) ----------------------------------------------
+     "Nichts zeigen, was nicht funktioniert": Regel-Ziele (Pfad, Domain) und die Vorschau gibt es
+     erst mit preview_impact_event_targets_v1 und den v3-Funktionen, den Sitemap-Waehler erst mit
+     der Edge Function sitemap-lesen. Bis dahin bietet Schritt 3 nur "Brand metrics only" und
+     "Specific URLs" ueber die v2-Wege, und es gibt keinen Sitemap-Knopf.
+     Gefragt wird EINMAL je Seitenaufruf und fuer alle Wurzeln, beim ersten Oeffnen von Anlegen
+     oder Detail -- mit einem Aufruf, der nichts aendert: die Vorschau mit leerer Zielliste, die
+     Edge Function mit leerer Adresse (sie lehnt die ab, ohne etwas abzurufen). Eine fehlende
+     Funktion erkennt PostgREST an PGRST202, eine fehlende Edge Function das Gateway von Supabase
+     an 404 NOT_FOUND ("Requested function was not found"); jede andere Antwort heisst "da".
+     Netzfehler und Zeitablauf heissen "noch unbekannt" -- dann wird beim naechsten Oeffnen noch
+     einmal gefragt, und bis dahin gilt der Rueckfall. NICHT ueber UC.ohneBubble: das ist kein
+     Rueckweg an Bubble, sondern die Frage, was die Datenbank kann. */
+  var ZIELE_DA = { stand: null, laeuft: null }, SITEMAP_DA = { stand: null, laeuft: null };
+  function fehltFn(erg) {
+    var f = (erg && erg.fehler) || {};
+    return !!erg && !erg.ok && (/PGRST202/.test(String(f.code || "")) ||
+      (erg.status === 404 && /could not find the function/i.test(String(f.message || "") + " " + String(f.details || ""))));
+  }
+  function edgeFehlt(erg) {
+    var f = (erg && erg.fehler) || {};
+    return !!erg && !erg.ok && erg.status === 404 &&
+      (String(f.code || "") === "NOT_FOUND" || /requested function was not found/i.test(String(f.message || "")));
+  }
+  function unbekannt(erg) { return !erg || erg.status === 0 || erg.status === 401; }
+
+  /* ---- ZIELE AUS EINER EINGABE (15.10., Vertrag Abschnitt 1) --------------------------------
+     Ein Ziel ist eine Regel: url (genau diese Adresse), path (alles unter host/pfad, Pfadgrenze
+     an "/"), host (genau dieser Host), host_all (Host und alle Unterdomains). Die Datenbank
+     normalisiert selbst (url_norm_v1); hier nur so viel, wie die Oberflaeche zum Zeigen und zum
+     Erkennen von Doppelten braucht -- www. weg, Host klein, Schema, Sternchen und Schraegstrich
+     am Ende weg. Die SCHREIBWEISE (lee-up.de/blog/*) steht immer sichtbar: sie ist das, was die
+     Regel trifft, in einer Zeile. */
+  var ZIEL_MAX = 50;
+  function hostOk(h) { return /^(?=.{3,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(String(h || "")); }
+  function zerlegen(s) {
+    s = String(s == null ? "" : s).trim();
+    if (!s || /\s/.test(s)) return null;
+    var schema = /^https?:\/\//i.test(s), rest = s.replace(/^https?:\/\//i, "");
+    var alle = /^\*\./.test(rest);
+    rest = rest.replace(/^\*\./, "");
+    var m = /^([^\/?#]+)([^?#]*)(\?[^#]*)?(#.*)?$/.exec(rest);
+    if (!m) return null;
+    var host = m[1].toLowerCase().replace(/^www\./, ""), pfad = m[2] || "";
+    var stern = /\*$/.test(pfad);
+    pfad = pfad.replace(/\/?\*$/, "");
+    var schraeg = /\/$/.test(pfad);
+    pfad = pfad.replace(/\/+$/, "");
+    return { schema: schema, host: host, pfad: pfad, stern: stern, schraeg: schraeg, alle: alle, query: m[3] || "", roh: s };
+  }
+  /* Mehrere Eintraege: je Zeile (oder durch Leerzeichen bzw. Komma getrennt) -- eine Adresse
+     enthaelt keines davon. */
+  function eingabeTeile(text) {
+    return String(text == null ? "" : text).split(/[\s,]+/).map(function (x) { return x.trim(); }).filter(Boolean);
+  }
+  /* Welche Art die Eingabe nahelegt (Entscheidung des Nutzers 15.10.): Host -> Domain,
+     Host + Pfad -> Pfad, mehrere Eintraege -> URLs. Eine volle Adresse MIT Schema und einem
+     Pfad ohne Schraegstrich am Ende ist eine Seite ("https://lee-up.de/blog/artikel-1"), keine
+     Abteilung -- das ist, was jemand aus der Adresszeile kopiert. Eine .xml ist eine Sitemap. */
+  function artVorschlag(text) {
+    var teile = eingabeTeile(text);
+    if (!teile.length) return null;
+    if (teile.length > 1) return "url";
+    var z = zerlegen(teile[0]);
+    if (!z || !z.host) return null;
+    if (/\.xml(\.gz)?$/i.test(z.pfad)) return "sitemap";
+    if (z.alle) return "host_all";
+    if (!z.pfad) return "host";
+    if (z.stern || z.schraeg) return "path";
+    if (z.schema || z.query) return "url";
+    return "path";
+  }
+  function urlTextSchluessel(s) {
+    return String(s || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/#.*$/, "").replace(/\/+$/, "");
+  }
+  /* Ein Eintrag als Ziel der gewaehlten Art. { kind, input, key, zeigen } oder { fehler }. */
+  function zielBauen(text, art) {
+    var z = zerlegen(text);
+    if (!z || !hostOk(z.host)) return { fehler: "host", roh: String(text || "").trim() };
+    if (art === "url") {
+      var u = (z.schema ? z.roh : "https://" + z.roh).replace(/#.*$/, "");
+      if (u.length > 2048) return { fehler: "host", roh: z.roh };
+      return { kind: "url", input: u, key: "url|" + urlTextSchluessel(u), zeigen: z.host + (z.pfad || "") + (z.query || "") };
+    }
+    if (art === "path") {
+      if (!z.pfad) return { fehler: "pfad", roh: z.roh };
+      var v = z.host + z.pfad;
+      return { kind: "path", input: v, key: "path|" + v.toLowerCase(), zeigen: v + "/*" };
+    }
+    if (art === "host_all") return { kind: "host_all", input: z.host, key: "host_all|" + z.host, zeigen: "*." + z.host + "/*" };
+    return { kind: "host", input: z.host, key: "host|" + z.host, zeigen: z.host + "/*" };
+  }
+  /* Ein Ziel aus der Datenbank (targets[] von get_impact_event_v3) in derselben Form. value ist
+     normalisiert, input die Eingabe des Nutzers -- gezeigt wird value. */
+  function zielAusDb(t) {
+    if (!t) return null;
+    var k = String(t.kind || ""), v = String(t.value || t.input || "");
+    var x = zielBauen(v, k === "host_all" ? "host_all" : k);
+    if (x.fehler) return { id: t.id, kind: k, input: v, key: k + "|" + v.toLowerCase(), zeigen: v, db: t };
+    x.id = t.id; x.db = t;
+    return x;
+  }
+  /* Der Host einer Eingabe, wie die Vorschau ihn einstuft ("Count as your domain"). */
+  function zielHost(z) {
+    var x = z && zerlegen(z.input);
+    return x ? x.host : "";
+  }
+  /* Zwei Hosts, die sich nur um einen Tippfehler unterscheiden (hoechstens zwei Zeichen) --
+     fuer "Did you mean ...?" bei 0 Treffern. */
+  function aehnlich(a, b) {
+    a = String(a || ""); b = String(b || "");
+    if (!a || !b || a === b || Math.abs(a.length - b.length) > 2) return false;
+    var m = [], i, j;
+    for (i = 0; i <= a.length; i++) { m[i] = [i]; }
+    for (j = 0; j <= b.length; j++) m[0][j] = j;
+    for (i = 1; i <= a.length; i++) for (j = 1; j <= b.length; j++) {
+      m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
+    }
+    return m[a.length][b.length] <= 2;
+  }
 
   /* ============================================================================================
      Eine Wurzel
@@ -726,19 +1017,36 @@
       var k = KANAL[kanal], b = body(o);
       if (spaet && fireBubble.spaet) fireBubble.spaet(k.attr, kanal, b); else fireBubble(k.attr, kanal, b);
     }
-    function rufen(kanal, o, kx, spaet) {
+    /* v3 (15.10.): true -- der Aufruf traegt Ziele und braucht die Fassung mit Zielen (fn3). */
+    function rufen(kanal, o, kx, spaet, v3) {
       kx = kx || {};
       if (demo) { demoAntwort(kanal, body(o), kx); return; }
       var k = KANAL[kanal];
-      if (RUECKFALL[kanal] || !UC.rpc) { bubbleRufen(kanal, o, spaet); return; }
+      var mitV3 = !!k.fn3 && !RUECKFALL3[kanal] && (k.v3immer || v3 === true);
+      if (!mitV3 && (RUECKFALL[kanal] || !UC.rpc)) {
+        if (k.nurDirekt) { kam(kanal, { ok: false, status: 0, fehler: { code: "", message: "", hint: "", details: "" } }, kx); return; }
+        bubbleRufen(kanal, o, spaet);
+        return;
+      }
       var tm = team();
       (tm ? Promise.resolve(tm) : (UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(""))).then(function (tm2) {
         /* Kein Team nach 10 s: kein Aufruf ohne p_team (der Server antwortete mit forbidden) --
            die Stelle, die wartet, bekommt den allgemeinen Fehler statt ewig zu laden. */
         if (!tm2) return { ok: false, status: 0, fehler: { code: "", message: "", hint: "", details: "" } };
-        return UC.rpc(k.fn, mitTeam(o, tm2), { timeoutMs: k.ms });
+        return UC.rpc(mitV3 ? k.fn3 : k.fn, mitTeam(o, tm2), { timeoutMs: k.ms });
       }).then(function (erg) {
         erg = erg || { ok: false, status: 0, fehler: {} };
+        /* v3 fehlt (SQL noch nicht eingespielt): ein Lesekanal fragt still v2 -- dieselben
+           Parameter, die Antwort hat nur keine Ziele. Ein Schreibaufruf MIT Zielen kann nicht
+           still zurueckfallen (v2 kennt p_targets nicht); er meldet es am Feld der Ziele, und die
+           Oberflaeche bietet ab jetzt nur noch, was v2 kann. */
+        if (mitV3 && fehltFn(erg)) {
+          RUECKFALL3[kanal] = true;
+          if (k.v3immer) { rufen(kanal, o, kx, spaet); return; }
+          ZIELE_DA.stand = false;
+          kam(kanal, { ok: false, status: 404, fehler: { code: "", message: "impact_event_targets_unavailable", hint: "p_targets", details: "" } }, kx);
+          return;
+        }
         /* "And" (p_tagmode) und die Funktion kennt den Parameter noch nicht: PostgREST meldet das
            als fehlende Funktion (PGRST202), obwohl es sie gibt. Das ist KEIN Grund fuer den
            Rueckweg zu Bubble -- der wuerde den Kanal fuer die ganze Sitzung umstellen, und Bubble
@@ -749,7 +1057,7 @@
           kam(kanal, { ok: false, status: 400, fehler: { code: "", message: "impact_event_tagmode_unavailable", hint: "p_tagmode", details: "" } }, kx);
           return;
         }
-        if (!erg.ok && funktionFehlt(erg)) {
+        if (!erg.ok && funktionFehlt(erg) && !k.nurDirekt) {
           /* Die v2-Funktion ist noch nicht eingespielt: dieser Kanal geht fuer den Rest der
              Sitzung den alten Weg, ohne jedes Mal erst an der 404 vorbei. */
           RUECKFALL[kanal] = true;
@@ -784,7 +1092,7 @@
       /* Anlegen, Bearbeiten, URL hinzufuegen und entfernen antworten mit dem Detail (Vertrag 1,
          Antwort b). Schliesst es kein wartendes Popup mehr (dessen Uhr war abgelaufen), laedt die
          Liste hier neu -- die Aenderung ist trotzdem geschehen. */
-      var wartet = kanal === "uevRemoveUrl" ? !!wartend.urlWeg : !!(popup && popup === kx.popup && popup.warte);
+      var wartet = kanal === "uevRemoveUrl" ? !!wartend.urlWeg : kanal === "uevRemoveTarget" ? !!wartend.zielWeg : !!(popup && popup === kx.popup && popup.warte);
       if (!ctrl.setDetail(d, "schreiben")) { fehlerKam(kanal, { message: "unreadable_response" }, kx); return; }
       if (!wartet) listeNeu();
     }
@@ -813,6 +1121,7 @@
       }
       if (kanal === "uevDelete") { loeschFehler(txt); return; }
       if (kanal === "uevRemoveUrl") { urlWegFehler(txt); return; }
+      if (kanal === "uevRemoveTarget") { zielWegFehler(txt); return; }
       if (popup && popup === kx.popup && popupFehlerKam(txt, code, hint)) return;
       if (UC.toast) UC.toast(txt, { kind: "error" });
     }
@@ -941,7 +1250,7 @@
        ============================================================================================ */
     var elListe = null, elZahl = null, elSucheIn = null, elSuche = null, sucheKit = null, typFilter = null;
     function baueUebersicht() {
-      elAktion.innerHTML = seitenInfoKnopf() +
+      elAktion.innerHTML = anleitungKnopf() + seitenInfoKnopf() +
         '<button class="up-ph-addbtn up-export uev-anlegen" type="button">' + UC.icon("plus", 1.8) +
           '<span data-i18n="Create event">' + esc(t("Create event")) + '</span></button>';
       elMain.innerHTML =
@@ -1159,8 +1468,10 @@
     var linie = null, elChartWrap = null, elLegende = null;
     function baueDetail() {
       linie = null;
-      elAktion.innerHTML = seitenInfoKnopf() +
-        '<button class="up-btn-sec uev-addurl-kopf" type="button">' + UC.icon("plus", 1.8) + '<span>' + esc(t("Add URL")) + '</span></button>' +
+      /* "Add" statt "Add URL" (15.10.): derselbe Dialog nimmt jetzt auch Regeln. Ohne Ziele in der
+         Datenbank bleibt es beim alten Wort -- der Dialog kann dann nur eine URL. */
+      elAktion.innerHTML = anleitungKnopf() + seitenInfoKnopf() +
+        '<button class="up-btn-sec uev-addurl-kopf" type="button">' + UC.icon("plus", 1.8) + '<span class="uev-addurl-txt">' + esc(t(zieleDa() ? "Add" : "Add URL")) + '</span></button>' +
         '<span class="uev-kopfmehr"></span>';
       elMain.innerHTML =
         '<div class="uev-detail">' +
@@ -1202,6 +1513,8 @@
               '<div class="up-legend uev-legende"></div></div>' +
           '</section>' +
           '<section class="uev-sek" data-sek="markt"></section>' +
+          /* Die Regel-Ziele (15.10.): je Ziel ein eigener Abschnitt, gebaut in renderZiele. */
+          '<div class="uev-ziele" data-sek="ziele" hidden></div>' +
           '<section class="uev-sek" data-sek="urls"></section>' +
           '<section class="uev-sek" data-sek="scope"></section>' +
           '<section class="uev-sek uev-sek-resp" data-sek="resp"></section>' +
@@ -1498,20 +1811,25 @@
         var el = elMain.querySelector('[data-sek="' + n + '"]');
         if (!el) return;
         el.innerHTML = '<div class="uev-tabinhalt"></div>' + fussHtml();
-        var st = { page: 1, pageSize: seitenGroesse[n], totalCount: null, loading: false };
-        var neu = function () { seitenGroesse[n] = st.pageSize; st.loading = false; if (n === "markt") renderMarkt(); else renderUrls(); };
-        seiten[n] = { st: st, kit: UC.makePager ? UC.makePager({ root: el, state: st, onChange: neu }) : null };
-        /* Die Klicks der Fusszeile wie in Shopping und Ads -- der Pager aus core zeichnet nur. */
-        el.addEventListener("click", function (e) {
-          var k = seiten[n] && seiten[n].kit;
-          if (!k || !e.target.closest || !e.target.closest(".uev-foot")) return;
-          var ps = e.target.closest("[data-pagesize]");
-          if (ps) { k.setPageSize(Number(ps.getAttribute("data-pagesize"))); return; }
-          if (e.target.closest(".up-page-prev")) { k.goToPage(st.page - 1); return; }
-          if (e.target.closest(".up-page-next")) { k.goToPage(st.page + 1); return; }
-          var pg = e.target.closest(".up-page[data-page]");
-          if (pg) k.goToPage(Number(pg.getAttribute("data-page")));
-        });
+        pagerAnlegen(el, n, function () { if (n === "markt") renderMarkt(); else renderUrls(); });
+      });
+    }
+    /* Ein Pager an einem Abschnitt, der Inhalt und Fusszeile schon traegt -- auch fuer die
+       Abschnitte der Regel-Ziele, die erst mit dem Detail entstehen (15.10.). */
+    function pagerAnlegen(el, n, zeichnen) {
+      var st = { page: 1, pageSize: seitenGroesse[n] || SEITEN_GROESSE, totalCount: null, loading: false };
+      var neu = function () { seitenGroesse[n] = st.pageSize; st.loading = false; zeichnen(); };
+      seiten[n] = { st: st, el: el, kit: UC.makePager ? UC.makePager({ root: el, state: st, onChange: neu }) : null };
+      /* Die Klicks der Fusszeile wie in Shopping und Ads -- der Pager aus core zeichnet nur. */
+      el.addEventListener("click", function (e) {
+        var k = seiten[n] && seiten[n].kit;
+        if (!k || !e.target.closest || !e.target.closest(".uev-foot")) return;
+        var ps = e.target.closest("[data-pagesize]");
+        if (ps) { k.setPageSize(Number(ps.getAttribute("data-pagesize"))); return; }
+        if (e.target.closest(".up-page-prev")) { k.goToPage(st.page - 1); return; }
+        if (e.target.closest(".up-page-next")) { k.goToPage(st.page + 1); return; }
+        var pg = e.target.closest(".up-page[data-page]");
+        if (pg) k.goToPage(Number(pg.getAttribute("data-page")));
       });
     }
     /* Der Inhalt einer Tabelle (Kopf, Tabelle) -- die Fusszeile bleibt stehen. */
@@ -1522,7 +1840,7 @@
     /* Fusszeile zeichnen und den Ausschnitt der aktuellen Seite liefern. total null: keine Fusszeile
        (Skelett, Leerzustand). Wie ueberall: sichtbar, sobald es Zeilen gibt -- auch bei einer Seite. */
     function seitenStand(n, total) {
-      var s = seiten[n], el = elMain.querySelector('[data-sek="' + n + '"]');
+      var s = seiten[n], el = (s && s.el) || elMain.querySelector('[data-sek="' + n + '"]');
       var foot = el ? el.querySelector(".uev-foot") : null;
       if (foot) foot.hidden = !(total > 0);
       if (!s || !(total > 0)) return { von: 0, bis: total || 0 };
@@ -1636,6 +1954,170 @@
               '<div class="up-td uev-td-zahl">' + (an ? trendHtml("visibility", gs && gs.delta) : sk) + '</div>' +
             '</div>';
           }).join("") + '</div></div>';
+    }
+
+    /* ---- DIE REGEL-ZIELE (15.10., Vertrag Abschnitt 5: targets[] von
+       cached_impact_event_analysis_v3) ------------------------------------------------------
+       Je Regel (Pfad, Domain) ein eigener Abschnitt: Kopf mit der Schreibweise der Regel, vier
+       Kennzahlen im Band aus core (.up-kpiband.is-offen wie oben), der Verlauf (Zitate und neue
+       URLs je Tag, UC.makeLine wie das Diagramm darueber, mit dem Pin des Events) und die zitierten
+       URLs als .up-vartable mit dem Pager aus core -- dieselben Teile wie der Rest der Seite.
+       URL-Ziele behalten die Tabelle "Affected URLs" (urls[], wie bisher).
+       Ein Abschnitt entsteht einmal je Ziel und bleibt stehen, solange es das Ziel gibt -- das
+       Diagramm darin ueberlebt so jedes Neuzeichnen. */
+    var zielLinien = {};
+    function regelZiele(d) { return (d && isArr(d.targets) ? d.targets : []).filter(function (x) { return x && x.kind && x.kind !== "url"; }); }
+    /* Die Auswertung eines Ziels: nach id (bzw. target_id), sonst nach value, sonst nach der
+       Reihenfolge -- der Vertrag nennt die Schluessel je Eintrag nicht ausdruecklich. */
+    function zielAuswertung(a, zt, i, alle) {
+      var l = a && isArr(a.targets) ? a.targets : null, j;
+      if (!l) return null;
+      for (j = 0; j < l.length; j++) {
+        var x = l[j] || {};
+        if ((x.id != null && String(x.id) === String(zt.id)) || (x.target_id != null && String(x.target_id) === String(zt.id))) return x;
+      }
+      for (j = 0; j < l.length; j++) if (l[j] && l[j].value != null && String(l[j].value) === String(zt.value)) return l[j];
+      return l.length === alle.length ? l[i] : null;
+    }
+    var ART_SATZ = {
+      path: "Everything under this path, including pages added later.",
+      host: "Every page on this domain, including pages added later.",
+      host_all: "Every page on this domain and its subdomains, including pages added later."
+    };
+    var ART_ZEICHEN = { url: "link", path: "folder", host: "globe", host_all: "globe" };
+    function zielSekAnlegen(host, zt) {
+      var sek = document.createElement("section");
+      var x = zielAusDb(zt) || { zeigen: String(zt.value || "") };
+      sek.className = "uev-sek uev-zielsek";
+      sek.setAttribute("data-ziel-id", String(zt.id));
+      sek.innerHTML =
+        '<div class="up-sec-head uev-sec-head"><div class="up-sec-titles">' +
+            '<span class="up-heading up-sec-h uev-ziel-h"><span class="uev-ziel-ic">' + UC.icon(ART_ZEICHEN[zt.kind] || "link", 2) + '</span>' +
+              '<span class="uev-notation is-titel">' + esc(x.zeigen) + '</span></span>' +
+            '<span class="up-sec-sub">' + esc(t(ART_SATZ[zt.kind] || ART_SATZ.path)) + '</span>' +
+          '</div>' +
+          '<button type="button" class="up-btn-sec uev-zielweg" data-ziel-id="' + esc(zt.id) + '">' + UC.icon("trash", 2) + '<span>' + esc(t("Remove")) + '</span></button>' +
+        '</div>' +
+        '<div class="uev-ziel-block">' +
+          /* is-4 aus core: vier Kennzahlen in einer Reihe, schmal zwei mal zwei. */
+          '<div class="up-kpiband is-offen is-4 uev-zielkpis"></div>' +
+          '<div class="up-box uev-chartbox uev-zielchart"><div class="up-line-wrap uev-linewrap uev-ziel-linie"><canvas></canvas></div><div class="up-legend uev-legende"></div></div>' +
+          '<div class="uev-ziel-tab"><div class="uev-tabinhalt"></div>' + fussHtml() + '</div>' +
+        '</div>';
+      host.appendChild(sek);
+      var n = "ziel-" + zt.id;
+      pagerAnlegen(sek.querySelector(".uev-ziel-tab"), n, function () { renderZiele(); });
+      var lw = sek.querySelector(".uev-ziel-linie");
+      zielLinien[zt.id] = UC.makeLine ? UC.makeLine({
+        wrap: lw, canvas: lw.querySelector("canvas"), legend: sek.querySelector(".uev-legende"),
+        isDark: isDark, gran: function () { return "day"; },
+        unit: function () { return ""; }, decimals: function () { return 0; },
+        yOhneDeckel: true, yGanz: true, legendeImmer: true,
+        tipLabel: function () { return ""; },
+        markers: chartMarker,
+        onMarker: function (id) { if (id && id !== state.eventId) oeffnen(id, true); }
+      }) : null;
+      return sek;
+    }
+    function renderZiele() {
+      var host = elMain.querySelector('[data-sek="ziele"]'), d = dieDetail(), a = dieAnalyse();
+      if (!host) return;
+      var liste = regelZiele(d), da = {};
+      liste.forEach(function (zt, i) {
+        da[String(zt.id)] = 1;
+        var sek = null, alle = host.querySelectorAll(".uev-zielsek");
+        for (var j = 0; j < alle.length; j++) if (alle[j].getAttribute("data-ziel-id") === String(zt.id)) sek = alle[j];
+        if (!sek) sek = zielSekAnlegen(host, zt);
+        else host.appendChild(sek);
+        zielFuellen(sek, zt, zielAuswertung(a, zt, i, liste), a);
+      });
+      /* Entfernte Ziele: Abschnitt, Diagramm und Pager weg. */
+      [].slice.call(host.querySelectorAll(".uev-zielsek")).forEach(function (sek) {
+        var id = sek.getAttribute("data-ziel-id");
+        if (da[id]) return;
+        if (zielLinien[id]) { try { zielLinien[id].destroy(); } catch (e) {} delete zielLinien[id]; }
+        delete seiten["ziel-" + id];
+        sek.parentNode.removeChild(sek);
+      });
+      host.hidden = !liste.length;
+    }
+    function zielFuellen(sek, zt, z, a) {
+      var kpis = sek.querySelector(".uev-zielkpis"), linie2 = zielLinien[zt.id], platz = sek.querySelector(".uev-tabinhalt");
+      var n = "ziel-" + zt.id;
+      var kopf = tabKopf("URL", [{ t: "First cited", k: "uev-th-beob" }, { t: "Citations after" }, { t: "Prompts" }, { t: "Models" }]);
+      if (!a) {
+        /* Die Analyse laeuft noch (oder ist gescheitert -- das sagen Kennzahlen und Diagramm oben
+           schon, hier also leer statt ein drittes Mal). */
+        var fehler = state.analyseFehler && !state.analyseLaden;
+        kpis.innerHTML = fehler ? "" : [0, 1, 2, 3].map(function () { return UC.kpiKarteSkelett("uev-kpi"); }).join("");
+        if (linie2) { if (fehler) linie2.empty(t("This event could not be loaded.")); else linie2.skeleton(); }
+        platz.innerHTML = fehler ? "" : '<div class="up-vartable uev-zielurls">' + kopf + '<div class="up-tbody up-vbody">' +
+          (UC.skeletonRows ? UC.skeletonRows({ count: 3, rowClass: "up-row up-vrow", cellClass: "up-td",
+            cols: [{ w: 160, jitter: 40, logo: true, cls: "up-var-name uev-td-url" }, { w: 80, cls: "uev-td-zahl uev-td-beob" }, { w: 40, cls: "uev-td-zahl" }, { w: 30, cls: "uev-td-zahl" }, { w: 30, cls: "uev-td-zahl" }] }) : "") +
+          '</div></div>';
+        seitenStand(n, null);
+        return;
+      }
+      if (!z) {
+        /* Die Analyse ist da, kennt dieses Ziel aber nicht (v2 ohne targets[], oder das Ziel ist
+           gerade erst dazugekommen und der Cache noch alt): ein Satz statt erfundener Nullen. */
+        kpis.innerHTML = "";
+        if (linie2) linie2.empty(t("The analysis for this rule isn't available yet."));
+        platz.innerHTML = "";
+        seitenStand(n, null);
+        return;
+      }
+      function zahlWert(v) { v = num(v); return v == null ? '<span class="up-num is-empty">\u2013</span>' : '<span class="up-num">' + esc(zahl(v)) + '</span>'; }
+      var sb = num(z.share_of_citations_before), sa = num(z.share_of_citations_after);
+      kpis.innerHTML = [
+        UC.kpiKarte({ label: "Cited URLs", wertHtml: zahlWert(z.matched_url_count != null ? z.matched_url_count : zt.matched_url_count), fussHtml: esc(t("In the whole period")), klasse: "uev-kpi" }),
+        UC.kpiKarte({ label: "Citation count", vorherHtml: zahlWert(z.citations_before), wertHtml: zahlWert(z.citations_after), fussHtml: esc(t("Before and after the event")), klasse: "uev-kpi" }),
+        UC.kpiKarte({ label: "Share of all citations", vorherHtml: wertHtml("visibility", sb), wertHtml: wertHtml("visibility", sa),
+          trendHtml: sb != null && sa != null ? trendHtml("visibility", sa - sb) : "", klasse: "uev-kpi" }),
+        UC.kpiKarte({ label: "New URLs", wertHtml: zahlWert(z.new_urls_after), fussHtml: esc(t("First cited after the event")), klasse: "uev-kpi" })
+      ].join("");
+      var tage = isArr(z.daily) ? z.daily : [];
+      if (linie2) {
+        if (!tage.length) linie2.empty();
+        else {
+          var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : token("--vc-text", "#1f1f1b");
+          var grau = token("--vc-fourth", "#80858e");
+          linie2.render({ labels: tage.map(function (p) { return String(p.day).slice(0, 10); }), datasets: [
+            { label: t("Citation count"), __id: "zitate", __baseColor: tinte, borderColor: tinte, data: tage.map(function (p) { return num(p.citations); }) },
+            { label: t("New URLs"), __id: "neu", __baseColor: grau, borderColor: grau, __dash: true, data: tage.map(function (p) { return num(p.new_urls); }) }
+          ] });
+        }
+      }
+      var urls = isArr(z.cited_urls) ? z.cited_urls : [];
+      if (!urls.length) {
+        seitenStand(n, null);
+        platz.innerHTML = UC.leerHtml({ mini: true, icon: "link", titel: "No cited pages yet", text: "Pages that match this rule appear here as soon as an AI cites them." });
+        return;
+      }
+      var ab = seitenStand(n, urls.length), ev = dieDetail() || {};
+      var evTag = String(ev.event_date || "").slice(0, 10);
+      platz.innerHTML = '<div class="up-vartable uev-zielurls">' + kopf + '<div class="up-tbody up-vbody">' +
+        urls.slice(ab.von, ab.bis).map(function (u) {
+          var hp = hostPfad(u.url), tag = String(u.first_observed_day || "").slice(0, 10), neu = !!tag && !!evTag && tag > evTag;
+          var run = u.first_observed_prompt_run_id ? String(u.first_observed_prompt_run_id) : "";
+          var modelle = isArr(u.models_after) ? u.models_after : [];
+          /* Die Zeile oeffnet die Antwort, in der die URL zuerst zitiert wurde (Response-Drawer
+             wie ueberall in der App) -- ohne sie das URL-Detail wie in der Tabelle darunter. */
+          return '<div class="up-row up-vrow uev-zitzeile" role="link" tabindex="0"' + (run ? ' data-run="' + esc(run) + '"' : '') + ' data-url="' + esc(u.url || "") + '">' +
+            '<div class="up-td up-var-name uev-td-url"><span class="up-fav up-logo-box has-img"><img src="' + esc(favicon(u.url)) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>' +
+              '<span class="uev-url-txt"><span class="uev-url-host">' + esc(hp.host) + '</span>' +
+              '<span class="uev-url-pfad" title="' + esc(u.url || "") + '">' + esc(pfadText(hp)) + '</span></span></div>' +
+            '<div class="up-td uev-td-zahl uev-td-beob">' + (tag ? '<span class="up-marke is-leise uev-beob' + (neu ? " is-ja" : "") + '">' + esc(datum(tag)) + '</span>' : '<span class="up-num is-empty">\u2013</span>') + '</div>' +
+            '<div class="up-td uev-td-zahl">' + zahlWert(u.citations_after) + '</div>' +
+            '<div class="up-td uev-td-zahl">' + zahlWert(u.prompts_after) + '</div>' +
+            '<div class="up-td uev-td-zahl"' + (modelle.length ? ' data-tip="' + esc(modelle.map(modellName).join(", ")) + '"' : '') + '>' + zahlWert(modelle.length) + '</div>' +
+          '</div>';
+        }).join("") + '</div></div>';
+    }
+    function modellName(k) {
+      var l = UC.getModels ? UC.getModels() : [];
+      for (var i = 0; i < l.length; i++) if (String(l[i].key || l[i].model || "") === String(k)) return String(l[i].display_name || l[i].name || k);
+      return String(k);
     }
 
     /* Die Topics des Events wie in response-detail (topicChip): der statische Chip aus core in der
@@ -1763,7 +2245,8 @@
     function renderDetail() {
       if (!elMain.querySelector(".uev-detail")) return;
       krumenNeu();
-      renderKopf(); renderHinweise(); renderKpis(); renderChart(); renderMarkt(); renderUrls(); renderScope(); renderResp();
+      renderKopf(); renderHinweise(); renderKpis(); renderChart(); renderMarkt(); renderZiele(); renderUrls(); renderScope(); renderResp();
+      if (anleitung && anleitung.laeuft()) anleitung.neu();
     }
 
     /* ---- Anforderungen an Bubble (fertige RPC-Bodies) --------------------------------------- */
@@ -1931,13 +2414,19 @@
       if (e.target.closest(".uev-mehr")) return;
       var uw = e.target.closest(".uev-urlweg");
       if (uw) { urlEntfernenFragen(uw.getAttribute("data-url-id")); return; }
+      var zw = e.target.closest(".uev-zielweg");
+      if (zw) { zielEntfernenFragen(zw.getAttribute("data-ziel-id")); return; }
+      if (e.target.closest(".uev-anl-toggle")) { anleitungUmschalten(); return; }
+      /* Zitierte URL einer Regel: die Antwort, in der sie zuerst zitiert wurde (15.10.). */
+      var zz = e.target.closest(".uev-zitzeile");
+      if (zz) { zitatOeffnen(zz); return; }
       /* Zeile der URL-Tabelle: das URL-Detail im Drawer der App. Kennung ist die URL selbst -- so
          nimmt der URL-Drawer sie (Drawer-System der Host-App: "IDs koennen ganze URLs sein"). */
       var uz = e.target.closest(".uev-urlzeile[data-url]");
       if (uz) { if (UC.drawerOeffnen) UC.drawerOeffnen("url", uz.getAttribute("data-url"), "events"); return; }
       var mz = e.target.closest(".uev-markenzeile[data-company-id]");
       if (mz) { if (UC.drawerOeffnen) UC.drawerOeffnen("brand", mz.getAttribute("data-company-id"), "events"); return; }
-      if (e.target.closest(".uev-addurl-kopf, [data-uev-addurl]")) { popupUrl(); return; }
+      if (e.target.closest(".uev-addurl-kopf, [data-uev-addurl]")) { popupZiel(); return; }
       var k = e.target.closest(".uev-karte[data-event-id]");
       if (k && !k.classList.contains("is-sk")) oeffnen(k.getAttribute("data-event-id"), true);
     });
@@ -1948,8 +2437,16 @@
       var uz = e.target.closest && e.target.closest(".uev-urlzeile[data-url]");
       if (uz && e.target === uz) { e.preventDefault(); if (UC.drawerOeffnen) UC.drawerOeffnen("url", uz.getAttribute("data-url"), "events"); return; }
       var mz = e.target.closest && e.target.closest(".uev-markenzeile[data-company-id]");
-      if (mz && e.target === mz) { e.preventDefault(); if (UC.drawerOeffnen) UC.drawerOeffnen("brand", mz.getAttribute("data-company-id"), "events"); }
+      if (mz && e.target === mz) { e.preventDefault(); if (UC.drawerOeffnen) UC.drawerOeffnen("brand", mz.getAttribute("data-company-id"), "events"); return; }
+      var zz = e.target.closest && e.target.closest(".uev-zitzeile");
+      if (zz && e.target === zz) { e.preventDefault(); zitatOeffnen(zz); }
     });
+    function zitatOeffnen(z) {
+      if (!UC.drawerOeffnen) return;
+      var run = z.getAttribute("data-run");
+      if (run) UC.drawerOeffnen("response", run, "events");
+      else if (z.getAttribute("data-url")) UC.drawerOeffnen("url", z.getAttribute("data-url"), "events");
+    }
     function respFilter(urlId, rollen) {
       state.respUrl = urlId || "";
       renderResp();
@@ -1961,7 +2458,7 @@
     }
 
     /* ---- Loeschen und URL entfernen: bestaetigen im allgemeinen Popup --------------------- */
-    var wartend = { del: null, urlWeg: null };
+    var wartend = { del: null, urlWeg: null, zielWeg: null };
     /* Antwortet Bubble nie, haengt der Knopf sonst fuer immer -- und ein beschaeftigtes Popup
        laesst sich weder mit Escape noch ueber den Schleier schliessen. 25s wie unten (WARTE_MS). */
     function warteUhr(art, api) {
@@ -2010,6 +2507,27 @@
         onClose: function () { if (wartend.urlWeg && wartend.urlWeg.api === m) wartend.urlWeg = null; }
       });
     }
+    /* Eine Regel entfernen (15.10.): dieselbe Bestaetigung wie bei einer URL, remove_impact_event_target_v1. */
+    function zielEntfernenFragen(zielId) {
+      var d = dieDetail();
+      if (!d) return;
+      var zt = regelZiele(d).filter(function (x) { return String(x.id) === String(zielId); })[0];
+      if (!zt) return;
+      var x = zielAusDb(zt) || { zeigen: String(zt.value || "") };
+      var m = UC.makeModal({
+        titel: "Remove this target from the event?", isDark: isDark,
+        inhaltHtml: '<p class="uev-popup-url">' + esc(x.zeigen) + '</p><p class="uev-popup-text">' + esc(t("Only the rule is removed. Pages and their citations stay untouched.")) + '</p>',
+        knoepfe: [{ id: "abbrechen", text: "Cancel", art: "sec" },
+                  { id: "ok", text: "Remove target", art: "gefahr", aktion: function (api) {
+                    if (wartend.zielWeg) return false;
+                    api.busy("ok", true); api.fehler("");
+                    wartend.zielWeg = { eventId: d.id, zielId: zielId, api: api, uhr: warteUhr("zielWeg", api) };
+                    rufen("uevRemoveTarget", { p_event_id: d.id, p_target_id: zielId }, { eventId: d.id });
+                    return false;
+                  } }],
+        onClose: function () { if (wartend.zielWeg && wartend.zielWeg.api === m) wartend.zielWeg = null; }
+      });
+    }
     /* ---- Anlegen, Bearbeiten, URL hinzufuegen (Spezifikation 48-67) ------------------------
        Alle drei im allgemeinen Popup aus core (UC.makeModal) und mit den Feldern des Topic-
        Dialogs: Etikett, Namensfeld, Aussehen-Knoepfe, Farbraster (.up-topicmodal-*). Ein Event
@@ -2040,15 +2558,8 @@
       var hi = tagAus(heuteIso());
       return { lo: new Date(hi.getFullYear(), hi.getMonth(), hi.getDate() - DATUM_TAGE), hi: hi };
     }
-    /* Sieht die Eingabe wie eine Adresse aus? Ein Punkt im Host, eine Endung aus Buchstaben, keine
-       Leerzeichen: "photovoltaik kosten" ist eine Suche, "sonnenkraft.de/preise" eine Adresse. Ob
-       sie gilt, entscheidet der Server (impact_event_invalid_url) -- er normalisiert auch. */
-    function istUrl(s) { return /^(https?:\/\/)?[^\s\/?#]+\.[a-z]{2,}(:\d+)?([\/?#]\S*)?$/i.test(String(s || "").trim()); }
-    function mitSchema(s) { s = String(s || "").trim(); return /^https?:\/\//i.test(s) ? s : "https://" + s; }
-    /* Nur fuer "schon in der Liste?" im Popup. Der Server dedupliziert ohnehin nach url_norm_v1. */
-    function urlSchluessel(s) {
-      return String(s || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/#.*$/, "").replace(/\/+$/, "");
-    }
+    /* Ob eine Eingabe eine Adresse ist und welche Art Ziel, sagen seit 15.10. zerlegen,
+       artVorschlag und zielBauen (oben, ausserhalb der Wurzel). */
 
     /* Die Typen nach Gruppen: die Liste in core folgt dem Vertrag, und dort steht die Landingpage
        zwischen den Content-Typen. Innerhalb einer Gruppe bleibt die Reihenfolge, zwischen den
@@ -2412,24 +2923,724 @@
           '<p class="uev-umfang-zahl" aria-live="polite"></p>' +
         '</div>', false, "topics");
     }
-    function urlSuche() {
-      return '<div class="uev-urlsuche"><span class="uev-urlsuche-ic">' + UC.icon("search", 2) + '</span>' +
-          '<input type="text" class="up-topicmodal-name uev-urlein" placeholder="' + esc(t("Search your URLs or paste a link")) + '" autocomplete="off" spellcheck="false" inputmode="url"/></div>' +
-        klapp(false, '<div class="uev-urltreffer" role="listbox"></div>', "uev-treffer-klapp");
+    /* ---- SCHRITT 3: "WHAT SHOULD WE TRACK?" (15.10.) ---------------------------------------
+       Ein EIGENER Schritt (Nutzer: "weil man das sonst haeufig uebersieht"). Oben die Wahl, was
+       getrackt wird -- nichts ist vorgewaehlt, "Continue" wartet auf eine Entscheidung, auch wenn
+       sie "Brand metrics only" heisst. Darunter EIN Eingabefeld: es schlaegt die passende Art vor
+       (Host -> Domain, Host + Pfad -> Pfad, mehrere Eintraege -> URLs), bis jemand selbst eine Art
+       waehlt; die Schreibweise der Regel steht immer darunter. Mehrere Ziele gehen, jedes
+       einzeln entfernbar. Mit Zielen in der Datenbank kommen die Live-Vorschau
+       (preview_impact_event_targets_v1, verzoegert beim Tippen), "Count as your domain" und der
+       Sitemap-Waehler dazu. Dieselben Teile stehen im Add-Dialog eines Events (p.art "ziel"),
+       dort ohne "Brand metrics only". */
+    var ARTEN = [
+      { k: "marke", titel: "Brand metrics only", ic: "chartSpline", satz: "Visibility, rank and sentiment" },
+      { k: "url", titel: "Specific URLs", ic: "link", bsp: "example.com/blog/launch" },
+      { k: "path", titel: "Everything under a path", ic: "folder", bsp: "example.com/blog/*" },
+      { k: "host", titel: "Whole domain or subdomain", ic: "globe", bsp: "blog.example.com/*", bspAlle: "*.example.com/*" }
+    ];
+    var ART_NAME = { url: "URL", path: "Path", host: "Domain", host_all: "Domain and subdomains" };
+    var ART_PLATZHALTER = { url: "Search your URLs or paste links", path: "Paste a path, e.g. example.com/blog",
+      host: "Paste a domain, e.g. blog.example.com", "": "Paste a URL, a path or a domain" };
+    function zieleDa() { return !demo && ZIELE_DA.stand === true; }
+    function sitemapDa() { return zieleDa() && SITEMAP_DA.stand === true; }
+    function artenFuer(p) {
+      return ARTEN.filter(function (a) {
+        if (a.k === "marke") return p.art === "anlegen";
+        return a.k === "url" || zieleDa();
+      });
     }
-    function urlFelder(e) {
-      return feld("Affected URLs",
-          '<p class="up-modal-hinweis">' + esc(t("Add pages, articles or external sources associated with this event.")) + '</p>' +
-          urlSuche() + '<div class="uev-urlauswahl"></div>', true, "urls") +
+    /* Die Art, als die eine Eingabe gelesen wird: "host" mit dem Schalter wird host_all. Ist noch
+       keine gewaehlt, gilt der Vorschlag aus der Eingabe -- das Feld steht schon vor der Wahl da,
+       damit es die Art vorschlagen kann. */
+    function leseArt(e) {
+      var a = e.zielArt;
+      if (!a || a === "marke") {
+        var v = artVorschlag(e.eingabe);
+        /* Ohne Regeln in der Datenbank ist jede Eingabe eine URL (gemessen 15.10.: sonst landete
+           "lee-up.de/blog" als Pfad in der Liste, den v2 gar nicht kennt). */
+        return v && v !== "sitemap" && (v === "url" || zieleDa()) ? v : "url";
+      }
+      return a === "host" && e.unterdomains ? "host_all" : a;
+    }
+    function zielMax(p) {
+      if (zieleDa()) return ZIEL_MAX;
+      return p.art === "ziel" ? 1 : URL_MAX;
+    }
+    function artenHtml(p) {
+      var l = artenFuer(p), e = p.e;
+      /* Im Add-Dialog ohne Regeln bleibt nur "Specific URLs" -- eine Wahl mit einer Moeglichkeit
+         ist keine. */
+      if (p.art === "ziel" && l.length < 2) return "";
+      var fokusbar = l.some(function (a) { return a.k === e.zielArt; }) ? e.zielArt : l[0].k;
+      return '<div class="uev-arten" role="radiogroup" aria-label="' + esc(t("What should we track?")) + '">' + l.map(function (a) {
+        var an = a.k === e.zielArt;
+        var unter = a.k === "host" ? klapp(an, '<div class="uev-unter"><span class="uev-unter-lbl" id="uev-unter-' + instanceId + '">' + esc(t("Include all subdomains")) + '</span>' +
+          '<span class="up-switch' + (e.unterdomains ? " is-on" : "") + '" role="switch" tabindex="0" aria-checked="' + !!e.unterdomains + '" aria-labelledby="uev-unter-' + instanceId + '" data-unterdomains></span></div>', "uev-unter-klapp") : "";
+        return '<div class="uev-art-w' + (an ? " is-on" : "") + '" data-art-w="' + a.k + '">' +
+          '<button type="button" class="uev-art' + (an ? " is-on" : "") + '" role="radio" aria-checked="' + an + '" tabindex="' + (a.k === fokusbar ? 0 : -1) + '" data-art="' + a.k + '">' +
+            '<span class="uev-art-punkt" aria-hidden="true"></span>' +
+            '<span class="uev-art-ic" aria-hidden="true">' + UC.icon(a.ic, 2) + '</span>' +
+            '<span class="uev-art-txt"><span class="uev-art-t">' + esc(t(a.titel)) + '</span>' +
+              (a.satz ? '<span class="uev-art-s">' + esc(t(a.satz)) + '</span>'
+                      : '<span class="uev-notation is-leise uev-art-bsp">' + esc(a.k === "host" && e.unterdomains ? a.bspAlle : a.bsp) + '</span>') +
+            '</span>' +
+          '</button>' + unter +
+        '</div>';
+      }).join("") + '</div>';
+    }
+    function eingabeHtml(p) {
+      var e = p.e, art = e.zielArt && e.zielArt !== "marke" ? e.zielArt : "";
+      return '<div class="uev-zieleingabe">' +
+          '<div class="uev-zielzeile">' +
+            '<div class="uev-urlsuche"><span class="uev-urlsuche-ic">' + UC.icon(ART_ZEICHEN[art] || "link", 2) + '</span>' +
+              '<textarea class="up-topicmodal-name uev-urlein uev-zielein" rows="1" placeholder="' + esc(t(ART_PLATZHALTER[art])) + '" autocomplete="off" spellcheck="false" inputmode="url"' +
+                ' aria-label="' + esc(t(ART_PLATZHALTER[art])) + '">' + esc(e.eingabe || "") + '</textarea></div>' +
+            '<button type="button" class="up-btn-sec uev-zielhinzu" disabled>' + esc(t("Add")) + '</button>' +
+          '</div>' +
+          '<div class="uev-schreibweise" aria-live="polite"></div>' +
+          feldFehlerHtml("ziele") +
+          klapp(false, '<div class="uev-urltreffer" role="listbox"></div>', "uev-treffer-klapp") +
+          (sitemapDa() ? '<div class="uev-sm-knopfzeile"><button type="button" class="up-quietbtn uev-sm-auf">' + UC.icon("folders", 2) + '<span>' + esc(t("Load from sitemap")) + '</span></button></div>' : '') +
+        '</div>';
+    }
+    function zielFelder(p) {
+      var e = p.e, offen = e.zielArt !== "marke";
+      return feld(p.art === "ziel" ? (zieleDa() ? "What should we track?" : "URL") : "What should we track?",
+        '<div class="uev-ziel">' +
+          (p.art === "ziel" ? '<p class="up-modal-hinweis">' + esc(t(zieleDa() ? "Rules count retroactively, also for pages that were cited before you add them."
+            : "Observations are counted from the event date, also for URLs you add now.")) + '</p>' : '') +
+          '<div class="uev-arten-ort">' + artenHtml(p) + '</div>' +
+          '<p class="up-modal-hinweis uev-arthinweis"' + (e.zielArt ? ' hidden' : '') + '>' + esc(t("Choose what to track.")) + '</p>' +
+          klapp(offen, '<div class="uev-eingabe-ort">' + eingabeHtml(p) + '</div>', "uev-eingabe-klapp") +
+          '<div class="uev-sm-ort"></div>' +
+          '<div class="uev-zielliste"></div>' +
+          '<div class="uev-vz" aria-live="polite"></div>' +
+        '</div>', false, "");
+    }
+    /* Schritt 4: was getrackt wird (kurz), das Titelbild, die Vorschau der Karte, das Schloss. */
+    function pruefFelder(e) {
+      return feld("Tracking", '<div class="uev-pruefziele"></div>') +
         coverFeld(e) +
         '<div class="uev-pruef"></div>' +
         gesperrtHinweis("Date and scope can't be changed later");
     }
+    function pruefZieleZeigen() {
+      var p = popup, el = im(".uev-pruefziele");
+      if (!el) return;
+      var e = p.e;
+      if (e.zielArt !== "marke" && e.ziele.length) {
+        el.innerHTML = '<div class="uev-pruefliste">' + e.ziele.map(function (z) {
+          return '<span class="uev-pruefziel"><span class="uev-ziel-ic">' + UC.icon(ART_ZEICHEN[z.kind] || "link", 2) + '</span>' +
+            '<span class="uev-notation">' + esc(z.zeigen) + '</span></span>';
+        }).join("") + '</div>';
+      } else el.innerHTML = '<span class="uev-pruefmarke">' + UC.icon("chartSpline", 2) + '<span>' + esc(t("Brand metrics only")) + '</span></span>';
+    }
+
+    /* Die Eingabe lesen: jeder Eintrag als Ziel der gewaehlten Art. */
+    function eingabeLesen(p) {
+      var e = p.e, art = leseArt(e), teile = eingabeTeile(e.eingabe), gut = [], schlecht = [];
+      teile.forEach(function (x) { var z = zielBauen(x, art); if (z.fehler) schlecht.push(z); else gut.push(z); });
+      return { teile: teile, gut: gut, schlecht: schlecht, vorschlag: artVorschlag(e.eingabe) };
+    }
+    /* Steht dieses Ziel schon in der Liste oder (im Add-Dialog) schon im Event? */
+    function zielImEvent(p, z) {
+      if (p.art !== "ziel") return false;
+      var d = state.detail[p.eventId];
+      if (!d) return false;
+      if (isArr(d.targets) && d.targets.some(function (x) { var y = zielAusDb(x); return y && y.key === z.key; })) return true;
+      return z.kind === "url" && isArr(d.urls) && d.urls.some(function (u) { return "url|" + urlTextSchluessel(u.url) === z.key; });
+    }
+    function zielGewaehlt(p, z) { return p.e.ziele.some(function (x) { return x.key === z.key; }); }
+    function schlechtText(z) {
+      if (z.fehler === "pfad") return t("Please add a path, e.g. example.com/blog.");
+      return z.roh ? ersetze(t("This can't be used: {wert}"), { wert: z.roh }) : t("Please enter a valid domain.");
+    }
+    /* Die Eingabe in die Liste uebernehmen (Knopf "Add", Enter, "Continue"). false: es gab einen
+       Grund, nichts zu uebernehmen -- er steht am Feld, die Eingabe bleibt stehen. */
+    function eingabeUebernehmen(p) {
+      var r = eingabeLesen(p);
+      if (!r.teile.length) return true;
+      if (r.vorschlag === "sitemap") {
+        if (sitemapDa()) { smOeffnen(p, r.teile[0], true); return false; }
+        feldFehler("ziele", t("This looks like a sitemap. Please add the pages or the domain instead."));
+        return false;
+      }
+      if (r.schlecht.length) { feldFehler("ziele", schlechtText(r.schlecht[0])); return false; }
+      var neu = r.gut.filter(function (z) { return !zielGewaehlt(p, z); });
+      if (neu.some(function (z) { return zielImEvent(p, z); })) { feldFehler("ziele", fehlerText(zieleDa() ? "impact_event_target_duplicate" : "impact_event_url_duplicate")); return false; }
+      if (!neu.length) { feldFehler("ziele", t("This target is already in the list.")); return false; }
+      if (p.e.ziele.length + neu.length > zielMax(p)) {
+        feldFehler("ziele", zielMax(p) === 1 ? t("Add one URL at a time.") : fehlerText(zieleDa() ? "impact_event_too_many_targets" : "impact_event_too_many_urls"));
+        return false;
+      }
+      neu.forEach(function (z) { p.e.ziele.push(z); });
+      artNachZiel(p, neu[0]);
+      p.e.eingabe = ""; p.e.artVonHand = false;
+      var inp = im(".uev-zielein");
+      if (inp) { inp.value = ""; feldHoehe(inp); }
+      p.such.frage = ""; p.such.treffer = null; p.such.laedt = false; p.such.fehler = "";
+      if (p.maschine) p.maschine.abbrechen();
+      feldFehler("ziele", "");
+      p.api.fehler("");
+      zieleZeigen(p);
+      return true;
+    }
+    /* Ein Ziel kam dazu, aber noch keine Art ist gewaehlt (oder "Brand metrics only"): dann ist es
+       jetzt die Art dieses Ziels -- sonst stuende ein Ziel in einer Liste, die nicht gilt. */
+    function artNachZiel(p, z) {
+      if (!z || (p.e.zielArt && p.e.zielArt !== "marke")) return;
+      if (z.kind === "host" || z.kind === "host_all") { if (p.e.unterdomains !== (z.kind === "host_all")) unterdomainsUmschalten(p); }
+      artWaehlen(p, z.kind === "host_all" ? "host" : z.kind, false);
+    }
+    /* Ein mehrzeiliges Feld waechst mit seinem Inhalt (bis fuenf Zeilen, dann scrollt es). */
+    function feldHoehe(inp) {
+      try { inp.style.height = ""; inp.style.height = Math.min(inp.scrollHeight + 2, 116) + "px"; } catch (e) {}
+    }
+    /* Alles in Schritt 3 neu: Wahl, Eingabe, Liste, Vorschau, Knoepfe. */
+    function zieleZeigen(p, artenAuch) {
+      if (!p || popup !== p) return;
+      if (artenAuch) { var ao = im(".uev-arten-ort"); if (ao) ao.innerHTML = artenHtml(p); }
+      var e = p.e, offen = e.zielArt !== "marke";
+      var hw = im(".uev-arthinweis");
+      if (hw) hw.hidden = !!e.zielArt;
+      klappen(im(".uev-eingabe-klapp"), offen);
+      var inp = im(".uev-zielein");
+      if (inp) {
+        var art = offen && e.zielArt ? e.zielArt : "";
+        inp.placeholder = t(ART_PLATZHALTER[art]); inp.setAttribute("aria-label", t(ART_PLATZHALTER[art]));
+        var ic = im(".uev-zieleingabe .uev-urlsuche-ic");
+        if (ic) ic.innerHTML = UC.icon(ART_ZEICHEN[art] || "link", 2);
+      }
+      schreibweiseZeigen(p);
+      zielListeZeigen(p);
+      trefferZeigen();
+      vzAnfordern(p);
+      pruefenZeigen();
+      knoepfeSync();
+    }
+    function artWaehlen(p, k, vonHand) {
+      if (!p || k === p.e.zielArt) return;
+      p.e.zielArt = k;
+      if (vonHand) p.e.artVonHand = !!String(p.e.eingabe || "").trim();
+      feldFehler("ziele", "");
+      var ws = p.api.el.querySelectorAll("[data-art]");
+      for (var i = 0; i < ws.length; i++) {
+        var an = ws[i].getAttribute("data-art") === k;
+        ws[i].classList.toggle("is-on", an); ws[i].setAttribute("aria-checked", String(an)); ws[i].tabIndex = an ? 0 : -1;
+        var w = ws[i].closest(".uev-art-w");
+        if (w) w.classList.toggle("is-on", an);
+      }
+      klappen(im(".uev-unter-klapp"), k === "host");
+      zieleZeigen(p);
+    }
+    /* Die Schreibweise der Eingabe, immer sichtbar: leer das Beispiel der gewaehlten Art, sonst
+       das, was die Regel trifft. Eine .xml bekommt den Weg zum Sitemap-Waehler. */
+    function schreibweiseZeigen(p) {
+      var el = im(".uev-schreibweise"), knopf = im(".uev-zielhinzu");
+      if (!el) return;
+      var e = p.e, r = eingabeLesen(p), html = "";
+      if (!r.teile.length) {
+        var a = ARTEN.filter(function (x) { return x.k === e.zielArt; })[0];
+        html = a && a.bsp ? '<span class="uev-schreib-lbl">' + esc(t("e.g.")) + '</span><span class="uev-notation is-leise">' + esc(e.zielArt === "host" && e.unterdomains ? a.bspAlle : a.bsp) + '</span>' : "";
+      } else if (r.vorschlag === "sitemap") {
+        html = '<span class="uev-schreib-satz">' + esc(t("This looks like a sitemap.")) + '</span>' +
+          (sitemapDa() ? '<button type="button" class="up-quietbtn uev-sm-auf" data-sm-url="' + esc(r.teile[0]) + '">' + UC.icon("folders", 2) + '<span>' + esc(t("Load from sitemap")) + '</span></button>' : '');
+      } else if (r.schlecht.length) {
+        html = '<span class="uev-schreib-satz">' + esc(r.schlecht[0].fehler === "pfad" ? t("Please add a path, e.g. example.com/blog.") : t("Enter a domain like example.com.")) + '</span>';
+      } else {
+        html = '<span class="up-marke is-leise">' + esc(r.gut.length > 1 ? ersetze(t("{n} URLs"), { n: zahl(r.gut.length) }) : t(ART_NAME[r.gut[0].kind])) + '</span>' +
+          r.gut.slice(0, 3).map(function (z) { return '<span class="uev-notation">' + esc(z.zeigen) + '</span>'; }).join("") +
+          (r.gut.length > 3 ? '<span class="uev-schreib-satz">' + esc(ersetze(t("and {n} more"), { n: r.gut.length - 3 })) + '</span>' : '');
+      }
+      el.innerHTML = html;
+      if (knopf) knopf.disabled = !r.teile.length || !!r.schlecht.length || r.vorschlag === "sitemap";
+    }
+    function zielListeZeigen(p) {
+      var el = im(".uev-zielliste");
+      if (!el) return;
+      var e = p.e, vz = vzErgebnis(p), je = {};
+      if (vz && vz.d && isArr(vz.d.per_target)) vz.d.per_target.forEach(function (x) { if (x) je[String(x.kind) + "|" + String(x.input)] = x; });
+      /* Bei "Brand metrics only" bleiben die Ziele erhalten (nichts geht verloren), stehen aber
+         nicht da und gehen nicht hinaus -- gezeigt wird, was gilt. */
+      if (!e.ziele.length || e.zielArt === "marke") { el.innerHTML = ""; return; }
+      el.innerHTML = '<div class="uev-urlwahl-liste">' + e.ziele.map(function (z, i) {
+        var pt = je[z.kind + "|" + z.input], n = pt ? num(pt.matched_url_count) : null;
+        var zahlTxt = z.kind !== "url" && !zieleDa() ? '<span class="uev-ziel-fehler">' + esc(fehlerText("impact_event_targets_unavailable")) + '</span>'
+          : pt && pt.error ? '<span class="uev-ziel-fehler">' + esc(fehlerText("impact_event_invalid_target")) + '</span>'
+          : n != null ? '<span class="uev-ziel-n">' + esc(ersetze(t(n === 1 ? "{n} URL" : "{n} URLs"), { n: zahl(n) })) + '</span>' : '';
+        return '<div class="uev-urlwahl">' +
+          '<span class="uev-ziel-ic">' + UC.icon(ART_ZEICHEN[z.kind] || "link", 2) + '</span>' +
+          '<span class="uev-url-txt"><span class="uev-notation">' + esc(z.zeigen) + '</span>' +
+            '<span class="uev-url-pfad">' + esc(t(ART_NAME[z.kind])) + '</span></span>' + zahlTxt +
+          '<button type="button" class="up-iconbtn uev-urlwahl-weg" data-url-weg="' + i + '" aria-label="' + esc(t("Remove")) + '" data-tip="' + esc(t("Remove")) + '">' + UC.icon("x", 2) + '</button></div>';
+      }).join("") + '</div>';
+    }
+
+    /* ---- DIE LIVE-VORSCHAU (preview_impact_event_targets_v1, Vertrag Abschnitt 4) -----------
+       Fuer alle Ziele der Liste plus die gueltige Eingabe, 400ms nach dem letzten Tastendruck,
+       sofort nach Hinzufuegen und Entfernen. Je Zielliste gemerkt -- wer hin und her schaltet,
+       fragt nicht zweimal. Es zaehlt nur die Antwort auf die aktuelle Liste; was vorher bestellt
+       war, landet im Speicher, wird aber nicht gezeigt. Ein Fehler der Vorschau sperrt nichts:
+       sie ist Hilfe, keine Bedingung. */
+    var VZ_TAGE = 90;
+    function vzListe(p) {
+      var e = p.e;
+      if (!zieleDa() || e.zielArt === "marke") return [];
+      var r = eingabeLesen(p), l = e.ziele.slice(), da = {};
+      if (!r.schlecht.length && r.vorschlag !== "sitemap") r.gut.forEach(function (z) { l.push(z); });
+      return l.filter(function (z) { if (da[z.key]) return false; da[z.key] = 1; return true; });
+    }
+    function vzErgebnis(p) { return p.zv && p.zv.akt ? p.zv.ergebnisse[p.zv.akt] || null : null; }
+    function vzAnfordern(p, sofort) {
+      if (!p) return;
+      p.zv = p.zv || { ergebnisse: {}, akt: null, soll: null, uhr: null };
+      var l = vzListe(p);
+      clearTimeout(p.zv.uhr);
+      if (!l.length) { p.zv.soll = null; p.zv.akt = null; vzZeigen(p); return; }
+      var liste = l.map(function (z) { return { kind: z.kind, input: z.input }; });
+      var sig = JSON.stringify(liste);
+      p.zv.soll = sig;
+      if (p.zv.ergebnisse[sig]) { p.zv.akt = sig; vzZeigen(p); return; }
+      p.zv.uhr = setTimeout(function () { vzLos(p, sig, liste); }, sofort ? 0 : 400);
+      vzZeigen(p);
+    }
+    function teamHolen() {
+      var tm = team();
+      return tm ? Promise.resolve(tm) : (UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(""));
+    }
+    function vzLos(p, sig, liste) {
+      if (popup !== p) return;
+      teamHolen().then(function (tm) {
+        if (!tm) return { ok: false, status: 0, fehler: {} };
+        return UC.rpc("preview_impact_event_targets_v1", { p_team: tm, p_targets: liste, p_days: VZ_TAGE }, { timeoutMs: 15000 });
+      }).then(function (erg) {
+        if (popup !== p) return;
+        var d = erg && erg.ok ? erg.daten : null;
+        if (isArr(d) && d.length === 1) d = d[0];
+        p.zv.ergebnisse[sig] = d && typeof d === "object" && !isArr(d) ? { d: d } : { fehler: true };
+        if (p.zv.soll === sig) { p.zv.akt = sig; vzZeigen(p); zielListeZeigen(p); }
+      });
+    }
+    function vzZeigen(p) {
+      var el = im(".uev-vz");
+      if (!el || popup !== p) return;
+      var l = vzListe(p);
+      if (!l.length) { el.innerHTML = ""; el.hidden = true; return; }
+      el.hidden = false;
+      var res = p.zv && p.zv.soll && p.zv.akt === p.zv.soll ? vzErgebnis(p) : null;
+      if (!res) {
+        el.innerHTML = '<p class="uev-vz-laeuft"><span class="up-modal-spin"></span><span>' + esc(ersetze(t("Checking the last {n} days…"), { n: VZ_TAGE })) + '</span></p>';
+        return;
+      }
+      if (res.fehler) {
+        el.innerHTML = '<div class="up-fehlerzeile is-on"><span>' + esc(t("The preview could not be loaded.")) + '</span></div>';
+        return;
+      }
+      var d = res.d, n = num(d.matched_url_count) || 0, c = num(d.citation_count) || 0, pr = num(d.prompt_count) || 0, tage = num(d.days) || VZ_TAGE;
+      function mitZahl(schl, v) { return esc(t(schl)).replace("{n}", '<span class="uev-vz-n">' + esc(zahl(v)) + '</span>'); }
+      var html = '<p class="uev-vz-kopf"><span class="uev-vz-zeit">' + esc(ersetze(t("Last {n} days:"), { n: tage })) + '</span> ' +
+        mitZahl(n === 1 ? "{n} URL matches" : "{n} URLs match", n) +
+        (n ? ', ' + mitZahl(c === 1 ? "{n} citation" : "{n} citations", c) + ' ' + mitZahl(pr === 1 ? "in {n} prompt" : "in {n} prompts", pr) : '') + '</p>';
+      var bsp = isArr(d.examples) ? d.examples.slice(0, 5) : [];
+      if (n && bsp.length) {
+        html += '<div class="uev-vz-liste">' + bsp.map(function (x) {
+          var hp = hostPfad(x.url), ci = num(x.citations);
+          return '<div class="uev-vz-reihe"><span class="uev-vz-url" title="' + esc(x.url || "") + '">' + esc(hp.host + (hp.start ? "" : hp.pfad)) + '</span>' +
+            (ci != null ? '<span class="uev-vz-wert">' + esc(ersetze(t(ci === 1 ? "{n} citation" : "{n} citations"), { n: zahl(ci) })) + '</span>' : '') + '</div>';
+        }).join("") + '</div>';
+      }
+      var nah = isArr(d.near_misses) ? d.near_misses.slice(0, 5) : [];
+      var hosts = {};
+      l.forEach(function (z) { var h = zielHost(z); if (h) hosts[h] = 1; });
+      var hl = Object.keys(hosts), h1 = hl.length === 1 ? hl[0] : "";
+      if (!n) {
+        /* Null Treffer: je Fall ein eigener Satz (Entscheidung des Nutzers 15.10.). */
+        var vertippt = "";
+        if (d.host_known === false && h1) nah.forEach(function (x) { var nh = hostPfad(x.url).host; if (!vertippt && aehnlich(nh, h1)) vertippt = nh; });
+        var satz;
+        if (vertippt) satz = '<span>' + esc(ersetze(t("We haven't seen this domain in your citations. Did you mean {host}?"), { host: vertippt })) + '</span>' +
+          '<button type="button" class="up-quietbtn uev-vz-statt" data-statt-alt="' + esc(h1) + '" data-statt-neu="' + esc(vertippt) + '">' + esc(ersetze(t("Use {host}"), { host: vertippt })) + '</button>';
+        else if (d.host_known === false && h1 && h1.split(".").length > 2) satz = esc(t("This subdomain hasn't been cited yet. It will be counted from its first citation."));
+        else if (d.host_known === false) satz = esc(t("This domain hasn't been cited yet. It will be counted from its first citation."));
+        else satz = esc(t("No cited page matches yet. Matching pages count from their first citation."));
+        html += '<p class="uev-vz-satz">' + satz + '</p>' +
+          '<p class="uev-vz-satz is-leise">' + esc(t("Only pages that AI answers to your tracked prompts cite can be counted.")) + '</p>';
+      }
+      if (nah.length) {
+        var GRUND = { other_host: "Other host", other_path: "Other path" };
+        html += '<div class="uev-vz-titel">' + esc(t("Similar, but not matching")) + '</div><div class="uev-vz-liste is-leise">' + nah.map(function (x) {
+          var hp = hostPfad(x.url);
+          return '<div class="uev-vz-reihe"><span class="uev-vz-url" title="' + esc(x.url || "") + '">' + esc(hp.host + (hp.start ? "" : hp.pfad)) + '</span>' +
+            (GRUND[x.reason] ? '<span class="uev-vz-wert">' + esc(t(GRUND[x.reason])) + '</span>' : '') + '</div>';
+        }).join("") + '</div>';
+      }
+      /* "Count as your domain" (Nutzer 15.10.: "JA, das soll direkt angeboten werden"): nur fuer
+         EINEN Host -- bei mehreren sagt die Vorschau nicht, welcher gemeint ist. */
+      if (h1 && d.host_role !== "own" && !(p.eigen && p.eigen[h1])) {
+        html += '<div class="uev-vz-eigen"><span>' + esc(ersetze(t("{host} doesn't count as your domain yet."), { host: h1 })) + '</span>' +
+          '<button type="button" class="up-btn-sec uev-vz-eigenbtn" data-eigen-host="' + esc(h1) + '"' + (p.eigenLaeuft ? ' disabled' : '') + '>' +
+            (p.eigenLaeuft ? '<span class="up-modal-spin"></span>' : '') + '<span>' + esc(t("Count as your domain")) + '</span></button></div>';
+      }
+      el.innerHTML = html;
+    }
+    /* Einen Host als eigene Domain zaehlen: derselbe Weg wie "Count as: Your own site" im
+       Domain-Drawer (domain_classify_v1, p_role "own"). Die Datenbank leert ihre Caches selbst;
+       hier faellt der Speicher der Vorschau, und sie fragt neu. Die Saetze der Fehler sind die
+       des Drawers (Katalog in core). */
+    function alsEigeneZaehlen(p, host) {
+      if (!p || p.eigenLaeuft || !host) return;
+      p.eigenLaeuft = host;
+      vzZeigen(p);
+      teamHolen().then(function (tm) {
+        if (!tm) return { ok: false, status: 0, fehler: {} };
+        return UC.rpc("domain_classify_v1", { p_team: tm, p_domain: host, p_role: "own" }, { timeoutMs: 30000 });
+      }).then(function (erg) {
+        p.eigenLaeuft = null;
+        if (popup !== p) return;
+        if (!erg || !erg.ok) {
+          var fe = (erg && erg.fehler) || {}, code = String(fe.message || fe.code || ""), hint = String(fe.hint || ""), wer = String(fe.details || "");
+          var satz = code === "domain_classify_forbidden" ? t("Only owners and admins can change how a domain counts.")
+            : /rate_limited$/.test(code) ? t("Too many changes in a short time. Please wait a moment.")
+            : code === "domain_classify_invalid" && hint === "tracked_competitor" ? t("This domain belongs to {brand}, a competitor.").replace("{brand}", wer || "?")
+            : code === "domain_classify_invalid" && hint === "own_brand" ? t("This is the domain of your brand {brand}.").replace("{brand}", wer || "?")
+            : code === "domain_classify_invalid" && hint === "limit" ? t("Your team can assign up to {n} domains.").replace("{n}", wer || "100")
+            : t("This change could not be saved. Please try again.");
+          if (UC.toast) UC.toast(satz, { kind: "error" });
+          vzZeigen(p);
+          return;
+        }
+        p.eigen = p.eigen || {};
+        p.eigen[host] = true;
+        if (UC.toast) UC.toast(t("This domain now counts as your own site."), { kind: "success" });
+        p.zv.ergebnisse = {};
+        vzAnfordern(p, true);
+      });
+    }
+    /* "Did you mean ...?": den Host in Eingabe und Liste ersetzen. */
+    function hostErsetzen(p, alt, neu) {
+      if (!p || !alt || !neu) return;
+      var art = leseArt(p.e);
+      p.e.ziele = p.e.ziele.map(function (z) {
+        if (zielHost(z) !== alt) return z;
+        var x = zielBauen(String(z.input).replace(alt, neu), z.kind);
+        return x.fehler ? z : x;
+      });
+      if (p.e.eingabe && p.e.eingabe.indexOf(alt) >= 0) {
+        p.e.eingabe = p.e.eingabe.split(alt).join(neu);
+        var inp = im(".uev-zielein");
+        if (inp) inp.value = p.e.eingabe;
+      }
+      void art;
+      zieleZeigen(p);
+    }
+
+    /* ---- DER SITEMAP-WAEHLER (Edge Function sitemap-lesen, Vertrag Abschnitt 6) -------------
+       In Schritt 3 und im Add-Dialog, unter dem Eingabefeld. Gelesen wird ueber den Weg der App
+       fuer Edge Functions (UC.edge); gespeichert wird NICHTS ausser den Zielen, die man danach
+       uebernimmt. Die Seiten stehen als Baum nach Host und Ordnern, je Ordner die Zahl der Seiten
+       und das juengste lastmod; ein Ordner waehlt eine Regel (Pfad, beim Host die ganze Domain),
+       eine Seite eine URL, "Select all in folder" alle Seiten darin einzeln. Was ein gewaehlter
+       Ordner schon enthaelt, steht gewaehlt und gesperrt. Gezeichnet werden nur aufgeklappte
+       Ordner und je Ordner zuerst 50 Seiten -- eine Sitemap darf 50 000 haben.
+       Laden mit dem Ladebild aus core (Spinner, kein Skelett: der Abschnitt ist selten). Jeder
+       Fehlercode bekommt einen eigenen Satz, als roter Satz ohne Kasten. */
+    var SM_FEHLER = {
+      not_found: "We couldn't find a sitemap there. Try the full link to your sitemap.xml.",
+      timeout: "The website took too long to answer. Please try again later.",
+      too_large: "This sitemap is too large to read. Try one of the smaller sitemaps it lists.",
+      invalid_xml: "This file isn't a sitemap we can read. Check that the link points to a sitemap.xml.",
+      blocked: "This address can't be read. Please use the public address of your website.",
+      rate_limited: "Too many sitemap requests. Please wait a while and try again.",
+      network: "We could not reach the server. Check your connection and try again.",
+      leer: "Please enter a sitemap link or a domain.",
+      ungueltig: "Please enter a valid domain."
+    };
+    var SM_SEITEN = 50, SM_MEHR = 100, SM_TREFFER = 200;
+    function smVorschlag(p) {
+      var r = eingabeTeile(p.e.eingabe), z = r.length ? zerlegen(r[0]) : null;
+      if (z && hostOk(z.host)) return /\.xml(\.gz)?$/i.test(z.pfad) ? r[0] : z.host;
+      for (var i = 0; i < p.e.ziele.length; i++) { var h = zielHost(p.e.ziele[i]); if (h) return h; }
+      return "";
+    }
+    function smOeffnen(p, url, laden) {
+      if (!p || !sitemapDa()) return;
+      if (!p.sm) p.sm = { offen: false, laeuft: false, fehler: "", antwort: null, knoten: {}, auf: {}, wahl: { ordner: {}, urls: {} }, suche: "", mehr: {}, url: "" };
+      p.sm.offen = true;
+      if (url) p.sm.url = url; else if (!p.sm.url) p.sm.url = smVorschlag(p);
+      smZeichnen(p);
+      if (laden && p.sm.url) smLaden(p);
+      else setTimeout(function () { var f = im(".uev-sm-ein"); try { if (f) f.focus(); } catch (e) {} }, 30);
+    }
+    function smZu(p) {
+      if (!p || !p.sm) return;
+      p.sm.offen = false;
+      if (p.sm.lb) { try { p.sm.lb.stop(); } catch (e) {} p.sm.lb = null; }
+      var ort = im(".uev-sm-ort");
+      if (ort) ort.innerHTML = "";
+      var kz = im(".uev-sm-knopfzeile");
+      if (kz) kz.hidden = false;
+      var k = im(".uev-sm-knopfzeile .uev-sm-auf");
+      try { if (k) k.focus(); } catch (e) {}
+    }
+    function smFehlerText(code) { return t(SM_FEHLER[code] || "The sitemap could not be loaded. Please try again."); }
+    function smLaden(p) {
+      var inp = im(".uev-sm-ein"), url = String(inp ? inp.value : p.sm.url || "").trim();
+      p.sm.url = url;
+      var z = zerlegen(url);
+      if (!url) { p.sm.fehler = smFehlerText("leer"); smZeichnen(p); return; }
+      if (!z || !hostOk(z.host)) { p.sm.fehler = smFehlerText("ungueltig"); smZeichnen(p); return; }
+      p.sm.laeuft = true; p.sm.fehler = ""; p.sm.antwort = null;
+      smZeichnen(p);
+      var seq = p.sm.seq = (p.sm.seq || 0) + 1;
+      teamHolen().then(function (tm) {
+        if (!tm) return { ok: false, status: 0, fehler: { message: "network" } };
+        return UC.edge("sitemap-lesen", { team_id: tm, url: url }, { timeoutMs: 35000 });
+      }).then(function (erg) {
+        if (popup !== p || !p.sm || p.sm.seq !== seq) return;
+        p.sm.laeuft = false;
+        var d = erg && erg.ok ? erg.daten : null;
+        if (d && d.ok === true && isArr(d.urls)) {
+          p.sm.antwort = d;
+          smBaum(p, d.urls);
+        } else {
+          var code = d && d.ok === false ? String(d.error || "") : String((erg && erg.fehler && erg.fehler.message) || "");
+          if (edgeFehlt(erg)) { SITEMAP_DA.stand = false; code = ""; }
+          p.sm.fehler = smFehlerText(code);
+        }
+        smZeichnen(p);
+      });
+    }
+    function smBaum(p, urls) {
+      var knoten = {}, hosts = [];
+      function neu(key, host, pfad, tiefe, art, eltern) {
+        var k = { key: key, host: host, pfad: pfad, tiefe: tiefe, art: art, eltern: eltern, kinder: [], kinderJe: {}, seiten: [], n: 0, neu: "" };
+        knoten[key] = k;
+        if (eltern) { eltern.kinderJe[key] = k; eltern.kinder.push(k); } else hosts.push(k);
+        return k;
+      }
+      urls.forEach(function (u) {
+        var loc = String(u && u.loc || "").trim(), x = null;
+        try { x = new URL(loc); } catch (e) { x = null; }
+        if (!x || !/^https?:$/.test(x.protocol)) return;
+        var host = x.hostname.toLowerCase().replace(/^www\./, ""), teile = x.pathname.split("/").filter(Boolean);
+        var lm = String(u.lastmod || "").slice(0, 10);
+        var k = knoten["h:" + host] || neu("h:" + host, host, "", 0, "host", null);
+        function zaehl(n) { n.n++; if (lm > n.neu) n.neu = lm; }
+        zaehl(k);
+        for (var i = 0; i < teile.length - 1; i++) {
+          var pfad = "/" + teile.slice(0, i + 1).join("/"), key = "p:" + host + pfad;
+          k = k.kinderJe[key] || neu(key, host, pfad, i + 1, "ordner", k);
+          zaehl(k);
+        }
+        if (knoten["u:" + loc]) return;
+        var s = { key: "u:" + loc, loc: loc, host: host, pfad: x.pathname + (x.search || ""), lastmod: lm, eltern: k, tiefe: k.tiefe + 1, art: "seite" };
+        knoten[s.key] = s;
+        k.seiten.push(s);
+      });
+      function ordnen(k) {
+        k.kinder.sort(function (a, b) { return a.pfad < b.pfad ? -1 : a.pfad > b.pfad ? 1 : 0; });
+        k.seiten.sort(function (a, b) { return a.lastmod !== b.lastmod ? (a.lastmod < b.lastmod ? 1 : -1) : (a.pfad < b.pfad ? -1 : 1); });
+        k.kinder.forEach(ordnen);
+      }
+      hosts.sort(function (a, b) { return b.n - a.n; });
+      hosts.forEach(ordnen);
+      p.sm.knoten = knoten; p.sm.hosts = hosts;
+      p.sm.auf = {}; p.sm.wahl = { ordner: {}, urls: {} }; p.sm.mehr = {}; p.sm.suche = "";
+      /* Ein Host: gleich aufgeklappt -- sonst stuende eine einzelne Zeile da. */
+      if (hosts.length === 1) p.sm.auf[hosts[0].key] = true;
+    }
+    /* Gedeckt: ein Vorfahr ist als Regel gewaehlt -- die Seite ist darin schon enthalten. */
+    function smGedeckt(p, k) {
+      for (var e = k.eltern; e; e = e.eltern) if (p.sm.wahl.ordner[e.key]) return true;
+      return false;
+    }
+    function smGewaehlt(p) {
+      var o = Object.keys(p.sm.wahl.ordner).filter(function (k) { return p.sm.knoten[k] && !smGedeckt(p, p.sm.knoten[k]); });
+      var u = Object.keys(p.sm.wahl.urls).filter(function (k) { return p.sm.knoten[k] && !smGedeckt(p, p.sm.knoten[k]); });
+      return { ordner: o, urls: u };
+    }
+    function smOrdnerName(k) { return k.art === "host" ? k.host : k.pfad.slice(k.pfad.lastIndexOf("/")) ; }
+    function smReihe(p, k, flach) {
+      var gedeckt = smGedeckt(p, k), tiefe = flach ? 0 : k.tiefe;
+      if (k.art === "seite") {
+        var an = gedeckt || !!p.sm.wahl.urls[k.key];
+        /* Im Baum der Teil nach dem Ordner ("/artikel-1" unter "/blog"), in der Suche der ganze. */
+        var name = flach ? k.host + k.pfad : (k.pfad === "/" ? t("Homepage") : k.pfad.slice((k.eltern && k.eltern.pfad || "").length) || k.pfad);
+        return '<div class="up-filter-item uev-sm-reihe is-seite' + (an ? " is-checked" : "") + (gedeckt ? " is-gedeckt" : "") + '" role="treeitem" aria-level="' + (tiefe + 1) + '" aria-selected="' + an + '"' +
+            (gedeckt ? ' aria-disabled="true" data-tip="' + esc(t("Included in the folder")) + '"' : '') + ' tabindex="-1" data-sm-wahl="' + esc(k.key) + '" style="--uev-tiefe:' + tiefe + '">' +
+          '<span class="uev-sm-auf-platz" aria-hidden="true"></span>' +
+          '<span class="up-filter-check">' + UC.icon("check", 3) + '</span>' +
+          '<span class="uev-sm-name" title="' + esc(k.loc) + '">' + esc(name) + '</span>' +
+          (k.lastmod ? '<span class="uev-sm-angaben"><span class="uev-sm-datum">' + esc(datum(k.lastmod)) + '</span></span>' : '') +
+        '</div>';
+      }
+      var offen = !!p.sm.auf[k.key] && !flach, gew = gedeckt || !!p.sm.wahl.ordner[k.key];
+      var titel = k.art === "host" ? k.host : (flach ? k.host + k.pfad : smOrdnerName(k));
+      return '<div class="up-filter-item uev-sm-reihe is-ordner' + (gew ? " is-checked" : "") + (gedeckt ? " is-gedeckt" : "") + '" role="treeitem" aria-level="' + (tiefe + 1) + '" aria-selected="' + gew + '"' +
+          (flach ? '' : ' aria-expanded="' + offen + '"') + (gedeckt ? ' aria-disabled="true"' : '') + ' tabindex="-1" data-sm-wahl="' + esc(k.key) + '" style="--uev-tiefe:' + tiefe + '"' +
+          ' aria-label="' + esc(ersetze(t("Track everything under {path}"), { path: k.host + (k.pfad || "") })) + '">' +
+        (flach ? '<span class="uev-sm-auf-platz" aria-hidden="true"></span>'
+          : '<button type="button" class="up-iconbtn is-20 is-quiet uev-sm-klapp" data-sm-klapp="' + esc(k.key) + '" tabindex="-1" aria-label="' + esc(t(offen ? "Collapse" : "Expand")) + '">' + UC.icon(offen ? "chevronDown" : "chevronRight", 2) + '</button>') +
+        '<span class="up-filter-check">' + UC.icon("check", 3) + '</span>' +
+        '<span class="uev-sm-ic">' + UC.icon(k.art === "host" ? "globe" : (offen ? "folderOpen" : "folder"), 2) + '</span>' +
+        '<span class="uev-sm-name">' + esc(titel) + '</span>' +
+        '<span class="uev-sm-angaben"><span class="uev-sm-n">' + esc(ersetze(t(k.n === 1 ? "{n} page" : "{n} pages"), { n: zahl(k.n) })) + '</span>' +
+          (k.neu ? '<span class="uev-sm-datum" data-tip="' + esc(t("Newest change")) + '">' + esc(datum(k.neu)) + '</span>' : '') + '</span>' +
+        (gedeckt ? '' : '<button type="button" class="up-quietbtn uev-sm-alle" data-sm-alle="' + esc(k.key) + '" tabindex="-1">' + esc(t("Select all in folder")) + '</button>') +
+      '</div>';
+    }
+    function smReihen(p) {
+      var aus = [], q = String(p.sm.suche || "").trim().toLowerCase();
+      if (q) {
+        /* Suche: flach -- passende Ordner und Seiten mit vollem Pfad. */
+        var n = 0;
+        Object.keys(p.sm.knoten).forEach(function (key) {
+          var k = p.sm.knoten[key];
+          if (n >= SM_TREFFER) return;
+          var text = (k.art === "seite" ? k.loc : k.host + (k.pfad || "")).toLowerCase();
+          if (text.indexOf(q) >= 0) { aus.push(smReihe(p, k, true)); n++; }
+        });
+        return aus.length ? aus.join("") : '<div class="up-ment-noresult">' + esc(t("No matching pages")) + '</div>';
+      }
+      function geh(k) {
+        aus.push(smReihe(p, k, false));
+        if (!p.sm.auf[k.key]) return;
+        /* Fuer Touch (CSS blendet sie nur dort ein): "Select all in folder" als eigene Zeile. */
+        if (!smGedeckt(p, k) && (k.seiten.length || k.kinder.length)) aus.push('<button type="button" class="up-quietbtn uev-sm-alle-reihe" data-sm-alle="' + esc(k.key) + '" style="--uev-tiefe:' + (k.tiefe + 1) + '">' + esc(t("Select all in folder")) + '</button>');
+        k.kinder.forEach(geh);
+        var max = SM_SEITEN + (p.sm.mehr[k.key] || 0);
+        k.seiten.slice(0, max).forEach(function (s) { aus.push(smReihe(p, s, false)); });
+        if (k.seiten.length > max) aus.push('<button type="button" class="up-quietbtn uev-sm-mehr" data-sm-mehr="' + esc(k.key) + '" style="--uev-tiefe:' + (k.tiefe + 1) + '">' +
+          esc(ersetze(t("Show {n} more"), { n: zahl(Math.min(SM_MEHR, k.seiten.length - max)) })) + '</button>');
+      }
+      (p.sm.hosts || []).forEach(geh);
+      return aus.join("");
+    }
+    function smZeichnen(p) {
+      var ort = im(".uev-sm-ort");
+      if (!ort || !p.sm) return;
+      /* Der Knopf "Load from sitemap" steht nicht doppelt ueber dem offenen Waehler. */
+      var kz = im(".uev-sm-knopfzeile");
+      if (kz) kz.hidden = !!p.sm.offen;
+      if (!p.sm.offen) { ort.innerHTML = ""; return; }
+      var sm = p.sm;
+      if (!ort.querySelector(".uev-sm")) {
+        ort.innerHTML = '<div class="uev-sm" role="group" aria-label="' + esc(t("Load from sitemap")) + '">' +
+          '<div class="uev-sm-kopf"><span class="uev-sm-titel">' + UC.icon("folders", 2) + '<span>' + esc(t("Load from sitemap")) + '</span></span>' +
+            '<button type="button" class="up-iconbtn uev-sm-zu" aria-label="' + esc(t("Close")) + '" data-tip="' + esc(t("Close")) + '">' + UC.icon("x", 2) + '</button></div>' +
+          '<div class="uev-sm-zeile"><input type="text" class="up-topicmodal-name uev-sm-ein" placeholder="' + esc(t("Sitemap link or domain")) + '" aria-label="' + esc(t("Sitemap link or domain")) + '" autocomplete="off" spellcheck="false" inputmode="url"/>' +
+            '<button type="button" class="up-btn-sec uev-sm-laden">' + esc(t("Load")) + '</button></div>' +
+          '<div class="up-fehlerzeile uev-sm-fehler" role="alert"><span></span></div>' +
+          '<div class="uev-sm-inhalt"></div>' +
+        '</div>';
+        ort.querySelector(".uev-sm-ein").value = sm.url || "";
+      }
+      var fe = ort.querySelector(".uev-sm-fehler");
+      fe.firstChild.textContent = sm.fehler || "";
+      fe.classList.toggle("is-on", !!sm.fehler);
+      var knopf = ort.querySelector(".uev-sm-laden");
+      knopf.disabled = !!sm.laeuft;
+      var inh = ort.querySelector(".uev-sm-inhalt");
+      if (sm.laeuft) {
+        if (!inh.querySelector(".up-lb")) {
+          inh.innerHTML = '<div class="uev-sm-lb"></div>';
+          sm.lb = UC.makeLadebild ? UC.makeLadebild(inh.querySelector(".uev-sm-lb"), { icon: "tickets", name: "Reading your sitemap",
+            saetze: ["Looking for your sitemap…", "Reading pages…", "Sorting pages into folders…"] }) : null;
+          if (sm.lb) sm.lb.start();
+        }
+        return;
+      }
+      if (sm.lb) { try { sm.lb.stop(); } catch (e) {} sm.lb = null; }
+      if (!sm.antwort) { inh.innerHTML = ""; return; }
+      var d = sm.antwort, total = num(d.total) != null ? num(d.total) : d.urls.length, quelle = String(d.source || "");
+      var gew = smGewaehlt(p), anzahl = gew.ordner.length + gew.urls.length;
+      if (!inh.querySelector(".uev-sm-baum")) {
+        inh.innerHTML =
+          '<p class="up-modal-hinweis uev-sm-quelle"></p>' +
+          '<div class="up-ment-searchwrap uev-sm-suchw"><input class="up-ment-search uev-sm-suche" type="text" placeholder="' + esc(t("Search pages…")) + '" aria-label="' + esc(t("Search pages…")) + '" autocomplete="off" spellcheck="false"/>' +
+            '<button class="up-ment-searchclear uev-sm-suche-x" type="button" aria-label="' + esc(t("Clear search")) + '">' + UC.icon("x", 2) + '</button></div>' +
+          '<div class="up-filter-list uev-sm-baum" role="tree" aria-multiselectable="true" aria-label="' + esc(t("Pages")) + '"></div>' +
+          '<div class="uev-sm-fuss"><span class="uev-sm-zahl"></span><button type="button" class="up-btn-pri uev-sm-nehmen">' + esc(t("Add selection")) + '</button></div>';
+      }
+      var hq = inh.querySelector(".uev-sm-quelle");
+      hq.textContent = (d.urls.length ? ersetze(t("{n} pages from {source}"), { n: zahl(total), source: hostPfad(quelle).host + (hostPfad(quelle).start ? "" : hostPfad(quelle).pfad) })
+        : t("This sitemap lists no pages.")) + (d.truncated === true ? " " + ersetze(t("Only the first {n} pages could be read."), { n: zahl(d.urls.length) }) : "");
+      var suche = inh.querySelector(".uev-sm-suche");
+      if (suche && suche.value !== sm.suche && document.activeElement !== suche) suche.value = sm.suche;
+      inh.querySelector(".uev-sm-suchw").classList.toggle("has-text", !!sm.suche);
+      var baum = inh.querySelector(".uev-sm-baum"), oben = baum.scrollTop;
+      baum.innerHTML = d.urls.length ? smReihen(p) : "";
+      baum.scrollTop = oben;
+      var roving = baum.querySelector('.uev-sm-reihe[tabindex="-1"]');
+      if (roving && !baum.querySelector('.uev-sm-reihe[tabindex="0"]')) roving.tabIndex = 0;
+      inh.querySelector(".uev-sm-zahl").textContent = ersetze(t("{n} selected"), { n: zahl(anzahl) });
+      inh.querySelector(".uev-sm-nehmen").disabled = !anzahl;
+    }
+    function smUmschalten(p, key) {
+      var k = p.sm.knoten[key];
+      if (!k || smGedeckt(p, k)) return;
+      if (k.art === "seite") { if (p.sm.wahl.urls[key]) delete p.sm.wahl.urls[key]; else p.sm.wahl.urls[key] = true; }
+      else {
+        if (p.sm.wahl.ordner[key]) delete p.sm.wahl.ordner[key];
+        else {
+          p.sm.wahl.ordner[key] = true;
+          /* Was darin schon einzeln gewaehlt war, ist jetzt in der Regel enthalten. */
+          Object.keys(p.sm.wahl.urls).concat(Object.keys(p.sm.wahl.ordner)).forEach(function (kk) {
+            var x = p.sm.knoten[kk];
+            if (x && x !== k && smGedeckt(p, x)) { delete p.sm.wahl.urls[kk]; delete p.sm.wahl.ordner[kk]; }
+          });
+        }
+      }
+      smZeichnen(p);
+      smFokus(p, key);
+    }
+    function smAlleImOrdner(p, key) {
+      var k = p.sm.knoten[key];
+      if (!k || smGedeckt(p, k)) return;
+      (function geh(n) { n.seiten.forEach(function (s) { p.sm.wahl.urls[s.key] = true; }); n.kinder.forEach(geh); })(k);
+      p.sm.auf[key] = true;
+      smZeichnen(p);
+      smFokus(p, key);
+    }
+    function smFokus(p, key) {
+      var b = im(".uev-sm-baum");
+      if (!b) return;
+      var l = b.querySelectorAll(".uev-sm-reihe");
+      for (var i = 0; i < l.length; i++) {
+        var an = l[i].getAttribute("data-sm-wahl") === key;
+        l[i].tabIndex = an ? 0 : -1;
+        if (an) { try { l[i].focus({ preventScroll: false }); } catch (e) {} }
+      }
+    }
+    /* Die Auswahl als Ziele in die Liste -- Host -> ganze Domain, Ordner -> Pfad, Seite -> URL. */
+    function smUebernehmen(p) {
+      var gew = smGewaehlt(p), neu = [];
+      gew.ordner.forEach(function (key) {
+        var k = p.sm.knoten[key];
+        var z = k.art === "host" ? zielBauen(k.host, "host") : zielBauen(k.host + k.pfad, "path");
+        if (!z.fehler) neu.push(z);
+      });
+      gew.urls.forEach(function (key) { var z = zielBauen(p.sm.knoten[key].loc, "url"); if (!z.fehler) neu.push(z); });
+      neu = neu.filter(function (z) { return !zielGewaehlt(p, z) && !zielImEvent(p, z); });
+      if (p.e.ziele.length + neu.length > zielMax(p)) {
+        p.sm.fehler = ersetze(t("You can add {n} more targets to this event."), { n: Math.max(0, zielMax(p) - p.e.ziele.length) });
+        smZeichnen(p);
+        return;
+      }
+      neu.forEach(function (z) { p.e.ziele.push(z); });
+      if (!p.e.zielArt || p.e.zielArt === "marke") p.e.zielArt = gew.ordner.length ? "path" : "url";
+      smZu(p);
+      feldFehler("ziele", "");
+      zieleZeigen(p, true);
+      klappen(im(".uev-unter-klapp"), p.e.zielArt === "host");
+    }
 
     /* ---- Zeichnen in einem offenen Popup --------------------------------------------------- */
     function im(sel) { return popup ? popup.api.el.querySelector(sel) : null; }
+    /* Vier Schritte seit 15.10.: die Ziele sind ein eigener Schritt, das Pruefen der letzte. */
     function schrittText(n) {
-      return ersetze(t("Step {n} of 3"), { n: n }) + ": " + t(["Details", "Scope", "URLs & review"][n - 1]);
+      return ersetze(t("Step {n} of 4"), { n: n }) + ": " + t(["Details", "Prompts", "Tracking", "Check and create"][n - 1]);
     }
     function typNeu() {
       var p = popup, tp = typVon(p.e.typ), b = im('[data-wahl="typ"]');
@@ -2498,15 +3709,9 @@
       klappen(im(".uev-umfang-klapp"), p.e.modus === "topics");
       zahlZeigen();
     }
-    function imEvent(p, url) {
-      if (p.art !== "url") return false;
-      var d = state.detail[p.eventId], k = urlSchluessel(url);
-      return !!(d && isArr(d.urls) && d.urls.some(function (u) { return urlSchluessel(u.url) === k; }));
-    }
-    function gewaehlt(p, url) {
-      var k = urlSchluessel(url);
-      return p.e.urls.some(function (u) { return urlSchluessel(u.url) === k; });
-    }
+    /* Die Suche nach bekannten URLs (search_quick_actions, wie bisher) nur bei "Specific URLs" und
+       einem einzelnen Eintrag -- bei einer Regel oder einer Liste gibt es nichts nachzuschlagen.
+       "Add as new target" ist seit 15.10. der Knopf "Add" neben dem Feld. */
     function trefferZeigen() {
       var p = popup, el = im(".uev-urltreffer");
       if (!el) return;
@@ -2514,23 +3719,25 @@
       var kl = el.closest(".uev-klapp");
       /* Beim Zuklappen bleibt der Inhalt stehen, bis der Behaelter zu ist -- sonst faellt die Hoehe
          sofort auf 0 und es gibt nichts zu animieren. */
-      if (!q) { klappen(kl, false); return; }
-      var voll = p.art === "anlegen" && p.e.urls.length >= URL_MAX;
+      if (!q || leseArt(p.e) !== "url" || eingabeTeile(q).length > 1) { klappen(kl, false); return; }
+      var voll = p.e.ziele.length >= zielMax(p);
       var treffer = s.treffer || [];
       function zustand(url) {
-        if (imEvent(p, url)) return { txt: t("Already in this event"), klasse: "is-taken" };
-        if (gewaehlt(p, url)) return { txt: t("Added"), klasse: "is-taken" };
+        var z = zielBauen(url, "url");
+        if (!z.fehler && zielImEvent(p, z)) return { txt: t("Already in this event"), klasse: "is-taken" };
+        if (!z.fehler && zielGewaehlt(p, z)) return { txt: t("Added"), klasse: "is-taken" };
         return { txt: "", klasse: voll ? "is-taken" : "" };
       }
       /* Eine getippte Adresse, die kein Treffer ist, wird als neues Ziel angeboten (Spezifikation
-         60) -- OBEN, weil sie genau das ist, was jemand gerade eingefuegt hat. */
-      var neu = istUrl(q) ? mitSchema(q) : "";
-      if (neu && !treffer.some(function (it) { return urlSchluessel(it.url) === urlSchluessel(neu); })) {
-        var z = zustand(neu);
-        html += '<button type="button" class="up-es-row uev-neuziel' + (z.klasse ? " " + z.klasse : "") + '" data-neu-url="' + esc(neu) + '">' +
+         60) -- OBEN, weil sie genau das ist, was jemand gerade eingefuegt hat. Dasselbe wie der
+         Knopf "Add" daneben, an der Stelle, an der man nach der Suche hinsieht. */
+      var neuZ = zielBauen(q, "url"), neu = neuZ.fehler || !/\./.test(q) ? "" : neuZ.input;
+      if (neu && !treffer.some(function (it) { return "url|" + urlTextSchluessel(it.url) === neuZ.key; })) {
+        var zn = zustand(neu);
+        html += '<button type="button" class="up-es-row uev-neuziel' + (zn.klasse ? " " + zn.klasse : "") + '" data-neu-url="' + esc(neu) + '">' +
           (UC.entityAvatar ? UC.entityAvatar("", UC.icon("plus", 2), false, "up-es") : "") +
           '<span class="up-es-main"><span class="up-es-primary">' + esc(neu) + '</span></span>' +
-          '<span class="up-es-type">' + esc(z.txt || t("Add as new target")) + '</span></button>';
+          '<span class="up-es-type">' + esc(zn.txt || t("Add as new target")) + '</span></button>';
       }
       if (s.laedt) {
         html += [0, 1].map(function () {
@@ -2538,7 +3745,7 @@
         }).join("");
       } else if (s.fehler) {
         html += '<p class="up-modal-hinweis uev-urlnote">' + esc(s.fehler) + '</p>';
-      } else if (s.treffer) {
+      } else if (s.treffer && treffer.length) {
         html += treffer.map(function (it, i) {
           var z = zustand(it.url);
           /* Rechts steht nur, was die Zeile von den anderen unterscheidet ("Already in this event",
@@ -2546,43 +3753,46 @@
              schon, das ist unnoetig") -- die Suche findet ohnehin nur beobachtete URLs. */
           return UC.entityRow(it, { prefix: "up-es", query: q, index: i, rechts: z.txt || "", typLabel: false, klasse: z.klasse });
         }).join("");
-        if (!treffer.length && !neu) html += '<p class="up-modal-hinweis uev-urlnote">' + esc(t("No matching URLs. Paste a full link to add it as a new target.")) + '</p>';
       }
       if (html) el.innerHTML = html;
       klappen(kl, !!html);
     }
-    function auswahlZeigen() {
-      var p = popup, el = im(".uev-urlauswahl");
-      if (!el) return;
-      p.ohneUrlsFrage = false;
-      var l = p.e.urls;
-      el.innerHTML = !l.length ? "" :
-        '<div class="uev-urlwahl-liste">' + l.map(function (u, i) {
-          var hp = hostPfad(u.url);
-          return '<div class="uev-urlwahl">' +
-            '<span class="up-fav up-logo-box has-img"><img src="' + esc(favicon(u.url)) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>' +
-            '<span class="uev-url-txt"><span class="uev-url-host">' + esc(hp.host) + '</span><span class="uev-url-pfad" title="' + esc(u.url) + '">' + esc(pfadText(hp)) + '</span></span>' +
-            (u.neu ? '<span class="uev-urlwahl-neu">' + esc(t("New target")) + '</span>' : '') +
-            '<button type="button" class="up-iconbtn uev-urlwahl-weg" data-url-weg="' + i + '" aria-label="' + esc(t("Remove")) + '" data-tip="' + esc(t("Remove")) + '">' + UC.icon("x", 2) + '</button></div>';
-        }).join("") + '</div>';
-    }
     /* DIE VORSCHAU (03.10. angefordert): im letzten Schritt die Karte, wie sie danach in der
        Uebersicht steht -- dieselbe karteHtml, gefuellt aus dem Entwurf, ohne Menue und ohne Klick.
-       Sie ersetzt die Zusammenfassung: alles, was dort stand, steht auf der Karte. */
+       Sie ersetzt die Zusammenfassung: alles, was dort stand, steht auf der Karte. Seit 15.10. mit
+       den Zielen (die Karte zaehlt sie nach Art) und der Liste der Ziele darueber. */
     function pruefenZeigen() {
       var p = popup, el = im(".uev-pruef");
       if (!el || p.art !== "anlegen") return;
-      var e = p.e, v = dieVorschau(p);
+      var e = p.e, v = dieVorschau(p), mit = e.zielArt && e.zielArt !== "marke" ? e.ziele : [];
       var ev = { id: "", name: e.name.trim() || t("Untitled event"), event_date: e.datum, event_type: e.typ,
         icon: e.icon, color: e.farbe, cover: e.cover, description: e.text.trim() || null, scope_mode: e.modus,
         selected_topic_count: e.modus === "topics" ? e.topics.length : null,
-        affected_prompt_count: v && !v.fehler ? v.n : null, affected_url_count: e.urls.length };
+        affected_prompt_count: v && !v.fehler ? v.n : null,
+        affected_url_count: mit.filter(function (z) { return z.kind === "url"; }).length,
+        targets: mit.map(function (z) { return { kind: z.kind }; }) };
       el.innerHTML = '<span class="up-topicmodal-label">' + esc(t("Preview")) + '</span>' +
         '<div class="uev-vorschau">' + karteHtml(ev, true) + '</div>';
+      pruefZieleZeigen();
+    }
+    /* Schritt 3 ist bereit: eine Art ist gewaehlt, und ausser bei "Brand metrics only" steht ein
+       Ziel in der Liste oder eine gueltige Eingabe im Feld (die "Continue" dann uebernimmt). */
+    function zieleOk(p) {
+      var e = p.e;
+      if (p.art === "anlegen") {
+        if (!e.zielArt) return false;
+        if (e.zielArt === "marke") return true;
+      }
+      /* Regeln in der Liste, aber die Datenbank kann sie (noch) nicht: nicht weiter -- sonst
+         gingen sie beim Anlegen still verloren. Die Liste sagt es an jeder Regel. */
+      if (!zieleDa() && e.ziele.some(function (z) { return z.kind !== "url"; })) return false;
+      if (e.ziele.length) return true;
+      var r = eingabeLesen(p);
+      return r.gut.length > 0 && !r.schlecht.length && r.vorschlag !== "sitemap" && r.gut.length <= zielMax(p);
     }
     function schrittOk(p) {
       var e = p.e;
-      if (p.art === "url") return e.urls.length === 1;
+      if (p.art === "ziel") return zieleOk(p);
       if (p.art === "bearbeiten") return !!e.name.trim() && laenge(e.text.trim()) <= TEXT_MAX;
       if (p.schritt === 1) return !!e.name.trim() && !!e.datum && !!e.typ && laenge(e.text.trim()) <= TEXT_MAX;
       if (p.schritt === 2) {
@@ -2593,6 +3803,7 @@
         if (p.vorschauLaeuft || !v) return false;
         return v.fehler || v.n !== 0;
       }
+      if (p.schritt === 3) return zieleOk(p);
       return true;
     }
     function knoepfeSync() {
@@ -2600,42 +3811,50 @@
       if (!p || p.warte) return;
       var b = p.api.knopf(p.knopf);
       if (b) b.disabled = !schrittOk(p);
-      if (p.art !== "anlegen") return;
-      var z = p.api.knopf("zurueck");
-      if (z) z.hidden = p.schritt === 1;
-      /* Ohne URLs fragt der Knopf einmal nach (03.10.): erst "Create without URLs?", der zweite
-         Klick legt an. Jede Aenderung an der Auswahl oder ein Schrittwechsel nimmt die Frage zurueck. */
-      var lbl = p.schritt === 3 ? (p.ohneUrlsFrage ? "Create without URLs?" : "Create event") : "Continue", tx = b && b.querySelector(".up-modal-knopftxt");
-      if (tx) { tx.textContent = t(lbl); tx.setAttribute("data-i18n", lbl); }
+      if (p.art === "anlegen") {
+        var z = p.api.knopf("zurueck");
+        if (z) z.hidden = p.schritt === 1;
+        /* "Create without URLs?" (03.10.) ist seit 15.10. die ausdrueckliche Wahl "Brand metrics
+           only" in Schritt 3 -- ein Event ohne Ziele entsteht nie mehr aus Versehen. */
+        var lbl = p.schritt === 4 ? "Create event" : "Continue", tx = b && b.querySelector(".up-modal-knopftxt");
+        if (tx) { tx.textContent = t(lbl); tx.setAttribute("data-i18n", lbl); }
+      }
+      if (anleitung && anleitung.laeuft()) anleitung.neu();
     }
     function schritt(n, fehlerBehalten) {
       var p = popup;
-      if (!p || n < 1 || n > 3) return;
+      if (!p || n < 1 || n > 4) return;
       p.schritt = n;
-      p.ohneUrlsFrage = false;
       if (!fehlerBehalten) p.api.fehler("");
       var st = p.api.body.querySelectorAll(".uev-schritt");
       for (var i = 0; i < st.length; i++) st[i].hidden = parseInt(st[i].getAttribute("data-schritt"), 10) !== n;
-      /* Schritt 2 und 3 entstehen erst, wenn sie gezeigt werden: der Topics-Filter baut sich nur
+      /* Schritt 2 bis 4 entstehen erst, wenn sie gezeigt werden: der Topics-Filter baut sich nur
          in einer sichtbaren Wurzel (makeMount), und in einem verdeckten Schritt stuende er erst
          nach dem naechsten Blick des Waechters da. */
       var box = p.api.body.querySelector('.uev-schritt[data-schritt="' + n + '"]');
       if (box && !box.__uevGebaut) {
         box.__uevGebaut = 1;
         if (n === 2) { box.innerHTML = umfangFelder(p.e); topicsZeigen(); }
-        if (n === 3) box.innerHTML = urlFelder(p.e);
+        if (n === 3) box.innerHTML = zielFelder(p);
+        if (n === 4) box.innerHTML = pruefFelder(p.e);
       }
       var sub = p.api.el.querySelector(".up-topicmodal-sub");
       if (sub) sub.textContent = schrittText(n);
       if (n === 2) { umfangNeu(); vorschauAnfordern(); }
       if (n === 3) {
-        auswahlZeigen(); trefferZeigen(); pruefenZeigen();
-        var inp = im(".uev-urlein");
-        setTimeout(function () { try { if (inp) inp.focus(); } catch (e) {} }, 30);
+        zieleZeigen(p, true);
+        /* Der Fokus dorthin, wo die naechste Handlung ist: ins Feld, wenn eine Art mit Eingabe
+           gewaehlt ist, sonst auf die Wahl selbst. */
+        setTimeout(function () {
+          var f = p.e.zielArt && p.e.zielArt !== "marke" ? im(".uev-zielein") : im('.uev-art[tabindex="0"]');
+          try { if (f) f.focus(); } catch (e) {}
+        }, 30);
       }
+      if (n === 4) pruefenZeigen();
       if (n === 1) { var nm = im('[data-feld="name"]'); setTimeout(function () { try { if (nm) nm.focus(); } catch (e) {} }, 30); }
       try { p.api.karte.scrollTop = 0; } catch (e) {}
       knoepfeSync();
+      anleitungFolgen();
     }
 
     /* ---- Die Zahl der Prompts im Umfang (preview_impact_event_scope_v1) ---------------------
@@ -2711,23 +3930,30 @@
         onIdle: function () { if (popup !== p) return; p.such.laedt = false; p.such.treffer = null; p.such.fehler = ""; trefferZeigen(); }
       });
     }
-    function urlNehmen(url, neu) {
+    /* Ein Treffer der Suche als URL-Ziel. */
+    function urlNehmen(url) {
       var p = popup;
-      if (!p || !url || gewaehlt(p, url) || imEvent(p, url)) return;
+      if (!p || !url) return;
+      var z = zielBauen(url, "url");
       /* Nur http(s), hoechstens 2048 Zeichen (13.10., wie der Server: impact_event_invalid_url) --
          die Meldung am Feld, statt erst beim Anlegen. */
-      if (!urlOk(url)) { feldFehler("urls", fehlerText("impact_event_invalid_url")); return; }
-      if (p.art === "url") p.e.urls = [{ url: url, neu: neu }];
-      else if (p.e.urls.length < URL_MAX) p.e.urls.push({ url: url, neu: neu });
-      else { feldFehler("urls", fehlerText("impact_event_too_many_urls")); return; }
-      feldFehler("urls", "");
-      var inp = im(".uev-urlein");
-      if (inp) inp.value = "";
+      if (z.fehler || !urlOk(z.input)) { feldFehler("ziele", fehlerText("impact_event_invalid_url")); return; }
+      if (zielGewaehlt(p, z) || zielImEvent(p, z)) return;
+      if (p.e.ziele.length >= zielMax(p)) {
+        feldFehler("ziele", zielMax(p) === 1 ? t("Add one URL at a time.") : fehlerText(zieleDa() ? "impact_event_too_many_targets" : "impact_event_too_many_urls"));
+        return;
+      }
+      p.e.ziele.push(z);
+      artNachZiel(p, z);
+      p.e.eingabe = ""; p.e.artVonHand = false;
+      var inp = im(".uev-zielein");
+      if (inp) { inp.value = ""; feldHoehe(inp); }
       p.such.frage = ""; p.such.treffer = null; p.such.laedt = false; p.such.fehler = "";
       if (p.maschine) p.maschine.abbrechen();
       try { if (inp) inp.focus(); } catch (e) {}
+      feldFehler("ziele", "");
       p.api.fehler("");
-      auswahlZeigen(); trefferZeigen(); pruefenZeigen(); knoepfeSync();
+      zieleZeigen(p);
     }
 
     /* ---- Senden und Antworten -------------------------------------------------------------- */
@@ -2766,7 +3992,7 @@
       var b = {
         p_name: e.name.trim(), p_event_date: e.datum, p_scope_mode: e.modus,
         p_tag_ids: e.modus === "topics" ? e.topics.slice() : null,
-        p_urls: e.urls.length ? e.urls.map(function (u) { return u.url; }) : null,
+        p_urls: null,
         p_description: e.text.trim() || null, p_event_type: e.typ,
         p_icon: e.icon ? iconFuerDb(e.icon) : null, p_color: e.farbe ? String(e.farbe).toLowerCase() : null
       };
@@ -2775,9 +4001,16 @@
          nicht fuehrt, haette sonst JEDES Anlegen gescheitert, auch ohne Titelbild. */
       if (e.cover) b.p_cover = e.cover;
       if (tagModusWirkt(e) === "and") b.p_tagmode = "and";
+      /* DIE ZIELE (15.10.): mit Zielen in der Datenbank als p_targets an create_impact_event_v3
+         (auch URLs, als kind "url" -- die Datenbank macht daraus dieselben Ziele wie aus p_urls),
+         sonst wie bisher als p_urls an v2. "Brand metrics only" schickt keines von beiden, auch
+         wenn vorher Ziele eingetragen waren -- es gilt, was gewaehlt ist. */
+      var mit = e.zielArt && e.zielArt !== "marke" ? e.ziele : [];
+      if (mit.length && zieleDa()) { delete b.p_urls; b.p_targets = mit.map(function (z) { return { kind: z.kind, input: z.input }; }); }
+      else if (mit.length) b.p_urls = mit.filter(function (z) { return z.kind === "url"; }).map(function (z) { return z.input; });
       if (!vorabPruefen(p, b)) return;
       warten(p, "anlegen");
-      rufen("uevCreate", b, { popup: p });
+      rufen("uevCreate", b, { popup: p }, false, !!b.p_targets);
     }
     /* Vertrag 3.5: null heisst unveraendert, "" leert (Beschreibung, Zeichen, Farbe). Ein leerer
        Name ist nicht erlaubt -- der Knopf ist dann gar nicht erst frei. */
@@ -2802,16 +4035,28 @@
       warten(p, "bearbeiten");
       rufen("uevUpdate", b, { popup: p });
     }
-    function urlSenden() {
+    /* Der Add-Dialog (15.10.): mit Zielen in der Datenbank alle auf einmal ueber
+       add_impact_event_target_v1 (auch eine Auswahl aus der Sitemap), sonst wie bisher genau eine
+       URL ueber add_impact_event_url_v2. Was noch im Feld steht, kommt vorher dazu. */
+    function zielSenden() {
       var p = popup;
-      if (!p || p.warte || !p.e.urls.length) return;
-      /* 100 URLs je Event (409 impact_event_too_many_urls) -- das Detail kennt die Zahl schon. */
+      if (!p || p.warte) return;
+      if (String(p.e.eingabe || "").trim() && !eingabeUebernehmen(p)) return;
+      if (!p.e.ziele.length) return;
       var d = state.detail[p.eventId];
+      if (zieleDa()) {
+        var schon = d && isArr(d.targets) ? d.targets.length : 0;
+        if (schon + p.e.ziele.length > ZIEL_MAX) { feldFehlerZeigen(p, "impact_event_too_many_targets", "", fehlerText("impact_event_too_many_targets")); return; }
+        warten(p, "ziel");
+        rufen("uevAddTarget", { p_event_id: p.eventId, p_targets: p.e.ziele.map(function (z) { return { kind: z.kind, input: z.input }; }) }, { popup: p });
+        return;
+      }
+      /* 100 URLs je Event (409 impact_event_too_many_urls) -- das Detail kennt die Zahl schon. */
       if (d && isArr(d.urls) && d.urls.length >= URL_MAX) {
         feldFehlerZeigen(p, "impact_event_too_many_urls", "", fehlerText("impact_event_too_many_urls"));
         return;
       }
-      var b = { p_event_id: p.eventId, p_url: p.e.urls[0].url };
+      var b = { p_event_id: p.eventId, p_url: p.e.ziele[0].input };
       if (!vorabPruefen(p, b)) return;
       warten(p, "url");
       rufen("uevAddUrl", b, { popup: p });
@@ -2848,6 +4093,11 @@
       if (w) { clearTimeout(w.uhr); wartend.urlWeg = null; w.api.busy("ok", false); w.api.schliessen(); }
       if (UC.toast) UC.toast(txt || fehlerText(""), { kind: "error" });
     }
+    function zielWegFehler(txt) {
+      var w = wartend.zielWeg;
+      if (w) { clearTimeout(w.uhr); wartend.zielWeg = null; w.api.busy("ok", false); w.api.schliessen(); }
+      if (UC.toast) UC.toast(txt || fehlerText(""), { kind: "error" });
+    }
     /* Ist seit dem Klick schon eine neue Liste gekommen, entscheidet sie sofort; sonst wird eine
        angefordert (upEventsChanged), und das Abo unten entscheidet, wenn sie da ist. Kommt keine,
        endet das Warten an der Uhr des Dialogs. */
@@ -2875,19 +4125,27 @@
       clearTimeout(p.warteUhr);
       p.warte = null;
       p.api.busy(p.knopf, false);
+      /* Die Anleitung geht im Detail weiter (Kennzahlen, Vergleich, Ziele) -- das Schliessen des
+         Popups darf sie darum nicht beenden (popupZu fragt anleitungImDetail). */
+      if (art === "anlegen" && anleitung && anleitung.laeuft()) anlInsDetail = true;
       p.api.schliessen();
       listeNeu();
-      if (art === "anlegen") { if (UC.toast) UC.toast(t("Event created")); oeffnen(id, true, false, true); }
-      else if (UC.toast) UC.toast(t(art === "url" ? "URL added" : "Event updated"));
+      if (art === "anlegen") {
+        if (UC.toast) UC.toast(t("Event created"));
+        oeffnen(id, true, false, true);
+        if (anlInsDetail) setTimeout(function () { anlInsDetail = false; anleitungZeige("d1"); }, 60);
+      }
+      else if (UC.toast) UC.toast(t(art === "url" ? "URL added" : art === "ziel" ? "Added to tracking" : "Event updated"));
     }
     /* Welcher Schritt einen Fehler beheben kann -- dorthin springt das Popup, die Meldung bleibt. */
     var FEHLER_SCHRITT = {
       impact_event_name_required: 1, impact_event_invalid_date: 1,
       impact_event_topics_required: 2, impact_event_invalid_topics: 2, impact_event_no_active_prompts: 2,
-      impact_event_invalid_url: 3, impact_event_too_many_urls: 3
+      impact_event_invalid_url: 3, impact_event_too_many_urls: 3,
+      impact_event_invalid_target: 3, impact_event_too_many_targets: 3, impact_event_target_duplicate: 3, impact_event_targets_unavailable: 3
     };
     /* Der Schritt des Anlegen-Popups, in dem ein Feld steht (13.10.: das Feld aus hint). */
-    var FELD_SCHRITT = { name: 1, datum: 1, typ: 1, text: 1, aussehen: 1, topics: 2, urls: 3, cover: 3 };
+    var FELD_SCHRITT = { name: 1, datum: 1, typ: 1, text: 1, aussehen: 1, topics: 2, ziele: 3, cover: 4 };
     /* Eine Meldung an ihr Feld: im Anlegen-Popup erst in den Schritt, der es zeigt (die Meldung
        unten bleibt dann leer), sonst direkt. Hat das Popup das Feld nicht (ein Topic-Fehler im
        Bearbeiten), steht sie in der Fehlerzeile des Popups. */
@@ -2895,6 +4153,11 @@
       var f = feldVonFehler(code, hint);
       var n = p.art === "anlegen" ? (FELD_SCHRITT[f] || FEHLER_SCHRITT[code] || 0) : 0;
       if (n && n !== p.schritt) schritt(n, true);
+      /* Regeln gibt es nicht (create v3 fehlt): Schritt 3 bietet ab jetzt nur noch, was geht. */
+      if (code === "impact_event_targets_unavailable" && f === "ziele") {
+        if (p.e.zielArt && p.e.zielArt !== "url" && p.e.zielArt !== "marke") p.e.zielArt = "url";
+        zieleZeigen(p, true);
+      }
       if (!feldFehler(f, txt)) p.api.fehler(txt);
     }
     function popupFehlerKam(txt, code, hint) {
@@ -2917,8 +4180,13 @@
       var p = popup;
       if (!p) return;
       clearTimeout(p.warteUhr); clearTimeout(p.vorschauUhr);
+      if (p.zv) clearTimeout(p.zv.uhr);
+      if (p.sm && p.sm.lb) { try { p.sm.lb.stop(); } catch (e) {} }
       if (p.maschine) p.maschine.abbrechen();
       popup = null;
+      /* Die Anleitung steht noch in einem Schritt des Popups (nicht auf dem Weg ins Detail):
+         mit dem Popup ist sie zu Ende. */
+      if (anleitung && anleitung.laeuft() && !anleitungImDetail()) anleitung.stop("popup");
     }
     function popupAufbauen(p) {
       popup = p;
@@ -2940,28 +4208,15 @@
         return;
       }
       var e = { name: "", datum: heuteIso(), monat: null, typ: "", text: "", icon: null, farbe: null, cover: null, offen: null,
-                modus: "topics", topics: [], tagModus: "or", urls: [] };
+                modus: "topics", topics: [], tagModus: "or", zielArt: null, unterdomains: false, ziele: [], eingabe: "", artVonHand: false };
       var api = UC.makeModal({
         titel: "Create event", unter: schrittText(1), breit: true, isDark: isDark,
         inhaltHtml: '<div class="uev-schritt" data-schritt="1">' + detailFelder(e, true) + '</div>' +
           '<div class="uev-schritt" data-schritt="2" hidden></div>' +
-          '<div class="uev-schritt" data-schritt="3" hidden></div>',
+          '<div class="uev-schritt" data-schritt="3" hidden></div>' +
+          '<div class="uev-schritt" data-schritt="4" hidden></div>',
         knoepfe: [{ id: "zurueck", text: "Back", art: "sec", aktion: function () { schritt(popup.schritt - 1); return false; } },
-                  { id: "weiter", text: "Continue", art: "pri", aktion: function () {
-                    var p = popup;
-                    if (!schrittOk(p)) return false;
-                    if (p.schritt < 3) { schritt(p.schritt + 1); return false; }
-                    /* Ohne URLs: der Knopf fragt nach, und das Feld "Affected URLs" bekommt den Fokus
-                       (04.10.) -- wer doch eine URL will, tippt sofort los. */
-                    if (!p.e.urls.length && !p.ohneUrlsFrage) {
-                      p.ohneUrlsFrage = true; knoepfeSync();
-                      var ein = im(".uev-urlein");
-                      try { if (ein) ein.focus(); } catch (e) {}
-                      return false;
-                    }
-                    anlegenSenden();
-                    return false;
-                  } }],
+                  { id: "weiter", text: "Continue", art: "pri", aktion: function () { weiterImPopup(); return false; } }],
         onClose: popupZu
       });
       api.body.querySelector('.uev-schritt[data-schritt="1"]').__uevGebaut = 1;
@@ -2969,6 +4224,36 @@
       sucheBauen(p);
       popupAufbauen(p);
       schritt(1);
+      verfuegbarkeitHolen(function () {
+        var b3 = p.api.body.querySelector('.uev-schritt[data-schritt="3"]');
+        if (popup === p && b3 && b3.__uevGebaut) zieleNeuBauen(p);
+      });
+      /* Beim ERSTEN Anlegen laeuft die Anleitung von selbst mit (gemerkt je Nutzer), ohne den
+         Fokus aus dem Namensfeld zu nehmen. */
+      if (!demo && !anleitungGesehen() && !(anleitung && anleitung.laeuft())) { anleitungMerken(); anleitungStarten("w1", false); }
+    }
+    /* "Continue" (und Next der Anleitung): im Schritt der Ziele zuerst die Eingabe uebernehmen --
+       was im Feld steht, geht nicht verloren. */
+    function weiterImPopup() {
+      var p = popup;
+      if (!p || p.art !== "anlegen") return;
+      if (p.schritt === 3 && p.e.zielArt && p.e.zielArt !== "marke" && String(p.e.eingabe || "").trim() && !eingabeUebernehmen(p)) return;
+      if (!schrittOk(p)) return;
+      if (p.schritt < 4) { schritt(p.schritt + 1); return; }
+      anlegenSenden();
+    }
+    /* Die Verfuegbarkeit kam, nachdem Schritt 3 schon stand: Wahl und Eingabe neu bauen, die
+       Eingaben bleiben (sie stehen in p.e). */
+    function zieleNeuBauen(p) {
+      var ort = p.api.body.querySelector(".uev-ziel");
+      if (!ort) return;
+      if (p.e.zielArt && !artenFuer(p).some(function (a) { return a.k === p.e.zielArt; })) p.e.zielArt = p.art === "ziel" ? "url" : null;
+      var feldEl = ort.closest(".up-topicmodal-field");
+      var tmp = document.createElement("div");
+      tmp.innerHTML = zielFelder(p);
+      if (feldEl && tmp.firstChild) feldEl.parentNode.replaceChild(tmp.firstChild, feldEl);
+      if (p.sm && p.sm.offen) smZeichnen(p);
+      zieleZeigen(p, false);
     }
     function popupBearbeiten(eid) {
       if (popup) return;
@@ -2987,22 +4272,27 @@
       });
       popupAufbauen({ art: "bearbeiten", api: api, e: e, alt: alt, eventId: String(ev.id), knopf: "speichern", pops: {} });
     }
-    function popupUrl() {
+    /* ADD (15.10., vorher "Add URL"): dieselben Ziel-Arten wie Schritt 3, ohne "Brand metrics
+       only", mit Sitemap-Waehler. Ohne Ziele in der Datenbank genau der alte Dialog: eine URL. */
+    function popupZiel() {
       if (popup) return;
       var d = dieDetail();
       if (!d) return;
+      var regeln = zieleDa();
+      var e = { zielArt: "url", unterdomains: false, ziele: [], eingabe: "", artVonHand: false };
+      var p = { art: "ziel", e: e, eventId: String(d.id), knopf: "hinzu", pops: {} };
       var api = UC.makeModal({
-        titel: "Add URL", breit: true, isDark: isDark,
-        inhaltHtml: '<div class="uev-schritt">' +
-          '<p class="up-modal-hinweis">' + esc(t("Observations are counted from the event date, also for URLs you add now.")) + '</p>' +
-          urlSuche() + feldFehlerHtml("urls") + '<div class="uev-urlauswahl"></div></div>',
+        titel: regeln ? "What should we track?" : "Add URL", breit: true, isDark: isDark,
+        inhaltHtml: '<div class="uev-schritt">' + zielFelder(p) + '</div>',
         knoepfe: [{ id: "abbrechen", text: "Cancel", art: "sec" },
-                  { id: "hinzu", text: "Add URL", art: "pri", aktion: function () { if (schrittOk(popup)) urlSenden(); return false; } }],
+                  { id: "hinzu", text: regeln ? "Add" : "Add URL", art: "pri", aktion: function () { zielSenden(); return false; } }],
         onClose: popupZu
       });
-      var p = { art: "url", api: api, e: { urls: [] }, eventId: String(d.id), knopf: "hinzu", pops: {} };
+      p.api = api;
       sucheBauen(p);
       popupAufbauen(p);
+      zieleZeigen(p, false);
+      verfuegbarkeitHolen(function () { if (popup === p && zieleDa() !== regeln) zieleNeuBauen(p); });
     }
 
     /* ---- Eingaben im Popup ------------------------------------------------------------------ */
@@ -3098,15 +4388,52 @@
         return;
       }
       var nz = x.closest("[data-neu-url]");
-      if (nz) { urlNehmen(nz.getAttribute("data-neu-url"), true); return; }
+      if (nz) { if (!nz.classList.contains("is-taken")) urlNehmen(nz.getAttribute("data-neu-url")); return; }
       var hit = x.closest(".uev-urltreffer [data-esi]");
-      if (hit) { var it = (p.such.treffer || [])[parseInt(hit.getAttribute("data-esi"), 10)]; if (it) urlNehmen(it.url, false); return; }
-      var weg = x.closest("[data-url-weg]");
-      if (weg) {
-        p.e.urls.splice(parseInt(weg.getAttribute("data-url-weg"), 10), 1);
-        feldFehler("urls", "");
-        auswahlZeigen(); trefferZeigen(); pruefenZeigen(); knoepfeSync();
+      if (hit) { var it = (p.such.treffer || [])[parseInt(hit.getAttribute("data-esi"), 10)]; if (it) urlNehmen(it.url); return; }
+      /* ---- Ziele (15.10.) ---- */
+      var art = x.closest("[data-art]");
+      if (art) { artWaehlen(p, art.getAttribute("data-art"), true); return; }
+      var ud = x.closest("[data-unterdomains]");
+      if (ud) { p.e.unterVonHand = true; unterdomainsUmschalten(p); return; }
+      if (x.closest(".uev-zielhinzu")) { if (eingabeUebernehmen(p)) { var f0 = im(".uev-zielein"); try { if (f0) f0.focus(); } catch (e0) {} } return; }
+      /* data-url-weg wie vor dem 15.10.: die Liste traegt jetzt Ziele, der Knopf ist derselbe. */
+      var zw = x.closest("[data-url-weg]");
+      if (zw) {
+        p.e.ziele.splice(parseInt(zw.getAttribute("data-url-weg"), 10), 1);
+        feldFehler("ziele", "");
+        zieleZeigen(p);
+        var f1 = im(".uev-zielein");
+        try { if (f1) f1.focus(); } catch (e1) {}
+        return;
       }
+      var eb = x.closest("[data-eigen-host]");
+      if (eb) { if (!eb.disabled) alsEigeneZaehlen(p, eb.getAttribute("data-eigen-host")); return; }
+      var st = x.closest("[data-statt-alt]");
+      if (st) { hostErsetzen(p, st.getAttribute("data-statt-alt"), st.getAttribute("data-statt-neu")); return; }
+      /* ---- Sitemap ---- */
+      var sa = x.closest(".uev-sm-auf");
+      if (sa) { smOeffnen(p, sa.getAttribute("data-sm-url") || "", !!sa.getAttribute("data-sm-url")); return; }
+      if (x.closest(".uev-sm-zu")) { smZu(p); return; }
+      if (x.closest(".uev-sm-laden")) { smLaden(p); return; }
+      if (x.closest(".uev-sm-nehmen")) { smUebernehmen(p); return; }
+      if (x.closest(".uev-sm-suche-x")) { p.sm.suche = ""; var sx = im(".uev-sm-suche"); if (sx) { sx.value = ""; try { sx.focus(); } catch (e2) {} } smZeichnen(p); return; }
+      var sk = x.closest("[data-sm-klapp]");
+      if (sk) { var kk = sk.getAttribute("data-sm-klapp"); p.sm.auf[kk] = !p.sm.auf[kk]; smZeichnen(p); smFokus(p, kk); return; }
+      var sal = x.closest("[data-sm-alle]");
+      if (sal) { smAlleImOrdner(p, sal.getAttribute("data-sm-alle")); return; }
+      var sme = x.closest("[data-sm-mehr]");
+      if (sme) { var km = sme.getAttribute("data-sm-mehr"); p.sm.mehr[km] = (p.sm.mehr[km] || 0) + SM_MEHR; smZeichnen(p); return; }
+      var sw = x.closest("[data-sm-wahl]");
+      if (sw) { smUmschalten(p, sw.getAttribute("data-sm-wahl")); return; }
+    }
+    function unterdomainsUmschalten(p) {
+      p.e.unterdomains = !p.e.unterdomains;
+      var sw = im("[data-unterdomains]");
+      if (sw) { sw.classList.toggle("is-on", p.e.unterdomains); sw.setAttribute("aria-checked", String(p.e.unterdomains)); }
+      var bsp = im('[data-art="host"] .uev-art-bsp');
+      if (bsp) bsp.textContent = p.e.unterdomains ? "*.example.com/*" : "blog.example.com/*";
+      zieleZeigen(p);
     }
     function popupEingabe(ev) {
       var p = popup, x = ev.target;
@@ -3122,18 +4449,39 @@
       if (x.matches(".uev-typsuche")) { p.typSuche = x.value; typListeZeigen(); return; }
       if (x.matches(".uev-topicsuche")) { p.topicSuche = x.value; topicsZeigen(); return; }
       if (x.matches(".uev-typeigen")) { var add = im(".uev-typeigen-add"); if (add) add.disabled = !typEigenOk(p); return; }
-      if (x.matches(".uev-urlein")) {
-        feldFehler("urls", "");
-        p.such.frage = x.value;
-        if (p.maschine) p.maschine.tippen(x.value);
+      if (x.matches(".uev-zielein")) {
+        feldFehler("ziele", "");
+        feldHoehe(x);
+        p.e.eingabe = x.value;
+        /* Die passende Art vorschlagen, solange niemand selbst eine gewaehlt hat (15.10.). Leer
+           gibt die Wahl wieder frei. */
+        if (!String(x.value).trim()) { p.e.artVonHand = false; p.e.unterVonHand = false; }
+        var vs = artVorschlag(x.value);
+        if (!p.e.artVonHand && vs && vs !== "sitemap") {
+          var k = vs === "host_all" ? "host" : vs;
+          if (artenFuer(p).some(function (a) { return a.k === k; })) {
+            /* "*.host" schaltet die Unterdomains an, ein blosser Host wieder aus -- solange
+               niemand den Schalter selbst bedient hat. */
+            if (k === "host" && !p.e.unterVonHand && p.e.unterdomains !== (vs === "host_all")) unterdomainsUmschalten(p);
+            if (k !== p.e.zielArt) artWaehlen(p, k, false);
+          }
+        }
+        p.such.frage = leseArt(p.e) === "url" && eingabeTeile(x.value).length === 1 ? x.value : "";
+        if (p.maschine) p.maschine.tippen(p.such.frage);
+        schreibweiseZeigen(p);
         trefferZeigen();
+        vzAnfordern(p);
+        knoepfeSync();
+        return;
       }
+      if (x.matches(".uev-sm-suche")) { p.sm.suche = x.value; smZeichnen(p); return; }
     }
     /* Enter: im Namen weiter zum naechsten Schritt (wie Speichern im Topic-Dialog), in der Suche
        die eingefuegte Adresse als neues Ziel uebernehmen. */
     function popupTaste(ev) {
       var p = popup, x = ev.target;
       if (p && ev.key === " " && x && x.matches && x.matches(".uev-topicitem")) { ev.preventDefault(); topicUmschalten(x.getAttribute("data-topic-id")); return; }
+      if (p && x && x.matches && zieleTaste(p, ev, x)) return;
       if (!p || ev.key !== "Enter" || !x || !x.matches) return;
       if (x.matches(".uev-typeigen")) { ev.preventDefault(); typEigenNehmen(); return; }
       if (x.matches(".uev-typitem")) { ev.preventDefault(); x.click(); return; }
@@ -3144,11 +4492,200 @@
         if (b && !b.disabled) b.click();
         return;
       }
-      if (x.matches(".uev-urlein")) {
-        ev.preventDefault();
-        var nz = im(".uev-urltreffer [data-neu-url]:not(.is-taken)");
-        if (nz) urlNehmen(nz.getAttribute("data-neu-url"), true);
+      /* Enter im Zielfeld uebernimmt die Eingabe; Umschalt+Enter ist eine neue Zeile (mehrere URLs). */
+      if (x.matches(".uev-zielein") && !ev.shiftKey) { ev.preventDefault(); eingabeUebernehmen(p); return; }
+      if (x.matches(".uev-sm-ein")) { ev.preventDefault(); smLaden(p); return; }
+    }
+
+    /* Tastatur in Schritt 3 (15.10.): die Wahl ist eine Radiogruppe (Pfeile wechseln, wie in jeder
+       Radiogruppe), der Schalter reagiert auf Leertaste und Enter, der Baum der Sitemap auf
+       Pfeile (hoch/runter: Zeile, rechts/links: auf- und zuklappen) und Leertaste/Enter (waehlen). */
+    function zieleTaste(p, ev, x) {
+      var k = ev.key;
+      if (x.matches("[data-art]")) {
+        if (k === "ArrowDown" || k === "ArrowRight" || k === "ArrowUp" || k === "ArrowLeft") {
+          var l = [].slice.call(p.api.el.querySelectorAll("[data-art]")), i = l.indexOf(x);
+          var j = (i + (k === "ArrowDown" || k === "ArrowRight" ? 1 : -1) + l.length) % l.length;
+          ev.preventDefault();
+          artWaehlen(p, l[j].getAttribute("data-art"), true);
+          try { l[j].focus(); } catch (e) {}
+          return true;
+        }
+        if (k === " " || k === "Enter") { ev.preventDefault(); artWaehlen(p, x.getAttribute("data-art"), true); return true; }
+        return false;
       }
+      if (x.matches("[data-unterdomains]") && (k === " " || k === "Enter")) { ev.preventDefault(); p.e.unterVonHand = true; unterdomainsUmschalten(p); return true; }
+      if (x.matches(".uev-sm-reihe") && p.sm) {
+        var reihen = [].slice.call(p.api.el.querySelectorAll(".uev-sm-baum .uev-sm-reihe")), n = reihen.indexOf(x), key = x.getAttribute("data-sm-wahl");
+        if (k === "ArrowDown" || k === "ArrowUp") {
+          ev.preventDefault();
+          var z = reihen[n + (k === "ArrowDown" ? 1 : -1)];
+          if (z) smFokus(p, z.getAttribute("data-sm-wahl"));
+          return true;
+        }
+        var kn = p.sm.knoten[key];
+        if ((k === "ArrowRight" || k === "ArrowLeft") && kn && kn.art !== "seite") {
+          ev.preventDefault();
+          var auf = k === "ArrowRight";
+          if (!!p.sm.auf[key] !== auf) { p.sm.auf[key] = auf; smZeichnen(p); smFokus(p, key); }
+          return true;
+        }
+        if (k === " " || k === "Enter") { ev.preventDefault(); smUmschalten(p, key); return true; }
+      }
+      return false;
+    }
+
+    /* Einmal je Seitenaufruf fragen, was die Datenbank kann (siehe ZIELE_DA oben). fertig laeuft
+       danach -- auch dann, wenn schon alles bekannt war. */
+    function verfuegbarkeitHolen(fertig) {
+      if (demo || !UC.rpc) return;
+      teamHolen().then(function (tm) {
+        if (!tm) return null;
+        var a = ZIELE_DA.stand != null ? null : (ZIELE_DA.laeuft || (ZIELE_DA.laeuft =
+          UC.rpc("preview_impact_event_targets_v1", { p_team: tm, p_targets: [], p_days: VZ_TAGE }, { timeoutMs: 15000 }).then(function (erg) {
+            ZIELE_DA.laeuft = null;
+            if (fehltFn(erg)) ZIELE_DA.stand = false; else if (!unbekannt(erg)) ZIELE_DA.stand = true;
+          })));
+        var b = SITEMAP_DA.stand != null || !UC.edge ? null : (SITEMAP_DA.laeuft || (SITEMAP_DA.laeuft =
+          UC.edge("sitemap-lesen", { team_id: tm, url: "" }, { timeoutMs: 15000 }).then(function (erg) {
+            SITEMAP_DA.laeuft = null;
+            if (edgeFehlt(erg)) SITEMAP_DA.stand = false; else if (!unbekannt(erg)) SITEMAP_DA.stand = true;
+          })));
+        return Promise.all([a, b]);
+      }).then(function () {
+        if (root.isConnected === false) return;
+        /* Der Kopf des Details sagt "Add" erst, wenn der Dialog mehr als eine URL kann. */
+        var tx = elAktion.querySelector(".uev-addurl-txt");
+        if (tx) tx.textContent = t(zieleDa() ? "Add" : "Add URL");
+        if (fertig) { try { fertig(); } catch (e) {} }
+      });
+    }
+
+    /* ---- DIE ANLEITUNG (15.10., UC.makeAnleitung aus core) ---------------------------------
+       Laeuft beim ERSTEN Anlegen eines Events von selbst mit (gemerkt je Nutzer, localStorage
+       wie die anderen Vorlieben dieses Geraets), und der Knopf im Seitenkopf schaltet sie an und
+       aus. Sie fuehrt durch die vier Schritte des Anlegens und danach kurz durch das Detail:
+       Kennzahlen, Vergleich, Ziele. Wo man gerade ist, dort beginnt sie: in der Uebersicht am
+       Knopf "Create event", im offenen Popup bei dessen Schritt, im Detail bei den Kennzahlen.
+       Im Popup ist ihr Next dasselbe wie "Continue" (gesperrt, solange Continue gesperrt ist),
+       im letzten Schritt heisst er wie der Knopf des Popups: "Create event". Die Karte haengt
+       neben dem Popup (rahmen), auf schmalen Bildschirmen unten am Fenster. */
+    var ANL_KEY = "up_anleitung_v1", anleitung = null, anlInsDetail = false;
+    function anlNutzer() { try { return (UC.nutzerId && UC.nutzerId()) || "_"; } catch (e) { return "_"; } }
+    function anlLesen() { try { var o = JSON.parse(window.localStorage.getItem(UC.prefKey ? UC.prefKey(ANL_KEY) : ANL_KEY) || "{}"); return o && typeof o === "object" ? o : {}; } catch (e) { return {}; } }
+    function anleitungGesehen() { var o = anlLesen()[anlNutzer()]; return !!(o && o.events); }
+    function anleitungMerken() {
+      var o = anlLesen(), k = anlNutzer();
+      o[k] = o[k] && typeof o[k] === "object" ? o[k] : {};
+      o[k].events = 1;
+      try { window.localStorage.setItem(UC.prefKey ? UC.prefKey(ANL_KEY) : ANL_KEY, JSON.stringify(o)); } catch (e) {}
+    }
+    function anlZeile(ic, txt) { return '<span class="up-explain-row">' + UC.icon(ic, 2) + '<span>' + esc(txt) + '</span></span>'; }
+    function anlLegende() {
+      return '<span class="up-explain-row">' + legLinie(false) + '<span>' + esc(t("Affected prompts")) + '</span></span>' +
+        '<span class="up-explain-row">' + legLinie(true) + '<span>' + esc(t("Comparison group")) + '</span></span>';
+    }
+    function popupKarte() { return popup ? popup.api.karte : null; }
+    function anlImPopup(id) { return { mount: popupKarte, rahmen: popupKarte, seiten: ["rechts", "links"],
+      weiter: function () { weiterImPopup(); },
+      weiterAus: function () { return !popup || popup.art !== "anlegen" || !!popup.warte || !schrittOk(popup); },
+      zurueck: id === "w1" ? false : function () { if (popup) schritt(popup.schritt - 1); } }; }
+    function anlSchritt(o, extra) { for (var k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) o[k] = extra[k]; return o; }
+    var ANL_SCHRITTE = [
+      { id: "kopf", seiten: ["unten", "links"], zurueck: false,
+        ziel: function () { return elAktion.querySelector(".uev-anlegen"); },
+        titel: "Create an event",
+        text: "An event marks a change, such as a relaunch or a campaign, and Upstreem compares your AI results before and after it.",
+        vis: function () { return anlZeile("tickets", t("Website relaunch")) + anlZeile("calendar", datum(heuteIso())); },
+        weiter: function () { popupAnlegen(); } },
+      anlSchritt({ id: "w1", ziel: function () { return im('[data-feld="name"]'); },
+        titel: "Name, date and type",
+        text: "The date is the comparison point: Upstreem compares the days before it with the days after it.",
+        vis: function () { return anlZeile("calendar", datum(heuteIso())) + '<span class="up-explain-row"><span>' + esc(t("Before")) + '</span>' + UC.icon("arrowRight", 2) + '<span>' + esc(t("After")) + '</span></span>'; } }, anlImPopup("w1")),
+      anlSchritt({ id: "w2", ziel: function () { return im(".uev-umfang"); },
+        titel: "Which prompts are affected?",
+        text: "These prompts are fixed when you create the event, and your other prompts form a comparison group that shows what would have happened anyway.",
+        vis: anlLegende }, anlImPopup("w2")),
+      anlSchritt({ id: "w3", ziel: function () { return im(".uev-arten-ort") || im(".uev-ziel"); },
+        titel: "What should we track?",
+        text: function () { return zieleDa()
+          ? "A rule like example.com/blog/* also counts new articles once an AI cites them, and you can load your sitemap or count a domain as yours right here."
+          : "Pick the pages that belong to this change, or keep it to brand metrics."; },
+        vis: function () { return zieleDa() ? anlZeile("folder", "example.com/blog/*") + anlZeile("globe", "*.example.com/*") : anlZeile("link", "example.com/blog/launch"); } }, anlImPopup("w3")),
+      anlSchritt({ id: "w4", ziel: function () { return im(".uev-vorschau") || im(".uev-pruef"); },
+        titel: "Check and create",
+        text: "Check the preview and create the event, since date and prompts can't be changed later.",
+        vis: function () { return anlZeile("lock", t("Date and scope can't be changed later")); },
+        knopf: "Create event" }, anlImPopup("w4")),
+      { id: "d1", seiten: ["unten", "oben"], zurueck: false,
+        ziel: function () { return elMain.querySelector('[data-sek="kpis"]'); },
+        titel: "Before and after",
+        text: "Each number shows how your brand moved since the event, and vs. comparison shows how much more than in your other prompts.",
+        vis: function () {
+          return '<span class="up-explain-row"><span>' + esc(UC.fmtPct ? UC.fmtPct(34.3, 1) : "34.3%") + '</span><span class="up-explain-up">+' + esc(UC.fmtPct ? UC.fmtPct(4.7, 1) : "4.7%") + '</span></span>' +
+            '<span class="up-explain-row"><span>' + esc(t("vs. comparison")) + '</span><span class="up-explain-up">+' + esc(UC.fmtPct ? UC.fmtPct(2.1, 1) : "2.1%") + '</span></span>';
+        } },
+      { id: "d2", seiten: ["oben", "unten", "rechts", "links"],
+        ziel: function () { return elMain.querySelector(".uev-sek-chart .uev-chartbox"); },
+        titel: "Compared with the rest",
+        text: "The solid line shows the affected prompts and the dashed line the comparison group, so a gap that opens after the event is its effect.",
+        vis: anlLegende },
+      /* Der Kopf des Abschnitts, nicht der Abschnitt: der ist mit Kennzahlen, Verlauf und Tabelle
+         hoeher als das Fenster, und die Karte fand daneben keinen Platz (gemessen: angedockt). */
+      { id: "d3", seiten: ["unten", "oben", "rechts", "links"],
+        ziel: function () { return elMain.querySelector(".uev-zielsek .uev-sec-head") || elMain.querySelector('[data-sek="urls"] .uev-sec-head'); },
+        titel: "What you track",
+        text: function () { return regelZiele(dieDetail()).length || (dieDetail() && isArr(dieDetail().urls) && dieDetail().urls.length)
+          ? "Here you see which of your pages AI answers cited after the event, including new pages that match your rules."
+          : "Add pages or rules at any time with Add at the top of the page."; },
+        vis: function () { return anlZeile("folder", "example.com/blog/*") + anlZeile("fileText", ersetze(t("{n} new URLs after the event"), { n: 3 })); } }
+    ];
+    function anleitungBauen() {
+      if (anleitung || !UC.makeAnleitung) return anleitung;
+      anleitung = UC.makeAnleitung({
+        schritte: ANL_SCHRITTE, getIsDark: isDark,
+        onSchritt: function () { anleitungKnopfSync(); },
+        onEnde: function () { anlInsDetail = false; anleitungKnopfSync(); }
+      });
+      return anleitung;
+    }
+    function anleitungStarten(id, fokus) {
+      var a = anleitungBauen();
+      if (!a) return;
+      var i = a.indexVon(id);
+      if (i >= 0) a.start(i, { fokus: !!fokus });
+      /* Wer sie einmal gesehen hat (auch ueber den Knopf), bekommt sie nicht mehr von selbst. */
+      anleitungMerken();
+      anleitungKnopfSync();
+    }
+    function anleitungZeige(id) {
+      if (!anleitung || !anleitung.laeuft()) return;
+      var i = anleitung.indexVon(id);
+      if (i >= 0 && i !== anleitung.index()) anleitung.zeige(i);
+    }
+    /* Das Popup hat den Schritt gewechselt (Continue, Back, ein Fehler): die Anleitung folgt. */
+    function anleitungFolgen() {
+      if (!anleitung || !anleitung.laeuft() || !popup || popup.art !== "anlegen") return;
+      anleitungZeige("w" + popup.schritt);
+    }
+    function anleitungImDetail() { return anlInsDetail; }
+    function anleitungUmschalten() {
+      if (anleitung && anleitung.laeuft()) { anleitung.stop("aus"); return; }
+      if (popup && popup.art === "anlegen") anleitungStarten("w" + popup.schritt, true);
+      else if (state.ansicht === "detail") anleitungStarten("d1", true);
+      else anleitungStarten("kopf", true);
+    }
+    function anleitungKnopf() {
+      var an = !!(anleitung && anleitung.laeuft());
+      return '<button type="button" class="up-iconbtn uev-anl-toggle" aria-pressed="' + an + '" aria-label="' + esc(t("Step-by-step guide")) + '"' +
+        ' data-tip="' + esc(t(an ? "Hide guide" : "Show guide")) + '">' + UC.icon("signpost", 2) + '</button>';
+    }
+    function anleitungKnopfSync() {
+      var b = elAktion && elAktion.querySelector(".uev-anl-toggle");
+      if (!b) return;
+      var an = !!(anleitung && anleitung.laeuft());
+      b.setAttribute("aria-pressed", String(an));
+      b.setAttribute("data-tip", t(an ? "Hide guide" : "Show guide"));
     }
 
     /* ---- Abos ----------------------------------------------------------------------------- */
@@ -3197,18 +4734,31 @@
           renderDetail();
           return false;
         }
-        var id = String(d.id), neu = !state.detail[id];
+        var id = String(d.id), neu = !state.detail[id], alt = state.detail[id];
+        /* Eine Antwort OHNE targets[] (v2: Bearbeiten, URL hinzufuegen und entfernen laufen weiter
+           ueber v2) auf ein Detail MIT Zielen: die Regeln bleiben, die URL-Ziele kommen aus den
+           neuen urls[] -- sonst verschwaenden die Abschnitte der Regeln nach jedem Umbenennen. */
+        if (alt && isArr(alt.targets) && !isArr(d.targets)) {
+          var behalten = alt.targets.filter(function (x) { return x && x.kind !== "url"; });
+          d.targets = behalten.concat((isArr(d.urls) ? d.urls : []).map(function (u) { return { id: u.id, kind: "url", value: u.url, input: u.url_input || u.url, created_at: u.created_at }; }));
+        }
         /* Hat sich die URL-Liste geaendert (URL hinzugefuegt oder entfernt), stimmt die Analyse
            nicht mehr -- Vertrag 3.9: "nach einer URL-Aenderung einfach neu laden". Das macht die
-           Komponente selbst, Bubble braucht dafuer keinen zweiten Schritt. */
-        function urlSatz(x) { return (x && isArr(x.urls) ? x.urls.map(function (u) { return u.id; }) : []).sort().join(","); }
-        var urlsNeu = !neu && urlSatz(state.detail[id]) !== urlSatz(d);
+           Komponente selbst, Bubble braucht dafuer keinen zweiten Schritt. Seit 15.10. zaehlen
+           die Ziele mit (eine Regel dazu oder weg). */
+        function urlSatz(x) {
+          var l = (x && isArr(x.urls) ? x.urls.map(function (u) { return "u" + u.id; }) : []);
+          if (x && isArr(x.targets)) x.targets.forEach(function (z) { if (z && z.kind !== "url") l.push("z" + z.id); });
+          return l.sort().join(",");
+        }
+        var urlsNeu = !neu && urlSatz(alt) !== urlSatz(d);
         state.detail[id] = d;
         state.detailLaden = false; state.detailFehler = false;
         persist();
         /* Ein Detail-Objekt ist auch die Antwort auf Anlegen, Bearbeiten, URL hinzufuegen und
            entfernen -- also schliesst es ein wartendes Popup dieser Art. */
         if (!lesen && wartend.urlWeg && wartend.urlWeg.eventId === id) { var api1 = wartend.urlWeg.api; clearTimeout(wartend.urlWeg.uhr); wartend.urlWeg = null; api1.busy("ok", false); api1.schliessen(); listeNeu(); }
+        if (!lesen && wartend.zielWeg && wartend.zielWeg.eventId === id) { var api3 = wartend.zielWeg.api; clearTimeout(wartend.zielWeg.uhr); wartend.zielWeg = null; api3.busy("ok", false); api3.schliessen(); listeNeu(); }
         if (!lesen) popupDetailKam(d, neu);
         if (state.ansicht === "detail" && state.eventId === id) {
           if (urlsNeu) { analyseAnfordern(); responsesAnfordern(false, true); }
@@ -3352,6 +4902,8 @@
        sogar beim Teamwechsel"): ausserhalb nicht in der Adresse, beim Zurueckkommen wieder da, nach
        einem Teamwechsel weg -- auch ueber ein Neuladen hinweg. Vor dem ersten Stand, damit ein
        Parameter aus einem anderen Team gar nicht erst geoeffnet wird. */
+    /* Was die Datenbank schon kann (Ziele, Sitemap) -- einmal je Seitenaufruf, fuer alle Wurzeln. */
+    verfuegbarkeitHolen();
     if (UC.ansichtsParameter) UC.ansichtsParameter({ ansicht: "events", schluessel: ["event"], owner: root,
       onTeamWechsel: function () { if (state.ansicht === "detail") zurUebersicht(false); } });
     /* Erster Stand: die Adresse entscheidet. spaet=true fuer einen Tiefenlink: seit 13.10. wartet
