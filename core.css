@@ -729,14 +729,14 @@
    contain-Regel bei (0,0,0) -- jede eigene Angabe einer Komponente gewinnt weiterhin. Ein neues
    Popup mit eigener Rollflaeche traegt sich in BEIDE Listen ein (sie sind gleich). */
 .up-root.up-root, .up-root.up-root *:not(:where(
-  .up-topicmodal-card, .uex-body, .uca-body, .uca-bld-list, .uca-how, .ums-aside, .ums-main,
+  .up-topicmodal-card, .uex-body, .uex-nav, .uca-body, .uca-bld-list, .uca-how, .ums-aside, .ums-main,
   .am-set-aside, .am-set-main, .uap-list, .uap-list-opts, .upt-gm-list, .up-cgm-list, .upt-topiclist,
   .up-kdr-koerper, .up-sdrawer-body, .uo-m-body,
   .up-filter-list, .utf-list, .umf-list, .umk-list, .upr-dd-list, .combo-filter-menu,
   .am-rep-range-menu, .am-pick-scroll, .up-cols-menu, .usn-menu, .usn-teamlist, .uob-help-body,
   .uev-urltreffer, .uev-sm-baum)) { overscroll-behavior: auto !important; }
 :where(
-  .up-topicmodal-card, .uex-body, .uca-body, .uca-bld-list, .uca-how, .ums-aside, .ums-main,
+  .up-topicmodal-card, .uex-body, .uex-nav, .uca-body, .uca-bld-list, .uca-how, .ums-aside, .ums-main,
   .am-set-aside, .am-set-main, .uap-list, .uap-list-opts, .upt-gm-list, .up-cgm-list, .upt-topiclist,
   .up-kdr-koerper, .up-sdrawer-body, .uo-m-body,
   .up-filter-list, .utf-list, .umf-list, .umk-list, .upr-dd-list, .combo-filter-menu,

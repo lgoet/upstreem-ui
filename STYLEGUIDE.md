@@ -2730,56 +2730,84 @@ Bulk-Action-Bar am `document.body`); diese Leiste fuehrt die Marken deshalb selb
 
 Genutzt von: prompts-table (Topics-Zelle, Topics-Editor in der Bulk-Bar).
 
-## 27a. Der Export-Dialog: Variante D „Schnellweg aus dem Kontext“ (seit 16.10.)
+## 27a. Der Export-Dialog: Variante C „Zweispaltig“ (seit 16.10.)
 
-`export-data.js`/`.css` (Präfix `uex`), vom Nutzer aus vier Varianten gewählt. Vorbilder: Vercel Logs
-(exportiert, was man gerade sieht), Airtable und Attio (die Ansicht ist der Export), Ahrefs
-(Zeilengrenze vorab genannt). Der Dialog öffnet **vorbelegt** mit dem Datensatz der Seite, dem Filter
-des Drawers und dem Zeitraum; ein Klick (Enter) genügt.
+`export-data.js`/`.css` (Präfix `uex`), vom Nutzer aus der Leinwand „Export-Varianten“ gewählt (löst
+Variante D vom selben Tag ab). Vorbilder: Figmas Export-Fenster (Liste links, Einstellungen rechts),
+die Einstellungsflächen von Notion und Linear, die Spaltenwahl wie Attio und Airtable (die sichtbaren
+Spalten sind die Datei). Der Dialog öffnet **vorbelegt** mit dem Datensatz der Seite, dem Filter des
+Drawers und dem Zeitraum; ein Klick (Enter) genügt.
 
-**Hülle** aus §27 (`.up-topicmodal-backdrop/-card/-head/-title`, `.up-popup-close`), Breite **440**,
-Kopf 16/16/0, Inhalt 20/16/16 (im Lauf und fertig 24/16/20), Fuß 0/16/16; der Inhalt rollt
-(`.uex-body`, in core in der Liste der Popup-Rollflächen), Kopf und Fuß stehen. Am Telefon bleibt es
-eine Karte mit 16 Rand und `max-height: calc(100dvh - 32px)`, kein Vollbild.
+**Hülle** aus §27 (`.up-topicmodal-backdrop/-card/-head/-title`, `.up-popup-close`), Breite **760**,
+Titel „Export data“, Kopf 16. Darunter der Rumpf **548** hoch (gibt unter der `max-height` der Karte
+nach): links die Liste **232** (Polster 4/8/8), rechts die Einstellungen (Polster 20/24, Abstand 22
+zwischen den Feldern). Liste und Fuß stehen auf dem Grund der Seite (`--up-seite-grau` /
+`--up-seite-dunkel`), die Karte eine Stufe darüber. Liste (`.uex-nav`) und Einstellungen
+(`.uex-body`) rollen je für sich und stehen in core in beiden Listen der Popup-Rollflächen.
 
-**Kopf:** „Export {Datensatz}“, darunter „From {Bereich}“ (Prompt Insights, Citations, Brands, Shopping,
-Ads -- der Bereich des Datensatzes) und, wo ein Filter mitgeht, „, filtered to“ plus Chip. Der Chip
-ist `.up-entchip.is-static` auf der Chip-Stufe 24 (Polster 8/2, Abstand 6, Radius 4, Grund
-`--up-sel-bg`, kein Rahmen, kein Punkt), Zeichen 12, Kreuz `.up-iconbtn.is-20`. Er steht nur, wo der
-Filter für den gewählten Datensatz wirklich gilt (`FILTER` in export-data.js, dieselbe Liste wie
-`exportParameter`): Domain des Domain-Drawers für URLs und Responses, Adresse des URL-Drawers,
-Prompt und Marke (Name über `filter_label` in `setContext`). Die Filter von Shopping und Ads:
-„From Shopping, with [Page filters]“, ohne Kreuz (sie stehen in der Leiste der Seite).
+**Links, die Datensätze:** alle zwölf in ihren Bereichen (Prompt Insights, Citations, Brands, Shopping,
+Ads mit „Beta“ als `.up-marke.is-akzent` wie in der Seitenleiste), ohne Rollen. Zeile `.up-optrow`
+32 hoch, Radius 6, Schrift 13, Zeichen 16 (Hugeicons), ohne den Zeilenabstand von core; Hover und
+gewählt wie die Preferences (gewählt `--up-wahl-bg` mit Ring `--up-wahl-rand`, Gewicht 500). Eine
+Radiogruppe über alle Bereiche: Pfeiltasten wandern **und wählen**, nur der gewählte Eintrag ist ein
+Tab-Halt; der Bereich hängt per `aria-describedby` am Eintrag. Rechts am Eintrag „Soon“, wo es den
+Export noch nicht gibt (`export_columns_v1` beim Öffnen je Datensatz von Shopping und Ads, einmal im
+Seitenleben), sonst das Filterzeichen, wo ein Kontextfilter gilt. Ohne core-RPC und Team (Bubble-Weg)
+fehlen Shopping und Ads ganz.
 
-**Die Liste der Wahlen:** Rahmen 1, Radius 8, Zeilen ≥ 44 mit Etikett (72, `--vc-third`), Wert
-(500), Nebenangabe (12, `--vc-third`, Ellipse) und „Edit“/„Done“ (12/500, `--vc-muted`). Jede
-Zeile klappt **im Dialog** auf:
-- **Data**: die Datensätze der Gruppe als `.up-pop-opt` mit `.up-check`, `role="radio"`, Pfeiltasten.
-- **Date range**: die vier Presets mit ihrem Zeitraum als Nebenangabe, dazu „Custom range“. Der
-  Kalender aus `filters/date-range.js` kann nicht eingebettet aufklappen (kein Inline-Modus); „Custom
-  range“ öffnet darum sein Feld unter der Zeile (core hebt es in die oberste Ebene). Der unsichtbare
-  Auslöser liegt über der Zeile und nimmt den Mausklick, mit der Tastatur steht man auf der Zeile.
-- **Columns**: die Spalten aus `export_columns_v1` als Checkliste aus core (`.up-filter-*`); die
-  Abwahl ist eine Einstellung je Spaltensatz und bleibt. Keine Spalte gewählt: Knopf gesperrt, Satz
-  „Choose at least one column.“
-- **Format**: fest „CSV“, ohne Edit (es gibt nur eins).
+**Der Kontextfilter gilt nur in seinem Scope.** Ein Drawer setzt Domain, Adresse, Prompt oder Brand
+(`setContext`, Name über `filter_label`). Er gilt für genau die Datensätze, die der Drawer selbst
+gefiltert zeigt **und** deren Funktion ihn als Parameter kennt (`FILTER` in export-data.js, dieselbe
+Liste wie `exportParameter`): Domain → URLs, Responses; Adresse → Responses; Prompt → Responses;
+Brand → Responses, Domains, URLs. Wählt man links einen anderen Datensatz, ist er dort weg (kein
+Chip, kein Parameter); zurück auf einen Datensatz im Scope ist er wieder da. Die Seitenfilter von
+Shopping und Ads gelten je Datensatz, für den die Seite sie meldet (`params`, `filter_aktiv`). Der
+Zeitraum ist eine Einstellung des Dialogs, kein Filter: er bleibt beim Wechsel stehen und steht
+sichtbar im Feld.
 
-Darunter der Hinweis (Zeichen 14, 12/16, `--vc-third`): „Safe to open in Excel and Sheets. Up to
-{Seitengröße × 60} rows.“, bzw. „Exports for … are coming soon.“; ein Fehler steht **allein** als
-roter Satz (`.up-fehlerzeile`, kein Kasten, kein Toast).
+**Rechts, die Einstellungen:** Überschrift 16/600 mit Satz 13 (`--vc-third`, `TYPES.beschr`), dann
+Felder mit Etikett 14/500:
+- **Filters** (nur wenn einer gilt): `.up-entchip.is-static` auf der Chip-Stufe 24 (Polster 8/2,
+  Abstand 6, Radius 4, Grund `--up-sel-bg`), Zeichen 12, Kreuz `.up-iconbtn.is-20`; „Page filters“
+  ohne Kreuz. Das Etikett trägt `data-i18n="Filters"` – das deutsche „Filter“ ist selbst ein Schlüssel.
+- **Date range**: ein Feld 40 hoch, Radius 8, mit Kalenderzeichen, Wert, Zeitraum rechts und Winkel.
+  Der Kalender aus `filters/date-range.js` liegt **unsichtbar** darüber und nimmt den Mausklick, sein
+  Feld (Presets, Reset, Monate) öffnet darunter in der obersten Ebene; Tastatur: Enter auf dem Feld.
+  Ohne Kalender klappt das Feld die vier Presets als Liste auf, mit dem Satz, dass der freie Zeitraum
+  fehlt. Ein Zeitraum, den die Datenbank ablehnt: roter Rand und roter Satz **am Feld**.
+- **Columns**: Kopf mit Zähler („10 of 13 columns“) und „Select all“ (`.up-filter-reset`), darunter die
+  Checkliste aus core (`.up-filter-item/-check`) zweispaltig, aus `export_columns_v1` **schon beim
+  Wählen**; Skelett nur beim ersten Laden eines Spaltensatzes. Die Abwahl ist eine Einstellung je
+  Spaltensatz und bleibt. Keine Spalte: Knopf gesperrt, Satz „Choose at least one column.“ unter der
+  Liste. Ohne Spaltenliste (Bubble-Weg) „All columns“.
+- **Format**: fest „CSV“ (die Leinwand zeigt CSV | Excel; eine Excel-Datei baut die App nicht).
 
-**Läuft:** die große Zahl 28/500 mit „of N rows“ (N = `total_count`, gedeckelt auf die Grenze), ein
-Balken 6 hoch in `--up-accent` auf `--up-sel-bg` -- nur mit echter Gesamtzahl, sonst keiner --,
-„Page k of n. Closing this window stops the export.“ Fuß: „Cancel export“ (`.up-btn-sec.is-lg` mit
-`.up-btn-spin`). Schließen, Escape, Schleier und Cancel brechen ab (Laufnummer: späte Antworten
+Darunter der Hinweis (Zeichen 14, 12/16): „Safe to open in Excel and Sheets. Up to {Seitengröße × 60}
+rows.“ Gibt es den Export noch nicht, stehen unter der Überschrift nur „Exports for … are coming
+soon.“ und der gesperrte Knopf.
+
+**Fuß:** links der Dateiname als Vorschau (Zeichen 14, Mono 12, `--vc-third`, derselbe Name, den der
+Export vergibt), bei einem Fehler an seiner Stelle der rote Satz (`.up-fehlerzeile`, kein Kasten, kein
+Toast); rechts zwei Knöpfe aus core in der Knopfstufe 32: „Cancel“ | „Export {Datensatz}“.
+
+**Läuft:** links ruht die Liste (45 %, `inert`). Rechts „Exporting {Datensatz}“ mit „Closing this
+window stops the export.“, der Balken 6 hoch in `--up-accent` auf `--up-sel-bg` (nur mit echter
+Gesamtzahl aus `total_count`, sonst keiner) mit „k of n rows“ und Prozent, darunter drei Schritte:
+Spalten (Haken), Zeilen mit „Page k of n“ (Kreisel), Datei (Uhr – einen gestrichelten Kreis hat der
+Zeichensatz nicht). Fuß: „Cancel export“ | „Exporting…“ (gesperrt, 70 %, Kreisel); der Fokus steht
+auf „Cancel export“. Schließen, Escape, Schleier und Cancel brechen ab (Laufnummer: späte Antworten
 verfallen).
 
-**Fertig:** `checkCircle` in `--vt-up`, „N rows exported“ 16/600, die Datei als Kachel (Rahmen 1,
-Radius 8, Mono 12 für den Namen, Größe aus `Blob.size`), Fuß zweispaltig „Download again“ |
-„Done“. Gekürzt (60 Seiten erreicht): Satz darunter.
+**Fertig:** `checkCircle` 28 in `--vt-up`, „N rows exported“, „The download started on its own. If
+nothing arrived, download the file again.“, die Datei als Kachel (Rahmen 1, Radius 8, Name Mono 12,
+„2.1 MB, 13 columns, CSV“ aus `Blob.size`) mit „Download again“. Fuß: „Export another“ | „Done“.
+Gekürzt (60 Seiten erreicht): Satz unter der Kachel.
 
-**Knöpfe** nur aus core in der großen Stufe (`.up-btn-pri.is-lg`, `.up-btn-sec.is-lg`); gesperrt ist
-der core-Knopf im disabled-Zustand (40 %). Der Bubble-Weg (ohne Team) wartet wie bisher mit Kreisel.
+**Telefon (unter 640):** zwei Schritte über `data-schritt`: die Liste, dann die Einstellungen mit
+„Back“. Der Dialog öffnet auf den Einstellungen des vorbelegten Datensatzes; in der Liste wählen die
+Pfeiltasten nicht (das hieße den Schritt wechseln), Enter wählt. Die Karte steht in voller
+Fensterhöhe (16 Rand), damit sie beim Schrittwechsel nicht springt; Spalten einspaltig, die Knöpfe
+teilen sich die Breite.
 
 ## 28. Der `*/`-in-CSS-Kommentar-Bug — PFLICHTCHECK vor jedem CSS-Commit
 
