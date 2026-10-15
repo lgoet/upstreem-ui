@@ -1384,26 +1384,53 @@
 .upt-ff-opt { min-height: 34px; }
 .upt-ff-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
 
-/* Display (das Menue am Zahnrad-Knopf): links die Gruppierung, rechts Spalten und Zeilenhoehe.
-   NEBENEINANDER, weil untereinander 862px herauskamen (gemessen, ohne eine einzige eigene
-   Gruppierung) -- mehr als ein Laptopfenster hoch. Nebeneinander sind es so viele wie die
-   laengere Spalte, die Spaltenliste.
-   Die Gruppierung bringt ihr eigenes Polster und ihre 340px Mindestbreite aus ihrem Popover mit;
-   hier ist das Menue der Kasten, also beides weg. Die Trennlinie zwischen beiden steht senkrecht
-   statt waagerecht (die waagerechte aus dispGruppe bleibt fuer das Telefon). */
-.upt-root[data-leiste="yes"] .up-cols-menu { width: auto; display: flex; align-items: flex-start; }
-.upt-disp-grpwrap { flex: 0 0 272px; min-width: 0; padding-right: 12px; margin-right: 12px; border-right: 1px solid var(--vc-border); }
-.upt-disp-grpwrap > .up-pop-div { display: none; }
-.upt-disp-spalten { flex: 0 0 230px; min-width: 0; }
+/* Display (das Menue am Zahnrad-Knopf), Entwurf B (15.10. gewaehlt): EINE Spalte -- oben die Zeile
+   "Grouping" (None / Topic / Intent) mit den eigenen Gruppierungen darunter, dann "Row height",
+   die Spalten als Chips (core, makeColumns cfg.form "chips"), unten "Reset to default".
+   340 breit wie das Menue der Gruppierung bisher: dessen Liste eigener Gruppierungen (Auge, Menue)
+   braucht den Platz. Die Gruppierung bringt Polster und 340px Mindestbreite aus ihrem Popover mit;
+   hier ist das Menue der Kasten, also beides weg. */
+.upt-root[data-leiste="yes"] .up-cols-menu { width: 340px; }
 .upt-group-menu.upt-disp-grp { width: auto; min-width: 0; max-width: none; padding: 0; }
-/* Telefon: untereinander, so breit wie das Fenster erlaubt, und das Menue scrollt in sich. */
-.upt-root[data-leiste="yes"].is-vnarrow .up-cols-menu {
-  flex-direction: column; align-items: stretch; width: min(320px, calc(100vw - 32px));
-  max-height: calc(100vh - 32px); overflow-y: auto;
-}
-.upt-root[data-leiste="yes"].is-vnarrow .upt-disp-grpwrap { flex: 0 0 auto; padding-right: 0; margin-right: 0; border-right: 0; }
-.upt-root[data-leiste="yes"].is-vnarrow .upt-disp-grpwrap > .up-pop-div { display: block; }
-.upt-root[data-leiste="yes"].is-vnarrow .upt-disp-spalten { flex: 0 0 auto; }
+/* Der Segmentstreifen der Gruppierung als kompakter Streifen rechts in seiner Zeile (core:
+   .up-pop-feld .up-dense). Die Regel des alten Popovers (.upt-group-menu .up-dense, volle Breite mit
+   6px Luecke) gilt hier nicht -- vier Klassen schlagen ihre zwei. */
+.upt-group-menu.upt-disp-grp .up-pop-feld .up-dense { display: inline-flex; gap: 0; }
+.upt-group-menu.upt-disp-grp .up-pop-feld .up-dense-btn { flex: 0 0 auto; }
+.upt-disp-fuss { display: flex; flex-direction: column; align-items: flex-start; }
+/* Telefon: so breit wie das Fenster erlaubt, und das Menue scrollt in sich. */
+.upt-root[data-leiste="yes"].is-vnarrow .up-cols-menu { width: min(340px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow-y: auto; }
+
+/* Active / Inactive 32 hoch (15.10. verlangt), wie die Knoepfe daneben: die Werte der grossen Form
+   aus core (.up-seg.is-lg: Schiene und Knoepfe 32, Polster 16). Die Pille misst core selbst. */
+.upt-root[data-leiste="yes"] .upt-status { height: var(--up-h-btn); }
+.upt-root[data-leiste="yes"] .upt-status-btn { height: var(--up-h-btn); padding: 0 16px; }
+
+/* Export wie in Entwurf B: leiser Knopf ohne Flaeche (Zeichen und Wort in der Sekundaerfarbe,
+   beim Ueberfahren der Grund der Werkzeugknoepfe). Gilt nur fuer den Export DIESER Leiste --
+   .up-export traegt auch der Kopfknopf "Add Prompts" der Seite. Fuenf Klassen schlagen die dunkle
+   Regel von core. */
+.up-root.upt-root[data-leiste="yes"] .up-head-tools .up-export { background: transparent; color: var(--vc-muted); opacity: 1;
+  font-size: var(--up-fs-m); font-weight: var(--up-fw-m); padding: 0 10px; transition: background-color 120ms ease, color 120ms ease; }
+.up-root.upt-root[data-leiste="yes"] .up-head-tools .up-export:hover { background: var(--vc-heading-bg); color: var(--vc-text); }
+
+/* Die Tabelle ueber die VOLLE BREITE der Ansicht (15.10., "wie man das aus anderen SaaS kennt"):
+   der Kasten greift um den Rand der Ansicht nach aussen (16 links und rechts, .wirt-ansicht der
+   App), die Kopfzeile und jede Zeile holen ihn innen wieder herein. So laufen die Linien zwischen
+   den Zeilen und der Grund beim Ueberfahren bis an die Kanten, und der Inhalt steht buendig mit der
+   Leiste darueber. Die Spaltenbreiten rechnet das Spalten-Kit an der Tabellenwurzel -- deren
+   Breite ist genau der Innenraum der Zeilen, also passt es. */
+.upt-root[data-leiste="yes"] { --upt-auslauf: 16px; }
+.upt-root[data-leiste="yes"] .up-box { margin-left: calc(-1 * var(--upt-auslauf)); margin-right: calc(-1 * var(--upt-auslauf)); }
+.upt-root[data-leiste="yes"] .up-thead,
+.upt-root[data-leiste="yes"] .up-tbody > .up-row { padding-left: var(--upt-auslauf); padding-right: var(--upt-auslauf); }
+
+/* Die Kopfzeile flacher (15.10.: "die Grids stehen gefuehlt etwas ab" -- die senkrechten Linien
+   ragten 14px ueber den Text): 36 statt 45. Der klebende Kopf einer offenen Gruppe und der Kopf der
+   Gruppenliste muessen genau darunter bzw. daneben stehen, also ziehen beide mit. */
+.upt-root[data-leiste="yes"] .up-thead { height: 36px; flex: 0 0 36px; }
+.up-root.upt-root[data-leiste="yes"].up-sticky .upt-grp-head.is-open { top: calc(var(--up-sticky-top) + var(--up-thead-off) + 36px); }
+.upt-root[data-leiste="yes"] .upt-grp-sidehead { height: 36px; flex: 0 0 36px; }
 
 /* Die Tabelle ohne Kasten (15.10. angefordert): kein Rahmen aussen herum, kein Grund hinter der
    Kopfzeile -- die Linien zwischen den Zeilen und Spalten bleiben. Der Rahmen wird farblos und
@@ -1435,3 +1462,15 @@
    "Marked as branded by you"). */
 .upt-root.is-narrow .upt-prompt-marke .up-branded-lbl,
 .upt-root.is-narrow .upt-prompt-marke .up-branded-sep { display: none; }
+
+/* Die Filterleiste der Seite fliesst in der einen Leiste MIT: ihre Huellen loesen sich auf, und
+   "Filters", jeder Chip und "Clear All" stehen einzeln in der Reihe neben Active/Inactive und dem
+   Kalender und brechen dort um. Als ein Block rutschte die ganze Leiste samt "Filters" in eine
+   zweite Zeile, sobald zwei Chips nicht mehr neben den Kalender passten (gemessen 1440 breit,
+   zwei Chips). Der Trennstrich zwischen Knopf und Chips gehoert zur Leiste als Block -- hier
+   trennt der Abstand. "Filters" selbst (.ufb-more) bleibt ein Kasten: an ihm haengt das Menue. */
+.upt-root[data-leiste="yes"] .upt-scope .ufb-root,
+.upt-root[data-leiste="yes"] .upt-scope .ufb-bar,
+.upt-root[data-leiste="yes"] .upt-scope .ufb-root.has-filters .ufb-chips { display: contents; }
+.upt-root[data-leiste="yes"] .upt-scope .ufb-sep { display: none; }
+.upt-root[data-leiste="yes"] .upt-scope .ufb-clear { margin-left: 0; }

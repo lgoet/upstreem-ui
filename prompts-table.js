@@ -2709,7 +2709,26 @@
          Zeilen Intents tragen; sonst gibt es nur eine Art und der Schalter waere Attrappe. */
       var mitIntent = intentsMoeglich();
       var istIntent = mitIntent && state.groupBy === "intent";
-      var h = mitIntent
+      var h;
+      if (LEISTE){
+        /* IM DISPLAY-MENUE (15.10., Entwurf B): EINE Zeile "Grouping" mit None / Topic / Intent
+           statt Schalter plus Umschalter -- None ist "nicht gruppiert". Die eigenen Gruppierungen
+           darunter nur, wenn nach Topic gruppiert ist; vorher hat es sie nicht zu sehen gegeben. */
+        var aktiv = !on ? "none" : (istIntent ? "intent" : "topic");
+        var wahl = function(k, lbl){
+          return '<button class="up-dense-btn' + (aktiv === k ? " is-active" : "") + '" type="button" role="radio" aria-checked="' +
+            (aktiv === k ? "true" : "false") + '" data-grp-by="' + k + '">' + lbl + '</button>';
+        };
+        h = '<div class="up-pop-feld"><span class="up-pop-label">Grouping</span>' +
+              '<div class="up-dense upt-grpby" role="radiogroup" aria-label="Grouping">' +
+                wahl("none", "None") + wahl("topic", "Topic") + (mitIntent ? wahl("intent", "Intent") : "") +
+              '</div></div>';
+        if (state.status === "inactive"){
+          h += '<div class="upt-group-note">Active view only – inactive prompts stay ungrouped.</div>';
+        }
+        if (aktiv !== "topic"){ elGrpMenu.innerHTML = h; return; }
+      } else {
+      h = mitIntent
         ? '<div class="up-pop-head">Group by</div>' +
           '<div class="up-dense upt-grpby" role="radiogroup" aria-label="Group by">' +
             '<button class="up-dense-btn' + (!istIntent ? " is-active" : "") + '" type="button" role="radio" aria-checked="' + (!istIntent ? "true" : "false") + '" data-grp-by="topic">Topic</button>' +
@@ -2724,6 +2743,7 @@
       /* Grouping is an Active-view feature; say so instead of silently doing nothing. */
       if (state.status === "inactive"){
         h += '<div class="upt-group-note">Active view only – inactive prompts stay ungrouped.</div>';
+      }
       }
       /* HIER STAND "Sort groups by" mit einer Reihe dichter Knoepfe (21.09. entfernt). Es war
          die zweite Stelle fuer dieselbe Einstellung: die Seitenliste hat ihren eigenen Sortierer
@@ -4249,6 +4269,10 @@
         optionen: function(){ return [{ key: "yes", name: ffT("Mentioned") }, { key: "no", name: ffT("Not mentioned") }]; },
         auswahl: function(){ return state.brandMentioned ? [state.brandMentioned] : []; },
         aus: function(){ return !markeName(); },
+        bild: function(){
+          var l = root.getAttribute("data-brand-logo") || "";
+          return l && l !== "BRAND_LOGO" ? l : "";
+        },
         setzen: function(l){ brandSetzen(l.length ? l[l.length - 1] : ""); }, einzeln: true
       },
       brands: {
@@ -4285,6 +4309,10 @@
               '<span class="upt-ff-chev"><span class="upt-ff-x" role="button" tabindex="-1" aria-label="Clear selection">' + UC.icon("x", 2.2) + '</span></span>' +
             '</button>' +
             '<div class="upt-ff-menu" role="dialog">' +
+              /* Kopfzeile wie im alten Marken-Dropdown (15.10. verlangt): Titel, dazu "Select all",
+                 solange nichts gewaehlt ist, sonst "Reset" -- der Text wechselt in ffZeichnen. */
+              (a.suche ? '<div class="up-filter-head"><span class="up-filter-title">' + esc(ffT("Mentioned brands")) + '</span>' +
+                '<button class="up-pop-action" type="button" data-ff-alle>' + esc(ffT("Select all")) + '</button></div>' : '') +
               (a.suche
                 /* Suchfeld und Leerzeile der Markenliste aus core (UC.mentFilter sucht darin). */
                 ? '<div class="up-ment-searchwrap"><input class="up-ment-search upt-ff-search-in" type="text" placeholder="' + esc(ffT("Search brands...")) + '" autocomplete="off" spellcheck="false" aria-label="' + esc(ffT("Search brands")) + '"/>' +
@@ -4295,6 +4323,12 @@
           '</div>';
         w.addEventListener("click", function(e){
           if (e.target.closest(".upt-ff-x")){ e.stopPropagation(); a.setzen([]); ffSync(); return; }
+          if (e.target.closest("[data-ff-alle]")){
+            /* Wie im alten Dropdown: ohne Auswahl alle, mit Auswahl keine. Wirkt sofort. */
+            a.setzen(a.auswahl().length ? [] : a.optionen().map(function(o){ return o.key; }));
+            ffSync();
+            return;
+          }
           if (e.target.closest(".upt-ff-search-x")){
             var si = w.querySelector(".upt-ff-search-in");
             if (si){ si.value = ""; UC.mentFilter(w, ""); try { si.focus(); } catch(e2){} }
@@ -4352,6 +4386,15 @@
         r.setAttribute("aria-selected", an ? "true" : "false");
       });
       w.classList.toggle("has-sel", sel.length > 0);
+      var alle = w.querySelector("[data-ff-alle]");
+      if (alle){
+        alle.textContent = ffT(sel.length ? "Reset" : "Select all");
+        alle.classList.toggle("is-hidden", !opts.length);
+      }
+      /* Ein Bild statt des Zeichens in Menuezeile und Chip (15.10.): bei "<Marke> mentioned?" das
+         Logo der eigenen Marke. */
+      var bild = a.bild ? a.bild() : "";
+      if (bild) w.setAttribute("data-ufb-bild", bild); else w.removeAttribute("data-ufb-bild");
       w.setAttribute("data-ufb-label", a.label());
       w.setAttribute("data-ufb-chip", a.chip());
       if (a.aus()) w.setAttribute("data-ufb-aus", "yes"); else w.removeAttribute("data-ufb-aus");
@@ -4369,7 +4412,8 @@
         ffZeichnen(key);
         var w = ffWurzeln[key];
         return key + ":" + FF_ARTEN[key].auswahl().join(",") + ":" + (w.getAttribute("data-ufb-aus") || "") + ":" +
-               (w.getAttribute("data-ufb-label") || "") + ":" + w.querySelector(".upt-ff-list").getAttribute("data-sig");
+               (w.getAttribute("data-ufb-label") || "") + ":" + (w.getAttribute("data-ufb-bild") || "") + ":" +
+               w.querySelector(".upt-ff-list").getAttribute("data-sig");
       }).join("|");
       if (neu === ffStand) return;
       ffStand = neu;
@@ -4381,6 +4425,7 @@
     /* ---------------- columns / pager / sort (core) ---------------- */
     var PROMPT_MIN = 260;
     var elDispGrp = null;   /* Huelle der Gruppierung im Display-Menue, siehe dispGruppe */
+    var elDispFuss = null;  /* sein Fuss "Reset to default", siehe dispFuss */
     var colsKit = UC.makeColumns({
       root: root, state: state, columns: COLUMNS,
       storePrefix: "upt", instanceId: instanceId,
@@ -4400,7 +4445,9 @@
       rowHeightSwitch: ROW_HEIGHTS, badgeSel: ".upt-cols-badge", cellPrefixes: ["up","upt","upt-grp"],
       /* In der einen Leiste ist dieses Menue "Display": oben die Gruppierung, darunter wie bisher
          Spalten und Zeilenhoehe. */
-      vorspann: LEISTE ? dispGruppe : null,
+      vorspann: LEISTE ? dispGruppe : null, nachspann: LEISTE ? dispFuss : null,
+      /* Spalten als Chips und die Zeilenhoehe beschriftet, wie in Entwurf B (15.10. gewaehlt). */
+      form: LEISTE ? "chips" : null,
       onChange: function(){ render(); }
     });
     function dispGruppe(){
@@ -4414,17 +4461,19 @@
         elDispGrp.appendChild(trenner);
       }
       populateGroupMenu();
-      /* Spalten und Zeilenhoehe in EINE Huelle, damit sie NEBEN der Gruppierung stehen koennen
-         (prompts-table.css). Untereinander war das Menue 862px hoch, gemessen -- hoeher als ein
-         Laptopfenster. Die Klickwege des Spalten-Kits haengen an data-col / data-rowheight und
-         finden ihre Zeilen ueber closest(), die Huelle stoert sie nicht. */
-      if (elColsMenu){
-        var spalten = document.createElement("div");
-        spalten.className = "upt-disp-spalten";
-        while (elColsMenu.firstChild) spalten.appendChild(elColsMenu.firstChild);
-        elColsMenu.appendChild(spalten);
-      }
       return elDispGrp;
+    }
+    /* Der Fuss des Display-Menues: alles auf die Vorgabe -- alle Spalten, Zeilenhoehe Default,
+       nicht gruppiert. Gespeichert wird ohnehin je Nutzer (localStorage), ein "Set as default"
+       braucht es darum nicht. */
+    function dispFuss(){
+      if (!elDispFuss){
+        elDispFuss = document.createElement("div");
+        elDispFuss.className = "upt-disp-fuss";
+        elDispFuss.innerHTML = '<div class="up-pop-div"></div>' +
+          '<button class="up-pop-action upt-disp-reset" type="button" data-disp-reset>Reset to default</button>';
+      }
+      return elDispFuss;
     }
     var readCols = colsKit.readCols, writeCols = colsKit.writeCols;
     var readWidths = colsKit.readWidths, writeWidths = colsKit.writeWidths;
@@ -4692,6 +4741,11 @@
           return;
         }
         var grpBy = e.target.closest("[data-grp-by]");
+        /* "None" im Display-Menue der einen Leiste: Gruppierung aus. */
+        if (grpBy && grpBy.getAttribute("data-grp-by") === "none"){
+          if (state.grouped) toggleGrouping();
+          return;
+        }
         if (grpBy){
           var nach = grpBy.getAttribute("data-grp-by") === "intent" ? "intent" : "topic";
           if (nach === state.groupBy && state.grouped){ return; }
@@ -5041,6 +5095,13 @@
         closePops(elCols);
         if (openC) populateCols();
         setPopOpen(elCols, openC);
+        return;
+      }
+      if (e.target.closest("[data-disp-reset]")){
+        if (state.grouped) toggleGrouping();
+        setRowHeight("default");
+        selectAllCols();
+        populateCols();
         return;
       }
       var rhBtn = e.target.closest("[data-rowheight]");

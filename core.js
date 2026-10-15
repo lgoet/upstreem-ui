@@ -2669,6 +2669,12 @@
     "Not mentioned": "Nicht erwähnt",
     "Prompt type": "Prompt-Typ",
     "Any": "Beliebig",
+    /* Die Bedingung im Filter-Chip ("Topic  is any of  SUV, EV") und das Display-Menue. */
+    "is": "ist",
+    "is any of": "ist eines von",
+    "is all of": "ist alles von",
+    "None": "Keine",
+    "Reset to default": "Zurücksetzen",
     /* Das Konto-Menue der Seitenleiste (07.09. ausdruecklich angefordert). */
     "Account Settings": "Kontoeinstellungen",
     "System": "System",
@@ -7307,7 +7313,31 @@
             }).join("") +
           '</div>'
         : "";
-      menu.innerHTML = head + rows + densePart + rowHeightPart;
+      /* cfg.form "chips" (15.10., Display-Menue der Prompt-Tabelle, Entwurf B): die Spalten als
+         Chips zum An- und Abschalten statt als Zeilen mit Schalter, die Zeilenhoehe als Zeile
+         "Row height" mit beschrifteten Knoepfen statt Zeichen. Dieselben data-col / data-colsall /
+         data-rowheight -- die Klickwege der Tabelle bleiben gleich. Ohne cfg.form wie bisher. */
+      if (cfg.form === "chips"){
+        var chips = '<div class="up-spaltchips">' + listed.map(function(c){
+          var on = !!da[c.key];
+          var platzlos = !on && state.cols[c.key] !== false;
+          var locked = on && zuSehen === 1;
+          return '<button type="button" class="up-entchip up-spaltchip' + (on ? " is-soft" : " is-aus") +
+                   (locked ? " is-locked" : "") + '" data-col="' + c.key + '" aria-pressed="' + (on ? "true" : "false") + '"' +
+                   (platzlos ? ' data-tip="' + esc(t_("Not enough space at this width. Turn it on and another column makes room.")) + '"' : "") + '>' +
+                   esc(t_(c.label)) + '</button>';
+        }).join("") + '</div>';
+        var hoehe = cfg.rowHeightSwitch
+          ? '<div class="up-pop-feld"><span class="up-pop-label">' + esc(t_("Row height")) + '</span>' +
+              '<div class="up-dense up-dense-3">' + cfg.rowHeightSwitch.map(function(o){
+                return '<button class="up-dense-btn' + (state.rowHeight === o.key ? " is-active" : "") +
+                       '" type="button" data-rowheight="' + o.key + '">' + esc(t_(o.label)) + '</button>';
+              }).join("") + '</div></div><div class="up-pop-div"></div>'
+          : "";
+        menu.innerHTML = hoehe + head + chips;
+      } else {
+        menu.innerHTML = head + rows + densePart + rowHeightPart;
+      }
       /* cfg.vorspann (15.10.): ein Element, das die Tabelle OBEN ins Menue stellt -- die
          Prompt-Tabelle stellt dort ihre Gruppierung hinein, wenn das Menue ihr "Display" ist.
          Ein ELEMENT und kein HTML: es traegt seinen eigenen Zustand und seine Klickwege und wird
@@ -7316,6 +7346,12 @@
         var vor = null;
         try { vor = cfg.vorspann(); } catch(e){ vor = null; }
         if (vor) menu.insertBefore(vor, menu.firstChild);
+      }
+      /* cfg.nachspann: dasselbe am ENDE (Fusszeile "Reset to default" der Prompt-Tabelle). */
+      if (typeof cfg.nachspann === "function"){
+        var nach = null;
+        try { nach = cfg.nachspann(); } catch(e){ nach = null; }
+        if (nach) menu.appendChild(nach);
       }
     }
     function syncColsBadge(){

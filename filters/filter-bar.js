@@ -141,7 +141,7 @@
       behalten: true, fnAttrs: [], fnMarke: "upt" },
     { key: "brands", label: "Mentioned brands", attr: "data-brands-instance", visAttr: "data-brands-visible", rootSel: ".upt-ff-brands",
       ctrl: "__uptfCtrl", selKey: "sel", opt: ".upt-ff-opt", keyAttr: "data-key",
-      nameSel: ".upt-ff-name", clearSel: ".upt-ff-x", evt: "upt-ff", chip: "Brands", icon: "store",
+      nameSel: ".upt-ff-name", clearSel: ".upt-ff-x", evt: "upt-ff", chip: "Brands", icon: "squareStack",
       behalten: true, fnAttrs: [], fnMarke: "upt" }
   ];
   /* Trigger und Chevron je Filter. Bisher standen die vier Klassen woertlich an drei Stellen
@@ -377,6 +377,17 @@
       function labelVon(f) { return attrVon(f, "data-ufb-label") || f.label; }
       function chipVon(f) { return attrVon(f, "data-ufb-chip") || f.chip; }
       function leerVon(f) { return attrVon(f, "data-ufb-leer") || "All"; }
+      /* Das Zeichen einer Zeile bzw. eines Chips: ein Bild, wenn die Wurzel eins mitbringt
+         (data-ufb-bild -- das Logo der eigenen Marke bei "<Marke> mentioned?", 15.10.), sonst das
+         feste Zeichen des Filters. Faellt das Bild aus, bleibt die Kachel leer statt zu zerbrechen. */
+      function zeichenVon(f) {
+        var bild = attrVon(f, "data-ufb-bild");
+        if (bild && /^(https?:\/\/|\/)/i.test(bild)) {
+          return '<span class="ufb-bild"><img src="' + esc(bild) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
+            ' onerror="this.remove()"/></span>';
+        }
+        return UC.icon(f.icon, 2);
+      }
       /* Ein Filter kann sich selbst abmelden (data-ufb-aus="yes"), ohne ausgeblendet zu sein: die
          Tabelle tut das fuer Prompt type und die Markenfilter in der Inactive-Ansicht, wo sie
          keine Spalte haben. Keine Zeile, kein Chip -- und die Auswahl bleibt stehen. */
@@ -808,6 +819,8 @@
            als "Name ........ Wert" statt als Spiegel. Beide immer mitschreiben; welche Form zu
            sehen ist, entscheidet die CSS. */
         var lblEl = wrap.querySelector(".ufb-row-lbl"), wertEl = wrap.querySelector(".ufb-row-wert");
+        var icEl = wrap.querySelector(".ufb-row-ic");
+        if (icEl) { var zh = zeichenVon(f); if (icEl.__ufbZeichen !== zh) { icEl.__ufbZeichen = zh; icEl.innerHTML = zh; } }
         if (lblEl) lblEl.textContent = tr(labelVon(f));
         if (wertEl) {
           var cw = chipText(f);
@@ -949,6 +962,17 @@
         }
         return { key: f.chip, wert: wert };
       }
+      /* Die Bedingung im Chip der grossen Form: ein Wert "is", mehrere "is any of" -- ausser bei
+         Topics im Modus "and" (Prompts, die ALLE gewaehlten Topics tragen): "is all of". */
+      function bedingung(f) {
+        if (auswahl(f).length <= 1) return "is";
+        if (f.key === "topics") {
+          var w = eingezogen[f.key], c = w && w[f.ctrl], sel = null;
+          try { sel = c && typeof c.getSelected === "function" ? c.getSelected() : null; } catch (e) { sel = null; }
+          if (sel && sel.tag_mode === "and") return "is all of";
+        }
+        return "is any of";
+      }
       /* UC.t, wo es das gibt -- eine aeltere core.js ohne Katalog laesst die englischen Worte stehen,
          statt die Leiste zu zerlegen. */
       function tr(s) { return UC.t ? UC.t(s) : s; }
@@ -973,13 +997,20 @@
           var name = tr(labelVon(f));
           var tip = tr("Clear {filter}").split("{filter}").join(name);
           var aria = tr("Clear {filter} filter").split("{filter}").join(name);
-          var innen = '<span class="ufb-chip-ic">' + UC.icon(f.icon, 2) + '</span>' +
+          var innen = '<span class="ufb-chip-ic">' + zeichenVon(f) + '</span>' +
             '<span class="ufb-chip-lbl"><span class="ufb-chip-key">' + esc(tr(chipVon(f))) + ': </span>' +
             esc(c.wert) + '</span>';
           /* Klickbar: Zeichen und Text stecken in einem EIGENEN Knopf neben dem X -- ein Knopf im
-             Knopf waere fuer Tastatur und Vorleser eine Sache statt zwei. */
-          if (klick) innen = '<button class="ufb-chip-auf" type="button" data-chip-open="' + esc(f.key) + '" aria-haspopup="menu">' + innen + '</button>';
-          teile.push('<span class="up-entchip is-static ufb-chip' + (klick ? " is-klick" : "") + '" data-chip="' + esc(f.key) + '">' +
+             Knopf waere fuer Tastatur und Vorleser eine Sache statt zwei.
+             Und in der Form aus Entwurf B (15.10. gewaehlt): Name, Bedingung, Wert als drei Teile mit
+             feinem Strich dazwischen -- "Topic | is any of | SUV, EV". Die Bedingung sagt, wie mehrere
+             Werte zusammenwirken (Topics im Modus "and": "is all of"). */
+          if (klick) innen = '<button class="ufb-chip-auf" type="button" data-chip-open="' + esc(f.key) + '" aria-haspopup="menu">' +
+            '<span class="ufb-chip-teil ufb-chip-name"><span class="ufb-chip-ic">' + zeichenVon(f) + '</span>' + esc(tr(chipVon(f))) + '</span>' +
+            '<span class="ufb-chip-teil ufb-chip-op">' + esc(tr(bedingung(f))) + '</span>' +
+            '<span class="ufb-chip-teil ufb-chip-wert">' + esc(c.wert) + '</span>' +
+          '</button>';
+          teile.push('<span class="up-entchip is-static ufb-chip' + (klick ? " is-klick is-teile" : "") + '" data-chip="' + esc(f.key) + '">' +
             innen +
             '<button class="ufb-chip-x" type="button" data-chip-clear="' + esc(f.key) + '" ' +
               'aria-label="' + esc(aria) + '" data-tip="' + esc(tip) + '">' +
@@ -1041,6 +1072,7 @@
       elBtn.addEventListener("click", function (e) {
         e.stopPropagation();
         if (pop.isOpen()) { pop.close(false); return; }
+        elMenu.classList.remove("is-vomchip");
         /* Nach einem Oeffnen vom Chip steht noch is-drill am Panel, bis render() laeuft -- und die
            Messung unten nimmt die Breite des Panels. Nur dann einmal vorher richtigstellen. */
         if (elMenu.classList.contains("is-drill") !== hinein()) elMenu.classList.toggle("is-drill", hinein());
@@ -1124,6 +1156,9 @@
            daran haengt die Breite des Panels, nach der sich die Lage richtet. Ein einzelner Klick,
            kein Pfad, der bei jeder Bewegung laeuft. */
         var lage = lageMessen(anker);
+        /* Vom Chip: KEIN "Back" oben (15.10. abgelehnt -- der Chip ist der Weg hinein, das Menue zeigt
+           nur diesen einen Filter). Die Klasse nimmt onClose wieder weg. */
+        elMenu.classList.toggle("is-vomchip", vomChip);
         /* Die Lage VOR dem Oeffnen: makePopover hebt das Panel beim Oeffnen in die oberste Ebene
            (position: fixed) und rechnet seine Stelle EINMAL aus der Ruhelage. Danach gesetzt,
            landete das Panel am linken Fensterrand statt unter dem Chip (gemessen: left 8). */
@@ -1144,6 +1179,8 @@
           if (pop.isOpen()) return;
           elMenu.style.left = ""; elMenu.style.right = ""; elMenu.style.marginTop = "";
           elMenu.classList.remove("is-right");
+          /* Erst nach dem Ausblenden: sonst stuende "Back" waehrend des Zugehens kurz da. */
+          elMenu.classList.remove("is-vomchip");
         }, 300);
       }
 

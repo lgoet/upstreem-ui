@@ -625,7 +625,8 @@
    Der Hover behaelt seine Flaeche UND bekommt die kraeftigere Kante dazu, wie jeder andere
    umrandete Trigger des Hauses (.udr-trigger, .utf-trigger): --vc-hover-border. */
 .usn-bar .mqa-trigger {
-  height: 36px; border-radius: 12px; background: transparent;
+  /* Radius 8 wie die Menuepunkte darunter (15.10.). */
+  height: 36px; border-radius: var(--up-r-m); background: transparent;
   border: 1px solid var(--vc-border); color: var(--vc-muted);
   /* 7 + 1px Rahmen = 8: das Zeichen beginnt bei 16 vom Rand wie in jeder Zeile (14.10. spaet). */
   padding-left: 7px;
@@ -817,7 +818,8 @@
 .usn-item {
   width: 100%; display: flex; align-items: center; gap: 7px;
   height: 36px; padding: 0 8px;
-  border: 0; border-radius: 12px; background: transparent;
+  /* 8 statt 12 (15.10. verlangt, mit dem Knopf Quick Actions darueber). */
+  border: 0; border-radius: var(--up-r-m); background: transparent;
   font: inherit; font-size: 14px; font-weight: 500; color: var(--vc-text);
   cursor: pointer; text-align: left;
   transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease),

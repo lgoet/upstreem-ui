@@ -436,11 +436,12 @@
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .ufb-root[data-form="gross"] .ufb-row-wert.is-gesetzt { color: var(--vc-text); font-weight: 500; }
-/* 248 trug Spiegel ODER Name; Name UND Wert brauchen mehr. 320, weil "<Marke> mentioned?" der
-   laengste Name ist: bei 300 wurden Name UND Wert abgeschnitten ("Mercedes Benz menti...",
-   "Mentio...", gemessen 15.10.). Das ist zugleich die Breite des Hineingehens. Nicht im
-   Hineingehen: dort gilt die Breite der Seite. */
-.ufb-root[data-form="gross"] .ufb-menu.ufb-menu:not(.is-drill) { width: 320px; }
+/* 248 trug Spiegel ODER Name; Name UND Wert brauchen mehr. 340, weil "<Marke> mentioned?" der
+   laengste Name ist: bei 300 und noch bei 320 wurden Name UND Wert abgeschnitten, sobald der Wert
+   "Mentioned" statt "Any" lautet ("Mercedes Benz menti...", "Mentio...", gemessen 15.10.). 340 ist
+   auch die Breite des Display-Menues der Tabelle daneben. Nicht im Hineingehen: dort gilt die
+   Breite der Seite. */
+.ufb-root[data-form="gross"] .ufb-menu.ufb-menu:not(.is-drill) { width: 340px; }
 
 /* Klickbare Chips: Zeichen und Text sind ein eigener Knopf (ufb-chip-auf), das X bleibt daneben.
    Der Knopf traegt keine eigene Form -- die Form ist der Chip. Beim Ueberfahren bekommt der CHIP
@@ -464,3 +465,28 @@
    "Reset Filters" nicht zwischen "Back" und die Optionen -- es leert ALLE Filter, und dort steht
    man in einem. Auf der Liste aller Filter (nach "Back") steht es wieder da. */
 .ufb-root[data-form="gross"] .ufb-menu.is-inside .ufb-resetbox { display: none; }
+
+/* DER CHIP IN DREI TEILEN (15.10., Entwurf B): Name mit Zeichen, Bedingung, Wert, dann das X --
+   je durch einen feinen Strich getrennt, der Rahmen ist der des Chips. Die Teile tragen das
+   Polster, der Chip keins mehr. Die Bedingung ist die leise Haelfte (dritte Farbe), der Wert die
+   Aussage. */
+.up-entchip.ufb-chip.is-teile { padding: 0; gap: 0; }
+.ufb-chip.is-teile .ufb-chip-auf { gap: 0; align-self: stretch; }
+.ufb-chip-teil { display: inline-flex; align-items: center; gap: 6px; height: 100%; padding: 0 8px;
+  font-size: var(--up-fs-m); font-weight: var(--up-fw-m); white-space: nowrap; }
+.ufb-chip-teil + .ufb-chip-teil { border-left: 1px solid var(--vc-border); }
+.ufb-chip-name { padding-left: 10px; color: var(--vc-muted); }
+.ufb-chip-op { color: var(--vc-third); font-weight: var(--up-fw-n); }
+.ufb-chip-wert { color: var(--vc-text); min-width: 0; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+/* Vier Klassen: die Regel fuer das X im Chip oben hat drei (.up-entchip.ufb-chip .ufb-chip-x). */
+.up-entchip.ufb-chip.is-teile .ufb-chip-x { align-self: stretch; height: auto; flex-basis: 28px; width: 28px; border-radius: 0;
+  border-left: 1px solid var(--vc-border); }
+/* Vom Chip geoeffnet: kein "Back" -- der Chip ist der Weg hinein (15.10.). */
+.ufb-root[data-form="gross"] .ufb-menu.is-vomchip .up-subback.up-subback { display: none; }
+/* Ein Logo statt des Zeichens (zeichenVon, 15.10.): dieselbe Kachel wie die Logos der Marken-
+   Dropdowns (.up-ment-logo: Logo-Grund, Radius 4), so gross wie das Zeichen, das sie ersetzt --
+   16 in der Menuezeile, 14 im Chip. */
+.ufb-bild { display: inline-flex; width: 16px; height: 16px; border-radius: var(--up-r-xs); overflow: hidden;
+  background: var(--vt-logo-bg); flex: 0 0 auto; }
+.ufb-bild img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ufb-chip-ic .ufb-bild { width: 14px; height: 14px; }

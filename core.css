@@ -4851,6 +4851,23 @@
    den Hover des Chips und nicht den der App. */
 .up-entchip.is-soft:not(.up-chiphover):hover { background: var(--vt-row-hover-solid, var(--vc-switch-bg)); }
 .up-entchip:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 1px; }
+/* SPALTEN ALS CHIPS (15.10., UC.makeColumns cfg.form "chips", Display-Menue der Prompt-Tabelle nach
+   Entwurf B): derselbe Chip, nur ohne Zeichen -- darum gleiches Polster links und rechts -- und als
+   Schalter. An = is-soft (leichter Grund, wie oben), aus = gestrichelter Rand ohne Grund in der
+   vierten Schriftfarbe: "gibt es, ist aber nicht zu sehen". Hoehe, Radius und Rand bleiben die des
+   Chips. */
+.up-spaltchips { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 0 4px; }
+.up-entchip.up-spaltchip { padding: 0 10px; font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-text); }
+.up-entchip.up-spaltchip.is-aus { border-style: dashed; background: transparent; color: var(--vc-fourth); }
+.up-entchip.up-spaltchip.is-aus:hover { color: var(--vc-text); border-color: var(--vc-hover-border); }
+.up-entchip.up-spaltchip.is-locked { cursor: default; }
+/* Eine Zeile "Name ........ Bedienelement" in einem Dropdown (Row height, Grouping im Display-Menue). */
+.up-pop-feld { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; }
+/* Der Segmentstreifen darin steht RECHTS neben einem Namen, also so breit wie sein Inhalt statt
+   der ganzen Zeile, und 28 hoch (--up-h-seg) statt 34 -- Schiene UND Knoepfe zusammen, sonst
+   stoesst die Pille an den Rand. Radius 8 bleibt. */
+.up-pop-feld .up-dense { width: auto; flex: 0 0 auto; height: var(--up-h-seg); }
+.up-pop-feld .up-dense-btn { flex: 0 0 auto; height: var(--up-h-seg); padding: 0 10px; }
 
 /* ---- KEIN HINEINZOOMEN BEIM FOKUS AUF DEM TELEFON ----------------------------------------
    iOS-Safari zoomt die Seite, sobald ein Feld mit einer Schrift UNTER 16px den Fokus bekommt.
