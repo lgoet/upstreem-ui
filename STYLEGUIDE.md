@@ -2611,6 +2611,57 @@ Bulk-Action-Bar am `document.body`); diese Leiste fuehrt die Marken deshalb selb
 
 Genutzt von: prompts-table (Topics-Zelle, Topics-Editor in der Bulk-Bar).
 
+## 27a. Der Export-Dialog: Variante D „Schnellweg aus dem Kontext“ (seit 16.10.)
+
+`export-data.js`/`.css` (Präfix `uex`), vom Nutzer aus vier Varianten gewählt. Vorbilder: Vercel Logs
+(exportiert, was man gerade sieht), Airtable und Attio (die Ansicht ist der Export), Ahrefs
+(Zeilengrenze vorab genannt). Der Dialog öffnet **vorbelegt** mit dem Datensatz der Seite, dem Filter
+des Drawers und dem Zeitraum; ein Klick (Enter) genügt.
+
+**Hülle** aus §27 (`.up-topicmodal-backdrop/-card/-head/-title`, `.up-popup-close`), Breite **440**,
+Kopf 16/16/0, Inhalt 20/16/16 (im Lauf und fertig 24/16/20), Fuß 0/16/16; der Inhalt rollt
+(`.uex-body`, in core in der Liste der Popup-Rollflächen), Kopf und Fuß stehen. Am Telefon bleibt es
+eine Karte mit 16 Rand und `max-height: calc(100dvh - 32px)`, kein Vollbild.
+
+**Kopf:** „Export {Datensatz}“, darunter „From {Bereich}“ (Prompt Insights, Citations, Brands, Shopping,
+Ads -- der Bereich des Datensatzes) und, wo ein Filter mitgeht, „, filtered to“ plus Chip. Der Chip
+ist `.up-entchip.is-static` auf der Chip-Stufe 24 (Polster 8/2, Abstand 6, Radius 4, Grund
+`--up-sel-bg`, kein Rahmen, kein Punkt), Zeichen 12, Kreuz `.up-iconbtn.is-20`. Er steht nur, wo der
+Filter für den gewählten Datensatz wirklich gilt (`FILTER` in export-data.js, dieselbe Liste wie
+`exportParameter`): Domain des Domain-Drawers für URLs und Responses, Adresse des URL-Drawers,
+Prompt und Marke (Name über `filter_label` in `setContext`). Die Filter von Shopping und Ads:
+„From Shopping, with [Page filters]“, ohne Kreuz (sie stehen in der Leiste der Seite).
+
+**Die Liste der Wahlen:** Rahmen 1, Radius 8, Zeilen ≥ 44 mit Etikett (72, `--vc-third`), Wert
+(500), Nebenangabe (12, `--vc-third`, Ellipse) und „Edit“/„Done“ (12/500, `--vc-muted`). Jede
+Zeile klappt **im Dialog** auf:
+- **Data**: die Datensätze der Gruppe als `.up-pop-opt` mit `.up-check`, `role="radio"`, Pfeiltasten.
+- **Date range**: die vier Presets mit ihrem Zeitraum als Nebenangabe, dazu „Custom range“. Der
+  Kalender aus `filters/date-range.js` kann nicht eingebettet aufklappen (kein Inline-Modus); „Custom
+  range“ öffnet darum sein Feld unter der Zeile (core hebt es in die oberste Ebene). Der unsichtbare
+  Auslöser liegt über der Zeile und nimmt den Mausklick, mit der Tastatur steht man auf der Zeile.
+- **Columns**: die Spalten aus `export_columns_v1` als Checkliste aus core (`.up-filter-*`); die
+  Abwahl ist eine Einstellung je Spaltensatz und bleibt. Keine Spalte gewählt: Knopf gesperrt, Satz
+  „Choose at least one column.“
+- **Format**: fest „CSV“, ohne Edit (es gibt nur eins).
+
+Darunter der Hinweis (Zeichen 14, 12/16, `--vc-third`): „Safe to open in Excel and Sheets. Up to
+{Seitengröße × 60} rows.“, bzw. „Exports for … are coming soon.“; ein Fehler steht **allein** als
+roter Satz (`.up-fehlerzeile`, kein Kasten, kein Toast).
+
+**Läuft:** die große Zahl 28/500 mit „of N rows“ (N = `total_count`, gedeckelt auf die Grenze), ein
+Balken 6 hoch in `--up-accent` auf `--up-sel-bg` -- nur mit echter Gesamtzahl, sonst keiner --,
+„Page k of n. Closing this window stops the export.“ Fuß: „Cancel export“ (`.up-btn-sec.is-lg` mit
+`.up-btn-spin`). Schließen, Escape, Schleier und Cancel brechen ab (Laufnummer: späte Antworten
+verfallen).
+
+**Fertig:** `checkCircle` in `--vt-up`, „N rows exported“ 16/600, die Datei als Kachel (Rahmen 1,
+Radius 8, Mono 12 für den Namen, Größe aus `Blob.size`), Fuß zweispaltig „Download again“ |
+„Done“. Gekürzt (60 Seiten erreicht): Satz darunter.
+
+**Knöpfe** nur aus core in der großen Stufe (`.up-btn-pri.is-lg`, `.up-btn-sec.is-lg`); gesperrt ist
+der core-Knopf im disabled-Zustand (40 %). Der Bubble-Weg (ohne Team) wartet wie bisher mit Kreisel.
+
 ## 28. Der `*/`-in-CSS-Kommentar-Bug — PFLICHTCHECK vor jedem CSS-Commit
 
 **Das ist jetzt zweimal live passiert und hat beide Male eine ganze Komponente unbenutzbar gemacht
