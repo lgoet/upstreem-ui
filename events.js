@@ -2943,6 +2943,10 @@
     var ART_PLATZHALTER = { url: "Search your URLs or paste links", path: "Paste a path, e.g. example.com/blog",
       host: "Paste a domain, e.g. blog.example.com", "": "Paste a URL, a path or a domain" };
     function zieleDa() { return !demo && ZIELE_DA.stand === true; }
+    /* Ohne Regeln in der Datenbank gibt es nur URLs -- dann darf das Feld auch nicht "a path or a
+       domain" anbieten (gemessen 15.10. spaet im Rueckfall: der Platzhalter versprach Pfad und
+       Domain, eingetragen wurde beides als URL). */
+    function platzhalter(art) { return t(ART_PLATZHALTER[art || (zieleDa() ? "" : "url")]); }
     function sitemapDa() { return zieleDa() && SITEMAP_DA.stand === true; }
     function artenFuer(p) {
       return ARTEN.filter(function (a) {
@@ -2994,8 +2998,8 @@
       return '<div class="uev-zieleingabe">' +
           '<div class="uev-zielzeile">' +
             '<div class="uev-urlsuche"><span class="uev-urlsuche-ic">' + UC.icon(ART_ZEICHEN[art] || "link", 2) + '</span>' +
-              '<textarea class="up-topicmodal-name uev-urlein uev-zielein" rows="1" placeholder="' + esc(t(ART_PLATZHALTER[art])) + '" autocomplete="off" spellcheck="false" inputmode="url"' +
-                ' aria-label="' + esc(t(ART_PLATZHALTER[art])) + '">' + esc(e.eingabe || "") + '</textarea></div>' +
+              '<textarea class="up-topicmodal-name uev-urlein uev-zielein" rows="1" placeholder="' + esc(platzhalter(art)) + '" autocomplete="off" spellcheck="false" inputmode="url"' +
+                ' aria-label="' + esc(platzhalter(art)) + '">' + esc(e.eingabe || "") + '</textarea></div>' +
             '<button type="button" class="up-btn-sec uev-zielhinzu" disabled>' + esc(t("Add")) + '</button>' +
           '</div>' +
           '<div class="uev-schreibweise" aria-live="polite"></div>' +
@@ -3108,7 +3112,7 @@
       var inp = im(".uev-zielein");
       if (inp) {
         var art = offen && e.zielArt ? e.zielArt : "";
-        inp.placeholder = t(ART_PLATZHALTER[art]); inp.setAttribute("aria-label", t(ART_PLATZHALTER[art]));
+        inp.placeholder = platzhalter(art); inp.setAttribute("aria-label", platzhalter(art));
         var ic = im(".uev-zieleingabe .uev-urlsuche-ic");
         if (ic) ic.innerHTML = UC.icon(ART_ZEICHEN[art] || "link", 2);
       }
