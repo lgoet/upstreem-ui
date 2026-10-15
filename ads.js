@@ -103,6 +103,14 @@
     if (s.indexOf("//") === 0) s = "https:" + s;
     return /^https?:\/\/[^\s"'<>]+$/i.test(s) ? s : "";
   }
+  /* Der Export-Knopf der Leisten: dasselbe Markup wie in Prompt Insights und den Tabellen
+     (.up-export aus core, Feather "download"). Nicht UC.icon("download") -- das ist ein anderes
+     Zeichen, und der Knopf soll auf jeder Seite gleich aussehen. */
+  function exportKnopfHtml() {
+    return '<button class="up-export uad-export" type="button" aria-label="' + esc(t("Export")) + '"><svg viewBox="0 0 24 24" aria-hidden="true">' +
+      '<path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></svg>' +
+      '<span>' + esc(t("Export")) + '</span></button>';
+  }
 
   /* ---- Zahlen (CLAUDE.md 2b): Prozent mit einer Stelle, Anzahlen ganz ----------------------------
      PLAUSIBEL ODER GAR NICHT, wie in Shopping: ein Anteil von 250 % oder 1e21 Auftritte ist kein
@@ -382,6 +390,8 @@
         '<div class="up-root utf-root" data-instance="' + esc(idTopics) + '" data-local="yes" data-isdark="' + dunkelAttr + '"></div>' +
         '<div class="up-root umf-root" data-instance="' + esc(idModelle) + '" data-local="yes" data-isdark="' + dunkelAttr + '"></div>' +
         '<div class="up-root umk-root" data-instance="' + esc(idMaerkte) + '" data-local="yes" data-isdark="' + dunkelAttr + '"></div>' +
+        /* EXPORT rechts in der Filterzeile (16.10.), Form wie in Prompt Insights (.up-export aus core). */
+        exportKnopfHtml() +
       '</div>' +
       '<div class="uad-main"></div>';
     var elMain = root.querySelector(".uad-main"), elNav = root.querySelector(".uad-nav");
@@ -1386,6 +1396,17 @@
       }).join("");
     }
     function skelettZeilen(n, sp2) { return UC.skeletonRows ? UC.skeletonRows({ count: n, rowClass: "up-row", cellClass: "up-td", cols: sp2 }) : ""; }
+    /* EINE LEERE TABELLE NEBEN DEN CHARTS (15.10., wie in shopping.js): Kopf wie beim Skelett,
+       darunter der Leerzustand der Charts aus core (UC.tabelleLeerHtml) in der Flaeche der n
+       Skelettzeilen -- zwischen Laden und Leer springt nichts. Vorher ein Kasten ohne Kopf mit
+       einem Satz. Der Zustand steht neben dem Spaltenscroller, damit er ueber dem Sichtbaren
+       mittig sitzt und nicht ueber der ganzen Scrollbreite. Gefiltert wie die Charts der Seite. */
+    function tabelleLeer(name, n, o) {
+      if (!UC.tabelleLeerHtml) return '<div class="up-box">' + UC.leerHtml({ mini: true, titel: o.alt }) + '</div>';
+      return '<div class="up-box uad-box"><div class="up-colscroll"><div class="up-colscroll-innen">' +
+          '<div class="up-thead">' + kopfAus(name) + '</div></div></div>' +
+        UC.tabelleLeerHtml({ icon: o.icon, text: o.text, gefiltert: filterAktiv(), zeilen: n }) + '</div>';
+    }
     function skelettAus(name, n) {
       var d = TABELLEN[name];
       return skelettZeilen(n, [d.erste.sk].concat(d.spalten.map(function (c) {
@@ -1502,7 +1523,7 @@
         /* Ein Fehler steht EINMAL, an der Stelle der Kennzahlen; der Rest traegt dann nichts, was
            wie Daten aussieht. */
         sek("kpis").innerHTML = '<div class="uad-kpifehler">' + fehlerKasten(a) + '</div>';
-        if (linie) linie.empty(t("Ads data could not be loaded"));
+        if (linie) linie.meldung(t("Ads data could not be loaded"));
         sek("anteil").querySelector(".uad-balkenplatz").innerHTML = "";
         sek("topics").querySelector(".uad-tabelle").innerHTML = "";
         topicsPager(null);
@@ -1544,7 +1565,7 @@
       var tr = trendTage(d.trend);
       /* Ein Tag ohne getrackte Antwort hat keine Coverage (null) -- dort bricht die Linie ab, statt
          eine 0 zu behaupten, die niemand gemessen hat. */
-      if (!tr.length || !tr.some(function (x) { return anteilWert(x.ad_coverage_pct) != null; })) { linie.empty(); return; }
+      if (!tr.length || !tr.some(function (x) { return anteilWert(x.ad_coverage_pct) != null; })) { linie.empty({ gefiltert: filterAktiv() }); return; }
       linieZeichnen(tr.map(function (x) { return str(x.date).slice(0, 10); }), linienDaten(tr, "ad_coverage_pct", "pct"), t("Ad Coverage"));
     }
     /* Advertiser Share: die Top 8 als Balkenliste aus core (Model Breakdown in domain-detail). Die
@@ -1559,7 +1580,9 @@
       var l = (isArr(d.advertiser_share) ? d.advertiser_share : []).filter(function (x) {
         return x && typeof x === "object" && str(x.advertiser_name).trim() && anteilWert(x.ad_share_pct) != null;
       }).slice(0, 8);
-      if (!l.length) { platz.innerHTML = UC.leerHtml({ mini: true, titel: leerSatz() }); balken = null; return; }
+      /* Leer: der Leerzustand der Balkenliste aus core (15.10., kompakt: Zeichen und Titel).
+         Gefiltert sagt er "No matching data" mit der Lupe, sonst, was fehlt. */
+      if (!l.length) { balken.render([], { leer: { gefiltert: filterAktiv(), titel: filterAktiv() ? null : "No Ads observed" } }); return; }
       var max = Math.max.apply(null, l.map(function (x) { return anteilWert(x.ad_share_pct); })) || 1;
       balken.render(l.map(function (x, i) {
         var n = str(x.advertiser_name).trim(), info_ = advInfo(n, x.company_id), v = anteilWert(x.ad_share_pct);
@@ -1692,9 +1715,9 @@
       zahlSetzen(el, UC.makeZaehlZeile ? null : alle.length);
       if (!alle.length) {
         var gesucht = !!str(tt.suche).trim();
-        platz.innerHTML = '<div class="up-box">' + (gesucht
-          ? UC.leerHtml({ gefiltert: true, was: "topics", knopf: "Clear search", knopfAttr: "data-uad-topicsweg" })
-          : UC.leerHtml({ mini: true, titel: leerSatz() })) + '</div>';
+        if (gesucht) platz.innerHTML = '<div class="up-box">' +
+          UC.leerHtml({ gefiltert: true, was: "topics", knopf: "Clear search", knopfAttr: "data-uad-topicsweg" }) + '</div>';
+        else { platz.innerHTML = tabelleLeer("topics", 5, { icon: "tags", alt: leerSatz() }); spaltenAnwenden("topics"); }
         topicsPager(0);
         return;
       }
@@ -2010,7 +2033,7 @@
       if (fe) {
         sek("held").innerHTML = '<div class="up-box">' + fehlerKasten(a, "detail") + '</div>';
         sek("kpis").hidden = true;
-        if (linie) linie.empty(t("This advertiser could not be loaded"));
+        if (linie) linie.meldung(t("This advertiser could not be loaded"));
         return;
       }
       sek("kpis").hidden = false;
@@ -2063,7 +2086,7 @@
     function zeichneDetailChart() {
       if (!linie) return;
       var a = detailAnfrage(), d = dasDetail();
-      if (!d) { if (fehlerVon(a)) linie.empty(t("This advertiser could not be loaded")); else linie.skeleton(); return; }
+      if (!d) { if (fehlerVon(a)) linie.meldung(t("This advertiser could not be loaded")); else linie.skeleton(); return; }
       var tr = trendTage(d.trend), n = state.dMetrik === "n";
       if (!tr.length) { linie.empty(); return; }
       /* Ein Tag ohne Auftritt ist 0 (gezaehlt), der Anteil eines Tags ohne Ads ist keiner (null). */
@@ -2081,7 +2104,7 @@
       var verknuepft = !!str(adv.company_id).trim();
       var l = (isArr(d.prompts) ? d.prompts : []).filter(function (x) { return x && typeof x === "object" && str(x.prompt_text).trim(); });
       zahlSetzen(el, l.length);
-      if (!l.length) { platz.innerHTML = '<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No prompts yet" }) + '</div>'; return; }
+      if (!l.length) { platz.innerHTML = tabelleLeer("dprompts", 4, { icon: "zap", alt: "No prompts yet" }); spaltenAnwenden("dprompts"); return; }
       platz.innerHTML = tabelleHtml(kopfAus("dprompts"), l.map(function (x) {
         var pid = str(x.prompt_id).trim();
         var org = x.organic_mentioned, organisch;
@@ -2138,7 +2161,12 @@
       var werkzeuge = (mitKampagne ? segHtml("uad-gruppe-seg", [["all", "All"], ["campaign", "By Campaign"]], state.dGruppe) : '') +
         leiserKnopf("Open Ad Library", 'data-uad-bibliothek="' + esc(state.advertiser || "") + '"');
       var gesamtN = anzahlWert(s.ad_appearances);
-      if (!l.length) { el.innerHTML = kopf("Ads", { zahl: 0, tools: werkzeuge }) + '<div class="up-box">' + UC.leerHtml({ mini: true, titel: leerSatz() }) + '</div>'; return; }
+      /* Leer: derselbe Zustand wie "Recent Ads" der Uebersicht (zeichneRecent) -- Kacheln statt
+         Zeilen, also der Leerzustand im Fluss mit seinem eigenen Polster, nicht die Tabellenflaeche
+         (15.10.; vorher ein Satz in 13px). Gefiltert ohne Knopf: hier haengt kein data-uad-alleweg. */
+      if (!l.length) { el.innerHTML = kopf("Ads", { zahl: 0, tools: werkzeuge }) + '<div class="up-box">' + UC.leerHtml({ icon: "marketing",
+        gefiltert: filterAktiv(), titel: filterAktiv() ? "No matching Ads" : "No Ads observed", knopf: "",
+        text: filterAktiv() ? "No Ads match these filters." : "None of the tracked AI responses in this range contained an Ad." }) + '</div>'; return; }
       /* Mehr Auftritte als gelieferte Ads: das sind die neuesten. Der Satz sagt es, der Knopf daneben
          fuehrt zu allen. */
       var hinweis = gesamtN != null && gesamtN > l.length ? '<p class="uad-hinweis">' + esc(ersetze(t("Showing the {n} most recent of {total}."), { n: ganz(l.length), total: ganz(gesamtN) })) + '</p>' : '';
@@ -2381,6 +2409,57 @@
       } catch (e) {}
       if (UC.legacyCopy && UC.legacyCopy(text)) fertig();
     }
+
+    /* ---- Export (16.10.) ---------------------------------------------------------------------
+       Der Knopf oeffnet den Export-Dialog der App (export-data.js) mit den Datensaetzen von Ads,
+       vorgewaehlt nach Reiter, und gibt ihm Zeitraum und Filter der Seite mit. Die Parameter je
+       Datensatz sind die der Liste (Auftrag bubble/shopping_ads_export_db_auftrag_16_10.md) ohne
+       Team und Zeitraum -- die setzt der Dialog aus seiner eigenen Auswahl. Eine Suche geht nur von
+       dem Reiter mit, auf dem sie steht. Im Advertiser Detail gelten Ad Library und Prompts with Ads
+       fuer DIESEN Werbetreibenden (das zeigt die Seite). Ob es die Funktionen schon gibt, prueft
+       der Dialog selbst. */
+    function exportKennung() {
+      var k = str(root.getAttribute("data-export-instance")).trim();
+      if (k && !/^[A-Z_]{3,}$/.test(k)) return k;
+      var e = document.querySelector(".uex-root[data-instance]");
+      k = e ? str(e.getAttribute("data-instance")).trim() : "";
+      return k && !/^[A-Z_]{3,}$/.test(k) ? k : "";
+    }
+    function exportKontext() {
+      var s = state.seite, f = state.filter, lb = state.library;
+      var grund = grundBody();
+      delete grund.p_team; delete grund.p_date_from; delete grund.p_date_to;
+      function neu(extra) { return mit(mit({}, grund), extra || {}); }
+      var detail = s === "advertiser" && str(state.advertiser).trim() ? { p_advertisers: [str(state.advertiser).trim()] } : {};
+      var advSuche = s === "advertisers" ? suchText(state.advertisers.suche) : null;
+      /* Die Suche der Bibliothek gilt in beiden Modi (libAnfrage und promptAnfrage lesen sie). */
+      var libSuche = s === "library" ? suchText(lb.suche) : null;
+      var basis = filterAktiv();
+      return {
+        export_type: s === "library" ? (lb.modus === "prompts" ? "ads_prompts" : "ads_library") : s === "advertiser" ? "ads_library" : "ads_advertisers",
+        date_from: f.von || "", date_to: f.bis || "", preset: f.preset || "",
+        params: {
+          ads_advertisers: neu({ p_search: advSuche, p_sort: orderOf("advertisers", state.advertisers) }),
+          ads_library: neu(mit(mit({}, detail), { p_search: libSuche })),
+          ads_prompts: neu(mit(mit({}, detail), { p_search: libSuche, p_sort: orderOf("prompts", state.prompts) }))
+        },
+        filter_aktiv: {
+          ads_advertisers: basis || !!advSuche,
+          ads_library: basis || !!libSuche || !!detail.p_advertisers,
+          ads_prompts: basis || !!libSuche || !!detail.p_advertisers
+        }
+      };
+    }
+    function exportOeffnen() {
+      var k = exportKennung(), auf = false;
+      if (k && typeof window.upstreemExportOpen === "function") {
+        try { auf = window.upstreemExportOpen(k, exportKontext()) !== false; } catch (e) { auf = false; }
+      }
+      /* Kein stilles Nichts: ohne Dialog auf der Seite sagt es der Knopf. */
+      if (!auf && UC.toast) UC.toast(t("Export isn't available on this page"), { kind: "neutral" });
+    }
+    var elExport = root.querySelector(".uad-export");
+    if (elExport) elExport.addEventListener("click", function (e) { e.preventDefault(); exportOeffnen(); });
 
     /* ---- Klicks ---------------------------------------------------------------------------------- */
     root.addEventListener("click", function (e) {

@@ -894,11 +894,20 @@
        unbeantwortet laesst, wegen der man hinsieht. */
     var LISTE_MAX = 5;
     function eigenesRoh(r){ return r && (r.is_own === true || String(r.is_own) === "yes"); }
+    /* LEER (15.10.): der Leerzustand der Charts aus core (UC.tabelleLeerHtml) statt "No data" in
+       13px. Die Flaeche ist die der fuenf Skelettzeilen (5 x 36, Zeilenhoehe in der CSS), also
+       springt die Liste nicht; bei 180 Hoehe steht die kompakte Form (Zeichen und Titel). Agentic
+       hat keine Filter (letzte 30 Tage, agenticStand in dashboard-page), also nie "No matching". */
+    function listeLeer(zeichen){
+      return UC.tabelleLeerHtml
+        ? UC.tabelleLeerHtml({ icon: zeichen, zeilen: LISTE_MAX })
+        : '<div class="upw-li-empty" data-i18n="No data">' + esc(t("No data")) + '</div>';
+    }
     function renderBrands(){
       if (state.fehler.brands){ elBrands.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("brands") : ""; return; }
       if (state.loading || !state.brands){ elBrands.innerHTML = listenSkelett(LISTE_MAX); return; }
       var rows = state.brands;
-      if (!rows.length){ elBrands.innerHTML = '<div class="upw-li-empty" data-i18n="No data">' + esc(t("No data")) + '</div>'; return; }
+      if (!rows.length){ elBrands.innerHTML = listeLeer("squareStack"); return; }
       var pos = function(r, i){ return num(r.position) != null ? num(r.position) : i + 1; };
       var zeige = rows.slice(0, LISTE_MAX);
       var eigenIdx = -1;
@@ -930,7 +939,7 @@
       var fehler = url ? state.fehler.urls : state.fehler.domains;
       if (fehler){ elCites.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("citations") : ""; return; }
       if (state.loading || !rows){ elCites.innerHTML = listenSkelett(LISTE_MAX); return; }
-      if (!rows.length){ elCites.innerHTML = '<div class="upw-li-empty" data-i18n="No data">' + esc(t("No data")) + '</div>'; return; }
+      if (!rows.length){ elCites.innerHTML = listeLeer("domain"); return; }
       elCites.innerHTML = rows.slice(0, LISTE_MAX).map(function(r, i){
         var name = url ? (r.title || r.url || "") : (r.domain || "");
         /* Reddit wie in der URL-Tabelle und in Top Citations (28.09.): statt "reddit.com"

@@ -1688,7 +1688,8 @@
   /* SEIT DEM 15.10. (Dunkel nach Geist) MIT RAND, wie hell und wie Geists Input: das Feld ist
      Background 1 (#0a0a0a) auf der schwarzen Seite, also nur 10 Stufen ueber dem Grund -- ohne
      Rand waere es nicht mehr zu sehen. Der randlose Ruhezustand stammte aus der Zeit, als das Feld
-     (#232326) deutlich heller war als alles um es herum. */
+     (#232326) deutlich heller war als alles um es herum. Seit "eine Stufe ruhiger" (15.10.
+     abends) #0f0f0f auf #0a0a0a, also 5 Stufen -- der Rand ist damit erst recht noetig. */
   #ask-mira[data-theme="dark"] .am-composer { background: var(--vc-field); }
   /* settings tray inside the shell — slides open/closed smoothly */
   .am-settings-panel {

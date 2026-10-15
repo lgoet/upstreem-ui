@@ -51,6 +51,14 @@
   var esc = UC.esc;
   /* core exportiert kein isArr -- eine Zeile, kein Nachbau eines Bauteils. */
   function isArr(v) { return Object.prototype.toString.call(v) === "[object Array]"; }
+  /* Die Saetze dieser Datei stehen sonst in core; diese zwei kamen am 15.10. nachts mit dem
+     Leerzustand fuer url_not_found dazu und stehen hier wie die eigenen Saetze von events.js und
+     shopping.js -- so wandert der Leerzustand mit der Datei, ohne core neu auszuliefern. Gegen alle
+     Kataloge geprueft (Katalog-Kollision). */
+  if (UC.addMessages) UC.addMessages("de", {
+    "Not cited yet": "Noch nicht zitiert",
+    "AI answers to your tracked prompts haven't cited this page yet.": "KI-Antworten auf deine getrackten Prompts haben diese Seite noch nicht zitiert."
+  });
 
   /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (27.09. gemeldet) ----
      "Es ist gar nicht noetig, dass beim Theme-Wechsel was in den Loading-yes-State geht."
@@ -919,6 +927,15 @@
       elFehler.hidden = !state.fehler;
       root.classList.toggle("is-fehler", !!state.fehler);
       if (state.fehler && root.__uudKopf) {
+        /* NOCH NIE ZITIERT IST LEER, NICHT KAPUTT (15.10. nachts): url_not_found heisst nur, dass
+           das eigene Team die Seite nie zitiert hat (Vertrag 12.10.) -- etwa ein URL-Ziel eines
+           Events, das noch keine KI-Antwort genannt hat. Dafuer der Leerzustand nach Geist mit dem
+           Zeichen der Art, nicht das Info-Zeichen von "Page not available". Dieselbe Stelle, dieselbe
+           Huelle: Kopf und Antworten bleiben auch hier weg (is-fehler), es gibt nichts zu zeigen. */
+        if (state.fehlerCode === "url_not_found") {
+          elFehler.innerHTML = UC.leerHtml({ icon: "link", titel: "Not cited yet", text: "AI answers to your tracked prompts haven't cited this page yet." });
+          return;
+        }
         /* Im Drawer aus core: der Leerzustand aus core, mit "Try again", wo ein zweiter Versuch
            etwas bringen kann (wie Response Detail). */
         elFehler.innerHTML = UC.leerHtml({ icon: "info", titel: "Page not available", text: state.fehler,
@@ -1260,11 +1277,15 @@
         return;
       }
       var code = erg.ok ? "" : duStr((erg.fehler && (erg.fehler.message || erg.fehler.code)) || "");
-      if (window.console) console.warn("[url-detail] " + DU.FN.detail + " fuer " + url + ": " +
+      /* url_not_found ist seit 15.10. nachts ein Leerzustand, kein Fehler -- keine Warnung dafuer. */
+      if (code !== "url_not_found" && window.console) console.warn("[url-detail] " + DU.FN.detail + " fuer " + url + ": " +
         (code || "Antwort nicht lesbar") + (erg.status ? " (HTTP " + erg.status + ")" : ""));
       DU.zeile = null; DU.kanon = "";
       c.setFehlerCode(code);
       duKopf(false);
+      /* Noch nie zitiert (Leerzustand, siehe render): die Krume nennt trotzdem die Seite, um die es
+         geht -- sonst stuende dort "URL / -" ueber "Not cited yet", und man wuesste nicht, welche. */
+      if (code === "url_not_found" && DU.kopf) DU.kopf.name(url.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/$/, ""));
       /* Ohne Seite auch keine Tabelle: sie stuende sonst leer unter der Meldung. */
       if (DU.slot) DU.slot.querySelector(".uud-dw").classList.add("is-fehler");
     });

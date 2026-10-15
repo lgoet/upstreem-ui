@@ -175,14 +175,22 @@
       isDark: darkNow, isOwner: isOwner,
       gran: function(){ return curGran; },
       /* Ohne Nachkommastellen -- vorgegeben. Der Standard des Kits waere zwei. */
-      decimals: 0
+      decimals: 0,
+      /* Der Leerzustand sagt "No matching data", wenn die Seite gefiltert geladen hat (15.10.,
+         Feld gefiltert im Payload; ohne das Feld gilt ungefiltert). */
+      gefiltert: function(){ return !!state.gefiltert; }
     });
 
     /* ---------- render (two independent halves) ---------- */
+    /* DAS ZEICHEN VOR "Brand" (15.10. angefordert: "die Icons, wenn vorhanden, im Tabellenheader
+       auch bei Visibility Chart"): squareStack, wie vor "Brand" in Brands Overview -- dieselbe
+       Spalte, dasselbe Zeichen (UC.kopfZeichenHtml, .up-th-ic aus core). Visibility, Ranking und
+       Sentiment tragen dort keins, also auch hier keins. Als Zeichenkette, weil der Kopf mit jedem
+       Zeichnen neu entsteht. */
     function tableHeadHtml(){
       return '<div class="vt-thead">' +
         '<div class="vt-th vt-th-idx">' + UC.HASH_ICON + '</div>' +
-        '<div class="vt-th">Brand</div>' +
+        '<div class="vt-th vt-th-brand">' + (UC.kopfZeichenHtml ? UC.kopfZeichenHtml("squareStack") : "") + 'Brand</div>' +
         '<div class="vt-th vt-th-visibility">Visibility<span class="up-th-info" data-explain="visibility"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V12"/><path d="M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z"/></svg></span></div>' +
         '<div class="vt-th vt-th-ranking">Ranking<span class="up-th-info" data-explain="ranking"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V12"/><path d="M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z"/></svg></span></div>' +
         '<div class="vt-th vt-th-sentiment">Sentiment<span class="up-th-info" data-explain="sentiment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V12"/><path d="M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z"/></svg></span></div></div>';
@@ -213,7 +221,7 @@
       if (!isOwner()) return;
       /* Der Lesefehler schlaegt den Ladezustand: sonst dreht die Kurve weiter, waehrend die
          Tabelle daneben den Fehler schon zeigt. */
-      if (state.leseFehler){ root.classList.remove("is-line-loading"); closeScaleMenu(); line.empty("The data could not be read."); return; }
+      if (state.leseFehler){ root.classList.remove("is-line-loading"); closeScaleMenu(); line.meldung("The data could not be read."); return; }
       var loading = state.loading || !state.hasLine || state.linePending;
       /* The gear button (and, if it was somehow open when a reload started, its dropdown) has no
          business being reachable over a skeleton — there's nothing to configure yet. Plain
@@ -244,6 +252,14 @@
       return UC.trendChip(delta, { decimals: decimals, inverted: inverted, suffix: suffix });
     }
     var ROW_GOTO = '<span class="up-row-goto">' + UC.GOTO_SVG + '</span>';
+    /* Leer: der Leerzustand des Charts daneben (15.10., UC.tabelleLeerHtml) statt des knappen "No
+       data" unter dem Kopf. Die Flaeche ist die der Skelettzeilen, im Band fuellt sie die Tabelle
+       bis unten; gefiltert wie die Kurve. Das Zeichen ist das des Spaltenkopfs (squareStack). */
+    function tabLeerHtml(){
+      return UC.tabelleLeerHtml
+        ? UC.tabelleLeerHtml({ icon: "squareStack", gefiltert: !!state.gefiltert, zeilen: UC.MAX_LINE_SERIES || 8 })
+        : '<div class="up-empty-mini">No data</div>';
+    }
     function renderTable(){
       var rows = Array.isArray(state.tableRows) ? state.tableRows : [];
       var head = tableHeadHtml();
@@ -255,7 +271,7 @@
         /* Lokaler Modus: keine Zwischenlieferungen, leer ist leer -- sofort (wie die Kurve oben). */
         if (isYes(root.getAttribute("data-local"))){
           if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
-          tableEl.innerHTML = head + '<div class="up-empty-mini">No data</div>';
+          tableEl.innerHTML = head + tabLeerHtml();
           return;
         }
         if (!tableEmptyGraceTimer){
@@ -263,7 +279,7 @@
           tableEmptyGraceTimer = setTimeout(function(){
             tableEmptyGraceTimer = null;
             if (state.loading || !state.hasTable || (Array.isArray(state.tableRows) && state.tableRows.length)) return;
-            tableEl.innerHTML = head + '<div class="up-empty-mini">No data</div>';
+            tableEl.innerHTML = head + tabLeerHtml();
           }, 600);   // matches this same file's line-chart __votNoDataT grace window
         }
         return;
@@ -971,6 +987,7 @@
         /* Nur eine echte Lieferung loescht den Vermerk -- ein reiner Theme-Render darf ihn
            nicht wegraeumen, sonst stuende danach "No data" statt des Fehlers. */
         if (params.table != null || params.rows != null || params.series != null) state.leseFehler = false;
+        if (params.gefiltert != null) state.gefiltert = isYes(params.gefiltert);
         var __tbl = (params.table != null) ? params.table : (params.brands != null) ? params.brands : params.rows;
         if (__tbl != null){ state.tableRows = Array.isArray(__tbl) ? __tbl : []; state.hasTable = true; }
         if (params.series != null){

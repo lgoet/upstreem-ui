@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261141;
+  var BUILD = 20261145;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -609,7 +609,8 @@
       else document.documentElement.removeAttribute("data-up-hell");
       /* DAS GEGENSTUECK FUERS DUNKEL (15.10., "Dark nach Geist"): dieselbe Aufteilung wie im grauen
          Hell -- Seite, Seitenleiste und Leisten in Geists Background 2 (#000), Inhalt in Background 1
-         (#0a0a0a). Die Werte stehen in core.css an jedem [data-theme="dark"]; das Attribut braucht
+         (#0a0a0a); seit "eine Stufe ruhiger" (15.10. abends) Seite #0a0a0a, Inhalt #0f0f0f.
+         Die Werte stehen in core.css an jedem [data-theme="dark"]; das Attribut braucht
          es fuer zwei Dinge, die eine Wurzel nicht erreicht: den Seitengrund (html/body, den sonst das
          Kopf-Skript in #101114 malt) und die Regeln, die Inhaltsflaechen vom Seitengrund trennen.
          Ein EIGENER Name und kein zweiter Wert von data-up-hell: das Attribut heisst "hell", und
@@ -899,8 +900,10 @@
     "Dismiss": "Ausblenden",
     "Show": "Zeigen",
     "Hide": "Ausblenden",
-    /* Der Knopf im Seitenkopf, der ein ausgeblendetes Band zurueckholt (UC.bandAus, 15.10.). */
-    "Show chart": "Chart einblenden",
+    /* Der Umschalter des Bandes im Seitenkopf (UC.bandSchalterHtml, 15.10. spaet). Er ersetzt den
+       Knopf "Show chart", der nur im ausgeblendeten Zustand erschien. */
+    "Chart and table": "Chart und Tabelle",
+    "Table only": "Nur Tabelle",
     "Open in new tab": "In neuem Tab öffnen",
 
     /* ── Filter auf Brand-Erwähnungen (vier Tabellen teilen diese Texte) ───────────────────── */
@@ -1293,6 +1296,12 @@
     "No URL types for this period.": "Keine URL-Typen für diesen Zeitraum.",
     "No model data for this period.": "Keine Modelldaten für diesen Zeitraum.",
     "No citation share for this period.": "Kein Citation-Anteil für diesen Zeitraum.",
+    /* Der Leerzustand der Charts (chartLeerHtml, 15.10.) */
+    "No data yet": "Noch keine Daten",
+    "No matching data": "Keine passenden Daten",
+    "Data will appear here once responses are collected for this period.":
+      "Sobald für diesen Zeitraum KI-Antworten vorliegen, erscheinen hier die Daten.",
+    "Try changing the filters or the date range.": "Ändere die Filter oder den Zeitraum.",
     "No citations for this response.": "Keine Web-Quellen zu dieser Response.",
     "No citations match this filter.": "Keine Web-Quellen passen zu diesem Filter.",
     "No topics match your search.": "Keine Topics passen zu deiner Suche.",
@@ -6628,6 +6637,17 @@
     if (!opts || opts.branded !== false) p.p_branded = f.branded;
     return p;
   }
+  /* STEHT AUF DER SEITE EIN DATENFILTER? (15.10., fuer den Leerzustand der Charts: "No matching
+     data" mit der Lupe statt "No data yet".) f ist der Filterstand der Seiten (dashboard-,
+     brands-, citations-page: modelle, maerkte, topics), dazu der Intent-Filter der App. Der
+     Zeitraum zaehlt nicht -- einen gibt es immer --, Branded auch nicht: "non_branded" ist die
+     Vorgabe, keine Wahl des Nutzers. Steht in core, weil drei Seiten dieselbe Frage stellen. */
+  function seitenFilterAktiv(f){
+    f = f || {};
+    function voll(x){ return !!(x && x.length); }
+    if (voll(f.modelle) || voll(f.maerkte) || voll(f.topics)) return true;
+    return intentsLive() && intentFilterGet().intents.length > 0;
+  }
 
   /* Loading skeleton rows for a grid table.
      spec: { count, cols:[width|{w, jitter, logo, logoStyle, cls}], rowClass, cellClass, headHtml }
@@ -7740,7 +7760,14 @@
          exactly the wrap-onto-a-second-implicit-row breakage above, just on a delayed/intermittent
          trigger (only after some other row had already been stamped with the current signature). The
          query below finds ANY row missing the current signature, wherever it sits. */
-      var rowsStale = !!root.querySelector('.up-row:not([data-up-colsig="' + sigCols + '"])');
+      /* DER KOPF ZAEHLT MIT (15.10., Leerzustand der Tabellen neben den Charts). Eine Tabelle, die
+         ihren Kopf selbst neu zeichnet (brands-overview, die leeren Tabellen in Shopping und Ads),
+         hat im Leerzustand KEINE Zeile -- dann gab es nichts Ungestempeltes, die Pruefung oben
+         kehrte zurueck, und der frische Kopf zeigte alle Zellen: gemessen bei 375 in Brands vier
+         Spuren und sechs Kopfzellen, Sentiment und die Aktionsspalte brachen in eine zweite
+         Rasterzeile um (im Skelett davor waren sie ausgeblendet). Also traegt der Kopf den Stempel
+         genauso wie jede Zeile. */
+      var rowsStale = !!root.querySelector('.up-row:not([data-up-colsig="' + sigCols + '"]), .up-thead:not([data-up-colsig="' + sigCols + '"])');
       if (sigCols === lastSigCols && !rowsStale) return;
       /* Aendert die Breite, welche Spalten Platz haben, muss das Menue es mitsagen -- auch wenn
          es gerade offen ist, waehrend jemand das Fenster zieht. Nur beim Wechsel der Menge,
@@ -7756,7 +7783,7 @@
           el.style.display = shown[c.key] ? "" : "none";
         });
       });
-      Array.prototype.forEach.call(root.querySelectorAll(".up-row"), function(r){
+      Array.prototype.forEach.call(root.querySelectorAll(".up-row, .up-thead"), function(r){
         r.setAttribute("data-up-colsig", sigCols);
       });
     }
@@ -15319,6 +15346,9 @@
   var _klebRaf = 0;
   function klebPruefenAlle(){
     _klebRaf = 0;
+    /* Der klebende Fuss liest zuerst (alle Tabellen), geschrieben wird erst nach der Leiste --
+       so erzwingt keine Klasse von hier eine Neuberechnung mitten in den Lesungen dort. */
+    var fuss = fussLesen();
     KLEB_WURZELN = KLEB_WURZELN.filter(function(w){ return w.root.isConnected; });
     KLEB_WURZELN.forEach(function(w){
       var head = w.head && w.head.isConnected ? w.head : (w.head = w.root.querySelector(".up-head"));
@@ -15331,6 +15361,7 @@
       var klebt = d > w.ruhe + 0.5;
       if (klebt !== w.root.classList.contains("is-geklebt")) w.root.classList.toggle("is-geklebt", klebt);
     });
+    fussSchreiben(fuss);
   }
   function klebPlanen(){ if (!_klebRaf) _klebRaf = requestAnimationFrame(klebPruefenAlle); }
   try {
@@ -15341,6 +15372,216 @@
     for (var i = 0; i < KLEB_WURZELN.length; i++) if (KLEB_WURZELN[i].root === root){ KLEB_WURZELN[i].ruhe = null; klebPlanen(); return; }
     KLEB_WURZELN.push({ root: root, head: head || null, ruhe: null });
     klebPlanen();
+  }
+
+  /* ---- DER KLEBENDE FUSS (16.10., data-kleb-fuss="yes" an der Wurzel einer Tabelle) ----------
+     Bestellt fuer Citations und Brands > Tracked (Variante A der Leinwand "Citations
+     Seitenaufbau"): "sobald die Tabelle unten voll im Bild ist, dann die bottom Summary
+     Row/Pagination und so, solange das Verhalten, wie die bottom sticky parts der Tabelle
+     reinkommen, smooth bleibt." Gesamtzeile (.up-sumrow) und Pagination (.up-foot) kleben unten
+     am Scrollbereich -- ABER ERST, WENN DIE TABELLE DEN BILDSCHIRM FUELLT. Solange Kopf, Reiter
+     oder Chart noch zu sehen sind, stehen sie an ihrem Platz am Ende der Tabelle; am Ende der
+     Tabelle kehren sie von selbst dorthin zurueck (das ist sticky selbst, ohne Sprung).
+     "Die Tabelle fuellt den Bildschirm" heisst: ihr Spaltenkopf klebt, er steht also tiefer in
+     .up-table als in Ruhe. Das gibt es nur mit klebendem Kopf (.up-sticky, ab 1000 breit) --
+     darunter klebt nichts, wie bei jeder Tabelle der App.
+     NUR ZWEI UEBERGAENGE BEWEGEN SICH (transform und opacity, --up-t-3, easeOutExpo):
+       aus -> an   die Tabelle beginnt zu fuellen, waehrend ihr Ende noch unter dem Bild liegt:
+                   der Fuss faehrt von unten herein. Liegt das Ende schon im Bild, aendert sich
+                   nichts Sichtbares -- er steht dann ohnehin an seinem Platz.
+       an -> aus   die Tabelle fuellt nicht mehr (zurueck zum Chart), der Fuss klebt aber gerade:
+                   er faehrt nach unten hinaus, und ERST DANACH steht er wieder im Fluss, dort
+                   liegt er dann unter dem Bild. Kehrt die Richtung mittendrin um, kehrt die
+                   Bewegung von der Stelle aus um, an der sie gerade ist -- darum Uebergaenge und
+                   keine Keyframes, die von vorn anfingen.
+     Der Wechsel am Ende der Tabelle bewegt nichts; nur der Schatten blendet.
+     Linie und Schatten NUR, solange er wirklich klebt (.is-fuss-klebt): sein natuerlicher Platz
+     liegt dann unter dem Bild. Den liest eine unsichtbare Marke direkt unter dem Kasten
+     (.up-fuss-marke) -- am klebenden Element selbst laesst er sich nicht mehr ablesen.
+     Gelesen wird im Scroll-Durchlauf der Leiste (klebPruefenAlle), je Bild hoechstens einmal:
+     vier Lesungen je Tabelle, geschrieben wird nur bei einem Wechsel. Die Hoehen von Fuss und
+     Gesamtzeile kommen aus einem Groessenwaechter, nicht aus dem Scrollen. Bewegung reduziert
+     (prefers-reduced-motion): dieselben Zustaende, ohne Fahrt. */
+  var FUSS_WURZELN = [];
+  function fussDauer(root){
+    var v = 260;
+    try { v = parseFloat(window.getComputedStyle(root).getPropertyValue("--up-t-3")) || 260; } catch(e){}
+    return v;
+  }
+  function fussBewegt(){
+    try { return !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch(e){ return true; }
+  }
+  /* Der Scrollbereich, an dessen Unterkante der Fuss klebt: #main in der App, sonst der naechste
+     Vorfahre, der scrollt, sonst das Fenster (wie makeFestHoehe). */
+  function fussScroller(root){
+    var m = document.getElementById("main");
+    if (m && m.contains(root)) return m;
+    var el = root.parentElement, n = 0, oy;
+    while (el && el !== document.body && el !== document.documentElement && n++ < 40){
+      try { oy = window.getComputedStyle(el).overflowY; } catch(e){ return null; }
+      if (oy === "auto" || oy === "scroll") return el;
+      el = el.parentElement;
+    }
+    return null;
+  }
+  function fussScrollerHolen(w){
+    if (w.sc === undefined){
+      w.sc = fussScroller(w.root);
+      try { w.scPolster = w.sc ? (parseFloat(window.getComputedStyle(w.sc).paddingBottom) || 0) : 0; } catch(e){ w.scPolster = 0; }
+    }
+    return w.sc;
+  }
+  /* Die Hoehen aus dem Groessenwaechter. --up-fuss-unter: wie weit die Gesamtzeile ueber der
+     Unterkante klebt (Hoehe der Pagination plus die Linie des Kastens zwischen beiden -- so
+     loesen sich beide am Ende der Tabelle im selben Bild, und die Linie bleibt, wo sie war).
+     --up-fuss-weg: die Strecke der Fahrt, beide Teile als EIN Block, samt Schatten -- ABER NIE
+     WEITER, ALS UNTER IHREM PLATZ NOCH INHALT STEHT. Ein verschobenes Element zaehlt fuer den
+     Scrollbereich an seinem Platz im Fluss plus Verschiebung (das Kleben zaehlt dort nicht mit):
+     121 Weg unter einer Pagination, unter der 64 Luft stehen, verlaengerten die Seite fuer die
+     Dauer der Fahrt um 57px (gemessen 16.10., scrollHeight 773 -> 830) -- der Balken zuckte. Der
+     Platz wird nur in Ruhe gemessen (kein Teil verschoben), sonst zaehlte die Fahrt mit. */
+  function fussMessen(w){
+    var r = w.root;
+    if (!r.isConnected) return;
+    if (!w.foot || !w.foot.isConnected) w.foot = r.querySelector(":scope > .up-foot");
+    if (!w.sum || !w.sum.isConnected) w.sum = w.box.querySelector(".up-sumrow");
+    [w.foot, w.sum].forEach(function(el){
+      if (el && w.ro && w.gesehen.indexOf(el) < 0){ w.gesehen.push(el); w.ro.observe(el); }
+    });
+    var footH = w.foot ? w.foot.offsetHeight : 0, sumH = w.sum ? w.sum.offsetHeight : 0, rand = 0;
+    try { rand = parseFloat(window.getComputedStyle(w.box).borderBottomWidth) || 0; } catch(e){}
+    var unter = footH ? footH + rand : 0;
+    if (w.phase === "aus" && (footH || sumH) && r.getClientRects().length){
+      var sc = fussScrollerHolen(w);
+      var ende = w.marke.getBoundingClientRect().top + (footH ? footH : -rand);
+      var inhaltEnde = sc ? sc.getBoundingClientRect().top + (sc.clientTop || 0) - sc.scrollTop + sc.scrollHeight
+                          : document.documentElement.scrollHeight - (window.pageYOffset || 0);
+      w.platz = Math.max(0, Math.floor(inhaltEnde - ende));
+    }
+    var weg = sumH + unter + 24;
+    if (w.platz != null) weg = Math.min(weg, w.platz);
+    if (footH !== w.footH || sumH !== w.sumH || rand !== w.rand || weg !== w.weg){
+      w.footH = footH; w.sumH = sumH; w.rand = rand; w.weg = weg;
+      r.style.setProperty("--up-fuss-unter", unter + "px");
+      r.style.setProperty("--up-fuss-weg", weg + "px");
+      if (r.classList.contains("is-fuss-ohne-summe") !== !sumH) r.classList.toggle("is-fuss-ohne-summe", !sumH);
+    }
+    klebPlanen();
+  }
+  function klebFuss(root){
+    for (var i = 0; i < FUSS_WURZELN.length; i++) if (FUSS_WURZELN[i].root === root) return FUSS_WURZELN[i];
+    var box = root.querySelector(".up-box");
+    if (!box || !box.parentNode) return null;
+    var marke = document.createElement("div");
+    marke.className = "up-fuss-marke";
+    marke.setAttribute("aria-hidden", "true");
+    box.parentNode.insertBefore(marke, box.nextSibling);
+    var w = { root: root, box: box, marke: marke, phase: "aus", uhr: 0, footH: -1, sumH: -1, rand: -1, weg: -1,
+              platz: null, sc: undefined, scPolster: 0, gesehen: [], ro: null };
+    FUSS_WURZELN.push(w);
+    /* Der Kasten waechst mit jeder Zeile und mit der Gesamtzeile, die oft erst nach dem Aufbau
+       entsteht (makeZaehlZeile): sein Waechter findet sie und meldet das Ende der Tabelle neu,
+       auch wenn niemand scrollt (Blaettern, Laden, Band ein und aus). */
+    if (window.ResizeObserver){
+      w.ro = new ResizeObserver(function(){ fussMessen(w); });
+      w.ro.observe(box);
+      w.ro.observe(root);
+    }
+    fussMessen(w);
+    return w;
+  }
+  function fussLesen(){
+    if (!FUSS_WURZELN.length) return null;
+    FUSS_WURZELN = FUSS_WURZELN.filter(function(w){ return w.root.isConnected; });
+    return FUSS_WURZELN.map(function(w){
+      var r = w.root;
+      if (!r.classList.contains("up-sticky") || !(w.sumH > 0 || w.footH > 0)) return { w: w, fuellt: false, unten: false };
+      if (!w.thead || !w.thead.isConnected){ w.thead = w.box.querySelector(".up-thead"); w.table = w.thead && w.thead.parentElement; }
+      if (!w.thead || !w.table) return { w: w, fuellt: false, unten: false };
+      fussScrollerHolen(w);
+      var unterkante;
+      if (w.sc){ var s = w.sc.getBoundingClientRect(); unterkante = s.top + (w.sc.clientTop || 0) + w.sc.clientHeight - w.scPolster; }
+      else unterkante = window.innerHeight || document.documentElement.clientHeight || 0;
+      var fuellt = w.thead.getBoundingClientRect().top - w.table.getBoundingClientRect().top > 0.5;
+      /* Das natuerliche Ende des untersten Teils: die Pagination steht direkt unter der Marke,
+         die Gesamtzeile allein endet ueber der Linie des Kastens. */
+      var ende = w.marke.getBoundingClientRect().top + (w.footH > 0 ? w.footH : -w.rand);
+      return { w: w, fuellt: fuellt, unten: ende > unterkante + 0.5 };
+    });
+  }
+  /* Den Stil jetzt festschreiben: der Startpunkt einer Fahrt muss berechnet sein, bevor der
+     Zielzustand gesetzt wird -- sonst sieht der Browser nur das Ziel und faehrt nicht. Nur Stil,
+     kein Layout. */
+  function fussFest(w){ try { window.getComputedStyle(w.sum || w.foot || w.root).transform; } catch(e){} }
+  function fussRein(w){
+    var cl = w.root.classList;
+    cl.add("is-fuss-still"); cl.add("is-fuss-an"); cl.add("is-fuss-weg");
+    fussFest(w);
+    cl.remove("is-fuss-still"); cl.remove("is-fuss-weg");
+    w.phase = "an";
+  }
+  function fussAus(w){
+    clearTimeout(w.uhr);
+    var cl = w.root.classList;
+    cl.add("is-fuss-still");
+    cl.remove("is-fuss-an"); cl.remove("is-fuss-weg"); cl.remove("is-fuss-klebt");
+    fussFest(w);
+    cl.remove("is-fuss-still");
+    w.phase = "aus";
+  }
+  /* Hinaus: erst die Fahrt, dann zurueck in den Fluss. Die Uhr und nicht transitionend: in
+     einem verdeckten Fenster laufen keine Uebergaenge, und das Ende kaeme nie. */
+  function fussRaus(w){
+    w.phase = "raus";
+    w.root.classList.add("is-fuss-weg");
+    clearTimeout(w.uhr);
+    w.uhr = setTimeout(function(){ if (w.phase === "raus") fussAus(w); }, fussDauer(w.root) + 40);
+  }
+  function fussStellen(w, fuellt, unten){
+    var cl = w.root.classList;
+    if (fuellt){
+      if (w.phase === "aus"){
+        if (unten && fussBewegt()) fussRein(w);
+        else { cl.add("is-fuss-an"); w.phase = "an"; }
+      } else if (w.phase === "raus"){
+        clearTimeout(w.uhr); cl.remove("is-fuss-weg"); w.phase = "an";
+      }
+    } else if (w.phase === "an"){
+      if (unten && fussBewegt()) fussRaus(w); else fussAus(w);
+    }
+    var klebt = w.phase === "an" && unten;
+    if (klebt !== cl.contains("is-fuss-klebt")) cl.toggle("is-fuss-klebt", klebt);
+  }
+  function fussSchreiben(liste){
+    if (!liste) return;
+    liste.forEach(function(z){ fussStellen(z.w, z.fuellt, z.unten); });
+  }
+
+  /* DIE LEISTE UEBER DEM BAND (16.10., Variante A der Leinwand "Citations Seitenaufbau", fuer
+     Citations und Brands > Tracked gewaehlt). Die eine Leiste einer Tabelle (data-leiste="yes",
+     ihr .up-head) steht OBEN, ueber dem Chart: links Kalender und Filter, die fuer Chart UND
+     Tabelle gelten, rechts die Werkzeuge der Tabelle. Darunter das Band, darunter der Kasten.
+     Gebaut als Umstellung IN der Wurzel der Tabelle, nicht als eigene Leiste der Seite: so klebt
+     die Leiste ueber makeSticky wie in Prompt Insights (oben bei --up-sticky-top), der
+     Spaltenkopf direkt unter ihr (--up-thead-off ist ihre gemessene Hoehe; das Band liegt
+     dazwischen und scrollt unter ihr weg), und kein Knopf der Tabelle verlaesst die Wurzel, an
+     der ihre Klicks, Tooltips, Suche und Menues haengen. Die Seite haengt Kalender und Filter in
+     .up-leiste-scope wie in Prompt Insights.
+     root: Wurzel der Tabelle; band: das Band oder seine Huelle; o.kopf: die Leiste, wenn sie nicht
+     das direkte Kind .up-head ist (Brands: der Kopf der Tabelleneinheit wandert nach oben).
+     Bewegt nur, was nicht schon steht. Wandert das Band zu einer anderen Tabelle (Reiterwechsel in
+     Citations), verliert die alte ihre Klasse. */
+  function bandUnterLeiste(root, band, o){
+    o = o || {};
+    if (!root || !band) return false;
+    var kopf = o.kopf || root.querySelector(":scope > .up-head");
+    if (!kopf) return false;
+    var alt = band.parentNode;
+    if (alt && alt !== root && alt.classList && alt.classList.contains("has-leistenband")) alt.classList.remove("has-leistenband");
+    if (kopf.parentNode !== root) root.insertBefore(kopf, root.firstChild);
+    if (kopf.nextElementSibling !== band) root.insertBefore(band, kopf.nextSibling);
+    if (!root.classList.contains("has-leistenband")) root.classList.add("has-leistenband");
+    return true;
   }
 
   function makeSticky(root, headEl){
@@ -15450,6 +15691,10 @@
       stickyTopSetzen(on);
       if (on){ syncTheadOffset(); syncDeckstreifen(); }
       klebAnmelden(root, headEl);
+      /* Der klebende Fuss (siehe klebFuss): per Attribut, fuer jede Tabelle mit makeSticky. Hier
+         und nicht beim Aufbau: eine Seite darf das Attribut setzen, solange die Tabelle sich
+         noch einrichtet -- applySticky laeuft danach bei jedem Fensterwechsel wieder. */
+      if (root.getAttribute("data-kleb-fuss") === "yes") klebFuss(root);
     }
     /* WIE HOCH MUSS DER DECKSTREIFEN WIRKLICH SEIN (19.09. gemessen im Domain-Drawer).
        .up-head::before malt die Flaeche ueber der geklebten Leiste, damit keine Zeile darueber
@@ -15536,7 +15781,18 @@
      weiter, bis sie wieder zu sehen ist.
      cfg.kopf / cfg.fuss: Leiste und Pagination der Tabelle (ihre Groesse verschiebt Oberkante
      bzw. Rest). Rueckgabe { planen }: die Komponente ruft planen() nach jedem Zeichnen, das die
-     Pagination ein- oder ausblenden kann; hoechstens einmal je Bild. */
+     Pagination ein- oder ausblenden kann; hoechstens einmal je Bild.
+     cfg.seiteZuerst (15.10. spaet, Prompt Insights; gemeldet: "da ist ja Topbar, Navigation und
+     Filterbar sticky oben ... davor soll alles scrollen. So ist es auf den anderen Views ja
+     auch"): der Kasten wird nicht auf den Platz UNTER dem Seitenkopf bemessen, sondern auf den
+     Platz unter der GEKLEBTEN Leiste. Dann scrollt #main genau so weit, bis die Leiste an ihrer
+     Klebkante steht -- Seitenkopf und Reiter gehen weg wie auf jeder anderen Seite --, und ab da
+     scrollt nur noch der Kasten, die Pagination steht unten. Ohne das scrollte #main gar nicht,
+     und alles ueber der Tabelle stand wie angeheftet (b882286 bis hier). Der Rad-Uebergang unten
+     gehoert dazu: ohne ihn finge der Kasten das Rad schon in Ruhe ab, und der Seitenkopf ginge
+     ueber der Tabelle nie weg.
+     cfg.rollt: Selektor weiterer Flaechen der Wurzel, die wie der Kasten in sich scrollen (die
+     Gruppenliste der Prompt-Tabelle) -- dort gilt derselbe Rad-Uebergang. */
   /* DIE FILTER DER EINEN LEISTE (15.10., zuerst in der Prompt-Tabelle, abends nach core gehoben
      fuer Responses und alle weiteren Tabellen). Eine Tabelle hat Filter, die DATEN aendern ("<Marke>
      mentioned?", Mentioned brands, Rank, Sentiment ...). In der einen Leiste stehen sie nicht mehr
@@ -15708,30 +15964,77 @@
      nicht und sollen es auch nicht (ohne data-flach greift ohnehin keine Regel).
        teile.zwei     true: zwei Einheiten mit Trennlinie (.up-band-zwei)
        teile.selbst   true: das Band ist zugleich seine einzige Einheit (Brands)
-       teile.einheit, .kopf, .flaeche, .inhalt   Selektoren, relativ zum Band */
+       teile.einheit, .kopf, .flaeche, .inhalt   Selektoren, relativ zum Band
+       teile.auge     Selektor des eigenen Knopfs zum Ausblenden: er weicht, sobald der Umschalter
+                      im Seitenkopf steht (bandAus) -- ohne Seitenkopf bleibt er der einzige Weg */
   function bandTeile(band, teile){
     if (!band || !band.classList) return null;
     teile = teile || {};
     band.classList.add("up-band");
     if (teile.zwei) band.classList.add("up-band-zwei");
     if (teile.selbst) band.classList.add("up-band-einheit");
-    [["einheit", "up-band-einheit"], ["kopf", "up-band-head"], ["flaeche", "up-band-flaeche"], ["inhalt", "up-band-inhalt"]].forEach(function(p){
+    [["einheit", "up-band-einheit"], ["kopf", "up-band-head"], ["flaeche", "up-band-flaeche"], ["inhalt", "up-band-inhalt"],
+     ["auge", "up-band-auge"]].forEach(function(p){
       if (!teile[p[0]]) return;
       try { [].forEach.call(band.querySelectorAll(teile[p[0]]), function(el){ el.classList.add(p[1]); }); } catch(e){}
     });
     return band;
   }
+  /* DER UMSCHALTER DES BANDES (15.10. spaet: "Mach oben in die Topbar einen Switcher zum Ein- und
+     Ausschalten der Charts. Nicht ueber so ein Eye-Icon. Switcher nur mit 2 Icons, aber
+     entspanntem Padding"). Vorher stand am Band ein Auge und, nur solange es aus war, im Kopf ein
+     Knopf "Show chart" -- zwei Bedienungen an zwei Orten fuer dieselbe Wahl, und die eine erschien
+     und verschwand.
+     DER THEMENSCHALTER IN ZWEI FELDERN und kein Nachbau: .up-seg mit der gleitenden Flaeche
+     (segLauf), die Form steht in core.css an denselben Regeln wie .up-themesw -- Kapseln mit
+     Polster neben dem Zeichen, 40 x 32 (32 hoch wie die Knoepfe des Seitenkopfs) bzw. 32 x 24.
+     Zwei sich ausschliessende Wahlen, also radiogroup/radio wie dort; der Name je Knopf als
+     aria-label und Tooltip.
+     Die Zeichen: chartSpline (ein Verlauf mit Achse -- dasselbe wie bisher am Knopf "Show chart")
+     fuer Chart und Tabelle, listIcon (drei Zeilen) fuer nur die Tabelle. Kein Auge: das sagt
+     "verbergen", nicht "was steht da". Und nicht layoutGrid -- das ist in Ads die Kachelansicht.
+     opts.aus  true: "Table only" gewaehlt; opts.id  Kennung des Bandes; opts.klein  die 24er-Form */
+  var BAND_WAHLEN = [
+    { key: "an",  label: "Chart and table", zeichen: "chartSpline" },
+    { key: "aus", label: "Table only",      zeichen: "listIcon" }
+  ];
+  function bandSchalterHtml(opts){
+    opts = opts || {};
+    var aus = !!opts.aus;
+    return '<div class="up-seg up-bandsw' + (opts.klein ? " is-klein" : "") + '" role="radiogroup" aria-label="' + esc(t_("Layout")) + '"' +
+      (opts.id != null ? ' data-band="' + esc(String(opts.id)) + '"' : "") + '>' +
+      BAND_WAHLEN.map(function(w){
+        var an = (w.key === "aus") === aus, name = t_(w.label);
+        return '<button type="button" class="up-seg-btn' + (an ? " is-active" : "") + '" role="radio" aria-checked="' + (an ? "true" : "false") + '"' +
+          ' data-up-bandwahl="' + w.key + '" aria-label="' + esc(name) + '" data-tip="' + esc(name) + '">' +
+          icon(w.zeichen, 1.5) + '</button>';
+      }).join("") +
+    '</div>';
+  }
+  /* Die Wahl an einem stehenden Umschalter nachziehen. Die Flaeche faehrt von selbst: segLauf misst
+     .is-active nach jedem Klick, und ein frisch eingehaengter Umschalter wird beim Einhaengen
+     gemessen (der Beobachter weiter unten). */
+  function bandSchalterStellen(sw, aus){
+    [].forEach.call(sw.querySelectorAll("[data-up-bandwahl]"), function(b){
+      var an = (b.getAttribute("data-up-bandwahl") === "aus") === !!aus;
+      if (b.classList.contains("is-active") !== an) b.classList.toggle("is-active", an);
+      b.setAttribute("aria-checked", an ? "true" : "false");
+    });
+  }
   /* bandAus: ein Band GANZ ausblenden (15.10.: "Wenn man bei Citations oder bei Brands die Charts
-     ausblendet, gehen die ganz weg und lassen sich ueber einen dann kommenden Button in der
-     Topbar wieder einblenden"). Ausgeblendet steht im Kopf der Seite (.up-ph-top) ein Zeichenknopf
-     wie Aktualisieren daneben (.up-ph-iconbtn), eingeblendet ist er weg. Der Zustand gehoert der
-     Komponente: sie ruft das bei jedem Wechsel und beim Aufbau, und o.zeigen ist IHR Weg zurueck
-     (derselbe wie ihr eigener Knopf -- dieselben Ereignisse, derselbe Speicher).
-     Ohne Seitenkopf (ein Band ausserhalb einer Seite) gibt es keinen Weg zurueck: dann tut die
-     Funktion nichts und meldet false -- die Komponente klappt wie bisher zusammen.
-       o.id     Kennung des Bandes (mehrere Baender auf einer Seite)
-       o.zeigen Rueckruf des Knopfs
-       o.tip    Beschriftung, Vorgabe "Show chart" */
+     ausblendet, gehen die ganz weg"). Seit dem 15.10. spaet steht dafuer im Kopf der Seite
+     (.up-ph-top) IMMER der Umschalter oben (bandSchalterHtml), an und aus -- nicht mehr ein Knopf,
+     der nur im ausgeblendeten Zustand erscheint. Er steht als Erstes vor den Knoepfen des Kopfs:
+     direkt im Kopf vor Aktualisieren (Citations), sonst am Anfang ihrer Huelle (Brands: vor
+     "Add Brand") -- die Ansicht vor den Handlungen, wie bei Geist.
+     Der Zustand gehoert der Komponente: sie ruft das bei jedem Wechsel und beim Aufbau, und
+     o.setzen(aus) ist IHR Weg (derselbe wie ihr eigener Knopf -- dieselben Ereignisse, derselbe
+     Speicher). Das Band bekommt dazu .is-band-schalter: ihr Auge (bandTeile, teile.auge) weicht.
+     Ohne Seitenkopf (ein Band ausserhalb einer Seite) gibt es keinen Umschalter: dann tut die
+     Funktion nichts und meldet false -- die Komponente klappt wie bisher mit ihrem Auge zusammen.
+       o.id      Kennung des Bandes (mehrere Baender auf einer Seite)
+       o.setzen  Rueckruf des Umschalters mit dem gewuenschten Zustand (true = aus)
+       o.zeigen  der Rueckruf von bisher (nur Einblenden), gilt, solange o.setzen fehlt */
   function bandAus(band, aus, o){
     o = o || {};
     if (!band || !band.parentElement) return false;
@@ -15744,30 +16047,33 @@
       if (kopf) break;
       el = el.parentElement;
     }
-    if (!kopf){ band.classList.remove("is-band-aus"); return false; }
+    if (!kopf){ band.classList.remove("is-band-aus"); band.classList.remove("is-band-schalter"); return false; }
     var id = String(o.id || "band");
-    var knopf = null;
-    [].forEach.call(kopf.querySelectorAll(".up-band-zeigen"), function(b){ if (b.getAttribute("data-band") === id) knopf = b; });
+    var sw = null;
+    [].forEach.call(kopf.querySelectorAll(".up-bandsw"), function(s){ if (s.getAttribute("data-band") === id) sw = s; });
     band.classList.toggle("is-band-aus", !!aus);
-    if (aus && !knopf){
-      var wort = t(o.tip || "Show chart");
-      knopf = document.createElement("button");
-      knopf.type = "button";
-      knopf.className = "up-ph-iconbtn up-band-zeigen";
-      knopf.setAttribute("data-band", id);
-      knopf.setAttribute("data-tip", wort);
-      knopf.setAttribute("aria-label", wort);
-      knopf.innerHTML = icon("chartSpline", 1.8);
-      knopf.addEventListener("click", function(){ if (typeof knopf.__zeigen === "function") knopf.__zeigen(); });
-      /* Vor dem ersten Zeichenknopf des Kopfs (Aktualisieren, Docs): dort, wo die Werkzeuge der
-         Seite stehen, und in derselben Huelle wie sie. */
-      var vor = kopf.querySelector(".up-ph-iconbtn:not(.up-band-zeigen)");
-      if (vor && vor.parentNode) vor.parentNode.insertBefore(knopf, vor); else kopf.appendChild(knopf);
+    band.classList.add("is-band-schalter");
+    if (!sw){
+      var huelle = document.createElement("div");
+      huelle.innerHTML = bandSchalterHtml({ id: id, aus: !!aus });
+      sw = huelle.firstChild;
+      sw.addEventListener("click", function(e){
+        var b = e.target && e.target.closest ? e.target.closest("[data-up-bandwahl]") : null;
+        if (!b || !sw.contains(b) || b.classList.contains("is-active")) return;
+        var willAus = b.getAttribute("data-up-bandwahl") === "aus";
+        if (typeof sw.__setzen === "function") sw.__setzen(willAus);
+        else if (!willAus && typeof sw.__zeigen === "function") sw.__zeigen();
+      });
+      /* Vor den ersten Knopf des Kopfs, und zwar an den Anfang seiner Huelle: steht er direkt im
+         Kopf (Citations), davor; steht er in einer Werkzeuggruppe (Brands), als ihr erstes Kind. */
+      var erster = kopf.querySelector(".up-ph-addbtn, .up-ph-iconbtn");
+      if (!erster || !erster.parentNode) kopf.appendChild(sw);
+      else if (erster.parentNode === kopf) kopf.insertBefore(sw, erster);
+      else erster.parentNode.insertBefore(sw, erster.parentNode.firstChild);
     }
-    if (knopf){
-      knopf.__zeigen = o.zeigen;
-      if (!aus && knopf.parentNode) knopf.parentNode.removeChild(knopf);
-    }
+    sw.__setzen = o.setzen;
+    sw.__zeigen = o.zeigen;
+    bandSchalterStellen(sw, !!aus);
     return true;
   }
   /* Gemerkt ueber das Neuladen hinaus (der Speicher der Komponenten lebt am Fenster und war nach
@@ -15808,6 +16114,49 @@
       _h = null;
       if (root.classList.contains("is-festhoehe")) root.classList.remove("is-festhoehe");
       root.style.removeProperty("--up-flach-box-h");
+      radPruefen();
+    }
+    /* DER RAD-UEBERGANG (cfg.seiteZuerst). Der Kasten ist dann ein Scrollbereich in einer Seite,
+       die selbst noch scrollen kann: ohne Eingriff naehme der Browser das Rad ueber der Tabelle
+       fuer den Kasten, und der Seitenkopf bliebe stehen, bis die letzte Zeile erreicht ist.
+       Solange #main noch Weg hat, geht ein Rad nach UNTEN deshalb an #main, der Rest desselben
+       Schritts an den Kasten (gemessen 1100x800: eine Raste von 100 -> 96 an #main, 4 an den
+       Kasten). Danach greift nichts mehr ein: der naechste Radschritt ist ein gewoehnlicher
+       Scrollvorgang im Kasten. Nach OBEN braucht es nichts: steht der Kasten oben, reicht der
+       Browser das Rad selbst an #main weiter (overscroll-behavior: auto, core.css
+       "Scroll-Chaining schuetzen").
+       Der Zuhoerer haengt NUR, solange #main noch Weg hat. Ein nicht-passiver Radzuhoerer laesst
+       jedes Rad ueber der Wurzel erst durch das Skript laufen, und im Normalfall (Kopf weg,
+       Tabelle scrollt) soll es ungebremst bleiben. Nur ueber dem Kasten (und cfg.rollt), nicht
+       ueber Leiste und Menues: ein offenes Menue mit Liste scrollt in sich. Horizontal, mit Shift
+       oder Strg (Zoom) bleibt alles beim Browser. */
+    var _rad = false, _radSc = null;
+    var RAD_ZIEL = ".up-box" + (cfg.rollt ? ", " + cfg.rollt : "");
+    function rad(e){
+      if (e.defaultPrevented || e.ctrlKey || e.shiftKey) return;
+      var ziel = e.target && e.target.closest ? e.target.closest(RAD_ZIEL) : null;
+      if (!ziel || !root.contains(ziel)) return;
+      var sc = scroller();
+      if (!sc) return;
+      var dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? sc.clientHeight : 1);
+      if (!(dy > 0) || Math.abs(e.deltaX) > dy) return;
+      var rest = sc.scrollHeight - sc.clientHeight - sc.scrollTop;
+      if (rest < 1) return;
+      e.preventDefault();
+      var schritt = Math.min(dy, rest);
+      sc.scrollTop += schritt;
+      if (ziel === box && dy - schritt >= 1) box.scrollTop += dy - schritt;
+    }
+    function radPruefen(){
+      if (!cfg.seiteZuerst) return;
+      var sc = root.isConnected ? scroller() : null;
+      if (_radSc && _radSc !== sc){ _radSc.removeEventListener("scroll", radPruefen); _radSc = null; }
+      if (sc && !_radSc){ _radSc = sc; sc.addEventListener("scroll", radPruefen, { passive: true }); }
+      var an = !!sc && root.classList.contains("is-festhoehe") && sc.scrollHeight - sc.clientHeight - sc.scrollTop >= 1;
+      if (an === _rad) return;
+      _rad = an;
+      if (an) root.addEventListener("wheel", rad, { passive: false });
+      else root.removeEventListener("wheel", rad, { passive: false });
     }
     function messen(){
       if (!root.isConnected) return;
@@ -15851,18 +16200,38 @@
       var boxUnten = box.getBoundingClientRect().bottom - kante;
       root.style.paddingBottom = pb0;
       var unten = Math.max(0, ende - extra - boxUnten);
+      /* cfg.seiteZuerst: um wie viel #main scrollen darf, bis die Leiste klebt. Die Leiste wird
+         dafuer kurz aus dem Kleben genommen (position static, im selben Zug zurueck wie das
+         Polster oben): klebt sie gerade, zeigte ihr Rechteck die Klebstelle statt ihrer Lage im
+         Fluss, und die Strecke kaeme zu kurz heraus. Die Klebkante ist Polster des Scrollbereichs
+         plus top der Leiste ("sticky top" misst gegen die Polsterkante, siehe syncDeckstreifen). */
+      var weg = 0;
+      var kopf = cfg.seiteZuerst && cfg.kopf && cfg.kopf.isConnected ? cfg.kopf : null;
+      if (kopf){
+        var kcs = null, scPad = 0;
+        try { kcs = window.getComputedStyle(kopf); scPad = parseFloat(window.getComputedStyle(sc).paddingTop) || 0; } catch(e){}
+        if (kcs && kcs.position === "sticky"){
+          var kTop = parseFloat(kcs.top) || 0, kPos0 = kopf.style.position;
+          kopf.style.position = "static";
+          var kopfOben = kopf.getBoundingClientRect().top - kante;
+          kopf.style.position = kPos0;
+          weg = Math.max(0, kopfOben - scPad - kTop);
+        }
+      }
       /* Die Oberkante zaehlt mit dem Kasten in seiner JETZIGEN Hoehe nicht -- oben haengt nur
          vom Inhalt darueber ab. Abgerundet auf 1/64 px (die Layout-Einheit des Browsers), nicht
          auf ganze Pixel: die Oberkante liegt oft auf einem Bruchteil (gemessen 160,04), und ganze
          Pixel liessen dann knapp einen Pixel frei unter der Pagination. Zu viel darf es nicht
-         sein, sonst scrollt #main um diesen Rest. */
-      var h = Math.floor((sc.clientHeight - oben - unten) * 64) / 64;
+         sein, sonst scrollt #main um diesen Rest (mit seiteZuerst: ueber die Klebkante hinaus,
+         und die Leiste schoebe sich ueber die Linie des Kastens). */
+      var h = Math.floor((sc.clientHeight + weg - oben - unten) * 64) / 64;
       if (!(h >= MIN)){ aus(); return; }
       if (_h == null || Math.abs(h - _h) >= 0.5 / 64){ _h = h; root.style.setProperty("--up-flach-box-h", h + "px"); }
       /* Beim ersten Einschalten noch einmal messen: die Seite darf mit is-festhoehe ihr Polster
          unter der Tabelle zuruecknehmen (prompts-page.css tut es), und dieser Platz gehoert dann
          dem Kasten. Das zweite Mal findet die Klasse schon vor -- keine Schleife. */
       if (!root.classList.contains("is-festhoehe")){ root.classList.add("is-festhoehe"); planen(); }
+      radPruefen();
     }
     _plan = rafThrottle(messen);
     /* Was die Oberkante oder den Rest darunter verschiebt: die Leiste (Chips brechen um), der
@@ -16513,8 +16882,9 @@
     if (!selectedKeys.length) return prepped;
     var selSet = {};
     selectedKeys.forEach(function(k){ selSet[k] = true; });
-    /* Dunkel Geists Gray 300 (15.10.; vorher Linears #28282c, eine Stufe Blaustich). */
-    var grey = isDark ? "#292929" : "#e4e2e4";
+    /* Dunkel Geists Gray 300 (15.10.; vorher Linears #28282c, eine Stufe Blaustich). Seit "eine
+       Stufe ruhiger" (15.10. abends) #2e2e2e: derselbe Abstand (+31) ueber dem Inhalt #0f0f0f. */
+    var grey = isDark ? "#2e2e2e" : "#e4e2e4";
     return prepped.map(function(it){
       return (it.key != null && selSet[it.key]) ? it : { key: it.key, name: it.name, share: it.share, color: grey, __dimmed: true, __realColor: it.color };
     });
@@ -17399,7 +17769,7 @@
     var mount = cfg.mount;
     var isDark = cfg.isDark || function(){ return false; };
     var fmt = cfg.fmt || function(v){ return fmtPct(v); };
-    var letzte = null, letzteSig = null, ro = null;
+    var letzte = null, letzteSig = null, ro = null, letzteLeer = null;
 
     /* opts.ohneFahrt (29.09. spaet): die Balken stehen sofort auf ihrer Breite, statt von 0
        einzufahren. Fuer einen Aufrufer, der DIESELBEN Daten ein zweites Mal zeichnet -- nach
@@ -17408,6 +17778,9 @@
     function zeichnen(items, opts){
       if (!mount) return;
       letzte = items;
+      /* Der Text des Leerzustands gehoert zu dieser Zeichnung: redraw() (Themenwechsel) reicht
+         ihn wieder mit, sonst stuende danach der Standardtitel da. */
+      letzteLeer = (opts && opts.leer) || null;
       var ohneFahrt = !!(opts && opts.ohneFahrt);
       /* DIESELBEN BALKEN EIN ZWEITES MAL (06.10., Ads: "die Barcharts triggern doppelte
          Appear-Animationen"). Eine Seite zeichnet bei jeder Antwort und jedem Store-Nachtrag neu,
@@ -17421,7 +17794,17 @@
       if (!ohneFahrt && sig === letzteSig && mount.querySelector(".up-bar-row")) ohneFahrt = true;
       letzteSig = sig;
       var d = (items || []).slice().filter(Boolean);
-      if (!d.length){ mount.innerHTML = '<div class="up-chart-empty">No data</div>'; return; }
+      /* Leer: der Leerzustand nach Geist (chartLeerHtml) im FLUSS -- die Liste hat keine eigene
+         Hoehe, sie waechst mit ihren Zeilen, also traegt der Zustand seine. opts.leer reicht
+         Titel, Satz oder gefiltert durch; cfg.gefiltert() gilt, wenn der Aufrufer nichts sagt. */
+      if (!d.length){
+        var lo = letzteLeer || {};
+        mount.innerHTML = chartLeerHtml({
+          fluss: true, titel: lo.titel, text: lo.text, icon: lo.icon || "chartBarDec",
+          gefiltert: lo.gefiltert != null ? !!lo.gefiltert : !!(cfg.gefiltert && cfg.gefiltert())
+        });
+        return;
+      }
       var spalte = cfg.labelCol ? !!cfg.labelCol() : false;
       var maxName = 0;
       /* Traegt irgendein Eintrag ein Logo oder Zeichen, bekommt jeder das Kaestchen (barLogoHtml). */
@@ -17564,7 +17947,7 @@
       for (var i = 0; i < (n || 4); i++) zeilen += '<div class="up-bar-sk-row"><span class="up-bar-sk-track" style="width:' + (92 - i * 14) + '%"></span></div>';
       mount.innerHTML = '<div class="up-bars-sk">' + zeilen + '</div>';
     }
-    return { render: zeichnen, skeleton: skelett, redraw: function(){ if (letzte) zeichnen(letzte); } };
+    return { render: zeichnen, skeleton: skelett, redraw: function(){ if (letzte) zeichnen(letzte, { leer: letzteLeer }); } };
   }
 
   /* ---------- DER LOGO-FAECHER (UC.makeFaecher, 29.09. -- aus ask-mira nach core) ----------
@@ -18443,18 +18826,23 @@
                  sehen beide Charts das erste Mal gleich aus. */
     function themeColors(){
       return isDark()
-        ? { text:"#e0e0e0", muted:"#a0a0a0", border:"#2e2e2e", bg:"#0a0a0a", grid:"rgba(255,255,255,0.09)" }
+        ? { text:"#e0e0e0", muted:"#a0a0a0", border:"#222222", bg:"#0f0f0f", grid:"rgba(255,255,255,0.06)" }
         /* bg ist die FUELLUNG der Datenpunkte, also die Farbe der Karte, auf der das Chart liegt
            -- im Dunkeln seit dem 15.10. Geists Background 1 (#0a0a0a, vorher #1c1c1f: ein grauer
            Ring in jeder Linie auf dem neuen Grund), im Hellen seit dem 07.09. #f9f8f9 und nicht
            mehr Weiss. Ein weisser Punktkern auf einer getoenten Karte waere ein heller Fleck in
            jeder Linie. Die Achse dunkel Geists Default border #2e2e2e (vorher #34343a), das Raster
-           bleibt 9 % Weiss -- das ist Geists Gray Alpha 200 und auf #0a0a0a #1f1f1f, Gray 200. */
+           bleibt 9 % Weiss -- das ist Geists Gray Alpha 200 und auf #0a0a0a #1f1f1f, Gray 200.
+           EINE STUFE RUHIGER (15.10. abends, core.css am dunklen .up-root): Punktkern = Inhalt
+           #0f0f0f, Achse = Linie #222222 (8 % Weiss auf dem Inhalt). Das Raster geht auf 6 %
+           (#1d1d1d) mit: bei 9 % laege es mit #252525 UEBER der Achse, und es soll schwaecher
+           sein als sie (siehe oben) -- vorher 14 Stufen darunter, jetzt 5, wie im Hellen (4). */
         : { text:"#1f1f1b", muted:"#6b6f78", border:"#e4e2e4", bg:"#ffffff", grid:"rgba(0,0,0,0.09)" };
     }
     function clearExtras(){
       var sk = wrap.querySelector(".up-line-sk"); if (sk) sk.remove();
       var em = wrap.querySelector(".up-line-empty"); if (em) em.remove();
+      var lz = wrap.querySelector(".up-chart-leer"); if (lz) lz.remove();
     }
     function destroy(){
       if (sizeIv){ clearInterval(sizeIv); sizeIv = null; }
@@ -18547,7 +18935,24 @@
       wrap.insertAdjacentHTML("beforeend", lineSkeletonHtml());
       if (cfg.watermark !== false) injectWatermark(wrap);
     }
-    function empty(msg){
+    /* empty(opt): der Leerzustand nach Geist (chartLeerHtml), opt = { titel, text, icon,
+       gefiltert }; ohne opt.gefiltert fragt er cfg.gefiltert(). Das Wasserzeichen geht dabei weg:
+       es saesse genau hinter Kachel und Titel. render() und skeleton() setzen es wieder ein.
+       empty("Text") ist der knappe Text von frueher und dasselbe wie meldung("Text") -- so
+       zeigen Aufrufer, die hier einen FEHLER hineinreichen ("The data could not be read."), weiter
+       keinen Leerzustand. Leer und kaputt sehen nie gleich aus (CLAUDE.md 2). */
+    function empty(opt){
+      if (typeof opt === "string"){ meldung(opt); return; }
+      opt = opt || {};
+      stand++;
+      destroy(); clearExtras(); clearLegend();
+      var wm = wrap.querySelector(".upstreem-watermark"); if (wm) wm.remove();
+      wrap.insertAdjacentHTML("beforeend", chartLeerHtml({
+        titel: opt.titel, text: opt.text, icon: opt.icon || "chartSpline",
+        gefiltert: opt.gefiltert != null ? !!opt.gefiltert : !!(cfg.gefiltert && cfg.gefiltert())
+      }));
+    }
+    function meldung(msg){
       stand++;
       destroy(); clearExtras(); clearLegend();
       wrap.insertAdjacentHTML("beforeend", '<div class="up-line-empty">' + esc(msg || t_("No data")) + '</div>');
@@ -18810,7 +19215,7 @@
         if (!isOwner()) return;
         var alive = false;
         try { alive = !!(window.Chart && window.Chart.getChart && canvas && window.Chart.getChart(canvas)); } catch(e){}
-        if (alive || wrap.querySelector(".up-line-empty")) return;
+        if (alive || wrap.querySelector(".up-line-empty, .up-chart-leer")) return;
         if (attempts++ >= 12) return;
         buildWhenSized(built, meinStand);
         verifyT = setTimeout(check, 250);
@@ -18899,6 +19304,7 @@
       updateColors: updateColors,
       skeleton: skeleton,
       empty: empty,
+      meldung: meldung,
       destroy: destroy,
       relayoutLegend: legendLayout,
       /* exposed because a component can drive the same highlight from outside the legend —
@@ -19228,6 +19634,9 @@
       if (chart){ try { chart.destroy(); } catch(e){} chart = null; }
       var cv = body.querySelector("canvas");
       if (cv && window.Chart && window.Chart.getChart){ var ex = window.Chart.getChart(cv); if (ex) try { ex.destroy(); } catch(e){} }
+      /* Der Wirt traegt seine Positionierung nur, solange der Leerzustand in ihm steht (empty
+         unten) -- danach haengen Ring, Balken und Tooltip wieder an dem, woran sie vorher hingen. */
+      body.classList.remove("up-chart-leer-wirt");
     }
     /* below collapseAt the legend drops under the doughnut instead of sitting beside it — mirrored
        onto .up-donut-sk too (when the skeleton is what's currently showing) so the loading circle
@@ -19242,7 +19651,21 @@
       if (sk) sk.classList.toggle("is-collapsed", collapsed);
     }
     function skeleton(){ destroy(); body.innerHTML = (cfg.chartMode && cfg.chartMode() === "bar") ? barSkeletonHtml() : donutSkeletonHtml(); }
-    function empty(msg){ destroy(); body.innerHTML = '<div class="up-chart-empty">' + esc(msg || t_("No data")) + '</div>'; }
+    /* empty(opt) zeichnet den Leerzustand nach Geist (chartLeerHtml) ueber die ganze Flaeche des
+       Koerpers; das Zeichen folgt dem Modus (Ring oder Balken). empty("Text") und meldung("Text")
+       sind der knappe Text von frueher -- fuer Lese- und Ladefehler, siehe makeLine. */
+    function empty(opt){
+      if (typeof opt === "string"){ meldung(opt); return; }
+      opt = opt || {};
+      destroy();
+      var balken = cfg.chartMode && cfg.chartMode() === "bar";
+      body.innerHTML = chartLeerHtml({
+        titel: opt.titel, text: opt.text, icon: opt.icon || (balken ? "chartBarDec" : "donut"),
+        gefiltert: opt.gefiltert != null ? !!opt.gefiltert : !!(cfg.gefiltert && cfg.gefiltert())
+      });
+      body.classList.add("up-chart-leer-wirt");
+    }
+    function meldung(msg){ destroy(); body.innerHTML = '<div class="up-chart-empty">' + esc(msg || t_("No data")) + '</div>'; }
     function isEmpty(d){ return !d.length || d.every(function(x){ return !(Number(x.share) > 0); }); }
 
     /* opts.ohneFahrt: ohne die 200ms-Einblendung von Chart.js -- derselbe Fall wie bei
@@ -19261,7 +19684,7 @@
       d = d || [];
       letzteZeichnung = { art: "donut", daten: d };
       lastKeys = keysOf(d); lastMode = "donut";
-      if (isEmpty(d)){ empty(); return; }
+      if (isEmpty(d)){ empty({ icon: "donut" }); return; }
       body.innerHTML =
         '<div class="up-donut-layout">' +
           '<div class="up-donut-wrap"><canvas></canvas>' +
@@ -19374,7 +19797,7 @@
       destroy();
       letzteZeichnung = { art: "bars", daten: d };
       d = (d || []).slice().sort(function(a, b){ return b.share - a.share; });
-      if (isEmpty(d)){ empty(); return; }
+      if (isEmpty(d)){ empty({ icon: "chartBarDec" }); return; }
       lastKeys = keysOf(d); lastMode = "bar";
       var mitLogos = d.some(function(it){ return !!(it.logo || it.ersatz || it.flagge != null); });
       body.innerHTML = '<div class="up-bars">' + d.map(function(it){
@@ -19501,6 +19924,7 @@
       updateColors: updateColors,
       skeleton: skeleton,
       empty: empty,
+      meldung: meldung,
       destroy: destroy,
       applyCollapse: applyCollapse,
       resize: function(){ try { if (chart) chart.resize(); } catch(e){} },
@@ -24804,9 +25228,14 @@
                                    { w: 28,  cls: "up-var-cnt" }] });
     }
     if (!rows.length){
-      return '<div class="up-empty-mini">' +
-        (q ? t_("No variation matches this search.")
-           : (opts.emptyText || t_("No variations recorded."))) + '</div>';
+      /* Der Leerzustand der Charts (15.10., tabelleLeerHtml): die Variantentabelle steht an der
+         Stelle der Kurve (brand-detail) bzw. unter ihr, und die traegt ihn schon. Der bisherige
+         Satz bleibt der Satz; die Flaeche ist die der sechs Skelettzeilen oben. Die Suche ist
+         ein Filter: "No matching data" mit der Lupe. */
+      return tabelleLeerHtml({
+        icon: "squareStack", gefiltert: !!q, zeilen: 6,
+        text: q ? "No variation matches this search." : (opts.emptyText || "No variations recorded.")
+      });
     }
     return rows.map(function(v){
       var sov = toNum(v.share_of_voice_pct);
@@ -25200,6 +25629,69 @@
       (knopf ? '<button class="up-empty-btn" type="button" ' + (opt.knopfAttr || "data-clearall") +
                '>' + esc(t_(knopf)) + '</button>' : "") +
     '</div>';
+  }
+
+  /* ---- DER LEERZUSTAND IM CHART (15.10., "Empty States: ja natuerlich, warum denn nicht?") -----
+     Bis hierher stand in jedem leeren Chart der nackte Text "No data" (.up-line-empty in makeLine,
+     .up-chart-empty in makeTypeChart und makeBarList), waehrend Tabellen und Listen daneben schon
+     den Leerzustand nach Geist trugen. Jetzt zeichnen die drei Bausteine selbst diesen Zustand --
+     ein Ort, und jeder Chart der App zieht mit, ohne dass eine Komponente ihn kennen muss.
+
+     Gestalt: DIESELBE wie leerHtml (Kachel 54, Titel 16/500, Satz 14), nur ohne Knopf -- im Chart
+     haengt niemand an data-clearall, ein Knopf waere tot. Der Text ist fest vorgegeben, weil ein
+     Chart, anders als eine Tabelle, fast immer aus demselben Grund leer ist: im Zeitraum gab es
+     keine Antworten. Wer es genauer weiss (domain-detail: "No URL types for this period."),
+     gibt den Satz mit.
+
+     GROESSE NACH FLAECHE, nicht nach Aufrufer. Die Huelle .up-chart-leer liegt ueber der ganzen
+     Chartflache (position absolute, inset 0) und ist ein Groessen-Container; core.css blendet
+     ueber @container aus, was nicht mehr hineinpasst: unter 220 Hoehe faellt der Satz weg, unter
+     130 auch die Kachel. Damit sitzt der Zustand senkrecht mittig in der Flaeche, deren Hoehe er
+     NICHT bestimmt -- die bleibt die des Charts, also kein Sprung der Seite. Und es gibt keinen
+     Schwellwert in Javascript, der in einem verdeckten Drawer 0 misst.
+     fluss: fuer Flaechen ohne eigene Hoehe (die Balkenliste waechst mit ihren Zeilen). Dort waere
+     eine absolute Huelle 0 hoch; im Fluss steht die kompakte Form (Kachel und Titel) mit eigenem
+     Polster.
+
+     Leer ist NICHT kaputt (CLAUDE.md 2): ein Lese- oder Ladefehler bleibt der knappe Text der
+     Bausteine (meldung() an makeLine und makeTypeChart), nie diese Kachel. */
+  var CHART_LEER_SATZ = "Data will appear here once responses are collected for this period.";
+  function chartLeerHtml(opt){
+    opt = opt || {};
+    var gef = !!opt.gefiltert;
+    return '<div class="up-chart-leer' + (opt.fluss ? " is-fluss" : "") + '">' + leerHtml({
+      gefiltert: gef,
+      titel: opt.titel != null ? opt.titel : (gef ? "No matching data" : "No data yet"),
+      text: opt.text != null ? opt.text : (gef ? "Try changing the filters or the date range." : CHART_LEER_SATZ),
+      /* Ohne Angabe das Zeichen der Linie: chartSpline steht in ICON_PATHS. Gefiltert gewinnt in
+         leerHtml ohnehin die Lupe. */
+      icon: opt.icon || "chartSpline",
+      knopf: ""
+    }) + '</div>';
+  }
+
+  /* ---- DER LEERZUSTAND IN DER TABELLE NEBEN DEM CHART (15.10., "Empty State: JA") --------------
+     Seit die Charts den Leerzustand nach Geist tragen, fiel daneben das alte "No data" der kleinen
+     Tabellen auf (.up-empty-mini: ein Satz, 68 hoch, oben unter dem Kopf). Jetzt zeichnen sie
+     DENSELBEN Zustand wie der Chart: chartLeerHtml, mit denselben Texten und denselben Stufen nach
+     Flaeche (voll, kompakt, nur Titel). Kein zweiter Baustein mit eigenen Massen.
+
+     DIE FLAECHE IST DIE DES SKELETTS. chartLeerHtml liegt absolut ueber einer Flaeche, die ihre
+     Hoehe von woanders hat; in einer Tabelle hat sie keine. Diese Huelle gibt sie ihr: mindestens
+     zeilen x Zeilenhoehe (--up-h-row, 55; eine Liste mit anderen Zeilen setzt
+     --up-tab-leer-zeile in ihrer CSS), also genau so viel, wie das Skelett darueber einnahm --
+     zwischen Laden und Leer springt nichts. Steht die Tabelle in einem Band fester Hoehe (Top
+     Brands, Top Citations), waechst die Huelle mit flex bis an dessen Unterkante und der Zustand
+     sitzt mittig in der ganzen Tabellenflaeche. Ohne Angabe 4 Zeilen (220): die volle Form passt.
+
+     Leer ist NICHT kaputt: ein Lesefehler bleibt leseFehlerHtml bzw. der knappe Text des Aufrufers.
+     opt: wie chartLeerHtml (titel, text, icon, gefiltert) plus zeilen und klasse. */
+  function tabelleLeerHtml(opt){
+    opt = opt || {};
+    var n = toNum(opt.zeilen);
+    return '<div class="up-tab-leer' + (opt.klasse ? " " + esc(opt.klasse) : "") + '"' +
+      (n != null && n > 0 ? ' style="--up-tab-leer-zeilen:' + Math.round(n) + '"' : "") + '>' +
+      chartLeerHtml({ titel: opt.titel, text: opt.text, icon: opt.icon, gefiltert: opt.gefiltert }) + '</div>';
   }
 
   /* ══ EINZELSEITE: der Rahmen der kleinen ganzseitigen Flaechen (07.10.) ═══════════════════════
@@ -27496,6 +27988,11 @@
     makeToolGroup: makeToolGroup,
     leseFehlerHtml: leseFehlerHtml,
     leerHtml: leerHtml,
+    /* Der Leerzustand eines Charts (15.10.): fuer Flaechen, die keinen der Chart-Bausteine
+       benutzen (Landschaft in brands-overview, Heatmap des Performance Radar). */
+    chartLeerHtml: chartLeerHtml,
+    /* Derselbe Zustand in einer Tabelle oder Liste neben dem Chart (15.10.), Flaeche wie ihr Skelett. */
+    tabelleLeerHtml: tabelleLeerHtml,
     /* Die Einzelseite (07.10.): Rahmen und Teile der kleinen ganzseitigen Flaechen. */
     makeEinzelseite: makeEinzelseite,
     esKopfHtml: esKopfHtml, esFeldHtml: esFeldHtml, esKnopfHtml: esKnopfHtml, captchaPlatzHtml: captchaPlatzHtml,
@@ -27633,6 +28130,7 @@
     INTENTE: INTENTE, intentArt: intentArt, hatIntent: hatIntent, intentZustand: intentZustand,
     intentHtml: intentHtml, brandedHtml: brandedHtml, intentMenuHtml: intentMenuHtml,
     intentsLive: intentsLive, intentFilterGet: intentFilterGet, intentFilterSet: intentFilterSet, intentFilterParams: intentFilterParams,
+    seitenFilterAktiv: seitenFilterAktiv,
     makeIntentMenu: makeIntentMenu, intentName: intentName, intentsLiveStart: intentsLiveStart, onIntentDaten: onIntentDaten,
     rpcMitIntent: rpcMitIntent,
     intentReiseHtml: intentReiseHtml, intentErklaerHtml: intentErklaerHtml, intentEinzelErklaerHtml: intentEinzelErklaerHtml, brandedErklaerHtml: brandedErklaerHtml,
@@ -27695,6 +28193,8 @@
     makeFestHoehe: makeFestHoehe,
     makeLeistenFilter: makeLeistenFilter,
     bandTeile: bandTeile, bandAus: bandAus, bandAusGemerkt: bandAusGemerkt, bandAusMerken: bandAusMerken,
+    bandUnterLeiste: bandUnterLeiste, klebFuss: klebFuss,
+    bandSchalterHtml: bandSchalterHtml,
     rafThrottle: rafThrottle,
     einmalProBild: einmalProBild,
     onResize: onResize,

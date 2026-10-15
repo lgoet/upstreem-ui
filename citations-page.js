@@ -142,9 +142,9 @@
           /* Die Filter der beiden Tabellen (15.10., "die eine Leiste" wie Prompt Insights): was in
              ihren Werkzeugleisten DATEN filterte, steht als Zeile im Menue "Filters" -- in der
              grossen Form mit Chips, die ihr Untermenue oeffnen. Gebaut von domains-table.js bzw.
-             urls-table.js unter diesen Ids, je Reiter nur die eigenen sichtbar (leisteWerte). Die
-             Leiste bleibt UEBER dem Band und nicht im Kopf der Tabelle: sie gilt fuer Chart und
-             Tabelle zugleich. */
+             urls-table.js unter diesen Ids, je Reiter nur die eigenen sichtbar (leisteWerte). Seit
+             dem 16.10. (Variante A) steht die Filterzeile in der Leiste der Tabelle, und die Leiste
+             steht UEBER dem Band: sie gilt fuer Chart und Tabelle zugleich (leisteUndBandStellen). */
           ' data-form="gross"' +
           ' data-dmention-instance="' + esc(ids.udt) + '_dmention" data-dbrands-instance="' + esc(ids.udt) + '_dbrands"' +
           ' data-dtypes-instance="' + esc(ids.udt) + '_dtypes"' +
@@ -161,6 +161,18 @@
         '<div class="ucs-tab" data-ucs-tab="urls">' + einsetzen(MARKUP.uut) + '</div>' +
       '</div>';
 
+    /* VARIANTE A DER LEINWAND "Citations Seitenaufbau" (16.10., vom Nutzer gewaehlt): die eine
+       Leiste steht OBEN, ueber dem Chart, und klebt; der Spaltenkopf klebt direkt unter ihr;
+       Gesamtzeile und Pagination kleben unten, sobald die Tabelle den Bildschirm fuellt. Die
+       Leiste ist der Kopf der Tabelle des Reiters (wie in Prompt Insights): links Kalender und
+       Filter (die Filterzeile wandert in .up-leiste-scope), rechts ihre Werkzeuge -- und der Chart
+       steht in derselben Wurzel zwischen Leiste und Kasten (core, UC.bandUnterLeiste). Beim
+       Reiterwechsel wandern Filterzeile und Chart zur anderen Tabelle (reiterZeigen); die
+       Werkzeuge bleiben, wo sie sind, und mit ihnen ihre Klicks.
+       data-kleb-fuss vor dem Aufbau der Tabellen: sie richten sich erst einen Takt spaeter ueber
+       watchRoots ein (Muster: data-leiste in prompts-page.js). */
+    [].forEach.call(root.querySelectorAll(".udt-root, .uut-root"), function (t) { t.setAttribute("data-kleb-fuss", "yes"); });
+    var elFilterzeile = root.querySelector(".ucs-filterzeile"), elChart = root.querySelector(".ucs-chart");
     var elNav = root.querySelector(".ucs-nav"), elRefresh = root.querySelector(".ucs-refresh");
     var nav = UC.makePageNav ? UC.makePageNav(root, {
       nav: elNav, storeKey: instanceId + "|ucs-nav", selected: state.tab,
@@ -211,8 +223,29 @@
       if (!fb) return;
       Object.keys(w).forEach(function (k) { if (fb.getAttribute(k) !== w[k]) fb.setAttribute(k, w[k]); });
     }
+    /* Die Leiste des offenen Reiters: Filterzeile in ihre linke Haelfte (.up-leiste-scope, beim
+       ersten Mal angelegt wie in prompts-page.js), der Chart zwischen sie und den Kasten. Bewegt
+       werden die vorhandenen Elemente -- Kalender, Filter und Chart behalten ihren Zustand und ihre
+       Handler. */
+    function leisteUndBandStellen() {
+      var tab = root.querySelector('.ucs-tab[data-ucs-tab="' + (state.tab === "urls" ? "urls" : "domains") + '"] > .up-root');
+      var kopf = tab && tab.querySelector(":scope > .up-head");
+      if (!kopf) return;
+      var s = kopf.querySelector(":scope > .up-leiste-scope");
+      if (!s) {
+        s = document.createElement("div");
+        s.className = "ucs-scope up-leiste-scope";
+        kopf.insertBefore(s, kopf.firstChild);
+      }
+      if (elFilterzeile) {
+        if (elFilterzeile.parentNode !== s) s.appendChild(elFilterzeile);
+        elFilterzeile.classList.add("is-in-tabelle");
+      }
+      if (elChart && UC.bandUnterLeiste) UC.bandUnterLeiste(tab, elChart);
+    }
     function reiterZeigen() {
       root.querySelectorAll(".ucs-tab").forEach(function (el) { el.hidden = el.getAttribute("data-ucs-tab") !== state.tab; });
+      leisteUndBandStellen();
       leisteStellen();
       root.setAttribute("data-ucs-reiter", state.tab);
       if (krumen && krumen.zeichnen) krumen.zeichnen();
@@ -485,6 +518,8 @@
               } else {
                 state.fehler.chart = null;
                 p.instanceId = ids.combo; p.isDark = isDark();
+                /* Gefiltert geladen: ein leeres Ergebnis sagt dann "No matching data" (15.10.). */
+                p.gefiltert = UC.seitenFilterAktiv ? UC.seitenFilterAktiv(state.f) : false;
                 try { window.renderComboChart(p); } catch (e) {}
               }
               /* Der Chart haelt einen AUSDRUECKLICH gesetzten Ladezustand, bis er ebenso

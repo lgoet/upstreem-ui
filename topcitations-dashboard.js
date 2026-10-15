@@ -67,11 +67,16 @@
       cols: [{ w:12, cls:"tct-td-idx" }, { w:60, jitter:18, logo:true }, 46, 40, 36]
     }) + '</div>';
   }
+  /* DAS ZEICHEN VOR "Type" (15.10. angefordert: "die Icons, wenn vorhanden, im Tabellenheader
+     auch bei Top Citations Dashboard"): dropdownFieldType, wie vor "Type" in Domains und URLs --
+     dieselbe Spalte, dasselbe Zeichen (UC.kopfZeichenHtml, .up-th-ic aus core). Domain, URL, Share
+     und Used tragen dort keins, also auch hier keins. Als Zeichenkette, weil der Kopf mit jedem
+     Zeichnen (und jedem Wechsel Domains/URLs) neu entsteht. */
   function tableHeadHtml(mode){
     return '<div class="tct-thead">' +
       '<div class="tct-th tct-th-idx">' + UC.HASH_ICON + '</div>' +
       '<div class="tct-th">' + (mode === "url" ? "URL" : "Domain") + '</div>' +
-      '<div class="tct-th tct-th-type">Type</div>' +
+      '<div class="tct-th tct-th-type">' + (UC.kopfZeichenHtml ? UC.kopfZeichenHtml("dropdownFieldType") : "") + 'Type</div>' +
       '<div class="tct-th">Share</div>' +
       '<div class="tct-th tct-th-used">Used</div></div>';
   }
@@ -241,6 +246,9 @@
       total: function(){ return state.chartTotal; },
       centerLabel: "Citations",
       collapseHost: root,
+      /* Der Leerzustand sagt "No matching data", wenn die Seite gefiltert geladen hat (15.10.,
+         Feld gefiltert im Payload; ohne das Feld gilt ungefiltert). */
+      gefiltert: function(){ return !!state.gefiltert; },
       /* this component's chart box has the toolbar above it inside the same root, so the bar list
          has to subtract that before deciding how many bars fit */
       availHeight: function(){
@@ -300,7 +308,7 @@
       if (state.listenFehler){
         chartGrace.clear();
         if (topTotal) topTotal.style.display = "none";
-        typeChart.empty("The data could not be read.");
+        typeChart.meldung("The data could not be read.");
         syncChartSwitch();
         return;
       }
@@ -445,8 +453,14 @@
             /* Nur "No data" sagen, wenn fuer DIESEN Modus wirklich eine Lieferung kam. Sonst
                weiter das Skelett: es ist noch nichts da, und das ist etwas anderes als nichts. */
             if (!hatZeilenLieferung() && !state.listenFehler) return;
-            tableEl.innerHTML = head + '<div class="up-empty-mini">' +
-              esc(state.listenFehler || widerspruchsText() || "No data") + '</div>';
+            /* Ein Fehler oder der Widerspruch zum Zaehler bleibt der knappe Text -- leer ist nicht
+               kaputt. Wirklich leer: der Leerzustand des Charts daneben (15.10.,
+               UC.tabelleLeerHtml), Flaeche der acht Skelettzeilen, im Band bis unten, gefiltert
+               wie der Ring. Das Zeichen der Domains- und URL-Tabelle (domain). */
+            var fehlerText = state.listenFehler || widerspruchsText();
+            tableEl.innerHTML = head + (fehlerText || !UC.tabelleLeerHtml
+              ? '<div class="up-empty-mini">' + esc(fehlerText || "No data") + '</div>'
+              : UC.tabelleLeerHtml({ icon: "domain", gefiltert: !!state.gefiltert, zeilen: 8 }));
           }, 600);   // shortened from the 3s visibility-chart default — felt "stuck" once loading was genuinely done
         }
         return;
@@ -1021,6 +1035,7 @@
         if (params.totalCountDomain != null) state.totalCountDomain = params.totalCountDomain;
         if (params.totalCountUrl != null) state.totalCountUrl = params.totalCountUrl;
         if (params.citations_total != null) state.chartTotal = params.citations_total;
+        if (params.gefiltert != null) state.gefiltert = isYes(params.gefiltert);
         /* brand kommt aus demselben Run-JS-Step und damit durch dieselben Backticks wie die
            Listen -- ein Markenname mit " zerlegt den Text genauso. Also durch dieselbe geteilte
            Reparatur; parseBubbleJson verpackt ein einzelnes Objekt in ein Array. */

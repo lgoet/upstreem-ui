@@ -157,15 +157,12 @@
 .ubo-mx-spacer { grid-row: 2; grid-column: 1; }
 .ubo-mx-wrap { grid-row: 1; grid-column: 2; width: 100%; height: 100%; position: relative; }
 .ubo-mx-canvas { display: block; }
-/* Skeleton + empty state: the wrap owns both so the canvas can stay untouched underneath. */
+/* Skeleton: the wrap owns it so the canvas can stay untouched underneath. Der Leerzustand steht
+   seit dem 15.10. als Element aus core darin (UC.chartLeerHtml, siehe makeMatrix.empty) statt
+   als ::after "No data" -- dieselbe Gestalt wie in jedem anderen leeren Chart. */
 .ubo-mx-wrap.is-sk::after {
   content: ""; position: absolute; inset: 8px; border-radius: var(--up-r-s);
   background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung);
-}
-.ubo-mx-wrap.is-empty::after {
-  content: "No data"; position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--vc-muted); font-size: 13px;
 }
 
 /* ---------- Landscape tooltip (body-mounted, follows the cursor) ---------- */
@@ -225,6 +222,8 @@
    every other one. Nothing table-shaped gets redeclared here again; only the two genuinely
    component-specific things below (row height, and the index/actions cells) are local. */
 .ubo-root .up-row { height: 56px; flex: 0 0 56px; }
+/* Der Leerzustand (UC.tabelleLeerHtml, 15.10.) rechnet in DIESEN Zeilen: sieben Skelettzeilen zu 56. */
+.up-root.ubo-root .ubo-table > .up-tab-leer { --up-tab-leer-zeile: 56px; }
 /* Die drei Regeln fuer die "#"-Spalte stehen jetzt in core.css (.up-th-idx / .up-td-idx),
    seit discover-brands als zweite Tabelle dieselbe Spalte hat. */
 .ubo-root .up-th-act, .ubo-root .up-td-act { padding: 0; justify-content: center; }

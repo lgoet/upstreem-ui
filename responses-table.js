@@ -1460,11 +1460,13 @@
        Insights im Reiter Responses -- dort ist die Tabelle das einzige Element, wie die
        Prompt-Tabelle im Reiter daneben). Dann scrollt nur der Kasten, Leiste und Pagination
        stehen (UC.makeFestHoehe in core). In der Kartenansicht ist der Kasten ausgeblendet, core
-       schaltet die feste Hoehe dann selbst ab; render() plant nach jedem Wechsel neu. */
+       schaltet die feste Hoehe dann selbst ab; render() plant nach jedem Wechsel neu.
+       seiteZuerst (15.10. spaet): Seitenkopf und Reiter scrollen weg, bis die Leiste klebt, wie im
+       Reiter All Prompts daneben. */
     var _fest = null;
     function festPlanen(){ if (_fest) _fest.planen(); }
     if (root.getAttribute("data-festhoehe") === "yes" && UC.makeFestHoehe)
-      _fest = UC.makeFestHoehe(root, { kopf: elHead, fuss: root.querySelector(".up-foot") });
+      _fest = UC.makeFestHoehe(root, { kopf: elHead, fuss: root.querySelector(".up-foot"), seiteZuerst: true });
 
     var _tips = UC.makeTooltips(root, function(){ return isDark; });
     /* Full prompt on hover when the 2-line clamp cuts it off — same behaviour prompts-table has,

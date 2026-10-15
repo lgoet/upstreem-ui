@@ -14,9 +14,17 @@
 .ubr-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
 /* Die Filterzeile gilt fuer beide Reiter: Discover kennt Zeitraum, Models, Markets und Topics
    (Vertrag Brands v1, 6.1). */
+/* VARIANTE A (16.10.): auf Tracked steht sie in der Leiste der Tabelle, hinter Active/Inactive
+   (.up-leiste-scope, brands-page.js filterzeileStellen), und loest sich dort auf -- Kalender,
+   "Filters" und Chips fliessen in der Leiste wie in Prompt Insights. */
+.ubr-filterzeile.is-in-tabelle { display: contents; }
 /* Die Luft ueber und unter .ubr-main steht in core ("DIE LUFT UNTER DEM SEITENKOPF"): 16 unter der
    Filterzeile wie ueber ihr, 64 unten. */
 .ubr-main { min-width: 0; }
 .ubr-tab { min-width: 0; }
 .ubr-root .ubr-tab[hidden] { display: none; }
 .up-root .ubr-tools .up-ph-addbtn { margin-top: 0; }
+/* Der Umschalter des Bandes (UC.bandAus setzt ihn an den Anfang von .ubr-tools) gilt dem Chart von
+   Tracked. Discover hat keinen Chart -- dort stuende ein Schalter, der nichts Sichtbares tut. Die
+   Knoepfe daneben bleiben stehen: die Gruppe ist rechtsbuendig, es faellt nur das linke Stueck weg. */
+.ubr-root[data-ubr-reiter="discover"] .ubr-tools > .up-bandsw { display: none; }
