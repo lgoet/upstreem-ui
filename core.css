@@ -139,6 +139,10 @@
   /* Abstand zwischen Trend und Zahl (15.10. spaet: "etwas mehr gap, minimal mehr"): 12 statt der
      10, die jede Zelle zwischen ihren Teilen laesst. */
   --up-spur-abstand: 12px;
+  /* Luft zwischen der Unterkante eines offenen Bandes und der Zeile darunter (15.10., Vorbild
+     Prompt Insights: Linie der Navigation bis zur Leiste 16, Leiste bis zum Tabellenkopf 16).
+     Regel "DIE ZEILE UNTER DEM BAND". */
+  --up-band-luft: 16px;
 
   /* Bewegung. Drei Dauern, zwei Kurven -- nach dem, WAS sich bewegt, nicht wie weit.
      Die zwei Kurven sind die, die in der App schon am haeufigsten ausgeschrieben stehen. */
@@ -3632,6 +3636,118 @@
        klickbar (gemessen 15.10.: elementFromPoint ueber der Responses-Tabelle traf den Regler). */
     .up-ff-menu { pointer-events: none; }
     .up-ff-list.is-panel { display: none; }
+
+    /* ---------- DAS OFFENE BAND (.up-band unter data-flach="yes", 15.10.) ----------
+       Variante A der Vorschau zur Citations-Seite, vom Nutzer gewaehlt und danach auf Brands,
+       Shopping und Ads uebertragen -- dort viermal fast gleich lokal gebaut, darum hierher gehoben,
+       mit den Werten der vier Vorlagen (citations-combo-chart.css, brands-overview.css,
+       shopping.css, ads.css). Die Form der flachen Tabelle oben, uebertragen auf Diagramme:
+         .up-band          kein Kasten, laeuft links und rechts um --up-flach-aus bis an die
+                           Kanten, oben und unten je eine Linie, an den Seiten keine;
+         .up-band-einheit  ein Teil mit eigener Ueberschrift. Sein Polster gibt den Auslauf zurueck:
+                           Ueberschrift und Inhalt stehen buendig mit Filterzeile und Tabellen.
+                           Ein Band aus einem einzigen Teil traegt beide Klassen (Brands);
+         .up-band-head     Ueberschrift samt Werkzeugen als erste Zeile IM Band, 48 hoch wie Kopf
+                           und Fuss der flachen Tabelle (--up-flach-h), ohne Linie zum Inhalt;
+         .up-band-flaeche  der bisherige Kasten wird zur Flaeche: kein Rahmen, kein Radius, kein
+                           Grund, kein Auslauf, auch im Dunkeln nicht. Ein .up-box direkt im Band
+                           ist es von selbst;
+         .up-band-inhalt   das Polster des Inhalts: 8 oben (die 48er Zeile bringt den Abstand zur
+                           Linie mit), 16 unten; seitlich nur, wo er ohne Einheit im Band steht;
+         .up-band-zwei     zwei Einheiten in einem Band. Die Trennlinie ist die 1px-Luecke, durch
+                           die der Grund des Bandes (die Linienfarbe) scheint -- nebeneinander
+                           senkrecht, gestapelt waagerecht; die Einheiten decken mit dem Grund der
+                           Seite. So muss die Linie nicht wissen, wie die Einheiten stehen;
+         .up-band-raster   dazu das auto-fit-Raster (Shopping, Ads): nebeneinander, solange jede
+                           Spalte --up-band-spalte breit sein kann, sonst gestapelt.
+       DASSELBE ATTRIBUT WIE DIE TABELLE und kein eigenes: --up-flach-aus und --up-flach-h setzt
+       core an .up-root[data-flach="yes"]; ein eigenes Attribut muesste sie ein zweites Mal
+       festlegen. Ohne data-flach (die Bubble-Vorlagen) greift keine dieser Regeln.
+       Ein Band ist entweder selbst diese Wurzel (Citations, Shopping, Ads) oder steht in ihr
+       (Brands) -- darum jede Regel in beiden Formen. Spezifitaet (0,5,0) und mehr: schlaegt die
+       flache Tabelle (.up-box, 0,4,0; Shopping und Ads tragen .up-box), die dunklen
+       Kartenregeln und die Kastenregeln der Komponenten ohne die Ladereihenfolge. Das !important
+       des Zusammenklappens einer Komponente (Bubble) bleibt staerker. */
+    .up-root.up-root[data-flach="yes"].up-band,
+    .up-root.up-root[data-flach="yes"] .up-band {
+      /* width auto: .up-root traegt 100%, damit wuerde der Auslauf das Band nur verschieben. */
+      width: auto; margin-left: calc(-1 * var(--up-flach-aus)); margin-right: calc(-1 * var(--up-flach-aus));
+      border-top: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border);
+    }
+    .up-root.up-root[data-flach="yes"] .up-band.up-band-einheit,
+    :is(.up-root.up-root[data-flach="yes"].up-band, .up-root.up-root[data-flach="yes"] .up-band) .up-band-einheit {
+      padding: 0 var(--up-flach-aus);
+    }
+    /* min-height und nicht height: bricht die Zeile schmal um, waechst sie, statt zu ueberlaufen. */
+    :is(.up-root.up-root[data-flach="yes"].up-band, .up-root.up-root[data-flach="yes"] .up-band) .up-band-head {
+      height: auto; min-height: var(--up-flach-h); margin-bottom: 0;
+    }
+    :is(.up-root.up-root[data-flach="yes"].up-band, .up-root.up-root[data-flach="yes"] .up-band):not(.up-band-einheit) > .up-band-head {
+      padding-left: var(--up-flach-aus); padding-right: var(--up-flach-aus);
+    }
+    /* ZWEIZEILIG (Ueberschrift mit Unterzeile, oder schmal umgebrochen): 16 ueber der Schrift wie
+       in der 48er Zeile (dort 15.6), 8 unter ihr -- mit den 8 ueber dem Inhalt dieselben 16 wie
+       zwischen Linie und Ueberschrift. Ohne das stand die Ueberschrift 6px unter der Linie, weil
+       die zwei Zeilen die 48 schon fuellten (Shopping, 15.10. gemeldet: "Top ist hier und da zu
+       klein"). Die Regel stand zuerst in brands-overview.css fuer den schmalen Kopf. */
+    :is(.up-root.up-root[data-flach="yes"].up-band, .up-root.up-root[data-flach="yes"] .up-band) .up-band-head:is(.is-zweizeilig, :has(.up-sec-sub)) {
+      padding-top: 16px; padding-bottom: 8px;
+    }
+    :is(.up-root.up-root[data-flach="yes"].up-band, .up-root.up-root[data-flach="yes"] .up-band) > .up-box,
+    :is(.up-root.up-root[data-flach="yes"].up-band, .up-root.up-root[data-flach="yes"] .up-band) .up-band-flaeche {
+      border-width: 0; border-radius: 0; background: transparent; margin-left: 0; margin-right: 0;
+    }
+    :is(.up-root.up-root[data-flach="yes"].up-band, .up-root.up-root[data-flach="yes"] .up-band) .up-band-inhalt {
+      padding: 8px 0 16px;
+    }
+    :is(.up-root.up-root[data-flach="yes"].up-band, .up-root.up-root[data-flach="yes"] .up-band):not(.up-band-einheit) > .up-band-inhalt {
+      padding: 8px var(--up-flach-aus) 16px;
+    }
+    .up-root.up-root[data-flach="yes"].up-band-zwei,
+    .up-root.up-root[data-flach="yes"] .up-band-zwei { gap: 1px; background: var(--vc-border); }
+    :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) > .up-band-einheit {
+      background: var(--up-surface);
+    }
+    /* :not([hidden]): das display des Rasters schluege sonst das hidden einer Seite. */
+    .up-root.up-root[data-flach="yes"].up-band-raster:not([hidden]),
+    .up-root.up-root[data-flach="yes"] .up-band-raster:not([hidden]) {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(min(var(--up-band-spalte, 472px), 100%), 1fr));
+      align-items: stretch;
+    }
+    /* AUSGEBLENDET IST DAS BAND GANZ WEG (15.10.: "gehen die ganz weg und lassen sich ueber einen
+       dann kommenden Button in der Topbar wieder einblenden"). Keine Restzeile, keine Linie; eine
+       Huelle, die nur das Band traegt (Citations, .ucs-chart), faellt mit weg -- sonst stuende
+       ihr Abstand im Stapel als Luecke da. Den Knopf zum Einblenden setzt UC.bandAus in den
+       Seitenkopf. */
+    :is(.up-root.up-root[data-flach="yes"].up-band, .up-root.up-root[data-flach="yes"] .up-band).up-band.is-band-aus { display: none; }
+    .up-root :has(> .up-band.is-band-aus:only-child) { display: none; }
+    /* Der Knopf im Seitenkopf: steht er direkt im Kopf (Citations, Aktualisieren ist dort ein
+       eigenes Kind), rueckt er an die Werkzeuge rechts, 8 vor ihnen wie zwischen den Knoepfen
+       einer Werkzeuggruppe (.uds-tools, .ubr-tools) -- der Kopf selbst haelt 16 Abstand. In einer
+       Werkzeuggruppe steht er ohnehin richtig. */
+    .up-ph-top > .up-band-zeigen { margin-left: auto; margin-right: -8px; }
+
+    /* ---------- DIE ZEILE UNTER DEM BAND (15.10.) ----------
+       Zwischen der Unterkante eines Bandes und der Zeile darunter (Leiste oder Ueberschrift einer
+       Tabelle) steht --up-band-luft (16) -- derselbe Abstand wie in Prompt Insights von der Linie
+       der Navigation zur Leiste, und dieselbe Luft wie von der Leiste zum Tabellenkopf (.up-head,
+       16 Polster unten). Vorher je Seite anders: 24 (Citations, Brands), 48 (Shopping, Ads).
+       Gilt fuer ein Band und fuer eine Gruppe, die mit einem Band endet (Shopping: Kennzahlen und
+       Diagramm), sofern danach kein weiteres Band kommt -- zwischen zwei Baendern bleibt der
+       Abstand zwischen Bloecken. Der Stapel setzt seinen Abstand als --up-stapel-luft (gap:
+       var(--up-stapel-luft)); der Rand gleicht ihn hier auf die 16 aus. Ein Stapel ohne die
+       Variable bekommt die 16 obendrauf -- darum setzt jede Seite mit Band sie.
+       Kein :has() im :has(): das verwirft der Browser samt der ganzen Regel (gemessen). Darum
+       steht "danach beginnt eine Huelle mit einem Band" (Dashboard: .uds-teil) als eigenes
+       :not(:has(...)) daneben und nicht im ersten :has(). */
+    :is(.up-band, :has(> .up-band:last-child)):has(+ :not(.up-band)):not(:has(+ * > .up-band:first-child)) {
+      margin-bottom: calc(var(--up-band-luft) - var(--up-stapel-luft, 0px));
+    }
+    /* Und darunter dieselbe Luft: eine Abschnittsueberschrift (.up-sec-head, Shopping) direkt ueber
+       einer flachen Tabelle haelt bis zu deren Linie 16 statt ihrer 14 -- wie die Leiste und der
+       Kopf .up-head (16). Gemessen vorher: Ueberschrift bis Tabelle 14, Leiste bis Tabelle 16. */
+    .up-sec-head:has(+ .up-root[data-flach="yes"]) { margin-bottom: var(--up-band-luft); }
+
 
     
     /* Letter fallback: a broken/missing favicon used to leave an empty square, which reads as a

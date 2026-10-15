@@ -111,6 +111,13 @@
     var colorScale = readColorScale();
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
+    /* DAS OFFENE BAND (data-flach, Dashboard-Seite, 15.10.): Chart und Top Brands als EIN Band
+       mit zwei Einheiten und der Trennlinie aus core (core.css "DAS OFFENE BAND"). Links wird der
+       Kasten zur Flaeche, rechts steht die Tabelle flach in ihrer Einheit (visibility-chart.css).
+       Ohne das Attribut (Bubble) bleibt alles im Kasten. */
+    if (root.getAttribute("data-flach") === "yes" && UC.bandTeile)
+      UC.bandTeile(root, { zwei: true, einheit: ".vot-unit", kopf: ".vot-head", flaeche: ".vot-box-left",
+        inhalt: ".vot-box-left > .vot-panel-body" });
     function readProcessing(){
       var a = root.getAttribute("data-processing");
       var b = root.getAttribute("data-processing2");

@@ -1210,8 +1210,11 @@
     }
     function sek(name) { return elMain.querySelector('[data-sek="' + name + '"]'); }
     /* Abschnittskopf aus core (.up-sec-head), wie im Event-Detail. */
+    /* .up-band-head: im offenen Band die Ueberschriftzeile aus core (core.css "DAS OFFENE BAND";
+       mit Unterzeile zweizeilig, 16 ueber der Schrift). Ausserhalb eines Bandes greift die Klasse
+       nicht. */
     function sekKopf(titel, desc, rechts, erklaerung) {
-      return '<div class="up-sec-head ush-sec-head"><div class="up-sec-titles">' +
+      return '<div class="up-sec-head ush-sec-head up-band-head"><div class="up-sec-titles">' +
           '<span class="up-heading up-sec-h">' + esc(t(titel)) + (erklaerung ? info(erklaerung) : '') + '</span>' +
           (desc ? '<span class="up-sec-sub">' + esc(desc) + '</span>' : '') +
         '</div>' + (rechts || '') + '</div>';
@@ -1239,7 +1242,7 @@
        So bleiben Diagramm, Suche und Pager dieselben Knoten -- ein Neuaufbau je Antwort haette ihre
        Zuhoerer und den Stand der Suche verloren. */
     function chartHtml(segKlasse, segWerte, aktiv) {
-      return '<div class="up-box ush-chartbox">' +
+      return '<div class="up-box ush-chartbox up-band-inhalt">' +
         '<p class="ush-chartnote" hidden>' + esc(t("Lower is better: position 1 sits at the top of the chart.")) + '</p>' +
         '<div class="ush-linewrap"><canvas></canvas></div><div class="up-legend ush-legende"></div></div>';
     }
@@ -1248,9 +1251,10 @@
        Band bis an die Kanten, oben und unten eine Linie, die Ueberschrift samt Werkzeugen als
        erste Zeile IM Band. Dasselbe Attribut wie die flache Tabelle (data-flach an einer .up-root):
        die Masse --up-flach-aus und --up-flach-h setzt core dort, fuer jede Komponente gleich.
-       Die Regeln stehen in shopping.css unter "DAS OFFENE BAND". */
+       Seit dem 15.10. abends der Baustein aus core (.up-band, core.css "DAS OFFENE BAND"); in
+       shopping.css steht nur noch, was Held und "Where this product appears" eigen haben. */
     function bandAuf(name, klasse) {
-      return '<section class="up-root ush-sek ush-band' + (klasse ? " " + klasse : "") + '" data-flach="yes"' +
+      return '<section class="up-root ush-sek ush-band up-band' + (klasse ? " " + klasse : "") + '" data-flach="yes"' +
         (isDark() ? ' data-theme="dark"' : '') + (name ? ' data-sek="' + name + '"' : '') + '>';
     }
     /* o.leiste: DIE EINE LEISTE (core.css, data-leiste) -- die Ueberschrift faellt weg, rechts stehen
@@ -1321,9 +1325,9 @@
              senkrechten Linie dazwischen (gestapelt waagerecht, shopping.css "DAS OFFENE BAND").
              Product Movement ist eine Liste im Raster der Tabellen und bleibt flach: die flache
              Tabelle braucht eine .up-root mit data-flach ueber ihrem Kasten. */
-          '<div class="up-root ush-zwei ush-band" data-flach="yes"' + (isDark() ? ' data-theme="dark"' : '') + ' data-sek="zwei">' +
-            '<section class="up-root ush-sek" data-flach="yes"' + (isDark() ? ' data-theme="dark"' : '') + ' data-sek="bewegung"></section>' +
-            '<section class="ush-sek" data-sek="verteilung"></section>' +
+          '<div class="up-root ush-zwei ush-band up-band up-band-zwei up-band-raster" data-flach="yes"' + (isDark() ? ' data-theme="dark"' : '') + ' data-sek="zwei">' +
+            '<section class="up-root ush-sek up-band-einheit" data-flach="yes"' + (isDark() ? ' data-theme="dark"' : '') + ' data-sek="bewegung"></section>' +
+            '<section class="ush-sek up-band-einheit" data-sek="verteilung"></section>' +
           '</div>' +
         '</div>';
       } else if (s === "brands") {
@@ -1999,7 +2003,7 @@
       var el = sek("verteilung");
       if (!el) return;
       if (!el.querySelector(".ush-balkenplatz")) el.innerHTML = sekKopf("Merchant Distribution", t("Merchants listed with observed products"), mehrKnopf("View all merchants", "merchants"), "merchant") +
-        '<div class="up-box ush-balkenbox"><div class="ush-balkenplatz"></div></div>';
+        '<div class="up-box ush-balkenbox up-band-flaeche up-band-inhalt"><div class="ush-balkenplatz"></div></div>';
       var platz = el.querySelector(".ush-balkenplatz");
       if (!balken.ov) balken.ov = UC.makeBarList({ mount: platz, isDark: isDark, fmt: function (v) { return pct(v); } });
       if (!d) { balken.ov.skeleton(5); return; }
@@ -2486,7 +2490,7 @@
       var el = sek("balken");
       if (!el) return;
       if (!el.querySelector(".ush-balkenplatz")) el.innerHTML = sekKopf("Merchant Share", t("Share of all merchant mentions on observed products"), "", "merchant") +
-        '<div class="up-box ush-balkenbox"><div class="ush-balkenplatz"></div></div>';
+        '<div class="up-box ush-balkenbox up-band-inhalt"><div class="ush-balkenplatz"></div></div>';
       var platz = el.querySelector(".ush-balkenplatz");
       if (!balken.me) balken.me = UC.makeBarList({ mount: platz, isDark: isDark, fmt: function (v) { return pct(v); } });
       if (!d) { if (fehlerVon(a)) platz.innerHTML = fehlerKasten(a); else balken.me.skeleton(6); return; }

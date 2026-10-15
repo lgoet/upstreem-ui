@@ -32,8 +32,11 @@
 .uds-filterzeile > .udr-root { flex: 0 0 auto; }
 .uds-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
 /* 48 zwischen den drei Bloecken: drei eigene Auswertungen, also "zwischen Gruppen" nach dem
-   Entwurf von Shopping (shopping.css, .ush-seite). */
-.uds-main { display: flex; flex-direction: column; gap: 48px; padding: 24px 0 64px; min-width: 0; }
+   Entwurf von Shopping (shopping.css, .ush-seite). Als --up-stapel-luft: unter dem Band von Top
+   Citations gleicht core das auf --up-band-luft aus, die Ueberschriftzeile der Responses steht 16
+   unter seiner Linie wie die Leiste in Prompt Insights (core.css "DIE ZEILE UNTER DEM BAND");
+   zwischen den zwei Baendern bleiben die 48. */
+.uds-main { display: flex; flex-direction: column; --up-stapel-luft: 48px; gap: var(--up-stapel-luft); padding: 24px 0 64px; min-width: 0; }
 /* UNTER DEN FILTERN 16 WIE DARUEBER (14.10., gemeldet: "unter Kalender und Filter mehr Luft
    als von den Filtern zur Linie der Navigation"). Gemessen: Linie bis Filter 16, Filter bis
    Inhalt 24. Ohne Filterzeile (andere Reiter, Seiten ohne Filter) bleibt es bei 24 unter der
