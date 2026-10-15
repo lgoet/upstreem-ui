@@ -1684,9 +1684,11 @@
       var platz = el.querySelector(".uad-tabelle");
       if (topicsSort) { try { topicsSort.syncHeadSorters(); } catch (e) {} }
       var tw = el.querySelector(".uad-tabwurzel");
-      if (!d) { zahlSetzen(el, null); platz.innerHTML = tabelleHtml(kopfAus("topics"), skelettAus("topics", 5)); zaehlEinhaengen("topics", el, tw, "laedt"); spaltenAnwenden("topics"); topicsPager(null); if (topicsSort) topicsSort.syncHeadSorters(); return; }
+      if (!d) { zahlSetzen(el, null); platz.innerHTML = tabelleHtml(kopfAus("topics"), skelettAus("topics", 5)); spaltenAnwenden("topics"); topicsPager(null); if (topicsSort) topicsSort.syncHeadSorters(); return; }
       var alle = topicsListe(d), tt = state.topicsTab, gr = tt.pageSize || GROESSE;
-      /* Die Zahl steht seit dem 15.10. in der Gesamtzeile und im Pager, nicht mehr dazu im Kopf. */
+      /* Die Zahl steht seit dem 15.10. im Pager, nicht mehr dazu im Kopf. Eine Gesamtzeile hat diese
+         Tabelle NICHT (15.10. spaet, Nutzer: "in dieser Tabelle moechte ich keine Summary-Zeile") --
+         auch nicht die Anzahl: ein Prompt traegt mehrere Topics, jede Summe zaehlte doppelt. */
       zahlSetzen(el, UC.makeZaehlZeile ? null : alle.length);
       if (!alle.length) {
         var gesucht = !!str(tt.suche).trim();
@@ -1708,7 +1710,6 @@
           td("n", ganzHtml(x.ad_appearances)) +
         '</div>';
       }).join(""), "uad-klickbar");
-      zaehlEinhaengen("topics", el, tw, alle.length);
       spaltenAnwenden("topics");
       if (topicsSort) topicsSort.syncHeadSorters();
       topicsPager(alle.length);
@@ -1802,9 +1803,9 @@
       zaehlEinhaengen(tbName(), sek("tabelle"), w, zahl);
     }
     /* DIE GESAMTZEILE (15.10. abends, core UC.makeZaehlZeile): unter den Zeilen jeder ganzen
-       Tabelle (Advertisers, die Liste und die Prompts der Library, Topics with Ads) vorerst nur die
-       Anzahl links -- die Gesamtzahl des Servers (total_count; bei Topics with Ads, die in der
-       Komponente blaettern, die Zahl der Treffer), nicht die Zeilen der Seite; ein Lesefehler ist
+       Tabelle (Advertisers, die Liste und die Prompts der Library; NICHT Topics with Ads, siehe
+       zeichneTopics) links die Anzahl -- die Gesamtzahl des Servers (total_count), nicht die
+       Zeilen der Seite; ein Lesefehler ist
        "–". Ausblendbar ueber Display ("Summary row"), gemerkt je Tabelle. Das Raster der Karten ist
        keine Tabelle (die Zahl steht dort im Pager), die Prompts im Advertiser-Detail sind eine
        Vorschau ohne Pager.
@@ -1817,19 +1818,7 @@
        nur beim Preis). feld: Schluessel der Antwort (SUMME_FELDER oben), art: Format nach CLAUDE.md
        2b, kurz: Bezeichnung in der Zelle (klein wie in der Prompt-Tabelle), label: im Menue und im
        Tooltip. Formate heissen wie in ihrer Zelle: in Advertisers kurz (FORMAT_KURZ), in der
-       Bibliothek ueber UC.adFormatLabel; der Anteil steht statt kurz dahinter.
-       TOPICS WITH ADS (Uebersicht) rechnet lokal, aus der Antwort, die schon da ist -- aber nicht als
-       Summe ueber die Zeilen: ein Prompt traegt mehrere Topics, und seine Ads zaehlten in jedem davon
-       (gemessen an shopads_c: Summe der Appearances 53, wirklich 48; Advertisers 51 gegen 37). Die
-       Gesamtwerte stehen in kpis der Uebersicht (ad_coverage_pct, advertisers, ad_appearances) --
-       dieselben Zahlen wie die Kacheln darueber. Sie gelten fuer ALLE Topics: grenzt die Suche der
-       Tabelle die Topics ein, gibt es keinen Gesamtwert ohne Doppelzaehlung, die Zelle zeigt "–". */
-    function topicsGesamt(k) {
-      if (str(state.topicsTab.suche).trim()) return null;
-      var d = daten(ovAnfrage()), kp = d ? objOder(d.kpis) : null;
-      if (!kp) return null;
-      return k === "ad_coverage_pct" ? anteilWert(kp[k]) : anzahlWert(kp[k]);
-    }
+       Bibliothek ueber UC.adFormatLabel; der Anteil steht statt kurz dahinter. */
     function advFormat(k) { k = str(k).trim(); return k ? (FORMAT_KURZ[k] ? t(FORMAT_KURZ[k]) : k) : null; }
     function libFormat(k) { k = str(k).trim(); return k ? (UC.adFormatLabel ? UC.adFormatLabel(k) : k) : null; }
     var SUM_RECHNEN = {
@@ -1852,11 +1841,6 @@
       lprompts: {
         cov: [{ key: "avg", label: "Average", kurz: "avg", feld: "avg_coverage_pct", art: "pct" }],
         advs: [{ key: "summe", label: "Total", kurz: "total", feld: "advertisers_total", art: "anzahl" }]
-      },
-      topics: {
-        cov: [{ key: "avg", label: "Average", kurz: "avg", art: "pct", lokal: function () { return topicsGesamt("ad_coverage_pct"); } }],
-        advs: [{ key: "summe", label: "Total", kurz: "total", art: "anzahl", lokal: function () { return topicsGesamt("advertisers"); } }],
-        n: [{ key: "summe", label: "Total", kurz: "total", art: "anzahl", lokal: function () { return topicsGesamt("ad_appearances"); } }]
       }
     };
     var zaehl = {};
