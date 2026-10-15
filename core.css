@@ -1229,11 +1229,10 @@
     /* Der Name sitzt in einem eigenen Span: der Truncation-Tooltip misst scrollWidth gegen
        clientWidth, und das geht nur an dem Element, das den Text wirklich abschneidet. */
     .up-varname { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    /* Zahl links, Ring an der rechten Spaltenkante. Die 16px zum Zellenrand kommen aus der
-       Polsterung von .up-td -- kein zweiter Wert, der irgendwann abweicht. margin-left:auto
-       statt space-between: kaeme ein drittes Element dazu, saesse es sonst in der Mitte. */
-    .up-var-sov { justify-content: flex-start; gap: 18px; }
-    .up-var-sov .up-varring { margin-left: auto; }
+    /* Zahl an der rechten Spaltenkante, der Ring links davor (15.10. spaet, wie Zahl und Trend in
+       jeder Zelle: core, "RECHTSBUENDIG, DER TREND LINKS DAVOR"). Vorher stand die Zahl links und
+       der Ring rechts aussen. Die 16px zum Zellenrand kommen aus der Polsterung von .up-td. */
+    .up-var-sov { justify-content: flex-end; gap: var(--up-spur-abstand); }
     .up-var-sov .up-num { font-variant-numeric: tabular-nums; }
     .up-varring { flex: 0 0 auto; display: inline-flex; line-height: 0; }
     /* 40 Prozent groesser: 16 x 1.4 = 22.4. Die Groesse steht hier und nicht im SVG -- die
@@ -4348,9 +4347,14 @@
    zu, die Ausrichtung soll ueberall dieselbe sein. Ohne .up-pille: Plan- und Status-Pillen bauen
    auf .up-sent auf (Teams, gemessen), sind aber Text. Eine Zahl in einer Huelle ("102 / 150")
    rueckt die Komponente selbst nach rechts. Wird es zu eng, laeuft der Trend links aus dem Bild
-   und nicht die Zahl. */
-.up-td:has(> .up-num, > .up-rank-group, > .up-sent:not(.up-pille)) { justify-content: flex-end; column-gap: var(--up-spur-abstand); }
-.up-td > .up-trend { order: -1; }
+   und nicht die Zahl. :where haelt die Regel auf der Spezifitaet von .up-td: jede Ausnahme --
+   die zentrierte Indexspalte (.up-td-idx), eine Datumsspalte, die ihre Ziffern als .up-num
+   setzt (Shopping, Ads) -- gewinnt mit einer Klasse mehr, ohne Reihenfolge. */
+.up-td:has(> :where(.up-num, .up-rank-group, .up-sent:not(.up-pille))) { justify-content: flex-end; }
+/* Der Abstand 12 nur zwischen Zeiger und Zahl -- Trend oder der Ring der Variationen
+   (.up-varring) --, nicht zwischen einer Zahl und ihrem Zusatz ("of 120", .up-var-cnt: 6). */
+.up-td:has(> :where(.up-trend, .up-varring)) { column-gap: var(--up-spur-abstand); }
+.up-td > :where(.up-trend, .up-varring) { order: -1; }
 .up-rank-group { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 .up-hash { width: 12px; height: 12px; color: var(--vc-third); flex: 0 0 auto; display: block; }
 /* ---------- SENTIMENT OHNE KASTEN (29.09. angefordert) ----------

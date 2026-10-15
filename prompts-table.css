@@ -1422,6 +1422,9 @@
 .upt-root .upt-td-rank, .upt-root .upt-grp-td-rank { --up-spur: var(--up-spur-rang); }
 .upt-root .upt-td-sentiment, .upt-root .upt-grp-td-sentiment { --up-spur: var(--up-spur-note); }
 .upt-grp-zelle .up-num, .upt-grp-zelle .up-sent-val { min-width: var(--up-spur, 0); text-align: right; }
+/* Rechts in der Zelle wie die Zahlen darunter (core, "RECHTSBUENDIG, DER TREND LINKS DAVOR",
+   15.10. spaet) -- das Durchschnittszeichen bleibt mit seinem Abstand vor dem Wert. */
+.upt-grp-zelle:has(> .up-num, > .up-rank-group, > .up-sent:not(.up-pille)) { justify-content: flex-end; }
 
 /* Das Zeichen vor "Brand Mentions" und "Topics" (prompts-table.js, ZEICHEN VOR ZWEI
    SPALTENKOEPFEN): 14 wie das Info-Zeichen daneben, Drittfarbe, schrumpft nie. */

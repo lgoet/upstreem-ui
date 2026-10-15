@@ -164,6 +164,11 @@
    und am Format des Nutzers. */
 .uad-root :is(.up-td-share, .up-td-cov) { --up-spur: var(--up-spur-pct1); }
 .uad-root :is(.up-td-n, .up-td-prompts, .up-td-topics, .up-td-advs) { --up-spur: var(--up-spur-anzahl); }
+/* Seit dem 15.10. spaet stehen Zahlen RECHTS in der Zelle (core, "RECHTSBUENDIG, DER TREND LINKS
+   DAVOR"), erkannt am direkten Kind .up-num -- die Daten tragen ihre Ziffern ebenso als .up-num
+   und rutschten sonst mit (gemessen: First Seen, Last Seen, im Ad Library Seen). Hier heisst
+   .up-td-first das erste Datum, nicht wie in Shopping die First Position Rate. */
+.uad-root :is(.up-td-first, .up-td-last, .up-td-seen) { justify-content: flex-start; }
 /* PREIS: core hat (noch) kein Token; 57 ist "€000.00" in der Zellschrift, gemessen 56,18 (siehe
    shopping.css). Laengere Preise sprengen ihre Spur, wie es core fuer Ausreisser vorsieht. */
 .uad-root .up-td-price { --up-spur: 57px; }

@@ -187,6 +187,13 @@
 .ush-root :is(.up-td-share, .up-td-presence, .up-td-vis, .up-td-first) { --up-spur: var(--up-spur-pct1); }
 .ush-root :is(.up-td-obs, .up-td-products) { --up-spur: var(--up-spur-anzahl); }
 .ush-root :is(.up-td-pos, .up-td-position, .up-td-rating) { --up-spur: var(--up-spur-rang); }
+/* Seit dem 15.10. spaet stehen Zahlen RECHTS in der Zelle, der Trend links davor (core,
+   "RECHTSBUENDIG, DER TREND LINKS DAVOR"). core erkennt die Zahl am direkten Kind .up-num -- die
+   Daten tragen ihre Ziffern ebenso als .up-num und blieben sonst nicht links wie Text (gemessen:
+   Last Seen und First Seen rechts). Rating steckt mit seinem Stern in .ush-rating, das erkennt core
+   nicht; es ist aber eine Zahl und gehoert nach rechts. */
+.ush-root :is(.up-td-seen, .up-td-firstseen) { justify-content: flex-start; }
+.ush-root .up-td-rating { justify-content: flex-end; }
 /* PREIS: core hat (noch) kein Token. 57 ist "€000.00" in der Zellschrift (14/500, Tabellenziffern),
    gemessen 56,18 und aufgerundet wie die Token in core -- die Preise der Antworten liegen fast alle
    unter tausend. Eine Spanne ("€19.62–€21.62", 103,5) und ein Preis mit Waehrungscode ("CHF 12.00",
