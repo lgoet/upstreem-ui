@@ -6977,17 +6977,16 @@
        Style-Neuberechnung erzwingt, und applyCols laeuft bei jedem Zeichnen.
        Die Breite kann sich nur aendern, wenn der Kasten seine Groesse aendert -- und genau das
        meldet ein Groessenwaechter, ohne dass jemand messen muss. */
-    var _bwWert = null, _bwEl = null, _bwRoBreite = null;
-    /* cfg.breiteAbzug (15.10.): Pixel des Kastens, die dem Raster NICHT zur Verfuegung stehen.
-       prompts-table laesst den Kasten in der einen Leiste links und rechts um je 16 ueber die
-       Ansicht hinauslaufen (die Linien gehen bis an die Kanten) und gibt das jeder Zeile als
-       Polster zurueck. Gemessen am Kasten allein haette autoFit 32px zu viel gesehen und Spalten
-       behalten, die nicht mehr passen. Zahl oder Funktion; ohne Angabe 0, also fuer jede andere
-       Tabelle wie bisher. Gemessen und gemerkt wird weiter der Kasten selbst. */
-    function breiteAbzug(){
-      var v = (typeof cfg.breiteAbzug === "function") ? cfg.breiteAbzug() : cfg.breiteAbzug;
-      return (typeof v === "number" && v > 0) ? v : 0;
-    }
+    var _bwWert = null, _bwEl = null, _bwRoBreite = null, _bwAbzug = 0;
+    /* DIE FLACHE TABELLE (data-flach="yes", 15.10.): der Kasten laeuft ueber die Ansicht hinaus
+       (die Linien gehen bis an die Kanten), und die Kopfzeile wie jede Zeile nimmt das als
+       Polster zurueck. Dem Raster steht also die Breite des Kastens MINUS dieses Polster zur
+       Verfuegung -- gemessen am Kasten allein haette autoFit es als Spaltenplatz gezaehlt und
+       Spalten behalten, die nicht mehr passen. Das Polster wird an der Kopfzeile GEMESSEN (mit
+       der Breite zusammen, nur dann), nicht als Zahl uebergeben: so stimmt es auch, wo eine
+       Komponente --up-flach-aus anders setzt. Ohne data-flach bleibt es bei 0, also fuer jede
+       andere Tabelle wie bisher. */
+    function breiteAbzug(){ return _bwAbzug; }
     function boxWidth(){
       var w = boxWidthRoh();
       return w ? Math.max(0, w - breiteAbzug()) : w;
@@ -7016,6 +7015,16 @@
          Der Waechter oben feuert beim Aufgehen und macht den Wert dann von selbst neu. */
       if (!messbar(box)) return 0;
       _bwWert = box.getBoundingClientRect().width || 0;
+      _bwAbzug = 0;
+      if (root.getAttribute("data-flach") === "yes"){
+        var kopf = root.querySelector(".up-thead");
+        if (kopf){
+          try {
+            var kcs = window.getComputedStyle(kopf);
+            _bwAbzug = (parseFloat(kcs.paddingLeft) || 0) + (parseFloat(kcs.paddingRight) || 0);
+          } catch(e){ _bwAbzug = 0; }
+        }
+      }
       return _bwWert;
     }
     /* Zwei Sicherungen neben dem Waechter, weil ein ResizeObserver in einem verdeckten Tab nie
@@ -7229,7 +7238,7 @@
       var first = thead.children[LEAD() ? 1 : 0];
       if (!first) return;
       var wA = first.getBoundingClientRect().width;
-      /* Ohne das Auslauf-Polster (cfg.breiteAbzug, siehe boxWidth) -- sonst durfte die erste
+      /* Ohne das Auslauf-Polster der flachen Tabelle (siehe boxWidth) -- sonst durfte die erste
          Spalte genau um dieses Polster zu weit wachsen. */
       var total = thead.getBoundingClientRect().width - breiteAbzug();
       var others = layoutKeys().slice(1).reduce(function(sum, k){ return sum + colMin(k); }, 0);
@@ -14836,6 +14845,135 @@
       }).observe(headEl);
     }
     return { applySticky: applySticky, syncTheadOffset: syncTheadOffset };
+  }
+
+  /* FESTE HOEHE, NUR DIE TABELLE SCROLLT (15.10., zuerst in der Prompt-Tabelle). Fuer eine
+     flache Tabelle (data-flach="yes"), die der Hauptinhalt ihrer Seite ist: der Kasten bekommt
+     als Hoechstmass genau den Platz zwischen seiner Oberkante und dem unteren Rand des
+     Scrollbereichs der Seite, abzueglich allem, was darunter noch steht (Pagination, Polster der
+     Seite). Dann scrollt #main nicht mehr, sondern nur der Kasten, und die Pagination steht unten
+     fest. Schreibt --up-flach-box-h und is-festhoehe an die Wurzel (CSS in core.css unter
+     "DIE FLACHE TABELLE"). Nicht fuer Tabellen unter Diagrammen oder neben anderen Tabellen:
+     dort waere es ein Guckloch mitten auf der Seite.
+     WAS DARUNTER STEHT, WIRD GEMESSEN, NICHT ADDIERT: Polster, Raender und Mindesthoehen der
+     Seitenhuellen lassen sich nicht zuverlaessig aufsummieren (eine Huelle mit min-height hat
+     leeren Rest, der nicht zaehlen darf). Darum bekommt die Wurzel fuer die Messung kurz ein
+     grosses Polster unten: der Inhalt des Scrollbereichs laeuft damit sicher ueber, und sein
+     Ende minus Polster minus Unterkante des Kastens ist genau der Rest. Polster und nicht
+     min-height am Kasten: das setzte dessen eigene Scrollstellung auf 0 zurueck, und ein Rand
+     koennte mit dem eines Vorfahren zusammenfallen. Zurueckgesetzt wird im selben Zug, vor dem
+     naechsten Bild -- zu sehen ist davon nichts, und kein Groessenwaechter bekommt es mit.
+     Nur mit klebendem Kopf (.up-sticky, ab 1000 breit, makeSticky): darunter scrollt die Seite
+     wie bisher, auf dem Telefon waere ein Scrollbereich im Scrollbereich eine Falle fuer den
+     Daumen. Unter cfg.min (240) Platz ebenfalls die Seite -- ein Guckloch von drei Zeilen ist
+     schlechter als eine Seite, die scrollt. Geparkte Ansicht: nichts aendern, der alte Wert gilt
+     weiter, bis sie wieder zu sehen ist.
+     cfg.kopf / cfg.fuss: Leiste und Pagination der Tabelle (ihre Groesse verschiebt Oberkante
+     bzw. Rest). Rueckgabe { planen }: die Komponente ruft planen() nach jedem Zeichnen, das die
+     Pagination ein- oder ausblenden kann; hoechstens einmal je Bild. */
+  function makeFestHoehe(root, cfg){
+    cfg = cfg || {};
+    var MIN = cfg.min || 240;
+    var box = root && root.querySelector(".up-box");
+    if (!box) return { planen: function(){} };
+    /* Der Kasten ist jetzt ein Scrollbereich: die schmale Leiste aus core statt der des Systems
+       (auf Windows sonst 17px grau neben der letzten Spalte). */
+    box.classList.add("up-scroll");
+    var _h = null, _plan = null;
+    var gesehen = window.WeakSet ? new WeakSet() : null;
+    function planen(){ if (_plan) _plan(); }
+    function scroller(){
+      var m = document.getElementById("main");
+      if (m && m.contains(root)) return m;
+      var el = root.parentElement, n = 0, oy;
+      while (el && el !== document.body && el !== document.documentElement && n++ < 40){
+        try { oy = window.getComputedStyle(el).overflowY; } catch(e){ return null; }
+        if (oy === "auto" || oy === "scroll") return el;
+        el = el.parentElement;
+      }
+      return null;
+    }
+    function aus(){
+      _h = null;
+      if (root.classList.contains("is-festhoehe")) root.classList.remove("is-festhoehe");
+      root.style.removeProperty("--up-flach-box-h");
+    }
+    function messen(){
+      if (!root.isConnected) return;
+      if (!root.classList.contains("up-sticky")){ aus(); return; }
+      /* messbar und nicht istSichtbar: die Ansicht blendet mit Deckkraft 0 auf, und genau in dem
+         Moment meldet sich der Groessenwaechter -- danach kommt kein Anlass mehr. Messen geht bei
+         Deckkraft 0 sehr wohl, nur in einer geparkten Ansicht nicht. */
+      if (!messbar(root)) return;
+      /* LAEUFT GERADE EINE BEWEGUNG, DIE DIE TABELLE MITNIMMT, wird nach ihrem Ende noch einmal
+         gemessen. Der Auftritt der Seite (makeAuftritt, el.animate) schiebt den Inhalt mit
+         transform herein; mitten darin zaehlt der verschobene Rest als Ueberlauf des
+         Scrollbereichs, und der Kasten wurde genau um die Verschiebung zu niedrig -- gemessen 1px
+         Luft unter der Pagination nach dem ersten Laden, nach einem Fensterzug weg. el.animate
+         loest kein animationend aus, darum ueber die Animationen selbst (das deckt
+         CSS-Animationen und -Uebergaenge mit ab). Nur Bewegungen an der Tabelle oder einem ihrer
+         Vorfahren, nicht jeder Hover auf der Seite; jede nur einmal je Tabelle. */
+      if (document.getAnimations && gesehen){
+        try {
+          document.getAnimations().forEach(function(a){
+            var t = a.effect && a.effect.target;
+            if (gesehen.has(a) || a.playState !== "running" || !t || !t.contains || !t.contains(root)) return;
+            gesehen.add(a);
+            a.finished.then(function(){ planen(); }, function(){});
+          });
+        } catch(e){}
+      }
+      var sc = scroller();
+      if (!sc){ aus(); return; }
+      var scR = sc.getBoundingClientRect();
+      var kante = scR.top + (sc.clientTop || 0) - sc.scrollTop;   /* Oberkante des Inhalts */
+      var oben = box.getBoundingClientRect().top - kante;
+      var extra = Math.max(600, Math.round((window.innerHeight || 800) * 2));
+      var pb0 = root.style.paddingBottom, pbW = 0;
+      try { pbW = parseFloat(window.getComputedStyle(root).paddingBottom) || 0; } catch(e){}
+      root.style.paddingBottom = (pbW + extra) + "px";
+      var ende = sc.scrollHeight;
+      var boxUnten = box.getBoundingClientRect().bottom - kante;
+      root.style.paddingBottom = pb0;
+      var unten = Math.max(0, ende - extra - boxUnten);
+      /* Die Oberkante zaehlt mit dem Kasten in seiner JETZIGEN Hoehe nicht -- oben haengt nur
+         vom Inhalt darueber ab. Abgerundet auf 1/64 px (die Layout-Einheit des Browsers), nicht
+         auf ganze Pixel: die Oberkante liegt oft auf einem Bruchteil (gemessen 160,04), und ganze
+         Pixel liessen dann knapp einen Pixel frei unter der Pagination. Zu viel darf es nicht
+         sein, sonst scrollt #main um diesen Rest. */
+      var h = Math.floor((sc.clientHeight - oben - unten) * 64) / 64;
+      if (!(h >= MIN)){ aus(); return; }
+      if (_h == null || Math.abs(h - _h) >= 0.5 / 64){ _h = h; root.style.setProperty("--up-flach-box-h", h + "px"); }
+      /* Beim ersten Einschalten noch einmal messen: die Seite darf mit is-festhoehe ihr Polster
+         unter der Tabelle zuruecknehmen (prompts-page.css tut es), und dieser Platz gehoert dann
+         dem Kasten. Das zweite Mal findet die Klasse schon vor -- keine Schleife. */
+      if (!root.classList.contains("is-festhoehe")){ root.classList.add("is-festhoehe"); planen(); }
+    }
+    _plan = rafThrottle(messen);
+    /* Was die Oberkante oder den Rest darunter verschiebt: die Leiste (Chips brechen um), der
+       Fuss (bricht um, verschwindet mit einer Gruppierung), der Scrollbereich selbst (Fenster). */
+    if (window.ResizeObserver){
+      var ro = new ResizeObserver(function(){ planen(); });
+      if (cfg.kopf) ro.observe(cfg.kopf);
+      if (cfg.fuss) ro.observe(cfg.fuss);
+      var sc0 = scroller();
+      if (sc0) ro.observe(sc0);
+      /* Und alles, was im Scrollbereich UEBER der Tabelle steht (Seitenkopf, Reiter): gemessen
+         beim ersten Laden, der Kopf der Seite wurde nach dem Nachladen der Schrift 2px niedriger,
+         die Tabelle rutschte hoch, und unter der Pagination blieben 2px frei, weil weder Leiste
+         noch Fuss noch #main ihre Groesse geaendert hatten. Je Ebene die Geschwister davor --
+         eine Handvoll Elemente, keine Liste von Zeilen. */
+      var ebene = root, n = 0;
+      while (ebene && ebene !== sc0 && n++ < 12){
+        var vor = ebene.previousElementSibling, k = 0;
+        while (vor && k++ < 8){ ro.observe(vor); vor = vor.previousElementSibling; }
+        ebene = ebene.parentElement;
+      }
+    }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ planen(); });
+    window.addEventListener("resize", planen, { passive: true });
+    planen();
+    return { planen: planen };
   }
 
   /* Bubble re-injects a component's whole markup block (script tags included) whenever the
@@ -26072,6 +26210,7 @@
        der Beobachter feuert also nie. Wer so etwas oeffnet, ruft das hier fuer seinen Ast. */
     spracheLauf: spracheLauf,
     makeSticky: makeSticky,
+    makeFestHoehe: makeFestHoehe,
     rafThrottle: rafThrottle,
     einmalProBild: einmalProBild,
     onResize: onResize,

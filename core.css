@@ -3351,6 +3351,69 @@
        Genau das gemeldete Bild: hier und da fehlt eine Trennlinie, aber nicht ueberall. */
     .up-tbody > .up-row:last-child { border-bottom: none; }
 
+    /* ---------- DIE FLACHE TABELLE (data-flach="yes" an .up-root, 15.10.) ----------
+       Zuerst in der Prompt-Tabelle gebaut und dort Stueck fuer Stueck abgenommen, dann hierher
+       gehoben, damit jede Tabelle sie mit EINEM Attribut bekommt:
+       - kein Kasten: oben und unten eine Linie, an den Seiten keine (0 breit, nicht farblos --
+         sonst endet jede Zeilenlinie einen Pixel vor dem Rand), kein Radius, kein Grund;
+       - bis an die Kanten: der Kasten laeuft um --up-flach-aus (16, das Polster der Ansicht) links
+         und rechts heraus; jede Zeile beginnt links an der Kante (ihr Zellpolster 12 ist der
+         Abstand) und haelt rechts --up-flach-aus Polster, damit die letzte Zahl nicht am
+         Fensterrand steht. Wo die Tabelle nicht auslaufen darf (Karte, Drawer), setzt die
+         Komponente --up-flach-aus: 0px;
+       - Kopf und Fuss 48 hoch (--up-flach-h): nach 40 kommt auf der Skala erst 55, die
+         Zeilenhoehe; 45 setzte die 28er Knoepfe der Pagination auf halbe Pixel. Die Linie unter
+         dem Kopf zieht der Kopf selbst (Schatten nach innen), die Zellen allein liessen sie vor
+         dem Auslauf enden;
+       - die Beschriftung der Koepfe 13/500 statt 12/400 ("noch sehr duenn und klein").
+       Andere Zeilenarten einer Tabelle (Gruppenkopf, Unterzeilen eines Drilldowns) braucht die
+       Komponente selbst: rechts --up-flach-aus Polster, links nichts.
+       .up-root.up-root: gegen die Regeln von core gewinnt die Spezifitaet, auch gegen die dunklen
+       (.up-root[data-theme="dark"].up-sticky .up-thead) und gegen eine Komponente mit
+       .xyz-root .up-box -- nie die Ladereihenfolge. makeColumns zieht das Polster der Kopfzeile
+       von der Breite ab, mit der es Spalten verteilt (boxWidth). */
+    .up-root[data-flach="yes"] { --up-flach-aus: 16px; --up-flach-h: 48px; }
+    .up-root.up-root[data-flach="yes"] .up-box {
+      border-width: 1px 0; border-color: var(--vc-border); border-radius: 0; background: transparent;
+      margin-left: calc(-1 * var(--up-flach-aus)); margin-right: calc(-1 * var(--up-flach-aus));
+    }
+    .up-root.up-root[data-flach="yes"] .up-table { background: transparent; }
+    /* Der Grund des Kopfes ist die SEITENFARBE und nicht durchsichtig: klebt er, laufen die
+       Zeilen darunter durch. */
+    .up-root.up-root[data-flach="yes"] .up-thead {
+      height: var(--up-flach-h); flex: 0 0 var(--up-flach-h);
+      background: var(--up-surface); box-shadow: inset 0 -1px 0 var(--vc-border);
+      padding-left: 0; padding-right: var(--up-flach-aus);
+    }
+    .up-root.up-root[data-flach="yes"] .up-box .up-row { padding-left: 0; padding-right: var(--up-flach-aus); }
+    .up-root.up-root[data-flach="yes"] .up-th { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); }
+    /* Klebend: Rahmen und runde Ecken des Kopfes und Koerpers gehoeren zum Kasten, den es hier
+       nicht gibt -- 0 breit, sonst stuende links und rechts je ein farbloser Pixel. */
+    .up-root.up-root[data-flach="yes"].up-sticky .up-thead {
+      background-image: none; background-color: var(--up-surface); border-width: 0; border-radius: 0;
+    }
+    .up-root.up-root[data-flach="yes"].up-sticky .up-thead::before,
+    .up-root.up-root[data-flach="yes"].up-sticky .up-thead::after { display: none; }
+    .up-root.up-root[data-flach="yes"].up-sticky .up-tbody { border-width: 0; border-radius: 0; }
+    /* Der Fuss: 48 hoch direkt unter der unteren Linie, links mit auslaufend auf der Kante der
+       ersten Zelle (12), die Knoepfe in der 28er Form (--up-h-seg), je 10 darueber und darunter.
+       Umgebrochen (core zentriert dann) ohne den Auszug, er schob die Mitte um 8px. */
+    .up-root.up-root[data-flach="yes"] .up-foot {
+      margin-top: 0; min-height: var(--up-flach-h);
+      margin-left: calc(-1 * var(--up-flach-aus)); padding-left: 12px;
+    }
+    .up-root.up-root[data-flach="yes"] .up-foot.is-wrapped { margin-left: 0; padding-left: 0; }
+    .up-root.up-root[data-flach="yes"] .up-foot .up-pagesize-seg { height: var(--up-h-seg); }
+    .up-root.up-root[data-flach="yes"] .up-foot .up-pagesize-btn { height: var(--up-h-seg); min-width: 30px; padding: 0 8px; }
+    .up-root.up-root[data-flach="yes"] .up-foot .up-page { height: var(--up-h-seg); min-width: var(--up-h-seg); }
+    .up-root.up-root[data-flach="yes"] .up-foot .up-page-gap { height: var(--up-h-seg); }
+    /* FESTE HOEHE (UC.makeFestHoehe): nur der Kasten scrollt, Leiste oben und Pagination unten
+       stehen. --up-flach-box-h ist gemessen; max-height, damit drei Zeilen unter der dritten
+       enden und keinen leeren Kasten bis zum Fensterrand ziehen. Der Kopf klebt dann am Kasten
+       (top 0), nicht mehr an #main. */
+    .up-root.up-root[data-flach="yes"].is-festhoehe .up-box { max-height: var(--up-flach-box-h); overflow: auto; overscroll-behavior: contain; }
+    .up-root.up-root[data-flach="yes"].is-festhoehe .up-thead { position: sticky; top: 0; z-index: 5; }
+
     
     /* Letter fallback: a broken/missing favicon used to leave an empty square, which reads as a
        loading glitch. The initial keeps every row visually complete. */

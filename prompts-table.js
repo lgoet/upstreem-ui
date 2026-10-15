@@ -642,6 +642,10 @@
        Breitenstufen, die Knoepfe wegnehmen. Ohne das Attribut (Bubble, Landingpage) bleibt alles,
        wie es war. */
     var LEISTE = root.getAttribute("data-leiste") === "yes";
+    /* Mit der einen Leiste ist die Tabelle flach (core.css "DIE FLACHE TABELLE"): ohne Kasten,
+       bis an die Kanten, Kopf und Fuss 48. Vor dem ersten Messen der Spalten gesetzt -- makeColumns
+       zieht das Polster der Kopfzeile von der Breite ab. */
+    if (LEISTE) root.setAttribute("data-flach", "yes");
 
     /* Mentioned-brands multi-select — built from JS the same reason the header explainer icons
        are: the markup is a hand copy the CDN pin never touches, and this table simply never had
@@ -4464,11 +4468,6 @@
       root: root, state: state, columns: COLUMNS,
       storePrefix: "upt", instanceId: instanceId,
       firstKey: "prompt", firstMin: PROMPT_MIN, noActions: true,
-      /* Die eine Leiste: der Kasten laeuft je 16 ueber die Ansicht hinaus (--upt-aus in
-         prompts-table.css), die Zeilen nehmen davon nur RECHTS 16 als Polster zurueck -- links
-         beginnt die erste Zelle seit dem 15.10. an der Kante. Dem Raster bleiben also 16 weniger,
-         als der Kasten breit ist. Steht --upt-aus anders, muss diese Zahl mit. */
-      breiteAbzug: LEISTE ? 16 : 0,
       /* Inactive prompts aren't being run, so there's nothing to show for any of these — no brand
          mentions, and no visibility/rank/sentiment either (those numbers come from the same runs).
          Removed from the grid template rather than hidden with CSS — a hidden cell would leave its
@@ -5566,123 +5565,12 @@
     else window.addEventListener("resize", UC.rafThrottle(function(){ _sticky.applySticky(); festPlanen(); }));
     _sticky.applySticky();
 
-    /* FESTE HOEHE, NUR DIE TABELLE SCROLLT (15.10., nur die eine Leiste -- CSS unter
-       is-festhoehe in prompts-table.css). Der Kasten bekommt als Hoechstmass genau den Platz
-       zwischen seiner Oberkante und dem unteren Rand des Scrollbereichs der Seite, abzueglich
-       allem, was darunter noch steht (Pagination, Polster der Seite). Dann scrollt #main nicht
-       mehr, sondern nur der Kasten, und die Pagination steht unten fest.
-       WAS DARUNTER STEHT, WIRD GEMESSEN, NICHT ADDIERT: Polster, Raender und Mindesthoehen der
-       Seitenhuellen lassen sich nicht zuverlaessig aufsummieren (eine Huelle mit min-height hat
-       leeren Rest, der nicht zaehlen darf). Darum bekommt die Wurzel fuer die Messung kurz ein
-       grosses Polster unten: der Inhalt des Scrollbereichs laeuft damit sicher ueber, und sein
-       Ende minus Polster minus Unterkante des Kastens ist genau der Rest. Polster und nicht
-       min-height am Kasten: das setzte dessen eigene Scrollstellung auf 0 zurueck, und ein Rand
-       koennte mit dem eines Vorfahren zusammenfallen. Zurueckgesetzt wird im selben Zug, vor dem
-       naechsten Bild -- zu sehen ist davon nichts, und kein Groessenwaechter bekommt es mit.
-       Nur mit klebendem Kopf (ab 1000 breit, core makeSticky): darunter scrollt die Seite wie
-       bisher, auf dem Telefon waere ein Scrollbereich im Scrollbereich eine Falle fuer den Daumen.
-       Unter FEST_MIN Platz (niedriges Fenster) ebenfalls die Seite -- ein Guckloch von drei
-       Zeilen ist schlechter als eine Seite, die scrollt. Geparkte Ansicht: nichts aendern, der
-       alte Wert gilt weiter, bis sie wieder zu sehen ist. */
-    var _festPlan = null, _festH = null, FEST_MIN = 240;
-    function festPlanen(){ if (_festPlan) _festPlan(); }
-    if (LEISTE){
-      var elBoxFest = root.querySelector(".up-box");
-      /* Der Kasten ist jetzt ein Scrollbereich: die schmale Leiste aus core statt der des
-         Systems (auf Windows sonst 17px grau neben der letzten Spalte). */
-      if (elBoxFest) elBoxFest.classList.add("up-scroll");
-      var festScroller = function(){
-        var m = document.getElementById("main");
-        if (m && m.contains(root)) return m;
-        var el = root.parentElement, n = 0, oy;
-        while (el && el !== document.body && el !== document.documentElement && n++ < 40){
-          try { oy = window.getComputedStyle(el).overflowY; } catch(e){ return null; }
-          if (oy === "auto" || oy === "scroll") return el;
-          el = el.parentElement;
-        }
-        return null;
-      };
-      var festAus = function(){
-        _festH = null;
-        if (root.classList.contains("is-festhoehe")) root.classList.remove("is-festhoehe");
-        root.style.removeProperty("--upt-box-h");
-      };
-      var festMessen = function(){
-        if (!elBoxFest || !root.isConnected) return;
-        if (!root.classList.contains("up-sticky")){ festAus(); return; }
-        /* messbar und nicht istSichtbar: die Ansicht blendet mit Deckkraft 0 auf, und genau in
-           dem Moment meldet sich der Groessenwaechter -- danach kommt kein Anlass mehr. Messen
-           geht bei Deckkraft 0 sehr wohl, nur in einer geparkten Ansicht nicht. */
-        if (UC.messbar && !UC.messbar(root)) return;
-        /* LAEUFT GERADE EINE BEWEGUNG, DIE DIE TABELLE MITNIMMT, wird nach ihrem Ende noch einmal
-           gemessen. Der Auftritt der Seite (UC.makeAuftritt, el.animate) schiebt den Inhalt mit
-           transform herein; mitten darin zaehlt der verschobene Rest als Ueberlauf des
-           Scrollbereichs, und der Kasten wurde genau um die Verschiebung zu niedrig -- gemessen
-           1px Luft unter der Pagination nach dem ersten Laden, nach einem Fensterzug weg.
-           el.animate loest kein animationend aus, darum ueber die Animationen selbst (das deckt
-           CSS-Animationen und -Uebergaenge mit ab). Nur Bewegungen an der Tabelle oder einem
-           ihrer Vorfahren, nicht jeder Hover auf der Seite; jede nur einmal. */
-        if (document.getAnimations){
-          try {
-            document.getAnimations().forEach(function(a){
-              var t = a.effect && a.effect.target;
-              if (a.__uptFest || a.playState !== "running" || !t || !t.contains || !t.contains(root)) return;
-              a.__uptFest = true;
-              a.finished.then(function(){ festPlanen(); }, function(){});
-            });
-          } catch(e){}
-        }
-        var sc = festScroller();
-        if (!sc){ festAus(); return; }
-        var scR = sc.getBoundingClientRect();
-        var kante = scR.top + (sc.clientTop || 0) - sc.scrollTop;   /* Oberkante des Inhalts */
-        var oben = elBoxFest.getBoundingClientRect().top - kante;
-        var extra = Math.max(600, Math.round((window.innerHeight || 800) * 2));
-        var pb0 = root.style.paddingBottom, pbW = 0;
-        try { pbW = parseFloat(window.getComputedStyle(root).paddingBottom) || 0; } catch(e){}
-        root.style.paddingBottom = (pbW + extra) + "px";
-        var ende = sc.scrollHeight;
-        var boxUnten = elBoxFest.getBoundingClientRect().bottom - kante;
-        root.style.paddingBottom = pb0;
-        var unten = Math.max(0, ende - extra - boxUnten);
-        /* Die Oberkante zaehlt mit dem Kasten in seiner JETZIGEN Hoehe nicht -- oben haengt nur
-           vom Inhalt darueber ab. Abgerundet auf 1/64 px (die Layout-Einheit des Browsers), nicht
-           auf ganze Pixel: die Oberkante liegt oft auf einem Bruchteil (gemessen 160,04), und
-           ganze Pixel liessen dann knapp einen Pixel frei unter der Pagination. Zu viel darf es
-           nicht sein, sonst scrollt #main um diesen Rest. */
-        var h = Math.floor((sc.clientHeight - oben - unten) * 64) / 64;
-        if (!(h >= FEST_MIN)){ festAus(); return; }
-        if (_festH == null || Math.abs(h - _festH) >= 0.5 / 64){ _festH = h; root.style.setProperty("--upt-box-h", h + "px"); }
-        /* Beim ersten Einschalten noch einmal messen: die Seite nimmt mit is-festhoehe ihr
-           Polster unter der Tabelle zurueck (prompts-page.css), und dieser Platz gehoert dann dem
-           Kasten. Das zweite Mal findet die Klasse schon vor -- keine Schleife. */
-        if (!root.classList.contains("is-festhoehe")){ root.classList.add("is-festhoehe"); festPlanen(); }
-      };
-      _festPlan = UC.rafThrottle(festMessen);
-      /* Was die Oberkante oder den Rest darunter verschiebt: die Leiste (Chips brechen um), der
-         Fuss (bricht um, verschwindet mit der Gruppierung), der Scrollbereich selbst (Fenster). */
-      if (window.ResizeObserver){
-        var festRO = new ResizeObserver(function(){ festPlanen(); });
-        if (elHead) festRO.observe(elHead);
-        if (elFoot) festRO.observe(elFoot);
-        var festSc = festScroller();
-        if (festSc) festRO.observe(festSc);
-        /* Und alles, was im Scrollbereich UEBER der Tabelle steht (Seitenkopf, Reiter): gemessen
-           beim ersten Laden, der Kopf der Seite wurde nach dem Nachladen der Schrift 2px
-           niedriger, die Tabelle rutschte hoch, und unter der Pagination blieben 2px frei, weil
-           weder Leiste noch Fuss noch #main ihre Groesse geaendert hatten. Je Ebene die
-           Geschwister davor -- eine Handvoll Elemente, keine Liste von Zeilen. */
-        var festEbene = root, festN = 0;
-        while (festEbene && festEbene !== festSc && festN++ < 12){
-          var festVor = festEbene.previousElementSibling, festK = 0;
-          while (festVor && festK++ < 8){ festRO.observe(festVor); festVor = festVor.previousElementSibling; }
-          festEbene = festEbene.parentElement;
-        }
-      }
-      if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ festPlanen(); });
-      window.addEventListener("resize", festPlanen, { passive: true });
-      festPlanen();
-    }
+    /* FESTE HOEHE, NUR DIE TABELLE SCROLLT (15.10., nur die eine Leiste): der Baustein steht seit
+       dem Abend in core (UC.makeFestHoehe, dort die Begruendung jeder Messung). Die Seite nimmt
+       mit is-festhoehe ihr Polster unter der Tabelle zurueck (prompts-page.css). */
+    var _fest = null;
+    function festPlanen(){ if (_fest) _fest.planen(); }
+    if (LEISTE && UC.makeFestHoehe) _fest = UC.makeFestHoehe(root, { kopf: elHead, fuss: elFoot });
 
     function render(){
       renderTable(); renderCount(); syncHeadSorters(); syncColsBadge(); syncSelectAll(); syncBrand();

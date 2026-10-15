@@ -49,7 +49,7 @@
 .upi-root:not([data-upi-reiter="topics"]) .upi-filterzeile ~ .upi-main { padding-top: 16px; }
 /* Dieselben 16 zur Linie, wenn die Filter im Kopf der Prompt-Tabelle stehen. */
 .upi-root.upi-mit-leiste .upi-main { padding-top: 16px; }
-/* Steht die Prompt-Tabelle auf fester Hoehe (is-festhoehe, prompts-table.js festHoehe), scrollt
+/* Steht die Prompt-Tabelle auf fester Hoehe (is-festhoehe, UC.makeFestHoehe in core), scrollt
    die Seite nicht mehr, und die 64 unter dem Inhalt waeren ein leerer Streifen unter der
    Pagination. 0 und nicht 8 (15.10. nachgereicht: "der Inhalt ist zu weit oben"): die
    Fusszeile reicht bis an den Fensterrand, und ihre Knoepfe stehen mittig zwischen der Linie
