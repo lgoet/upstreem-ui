@@ -15245,6 +15245,9 @@
   var _klebRaf = 0;
   function klebPruefenAlle(){
     _klebRaf = 0;
+    /* Der klebende Fuss liest zuerst (alle Tabellen), geschrieben wird erst nach der Leiste --
+       so erzwingt keine Klasse von hier eine Neuberechnung mitten in den Lesungen dort. */
+    var fuss = fussLesen();
     KLEB_WURZELN = KLEB_WURZELN.filter(function(w){ return w.root.isConnected; });
     KLEB_WURZELN.forEach(function(w){
       var head = w.head && w.head.isConnected ? w.head : (w.head = w.root.querySelector(".up-head"));
@@ -15257,6 +15260,7 @@
       var klebt = d > w.ruhe + 0.5;
       if (klebt !== w.root.classList.contains("is-geklebt")) w.root.classList.toggle("is-geklebt", klebt);
     });
+    fussSchreiben(fuss);
   }
   function klebPlanen(){ if (!_klebRaf) _klebRaf = requestAnimationFrame(klebPruefenAlle); }
   try {
@@ -15267,6 +15271,216 @@
     for (var i = 0; i < KLEB_WURZELN.length; i++) if (KLEB_WURZELN[i].root === root){ KLEB_WURZELN[i].ruhe = null; klebPlanen(); return; }
     KLEB_WURZELN.push({ root: root, head: head || null, ruhe: null });
     klebPlanen();
+  }
+
+  /* ---- DER KLEBENDE FUSS (16.10., data-kleb-fuss="yes" an der Wurzel einer Tabelle) ----------
+     Bestellt fuer Citations und Brands > Tracked (Variante A der Leinwand "Citations
+     Seitenaufbau"): "sobald die Tabelle unten voll im Bild ist, dann die bottom Summary
+     Row/Pagination und so, solange das Verhalten, wie die bottom sticky parts der Tabelle
+     reinkommen, smooth bleibt." Gesamtzeile (.up-sumrow) und Pagination (.up-foot) kleben unten
+     am Scrollbereich -- ABER ERST, WENN DIE TABELLE DEN BILDSCHIRM FUELLT. Solange Kopf, Reiter
+     oder Chart noch zu sehen sind, stehen sie an ihrem Platz am Ende der Tabelle; am Ende der
+     Tabelle kehren sie von selbst dorthin zurueck (das ist sticky selbst, ohne Sprung).
+     "Die Tabelle fuellt den Bildschirm" heisst: ihr Spaltenkopf klebt, er steht also tiefer in
+     .up-table als in Ruhe. Das gibt es nur mit klebendem Kopf (.up-sticky, ab 1000 breit) --
+     darunter klebt nichts, wie bei jeder Tabelle der App.
+     NUR ZWEI UEBERGAENGE BEWEGEN SICH (transform und opacity, --up-t-3, easeOutExpo):
+       aus -> an   die Tabelle beginnt zu fuellen, waehrend ihr Ende noch unter dem Bild liegt:
+                   der Fuss faehrt von unten herein. Liegt das Ende schon im Bild, aendert sich
+                   nichts Sichtbares -- er steht dann ohnehin an seinem Platz.
+       an -> aus   die Tabelle fuellt nicht mehr (zurueck zum Chart), der Fuss klebt aber gerade:
+                   er faehrt nach unten hinaus, und ERST DANACH steht er wieder im Fluss, dort
+                   liegt er dann unter dem Bild. Kehrt die Richtung mittendrin um, kehrt die
+                   Bewegung von der Stelle aus um, an der sie gerade ist -- darum Uebergaenge und
+                   keine Keyframes, die von vorn anfingen.
+     Der Wechsel am Ende der Tabelle bewegt nichts; nur der Schatten blendet.
+     Linie und Schatten NUR, solange er wirklich klebt (.is-fuss-klebt): sein natuerlicher Platz
+     liegt dann unter dem Bild. Den liest eine unsichtbare Marke direkt unter dem Kasten
+     (.up-fuss-marke) -- am klebenden Element selbst laesst er sich nicht mehr ablesen.
+     Gelesen wird im Scroll-Durchlauf der Leiste (klebPruefenAlle), je Bild hoechstens einmal:
+     vier Lesungen je Tabelle, geschrieben wird nur bei einem Wechsel. Die Hoehen von Fuss und
+     Gesamtzeile kommen aus einem Groessenwaechter, nicht aus dem Scrollen. Bewegung reduziert
+     (prefers-reduced-motion): dieselben Zustaende, ohne Fahrt. */
+  var FUSS_WURZELN = [];
+  function fussDauer(root){
+    var v = 260;
+    try { v = parseFloat(window.getComputedStyle(root).getPropertyValue("--up-t-3")) || 260; } catch(e){}
+    return v;
+  }
+  function fussBewegt(){
+    try { return !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch(e){ return true; }
+  }
+  /* Der Scrollbereich, an dessen Unterkante der Fuss klebt: #main in der App, sonst der naechste
+     Vorfahre, der scrollt, sonst das Fenster (wie makeFestHoehe). */
+  function fussScroller(root){
+    var m = document.getElementById("main");
+    if (m && m.contains(root)) return m;
+    var el = root.parentElement, n = 0, oy;
+    while (el && el !== document.body && el !== document.documentElement && n++ < 40){
+      try { oy = window.getComputedStyle(el).overflowY; } catch(e){ return null; }
+      if (oy === "auto" || oy === "scroll") return el;
+      el = el.parentElement;
+    }
+    return null;
+  }
+  function fussScrollerHolen(w){
+    if (w.sc === undefined){
+      w.sc = fussScroller(w.root);
+      try { w.scPolster = w.sc ? (parseFloat(window.getComputedStyle(w.sc).paddingBottom) || 0) : 0; } catch(e){ w.scPolster = 0; }
+    }
+    return w.sc;
+  }
+  /* Die Hoehen aus dem Groessenwaechter. --up-fuss-unter: wie weit die Gesamtzeile ueber der
+     Unterkante klebt (Hoehe der Pagination plus die Linie des Kastens zwischen beiden -- so
+     loesen sich beide am Ende der Tabelle im selben Bild, und die Linie bleibt, wo sie war).
+     --up-fuss-weg: die Strecke der Fahrt, beide Teile als EIN Block, samt Schatten -- ABER NIE
+     WEITER, ALS UNTER IHREM PLATZ NOCH INHALT STEHT. Ein verschobenes Element zaehlt fuer den
+     Scrollbereich an seinem Platz im Fluss plus Verschiebung (das Kleben zaehlt dort nicht mit):
+     121 Weg unter einer Pagination, unter der 64 Luft stehen, verlaengerten die Seite fuer die
+     Dauer der Fahrt um 57px (gemessen 16.10., scrollHeight 773 -> 830) -- der Balken zuckte. Der
+     Platz wird nur in Ruhe gemessen (kein Teil verschoben), sonst zaehlte die Fahrt mit. */
+  function fussMessen(w){
+    var r = w.root;
+    if (!r.isConnected) return;
+    if (!w.foot || !w.foot.isConnected) w.foot = r.querySelector(":scope > .up-foot");
+    if (!w.sum || !w.sum.isConnected) w.sum = w.box.querySelector(".up-sumrow");
+    [w.foot, w.sum].forEach(function(el){
+      if (el && w.ro && w.gesehen.indexOf(el) < 0){ w.gesehen.push(el); w.ro.observe(el); }
+    });
+    var footH = w.foot ? w.foot.offsetHeight : 0, sumH = w.sum ? w.sum.offsetHeight : 0, rand = 0;
+    try { rand = parseFloat(window.getComputedStyle(w.box).borderBottomWidth) || 0; } catch(e){}
+    var unter = footH ? footH + rand : 0;
+    if (w.phase === "aus" && (footH || sumH) && r.getClientRects().length){
+      var sc = fussScrollerHolen(w);
+      var ende = w.marke.getBoundingClientRect().top + (footH ? footH : -rand);
+      var inhaltEnde = sc ? sc.getBoundingClientRect().top + (sc.clientTop || 0) - sc.scrollTop + sc.scrollHeight
+                          : document.documentElement.scrollHeight - (window.pageYOffset || 0);
+      w.platz = Math.max(0, Math.floor(inhaltEnde - ende));
+    }
+    var weg = sumH + unter + 24;
+    if (w.platz != null) weg = Math.min(weg, w.platz);
+    if (footH !== w.footH || sumH !== w.sumH || rand !== w.rand || weg !== w.weg){
+      w.footH = footH; w.sumH = sumH; w.rand = rand; w.weg = weg;
+      r.style.setProperty("--up-fuss-unter", unter + "px");
+      r.style.setProperty("--up-fuss-weg", weg + "px");
+      if (r.classList.contains("is-fuss-ohne-summe") !== !sumH) r.classList.toggle("is-fuss-ohne-summe", !sumH);
+    }
+    klebPlanen();
+  }
+  function klebFuss(root){
+    for (var i = 0; i < FUSS_WURZELN.length; i++) if (FUSS_WURZELN[i].root === root) return FUSS_WURZELN[i];
+    var box = root.querySelector(".up-box");
+    if (!box || !box.parentNode) return null;
+    var marke = document.createElement("div");
+    marke.className = "up-fuss-marke";
+    marke.setAttribute("aria-hidden", "true");
+    box.parentNode.insertBefore(marke, box.nextSibling);
+    var w = { root: root, box: box, marke: marke, phase: "aus", uhr: 0, footH: -1, sumH: -1, rand: -1, weg: -1,
+              platz: null, sc: undefined, scPolster: 0, gesehen: [], ro: null };
+    FUSS_WURZELN.push(w);
+    /* Der Kasten waechst mit jeder Zeile und mit der Gesamtzeile, die oft erst nach dem Aufbau
+       entsteht (makeZaehlZeile): sein Waechter findet sie und meldet das Ende der Tabelle neu,
+       auch wenn niemand scrollt (Blaettern, Laden, Band ein und aus). */
+    if (window.ResizeObserver){
+      w.ro = new ResizeObserver(function(){ fussMessen(w); });
+      w.ro.observe(box);
+      w.ro.observe(root);
+    }
+    fussMessen(w);
+    return w;
+  }
+  function fussLesen(){
+    if (!FUSS_WURZELN.length) return null;
+    FUSS_WURZELN = FUSS_WURZELN.filter(function(w){ return w.root.isConnected; });
+    return FUSS_WURZELN.map(function(w){
+      var r = w.root;
+      if (!r.classList.contains("up-sticky") || !(w.sumH > 0 || w.footH > 0)) return { w: w, fuellt: false, unten: false };
+      if (!w.thead || !w.thead.isConnected){ w.thead = w.box.querySelector(".up-thead"); w.table = w.thead && w.thead.parentElement; }
+      if (!w.thead || !w.table) return { w: w, fuellt: false, unten: false };
+      fussScrollerHolen(w);
+      var unterkante;
+      if (w.sc){ var s = w.sc.getBoundingClientRect(); unterkante = s.top + (w.sc.clientTop || 0) + w.sc.clientHeight - w.scPolster; }
+      else unterkante = window.innerHeight || document.documentElement.clientHeight || 0;
+      var fuellt = w.thead.getBoundingClientRect().top - w.table.getBoundingClientRect().top > 0.5;
+      /* Das natuerliche Ende des untersten Teils: die Pagination steht direkt unter der Marke,
+         die Gesamtzeile allein endet ueber der Linie des Kastens. */
+      var ende = w.marke.getBoundingClientRect().top + (w.footH > 0 ? w.footH : -w.rand);
+      return { w: w, fuellt: fuellt, unten: ende > unterkante + 0.5 };
+    });
+  }
+  /* Den Stil jetzt festschreiben: der Startpunkt einer Fahrt muss berechnet sein, bevor der
+     Zielzustand gesetzt wird -- sonst sieht der Browser nur das Ziel und faehrt nicht. Nur Stil,
+     kein Layout. */
+  function fussFest(w){ try { window.getComputedStyle(w.sum || w.foot || w.root).transform; } catch(e){} }
+  function fussRein(w){
+    var cl = w.root.classList;
+    cl.add("is-fuss-still"); cl.add("is-fuss-an"); cl.add("is-fuss-weg");
+    fussFest(w);
+    cl.remove("is-fuss-still"); cl.remove("is-fuss-weg");
+    w.phase = "an";
+  }
+  function fussAus(w){
+    clearTimeout(w.uhr);
+    var cl = w.root.classList;
+    cl.add("is-fuss-still");
+    cl.remove("is-fuss-an"); cl.remove("is-fuss-weg"); cl.remove("is-fuss-klebt");
+    fussFest(w);
+    cl.remove("is-fuss-still");
+    w.phase = "aus";
+  }
+  /* Hinaus: erst die Fahrt, dann zurueck in den Fluss. Die Uhr und nicht transitionend: in
+     einem verdeckten Fenster laufen keine Uebergaenge, und das Ende kaeme nie. */
+  function fussRaus(w){
+    w.phase = "raus";
+    w.root.classList.add("is-fuss-weg");
+    clearTimeout(w.uhr);
+    w.uhr = setTimeout(function(){ if (w.phase === "raus") fussAus(w); }, fussDauer(w.root) + 40);
+  }
+  function fussStellen(w, fuellt, unten){
+    var cl = w.root.classList;
+    if (fuellt){
+      if (w.phase === "aus"){
+        if (unten && fussBewegt()) fussRein(w);
+        else { cl.add("is-fuss-an"); w.phase = "an"; }
+      } else if (w.phase === "raus"){
+        clearTimeout(w.uhr); cl.remove("is-fuss-weg"); w.phase = "an";
+      }
+    } else if (w.phase === "an"){
+      if (unten && fussBewegt()) fussRaus(w); else fussAus(w);
+    }
+    var klebt = w.phase === "an" && unten;
+    if (klebt !== cl.contains("is-fuss-klebt")) cl.toggle("is-fuss-klebt", klebt);
+  }
+  function fussSchreiben(liste){
+    if (!liste) return;
+    liste.forEach(function(z){ fussStellen(z.w, z.fuellt, z.unten); });
+  }
+
+  /* DIE LEISTE UEBER DEM BAND (16.10., Variante A der Leinwand "Citations Seitenaufbau", fuer
+     Citations und Brands > Tracked gewaehlt). Die eine Leiste einer Tabelle (data-leiste="yes",
+     ihr .up-head) steht OBEN, ueber dem Chart: links Kalender und Filter, die fuer Chart UND
+     Tabelle gelten, rechts die Werkzeuge der Tabelle. Darunter das Band, darunter der Kasten.
+     Gebaut als Umstellung IN der Wurzel der Tabelle, nicht als eigene Leiste der Seite: so klebt
+     die Leiste ueber makeSticky wie in Prompt Insights (oben bei --up-sticky-top), der
+     Spaltenkopf direkt unter ihr (--up-thead-off ist ihre gemessene Hoehe; das Band liegt
+     dazwischen und scrollt unter ihr weg), und kein Knopf der Tabelle verlaesst die Wurzel, an
+     der ihre Klicks, Tooltips, Suche und Menues haengen. Die Seite haengt Kalender und Filter in
+     .up-leiste-scope wie in Prompt Insights.
+     root: Wurzel der Tabelle; band: das Band oder seine Huelle; o.kopf: die Leiste, wenn sie nicht
+     das direkte Kind .up-head ist (Brands: der Kopf der Tabelleneinheit wandert nach oben).
+     Bewegt nur, was nicht schon steht. Wandert das Band zu einer anderen Tabelle (Reiterwechsel in
+     Citations), verliert die alte ihre Klasse. */
+  function bandUnterLeiste(root, band, o){
+    o = o || {};
+    if (!root || !band) return false;
+    var kopf = o.kopf || root.querySelector(":scope > .up-head");
+    if (!kopf) return false;
+    var alt = band.parentNode;
+    if (alt && alt !== root && alt.classList && alt.classList.contains("has-leistenband")) alt.classList.remove("has-leistenband");
+    if (kopf.parentNode !== root) root.insertBefore(kopf, root.firstChild);
+    if (kopf.nextElementSibling !== band) root.insertBefore(band, kopf.nextSibling);
+    if (!root.classList.contains("has-leistenband")) root.classList.add("has-leistenband");
+    return true;
   }
 
   function makeSticky(root, headEl){
@@ -15376,6 +15590,10 @@
       stickyTopSetzen(on);
       if (on){ syncTheadOffset(); syncDeckstreifen(); }
       klebAnmelden(root, headEl);
+      /* Der klebende Fuss (siehe klebFuss): per Attribut, fuer jede Tabelle mit makeSticky. Hier
+         und nicht beim Aufbau: eine Seite darf das Attribut setzen, solange die Tabelle sich
+         noch einrichtet -- applySticky laeuft danach bei jedem Fensterwechsel wieder. */
+      if (root.getAttribute("data-kleb-fuss") === "yes") klebFuss(root);
     }
     /* WIE HOCH MUSS DER DECKSTREIFEN WIRKLICH SEIN (19.09. gemessen im Domain-Drawer).
        .up-head::before malt die Flaeche ueber der geklebten Leiste, damit keine Zeile darueber
@@ -27768,6 +27986,7 @@
     makeFestHoehe: makeFestHoehe,
     makeLeistenFilter: makeLeistenFilter,
     bandTeile: bandTeile, bandAus: bandAus, bandAusGemerkt: bandAusGemerkt, bandAusMerken: bandAusMerken,
+    bandUnterLeiste: bandUnterLeiste, klebFuss: klebFuss,
     bandSchalterHtml: bandSchalterHtml,
     rafThrottle: rafThrottle,
     einmalProBild: einmalProBild,

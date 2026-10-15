@@ -203,6 +203,21 @@
         '<div class="ubr-tab" data-ubr-tab="discover">' + einsetzen(MARKUP.udb) + '</div>' +
       '</div>';
 
+    /* VARIANTE A DER LEINWAND "Citations Seitenaufbau" (16.10., fuer Citations und Tracked
+       gewaehlt): die eine Leiste der Tabelle steht oben ueber dem Chart und klebt, links
+       Active/Inactive, Kalender und Filter, rechts Sortierung, Suche, Display, Export; der
+       Spaltenkopf klebt unter ihr, die Gesamtzeile unten, sobald die Tabelle den Bildschirm fuellt.
+       Die Umstellung in der Wurzel macht brands-overview.js (core, UC.bandUnterLeiste), hier nur:
+       klebender Fuss und Klebkante (16 wie jede Tabelle unter einem Kopf, der wegscrollt) vor dem
+       Aufbau der Komponente, und die Filterzeile in die Leiste (filterzeileStellen). Discover hat
+       keinen Chart: dort bleibt die Filterzeile ueber der Tabelle. */
+    (function () {
+      var u = root.querySelector(".ubo-root");
+      if (!u) return;
+      u.setAttribute("data-kleb-fuss", "yes");
+      if (!u.getAttribute("data-sticky-top")) u.setAttribute("data-sticky-top", "16");
+    })();
+    var elFilterzeile = root.querySelector(".ubr-filterzeile");
     var elNav = root.querySelector(".ubr-nav"), elRefresh = root.querySelector(".ubr-refresh"), elAdd = root.querySelector(".ubr-add");
     function el(sel) { return root.querySelector(sel); }
     var nav = UC.makePageNav ? UC.makePageNav(root, {
@@ -240,8 +255,38 @@
         else window.history.replaceState(window.history.state, "", neu);
       } catch (e) {}
     }
+    /* Die Filterzeile in die Leiste der Tabelle (Tracked) bzw. zurueck ueber die Tabelle
+       (Discover). Die linke Haelfte der Leiste (.ubo-scope.up-leiste-scope) legt brands-overview.js
+       an und stellt Active/Inactive hinein; wer zuerst kommt, legt sie an, der andere findet sie --
+       derselbe Name, dieselbe Stelle. Gefunden ueber den Umschalter Active/Inactive, der Kopf des
+       Charts heisst ebenfalls .ubo-head. Bewegt wird das vorhandene Element: Kalender und Filter
+       behalten Zustand und Handler (Muster: prompts-page.js filterzeileStellen). */
+    function filterzeileStellen() {
+      if (!elFilterzeile) return;
+      var scope = null;
+      if (state.tab === "tracked") {
+        var knopf = root.querySelector(".ubo-root .ubo-seg [data-status]");
+        var kopf = knopf && knopf.closest(".ubo-head");
+        if (kopf) {
+          scope = kopf.querySelector(":scope > .ubo-scope");
+          if (!scope) {
+            scope = document.createElement("div");
+            scope.className = "ubo-scope up-leiste-scope";
+            kopf.insertBefore(scope, kopf.firstChild);
+          }
+        }
+      }
+      if (scope) {
+        if (elFilterzeile.parentNode !== scope) scope.appendChild(elFilterzeile);
+      } else {
+        var main = root.querySelector(".ubr-main");
+        if (elFilterzeile.parentNode !== root || elFilterzeile.nextSibling !== main) root.insertBefore(elFilterzeile, main);
+      }
+      elFilterzeile.classList.toggle("is-in-tabelle", !!scope);
+    }
     function reiterZeigen() {
       root.querySelectorAll(".ubr-tab").forEach(function (x) { x.hidden = x.getAttribute("data-ubr-tab") !== state.tab; });
+      filterzeileStellen();
       root.setAttribute("data-ubr-reiter", state.tab);
       if (krumen && krumen.zeichnen) krumen.zeichnen();
     }
