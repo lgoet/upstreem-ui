@@ -115,10 +115,12 @@
 .tct-table.tct-hide-type .tct-th-type, .tct-table.tct-hide-type .tct-td-type { display: none; }
 .tct-table.tct-hide-type.tct-hide-used .tct-thead, .tct-table.tct-hide-type.tct-hide-used .tct-row { grid-template-columns: 44px minmax(120px,1fr) 30%; }
 .tct-thead { height: 45px; flex: 0 0 45px; background: var(--vt-head-bg); }
-.tct-th { font-size: 12px; font-weight: 400; color: var(--vc-muted); padding: 0 16px 0 8px; height: 100%;
+/* Kopfschrift 14/500 wie jeder Tabellenkopf der App (core .up-root .up-th, 15.10. spaet);
+   vorher 12/400. Das Rautenzeichen waechst im selben Verhaeltnis mit: 12 x 14/12 = 14. */
+.tct-th { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); color: var(--vc-muted); padding: 0 16px 0 8px; height: 100%;
   display: flex; align-items: center; border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
 .tct-th-idx { justify-content: center; padding: 0; }
-.tct-th-idx svg { width: 12px; height: 12px; color: var(--vc-third); display: block; }
+.tct-th-idx svg { width: 14px; height: 14px; color: var(--vc-third); display: block; }
 .tct-th:last-child { border-right: none; }
 .tct-tbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .tct-row { height: 55px; flex: 0 0 55px; cursor: pointer; }
