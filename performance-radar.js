@@ -418,6 +418,9 @@
       loading: !!saved.loading,
       hasData: !!saved.hasData,
       leseFehler: !!saved.leseFehler,
+      /* Die Seite hat gefiltert geladen (Feld gefiltert im Payload, 15.10. abends, wie Visibility
+         Chart und Combo Chart): ein leeres Raster sagt dann "No matching data". */
+      gefiltert: !!saved.gefiltert,
       /* Die zuletzt gemessene Rasterhoehe gehoert mit: steht ein Neuaufbau mitten in einem
          Ladevorgang, soll sein Skelett so hoch sein wie das Raster davor (siehe renderSkeleton). */
       lastGridH: saved.lastGridH || 0,
@@ -433,7 +436,7 @@
         appliedTopics: state.appliedTopics, appliedCompanies: state.appliedCompanies,
         topicLimit: state.topicLimit, companyLimit: state.companyLimit,
         loading: !!state.loading, hasData: !!state.hasData, leseFehler: !!state.leseFehler,
-        lastGridH: state.lastGridH || 0
+        gefiltert: !!state.gefiltert, lastGridH: state.lastGridH || 0
       };
     }
 
@@ -909,11 +912,12 @@
       /* Leer: der Leerzustand der Charts aus core (15.10.) ueber der ganzen .uhm-empty, die ihre
          220 Hoehe behaelt -- vorher stand dort "No data" in 13px. Das Zeichen sind Kacheln wie die
          Zellen der Matrix (dashboardSquare; layoutGrid ist das Rautenzeichen der Gitteransicht).
-         Gefiltert ist, was auch die Werkzeugleiste gefiltert nennt (auswahlEingeschraenkt). */
+         Gefiltert ist, was auch die Werkzeugleiste gefiltert nennt (auswahlEingeschraenkt), oder
+         was die Seite mit ihrer Filterleiste geladen hat (state.gefiltert). */
       elGrid.innerHTML = state.leseFehler
         ? UC.leseFehlerHtml("the radar")
         : '<div class="uhm-empty up-chart-leer-wirt">' + (UC.chartLeerHtml
-            ? UC.chartLeerHtml({ icon: "dashboardSquare", gefiltert: auswahlEingeschraenkt() })
+            ? UC.chartLeerHtml({ icon: "dashboardSquare", gefiltert: auswahlEingeschraenkt() || !!state.gefiltert })
             : UC.esc(UC.t ? UC.t("No data") : "No data")) + '</div>';
       state.layoutKey = "";
     }
@@ -1600,6 +1604,7 @@
         /* Nur eine echte Lieferung loescht den Vermerk -- ein reiner Theme-Render darf ihn
            nicht wegraeumen, sonst stuende danach "No data" statt des Fehlers. */
         if (params.cells != null || params.rows != null) state.leseFehler = false;
+        if (params.gefiltert != null) state.gefiltert = isYes(params.gefiltert);
         if (params.isDark != null){
           /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
              in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst
@@ -1671,7 +1676,7 @@
         state.availTopics = []; state.availCompanies = [];
         state.selTopics = {}; state.selCompanies = {};
         state.appliedTopics = []; state.appliedCompanies = [];
-        state.hasData = false; state.loading = false; state.layoutKey = "";
+        state.hasData = false; state.loading = false; state.layoutKey = ""; state.gefiltert = false;
         pickPop.close(false);
         hideTip();
         soft.end();
