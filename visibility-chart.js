@@ -179,10 +179,15 @@
     });
 
     /* ---------- render (two independent halves) ---------- */
+    /* DAS ZEICHEN VOR "Brand" (15.10. angefordert: "die Icons, wenn vorhanden, im Tabellenheader
+       auch bei Visibility Chart"): squareStack, wie vor "Brand" in Brands Overview -- dieselbe
+       Spalte, dasselbe Zeichen (UC.kopfZeichenHtml, .up-th-ic aus core). Visibility, Ranking und
+       Sentiment tragen dort keins, also auch hier keins. Als Zeichenkette, weil der Kopf mit jedem
+       Zeichnen neu entsteht. */
     function tableHeadHtml(){
       return '<div class="vt-thead">' +
         '<div class="vt-th vt-th-idx">' + UC.HASH_ICON + '</div>' +
-        '<div class="vt-th">Brand</div>' +
+        '<div class="vt-th vt-th-brand">' + (UC.kopfZeichenHtml ? UC.kopfZeichenHtml("squareStack") : "") + 'Brand</div>' +
         '<div class="vt-th vt-th-visibility">Visibility<span class="up-th-info" data-explain="visibility"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V12"/><path d="M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z"/></svg></span></div>' +
         '<div class="vt-th vt-th-ranking">Ranking<span class="up-th-info" data-explain="ranking"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V12"/><path d="M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z"/></svg></span></div>' +
         '<div class="vt-th vt-th-sentiment">Sentiment<span class="up-th-info" data-explain="sentiment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V12"/><path d="M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z"/></svg></span></div></div>';

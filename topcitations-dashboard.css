@@ -154,6 +154,10 @@
   display: flex; align-items: center; border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
 .tct-th-idx { justify-content: center; padding: 0; }
 .tct-th-idx svg { width: 14px; height: 14px; color: var(--vc-third); display: block; }
+/* DER KOPF MIT ZEICHEN (15.10., dropdownFieldType vor "Type", Zeichen und Groesse aus core
+   .up-th-ic): zwischen Zeichen und Wort dieselben 6 wie in den Seitentabellen (core .up-th gap).
+   Nur an diesem Kopf -- die anderen tragen kein Zeichen, ein gap haette dort nichts zu trennen. */
+.tct-th-type { gap: 6px; }
 .tct-th:last-child { border-right: none; }
 .tct-tbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .tct-row { height: 55px; flex: 0 0 55px; cursor: pointer; }

@@ -1108,10 +1108,16 @@ UC.kopfZeichen(th, name)   setzt es als erstes Kind in einen vorhandenen Kopf, n
 
 | Spalte | Zeichen |
 |---|---|
-| Brand Mentions, Brand (Brands Overview) | `squareStack` (wie Brands in der Seitenleiste) |
+| Brand Mentions, Brand (Brands Overview, Top Brands im Visibility Chart) | `squareStack` (wie Brands in der Seitenleiste) |
 | Topics | `tags` |
 | Citations (Responses) | `globe` (wie Citations in der Seitenleiste) |
-| Type (Domains, URLs) | `dropdownFieldType` |
+| Type (Domains, URLs, Top Citations) | `dropdownFieldType` |
+
+Dieselbe Spalte trägt in jeder Tabelle dasselbe Zeichen, und nur, wenn die Seitentabelle eins
+hat: Visibility, Rank/Ranking, Sentiment, Share, Used, Domain und URL tragen keins. Top Brands
+(`.vt-th-brand`) und Top Citations (`.tct-th-type`) sind keine `.up-th`; der Kopf mit Zeichen
+bekommt dort den Abstand der Seitentabellen (`gap: 6px`) selbst, nur dieser eine Kopf, weil das
+Info-Zeichen der anderen mit `margin-left: auto` steht.
 
 `aria-hidden`: das Wort daneben sagt alles. Neue Tabellen bekommen ihr Kopfzeichen über
 `UC.kopfZeichenHtml` und je Spalte eine `art` (Abschnitt 8d).

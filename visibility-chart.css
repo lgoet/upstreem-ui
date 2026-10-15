@@ -208,6 +208,11 @@
   display: flex; align-items: center; border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
 .vt-th-idx { justify-content: center; padding: 0; }
 .vt-th-idx svg { width: 14px; height: 14px; color: var(--vc-third); display: block; }
+/* DER KOPF MIT ZEICHEN (15.10., squareStack vor "Brand", Zeichen und Groesse aus core .up-th-ic):
+   zwischen Zeichen und Wort dieselben 6 wie in den Seitentabellen (core .up-th gap). Nur an
+   diesem Kopf und nicht an jedem .vt-th: dort steht das Info-Zeichen mit margin-left:auto, und
+   ein gap schoebe es bei Sentiment (Untergrenze 92, siehe oben) 6px ueber die Tabellenkante. */
+.vt-th-brand { gap: 6px; }
 .vt-th:last-child { border-right: none; }
 .vt-tbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .vt-row { height: 55px; flex: 0 0 55px; cursor: pointer; }

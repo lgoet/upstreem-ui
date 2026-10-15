@@ -67,11 +67,16 @@
       cols: [{ w:12, cls:"tct-td-idx" }, { w:60, jitter:18, logo:true }, 46, 40, 36]
     }) + '</div>';
   }
+  /* DAS ZEICHEN VOR "Type" (15.10. angefordert: "die Icons, wenn vorhanden, im Tabellenheader
+     auch bei Top Citations Dashboard"): dropdownFieldType, wie vor "Type" in Domains und URLs --
+     dieselbe Spalte, dasselbe Zeichen (UC.kopfZeichenHtml, .up-th-ic aus core). Domain, URL, Share
+     und Used tragen dort keins, also auch hier keins. Als Zeichenkette, weil der Kopf mit jedem
+     Zeichnen (und jedem Wechsel Domains/URLs) neu entsteht. */
   function tableHeadHtml(mode){
     return '<div class="tct-thead">' +
       '<div class="tct-th tct-th-idx">' + UC.HASH_ICON + '</div>' +
       '<div class="tct-th">' + (mode === "url" ? "URL" : "Domain") + '</div>' +
-      '<div class="tct-th tct-th-type">Type</div>' +
+      '<div class="tct-th tct-th-type">' + (UC.kopfZeichenHtml ? UC.kopfZeichenHtml("dropdownFieldType") : "") + 'Type</div>' +
       '<div class="tct-th">Share</div>' +
       '<div class="tct-th tct-th-used">Used</div></div>';
   }
