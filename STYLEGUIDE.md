@@ -572,7 +572,7 @@ Markierungsstriche 2 und 1) und die em-Werte in Miras Text.
 | Gran-Switcher (D/W/M, `.vc-gran`) | Höhe 26px, Radius 6, Knöpfe min. 26 breit |
 | Segment (`.up-seg`) | Höhe 26px, Radius 6; `.is-lg` 32px |
 | Tabellen-Zeile Höhe | `.up-row` 72px (Comfortable), 55px (Compact, `.is-dense`); Top Brands `.vt-row` 55px |
-| Tabellen-Head Höhe | 45px; flache Tabelle 48px (`--up-flach-h`) |
+| Tabellen-Head Höhe | 45px; flache Tabelle 48px (`--up-flach-h`); Kastentabellen im Drawer und in den Settings ebenfalls 48 |
 | Logo-Box (`.up-logo-box`) | 24×24px, Radius 6, Bild 22×22px Radius 5 (1px Polster) |
 | Zellen-Padding (`.up-th`, `.up-td`) | `0 16px 0 12px` |
 | Filter-Item (`.up-filter-item`) | Polster `6px 9px`, Radius 4 |
@@ -1179,6 +1179,22 @@ Grund    im Light die Fläche der Tabelle (--vc-bg), kein --vt-head-bg mehr; dec
 Dunkel   behält seinen Kopfgrund (--vt-head-bg)
 Gilt für Responses, URLs, Conversion, Variations, Brand-Editor (Alias, Tracking); Top Brands und
          Top Citations bekommen dasselbe als Band im Kasten (Abschnitt 8f)
+```
+
+**Tabellen der Settings-Seite** (seit 16.10.; vom 15.10. bis dahin flach): Team Organisation
+(Mitglieder, Einladungen, Protokoll) und Billing stehen **im Kasten wie im Drawer** („Border drum
+herum und Roundness, nicht full width gestreckt“). Kein `data-flach` mehr an `.uto-root`/`.ubl-root`
+(`settings-page.js`); den Kasten bringen die Schalen selbst mit (`.uto-table`, `.ubl-table`), Kopf
+und dunkler Rand kommen aus denselben core-Regeln wie im Drawer, dort um `.uss-root` ergänzt.
+
+```
+Kasten   Rand 1px --vc-border rundum, Radius 12 (--up-r-2xl), Grund --vc-bg; kein overflow:
+         hidden (das Zeilenmenü fährt heraus), die Ecken runden Kopf und letztes Kind mit 11
+Kopf     48, im Light ohne eigenen Grund; Protokoll-Zeilen bleiben 34
+Breite   höchstens 720 wie Your Brand (.usb-body) und Billing (.ubl-body); Team .uto-body
+         seit 16.10. ebenso. team-orga schaltet erst unter 720 auf drei Spalten (narrowAt)
+Dunkel   Rand bleibt (#222 gemessen), wie im Drawer; Billing hatte ihn schon
+Telefon  343 bei 375, 16 Rand, kein waagrechter Überlauf (wie die Drawer-Tabellen)
 ```
 
 ---

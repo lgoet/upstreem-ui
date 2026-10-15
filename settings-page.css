@@ -11,12 +11,10 @@
    LUFT UNTER DEM SEITENKOPF"; bis 15.10. 24). */
 .uss-main { min-width: 0; }
 .uss-tab { min-width: 0; }
-/* Die flachen Tabellen der Reiter Team Organisation und Billing (data-flach, settings-page.js)
-   laufen NICHT bis an die Kanten (--up-flach-aus 0 statt der 16 aus core). Der Auslauf ist fuer
-   eine Tabelle, die die Seite ist; hier stehen bis zu drei Tabellen untereinander, jede unter
-   ihrer eigenen Ueberschrift mit Knopf an derselben Kante, und Billing endet bei 720 Lesebreite
-   -- dort liefe die Linie links an die Seitenleiste und rechts mitten in die Flaeche. Mit 0
-   beginnen und enden die Linien an Ueberschrift und Knopf, und der erste Text steht 12 neben
-   der Kante, wie vorher im Kasten (13). */
-.uss-root .up-root[data-flach="yes"] { --up-flach-aus: 0px; }
+/* Die Tabellen der Reiter Team Organisation und Billing stehen seit dem 16.10. im Kasten wie in
+   den Drawern (vorher die flache Fassung, data-flach): Rand rundum und Radius 12 bringen ihre
+   Schalen mit (.uto-table, .ubl-table), Kopf 48 ohne Grund im Hellen und der Rand im Dunkeln
+   kommen aus denselben core-Regeln wie im Drawer (core.css "DIE TABELLENKOEPFE IM DRAWER" und
+   "IM DRAWER NACH GEIST BLEIBT DER RAND", dort um .uss-root ergaenzt). Die Breite ist die
+   Lesebreite 720 aller drei Reiter (settings-brand.css, team-orga.css, settings-billing.css). */
 .uss-root .uss-tab[hidden] { display: none; }

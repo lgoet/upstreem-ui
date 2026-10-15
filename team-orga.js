@@ -398,7 +398,8 @@
         return UC.themeParam(root.getAttribute("data-isdark")) || root.getAttribute("data-theme") === "dark";
       }
 
-      /* DIE FLACHE TABELLE (core, data-flach="yes" am Markup der Settings-Seite, 15.10.): die
+      /* DIE FLACHE TABELLE (core, data-flach="yes", 15.10.; die Settings-Seite setzt es seit dem
+         16.10. nicht mehr, dort stehen die Schalen im Kasten wie im Drawer): die
          Regeln in core greifen am Kasten ueber .up-box (ohne Rahmen an den Seiten, Kopf 48 mit
          13/500, Linie unter dem Kopf, jede Zeile rechts mit dem Auslauf-Polster). Die Schalen
          hier heissen .uto-table und waren nie .up-box -- nur in der flachen Fassung bekommen sie
@@ -472,7 +473,12 @@
          overflow: hidden alles ab, was heraus will -- hier das Zeilenmenue. Dieselbe Zeile, die
          jede Tabelle und jeder Filter der App ruft. */
       if (UC.unclipAncestors) UC.unclipAncestors(root);
-      if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 860 });
+      /* 720 und nicht mehr 860 (16.10.): der Bereich ist seitdem hoechstens 720 breit (team-orga.css,
+         .uto-body, wie Your Brand und Billing). Mit 860 haette eine Wurzel zwischen 720 und 860 die
+         drei Spalten gezeigt, eine breitere in DENSELBEN 720 aber fuenf -- dieselbe Tabelle, je nach
+         Fenster zwei Bilder. Unter 720 wird der Bereich schmaler als seine Grenze, und erst dann
+         fallen E-Mail und Beitrittsdatum weg. */
+      if (UC.widthTiers) UC.widthTiers(root, { narrowAt: 720 });
 
       /* ---------------- wer darf was ----------------
          NUR die Sichtbarkeit im Menue. Die Pruefung steht im RPC -- siehe Kopf dieser Datei.
