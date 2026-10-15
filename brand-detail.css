@@ -128,6 +128,12 @@
    aus, in der App gewann core und der Abschnitt polsterte ein zweites Mal: 16px der Karte plus
    16px des Abschnitts. */
 .ubd-root .ubd-varsec { padding: 0; margin-top: 8px; }
+/* DIE FESTE SPUR der Zahlen (core.css, --up-spur, 15.10.): die Zeilen baut UC.variationRows --
+   Share of Voice mit fmtPctShort (ganz oder mit einer Stelle, also die Spur fuer eine Stelle),
+   die Anzahl ganz, "of N" dahinter beginnt damit in jeder Zeile auf demselben Pixel. Hier und
+   nicht an .up-var-sov in core: Shopping und Ads tragen dieselbe Zellklasse mit eigenem Format. */
+.ubd-root .ubd-vrow .up-var-sov { --up-spur: var(--up-spur-pct1); }
+.ubd-root .ubd-vrow .up-var-cnt { --up-spur: var(--up-spur-anzahl); }
 
 /* ---- Schmale Breiten -------------------------------------------------------------------------
    .ubd-root.is-narrow statt @media (max-width: 560px): gemessen wird die EIGENE Box (UC.widthTiers
