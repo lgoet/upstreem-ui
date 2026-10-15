@@ -76,8 +76,12 @@ for schluessel, pfad, kennung in TEILE:
     # Brands Overview mit der flachen Tabelle aus core (15.10., data-flach): ohne Kasten, bis an
     # die Kanten, Kopf 48. Hier und nicht in der Vorlage: dieselbe Komponente in einer
     # Bubble-Gruppe behaelt ihren Kasten. Keine feste Hoehe -- ueber der Tabelle steht der Chart.
+    # data-leiste (15.10.): die eine Leiste wie in der Prompt-Tabelle -- Active/Inactive links im
+    # Kopf der Tabelle, rechts Sortierer, Suche, Display, Export, die Anzahl in der Gesamtzeile;
+    # der Chart darueber als offenes Band (brands-overview.css). Im Markup und nicht zur Laufzeit
+    # gesetzt: die Komponente liest es beim Einrichten, und so steht es vor dem ersten Zeichnen.
     if schluessel == "ubo":
-        zusatz += ' data-flach="yes"'
+        zusatz += ' data-flach="yes" data-leiste="yes"'
     m = re.sub(r'(<div class="up-root [^"]*")', lambda mm: mm.group(1) + zusatz, m, count=1)
     if 'data-instance="%s"' % kennung not in m:
         print("ABBRUCH -- data-instance in %s nicht ersetzt" % pfad)

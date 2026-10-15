@@ -4648,14 +4648,14 @@
     }
 
     /* ══ DIE GESAMTZEILE (15.10., Baustein UC.makeSumZeile aus core) ══════════════════════════
-       Bestellt nach der Empfehlung vom 15.10.: eine feste Zeile ueber der Pagination. Links die
-       Anzahl (wie der Zaehler im Kopf), dazu "without data" und der Anteil Branded, solange Platz
-       ist (core bricht die Paare um und schneidet ab -- nie ein halbes). Branded hat seit dem
-       15.10. keine eigene Spalte mehr, der Chip steht in der Prompt-Zelle; also steht auch sein
-       Zaehlwert dort. Visibility, Rank, Sentiment: der gewichtete Gesamtwert, ueber ein kleines
-       Menue Median oder ein Zaehlwert. Topics: "without topic" (meta.counts.untagged_active, das
-       die Tabelle schon als state.ohneTopic fuehrt). Brand Mentions, Intent, Market, Created
-       bleiben leer -- fuer sie gibt es keine Summe, die etwas aussagt.
+       Bestellt nach der Empfehlung vom 15.10.: eine feste Zeile ueber der Pagination. Links NUR die
+       Anzahl (15.10. spaet: "in der ganz linken nur den Count"; "without data" und "branded"
+       standen dort bis dahin mit). In den Spalten von Haus aus KEINE Berechnung, sondern "+ Add"
+       ("per default nix an calculations"): Visibility, Rank, Sentiment bieten im Menue den
+       gewichteten Gesamtwert, den Median oder einen Zaehlwert, Topics "without topic"
+       (meta.counts.untagged_active, das die Tabelle schon als state.ohneTopic fuehrt); "None"
+       stellt zurueck. Brand Mentions, Intent, Market, Created haben noch keine Berechnung -- dort
+       steht "+ Add" als blosser Text (core).
        Nur mit der einen Leiste (data-leiste): Bubble und die Landingpage behalten ihre Tabelle,
        und der Schalter dafuer steht im Display-Menue, das es nur dort gibt.
        Die Felder von meta.summary (Auftrag bubble/prompts_summary_db_auftrag.md) in feld, ihr
@@ -4675,17 +4675,26 @@
         { key: "avg",    label: "Weighted average",  kurz: "avg",      feld: "avg_sentiment",      art: "note" },
         { key: "median", label: "Median",            kurz: "median",   feld: "median_sentiment",   art: "note" },
         { key: "zahl",   label: "Prompts below 50",  kurz: "below 50", feld: "sentiment_below_50", art: "anzahl" }
+      ],
+      /* feld null: der Wert kommt nicht aus meta.summary, sondern aus state.ohneTopic (renderSumme). */
+      topics: [
+        { key: "ohne",   label: "Prompts without topic", kurz: "without topic", feld: null,      art: "anzahl" }
       ]
     };
-    var SUM_STD = { an: true, visibility: "avg", rank: "avg", sentiment: "avg" };
+    /* "aus" ist die Wahl "None": keine Berechnung, die Zelle zeigt "+ Add". */
+    var SUM_AUS = "aus";
+    var SUM_STD = { an: true, visibility: SUM_AUS, rank: SUM_AUS, sentiment: SUM_AUS, topics: SUM_AUS };
     /* Die Wahl je Spalte und der Schalter: ein Geraet, eine Vorliebe (prefKey, wie Spalten und
        Zeilenhoehe), dazu der window-Speicher je Instanz -- ein Themenwechsel baut die Tabelle neu,
        und sie soll danach dieselbe Zeile zeigen, ohne erst die Ablage zu lesen. Keine Datenbank. */
-    function sumKey(){ return UC.prefKey ? UC.prefKey("upt_summe__" + instanceId) : ("upt_summe__" + instanceId); }
+    /* summe2 seit dem 15.10. spaet: unter dem alten Schluessel steht "avg" auch bei jedem, der nur
+       den Schalter bedient hat (gespeichert wird die ganze Wahl) -- das las sich als Wahl, und die
+       neue Voreinstellung "keine Berechnung" kaeme nie an. */
+    function sumKey(){ return UC.prefKey ? UC.prefKey("upt_summe2__" + instanceId) : ("upt_summe2__" + instanceId); }
     function sumLesen(){
       var o = {}, k;
       for (k in SUM_STD) o[k] = SUM_STD[k];
-      var roh = (window.__uptSumme || {})[instanceId];
+      var roh = (window.__uptSumme2 || {})[instanceId];
       if (!roh){
         try {
           roh = JSON.parse((UC.prefGet ? UC.prefGet(sumKey()) : window.localStorage.getItem(sumKey())) || "null");
@@ -4694,7 +4703,7 @@
       if (roh && typeof roh === "object"){
         if (roh.an === false) o.an = false;
         Object.keys(SUM_MODI).forEach(function(sp){
-          if (SUM_MODI[sp].some(function(m){ return m.key === roh[sp]; })) o[sp] = roh[sp];
+          if (roh[sp] === SUM_AUS || SUM_MODI[sp].some(function(m){ return m.key === roh[sp]; })) o[sp] = roh[sp];
         });
       }
       return o;
@@ -4703,13 +4712,14 @@
     function sumSchreiben(){
       var kopie = {}, k;
       for (k in sumWahl) kopie[k] = sumWahl[k];
-      (window.__uptSumme = window.__uptSumme || {})[instanceId] = kopie;
+      (window.__uptSumme2 = window.__uptSumme2 || {})[instanceId] = kopie;
       try { window.localStorage.setItem(sumKey(), JSON.stringify(kopie)); } catch(e){}
     }
     var sumKit = (LEISTE && UC.makeSumZeile) ? UC.makeSumZeile({
       root: root, nach: elTbody, group: POP_GROUP,
       onWahl: function(spalte, modus){
         if (!SUM_MODI[spalte]) return;
+        if (modus !== SUM_AUS && !SUM_MODI[spalte].some(function(m){ return m.key === modus; })) return;
         sumWahl[spalte] = modus;
         sumSchreiben();
         renderSumme();
@@ -4759,12 +4769,6 @@
         if (state.leseFehler){ n = null; S = {}; }
       }
       var erste = UC.sumPaarHtml(n, "count", "anzahl");
-      if (!g && aktiv){
-        erste += UC.sumPaarHtml(S.prompts_no_runs, "without data", "anzahl");
-        /* Nur, wenn die Zeilen Branded kennen (wie Spalte und Filter, state.intentDa) -- vorher
-           waere die Zahl eine Aussage ueber ein Feld, das es noch nicht gibt. */
-        if (state.intentDa) erste += UC.sumPaarHtml(S.branded_count, "branded", "anzahl");
-      }
       var gWert = g ? { visibility: g.visibility_pct, rank: g.avg_rank, sentiment: g.avg_sentiment } : null;
       var zellen = COLUMNS.map(function(c){
         var z = { key: c.key };
@@ -4773,15 +4777,17 @@
         if (!aktiv) return z;
         var modi = SUM_MODI[c.key];
         if (modi){
-          var m = modi.filter(function(x){ return x.key === sumWahl[c.key]; })[0] || modi[0];
-          var v = g ? (m.key === "avg" ? gWert[c.key] : null) : S[m.feld];
-          z.html = UC.sumPaarHtml(v, m.kurz, m.art);
-          z.tip = m.label;
-          z.sk = 56;
-          z.menu = { wahl: m.key, optionen: modi.map(function(x){ return { key: x.key, label: x.label }; }) };
-        } else if (c.key === "topics" && !g){
-          z.html = UC.sumPaarHtml(state.leseFehler ? null : state.ohneTopic, "without topic", "anzahl");
-          z.sk = 90;
+          var m = modi.filter(function(x){ return x.key === sumWahl[c.key]; })[0] || null;
+          z.menu = { wahl: m ? m.key : SUM_AUS,
+            optionen: [{ key: SUM_AUS, label: "None" }].concat(modi.map(function(x){ return { key: x.key, label: x.label }; })) };
+          if (m){
+            var v;
+            if (m.feld == null) v = (g || state.leseFehler) ? null : state.ohneTopic;
+            else v = g ? (m.key === "avg" ? gWert[c.key] : null) : S[m.feld];
+            z.html = UC.sumPaarHtml(v, m.kurz, m.art);
+            z.tip = m.label;
+            z.sk = m.feld == null ? 90 : 56;
+          }
         }
         return z;
       });

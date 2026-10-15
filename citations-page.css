@@ -22,3 +22,7 @@
 .ucs-chart, .ucs-tab { min-width: 0; }
 /* hidden gegen das display der eigenen Regel: der Reiter, der nicht offen ist, steht nicht da. */
 .ucs-root .ucs-tab[hidden] { display: none; }
+/* DIE FILTERZEILE FLIESST (15.10.): seit die Filter der Tabellen als Chips in dieser Zeile stehen,
+   kommen schnell vier oder fuenf zusammen; als ein Block rutschte die ganze Filterleiste unter den
+   Kalender (gemessen bei 1440 mit vier Chips). Die Regeln dafuer stehen in core (.up-leiste-fluss,
+   "DIE EINE LEISTE"), die Klasse sitzt im Markup an .ucs-filterzeile. */

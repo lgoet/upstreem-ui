@@ -592,6 +592,19 @@
     if (!lineWrap || !lineCanvas || !tableEl || !mxWrap || !mxCanvas) return null;
 
     var instanceId = root.getAttribute("data-instance") || "default";
+    /* DIE EINE LEISTE (15.10., wie Prompt- und Responses-Tabelle): die Seite Brands setzt
+       data-leiste="yes" (.brands_markup.py). Dann gilt im Kopf der TABELLE:
+         links  was die Daten aendert: Active/Inactive (.up-leiste-scope aus core)
+         rechts was nur die Ansicht aendert: Sortierer, Suche, Display (Spalten als Chips, Schalter
+                fuer die Gesamtzeile), Export
+       Die Ueberschrift "Brands" mit Zaehler faellt weg (core), die Anzahl steht in der Gesamtzeile
+       unter der Tabelle (UC.makeZaehlZeile). Keine einklappbare Werkzeuggruppe, keine Stufen.
+       Die Filterzeile der Seite bleibt UEBER dem Chart: sie gilt fuer Chart und Tabelle.
+       Ohne das Attribut (Bubble) bleibt alles, wie es war. */
+    var LEISTE = root.getAttribute("data-leiste") === "yes";
+    /* Mit der einen Leiste ist die Tabelle flach (core.css "DIE FLACHE TABELLE") -- vor
+       ensureChrome, das daran den Kasten der Tabelle zu .up-box macht. */
+    if (LEISTE) root.setAttribute("data-flach", "yes");
 
     /* ---------- markup self-healing ----------
        Bubble markup is pasted by hand, so a placement can sit on an OLDER copy of the root HTML
@@ -663,6 +676,12 @@
       var tabBox = tableEl && tableEl.parentElement;
       if (root.getAttribute("data-flach") === "yes" && tabBox && tabBox.classList.contains("ubo-box"))
         tabBox.classList.add("up-box");
+      /* DAS OFFENE BAND (15.10.): die CSS braucht einen Griff fuer die Einheit des Charts -- beide
+         Einheiten heissen im Markup nur .ubo-unit. Ueber den Kasten des Charts gefunden, nicht ueber
+         die Stelle im Markup (dieselbe Ueberlegung wie bei der Werkzeugleiste weiter unten). */
+      var chartBox = root.querySelector(".ubo-box-chart");
+      if (chartBox && chartBox.parentElement && chartBox.parentElement.classList.contains("ubo-unit"))
+        chartBox.parentElement.classList.add("ubo-unit-chart");
     }
     ensureChrome();
 
@@ -939,11 +958,17 @@
       firstKey: "brand", firstMin: 160, actionsMin: 56,
       /* No "#" column in the Inactive list — it is not a ranking, so the lead track collapses. */
       leadWidth: function(){ return state.status === "inactive" ? 0 : IDX_W; },
-      badgeSel: ".ubo-cols-badge", cellPrefixes: ["up", "ubo"],
+      /* "up-sum": die Zellen der Gesamtzeile (UC.makeZaehlZeile) gehen mit ihren Spalten. */
+      badgeSel: ".ubo-cols-badge", cellPrefixes: ["up", "ubo", "up-sum"],
       isHidden: function(c){
         return (c.key === "deactivated") ? (state.status !== "inactive")
                                          : (state.status === "inactive");
       },
+      /* In der einen Leiste ist das Menue "Display" wie in Prompt- und Responses-Tabelle: Spalten
+         als Chips, darunter der Schalter der Gesamtzeile. Zur Laufzeit gelesen: die Zeile entsteht
+         erst weiter unten. */
+      form: LEISTE ? "chips" : null,
+      nachspann: LEISTE ? function(){ return zaehl ? zaehl.schalter() : null; } : null,
       onChange: function(){ renderTable(); }
     });
     state.cols = colsKit.readCols();
@@ -1061,8 +1086,22 @@
         actionsCell() + '</div>';
     }
     var emptyGraceTimer = null;
+    /* Die Gesamtzeile nach JEDEM Zeichnen der Tabelle mit, auch nach Skelett, Fehler und Leere:
+       tabelleZeichnen kehrt an vier Stellen vorzeitig zurueck, und an jeder muss die Zeile
+       ihren Ladezustand bzw. ihre Zahl nachziehen. */
     function renderTable(){
       if (!isOwner()) return;
+      tabelleZeichnen();
+      if (zaehl) zaehl.zeichnen();
+    }
+    /* Die Zeilen des offenen Reiters, wie die Tabelle sie zeigt (mit der Suche). */
+    function gezeigteZeilen(){
+      var rows = (state.status === "inactive") ? (state.inactiveRows || []) : (state.tableRows || []);
+      var q = (state.query || "").trim().toLowerCase();
+      if (q) rows = rows.filter(function(r){ return String(r.name || "").toLowerCase().indexOf(q) > -1; });
+      return rows;
+    }
+    function tabelleZeichnen(){
       var inactive = state.status === "inactive";
       var hasData = inactive ? true : state.hasTable;
       /* While a sort is in flight the rows already on screen are still the right rows -- keep them
@@ -1083,9 +1122,8 @@
         applyCols();
         return;
       }
-      var rows = inactive ? (state.inactiveRows || []) : (state.tableRows || []);
+      var rows = gezeigteZeilen();
       var q = (state.query || "").trim().toLowerCase();
-      if (q) rows = rows.filter(function(r){ return String(r.name || "").toLowerCase().indexOf(q) > -1; });
       if (!rows.length){
         /* A search that matches nothing is final the instant it is typed -- there is no delivery
            pending, the rows are already here. Say so immediately instead of flashing the skeleton
@@ -1142,11 +1180,28 @@
       var statusKnopf = root.querySelector(".ubo-seg [data-status]");
       var seg = statusKnopf ? statusKnopf.closest(".ubo-seg") : null;
       if (!seg) return;
-      var uboHead = seg.parentElement;
+      var uboHead = seg.closest(".ubo-head") || seg.parentElement;
       if (!uboHead) return;
       var tools = uboHead.querySelector(".ubo-head-tools");
       var exportBtn = uboHead.querySelector(".up-export");
-      if (tools && seg.parentNode !== tools){
+      if (LEISTE){
+        /* In der einen Leiste steht Active/Inactive VORNE links: es wechselt die Menge der Marken,
+           gehoert also zu dem, was die Daten aendert -- als Umschalter, nicht als Filter im Menue
+           (wie in der Prompt-Tabelle). Das Layout des Kopfs kommt ganz aus core ("DIE EINE
+           LEISTE"): dafuer tragen Kopf und Werkzeuge der Tabelle zusaetzlich die Klassen, an
+           denen core es festmacht. Der Kopf des Charts bleibt davon unberuehrt. 32 hoch wie die
+           Knoepfe daneben: is-lg, die grosse Form des Umschalters aus core. */
+        uboHead.classList.add("up-head");
+        if (tools) tools.classList.add("up-head-tools");
+        var scope = uboHead.querySelector(".ubo-scope");
+        if (!scope){
+          scope = document.createElement("div");
+          scope.className = "ubo-scope up-leiste-scope";
+          uboHead.insertBefore(scope, uboHead.firstChild);
+        }
+        seg.classList.add("is-lg");
+        if (seg.parentNode !== scope) scope.insertBefore(seg, scope.firstChild);
+      } else if (tools && seg.parentNode !== tools){
         if (exportBtn && exportBtn.parentNode === tools) tools.insertBefore(seg, exportBtn);
         else tools.appendChild(seg);
       }
@@ -1724,12 +1779,51 @@
       var c = root.querySelector(".ubo-cols");
       return c && c.closest ? c.closest(".ubo-head-tools") : null;
     })();
-    var toolGroup = (UC.makeToolGroup && uboTabTools) ? UC.makeToolGroup({
+    /* In der einen Leiste keine einklappbare Werkzeuggruppe: rechts stehen nur vier Knoepfe, und
+       die bleiben stehen (wie in Prompt- und Responses-Tabelle). */
+    var toolGroup = (!LEISTE && UC.makeToolGroup && uboTabTools) ? UC.makeToolGroup({
       root: root, tools: uboTabTools,
       filterActive: function(){ return !!(state.query && String(state.query).trim()); },
       prefKey: UC.prefKey ? UC.prefKey("ubo_tools__" + instanceId) : null,
       minWidth: 0,
       tip: "Sort, search and table settings"
+    }) : null;
+
+    /* DIE GESAMTZEILE (15.10. abends, core UC.makeZaehlZeile): vorerst nur die Anzahl links
+       ("11 count"), so bestellt -- dieselbe Zahl, die bisher als Zaehler neben "Brands" stand und
+       mit der Ueberschrift in der einen Leiste wegfaellt. Nur in der einen Leiste; ausblendbar
+       ueber Display.
+       HINTER .ubo-table und nicht hinter .up-tbody: tabelleZeichnen schreibt die ganze Tabelle
+       (Kopf und Koerper) bei jedem Zeichnen neu, eine Zeile hinter dem Koerper ginge damit jedes
+       Mal verloren. Im Kasten der Tabelle (.up-box) steht sie auf demselben Raster und mit demselben
+       Auslauf-Polster wie die Zeilen -- --up-cols liegt an der Wurzel.
+       Die Anzahl ist die des offenen Reiters, mit der Suche: die Tabelle laedt alle Marken auf
+       einmal, die Suche filtert hier im Browser. Ohne Suche die Gesamtzahl des Servers, sonst die
+       gefundenen Zeilen. Unlesbar heisst "–", nie 0. */
+    var zaehl = (LEISTE && UC.makeZaehlZeile) ? UC.makeZaehlZeile({
+      root: root, nach: tableEl, instanceId: instanceId, praefix: "ubo", group: POP_GROUP,
+      cols: function(){ return colsKit; },
+      /* In der Reihenfolge der Spalten. Die "#"-Spur davor und die Aktionsspur dahinter haben
+         keine Zelle: die erste Zelle (die Anzahl) ueberspannt "#" und Brand (brands-overview.css),
+         die Aktionsspur bleibt leer. */
+      spalten: function(){
+        return COLS_ALL.filter(function(c){
+          return (c.key === "deactivated") === (state.status === "inactive");
+        }).map(function(c){ return c.key; });
+      },
+      anzahl: function(){
+        var inaktiv = state.status === "inactive";
+        if (state.leseFehler || (inaktiv && state.inaktivFehler)) return null;
+        if ((state.query || "").trim()) return gezeigteZeilen().length;
+        var n = UC.toNum ? UC.toNum(inaktiv ? state.totalCountInactive : state.totalCount)
+                         : (inaktiv ? state.totalCountInactive : state.totalCount);
+        if (n != null) return n;
+        return inaktiv ? (state.inactiveRows || []).length : (state.tableRows || []).length;
+      },
+      laedt: function(){
+        if (state.leseFehler) return false;
+        return isLoading() || (state.status !== "inactive" && !state.hasTable);
+      }
     }) : null;
 
     /* ---------- responsive ---------- */
@@ -1740,6 +1834,12 @@
     function applyResponsive(breite){
       var w = (typeof breite === "number" && breite > 0) ? breite : (root.clientWidth || 0);
       if (w) root.classList.toggle("is-narrow", w < 760);
+      /* is-vnarrow nur in der einen Leiste, mit derselben Grenze wie Prompt- und Responses-Tabelle
+         (620, eigene Breite): core legt daran den Kopf der Leiste in zwei volle Zeilen (oben die
+         Daten, darunter rechts die Ansicht) und laesst die Gesamtzeile nur die Anzahl ueber die
+         ganze Breite zeigen. Ohne Leiste (Bubble) bleibt die Klasse weg -- sie hat in core weitere
+         Folgen, die dort nie gemessen wurden. */
+      if (w && LEISTE) root.classList.toggle("is-vnarrow", w < 620);
       root.classList.toggle("ubo-narrow-page", UC.getPageWidth() < 500);
       /* Unter 620px ist der Kit aus und die Leiste verhaelt sich wie vor ihm. Die Breite ist hier
          schon gemessen -- refit bekommt sie mit, statt sie neu zu lesen. */

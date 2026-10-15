@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261117;
+  var BUILD = 20261118;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -26118,11 +26118,16 @@
   }
 
   /* ══ DIE GESAMTZEILE EINER TABELLE (UC.makeSumZeile, UC.sumPaarHtml, 15.10.) ═══════════════
-     Eine feste Zeile unter den Zeilen und ueber der Pagination statt eines "Add calculation" unter
-     jeder Spalte (Empfehlung vom 15.10., vom Nutzer bestellt). Links steht IMMER die Anzahl
-     ("102 count") -- das gilt fuer jede Tabelle der App, darum liegt es hier. In den Spalten steht,
-     was die Tabelle dafuer vorsieht, jedes als Paar aus Wert und Bezeichnung (CSS und Begruendung
-     der Masse in core.css, "DIE GESAMTZEILE EINER TABELLE").
+     Eine feste Zeile unter den Zeilen und ueber der Pagination (Empfehlung vom 15.10., vom Nutzer
+     bestellt). Links steht IMMER und NUR die Anzahl ("102 count") -- das gilt fuer jede Tabelle der
+     App, darum liegt es hier. In den Spalten steht von Haus aus KEINE Berechnung, sondern "+ Add"
+     (15.10. spaet: "per default nix an calculations"); was der Nutzer dort waehlt, steht als Paar
+     aus Wert und Bezeichnung (CSS und Begruendung der Masse in core.css, "DIE GESAMTZEILE EINER
+     TABELLE").
+     "+ Add" hat zwei Formen: mit spec.zellen[i].menu ein Knopf, der das Menue der Spalte oeffnet
+     (die Tabelle setzt dann keinen html und menu.wahl auf ihre "keine"-Wahl); ohne menu ein
+     blosser Text -- die Spalte hat noch keine Berechnung, und ein Knopf, der nichts tut, waere
+     einer zu viel. Ganz leer bleibt eine Zelle nur mit leer: true.
      WAS DIE TABELLE NICHT RECHNET: sie kennt nur ihre Seite (hoechstens 100 Zeilen). Gewichtete
      Gesamtwerte, Median und Zaehlwerte ueber alle Seiten kommen vom Server, die Zeile zeigt nur an.
      Fehlt ein Wert, steht "–" und nie 0 (sumPaarHtml).
@@ -26148,6 +26153,8 @@
     "Prompts at 0%": "Prompts bei 0%",
     "Prompts at rank 1": "Prompts auf Rang 1",
     "Prompts below 50": "Prompts unter 50",
+    "Prompts without topic": "Prompts ohne Topic",
+    "Add calculation": "Berechnung hinzufügen",
     "Summary row": "Summenzeile"
   });
   /* Ein Wert der Zeile als Text, nach den Formaten von CLAUDE.md 2b. art: "anzahl" (ganze Zahl,
@@ -26173,10 +26180,11 @@
      Popover-Gruppe der Tabelle), onWahl(spalte, modus) }.
      Rueckgabe { el, zeichnen(spec), zeigen(an), schliessen() }.
      spec: { laedt, ersteSk, erste (HTML aus sumPaarHtml), sichtbar {spalte: true},
-             zellen: [{ key, html, sk, tip, menu: { wahl, optionen: [{ key, label }] } }] }
+             zellen: [{ key, html, sk, tip, leer, menu: { wahl, optionen: [{ key, label }] } }] }
        laedt   Skelett im Gleichlauf mit der Tabelle; je Zelle ein Balken der Breite sk (px), ohne
-               sk bleibt die Zelle leer wie im fertigen Zustand -- eine Spalte ohne Angabe bekommt
-               kein Skelett, das danach in nichts verschwindet.
+               sk zeigt die Zelle schon beim Laden, was sie danach zeigt ("+ Add" haengt an keinen
+               Daten) -- eine Spalte ohne Wert bekommt kein Skelett, das danach in nichts verschwindet.
+       html    das Paar der gewaehlten Berechnung; ohne html steht "+ Add" (siehe oben).
        zellen  in der Reihenfolge der Spalten, ALLE Spalten (auch ausgeblendete), sonst verrutscht
                das Raster. */
   function makeSumZeile(cfg){
@@ -26224,6 +26232,7 @@
       return true;
     }
     function skBalken(w){ return w ? '<span class="up-tsk-bar" style="width:' + Math.round(w) + 'px"></span>' : ""; }
+    var ADD_INNEN = icon("plus", 2) + '<span>' + esc(t_("Add")) + '</span>';
     function zellenHtml(s){
       var sicht = s.sichtbar || null;
       var out = '<div class="up-sumzelle up-sumzelle-erste">' +
@@ -26231,12 +26240,17 @@
       (s.zellen || []).forEach(function(z){
         if (!z || !z.key) return;
         var inhalt = "";
-        if (s.laedt) inhalt = skBalken(z.sk);
-        else if (z.menu && z.html){
+        if (s.laedt && z.sk) inhalt = skBalken(z.sk);
+        else if (z.leer) inhalt = "";
+        else if (z.menu && z.html && !s.laedt){
           inhalt = '<button type="button" class="up-sumknopf" data-sum-menu="' + esc(z.key) + '" aria-haspopup="menu" aria-expanded="false"' +
             (z.tip ? ' data-tip="' + esc(t_(z.tip)) + '"' : "") + '>' + z.html +
             '<span class="up-sumchev">' + icon("chevronDown", 2) + '</span></button>';
-        } else inhalt = z.html || "";
+        } else if (z.html && !s.laedt) inhalt = z.html;
+        else if (z.menu){
+          inhalt = '<button type="button" class="up-sumknopf up-sumadd" data-sum-menu="' + esc(z.key) + '" aria-haspopup="menu" aria-expanded="false"' +
+            ' aria-label="' + esc(t_("Add calculation")) + '">' + ADD_INNEN + '</button>';
+        } else inhalt = '<span class="up-sumadd">' + ADD_INNEN + '</span>';
         out += '<div class="up-sumzelle up-sum-td-' + esc(z.key) + '"' +
           (!sicht || sicht[z.key] ? "" : ' style="display:none"') + '>' + inhalt + '</div>';
       });
@@ -26269,7 +26283,9 @@
       if (!menuFuellen(key)) return;
       var r = el.getBoundingClientRect(), k = knopf.getBoundingClientRect();
       var breite = menu.offsetWidth || 220;
-      var links = Math.max(0, Math.min(k.left - r.left, r.width - breite - 8));
+      /* Rechtsbuendig an den Knopf wie die Zelle (15.10. spaet): das Menue endet, wo der Knopf
+         endet, und laeuft nach links in die Spalte hinein. */
+      var links = Math.max(0, Math.min(k.right - r.left - breite, r.width - breite - 8));
       menu.style.left = Math.round(links) + "px";
       /* Der Abstand zum KNOPF wie bei jedem Dropdown (--up-dd-gap), nicht zur Oberkante der Zeile:
          der Knopf steht 10 tiefer, gemessen lagen sonst 16 zwischen Menue und Knopf statt 6. */
@@ -26311,6 +26327,7 @@
 
   /* DIE ZAEHLZEILE (15.10. abends): die Gesamtzeile (makeSumZeile) fuer jede weitere Tabelle --
      vorerst nur mit der Anzahl links ("102 count"), so bestellt: "erstmal mit dem Count links".
+     In den Spalten steht "+ Add" als blosser Text (keine Berechnung angeboten, siehe makeSumZeile).
      Die Prompt-Tabelle hat ihre reichere Fassung (Kennzahlen mit Menue) selbst gebaut; hier die
      Teile, die sonst jede Tabelle einzeln verdrahten muesste:
        - die Zeile hinter dem Koerper (cfg.nach, meist .up-tbody), Skelett im Gleichlauf

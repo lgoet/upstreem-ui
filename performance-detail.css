@@ -148,3 +148,11 @@
   color: transparent; border-radius: var(--up-r-s); background: var(--vc-heading-bg);
 }
 .upd-root.is-loading:not(.has-selection) .upd-empty .up-empty-t { display: none; }
+
+/* DIE FESTE SPUR der Zahlen (core.css, --up-spur, 15.10.): die Variationen baut UC.variationRows --
+   Share of Voice mit fmtPctShort (ganz oder mit einer Stelle, also die Spur fuer eine Stelle),
+   die Anzahl ganz, "of N" dahinter beginnt damit in jeder Zeile auf demselben Pixel. Hier und
+   nicht an .up-var-sov in core: Shopping und Ads tragen dieselbe Zellklasse mit eigenem Format.
+   Die Rangliste daneben (.upd-stand-val) hatte schon eine feste Spur (52px, rechts, 13px). */
+.upd-root .upd-vrow .up-var-sov { --up-spur: var(--up-spur-pct1); }
+.upd-root .upd-vrow .up-var-cnt { --up-spur: var(--up-spur-anzahl); }

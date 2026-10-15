@@ -54,6 +54,77 @@
   position: relative; display: flex; flex-direction: column; }
 .ubo-scale-btn { position: absolute; top: 4px; right: 4px; }
 
+/* ---------- DAS OFFENE BAND (data-flach="yes" an der Wurzel, 15.10.) ----------
+   Variante A der Vorschau, vom Nutzer gewaehlt und zuerst auf Citations gebaut
+   (citations-combo-chart.css, "DAS OFFENE BAND") -- hier dieselbe Bauart mit denselben
+   Variablen aus core: kein Kasten, die Einheit des Charts laeuft links und rechts um
+   --up-flach-aus bis an die Kanten, oben und unten je eine Linie, an den Seiten keine. Ueberschrift
+   und Werkzeuge sind die erste Zeile IM Band, 48 hoch wie Kopf und Fuss der flachen Tabelle
+   darunter (--up-flach-h), ohne Linie zum Diagramm.
+   ANDERS ALS AUF CITATIONS ist das Band hier nicht die Wurzel, sondern ihre erste Einheit
+   (.ubo-unit-chart, setzt ensureChrome): die Tabelle steht in derselben Wurzel darunter. Beide
+   tragen dasselbe data-flach, das die Masse aus core setzt -- Band und Tabelle laufen damit nie
+   auseinander. Gesetzt wird es nur von der Seite Brands (.brands_markup.py, und mit
+   data-leiste); dieselbe Komponente in Bubble bleibt im Kasten.
+   24 zwischen Band und Tabelle wie auf Citations (.ucs-main): beide gehoeren zur selben Auswahl.
+   Spezifitaet .up-root.ubo-root[data-flach="yes"] (0,3,0) und mehr: schlaegt die Kastenregeln
+   oben und die dunkle Kartenregel aus core (.up-root[data-theme="dark"] .ubo-box) ohne die
+   Ladereihenfolge. Das !important des ausgeblendeten Kastens (height 0) bleibt staerker, so klappt
+   das Band beim Ausblenden auf seine Ueberschriftzeile zusammen. */
+.up-root.ubo-root[data-flach="yes"] { gap: 24px; }
+.up-root.ubo-root[data-flach="yes"] .ubo-unit-chart {
+  margin-left: calc(-1 * var(--up-flach-aus)); margin-right: calc(-1 * var(--up-flach-aus));
+  /* Das Polster gibt den Auslauf zurueck: Ueberschrift und Diagramm stehen buendig mit
+     Filterzeile und Tabellenleiste. */
+  padding: 0 var(--up-flach-aus);
+  border-top: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border);
+}
+/* min-height und nicht height: auf dem Telefon bricht die Zeile in zwei (ubo-narrow-page unten). */
+.up-root.ubo-root[data-flach="yes"] .ubo-unit-chart > .ubo-head { min-height: var(--up-flach-h); margin-bottom: 0; }
+/* Dort stand die Ueberschrift ohne Polster direkt an der oberen Linie (gemessen bei 375: 1px
+   darunter). 16 darueber wie in der 48er Zeile (dort 15.6 bis zur Schrift), 8 unter den
+   Werkzeugen -- mit den 8 ueber dem Diagramm dieselben 16 wie zwischen Ueberschrift und Linie. */
+.up-root.ubo-root[data-flach="yes"].ubo-narrow-page .ubo-unit-chart > .ubo-head { padding: 16px 0 8px; }
+/* Der Kasten wird zur Flaeche: kein Rahmen, kein Radius, kein eigener Grund, auch im Dunkeln
+   nicht. 409 statt 427: die Ueberschrift steht jetzt im Band, die Zeichenflaeche bleibt mit 385
+   so hoch wie bisher (427 - 2 Rahmen - 24 - 16 = 409 - 8 - 16). */
+.up-root.ubo-root[data-flach="yes"] .ubo-box-chart {
+  border-width: 0; border-radius: 0; background: transparent; height: 409px;
+}
+/* Seitlich kein Polster mehr, das hat jetzt die Einheit; oben 8 statt 24, weil die 48er
+   Ueberschriftzeile den Abstand zur Linie schon mitbringt. */
+.up-root.ubo-root[data-flach="yes"] .ubo-box-chart > .ubo-panel-body { padding: 8px 0 16px; }
+/* Schmal (is-narrow) aus demselben Grund 18 weniger als die 380 im Kasten: 380 - 2 - 24 - 16 = 338
+   Zeichenflaeche, + 8 + 16. */
+.up-root.ubo-root[data-flach="yes"].is-narrow .ubo-box-chart { height: 362px; }
+
+/* ---------- DIE FESTE SPUR der Zahlen (core.css, --up-spur, 15.10.) ----------
+   Je Kennzahlspalte ihr Format, so wie die Zelle es zeigt: Visibility mit einer Stelle
+   (UC.fmtPct(v, 1), "41.6%"), Rang immer mit einer Stelle (fmt1), Sentiment 0-100 (UC.sentHtml).
+   Die Zahl steht darin rechts, Kopf und Zelle bleiben links -- Komma unter Komma, und der Trend
+   dahinter beginnt in jeder Zeile auf demselben Pixel. Ueberall, auch in Bubble ("feste Spur
+   ueberall"). Deactivated ist ein Datum und keine Zahl. */
+.ubo-root .up-td-visibility { --up-spur: var(--up-spur-pct1); }
+.ubo-root .up-td-ranking { --up-spur: var(--up-spur-rang); }
+.ubo-root .up-td-sentiment { --up-spur: var(--up-spur-note); }
+
+/* ---------- DIE EINE LEISTE (data-leiste="yes", 15.10.) ----------
+   Das Layout des Tabellenkopfs kommt ganz aus core ("DIE EINE LEISTE"): brands-overview.js gibt
+   Kopf und Werkzeugen der Tabelle dafuer .up-head / .up-head-tools und legt Active/Inactive in
+   .up-leiste-scope. Hier steht nur, was es allein in dieser Tabelle gibt.
+   Die Gesamtzeile (core, UC.makeZaehlZeile): ihre erste Zelle, die Anzahl, ueberspannt die
+   "#"-Spur UND Brand. Die "#"-Spur (44, leadWidth) ist die erste Spur des Rasters; allein darin
+   stuende "11 count" abgeschnitten in 44px, und jede weitere Zelle rueckte um eine Spur nach links
+   -- Visibility unter Brand. Im Reiter Inactive gibt es die Spur nicht (leadWidth 0), dort ist die
+   erste Zelle wieder Brand allein. Auf dem Telefon (is-vnarrow) zieht core die Anzahl ohnehin
+   ueber die ganze Breite -- ausgenommen, damit die beiden Regeln nicht ueber die Ladereihenfolge
+   entscheiden. */
+.ubo-root:not(.is-inactive-view):not(.is-vnarrow) .up-sumrow > .up-sumzelle-erste { grid-column: span 2; }
+/* Telefon (is-vnarrow, nur in der einen Leiste gesetzt): der Edit-Knopf der Zeile geht ueber die
+   core-Regel an .up-rowbtn, in der .ubo-editbtn seit dem 15.10. mitsteht. Unsichtbar nahm er sonst
+   seine 59px in der Brand-Spalte mit, und vom Namen blieben bei 375 gemessen 6px ("V" fuer VW).
+   Edit bleibt im Dreipunktmenue der Zeile. */
+
 /* ---------- chart type switch (Linechart | Landscape) + status switch (Active | Inactive) ----------
    Both are the app's standard segmented control, identical to .vc-gran / .upt-status. */
 /* Y-axis switch — Landscape only. The line chart's gear ("Chart Settings") is meaningless for a
@@ -191,6 +262,9 @@
    auf diesen Knopf zeigt, findet ihn weiter. */
 
 /* row actions trigger — always visible, not hover-revealed */
+/* Kein Nachbau von .up-seg-btn (Verdacht von .check_reinvention.py, 15.10. begruendet): das ist
+   der Dreipunkt-Knopf einer Zeile, 28 im Quadrat in der 55er Zeile, kein Knopf eines Umschalters
+   -- er steht allein, hat keine Schiene und keine Pille. */
 .ubo-actbtn {
   width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent;
   color: var(--vc-muted); cursor: pointer; padding: 0;
@@ -241,7 +315,9 @@
 /* Sort and Table Settings describe the ACTIVE table's metric columns — the Inactive view has
    none of them, so the controls are hidden rather than left there doing nothing. */
 .ubo-root.is-inactive-view .ubo-sort,
-.ubo-root.is-inactive-view .ubo-cols { display: none; }
+.ubo-root.is-inactive-view:not([data-leiste="yes"]) .ubo-cols { display: none; }
+/* In der einen Leiste bleibt Display auch im Reiter Inactive: dort steht der Schalter der
+   Gesamtzeile, und die Zeile gibt es in beiden Reitern. */
 
 /* ---------- responsive ---------- */
 .ubo-root.is-narrow .ubo-box-chart { height: 380px; }

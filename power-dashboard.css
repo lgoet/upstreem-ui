@@ -533,9 +533,17 @@
    deshalb bleibt das Feld bei 54: es IST hier der Abstand, und eine schmalere Zahl bekommt
    automatisch mehr Luft als eine breite.
    Die Spalte zieht jedes Mal mit -- 54 + 0 + 62 = 116 --, sonst bliebe rechts ein Rest stehen und
-   der Pfeil haette einen Abstand zur Kante, den die Zeile daneben nicht hat. */
-.upw-li-val { flex: 0 0 116px; display: inline-flex; align-items: center; gap: 0; }
-.upw-li-val > .up-num { flex: 0 0 54px; }
+   der Pfeil haette einen Abstand zur Kante, den die Zeile daneben nicht hat.
+   (Feld und Abstand 0 am 15.10. abgeloest, siehe den Absatz darunter; die Rechnung bleibt.) */
+/* DIE FESTE SPUR (core.css, --up-spur, 15.10.: "Feste Spur ueberall, egal ob mit Trend oder ohne").
+   Das 54px-Feld oben war schon eine Spur, aber mit der Zahl LINKS darin: der Trend begann zwar
+   ueberall gleich, die Ziffern standen aber versetzt ("3.6%" endete 23px vor dem Trend, "41.6%"
+   16px). Jetzt wie in jeder Tabellenzelle: die Zahl steht rechts in der Spur ihres Formats
+   (Prozent mit einer Stelle, --up-spur-pct1 = 49, die Breite von "100.0%"), Komma unter Komma,
+   und der Abstand zum Trend ist der von .up-td, 10px -- nicht mehr der zufaellige Rest des
+   Feldes. Die Spalte zieht wieder mit: 49 + 10 + 62 = 121. */
+.upw-li-val { flex: 0 0 121px; display: inline-flex; align-items: center; gap: 10px; }
+.upw-li-val > .up-num { flex: 0 0 auto; min-width: var(--up-spur-pct1); text-align: right; }
 /* Die eigene Marke traegt ihren Namen fetter -- dasselbe Mittel, mit dem die grossen Tabellen sie
    hervorheben, nur ohne deren Zeilenflaeche. */
 .upw-li.is-own .upw-li-name { font-weight: 600; }

@@ -137,6 +137,14 @@
 .tct-name { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .tct-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }
 .tct-used { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
+/* DIE FESTE SPUR der Zahlen (core.css, --up-spur, 15.10.): Share wie sie in der Zelle steht (ganze
+   Prozent, UC.fmtPct ohne Stelle), Used als Anzahl (UC.fmtTotal, "1.24k"). Die Zellen sind .tct-td
+   und keine .up-td, die Regel aus core erreicht sie nicht -- dieselbe Form hier. Dazu die
+   Tabellenziffern, die .up-num traegt und diese lokale Kopie nie bekam: die Spur ist in ihnen
+   gemessen, und erst mit ihnen steht Ziffer unter Ziffer. */
+.tcd-root .tct-td-share { --up-spur: var(--up-spur-pct0); }
+.tcd-root .tct-td-used { --up-spur: var(--up-spur-anzahl); }
+.tct-td .tct-num, .tct-td .tct-used { min-width: var(--up-spur, 0); text-align: right; font-variant-numeric: tabular-nums; }
 /* Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke. Kein Nachbau von .up-planpill (meldet .check_reinvention.py wegen des Rahmens): das ist der Typ-Chip aus STYLEGUIDE 1a/1b, Masse wie .up-tag. */
 .tct-tag { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 7px;
   border: 1px solid transparent; box-sizing: border-box;

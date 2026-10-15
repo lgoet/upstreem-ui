@@ -45,8 +45,16 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------- share / used / last-seen typography ---------- */
+/* .udt-num/.udt-used traegt das eigene Markup seit dem 15.10. nicht mehr (dort .up-num, siehe die
+   feste Spur unten); die Regeln bleiben fuer fremde Kopien der Zeile (die Landingpage zeichnet sie
+   mit .udt-num nach). */
 .udt-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
 .udt-used { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* DIE FESTE SPUR der Zahlen (core.css, --up-spur, 15.10.): Share mit einer Stelle und Prozent
+   (fmt1, "100.0%"), Used als Anzahl (fmtTotal, "4.94k"). Die Zahl steht darin rechts, Kopf und
+   Zelle bleiben links, der Trend beginnt in jeder Zeile auf demselben Pixel. */
+.udt-root .up-td-share { --up-spur: var(--up-spur-pct1); }
+.udt-root .up-td-used { --up-spur: var(--up-spur-anzahl); }
 .udt-date { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
 
 /* ---------- citation-type chip (single palette — domains have no url-type dimension) ---------- */
@@ -251,6 +259,11 @@
   white-space: nowrap; }
 .udt-sub-share { font-size: 13.5px; font-weight: 500; color: var(--vc-text);
   font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Die feste Spur auch hier (15.10.): der Anteil im Drilldown ist eine Zelle des eigenen Rasters
+   (keine .up-td), also greift die Regel aus core nicht -- dieselbe Ausnahme wie die Gruppenkoepfe
+   der Prompt-Tabelle. justify-self start: sonst zoege das Raster die Zelle auf die ganze Spalte,
+   und "rechts" hiesse am Ende der Spalte statt am Ende der Spur. */
+.udt-subrow .udt-sub-share { --up-spur: var(--up-spur-pct1); justify-self: start; min-width: var(--up-spur); text-align: right; }
 .udt-sub-date { font-size: 13px; font-weight: 500; color: var(--vc-muted); white-space: nowrap;
   overflow: hidden; text-overflow: ellipsis; }
 /* One step under urls-table's .uut-tag (24px/12px) - same chip, quieter, because here it is a
@@ -386,3 +399,12 @@
 .up-root.is-vnarrow .udt-sub-empty { padding-left: 14px; }
 .up-root.is-vnarrow .udt-sub-title { max-width: none; }
 .up-root.is-vnarrow .udt-sub-search { width: 150px; }
+
+/* DIE EINE LEISTE (15.10., data-leiste="yes" von der Citations-Seite): das Layout des Kopfs steht
+   in core (DIE EINE LEISTE), die Ueberschrift faellt dort weg. Hier gehen die drei Filterknoepfe --
+   sie stehen jetzt als Zeilen im Menue "Filters" der Seite (domains-table.js, Filter der einen
+   Leiste). Die Elemente bleiben im Markup, ihr Zustand wird weiter gepflegt. Nur die Knoepfe der
+   Werkzeugleiste: der Filter im Drilldown (.udt-sub-*) bleibt, er gilt fuer EINE Domain. */
+.udt-root[data-leiste="yes"] .up-head-tools > .udt-brand-toggle,
+.udt-root[data-leiste="yes"] .up-head-tools > .up-ment,
+.udt-root[data-leiste="yes"] .up-head-tools > .up-filter { display: none; }

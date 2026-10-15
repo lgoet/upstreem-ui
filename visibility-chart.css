@@ -228,3 +228,15 @@
 .vot-root .up-legend .up-company-item:hover .up-company-name { color: var(--vc-text); }
 
 /* Abschnittsform im Drawer (data-form="abschnitte"): aus core (13.10.). */
+
+/* DIE FESTE SPUR der Zahlen (core.css, --up-spur, 15.10.): Visibility wie sie in der Zelle steht
+   (ganze Prozent, UC.fmtPct ohne Stelle -- am 15.10. bewusst so belassen), Rang mit einer Stelle,
+   Sentiment 0-100. Die Zellen hier sind .vt-td und keine .up-td, die Regel aus core erreicht sie
+   also nicht: dieselbe Form fuer sie, sonst stuende Top Brands als einzige Tabelle der Seite ohne
+   Spur. Die Zahl steht in ihrer Spur rechts, Kopf und Zelle bleiben links, ein Trend dahinter
+   beginnt in jeder Zeile auf demselben Pixel. trendFitJetzt() misst danach mit der Spur -- ein
+   Trend, der mit ihr nicht mehr passt, faellt weg, statt aus der Zelle zu laufen. */
+.vot-root .vt-td-visibility { --up-spur: var(--up-spur-pct0); }
+.vot-root .vt-td-ranking { --up-spur: var(--up-spur-rang); }
+.vot-root .vt-td-sentiment { --up-spur: var(--up-spur-note); }
+.vt-td .up-num, .vt-td .up-sent-val { min-width: var(--up-spur, 0); text-align: right; }
