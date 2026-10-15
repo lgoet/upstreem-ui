@@ -4446,9 +4446,10 @@
       storePrefix: "upt", instanceId: instanceId,
       firstKey: "prompt", firstMin: PROMPT_MIN, noActions: true,
       /* Die eine Leiste: der Kasten laeuft je 16 ueber die Ansicht hinaus (--upt-aus in
-         prompts-table.css), die Zeilen nehmen es als Polster zurueck. Dem Raster bleiben also 32
-         weniger, als der Kasten breit ist. Steht --upt-aus anders, muss diese Zahl mit. */
-      breiteAbzug: LEISTE ? 32 : 0,
+         prompts-table.css), die Zeilen nehmen davon nur RECHTS 16 als Polster zurueck -- links
+         beginnt die erste Zelle seit dem 15.10. an der Kante. Dem Raster bleiben also 16 weniger,
+         als der Kasten breit ist. Steht --upt-aus anders, muss diese Zahl mit. */
+      breiteAbzug: LEISTE ? 16 : 0,
       /* Inactive prompts aren't being run, so there's nothing to show for any of these — no brand
          mentions, and no visibility/rank/sentiment either (those numbers come from the same runs).
          Removed from the grid template rather than hidden with CSS — a hidden cell would leave its
@@ -5594,6 +5595,24 @@
            dem Moment meldet sich der Groessenwaechter -- danach kommt kein Anlass mehr. Messen
            geht bei Deckkraft 0 sehr wohl, nur in einer geparkten Ansicht nicht. */
         if (UC.messbar && !UC.messbar(root)) return;
+        /* LAEUFT GERADE EINE BEWEGUNG, DIE DIE TABELLE MITNIMMT, wird nach ihrem Ende noch einmal
+           gemessen. Der Auftritt der Seite (UC.makeAuftritt, el.animate) schiebt den Inhalt mit
+           transform herein; mitten darin zaehlt der verschobene Rest als Ueberlauf des
+           Scrollbereichs, und der Kasten wurde genau um die Verschiebung zu niedrig -- gemessen
+           1px Luft unter der Pagination nach dem ersten Laden, nach einem Fensterzug weg.
+           el.animate loest kein animationend aus, darum ueber die Animationen selbst (das deckt
+           CSS-Animationen und -Uebergaenge mit ab). Nur Bewegungen an der Tabelle oder einem
+           ihrer Vorfahren, nicht jeder Hover auf der Seite; jede nur einmal. */
+        if (document.getAnimations){
+          try {
+            document.getAnimations().forEach(function(a){
+              var t = a.effect && a.effect.target;
+              if (a.__uptFest || a.playState !== "running" || !t || !t.contains || !t.contains(root)) return;
+              a.__uptFest = true;
+              a.finished.then(function(){ festPlanen(); }, function(){});
+            });
+          } catch(e){}
+        }
         var sc = festScroller();
         if (!sc){ festAus(); return; }
         var scR = sc.getBoundingClientRect();
@@ -5608,11 +5627,13 @@
         root.style.paddingBottom = pb0;
         var unten = Math.max(0, ende - extra - boxUnten);
         /* Die Oberkante zaehlt mit dem Kasten in seiner JETZIGEN Hoehe nicht -- oben haengt nur
-           vom Inhalt darueber ab. Abgerundet: ein halber Pixel zu viel liesse #main um einen
-           Pixel scrollen. */
-        var h = Math.floor(sc.clientHeight - oben - unten);
+           vom Inhalt darueber ab. Abgerundet auf 1/64 px (die Layout-Einheit des Browsers), nicht
+           auf ganze Pixel: die Oberkante liegt oft auf einem Bruchteil (gemessen 160,04), und
+           ganze Pixel liessen dann knapp einen Pixel frei unter der Pagination. Zu viel darf es
+           nicht sein, sonst scrollt #main um diesen Rest. */
+        var h = Math.floor((sc.clientHeight - oben - unten) * 64) / 64;
         if (!(h >= FEST_MIN)){ festAus(); return; }
-        if (h !== _festH){ _festH = h; root.style.setProperty("--upt-box-h", h + "px"); }
+        if (_festH == null || Math.abs(h - _festH) >= 0.5 / 64){ _festH = h; root.style.setProperty("--upt-box-h", h + "px"); }
         /* Beim ersten Einschalten noch einmal messen: die Seite nimmt mit is-festhoehe ihr
            Polster unter der Tabelle zurueck (prompts-page.css), und dieser Platz gehoert dann dem
            Kasten. Das zweite Mal findet die Klasse schon vor -- keine Schleife. */
@@ -5627,7 +5648,19 @@
         if (elFoot) festRO.observe(elFoot);
         var festSc = festScroller();
         if (festSc) festRO.observe(festSc);
+        /* Und alles, was im Scrollbereich UEBER der Tabelle steht (Seitenkopf, Reiter): gemessen
+           beim ersten Laden, der Kopf der Seite wurde nach dem Nachladen der Schrift 2px
+           niedriger, die Tabelle rutschte hoch, und unter der Pagination blieben 2px frei, weil
+           weder Leiste noch Fuss noch #main ihre Groesse geaendert hatten. Je Ebene die
+           Geschwister davor -- eine Handvoll Elemente, keine Liste von Zeilen. */
+        var festEbene = root, festN = 0;
+        while (festEbene && festEbene !== festSc && festN++ < 12){
+          var festVor = festEbene.previousElementSibling, festK = 0;
+          while (festVor && festK++ < 8){ festRO.observe(festVor); festVor = festVor.previousElementSibling; }
+          festEbene = festEbene.parentElement;
+        }
       }
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ festPlanen(); });
       window.addEventListener("resize", festPlanen, { passive: true });
       festPlanen();
     }

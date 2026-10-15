@@ -1421,12 +1421,24 @@
 
 /* Die Kopfzeile flacher (15.10.: "die Grids stehen gefuehlt etwas ab" -- die senkrechten Linien
    ragten 14px ueber den Text): erst 36 statt 45, am selben Tag auf 40 (--up-h-gross) angehoben,
-   zusammen mit der Fusszeile darunter ("heading und bottom rows auf 40px"). Der klebende Kopf
-   einer offenen Gruppe und der Kopf der Gruppenliste muessen genau darunter bzw. daneben stehen,
-   also ziehen beide mit. */
-.upt-root[data-leiste="yes"] .up-thead { height: var(--up-h-gross); flex: 0 0 var(--up-h-gross); }
-.up-root.upt-root[data-leiste="yes"].up-sticky .upt-grp-head.is-open { top: calc(var(--up-sticky-top) + var(--up-thead-off) + var(--up-h-gross)); }
-.upt-root[data-leiste="yes"] .upt-grp-sidehead { height: var(--up-h-gross); flex: 0 0 var(--up-h-gross); }
+   zusammen mit der Fusszeile darunter ("heading und bottom rows auf 40px"), danach auf 48
+   ("die naechste Groesse"). WARUM 48 UND NICHT 45 ODER 55: auf der Hoehen-Skala kommt nach 40
+   erst 55, und das ist die Zeilenhoehe -- Kopf und Zeile saehen gleich aus. 45 ist die Kopfhoehe
+   der anderen Tabellen in core, aber die 28er Knoepfe der Pagination saessen darin auf halben
+   Pixeln (8,5 oben und unten). 48 = 28 + 2 x 10 geht glatt auf und steht in core schon als Hoehe
+   der klebenden Kopfleiste (.up-sticky .up-head). Darum ein eigener Name hier statt einer Zahl
+   in acht Regeln: --upt-rand-h, fuer Kopf und Fuss.
+   Der klebende Kopf einer offenen Gruppe und der Kopf der Gruppenliste muessen genau darunter
+   bzw. daneben stehen, also ziehen beide mit.
+   Die LINIE UNTER DEM KOPF zieht der Kopf selbst (15.10., gemeldet: "streckt sich nicht bis ganz
+   aussen"): die Zellen tragen sie als border-bottom, und die Zellen beginnen erst nach dem
+   Auslauf-Polster -- links und rechts fehlten je 16px. Ein Schatten nach innen kostet keinen
+   Pixel Hoehe und liegt genau auf der Linie der Zellen; wo beide sind, deckt eine die andere. */
+.upt-root[data-leiste="yes"] { --upt-rand-h: 48px; }
+.upt-root[data-leiste="yes"] .up-thead { height: var(--upt-rand-h); flex: 0 0 var(--upt-rand-h);
+  box-shadow: inset 0 -1px 0 var(--vc-border); }
+.up-root.upt-root[data-leiste="yes"].up-sticky .upt-grp-head.is-open { top: calc(var(--up-sticky-top) + var(--up-thead-off) + var(--upt-rand-h)); }
+.upt-root[data-leiste="yes"] .upt-grp-sidehead { height: var(--upt-rand-h); flex: 0 0 var(--upt-rand-h); }
 
 /* Die Tabelle ohne Kasten (15.10. angefordert): kein Rahmen aussen herum, kein Grund hinter der
    Kopfzeile -- die Linien zwischen den Zeilen und Spalten bleiben. Der Rahmen wird farblos und
@@ -1463,25 +1475,35 @@
    und standen in der Gruppenansicht 16px links neben ihren Spaltenkoepfen. Darum hier .up-box
    .up-row (jede Tiefe) und der Gruppenkopf mit; der Fuss einer Gruppe weiter unten.
    Mit Gruppen laeuft die Huelle aus statt des Kastens: sie traegt Liste UND Kasten, und die Liste
-   soll an der linken Kante stehen, nicht 16px davor. Rechts und links bleibt das Polster der
-   Zeilen auch dann 16 -- es aendert sich beim Oeffnen der Liste nicht, sonst sprangen alle Zeilen
-   in dem Moment, in dem die Liste ihre Breite erst noch aufzieht. */
+   soll an der linken Kante stehen, nicht 16px davor.
+   LINKS KEIN POLSTER MEHR (15.10. nachgereicht: "das 16px Padding in den Rows left kann weg",
+   Kaestchen und Prompt-Text 16px weiter links): die erste Zelle beginnt an der Kante, ihr eigenes
+   Zellpolster (12) ist der ganze Abstand -- wie in den Tabellen von Linear und Attio. Rechts
+   bleiben die 16, sonst stuende die letzte Zahl am Fensterrand. Beim Oeffnen der Liste aendert
+   sich am Polster nichts, also springt keine Zeile, waehrend die Liste ihre Breite aufzieht. */
 .upt-root[data-leiste="yes"] { --upt-aus: 16px; }
 .upt-root[data-leiste="yes"] .up-box,
 .upt-root[data-leiste="yes"].is-grouped .upt-grp-widewrap { margin-left: calc(-1 * var(--upt-aus)); margin-right: calc(-1 * var(--upt-aus)); }
 .upt-root[data-leiste="yes"].is-grouped .up-box { margin-left: 0; margin-right: 0; }
 .upt-root[data-leiste="yes"] .up-thead,
 .upt-root[data-leiste="yes"] .up-box .up-row,
-.upt-root[data-leiste="yes"] .upt-grp-head { padding-left: var(--upt-aus); padding-right: var(--upt-aus); }
-/* Fuss einer Gruppe: 40 hoch wie der Fuss der Tabelle (28er Knoepfe, je 6 darueber und darunter),
-   links auf der Kante der Kaestchen -- deren Zelle beginnt jetzt um --upt-aus weiter innen. */
-.upt-root[data-leiste="yes"] .upt-grp-foot { min-height: var(--up-h-gross);
-  padding: 6px calc(16px + var(--upt-aus)) 6px calc(12px + var(--upt-aus)); }
+.upt-root[data-leiste="yes"] .upt-grp-head { padding-left: 0; padding-right: var(--upt-aus); }
+/* Fuss einer Gruppe: so hoch wie der Fuss der Tabelle (48, 28er Knoepfe, je 10 darueber und
+   darunter), links auf der Kante der Kaestchen (12, das Zellpolster), rechts mit dem Auslauf. */
+.upt-root[data-leiste="yes"] .upt-grp-foot { min-height: var(--upt-rand-h);
+  padding: 10px calc(16px + var(--upt-aus)) 10px 12px; }
 
-/* Der Fuss der Tabelle: 40 hoch, direkt unter der unteren Linie (15.10.). Die Knoepfe in der
+/* Der Fuss der Tabelle: 48 hoch (--upt-rand-h), direkt unter der unteren Linie (15.10.). Die Knoepfe in der
    28er Form, Wert fuer Wert die des Gruppenfusses (.upt-grp-foot oben in dieser Datei) -- dieselbe
    Pagination in derselben Tabelle soll nicht zweierlei Groessen haben. */
-.upt-root[data-leiste="yes"] .up-foot { margin-top: 0; min-height: var(--up-h-gross); }
+/* Links laeuft der Fuss mit aus und beginnt auf der Kante der Kaestchen (12), wie der Fuss einer
+   Gruppe -- sonst stuende "Rows per page" 4px rechts von der Spalte darueber (gemessen 266
+   gegen 262). Rechts bleibt er auf der Kante der letzten Zelle. */
+.upt-root[data-leiste="yes"] .up-foot { margin-top: 0; min-height: var(--upt-rand-h);
+  margin-left: calc(-1 * var(--upt-aus)); padding-left: 12px; }
+/* Umgebrochen (schmal, core zentriert dann beide Gruppen) ohne den Auszug: er schob die Mitte
+   um 8px nach links. */
+.upt-root[data-leiste="yes"] .up-foot.is-wrapped { margin-left: 0; padding-left: 0; }
 .upt-root[data-leiste="yes"] .up-foot .up-pagesize-seg { height: var(--up-h-seg); }
 .upt-root[data-leiste="yes"] .up-foot .up-pagesize-btn { height: var(--up-h-seg); min-width: 30px; padding: 0 8px; }
 .upt-root[data-leiste="yes"] .up-foot .up-page { height: var(--up-h-seg); min-width: var(--up-h-seg); }
@@ -1491,21 +1513,20 @@
    Karte mit Rahmen -- und mit der Tabelle bis an die Kante wuerde diese Karte links an der
    Seitenleiste kleben. Jetzt ist sie eine Spalte der Flaeche: oben und unten dieselben Linien wie
    der Kasten, rechts eine als Trenner zur Tabelle, kein Radius, kein Abstand dazwischen. Ihr Kopf
-   ist 40 hoch wie der Tabellenkopf daneben, also liest sich beides als EINE Kopfzeile.
+   ist so hoch wie der Tabellenkopf daneben (--upt-rand-h), also liest sich beides als EINE Kopfzeile.
    Zugeklappt (Breite 0) hat sie keinen Rahmen, sonst stuende ein unsichtbarer Pixel vor der
-   Tabelle. Die Eintraege bekommen links das Auslauf-Polster dazu, wie die erste Zelle. */
+   Tabelle. Die Eintraege behalten links ihre 12 -- wie die erste Zelle, die links auch kein
+   Auslauf-Polster mehr hat. */
 .up-root.upt-root[data-leiste="yes"].is-grouped .upt-grp-sidepanel { border-width: 0; border-radius: 0; }
 .up-root.upt-root[data-leiste="yes"].is-grouped.is-groups-wide .upt-grp-sidepanel { border-width: 1px 1px 1px 0; border-color: var(--vc-border); }
 .up-root.upt-root[data-leiste="yes"].is-grouped.is-groups-wide .upt-grp-widewrap { gap: 0; }
 .up-root.upt-root[data-leiste="yes"] .upt-grp-sidehead,
 .up-root.upt-root[data-leiste="yes"].up-sticky .upt-grp-sidehead {
   background: var(--up-surface); border: 0; border-bottom: 1px solid var(--vc-border); border-radius: 0;
-  padding-left: calc(12px + var(--upt-aus));
 }
 .up-root.upt-root[data-leiste="yes"].up-sticky .upt-grp-sidehead::before,
 .up-root.upt-root[data-leiste="yes"].up-sticky .upt-grp-sidehead::after { display: none; }
 .up-root.upt-root[data-leiste="yes"].up-sticky .upt-grp-sidelist { border: 0; border-radius: 0; }
-.upt-root[data-leiste="yes"] .upt-grp-sideitem { padding-left: calc(12px + var(--upt-aus)); }
 
 /* FESTE HOEHE: NUR DIE TABELLE SCROLLT (15.10.). Bei voller Hoehe ist der Scrollbereich der
    Kasten selbst, Leiste oben und Pagination unten bleiben stehen -- wie in Linear, Attio, Notion.
@@ -1514,11 +1535,11 @@
    reicht (und nur mit klebendem Kopf, also ab 1000 breit), steht is-festhoehe an der Wurzel.
    max-height und nicht height: mit drei Zeilen endet der Kasten unter der dritten, mit der Linie
    darunter, und die Pagination folgt direkt -- kein leerer Kasten bis zum Fensterrand.
-   Kopf und offener Gruppenkopf kleben damit am KASTEN (top 0 und 40) statt an #main; die
+   Kopf und offener Gruppenkopf kleben damit am KASTEN (top 0 und --upt-rand-h) statt an #main; die
    Rechnung mit --up-sticky-top und --up-thead-off gilt hier nicht mehr. */
 .up-root.upt-root[data-leiste="yes"].is-festhoehe .up-box { max-height: var(--upt-box-h); overflow: auto; overscroll-behavior: contain; }
 .up-root.upt-root[data-leiste="yes"].is-festhoehe .up-thead { position: sticky; top: 0; z-index: 5; }
-.up-root.upt-root[data-leiste="yes"].up-sticky.is-festhoehe .upt-grp-head.is-open { top: var(--up-h-gross); }
+.up-root.upt-root[data-leiste="yes"].up-sticky.is-festhoehe .upt-grp-head.is-open { top: var(--upt-rand-h); }
 /* Die Gruppenliste wird gleich hoch gedeckelt und scrollt in sich (ihre Liste hat schon
    overflow-y: auto). Ihr Kopf klebt dann nicht mehr: er steht ohnehin ueber der scrollenden Liste,
    und sticky mit dem Abstand von #main schob ihn sonst innerhalb der Spalte nach unten. */

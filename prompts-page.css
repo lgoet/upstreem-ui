@@ -51,9 +51,12 @@
 .upi-root.upi-mit-leiste .upi-main { padding-top: 16px; }
 /* Steht die Prompt-Tabelle auf fester Hoehe (is-festhoehe, prompts-table.js festHoehe), scrollt
    die Seite nicht mehr, und die 64 unter dem Inhalt waeren ein leerer Streifen unter der
-   Pagination. 8 bleiben, damit die Knoepfe nicht an der Fensterkante stehen. Nur fuer den
-   sichtbaren Reiter: der Prompt-Reiter behaelt die Klasse, auch wenn ein anderer offen ist. */
-.upi-root .upi-main:has(> .upi-tab:not([hidden]) > .upt-root.is-festhoehe) { padding-bottom: 8px; }
+   Pagination. 0 und nicht 8 (15.10. nachgereicht: "der Inhalt ist zu weit oben"): die
+   Fusszeile reicht bis an den Fensterrand, und ihre Knoepfe stehen mittig zwischen der Linie
+   darueber und der Kante -- mit 8 darunter sahen sie 8px zu hoch aus, obwohl sie in ihrer Zeile
+   mittig sassen. Nur fuer den sichtbaren Reiter: der Prompt-Reiter behaelt die Klasse, auch
+   wenn ein anderer offen ist. */
+.upi-root .upi-main:has(> .upi-tab:not([hidden]) > .upt-root.is-festhoehe) { padding-bottom: 0; }
 .upi-tab { min-width: 0; }
 .upi-root .upi-tab[hidden] { display: none; }
 .up-root .upi-tools .up-ph-addbtn { margin-top: 0; }
