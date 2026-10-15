@@ -6867,3 +6867,105 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
 .up-plandlg-card > .up-plandlg-err:not(.is-on) { display: none; }
 .up-plandlg-card > .up-plandlg-err.is-on { margin-top: 0; }
 @media (prefers-reduced-motion: reduce){ .up-plan-note { transition: none; } }
+
+/* ---------- DIE GESAMTZEILE EINER TABELLE (.up-sumrow, UC.makeSumZeile, 15.10.) ----------
+   Eine feste Zeile unter den Zeilen und ueber der Pagination, statt eines "Add calculation" unter
+   jeder Spalte (so in der Empfehlung vom 15.10., vom Nutzer bestellt). Links IMMER die Anzahl,
+   in den Spalten das, was die Tabelle dafuer vorsieht. Jede Angabe ist ein Paar: der Wert in der
+   Primaerfarbe und eine Stufe groesser als die Zellenschrift (16 statt der 14 von .up-num), dann
+   Abstand, dann die Bezeichnung in der Drittfarbe -- "so gestylt auch der Rest" (Nutzer, 15.10.).
+   Primaerfarbe heisst hier --up-accent-ink: die Akzentfarbe als SCHRIFT auf dem Seitengrund,
+   nicht --up-accent (die Flaeche, siehe die Akzente oben).
+   Vorbild der Geometrie ist der Gruppenkopf der Prompt-Tabelle (prompts-table.css, .upt-grp-head):
+   dasselbe Raster wie .up-row (--up-cols), dasselbe Zellpolster wie .up-td (0 16 0 12) und ein
+   DURCHSICHTIGER linker Rahmen in der Breite der Zellgrenze -- so beginnt jede Zahl auf dem Pixel,
+   auf dem die Werte ihrer Spalte darueber beginnen, ohne dass die Zeile senkrechte Linien traegt.
+   Hoehe wie Kopf und Fuss der flachen Tabelle (--up-flach-h, 48), ohne data-flach dieselben 48.
+   Oben eine Linie; die letzte Zeile darueber hat keine (.up-tbody > .up-row:last-child), also
+   steht nie eine doppelte. Die Linie ist ein Schatten nach innen wie unter dem Kopf der flachen
+   Tabelle und kein Rahmen: mit 1px Rahmen blieben 47 fuer den Inhalt, und der 28er Knopf stand
+   auf halben Pixeln (gemessen 813.5). Grund ist die Seitenfarbe und deckend: mit fester Hoehe
+   klebt die Zeile unten im scrollenden Kasten, und die Zeilen laufen darunter durch.
+   position: relative, damit das Menue der Zeile (.up-summenu) an ihr haengt; mit fester Hoehe
+   sticky, und sticky ist ebenso ein Bezugsrahmen. */
+.up-sumrow {
+  display: grid; grid-template-columns: var(--up-cols); align-items: center;
+  position: relative; height: var(--up-flach-h, 48px); flex: 0 0 var(--up-flach-h, 48px);
+  box-shadow: inset 0 1px 0 var(--vc-border); background: var(--up-surface);
+}
+.up-sumrow.is-aus { display: none; }
+/* Rechts das Auslauf-Polster wie jede Zeile der flachen Tabelle, links nichts (core.css "DIE
+   FLACHE TABELLE": das Zellpolster 12 ist der Abstand zur Kante). */
+.up-root.up-root[data-flach="yes"] .up-sumrow { padding-left: 0; padding-right: var(--up-flach-aus); }
+/* Feste Hoehe (UC.makeFestHoehe): unten am Kasten kleben, damit die Summe ueber der Pagination
+   stehen bleibt, waehrend die Zeilen scrollen. z 4: unter dem klebenden Kopf (5), ueber den
+   Zeilen. Der Bezugsrahmen ist .up-table, das alle Zeilen umfasst -- die Zeile klebt also ueber
+   die ganze Scrollstrecke. */
+.up-root.up-root[data-flach="yes"].is-festhoehe .up-sumrow { position: sticky; bottom: 0; z-index: 4; }
+.up-sumzelle {
+  display: flex; align-items: center; gap: 16px; min-width: 0; height: 100%; overflow: hidden;
+  padding: 0 16px 0 12px; border-left: 1px solid transparent;
+}
+.up-sumzelle:first-child { border-left: none; }
+/* Die erste Zelle traegt mehrere Paare ("102 count", "4 without data", ...), aber nur, solange
+   sie ganz passen: die Reihe ist eine Zeile hoch, und was nicht mehr daneben passt, bricht in
+   eine zweite um, die abgeschnitten ist. Kein Messen, und nie ein halbes Paar. 24 hoch, weil ein
+   Paar aus 16er und 13er Schrift auf gemeinsamer Grundlinie gut 21 braucht. Der Zeilenabstand
+   von 24 schiebt die zweite Zeile ganz unter die Kante: ohne ihn begann sie bei 21 in einem 24
+   hohen Kasten, also 3px im Bild (gemessen). Die Anzahl steht vorn und faellt damit als letzte. */
+.up-sumreihe {
+  display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 16px; row-gap: 24px;
+  height: 24px; min-width: 0; overflow: hidden;
+}
+.up-sumpaar {
+  display: inline-flex; align-items: baseline; gap: 6px; min-width: 0; flex: 0 1 auto;
+  white-space: nowrap; line-height: 20px;
+}
+.up-sumwert {
+  flex: 0 0 auto; font-size: var(--up-fs-xl); font-weight: var(--up-fw-h);
+  color: var(--up-accent-ink); font-variant-numeric: tabular-nums;
+}
+/* Ein fehlender Wert ist "–" in der Farbe jeder leeren Zelle (.up-num.is-empty) und nie 0: eine
+   Null in der Primaerfarbe waere eine Aussage, die niemand gemacht hat. */
+.up-sumwert.is-leer { color: var(--vc-fourth); }
+.up-sumlabel {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis;
+  font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-third);
+}
+/* Eine Zelle mit Auswahl (Gesamtwert, Median, Zaehlwert): das Paar ist der Knopf. Polster und
+   Gegenrand gleich gross, damit der Wert auf der Kante der Spalte bleibt und der Knopf keinen
+   Platz im Raster nimmt -- die Flaeche beim Ueberfahren laeuft 6 in das Zellpolster. Das Zeichen
+   dahinter dreht sich nie (Hausregel), es sagt nur, dass hier eine Auswahl ist.
+   DAS ZEICHEN WEICHT ZUERST, nicht die Bezeichnung: der Knopf bricht um wie die Reihe der ersten
+   Zelle, und ein Zeichen, das nicht mehr daneben passt, faellt in die abgeschnittene zweite
+   Zeile. Gemessen an Rank auf seiner Mindestbreite (108, erste Spalte breit gezogen): mit festem
+   Zeichen stand dort "3.0 med…" (44.6 statt 33.4px fuer "median"). Die erste Zeile muss dabei 28
+   hoch bleiben, sonst rutscht das Paar ohne Zeichen an die Oberkante (gemessen dy 0 statt 3.5):
+   dafuer die Stuetze ::before, 0 breit und 28 hoch, ihr Abstand zum Paar mit -4 aufgehoben. */
+.up-sumknopf {
+  display: inline-flex; flex-wrap: wrap; align-items: center; column-gap: 4px; row-gap: var(--up-h-seg);
+  min-width: 0; max-width: calc(100% + 12px); overflow: hidden;
+  height: var(--up-h-seg); padding: 0 6px; margin: 0 -6px; border: 0; border-radius: var(--up-r-m);
+  background: transparent; color: inherit; font: inherit; cursor: pointer;
+  transition: background var(--up-t-1) ease;
+}
+.up-sumknopf::before { content: ""; flex: 0 0 0px; width: 0; height: var(--up-h-seg); margin-right: -4px; }
+.up-sumknopf:hover, .up-sumrow.is-open .up-sumknopf.is-offen { background: var(--vc-heading-bg); }
+.up-sumknopf:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
+.up-sumchev { display: inline-flex; align-items: center; flex: 0 0 12px; width: 12px; height: var(--up-h-seg); color: var(--vc-third); }
+.up-sumchev svg { width: 12px; height: 12px; display: block; }
+/* Das Menue klappt nach OBEN auf: die Zeile steht unten, darunter kommt nur noch die Pagination.
+   Es haengt an der Zeile (eine Zeile, ein Menue), die Lage links setzt makeSumZeile an den Knopf.
+   Zwei und drei Klassen gegen .up-menu / .up-menu.is-shown -- nie die Ladereihenfolge. Liegt es
+   doch einmal verdeckt (ein sehr niedriger Kasten), hebt menuEscape es in den Top Layer. */
+.up-menu.up-summenu {
+  top: auto; right: auto; bottom: calc(100% + var(--up-dd-gap)); left: 0;
+  width: 220px; transform: translateY(4px) scale(0.985);
+}
+.up-menu.up-summenu.is-shown { transform: translateY(0) scale(1); }
+/* Telefon (is-vnarrow): nur die Anzahl, ueber die ganze Breite. Unter 620 stehen ohnehin nur
+   noch Prompt und Visibility; drei Kennzahlen mit Menue in zwei Spalten waeren ein Bedienfeld,
+   das der Daumen nicht trifft, und die Anzahl ist die eine Zahl, die dort zaehlt. */
+.up-root.is-vnarrow .up-sumzelle:not(:first-child) { display: none; }
+.up-root.is-vnarrow .up-sumzelle:first-child { grid-column: 1 / -1; }
+.up-root.is-vnarrow .up-sumreihe .up-sumpaar + .up-sumpaar { display: none; }

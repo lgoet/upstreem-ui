@@ -650,6 +650,9 @@
                 if (z.totalCount != null) p.totalCount = z.totalCount;
                 if (z.totalCountInactive != null) p.totalCountInactive = z.totalCountInactive;
                 if (z.without_topic != null) p.without_topic = z.without_topic;
+                /* Immer mitgeben, auch als null: eine Lieferung ohne summary heisst "fuer diese
+                   Filter unbekannt", und die Tabelle darf dann nicht die Zahlen der vorigen zeigen. */
+                p.summary = z.summary || null;
                 if (reqId != null) p.requestId = reqId;
                 try { setter("renderPromptsTable")(p); } catch (e) {}
               }

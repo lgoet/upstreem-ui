@@ -25932,6 +25932,198 @@
               .filter(function(g){ return g && !g.hidden; }).concat(verborgen));
   }
 
+  /* ══ DIE GESAMTZEILE EINER TABELLE (UC.makeSumZeile, UC.sumPaarHtml, 15.10.) ═══════════════
+     Eine feste Zeile unter den Zeilen und ueber der Pagination statt eines "Add calculation" unter
+     jeder Spalte (Empfehlung vom 15.10., vom Nutzer bestellt). Links steht IMMER die Anzahl
+     ("102 count") -- das gilt fuer jede Tabelle der App, darum liegt es hier. In den Spalten steht,
+     was die Tabelle dafuer vorsieht, jedes als Paar aus Wert und Bezeichnung (CSS und Begruendung
+     der Masse in core.css, "DIE GESAMTZEILE EINER TABELLE").
+     WAS DIE TABELLE NICHT RECHNET: sie kennt nur ihre Seite (hoechstens 100 Zeilen). Gewichtete
+     Gesamtwerte, Median und Zaehlwerte ueber alle Seiten kommen vom Server, die Zeile zeigt nur an.
+     Fehlt ein Wert, steht "–" und nie 0 (sumPaarHtml).
+     Die Zellen tragen up-sum-td-<Spalte>: mit "up-sum" in cellPrefixes von makeColumns blendet
+     applyCols sie mit ihren Spalten aus und ein. Weil applyCols nur bei einer GEAENDERTEN
+     Spaltenmenge an die Zellen geht, schreibt zeichnen() die Sichtbarkeit selbst mit (spec.sichtbar)
+     -- eine neu gezeichnete Zeile muss von sich aus stimmen, wie der Gruppenkopf der Prompt-Tabelle.
+     EIN Menue je Zeile: eine Zelle mit spec.zellen[i].menu wird zum Knopf, und das Menue haengt an
+     der Zeile, nicht an der Zelle -- die Zelle schneidet ab (overflow hidden), das Menue darf das
+     nicht. Es klappt nach oben auf (CSS); liegt es doch verdeckt, hebt dropdownOpened es ueber
+     menuEscape in den Top Layer, wie jedes andere Dropdown. */
+  addMessages("de", {
+    "count": "gesamt",
+    "without data": "ohne Daten",
+    "without topic": "ohne Topic",
+    "avg": "Schnitt",
+    "median": "Median",
+    "at 0%": "bei 0%",
+    "at #1": "auf #1",
+    "below 50": "unter 50",
+    "Weighted average": "Gewichteter Schnitt",
+    "Median": "Median",
+    "Prompts at 0%": "Prompts bei 0%",
+    "Prompts at rank 1": "Prompts auf Rang 1",
+    "Prompts below 50": "Prompts unter 50",
+    "Summary row": "Summenzeile"
+  });
+  /* Ein Wert der Zeile als Text, nach den Formaten von CLAUDE.md 2b. art: "anzahl" (ganze Zahl,
+     dieselbe Form wie der Zaehler im Tabellenkopf), "pct" (Visibility, eine Stelle), "rang" (immer
+     eine Stelle, auch bei glatt 3), "note" (Sentiment, ganzzahlig). null heisst "kein Wert". */
+  function sumWertText(v, art){
+    var n = toNum(v);
+    if (n == null) return null;
+    if (art === "pct") return fmtPct(n, 1);
+    if (art === "rang") return fmt1(n);
+    if (art === "note") return fmtNum(Math.round(n), 0);
+    return fmtTotal(n);
+  }
+  /* Ein Paar: Wert (Primaerfarbe, 16) und Bezeichnung (Drittfarbe). Die Bezeichnung ist der
+     englische Text und wird hier uebersetzt, wie die Spaltennamen in makeColumns. */
+  function sumPaarHtml(v, label, art){
+    var txt = sumWertText(v, art);
+    return '<span class="up-sumpaar"><span class="up-sumwert' + (txt == null ? " is-leer" : "") + '">' +
+      esc(txt == null ? "–" : txt) + '</span>' +
+      (label ? '<span class="up-sumlabel">' + esc(t_(label)) + '</span>' : "") + '</span>';
+  }
+  /* cfg: { root, nach (das Element, hinter dem die Zeile steht, ueblich .up-tbody), group (die
+     Popover-Gruppe der Tabelle), onWahl(spalte, modus) }.
+     Rueckgabe { el, zeichnen(spec), zeigen(an), schliessen() }.
+     spec: { laedt, ersteSk, erste (HTML aus sumPaarHtml), sichtbar {spalte: true},
+             zellen: [{ key, html, sk, tip, menu: { wahl, optionen: [{ key, label }] } }] }
+       laedt   Skelett im Gleichlauf mit der Tabelle; je Zelle ein Balken der Breite sk (px), ohne
+               sk bleibt die Zelle leer wie im fertigen Zustand -- eine Spalte ohne Angabe bekommt
+               kein Skelett, das danach in nichts verschwindet.
+       zellen  in der Reihenfolge der Spalten, ALLE Spalten (auch ausgeblendete), sonst verrutscht
+               das Raster. */
+  function makeSumZeile(cfg){
+    cfg = cfg || {};
+    var nach = cfg.nach;
+    var nichts = { el: null, zeichnen: function(){}, zeigen: function(){}, schliessen: function(){} };
+    if (!nach || !nach.parentNode) return nichts;
+    /* Eine Zeile aus einem frueheren Aufbau derselben Tabelle (ihr Menue haengt an einem alten
+       Popover) wird ersetzt, nicht mitbenutzt. */
+    var alt = nach.parentNode.querySelector(":scope > .up-sumrow");
+    if (alt) alt.parentNode.removeChild(alt);
+    var el = document.createElement("div");
+    el.className = "up-sumrow";
+    var menu = document.createElement("div");
+    menu.className = "up-menu up-summenu";
+    menu.setAttribute("role", "menu");
+    menu.setAttribute("aria-hidden", "true");
+    el.appendChild(menu);
+    nach.parentNode.insertBefore(el, nach.nextSibling);
+
+    var spec = {}, letzt = null, offenFuer = null;
+    var pop = makePopover({ wrap: el, menu: menu, group: cfg.group || null,
+      onClose: function(){ offenFuer = null; knoepfeMarken(); } });
+    function knoepfeMarken(){
+      Array.prototype.forEach.call(el.querySelectorAll("[data-sum-menu]"), function(b){
+        var an = b.getAttribute("data-sum-menu") === offenFuer;
+        b.classList.toggle("is-offen", an);
+        b.setAttribute("aria-expanded", an ? "true" : "false");
+      });
+    }
+    function zelleVon(key){
+      var l = spec.zellen || [];
+      for (var i = 0; i < l.length; i++) if (l[i] && l[i].key === key) return l[i];
+      return null;
+    }
+    function menuFuellen(key){
+      var z = zelleVon(key), m = z && z.menu;
+      if (!m || !isArr(m.optionen) || !m.optionen.length) return false;
+      menu.innerHTML = m.optionen.map(function(o){
+        var an = o.key === m.wahl;
+        return '<div class="up-pop-opt' + (an ? " is-active" : "") + '" role="menuitemradio" aria-checked="' +
+                 (an ? "true" : "false") + '" data-sum-wahl="' + esc(o.key) + '">' +
+                 '<span>' + esc(t_(o.label)) + '</span><span class="up-check">' + CHECK_SVG + '</span></div>';
+      }).join("");
+      return true;
+    }
+    function skBalken(w){ return w ? '<span class="up-tsk-bar" style="width:' + Math.round(w) + 'px"></span>' : ""; }
+    function zellenHtml(s){
+      var sicht = s.sichtbar || null;
+      var out = '<div class="up-sumzelle up-sumzelle-erste">' +
+        (s.laedt ? skBalken(s.ersteSk || 84) : '<div class="up-sumreihe">' + (s.erste || "") + '</div>') + '</div>';
+      (s.zellen || []).forEach(function(z){
+        if (!z || !z.key) return;
+        var inhalt = "";
+        if (s.laedt) inhalt = skBalken(z.sk);
+        else if (z.menu && z.html){
+          inhalt = '<button type="button" class="up-sumknopf" data-sum-menu="' + esc(z.key) + '" aria-haspopup="menu" aria-expanded="false"' +
+            (z.tip ? ' data-tip="' + esc(t_(z.tip)) + '"' : "") + '>' + z.html +
+            '<span class="up-sumchev">' + icon("chevronDown", 2) + '</span></button>';
+        } else inhalt = z.html || "";
+        out += '<div class="up-sumzelle up-sum-td-' + esc(z.key) + '"' +
+          (!sicht || sicht[z.key] ? "" : ' style="display:none"') + '>' + inhalt + '</div>';
+      });
+      return out;
+    }
+    /* Gezeichnet wird nur, was sich geaendert hat: die Tabelle ruft das bei jedem Zeichnen, und ein
+       neues innerHTML waehrend eines offenen Menues wuerde den Knopf unter dem Zeiger tauschen. */
+    function zeichnen(s){
+      spec = s || {};
+      var html = zellenHtml(spec);
+      if (html !== letzt){
+        letzt = html;
+        while (el.firstChild && el.firstChild !== menu) el.removeChild(el.firstChild);
+        menu.insertAdjacentHTML("beforebegin", html);
+      }
+      if (offenFuer){
+        var z = zelleVon(offenFuer);
+        if (spec.laedt || !z || !z.menu) pop.close(false);
+        else { menuFuellen(offenFuer); knoepfeMarken(); }
+      }
+    }
+    function oeffnen(knopf){
+      var key = knopf.getAttribute("data-sum-menu");
+      var warOffen = pop.isOpen(), warFuer = offenFuer;
+      /* Ein zweiter Klick auf denselben Knopf schliesst; ein Klick auf einen anderen schliesst und
+         oeffnet dort neu -- ein schon in den Top Layer gehobenes Menue haelt sonst die Lage des
+         ersten Knopfs. */
+      if (warOffen) pop.close(false);
+      if (warOffen && warFuer === key) return;
+      if (!menuFuellen(key)) return;
+      var r = el.getBoundingClientRect(), k = knopf.getBoundingClientRect();
+      var breite = menu.offsetWidth || 220;
+      var links = Math.max(0, Math.min(k.left - r.left, r.width - breite - 8));
+      menu.style.left = Math.round(links) + "px";
+      /* Der Abstand zum KNOPF wie bei jedem Dropdown (--up-dd-gap), nicht zur Oberkante der Zeile:
+         der Knopf steht 10 tiefer, gemessen lagen sonst 16 zwischen Menue und Knopf statt 6. */
+      var spalt = parseFloat(window.getComputedStyle(menu).getPropertyValue("--up-dd-gap")) || 6;
+      menu.style.bottom = Math.round(r.bottom - k.top + spalt) + "px";
+      offenFuer = key;
+      pop.open();
+      knoepfeMarken();
+    }
+    el.addEventListener("click", function(e){
+      var wahl = e.target.closest && e.target.closest("[data-sum-wahl]");
+      if (wahl && menu.contains(wahl)){
+        var key = offenFuer, modus = wahl.getAttribute("data-sum-wahl");
+        pop.close(true);
+        if (key && typeof cfg.onWahl === "function"){ try { cfg.onWahl(key, modus); } catch(err){} }
+        return;
+      }
+      var knopf = e.target.closest && e.target.closest("[data-sum-menu]");
+      if (knopf && el.contains(knopf) && !menu.contains(knopf)) oeffnen(knopf);
+    });
+    el.addEventListener("keydown", function(e){
+      if ((e.key === "Escape" || e.key === "Esc") && pop.isOpen()){
+        e.stopPropagation();
+        var b = offenFuer ? el.querySelector('[data-sum-menu="' + offenFuer + '"]') : null;
+        pop.close(false);
+        try { if (b) b.focus(); } catch(err){}
+      }
+    });
+    return {
+      el: el,
+      zeichnen: zeichnen,
+      zeigen: function(an){
+        el.classList.toggle("is-aus", !an);
+        if (!an) pop.close(false);
+      },
+      schliessen: function(){ pop.close(false); }
+    };
+  }
+
 
   var API = {
     BUILD: BUILD,
@@ -26300,7 +26492,9 @@
     lineWidthSectionHtml: lineWidthSectionHtml,
     getColorScalePref: getColorScalePref, setColorScalePref: setColorScalePref,
     lineWidthSwitchHtml: lineWidthSwitchHtml, colorScaleOptionsHtml: colorScaleOptionsHtml,
-    flagHtml: flagHtml, flagUrl: flagUrl, wireFlags: wireFlags
+    flagHtml: flagHtml, flagUrl: flagUrl, wireFlags: wireFlags,
+    /* Die Gesamtzeile einer Tabelle (15.10., siehe makeSumZeile). */
+    makeSumZeile: makeSumZeile, sumPaarHtml: sumPaarHtml
   };
 
   /* ---- Verdraengungssperre -------------------------------------------------------------------
