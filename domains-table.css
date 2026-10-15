@@ -371,6 +371,16 @@
 .up-root.is-t1 .udt-sub-date, .up-root.is-t1 .udt-sub-head > span:nth-child(4) { display: none; }
 .up-root.is-t0 .udt-subrows { --udt-subcols: minmax(0, 1fr) 84px 0px 0px 30px; }
 .up-root.is-t0 .udt-sub-type, .up-root.is-t0 .udt-sub-head > span:nth-child(3) { display: none; }
+/* Flache Tabelle (core, data-flach, 15.10.): der Kasten laeuft rechts bis an die Kante, jede Zeile
+   haelt dort --up-flach-aus Polster. Die Teile des Drilldowns sind eigene Zeilenarten im Kasten
+   und brauchen dasselbe, sonst stuenden Anteil, Typ und Datum 16px weiter rechts als die Spalten
+   der Hauptzeile darueber. Links aendert sich nichts: ihre 46 zaehlen ab der Kante des Kastens,
+   und die Hauptzeilen beginnen jetzt ebenfalls an ihr. */
+.up-root.udt-root[data-flach="yes"] .udt-sub-head,
+.up-root.udt-root[data-flach="yes"] .udt-subrow,
+.up-root.udt-root[data-flach="yes"] .udt-sub-toolbar,
+.up-root.udt-root[data-flach="yes"] .udt-sub-foot,
+.up-root.udt-root[data-flach="yes"] .udt-sub-empty { padding-right: calc(12px + var(--up-flach-aus)); }
 .up-root.is-vnarrow .udt-sub-head, .up-root.is-vnarrow .udt-subrow,
 .up-root.is-vnarrow .udt-sub-toolbar, .up-root.is-vnarrow .udt-sub-foot,
 .up-root.is-vnarrow .udt-sub-empty { padding-left: 14px; }

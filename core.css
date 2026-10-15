@@ -3387,6 +3387,10 @@
     }
     .up-root.up-root[data-flach="yes"] .up-box .up-row { padding-left: 0; padding-right: var(--up-flach-aus); }
     .up-root.up-root[data-flach="yes"] .up-th { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); }
+    /* Das Logo vor "Mentioned?" (Responses, URLs) traegt 5px Aussenabstand UND den Abstand der
+       Zelle (6): 11 bis zum Wort, wo vor "Visibility" in der Prompt-Tabelle 6 stehen. Flach
+       gilt der Abstand der Zelle allein -- und die 5px fehlten der breiteren Kopfschrift. */
+    .up-root.up-root[data-flach="yes"] .up-th-brandlogo { margin-right: 0; }
     /* Klebend: Rahmen und runde Ecken des Kopfes und Koerpers gehoeren zum Kasten, den es hier
        nicht gibt -- 0 breit, sonst stuende links und rechts je ein farbloser Pixel. */
     .up-root.up-root[data-flach="yes"].up-sticky .up-thead {

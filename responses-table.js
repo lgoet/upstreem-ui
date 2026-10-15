@@ -82,9 +82,13 @@
        114, plus 2px Reserve gegen Rundung. Bei 110 fehlten 4px, und genau das war zu sehen:
        "Mentioned…". Steht der Markenname davor ("Volkswagen mentioned?", 134px), schneidet es
        weiter ab -- das ist der gewollte Fall, dafuer gibt es den Tooltip. */
-    { key: "mentioned",  label: "Mentioned?",     w: "minmax(116px, 0.6fr)",  min: 116, dropAt: "vnarrow", prio: 30 },
-    { key: "sentiment",  label: "Sentiment",      w: "minmax(120px, 1fr)",    min: 120, dropAt: "narrow",  prio: 70 },
-    { key: "rank",       label: "Rank",           w: "minmax(90px, 1fr)",     min: 90,  dropAt: "narrow",  prio: 60 },
+    /* minFlach/wFlach (15.10.): in der flachen Fassung (core, Kopfschrift 13/500) gemessen
+       "Mentioned?" mit Logo 123, Sentiment 132, Rank 101 (je samt 1px Zellrand) -- nur 2 bis 3
+       darueber: mit 6 bis 8 Luft passte die Summe bei 1440 nicht mehr ins Budget, und
+       "Mentioned?" fiel weg. */
+    { key: "mentioned",  label: "Mentioned?",     w: "minmax(116px, 0.6fr)",  min: 116, wFlach: "minmax(126px, 0.6fr)", minFlach: 126, dropAt: "vnarrow", prio: 30 },
+    { key: "sentiment",  label: "Sentiment",      w: "minmax(120px, 1fr)",    min: 120, wFlach: "minmax(134px, 1fr)", minFlach: 134, dropAt: "narrow",  prio: 70 },
+    { key: "rank",       label: "Rank",           w: "minmax(90px, 1fr)",     min: 90,  wFlach: "minmax(104px, 1fr)", minFlach: 104, dropAt: "narrow",  prio: 60 },
     /* Brand Mentions shows 4 chips + "+N" (178px, the app-wide figure). Citations shows FIVE chips
        and its "+N" routinely runs to 5 digits (+23266), so it gets a strictly wider floor and a
        larger fr share — with equal fr both columns end up the same width regardless of the mins. */
@@ -703,6 +707,12 @@
 
     /* ---------------- table settings (columns + row height) ---------------- */
     var PROMPT_MIN = 240;
+    /* Flach (core, data-flach am Markup, Kopfschrift 13/500) brauchen Mentioned?, Sentiment und
+       Rank zusammen 28px mehr Mindestbreite (siehe minFlach in COLUMNS). Bei 1440 Fensterbreite
+       bleiben der Tabelle 1174px, und damit "Mentioned?" stehen bleibt, gibt die Prompt-Spalte
+       20 ab: 220 statt 240 (gerechnet: 1174 - 220 - 31 Reserve = 923 fuer 918 Mindestbreiten).
+       Vorher stand sie bei 1440 auf 224. */
+    if (root.getAttribute("data-flach") === "yes") PROMPT_MIN = 220;
     var colsKit = UC.makeColumns({
       root: root, state: state, columns: COLUMNS,
       storePrefix: "urt", instanceId: instanceId,
@@ -1181,9 +1191,18 @@
        Vorfahrenkette hoch. In der Messung des Nutzers standen dahinter 703 rAF-Anmeldungen und
        446 Lesezugriffe allein fuer syncTheadOffset. Am Ende der Bewegung reicht es -- die Leiste
        klebt waehrend des Ziehens ohnehin da, wo sie war. */
-    if (UC.aufResize) UC.aufResize(function(){ _sticky.applySticky(); });
-    else window.addEventListener("resize", UC.rafThrottle(function(){ _sticky.applySticky(); }));
+    if (UC.aufResize) UC.aufResize(function(){ _sticky.applySticky(); festPlanen(); });
+    else window.addEventListener("resize", UC.rafThrottle(function(){ _sticky.applySticky(); festPlanen(); }));
     _sticky.applySticky();
+    /* FESTE HOEHE (15.10.): nur wo der Gastgeber es will (data-festhoehe="yes", die Seite Prompt
+       Insights im Reiter Responses -- dort ist die Tabelle das einzige Element, wie die
+       Prompt-Tabelle im Reiter daneben). Dann scrollt nur der Kasten, Leiste und Pagination
+       stehen (UC.makeFestHoehe in core). In der Kartenansicht ist der Kasten ausgeblendet, core
+       schaltet die feste Hoehe dann selbst ab; render() plant nach jedem Wechsel neu. */
+    var _fest = null;
+    function festPlanen(){ if (_fest) _fest.planen(); }
+    if (root.getAttribute("data-festhoehe") === "yes" && UC.makeFestHoehe)
+      _fest = UC.makeFestHoehe(root, { kopf: elHead, fuss: root.querySelector(".up-foot") });
 
     var _tips = UC.makeTooltips(root, function(){ return isDark; });
     /* Full prompt on hover when the 2-line clamp cuts it off — same behaviour prompts-table has,
@@ -1284,6 +1303,7 @@
       renderBody(); renderCount(); syncHeadSorters(); syncBrand(); syncFaderBadge(); syncColsBadge();
       renderPageSize(); renderPager(); applyCols(); syncMentLabel(); syncViewSwitch(); applyResponsive();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
+      festPlanen();
     }
 
     if (state.query){ elSearchIn.value = state.query; elSearch.classList.add("is-open", "has-text"); }

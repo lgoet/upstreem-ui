@@ -44,9 +44,12 @@
          first thing you can do without. */
       { key: "share",    label: "Share",            w: "minmax(13%, 150px)",   min: 130, prio: 50 },
       { key: "type",     label: "Type",             w: "minmax(11%, 1fr)",     min: 118, dropAt: "vnarrow", prio: 30 },
-      { key: "ment",     label: "Mentioned?",       w: "minmax(112px, 0.6fr)", min: 112, dropAt: "narrow",  prio: 20 },
+      /* minFlach/wFlach (15.10.): flach (core, Kopfschrift 13/500) gemessen "Mentioned?" mit Logo
+         123 und "Last Seen" mit Sortierpfeilen 110, je samt Zellrand -- die alten Untergrenzen
+         112 und 104 kuerzten beide. Nur fuer die flache Fassung (Drawer bleiben bei 12/400). */
+      { key: "ment",     label: "Mentioned?",       w: "minmax(112px, 0.6fr)", min: 112, wFlach: "minmax(126px, 0.6fr)", minFlach: 126, dropAt: "narrow",  prio: 20 },
       { key: "brands",   label: "Brands mentioned", w: "minmax(13%, 1fr)",     min: 178, dropAt: "vnarrow", prio: 40 },
-      { key: "lastseen", label: "Last Seen",        w: "minmax(104px, 0.7fr)", min: 104, dropAt: "vnarrow", prio: 10 }
+      { key: "lastseen", label: "Last Seen",        w: "minmax(104px, 0.7fr)", min: 104, wFlach: "minmax(114px, 0.7fr)", minFlach: 114, dropAt: "vnarrow", prio: 10 }
   ];
 
   /* ORDER maps each (field, direction) pair onto the single value the RPC expects in p_order.

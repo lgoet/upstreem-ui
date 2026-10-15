@@ -51,7 +51,9 @@
       { key: "share",    label: "Share",     w: "minmax(13%, 150px)",   min: 130, prio: 40 },
       { key: "used",     label: "Used",      w: "minmax(11%, 1fr)",     min: 100, dropAt: "narrow",  prio: 20 },
       { key: "type",     label: "Type",      w: "minmax(11%, 1fr)",     min: 118, dropAt: "vnarrow", prio: 30 },
-      { key: "lastseen", label: "Last Seen", w: "minmax(104px, 0.7fr)", min: 104, dropAt: "vnarrow", prio: 10 }
+      /* Flach (core, Kopfschrift 13/500, 15.10.) braucht "Last Seen" mit Sortierpfeilen 110 samt
+         Zellrand; die alte Untergrenze 104 kuerzte. Nur fuer die flache Fassung. */
+      { key: "lastseen", label: "Last Seen", w: "minmax(104px, 0.7fr)", min: 104, wFlach: "minmax(114px, 0.7fr)", minFlach: 114, dropAt: "vnarrow", prio: 10 }
   ];
 
   /* ORDER maps each (field, direction) pair onto the single value the RPC expects in p_order.

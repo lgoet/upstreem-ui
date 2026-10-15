@@ -205,6 +205,12 @@
 .urt-cards { display: none; grid-template-columns: repeat(var(--urt-cols, 1), 1fr); gap: 14px; }
 .up-root.is-cards-view .urt-cards { display: grid; }
 .up-root.is-cards-view .up-box { display: none; }   /* .up-box wraps .up-thead + .up-tbody */
+/* Flache Tabelle (core, data-flach): der Fuss laeuft links mit dem Kasten aus und beginnt auf der
+   Kante der ersten Zelle. In der Kartenansicht gibt es keinen Kasten, die Karten stehen auf der
+   Kante der Wurzel -- dann auch der Fuss, sonst stuende er 16px links neben den Karten. Und ohne
+   Linie darueber braucht er wieder seinen Abstand (16, wie ohne flache Tabelle), sonst klebt er
+   an der letzten Karte. */
+.up-root.urt-root[data-flach="yes"].is-cards-view .up-foot { margin-left: 0; padding-left: 0; margin-top: 16px; }
 
 /* KARTENENTWURF 13.10. (upstreem-response-card, "Airbnb / Trade Republic"): ruhige Flaeche,
    Rahmen, viel Luft, beim Hover ein weicher Schatten statt einer Flaechenfarbe. Die Masse sind

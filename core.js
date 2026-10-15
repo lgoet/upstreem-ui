@@ -7063,11 +7063,18 @@
        so the budget was wrong by ~100px and the rightmost column dropped a breakpoint too early.
        Both colMin() and the unpinned track in applyCols() read through here, so the two can no
        longer disagree. */
+    /* minFlach / wFlach (15.10.): Untergrenze und Spur einer Spalte, wenn die Tabelle flach ist
+       (data-flach="yes"). Die flache Tabelle setzt die Kopfschrift auf 13/500 statt 12/400, und
+       ein Kopf braucht dann mehr Platz (gemessen in Responses: "Mentioned?" 122 statt der 116 der
+       Spalte, Sentiment 131 statt 120). Nur fuer die flache Fassung, damit dieselbe Tabelle in
+       einem Drawer mit der kleinen Kopfschrift nicht frueher Spalten verliert. */
+    function istFlach(){ return root.getAttribute("data-flach") === "yes"; }
     function colMin(key){
       if (key === FIRST) return FIRST_MIN;
       if (key === "actions") return ACTIONS_MIN_F();
       var c = COLUMNS.filter(function(x){ return x.key === key; })[0];
       if (c && c.minNarrow != null && root.classList.contains("is-vnarrow")) return c.minNarrow;
+      if (c && c.minFlach != null && istFlach()) return c.minFlach;
       return (c && c.min) || 100;
     }
     /* the unpinned grid track: c.w verbatim, except where minNarrow overrides the floor */
@@ -7075,6 +7082,7 @@
       if (c.minNarrow != null && root.classList.contains("is-vnarrow")) {
         return "minmax(" + c.minNarrow + "px, 1fr)";
       }
+      if (c.wFlach && istFlach()) return c.wFlach;
       return c.w;
     }
     /* see applyCols(): the two halves are guarded separately because they change at different
