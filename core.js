@@ -15341,26 +15341,58 @@
      tiefer in ihrer Wurzel als in Ruhe), und nur dann malt der Streifen (core.css).
      EIN Zuhoerer fuer die ganze Seite, in der Einfangphase (scroll blubbert nicht, und Drawer
      scrollen in ihrem eigenen Behaelter), je Bild hoechstens einmal: zwei Lesungen je Tabelle,
-     geschrieben wird nur bei einem Wechsel. */
+     geschrieben wird nur bei einem Wechsel.
+     SEIT DEM 16.10. OHNE GELERNTE RUHELAGE. Bis dahin galt der kleinste je gesehene Abstand der
+     Leiste zum Anfang ihrer Wurzel als Ruhe. Jedes applySticky (Nachlauf der Kopfsuche bis 4,8 s
+     nach dem Laden, Groessenwechsel, ein neuer Seitenkopf irgendwo) loeschte ihn -- lief es,
+     waehrend die Leiste klebte, lernte der naechste Durchlauf eine GEKLEBTE Lage als Ruhe, und
+     etwas Zurueckscrollen nahm die Klasse weg, obwohl die Leiste weiter klebte (gemessen:
+     Prompts 2000 -> 400, 24 Zeilentreffer ueber der Leiste bis ganz nach oben). Jetzt liest die
+     Probe das Deck (klebDeckStellen): in Ruhe liegt es deckungsgleich unter der Leiste, klebend
+     steht es hoeher -- ein Vergleich zweier Lagen im selben Bild, nichts zu lernen. Die Klasse
+     traegt nur noch den Streifen (Rest ueber 2 x Leistenhoehe) und die Linie unter der Leiste;
+     gedeckt wird schon vom Deck selbst, ohne Bildverzug. */
   var KLEB_WURZELN = [];
   var _klebRaf = 0;
+  /* DAS DECK (16.10., CSS .up-kleb-deck in core.css): zwei leere Kaesten direkt vor der Leiste,
+     der obere zuerst. Gemerkt an der Leiste, nicht gesucht -- wandert die Leiste (bandUnterLeiste),
+     kommen sie mit. Bewegt wird nur, was nicht schon steht; gibt die Leiste zurueck, was jetzt
+     direkt vor ihr liegt (der untere Kasten). */
+  function klebDeckStellen(head){
+    if (!head || !head.parentNode) return null;
+    var u = head.__upDeckU, o = head.__upDeckO;
+    if (!u || !o){
+      o = document.createElement("div"); o.className = "up-kleb-deck is-oben"; o.setAttribute("aria-hidden", "true");
+      u = document.createElement("div"); u.className = "up-kleb-deck"; u.setAttribute("aria-hidden", "true");
+      head.__upDeckO = o; head.__upDeckU = u;
+    }
+    if (u.parentNode !== head.parentNode || u.nextSibling !== head) head.parentNode.insertBefore(u, head);
+    if (o.parentNode !== head.parentNode || o.nextSibling !== u) head.parentNode.insertBefore(o, u);
+    return u;
+  }
   function klebPruefenAlle(){
     _klebRaf = 0;
     /* Der klebende Fuss liest zuerst (alle Tabellen), geschrieben wird erst nach der Leiste --
        so erzwingt keine Klasse von hier eine Neuberechnung mitten in den Lesungen dort. */
     var fuss = fussLesen();
     KLEB_WURZELN = KLEB_WURZELN.filter(function(w){ return w.root.isConnected; });
+    /* Erst alle lesen, dann schreiben: eine Klasse zwischen zwei Tabellen erzwaenge sonst je Tabelle
+       eine neue Berechnung. */
+    var wechsel = [];
     KLEB_WURZELN.forEach(function(w){
       var head = w.head && w.head.isConnected ? w.head : (w.head = w.root.querySelector(".up-head"));
-      if (!head || !w.root.classList.contains("up-sticky")){ w.root.classList.remove("is-geklebt"); return; }
-      var d = head.getBoundingClientRect().top - w.root.getBoundingClientRect().top;
-      /* d in Ruhe: der Abstand der Leiste zum Anfang ihrer Wurzel. Der kleinste je gesehene Wert ist
-         die Ruhelage; klebt die Leiste, waechst d um die Strecke, die die Wurzel schon unter ihr
-         weggescrollt ist. */
-      if (w.ruhe == null || d < w.ruhe) w.ruhe = d;
-      var klebt = d > w.ruhe + 0.5;
-      if (klebt !== w.root.classList.contains("is-geklebt")) w.root.classList.toggle("is-geklebt", klebt);
+      var klebt = false;
+      if (head && w.root.classList.contains("up-sticky")){
+        var deck = head.__upDeckU;
+        /* Nur wenn eine Komponente die Leiste umgehaengt hat: dann zieht das Deck nach. */
+        if (!deck || deck.nextSibling !== head) deck = klebDeckStellen(head);
+        /* Klebend steht das Deck mindestens 1px hoeher als die Leiste (core.css: Zone + 1), in Ruhe
+           auf derselben Hoehe. */
+        klebt = !!deck && deck.getBoundingClientRect().top < head.getBoundingClientRect().top - 0.5;
+      }
+      if (klebt !== w.root.classList.contains("is-geklebt")) wechsel.push([w.root, klebt]);
     });
+    wechsel.forEach(function(z){ z[0].classList.toggle("is-geklebt", z[1]); });
     fussSchreiben(fuss);
   }
   function klebPlanen(){ if (!_klebRaf) _klebRaf = requestAnimationFrame(klebPruefenAlle); }
@@ -15369,8 +15401,8 @@
     window.addEventListener("resize", klebPlanen, { passive: true });
   } catch(e){}
   function klebAnmelden(root, head){
-    for (var i = 0; i < KLEB_WURZELN.length; i++) if (KLEB_WURZELN[i].root === root){ KLEB_WURZELN[i].ruhe = null; klebPlanen(); return; }
-    KLEB_WURZELN.push({ root: root, head: head || null, ruhe: null });
+    for (var i = 0; i < KLEB_WURZELN.length; i++) if (KLEB_WURZELN[i].root === root){ if (head) KLEB_WURZELN[i].head = head; klebPlanen(); return; }
+    KLEB_WURZELN.push({ root: root, head: head || null });
     klebPlanen();
   }
 
@@ -15629,6 +15661,8 @@
     var alt = band.parentNode;
     if (alt && alt !== root && alt.classList && alt.classList.contains("has-leistenband")) alt.classList.remove("has-leistenband");
     if (kopf.parentNode !== root) root.insertBefore(kopf, root.firstChild);
+    /* Hat die Leiste schon ihr Deck (makeSticky lief vor dem Umzug), kommt es mit. */
+    if (kopf.__upDeckU) klebDeckStellen(kopf);
     if (kopf.nextElementSibling !== band) root.insertBefore(band, kopf.nextSibling);
     if (!root.classList.contains("has-leistenband")) root.classList.add("has-leistenband");
     return true;
@@ -15748,6 +15782,9 @@
          noch ein Scroller liegt. */
       stickyTopSetzen(on);
       if (on){ syncTheadOffset(); syncDeckstreifen(); }
+      /* Das Deck ueber der Leiste (klebDeckStellen): erst, wenn sie klebt -- eine Tabelle, die nie
+         klebt, bekommt keine Kaesten. Ohne .up-sticky sind sie ohnehin unsichtbar. */
+      if (on && headEl) klebDeckStellen(headEl);
       klebAnmelden(root, headEl);
       /* Der klebende Fuss (siehe klebFuss): per Attribut, fuer jede Tabelle mit makeSticky. Hier
          und nicht beim Aufbau: eine Seite darf das Attribut setzen, solange die Tabelle sich
