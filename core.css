@@ -3903,8 +3903,13 @@
        .up-box nur ohne .up-sticky darueber, sonst stuende im Dunkeln eine doppelte Linie. Am Kasten
        selbst gefragt (:not(.up-sticky .up-box)) und nicht an einer .up-root davor: auch die Huelle
        des Drawers ist eine dunkle .up-root, und die ist nie klebend. */
+    /* DIE SETTINGS-SEITE (.uss-root, 16.10.) traegt ihre Tabellen seitdem im Kasten wie der Drawer
+       ("wie in den Drawern, Border drum herum"), also auch dessen Rand im Dunkeln. Ohne sie haette
+       Team (.uto-table steht in der Liste "kein Rand" oben) im Dunkeln keinen Rand, Billing
+       (.ubl-table steht dort nicht) aber schon -- zwei Kaesten derselben Seite, zwei Bilder. Nur die
+       zweite Zeile: einen klebenden Kasten oder .up-box gibt es in den Settings nicht. */
     html[data-up-dunkel="geist"] :is(.up-kdr, [id^="drawer-"]) .up-root[data-theme="dark"] .up-box:not(.up-sticky .up-box),
-    html[data-up-dunkel="geist"] :is(.up-kdr, [id^="drawer-"]) .up-root[data-theme="dark"] :is(.up-vartable, .uto-table, .ube-table, .urd-card, .urd-cite-card, .urt-card),
+    html[data-up-dunkel="geist"] :is(.up-kdr, [id^="drawer-"], .uss-root) .up-root[data-theme="dark"] :is(.up-vartable, .uto-table, .ube-table, .urd-card, .urd-cite-card, .urt-card),
     html[data-up-dunkel="geist"] :is(.up-kdr, [id^="drawer-"]) .up-root[data-theme="dark"].up-sticky :is(.up-thead, .up-tbody) {
       border-color: var(--vc-border); border-left-width: 1px; border-right-width: 1px;
     }
@@ -4486,11 +4491,17 @@
        (.uprd-root) ueber einer dunklen Tabelle. Das Dunkel behaelt seinen Kopfgrund, nur die Hoehe
        gilt in beiden Themen.
        (0,4,0) und (0,5,1): schlaegt die Kopfhoehen der Kastentabellen (.ube-table, .uud-ctable,
-       .up-vartable, je 0,3,0) und den klebenden Kopf (0,2,0) ohne die Ladereihenfolge. */
-    :is(.up-kdr, [id^="drawer-"]) .up-root.up-root .up-thead {
+       .up-vartable, je 0,3,0) und den klebenden Kopf (0,2,0) ohne die Ladereihenfolge.
+       Dazu die Settings-Seite (.uss-root, 16.10.): Team und Billing stehen seitdem im Kasten wie
+       die Tabellen im Drawer und tragen denselben Kopf -- vorher 45 auf --vt-head-bg aus ihren
+       Schalen (.uto-table, .ubl-table, je 0,2,0). Das Team-Protokoll (.up-logtab, Kopf ohne .up-row)
+       behaelt damit die 48, die es in der flachen Fassung schon hatte; der Protokollkopf des
+       Marken-Editors traegt .up-row und bleibt bei 36 (.up-logtab.up-logtab .up-thead.up-row,
+       weiter unten mit gleicher Staerke). */
+    :is(.up-kdr, [id^="drawer-"], .uss-root) .up-root.up-root .up-thead {
       height: var(--up-flach-h, 48px); flex: 0 0 var(--up-flach-h, 48px);
     }
-    html[data-up-hell="grau"] :is(.up-kdr, [id^="drawer-"]) .up-root.up-root .up-thead { background: var(--vc-bg); }
+    html[data-up-hell="grau"] :is(.up-kdr, [id^="drawer-"], .uss-root) .up-root.up-root .up-thead { background: var(--vc-bg); }
 
 
 
