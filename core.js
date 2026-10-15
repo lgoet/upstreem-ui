@@ -337,8 +337,14 @@
      eine Entscheidung des Nutzers darueber, wie die App aussieht -- keine Berechtigung und kein
      Merkmal des Kontos. Bei "off" faellt die Zeile GANZ weg (siehe sidebar.css), und der
      Teamschalter steht wieder oben links. */
+  /* light_style (15.10.): welches HELLE Thema gilt, wenn hell gemalt wird -- "legacy" ist das Hell
+     bis heute (weisse Seite), "gray" das neue nach Vercel (graue Seite, weisse Inhaltsflaechen).
+     Vorgabe legacy: niemand bekommt das neue Aussehen ungefragt. Ein eigener Schluessel und KEIN
+     vierter Wert von pref_theme: das Thema bleibt dark/light/system (die Datenbank kennt nur
+     diese drei, Spalte app.user_settings.theme ist ein Aufzaehlungstyp), und jede Stelle, die
+     heute "dunkel oder hell" fragt, bleibt richtig. */
   var PREF_DEFAULT = { locale: "en", num: "en", date: "d-mon-y", date_sync: "off", date_preset: "last7",
-                       branding: "on", accent: "default", event_markers: "on" };
+                       branding: "on", accent: "default", event_markers: "on", light_style: "legacy" };
   var PREF_ERLAUBT = {
     locale: { en: 1, de: 1 },
     /* "en": 1,234.56 und 1.24k -- Punkt trennt die Nachkommastellen.
@@ -355,7 +361,8 @@
     /* Event-Marker in den Liniendiagrammen (02.10., Impact Events). Vorgabe AN -- so verlangt:
        "die Standarderfahrung muss die Events zeigen". Der Fokus-Marker im Event-Detail steht
        unabhaengig davon immer (das ganze Diagramm handelt von ihm). */
-    event_markers: { on: 1, off: 1 }
+    event_markers: { on: 1, off: 1 },
+    light_style: { legacy: 1, gray: 1 }
   };
   var _prefs = null;
   /* OHNE Team-Suffix, und das ist eine Korrektur. Diese Werte liefen ueber storeKey, und storeKey
@@ -434,10 +441,19 @@
      Liste dort ist genau PREF_ERLAUBT (Antwort des DB-Chats, missbrauch_14_10 F4). Nicht gesetzte
      Werte kommen als null und lassen die Wahl auf dem Geraet stehen. */
   var VORLIEBEN_DB = true;
-  var PREF_DB_KEY = { locale: "locale", num: "number_format", date: "date_format", accent: "accent" };
+  var PREF_DB_KEY = { locale: "locale", num: "number_format", date: "date_format", accent: "accent",
+                      light_style: "light_style" };
+  /* light_style (15.10.) geht erst in die Datenbank, wenn sie den Schluessel kennt: heute steht er
+     nicht in app._app_settings_allowed_v1, user_settings_set_v1 antwortete also mit 400
+     app_invalid_param. Bis dahin bleibt die Wahl auf dem Geraet (up_prefs), wie es Sprache und
+     Formate vor dem 14.10. taten. Einschalten = diese Zeile auf true, sobald der DB-Chat die Liste
+     und _app_settings_row_v1 erweitert hat. Gelesen wird beim Start schon jetzt -- ein Feld, das
+     nicht kommt, aendert nichts. */
+  var HELL_STIL_DB = false;
   var VORLIEBE_VOM_START = { an: false };
   function vorliebeNachDb(name, wert){
     if (!VORLIEBEN_DB || !PREF_DB_KEY[name] || VORLIEBE_VOM_START.an) return null;
+    if (name === "light_style" && !HELL_STIL_DB) return null;
     /* APP steht weiter unten (var, also schon vorhanden, aber vor dem Start noch undefined). */
     if (typeof APP === "undefined" || !APP || !APP.aktiv) return null;
     return rpc("user_settings_set_v1", { p_key: PREF_DB_KEY[name], p_value: wert }, { timeoutMs: 15000 });
@@ -450,7 +466,7 @@
     if (!VORLIEBEN_DB || !settings || typeof settings !== "object") return;
     VORLIEBE_VOM_START.an = true;
     try {
-      ["num", "date", "accent"].forEach(function(name){
+      ["num", "date", "accent", "light_style"].forEach(function(name){
         var w = settings[PREF_DB_KEY[name]];
         if (w != null && PREF_ERLAUBT[name] && PREF_ERLAUBT[name][w] && getPref(name) !== w) setPref(name, w);
       });
@@ -544,6 +560,31 @@
   akzentAnwenden();
   window.addEventListener("up-prefs-change", function(e){
     if (!e || !e.detail || e.detail.name === "accent") akzentAnwenden();
+  });
+  /* DAS GRAUE HELL ANS DOKUMENT (15.10., "Light" nach Vercel; das bisherige Hell heisst seither
+     "Legacy Light"). Wie die Akzentfarbe am <html>: von dort erreicht es jede Wurzel, die Portale
+     und den Seitengrund (html/body), den core.css in diesem Fall selbst malt.
+     NUR SOLANGE HELL GEMALT WIRD: die Wahl light_style bleibt stehen, wenn jemand auf Dunkel
+     schaltet -- sie gilt fuer den naechsten hellen Moment. Stuende das Attribut auch im Dunkeln,
+     traefe es jedes Element, das sein Thema selbst als hell traegt (Erklaerkarte, Menues), und
+     malte dort die grauen Werte in eine dunkle Seite.
+     Das Thema kommt aus window.__upTheme (THEME weiter unten, beim ersten Aufruf hier noch nicht
+     gesetzt), dann aus pref_theme, und ohne beides aus dem Betriebssystem -- dieselbe Reihenfolge
+     wie themeBeimStart. Aufgerufen beim Laden, von setUpstreemTheme und bei jeder Aenderung der Wahl. */
+  function hellAnwenden(){
+    try {
+      var th = window.__upTheme && window.__upTheme.value;
+      if (th !== "dark" && th !== "light") th = readPrefTheme();
+      if (th !== "dark" && th !== "light"){
+        th = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+      }
+      if (th === "light" && getPref("light_style") === "gray") document.documentElement.setAttribute("data-up-hell", "grau");
+      else document.documentElement.removeAttribute("data-up-hell");
+    } catch(e){}
+  }
+  hellAnwenden();
+  window.addEventListener("up-prefs-change", function(e){
+    if (!e || !e.detail || e.detail.name === "light_style") hellAnwenden();
   });
   function onPrefs(fn){
     if (typeof fn !== "function") return function(){};
@@ -3332,6 +3373,8 @@
     "Search merchants…": "Händler durchsuchen…", "No merchants yet": "Noch keine Händler",
     "Theme": "Design",
     "Light": "Hell",
+    /* Das Hell bis zum 15.10. (weisse Seite); "Light" ist seither das graue nach Vercel. */
+    "Legacy Light": "Hell (klassisch)",
     "Dark": "Dunkel",
     "Display": "Darstellung",
 
@@ -21650,6 +21693,8 @@
       if (systemWahl) document.documentElement.removeAttribute("data-up-pagetheme");
       else document.documentElement.setAttribute("data-up-pagetheme", THEME.value);
     } catch(e){}
+    /* Das graue Hell folgt dem aufgeloesten Thema (siehe hellAnwenden): im Dunkeln faellt es weg. */
+    hellAnwenden();
     var roots = document.querySelectorAll(".up-root");
     for (var i = 0; i < roots.length; i++) applyThemeTo(roots[i], dark);
     /* Portalled surfaces (opportunities' drawer, the topic modal) live in <body>, outside any
@@ -21794,9 +21839,34 @@
     return "system";
   }
 
+  /* DIE VIER WAHLEN DER THEMENZEILE (15.10.): "legacy-light" (das Hell bis heute), "light" (das
+     graue Hell nach Vercel), "dark", "system". Zwei Einstellungen dahinter -- das Thema
+     (pref_theme, Datenbank theme) und der helle Stil (light_style) --, eine Zeile davor.
+     EIGENE NAMEN, getUpstreemThemeChoice bleibt, wie es war: es liefert weiter light/dark/system,
+     und ein Abnehmer an einem aelteren Pin, der "light" als Hell liest, bleibt richtig.
+     "system" uebernimmt den zuletzt gewaehlten hellen Stil: wer einmal "Light" gewaehlt hat und
+     dann "System", bekommt bei hellem Betriebssystem das graue Hell. Eine fuenfte Zeile
+     "System (Legacy)" waere dieselbe Unterscheidung noch einmal; der Satz unter der Zeile sagt es. */
+  function getUpstreemThemeOption(){
+    var c = getUpstreemThemeChoice();
+    if (c === "light") return getPref("light_style") === "gray" ? "light" : "legacy-light";
+    return c;
+  }
+  function setUpstreemThemeOption(key){
+    var k = String(key == null ? "" : key).trim().toLowerCase();
+    /* ERST der Stil, DANN das Thema: setUpstreemTheme ruft hellAnwenden mit dem neuen Stil, und es
+       gibt kein Bild, in dem das alte Hell mit dem neuen Thema steht. Umgekehrt blitzte beim
+       Wechsel von Dunkel auf "Light" fuer einen Augenblick das weisse Hell auf. */
+    if (k === "legacy-light"){ setPref("light_style", "legacy"); return setUpstreemTheme("light"); }
+    if (k === "light"){ setPref("light_style", "gray"); return setUpstreemTheme("light"); }
+    return setUpstreemTheme(k);
+  }
+
   window.setUpstreemTheme = setUpstreemTheme;
   window.getUpstreemTheme = getUpstreemTheme;
   window.getUpstreemThemeChoice = getUpstreemThemeChoice;
+  window.getUpstreemThemeOption = getUpstreemThemeOption;
+  window.setUpstreemThemeOption = setUpstreemThemeOption;
 
   /* Schalter fuer die Event-Diagnose in makeFire. Global, weil er aus der Konsole und aus einem
      Run-JS-Schritt erreichbar sein muss; standardmaessig aus. Rueckgabe ist der neue Zustand,
@@ -26763,6 +26833,7 @@
     appStart: appStart, appStartAktiv: appStartAktiv, appTeamWechseln: appTeamWechseln, appTeilNachladen: appTeilNachladen,
     anMira: anMira, miraBezug: miraBezug,
     onPrefs: onPrefs, getUpstreemThemeChoice: getUpstreemThemeChoice,
+    getUpstreemThemeOption: getUpstreemThemeOption, setUpstreemThemeOption: setUpstreemThemeOption,
     PREF_DEFAULT: PREF_DEFAULT, PREF_ERLAUBT: PREF_ERLAUBT,
     fmtNum: fmtNum, fmtGeld: fmtGeld, fmtDateMuster: fmtDateMuster, datumsTeile: datumsTeile,
     addMessages: addMessages, t: t,

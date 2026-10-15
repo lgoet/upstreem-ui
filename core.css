@@ -745,6 +745,104 @@
     html[data-accent="terrakotta"] .up-root { --up-accent: #BD5836; --up-accent-fg: #ffffff; --up-accent-ink: #BD5836; }
     html[data-accent="terrakotta"] .up-root[data-theme="dark"] { --up-accent: #D97757; --up-accent-fg: #1f1f1b; --up-accent-ink: #D97757; }
 
+    /* ================= DAS GRAUE HELL ("Light", 15.10.) ===========================================
+       Seit dem 15.10. gibt es zwei helle Themen. "Legacy Light" ist das Hell bis dahin und steht
+       unveraendert in den Bloecken oben; "Light" ist dieses hier, nach Vercel: die SEITE grau --
+       Seitengrund, Seitenleiste, Seitenkopf, Reiterzeile --, die INHALTSFLAECHEN weiss -- Tabellen,
+       Karten, Charts, Drawer, Menues. core.js setzt data-up-hell="grau" ans <html>, aber nur,
+       solange hell gemalt wird (hellAnwenden); im Dunkeln steht das Attribut nicht.
+
+       DIE WERTE SIND VERCELS EIGENE, ausgelesen am 15.10. aus vercel.com/geist (helles Thema,
+       --ds-*-value an :root) und gegengeprueft an zwei Seiten mit App-Rahmen:
+           Background 1  --ds-background-100  hsl(0 0% 100%)  #ffffff  "Default element background"
+           Background 2  --ds-background-200  hsl(0 0%  98%)  #fafafa  "Secondary background"
+           Gray 400      --ds-gray-400        hsl(0 0%  92%)  #ebebeb  "Default border"
+       vercel.com/docs: body, Kopf und Seitenleiste #fafafa, Karten #ffffff mit 1px #eaeaea, Radius 12.
+       Das Bild zur neuen Navigation (vercel.com/changelog/dashboard-navigation-redesign-rollout,
+       26.02.2026): Seitenleiste, Kopf und Reiterzeile #fafafa, darunter die Inhaltsflaeche #ffffff
+       mit einer hellen Linie (#e6e6e6) als Kante; der gewaehlte Reiter ein grauer Fleck (#e6e6e6 =
+       8 % Schwarz auf #fafafa) OHNE Rahmen.
+
+       WAS SICH AENDERT, und nur das:
+         --up-surface  der Seitengrund (#ffffff -> #fafafa). Er ist schon heute genau DAS Token, das
+                       "die Farbe der Seite" bedeutet -- Deckstreifen hinter klebenden Leisten,
+                       Kopfzeilen von Komponenten, der Grund unter einer flachen Tabelle. Alles, was
+                       ihn traegt, wird damit grau, ohne dass eine Regel ihn nennen muss.
+         --vc-border   Vercels Default border (#e4e2e4 -> #ebebeb). Die Kante zwischen Weiss und
+                       Grau ist die Linie, die Vercel dafuer zieht; die etwas dunklere aus Linears
+                       Leiter neben Vercels Grau saehe nach zwei Systemen aus.
+       Was NICHT: die Schriftfarben (auf #fafafa gemessen: --vc-text 15.8, --vc-muted 9.8,
+       --vc-third 4.8 -- AA haelt; --vc-fourth 3.5 wie im Weiss 3.7, Beiwerk), die Karte (--vc-bg
+       bleibt #ffffff), Kopfzeile und Hover in den Tabellen, Menues, Akzent, Tiefen.
+
+       INNERHALB EINER WEISSEN FLAECHE IST DER GRUND WEISS. Ein Drawer, ein Fenster am <body>
+       (up-portal) und der Kasten einer flachen Tabelle setzen --up-surface auf --vc-bg zurueck: was
+       dort "Seitenfarbe" sagt -- der klebende Tabellenkopf, die Gesamtzeile, die festgehaltene erste
+       Spalte --, ist die Farbe DIESER Flaeche. */
+    html[data-up-hell="grau"] {
+      --up-seite-grau: #fafafa;   /* Vercel Background 2 */
+      --up-kante-grau: #ebebeb;   /* Vercel Gray 400, Default border */
+    }
+    /* Der Grund hinter allem (html/body). Das Kopf-Skript der App malt ihn weiss (kopf.css,
+       html[data-up-pagetheme="light"] body, 0,1,2); hier eine Stufe spezifischer (0,2,2) statt
+       spaeter geladen. Nur ohne dunkles Seitenthema -- dann steht data-up-hell ohnehin nicht. */
+    html[data-up-hell="grau"]:not([data-up-pagetheme="dark"]),
+    html[data-up-hell="grau"]:not([data-up-pagetheme="dark"]) body { background-color: var(--up-seite-grau); }
+    html[data-up-hell="grau"] .up-root:not([data-theme="dark"]) {
+      --up-surface: var(--up-seite-grau);
+      --vc-border: var(--up-kante-grau);
+      --vc-switch-border: var(--up-kante-grau);
+      /* DIE LEISEN FLAECHEN MUESSEN AUF DEM GRAU NOCH ZU SEHEN SEIN. --vc-heading-bg ist die Flaeche
+         fuer Hover und Kopfzeilen (#f9f8f9) -- auf #fafafa liegt sie EINE Stufe darunter, der Hover
+         eines Knopfs in der Werkzeugleiste waere unsichtbar. Vercel nimmt dafuer Gray 100 (#f2f2f2,
+         "Default background" einer Komponente; dasselbe, was 5 % Schwarz auf Weiss ergibt, Vercels
+         Hover in Menues). Auf der Seite 8 Stufen, auf der Karte 13. */
+      --vc-heading-bg: #f2f2f2;
+      /* Eingabefelder wie bei Vercel weiss mit Rahmen (Background 1): das bisherige #f9f8f9 waere
+         auf der grauen Seite vom Grund nicht zu unterscheiden, nur der Rahmen bliebe. */
+      --vc-field: var(--vc-bg);
+    }
+    html[data-up-hell="grau"] .up-root:is(.up-kdr, .up-portal):not([data-theme="dark"]),
+    html[data-up-hell="grau"] :is(.up-kdr, .up-portal, [id^="drawer-"]) .up-root:not([data-theme="dark"]) {
+      --up-surface: var(--vc-bg);
+    }
+    /* DIE FLACHE TABELLE BLEIBT FLACH UND WIRD WEISS: kein Kasten, keine Rundung, oben und unten die
+       Linie, links und rechts bis an die Kante (data-flach, 15.10. so abgenommen) -- nur ihr Grund ist
+       jetzt Weiss statt durchsichtig. Das ist auch Vercels Bild: die Inhaltsflaeche laeuft dort bis an
+       den Fensterrand. Ein weisser Kasten mit Radius braechte den Rahmen zurueck, der am 15.10.
+       ausdruecklich weggenommen wurde. Leiste darueber und Pagination darunter stehen auf der Seite. */
+    html[data-up-hell="grau"] .up-root[data-flach="yes"]:not([data-theme="dark"]) .up-box {
+      --up-surface: var(--vc-bg);
+      background: var(--up-surface);
+    }
+    /* Dasselbe fuer die uebrigen Flaechen, die heute durchsichtig auf der Seite liegen und im
+       Weiss der Seite nie einen eigenen Grund brauchten -- gefunden im Pruefstand, Seite fuer Seite:
+         .up-band                    das offene Band aus core (wird gerade aus den zwei Bandformen
+                                     unten zusammengefuehrt; die Regel greift, sobald es die Klasse gibt)
+         .combo-root[data-flach]     das Chart-Band auf Citations (die Wurzel IST das Band)
+         .ubo-unit-chart             das Chart-Band auf Brands (die erste Einheit der Wurzel), nur
+                                     flach -- im Kasten liegt die Ueberschrift ueber der Karte auf
+                                     der Seite, und die Karte (.ubo-box) ist schon weiss
+         .upt-grp-sidepanel          die Gruppenspalte links neben der Prompt-Tabelle (flach und im
+                                     Kasten: beide Male steht sie neben dem weissen Tabellenkasten)
+       Die Kopfzeilen IM Band (Ueberschrift, D/W/M) stehen damit auf Weiss, wie die Kopfzeile einer
+       Tabelle; die Werkzeugzeile darueber (Kalender, Filters) bleibt auf der Seite. */
+    html[data-up-hell="grau"] .up-root:not([data-theme="dark"]) :is(.up-band, .upt-grp-sidepanel),
+    html[data-up-hell="grau"] .up-root.ubo-root[data-flach="yes"]:not([data-theme="dark"]) .ubo-unit-chart,
+    html[data-up-hell="grau"] .up-root.combo-root[data-flach="yes"]:not([data-theme="dark"]) {
+      --up-surface: var(--vc-bg);
+      background: var(--up-surface);
+    }
+    /* Die Karten der Opportunities tragen 2 % Schwarz ueber dem Grund (--uo-col-bg) -- auf der grauen
+       Seite ein grauer Kasten auf Grau. Im grauen Hell sind sie Inhalt und damit weiss. */
+    html[data-up-hell="grau"] .up-root.uo-root:not([data-theme="dark"]) { --uo-col-bg: var(--vc-bg); }
+    /* Der gewaehlte Reiter wie bei Vercel: ein grauer Fleck ohne Rahmen. Die Vorgabe (Kopfzeilengrund
+       #f9f8f9 mit Rahmen) laege auf #fafafa fast ohne Unterschied, nur der Rahmen bliebe. 8 % der
+       Schrift auf #fafafa ergeben #e8e8e7 -- Vercel misst 8 % Schwarz, #e6e6e6. */
+    html[data-up-hell="grau"] .up-root:not([data-theme="dark"]) .up-ph-navpille {
+      background: color-mix(in srgb, var(--vc-text) 8%, transparent); border-color: transparent;
+    }
+
     /* ---------- Fokus-Ring fuer Eingabefelder ----------
        EIN Fokuszustand fuer die ganze App: blauer Rand plus ein 4px weicher Auslauf dahinter.
        Vorher war der Fokus in jeder Komponente die Hover-Randfarbe, teils zusaetzlich mit einem

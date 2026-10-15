@@ -193,7 +193,10 @@
        Die Begruendung in core.js an "preference" (Fader = filtern, Regler = einstellen)
        gilt fuer den Satz weiter; hier wiegt schwerer, dass Knopf und Ziel zusammengehoeren. */
     { items: [{ key: "prefswin", label: "Preferences", icon: "settings2" }] },
+    /* Seit dem 15.10. vier Zeilen: "Light" ist das graue Hell nach Vercel, "Legacy Light" das Hell bis
+       dahin -- dieselben Werte wie im Einstellungsfenster (UC.setUpstreemThemeOption). */
     { head: "Theme", theme: true, items: [
+      { key: "legacy-light", label: "Legacy Light" },
       { key: "light",  label: "Light"  },
       { key: "dark",   label: "Dark"   },
       { key: "system", label: "System" }
@@ -1114,7 +1117,11 @@
     /* Aus core, seit das Einstellungsfenster dieselbe Frage stellt. Hier standen dieselben
        fuenf Zeilen ein zweites Mal. */
     function themaJetzt(){
-      return UC.getUpstreemThemeChoice ? UC.getUpstreemThemeChoice() : "system";
+      /* Die Wahl mit dem hellen Stil. Eine aeltere core ohne die Funktion kennt nur das bisherige
+         Hell -- dort ist "light" also "legacy-light". */
+      if (UC.getUpstreemThemeOption) return UC.getUpstreemThemeOption();
+      var c = UC.getUpstreemThemeChoice ? UC.getUpstreemThemeChoice() : "system";
+      return c === "light" ? "legacy-light" : c;
     }
     function renderTeamMenu(){
       var such = state.suche.toLowerCase();
@@ -1391,9 +1398,13 @@
              Auch "system" geht direkt dorthin -- die Aufloesung nach der Systemeinstellung und das
              Loeschen der gespeicherten Wahl stehen seit dieser Runde in core. Hier stand beides
              ein zweites Mal, und eine Regel an zwei Orten laeuft irgendwann auseinander. */
-          if (window.setUpstreemTheme) window.setUpstreemTheme(key);
+          /* Die zwei hellen Zeilen gehen ueber setUpstreemThemeOption (Thema UND heller Stil). Im
+             Ereignis bleibt value das Thema (light/dark/system), wie es ein Workflow seit jeher
+             liest; welche helle Zeile es war, steht daneben in option. */
+          if (UC.setUpstreemThemeOption) UC.setUpstreemThemeOption(key);
+          else if (window.setUpstreemTheme) window.setUpstreemTheme(key === "legacy-light" ? "light" : key);
           renderAccMenu(); renderNav();
-          fire("data-theme-fn", "usnTheme", { value: key });
+          fire("data-theme-fn", "usnTheme", { value: key === "legacy-light" ? "light" : key, option: key });
           return;
         }
         menuZu();

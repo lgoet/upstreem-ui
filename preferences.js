@@ -107,6 +107,8 @@
          mehr, sonst laufen zwei Fassungen desselben Wortes auseinander. */
       "System follows the setting of your operating system.":
         "System übernimmt die Einstellung deines Betriebssystems.",
+      "Light has a gray page with white content areas. Legacy Light keeps the previous all-white look. System follows your operating system.":
+        "Hell hat eine graue Seite mit weißen Inhaltsflächen. Hell (klassisch) behält das bisherige, ganz weiße Aussehen. System folgt deinem Betriebssystem.",
       "General": "Allgemein",
       "How upstreem looks across the whole app": "Wie upstreem in der ganzen App aussieht",
       "Appearance": "Darstellung",
@@ -162,7 +164,12 @@
        pref_theme -- dort lag es schon, bevor es dieses Fenster gab, und das Konto-Menue der
        Seitenleiste schreibt in denselben Schluessel. Zwei Speicherorte fuer eine Einstellung
        waeren zwei Wahrheiten. */
+    /* VIER WAHLEN SEIT DEM 15.10.: "Light" ist das graue Hell nach Vercel (graue Seite, weisse
+       Inhaltsflaechen), "Legacy Light" das Hell bis dahin. Die Werte sind die von
+       UC.setUpstreemThemeOption -- dahinter stehen zwei Einstellungen (Thema und light_style),
+       hier eine Zeile. Reihenfolge wie bestellt: das bisherige zuerst. */
     var THEMEN = [
+      { wert: "legacy-light", name: "Legacy Light" },
       { wert: "light",  name: "Light" },
       { wert: "dark",   name: "Dark" },
       { wert: "system", name: "System" }
@@ -408,7 +415,8 @@
       return '<div class="ums-sec">' +
         '<h3 class="ums-sectitle">' + esc(t("Appearance")) + '</h3>' +
         '<div class="ums-secline"></div>' +
-        zeileHtml("Theme", "System follows the setting of your operating system.",
+        zeileHtml("Theme", "Light has a gray page with white content areas. Legacy Light keeps the " +
+          "previous all-white look. System follows your operating system.",
           selHtml("theme", THEMEN, themaJetzt())) +
         zeileHtml("Accent color", "The color of buttons, switches, checks and the selected page in the navigation. Logos, favicons and charts keep their own colors, except with Default + Blue: everything as in Default, charts in blue.",
           selHtml("accent", AKZENTE, UC.getPref("accent"))) +
@@ -489,7 +497,11 @@
       '</div>';
     }
     function themaJetzt() {
-      return UC.getUpstreemThemeChoice ? UC.getUpstreemThemeChoice() : "system";
+      /* Die Wahl mit dem hellen Stil (legacy-light/light/dark/system). Eine aeltere core ohne die
+         Funktion kennt nur das bisherige Hell -- dort ist "light" also "legacy-light". */
+      if (UC.getUpstreemThemeOption) return UC.getUpstreemThemeOption();
+      var c = UC.getUpstreemThemeChoice ? UC.getUpstreemThemeChoice() : "system";
+      return c === "light" ? "legacy-light" : c;
     }
     function schemaName(key) {
       /* "Brand Colors" und nicht mehr "Default": Vorgabe ist jetzt Tableau, und "Default" waere
@@ -578,7 +590,8 @@
       if (name === "theme") {
         /* Der Weg von core, derselbe, den das Konto-Menue der Seitenleiste geht: er faerbt jede
            Wurzel der Seite um, merkt die Wahl und loest "System" nach der Systemeinstellung auf. */
-        if (window.setUpstreemTheme) window.setUpstreemTheme(wert);
+        if (UC.setUpstreemThemeOption) UC.setUpstreemThemeOption(wert);
+        else if (window.setUpstreemTheme) window.setUpstreemTheme(wert === "legacy-light" ? "light" : wert);
       } else if (name === "locale") {
         /* ---- SPRACHWECHSEL: SCHREIBEN UND NEU LADEN, OHNE JEDEN LAUF ----------------------
            Gemeldet am 10.09. mit RESULT_CODE_HUNG -- die Seite HAENGT, sie wirft nicht. Das ist

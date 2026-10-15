@@ -132,6 +132,14 @@
      Linears Leiter und ist mit ihr nicht mitgewandert. */
   --usn-bg: var(--up-surface); --usn-sel: var(--up-sel-bg); --usn-akt: var(--up-sel-bg);
 }
+/* DAS GRAUE HELL ("Light", 15.10., core.css "DAS GRAUE HELL"): die Leiste traegt das Grau der
+   Seite, wie bei Vercel -- dort sind Seitenleiste und Seitengrund derselbe Ton (#fafafa), die
+   Kante rechts trennt. --usn-sel/--usn-akt bleiben die Ueberlagerung aus der Schriftfarbe, die
+   dunkelt jeden Grund im selben Verhaeltnis ab. Nicht ueber --up-surface: die Leiste ist ein
+   Portal, und Portale setzen die Seitenfarbe im grauen Hell auf Weiss zurueck. */
+html[data-up-hell="grau"] .usn-bar:not([data-theme="dark"]),
+html[data-up-hell="grau"] .usn-fab:not([data-theme="dark"]),
+html[data-up-hell="grau"] .usn-scrim:not([data-theme="dark"]) { --usn-bg: var(--up-seite-grau); }
 /* Seit die Leiste denselben Ton traegt wie die Seite, braucht sie eine Kante -- sonst gibt es
    keine Grenze mehr zwischen Navigation und Inhalt. Angefordert am 08.09. fuer das Dunkle; seit
    dem 07.09. traegt die Leiste auch im Hellen die Seitenfarbe, also gilt die Kante dort genauso.
