@@ -331,29 +331,33 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-klapp-in { min-height: 0; overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .uev-klapp, .uev-klapp.is-offen { transition: none; } }
 
-/* Umfang: Umschalter, Topics und Zahl als eine Gruppe. */
-.uev-umfang { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+/* Umfang: Umschalter, Topics und Zahl als eine Gruppe. 16 zwischen den Teilen (15.10. spaet, vorher
+   12; Nutzer: "Gib dem mehr Raum zu atmen"). */
+.uev-umfang { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
 /* .up-seg steht in core auf align-self: center (Werkzeugleisten) -- hier buendig mit dem Etikett. */
 .uev-umfang .uev-umfangseg { align-self: flex-start; }
-/* Die Topics als Liste in einem Feldkasten (Rand wie die Eingabefelder, Radius 10, Polster 6 --
-   die Zeilen darin tragen 8, konzentrisch). Unten die Zahl der gewaehlten und Select all/Clear. */
-.uev-umfang .uev-topicbox { display: flex; flex-direction: column; gap: 6px; padding: 6px;
-  border: 1px solid var(--vc-border); border-radius: var(--up-r-l); }
-/* Der Abstand zum Umschalter liegt IM Klapp-Behaelter (Polster oben statt gap): zugeklappt soll
+/* Die Topics OFFEN im Popup, ohne eigenen Kasten (15.10. spaet; Nutzer: "muss nicht nochmal separat
+   in einer Card sein"): Suche, Liste und Fuss untereinander, 12 Luft, vor dem Fuss eine Linie.
+   Die Zeilen (.up-filter-item, seitlich 9 Polster) ruecken um dieses Polster nach aussen --
+   Kaestchen und Namen fluchten so mit Etikett, Umschalter und Suchfeld, nur die Hoverflaeche
+   reicht 9 darueber hinaus (wie die Treffer der URL-Suche in Schritt 3). Der negative Rand sitzt
+   am Klapp-Behaelter, nicht an der Liste: dessen overflow: hidden schnitte ihn sonst ab; 9 Polster
+   holen Suche und Fuss zurueck auf die Kante.
+   Der Abstand zum Umschalter liegt IM Klapp-Behaelter (Polster oben statt gap): zugeklappt soll
    zwischen Umschalter und Zahl nur EIN Abstand stehen, nicht zwei um eine leere Zeile herum. */
-.uev-umfang > .uev-umfang-klapp { align-self: stretch; margin-top: -12px; }
-.uev-umfang-klapp .uev-topicbox { margin-top: 12px; }
+.uev-umfang > .uev-umfang-klapp { align-self: stretch; margin: -16px -9px 0; }
+.uev-umfang .uev-topicbox { display: flex; flex-direction: column; gap: 12px; padding: 16px 9px 0; }
 .uev-topicbox .uev-topicsuche-w { margin: 0; }
-.uev-topicbox .uev-topicliste { max-height: 232px; overflow-y: auto; }
+.uev-topicbox .uev-topicliste { max-height: 232px; overflow-y: auto; margin: 0 -9px; }
 .uev-topic-zeichen { flex: 0 0 auto; font-size: var(--up-fs-m); line-height: 1; }
 .uev-topic-punkt { flex: 0 0 auto; width: 8px; height: 8px; border-radius: var(--up-r-voll); background: var(--vc-fourth); }
 /* Name: .up-ment-name aus core (13/500, wie im Marken-Filter), hier nur das Wachsen. */
 .uev-topic-name { flex: 1 1 auto; }
 .uev-topic-zahl { flex: 0 0 auto; font-size: var(--up-fs-s); color: var(--vc-fourth); font-variant-numeric: tabular-nums; }
 /* Links der Or/And-Umschalter aus core, rechts Zahl und "Select all" -- die Ordnung des Fusses im
-   Topics-Filter (.utf-foot). 8px oben statt 4: der Umschalter ist 28 hoch und braucht unter der
-   Linie dieselbe Luft wie dort. */
-.uev-topicfuss { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0 0; border-top: 1px solid var(--vc-border); }
+   Topics-Filter (.utf-foot). Ueber der Linie die 12 der Gruppe, darunter ebenso 12 (15.10. spaet,
+   vorher 8 im Kasten): die Linie steht mittig zwischen Liste und Umschalter. */
+.uev-topicfuss { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0 0; border-top: 1px solid var(--vc-border); }
 .uev-topicfuss-r { display: inline-flex; align-items: center; gap: 12px; margin-left: auto; min-width: 0; }
 .uev-topicfuss-zahl { font-size: var(--up-fs-s); color: var(--vc-third); }
 .uev-umfang-zahl { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--up-fs-m); color: var(--vc-text); }
@@ -385,12 +389,15 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-urlsk-txt .uev-sk:first-child { width: 45%; }
 .uev-urlsk-txt .uev-sk:last-child { width: 70%; height: 10px; }
 
-/* Der Rahmen des Eingabefeldes darueber (.up-topicmodal-name: Rand, Radius 9) und NICHT .up-box:
-   die verliert im Dunkeln ihren Rand mit Absicht (Flaechen trennt dort die Helligkeit, core.css
-   "Modale, Eingabefelder ... keine Flaechen") und stand auf der gleichfarbigen Karte unsichtbar. */
-.uev-urlwahl-liste { display: flex; flex-direction: column; border: 1px solid var(--vc-border); border-radius: var(--up-r-m); overflow: hidden; }
-.uev-urlwahl { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 8px 8px 12px; }
+/* Die Liste der Ziele OFFEN (15.10. spaet, vorher mit eigenem Rahmen -- ein Kasten im Kasten des
+   Popups): die Zeilen untereinander, zwischen zwei Zeilen eine Linie in --vc-border, die Linie des
+   Teils darueber schliesst die Liste nach oben ab. Zeichen und Schreibweise fluchten mit dem Feld;
+   rechts das X um sein Polster (8) nach aussen, damit sein Zeichen mit der Kante des Add-Knopfs
+   abschliesst. */
+.uev-urlwahl-liste { display: flex; flex-direction: column; min-width: 0; }
+.uev-urlwahl { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 8px 0; }
 .uev-urlwahl + .uev-urlwahl { border-top: 1px solid var(--vc-border); }
+.uev-urlwahl .uev-urlwahl-weg { margin-right: -8px; }
 .uev-urlwahl .uev-url-txt { flex: 1 1 auto; }
 .uev-urlwahl-neu { flex: 0 0 auto; font-size: var(--up-fs-xs); color: var(--vc-third); }
 .uev-urlauswahl { display: flex; flex-direction: column; gap: 8px; }
@@ -410,15 +417,36 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-gesperrt svg { width: 13px; height: 13px; flex: 0 0 auto; color: var(--vc-third); }
 
 /* ---- ZIELE (15.10.): Schritt 3 "What should we track?" und der Add-Dialog -------------------
-   Die Wahl steht wie die Topics in Schritt 2 in einem Feldkasten (Rand wie die Eingabefelder,
-   --up-r-l, Polster 6), die Zeilen sind die Zeilen der Filter aus core in der Bauart einer
-   Radiogruppe: Punkt, Zeichen, Titel, darunter die Schreibweise der Regel. Gewaehlt traegt die
-   Zeile die Flaeche einer gewaehlten Zeile (--up-sel-bg) und der Punkt den Ring in der
-   Akzentfarbe -- dieselbe Sprache wie das Kaestchen der Topics daneben. */
-.uev-ziel { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
-.uev-arten { display: flex; flex-direction: column; gap: 2px; padding: 6px; border: 1px solid var(--vc-border); border-radius: var(--up-r-l); }
-/* Radius der Zeile konzentrisch zum Kasten (Geist, 15.10.): 8 - 6 Polster = 2, gerundet auf die
-   Stufe 4 -- dieselbe wie die Filterzeilen (.up-filter-item) der Topics in Schritt 2. */
+   Seit dem 15.10. spaet vier Teile untereinander, OHNE Kasten im Kasten (Nutzer: "mehr Raum zu
+   atmen, trenne wenn noetig mit Separatoren"): oben das Feld als primaere Eingabe, darunter die
+   Wahl der Art, dann Liste und Vorschau, zuletzt der offene Sitemap-Waehler. Zwischen zwei
+   sichtbaren Teilen eine Linie in --vc-border, je 16 darueber und darunter -- zusammen die 32,
+   die das Popup zwischen zwei Feldern laesst (.uev-schritt), die Linie mittendrin. Ein Teil ohne
+   Inhalt steht gar nicht da (:has), sonst stuende eine Linie ueber nichts. */
+.uev-ziel { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.uev-ziel > .uev-ziel-teil:not(:first-child), .uev-ziel > .uev-sm-ort { padding-top: 16px; border-top: 1px solid var(--vc-border); }
+.uev-ziel > .uev-arten-teil:not(:has(.uev-arten)),
+.uev-ziel > .uev-ergebnis:not(:has(.uev-urlwahl, .uev-vz:not([hidden]):not(:empty))),
+.uev-ziel > .uev-sm-ort:empty { display: none; }
+.uev-ergebnis { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+/* Der Kopf des Feldes: links das Etikett, rechts "Load from sitemap" als leiser Knopf. Er ist 24
+   hoch (Rolle nach Hoehe: Radius 4, Schrift 12 wie das Etikett) und ragt oben und unten ueber
+   die Zeile des Etiketts hinaus, ohne sie hoeher zu machen -- das Feld steht darunter im selben
+   Abstand wie unter jedem anderen Etikett. Rechts -8: der Text schliesst mit der Kante des
+   Add-Knopfs ab, nur die Hoverflaeche ragt um das Polster hinaus. */
+.uev-zielkopf { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-width: 0; }
+.uev-sm-knopfzeile { display: inline-flex; min-width: 0; }
+.uev-sm-knopfzeile[hidden] { display: none; }
+.uev-zielkopf .up-quietbtn { height: var(--up-h-chip); margin: -4px -8px -4px 0; border-radius: var(--up-r-s); font-size: var(--up-fs-s); }
+.uev-zielkopf .up-quietbtn svg { width: 14px; height: 14px; flex-basis: 14px; color: var(--vc-third); }
+/* Die Wahl der Art: die Zeilen der Filter aus core in der Bauart einer Radiogruppe -- Punkt,
+   Zeichen, Titel, darunter die Schreibweise der Regel. Gewaehlt traegt die Zeile die Flaeche einer
+   gewaehlten Zeile (--up-sel-bg) und der Punkt den Ring in der Akzentfarbe, dieselbe Sprache wie
+   das Kaestchen der Topics in Schritt 2. Offen im Popup (15.10. spaet, vorher im Feldkasten): die
+   Zeilen ruecken um ihr Polster (10) nach aussen, Punkt und Text fluchten mit dem Etikett darueber,
+   nur Hover- und Wahlflaeche reichen ueber die Kante -- wie die Topics in Schritt 2. */
+.uev-arten { display: flex; flex-direction: column; gap: 2px; margin: 0 -10px; }
+/* Radius 4 wie die Filterzeilen (.up-filter-item) der Topics in Schritt 2. */
 .uev-art { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; padding: 8px 10px; border: 0; border-radius: var(--up-r-s);
   background: transparent; color: var(--vc-text); font: inherit; text-align: left; cursor: pointer;
   transition: background var(--up-t-1) var(--up-ease); }
@@ -456,27 +484,36 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-unter .up-switch:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: 2px; }
 .uev-arthinweis[hidden] { display: none; }
 
-/* Das Eingabefeld: ein mehrzeiliges Namensfeld (eine Liste laesst sich einfuegen), einzeilig 36 hoch
-   wie jedes Feld des Popups, waechst bis fuenf Zeilen. Das Zeichen bleibt auf der ersten Zeile. */
+/* Das Eingabefeld: die primaere Eingabe des Schritts, darum in der grossen Stufe der Hoehenskala
+   (40, --up-h-gross, "Hauptknopf, Suchfeld") mit Radius 8 nach Rolle -- und "Add" daneben als
+   .up-btn-sec.is-lg aus core, ebenso 40 und 8 (15.10. spaet; vorher Feld 36 und Knopf 32, "sieht
+   inkonsistent aus"). Ein mehrzeiliges Namensfeld (eine Liste laesst sich einfuegen): einzeilig
+   1 + 10 + 18 + 10 + 1 = 40, waechst bis fuenf Zeilen. Das Zeichen bleibt auf der ersten Zeile
+   (Mitte 20), der Knopf oben buendig, auch wenn das Feld waechst. */
 .uev-zieleingabe { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .uev-zielzeile { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
 .uev-zielzeile .uev-urlsuche { flex: 1 1 auto; min-width: 0; }
-.uev-zieleingabe .up-topicmodal-name.uev-zielein { display: block; height: auto; min-height: 36px; max-height: 116px;
-  padding: 8px 12px 8px 34px; line-height: 18px; resize: none; overflow-y: auto; }
-.uev-zieleingabe .uev-urlsuche-ic { top: 18px; }
-/* Der Knopf ist 32 hoch (.up-btn-sec), das Feld 36: 2px Versatz setzt ihn mittig zur ersten Zeile,
-   auch wenn das Feld waechst. */
-.uev-zielzeile .uev-zielhinzu { flex: 0 0 auto; margin-top: 2px; }
+.uev-zieleingabe .up-topicmodal-name.uev-zielein { display: block; height: auto; min-height: var(--up-h-gross); max-height: 116px;
+  padding: 10px 12px 10px 34px; border-radius: var(--up-r-l); line-height: 18px; resize: none; overflow-y: auto; }
+.uev-zieleingabe .uev-urlsuche-ic { top: 20px; }
+/* Der Platzhalter bleibt EINE Zeile: bei 375 brach "Paste a URL, a path or a domain" um, das Feld
+   bekam bei 40 Hoehe 56 Inhalt und einen Rollbalken, ohne dass etwas getippt war (gemessen 15.10.
+   spaet: scrollHeight 56 -> 38). */
+.uev-zieleingabe .uev-zielein::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.uev-zielzeile .uev-zielhinzu { flex: 0 0 auto; }
 .uev-schreibweise { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: var(--up-h-chip); font-size: var(--up-fs-s); color: var(--vc-third); }
 .uev-schreibweise:empty { display: none; }
 .uev-schreib-lbl, .uev-schreib-satz { color: var(--vc-third); }
 .uev-schreibweise .uev-notation { max-width: 100%; }
-.uev-sm-knopfzeile { display: flex; }
-.uev-sm-knopfzeile[hidden] { display: none; }
-.uev-sm-knopfzeile .up-quietbtn { margin-left: -8px; }
 /* 24 hoch -> Radius 4 (Rolle nach Hoehe, Geist): der leise Knopf aus core ist fuer 32 gerundet. */
 .uev-schreibweise .up-quietbtn { height: var(--up-h-chip); border-radius: var(--up-r-s); }
-.uev-ziel .uev-feldfehler { margin-top: -8px; }
+/* Die Fehlerzeile unter dem Feld: zu ist sie 0 hoch. core gibt ihrem Text 5 Polster, die eine
+   zugeklappte 0fr-Zeile nicht wegnimmt -- ohne jeden Fehler standen so in Schritt 3 5px, in
+   Schritt 2 mit dem gap 13px unter dem Feld (gemessen 15.10. spaet). Das Polster kommt erst mit .is-on, wie bei
+   .up-topicmodal-err in core. Der negative Rand nimmt das gap davor zurueck. */
+.uev-ziel .uev-feldfehler, .uev-umfang + .uev-feldfehler { margin-top: -8px; }
+.uev-ziel .uev-feldfehler > span, .uev-umfang + .uev-feldfehler > span { padding-top: 0; }
+.uev-ziel .uev-feldfehler.is-on > span, .uev-umfang + .uev-feldfehler.is-on > span { padding-top: 5px; }
 
 /* Die Liste der Ziele: die Liste der URLs von vorher (.uev-urlwahl), je Ziel das Zeichen seiner
    Art, die Schreibweise und die Zahl der Treffer aus der Vorschau. */
@@ -487,9 +524,10 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-ziel-fehler { flex: 0 1 auto; min-width: 0; font-size: var(--up-fs-s); color: var(--vt-down); }
 .uev-zielliste:empty { display: none; }
 
-/* Die Live-Vorschau: im selben Feldkasten wie die Wahl. Ein Satz oben, darunter Beispiele und
-   aehnliche Adressen als leise Zeilen, zuletzt das Angebot "Count as your domain". */
-.uev-vz { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--vc-border); border-radius: var(--up-r-l); font-size: var(--up-fs-m); }
+/* Die Live-Vorschau OFFEN unter der Liste (15.10. spaet, vorher im eigenen Feldkasten): ein Satz
+   oben, darunter Beispiele und aehnliche Adressen als leise Zeilen, zuletzt das Angebot "Count as
+   your domain" hinter einer Linie. */
+.uev-vz { display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: var(--up-fs-m); }
 .uev-vz[hidden] { display: none; }
 .uev-vz .up-fehlerzeile > span { padding-top: 0; }
 .uev-vz-laeuft { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--vc-third); }
@@ -506,30 +544,37 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-vz-satz { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; line-height: 1.45; color: var(--vc-muted); }
 .uev-vz-satz.is-leise { font-size: var(--up-fs-s); color: var(--vc-third); }
 .uev-vz-satz .up-quietbtn { height: var(--up-h-chip); border-radius: var(--up-r-s); }
-.uev-vz-eigen { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding-top: 10px;
+.uev-vz-eigen { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding-top: 12px;
   border-top: 1px solid var(--vc-border); color: var(--vc-muted); }
 .uev-vz-eigenbtn .up-modal-spin { display: inline-block; }
 
 /* ---- DER SITEMAP-WAEHLER --------------------------------------------------------------------
-   Ein Feldkasten wie Wahl und Vorschau. Der Baum sind die Zeilen der Filter aus core
-   (.up-filter-item mit .up-filter-check -- gewaehlt ist gewaehlt wie in jedem Filter), je Ebene
-   16px eingerueckt. Rechts Zahl der Seiten und juengstes lastmod; beim Ueberfahren steht an
-   ihrer Stelle "Select all in folder" (Hover-Tausch wie in den Listen der App, nie darueber). */
-.uev-sm { display: flex; flex-direction: column; gap: 12px; padding: 12px; border: 1px solid var(--vc-border); border-radius: var(--up-r-l); min-width: 0; }
-.uev-sm-kopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -4px -4px -4px 0; }
+   Der letzte Teil von Schritt 3 bzw. des Add-Dialogs, offen hinter der Linie der Teile (15.10.
+   spaet, vorher ein Feldkasten zwischen Eingabe und Liste). Der Baum sind die Zeilen der Filter
+   aus core (.up-filter-item mit .up-filter-check -- gewaehlt ist gewaehlt wie in jedem Filter),
+   je Ebene 16px eingerueckt. Rechts Zahl der Seiten und juengstes lastmod; beim Ueberfahren steht
+   an ihrer Stelle "Select all in folder" (Hover-Tausch wie in den Listen der App, nie darueber). */
+.uev-sm { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+/* Das X rueckt um sein Polster (8) nach aussen: sein Zeichen schliesst mit der Kante ab. */
+.uev-sm-kopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -4px -8px -4px 0; }
 .uev-sm-titel { display: inline-flex; align-items: center; gap: 8px; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
 .uev-sm-titel svg { width: 16px; height: 16px; color: var(--vc-third); }
+/* Feld und "Load" gleich hoch (15.10. spaet, vorher 36 und 32): beide 32 (--up-h-btn) mit Radius 6
+   -- eine Nebeneingabe, eine Stufe unter dem Feld oben, so hoch wie die Suche im Baum darunter. */
 .uev-sm-zeile { display: flex; align-items: center; gap: 8px; }
-.uev-sm-zeile .uev-sm-ein { flex: 1 1 auto; min-width: 0; }
+.uev-sm-zeile .uev-sm-ein { flex: 1 1 auto; min-width: 0; height: var(--up-h-btn); border-radius: var(--up-r-m); }
 .uev-sm-zeile .uev-sm-laden { flex: 0 0 auto; }
 /* Die Fehlerzeile klappt auf 0 zu -- der Abstand der Gruppe davor darf dann nicht stehen bleiben. */
 .uev-sm .uev-sm-fehler { margin-top: -12px; }
-.uev-sm-inhalt { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.uev-sm-inhalt { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .uev-sm-inhalt:empty { display: none; }
 .uev-sm-lb { padding: 16px 0 8px; }
 .uev-sm-quelle { overflow-wrap: anywhere; }
 .uev-sm-inhalt .uev-sm-suchw { margin: 0; }
-.uev-sm-baum { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; gap: 2px; margin: 0 -6px; padding: 0 6px; }
+/* Die Zeilen ruecken um ihr Polster (6) nach aussen, wie Topics und Arten: der Pfeil des obersten
+   Ordners steht an der Kante von Feld und Suche, nur die Hoverflaeche reicht darueber (15.10.
+   spaet, vorher im Kasten 15 eingerueckt). */
+.uev-sm-baum { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; gap: 2px; margin: 0 -6px; padding: 0; }
 .uev-sm-baum .uev-sm-reihe { padding-left: calc(6px + var(--uev-tiefe, 0) * 16px); min-height: 36px; }
 .uev-sm-reihe:focus-visible { outline: 0; box-shadow: inset 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .uev-sm-reihe .uev-sm-klapp { color: var(--vc-third); }

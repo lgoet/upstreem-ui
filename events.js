@@ -705,6 +705,7 @@
     /* Schritte und Ziele */
     "Step {n} of 4": "Schritt {n} von 4", "Tracking": "Tracking", "Check and create": "Prüfen und anlegen",
     "What should we track?": "Was sollen wir tracken?", "Choose what to track.": "Wähl aus, was getrackt werden soll.",
+    "URLs, paths or domains": "URLs, Pfade oder Domains", "Add to tracking": "Zum Tracking hinzufügen",
     "Brand metrics only": "Nur Markenwerte", "Visibility, rank and sentiment": "Visibility, Rank und Sentiment",
     "Specific URLs": "Bestimmte URLs", "Everything under a path": "Alles unter einem Pfad",
     "Whole domain or subdomain": "Ganze Domain oder Subdomain", "Include all subdomains": "Alle Subdomains einbeziehen",
@@ -1714,7 +1715,7 @@
         legendeImmer: true,
         /* Gefiltert leer (Models, Markets, Intent): der Leerzustand mit Lupe, "No matching data"
            (core, chartLeerHtml) -- leer wegen des Filters ist etwas anderes als noch keine Daten. */
-        gefiltert: gefiltert,
+        gefiltert: analyseGefiltert,
         markers: chartMarker,
         onMarker: function (id) { if (id && id !== state.eventId) oeffnen(id, true); }
       });
@@ -1762,8 +1763,11 @@
       analyseAnfordern(); renderDetail();
     }
     /* Schraenkt ein Filter die Analyse ein? Models und Markets aus der Leiste des Details, dazu der
-       Intent-Filter der App -- dieselbe Frage, die die Seiten an UC.seitenFilterAktiv stellen. */
-    function gefiltert() {
+       Intent-Filter der App -- dieselbe Frage, die die Seiten an UC.seitenFilterAktiv stellen.
+       NICHT "gefiltert" nennen: so heisst schon die Liste der Uebersicht (oben), und eine zweite
+       Funktionsdeklaration gleichen Namens im selben Bereich ueberschreibt die erste still -- am
+       16.10. bekam die Uebersicht dadurch true statt der Liste und zeigte "No matching events". */
+    function analyseGefiltert() {
       return UC.seitenFilterAktiv ? UC.seitenFilterAktiv({ modelle: state.modelle, maerkte: state.maerkte })
         : !!((state.modelle && state.modelle.length) || (state.maerkte && state.maerkte.length));
     }
@@ -3233,20 +3237,23 @@
         '</div>', false, "topics");
     }
     /* ---- SCHRITT 3: "WHAT SHOULD WE TRACK?" (15.10.) ---------------------------------------
-       Ein EIGENER Schritt (Nutzer: "weil man das sonst haeufig uebersieht"). Oben die Wahl, was
-       getrackt wird -- nichts ist vorgewaehlt, "Continue" wartet auf eine Entscheidung, auch wenn
-       sie "Brand metrics only" heisst. Darunter EIN Eingabefeld: es schlaegt die passende Art vor
-       (Host -> Domain, Host + Pfad -> Pfad, mehrere Eintraege -> URLs), bis jemand selbst eine Art
-       waehlt; die Schreibweise der Regel steht immer darunter. Mehrere Ziele gehen, jedes
-       einzeln entfernbar. Mit Zielen in der Datenbank kommen die Live-Vorschau
-       (preview_impact_event_targets_v1, verzoegert beim Tippen), "Count as your domain" und der
-       Sitemap-Waehler dazu. Dieselben Teile stehen im Add-Dialog eines Events (p.art "ziel"),
-       dort ohne "Brand metrics only". */
+       Ein EIGENER Schritt (Nutzer: "weil man das sonst haeufig uebersieht"). Seit dem 15.10. spaet
+       (Nutzer: "Die URL-Eingabe muss der primaere Input sein, die Auswahlen eher sekundaer
+       darunter") von oben nach unten: EIN Eingabefeld, darunter die Schreibweise der Regel, dann
+       die Wahl der Art, zuletzt Liste und Vorschau. Das Feld schlaegt die passende Art vor (Host ->
+       Domain, Host + Pfad -> Pfad, mehrere Eintraege -> URLs), bis jemand selbst eine waehlt --
+       nichts ist vorgewaehlt, "Continue" wartet auf eine Entscheidung, auch wenn sie "Brand metrics
+       only" heisst. Mehrere Ziele gehen, jedes einzeln entfernbar. Mit Zielen in der Datenbank
+       kommen die Live-Vorschau (preview_impact_event_targets_v1, verzoegert beim Tippen), "Count
+       as your domain" und der Sitemap-Waehler dazu. Dieselben Teile stehen im Add-Dialog eines
+       Events (p.art "ziel"), dort ohne "Brand metrics only". */
+    /* "Brand metrics only" steht ZULETZT (Nutzer 15.10. spaet): es heisst "keine URLs" und ist
+       damit die Ausnahme zu dem, was das Feld darueber anbietet. */
     var ARTEN = [
-      { k: "marke", titel: "Brand metrics only", ic: "chartSpline", satz: "Visibility, rank and sentiment" },
       { k: "url", titel: "Specific URLs", ic: "link", bsp: "example.com/blog/launch" },
       { k: "path", titel: "Everything under a path", ic: "folder", bsp: "example.com/blog/*" },
-      { k: "host", titel: "Whole domain or subdomain", ic: "globe", bsp: "blog.example.com/*", bspAlle: "*.example.com/*" }
+      { k: "host", titel: "Whole domain or subdomain", ic: "globe", bsp: "blog.example.com/*", bspAlle: "*.example.com/*" },
+      { k: "marke", titel: "Brand metrics only", ic: "chartSpline", satz: "Visibility, rank and sentiment" }
     ];
     var ART_NAME = { url: "URL", path: "Path", host: "Domain", host_all: "Domain and subdomains" };
     var ART_PLATZHALTER = { url: "Search your URLs or paste links", path: "Paste a path, e.g. example.com/blog",
@@ -3302,6 +3309,11 @@
         '</div>';
       }).join("") + '</div>';
     }
+    /* Das Feld: Eingabe und "Add" gleich hoch (40, --up-h-gross; Nutzer 15.10. spaet: "der
+       Add-Button ist kleiner als das Inputfeld, sieht inkonsistent aus"). Darunter die
+       Schreibweise, die Fehlerzeile und die Treffer der URL-Suche -- direkt am Feld, zu dem sie
+       gehoeren. "Load from sitemap" steht NICHT mehr hier, sondern rechts im Kopf des Feldes
+       (zielKopf): zwischen Eingabe und Ergebnissen unterbrach es den Fluss. */
     function eingabeHtml(p) {
       var e = p.e, art = e.zielArt && e.zielArt !== "marke" ? e.zielArt : "";
       return '<div class="uev-zieleingabe">' +
@@ -3309,27 +3321,47 @@
             '<div class="uev-urlsuche"><span class="uev-urlsuche-ic">' + UC.icon(ART_ZEICHEN[art] || "link", 2) + '</span>' +
               '<textarea class="up-topicmodal-name uev-urlein uev-zielein" rows="1" placeholder="' + esc(platzhalter(art)) + '" autocomplete="off" spellcheck="false" inputmode="url"' +
                 ' aria-label="' + esc(platzhalter(art)) + '">' + esc(e.eingabe || "") + '</textarea></div>' +
-            '<button type="button" class="up-btn-sec uev-zielhinzu" disabled>' + esc(t("Add")) + '</button>' +
+            '<button type="button" class="up-btn-sec is-lg uev-zielhinzu" disabled>' + esc(t("Add")) + '</button>' +
           '</div>' +
           '<div class="uev-schreibweise" aria-live="polite"></div>' +
           feldFehlerHtml("ziele") +
           klapp(false, '<div class="uev-urltreffer" role="listbox"></div>', "uev-treffer-klapp") +
-          (sitemapDa() ? '<div class="uev-sm-knopfzeile"><button type="button" class="up-quietbtn uev-sm-auf">' + UC.icon("folders", 2) + '<span>' + esc(t("Load from sitemap")) + '</span></button></div>' : '') +
         '</div>';
     }
+    /* Der Kopf des Feldes: links das Etikett, rechts "Load from sitemap" als leiser Knopf -- ein
+       zweiter Weg zu derselben Eingabe, darum neben ihrem Etikett und nicht im Fluss darunter.
+       Die Huelle .uev-sm-knopfzeile bleibt: smZeichnen blendet sie bei offenem Waehler aus, und
+       fehlt die Function, nimmt smLaden sie ganz heraus. */
+    function zielKopf(p) {
+      var lbl = zieleDa() ? "URLs, paths or domains" : p.art === "ziel" ? "URL" : "URLs";
+      return '<div class="uev-zielkopf"><span class="up-topicmodal-label">' + esc(t(lbl)) + '</span>' +
+        (sitemapDa() ? '<span class="uev-sm-knopfzeile"><button type="button" class="up-quietbtn uev-sm-auf">' + UC.icon("folders", 2) + '<span>' + esc(t("Load from sitemap")) + '</span></button></span>' : '') +
+      '</div>';
+    }
+    /* Vier Teile untereinander, ohne Kasten im Kasten (Nutzer 15.10. spaet: "mehr Raum zu atmen,
+       trenne wenn noetig mit Separatoren"): Eingabe, Art, Ergebnis (Liste und Vorschau), der
+       offene Sitemap-Waehler. Zwischen zwei sichtbaren Teilen eine Linie; ein leerer Teil steht
+       gar nicht da (CSS, :has) -- so traegt keine Aenderung irgendwo eine Linie ueber nichts. Der
+       Sitemap-Waehler steht ZULETZT: offen reisst er Eingabe und Vorschau nicht auseinander. */
     function zielFelder(p) {
-      var e = p.e, offen = e.zielArt !== "marke";
-      return feld(p.art === "ziel" ? (zieleDa() ? "What should we track?" : "URL") : "What should we track?",
-        '<div class="uev-ziel">' +
-          (p.art === "ziel" ? '<p class="up-modal-hinweis">' + esc(t(zieleDa() ? "Rules count retroactively, also for pages that were cited before you add them."
-            : "Observations are counted from the event date, also for URLs you add now.")) + '</p>' : '') +
-          '<div class="uev-arten-ort">' + artenHtml(p) + '</div>' +
-          '<p class="up-modal-hinweis uev-arthinweis"' + (e.zielArt ? ' hidden' : '') + '>' + esc(t("Choose what to track.")) + '</p>' +
-          klapp(offen, '<div class="uev-eingabe-ort">' + eingabeHtml(p) + '</div>', "uev-eingabe-klapp") +
+      var e = p.e;
+      return '<div class="uev-ziel">' +
+          '<div class="up-topicmodal-field uev-ziel-teil uev-eingabe-teil">' + zielKopf(p) +
+            (p.art === "ziel" ? '<p class="up-modal-hinweis">' + esc(t(zieleDa() ? "Rules count retroactively, also for pages that were cited before you add them."
+              : "Observations are counted from the event date, also for URLs you add now.")) + '</p>' : '') +
+            '<div class="uev-eingabe-ort">' + eingabeHtml(p) + '</div>' +
+          '</div>' +
+          '<div class="up-topicmodal-field uev-ziel-teil uev-arten-teil">' +
+            '<span class="up-topicmodal-label">' + esc(t("What should we track?")) + '</span>' +
+            '<div class="uev-arten-ort">' + artenHtml(p) + '</div>' +
+            '<p class="up-modal-hinweis uev-arthinweis"' + (e.zielArt ? ' hidden' : '') + '>' + esc(t("Choose what to track.")) + '</p>' +
+          '</div>' +
+          '<div class="uev-ziel-teil uev-ergebnis">' +
+            '<div class="uev-zielliste"></div>' +
+            '<div class="uev-vz" aria-live="polite"></div>' +
+          '</div>' +
           '<div class="uev-sm-ort"></div>' +
-          '<div class="uev-zielliste"></div>' +
-          '<div class="uev-vz" aria-live="polite"></div>' +
-        '</div>', false, "");
+        '</div>';
     }
     /* Schritt 4: was getrackt wird (kurz), das Titelbild, die Vorschau der Karte, das Schloss. */
     function pruefFelder(e) {
@@ -3417,7 +3449,10 @@
       var e = p.e, offen = e.zielArt !== "marke";
       var hw = im(".uev-arthinweis");
       if (hw) hw.hidden = !!e.zielArt;
-      klappen(im(".uev-eingabe-klapp"), offen);
+      /* Das Feld bleibt auch bei "Brand metrics only" stehen (15.10. spaet): es steht jetzt OBEN,
+         zugeklappt zoege es die Wahl darunter samt der eben geklickten Zeile unter dem Zeiger weg.
+         Was dort getippt wird, schlaegt wie immer seine Art vor; Liste und Vorschau zeigen bei
+         "Brand metrics only" weiter nichts (zielListeZeigen, vzListe). */
       var inp = im(".uev-zielein");
       if (inp) {
         var art = offen && e.zielArt ? e.zielArt : "";
@@ -3789,8 +3824,23 @@
       p.sm.offen = true;
       if (url) p.sm.url = url; else if (!p.sm.url) p.sm.url = smVorschlag(p);
       smZeichnen(p);
+      smInSicht();
       if (laden && p.sm.url) smLaden(p);
-      else setTimeout(function () { var f = im(".uev-sm-ein"); try { if (f) f.focus(); } catch (e) {} }, 30);
+      /* preventScroll: den Weg dorthin macht smInSicht -- ein zweiter, sofortiger Sprung des
+         Fokus braeche die weiche Bewegung mittendrin ab. */
+      else setTimeout(function () { var f = im(".uev-sm-ein"); try { if (f) f.focus({ preventScroll: true }); } catch (e) {} }, 30);
+    }
+    /* Der Waehler steht seit dem 15.10. spaet am Ende des Schritts, sein Knopf oben im Kopf des
+       Feldes: ohne diesen Zug oeffnete er womoeglich unterhalb des Sichtbaren. Gezogen wird beim
+       Oeffnen, beim Laden (Ladebild) und wenn die Antwort da ist -- erst dann ist er gross
+       (gemessen 800 x 1000: mit Baum 278 hoch, das Popup darunter 128 zu lang, und nur der
+       Zug beim Oeffnen liess ihn halb verdeckt). "nearest": steht er schon ganz da, bewegt sich nichts; ist er hoeher als das
+       Sichtbare, kommt seine Oberkante nach oben. Nicht bei jedem Neuzeichnen -- wer im Baum
+       waehlt, soll nicht weggezogen werden. */
+    function smInSicht() {
+      var el = im(".uev-sm");
+      var ruhig = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      try { if (el) el.scrollIntoView({ block: "nearest", behavior: ruhig ? "auto" : "smooth" }); } catch (e) {}
     }
     function smZu(p) {
       if (!p || !p.sm) return;
@@ -3813,6 +3863,7 @@
       if (!z || !hostOk(z.host)) { p.sm.fehler = smFehlerText("ungueltig"); smZeichnen(p); return; }
       p.sm.laeuft = true; p.sm.fehler = ""; p.sm.antwort = null;
       smZeichnen(p);
+      smInSicht();
       var seq = p.sm.seq = (p.sm.seq || 0) + 1;
       teamHolen().then(function (tm) {
         if (!tm) return { ok: false, status: 0, fehler: { message: "network" } };
@@ -3838,6 +3889,7 @@
           p.sm.fehler = code === "rate_limited" ? smWarteText(fe.retry_after) : smFehlerText(code);
         }
         smZeichnen(p);
+        smInSicht();
       });
     }
     function smBaum(p, urls) {
@@ -4273,10 +4325,10 @@
       if (n === 2) { umfangNeu(); vorschauAnfordern(); }
       if (n === 3) {
         zieleZeigen(p, true);
-        /* Der Fokus dorthin, wo die naechste Handlung ist: ins Feld, wenn eine Art mit Eingabe
-           gewaehlt ist, sonst auf die Wahl selbst. */
+        /* Der Fokus dorthin, wo die naechste Handlung ist: ins Feld -- es ist seit dem 15.10. spaet
+           der erste und wichtigste Teil des Schritts --, nur bei "Brand metrics only" auf die Wahl. */
         setTimeout(function () {
-          var f = p.e.zielArt && p.e.zielArt !== "marke" ? im(".uev-zielein") : im('.uev-art[tabindex="0"]');
+          var f = p.e.zielArt !== "marke" ? im(".uev-zielein") : im('.uev-art[tabindex="0"]');
           try { if (f) f.focus(); } catch (e) {}
         }, 30);
       }
@@ -4697,10 +4749,11 @@
       var ort = p.api.body.querySelector(".uev-ziel");
       if (!ort) return;
       if (p.e.zielArt && !artenFuer(p).some(function (a) { return a.k === p.e.zielArt; })) p.e.zielArt = p.art === "ziel" ? "url" : null;
-      var feldEl = ort.closest(".up-topicmodal-field");
+      /* Seit dem 15.10. spaet ist .uev-ziel selbst die aeusserste Huelle (vier Teile, kein Feld
+         drumherum) -- ersetzt wird also sie. */
       var tmp = document.createElement("div");
       tmp.innerHTML = zielFelder(p);
-      if (feldEl && tmp.firstChild) feldEl.parentNode.replaceChild(tmp.firstChild, feldEl);
+      if (tmp.firstChild) ort.parentNode.replaceChild(tmp.firstChild, ort);
       if (p.sm && p.sm.offen) smZeichnen(p);
       zieleZeigen(p, false);
     }
@@ -4722,7 +4775,9 @@
       popupAufbauen({ art: "bearbeiten", api: api, e: e, alt: alt, eventId: String(ev.id), knopf: "speichern", pops: {} });
     }
     /* ADD (15.10., vorher "Add URL"): dieselben Ziel-Arten wie Schritt 3, ohne "Brand metrics
-       only", mit Sitemap-Waehler. Ohne Ziele in der Datenbank genau der alte Dialog: eine URL. */
+       only", mit Sitemap-Waehler. Ohne Ziele in der Datenbank genau der alte Dialog: eine URL.
+       Titel "Add to tracking" seit dem 15.10. spaet: "What should we track?" ist jetzt das
+       Etikett der Wahl IM Dialog und stuende sonst zweimal untereinander. */
     function popupZiel() {
       if (popup) return;
       var d = dieDetail();
@@ -4731,7 +4786,7 @@
       var e = { zielArt: "url", unterdomains: false, ziele: [], eingabe: "", artVonHand: false };
       var p = { art: "ziel", e: e, eventId: String(d.id), knopf: "hinzu", pops: {} };
       var api = UC.makeModal({
-        titel: regeln ? "What should we track?" : "Add URL", breit: true, isDark: isDark,
+        titel: regeln ? "Add to tracking" : "Add URL", breit: true, isDark: isDark,
         inhaltHtml: '<div class="uev-schritt">' + zielFelder(p) + '</div>',
         knoepfe: [{ id: "abbrechen", text: "Cancel", art: "sec" },
                   { id: "hinzu", text: regeln ? "Add" : "Add URL", art: "pri", aktion: function () { zielSenden(); return false; } }],
@@ -5063,7 +5118,9 @@
         titel: "Which prompts are affected?",
         text: "These prompts are fixed when you create the event, and your other prompts form a comparison group that shows what would have happened anyway.",
         vis: anlLegende }, anlImPopup("w2")),
-      anlSchritt({ id: "w3", ziel: function () { return im(".uev-arten-ort") || im(".uev-ziel"); },
+      /* Ziel ist das Feld oben (15.10. spaet umgestellt): der Satz spricht von der Regel, die man
+         dort eintippt, und von der Sitemap, die rechts in seinem Kopf steht. */
+      anlSchritt({ id: "w3", ziel: function () { return im(".uev-eingabe-teil") || im(".uev-ziel"); },
         titel: "What should we track?",
         text: function () { return zieleDa()
           ? "A rule like example.com/blog/* also counts new articles once an AI cites them, and you can load your sitemap or count a domain as yours right here."

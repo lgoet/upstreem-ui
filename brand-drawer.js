@@ -625,8 +625,10 @@
       }
       teil.setAttribute("data-export-instance", k);
       var typ = teil.classList.contains("urt-root") ? "prompt_runs" : (B.top.modus === "url" ? "urls" : "domains");
-      /* Bubble reicht brand_id an alle drei Exporte als p_brand weiter (Vertrag 12.10.). */
-      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: typ, brand_id: B.id }); } catch (err) {}
+      /* Bubble reicht brand_id an alle drei Exporte als p_brand weiter (Vertrag 12.10.).
+         filter_label (16.10.): der Name der Marke fuer den Chip im Kopf des Export-Dialogs
+         ("filtered to VW"); ohne ihn steht dort "This brand". */
+      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: typ, brand_id: B.id, filter_label: B.zeile ? str(B.zeile.name) : "" }); } catch (err) {}
     }, true);
   }
 

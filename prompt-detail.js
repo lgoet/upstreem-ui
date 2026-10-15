@@ -733,7 +733,8 @@
       teil.setAttribute("data-export-instance", k);
       var typ = teil.classList.contains("vot-root") ? "brands" : teil.classList.contains("urt-root") ? "prompt_runs"
         : (P.top.modus === "url" ? "urls" : "domains");
-      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: typ, prompt_id: P.id }); } catch (err) {}
+      /* filter_label (16.10.): der Prompt-Text fuer den Chip im Kopf des Export-Dialogs. */
+      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: typ, prompt_id: P.id, filter_label: P.zeile ? str(P.zeile.prompt_text) : "" }); } catch (err) {}
     }, true);
   }
 

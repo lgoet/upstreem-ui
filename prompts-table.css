@@ -1411,8 +1411,9 @@
 
 /* DIE FLACHE TABELLE steht seit dem 15.10. abends in core (core.css "DIE FLACHE TABELLE",
    data-flach="yes", das prompts-table.js mit der einen Leiste setzt): ohne Kasten, bis an die
-   Kanten, Kopf und Fuss 48 (--up-flach-h), Kopfschrift 13/500, Linie unter dem Kopf, feste Hoehe
-   (UC.makeFestHoehe). Die Begruendung jedes Werts (36 -> 40 -> 48, die Linie als Schatten, links
+   Kanten, Kopf und Fuss 48 (--up-flach-h), Kopfschrift 13/500, Linie unter dem Kopf; geklebt
+   wird seit dem 16.10. ueber den klebenden Fuss (data-kleb-fuss, vorher feste Hoehe,
+   UC.makeFestHoehe). Die Begruendung jedes Werts (36 -> 40 -> 48, die Linie als Schatten, links
    kein Polster) steht dort beim Baustein. Hier bleibt nur, was es allein in dieser Tabelle gibt:
    die Zeichen vor zwei Koepfen, Gruppenkopf, Gruppenfuss und die Gruppenliste -- mit denselben
    Massen ueber die Variablen aus core. */
@@ -1447,10 +1448,10 @@
    Der erste Anlauf der vollen Breite (f59c2d7) vergass ihn und die Zeilen in .upt-grp-inner -- in
    der Gruppenansicht standen sie dann 16px neben ihren Spaltenkoepfen. Die Zeilen erfasst core
    (.up-box .up-row, jede Tiefe). Der klebende Kopf einer offenen Gruppe steht genau unter dem
-   Tabellenkopf: an #main mit dessen Abstand, mit fester Hoehe am Kasten. */
+   Tabellenkopf, an #main mit dessen Abstand. (Die Fassung fuer die feste Kastenhoehe, top am
+   Kasten, ist mit ihr am 16.10. entfallen -- die Tabelle klebt seitdem wie Citations.) */
 .upt-root[data-flach="yes"] .upt-grp-head { padding-left: 0; padding-right: var(--up-flach-aus); }
 .up-root.upt-root[data-flach="yes"].up-sticky .upt-grp-head.is-open { top: calc(var(--up-sticky-top) + var(--up-thead-off) + var(--up-flach-h)); }
-.up-root.upt-root[data-flach="yes"].up-sticky.is-festhoehe .upt-grp-head.is-open { top: var(--up-flach-h); }
 /* Fuss einer Gruppe: so hoch wie der Fuss der Tabelle (48, 28er Knoepfe, je 10 darueber und
    darunter), links auf der Kante der Kaestchen (12, das Zellpolster), rechts mit dem Auslauf. */
 .upt-root[data-flach="yes"] .upt-grp-foot { min-height: var(--up-flach-h);
@@ -1479,12 +1480,10 @@
 .up-root.upt-root[data-flach="yes"].up-sticky .upt-grp-sidehead::before,
 .up-root.upt-root[data-flach="yes"].up-sticky .upt-grp-sidehead::after { display: none; }
 .up-root.upt-root[data-flach="yes"].up-sticky .upt-grp-sidelist { border: 0; border-radius: 0; }
-/* Feste Hoehe (UC.makeFestHoehe): die Gruppenliste wird gleich hoch gedeckelt wie der Kasten und
-   scrollt in sich (ihre Liste hat schon overflow-y: auto). Ihr Kopf klebt dann nicht mehr: er
-   steht ohnehin ueber der scrollenden Liste, und sticky mit dem Abstand von #main schob ihn sonst
-   innerhalb der Spalte nach unten. */
-.up-root.upt-root[data-flach="yes"].is-grouped.up-sticky.is-festhoehe .upt-grp-sidepanel { max-height: var(--up-flach-box-h); overflow: hidden; }
-.up-root.upt-root[data-flach="yes"].up-sticky.is-festhoehe .upt-grp-sidehead { position: relative; top: auto; }
+/* Ohne feste Kastenhoehe (16.10.) steht die Gruppenliste im Fluss neben dem Kasten: die Zeile ist
+   so hoch wie das hoehere von beiden, die Liste scrollt nicht in sich, ihr Kopf klebt neben dem
+   Spaltenkopf (.up-sticky .upt-grp-sidehead oben) -- EIN Scrollbereich, wie die Tabelle daneben.
+   Die Deckelung auf --up-flach-box-h und der nicht klebende Kopf gehoerten zur festen Hoehe. */
 
 /* Der Branded-Chip in der Prompt-Zelle (15.10., prompts-table.js promptMarkeHtml): rechts in der
    Zelle, fest so breit wie er ist -- der Text nimmt den Rest und bricht davor um. Steht kein Chip
