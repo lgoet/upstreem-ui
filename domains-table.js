@@ -52,8 +52,9 @@
       { key: "used",     label: "Used",      w: "minmax(11%, 1fr)",     min: 100, dropAt: "narrow",  prio: 20 },
       { key: "type",     label: "Type",      w: "minmax(11%, 1fr)",     min: 118, dropAt: "vnarrow", prio: 30 },
       /* Flach (core, Kopfschrift 13/500, 15.10.) braucht "Last Seen" mit Sortierpfeilen 110 samt
-         Zellrand; die alte Untergrenze 104 kuerzte. Nur fuer die flache Fassung. */
-      { key: "lastseen", label: "Last Seen", w: "minmax(104px, 0.7fr)", min: 104, wFlach: "minmax(114px, 0.7fr)", minFlach: 114, dropAt: "vnarrow", prio: 10 }
+         Zellrand; die alte Untergrenze 104 kuerzte. Seit 15.10. spaet traegt jeder Kopf 14/500,
+         auch im Drawer: gemessen 115.7 mit Sortierpfeilen 15, also EINE Untergrenze 118. */
+      { key: "lastseen", label: "Last Seen", w: "minmax(118px, 0.7fr)", min: 118, dropAt: "vnarrow", prio: 10 }
   ];
 
   /* ORDER maps each (field, direction) pair onto the single value the RPC expects in p_order.
@@ -998,6 +999,11 @@
     /* Columns, pagination and header sorting all come from core now — urls-table and
        domains-table used to carry byte-identical copies of that machinery. Only the data
        differs, and that data is right here in the config. */
+    /* DAS ZEICHEN VOR "Type" (15.10. angefordert): die Zitationsart traegt Hugeicons
+       DropdownFieldType -- dieselbe Machart wie vor "Brand Mentions" in der Prompt-Tabelle
+       (UC.kopfZeichen, .up-th-ic aus core). Vor makeColumns, damit der Kopf seine endgueltige
+       Breite schon hat, wenn die Spalten zum ersten Mal verteilt werden. */
+    if (UC.kopfZeichen) UC.kopfZeichen(root.querySelector(".up-thead .up-th-type"), "dropdownFieldType");
     var colsKit = UC.makeColumns({
       root: root, state: state, columns: COLUMNS,
       storePrefix: "udt", instanceId: instanceId,

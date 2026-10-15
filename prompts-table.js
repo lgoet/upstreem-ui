@@ -406,10 +406,14 @@
        der Deckel waechst mit, damit die drei Kennzahlspalten nebeneinander gleich wirken.
        Nachgemessen mit der groesseren Kopfschrift (13/500, 15.10. abends): Visibility 142,
        Rank 100, Sentiment 131, Market 91 -- Sentiment hatte nur noch 1px Luft, Market waere
-       abgeschnitten worden. Wieder je etwa 6 bis 7 darueber. */
-    { key: "visibility", label: "Visibility",      w: "minmax(148px, 152px)", min: 148, prio: 70 },
-    { key: "rank",       label: "Rank",            w: "minmax(108px, 136px)", min: 108, dropAt: "vnarrow", prio: 40 },
-    { key: "sentiment",  label: "Sentiment",       w: "minmax(138px, 144px)", min: 138, dropAt: "narrow",  prio: 30 },
+       abgeschnitten worden. Wieder je etwa 6 bis 7 darueber.
+       Und noch einmal mit der Kopfschrift 14/500 und den Zeichen 15/17 (15.10. spaet, Klon des
+       Kopfs mit max-content): Visibility 149.6, Rank 105.1, Sentiment 138.8, Market 96.5,
+       Created 102.2 -- Visibility und Sentiment lagen ueber ihrer Untergrenze, Rank und Market
+       hatten unter 3 Luft. Wieder je 6 bis 8 darueber, die Deckel wachsen mit. */
+    { key: "visibility", label: "Visibility",      w: "minmax(156px, 160px)", min: 156, prio: 70 },
+    { key: "rank",       label: "Rank",            w: "minmax(112px, 136px)", min: 112, dropAt: "vnarrow", prio: 40 },
+    { key: "sentiment",  label: "Sentiment",       w: "minmax(145px, 152px)", min: 145, dropAt: "narrow",  prio: 30 },
     /* 178px, same as urls-table's identical column: 4 × 32px avatars (−6px overlap each) plus
        the "+N" label plus the cell's own 28px padding, with headroom for the hover spread.
        A %-based floor let it collapse below that and clipped the stack. */
@@ -435,7 +439,7 @@
        wenn die Zeilen Intent-Felder tragen (isHidden). */
     { key: "intent",     label: "Intent",          w: "minmax(176px, 1fr)", min: 176, dropAt: "narrow",  prio: 35 },
     { key: "branded",    label: "Branded",         w: "minmax(172px, 1fr)", min: 172, dropAt: "narrow",  prio: 30 },
-    { key: "market",     label: "Market",          w: "minmax(98px, 128px)", min: 98,  dropAt: "narrow",  prio: 20 },
+    { key: "market",     label: "Market",          w: "minmax(104px, 128px)", min: 104, dropAt: "narrow",  prio: 20 },
     { key: "created",    label: "Created",         w: "minmax(10%, 0.7fr)",min: 110, dropAt: "narrow",  prio: 10 }
   ];
   var ROW_HEIGHTS = [
@@ -2730,17 +2734,11 @@
     /* ZEICHEN VOR ZWEI SPALTENKOEPFEN (15.10., nur die eine Leiste): "Brand Mentions" bekommt das
        Zeichen von Brands aus der Seitenleiste (squareStack, dasselbe wie im Branded-Chip),
        "Topics" das des Reiters Topics im Seitenkopf (tags, NAV_ZEICHEN in core). Wie das Logo
-       vor "Visibility" steht es vor dem Wort, in der Drittfarbe. Nur einmal: der Kopf ist festes
-       Markup und wird nicht neu gezeichnet. */
-    if (LEISTE){
+       vor "Visibility" steht es vor dem Wort, in der Drittfarbe. Seit 15.10. spaet aus core
+       (UC.kopfZeichen, .up-th-ic): Responses, Domains, URLs und Brands Overview tragen dasselbe. */
+    if (LEISTE && UC.kopfZeichen){
       [["brands", "squareStack"], ["topics", "tags"]].forEach(function(z){
-        var th = root.querySelector(".up-thead .up-th-" + z[0]);
-        if (!th || th.querySelector(".upt-th-ic")) return;
-        var ic = document.createElement("span");
-        ic.className = "upt-th-ic";
-        ic.setAttribute("aria-hidden", "true");
-        ic.innerHTML = UC.icon(z[1], 2);
-        th.insertBefore(ic, th.firstChild);
+        UC.kopfZeichen(root.querySelector(".up-thead .up-th-" + z[0]), z[1]);
       });
     }
 
@@ -4649,47 +4647,81 @@
 
     /* ══ DIE GESAMTZEILE (15.10., Baustein UC.makeSumZeile aus core) ══════════════════════════
        Bestellt nach der Empfehlung vom 15.10.: eine feste Zeile ueber der Pagination. Links NUR die
-       Anzahl (15.10. spaet: "in der ganz linken nur den Count"; "without data" und "branded"
-       standen dort bis dahin mit). In den Spalten von Haus aus KEINE Berechnung, sondern "+ Add"
-       ("per default nix an calculations"): Visibility, Rank, Sentiment bieten im Menue den
-       gewichteten Gesamtwert, den Median oder einen Zaehlwert, Topics "without topic"
-       (meta.counts.untagged_active, das die Tabelle schon als state.ohneTopic fuehrt); "None"
-       stellt zurueck. Brand Mentions, Intent, Market, Created haben noch keine Berechnung -- dort
-       steht "+ Add" als blosser Text (core).
+       Anzahl (15.10. spaet: "in der ganz linken nur den Count"). In den Spalten von Haus aus KEINE
+       Berechnung, sondern "+ Calculation" ("per default nix an calculations"); das Menue je Spalte
+       bietet, was der Nutzer am 15.10. spaet abgenommen hat ("bitte exakt so umsetzen"): Median
+       gestrichen, der gewichtete Gesamtwert heisst "Average Visibility" (ebenso Rank, Sentiment).
+       "None" stellt zurueck.
+       WOHER DIE WERTE KOMMEN: eine EIGENE Abfrage (cached_prompts_summary_v1, prompts-page.js
+       summeLaden), nicht meta der Liste -- die Zeilen warten nie auf eine Summe, und eine Summe hat
+       ihr eigenes Skelett in ihrer Zelle. Geholt wird nur, was gewaehlt ist (summeFelder, die Seite
+       fragt es hier ab). "Prompts without topic" kommt schon mit der Liste (state.ohneTopic, lokal).
        Nur mit der einen Leiste (data-leiste): Bubble und die Landingpage behalten ihre Tabelle,
        und der Schalter dafuer steht im Display-Menue, das es nur dort gibt.
-       Die Felder von meta.summary (Auftrag bubble/prompts_summary_db_auftrag.md) in feld, ihr
-       Format in art (CLAUDE.md 2b). kurz steht in der Zelle, label im Menue und im Tooltip. */
+       feld: Schluessel der Antwort (Auftrag bubble/prompts_summary_db_auftrag.md), art: Format
+       (CLAUDE.md 2b), kurz: Bezeichnung in der Zelle, label: im Menue und im Tooltip.
+       gruppe: der Wert, den der Gruppenkopf schon kennt (im Listenmodus einer Gruppe), name: macht
+       aus dem Schluessel einen Namen, anteil: Feld mit dem Anteil, der statt kurz dahinter steht. */
+    function intentLabel(k){
+      var a = UC.intentArt ? UC.intentArt(k) : null;
+      return a ? (UC.intentName ? UC.intentName(a) : a.label) : (k == null ? null : String(k));
+    }
     var SUM_MODI = {
       visibility: [
-        { key: "avg",    label: "Weighted average",  kurz: "avg",      feld: "visibility_pct",     art: "pct" },
-        { key: "median", label: "Median",            kurz: "median",   feld: "median_visibility",  art: "pct" },
-        { key: "zahl",   label: "Prompts at 0%",     kurz: "at 0%",    feld: "prompts_zero_vis",   art: "anzahl" }
+        { key: "avg",      label: "Average Visibility", kurz: "avg",       feld: "visibility_pct",    art: "pct", gruppe: "visibility_pct" },
+        { key: "erwaehnt", label: "Prompts mentioned",  kurz: "mentioned", feld: "prompts_mentioned", art: "anzahl" },
+        { key: "zahl",     label: "Prompts at 0%",      kurz: "at 0%",     feld: "prompts_zero_vis",  art: "anzahl" }
       ],
       rank: [
-        { key: "avg",    label: "Weighted average",  kurz: "avg",      feld: "avg_rank",           art: "rang" },
-        { key: "median", label: "Median",            kurz: "median",   feld: "median_rank",        art: "rang" },
-        { key: "zahl",   label: "Prompts at rank 1", kurz: "at #1",    feld: "rank1_count",        art: "anzahl" }
+        { key: "avg",      label: "Average Rank",       kurz: "avg",       feld: "avg_rank",          art: "rang", gruppe: "avg_rank" },
+        { key: "zahl",     label: "Prompts at rank 1",  kurz: "at #1",     feld: "rank1_count",       art: "anzahl" },
+        { key: "top3",     label: "Prompts in top 3",   kurz: "in top 3",  feld: "rank_top3_count",   art: "anzahl" }
       ],
       sentiment: [
-        { key: "avg",    label: "Weighted average",  kurz: "avg",      feld: "avg_sentiment",      art: "note" },
-        { key: "median", label: "Median",            kurz: "median",   feld: "median_sentiment",   art: "note" },
-        { key: "zahl",   label: "Prompts below 50",  kurz: "below 50", feld: "sentiment_below_50", art: "anzahl" }
+        { key: "avg",      label: "Average Sentiment",  kurz: "avg",       feld: "avg_sentiment",     art: "note", gruppe: "avg_sentiment" },
+        { key: "zahl",     label: "Prompts below 50",   kurz: "below 50",  feld: "sentiment_below_50", art: "anzahl" }
       ],
-      /* feld null: der Wert kommt nicht aus meta.summary, sondern aus state.ohneTopic (renderSumme). */
       topics: [
-        { key: "ohne",   label: "Prompts without topic", kurz: "without topic", feld: null,      art: "anzahl" }
+        { key: "ohne",     label: "Prompts without topic", kurz: "without topic", lokal: true,    art: "anzahl" },
+        { key: "genutzt",  label: "Topics used",        kurz: "topics",    feld: "topics_used",       art: "anzahl" }
+      ],
+      brands: [
+        { key: "jeprompt", label: "Avg. brands per prompt", kurz: "per prompt", feld: "avg_brands_per_prompt", art: "rang" },
+        { key: "wettb",    label: "Competitors seen",   kurz: "competitors", feld: "competitors_seen", art: "anzahl" }
+      ],
+      intent: [
+        { key: "haeufig",  label: "Most common intent", kurz: "most common", feld: "top_intent",      art: "text", name: intentLabel, anteil: "top_intent_share" }
+      ],
+      market: [
+        { key: "genutzt",  label: "Markets used",       kurz: "markets",   feld: "markets_used",      art: "anzahl" },
+        { key: "haeufig",  label: "Most common market", kurz: "most common", feld: "top_market",     art: "text",
+          name: function(k){ return k == null ? null : String(k).toUpperCase(); }, anteil: "top_market_share" }
+      ],
+      created: [
+        { key: "neu",      label: "Newest",             kurz: "newest",    feld: "newest_created",    art: "datum" },
+        { key: "woche",    label: "Added last 7 days",  kurz: "last 7 days", feld: "added_last_7d",  art: "anzahl" }
       ]
     };
-    /* "aus" ist die Wahl "None": keine Berechnung, die Zelle zeigt "+ Add". */
+    UC.addMessages && UC.addMessages("de", {
+      "Prompts mentioned": "Prompts mit Erwähnung", "mentioned": "erwähnt",
+      "Prompts in top 3": "Prompts in den Top 3", "in top 3": "in Top 3",
+      "Topics used": "Genutzte Topics", "topics": "Topics",
+      "Avg. brands per prompt": "Ø Marken je Prompt", "per prompt": "je Prompt",
+      "Competitors seen": "Gesehene Wettbewerber", "competitors": "Wettbewerber",
+      "Most common intent": "Häufigster Intent", "Markets used": "Genutzte Märkte", "markets": "Märkte",
+      "Most common market": "Häufigster Markt", "Added last 7 days": "Neu in 7 Tagen", "last 7 days": "in 7 Tagen"
+    });
+    /* "aus" ist die Wahl "None": keine Berechnung, die Zelle zeigt "+ Calculation". */
     var SUM_AUS = "aus";
-    var SUM_STD = { an: true, visibility: SUM_AUS, rank: SUM_AUS, sentiment: SUM_AUS, topics: SUM_AUS };
+    var SUM_STD = { an: true };
+    Object.keys(SUM_MODI).forEach(function(k){ SUM_STD[k] = SUM_AUS; });
     /* Die Wahl je Spalte und der Schalter: ein Geraet, eine Vorliebe (prefKey, wie Spalten und
        Zeilenhoehe), dazu der window-Speicher je Instanz -- ein Themenwechsel baut die Tabelle neu,
        und sie soll danach dieselbe Zeile zeigen, ohne erst die Ablage zu lesen. Keine Datenbank. */
     /* summe2 seit dem 15.10. spaet: unter dem alten Schluessel steht "avg" auch bei jedem, der nur
        den Schalter bedient hat (gespeichert wird die ganze Wahl) -- das las sich als Wahl, und die
-       neue Voreinstellung "keine Berechnung" kaeme nie an. */
+       neue Voreinstellung "keine Berechnung" kaeme nie an. Eine gestrichene Wahl (Median) faellt in
+       sumLesen still auf "None". */
     function sumKey(){ return UC.prefKey ? UC.prefKey("upt_summe2__" + instanceId) : ("upt_summe2__" + instanceId); }
     function sumLesen(){
       var o = {}, k;
@@ -4723,13 +4755,37 @@
         sumWahl[spalte] = modus;
         sumSchreiben();
         renderSumme();
+        summeMelden();
       }
     }) : null;
+    /* Die Felder, die die gewaehlten Berechnungen vom Server brauchen -- die Seite fragt sie ab,
+       bevor sie die Summe holt (summeLaden). Inaktiv laeuft keine Kennzahl. */
+    function summeFelder(){
+      if (!sumKit || state.status === "inactive" || sumWahl.an === false) return [];
+      var f = [];
+      Object.keys(SUM_MODI).forEach(function(sp){
+        var m = SUM_MODI[sp].filter(function(x){ return x.key === sumWahl[sp]; })[0];
+        if (!m || m.lokal) return;
+        [m.feld, m.anteil].forEach(function(x){ if (x && f.indexOf(x) < 0) f.push(x); });
+      });
+      return f.sort();
+    }
+    /* Eine neue Wahl: nur die Summe holen lassen, die Liste bleibt, wie sie ist. */
+    var summeGemeldet = "";
+    function summeMelden(){
+      var f = summeFelder().join(",");
+      if (f === summeGemeldet) return;
+      summeGemeldet = f;
+      if (f) fire("data-summe-fn", "uptSumme", { fields: f });
+    }
     function sumAnSetzen(an){
       sumWahl.an = !!an;
       sumSchreiben();
       if (sumKit) sumKit.zeigen(sumWahl.an);
       dispSummeSync();
+      /* Wieder eingeblendet: was ausgeblendet nicht geholt wurde, holen lassen. */
+      summeGemeldet = "";
+      if (sumWahl.an) summeMelden();
       /* Mit wenigen Zeilen ist der Kasten kuerzer als sein Hoechstmass und die Pagination rueckt
          mit; der Platz darueber aendert sich nicht -- trotzdem einmal neu messen, wie nach jedem
          Ein- und Ausblenden unter der Tabelle. */
@@ -4755,6 +4811,7 @@
         g = (state.groups || []).filter(function(x){ return groupId(x) === state.expandedGroup; })[0] || null;
       }
       var S = state.summe || {};
+      var summeLaedt = !!state.summeLaedt;
       var n;
       if (g){
         laedt = !!state.groupsLoading || !state.groupsHasData;
@@ -4769,7 +4826,6 @@
         if (state.leseFehler){ n = null; S = {}; }
       }
       var erste = UC.sumPaarHtml(n, "count", "anzahl");
-      var gWert = g ? { visibility: g.visibility_pct, rank: g.avg_rank, sentiment: g.avg_sentiment } : null;
       var zellen = COLUMNS.map(function(c){
         var z = { key: c.key };
         /* Inaktive Prompts laufen nicht: nur die Anzahl (die Kennzahlspalten sind dort ohnehin
@@ -4781,12 +4837,21 @@
           z.menu = { wahl: m ? m.key : SUM_AUS,
             optionen: [{ key: SUM_AUS, label: "None" }].concat(modi.map(function(x){ return { key: x.key, label: x.label }; })) };
           if (m){
-            var v;
-            if (m.feld == null) v = (g || state.leseFehler) ? null : state.ohneTopic;
-            else v = g ? (m.key === "avg" ? gWert[c.key] : null) : S[m.feld];
-            z.html = UC.sumPaarHtml(v, m.kurz, m.art);
+            var v = null, kurz = m.kurz;
+            if (m.lokal) v = (g || state.leseFehler) ? null : state.ohneTopic;
+            /* Im Listenmodus einer Gruppe: was ihr Kopf kennt (die Mittelwerte), sonst "–". */
+            else if (g) v = m.gruppe ? g[m.gruppe] : null;
+            else if (state.leseFehler) v = null;
+            /* Eigenes Skelett, solange die Summe unterwegs ist -- die Zeilen warten nicht darauf. */
+            else if (summeLaedt && !Object.prototype.hasOwnProperty.call(S, m.feld)) z.laedt = true;
+            else {
+              v = S[m.feld];
+              if (m.name) v = m.name(v);
+              if (m.anteil){ var a = toNum(S[m.anteil]); if (a != null && v != null) kurz = UC.fmtPct(a, 0); }
+            }
+            z.html = UC.sumPaarHtml(v, kurz, m.art);
             z.tip = m.label;
-            z.sk = m.feld == null ? 90 : 56;
+            z.sk = m.lokal ? 90 : 56;
           }
         }
         return z;
@@ -4794,6 +4859,35 @@
       sumKit.zeichnen({ laedt: laedt, ersteSk: 84, erste: erste, sichtbar: sicht, zellen: zellen });
     }
     if (sumKit){ sumKit.zeigen(sumWahl.an); renderSumme(); }
+    /* Die Antwort der eigenen Summen-Abfrage (prompts-page.js summeLaden, setPromptsTableSumme):
+       { laedt: true } -- unterwegs, die alten Werte gelten fuer den neuen Filter nicht mehr;
+       { daten: {...} } -- da; { fehler: true } -- gescheitert, die Zellen zeigen "–". */
+    function summeSetzen(d){
+      d = d || {};
+      if (d.laedt){ state.summeLaedt = true; state.summe = {}; }
+      else if (d.daten && typeof d.daten === "object"){ state.summeLaedt = false; state.summe = d.daten; }
+      else { state.summeLaedt = false; state.summe = {}; }
+      renderSumme();
+    }
+
+    /* DAS PLUS IM KOPF DER PROMPT-SPALTE (15.10. spaet, "genau wie bei Brands Overview"): oeffnet
+       denselben Dialog wie "Add Prompts" oben -- die Seite haelt ihn (uptAddPrompts). Rechts in
+       der Zelle wie bei Brands (.ubo-addbrand): das Ende der Spalte ist der Platz ihrer
+       Handgriffe. Nur in der einen Leiste: Bubble hat dafuer keinen Empfaenger. */
+    if (LEISTE){
+      var thP = root.querySelector(".up-thead .up-th-prompt");
+      if (thP && !thP.querySelector("[data-addprompts]")){
+        var plus = document.createElement("button");
+        plus.type = "button";
+        plus.className = "up-iconbtn is-24 upt-addprompt";
+        plus.setAttribute("data-addprompts", "");
+        plus.setAttribute("data-tip", "Add Prompts");
+        plus.setAttribute("aria-label", UC.t ? UC.t("Add Prompts") : "Add Prompts");
+        plus.innerHTML = UC.icon("plus", 2);
+        var grip = thP.querySelector(".up-grip");
+        thP.insertBefore(plus, grip || null);
+      }
+    }
 
     /* grpActionMenu's own outside-click-close -- it isn't nested inside any single makePopover
        wrap (unlike grpRowMenu, which lives inside the Grouping popover and closes for free when
@@ -5301,6 +5395,9 @@
         toggleGrpSideSearch(false);
         return;
       }
+
+      // --- das Plus im Kopf der Prompt-Spalte: nie ein Sortierklick ---
+      if (e.target.closest("[data-addprompts]")){ fire("data-addprompts-fn", "uptAddPrompts", {}); return; }
 
       // --- header sorters ---
       var th = e.target.closest(".up-th.is-sortable");
@@ -5993,6 +6090,10 @@
 
     return {
       root: root,
+      /* Die Berechnungen der Gesamtzeile (15.10. spaet): welche Felder die Seite holen soll, und wo
+         ihre Antwort ankommt (setPromptsTableSumme). */
+      summeFelder: function(){ return summeFelder(); },
+      summeSetzen: function(d){ summeSetzen(d); },
       /* Der Gruppierungsstand, wie ihn die Tabelle gerade zeigt (11.10.). Fuer eine Seite, die
          lokal einbettet: sie muss VOR ihrer ersten Anfrage wissen, ob Gruppen gebraucht werden.
          Vorher startete die Seite mit "aus", die Tabelle stand aber auf ihrer Voreinstellung "an"
@@ -6213,12 +6314,8 @@
            gern anders heisst als der Schluessel im Kopf des Entwicklers. */
         var _ot = params.without_topic != null ? params.without_topic : params.withoutTopic;
         if (_ot != null) state.ohneTopic = toNum(_ot);
-        /* meta.summary fuer die Gesamtzeile (15.10.). Kommt mit jeder Lieferung der Liste; fehlt es
-           in einer Lieferung MIT Zeilen, gilt der alte Stand fuer diese Filter nicht mehr -- dann
-           null und die Zeile zeigt "–", nie die Zahlen eines anderen Filters. */
-        if (params.summary !== undefined){
-          state.summe = (params.summary && typeof params.summary === "object" && !Array.isArray(params.summary)) ? params.summary : null;
-        } else if (params.rows != null) state.summe = null;
+        /* Die Summe der Gesamtzeile kommt seit dem 15.10. spaet NICHT mehr mit der Liste, sondern
+           aus ihrer eigenen Abfrage (summeSetzen). */
         if (params.brands != null){
           var _b = Array.isArray(params.brands) ? params.brands : [];
           if (_b.length) state.brands = _b;   // an empty list is a failed/not-yet-loaded fetch, not "no brands"
@@ -6569,6 +6666,13 @@
      {id, name, emoji, hex_light, hex_dark} — the same shape the rows' own `tags` use, so you can
      feed it straight from your topics table. Load it once on page load, like the brand lists in
      urls-table/domains-table. */
+  /* Die Summe der Gesamtzeile aus ihrer eigenen Abfrage (prompts-page.js summeLaden). */
+  function doSumme(id, d){
+    var ctrl = id ? resolve(id) : initRoot(document.querySelector(".upt-root"));
+    if (!ctrl || !ctrl.summeSetzen) return false;
+    ctrl.summeSetzen(d);
+    return true;
+  }
   function doTopics(id, topics){
     var list = topics;
     /* Accepts either a ready array OR the raw Bubble text. Raw text goes through the shared
@@ -6619,7 +6723,7 @@
     api: { renderPromptsTable: doRender, setPromptsTableLoading: doLoading, resetPromptsTable: doReset,
            setPromptsTableTopics: doTopics, setPromptsTableBrands: doBrands,
            setPromptsTableGroups: doGroups, setPromptsTableGroupPrompts: doGroupPrompts,
-           setPromptsTableViewActive: doViewActive },
+           setPromptsTableViewActive: doViewActive, setPromptsTableSumme: doSumme },
     forwardShape: { renderPromptsTable: "params", resetPromptsTable: "id" }
   });
   function rootsWithId(id){ return mount.rootsWithId(id); }

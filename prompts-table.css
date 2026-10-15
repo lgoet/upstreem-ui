@@ -699,7 +699,8 @@
 /* ---------- Visibility column header: tracked-brand logo ----------
    Every metric in Visibility/Rank/Sentiment is about this one brand's performance on the
    prompt, so the header names it once instead of repeating it per row. */
-.upt-th-brandlogo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; display: none; object-fit: cover; }
+/* 17 wie .up-th-brandlogo in core, seit der Kopfschrift 14 (15.10. spaet, 16 x 14/13 = 17.2). */
+.upt-th-brandlogo { width: 17px; height: 17px; border-radius: 4px; flex: 0 0 auto; display: none; object-fit: cover; }
 
 /* Column explainer visuals: panel shell + row/dot/trend classes all now live in core.css's
    .up-explain-* — this table used to carry its own byte-identical upt-explain-* copy. */
@@ -1428,10 +1429,17 @@
    15.10. spaet) -- das Durchschnittszeichen bleibt mit seinem Abstand vor dem Wert. */
 .upt-grp-zelle:has(> .up-num, > .up-rank-group, > .up-sent:not(.up-pille)) { justify-content: flex-end; }
 
-/* Das Zeichen vor "Brand Mentions" und "Topics" (prompts-table.js, ZEICHEN VOR ZWEI
-   SPALTENKOEPFEN): 14 wie das Info-Zeichen daneben, Drittfarbe, schrumpft nie. */
+/* Das Plus im Kopf der Prompt-Spalte (15.10. spaet, prompts-table.js): dieselbe Lage wie bei
+   Brands (.up-th-brand .ubo-addbrand) -- margin-left auto an das rechte Ende, -8 holt die Haelfte
+   des Zellpolsters zurueck, 8 vor der Spaltenlinie. Der Greifer liegt auf der Linie und bleibt frei. */
+.up-th-prompt .upt-addprompt { margin-left: auto; margin-right: -8px; }
+
+/* Das Zeichen vor "Brand Mentions" und "Topics" ist seit 15.10. spaet .up-th-ic aus core
+   (UC.kopfZeichen) -- vier weitere Tabellen tragen dasselbe. .upt-th-ic bleibt als Alias mit
+   denselben Massen stehen (Vertrag: keine Klasse verschwindet): ein Stand vom 15.10. vormittags
+   setzt das Zeichen noch unter diesem Namen. */
 .upt-th-ic { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
-.upt-th-ic svg { width: 14px; height: 14px; display: block; }
+.upt-th-ic svg { width: 15px; height: 15px; display: block; }
 
 /* Der Kopf einer Gruppe ist eine Zeile wie jede andere: rechts das Auslauf-Polster, links nichts.
    Der erste Anlauf der vollen Breite (f59c2d7) vergass ihn und die Zeilen in .upt-grp-inner -- in

@@ -266,7 +266,8 @@
 .ush-bewegung .up-tbody + .up-thead { border-top: 1px solid var(--vc-border); }
 .ush-gruppenkopf .up-th { flex: 1 1 auto; gap: 6px; font-weight: var(--up-fw-m); color: var(--vc-text); border-left: 0; }
 .ush-gruppen-ic { display: inline-flex; }
-.ush-gruppen-ic svg { width: 14px; height: 14px; display: block; }
+/* 15 wie jedes Zeichen im Tabellenkopf seit der Kopfschrift 14 (core .up-th-ic, 15.10. spaet). */
+.ush-gruppen-ic svg { width: 15px; height: 15px; display: block; }
 .ush-bewegung .up-thead:first-child .ush-gruppen-ic { color: var(--vt-up); }
 .ush-bewegung .up-tbody + .up-thead .ush-gruppen-ic { color: var(--vt-down); }
 .ush-bew-rechts { flex-direction: column; align-items: flex-end; justify-content: center; gap: 2px; }

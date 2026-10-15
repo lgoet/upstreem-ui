@@ -82,7 +82,8 @@
     /* All Feather, taken from the set. */
     x:       '<svg viewBox="0 0 24 24"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg>',
     plus:    '<svg viewBox="0 0 24 24"><path d="M11.9922 4.00012V20.0001M19.9922 12.0001H3.99222"/></svg>',
-    edit:    '<svg viewBox="0 0 24 24"><path d="M7.99219 16L8.71615 13.1041C8.89023 12.4078 9.25026 11.772 9.75776 11.2644L16.4171 4.60509L17.4071 3.6151C18.2272 2.79497 19.557 2.79497 20.3771 3.6151C21.1972 4.43524 21.1972 5.76493 20.3771 6.58507L19.3871 7.57506L12.7277 14.2344C12.2202 14.7419 11.5843 15.102 10.888 15.276L7.99219 16Z"/><path d="M18.9921 13.5C18.9921 16.7875 18.9921 18.4312 18.0842 19.5376C17.918 19.7401 17.7322 19.9258 17.5297 20.092C16.4234 21 14.7796 21 11.4921 21H10.9922C7.22095 21 5.33535 21 4.16378 19.8284C2.99222 18.6569 2.99219 16.7712 2.99219 13V12.5C2.99219 9.21252 2.99219 7.56879 3.90013 6.46244C4.06636 6.2599 4.25208 6.07417 4.45463 5.90794C5.56098 5 7.20471 5 10.4922 5"/></svg>',
+    /* Kein "edit" mehr (15.10.): der Stift der Listenzeile kommt als squarePen aus UC.icon, und
+       er war der einzige Abnehmer dieser Kopie. */
     upload:  '<svg viewBox="0 0 24 24"><path d="M2.99994 17C2.99994 17.93 2.99994 18.395 3.10216 18.7765C3.37956 19.8117 4.18821 20.6204 5.22348 20.8978C5.60498 21 6.06997 21 6.99994 21L16.9999 21C17.9299 21 18.3949 21 18.7764 20.8978C19.8117 20.6204 20.6203 19.8117 20.8977 18.7765C20.9999 18.395 20.9999 17.93 20.9999 17"/><path d="M16.5 7.49993C16.5 7.49993 13.1858 2.99997 12 2.99996C10.8141 2.99995 7.50002 7.49996 7.50002 7.49996M12 3.99996V16"/></svg>',
     download:'<svg viewBox="0 0 24 24"><path d="M16.9504 12.1817C17.1981 12.814 16.5076 13.5726 15.1267 15.0899C13.6702 16.6902 12.9201 17.4904 12 17.5C11.0799 17.4904 10.3298 16.6902 8.87331 15.0899C7.49239 13.5726 6.80193 12.814 7.04964 12.1817C7.05868 12.1586 7.06851 12.1359 7.0791 12.1135C7.34928 11.542 8.24477 11.5029 10 11.5002V4.99998C10 4.53501 10 4.30253 10.0511 4.11179C10.1898 3.59414 10.5941 3.1898 11.1118 3.05111C11.3025 3 11.535 3 12 3C12.4649 3 12.6974 3 12.8882 3.05111C13.4058 3.1898 13.8102 3.59414 13.9489 4.11179C14 4.30253 14 4.53501 14 4.99998V11.5002C15.7552 11.5029 16.6507 11.542 16.9209 12.1135C16.9315 12.1359 16.9413 12.1586 16.9504 12.1817Z"/><path d="M5.00006 21H19.0001"/></svg>',
     pin:     '<svg viewBox="0 0 24 24"><path d="M7 9.00183C4.82497 9.01495 3.64706 9.11944 2.87868 9.95185C2 10.9038 2 12.4358 2 15.4999C2 18.5641 2 20.0961 2.87868 21.048C3.75736 21.9999 5.17157 21.9999 8 21.9999H16C18.8284 21.9999 20.2426 21.9999 21.1213 21.048C22 20.0961 22 18.5641 22 15.4999C22 12.4358 22 10.9038 21.1213 9.95185C20.3529 9.11944 19.175 9.01495 17 9.00183"/><path d="M6 12L10.5 14.625M18 19L13.8 16.55M13.8 16.55L18 13.75M13.8 16.55L10.5 14.625M10.5 14.625L6 17.6"/><path d="M12 7C13.3807 7 14.5 5.88071 14.5 4.5C14.5 3.11929 13.3807 2 12 2C10.6193 2 9.5 3.11929 9.5 4.5C9.5 5.88071 10.6193 7 12 7ZM12 7V11"/></svg>',
@@ -453,24 +454,57 @@
            '</div>';
   }
 
+  /* Eine Zeile der Liste (15.10. neu gebaut). Von links: der Text, DIREKT dahinter der Stift --
+     am Text und nicht rechts aussen, weil er den Text meint und nicht die Zeile --, dann der Markt
+     und ganz rechts das X. Markt und X stehen immer da: welcher Markt gilt und wie man eine Zeile
+     wieder loswird, muss man sehen, ohne erst darueberzufahren. Der Stift erscheint bei Hover
+     oder Fokus der Zeile (add-prompts.css).
+     Der Markt ist UC.marketChip -- dieselbe Flaggenkachel mit Code wie in der Market-Spalte der
+     Prompt-Tabelle (core .up-market = .upt-market) --, nur Anzeige. Ohne Markt der Strich der
+     Tabelle fuer eine leere Zelle, damit die Spalte nicht in jeder Zeile woanders anfaengt.
+     Bearbeiten macht aus dem Text ein einzeiliges Feld IN DERSELBEN ZEILE: gleiche Hoehe, Markt
+     und X bleiben stehen. Vorher war es eine Textarea, die die ganze Zeile ersetzte und mit dem
+     Inhalt wuchs. Aus der Eingabe kommt kein Zeilenumbruch (sie zerlegt mehrzeiligen Text in
+     einen Prompt je Zeile), aus einer CSV-Zelle in Anfuehrungszeichen schon. Ein einzeiliges Feld
+     STREICHT ihn beim Setzen, ohne Ersatz: aus "Zeile eins", Umbruch, "Zeile zwei" wuerde
+     "Zeile einsZeile zwei". Deshalb wird er vorher zum Leerzeichen -- genau das, was die Zeile
+     vor dem Bearbeiten zeigt (white-space: nowrap). */
   function rowHtml(r) {
     var mk = r.market || S.market;
-    var chip = mk
-      ? '<span class="uap-rowmarket" title="' + esc(marketName(mk)) + '">' +
-          '<img class="uap-flag" src="' + esc(flagUrl(mk)) + '" alt="">' +
-          '<span class="uap-rowmarket-code">' + esc(mk.toUpperCase()) + '</span>' +
-        '</span>'
-      : "";
+    var name = mk ? marketName(mk) : "";
+    var markt = '<span class="uap-rowmarket"' +
+                  /* Der Name nur, wenn er mehr sagt als der Code: ein unbekannter Markt heisst
+                     "DE" und ein Tooltip "DE" ueber "DE" waere Rauschen. */
+                  (name && name !== mk.toUpperCase() ? ' data-tip="' + esc(name) + '"' : '') + '>' +
+                  /* Ohne marketChip (ein aelteres core.js gewinnt das Laderennen) der Code allein,
+                     in der Schrift des Chips. uap-rowmarket-code und unten uap-rowbtn sind die
+                     Namen von vorher und bleiben Griffe, damit keiner verschwindet, an dem fremder
+                     Code haengen koennte (Vertragspruefung, 0 Entfernungen). */
+                  (mk ? (UC.marketChip ? UC.marketChip(mk)
+                                       : '<span class="up-market-code uap-rowmarket-code">' + esc(mk.toUpperCase()) + '</span>')
+                      : '<span class="up-num is-empty">–</span>') +
+                '</span>';
+    var weg = '<button type="button" class="up-iconbtn is-24 uap-rowbtn uap-rowx" data-act="del"' +
+                ' aria-label="' + esc(tr("Remove")) + '" data-tip="' + esc(tr("Remove")) + '">' +
+                UC.icon("x", 2) + '</button>';
     if (S.editing === r.id) {
       return '<li class="uap-row is-editing" data-id="' + esc(r.id) + '">' +
-               '<textarea class="uap-rowedit" rows="1" maxlength="500">' + esc(r.text) + '</textarea>' +
+               '<span class="uap-rowmain">' +
+                 '<input type="text" class="uap-rowedit" maxlength="' + TEXT_MAX + '"' +
+                   ' value="' + esc(String(r.text).replace(/\s*[\r\n]+\s*/g, " ")) + '"' +
+                   ' aria-label="' + esc(tr("Edit prompt")) + '">' +
+               '</span>' +
+               markt + weg +
              '</li>';
     }
     return '<li class="uap-row" data-id="' + esc(r.id) + '">' +
-             '<span class="uap-rowtext">' + esc(r.text) + '</span>' +
-             chip +
-             '<button type="button" class="uap-rowbtn" data-act="edit" data-tip="Edit">' + ICON.edit + '</button>' +
-             '<button type="button" class="uap-rowbtn" data-act="del" data-tip="Remove">' + ICON.x + '</button>' +
+             '<span class="uap-rowmain">' +
+               '<span class="uap-rowtext">' + esc(r.text) + '</span>' +
+               '<button type="button" class="up-iconbtn is-24 uap-rowbtn uap-rowpen" data-act="edit"' +
+                 ' aria-label="' + esc(tr("Edit prompt")) + '" data-tip="' + esc(tr("Edit")) + '">' +
+                 UC.icon("squarePen", 2) + '</button>' +
+             '</span>' +
+             markt + weg +
            '</li>';
   }
 
@@ -542,11 +576,14 @@
     /* The Enter affordance follows the field, not the list. */
     if (M.enter) M.enter.hidden = !String(M.input.value || "").trim();
 
+    /* Kein autosize mehr: das Feld ist einzeilig und so hoch wie die Zeile es zulaesst. */
     var ed = el.querySelector(".uap-rowedit");
-    if (ed) { autosize(ed); ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); }
+    if (ed) {
+      ed.focus();
+      try { ed.setSelectionRange(ed.value.length, ed.value.length); } catch (e) {}
+    }
 
-    /* Erst jetzt messen: der Inhalt steht, autosize hat die Textarea auf ihre Zeilenzahl
-       gebracht. Vorher waere die Zielhoehe die von gestern. */
+    /* Erst jetzt messen: der Inhalt steht. Vorher waere die Zielhoehe die von gestern. */
     if (!bewegt) return;
     clearTimeout(_lwTimer);
     lwSettle(wrap);                                   /* frei messen, ohne Reste der letzten Bewegung */
@@ -812,11 +849,15 @@
     if (UC.makeTooltips) {
       var prevTip = window.__upTipEl, prevState = window.__upTipState;
       window.__upTipEl = null; window.__upTipState = null;
-      UC.makeTooltips(back, function () {
+      var tips = UC.makeTooltips(back, function () {
         return UC.getUpstreemTheme ? UC.getUpstreemTheme() === "dark" : false;
       });
       if (window.__upTipEl) back.appendChild(window.__upTipEl);
       window.__upTipEl = prevTip; window.__upTipState = prevState;
+      /* Der volle Prompt, wenn die Zeile ihn kuerzt -- der Kuerzungs-Tooltip aus core, derselbe
+         wie in der Prompt-Spalte der Responses-Tabelle. Er erscheint nur, wenn der Text wirklich
+         abgeschnitten ist; an diesem eigenen Tip, damit er ueber dem Dialog liegt (siehe oben). */
+      if (tips && UC.makeClipTip) UC.makeClipTip(back, tips, ".uap-rowtext");
     }
     /* The stores fill in after the page's Run-JavaScript steps run, which can be after the modal
        was already built. Both pickers redraw on their own when that happens. */
@@ -843,6 +884,37 @@
     M.enter.hidden = true;
     renderList();
     M.list.scrollTop = M.list.scrollHeight;
+  }
+
+  /* Uebernimmt den Text eines Bearbeitungsfelds in seine Zeile und beendet das Bearbeiten. Gibt
+     die Zeilen-id zurueck, oder null, wenn das Feld nicht (mehr) das bearbeitete ist -- ein Feld,
+     das beim Neuaufbau aus dem Dokument faellt, kann noch einen blur schicken, und der darf
+     weder doppelt uebernehmen noch die Entscheidung von Escape umdrehen.
+     Dieselben Regeln wie beim Hinzufuegen: leer heisst entfernt (so sieht es auch aus), und ein
+     Text, den eine ANDERE Zeile schon traegt, macht diese Zeile zum Doppel und nimmt sie heraus
+     -- mit demselben Satz wie addRows. Vorher kam ein Doppel ueber das Bearbeiten durch, obwohl
+     die Liste sonst nie zweimal denselben Prompt traegt. */
+  function zeileUebernehmen(ed) {
+    var li = ed && ed.closest ? ed.closest(".uap-row") : null;
+    var id = li ? li.getAttribute("data-id") : null;
+    if (!id || S.editing !== id) return null;
+    S.editing = null;
+    var v = String(ed.value || "").trim(), k = normKey(v), doppelt = false;
+    if (v) S.rows.forEach(function (r) { if (r.id !== id && normKey(r.text) === k) doppelt = true; });
+    S.rows = S.rows.filter(function (r) {
+      if (r.id !== id) return true;
+      if (!v || doppelt) return false;
+      r.text = v; return true;
+    });
+    if (doppelt) S.capNote = tr("1 duplicate skipped");
+    return id;
+  }
+  /* Nach Enter oder Escape steht der Fokus auf dem Stift derselben Zeile statt im Nichts -- die
+     Tastatur macht dort weiter, wo sie war. Ist die Zeile weg (geleert, Doppel), aufs Feld. */
+  function stiftFokus(id) {
+    var b = id ? M.list.querySelector('.uap-row[data-id="' + id + '"] .uap-rowpen') : null;
+    if (b) { try { b.focus(); } catch (e) {} return; }
+    if (S.tab === "manual") { try { M.input.focus(); } catch (e) {} }
   }
 
   function readFile(file) {
@@ -932,6 +1004,11 @@
         if (act === "edit" || act === "del") {
           var li = btn.closest(".uap-row"); if (!li) return;
           var id = li.getAttribute("data-id");
+          /* Steht noch eine Zeile im Bearbeiten, gilt ihr Text zuerst. Der Fokus ist dafuer nicht
+             aus dem Feld gegangen (mousedown unten), also kam kein blur -- ohne diese Zeile waere
+             das Getippte beim Neuaufbau weg. */
+          var offen = M.list.querySelector(".uap-rowedit");
+          if (offen) zeileUebernehmen(offen);
           if (act === "del") S.rows = S.rows.filter(function (r) { return r.id !== id; });
           else S.editing = id;
           renderList();
@@ -982,23 +1059,37 @@
 
     /* Inline row editing: blur or Enter commits, Escape drops the change. */
     M.list.addEventListener("keydown", function (e) {
-      if (!e.target.classList.contains("uap-rowedit")) return;
-      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.target.blur(); }
-      if (e.key === "Escape") { e.preventDefault(); S.editing = null; renderList(); }
+      if (!e.target.classList || !e.target.classList.contains("uap-rowedit")) return;
+      /* Enter waehrend einer IME-Eingabe bestaetigt das Zeichen, nicht die Zeile. */
+      if (e.isComposing) return;
+      if (e.key === "Enter") {
+        e.preventDefault();
+        var id = zeileUebernehmen(e.target);
+        renderList();
+        stiftFokus(id);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        /* Nicht weiterreichen: der Escape-Griff am document schliesst sonst den ganzen Dialog.
+           Genau das tat er bisher -- wer das Bearbeiten abbrechen wollte, verlor alle Zeilen. */
+        e.stopPropagation();
+        var li = e.target.closest(".uap-row"), id2 = li ? li.getAttribute("data-id") : null;
+        S.editing = null;
+        renderList();
+        stiftFokus(id2);
+      }
     });
-    M.list.addEventListener("input", function (e) {
-      if (e.target.classList.contains("uap-rowedit")) autosize(e.target);
+    /* Ein Klick auf einen Knopf der Liste (Stift einer anderen Zeile, ein X) darf das Feld nicht
+       per blur schliessen: der blur baut die Liste neu, und der Knopf unter dem Zeiger ist danach
+       ein anderer Knoten -- der Klick kaeme nie an, man muesste zweimal klicken. Also bleibt der
+       Fokus im Feld, und der Klick uebernimmt den Text selbst (siehe "edit"/"del" oben). */
+    M.list.addEventListener("mousedown", function (e) {
+      if (!S.editing) return;
+      var b = e.target.closest ? e.target.closest("[data-act]") : null;
+      if (b && M.list.contains(b)) e.preventDefault();
     });
     M.list.addEventListener("blur", function (e) {
       if (!e.target.classList || !e.target.classList.contains("uap-rowedit")) return;
-      var li = e.target.closest(".uap-row"); if (!li) return;
-      var id = li.getAttribute("data-id"), v = String(e.target.value || "").trim();
-      S.rows = S.rows.filter(function (r) {
-        if (r.id !== id) return true;
-        if (!v) return false;                 // emptied out means removed, which is what it looks like
-        r.text = v; return true;
-      });
-      S.editing = null;
+      if (zeileUebernehmen(e.target) == null) return;
       renderList();
     }, true);
 

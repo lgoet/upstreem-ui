@@ -85,10 +85,14 @@
     /* minFlach/wFlach (15.10.): in der flachen Fassung (core, Kopfschrift 13/500) gemessen
        "Mentioned?" mit Logo 123, Sentiment 132, Rank 101 (je samt 1px Zellrand) -- nur 2 bis 3
        darueber: mit 6 bis 8 Luft passte die Summe bei 1440 nicht mehr ins Budget, und
-       "Mentioned?" fiel weg. */
-    { key: "mentioned",  label: "Mentioned?",     w: "minmax(116px, 0.6fr)",  min: 116, wFlach: "minmax(126px, 0.6fr)", minFlach: 126, dropAt: "vnarrow", prio: 30 },
-    { key: "sentiment",  label: "Sentiment",      w: "minmax(120px, 1fr)",    min: 120, wFlach: "minmax(134px, 1fr)", minFlach: 134, dropAt: "narrow",  prio: 70 },
-    { key: "rank",       label: "Rank",           w: "minmax(90px, 1fr)",     min: 90,  wFlach: "minmax(104px, 1fr)", minFlach: 104, dropAt: "narrow",  prio: 60 },
+       "Mentioned?" fiel weg.
+       Seit 15.10. spaet traegt JEDER Kopf 14/500 (core .up-root .up-th), flach wie im Drawer --
+       die zweite Untergrenze fuer die flache Fassung ist damit hinfaellig, es gilt eine. Gemessen
+       (Klon des Kopfs, Logo 17, Info und Sortierpfeil 15, samt Zellrand): "Mentioned?" 129.4,
+       Sentiment 138.8, Rank 105.1. Wieder 2 bis 3 darueber. */
+    { key: "mentioned",  label: "Mentioned?",     w: "minmax(132px, 0.6fr)",  min: 132, dropAt: "vnarrow", prio: 30 },
+    { key: "sentiment",  label: "Sentiment",      w: "minmax(141px, 1fr)",    min: 141, dropAt: "narrow",  prio: 70 },
+    { key: "rank",       label: "Rank",           w: "minmax(108px, 1fr)",    min: 108, dropAt: "narrow",  prio: 60 },
     /* Brand Mentions shows 4 chips + "+N" (178px, the app-wide figure). Citations shows FIVE chips
        and its "+N" routinely runs to 5 digits (+23266), so it gets a strictly wider floor and a
        larger fr share — with equal fr both columns end up the same width regardless of the mins. */
@@ -719,8 +723,14 @@
        Rank zusammen 28px mehr Mindestbreite (siehe minFlach in COLUMNS). Bei 1440 Fensterbreite
        bleiben der Tabelle 1174px, und damit "Mentioned?" stehen bleibt, gibt die Prompt-Spalte
        20 ab: 220 statt 240 (gerechnet: 1174 - 220 - 31 Reserve = 923 fuer 918 Mindestbreiten).
-       Vorher stand sie bei 1440 auf 224. */
-    if (root.getAttribute("data-flach") === "yes") PROMPT_MIN = 220;
+       Vorher stand sie bei 1440 auf 224.
+       Mit der Kopfschrift 14/500 (15.10. spaet) brauchen die drei 17 mehr (132 + 141 + 108): 935
+       Mindestbreiten, also 206 fuer Prompt UND ein Anteil von 0.17 statt 0.18 (siehe firstShare:
+       18 Prozent von 1174 sind 211 und lagen schon ueber 206) -- 1174 - 206 - 31 = 937. Sonst
+       faellt "Mentioned?" bei 1440 wieder weg (gemessen: sechs Spalten statt sieben). Die Spalte
+       selbst steht dort trotzdem breiter, die Deckel der Kennzahlen geben ihr den Rest. */
+    var FLACH = root.getAttribute("data-flach") === "yes";
+    if (FLACH) PROMPT_MIN = 206;
     var colsKit = UC.makeColumns({
       root: root, state: state, columns: COLUMNS,
       storePrefix: "urt", instanceId: instanceId,
@@ -741,8 +751,9 @@
          Reserve nicht mehr, egal welcher Anteil. 0.18 erreicht sie, ohne die Prompt-Spalte an
          ihre eigene Untergrenze zu druecken (PROMPT_MIN 240 gilt weiter).
          Wer noch tiefer will, muss an eine ANDERE Mindestbreite -- die zwei dicksten sind
-         Citations (216) und Brand Mentions (178). Das ist eine eigene Entscheidung. */
-      firstShare: 0.18,
+         Citations (216) und Brand Mentions (178). Das ist eine eigene Entscheidung.
+         Flach 0.17 (15.10. spaet, Kopfschrift 14/500): siehe PROMPT_MIN oben. */
+      firstShare: FLACH ? 0.17 : 0.18,
       /* "up-sum": die Zellen der Gesamtzeile (UC.makeZaehlZeile) gehen mit ihren Spalten. */
       rowHeightSwitch: ROW_HEIGHTS, badgeSel: ".urt-cols-badge", cellPrefixes: ["up","urt","up-sum"],
       /* Unten im Display-Menue der Schalter fuer die Gesamtzeile (nur in der einen Leiste, wo es
@@ -1440,6 +1451,10 @@
       info.innerHTML = INFO_SVG;
       th.appendChild(info);
     });
+    /* DAS ZEICHEN VOR "Citations" (15.10. angefordert): der Globus, mit dem die Seitenleiste
+       Citations fuehrt -- dieselbe Machart wie vor "Brand Mentions" in der Prompt-Tabelle
+       (UC.kopfZeichen, .up-th-ic aus core). In jeder Fassung der Tabelle, auch im Drawer. */
+    if (UC.kopfZeichen) UC.kopfZeichen(root.querySelector(".up-thead .up-th-citations"), "globe");
     if (UC.makeExplain){
       UC.makeExplain({
         root: root, triggerSel: ".up-th-info", getIsDark: function(){ return isDark; },

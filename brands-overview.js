@@ -762,12 +762,14 @@
     /* minFlach/wFlach (15.10.): in der flachen Fassung (core, Kopfschrift 13/500) brauchen die
        Koepfe samt Sortierpfeil, Info-Zeichen und 1px Zellrand gemessen 120.6 (Visibility), 118.8
        (Ranking) und 132 (Sentiment) -- alle drei ueber ihrer alten Untergrenze, an der Grenze
-       waeren sie gekuerzt. Je 2 bis 3 darueber, wie in Responses. Nur flach: dieselbe Tabelle in
-       Bubble behaelt 12/400 und ihre Werte. */
+       waeren sie gekuerzt. Je 2 bis 3 darueber, wie in Responses.
+       Seit 15.10. spaet traegt jeder Kopf 14/500 (core .up-root .up-th) -- EINE Untergrenze,
+       gemessen mit Info und Sortierpfeil 15 samt Zellrand: Visibility 126.6, Ranking 124.7,
+       Sentiment 138.8. Wieder 2 bis 3 darueber. */
     var COLS_ALL = [
-      { key: "visibility", label: "Visibility", w: "minmax(120px, 1fr)", min: 120, wFlach: "minmax(123px, 1fr)", minFlach: 123, prio: 30 },
-      { key: "ranking",    label: "Ranking",    w: "minmax(112px, 1fr)", min: 112, wFlach: "minmax(121px, 1fr)", minFlach: 121, prio: 20 },
-      { key: "sentiment",  label: "Sentiment",  w: "minmax(120px, 1fr)", min: 120, wFlach: "minmax(134px, 1fr)", minFlach: 134, prio: 10 },
+      { key: "visibility", label: "Visibility", w: "minmax(129px, 1fr)", min: 129, prio: 30 },
+      { key: "ranking",    label: "Ranking",    w: "minmax(127px, 1fr)", min: 127, prio: 20 },
+      { key: "sentiment",  label: "Sentiment",  w: "minmax(141px, 1fr)", min: 141, prio: 10 },
       /* Inactive-only, and the inverse of the three above — see cfg.isHidden below. */
       { key: "deactivated", label: "Deactivated", w: "minmax(140px, 0.8fr)", min: 140, prio: 5 }
     ];
@@ -1017,8 +1019,12 @@
        Spalte kuerzen, und der Knopf behaelt seine Breite. */
     var ADD_BRAND_BTN = '<button class="up-iconbtn is-24 ubo-addbrand" type="button" data-tip="Add brand" ' +
       'aria-label="Add brand">' + UC.icon("plus", 2) + '</button>';
+    /* DAS ZEICHEN VOR "Brand" (15.10. angefordert): squareStack, mit dem die Seitenleiste
+       Brands fuehrt -- dasselbe wie vor "Brand Mentions" in der Prompt-Tabelle (UC.kopfZeichenHtml,
+       .up-th-ic aus core). Hier als Zeichenkette, weil der Kopf mit jedem Zeichnen neu entsteht. */
     function brandHeadHtml(){
-      return '<div class="up-th up-th-brand"><span class="up-th-txt">Brand</span>' + ADD_BRAND_BTN + '</div>';
+      return '<div class="up-th up-th-brand">' + (UC.kopfZeichenHtml ? UC.kopfZeichenHtml("squareStack") : "") +
+        '<span class="up-th-txt">Brand</span>' + ADD_BRAND_BTN + '</div>';
     }
     /* Liegt add-brand.js auf der Seite, oeffnet es seinen Dialog und feuert das Add-Event selbst --
        dieselbe Reihenfolge wie im Brands-Seitenkopf. Ohne die Datei ein eigenes Ereignis, damit der
@@ -1820,9 +1826,90 @@
        Die Anzahl ist die des offenen Reiters, mit der Suche: die Tabelle laedt alle Marken auf
        einmal, die Suche filtert hier im Browser. Ohne Suche die Gesamtzahl des Servers, sonst die
        gefundenen Zeilen. Unlesbar heisst "–", nie 0. */
+    /* DIE BERECHNUNGEN (15.10. spaet, vom Nutzer abgenommen, "bitte exakt so umsetzen"): die
+       Tabelle hat alle Marken des Reiters im Browser, also rechnet sie selbst (lokal) -- ueber
+       genau die Zeilen, die sie zeigt (gezeigteZeilen: Reiter und Suche), nicht ueber eine Seite.
+       Nur die drei Kennzahlspalten; im Reiter Inactive gibt es sie nicht (spalten unten liefert
+       dort nur "deactivated"), also auch keine Berechnung. Leere Menge oder kein Wert: null, die
+       Zelle zeigt "–" (core sumPaarHtml), nie 0.
+       Bewusst NICHT: "Your position" -- "sieht man eh, brauch ich nicht". */
+    function zahlenVon(feld){
+      return gezeigteZeilen().map(function(r){ return UC.toNum(r[feld]); })
+        .filter(function(v){ return v != null; });
+    }
+    function mittelVon(feld){
+      var l = zahlenVon(feld);
+      return l.length ? l.reduce(function(a, b){ return a + b; }, 0) / l.length : null;
+    }
+    function kleinsterVon(feld){
+      var l = zahlenVon(feld);
+      return l.length ? Math.min.apply(null, l) : null;
+    }
+    /* Die eigene Marke: die Zeilen tragen is_own (dashboard-data.js, marke()). Fehlt es in allen
+       Zeilen (ein aelterer Payload), gilt die Marke mit role "own" aus der Markenablage der App
+       (setUpstreemBrands) -- dieselben zwei Schreibweisen wie in power-dashboard.js. */
+    function istEigene(r){
+      return !!r && (r.is_own === true || UC.isYes(r.is_own) || String(r.role || "").toLowerCase() === "own");
+    }
+    function eigeneZeile(rows){
+      for (var i = 0; i < rows.length; i++) if (istEigene(rows[i])) return rows[i];
+      var ablage = UC.getBrands ? UC.getBrands() : [], id = null;
+      for (var j = 0; j < ablage.length; j++) if (istEigene(ablage[j])){ id = String(ablage[j].company_id); break; }
+      if (id == null) return null;
+      for (var k = 0; k < rows.length; k++) if (String(rows[k].company_id) === id) return rows[k];
+      return null;
+    }
+    /* Abstand der eigenen Marke zur Marke mit der hoechsten Visibility, in Prozentpunkten; steht
+       sie selbst vorn, 0. Ist sie nicht unter den gezeigten Zeilen (Suche), gibt es keinen
+       Abstand -- "–". */
+    function abstandZurSpitze(){
+      var rows = gezeigteZeilen(), eigen = eigeneZeile(rows);
+      var v = eigen ? UC.toNum(eigen.visibility_pct) : null;
+      if (v == null) return null;
+      return Math.max(0, Math.max.apply(null, zahlenVon("visibility_pct")) - v);
+    }
+    /* "4 / 2": Marken mit Trend nach oben und nach unten in DIESER Kennzahl. Gezaehlt wird, was
+       die Zelle als Pfeil zeigt: UC.trendChip laesst eine Aenderung weg, die auf ihre Stellen
+       gerundet 0 ist (Visibility ganzzahlig, Rang und Sentiment eine Stelle) -- dieselbe Regel
+       hier, sonst stuende unten eine 5, wo oben vier Pfeile stehen. Beim Rang ist weniger
+       besser: ein sinkender Rang zaehlt als steigend (umgekehrt). Traegt keine Zeile einen
+       Trend, "–" statt "0 / 0". */
+    function steigendFallend(feld, stellen, umgekehrt){
+      var hoch = 0, runter = 0, mitTrend = 0, f = Math.pow(10, stellen);
+      gezeigteZeilen().forEach(function(r){
+        var d = UC.toNum(r[feld]);
+        if (d == null) return;
+        mitTrend++;
+        if (Math.round(Math.abs(d) * f) / f === 0) return;
+        if ((d > 0) !== !!umgekehrt) hoch++; else runter++;
+      });
+      return mitTrend ? UC.fmtTotal(hoch) + " / " + UC.fmtTotal(runter) : null;
+    }
+    UC.addMessages && UC.addMessages("de", {
+      "Gap to leader": "Abstand zur Spitze", "to leader": "zur Spitze",
+      "Rising / falling": "Steigend / fallend", "rising / falling": "steigend / fallend"
+    });
+    var RECHNEN = {
+      visibility: [
+        { key: "avg",    label: "Average",          kurz: "avg",              art: "pct",  lokal: function(){ return mittelVon("visibility_pct"); } },
+        { key: "spitze", label: "Gap to leader",    kurz: "to leader",        art: "pct",  lokal: abstandZurSpitze },
+        { key: "trend",  label: "Rising / falling", kurz: "rising / falling", art: "text", lokal: function(){ return steigendFallend("visibility_delta_pct", 0, false); } }
+      ],
+      ranking: [
+        { key: "avg",    label: "Average",          kurz: "avg",              art: "rang", lokal: function(){ return mittelVon("avg_rank"); } },
+        { key: "best",   label: "Best",             kurz: "best",             art: "rang", lokal: function(){ return kleinsterVon("avg_rank"); } },
+        { key: "trend",  label: "Rising / falling", kurz: "rising / falling", art: "text", lokal: function(){ return steigendFallend("avg_rank_delta", 1, true); } }
+      ],
+      sentiment: [
+        { key: "avg",    label: "Average",          kurz: "avg",              art: "note", lokal: function(){ return mittelVon("sentiment"); } },
+        { key: "lowest", label: "Lowest",           kurz: "lowest",           art: "note", lokal: function(){ return kleinsterVon("sentiment"); } },
+        { key: "trend",  label: "Rising / falling", kurz: "rising / falling", art: "text", lokal: function(){ return steigendFallend("sentiment_delta", 1, false); } }
+      ]
+    };
     var zaehl = (LEISTE && UC.makeZaehlZeile) ? UC.makeZaehlZeile({
       root: root, nach: tableEl, instanceId: instanceId, praefix: "ubo", group: POP_GROUP,
       cols: function(){ return colsKit; },
+      rechnen: RECHNEN,
       /* In der Reihenfolge der Spalten. Die "#"-Spur davor und die Aktionsspur dahinter haben
          keine Zelle: die erste Zelle (die Anzahl) ueberspannt "#" und Brand (brands-overview.css),
          die Aktionsspur bleibt leer. */

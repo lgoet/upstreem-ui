@@ -134,7 +134,16 @@
 
 /* ---------- Top Brands table ---------- */
 .vt-table { width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--vc-bg); overflow: hidden; }
-.vt-thead, .vt-row { display: grid; grid-template-columns: 44px minmax(120px,1fr) 22% 20% 20%; align-items: center; }
+/* SENTIMENT MIT UNTERGRENZE (15.10. spaet). Mit der Kopfschrift 14/500 ist "Sentiment" 67.8 breit;
+   bei 1175 Fensterbreite, wo das Dashboard gerade noch zweispaltig steht, ist die Tabelle 437 breit
+   und 20 Prozent sind 87.4 -- das Wort lief 4.5px ins rechte Polster, sein Info-Zeichen 19.5px,
+   also ueber die Kante der Tabelle. 92 = 8 Polster + 67.8 Wort + 15 Info + 1: das Wort steht ganz
+   in der Zelle, das Info-Zeichen (nur beim Ueberfahren zu sehen) im rechten Polster, nichts wird
+   abgeschnitten. Volle Untergrenzen fuer alle drei Kennzahlen samt 16 Polster (94.6/92.7/106.8)
+   waren gemessen zu teuer: die Markenspalte fiel bei 437 von 122 auf 94, vom Namen blieben 6px
+   (Logo, Abstand und Pfeil daneben nehmen 88). So gibt sie hoechstens 5 ab, ab 1225 nichts.
+   Visibility und Ranking passen mit ihren Anteilen (Wort samt Zeichen 79.6 bzw. 77.6 bei 96/87). */
+.vt-thead, .vt-row { display: grid; grid-template-columns: 44px minmax(100px,1fr) 22% 20% minmax(92px,20%); align-items: center; }
 
 .vt-table.vt-hide-sentiment .vt-th-sentiment,
 .vt-table.vt-hide-sentiment .vt-td-sentiment { display: none; }
@@ -153,10 +162,12 @@
 .vt-table.vt-hide-trend-ranking    .vt-td-ranking    .up-trend,
 .vt-table.vt-hide-trend-sentiment  .vt-td-sentiment  .up-trend { display: none; }
 .vt-thead { height: 45px; flex: 0 0 45px; background: var(--vt-head-bg); }
-.vt-th { font-size: 12px; font-weight: 400; color: var(--vc-muted); padding: 0 16px 0 8px; height: 100%;
+/* Kopfschrift 14/500 wie jeder Tabellenkopf der App (core .up-root .up-th, 15.10. spaet);
+   vorher 12/400. Das Rautenzeichen waechst im selben Verhaeltnis mit: 12 x 14/12 = 14. */
+.vt-th { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); color: var(--vc-muted); padding: 0 16px 0 8px; height: 100%;
   display: flex; align-items: center; border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
 .vt-th-idx { justify-content: center; padding: 0; }
-.vt-th-idx svg { width: 12px; height: 12px; color: var(--vc-third); display: block; }
+.vt-th-idx svg { width: 14px; height: 14px; color: var(--vc-third); display: block; }
 .vt-th:last-child { border-right: none; }
 .vt-tbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .vt-row { height: 55px; flex: 0 0 55px; cursor: pointer; }
