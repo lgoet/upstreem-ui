@@ -95,11 +95,11 @@ Schriftgrößen** und **57 Radien** heraus, wo sechs und fünf gemeint waren.
 |---|---|---|---|
 | Schriftgröße | 11 · 12 · 13 · 14 · 16 · 22 · 28 | `--up-fs-xs/s/m/l/xl/2xl/3xl` | Polaris (8 Stufen), EightShapes, Dashboard-Ratgeber (6) |
 | Schnitt | **Bereich** 400–700 | `--up-fw-n/m/h/b` | der geladenen Achse in `core.css` |
-| Radius | 4 · 6 · 8 · 10 · 12 · 16 · 999 **plus konzentrische Kinder** | `--up-r-xs/s/m/l/xl/2xl/voll` | Primer (3/6/12), Konzentrik-Formel |
+| Radius (seit 15.10.) | 4 · 6 · 8 · 12 · 16 · 999 **plus konzentrische Kinder** | `--up-r-xs/s` 4, `-m` 6, `-l/xl` 8, `-2xl` 12, `-3xl` 16, `-voll` | Geist materials (vercel.com/geist), Konzentrik-Formel |
 | Höhe | 24 · 28 · 32 · 40 · 55 | `--up-h-chip/seg/btn/gross/row` | Primer, identisch (24/28/32/40/48) |
 | Dauer | 120 · 200 · 260 | `--up-t-1/2/3` | Material 3 (UI-Band 100–300) |
 | Kurve | 2 | `--up-ease`, `--up-ease-auf` | — |
-| Tiefe | 4 + 2 benannte | `--up-e-1..4`, `--up-e-drawer`, `--up-e-chip` | Atlassian (sunken/default/raised/overlay) |
+| Tiefe (seit 15.10.) | 4 + 2 benannte | `--up-e-1..4`, `--up-e-drawer`, `--up-e-chip` | Werte aus Vercels `--ds-shadow-*`; Rollen gegen Atlassian (sunken/default/raised/overlay) |
 
 **Die Skalen kommen aus DEINEM Bestand, nicht von außen.** Jede Stufe ist die, die die App
 ohnehin am häufigsten trägt; die Fachsysteme oben waren die Gegenprobe, nicht die Vorlage. Zwei
@@ -113,14 +113,21 @@ Korrekturen sind dabei herausgekommen, beide wichtig:
   (13.2, 15.8), die je Browser anders runden — genau daher kommen die 216 halben Pixel im
   Bestand. Die Stufen sind von Hand gesetzt.
 
-Vier Dinge, die man dabei wissen muss:
+Was man dabei wissen muss:
 
-- **Konzentrische Radien sind kein Fehler.** Von 763 Radiusangaben liegen 443 auf der Basis und
-  **185 auf Basis minus 1** — das sind die konzentrischen Kinder: ein Element mit 1px Rahmen in
-  einer 8er-Ecke braucht innen 7, sonst läuft der Spalt zwischen beiden Rundungen ungleich
-  breit. Die Regel steht seit langem im STYLEGUIDE (Zeile 424, Logo-Box), sie hatte nur keinen
-  Namen. Wirklich falsch sind nur die **35 mit Nachkommastelle**. `.check_skala.py` lässt Basis
-  minus 1 durch — die erste Fassung tat das nicht und meldete 185 völlig richtige Werte.
+- **Konzentrische Radien sind kein Fehler.** Ein Element mit 1px Rahmen in einer 6er-Ecke
+  braucht innen 5, sonst läuft der Spalt zwischen beiden Rundungen ungleich breit; die Kinder
+  der Stufen sind also 3/5/7/11/15. Am 21.09. lagen von 763 Radiusangaben 185 genau dort.
+  Geschrieben wird das Kind seit dem 15.10. aus dem Token: `calc(var(--up-r-m) - 1px)`, das
+  Bild im Logo-Stapel (Rahmen 1 + Polster 2) `calc(var(--up-r-m) - 3px)`. `.check_skala.py`
+  lässt Basis minus 1 durch.
+
+- **Radius nach Rolle (Geist, 15.10.).** Knopf, Feld, Segment und Zeile nach ihrer Höhe: bis 24
+  → 4, 25–36 → 6, ab 37 → 8. Menü 12, die Zeile darin konzentrisch. Karte, Tabelle, Dialog,
+  Toast, Erklärkarte 12, ihre Kinder 11. Tooltip einzeilig 6, mehrzeilig 8. Badge und Avatar
+  voll rund. Seit dem Umbau laufen 811 von 963 Angaben über ein Token; fest stehen nur noch 0,
+  50 %, Haarlinien unter 4 und die em-Werte in Mira. **Alte Zahlen in Kommentaren** (vor dem
+  15.10.) meinen die alte Skala; die Zuordnung steht im Radius-Block von `core.css`.
 
 - **Der Schnitt ist ein Bereich, keine Liste.** Geist wird als *variable* Schrift geladen
   (`@import … wght@400..700`), also rendert auch 450 oder 550 wirklich — an 37 Stellen ist genau
@@ -129,23 +136,29 @@ Vier Dinge, die man dabei wissen muss:
   750 dastand — zwei davon hatten sogar zwei Stufen gebaut, die beide als 600 herauskamen.
 - **Verschachtelte Radien werden gerechnet, dann gerundet:** innen = außen − Innenabstand, danach
   auf die nächste Stufe. Ohne das Runden erzeugt die Regel aus §1 („Faktor auf alles") genau die
-  `3.23`, `4.28`, `7.04` und `8.9`, die heute im Bestand stehen.
-- **Ausnahmen, die bleiben:** `--up-dd-radius` (14px) für Menüs, `--up-dd-pad`, `--up-dd-gap`,
-  `--up-sub-gap`, `--up-focus-w`. Die gab es vorher und sie sind in sich stimmig. Eine Skala mit
-  einer benannten Ausnahme ist besser als zwei Skalen nebeneinander.
+  `3.23`, `4.28`, `7.04` und `8.9`, die bis zum 15.10. im Bestand standen.
+- **Ausnahmen, die bleiben:** `--up-dd-pad`, `--up-dd-gap`, `--up-sub-gap`, `--up-focus-w`. Die
+  gab es vorher und sie sind in sich stimmig. `--up-dd-radius` ist seit dem 15.10. **keine**
+  Ausnahme mehr: 12 wie `--up-r-2xl`, und es steht auch an `:root`, weil Menüs von Mira und der
+  Fader am `<body>` hängen (ein unaufgelöstes `var()` in `border-radius` ist eine scharfe Ecke).
 
 - **Tiefe nach Rolle, nicht nach Auge** (Stand 06.10.): `e-1` liegt auf der Fläche (Knopf,
   Feld, Kachel), `e-2` hängt an einem Auslöser (Menü, Popover, jeder Tooltip, Erklärkarte),
   `e-3` schwebt frei über dem Inhalt (Leiste, ihr Knopf), `e-4` liegt über einem Schleier
-  (Dialog, Palette); dazu `e-drawer` (wirft seitlich) und `e-chip` (gehobener Chip). Die
+  (Dialog, Palette, Toast); dazu `e-drawer` (wirft seitlich) und `e-chip` (gehobener Chip). Die
   umgekehrte Karte (hell dunkel, dunkel hell) trägt `--vc-inverse-bg`/`--vc-inverse-ink`. Alle
-  stehen auch an `:root` und erreichen damit, was an `<body>` hängt.
+  stehen auch an `:root` und erreichen damit, was an `<body>` hängt. `--up-dd-shadow` ist e-2.
+  Seit dem 15.10. sind die Werte Geists eigene (small, menu, modal, modal-elevated; e-chip =
+  medium; e-drawer = modal-elevated um 90° gedreht), mehrlagig und leise. Im Dunkeln werden nur
+  e-1 und e-chip kräftiger, die Kante tragen dort die Rahmen. Kein Rückfallwert in
+  `var(--up-e-*, …)`: der hielte beim nächsten Wechsel der Werte die alte Fassung fest.
 
 `.check_skala.py` hält das. Es arbeitet mit einer **Grundlinie** (`.skala_grundlinie.json`): was
 am Einführungstag schon dastand, ist als Bestand vermerkt und blockiert nie einen Commit —
 gemeldet wird nur, was **dazukommt**. Ein Prüfer, der am ersten Tag tausend Treffer meldet, wird
 weggeklickt. Der Bestand (Stand 21.09.: **1295** Angaben — 673 Farbliterale, 318 Schriftgrößen,
-268 Dauern, 65 Radien) wird abgebaut, wenn eine Datei ohnehin angefasst wird. Nach dem Aufräumen
+268 Dauern, 65 Radien) wird abgebaut, wenn eine Datei ohnehin angefasst wird; Stand 15.10.:
+**900** (444 Farbliterale, 192 Schriftgrößen, 257 Dauern, 7 Radien). Nach dem Aufräumen
 einer Datei: `python3 .check_skala.py --grundlinie`.
 
 Er erkennt auch, wenn ein bekannter Wert nur **häufiger** wird: eine 16. Angabe auf `12.5px` in
@@ -157,6 +170,29 @@ der App falsch. Ebenso gehen **`clamp()` und `calc()` durch**: in `clamp()` steh
 Überschriften ganzseitiger Flächen (auth-page, onboarding, ask-mira, prompt-research), die mit
 dem Fenster mitwachsen sollen — dieselbe Überlegung; `calc()` rechnet meist aus einem Token und
 ist damit schon auf der Skala.
+
+## 1d. Stand 15.10.: Geist und die Tabellenbausteine
+
+Am 14. und 15.10. ist das Aussehen der App an vielen Stellen neu festgelegt worden. Vorlage für
+Ecken, Schatten, Farben, Skelett, Leerzustand, Command Menu, Suchfeld, Knopf-Hover, Slider,
+Badge und Avatar-Gruppe ist **Geist** (vercel.com/geist). Wer davon etwas baut, schaut dort
+nach, nicht im Bestand. Die Einzelheiten stehen im STYLEGUIDE; hier steht, was man vorher wissen
+muss.
+
+| Thema | Regel | Wo |
+|---|---|---|
+| Thema | Nur **Light, Dark, System**. „Hell klassisch“/Legacy Light gibt es nicht mehr. Light ist wie bei Vercel: Seite, Seitenleiste und Leisten grau, Tabellen, Inhalte und Charts weiß | `html[data-up-hell="grau"]` aus `hellAnwenden()`, `UC.themeSchalterHtml` |
+| Auswahl | Gewählte Zustände im Light rgba(0,0,0,.05) **mit** Rand | `--up-wahl-bg`, `--up-wahl-rand` |
+| Knopf-Hover | Nur die Fläche ändert sich, der Rand bleibt; Fokus 2px-Outline mit 2px Abstand | `--up-knopf-hover`, `--up-knopf-rand-hover`, `--up-knopf-fokus-abstand` |
+| Suchfeld | Geist-Search-Input in **unserem** Blau; Esc-Schild; erstes Escape leert, zweites schließt | `.up-search` |
+| Command Menu | Geist-Aufbau, aber **ohne Linie unter dem Suchfeld** (ausdrücklicher Wunsch) | `quick-actions.css` |
+| Zahlen in Zellen | Rechtsbündig in fester Spur, Trend an der **linken** Zellkante; Rang-„#“ und Sentiment-Balken bleiben mit 4/6 an der Zahl | `--up-spur-*`, `--up-spur-abstand` (12) |
+| Spaltenbreite | Flach wächst jede fr-Spalte höchstens bis min + 32; am Ende wächst nur die erste | `deckeln()` in makeColumns |
+| Platzmangel | Spalten weichen nach ihrer `art`, nie nach einer Zahl je Datei; Share/Visibility (`anteil`) nie; eine angeklickte Spalte bleibt, dafür weicht die nächst unwichtigere | `SPALTEN_ART` in core |
+| Gesamtzeile | Links nur der Count, Werte rechtsbündig, von Haus aus keine Berechnung („+ Calculation“), Ø-Zeichen statt „avg“. Berechnungen laden **getrennt** von der Liste, Skelett nur in der Zelle, kein Median | `UC.makeZaehlZeile` (`cfg.rechnen`, `cfg.quelle`) |
+| Band | Chart oben als Band; ausgeblendet ist es **ganz** weg, „Show chart“ in der Topbar holt es zurück; Luft über und unter der Leiste einheitlich nach dem Vorbild der Prompts-Tabelle | `.up-band*`, `UC.bandTeile`, `UC.bandAus`, `--up-band-luft` |
+
+Neue Tabellen bekommen Kopfzeichen über `UC.kopfZeichenHtml` und je Spalte eine `art`.
 
 
 ## 2. Daten von Bubble: leer und kaputt sind zwei Dinge
