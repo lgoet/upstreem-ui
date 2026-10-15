@@ -7221,6 +7221,11 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
    Brands "Rising / falling" bei 143px). Begrenzt auf die Knopfbreite bleibt es in der ersten Zeile:
    der Wert steht ganz (flex 0 0 auto), die Bezeichnung kuerzt mit Auslassungspunkten. */
 .up-sumknopf > .up-sumpaar { max-width: 100%; }
+/* LANGE NAMEN KUERZEN MIT (15.10. spaet): eine Zahl steht immer ganz, ein Name ("UGC / Community"
+   in 150px, "08. Oct – 14. Oct" in 120px) darf kuerzen -- sonst schnitt der Knopf ihn hart ab.
+   Zuerst weicht die Bezeichnung dahinter (flex-shrink 1000 gegen 1), dann der Name mit "…". */
+.up-sumwert.is-text { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.up-sumpaar > .up-sumlabel { flex: 0 1000 auto; }
 .up-sumknopf:hover, .up-sumrow.is-open .up-sumknopf.is-offen { background: var(--vc-heading-bg); }
 .up-sumknopf:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .up-sumchev { display: inline-flex; align-items: center; flex: 0 0 12px; width: 12px; height: var(--up-h-seg); color: var(--vc-fourth); }

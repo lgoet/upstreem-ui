@@ -730,7 +730,29 @@
       }).filter(function (g) { return g.tag_ids.length; });
       if (geaendert) UC.cgWrite(l);
     }
+    /* ---- Die Berechnungen der Gesamtzeile der Responses (15.10. spaet) ---------------------------
+       Wie bei der Prompt-Tabelle eine EIGENE Abfrage neben der Liste (cached_dashboard_responses_
+       summary_v1), aber geholt von der Tabelle selbst (core, makeZaehlZeile): nur, was gewaehlt ist,
+       je Filterstand einmal, mit eigenem Skelett in der Zelle -- die Zeilen warten nie darauf. Die
+       Seite gibt ihr dafuer die Quelle: dieselben Filter wie die Liste (state.resp), ohne Seite und
+       Sortierung. sig traegt den Stand des Laders: ein Aktualisieren leert ihn, und die Summe gilt
+       damit als neu, obwohl der Filterstand derselbe ist.
+       Der Kanal je Signatur MIT p_fields: zwei kurz nacheinander gewaehlte Berechnungen brechen sich
+       so nicht gegenseitig ab (ein abgebrochener Abruf gaelte in core fuer diesen Filterstand als
+       gescheitert und stuende als "–" da, bis sich der Filter aendert). */
+    var respSumme = {
+      sig: function () { return (lader.stand ? lader.stand() : 0) + "|" + D.responsesSumme(filterStand(), state.resp, []).sig; },
+      holen: function (felder) {
+        if (!team() || !D.responsesSumme) return null;
+        var a = D.responsesSumme(filterStand(), state.resp, felder);
+        if (!a.params.p_fields.length) return null;
+        return lader.laden("rsumme|" + a.sig, a).then(function (erg) { return erg.ok ? D.zuResponsesSumme(erg.daten) : null; });
+      }
+    };
     function respAuftrag() {
+      /* Die Quelle der Summen vor jedem Laden der Liste setzen: ein Neuaufbau der Tabelle (Theme)
+         findet sie so im Speicher ihrer Instanz, und sie steht, bevor die ersten Zeilen kommen. */
+      try { setter("setResponsesTableSummenQuelle")(ids.urt, respSumme); } catch (e) {}
       var teile = D.responses(filterStand(), state.resp), reqId = state.resp.requestId;
       function imSp() { return teile.every(function (a) { return lader.ausSpeicher(a) !== undefined; }); }
       return {

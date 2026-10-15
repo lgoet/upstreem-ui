@@ -174,7 +174,15 @@
     "This is taking longer than expected. Please try again.": "Das dauert länger als erwartet. Bitte erneut versuchen.",
     "Try again": "Erneut versuchen",
     "No matching topics": "Keine passenden Topics",
-    "View Response": "Antwort ansehen"
+    "View Response": "Antwort ansehen",
+    /* Die Berechnungen der Gesamtzeilen (15.10. spaet). "Average", "Total", "Median", "avg",
+       "total", "median", "most common", "topics", "markets" stehen in core. Gleichlautend: "Top 3
+       share"/"top 3" in shopping.js, "Models used"/"models" in responses-table.js, "Topics used" und
+       "Markets used" in prompts-table.js -- die laden in anderen Ansichten, ohne diese Datei;
+       gehoeren nach core. */
+    "Top 3 share": "Anteil der Top 3", "top 3": "Top 3", "Prompts used": "Genutzte Prompts", "prompts": "Prompts",
+    "Topics used": "Genutzte Topics", "Markets used": "Genutzte Märkte", "Most common format": "Häufigstes Format",
+    "Models used": "Genutzte Modelle", "models": "Modelle"
   });
 
   /* Die Erklaerkarten (UC.makeExplain), Texte aus dem Entwurf (TIPS). */
@@ -641,6 +649,71 @@
       var o = {}, k, ALT = { p_team: "p_team_id", p_tag_ids: "p_topic_ids" };
       for (k in b) if (Object.prototype.hasOwnProperty.call(b, k)) o[ALT[k] || k] = b[k];
       return o;
+    }
+    /* ---- Die Berechnungen der Gesamtzeilen (15.10. spaet) ---------------------------------------
+       Je Tabelle eine EIGENE Abfrage neben der Liste (Auftrag bubble/summen_db_auftrag_15_10.md, 6),
+       geholt von der Gesamtzeile selbst (core, makeZaehlZeile): nur, was gewaehlt ist, je
+       Filterstand einmal, mit eigenem Skelett in der Zelle -- die Zeilen warten nie darauf. Der Body
+       ist der der Liste OHNE Sortierung und Seite, also aendern Blaettern und Sortieren die
+       Signatur nicht. summenStand zaehlt reset(): danach gilt dieselbe Signatur als neu. Kein
+       Rueckweg ueber Bubble -- die Summen gibt es nur in der App; fehlt die Funktion, steht "–"
+       (core), und es wird nicht wiederholt. Die Topics der Uebersicht fragen nichts (lokal, unten).
+       price_currency fuer den Median der Bibliothek ist im Auftrag nicht genannt: die Datenbank
+       ignoriert unbekannte Namen, und kommt sie, steht der Preis wie in seiner Zelle. */
+    var SUMME_FN = { advertisers: "list_ads_advertisers_summary_v2", liste: "list_ads_library_summary_v2",
+                     lprompts: "list_ads_prompts_summary_v2" };
+    var SUMME_FELDER = {
+      advertisers: ["top3_share_pct", "appearances_total", "prompts_used", "topics_used", "markets_used", "top_format", "top_format_share"],
+      liste: ["top_format", "top_format_share", "price_median", "price_currency", "models_used"],
+      lprompts: ["avg_coverage_pct", "advertisers_total"]
+    };
+    var SUMME_TEXT = ["top_format", "price_currency"];
+    var summenStand = 0;
+    function summeBody(name) {
+      var a = name === "advertisers" ? advAnfrage() : name === "lprompts" ? promptAnfrage() : libAnfrage();
+      var b = mit({}, a.body);
+      delete b.p_limit; delete b.p_offset; delete b.p_sort;
+      return b;
+    }
+    /* Die Antwort: ein Objekt mit genau den bestellten Feldern (Auftrag 0.8), Zahlen als Zahl oder
+       null, Namen als Text oder null -- nie 0 fuer "nichts". Auch { summary: {...} } und eine Liste
+       mit einem Objekt. Unlesbar: null, die gewaehlten Zellen zeigen "–". */
+    function summeLesen(d, felder) {
+      var x = objOder(d) && objOder(d.summary) ? d.summary : d;
+      if (isArr(x) && x.length === 1 && objOder(x[0])) x = x[0];
+      if (!objOder(x)) return null;
+      var o = {};
+      felder.forEach(function (k) {
+        if (!Object.prototype.hasOwnProperty.call(x, k)) return;
+        o[k] = SUMME_TEXT.indexOf(k) >= 0 ? (str(x[k]).trim() || null) : num(x[k]);
+      });
+      return o;
+    }
+    /* Gelesene Summen je Anfrage (Funktion + ganzer Body samt p_fields und summenStand): die
+       Gesamtzeile merkt sich ihre Werte nur, solange es SIE gibt, und zeichnen() baut den Abschnitt
+       bei jedem Seiten- und Ansichtswechsel neu -- wie in shopping.js gemessen, holte ein Neubau
+       dieselbe Summe sonst ein zweites Mal. Nur Gelesenes; ein Fehler wird beim naechsten Aufbau
+       einmal neu versucht, nicht in einer Schleife. Die juengsten 30. */
+    var summenSpeicher = {}, summenReihe = [];
+    function summenQuelle(name) {
+      return {
+        sig: function () { return summenStand + "|" + sigVon(summeBody(name)); },
+        holen: function (felder) {
+          if (!UC.rpc || !team() || !SUMME_FN[name]) return null;
+          var fl = (isArr(felder) ? felder : []).filter(function (f, i, l) { return SUMME_FELDER[name].indexOf(f) >= 0 && l.indexOf(f) === i; }).sort();
+          if (!fl.length) return null;
+          var body = mit(summeBody(name), { p_fields: fl }), k = summenStand + "|" + SUMME_FN[name] + "|" + sigVon(body);
+          if (summenSpeicher[k]) return Promise.resolve(summenSpeicher[k]);
+          return Promise.resolve(UC.rpc(SUMME_FN[name], body, { timeoutMs: WARTE_MS })).then(function (erg) {
+            var d = erg && erg.ok ? summeLesen(erg.daten, SUMME_FELDER[name]) : null;
+            if (d) {
+              summenSpeicher[k] = d; summenReihe.push(k);
+              while (summenReihe.length > 30) delete summenSpeicher[summenReihe.shift()];
+            }
+            return d;
+          }, function () { return null; });
+        }
+      };
     }
     /* Die Signatur ist der GANZE Body, mit Team (13.10.). Vorher blieb p_team_id draussen ("das Team
        wechselt nur mit einem Seitenaufbau") -- seit die Seite selbst laedt und auf onTeamChange
@@ -1737,6 +1810,52 @@
        (innerHTML), wird DIESELBE Zeile danach wieder hinter den neuen Koerper gehaengt -- ein
        Neubau je Zeichnen haette jedes Mal ein neues Popover angelegt. Ohne Koerper (Leer- und
        Fehlerzustand) bleibt sie draussen; der Zustand sagt dann selbst, was ist. */
+    /* DIE BERECHNUNGEN JE SPALTE (15.10. spaet, vom Nutzer abgenommen: "exakt so umsetzen"; Median
+       nur beim Preis). feld: Schluessel der Antwort (SUMME_FELDER oben), art: Format nach CLAUDE.md
+       2b, kurz: Bezeichnung in der Zelle (klein wie in der Prompt-Tabelle), label: im Menue und im
+       Tooltip. Formate heissen wie in ihrer Zelle: in Advertisers kurz (FORMAT_KURZ), in der
+       Bibliothek ueber UC.adFormatLabel; der Anteil steht statt kurz dahinter.
+       TOPICS WITH ADS (Uebersicht) rechnet lokal, aus der Antwort, die schon da ist -- aber nicht als
+       Summe ueber die Zeilen: ein Prompt traegt mehrere Topics, und seine Ads zaehlten in jedem davon
+       (gemessen an shopads_c: Summe der Appearances 53, wirklich 48; Advertisers 51 gegen 37). Die
+       Gesamtwerte stehen in kpis der Uebersicht (ad_coverage_pct, advertisers, ad_appearances) --
+       dieselben Zahlen wie die Kacheln darueber. Sie gelten fuer ALLE Topics: grenzt die Suche der
+       Tabelle die Topics ein, gibt es keinen Gesamtwert ohne Doppelzaehlung, die Zelle zeigt "–". */
+    function topicsGesamt(k) {
+      if (str(state.topicsTab.suche).trim()) return null;
+      var d = daten(ovAnfrage()), kp = d ? objOder(d.kpis) : null;
+      if (!kp) return null;
+      return k === "ad_coverage_pct" ? anteilWert(kp[k]) : anzahlWert(kp[k]);
+    }
+    function advFormat(k) { k = str(k).trim(); return k ? (FORMAT_KURZ[k] ? t(FORMAT_KURZ[k]) : k) : null; }
+    function libFormat(k) { k = str(k).trim(); return k ? (UC.adFormatLabel ? UC.adFormatLabel(k) : k) : null; }
+    var SUM_RECHNEN = {
+      advertisers: {
+        share: [{ key: "top3", label: "Top 3 share", kurz: "top 3", feld: "top3_share_pct", art: "pct" }],
+        n: [{ key: "summe", label: "Total", kurz: "total", feld: "appearances_total", art: "anzahl" }],
+        prompts: [{ key: "genutzt", label: "Prompts used", kurz: "prompts", feld: "prompts_used", art: "anzahl" }],
+        topics: [{ key: "genutzt", label: "Topics used", kurz: "topics", feld: "topics_used", art: "anzahl" }],
+        markets: [{ key: "genutzt", label: "Markets used", kurz: "markets", feld: "markets_used", art: "anzahl" }],
+        formats: [{ key: "haeufig", label: "Most common format", kurz: "most common", feld: "top_format", art: "text",
+          name: advFormat, anteil: "top_format_share" }]
+      },
+      liste: {
+        format: [{ key: "haeufig", label: "Most common format", kurz: "most common", feld: "top_format", art: "text",
+          name: libFormat, anteil: "top_format_share" }],
+        price: [{ key: "median", label: "Median", kurz: "median", feld: "price_median", felder: ["price_currency"], art: "text",
+          wert: function (d) { return (UC.fmtGeld ? UC.fmtGeld(d.price_median, d.price_currency) : "") || null; } }],
+        model: [{ key: "genutzt", label: "Models used", kurz: "models", feld: "models_used", art: "anzahl" }]
+      },
+      lprompts: {
+        cov: [{ key: "avg", label: "Average", kurz: "avg", feld: "avg_coverage_pct", art: "pct" }],
+        advs: [{ key: "summe", label: "Total", kurz: "total", feld: "advertisers_total", art: "anzahl" }]
+      },
+      topics: {
+        cov: [{ key: "avg", label: "Average", kurz: "avg", art: "pct", lokal: function () { return topicsGesamt("ad_coverage_pct"); } }],
+        advs: [{ key: "summe", label: "Total", kurz: "total", art: "anzahl", lokal: function () { return topicsGesamt("advertisers"); } }],
+        n: [{ key: "summe", label: "Total", kurz: "total", art: "anzahl", lokal: function () { return topicsGesamt("ad_appearances"); } }]
+      }
+    };
     var zaehl = {};
     function zaehlEinhaengen(name, tab, w, zahl) {
       if (!UC.makeZaehlZeile || !tab || !w || !TABELLEN[name]) return;
@@ -1751,7 +1870,9 @@
           cols: function () { var e = spalten[name]; return e ? e.kit : null; },
           spalten: function () { return TABELLEN[name].spalten.map(function (c) { return c.key; }); },
           anzahl: function () { return typeof z.stand === "number" ? z.stand : null; },
-          laedt: function () { return z.stand === "laedt"; }
+          laedt: function () { return z.stand === "laedt"; },
+          rechnen: SUM_RECHNEN[name] || null,
+          quelle: SUMME_FN[name] ? summenQuelle(name) : null
         });
         z.el = tbody.parentNode.querySelector(":scope > .up-sumrow");
       } else if (z.el && z.el.previousElementSibling !== tbody) {
@@ -2376,6 +2497,7 @@
       setPrompts: function (raw, f) { return antwort("prompts", raw, f); },
       setOptionen: function (raw, f) { return antwort("optionen", raw, f); },
       reset: function () {
+        summenStand++;
         KANAELE.forEach(function (k) {
           state.cache[k] = {}; state.reihe[k] = [];
           if (unterwegs[k]) {

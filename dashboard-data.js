@@ -41,6 +41,9 @@
     overview: "cached_dashboard_overview_v1",
     visibility: "cached_dashboard_visibility_v1",
     responses: "cached_dashboard_responses_v1",
+    /* Die Berechnungen der Gesamtzeile der Responses (15.10. spaet, Auftrag
+       bubble/summen_db_auftrag_15_10.md, 2): eine EIGENE Abfrage neben der Liste. */
+    responsesSumme: "cached_dashboard_responses_summary_v1",
     chats: "dashboard_chats_v1",
     opportunities: "dashboard_opportunities_v1",
     clear: "clear_dashboard_cache_v1"
@@ -135,6 +138,23 @@
     return teile;
   }
   function clear(team) { return { art: "clear", fn: FN.clear, params: { p_team: str(team) }, sig: "" }; }
+  /* Die Summe der Responses: GENAU die Parameter der Liste derselben Stelle (responses()), ohne
+     Sortierung und Seite -- Blaettern und Sortieren aendern keine Summe. Eine Stelle, die der Liste
+     mehr mitgibt (p_brand, p_domain, p_url, p_prompt_id in den Drawern), gibt es der Summe genauso
+     mit; der Auftrag verlangt dort "exakt dieselben wie die Liste". p_fields ueber summeFelder
+     (citations-data.js): nur bekannte Namen, einmal, sortiert. */
+  var RESP_SUMME_FELDER = ["mention_rate_pct", "mentioned_count", "avg_sentiment", "sentiment_below_50",
+                           "avg_rank", "rank1_count", "avg_brands_per_response", "brands_seen",
+                           "avg_citations_per_response", "responses_with_citations_pct",
+                           "models_used", "top_model", "top_model_share", "first_date", "last_date", "responses_last_7d"];
+  var RESP_SUMME_TEXT = ["top_model", "first_date", "last_date"];
+  function responsesSumme(f, r, felder) {
+    var p = mit({}, responses(f, r).params);
+    delete p.p_order; delete p.p_limit; delete p.p_offset;
+    p.p_fields = C().summeFelder(felder, RESP_SUMME_FELDER);
+    return anfrage("responsesSumme", p);
+  }
+  function zuResponsesSumme(d) { return C().summeLesen(d, RESP_SUMME_FELDER, RESP_SUMME_TEXT); }
   /* Agentic, Nachtrag 09.10.: die Chats des angemeldeten Nutzers (Recent chats, Miras Liste) und
      alle Opportunities des Teams (das geliehene Brett). Vorher kamen beide aus
      get_power_dashboard_v1 ueber einen Bubble-Schritt. */
@@ -339,6 +359,7 @@
     FN: FN, ORDER: ORDER, RESPONSES_MAX: RESPONSES_MAX,
     letzte30: letzte30, berlinHeute: berlinHeute,
     overview: overview, visibility: visibility, responses: responses, responsesTeile: responsesTeile, clear: clear,
+    responsesSumme: responsesSumme, zuResponsesSumme: zuResponsesSumme,
     chats: chats, opportunities: opportunities, zuChats: zuChats, zuOpportunities: zuOpportunities,
     topTypen: topTypen, topListe: topListe,
     zuVisibility: zuVisibility, zuMarkentabelle: zuMarkentabelle, zuTop: zuTop,

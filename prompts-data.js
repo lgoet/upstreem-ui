@@ -413,6 +413,10 @@
 
   function responses(f, r) { return DD().responsesTeile(f, r); }
   function zuResponses(teile) { return DD().zuResponses(teile); }
+  /* Die Summe der Responses-Tabelle (15.10. spaet): dieselbe Anfrage wie im Dashboard, ohne Seite
+     und Sortierung (dashboard-data.js responsesSumme). */
+  function responsesSumme(f, r, felder) { return DD().responsesSumme(f, r, felder); }
+  function zuResponsesSumme(d) { return DD().zuResponsesSumme(d); }
   function makeLader(o) { return C().makeLader(o); }
 
   window.UpstreemPromptsDaten = {
@@ -421,7 +425,7 @@
     anlegen: anlegen, topicsSetzen: topicsSetzen, sammel: sammel,
     topicSpeichern: topicSpeichern, topicLoeschen: topicLoeschen, aktualisieren: aktualisieren,
     intentSetzen: intentSetzen, brandedSetzen: brandedSetzen, INTENTE: INTENTE,
-    responses: responses, zuResponses: zuResponses,
+    responses: responses, zuResponses: zuResponses, responsesSumme: responsesSumme, zuResponsesSumme: zuResponsesSumme,
     zuListe: zuListe, zuGruppenZeilen: zuGruppenZeilen, zuGruppen: zuGruppen, abgelegteTopics: abgelegteTopics,
     zuSeite: zuSeite, zuAnlage: zuAnlage, zuSammel: zuSammel, zuTopic: zuTopic,
     fehlerArt: fehlerArt, meldung: meldung, hinweis: hinweis, hinweisZahl: hinweisZahl,
