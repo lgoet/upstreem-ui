@@ -2875,6 +2875,16 @@ richtige Preis dafür, dass kein core-Kit sie versehentlich für sein eigenes El
 Pager lesen sich als zwei konkurrierende Tabellen in einer dritten. Öffnen schließt und **resettet**
 den vorherigen (Suche, Filter, Seite, Seitengröße).
 
+**Die angeklickte Zeile bleibt stehen (16.10.).** Schließt das Öffnen einen größeren Block
+weiter oben, fällt dessen Höhe über der Zeile weg, und sie sprang nach oben, teils unter die
+klebende Leiste. Die Scroll-Verankerung des Browsers hilft nicht: `#main` trägt im Wirt
+`overflow-anchor: none`, und auch eingeschaltet wählt sie den gerade entfernten Block als Anker.
+Deshalb öffnet jeder Aufklapper über **`UC.zeileHalten(el, aendern, { dauer })`**: Lage vorher
+und nachher lesen, den scrollenden Vorfahren (`#main`, im Drawer dessen Körper) im selben Zug
+nachschieben, mindestens unter Leiste und Spaltenkopf; am Seitenende hält ein zeitweiliger
+unterer Rand die Lage für die Dauer der Bewegung. Genutzt von Citations › Domains und den
+Prompt-Gruppen (Akkordeon-Modus).
+
 **Auf/Zu animieren: Keyframe, keine Transition.** Der Block wird von `renderTable()` frisch erzeugt;
 eine Transition läuft auf einem gerade eingefügten Knoten nie an. `grid-template-rows: 0fr -> 1fr`
 über 200 ms, `.is-closing` mit `forwards` für den Weg zurück (JS wartet die 200 ms ab, dann erst
