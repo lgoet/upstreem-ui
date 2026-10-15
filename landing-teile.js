@@ -326,7 +326,117 @@
     });
   }
 
+  /* ---- Anker auf derselben Seite (15.10. gemeldet: "der Klick auf Neu Customer Journey Tracking
+     scrollt eher zu Domain Detail") ----
+     Der Browser rechnet das Ziel eines weichen Sprungs EINMAL, am Anfang. Auf der Startseite aendern
+     sich waehrend der 3.600px Fahrt aber noch Hoehen darueber (Bilder laden, Vorschauen werden
+     gebaut) -- das Ziel wandert, und die Fahrt endet daneben. Hier wird nach dem Ende der Fahrt
+     nachgemessen und, wenn das Ziel nicht mehr unter der Leiste steht, nachgefahren (hoechstens
+     dreimal). Links mit eigenem Handler (die Panels der Leiste) haben preventDefault schon gesetzt
+     und bleiben unberuehrt. */
+  function ankerBinden(){
+    if (document.__ulhAnker) return;
+    document.__ulhAnker = true;
+    var ruhig = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function abstand(ziel){
+      var m = parseFloat(getComputedStyle(ziel).scrollMarginTop) || 0;
+      return ziel.getBoundingClientRect().top - m;
+    }
+    function fahren(ziel, runde){
+      window.scrollBy({ top: abstand(ziel), behavior: ruhig ? "auto" : "smooth" });
+      if (runde >= 3) return;
+      var fertig = false, uhr = null;
+      function pruefen(){
+        if (fertig) return;
+        fertig = true;
+        window.removeEventListener("scrollend", pruefen);
+        clearTimeout(uhr);
+        if (Math.abs(abstand(ziel)) > 4) fahren(ziel, runde + 1);
+      }
+      /* scrollend wo es das gibt; sonst eine Frist, die eine lange Fahrt abdeckt. */
+      if ("onscrollend" in window) window.addEventListener("scrollend", pruefen);
+      uhr = setTimeout(pruefen, 1600);
+    }
+    document.addEventListener("click", function(e){
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      var a = e.target && e.target.closest ? e.target.closest("a[href*='#']") : null;
+      if (!a || a.target === "_blank") return;
+      var url;
+      try { url = new URL(a.getAttribute("href"), location.href); } catch (err){ return; }
+      if (url.origin !== location.origin || url.pathname.replace(/\/$/, "") !== location.pathname.replace(/\/$/, "")) return;
+      var id = decodeURIComponent(url.hash.slice(1));
+      var ziel = id && document.getElementById(id);
+      if (!ziel) return;
+      e.preventDefault();
+      try { history.pushState(null, "", url.hash); } catch (err){}
+      fahren(ziel, 1);
+    });
+  }
+
+  /* ---- Der Preisschalter (15.10. aus landing-hero.js hierher) ----
+     Startseite UND eigene Preisseite (/pricing). Markup bleibt stehen, der Schalter stellt um, die
+     Ersparnis klappt auf oder zu, und der Betrag ZAEHLT auf die neue Zahl: ein Preis, der umspringt,
+     liest sich wie ein anderer Preis, ein zaehlender wie derselbe Tarif zu anderen Bedingungen.
+     Die Betraege stehen am Element (data-mon, data-jahr), die Sprache an der Sektion (data-lang). */
+  function geld(v, de){
+    var g = Math.round(v * 10) / 10;
+    var t = g % 1 === 0 ? String(g) : g.toFixed(1);
+    return de ? t.replace(".", ",") + " \u20ac" : t + "\u20ac";
+  }
+  function zaehlen(el, ziel, de){
+    var von = parseFloat(String(el.textContent || "").replace(",", ".").replace(/[^0-9.]/g, ""));
+    if (!isFinite(von)) von = ziel;
+    if (el.__uhr) cancelAnimationFrame(el.__uhr);
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+      el.textContent = geld(ziel, de); return;
+    }
+    var t0 = 0, DAUER = 380;
+    (function lauf(ts){
+      if (!t0) t0 = ts || 0;
+      var p = Math.min(1, ((ts || 0) - t0) / DAUER), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = geld(von + (ziel - von) * e, de);
+      if (p < 1) el.__uhr = requestAnimationFrame(lauf);
+      else { el.__uhr = 0; el.textContent = geld(ziel, de); }
+    })(0);
+  }
+  function preiseBinden(root){
+    [].forEach.call(root.querySelectorAll(".ulh-preis"), function(sek){
+      if (sek.__ulhPreis) return;
+      sek.__ulhPreis = true;
+      var de = sek.getAttribute("data-lang") === "de";
+      sek.addEventListener("click", function(e){
+        var b = e.target.closest ? e.target.closest("[data-interval]") : null;
+        if (!b || !sek.contains(b)) return;
+        var jaehrlich = b.getAttribute("data-interval") === "yearly";
+        [].forEach.call(sek.querySelectorAll("[data-interval]"), function(x){
+          var an = (x.getAttribute("data-interval") === "yearly") === jaehrlich;
+          x.classList.toggle("is-active", an);
+          x.setAttribute("aria-selected", an ? "true" : "false");
+        });
+        [].forEach.call(sek.querySelectorAll(".ulh-preis-karte"), function(k){
+          var z = k.querySelector(".ulh-preis-zahl");
+          var ziel = z && parseFloat(z.getAttribute(jaehrlich ? "data-jahr" : "data-mon"));
+          if (z && isFinite(ziel)) zaehlen(z, ziel, de);
+          var n = k.querySelector(".ulh-preis-notiz");
+          if (n) n.classList.toggle("is-on", jaehrlich);
+        });
+      });
+    });
+  }
+  /* Die Haekchen der Preisliste. Auf der Startseite setzt sie landing-hero.js aus core
+     (zeichenSetzen, UC.icon); auf der eigenen Preisseite laeuft core nicht -- dort steht hier
+     derselbe Feather-Pfad ("check"), mit der Strichstaerke aus data-ic-w. */
+  function haekchen(root){
+    [].forEach.call(root.querySelectorAll('[data-ic="check"]'), function(el){
+      if (el.firstChild) return;
+      var w = el.getAttribute("data-ic-w") || "2";
+      el.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + w +
+        '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>';
+    });
+  }
+
   function binden(){
+    ankerBinden();
     /* Die Leiste der STARTSEITE ist keine eigene Wurzel (data-ulh-teil fehlt) -- ihr Toggle wird
        trotzdem gebunden. */
     spracheBinden(document);
@@ -335,11 +445,14 @@
       nachweisBinden(root);
       jahrSetzen(root);
       kalenderBinden(root);
+      preiseBinden(root);
+      haekchen(root);
     });
   }
 
   window.UpstreemLandingTeile = { navLauf: navLauf, nachweisBinden: nachweisBinden,
                                   jahrSetzen: jahrSetzen, kalenderBinden: kalenderBinden, spracheBinden: spracheBinden,
+                                  preiseBinden: preiseBinden,
                                   binden: binden };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", binden);

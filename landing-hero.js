@@ -51,6 +51,9 @@
     var basis = SITE === "" || /^https?:\/\/[^\/]+$/.test(SITE) ? SITE + "/" : SITE;
     return basis + (anker ? "#" + anker : "");
   }
+  /* Eine Unterseite der Website in der laufenden Sprache: "/pricing" -> "/de/pricing" auf Deutsch,
+     "https://upstreem.ai/pricing" in Framer. */
+  function seitenUrl(p){ return SITE + p; }
   function tab(h){
     return WEBSITE && h.charAt(0) === "/" ? "" : ' target="_blank" rel="noopener"';
   }
@@ -893,7 +896,7 @@
           /* Seit 14.10. der Preisabschnitt der Startseite (#pricing) und keine eigene Seite mehr:
              dieselben Karten standen sonst zweimal und liefen auseinander. upstreem-web leitet
              /pricing dorthin um. */
-          '<a class="ulh-nav-punkt" href="' + startUrl("pricing") + '"' + tab(startUrl("pricing")) + '>Pricing</a>' +
+          '<a class="ulh-nav-punkt" href="' + seitenUrl("/pricing") + '"' + tab(seitenUrl("/pricing")) + '>Pricing</a>' +
         '</nav>' +
         '<div class="ulh-nav-rechts">' +
           /* DER SPRACH-TOGGLE (14.10.), nur auf der eigenen Website (Framer kennt kein /de).
@@ -958,7 +961,7 @@
     return '<div class="ulh-nav-mobil">' +
       '<div class="ulh-nm-in">' +
         gruppen +
-        ' <a class="ulh-nm-eintrag ulh-nm-einzeln" href="' + startUrl("pricing") + '"' + tab(startUrl("pricing")) + '>' +
+        ' <a class="ulh-nm-eintrag ulh-nm-einzeln" href="' + seitenUrl("/pricing") + '"' + tab(seitenUrl("/pricing")) + '>' +
           '<span class="ulh-nav-e-t">Pricing</span></a>' +
         (WEBSITE ? ' <div class="ulh-nm-sprache ulh-sprache" role="group" aria-label="' + T("Language") + '">' +
             '<a href="/" hreflang="en" lang="en" data-sprache="en"' + (LANG === "en" ? ' class="is-an" aria-current="true"' : '') + '>' +
@@ -1178,7 +1181,11 @@
         '<div class="ulh-preis-name">' + t.name + '</div>' +
         '<p class="ulh-preis-desc">' + t.desc + '</p>' +
         '<div class="ulh-preis-betrag">' +
-          '<span class="ulh-preis-zahl">' + preisGeld(preisMonat(t, true)) + '</span>' +
+          /* data-mon/data-jahr: die zwei Monatsbetraege als Zahl -- der Schalter (landing-teile.js,
+             preiseBinden) zaehlt zwischen ihnen und braucht dafuer weder TARIFE noch dieses Skript,
+             denn auf der Preisseite der Website laeuft nur landing-teile.js. */
+          '<span class="ulh-preis-zahl" data-mon="' + preisMonat(t, false) + '" data-jahr="' + preisMonat(t, true) + '">' +
+            preisGeld(preisMonat(t, true)) + '</span>' +
           '<span class="ulh-preis-je">/ month</span>' +
         '</div>' +
         /* Die Ersparnis klappt auf und zu, statt zu erscheinen und zu verschwinden: so schiebt sie
@@ -1203,13 +1210,33 @@
       '</div>';
   }
   function preise(){
-    return '<section class="ulh-preis" id="pricing">' +
+    return '<section class="ulh-preis" id="pricing" data-lang="' + LANG + '">' +
       '<div class="ulh-spur">' +
         '<div class="ulh-feat-kopf ulh-auf">' +
           '<span class="ulh-feat-chip">' + PREIS_CHIP + '</span>' +
           '<h2 class="ulh-feat-h">' + PREIS_H + '</h2>' +
           '<p class="ulh-feat-sub">' + PREIS_SUB + '</p>' +
         '</div>' +
+        preisInhalt() +
+      '</div>' +
+    '</section>';
+  }
+  /* DIE EIGENE PREISSEITE (15.10. angefordert: "eine separate Seite fuer Preise, der Klick auf
+     Preise soll dorthin; die Preise unten auf der Landingpage bleiben"). Dieselben Karten wie der
+     Abschnitt der Startseite, darueber der Kopf als Band wie bei Demo und Kontakt -- dort steht die
+     h1 der Seite. Auf der Website rendert upstreem-web sie unter /pricing (lib/ui.ts, preise). */
+  function preisSeite(){
+    return '<section class="ulh-preis ulh-preis-seite" data-lang="' + LANG + '">' +
+      '<div class="ulh-seitenkopf"><div class="ulh-spur ulh-seitenkopf-in">' +
+        '<span class="ulh-feat-chip">' + PREIS_CHIP + '</span>' +
+        '<h1 class="ulh-seitenkopf-h">' + PREIS_H + '</h1>' +
+        '<p class="ulh-seitenkopf-sub">' + PREIS_SUB + '</p>' +
+      '</div></div>' +
+      '<div class="ulh-spur">' + preisInhalt() + '</div>' +
+    '</section>';
+  }
+  function preisInhalt(){
+    return '' +
         /* Der Schalter ist .up-seg aus core -- dasselbe Bauteil wie im Onboarding, nur in der
            32px-Form (is-lg). Seine Farbmarken setzt die CSS hier lokal, weil core sie an .up-root
            haengt und diese Sektion keine ist. */
@@ -1224,60 +1251,18 @@
         '<div class="ulh-preis-reihe ulh-auf" style="--auf:2">' +
           TARIFE.map(preisKarte).join("") +
         '</div>' +
-        '<p class="ulh-preis-fuss ulh-auf" style="--auf:3">' + PREIS_FUSS + '</p>' +
-      '</div>' +
-    '</section>';
+        '<p class="ulh-preis-fuss ulh-auf" style="--auf:3">' + PREIS_FUSS + '</p>';
   }
   /* Der Wechsel zwischen Monat und Jahr. Derselbe Weg wie im Onboarding: Markup bleibt stehen,
      der Schalter stellt um, die Ersparnis klappt auf oder zu, und der Betrag ZAEHLT auf die neue
      Zahl. Ein Preis, der umspringt, liest sich wie ein anderer Preis -- ein zaehlender sagt, dass
      es derselbe Tarif zu anderen Bedingungen ist. */
   function preiseBinden(root){
-    var sek = root.querySelector(".ulh-preis"); if (!sek || sek.__ulhPreis) return;
-    sek.__ulhPreis = true;
-    var karten = sek.querySelectorAll(".ulh-preis-karte");
-    sek.addEventListener("click", function(e){
-      var b = e.target.closest ? e.target.closest("[data-interval]") : null;
-      if (!b || !sek.contains(b)) return;
-      var jaehrlich = b.getAttribute("data-interval") === "yearly";
-      var sw = sek.querySelectorAll("[data-interval]");
-      for (var i = 0; i < sw.length; i++){
-        var an = (sw[i].getAttribute("data-interval") === "yearly") === jaehrlich;
-        sw[i].classList.toggle("is-active", an);
-        sw[i].setAttribute("aria-selected", an ? "true" : "false");
-      }
-      for (var k = 0; k < karten.length; k++){
-        var t = TARIFE[k]; if (!t) continue;
-        var zahl = karten[k].querySelector(".ulh-preis-zahl");
-        if (zahl) preisZaehlen(zahl, preisMonat(t, jaehrlich));
-        var notiz = karten[k].querySelector(".ulh-preis-notiz");
-        if (notiz) notiz.classList.toggle("is-on", jaehrlich);
-      }
-    });
+    /* Seit dem 15.10. in landing-teile.js: dieselbe Bedienung braucht die eigene Preisseite der
+       Website, und dort laeuft nur diese kleine Datei. */
+    var t = window.UpstreemLandingTeile;
+    if (t && t.preiseBinden) t.preiseBinden(root);
   }
-  /* Von der Zahl, die dasteht, auf die neue. Die Ausgangszahl wird aus dem TEXT gelesen und nicht
-     mitgefuehrt: so stimmt sie auch, wenn mitten im Zaehlen erneut umgeschaltet wird. 380ms mit
-     weichem Ausklang, wie im Onboarding. */
-  function preisZaehlen(el, ziel){
-    /* Komma zuerst zum Punkt: auf Deutsch steht "82,5 €", und ohne den Tausch wurde daraus 825. */
-    var von = parseFloat(String(el.textContent || "").replace(",", ".").replace(/[^0-9.]/g, ""));
-    if (!isFinite(von)) von = ziel;
-    if (el.__uhr) cancelAnimationFrame(el.__uhr);
-    /* Weniger Bewegung: der Preis steht sofort (14.10., Audit). */
-    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches){
-      el.textContent = preisGeld(ziel); return;
-    }
-    var t0 = 0, DAUER = 380;
-    (function lauf(ts){
-      if (!t0) t0 = ts || 0;
-      var p = Math.min(1, ((ts || 0) - t0) / DAUER);
-      var e = 1 - Math.pow(1 - p, 3);
-      el.textContent = preisGeld(von + (ziel - von) * e);
-      if (p < 1) el.__uhr = requestAnimationFrame(lauf);
-      else { el.__uhr = 0; el.textContent = preisGeld(ziel); }
-    })(0);
-  }
-
   /* ---------- Der Fuss ----------------------------------------------------------------------
      Schwarz, ueber die ganze Breite: das Ende der Seite soll auch wie eines aussehen. Links die
      Marke und darunter die zwei Netzwerke, rechts die Spalten. Die Adressen sind die echten der
@@ -1285,7 +1270,7 @@
   var FUSS_SPALTEN = [
     { t: "Product", e: [
       { t: "Overview", h: startUrl() },
-      { t: "Pricing", h: startUrl("pricing") },
+      { t: "Pricing", h: seitenUrl("/pricing") },
       { t: "Log in", h: "https://app.upstreem.ai/signup?mode=login" }
     ]},
     { t: "Resources", e: [
@@ -2383,14 +2368,22 @@
      Die Verteilung auf die drei Bahnen: innen zwei, mitte drei, aussen drei. Innen weniger, weil
      dort der Umfang kleiner ist und drei Zeichen sich sonst beruehren. */
   var ORBIT = [
-    /* NUR WAS SICH VERFOLGEN LAESST (14.10. vom Nutzer: ChatGPT, Perplexity, Google AI Overviews,
-       Gemini). Hier standen acht Zeichen, darunter Claude, Copilot, Grok, Mistral und DeepSeek --
-       eine Karte, die "every major model" sagt, darf keins zeigen, das es nicht gibt. Vier auf
-       drei Bahnen: innen eins, Mitte zwei, aussen eins -- jede Bahn traegt etwas. */
+    /* WIEDER DIE VOLLE BELEGUNG (15.10. vom Nutzer: "auch die anderen Modelle wieder hinzu, wie
+       vorher"). Am 14.10. stand die Karte voruebergehend auf den vier verfolgbaren Modellen; der Ring
+       ist aber ein Bild der KI-Landschaft, kein Leistungsversprechen -- das stehen im Text der Karte
+       und in den Preisen. Die acht von vorher, dazu Google AI Overviews (verfolgt seit dem 14.10.)
+       aussen: innen zwei, Mitte drei, aussen vier. */
     { bahn: 0, d: "openai.com",              n: "ChatGPT" },
-    { bahn: 1, d: "perplexity.ai",           n: "Perplexity" },
+    { bahn: 0, d: "claude.ai",               n: "Claude" },
     { bahn: 1, d: "gemini.google.com",       n: "Gemini" },
-    { bahn: 2, d: "google.com",              n: "Google AI Overviews" }
+    { bahn: 1, d: "perplexity.ai",           n: "Perplexity" },
+    /* copilot.cloud.microsoft und nicht copilot.microsoft.com: die zweite Adresse liefert kein
+       Logo, sondern ein leeres schwarzes Kaestchen -- im Bild geprueft, neben den anderen sieben. */
+    { bahn: 1, d: "copilot.cloud.microsoft",  n: "Copilot" },
+    { bahn: 2, d: "google.com",              n: "Google AI Overviews" },
+    { bahn: 2, d: "x.ai",                    n: "Grok" },
+    { bahn: 2, d: "mistral.ai",              n: "Mistral" },
+    { bahn: 2, d: "deepseek.com",            n: "DeepSeek" }
   ];
   /* Die Marke in der Mitte. Dieselbe Datei, die die App als Favicon im hellen Thema fuehrt --
      dunkle Tinte auf durchsichtigem Grund, also genau richtig auf der weissen Scheibe. */
@@ -3943,7 +3936,11 @@
         /* Der Sentiment-Baustein der App (UC.sentHtml: Balken in der Farbe des Werts, davor die
            ganze Zahl), hier gross. Farbe und Zahl wechseln beim Umlegen (visReiseFuellen). */
         '<span class="ulh-br-wert">' + (kern.sentHtml ? kern.sentHtml(BRANDED.ohne) : Math.round(BRANDED.ohne)) + '</span>' +
-        '<span class="ulh-br-diff">+' + Math.round(BRANDED.mit - BRANDED.ohne) + (LANG === "de" ? " Pkt." : " pts") + '</span>' +
+        /* Der Trend-Chip der App (15.10.: "wie in der Hauptapp, gruen, Pfeil nach rechts oben"):
+           UC.trendChip mit ganzer Zahl ohne Einheit -- Sentiment ist kein Prozentwert (CLAUDE.md
+           2b). Vorher stand hier ein eigener roter Text "+15 pts". */
+        '<span class="ulh-br-diff">' + (kern.trendChip ? kern.trendChip(BRANDED.mit - BRANDED.ohne, { decimals: false, suffix: "" })
+          : "+" + Math.round(BRANDED.mit - BRANDED.ohne)) + '</span>' +
       '</div>' +
       '<div class="ulh-br-liste">' + zeilen + '</div>' +
     '</div>';
@@ -8742,7 +8739,8 @@
      Markup fuer die Framer-Komponenten -- statt zu starten. Im Browser setzt niemand den Schalter. */
   if (window.__ulhNurHtml){
     window.__ulhHtml = { seite: seiteHtml(true), stand: standDerSeite(), leiste: deHtml(leiste()), fuss: deHtml(fuss()),
-                         demo: deHtml(termin("demo")), kontakt: deHtml(termin("kontakt")) };
+                         demo: deHtml(termin("demo")), kontakt: deHtml(termin("kontakt")),
+                         preise: deHtml(preisSeite()) };
     return;
   }
 

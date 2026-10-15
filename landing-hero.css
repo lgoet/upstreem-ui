@@ -3479,11 +3479,14 @@
 .ulh-geo-mk-t { font-weight: 500; color: var(--ulh-text); }
 .ulh-geo-mk-s { color: var(--ulh-sub); }
 .ulh-geo-in { position: relative; z-index: 1; }
-.ulh-geo-kopf { max-width: 640px; margin-left: auto; margin-right: auto; }
+/* Breiter (15.10.: "steht auf 5 Zeilen, ab ,Deine Kunden' bitte mehr Breite"): der erste Satz
+   bleibt eine eigene Zeile, der Rest laeuft in bis zu 46 Zeichen Breite -- auf Deutsch drei
+   Zeilen statt fuenf. Der Kopf darf dafuer bis 960px. */
+.ulh-geo-kopf { max-width: 960px; margin-left: auto; margin-right: auto; }
 /* Die Ueberschrift traegt beide Toene wie die der Quellen: erster Satz dunkel, Rest in der zweiten
    Farbe -- hier ohne Scrolleffekt, denn sie ist kurz und steht neben Zahlen, nicht allein. */
-.ulh-geo-h { max-width: 22ch; }
-.ulh-geo-h2 { color: var(--ulh-sub); }
+.ulh-geo-h { max-width: none; }
+.ulh-geo-h2 { display: block; max-width: 46ch; margin: 0 auto; color: var(--ulh-sub); text-wrap: balance; }
 /* Vier Zahlen, zwei mal zwei. Der Strich links ist dieselbe Machart wie im Vorbild: eine Kante,
    kein Kasten -- die Zahl soll stehen, nicht in einer Karte sitzen. */
 .ulh-geo-kpis {
@@ -3784,6 +3787,12 @@
    Ganzes ungueltig. Genau daran hatte die erste Fassung ihren Rahmen und ihren Grund verloren:
    border: 1px solid var(--vc-border) fiel weg, die Karten standen ohne Kontur auf der Seite. */
 .ulh-preis { padding: clamp(64px, 9vw, 128px) 0 clamp(48px, 7vw, 96px); }
+/* DIE EIGENE PREISSEITE (15.10., /pricing): oben steht das Kopfband (.ulh-seitenkopf), darunter
+   ohne die grosse Luft des Startseiten-Abschnitts der Schalter -- der Kopf ist schon der Anfang.
+   Auf den Unterseiten laeuft das Einblenden beim Scrollen nicht (es steckt in landing-hero.js):
+   .ulh-auf stuende dort fuer immer auf Deckkraft 0. Also gleich sichtbar. */
+.ulh-preis.ulh-preis-seite { padding: 0 0 clamp(64px, 9vw, 120px); }
+.ulh-root.ulh-teil .ulh-auf { opacity: 1; translate: none; }
 /* Der Schalter ist .up-seg aus core. Seine Marken stehen hier lokal -- ohne sie bekaeme er weder
    Grund noch Rahmen. Die Schiene ist genau der Ton, den diese Sektion bis zum 22.09. gerendert
    hat (rgba(245,245,245,0.6) auf --ulh-grund), jetzt deckend ausgeschrieben. Damit bleibt die
@@ -4389,9 +4398,10 @@
 .ulh-br-wert .up-sent-dot { width: 6px; height: 26px; transition: background-color 700ms var(--ulh-ease); }
 .ulh-br-wert .up-sent-val { font-size: inherit; font-weight: inherit; letter-spacing: inherit; }
 @media (prefers-reduced-motion: reduce) { .ulh-root .ulh-br-wert .up-sent-dot { transition: none; } }
-/* "+16.6 pts" erscheint nur, solange Branded mitzaehlt: es ist der geschoente Teil. */
+/* Der Trend erscheint nur, solange Branded mitzaehlt: er ist der geschoente Teil. */
+/* Nur noch Huelle fuer den Trend-Chip aus core (Farbe, Pfeil, Schrift kommen von .up-trend). */
 .ulh-br-diff {
-  font-size: 12px; font-weight: 500; color: #b0200c; font-variant-numeric: tabular-nums;
+  display: inline-flex; align-self: center;
   opacity: 0; transform: translateY(4px);
   transition: opacity 320ms var(--ulh-ease), transform 420ms var(--ulh-expo);
 }
