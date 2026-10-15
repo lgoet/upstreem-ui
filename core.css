@@ -1727,7 +1727,7 @@
        diese Probe aussieht wie die Zelle. */
     /* Der 4px-Ring ist die Farbe der Platte (Tinte der Karte), damit sich die Punkte gegenseitig
        ausschneiden wie in der Zelle -- er folgt der Platte jetzt ueber das Token, auch im Dunkeln. */
-    .up-explain-dot { width: 28px; height: 28px; border-radius: var(--up-r-m); background: #eeedef;
+    .up-explain-dot { width: 28px; height: 28px; border-radius: var(--up-r-voll); background: #eeedef;
       border: 0; box-shadow: 0 0 0 4px var(--vc-inverse-ink); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #6f6f6f; }
     .up-explain-more { background: #f0f0f0; }
     .up-explain[data-theme="dark"] .up-explain-dot { background: #28282c; border-color: #4a4a4a; color: #b8b8b8; }
@@ -5016,9 +5016,16 @@
    .urd-cite-card, .urd-pc (mit Produkt-Id), .up-adcard (adCardHtml), .uad-auf-ad, .uev-karte,
    .uo-card. */
 :root, .up-root, [data-theme] { --up-karte-hover: color-mix(in srgb, var(--up-knopf-hover) 50%, transparent); }
-.up-karte-klick { cursor: pointer; transition: transform var(--up-t-1) var(--up-ease); }
-.up-karte-klick:hover, .up-karte-klick.is-hl { background-image: linear-gradient(var(--up-karte-hover), var(--up-karte-hover)); }
+/* DAZU HEBUNG UND HAUCH SCHATTEN (15.10. spaet, Nutzer: "nur Flaeche ist super. Ganz leichter
+   Slide-up-Effekt wie wir ihn schon hatten und minimal mehr Schatten ist aber auch gut"): 2px nach
+   oben wie die Ad Card bis zum 13.10., Schatten e-1 (Geist small, die leiseste Stufe). Der Rand
+   bleibt, wie bei Geist. Beim Druck faellt die Hebung weg und die Karte wird 1 % kleiner. */
+.up-karte-klick { cursor: pointer;
+  transition: transform var(--up-t-2) var(--up-ease), box-shadow var(--up-t-2) var(--up-ease); }
+.up-karte-klick:hover, .up-karte-klick.is-hl { background-image: linear-gradient(var(--up-karte-hover), var(--up-karte-hover));
+  transform: translateY(-2px); box-shadow: var(--up-e-1); }
 .up-karte-klick:active { transform: scale(.99); }
+@media (prefers-reduced-motion: reduce) { .up-karte-klick:hover, .up-karte-klick.is-hl { transform: none; } }
 .up-karte-klick:focus-visible { outline: 2px solid var(--vc-text); outline-offset: 2px; }
 
 /* DIE AD CARD (05.10., Ads V1, core.js adCardHtml): die Produktkarte des Response Detail (.urd-pc)
@@ -5853,8 +5860,17 @@
    Groesse (28), Form (abgerundetes Quadrat, --up-r-m -- ein Logo ist kein Portraet), Platte und
    Rahmen bleiben.
    UNVERAENDERT: Anheben 3px, Spreizen 8/16 (gespiegelt bei is-spread-left), nach vorn beim
-   Ueberfahren, Tooltip (data-brandtip am unbeweglichen Kasten), Ring in der Hoverfarbe der Zeile. */
-:root { --up-stack-ueber: 8px; --up-stack-ring-w: 1px; }
+   Ueberfahren, Tooltip (data-brandtip am unbeweglichen Kasten), Ring in der Hoverfarbe der Zeile.
+   NACHGEZOGEN 15.10. spaet (Nutzer: "die Chips Citations und Brand Mentions stimmen noch nicht, das
+   solltest du vom Geist-System-Avatar nutzen, hast du nur fuer die +1 gemacht. Und die sind etwas
+   zu nah beieinander, der Abstand muss ein paar px groesser sein, so wie es vorher war"):
+     Form          jetzt der Geist-Avatar selbst: ein KREIS (vercel.com/geist/avatar: rounded-full,
+                   overflow hidden, innen ein 1px-Ring in Gray Alpha 400 -- hier der Rahmen in
+                   --vc-border). Das Logo bleibt ein Logo: ein 20er Quadrat mit Radius 4 in der
+                   Platte, das ganz in den Kreis passt (Ecke bei 12.5 vom Mittelpunkt, Kreis innen
+                   13) -- nichts wird abgeschnitten. Vorher 22er Bild im abgerundeten Quadrat.
+     Ueberlappung  wieder 4 wie vor dem 15.10. (dicht 3.52). Geists 0.3 x Groesse (8) lag zu eng. */
+:root { --up-stack-ueber: 4px; --up-stack-ring-w: 1px; }
 .up-stack { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; isolation: isolate; }
 .up-stack-item {
   width: 28px; height: 28px; flex: 0 0 28px;
@@ -5891,7 +5907,7 @@
    Kante des Chips. */
 .up-stack-vis {
   display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 100%;
-  border-radius: var(--up-r-m); padding: 2px; background: var(--vt-logo-bg); box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg);
+  border-radius: var(--up-r-voll); padding: 3px; background: var(--vt-logo-bg); box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg);
   border: 1px solid var(--vc-border);
   transition: transform .16s ease;
   /* Bezug fuer den Globus des Favicon-Rueckfalls (siehe .up-fav weiter oben). In Ruhe traegt die
@@ -5911,7 +5927,9 @@
    unberuehrt -- in beiden Themen dieselbe Geometrie, und die Kacheln mit eigenem Mass
    (performance-detail ohne Rahmen, die kompakte Zeile) bekommen denselben 1px-Rand, ohne dass
    ihr Bild im Dunkeln schrumpft. Der Ring folgt dem Radius des Bildes, er ist also konzentrisch. */
-.up-root[data-theme="dark"] .up-stack-vis { border-color: transparent; background-clip: content-box; }
+/* Seit dem Kreis (15.10. spaet) traegt der Rahmen im Dunkeln den Geist-Ring (--vc-border) statt
+   durchsichtig zu sein: sonst bliebe vom Avatar nur die helle Logo-Kachel, und der Kreis fehlte. */
+.up-root[data-theme="dark"] .up-stack-vis { border-color: var(--vc-border); background-clip: content-box; }
 .up-root[data-theme="dark"] .up-stack-item img { box-shadow: 0 0 0 1px var(--vt-logo-bg); }
 /* DER VORGAENGER SCHIEN DURCH (28.09. gemeldet: "links vor jedem Chip ist noch ein schmaler
    Bereich des Chips davor sichtbar", nur im Dunkeln). Die Regel darueber macht Rahmen und
@@ -5949,8 +5967,8 @@
 .up-karte-klick:is(:hover, .is-hl) :is(.up-stack-vis, .up-stack-more) {
   --up-stack-ring: color-mix(in srgb, var(--vc-bg) 50%, var(--up-knopf-hover));
   box-shadow: 0 0 0 var(--up-stack-ring-w) var(--up-stack-ring); }
-/* 5 statt 7: der Chip hat jetzt 1px Rahmen und 2px Polsterung, das Bild sitzt also 3px innen. */
-.up-stack-item img { width: 100%; height: 100%; border-radius: calc(var(--up-r-m) - 3px); object-fit: contain; display: block; }
+/* Das Logo im Kreis: 28 - 2 Rahmen - 2 x 3 Polster = 20, Radius 4 (--up-r-xs), siehe Kopf des Blocks. */
+.up-stack-item img { width: 100%; height: 100%; border-radius: var(--up-r-xs); object-fit: contain; display: block; }
 .up-stack-ltr { font-size: 10px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
 .up-stack-item.has-img .up-stack-ltr { display: none; }
 /* "+N" NACH GEIST (15.10.; vorher reiner Text 12/500 mit 8px Abstand): ein Kreis in Chipgroesse,
@@ -6024,13 +6042,13 @@
 .up-root.is-dense .up-stack-item { width: 24.64px; height: 24.64px; flex: 0 0 24.64px; }
 /* Dichte Zeilen: Faktor 0.88 auf alles (24.64 statt 28). Polsterung 2 -> 1.76, Rahmen bleibt 1px,
    also sitzt das Bild 2.76px innen und der Bildradius ist 7.04 - 2.76 = 4.28.
-   Seit dem 15.10. auf der Skala gerundet statt gerechnet: 0.88 x 6 = 5.3 -> 5 (m minus 1), das
-   Bild 5 - 2.76 = 2.2 -> 3 wie im normalen Chip -- ein Bruchteil darunter ist auf 20px nicht zu sehen. */
+   Seit dem 15.10. spaet ein Kreis wie der normale Chip: Polster 0.88 x 3 = 2.64, das Logo also
+   24.64 - 2 - 5.28 = 17.36 mit Radius 4 -- passt in den Kreis (Ecke 10.6 vom Mittelpunkt, innen 11.3). */
 /* Der Ring bleibt 1px (Geist: ein Haarstrich in jeder Groesse), nur die Ueberlappung zieht mit. */
-.up-root.is-dense .up-stack-vis { border-radius: calc(var(--up-r-m) - 1px); padding: 1.76px; box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg); }
+.up-root.is-dense .up-stack-vis { border-radius: var(--up-r-voll); padding: 2.64px; box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg); }
 .up-root.is-dense .up-row:hover .up-stack-vis { box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vt-row-hover-solid, var(--vc-bg));
   --up-stack-ring: var(--vt-row-hover-solid, var(--vc-bg)); }
-.up-root.is-dense .up-stack-item img { border-radius: calc(var(--up-r-m) - 3px); }
+.up-root.is-dense .up-stack-item img { border-radius: var(--up-r-xs); }
 .up-root.is-dense .up-stack-ltr { font-size: 8.8px; }
 .up-root.is-dense .up-stack-item + .up-stack-item { margin-left: calc(var(--up-stack-ueber) * -0.88); }
 .up-root.is-dense .up-stack-more { min-width: calc(28px * 0.88); height: calc(28px * 0.88); margin-left: calc(var(--up-stack-ueber) * -0.88); }

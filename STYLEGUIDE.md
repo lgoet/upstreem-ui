@@ -564,7 +564,7 @@ Bei uns heißt das:
 
 | Karte | Ruhe | Hover (`.up-karte-klick`) |
 |---|---|---|
-| Event, Opportunity, Antwort (Card Mode), Produkt, Quelle, Ad Card, Recent Ad | `1px solid var(--vc-border)`, Radius 12, **kein Schatten** | Fläche einen halben Schritt zur Hover-Fläche, Rand und Schatten bleiben |
+| Event, Opportunity, Antwort (Card Mode), Produkt, Quelle, Ad Card, Recent Ad | `1px solid var(--vc-border)`, Radius 12, **kein Schatten** | Fläche einen halben Schritt zur Hover-Fläche, **2px nach oben** und **`--up-e-1`**, der Rand bleibt |
 | Kasten, Hero, Chart-Kasten, Einstellungs-Karte (`.up-box`, `.usb-card`) | wie oben | — (nicht klickbar) |
 | Kennzahlen im Band, flache Tabelle, offenes Band | flach, ohne Kasten | — |
 | Erklärkarte, Menü, Popover | schwebt: `--up-e-2` | — |
@@ -577,6 +577,12 @@ seiner Stelle. Auf Weiß ergibt das genau Geists `#f9f9f9`; der durchscheinende 
 Opportunity-Karte im Dunkeln (`--uo-col-bg`) bleibt erhalten. Druck (`scale(.99)`) und Fokus
 (2px-Outline, 2px Abstand) sind unverändert. Vom 13. bis 15.10. war der Hover „Rand eine Spur
 kräftiger plus `--up-e-1`“.
+
+**Dazu Hebung und Hauch Schatten** (15.10. spät, Nutzer: „nur Fläche ist super. Ganz leichter
+Slide-up-Effekt wie wir ihn schon hatten und minimal mehr Schatten ist aber auch gut“):
+`transform: translateY(-2px)` (wie die Ad Card bis zum 13.10.) und `box-shadow: var(--up-e-1)`
+(Geist small, die leiseste Stufe), Übergang `--up-t-2` mit `--up-ease`. Beim Druck fällt die
+Hebung weg (`scale(.99)`), bei `prefers-reduced-motion` gibt es keine Hebung.
 
 Eine Karte mit Schatten in Ruhe gibt es nur noch an einer Stelle: die Tarifkarte (`.up-plan`,
 `--up-e-1`), die am 28.09. samt Schatten von der Landingpage übernommen wurde. Zeichen-Kacheln
@@ -1934,14 +1940,19 @@ Bis 15.10. war das offene Feld randlos und transparent (Notion-Stil), Text 14/50
 
 ## 17. Brand-Logo-Stack in Zeilen: eine Geist-Avatar-Group (seit 15.10.)
 
-`.up-stack` (Brand Mentions, Citations in Responses, Karten) überlappt nach Geists AvatarGroup
-(vercel.com/geist/avatar, overlap „auto“ = 0.3 × Größe):
+`.up-stack` (Brand Mentions, Citations in Responses, Karten) ist eine Geist-AvatarGroup aus
+Geist-Avataren (vercel.com/geist/avatar):
 
 ```
-Chip          .up-stack-item 28×28; sichtbare Ebene .up-stack-vis: Radius 6 (--up-r-m, ein Logo
-              ist kein Porträt), 1px --vc-border, 2px Polster, Platte --vt-logo-bg (im Dark
-              hell), Bild Radius calc(var(--up-r-m) - 3px)
-Überlappung   --up-stack-ueber 8px (0.3 × 28; dicht 0.88 × 8 = 7.04); bis 15.10. 4
+Chip          .up-stack-item 28×28; sichtbare Ebene .up-stack-vis ist ein KREIS wie Geists
+              Avatar (rounded-full, innen 1px-Ring): Radius --up-r-voll, 1px --vc-border (im
+              Dark ebenfalls, als Ring), 3px Polster, Platte --vt-logo-bg (im Dark nur unter dem
+              Logo). Das Logo ein 20er Quadrat mit Radius 4 (--up-r-xs), ganz im Kreis (Ecke 12.5
+              vom Mittelpunkt, Kreis innen 13), nichts abgeschnitten. Dicht: Polster 2.64, Logo 17.36.
+              Bis 15.10. spät: abgerundetes Quadrat Radius 6 mit 22er Bild ("ein Logo ist kein
+              Porträt") -- vom Nutzer verworfen: "das solltest du vom Geist-System-Avatar nutzen".
+Überlappung   --up-stack-ueber 4px (dicht 3.52) wie vor dem 15.10.; Geists 0.3 × Größe (8) war
+              dem Nutzer zu eng ("etwas zu nah beieinander ... so wie es vorher war")
 Ring          --up-stack-ring-w 1px in der Zeilenfarbe (folgt dem Zeilen-Hover); bis 15.10.
               4px, die den Abstand malten
 Reihenfolge   das ERSTE Mitglied liegt oben (--up-stack-z absteigend, von brandStack gesetzt);

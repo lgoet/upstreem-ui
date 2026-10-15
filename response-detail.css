@@ -270,7 +270,7 @@
 .up-root[data-theme="dark"] .urd-cc-foot .up-stack-vis,
 .up-root[data-theme="dark"] .urd-cr-ments .up-stack-vis {
   border-color: transparent; background-clip: padding-box; }
-.urd-cc-foot .up-stack-item img, .urd-cr-ments .up-stack-item img { border-radius: calc(var(--up-r-m) - 3px); }
+.urd-cc-foot .up-stack-item img, .urd-cr-ments .up-stack-item img { border-radius: var(--up-r-xs); }
 /* Das "+N" ist seit 15.10. in core ein Kreis, der wie ein Mitglied des Stapels unter den letzten
    Chip greift (Geist-AvatarGroup). In dieser REIHE steht es wie ein weiterer Chip: 26px, 4px Abstand,
    ohne Ring -- dieselben Werte wie die Chips hier. */
