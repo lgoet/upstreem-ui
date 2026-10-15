@@ -402,7 +402,8 @@
             '<span class="uut-url-title">' + (redditTitleHtml(url, title, state.query) || highlight(title, state.query)) + '</span>' +
             '<span class="uut-url-sub">' + highlight(url, state.query) + '</span>' +
           '</span>' +
-          '<span class="uut-row-goto">' + GOTO_SVG + '</span>' +
+          /* Kein Zeilenpfeil mehr (16.10., .uut-row-goto in urls-table.css): er belegte 16px plus
+             Abstand auch unsichtbar, die bekommen jetzt Titel und Adresse. */
         '</div>' +
         /* Kein Trend im Domain-Modus: die RPC liefert dafuer keine Veraenderung, und ein Pfeil,
            der sich auf den globalen Anteil bezieht, waere neben dem Domain-Anteil schlicht falsch. */

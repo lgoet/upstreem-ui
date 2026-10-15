@@ -189,7 +189,8 @@
         return UC.themeParam(root.getAttribute("data-isdark")) || root.getAttribute("data-theme") === "dark";
       }
 
-      /* DIE FLACHE TABELLE (core, data-flach="yes" am Markup der Settings-Seite, 15.10.): wie in
+      /* DIE FLACHE TABELLE (core, data-flach="yes", 15.10.; die Settings-Seite setzt es seit dem
+         16.10. nicht mehr, dort steht die Schale im Kasten wie im Drawer): wie in
          team-orga bekommt die Schale nur in der flachen Fassung .up-box, an dem die Regeln von
          core greifen -- immer gesetzt, entschiede die Ladereihenfolge zwischen Radius 16 und 12. */
       var kastenKl = root.getAttribute("data-flach") === "yes" ? " up-box" : "";

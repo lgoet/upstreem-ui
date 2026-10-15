@@ -1941,7 +1941,7 @@
        diese Probe aussieht wie die Zelle. */
     /* Der 4px-Ring ist die Farbe der Platte (Tinte der Karte), damit sich die Punkte gegenseitig
        ausschneiden wie in der Zelle -- er folgt der Platte jetzt ueber das Token, auch im Dunkeln. */
-    .up-explain-dot { width: 28px; height: 28px; border-radius: var(--up-r-voll); background: #eeedef;
+    .up-explain-dot { width: 28px; height: 28px; border-radius: var(--up-r-m); background: #eeedef;
       border: 0; box-shadow: 0 0 0 4px var(--vc-inverse-ink); display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: #6f6f6f; }
     .up-explain-more { background: #f0f0f0; }
     .up-explain[data-theme="dark"] .up-explain-dot { background: #28282c; border-color: #4a4a4a; color: #b8b8b8; }
@@ -3904,8 +3904,13 @@
        .up-box nur ohne .up-sticky darueber, sonst stuende im Dunkeln eine doppelte Linie. Am Kasten
        selbst gefragt (:not(.up-sticky .up-box)) und nicht an einer .up-root davor: auch die Huelle
        des Drawers ist eine dunkle .up-root, und die ist nie klebend. */
+    /* DIE SETTINGS-SEITE (.uss-root, 16.10.) traegt ihre Tabellen seitdem im Kasten wie der Drawer
+       ("wie in den Drawern, Border drum herum"), also auch dessen Rand im Dunkeln. Ohne sie haette
+       Team (.uto-table steht in der Liste "kein Rand" oben) im Dunkeln keinen Rand, Billing
+       (.ubl-table steht dort nicht) aber schon -- zwei Kaesten derselben Seite, zwei Bilder. Nur die
+       zweite Zeile: einen klebenden Kasten oder .up-box gibt es in den Settings nicht. */
     html[data-up-dunkel="geist"] :is(.up-kdr, [id^="drawer-"]) .up-root[data-theme="dark"] .up-box:not(.up-sticky .up-box),
-    html[data-up-dunkel="geist"] :is(.up-kdr, [id^="drawer-"]) .up-root[data-theme="dark"] :is(.up-vartable, .uto-table, .ube-table, .urd-card, .urd-cite-card, .urt-card),
+    html[data-up-dunkel="geist"] :is(.up-kdr, [id^="drawer-"], .uss-root) .up-root[data-theme="dark"] :is(.up-vartable, .uto-table, .ube-table, .urd-card, .urd-cite-card, .urt-card),
     html[data-up-dunkel="geist"] :is(.up-kdr, [id^="drawer-"]) .up-root[data-theme="dark"].up-sticky :is(.up-thead, .up-tbody) {
       border-color: var(--vc-border); border-left-width: 1px; border-right-width: 1px;
     }
@@ -4487,11 +4492,17 @@
        (.uprd-root) ueber einer dunklen Tabelle. Das Dunkel behaelt seinen Kopfgrund, nur die Hoehe
        gilt in beiden Themen.
        (0,4,0) und (0,5,1): schlaegt die Kopfhoehen der Kastentabellen (.ube-table, .uud-ctable,
-       .up-vartable, je 0,3,0) und den klebenden Kopf (0,2,0) ohne die Ladereihenfolge. */
-    :is(.up-kdr, [id^="drawer-"]) .up-root.up-root .up-thead {
+       .up-vartable, je 0,3,0) und den klebenden Kopf (0,2,0) ohne die Ladereihenfolge.
+       Dazu die Settings-Seite (.uss-root, 16.10.): Team und Billing stehen seitdem im Kasten wie
+       die Tabellen im Drawer und tragen denselben Kopf -- vorher 45 auf --vt-head-bg aus ihren
+       Schalen (.uto-table, .ubl-table, je 0,2,0). Das Team-Protokoll (.up-logtab, Kopf ohne .up-row)
+       behaelt damit die 48, die es in der flachen Fassung schon hatte; der Protokollkopf des
+       Marken-Editors traegt .up-row und bleibt bei 36 (.up-logtab.up-logtab .up-thead.up-row,
+       weiter unten mit gleicher Staerke). */
+    :is(.up-kdr, [id^="drawer-"], .uss-root) .up-root.up-root .up-thead {
       height: var(--up-flach-h, 48px); flex: 0 0 var(--up-flach-h, 48px);
     }
-    html[data-up-hell="grau"] :is(.up-kdr, [id^="drawer-"]) .up-root.up-root .up-thead { background: var(--vc-bg); }
+    html[data-up-hell="grau"] :is(.up-kdr, [id^="drawer-"], .uss-root) .up-root.up-root .up-thead { background: var(--vc-bg); }
 
 
 
@@ -5416,6 +5427,15 @@
     }
 
 /* ---------- Zeilen-Affordanz: Pfeil, der nach einer Verweildauer zur Aktion wird ----------
+   STILLGELEGT. Der Block hat keinen Verbraucher mehr: "Edit" in brands-overview und "Show Pages"
+   in domains-table sind inzwischen .up-rowbtn (weiter oben) -- der Knopf kommt beim Hover der
+   Zeile sofort, in der Zelle, ohne Pfeil davor und ohne Wartezeit. Seit dem 16.10. ist auch der
+   Pfeil hier aus (kein hereingleitendes Zeichen in Tabellen, ausdruecklicher Wunsch). Die Regeln
+   bleiben, weil der Vertrag die Klassen fuehrt. Wer eine Zeilenaktion braucht, nimmt .up-rowbtn:
+   ohne den Pfeil waere hier eine Sekunde Leere vor der Aktion, und die Aktion laege ueber dem
+   Zellinhalt statt an seiner Stelle.
+
+   Was der Block war:
    Die Bauart kommt aus domains-table ("Show Pages") und steht jetzt hier, weil brands-overview
    mit seinem Edit-Knopf genau dasselbe braucht -- Buchstabe fuer Buchstabe dieselben Zeiten,
    Groessen und Positionen. Die .udt-*-Klassen stehen in jeder Regel mit, damit das Markup der
@@ -5433,19 +5453,8 @@
 .up-rowswap, .udt-row-affordance {
   display: inline-block; margin-left: auto; position: relative; flex: 0 0 auto; width: 0; height: 32px;
 }
-.up-rowswap-goto, .udt-row-goto {
-  position: absolute; top: 50%; right: 0; width: 16px; height: 16px; color: var(--vc-third);
-  opacity: 0; transform: translateY(-50%) translateX(-3px);
-  transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms;
-}
-.up-rowswap-goto svg, .udt-row-goto svg { width: 16px; height: 16px; display: block; }
-.up-row:hover .up-rowswap-goto, .up-row:hover .udt-row-goto {
-  opacity: 1; transform: translateY(-50%) translateX(0); transition-delay: 220ms;
-}
-.up-row.is-rowswap .up-rowswap-goto, .up-row.is-showpages-hover .udt-row-goto {
-  opacity: 0; transition: opacity 120ms ease; transition-delay: 0ms;
-}
-.up-root.is-vnarrow .up-rowswap-goto, .up-root.is-vnarrow .udt-row-goto { display: none; }
+/* Der Pfeil: seit 16.10. aus (siehe Kopf des Blocks und .up-row-goto darunter). */
+.up-rowswap-goto, .udt-row-goto { display: none; }
 /* Die Aktion sitzt in demselben Platz, den der Pfeil hatte: kein Rahmen, keine Pille -- eine
    Beschriftung mit Zeichen, nicht ein Knopf, der aus dem Nichts auftaucht. */
 .up-rowswap-act, .udt-row-showpages {
@@ -5464,13 +5473,17 @@
 }
 .up-root.is-vnarrow .up-rowswap, .up-root.is-vnarrow .udt-row-affordance { display: none; }
 
-/* go-to arrow, revealed on row hover after a short delay so it doesn't flicker while the cursor
-   sweeps across rows */
-.up-row-goto { margin-left: auto; width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-third);
-  opacity: 0; transform: translateX(-3px); transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms; }
-.up-row-goto svg { width: 16px; height: 16px; display: block; }
-.up-row:hover .up-row-goto { opacity: 1; transform: translateX(0); transition-delay: 220ms; }
-.up-root.is-vnarrow .up-row-goto { display: none; }
+/* Zeilenpfeil (arrowUpRight am Ende der ersten Zelle): STILLGELEGT seit 16.10., ausdruecklicher
+   Wunsch -- in keiner Tabelle mehr ein Zeichen, das beim Hover hereingleitet. Dass die Zeile
+   klickbar ist, sagen ihre Hover-Flaeche und der Zeiger schon. Der Pfeil kostete dafuer Platz:
+   als Flex-Kind mit margin-left:auto belegte er 16px plus den Abstand der Zelle IMMER, auch
+   unsichtbar. In Top Brands und Top Domains kam er nie (dort ist die Zeile keine .up-row), kuerzte
+   aber die Namen (gemessen 1440 breit: "Mercedes Benz" 92.9 statt 101.3px).
+   Kein Markup erzeugt ihn mehr (prompts-table, visibility-chart, topcitations-dashboard). Die
+   Regel bleibt, weil der Vertrag die Klasse fuehrt und Markup ausserhalb dieser Dateien (die
+   Landing-Vorschau, alte Pruefstaende) sonst einen festen Pfeil zeigte; display:none nimmt ihm
+   auch den Platz. */
+.up-row-goto { display: none; }
 
 /* type/citation chip. Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke.
    Form, Groesse, Schrift und Polster seit 15.10. aus dem Geist-Badge direkt darunter. */
@@ -6474,7 +6487,7 @@
 .up-th-brandlogo { width: 17px; height: 17px; border-radius: var(--up-r-xs); flex: 0 0 auto; object-fit: cover; }
 
 /* ---------- brand-mention chip stack ----------
-   Overlapping 32px circles. Shared by urls-table's Brands mentioned column and prompts-table's
+   Overlapping 28px logo plates (rounded squares, see below). Shared by urls-table's Brands mentioned column and prompts-table's
    Brand Mentions column. The 4px visual gap between them is a ring in the ROW's background
    colour, not a real gap: with a negative margin the neighbour would otherwise touch. The ring
    has to follow the row's hover colour too, hence the override below.
@@ -6483,61 +6496,37 @@
    stalls the page for a couple of seconds (see .up-row for the same reasoning). The hover
    lift/spread stays on .up-stack-vis's transform, which is cheap and only ever touches one
    row's stack at a time. */
-/* ---- DER STAPEL IST EINE GEIST-AVATAR-GROUP (15.10.) ----
-   Gewuenscht: "die Avatars fuer Brand-Mention-Chips und Citation-Chips: die Standard-Group-
-   Ueberlappungs-Settings aus dem Design System, nur das gesamte Hover-/Highlight-Verhalten exakt
-   beibehalten". vercel.com/geist/avatar, am 15.10. ausgelesen (AvatarGroup, overlap "auto"):
-     Ueberlappung  0.3 x Groesse, gerundet (16 -> 5, 24 -> 7, 32 -> 10, 48 -> 14); bei 28 also 8
-                   (vorher 4), im dichten Modus 0.88 x 8 = 7.04 wie jedes Mass dort.
-     Ring          jedes Mitglied 1px in der Grundfarbe (vorher 4px, die den Abstand malten).
-     Reihenfolge   das ERSTE Mitglied liegt oben (z-index absteigend; brandStack schreibt die Stufe
-                   als --up-stack-z an jeden Chip). isolation haelt diese Stufen im Stapel -- sie
-                   duerfen nicht ueber einen klebenden Tabellenkopf steigen.
-     "+N"          ein Kreis in Chipgroesse, der wie ein Mitglied unterlappt (Regel bei .up-stack-more).
-   Groesse (28), Form (abgerundetes Quadrat, --up-r-m -- ein Logo ist kein Portraet), Platte und
-   Rahmen bleiben.
-   UNVERAENDERT: Anheben 3px, Spreizen 8/16 (gespiegelt bei is-spread-left), nach vorn beim
-   Ueberfahren, Tooltip (data-brandtip am unbeweglichen Kasten), Ring in der Hoverfarbe der Zeile.
-   NACHGEZOGEN 15.10. spaet (Nutzer: "die Chips Citations und Brand Mentions stimmen noch nicht, das
-   solltest du vom Geist-System-Avatar nutzen, hast du nur fuer die +1 gemacht. Und die sind etwas
-   zu nah beieinander, der Abstand muss ein paar px groesser sein, so wie es vorher war"):
-     Form          jetzt der Geist-Avatar selbst: ein KREIS (vercel.com/geist/avatar: rounded-full,
-                   overflow hidden, innen ein 1px-Ring in Gray Alpha 400 -- hier der Rahmen in
-                   --vc-border). Das Logo bleibt ein Logo: ein 20er Quadrat mit Radius 4 in der
-                   Platte, das ganz in den Kreis passt (Ecke bei 12.5 vom Mittelpunkt, Kreis innen
-                   13) -- nichts wird abgeschnitten. Vorher 22er Bild im abgerundeten Quadrat.
-     Ueberlappung  wieder 4 wie vor dem 15.10. (dicht 3.52). Geists 0.3 x Groesse (8) lag zu eng.
-   NACHGEZOGEN 15.10. nachts (Nutzer: "eine Stufe groesser und bitte wieder ein sichtbares Gap
-   zwischen den Elementen, wie es vorher ja auch gab, und minimal kleiner den Abstand zwischen den
-   Elementen"):
-     Groesse       32 statt 28 -- die naechste Stufe der Hoehen-Skala (--up-h-btn). Faktor 32/28 auf
-                   alles, dann auf die Stufe: Polster 3 -> 4, Logo 22 (32 - 2 Rahmen - 2 x 4) mit
-                   Radius 4 (--up-r-xs; 4.57 liegt naeher an 4 als an 6). Ecke des Logos 13.9 vom
-                   Mittelpunkt, Kreis innen 15 -- im Dunkeln mit dem 1px-Plattenrand 14.9, passt
-                   auch dort. Bei 24er Logo (Polster 3) laege die Ecke mit Radius 4 bei 15.3, also
-                   im Rahmen. Buchstabe 10 -> 11 (--up-fs-xs), "+N" 11 -> 12 (--up-fs-s): eine
-                   Stufe ueber dem Buchstaben wie vorher.
-     Ring          3 statt 1: der sichtbare ABSTAND zwischen zwei Chips, in der Grundfarbe. Vor dem
-                   15.10. waren es 4 bei 28 -- 3 ist der Teil davon, der neben dem Haarstrich-Rand
-                   des Kreises noch als Luecke liest und nicht als zweite Linie.
-     Ueberlappung  5 statt 4, Schritt 27 statt 24. Verdeckt wird vom Nachfolger jetzt Ueberlappung
-                   plus Ring = 8 von 32 (25 %, vorher 5 von 28 = 18 %, Geists 9 von 28 = 32 % war
-                   "zu nah") -- die Chips ruecken also sichtbar zusammen, Schritt durch Groesse 0.84
-                   statt 0.86. Und 5 + 3 = 8 ist genau das Spreizen beim Hover: der angefasste Chip
-                   kommt mit seinem Ring genau bis an die Nachbarn, ohne in sie zu schneiden -- das
-                   Hover-Verhalten (8/16, 3px Anheben) bleibt dadurch Wert fuer Wert, wie es war.
-     Dicht         Faktor 0.88 ueber dieselben drei Marken (.up-root.is-dense weiter unten), nicht
-                   je Regel: 28.16, Ueberlappung 4.4, Ring 2.64 -- 4.4 + 2.64 = 7.04, das dichte
-                   Spreizen. Der Ring zieht seit heute mit, er ist kein Haarstrich mehr. */
-/* --up-stack-gr: die Chipgroesse als EINE Marke, weil Chip, "+N" und das dichte Mass sie teilen.
-   Aus der Hoehen-Skala, die ebenfalls an :root steht (Kopf dieser Datei) -- so loest sie auch fuer
-   einen Stapel ausserhalb einer .up-root auf. */
-:root { --up-stack-gr: var(--up-h-btn); --up-stack-ueber: 5px; --up-stack-ring-w: 3px; }
+/* ---- DER STAPEL IST WIEDER EINE REIHE VON LOGOPLATTEN (16.10.) ----
+   Am 15.10. war der Stapel eine Geist-AvatarGroup geworden: erst Ueberlappung 8 und Ring 1 mit dem
+   "+N" als Kreis (b6f2d5b), dann jeder Chip ein Kreis (4c5e41c), zuletzt 32er Kreise mit Ring 3 und
+   Ueberlappung 5 (0d4c322). Am 16.10. zurueckgenommen (Nutzer: "Lass uns das bitte wieder
+   rueckgaengig machen, also einfach altes Design. Die eckigen."). Es gilt wieder der Stand davor:
+     Chip          28 (die 28er Stufe der Hoehen-Skala, --up-h-seg), ein abgerundetes Quadrat --
+                   ein Logo ist eine Logoplatte und kein Portraet, und Platten tragen in core
+                   --up-r-m (.up-logo-box, die Zeile in Quick Actions).
+     Ueberlappung  4, der Ring 4 in der Zeilenfarbe -- der Ring ist der ABSTAND zum Nachbarn.
+     Reihenfolge   der SPAETERE Chip liegt oben (Reihenfolge im Dokument, kein z-index je Chip).
+     "+N"          reiner Text 12/500 mit 8 Abstand, kein Kreis: die Zahl ist ein Etikett, keine
+                   weitere Marke.
+   AUF DER SKALA STATT DER ALTEN ZAHLEN (§1c, Radius nach Rolle seit 15.10.): Chip 6 statt 8 (28 hoch
+   -> 6), das Bild konzentrisch 6 - 3 = 3 statt 5; dicht ebenfalls 6 und 3 statt 7.04 und 4.28 --
+   0.88 x 6 = 5.3 liegt auf der Stufe 6, und ein Bruchteil im Radius rundet je Browser anders. Der
+   Buchstabe 11 (--up-fs-xs) statt 10, dicht ebenfalls 11 statt 8.8 -- die Skala beginnt bei 11, und
+   .up-logo-ltr traegt in der 24er Platte dieselbe 11.
+   Von der Geist-Fassung bleiben die drei Marken unten (EIN Ort fuer Groesse, Ueberlappung und Ring,
+   der dichte Modus rechnet sie mit 0.88 um) und isolation am Stapel: der angefasste Chip (z-index 3)
+   steigt damit nicht ueber eine klebende erste Spalte. Der Ring in der Hoverfarbe einer
+   klickbaren Karte (.up-karte-klick) bleibt ebenfalls -- die Karte toent sich seit dem 15.10. */
+/* --up-stack-gr: die Chipgroesse als EINE Marke, weil Chip und das dichte Mass sie teilen. Aus der
+   Hoehen-Skala, die ebenfalls an :root steht (Kopf dieser Datei) -- so loest sie auch fuer einen
+   Stapel ausserhalb einer .up-root auf. --up-stack-ring-w liest auch der Einzug der Karte
+   (.urt-card-citations in responses-table.css). */
+:root { --up-stack-gr: var(--up-h-seg); --up-stack-ueber: 4px; --up-stack-ring-w: 4px; }
 .up-stack { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; isolation: isolate; }
 .up-stack-item {
   width: var(--up-stack-gr); height: var(--up-stack-gr); flex: 0 0 var(--up-stack-gr);
   display: inline-flex; align-items: center; justify-content: center;
-  position: relative; cursor: default; z-index: var(--up-stack-z, auto);
+  position: relative; cursor: default;
 }
 .up-stack-item + .up-stack-item { margin-left: calc(var(--up-stack-ueber) * -1); }
 /* Hit-testing lives on .up-stack-item, which never moves — only its inner .up-stack-vis animates
@@ -6566,11 +6555,10 @@
    Rechnung: 28px Chip - 2x1 Rahmen - 2x2 Polsterung = 22px Bild, Bildradius 8 - 3 = 5
    (seit 15.10. auf der Geist-Skala: Chip --up-r-m = 6, Bild 6 - 3 = 3).
    Der 4px-Ring aus box-shadow bleibt unberuehrt: das ist der ABSTAND zum Nachbarn, nicht die
-   Kante des Chips.
-   Seit 15.10. nachts: 32er Kreis, 1px Rahmen, 4px Polster, also 22er Logo; Ring 3 (Kopf des Blocks). */
+   Kante des Chips. */
 .up-stack-vis {
   display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 100%;
-  border-radius: var(--up-r-voll); padding: 4px; background: var(--vt-logo-bg); box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg);
+  border-radius: var(--up-r-m); padding: 2px; background: var(--vt-logo-bg); box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg);
   border: 1px solid var(--vc-border);
   transition: transform .16s ease;
   /* Bezug fuer den Globus des Favicon-Rueckfalls (siehe .up-fav weiter oben). In Ruhe traegt die
@@ -6590,9 +6578,7 @@
    unberuehrt -- in beiden Themen dieselbe Geometrie, und die Kacheln mit eigenem Mass
    (performance-detail ohne Rahmen, die kompakte Zeile) bekommen denselben 1px-Rand, ohne dass
    ihr Bild im Dunkeln schrumpft. Der Ring folgt dem Radius des Bildes, er ist also konzentrisch. */
-/* Seit dem Kreis (15.10. spaet) traegt der Rahmen im Dunkeln den Geist-Ring (--vc-border) statt
-   durchsichtig zu sein: sonst bliebe vom Avatar nur die helle Logo-Kachel, und der Kreis fehlte. */
-.up-root[data-theme="dark"] .up-stack-vis { border-color: var(--vc-border); background-clip: content-box; }
+.up-root[data-theme="dark"] .up-stack-vis { border-color: transparent; background-clip: content-box; }
 .up-root[data-theme="dark"] .up-stack-item img { box-shadow: 0 0 0 1px var(--vt-logo-bg); }
 /* DER VORGAENGER SCHIEN DURCH (28.09. gemeldet: "links vor jedem Chip ist noch ein schmaler
    Bereich des Chips davor sichtbar", nur im Dunkeln). Die Regel darueber macht Rahmen und
@@ -6608,10 +6594,9 @@
    beim Hover der Zeile, im dichten Modus und in der Leiste (sidebar.css) setzen die Regeln des
    Rings sie mit. Nur Folgechips: der erste liegt ueber nichts, und die einzelnen Kacheln in
    performance-detail (ohne Ring) bleiben durchsichtig wie am 27.09. bestellt.
-   SEIT 15.10. UMGEKEHRT (Geist: das erste Mitglied liegt oben): jetzt liegt der VORGAENGER ueber
-   seinem Nachfolger, also malt er die Flaeche -- jeder Chip, hinter dem noch etwas steht (ein Chip,
-   das "+N" oder der Anhang), daher :not(:last-child). Ein einzelner Chip bleibt durchsichtig. */
-.up-root[data-theme="dark"] .up-stack-item:not(:last-child) .up-stack-vis {
+   Vom 15. zum 16.10. lag mit der Geist-Gruppe der Vorgaenger oben, die Regel stand darum an
+   :not(:last-child); seit der Rueckkehr liegt wieder der Nachfolger oben und malt die Flaeche. */
+.up-root[data-theme="dark"] .up-stack-item + .up-stack-item .up-stack-vis {
   background: linear-gradient(var(--vt-logo-bg), var(--vt-logo-bg)) content-box,
               var(--up-stack-ring, var(--vc-bg));
 }
@@ -6626,35 +6611,23 @@
    weisser Ring auf dem getoenten Grund, dasselbe Bild wie im Bericht oben, nur umgekehrt. Deckend
    gerechnet (die halbe Hover-Flaeche auf --vc-bg, dem Grund der Antwortkarte), weil der Folgechip
    im Dunkeln mit --up-stack-ring den Vorgaenger ZUDECKEN muss; ein durchscheinender Ton liesse ihn
-   durch. Auch das "+N". */
-.up-karte-klick:is(:hover, .is-hl) :is(.up-stack-vis, .up-stack-more) {
+   durch. Das "+N" ist seit dem 16.10. wieder Text ohne Ring. */
+.up-karte-klick:is(:hover, .is-hl) .up-stack-vis {
   --up-stack-ring: color-mix(in srgb, var(--vc-bg) 50%, var(--up-knopf-hover));
   box-shadow: 0 0 0 var(--up-stack-ring-w) var(--up-stack-ring); }
-/* Das Logo im Kreis: 32 - 2 Rahmen - 2 x 4 Polster = 22, Radius 4 (--up-r-xs), siehe Kopf des Blocks.
-   Der Buchstabe 11 (vorher 10 bei 28: Faktor 32/28 ergibt 11.4, die Stufe darunter liegt naeher). */
-.up-stack-item img { width: 100%; height: 100%; border-radius: var(--up-r-xs); object-fit: contain; display: block; }
+/* Das Bild sitzt 3px innen (1 Rahmen + 2 Polster), also konzentrisch 6 - 3 = 3 (vor dem 15.10.
+   8 - 3 = 5). Der Buchstabe 11 (--up-fs-xs): bis 15.10. stand hier 10, unter dem Anfang der Skala;
+   .up-logo-ltr traegt in der 24er Platte ebenfalls 11. */
+.up-stack-item img { width: 100%; height: 100%; border-radius: calc(var(--up-r-m) - 3px); object-fit: contain; display: block; }
 .up-stack-ltr { font-size: var(--up-fs-xs); font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
 .up-stack-item.has-img .up-stack-ltr { display: none; }
-/* "+N" NACH GEIST (15.10.; vorher reiner Text 12/500 mit 8px Abstand): ein Kreis in Chipgroesse,
-   der wie ein weiteres Mitglied um die Ueberlappung unter den letzten Chip greift und zuunterst liegt
-   (Geist z-index 0). Geist: Gray 100 mit 1px Gray 400, Schrift 10/600 -- hier unsere Toene (Grund
-   --up-sel-bg, Kante --vc-border, Schrift --vc-muted) und 11 statt 10 (die Skala beginnt bei 11).
-   min-width statt width: eine dreistellige Zahl darf ihn zur Pille ziehen, statt abzuschneiden.
-   Der 1px-Ring in der Zeilenfarbe wie an jedem Chip, beim Ueberfahren der Zeile mit.
-   Seit 15.10. nachts mit dem Chip eine Stufe groesser: Kreis 32 (--up-stack-gr), Ring 3, Polster
-   4 -> 5 (Faktor 32/28 = 4.57), Schrift 11 -> 12 (12.6 gerechnet; 12 haelt den Abstand von einer
-   Stufe zum Buchstaben im Chip, der auf 11 steht). */
+/* plain text, no circle: the overflow count is a label, not another brand.
+   Vom 15. zum 16.10. ein Geist-Kreis in Chipgroesse; wieder zurueck (Kopf des Blocks). */
 .up-stack-more {
-  position: relative; z-index: 0; flex: 0 0 auto;
-  display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
-  min-width: var(--up-stack-gr); height: var(--up-stack-gr); padding: 0 5px; margin-left: calc(var(--up-stack-ueber) * -1);
-  border: 1px solid var(--vc-border); border-radius: var(--up-r-voll); background: var(--up-sel-bg);
-  box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vc-bg);
-  font-size: var(--up-fs-s); font-weight: var(--up-fw-h); line-height: 1; color: var(--vc-muted);
-  white-space: nowrap; font-variant-numeric: tabular-nums;
+  margin-left: 8px; flex: 0 0 auto;
+  font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-muted); white-space: nowrap;
   transition: transform .16s ease;
 }
-.up-row:hover .up-stack-more { box-shadow: 0 0 0 var(--up-stack-ring-w) var(--vt-row-hover-solid, var(--vc-bg)); }
 /* Der Anhang hinter dem Stapel (brandStack opts.tailHtml). Dieselbe Uebergangszeit wie das "+N",
    damit beide zusammen gehen und nicht zwei Bewegungen zu sehen sind. Der Abstand kommt aus dem
    Fuss, der ihn vorher als eigenes Kind hatte -- 8px, wie die Luecke in .urt-card-footleft. */
@@ -6666,9 +6639,8 @@
    shifting the hovered item's visual layer and everything AFTER it to the right. Items BEFORE
    it never move (so the first brand can't drift left). Following items shift twice as far so
    their gaps to each other stay at the default: they don't squash together.
-   z-index 20 seit 15.10.: ueber jeder Stufe des Stapels (--up-stack-z, hoechstens so viele wie
-   Chips, max 12) -- isolation am Stapel haelt die Zahl dort drin. */
-.up-stack-item:hover { z-index: 20; }
+   z-index 3 wie vor dem 15.10.; isolation am Stapel haelt ihn dort drin. */
+.up-stack-item:hover { z-index: 3; }
 .up-stack-item:hover .up-stack-vis { transform: translateX(8px) translateY(-3px); }
 .up-stack-item:first-child:hover .up-stack-vis { transform: translateY(-3px); }
 .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
@@ -6706,17 +6678,18 @@
 .up-root.is-dense .up-stack.is-spread-left .up-stack-item:has(~ .up-stack-item:hover) .up-stack-vis { transform: translateX(-14.08px); }
 .up-root.is-dense .up-stack.is-spread-left .up-stack-item:has(~ .up-stack-item.is-last:hover) .up-stack-vis { transform: translateX(-7.04px); }
 /* Compact mode shrinks the mentioned-brand logos ~20% and scales every gap/shift to match. */
-/* Dichte Zeilen: Faktor 0.88 auf alles. Seit 15.10. nachts ueber die drei Marken des Stapels statt
-   je Regel -- Groesse 32 -> 28.16, Ueberlappung 5 -> 4.4, Ring 3 -> 2.64 --, damit Chip, "+N",
-   Ring, Zeilen-Hover und der Einzug der Karte (.urt-card-citations) EINEN Wert lesen. Vorher stand
-   der Ring hier als eigene box-shadow-Regel, die mit (0,3,0) auch den Ring der gehoverten Karte
-   schlug; die Zeile brauchte dafuer eine zweite Hover-Regel. Beides faellt weg.
-   Polster 4 -> 3.52, Logo also 28.16 - 2 - 7.04 = 19.12 mit Radius 4 -- Ecke 11.9 vom
-   Mittelpunkt, Kreis innen 13.08. Buchstabe 11 x 0.88, "+N" 12 x 0.88 = 10.6 -> 11 (Stufe). */
-.up-root.is-dense { --up-stack-gr: calc(var(--up-h-btn) * 0.88); --up-stack-ueber: calc(5px * 0.88); --up-stack-ring-w: calc(3px * 0.88); }
-.up-root.is-dense .up-stack-vis { padding: calc(4px * 0.88); }
-.up-root.is-dense .up-stack-ltr { font-size: calc(var(--up-fs-xs) * 0.88); }
-.up-root.is-dense .up-stack-more { padding: 0 calc(5px * 0.88); font-size: var(--up-fs-xs); }
+/* Dichte Zeilen: Faktor 0.88 auf alles, ueber die drei Marken des Stapels statt je Regel --
+   Groesse 28 -> 24.64, Ueberlappung und Ring 4 -> 3.52, wie vor dem 15.10. --, damit Chip, Ring,
+   Zeilen-Hover und der Einzug der Karte (.urt-card-citations) EINEN Wert lesen. Polster 2 -> 1.76,
+   das Bild also 24.64 - 2 - 3.52 = 19.12.
+   NICHT mitgerechnet: Radius und Buchstabe. 0.88 x 6 = 5.3 liegt auf der Stufe 6, das Bild 6 - 2.76
+   = 3.2 auf 3 -- beides wie im normalen Chip, die Regeln oben gelten also unveraendert (vor dem
+   15.10. standen hier 7.04 und 4.28, Bruchteile, die je Browser anders runden). Der Buchstabe
+   bliebe mit 0.88 unter dem Anfang der Skala (9.7), er steht wie in der 24er .up-logo-box auf 11.
+   Das "+N" bleibt 12 (die Schrift der Zelle), nur sein Abstand zieht mit. */
+.up-root.is-dense { --up-stack-gr: calc(var(--up-h-seg) * 0.88); --up-stack-ueber: calc(4px * 0.88); --up-stack-ring-w: calc(4px * 0.88); }
+.up-root.is-dense .up-stack-vis { padding: calc(2px * 0.88); }
+.up-root.is-dense .up-stack-more { margin-left: calc(8px * 0.88); }
 .up-root.is-dense .up-stack-item:hover .up-stack-vis { transform: translateX(7.04px) translateY(-3px); }
 .up-root.is-dense .up-stack-item:first-child:hover .up-stack-vis { transform: translateY(-3px); }
 .up-root.is-dense .up-stack-item:hover ~ .up-stack-item .up-stack-vis,
