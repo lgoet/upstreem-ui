@@ -26414,7 +26414,10 @@
          window-Speicher je Schluessel (ein Neuaufbau beim Themenwechsel liest ihn) -- der Schalter
          und, seit dem 15.10. spaet, die Wahl je Spalte;
        - DIE BERECHNUNGEN (15.10. spaet): cfg.rechnen = { <Spalte>: [{ key, label, kurz, art,
-         feld | wert(daten) | lokal() }] }. Eine Spalte mit Eintraegen bekommt "+ Calculation" als
+         feld | wert(daten) | lokal(), name(wert), anteil, felder }] }. name macht aus einem
+         Schluessel einen Namen (Intent, Modell), anteil ist das Feld mit dem Anteil in %, der dann
+         statt kurz dahinter steht ("Informational 42%"), felder sind weitere Felder, die wert()
+         braucht (ein Bereich aus zwei Feldern). Eine Spalte mit Eintraegen bekommt "+ Calculation" als
          Knopf mit Menue ("None" zuerst, von Haus aus gewaehlt), eine ohne den blossen Text.
          lokal(): die Tabelle hat alle Zeilen im Browser und rechnet selbst (Brands, Teams).
          Sonst kommt der Wert vom Server: cfg.quelle = { sig() (der Filterstand als Text),
@@ -26514,9 +26517,12 @@
       var f = [];
       Object.keys(wahl).forEach(function(sp){
         var o = optionVon(sp, wahl[sp]);
-        if (o && typeof o.lokal !== "function" && o.feld && f.indexOf(o.feld) < 0) f.push(o.feld);
+        if (!o || typeof o.lokal === "function") return;
+        [o.feld, o.anteil].concat(isArr(o.felder) ? o.felder : []).forEach(function(x){
+          if (x && f.indexOf(x) < 0) f.push(x);
+        });
       });
-      return f;
+      return f.sort();
     }
     function holenWennNoetig(){
       if (!quelle) return;
@@ -26559,14 +26565,18 @@
         z.menu = { wahl: o ? o.key : SUM_AUS,
           optionen: [{ key: SUM_AUS, label: "None" }].concat(l.map(function(x){ return { key: x.key, label: x.label }; })) };
         if (!o) return z;
-        var v = null;
+        var v = null, kurz = o.kurz;
         if (typeof o.lokal === "function"){ try { v = o.lokal(); } catch(err){ v = null; } }
         else if (e){
-          if (!e.hat[o.feld] && !e.gescheitert[o.feld]){ z.laedt = true; z.sk = 56; }
+          var noetig = [o.feld].concat(isArr(o.felder) ? o.felder : []).filter(Boolean);
+          var offenF = noetig.filter(function(f){ return !e.hat[f] && !e.gescheitert[f]; });
+          if (offenF.length){ z.laedt = true; z.sk = 56; }
           else if (typeof o.wert === "function"){ try { v = o.wert(e.daten); } catch(err){ v = null; } }
           else v = e.daten[o.feld];
+          if (v != null && typeof o.name === "function"){ try { v = o.name(v); } catch(err){} }
+          if (v != null && o.anteil){ var an_ = toNum(e.daten[o.anteil]); if (an_ != null) kurz = fmtPct(an_, 0); }
         }
-        z.html = sumPaarHtml(v, o.kurz, o.art);
+        z.html = sumPaarHtml(v, kurz, o.art);
         z.tip = o.label;
         z.sk = z.sk || 56;
         return z;
