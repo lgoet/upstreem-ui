@@ -1263,11 +1263,13 @@
        daneben steht: wenn Platz fehlt, geht die Wiederholung und nicht der Wert.
        Der Mention Count faellt ganz weg. Ausdruecklich so gewollt -- lieber eine Zahl weniger als
        ein Name, von dem drei Buchstaben und Punkte zu sehen sind.
-       Die 130px sind gemessen, nicht gerundet: "Share of Voice" plus die Erklaer-Raute plus
-       12/16 Polsterung und 6 Abstand brauchen 129px. Mit 96px war die SPALTENUEBERSCHRIFT
-       abgeschnitten -- dann verschiebt man das Problem nur von der Zeile in den Kopf. */
+       Die 130px waren gemessen, nicht gerundet: "Share of Voice" plus die Erklaer-Raute plus
+       12/16 Polsterung und 6 Abstand brauchten 129px. Mit 96px war die SPALTENUEBERSCHRIFT
+       abgeschnitten -- dann verschiebt man das Problem nur von der Zeile in den Kopf.
+       Seit der Kopfschrift 14/500 und dem Info-Zeichen 15 (15.10. spaet) braucht derselbe Kopf
+       gemessen 145.1, also 148. Bei 360px Traegerbreite bleiben dem Namen 178. */
     .up-root.is-vnarrow .up-var-sov .up-varring { display: none; }
-    .up-root.is-vnarrow .up-var-sov, .up-root.is-vnarrow .up-th-vsov { flex: 0 0 130px; }
+    .up-root.is-vnarrow .up-var-sov, .up-root.is-vnarrow .up-th-vsov { flex: 0 0 148px; }
     .up-root.is-vnarrow .up-var-cnt, .up-root.is-vnarrow .up-th-vcnt { display: none; }
     .up-root[data-theme="dark"] .up-varring-track { stroke: var(--vc-border); }
     .up-root[data-theme="dark"] .up-varring-fill { stroke: var(--up-accent); }
@@ -3230,7 +3232,8 @@
        Verdoppeln statt Verschieben: eine Regel, die nur durch ihre Position gewinnt, kippt
        beim naechsten Umsortieren wieder. */
     .up-th-idx.up-th-idx, .up-td-idx.up-td-idx { justify-content: center; padding: 0; }
-    .up-th-idx svg { width: 14px; height: 14px; display: block; }
+    /* 15 seit der Kopfschrift 14 (15.10. spaet), wie die anderen Zeichen im Kopf. */
+    .up-th-idx svg { width: 15px; height: 15px; display: block; }
     .up-td-idx.up-td-idx { font-size: 12px; color: var(--vc-muted); font-variant-numeric: tabular-nums; }
 
     .up-table { width: 100%; display: flex; flex-direction: column; background: var(--vc-bg); }
@@ -3262,6 +3265,30 @@
     .up-th { font-size: 12px; font-weight: 400; color: var(--vc-muted); padding: 0 16px 0 12px; height: 100%;
       white-space: nowrap; overflow: hidden;
       display: flex; align-items: center; gap: 6px; border-left: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }
+    /* DIE KOPFSCHRIFT JEDER TABELLE: 14/500 (15.10. spaet, "alle Header Rows eine Klasse groesser").
+       Vorher zwei Stufen: 13/500 in der flachen Tabelle, 12/400 ueberall sonst (Drawer, Dashboard,
+       Details). Jetzt eine Stufe ueber der flachen fuer alle, damit kein Kopf mehr kleiner ist als
+       ein anderer -- Top Brands (.vt-th), Top Citations (.tct-th) und die Variantentabelle ziehen
+       mit. An .up-root und nicht an .up-th allein: die Vorschauen der Landingpage (.ulh-vis-tab)
+       tragen .up-th ausserhalb jeder Wurzel, mit fest gesetzten Spaltenbreiten -- die bleiben, bis
+       die Landing-Sitzung sie selbst nachzieht.
+       Die Spalten sind darauf neu vermessen (min/minFlach je Tabelle): ein Kopf mit Wort, Zeichen,
+       Info und Sortierpfeil braucht bei 14 rund 8 Prozent mehr Platz. */
+    .up-root .up-th { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); }
+    /* DIE ZEICHEN IM KOPF WACHSEN MIT (15.10. spaet). Gerechnet 14/13 auf die Werte der flachen
+       Tabelle, dann gerundet (§1c): Info, Sortierpfeile, Zeichen vor dem Wort und Rautenzeichen
+       14 -> 15, Markenlogo 16 -> 17 (Radius 4 bleibt, 4.3 rundet auf die Stufe). Der Abstand
+       der Zelle 6 -> 6.5 rundet auf 6 und bleibt. Nur IM Kopf: dasselbe .up-th-info steht an
+       Kennzahlen und Abschnittstiteln (Shopping, Ads, Details) und behaelt dort seine 14. */
+    .up-th .up-th-info, .vt-th .up-th-info, .tct-th .up-th-info { width: 15px; height: 15px; flex: 0 0 15px; }
+    .up-th .up-th-info svg, .vt-th .up-th-info svg, .tct-th .up-th-info svg { width: 15px; height: 15px; }
+    /* DAS ZEICHEN VOR DEM WORT (15.10., aus prompts-table nach core gehoben, als zweite und dritte
+       Tabelle es brauchten): "Brand Mentions" und "Brand" (squareStack wie Brands in der
+       Seitenleiste), "Topics" (tags), "Citations" (globe wie Citations in der Seitenleiste),
+       "Type" (dropdownFieldType). Drittfarbe wie Info und Sortierpfeil, schrumpft nie -- verliert
+       der Kopf Platz, kuerzt sich das Wort, nicht das Zeichen. Gesetzt mit UC.kopfZeichen. */
+    .up-th-ic { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
+    .up-th-ic svg { width: 15px; height: 15px; display: block; }
     /* Column separators sit on the LEFT edge, not the right, and the exception is :first-child.
        Mirror-imaging this matters: hidden columns are still DOM children, so with border-right +
        ":last-child { border-right: none }" the exception kept landing on a display:none cell while
@@ -3297,16 +3324,18 @@
     .up-root.is-resizing .up-row { cursor: col-resize; }
     .up-th.is-sortable:hover { color: var(--vc-text); }
 
-    /* Kopf-Sortierer: zwei 14px-Chevrons uebereinander, je 2px zusammengezogen. Die Geometrie ist
-       Lucide chevron-up / chevron-down. Der aktive zeigt in die Sortierrichtung. */
+    /* Kopf-Sortierer: zwei Chevrons uebereinander, je 2px zusammengezogen. Die Geometrie ist
+       Lucide chevron-up / chevron-down. Der aktive zeigt in die Sortierrichtung. 15 statt 14 seit
+       der Kopfschrift 14 (15.10. spaet); das Zusammenziehen 2 x 15/14 = 2.1 bleibt 2. */
     .up-thsort { display: inline-flex; flex-direction: column; align-items: center; flex: 0 0 auto; line-height: 0; }
-    .up-thsort svg { width: 14px; height: 14px; display: block; color: var(--vc-third); transition: color 120ms ease; }
+    .up-thsort svg { width: 15px; height: 15px; display: block; color: var(--vc-third); transition: color 120ms ease; }
     .up-thsort .up-thsort-up { margin-bottom: -2px; }
     .up-thsort .up-thsort-down { margin-top: -2px; }
     .up-thsort.is-asc .up-thsort-up { color: var(--vc-text); }
     .up-thsort.is-desc .up-thsort-down { color: var(--vc-text); }
-    /* the sub-label that appears when a column is sorted by its secondary key (Share → Trend) */
-    .up-th-sub { font-size: 11px; font-weight: 500; color: var(--vc-text); }
+    /* the sub-label that appears when a column is sorted by its secondary key (Share → Trend).
+       Eine Stufe unter der Kopfschrift wie vorher (11 unter 12): seit dem Kopf 14 also 12. */
+    .up-th-sub { font-size: var(--up-fs-s); font-weight: 500; color: var(--vc-text); }
 
     .up-tbody { display: flex; flex-direction: column; }
     /* Soft-reload dim — see UC.makeSoftReload. The rows stay on screen because they're still
@@ -3384,7 +3413,8 @@
          Zeilenhoehe; 45 setzte die 28er Knoepfe der Pagination auf halbe Pixel. Die Linie unter
          dem Kopf zieht der Kopf selbst (Schatten nach innen), die Zellen allein liessen sie vor
          dem Auslauf enden;
-       - die Beschriftung der Koepfe 13/500 statt 12/400 ("noch sehr duenn und klein").
+       - die Beschriftung der Koepfe war hier zuerst 13/500 statt 12/400 ("noch sehr duenn und
+         klein"); seit 15.10. spaet steht 14/500 fuer jede Tabelle an .up-root .up-th.
        Andere Zeilenarten einer Tabelle (Gruppenkopf, Unterzeilen eines Drilldowns) braucht die
        Komponente selbst: rechts --up-flach-aus Polster, links nichts.
        .up-root.up-root: gegen die Regeln von core gewinnt die Spezifitaet, auch gegen die dunklen
@@ -3405,11 +3435,6 @@
       padding-left: 0; padding-right: var(--up-flach-aus);
     }
     .up-root.up-root[data-flach="yes"] .up-box .up-row { padding-left: 0; padding-right: var(--up-flach-aus); }
-    .up-root.up-root[data-flach="yes"] .up-th { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); }
-    /* Das Logo vor "Mentioned?" (Responses, URLs) traegt 5px Aussenabstand UND den Abstand der
-       Zelle (6): 11 bis zum Wort, wo vor "Visibility" in der Prompt-Tabelle 6 stehen. Flach
-       gilt der Abstand der Zelle allein -- und die 5px fehlten der breiteren Kopfschrift. */
-    .up-root.up-root[data-flach="yes"] .up-th-brandlogo { margin-right: 0; }
     /* Klebend: Rahmen und runde Ecken des Kopfes und Koerpers gehoeren zum Kasten, den es hier
        nicht gibt -- 0 breit, sonst stuende links und rechts je ein farbloser Pixel. */
     .up-root.up-root[data-flach="yes"].up-sticky .up-thead {
@@ -5205,7 +5230,12 @@
 
 /* ---------- "<brand logo> mentioned?" column header ----------
    urls-table established this; it lives here so every table with the column gets the same thing. */
-.up-th-brandlogo { width: 16px; height: 16px; border-radius: 4px; flex: 0 0 auto; object-fit: cover; margin-right: 5px; }
+/* 17 statt 16 seit der Kopfschrift 14 (15.10. spaet, 16 x 14/13 = 17.2); der Radius 4.3 rundet auf 4.
+   Ohne eigenen Aussenabstand: bis 15.10. trug das Logo 5px UND den Abstand der Zelle (6), also 11
+   bis zum Wort, wo vor "Visibility" in der Prompt-Tabelle 6 stehen. Die flache Tabelle hatte das
+   schon abgestellt ("die 5px fehlten der breiteren Kopfschrift"); seit jeder Kopf dieselbe Schrift
+   traegt, gilt es fuer jeden -- sonst stuende das Logo im Drawer anders als auf der Seite. */
+.up-th-brandlogo { width: 17px; height: 17px; border-radius: 4px; flex: 0 0 auto; object-fit: cover; }
 
 /* ---------- brand-mention chip stack ----------
    Overlapping 32px circles. Shared by urls-table's Brands mentioned column and prompts-table's
@@ -5694,7 +5724,9 @@
    .uto-table .up-td) mit derselben Staerke -- ohne die zweite Klasse entschiede die Ladereihenfolge. */
 .up-logtab.up-logtab .up-thead.up-row { height: 36px; flex: 0 0 36px; }
 .up-logtab.up-logtab .up-row:not(.up-thead) { height: 34px; flex: 0 0 34px; }
-.up-logtab.up-logtab .up-th, .up-logtab.up-logtab .up-td { font-size: var(--up-fs-s); }
+/* Nur die Zellen: der Kopf traegt seit 15.10. spaet die Schrift jedes Tabellenkopfs (14/500) --
+   "alle Header Rows" schliesst das Protokoll ein, der Inhalt bleibt dicht. */
+.up-logtab.up-logtab .up-td { font-size: var(--up-fs-s); }
 /* Ab 14 Zeilen ein eigener Ausschnitt statt einer Seite, die ins Endlose waechst. 476 = 36 Kopf
    + 13 x 34 -- also genau vierzehn Zeilen, danach scrollt es.
    Hier darf overflow stehen, im Gegensatz zum Kasten oben: im Protokoll gibt es kein Zeilenmenue,
@@ -7071,6 +7103,12 @@ button.up-ph-crumb:hover, button.up-ph-crumb:focus-visible { color: var(--vc-tex
   transition: background var(--up-t-1) ease;
 }
 .up-sumknopf::before { content: ""; flex: 0 0 0px; width: 0; height: var(--up-h-seg); margin-right: -4px; }
+/* DAS PAAR PASST SICH DEM KNOPF AN (15.10. spaet): ein Paar, das breiter ist als der Knopf, brach
+   als Ganzes in die abgeschnittene zweite Zeile -- 66px tief in der 48er Zelle, NICHTS war zu
+   sehen, nicht einmal der Wert (gemessen in Teams: "Developer Access most common" in 172px, in
+   Brands "Rising / falling" bei 143px). Begrenzt auf die Knopfbreite bleibt es in der ersten Zeile:
+   der Wert steht ganz (flex 0 0 auto), die Bezeichnung kuerzt mit Auslassungspunkten. */
+.up-sumknopf > .up-sumpaar { max-width: 100%; }
 .up-sumknopf:hover, .up-sumrow.is-open .up-sumknopf.is-offen { background: var(--vc-heading-bg); }
 .up-sumknopf:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .up-sumchev { display: inline-flex; align-items: center; flex: 0 0 12px; width: 12px; height: var(--up-h-seg); color: var(--vc-fourth); }

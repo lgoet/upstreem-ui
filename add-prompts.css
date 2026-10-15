@@ -156,22 +156,33 @@
    solange die Bewegung laeuft. Danach nimmt JS die Klasse wieder ab und der Balken erscheint
    genau dann, wenn die Liste ihren Deckel wirklich erreicht hat. */
 .uap-listwrap.is-resizing .uap-list { overflow: hidden; flex-shrink: 0; }
+/* Der Kopf liest sich wie der Kopf der flachen Tabelle (core, data-flach): 13/500 in der
+   zweiten Schriftfarbe, die Linie darunter zieht die Liste. Vorher 14px in voller Schriftfarbe --
+   lauter als die Zeilen, die er ueberschreibt. */
 .uap-listhead {
   display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
-  font-size: 14px; font-weight: 500; color: var(--vc-text);
+  font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted);
 }
 .uap-clearall {
   margin-left: auto; border: 0; background: transparent; padding: 0;
-  color: var(--vc-muted); font: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+  color: var(--vc-muted); font: inherit; font-size: var(--up-fs-s); font-weight: var(--up-fw-m); cursor: pointer;
 }
 .uap-clearall:hover { color: var(--vc-text); }
 
 /* 232px ist die Grenze, ab der die Liste selbst scrollt statt den Dialog weiter wachsen zu
    lassen. Die Hoehenanimation laeuft deshalb von selbst aus: sobald der Inhalt hier anschlaegt,
-   aendert sich die gemessene Zielhoehe nicht mehr und es gibt nichts mehr zu bewegen. */
+   aendert sich die gemessene Zielhoehe nicht mehr und es gibt nichts mehr zu bewegen. Bei 40er
+   Zeilen schneidet die Kante die sechste an -- dass es weitergeht, sieht man, ohne zu scrollen.
+   Gebaut wie die flache Tabelle: kein Kasten, oben und unten eine Linie, dazwischen eine je
+   Zeile. Die Liste laeuft 8px in das Polster der Karte hinaus, die Zeile holt sie mit 8px
+   Polster zurueck: so steht der Text buendig unter "N prompts", und Linien wie Hover-Grund
+   reichen sichtbar darueber hinaus -- buendig mit dem Text sahe der Grund aus wie abgeschnitten.
+   Nur halb in das Polster (16) und nicht bis an den Kartenrand: in einer Karte laeuft auch die
+   flache Tabelle nicht aus (core, --up-flach-aus). */
 .uap-list {
-  list-style: none; margin: 0; padding: 0;
-  display: flex; flex-direction: column; gap: 4px;
+  list-style: none; margin: 0 -8px; padding: 0;
+  display: flex; flex-direction: column;
+  border-top: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border);
   max-height: 232px; overflow-y: auto; overscroll-behavior: contain;
 }
 
@@ -183,37 +194,73 @@
 .uap-capnote svg { width: 13px; height: 13px; flex: 0 0 13px; display: block; fill: none;
   stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
+/* Die Zeile (15.10.): kein grauer Kasten mehr, sondern eine Zeile wie in der Tabelle -- 40 hoch
+   (--up-h-gross), getrennt durch eine Linie, beim Hover der Grund der Tabellenzeile
+   (--vt-row-hover, core .up-row:hover). Vier graue Kaesten mit 4px Luft lasen sich als vier
+   Knoepfe, nicht als eine Liste.
+   flex: 0 0 auto ist Pflicht und nicht Zierde: die Liste ist eine Flex-Spalte mit max-height, und
+   ohne das staucht sie ihre Zeilen auf ihre Mindesthoehe zusammen, statt zu scrollen.
+   Rechts 4 statt 8 Polster: das X ist ein 24er-Knopf mit 5px Luft um sein Zeichen, so steht das
+   Zeichen etwa so weit vom Rand wie der Text links. */
 .uap-row {
-  display: flex; align-items: center; gap: 8px;
-  min-height: 34px; padding: 5px 6px 5px 10px; border-radius: 9px;
-  background: var(--vc-heading-bg);
+  display: flex; align-items: center; gap: 8px; flex: 0 0 auto;
+  height: var(--up-h-gross); padding: 0 4px 0 8px;
 }
+.uap-row + .uap-row { border-top: 1px solid var(--vc-border); }
+.uap-row:hover { background: var(--vt-row-hover); }
+
+/* Text und Stift als eine Gruppe, die den freien Platz nimmt: der Text schrumpft auf seine
+   Breite (0 1 auto), der Stift steht DIREKT dahinter und nicht rechts aussen. Wird der Text
+   gekuerzt, steht der Stift hinter den drei Punkten. */
+.uap-rowmain { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 4px; }
 .uap-rowtext {
-  flex: 1 1 auto; min-width: 0; font-size: 13px; line-height: 1.35; color: var(--vc-text);
+  flex: 0 1 auto; min-width: 0;
+  font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 1.35; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.uap-rowmarket { display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto; }
+
+/* Der Stift ist core .up-iconbtn.is-24, hier nur seine Sichtbarkeit: bei Hover oder Fokus der
+   Zeile. Er haelt seinen Platz auch unsichtbar -- sonst rueckte beim Darueberfahren alles
+   dahinter um 28px. Treffbar bleibt er dabei, und das ist Absicht: erreichen kann ihn der Zeiger
+   nur ueber die Zeile, und dann ist er sichtbar. Mit pointer-events: none bis zum Hover ging im
+   Pruefstand der erste Klick daneben, wenn Bewegung und Klick zusammenfielen -- der Treffertest
+   lief noch gegen den Stand ohne Hover.
+   Ohne Zeiger (Telefon, Tablet) gibt es kein Darueberfahren; dort steht er immer da, sonst kaeme
+   man an das Bearbeiten nie heran. */
+.uap-row .uap-rowpen { opacity: 0; transition: opacity var(--up-t-1) ease; }
+.uap-row:hover .uap-rowpen, .uap-row:focus-within .uap-rowpen { opacity: 1; }
+@media (hover: none) {
+  .uap-row .uap-rowpen { opacity: 1; }
+}
+/* Die Platte unter einem Knopf, auf dem der Zeiger steht. core gibt ihr --vc-heading-bg -- und
+   das ist in diesem Dialog in BEIDEN Themen genau der Ton der gehoverten Zeile (#f9f8f9,
+   #232326), die Platte waere also unsichtbar. Eine Stufe weiter, der Ton einer gewaehlten
+   Menuezeile (--up-sel-bg). Nur die Farbe; Groesse, Radius und Zeichen bleiben die von core.
+   .uap-rowbtn ist der Name der beiden Zeilenknoepfe von vorher; er bleibt ihr Griff. */
+.uap-list .uap-row .uap-rowbtn:hover { background: var(--up-sel-bg); }
+
+/* Der Markt in einer festen Spur, links buendig: die Codes sind verschieden breit (DE, MX), und
+   rechts an das X gelehnt stuenden die Flaggen sonst in jeder Zeile woanders. 52 = Flagge 18,
+   Abstand 8 und der breiteste denkbare Code: gemessen ueber alle 676 Buchstabenpaare in der
+   Schrift von .up-market-code ist das WW mit 24.2px (MW 22.9, DE 16.5). */
+.uap-rowmarket { flex: 0 0 auto; width: 52px; display: inline-flex; align-items: center; }
+/* Nur ohne UC.marketChip (aelteres core.js): dann steht der Code allein da, und zwar in der Spur
+   der Codes -- 26 = Flagge 18 plus Abstand 8 --, nicht links unter den Flaggen. */
+.uap-rowmarket .uap-rowmarket-code { padding-left: 26px; }
+
 .uap-flag { width: 18px; height: 14px; border-radius: 3px; object-fit: cover; display: block; flex: 0 0 18px; }
 /* In the trigger the flag is the icon, so it takes the icon slot's size, not the row's. */
 .uap-trigger-ic .uap-flag { width: 20px; height: 14px; flex: 0 0 20px; }
-.uap-rowmarket-code { font-size: 11px; font-weight: 600; color: var(--vc-muted); letter-spacing: .02em; }
 
-.uap-rowbtn {
-  width: 26px; height: 26px; flex: 0 0 26px; border: 0; border-radius: 7px;
-  background: transparent; color: var(--vc-third); cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center;
-  opacity: 0; transition: opacity 120ms ease, background 120ms ease, color 120ms ease;
-}
-.uap-row:hover .uap-rowbtn, .uap-rowbtn:focus-visible { opacity: 1; }
-.uap-rowbtn:hover { background: var(--vc-bg); color: var(--vc-text); }
-.uap-rowbtn svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor;
-  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
+/* Das Feld steht genau dort, wo der Text stand: 5px nach links herausgezogen, 1px Rahmen und
+   4px Polster -- der erste Buchstabe bleibt auf seinem Pixel, beim Wechsel springt nichts.
+   Nicht bis ganz an den Rand der Zeile: die Liste scrollt und schneidet damit seitlich ab, der
+   2px-Fokusring braucht die 3px davor. 32 hoch in der 40er Zeile, die Zeile bleibt 40. */
 .uap-rowedit {
-  width: 100%; box-sizing: border-box; resize: none; overflow-y: auto;
-  max-height: 132px; padding: 4px 6px; border: 1px solid var(--vc-hover-border); border-radius: 7px;
+  flex: 1 1 auto; min-width: 0; height: var(--up-h-btn); margin: 0 0 0 -5px; padding: 0 8px 0 4px;
+  border: 1px solid var(--vc-hover-border); border-radius: var(--up-r-m);
   background: var(--vc-bg); color: var(--vc-text);
-  font: inherit; font-size: 13px; line-height: 1.35;
+  font: inherit; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 1.35;
 }
 /* Vorher stand hier nur outline:none. Das Feld hatte damit ueberhaupt keine Fokusanzeige --
    schlimmer als eine falsche Farbe, weil beim Tabben nicht zu sehen war, wo man ist. */

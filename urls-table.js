@@ -64,10 +64,12 @@
       { key: "type",     label: "Type",             w: "minmax(11%, 1fr)",     min: 118, dropAt: "vnarrow", prio: 30 },
       /* minFlach/wFlach (15.10.): flach (core, Kopfschrift 13/500) gemessen "Mentioned?" mit Logo
          123 und "Last Seen" mit Sortierpfeilen 110, je samt Zellrand -- die alten Untergrenzen
-         112 und 104 kuerzten beide. Nur fuer die flache Fassung (Drawer bleiben bei 12/400). */
-      { key: "ment",     label: "Mentioned?",       w: "minmax(112px, 0.6fr)", min: 112, wFlach: "minmax(126px, 0.6fr)", minFlach: 126, dropAt: "narrow",  prio: 20 },
+         112 und 104 kuerzten beide.
+         Seit 15.10. spaet traegt jeder Kopf 14/500, auch im Drawer -- also EINE Untergrenze:
+         gemessen "Mentioned?" mit Logo 17 129.4, "Last Seen" mit Sortierpfeilen 15 115.7. */
+      { key: "ment",     label: "Mentioned?",       w: "minmax(132px, 0.6fr)", min: 132, dropAt: "narrow",  prio: 20 },
       { key: "brands",   label: "Brands mentioned", w: "minmax(13%, 1fr)",     min: 178, dropAt: "vnarrow", prio: 40 },
-      { key: "lastseen", label: "Last Seen",        w: "minmax(104px, 0.7fr)", min: 104, wFlach: "minmax(114px, 0.7fr)", minFlach: 114, dropAt: "vnarrow", prio: 10 }
+      { key: "lastseen", label: "Last Seen",        w: "minmax(118px, 0.7fr)", min: 118, dropAt: "vnarrow", prio: 10 }
   ];
 
   /* ORDER maps each (field, direction) pair onto the single value the RPC expects in p_order.
@@ -691,10 +693,20 @@
     /* Columns, pagination and header sorting all come from core now — urls-table and
        domains-table used to carry byte-identical copies of that machinery. Only the data
        differs, and that data is right here in the config. */
+    /* DAS ZEICHEN VOR "Type" (15.10. angefordert): die Zitationsart traegt Hugeicons
+       DropdownFieldType -- dieselbe Machart wie vor "Brand Mentions" in der Prompt-Tabelle
+       (UC.kopfZeichen, .up-th-ic aus core). Vor makeColumns, damit der Kopf seine endgueltige
+       Breite schon hat, wenn die Spalten zum ersten Mal verteilt werden. */
+    if (UC.kopfZeichen) UC.kopfZeichen(root.querySelector(".up-thead .up-th-type"), "dropdownFieldType");
     var colsKit = UC.makeColumns({
       root: root, state: state, columns: COLUMNS,
       storePrefix: "uut", instanceId: instanceId,
       firstKey: "domain", firstMin: URL_MIN, actionsMin: 120,
+      /* Flach 29 statt 30 Prozent fuer die URL (15.10. spaet): mit der Kopfschrift 14/500 brauchen
+         "Mentioned?" und "Last Seen" zusammen 10 mehr (676 Mindestbreiten), und bei 1440 blieben
+         mit 30 Prozent nur 671.8 -- "Last Seen" fiel weg (gemessen). 29 Prozent geben 683.5; die
+         URL-Spalte waechst darueber weiter mit 1.6fr. Ohne data-flach bleibt es bei 0.30. */
+      firstShare: root.getAttribute("data-flach") === "yes" ? 0.29 : null,
       /* "up-sum": die Zellen der Gesamtzeile (UC.makeZaehlZeile) gehen mit ihren Spalten. */
       dense: !LEISTE, badgeSel: ".uut-cols-badge", cellPrefixes: ["up","uut","up-sum"],
       /* In der einen Leiste heisst das Menue "Display": Spalten als Chips wie in Responses und

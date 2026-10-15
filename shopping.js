@@ -1520,7 +1520,10 @@
        o.flach: Untergrenze in der flachen Tabelle (UC.makeColumns minFlach/wFlach, 15.10.). Ihre
        Kopfschrift ist 13/500 statt 12/400, und so brauchten mehrere Koepfe mehr als ihr min
        (gemessen bei 1100 mit dem Klon des Kopfs, Erklaer- und Sortierzeichen mitgezaehlt, z. B.
-       "First Position Rate" mit Sortierung 179,8 bei 176). Der Wert liegt 2 bis 4 darueber. */
+       "First Position Rate" mit Sortierung 179,8 bei 176). Der Wert liegt 2 bis 4 darueber.
+       Nachgemessen mit der Kopfschrift 14/500 und Info/Sortierpfeil 15 (15.10. spaet, Klon des
+       Kopfs, samt Zellrand): z. B. "First Position Rate" mit Sortierung 190.4, ohne 169.4,
+       "Avg. Product Position" 209.9, "Observations" 158.0 / 137.0. Wieder 3 darueber. */
     function sp(key, label, min, fr, prio, sk, o) {
       o = o || {};
       return { key: key, label: label, w: "minmax(" + min + "px," + fr + "fr)", min: min, prio: prio, sk: sk, sort: o.sort, info: o.info,
@@ -1531,47 +1534,47 @@
         sp("share", "Share of Shelf", 154, 1.2, 90, 60, { info: "share" }),
         sp("presence", "Presence", 120, 1, 80, 44, { info: "presence" }),
         sp("products", "Products", 104, 0.8, 50, 30),
-        sp("pos", "Avg. Position", 124, 1, 70, 36, { info: "pos", flach: 130 }),
-        sp("first", "First Position Rate", 156, 1.1, 40, 44, { info: "firstBrand", flach: 162 }),
+        sp("pos", "Avg. Position", 124, 1, 70, 36, { info: "pos", flach: 137 }),
+        sp("first", "First Position Rate", 156, 1.1, 40, 44, { info: "firstBrand", flach: 173 }),
         sp("change", "Change", 110, 0.9, 60, 40)] },
       topprodukte: { erste: { label: "Product", min: 260, sk: { w: 160, logo: true } }, spalten: [
         sp("vis", "Visibility", 130, 1.1, 90, 60, { info: "vis" }),
-        sp("pos", "Avg. Position", 126, 0.9, 80, 36, { info: "pos", flach: 130 }),
-        sp("obs", "Observations", 128, 0.9, 70, 30, { info: "obs", flach: 132 }),
-        sp("first", "First Position Rate", 156, 1.1, 50, 44, { info: "firstProd", flach: 162 }),
+        sp("pos", "Avg. Position", 126, 0.9, 80, 36, { info: "pos", flach: 137 }),
+        sp("obs", "Observations", 128, 0.9, 70, 30, { info: "obs", flach: 140 }),
+        sp("first", "First Position Rate", 156, 1.1, 50, 44, { info: "firstProd", flach: 173 }),
         sp("rating", "Rating", 92, 0.7, 40, 30),
         /* 148: eine Preisspanne ("€19.62–€21.62") braucht 105px Text plus 28 Polster; mit 128/130
            lief sie 4,5px in das rechte Polster (06.10. gemessen). Was laenger ist, kuerzt core. */
         sp("price", "Price", 148, 1, 60, 50, { info: "price" })] },
       products: { erste: { label: "Product", min: 280, sort: "title", sk: { w: 170, logo: true } }, spalten: [
         sp("brand", "Brand", 160, 1.2, 85, { w: 70, logo: true }),
-        sp("vis", "Visibility", 124, 1, 90, 60, { sort: "visibility", info: "vis" }),
-        sp("obs", "Observations", 148, 1, 70, 30, { sort: "observations", info: "obs", flach: 152 }),
-        sp("pos", "Avg. Position", 144, 1, 80, 36, { sort: "avg_position", info: "pos", flach: 150 }),
-        sp("first", "First Position Rate", 176, 1.1, 50, 44, { sort: "first_position_rate", info: "firstProd", flach: 182 }),
+        sp("vis", "Visibility", 124, 1, 90, 60, { sort: "visibility", info: "vis", flach: 130 }),
+        sp("obs", "Observations", 148, 1, 70, 30, { sort: "observations", info: "obs", flach: 161 }),
+        sp("pos", "Avg. Position", 144, 1, 80, 36, { sort: "avg_position", info: "pos", flach: 158 }),
+        sp("first", "First Position Rate", 176, 1.1, 50, 44, { sort: "first_position_rate", info: "firstProd", flach: 194 }),
         sp("price", "Price", 148, 1.1, 60, 60, { sort: "price", info: "price" }),
-        sp("rating", "Rating", 92, 0.7, 30, 30, { sort: "rating" }),
+        sp("rating", "Rating", 92, 0.7, 30, 30, { sort: "rating", flach: 96 }),
         sp("merchants", "Merchants", 128, 1.1, 40, 70),
         sp("seen", "Last Seen", 120, 0.9, 20, 60, { sort: "last_seen" })] },
       brands: { erste: { label: "Brand", min: 220, sort: "name", sk: { w: 110, logo: true } }, spalten: [
-        sp("share", "Share of Shelf", 154, 1.2, 90, 60, { sort: "share_of_shelf", info: "share", flach: 158 }),
-        sp("presence", "Presence", 126, 0.9, 80, 44, { sort: "presence", info: "presence", flach: 128 }),
-        sp("products", "Products", 104, 0.8, 60, 30, { sort: "products", flach: 106 }),
-        sp("obs", "Observations", 148, 0.9, 50, 36, { sort: "observations", info: "obs", flach: 152 }),
-        sp("pos", "Avg. Position", 144, 1, 70, 36, { sort: "avg_position", info: "pos", flach: 150 }),
-        sp("first", "First Position Rate", 176, 1.1, 40, 44, { sort: "first_position_rate", info: "firstBrand", flach: 182 }),
+        sp("share", "Share of Shelf", 154, 1.2, 90, 60, { sort: "share_of_shelf", info: "share", flach: 168 }),
+        sp("presence", "Presence", 126, 0.9, 80, 44, { sort: "presence", info: "presence", flach: 136 }),
+        sp("products", "Products", 104, 0.8, 60, 30, { sort: "products", flach: 112 }),
+        sp("obs", "Observations", 148, 0.9, 50, 36, { sort: "observations", info: "obs", flach: 161 }),
+        sp("pos", "Avg. Position", 144, 1, 70, 36, { sort: "avg_position", info: "pos", flach: 158 }),
+        sp("first", "First Position Rate", 176, 1.1, 40, 44, { sort: "first_position_rate", info: "firstBrand", flach: 194 }),
         sp("change", "Change", 110, 0.9, 65, 40, { sort: "share_of_shelf_delta" }),
         sp("top", "Top Product", 240, 1.8, 30, { w: 140, logo: true })] },
       merchants: { erste: { label: "Merchant", min: 240, sort: "name", sk: { w: 120, logo: true } }, spalten: [
         sp("share", "Share", 150, 1.2, 90, 60, { sort: "observations", info: "merchant" }),
-        sp("products", "Products", 104, 0.8, 80, 30, { sort: "products", flach: 106 }),
-        sp("obs", "Observations", 148, 1.1, 70, 50, { sort: "observations", info: "obs", flach: 152 }),
-        sp("pos", "Avg. Product Position", 192, 1.1, 60, 36, { sort: "avg_position", info: "pos", flach: 200 }),
+        sp("products", "Products", 104, 0.8, 80, 30, { sort: "products", flach: 112 }),
+        sp("obs", "Observations", 148, 1.1, 70, 50, { sort: "observations", info: "obs", flach: 161 }),
+        sp("pos", "Avg. Product Position", 192, 1.1, 60, 36, { sort: "avg_position", info: "pos", flach: 213 }),
         sp("firstseen", "First Seen", 120, 1, 30, 60, { sort: "first_seen" }),
         sp("seen", "Last Seen", 120, 1, 40, 60, { sort: "last_seen" })] },
       dhaendler: { erste: { label: "Merchant", min: 220, sk: { w: 120, logo: true } }, spalten: [
         sp("share", "Share", 124, 1, 90, 40, { info: "merchant" }),
-        sp("obs", "Observations", 128, 1, 80, 30, { info: "obs", flach: 132 }),
+        sp("obs", "Observations", 128, 1, 80, 30, { info: "obs", flach: 140 }),
         sp("price", "Price", 160, 1.2, 70, 60, { info: "price" })] },
       /* Recent Appearances: die erste Spalte ist ein Datum (120 Untergrenze). Dahinter die
          Knopfspalte "View Response", gemessen (UC.makeAktionsSpur) statt geschaetzt. */
@@ -1579,7 +1582,7 @@
         sp("model", "Model", 150, 1.2, 90, { w: 70, logo: true }),
         sp("market", "Market", 90, 0.7, 50, 30),
         sp("topic", "Topic", 160, 1.4, 40, 80),
-        sp("position", "Position", 100, 0.8, 70, 30, { info: "pos" }),
+        sp("position", "Position", 100, 0.8, 70, 30, { info: "pos", flach: 106 }),
         sp("price", "Price", 110, 0.9, 60, 40, { info: "price" }),
         sp("merchant", "Merchant", 180, 1.4, 80, { w: 90, logo: true })] }
     };
