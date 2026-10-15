@@ -1419,6 +1419,18 @@
 .upt-root[data-leiste="yes"] .upt-status { height: var(--up-h-btn); }
 .upt-root[data-leiste="yes"] .upt-status-btn { height: var(--up-h-btn); padding: 0 16px; }
 
+/* DIE BESCHRIFTUNG DER SPALTENKOEPFE eine Stufe groesser und kraeftiger (15.10., gemeldet: "noch
+   sehr duenn und klein"): 13 statt 12 (--up-fs-m, die naechste Stufe der Skala, dort
+   "Fliesstext, Knopfbeschriftung") und 500 statt 400 (--up-fw-m, "der Normalfall der App").
+   Die Farbe bleibt die leise (--vc-muted): der Kopf soll lesbar sein, aber nicht mit den Werten
+   darunter konkurrieren. Die Mindestbreiten von Visibility, Rank und Sentiment (COLUMNS in
+   prompts-table.js) sind gegen diese Groesse nachgemessen. */
+.upt-root[data-leiste="yes"] .up-th { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); }
+/* Das Zeichen vor "Brand Mentions" und "Topics" (prompts-table.js, ZEICHEN VOR ZWEI
+   SPALTENKOEPFEN): 14 wie das Info-Zeichen daneben, Drittfarbe, schrumpft nie. */
+.upt-th-ic { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
+.upt-th-ic svg { width: 14px; height: 14px; display: block; }
+
 /* Die Kopfzeile flacher (15.10.: "die Grids stehen gefuehlt etwas ab" -- die senkrechten Linien
    ragten 14px ueber den Text): erst 36 statt 45, am selben Tag auf 40 (--up-h-gross) angehoben,
    zusammen mit der Fusszeile darunter ("heading und bottom rows auf 40px"), danach auf 48

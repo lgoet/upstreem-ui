@@ -403,10 +403,13 @@
        Visi..."): ein Kopf traegt Wort, Info-Zeichen, Sortierpfeile und 28px Polster, Visibility
        dazu das Logo der Marke. Gemessen: Visibility braucht 137, Rank 98, Sentiment 125 -- die
        alten Untergrenzen (120/90/120) und der Deckel 128 lagen darunter. Jetzt je etwas darueber;
-       der Deckel waechst mit, damit die drei Kennzahlspalten nebeneinander gleich wirken. */
-    { key: "visibility", label: "Visibility",      w: "minmax(144px, 152px)", min: 144, prio: 70 },
+       der Deckel waechst mit, damit die drei Kennzahlspalten nebeneinander gleich wirken.
+       Nachgemessen mit der groesseren Kopfschrift (13/500, 15.10. abends): Visibility 142,
+       Rank 100, Sentiment 131, Market 91 -- Sentiment hatte nur noch 1px Luft, Market waere
+       abgeschnitten worden. Wieder je etwa 6 bis 7 darueber. */
+    { key: "visibility", label: "Visibility",      w: "minmax(148px, 152px)", min: 148, prio: 70 },
     { key: "rank",       label: "Rank",            w: "minmax(108px, 136px)", min: 108, dropAt: "vnarrow", prio: 40 },
-    { key: "sentiment",  label: "Sentiment",       w: "minmax(132px, 144px)", min: 132, dropAt: "narrow",  prio: 30 },
+    { key: "sentiment",  label: "Sentiment",       w: "minmax(138px, 144px)", min: 138, dropAt: "narrow",  prio: 30 },
     /* 178px, same as urls-table's identical column: 4 × 32px avatars (−6px overlap each) plus
        the "+N" label plus the cell's own 28px padding, with headroom for the hover spread.
        A %-based floor let it collapse below that and clipped the stack. */
@@ -432,7 +435,7 @@
        wenn die Zeilen Intent-Felder tragen (isHidden). */
     { key: "intent",     label: "Intent",          w: "minmax(176px, 1fr)", min: 176, dropAt: "narrow",  prio: 35 },
     { key: "branded",    label: "Branded",         w: "minmax(172px, 1fr)", min: 172, dropAt: "narrow",  prio: 30 },
-    { key: "market",     label: "Market",          w: "minmax(90px, 128px)", min: 90,  dropAt: "narrow",  prio: 20 },
+    { key: "market",     label: "Market",          w: "minmax(98px, 128px)", min: 98,  dropAt: "narrow",  prio: 20 },
     { key: "created",    label: "Created",         w: "minmax(10%, 0.7fr)",min: 110, dropAt: "narrow",  prio: 10 }
   ];
   var ROW_HEIGHTS = [
@@ -2713,6 +2716,22 @@
       var thPrompt = LEISTE ? root.querySelector(".up-thead .up-th-prompt") : null;
       if (thPrompt) thPrompt.insertBefore(btn, thPrompt.firstChild);
     })();
+    /* ZEICHEN VOR ZWEI SPALTENKOEPFEN (15.10., nur die eine Leiste): "Brand Mentions" bekommt das
+       Zeichen von Brands aus der Seitenleiste (squareStack, dasselbe wie im Branded-Chip),
+       "Topics" das des Reiters Topics im Seitenkopf (tags, NAV_ZEICHEN in core). Wie das Logo
+       vor "Visibility" steht es vor dem Wort, in der Drittfarbe. Nur einmal: der Kopf ist festes
+       Markup und wird nicht neu gezeichnet. */
+    if (LEISTE){
+      [["brands", "squareStack"], ["topics", "tags"]].forEach(function(z){
+        var th = root.querySelector(".up-thead .up-th-" + z[0]);
+        if (!th || th.querySelector(".upt-th-ic")) return;
+        var ic = document.createElement("span");
+        ic.className = "upt-th-ic";
+        ic.setAttribute("aria-hidden", "true");
+        ic.innerHTML = UC.icon(z[1], 2);
+        th.insertBefore(ic, th.firstChild);
+      });
+    }
 
     function populateGroupMenu(){
       if (!elGrpMenu) return;
