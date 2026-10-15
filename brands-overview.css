@@ -120,13 +120,10 @@
    ueber die ganze Breite -- ausgenommen, damit die beiden Regeln nicht ueber die Ladereihenfolge
    entscheiden. */
 .ubo-root:not(.is-inactive-view):not(.is-vnarrow) .up-sumrow > .up-sumzelle-erste { grid-column: span 2; }
-/* Telefon (is-vnarrow, nur in der einen Leiste gesetzt): der Edit-Knopf der Zeile geht, wie core
-   es fuer seinen Zeilenknopf tut (.up-root.is-vnarrow .up-rowbtn). Unsichtbar nimmt er sonst seine
-   59px in der Brand-Spalte mit, und vom Namen blieben bei 375 gemessen 6px ("V" fuer VW). Edit
-   bleibt im Dreipunktmenue der Zeile. Hier und nicht in core, weil core nicht Teil dieses
-   Auftrags ist: dort fehlt .ubo-editbtn in genau dieser einen Regel, obwohl der Kommentar an
-   .up-rowbtn sagt, die alte Klasse stehe in jeder Regel mit. */
-.ubo-root.is-vnarrow .ubo-editbtn { display: none; }
+/* Telefon (is-vnarrow, nur in der einen Leiste gesetzt): der Edit-Knopf der Zeile geht ueber die
+   core-Regel an .up-rowbtn, in der .ubo-editbtn seit dem 15.10. mitsteht. Unsichtbar nahm er sonst
+   seine 59px in der Brand-Spalte mit, und vom Namen blieben bei 375 gemessen 6px ("V" fuer VW).
+   Edit bleibt im Dreipunktmenue der Zeile. */
 
 /* ---------- chart type switch (Linechart | Landscape) + status switch (Active | Inactive) ----------
    Both are the app's standard segmented control, identical to .vc-gran / .upt-status. */

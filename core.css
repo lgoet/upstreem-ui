@@ -2448,7 +2448,7 @@
     /* Ganz schmal faellt er weg: dort ist die fuehrende Zelle schon auf ihre Mindestbreite
        gestrichen, und ein Knopf darin schiebt den Namen aus dem Bild. Dieselbe Stufe, an der
        auch der Pfeil des Vorlaeufers verschwindet. */
-    .up-root.is-vnarrow .up-rowbtn { display: none; }
+    .up-root.is-vnarrow .up-rowbtn, .up-root.is-vnarrow .ubo-editbtn { display: none; }
 
     /* ---------- sort dropdown ---------- */
     .up-sort { position: relative; flex: 0 0 auto; }
