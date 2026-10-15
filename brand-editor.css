@@ -111,7 +111,9 @@
 .ube-leer.ube-leer { padding: 18px 12px; }
 
 /* ---------- Farbe ---------- */
-.ube-farbzeile { display: flex; align-items: center; gap: 8px; }
+/* Umbrechen statt abschneiden (15.10. spaet, gemessen bei 375: Feld 178 + Logo-Knopf + Save passten
+   nicht in 343, Save lag 45px ausserhalb). Breit passt alles in eine Zeile, es bricht nichts um. */
+.ube-farbzeile { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 /* Der Farbkasten sitzt IM Feld, links vom Text: so gehoert er sichtbar zum Wert und nicht daneben.
    Coloris haengt sich beim Klick genau darauf. */
 .ube-farbfeld { position: relative; display: inline-flex; align-items: center; }
