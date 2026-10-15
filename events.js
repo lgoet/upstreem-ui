@@ -763,10 +763,12 @@
     "Load from sitemap": "Aus Sitemap laden", "Sitemap link or domain": "Sitemap-Link oder Domain", "Load": "Laden",
     "Reading your sitemap": "Deine Sitemap wird gelesen", "Looking for your sitemap…": "Sitemap wird gesucht…",
     "Reading pages…": "Seiten werden gelesen…", "Sorting pages into folders…": "Seiten werden nach Ordnern sortiert…",
-    "We couldn't find a sitemap there. Try the full link to your sitemap.xml.": "Dort haben wir keine Sitemap gefunden. Versuch den vollständigen Link zu deiner sitemap.xml.",
+    /* 16.10.: je nach Eingabe (Domain oder Datei) ein eigener Satz, jeder sagt, was stattdessen geht */
+    "We couldn't find a sitemap for {domain}. Try the full link to your sitemap.xml.": "Für {domain} haben wir keine Sitemap gefunden. Versuch den vollständigen Link zu deiner sitemap.xml.",
+    "We couldn't open this sitemap. Check the link, or enter just your domain.": "Diese Sitemap ließ sich nicht öffnen. Prüf den Link oder gib nur deine Domain ein.",
+    "This link isn't a sitemap. Enter your domain or the link to your sitemap.xml.": "Dieser Link ist keine Sitemap. Gib deine Domain oder den Link zu deiner sitemap.xml ein.",
     "The website took too long to answer. Please try again later.": "Die Website hat zu lange gebraucht. Versuch es bitte später noch einmal.",
     "This sitemap is too large to read. Try one of the smaller sitemaps it lists.": "Diese Sitemap ist zu groß. Versuch eine der kleineren Sitemaps, die sie auflistet.",
-    "This file isn't a sitemap we can read. Check that the link points to a sitemap.xml.": "Diese Datei ist keine lesbare Sitemap. Prüf, ob der Link auf eine sitemap.xml zeigt.",
     "This address can't be read. Please use the public address of your website.": "Diese Adresse lässt sich nicht lesen. Nimm bitte die öffentliche Adresse deiner Website.",
     "Too many sitemap requests. Please wait a while and try again.": "Zu viele Sitemap-Abrufe. Warte bitte eine Weile und versuch es dann noch einmal.",
     "Please enter a sitemap link or a domain.": "Gib bitte einen Sitemap-Link oder eine Domain ein.",
@@ -781,6 +783,14 @@
     "Track everything under {path}": "Alles unter {path} tracken", "Included in the folder": "Im Ordner enthalten",
     "Show {n} more": "{n} weitere zeigen", "No matching pages": "Keine passenden Seiten", "Add selection": "Auswahl übernehmen",
     "Expand": "Aufklappen", "Collapse": "Zuklappen",
+    /* 16.10.: der Deckel im Waehler und am Feld (ZIEL_MAX je Event) */
+    "You can add {n} more targets. A folder counts as one and covers every page in it.": "Du kannst noch {n} Ziele hinzufügen. Ein Ordner zählt als eins und deckt jede Seite darin ab.",
+    "You can add 1 more target. A folder counts as one and covers every page in it.": "Du kannst noch ein Ziel hinzufügen. Ein Ordner zählt als eins und deckt jede Seite darin ab.",
+    "That's the most you can add. To cover more pages, select a folder instead.": "Mehr geht nicht. Für weitere Seiten wähl stattdessen einen Ordner.",
+    "No more targets fit into this event.": "In dieses Event passen keine weiteren Ziele.",
+    "Too many pages, select the folder instead": "Zu viele Seiten, wähl stattdessen den Ordner",
+    "Too many pages, select the domain instead": "Zu viele Seiten, wähl stattdessen die Domain",
+    "You can add 1 more target to this event.": "Du kannst diesem Event noch ein Ziel hinzufügen.",
     /* Auswertung je Regel */
     "Everything under this path, including pages added later.": "Alles unter diesem Pfad, auch Seiten, die später dazukommen.",
     "Every page on this domain, including pages added later.": "Jede Seite dieser Domain, auch Seiten, die später dazukommen.",
@@ -2251,6 +2261,25 @@
       host_all: "Every page on this domain and its subdomains, including pages added later."
     };
     var ART_ZEICHEN = { url: "link", path: "folder", host: "globe", host_all: "globe" };
+    /* DAS FAVICON EINES ZIELS (16.10., Nutzer: "Wenn man neue URLs hinzufuegt, die es noch nicht
+       gibt, soll er bitte das Favicon mit Google S2 holen. Aktuell zeigt er nur ein Globe-Icon").
+       Aus core: UC.faviconUrl (Google S2, Host ohne www, die Unterdomain bleibt -- und immer ueber
+       UC.fremdUrl, den Datenschutz-Weg der App) und UC.entityAvatar, die Kachel der Suchzeilen
+       direkt darunter. Scheitert das Bild, zeigt die Kachel das Zeichen der Art, wie vorher; die
+       Art selbst steht weiter als Text daneben. Gilt fuer jede Art: auch eine Pfad- oder
+       Domain-Regel gehoert zu einer Domain. */
+    function zielFavUrl(adresse) { return UC.faviconUrl ? UC.faviconUrl(adresse) : ""; }
+    function zielKachel(z, rueckfall) {
+      var fb = rueckfall || UC.icon(ART_ZEICHEN[z.kind] || "link", 2);
+      return UC.entityAvatar ? UC.entityAvatar(zielFavUrl(zielHost(z) || z.input), fb, false, "up-es") : '<span class="uev-ziel-ic">' + fb + '</span>';
+    }
+    /* Klein, an der Stelle eines 16er-Zeichens (Chip in Schritt 4, Host im Sitemap-Baum): nur das
+       Bild. Scheitert es, setzt core den Globus in derselben Groesse an seine Stelle
+       (faviconRueckfall, .up-globus-frei) -- keine Luecke, kein zweites Zeichen. */
+    function zielFavKlein(adresse, rueckfall) {
+      var s = zielFavUrl(adresse);
+      return s ? '<img class="uev-fav" src="' + esc(s) + '" width="16" height="16" alt="" loading="lazy" referrerpolicy="no-referrer"/>' : rueckfall;
+    }
     function zielSekAnlegen(host, zt) {
       var sek = document.createElement("section");
       var x = zielAusDb(zt) || { zeigen: String(zt.value || "") };
@@ -3283,9 +3312,30 @@
       }
       return a === "host" && e.unterdomains ? "host_all" : a;
     }
-    function zielMax(p) {
-      if (zieleDa()) return ZIEL_MAX;
-      return p.art === "ziel" ? 1 : URL_MAX;
+    /* Wie viele Ziele noch dazukommen duerfen (16.10.). Die Datenbank rechnet je EVENT, nicht je
+       Dialog: add_impact_event_target_v1 lehnt ab, wenn vorhandene URLs + Regeln + neue mehr als
+       ZIEL_MAX sind (gelesen 16.10.; targets[] von get_impact_event_v3 traegt beide). Bis 16.10.
+       zaehlte die Oberflaeche im Add-Dialog nur die eigene Liste -- bei 45 vorhandenen liessen sich
+       50 sammeln, und erst "Add" scheiterte. Ohne Regeln in der Datenbank (v2): URL_MAX je Event,
+       im Add-Dialog eine URL auf einmal, wie bisher. */
+    function zielZahlImEvent(p) {
+      var d = p.art === "ziel" ? state.detail[p.eventId] : null;
+      if (!d) return 0;
+      if (zieleDa() && isArr(d.targets)) return d.targets.length;
+      return isArr(d.urls) ? d.urls.length : 0;
+    }
+    function zielFrei(p) {
+      var frei = (zieleDa() ? ZIEL_MAX : URL_MAX) - zielZahlImEvent(p) - p.e.ziele.length;
+      if (!zieleDa() && p.art === "ziel") frei = Math.min(frei, 1 - p.e.ziele.length);
+      return Math.max(0, frei);
+    }
+    /* Der Satz, wenn mehr kommen sollen, als frei ist: wie viele noch gehen, oder dass keins mehr
+       geht. */
+    function zuVielText(p) {
+      var frei = zielFrei(p);
+      if (!zieleDa()) return p.art === "ziel" && frei ? t("Add one URL at a time.") : fehlerText("impact_event_too_many_urls");
+      if (!frei) return fehlerText("impact_event_too_many_targets");
+      return frei === 1 ? t("You can add 1 more target to this event.") : ersetze(t("You can add {n} more targets to this event."), { n: zahl(frei) });
     }
     function artenHtml(p) {
       var l = artenFuer(p), e = p.e;
@@ -3331,11 +3381,12 @@
     /* Der Kopf des Feldes: links das Etikett, rechts "Load from sitemap" als leiser Knopf -- ein
        zweiter Weg zu derselben Eingabe, darum neben ihrem Etikett und nicht im Fluss darunter.
        Die Huelle .uev-sm-knopfzeile bleibt: smZeichnen blendet sie bei offenem Waehler aus, und
-       fehlt die Function, nimmt smLaden sie ganz heraus. */
+       fehlt die Function, nimmt smLaden sie ganz heraus. Zeichen seit dem 16.10. FolderTree
+       (Nutzer bestellt; vorher "folders", das Team-Symbol der Leiste). */
     function zielKopf(p) {
       var lbl = zieleDa() ? "URLs, paths or domains" : p.art === "ziel" ? "URL" : "URLs";
       return '<div class="uev-zielkopf"><span class="up-topicmodal-label">' + esc(t(lbl)) + '</span>' +
-        (sitemapDa() ? '<span class="uev-sm-knopfzeile"><button type="button" class="up-quietbtn uev-sm-auf">' + UC.icon("folders", 2) + '<span>' + esc(t("Load from sitemap")) + '</span></button></span>' : '') +
+        (sitemapDa() ? '<span class="uev-sm-knopfzeile"><button type="button" class="up-quietbtn uev-sm-auf">' + UC.icon("folderTree", 2) + '<span>' + esc(t("Load from sitemap")) + '</span></button></span>' : '') +
       '</div>';
     }
     /* Vier Teile untereinander, ohne Kasten im Kasten (Nutzer 15.10. spaet: "mehr Raum zu atmen,
@@ -3376,7 +3427,7 @@
       var e = p.e;
       if (e.zielArt !== "marke" && e.ziele.length) {
         el.innerHTML = '<div class="uev-pruefliste">' + e.ziele.map(function (z) {
-          return '<span class="uev-pruefziel"><span class="uev-ziel-ic">' + UC.icon(ART_ZEICHEN[z.kind] || "link", 2) + '</span>' +
+          return '<span class="uev-pruefziel"><span class="uev-ziel-ic">' + zielFavKlein(zielHost(z) || z.input, UC.icon(ART_ZEICHEN[z.kind] || "link", 2)) + '</span>' +
             '<span class="uev-notation">' + esc(z.zeigen) + '</span></span>';
         }).join("") + '</div>';
       } else el.innerHTML = '<span class="uev-pruefmarke">' + UC.icon("chartSpline", 2) + '<span>' + esc(t("Brand metrics only")) + '</span></span>';
@@ -3397,6 +3448,12 @@
       return z.kind === "url" && isArr(d.urls) && d.urls.some(function (u) { return "url|" + urlSchluessel(u.url) === z.key; });
     }
     function zielGewaehlt(p, z) { return p.e.ziele.some(function (x) { return x.key === z.key; }); }
+    /* Wie viele Eintraege der Eingabe NEU waeren (nicht schon in der Liste oder im Event, jeder
+       einmal) -- daran misst der Deckel eine eingefuegte Liste, bevor jemand "Add" drueckt. */
+    function eingabeNeu(p, r) {
+      var da = {};
+      return r.gut.filter(function (z) { if (da[z.key] || zielGewaehlt(p, z) || zielImEvent(p, z)) return false; da[z.key] = 1; return true; }).length;
+    }
     function schlechtText(z) {
       if (z.fehler === "pfad") return t("Please add a path, e.g. example.com/blog.");
       return z.roh ? ersetze(t("This can't be used: {wert}"), { wert: z.roh }) : t("Please enter a valid domain.");
@@ -3415,10 +3472,7 @@
       var neu = r.gut.filter(function (z) { return !zielGewaehlt(p, z); });
       if (neu.some(function (z) { return zielImEvent(p, z); })) { feldFehler("ziele", fehlerText(zieleDa() ? "impact_event_target_duplicate" : "impact_event_url_duplicate")); return false; }
       if (!neu.length) { feldFehler("ziele", t("This target is already in the list.")); return false; }
-      if (p.e.ziele.length + neu.length > zielMax(p)) {
-        feldFehler("ziele", zielMax(p) === 1 ? t("Add one URL at a time.") : fehlerText(zieleDa() ? "impact_event_too_many_targets" : "impact_event_too_many_urls"));
-        return false;
-      }
+      if (neu.length > zielFrei(p)) { feldFehler("ziele", zuVielText(p)); return false; }
       neu.forEach(function (z) { p.e.ziele.push(z); });
       artNachZiel(p, neu[0]);
       p.e.eingabe = ""; p.e.artVonHand = false;
@@ -3466,6 +3520,10 @@
       vzAnfordern(p);
       pruefenZeigen();
       knoepfeSync();
+      /* Die Liste hat sich geaendert, der Waehler ist offen: sein Deckel und was "Already added"
+         ist, haengen an ihr (16.10.: ein entferntes Ziel stand sonst bis zum naechsten Klick im
+         Baum als getrackt da). */
+      if (p.sm && p.sm.offen && p.sm.antwort && !p.sm.laeuft) smZeichnen(p);
     }
     function artWaehlen(p, k, vonHand) {
       if (!p || k === p.e.zielArt) return;
@@ -3487,22 +3545,26 @@
     function schreibweiseZeigen(p) {
       var el = im(".uev-schreibweise"), knopf = im(".uev-zielhinzu");
       if (!el) return;
-      var e = p.e, r = eingabeLesen(p), html = "";
+      var e = p.e, r = eingabeLesen(p), html = "", zuViel = false;
       if (!r.teile.length) {
         var a = ARTEN.filter(function (x) { return x.k === e.zielArt; })[0];
         html = a && a.bsp ? '<span class="uev-schreib-lbl">' + esc(t("e.g.")) + '</span><span class="uev-notation is-leise">' + esc(e.zielArt === "host" && e.unterdomains ? a.bspAlle : a.bsp) + '</span>' : "";
       } else if (r.vorschlag === "sitemap") {
         html = '<span class="uev-schreib-satz">' + esc(t("This looks like a sitemap.")) + '</span>' +
-          (sitemapDa() ? '<button type="button" class="up-quietbtn uev-sm-auf" data-sm-url="' + esc(r.teile[0]) + '">' + UC.icon("folders", 2) + '<span>' + esc(t("Load from sitemap")) + '</span></button>' : '');
+          (sitemapDa() ? '<button type="button" class="up-quietbtn uev-sm-auf" data-sm-url="' + esc(r.teile[0]) + '">' + UC.icon("folderTree", 2) + '<span>' + esc(t("Load from sitemap")) + '</span></button>' : '');
       } else if (r.schlecht.length) {
         html = '<span class="uev-schreib-satz">' + esc(r.schlecht[0].fehler === "pfad" ? t("Please add a path, e.g. example.com/blog.") : t("Enter a domain like example.com.")) + '</span>';
       } else {
         html = '<span class="up-marke is-leise">' + esc(r.gut.length > 1 ? ersetze(t("{n} URLs"), { n: zahl(r.gut.length) }) : t(ART_NAME[r.gut[0].kind])) + '</span>' +
           r.gut.slice(0, 3).map(function (z) { return '<span class="uev-notation">' + esc(z.zeigen) + '</span>'; }).join("") +
           (r.gut.length > 3 ? '<span class="uev-schreib-satz">' + esc(ersetze(t("and {n} more"), { n: r.gut.length - 3 })) + '</span>' : '');
+        /* Mehr eingefuegt, als frei ist (16.10.): der Grund steht SOFORT da, "Add" ist aus -- bis
+           16.10. kam er erst nach dem Klick. */
+        zuViel = eingabeNeu(p, r) > zielFrei(p);
+        if (zuViel) html += '<span class="uev-ziel-fehler">' + esc(zuVielText(p)) + '</span>';
       }
       el.innerHTML = html;
-      if (knopf) knopf.disabled = !r.teile.length || !!r.schlecht.length || r.vorschlag === "sitemap";
+      if (knopf) knopf.disabled = !r.teile.length || !!r.schlecht.length || r.vorschlag === "sitemap" || zuViel;
     }
     function zielListeZeigen(p) {
       var el = im(".uev-zielliste");
@@ -3522,7 +3584,7 @@
           : pt && pt.error ? '<span class="uev-ziel-fehler">' + esc(t(ZIEL_GRUND[pt.error] || FEHLER.impact_event_invalid_target)) + '</span>'
           : n != null ? '<span class="uev-ziel-n">' + esc(ersetze(t(n === 1 ? "{n} URL" : "{n} URLs"), { n: zahl(n) })) + '</span>' : '';
         return '<div class="uev-urlwahl">' +
-          '<span class="uev-ziel-ic">' + UC.icon(ART_ZEICHEN[z.kind] || "link", 2) + '</span>' +
+          zielKachel(z) +
           '<span class="uev-url-txt"><span class="uev-notation">' + esc(z.zeigen) + '</span>' +
             '<span class="uev-url-pfad">' + esc(t(ART_NAME[z.kind])) + '</span></span>' + zahlTxt +
           '<button type="button" class="up-iconbtn uev-urlwahl-weg" data-url-weg="' + i + '" aria-label="' + esc(t("Remove")) + '" data-tip="' + esc(t("Remove")) + '">' + UC.icon("x", 2) + '</button></div>';
@@ -3540,7 +3602,9 @@
       var e = p.e;
       if (!zieleDa() || e.zielArt === "marke") return [];
       var r = eingabeLesen(p), l = e.ziele.slice(), da = {};
-      if (!r.schlecht.length && r.vorschlag !== "sitemap") r.gut.forEach(function (z) { l.push(z); });
+      /* Eine Eingabe, die nicht mehr hineinpasst, fragt die Vorschau nicht an: sie kaeme nie in die
+         Liste, und die Funktion lehnt ueber 200 Eintraege ohnehin ab. */
+      if (!r.schlecht.length && r.vorschlag !== "sitemap" && eingabeNeu(p, r) <= zielFrei(p)) r.gut.forEach(function (z) { l.push(z); });
       return l.filter(function (z) { if (da[z.key]) return false; da[z.key] = 1; return true; });
     }
     function vzErgebnis(p) { return p.zv && p.zv.akt ? p.zv.ergebnisse[p.zv.akt] || null : null; }
@@ -3779,12 +3843,26 @@
        Ordner schon enthaelt, steht gewaehlt und gesperrt. Gezeichnet werden nur aufgeklappte
        Ordner und je Ordner zuerst 50 Seiten -- eine Sitemap darf 50 000 haben.
        Laden mit dem Ladebild aus core (Spinner, kein Skelett: der Abschnitt ist selten). Jeder
-       Fehlercode bekommt einen eigenen Satz, als roter Satz ohne Kasten. */
+       Fehlercode bekommt einen eigenen Satz, als roter Satz ohne Kasten.
+       Seit dem 16.10. mit Deckel (Nutzer: "4000 Seiten gefunden und ich koennte die per Klick
+       einfach uebernehmen. Das darf nicht sein."): die Datenbank nimmt hoechstens ZIEL_MAX Ziele
+       je Event (create_impact_event_v3, add_impact_event_target_v1, beide gelesen 16.10.) -- der
+       Waehler zaehlt schon bei der AUSWAHL dagegen, nicht erst beim Uebernehmen (smDeckel). */
+    /* not_found und invalid_xml heissen je nach dem, was gefragt wurde, etwas anderes (16.10.):
+       nach einer DOMAIN hat sie robots.txt, /sitemap.xml und /sitemap_index.xml probiert -- ein
+       invalid_xml ist dort fast immer eine HTML-Seite, die ein Server fuer jede unbekannte Adresse
+       liefert, also schlicht "keine Sitemap da". Nach einer DATEI ist es der Link selbst. Bis
+       16.10. stand fuer beide derselbe Satz ("This file isn't a sitemap we can read"), und der
+       las sich nach einer eingegebenen Seiten-URL so, als ginge nur eine sitemap.xml -- dabei geht
+       die Domain genauso. Darum sagt jeder Satz, was stattdessen geht. */
+    var SM_FEHLER_HOST = "We couldn't find a sitemap for {domain}. Try the full link to your sitemap.xml.";
+    var SM_FEHLER_DATEI = {
+      not_found: "We couldn't open this sitemap. Check the link, or enter just your domain.",
+      invalid_xml: "This link isn't a sitemap. Enter your domain or the link to your sitemap.xml."
+    };
     var SM_FEHLER = {
-      not_found: "We couldn't find a sitemap there. Try the full link to your sitemap.xml.",
       timeout: "The website took too long to answer. Please try again later.",
       too_large: "This sitemap is too large to read. Try one of the smaller sitemaps it lists.",
-      invalid_xml: "This file isn't a sitemap we can read. Check that the link points to a sitemap.xml.",
       blocked: "This address can't be read. Please use the public address of your website.",
       rate_limited: "Too many sitemap requests. Please wait a while and try again.",
       network: "We could not reach the server. Check your connection and try again.",
@@ -3812,9 +3890,31 @@
       return ersetze(t(min === 1 ? "Too many sitemap requests. Please try again in 1 minute." : "Too many sitemap requests. Please try again in {n} minutes."), { n: zahl(min) });
     }
     var SM_SEITEN = 50, SM_MEHR = 100, SM_TREFFER = 200;
+    /* Sieht die Eingabe nach einer Sitemap-DATEI aus? .xml, .xml.gz, .txt (die Text-Sitemap, die
+       sitemap-lesen auch liest), .gz, oder "sitemap" irgendwo in Pfad oder Query -- so heissen
+       auch die Adressen der Plugins (index.php?sitemap=1, /sitemap/). */
+    function smDateiArtig(z) { return !!z && (/\.(xml|txt)(\.gz)?$|\.gz$/i.test(z.pfad) || /sitemap/i.test(z.pfad + z.query)); }
+    /* Was an sitemap-lesen geht (16.10., Nutzer: "Ich wuerde erwarten, dass er zumindest
+       versucht, die Domain aus der URL zu holen"). Die Function liest eine Eingabe mit Pfad als
+       DATEI (core.ts readOnce: Host-Modus nur bei Pfad "/" ohne Query) -- eine Seiten-URL kam
+       als HTML zurueck und scheiterte mit invalid_xml. Darum geht bei einer Seite nur ihr Host
+       hinaus, mit dem Schema und genau der Schreibweise, die getippt wurde: die Unterdomain
+       bleibt, www bleibt, wie es bei einer getippten Domain schon immer blieb (die Function
+       folgt Weiterleitungen selbst; ein fremdes www- oder Nicht-www-Ziel koennte es gar nicht
+       geben). Eine Datei geht unveraendert hinaus, und ihr Fehler bleibt ihr Fehler.
+       { url, modus: "host" | "datei", domain (zum Zeigen, ohne www), umgestellt } oder null. */
+    function smAnfrage(roh) {
+      roh = String(roh == null ? "" : roh).trim();
+      var z = zerlegen(roh);
+      if (!z || !hostOk(z.host)) return null;
+      if (smDateiArtig(z)) return { url: roh, modus: "datei", domain: z.host, umgestellt: false };
+      var m = /^(https?:\/\/)?([^\/?#]+)/i.exec(roh);
+      var ursprung = ((m && m[1]) || "").toLowerCase() + ((m && m[2]) || z.host).toLowerCase().replace(/^\*\./, "");
+      return { url: ursprung, modus: "host", domain: z.host, umgestellt: !!(z.pfad || z.query) };
+    }
     function smVorschlag(p) {
       var r = eingabeTeile(p.e.eingabe), z = r.length ? zerlegen(r[0]) : null;
-      if (z && hostOk(z.host)) return /\.xml(\.gz)?$/i.test(z.pfad) ? r[0] : z.host;
+      if (z && hostOk(z.host)) return smDateiArtig(z) ? r[0] : z.host;
       for (var i = 0; i < p.e.ziele.length; i++) { var h = zielHost(p.e.ziele[i]); if (h) return h; }
       return "";
     }
@@ -3853,21 +3953,26 @@
       var k = im(".uev-sm-knopfzeile .uev-sm-auf");
       try { if (k) k.focus(); } catch (e) {}
     }
-    function smFehlerText(code) { return t(SM_FEHLER[code] || "The sitemap could not be loaded. Please try again."); }
+    function smFehlerText(code, anf) {
+      if (anf && (code === "not_found" || code === "invalid_xml")) {
+        return anf.modus === "datei" ? t(SM_FEHLER_DATEI[code]) : ersetze(t(SM_FEHLER_HOST), { domain: anf.domain });
+      }
+      return t(SM_FEHLER[code] || "The sitemap could not be loaded. Please try again.");
+    }
     function smLaden(p) {
       var inp = im(".uev-sm-ein"), url = String(inp ? inp.value : p.sm.url || "").trim();
       p.sm.url = url;
-      var z = zerlegen(url);
+      var anf = smAnfrage(url);
       if (!sitemapDa()) { p.sm.fehler = smFehlerText("not_configured"); smZeichnen(p); return; }
       if (!url) { p.sm.fehler = smFehlerText("leer"); smZeichnen(p); return; }
-      if (!z || !hostOk(z.host)) { p.sm.fehler = smFehlerText("ungueltig"); smZeichnen(p); return; }
+      if (!anf) { p.sm.fehler = smFehlerText("ungueltig"); smZeichnen(p); return; }
       p.sm.laeuft = true; p.sm.fehler = ""; p.sm.antwort = null;
       smZeichnen(p);
       smInSicht();
       var seq = p.sm.seq = (p.sm.seq || 0) + 1;
       teamHolen().then(function (tm) {
         if (!tm) return { ok: false, status: 0, fehler: { message: "network" } };
-        return UC.edge("sitemap-lesen", { team_id: tm, url: url }, { timeoutMs: 35000 });
+        return UC.edge("sitemap-lesen", { team_id: tm, url: anf.url }, { timeoutMs: 35000 });
       }).then(function (erg) {
         if (popup !== p || !p.sm || p.sm.seq !== seq) return;
         p.sm.laeuft = false;
@@ -3886,7 +3991,7 @@
             if (kz0) kz0.parentNode.removeChild(kz0);
             schreibweiseZeigen(p);
           }
-          p.sm.fehler = code === "rate_limited" ? smWarteText(fe.retry_after) : smFehlerText(code);
+          p.sm.fehler = code === "rate_limited" ? smWarteText(fe.retry_after) : smFehlerText(code, anf);
         }
         smZeichnen(p);
         smInSicht();
@@ -3926,7 +4031,10 @@
       }
       hosts.sort(function (a, b) { return b.n - a.n; });
       hosts.forEach(ordnen);
-      p.sm.knoten = knoten; p.sm.hosts = hosts;
+      /* alle: die Seiten darunter, jede einmal (n zaehlt eine doppelt gelistete Adresse doppelt)
+         -- so viele waehlt "Select all in folder", und daran misst der Deckel, ob es passt. */
+      (function zaehlen(l) { l.forEach(function (k) { zaehlen(k.kinder); k.alle = k.seiten.length; k.kinder.forEach(function (c) { k.alle += c.alle; }); }); })(hosts);
+      p.sm.knoten = knoten; p.sm.hosts = hosts; p.sm.vorh = null;
       p.sm.auf = {}; p.sm.wahl = { ordner: {}, urls: {} }; p.sm.mehr = {}; p.sm.suche = "";
       /* Ein Host: gleich aufgeklappt -- sonst stuende eine einzelne Zeile da. */
       if (hosts.length === 1) p.sm.auf[hosts[0].key] = true;
@@ -3936,42 +4044,135 @@
       for (var e = k.eltern; e; e = e.eltern) if (p.sm.wahl.ordner[e.key]) return true;
       return false;
     }
+    /* Gewaehlt und zaehlt: nicht in einem gewaehlten Ordner und nicht schon getrackt. */
     function smGewaehlt(p) {
-      var o = Object.keys(p.sm.wahl.ordner).filter(function (k) { return p.sm.knoten[k] && !smGedeckt(p, p.sm.knoten[k]); });
-      var u = Object.keys(p.sm.wahl.urls).filter(function (k) { return p.sm.knoten[k] && !smGedeckt(p, p.sm.knoten[k]); });
-      return { ordner: o, urls: u };
+      var v = smVorhanden(p);
+      function zaehlt(k) { return p.sm.knoten[k] && !v.an[k] && !smGedeckt(p, p.sm.knoten[k]); }
+      return { ordner: Object.keys(p.sm.wahl.ordner).filter(zaehlt), urls: Object.keys(p.sm.wahl.urls).filter(zaehlt) };
+    }
+    /* Was schon getrackt wird -- die Liste dieses Dialogs und im Add-Dialog die Ziele des Events
+       (16.10.). Ein Knoten, den eines davon trifft (genau dieselbe URL, oder eine Regel, unter die
+       er faellt), steht gewaehlt und gesperrt da und zaehlt nicht gegen den Deckel: bis 16.10.
+       zaehlte die Auswahl ihn mit, und smUebernehmen liess ihn dann still fallen. Gerechnet einmal
+       je Stand der Liste (sig) und je geladener Sitemap, nicht bei jedem Zeichnen -- eine Sitemap
+       darf 50 000 Seiten haben. an[key]: der Knoten selbst; n[key]: getrackte Seiten darunter. */
+    function smVorhanden(p) {
+      var l = p.e.ziele.slice(), d = p.art === "ziel" ? state.detail[p.eventId] : null;
+      if (d && isArr(d.targets)) d.targets.forEach(function (x) { var y = zielAusDb(x); if (y) l.push(y); });
+      else if (d && isArr(d.urls)) d.urls.forEach(function (u) { var y = zielBauen(u && u.url, "url"); if (!y.fehler) l.push(y); });
+      var sig = l.map(function (z) { return z.key; }).join("\n");
+      if (p.sm.vorh && p.sm.vorh.sig === sig && p.sm.vorh.knoten === p.sm.knoten) return p.sm.vorh;
+      var v = p.sm.vorh = { sig: sig, knoten: p.sm.knoten, an: {}, n: {} };
+      if (!l.length) return v;
+      var urls = {}, mitUrls = false, regeln = [];
+      l.forEach(function (z) {
+        if (z.kind === "url") { urls[z.key] = 1; mitUrls = true; return; }
+        var x = zerlegen(z.input);
+        if (x && x.host) regeln.push({ kind: z.kind, host: x.host, pfad: z.kind === "path" ? x.pfad : "" });
+      });
+      /* Dieselbe Pfadgrenze wie die Datenbank (Vertrag Abschnitt 1): /blog trifft /blog und
+         /blog/..., nicht /blogger; die Query zaehlt nicht. */
+      function deckt(k) {
+        var pfad = k.art === "seite" ? k.pfad.split("?")[0].replace(/\/+$/, "") : k.pfad;
+        for (var i = 0; i < regeln.length; i++) {
+          var r = regeln[i];
+          if (r.kind === "host_all" ? (k.host === r.host || k.host.slice(-r.host.length - 1) === "." + r.host)
+              : k.host === r.host && (r.kind === "host" || (k.art !== "host" && (pfad === r.pfad || pfad.indexOf(r.pfad + "/") === 0)))) return true;
+        }
+        return false;
+      }
+      Object.keys(p.sm.knoten).forEach(function (key) {
+        var k = p.sm.knoten[key];
+        if (!deckt(k) && !(mitUrls && k.art === "seite" && urls[zielBauen(k.loc, "url").key])) return;
+        v.an[key] = true;
+        if (k.art === "seite") for (var e = k.eltern; e; e = e.eltern) v.n[e.key] = (v.n[e.key] || 0) + 1;
+      });
+      return v;
+    }
+    /* ---- DER DECKEL IM WAEHLER (16.10.) -------------------------------------------------------
+       Je Zeichnen einmal: wie viele Ziele die Auswahl ergibt (anzahl), wie viele hineinpassen
+       (frei, zielFrei), und je Ordner, wie viele gewaehlte Ziele darunter liegen. Daraus folgt:
+       eine Seite geht, solange anzahl < frei; ein Ordner geht, wenn er nach dem Ersetzen dessen,
+       was er enthaelt, noch passt (bei voller Auswahl ein Tausch vieler Seiten gegen eine Regel);
+       "Select all in folder" steht nur da, wenn alle Seiten darin passen -- sonst der Hinweis,
+       den Ordner selbst zu waehlen. Die Auswahl ist selbst gedeckelt, die Schleife also kurz. */
+    function smDeckel(p) {
+      var v = smVorhanden(p), gew = smGewaehlt(p), dk = { v: v, gew: gew, anzahl: gew.ordner.length + gew.urls.length, frei: zielFrei(p), unter: {}, unterOrdner: {}, unterSeiten: {} };
+      function hoch(key, ordner) {
+        var k = p.sm.knoten[key];
+        for (var e = k.eltern; e; e = e.eltern) {
+          dk.unter[e.key] = (dk.unter[e.key] || 0) + 1;
+          if (ordner) { dk.unterOrdner[e.key] = (dk.unterOrdner[e.key] || 0) + 1; dk.unterSeiten[e.key] = (dk.unterSeiten[e.key] || 0) + smWaehlbar(v, k); }
+        }
+      }
+      gew.ordner.forEach(function (key) { hoch(key, true); });
+      gew.urls.forEach(function (key) { hoch(key, false); });
+      return dk;
+    }
+    /* Seiten unter einem Ordner, die noch nicht getrackt sind. */
+    function smWaehlbar(v, k) { return (k.alle || 0) - (v.n[k.key] || 0); }
+    /* Passt dieser (noch nicht gewaehlte) Knoten dazu? Ein Ordner ersetzt, was darunter gewaehlt ist. */
+    function smPasst(dk, k) { return dk.anzahl + 1 - (k.art === "seite" ? 0 : dk.unter[k.key] || 0) <= dk.frei; }
+    /* Wie viele Seiten "Select all in folder" dazunaehme: jede noch nicht getrackte darunter, ausser
+       denen in einem schon gewaehlten Unterordner (dessen Regel bleibt). */
+    function smAlleNeu(dk, k) { return smWaehlbar(dk.v, k) - (dk.unterSeiten[k.key] || 0); }
+    function smAllePasst(dk, k) {
+      var neu = smAlleNeu(dk, k);
+      return neu > 0 && dk.anzahl - (dk.unter[k.key] || 0) + (dk.unterOrdner[k.key] || 0) + neu <= dk.frei;
     }
     function smOrdnerName(k) { return k.art === "host" ? k.host : k.pfad.slice(k.pfad.lastIndexOf("/")) ; }
-    function smReihe(p, k, flach) {
-      var gedeckt = smGedeckt(p, k), tiefe = flach ? 0 : k.tiefe;
+    /* Der Zustand einer Zeile (16.10.): getrackt ("Already added", aus core), im gewaehlten Ordner
+       enthalten, gewaehlt -- oder VOLL: nicht gewaehlt und passt nicht mehr hinein. Voll ist
+       gesperrt wie gedeckt, aber ohne Haken, und sagt im Tooltip warum. */
+    function smZustand(p, dk, k) {
+      var vorh = !!dk.v.an[k.key], gedeckt = !vorh && smGedeckt(p, k), gesperrt = vorh || gedeckt;
+      var an = gesperrt || !!(k.art === "seite" ? p.sm.wahl.urls[k.key] : p.sm.wahl.ordner[k.key]);
+      var voll = !an && !smPasst(dk, k);
+      return { an: an, gesperrt: gesperrt, voll: voll,
+        tip: vorh ? t("Already added") : gedeckt ? t("Included in the folder") : voll ? t("No more targets fit into this event.") : "" };
+    }
+    function smReihe(p, k, flach, dk) {
+      var z = smZustand(p, dk, k), tiefe = flach ? 0 : k.tiefe;
+      var klassen = (z.an ? " is-checked" : "") + (z.gesperrt ? " is-gedeckt" : "") + (z.voll ? " is-voll" : "");
+      var aria = ' aria-selected="' + z.an + '"' + (z.gesperrt || z.voll ? ' aria-disabled="true"' : '') + (z.tip ? ' data-tip="' + esc(z.tip) + '"' : '');
       if (k.art === "seite") {
-        var an = gedeckt || !!p.sm.wahl.urls[k.key];
         /* Im Baum der Teil nach dem Ordner ("/artikel-1" unter "/blog"), in der Suche der ganze. */
         var name = flach ? k.host + k.pfad : (k.pfad === "/" ? t("Homepage") : k.pfad.slice((k.eltern && k.eltern.pfad || "").length) || k.pfad);
-        return '<div class="up-filter-item uev-sm-reihe is-seite' + (an ? " is-checked" : "") + (gedeckt ? " is-gedeckt" : "") + '" role="treeitem" aria-level="' + (tiefe + 1) + '" aria-selected="' + an + '"' +
-            (gedeckt ? ' aria-disabled="true" data-tip="' + esc(t("Included in the folder")) + '"' : '') + ' tabindex="-1" data-sm-wahl="' + esc(k.key) + '" style="--uev-tiefe:' + tiefe + '">' +
+        return '<div class="up-filter-item uev-sm-reihe is-seite' + klassen + '" role="treeitem" aria-level="' + (tiefe + 1) + '"' + aria +
+            ' tabindex="-1" data-sm-wahl="' + esc(k.key) + '" style="--uev-tiefe:' + tiefe + '">' +
           '<span class="uev-sm-auf-platz" aria-hidden="true"></span>' +
           '<span class="up-filter-check">' + UC.icon("check", 3) + '</span>' +
           '<span class="uev-sm-name" title="' + esc(k.loc) + '">' + esc(name) + '</span>' +
           (k.lastmod ? '<span class="uev-sm-angaben"><span class="uev-sm-datum">' + esc(datum(k.lastmod)) + '</span></span>' : '') +
         '</div>';
       }
-      var offen = !!p.sm.auf[k.key] && !flach, gew = gedeckt || !!p.sm.wahl.ordner[k.key];
+      var offen = !!p.sm.auf[k.key] && !flach;
       var titel = k.art === "host" ? k.host : (flach ? k.host + k.pfad : smOrdnerName(k));
-      return '<div class="up-filter-item uev-sm-reihe is-ordner' + (gew ? " is-checked" : "") + (gedeckt ? " is-gedeckt" : "") + '" role="treeitem" aria-level="' + (tiefe + 1) + '" aria-selected="' + gew + '"' +
-          (flach ? '' : ' aria-expanded="' + offen + '"') + (gedeckt ? ' aria-disabled="true"' : '') + ' tabindex="-1" data-sm-wahl="' + esc(k.key) + '" style="--uev-tiefe:' + tiefe + '"' +
+      return '<div class="up-filter-item uev-sm-reihe is-ordner' + klassen + '" role="treeitem" aria-level="' + (tiefe + 1) + '"' + aria +
+          (flach ? '' : ' aria-expanded="' + offen + '"') + ' tabindex="-1" data-sm-wahl="' + esc(k.key) + '" style="--uev-tiefe:' + tiefe + '"' +
           ' aria-label="' + esc(ersetze(t("Track everything under {path}"), { path: k.host + (k.pfad || "") })) + '">' +
         (flach ? '<span class="uev-sm-auf-platz" aria-hidden="true"></span>'
           : '<button type="button" class="up-iconbtn is-20 is-quiet uev-sm-klapp" data-sm-klapp="' + esc(k.key) + '" tabindex="-1" aria-label="' + esc(t(offen ? "Collapse" : "Expand")) + '">' + UC.icon(offen ? "chevronDown" : "chevronRight", 2) + '</button>') +
         '<span class="up-filter-check">' + UC.icon("check", 3) + '</span>' +
-        '<span class="uev-sm-ic">' + UC.icon(k.art === "host" ? "globe" : (offen ? "folderOpen" : "folder"), 2) + '</span>' +
+        '<span class="uev-sm-ic">' + (k.art === "host" ? zielFavKlein(k.host, UC.icon("globe", 2)) : UC.icon(offen ? "folderOpen" : "folder", 2)) + '</span>' +
         '<span class="uev-sm-name">' + esc(titel) + '</span>' +
         '<span class="uev-sm-angaben"><span class="uev-sm-n">' + esc(ersetze(t(k.n === 1 ? "{n} page" : "{n} pages"), { n: zahl(k.n) })) + '</span>' +
           (k.neu ? '<span class="uev-sm-datum" data-tip="' + esc(t("Newest change")) + '">' + esc(datum(k.neu)) + '</span>' : '') + '</span>' +
-        (gedeckt ? '' : '<button type="button" class="up-quietbtn uev-sm-alle" data-sm-alle="' + esc(k.key) + '" tabindex="-1">' + esc(t("Select all in folder")) + '</button>') +
+        smAlleHtml(dk, k, z, "uev-sm-alle", ' tabindex="-1"') +
       '</div>';
     }
-    function smReihen(p) {
+    /* "Select all in folder" -- oder, wenn die Seiten darin nicht mehr hineinpassen, der Hinweis,
+       den Ordner (beim Host die Domain) selbst zu waehlen: eine Regel, die jede Seite darin
+       deckt. Nichts, wenn der Ordner gewaehlt, gesperrt oder voll ist oder nichts mehr zu waehlen
+       hat. In der Zeile (Hover-Tausch) und fuer Touch als eigene Zeile darunter. */
+    function smAlleHtml(dk, k, z, klasse, extra) {
+      /* Kaeme nichts dazu (jede Seite darin schon gewaehlt oder getrackt), steht nichts da. */
+      var dazu = smAlleNeu(dk, k) - ((dk.unter[k.key] || 0) - (dk.unterOrdner[k.key] || 0));
+      if (z.an || z.gesperrt || z.voll || dazu <= 0) return "";
+      if (smAllePasst(dk, k)) return '<button type="button" class="up-quietbtn ' + klasse + '" data-sm-alle="' + esc(k.key) + '"' + extra + '>' + esc(t("Select all in folder")) + '</button>';
+      return '<span class="' + klasse + ' is-nein"' + extra.replace(/ tabindex="-1"/, "") + '>' + esc(t(k.art === "host" ? "Too many pages, select the domain instead" : "Too many pages, select the folder instead")) + '</span>';
+    }
+    function smReihen(p, dk) {
       var aus = [], q = String(p.sm.suche || "").trim().toLowerCase();
       if (q) {
         /* Suche: flach -- passende Ordner und Seiten mit vollem Pfad. */
@@ -3980,18 +4181,18 @@
           var k = p.sm.knoten[key];
           if (n >= SM_TREFFER) return;
           var text = (k.art === "seite" ? k.loc : k.host + (k.pfad || "")).toLowerCase();
-          if (text.indexOf(q) >= 0) { aus.push(smReihe(p, k, true)); n++; }
+          if (text.indexOf(q) >= 0) { aus.push(smReihe(p, k, true, dk)); n++; }
         });
         return aus.length ? aus.join("") : '<div class="up-ment-noresult">' + esc(t("No matching pages")) + '</div>';
       }
       function geh(k) {
-        aus.push(smReihe(p, k, false));
+        aus.push(smReihe(p, k, false, dk));
         if (!p.sm.auf[k.key]) return;
         /* Fuer Touch (CSS blendet sie nur dort ein): "Select all in folder" als eigene Zeile. */
-        if (!smGedeckt(p, k) && (k.seiten.length || k.kinder.length)) aus.push('<button type="button" class="up-quietbtn uev-sm-alle-reihe" data-sm-alle="' + esc(k.key) + '" style="--uev-tiefe:' + (k.tiefe + 1) + '">' + esc(t("Select all in folder")) + '</button>');
+        aus.push(smAlleHtml(dk, k, smZustand(p, dk, k), "uev-sm-alle-reihe", ' style="--uev-tiefe:' + (k.tiefe + 1) + '"'));
         k.kinder.forEach(geh);
         var max = SM_SEITEN + (p.sm.mehr[k.key] || 0);
-        k.seiten.slice(0, max).forEach(function (s) { aus.push(smReihe(p, s, false)); });
+        k.seiten.slice(0, max).forEach(function (s) { aus.push(smReihe(p, s, false, dk)); });
         if (k.seiten.length > max) aus.push('<button type="button" class="up-quietbtn uev-sm-mehr" data-sm-mehr="' + esc(k.key) + '" style="--uev-tiefe:' + (k.tiefe + 1) + '">' +
           esc(ersetze(t("Show {n} more"), { n: zahl(Math.min(SM_MEHR, k.seiten.length - max)) })) + '</button>');
       }
@@ -4008,7 +4209,7 @@
       var sm = p.sm;
       if (!ort.querySelector(".uev-sm")) {
         ort.innerHTML = '<div class="uev-sm" role="group" aria-label="' + esc(t("Load from sitemap")) + '">' +
-          '<div class="uev-sm-kopf"><span class="uev-sm-titel">' + UC.icon("folders", 2) + '<span>' + esc(t("Load from sitemap")) + '</span></span>' +
+          '<div class="uev-sm-kopf"><span class="uev-sm-titel">' + UC.icon("folderTree", 2) + '<span>' + esc(t("Load from sitemap")) + '</span></span>' +
             '<button type="button" class="up-iconbtn uev-sm-zu" aria-label="' + esc(t("Close")) + '" data-tip="' + esc(t("Close")) + '">' + UC.icon("x", 2) + '</button></div>' +
           '<div class="uev-sm-zeile"><input type="text" class="up-topicmodal-name uev-sm-ein" placeholder="' + esc(t("Sitemap link or domain")) + '" aria-label="' + esc(t("Sitemap link or domain")) + '" autocomplete="off" spellcheck="false" inputmode="url"/>' +
             '<button type="button" class="up-btn-sec uev-sm-laden">' + esc(t("Load")) + '</button></div>' +
@@ -4036,10 +4237,11 @@
       if (sm.lb) { try { sm.lb.stop(); } catch (e) {} sm.lb = null; }
       if (!sm.antwort) { inh.innerHTML = ""; return; }
       var d = sm.antwort, total = num(d.total) != null ? num(d.total) : d.urls.length, quelle = String(d.source || "");
-      var gew = smGewaehlt(p), anzahl = gew.ordner.length + gew.urls.length;
+      var dk = smDeckel(p), anzahl = dk.anzahl;
       if (!inh.querySelector(".uev-sm-baum")) {
         inh.innerHTML =
-          '<p class="up-modal-hinweis uev-sm-quelle"></p>' +
+          '<div class="uev-sm-saetze"><p class="up-modal-hinweis uev-sm-quelle"></p>' +
+            '<p class="up-modal-hinweis uev-sm-deckel" aria-live="polite"></p></div>' +
           '<div class="up-ment-searchwrap uev-sm-suchw"><input class="up-ment-search uev-sm-suche" type="text" placeholder="' + esc(t("Search pages…")) + '" aria-label="' + esc(t("Search pages…")) + '" autocomplete="off" spellcheck="false"/>' +
             '<button class="up-ment-searchclear uev-sm-suche-x" type="button" aria-label="' + esc(t("Clear search")) + '">' + UC.icon("x", 2) + '</button></div>' +
           '<div class="up-filter-list uev-sm-baum" role="tree" aria-multiselectable="true" aria-label="' + esc(t("Pages")) + '"></div>' +
@@ -4052,16 +4254,27 @@
       if (suche && suche.value !== sm.suche && document.activeElement !== suche) suche.value = sm.suche;
       inh.querySelector(".uev-sm-suchw").classList.toggle("has-text", !!sm.suche);
       var baum = inh.querySelector(".uev-sm-baum"), oben = baum.scrollTop;
-      baum.innerHTML = d.urls.length ? smReihen(p) : "";
+      baum.innerHTML = d.urls.length ? smReihen(p, dk) : "";
       baum.scrollTop = oben;
       var roving = baum.querySelector('.uev-sm-reihe[tabindex="-1"]');
       if (roving && !baum.querySelector('.uev-sm-reihe[tabindex="0"]')) roving.tabIndex = 0;
-      inh.querySelector(".uev-sm-zahl").textContent = ersetze(t("{n} selected"), { n: zahl(anzahl) });
-      inh.querySelector(".uev-sm-nehmen").disabled = !anzahl;
+      /* Wie viele noch gehen, VOR dem Waehlen (16.10.): oben der Satz, unten "3 of 50 selected" --
+         bezogen auf das, was in diesem Event noch frei ist, nicht auf 50. */
+      var rest = dk.frei - anzahl, dl = inh.querySelector(".uev-sm-deckel");
+      dl.textContent = !d.urls.length ? "" : !dk.frei ? fehlerText("impact_event_too_many_targets")
+        : rest <= 0 ? t("That's the most you can add. To cover more pages, select a folder instead.")
+        : rest === 1 ? t("You can add 1 more target. A folder counts as one and covers every page in it.")
+        : ersetze(t("You can add {n} more targets. A folder counts as one and covers every page in it."), { n: zahl(rest) });
+      dl.hidden = !dl.textContent;
+      inh.querySelector(".uev-sm-zahl").textContent = dk.frei ? ersetze(t("{n} of {total} selected"), { n: zahl(anzahl), total: zahl(dk.frei) }) : ersetze(t("{n} selected"), { n: zahl(anzahl) });
+      inh.querySelector(".uev-sm-nehmen").disabled = !anzahl || anzahl > dk.frei;
     }
     function smUmschalten(p, key) {
       var k = p.sm.knoten[key];
-      if (!k || smGedeckt(p, k)) return;
+      if (!k) return;
+      /* Gesperrt (getrackt, im Ordner) oder voll: nichts aendern -- auch nicht per Tastatur. */
+      var z = smZustand(p, smDeckel(p), k);
+      if (z.gesperrt || z.voll) return;
       if (k.art === "seite") { if (p.sm.wahl.urls[key]) delete p.sm.wahl.urls[key]; else p.sm.wahl.urls[key] = true; }
       else {
         if (p.sm.wahl.ordner[key]) delete p.sm.wahl.ordner[key];
@@ -4078,9 +4291,18 @@
       smFokus(p, key);
     }
     function smAlleImOrdner(p, key) {
-      var k = p.sm.knoten[key];
-      if (!k || smGedeckt(p, k)) return;
-      (function geh(n) { n.seiten.forEach(function (s) { p.sm.wahl.urls[s.key] = true; }); n.kinder.forEach(geh); })(k);
+      var k = p.sm.knoten[key], dk = k && smDeckel(p);
+      /* Nur, wenn alle hineinpassen -- der Knopf steht sonst gar nicht da, aber ein Klick aus einem
+         aelteren Bild darf den Deckel nicht umgehen. Getrackte Seiten und die in einem gewaehlten
+         Unterordner bleiben, wie sie sind. */
+      if (!k || !smAllePasst(dk, k)) return;
+      var z = smZustand(p, dk, k);
+      if (z.an || z.gesperrt || z.voll) return;
+      (function geh(n) {
+        if (n !== k && p.sm.wahl.ordner[n.key]) return;
+        n.seiten.forEach(function (s) { if (!dk.v.an[s.key]) p.sm.wahl.urls[s.key] = true; });
+        n.kinder.forEach(geh);
+      })(k);
       p.sm.auf[key] = true;
       smZeichnen(p);
       smFokus(p, key);
@@ -4105,8 +4327,10 @@
       });
       gew.urls.forEach(function (key) { var z = zielBauen(p.sm.knoten[key].loc, "url"); if (!z.fehler) neu.push(z); });
       neu = neu.filter(function (z) { return !zielGewaehlt(p, z) && !zielImEvent(p, z); });
-      if (p.e.ziele.length + neu.length > zielMax(p)) {
-        p.sm.fehler = ersetze(t("You can add {n} more targets to this event."), { n: Math.max(0, zielMax(p) - p.e.ziele.length) });
+      /* Die letzte Wache: die Auswahl ist schon gedeckelt (smDeckel), aber uebernommen wird nie
+         mehr, als in diesem Event noch frei ist -- auch nicht aus einem aelteren Bild. */
+      if (neu.length > zielFrei(p)) {
+        p.sm.fehler = zuVielText(p);
         smZeichnen(p);
         return;
       }
@@ -4202,7 +4426,7 @@
       /* Beim Zuklappen bleibt der Inhalt stehen, bis der Behaelter zu ist -- sonst faellt die Hoehe
          sofort auf 0 und es gibt nichts zu animieren. */
       if (!q || leseArt(p.e) !== "url" || eingabeTeile(q).length > 1) { klappen(kl, false); return; }
-      var voll = p.e.ziele.length >= zielMax(p);
+      var voll = !zielFrei(p);
       var treffer = s.treffer || [];
       function zustand(url) {
         var z = zielBauen(url, "url");
@@ -4217,7 +4441,8 @@
       if (neu && !treffer.some(function (it) { return "url|" + urlSchluessel(it.url) === neuZ.key; })) {
         var zn = zustand(neu);
         html += '<button type="button" class="up-es-row uev-neuziel' + (zn.klasse ? " " + zn.klasse : "") + '" data-neu-url="' + esc(neu) + '">' +
-          (UC.entityAvatar ? UC.entityAvatar("", UC.icon("plus", 2), false, "up-es") : "") +
+          /* Das Favicon der getippten Domain (16.10.); scheitert es, das "+" wie bisher. */
+          zielKachel(neuZ, UC.icon("plus", 2)) +
           '<span class="up-es-main"><span class="up-es-primary">' + esc(neu) + '</span></span>' +
           '<span class="up-es-type">' + esc(zn.txt || t("Add as new target")) + '</span></button>';
       }
@@ -4233,7 +4458,11 @@
           /* Rechts steht nur, was die Zeile von den anderen unterscheidet ("Already in this event",
              "Added"). "Previously observed" stand an JEDEM Treffer (04.10.: "natuerlich gibt's die
              schon, das ist unnoetig") -- die Suche findet ohnehin nur beobachtete URLs. */
-          return UC.entityRow(it, { prefix: "up-es", query: q, index: i, rechts: z.txt || "", typLabel: false, klasse: z.klasse });
+          /* Bringt die Suche kein Favicon mit, holt es die Zeile wie jedes Ziel ueber Google S2
+             (16.10.) -- sonst stand dort nur der Globus aus entityRow. */
+          var mitBild = it;
+          if (it && !it.favicon && it.url) { mitBild = {}; for (var kk in it) mitBild[kk] = it[kk]; mitBild.favicon = zielFavUrl(it.url); }
+          return UC.entityRow(mitBild, { prefix: "up-es", query: q, index: i, rechts: z.txt || "", typLabel: false, klasse: z.klasse });
         }).join("");
       }
       if (html) el.innerHTML = html;
@@ -4270,7 +4499,7 @@
       if (!zieleDa() && e.ziele.some(function (z) { return z.kind !== "url"; })) return false;
       if (e.ziele.length) return true;
       var r = eingabeLesen(p);
-      return r.gut.length > 0 && !r.schlecht.length && r.vorschlag !== "sitemap" && r.gut.length <= zielMax(p);
+      return r.gut.length > 0 && !r.schlecht.length && r.vorschlag !== "sitemap" && r.gut.length <= zielFrei(p);
     }
     function schrittOk(p) {
       var e = p.e;
@@ -4421,10 +4650,7 @@
          die Meldung am Feld, statt erst beim Anlegen. */
       if (z.fehler || !urlOk(z.input)) { feldFehler("ziele", fehlerText("impact_event_invalid_url")); return; }
       if (zielGewaehlt(p, z) || zielImEvent(p, z)) return;
-      if (p.e.ziele.length >= zielMax(p)) {
-        feldFehler("ziele", zielMax(p) === 1 ? t("Add one URL at a time.") : fehlerText(zieleDa() ? "impact_event_too_many_targets" : "impact_event_too_many_urls"));
-        return;
-      }
+      if (!zielFrei(p)) { feldFehler("ziele", zuVielText(p)); return; }
       p.e.ziele.push(z);
       artNachZiel(p, z);
       p.e.eingabe = ""; p.e.artVonHand = false;
