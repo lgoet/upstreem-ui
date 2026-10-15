@@ -405,11 +405,18 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
    Akzentfarbe -- dieselbe Sprache wie das Kaestchen der Topics daneben. */
 .uev-ziel { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .uev-arten { display: flex; flex-direction: column; gap: 2px; padding: 6px; border: 1px solid var(--vc-border); border-radius: var(--up-r-l); }
-.uev-art { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; padding: 8px 10px; border: 0; border-radius: var(--up-r-m);
+/* Radius der Zeile konzentrisch zum Kasten (Geist, 15.10.): 8 - 6 Polster = 2, gerundet auf die
+   Stufe 4 -- dieselbe wie die Filterzeilen (.up-filter-item) der Topics in Schritt 2. */
+.uev-art { display: flex; align-items: center; gap: 10px; width: 100%; min-width: 0; padding: 8px 10px; border: 0; border-radius: var(--up-r-s);
   background: transparent; color: var(--vc-text); font: inherit; text-align: left; cursor: pointer;
   transition: background var(--up-t-1) var(--up-ease); }
 .uev-art:hover { background: var(--vc-heading-bg); }
 .uev-art.is-on, .uev-art.is-on:hover { background: var(--up-sel-bg); }
+/* Im grauen Hell der Gewaehlt-Zustand aus core (--up-wahl-bg MIT Rand, 15.10.: "weiterhin eine
+   Border") -- als Ring innen wie in Seitenleiste und Preferences: ein echter Rand schoebe den
+   Inhalt um einen Pixel. */
+html[data-up-hell="grau"] .up-root:not([data-theme="dark"]) .uev-art.is-on,
+html[data-up-hell="grau"] .up-root:not([data-theme="dark"]) .uev-art.is-on:hover { background: var(--up-wahl-bg); box-shadow: inset 0 0 0 1px var(--up-wahl-rand); }
 .uev-art:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 /* Der Punkt: 16 wie das Kaestchen der Filter (.up-filter-check), Rand 1.5 wie dort; gewaehlt ein
    Ring von 5 in der Akzentfarbe -- innen bleibt ein Punkt von 6 im Grund. */
@@ -452,7 +459,8 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-sm-knopfzeile { display: flex; }
 .uev-sm-knopfzeile[hidden] { display: none; }
 .uev-sm-knopfzeile .up-quietbtn { margin-left: -8px; }
-.uev-schreibweise .up-quietbtn { height: var(--up-h-chip); }
+/* 24 hoch -> Radius 4 (Rolle nach Hoehe, Geist): der leise Knopf aus core ist fuer 32 gerundet. */
+.uev-schreibweise .up-quietbtn { height: var(--up-h-chip); border-radius: var(--up-r-s); }
 .uev-ziel .uev-feldfehler { margin-top: -8px; }
 
 /* Die Liste der Ziele: die Liste der URLs von vorher (.uev-urlwahl), je Ziel das Zeichen seiner
@@ -482,7 +490,7 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-vz-titel { margin-top: 4px; font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-third); }
 .uev-vz-satz { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; line-height: 1.45; color: var(--vc-muted); }
 .uev-vz-satz.is-leise { font-size: var(--up-fs-s); color: var(--vc-third); }
-.uev-vz-satz .up-quietbtn { height: var(--up-h-chip); }
+.uev-vz-satz .up-quietbtn { height: var(--up-h-chip); border-radius: var(--up-r-s); }
 .uev-vz-eigen { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding-top: 10px;
   border-top: 1px solid var(--vc-border); color: var(--vc-muted); }
 .uev-vz-eigenbtn .up-modal-spin { display: inline-block; }
@@ -515,7 +523,7 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-sm-ic svg { width: 16px; height: 16px; }
 .uev-sm-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); color: var(--vc-text); }
 .uev-sm-angaben { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 12px; font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.uev-sm-reihe .uev-sm-alle { display: none; height: var(--up-h-chip); font-size: var(--up-fs-s); }
+.uev-sm-reihe .uev-sm-alle { display: none; height: var(--up-h-chip); border-radius: var(--up-r-s); font-size: var(--up-fs-s); }
 .uev-sm-reihe.is-ordner:hover .uev-sm-angaben, .uev-sm-reihe.is-ordner:focus-within .uev-sm-angaben { display: none; }
 .uev-sm-reihe.is-ordner:hover .uev-sm-alle, .uev-sm-reihe.is-ordner:focus-within .uev-sm-alle { display: inline-flex; }
 /* Ohne Zeiger kein Ueberfahren: dort steht "Select all in folder" als eigene Zeile unter dem
