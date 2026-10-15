@@ -4796,10 +4796,6 @@
       /* Wieder eingeblendet: was ausgeblendet nicht geholt wurde, holen lassen. */
       summeGemeldet = "";
       if (sumWahl.an) summeMelden();
-      /* Mit wenigen Zeilen ist der Kasten kuerzer als sein Hoechstmass und die Pagination rueckt
-         mit; der Platz darueber aendert sich nicht -- trotzdem einmal neu messen, wie nach jedem
-         Ein- und Ausblenden unter der Tabelle. */
-      festPlanen();
     }
     function renderSumme(){
       if (!sumKit) return;
@@ -5731,19 +5727,17 @@
        Vorfahrenkette hoch. In der Messung des Nutzers standen dahinter 703 rAF-Anmeldungen und
        446 Lesezugriffe allein fuer syncTheadOffset. Am Ende der Bewegung reicht es -- die Leiste
        klebt waehrend des Ziehens ohnehin da, wo sie war. */
-    if (UC.aufResize) UC.aufResize(function(){ _sticky.applySticky(); festPlanen(); });
-    else window.addEventListener("resize", UC.rafThrottle(function(){ _sticky.applySticky(); festPlanen(); }));
+    if (UC.aufResize) UC.aufResize(function(){ _sticky.applySticky(); });
+    else window.addEventListener("resize", UC.rafThrottle(function(){ _sticky.applySticky(); }));
     _sticky.applySticky();
 
-    /* FESTE HOEHE, NUR DIE TABELLE SCROLLT (15.10., nur die eine Leiste): der Baustein steht seit
-       dem Abend in core (UC.makeFestHoehe, dort die Begruendung jeder Messung). Die Seite nimmt
-       mit is-festhoehe ihr Polster unter der Tabelle zurueck (prompts-page.css).
-       seiteZuerst (15.10. spaet, gemeldet: "Topbar, Navigation und Filterbar sticky oben ... davor
-       soll alles scrollen"): Seitenkopf und Reiter scrollen weg, bis die Leiste klebt, erst dann
-       scrollt nur der Kasten. Die Gruppenliste scrollt in sich wie der Kasten (rollt). */
-    var _fest = null;
-    function festPlanen(){ if (_fest) _fest.planen(); }
-    if (LEISTE && UC.makeFestHoehe) _fest = UC.makeFestHoehe(root, { kopf: elHead, fuss: elFoot, seiteZuerst: true, rollt: ".upt-grp-sidepanel" });
+    /* KEINE FESTE HOEHE MEHR (16.10.). Vom 15.10. an stand die Tabelle mit der einen Leiste auf
+       UC.makeFestHoehe (nur der Kasten scrollte, die Gruppenliste daneben ebenso). Gemeldet: der
+       Hochscroll stockte an Zeile 1, und erst eine neue Geste nahm die Seite mit -- "auf den
+       anderen Seiten nicht so". Jetzt wie Citations und Brands: EIN Scrollbereich, die Leiste
+       klebt oben, Gesamtzeile und Pagination unten (data-kleb-fuss, von prompts-page.js vor dem
+       Aufbau gesetzt; core klebFuss). Die Gruppenliste steht im Fluss neben dem Kasten, ihr Kopf
+       klebt neben dem Spaltenkopf (prompts-table.css). */
 
     function render(){
       renderTable(); renderCount(); syncHeadSorters(); syncColsBadge(); syncSelectAll(); syncBrand();
@@ -5776,9 +5770,6 @@
       kpiNachziehen();
       /* Die Filter der einen Leiste auf Stand (Marken, Intent-Felder, Status, Zuruecksetzen). */
       ffSync();
-      /* Gruppierung an oder aus, Ladezustand, ein anderer Reiter: alles, was die Pagination
-         ein- oder ausblendet, aendert den Platz des Kastens. Hoechstens einmal je Bild. */
-      festPlanen();
     }
 
 

@@ -50,16 +50,11 @@
    setzt sie weiter, wenn die Filter im Kopf der Prompt-Tabelle stehen) brauchte dafuer eine eigene
    Regel mit denselben 16; die ist mit der Regel in core entfallen. */
 .upi-main { min-width: 0; }
-/* Steht die Prompt-Tabelle auf fester Hoehe (is-festhoehe, UC.makeFestHoehe in core), scrollt
-   die Seite nur noch, bis die Leiste klebt (seiteZuerst, 15.10. spaet: Seitenkopf und Reiter
-   gehen weg, danach scrollt nur der Kasten), und die 64 unter dem Inhalt waeren ein leerer
-   Streifen unter der Pagination. 0 und nicht 8 (15.10. nachgereicht: "der Inhalt ist zu weit oben"): die
-   Fusszeile reicht bis an den Fensterrand, und ihre Knoepfe stehen mittig zwischen der Linie
-   darueber und der Kante -- mit 8 darunter sahen sie 8px zu hoch aus, obwohl sie in ihrer Zeile
-   mittig sassen. Nur fuer den sichtbaren Reiter: der Prompt-Reiter behaelt die Klasse, auch
-   wenn ein anderer offen ist. Seit dem 15.10. abends auch fuer die Responses-Tabelle
-   (.up-root statt .upt-root): sie steht im Reiter Responses ebenfalls auf fester Hoehe. */
-.upi-root .upi-main:has(> .upi-tab:not([hidden]) > .up-root.is-festhoehe) { padding-bottom: 0; }
+/* Die Regel, die unter fester Kastenhoehe (is-festhoehe) das Polster unter der Tabelle
+   zuruecknahm, ist am 16.10. abends entfallen: All Prompts und Responses kleben seitdem ueber den
+   klebenden Fuss (core klebFuss), die Seite scrollt bis ans Ende, und das Polster aus core ("DIE
+   LUFT UNTER DEM SEITENKOPF") steht wie auf Citations unter der Pagination -- es ist zugleich der
+   Weg, den der Fuss beim Hineinfahren hat. */
 .upi-tab { min-width: 0; }
 .upi-root .upi-tab[hidden] { display: none; }
 .up-root .upi-tools .up-ph-addbtn { margin-top: 0; }

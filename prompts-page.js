@@ -296,6 +296,13 @@
        Markenschalter, "All Brands" und der Regler als Zeilen im Menue "Filters". */
     var elUrt = root.querySelector('[data-upi-tab="responses"] .urt-root');
     if (elUrt) elUrt.setAttribute("data-leiste", "yes");
+    /* DER KLEBENDE FUSS (16.10. abends, "einheitlich" wie Citations und Brands): beide Tabellen
+       kleben ueber core klebFuss statt ueber eine feste Kastenhoehe -- EIN Scrollbereich, die Leiste
+       oben, Gesamtzeile und Pagination unten, sobald die Tabelle die untere Haelfte des Bildes
+       einnimmt; auf dem Telefon nur die Leiste. Vor dem Aufbau gesetzt wie data-leiste. Die
+       Response-Tabelle traegt im Markup noch data-festhoehe (von Hand nachgetragen, nicht aus der
+       Vorlage) -- der klebende Fuss gewinnt dort (responses-table.js). */
+    [elUpt, elUrt].forEach(function (t) { if (t) t.setAttribute("data-kleb-fuss", "yes"); });
     /* Die Huelle links im Kopf der Tabelle des Reiters (core: .up-leiste-scope). Die
        Prompt-Tabelle legt ihre selbst an (Active/Inactive steht darin) und traegt dazu ihren
        eigenen Griff .upt-scope. */

@@ -1996,9 +1996,14 @@
       var mv = d.movement && typeof d.movement === "object" ? d.movement : {};
       var steigt = (isArr(mv.rising) ? mv.rising : []).filter(function (x) { return x && str(x.source_product_id).trim(); }).slice(0, 5);
       var faellt = (isArr(mv.declining) ? mv.declining : []).filter(function (x) { return x && str(x.source_product_id).trim(); }).slice(0, 5);
+      /* Leer: der Zustand der Tabellen neben den Charts (15.10. spaet, UC.tabelleLeerHtml) in der
+         Flaeche der vier Skelettzeilen oben -- vorher UC.leerHtml im Fluss (246 hoch gegen 288 im
+         Skelett, das Band sprang beim Laden um 42). Im Band liegt er wie der Leerzustand von
+         Merchant Distribution daneben ueber dem ganzen Kasten, gleiche Mitte und gleiche Stufe. */
       if (!vergleich(meta) || (!steigt.length && !faellt.length)) {
-        el.innerHTML = kopf + '<div class="up-box">' + UC.leerHtml({ icon: "chartSpline", titel: "Not enough history yet",
-          text: "Product Movement needs a comparison period. It appears once there is data from before this range." }) + '</div>';
+        var lo = { icon: "chartSpline", titel: "Not enough history yet",
+          text: "Product Movement needs a comparison period. It appears once there is data from before this range." };
+        el.innerHTML = kopf + '<div class="up-box">' + (UC.tabelleLeerHtml ? UC.tabelleLeerHtml({ icon: lo.icon, titel: lo.titel, text: lo.text, zeilen: 4 }) : UC.leerHtml(lo)) + '</div>';
         return;
       }
       function gruppe(titel, ic, l) {

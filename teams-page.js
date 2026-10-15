@@ -51,11 +51,14 @@
       rufen: function (fn, params, o) { return UC.rpc(fn, params, { signal: o && o.signal, timeoutMs: 20000 }); }
     }));
     var idUts = instanceId + "_table";
-    /* data-flach und data-festhoehe (15.10.): die flache Tabelle aus core (ohne Kasten, bis an die
-       Kanten, Kopf und Fuss 48) und die feste Hoehe -- die Tabelle ist das ganze Element dieser
-       Seite, also scrollt nur ihr Kasten, und die Pagination steht unten. Am Markup und nicht in
-       teams.js: dieselbe Tabelle in einer Bubble-Gruppe behaelt ihren Kasten. */
-    root.innerHTML = '<div class="up-root uts-root" data-flach="yes" data-festhoehe="yes" data-instance="' + esc(idUts) + '" data-sticky-top="16"' +
+    /* data-flach (15.10.): die flache Tabelle aus core (ohne Kasten, bis an die Kanten, Kopf und
+       Fuss 48). data-kleb-fuss (16.10. abends, statt der festen Hoehe data-festhoehe): EIN
+       Scrollbereich wie auf jeder Seite mit der einen Leiste -- die Leiste klebt oben (auch auf
+       dem Telefon), Gesamtzeile und Pagination unten, sobald die Tabelle die untere Haelfte des
+       Bildes einnimmt (core klebFuss). Mit der festen Hoehe stockte der Hochscroll an der ersten
+       Zeile. Am Markup und nicht in teams.js: dieselbe Tabelle in einer Bubble-Gruppe behaelt
+       ihren Kasten. */
+    root.innerHTML = '<div class="up-root uts-root" data-flach="yes" data-kleb-fuss="yes" data-instance="' + esc(idUts) + '" data-sticky-top="16"' +
       ' data-switch-fn="bubble_fn_usnTeam" data-newteam-fn="bubble_fn_usnNewTeam"></div>';
     /* Der Auftritt (core, makeAuftritt): erst mit Stylesheets und erster Liste, dann in einem Zug. */
     var auftritt = UC.makeAuftritt ? UC.makeAuftritt(root, { inhalt: ":scope > *" }) : null;
