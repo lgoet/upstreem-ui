@@ -644,8 +644,8 @@ Hebung weg (`scale(.99)`), bei `prefers-reduced-motion` gibt es keine Hebung.
 
 Eine Karte mit Schatten in Ruhe gibt es nur noch an einer Stelle: die Tarifkarte (`.up-plan`,
 `--up-e-1`), die am 28.09. samt Schatten von der Landingpage übernommen wurde. Zeichen-Kacheln
-(`.up-lb-tile`, `.uev-avatar`) sind keine Karten und behalten `--up-e-1`. (`.unc-tile` gibt es
-seit dem 16.10. nicht mehr, siehe §49.)
+(`.uev-avatar`) sind keine Karten und behalten `--up-e-1`. (`.unc-tile` gibt es seit dem 16.10.
+nicht mehr, siehe §49; `.up-lb-tile` trägt seit dem 16.10. keine Kachel mehr, siehe §9b.)
 
 ---
 
@@ -856,7 +856,21 @@ Menüs mit 6er-Polster (Zeilenmenüs der Gruppen, Brands-Aktionen) runden ihre Z
 .up-filter-check { width:16px; height:16px; border-radius: var(--up-r-xs);   /* 4 */
   border:1.5px solid var(--vc-border); color: var(--up-accent-fg); }
 .up-filter-item.is-checked .up-filter-check { background: var(--up-accent); border-color: var(--up-accent); }
+/* Seit 16.10.: die LEERE Checkbox zeigt den Hover ihrer Zeile mit */
+.up-filter-item:not(.is-checked):not(.is-disabled):not([aria-disabled="true"]):not(:disabled):is(:hover, :focus-visible, .is-cursor)
+  .up-filter-check { border-color: var(--vc-third); }
 ```
+**Hover der leeren Checkbox (16.10.).** Der Zeilen-Hover (`--vc-heading-bg`) liegt fast im Ton
+des Rands (`--vc-border`): gemessen hell 235 auf 242–244, dunkel 34 auf 31–36 – das leere
+Kästchen verschwand genau beim Zeigen. Darum geht sein Rand beim Hover der Zeile auf
+`--vc-third`, wie in der Prompt-Tabelle (`.up-row:hover .upt-check:not(.is-checked)`); weich
+über `--up-cb-t`. Gewählte Kästchen behalten den Akzent, gesperrte Zeilen bekommen nichts.
+Dieselbe Wirkung für die Tastatur: `:focus-visible` an Zeilen mit `tabindex`, `.is-cursor` in
+Topics/Models/Markets. Eine Regel in core für jedes Dropdown mit `.up-filter-check`; die kleine
+Fassung im Themen-Chip (`.up-topicchip-check`) zieht beim Hover des Chips gleich mit (nicht in
+einer vollen `.up-topiclist.is-full`), das eigene Kästchen im Domain-Filter des
+Citation-Share-Charts (`.combo-filter-check`) ebenso. Wer eine neue Checkbox-Liste baut, nimmt `.up-filter-item` und
+bekommt das mit.
 
 ---
 
@@ -1218,9 +1232,27 @@ Kleben         makeSticky wie jede Tabelle: Kopf, Reiter und Chart scrollen weg,
 Höhe Telefon   375x812: Leiste klebt 16–104 (zwei Zeilen, Citations, Responses), 16–144 (drei
                Zeilen, All Prompts, Brands), 16–64 (Teams); Spaltenkopf darunter 48 – oben
                stehen damit 152 (19 %), 192 (24 %) bzw. 112 (14 %) fest
-Linie          unter der Leiste NUR, solange sie klebt (.is-geklebt), eingeblendet (--up-t-2)
+Deck           über der klebenden Leiste bis zur Oberkante des Scrollbereichs (16.10.): zwei
+               leere sticky-Kästen .up-kleb-deck direkt VOR der Leiste (core klebDeckStellen),
+               Fläche --up-surface, Ebene 6. In Ruhe liegen sie deckungsgleich unter der Leiste
+               und übermalen nichts; klebt sie, rasten sie über ihr ein – im selben Bild, ohne
+               Klasse und ohne JS im Scroll-Takt. Je Kasten höchstens so hoch wie die Leiste:
+               Seiten 16 + 1, Drawer 72 + 1 (48 und 25, unter dem Glaskopf mit). Am Ende der
+               Wurzel gehen sie mit der Leiste; keine Lage ändert sich
+Linie          unter der Leiste NUR, solange sie klebt (.is-geklebt: das Deck steht höher als
+               die Leiste – keine gelernte Ruhelage mehr), eingeblendet (--up-t-2)
 Abstände       Leiste 16 unten, Band 16 unten; der Stapel der Wurzel fällt auf 0
 ```
+
+Warum das Deck und nicht mehr der Streifen allein (16.10., „hier und da Rows hinter der klebenden
+Topbar, in den 16 px über den Knöpfen“): der Streifen `.is-geklebt .up-head::before` hängt an
+einer Klasse, die JS im Scroll-Takt setzt. Nach einem Sprung (Ende-Taste, Scrollbalken, schneller
+Wurf) klebte die Leiste, bevor die Klasse kam, und nach jedem applySticky während des Klebens
+(Nachlauf der Kopfsuche bis 4,8 s nach dem Laden, Größenwechsel, ein neuer Seitenkopf) lernte die
+Probe eine geklebte Lage als Ruhe – beim Zurückscrollen fiel die Klasse weg, obwohl die Leiste
+weiter klebte. Gemessen vorher 24–45 Treffer auf Zeilen bzw. Chart in diesem Streifen, nachher 0
+(Seiten, Drawer, 1440/1100/375, hell/dunkel, auch mit entfernter Klasse). Der Streifen bleibt für
+das, was über 2 x Leistenhöhe hinausgeht.
 
 Warum in der Wurzel der Tabelle und nicht als Leiste der Seite: Domains, URLs und Brands
 hängen Klicks, Suche, Tooltips und Menüs an ihre Wurzel (`ownsTarget`, `root.contains`); ein
@@ -1381,7 +1413,7 @@ Schatten       NUR wenn er wirklich klebt (.is-fuss-klebt; die Marke .up-fuss-ma
                .is-fuss-ohne-summe)
 Gruppenspalte  All Prompts mit is-groups-wide: die Gruppenliste steht im Fluss neben dem Kasten
                (kein eigener Scrollbereich mehr), ihr Kopf klebt neben dem Spaltenkopf
-z              4 (unter Spaltenkopf 5 und Leiste 6)
+z              4 (unter Spaltenkopf 5, Leiste 6 und dem Deck über ihr, 6 – 8b)
 Bewegung aus   prefers-reduced-motion: dieselben Zustände ohne Fahrt
 ```
 
@@ -1637,6 +1669,55 @@ Kasten (vorher: Balkenliste kompakt oben).
 
 ---
 
+## 9b. Das Ladebild langer Läufe (`UC.makeLadebild`, Variante A seit 16.10.)
+
+Ein Baustein für jeden Lauf, der Sekunden dauert und seinen Fortschritt nicht kennt: Explore
+Brands (Scan), Prompt Research (Recherche), Opportunities (Suche) und die Sitemap im
+Anlegen-Dialog der Events. Keine Seite trägt eine eigene Kopie; die Träger (`.udb-loading`,
+`.uo-suche`, `.upr-loading-inner`, `.uev-sm-lb`) geben nur Fläche und Abstand.
+
+Am 16.10. gewählt: **Variante A, entschlackt** (Nutzer: „Loader: bitte Variante A, entschlackt").
+Die Form vom 01.10. bleibt, ohne das, was sie schwer machte:
+
+| Teil | Wert | vorher |
+|---|---|---|
+| Zeichen | das Seitenzeichen aus dem Seitenkopf, 20px, `--vc-muted`, **ohne Kachel** | Kachel 44 mit Verlauf, Rand, `--up-e-1` |
+| Kreis | 48 (`--up-lb-ring`), Strich 1.5px, Bogen ein Fünftel, 1s je Umlauf | 72 |
+| Bogen / Spur | `--vc-text` / `--vc-border` | `--up-accent` / `--vc-border` |
+| Titel | 14/500 auf 20, `--vc-text`, 16 unter dem Kreis | 14/500, Zeilenhöhe normal |
+| Unterzeile | 13, `--vc-third`, 2 darunter, nur wenn sie etwas sagt | gleich |
+| Statuszeile | 13 auf 19 (feste Höhe), `--vc-third`, 4 darunter | `--vc-muted`, 6 darunter |
+| Wechsel | nur Deckkraft: 200ms aus, Tausch nach 240ms, 200ms ein (`--up-t-2`, `--up-ease-auf`) | schob 95 % nach oben |
+| Auftritt | Deckkraft 260ms (`--up-t-3`, `--up-ease-expo`) | `ease` |
+| Kompakt (`cfg.kompakt`) | Kreis 40, Zeichen 16, Strich 1.8 Einheiten (= 1.5px), Titel 12 unter dem Kreis | wie ganzseitig |
+
+```js
+UC.makeLadebild(host, { icon: "compass", name: "Scanning your AI answers", saetze: [...], kompakt: false })
+// -> { el, start, stop, laeuft, name, sub }
+```
+
+Höhe: ganzseitig 107 (48 + 16 + 20 + 4 + 19), mit Unterzeile 126, kompakt 95. Das SVG rechnet
+in 48er Einheiten (Radius 23.25 = Rand minus halber Strich), der Bogen über `pathLength="100"`
+in Prozent des Umfangs. `stop()` schließt den Bogen in 260ms zum vollen Kreis und hält das
+Drehen an; wer danach umschaltet, wartet (Opportunities 400ms).
+
+**Titel und Unterzeile machen den Träger nicht breiter** (`width: 0; min-width: 100%`): ohne
+Umbruch wäre ihre Mindestbreite die ganze Zeile, und ein Träger, der sich nach dem Inhalt richtet,
+wuchs mit. Bei 375 schoben drei lange Schlagworte in Prompt Research `#main` um 138px über den
+Rand; jetzt kürzt der Titel mit „…".
+
+Nicht: kein Fortschrittsbalken (kein Lauf hier kennt seinen Fortschritt), kein Schweben, kein
+Pulsieren, keine zweite Bewegung neben dem Spinner. `prefers-reduced-motion`: kein Auftritt,
+Spinner langsamer (2.4s, ein stehender Spinner sagt „hängt"), Statuszeile wechselt hart.
+
+**Erst nach 300ms zeigen, mindestens 500ms stehen lassen** (Vercel Web Interface Guidelines) ist
+bewusst **nicht** umgesetzt: die Mindestzeit verlangte, dass `stop()` wartet und jeder Aufrufer
+seinen Inhalt erst danach zeigt (Events ersetzt den Inhalt im selben Aufruf, Explore Brands blendet
+den Träger im selben Takt aus). Die Verzögerung allein verschöbe das Aufblitzen nur. Wer es
+nachrüstet: `stop(fertig)` mit Rückruf, die vier Aufrufer warten darauf.
+
+---
+
 ## 10. Layout-Verhalten (Responsive)
 
 ### Kopfzeile: 64px Mindestabstand, gemessen statt geraten
@@ -1775,6 +1856,10 @@ Deshalb im Sticky-Modus zusätzlich `height: 48px` (32 Inhalt + 16 Padding).
 **6. Zeilen hinter einer transparenten Topbar.** Ist die Seiten-Topbar transparent,
 scrollen Zeilen dahinter durch. Der Kopf bekommt ein opakes `::before`, das von seiner
 Oberkante bis zur Viewport-Oberkante reicht (`height: var(--udt-sticky-top)`).
+
+> **Stand 16.10.:** Ein Streifen, der nur mit einer Klasse malt, deckt ein Bild zu spät oder gar
+> nicht (8b). In core deckt heute das **Deck** `.up-kleb-deck`: sticky-Kästen direkt vor der
+> Leiste, in Ruhe unter ihr verborgen, klebend über ihr – reines sticky, kein Zustand.
 
 **7. Border NICHT auf die Box, sondern auf Kopf/Body.** Sitzt der Spaltenkopf 1px
 innerhalb der Box-Border, überdeckt sein opaker Hintergrund die gerade obere
@@ -2708,6 +2793,57 @@ Bulk-Action-Bar am `document.body`); diese Leiste fuehrt die Marken deshalb selb
 
 Genutzt von: prompts-table (Topics-Zelle, Topics-Editor in der Bulk-Bar).
 
+## 27a. Der Export-Dialog: Variante D „Schnellweg aus dem Kontext“ (seit 16.10.)
+
+`export-data.js`/`.css` (Präfix `uex`), vom Nutzer aus vier Varianten gewählt. Vorbilder: Vercel Logs
+(exportiert, was man gerade sieht), Airtable und Attio (die Ansicht ist der Export), Ahrefs
+(Zeilengrenze vorab genannt). Der Dialog öffnet **vorbelegt** mit dem Datensatz der Seite, dem Filter
+des Drawers und dem Zeitraum; ein Klick (Enter) genügt.
+
+**Hülle** aus §27 (`.up-topicmodal-backdrop/-card/-head/-title`, `.up-popup-close`), Breite **440**,
+Kopf 16/16/0, Inhalt 20/16/16 (im Lauf und fertig 24/16/20), Fuß 0/16/16; der Inhalt rollt
+(`.uex-body`, in core in der Liste der Popup-Rollflächen), Kopf und Fuß stehen. Am Telefon bleibt es
+eine Karte mit 16 Rand und `max-height: calc(100dvh - 32px)`, kein Vollbild.
+
+**Kopf:** „Export {Datensatz}“, darunter „From {Bereich}“ (Prompt Insights, Citations, Brands, Shopping,
+Ads -- der Bereich des Datensatzes) und, wo ein Filter mitgeht, „, filtered to“ plus Chip. Der Chip
+ist `.up-entchip.is-static` auf der Chip-Stufe 24 (Polster 8/2, Abstand 6, Radius 4, Grund
+`--up-sel-bg`, kein Rahmen, kein Punkt), Zeichen 12, Kreuz `.up-iconbtn.is-20`. Er steht nur, wo der
+Filter für den gewählten Datensatz wirklich gilt (`FILTER` in export-data.js, dieselbe Liste wie
+`exportParameter`): Domain des Domain-Drawers für URLs und Responses, Adresse des URL-Drawers,
+Prompt und Marke (Name über `filter_label` in `setContext`). Die Filter von Shopping und Ads:
+„From Shopping, with [Page filters]“, ohne Kreuz (sie stehen in der Leiste der Seite).
+
+**Die Liste der Wahlen:** Rahmen 1, Radius 8, Zeilen ≥ 44 mit Etikett (72, `--vc-third`), Wert
+(500), Nebenangabe (12, `--vc-third`, Ellipse) und „Edit“/„Done“ (12/500, `--vc-muted`). Jede
+Zeile klappt **im Dialog** auf:
+- **Data**: die Datensätze der Gruppe als `.up-pop-opt` mit `.up-check`, `role="radio"`, Pfeiltasten.
+- **Date range**: die vier Presets mit ihrem Zeitraum als Nebenangabe, dazu „Custom range“. Der
+  Kalender aus `filters/date-range.js` kann nicht eingebettet aufklappen (kein Inline-Modus); „Custom
+  range“ öffnet darum sein Feld unter der Zeile (core hebt es in die oberste Ebene). Der unsichtbare
+  Auslöser liegt über der Zeile und nimmt den Mausklick, mit der Tastatur steht man auf der Zeile.
+- **Columns**: die Spalten aus `export_columns_v1` als Checkliste aus core (`.up-filter-*`); die
+  Abwahl ist eine Einstellung je Spaltensatz und bleibt. Keine Spalte gewählt: Knopf gesperrt, Satz
+  „Choose at least one column.“
+- **Format**: fest „CSV“, ohne Edit (es gibt nur eins).
+
+Darunter der Hinweis (Zeichen 14, 12/16, `--vc-third`): „Safe to open in Excel and Sheets. Up to
+{Seitengröße × 60} rows.“, bzw. „Exports for … are coming soon.“; ein Fehler steht **allein** als
+roter Satz (`.up-fehlerzeile`, kein Kasten, kein Toast).
+
+**Läuft:** die große Zahl 28/500 mit „of N rows“ (N = `total_count`, gedeckelt auf die Grenze), ein
+Balken 6 hoch in `--up-accent` auf `--up-sel-bg` -- nur mit echter Gesamtzahl, sonst keiner --,
+„Page k of n. Closing this window stops the export.“ Fuß: „Cancel export“ (`.up-btn-sec.is-lg` mit
+`.up-btn-spin`). Schließen, Escape, Schleier und Cancel brechen ab (Laufnummer: späte Antworten
+verfallen).
+
+**Fertig:** `checkCircle` in `--vt-up`, „N rows exported“ 16/600, die Datei als Kachel (Rahmen 1,
+Radius 8, Mono 12 für den Namen, Größe aus `Blob.size`), Fuß zweispaltig „Download again“ |
+„Done“. Gekürzt (60 Seiten erreicht): Satz darunter.
+
+**Knöpfe** nur aus core in der großen Stufe (`.up-btn-pri.is-lg`, `.up-btn-sec.is-lg`); gesperrt ist
+der core-Knopf im disabled-Zustand (40 %). Der Bubble-Weg (ohne Team) wartet wie bisher mit Kreisel.
+
 ## 28. Der `*/`-in-CSS-Kommentar-Bug — PFLICHTCHECK vor jedem CSS-Commit
 
 **Das ist jetzt zweimal live passiert und hat beide Male eine ganze Komponente unbenutzbar gemacht
@@ -2801,6 +2937,16 @@ richtige Preis dafür, dass kein core-Kit sie versehentlich für sein eigenes El
 **Genau EIN Drilldown offen.** Zwei offene Blöcke mit je eigener Suche, eigenem Filter und eigenem
 Pager lesen sich als zwei konkurrierende Tabellen in einer dritten. Öffnen schließt und **resettet**
 den vorherigen (Suche, Filter, Seite, Seitengröße).
+
+**Die angeklickte Zeile bleibt stehen (16.10.).** Schließt das Öffnen einen größeren Block
+weiter oben, fällt dessen Höhe über der Zeile weg, und sie sprang nach oben, teils unter die
+klebende Leiste. Die Scroll-Verankerung des Browsers hilft nicht: `#main` trägt im Wirt
+`overflow-anchor: none`, und auch eingeschaltet wählt sie den gerade entfernten Block als Anker.
+Deshalb öffnet jeder Aufklapper über **`UC.zeileHalten(el, aendern, { dauer })`**: Lage vorher
+und nachher lesen, den scrollenden Vorfahren (`#main`, im Drawer dessen Körper) im selben Zug
+nachschieben, mindestens unter Leiste und Spaltenkopf; am Seitenende hält ein zeitweiliger
+unterer Rand die Lage für die Dauer der Bewegung. Genutzt von Citations › Domains und den
+Prompt-Gruppen (Akkordeon-Modus).
 
 **Auf/Zu animieren: Keyframe, keine Transition.** Der Block wird von `renderTable()` frisch erzeugt;
 eine Transition läuft auf einem gerade eingefügten Knoten nie an. `grid-template-rows: 0fr -> 1fr`

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261148;
+  var BUILD = 20261152;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -10933,6 +10933,11 @@
       kasten.classList.remove("has-img");
       if (kasten.style && kasten.style.visibility === "hidden") kasten.style.visibility = "";
       if (img && img.parentNode) img.parentNode.removeChild(img);
+      /* Die Kachel der Suchzeile (entityAvatar) zeigt ihren Rueckfall nur mit is-fb. Ihr eigenes
+         onerror setzt es -- aber Googles Platzhalter LAEDT (16px, gemessen 16.10. mit Status 404
+         und Bild) und kommt nur ueber favPlatzhalter hierher: das Bild war weg, der Rueckfall
+         blieb unsichtbar, und die Kachel stand leer da. */
+      if (kasten.classList.contains("up-es-av")) kasten.classList.add("is-fb");
       var zeigtSchon = kasten.classList.contains("up-fav") || kasten.querySelector(FAV_BUCHSTABE);
       if (!zeigtSchon) kasten.classList.add("up-globus-an");
       return;
@@ -15423,26 +15428,58 @@
      tiefer in ihrer Wurzel als in Ruhe), und nur dann malt der Streifen (core.css).
      EIN Zuhoerer fuer die ganze Seite, in der Einfangphase (scroll blubbert nicht, und Drawer
      scrollen in ihrem eigenen Behaelter), je Bild hoechstens einmal: zwei Lesungen je Tabelle,
-     geschrieben wird nur bei einem Wechsel. */
+     geschrieben wird nur bei einem Wechsel.
+     SEIT DEM 16.10. OHNE GELERNTE RUHELAGE. Bis dahin galt der kleinste je gesehene Abstand der
+     Leiste zum Anfang ihrer Wurzel als Ruhe. Jedes applySticky (Nachlauf der Kopfsuche bis 4,8 s
+     nach dem Laden, Groessenwechsel, ein neuer Seitenkopf irgendwo) loeschte ihn -- lief es,
+     waehrend die Leiste klebte, lernte der naechste Durchlauf eine GEKLEBTE Lage als Ruhe, und
+     etwas Zurueckscrollen nahm die Klasse weg, obwohl die Leiste weiter klebte (gemessen:
+     Prompts 2000 -> 400, 24 Zeilentreffer ueber der Leiste bis ganz nach oben). Jetzt liest die
+     Probe das Deck (klebDeckStellen): in Ruhe liegt es deckungsgleich unter der Leiste, klebend
+     steht es hoeher -- ein Vergleich zweier Lagen im selben Bild, nichts zu lernen. Die Klasse
+     traegt nur noch den Streifen (Rest ueber 2 x Leistenhoehe) und die Linie unter der Leiste;
+     gedeckt wird schon vom Deck selbst, ohne Bildverzug. */
   var KLEB_WURZELN = [];
   var _klebRaf = 0;
+  /* DAS DECK (16.10., CSS .up-kleb-deck in core.css): zwei leere Kaesten direkt vor der Leiste,
+     der obere zuerst. Gemerkt an der Leiste, nicht gesucht -- wandert die Leiste (bandUnterLeiste),
+     kommen sie mit. Bewegt wird nur, was nicht schon steht; gibt die Leiste zurueck, was jetzt
+     direkt vor ihr liegt (der untere Kasten). */
+  function klebDeckStellen(head){
+    if (!head || !head.parentNode) return null;
+    var u = head.__upDeckU, o = head.__upDeckO;
+    if (!u || !o){
+      o = document.createElement("div"); o.className = "up-kleb-deck is-oben"; o.setAttribute("aria-hidden", "true");
+      u = document.createElement("div"); u.className = "up-kleb-deck"; u.setAttribute("aria-hidden", "true");
+      head.__upDeckO = o; head.__upDeckU = u;
+    }
+    if (u.parentNode !== head.parentNode || u.nextSibling !== head) head.parentNode.insertBefore(u, head);
+    if (o.parentNode !== head.parentNode || o.nextSibling !== u) head.parentNode.insertBefore(o, u);
+    return u;
+  }
   function klebPruefenAlle(){
     _klebRaf = 0;
     /* Der klebende Fuss liest zuerst (alle Tabellen), geschrieben wird erst nach der Leiste --
        so erzwingt keine Klasse von hier eine Neuberechnung mitten in den Lesungen dort. */
     var fuss = fussLesen();
     KLEB_WURZELN = KLEB_WURZELN.filter(function(w){ return w.root.isConnected; });
+    /* Erst alle lesen, dann schreiben: eine Klasse zwischen zwei Tabellen erzwaenge sonst je Tabelle
+       eine neue Berechnung. */
+    var wechsel = [];
     KLEB_WURZELN.forEach(function(w){
       var head = w.head && w.head.isConnected ? w.head : (w.head = w.root.querySelector(".up-head"));
-      if (!head || !w.root.classList.contains("up-sticky")){ w.root.classList.remove("is-geklebt"); return; }
-      var d = head.getBoundingClientRect().top - w.root.getBoundingClientRect().top;
-      /* d in Ruhe: der Abstand der Leiste zum Anfang ihrer Wurzel. Der kleinste je gesehene Wert ist
-         die Ruhelage; klebt die Leiste, waechst d um die Strecke, die die Wurzel schon unter ihr
-         weggescrollt ist. */
-      if (w.ruhe == null || d < w.ruhe) w.ruhe = d;
-      var klebt = d > w.ruhe + 0.5;
-      if (klebt !== w.root.classList.contains("is-geklebt")) w.root.classList.toggle("is-geklebt", klebt);
+      var klebt = false;
+      if (head && w.root.classList.contains("up-sticky")){
+        var deck = head.__upDeckU;
+        /* Nur wenn eine Komponente die Leiste umgehaengt hat: dann zieht das Deck nach. */
+        if (!deck || deck.nextSibling !== head) deck = klebDeckStellen(head);
+        /* Klebend steht das Deck mindestens 1px hoeher als die Leiste (core.css: Zone + 1), in Ruhe
+           auf derselben Hoehe. */
+        klebt = !!deck && deck.getBoundingClientRect().top < head.getBoundingClientRect().top - 0.5;
+      }
+      if (klebt !== w.root.classList.contains("is-geklebt")) wechsel.push([w.root, klebt]);
     });
+    wechsel.forEach(function(z){ z[0].classList.toggle("is-geklebt", z[1]); });
     fussSchreiben(fuss);
   }
   function klebPlanen(){ if (!_klebRaf) _klebRaf = requestAnimationFrame(klebPruefenAlle); }
@@ -15451,8 +15488,8 @@
     window.addEventListener("resize", klebPlanen, { passive: true });
   } catch(e){}
   function klebAnmelden(root, head){
-    for (var i = 0; i < KLEB_WURZELN.length; i++) if (KLEB_WURZELN[i].root === root){ KLEB_WURZELN[i].ruhe = null; klebPlanen(); return; }
-    KLEB_WURZELN.push({ root: root, head: head || null, ruhe: null });
+    for (var i = 0; i < KLEB_WURZELN.length; i++) if (KLEB_WURZELN[i].root === root){ if (head) KLEB_WURZELN[i].head = head; klebPlanen(); return; }
+    KLEB_WURZELN.push({ root: root, head: head || null });
     klebPlanen();
   }
 
@@ -15689,6 +15726,105 @@
     liste.forEach(function(z){ fussStellen(z.w, z.fuellt, z.unten, z.bereit); });
   }
 
+  /* DIE ANGEKLICKTE ZEILE BLEIBT STEHEN (16.10.). Gemeldet an der Domains-Tabelle: oben ein
+     offener Drilldown mit 15 URLs, weiter unten einer mit 5 geoeffnet -- der obere schliesst
+     (richtig), aber die Hoehe, die oben wegfaellt, zieht die angeklickte Zeile mit nach oben, oft
+     unter die klebende Leiste oder ganz aus dem Bild (gemessen 1440x900: 600 -> 15, Leiste endet
+     bei 112). Dieselbe Bauart hat die Gruppenansicht der Prompt-Tabelle.
+     WARUM DER BROWSER DAS NICHT SELBST AUFFAENGT: seine Scroll-Verankerung (overflow-anchor) ist
+     am einen Scrollbereich abgeschaltet -- der Wirt setzt #main { overflow-anchor: none }
+     (kopf.css), weil sie beim Laden der Ansichten staendig nachkorrigierte. Und eingeschaltet
+     waehlte sie oft den falschen Anker: das erste sichtbare Element von oben, und das liegt hier
+     meist IM Drilldown, der gerade entfernt wird -- ein entfernter Anker korrigiert nichts.
+     Also fuer genau diese eine Aenderung von Hand: Lage der Zeile vorher lesen, aendern, dieselbe
+     Lage danach lesen und den Scrollbereich um den Unterschied schieben -- im selben Zug, bevor
+     das naechste Bild gemalt wird, es springt also nichts. Geschoben wird der naechste Vorfahre,
+     der wirklich scrollt (#main, im Drawer sein Koerper), sonst das Dokument.
+     Danach MINDESTENS: die Oberkante steht unter Leiste und Spaltenkopf, wenn die kleben -- fuer
+     eine halb unter dem Kopf angeklickte Zeile und eine per Tab erreichte (der Browser rollt beim
+     Fokus nur ins Bild, nicht unter den klebenden Kopf).
+     el muss im Fluss stehen und darf nicht selbst kleben: ein klebendes Element meldet die Lage,
+     an der es klebt, nicht die, an der es steht (die offene Gruppe der Prompt-Tabelle klebt --
+     dort wird ihr Abschnitt gehalten). */
+  function scrollerVon(el){
+    var a = el.parentElement, oy;
+    while (a && a !== document.body && a !== document.documentElement){
+      try { oy = window.getComputedStyle(a).overflowY; } catch(e){ break; }
+      if ((oy === "auto" || oy === "scroll" || oy === "overlay") && a.scrollHeight > a.clientHeight + 1) return a;
+      a = a.parentElement;
+    }
+    return document.scrollingElement || document.documentElement;
+  }
+  /* Die Kante, unter der eine Zeile zu sehen ist: Unterkante von Leiste und Spaltenkopf der
+     eigenen Tabelle, solange sie kleben, sonst der obere Rand des Scrollbereichs. Ein Kopf, der
+     gerade nicht klebt, steht im Fluss ueber der Zeile und verschiebt die Kante nicht. */
+  function klebKante(el, sc){
+    var oben = sc === (document.scrollingElement || document.documentElement) ? 0
+             : sc.getBoundingClientRect().top + (sc.clientTop || 0);
+    var root = el.closest ? el.closest(".up-root") : null;
+    if (!root) return oben;
+    Array.prototype.forEach.call(root.querySelectorAll(".up-head, .up-thead"), function(k){
+      if (!k.getClientRects().length) return;
+      var p = "";
+      try { p = window.getComputedStyle(k).position; } catch(e){}
+      if (p === "sticky" || p === "fixed") oben = Math.max(oben, k.getBoundingClientRect().bottom);
+    });
+    return oben;
+  }
+  /* AM ENDE DER SEITE reicht der Inhalt im ersten Bild oft nicht: schliesst der vorige Aufklapper
+     UNTER der Zeile, waechst der neue erst ab Hoehe 0 (grid-template-rows 0fr -> 1fr), und der
+     Browser zieht den Scrollbereich auf sein neues Ende -- die Zeile sackt ab (gemessen Prompt
+     Insights 1440x900: +43). Fuer die Dauer der Bewegung bekommt die Tabelle darum unten genau
+     den fehlenden Rand; danach ist der neue Aufklapper gewachsen und traegt die Lage selbst.
+     Reicht auch sein volles Mass nicht (nichts mehr darunter), sinkt die Zeile am Ende der
+     Bewegung um den Rest -- nach unten, also weiter im Bild. Gemerkt an der Wurzel, damit ein
+     zweiter Klick waehrend der Bewegung den Rand nicht doppelt nimmt und der alte Wert sicher
+     zurueckkommt. Uhr statt rAF: im verdeckten Fenster laeuft kein rAF, der Rand bliebe stehen. */
+  function haltRand(el, px, dauer){
+    var root = el.closest ? el.closest(".up-root") : null;
+    if (!root || !(px > 0)) return;
+    var r = root.__upHaltRand;
+    if (!r){
+      var basis = 0;
+      try { basis = parseFloat(window.getComputedStyle(root).marginBottom) || 0; } catch(e){}
+      r = root.__upHaltRand = { alt: root.style.marginBottom, basis: basis, px: 0, uhr: 0 };
+    }
+    r.px += px;
+    root.style.marginBottom = (r.basis + r.px) + "px";
+    clearTimeout(r.uhr);
+    r.uhr = setTimeout(function(){
+      root.style.marginBottom = r.alt;
+      if (root.__upHaltRand === r) root.__upHaltRand = null;
+    }, (dauer || 0) + 40);
+  }
+  /* o.dauer: wie lange die Bewegung des neuen Aufklappers laeuft (ms) -- nur dann gibt es den
+     Rand am Seitenende. */
+  function zeileHalten(el, aendern, o){
+    o = o || {};
+    if (!el || !el.isConnected || !el.getBoundingClientRect){ aendern(); return; }
+    /* Die Kante VOR der Aenderung, an der der Nutzer die Zeile gesehen hat. Was oben wegfaellt,
+       rueckt den Tabellenanfang nur naeher an die gehaltene Zeile: loest sich der Kopf dadurch,
+       steht er im Fluss UEBER ihr und verdeckt nichts. Klebt er vorher nicht, klebt er danach
+       erst recht nicht. */
+    var sc = scrollerVon(el), vor = el.getBoundingClientRect().top, kante = klebKante(el, sc);
+    aendern();
+    if (!el.isConnected) return;
+    var d = el.getBoundingClientRect().top - vor;
+    /* Halb unter dem klebenden Kopf: so weit zurueck, dass die Oberkante frei steht. */
+    var frei = Math.min(0, vor - kante);
+    /* Nach oben begrenzt die 0: fiel ueber der Zeile mehr weg, als darueber gescrollt war, steht
+       sie danach hoeher -- im Fluss unter einem Kopf, der dann nicht mehr klebt, also im Bild. */
+    var ziel = Math.max(0, sc.scrollTop + d + frei);
+    /* Der Rand auch dann, wenn nichts zu schieben ist: der Browser zieht den Scrollbereich nicht
+       immer schon beim Lesen auf sein neues Ende, sondern erst beim naechsten Bild -- dann stuende
+       die Zeile jetzt richtig und saenke danach ab. */
+    var fehlt = ziel - (sc.scrollHeight - sc.clientHeight);
+    if (fehlt > 0.5 && o.dauer) haltRand(el, Math.ceil(fehlt), o.dauer);
+    if (Math.abs(sc.scrollTop - ziel) < 0.5) return;
+    /* instant: ein scroll-behavior: smooth am Bereich liesse die Zeile sonst sichtbar wandern. */
+    try { sc.scrollTo({ top: ziel, left: sc.scrollLeft, behavior: "instant" }); } catch(e){ sc.scrollTop = ziel; }
+  }
+
   /* DIE LEISTE UEBER DEM BAND (16.10., Variante A der Leinwand "Citations Seitenaufbau", fuer
      Citations und Brands > Tracked gewaehlt). Die eine Leiste einer Tabelle (data-leiste="yes",
      ihr .up-head) steht OBEN, ueber dem Chart: links Kalender und Filter, die fuer Chart UND
@@ -15711,6 +15847,8 @@
     var alt = band.parentNode;
     if (alt && alt !== root && alt.classList && alt.classList.contains("has-leistenband")) alt.classList.remove("has-leistenband");
     if (kopf.parentNode !== root) root.insertBefore(kopf, root.firstChild);
+    /* Hat die Leiste schon ihr Deck (makeSticky lief vor dem Umzug), kommt es mit. */
+    if (kopf.__upDeckU) klebDeckStellen(kopf);
     if (kopf.nextElementSibling !== band) root.insertBefore(band, kopf.nextSibling);
     if (!root.classList.contains("has-leistenband")) root.classList.add("has-leistenband");
     return true;
@@ -15830,6 +15968,9 @@
          noch ein Scroller liegt. */
       stickyTopSetzen(on);
       if (on){ syncTheadOffset(); syncDeckstreifen(); }
+      /* Das Deck ueber der Leiste (klebDeckStellen): erst, wenn sie klebt -- eine Tabelle, die nie
+         klebt, bekommt keine Kaesten. Ohne .up-sticky sind sie ohnehin unsichtbar. */
+      if (on && headEl) klebDeckStellen(headEl);
       klebAnmelden(root, headEl);
       /* Der klebende Fuss (siehe klebFuss): per Attribut, fuer jede Tabelle mit makeSticky. Hier
          und nicht beim Aufbau: eine Seite darf das Attribut setzen, solange die Tabelle sich
@@ -18270,22 +18411,25 @@
     return { el: el, zeigen: zeigen };
   }
 
-  /* ---------- DAS LADEBILD FUER LANGE LAEUFE (30.09., zweite Fassung 01.10.) ----------
-     EIN Ladebild fuer alle langen Laeufe: Opportunities (Suche), Prompt Research (Recherche) und
-     Explore Brands (Scan). Bis zum 01.10. trugen die zwei letzten je eine eigene Kopie -- und die
-     drei sahen verschieden aus ("das ist ein core-Thema").
-     DIE FORM kommt vom Ladebild in Explore Brands (01.10.: "nimm den als Grundlage"): Kachel mit
-     dem Zeichen der Seite in der Mitte, darunter Titel und wechselnde Statuszeile. Geaendert, wie
-     gewuenscht: die Kachel schwebt nicht mehr auf und ab, und die zwei pulsierenden Ringe sind EIN
-     duenner Kreis, auf dem ein Bogen umlaeuft -- ein Spinner. Er ist das einzige, was sich bewegt,
-     und damit das Zeichen "hier wird gearbeitet".
-     KEIN BALKEN MEHR. Er lief auf einer erfundenen Kurve gegen 92 Prozent -- kein Lauf hier kennt
+  /* ---------- DAS LADEBILD FUER LANGE LAEUFE (30.09., zweite Fassung 01.10., dritte 16.10.) ----------
+     EIN Ladebild fuer alle langen Laeufe: Opportunities (Suche), Prompt Research (Recherche),
+     Explore Brands (Scan) und die Sitemap im Anlegen-Dialog der Events. Bis zum 01.10. trugen zwei
+     davon je eine eigene Kopie -- und sie sahen verschieden aus ("das ist ein core-Thema").
+     DIE FORM kommt vom Ladebild in Explore Brands (01.10.: "nimm den als Grundlage"): das Zeichen
+     der Seite in der Mitte eines Kreises, darunter Titel und wechselnde Statuszeile. Die zwei
+     pulsierenden Ringe von damals sind EIN duenner Kreis, auf dem ein Bogen umlaeuft -- ein Spinner.
+     Er ist das einzige, was sich dreht, und damit das Zeichen "hier wird gearbeitet".
+     SEIT DEM 16.10. ENTSCHLACKT (Variante A): keine Kachel mehr um das Zeichen, Kreis 48 statt 72,
+     Bogen in Textfarbe, die Statuszeile blendet ueber statt zu schieben. Die Masse stehen in
+     core.css am Ladebild.
+     KEIN BALKEN. Er lief auf einer erfundenen Kurve gegen 92 Prozent -- kein Lauf hier kennt
      seinen Fortschritt, und ein Balken behauptet einen.
      cfg:  icon     Name aus UC.icon: das Zeichen, das die Seite im Seitenkopf traegt
            name     der Titel, sub die leisere Zeile darunter (leer = keine)
            saetze   die wechselnde Statuszeile -- ein Feld oder eine Funktion, die es beim Start
                     liefert (prompt-research legt seine Liste erst nach dem Bauen an)
            satzMs   Wechsel der Statuszeile (2800)
+           kompakt  die kleine Form fuer einen Teilschritt in einem Dialog (Kreis 40, Zeichen 16)
      start(seit)  seit wird angenommen und nicht mehr gebraucht (es gibt keinen Balken, der an
                   einer Stelle weiterfahren muesste) -- die Aufrufer bleiben, wie sie sind.
      stop()       der Bogen schliesst sich zum vollen Kreis, das Drehen haelt an: "fertig". Wer
@@ -18297,7 +18441,7 @@
     cfg = cfg || {};
     if (!host) return null;
     var el = document.createElement("div");
-    el.className = "up-lb";
+    el.className = "up-lb" + (cfg.kompakt ? " is-kompakt" : "");
     el.setAttribute("role", "status");
     el.setAttribute("aria-live", "polite");
     function zeile(klasse, text){
@@ -18305,12 +18449,13 @@
         esc(text ? t_(text) : "") + '</div>';
     }
     /* pathLength 100: der Bogen ist damit in Prozent des Umfangs angegeben (CSS, stroke-dasharray)
-       und haengt nicht am Radius. */
+       und haengt nicht am Radius. viewBox 48 wie der Kreis in voller Groesse: dort ist eine Einheit
+       ein Pixel; r 23.25 ist der Rand minus halber Strich (1.5). */
     el.innerHTML =
       '<div class="up-lb-mark">' +
-        '<svg class="up-lb-spin" viewBox="0 0 72 72" aria-hidden="true">' +
-          '<circle class="up-lb-spur" cx="36" cy="36" r="35"/>' +
-          '<circle class="up-lb-bogen" cx="36" cy="36" r="35" pathLength="100"/>' +
+        '<svg class="up-lb-spin" viewBox="0 0 48 48" aria-hidden="true">' +
+          '<circle class="up-lb-spur" cx="24" cy="24" r="23.25"/>' +
+          '<circle class="up-lb-bogen" cx="24" cy="24" r="23.25" pathLength="100"/>' +
         '</svg>' +
         '<span class="up-lb-tile">' + (cfg.icon ? icon(cfg.icon, 2) : "") + '</span>' +
       '</div>' +
@@ -24560,6 +24705,14 @@
     folders:  '<path d="M16.2627 10.5H7.73725C5.15571 10.5 3.86494 10.5 3.27143 11.3526C2.67793 12.2052 3.11904 13.4258 4.00126 15.867L5.08545 18.867C5.54545 20.1398 5.77545 20.7763 6.2889 21.1381C6.80235 21.5 7.47538 21.5 8.82143 21.5H15.1786C16.5246 21.5 17.1976 21.5 17.7111 21.1381C18.2245 20.7763 18.4545 20.1398 18.9146 18.867L19.9987 15.867C20.881 13.4258 21.3221 12.2052 20.7286 11.3526C20.1351 10.5 18.8443 10.5 16.2627 10.5Z"/>' +
              '<path d="M19 8C19 7.53406 19 7.30109 18.9239 7.11732C18.8224 6.87229 18.6277 6.67761 18.3827 6.57612C18.1989 6.5 17.9659 6.5 17.5 6.5H6.5C6.03406 6.5 5.80109 6.5 5.61732 6.57612C5.37229 6.67761 5.17761 6.87229 5.07612 7.11732C5 7.30109 5 7.53406 5 8"/>' +
              '<path d="M16.5 4C16.5 3.53406 16.5 3.30109 16.4239 3.11732C16.3224 2.87229 16.1277 2.67761 15.8827 2.57612C15.6989 2.5 15.4659 2.5 15 2.5H9C8.53406 2.5 8.30109 2.5 8.11732 2.57612C7.87229 2.67761 7.67761 2.87229 7.57612 3.11732C7.5 3.30109 7.5 3.53406 7.5 4"/>',
+    /* Hugeicons FolderTree (16.10. vom Nutzer fuer "Load from sitemap" in den Events bestimmt,
+       statt folders). Pfade woertlich aus @hugeicons/core-free-icons@4.3.5
+       (dist/esm/FolderTreeIcon.js, ueber jsDelivr und unpkg gelesen, beide gleich), nicht
+       nachgezeichnet: ein Ordner oben, einer unten, die Linie des Baums links. */
+    folderTree: '<path d="M12 7V5.33333C12 4.55608 12 4.16746 12.1405 3.86607C12.2896 3.54646 12.5465 3.28958 12.8661 3.14054C13.1675 3 13.5561 3 14.3333 3C14.7406 3 14.9443 3 15.1321 3.04949C15.3321 3.10217 15.519 3.19563 15.6811 3.324C15.8334 3.44459 15.9556 3.6075 16.2 3.93333L17 5H18.5C19.4346 5 19.9019 5 20.25 5.20096C20.478 5.33261 20.6674 5.52197 20.799 5.75C21 6.09808 21 6.56538 21 7.5C21 8.43462 21 8.90192 20.799 9.25C20.6674 9.47803 20.478 9.66739 20.25 9.79904C19.9019 10 19.4346 10 18.5 10H15C13.5858 10 12.8787 10 12.4393 9.56066C12 9.12132 12 8.41421 12 7Z"/>' +
+                '<path d="M12 18V16.3333C12 15.5561 12 15.1675 12.1405 14.8661C12.2896 14.5465 12.5465 14.2896 12.8661 14.1405C13.1675 14 13.5561 14 14.3333 14C14.7406 14 14.9443 14 15.1321 14.0495C15.3321 14.1022 15.519 14.1956 15.6811 14.324C15.8334 14.4446 15.9556 14.6075 16.2 14.9333L17 16H18.5C19.4346 16 19.9019 16 20.25 16.201C20.478 16.3326 20.6674 16.522 20.799 16.75C21 17.0981 21 17.5654 21 18.5C21 19.4346 21 19.9019 20.799 20.25C20.6674 20.478 20.478 20.6674 20.25 20.799C19.9019 21 19.4346 21 18.5 21H15C13.5858 21 12.8787 21 12.4393 20.5607C12 20.1213 12 19.4142 12 18Z"/>' +
+                '<path d="M8 7H7C6.07003 7 5.60504 7 5.22354 6.89778C4.18827 6.62038 3.37962 5.81173 3.10222 4.77646C3 4.39496 3 3.92997 3 3"/>' +
+                '<path d="M3 3V13C3 14.8692 3 15.8038 3.40192 16.5C3.66523 16.9561 4.04394 17.3348 4.5 17.5981C5.19615 18 6.13077 18 8 18"/>',
     listTodo: '<path d="M12 21C15.7497 21 17.6246 21 18.9389 20.0451C19.3634 19.7367 19.7367 19.3634 20.0451 18.9389C21 17.6246 21 15.7497 21 12C21 8.25027 21 6.3754 20.0451 5.06107C19.7367 4.6366 19.3634 4.26331 18.9389 3.95491C17.6246 3 15.7497 3 12 3C8.25027 3 6.3754 3 5.06107 3.95491C4.6366 4.26331 4.26331 4.6366 3.95491 5.06107C3 6.3754 3 8.25027 3 12C3 15.7497 3 17.6246 3.95491 18.9389C4.26331 19.3634 4.6366 19.7367 5.06107 20.0451C6.3754 21 8.25027 21 12 21Z"/>' +
               '<path d="M12 7V11M17 7V17M7 7V14"/>',
     /* Lucide "database-search" -- der Zylinder mit der Lupe unten rechts. Uebertragen und
@@ -28356,6 +28509,8 @@
     makeLeistenFilter: makeLeistenFilter,
     bandTeile: bandTeile, bandAus: bandAus, bandAusGemerkt: bandAusGemerkt, bandAusMerken: bandAusMerken,
     bandUnterLeiste: bandUnterLeiste, klebFuss: klebFuss,
+    /* Aufklapper in Tabellen (Drilldown, Gruppe): die angeklickte Zeile bleibt stehen. */
+    zeileHalten: zeileHalten,
     bandSchalterHtml: bandSchalterHtml,
     rafThrottle: rafThrottle,
     einmalProBild: einmalProBild,
