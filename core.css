@@ -713,8 +713,49 @@
    `auto` ist der Browser-Default — das hier stellt also nur wieder her, was ohne die fremde Regel
    ohnehin gaelte, und kann fuer sich genommen nichts kaputt machen.
    Doppeltes `.up-root` nur wegen Spezifitaet: (0,2,0) schlaegt `[id*="..."] *` (0,1,0) unabhaengig
-   von der Ladereihenfolge, weil beide Seiten `!important` verwenden. */
-.up-root.up-root, .up-root.up-root * { overscroll-behavior: auto !important; }
+   von der Ladereihenfolge, weil beide Seiten `!important` verwenden.
+
+   AUSGENOMMEN: DIE ROLLFLAECHEN DER POPUPS (15.10.). Gemeldet: "Wenn man auf einem Popup scrollt,
+   scrollt irgendwann auch die Hauptseite dahinter." Die Regel oben traf auch die Flaechen, auf
+   die `contain` wirklich gehoert -- und weil sie `!important` traegt, war jede solche Angabe
+   darunter tot. Gemessen: .up-kdr-koerper deklariert contain und rechnete auto; die Liste von
+   Mentioned brands im Filtermenue der Citations (auto) gab das Rad an ihrem Ende an #main weiter,
+   #main sprang von 0 auf 300.
+   Die Liste hier ist die EINE Stelle dafuer. Nur Flaechen, die selbst rollen (Listen in Menues,
+   Koerper und Karten der Dialoge, Koerper der Drawer) -- nie ein Panel oder eine Zeile mit
+   overflow: hidden: an einer Zeile mit Auslassungspunkten versickerte das Rad sonst wieder genau
+   so wie oben beschrieben, nur innerhalb der Liste.
+   :where() traegt keine Spezifitaet bei: die Ruecksetzregel bleibt bei (0,2,0), und die
+   contain-Regel bei (0,0,0) -- jede eigene Angabe einer Komponente gewinnt weiterhin. Ein neues
+   Popup mit eigener Rollflaeche traegt sich in BEIDE Listen ein (sie sind gleich). */
+.up-root.up-root, .up-root.up-root *:not(:where(
+  .up-topicmodal-card, .uex-body, .uca-body, .uca-bld-list, .uca-how, .ums-aside, .ums-main,
+  .am-set-aside, .am-set-main, .uap-list, .uap-list-opts, .upt-gm-list, .up-cgm-list, .upt-topiclist,
+  .up-kdr-koerper, .up-sdrawer-body, .uo-m-body,
+  .up-filter-list, .utf-list, .umf-list, .umk-list, .upr-dd-list, .combo-filter-menu,
+  .am-rep-range-menu, .am-pick-scroll, .up-cols-menu, .usn-menu, .usn-teamlist, .uob-help-body,
+  .uev-urltreffer, .uev-sm-baum)) { overscroll-behavior: auto !important; }
+:where(
+  .up-topicmodal-card, .uex-body, .uca-body, .uca-bld-list, .uca-how, .ums-aside, .ums-main,
+  .am-set-aside, .am-set-main, .uap-list, .uap-list-opts, .upt-gm-list, .up-cgm-list, .upt-topiclist,
+  .up-kdr-koerper, .up-sdrawer-body, .uo-m-body,
+  .up-filter-list, .utf-list, .umf-list, .umk-list, .upr-dd-list, .combo-filter-menu,
+  .am-rep-range-menu, .am-pick-scroll, .up-cols-menu, .usn-menu, .usn-teamlist, .uob-help-body,
+  .uev-urltreffer, .uev-sm-baum) { overscroll-behavior: contain; }
+/* DIE SEITENSPERRE (15.10.), gesetzt von core.js (seitenSperreAbgleichen), solange ein modales
+   Popup am body offen ist. Sie deckt, was contain nicht kann: das Rad ueber dem Schleier und ueber
+   Kopf und Fuss einer Karte, die selbst nicht rollen. Wie die Sperre des Kopf-Skripts fuer seine
+   Drawer (drawer-locked) nur overflow -- keine Ebene, keine Lage, nichts, was einen
+   Stapelkontext aufmacht. #main davor: die Wirt-Regel fuer #main (overflow-y: auto) traegt eine
+   Kennung, und gegen die gewinnt eine Klasse allein nicht.
+   Die Rinne nur, wenn vorher eine klassische Leiste stand (core.js misst): sonst sprang der Inhalt
+   beim Oeffnen um ihre Breite nach rechts. Ohne scrollbar-gutter (Safari vor 18.2) haelt ein
+   Polster in derselben Breite den Platz. */
+#main.up-seitensperre { overflow: hidden; }
+#main.up-seitensperre.up-sperre-rinne { scrollbar-gutter: stable; }
+@supports not (scrollbar-gutter: stable) {
+  #main.up-seitensperre.up-sperre-rinne { padding-right: var(--up-sperre-rinne, 0px); }
+}
     .up-root[data-theme="dark"] {
       /* ================= DAS DUNKEL NACH GEIST (15.10.) =========================================
          Gemeldet: "Darkmode: Da passen jetzt die Farben nicht wirklich ... sieht sehr off und uebel
@@ -4536,6 +4577,59 @@
     .up-tab-leer { --up-tab-leer-zeile: 72px; position: relative; flex: 1 1 auto; min-width: 0;
       min-height: calc(var(--up-tab-leer-zeilen, 4) * var(--up-tab-leer-zeile)); }
     .up-root.is-dense .up-tab-leer, .up-vartable .up-tab-leer { --up-tab-leer-zeile: var(--up-h-row); }
+    /* ---- DER LEERZUSTAND IM BAND MIT ZWEI EINHEITEN (15.10. spaet: "ja natuerlich alignen") ----
+       Zwei Leerzustaende nebeneinander sassen verschieden hoch und in verschiedener Form, weil jeder
+       ueber SEINER Teilflaeche lag: der Chart ueber der Zeichenflaeche, der Doughnut unter seiner
+       Kopfzeile, die Tabelle unter ihrem Tabellenkopf, die Balkenliste im Fluss oben und immer
+       kompakt. Gemessen bei 1440 (Versatz der Mitten): Ads 108 und kompakt gegen voll, Shopping
+       kompakt gegen voll (Oberkanten 24), Dashboard Visibility 34 und Top Citations 28, Citations 21.
+       Im Band mit zwei Einheiten liegt die Ebene darum ueber dem GANZEN KASTEN der Einheit, dem Kind
+       unter der Ueberschriftzeile: der reicht in beiden Einheiten von derselben Linie bis an die
+       Unterkante des Bandes (das Raster bzw. die Zeile dehnt beide). Gleiche Flaeche heisst gleiche
+       Mitte, und die Stufe (voll, kompakt, nur Titel) kommt aus denselben Container-Queries oben mit
+       derselben Groesse -- egal ob Chart, Doughnut, Balkenliste oder Tabelle. Was zwischen Kasten
+       und Ebene positioniert war (Zeichenflaeche, Wirt des Doughnuts, Huelle der Tabelle, Panels der
+       Komponenten), steht dafuer statisch, aber nur solange die Ebene darin steht: gefuellt greift
+       keine dieser Regeln.
+       DER TABELLENKOPF bleibt unter der Ebene bedienbar (pointer-events none; die Ebene traegt
+       keinen Knopf). Damit der volle Zustand ihn nie beruehrt, ist die Huelle der Tabelle hier
+       mindestens 220 hoch: mit dem Kopf (49) wird der Kasten 269, der volle Zustand (bis 170 mit
+       dreizeiligem Satz) laesst oben 49 frei. Die Tabellen der Baender liegen ohnehin darueber
+       (Top Brands und Top Citations 440, Topics with Ads 275, Product Movement 288).
+       DIE BALKENLISTE wird hier eine Ebene wie die anderen. is-fluss setzt Satz und Abstand fest
+       (kompakt); beides wird nur ueber dieselben Grenzen zurueckgenommen, ab denen die Ebene sie
+       sonst zeigt (220 hoch, 280 breit). Ihre Huelle .up-bars-leer (makeBarList) haelt die Hoehe
+       ihres Skeletts -- Zeilen x 26 (.up-bar-sk-row: Spur 20, Polster 2 x 3) --, damit sie
+       gestapelt, ohne Nachbarn, nicht auf ihr Polster zusammenfaellt und zwischen Laden und Leer
+       nichts springt.
+       Nur .up-band-zwei: ein Band aus einer Einheit (Brands, die Diagramme ueber Shopping und Ads)
+       hat keinen Nachbarn und bleibt, wie es ist; ohne data-flach (Bubble) greift ohnehin nichts.
+       Spezifitaet (0,6,0) und mehr: schlaegt die Positionen der Bausteine (.up-line-wrap,
+       .up-chart-leer-wirt, .up-tab-leer) und der Komponenten ohne die Ladereihenfolge. */
+    :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) > .up-band-einheit > :has(.up-chart-leer) {
+      position: relative;
+    }
+    :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) > .up-band-einheit > :has(.up-chart-leer) :has(.up-chart-leer) {
+      position: static;
+    }
+    :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) > .up-band-einheit > :has(.up-chart-leer) .up-chart-leer {
+      position: absolute; inset: 0; container: up-chart-leer / size; pointer-events: none;
+    }
+    :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) > .up-band-einheit > :has(.up-chart-leer) .up-chart-leer > .up-empty.up-leer {
+      height: 100%; padding: 16px 24px;
+    }
+    @container up-chart-leer (min-height: 220px) {
+      :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) .up-chart-leer.is-fluss > .up-empty.up-leer { gap: 24px; }
+    }
+    @container up-chart-leer (min-height: 220px) and (min-width: 280px) {
+      :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) .up-chart-leer.is-fluss .up-empty-t { display: block; }
+    }
+    :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) .up-tab-leer {
+      min-height: max(220px, calc(var(--up-tab-leer-zeilen, 4) * var(--up-tab-leer-zeile)));
+    }
+    :is(.up-root.up-root[data-flach="yes"].up-band-zwei, .up-root.up-root[data-flach="yes"] .up-band-zwei) .up-bars-leer {
+      min-height: calc(var(--up-bars-leer-zeilen, 5) * 26px);
+    }
     .up-row.up-tsk { cursor: default; }
     .up-row.up-tsk:hover { background: transparent; }
     .up-tsk-bar { display: inline-block; height: 12px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }

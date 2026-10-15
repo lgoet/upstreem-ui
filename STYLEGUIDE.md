@@ -795,6 +795,10 @@ leichtes Scale, kein `display:none`-Hard-Toggle):
 ```
 Wichtig: das Menü bleibt IMMER im DOM/Layout (`display` wird nie umgeschaltet) — nur `opacity`/`transform`/`pointer-events`. Nur **ein** Dropdown gleichzeitig offen (beim Öffnen eines anderen wird das erste geschlossen).
 
+**Rollt eine Liste im Menü** (`max-height` + `overflow-y: auto`), gehört ihre Klasse in die Liste
+der Rollflächen in `core.css` (§27, „Scrollen in Popups"). Sonst gibt sie das Rad an ihrem Ende an
+`#main` weiter, und die Seite rollt unter dem offenen Menü weg. `.up-filter-list` steht schon drin.
+
 ### Positionierung: reines `position:absolute` (siehe Abschnitt 14 für das ganze Warum)
 
 `position:absolute` im `position:relative`-Wrapper, `top: calc(100% + Npx); right: 0;
@@ -1550,7 +1554,7 @@ Größe      nach der Fläche (Container-Query an der Hülle), nicht nach dem Au
              unter 130       nur der Titel (56)
              unter 280 breit ohne Satz
 Fluss      fluss: true für Flächen ohne eigene Höhe (Balkenliste): im Fluss, Polster 24,
-           immer kompakt (Kachel und Titel, 142)
+           immer kompakt (Kachel und Titel, 142) — außer im Band mit zwei Einheiten (unten)
 Wirt       makeTypeChart setzt .up-chart-leer-wirt (nur position: relative), solange der
            Zustand im Körper steht; die Linie braucht nichts, .up-line-wrap ist positioniert
 ```
@@ -1599,6 +1603,37 @@ Widerspruch zum Zähler in Top Citations bleiben der knappe Text.
 eine Tabelle, die im Leerzustand nur ihren Kopf neu zeichnet, hat keine Zeile, an der die
 Prüfung „ungestempelt" anschlagen könnte, und zeigte bei 375 alle Kopfzellen (Brands: sechs
 Zellen auf vier Spuren, zweite Rasterzeile).
+
+### Zwei Leerzustände in einem Band (seit 15.10. spät)
+
+In einem Band mit zwei Einheiten (`.up-band-zwei`: Visibility Chart und Top Citations auf dem
+Dashboard und in den Drawern, Citations, Shopping, Ads) sitzen beide Leerzustände **gleich**:
+gleiche Höhe, gleiche Stufe, mittig — egal ob Chart, Doughnut, Balkenliste oder Tabelle. Vorher
+lag jeder über seiner Teilfläche (Zeichenfläche, Körper unter dem Doughnut-Kopf, Tabelle unter
+ihrem Kopf, Balkenliste oben im Fluss und immer kompakt); gemessen bei 1440 standen die Mitten
+bis 108 auseinander (Ads), dazu kompakt neben voll.
+
+```
+Fläche     der GANZE Kasten der Einheit: ihr Kind unter der Überschriftzeile. Er reicht in beiden
+           Einheiten von derselben Linie bis an die Unterkante des Bandes, also gleiche Mitte und
+           gleiche Container-Größe (Stufe). Was dazwischen positioniert war (.up-line-wrap,
+           .up-chart-leer-wirt, .up-tab-leer, Panels der Komponenten), steht statisch, solange
+           die Ebene darin steht — gefüllt greift keine Regel
+Kopf       der Tabellenkopf liegt unter der Ebene und bleibt bedienbar (pointer-events none);
+           .up-tab-leer ist im Band mindestens 220, der volle Zustand lässt über sich 49 frei
+Balken     die Balkenliste wird im Band eine Ebene wie die anderen (Stufe nach Fläche statt
+           immer kompakt). Ihre Hülle .up-bars-leer hält die Höhe des letzten Skeletts
+           (Zeilen x 26), gestapelt springt nichts. Außerhalb eines Bandes unverändert (is-fluss)
+Gestapelt  jede Einheit ist ihre eigene Zeile und mittig in ihrem Kasten; die Stufe folgt dort
+           ihrer eigenen Höhe (Balkenliste 154/180: kompakt, Tabelle voll)
+Nur zwei   ein Band aus einer Einheit (Brands, die Diagramme über Shopping und Ads) hat keinen
+           Nachbarn und bleibt, wie es ist; ohne data-flach (Bubble) greift nichts
+```
+
+Product Movement (Shopping) zeigt „Not enough history yet" seitdem über `UC.tabelleLeerHtml`
+(4 Zeilen, wie sein Skelett) statt `UC.leerHtml` im Fluss: das Band sprang beim Laden um 42.
+Steht nur eine Einheit leer neben einer gefüllten, sitzt ihr Zustand ebenfalls mittig im ganzen
+Kasten (vorher: Balkenliste kompakt oben).
 
 ---
 
@@ -2576,6 +2611,41 @@ Primärfarbe** (`--vc-text`, NICHT Mutedfarbe — der User liest diese Labels be
 **Alle Elemente untereinander** (Header-Block, jedes Feld, Footer): **32px Gap** — getragen vom
 Card-Flex-Container selbst, nicht von individuellem Padding pro Block.
 
+### Scrollen in Popups: die Seite dahinter bleibt stehen (seit 15.10.)
+
+Gemeldet: „Wenn man auf einem Popup scrollt, scrollt irgendwann auch die Hauptseite dahinter."
+Zwei Mechanismen, beide zentral in core, keine Komponente muss etwas melden:
+
+1. **Rollflächen halten das Rad** (`overscroll-behavior: contain`). Jede Fläche, die in einem
+   Popup, Menü oder Drawer selbst rollt (Karte bzw. Körper eines Dialogs, Liste eines Menüs,
+   Körper eines Drawers), steht in der **einen Liste** in `core.css` bei der Rücksetzregel aus §38.
+   Die Liste steht dort zweimal, gleichlautend: einmal als Ausnahme von der Rücksetzregel, einmal
+   mit `contain`. Nur echte Rollflächen eintragen, nie ein Panel oder eine Zeile mit
+   `overflow: hidden` — dort versickert das Rad sonst innerhalb der Liste (§38).
+2. **Die Seitensperre** (`core.js`, `seitenSperreAbgleichen`). Solange ein modales Popup am
+   `<body>` offen ist, trägt `#main` die Klasse `up-seitensperre` (`overflow: hidden`). Das deckt
+   das Rad über dem Schleier und über Kopf und Fuß, die selbst nicht rollen. Der Zustand wird
+   **abgelesen, nicht gezählt**: ein Beobachter auf den Popup-Wurzeln am `<body>` (nur ihr
+   `class`-Attribut) zählt bei jeder Änderung nach, wie viele offen sind. Mehrere übereinander
+   halten die Sperre, das letzte gibt sie frei, ein vergessenes Herunterzählen gibt es nicht.
+   Stand vorher eine klassische Bildlaufleiste (Windows, macOS mit Maus), hält
+   `up-sperre-rinne` ihre Breite per `scrollbar-gutter: stable` frei — der Inhalt springt nicht.
+
+**Was ein neues Popup tun muss:** als Schleier `.up-topicmodal-backdrop` am `<body>` mit
+`.is-shown` (oder `UC.makeModal`) — dann sperrt core von selbst. Eine andere Hülle wird in
+`SPERR_WURZEL`/`SPERR_OFFEN` in `core.js` eingetragen. Eine eigene Rollfläche kommt in die Liste
+in `core.css`.
+
+**Was nicht sperrt:** nicht-modale Menüs (Dropdowns, Kalender, Display-Menü) — dort reicht
+`contain` an der Liste, das Rad über dem Menü selbst darf die Seite bewegen. Die Drawer des
+Kopf-Skripts sperren selbst (`drawer-locked`); core sperrt sie nicht ein zweites Mal (liegt deren
+Sperre schon, misst die Rinne 0). Ohne `#main` (Landingpage, Anmeldung, Onboarding) wird nichts
+gesperrt.
+
+**Keine eigenen Wege:** kein `wheel`-Zuhörer mit `preventDefault`, kein `position: fixed` auf
+`body`, nichts an z-index, Lage oder Stapelung fremder Vorfahren. Nur `overflow` an `#main`, wie es
+das Kopf-Skript für seine Drawer auch tut.
+
 ---
 
 *Stand: Werte 1:1 aus dem aktuellen Code der vier Dateien extrahiert (nicht aus Erinnerung). Bei Widersprüchen zwischen den Dateien wurde die neueste/zuletzt gefixte Version als Standard genommen.*
@@ -3025,6 +3095,13 @@ Doppeltes `.up-root` rein wegen Spezifität: (0,2,0) schlägt `[id*="..."] *` (0
 der Ladereihenfolge, da beide `!important` nutzen. Verifiziert mit dem echten Header-CSS im
 Testaufbau: innerhalb der Komponente `auto`, außerhalb weiterhin `contain` — die fremde Regel
 bleibt überall sonst wirksam.
+
+**Ausnahme seit 15.10.: die Rollflächen der Popups.** Die Regel traf auch die Flächen, auf die
+`contain` gehört — und weil sie `!important` trägt, war jede solche Angabe darunter tot
+(gemessen: `.up-kdr-koerper` deklarierte `contain` und rechnete `auto`; die Liste eines
+Filtermenüs gab das Rad an ihrem Ende an `#main` weiter, 0 → 300). Heute nimmt die Regel diese
+Flächen per `:not(:where(...))` aus, und eine zweite Regel gibt ihnen `contain`. Die Liste steht
+in `core.css` direkt an der Regel, siehe §27 „Scrollen in Popups".
 
 **Sauberste Lösung wäre trotzdem seitenseitig**: `overscroll-behavior: contain` aus der `*`-Regel
 entfernen (`touch-action: pan-y` darf bleiben). Die core.css-Regel ist die Verteidigungslinie für
