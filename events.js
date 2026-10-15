@@ -826,6 +826,17 @@
       "Mit Hinzufügen oben auf der Seite ergänzt du jederzeit Seiten oder Regeln.",
     "{n} new URLs after the event": "{n} neue URLs nach dem Event"
   });
+  /* 15.10. nachts: Leerzustaende des Details. Gegen alle Kataloge geprueft (Katalog-Kollision);
+     "No data yet" und "Add" stehen in core und werden nur benutzt. */
+  if (UC.addMessages) UC.addMessages("de", {
+    "Nothing tracked yet": "Noch nichts getrackt",
+    "Add pages, paths or domains to see which of them AI answers cite after the event.":
+      "Füg Seiten, Pfade oder Domains hinzu, um zu sehen, welche davon KI-Antworten nach dem Event zitieren.",
+    "No competitors to compare yet": "Noch keine Wettbewerber zum Vergleichen",
+    "Competitors you track appear here with their visibility before and after the event.":
+      "Wettbewerber, die du trackst, erscheinen hier mit ihrer Visibility vor und nach dem Event.",
+    "This page opens once an AI answer cites it.": "Diese Seite lässt sich öffnen, sobald eine KI-Antwort sie zitiert."
+  });
 
   /* Spaltenzahl der Karten: nach dem PLATZ (wie response-detail.spalten -- dieselben Schwellen,
      dieselbe Begruendung: ein springendes Raster ist schlimmer als eine kurze letzte Reihe). */
@@ -1678,10 +1689,14 @@
             '<div class="up-box uev-chartbox"><div class="up-line-wrap uev-linewrap"><canvas></canvas></div>' +
               '<div class="up-legend uev-legende"></div></div>' +
           '</section>' +
-          '<section class="uev-sek" data-sek="markt"></section>' +
-          /* Die Regel-Ziele (15.10.): je Ziel ein eigener Abschnitt, gebaut in renderZiele. */
+          /* DIE ZIELE DIREKT UNTER DEM CHART, VOR DER MARKTBEWEGUNG (15.10. nachts angefordert:
+             "die URL-/Quellen-Sektion direkt unters Chart und ueber Marktbewegung"). Was das Event
+             trackt, gehoert zu seiner Wirkung oben; der Markt ist der Blick nach aussen danach.
+             Untereinander wie bisher: erst die Regel-Ziele (je Ziel ein Abschnitt, renderZiele),
+             dann die URL-Ziele. */
           '<div class="uev-ziele" data-sek="ziele" hidden></div>' +
           '<section class="uev-sek" data-sek="urls"></section>' +
+          '<section class="uev-sek" data-sek="markt"></section>' +
           '<section class="uev-sek" data-sek="scope"></section>' +
           '<section class="uev-sek uev-sek-resp" data-sek="resp"></section>' +
         '</div>';
@@ -1697,6 +1712,9 @@
         /* Die Legende IMMER (04.10.): erst sie sagt, welche Linie die betroffenen Prompts und
            welche die Vergleichsgruppe ist -- unabhaengig von "Legende zeigen" in den Preferences. */
         legendeImmer: true,
+        /* Gefiltert leer (Models, Markets, Intent): der Leerzustand mit Lupe, "No matching data"
+           (core, chartLeerHtml) -- leer wegen des Filters ist etwas anderes als noch keine Daten. */
+        gefiltert: gefiltert,
         markers: chartMarker,
         onMarker: function (id) { if (id && id !== state.eventId) oeffnen(id, true); }
       });
@@ -1742,6 +1760,12 @@
       if (alt === (liste || []).join(",") && (state[feld] == null) === (liste == null)) return;
       state[feld] = liste; persist();
       analyseAnfordern(); renderDetail();
+    }
+    /* Schraenkt ein Filter die Analyse ein? Models und Markets aus der Leiste des Details, dazu der
+       Intent-Filter der App -- dieselbe Frage, die die Seiten an UC.seitenFilterAktiv stellen. */
+    function gefiltert() {
+      return UC.seitenFilterAktiv ? UC.seitenFilterAktiv({ modelle: state.modelle, maerkte: state.maerkte })
+        : !!((state.modelle && state.modelle.length) || (state.maerkte && state.maerkte.length));
     }
     function segSetzen() {
       var fb = elMain.querySelectorAll(".uev-fenster [data-fenster]");
@@ -1887,7 +1911,10 @@
       var leer = !(a.cohort && num(a.cohort.comparable_prompt_count) > 0);
       el.innerHTML = METRIKEN.map(function (m) {
         var teile = leer ? { wertHtml: '<span class="up-num is-empty">–</span>' } : kpiTeile(m.key, a);
-        if (leer && m.key === "visibility") teile.fussHtml = esc(t("No comparable data yet"));
+        /* Der Satz unter JEDER Kachel (15.10. nachts): bis dahin stand er nur unter Visibility, und
+           Rank und Sentiment zeigten einen nackten Strich ohne Grund. Der Strich bleibt -- er ist der
+           Wert einer Kachel ohne Zahl (Vertrag 5: "KPI-Karten - und Noch keine vergleichbaren Daten"). */
+        if (leer) teile.fussHtml = esc(t("No comparable data yet"));
         teile.label = m.label;
         /* Die drei Kennzahlen in EINEM Kasten: das Kennzahlen-Band aus core (.up-kpiband am
            Behaelter, 04.10.), senkrechte Linien ueber die volle Hoehe. */
@@ -1904,6 +1931,10 @@
       var v = "";
       try { v = String(getComputedStyle(root).getPropertyValue(name) || "").trim(); } catch (e) {}
       return v || sonst;
+    }
+    /* Traegt irgendeine Reihe wenigstens einen Wert? (null ist eine Luecke, kein Wert.) */
+    function mitWert(ds) {
+      return ds.some(function (x) { return isArr(x.data) && x.data.some(function (v) { return v != null; }); });
     }
     function renderChart() {
       if (!linie) return;
@@ -1928,6 +1959,10 @@
         ds.push({ label: t("Comparison"), __id: "comparison", __baseColor: grau, borderColor: grau,
                   __dash: true, data: tr.map(function (p) { return num(p["comparison_" + feld]); }) });
       }
+      /* Tage ohne einen einzigen Wert (alle Laeufe 0, oder die Marke hat in der gewaehlten Kennzahl
+         nie einen -- Rank ohne Erwaehnung): sonst ein leeres Achsenkreuz mit dem Pin, eine leere
+         Flaeche statt eines Leerzustands (gemessen 15.10. nachts: 61 Tage, 0 Punkte). */
+      if (!mitWert(ds)) { linie.empty(); return; }
       linie.render({ labels: tr.map(function (p) { return String(p.day).slice(0, 10); }), datasets: ds });
     }
 
@@ -2036,9 +2071,18 @@
         seitenStand("markt", null);
         return;
       }
-      /* Ohne Wettbewerber faellt der Abschnitt weg (Spezifikation 85) -- eine Tabelle mit nur der
-         eigenen Zeile ist kein Markt. */
-      if (!(isArr(a.competitors) && a.competitors.length)) { platz.innerHTML = ""; seitenStand("markt", null); el.hidden = true; return; }
+      /* Ohne Wettbewerber keine Tabelle (Spezifikation 85) -- eine Tabelle mit nur der eigenen
+         Zeile ist kein Markt. Aber auch kein Verschwinden mehr (15.10. nachts): der Abschnitt hatte
+         eben noch sein Skelett gezeigt, und ein Skelett, das wortlos wieder geht, sieht aus wie ein
+         Fehler -- und alles darunter rutschte hoch. Stattdessen der Leerzustand aus core im Kasten,
+         wie bei den Zielen. Der Satz nennt beide Gruende ohne sie zu unterscheiden: keine
+         Wettbewerber getrackt, oder noch keiner in diesen Prompts gesehen. */
+      if (!(isArr(a.competitors) && a.competitors.length)) {
+        seitenStand("markt", null);
+        platz.innerHTML = sekKopf(titel, desc) + '<div class="up-box uev-leerbox">' +
+          UC.leerHtml({ icon: "squareStack", titel: "No competitors to compare yet", text: "Competitors you track appear here with their visibility before and after the event." }) + '</div>';
+        return;
+      }
       var reihen = [];
       if (a.affected) reihen.push({ du: true, m: a.affected });
       a.competitors.forEach(function (c) { reihen.push({ m: c }); });
@@ -2049,7 +2093,7 @@
           /* Ohne Vorher-Wert steht vorher ein Strich und kein Trend -- und kein "Neu getrackt"
              (03.10.: "ein Wert ohne Vorher-Wert ist nicht gleich neu getrackt"). */
           var aend = num(v.before) == null ? "" : trendHtml("visibility", v.delta);
-          /* Die Zeile oeffnet die Marke im Drawer der App (04.10.), wie die URL-Zeilen darunter ihr
+          /* Die Zeile oeffnet die Marke im Drawer der App (04.10.), wie die URL-Zeilen darueber ihr
              URL-Detail -- openDrawer("brand", company_id), derselbe Weg wie url-detail und das
              Power Dashboard. Kein Bubble-Workflow noetig. */
           var cid = r.m.company_id != null ? String(r.m.company_id) : "";
@@ -2067,7 +2111,9 @@
        die Spalte heisst schon "First cited", der Chip sagt nur noch wann. Nie "noch nie zitiert"
        (Vertrag 5): gezaehlt wird nur in den betroffenen Prompts des eigenen Teams. Zitiert in der
        Schriftfarbe, nicht zitiert zurueckgenommen -- der Text sagt es, die Farbe stuetzt nur. */
-    function beobachtung(o) {
+    /* still: die Zeile oeffnet nichts (urlZitiert) -- dann sagt der Chip am Zeiger in einem Satz,
+       warum (15.10. nachts). Derselbe Chip, dasselbe Wort wie in jeder anderen Zeile. */
+    function beobachtung(o, still) {
       o = o || {};
       var st = o.status, txt, ja = true;
       /* day_number zaehlt die Tage NACH dem Event (Vertrag 3.9: 0 = Event-Tag) -- darum "After 10
@@ -2079,33 +2125,73 @@
           : ersetze(t(n === 1 ? "After 1 day ({date})" : "After {n} days ({date})"), { n: zahl(n), date: datum(o.first_observed_day) });
       } else if (st === "not_observed_within_6_months") { txt = t("Not within 6 months"); ja = false; }
       else { txt = t("Not yet"); ja = false; }
-      return '<span class="up-marke is-leise uev-beob' + (ja ? " is-ja" : "") + '">' + esc(txt) + '</span>';
+      return '<span class="up-marke is-leise uev-beob' + (ja ? " is-ja" : "") + '"' +
+        (still ? ' data-tip="' + esc(t("This page opens once an AI answer cites it.")) + '"' : '') + '>' + esc(txt) + '</span>';
+    }
+    /* IST DIESE URL SCHON ZITIERT? (15.10. nachts: "Klick auf eine noch nicht zitierte URL oeffnet
+       einen leeren, scheiternden URL-Detail-Drawer"). Das URL-Detail kennt nur Seiten, die das
+       eigene Team zitiert hat (url_detail_v1 sonst url_not_found). Zitiert heisst darum: nach dem
+       Event beobachtet (first_observed_prompt_run_id, Vertrag 3.9 "Klickbar"), in einem der beiden
+       Fenster in Laeufen gesehen (runs_with_url, global_share), in den 183 Tagen davor zitiert
+       (observed_before_event) -- oder dem Team schon beim Hinzufuegen bekannt (team_kannte_url).
+       Ohne Eintrag in der Analyse (laedt noch, gescheitert, Cache aelter als die URL) zaehlt nur das
+       letzte; eine URL, von der niemand weiss, ob es sie zu oeffnen gibt, oeffnet nicht. */
+    function urlZitiert(u, an) {
+      if (u && u.team_kannte_url === true) return true;
+      if (!an) return false;
+      var o = an.observation || {}, r = an.runs_with_url || {}, g = an.global_share || {};
+      return !!o.first_observed_prompt_run_id || o.observed_before_event === true ||
+        num(r.before) > 0 || num(r.after) > 0 || num(g.before) > 0 || num(g.after) > 0;
     }
     function renderUrls() {
       var el = elMain.querySelector('[data-sek="urls"]'), d = dieDetail(), a = dieAnalyse();
       var platz = tabInhalt("urls");
-      if (!d) { platz.innerHTML = ""; seitenStand("urls", null); return; }
+      /* Ohne Detail kein Abschnitt (statt einer leeren Flaeche mit 40 Abstand darueber): der Kopf
+         zeigt sein Skelett, und die Ziele kommen mit dem Detail. */
+      if (!d) { platz.innerHTML = ""; seitenStand("urls", null); el.hidden = true; return; }
       var urls = isArr(d.urls) ? d.urls : [];
-      /* Ohne URLs keine leere Analyse-Tabelle (Spezifikation 42) -- der Leerzustand aus core mit
-         dem Weg, eine anzulegen. Mit URLs steht "Add URL" schon im Seitenkopf: kein zweiter Knopf. */
       if (!urls.length) {
         seitenStand("urls", null);
-        platz.innerHTML = sekKopf("Affected URLs", "") +
-          UC.leerHtml({ mini: true, icon: "link", titel: "No URLs added yet", text: "Add pages, articles or external sources associated with this event.",
-            knopf: "Add URL", knopfAttr: "data-uev-addurl" });
+        /* Nur Regel-Ziele: die stehen als eigene Abschnitte direkt darueber. Ein "No URLs added yet"
+           darunter laese sich, als fehle etwas -- der Abschnitt faellt weg. */
+        if (regelZiele(d).length) { platz.innerHTML = ""; el.hidden = true; return; }
+        el.hidden = false;
+        /* Gar kein Ziel: keine leere Analyse-Tabelle (Spezifikation 42), sondern der Leerzustand
+           nach Geist im Kasten mit dem Weg, eines anzulegen. Bis 15.10. stand hier die Mini-Form,
+           und die laesst Satz und Knopf weg -- uebrig blieb eine graue Zeile ohne Ausweg. Der Knopf
+           ist derselbe wie oben im Seitenkopf: ohne Ziele in der Datenbank "Add URL", sonst "Add". */
+        var regeln = zieleDa();
+        platz.innerHTML = sekKopf("Affected URLs", "") + '<div class="up-box uev-leerbox">' +
+          UC.leerHtml({ icon: "link", titel: regeln ? "Nothing tracked yet" : "No URLs added yet",
+            text: regeln ? "Add pages, paths or domains to see which of them AI answers cite after the event."
+                         : "Add pages, articles or external sources associated with this event.",
+            knopf: regeln ? "Add" : "Add URL", knopfAttr: "data-uev-addurl" }) + '</div>';
         return;
       }
+      el.hidden = false;
       var proId = {};
       (a && isArr(a.urls) ? a.urls : []).forEach(function (u) { proId[u.id] = u; });
+      /* Gescheitert ist die Analyse nur, wenn sie nicht mehr laedt -- dann Striche statt Skelett:
+         ein Skelett, das nie endet, sieht aus wie "gleich da" (CLAUDE.md 2). Den Fehler selbst sagen
+         Kennzahlen und Diagramm oben. */
+      var kaputt = !a && state.analyseFehler && !state.analyseLaden;
       var ab = seitenStand("urls", urls.length);
       platz.innerHTML = sekKopf("Affected URLs", "Pages, articles or external sources associated with this event. Global share is measured in the affected prompts.") +
         '<div class="up-vartable uev-urls">' +
           tabKopf("URL", [{ t: "First cited", k: "uev-th-beob", info: "zitiert" }, { t: "Global share before" }, { t: "Global share after" }, { t: "Change" }]) +
           '<div class="up-tbody up-vbody">' + urls.slice(ab.von, ab.bis).map(function (u) {
             var an = proId[u.id], hp = hostPfad(u.url), gs = an && an.global_share ? an.global_share : null;
-            var sk = '<span class="up-tsk-bar"></span>';
-            /* Die ganze Zeile oeffnet das URL-Detail (03.10.), "Remove" faengt seinen Klick selbst ab. */
-            return '<div class="up-row up-vrow uev-urlzeile" data-url-id="' + esc(u.id) + '" data-url="' + esc(u.url) + '" role="link" tabindex="0">' +
+            /* Ohne Eintrag: laedt die Analyse noch, das Skelett; ist sie da, kennt die URL aber
+               nicht (gerade hinzugefuegt, Cache aelter), oder ist sie gescheitert, Striche -- und bei
+               einer vorhandenen Analyse "Not yet" wie jede nicht beobachtete URL. */
+            var sk = !a && !kaputt ? '<span class="up-tsk-bar"></span>' : '<span class="up-num is-empty">–</span>';
+            var zit = urlZitiert(u, an);
+            var beob = an ? beobachtung(an.observation, !zit) : a ? beobachtung({}, !zit) : sk;
+            /* Die ganze Zeile oeffnet das URL-Detail (03.10.), "Remove" faengt seinen Klick selbst ab.
+               NICHT ZITIERT (15.10. nachts): eine stille Zeile -- keine Rolle, kein Tab-Halt, kein
+               Zeiger, kein Hover-Grund (uev-urlstill in events.css). Der Klick-Weg sucht
+               .uev-urlzeile und geht an ihr vorbei; "Remove" bleibt am Hover der Zeile. */
+            return '<div class="up-row up-vrow ' + (zit ? 'uev-urlzeile' : 'uev-urlstill') + '" data-url-id="' + esc(u.id) + '" data-url="' + esc(u.url) + '"' + (zit ? ' role="link" tabindex="0"' : '') + '>' +
               /* Der Zeilenknopf sitzt in der ersten Zelle und erscheint am Hover der Zeile -- das
                  Bauteil .up-btn-sec.up-rowbtn aus core, wie "Edit" in brands-overview. Nur "Remove":
                  der Knopf "Responses" filterte die Tabelle darunter und war unverstaendlich (03.10.). */
@@ -2114,7 +2200,7 @@
                 '<span class="uev-url-pfad" title="' + esc(u.url) + '">' + esc(pfadText(hp)) + '</span></span>' +
                 '<button type="button" class="up-btn-sec up-rowbtn uev-urlweg" data-url-id="' + esc(u.id) + '" aria-label="' + esc(t("Remove")) + '">' + UC.icon("trash", 2) + '<span>' + esc(t("Remove")) + '</span></button>' +
               '</div>' +
-              '<div class="up-td uev-td-zahl uev-td-beob">' + (an ? beobachtung(an.observation) : sk) + '</div>' +
+              '<div class="up-td uev-td-zahl uev-td-beob">' + beob + '</div>' +
               '<div class="up-td uev-td-zahl">' + (an ? wertHtml("visibility", gs && gs.before) : sk) + '</div>' +
               '<div class="up-td uev-td-zahl">' + (an ? wertHtml("visibility", gs && gs.after) : sk) + '</div>' +
               '<div class="up-td uev-td-zahl">' + (an ? trendHtml("visibility", gs && gs.delta) : sk) + '</div>' +
@@ -2145,6 +2231,16 @@
       for (j = 0; j < l.length; j++) if (l[j] && l[j].value != null && String(l[j].value) === String(zt.value)) return l[j];
       return l.length === alle.length ? l[i] : null;
     }
+    /* Ein Ziel ohne ein einziges Zitat im ganzen Zeitraum: keine zitierte Seite, keine Zitate
+       vorher oder nachher, keine neue URL, kein Tag mit Zitaten. matched_url_count wie die Kachel
+       "Cited URLs": aus der Auswertung, sonst aus dem Detail. Eine 0 dort ist dann keine Messung,
+       die man zeigen muss, sondern "noch nichts da" (15.10. nachts). */
+    function zielOhneZitate(z, zt) {
+      var mc = z.matched_url_count != null ? num(z.matched_url_count) : num(zt && zt.matched_url_count);
+      if (mc > 0 || (isArr(z.cited_urls) && z.cited_urls.length)) return false;
+      if (num(z.citations_before) > 0 || num(z.citations_after) > 0 || num(z.new_urls_before) > 0 || num(z.new_urls_after) > 0) return false;
+      return !(isArr(z.daily) && z.daily.some(function (p) { return num(p && p.citations) > 0 || num(p && p.new_urls) > 0; }));
+    }
     var ART_SATZ = {
       path: "Everything under this path, including pages added later.",
       host: "Every page on this domain, including pages added later.",
@@ -2171,6 +2267,10 @@
           /* cited_urls_truncated (15.10.): die Tabelle traegt hoechstens 200 URLs, die neuesten. */
           '<div class="uev-hinweise uev-ziel-hinweis" hidden></div>' +
           '<div class="uev-ziel-tab"><div class="uev-tabinhalt"></div>' + fussHtml() + '</div>' +
+          /* Der Leerzustand des ganzen Ziels (zielFuellen, is-leer am Block): statt Kennzahlen,
+             Verlauf und Tabelle. Die drei bleiben stehen, nur verborgen -- das Diagramm ueberlebt so
+             den Wechsel zurueck, sobald das erste Zitat kommt. */
+          '<div class="up-box uev-leerbox uev-zielleer"></div>' +
         '</div>';
       host.appendChild(sek);
       var n = "ziel-" + zt.id;
@@ -2218,6 +2318,16 @@
         hinweis.innerHTML = mehr ? '<span class="uev-angabe">' + UC.icon("info", 2) + '<span>' + esc(ersetze(t("Showing the newest {n} URLs"), { n: zahl(z.cited_urls.length) })) + '</span></span>' : "";
       }
       var kopf = tabKopf("URL", [{ t: "First cited", k: "uev-th-beob" }, { t: "Citations after" }, { t: "Prompts" }, { t: "Models" }]);
+      /* EIN Leerzustand fuer das ganze Ziel statt vier Nullen, einer flachen Linie und einer grauen
+         Zeile (15.10. nachts gemessen: so sah ein Ziel ohne ein einziges Zitat aus). html "" zeigt
+         Kennzahlen, Verlauf und Tabelle wie bisher. */
+      var block = sek.querySelector(".uev-ziel-block"), leerEl = sek.querySelector(".uev-zielleer");
+      function leerZeigen(html) {
+        if (block) block.classList.toggle("is-leer", !!html);
+        if (leerEl) leerEl.innerHTML = html || "";
+      }
+      var zeichen = ART_ZEICHEN[zt.kind] || "link";
+      leerZeigen("");
       if (!a) {
         /* Die Analyse laeuft noch (oder ist gescheitert -- das sagen Kennzahlen und Diagramm oben
            schon, hier also leer statt ein drittes Mal). */
@@ -2231,15 +2341,19 @@
         seitenStand(n, null);
         return;
       }
-      if (!z) {
-        /* Die Analyse ist da, kennt dieses Ziel aber nicht (v2 ohne targets[], oder das Ziel ist
-           gerade erst dazugekommen und der Cache noch alt): ein Satz statt erfundener Nullen. */
+      if (!z || zielOhneZitate(z, zt)) {
+        /* !z: die Analyse ist da, kennt dieses Ziel aber nicht (v2 ohne targets[], oder das Ziel
+           ist gerade erst dazugekommen und der Cache noch alt) -- ein Satz statt erfundener Nullen.
+           Noch keine Auswertung ist ein Leerzustand, kein Fehler (15.10.). Sonst: ausgewertet, aber
+           noch kein einziges Zitat. Beide im Leerzustand aus core mit dem Zeichen der Regel, wie im
+           Kopf des Abschnitts; die Saetze sind die, die hier schon im Katalog standen ("No data yet"
+           aus core) -- kein neuer Schluessel fuer dieselbe Aussage. */
         kpis.innerHTML = "";
-        /* Noch keine Auswertung ist ein Leerzustand, kein Fehler (15.10.): der Leerzustand der
-           Charts aus core mit diesem Satz. Der Schluessel steht im Katalog dieser Datei. */
-        if (linie2) linie2.empty({ text: "The analysis for this rule isn't available yet." });
         platz.innerHTML = "";
         seitenStand(n, null);
+        leerZeigen(UC.leerHtml(!z
+          ? { icon: zeichen, titel: "No data yet", text: "The analysis for this rule isn't available yet." }
+          : { icon: zeichen, titel: "No cited pages yet", text: "Pages that match this rule appear here as soon as an AI cites them." }));
         return;
       }
       function zahlWert(v) { v = num(v); return v == null ? '<span class="up-num is-empty">\u2013</span>' : '<span class="up-num">' + esc(zahl(v)) + '</span>'; }
@@ -2257,7 +2371,9 @@
       ].join("");
       var tage = isArr(z.daily) ? z.daily : [];
       if (linie2) {
-        if (!tage.length) linie2.empty();
+        /* Ohne Tage oder nur mit Tagen ohne Lauf (alles null): der Leerzustand der Charts, nicht ein
+           leeres Achsenkreuz (wie renderChart). */
+        if (!tage.some(function (p) { return num(p.runs) !== 0 && (num(p.citations) != null || num(p.new_urls) != null); })) linie2.empty();
         else {
           var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : token("--vc-text", "#1f1f1b");
           var grau = token("--vc-fourth", "#80858e");
@@ -2280,8 +2396,11 @@
       }
       var urls = isArr(z.cited_urls) ? z.cited_urls : [];
       if (!urls.length) {
+        /* Zitate im Zeitraum, aber keine einzelne Seite in der Liste (selten -- ohne jedes Zitat
+           steht oben schon der Leerzustand des Ziels): die Mini-Form aus core, im Kasten an der
+           Stelle der Tabelle, damit sie nicht frei unter dem Diagramm schwebt. */
         seitenStand(n, null);
-        platz.innerHTML = UC.leerHtml({ mini: true, icon: "link", titel: "No cited pages yet", text: "Pages that match this rule appear here as soon as an AI cites them." });
+        platz.innerHTML = '<div class="up-box uev-leerbox">' + UC.leerHtml({ mini: true, titel: "No cited pages yet" }) + '</div>';
         return;
       }
       var ab = seitenStand(n, urls.length), ev = dieDetail() || {};

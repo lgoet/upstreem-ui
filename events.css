@@ -172,6 +172,9 @@
 /* Ein Abschnitt: Kopf aus core (.up-sec-head bringt seine 14px Abstand nach unten mit), darunter
    der Inhalt. Kein eigener Abstand dazwischen, sonst stuende er doppelt. */
 .uev-sek { display: flex; flex-direction: column; min-width: 0; }
+/* hidden muss gegen das display darueber gewinnen (15.10. nachts gemessen: ein verborgener, leerer
+   Abschnitt stand mit 0 Hoehe weiter im Raster des Details und liess 40 Abstand zu viel stehen). */
+.uev-sek[hidden] { display: none; }
 .uev-sec-head .up-sec-h { gap: 6px; }
 .uev-chartbox { padding: 16px; }
 .uev-linewrap { height: 300px; }
@@ -226,6 +229,11 @@
 /* Die Zeile oeffnet das URL-Detail: Zeiger wie jede klickbare Zeile (core setzt in .up-vartable
    "default", hier eine Stufe spezifischer). Den Hover-Grund bringt .up-row aus core mit. */
 .uev-urls .up-row.uev-urlzeile { cursor: pointer; }
+/* Eine noch nicht zitierte URL oeffnet nichts (15.10. nachts, events.js urlZitiert): kein Zeiger
+   (den Pfeil bringt .up-vartable aus core) und kein Hover-Grund -- der kaeme sonst von .up-row:hover
+   aus core und verspraeche einen Klick. "Remove" erscheint weiter am Hover der Zeile. Wie die
+   Skelettzeile in core (.up-row.up-tsk:hover). */
+.uev-urls .up-tbody .up-row.uev-urlstill:hover { background: transparent; }
 /* Dasselbe fuer die Marktbewegung: die Zeile oeffnet die Marke (04.10.). */
 .uev-markt .up-row.uev-markenzeile { cursor: pointer; }
 
@@ -580,4 +588,9 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 /* 750 = 220 URL + 150 First cited + 3 x 120 + 20. */
 .uev-zielurls > .up-thead, .uev-zielurls > .up-tbody { min-width: 750px; }
 .uev-zielurls .up-row.uev-zitzeile { cursor: pointer; }
+/* Ein Ziel ohne Zitat (is-leer, events.js zielFuellen): nur der Leerzustand, Kennzahlen, Verlauf,
+   Hinweis und Tabelle verborgen (sie bleiben im Dokument, das Diagramm ueberlebt so). Ohne is-leer
+   steht der Kasten nicht da. */
+.uev-ziel-block.is-leer > :not(.uev-zielleer),
+.uev-ziel-block:not(.is-leer) > .uev-zielleer { display: none; }
 .uev-root.is-narrow .uev-zielsek .uev-sec-head { flex-wrap: wrap; }
