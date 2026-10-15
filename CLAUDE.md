@@ -129,7 +129,9 @@ Was man dabei wissen muss:
 - **Radius nach Rolle (Geist, 15.10.).** Knopf, Feld, Segment und Zeile nach ihrer Höhe: bis 24
   → 4, 25–36 → 6, ab 37 → 8. Menü 12, die Zeile darin konzentrisch. Karte, Tabelle, Dialog,
   Toast, Erklärkarte 12, ihre Kinder 11. Tooltip einzeilig 6, mehrzeilig 8. Badge und Avatar
-  voll rund. Seit dem Umbau laufen 811 von 963 Angaben über ein Token; fest stehen nur noch 0,
+  (Person) voll rund. Marken- und Citation-Chips (`.up-stack`) sind **Logoplatten, keine
+  Avatare**: 28 hoch → 6, das Bild 3 (am 15.10. kurz Geist-Kreise, am 16.10. auf Wunsch zurück:
+  „Die eckigen.“). Seit dem Umbau laufen 811 von 963 Angaben über ein Token; fest stehen nur noch 0,
   50 %, Haarlinien unter 4 und die em-Werte in Mira. **Alte Zahlen in Kommentaren** (vor dem
   15.10.) meinen die alte Skala; die Zuordnung steht im Radius-Block von `core.css`.
 
@@ -178,9 +180,10 @@ ist damit schon auf der Skala.
 ## 1d. Stand 15.10.: Geist und die Tabellenbausteine
 
 Am 14. und 15.10. ist das Aussehen der App an vielen Stellen neu festgelegt worden. Vorlage für
-Ecken, Schatten, Farben, Skelett, Leerzustand, Command Menu, Suchfeld, Knopf-Hover, Slider,
-Badge und Avatar-Gruppe ist **Geist** (vercel.com/geist). Wer davon etwas baut, schaut dort
-nach, nicht im Bestand. Die Einzelheiten stehen im STYLEGUIDE; hier steht, was man vorher wissen
+Ecken, Schatten, Farben, Skelett, Leerzustand, Command Menu, Suchfeld, Knopf-Hover, Slider
+und Badge ist **Geist** (vercel.com/geist). Wer davon etwas baut, schaut dort
+nach, nicht im Bestand. **Ausnahme:** der Logo-Stapel (Marken-/Citation-Chips) ist seit dem
+16.10. wieder die alte Reihe eckiger Logoplatten, nicht Geists Avatar-Gruppe (STYLEGUIDE §17). Die Einzelheiten stehen im STYLEGUIDE; hier steht, was man vorher wissen
 muss.
 
 | Thema | Regel | Wo |
