@@ -207,7 +207,7 @@
   background: color-mix(in srgb, var(--vt-head-bg) 50%, var(--up-surface) 50%);
   border-bottom: 1px solid var(--vc-border);
   display: grid; grid-template-rows: 1fr;
-  --udt-subcols: minmax(0, 1fr) 112px 128px 108px 34px; }
+  --udt-subcols: minmax(0, 1fr) 112px 128px 108px; }
 .up-root[data-theme="dark"] .udt-subrows {
   background: color-mix(in srgb, var(--vc-bg) 50%, var(--up-surface) 50%);
 }
@@ -278,14 +278,13 @@
   max-width: 100%; box-sizing: border-box; }
 .udt-sub-tag-dot { width: 6px; height: 6px; border-radius: var(--up-r-voll); flex: 0 0 auto; }
 .udt-sub-tag-lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Arrow appears on row hover, same delayed slide-in as the domain row's own goto arrow, so the
-   two levels of the table announce clickability identically. */
-.udt-sub-goto { width: 16px; height: 16px; color: var(--vc-third); opacity: 0;
-  transform: translateX(-3px); justify-self: end;
-  transition: opacity 140ms ease, transform 140ms ease; }
-.udt-sub-goto svg { width: 16px; height: 16px; display: block; }
-.udt-subrow:hover .udt-sub-goto, .udt-subrow:focus-visible .udt-sub-goto {
-  opacity: 1; transform: translateX(0); transition-delay: 180ms; }
+/* Zeilenpfeil der Seiten: STILLGELEGT seit 16.10., wie .up-row-goto in core (dort die Begruendung)
+   -- kein hereingleitendes Zeichen mehr in Tabellen. domains-table.js erzeugt ihn nicht mehr, und
+   seine Spur ist aus --udt-subcols heraus (oben und unter "narrow"): der Titel bekommt die 34px
+   plus 12px Spaltenabstand, die der Pfeil auch unsichtbar belegte. Die Regel bleibt, weil der
+   Vertrag die Klasse fuehrt; die Landing-Vorschau baut die Zeile noch mit ihm nach, display:none
+   nimmt ihm dort auch den Platz. */
+.udt-sub-goto { display: none; }
 
 .udt-sub-empty { font-size: 12.5px; color: var(--vc-third); padding: 20px 12px 20px 46px; }
 
@@ -385,9 +384,9 @@
 /* ---------- narrow ----------
    The date goes first, then the type chip: on a phone the drilldown is answering "which pages",
    and the recency of each is the last thing worth the width. */
-.up-root.is-t1 .udt-subrows { --udt-subcols: minmax(0, 1fr) 92px 112px 0px 30px; }
+.up-root.is-t1 .udt-subrows { --udt-subcols: minmax(0, 1fr) 92px 112px 0px; }
 .up-root.is-t1 .udt-sub-date, .up-root.is-t1 .udt-sub-head > span:nth-child(4) { display: none; }
-.up-root.is-t0 .udt-subrows { --udt-subcols: minmax(0, 1fr) 84px 0px 0px 30px; }
+.up-root.is-t0 .udt-subrows { --udt-subcols: minmax(0, 1fr) 84px 0px 0px; }
 .up-root.is-t0 .udt-sub-type, .up-root.is-t0 .udt-sub-head > span:nth-child(3) { display: none; }
 /* Flache Tabelle (core, data-flach, 15.10.): der Kasten laeuft rechts bis an die Kante, jede Zeile
    haelt dort --up-flach-aus Polster. Die Teile des Drilldowns sind eigene Zeilenarten im Kasten

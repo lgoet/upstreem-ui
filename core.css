@@ -5415,6 +5415,15 @@
     }
 
 /* ---------- Zeilen-Affordanz: Pfeil, der nach einer Verweildauer zur Aktion wird ----------
+   STILLGELEGT. Der Block hat keinen Verbraucher mehr: "Edit" in brands-overview und "Show Pages"
+   in domains-table sind inzwischen .up-rowbtn (weiter oben) -- der Knopf kommt beim Hover der
+   Zeile sofort, in der Zelle, ohne Pfeil davor und ohne Wartezeit. Seit dem 16.10. ist auch der
+   Pfeil hier aus (kein hereingleitendes Zeichen in Tabellen, ausdruecklicher Wunsch). Die Regeln
+   bleiben, weil der Vertrag die Klassen fuehrt. Wer eine Zeilenaktion braucht, nimmt .up-rowbtn:
+   ohne den Pfeil waere hier eine Sekunde Leere vor der Aktion, und die Aktion laege ueber dem
+   Zellinhalt statt an seiner Stelle.
+
+   Was der Block war:
    Die Bauart kommt aus domains-table ("Show Pages") und steht jetzt hier, weil brands-overview
    mit seinem Edit-Knopf genau dasselbe braucht -- Buchstabe fuer Buchstabe dieselben Zeiten,
    Groessen und Positionen. Die .udt-*-Klassen stehen in jeder Regel mit, damit das Markup der
@@ -5432,19 +5441,8 @@
 .up-rowswap, .udt-row-affordance {
   display: inline-block; margin-left: auto; position: relative; flex: 0 0 auto; width: 0; height: 32px;
 }
-.up-rowswap-goto, .udt-row-goto {
-  position: absolute; top: 50%; right: 0; width: 16px; height: 16px; color: var(--vc-third);
-  opacity: 0; transform: translateY(-50%) translateX(-3px);
-  transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms;
-}
-.up-rowswap-goto svg, .udt-row-goto svg { width: 16px; height: 16px; display: block; }
-.up-row:hover .up-rowswap-goto, .up-row:hover .udt-row-goto {
-  opacity: 1; transform: translateY(-50%) translateX(0); transition-delay: 220ms;
-}
-.up-row.is-rowswap .up-rowswap-goto, .up-row.is-showpages-hover .udt-row-goto {
-  opacity: 0; transition: opacity 120ms ease; transition-delay: 0ms;
-}
-.up-root.is-vnarrow .up-rowswap-goto, .up-root.is-vnarrow .udt-row-goto { display: none; }
+/* Der Pfeil: seit 16.10. aus (siehe Kopf des Blocks und .up-row-goto darunter). */
+.up-rowswap-goto, .udt-row-goto { display: none; }
 /* Die Aktion sitzt in demselben Platz, den der Pfeil hatte: kein Rahmen, keine Pille -- eine
    Beschriftung mit Zeichen, nicht ein Knopf, der aus dem Nichts auftaucht. */
 .up-rowswap-act, .udt-row-showpages {
@@ -5463,13 +5461,17 @@
 }
 .up-root.is-vnarrow .up-rowswap, .up-root.is-vnarrow .udt-row-affordance { display: none; }
 
-/* go-to arrow, revealed on row hover after a short delay so it doesn't flicker while the cursor
-   sweeps across rows */
-.up-row-goto { margin-left: auto; width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-third);
-  opacity: 0; transform: translateX(-3px); transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms; }
-.up-row-goto svg { width: 16px; height: 16px; display: block; }
-.up-row:hover .up-row-goto { opacity: 1; transform: translateX(0); transition-delay: 220ms; }
-.up-root.is-vnarrow .up-row-goto { display: none; }
+/* Zeilenpfeil (arrowUpRight am Ende der ersten Zelle): STILLGELEGT seit 16.10., ausdruecklicher
+   Wunsch -- in keiner Tabelle mehr ein Zeichen, das beim Hover hereingleitet. Dass die Zeile
+   klickbar ist, sagen ihre Hover-Flaeche und der Zeiger schon. Der Pfeil kostete dafuer Platz:
+   als Flex-Kind mit margin-left:auto belegte er 16px plus den Abstand der Zelle IMMER, auch
+   unsichtbar. In Top Brands und Top Domains kam er nie (dort ist die Zeile keine .up-row), kuerzte
+   aber die Namen (gemessen 1440 breit: "Mercedes Benz" 92.9 statt 101.3px).
+   Kein Markup erzeugt ihn mehr (prompts-table, visibility-chart, topcitations-dashboard). Die
+   Regel bleibt, weil der Vertrag die Klasse fuehrt und Markup ausserhalb dieser Dateien (die
+   Landing-Vorschau, alte Pruefstaende) sonst einen festen Pfeil zeigte; display:none nimmt ihm
+   auch den Platz. */
+.up-row-goto { display: none; }
 
 /* type/citation chip. Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke.
    Form, Groesse, Schrift und Polster seit 15.10. aus dem Geist-Badge direkt darunter. */

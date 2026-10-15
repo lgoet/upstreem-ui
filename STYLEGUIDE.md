@@ -2542,7 +2542,7 @@ Komponente wirklich zusätzlich hat (eine Zeilenhöhe, eine Index-Zelle, ein Act
 
 CSS dazu kommt aus `core.css`: `.up-root`, `.up-head*`, `.up-iconbtn`, `.up-thead/.up-row/.up-th/.up-td`,
 `.up-pop-*`, `.up-filter-*`, `.up-line-*`, `.up-legend`, `.up-donut-*`, `.up-bars/.up-bar-*`,
-`.up-trend`, `.up-logo-box`, `.up-row-goto`, `.up-tag`, `.up-tip`, `.up-explain`, `.up-empty*`,
+`.up-trend`, `.up-logo-box`, `.up-rowbtn` (Zeilenknopf; `.up-row-goto` ist seit 16.10. stillgelegt), `.up-tag`, `.up-tip`, `.up-explain`, `.up-empty*`,
 `.up-leer`, `.up-skelett`, `.up-search`, `.up-ddtrigger`, `.up-btn-sec`, `.up-seg`/`.up-themesw`,
 `.up-stack*`, `.up-th-ic`, `.up-sumrow`/`.up-sum*`, `.up-band*`, `.up-leiste-fluss`, `.up-ff*`
 und die Attribute `data-flach="yes"` und `data-leiste="yes"`.
@@ -2950,6 +2950,22 @@ Suchzustand nie neu geladen wird, ist der komplexere und fehleranfälligere Zust
 dazu zu bringen, den Drilldown-Zustand zu berücksichtigen. Kein Fade-out dabei — nur der User-
 getriebene Schließen-Klick (über den Toggle oder den Drilldown-eigenen X-Button) bekommt die
 200-ms-Animation, ein programmatisches Schließen ist sofort.
+
+**Stand 16.10. — kein Zeilenpfeil mehr, keine Verweildauer.** In keiner Tabelle gleitet beim Hover
+noch ein Pfeil (arrowUpRight) herein – ausdrücklicher Wunsch. Er sagte nur, dass die Zeile klickbar
+ist, was Hover-Fläche und Zeiger schon sagen, und belegte als Flex-Kind mit `margin-left:auto` auch
+unsichtbar 16px plus den Abstand der Zelle (in Top Brands und Top Domains kam er nie zum Vorschein,
+kürzte aber die Namen). Das Markup erzeugt ihn nirgends mehr; `.up-row-goto`, `.uut-row-goto`,
+`.udt-sub-goto` und `.up-rowswap-goto`/`.udt-row-goto` stehen nur noch als `display:none` in der
+CSS, weil der Vertrag die Klassen führt. Der Drilldown hat seine fünfte Spalte (`--udt-subcols`) mit
+ihm verloren. Gemessen am 16.10. (1440 breit): Prompt-Text 428 → 454px, URL-Titel 252 → 278px,
+Seitentitel im Drilldown 686 → 732px Spur (375 breit: 140 → 182px), "Mercedes Benz" in Top Brands
+nicht mehr gekürzt.
+Die Aktionen, die nach der Verweildauer an die Stelle des Pfeils traten ("Show Pages" hier, "Edit"
+in brands-overview), sind `.up-btn-sec.up-rowbtn` aus core: sie kommen beim Hover der Zeile sofort,
+in der ersten Zelle, ohne Pfeil davor. Eine Sekunde Leere vor der Handlung, um die es in der Zeile
+geht, wäre ohne den Pfeil nur noch Warten. Die beiden Nachträge darunter beschreiben den alten Stand;
+wer eine Zeilenaktion braucht, nimmt `.up-rowbtn`, nicht `.up-rowswap`/`UC.rowDwell`.
 
 **Nachtrag — ein zweiter, spät auftauchender Trigger für dieselbe Aktion.** `domains-table`s
 Zeile bekommt nach 1.5s Hover einen zweiten Weg, den Drilldown zu öffnen (ein "Show Pages"-Button
