@@ -4134,6 +4134,26 @@
     }
     .up-root.up-root[data-flach="yes"].up-sticky .up-thead::before,
     .up-root.up-root[data-flach="yes"].up-sticky .up-thead::after { display: none; }
+    /* DIE LINIE UEBER DEM KLEBENDEN KOPF (16.10.): "wenn die Topbar sticky wird, verschwindet die
+       Top-Border ueber der Header-Row". In Ruhe ist diese Linie der obere Rand des Kastens, und der
+       Kopf hat keine eigene. Bis 0ed044e scrollte der Kasten in sich (feste Hoehe), sein Rand blieb
+       stehen; seitdem scrollt #main, und der Rand laeuft mit dem Kasten unter die Leiste (z 6) --
+       gemessen auf Prompts, Responses und Teams in jeder geklebten Lage: nichts ueber dem Kopf.
+       Mit Band (Citations, Brands > Tracked) kam sie nur von der Linie der Leiste, also erst mit
+       .is-geklebt aus dem Scroll-Takt und eingeblendet.
+       Jetzt traegt der Kopf sie selbst, als Schatten 1px UEBER sich: in Ruhe liegt er genau auf dem
+       Rand des Kastens (dieselbe deckende Farbe, dieselbe Breite -- der Kopf ist so breit wie der
+       Kasten), es aendert sich kein Pixel. Klebend steht der Kopf 1px tiefer als bisher, sodass der
+       Schatten nicht in der Leiste liegt (die malt ueber dem Kopf und deckte ihn), sondern im Pixel
+       darunter -- dort, wo in Ruhe der Rand steht. Leiste, Linie, Kopf liegen damit klebend genau
+       wie in Ruhe, und der Kopf rastet im selben Pixel ein wie die Leiste. Reines sticky, ohne
+       Klasse, ohne Bildverzug; am Ende der Tabelle geht die Linie mit dem Kopf unter die Leiste.
+       Wer unter dem Kopf klebt (offene Gruppe, Kopf der Gruppenliste in prompts-table.css), rechnet
+       das 1px mit. Nicht bei fester Hoehe: dort klebt der Kopf am Kasten, und dessen Rand steht. */
+    .up-root.up-root[data-flach="yes"].up-sticky:not(.is-festhoehe) .up-thead {
+      top: calc(var(--up-sticky-top) + var(--up-thead-off) + 1px);
+      box-shadow: 0 -1px 0 var(--vc-border), inset 0 -1px 0 var(--vc-border);
+    }
     .up-root.up-root[data-flach="yes"].up-sticky .up-tbody { border-width: 0; border-radius: 0; }
     /* Die klebende Leiste laeuft mit aus (Bestandsaufnahme 15.10.): ihr deckender Grund und der
        Deckstreifen darueber (.is-geklebt .up-head::before, left/right 0) reichten nur so breit
@@ -4229,10 +4249,14 @@
        zwischen Leiste und Band. (0,4,0): schlaegt den Stapel der Komponente (0,3,0). */
     .up-root.up-root[data-flach="yes"].has-leistenband { --up-stapel-luft: 0px; }
     /* Eine Linie unter der Leiste, NUR solange sie klebt (.is-geklebt, klebPruefenAlle): dann
-       laeuft der Chart unter ihr weg, bzw. sie ist die obere Kante des Spaltenkopfs. In Ruhe steht
-       darunter die Linie des Bandes. Eingeblendet, nicht geschaltet. */
+       laeuft der Chart unter ihr weg. In Ruhe steht darunter die Linie des Bandes. Eingeblendet,
+       nicht geschaltet. Ueber dem klebenden Spaltenkopf traegt die Linie seit dem 16.10. der Kopf
+       selbst (DIE LINIE UEBER DEM KLEBENDEN KOPF), ohne Klasse und ohne Einblenden; er steht dann
+       1px unter der Leiste. Darum liegt auch diese Linie 1px UNTER der Leiste (bottom -1px) und
+       nicht in ihrem letzten Pixel: genau auf seiner -- in ihrem letzten Pixel stuenden klebend zwei
+       Linien uebereinander. */
     .up-root.has-leistenband.up-sticky > .up-head::after {
-      content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; pointer-events: none;
+      content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px; pointer-events: none;
       background: var(--vc-border); opacity: 0; transition: opacity var(--up-t-2) var(--up-ease-expo);
     }
     .up-root.has-leistenband.up-sticky.is-geklebt > .up-head::after { opacity: 1; }
