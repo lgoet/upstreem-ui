@@ -1107,7 +1107,10 @@ Kopf und Fuß  48 hoch (--up-flach-h). Linie unter dem Kopf als inset-Schatten, 
               --up-surface (deckend, weil er kleben kann)
 Pagination    Knöpfe in der 28er Form (--up-h-seg)
 Feste Höhe    UC.makeFestHoehe(root, cfg): nur der Kasten scrollt, Leiste oben und Pagination
-              unten stehen; nur mit klebendem Kopf (ab 1000 breit), nie unter 240px Platz
+              unten stehen; nur mit klebendem Kopf (ab 1000 breit), nie unter 240px Platz.
+              Seit 16.10. von KEINER Seite mehr benutzt (Hochscroll stockte an Zeile 1, siehe
+              8e): All Prompts, Responses und Teams kleben über den klebenden Fuß. Der Baustein
+              bleibt für den Vertrag (data-festhoehe ohne data-kleb-fuss)
 ```
 Im grauen Light (Abschnitt 1) wird der Kasten der flachen Tabelle weiß, bleibt aber flach: kein
 Rahmen, kein Radius. Das ist auch Vercels Bild (die Inhaltsfläche läuft bis an den Fensterrand).
@@ -1201,9 +1204,16 @@ Aufbau         in der Wurzel der Tabelle: Leiste (.up-head) – Band – Kasten
 Filterzeile    die Seite hängt sie in .up-leiste-scope (display: contents, wie Prompt Insights)
 Reiterwechsel  Filterzeile und Band wandern zur Tabelle des Reiters (das Element, nicht eine
                Kopie: Zustand und Handler bleiben); die Werkzeuge bleiben in ihrer Tabelle
-Kleben         makeSticky wie jede Tabelle, ab 1000 breit: Kopf, Reiter und Chart scrollen weg,
-               die Leiste klebt bei --up-sticky-top (16), der Spaltenkopf direkt darunter
-               (--up-thead-off = gemessene Höhe der Leiste), das Band scrollt dazwischen weg
+Kleben         makeSticky wie jede Tabelle: Kopf, Reiter und Chart scrollen weg, die Leiste
+               klebt bei --up-sticky-top (16), der Spaltenkopf direkt darunter
+               (--up-thead-off = gemessene Höhe der Leiste), das Band scrollt dazwischen weg.
+               Seit 16.10. AUCH UNTER 1000 (Telefon), für jede Wurzel mit data-leiste oder
+               data-kleb-fuss: Leiste und Spaltenkopf kleben, der Fuß nie (8e). Der Spaltenkopf
+               geht dort ohne Bruch mit, weil schmal Spalten weichen statt waagrecht zu scrollen
+               (gemessen 375: scrollWidth = clientWidth in allen sechs Tabellen)
+Höhe Telefon   375x812: Leiste klebt 16–104 (zwei Zeilen, Citations, Responses), 16–144 (drei
+               Zeilen, All Prompts, Brands), 16–64 (Teams); Spaltenkopf darunter 48 – oben
+               stehen damit 152 (19 %), 192 (24 %) bzw. 112 (14 %) fest
 Linie          unter der Leiste NUR, solange sie klebt (.is-geklebt), eingeblendet (--up-t-2)
 Abstände       Leiste 16 unten, Band 16 unten; der Stapel der Wurzel fällt auf 0
 ```
@@ -1329,29 +1339,44 @@ Der Schalter „Summary row“ steht im Display-Menü; Schalter und Wahl je Spal
 gemerkt (`<praefix>_summe__<instanceId>`). Die Zellen tragen `up-sum-td-<Spalte>` und blenden
 mit ihren Spalten aus. Topics with Ads (Ads Overview) hat bewusst keine Gesamtzeile.
 
-**Der klebende Fuß** (`data-kleb-fuss="yes"` an der Wurzel, seit 16.10., zuerst Citations und
-Brands › Tracked). Gesamtzeile und Pagination kleben unten am Scrollbereich, **sobald die Tabelle
-den Bildschirm füllt** – also sobald ihr Spaltenkopf klebt. Solange Kopf, Reiter oder Chart zu
-sehen sind, stehen sie an ihrem Platz am Ende der Tabelle; am Ende geben sie von selbst dorthin
-zurück. Ein Scrollbereich, kein zweiter wie bei fester Höhe. Jede Tabelle mit `UC.makeSticky`
-bekommt ihn über das Attribut (applySticky richtet ihn ein, `UC.klebFuss(root)` direkt).
+**Der klebende Fuß** (`data-kleb-fuss="yes"` an der Wurzel, seit 16.10.; einheitlich auf
+Citations, Brands › Tracked, All Prompts, Responses und Teams). Gesamtzeile und Pagination kleben
+unten am Scrollbereich, **sobald die Tabelle die untere Hälfte des Bildes einnimmt**. Solange der
+Chart den größten Teil zeigt, stehen sie an ihrem Platz am Ende der Tabelle; am Ende geben sie
+von selbst dorthin zurück. EIN Scrollbereich (#main), kein zweiter wie bei fester Höhe. Jede
+Tabelle mit `UC.makeSticky` bekommt ihn über das Attribut (applySticky richtet ihn ein,
+`UC.klebFuss(root)` direkt). Dasselbe Muster wie Airtables Summary Bar und Attios Calculations
+unter der Tabelle: die Zusammenfassung bleibt unten im Bild, solange die Tabelle läuft.
 
 ```
-Wann           nur mit klebendem Kopf (.up-sticky, ab 1000 breit); darunter klebt nichts
-Herein         fängt die Tabelle an zu füllen, während ihr Ende unter dem Bild liegt: Fahrt von
-               unten, transform + opacity, --up-t-3 / --up-t-2, easeOutExpo (--up-ease-expo)
-Hinaus         füllt sie nicht mehr (zurück zum Chart): dieselbe Fahrt nach unten, ERST DANACH
-               zurück in den Fluss (dort liegt er unter dem Bild); Umkehr mittendrin kehrt von
-               der Stelle um (Übergänge, keine Keyframes)
+Wann           nur ab 1000 breit (klebBreit); auf dem Telefon klebt der Fuß NIE, dort nur
+               Leiste und Spaltenkopf (8b)
+Schwelle       Oberkante der Tabelle (.up-table) im sichtbaren Teil des Scrollbereichs: herein
+               bei höchstens 50 %, hinaus erst über 70 % (Hysterese, FUSS_REIN/FUSS_RAUS) –
+               gemessen Citations 1440x900 herein bei scrollTop 190, hinaus bei 8 (vorher beides
+               ~578: 5px zurück nahmen ihn weg), 1100x800 herein 585, hinaus 423
+Erster Blick   Seite geladen, Reiter gewechselt, Karten- zurück zur Tabellenansicht: der Fuß
+               steht sofort, wo er hingehört, ohne Fahrt (All Prompts liegt schon beim Laden
+               über der Schwelle)
+Herein         kommt die Tabelle über die Schwelle, während ihr Ende unter dem Bild liegt: Fahrt
+               von unten, transform + opacity, --up-t-3 / --up-t-2, easeOutExpo (--up-ease-expo)
+Hinaus         fällt sie unter die Schwelle (zurück zum Chart): dieselbe Fahrt nach unten, ERST
+               DANACH zurück in den Fluss (dort liegt er unter dem Bild); Umkehr mittendrin
+               kehrt von der Stelle um (Übergänge, keine Keyframes)
 Ende           Wechsel ohne Bewegung (sticky selbst); beide Teile lösen sich im selben Bild
 Weg            --up-fuss-weg: Höhe beider Teile + 24, aber nie mehr als Inhalt unter ihrem Platz
                steht (sonst verlängert die Fahrt die Seite, der Balken zuckt; gemessen 57px)
 Lage           Pagination bottom 0, Gesamtzeile darüber (--up-fuss-unter = Pagination + Linie);
                die Linie dazwischen zeichnet die Pagination (0 -1px 0 --vc-border)
 Grund          deckend: Gesamtzeile wie bisher, Pagination --up-surface; sie läuft rechts mit aus
-Schatten       NUR wenn er wirklich klebt (.is-fuss-klebt; Marke .up-fuss-marke unter dem
-               Kasten liest den natürlichen Platz): --up-e-3 nach oben gespiegelt, auf dem
-               obersten Teil (ohne Gesamtzeile die Pagination, .is-fuss-ohne-summe)
+Schatten       NUR wenn er wirklich klebt (.is-fuss-klebt; die Marke .up-fuss-marke, ein Kind
+               der Wurzel direkt vor der Pagination, liest den natürlichen Platz – vor der
+               Pagination und nicht hinter dem Kasten, weil der in der Gruppenspalte von
+               All Prompts in einer Zeile neben der Gruppenliste steht): --up-e-3 nach oben
+               gespiegelt, auf dem obersten Teil (ohne Gesamtzeile die Pagination,
+               .is-fuss-ohne-summe)
+Gruppenspalte  All Prompts mit is-groups-wide: die Gruppenliste steht im Fluss neben dem Kasten
+               (kein eigener Scrollbereich mehr), ihr Kopf klebt neben dem Spaltenkopf
 z              4 (unter Spaltenkopf 5 und Leiste 6)
 Bewegung aus   prefers-reduced-motion: dieselben Zustände ohne Fahrt
 ```
@@ -2388,9 +2413,9 @@ Komponente wirklich zusätzlich hat (eine Zeilenhöhe, eine Index-Zelle, ein Act
 | Themenschalter (5) | `UC.themeSchalterHtml({ klein, wahl })` |
 | Kopfzeichen im Spaltenkopf (8a) | `UC.kopfZeichenHtml(name)`, `UC.kopfZeichen(th, name)` |
 | Filter der einen Leiste (8b) | `UC.makeLeistenFilter(root, { instanceId, arten })` |
-| Feste Höhe der flachen Tabelle (8a) | `UC.makeFestHoehe(root, { min, kopf, fuss })` |
+| Feste Höhe der flachen Tabelle (8a, seit 16.10. ungenutzt – stattdessen der klebende Fuß) | `UC.makeFestHoehe(root, { min, kopf, fuss })` |
 | Leiste über dem Band (8b) | `UC.bandUnterLeiste(root, band, { kopf })` |
-| Klebender Fuß (8e) | `data-kleb-fuss="yes"` an der Wurzel (mit `UC.makeSticky`), direkt `UC.klebFuss(root)` |
+| Klebender Fuß (8e) – auch Leiste und Spaltenkopf auf dem Telefon (8b) | `data-kleb-fuss="yes"` an der Wurzel (mit `UC.makeSticky`), direkt `UC.klebFuss(root)` |
 | Gesamtzeile (8e) | `UC.makeZaehlZeile({ root, nach, praefix, instanceId, spalten, laedt, anzahl, rechnen, quelle, cols })`, darunter `UC.makeSumZeile`, `UC.sumPaarHtml` |
 | Offenes Band (8f) | `UC.bandTeile(band, teile)` (mit `teile.auge`), `UC.bandAus(band, aus, { id, setzen })` setzt den Umschalter im Seitenkopf, `UC.bandSchalterHtml({ aus, id, klein })`, `UC.bandAusGemerkt(id)`, `UC.bandAusMerken(id, aus)` |
 | Bubble-Klempnerei: Root-Registry, iframe-Forwarder, Wheel, Init-Kaskade, Stub-Replay | `UC.makeMount({rootClass, ctrlProp, resolveLocal, queue, initRoot, api, forwardShape})` |

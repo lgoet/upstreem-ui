@@ -1463,9 +1463,13 @@
        schaltet die feste Hoehe dann selbst ab; render() plant nach jedem Wechsel neu.
        seiteZuerst (15.10. spaet): Seitenkopf und Reiter scrollen weg, bis die Leiste klebt, wie im
        Reiter All Prompts daneben. */
+    /* Der klebende Fuss gewinnt (16.10.): mit data-kleb-fuss="yes" (prompts-page.js setzt es)
+       keine feste Hoehe -- EIN Scrollbereich, Leiste oben, Gesamtzeile und Pagination unten wie
+       auf Citations. Gemeldet war das Stocken des Hochscrolls an Zeile 1 (core, makeFestHoehe).
+       data-festhoehe allein behaelt seine Bedeutung fuer einen Gastgeber, der es so will. */
     var _fest = null;
     function festPlanen(){ if (_fest) _fest.planen(); }
-    if (root.getAttribute("data-festhoehe") === "yes" && UC.makeFestHoehe)
+    if (root.getAttribute("data-festhoehe") === "yes" && root.getAttribute("data-kleb-fuss") !== "yes" && UC.makeFestHoehe)
       _fest = UC.makeFestHoehe(root, { kopf: elHead, fuss: root.querySelector(".up-foot"), seiteZuerst: true });
 
     var _tips = UC.makeTooltips(root, function(){ return isDark; });

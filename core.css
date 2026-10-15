@@ -3608,6 +3608,9 @@
     /* ---------- table ---------- */
     .up-box { border: 1px solid var(--vc-border); background: var(--vc-bg); border-radius: var(--up-r-2xl); overflow: hidden; }
     /* ---------- sticky header (default on >=1000px page width, off via data-sticky="no") ----------
+       Seit dem 16.10. auch darunter, aber nur fuer die eine Leiste (data-leiste) und Tabellen mit
+       klebendem Fuss (data-kleb-fuss): dort kleben Leiste und Spaltenkopf auf dem Telefon wie breit
+       (makeSticky, applySticky); der Fuss bleibt dort im Fluss (klebFuss, klebBreit).
        Both the component head and the column header stick to the scrolling ancestor. overflow:hidden
        on .up-box would trap the column header, so in sticky mode it becomes visible and the visible
        border moves onto the header and body (see below). Backgrounds must be OPAQUE or rows bleed
@@ -4124,9 +4127,11 @@
     .up-root.has-leistenband.up-sticky.is-geklebt > .up-head::after { opacity: 1; }
 
     /* ---------- DER KLEBENDE FUSS (data-kleb-fuss="yes", core.js klebFuss, 16.10.) ----------
-       Gesamtzeile und Pagination kleben unten am Scrollbereich, sobald die Tabelle den Bildschirm
-       fuellt (ihr Spaltenkopf klebt), und fahren dabei herein; am Ende der Tabelle stehen sie an
-       ihrem Platz. Die Zustaende setzt core.js, hier steht nur, wie sie aussehen:
+       Gesamtzeile und Pagination kleben unten am Scrollbereich, sobald die Tabelle die untere
+       Haelfte des Bildes einnimmt (hinaus erst wieder ueber 70 %, core.js FUSS_REIN/FUSS_RAUS,
+       16.10. abends), und fahren dabei herein; am Ende der Tabelle stehen sie an ihrem Platz. Nur
+       ab 1000 breit -- auf dem Telefon nie. Die Marke steht als Kind der Wurzel vor der
+       Pagination. Die Zustaende setzt core.js, hier steht nur, wie sie aussehen:
          .is-fuss-an          sticky (Gesamtzeile ueber der Pagination: --up-fuss-unter)
          .is-fuss-weg         unten hinaus gefahren (--up-fuss-weg, beide als ein Block)
          .is-fuss-still       ohne Uebergang (Startpunkt einer Fahrt, Rueckkehr in den Fluss)

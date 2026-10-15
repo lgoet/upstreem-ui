@@ -15285,30 +15285,58 @@
      Seitenaufbau"): "sobald die Tabelle unten voll im Bild ist, dann die bottom Summary
      Row/Pagination und so, solange das Verhalten, wie die bottom sticky parts der Tabelle
      reinkommen, smooth bleibt." Gesamtzeile (.up-sumrow) und Pagination (.up-foot) kleben unten
-     am Scrollbereich -- ABER ERST, WENN DIE TABELLE DEN BILDSCHIRM FUELLT. Solange Kopf, Reiter
-     oder Chart noch zu sehen sind, stehen sie an ihrem Platz am Ende der Tabelle; am Ende der
-     Tabelle kehren sie von selbst dorthin zurueck (das ist sticky selbst, ohne Sprung).
-     "Die Tabelle fuellt den Bildschirm" heisst: ihr Spaltenkopf klebt, er steht also tiefer in
-     .up-table als in Ruhe. Das gibt es nur mit klebendem Kopf (.up-sticky, ab 1000 breit) --
-     darunter klebt nichts, wie bei jeder Tabelle der App.
+     am Scrollbereich -- ABER ERST, WENN DIE TABELLE DIE UNTERE HAELFTE DES BILDES EINNIMMT.
+     Solange der Chart noch den groessten Teil zeigt, stehen sie an ihrem Platz am Ende der
+     Tabelle; am Ende der Tabelle kehren sie von selbst dorthin zurueck (das ist sticky selbst,
+     ohne Sprung). Seit dem 16.10. abends fuer alle Tabellen mit der einen Leiste: Citations,
+     Brands > Tracked, All Prompts, Responses, Teams -- die feste Kastenhoehe (makeFestHoehe) ist
+     dort abgeloest.
+     DIE SCHWELLE (16.10. abends, gemeldet: "muss frueher reinkommen, nicht erst wenn die Tabelle
+     ganz sichtbar ist ... sobald man nur etwas hochscrollt, verschwindet der Bereich sofort
+     wieder"). Vorher hiess "fuellt": ihr Spaltenkopf klebt -- rein und raus an DERSELBEN
+     Stelle, und 5px zurueck nahmen den Fuss wieder weg (gemessen Citations 1440x900: rein bei
+     scrollTop 580, raus bei 575). Jetzt zaehlt die Oberkante der Tabelle (.up-table, sie selbst
+     klebt nie) im sichtbaren Teil des Scrollbereichs:
+       rein   bei hoechstens FUSS_REIN (50 %) der Hoehe -- die Tabelle nimmt die untere Haelfte ein;
+       raus   erst ueber FUSS_RAUS (70 %) -- die Luecke dazwischen ist das Zurueckscrollen, das der
+              Fuss aushaelt: 180px bei 900 hoch, 160 bei 800, 120 noch bei 600. Darueber stuende
+              der Fuss (Gesamtzeile und Pagination, 97px) auf weniger als 30 % Tabelle und deckte
+              mehr als ein Drittel davon zu -- dort gehoert der Platz wieder dem Chart darueber.
+     Ein Prozentsatz und keine Pixelzahl: dieselbe Geste soll bei jeder Fensterhoehe dasselbe tun.
+     NUR AB 1000 BREIT (klebBreit). Darunter klebt seit dem 16.10. zwar die Leiste samt
+     Spaltenkopf (makeSticky), der Fuss aber nie ("auf Mobile soll die Bottom Bar NICHT kleben"):
+     auf dem Telefon naehme er unten ein Achtel des Bildes, das die Leiste oben schon nimmt.
      NUR ZWEI UEBERGAENGE BEWEGEN SICH (transform und opacity, --up-t-3, easeOutExpo):
-       aus -> an   die Tabelle beginnt zu fuellen, waehrend ihr Ende noch unter dem Bild liegt:
-                   der Fuss faehrt von unten herein. Liegt das Ende schon im Bild, aendert sich
-                   nichts Sichtbares -- er steht dann ohnehin an seinem Platz.
-       an -> aus   die Tabelle fuellt nicht mehr (zurueck zum Chart), der Fuss klebt aber gerade:
-                   er faehrt nach unten hinaus, und ERST DANACH steht er wieder im Fluss, dort
-                   liegt er dann unter dem Bild. Kehrt die Richtung mittendrin um, kehrt die
+       aus -> an   die Tabelle kommt ueber die Schwelle, waehrend ihr Ende noch unter dem Bild
+                   liegt: der Fuss faehrt von unten herein. Liegt das Ende schon im Bild, aendert
+                   sich nichts Sichtbares -- er steht dann ohnehin an seinem Platz.
+       an -> aus   die Tabelle faellt unter die Schwelle (zurueck zum Chart), der Fuss klebt aber
+                   gerade: er faehrt nach unten hinaus, und ERST DANACH steht er wieder im Fluss,
+                   dort liegt er dann unter dem Bild. Kehrt die Richtung mittendrin um, kehrt die
                    Bewegung von der Stelle aus um, an der sie gerade ist -- darum Uebergaenge und
                    keine Keyframes, die von vorn anfingen.
-     Der Wechsel am Ende der Tabelle bewegt nichts; nur der Schatten blendet.
+     Der Wechsel am Ende der Tabelle bewegt nichts; nur der Schatten blendet. Beim ERSTEN BLICK
+     (Seite geladen, Reiter gewechselt, Gesamtzeile erst jetzt da) faehrt nichts: der Fuss steht
+     sofort, wo er hingehoert -- auf All Prompts liegt die Tabelle schon beim Laden ueber der
+     Schwelle, und eine Fahrt ohne Scrollen sahe aus wie etwas, das nachlaedt.
      Linie und Schatten NUR, solange er wirklich klebt (.is-fuss-klebt): sein natuerlicher Platz
-     liegt dann unter dem Bild. Den liest eine unsichtbare Marke direkt unter dem Kasten
-     (.up-fuss-marke) -- am klebenden Element selbst laesst er sich nicht mehr ablesen.
+     liegt dann unter dem Bild. Den liest eine unsichtbare Marke direkt VOR DER PAGINATION
+     (.up-fuss-marke, ein Kind der Wurzel) -- am klebenden Element selbst laesst er sich nicht
+     mehr ablesen. Vor der Pagination und nicht hinter dem Kasten: in der Gruppenspalte der
+     Prompt-Tabelle (is-groups-wide) steht der Kasten in einer Zeile neben der Gruppenliste, eine
+     Marke dort laege oben in dieser Zeile statt unter ihr. Das Ende der Gesamtzeile allein liest
+     sich am Kasten (er selbst klebt nie).
      Gelesen wird im Scroll-Durchlauf der Leiste (klebPruefenAlle), je Bild hoechstens einmal:
      vier Lesungen je Tabelle, geschrieben wird nur bei einem Wechsel. Die Hoehen von Fuss und
      Gesamtzeile kommen aus einem Groessenwaechter, nicht aus dem Scrollen. Bewegung reduziert
      (prefers-reduced-motion): dieselben Zustaende, ohne Fahrt. */
   var FUSS_WURZELN = [];
+  var FUSS_REIN = 0.5, FUSS_RAUS = 0.7;
+  /* Ab welcher Breite Fuss und feste Kastenhoehe gelten -- dieselbe Grenze wie der klebende Kopf
+     jeder Tabelle (makeSticky). */
+  function klebBreit(){
+    return (window.innerWidth || document.documentElement.clientWidth || 0) >= 1000;
+  }
   function fussDauer(root){
     var v = 260;
     try { v = parseFloat(window.getComputedStyle(root).getPropertyValue("--up-t-3")) || 260; } catch(e){}
@@ -15346,11 +15374,27 @@
      121 Weg unter einer Pagination, unter der 64 Luft stehen, verlaengerten die Seite fuer die
      Dauer der Fahrt um 57px (gemessen 16.10., scrollHeight 773 -> 830) -- der Balken zuckte. Der
      Platz wird nur in Ruhe gemessen (kein Teil verschoben), sonst zaehlte die Fahrt mit. */
+  /* Die Marke steht als Kind der Wurzel direkt vor der Pagination; ohne Pagination hinter dem
+     Kasten bzw. der Huelle, mit der er in der Wurzel steht. Nachgezogen, wenn eine Komponente
+     ihre Pagination neu anlegt -- bewegt wird nur, was nicht schon steht. */
+  function fussMarkeStellen(w){
+    var m = w.marke, f = w.foot;
+    if (f && f.parentNode === w.root){ if (m.nextSibling !== f) w.root.insertBefore(m, f); return; }
+    var a = w.box;
+    while (a.parentNode && a.parentNode !== w.root) a = a.parentNode;
+    if (a.parentNode === w.root && m.previousSibling !== a) w.root.insertBefore(m, a.nextSibling);
+  }
+  /* Das natuerliche Ende des untersten Teils: die Pagination steht direkt unter der Marke, die
+     Gesamtzeile allein endet ueber der Linie des Kastens. */
+  function fussEnde(w, footH, rand){
+    return footH > 0 ? w.marke.getBoundingClientRect().top + footH : w.box.getBoundingClientRect().bottom - rand;
+  }
   function fussMessen(w){
     var r = w.root;
     if (!r.isConnected) return;
     if (!w.foot || !w.foot.isConnected) w.foot = r.querySelector(":scope > .up-foot");
     if (!w.sum || !w.sum.isConnected) w.sum = w.box.querySelector(".up-sumrow");
+    fussMarkeStellen(w);
     [w.foot, w.sum].forEach(function(el){
       if (el && w.ro && w.gesehen.indexOf(el) < 0){ w.gesehen.push(el); w.ro.observe(el); }
     });
@@ -15359,7 +15403,7 @@
     var unter = footH ? footH + rand : 0;
     if (w.phase === "aus" && (footH || sumH) && r.getClientRects().length){
       var sc = fussScrollerHolen(w);
-      var ende = w.marke.getBoundingClientRect().top + (footH ? footH : -rand);
+      var ende = fussEnde(w, footH, rand);
       var inhaltEnde = sc ? sc.getBoundingClientRect().top + (sc.clientTop || 0) - sc.scrollTop + sc.scrollHeight
                           : document.documentElement.scrollHeight - (window.pageYOffset || 0);
       w.platz = Math.max(0, Math.floor(inhaltEnde - ende));
@@ -15381,9 +15425,9 @@
     var marke = document.createElement("div");
     marke.className = "up-fuss-marke";
     marke.setAttribute("aria-hidden", "true");
-    box.parentNode.insertBefore(marke, box.nextSibling);
+    /* Eingehaengt erst in fussMessen (fussMarkeStellen), wenn die Pagination gesucht ist. */
     var w = { root: root, box: box, marke: marke, phase: "aus", uhr: 0, footH: -1, sumH: -1, rand: -1, weg: -1,
-              platz: null, sc: undefined, scPolster: 0, gesehen: [], ro: null };
+              platz: null, sc: undefined, scPolster: 0, gesehen: [], ro: null, imBild: false };
     FUSS_WURZELN.push(w);
     /* Der Kasten waechst mit jeder Zeile und mit der Gesamtzeile, die oft erst nach dem Aufbau
        entsteht (makeZaehlZeile): sein Waechter findet sie und meldet das Ende der Tabelle neu,
@@ -15399,20 +15443,23 @@
   function fussLesen(){
     if (!FUSS_WURZELN.length) return null;
     FUSS_WURZELN = FUSS_WURZELN.filter(function(w){ return w.root.isConnected; });
+    var breit = klebBreit();
     return FUSS_WURZELN.map(function(w){
-      var r = w.root;
-      if (!r.classList.contains("up-sticky") || !(w.sumH > 0 || w.footH > 0)) return { w: w, fuellt: false, unten: false };
+      var r = w.root, nichts = { w: w, fuellt: false, unten: false, bereit: false };
+      if (!breit || !r.classList.contains("up-sticky") || !(w.sumH > 0 || w.footH > 0)) return nichts;
       if (!w.thead || !w.thead.isConnected){ w.thead = w.box.querySelector(".up-thead"); w.table = w.thead && w.thead.parentElement; }
-      if (!w.thead || !w.table) return { w: w, fuellt: false, unten: false };
+      /* Ein ausgeblendeter Kasten (Kartenansicht der Responses, Reiter zu) hat das Rechteck 0 --
+         das hiesse "ganz oben" und klebte den Fuss an eine Tabelle, die es nicht zu sehen gibt. */
+      if (!w.thead || !w.table || !w.box.getClientRects().length) return nichts;
       fussScrollerHolen(w);
-      var unterkante;
-      if (w.sc){ var s = w.sc.getBoundingClientRect(); unterkante = s.top + (w.sc.clientTop || 0) + w.sc.clientHeight - w.scPolster; }
-      else unterkante = window.innerHeight || document.documentElement.clientHeight || 0;
-      var fuellt = w.thead.getBoundingClientRect().top - w.table.getBoundingClientRect().top > 0.5;
-      /* Das natuerliche Ende des untersten Teils: die Pagination steht direkt unter der Marke,
-         die Gesamtzeile allein endet ueber der Linie des Kastens. */
-      var ende = w.marke.getBoundingClientRect().top + (w.footH > 0 ? w.footH : -w.rand);
-      return { w: w, fuellt: fuellt, unten: ende > unterkante + 0.5 };
+      var oben, unterkante;
+      if (w.sc){ var s = w.sc.getBoundingClientRect(); oben = s.top + (w.sc.clientTop || 0); unterkante = oben + w.sc.clientHeight - w.scPolster; }
+      else { oben = 0; unterkante = window.innerHeight || document.documentElement.clientHeight || 0; }
+      /* Die Schwelle haengt am Zustand: wer klebt, geht erst bei FUSS_RAUS (siehe oben). Waehrend
+         der Fahrt hinaus gilt wieder die Schwelle hinein -- dorthin kehrt sie um. */
+      var anteil = w.phase === "an" ? FUSS_RAUS : FUSS_REIN;
+      var fuellt = w.table.getBoundingClientRect().top - oben <= anteil * (unterkante - oben);
+      return { w: w, fuellt: fuellt, unten: fussEnde(w, w.footH, w.rand) > unterkante + 0.5, bereit: true };
     });
   }
   /* Den Stil jetzt festschreiben: der Startpunkt einer Fahrt muss berechnet sein, bevor der
@@ -15443,24 +15490,27 @@
     clearTimeout(w.uhr);
     w.uhr = setTimeout(function(){ if (w.phase === "raus") fussAus(w); }, fussDauer(w.root) + 40);
   }
-  function fussStellen(w, fuellt, unten){
+  function fussStellen(w, fuellt, unten, bereit){
     var cl = w.root.classList;
+    /* Der erste Blick ohne Fahrt (siehe oben): bereit heisst gemessen und zu sehen. */
+    var fahrt = !!bereit && w.imBild && fussBewegt();
+    w.imBild = !!bereit;
     if (fuellt){
       if (w.phase === "aus"){
-        if (unten && fussBewegt()) fussRein(w);
+        if (unten && fahrt) fussRein(w);
         else { cl.add("is-fuss-an"); w.phase = "an"; }
       } else if (w.phase === "raus"){
         clearTimeout(w.uhr); cl.remove("is-fuss-weg"); w.phase = "an";
       }
     } else if (w.phase === "an"){
-      if (unten && fussBewegt()) fussRaus(w); else fussAus(w);
+      if (unten && fahrt) fussRaus(w); else fussAus(w);
     }
     var klebt = w.phase === "an" && unten;
     if (klebt !== cl.contains("is-fuss-klebt")) cl.toggle("is-fuss-klebt", klebt);
   }
   function fussSchreiben(liste){
     if (!liste) return;
-    liste.forEach(function(z){ fussStellen(z.w, z.fuellt, z.unten); });
+    liste.forEach(function(z){ fussStellen(z.w, z.fuellt, z.unten, z.bereit); });
   }
 
   /* DIE LEISTE UEBER DEM BAND (16.10., Variante A der Leinwand "Citations Seitenaufbau", fuer
@@ -15580,8 +15630,16 @@
       _kopfGesetzt = false;
     }
     function applySticky(){
-      var pageW = window.innerWidth || document.documentElement.clientWidth || 0;
-      var on = root.getAttribute("data-sticky") !== "no" && pageW >= 1000;
+      /* AUCH AUF DEM TELEFON (16.10., "Top schon -- das sollte ohnehin so sein: Filter und
+         Toolbar"): die eine Leiste (data-leiste) und jede Tabelle mit klebendem Fuss
+         (data-kleb-fuss -- Teams hat keine data-leiste, ihre Werkzeugleiste ist dort die Leiste)
+         kleben unter 1000 genauso, Leiste und Spaltenkopf. Der Spaltenkopf geht dort ohne Bruch
+         mit: schmal weichen die Spalten nach ihrer art (SPALTEN_ART), der Kasten scrollt nicht
+         waagrecht (gemessen 375 breit: scrollWidth = clientWidth in allen sechs Tabellen). Der Fuss
+         klebt dort nie (klebBreit in fussLesen). Alle anderen Tabellen bleiben wie bisher erst ab
+         1000 klebend. */
+      var schmal = root.getAttribute("data-leiste") === "yes" || root.getAttribute("data-kleb-fuss") === "yes";
+      var on = root.getAttribute("data-sticky") !== "no" && (klebBreit() || schmal);
       root.classList.toggle("up-sticky", on);
       /* Always unclip, regardless of "on" -- sticky positioning is the reason this call exists
          here, but topbar dropdowns (position:absolute, not sticky) need the same escape from a
@@ -15698,7 +15756,15 @@
      gehoert dazu: ohne ihn finge der Kasten das Rad schon in Ruhe ab, und der Seitenkopf ginge
      ueber der Tabelle nie weg.
      cfg.rollt: Selektor weiterer Flaechen der Wurzel, die wie der Kasten in sich scrollen (die
-     Gruppenliste der Prompt-Tabelle) -- dort gilt derselbe Rad-Uebergang. */
+     Gruppenliste der Prompt-Tabelle) -- dort gilt derselbe Rad-Uebergang.
+     SEIT DEM 16.10. RUFT KEINE SEITE DER APP DAS MEHR AUF. All Prompts, Responses und Teams kleben
+     wie Citations und Brands ueber den klebenden Fuss (data-kleb-fuss, klebFuss): EIN
+     Scrollbereich (#main), Leiste oben, Gesamtzeile und Pagination unten. Gemeldet: "wenn man
+     runtergescrollt ist und dann hochscrollt, stockt der Hochscroll einmal oben, wenn die Tabelle
+     bei Row 1 angekommen ist" -- das Rad bleibt am Kasten haengen, bis eine neue Geste beginnt
+     (gemessen Teams 1440x900: Kasten 390 -> 0, #main blieb bei 48). Das liegt am Scrollbereich im
+     Scrollbereich selbst, kein Rad-Uebergang behebt es ganz. Der Baustein bleibt fuer den Vertrag
+     stehen (data-festhoehe in responses-table.js und teams.js, dort nur noch ohne klebenden Fuss). */
   /* DIE FILTER DER EINEN LEISTE (15.10., zuerst in der Prompt-Tabelle, abends nach core gehoben
      fuer Responses und alle weiteren Tabellen). Eine Tabelle hat Filter, die DATEN aendern ("<Marke>
      mentioned?", Mentioned brands, Rank, Sentiment ...). In der einen Leiste stehen sie nicht mehr
@@ -16066,7 +16132,9 @@
     }
     function messen(){
       if (!root.isConnected) return;
-      if (!root.classList.contains("up-sticky")){ aus(); return; }
+      /* klebBreit dazu (16.10.): .up-sticky gibt es seitdem fuer die eine Leiste auch unter 1000,
+         die feste Hoehe aber weiter nur breit (Daumenfalle, siehe oben). */
+      if (!root.classList.contains("up-sticky") || !klebBreit()){ aus(); return; }
       /* messbar und nicht istSichtbar: die Ansicht blendet mit Deckkraft 0 auf, und genau in dem
          Moment meldet sich der Groessenwaechter -- danach kommt kein Anlass mehr. Messen geht bei
          Deckkraft 0 sehr wohl, nur in einer geparkten Ansicht nicht. */
