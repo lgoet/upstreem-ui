@@ -194,6 +194,14 @@
       var auf = feld.hasAttribute("hidden");
       if (auf) feld.removeAttribute("hidden"); else feld.setAttribute("hidden", "");
       knopf.setAttribute("aria-expanded", auf ? "true" : "false");
+      /* Ins Bild holen (15.10. gemeldet: "der Knopf macht nichts"). Er tat es -- aber der Nachweis
+         klappt UNTER dem Knopf auf, und der steht am Ende der Seite: gemessen lag die Oberkante bei
+         846px in einem 860px hohen Fenster, zu sehen war nichts. Jetzt faehrt die Seite so weit,
+         dass er ganz dasteht; eingeblendet wird er in der CSS (.ulh-fuss-nachweis). */
+      if (auf) requestAnimationFrame(function(){
+        var ruhig = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        try { feld.scrollIntoView({ behavior: ruhig ? "auto" : "smooth", block: "end" }); } catch (e){ feld.scrollIntoView(false); }
+      });
     });
   }
 

@@ -3866,7 +3866,9 @@
     var kern = window.UpstreemCore || {};
     var du = MARKEN[0], wett = MARKEN.filter(function(m){ return m.id === REISE_WETT; })[0];
     function saeule(wert, kl, i, j){
-      return '<div class="ulh-rs-s ' + kl + '" style="--rs-i:' + i + ';--rs-j:' + j + '">' +
+      /* --rs-k: die Stelle in der Reihe von links nach rechts (Acme, BMW, Acme, BMW ...) -- danach
+         staffelt die CSS den Auftritt, eine Saeule nach der anderen. */
+      return '<div class="ulh-rs-s ' + kl + '" style="--rs-i:' + i + ';--rs-j:' + j + ';--rs-k:' + (i * 2 + j) + '">' +
         '<span class="ulh-rs-w">' + eine(wert) + '%</span>' +
         '<span class="ulh-rs-k" style="--rs-h:' + (wert / REISE_MAX * 100).toFixed(1) + '%"></span>' +
       '</div>';
@@ -3960,7 +3962,17 @@
       }, { threshold: 0.2 });
       b.observe(el);
     }
-    sobaldSichtbar(rs, function(an){ if (an) rs.classList.add("is-da"); });
+    /* Die Saeulen starten erst, wenn der Chart zu 60 Prozent im Bild steht (15.10.: "keine
+       wirkliche Appear-Animation"). Bei 20 Prozent liefen sie, waehrend die Karte selbst noch
+       einblendete -- man sah das Ende, nicht das Wachsen. Ein eigener Beobachter, weil die
+       Branded-Karte weiter bei 20 Prozent beginnen soll. */
+    if (ruhig || typeof IntersectionObserver === "undefined") rs.classList.add("is-da");
+    else {
+      var rsBeo = new IntersectionObserver(function(e){
+        if (e[0] && e[0].isIntersecting){ rs.classList.add("is-da"); rsBeo.disconnect(); }
+      }, { threshold: 0.6 });
+      rsBeo.observe(rs);
+    }
     if (!br) return true;
     var wert = br.querySelector(".ulh-br-wert .up-sent-val") || br.querySelector(".ulh-br-wert");
     var balken = br.querySelector(".ulh-br-wert .up-sent-dot");
