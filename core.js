@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261150;
+  var BUILD = 20261153;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -13128,6 +13128,56 @@
     return { selectPage: selectPage, positionUnderline: positionUnderline };
   }
 
+  /* ---------- Der Umschalter der Seitenleiste im Seitenkopf (16.10. angefordert) ----------
+     "Sidebar-Button im Mobile: in die richtige Topbar, ganz links, nicht floaten. Die Elemente
+     darin machen Platz." Bis hierher schwebte auf dem Telefon ein eigener Knopf der Seitenleiste
+     (.usn-fab, fixed bei 0/32) ueber der Seite -- seit die Leiste der Tabellen auch dort oben
+     klebt, lag er auf der linken unteren Ecke ihres ersten Knopfs.
+     Jetzt steht er im Fluss der Kopfzeile: erstes Kind von .up-ph-top, vor der Krume, und er
+     scrollt mit ihr weg. Gezeigt wird er nur, wenn die Seitenleiste ganz ausgeblendet ist
+     (sidebar.js setzt html[data-usn-modus="hint"], heute unter 500px Fensterbreite); auf dem
+     Desktop ist er display: none und nimmt keinen Platz.
+     Der Klick geht als Ereignis an window und nicht an eine Funktion der Seitenleiste: core
+     laedt vor sidebar.js und kennt sie nicht, und ein Ereignis an window erreicht sie auch dann,
+     wenn eine Seite Klicks in ihrem Kopf anhaelt. Die Leiste macht damit, was ihr eigener
+     Knopf machte (auf, zu, Schleier, Escape -- alles dort).
+     .up-ph-iconbtn wie Refresh und Docs in derselben Zeile; das Zeichen ist das der Leiste
+     (panelLeft), in der Strichstaerke der Nachbarn (1.8, dashboard-page.js). Das Etikett bleibt
+     englisch wie die ganze Seitenleiste (sidebar.js, kein Katalog). */
+  function seitenleistenKnopf(){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "up-ph-iconbtn up-ph-seitenleiste";
+    b.setAttribute("aria-label", "Open navigation");
+    b.innerHTML = icon("panelLeft", 1.8);
+    b.addEventListener("click", function(){
+      try { window.dispatchEvent(new CustomEvent("up-seitenleiste", { detail: { aktion: "umschalten" } })); } catch(e){}
+    });
+    /* Der Seitenleiste sagen, dass es in einer Ansicht jetzt einen Kopfknopf gibt -- sie zeigt
+       ihren schwebenden Knopf nur noch, wo keiner ist (sidebar.js kopfKnopfDa). Einen Takt
+       spaeter: der Knopf wird erst nach dieser Rueckgabe eingehaengt. */
+    setTimeout(function(){
+      try { window.dispatchEvent(new CustomEvent("up-seitenleiste-knopf")); } catch(e){}
+    }, 0);
+    return b;
+  }
+  /* Haengt den Umschalter vor das Kind von zeile, das el enthaelt. Nur in einer Ansicht der App
+     ([id^="view-"]): die Landingpage fuehrt Seitenkopf und Seitenleiste im Schaufenster, nimmt dort
+     der Leiste ihre Telefon-Handhaben ab (landing-hero.js leisteHolen) und haelt sie eingeklappt --
+     ein Umschalter in ihrem Kopf haette nichts zu oeffnen. Einmal je Zeile. */
+  function seitenleistenKnopfEinsetzen(zeile, el){
+    if (!zeile || !el || !zeile.contains(el) || zeile === el) return null;
+    if (!zeile.closest || !zeile.closest('[id^="view-"]')) return null;
+    var da = zeile.querySelector(":scope > .up-ph-seitenleiste");
+    if (da) return da;
+    var vor = el;
+    while (vor.parentNode && vor.parentNode !== zeile) vor = vor.parentNode;
+    if (vor.parentNode !== zeile) return null;
+    var b = seitenleistenKnopf();
+    zeile.insertBefore(b, vor);
+    return b;
+  }
+
   /* ---------- Brotkrumen im Seitenkopf (29.09. angefordert) ----------
      "in der heading oben auch so kleine breadcrumbs, je nach dem wo in der page navigation man
      sich aktuell befindet": das Zeichen der Seite, ihr Name, ein Chevron und die Unterseite.
@@ -13208,6 +13258,29 @@
                 letzte, i + 1, !!klicks[i + 1]);
       });
       h.innerHTML = html;
+      krumeEinpassen();
+    }
+    /* DIE KRUME MACHT PLATZ FUER DEN UMSCHALTER DER SEITENLEISTE (16.10.). Steht er links in der
+       Zeile (nur auf dem Telefon, html[data-usn-modus="hint"]), fehlen der Krume 32px -- gemessen
+       bei 375 endete "Prompt Insights > All Prompts" in "Prompt ... > All Pr...". Dann faellt
+       zuerst der NAME der ersten Stufe weg, ihr Zeichen bleibt: "Zeichen > All Prompts". Gemessen
+       und nicht an einer Breite festgemacht (wie makePageNav einpassen): wo die ganze Krume passt,
+       bleibt sie ganz. Gekuerzt heisst: der Text eines Namens ist breiter als sein Kasten, mit
+       Range gemessen (scrollWidth rundet, und das "..." steht schon bei 0,09px Ueberhang).
+       Nur im hint-Zustand gemessen -- sonst wird nur die Klasse geloescht, die CSS greift dort
+       ohnehin nicht, und der Desktop rechnet nichts dazu. Eine einzelne Stufe (Dashboard,
+       Opportunities) hat nichts abzugeben und bleibt, wie sie ist. */
+    function krumeEinpassen(){
+      if (!h.isConnected) return;
+      var war = h.classList.contains("is-knapp");
+      var hint = document.documentElement.getAttribute("data-usn-modus") === "hint";
+      if (!hint || h.querySelectorAll(".up-ph-crumb").length < 2){ if (war) h.classList.remove("is-knapp"); return; }
+      if (war) h.classList.remove("is-knapp");
+      var zuViel = [].some.call(h.querySelectorAll(".up-ph-crumbname"), function(n){
+        var rg = document.createRange(); rg.selectNodeContents(n);
+        return rg.getBoundingClientRect().width > n.getBoundingClientRect().width + 0.01;
+      });
+      if (zuViel) h.classList.add("is-knapp");
     }
     h.addEventListener("click", function(e){
       var b = e.target && e.target.closest ? e.target.closest("[data-up-krume]") : null;
@@ -13228,7 +13301,16 @@
       if (nav && nav.__upStrichNeu) nav.__upStrichNeu();
     }
     root.classList.add("has-crumbs");
+    /* Der Umschalter der Seitenleiste ganz links in der Kopfzeile (seitenleistenKnopf oben) -- hier,
+       weil JEDER Seitenkopf der App durch diese Funktion geht, auch der Platzhalter einer Ansicht
+       (seitenVorab): der Knopf steht also schon, bevor die Seite selbst da ist, und springt nicht.
+       VOR dem ersten Zeichnen, damit krumeEinpassen schon mit ihm misst. */
+    seitenleistenKnopfEinsetzen(h.closest ? h.closest(".up-ph-top") : null, h);
     zeichnen();
+    /* Erscheint oder verschwindet der Umschalter (Fensterbreite, oder die Seitenleiste meldet ihren
+       Zustand erst nach diesem Aufbau), aendert sich die Breite der Huelle um die Krume, nicht die
+       der Wurzel -- also dort beobachten. */
+    if (onResize && h.parentNode && h.parentNode !== root) onResize(h.parentNode, krumeEinpassen);
     if (quelle && window.MutationObserver){
       new MutationObserver(zeichnen).observe(quelle, { subtree: true, childList: true, characterData: true,
         attributes: true, attributeFilter: ["class", "aria-selected"] });
@@ -15346,26 +15428,58 @@
      tiefer in ihrer Wurzel als in Ruhe), und nur dann malt der Streifen (core.css).
      EIN Zuhoerer fuer die ganze Seite, in der Einfangphase (scroll blubbert nicht, und Drawer
      scrollen in ihrem eigenen Behaelter), je Bild hoechstens einmal: zwei Lesungen je Tabelle,
-     geschrieben wird nur bei einem Wechsel. */
+     geschrieben wird nur bei einem Wechsel.
+     SEIT DEM 16.10. OHNE GELERNTE RUHELAGE. Bis dahin galt der kleinste je gesehene Abstand der
+     Leiste zum Anfang ihrer Wurzel als Ruhe. Jedes applySticky (Nachlauf der Kopfsuche bis 4,8 s
+     nach dem Laden, Groessenwechsel, ein neuer Seitenkopf irgendwo) loeschte ihn -- lief es,
+     waehrend die Leiste klebte, lernte der naechste Durchlauf eine GEKLEBTE Lage als Ruhe, und
+     etwas Zurueckscrollen nahm die Klasse weg, obwohl die Leiste weiter klebte (gemessen:
+     Prompts 2000 -> 400, 24 Zeilentreffer ueber der Leiste bis ganz nach oben). Jetzt liest die
+     Probe das Deck (klebDeckStellen): in Ruhe liegt es deckungsgleich unter der Leiste, klebend
+     steht es hoeher -- ein Vergleich zweier Lagen im selben Bild, nichts zu lernen. Die Klasse
+     traegt nur noch den Streifen (Rest ueber 2 x Leistenhoehe) und die Linie unter der Leiste;
+     gedeckt wird schon vom Deck selbst, ohne Bildverzug. */
   var KLEB_WURZELN = [];
   var _klebRaf = 0;
+  /* DAS DECK (16.10., CSS .up-kleb-deck in core.css): zwei leere Kaesten direkt vor der Leiste,
+     der obere zuerst. Gemerkt an der Leiste, nicht gesucht -- wandert die Leiste (bandUnterLeiste),
+     kommen sie mit. Bewegt wird nur, was nicht schon steht; gibt die Leiste zurueck, was jetzt
+     direkt vor ihr liegt (der untere Kasten). */
+  function klebDeckStellen(head){
+    if (!head || !head.parentNode) return null;
+    var u = head.__upDeckU, o = head.__upDeckO;
+    if (!u || !o){
+      o = document.createElement("div"); o.className = "up-kleb-deck is-oben"; o.setAttribute("aria-hidden", "true");
+      u = document.createElement("div"); u.className = "up-kleb-deck"; u.setAttribute("aria-hidden", "true");
+      head.__upDeckO = o; head.__upDeckU = u;
+    }
+    if (u.parentNode !== head.parentNode || u.nextSibling !== head) head.parentNode.insertBefore(u, head);
+    if (o.parentNode !== head.parentNode || o.nextSibling !== u) head.parentNode.insertBefore(o, u);
+    return u;
+  }
   function klebPruefenAlle(){
     _klebRaf = 0;
     /* Der klebende Fuss liest zuerst (alle Tabellen), geschrieben wird erst nach der Leiste --
        so erzwingt keine Klasse von hier eine Neuberechnung mitten in den Lesungen dort. */
     var fuss = fussLesen();
     KLEB_WURZELN = KLEB_WURZELN.filter(function(w){ return w.root.isConnected; });
+    /* Erst alle lesen, dann schreiben: eine Klasse zwischen zwei Tabellen erzwaenge sonst je Tabelle
+       eine neue Berechnung. */
+    var wechsel = [];
     KLEB_WURZELN.forEach(function(w){
       var head = w.head && w.head.isConnected ? w.head : (w.head = w.root.querySelector(".up-head"));
-      if (!head || !w.root.classList.contains("up-sticky")){ w.root.classList.remove("is-geklebt"); return; }
-      var d = head.getBoundingClientRect().top - w.root.getBoundingClientRect().top;
-      /* d in Ruhe: der Abstand der Leiste zum Anfang ihrer Wurzel. Der kleinste je gesehene Wert ist
-         die Ruhelage; klebt die Leiste, waechst d um die Strecke, die die Wurzel schon unter ihr
-         weggescrollt ist. */
-      if (w.ruhe == null || d < w.ruhe) w.ruhe = d;
-      var klebt = d > w.ruhe + 0.5;
-      if (klebt !== w.root.classList.contains("is-geklebt")) w.root.classList.toggle("is-geklebt", klebt);
+      var klebt = false;
+      if (head && w.root.classList.contains("up-sticky")){
+        var deck = head.__upDeckU;
+        /* Nur wenn eine Komponente die Leiste umgehaengt hat: dann zieht das Deck nach. */
+        if (!deck || deck.nextSibling !== head) deck = klebDeckStellen(head);
+        /* Klebend steht das Deck mindestens 1px hoeher als die Leiste (core.css: Zone + 1), in Ruhe
+           auf derselben Hoehe. */
+        klebt = !!deck && deck.getBoundingClientRect().top < head.getBoundingClientRect().top - 0.5;
+      }
+      if (klebt !== w.root.classList.contains("is-geklebt")) wechsel.push([w.root, klebt]);
     });
+    wechsel.forEach(function(z){ z[0].classList.toggle("is-geklebt", z[1]); });
     fussSchreiben(fuss);
   }
   function klebPlanen(){ if (!_klebRaf) _klebRaf = requestAnimationFrame(klebPruefenAlle); }
@@ -15374,8 +15488,8 @@
     window.addEventListener("resize", klebPlanen, { passive: true });
   } catch(e){}
   function klebAnmelden(root, head){
-    for (var i = 0; i < KLEB_WURZELN.length; i++) if (KLEB_WURZELN[i].root === root){ KLEB_WURZELN[i].ruhe = null; klebPlanen(); return; }
-    KLEB_WURZELN.push({ root: root, head: head || null, ruhe: null });
+    for (var i = 0; i < KLEB_WURZELN.length; i++) if (KLEB_WURZELN[i].root === root){ if (head) KLEB_WURZELN[i].head = head; klebPlanen(); return; }
+    KLEB_WURZELN.push({ root: root, head: head || null });
     klebPlanen();
   }
 
@@ -15612,6 +15726,105 @@
     liste.forEach(function(z){ fussStellen(z.w, z.fuellt, z.unten, z.bereit); });
   }
 
+  /* DIE ANGEKLICKTE ZEILE BLEIBT STEHEN (16.10.). Gemeldet an der Domains-Tabelle: oben ein
+     offener Drilldown mit 15 URLs, weiter unten einer mit 5 geoeffnet -- der obere schliesst
+     (richtig), aber die Hoehe, die oben wegfaellt, zieht die angeklickte Zeile mit nach oben, oft
+     unter die klebende Leiste oder ganz aus dem Bild (gemessen 1440x900: 600 -> 15, Leiste endet
+     bei 112). Dieselbe Bauart hat die Gruppenansicht der Prompt-Tabelle.
+     WARUM DER BROWSER DAS NICHT SELBST AUFFAENGT: seine Scroll-Verankerung (overflow-anchor) ist
+     am einen Scrollbereich abgeschaltet -- der Wirt setzt #main { overflow-anchor: none }
+     (kopf.css), weil sie beim Laden der Ansichten staendig nachkorrigierte. Und eingeschaltet
+     waehlte sie oft den falschen Anker: das erste sichtbare Element von oben, und das liegt hier
+     meist IM Drilldown, der gerade entfernt wird -- ein entfernter Anker korrigiert nichts.
+     Also fuer genau diese eine Aenderung von Hand: Lage der Zeile vorher lesen, aendern, dieselbe
+     Lage danach lesen und den Scrollbereich um den Unterschied schieben -- im selben Zug, bevor
+     das naechste Bild gemalt wird, es springt also nichts. Geschoben wird der naechste Vorfahre,
+     der wirklich scrollt (#main, im Drawer sein Koerper), sonst das Dokument.
+     Danach MINDESTENS: die Oberkante steht unter Leiste und Spaltenkopf, wenn die kleben -- fuer
+     eine halb unter dem Kopf angeklickte Zeile und eine per Tab erreichte (der Browser rollt beim
+     Fokus nur ins Bild, nicht unter den klebenden Kopf).
+     el muss im Fluss stehen und darf nicht selbst kleben: ein klebendes Element meldet die Lage,
+     an der es klebt, nicht die, an der es steht (die offene Gruppe der Prompt-Tabelle klebt --
+     dort wird ihr Abschnitt gehalten). */
+  function scrollerVon(el){
+    var a = el.parentElement, oy;
+    while (a && a !== document.body && a !== document.documentElement){
+      try { oy = window.getComputedStyle(a).overflowY; } catch(e){ break; }
+      if ((oy === "auto" || oy === "scroll" || oy === "overlay") && a.scrollHeight > a.clientHeight + 1) return a;
+      a = a.parentElement;
+    }
+    return document.scrollingElement || document.documentElement;
+  }
+  /* Die Kante, unter der eine Zeile zu sehen ist: Unterkante von Leiste und Spaltenkopf der
+     eigenen Tabelle, solange sie kleben, sonst der obere Rand des Scrollbereichs. Ein Kopf, der
+     gerade nicht klebt, steht im Fluss ueber der Zeile und verschiebt die Kante nicht. */
+  function klebKante(el, sc){
+    var oben = sc === (document.scrollingElement || document.documentElement) ? 0
+             : sc.getBoundingClientRect().top + (sc.clientTop || 0);
+    var root = el.closest ? el.closest(".up-root") : null;
+    if (!root) return oben;
+    Array.prototype.forEach.call(root.querySelectorAll(".up-head, .up-thead"), function(k){
+      if (!k.getClientRects().length) return;
+      var p = "";
+      try { p = window.getComputedStyle(k).position; } catch(e){}
+      if (p === "sticky" || p === "fixed") oben = Math.max(oben, k.getBoundingClientRect().bottom);
+    });
+    return oben;
+  }
+  /* AM ENDE DER SEITE reicht der Inhalt im ersten Bild oft nicht: schliesst der vorige Aufklapper
+     UNTER der Zeile, waechst der neue erst ab Hoehe 0 (grid-template-rows 0fr -> 1fr), und der
+     Browser zieht den Scrollbereich auf sein neues Ende -- die Zeile sackt ab (gemessen Prompt
+     Insights 1440x900: +43). Fuer die Dauer der Bewegung bekommt die Tabelle darum unten genau
+     den fehlenden Rand; danach ist der neue Aufklapper gewachsen und traegt die Lage selbst.
+     Reicht auch sein volles Mass nicht (nichts mehr darunter), sinkt die Zeile am Ende der
+     Bewegung um den Rest -- nach unten, also weiter im Bild. Gemerkt an der Wurzel, damit ein
+     zweiter Klick waehrend der Bewegung den Rand nicht doppelt nimmt und der alte Wert sicher
+     zurueckkommt. Uhr statt rAF: im verdeckten Fenster laeuft kein rAF, der Rand bliebe stehen. */
+  function haltRand(el, px, dauer){
+    var root = el.closest ? el.closest(".up-root") : null;
+    if (!root || !(px > 0)) return;
+    var r = root.__upHaltRand;
+    if (!r){
+      var basis = 0;
+      try { basis = parseFloat(window.getComputedStyle(root).marginBottom) || 0; } catch(e){}
+      r = root.__upHaltRand = { alt: root.style.marginBottom, basis: basis, px: 0, uhr: 0 };
+    }
+    r.px += px;
+    root.style.marginBottom = (r.basis + r.px) + "px";
+    clearTimeout(r.uhr);
+    r.uhr = setTimeout(function(){
+      root.style.marginBottom = r.alt;
+      if (root.__upHaltRand === r) root.__upHaltRand = null;
+    }, (dauer || 0) + 40);
+  }
+  /* o.dauer: wie lange die Bewegung des neuen Aufklappers laeuft (ms) -- nur dann gibt es den
+     Rand am Seitenende. */
+  function zeileHalten(el, aendern, o){
+    o = o || {};
+    if (!el || !el.isConnected || !el.getBoundingClientRect){ aendern(); return; }
+    /* Die Kante VOR der Aenderung, an der der Nutzer die Zeile gesehen hat. Was oben wegfaellt,
+       rueckt den Tabellenanfang nur naeher an die gehaltene Zeile: loest sich der Kopf dadurch,
+       steht er im Fluss UEBER ihr und verdeckt nichts. Klebt er vorher nicht, klebt er danach
+       erst recht nicht. */
+    var sc = scrollerVon(el), vor = el.getBoundingClientRect().top, kante = klebKante(el, sc);
+    aendern();
+    if (!el.isConnected) return;
+    var d = el.getBoundingClientRect().top - vor;
+    /* Halb unter dem klebenden Kopf: so weit zurueck, dass die Oberkante frei steht. */
+    var frei = Math.min(0, vor - kante);
+    /* Nach oben begrenzt die 0: fiel ueber der Zeile mehr weg, als darueber gescrollt war, steht
+       sie danach hoeher -- im Fluss unter einem Kopf, der dann nicht mehr klebt, also im Bild. */
+    var ziel = Math.max(0, sc.scrollTop + d + frei);
+    /* Der Rand auch dann, wenn nichts zu schieben ist: der Browser zieht den Scrollbereich nicht
+       immer schon beim Lesen auf sein neues Ende, sondern erst beim naechsten Bild -- dann stuende
+       die Zeile jetzt richtig und saenke danach ab. */
+    var fehlt = ziel - (sc.scrollHeight - sc.clientHeight);
+    if (fehlt > 0.5 && o.dauer) haltRand(el, Math.ceil(fehlt), o.dauer);
+    if (Math.abs(sc.scrollTop - ziel) < 0.5) return;
+    /* instant: ein scroll-behavior: smooth am Bereich liesse die Zeile sonst sichtbar wandern. */
+    try { sc.scrollTo({ top: ziel, left: sc.scrollLeft, behavior: "instant" }); } catch(e){ sc.scrollTop = ziel; }
+  }
+
   /* DIE LEISTE UEBER DEM BAND (16.10., Variante A der Leinwand "Citations Seitenaufbau", fuer
      Citations und Brands > Tracked gewaehlt). Die eine Leiste einer Tabelle (data-leiste="yes",
      ihr .up-head) steht OBEN, ueber dem Chart: links Kalender und Filter, die fuer Chart UND
@@ -15634,6 +15847,8 @@
     var alt = band.parentNode;
     if (alt && alt !== root && alt.classList && alt.classList.contains("has-leistenband")) alt.classList.remove("has-leistenband");
     if (kopf.parentNode !== root) root.insertBefore(kopf, root.firstChild);
+    /* Hat die Leiste schon ihr Deck (makeSticky lief vor dem Umzug), kommt es mit. */
+    if (kopf.__upDeckU) klebDeckStellen(kopf);
     if (kopf.nextElementSibling !== band) root.insertBefore(band, kopf.nextSibling);
     if (!root.classList.contains("has-leistenband")) root.classList.add("has-leistenband");
     return true;
@@ -15753,6 +15968,9 @@
          noch ein Scroller liegt. */
       stickyTopSetzen(on);
       if (on){ syncTheadOffset(); syncDeckstreifen(); }
+      /* Das Deck ueber der Leiste (klebDeckStellen): erst, wenn sie klebt -- eine Tabelle, die nie
+         klebt, bekommt keine Kaesten. Ohne .up-sticky sind sie ohnehin unsichtbar. */
+      if (on && headEl) klebDeckStellen(headEl);
       klebAnmelden(root, headEl);
       /* Der klebende Fuss (siehe klebFuss): per Attribut, fuer jede Tabelle mit makeSticky. Hier
          und nicht beim Aufbau: eine Seite darf das Attribut setzen, solange die Tabelle sich
@@ -16136,8 +16354,11 @@
         else if (!willAus && typeof sw.__zeigen === "function") sw.__zeigen();
       });
       /* Vor den ersten Knopf des Kopfs, und zwar an den Anfang seiner Huelle: steht er direkt im
-         Kopf (Citations), davor; steht er in einer Werkzeuggruppe (Brands), als ihr erstes Kind. */
-      var erster = kopf.querySelector(".up-ph-addbtn, .up-ph-iconbtn");
+         Kopf (Citations), davor; steht er in einer Werkzeuggruppe (Brands), als ihr erstes Kind.
+         Der Umschalter der Seitenleiste zaehlt nicht mit (16.10.): er traegt dieselbe Klasse wie
+         die Knoepfe rechts, steht aber links vor der Krume -- als "erster Knopf" gelesen landete
+         der Bandschalter gemessen bei 375 vor ihm, ganz links in der Zeile. */
+      var erster = kopf.querySelector(".up-ph-addbtn, .up-ph-iconbtn:not(.up-ph-seitenleiste)");
       if (!erster || !erster.parentNode) kopf.appendChild(sw);
       else if (erster.parentNode === kopf) kopf.insertBefore(sw, erster);
       else erster.parentNode.insertBefore(sw, erster.parentNode.firstChild);
@@ -28288,6 +28509,8 @@
     makeLeistenFilter: makeLeistenFilter,
     bandTeile: bandTeile, bandAus: bandAus, bandAusGemerkt: bandAusGemerkt, bandAusMerken: bandAusMerken,
     bandUnterLeiste: bandUnterLeiste, klebFuss: klebFuss,
+    /* Aufklapper in Tabellen (Drilldown, Gruppe): die angeklickte Zeile bleibt stehen. */
+    zeileHalten: zeileHalten,
     bandSchalterHtml: bandSchalterHtml,
     rafThrottle: rafThrottle,
     einmalProBild: einmalProBild,
@@ -28314,6 +28537,7 @@
     cgDelete: cgDelete,
     makePageNav: makePageNav,
     makePageCrumbs: makePageCrumbs,
+    seitenleistenKnopfEinsetzen: seitenleistenKnopfEinsetzen,
     makePageHeaderMeta: makePageHeaderMeta,
     syncTheme: syncTheme,
     themeOnly: themeOnly,

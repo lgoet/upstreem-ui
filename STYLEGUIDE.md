@@ -1233,9 +1233,27 @@ Kleben         makeSticky wie jede Tabelle: Kopf, Reiter und Chart scrollen weg,
 Höhe Telefon   375x812: Leiste klebt 16–104 (zwei Zeilen, Citations, Responses), 16–144 (drei
                Zeilen, All Prompts, Brands), 16–64 (Teams); Spaltenkopf darunter 48 – oben
                stehen damit 152 (19 %), 192 (24 %) bzw. 112 (14 %) fest
-Linie          unter der Leiste NUR, solange sie klebt (.is-geklebt), eingeblendet (--up-t-2)
+Deck           über der klebenden Leiste bis zur Oberkante des Scrollbereichs (16.10.): zwei
+               leere sticky-Kästen .up-kleb-deck direkt VOR der Leiste (core klebDeckStellen),
+               Fläche --up-surface, Ebene 6. In Ruhe liegen sie deckungsgleich unter der Leiste
+               und übermalen nichts; klebt sie, rasten sie über ihr ein – im selben Bild, ohne
+               Klasse und ohne JS im Scroll-Takt. Je Kasten höchstens so hoch wie die Leiste:
+               Seiten 16 + 1, Drawer 72 + 1 (48 und 25, unter dem Glaskopf mit). Am Ende der
+               Wurzel gehen sie mit der Leiste; keine Lage ändert sich
+Linie          unter der Leiste NUR, solange sie klebt (.is-geklebt: das Deck steht höher als
+               die Leiste – keine gelernte Ruhelage mehr), eingeblendet (--up-t-2)
 Abstände       Leiste 16 unten, Band 16 unten; der Stapel der Wurzel fällt auf 0
 ```
+
+Warum das Deck und nicht mehr der Streifen allein (16.10., „hier und da Rows hinter der klebenden
+Topbar, in den 16 px über den Knöpfen“): der Streifen `.is-geklebt .up-head::before` hängt an
+einer Klasse, die JS im Scroll-Takt setzt. Nach einem Sprung (Ende-Taste, Scrollbalken, schneller
+Wurf) klebte die Leiste, bevor die Klasse kam, und nach jedem applySticky während des Klebens
+(Nachlauf der Kopfsuche bis 4,8 s nach dem Laden, Größenwechsel, ein neuer Seitenkopf) lernte die
+Probe eine geklebte Lage als Ruhe – beim Zurückscrollen fiel die Klasse weg, obwohl die Leiste
+weiter klebte. Gemessen vorher 24–45 Treffer auf Zeilen bzw. Chart in diesem Streifen, nachher 0
+(Seiten, Drawer, 1440/1100/375, hell/dunkel, auch mit entfernter Klasse). Der Streifen bleibt für
+das, was über 2 x Leistenhöhe hinausgeht.
 
 Warum in der Wurzel der Tabelle und nicht als Leiste der Seite: Domains, URLs und Brands
 hängen Klicks, Suche, Tooltips und Menüs an ihre Wurzel (`ownsTarget`, `root.contains`); ein
@@ -1396,7 +1414,7 @@ Schatten       NUR wenn er wirklich klebt (.is-fuss-klebt; die Marke .up-fuss-ma
                .is-fuss-ohne-summe)
 Gruppenspalte  All Prompts mit is-groups-wide: die Gruppenliste steht im Fluss neben dem Kasten
                (kein eigener Scrollbereich mehr), ihr Kopf klebt neben dem Spaltenkopf
-z              4 (unter Spaltenkopf 5 und Leiste 6)
+z              4 (unter Spaltenkopf 5, Leiste 6 und dem Deck über ihr, 6 – 8b)
 Bewegung aus   prefers-reduced-motion: dieselben Zustände ohne Fahrt
 ```
 
@@ -1748,6 +1766,46 @@ Suchfelds und bei jeder Label-Änderung eines Trigger-Buttons. Hilfsfunktionen, 
 Labels setzen, dürfen deshalb **keine frühen `return`s** haben, sonst läuft die
 Neumessung nur in einem der Zweige.
 
+### Seitenleiste auf dem Telefon: der Umschalter im Seitenkopf (seit 16.10.)
+
+„Sidebar-Button im Mobile: in die richtige Topbar, ganz links, nicht floaten.“ Bis zum 16.10.
+schwebte im hint-Zustand ein eigener Knopf (`.usn-fab`, fixed bei 0/32, 32 × 36, Schatten e-3)
+über der Seite – seit die Leiste der Tabellen auch auf dem Telefon klebt, lag er auf der linken
+unteren Ecke ihres ersten Knopfs. Jetzt:
+
+```
+Wann          nur im hint-Zustand der Seitenleiste (Fenster unter 500, Leiste ganz weg);
+              sidebar.js schreibt den Zustand an <html> (data-usn-modus = hint | mini | wide,
+              dieselben Namen wie mode in usnState). Desktop und Tablet: display none, kein Platz
+Wo            erstes Kind der Kopfzeile (.up-ph-top), vor der Krume – gesetzt von
+              UC.makePageCrumbs, also in JEDEM Seitenkopf samt Platzhalter (seitenVorab);
+              Mira (eigener Kopf) setzt ihn per UC.seitenleistenKnopfEinsetzen(zeile, vorKind)
+              vor ihr erstes Kind in .am-hero-inner. Nur in einer Ansicht ([id^="view-"]) – im
+              Schaufenster der Landingpage nicht
+Knopf         .up-ph-iconbtn (32 × 32, Radius --up-r-m, Zeichen 15, Fokusring) wie Refresh und
+              Docs in derselben Zeile, Zeichen panelLeft (1.8), aria-label "Open navigation";
+              kein Schatten, scrollt mit der Kopfzeile weg (nur die Leiste klebt)
+Lage          Box 8 vom Rand (--up-ph-rand-r, wie die Knöpfe rechts), Zeichen damit bei 16 –
+              auf der Kante, an der sonst das Krumenzeichen steht; 8 zur Krume, Krumenzeichen
+              bei 48. Vertikal mittig in der 48er-Zeile (8–40). Mira: in ihrem Kopf bei 32/16,
+              gespiegelt zu "Chats" (32 vom rechten Rand), Farbe wie dieses (--am-muted-2),
+              Fokusring innen (der Kopf kappt seitlich)
+Klick         CustomEvent "up-seitenleiste" an window -> sidebar.js wie bisher der eigene Knopf:
+              auf/zu, Schleier, Escape, Klick daneben unverändert
+Platz         die Krume wächst in den freien Platz (sonst verteilt space-between sie in die
+              Mitte); Hinzufügen-Knöpfe zeigen ihre kurze Fassung, wo die Wurzel kein is-narrow
+              hat (Opportunities: "Look for"); reicht es nicht, fällt der Name der ersten
+              Krumenstufe weg, das Zeichen bleibt (.is-knapp, gemessen mit Range in
+              krumeEinpassen): "Zeichen > All Prompts"
+Rückfall      .usn-fab bleibt, erscheint aber nur, wenn die offene Ansicht (.view-on) keinen
+              sichtbaren Kopfknopf hat – eine Seite ohne Kopf landet sonst in der Sackgasse
+```
+
+Gemessen 375/390/430, alle 13 Seiten über die Seitenleiste geöffnet: Knopf 8/8 32 × 32, Mitte
+gleich Krume und rechten Knöpfen, keine Überlappung in der Kopfzeile, keine abgeschnittene Krume,
+die klebende Leiste nirgends mehr überdeckt (vorher traf `elementFromPoint` bei 21/43 und 26/46
+den schwebenden Knopf). Desktop 1440: alle Kopfzeilen auf den Zehntelpixel wie vorher.
+
 ### Sticky Table-Header (nur wenn die Komponente direkt injiziert ist)
 
 Ein seitenweit klebender Header ist nur möglich, wenn die Komponente **direkt in die
@@ -1799,6 +1857,10 @@ Deshalb im Sticky-Modus zusätzlich `height: 48px` (32 Inhalt + 16 Padding).
 **6. Zeilen hinter einer transparenten Topbar.** Ist die Seiten-Topbar transparent,
 scrollen Zeilen dahinter durch. Der Kopf bekommt ein opakes `::before`, das von seiner
 Oberkante bis zur Viewport-Oberkante reicht (`height: var(--udt-sticky-top)`).
+
+> **Stand 16.10.:** Ein Streifen, der nur mit einer Klasse malt, deckt ein Bild zu spät oder gar
+> nicht (8b). In core deckt heute das **Deck** `.up-kleb-deck`: sticky-Kästen direkt vor der
+> Leiste, in Ruhe unter ihr verborgen, klebend über ihr – reines sticky, kein Zustand.
 
 **7. Border NICHT auf die Box, sondern auf Kopf/Body.** Sitzt der Spaltenkopf 1px
 innerhalb der Box-Border, überdeckt sein opaker Hintergrund die gerade obere
@@ -2518,6 +2580,7 @@ Komponente wirklich zusätzlich hat (eine Zeilenhöhe, eine Index-Zelle, ein Act
 | Klebender Fuß (8e) – auch Leiste und Spaltenkopf auf dem Telefon (8b) | `data-kleb-fuss="yes"` an der Wurzel (mit `UC.makeSticky`), direkt `UC.klebFuss(root)` |
 | Gesamtzeile (8e) | `UC.makeZaehlZeile({ root, nach, praefix, instanceId, spalten, laedt, anzahl, rechnen, quelle, cols })`, darunter `UC.makeSumZeile`, `UC.sumPaarHtml` |
 | Offenes Band (8f) | `UC.bandTeile(band, teile)` (mit `teile.auge`), `UC.bandAus(band, aus, { id, setzen })` setzt den Umschalter im Seitenkopf, `UC.bandSchalterHtml({ aus, id, klein })`, `UC.bandAusGemerkt(id)`, `UC.bandAusMerken(id, aus)` |
+| Umschalter der Seitenleiste im Kopf (10) | kommt mit `UC.makePageCrumbs`; ein eigener Kopf ohne Krume: `UC.seitenleistenKnopfEinsetzen(zeile, vorKind)` |
 | Bubble-Klempnerei: Root-Registry, iframe-Forwarder, Wheel, Init-Kaskade, Stub-Replay | `UC.makeMount({rootClass, ctrlProp, resolveLocal, queue, initRoot, api, forwardShape})` |
 
 CSS dazu kommt aus `core.css`: `.up-root`, `.up-head*`, `.up-iconbtn`, `.up-thead/.up-row/.up-th/.up-td`,
@@ -2876,6 +2939,16 @@ richtige Preis dafür, dass kein core-Kit sie versehentlich für sein eigenes El
 **Genau EIN Drilldown offen.** Zwei offene Blöcke mit je eigener Suche, eigenem Filter und eigenem
 Pager lesen sich als zwei konkurrierende Tabellen in einer dritten. Öffnen schließt und **resettet**
 den vorherigen (Suche, Filter, Seite, Seitengröße).
+
+**Die angeklickte Zeile bleibt stehen (16.10.).** Schließt das Öffnen einen größeren Block
+weiter oben, fällt dessen Höhe über der Zeile weg, und sie sprang nach oben, teils unter die
+klebende Leiste. Die Scroll-Verankerung des Browsers hilft nicht: `#main` trägt im Wirt
+`overflow-anchor: none`, und auch eingeschaltet wählt sie den gerade entfernten Block als Anker.
+Deshalb öffnet jeder Aufklapper über **`UC.zeileHalten(el, aendern, { dauer })`**: Lage vorher
+und nachher lesen, den scrollenden Vorfahren (`#main`, im Drawer dessen Körper) im selben Zug
+nachschieben, mindestens unter Leiste und Spaltenkopf; am Seitenende hält ein zeitweiliger
+unterer Rand die Lage für die Dauer der Bewegung. Genutzt von Citations › Domains und den
+Prompt-Gruppen (Akkordeon-Modus).
 
 **Auf/Zu animieren: Keyframe, keine Transition.** Der Block wird von `renderTable()` frisch erzeugt;
 eine Transition läuft auf einem gerade eingefügten Knoten nie an. `grid-template-rows: 0fr -> 1fr`
