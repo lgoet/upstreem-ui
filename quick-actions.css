@@ -109,8 +109,9 @@
   border: 1px solid var(--am-border); border-radius: var(--up-r-xs, 4px); background: var(--am-soft-2);
   font-size: 10.5px; font-weight: 600; color: var(--am-muted); letter-spacing: 0.02em; font-family: var(--mqa-font);
 }
-/* the "⌘K" chip specifically — background only, no border (the "esc" hint elsewhere keeps its border) */
-.mqa-trigger .mqa-kbd { border: 0; }
+/* Das "⌘K" am Ausloeser in einem kleinen Kasten MIT Rand (15.10. spaet: "das Command-K-Ding im
+   Quick-Actions-Button in einen kleinen bordered Container"). Bis dahin nur Grund, ohne Rand. */
+.mqa-trigger .mqa-kbd { height: 20px; padding: 0 5px; border: 1px solid var(--am-border); background: transparent; }
 
 /* ---------- overlay + modal ---------- */
 /* TOP LAYER. Create with AI liegt seit dem Drawer-Fix selbst im Top Layer, und der wird nach
