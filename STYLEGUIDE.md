@@ -49,118 +49,212 @@ var LOADING_EXPLICIT = (window.__udtLoadingExplicit = window.__udtLoadingExplici
 
 ## 1. Farben
 
-### Light Mode
+Quelle aller Werte: `core.css` (Block `.up-root`, `.up-root[data-theme="dark"]`, die Blöcke an
+`:root` und `html[data-up-hell="grau"]`). Stand 15.10.
+
+### Thema: Light, Dark, System (seit 15.10.)
+
+Es gibt genau **drei** Wahlen: Light, Dark, System. „Legacy Light“ bzw. „Hell (klassisch)“ ist
+als Wahl entfallen (15.10. abends: „Das Hell klassisch fällt weg als Design“). Wer es gespeichert
+hatte, bekommt ohne eigenes Zutun das neue Light: `prefsLesen()` liest `light_style` nur noch
+als `"gray"` und schreibt den bereinigten Stand zurück; `setUpstreemThemeOption("legacy-light")`
+wird als `"light"` angenommen (Aufrufer an alten Pins).
+
+**Das Light ist wie bei Vercel:** Seite, Seitenleiste, Topbars und Sub-Navigation **grau**
+(`#fafafa`), Tabellen, Karten, Charts, Drawer und Menüs **weiß**. Umgesetzt über ein Attribut,
+nicht über eine zweite Palette:
+
+```
+hellAnwenden() (core.js)   setzt html[data-up-hell="grau"], sobald hell gemalt wird
+                           (Thema aus __upTheme, sonst pref_theme, sonst Betriebssystem);
+                           im Dunkeln entfernt; nie auf der Landingpage (__upApp.landing)
+```
+
+Das Attribut überschreibt an jeder hellen Wurzel fünf Marken und sonst nichts:
+
+| Marke | ohne Attribut | im grauen Light | Herkunft |
+|---|---|---|---|
+| `--up-surface` (Seitengrund) | `#ffffff` | `#fafafa` | Geist Background 2 |
+| `--vc-border` | `#e4e2e4` | `#ebebeb` | Geist Gray 400, Default border |
+| `--vc-switch-border` | `#e4e2e4` | `#ebebeb` | wie oben |
+| `--vc-heading-bg` (Hover, Kopfzeilen) | `#f9f8f9` | `#f2f2f2` | Geist Gray 100; `#f9f8f9` wäre auf `#fafafa` unsichtbar |
+| `--vc-field` (Eingabefeld) | `#f9f8f9` | `--vc-bg` (weiß) | Vercel: Felder weiß mit Rahmen |
+
+**Innerhalb einer weißen Fläche ist der Grund weiß:** Drawer (`.up-kdr`, `[id^="drawer-"]`),
+Portale (`.up-portal`), `.up-band`, `.up-box`, die flache Tabelle und ihr Band setzen
+`--up-surface` wieder auf `--vc-bg`. Was dort „Seitenfarbe“ sagt (klebender Kopf, Gesamtzeile),
+ist die Farbe dieser Fläche. Ohne das Attribut (Landingpage, erstes Bild vor dem Kopf-Skript)
+gelten die Werte der linken Spalte.
+
+**Gewählter Zustand im Light** (Seitenleiste, Reiter der Sub-Navigation `.up-ph-navpille`,
+Navigation im Preferences-Fenster): Grund **und** Rand, nie nur ein Fleck.
+
+```
+--up-wahl-bg:   rgba(0,0,0,.05)   Geist Gray Alpha 100
+--up-wahl-rand: rgba(0,0,0,.08)   Geist Gray Alpha 400, 1px
+```
+
+Durchscheinend und nicht fest: der Grund ergibt auf `#fafafa` `#eeeeee`, ein fester Rand
+`#ebebeb` läge darauf nur 3 Stufen dunkler; der durchscheinende Rand über dem Grund ergibt
+`#dbdbdb`. Wo ein echter Rand die Zeile um einen Pixel verschöbe (Seitenleiste, `.usn-item`),
+steht er als `box-shadow: inset 0 0 0 1px var(--up-wahl-rand)`. Nur das Gewählte trägt den
+Rand, der Hover nicht. Ausdrücklich angefordert: „da auch bitte weiterhin eine Border“.
+
+**Themenschalter** nach Geist: `UC.themeSchalterHtml({ klein, wahl })`, siehe Abschnitt 5.
+
+### Light (`.up-root`)
 | Rolle | Variable | Wert |
 |---|---|---|
-| Primär-Fontfarbe (Haupttext) | `--vc-text` | `#1f1f1b` |
-| Sekundär-/Mutedfarbe (Labels, Icons default) | `--vc-muted` | `#6f737c` |
-| Drittfarbe (Hash-Icon, Positionsnummer) | `--vc-third` | `#9e9e9e` |
-| Border | `--vc-border` | `#e0e2e6` |
-| Haupt-Background | `--vc-bg` | `#ffffff` |
-| Topbar-Background | `--vc-topbar-bg` | `#ffffff` |
-| Hover-/Heading-Background | `--vc-heading-bg` | `#f5f5f5` |
-| Skeleton-Grundfarbe | `--vc-sk` | `#e8e8e8` |
-| Switch-/Switcher-Track-BG | `--vc-switch-bg` | `#f5f5f5` |
-| Switch-Border | `--vc-switch-border` | `#e0e2e6` |
-| Akzent/Primärfarbe | `--vc-primary` | `#1f1f1b` (identisch mit `--vc-text`) |
-| Tabellen-Head-BG | `--vt-head-bg` | `rgba(245,245,245,0.3)` |
+| Primär-Fontfarbe | `--vc-text` | `#1f1f1b` |
+| Zweite Stufe (Beschriftungen) | `--vc-muted` | `#3e4146` |
+| Dritte Stufe (Metadaten, Platzhalter, Zeichen) | `--vc-third` | `#6b6f78` |
+| Vierte Stufe (Zähler, Etiketten der Gesamtzeile) | `--vc-fourth` | `#80858e` |
+| Border | `--vc-border` | `#e4e2e4` (grau: `#ebebeb`) |
+| Karte, Tabelle, Menü | `--vc-bg` | `#ffffff` |
+| Seitengrund | `--up-surface` | `#ffffff` (grau: `#fafafa`) |
+| Hover-/Heading-Background | `--vc-heading-bg` | `#f9f8f9` (grau: `#f2f2f2`) |
+| Skeleton-Grundfarbe | `--vc-sk` | `#eeedef` |
+| Menü / Auswahl im Menü / Menürand | `--up-menu-bg` / `--up-sel-bg` / `--up-menu-border` | `#ffffff` / `#f4f2f4` / `#dcdbdd` |
+| Schiene / Pille eines Umschalters | `--vc-switch-rail` / `--vc-switch-pill` | `#f2f2f2` / `#ffffff` |
+| Switch-Border | `--vc-switch-border` | `#e4e2e4` (grau: `#ebebeb`) |
+| Eingabefeld | `--vc-field` | `#f9f8f9` (grau: `#ffffff`) |
+| Tabellen-Head-BG / Row-Hover | `--vt-head-bg` / `--vt-row-hover` | `#f9f8f9` / `#f9f8f9` |
 | Logo-Box-BG | `--vt-logo-bg` | `#ffffff` |
-| Row-Hover | `--vt-row-hover` | `rgba(245,245,245,0.75)` |
-| Trend positiv | `--vt-up` | `#2ea84a` |
-| Trend negativ | `--vt-down` | `#b0200c` |
+| Akzent Fläche / Schrift darauf / Akzent als Schrift | `--up-accent` / `--up-accent-fg` / `--up-accent-ink` | `#1f1f1b` / `#ffffff` / `#1f1f1b` |
+| Fokus / Fokusring | `--up-focus` / `--up-focus-ring` | `#4A9EFF` / `rgba(74,158,255,0.20)`, Breite `--up-focus-w` 2px |
+| Gefahr-Knopf | `--vc-danger` / `--vc-danger-fg` | `#da2f35` (Geist Red 800) / `#ffffff` |
 
-### Dark Mode
+### Dark (`.up-root[data-theme="dark"]`)
 | Rolle | Variable | Wert |
 |---|---|---|
 | Primär-Fontfarbe | `--vc-text` | `#e0e0e0` |
-| Sekundärfarbe | `--vc-muted` | `#a0a0a0` |
-| Drittfarbe | `--vc-third` | `#808080` |
-| Border | `--vc-border` | `#353535` |
-| Haupt-Background | `--vc-bg` | `#1b1b1b` |
-| Topbar-Background | `--vc-topbar-bg` | `#121212` |
-| Hover-/Heading-Background | `--vc-heading-bg` | `rgba(42,42,42,0.6)` |
-| Skeleton-Grundfarbe | `--vc-sk` | `#3a3a3a` |
-| Switch-Track-BG | `--vc-switch-bg` | `rgba(42,42,42,0.6)` |
-| Switch-Border | `--vc-switch-border` | `#353535` |
-| Akzent/Primärfarbe | `--vc-primary` | `#e0e0e0` (identisch mit `--vc-text`) |
-| Icon-Farbe default | — | `#a0a0a0` |
-| Tabellen-Head-BG | `--vt-head-bg` | `#121212` |
+| Zweite / dritte / vierte Stufe | `--vc-muted` / `--vc-third` / `--vc-fourth` | `#c9cbd0` / `#a0a0a0` / `#6c717a` |
+| Border | `--vc-border` | `#34343a` |
+| Karte | `--vc-bg` | `#1c1c1f` |
+| Seitengrund | `--up-surface` | `#101114` |
+| Hover-/Heading-Background | `--vc-heading-bg` | `#232326` |
+| Skeleton-Grundfarbe | `--vc-sk` | `#28282c` |
+| Menü / Auswahl / Menürand | `--up-menu-bg` / `--up-sel-bg` / `--up-menu-border` | `#232326` / `#28282c` / `#3e3e44` |
+| Schiene / Pille | `--vc-switch-rail` / `--vc-switch-pill` | `rgba(255,255,255,.055)` / `rgba(255,255,255,.07)` |
+| Eingabefeld | `--vc-field` | `#232326` |
+| Tabellen-Head-BG / Row-Hover | `--vt-head-bg` / `--vt-row-hover` | `#232326` / `#232326` |
 | Logo-Box-BG | `--vt-logo-bg` | `#e0e0e0` |
-| Row-Hover | `--vt-row-hover` | `rgba(42,42,42,0.6)` |
-| Trend positiv | `--vt-up` | `#60d25d` |
-| Trend negativ | `--vt-down` | `#d25d5d` |
+| Akzent | `--up-accent` / `--up-accent-fg` | `#e0e0e0` / `#1b1b1b` |
+| Fokus / Fokusring | `--up-focus` / `--up-focus-ring` | `#6DB2FF` / `rgba(109,178,255,0.28)` |
 
-> **Verbindlich: Es gibt kein Teal, kein Mint, keine eigene Markenfarbe als Akzent.**
-> Die Akzent-/Primärfarbe ist **immer** die Fontprimärfarbe des jeweiligen Themes,
-> also `#1f1f1b` im Light Mode und `#e0e0e0` im Dark Mode. Das gilt für **jedes**
-> Element, das einen „aktiv", „ausgewählt", „primär" oder „hervorgehoben"-Zustand
-> hat: Switches, Checkboxen, aktive Segmented-Buttons, Primär-Buttons (Goto,
-> Filter-Submit), Fokus-Rahmen, aktive Tabs, Progress-Fills, Slider-Tracks.
-> Der frühere Wert `#14b8a6` ist ersatzlos gestrichen und darf in keiner neuen
-> Komponente mehr auftauchen.
+### Zustandsfarben nach Geist (seit 15.10., an `:root`)
+
+Quelle: Vercels eigene Werte (vercel.com/geist/colors, sRGB-Fassung). Geists Rollen werden
+übernommen: **Schrift und Zeichen** Stufe 900, **Fläche** (Ring, Punkt, Balken) 700/800,
+**Notiz** Grund 100 mit Rand 400. Die Marken stehen an `:root` (nicht nur an `.up-root`), damit
+Tooltips, Dialoge und Menüs am `<body>` sie erreichen; eigene Kopien in Komponenten sind entfernt.
+
+| Rolle | Variable | Light | Dark |
+|---|---|---|---|
+| Trend positiv, Text „gut“ | `--vt-up` (= `--vc-pos`) | `#297a3a` (Green 900) | `#62c073` |
+| Trend negativ, Fehlertext | `--vt-down` (= `--vc-neg`) | `#cb2a2f` (Red 900) | `#ff6166` |
+| Fläche gut (Kontingent-Ring, Punkt „Active“) | `--vt-up-flaeche` | `#45a557` (Green 700) | `#45a557` |
+| Fläche Fehler (Kontingent ab Limit) | `--vt-down-flaeche` | `#da2f35` (Red 800) | `#d93036` |
+| Fläche Warnung | `--vt-warn-flaeche` | `#ffb224` (Amber 700) | `#ffb224` |
+| Notiz positiv: Grund | `--vc-pos-bg` | `#effbef` | `#0b2212` |
+| Notiz negativ: Grund / Rand | `--vc-neg-bg` / `--vc-neg-border` | `#fff0f0` / `#fdd8d8` | `#2a1314` / `#671e21` |
+| Warnung: Text / Grund / Rand | `--vc-warn` / `--vc-warn-bg` / `--vc-warn-border` | `#a35200` / `#fff6e5` / `#ffdd8f` | `#f2a20d` / `#291800` / `#573300` |
+
+Bis 15.10. war es `#2ea84a`/`#b0200c` (hell) und `#60d25d`/`#d25d5d` (dunkel); `#2ea84a` lag auf
+Weiß bei 3.08 und damit unter AA. Jetzt auf Weiß 5.33 und 5.37.
+
+**Das Grün des Prompt-Kontingents** (Ring in Prompt Insights, `prompts-page.css`): Bogen
+`--vt-up-flaeche`, ab dem Limit `--vt-down-flaeche`. Flächenstufe, nicht die Schriftstufe 900.
+
+> **Akzentfarbe.** Von Haus aus ist der Akzent die Fontprimärfarbe des Themes (`--up-accent`
+> `#1f1f1b` hell, `#e0e0e0` dunkel). Er trägt jeden „aktiv / ausgewählt / primär“-Zustand:
+> Switches, Checkboxen, Primär-Buttons, aktive Seite der Pagination, Slider-Füllung. Seit dem
+> 18.09. ist er in den Preferences wählbar (`html[data-accent]`: Indigo `#5E6AD2`, Azur
+> `#0075DE`, Terrakotta `#BD5836`, dazu „Standard + Blau“ nur für Chartlinien). Komponenten lesen
+> deshalb immer `--up-accent`/`--up-accent-fg`/`--up-accent-ink`, nie `--vc-text` für einen
+> Akzent. Teal `#14b8a6` ist ersatzlos gestrichen.
 >
-> Auf dunklem Grund (z. B. Text auf einem Primär-Button) kehrt sich das Paar um:
-> BG `--vc-text`, Text/Icon `#e0e0e0` im Light Mode bzw. `#1f1f1b` im Dark Mode
-> (siehe Abschnitt 4, Primärfarben-Buttons).
->
-> Davon **nicht** betroffen sind die semantischen Paletten: Citation-Type- und
-> URL-Type-Farben (1a/1b), Trend-Farben `--vt-up`/`--vt-down` und die
-> Sentiment-Ampel. Das sind Datenkodierungen, keine Akzente.
+> Davon **nicht** betroffen sind die semantischen Paletten: Citation- und URL-Type-Farben
+> (1a/1b), Zustandsfarben (oben), Chartfarben und die Sentiment-Ampel. Das sind
+> Datenkodierungen, keine Akzente.
+
+### Chartfarben nach Geist (seit 15.10.)
+
+- **Linienpalette „Geist“** (`GEIST_LINIEN` in `core.js`, Vorgabe der Farbskala,
+  `SCALE_VORGABE = "geist"`): `#0072f5` Blue, `#ff990a` Amber, `#8e4ec6` Purple, `#12a594`
+  Teal, `#ea3e83` Pink, `#45a557` Green, `#e5484d` Red, `#8f8f8f` Gray. Geists Stufe 700, in
+  beiden Themen derselbe Ton; Amber als 800, weil 700 auf Weiß kaum zu sehen wäre. Wer eine
+  andere Skala gespeichert hat (Linear, Tableau ...), behält sie. Bis 15.10. Tailwind 500.
+- **Märkte** (`MARKT_FARBEN`): `#0072f5`, `#99ceff`, `#00254c`, `#52aeff`, `#0a4380`, `#cce6ff`,
+  `#0062d1`, `#0090ff` (Geist Blue, hell und dunkel gemischt).
+- **Tarifpunkte**: Essential `#12a594`, Professional `#0072f5`, Enterprise `#8e4ec6`.
 
 ### Feste (nicht theme-abhängige) Farben
-- Icon-Buttons default: `#6f6f6f` (light) / `#a0a0a0` (dark) — **nicht** über `--vc-muted`, sondern hart codiert
-- Primär-Button-Hover-BG (Goto, Filter-Submit): `#585855` (light) / `#a0a0a0` (dark)
-- Sentiment-Ampel: ≤25 `#D25D5D` · ≤40 `#D2865D` · ≤60 `#9E9E9E` · ≤75 `#9FD25D` · sonst `#60D25D` (gilt in beiden Themes gleich)
-- Dark-Tooltip (Icon-Buttons): BG `#1f1f1b` (light Mode!) / `#f0f0f0` (dark Mode) — **invertiert** zum Theme, Text jeweils umgekehrt (`#ffffff` / `#1f1f1b`)
+- Icon-Buttons: Ruhe `--vc-third`, Hover `--vc-text` (über die Marke, nicht mehr hart `#6f6f6f`)
+- Primär-Button-Hover: nur `opacity: .88`, keine zweite Farbe
+- Sentiment-Ampel (`UC.sentColor`, seit 15.10. Geist, in beiden Themes gleich): ≤25 `#E5484D`,
+  ≤40 `#FF990A`, ≤60 `#8F8F8F`, ≤75 `#6CDA75`, sonst `#45A557`. Bis 15.10. `#D25D5D`,
+  `#D2865D`, `#9E9E9E`, `#9FD25D`, `#60D25D`.
+- Icon-Tooltip `.up-tip`: BG `#1f1f1b`, Text `#ffffff`; an einem Element mit
+  `data-theme="dark"` BG `#f0f0f0`, Text `--vc-text-invert`
 
 ---
 
-## 1a. Citation-Type-Farben (Stand 13.10., Variante D "Branchenüblich")
+## 1a. Citation-Type-Farben (Stand 15.10., Geist)
 
-Ersetzt die bisherige Palette vollständig. Quelle der Werte: `CITE_TYPE` in `core.js`.
-Vorbild ist Peec AI: Farbe nur im Chip, sehr heller Grund, feiner Rand im selben Ton, dunkle
-Schrift. Die Farbtöne folgen der Branchenkonvention (Competition rot, Brand Platforms orange,
-Editorial blau, UGC türkis).
+Quelle der Werte: `CITE_TYPE` und `TYPE_OTHER` in `core.js`. Die Zuordnung der Farbtöne ist die
+von Variante D (13.10., Branchenkonvention: Competition rot, Brand Platforms orange, Editorial
+blau, UGC türkis, Knowledge-Base violett, Institutional grau); die **Werte** kommen seit dem
+15.10. abends aus Geists Skalen und nach Geists Rollen:
 
-| Citation Type | fill | fillDark | ink | inkDark | bg | bgDark | bd | bdDark |
-|---|---|---|---|---|---|---|---|---|
-| Editorial | `#7493C7` | `#8BA6D1` | `#375587` | `#B4CCF2` | `#F0F7FF` | `#1D232E` | `#D0E3FF` | `#2C384D` |
-| UGC / Community | `#49A1AB` | `#6DB2B9` | `#00636D` | `#9CD6DD` | `#EAFBFD` | `#162628` | `#BFEBF0` | `#1C3E42` |
-| Knowledge-Base | `#9688C1` | `#A79CCC` | `#594A82` | `#CDC3EE` | `#F7F5FF` | `#23212C` | `#E3DCFD` | `#39344B` |
-| Brand Platforms | `#BB845F` | `#C8997B` | `#7B461E` | `#EAC1A6` | `#FFF4EC` | `#2B2019` | `#FADAC6` | `#483224` |
-| Institutional | `#8195A6` | `#97A7B5` | `#455868` | `#BECDDA` | `#F3F7FB` | `#1F2327` | `#D8E3ED` | `#313940` |
-| Competition | `#C17E78` | `#CD948F` | `#803F3B` | `#EFBCB7` | `#FFF2F1` | `#2D1F1D` | `#FED6D2` | `#4B302D` |
-| You | `#1F1F1B` | `#E0E0E0` | `#FFFFFF` | `#1B1B1B` | `#1F1F1B` | `#E0E0E0` | `#1F1F1B` | `#E0E0E0` |
-| Fallback / Uncategorized | `#9E9E9E` | `#808080` | `#5F636B` | `#A8A8A8` | `#F5F5F5` | `#262626` | `#E0E2E6` | `#3A3A3A` |
+```
+fill   Stufe 700 ("high contrast background"), bei Geist in beiden Themen derselbe Ton
+       -> fill = fillDark. Brand Platforms Amber 800 (Orange statt Gelb), Institutional
+       Gray 800 / dunkel Gray 900.
+ink    Stufe 900 ("text and icons"); Institutional Gray 1000, Uncategorized Gray 900
+bg     Stufe 200 (Geist: "on smaller UI elements like badges, use Color 2 or 3")
+bd     = bg. Der Rand ist seit dem 14.10. unsichtbar, er hält nur die Größe.
+```
+
+| Citation Type | fill | fillDark | ink | inkDark | bg = bd | bgDark = bdDark |
+|---|---|---|---|---|---|---|
+| Editorial | `#0072F5` | `#0072F5` | `#0068D6` | `#52A8FF` | `#EBF5FF` | `#10233D` |
+| UGC / Community | `#12A594` | `#12A594` | `#067A6E` | `#0AC7B4` | `#E5FAF6` | `#062822` |
+| Knowledge-Base | `#8E4EC6` | `#8E4EC6` | `#7820BC` | `#BF7AF0` | `#F9F1FE` | `#2E1938` |
+| Brand Platforms | `#FF990A` | `#FF990A` | `#A35200` | `#F2A20D` | `#FFF4D6` | `#331B00` |
+| Institutional | `#7D7D7D` | `#A1A1A1` | `#171717` | `#EDEDED` | `#EBEBEB` | `#1F1F1F` |
+| Competition | `#E5484D` | `#E5484D` | `#CB2A2F` | `#FF6166` | `#FFEBEB` | `#3C1618` |
+| You | `#1F1F1B` | `#E0E0E0` | `#FFFFFF` | `#1B1B1B` | `#1F1F1B` | `#E0E0E0` |
+| Fallback / Uncategorized | `#A8A8A8` | `#7D7D7D` | `#4C4C4C` | `#A1A1A1` | `#F2F2F2` | `#1A1A1A` |
 
 - **fill**: Flächen in Charts (Doughnut, Balken, Legendenpunkt).
-- **ink, bg, bd**: Schrift, Grund und Rand des Chips.
+- **ink, bg**: Schrift und Grund des Chips. Kein Beimischen der Typfarbe in den Grund mehr (vom
+  14.10. bis 15.10. waren es 7 %): gemischt fiele die Schrift bei Red unter 4.5.
 - **You** trägt die Akzentfarbe des Themes (Abschnitt 1) und ist als einziger Chip invertiert.
 - **Lesen** immer über `UC.typeStyle("citation" | "url", roh, isDark)` → `{ fill, ink, bg, bd, dot }`; Ringe und Legenden über `UC.typeColor` (= `fill`). Keine Komponente hält eine eigene Kopie.
 
-> **Neue Dark-Mode-Regel (ersetzt "flach #242424, keine Tönung"):**
-> Im Dark Mode ist der Chip-Grund **leicht getönt** (OKLCH L 0.255, C 0.022 im Farbton des Typs),
-> der Rand etwas heller getönt (L 0.34, C 0.04), die Schrift hell (L 0.84, C 0.06).
-> Der Grund hebt sich vom Seitenhintergrund kaum ab (1.09:1). Sichtbar wird der Chip durch den Rand.
-> Chart-Flächen werden im Dark Mode heller (`fillDark`), damit sie auf `#1B1B1B` gleich stark wirken.
+**Kontrast** Schrift auf Chip-Grund (WCAG, im Code nachgerechnet): Typen hell 4.69 (Red) bis
+6.97 (Purple), dunkel 5.25 bis 7.67; Rückfall 7.67 / 6.74.
 
-**Kontrast** Schrift auf Chip-Grund (WCAG): Typen hell 6.6 bis 7.1:1, dunkel 9.5 bis 9.7:1;
-Fallback 5.5:1 / 6.4:1; You 16.5:1 / 13:1.
+**Chip-Form: ein Geist-Badge** (seit 15.10., `core.css` „DER TYP-CHIP IST EIN GEIST-BADGE“).
+EINE Regel für jeden Citation- und URL-Type-Chip (`.up-tag`, `.up-filter-tag`, `.udt-tag`,
+`.uut-tag`, `.tct-tag`), Komponenten behalten nur Lage und Kürzung. Farben weiter inline aus
+`UC.typeStyle`.
 
-**Chip-Maße** (gelten für `.tct-tag`, `.ut-badge`, `.utc-chip`):
 ```
-Höhe:          24px kompakt / 28px groß (unverändert)
-Padding:       0 10px / 0 11px (unverändert)
-Border:        1px solid bd          NEU
-Box-Sizing:    border-box            NEU (Rand liegt innerhalb der Höhe)
-Border-Radius: 7px / 8px (unverändert)
-Font-Size:     12px / 14px (unverändert)
-Font-Weight:   500                   NEU (vorher 600)
-Punkt:         KEINER
+                 md (Tabellenzeile, Filter)   sm (Drilldown, Erklärkarten)
+Höhe             24  --up-badge-h             20  --up-badge-h-s
+Polster          0 12px                       0 8px
+Abstand          5px                          4px
+Schrift          12 / 500, tabular-nums       11 / 500, Sperrung 0.2px
+Radius           voll rund (--up-r-voll)      voll rund
+Rand             1px in bg (unsichtbar)       wie md
 ```
+
+Bis 15.10. waren es 24px hoch, Polster 10, Radius 7 und ein sichtbarer Rand in `bd`.
 
 > **Unverändert gilt:** Citation Types haben KEINEN Punkt im Chip, URL Types haben IMMER einen
-> (6×6px, `border-radius: 999px`, 6px Gap).
+> (`.up-tag-dot` 6×6px, voll rund, im Abstand des Badges).
 
 Aliase auf dem Weg zu diesen Keys (`CITE_ALIAS`/`citeName()`): `Brand_Platform`/`Brand Platform` →
 `Brand Platforms`, `Knowledge_Base`/`Knowledge Base` → `Knowledge-Base`, `UGC_Community`/
@@ -168,51 +262,49 @@ Aliase auf dem Weg zu diesen Keys (`CITE_ALIAS`/`citeName()`): `Brand_Platform`/
 
 ---
 
-## 1b. URL-Type-Farben (Stand 13.10., Variante D)
+## 1b. URL-Type-Farben (Stand 15.10., Geist)
 
-Quelle: `URL_FAMILY` und `URL_TYPE` in `core.js`. Es gibt nur noch **drei Chip-Farben**, eine je
-Familie. Die Typen unterscheiden sich im Chip durch die Beschriftung und durch den **Punkt**,
-der die Chart-Fläche des Typs trägt. In Charts sind die Typen einer Familie über die Helligkeit
-gestaffelt. Die Familientöne sind dieselben wie bei den Citation Types:
-Commercial = Brand Platforms, Editorial = Editorial, Reference = Knowledge-Base.
+Quelle: `URL_FAMILY` und `URL_TYPE` in `core.js`. Es gibt **drei Chip-Farben**, eine je Familie
+(Geist-Stufe 900 auf 200): Commercial Amber, Editorial Blue, Reference Purple, also dieselben
+Töne wie Brand Platforms, Editorial und Knowledge-Base in 1a. Die Typen unterscheiden sich im
+Chip durch die Beschriftung und durch den **Punkt**, der die Chart-Fläche des Typs trägt.
 
 **Chip je Familie**
 
-| Familie | ink | inkDark | bg | bgDark | bd | bdDark |
-|---|---|---|---|---|---|---|
-| Commercial | `#7B461E` | `#EAC1A6` | `#FFF4EC` | `#2B2019` | `#FADAC6` | `#483224` |
-| Editorial | `#375587` | `#B4CCF2` | `#F0F7FF` | `#1D232E` | `#D0E3FF` | `#2C384D` |
-| Reference, community, media | `#594A82` | `#CDC3EE` | `#F7F5FF` | `#23212C` | `#E3DCFD` | `#39344B` |
-| Fallback | `#5F636B` | `#A8A8A8` | `#F5F5F5` | `#262626` | `#E0E2E6` | `#3A3A3A` |
+| Familie | ink | inkDark | bg = bd | bgDark = bdDark |
+|---|---|---|---|---|
+| Commercial | `#A35200` | `#F2A20D` | `#FFF4D6` | `#331B00` |
+| Editorial | `#0068D6` | `#52A8FF` | `#EBF5FF` | `#10233D` |
+| Reference, community, media | `#7820BC` | `#BF7AF0` | `#F9F1FE` | `#2E1938` |
+| Fallback | `#4C4C4C` | `#A1A1A1` | `#F2F2F2` | `#1A1A1A` |
 
-**Fläche je Typ** (Chart und Chip-Punkt)
+**Fläche je Typ** (Chart und Chip-Punkt): Geists Stufen der Familie, nach OKLCH-Helligkeit
+gewählt, damit die Staffel stetig läuft.
 
 | Typ | Familie | fill | fillDark |
 |---|---|---|---|
-| Homepage | Commercial | `#845738` | `#F1C7AC` |
-| Product / Service | Commercial | `#A57656` | `#D2AA8F` |
-| Marketplace | Commercial | `#C89675` | `#B48D73` |
-| Company Info | Commercial | `#EBB896` | `#977158` |
-| Article | Editorial | `#4A648E` | `#BAD2F9` |
-| Listicle | Editorial | `#607BA7` | `#A4BCE2` |
-| Guide | Editorial | `#7793C1` | `#8FA6CB` |
-| Comparison | Editorial | `#8FACDB` | `#7A90B4` |
-| Review | Editorial | `#A8C6F5` | `#667B9E` |
-| Documentation | Reference | `#665A8A` | `#D3CAF5` |
-| Forum | Reference | `#7D71A2` | `#BDB4DE` |
-| Directory | Reference | `#9589BC` | `#A79EC7` |
-| Video | Reference | `#AEA2D6` | `#9188B1` |
-| Social Post | Reference | `#C7BBF0` | `#7C749B` |
-| Uncategorized | Fallback | `#9E9E9E` | `#808080` |
+| Homepage | Commercial | `#4E2009` | `#FEF3DC` |
+| Product / Service | Commercial | `#A35200` | `#FFB224` |
+| Marketplace | Commercial | `#FF990A` | `#FF990A` |
+| Company Info | Commercial | `#FFC96B` | `#6B4105` |
+| Article | Editorial | `#00254C` | `#EBF6FF` |
+| Listicle | Editorial | `#0062D1` | `#52A8FF` |
+| Guide | Editorial | `#0072F5` | `#0090FF` |
+| Comparison | Editorial | `#52AEFF` | `#0062D1` |
+| Review | Editorial | `#99CEFF` | `#0A4380` |
+| Documentation | Reference | `#2E004C` | `#F8EDFC` |
+| Forum | Reference | `#763DA9` | `#BF7AF0` |
+| Directory | Reference | `#8E4EC6` | `#8E4EC6` |
+| Video | Reference | `#BF89EC` | `#763DA9` |
+| Social Post | Reference | `#D5B1F1` | `#5F2E85` |
+| Uncategorized | Fallback | `#A8A8A8` | `#7D7D7D` |
 
 Hell gestaffelt von dunkel nach hell, im Dark Mode **gegenläufig** von hell nach dunkel, damit der
 erste (meist größte) Typ einer Familie in beiden Themes am stärksten wirkt.
 
-Die getrennte **Chart-Fill-Variante** (`URL_COLOR_CHART`/`URL_COLOR_DARK` mit eigenen Werten)
-entfällt. Beide Namen bleiben als Ableitung aus `fill`/`fillDark` erhalten.
-Documentation und Review teilen keinen Wert mehr.
+`URL_COLOR_CHART`/`URL_COLOR_DARK` gibt es weiter, aber nur als Ableitung aus `fill`/`fillDark`.
 
-**Chip-Maße:** wie 1a, plus Punkt.
+**Chip-Maße:** wie 1a (Geist-Badge), plus Punkt.
 
 ---
 
@@ -313,44 +405,96 @@ gezeigt (statt eines nichtssagenden „0.0%").
 | Element | Size | Weight | Farbe | Sonstiges |
 |---|---|---|---|---|
 | Heading (Chart-Titel) | 14px | 500 | `--vc-text` | line-height 1.2, ellipsis |
-| Tabellen-Header-Label | 12px | 400 | `--vc-muted` | — |
+| Tabellen-Header-Label (`.up-root .up-th`, `.vt-th`, `.tct-th`) | 14px | 500 | `--vc-muted` | seit 15.10. für jede Tabelle (vorher 12/400, flach 13/500); Zeichen im Kopf 15px |
 | Tabellen-Zelle (Brand-Name) | 14px | 500 | `--vc-text` | ellipsis |
-| Tabellen-Zahlen (`.vt-num`) | 14px | 500 | `--vc-text` | — |
-| Trend-Chip | 13px | 600 | `--vt-up`/`--vt-down` | gap 4px zum Icon |
+| Tabellen-Zahlen (`.up-num`) | 14px | 500 | `--vc-text` | tabular-nums |
+| Trend-Chip (`.up-trend`) | 13px | 600 | `--vt-up`/`--vt-down` | Pfeil 16×16, gap 4px |
 | Sentiment-Wert | 14px (wie `.up-num`; im Kontext so gross wie Visibility/Rank daneben) | 500 | `--vc-text` | — |
+| Gesamtzeile: Wert / Etikett (`.up-sumwert` / `.up-sumlabel`) | 16px / 13px | 600 / 500 | `--up-accent-ink` / `--vc-fourth` | Abschnitt 8e |
+| Leerzustand: Titel / Satz (`.up-leer`) | 16px / 14px | 500 / 400 | `--vc-text` / `--vc-muted` | Zeilenhöhe 24 / 20 |
+| Suchfeld offen (`.up-search-input`) | 14px | 400 | `--vc-text` | bis 15.10. 14/500 |
 | Legend-Name (Line-Chart) | 12px | 500 | `--vc-text` | max-width + ellipsis |
-| Dropdown-Head (SORT BY, COMPANIES) | 11px | 600 | `--vc-muted` | uppercase, letter-spacing 0.04em |
+| Dropdown-Head (`.up-pop-head`, `.up-label`) | 12px | 600 | `--vc-third` | keine Versalien |
 | Dropdown-Item | 13px – 13.5px | 500 | `--vc-text` | — |
 | Filter-Item | 13px | normal | `--vc-text` | — |
 | Filter-Counter (7/7) | 11px | 600 | `--vc-muted` | tabular-nums |
 | Icon-Button-Tooltip | 12px | 500 | invertiert (s.o.) | line-height 1 |
 | Switcher-Label (Day/Week/Month) | 12px | 500 | `--vc-muted` → `--vc-text` aktiv | — |
-| Segmented-Switcher (uc-seg, Doughnut/Bar) | — (nur Icon) | — | `--uc-muted` → `--uc-text` aktiv | 14×14 Icon |
+| Segmented-Switcher (`.up-seg`, Doughnut/Bar) | – (nur Icon) | – | `--vc-muted` → `--vc-text` aktiv | 14×14 Icon |
 
 ---
 
 ## 2a. Icons
 
-**Alle Icons sind Feather Icons.** Keine gemischten Sets, kein Material, kein
-Heroicons, kein Lucide. Inline als SVG eingebettet, nie als Font oder externes
-Sprite, damit sie `currentColor` erben und im Dark Mode automatisch mitgehen.
+**Alle Icons kommen aus `UC.icon(name, strokeWidth)`** (`ICON_PATHS` in `core.js`), nie selbst
+gezeichnet. Der Satz ist seit dem 22.09. **Hugeicons 4.3.5, stroke-rounded** (vorher Lucide,
+davor Feather; die Schlüssel sind geblieben). Einzelne Zeichen sind wörtlich aus Lucide
+übernommen (z. B. die Sortierpfeile im Spaltenkopf), `linkFeather` ist das Feather-„link“.
+Inline als SVG, nie als Font oder externes Sprite, damit sie `currentColor` erben und im Dark
+Mode automatisch mitgehen.
 
-Standard-Attribute, so wie Feather sie ausliefert:
+Standard-Attribute (die Hülle von `icon()`):
 ```html
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 ```
-- `stroke-width` liegt je nach Größe zwischen **2** und **2.2**. Kleine Icons
-  (14px, Chevrons) vertragen 2.2, große bleiben bei 2. Ein Häkchen in einer
-  Checkbox darf auf 3 gehen, sonst wirkt es zu zart.
-- **Nie `fill` setzen**, immer `stroke: currentColor`. Farbe kommt ausschließlich
-  über die `color`-Eigenschaft des Elternelements.
-- Größen: 16×16 in Icon-Buttons, 14×14 in Trigger-Chevrons und Info-Icons,
-  11×11 in Checkboxen.
+- Gezeichnet ist der Satz für Strichstärke 1.5; Aufrufer mit 2 bekommen ein etwas
+  kräftigeres Bild (gewollt). Ein Häkchen in einer Checkbox darf auf 3 gehen.
+- **Keine gefüllten Icons** für „aktiv“ oder „gespeichert“: den Zustand zeigt der Knopf, das
+  Zeichen bleibt Strich. Farbe kommt ausschließlich über `color` des Elternelements.
+- Größen: 16×16 in Icon-Buttons, 15×15 im Tabellenkopf (Kopfzeichen, Info, Sortierpfeile),
+  14×14 in Trigger-Chevrons, Info-Icons außerhalb des Kopfs und offener Suchlupe, 11×11 in
+  Checkboxen.
+- Ein unbekannter Name liefert `""` und einen Konsolenfehler. Wer das Ergebnis in eine eigene
+  Hülle setzt, hat ein Loch; darum prüfen Bausteine wie `UC.kopfZeichenHtml` das Ergebnis.
 
 ---
 
-## 3. Spacing / Gaps / Radius
+## 3. Spacing / Gaps / Radius / Tiefe
+
+### Radius-Skala nach Geist (seit 15.10.)
+
+Die Stufen sind die von Geist (vercel.com/geist/materials): 4, 6, 8, 12, 16 und rund, nichts
+dazwischen. Gegenüber vorher (4/6/8/10/12/16/32) ist alles eine Stufe kleiner.
+
+| Token | Wert | Rolle | bis 15.10. |
+|---|---|---|---|
+| `--up-r-xs` | 4px | Punkt, Haken, Checkbox, Plakette, Knopf im Segment | 4 |
+| `--up-r-s` | 4px | Chip, Tag, Knopf bis 24px, Menüzeile im 12er-Menü | 6 |
+| `--up-r-m` | 6px | Knopf, Feld 32 bis 36px, Segment, Logo-Box, Tooltip einzeilig | 8 |
+| `--up-r-l` | 8px | Knopf und Feld ab 40px, Kachel, Tooltip mehrzeilig | 10 |
+| `--up-r-xl` | 8px | Karte innen, große Logoplatte, Vorschaubild | 12 |
+| `--up-r-2xl` | 12px | Karte, Box, Tabelle, Dialog, Toast, Erklärkarte | 16 |
+| `--up-r-3xl` | 16px | ganzseitige Fläche (heute das Anmeldefeld `.uau-panel`) | 32 |
+| `--up-r-voll` | 999px | alles ganz Runde (Badge, Avatar, Switch) | 999 |
+| `--up-dd-radius` | 12px | jedes Menü; steht auch an `:root` | 14 |
+
+`s = xs` und `xl = l` tragen denselben Wert, weil zwei alte Rollen auf dieselbe Geist-Stufe
+fallen. Die Namen bleiben getrennt: sie sagen, **was** gerundet wird. `--up-dd-radius` ist seit
+dem 15.10. **keine Ausnahme** mehr, sondern die Kartenstufe 12.
+
+**Die Regel nach Rolle**, nicht nach Gefühl:
+
+```
+Knopf, Feld, Segment, Zeile   nach ihrer Höhe:  bis 24 -> 4,  25-36 -> 6,  ab 37 -> 8
+Menü                          12; die Zeile darin konzentrisch (Polster 8 -> 4, Polster 6 -> 6)
+Karte, Tabelle, Dialog,
+Toast, Erklärkarte            12; ihre direkten Kinder 11
+Tooltip                       einzeilig 6 (.up-tip), mehrzeilig 8 (Chart-Tooltips)
+Badge, Avatar-Gruppe          voll rund
+```
+
+**Konzentrische Kinder gibt es weiterhin**: innen = außen minus Abstand, dann auf die nächste
+Stufe gerundet. Geschrieben wird das Kind aus dem Token, nicht als Zahl: ein Bild mit 1px Rand
+in einer 6er-Ecke `calc(var(--up-r-m) - 1px)`, das Bild im Logo-Stapel (Rand 1 plus Polster 2)
+`calc(var(--up-r-m) - 3px)`. Fest stehen nur noch 0, 50 %, Haarlinien unter 4 (Flaggen 3,
+Markierungsstriche 2 und 1) und die em-Werte in Miras Text.
+
+**Alte Zahlen in Kommentaren** (vor dem 15.10.) meinen die alte Skala. Zuordnung alt → neu
+(Radius-Block in `core.css`): 4 → 4, 6 → 4, 8 und 9 → 6, 10 bis 12 → 8, 14 bis 18 → 12,
+32 → 16. Maßgeblich ist die Rolle, nicht der Kommentar.
+
+### Maße
 
 | Kontext | Wert |
 |---|---|
@@ -358,97 +502,190 @@ Standard-Attribute, so wie Feather sie ausliefert:
 | Gap im gestapelten (mobilen) Modus | **32px** |
 | Head-Höhe (über jeder Chart-Box) | 32px, `margin-bottom: 16px` |
 | Head-Tools-Gap (Icon-Buttons untereinander) | 8px |
-| Box-Border-Radius (Chart-Container) | **16px** — beide Boxen, volle Radien (kein "verschmolzener" Look mehr) |
-| Tooltip-Border-Radius (Line-Chart) | **16px** |
-| Tooltip-Border-Radius (Icon-Button, dunkel) | 6px |
-| Dropdown-Menü-Radius | 12px (Filter) / 14px (Sort) |
-| Icon-Button | 32×32px, radius 8px, SVG 16×16px |
-| Switch-Track (Toggle) | 38×22px, radius 999px (voll rund), Knopf 18×18px |
-| Gran-Switcher (Day/Week/Month) | Höhe 32px, Button-Radius 8px |
-| Segmented-Switcher (Doughnut/Bar, uc-seg) | Höhe 24px, Radius 7px |
-| Tabellen-Zeile Höhe | 55px (Gap-Row: 50px, wegen 4px Marge + 1px Border) |
-| Tabellen-Head Höhe | 45px |
-| Logo-Box | 24×24px, radius 8px, Bild 22×22px radius 7px (1px Padding) |
-| Zellen-Padding | `0 16px 0 8px` |
-| Filter-Item Padding | `7px 9px`, radius 8px |
-| Filter-Dropdown Padding | 6px außen |
-| Filter-Submit-Button | Höhe 34px, radius 9px, `margin-top: 6px` |
+| Box-Radius (`.up-box`, Chart-Container) | 12px (`--up-r-2xl`) |
+| Tooltip-Radius Chart (Linie, Doughnut) | 8px (`--up-r-l`) |
+| Tooltip-Radius Icon-Button (`.up-tip`) | 6px (`--up-r-m`) |
+| Dropdown-Menü-Radius | 12px (`--up-dd-radius`), Polster 8 (`--up-dd-pad`), Abstand zum Auslöser 6 (`--up-dd-gap`) |
+| Icon-Button (`.up-iconbtn`) | 32×32px, Radius 6, SVG 16×16px; Stufen 28 (Radius 6), 24 (4), 20 (4) |
+| Switch-Track (Toggle) | 38×22px, voll rund, Knopf 18×18px mit `--up-e-1` |
+| Gran-Switcher (D/W/M, `.vc-gran`) | Höhe 26px, Radius 6, Knöpfe min. 26 breit |
+| Segment (`.up-seg`) | Höhe 26px, Radius 6; `.is-lg` 32px |
+| Tabellen-Zeile Höhe | `.up-row` 72px (Comfortable), 55px (Compact, `.is-dense`); Top Brands `.vt-row` 55px |
+| Tabellen-Head Höhe | 45px; flache Tabelle 48px (`--up-flach-h`) |
+| Logo-Box (`.up-logo-box`) | 24×24px, Radius 6, Bild 22×22px Radius 5 (1px Polster) |
+| Zellen-Padding (`.up-th`, `.up-td`) | `0 16px 0 12px` |
+| Filter-Item (`.up-filter-item`) | Polster `6px 9px`, Radius 4 |
+| Filter-Submit-Button (`.up-filter-submit`) | Höhe 32px, Radius 6, `margin-top: 6px` |
 
-**Standard-Schatten (Dropdowns/Popovers):** `box-shadow: 0 10px 28px rgba(0,0,0,.14)`
-**Tooltip-Schatten (dunkel, Icon-Buttons):** `box-shadow: 0 4px 14px rgba(0,0,0,0.18)`
-**Tooltip-Schatten (Line-Chart, hell):** `box-shadow: 0 4px 14px rgba(0,0,0,.10)` · **(dunkel):** `rgba(0,0,0,.25)`
+### Tiefe: die Schatten nach Geist (seit 15.10.)
+
+Quelle: Vercels `--ds-shadow-*` (vercel.com/geist/materials). Jede Stufe ist zwei bis drei
+schmale Lagen mit negativer Streuung statt einer breiten Lage; Geists 1px-Ring fehlt mit Absicht
+(jedes Bauteil hat seinen Rahmen schon als `border`). Alle Tiefen stehen an `:root`, `.up-root`
+und `[data-theme]`, erreichen also auch, was am `<body>` hängt. **Kein Rückfallwert** in
+`var(--up-e-*, …)`; einzige Ausnahme `quick-actions.css`, die ohne core laufen muss.
+
+| Token | Rolle | Geist | Light |
+|---|---|---|---|
+| `--up-e-1` | liegt auf der Fläche: Knopf, Feld, Regler, Kachel | small | `0 2px 2px rgba(0,0,0,.04)` |
+| `--up-e-2` | hängt an einem Auslöser: Menü, Popover, Tooltip, Erklärkarte, Hover-Anhub | menu | `0 1px 1px rgba(0,0,0,.02), 0 4px 8px -4px rgba(0,0,0,.04), 0 16px 24px -8px rgba(0,0,0,.06)` |
+| `--up-e-3` | schwebt frei über dem Inhalt: Leiste, Kasten | modal | `0 1px 1px rgba(0,0,0,.02), 0 8px 16px -4px rgba(0,0,0,.04), 0 24px 32px -8px rgba(0,0,0,.06)` |
+| `--up-e-4` | liegt über einem Schleier: Dialog, Palette, **Toast** | modal-elevated | `0 32px 72px -12px rgba(0,0,0,.06), 0 8px 32px -12px rgba(0,0,0,.08), 0 8px 24px -12px rgba(0,0,0,.12)` |
+| `--up-e-drawer` | Schublade, wirft seitlich | modal-elevated, um 90° gedreht | `-32px 0 72px -12px rgba(0,0,0,.06), -8px 0 32px -12px rgba(0,0,0,.08), -8px 0 24px -12px rgba(0,0,0,.12)` |
+| `--up-e-chip` | gehobener Chip | medium | `0 2px 2px rgba(0,0,0,.04), 0 8px 8px -8px rgba(0,0,0,.04)` |
+
+**Im Dunkeln** werden nur die flachen Stufen kräftiger, wie bei Geist: `--up-e-1`
+`0 1px 2px rgba(0,0,0,.16)`, `--up-e-chip` `0 2px 2px rgba(0,0,0,.32), 0 8px 8px -8px
+rgba(0,0,0,.16)`. e-2, e-3, e-4 und e-drawer behalten die hellen Zahlen (sie stehen trotzdem im
+dunklen Block ausgeschrieben); die Kante tragen dort die helleren Rahmen.
+
+`--up-dd-shadow` **ist** `var(--up-e-2)`, nicht mehr eine eigene Zahl. Bis 15.10. war jede Stufe
+eine breite Lage (Menüs `0 10px 28px rgba(0,0,0,.14)`, Tooltips `0 4px 14px rgba(0,0,0,.18)`);
+diese Werte gelten nirgends mehr.
 
 ---
 
-## 4. Icon-Buttons
+## 4. Icon-Buttons und Knopf-Zustände
 
 ```css
-.iconbtn {
-  width: 32px; height: 32px; border: 0; border-radius: 8px;
-  background: transparent; color: #6f6f6f; cursor: pointer; padding: 0;
+/* core.css, .up-iconbtn (laut) und .up-iconbtn.is-quiet (leise) */
+.up-iconbtn {
+  width: 32px; height: 32px; border: 0; border-radius: var(--up-r-m);   /* 6 */
+  background: transparent; color: var(--vc-third); cursor: pointer; padding: 0;
 }
-[data-theme="dark"] .iconbtn { color: #a0a0a0; }
-.iconbtn:hover { color: var(--vc-text); }              /* WICHTIG: braucht eigene dark-mode-hover-Regel! */
-[data-theme="dark"] .iconbtn:hover { color: var(--vc-text); }
-.iconbtn svg { width: 16px; height: 16px; display: block; }
+.up-root[data-theme="dark"] .up-iconbtn { color: var(--vc-third); }
+.up-root[data-theme="dark"] .up-iconbtn:hover { color: var(--vc-text); }  /* eigene Dunkel-Regel, s. Falle */
+.up-iconbtn:not(.is-quiet):hover { color: var(--vc-text); background: var(--vc-heading-bg); }
+.up-iconbtn.is-quiet:hover { color: var(--vc-text); background: transparent; }
+.up-iconbtn svg { width: 16px; height: 16px; display: block; }
+```
+Größenleiter: `.is-28` (28, Radius 6, SVG 15), `.is-24` (24, Radius 4, SVG 14), `.is-20` (20,
+Radius 4, SVG 13).
+
+⚠️ **Bekannte Falle:** Eine simple `:hover`-Regel reicht **nicht**: die Dark-Mode-Grundregel
+(`.up-root[data-theme="dark"] .up-iconbtn`) hat höhere Spezifität als ein einfaches `:hover`
+und überschreibt es lautlos. Immer eine **explizite** dunkle Hover-Regel danebensetzen. Derselbe
+Trick gilt für **jeden** Zustand, der im Dark Mode „verschwindet": Switch-`is-on`,
+Filter-`is-checked`, etc.
+
+### Knopf-Zustände nach Geist (seit 15.10.)
+
+Gelesen an vercel.com/geist/button, /menu und /select. Die Töne bleiben unsere, als Token in
+core (an `:root`, `.up-root` und jedem `[data-theme]` neu ausgewertet, damit ein Menü mit eigenem
+Rand den eigenen Ton bekommt):
+
+```
+--up-knopf-hover:          var(--vc-heading-bg)                                 Fläche beim Überfahren
+--up-knopf-rand-hover:     color-mix(in srgb, var(--vc-border) 86%, var(--vc-text))   eine Stufe kräftigere Kante
+--up-knopf-fokus-abstand:  2px
 ```
 
-⚠️ **Bekannte Falle:** Eine simple `.iconbtn:hover { color: var(--vc-text); }`-Regel reicht **nicht** — die Dark-Mode-Grundfarben-Regel (`[data-theme="dark"] .iconbtn`) hat höhere CSS-Spezifität als ein einfaches `:hover`, und überschreibt es lautlos. Immer eine **explizite** `[data-theme="dark"] .iconbtn:hover`-Regel danebensetzen. Derselbe Trick gilt für **jeden** Zustand, der im Dark Mode „verschwindet": Switch-`is-on`, Filter-`is-checked`, etc. — immer eine theme-gescopte Version der Zustands-Klasse ergänzen.
+| Bauteil | Ruhe | Hover | Offen | Fokus (Tastatur) |
+|---|---|---|---|---|
+| Sekundärknopf (`.up-btn-sec`, 32, Radius 6, Rand `--vc-border`) | transparent | **nur** Fläche `--up-knopf-hover`, Rand bleibt | – | `outline: 2px solid var(--up-focus)`, `outline-offset: 2px` |
+| Menü-Auslöser mit Rahmen (`.up-ddtrigger`) | Grund `--vc-bg`, Rand `--vc-border`, Schrift `--vc-muted` | Fläche `--up-knopf-hover` **und** Rand `--up-knopf-rand-hover`, Schrift `--vc-text` | wie Hover | wie oben |
+| Menü-Auslöser gewählt (`.up-ddwrap.has-sel`) | Fläche `--vc-heading-bg`, Rand `--vc-hover-border` | unverändert: ein Zustand, kein Hover | | |
+| Gedrückt | nichts Eigenes (Geist: `data-pressed` ändert weder Fläche noch Rand) | | | |
 
-### Primärfarben-Buttons (Goto, Filter-Submit)
+Bis 15.10. zog jeder umrandete Knopf beim Überfahren seinen Rand auf `--vc-hover-border`
+(`#6f6f6f` hell, `#707070` dunkel), „recht dunkel“. Diese Kante trägt jetzt nur noch der
+**gewählte** Zustand. Der Fokus ist eine `outline` mit Abstand, kein `box-shadow`: so ist der
+Abstand durchsichtig und braucht keine Grundfarbe.
+
+### Primärfarben-Buttons (`.up-btn-pri`, `.up-filter-submit`, `.up-topicmodal-save`)
 ```css
-.goto { background: var(--vc-text) !important; color: #e0e0e0; }
-[data-theme="dark"] .goto { color: #1f1f1b; }
-.goto:hover, .filter-submit:hover { background: #585855 !important; }
-[data-theme="dark"] .goto:hover, [data-theme="dark"] .filter-submit:hover { background: #a0a0a0 !important; }
+.up-btn-pri { height: 32px; padding: 0 14px; border-radius: var(--up-r-m); border: 0;
+  background: var(--up-accent); color: var(--up-accent-fg); font-size: 13px; font-weight: 500; }
+.up-btn-pri:not(:disabled):hover { opacity: .88; }
+.up-btn-pri:disabled { opacity: .4; }
+.up-btn-pri:focus-visible { outline: 0; box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 ```
-Regel: **nur der Background ändert sich beim Hover**, nie die Icon-/Textfarbe.
+Regel: **beim Hover ändert sich nur die Deckkraft**, nie Icon-/Textfarbe; ausgeschaltet bleibt die
+Füllung und wird gedimmt.
 
 ---
 
 ## 5. Switcher & Toggles
 
-### Segmentierter Switcher (Day/Week/Month, Doughnut/Bar)
+### Segmentierter Switcher (`.up-seg`, D/W/M `.vc-gran`, Doughnut/Bar)
 ```css
-.gran { display: inline-flex; background: var(--vc-switch-bg); border-radius: 8px; height: 32px; }
-.gran-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 8px;
-  background: transparent; color: var(--vc-muted); font-size: 12px; font-weight: 500; }
-.gran-btn:hover { color: var(--vc-text); }
-.gran-btn.is-active { background: #ffffff; color: var(--vc-text); border-color: var(--vc-switch-border); }
-[data-theme="dark"] .gran-btn.is-active { background: #121212; border-color: #353535; }
+.up-seg   { display: inline-flex; height: 26px; background: var(--vc-switch-rail);
+            border-radius: var(--up-r-m); border: 0; }                 /* 6 */
+.vc-gran-btn { height: 26px; min-width: 26px; padding: 0 8px; border-radius: var(--up-r-m);
+            color: var(--vc-muted); font-size: 12px; font-weight: 500; }
+/* die aktive Stufe ist ein gleitender Streifen (::before), kein umgefärbter Knopf */
+.up-seg::before { border-radius: var(--up-r-m); background: var(--vc-switch-pill);
+            border: 1px solid var(--vc-switch-border); }               /* fährt 200ms */
 ```
-Kleinere Variante (Segmented Icon-Switcher, z.B. Doughnut/Bar in Citations Overview): Höhe 24px statt 32px, Radius 7px statt 8px, Icons 14×14.
+Große Form `.up-seg.is-lg` (allein über dem Inhalt, z. B. Brand Detail): 32px hoch, Knöpfe
+`0 16px`. Die Schiene ist in jeder Größe `--vc-switch-rail`, die Pille `--vc-switch-pill`.
 
-### An/Aus-Switch (z.B. „Descending" im Sort-Dropdown)
-```css
-.switch { width: 38px; height: 22px; border-radius: 999px; background: var(--vc-border); }
-[data-theme="dark"] .switch { background: rgba(42,42,42,0.6); }
-.switch::after { content:""; position:absolute; top:2px; left:2px; width:18px; height:18px;
-  border-radius:999px; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,0.2); transition: transform 160ms ease; }
-.switch.is-on { background: var(--vc-text); }
-.switch.is-on::after { transform: translateX(16px); }
-[data-theme="dark"] .switch::after { background: #e0e0e0; }
-[data-theme="dark"] .switch.is-on { background: var(--vc-text); }   /* Spezifitäts-Fix, s.o. */
-[data-theme="dark"] .switch.is-on::after { background: #1f1f1b; }
+### Themenschalter nach Geist (`UC.themeSchalterHtml`, seit 15.10.)
+
+Geists Theme Switcher (vercel.com/geist/theme-switcher), aufgebaut auf `.up-seg` (der gleitende
+Streifen bleibt). EIN Markup für beide Orte: das Konto-Menü der Seitenleiste (klein) und
+Preferences (groß). Vorher dort eine Liste mit Haken und hier ein Auswahlmenü.
+
 ```
-Kein Mint/Teal irgendwo in Switches oder Checkboxen — immer `--vc-text` als „aktiv"-Farbe
-(siehe die verbindliche Akzentfarben-Regel in Abschnitt 1).
+UC.themeSchalterHtml({ klein, wahl })  -> .up-seg.up-themesw[.is-klein], role="radiogroup"
+Reihenfolge     System (Zeichen computer), Light (sun), Dark (moon); nur Zeichen 16px,
+                Name als aria-label und Tooltip
+Größe           32 (--up-h-btn, Preferences) / 24 (--up-h-chip, .is-klein, Konto-Menü)
+Form            voll rund, keine Schiene; außen ein 1px-Ring --vc-switch-border (box-shadow)
+Gewählt         Fläche --vc-switch-pill mit eigenem 1px-Ring --vc-switch-border und --up-e-1
+Farben          Ruhe --vc-third, Hover und gewählt --vc-text
+Klick           data-up-themawahl am Knopf; der Ort ruft setUpstreemThemeOption
+```
+
+### An/Aus-Switch (z.B. „Descending" im Sort-Dropdown, „Summary row" im Display-Menü)
+```css
+.up-switch { width: 38px; height: 22px; border-radius: var(--up-r-voll);
+  background: var(--up-switch-off, #d6d6d4); }                       /* dunkel #444444 */
+.up-switch::after { content:""; position:absolute; top:2px; left:2px; width:18px; height:18px;
+  border-radius: var(--up-r-voll); background:#fff; box-shadow: var(--up-e-1);
+  transition: transform 160ms ease; }
+.up-switch.is-on { background: var(--up-accent); }
+.up-root[data-theme="dark"] .up-switch.is-on { background: var(--up-accent); }   /* Spezifitäts-Fix */
+.up-switch.is-on::after { transform: translateX(16px); }
+```
+Kein Mint/Teal in Switches oder Checkboxen: „aktiv“ ist immer `--up-accent` (Abschnitt 1).
+
+### Slider nach Geist (`.urt-slider`, seit 15.10.)
+
+Der Doppelregler der Responses-Filter und des Panels in der einen Leiste (`responses-table.css`),
+gelesen an vercel.com/geist/slider:
+
+```
+Bahn       8px hoch, voll rund, --vc-border (im grauen Light #ebebeb = Geist Gray 200)
+Füllung    volle Bahnhöhe, --up-accent
+Griff      stehender Riegel 6x14, Radius 1 innen, Grund --up-surface,
+           1px-Ring innen in --up-knopf-rand-hover
+Ziehen     scale(1.2) über --up-t-1; Fokus dazu 2px-Outline --up-focus im Abstand 2
+Treffer    der Griff trägt ringsum 6px durchsichtigen Rand (--urt-griff-rand), sichtbar
+           sind nur die 6x14; die Eingabefelder ragen je einen halben Griff über die Bahn,
+           damit die Griffmitte an den Enden auf dem Bahnende steht
+```
+Kein Hover-Zustand. Werte, Schritte und Ereignisse sind unverändert.
 
 ---
 
 ## 6. Dropdowns / Popover-Menüs
 
-**Alle Dropdowns nutzen dieselbe Appear-Animation** (opacity + leichtes Scale, kein `display:none`-Hard-Toggle):
+**Alle Dropdowns nutzen dieselbe Hülle `.up-menu`** und dieselbe Appear-Animation (opacity +
+leichtes Scale, kein `display:none`-Hard-Toggle):
 ```css
-.menu {
-  position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
-  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: 12px;
-  box-shadow: 0 10px 28px rgba(0,0,0,.14); padding: 6px;
+.up-menu {
+  position: absolute; top: calc(100% + var(--up-dd-gap)); right: 0; z-index: 60; width: 230px;
+  background: var(--vc-bg); border: 1px solid var(--vc-border);
+  border-radius: var(--up-dd-radius);          /* 12, Geist material-menu (bis 15.10. 14) */
+  box-shadow: var(--up-dd-shadow);             /* = --up-e-2 */
+  padding: var(--up-dd-pad);                   /* 8 */
   opacity: 0; transform: translateY(-4px) scale(0.985); pointer-events: none;
   transition: opacity 140ms ease, transform 140ms ease;
 }
-.wrap.is-open .menu { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-.wrap.is-open .trigger-btn { color: var(--vc-text); background: var(--vc-heading-bg); }
+.up-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.up-root[data-theme="dark"] .up-menu { background: var(--up-menu-bg); }
+.is-open > .up-iconbtn { color: var(--vc-text); background: var(--vc-heading-bg); }
 ```
 Wichtig: das Menü bleibt IMMER im DOM/Layout (`display` wird nie umgeschaltet) — nur `opacity`/`transform`/`pointer-events`. Nur **ein** Dropdown gleichzeitig offen (beim Öffnen eines anderen wird das erste geschlossen).
 
@@ -493,20 +730,22 @@ ohnehin sofort an und haben keinen Entwurf.
 
 ### Dropdown-Item (Liste, z.B. Sort-Optionen)
 ```css
-.pop-opt { display:flex; align-items:center; justify-content:space-between; gap:10px;
-  padding:9px 10px; border-radius:9px; font-size:13.5px; font-weight:500; color:var(--vc-text); }
-.pop-opt:hover { background: var(--vc-heading-bg); }
+.up-pop-opt { display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:9px 10px; border-radius: var(--up-r-s);   /* 4 = 12er-Menü minus 8 Polster */
+  font-size:13.5px; font-weight:500; color:var(--vc-text); }
+.up-pop-opt:hover { background: var(--vc-heading-bg); }
 ```
-Divider zwischen Gruppen: `height:1px; background:var(--vc-border); margin:7px 4px;`
+Menüs mit 6er-Polster (Zeilenmenüs der Gruppen, Brands-Aktionen) runden ihre Zeilen mit 6
+(`--up-r-m`). Divider zwischen Gruppen (`.up-pop-div`): `height:1px; background:var(--vc-border); margin:7px 4px;`
 
 ### Filter-/Auswahl-Item (Checkbox-Liste)
 ```css
-.filter-item { display:flex; align-items:center; gap:10px; padding:7px 9px; border-radius:8px; font-size:13px; }
-.filter-item:hover { background: var(--vc-heading-bg); }
-.filter-item.is-disabled { opacity: .4; cursor: default; }   /* NIE cursor:not-allowed verwenden */
-.filter-check { width:16px; height:16px; border-radius:5px; border:1.5px solid var(--vc-border); color:#fff; }
-.filter-item.is-checked .filter-check { background: var(--vc-text); border-color: var(--vc-text); }
-[data-theme="dark"] .filter-item.is-checked .filter-check { color: #1f1f1b; }
+.up-filter-item { display:flex; align-items:center; gap:10px; padding:6px 9px; border-radius: var(--up-r-s); }
+.up-filter-item:hover { background: var(--vc-heading-bg); }
+.up-filter-item.is-disabled { opacity: .4; cursor: default; }   /* NIE cursor:not-allowed verwenden */
+.up-filter-check { width:16px; height:16px; border-radius: var(--up-r-xs);   /* 4 */
+  border:1.5px solid var(--vc-border); color: var(--up-accent-fg); }
+.up-filter-item.is-checked .up-filter-check { background: var(--up-accent); border-color: var(--up-accent); }
 ```
 
 ---
@@ -515,52 +754,44 @@ Divider zwischen Gruppen: `height:1px; background:var(--vc-border); margin:7px 4
 
 ## 6a. Dropdown-Trigger: Hover- und Open-States (verbindlich)
 
-Gilt für **jeden** Dropdown-Auslöser, egal ob Icon-Button oder beschrifteter Container.
+Gilt für **jeden** Dropdown-Auslöser, egal ob Icon-Button oder beschrifteter Container. Seit
+dem 15.10. nach Geist (Abschnitt 4, Knopf-Zustände); bis dahin zog der Hover den Rand auf
+`--vc-hover-border`.
 
-**Elemente MIT Rahmen** (beschriftete Container, Inputs, Karten):
+**Elemente MIT Rahmen** (`.up-ddtrigger`: Markets, Models, Topics, Kalender, Settings):
 ```
-Ruhezustand   bg: transparent          border: var(--vc-border)        text: var(--vc-text)
-Hover         bg: var(--vc-hover-bg)   border: var(--vc-hover-border)
-Geöffnet      bg: TRANSPARENT          border: var(--vc-hover-border)
+Ruhezustand   bg: var(--vc-bg)              border: var(--vc-border)            text: var(--vc-muted)
+Hover         bg: var(--up-knopf-hover)     border: var(--up-knopf-rand-hover)  text: var(--vc-text)
+Geöffnet      wie Hover (.up-ddwrap.is-open)
+Gewählt       bg: var(--vc-heading-bg)      border: var(--vc-hover-border)      text: var(--vc-text)
+              (.up-ddwrap.has-sel: ein Zustand, kein Hover; die dunkle Kante gibt es nur hier)
+Fokus         outline 2px var(--up-focus), outline-offset 2px
 ```
+Maße: 32 hoch, Polster `0 10px`, Radius 6 (`--up-r-m`), 1px Rand, Schrift 13/500, Zeichen 16,
+Abstand 8. Die Form ist `[Icon] [Beschriftung] [Chevron]`, nur so breit wie ihr Inhalt.
 
-> **Der Geöffnet-Zustand ist NICHT der Hover-Zustand.** Geöffnet ändert **ausschließlich
-> die Rahmenfarbe**, der Hintergrund bleibt transparent. Sonst sieht ein offenes Dropdown
-> aus, als läge der Mauszeiger darauf, und man verliert die Rückmeldung beim Überfahren
-> des bereits geöffneten Auslösers.
+**Elemente OHNE Rahmen** (Icon-Buttons, `.up-filter-btn`): nur der Hintergrund.
 ```
---vc-hover-bg:     #f5f5f5   (hell)  /  rgba(42,42,42,0.6)  (dunkel)
---vc-hover-border: #6f6f6f   (hell)  /  #707070             (dunkel)
-```
-
-**Elemente OHNE Rahmen** (Icon-Buttons) — nur der Hintergrund:
-```
-Ruhezustand   bg: transparent          icon: #6f6f6f / #a0a0a0
-Hover         bg: var(--vc-hover-bg)   icon: var(--vc-text)
-Geöffnet      bg: var(--vc-hover-bg)   icon: var(--vc-text)
+Ruhezustand   bg: transparent                 icon/text: var(--vc-third) bzw. var(--vc-text)
+Hover         bg: var(--vc-heading-bg)        icon: var(--vc-text)
+Geöffnet      bg: var(--vc-heading-bg)        icon: var(--vc-text)
+Aktiv         bg: var(--vc-heading-bg)        (.up-filter.is-active: angewendeter Filter)
 ```
 
 Ein Chevron **rotiert nicht** beim Öffnen.
 
 ### Aktiver Filter: gleiche Optik wie „Geöffnet"
 
-Ein Trigger, dessen Filter **angewendet** ist, trägt exakt dieselbe Darstellung wie
-ein geöffnetes Dropdown:
-
-```
-Aktiv (Filter angewendet)   bg: TRANSPARENT   border: var(--vc-hover-border)   text: var(--vc-text)
-```
-
-Das ist Absicht und kein Zufall: „dieses Element tut gerade etwas" und „dieses
-Element ist offen" haben dasselbe visuelle Gewicht, beide heißen *hier hinsehen*.
-Ein separates Zähl-Badge oder eine Akzentfarbe braucht es dafür nicht, das Label
-nennt die Auswahl ohnehin.
+Ein Trigger, dessen Filter **angewendet** ist, trägt dieselbe Darstellung wie ein geöffnetes
+Dropdown. „Dieses Element tut gerade etwas“ und „dieses Element ist offen“ haben dasselbe
+Gewicht, beide heißen *hier hinsehen*. Ein separates Zähl-Badge braucht es dafür nicht, das
+Label nennt die Auswahl ohnehin.
 
 Umgesetzt als eigene Klasse `.is-active` am Wrapper, gesetzt aus derselben
 Funktion, die auch das Label schreibt:
 ```css
-.x-filter.is-active .x-filter-btn { background: transparent; color: var(--vc-text); border-color: var(--vc-hover-border); }
-.x-filter.is-active .x-filter-btn-chev { color: var(--vc-text); }
+.up-filter.is-active .up-filter-btn { background: var(--vc-heading-bg); color: var(--vc-text); }
+.up-filter.is-active .up-filter-btn-chev { color: var(--vc-text); }
 ```
 
 ### Chevron wird zum X, solange der Filter aktiv ist
@@ -597,10 +828,10 @@ gedrückt werden muss. Das Menü bleibt dabei offen, damit die geleerten Checkbo
 sichtbar sind. Für den Weg über das X am Trigger schließt es sich, weil dort nie
 eines offen war.
 
-Beschriftete Container (z. B. „All Citation Types", „All Brands"):
+Beschriftete Container ohne Rahmen (`.up-filter-btn`, z. B. „All Citation Types"):
 ```
-Höhe 32px, Padding 0 10px, Radius 8px, Border 1px solid var(--vc-border)
-Font 12px / 500, Gap 8px zum Chevron, Chevron 14×14 in var(--vc-muted)
+Höhe 32px, Padding 0 10px, Radius 6 (--up-r-m), Rand 1px transparent
+Font 12px / 500, Gap 8px zum Chevron, Chevron 14×14 in var(--vc-muted), max-width 220px
 ```
 Das Label nennt die aktive Auswahl: `All X` → bei einer Auswahl deren Name → ab zwei
 `N X`. Ein separates Zähl-Badge entfällt dann.
@@ -633,15 +864,16 @@ Es gibt **zwei unterschiedliche Tooltip-Typen** im System:
 ```css
 .up-tip {
   position: fixed; z-index: 2147483640;   /* an <body> gehängt, damit nichts es clippen kann */
-  height: 24px; padding: 0 9px; border-radius: 6px;
+  height: 24px; padding: 0 9px; border-radius: var(--up-r-m);   /* 6, Geist: einzeiliger Tooltip */
   font-size: 12px; font-weight: 500; line-height: 1;
-  box-shadow: var(--up-e-2);              /* Tiefe "haengt an einem Ausloeser", seit 28.09. */
+  box-shadow: var(--up-e-2);              /* Tiefe "haengt an einem Ausloeser" */
   opacity: 0; transform: translateY(4px); transition: opacity .14s ease, transform .14s ease;
 }
+.up-tip.is-wide { height: auto; white-space: normal; max-width: 340px; padding: 6px 9px; line-height: 1.35; }
 ```
-Farben: BG `#1f1f1b` / Text `#ffffff` — **in beiden Themes identisch, nicht invertieren.**
-Tooltips schweben über der Seite und liegen nicht in der Oberfläche; eine Invertierung
-lässt sie im Dark Mode wie eine fremde Komponente wirken.
+Farben: BG `#1f1f1b` / Text `#ffffff`, in beiden Themes; nur ein Tooltip, das selbst
+`data-theme="dark"` trägt, wird hell (`#f0f0f0`, Schrift `--vc-text-invert`).
+Tooltips schweben über der Seite und liegen nicht in der Oberfläche.
 
 Erscheint nach **60ms** Hover-Delay (bewusst kurz gehalten, „fast ohne Delay" wie Mira),
 verschwindet sofort bei Klick/Mousedown.
@@ -665,13 +897,14 @@ var showTip = _tips.showTip, showTipText = _tips.showTipText,
 `makeTooltips` installiert auch `[data-tip]`- und `[data-brandtip]`-Hover-Handler am Root automatisch.
 
 **B) Chart-Datenpunkt-Tooltip** (Linie folgt dem Cursor; derselbe Kasten am Doughnut)
-- Radius **16px**, Padding `10px 12px` (Linie) bzw. `12px 14px` (Doughnut)
+- Radius **8px** (`--up-r-l`, Geist: mehrzeiliger Tooltip; bis 15.10. 16px), Padding `10px 12px` (Linie) bzw. `12px 14px` (Doughnut)
 - Light Mode: `background:#ffffff; border:1px solid #dcdbdd`
 - Dark Mode: `background:#232326; border:1px solid #3e3e44` -- die **Menüfläche**, nicht der
   Seitengrund: was oben liegt, ist in dieser Leiter heller (vorher `#121212`, ein Loch statt einer
   Ebene)
-- Schatten in beiden Themen `var(--up-e-2)` (seit 06.10.; vorher je Thema ein eigener Wert). Das
-  Token löst sich am Ort auf: der Tooltip hängt im Chart, also unter der Wurzel mit ihrem Thema.
+- Schatten in beiden Themen `var(--up-e-2)` (seit 06.10.; vorher je Thema ein eigener Wert;
+  seit 15.10. die mehrlagigen Geist-Werte aus Abschnitt 3). Das Token löst sich am Ort auf: der
+  Tooltip hängt im Chart, also unter der Wurzel mit ihrem Thema.
 - Text: Titel `#6b6f78` hell / `#8a8a8a` dunkel, Werte `#1f1f1b` / `#e6e6e6`
 - Folgt der Maus mit Easing (`FOLLOW = 0.18` pro Frame, ca. 280ms „Trägheit")
 
@@ -681,9 +914,9 @@ Zweiteiliger Aufbau: oben ein helles Panel, das die Metrik so zeigt, wie sie in 
 aussieht, darunter Überschrift und ein Satz Erklärung auf dunklem Grund.
 
 ```css
-.explain {
+.up-explain {
   position: fixed; z-index: 2147483001; width: 248px; padding: 8px;
-  border-radius: 14px;
+  border-radius: var(--up-r-2xl);   /* 12, Kartenstufe (bis 15.10. 14) */
   /* Die UMGEKEHRTE Karte (seit 28.09. Token): hell eine dunkle Karte, dunkel eine helle.
      --vc-inverse-bg #1f1f1b / #eeedef, --vc-inverse-ink #ffffff / #1f1f1b -- an :root und an
      [data-theme="dark"], also auch am <body> richtig. */
@@ -692,33 +925,35 @@ aussieht, darunter Überschrift und ein Satz Erklärung auf dunklem Grund.
   opacity: 0; transform: translateY(-4px);
   transition: opacity .14s ease, transform .14s ease;
 }
-.explain.is-on { opacity: 1; transform: translateY(0); }
+.up-explain.is-on { opacity: 1; transform: translateY(0); }
 
-.explain-vis {          /* helles Panel mit der visuellen Darstellung */
-  background: #ffffff; border-radius: 9px; padding: 11px 12px;
+.up-explain-vis {       /* Beispielplatte: die Karte noch einmal umgekehrt */
+  background: var(--vc-inverse-ink); color: var(--vc-inverse-bg);
+  border-radius: var(--up-r-s);   /* 4 = 12 minus 8 Polster, konzentrisch */
+  padding: 11px 12px;
   display: flex; flex-direction: column; gap: 7px; align-items: flex-start;
   margin-bottom: 9px; min-height: 46px; justify-content: center;
 }
-.explain-h { font-size: 14.5px; font-weight: 600; line-height: 1.2; padding: 0 3px;
-             margin-bottom: 4px; color: #ffffff; }
-.explain-t { font-size: 13.5px; font-weight: 400; line-height: 1.5; padding: 0 3px;
-             color: rgba(255,255,255,0.68); }
+.up-explain-h { font-size: 14.5px; font-weight: 600; line-height: 1.2; padding: 0 3px;
+             margin-bottom: 4px; color: var(--vc-inverse-ink); }
+.up-explain-t { font-size: 13.5px; font-weight: 400; line-height: 1.5; padding: 0 3px;
+             color: color-mix(in srgb, var(--vc-inverse-ink) 68%, transparent); }
 ```
 
 **Zacken**, zeigt immer auf das auslösende Info-Icon:
 ```css
-.explain::before {
-  content: ""; position: absolute; top: -10px; left: var(--caret, 50%);
+.up-explain::before {
+  content: ""; position: absolute; top: -6px; left: var(--up-caret, 50%);
   transform: translateX(-50%);
   border-left: 12px solid transparent; border-right: 12px solid transparent;
   border-bottom: 11px solid var(--vc-inverse-bg);
 }
-.explain.is-flipped::before {    /* nach oben geklappt, wenn unten kein Platz ist */
+.up-explain.is-flipped::before {    /* nach oben geklappt, wenn unten kein Platz ist */
   top: auto; bottom: -10px;
   border-bottom: 0; border-top: 11px solid var(--vc-inverse-bg);
 }
 ```
-`--caret` wird beim Öffnen per JS auf die Icon-Mitte gesetzt, geklemmt auf
+`--up-caret` wird beim Öffnen per JS auf die Icon-Mitte gesetzt, geklemmt auf
 `14px … Breite-14px`. Ohne das zeigt der Zacken ins Leere, sobald die Box am
 Bildschirmrand seitlich verschoben wurde.
 
@@ -730,16 +965,18 @@ die Spaltenüberschrift. **Kein `cursor: help`** — der Cursor bleibt wie im Re
 ## 8. Tabelle (Top Brands)
 
 ```css
-.thead, .row { display: grid; grid-template-columns: 44px minmax(120px,1fr) 22% 20% 20%; }
-.thead { height: 45px; background: var(--vt-head-bg); }
-.row   { height: 55px; cursor: pointer; transition: background 120ms ease; }
-.row:hover { background: var(--vt-row-hover); }
-.td { padding: 0 16px 0 8px; gap: 12px; border-right/-bottom: 1px solid var(--vc-border); }
+/* visibility-chart.css */
+.vt-thead, .vt-row { display: grid; grid-template-columns: 44px minmax(100px,1fr) 22% 20% minmax(92px,20%); }
+.vt-thead { height: 45px; background: var(--vt-head-bg); }
+.vt-th    { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); color: var(--vc-muted); }  /* 14/500 seit 15.10. */
+.vt-row   { height: 55px; cursor: pointer; }
+.vt-row:hover { background: var(--vt-row-hover); }
+.vt-td    { padding: 0 16px 0 8px; gap: 12px; }
 ```
-- Brand-Spalte hat eine **harte Mindestbreite von 120px** — schrumpft nie weiter, egal wie eng der Rest wird.
-- Logo-Box 24×24px (radius 8, 1px Padding), Bild 22×22px (radius 7).
-- Trend-Chip: Icon 16×16 + Text, `gap:4px`, Farbe je nach Richtung/Invertierung (`--vt-up`/`--vt-down`).
-- Sentiment (seit 29.09.): **kein Kasten** -- Balken 3×12px (voller Radius, Ampel-Farbe) + Zahl wie `.up-num`, Markup nur aus `UC.sentHtml(v)`. Die Pille mit Rahmen (`.up-sent.up-pille`: 24px, Polster 6, Rahmen, Radius 6, Punkt 6×6) gibt es nur noch fuer Plaketten, die kein Messwert sind (Tarif, Team-Status).
+- Brand-Spalte mindestens 100px (ohne Sentiment- oder Rank-Spalte 120px).
+- Logo-Box 24×24px (Radius 6, 1px Padding), Bild 22×22px (Radius 5, konzentrisch).
+- Trend-Chip: Icon 16×16 + Text, `gap:4px`, Farbe je nach Richtung/Invertierung (`--vt-up`/`--vt-down`). In Top Brands bewusst ganzzahlig (15.10.).
+- Sentiment (seit 29.09.): **kein Kasten** -- Balken 3×12px (voller Radius, Ampel-Farbe) + Zahl wie `.up-num`, Markup nur aus `UC.sentHtml(v)`. Die Pille mit Rahmen (`.up-sent.up-pille`: 24px, Polster 6, Rahmen, Radius 4 (`--up-r-s`), Punkt 6×6 Radius 2) gibt es nur noch für Plaketten, die kein Messwert sind (Tarif, Team-Status).
 - Eigene Zeile für „Own Brand außerhalb Top 7": 4px Extra-Marge + 1px Top-Border, nur wenn `position > 7`.
 
 **Responsive Degradierung** (in dieser Reihenfolge, je enger):
@@ -749,11 +986,306 @@ die Spaltenüberschrift. **Kein `cursor: help`** — der Cursor bleibt wie im Re
 
 ---
 
-## 9. Skeleton / Loading
+## 8a. Die flache Tabelle, Kopfschrift und Kopfzeichen (seit 15.10.)
 
-- Pulsierende Skeleton-Blöcke: `background: var(--vc-sk)`, `@keyframes votpulse { 0%,100%{opacity:1} 50%{opacity:.45} }`
-- Line-Chart-Skeleton zusätzlich mit Shimmer-Sweep: ein `::after`-Gradient-Streifen, der per `translateX(-100% → 100%)` über 1200ms linear durchläuft
-- Zwei unabhängige Processing-Flags pro Element (`data-processing` + `data-processing2`) — Skeleton zeigt sich, sobald **einer** von beiden `"yes"` ist. So lassen sich Chart- und Tabellen-Ladezustand getrennt an unterschiedliche Bubble-States binden.
+**Flache Tabelle** (`data-flach="yes"` an `.up-root`, `core.css` „DIE FLACHE TABELLE“): zuerst
+in der Prompt-Tabelle abgenommen, dann nach core gehoben. Ein Attribut, kein Nachbau.
+
+```
+Kasten        keiner: oben und unten 1px --vc-border, seitlich 0 breit, kein Radius, kein Grund
+Auslauf       die Tabelle läuft um --up-flach-aus (16) links und rechts bis an die Kanten; jede
+              Zeile beginnt links an der Kante (ihr Zellpolster 12 ist der Abstand) und hält
+              rechts 16 Polster. In Karte oder Drawer setzt die Komponente --up-flach-aus: 0px.
+Kopf und Fuß  48 hoch (--up-flach-h). Linie unter dem Kopf als inset-Schatten, Grund
+              --up-surface (deckend, weil er kleben kann)
+Pagination    Knöpfe in der 28er Form (--up-h-seg)
+Feste Höhe    UC.makeFestHoehe(root, cfg): nur der Kasten scrollt, Leiste oben und Pagination
+              unten stehen; nur mit klebendem Kopf (ab 1000 breit), nie unter 240px Platz
+```
+Im grauen Light (Abschnitt 1) wird der Kasten der flachen Tabelle weiß, bleibt aber flach: kein
+Rahmen, kein Radius. Das ist auch Vercels Bild (die Inhaltsfläche läuft bis an den Fensterrand).
+
+**Kopfschrift jeder Tabelle: 14/500** (`.up-root .up-th`, dazu `.vt-th`, `.tct-th`), Farbe
+`--vc-muted`. Bis 15.10. zwei Stufen: 12/400 in normalen Tabellen, 13/500 in der flachen. Die
+Zeichen im Kopf wachsen mit auf **15px** (Info, Sortierpfeile, Kopfzeichen, Raute), das
+Markenlogo im Kopf (`.up-th-brandlogo`) auf 17px. Die Mindestbreiten der Spalten sind darauf neu
+vermessen (`min`/`minFlach` je Spalte).
+
+**Kopfzeichen** (`.up-th-ic`, Drittfarbe, schrumpft nie, das Wort kürzt sich zuerst):
+
+```
+UC.kopfZeichenHtml(name)   Markup für Köpfe, die als Zeichenkette gebaut werden
+UC.kopfZeichen(th, name)   setzt es als erstes Kind in einen vorhandenen Kopf, nur einmal
+```
+
+| Spalte | Zeichen |
+|---|---|
+| Brand Mentions, Brand (Brands Overview) | `squareStack` (wie Brands in der Seitenleiste) |
+| Topics | `tags` |
+| Citations (Responses) | `globe` (wie Citations in der Seitenleiste) |
+| Type (Domains, URLs) | `dropdownFieldType` |
+
+`aria-hidden`: das Wort daneben sagt alles. Neue Tabellen bekommen ihr Kopfzeichen über
+`UC.kopfZeichenHtml` und je Spalte eine `art` (Abschnitt 8d).
+
+---
+
+## 8b. Die eine Leiste (`data-leiste="yes"`, seit 15.10.)
+
+Der Kopf einer Tabelle trägt **links, was die Daten ändert**, und **rechts, was nur die Ansicht
+ändert**. Zuerst in der Prompt-Tabelle, abends nach core für Responses und weitere Tabellen.
+
+```
+.up-leiste-scope   links: Status-Umschalter, Kalender, "Filters", Chips (die Seite hängt
+                   ihre Filterzeile hinein), flex 1 1 480px
+.up-head-tools     rechts: Suche, Sortierer, Display, Export
+.up-heading        entfällt; die Zahl steht im Seitenkopf bzw. in der Gesamtzeile
+Umbruch            der Kopf BRICHT UM statt Knöpfe wegzunehmen (row-gap 8, column-gap 16),
+                   die Höhe kommt aus dem Inhalt; schmal (is-vnarrow) je eine volle Zeile
+```
+
+Die Filterleiste der Seite fließt in der Leiste mit: ihre Hüllen lösen sich auf
+(`display: contents`), „Filters“, jeder Chip und „Clear All“ stehen einzeln in der Reihe und
+brechen dort um. **`.up-leiste-fluss`** ist dasselbe für eine Filterzeile, die nicht im Kopf
+einer Tabelle steht, sondern über einem Band (Citations, Shopping, Ads): die Klasse an den
+Flex-Behälter, die Filterleiste als sein direktes Kind.
+
+**Filter der Leiste** (`UC.makeLeistenFilter(root, cfg)`): Filter, die Daten ändern
+(„<Marke> mentioned?“, Mentioned brands, Rank, Sentiment ...), stehen nicht mehr als Knöpfe in
+der Werkzeugleiste, sondern als Zeilen im Menü „Filters“ mit Chip dahinter. Der Baustein baut je
+Filter eine Wurzel `.up-ff.up-ff-<key>` (unsichtbarer Trigger, Panel mit `.up-filter-item`,
+Zeilen mindestens 34 hoch, eigener Inhalt wie ein Regler in `.up-ff-panel` mit `12px 10px 14px`
+Polster). Der Zustand bleibt in der Tabelle; sie feuert dieselben Ereignisse wie vorher ihre Knöpfe.
+
+---
+
+## 8c. Zahlen in Zellen: rechtsbündig in fester Spur (seit 15.10.)
+
+**Eine Zahlzelle stellt ihren Wert an die rechte Zellkante, der Trend steht an der linken.**
+Erkannt am Inhalt, nicht an der Spaltenklasse: direktes Kind ist `.up-num`, `.up-rank-group`
+oder `.up-sent` (ohne `.up-pille`). Der Kopf bleibt linksbündig.
+
+```css
+.up-td:has(> :where(.up-num, .up-rank-group, .up-sent:not(.up-pille))) { justify-content: flex-end; }
+.up-td.up-td:has(> :where(.up-trend, .up-varring)) { column-gap: var(--up-spur-abstand); }   /* 12 */
+.up-td > :where(.up-trend, .up-varring) { order: -1; margin-right: auto; }
+.up-td > .up-num { min-width: var(--up-spur, 0); text-align: right; }
+```
+
+So beginnt der Trend in jeder Zeile auf demselben Pixel, egal wie breit Zahl oder Trend sind;
+die 12 sind der kleinste Abstand, wenn es eng wird. Wird es zu eng, läuft der Trend links aus dem
+Bild, nicht die Zahl. Die rechte Kante ist dieselbe wie die der Gesamtzeile darunter.
+
+**Die Spur** ist eine Mindestbreite je Format, gemessen in der Zellschrift (14/500, Geist,
+Tabellenziffern) am **größten** Wert der Skala, auf ganze Pixel aufgerundet. Die Komponente
+ordnet sie über ihre Spaltenklasse zu (z. B. `.upt-td-visibility { --up-spur: var(--up-spur-pct0) }`):
+
+| Token | Wert | Format |
+|---|---|---|
+| `--up-spur-pct0` | 38px | „100%“ |
+| `--up-spur-pct1` | 49px | „100.0%“ |
+| `--up-spur-rang` | 29px | „10.0“ |
+| `--up-spur-note` | 26px | „100“ (Sentiment) |
+| `--up-spur-anzahl` | 38px | „0.00k“ / „0,000“ |
+| `--up-spur-abstand` | 12px | Abstand Trend (oder Ring der Variationen) zur Zahl |
+
+**Nur die direkte Zahl bekommt die Spur.** Rang-„#“ und Sentiment-Balken bleiben dicht an ihrer
+Zahl (`.up-rank-group` gap 4, `.up-sent` gap 6); mit der Spur rückte die Zahl von ihrem Zeichen
+weg („# 1“: 24 statt 4). Ausnahmen gewinnen über eine Klasse mehr, nie über die Reihenfolge: die
+zentrierte Indexspalte, Datumsspalten mit `.up-num` (Shopping, Ads) bleiben links. Eine Zahl mit
+Zusatz („102 of 150“, `.up-var-cnt`) hält 6 Abstand.
+
+---
+
+## 8d. Spaltenbreite: Deckel und Rangfolge bei Platzmangel (seit 15.10.)
+
+**Deckel** (`deckeln()` in `UC.makeColumns`, nur flache Tabelle, nicht schmal): jede fr-Spalte
+außer der ersten wächst höchstens bis zu ihrer Mindestbreite plus **32px** (`DECKEL_SPIEL`). Am
+Ende wächst nur noch die erste Spalte. Gerechnet wird wie im Raster (Anteil je fr; wer unter
+seiner Untergrenze läge, steht auf ihr, wer darüber, auf dem Deckel, bis nichts mehr kippt),
+nicht als `minmax(min, max)` in der Spur: dann füllte das Raster die gedeckelten Spuren zuerst und
+die erste Spalte stünde auf ihrer Untergrenze. Eine Untergrenze in Prozent wird flach zur
+gemessenen Mindestbreite in px. Spuren mit px-Grenze bleiben, wie sie sind.
+
+**Rangfolge** (`SPALTEN_ART` in core, je Spalte `art`): Reicht die Breite nicht, weichen Spalten
+nach ihrer Art, nie nach einer Zahl je Datei. Die kleinste Zahl fällt zuerst:
+
+| Stufe | `art` | Spalten |
+|---|---|---|
+| 1 | `datum` | Datum, Erstellt |
+| 2 | `intent` | Intent |
+| 3 | `markt` | Markt |
+| 4 | `topics` | Topics |
+| 5 | `citations` | Citations |
+| 6 | `typ` | Typ |
+| 7 | `marken` | Brand Mentions |
+| 8 | `zaehl` | Zähl- und Zusatzspalten (Used, Mentioned Count, Active Prompts) |
+| 9 | `sentiment` | Sentiment |
+| 10 | `kpi` | weitere Kennzahlen (Presence, First Position Rate) |
+| 11 | `rang` | Rank |
+| 12 | `erwaehnt` | Mentioned? |
+| nie | `anteil` | Share, Visibility |
+
+Innerhalb einer Art entscheidet `prio`, sonst die Stelle (die linke bleibt länger). Eine Spalte
+ohne `art` behält ihre alte `prio`; eine Tabelle stellt ganz um oder gar nicht. **Eine im Menü
+ausdrücklich angeklickte Spalte bleibt** (Vorrang vom 14.10.), dafür weicht die nächst
+unwichtigere. Ausschalten kann der Nutzer auch `anteil`-Spalten.
+
+---
+
+## 8e. Die Gesamtzeile (`UC.makeSumZeile`, `UC.makeZaehlZeile`, seit 15.10.)
+
+Eine feste Zeile unter den Zeilen und über der Pagination (`.up-sumrow`). Vorbild der Geometrie
+ist der Gruppenkopf der Prompt-Tabelle; Vorbild der Rechenzeile Attio.
+
+```
+Raster        var(--up-cols) wie .up-row, Höhe 48 (--up-flach-h), Grund --up-surface (deckend)
+Linie oben    inset 0 1px 0 var(--vc-border); senkrechte Linien an den Zellgrenzen (border-left)
+Zelle         .up-sumzelle, Polster 0 16px 0 12px, RECHTSBÜNDIG
+Ganz links    NUR die Anzahl ("102 count"), auch sie rechts in ihrer Zelle
+Paar          Wert 16/600 in --up-accent-ink, 6 Abstand, Etikett 13/500 in --vc-fourth
+"Ø"           Durchschnitt als Zeichen (Icon "durchschnitt", 13px, Farbe des Etiketts) statt
+              "avg"/"Schnitt"; vorgelesen als "Average"
+Leer          "–" in --vc-fourth, nie 0
+Knopf         Paar mit Auswahl: .up-sumknopf 28 hoch, Radius 6, Chevron 12 in --vc-fourth
+              (dreht sich nie); Menü 220 breit, klappt nach OBEN, rechtsbündig am Knopf
+Feste Höhe    klebt unten im scrollenden Kasten (sticky, z 4)
+Schmal        is-vnarrow: nur die Anzahl, über die ganze Breite
+```
+
+**Von Haus aus keine Berechnung:** in den Spalten steht „**+ Calculation**“ (Plus 12px,
+13/500, `--vc-fourth`). Mit Berechnungen ist es ein Knopf, der das Menü der Spalte öffnet
+(„None“ zuerst, von Haus aus gewählt); ohne ist es bloßer Text ohne Zeiger. Bis 15.10. abends
+hieß es „+ Add“ („sonst denkt man, man kann da was hinzufügen“).
+
+**Berechnungen laden getrennt von der Tabelle** (`UC.makeZaehlZeile`, `cfg.rechnen` je Spalte,
+`cfg.quelle = { sig(), holen(felder) }`): geholt wird nur, was gewählt ist, und nur dann; je
+Filterstand einmal (Blättern und Sortieren holen nichts). Die Zeilen warten nie darauf, das
+**Skelett steht nur in der Zelle**, nie über der ganzen Tabelle. Scheitert es, steht „–“.
+`lokal()` rechnet im Browser, wo die Tabelle alle Zeilen hat (Brands, Teams).
+
+**Kein Median** bei den Kennzahlen: in der Prompt-Tabelle gestrichen, der gewichtete Wert heißt
+„Average Visibility“ (ebenso Rank, Sentiment). Einzige Ausnahme ist der **Preis** in Shopping
+und Ads (Median des Preises, vom Nutzer so abgenommen).
+
+Der Schalter „Summary row“ steht im Display-Menü; Schalter und Wahl je Spalte werden je Nutzer
+gemerkt (`<praefix>_summe__<instanceId>`). Die Zellen tragen `up-sum-td-<Spalte>` und blenden
+mit ihren Spalten aus. Topics with Ads (Ads Overview) hat bewusst keine Gesamtzeile.
+
+---
+
+## 8f. Das offene Band (`.up-band*`, seit 15.10.)
+
+Ein Chart über einer Tabelle steht als **offenes Band**, die Form der flachen Tabelle übertragen
+auf Diagramme (Variante A der Citations-Vorschau, danach Brands, Shopping, Ads, Dashboard). Greift
+nur unter `data-flach="yes"`.
+
+```
+.up-band          kein Kasten, läuft um --up-flach-aus bis an die Kanten, oben und unten 1px
+.up-band-einheit  ein Teil mit eigener Überschrift; sein Polster gibt den Auslauf zurück
+.up-band-head     Überschrift samt Werkzeugen als erste Zeile IM Band, min. 48 hoch;
+                  zweizeilig (Unterzeile oder schmal umgebrochen) 16 oben, 8 unten
+.up-band-flaeche  der bisherige Kasten: kein Rahmen, kein Radius, kein Grund
+.up-band-inhalt   8 oben, 16 unten
+.up-band-zwei     zwei Einheiten; die Trennlinie ist die 1px-Lücke, durch die der Grund des
+                  Bandes (--vc-border) scheint
+.up-band-raster   auto-fit-Raster, nebeneinander solange jede Spalte --up-band-spalte (472px) hat
+```
+`UC.bandTeile(band, { zwei, selbst, einheit, kopf, flaeche, inhalt })` setzt die Klassen an die
+Teile einer Komponente (das Markup steckt oft in eingebauten Elementen).
+
+**Ausgeblendet ist das Band ganz weg** (`.is-band-aus`): keine Restzeile, keine Linie; eine
+Hülle, die nur das Band trägt, fällt mit. `UC.bandAus(band, aus, { id, zeigen, tip })` setzt dann
+im Seitenkopf (`.up-ph-top`) einen Zeichenknopf **„Show chart“** (`chartSpline`) vor die anderen
+Zeichenknöpfe; eingeblendet ist er weg. Der Zustand wird über das Neuladen gemerkt
+(`up_band_aus__<id>`). So lassen sich die Charts in Citations und Brands ganz ausblenden.
+
+**Die Zeile unter dem Band:** zwischen Unterkante des Bandes und der Leiste bzw. Überschrift der
+Tabelle stehen **16px** (`--up-band-luft`). Vorbild ist Prompt Insights: Linie der Navigation bis
+zur Leiste 16, Leiste bis zum Tabellenkopf 16. Vorher je Seite anders (24 in Citations und
+Brands, 48 in Shopping und Ads). Ein Stapel setzt seinen Abstand als `--up-stapel-luft`
+(`gap: var(--up-stapel-luft)`), die Regel gleicht ihn auf die 16 aus; darum setzt jede Seite mit
+Band die Variable. Zwischen zwei Bändern bleibt der Blockabstand. Eine Abschnittsüberschrift
+direkt über einer flachen Tabelle hält ebenfalls 16.
+
+Im grauen Light ist das Band Inhalt und damit weiß wie die flache Tabelle.
+
+---
+
+## 8g. Add-Prompts-Liste und Plus im Prompt-Kopf (seit 15.10.)
+
+**Liste im Dialog „Add Prompts“** (`add-prompts.css`): Zeilen wie in einer Tabelle, keine grauen
+Kästen mehr.
+
+```
+Zeile       40 hoch (--up-h-gross), Polster 0 4px 0 8px, getrennt durch 1px --vc-border,
+            Hover --vt-row-hover
+Text        13/500, eine Zeile mit Ellipse; voller Text per UC.makeClipTip nur bei Kürzung
+Stift       .up-iconbtn.is-24 direkt hinter dem Text, sichtbar bei Hover/Fokus (Platz bleibt),
+            ohne Zeiger immer
+Markt       UC.marketChip in fester 52er Spur; X ganz rechts; beide immer sichtbar
+Bearbeiten  einzeiliges Feld in derselben Zeile (32 in 40), der erste Buchstabe bleibt auf
+            seinem Pixel; Enter/Blur speichern, Esc bricht ab
+```
+
+**Plus im Kopf „Prompt“** (`.upt-addprompt`, nur in der einen Leiste): `.up-iconbtn.is-24` mit
+Zeichen `plus`, Tooltip „Add Prompts“, öffnet denselben Dialog. Lage wie bei Brands
+(`.ubo-addbrand`): `margin-left: auto; margin-right: -8px` am rechten Ende der Kopfzelle, der
+Greifer bleibt frei.
+
+---
+
+## 9. Skeleton / Loading (Geist, seit 15.10.)
+
+**Eine Form für alle Skelette**, gelesen an vercel.com/geist/skeleton: ein wandernder Glanz statt
+Pulsieren. Bis 15.10. gab es zwei nebeneinander (Pulsieren `uutpulse` an Tabellen, Lichtlauf
+`upskt` an Diagrammen); ihre Keyframes bleiben für den Vertrag stehen, tragen aber nichts mehr.
+
+```css
+.up-skelett { background: var(--vc-sk) var(--up-sk-verlauf); border-radius: var(--up-sk-r);
+              animation: var(--up-sk-bewegung); }
+@keyframes up-sk-geist { from { background-position: 300% 0; } to { background-position: 0 0; } }
+```
+
+| Token | Wert |
+|---|---|
+| `--up-sk-r` | 5px (Geist `rounded-[5px]`; voll rund für Avatare, eckig für Bildkacheln) |
+| `--up-sk-dauer` / `--up-sk-kurve` | 1.5s / ease-in-out |
+| `--up-sk-bewegung` | `up-sk-geist var(--up-sk-dauer) var(--up-sk-kurve) infinite`; bei `prefers-reduced-motion` `none` |
+| `--up-sk-glanz` | hell `rgba(0,0,0,.03)`, dunkel `rgba(255,255,255,.025)` |
+| `--up-sk-verlauf` | Verlauf transparent, Glanz, transparent auf einer 150 % breiten Kachel |
+
+Grundfarbe bleibt `--vc-sk` (`#eeedef` / `#28282c`) und wird am Element aufgelöst. Die Kachel ist
+150 % breit und fährt per `background-position` um ihre eigene Breite, ohne `::after` und ohne
+`overflow` am Element (sonst verschöbe sich die Grundlinie jeder Tabellenzeile). Wer kein
+`.up-skelett` nehmen kann, schreibt `background: var(--vc-sk) var(--up-sk-verlauf); animation:
+var(--up-sk-bewegung);`. Tabellenbalken `.up-tsk-bar` (12 hoch, Radius 5), Logo `.up-tsk-logo`
+(24, Radius 6). Skelette in geparkten Ansichten und geschlossenen Drawern stehen still.
+
+- Zwei unabhängige Processing-Flags pro Element (`data-processing` + `data-processing2`): Skeleton zeigt sich, sobald **einer** von beiden `"yes"` ist. So lassen sich Chart- und Tabellen-Ladezustand getrennt an unterschiedliche Bubble-States binden.
+
+---
+
+## 9a. Leerzustand (Geist, seit 15.10.)
+
+Gelesen an vercel.com/geist/empty-state. Gilt nur für `.up-leer`, das `UC.leerHtml({ gefiltert,
+was, icon, titel, text, knopf, mini })` setzt. Der Fehlerzustand (`UC.leseFehlerHtml`) bleibt
+bewusst, wie er ist.
+
+```
+Aufbau     eine Spalte, mittig; 24 zwischen Zeichen, Textblock und Aktion; 8 zwischen Titel
+           und Satz; Polster 48 oben und unten, 24 seitlich
+Zeichen    32px in einer umrandeten Kachel 54x54: 10 Polster, 1px --vc-border, Radius 8
+           (--up-r-l), Grund --vc-bg, Farbe --vc-muted
+Titel      16/24, Schnitt 500, Laufweite -0.02em, höchstens 340 breit, ausgeglichen umbrochen
+Satz       14/20, --vc-muted, höchstens 340 breit
+Aktion     Sekundärknopf: 32 hoch, Polster 0 12px, Radius 6 (--up-r-m), Grund --vc-bg,
+           1px --vc-border, Schrift 14/500
+```
+Kein eigener Rahmen um das Ganze (anders als bei Geist): der Leerzustand steht fast immer schon
+in einem Tabellenkörper oder `.up-box`. Gefiltert bringt der Baustein die Lupe, „No matching …“
+und den Räum-Knopf mit; im Ruhefall gibt es kein Standardsymbol. Bis 15.10. Zeichen 28px ohne
+Kachel, Titel 14, Satz 12.5.
 
 ---
 
@@ -880,6 +1412,12 @@ an die **Außenkante** der Border (absolute Positionierung bezieht sich sonst au
 Padding-Box, 1px zu weit innen), und der Farbübergang muss **hinter** der Border liegen
 (16px, nicht 15.5px), sonst wird die runde Border selbst überdeckt.
 
+> **Stand 15.10.:** In core heißt das heute `.up-sticky .up-thead::before/::after` und füllt mit
+> `--up-surface` statt `--vc-bg`. Der klebende Kopf rundet seit dem Radius-Umbau mit
+> `--up-r-2xl` (12), die Eckstücke stehen im Code aber noch auf **16** (Größe und Verlauf). Die
+> Regel heißt: Eckstück = Radius des Kopfes, Verlauf ab genau diesem Radius. Offen, bis es im
+> Code nachgezogen ist.
+
 **Alternative (garantiert sauber):** interner Scroll — Box mit `max-height` +
 `overflow: hidden` (runde Ecken) + `overflow-y: auto`, Spaltenkopf klebt an der Box.
 Das clippt alles automatisch an der Rundung (kein Zipfel, keine Border-Tricks), kostet
@@ -914,13 +1452,46 @@ Chart.js setzt `touch-action:none` auf den Canvas, was natives Scrollen blockier
 > eigenes `--am-*`-Token-Set schon aus der Pre-Core-Ära mit. Gilt nicht als Vorlage für neue
 > Tabellen-/Chart-Komponenten — dafür `urls-table.*`/Abschnitt 25 nehmen.
 
-Verwandt, aber mit eigenen Werten — falls du dort auch mal was anpasst:
-- Border: `#e5e7eb` (statt `#e0e2e6`)
-- Soft-Backgrounds: `#f7f8fa` / `#f3f4f6` (statt `#f5f5f5`)
-- Card-Radius: 16px (Popover-Karte), kleinere Elemente 5–10px
-- Icon-Kreis (Avatar): radius 999px, 20×20 oder 30×30px
-- Scrollbar-Thumb: `var(--am-border-strong)`, radius 999px, 3px „Border" in Card-Farbe (erzeugt einen schwebenden Thumb-Look)
-- Trend-Farben identisch zum Hauptsystem: `#60d25d` / `#d25d5d` im Dark Mode
+Die Schriftstufen zeigen seit dem 24.09. auf die Kern-Token (`--am-text: var(--vc-text)` usw.),
+Radien, Höhen und Tiefen lesen die Kern-Token mit Rückfallwert (`var(--up-r-2xl, 12px)`,
+`var(--up-e-4, …)`), damit die Palette auch ohne core funktioniert. Eigene Werte bleiben für
+Rahmen und weiche Flächen: hell `--am-border` `#e5e7eb`, `--am-soft` `#f7f8fa`, `--am-soft-2`
+`#f3f4f6`; dunkel die Dropdown-Werte (`#3e3e44`, `#28282c`, Karte `#232326`).
+
+### Das Command Menu von Geist (seit 15.10.)
+
+Gelesen an vercel.com/geist/command-menu (berechnete Stile des geöffneten Beispiels).
+
+```
+Schleier       hell: der Grund zu 80 % (color-mix(--am-card 80%, transparent)), OHNE Unschärfe;
+               dunkel rgba(0,0,0,.55); Karte 15vh von oben
+Karte          min(640px, 94vw) breit, max. 82vh, Radius 12 (--up-r-2xl), 1px --am-border,
+               Schatten --up-e-4; Einblenden aus scale(.96) mit Deckkraft,
+               cubic-bezier(.175,.885,.32,1.1), 260ms (--up-t-3)
+Eingabezeile   Polster 12px 16px 13px, min. 53 hoch, Abstand 12; Lupe 16; Feld 28 hoch,
+               16/400 (Geist 18, unter 16 zoomt iOS); rechts die Taste "Esc"
+               (.mqa-kbd im Menü: 20 hoch, Polster 0 4px, Radius 4, 1px-Ring, 12/400)
+Gruppenkopf    36 hoch, Polster 0 8px, 13/400, --vc-third
+Eintrag        mindestens 36 hoch, Polster 4px 8px, Abstand 12, Radius 6 (--up-r-m);
+               aktiv: 5 % der Schriftfarbe als Grund (color-mix)
+Avatar         24, Radius 6, 1px Rand; Flaggen 24x18 Radius 3 ohne Rand
+Trenner        1px --am-border über die volle Breite, 8 darüber und darunter
+Keine Treffer  Polster 30px 16px, 14/20, mittig
+```
+
+> **Bewusst OHNE Linie unter dem Suchfeld.** Geists Command Menu trennt die Eingabezeile mit
+> einer Linie; der Nutzer hat „ohne Linie“ mehrfach ausdrücklich verlangt, und das gilt, bis er
+> es aufhebt. An ihrer Stelle steht 1px Luft (Polster unten 13 statt 12), damit die Liste nicht
+> springt. Nicht „nach Geist“ nachziehen.
+
+Ebenfalls bewusst abweichend: Nachsatz 13 statt 14, Ergebniszeilen zweizeilig (Titel und
+Adresse), die Lupe bleibt. Eine Fußzeile mit Tastenhinweisen hat Geist nicht, hier auch nicht.
+Tastatur (Pfeile, Enter, Esc), Suche und Ereignisse sind unverändert.
+
+- Scrollbar-Thumb: `var(--am-border-strong)`, voll rund, 3px „Border“ in Kartenfarbe (schwebender Thumb)
+- Trend-Farben: eigene Marken `--am-up`/`--am-down`. Im Code stehen dort noch die Werte vor
+  Geist (hell `#2ea84a`/`#b0200c`, dunkel `#60d25d`/`#d25d5d`); laut ihrem eigenen Kommentar
+  sollen sie `--vt-up`/`--vt-down` gleichen (Abschnitt 1). Offen.
 
 ---
 
@@ -1203,7 +1774,7 @@ umbauen).** Jedes Dropdown-Menü ist ein ganz normales `position:absolute`-Kind 
 
 ```css
 .up-sort  { position: relative; }
-.up-sort-menu { position: absolute; top: calc(100% + 8px); right: 0; z-index: 60;
+.up-sort-menu { position: absolute; top: calc(100% + var(--up-dd-gap)); right: 0; z-index: 60;
   opacity: 0; transform: translateY(-4px) scale(.985); pointer-events: none;
   transition: opacity 140ms, transform 140ms; }
 .up-sort-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
@@ -1258,7 +1829,7 @@ Für lange Auswahl-Listen (Brands) im Dropdown:
 - **Suchfeld** ganz oben (zwischen Head und Liste), filtert **in-place** (blendet
   Nicht-Treffer per `style.display` aus, kein Re-Render → Fokus bleibt). Matching über ein
   `data-name`-Attribut (lowercase) am Item. Bei 0 Treffern ein dezentes „No matches".
-- **Clear-X** im Suchfeld (Feather-X), erscheint via `:not(:placeholder-shown) +`, in
+- **Clear-X** im Suchfeld (`UC.icon("x")`), erscheint via `:not(:placeholder-shown) +`, in
   Sekundärfarbe, im Hover Primär.
 - **Listenhöhe begrenzt:** `max-height` ≈ **10,5 Zeilen** — die 11. lugt halb raus als
   Scroll-Hinweis. Menü-`max-height` groß genug wählen, dass Kopf + Suche + Apply die Liste
@@ -1271,11 +1842,28 @@ Für lange Auswahl-Listen (Brands) im Dropdown:
   Layout** und nur per `visibility:hidden` unsichtbar, wenn nicht gebraucht — sonst rutscht
   der Head in der Höhe, sobald der Button erscheint. (Gleiche Regel für den Columns-Head.)
 
-## 16. Suchfeld (Notion-Style) + Mobile
+## 16. Suchfeld (Geist-Search-Input, seit 15.10.) + Mobile
 
-- **Lupe links, dann randloses, transparentes Feld** (kein Rahmen), Placeholder in dritter
-  Fontfarbe (`--vc-third`). Clear-X-Platz **immer reserviert** (`visibility`, nicht
-  `display`), aktive Lupe in Primärfarbe ohne Hintergrund.
+Aufbau unverändert: die Lupe (`.up-search-btn`, ein `.up-iconbtn`) zieht ein Feld nach rechts
+auf (`.up-search-box`, 200px plus 2 Abstand, damit rechnet die Werkzeugleiste). **Offen ist es
+Geists Search-Input**, in unserem Blau („nur halt mit meinem Blau, sonst aber genau das
+Verhalten“):
+
+```
+Rahmen      .up-search.is-open: 1px --vc-border als box-shadow um Lupe UND Feld,
+            Radius 6 (--up-r-m), Grund --vc-bg
+Lupe        innen links als Präfix: 14px, 12px vom Rand, --vc-third, ohne Fläche
+Text        14/400, beginnt 38px vom Feldrand; Platzhalter --vc-third
+Hover       Ring --up-knopf-rand-hover (eine Stufe kräftiger)
+Fokus       1px --up-focus plus 4px --up-focus-ring (#4A9EFF, wie jedes Feld der App)
+Leeren      Zeiger-Geräte: Tastenschild "Esc" (20 hoch, min. 20 breit, Polster 0 4px,
+            Radius 4, 1px-Ring --vc-border, 12/500) als Leeren-Knopf; Touch behält das X
+Escape      das erste Escape leert den Text (über den Leeren-Knopf der Komponente, Fokus
+            bleibt), erst ein leeres Feld schließt die Suche (einmal am Dokument, core.js)
+```
+Bis 15.10. war das offene Feld randlos und transparent (Notion-Stil), Text 14/500.
+
+- **Clear-Platz immer reserviert** (`visibility`, nicht `display`), damit der Text nicht springt.
 - **Kopf-Reserve:** Die geöffnete Suchbreite (`SEARCH_OPEN_WIDTH`, ~202px) wird im
   Gap-Budget **auch bei geschlossener Suche** eingerechnet, damit das Aufklappen nie
   überläuft. `fitToolbar()` **nicht** beim Toggle aufrufen (läuft mitten in der Transition).
@@ -1283,8 +1871,8 @@ Für lange Auswahl-Listen (Brands) im Dropdown:
   offene Suche die ganze Toolbar-Zeile: Lupe links, Feld voll breit, X rechts (schließt +
   reset), Heading und Count ausgeblendet (`is-searchtakeover`). Solange aktiv, pausiert
   `fitToolbar`; beim Verlassen einmal neu messen.
-- **Aktiv (offen):** Eingabetext und Placeholder werden einen Tick größer/fetter
-  (`.<pfx>-search.is-open .<pfx>-search-input { font-size: 14px; font-weight: 500; }`).
+- **Aktiv (offen):** Eingabetext und Placeholder werden einen Tick größer
+  (`.up-search.is-open .up-search-input { font-size: var(--up-fs-l); font-weight: var(--up-fw-n); }`, 14/400).
 - **Voller URL-Titel per Hover:** Truncated Titel in Tabellenzeilen zeigen nach ~400ms
   Hover den vollen Text (nur wenn wirklich abgeschnitten, `scrollWidth > clientWidth`). Der
   Hover-Bereich ist die **ganze `…-url-wrap`-Zone** (Titel- + URL-Zeile) mit
@@ -1297,20 +1885,36 @@ Für lange Auswahl-Listen (Brands) im Dropdown:
   denselben Selektor `.<pfx>-search.is-open .<pfx>-search-input` nutzen, damit sie später
   greift).
 
-## 17. Brand-Logo-Stack in Zeilen
+## 17. Brand-Logo-Stack in Zeilen: eine Geist-Avatar-Group (seit 15.10.)
 
-Überlappende Logo-Kreise (`… + …{ margin-left: -6px }`), Fill = `--vt-logo-bg` (im Dark
-hell, damit Favicons Kontrast haben), 2px-Ring in Zeilenfarbe erzeugt die Lücke.
+`.up-stack` (Brand Mentions, Citations in Responses, Karten) überlappt nach Geists AvatarGroup
+(vercel.com/geist/avatar, overlap „auto“ = 0.3 × Größe):
 
-Hover-Regel (Flicker-frei):
+```
+Chip          .up-stack-item 28×28; sichtbare Ebene .up-stack-vis: Radius 6 (--up-r-m, ein Logo
+              ist kein Porträt), 1px --vc-border, 2px Polster, Platte --vt-logo-bg (im Dark
+              hell), Bild Radius calc(var(--up-r-m) - 3px)
+Überlappung   --up-stack-ueber 8px (0.3 × 28; dicht 0.88 × 8 = 7.04); bis 15.10. 4
+Ring          --up-stack-ring-w 1px in der Zeilenfarbe (folgt dem Zeilen-Hover); bis 15.10.
+              4px, die den Abstand malten
+Reihenfolge   das ERSTE Mitglied liegt oben (--up-stack-z absteigend, von brandStack gesetzt);
+              isolation: isolate hält die Stufen im Stapel, unter dem klebenden Tabellenkopf
+"+N"          .up-stack-more: ein Kreis in Chipgröße (min. 28, Polster 0 4px), unterlappt wie
+              ein Mitglied und liegt zuunterst; Grund --up-sel-bg, 1px --vc-border, 11/600 in
+              --vc-muted; bis 15.10. reiner Text 12/500
+```
+
+**Hover-Verhalten unverändert** (gemessen):
 
 - **Gehovertes Element + alles danach rücken nach rechts**, alles davor bleibt stehen
   (das erste Logo darf nie nach links wandern). Gehovertes `translateX(8px)`, folgende
   `translateX(16px)` → nur die zwei Nachbar-Lücken öffnen, der Rest behält seinen Abstand.
-- **Lift:** gehovertes zusätzlich `translateY(-3px)` + `z-index` nach vorn.
-- **Kein Flicker:** ein **hover-only** `::before` vergrößert den Hit-Bereich über die
-  Ursprungsposition, damit das Verschieben das Element nicht unter dem Cursor wegzieht.
-- `transition: transform .16s ease` auch am „+X" (`…-stack-more`), damit es mitzieht.
+  Gespiegelt bei `.is-spread-left` (Stapel an der rechten Kante).
+- **Lift:** gehovertes zusätzlich `translateY(-3px)` und nach vorn (`z-index: 20`, über jeder
+  Stufe des Stapels).
+- **Kein Flicker:** der Treffer liegt auf `.up-stack-item`, das sich nie bewegt; nur die innere
+  `.up-stack-vis` animiert. Der Tooltip (`data-brandtip`) hängt am unbeweglichen Kasten.
+- `transition: transform .16s ease` auch am „+N“ und am Anhang (`.up-stack-tail`), damit sie mitziehen.
 
 ## 18. Density / „Table Settings"
 
@@ -1332,7 +1936,7 @@ Styling identisch zur Combo-Chart-Badge über dem Fader:
 ```css
 .<pfx>-cols-badge { position:absolute; top:-3px; right:-3px; z-index:2;
   min-width:16px; height:16px; padding:0 4px; border-radius:999px;
-  background: var(--vc-text); color:#e0e0e0;            /* Dark-Mode: color:#1f1f1b */
+  background: var(--vc-text); color: var(--vc-text-invert);   /* core .up-badge, beide Themen */
   font-size:10px; font-weight:600; line-height:1; font-variant-numeric: tabular-nums;
   display:none; align-items:center; justify-content:center; pointer-events:none; }
 .<pfx>-cols-badge.is-visible { display:inline-flex; }
@@ -1353,15 +1957,17 @@ applySticky();   /* einmal sofort */
 
 ## 20. Sticky-Header — Ergänzungen
 
-- **Seiten-Hintergrund als eigene Variable:** `--<pfx>-surface` (Light `#ffffff`, Dark
-  `#121212`) für Kopf-Hintergrund + Maske. Nicht `--vc-bg` (das ist die Kartenfarbe
-  `#1b1b1b` im Dark) — sonst ist der Bereich über/hinter der Tabelle sichtbar zu hell.
+- **Seiten-Hintergrund als eigene Variable:** `--up-surface` (Light `#ffffff`, im grauen Light
+  `#fafafa`, Dark `#101114`) für Kopf-Hintergrund + Maske. Nicht `--vc-bg` (das ist die
+  Kartenfarbe, `#1c1c1f` im Dark): sonst ist der Bereich über/hinter der Tabelle sichtbar zu
+  hell. In einer weißen Fläche (Drawer, Band, flache Tabelle) ist `--up-surface` die Farbe dieser
+  Fläche (Abschnitt 1).
 - **Maske +16px:** Die opake Maske über dem Header (`…-head::before`) bekommt
-  `height: calc(var(--<pfx>-sticky-top) + 16px)`, damit beim Scrollen oben keine
+  `height: calc(var(--up-sticky-top) + 16px)`, damit beim Scrollen oben keine
   Zeilenkante durchlugt.
-- **Ecken oben:** Die Radial-Eckstücke, die das Dreieck außerhalb der 16px-Rundung füllen,
-  nutzen `var(--<pfx>-surface)` (Seitenfarbe), **nicht** `--vc-bg` — sonst guckt im Dark ein
-  helleres Dreieck raus.
+- **Ecken oben:** Die Radial-Eckstücke, die das Dreieck außerhalb der Rundung füllen,
+  nutzen `var(--up-surface)` (Seitenfarbe), **nicht** `--vc-bg`: sonst guckt im Dark ein
+  helleres Dreieck raus. Größe = Radius des Kopfes (heute 12, im Code noch 16, siehe §10).
 
 ## 21. Dark-Mode — zwei Fallen, die Zeit kosten
 
@@ -1395,10 +2001,10 @@ applySticky();   /* einmal sofort */
 
 - **Zahlen:** `font-variant-numeric: tabular-nums` (Beträge, %, Trend), damit Werte sauber
   untereinander vergleichbar sind.
-- **Ausrichtung:** Text linksbündig, Header nach Spaltentyp ausrichten, nie zentriert.
-  Quantitative Zahlen (Beträge, Maße) idealerweise rechtsbündig; bei **Prozent + Trend-Badge
-  in einer Zelle** ist links vertretbar (der Rechtsbündig-Gewinn ist bei Werten ähnlicher
-  Größenordnung klein).
+- **Ausrichtung:** Text und alle Spaltenköpfe linksbündig, nie zentriert (Ausnahme: die
+  Indexspalte „#“). **Zahlen stehen seit dem 15.10. rechtsbündig an der Zellkante, der Trend an
+  der linken Kante** (Abschnitt 8c, feste Spur `--up-spur-*`, Abstand `--up-spur-abstand` 12).
+  Datumsspalten bleiben links. Bis 15.10. standen Zahl und Trend links nebeneinander.
 - **`aria-sort`** am aktiven Spaltenkopf setzen (`ascending`/`descending`/`none`).
 
 ## 23b. Abstände an Separatoren
@@ -1470,11 +2076,22 @@ Komponente wirklich zusätzlich hat (eine Zeilenhöhe, eine Index-Zelle, ein Act
 | Header-Sortierung mit Klick-Zyklus | `UC.makeHeadSort({root, state, cycles, defaultSort, trendField, onSort})` |
 | Suche (Slide-out, Debounce, requestId-Schutz) | `UC.makeSearch({root, box, input, state, prefix, onRender, onFire, …})` |
 | Skelett-Zeilen, Trend-Chip, Leer-Schonfrist, Spalten-Erklärer | `UC.skeletonRows`, `UC.trendChip`, `UC.makeEmptyGrace`, `UC.makeExplain` |
+| Leerzustand nach Geist (9a) | `UC.leerHtml({ gefiltert, was, icon, titel, text, knopf, mini })` |
+| Sentiment (Balken + Zahl) | `UC.sentHtml(v)`, Farbe `UC.sentColor(v)` |
+| Themenschalter (5) | `UC.themeSchalterHtml({ klein, wahl })` |
+| Kopfzeichen im Spaltenkopf (8a) | `UC.kopfZeichenHtml(name)`, `UC.kopfZeichen(th, name)` |
+| Filter der einen Leiste (8b) | `UC.makeLeistenFilter(root, { instanceId, arten })` |
+| Feste Höhe der flachen Tabelle (8a) | `UC.makeFestHoehe(root, { min, kopf, fuss })` |
+| Gesamtzeile (8e) | `UC.makeZaehlZeile({ root, nach, praefix, instanceId, spalten, laedt, anzahl, rechnen, quelle, cols })`, darunter `UC.makeSumZeile`, `UC.sumPaarHtml` |
+| Offenes Band (8f) | `UC.bandTeile(band, teile)`, `UC.bandAus(band, aus, { id, zeigen, tip })`, `UC.bandAusGemerkt(id)`, `UC.bandAusMerken(id, aus)` |
 | Bubble-Klempnerei: Root-Registry, iframe-Forwarder, Wheel, Init-Kaskade, Stub-Replay | `UC.makeMount({rootClass, ctrlProp, resolveLocal, queue, initRoot, api, forwardShape})` |
 
 CSS dazu kommt aus `core.css`: `.up-root`, `.up-head*`, `.up-iconbtn`, `.up-thead/.up-row/.up-th/.up-td`,
 `.up-pop-*`, `.up-filter-*`, `.up-line-*`, `.up-legend`, `.up-donut-*`, `.up-bars/.up-bar-*`,
-`.up-trend`, `.up-logo-box`, `.up-row-goto`, `.up-tag`, `.up-tip`, `.up-explain`, `.up-empty*`.
+`.up-trend`, `.up-logo-box`, `.up-row-goto`, `.up-tag`, `.up-tip`, `.up-explain`, `.up-empty*`,
+`.up-leer`, `.up-skelett`, `.up-search`, `.up-ddtrigger`, `.up-btn-sec`, `.up-seg`/`.up-themesw`,
+`.up-stack*`, `.up-th-ic`, `.up-sumrow`/`.up-sum*`, `.up-band*`, `.up-leiste-fluss`, `.up-ff*`
+und die Attribute `data-flach="yes"` und `data-leiste="yes"`.
 
 ### Was zwingend lokal bleibt
 
@@ -1595,10 +2212,13 @@ Top-Level-Blöcken (Header, jedes Feld, Footer):
 ```css
 padding: 16px;
 display: flex; flex-direction: column; gap: 32px;
-border-radius: 18px;
-box-shadow: 0 20px 48px rgba(0,0,0,.22);
+max-width: 420px;
+border: 1px solid var(--vc-border);
+border-radius: var(--up-r-2xl);   /* 12, Geist Dialog; bis 15.10. 16, davor 18 */
+box-shadow: var(--up-e-4);        /* liegt über einem Schleier */
 ```
-Dark Mode: `--up-surface: #1b1b1b` (Karten-Hintergrund).
+Hintergrund `--up-surface`: hell `#ffffff`, Dark Mode `#1c1c1f` (die Karte setzt ihre Palette
+selbst, weil sie am `<body>` hängt).
 
 **Kopfzeile** (`.up-topicmodal-head`, `align-items:flex-start` wegen des zweizeiligen Headings):
 - Heading: **22px, Weight 500**.
@@ -1628,18 +2248,17 @@ Card-Flex-Container selbst, nicht von individuellem Padding pro Block.
 ### Interaktive Chips (`.up-chiphover`)
 
 Jeder farbige Chip/Tag, der **klickbar** ist, bekommt zusaetzlich `.up-chiphover`. Im Ruhezustand
-behaelt der Chip seine eigene Tint-Farbe; beim Hover faellt er auf die neutrale Flaeche mit dem
-geteilten Hover-Border zurueck, damit "das ist ein Control" ueberall gleich liest — unabhaengig
-davon, welche Farbe das Tag zufaellig traegt.
+behaelt der Chip seine eigene Tint-Farbe; beim Hover faellt er auf die neutrale Flaeche zurueck,
+damit "das ist ein Control" ueberall gleich liest, unabhaengig davon, welche Farbe das Tag
+zufaellig traegt.
 
+```css
+.up-chiphover { transition: background 120ms ease, border-color 120ms ease, color 120ms ease; }
+.up-chiphover:hover { background: var(--vt-row-hover-solid); color: var(--up-accent-ink); box-shadow: none; }
 ```
-light:  background #f5f5f5 · border #6f6f6f · color #1f1f1b · box-shadow none
-dark:   background #2a2a2a · border #707070 · color #e0e0e0 · box-shadow none
-```
-
-Die Dark-Regel matcht sowohl `.up-root[data-theme="dark"]` als auch ein `[data-theme="dark"]`
-direkt auf der Flaeche — Chips koennen auch ausserhalb des Komponenten-Roots leben (z.B. in der
-Bulk-Action-Bar, die an `document.body` haengt).
+`--vt-row-hover-solid` ist hell `#f9f8f9`, dunkel `#232326`; eine eigene Dunkel-Regel gibt es
+nicht mehr. Chips koennen auch ausserhalb des Komponenten-Roots leben (z.B. in der
+Bulk-Action-Bar am `document.body`); diese Leiste fuehrt die Marken deshalb selbst mit.
 
 Genutzt von: prompts-table (Topics-Zelle, Topics-Editor in der Bulk-Bar).
 
