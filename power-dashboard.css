@@ -553,7 +553,13 @@
 /* Die eigene Marke traegt ihren Namen fetter -- dasselbe Mittel, mit dem die grossen Tabellen sie
    hervorheben, nur ohne deren Zeilenflaeche. */
 .upw-li.is-own .upw-li-name { font-weight: 600; }
+/* Nur noch der Rueckweg ohne UC.tabelleLeerHtml (alter core-Pin); der Leerzustand ist seit dem
+   15.10. der der Charts aus core. */
 .upw-li-empty { font-size: 13px; color: var(--vc-muted); padding: 8px 0; }
+/* Die Flaeche des Leerzustands rechnet in Zeilen DIESER Liste: dieselben 36 wie .upw-li oben,
+   also so hoch wie das Skelett aus fuenf Zeilen (180). Die Wurzel ist dicht (is-dense), die
+   Regel muss also die Dichte-Regel aus core (0,3,0) per Spezifitaet schlagen. */
+.up-root.upw-root .upw-list > .up-tab-leer { --up-tab-leer-zeile: 36px; }
 
 /* ---------- der Weiterweg, jetzt in der Ueberschriftzeile (14.09.) ----------
    Vorher stand unter jeder Liste eine Zeile ("All 8 brands"); sie ist zu einem 16px-Zeichen ganz

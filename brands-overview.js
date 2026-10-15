@@ -1183,9 +1183,17 @@
            pending, the rows are already here. Say so immediately instead of flashing the skeleton
            through the grace window below, which would read as "still loading" on every keystroke
            past the last match. */
+        /* DER LEERZUSTAND DES CHARTS (15.10., UC.tabelleLeerHtml) statt "No matches"/"No data" in
+           einer Zeile: dieselbe Gestalt wie die Kurve darueber, die Flaeche der sieben
+           Skelettzeilen (sonst sprang die Tabelle von 433 auf 116). Die Suche ist ein Filter:
+           Lupe und "No matching data", der Satz nennt Suche und Filter. Im Reiter Inactive gibt
+           es keinen Zeitraum, nach dem Daten kaemen -- dort ohne Satz. */
         if (q){
           if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; }
-          tableEl.innerHTML = headHtml() + '<div class="up-empty-mini">No matches</div>';
+          tableEl.innerHTML = headHtml() + (UC.tabelleLeerHtml
+            ? UC.tabelleLeerHtml({ icon: "squareStack", gefiltert: true, zeilen: 7,
+                                   text: "Nothing matches the current search and filters." })
+            : '<div class="up-empty-mini">No matches</div>');
           applyCols();
           return;
         }
@@ -1195,7 +1203,10 @@
            liest nur setLoading), eine leere Liste waehrend "yes" landet also oben im Skelett --
            und was hier ankommt, ist die Antwort. */
         if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; }
-        tableEl.innerHTML = headHtml() + '<div class="up-empty-mini">No data</div>';
+        tableEl.innerHTML = headHtml() + (UC.tabelleLeerHtml
+          ? UC.tabelleLeerHtml({ icon: "squareStack", gefiltert: !inactive && !!state.gefiltert, zeilen: 7,
+                                 text: inactive ? "" : null })
+          : '<div class="up-empty-mini">No data</div>');
         applyCols();
         return;
       }

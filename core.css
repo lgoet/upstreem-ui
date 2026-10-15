@@ -4440,6 +4440,20 @@
     .up-chart-leer.is-fluss { position: static; container-type: normal; }
     .up-chart-leer.is-fluss > .up-empty.up-leer { height: auto; padding: 24px; gap: 16px; }
     .up-chart-leer.is-fluss .up-empty-t { display: none; }
+    /* ---- DER LEERZUSTAND IN DER TABELLE NEBEN DEM CHART (15.10., tabelleLeerHtml in core.js) ----
+       Die Huelle gibt dem absoluten .up-chart-leer seine Flaeche: so hoch wie das Skelett der
+       Tabelle (Zeilen x Zeilenhoehe, die Zahl setzt der Aufrufer), damit zwischen Laden und Leer
+       nichts springt. flex 1: in einer Tabelle mit fester Hoehe (Top Brands, Top Citations: Band
+       aus Kopf und acht Zeilen) waechst sie bis an die Unterkante, der Zustand steht mittig in der
+       ganzen Flaeche. Die Stufen nach Groesse kommen unveraendert aus den Container-Queries oben.
+       DIE ZEILENHOEHE folgt der Zeile, die das Skelett zeichnet: .up-row ist 72, dicht 55
+       (--up-h-row) -- dieselben zwei Regeln wie bei .up-row weiter oben, also zieht ein Wechsel
+       der Dichte die Flaeche mit. Tabellen mit eigener Zeile setzen --up-tab-leer-zeile in ihrer
+       CSS (Top Brands und Top Citations 55, Brands Overview 56, Agentic-Listen 36), die
+       Variantentabelle hier (.up-vrow, 55). */
+    .up-tab-leer { --up-tab-leer-zeile: 72px; position: relative; flex: 1 1 auto; min-width: 0;
+      min-height: calc(var(--up-tab-leer-zeilen, 4) * var(--up-tab-leer-zeile)); }
+    .up-root.is-dense .up-tab-leer, .up-vartable .up-tab-leer { --up-tab-leer-zeile: var(--up-h-row); }
     .up-row.up-tsk { cursor: default; }
     .up-row.up-tsk:hover { background: transparent; }
     .up-tsk-bar { display: inline-block; height: 12px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }

@@ -7760,7 +7760,14 @@
          exactly the wrap-onto-a-second-implicit-row breakage above, just on a delayed/intermittent
          trigger (only after some other row had already been stamped with the current signature). The
          query below finds ANY row missing the current signature, wherever it sits. */
-      var rowsStale = !!root.querySelector('.up-row:not([data-up-colsig="' + sigCols + '"])');
+      /* DER KOPF ZAEHLT MIT (15.10., Leerzustand der Tabellen neben den Charts). Eine Tabelle, die
+         ihren Kopf selbst neu zeichnet (brands-overview, die leeren Tabellen in Shopping und Ads),
+         hat im Leerzustand KEINE Zeile -- dann gab es nichts Ungestempeltes, die Pruefung oben
+         kehrte zurueck, und der frische Kopf zeigte alle Zellen: gemessen bei 375 in Brands vier
+         Spuren und sechs Kopfzellen, Sentiment und die Aktionsspalte brachen in eine zweite
+         Rasterzeile um (im Skelett davor waren sie ausgeblendet). Also traegt der Kopf den Stempel
+         genauso wie jede Zeile. */
+      var rowsStale = !!root.querySelector('.up-row:not([data-up-colsig="' + sigCols + '"]), .up-thead:not([data-up-colsig="' + sigCols + '"])');
       if (sigCols === lastSigCols && !rowsStale) return;
       /* Aendert die Breite, welche Spalten Platz haben, muss das Menue es mitsagen -- auch wenn
          es gerade offen ist, waehrend jemand das Fenster zieht. Nur beim Wechsel der Menge,
@@ -7776,7 +7783,7 @@
           el.style.display = shown[c.key] ? "" : "none";
         });
       });
-      Array.prototype.forEach.call(root.querySelectorAll(".up-row"), function(r){
+      Array.prototype.forEach.call(root.querySelectorAll(".up-row, .up-thead"), function(r){
         r.setAttribute("data-up-colsig", sigCols);
       });
     }
@@ -24835,9 +24842,14 @@
                                    { w: 28,  cls: "up-var-cnt" }] });
     }
     if (!rows.length){
-      return '<div class="up-empty-mini">' +
-        (q ? t_("No variation matches this search.")
-           : (opts.emptyText || t_("No variations recorded."))) + '</div>';
+      /* Der Leerzustand der Charts (15.10., tabelleLeerHtml): die Variantentabelle steht an der
+         Stelle der Kurve (brand-detail) bzw. unter ihr, und die traegt ihn schon. Der bisherige
+         Satz bleibt der Satz; die Flaeche ist die der sechs Skelettzeilen oben. Die Suche ist
+         ein Filter: "No matching data" mit der Lupe. */
+      return tabelleLeerHtml({
+        icon: "squareStack", gefiltert: !!q, zeilen: 6,
+        text: q ? "No variation matches this search." : (opts.emptyText || "No variations recorded.")
+      });
     }
     return rows.map(function(v){
       var sov = toNum(v.share_of_voice_pct);
@@ -25270,6 +25282,30 @@
       icon: opt.icon || "chartSpline",
       knopf: ""
     }) + '</div>';
+  }
+
+  /* ---- DER LEERZUSTAND IN DER TABELLE NEBEN DEM CHART (15.10., "Empty State: JA") --------------
+     Seit die Charts den Leerzustand nach Geist tragen, fiel daneben das alte "No data" der kleinen
+     Tabellen auf (.up-empty-mini: ein Satz, 68 hoch, oben unter dem Kopf). Jetzt zeichnen sie
+     DENSELBEN Zustand wie der Chart: chartLeerHtml, mit denselben Texten und denselben Stufen nach
+     Flaeche (voll, kompakt, nur Titel). Kein zweiter Baustein mit eigenen Massen.
+
+     DIE FLAECHE IST DIE DES SKELETTS. chartLeerHtml liegt absolut ueber einer Flaeche, die ihre
+     Hoehe von woanders hat; in einer Tabelle hat sie keine. Diese Huelle gibt sie ihr: mindestens
+     zeilen x Zeilenhoehe (--up-h-row, 55; eine Liste mit anderen Zeilen setzt
+     --up-tab-leer-zeile in ihrer CSS), also genau so viel, wie das Skelett darueber einnahm --
+     zwischen Laden und Leer springt nichts. Steht die Tabelle in einem Band fester Hoehe (Top
+     Brands, Top Citations), waechst die Huelle mit flex bis an dessen Unterkante und der Zustand
+     sitzt mittig in der ganzen Tabellenflaeche. Ohne Angabe 4 Zeilen (220): die volle Form passt.
+
+     Leer ist NICHT kaputt: ein Lesefehler bleibt leseFehlerHtml bzw. der knappe Text des Aufrufers.
+     opt: wie chartLeerHtml (titel, text, icon, gefiltert) plus zeilen und klasse. */
+  function tabelleLeerHtml(opt){
+    opt = opt || {};
+    var n = toNum(opt.zeilen);
+    return '<div class="up-tab-leer' + (opt.klasse ? " " + esc(opt.klasse) : "") + '"' +
+      (n != null && n > 0 ? ' style="--up-tab-leer-zeilen:' + Math.round(n) + '"' : "") + '>' +
+      chartLeerHtml({ titel: opt.titel, text: opt.text, icon: opt.icon, gefiltert: opt.gefiltert }) + '</div>';
   }
 
   /* ══ EINZELSEITE: der Rahmen der kleinen ganzseitigen Flaechen (07.10.) ═══════════════════════
@@ -27569,6 +27605,8 @@
     /* Der Leerzustand eines Charts (15.10.): fuer Flaechen, die keinen der Chart-Bausteine
        benutzen (Landschaft in brands-overview, Heatmap des Performance Radar). */
     chartLeerHtml: chartLeerHtml,
+    /* Derselbe Zustand in einer Tabelle oder Liste neben dem Chart (15.10.), Flaeche wie ihr Skelett. */
+    tabelleLeerHtml: tabelleLeerHtml,
     /* Die Einzelseite (07.10.): Rahmen und Teile der kleinen ganzseitigen Flaechen. */
     makeEinzelseite: makeEinzelseite,
     esKopfHtml: esKopfHtml, esFeldHtml: esFeldHtml, esKnopfHtml: esKnopfHtml, captchaPlatzHtml: captchaPlatzHtml,

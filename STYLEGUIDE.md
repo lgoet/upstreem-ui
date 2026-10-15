@@ -1485,6 +1485,44 @@ zeigen weiter keinen Leerzustand. Gefiltert kommt aus `cfg.gefiltert()` der Baus
 Seiten (Dashboard, Brands, Citations) schicken dafür `gefiltert` im Payload, berechnet mit
 `UC.seitenFilterAktiv(f)` (Modelle, Märkte, Topics, Intent-Filter; der Zeitraum zählt nicht).
 
+### Die Tabellen-Fassung (`UC.tabelleLeerHtml`, seit 15.10.)
+
+Kleine Tabellen und Listen neben einem Chart tragen denselben Zustand wie der Chart, nicht mehr
+das knappe „No data" (`.up-empty-mini`). `UC.tabelleLeerHtml({ titel, text, icon, gefiltert,
+zeilen })` ist `chartLeerHtml` in einer Hülle, die der absoluten Fläche ihre Höhe gibt.
+
+```
+Text       wie im Chart: "No data yet" / gefiltert "No matching data" mit Lupe; ein Satz, den
+           die Tabelle genauer kennt, wird der Satz ("No variations recorded for this brand.")
+Fläche     .up-tab-leer: min-height = zeilen x Zeilenhöhe, also genau die Fläche des Skeletts
+           davor (kein Sprung zwischen Laden und Leer); flex 1, in einem Band fester Höhe bis an
+           dessen Unterkante. Ohne zeilen 4 (220, volle Form)
+Zeile      --up-tab-leer-zeile: 72 wie .up-row, dicht (is-dense) und .up-vrow 55 (--up-h-row);
+           eigene Zeilen setzt die Komponente: Top Brands und Top Citations 55, Brands Overview
+           56, Agentic-Listen 36
+Größe      die Stufen der Chart-Fassung: ab 220 voll, darunter Zeichen und Titel, unter 130 nur
+           der Titel, unter 280 breit ohne Satz
+Kopf       bleibt stehen wie beim Skelett. In Shopping und Ads steht der Zustand NEBEN dem
+           Spaltenscroller (Kopf darin, Zustand darunter im Kasten): bei 375 ist der Kopf dort
+           bis 1096 breit, der Zustand sitzt mittig über dem Sichtbaren
+Zeichen    das des Spaltenkopfs bzw. der Sache: squareStack (Marken, Varianten), domain
+           (Domains/URLs), stackStar (Produkte), store (Händler), messageCircle (Auftritte),
+           tags (Topics), zap (Prompts)
+```
+
+Verwender: Top Brands (visibility-chart), Top Domains/URLs (topcitations-dashboard), Brands
+Overview (auch Suche und Reiter Inactive, dort ohne Satz), die zwei Agentic-Listen
+(power-dashboard), Brand Landscape, Top Products, Merchants und Recent Appearances (shopping),
+Topics with Ads und Prompts des Werbetreibenden (ads), die Variantentabelle (`UC.variationRows`
+in brand-detail und performance-detail). Die Ads-Kacheln des Werbetreibenden tragen den vollen
+`UC.leerHtml` wie „Recent Ads" der Übersicht (Kacheln, keine Zeilen). Lesefehler und der
+Widerspruch zum Zähler in Top Citations bleiben der knappe Text.
+
+`makeColumns` stempelt seit demselben Tag auch den Kopf (`data-up-colsig` an `.up-thead`):
+eine Tabelle, die im Leerzustand nur ihren Kopf neu zeichnet, hat keine Zeile, an der die
+Prüfung „ungestempelt" anschlagen könnte, und zeigte bei 375 alle Kopfzellen (Brands: sechs
+Zellen auf vier Spuren, zweite Rasterzeile).
+
 ---
 
 ## 10. Layout-Verhalten (Responsive)
@@ -2293,6 +2331,7 @@ Komponente wirklich zusätzlich hat (eine Zeilenhöhe, eine Index-Zelle, ein Act
 | Suche (Slide-out, Debounce, requestId-Schutz) | `UC.makeSearch({root, box, input, state, prefix, onRender, onFire, …})` |
 | Skelett-Zeilen, Trend-Chip, Leer-Schonfrist, Spalten-Erklärer | `UC.skeletonRows`, `UC.trendChip`, `UC.makeEmptyGrace`, `UC.makeExplain` |
 | Leerzustand nach Geist (9a) | `UC.leerHtml({ gefiltert, was, icon, titel, text, knopf, mini })` |
+| Leerzustand im Chart / in der Tabelle daneben (9a) | `UC.chartLeerHtml({ titel, text, icon, gefiltert, fluss })`, `UC.tabelleLeerHtml({ …, zeilen })` |
 | Sentiment (Balken + Zahl) | `UC.sentHtml(v)`, Farbe `UC.sentColor(v)` |
 | Themenschalter (5) | `UC.themeSchalterHtml({ klein, wahl })` |
 | Kopfzeichen im Spaltenkopf (8a) | `UC.kopfZeichenHtml(name)`, `UC.kopfZeichen(th, name)` |

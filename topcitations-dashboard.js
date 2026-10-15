@@ -453,8 +453,14 @@
             /* Nur "No data" sagen, wenn fuer DIESEN Modus wirklich eine Lieferung kam. Sonst
                weiter das Skelett: es ist noch nichts da, und das ist etwas anderes als nichts. */
             if (!hatZeilenLieferung() && !state.listenFehler) return;
-            tableEl.innerHTML = head + '<div class="up-empty-mini">' +
-              esc(state.listenFehler || widerspruchsText() || "No data") + '</div>';
+            /* Ein Fehler oder der Widerspruch zum Zaehler bleibt der knappe Text -- leer ist nicht
+               kaputt. Wirklich leer: der Leerzustand des Charts daneben (15.10.,
+               UC.tabelleLeerHtml), Flaeche der acht Skelettzeilen, im Band bis unten, gefiltert
+               wie der Ring. Das Zeichen der Domains- und URL-Tabelle (domain). */
+            var fehlerText = state.listenFehler || widerspruchsText();
+            tableEl.innerHTML = head + (fehlerText || !UC.tabelleLeerHtml
+              ? '<div class="up-empty-mini">' + esc(fehlerText || "No data") + '</div>'
+              : UC.tabelleLeerHtml({ icon: "domain", gefiltert: !!state.gefiltert, zeilen: 8 }));
           }, 600);   // shortened from the 3s visibility-chart default — felt "stuck" once loading was genuinely done
         }
         return;

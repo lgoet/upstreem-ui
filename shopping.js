@@ -1676,6 +1676,18 @@
     function skelettZeilen(n, spalten) {
       return UC.skeletonRows ? UC.skeletonRows({ count: n, rowClass: "up-row", cellClass: "up-td", cols: spalten }) : "";
     }
+    /* EINE LEERE TABELLE NEBEN DEN CHARTS (15.10., "Empty State: JA"): Kopf wie beim Skelett, darunter
+       der Leerzustand der Charts aus core (UC.tabelleLeerHtml) in der Flaeche der n Skelettzeilen --
+       zwischen Laden und Leer springt nichts. Vorher ein Kasten ohne Kopf mit einem Satz (70 hoch).
+       Der Zustand steht NEBEN dem Spaltenscroller, nicht in ihm: ist die Tabelle breiter als ihr
+       Kasten, saesse er sonst mittig ueber der ganzen Scrollbreite statt ueber dem Sichtbaren.
+       Gefiltert wie die Charts der Seite (filterAktiv). */
+    function tabelleLeer(name, n, o) {
+      if (!UC.tabelleLeerHtml) return '<div class="up-box">' + UC.leerHtml({ mini: true, titel: o.alt }) + '</div>';
+      return '<div class="up-box ush-box"><div class="up-colscroll"><div class="up-colscroll-innen">' +
+          '<div class="up-thead">' + kopfAus(name) + '</div></div></div>' +
+        UC.tabelleLeerHtml({ icon: o.icon, text: o.text, gefiltert: filterAktiv(), zeilen: n }) + '</div>';
+    }
     function fehlerKasten(a, was) {
       var code = fehlerVon(a);
       var titel = was === "detail" ? "This product could not be loaded" : "Shopping data could not be loaded";
@@ -1911,7 +1923,7 @@
       if (!d) { platz.innerHTML = tabelleHtml(kopfAus("landscape"), skelettAus("landscape", 5)); spaltenAnwenden("landscape"); return; }
       var meta = d.meta;
       var l = (isArr(d.brands) ? d.brands : []).filter(function (b) { return b && typeof b === "object" && !(b.type === "own" && eigeneOhneTreffer(meta)); }).slice(0, 6);
-      if (!l.length) { platz.innerHTML = '<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No brands yet" }) + '</div>'; return; }
+      if (!l.length) { platz.innerHTML = tabelleLeer("landscape", 5, { icon: "squareStack", alt: "No brands yet" }); spaltenAnwenden("landscape"); return; }
       platz.innerHTML = tabelleHtml(kopfAus("landscape"), l.map(function (b) { return markeZeileOv(b, meta); }).join(""), "ush-klickbar");
       spaltenAnwenden("landscape");
     }
@@ -1935,7 +1947,7 @@
       var platz = vorschauPlatz(el, "topprodukte", sekKopf("Top Products", t("Most visible products across all brands"), mehrKnopf("View all products", "products")));
       if (!d) { platz.innerHTML = tabelleHtml(kopfAus("topprodukte"), skelettAus("topprodukte", 5)); spaltenAnwenden("topprodukte"); return; }
       var l = (isArr(d.top_products) ? d.top_products : []).filter(function (p) { return p && typeof p === "object" && str(p.source_product_id).trim(); }).slice(0, 10);
-      if (!l.length) { platz.innerHTML = '<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No products yet" }) + '</div>'; return; }
+      if (!l.length) { platz.innerHTML = tabelleLeer("topprodukte", 5, { icon: "stackStar", alt: "No products yet" }); spaltenAnwenden("topprodukte"); return; }
       platz.innerHTML = tabelleHtml(kopfAus("topprodukte"), l.map(function (p) {
         return '<div ' + produktZeile(p) + '>' +
           '<div class="up-td">' + produktZelle(p, d.meta) + '</div>' +
@@ -2778,7 +2790,12 @@
       var platz = vorschauPlatz(el, "dhaendler", sekKopf("Merchants", "", "", "merchant"));
       if (!d) { platz.innerHTML = tabelleHtml(kopfAus("dhaendler"), skelettAus("dhaendler", 3)); spaltenAnwenden("dhaendler"); return; }
       var l = (isArr(d.merchants) ? d.merchants : []).filter(function (m) { return m && typeof m === "object"; });
-      if (!l.length) { platz.innerHTML = '<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No merchants were listed with this product." }) + '</div>'; return; }
+      if (!l.length) {
+        platz.innerHTML = tabelleLeer("dhaendler", 3, { icon: "store", text: "No merchants were listed with this product.",
+                                                        alt: "No merchants were listed with this product." });
+        spaltenAnwenden("dhaendler");
+        return;
+      }
       platz.innerHTML = tabelleHtml(kopfAus("dhaendler"), l.map(function (m) {
         var n = haendlerName(m.merchant_name), p = letzterPreis(m.latest_price), sp = preisSpanne(m.price_ranges);
         return '<div class="up-row ush-zeile"' + (n ? ' data-haendler="' + esc(n) + '" role="link" tabindex="0"' : '') + '>' +
@@ -2805,7 +2822,11 @@
         return;
       }
       var rows = ap && isArr(ap.rows) ? ap.rows.filter(function (r) { return r && typeof r === "object"; }) : [];
-      if (!rows.length) { tabInhalt('<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No appearances in this range." }) + '</div>'); pagerSetzen("detail", 0); return; }
+      if (!rows.length) {
+        tabInhalt(tabelleLeer("detail", 5, { icon: "messageCircle", text: "No appearances in this range.", alt: "No appearances in this range." }));
+        spaltenAnwenden("detail"); pagerSetzen("detail", 0);
+        return;
+      }
       var html = tabelleHtml(kopf, rows.map(function (r) {
         var topics = (isArr(r.topics) ? r.topics : []).map(function (x) { return str(x).trim(); }).filter(Boolean);
         /* null heisst Einzelkarte (Uebergabe 7.3); ein Wert, der keine Platzierung sein kann, ist

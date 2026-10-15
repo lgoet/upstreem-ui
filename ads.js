@@ -1386,6 +1386,17 @@
       }).join("");
     }
     function skelettZeilen(n, sp2) { return UC.skeletonRows ? UC.skeletonRows({ count: n, rowClass: "up-row", cellClass: "up-td", cols: sp2 }) : ""; }
+    /* EINE LEERE TABELLE NEBEN DEN CHARTS (15.10., wie in shopping.js): Kopf wie beim Skelett,
+       darunter der Leerzustand der Charts aus core (UC.tabelleLeerHtml) in der Flaeche der n
+       Skelettzeilen -- zwischen Laden und Leer springt nichts. Vorher ein Kasten ohne Kopf mit
+       einem Satz. Der Zustand steht neben dem Spaltenscroller, damit er ueber dem Sichtbaren
+       mittig sitzt und nicht ueber der ganzen Scrollbreite. Gefiltert wie die Charts der Seite. */
+    function tabelleLeer(name, n, o) {
+      if (!UC.tabelleLeerHtml) return '<div class="up-box">' + UC.leerHtml({ mini: true, titel: o.alt }) + '</div>';
+      return '<div class="up-box uad-box"><div class="up-colscroll"><div class="up-colscroll-innen">' +
+          '<div class="up-thead">' + kopfAus(name) + '</div></div></div>' +
+        UC.tabelleLeerHtml({ icon: o.icon, text: o.text, gefiltert: filterAktiv(), zeilen: n }) + '</div>';
+    }
     function skelettAus(name, n) {
       var d = TABELLEN[name];
       return skelettZeilen(n, [d.erste.sk].concat(d.spalten.map(function (c) {
@@ -1694,9 +1705,9 @@
       zahlSetzen(el, UC.makeZaehlZeile ? null : alle.length);
       if (!alle.length) {
         var gesucht = !!str(tt.suche).trim();
-        platz.innerHTML = '<div class="up-box">' + (gesucht
-          ? UC.leerHtml({ gefiltert: true, was: "topics", knopf: "Clear search", knopfAttr: "data-uad-topicsweg" })
-          : UC.leerHtml({ mini: true, titel: leerSatz() })) + '</div>';
+        if (gesucht) platz.innerHTML = '<div class="up-box">' +
+          UC.leerHtml({ gefiltert: true, was: "topics", knopf: "Clear search", knopfAttr: "data-uad-topicsweg" }) + '</div>';
+        else { platz.innerHTML = tabelleLeer("topics", 5, { icon: "tags", alt: leerSatz() }); spaltenAnwenden("topics"); }
         topicsPager(0);
         return;
       }
@@ -2083,7 +2094,7 @@
       var verknuepft = !!str(adv.company_id).trim();
       var l = (isArr(d.prompts) ? d.prompts : []).filter(function (x) { return x && typeof x === "object" && str(x.prompt_text).trim(); });
       zahlSetzen(el, l.length);
-      if (!l.length) { platz.innerHTML = '<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No prompts yet" }) + '</div>'; return; }
+      if (!l.length) { platz.innerHTML = tabelleLeer("dprompts", 4, { icon: "zap", alt: "No prompts yet" }); spaltenAnwenden("dprompts"); return; }
       platz.innerHTML = tabelleHtml(kopfAus("dprompts"), l.map(function (x) {
         var pid = str(x.prompt_id).trim();
         var org = x.organic_mentioned, organisch;
@@ -2140,7 +2151,12 @@
       var werkzeuge = (mitKampagne ? segHtml("uad-gruppe-seg", [["all", "All"], ["campaign", "By Campaign"]], state.dGruppe) : '') +
         leiserKnopf("Open Ad Library", 'data-uad-bibliothek="' + esc(state.advertiser || "") + '"');
       var gesamtN = anzahlWert(s.ad_appearances);
-      if (!l.length) { el.innerHTML = kopf("Ads", { zahl: 0, tools: werkzeuge }) + '<div class="up-box">' + UC.leerHtml({ mini: true, titel: leerSatz() }) + '</div>'; return; }
+      /* Leer: derselbe Zustand wie "Recent Ads" der Uebersicht (zeichneRecent) -- Kacheln statt
+         Zeilen, also der Leerzustand im Fluss mit seinem eigenen Polster, nicht die Tabellenflaeche
+         (15.10.; vorher ein Satz in 13px). Gefiltert ohne Knopf: hier haengt kein data-uad-alleweg. */
+      if (!l.length) { el.innerHTML = kopf("Ads", { zahl: 0, tools: werkzeuge }) + '<div class="up-box">' + UC.leerHtml({ icon: "marketing",
+        gefiltert: filterAktiv(), titel: filterAktiv() ? "No matching Ads" : "No Ads observed", knopf: "",
+        text: filterAktiv() ? "No Ads match these filters." : "None of the tracked AI responses in this range contained an Ad." }) + '</div>'; return; }
       /* Mehr Auftritte als gelieferte Ads: das sind die neuesten. Der Satz sagt es, der Knopf daneben
          fuehrt zu allen. */
       var hinweis = gesamtN != null && gesamtN > l.length ? '<p class="uad-hinweis">' + esc(ersetze(t("Showing the {n} most recent of {total}."), { n: ganz(l.length), total: ganz(gesamtN) })) + '</p>' : '';
