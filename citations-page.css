@@ -22,16 +22,7 @@
 .ucs-chart, .ucs-tab { min-width: 0; }
 /* hidden gegen das display der eigenen Regel: der Reiter, der nicht offen ist, steht nicht da. */
 .ucs-root .ucs-tab[hidden] { display: none; }
-/* DIE FILTERZEILE FLIESST (15.10., wie die eine Leiste der Prompt-Tabelle, core.css "DIE EINE
-   LEISTE"): seit die Filter der Tabellen als Chips in dieser Zeile stehen, kommen schnell vier
-   oder fuenf zusammen. Als ein Block rutschte die ganze Filterleiste samt "Filters" in eine zweite
-   Zeile unter den Kalender, sobald ihre Chips nicht mehr daneben passten (gemessen bei 1440 mit
-   vier Chips). Jetzt loesen sich ihre Huellen auf, und "Filters", jeder Chip und "Clear All"
-   stehen einzeln in der Reihe und brechen dort um. "Filters" (.ufb-more) bleibt ein Kasten: an
-   ihm haengt das Menue. Dieselben drei Regeln wie in core, nur fuer diese Zeile -- dort gelten
-   sie allein im Kopf einer Tabelle (.up-leiste-scope), und diese Zeile steht ueber dem Band. */
-.ucs-filterzeile > .ufb-root,
-.ucs-filterzeile > .ufb-root > .ufb-bar,
-.ucs-filterzeile > .ufb-root.has-filters .ufb-chips { display: contents; }
-.ucs-filterzeile > .ufb-root .ufb-sep { display: none; }
-.ucs-filterzeile > .ufb-root .ufb-clear { margin-left: 0; }
+/* DIE FILTERZEILE FLIESST (15.10.): seit die Filter der Tabellen als Chips in dieser Zeile stehen,
+   kommen schnell vier oder fuenf zusammen; als ein Block rutschte die ganze Filterleiste unter den
+   Kalender (gemessen bei 1440 mit vier Chips). Die Regeln dafuer stehen in core (.up-leiste-fluss,
+   "DIE EINE LEISTE"), die Klasse sitzt im Markup an .ucs-filterzeile. */

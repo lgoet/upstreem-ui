@@ -135,7 +135,7 @@
         '<button class="up-ph-iconbtn ucs-refresh" type="button" aria-label="' + esc(t("Refresh")) + '" data-tip="' + esc(t("Refresh Data")) + '">' + REFRESH_SVG + '</button>' +
       '</div>' +
       '<div class="up-ph-nav ucs-nav" role="tablist"></div>' +
-      '<div class="ucs-filterzeile">' +
+      '<div class="ucs-filterzeile up-leiste-fluss">' +
         '<div class="up-root udr-root ucs-daten" data-instance="' + esc(ids.daten) + '" data-local="yes" data-isdark="' + dk + '"></div>' +
         '<div class="up-root ufb-root ucs-filterleiste" data-instance="' + esc(ids.filter) + '" data-topics-instance="' + esc(ids.topics) + '"' +
           ' data-models-instance="' + esc(ids.modelle) + '" data-markets-instance="' + esc(ids.maerkte) + '" data-isdark="' + dk + '"' +
