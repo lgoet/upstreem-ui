@@ -146,6 +146,16 @@
       if (e.target && e.target.classList && e.target.classList.contains("up-ment-search")) applyMentFilter();
     });
     var elMentLbl   = root.querySelector(".up-ment-lbl");
+    /* DIE EINE LEISTE (15.10., wie Responses und die Prompt-Tabelle): die Citations-Seite setzt
+       data-leiste="yes". Dann faellt die Ueberschrift mit Zaehler weg (die Anzahl steht in der
+       Gesamtzeile unten), und was DATEN aendert -- Markenschalter, "All Brands", Citation Types --
+       steht als Zeile im Menue "Filters" der Seite (UC.makeLeistenFilter unten), nicht mehr als
+       Knopf rechts. Anders als dort steht die Filterleiste nicht IM Kopf, sondern ueber dem Band:
+       sie gilt fuer Chart und Tabelle zugleich. Rechts bleibt, was nur die Ansicht aendert:
+       Sortierer, Suche, Display, Export. Der Drilldown behaelt seine eigenen Filter -- sie gelten
+       fuer EINE Domain, nicht fuer die Seite. Ohne das Attribut (Drawer, Bubble) bleibt alles,
+       wie es war. */
+    var LEISTE = root.getAttribute("data-leiste") === "yes";
 
     var gemerkteZeilen = Array.isArray(saved.rows) ? saved.rows : [];
       /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (19.09. gemeldet) ----
@@ -398,8 +408,11 @@
              greift also unveraendert. */
           (pages > 0 ? rowPagesBtn(isOpen) : "") +
         '</div>' +
-        '<div class="up-td up-td-share"><span class="udt-num">' + fmt1(share) + '%</span>' + trendChip(r.share_delta_pct, "%") + '</div>' +
-        '<div class="up-td up-td-used"><span class="udt-used">' + fmtTotal(used || 0) + '</span></div>' +
+        /* .up-num statt .udt-num/.udt-used (15.10., dieselben Werte): die feste Spur aus core
+           (--up-spur, domains-table.css) greift an .up-num -- Prozent unter Prozent, der Trend
+           beginnt in jeder Zeile auf demselben Pixel. */
+        '<div class="up-td up-td-share"><span class="up-num">' + fmt1(share) + '%</span>' + trendChip(r.share_delta_pct, "%") + '</div>' +
+        '<div class="up-td up-td-used"><span class="up-num">' + fmtTotal(used || 0) + '</span></div>' +
         '<div class="up-td up-td-type">' + tagHtml(r.citation_type) + '</div>' +
         '<div class="up-td up-td-lastseen"><span class="udt-date">' + esc(fmtDate(r.last_used_at)) + '</span></div>' +
         '<div class="up-td udt-td-actions">' +
@@ -989,7 +1002,13 @@
       root: root, state: state, columns: COLUMNS,
       storePrefix: "udt", instanceId: instanceId,
       firstKey: "domain", firstMin: DOMAIN_MIN, actionsMin: 100,
-      dense: false, badgeSel: ".udt-cols-badge", cellPrefixes: ["up"],
+      /* "up-sum": die Zellen der Gesamtzeile (UC.makeZaehlZeile) gehen mit ihren Spalten. */
+      dense: false, badgeSel: ".udt-cols-badge", cellPrefixes: ["up", "up-sum"],
+      /* In der einen Leiste heisst das Menue "Display": Spalten als Chips wie in Responses und
+         der Prompt-Tabelle, unten der Schalter fuer die Gesamtzeile. Zur Laufzeit gelesen: die
+         Zeile entsteht erst weiter unten. */
+      form: LEISTE ? "chips" : null,
+      nachspann: LEISTE ? function(){ return zaehl ? zaehl.schalter() : null; } : null,
       onChange: function(){ render(); }
     });
     var readCols = colsKit.readCols, writeCols = colsKit.writeCols;
@@ -1151,6 +1170,89 @@
       persist(); syncBrand(); renderPager();
       fire("data-brand-fn", "udtBrand", { brand_mentioned: state.brandMentioned });
     }
+
+    /* ---------------- die Filter der einen Leiste (15.10.) ----------------
+       Markenschalter, "All Brands" und Citation Types als Zeilen im Menue "Filters" der Seite
+       (filters/filter-bar.js, Eintraege dmention/dbrands/dtypes), gebaut von core
+       (UC.makeLeistenFilter) -- dieselbe Bauart wie in responses-table.js. Der ZUSTAND bleibt hier
+       (brandMentioned, mentionApplied, appliedSel), und die Ereignisse an die Seite sind dieselben
+       wie von den alten Knoepfen: udtBrand, udtMentioned, udtFilter mit denselben Feldern. Jede
+       Wahl gilt sofort -- auch Marken und Typen (vorher "Apply"): alle anderen Filter der Leiste
+       wirken sofort. */
+    function ffT(x){ return UC.t ? UC.t(x) : x; }
+    /* Ein unersetzter Platzhalter (BRAND_NAME aus der Bubble-Vorlage) ist keine Marke. */
+    function markeOk(n){ return n && !/^[A-Z_]{3,}$/.test(n) ? n : ""; }
+    function markenId(b){ return String(b.company_id != null ? b.company_id : (b.id != null ? b.id : (b.brand_id != null ? b.brand_id : b.name))); }
+    function brandSetzen(v){
+      v = v === "yes" || v === "no" ? v : "";
+      if (v === state.brandMentioned) return;
+      closeDrilldown();
+      state.brandMentioned = v;
+      state.page = 1;
+      state.softReload = false; dim.end();
+      persist(); syncBrand(); renderPager();
+      fire("data-brand-fn", "udtBrand", { brand_mentioned: state.brandMentioned });
+    }
+    function satzVon(l){ var n = {}; l.forEach(function(k){ n[k] = true; }); return n; }
+    function gewaehlt(o){ return Object.keys(o || {}).filter(function(k){ return o[k]; }); }
+    var FF_ARTEN = {
+      dmention: {
+        label: function(){ return ffT("{brand} mentioned?").replace("{brand}", markeOk(root.getAttribute("data-brand-name") || "")); },
+        chip: function(){ return markeOk(root.getAttribute("data-brand-name") || ""); }, leer: "Any",
+        optionen: function(){ return [{ key: "yes", name: ffT("Mentioned") }, { key: "no", name: ffT("Not mentioned") }]; },
+        auswahl: function(){ return state.brandMentioned ? [state.brandMentioned] : []; },
+        /* Ohne eigene Marke gibt es nichts zu fragen -- die Zeile meldet sich ab, die Auswahl bleibt. */
+        aus: function(){ return !markeOk(root.getAttribute("data-brand-name") || ""); },
+        bild: function(){ return markeOk(root.getAttribute("data-brand-logo") || ""); },
+        setzen: function(l){ brandSetzen(l.length ? l[l.length - 1] : ""); }, einzeln: true
+      },
+      dbrands: {
+        label: function(){ return ffT("Mentioned brands"); }, chip: function(){ return ffT("Brands"); }, leer: "All",
+        optionen: function(){
+          return (state.brands || []).map(function(b){
+            return { key: markenId(b), name: String(b.name != null ? b.name : markenId(b)),
+                     logo: String(b.logo_url != null ? b.logo_url : (b.logo != null ? b.logo : (b.favicon != null ? b.favicon : ""))) };
+          });
+        },
+        auswahl: function(){ return gewaehlt(state.mentionApplied); },
+        aus: function(){ return !(state.brands || []).length; },
+        setzen: function(l){ state.mentionSel = satzVon(l); submitMent(); }, suche: true
+      },
+      dtypes: {
+        label: function(){ return ffT("Citation type"); }, chip: function(){ return ffT("Citation type"); }, leer: "All",
+        optionen: function(){ return ALL_CITATION_TYPES.map(function(k){ return { key: k, name: UC.typLabel(k, "citation") }; }); },
+        auswahl: function(){ return gewaehlt(state.appliedSel); },
+        setzen: function(l){ state.filterSel = satzVon(l); submitFilter(); }
+      }
+    };
+    var ffKit = null;
+    function ffSync(){ if (ffKit) ffKit.sync(); }
+    if (LEISTE && UC.makeLeistenFilter){ ffKit = UC.makeLeistenFilter(root, { instanceId: instanceId, arten: FF_ARTEN }); ffSync(); }
+    /* Die Filterleiste der Seite, die die Filter DIESER Tabelle traegt. Sie steht nicht im Kopf
+       der Tabelle (wie bei Responses), sondern ueber dem Band -- gefunden ueber die Instanz, die
+       sie fuer "<Marke> mentioned?" eingetragen hat, also genau die Leiste, die auch die Zeilen
+       dieser Tabelle zeigt. */
+    function seitenLeiste(){
+      var id = instanceId + "_dmention", l = document.querySelectorAll(".ufb-root");
+      for (var i = 0; i < l.length; i++) if (String(l[i].getAttribute("data-dmention-instance") || "") === id) return l[i];
+      return null;
+    }
+
+    /* DIE GESAMTZEILE (15.10., core UC.makeZaehlZeile, wie Responses): vorerst nur die Anzahl
+       links. Dieselbe Zahl wie bisher im Kopf (renderCount), der in der einen Leiste wegfaellt --
+       die Gesamtzahl des Servers, nicht die Zeilen der Seite. Nur in der einen Leiste; ausblendbar
+       ueber Display. Sie steht HINTER dem Koerper: der Drilldown lebt in ihm und schiebt sie nur
+       nach unten. */
+    var zaehl = (LEISTE && UC.makeZaehlZeile) ? UC.makeZaehlZeile({
+      root: root, nach: elTbody, instanceId: instanceId, praefix: "udt",
+      cols: function(){ return typeof colsKit !== "undefined" ? colsKit : null; },
+      spalten: function(){ return COLUMNS.map(function(c){ return c.key; }); },
+      anzahl: function(){
+        if (state.leseFehler) return null;
+        return state.totalCount != null ? state.totalCount : (state.hasData ? state.rows.length : null);
+      },
+      laedt: function(){ return isBusy() || !state.hasData; }
+    }) : null;
 
     /* ---------------- search (same debounce/min-length/reqId pattern as urls-table.js) ---------------- */
 
@@ -1451,6 +1553,15 @@
         /* Wie in urls-table: ohne diese Meldung behielt die Seite ihr "erwaehnt ja/nein", der
            Schalter zeigte "alle", die Daten blieben gefiltert (Bestand 13.10.). */
         fire("data-brand-fn", "udtBrand", { brand_mentioned: "" });
+        /* In der einen Leiste stehen alle Filter im Menue "Filters" der Seite: "Reset filters" im
+           Leerzustand raeumt ALLES, auch Topics, Models, Markets und Intent (wie Responses). Jeder
+           Filter leert sich ueber seinen eigenen Weg; die drei dieser Tabelle sind hier schon leer
+           und melden sich darum nicht ein zweites Mal. */
+        if (LEISTE){
+          var fbR = seitenLeiste();
+          if (fbR && fbR.__ufbCtrl && typeof fbR.__ufbCtrl.reset === "function"){ try { fbR.__ufbCtrl.reset(); } catch(e2){} }
+        }
+        ffSync();
         return;
       }
 
@@ -1726,6 +1837,9 @@
     function headGap(){ return UC.headGap(elHeading, elHeadTools, elSearch, SEARCH_OPEN_WIDTH); }
     function fitToolbar(){
       if (!elHeading || !elHeadTools) return;
+      /* Die Stufen nehmen Knoepfe weg, wenn die Ueberschrift neben den Werkzeugen keinen Platz
+         hat -- in der einen Leiste gibt es keine Ueberschrift, der Kopf bricht um. */
+      if (LEISTE) return;
       if (root.classList.contains("is-searchtakeover")) return;
       for (var r = 0; r < TOOLBAR_TIERS.length; r++) root.classList.remove(TOOLBAR_TIERS[r]);
       for (var i = 0; i < TOOLBAR_TIERS.length; i++){
@@ -1794,6 +1908,8 @@
       renderTable(); renderCount(); syncHeadSorters(); syncBrand(); syncFilterBadge(); syncColsBadge();
       renderPageSize(); renderPager(); applyCols(); syncMentLabel(); applyResponsive();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
+      ffSync();
+      if (zaehl) zaehl.zeichnen();
     }
 
     if (state.query){ elSearchIn.value = state.query; elSearch.classList.add("is-open", "has-text"); }
@@ -1804,7 +1920,9 @@
        stehen, was sagt, worauf man gerade sieht -- Segmentschalter und Reiter (role="tablist") und
        den Export-Knopf. Unter 620px ist sie aus und die Leiste verhaelt sich wie vorher.
        filterActive: derselbe Ausdruck, den renderTable schon fuer "No matching domains" benutzt. */
-    var toolGroup = UC.makeToolGroup ? UC.makeToolGroup({
+    /* In der einen Leiste keine einklappbare Werkzeuggruppe: rechts stehen nur noch wenige
+       Knoepfe der Ansicht, und der Kopf bricht um, statt Knoepfe wegzunehmen (wie Responses). */
+    var toolGroup = (!LEISTE && UC.makeToolGroup) ? UC.makeToolGroup({
       root: root, tools: elHeadTools,
       filterActive: function(){
         return !!state.query ||
@@ -1934,7 +2052,8 @@
         if (o.brands !== undefined){ state.mentionApplied = satz(o.brands); state.mentionSel = satz(o.brands); populateMent(); syncMentLabel(); }
         if (o.brand_mentioned !== undefined){ var b = String(o.brand_mentioned || ""); state.brandMentioned = b === "yes" || b === "no" ? b : ""; syncBrand(); }
         state.page = 1;
-        persist(); renderPager();
+        /* Die Zeilen und Chips im Menue "Filters" zeigen denselben Stand (eine Leiste). */
+        persist(); renderPager(); ffSync();
         return true;
       },
       reset: function(){

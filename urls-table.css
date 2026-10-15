@@ -365,7 +365,13 @@
     
     
     
+    /* .uut-num traegt das eigene Markup seit dem 15.10. nicht mehr (dort .up-num, siehe die feste
+       Spur); die Regel bleibt fuer fremde Kopien der Zeile. */
     .uut-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; font-variant-numeric: tabular-nums; }
+    /* DIE FESTE SPUR der Zahlen (core.css, --up-spur, 15.10.): Share mit einer Stelle und Prozent
+       (fmt1, "100.0%"), auch als Domain Share im Domain-Modus. Die Zahl steht darin rechts, Kopf
+       und Zelle bleiben links, der Trend beginnt in jeder Zeile auf demselben Pixel. */
+    .uut-root .uut-td-share { --up-spur: var(--up-spur-pct1); }
     .uut-used { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; font-variant-numeric: tabular-nums; }
     .uut-date { font-size: 12px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
     /* Rand 1px (Farbe inline aus UC.typeStyle) innerhalb von border-box, damit Hoehe und Polster bleiben; Schnitt 500 statt 600, seit Variante D (13.10.) traegt die Farbe den Chip, nicht die Staerke. Kein Nachbau von .up-planpill (meldet .check_reinvention.py wegen des Rahmens): das ist der Typ-Chip aus STYLEGUIDE 1a/1b, Masse wie .up-tag. */
@@ -454,3 +460,19 @@
     
     /* Tooltips keep the same dark card in both themes: they float above the page, not inside
        the surface, so inverting them made them read as a different component. */
+
+    /* DIE EINE LEISTE (15.10., data-leiste="yes" von der Citations-Seite): das Layout des Kopfs
+       steht in core (DIE EINE LEISTE), die Ueberschrift faellt dort weg. Hier gehen die drei
+       Filterknoepfe -- Markenschalter, Marken und das Typen-Menue stehen jetzt als Zeilen im Menue
+       "Filters" der Seite (urls-table.js, Filter der einen Leiste). Die Elemente bleiben im
+       Markup, ihr Zustand wird weiter gepflegt. */
+    .uut-root[data-leiste="yes"] .up-head-tools > .uut-brand-toggle,
+    .uut-root[data-leiste="yes"] .up-head-tools > .up-ment,
+    .uut-root[data-leiste="yes"] .up-head-tools > .up-filter { display: none; }
+    /* Display in der einen Leiste: 340 breit wie das Display-Menue der Prompt-Tabelle
+       (prompts-table.css). Mit 230 (Vorgabe aus core) passte die Zeile "Row height" mit
+       Comfortable/Compact nicht: gemessen ragte der Segmentstreifen 15px ueber den Rand hinaus und
+       "Row height" brach in zwei Zeilen. Telefon: so breit wie das Fenster erlaubt, das Menue
+       scrollt in sich (dieselbe Regel wie dort). */
+    .uut-root[data-leiste="yes"] .up-cols-menu { width: 340px; }
+    .uut-root[data-leiste="yes"].is-vnarrow .up-cols-menu { width: min(340px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow-y: auto; }

@@ -472,6 +472,14 @@
    "Reset Filters" nicht zwischen "Back" und die Optionen -- es leert ALLE Filter, und dort steht
    man in einem. Auf der Liste aller Filter (nach "Back") steht es wieder da. */
 .ufb-root[data-form="gross"] .ufb-menu.is-inside .ufb-resetbox { display: none; }
+/* Aus demselben Grund auch der Branded-Schalter und die gespeicherten Filter (15.10., gemessen auf
+   der Citations-Seite: vom Chip "Citation type" geoeffnet standen "Branded prompts" und "Saved
+   filters" ueber den Typen, auf dem Telefon zwischen "Back" und den Models). Beide gehoeren zur
+   Liste aller Filter, nicht in einen einzelnen. Ohne die grosse Form gibt es keine gespeicherten
+   Filter, der Branded-Schalter steht dort aber genauso im Weg. */
+.ufb-root .ufb-menu.is-inside .ufb-branded,
+.ufb-root .ufb-menu.is-inside .ufb-branded-div,
+.ufb-root[data-form="gross"] .ufb-menu.is-inside .ufb-gesp { display: none; }
 
 /* DER CHIP IN DREI TEILEN (15.10., Entwurf B): Name mit Zeichen, Bedingung, Wert, dann das X --
    je durch einen feinen Strich getrennt, der Rahmen ist der des Chips. Die Teile tragen das

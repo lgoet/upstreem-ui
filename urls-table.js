@@ -136,6 +136,14 @@
       if (e.target && e.target.classList && e.target.classList.contains("up-ment-search")) applyMentFilter();
     });
     var elMentLbl   = root.querySelector(".up-ment-lbl");
+    /* DIE EINE LEISTE (15.10., wie Responses und domains-table.js): die Citations-Seite setzt
+       data-leiste="yes". Dann faellt die Ueberschrift mit Zaehler weg (die Anzahl steht in der
+       Gesamtzeile unten), und was DATEN aendert -- Markenschalter, "All Brands", Citation und URL
+       Types -- steht als Zeile im Menue "Filters" der Seite (UC.makeLeistenFilter unten). Die
+       Filterleiste steht ueber dem Band, nicht im Kopf: sie gilt fuer Chart und Tabelle. Rechts
+       bleibt, was nur die Ansicht aendert: Sortierer, Suche, Display, Export. Ohne das Attribut
+       (Domain-Drawer, Bubble) bleibt alles, wie es war. */
+    var LEISTE = root.getAttribute("data-leiste") === "yes";
 
     var gemerkteZeilen = Array.isArray(saved.rows) ? saved.rows : [];
       /* ---- EIN NEU GEBAUTES ELEMENT MACHT WEITER (19.09. gemeldet) ----
@@ -194,7 +202,9 @@
       brands: saved.brands || [],              // full list; persisted so a Bubble re-render keeps them
       mentionSel: saved.mentionSel || {},      // live checkbox state
       mentionApplied: saved.mentionApplied || {},
-      dense: readDense()                       // compact row mode (single-line first column) — localStorage
+      dense: readDense(),                      // compact row mode (single-line first column) — localStorage
+      /* Dieselbe Wahl als Text fuer das Display-Menue der einen Leiste (siehe ZEILENHOEHEN). */
+      rowHeight: readDense() ? "compact" : "comfortable"
     };
     root.classList.toggle("is-dense", state.dense);   // apply the saved row mode on load
     /* Column visibility is a per-user display preference, not app data — localStorage, keyed by
@@ -373,7 +383,10 @@
         '</div>' +
         /* Kein Trend im Domain-Modus: die RPC liefert dafuer keine Veraenderung, und ein Pfeil,
            der sich auf den globalen Anteil bezieht, waere neben dem Domain-Anteil schlicht falsch. */
-        '<div class="up-td uut-td-share"><span class="uut-num' + (share == null ? " is-empty" : "") + '">' +
+        /* .up-num statt .uut-num (15.10., dieselben Werte): die feste Spur aus core (--up-spur,
+           urls-table.css) greift an .up-num, und ein fehlender Wert ist "–" in der Farbe jeder
+           leeren Zelle (.up-num.is-empty) -- .uut-num hatte dafuer keine Regel. */
+        '<div class="up-td uut-td-share"><span class="up-num' + (share == null ? " is-empty" : "") + '">' +
           (share == null ? "\u2013" : fmt1(share) + "%") + '</span>' +
           (dm ? "" : trendChip(r.share_delta_pct, "%")) + '</div>' +
         '<div class="up-td uut-td-type">' + tagHtml(r.url_type) + '</div>' +
@@ -651,6 +664,11 @@
        can never be squeezed to the point where its header or cell content wraps. */
     var URL_MIN = 220;          // the URL cell holds two lines of text; below this it stops being readable
     var ACTIONS_MIN = 120;
+    /* Die zwei Zeilenhoehen dieser Tabelle (Comfortable/Compact, state.dense) in der Form, die das
+       Display-Menue der einen Leiste zeichnet (makeColumns cfg.rowHeightSwitch, Chip-Form). Ohne
+       das ginge die Zeilenhoehe dort verloren: die Chip-Form zeichnet den dense-Schalter nicht.
+       Geklickt wird ueber data-rowheight (Klick-Zuhoerer unten), gespeichert wie bisher als dense. */
+    var ZEILENHOEHEN = [{ key: "comfortable", label: "Comfortable" }, { key: "compact", label: "Compact" }];
 
     /* Columns, pagination and header sorting all come from core now — urls-table and
        domains-table used to carry byte-identical copies of that machinery. Only the data
@@ -659,7 +677,15 @@
       root: root, state: state, columns: COLUMNS,
       storePrefix: "uut", instanceId: instanceId,
       firstKey: "domain", firstMin: URL_MIN, actionsMin: 120,
-      dense: true, badgeSel: ".uut-cols-badge", cellPrefixes: ["up","uut"],
+      /* "up-sum": die Zellen der Gesamtzeile (UC.makeZaehlZeile) gehen mit ihren Spalten. */
+      dense: !LEISTE, badgeSel: ".uut-cols-badge", cellPrefixes: ["up","uut","up-sum"],
+      /* In der einen Leiste heisst das Menue "Display": Spalten als Chips wie in Responses und
+         der Prompt-Tabelle, unten der Schalter fuer die Gesamtzeile (zur Laufzeit gelesen, die
+         Zeile entsteht erst weiter unten). Die Zeilenhoehe kommt dort als Zeile "Row height" --
+         die Chip-Form kennt sie nur als rowHeightSwitch, nicht als dense. */
+      rowHeightSwitch: LEISTE ? ZEILENHOEHEN : null,
+      form: LEISTE ? "chips" : null,
+      nachspann: LEISTE ? function(){ return zaehl ? zaehl.schalter() : null; } : null,
       onChange: function(){ render(); }
     });
     var readCols = colsKit.readCols, writeCols = colsKit.writeCols;
@@ -708,6 +734,7 @@
        silently beat the class rule from the other. */
     function setDense(on){
       state.dense = !!on;
+      state.rowHeight = state.dense ? "compact" : "comfortable";
       root.classList.toggle("is-dense", state.dense);
       writeDense(); populateCols();
     }
@@ -869,6 +896,98 @@
       persist(); syncBrand(); renderPager();
       fire("data-brand-fn", "uutBrand", { brand_mentioned: state.brandMentioned });
     }
+
+    /* ---------------- die Filter der einen Leiste (15.10.) ----------------
+       Markenschalter, "All Brands", Citation Types und URL Types als Zeilen im Menue "Filters" der
+       Seite (filters/filter-bar.js, Eintraege umention/ubrands/ucittypes/uurltypes), gebaut von
+       core (UC.makeLeistenFilter) -- dieselbe Bauart wie in responses-table.js. Der ZUSTAND bleibt
+       hier, und die Ereignisse an die Seite sind dieselben wie von den alten Knoepfen: uutBrand,
+       uutMentioned und uutFilter. Die beiden Typ-Listen waren EIN Menue mit Umschalter und
+       gingen gemeinsam hinaus; jetzt sind es zwei Zeilen, und jede Wahl schickt wie vorher BEIDE
+       Listen (citation_types und url_types) -- der Empfaenger sieht keinen Unterschied. Jede Wahl
+       gilt sofort (vorher "Apply"): alle anderen Filter der Leiste wirken sofort. */
+    function ffT(x){ return UC.t ? UC.t(x) : x; }
+    /* Ein unersetzter Platzhalter (BRAND_NAME aus der Bubble-Vorlage) ist keine Marke. */
+    function markeOk(n){ return n && !/^[A-Z_]{3,}$/.test(n) ? n : ""; }
+    function markenId(b){ return String(b.company_id != null ? b.company_id : (b.id != null ? b.id : (b.brand_id != null ? b.brand_id : b.name))); }
+    function brandSetzen(v){
+      v = v === "yes" || v === "no" ? v : "";
+      if (v === state.brandMentioned) return;
+      state.brandMentioned = v;
+      state.page = 1;
+      state.softReload = false; dim.end();
+      persist(); syncBrand(); renderPager();
+      fire("data-brand-fn", "uutBrand", { brand_mentioned: state.brandMentioned });
+    }
+    function satzVon(l){ var n = {}; l.forEach(function(k){ n[k] = true; }); return n; }
+    function gewaehlt(o){ return Object.keys(o || {}).filter(function(k){ return o[k]; }); }
+    /* Eine Typ-Liste setzen, die andere so lassen, wie sie gilt -- submitFilter schickt beide. */
+    function typenSetzen(art, l){
+      state.filterSel = art === "citation" ? satzVon(l) : satzVon(gewaehlt(state.appliedSel));
+      state.filterUrlSel = art === "url" ? satzVon(l) : satzVon(gewaehlt(state.appliedUrlSel));
+      submitFilter();
+    }
+    var FF_ARTEN = {
+      umention: {
+        label: function(){ return ffT("{brand} mentioned?").replace("{brand}", markeOk(root.getAttribute("data-brand-name") || "")); },
+        chip: function(){ return markeOk(root.getAttribute("data-brand-name") || ""); }, leer: "Any",
+        optionen: function(){ return [{ key: "yes", name: ffT("Mentioned") }, { key: "no", name: ffT("Not mentioned") }]; },
+        auswahl: function(){ return state.brandMentioned ? [state.brandMentioned] : []; },
+        /* Ohne eigene Marke gibt es nichts zu fragen -- die Zeile meldet sich ab, die Auswahl bleibt. */
+        aus: function(){ return !markeOk(root.getAttribute("data-brand-name") || ""); },
+        bild: function(){ return markeOk(root.getAttribute("data-brand-logo") || ""); },
+        setzen: function(l){ brandSetzen(l.length ? l[l.length - 1] : ""); }, einzeln: true
+      },
+      ubrands: {
+        label: function(){ return ffT("Mentioned brands"); }, chip: function(){ return ffT("Brands"); }, leer: "All",
+        optionen: function(){
+          return (state.brands || []).map(function(b){
+            return { key: markenId(b), name: String(b.name != null ? b.name : markenId(b)),
+                     logo: String(b.logo_url != null ? b.logo_url : (b.logo != null ? b.logo : (b.favicon != null ? b.favicon : ""))) };
+          });
+        },
+        auswahl: function(){ return gewaehlt(state.mentionApplied); },
+        aus: function(){ return !(state.brands || []).length; },
+        setzen: function(l){ state.mentionSel = satzVon(l); submitMent(); }, suche: true
+      },
+      ucittypes: {
+        label: function(){ return ffT("Citation type"); }, chip: function(){ return ffT("Citation type"); }, leer: "All",
+        optionen: function(){ return ALL_CITATION_TYPES.map(function(k){ return { key: k, name: UC.typLabel(k, "citation") }; }); },
+        auswahl: function(){ return gewaehlt(state.appliedSel); },
+        setzen: function(l){ typenSetzen("citation", l); }
+      },
+      uurltypes: {
+        label: function(){ return ffT("URL type"); }, chip: function(){ return ffT("URL type"); }, leer: "All",
+        optionen: function(){ return ALL_URL_TYPES.map(function(k){ return { key: k, name: urlTypeInfo(k).label }; }); },
+        auswahl: function(){ return gewaehlt(state.appliedUrlSel); },
+        setzen: function(l){ typenSetzen("url", l); }
+      }
+    };
+    var ffKit = null;
+    function ffSync(){ if (ffKit) ffKit.sync(); }
+    if (LEISTE && UC.makeLeistenFilter){ ffKit = UC.makeLeistenFilter(root, { instanceId: instanceId, arten: FF_ARTEN }); ffSync(); }
+    /* Die Filterleiste der Seite, die die Filter DIESER Tabelle traegt -- sie steht ueber dem
+       Band, nicht im Kopf. Gefunden ueber die Instanz, die sie fuer "<Marke> mentioned?"
+       eingetragen hat. */
+    function seitenLeiste(){
+      var id = instanceId + "_umention", l = document.querySelectorAll(".ufb-root");
+      for (var i = 0; i < l.length; i++) if (String(l[i].getAttribute("data-umention-instance") || "") === id) return l[i];
+      return null;
+    }
+
+    /* DIE GESAMTZEILE (15.10., core UC.makeZaehlZeile, wie Responses): vorerst nur die Anzahl
+       links -- dieselbe Zahl wie bisher im Kopf, der in der einen Leiste wegfaellt, also die
+       Gesamtzahl des Servers. Nur in der einen Leiste; ausblendbar ueber Display. */
+    var zaehl = (LEISTE && UC.makeZaehlZeile) ? UC.makeZaehlZeile({
+      root: root, nach: elTbody, instanceId: instanceId, praefix: "uut",
+      cols: function(){ return typeof colsKit !== "undefined" ? colsKit : null; },
+      spalten: function(){ return COLUMNS.map(function(c){ return c.key; }); },
+      anzahl: function(){
+        if (state.leseFehler) return null;
+        return state.totalCount != null ? state.totalCount : (state.hasData ? state.rows.length : null);
+      },
+      laedt: function(){ return isBusy() || !state.hasData; }
+    }) : null;
 
     /* ---------------- search (same debounce/min-length/reqId as quick_actions) ---------------- */
 
@@ -1122,6 +1241,14 @@
         fire("data-filter-fn", "uutFilter", { citation_types: "", url_types: "" });
         fire("data-mentioned-fn", "uutMentioned", { brands: "" });
         fire("data-brand-fn", "uutBrand", { brand_mentioned: "" });
+        /* In der einen Leiste stehen alle Filter im Menue "Filters" der Seite: "Reset filters" im
+           Leerzustand raeumt ALLES, auch Topics, Models, Markets und Intent (wie Responses). Die
+           vier Filter dieser Tabelle sind hier schon leer und melden sich nicht ein zweites Mal. */
+        if (LEISTE){
+          var fbR = seitenLeiste();
+          if (fbR && fbR.__ufbCtrl && typeof fbR.__ufbCtrl.reset === "function"){ try { fbR.__ufbCtrl.reset(); } catch(e2){} }
+        }
+        ffSync();
         return;
       }
 
@@ -1197,6 +1324,8 @@
       }
       var denseBtn = e.target.closest("[data-dense]");
       if (denseBtn){ setDense(denseBtn.getAttribute("data-dense") === "1"); return; }
+      var rhBtn = e.target.closest("[data-rowheight]");
+      if (rhBtn){ setDense(rhBtn.getAttribute("data-rowheight") === "compact"); return; }
       if (e.target.closest("[data-colsall]")){ selectAllCols(); return; }
       var colRow = e.target.closest("[data-col]");
       if (colRow){ toggleCol(colRow.getAttribute("data-col")); return; }
@@ -1395,6 +1524,9 @@
     function headGap(){ return UC.headGap(elHeading, elHeadTools, elSearch, SEARCH_OPEN_WIDTH); }
     function fitToolbar(){
       if (!elHeading || !elHeadTools) return;
+      /* Die Stufen nehmen Knoepfe weg, wenn die Ueberschrift neben den Werkzeugen keinen Platz
+         hat -- in der einen Leiste gibt es keine Ueberschrift, der Kopf bricht um. */
+      if (LEISTE) return;
       if (root.classList.contains("is-searchtakeover")) return;   // search owns the row on mobile
       for (var r = 0; r < TOOLBAR_TIERS.length; r++) root.classList.remove(TOOLBAR_TIERS[r]);
       for (var i = 0; i < TOOLBAR_TIERS.length; i++){
@@ -1478,6 +1610,8 @@
          Beschriftung waere dann wieder die aus dem Markup. */
       syncShareKopf(); populateSort();
       if (root.classList.contains("up-sticky")) syncTheadOffset();
+      ffSync();
+      if (zaehl) zaehl.zeichnen();
     }
 
     // restore the search box if a query survived a rebuild
@@ -1490,7 +1624,9 @@
        den Export-Knopf. Unter 620px ist sie aus und die Leiste verhaelt sich wie vorher.
        filterActive: derselbe Ausdruck, den renderTable schon fuer "No matching URLs" benutzt --
        zwei Wahrheiten ueber dieselbe Frage waeren eine zu viel. */
-    var toolGroup = UC.makeToolGroup ? UC.makeToolGroup({
+    /* In der einen Leiste keine einklappbare Werkzeuggruppe: rechts stehen nur noch wenige
+       Knoepfe der Ansicht, und der Kopf bricht um, statt Knoepfe wegzunehmen (wie Responses). */
+    var toolGroup = (!LEISTE && UC.makeToolGroup) ? UC.makeToolGroup({
       root: root, tools: elHeadTools,
       filterActive: filterAktiv,
       prefKey: UC.prefKey ? UC.prefKey("uut_tools__" + instanceId) : null
@@ -1581,7 +1717,8 @@
         if (o.brands !== undefined){ state.mentionApplied = satz(o.brands); state.mentionSel = satz(o.brands); populateMent(); syncMentLabel(); }
         if (o.brand_mentioned !== undefined){ var b = String(o.brand_mentioned || ""); state.brandMentioned = b === "yes" || b === "no" ? b : ""; syncBrand(); }
         state.page = 1;
-        persist(); renderPager();
+        /* Die Zeilen und Chips im Menue "Filters" zeigen denselben Stand (eine Leiste). */
+        persist(); renderPager(); ffSync();
         return true;
       },
       /* RESET: alles, was bestimmt, WELCHE Zeilen man sieht und in welcher Reihenfolge, zurueck
