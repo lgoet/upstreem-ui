@@ -57,19 +57,22 @@
   /* Hideable columns. Domain and Actions are deliberately absent — the table makes no sense
      without the domain, and the row actions are the point of the Actions cell. */
   var COLUMNS = [
-      /* `prio` = survival order when too narrow to fit everything (higher survives longer, see
-         UC.makeColumns' autoFit). Share is the metric the table exists for; Last Seen is the
-         first thing you can do without. */
-      { key: "share",    label: "Share",            w: "minmax(13%, 150px)",   min: 130, prio: 50 },
-      { key: "type",     label: "Type",             w: "minmax(11%, 1fr)",     min: 118, dropAt: "vnarrow", prio: 30 },
+      /* `art` = welche Spalte bei Platzmangel zuerst weicht (SPALTEN_ART in core, seit 15.10.
+         spaet fuer alle Tabellen gleich): Last Seen, Type, Brands mentioned, zuletzt Mentioned?
+         (die Zeilenform von Visibility). Share ist die Kennzahl, fuer die es die Tabelle gibt --
+         sie faellt der Breite wegen nie. Mentioned? darum dropAt "vnarrow" statt "narrow": sonst
+         verschwand Type bei 990 Fensterbreite und kam bei 950 (Stufe narrow) wieder, waehrend
+         Mentioned? ging (gemessen). Mobil (vnarrow) bleibt es, wie es war. */
+      { key: "share",    label: "Share",            w: "minmax(13%, 150px)",   min: 130, art: "anteil" },
+      { key: "type",     label: "Type",             w: "minmax(11%, 1fr)",     min: 118, dropAt: "vnarrow", art: "typ" },
       /* minFlach/wFlach (15.10.): flach (core, Kopfschrift 13/500) gemessen "Mentioned?" mit Logo
          123 und "Last Seen" mit Sortierpfeilen 110, je samt Zellrand -- die alten Untergrenzen
          112 und 104 kuerzten beide.
          Seit 15.10. spaet traegt jeder Kopf 14/500, auch im Drawer -- also EINE Untergrenze:
          gemessen "Mentioned?" mit Logo 17 129.4, "Last Seen" mit Sortierpfeilen 15 115.7. */
-      { key: "ment",     label: "Mentioned?",       w: "minmax(132px, 0.6fr)", min: 132, dropAt: "narrow",  prio: 20 },
-      { key: "brands",   label: "Brands mentioned", w: "minmax(13%, 1fr)",     min: 178, dropAt: "vnarrow", prio: 40 },
-      { key: "lastseen", label: "Last Seen",        w: "minmax(118px, 0.7fr)", min: 118, dropAt: "vnarrow", prio: 10 }
+      { key: "ment",     label: "Mentioned?",       w: "minmax(132px, 0.6fr)", min: 132, dropAt: "vnarrow", art: "erwaehnt" },
+      { key: "brands",   label: "Brands mentioned", w: "minmax(13%, 1fr)",     min: 178, dropAt: "vnarrow", art: "marken" },
+      { key: "lastseen", label: "Last Seen",        w: "minmax(118px, 0.7fr)", min: 118, dropAt: "vnarrow", art: "datum" }
   ];
 
   /* ORDER maps each (field, direction) pair onto the single value the RPC expects in p_order.

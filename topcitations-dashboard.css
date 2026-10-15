@@ -131,6 +131,10 @@
 .tct-table.tct-hide-used .tct-th-used, .tct-table.tct-hide-used .tct-td-used { display: none; }
 .tct-table.tct-hide-used .tct-thead, .tct-table.tct-hide-used .tct-row { grid-template-columns: 44px minmax(120px,1fr) 22% 24%; }
 .tct-table.tct-hide-type .tct-th-type, .tct-table.tct-hide-type .tct-td-type { display: none; }
+/* Type weicht seit 15.10. spaet zuerst (unter 700, topcitations-dashboard.js checkBrandWidth),
+   Used erst unter 500 -- die Reihenfolge jeder Tabelle der App. Die Anteile wie beim Wegfall von
+   Used, nur getauscht: Share behaelt die breitere Spur. */
+.tct-table.tct-hide-type .tct-thead, .tct-table.tct-hide-type .tct-row { grid-template-columns: 44px minmax(120px,1fr) 24% 22%; }
 .tct-table.tct-hide-type.tct-hide-used .tct-thead, .tct-table.tct-hide-type.tct-hide-used .tct-row { grid-template-columns: 44px minmax(120px,1fr) 30%; }
 .tct-thead { height: 45px; flex: 0 0 45px; background: var(--vt-head-bg); }
 /* Kopfschrift 14/500 wie jeder Tabellenkopf der App (core .up-root .up-th, 15.10. spaet);

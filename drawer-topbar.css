@@ -159,13 +159,14 @@
    Skelett ueber dem Kreuz wuerde behaupten, man koenne den Drawer noch nicht schliessen.
    Alle drei tragen dieselbe Hoehe wie ihr Inhalt, damit die Zeile beim Ankommen der Daten nicht
    springt: der Typ 12px wie seine Schrift (siehe .utb-crumb), die Platte ihre eigenen 18. */
-.utb-sk { display: inline-block; border-radius: var(--up-r-xs); background: var(--vc-sk); }
+/* Seit dem 15.10. mit dem Geist-Schimmer aus core; vorher standen diese Balken still. */
+.utb-sk { display: inline-block; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
 .utb-sk-type { width: 34px; height: 12px; }
 .utb-sk-name { width: 140px; max-width: 100%; height: 12px; }
 /* Die Logoplatte im Ladezustand: ihre Groesse und Rundung behaelt sie (die Regel oben), nur ihr
    Grund wird der Skelettton. --vt-logo-bg ist die helle Platte fuer ein Bild und waere hier eine
    Behauptung, es sei schon eines da. */
-.utb-root .up-logo-box.utb-logo.is-sk { background: var(--vc-sk); }
+.utb-root .up-logo-box.utb-logo.is-sk { background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
 
 /* KEIN "schon angeheftet"-Zustand, und das ist eine Entscheidung: die Pins liegen im
    localStorage unter einem Schluessel, der die Instanz der SEITENLEISTE enthaelt

@@ -175,12 +175,12 @@
 }
 
 /* ---------- skeleton + empty ---------- */
-.uhm-cell.is-sk { background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+.uhm-cell.is-sk { background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
 .uhm-colhead.is-sk, .uhm-rowhead.is-sk { padding-bottom: 8px; }
-.uhm-sk-logo { width: 28px; height: 28px; border-radius: var(--up-r-m); background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
-.uhm-sk-bar { width: 44px; height: 9px; border-radius: var(--up-r-xs); background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+.uhm-sk-logo { width: 28px; height: 28px; border-radius: var(--up-r-m); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
+.uhm-sk-bar { width: 44px; height: 9px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
 /* So hoch und rund wie der Topic-Chip ("Dot", 24px, Radius 6, seit dem 06.10.). */
-.uhm-sk-chip { width: 88px; height: 24px; border-radius: var(--up-r-s); background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+.uhm-sk-chip { width: 88px; height: 24px; border-radius: var(--up-r-s); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
 .uhm-empty {
   min-height: 220px; display: flex; align-items: center; justify-content: center;
   color: var(--vc-muted); font-size: 13px;
@@ -278,7 +278,9 @@
 .uhm-tip {
   --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-third: #9e9e9e; --vc-border: #dcdbdd;
   --vc-bg: #ffffff; --vt-logo-bg: #ffffff;
-  --vt-up: #2ea84a; --vt-down: #b0200c;
+  /* --vt-up/--vt-down standen hier als eigene Kopie (#2ea84a / #b0200c), weil die Marke an .up-root
+     den Tooltip am <body> nicht erreichte. Seit dem 15.10. stehen sie an :root und an jedem
+     [data-theme="dark"] (core, Geist) -- die Kopie haette die neuen Farben hier ueberdeckt. */
   position: fixed; left: 0; top: 0; z-index: 100050; pointer-events: none;
   min-width: 236px; padding: 10px 12px;
   /* Mehrzeiliger Tooltip wie Geist (8, seit 15.10.; vorher 16 wie die Panels). Ueber ein
@@ -296,7 +298,6 @@
 .uhm-tip[data-theme="dark"] {
   --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-third: #808080; --vc-border: #3e3e44;
   --vc-bg: #1c1c1f; --vt-logo-bg: #e0e0e0;
-  --vt-up: #60d25d; --vt-down: #d25d5d;
 }
 .uhm-tip * { box-sizing: border-box; }
 .uhm-tip-head { display: flex; align-items: center; gap: 8px; }

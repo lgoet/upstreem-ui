@@ -291,10 +291,10 @@
 
 /* skeleton cards */
 .urt-card-sk { pointer-events: none; }
-.urt-sk { display: block; border-radius: var(--up-r-xs); background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+.urt-sk { display: block; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
 .urt-sk-chip { width: 96px; height: 18px; border-radius: var(--up-r-s); }
 .urt-sk-date { width: 56px; height: 12px; }
-.urt-sk-line { height: 12px; margin-top: 10px; border-radius: var(--up-r-xs); }
+.urt-sk-line { height: 12px; margin-top: 10px; border-radius: var(--up-sk-r); }
 
 
 

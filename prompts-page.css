@@ -25,8 +25,11 @@
 .upi-quota.is-fehler .upi-quota-zahl { color: var(--vt-down); }
 /* Gruen bis zum Limit, rot ab dem Limit. Spezifitaet ueber die Dunkel-Regel von core
    (.up-root[data-theme="dark"] .up-varring-fill, 0,3,0) -- sonst gewaenne im Dunkeln der Akzent. */
-.up-root.upi-root .upi-quota .up-varring-fill { stroke: var(--vt-up); }
-.up-root.upi-root .upi-quota.is-voll .up-varring-fill { stroke: var(--vt-down); }
+/* Der Ring nach Geist (15.10. abends: "das Gruen vom Prompt Quota ... Geist"): Geists Gauge zeichnet
+   den Bogen in Green 700 und die Fehlerstufe in Red 800 -- die Flaechenstufen (--vt-up-flaeche,
+   --vt-down-flaeche aus core), nicht die Schriftstufe 900 von --vt-up/--vt-down. */
+.up-root.upi-root .upi-quota .up-varring-fill { stroke: var(--vt-up-flaeche); }
+.up-root.upi-root .upi-quota.is-voll .up-varring-fill { stroke: var(--vt-down-flaeche); }
 /* Schmal: Ring und Zahl, das Wort steht im Tooltip (wie die Knoepfe ihr zweites Wort ablegen). */
 .up-root.is-narrow .upi-quota-wort { display: none; }
 /* hidden gegen das display der Knopf-Regeln aus core: ein Knopf, der zum Reiter nicht gehoert,

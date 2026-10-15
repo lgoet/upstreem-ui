@@ -766,12 +766,14 @@
        Seit 15.10. spaet traegt jeder Kopf 14/500 (core .up-root .up-th) -- EINE Untergrenze,
        gemessen mit Info und Sortierpfeil 15 samt Zellrand: Visibility 126.6, Ranking 124.7,
        Sentiment 138.8. Wieder 2 bis 3 darueber. */
+    /* `art` statt prio (15.10. spaet, SPALTEN_ART in core, fuer alle Tabellen gleich): erst
+       Sentiment, dann Ranking; Visibility faellt der Breite wegen nie. Deactivated ist ein Datum. */
     var COLS_ALL = [
-      { key: "visibility", label: "Visibility", w: "minmax(129px, 1fr)", min: 129, prio: 30 },
-      { key: "ranking",    label: "Ranking",    w: "minmax(127px, 1fr)", min: 127, prio: 20 },
-      { key: "sentiment",  label: "Sentiment",  w: "minmax(141px, 1fr)", min: 141, prio: 10 },
+      { key: "visibility", label: "Visibility", w: "minmax(129px, 1fr)", min: 129, art: "anteil" },
+      { key: "ranking",    label: "Ranking",    w: "minmax(127px, 1fr)", min: 127, art: "rang" },
+      { key: "sentiment",  label: "Sentiment",  w: "minmax(141px, 1fr)", min: 141, art: "sentiment" },
       /* Inactive-only, and the inverse of the three above — see cfg.isHidden below. */
-      { key: "deactivated", label: "Deactivated", w: "minmax(140px, 0.8fr)", min: 140, prio: 5 }
+      { key: "deactivated", label: "Deactivated", w: "minmax(140px, 0.8fr)", min: 140, art: "datum" }
     ];
     var METRIC_COLS = COLS_ALL.filter(function(c){ return c.key !== "deactivated"; });
 

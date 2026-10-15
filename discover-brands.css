@@ -20,8 +20,8 @@
    in der Tabelle und gehoert damit in dieselbe Zeile wie der Titel. */
 .udb-total { font-size: 13px; font-weight: 400; color: var(--vc-muted); white-space: nowrap;
   margin-left: 12px; flex: 0 0 auto; }
-.udb-total.is-sk { width: 168px; height: 13px; border-radius: var(--up-r-xs); background: var(--vc-sk);
-  animation: uutpulse 1.2s ease-in-out infinite; }
+.udb-total.is-sk { width: 168px; height: 13px; border-radius: var(--up-sk-r); background: var(--vc-sk) var(--up-sk-verlauf);
+  animation: var(--up-sk-bewegung); }
 /* Stand der Daten ("bis gestern", Vertrag Brands v1 10.2): leiser als die Zahl davor, mit Abstand
    statt Trennzeichen. */
 .udb-total-stand { margin-left: 8px; color: var(--vc-third); }

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261129;
+  var BUILD = 20261133;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -40,21 +40,37 @@
        bd   / bdDark     Rand des Chips, 1px
      Kontrast Schrift auf Grund (WCAG, nachgerechnet): Typen hell 6.6 bis 7.1, dunkel 9.5 bis 9.7;
      Rueckfall 5.5 / 6.4; You 16.5 / 13. Gelesen wird ueber typeStyle() weiter unten.
-     STYLEGUIDE 1a/1b fuehrt dieselben Werte als Tabelle. */
+     STYLEGUIDE 1a/1b fuehrt dieselben Werte als Tabelle.
+     SEIT DEM 15.10. ABENDS GEIST ("Chartfarben ... Nimm fuer das alles bitte das Geist Design System
+     zur Hand"). Dieselbe Zuordnung der Farbtoene, jetzt aus Geists Skalen (vercel.com/geist/colors,
+     sRGB-Fassung) und nach Geists Rollen:
+       fill  Stufe 700 ("high contrast background"), bei Geist in beiden Themen derselbe Ton --
+             darum fill = fillDark. Brand Platforms nimmt Amber 800 (Orange) statt 700 (Gelb), die
+             Konvention der Branche ist Orange; Institutional ist Gray 800 / dunkel Gray 900, weil
+             Geist kein Schiefergrau hat und der Rueckfall unten das hellere Gray traegt.
+       ink   Stufe 900 ("text and icons"), Uncategorized Gray 900, Institutional Gray 1000 -- wie
+             Geists Badge "gray-subtle".
+       bg    Stufe 200 ("On smaller UI elements like badges, you can use Color 2 or Color 3").
+             Nicht Geists gerechnete Badge-Flaeche (L .94): auf der stand die Schrift bei 4.43 bis
+             4.47 und damit unter AA; auf Stufe 200 hell 4.69 (Red) bis 6.97 (Purple), dunkel 5.25
+             bis 7.67 -- nachgerechnet je Typ.
+       bd    = bg (der Rand ist seit dem 14.10. unsichtbar, typeStyle liest bd wie bisher). */
   var CITE_TYPE = {
-    "Editorial":       { fill:"#7493C7", fillDark:"#8BA6D1", ink:"#375587", inkDark:"#B4CCF2", bg:"#F0F7FF", bgDark:"#1D232E", bd:"#D0E3FF", bdDark:"#2C384D" },
-    "UGC / Community": { fill:"#49A1AB", fillDark:"#6DB2B9", ink:"#00636D", inkDark:"#9CD6DD", bg:"#EAFBFD", bgDark:"#162628", bd:"#BFEBF0", bdDark:"#1C3E42" },
-    "Knowledge-Base":  { fill:"#9688C1", fillDark:"#A79CCC", ink:"#594A82", inkDark:"#CDC3EE", bg:"#F7F5FF", bgDark:"#23212C", bd:"#E3DCFD", bdDark:"#39344B" },
-    "Brand Platforms": { fill:"#BB845F", fillDark:"#C8997B", ink:"#7B461E", inkDark:"#EAC1A6", bg:"#FFF4EC", bgDark:"#2B2019", bd:"#FADAC6", bdDark:"#483224" },
-    "Institutional":   { fill:"#8195A6", fillDark:"#97A7B5", ink:"#455868", inkDark:"#BECDDA", bg:"#F3F7FB", bgDark:"#1F2327", bd:"#D8E3ED", bdDark:"#313940" },
-    "Competition":     { fill:"#C17E78", fillDark:"#CD948F", ink:"#803F3B", inkDark:"#EFBCB7", bg:"#FFF2F1", bgDark:"#2D1F1D", bd:"#FED6D2", bdDark:"#4B302D" },
+    "Editorial":       { fill:"#0072F5", fillDark:"#0072F5", ink:"#0068D6", inkDark:"#52A8FF", bg:"#EBF5FF", bgDark:"#10233D", bd:"#EBF5FF", bdDark:"#10233D" },
+    "UGC / Community": { fill:"#12A594", fillDark:"#12A594", ink:"#067A6E", inkDark:"#0AC7B4", bg:"#E5FAF6", bgDark:"#062822", bd:"#E5FAF6", bdDark:"#062822" },
+    "Knowledge-Base":  { fill:"#8E4EC6", fillDark:"#8E4EC6", ink:"#7820BC", inkDark:"#BF7AF0", bg:"#F9F1FE", bgDark:"#2E1938", bd:"#F9F1FE", bdDark:"#2E1938" },
+    "Brand Platforms": { fill:"#FF990A", fillDark:"#FF990A", ink:"#A35200", inkDark:"#F2A20D", bg:"#FFF4D6", bgDark:"#331B00", bd:"#FFF4D6", bdDark:"#331B00" },
+    "Institutional":   { fill:"#7D7D7D", fillDark:"#A1A1A1", ink:"#171717", inkDark:"#EDEDED", bg:"#EBEBEB", bgDark:"#1F1F1F", bd:"#EBEBEB", bdDark:"#1F1F1F" },
+    "Competition":     { fill:"#E5484D", fillDark:"#E5484D", ink:"#CB2A2F", inkDark:"#FF6166", bg:"#FFEBEB", bgDark:"#3C1618", bd:"#FFEBEB", bdDark:"#3C1618" },
     /* You traegt die Akzentfarbe des Themes (STYLEGUIDE 1: Akzent ist die Schriftfarbe) und ist
        als einziger Chip invertiert, damit die eigene Seite in jeder Liste sofort auffaellt. In
        Charts ist You damit die Textfarbe des Themes. */
     "You":             { fill:"#1F1F1B", fillDark:"#E0E0E0", ink:"#FFFFFF", inkDark:"#1B1B1B", bg:"#1F1F1B", bgDark:"#E0E0E0", bd:"#1F1F1B", bdDark:"#E0E0E0" }
   };
-  /* Rueckfall fuer unbekannte Typen und "Uncategorized", fuer Citation UND URL. */
-  var TYPE_OTHER = { fill:"#9E9E9E", fillDark:"#808080", ink:"#5F636B", inkDark:"#A8A8A8", bg:"#F5F5F5", bgDark:"#262626", bd:"#E0E2E6", bdDark:"#3A3A3A" };
+  /* Rueckfall fuer unbekannte Typen und "Uncategorized", fuer Citation UND URL. Geist Gray (15.10.):
+     Flaeche 600 hell / 800 dunkel -- leiser als Institutional, aber im Dunkeln noch 4.1:1 auf der
+     Karte; Schrift 900 auf Grund 100 (7.67 / 6.74). */
+  var TYPE_OTHER = { fill:"#A8A8A8", fillDark:"#7D7D7D", ink:"#4C4C4C", inkDark:"#A1A1A1", bg:"#F2F2F2", bgDark:"#1A1A1A", bd:"#F2F2F2", bdDark:"#1A1A1A" };
   /* Wer nur EINEN Wert je Typ liest (Ring, Legende, typeColor, ask-mira, Landingpage), bekommt die
      Chart-Flaeche. Die Namen bleiben, weil sie an UC haengen und von aussen gelesen werden. */
   var CITE_COLOR = {}, CITE_COLOR_DARK = {};
@@ -101,26 +117,37 @@
      (meist groesste) Typ einer Familie in beiden Themen am staerksten wirkt.
      Die Familientoene sind die der Zitationstypen: commercial = Brand Platforms,
      editorial = Editorial, reference = Knowledge-Base. */
+  /* SEIT DEM 15.10. ABENDS GEIST (siehe CITE_TYPE): Chip je Familie Stufe 900 auf Stufe 200 --
+     commercial Amber, editorial Blue, reference Purple. Die Flaechen sind Geists Stufen der Familie,
+     nach OKLCH-Helligkeit ausgewaehlt, damit die Staffel stetig laeuft (gemessen):
+         hell, dunkel nach hell     Amber 1000 900 800 500            L .31 .53 .77 .87
+                                    Blue  1000 800 700 600 500        L .27 .52 .58 .73 .83
+                                    Purple 1000 800 700 600 500       L .24 .48 .56 .72 .81
+         dunkel, hell nach dunkel   Amber 1000 700 800 500            L .97 .82 .77 .42
+                                    Blue  1000 900 600 800 500        L .97 .72 .65 .52 .39
+                                    Purple 1000 900 700 800 500       L .96 .70 .56 .48 .41
+     Hell Blue 900 fehlt, weil er fast gleich 800 ist (#0068d6 / #0062d1); dunkel Purple 600, weil
+     Geist ihn dort gleich 700 fuehrt. */
   var URL_FAMILY = {
-    commercial: { ink:"#7B461E", inkDark:"#EAC1A6", bg:"#FFF4EC", bgDark:"#2B2019", bd:"#FADAC6", bdDark:"#483224" },
-    editorial:  { ink:"#375587", inkDark:"#B4CCF2", bg:"#F0F7FF", bgDark:"#1D232E", bd:"#D0E3FF", bdDark:"#2C384D" },
-    reference:  { ink:"#594A82", inkDark:"#CDC3EE", bg:"#F7F5FF", bgDark:"#23212C", bd:"#E3DCFD", bdDark:"#39344B" }
+    commercial: { ink:"#A35200", inkDark:"#F2A20D", bg:"#FFF4D6", bgDark:"#331B00", bd:"#FFF4D6", bdDark:"#331B00" },
+    editorial:  { ink:"#0068D6", inkDark:"#52A8FF", bg:"#EBF5FF", bgDark:"#10233D", bd:"#EBF5FF", bdDark:"#10233D" },
+    reference:  { ink:"#7820BC", inkDark:"#BF7AF0", bg:"#F9F1FE", bgDark:"#2E1938", bd:"#F9F1FE", bdDark:"#2E1938" }
   };
   var URL_TYPE = {
-    homepage:        { label:"Homepage",          family:"commercial", fill:"#845738", fillDark:"#F1C7AC" },
-    product_service: { label:"Product / Service", family:"commercial", fill:"#A57656", fillDark:"#D2AA8F" },
-    marketplace:     { label:"Marketplace",       family:"commercial", fill:"#C89675", fillDark:"#B48D73" },
-    company_info:    { label:"Company Info",      family:"commercial", fill:"#EBB896", fillDark:"#977158" },
-    article:         { label:"Article",           family:"editorial",  fill:"#4A648E", fillDark:"#BAD2F9" },
-    listicle:        { label:"Listicle",          family:"editorial",  fill:"#607BA7", fillDark:"#A4BCE2" },
-    guide:           { label:"Guide",             family:"editorial",  fill:"#7793C1", fillDark:"#8FA6CB" },
-    comparison:      { label:"Comparison",        family:"editorial",  fill:"#8FACDB", fillDark:"#7A90B4" },
-    review:          { label:"Review",            family:"editorial",  fill:"#A8C6F5", fillDark:"#667B9E" },
-    documentation:   { label:"Documentation",     family:"reference",  fill:"#665A8A", fillDark:"#D3CAF5" },
-    forum:           { label:"Forum",             family:"reference",  fill:"#7D71A2", fillDark:"#BDB4DE" },
-    directory:       { label:"Directory",         family:"reference",  fill:"#9589BC", fillDark:"#A79EC7" },
-    video:           { label:"Video",             family:"reference",  fill:"#AEA2D6", fillDark:"#9188B1" },
-    social_post:     { label:"Social Post",       family:"reference",  fill:"#C7BBF0", fillDark:"#7C749B" }
+    homepage:        { label:"Homepage",          family:"commercial", fill:"#4E2009", fillDark:"#FEF3DC" },
+    product_service: { label:"Product / Service", family:"commercial", fill:"#A35200", fillDark:"#FFB224" },
+    marketplace:     { label:"Marketplace",       family:"commercial", fill:"#FF990A", fillDark:"#FF990A" },
+    company_info:    { label:"Company Info",      family:"commercial", fill:"#FFC96B", fillDark:"#6B4105" },
+    article:         { label:"Article",           family:"editorial",  fill:"#00254C", fillDark:"#EBF6FF" },
+    listicle:        { label:"Listicle",          family:"editorial",  fill:"#0062D1", fillDark:"#52A8FF" },
+    guide:           { label:"Guide",             family:"editorial",  fill:"#0072F5", fillDark:"#0090FF" },
+    comparison:      { label:"Comparison",        family:"editorial",  fill:"#52AEFF", fillDark:"#0062D1" },
+    review:          { label:"Review",            family:"editorial",  fill:"#99CEFF", fillDark:"#0A4380" },
+    documentation:   { label:"Documentation",     family:"reference",  fill:"#2E004C", fillDark:"#F8EDFC" },
+    forum:           { label:"Forum",             family:"reference",  fill:"#763DA9", fillDark:"#BF7AF0" },
+    directory:       { label:"Directory",         family:"reference",  fill:"#8E4EC6", fillDark:"#8E4EC6" },
+    video:           { label:"Video",             family:"reference",  fill:"#BF89EC", fillDark:"#763DA9" },
+    social_post:     { label:"Social Post",       family:"reference",  fill:"#D5B1F1", fillDark:"#5F2E85" }
   };
   /* Die Chipwerte der Familie in jeden Typ kopieren, damit ein Leser nur EIN Objekt braucht.
      c / cDark bleiben als Name fuer die Chip-Schrift: so hiessen die Felder bis zum 13.10., und
@@ -144,24 +171,15 @@
      Der URL-Schluessel wird wie in urls-table normalisiert ("Product Service" -> product_service),
      citeName() uebersetzt die Bubble-Schreibweisen der Zitationstypen (steht weiter unten, als
      Funktionsdeklaration aber schon hier aufrufbar). */
-  /* DER GRUND DER TYPE-CHIPS EINE SPUR SICHTBARER (14.10., gewuenscht: "minimal mehr Opacity, so
-     dass der Kontrast der Schrift noch stimmt"). 7 Prozent der Typfarbe (fill) in den hellen Grund
-     gemischt, im Dunkeln 7 Prozent in den dunklen. Nachgerechnet fuer jeden Typ in beiden Themen:
-     die Schrift bleibt ueber 4.5:1 (AA fuer 12px). "You" traegt die volle Flaeche und bleibt. */
-  function hexMisch(a, b, t){
-    function teil(h, i){ return parseInt(h.substr(1 + i * 2, 2), 16); }
-    if (!/^#[0-9a-f]{6}$/i.test(a) || !/^#[0-9a-f]{6}$/i.test(b)) return a;
-    var o = "#";
-    for (var i = 0; i < 3; i++){
-      var v = Math.round(teil(a, i) * (1 - t) + teil(b, i) * t);
-      o += (v < 16 ? "0" : "") + v.toString(16);
-    }
-    return o.toUpperCase();
-  }
+  /* DER GRUND DER TYPE-CHIPS. Vom 14.10. bis zum 15.10. abends wurden hier 7 Prozent der Typfarbe
+     in den Grund gemischt ("minimal mehr Opacity, so dass der Kontrast der Schrift noch stimmt").
+     Seit Geist ist der Grund Geists Stufe 200 ohne Beimischung: gemischt mit den kraeftigen
+     Flaechen (Stufe 700) traefe er Geists Wert nicht mehr, und die Schrift fiele bei Red unter 4.5.
+     Die dunklere Stufe 300 ginge auch nur bis auf Red (4.497 -- knapp unter AA); also 200 fuer
+     alle. Der Preis, gemessen in OKLCH: Editorial L .966 statt .952, eine Spur heller als bis
+     heute. "You" traegt die volle Flaeche und bleibt. */
   function chipGrund(e, isDark){
-    var grund = isDark ? e.bgDark : e.bg, farbe = isDark ? e.fillDark : e.fill;
-    if (!farbe || grund === farbe) return grund;
-    return hexMisch(grund, farbe, 0.07);
+    return isDark ? e.bgDark : e.bg;
   }
   function typeStyle(art, raw, isDark){
     var e, dot = null;
@@ -337,14 +355,16 @@
      eine Entscheidung des Nutzers darueber, wie die App aussieht -- keine Berechtigung und kein
      Merkmal des Kontos. Bei "off" faellt die Zeile GANZ weg (siehe sidebar.css), und der
      Teamschalter steht wieder oben links. */
-  /* light_style (15.10.): welches HELLE Thema gilt, wenn hell gemalt wird -- "legacy" ist das Hell
-     bis heute (weisse Seite), "gray" das neue nach Vercel (graue Seite, weisse Inhaltsflaechen).
-     Vorgabe legacy: niemand bekommt das neue Aussehen ungefragt. Ein eigener Schluessel und KEIN
-     vierter Wert von pref_theme: das Thema bleibt dark/light/system (die Datenbank kennt nur
-     diese drei, Spalte app.user_settings.theme ist ein Aufzaehlungstyp), und jede Stelle, die
-     heute "dunkel oder hell" fragt, bleibt richtig. */
+  /* light_style (15.10.): welches HELLE Thema gilt, wenn hell gemalt wird. Am Mittag zwei Werte --
+     "legacy" (das Hell bis dahin, weisse Seite) und "gray" (nach Vercel, graue Seite, weisse
+     Inhaltsflaechen). SEIT DEM ABEND NUR NOCH "gray": "Das Hell klassisch faellt weg als Design."
+     Der Schluessel bleibt, weil er in up_prefs steht und das Vorlade-Skript der App ihn liest; ein
+     gespeichertes "legacy" ist kein erlaubter Wert mehr und wird beim Lesen zur Vorgabe "gray"
+     (prefsLesen, MIGRATION) -- also zu Light, ohne dass jemand etwas tun muss.
+     Ein eigener Schluessel und KEIN vierter Wert von pref_theme: das Thema bleibt dark/light/system
+     (die Datenbank kennt nur diese drei, Spalte app.user_settings.theme ist ein Aufzaehlungstyp). */
   var PREF_DEFAULT = { locale: "en", num: "en", date: "d-mon-y", date_sync: "off", date_preset: "last7",
-                       branding: "on", accent: "default", event_markers: "on", light_style: "legacy" };
+                       branding: "on", accent: "default", event_markers: "on", light_style: "gray" };
   var PREF_ERLAUBT = {
     locale: { en: 1, de: 1 },
     /* "en": 1,234.56 und 1.24k -- Punkt trennt die Nachkommastellen.
@@ -362,7 +382,8 @@
        "die Standarderfahrung muss die Events zeigen". Der Fokus-Marker im Event-Detail steht
        unabhaengig davon immer (das ganze Diagramm handelt von ihm). */
     event_markers: { on: 1, off: 1 },
-    light_style: { legacy: 1, gray: 1 }
+    /* Nur noch das graue Hell (15.10. abends). "legacy" faellt durch und wird zur Vorgabe. */
+    light_style: { gray: 1 }
   };
   var _prefs = null;
   /* OHNE Team-Suffix, und das ist eine Korrektur. Diese Werte liefen ueber storeKey, und storeKey
@@ -396,6 +417,19 @@
       var v = o && typeof o[k] === "string" ? o[k] : "";
       _prefs[k] = (PREF_ERLAUBT[k] && PREF_ERLAUBT[k][v]) ? v : PREF_DEFAULT[k];
     });
+    /* MIGRATION DES HELLEN STILS (15.10. abends, "Legacy Light" entfaellt): steht in der Ablage
+       etwas anderes als "gray" -- "legacy" oder noch gar nichts --, wird der bereinigte Stand
+       zurueckgeschrieben. Lesen allein haette gereicht, um in DIESER Sitzung richtig zu malen; das
+       Zurueckschreiben ist fuer das Vorlade-Skript der App, das up_prefs.light_style VOR core liest
+       und data-up-hell bis heute nur bei "gray" setzt. So steht ab dem zweiten Laden auch dort das
+       Grau im ersten Bild. Ohne Ereignis: geaendert hat sich fuer niemanden etwas, was er sieht.
+       Nicht auf der Landingpage (__upApp.landing, gesetzt von landing-boot.js vor core): die malt
+       kein graues Hell, und eine Website schreibt nichts in den Speicher, was sie nicht braucht. */
+    var landing = false;
+    try { landing = !!(window.__upApp && window.__upApp.landing); } catch(e){}
+    if (!landing && (!o || o.light_style !== _prefs.light_style)){
+      try { window.localStorage.setItem(PREF_STORE, JSON.stringify(_prefs)); } catch(e){}
+    }
     return _prefs;
   }
   /* LAENDERNAMEN IN DER SPRACHE DER APP (14.10., gemeldet: "Germany" im deutschen Prompt Research).
@@ -561,24 +595,31 @@
   window.addEventListener("up-prefs-change", function(e){
     if (!e || !e.detail || e.detail.name === "accent") akzentAnwenden();
   });
-  /* DAS GRAUE HELL ANS DOKUMENT (15.10., "Light" nach Vercel; das bisherige Hell heisst seither
-     "Legacy Light"). Wie die Akzentfarbe am <html>: von dort erreicht es jede Wurzel, die Portale
-     und den Seitengrund (html/body), den core.css in diesem Fall selbst malt.
-     NUR SOLANGE HELL GEMALT WIRD: die Wahl light_style bleibt stehen, wenn jemand auf Dunkel
-     schaltet -- sie gilt fuer den naechsten hellen Moment. Stuende das Attribut auch im Dunkeln,
-     traefe es jedes Element, das sein Thema selbst als hell traegt (Erklaerkarte, Menues), und
-     malte dort die grauen Werte in eine dunkle Seite.
+  /* DAS GRAUE HELL ANS DOKUMENT (15.10., "Light" nach Vercel). Wie die Akzentfarbe am <html>: von
+     dort erreicht es jede Wurzel, die Portale und den Seitengrund (html/body), den core.css in
+     diesem Fall selbst malt.
+     SEIT DEM 15.10. ABENDS BEI JEDEM HELLEN ZUSTAND: "Das Hell klassisch faellt weg" -- es gibt nur
+     noch dieses Hell, also fragt die Regel die Vorliebe light_style nicht mehr (die kennt ohnehin
+     nur noch "gray"). Gilt auch ohne jede gespeicherte Wahl: kein pref_theme und ein helles
+     Betriebssystem ist hell, also grau.
+     NUR SOLANGE HELL GEMALT WIRD: stuende das Attribut auch im Dunkeln, traefe es jedes Element, das
+     sein Thema selbst als hell traegt (Erklaerkarte, Menues), und malte dort die grauen Werte in
+     eine dunkle Seite.
+     NICHT AUF DER LANDINGPAGE (__upApp.landing, gesetzt von landing-boot.js vor core): sie laedt
+     core fuer ihre Vorfuehrfenster, ist aber keine App-Seite -- mit dem Attribut wuerde core.css ihren
+     Seitengrund (html/body) grau malen und ihre Fenster umfaerben.
      Das Thema kommt aus window.__upTheme (THEME weiter unten, beim ersten Aufruf hier noch nicht
      gesetzt), dann aus pref_theme, und ohne beides aus dem Betriebssystem -- dieselbe Reihenfolge
      wie themeBeimStart. Aufgerufen beim Laden, von setUpstreemTheme und bei jeder Aenderung der Wahl. */
   function hellAnwenden(){
     try {
+      if (window.__upApp && window.__upApp.landing) return;
       var th = window.__upTheme && window.__upTheme.value;
       if (th !== "dark" && th !== "light") th = readPrefTheme();
       if (th !== "dark" && th !== "light"){
         th = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
       }
-      if (th === "light" && getPref("light_style") === "gray") document.documentElement.setAttribute("data-up-hell", "grau");
+      if (th === "light") document.documentElement.setAttribute("data-up-hell", "grau");
       else document.documentElement.removeAttribute("data-up-hell");
     } catch(e){}
   }
@@ -3375,8 +3416,8 @@
     "Search merchants…": "Händler durchsuchen…", "No merchants yet": "Noch keine Händler",
     "Theme": "Design",
     "Light": "Hell",
-    /* Das Hell bis zum 15.10. (weisse Seite); "Light" ist seither das graue nach Vercel. */
-    "Legacy Light": "Hell (klassisch)",
+    /* "Legacy Light" (das Hell bis zum 15.10.) ist seit dem 15.10. abends keine Wahl mehr -- der
+       Eintrag ist mit ihr gegangen. */
     "Dark": "Dunkel",
     "Display": "Darstellung",
 
@@ -5924,13 +5965,17 @@
   /* Colour for a 0-100 sentiment score: red -> orange -> grey -> light green -> green.
      Shared by visibility-chart's Top Brands table and prompts-table's Sentiment column —
      both need the exact same thresholds, not just a similar-looking scale. */
+  /* SEIT DEM 15.10. ABENDS GEIST, dieselben fuenf Stufen: Red 700, Amber 800 (Orange), Gray 700,
+     Green 600 (das hellere Gruen), Green 700. Ein Wert fuer beide Themen wie bisher -- Geist fuehrt
+     700/800 und Gray 700 hell und dunkel gleich; Green 600 ist der helle Ton (#6cda75), damit
+     "hellgruen" auch auf der dunklen Karte heller steht als das volle Gruen. Der Balken ist 3x12. */
   function sentColor(v){
     v = Number(v);
-    if (v <= 25) return "#D25D5D";
-    if (v <= 40) return "#D2865D";
-    if (v <= 60) return "#9E9E9E";
-    if (v <= 75) return "#9FD25D";
-    return "#60D25D";
+    if (v <= 25) return "#E5484D";
+    if (v <= 40) return "#FF990A";
+    if (v <= 60) return "#8F8F8F";
+    if (v <= 75) return "#6CDA75";
+    return "#45A557";
   }
   /* ---------- Sentiment: EIN Baustein fuer das Markup (29.09.) ----------
      Balken 3x12 in der Farbe des Werts plus die ganze Zahl (CLAUDE.md 2b: Sentiment ohne
@@ -6846,12 +6891,41 @@
      cfg: { root, state, columns, storePrefix, instanceId, firstKey, firstMin, actionsMin,
             dense, badgeSel, cellPrefixes, onChange, scrollen }
        scrollen   — no column drops for width; the table scrolls sideways instead (see autoFit)
-       columns    — [{key, label, w, min, dropAt}]; `w` is the responsive track, `dropAt` is
-                    "narrow" | "vnarrow" (the breakpoint at which the column stops being shown)
+       columns    — [{key, label, w, min, dropAt, art}]; `w` is the responsive track, `dropAt` is
+                    "narrow" | "vnarrow" (the breakpoint at which the column stops being shown),
+                    `art` die Spaltenart aus SPALTEN_ART (Reihenfolge des Wegfallens, siehe dort)
        firstKey   — the leading column that becomes a fixed px track once dragged ("domain")
        dense      — show the Comfortable/Compact switch in the menu
        cellPrefixes — class prefixes to toggle per column, e.g. ["up","uut"]
      state is the component's own object; this mutates state.cols / state.widths / state.dense. */
+  /* ---------- DIE RANGFOLGE NACH SPALTENART (15.10. spaet) ----------
+     Gemeldet: "wenn man mehr Columns auswaehlt als wegen Width moeglich, muessen die Columns der
+     Prioritaet fuer den User ausblenden" -- zuerst Datum/Erstellt, dann Intent, Markt, Topics,
+     Citations, Typ, Brand Mentions, dann langsam die Kennzahlen, Sentiment vor Rank; Share und
+     Visibility nie. Bis dahin pflegte jede Tabelle eigene prio-Zahlen, und die liefen
+     auseinander: in der Prompt-Tabelle stand Sentiment auf 30 und Intent auf 35, Sentiment fiel
+     also als dritte Spalte, vor Intent, Rank, Brand Mentions und Topics.
+     Jetzt sagt eine Spalte nur noch, WAS sie ist (`art`), und die Reihenfolge steht einmal hier.
+     Die kleinste Zahl faellt zuerst. Was der Nutzer nicht genannt hat, ist eingeordnet:
+       zaehl     Zaehl- und Zusatzspalten (Used, Mentioned Count, Active Prompts ...): nach Brand
+                 Mentions, vor den Kennzahlen -- eine Menge, keine Bewertung.
+       kpi       weitere Kennzahlen ohne eigene Stufe (Presence, First Position Rate): zwischen
+                 Sentiment und Rank, also "nach Sentiment, vor Rank" wie gesagt.
+       erwaehnt  "Mentioned?" -- die Zeilenform von Visibility (Visibility IST der Anteil der
+                 Antworten mit Mentioned? = ja), Sentiment und Rank gibt es nur, wenn sie ja ist.
+                 Darum faellt sie als letzte, nach Rank; "nie" bleibt beim Wort des Nutzers.
+     anteil (Share, Visibility) faellt nie der Breite wegen (wie `keep`). Die Wahl des Nutzers im
+     Menue gilt weiter: ausschalten kann er auch sie.
+     Innerhalb einer Art entscheidet `prio`, wenn eine Spalte sie traegt, sonst die Stelle: die
+     linke bleibt laenger. Eine Spalte OHNE art behaelt ihre alte prio -- eine Tabelle stellt
+     ganz um oder gar nicht; gemischt fiele jede Spalte ohne Art vor allen mit Art.
+     Der Vorrang vom 14.10. (ein Klick auf eine verdraengte Spalte im Menue, siehe vorrangKey)
+     steht weiter ueber jeder Art: die angeklickte Spalte erscheint, Platz machen die anderen in
+     dieser Reihenfolge. */
+  var SPALTEN_ART = {
+    datum: 1, intent: 2, markt: 3, topics: 4, citations: 5, typ: 6, marken: 7,
+    zaehl: 8, sentiment: 9, kpi: 10, rang: 11, erwaehnt: 12, anteil: null
+  };
   function makeColumns(cfg){
     var root = cfg.root, state = cfg.state, COLUMNS = cfg.columns;
     var FIRST = cfg.firstKey || "domain";
@@ -6917,15 +6991,23 @@
     function vorrangRang(key){ return state.colsVorrang.indexOf(key); }
 
     function visibleCols(){ return COLUMNS.filter(function(c){ return state.cols[c.key] !== false; }); }
-    /* Drop order when the table is too narrow for every column: lowest `prio` goes first.
+    /* Drop order when the table is too narrow for every column: lowest value goes first.
        Columns without an explicit prio fall back to their declaration order (leftmost = most
        important), which is the convention every table here already follows. Eine Spalte mit
-       Vorrang steht ueber allen ohne; untereinander gewinnt der juengere Wunsch. */
+       Vorrang steht ueber allen ohne; untereinander gewinnt der juengere Wunsch.
+       Mit `art` (SPALTEN_ART) zaehlt zuerst die Art, prio bzw. die Stelle nur innerhalb einer Art:
+       Art mal 1000 plus Unterrang -- prio und Stelle bleiben weit unter 1000. Der Vorrang liegt
+       mit 1e6 ueber jeder Art. */
     function prioOf(c){
       var r = vorrangRang(c.key);
-      if (r >= 0) return 10000 + r;
-      return c.prio != null ? c.prio : (COLUMNS.length - COLUMNS.indexOf(c));
+      if (r >= 0) return 1e6 + r;
+      var unter = c.prio != null ? c.prio : (COLUMNS.length - COLUMNS.indexOf(c));
+      var a = (c.art && SPALTEN_ART[c.art] != null) ? SPALTEN_ART[c.art] : null;
+      return a != null ? a * 1000 + unter : unter;
     }
+    /* Nie der Breite wegen: `keep` (die Tabelle erklaert die Spalte fuer unverzichtbar) oder die
+       Art anteil (Share, Visibility). Beides nur fuer autoFit -- die Wahl im Menue gilt weiter. */
+    function nieWeg(c){ return !!c.keep || c.art === "anteil"; }
     /* The width the lead column will actually occupy BEFORE the user ever drags it: its track is
        `minmax(30%, 1.6fr)`, so on a wide container the 30% is what really applies and it is far
        larger than FIRST_MIN. Budgeting against FIRST_MIN alone was the bug that let 8 columns
@@ -7000,7 +7082,11 @@
          still count toward `need`, so they squeeze the droppable ones instead of being squeezed.
          Filtered out of the candidate list rather than skipped inside the loop so the loop can
          never spin on a column it refuses to drop. */
-      var byPrio = cols.filter(function(c){ return !c.keep; })
+      /* Die Art anteil gilt wie keep (nieWeg). Passt danach selbst der Rest nicht -- erste Spalte
+         samt der nie wegfallenden --, bleibt es dabei: die erste Spur gibt bis zu ihrem Anteil
+         (firstFloor, meist 30 Prozent) nach, erst darunter laeuft das Raster ueber den Kasten.
+         Dasselbe galt schon immer fuer die LETZTE Spalte (kept > 1 unten). */
+      var byPrio = cols.filter(function(c){ return !nieWeg(c); })
                        .sort(function(a, b){ return prioOf(a) - prioOf(b); });
       var dropped = {}, kept = cols.length;
       for (var i = 0; i < byPrio.length && need > budget && kept > 1; i++){
@@ -16524,6 +16610,11 @@
     };
   }
 
+  /* Die Stopps des Geist-Schimmers fuer die svg-Skelette (Ring und Kurve): zwei Kacheln, je mit
+     dem Glanz in der Mitte -- dasselbe Bild wie --up-sk-verlauf an einem Balken, nur als Verlauf
+     ueber einen Streifen, der doppelt so breit ist wie eine Kachel (core.css, .up-sk-wisch). */
+  var SK_GLANZ_STOPS = '<stop offset="0%" class="up-sk-g0"/><stop offset="25%" class="up-sk-g1"/>' +
+    '<stop offset="50%" class="up-sk-g0"/><stop offset="75%" class="up-sk-g1"/><stop offset="100%" class="up-sk-g0"/>';
   function lineSkeletonHtml(){
     var hlines = "", xlabels = "", i;
     /* RASTER_N + 1 Striche, nicht vier: die Skelettstriche liegen mit justify-content: space-between
@@ -16533,14 +16624,20 @@
     for (i = 0; i < RASTER_N + 1; i++) hlines += '<div class="sk-lc-hline"></div>';
     for (i = 0; i < 6; i++) xlabels += '<div class="sk-lc-xlabel"></div>';
     var d = "M0,125 C60,115 100,70 150,58 C200,46 230,90 280,74 C330,58 390,22 460,14";
-    var agId = "up-sk-ag-" + Math.random().toString(36).slice(2);
+    var u = Math.random().toString(36).slice(2);
+    var agId = "up-sk-ag-" + u, mId = "up-sk-lm-" + u, gId = "up-sk-lg-" + u;
+    /* Der Schimmer auf der Kurve nach Geist (15.10.), wie am Ring (donutSkeletonHtml): ein Streifen
+       aus zwei Kacheln (je 1.5 mal die Breite, 690 bei 460), maskiert auf den Strich, faehrt um eine
+       Kachel. Die Maske haengt an der GRUPPE, nicht am Streifen -- sonst fuehre sie mit. */
     return '<div class="up-line-sk"><div class="sk-linechart">' +
       '<div class="sk-lc-grid">' + hlines +
         '<svg class="sk-lc-svg" viewBox="0 0 460 160" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">' +
-          '<defs><linearGradient id="' + agId + '" x1="0" y1="0" x2="0" y2="1"><stop class="sk-lc-astop0" offset="0%"/><stop class="sk-lc-astop1" offset="100%"/></linearGradient></defs>' +
+          '<defs><linearGradient id="' + agId + '" x1="0" y1="0" x2="0" y2="1"><stop class="sk-lc-astop0" offset="0%"/><stop class="sk-lc-astop1" offset="100%"/></linearGradient>' +
+            '<mask id="' + mId + '"><path d="' + d + '" fill="none" stroke="white" stroke-width="1.875" stroke-linecap="round"/></mask>' +
+            '<linearGradient id="' + gId + '" x1="0" y1="0" x2="1" y2="0">' + SK_GLANZ_STOPS + '</linearGradient></defs>' +
           '<path d="' + d + ' L460,160 L0,160 Z" fill="url(#' + agId + ')"/>' +
           '<path class="sk-lc-stroke" d="' + d + '"/>' +
-          '<path class="sk-lc-shimmer-path" d="' + d + '"/>' +
+          '<g mask="url(#' + mId + ')"><rect class="up-sk-wisch" x="-690" y="0" width="1380" height="160" fill="url(#' + gId + ')"></rect></g>' +
         '</svg>' +
       '</div>' +
       '<div class="sk-lc-xaxis">' + xlabels + '</div>' +
@@ -16633,8 +16730,22 @@
   /* ACHT Farben seit dem 13.10. ("Visibility Chart und Top Citations auf 8 Eintraege"): mit
      sieben bekaeme die achte Linie die Farbe der ersten. Die achte ist dieselbe Tailwind-500-Stufe
      wie die anderen. */
-  var LINE_PALETTE = ["#14b8a6","#0ea5e9","#6366f1","#d946ef","#f97316","#f43f5e","#64748b","#84cc16"];
+  /* SEIT DEM 15.10. ABENDS GEIST, wie die Skala "geist" unten (dieselben acht Werte): der Rueckfall
+     fuer Marken ohne eigene Farbe soll aussehen wie die Vorgabe-Skala, nicht wie eine dritte Palette.
+     Vorher Tailwind 500 (#14b8a6 ... #84cc16). */
+  var GEIST_LINIEN = ["#0072f5","#ff990a","#8e4ec6","#12a594","#ea3e83","#45a557","#e5484d","#8f8f8f"];
+  var LINE_PALETTE = GEIST_LINIEN.slice();
   var COLOR_SCALES = {
+    /* "Geist" (15.10. abends, VORGABE): "Chartfarben ... Nimm fuer das alles bitte das Geist Design
+       System". Geist hat keine eigene kategoriale Chart-Palette, aber zehn Skalen mit einer Stufe
+       fuer genau diese Rolle: 700, "high contrast background" -- und die ist bei Geist im hellen und
+       im dunklen Thema DERSELBE Ton, laeuft also wie die anderen Skalen ohne zweite Fassung.
+       Reihenfolge nach Farbton-Abstand: Blue, Amber, Purple, Teal, Pink, Green, Red, Gray -- keine
+       zwei Nachbarn liegen naeher als 70 Grad, Pink und Red (die sich am naechsten sind) zwei Plaetze
+       auseinander. Amber als 800 (Orange #ff990a) statt 700 (#ffb224): die gelbe Stufe kommt auf
+       Weiss auf 1.8:1 und waere als Linie kaum zu sehen; 800 auf 2.1.
+       Gemessen: auf Weiss 2.1 (Amber) bis 5.2 (Purple), auf der dunklen Karte #1c1c1f 3.3 bis 7.9. */
+    geist:      { label: "Geist",           colors: GEIST_LINIEN.slice() },
     /* Je Skala eine ACHTE Farbe (13.10., acht Linien): Tableau und Vivid die achte ihrer
        Vorlage (Tableau 10, d3 category10). Colorblind: die achte von Okabe-Ito ist Schwarz und
        verschwaende auf der dunklen Karte -- dafuer das neutrale Grau, das in farbenblind-sicheren
@@ -16664,8 +16775,10 @@
      hat, behaelt sie -- die Vorgabe greift nur, wo nichts gespeichert ist. "default" bleibt als
      SCHLUESSEL, damit gespeicherte Werte weiter gelten -- umbenannt ist nur die Beschriftung:
      "Brand Colors", denn genau das ist es, jede Marke in ihrer eigenen Farbe. */
-  var SCALE_ORDER = ["linear", "tableau", "default", "vivid", "colorblind"];
-  var SCALE_VORGABE = "linear";
+  /* SEIT DEM 15.10. ABENDS: Geist vorn und als Vorgabe. Wer eine Skala ausdruecklich gewaehlt hat
+     (auch Linear), behaelt sie -- getColorScalePref greift nur ohne gespeicherte Wahl zur Vorgabe. */
+  var SCALE_ORDER = ["geist", "linear", "tableau", "default", "vivid", "colorblind"];
+  var SCALE_VORGABE = "geist";
   /* 8 seit dem 13.10. ("Visibility Chart und Top Citations auf 8 Eintraege erweitern"); jede
      Farbskala oben hat dafuer acht Farben. */
   var MAX_LINE_SERIES = 8;
@@ -18390,8 +18503,12 @@
      tut das an den Enden gerade nicht.
      Reihenfolge der Vergabe: nach Anzahl absteigend, damit der groesste Markt den staerksten Ton
      bekommt. */
-  var MARKT_FARBEN = ["#3b82f6", "#93c5fd", "#1d4ed8", "#60a5fa",
-                      "#1e3a8a", "#bfdbfe", "#2563eb", "#7ea8f8"];
+  /* SEIT DEM 15.10. ABENDS GEIST BLUE, dieselbe Reihenfolge stark, hell, dunkel, mittel: 700, 500,
+     1000, 600, dunkle 500, 400, 800, dunkle 600. Geists helle Blue-Skala hat nur sechs
+     unterscheidbare Stufen fuer Flaechen (800 und 900 sind fast gleich), die zwei uebrigen kommen
+     aus seiner dunklen Skala -- auch das Geist-Werte, keine gerechneten. */
+  var MARKT_FARBEN = ["#0072f5", "#99ceff", "#00254c", "#52aeff",
+                      "#0a4380", "#cce6ff", "#0062d1", "#0090ff"];
   function marktFarbe(i){ return MARKT_FARBEN[i % MARKT_FARBEN.length]; }
 
   var ringWidthPlugin = {
@@ -18594,10 +18711,13 @@
     return '<div class="up-donut-sk">' +
       '<div class="up-sk-chart"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' +
         '<defs><mask id="' + mId + '"><circle cx="50" cy="50" r="38" fill="none" stroke="white" stroke-width="7"/></mask>' +
-        '<linearGradient id="' + gId + '" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" class="up-sk-g0"/><stop offset="50%" class="up-sk-g1"/><stop offset="100%" class="up-sk-g0"/></linearGradient></defs>' +
+        '<linearGradient id="' + gId + '" x1="0" y1="0" x2="1" y2="0">' + SK_GLANZ_STOPS + '</linearGradient></defs>' +
         '<circle cx="50" cy="50" r="38" fill="none" class="up-sk-ring" stroke-width="7"/>' +
-        /* Bewegt per CSS (.up-sk-wisch), nicht per SMIL -- siehe core.css bei .up-sk-chart (13.10.). */
-        '<rect class="up-sk-wisch" x="-60" y="0" width="50" height="100" fill="url(#' + gId + ')" mask="url(#' + mId + ')"></rect>' +
+        /* Bewegt per CSS (.up-sk-wisch), nicht per SMIL -- siehe core.css bei .up-sk-chart (13.10.).
+           Seit dem 15.10. nach Geist: zwei Kacheln zu 150 (1.5 mal die Breite von 100), die Maske an
+           der Gruppe statt am Streifen -- am Streifen fuhr sie mit, und der Schimmer lag neben dem
+           Ring (core.css, Begruendung bei .up-sk-wisch). */
+        '<g mask="url(#' + mId + ')"><rect class="up-sk-wisch" x="-150" y="0" width="300" height="100" fill="url(#' + gId + ')"></rect></g>' +
       '</svg></div>' +
       '<div class="up-sk-legend">' + legend + '</div>' +
     '</div>';
@@ -21994,27 +22114,50 @@
     return "system";
   }
 
-  /* DIE VIER WAHLEN DER THEMENZEILE (15.10.): "legacy-light" (das Hell bis heute), "light" (das
-     graue Hell nach Vercel), "dark", "system". Zwei Einstellungen dahinter -- das Thema
-     (pref_theme, Datenbank theme) und der helle Stil (light_style) --, eine Zeile davor.
-     EIGENE NAMEN, getUpstreemThemeChoice bleibt, wie es war: es liefert weiter light/dark/system,
-     und ein Abnehmer an einem aelteren Pin, der "light" als Hell liest, bleibt richtig.
-     "system" uebernimmt den zuletzt gewaehlten hellen Stil: wer einmal "Light" gewaehlt hat und
-     dann "System", bekommt bei hellem Betriebssystem das graue Hell. Eine fuenfte Zeile
-     "System (Legacy)" waere dieselbe Unterscheidung noch einmal; der Satz unter der Zeile sagt es. */
+  /* DIE WAHLEN DER THEMENZEILE. Am 15.10. mittags vier ("legacy-light", "light", "dark", "system"),
+     seit dem Abend wieder DREI -- "Das Hell klassisch faellt weg als Design": Light ist das graue
+     Hell, ein zweites gibt es nicht. Die zwei Funktionen bleiben unter ihrem Namen (Vertrag: sie
+     haengen an UC und am Fenster); getUpstreemThemeOption liefert damit dasselbe wie
+     getUpstreemThemeChoice. "legacy-light" nimmt setUpstreemThemeOption weiter an -- ein Aufrufer an
+     einem aelteren Pin bekommt Light statt eines stillen Fehlgriffs. */
   function getUpstreemThemeOption(){
-    var c = getUpstreemThemeChoice();
-    if (c === "light") return getPref("light_style") === "gray" ? "light" : "legacy-light";
-    return c;
+    return getUpstreemThemeChoice();
   }
   function setUpstreemThemeOption(key){
     var k = String(key == null ? "" : key).trim().toLowerCase();
-    /* ERST der Stil, DANN das Thema: setUpstreemTheme ruft hellAnwenden mit dem neuen Stil, und es
-       gibt kein Bild, in dem das alte Hell mit dem neuen Thema steht. Umgekehrt blitzte beim
-       Wechsel von Dunkel auf "Light" fuer einen Augenblick das weisse Hell auf. */
-    if (k === "legacy-light"){ setPref("light_style", "legacy"); return setUpstreemTheme("light"); }
-    if (k === "light"){ setPref("light_style", "gray"); return setUpstreemTheme("light"); }
+    if (k === "legacy-light") k = "light";
     return setUpstreemTheme(k);
+  }
+
+  /* ---- DER THEMENSCHALTER (15.10., Geist Theme Switcher) ----------------------------------------
+     EIN Markup fuer beide Orte, an denen man das Thema waehlt: das Konto-Menue der Seitenleiste
+     (klein, 24px -- Geist: "small for dense chrome ... dropdowns") und Preferences (32px, "default
+     size on a settings page"). Vorher war es dort eine Liste mit Haken und hier ein Auswahlmenue --
+     zwei Bedienungen fuer dieselbe Wahl.
+     Reihenfolge und Zeichen wie bei Geist: System (Bildschirm), Light (Sonne), Dark (Mond). Nur
+     Zeichen; der Name steht als aria-label und als Tooltip an jedem Knopf (Geist: "the aria-label per
+     option"). Die Rolle ist radiogroup/radio -- drei sich ausschliessende Wahlen, wie Geists
+     fieldset mit Radio-Feldern.
+     Kein eigener Klick-Zuhoerer: die Knoepfe tragen data-up-themawahl, und der Ort, der den Schalter
+     zeigt, hat seinen Zuhoerer ohnehin (Konto-Menue, Fenster) -- dort wird dann
+     setUpstreemThemeOption gerufen und das Ereignis gesendet, das jeder Ort schon hatte.
+     opts.klein  die 24er-Form; opts.wahl  die aktive Wahl (sonst die gespeicherte). */
+  var THEMA_WAHLEN = [
+    { key: "system", label: "System", zeichen: "computer" },
+    { key: "light",  label: "Light",  zeichen: "sun" },
+    { key: "dark",   label: "Dark",   zeichen: "moon" }
+  ];
+  function themeSchalterHtml(opts){
+    opts = opts || {};
+    var jetzt = opts.wahl || getUpstreemThemeOption();
+    return '<div class="up-seg up-themesw' + (opts.klein ? " is-klein" : "") + '" role="radiogroup" aria-label="' + esc(t_("Theme")) + '">' +
+      THEMA_WAHLEN.map(function(w){
+        var an = w.key === jetzt, name = t_(w.label);
+        return '<button type="button" class="up-seg-btn' + (an ? " is-active" : "") + '" role="radio" aria-checked="' + (an ? "true" : "false") + '"' +
+          ' data-up-themawahl="' + w.key + '" aria-label="' + esc(name) + '" data-tip="' + esc(name) + '">' +
+          icon(w.zeichen, 1.5) + '</button>';
+      }).join("") +
+    '</div>';
   }
 
   window.setUpstreemTheme = setUpstreemTheme;
@@ -23656,6 +23799,10 @@
          '<path d="M22.25 12C22.25 6.47715 17.7728 2 12.25 2C6.72715 2 2.25 6.47715 2.25 12C2.25 17.5228 6.72715 22 12.25 22C17.7728 22 22.25 17.5228 22.25 12Z"/>',
     /* Moon02Icon -- Dunkles Thema, in Anmeldung und Onboarding */
     moon: '<path d="M21.5 14.0784C20.3003 14.7189 18.9301 15.0821 17.4751 15.0821C12.7491 15.0821 8.91792 11.2509 8.91792 6.52485C8.91792 5.06986 9.28105 3.69968 9.92163 2.5C5.66765 3.49698 2.5 7.31513 2.5 11.8731C2.5 17.1899 6.8101 21.5 12.1269 21.5C16.6849 21.5 20.503 18.3324 21.5 14.0784Z"/>',
+    /* ComputerIcon -- die Wahl "System" im Themenschalter (15.10.; Geist zeigt dort einen
+       Bildschirm). Woertlich aus @hugeicons/core-free-icons@4.3.5 (dist/esm/ComputerIcon.js). */
+    computer: '<path d="M14 21H16M14 21C13.1716 21 12.5 20.3284 12.5 19.5V17L12 17M14 21H10M10 21H8M10 21C10.8284 21 11.5 20.3284 11.5 19.5V17L12 17M12 17V21"/>' +
+              '<path d="M16 3H8C5.17157 3 3.75736 3 2.87868 3.87868C2 4.75736 2 6.17157 2 9V11C2 13.8284 2 15.2426 2.87868 16.1213C3.75736 17 5.17157 17 8 17H16C18.8284 17 20.2426 17 21.1213 16.1213C22 15.2426 22 13.8284 22 11V9C22 6.17157 22 4.75736 21.1213 3.87868C20.2426 3 18.8284 3 16 3Z"/>',
     /* SquareLock01Icon -- Passwortfeld der Anmeldeseite */
     lock: '<path d="M12 14V17.0023"/><path d="M16.5 9V6.5C16.5 4.01472 14.4853 2 12 2C9.51472 2 7.5 4.01472 7.5 6.5V9"/>' +
           '<path d="M4.26781 18.8447C4.49269 20.515 5.87613 21.8235 7.55966 21.9009C8.97627 21.966 10.4153 22 12 22C13.5847 22 15.0237 21.966 16.4403 21.9009C18.1239 21.8235 19.5073 20.515 19.7322 18.8447C19.879 17.7547 20 16.6376 20 15.5C20 14.3624 19.879 13.2453 19.7322 12.1553C19.5073 10.485 18.1239 9.17649 16.4403 9.09909C15.0237 9.03397 13.5847 9 12 9C10.4153 9 8.97627 9.03397 7.55966 9.09909C5.87613 9.17649 4.49269 10.485 4.26781 12.1553C4.12104 13.2453 4 14.3624 4 15.5C4 16.6376 4.12104 17.7547 4.26781 18.8447Z"/>',
@@ -24566,10 +24713,16 @@
     var sym   = opt.icon === false ? false
               : (gef ? (opt.iconGefiltert || "search") : (opt.icon || false));
     var knopf = opt.knopf != null ? opt.knopf : (gef ? "Clear filters" : "");
-    return '<div class="up-empty' + (opt.klasse ? " " + opt.klasse : "") + '">' +
+    /* up-leer: die Gestalt nach Geist (15.10., core.css "DER LEERZUSTAND NACH GEIST"). Titel und
+       Satz stehen in einer eigenen Huelle (.up-empty-txt), weil Geist zwischen ihnen 8 laesst und
+       um sie herum 24 -- zwei Abstaende, die nur mit einer Gruppe ohne Gegenrand gehen.
+       leseFehlerHtml darueber bekommt die Klasse NICHT: der Fehlerzustand bleibt, wie er ist. */
+    return '<div class="up-empty up-leer' + (opt.klasse ? " " + opt.klasse : "") + '">' +
       (sym === false ? "" : '<div class="up-empty-ic">' + icon(sym, 1.6) + '</div>') +
-      '<div class="up-empty-h">' + esc(t_(titel)) + '</div>' +
-      (text ? '<div class="up-empty-t">' + esc(t_(text)) + '</div>' : "") +
+      '<div class="up-empty-txt">' +
+        '<div class="up-empty-h">' + esc(t_(titel)) + '</div>' +
+        (text ? '<div class="up-empty-t">' + esc(t_(text)) + '</div>' : "") +
+      '</div>' +
       (knopf ? '<button class="up-empty-btn" type="button" ' + (opt.knopfAttr || "data-clearall") +
                '>' + esc(t_(knopf)) + '</button>' : "") +
     '</div>';
@@ -25158,10 +25311,13 @@
      Ohne laufenden Tarif (aktiv === false) bleibt es beim Grundton, der Name wird gedaempft und
      ein Hinweis sagt warum. translate="no": der Tarifname ist ein Name.
      opts.klasse: eine Klasse der Komponente dazu (teams: uts-plan). */
+  /* Die Punkte der Tarif-Pillen seit dem 15.10. abends aus Geist, Stufe 700 (die Flaechenstufe,
+     hell und dunkel derselbe Ton): Teal, Blue, Purple -- dieselbe Abfolge der Farbtoene wie vorher
+     (Tuerkis, Himmelblau, Violett). */
   var PLAN_PUNKT = {
-    essential:    "#27a79b",
-    professional: "#34a1d1",
-    enterprise:   "#797ad8"
+    essential:    "#12a594",
+    professional: "#0072f5",
+    enterprise:   "#8e4ec6"
   };
   function planFarbe(name){
     var k = String(name == null ? "" : name).trim().toLowerCase();
@@ -26429,9 +26585,14 @@
   function sumPaarHtml(v, label, art){
     var txt = sumWertText(v, art);
     var istText = art === "text" || art === "datum";
+    /* "avg" steht als DURCHSCHNITTSZEICHEN da, nicht als Wort (15.10. spaet: "anstelle von 'Schnitt'
+       lieber das Durchschnittszeichen") -- dasselbe Zeichen wie vor den Werten der Gruppenkoepfe der
+       Prompt-Tabelle. Vorgelesen wird es als "Average". */
+    var lab = "";
+    if (label === "avg") lab = '<span class="up-sumlabel up-sumavg" role="img" aria-label="' + esc(t_("Average")) + '">' + icon("durchschnitt", 2) + '</span>';
+    else if (label) lab = '<span class="up-sumlabel">' + esc(t_(label)) + '</span>';
     return '<span class="up-sumpaar"><span class="up-sumwert' + (txt == null ? " is-leer" : "") + (istText ? " is-text" : "") + '">' +
-      esc(txt == null ? "–" : txt) + '</span>' +
-      (label ? '<span class="up-sumlabel">' + esc(t_(label)) + '</span>' : "") + '</span>';
+      esc(txt == null ? "–" : txt) + '</span>' + lab + '</span>';
   }
   /* cfg: { root, nach (das Element, hinter dem die Zeile steht, ueblich .up-tbody), group (die
      Popover-Gruppe der Tabelle), onWahl(spalte, modus) }.
@@ -27143,6 +27304,7 @@
     anMira: anMira, miraBezug: miraBezug,
     onPrefs: onPrefs, getUpstreemThemeChoice: getUpstreemThemeChoice,
     getUpstreemThemeOption: getUpstreemThemeOption, setUpstreemThemeOption: setUpstreemThemeOption,
+    themeSchalterHtml: themeSchalterHtml,
     PREF_DEFAULT: PREF_DEFAULT, PREF_ERLAUBT: PREF_ERLAUBT,
     fmtNum: fmtNum, fmtGeld: fmtGeld, fmtDateMuster: fmtDateMuster, datumsTeile: datumsTeile,
     addMessages: addMessages, t: t,

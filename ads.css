@@ -197,7 +197,7 @@
 .uad-organisch.is-ja svg { color: var(--vt-up); }
 
 /* ---- Skelette ----------------------------------------------------------------------------------- */
-.uad-sk-flaeche { background: var(--vc-sk); animation: uutpulse 1.2s ease-in-out infinite; }
+.uad-sk-flaeche { background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
 @media (prefers-reduced-motion: reduce) { .uad-sk-flaeche { animation: none; } }
 /* Das Skelett ist .up-adcard ohne .up-karte-klick (Hover, Druck, Fokus und Zeiger stehen seit dem
    13.10. dort, nicht mehr an .up-adcard) -- es reagiert also nicht und braucht keine Ruecknahme. */
