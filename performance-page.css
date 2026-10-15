@@ -6,11 +6,19 @@
 
 .upf-root { display: block; }
 .upf-root .upf-pagehead { padding: 8px 0; }
+/* Die Filterzeile (15.10. abends) mit denselben Werten wie auf der Dashboard-Seite
+   (dashboard-page.css, .uds-filterzeile): 16 unter der Kopflinie, 8 zwischen den Knoepfen. Die 16
+   darunter traegt .upf-main (core, "DIE LUFT UNTER DEM SEITENKOPF"). Kalender fest, die
+   Filterleiste nimmt den Rest; mit .up-leiste-fluss (core, im Markup) loest sie sich ohnehin in
+   einzelne Knoepfe auf, die Regel fuer .ufb-root bleibt fuer einen core ohne die Klasse. */
+.upf-filterzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 16px; }
+.upf-filterzeile > .udr-root { flex: 0 0 auto; }
+.upf-filterzeile > .ufb-root { flex: 1 1 auto; width: auto; min-width: 0; }
 /* 48 zwischen Radar und Detailbereich und zwischen Variations und URL-Tabelle (09.10.: 24 war zu
    eng) -- derselbe Abstand wie zwischen den Abschnitten im Detail selbst, sonst stuende die
    URL-Tabelle naeher an den Variations als die Abschnitte darueber aneinander. Die Luft oben (16
-   unter der Kopflinie, bis 15.10. 24) und unten (64) steht in core, "DIE LUFT UNTER DEM
-   SEITENKOPF". */
+   unter der Filterzeile; bis 15.10. 24 unter der Kopflinie, die Seite hatte keine Filterzeile)
+   und unten (64) steht in core, "DIE LUFT UNTER DEM SEITENKOPF". */
 .upf-main { display: flex; flex-direction: column; gap: 48px; min-width: 0; }
 .upf-radar, .upf-detail, .upf-urls { min-width: 0; }
 .upf-detail { display: flex; flex-direction: column; gap: 48px; }
