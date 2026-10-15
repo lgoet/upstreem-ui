@@ -164,7 +164,42 @@
     { key: "rsent", label: "Sentiment", attr: "data-rsent-instance", visAttr: "data-rsent-visible", rootSel: ".up-ff-rsent",
       ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
       nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Sentiment", icon: "smile",
-      behalten: true, fnAttrs: [], fnMarke: "urt" }
+      behalten: true, fnAttrs: [], fnMarke: "urt" },
+    /* DIE FILTER DER CITATIONS-TABELLEN (15.10., dieselbe eine Leiste): "<Marke> mentioned",
+       Mentioned brands und die Typen -- bisher Markenschalter, "All Brands" und das Typen-Menue in
+       den Werkzeugleisten von Domains und URLs. Gebaut von domains-table.js bzw. urls-table.js ueber
+       UC.makeLeistenFilter. Je Tabelle eigene Eintraege: beide stehen auf derselben Seite, die
+       Seite blendet je Reiter die des anderen aus (behalten: die Auswahl bleibt stehen). Die
+       URL-Tabelle hat zwei Typ-Filter, wo vorher ein Menue mit Umschalter stand -- beide melden wie
+       vorher beide Listen. */
+    { key: "dmention", label: "Brand mentioned", attr: "data-dmention-instance", visAttr: "data-dmention-visible", rootSel: ".up-ff-dmention",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Brand", icon: "megaphone",
+      behalten: true, fnAttrs: [], fnMarke: "udt" },
+    { key: "dbrands", label: "Mentioned brands", attr: "data-dbrands-instance", visAttr: "data-dbrands-visible", rootSel: ".up-ff-dbrands",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Brands", icon: "squareStack",
+      behalten: true, fnAttrs: [], fnMarke: "udt" },
+    { key: "dtypes", label: "Citation type", attr: "data-dtypes-instance", visAttr: "data-dtypes-visible", rootSel: ".up-ff-dtypes",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Citation type", icon: "newspaper",
+      behalten: true, fnAttrs: [], fnMarke: "udt" },
+    { key: "umention", label: "Brand mentioned", attr: "data-umention-instance", visAttr: "data-umention-visible", rootSel: ".up-ff-umention",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Brand", icon: "megaphone",
+      behalten: true, fnAttrs: [], fnMarke: "uut" },
+    { key: "ubrands", label: "Mentioned brands", attr: "data-ubrands-instance", visAttr: "data-ubrands-visible", rootSel: ".up-ff-ubrands",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Brands", icon: "squareStack",
+      behalten: true, fnAttrs: [], fnMarke: "uut" },
+    { key: "ucittypes", label: "Citation type", attr: "data-ucittypes-instance", visAttr: "data-ucittypes-visible", rootSel: ".up-ff-ucittypes",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "Citation type", icon: "newspaper",
+      behalten: true, fnAttrs: [], fnMarke: "uut" },
+    { key: "uurltypes", label: "URL type", attr: "data-uurltypes-instance", visAttr: "data-uurltypes-visible", rootSel: ".up-ff-uurltypes",
+      ctrl: "__upffCtrl", selKey: "sel", opt: ".up-ff-opt", keyAttr: "data-key",
+      nameSel: ".up-ff-name", clearSel: ".up-ff-x", evt: "up-ff", chip: "URL type", icon: "linkFeather",
+      behalten: true, fnAttrs: [], fnMarke: "uut" }
   ];
   /* Trigger und Chevron je Filter. Bisher standen die vier Klassen woertlich an drei Stellen
      (Spiegel, Beobachter, Chevron-Ausnahme); mit den Filtern der Prompt-Tabelle waeren es sieben
@@ -1005,7 +1040,8 @@
          farbige Strich (oder das Emoji des Topics), bei Models das Logo, bei Markets die Flagge, bei
          Intent das Zeichen, bei den Marken das Logo. Genommen wird es aus der Zeile des Filters
          selbst -- dieselbe Quelle wie der Name (namen()), also kein zweiter Renderer. */
-      var WERT_BILD = { models: ".umf-opt-logo", markets: ".umk-opt-flag", intents: ".uif-opt-main > svg", brands: ".up-ment-logo", rbrands: ".up-ment-logo" };
+      var WERT_BILD = { models: ".umf-opt-logo", markets: ".umk-opt-flag", intents: ".uif-opt-main > svg", brands: ".up-ment-logo", rbrands: ".up-ment-logo",
+                        dbrands: ".up-ment-logo", ubrands: ".up-ment-logo" };
       function wertBild(f, id) {
         var w = eingezogen[f.key];
         if (!w) return "";

@@ -18,6 +18,9 @@ Was ersetzt wird:
     BAND"). Die Vorlagen bleiben im Kasten, wie ein eingebautes Bubble-Element sie kennt. Die
     beiden Tabellen trugen das Attribut zuerst von Hand im erzeugten Block -- der naechste Lauf
     haette es wieder entfernt.
+  - data-leiste="yes" an die beiden Tabellen (15.10., "die eine Leiste" wie Responses): ohne
+    Ueberschrift, die Filter der Tabellen als Zeilen im Menue "Filters" der Filterzeile der Seite
+    (core.css "DIE EINE LEISTE", UC.makeLeistenFilter). Der Chart bekommt es nicht.
   - data-sticky-top="171" -> 16: die 171 waren der Kopf der alten Bubble-Ansicht ueber der Tabelle.
     Der Kopf dieser Seite klebt nicht, also klebt die Leiste 16 unter der Oberkante -- derselbe
     Wert wie auf Dashboard und Opportunities (core: stickyTopSetzen). 0 lag direkt am Rand
@@ -89,7 +92,11 @@ for schluessel, pfad, kennung in TEILE:
     # NACH data-local, damit es direkt hinter class steht -- so lag es schon von Hand an den Tabellen,
     # und deren Zeilen bleiben beim Neuerzeugen zeichengleich.
     m = re.sub(r'(<div class="up-root [^"]*")', r'\1 data-flach="yes"', m, count=1)
-    rest = [x for x in re.findall(r'"[A-Z][A-Z0-9_]{3,}"', m)]
+    # Die eine Leiste nur an den Tabellen (15.10.), nie am Chart: Ueberschrift weg, Filter als
+    # Zeilen im Menue "Filters" der Seite, Gesamtzeile mit der Anzahl unten.
+    if schluessel in ("udt", "uut"):
+        m = re.sub(r'(<div class="up-root [^"]*" data-flach="yes")', r'\1 data-leiste="yes"', m, count=1)
+    rest =[x for x in re.findall(r'"[A-Z][A-Z0-9_]{3,}"', m)]
     if rest:
         print("ABBRUCH -- unersetzte Platzhalter in %s: %s" % (pfad, ", ".join(sorted(set(rest)))))
         sys.exit(1)
