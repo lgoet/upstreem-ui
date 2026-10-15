@@ -1428,6 +1428,11 @@
    15.10. spaet) -- das Durchschnittszeichen bleibt mit seinem Abstand vor dem Wert. */
 .upt-grp-zelle:has(> .up-num, > .up-rank-group, > .up-sent:not(.up-pille)) { justify-content: flex-end; }
 
+/* Das Plus im Kopf der Prompt-Spalte (15.10. spaet, prompts-table.js): dieselbe Lage wie bei
+   Brands (.up-th-brand .ubo-addbrand) -- margin-left auto an das rechte Ende, -8 holt die Haelfte
+   des Zellpolsters zurueck, 8 vor der Spaltenlinie. Der Greifer liegt auf der Linie und bleibt frei. */
+.up-th-prompt .upt-addprompt { margin-left: auto; margin-right: -8px; }
+
 /* Das Zeichen vor "Brand Mentions" und "Topics" (prompts-table.js, ZEICHEN VOR ZWEI
    SPALTENKOEPFEN): 14 wie das Info-Zeichen daneben, Drittfarbe, schrumpft nie. */
 .upt-th-ic { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }

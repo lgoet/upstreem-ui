@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261123;
+  var BUILD = 20261124;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -26170,14 +26170,17 @@
   /* ══ DIE GESAMTZEILE EINER TABELLE (UC.makeSumZeile, UC.sumPaarHtml, 15.10.) ═══════════════
      Eine feste Zeile unter den Zeilen und ueber der Pagination (Empfehlung vom 15.10., vom Nutzer
      bestellt). Links steht IMMER und NUR die Anzahl ("102 count") -- das gilt fuer jede Tabelle der
-     App, darum liegt es hier. In den Spalten steht von Haus aus KEINE Berechnung, sondern "+ Add"
-     (15.10. spaet: "per default nix an calculations"); was der Nutzer dort waehlt, steht als Paar
+     App, darum liegt es hier. In den Spalten steht von Haus aus KEINE Berechnung, sondern
+     "+ Calculation" (15.10. spaet: "per default nix an calculations"; erst "+ Add", umbenannt:
+     "sonst denkt man, man kann da was hinzufuegen"); was der Nutzer dort waehlt, steht als Paar
      aus Wert und Bezeichnung (CSS und Begruendung der Masse in core.css, "DIE GESAMTZEILE EINER
      TABELLE").
-     "+ Add" hat zwei Formen: mit spec.zellen[i].menu ein Knopf, der das Menue der Spalte oeffnet
-     (die Tabelle setzt dann keinen html und menu.wahl auf ihre "keine"-Wahl); ohne menu ein
+     "+ Calculation" hat zwei Formen: mit spec.zellen[i].menu ein Knopf, der das Menue der Spalte
+     oeffnet (die Tabelle setzt dann keinen html und menu.wahl auf ihre "keine"-Wahl); ohne menu ein
      blosser Text -- die Spalte hat noch keine Berechnung, und ein Knopf, der nichts tut, waere
      einer zu viel. Ganz leer bleibt eine Zelle nur mit leer: true.
+     JEDE ZELLE LAEDT FUER SICH (zellen[i].laedt): eine Berechnung vom Server haengt nie an der
+     Tabelle -- sie hat ihr eigenes Skelett, und die Zeilen warten nicht auf sie.
      WAS DIE TABELLE NICHT RECHNET: sie kennt nur ihre Seite (hoechstens 100 Zeilen). Gewichtete
      Gesamtwerte, Median und Zaehlwerte ueber alle Seiten kommen vom Server, die Zeile zeigt nur an.
      Fehlt ein Wert, steht "–" und nie 0 (sumPaarHtml).
@@ -26204,13 +26207,34 @@
     "Prompts at rank 1": "Prompts auf Rang 1",
     "Prompts below 50": "Prompts unter 50",
     "Prompts without topic": "Prompts ohne Topic",
-    "Add calculation": "Berechnung hinzufügen",
+    "Calculation": "Berechnung",
+    "Choose a calculation": "Berechnung wählen",
+    /* Bezeichnungen, die mehrere Tabellen fuer ihre Berechnungen brauchen (15.10. spaet): hier
+       EINMAL, damit keine Komponente sie neu eintraegt (addMessages ist app-weit). Menue gross,
+       Zelle klein. */
+    "Average": "Durchschnitt",
+    "Total": "Summe",
+    "Best": "Bester Wert",
+    "Lowest": "Niedrigster Wert",
+    "Most common": "Am häufigsten",
+    "Average Visibility": "Durchschnittliche Visibility",
+    "Average Rank": "Durchschnittlicher Rank",
+    "Average Sentiment": "Durchschnittliches Sentiment",
+    "total": "Summe",
+    "best": "bester",
+    "lowest": "niedrigster",
+    "newest": "neuester",
+    "most common": "am häufigsten",
     "Summary row": "Summenzeile"
   });
   /* Ein Wert der Zeile als Text, nach den Formaten von CLAUDE.md 2b. art: "anzahl" (ganze Zahl,
      dieselbe Form wie der Zaehler im Tabellenkopf), "pct" (Visibility, eine Stelle), "rang" (immer
      eine Stelle, auch bei glatt 3), "note" (Sentiment, ganzzahlig). null heisst "kein Wert". */
   function sumWertText(v, art){
+    /* "text": ein Name (haeufigstes Modell, groesster Typ), "datum": ein Tag wie in den Datumsspalten
+       (fmtDate, nach der Vorliebe des Nutzers). Leer heisst "kein Wert". */
+    if (art === "text") return v == null || String(v).trim() === "" ? null : String(v);
+    if (art === "datum") return v == null || v === "" ? null : (fmtDate(v) || null);
     var n = toNum(v);
     if (n == null) return null;
     if (art === "pct") return fmtPct(n, 1);
@@ -26282,7 +26306,7 @@
       return true;
     }
     function skBalken(w){ return w ? '<span class="up-tsk-bar" style="width:' + Math.round(w) + 'px"></span>' : ""; }
-    var ADD_INNEN = icon("plus", 2) + '<span>' + esc(t_("Add")) + '</span>';
+    var ADD_INNEN = icon("plus", 2) + '<span>' + esc(t_("Calculation")) + '</span>';
     function zellenHtml(s){
       var sicht = s.sichtbar || null;
       var out = '<div class="up-sumzelle up-sumzelle-erste">' +
@@ -26290,7 +26314,7 @@
       (s.zellen || []).forEach(function(z){
         if (!z || !z.key) return;
         var inhalt = "";
-        if (s.laedt && z.sk) inhalt = skBalken(z.sk);
+        if ((s.laedt && z.sk) || z.laedt) inhalt = skBalken(z.sk || 56);
         else if (z.leer) inhalt = "";
         else if (z.menu && z.html && !s.laedt){
           inhalt = '<button type="button" class="up-sumknopf" data-sum-menu="' + esc(z.key) + '" aria-haspopup="menu" aria-expanded="false"' +
@@ -26299,7 +26323,7 @@
         } else if (z.html && !s.laedt) inhalt = z.html;
         else if (z.menu){
           inhalt = '<button type="button" class="up-sumknopf up-sumadd" data-sum-menu="' + esc(z.key) + '" aria-haspopup="menu" aria-expanded="false"' +
-            ' aria-label="' + esc(t_("Add calculation")) + '">' + ADD_INNEN + '</button>';
+            ' aria-label="' + esc(t_("Choose a calculation")) + '">' + ADD_INNEN + '</button>';
         } else inhalt = '<span class="up-sumadd">' + ADD_INNEN + '</span>';
         out += '<div class="up-sumzelle up-sum-td-' + esc(z.key) + '"' +
           (!sicht || sicht[z.key] ? "" : ' style="display:none"') + '>' + inhalt + '</div>';
@@ -26376,22 +26400,33 @@
   }
 
   /* DIE ZAEHLZEILE (15.10. abends): die Gesamtzeile (makeSumZeile) fuer jede weitere Tabelle --
-     vorerst nur mit der Anzahl links ("102 count"), so bestellt: "erstmal mit dem Count links".
-     In den Spalten steht "+ Add" als blosser Text (keine Berechnung angeboten, siehe makeSumZeile).
-     Die Prompt-Tabelle hat ihre reichere Fassung (Kennzahlen mit Menue) selbst gebaut; hier die
-     Teile, die sonst jede Tabelle einzeln verdrahten muesste:
+     links die Anzahl ("102 count"), in den Spalten "+ Calculation". Die Prompt-Tabelle hat ihre
+     reichere Fassung (Gruppen, eigene Datenquelle) selbst gebaut; hier die Teile, die sonst jede
+     Tabelle einzeln verdrahten muesste:
        - die Zeile hinter dem Koerper (cfg.nach, meist .up-tbody), Skelett im Gleichlauf
-         (cfg.laedt), eine leere Zelle je Spalte (cfg.spalten), damit das Raster steht; die
-         Zellen verschwinden mit ihren Spalten, wenn die Tabelle "up-sum" in ihren cellPrefixes
-         von makeColumns fuehrt;
+         (cfg.laedt), eine Zelle je Spalte (cfg.spalten), damit das Raster steht; die Zellen
+         verschwinden mit ihren Spalten, wenn die Tabelle "up-sum" in ihren cellPrefixes von
+         makeColumns fuehrt;
        - der Schalter "Summary row" fuer das Display-Menue (schalter() an makeColumns
          cfg.nachspann haengen): "uebers Display soll man diese untere Row immer ausblenden
          koennen" -- gilt fuer jede Tabelle mit dieser Zeile;
        - das Merken je Nutzer: localStorage ueber prefKey(<praefix>_summe__<instanceId>) und ein
-         window-Speicher je Schluessel (ein Neuaufbau beim Themenwechsel liest ihn).
+         window-Speicher je Schluessel (ein Neuaufbau beim Themenwechsel liest ihn) -- der Schalter
+         und, seit dem 15.10. spaet, die Wahl je Spalte;
+       - DIE BERECHNUNGEN (15.10. spaet): cfg.rechnen = { <Spalte>: [{ key, label, kurz, art,
+         feld | wert(daten) | lokal() }] }. Eine Spalte mit Eintraegen bekommt "+ Calculation" als
+         Knopf mit Menue ("None" zuerst, von Haus aus gewaehlt), eine ohne den blossen Text.
+         lokal(): die Tabelle hat alle Zeilen im Browser und rechnet selbst (Brands, Teams).
+         Sonst kommt der Wert vom Server: cfg.quelle = { sig() (der Filterstand als Text),
+         holen(felder) -> Promise<Objekt|null> }. Geholt wird NUR, was gewaehlt ist, und NUR
+         dann; getrennt von der Tabelle (die Zeilen warten nie darauf, "nicht die gesamte Tabelle
+         im Skeleton, wenn man unten eine groessere Berechnung baut"), mit eigenem Skelett in der
+         Zelle; je Filterstand einmal, Blaettern und Sortieren aendern sig nicht und holen nichts.
+         Scheitert es, steht "–" (sumPaarHtml), und die naechste Aenderung versucht es neu.
      Die Anzahl kommt von der Tabelle (cfg.anzahl, die Gesamtzahl ihres Servers, nicht die
      Zeilen der Seite); null wird "–", nie 0 (sumPaarHtml).
      cfg.onUmschalten(an): danach z. B. die feste Hoehe neu planen. */
+  var SUM_AUS = "aus";
   function makeZaehlZeile(cfg){
     cfg = cfg || {};
     var key = prefKey((cfg.praefix || "up") + "_summe__" + (cfg.instanceId || ""));
@@ -26401,7 +26436,31 @@
       try { var roh = window.localStorage.getItem(key); if (roh) stand = JSON.parse(roh); } catch(e){ stand = null; }
     }
     var an = !(stand && stand.an === false);
-    var kit = makeSumZeile({ root: cfg.root, nach: cfg.nach, group: cfg.group || null });
+    var rechnen = (cfg.rechnen && typeof cfg.rechnen === "object") ? cfg.rechnen : {};
+    function optionVon(spalte, k){
+      var l = isArr(rechnen[spalte]) ? rechnen[spalte] : [];
+      for (var i = 0; i < l.length; i++) if (l[i] && l[i].key === k) return l[i];
+      return null;
+    }
+    /* Nur Wahlen, die es (noch) gibt: eine umbenannte oder gestrichene Berechnung faellt still auf
+       "None" zurueck, statt eine leere Zelle mit Menue zu zeigen. */
+    var wahl = {};
+    if (stand && stand.wahl && typeof stand.wahl === "object"){
+      Object.keys(stand.wahl).forEach(function(sp){ if (optionVon(sp, stand.wahl[sp])) wahl[sp] = stand.wahl[sp]; });
+    }
+    function merken(){
+      var o = { an: an, wahl: wahl };
+      speicher[key] = o;
+      try { window.localStorage.setItem(key, JSON.stringify(o)); } catch(e){}
+    }
+    var kit = makeSumZeile({ root: cfg.root, nach: cfg.nach, group: cfg.group || null,
+      onWahl: function(spalte, modus){
+        if (modus === SUM_AUS) delete wahl[spalte];
+        else if (optionVon(spalte, modus)) wahl[spalte] = modus;
+        else return;
+        merken();
+        zeichnen();
+      } });
     if (!kit.el) return { zeichnen: function(){}, schalter: function(){ return null; }, an: function(){ return false; }, setzen: function(){} };
     kit.zeigen(an);
     var schalterEl = null;
@@ -26413,10 +26472,11 @@
     }
     function setzen(v){
       an = !!v;
-      speicher[key] = { an: an };
-      try { window.localStorage.setItem(key, JSON.stringify({ an: an })); } catch(e){}
+      merken();
       kit.zeigen(an);
       schalterSync();
+      /* Wieder eingeblendet: was ausgeblendet nicht geholt wurde, jetzt holen. */
+      if (an) zeichnen(false);
       if (typeof cfg.onUmschalten === "function"){ try { cfg.onUmschalten(an); } catch(e){} }
     }
     /* Eine Menuezeile mit Schalter wie "Descending" im Sortiermenue (.up-pop-row), mit Trenner
@@ -26437,17 +26497,90 @@
       schalterSync();
       return schalterEl;
     }
-    function zeichnen(){
+    /* ---- Werte vom Server: je Filterstand ein Speicher mit den schon geholten Feldern. ---- */
+    var quelle = cfg.quelle && typeof cfg.quelle.holen === "function" ? cfg.quelle : null;
+    var vorrat = {}, vorratReihe = [], unterwegs = {};
+    function sigJetzt(){ try { return quelle && typeof quelle.sig === "function" ? String(quelle.sig()) : ""; } catch(e){ return ""; } }
+    function eintrag(sig){
+      if (!vorrat[sig]){
+        vorrat[sig] = { daten: {}, hat: {}, gescheitert: {} };
+        vorratReihe.push(sig);
+        /* Fuenf Filterstaende genuegen fuer Hin und Her; mehr waere Speicher ohne Nutzen. */
+        while (vorratReihe.length > 5) delete vorrat[vorratReihe.shift()];
+      }
+      return vorrat[sig];
+    }
+    function serverFelder(){
+      var f = [];
+      Object.keys(wahl).forEach(function(sp){
+        var o = optionVon(sp, wahl[sp]);
+        if (o && typeof o.lokal !== "function" && o.feld && f.indexOf(o.feld) < 0) f.push(o.feld);
+      });
+      return f;
+    }
+    function holenWennNoetig(){
+      if (!quelle) return;
+      var sig = sigJetzt(), e = eintrag(sig);
+      var fehlt = serverFelder().filter(function(f){ return !e.hat[f] && !e.gescheitert[f] && !unterwegs[sig + "|" + f]; });
+      if (!fehlt.length) return;
+      fehlt.forEach(function(f){ unterwegs[sig + "|" + f] = true; });
+      var p;
+      try { p = quelle.holen(fehlt.slice()); } catch(err){ p = null; }
+      Promise.resolve(p).then(function(d){
+        var ziel = vorrat[sig];
+        fehlt.forEach(function(f){
+          delete unterwegs[sig + "|" + f];
+          if (!ziel) return;
+          /* Ein gescheiterter Abruf gilt fuer DIESEN Filterstand als gescheitert ("–") und wird
+             nicht bei jedem Zeichnen der Tabelle wiederholt -- die Tabelle zeichnet oft, und eine
+             fehlende Funktion waere sonst eine Anfrage je Zeichnen. Ein neuer Filterstand oder
+             eine neue Wahl versucht es wieder. */
+          if (d && typeof d === "object"){ ziel.hat[f] = true; ziel.daten[f] = d[f]; }
+          else ziel.gescheitert[f] = true;
+        });
+        zeichnen(true);
+      }, function(){
+        var ziel = vorrat[sig];
+        fehlt.forEach(function(f){ delete unterwegs[sig + "|" + f]; if (ziel) ziel.gescheitert[f] = true; });
+        zeichnen(true);
+      });
+    }
+    function zeichnen(ausAntwort){
       var sicht = {}, kitCols = typeof cfg.cols === "function" ? cfg.cols() : null;
       if (kitCols && typeof kitCols.effectiveCols === "function"){
         try { kitCols.effectiveCols().forEach(function(c){ sicht[c.key] = true; }); } catch(e){}
       }
-      var zellen = (typeof cfg.spalten === "function" ? (cfg.spalten() || []) : []).map(function(k){ return { key: k }; });
+      var sig = quelle ? sigJetzt() : "", e = quelle ? eintrag(sig) : null;
+      var tabelleLaedt = !!(typeof cfg.laedt === "function" && cfg.laedt());
+      var zellen = (typeof cfg.spalten === "function" ? (cfg.spalten() || []) : []).map(function(k){
+        var z = { key: k }, l = rechnen[k];
+        if (!isArr(l) || !l.length) return z;
+        var o = optionVon(k, wahl[k]);
+        z.menu = { wahl: o ? o.key : SUM_AUS,
+          optionen: [{ key: SUM_AUS, label: "None" }].concat(l.map(function(x){ return { key: x.key, label: x.label }; })) };
+        if (!o) return z;
+        var v = null;
+        if (typeof o.lokal === "function"){ try { v = o.lokal(); } catch(err){ v = null; } }
+        else if (e){
+          if (!e.hat[o.feld] && !e.gescheitert[o.feld]){ z.laedt = true; z.sk = 56; }
+          else if (typeof o.wert === "function"){ try { v = o.wert(e.daten); } catch(err){ v = null; } }
+          else v = e.daten[o.feld];
+        }
+        z.html = sumPaarHtml(v, o.kurz, o.art);
+        z.tip = o.label;
+        z.sk = z.sk || 56;
+        return z;
+      });
       var n = typeof cfg.anzahl === "function" ? cfg.anzahl() : null;
-      kit.zeichnen({ laedt: !!(typeof cfg.laedt === "function" && cfg.laedt()), ersteSk: 84,
+      kit.zeichnen({ laedt: tabelleLaedt, ersteSk: 84,
         erste: sumPaarHtml(n, "count", "anzahl"), sichtbar: sicht, zellen: zellen });
+      /* Erst nach dem Zeichnen holen -- und nicht aus der Antwort heraus (die bringt alles, was
+         bestellt war). Waehrend die Tabelle selbst laedt, ist ihr Filterstand der neue, die Zahl
+         also schon richtig zu holen; holen ist unabhaengig von den Zeilen. */
+      if (!ausAntwort && an) holenWennNoetig();
     }
-    return { zeichnen: zeichnen, schalter: schalter, an: function(){ return an; }, setzen: setzen };
+    return { zeichnen: function(){ zeichnen(false); }, schalter: schalter, an: function(){ return an; }, setzen: setzen,
+             wahl: function(){ var o = {}; Object.keys(wahl).forEach(function(k){ o[k] = wahl[k]; }); return o; } };
   }
 
 
