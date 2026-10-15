@@ -153,3 +153,8 @@
 @media (max-width: 560px) {
   .uts-root .up-head { flex-wrap: wrap; height: auto; row-gap: 8px; }
 }
+
+/* DIE FESTE SPUR der Zahlen (core.css, --up-spur, 15.10.): Active Prompts und Active Brands als
+   Anzahl (fmtInt, bis vierstellig) -- die Zahl vor "/ Grenze" steht darin rechts, damit die
+   Schraegstriche untereinander stehen. */
+.uts-root .up-td-prompts, .uts-root .up-td-brands { --up-spur: var(--up-spur-anzahl); }

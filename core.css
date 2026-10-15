@@ -122,6 +122,20 @@
   --up-h-gross: 40px;  /* Hauptknopf, Suchfeld                         (33) */
   --up-h-row:  55px;   /* Tabellenzeile -- steht so im STYLEGUIDE           */
 
+  /* DIE FESTE SPUR einer Zahl (15.10. gewaehlt, Vorschau "Zahl und Trend", Variante 1): jede Zahl
+     in einer Tabellenzelle bekommt eine Mindestbreite fuer ihr FORMAT und steht darin rechts --
+     Kopf und Zelle bleiben linksbuendig, aber Komma steht unter Komma, und ein Trend dahinter
+     beginnt in jeder Zeile auf demselben Pixel. Gemessen in der Zellschrift (.up-num 14/500,
+     Geist, Tabellenziffern), auf ganze Pixel aufgerundet, und zwar fuer den GROESSTEN Wert der
+     Skala (100%, Sentiment 100, Rang zweistellig): mit der typischen Breite ("00%") braeche
+     jede Zeile mit 100% aus der Flucht. Eine Zelle waehlt ihr Format ueber --up-spur (core.css,
+     "DIE FESTE SPUR", Regel an .up-num, .up-rank-group und .up-sent-val in .up-td). */
+  --up-spur-pct0:   38px;   /* "100%"    Prozent ohne Stelle, 37.05   */
+  --up-spur-pct1:   49px;   /* "100.0%"  Prozent mit einer Stelle, 48.59 */
+  --up-spur-rang:   29px;   /* "10.0"    Rang, immer eine Stelle, 28.69 */
+  --up-spur-note:   26px;   /* "100"     Sentiment 0-100, 25.71       */
+  --up-spur-anzahl: 38px;   /* "0.00k" / "0,000" Anzahl, 37.26        */
+
   /* Bewegung. Drei Dauern, zwei Kurven -- nach dem, WAS sich bewegt, nicht wie weit.
      Die zwei Kurven sind die, die in der App schon am haeufigsten ausgeschrieben stehen. */
   --up-t-1: 120ms;     /* Farbe, Deckkraft, Hover -- reiner Zustand   (133) */
@@ -4299,7 +4313,19 @@
    Die Zelle schneidet erst an ihrem POLSTERRAND ab (overflow hidden), nicht am Inhalt -- ein
    langer Wert ("€19.62–€21.62" in 100px) lief deshalb bis zu 4,5px in die 16px rechts hinein, und
    das Polster ist Pflicht (gemeldet an der Preisspalte der Shopping-Produkte). */
-.up-td > .up-num { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.up-td > .up-num { flex-shrink: 1; min-width: var(--up-spur, 0); text-align: right; overflow: hidden; text-overflow: ellipsis; }
+/* DIE FESTE SPUR (15.10., Token --up-spur-* an .up-root): setzt eine Zelle --up-spur (meist ueber
+   ihre Spaltenklasse in der Komponente, z. B. .upt-td-visibility { --up-spur: var(--up-spur-pct0) }),
+   steht die Zahl darin rechts. Ohne --up-spur bleibt die Mindestbreite 0 und rechts wirkungslos --
+   jede Zelle ohne Zuordnung sieht aus wie bisher. Gilt mit und ohne Trend dahinter ("egal ob mit
+   Trend oder ohne"). min-width und nicht width: ein Ausreisser jenseits der Skala sprengt die
+   Spur seiner Zeile, statt abgeschnitten zu werden. Die Zahl direkt in der Zelle bekommt die Spur
+   in der Regel darueber (dort stand min-width 0; eine zweite Regel gleicher Spezifitaet haette
+   ueber die Reihenfolge entschieden), jede tiefer verschachtelte hier (Rang hinter dem #-Zeichen,
+   eine Zahl in einer Huelle wie "12 / 20") -- ".up-td * >" trifft genau die, deren Elternteil
+   NICHT die Zelle selbst ist, also nie dieselbe Zahl wie die Regel darueber. Sentiment ueber
+   seinen Wert. */
+.up-td * > .up-num, .up-td .up-sent-val { min-width: var(--up-spur, 0); text-align: right; }
 .up-rank-group { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 .up-hash { width: 12px; height: 12px; color: var(--vc-third); flex: 0 0 auto; display: block; }
 /* ---------- SENTIMENT OHNE KASTEN (29.09. angefordert) ----------

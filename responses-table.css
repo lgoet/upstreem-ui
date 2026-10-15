@@ -316,3 +316,8 @@
 .urt-root[data-leiste="yes"] .up-head-tools > .urt-brand-toggle,
 .urt-root[data-leiste="yes"] .up-head-tools > .up-ment,
 .urt-root[data-leiste="yes"] .up-head-tools > .urt-fader { display: none; }
+
+/* DIE FESTE SPUR der Zahlen (core.css, --up-spur, 15.10.): Sentiment 0-100, Rang mit einer Stelle.
+   Die Zahl steht darin rechts, Kopf und Zelle bleiben links. */
+.urt-root .urt-td-sentiment { --up-spur: var(--up-spur-note); }
+.urt-root .urt-td-rank { --up-spur: var(--up-spur-rang); }

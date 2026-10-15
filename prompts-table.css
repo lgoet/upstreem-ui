@@ -1414,6 +1414,15 @@
    die Zeichen vor zwei Koepfen, Gruppenkopf, Gruppenfuss und die Gruppenliste -- mit denselben
    Massen ueber die Variablen aus core. */
 
+/* DIE FESTE SPUR der Zahlen (core.css, --up-spur): je Kennzahlspalte ihr Format -- Visibility
+   wie sie in der Zelle steht (ganze Prozent, UC.fmtPct), Rang mit einer Stelle, Sentiment 0-100.
+   Die Gruppenkoepfe tragen dieselben Zahlen auf demselben Raster (.upt-grp-zelle, keine .up-td):
+   die Regel aus core hier fuer sie, sonst stuende die Zahl im Kopf woanders als darunter. */
+.upt-root .upt-td-visibility, .upt-root .upt-grp-td-visibility { --up-spur: var(--up-spur-pct0); }
+.upt-root .upt-td-rank, .upt-root .upt-grp-td-rank { --up-spur: var(--up-spur-rang); }
+.upt-root .upt-td-sentiment, .upt-root .upt-grp-td-sentiment { --up-spur: var(--up-spur-note); }
+.upt-grp-zelle .up-num, .upt-grp-zelle .up-sent-val { min-width: var(--up-spur, 0); text-align: right; }
+
 /* Das Zeichen vor "Brand Mentions" und "Topics" (prompts-table.js, ZEICHEN VOR ZWEI
    SPALTENKOEPFEN): 14 wie das Info-Zeichen daneben, Drittfarbe, schrumpft nie. */
 .upt-th-ic { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
