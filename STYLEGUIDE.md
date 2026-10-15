@@ -50,7 +50,7 @@ var LOADING_EXPLICIT = (window.__udtLoadingExplicit = window.__udtLoadingExplici
 ## 1. Farben
 
 Quelle aller Werte: `core.css` (Block `.up-root`, `.up-root[data-theme="dark"]`, die Blöcke an
-`:root` und `html[data-up-hell="grau"]`). Stand 15.10.
+`:root`, `html[data-up-hell="grau"]` und `html[data-up-dunkel="geist"]`). Stand 15.10.
 
 ### Thema: Light, Dark, System (seit 15.10.)
 
@@ -103,6 +103,38 @@ Navigation im Preferences-Fenster, gedrückte Knöpfe): die Farbe aus Geists Sei
   Kontur, die der Nutzer „zu dunkel“ fand; der Grund selbst war schon fast `#ededed`.
 - Nur das Gewählte trägt den Rand, der Hover nicht.
 
+**Das Dark ist das Spiegelbild** (15.10. abends, „Darkmode … sieht sehr off und übel unordentlich
+aus“): dieselben Rollen mit Geists dunkler Skala. Seite, Seitenleiste, Topbars und Sub-Navigation
+**Background 2 `#000`**, Tabellen, Karten, Charts, Drawer, Menüs und Felder **Background 1
+`#0a0a0a`** -- der Inhalt ist im Dunkeln also eine Spur HELLER als die Seite, wie im
+Vercel-Dashboard. Vorher lag im Dunkeln alles auf einem Grund (`#101114`), getrennt nur durch
+Ränder, in Linears blaustichigen Tönen neben neutralen Resten aus älteren Zeiten.
+
+```
+hellAnwenden() (core.js)   setzt html[data-up-dunkel="geist"], sobald dunkel gemalt wird;
+                           eigener Name, nicht ein zweiter Wert von data-up-hell
+core.css                   Marken am dunklen .up-root und an :where(html[data-up-dunkel]) [data-theme="dark"];
+                           Block "DAS DUNKEL NACH GEIST: SEITE UND INHALT" spiegelt jede Regel des grauen Hells
+```
+
+Gemessen an vercel.com/geist im dunklen Thema (Stylesheet `.dark-theme`, sRGB, 15.10.):
+Background 1 `#0a0a0a`, Background 2 `#000000`, Gray 100 `#1a1a1a`, 200 `#1f1f1f`, 300 `#292929`,
+400 `#2e2e2e`, 500 `#454545`, 600 `#878787`, 700 `#8f8f8f`, 800 `#7d7d7d`, 900 `#a1a1a1`, 1000
+`#ededed`; Gray Alpha 100 bis 500 = 6 / 9 / 13 / 14 / 24 % Weiß. Menüs, Popover, Tooltips-Materialien
+und Dialoge tragen dort Background 1 mit einem Ring aus 14,5 % Weiß; Menü-Hover Gray Alpha 100;
+gewählter Punkt der Seitennavigation Gray Alpha 100 ohne Rand; Input Background 1 mit Ring Gray
+Alpha 400; Secondary-Knopf Background 1, Hover Gray 200, Rand Gray 400.
+
+**Gewählter Zustand im Dark:** `--up-wahl-bg: rgba(255,255,255,.06)` (Gray Alpha 100),
+`--up-wahl-rand: rgba(255,255,255,.03)`. Durchscheinend statt deckend wie im Light, weil dieselbe
+Stufe auf `#000` (Seitenleiste) und `#0a0a0a` (Preferences) sichtbar bleiben muss; auf der Seite
+ergibt sie `#0f0f0f` -- in L* derselbe Schritt wie `#ededed` auf `#fafafa` (4,1 gegen 4,3).
+Seitenleiste ohne Rand, Sub-Navigation, Preferences, Events-Arten und gedrückte Knöpfe mit dem Hauch.
+
+**Dunkle Elemente im Light** (die Bulk-Leiste der Prompts-Tabelle ist im Light eine dunkle Leiste)
+lesen weiter die alte Zeile `[data-theme="dark"]` an `:root` mit den Linear-Werten -- das Light
+darf sich nicht ändern. Das dunkle Thema überschreibt sie nur unter `html[data-up-dunkel]`.
+
 **Themenschalter** nach Geist: `UC.themeSchalterHtml({ klein, wahl })`, siehe Abschnitt 5.
 
 ### Light (`.up-root`)
@@ -127,23 +159,30 @@ Navigation im Preferences-Fenster, gedrückte Knöpfe): die Farbe aus Geists Sei
 | Fokus / Fokusring | `--up-focus` / `--up-focus-ring` | `#4A9EFF` / `rgba(74,158,255,0.20)`, Breite `--up-focus-w` 2px |
 | Gefahr-Knopf | `--vc-danger` / `--vc-danger-fg` | `#da2f35` (Geist Red 800) / `#ffffff` |
 
-### Dark (`.up-root[data-theme="dark"]`)
-| Rolle | Variable | Wert |
-|---|---|---|
-| Primär-Fontfarbe | `--vc-text` | `#e0e0e0` |
-| Zweite / dritte / vierte Stufe | `--vc-muted` / `--vc-third` / `--vc-fourth` | `#c9cbd0` / `#a0a0a0` / `#6c717a` |
-| Border | `--vc-border` | `#34343a` |
-| Karte | `--vc-bg` | `#1c1c1f` |
-| Seitengrund | `--up-surface` | `#101114` |
-| Hover-/Heading-Background | `--vc-heading-bg` | `#232326` |
-| Skeleton-Grundfarbe | `--vc-sk` | `#28282c` |
-| Menü / Auswahl / Menürand | `--up-menu-bg` / `--up-sel-bg` / `--up-menu-border` | `#232326` / `#28282c` / `#3e3e44` |
-| Schiene / Pille | `--vc-switch-rail` / `--vc-switch-pill` | `rgba(255,255,255,.055)` / `rgba(255,255,255,.07)` |
-| Eingabefeld | `--vc-field` | `#232326` |
-| Tabellen-Head-BG / Row-Hover | `--vt-head-bg` / `--vt-row-hover` | `#232326` / `#232326` |
-| Logo-Box-BG | `--vt-logo-bg` | `#e0e0e0` |
-| Akzent | `--up-accent` / `--up-accent-fg` | `#e0e0e0` / `#1b1b1b` |
-| Fokus / Fokusring | `--up-focus` / `--up-focus-ring` | `#6DB2FF` / `rgba(109,178,255,0.28)` |
+### Dark (`.up-root[data-theme="dark"]`, seit 15.10. Geist)
+| Rolle | Variable | Wert | Geist | bis 15.10. |
+|---|---|---|---|---|
+| Primär-Fontfarbe | `--vc-text` | `#ededed` | Gray 1000 (seit 16.10.; vorher `#e0e0e0`) | |
+| Zweite / dritte / vierte Stufe | `--vc-muted` / `--vc-third` / `--vc-fourth` | `#c9c9c9` / `#a1a1a1` / `#7d7d7d` | neutral statt blaustichig (seit 16.10., vorher `#c9cbd0` / `#a0a0a0` / `#6c717a`): `--vc-third` Gray 900, `--vc-fourth` Gray 800 (4,7:1 auf `#0a0a0a`); `--vc-muted` hat bei Geist keine Stufe, derselbe Wert ohne Blaustich. Nur unter `html[data-up-dunkel]`; Menüs und Tooltips mit eigener Leiter Wert für Wert getauscht | |
+| Border | `--vc-border` | `#2e2e2e` | Gray 400 | `#34343a` |
+| Inhalt: Karte, Tabelle, Chart, Drawer | `--vc-bg` | `#0a0a0a` | Background 1 | `#1c1c1f` |
+| Seitengrund (Seite, Seitenleiste, Kopf) | `--up-surface` | `#000000` | Background 2 | `#101114` |
+| Hover-/Heading-Background | `--vc-heading-bg` | `#1a1a1a` | Gray 100 | `#232326` |
+| Skeleton-Grundfarbe | `--vc-sk` | `#1a1a1a` (Glanz bis `#1f1f1f`) | Gray 100 → 200 | `#28282c` |
+| Menü / Auswahl / Menürand | `--up-menu-bg` / `--up-sel-bg` / `--up-menu-border` | `#0a0a0a` / `#1f1f1f` / `#454545` | Bg 1 / Gray 200 / Gray 500 | `#232326` / `#28282c` / `#3e3e44` |
+| Schiene / Pille | `--vc-switch-rail` / `--vc-switch-pill` | `rgba(255,255,255,.06)` / `rgba(255,255,255,.09)` | Gray Alpha 100 / 200 | `.055` / `.07` |
+| Switch-Fläche / -Rand / Aus-Schiene | `--vc-switch-bg` / `--vc-switch-border` / `--up-switch-off` | `#1a1a1a` / `#2e2e2e` / `#454545` | Gray 100 / 400 / 500 | `#232326` / `#34343a` / `#444444` |
+| Eingabefeld | `--vc-field` | `#0a0a0a` (mit Rand) | Background 1 | `#232326` |
+| Tabellen-Head-BG / Row-Hover | `--vt-head-bg` / `--vt-row-hover(-solid)` | `#0a0a0a` / `#1a1a1a` | Bg 1 / Gray 100 | `#232326` / `#232326` |
+| Chips: gewählt / gewählt+Hover / Rand Hover / Rand gewählt+Hover | `--up-chip-an` / `-an-hover` / `--up-chip-rand-hover` / `-rand-an-hover` | `#1f1f1f` / `#292929` / `#454545` / `rgba(255,255,255,.24)` | Gray 200 / 300 / 500 / Alpha 500 | `#26262a` / `#2c2c30` / `#4a4a52` / `#5a5a62` |
+| Gewählt (Navigation) | `--up-wahl-bg` / `--up-wahl-rand` | `rgba(255,255,255,.06)` / `rgba(255,255,255,.03)` | Gray Alpha 100 | (Seitenleiste `#28282c`) |
+| Logo-Box-BG | `--vt-logo-bg` | `#e0e0e0` | | |
+| Akzent | `--up-accent` / `--up-accent-fg` | `#e0e0e0` / `#1b1b1b` | (unverändert) | |
+| Fokus / Fokusring | `--up-focus` / `--up-focus-ring` | `#6DB2FF` / `rgba(109,178,255,0.28)` | | |
+
+Die Linien-Charts lesen im Dunkeln Achse `#2e2e2e` und Punktkern `#0a0a0a` (`themeColors` in
+core.js); ihre Tooltips tragen `--up-menu-bg`/`--up-menu-border` und die Schriftstufen statt
+eigener Werte (`#232326`, `#e6e6e6`, `#8a8a8a`).
 
 ### Zustandsfarben nach Geist (seit 15.10., an `:root`)
 
@@ -199,7 +238,8 @@ Weiß bei 3.08 und damit unter AA. Jetzt auf Weiß 5.33 und 5.37.
   ≤40 `#FF990A`, ≤60 `#8F8F8F`, ≤75 `#6CDA75`, sonst `#45A557`. Bis 15.10. `#D25D5D`,
   `#D2865D`, `#9E9E9E`, `#9FD25D`, `#60D25D`.
 - Icon-Tooltip `.up-tip`: BG `#1f1f1b`, Text `#ffffff`; an einem Element mit
-  `data-theme="dark"` BG `#f0f0f0`, Text `--vc-text-invert`
+  `data-theme="dark"` BG `#f0f0f0`, Text `--vc-text-invert` (Geists Tooltip ist im Dunkeln
+  ebenfalls hell: gemessen `#fff` mit `#171717`)
 
 ---
 
@@ -564,7 +604,7 @@ Bei uns heißt das:
 
 | Karte | Ruhe | Hover (`.up-karte-klick`) |
 |---|---|---|
-| Event, Opportunity, Antwort (Card Mode), Produkt, Quelle, Ad Card, Recent Ad | `1px solid var(--vc-border)`, Radius 12, **kein Schatten** | Fläche einen halben Schritt zur Hover-Fläche, Rand und Schatten bleiben |
+| Event, Opportunity, Antwort (Card Mode), Produkt, Quelle, Ad Card, Recent Ad | `1px solid var(--vc-border)`, Radius 12, **kein Schatten** | Fläche einen halben Schritt zur Hover-Fläche, **2px nach oben** und **`--up-e-1`**, der Rand bleibt |
 | Kasten, Hero, Chart-Kasten, Einstellungs-Karte (`.up-box`, `.usb-card`) | wie oben | — (nicht klickbar) |
 | Kennzahlen im Band, flache Tabelle, offenes Band | flach, ohne Kasten | — |
 | Erklärkarte, Menü, Popover | schwebt: `--up-e-2` | — |
@@ -577,6 +617,12 @@ seiner Stelle. Auf Weiß ergibt das genau Geists `#f9f9f9`; der durchscheinende 
 Opportunity-Karte im Dunkeln (`--uo-col-bg`) bleibt erhalten. Druck (`scale(.99)`) und Fokus
 (2px-Outline, 2px Abstand) sind unverändert. Vom 13. bis 15.10. war der Hover „Rand eine Spur
 kräftiger plus `--up-e-1`“.
+
+**Dazu Hebung und Hauch Schatten** (15.10. spät, Nutzer: „nur Fläche ist super. Ganz leichter
+Slide-up-Effekt wie wir ihn schon hatten und minimal mehr Schatten ist aber auch gut“):
+`transform: translateY(-2px)` (wie die Ad Card bis zum 13.10.) und `box-shadow: var(--up-e-1)`
+(Geist small, die leiseste Stufe), Übergang `--up-t-2` mit `--up-ease`. Beim Druck fällt die
+Hebung weg (`scale(.99)`), bei `prefers-reduced-motion` gibt es keine Hebung.
 
 Eine Karte mit Schatten in Ruhe gibt es nur noch an einer Stelle: die Tarifkarte (`.up-plan`,
 `--up-e-1`), die am 28.09. samt Schatten von der Landingpage übernommen wurde. Zeichen-Kacheln
@@ -941,9 +987,9 @@ var showTip = _tips.showTip, showTipText = _tips.showTipText,
 **B) Chart-Datenpunkt-Tooltip** (Linie folgt dem Cursor; derselbe Kasten am Doughnut)
 - Radius **8px** (`--up-r-l`, Geist: mehrzeiliger Tooltip; bis 15.10. 16px), Padding `10px 12px` (Linie) bzw. `12px 14px` (Doughnut)
 - Light Mode: `background:#ffffff; border:1px solid #dcdbdd`
-- Dark Mode: `background:#232326; border:1px solid #3e3e44` -- die **Menüfläche**, nicht der
-  Seitengrund: was oben liegt, ist in dieser Leiter heller (vorher `#121212`, ein Loch statt einer
-  Ebene)
+- Dark Mode: `background: var(--up-menu-bg); border: 1px solid var(--up-menu-border)` (seit 15.10.
+  `#0a0a0a` / `#454545`, Geist) -- die **Menüfläche**, nicht der Seitengrund; Schrift
+  `--vc-text`, Unterzeile `--vc-third`. Bis 15.10. `#232326` / `#3e3e44` mit `#e6e6e6` / `#8a8a8a`
 - Schatten in beiden Themen `var(--up-e-2)` (seit 06.10.; vorher je Thema ein eigener Wert;
   seit 15.10. die mehrlagigen Geist-Werte aus Abschnitt 3). Das Token löst sich am Ort auf: der
   Tooltip hängt im Chart, also unter der Wurzel mit ihrem Thema.
@@ -1500,7 +1546,8 @@ Die Schriftstufen zeigen seit dem 24.09. auf die Kern-Token (`--am-text: var(--v
 Radien, Höhen und Tiefen lesen die Kern-Token mit Rückfallwert (`var(--up-r-2xl, 12px)`,
 `var(--up-e-4, …)`), damit die Palette auch ohne core funktioniert. Eigene Werte bleiben für
 Rahmen und weiche Flächen: hell `--am-border` `#e5e7eb`, `--am-soft` `#f7f8fa`, `--am-soft-2`
-`#f3f4f6`; dunkel die Dropdown-Werte (`#3e3e44`, `#28282c`, Karte `#232326`).
+`#f3f4f6`; dunkel seit 15.10. die Marken der Dropdowns selbst (`var(--up-menu-border)`,
+`var(--up-sel-bg)`, Karte `var(--up-menu-bg)`, also `#454545` / `#1f1f1f` / `#0a0a0a`).
 
 ### Das Command Menu von Geist (seit 15.10.)
 
@@ -1934,14 +1981,19 @@ Bis 15.10. war das offene Feld randlos und transparent (Notion-Stil), Text 14/50
 
 ## 17. Brand-Logo-Stack in Zeilen: eine Geist-Avatar-Group (seit 15.10.)
 
-`.up-stack` (Brand Mentions, Citations in Responses, Karten) überlappt nach Geists AvatarGroup
-(vercel.com/geist/avatar, overlap „auto“ = 0.3 × Größe):
+`.up-stack` (Brand Mentions, Citations in Responses, Karten) ist eine Geist-AvatarGroup aus
+Geist-Avataren (vercel.com/geist/avatar):
 
 ```
-Chip          .up-stack-item 28×28; sichtbare Ebene .up-stack-vis: Radius 6 (--up-r-m, ein Logo
-              ist kein Porträt), 1px --vc-border, 2px Polster, Platte --vt-logo-bg (im Dark
-              hell), Bild Radius calc(var(--up-r-m) - 3px)
-Überlappung   --up-stack-ueber 8px (0.3 × 28; dicht 0.88 × 8 = 7.04); bis 15.10. 4
+Chip          .up-stack-item 28×28; sichtbare Ebene .up-stack-vis ist ein KREIS wie Geists
+              Avatar (rounded-full, innen 1px-Ring): Radius --up-r-voll, 1px --vc-border (im
+              Dark ebenfalls, als Ring), 3px Polster, Platte --vt-logo-bg (im Dark nur unter dem
+              Logo). Das Logo ein 20er Quadrat mit Radius 4 (--up-r-xs), ganz im Kreis (Ecke 12.5
+              vom Mittelpunkt, Kreis innen 13), nichts abgeschnitten. Dicht: Polster 2.64, Logo 17.36.
+              Bis 15.10. spät: abgerundetes Quadrat Radius 6 mit 22er Bild ("ein Logo ist kein
+              Porträt") -- vom Nutzer verworfen: "das solltest du vom Geist-System-Avatar nutzen".
+Überlappung   --up-stack-ueber 4px (dicht 3.52) wie vor dem 15.10.; Geists 0.3 × Größe (8) war
+              dem Nutzer zu eng ("etwas zu nah beieinander ... so wie es vorher war")
 Ring          --up-stack-ring-w 1px in der Zeilenfarbe (folgt dem Zeilen-Hover); bis 15.10.
               4px, die den Abstand malten
 Reihenfolge   das ERSTE Mitglied liegt oben (--up-stack-z absteigend, von brandStack gesetzt);
@@ -2005,10 +2057,10 @@ applySticky();   /* einmal sofort */
 ## 20. Sticky-Header — Ergänzungen
 
 - **Seiten-Hintergrund als eigene Variable:** `--up-surface` (Light `#ffffff`, im grauen Light
-  `#fafafa`, Dark `#101114`) für Kopf-Hintergrund + Maske. Nicht `--vc-bg` (das ist die
-  Kartenfarbe, `#1c1c1f` im Dark): sonst ist der Bereich über/hinter der Tabelle sichtbar zu
-  hell. In einer weißen Fläche (Drawer, Band, flache Tabelle) ist `--up-surface` die Farbe dieser
-  Fläche (Abschnitt 1).
+  `#fafafa`, Dark `#000000`) für Kopf-Hintergrund + Maske. Nicht `--vc-bg` (das ist die
+  Kartenfarbe, `#0a0a0a` im Dark): sonst ist der Bereich über/hinter der Tabelle sichtbar zu
+  hell. In einer Inhaltsfläche (Drawer, Band, flache Tabelle) ist `--up-surface` die Farbe dieser
+  Fläche, in beiden Themen (Abschnitt 1).
 - **Maske +16px:** Die opake Maske über dem Header (`…-head::before`) bekommt
   `height: calc(var(--up-sticky-top) + 16px)`, damit beim Scrollen oben keine
   Zeilenkante durchlugt.
@@ -2264,8 +2316,9 @@ border: 1px solid var(--vc-border);
 border-radius: var(--up-r-2xl);   /* 12, Geist Dialog; bis 15.10. 16, davor 18 */
 box-shadow: var(--up-e-4);        /* liegt über einem Schleier */
 ```
-Hintergrund `--up-surface`: hell `#ffffff`, Dark Mode `#1c1c1f` (die Karte setzt ihre Palette
-selbst, weil sie am `<body>` hängt).
+Hintergrund `--up-surface`: hell `#ffffff`, Dark Mode `#0a0a0a` (Geist Background 1, bis 15.10.
+`#1c1c1f`). Die Karte setzt ihre Palette selbst, weil sie am `<body>` hängt -- und zwar
+vollständig: ihre helle Grundregel setzt die Marken selbst, eine geerbte dunkle verlöre dagegen.
 
 **Kopfzeile** (`.up-topicmodal-head`, `align-items:flex-start` wegen des zweizeiligen Headings):
 - Heading: **22px, Weight 500**.
@@ -2303,7 +2356,7 @@ zufaellig traegt.
 .up-chiphover { transition: background 120ms ease, border-color 120ms ease, color 120ms ease; }
 .up-chiphover:hover { background: var(--vt-row-hover-solid); color: var(--up-accent-ink); box-shadow: none; }
 ```
-`--vt-row-hover-solid` ist hell `#f9f8f9`, dunkel `#232326`; eine eigene Dunkel-Regel gibt es
+`--vt-row-hover-solid` ist hell `#f9f8f9`, dunkel `#1a1a1a` (Geist Gray 100); eine eigene Dunkel-Regel gibt es
 nicht mehr. Chips koennen auch ausserhalb des Komponenten-Roots leben (z.B. in der
 Bulk-Action-Bar am `document.body`); diese Leiste fuehrt die Marken deshalb selbst mit.
 

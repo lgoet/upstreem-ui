@@ -1289,8 +1289,10 @@
   .am-cat-card:hover .am-cat-ic { transform: rotate(-4deg) scale(1.02); box-shadow: var(--up-e-chip); color: var(--am-text); }
   .am-cat-ic svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .am-cat-name { flex: 1 1 auto; min-width: 0; }
-  #ask-mira[data-theme="dark"] .am-cat-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: var(--up-e-1); }
-  #ask-mira[data-theme="dark"] .am-cat-card:hover .am-cat-ic { background: rgba(53,54,56,0.3); color: var(--am-text); box-shadow: var(--up-e-2); }
+  /* Dunkel nach Geist (15.10.): die Kachel traegt dieselben Marken wie hell (--am-card mit
+     --am-border, also Background 1 mit Gray 400) -- vorher ein eigener Ton (42/42/42 zu 30 %) mit
+     Linears #28282c als Rand. Dunkel bleibt nur die Tiefe e-2 beim Ueberfahren. */
+  #ask-mira[data-theme="dark"] .am-cat-card:hover .am-cat-ic { color: var(--am-text); box-shadow: var(--up-e-2); }
   /* Das Chevron rueckt beim Ueberfahren 4px nach rechts. transform und nicht margin: ein
      transform laesst den Browser nicht neu umbrechen, die Karte darum bleibt also ruhig.
      Der Uebergang steht in DIESER Regel und nicht in einer weiter oben: zwei Regeln mit
@@ -1478,14 +1480,14 @@
   .am-rep-edit:hover { color: var(--am-text); border-color: var(--am-muted-2); background: var(--am-soft); }
   .am-rep-card.is-editable .am-rep-edit { opacity: 1; pointer-events: auto; }
   .am-rep-card.is-editable .am-rep-go { opacity: 0; pointer-events: none; }
-  #ask-mira[data-theme="dark"] .am-rep-edit { background: #232326; border-color: #28282c; }
-  #ask-mira[data-theme="dark"] .am-rep-edit:hover { color: var(--am-text); background: #353638; }
+  /* Der Stift dunkel seit dem 15.10. aus denselben Marken wie hell (vorher #232326 / #28282c,
+     Hover #353638). */
   /* dark mode: report cards without background, like the category cards */
   /* Die zwei dunklen Sonderzeilen fuer die Reportkarte sind weg: --am-bg und
      --vt-row-hover-solid drehen sich mit dem Thema, und #2a2a2a war deckend, aber zu hell --
      dieselbe Meldung wie bei den Kategoriekarten. */
-  #ask-mira[data-theme="dark"] .am-rep-ic { background: rgba(42,42,42,0.3); border-color: #28282c; box-shadow: var(--up-e-1); }
-  #ask-mira[data-theme="dark"] .am-rep-card:hover .am-rep-ic { background: rgba(53,54,56,0.3); color: var(--am-text); box-shadow: var(--up-e-2); }
+  /* Wie die Kategoriekachel oben (15.10.): Marken statt eigener Toene, dunkel nur e-2 beim Ueberfahren. */
+  #ask-mira[data-theme="dark"] .am-rep-card:hover .am-rep-ic { color: var(--am-text); box-shadow: var(--up-e-2); }
 
   /* ===================== COMPOSER ===================== */
   .am-composer-area {
@@ -1665,8 +1667,10 @@
     transition: background 200ms ease, padding-bottom 300ms cubic-bezier(.4,0,.2,1);
   }
   .am-composer-shell.is-settings-open { padding-bottom: 16px; }   /* grey only overhangs while the tray is open */
+  /* Die Schale dunkel Geists Gray 100 (15.10.; vorher #1e1e1e) -- sie ist nur bei offener Leiste
+     zu sehen, als leise Flaeche um das Feld, wie hell #f9f8f9. */
   #ask-mira[data-theme="dark"] .am-composer-shell,
-  #ask-mira[data-theme="dark"] #am-composer-shell { background: #1e1e1e; }
+  #ask-mira[data-theme="dark"] #am-composer-shell { background: var(--vc-heading-bg); }
   /* Dark: das Eingabefeld traegt die FELDfarbe und im Ruhezustand keinen Rand.
      --am-bg ist #121212, die Farbe der SEITE -- das Feld lag damit dunkler als die Schale hinter
      ihm (#1e1e1e) und sank darin ein, statt sich abzuheben. --vc-field (#2a2a2a) ist die
@@ -1681,8 +1685,11 @@
      Auch nicht unter dem Zeiger (13.10.): der Hover kommt seit heute aus der geteilten Feldregel in
      core (Liste bei .up-field). Diese Regel ist mit der ID spezifischer als jene (0,2,0) und hielt
      den Rand sonst auch beim Ueberfahren durchsichtig -- im Dunkeln gab es dann keinen Hover. */
+  /* SEIT DEM 15.10. (Dunkel nach Geist) MIT RAND, wie hell und wie Geists Input: das Feld ist
+     Background 1 (#0a0a0a) auf der schwarzen Seite, also nur 10 Stufen ueber dem Grund -- ohne
+     Rand waere es nicht mehr zu sehen. Der randlose Ruhezustand stammte aus der Zeit, als das Feld
+     (#232326) deutlich heller war als alles um es herum. */
   #ask-mira[data-theme="dark"] .am-composer { background: var(--vc-field); }
-  #ask-mira[data-theme="dark"] .am-composer:not(:focus-within, :hover) { border-color: transparent; }
   /* settings tray inside the shell — slides open/closed smoothly */
   .am-settings-panel {
     width: 100%; background: transparent; overflow: hidden; max-height: 0; opacity: 0; pointer-events: none;
@@ -1724,8 +1731,9 @@
   .am-model-opt:not(.is-active) { color: var(--am-muted-3); }
   .am-model-opt:not(.is-active):hover { color: var(--am-text); }
   .am-model-opt:hover { background: var(--am-soft); }
-  #ask-mira[data-theme="dark"] .am-model-opt:hover { background: #232326; }
-  #ask-mira[data-theme="dark"] .am-model-opt.is-active { background: #252525; }
+  /* Dunkel (15.10.): ueberfahren aus der Marke wie hell (--am-soft, Gray 100), gewaehlt die Auswahl
+     der Menues (Gray 200) -- vorher #232326 und #252525. */
+  #ask-mira[data-theme="dark"] .am-model-opt.is-active { background: var(--up-sel-bg); }
   .am-model-opt-ic { width: 22px; height: 22px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; color: var(--am-text); }
   .am-model-opt[data-model="pro"] .am-model-opt-ic svg { width: 20px; height: 20px; display: block; }
   .am-model-opt[data-model="flash"] .am-model-opt-ic svg { width: 16px; height: 16px; display: block; }
@@ -2710,7 +2718,7 @@
      Rots -- im Dunkeln stand hier dasselbe dunkle #b0200c auf dunklem Grund. */
   .am-rec-note { max-width: 920px; margin: 8px auto 0; width: 100%; text-align: center; font-size: 12px; line-height: 1.4; color: var(--vt-down); display: none; }
   .am-rec-note.is-on { display: block; animation: amRecIn 160ms ease both; }
-  #ask-mira[data-theme="dark"] .am-rec-cancel:hover { background: #2f2f2f; }
+  #ask-mira[data-theme="dark"] .am-rec-cancel:hover { background: var(--up-sel-bg); }   /* Gray 200, vorher #2f2f2f */
   #ask-mira[data-theme="dark"] .am-rec-confirm:hover { background: #a0a0a0; box-shadow: none; }
   #ask-mira[data-theme="dark"] .am-rec-note { color: #e07068; }
   @media (max-width: 640px) {
@@ -3302,7 +3310,7 @@
   .am-dd-trigger:hover { border-color: var(--up-knopf-rand-hover); background: var(--am-soft); }
   .am-dd.is-open .am-dd-trigger,
   .am-dd.is-open .am-dd-trigger:hover { border-color: var(--up-knopf-rand-hover); background: var(--am-card); box-shadow: none; }
-  #ask-mira[data-theme="dark"] .am-dd-trigger:hover { background: #232326; }
+  /* Der Hover dunkel aus derselben Marke wie hell (--am-soft), vorher #232326 (15.10.). */
   #ask-mira[data-theme="dark"] .am-dd.is-open .am-dd-trigger,
   #ask-mira[data-theme="dark"] .am-dd.is-open .am-dd-trigger:hover { background: var(--am-card); box-shadow: none; }
   .am-dd-value { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -3328,8 +3336,9 @@
   }
   .am-dd-opt.is-selected .am-dd-check { background: var(--am-primary); border-color: var(--am-primary); color: #fff; }
   .am-dd-opt.is-selected .am-dd-check::before { content: "✓"; font-size: 11px; line-height: 1; }
-  #ask-mira[data-theme="dark"] .am-dd-opt:hover { background: #232326; }
-  #ask-mira[data-theme="dark"] .am-dd-opt.is-selected { background: #252525; }
+  /* Dunkel nach Geist (15.10.): Hover Gray 100, gewaehlt Gray 200 -- die Stufen jedes Menues. */
+  #ask-mira[data-theme="dark"] .am-dd-opt:hover { background: var(--vt-row-hover-solid); }
+  #ask-mira[data-theme="dark"] .am-dd-opt.is-selected { background: var(--up-sel-bg); }
   #ask-mira[data-theme="dark"] .am-dd-opt.is-selected .am-dd-check { background: #e0e0e0; border-color: #e0e0e0; color: var(--vc-text-invert); }
   .am-newchat:hover { background: var(--am-soft); }
   #ask-mira .am-newchat .am-ic { width: 14px; height: 14px; }
@@ -3856,19 +3865,21 @@
     background-size: 44px 44px;
   }
   #ask-mira[data-theme="dark"] .am-bubble tbody tr:nth-child(even) td { background: rgba(255,255,255,0.022); }
-  #ask-mira[data-theme="dark"] .am-ev-pill { background: transparent; border-color: #23252a; color: var(--am-muted-2); }
-  #ask-mira[data-theme="dark"] .am-ev-pill:hover { background: #1e1e1e; border-color: #555; }
+  /* Rand und Hover aus den Marken (15.10.): vorher Linears border-primary #23252a, auf dem neuen
+     Grund nicht mehr zu sehen, und ein Hover in #1e1e1e mit #555. */
+  #ask-mira[data-theme="dark"] .am-ev-pill { background: transparent; color: var(--am-muted-2); }
+  #ask-mira[data-theme="dark"] .am-ev-pill:hover { background: var(--am-soft); border-color: var(--up-chip-rand-hover); }
 
   /* Inline markers — dark mode. Explicit data-theme only; the OS-preference twins that used
      to sit next to every one of these are gone, see the token block above. */
-  #ask-mira[data-theme="dark"] .am-bubble blockquote { border-left-color: #28282c; }
+  #ask-mira[data-theme="dark"] .am-bubble blockquote { border-left-color: var(--am-border); }   /* Gray 400, vorher #28282c */
   #ask-mira[data-theme="dark"] .am-bubble span[data-mira-sentiment="positive"]    { background: rgba(34,197,94,0.12);  color:#86efac; }
   #ask-mira[data-theme="dark"] .am-bubble span[data-mira-sentiment="negative"]    { background: rgba(248,113,113,0.18); color:#fecaca; }
   #ask-mira[data-theme="dark"] .am-bubble span[data-mira-source-signal="likely"]  { background: rgba(96,165,250,0.12);  color:#bfdbfe; }
   #ask-mira[data-theme="dark"] .am-bubble span[data-mira-source-signal="unclear"] { background: rgba(251,191,36,0.13);  color:#fde68a; }
 
   /* Dark-mode hover / focus parity with prompt research */
-  #ask-mira[data-theme="dark"] .am-icon-action[aria-expanded="true"] { background: #242424; color: var(--am-text); }
+  #ask-mira[data-theme="dark"] .am-icon-action[aria-expanded="true"] { background: var(--up-sel-bg); color: var(--am-text); }   /* Gray 200, vorher #242424 */
   /* topic chips — dark mode (1:1 with the Opportunities page: white text, deeper tints) */
   /* Die dunkle Fassung von .uo-tag ist mit dem Chip selbst entfallen (22.09.) --
      .up-topicchip bringt sein dunkles Thema aus core mit. */

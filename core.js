@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261138;
+  var BUILD = 20261139;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -607,6 +607,16 @@
       }
       if (th === "light") document.documentElement.setAttribute("data-up-hell", "grau");
       else document.documentElement.removeAttribute("data-up-hell");
+      /* DAS GEGENSTUECK FUERS DUNKEL (15.10., "Dark nach Geist"): dieselbe Aufteilung wie im grauen
+         Hell -- Seite, Seitenleiste und Leisten in Geists Background 2 (#000), Inhalt in Background 1
+         (#0a0a0a). Die Werte stehen in core.css an jedem [data-theme="dark"]; das Attribut braucht
+         es fuer zwei Dinge, die eine Wurzel nicht erreicht: den Seitengrund (html/body, den sonst das
+         Kopf-Skript in #101114 malt) und die Regeln, die Inhaltsflaechen vom Seitengrund trennen.
+         Ein EIGENER Name und kein zweiter Wert von data-up-hell: das Attribut heisst "hell", und
+         Regeln, die nur sein Fehlen pruefen, sollen nicht still eine zweite Bedeutung bekommen.
+         Nicht auf der Landingpage (Ruecksprung oben), genau wie das graue Hell. */
+      if (th === "dark") document.documentElement.setAttribute("data-up-dunkel", "geist");
+      else document.documentElement.removeAttribute("data-up-dunkel");
     } catch(e){}
   }
   hellAnwenden();
@@ -16409,7 +16419,8 @@
     if (!selectedKeys.length) return prepped;
     var selSet = {};
     selectedKeys.forEach(function(k){ selSet[k] = true; });
-    var grey = isDark ? "#28282c" : "#e4e2e4";
+    /* Dunkel Geists Gray 300 (15.10.; vorher Linears #28282c, eine Stufe Blaustich). */
+    var grey = isDark ? "#292929" : "#e4e2e4";
     return prepped.map(function(it){
       return (it.key != null && selSet[it.key]) ? it : { key: it.key, name: it.name, share: it.share, color: grey, __dimmed: true, __realColor: it.color };
     });
@@ -16866,15 +16877,21 @@
          liegt, ist in dieser Leiter heller; #232326 ist dieselbe Flaeche, die jedes Dropdown
          traegt, und der Rahmen dazu ist derselbe (--up-menu-border, #3e3e44). Im Hellen bleibt
          alles wie es war. */
-      var boxBg = dark ? "#232326" : "#ffffff";
-      /* Rahmen der schwebenden Schicht: border-tertiary in beiden Themen (#3e3e44 / #dcdbdd). */
-      var boxBorder = dark ? "border:1px solid #3e3e44;" : "border:1px solid #dcdbdd;";
+      /* Seit dem 15.10. (Dunkel nach Geist) im Dunkeln die Marken statt der Linear-Werte: der
+         Tooltip ist dieselbe schwebende Schicht wie ein Menue, und die Marken stehen am Chart, in
+         dem er haengt. Im Hellen unveraendert die Werte von bisher. */
+      var boxBg = dark ? "var(--up-menu-bg)" : "#ffffff";
+      /* Rahmen der schwebenden Schicht: --up-menu-border dunkel, #dcdbdd hell. */
+      var boxBorder = dark ? "border:1px solid var(--up-menu-border);" : "border:1px solid #dcdbdd;";
       /* Die Tiefe aus der Skala (e-2: haengt an einem Ausloeser, wie .up-tip und die Erklaerkarte).
          Hier stand bis zum 06.10. ein eigener Wert je Thema (0 4px 14px .10/.25). Das Token loest
          sich am Ort auf: der Tooltip haengt im Chart, also unter der Wurzel mit ihrem Thema. */
       var boxShadow = "box-shadow:var(--up-e-2);";
-      var textColor = dark ? "#e6e6e6" : "#1f1f1b";
-      var mutedColor = dark ? "#8a8a8a" : "#6b6f78";
+      /* Dunkel die Schriftstufen der App (15.10.) statt eines dritten Weiss (#e6e6e6) und eines
+         Graus, das es sonst nirgends gab (#8a8a8a) -- hell sind es buchstabengleich --vc-text und
+         --vc-third. */
+      var textColor = dark ? "var(--vc-text)" : "#1f1f1b";
+      var mutedColor = dark ? "var(--vc-third)" : "#6b6f78";
       var dayLabel = chart.data.labels[dps[0].dataIndex];
       dps = dps.slice().sort(function(a, b){ return b.parsed.y - a.parsed.y; });
       var ff = "Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial";
@@ -18332,10 +18349,13 @@
                  sehen beide Charts das erste Mal gleich aus. */
     function themeColors(){
       return isDark()
-        ? { text:"#e0e0e0", muted:"#a0a0a0", border:"#34343a", bg:"#1c1c1f", grid:"rgba(255,255,255,0.09)" }
+        ? { text:"#e0e0e0", muted:"#a0a0a0", border:"#2e2e2e", bg:"#0a0a0a", grid:"rgba(255,255,255,0.09)" }
         /* bg ist die FUELLUNG der Datenpunkte, also die Farbe der Karte, auf der das Chart liegt
-           -- im Dunkeln #1c1c1f, im Hellen seit dem 07.09. #f9f8f9 und nicht mehr Weiss. Ein
-           weisser Punktkern auf einer getoenten Karte waere ein heller Fleck in jeder Linie. */
+           -- im Dunkeln seit dem 15.10. Geists Background 1 (#0a0a0a, vorher #1c1c1f: ein grauer
+           Ring in jeder Linie auf dem neuen Grund), im Hellen seit dem 07.09. #f9f8f9 und nicht
+           mehr Weiss. Ein weisser Punktkern auf einer getoenten Karte waere ein heller Fleck in
+           jeder Linie. Die Achse dunkel Geists Default border #2e2e2e (vorher #34343a), das Raster
+           bleibt 9 % Weiss -- das ist Geists Gray Alpha 200 und auf #0a0a0a #1f1f1f, Gray 200. */
         : { text:"#1f1f1b", muted:"#6b6f78", border:"#e4e2e4", bg:"#ffffff", grid:"rgba(0,0,0,0.09)" };
     }
     function clearExtras(){
@@ -18961,17 +18981,17 @@
         kSub = el.querySelector(".up-tt-sub"); kVal = el.querySelector(".up-tt-val");
         kDot = el.querySelector(".up-tt-dot"); kLbl = el.querySelector(".up-tt-lbl");
       }
-      var textColor = dark ? "#e6e6e6" : "#1f1f1b";
+      var textColor = dark ? "var(--vc-text)" : "#1f1f1b";   /* wie am Linien-Tooltip (15.10.) */
       /* Die Farben MUESSEN nachgezogen werden -- einmalig beim Anlegen liess den Tooltip auf dem
          Theme haengen, das beim ersten Zeigen gerade galt. Nur eben nicht bei jeder Bewegung,
          sondern beim Wechsel. */
       if (letztesTheme !== (dark ? "d" : "l")){
         letztesTheme = dark ? "d" : "l";
         /* Dieselbe Korrektur wie am Linien-Tooltip weiter oben: Menueflaeche statt Seitengrund. */
-        var boxBg = dark ? "#232326" : "#ffffff";
-        var boxBorder = dark ? "border:1px solid #3e3e44;" : "border:1px solid #dcdbdd;";
+        var boxBg = dark ? "var(--up-menu-bg)" : "#ffffff";
+        var boxBorder = dark ? "border:1px solid var(--up-menu-border);" : "border:1px solid #dcdbdd;";
         var boxShadow = "box-shadow:var(--up-e-2);";   /* wie am Linien-Tooltip oben */
-        var mutedColor = dark ? "#8a8a8a" : "#6b6f78";
+        var mutedColor = dark ? "var(--vc-third)" : "#6b6f78";
         kBox.style.cssText = "background:" + boxBg + ";color:" + textColor + ";" + boxBorder + "border-radius:var(--up-r-l);padding:12px 14px;font-family:Geist,system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:13px;line-height:1.35;" + boxShadow + "white-space:nowrap;";
         kTitle.style.cssText = "display:flex;align-items:center;gap:6px;font-weight:600;margin-bottom:6px;";
         kSub.style.cssText = "color:" + mutedColor + ";font-size:11px;";

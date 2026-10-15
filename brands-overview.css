@@ -194,7 +194,11 @@
    das seit dem 07.09. so; hier stand noch der Wert fuer Rahmen AUF Karten, und in einem Fall
    sogar noch border-primary aus der Zeit vor Linears Leiter. Eine Schicht, die ueber allem
    schwebt, braucht die kraeftigere Kante -- sonst loest sie sich gegen die Seite auf. */
-.ubo-mxtip[data-theme="dark"] { --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #3e3e44; --vc-bg: #1c1c1f;
+/* Seit dem 15.10. (Dunkel nach Geist) Grund und Rand aus den Marken einer schwebenden Schicht
+   (core, dunkler Block an :root -- er erreicht dieses Element, weil es data-theme selbst traegt)
+   statt einer Kopie der Linear-Werte: Background 1 und Gray 500. */
+/* Schrift im Dunkeln nach Geist (16.10.): Wert fuer Wert getauscht (#e0e0e0 -> #ededed, #a0a0a0 -> #a1a1a1), Flaeche am <body> mit eigener Leiter. */
+.ubo-mxtip[data-theme="dark"] { --vc-text: #ededed; --vc-muted: #a1a1a1; --vc-border: var(--up-menu-border); --vc-bg: var(--up-menu-bg);
   --vt-logo-bg: #e0e0e0; --vc-third: #808080; }
 .ubo-mxtip * { box-sizing: border-box; }
 .ubo-mxtip-head { display: flex; align-items: center; gap: 8px; }
@@ -267,8 +271,14 @@
   display: flex; flex-direction: column; gap: 2px;
 }
 .ubo-actmenu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-.ubo-actmenu[data-theme="dark"] { --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #3e3e44;
-  --vc-bg: #1c1c1f; --vc-heading-bg: #232326; --up-sel-bg: #232326; }
+/* Dunkel nach Geist (15.10.): Grund und Rand wie jedes Menue, Hover Gray 100 und Auswahl Gray 200
+   -- vorher beide #232326, also kein Unterschied zwischen ueberfahren und gewaehlt. Alle vier aus
+   Marken des dunklen Blocks an :root, die dieses Element erreicht; die zwei Flaechen ueber die
+   gleichwertigen Marken (Hover einer Zeile, gewaehlter Chip), weil die helle Grundregel oben
+   --vc-heading-bg und --up-sel-bg selbst setzt und ein Verweis auf sich selbst ungueltig waere. */
+/* Schrift im Dunkeln nach Geist (16.10.): Wert fuer Wert getauscht (#e0e0e0 -> #ededed, #a0a0a0 -> #a1a1a1), Flaeche am <body> mit eigener Leiter. */
+.ubo-actmenu[data-theme="dark"] { --vc-text: #ededed; --vc-muted: #a1a1a1; --vc-border: var(--up-menu-border);
+  --vc-bg: var(--up-menu-bg); --vc-heading-bg: var(--vt-row-hover-solid); --up-sel-bg: var(--up-chip-an); }
 .ubo-actmenu * { box-sizing: border-box; }
 @media (prefers-reduced-motion: reduce){ .ubo-actmenu { transition-duration: 1ms; } }
 

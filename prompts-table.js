@@ -121,7 +121,11 @@
            0 14px 34px, dunkel .6). Das Token erreicht das Popup am <body>, seit die Tiefen in core
            an :root und [data-theme="dark"] stehen, und dreht mit dessen data-theme -- darum steht
            in der Dunkel-Regel kein Schatten mehr. */
-        '.ust-topics-popup[data-theme="dark"]{background:#232326;border-color:#3e3e44;}'
+        /* Seit dem 15.10. Geists dunkle Skala (core.css "DAS DUNKEL NACH GEIST"): Grund und Rand
+           eines Popovers sind --up-menu-bg (Background 1) und --up-menu-border (Gray 500); das
+           Popup haengt am <body> mit eigenem data-theme, dort stehen beide Marken. Vorher Linears
+           #232326 und #3e3e44 -- daneben jedes andere Menue in Geists Toenen. */
+        '.ust-topics-popup[data-theme="dark"]{background:var(--up-menu-bg,#0a0a0a);border-color:var(--up-menu-border,#454545);}'
       ].join('');
       document.head.appendChild(style);
 
