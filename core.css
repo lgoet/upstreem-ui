@@ -3395,6 +3395,15 @@
     .up-root.up-root[data-flach="yes"].up-sticky .up-thead::before,
     .up-root.up-root[data-flach="yes"].up-sticky .up-thead::after { display: none; }
     .up-root.up-root[data-flach="yes"].up-sticky .up-tbody { border-width: 0; border-radius: 0; }
+    /* Die klebende Leiste laeuft mit aus (Bestandsaufnahme 15.10.): ihr deckender Grund und der
+       Deckstreifen darueber (.is-geklebt .up-head::before, left/right 0) reichten nur so breit
+       wie die Wurzel -- ohne feste Hoehe scrollten die Zeilen des ausgelaufenen Kastens in den
+       16px links und rechts sichtbar neben der angehefteten Leiste durch. Das Polster gibt den
+       Platz zurueck, der Inhalt der Leiste bleibt, wo er war. */
+    .up-root.up-root[data-flach="yes"].up-sticky .up-head {
+      margin-left: calc(-1 * var(--up-flach-aus)); margin-right: calc(-1 * var(--up-flach-aus));
+      padding-left: var(--up-flach-aus); padding-right: var(--up-flach-aus);
+    }
     /* Der Fuss: 48 hoch direkt unter der unteren Linie, links mit auslaufend auf der Kante der
        ersten Zelle (12), die Knoepfe in der 28er Form (--up-h-seg), je 10 darueber und darunter.
        Umgebrochen (core zentriert dann) ohne den Auszug, er schob die Mitte um 8px. */

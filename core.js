@@ -14923,6 +14923,10 @@
           });
         } catch(e){}
       }
+      /* Kasten ausgeblendet (etwa die Kartenansicht der Responses-Tabelle): dann gibt es nichts
+         zu deckeln, und seine Kanten waeren 0 -- eine Messung daran ergaebe Unsinn. Die
+         Komponente ruft planen() nach dem Zurueckschalten. */
+      if (!box.getClientRects().length){ aus(); return; }
       var sc = scroller();
       if (!sc){ aus(); return; }
       var scR = sc.getBoundingClientRect();
