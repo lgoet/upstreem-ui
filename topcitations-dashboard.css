@@ -161,6 +161,8 @@
 .tct-th:last-child { border-right: none; }
 .tct-tbody { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .tct-row { height: 55px; flex: 0 0 55px; cursor: pointer; }
+/* Der Leerzustand (UC.tabelleLeerHtml, 15.10.) rechnet in DIESEN Zeilen: acht Skelettzeilen zu 55. */
+.up-root.tcd-root .tct-table > .up-tab-leer { --up-tab-leer-zeile: 55px; }
 .tct-row:hover, .tct-row.is-hl { background: var(--vt-row-hover); }
 .tct-td { height: 100%; display: flex; align-items: center; gap: 12px; padding: 0 16px 0 8px; min-width: 0;
   border-right: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border); }

@@ -222,6 +222,8 @@
    every other one. Nothing table-shaped gets redeclared here again; only the two genuinely
    component-specific things below (row height, and the index/actions cells) are local. */
 .ubo-root .up-row { height: 56px; flex: 0 0 56px; }
+/* Der Leerzustand (UC.tabelleLeerHtml, 15.10.) rechnet in DIESEN Zeilen: sieben Skelettzeilen zu 56. */
+.up-root.ubo-root .ubo-table > .up-tab-leer { --up-tab-leer-zeile: 56px; }
 /* Die drei Regeln fuer die "#"-Spalte stehen jetzt in core.css (.up-th-idx / .up-td-idx),
    seit discover-brands als zweite Tabelle dieselbe Spalte hat. */
 .ubo-root .up-th-act, .ubo-root .up-td-act { padding: 0; justify-content: center; }

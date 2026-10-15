@@ -107,6 +107,14 @@
     var s = str(u).trim();
     return /^data:image\/(png|jpe?g|gif|webp|svg\+xml)[;,]/i.test(s) ? s : sichereUrl(s);
   }
+  /* Der Export-Knopf der Leisten: dasselbe Markup wie in Prompt Insights und den Tabellen
+     (.up-export aus core, Feather "download"). Nicht UC.icon("download") -- das ist ein anderes
+     Zeichen, und der Knopf soll auf jeder Seite gleich aussehen. */
+  function exportKnopfHtml() {
+    return '<button class="up-export ush-export" type="button" aria-label="' + esc(t("Export")) + '"><svg viewBox="0 0 24 24" aria-hidden="true">' +
+      '<path d="M12 15V3" /><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="m7 10 5 5 5-5" /></svg>' +
+      '<span>' + esc(t("Export")) + '</span></button>';
+  }
 
   /* ---- Zahlen, wie sie die Uebergabe festlegt (Abschnitt 4) --------------------------------
      Prozent mit einer Stelle, Position mit einer Stelle hinter der Raute, Anzahlen ganz. */
@@ -480,6 +488,9 @@
         '<div class="up-root utf-root" data-instance="' + esc(idTopics) + '" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
         '<div class="up-root umf-root" data-instance="' + esc(idModelle) + '" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
         '<div class="up-root umk-root" data-instance="' + esc(idMaerkte) + '" data-local="yes" data-isdark="' + (isDark() ? "yes" : "no") + '"></div>' +
+        /* EXPORT rechts in der Filterzeile (16.10.), Form wie in Prompt Insights (.up-export aus
+           core). Nicht auf der Landingpage (ohneAdresse): dort gibt es keinen Export-Dialog. */
+        (ohneAdresse ? '' : exportKnopfHtml()) +
       '</div>' +
       '<div class="ush-main"></div>';
     var elMain = root.querySelector(".ush-main"), elNav = root.querySelector(".ush-nav");
@@ -1676,6 +1687,18 @@
     function skelettZeilen(n, spalten) {
       return UC.skeletonRows ? UC.skeletonRows({ count: n, rowClass: "up-row", cellClass: "up-td", cols: spalten }) : "";
     }
+    /* EINE LEERE TABELLE NEBEN DEN CHARTS (15.10., "Empty State: JA"): Kopf wie beim Skelett, darunter
+       der Leerzustand der Charts aus core (UC.tabelleLeerHtml) in der Flaeche der n Skelettzeilen --
+       zwischen Laden und Leer springt nichts. Vorher ein Kasten ohne Kopf mit einem Satz (70 hoch).
+       Der Zustand steht NEBEN dem Spaltenscroller, nicht in ihm: ist die Tabelle breiter als ihr
+       Kasten, saesse er sonst mittig ueber der ganzen Scrollbreite statt ueber dem Sichtbaren.
+       Gefiltert wie die Charts der Seite (filterAktiv). */
+    function tabelleLeer(name, n, o) {
+      if (!UC.tabelleLeerHtml) return '<div class="up-box">' + UC.leerHtml({ mini: true, titel: o.alt }) + '</div>';
+      return '<div class="up-box ush-box"><div class="up-colscroll"><div class="up-colscroll-innen">' +
+          '<div class="up-thead">' + kopfAus(name) + '</div></div></div>' +
+        UC.tabelleLeerHtml({ icon: o.icon, text: o.text, gefiltert: filterAktiv(), zeilen: n }) + '</div>';
+    }
     function fehlerKasten(a, was) {
       var code = fehlerVon(a);
       var titel = was === "detail" ? "This product could not be loaded" : "Shopping data could not be loaded";
@@ -1911,7 +1934,7 @@
       if (!d) { platz.innerHTML = tabelleHtml(kopfAus("landscape"), skelettAus("landscape", 5)); spaltenAnwenden("landscape"); return; }
       var meta = d.meta;
       var l = (isArr(d.brands) ? d.brands : []).filter(function (b) { return b && typeof b === "object" && !(b.type === "own" && eigeneOhneTreffer(meta)); }).slice(0, 6);
-      if (!l.length) { platz.innerHTML = '<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No brands yet" }) + '</div>'; return; }
+      if (!l.length) { platz.innerHTML = tabelleLeer("landscape", 5, { icon: "squareStack", alt: "No brands yet" }); spaltenAnwenden("landscape"); return; }
       platz.innerHTML = tabelleHtml(kopfAus("landscape"), l.map(function (b) { return markeZeileOv(b, meta); }).join(""), "ush-klickbar");
       spaltenAnwenden("landscape");
     }
@@ -1935,7 +1958,7 @@
       var platz = vorschauPlatz(el, "topprodukte", sekKopf("Top Products", t("Most visible products across all brands"), mehrKnopf("View all products", "products")));
       if (!d) { platz.innerHTML = tabelleHtml(kopfAus("topprodukte"), skelettAus("topprodukte", 5)); spaltenAnwenden("topprodukte"); return; }
       var l = (isArr(d.top_products) ? d.top_products : []).filter(function (p) { return p && typeof p === "object" && str(p.source_product_id).trim(); }).slice(0, 10);
-      if (!l.length) { platz.innerHTML = '<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No products yet" }) + '</div>'; return; }
+      if (!l.length) { platz.innerHTML = tabelleLeer("topprodukte", 5, { icon: "stackStar", alt: "No products yet" }); spaltenAnwenden("topprodukte"); return; }
       platz.innerHTML = tabelleHtml(kopfAus("topprodukte"), l.map(function (p) {
         return '<div ' + produktZeile(p) + '>' +
           '<div class="up-td">' + produktZelle(p, d.meta) + '</div>' +
@@ -2778,7 +2801,12 @@
       var platz = vorschauPlatz(el, "dhaendler", sekKopf("Merchants", "", "", "merchant"));
       if (!d) { platz.innerHTML = tabelleHtml(kopfAus("dhaendler"), skelettAus("dhaendler", 3)); spaltenAnwenden("dhaendler"); return; }
       var l = (isArr(d.merchants) ? d.merchants : []).filter(function (m) { return m && typeof m === "object"; });
-      if (!l.length) { platz.innerHTML = '<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No merchants were listed with this product." }) + '</div>'; return; }
+      if (!l.length) {
+        platz.innerHTML = tabelleLeer("dhaendler", 3, { icon: "store", text: "No merchants were listed with this product.",
+                                                        alt: "No merchants were listed with this product." });
+        spaltenAnwenden("dhaendler");
+        return;
+      }
       platz.innerHTML = tabelleHtml(kopfAus("dhaendler"), l.map(function (m) {
         var n = haendlerName(m.merchant_name), p = letzterPreis(m.latest_price), sp = preisSpanne(m.price_ranges);
         return '<div class="up-row ush-zeile"' + (n ? ' data-haendler="' + esc(n) + '" role="link" tabindex="0"' : '') + '>' +
@@ -2805,7 +2833,11 @@
         return;
       }
       var rows = ap && isArr(ap.rows) ? ap.rows.filter(function (r) { return r && typeof r === "object"; }) : [];
-      if (!rows.length) { tabInhalt('<div class="up-box">' + UC.leerHtml({ mini: true, titel: "No appearances in this range." }) + '</div>'); pagerSetzen("detail", 0); return; }
+      if (!rows.length) {
+        tabInhalt(tabelleLeer("detail", 5, { icon: "messageCircle", text: "No appearances in this range.", alt: "No appearances in this range." }));
+        spaltenAnwenden("detail"); pagerSetzen("detail", 0);
+        return;
+      }
       var html = tabelleHtml(kopf, rows.map(function (r) {
         var topics = (isArr(r.topics) ? r.topics : []).map(function (x) { return str(x).trim(); }).filter(Boolean);
         /* null heisst Einzelkarte (Uebergabe 7.3); ein Wert, der keine Platzierung sein kann, ist
@@ -2840,6 +2872,60 @@
       spaltenAnwenden("detail");
       pagerSetzen("detail", vorige.aufTotal);
     }
+
+    /* ---- Export (16.10.) ---------------------------------------------------------------------
+       Der Knopf oeffnet den Export-Dialog der App (export-data.js) mit den Datensaetzen von
+       Shopping, vorgewaehlt nach Reiter, und gibt ihm Zeitraum und Filter der Seite mit. Die
+       Parameter je Datensatz sind die der Liste (Auftrag bubble/shopping_ads_export_db_auftrag_16_10.md)
+       ohne Team und Zeitraum -- die setzt der Dialog aus seiner eigenen Auswahl. Was die Filterzeile
+       gerade NICHT zeigt, geht nicht mit: die Filter der Produkttabelle und jede Suche nur auf ihrem
+       Reiter, wie die Chips. Ob es die Funktionen schon gibt, prueft der Dialog selbst. */
+    function exportKennung() {
+      var k = str(root.getAttribute("data-export-instance")).trim();
+      if (k && !/^[A-Z_]{3,}$/.test(k)) return k;
+      var e = document.querySelector(".uex-root[data-instance]");
+      k = e ? str(e.getAttribute("data-instance")).trim() : "";
+      return k && !/^[A-Z_]{3,}$/.test(k) ? k : "";
+    }
+    function exportKontext() {
+      var s = state.seite, f = state.filter, tb = state.products, aufProd = s === "products";
+      var grund = grundBody();
+      delete grund.p_team; delete grund.p_date_from; delete grund.p_date_to;
+      function neu(extra) { return mit(mit({}, grund), extra || {}); }
+      var prod = aufProd ? {
+        p_segment: { you: 1, competition: 1, other: 1 }[tb.seg] ? tb.seg : null,
+        p_search: suchText(tb.suche), p_merchant: tb.haendler ? str(tb.haendler) : null,
+        p_company_id: tb.marke && tb.marke.id ? str(tb.marke.id) : null } : {};
+      var detail = s === "detail" && state.produktId;
+      var basis = filterAktiv();
+      return {
+        export_type: { products: "shop_products", brands: "shop_brands", merchants: "shop_merchants", detail: "shop_appearances" }[s] || "shop_products",
+        date_from: f.von || "", date_to: f.bis || "", preset: f.preset || "",
+        params: {
+          shop_products: neu(mit(mit({}, prod), { p_order: orderOf("products", tb) })),
+          shop_brands: neu({ p_search: s === "brands" ? suchText(state.brands.suche) : null, p_order: orderOf("brands", state.brands) }),
+          shop_merchants: neu({ p_search: s === "merchants" ? suchText(state.merchants.suche) : null, p_order: orderOf("merchants", state.merchants) }),
+          /* Im Product Detail die Auftritte DIESES Produkts (die Tabelle Recent Appearances). */
+          shop_appearances: neu(detail ? { p_source_product_id: str(state.produktId) } : prod)
+        },
+        filter_aktiv: {
+          shop_products: basis || !!(prod.p_segment || prod.p_search || prod.p_merchant || prod.p_company_id),
+          shop_brands: basis || !!(s === "brands" && suchText(state.brands.suche)),
+          shop_merchants: basis || !!(s === "merchants" && suchText(state.merchants.suche)),
+          shop_appearances: basis || !!detail || !!(prod.p_segment || prod.p_search || prod.p_merchant || prod.p_company_id)
+        }
+      };
+    }
+    function exportOeffnen() {
+      var k = exportKennung(), auf = false;
+      if (k && typeof window.upstreemExportOpen === "function") {
+        try { auf = window.upstreemExportOpen(k, exportKontext()) !== false; } catch (e) { auf = false; }
+      }
+      /* Kein stilles Nichts: ohne Dialog auf der Seite sagt es der Knopf. */
+      if (!auf && UC.toast) UC.toast(t("Export isn't available on this page"), { kind: "neutral" });
+    }
+    var elExport = root.querySelector(".ush-export");
+    if (elExport) elExport.addEventListener("click", function (e) { e.preventDefault(); exportOeffnen(); });
 
     /* ---- Klicks ---------------------------------------------------------------------------------- */
     root.addEventListener("click", function (e) {

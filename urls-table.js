@@ -1277,6 +1277,10 @@
     }
     document.addEventListener("click", function(e){
       if (!ownsTarget(e.target)) return;   // portaled menus live in body now, so guard by ownership
+      /* FREMDE BAUSTEINE IN DER WURZEL (16.10., Variante A der Citations-Seite): der Chart steht
+         als Band zwischen Leiste und Kasten, Kalender und Filter der Seite in der Leiste. Ihre
+         Klicks gehoeren ihnen (wie in domains-table.js und prompts-table.js). */
+      if (e.target.closest && e.target.closest(".up-band, .up-leiste-scope .up-root, .up-ff")) return;
       /* Marked while the click is still inside the component. The document listener below can't
          work this out on its own: populateFilter()/populateCols() rebuild the menu via innerHTML,
          so by the time the event reaches document the clicked node is detached and

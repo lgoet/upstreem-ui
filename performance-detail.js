@@ -611,9 +611,11 @@
       }
       var rows = varRows();
       if (!rows.length){
-        elVBody.innerHTML = '<div class="up-empty-mini">' +
-          esc(t(state.varQuery ? "No variation matches this search." : "No variations recorded for this combination.")) +
-          '</div>';
+        /* Leer ueber dasselbe Kit wie die Zeilen (15.10.): variationRows([]) zeichnet den
+           Leerzustand der Charts in der Flaeche der Skelettzeilen, mit der Suche als Filter.
+           Vorher stand hier eine eigene "No data"-Zeile. */
+        elVBody.innerHTML = UC.variationRows([], { query: state.varQuery, rowClass: "up-vrow upd-vrow",
+                                                   emptyText: "No variations recorded for this combination." });
         seitenStand("var", null);
         return;
       }

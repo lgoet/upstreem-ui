@@ -252,6 +252,14 @@
       return UC.trendChip(delta, { decimals: decimals, inverted: inverted, suffix: suffix });
     }
     var ROW_GOTO = '<span class="up-row-goto">' + UC.GOTO_SVG + '</span>';
+    /* Leer: der Leerzustand des Charts daneben (15.10., UC.tabelleLeerHtml) statt des knappen "No
+       data" unter dem Kopf. Die Flaeche ist die der Skelettzeilen, im Band fuellt sie die Tabelle
+       bis unten; gefiltert wie die Kurve. Das Zeichen ist das des Spaltenkopfs (squareStack). */
+    function tabLeerHtml(){
+      return UC.tabelleLeerHtml
+        ? UC.tabelleLeerHtml({ icon: "squareStack", gefiltert: !!state.gefiltert, zeilen: UC.MAX_LINE_SERIES || 8 })
+        : '<div class="up-empty-mini">No data</div>';
+    }
     function renderTable(){
       var rows = Array.isArray(state.tableRows) ? state.tableRows : [];
       var head = tableHeadHtml();
@@ -263,7 +271,7 @@
         /* Lokaler Modus: keine Zwischenlieferungen, leer ist leer -- sofort (wie die Kurve oben). */
         if (isYes(root.getAttribute("data-local"))){
           if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
-          tableEl.innerHTML = head + '<div class="up-empty-mini">No data</div>';
+          tableEl.innerHTML = head + tabLeerHtml();
           return;
         }
         if (!tableEmptyGraceTimer){
@@ -271,7 +279,7 @@
           tableEmptyGraceTimer = setTimeout(function(){
             tableEmptyGraceTimer = null;
             if (state.loading || !state.hasTable || (Array.isArray(state.tableRows) && state.tableRows.length)) return;
-            tableEl.innerHTML = head + '<div class="up-empty-mini">No data</div>';
+            tableEl.innerHTML = head + tabLeerHtml();
           }, 600);   // matches this same file's line-chart __votNoDataT grace window
         }
         return;

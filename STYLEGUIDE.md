@@ -1189,6 +1189,31 @@ Filter eine Wurzel `.up-ff.up-ff-<key>` (unsichtbarer Trigger, Panel mit `.up-fi
 Zeilen mindestens 34 hoch, eigener Inhalt wie ein Regler in `.up-ff-panel` mit `12px 10px 14px`
 Polster). Der Zustand bleibt in der Tabelle; sie feuert dieselben Ereignisse wie vorher ihre Knöpfe.
 
+**Die Leiste über dem Band** (seit 16.10., Variante A der Leinwand „Citations Seitenaufbau“, für
+Citations und Brands › Tracked gewählt). Steht ein Chart über der Tabelle, steht die eine Leiste
+**über dem Chart**: Kalender und Filter gelten für Chart und Tabelle, und sie bleiben beim
+Scrollen greifbar. Es gibt keine eigene Filterzeile mehr und keine halbleere Werkzeugleiste der
+Tabelle.
+
+```
+Aufbau         in der Wurzel der Tabelle: Leiste (.up-head) – Band – Kasten
+               UC.bandUnterLeiste(root, band, { kopf }) stellt um, setzt .has-leistenband
+Filterzeile    die Seite hängt sie in .up-leiste-scope (display: contents, wie Prompt Insights)
+Reiterwechsel  Filterzeile und Band wandern zur Tabelle des Reiters (das Element, nicht eine
+               Kopie: Zustand und Handler bleiben); die Werkzeuge bleiben in ihrer Tabelle
+Kleben         makeSticky wie jede Tabelle, ab 1000 breit: Kopf, Reiter und Chart scrollen weg,
+               die Leiste klebt bei --up-sticky-top (16), der Spaltenkopf direkt darunter
+               (--up-thead-off = gemessene Höhe der Leiste), das Band scrollt dazwischen weg
+Linie          unter der Leiste NUR, solange sie klebt (.is-geklebt), eingeblendet (--up-t-2)
+Abstände       Leiste 16 unten, Band 16 unten; der Stapel der Wurzel fällt auf 0
+```
+
+Warum in der Wurzel der Tabelle und nicht als Leiste der Seite: Domains, URLs und Brands
+hängen Klicks, Suche, Tooltips und Menüs an ihre Wurzel (`ownsTarget`, `root.contains`); ein
+Werkzeug außerhalb wäre tot. Dafür ignorieren die drei Tabellen Klicks in fremden Bausteinen in
+ihrer Wurzel (`.up-band, .up-leiste-scope .up-root, .up-ff`, wie prompts-table.js) – sonst griffe
+etwa `[data-brand]` einer Markenzeile im Menü „Filters“ als Wahl der eigenen Markenliste.
+
 ---
 
 ## 8c. Zahlen in Zellen: rechtsbündig in fester Spur (seit 15.10.)
@@ -1303,6 +1328,33 @@ und Ads (Median des Preises, vom Nutzer so abgenommen).
 Der Schalter „Summary row“ steht im Display-Menü; Schalter und Wahl je Spalte werden je Nutzer
 gemerkt (`<praefix>_summe__<instanceId>`). Die Zellen tragen `up-sum-td-<Spalte>` und blenden
 mit ihren Spalten aus. Topics with Ads (Ads Overview) hat bewusst keine Gesamtzeile.
+
+**Der klebende Fuß** (`data-kleb-fuss="yes"` an der Wurzel, seit 16.10., zuerst Citations und
+Brands › Tracked). Gesamtzeile und Pagination kleben unten am Scrollbereich, **sobald die Tabelle
+den Bildschirm füllt** – also sobald ihr Spaltenkopf klebt. Solange Kopf, Reiter oder Chart zu
+sehen sind, stehen sie an ihrem Platz am Ende der Tabelle; am Ende geben sie von selbst dorthin
+zurück. Ein Scrollbereich, kein zweiter wie bei fester Höhe. Jede Tabelle mit `UC.makeSticky`
+bekommt ihn über das Attribut (applySticky richtet ihn ein, `UC.klebFuss(root)` direkt).
+
+```
+Wann           nur mit klebendem Kopf (.up-sticky, ab 1000 breit); darunter klebt nichts
+Herein         fängt die Tabelle an zu füllen, während ihr Ende unter dem Bild liegt: Fahrt von
+               unten, transform + opacity, --up-t-3 / --up-t-2, easeOutExpo (--up-ease-expo)
+Hinaus         füllt sie nicht mehr (zurück zum Chart): dieselbe Fahrt nach unten, ERST DANACH
+               zurück in den Fluss (dort liegt er unter dem Bild); Umkehr mittendrin kehrt von
+               der Stelle um (Übergänge, keine Keyframes)
+Ende           Wechsel ohne Bewegung (sticky selbst); beide Teile lösen sich im selben Bild
+Weg            --up-fuss-weg: Höhe beider Teile + 24, aber nie mehr als Inhalt unter ihrem Platz
+               steht (sonst verlängert die Fahrt die Seite, der Balken zuckt; gemessen 57px)
+Lage           Pagination bottom 0, Gesamtzeile darüber (--up-fuss-unter = Pagination + Linie);
+               die Linie dazwischen zeichnet die Pagination (0 -1px 0 --vc-border)
+Grund          deckend: Gesamtzeile wie bisher, Pagination --up-surface; sie läuft rechts mit aus
+Schatten       NUR wenn er wirklich klebt (.is-fuss-klebt; Marke .up-fuss-marke unter dem
+               Kasten liest den natürlichen Platz): --up-e-3 nach oben gespiegelt, auf dem
+               obersten Teil (ohne Gesamtzeile die Pagination, .is-fuss-ohne-summe)
+z              4 (unter Spaltenkopf 5 und Leiste 6)
+Bewegung aus   prefers-reduced-motion: dieselben Zustände ohne Fahrt
+```
 
 ---
 
@@ -1484,6 +1536,44 @@ demselben Grund dasselbe wie `meldung` — ältere Aufrufer, die dort einen Fehl
 zeigen weiter keinen Leerzustand. Gefiltert kommt aus `cfg.gefiltert()` der Bausteine; die
 Seiten (Dashboard, Brands, Citations) schicken dafür `gefiltert` im Payload, berechnet mit
 `UC.seitenFilterAktiv(f)` (Modelle, Märkte, Topics, Intent-Filter; der Zeitraum zählt nicht).
+
+### Die Tabellen-Fassung (`UC.tabelleLeerHtml`, seit 15.10.)
+
+Kleine Tabellen und Listen neben einem Chart tragen denselben Zustand wie der Chart, nicht mehr
+das knappe „No data" (`.up-empty-mini`). `UC.tabelleLeerHtml({ titel, text, icon, gefiltert,
+zeilen })` ist `chartLeerHtml` in einer Hülle, die der absoluten Fläche ihre Höhe gibt.
+
+```
+Text       wie im Chart: "No data yet" / gefiltert "No matching data" mit Lupe; ein Satz, den
+           die Tabelle genauer kennt, wird der Satz ("No variations recorded for this brand.")
+Fläche     .up-tab-leer: min-height = zeilen x Zeilenhöhe, also genau die Fläche des Skeletts
+           davor (kein Sprung zwischen Laden und Leer); flex 1, in einem Band fester Höhe bis an
+           dessen Unterkante. Ohne zeilen 4 (220, volle Form)
+Zeile      --up-tab-leer-zeile: 72 wie .up-row, dicht (is-dense) und .up-vrow 55 (--up-h-row);
+           eigene Zeilen setzt die Komponente: Top Brands und Top Citations 55, Brands Overview
+           56, Agentic-Listen 36
+Größe      die Stufen der Chart-Fassung: ab 220 voll, darunter Zeichen und Titel, unter 130 nur
+           der Titel, unter 280 breit ohne Satz
+Kopf       bleibt stehen wie beim Skelett. In Shopping und Ads steht der Zustand NEBEN dem
+           Spaltenscroller (Kopf darin, Zustand darunter im Kasten): bei 375 ist der Kopf dort
+           bis 1096 breit, der Zustand sitzt mittig über dem Sichtbaren
+Zeichen    das des Spaltenkopfs bzw. der Sache: squareStack (Marken, Varianten), domain
+           (Domains/URLs), stackStar (Produkte), store (Händler), messageCircle (Auftritte),
+           tags (Topics), zap (Prompts)
+```
+
+Verwender: Top Brands (visibility-chart), Top Domains/URLs (topcitations-dashboard), Brands
+Overview (auch Suche und Reiter Inactive, dort ohne Satz), die zwei Agentic-Listen
+(power-dashboard), Brand Landscape, Top Products, Merchants und Recent Appearances (shopping),
+Topics with Ads und Prompts des Werbetreibenden (ads), die Variantentabelle (`UC.variationRows`
+in brand-detail und performance-detail). Die Ads-Kacheln des Werbetreibenden tragen den vollen
+`UC.leerHtml` wie „Recent Ads" der Übersicht (Kacheln, keine Zeilen). Lesefehler und der
+Widerspruch zum Zähler in Top Citations bleiben der knappe Text.
+
+`makeColumns` stempelt seit demselben Tag auch den Kopf (`data-up-colsig` an `.up-thead`):
+eine Tabelle, die im Leerzustand nur ihren Kopf neu zeichnet, hat keine Zeile, an der die
+Prüfung „ungestempelt" anschlagen könnte, und zeigte bei 375 alle Kopfzellen (Brands: sechs
+Zellen auf vier Spuren, zweite Rasterzeile).
 
 ---
 
@@ -2293,11 +2383,14 @@ Komponente wirklich zusätzlich hat (eine Zeilenhöhe, eine Index-Zelle, ein Act
 | Suche (Slide-out, Debounce, requestId-Schutz) | `UC.makeSearch({root, box, input, state, prefix, onRender, onFire, …})` |
 | Skelett-Zeilen, Trend-Chip, Leer-Schonfrist, Spalten-Erklärer | `UC.skeletonRows`, `UC.trendChip`, `UC.makeEmptyGrace`, `UC.makeExplain` |
 | Leerzustand nach Geist (9a) | `UC.leerHtml({ gefiltert, was, icon, titel, text, knopf, mini })` |
+| Leerzustand im Chart / in der Tabelle daneben (9a) | `UC.chartLeerHtml({ titel, text, icon, gefiltert, fluss })`, `UC.tabelleLeerHtml({ …, zeilen })` |
 | Sentiment (Balken + Zahl) | `UC.sentHtml(v)`, Farbe `UC.sentColor(v)` |
 | Themenschalter (5) | `UC.themeSchalterHtml({ klein, wahl })` |
 | Kopfzeichen im Spaltenkopf (8a) | `UC.kopfZeichenHtml(name)`, `UC.kopfZeichen(th, name)` |
 | Filter der einen Leiste (8b) | `UC.makeLeistenFilter(root, { instanceId, arten })` |
 | Feste Höhe der flachen Tabelle (8a) | `UC.makeFestHoehe(root, { min, kopf, fuss })` |
+| Leiste über dem Band (8b) | `UC.bandUnterLeiste(root, band, { kopf })` |
+| Klebender Fuß (8e) | `data-kleb-fuss="yes"` an der Wurzel (mit `UC.makeSticky`), direkt `UC.klebFuss(root)` |
 | Gesamtzeile (8e) | `UC.makeZaehlZeile({ root, nach, praefix, instanceId, spalten, laedt, anzahl, rechnen, quelle, cols })`, darunter `UC.makeSumZeile`, `UC.sumPaarHtml` |
 | Offenes Band (8f) | `UC.bandTeile(band, teile)` (mit `teile.auge`), `UC.bandAus(band, aus, { id, setzen })` setzt den Umschalter im Seitenkopf, `UC.bandSchalterHtml({ aus, id, klein })`, `UC.bandAusGemerkt(id)`, `UC.bandAusMerken(id, aus)` |
 | Bubble-Klempnerei: Root-Registry, iframe-Forwarder, Wheel, Init-Kaskade, Stub-Replay | `UC.makeMount({rootClass, ctrlProp, resolveLocal, queue, initRoot, api, forwardShape})` |
