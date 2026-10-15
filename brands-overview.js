@@ -489,6 +489,7 @@
          noch da, wenn danach wieder echte Daten gezeichnet werden -- und ein zweites empty()
          haengte einen zweiten Kasten darunter. */
       var em = wrap.querySelector(".up-line-empty"); if (em) em.parentNode.removeChild(em);
+      var lz = wrap.querySelector(".up-chart-leer"); if (lz) lz.parentNode.removeChild(lz);
     }
     function skeleton(){
       destroy();
@@ -496,11 +497,22 @@
     }
     /* Gegenstueck zu skeleton(): der Zustand "es kam etwas an, aber es war unlesbar". Ohne das
        gab es im Landscape-Modus nur Skelett oder Zeichnung -- ein zerrissener Payload haette
-       also weitergeladen. Gleicher Kasten und gleiche Klasse wie in UC.makeLine.empty. */
-    function empty(msg){
+       also weitergeladen. Gleicher Kasten und gleiche Klasse wie in UC.makeLine.meldung. */
+    function meldung(msg){
       destroy();
       wrap.classList.remove("is-sk");
       wrap.insertAdjacentHTML("beforeend", '<div class="up-line-empty">' + UC.esc(msg || "No data") + '</div>');
+    }
+    /* Keine Marke mit beiden Werten: der Leerzustand der Charts aus core (15.10.), ueber der
+       ganzen Flaeche wie in UC.makeLine. Vorher stand hier ein ::after "No data" in 13px, ohne
+       Uebersetzung. Das Zeichen sind die vier Felder der Landschaft (dashboardSquare; layoutGrid
+       ist das Rautenzeichen der Gitteransicht und laese sich wie das Rang-# der Tabellen). */
+    function empty(){
+      destroy();
+      wrap.classList.remove("is-sk");
+      if (UC.chartLeerHtml) wrap.insertAdjacentHTML("beforeend", UC.chartLeerHtml({
+        icon: "dashboardSquare", gefiltert: !!(cfg.gefiltert && cfg.gefiltert())
+      }));
     }
     function render(rows){
       if (!isOwner()) return;
@@ -530,8 +542,8 @@
 
       var existing = window.Chart.getChart ? window.Chart.getChart(canvas) : null;
       if (existing) existing.destroy();
-      if (!pts.length){ chart = null; wrap.classList.add("is-empty"); return; }
-      wrap.classList.remove("is-empty");
+      if (!pts.length){ chart = null; empty(); return; }
+      var lz = wrap.querySelector(".up-chart-leer"); if (lz) lz.parentNode.removeChild(lz);
 
       var t = theme();
       var maxVis = Math.max.apply(null, pts.map(function(p){ return p.x; }).concat([0]));
@@ -577,7 +589,7 @@
       });
     }
     function resize(){ if (chart){ try { chart.resize(); } catch(e){} } }
-    return { render: render, skeleton: skeleton, empty: empty, destroy: destroy, resize: resize,
+    return { render: render, skeleton: skeleton, empty: empty, meldung: meldung, destroy: destroy, resize: resize,
              redraw: function(){ if (lastRows) render(lastRows); } };
   }
 
@@ -686,7 +698,7 @@
          des Charts ist das Band und zugleich seine einzige Einheit. */
       if (root.getAttribute("data-flach") === "yes" && UC.bandTeile && chartBox && chartBox.parentElement.classList.contains("ubo-unit-chart"))
         UC.bandTeile(chartBox.parentElement, { selbst: true, kopf: ":scope > .ubo-head", flaeche: ":scope > .ubo-box-chart",
-          inhalt: ":scope > .ubo-box-chart > .ubo-panel-body" });
+          inhalt: ":scope > .ubo-box-chart > .ubo-panel-body", auge: ".ubo-hide" });
     }
     ensureChrome();
 
@@ -829,17 +841,30 @@
     /* Chart hidden/shown survives a Bubble re-render of the markup, per instance — exactly the
        window.__ccHidden shape citations-combo-chart uses for its own Hide button. */
     var HIDDEN_STORE = (window.__uboHidden = window.__uboHidden || {});
-    /* ALS BAND (data-flach, Seite Brands, 15.10.): ausgeblendet ist der Chart ganz weg, der Knopf
-       zum Einblenden steht im Kopf der Seite (UC.bandAus) und geht denselben Weg wie das Auge im
-       Chart. Dazu ueber das Neuladen hinaus gemerkt -- der Speicher am Fenster bleibt der erste. */
+    /* ALS BAND (data-flach, Seite Brands, 15.10.): ausgeblendet ist der Chart ganz weg. Seit dem
+       15.10. spaet schaltet der Umschalter im Kopf der Seite (UC.bandAus) in BEIDE Richtungen,
+       und das Auge im Chart weicht, solange er steht (bandTeile, teile.auge). Umschalter und Auge
+       gehen denselben Weg, chartAusSetzen. Dazu ueber das Neuladen hinaus gemerkt -- der Speicher
+       am Fenster bleibt der erste. */
     var bandEl = root.querySelector(".ubo-unit-chart.up-band");
     if (bandEl && HIDDEN_STORE[instanceId] == null && UC.bandAusGemerkt && UC.bandAusGemerkt(instanceId)) HIDDEN_STORE[instanceId] = true;
     function bandStellen(){
       if (!bandEl || !UC.bandAus) return;
-      UC.bandAus(bandEl, root.classList.contains("is-hidden-view"), { id: instanceId, zeigen: function(){
-        var auge = root.querySelector(".ubo-hide");
-        if (auge && root.classList.contains("is-hidden-view")) auge.click();
+      UC.bandAus(bandEl, root.classList.contains("is-hidden-view"), { id: instanceId, setzen: function(aus){
+        if (!!aus !== root.classList.contains("is-hidden-view")) chartAusSetzen(!!aus);
       } });
+    }
+    /* Hide/Show the chart container -- same toggle, same persistence shape and the same
+       post-toggle resize as citations-combo-chart's hiddenSetzen. line und matrix entstehen weiter
+       unten; gerufen wird das erst nach dem Aufbau. */
+    function chartAusSetzen(collapsed){
+      root.classList.toggle("is-hidden-view", collapsed);
+      HIDDEN_STORE[instanceId] = collapsed;
+      if (bandEl && UC.bandAusMerken) UC.bandAusMerken(instanceId, collapsed);
+      bandStellen();
+      var hb = root.querySelector(".ubo-hide");
+      if (hb){ hb.setAttribute("data-tip", collapsed ? "Show" : "Hide"); hb.setAttribute("aria-label", collapsed ? "Show" : "Hide"); }
+      setTimeout(function(){ line.resize(); line.relayoutLegend && line.relayoutLegend(); matrix.resize(); }, 230);
     }
     var INIT_COMPANIES = (window.__uboInitCompanies = window.__uboInitCompanies || {});
     var USER_FILTERED  = (window.__uboUserFiltered = window.__uboUserFiltered || {});
@@ -855,10 +880,14 @@
       wrap: lineWrap, canvas: lineCanvas, legend: legendEl,
       isDark: darkNow, isOwner: isOwner, gran: function(){ return curGran; },
       /* Eine Nachkommastelle -- vorgegeben. */
-      decimals: 1
+      decimals: 1,
+      /* Der Leerzustand sagt "No matching data", wenn die Seite gefiltert geladen hat (15.10.,
+         Feld gefiltert im Payload; ohne das Feld gilt ungefiltert). */
+      gefiltert: function(){ return !!state.gefiltert; }
     });
     var matrix = makeMatrix({
       wrap: mxWrap, canvas: mxCanvas, isDark: darkNow, isOwner: isOwner,
+      gefiltert: function(){ return !!state.gefiltert; },
       getYAxis: function(){ return yAxis; },
       onPick: function(id){ fireRaw("data-rowclick-fn", "uboRowClick", id); }
     });
@@ -921,8 +950,8 @@
          Tabelle daneben den Fehler schon zeigt. */
       if (state.leseFehler){
         root.classList.remove("is-line-loading"); scaleKit.close();
-        if (chartMode === "landscape"){ line.destroy(); matrix.empty("The data could not be read."); return; }
-        matrix.destroy(); line.empty("The data could not be read."); return;
+        if (chartMode === "landscape"){ line.destroy(); matrix.meldung("The data could not be read."); return; }
+        matrix.destroy(); line.meldung("The data could not be read."); return;
       }
       var loading = state.loading || !state.hasLine || state.linePending;
       root.classList.toggle("is-line-loading", loading);
@@ -1672,17 +1701,10 @@
           toggleSearch();
           return;
         }
-        /* Hide/Show the chart container — same toggle, same persistence shape and the same
-           post-toggle resize as citations-combo-chart's .combo-hide. */
+        /* Hide/Show the chart container (chartAusSetzen, derselbe Weg wie der Umschalter im
+           Seitenkopf). */
         if (e.target.closest(".ubo-hide")){
-          var hb = e.target.closest(".ubo-hide");
-          var collapsed = root.classList.toggle("is-hidden-view");
-          HIDDEN_STORE[instanceId] = collapsed;
-          if (bandEl && UC.bandAusMerken) UC.bandAusMerken(instanceId, collapsed);
-          bandStellen();
-          hb.setAttribute("data-tip", collapsed ? "Show" : "Hide");
-          hb.setAttribute("aria-label", collapsed ? "Show" : "Hide");
-          setTimeout(function(){ line.resize(); line.relayoutLegend && line.relayoutLegend(); matrix.resize(); }, 230);
+          chartAusSetzen(!root.classList.contains("is-hidden-view"));
           return;
         }
         var ya = e.target.closest("[data-yaxis]");
@@ -2058,6 +2080,7 @@
         /* Nur eine echte Lieferung loescht den Vermerk -- ein reiner Theme-Render darf ihn nicht
            wegraeumen, sonst stuende danach der Leerzustand statt des Fehlers. */
         if (params.rows != null || params.series != null || params.table != null) state.leseFehler = false;
+        if (params.gefiltert != null) state.gefiltert = isYes(params.gefiltert);
         if (params.isDark != null){
           /* NICHT isYes(params.isDark): der Parameter ist eine Momentaufnahme aus dem Moment,
              in dem Bubble den Payload gebaut hat. Kennt core ein Thema, gewinnt core -- sonst

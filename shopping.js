@@ -1726,7 +1726,7 @@
         /* Das Band von Movement und Distribution hat ohne Inhalt nur noch seine Linien -- es geht
            ganz weg, statt als leerer Streifen dazustehen. */
         sek("zwei").hidden = true;
-        if (linie) linie.empty(t("Shopping data could not be loaded"));
+        if (linie) linie.meldung(t("Shopping data could not be loaded"));
         return;
       }
       sek("zwei").hidden = false;
@@ -1823,7 +1823,7 @@
       var d = s === "brands" ? overviewGleicherFilter() : dieOverview();
       if (!d) {
         var a = s === "brands" ? ovAnfrage(state.brands) : ovAnfrage(OV_VORGABE);
-        if (fehlerVon(a)) linie.empty(t("Shopping data could not be loaded")); else linie.skeleton();
+        if (fehlerVon(a)) linie.meldung(t("Shopping data could not be loaded")); else linie.skeleton();
         return;
       }
       var ch = d.chart && typeof d.chart === "object" ? d.chart : {};
@@ -1841,9 +1841,11 @@
          WAS fehlt: ohne Tage ist die Antwort kaputt (Lesefehler, nicht "leer"), ohne Reihe kam
          keine Marke vor, und ohne einen einzigen Wert fehlt genau diese Kennzahl. Dass es gar keine
          Shopping-Ergebnisse gab, faengt schon leerZustand fuer die ganze Seite ab. */
-      if (!tage.length) { linie.empty(t("The chart data could not be read.")); return; }
-      var markeFehlt = t("No tracked brand appeared in AI shopping results in this range.");
-      if (!reihen.length) { linie.empty(markeFehlt); return; }
+      if (!tage.length) { linie.meldung(t("The chart data could not be read.")); return; }
+      /* Ohne Reihe und ohne Wert ist das Chart LEER, nicht kaputt: der Leerzustand der Charts aus
+         core (15.10.) mit dem Satz, was fehlt -- und "No matching data", wenn ein Filter steht. */
+      var markeFehlt = "No tracked brand appeared in AI shopping results in this range.";
+      if (!reihen.length) { linie.empty({ text: markeFehlt, gefiltert: filterAktiv() }); return; }
       /* WIE JEDES LINIENCHART DER APP (05.10. gemeldet: Farben und Legende folgten den
          Einstellungen nicht):
          - die Datensaetze baut UC.buildLineDatasets wie in Visibility- und Brands-Chart, mit der
@@ -1875,7 +1877,8 @@
          (Uebergabe), also heisst das dasselbe wie "keine Reihe". Jede andere Kennzahl nennt sich
          selbst -- die Achse mit null Linien sahe sonst wie ein Ladefehler aus. */
       if (!irgendeinWert) {
-        linie.empty(feld === "avg_position" ? markeFehlt : ersetze(t("No {metric} values in this range."), { metric: t(metrikLabel()) }));
+        linie.empty({ text: feld === "avg_position" ? markeFehlt : ersetze(t("No {metric} values in this range."), { metric: t(metrikLabel()) }),
+                      gefiltert: filterAktiv() });
         return;
       }
       var bau = UC.buildLineDatasets(punkte, firmen, UC.getColorScalePref ? UC.getColorScalePref() : null);
@@ -2019,7 +2022,8 @@
         items.push({ key: "__rest", name: n != null ? ersetze(t(n === 1 ? "{n} merchant" : "{n} other merchants"), { n: ganz(n) }) : t("Other"),
                      share: anteilWert(rest.share), color: grau(99) });
       }
-      if (!items.length) { platz.innerHTML = UC.leerHtml({ mini: true, titel: "No merchants yet" }); return; }
+      /* Leer: der Leerzustand der Balkenliste aus core (15.10., kompakt: Zeichen und Titel). */
+      if (!items.length) { balken.ov.render([], { leer: { titel: "No merchants yet" } }); return; }
       balken.ov.render(items);
     }
 
@@ -2497,7 +2501,7 @@
       /* Ein Balken ohne lesbaren Anteil haette keine Laenge -- er faellt weg, die Tabelle darunter
          zeigt den Haendler trotzdem. */
       var l = (isArr(d.merchants) ? d.merchants : []).filter(function (m) { return m && typeof m === "object" && anteilWert(kz(m.share).v) != null; });
-      if (!l.length) { platz.innerHTML = UC.leerHtml({ mini: true, titel: "No merchants yet" }); return; }
+      if (!l.length) { balken.me.render([], { leer: { titel: "No merchants yet" } }); return; }
       var items = l.map(function (m, i) {
         var n = haendlerName(m.merchant_name);
         return { key: n, name: n || t("Unknown"), share: anteilWert(kz(m.share).v), color: grau(i), zeichen: UC.icon("store", 2) };
@@ -2570,7 +2574,7 @@
       if (fe) {
         sek("hero").innerHTML = '<div class="up-box">' + fehlerKasten(a, "detail") + '</div>';
         ["wo", "dhaendler"].forEach(function (n) { sek(n).innerHTML = ""; });
-        if (linie) linie.empty(t("This product could not be loaded"));
+        if (linie) linie.meldung(t("This product could not be loaded"));
         tabInhalt(""); pagerSetzen("detail", null); zaehlerSetzen(null);
         return;
       }
@@ -2686,7 +2690,7 @@
       var note = elMain.querySelector(".ush-chartnote");
       if (note) note.hidden = state.dMetrik !== "avg_position";
       var a = detailAnfrage(), d = dasDetail();
-      if (!d) { if (fehlerVon(a)) linie.empty(t("This product could not be loaded")); else linie.skeleton(); return; }
+      if (!d) { if (fehlerVon(a)) linie.meldung(t("This product could not be loaded")); else linie.skeleton(); return; }
       var tr = (isArr(d.trend) ? d.trend : []).filter(function (x) { return x && /^\d{4}-\d{2}-\d{2}/.test(str(x.day)); });
       if (!tr.length) { linie.empty(); return; }
       var p = d.product || {}, b = p.brand && typeof p.brand === "object" ? p.brand : { type: "other" };
@@ -2730,7 +2734,7 @@
         var bl = balken["wo_" + w];
         if (!d) { bl.skeleton(3); return; }
         var l = (isArr(d[w]) ? d[w] : []).filter(function (x) { return x && typeof x === "object" && anteilWert(x.share) != null; }).slice(0, 6);
-        if (!l.length) { platz.innerHTML = UC.leerHtml({ mini: true, titel: "No data" }); return; }
+        if (!l.length) { bl.render([]); return; }
         bl.render(l.map(function (x, i) {
           var name, logo = "";
           if (w === "topics") name = str(x.name).trim() || t("Unknown");

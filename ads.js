@@ -1502,7 +1502,7 @@
         /* Ein Fehler steht EINMAL, an der Stelle der Kennzahlen; der Rest traegt dann nichts, was
            wie Daten aussieht. */
         sek("kpis").innerHTML = '<div class="uad-kpifehler">' + fehlerKasten(a) + '</div>';
-        if (linie) linie.empty(t("Ads data could not be loaded"));
+        if (linie) linie.meldung(t("Ads data could not be loaded"));
         sek("anteil").querySelector(".uad-balkenplatz").innerHTML = "";
         sek("topics").querySelector(".uad-tabelle").innerHTML = "";
         topicsPager(null);
@@ -1544,7 +1544,7 @@
       var tr = trendTage(d.trend);
       /* Ein Tag ohne getrackte Antwort hat keine Coverage (null) -- dort bricht die Linie ab, statt
          eine 0 zu behaupten, die niemand gemessen hat. */
-      if (!tr.length || !tr.some(function (x) { return anteilWert(x.ad_coverage_pct) != null; })) { linie.empty(); return; }
+      if (!tr.length || !tr.some(function (x) { return anteilWert(x.ad_coverage_pct) != null; })) { linie.empty({ gefiltert: filterAktiv() }); return; }
       linieZeichnen(tr.map(function (x) { return str(x.date).slice(0, 10); }), linienDaten(tr, "ad_coverage_pct", "pct"), t("Ad Coverage"));
     }
     /* Advertiser Share: die Top 8 als Balkenliste aus core (Model Breakdown in domain-detail). Die
@@ -1559,7 +1559,9 @@
       var l = (isArr(d.advertiser_share) ? d.advertiser_share : []).filter(function (x) {
         return x && typeof x === "object" && str(x.advertiser_name).trim() && anteilWert(x.ad_share_pct) != null;
       }).slice(0, 8);
-      if (!l.length) { platz.innerHTML = UC.leerHtml({ mini: true, titel: leerSatz() }); balken = null; return; }
+      /* Leer: der Leerzustand der Balkenliste aus core (15.10., kompakt: Zeichen und Titel).
+         Gefiltert sagt er "No matching data" mit der Lupe, sonst, was fehlt. */
+      if (!l.length) { balken.render([], { leer: { gefiltert: filterAktiv(), titel: filterAktiv() ? null : "No Ads observed" } }); return; }
       var max = Math.max.apply(null, l.map(function (x) { return anteilWert(x.ad_share_pct); })) || 1;
       balken.render(l.map(function (x, i) {
         var n = str(x.advertiser_name).trim(), info_ = advInfo(n, x.company_id), v = anteilWert(x.ad_share_pct);
@@ -2010,7 +2012,7 @@
       if (fe) {
         sek("held").innerHTML = '<div class="up-box">' + fehlerKasten(a, "detail") + '</div>';
         sek("kpis").hidden = true;
-        if (linie) linie.empty(t("This advertiser could not be loaded"));
+        if (linie) linie.meldung(t("This advertiser could not be loaded"));
         return;
       }
       sek("kpis").hidden = false;
@@ -2063,7 +2065,7 @@
     function zeichneDetailChart() {
       if (!linie) return;
       var a = detailAnfrage(), d = dasDetail();
-      if (!d) { if (fehlerVon(a)) linie.empty(t("This advertiser could not be loaded")); else linie.skeleton(); return; }
+      if (!d) { if (fehlerVon(a)) linie.meldung(t("This advertiser could not be loaded")); else linie.skeleton(); return; }
       var tr = trendTage(d.trend), n = state.dMetrik === "n";
       if (!tr.length) { linie.empty(); return; }
       /* Ein Tag ohne Auftritt ist 0 (gezaehlt), der Anteil eines Tags ohne Ads ist keiner (null). */

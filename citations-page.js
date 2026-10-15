@@ -485,6 +485,8 @@
               } else {
                 state.fehler.chart = null;
                 p.instanceId = ids.combo; p.isDark = isDark();
+                /* Gefiltert geladen: ein leeres Ergebnis sagt dann "No matching data" (15.10.). */
+                p.gefiltert = UC.seitenFilterAktiv ? UC.seitenFilterAktiv(state.f) : false;
                 try { window.renderComboChart(p); } catch (e) {}
               }
               /* Der Chart haelt einen AUSDRUECKLICH gesetzten Ladezustand, bis er ebenso

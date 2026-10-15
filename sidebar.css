@@ -160,7 +160,10 @@ html[data-up-hell="grau"] .usn-bar:not([data-theme="dark"]) { --usn-akt: var(--u
    Der Hover kommt wieder aus der Ueberlagerung der Schriftfarbe (Grundregel oben, 7 %, die Zeile
    die Haelfte davon) statt aus --up-sel-bg: der Hover muss UNTER dem Gewaehlten bleiben, und
    --up-sel-bg (Gray 200, #1f1f1f) laege mit der Haelfte schon auf dessen Hoehe. Gemessen auf #000:
-   Hover der Zeile #080808, gewaehlt #0f0f0f -- im Licht #f2f2f2 und #ededed auf #fafafa. */
+   Hover der Zeile #080808, gewaehlt #0f0f0f -- im Licht #f2f2f2 und #ededed auf #fafafa.
+   Seit "eine Stufe ruhiger" (15.10. abends) ist der Seitengrund #0a0a0a; die Leiste folgt ihm
+   ueber --up-seite-dunkel, Hover und Gewaehlt sind durchscheinend und gehen von selbst mit
+   (gerechnet #121212 und #191919). */
 html[data-up-dunkel="geist"] .usn-bar[data-theme="dark"],
 html[data-up-dunkel="geist"] .usn-fab[data-theme="dark"],
 html[data-up-dunkel="geist"] .usn-scrim[data-theme="dark"] {
