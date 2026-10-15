@@ -662,9 +662,6 @@
 .up-root.upt-root .upt-selcount .upt-selcount-clear { color: var(--upt-chip-ink); }
 .up-root.upt-root .upt-selcount .upt-selcount-clear:hover { background: color-mix(in srgb, var(--upt-chip-ink) 16%, transparent); color: var(--upt-chip-ink); }
 
-/* ---------- responsive: narrow first column and dropped columns ---------- */
-.up-root.is-vnarrow .upt-td-prompt .up-row-goto { display: none; }
-
 /* ---------- responsive: toolbar (mobile) ----------
    is-w3 is the gap-measured tier (see fitToolbar()) — same one urls-table drops its own brand
    toggle at. is-w1/is-w0 (sort, cols, export-shrink) are already generic in core.css and need no

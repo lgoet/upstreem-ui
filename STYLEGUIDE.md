@@ -137,9 +137,17 @@ Alpha 400; Secondary-Knopf Background 1, Hover Gray 200, Rand Gray 400.
 `--up-wahl-rand: rgba(255,255,255,.03)`. Durchscheinend statt deckend wie im Light, weil dieselbe
 Stufe auf `#000` (Seitenleiste) und `#0a0a0a` (Preferences) sichtbar bleiben muss; auf der Seite
 ergibt sie `#0f0f0f` -- in L* derselbe Schritt wie `#ededed` auf `#fafafa` (4,1 gegen 4,3).
-Seit „eine Stufe ruhiger“ auf der Seite `#0a0a0a` → `#191919`, in der Seitenspalte der Preferences
-(`#1f1f1f`) → `#2c2c2c`.
+Seit „eine Stufe ruhiger“ auf der Seite `#0a0a0a` → `#191919`.
 Seitenleiste ohne Rand, Sub-Navigation, Preferences, Events-Arten und gedrückte Knöpfe mit dem Hauch.
+
+**Die Seitenspalte der Preferences und von Miras Einstellungen** (`.ums-aside`, 16.10.) trägt den
+Seitengrund wie die Seitenleiste der App: Light `--up-seite-grau` (`#fafafa`), Dark
+`--up-seite-dunkel` (`#0a0a0a`); der Inhalt rechts ist die Karte (`#fff` / `#0f0f0f`). Gewählt und
+Hover sind die der Seitenleiste: Light `#ededed` / `#f2f2f2`, Dark `#191919` / `#121212` (Hover =
+3,5 % der Schrift, in beiden Themen), dazu der Hauch Rand am Gewählten. Bis zum 16.10. stand die
+Spalte auf der Kopffläche der Karte (`--vc-heading-bg`): Light `#f9f8f9`, Dark `#1f1f1f` -- im
+Dunkeln also 16 Stufen ÜBER dem Inhalt statt darunter, die Wahl dort `#2c2c2c`, der Hover `#212121`
+(2 Stufen, unsichtbar).
 
 **Dunkle Elemente im Light** (die Bulk-Leiste der Prompts-Tabelle ist im Light eine dunkle Leiste)
 lesen weiter die alte Zeile `[data-theme="dark"]` an `:root` mit den Linear-Werten -- das Light
@@ -520,7 +528,7 @@ dazwischen. Gegenüber vorher (4/6/8/10/12/16/32) ist alles eine Stufe kleiner.
 |---|---|---|---|
 | `--up-r-xs` | 4px | Punkt, Haken, Checkbox, Plakette, Knopf im Segment | 4 |
 | `--up-r-s` | 4px | Chip, Tag, Knopf bis 24px, Menüzeile im 12er-Menü | 6 |
-| `--up-r-m` | 6px | Knopf, Feld 32 bis 36px, Segment, Logo-Box, Tooltip einzeilig | 8 |
+| `--up-r-m` | 6px | Knopf, Feld 32 bis 36px, Segment, Logo-Box, Logo-Stapel (Marken-/Citation-Chips), Tooltip einzeilig | 8 |
 | `--up-r-l` | 8px | Knopf und Feld ab 40px, Kachel, Tooltip mehrzeilig | 10 |
 | `--up-r-xl` | 8px | Karte innen, große Logoplatte, Vorschaubild | 12 |
 | `--up-r-2xl` | 12px | Karte, Box, Tabelle, Dialog, Toast, Erklärkarte | 16 |
@@ -540,7 +548,8 @@ Menü                          12; die Zeile darin konzentrisch (Polster 8 -> 4,
 Karte, Tabelle, Dialog,
 Toast, Erklärkarte            12; ihre direkten Kinder 11
 Tooltip                       einzeilig 6 (.up-tip), mehrzeilig 8 (Chart-Tooltips)
-Badge, Avatar-Gruppe          voll rund
+Badge, Avatar (Person)        voll rund
+Logo-Chip im Stapel           eine Logoplatte, kein Avatar: nach Höhe (28 -> 6), das Bild konzentrisch 3
 ```
 
 **Konzentrische Kinder gibt es weiterhin**: innen = außen minus Abstand, dann auf die nächste
@@ -572,7 +581,7 @@ Markierungsstriche 2 und 1) und die em-Werte in Miras Text.
 | Gran-Switcher (D/W/M, `.vc-gran`) | Höhe 26px, Radius 6, Knöpfe min. 26 breit |
 | Segment (`.up-seg`) | Höhe 26px, Radius 6; `.is-lg` 32px |
 | Tabellen-Zeile Höhe | `.up-row` 72px (Comfortable), 55px (Compact, `.is-dense`); Top Brands `.vt-row` 55px |
-| Tabellen-Head Höhe | 45px; flache Tabelle 48px (`--up-flach-h`) |
+| Tabellen-Head Höhe | 45px; flache Tabelle 48px (`--up-flach-h`); Kastentabellen im Drawer und in den Settings ebenfalls 48 |
 | Logo-Box (`.up-logo-box`) | 24×24px, Radius 6, Bild 22×22px Radius 5 (1px Polster) |
 | Zellen-Padding (`.up-th`, `.up-td`) | `0 16px 0 12px` |
 | Filter-Item (`.up-filter-item`) | Polster `6px 9px`, Radius 4 |
@@ -1181,6 +1190,22 @@ Gilt für Responses, URLs, Conversion, Variations, Brand-Editor (Alias, Tracking
          Top Citations bekommen dasselbe als Band im Kasten (Abschnitt 8f)
 ```
 
+**Tabellen der Settings-Seite** (seit 16.10.; vom 15.10. bis dahin flach): Team Organisation
+(Mitglieder, Einladungen, Protokoll) und Billing stehen **im Kasten wie im Drawer** („Border drum
+herum und Roundness, nicht full width gestreckt“). Kein `data-flach` mehr an `.uto-root`/`.ubl-root`
+(`settings-page.js`); den Kasten bringen die Schalen selbst mit (`.uto-table`, `.ubl-table`), Kopf
+und dunkler Rand kommen aus denselben core-Regeln wie im Drawer, dort um `.uss-root` ergänzt.
+
+```
+Kasten   Rand 1px --vc-border rundum, Radius 12 (--up-r-2xl), Grund --vc-bg; kein overflow:
+         hidden (das Zeilenmenü fährt heraus), die Ecken runden Kopf und letztes Kind mit 11
+Kopf     48, im Light ohne eigenen Grund; Protokoll-Zeilen bleiben 34
+Breite   höchstens 720 wie Your Brand (.usb-body) und Billing (.ubl-body); Team .uto-body
+         seit 16.10. ebenso. team-orga schaltet erst unter 720 auf drei Spalten (narrowAt)
+Dunkel   Rand bleibt (#222 gemessen), wie im Drawer; Billing hatte ihn schon
+Telefon  343 bei 375, 16 Rand, kein waagrechter Überlauf (wie die Drawer-Tabellen)
+```
+
 ---
 
 ## 8b. Die eine Leiste (`data-leiste="yes"`, seit 15.10.)
@@ -1232,9 +1257,27 @@ Kleben         makeSticky wie jede Tabelle: Kopf, Reiter und Chart scrollen weg,
 Höhe Telefon   375x812: Leiste klebt 16–104 (zwei Zeilen, Citations, Responses), 16–144 (drei
                Zeilen, All Prompts, Brands), 16–64 (Teams); Spaltenkopf darunter 48 – oben
                stehen damit 152 (19 %), 192 (24 %) bzw. 112 (14 %) fest
-Linie          unter der Leiste NUR, solange sie klebt (.is-geklebt), eingeblendet (--up-t-2)
+Deck           über der klebenden Leiste bis zur Oberkante des Scrollbereichs (16.10.): zwei
+               leere sticky-Kästen .up-kleb-deck direkt VOR der Leiste (core klebDeckStellen),
+               Fläche --up-surface, Ebene 6. In Ruhe liegen sie deckungsgleich unter der Leiste
+               und übermalen nichts; klebt sie, rasten sie über ihr ein – im selben Bild, ohne
+               Klasse und ohne JS im Scroll-Takt. Je Kasten höchstens so hoch wie die Leiste:
+               Seiten 16 + 1, Drawer 72 + 1 (48 und 25, unter dem Glaskopf mit). Am Ende der
+               Wurzel gehen sie mit der Leiste; keine Lage ändert sich
+Linie          unter der Leiste NUR, solange sie klebt (.is-geklebt: das Deck steht höher als
+               die Leiste – keine gelernte Ruhelage mehr), eingeblendet (--up-t-2)
 Abstände       Leiste 16 unten, Band 16 unten; der Stapel der Wurzel fällt auf 0
 ```
+
+Warum das Deck und nicht mehr der Streifen allein (16.10., „hier und da Rows hinter der klebenden
+Topbar, in den 16 px über den Knöpfen“): der Streifen `.is-geklebt .up-head::before` hängt an
+einer Klasse, die JS im Scroll-Takt setzt. Nach einem Sprung (Ende-Taste, Scrollbalken, schneller
+Wurf) klebte die Leiste, bevor die Klasse kam, und nach jedem applySticky während des Klebens
+(Nachlauf der Kopfsuche bis 4,8 s nach dem Laden, Größenwechsel, ein neuer Seitenkopf) lernte die
+Probe eine geklebte Lage als Ruhe – beim Zurückscrollen fiel die Klasse weg, obwohl die Leiste
+weiter klebte. Gemessen vorher 24–45 Treffer auf Zeilen bzw. Chart in diesem Streifen, nachher 0
+(Seiten, Drawer, 1440/1100/375, hell/dunkel, auch mit entfernter Klasse). Der Streifen bleibt für
+das, was über 2 x Leistenhöhe hinausgeht.
 
 Warum in der Wurzel der Tabelle und nicht als Leiste der Seite: Domains, URLs und Brands
 hängen Klicks, Suche, Tooltips und Menüs an ihre Wurzel (`ownsTarget`, `root.contains`); ein
@@ -1395,7 +1438,7 @@ Schatten       NUR wenn er wirklich klebt (.is-fuss-klebt; die Marke .up-fuss-ma
                .is-fuss-ohne-summe)
 Gruppenspalte  All Prompts mit is-groups-wide: die Gruppenliste steht im Fluss neben dem Kasten
                (kein eigener Scrollbereich mehr), ihr Kopf klebt neben dem Spaltenkopf
-z              4 (unter Spaltenkopf 5 und Leiste 6)
+z              4 (unter Spaltenkopf 5, Leiste 6 und dem Deck über ihr, 6 – 8b)
 Bewegung aus   prefers-reduced-motion: dieselben Zustände ohne Fahrt
 ```
 
@@ -1747,6 +1790,46 @@ Suchfelds und bei jeder Label-Änderung eines Trigger-Buttons. Hilfsfunktionen, 
 Labels setzen, dürfen deshalb **keine frühen `return`s** haben, sonst läuft die
 Neumessung nur in einem der Zweige.
 
+### Seitenleiste auf dem Telefon: der Umschalter im Seitenkopf (seit 16.10.)
+
+„Sidebar-Button im Mobile: in die richtige Topbar, ganz links, nicht floaten.“ Bis zum 16.10.
+schwebte im hint-Zustand ein eigener Knopf (`.usn-fab`, fixed bei 0/32, 32 × 36, Schatten e-3)
+über der Seite – seit die Leiste der Tabellen auch auf dem Telefon klebt, lag er auf der linken
+unteren Ecke ihres ersten Knopfs. Jetzt:
+
+```
+Wann          nur im hint-Zustand der Seitenleiste (Fenster unter 500, Leiste ganz weg);
+              sidebar.js schreibt den Zustand an <html> (data-usn-modus = hint | mini | wide,
+              dieselben Namen wie mode in usnState). Desktop und Tablet: display none, kein Platz
+Wo            erstes Kind der Kopfzeile (.up-ph-top), vor der Krume – gesetzt von
+              UC.makePageCrumbs, also in JEDEM Seitenkopf samt Platzhalter (seitenVorab);
+              Mira (eigener Kopf) setzt ihn per UC.seitenleistenKnopfEinsetzen(zeile, vorKind)
+              vor ihr erstes Kind in .am-hero-inner. Nur in einer Ansicht ([id^="view-"]) – im
+              Schaufenster der Landingpage nicht
+Knopf         .up-ph-iconbtn (32 × 32, Radius --up-r-m, Zeichen 15, Fokusring) wie Refresh und
+              Docs in derselben Zeile, Zeichen panelLeft (1.8), aria-label "Open navigation";
+              kein Schatten, scrollt mit der Kopfzeile weg (nur die Leiste klebt)
+Lage          Box 8 vom Rand (--up-ph-rand-r, wie die Knöpfe rechts), Zeichen damit bei 16 –
+              auf der Kante, an der sonst das Krumenzeichen steht; 8 zur Krume, Krumenzeichen
+              bei 48. Vertikal mittig in der 48er-Zeile (8–40). Mira: in ihrem Kopf bei 32/16,
+              gespiegelt zu "Chats" (32 vom rechten Rand), Farbe wie dieses (--am-muted-2),
+              Fokusring innen (der Kopf kappt seitlich)
+Klick         CustomEvent "up-seitenleiste" an window -> sidebar.js wie bisher der eigene Knopf:
+              auf/zu, Schleier, Escape, Klick daneben unverändert
+Platz         die Krume wächst in den freien Platz (sonst verteilt space-between sie in die
+              Mitte); Hinzufügen-Knöpfe zeigen ihre kurze Fassung, wo die Wurzel kein is-narrow
+              hat (Opportunities: "Look for"); reicht es nicht, fällt der Name der ersten
+              Krumenstufe weg, das Zeichen bleibt (.is-knapp, gemessen mit Range in
+              krumeEinpassen): "Zeichen > All Prompts"
+Rückfall      .usn-fab bleibt, erscheint aber nur, wenn die offene Ansicht (.view-on) keinen
+              sichtbaren Kopfknopf hat – eine Seite ohne Kopf landet sonst in der Sackgasse
+```
+
+Gemessen 375/390/430, alle 13 Seiten über die Seitenleiste geöffnet: Knopf 8/8 32 × 32, Mitte
+gleich Krume und rechten Knöpfen, keine Überlappung in der Kopfzeile, keine abgeschnittene Krume,
+die klebende Leiste nirgends mehr überdeckt (vorher traf `elementFromPoint` bei 21/43 und 26/46
+den schwebenden Knopf). Desktop 1440: alle Kopfzeilen auf den Zehntelpixel wie vorher.
+
 ### Sticky Table-Header (nur wenn die Komponente direkt injiziert ist)
 
 Ein seitenweit klebender Header ist nur möglich, wenn die Komponente **direkt in die
@@ -1798,6 +1881,10 @@ Deshalb im Sticky-Modus zusätzlich `height: 48px` (32 Inhalt + 16 Padding).
 **6. Zeilen hinter einer transparenten Topbar.** Ist die Seiten-Topbar transparent,
 scrollen Zeilen dahinter durch. Der Kopf bekommt ein opakes `::before`, das von seiner
 Oberkante bis zur Viewport-Oberkante reicht (`height: var(--udt-sticky-top)`).
+
+> **Stand 16.10.:** Ein Streifen, der nur mit einer Klasse malt, deckt ein Bild zu spät oder gar
+> nicht (8b). In core deckt heute das **Deck** `.up-kleb-deck`: sticky-Kästen direkt vor der
+> Leiste, in Ruhe unter ihr verborgen, klebend über ihr – reines sticky, kein Zustand.
 
 **7. Border NICHT auf die Box, sondern auf Kopf/Body.** Sitzt der Spaltenkopf 1px
 innerhalb der Box-Border, überdeckt sein opaker Hintergrund die gerade obere
@@ -2299,48 +2386,49 @@ Bis 15.10. war das offene Feld randlos und transparent (Notion-Stil), Text 14/50
   denselben Selektor `.<pfx>-search.is-open .<pfx>-search-input` nutzen, damit sie später
   greift).
 
-## 17. Brand-Logo-Stack in Zeilen: eine Geist-Avatar-Group (seit 15.10.)
+## 17. Brand-Logo-Stack in Zeilen: Logoplatten, keine Avatare
 
-`.up-stack` (Brand Mentions, Citations in Responses, Karten) ist eine Geist-AvatarGroup aus
-Geist-Avataren (vercel.com/geist/avatar):
+`.up-stack` (Brand Mentions, Citations in Responses, Karten, URL-Tabelle) ist eine Reihe
+überlappender **Logoplatten** – abgerundete Quadrate, keine Kreise. Ein Logo ist kein Porträt;
+Platten tragen in core `--up-r-m` (wie `.up-logo-box`).
 
 ```
-Chip          .up-stack-item 32×32 (--up-stack-gr = --up-h-btn, seit 15.10. nachts; vorher 28);
-              sichtbare Ebene .up-stack-vis ist ein KREIS wie Geists Avatar (rounded-full, innen
-              1px-Ring): Radius --up-r-voll, 1px --vc-border (im Dark ebenfalls, als Ring), 4px
-              Polster, Platte --vt-logo-bg (im Dark nur unter dem Logo). Das Logo ein 22er Quadrat
-              mit Radius 4 (--up-r-xs), ganz im Kreis (Ecke 13.9 vom Mittelpunkt, Kreis innen 15;
-              im Dark mit 1px Plattenrand 14.9), nichts abgeschnitten. Buchstabe 11 (--up-fs-xs).
-              Bis 15.10. spät: abgerundetes Quadrat Radius 6 mit 22er Bild ("ein Logo ist kein
-              Porträt") -- vom Nutzer verworfen: "das solltest du vom Geist-System-Avatar nutzen".
-Überlappung   --up-stack-ueber 5px, Schritt 27 (vorher 4 und 24 bei 28). Vom Nachfolger verdeckt:
-              Überlappung + Ring = 8 von 32 (25 %; vorher 5 von 28 = 18 %). Geists 0.3 × Größe
-              (8 bei 28, verdeckt 9 = 32 %) war dem Nutzer zu eng ("etwas zu nah beieinander").
-              5 + 3 = 8 = das Spreizen beim Hover: der angefasste Chip reicht mit seinem Ring genau
-              an die Nachbarn heran, ohne in sie zu schneiden.
-Ring          --up-stack-ring-w 3px in der Zeilenfarbe -- der sichtbare ABSTAND zwischen zwei
-              Chips (folgt Zeilen- und Karten-Hover). Bis 15.10. 4px, am 15.10. kurz 1px
-              (Haarstrich, vom Nutzer zurückgeholt: "wieder ein sichtbares Gap ... wie es vorher
-              ja auch gab")
-Dicht         Faktor 0.88 über die drei Marken an .up-root.is-dense: 28.16, Überlappung 4.4,
-              Ring 2.64; Polster 3.52, Logo 19.12, "+N" 11
-Reihenfolge   das ERSTE Mitglied liegt oben (--up-stack-z absteigend, von brandStack gesetzt);
-              isolation: isolate hält die Stufen im Stapel, unter dem klebenden Tabellenkopf
-"+N"          .up-stack-more: ein Kreis in Chipgröße (min. 32, Polster 0 5px), unterlappt wie
-              ein Mitglied und liegt zuunterst; Grund --up-sel-bg, 1px --vc-border, 12/600 in
-              --vc-muted; bis 15.10. reiner Text 12/500
+Chip          .up-stack-item 28×28 (--up-stack-gr = --up-h-seg); sichtbare Ebene .up-stack-vis:
+              Radius 6 (--up-r-m), 1px --vc-border, 2px Polster, Platte --vt-logo-bg. Im Dark
+              Rahmen durchsichtig, Platte nur unter dem Logo (content-box) plus 1px Schatten des
+              Bildes in Plattenfarbe.
+Logo          22×22, Radius 3 (calc(var(--up-r-m) - 3px): Rahmen 1 + Polster 2, konzentrisch)
+Buchstabe     11/600 (--up-fs-xs), wenn kein Logo da ist
+Überlappung   --up-stack-ueber 4px, Schritt 24
+Ring          --up-stack-ring-w 4px in der Zeilenfarbe -- der ABSTAND zum Nachbarn, nicht die
+              Kante des Chips. Folgt Zeilen-Hover und dem Ton einer gehoverten klickbaren Karte.
+Reihenfolge   der spätere Chip liegt oben (Dokumentreihenfolge, kein z-index je Chip); im Dark
+              malt jeder Folgechip die Fläche unter seinem Rahmen in der Ringfarbe
+              (--up-stack-ring), damit der Vorgänger nicht durchscheint
+"+N"          .up-stack-more: reiner Text 12/500 in --vc-muted, 8px Abstand -- ein Etikett, keine
+              weitere Marke
+Dicht         Faktor 0.88 über die drei Marken an .up-root.is-dense: 24.64, Überlappung und Ring
+              3.52, Polster 1.76, Logo 19.12, "+N"-Abstand 7.04. Radius und Buchstabe bleiben auf
+              ihrer Stufe (6 und 3, 11) -- 0.88 × 6 = 5.3 liegt auf der 6
 Eigene Maße   Response Detail (.urd-cc-foot, .urd-cr-ments): Reihe statt Stapel, 26er Chip mit
-              Polster 3 und "+N" 11 fest in response-detail.css; Leiste (.usn-chips, ungenutzt): 22
+              4px Abstand, ohne Ring, mit Rahmen; Leiste (.usn-chips, ungenutzt): 22
 ```
 
-**Hover-Verhalten unverändert** (gemessen):
+**Geschichte.** Am 15.10. war der Stapel kurz eine Geist-AvatarGroup: erst Überlappung 8, Ring 1
+und „+N“ als Kreis, dann jeder Chip ein Kreis, zuletzt 32er Kreise mit Ring 3 und Überlappung 5.
+Am 16.10. auf Wunsch zurück zum Stand davor („einfach altes Design. Die eckigen.“) – mit zwei
+Angleichungen an die Skala: Radius 6 statt 8 (Bild 3 statt 5, dicht 6/3 statt 7.04/4.28) und
+Buchstabe 11 statt 10 (dicht 11 statt 8.8). Geblieben sind die drei Marken, `isolation: isolate`
+am Stapel und der Ring im Ton der gehoverten Karte.
+
+**Hover-Verhalten** (gemessen):
 
 - **Gehovertes Element + alles danach rücken nach rechts**, alles davor bleibt stehen
   (das erste Logo darf nie nach links wandern). Gehovertes `translateX(8px)`, folgende
   `translateX(16px)` → nur die zwei Nachbar-Lücken öffnen, der Rest behält seinen Abstand.
-  Gespiegelt bei `.is-spread-left` (Stapel an der rechten Kante).
-- **Lift:** gehovertes zusätzlich `translateY(-3px)` und nach vorn (`z-index: 20`, über jeder
-  Stufe des Stapels).
+  Dicht 7.04/14.08. Gespiegelt bei `.is-spread-left` (Stapel an der rechten Kante).
+- **Lift:** gehovertes zusätzlich `translateY(-3px)` und nach vorn (`z-index: 3`;
+  `isolation` am Stapel hält ihn unter einer klebenden ersten Spalte).
 - **Kein Flicker:** der Treffer liegt auf `.up-stack-item`, das sich nie bewegt; nur die innere
   `.up-stack-vis` animiert. Der Tooltip (`data-brandtip`) hängt am unbeweglichen Kasten.
 - `transition: transform .16s ease` auch am „+N“ und am Anhang (`.up-stack-tail`), damit sie mitziehen.
@@ -2516,11 +2604,12 @@ Komponente wirklich zusätzlich hat (eine Zeilenhöhe, eine Index-Zelle, ein Act
 | Klebender Fuß (8e) – auch Leiste und Spaltenkopf auf dem Telefon (8b) | `data-kleb-fuss="yes"` an der Wurzel (mit `UC.makeSticky`), direkt `UC.klebFuss(root)` |
 | Gesamtzeile (8e) | `UC.makeZaehlZeile({ root, nach, praefix, instanceId, spalten, laedt, anzahl, rechnen, quelle, cols })`, darunter `UC.makeSumZeile`, `UC.sumPaarHtml` |
 | Offenes Band (8f) | `UC.bandTeile(band, teile)` (mit `teile.auge`), `UC.bandAus(band, aus, { id, setzen })` setzt den Umschalter im Seitenkopf, `UC.bandSchalterHtml({ aus, id, klein })`, `UC.bandAusGemerkt(id)`, `UC.bandAusMerken(id, aus)` |
+| Umschalter der Seitenleiste im Kopf (10) | kommt mit `UC.makePageCrumbs`; ein eigener Kopf ohne Krume: `UC.seitenleistenKnopfEinsetzen(zeile, vorKind)` |
 | Bubble-Klempnerei: Root-Registry, iframe-Forwarder, Wheel, Init-Kaskade, Stub-Replay | `UC.makeMount({rootClass, ctrlProp, resolveLocal, queue, initRoot, api, forwardShape})` |
 
 CSS dazu kommt aus `core.css`: `.up-root`, `.up-head*`, `.up-iconbtn`, `.up-thead/.up-row/.up-th/.up-td`,
 `.up-pop-*`, `.up-filter-*`, `.up-line-*`, `.up-legend`, `.up-donut-*`, `.up-bars/.up-bar-*`,
-`.up-trend`, `.up-logo-box`, `.up-row-goto`, `.up-tag`, `.up-tip`, `.up-explain`, `.up-empty*`,
+`.up-trend`, `.up-logo-box`, `.up-rowbtn` (Zeilenknopf; `.up-row-goto` ist seit 16.10. stillgelegt), `.up-tag`, `.up-tip`, `.up-explain`, `.up-empty*`,
 `.up-leer`, `.up-skelett`, `.up-search`, `.up-ddtrigger`, `.up-btn-sec`, `.up-seg`/`.up-themesw`,
 `.up-stack*`, `.up-th-ic`, `.up-sumrow`/`.up-sum*`, `.up-band*`, `.up-leiste-fluss`, `.up-ff*`
 und die Attribute `data-flach="yes"` und `data-leiste="yes"`.
@@ -2903,6 +2992,16 @@ richtige Preis dafür, dass kein core-Kit sie versehentlich für sein eigenes El
 Pager lesen sich als zwei konkurrierende Tabellen in einer dritten. Öffnen schließt und **resettet**
 den vorherigen (Suche, Filter, Seite, Seitengröße).
 
+**Die angeklickte Zeile bleibt stehen (16.10.).** Schließt das Öffnen einen größeren Block
+weiter oben, fällt dessen Höhe über der Zeile weg, und sie sprang nach oben, teils unter die
+klebende Leiste. Die Scroll-Verankerung des Browsers hilft nicht: `#main` trägt im Wirt
+`overflow-anchor: none`, und auch eingeschaltet wählt sie den gerade entfernten Block als Anker.
+Deshalb öffnet jeder Aufklapper über **`UC.zeileHalten(el, aendern, { dauer })`**: Lage vorher
+und nachher lesen, den scrollenden Vorfahren (`#main`, im Drawer dessen Körper) im selben Zug
+nachschieben, mindestens unter Leiste und Spaltenkopf; am Seitenende hält ein zeitweiliger
+unterer Rand die Lage für die Dauer der Bewegung. Genutzt von Citations › Domains und den
+Prompt-Gruppen (Akkordeon-Modus).
+
 **Auf/Zu animieren: Keyframe, keine Transition.** Der Block wird von `renderTable()` frisch erzeugt;
 eine Transition läuft auf einem gerade eingefügten Knoten nie an. `grid-template-rows: 0fr -> 1fr`
 über 200 ms, `.is-closing` mit `forwards` für den Weg zurück (JS wartet die 200 ms ab, dann erst
@@ -2946,6 +3045,22 @@ Suchzustand nie neu geladen wird, ist der komplexere und fehleranfälligere Zust
 dazu zu bringen, den Drilldown-Zustand zu berücksichtigen. Kein Fade-out dabei — nur der User-
 getriebene Schließen-Klick (über den Toggle oder den Drilldown-eigenen X-Button) bekommt die
 200-ms-Animation, ein programmatisches Schließen ist sofort.
+
+**Stand 16.10. — kein Zeilenpfeil mehr, keine Verweildauer.** In keiner Tabelle gleitet beim Hover
+noch ein Pfeil (arrowUpRight) herein – ausdrücklicher Wunsch. Er sagte nur, dass die Zeile klickbar
+ist, was Hover-Fläche und Zeiger schon sagen, und belegte als Flex-Kind mit `margin-left:auto` auch
+unsichtbar 16px plus den Abstand der Zelle (in Top Brands und Top Domains kam er nie zum Vorschein,
+kürzte aber die Namen). Das Markup erzeugt ihn nirgends mehr; `.up-row-goto`, `.uut-row-goto`,
+`.udt-sub-goto` und `.up-rowswap-goto`/`.udt-row-goto` stehen nur noch als `display:none` in der
+CSS, weil der Vertrag die Klassen führt. Der Drilldown hat seine fünfte Spalte (`--udt-subcols`) mit
+ihm verloren. Gemessen am 16.10. (1440 breit): Prompt-Text 428 → 454px, URL-Titel 252 → 278px,
+Seitentitel im Drilldown 686 → 732px Spur (375 breit: 140 → 182px), "Mercedes Benz" in Top Brands
+nicht mehr gekürzt.
+Die Aktionen, die nach der Verweildauer an die Stelle des Pfeils traten ("Show Pages" hier, "Edit"
+in brands-overview), sind `.up-btn-sec.up-rowbtn` aus core: sie kommen beim Hover der Zeile sofort,
+in der ersten Zelle, ohne Pfeil davor. Eine Sekunde Leere vor der Handlung, um die es in der Zeile
+geht, wäre ohne den Pfeil nur noch Warten. Die beiden Nachträge darunter beschreiben den alten Stand;
+wer eine Zeilenaktion braucht, nimmt `.up-rowbtn`, nicht `.up-rowswap`/`UC.rowDwell`.
 
 **Nachtrag — ein zweiter, spät auftauchender Trigger für dieselbe Aktion.** `domains-table`s
 Zeile bekommt nach 1.5s Hover einen zweiten Weg, den Drilldown zu öffnen (ein "Show Pages"-Button
