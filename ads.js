@@ -1069,7 +1069,9 @@
       var mitZahl = o.zahl != null && o.zahl !== "";
       /* o.scope: links im Kopf der einen Leiste, was die DATEN der Tabelle wechselt (core.css
          .up-leiste-scope) -- in der Library der Umschalter Ads/Prompts. */
-      return '<div class="up-head uad-head">' + (o.scope ? '<div class="up-leiste-scope uad-scope">' + o.scope + '</div>' : '') +
+      /* .up-band-head: im offenen Band die Ueberschriftzeile aus core (core.css "DAS OFFENE BAND");
+         ausserhalb eines Bandes greift die Klasse nicht. */
+      return '<div class="up-head uad-head up-band-head">' + (o.scope ? '<div class="up-leiste-scope uad-scope">' + o.scope + '</div>' : '') +
         '<span class="up-heading uad-heading' + (mitZahl ? " has-count" : "") + '"><span class="up-head-label">' + esc(t(titel)) + '</span>' +
           (o.info ? info(o.info) : '') +
           '<span class="up-head-sep"></span><span class="up-head-count">' + (mitZahl ? esc(o.zahl) : '') + '</span></span>' +
@@ -1098,17 +1100,18 @@
       for (var i = 0; i < b.length; i++) b[i].classList.toggle("is-active", b[i].getAttribute("data-wert") === aktiv);
       if (UC.segJetzt) { try { UC.segJetzt(el); } catch (e) {} }
     }
-    function chartHtml() { return '<div class="up-box uad-chartbox"><div class="uad-linewrap"><canvas></canvas></div></div>'; }
+    function chartHtml() { return '<div class="up-box uad-chartbox up-band-inhalt"><div class="uad-linewrap"><canvas></canvas></div></div>'; }
     /* DAS OFFENE BAND (15.10., Variante A wie der Chart der Citations-Seite, citations-combo-chart.css
        "DAS OFFENE BAND"): die Diagramme und die Balken des Advertiser Share stehen nicht mehr im
        Kasten, sondern in einem Band bis an die Kanten, oben und unten eine Linie, die Ueberschrift
        samt Werkzeugen als erste Zeile IM Band. Dasselbe Attribut wie die flache Tabelle (data-flach
        an einer .up-root): die Masse --up-flach-aus und --up-flach-h setzt core dort. Regeln in
        ads.css unter "DAS OFFENE BAND". data-theme gleich mit: der Theme-Waechter von core stempelt
-       eine neue innere Wurzel nur, wenn das Thema fest "dark" gewaehlt ist, nicht bei "System". */
+       eine neue innere Wurzel nur, wenn das Thema fest "dark" gewaehlt ist, nicht bei "System".
+       Seit dem 15.10. abends der Baustein aus core (.up-band, core.css "DAS OFFENE BAND"). */
     function dunkel() { return isDark() ? ' data-theme="dark"' : ''; }
     function bandAuf(name, klasse) {
-      return '<section class="up-root uad-sek uad-band' + (klasse ? " " + klasse : "") + '" data-flach="yes"' + dunkel() +
+      return '<section class="up-root uad-sek uad-band up-band' + (klasse ? " " + klasse : "") + '" data-flach="yes"' + dunkel() +
         (name ? ' data-sek="' + name + '"' : '') + '>';
     }
     function spaltenKnopf() {
@@ -1146,7 +1149,7 @@
        Die Zahl steht in der Gesamtzeile bzw. (Raster der Karten) im Pager. */
     function tabSek(titel, werkzeuge, ohnePager, sekName, ohneFlach, o) {
       o = o || {};
-      return '<section class="up-root uad-sek uad-tab"' + (ohneFlach ? '' : ' data-flach="yes"') + (o.leiste ? ' data-leiste="yes"' : '') + dunkel() +
+      return '<section class="up-root uad-sek uad-tab' + (o.klasse ? " " + o.klasse : "") + '"' + (ohneFlach ? '' : ' data-flach="yes"') + (o.leiste ? ' data-leiste="yes"' : '') + dunkel() +
           ' data-sek="' + (sekName || "tabelle") + '">' +
         kopf(titel, { tools: werkzeuge, scope: o.scope }) +
         '<div class="up-root uad-tabwurzel"' + dunkel() + '><div class="uad-tabelle"></div></div>' +
@@ -1164,12 +1167,12 @@
           '</div>' +
           /* Advertiser Share und Topics with Ads als EIN Band mit zwei Einheiten und einer Linie
              dazwischen (senkrecht, gestapelt waagerecht; ads.css "DAS OFFENE BAND"). */
-          '<div class="up-root uad-zwei uad-band" data-flach="yes"' + dunkel() + ' data-sek="zwei">' +
-            '<section class="uad-sek" data-sek="anteil">' + kopf("Advertiser Share", { info: "share", tools: leiserKnopf("View all", 'data-uad-ziel="advertisers"') }) +
-              '<div class="up-box uad-balkenbox"><div class="uad-balkenplatz"></div></div></section>' +
+          '<div class="up-root uad-zwei uad-band up-band up-band-zwei up-band-raster" data-flach="yes"' + dunkel() + ' data-sek="zwei">' +
+            '<section class="uad-sek up-band-einheit" data-sek="anteil">' + kopf("Advertiser Share", { info: "share", tools: leiserKnopf("View all", 'data-uad-ziel="advertisers"') }) +
+              '<div class="up-box uad-balkenbox up-band-flaeche up-band-inhalt"><div class="uad-balkenplatz"></div></div></section>' +
             /* Topics with Ads als ganze Tabelle wie alle anderen (06.10. angefordert): Suche und
                Display in der Kopfzeile, Seiten darunter. */
-            tabSek("Topics with Ads", sucheHtml("Search topics…", "Search topics") + spaltenKnopf(), false, "topics") +
+            tabSek("Topics with Ads", sucheHtml("Search topics…", "Search topics") + spaltenKnopf(), false, "topics", false, { klasse: "up-band-einheit" }) +
           '</div>' +
           '<section class="uad-sek" data-sek="recent">' + kopf("Recent Ads", { tools: leiserKnopf("Open Ad Library", 'data-uad-ziel="library"') }) +
             '<div class="uad-karten"></div></section>' +

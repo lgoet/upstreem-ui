@@ -821,6 +821,8 @@
     "Dismiss": "Ausblenden",
     "Show": "Zeigen",
     "Hide": "Ausblenden",
+    /* Der Knopf im Seitenkopf, der ein ausgeblendetes Band zurueckholt (UC.bandAus, 15.10.). */
+    "Show chart": "Chart einblenden",
     "Open in new tab": "In neuem Tab öffnen",
 
     /* ── Filter auf Brand-Erwähnungen (vier Tabellen teilen diese Texte) ───────────────────── */
@@ -15099,6 +15101,87 @@
     return { sync: sync };
   }
 
+  /* ══ DAS OFFENE BAND (15.10., core.css "DAS OFFENE BAND") ═══════════════════════════════════
+     bandTeile: setzt die Klassen des Bausteins an die Teile einer Komponente, die als Band steht
+     (data-flach="yes" an ihr oder einem Vorfahren). Die Komponente nennt ihre eigenen Teile per
+     Selektor -- das Markup steckt oft in eingebauten Bubble-Elementen, dort stehen die Klassen
+     nicht und sollen es auch nicht (ohne data-flach greift ohnehin keine Regel).
+       teile.zwei     true: zwei Einheiten mit Trennlinie (.up-band-zwei)
+       teile.selbst   true: das Band ist zugleich seine einzige Einheit (Brands)
+       teile.einheit, .kopf, .flaeche, .inhalt   Selektoren, relativ zum Band */
+  function bandTeile(band, teile){
+    if (!band || !band.classList) return null;
+    teile = teile || {};
+    band.classList.add("up-band");
+    if (teile.zwei) band.classList.add("up-band-zwei");
+    if (teile.selbst) band.classList.add("up-band-einheit");
+    [["einheit", "up-band-einheit"], ["kopf", "up-band-head"], ["flaeche", "up-band-flaeche"], ["inhalt", "up-band-inhalt"]].forEach(function(p){
+      if (!teile[p[0]]) return;
+      try { [].forEach.call(band.querySelectorAll(teile[p[0]]), function(el){ el.classList.add(p[1]); }); } catch(e){}
+    });
+    return band;
+  }
+  /* bandAus: ein Band GANZ ausblenden (15.10.: "Wenn man bei Citations oder bei Brands die Charts
+     ausblendet, gehen die ganz weg und lassen sich ueber einen dann kommenden Button in der
+     Topbar wieder einblenden"). Ausgeblendet steht im Kopf der Seite (.up-ph-top) ein Zeichenknopf
+     wie Aktualisieren daneben (.up-ph-iconbtn), eingeblendet ist er weg. Der Zustand gehoert der
+     Komponente: sie ruft das bei jedem Wechsel und beim Aufbau, und o.zeigen ist IHR Weg zurueck
+     (derselbe wie ihr eigener Knopf -- dieselben Ereignisse, derselbe Speicher).
+     Ohne Seitenkopf (ein Band ausserhalb einer Seite) gibt es keinen Weg zurueck: dann tut die
+     Funktion nichts und meldet false -- die Komponente klappt wie bisher zusammen.
+       o.id     Kennung des Bandes (mehrere Baender auf einer Seite)
+       o.zeigen Rueckruf des Knopfs
+       o.tip    Beschriftung, Vorgabe "Show chart" */
+  function bandAus(band, aus, o){
+    o = o || {};
+    if (!band || !band.parentElement) return false;
+    /* Der Kopf der Seite, in der das Band steht: der naechste Vorfahre, der einen .up-ph-top als
+       eigenes Kind traegt. Nicht ueber .up-seite -- die Klasse setzt makeAuftritt erst nach dem
+       Aufbau, und eine Komponente richtet sich unter Umstaenden schon vorher ein. */
+    var kopf = null, el = band.parentElement, n = 0;
+    while (el && el !== document.body && n++ < 30){
+      kopf = el.querySelector(":scope > .up-ph-top");
+      if (kopf) break;
+      el = el.parentElement;
+    }
+    if (!kopf){ band.classList.remove("is-band-aus"); return false; }
+    var id = String(o.id || "band");
+    var knopf = null;
+    [].forEach.call(kopf.querySelectorAll(".up-band-zeigen"), function(b){ if (b.getAttribute("data-band") === id) knopf = b; });
+    band.classList.toggle("is-band-aus", !!aus);
+    if (aus && !knopf){
+      var wort = t(o.tip || "Show chart");
+      knopf = document.createElement("button");
+      knopf.type = "button";
+      knopf.className = "up-ph-iconbtn up-band-zeigen";
+      knopf.setAttribute("data-band", id);
+      knopf.setAttribute("data-tip", wort);
+      knopf.setAttribute("aria-label", wort);
+      knopf.innerHTML = icon("chartSpline", 1.8);
+      knopf.addEventListener("click", function(){ if (typeof knopf.__zeigen === "function") knopf.__zeigen(); });
+      /* Vor dem ersten Zeichenknopf des Kopfs (Aktualisieren, Docs): dort, wo die Werkzeuge der
+         Seite stehen, und in derselben Huelle wie sie. */
+      var vor = kopf.querySelector(".up-ph-iconbtn:not(.up-band-zeigen)");
+      if (vor && vor.parentNode) vor.parentNode.insertBefore(knopf, vor); else kopf.appendChild(knopf);
+    }
+    if (knopf){
+      knopf.__zeigen = o.zeigen;
+      if (!aus && knopf.parentNode) knopf.parentNode.removeChild(knopf);
+    }
+    return true;
+  }
+  /* Gemerkt ueber das Neuladen hinaus (der Speicher der Komponenten lebt am Fenster und war nach
+     einem Neuladen leer). Nur fuer Baender -- die Bubble-Vorlagen merken weiter nur je Sitzung. */
+  function bandAusGemerkt(id){
+    try { return window.localStorage.getItem("up_band_aus__" + id) === "1"; } catch(e){ return false; }
+  }
+  function bandAusMerken(id, aus){
+    try {
+      if (aus) window.localStorage.setItem("up_band_aus__" + id, "1");
+      else window.localStorage.removeItem("up_band_aus__" + id);
+    } catch(e){}
+  }
+
   function makeFestHoehe(root, cfg){
     cfg = cfg || {};
     var MIN = cfg.min || 240;
@@ -26730,6 +26813,7 @@
     makeSticky: makeSticky,
     makeFestHoehe: makeFestHoehe,
     makeLeistenFilter: makeLeistenFilter,
+    bandTeile: bandTeile, bandAus: bandAus, bandAusGemerkt: bandAusGemerkt, bandAusMerken: bandAusMerken,
     rafThrottle: rafThrottle,
     einmalProBild: einmalProBild,
     onResize: onResize,

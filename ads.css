@@ -71,45 +71,18 @@
 .uad-seite[data-seite="advertiser"] .uad-linewrap { height: 220px; }
 
 /* ---- DAS OFFENE BAND (15.10., Variante A wie der Chart der Citations-Seite) -----------------------
-   Die Diagramme (Ad Coverage, Activity) und die Balken des Advertiser Share stehen nicht mehr im
-   Kasten, sondern in einem Band (ads.js bandAuf): bis an die Kanten um --up-flach-aus, oben und
-   unten je eine Linie, an den Seiten keine; die Ueberschrift samt Werkzeugen ist die erste Zeile
-   IM Band, 48 hoch wie Kopf und Fuss der flachen Tabelle (--up-flach-h), ohne Linie zum Inhalt
-   darunter. Dieselbe Bauart und dieselben Masse wie citations-combo-chart.css "DAS OFFENE BAND"
-   und shopping.css -- die Masse setzt core an .up-root[data-flach="yes"].
-   .uad-root davor (0,5,0): schlaegt die flache Tabelle aus core (.up-root.up-root[data-flach]
-   .up-box, 0,4,0) und die dunkle Kartenregel ohne die Ladereihenfolge. */
-.uad-root .up-root.uad-band[data-flach="yes"] {
-  /* width auto: .up-root traegt 100%, mit 100% wuerde der Auslauf das Band nur verschieben. */
-  width: auto; margin-left: calc(-1 * var(--up-flach-aus)); margin-right: calc(-1 * var(--up-flach-aus));
-  border-top: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border);
-}
-/* Die Ueberschriftzeile: 48 statt der 32 der Werkzeugzeile, ohne ihren Abstand nach unten; das
-   Polster gibt den Auslauf zurueck. height auto und min-height: ein schmal umbrechender Kopf
-   waechst. In den Einheiten von .uad-zwei polstert die Einheit. */
-.uad-root .up-root.uad-band[data-flach="yes"] > .uad-head { height: auto; min-height: var(--up-flach-h); margin-bottom: 0; padding: 0 var(--up-flach-aus); }
-.uad-root .up-root.uad-zwei[data-flach="yes"] > .uad-sek > .uad-head { height: auto; min-height: var(--up-flach-h); margin-bottom: 0; }
-/* Der Kasten wird zur Flaeche: kein Rahmen, kein Radius, kein Grund, kein Auslauf. Oben 8: die
-   48er Ueberschriftzeile bringt den Abstand zur Linie schon mit (wie Citations). */
-.uad-root .up-root.uad-band[data-flach="yes"] > .up-box,
-.uad-root .up-root.uad-zwei[data-flach="yes"] > .uad-sek > .uad-balkenbox {
-  border-width: 0; border-radius: 0; background: transparent; margin-left: 0; margin-right: 0;
-}
-.uad-root .up-root.uad-band[data-flach="yes"] > .uad-chartbox { padding: 8px var(--up-flach-aus) 16px; }
-.uad-root .up-root.uad-zwei[data-flach="yes"] > .uad-sek > .uad-balkenbox { padding: 8px 0 16px; }
+   Die Diagramme (Ad Coverage, Activity) und die Balken des Advertiser Share stehen nicht im Kasten,
+   sondern in einem Band (ads.js bandAuf). Seit dem 15.10. abends der Baustein aus core (core.css
+   "DAS OFFENE BAND"): Band, Ueberschriftzeile (.up-band-head an jedem Kopf aus kopf(), greift nur
+   im Band), Flaeche, Polster des Inhalts, die zwei Einheiten mit Trennlinie und ihr Raster. Hier
+   stand bis dahin eine Kopie davon. */
 
 /* ---- Overview: zwei Spalten gleicher Hoehe (Entwurf: align-items stretch, die Balken duerfen
-   unten Luft behalten). min(), damit ein Telefon nicht 420px erzwingt und waagerecht scrollt.
-   Seit dem 15.10. EIN offenes Band mit zwei Einheiten (siehe "DAS OFFENE BAND"): die Trennlinie
-   ist die 1px-Luecke des Rasters, durch die der Grund des Bandes (die Linienfarbe) scheint --
-   nebeneinander senkrecht, gestapelt waagerecht. So muss die Linie die Spaltenzahl des
-   auto-fit-Rasters nicht kennen (CSS kennt sie nicht, und eine Container-Abfrage braeuchte
-   Containment an .uad-zwei -- das legte einen Stapelkontext um die Menues der Kopfzeile). Die
-   Einheiten decken mit dem Grund der Seite. 452 = die 420 Inhalt von vorher plus das Polster der
-   Einheit (2 x --up-flach-aus). .up-root davor: .up-root setzt selbst display flex. */
-.up-root.uad-zwei { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(452px, 100%), 1fr)); gap: 1px; align-items: stretch;
-  background: var(--vc-border); }
-.uad-zwei > .uad-sek { padding: 0 var(--up-flach-aus); background: var(--up-surface); }
+   unten Luft behalten). Seit dem 15.10. EIN offenes Band mit zwei Einheiten (core: .up-band-zwei mit
+   .up-band-raster, die Trennlinie ist die 1px-Luecke des Rasters). 452 = die 420 Inhalt von vorher
+   plus das Polster der Einheit (2 x --up-flach-aus); min() in core, damit ein Telefon nicht 452px
+   erzwingt und waagerecht scrollt. */
+.uad-zwei { --up-band-spalte: 452px; }
 .uad-zwei > .uad-sek > .up-box, .uad-zwei .uad-vorschauplatz { flex: 1 1 auto; }
 .uad-zwei .uad-vorschauplatz, .uad-zwei .uad-vorschau, .uad-zwei .uad-vorschau > .uad-tabelle { display: flex; flex-direction: column; }
 .uad-zwei .uad-vorschau, .uad-zwei .uad-vorschau > .uad-tabelle, .uad-zwei .uad-vorschau > .uad-tabelle > .up-box { flex: 1 1 auto; }

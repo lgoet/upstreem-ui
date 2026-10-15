@@ -682,6 +682,11 @@
       var chartBox = root.querySelector(".ubo-box-chart");
       if (chartBox && chartBox.parentElement && chartBox.parentElement.classList.contains("ubo-unit"))
         chartBox.parentElement.classList.add("ubo-unit-chart");
+      /* Seit dem 15.10. abends der Baustein aus core (core.css "DAS OFFENE BAND"): die Einheit
+         des Charts ist das Band und zugleich seine einzige Einheit. */
+      if (root.getAttribute("data-flach") === "yes" && UC.bandTeile && chartBox && chartBox.parentElement.classList.contains("ubo-unit-chart"))
+        UC.bandTeile(chartBox.parentElement, { selbst: true, kopf: ":scope > .ubo-head", flaeche: ":scope > .ubo-box-chart",
+          inhalt: ":scope > .ubo-box-chart > .ubo-panel-body" });
     }
     ensureChrome();
 
@@ -820,6 +825,18 @@
     /* Chart hidden/shown survives a Bubble re-render of the markup, per instance — exactly the
        window.__ccHidden shape citations-combo-chart uses for its own Hide button. */
     var HIDDEN_STORE = (window.__uboHidden = window.__uboHidden || {});
+    /* ALS BAND (data-flach, Seite Brands, 15.10.): ausgeblendet ist der Chart ganz weg, der Knopf
+       zum Einblenden steht im Kopf der Seite (UC.bandAus) und geht denselben Weg wie das Auge im
+       Chart. Dazu ueber das Neuladen hinaus gemerkt -- der Speicher am Fenster bleibt der erste. */
+    var bandEl = root.querySelector(".ubo-unit-chart.up-band");
+    if (bandEl && HIDDEN_STORE[instanceId] == null && UC.bandAusGemerkt && UC.bandAusGemerkt(instanceId)) HIDDEN_STORE[instanceId] = true;
+    function bandStellen(){
+      if (!bandEl || !UC.bandAus) return;
+      UC.bandAus(bandEl, root.classList.contains("is-hidden-view"), { id: instanceId, zeigen: function(){
+        var auge = root.querySelector(".ubo-hide");
+        if (auge && root.classList.contains("is-hidden-view")) auge.click();
+      } });
+    }
     var INIT_COMPANIES = (window.__uboInitCompanies = window.__uboInitCompanies || {});
     var USER_FILTERED  = (window.__uboUserFiltered = window.__uboUserFiltered || {});
     var sortField = (SORT_STORE[instanceId] && SORT_STORE[instanceId].field) || "visibility";
@@ -1251,6 +1268,7 @@
         var hbtn = root.querySelector(".ubo-hide");
         if (hbtn){ hbtn.setAttribute("data-tip", "Show"); hbtn.setAttribute("aria-label", "Show"); }
       }
+      bandStellen();
       syncChartMode(); syncGran(); syncStatusSwitch(); setHeadCount();
       renderTable(); renderChartSide(); syncFilterBadge(); syncColsBadge();
     }
@@ -1652,6 +1670,8 @@
           var hb = e.target.closest(".ubo-hide");
           var collapsed = root.classList.toggle("is-hidden-view");
           HIDDEN_STORE[instanceId] = collapsed;
+          if (bandEl && UC.bandAusMerken) UC.bandAusMerken(instanceId, collapsed);
+          bandStellen();
           hb.setAttribute("data-tip", collapsed ? "Show" : "Hide");
           hb.setAttribute("aria-label", collapsed ? "Show" : "Hide");
           setTimeout(function(){ line.resize(); line.relayoutLegend && line.relayoutLegend(); matrix.resize(); }, 230);
@@ -1841,6 +1861,10 @@
          Folgen, die dort nie gemessen wurden. */
       if (w && LEISTE) root.classList.toggle("is-vnarrow", w < 620);
       root.classList.toggle("ubo-narrow-page", UC.getPageWidth() < 500);
+      /* Schmal bricht die Ueberschriftzeile des Bandes in zwei: dann 16 ueber und 8 unter ihr
+         (core.css, .up-band-head.is-zweizeilig -- die Regel stand bis zum 15.10. hier). */
+      var bandKopf = root.querySelector(".ubo-unit-chart > .up-band-head");
+      if (bandKopf) bandKopf.classList.toggle("is-zweizeilig", root.classList.contains("ubo-narrow-page"));
       /* Unter 620px ist der Kit aus und die Leiste verhaelt sich wie vor ihm. Die Breite ist hier
          schon gemessen -- refit bekommt sie mit, statt sie neu zu lesen. */
       if (typeof toolGroup !== "undefined" && toolGroup && w) toolGroup.refit(w);

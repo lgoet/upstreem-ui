@@ -55,47 +55,22 @@
 .ubo-scale-btn { position: absolute; top: 4px; right: 4px; }
 
 /* ---------- DAS OFFENE BAND (data-flach="yes" an der Wurzel, 15.10.) ----------
-   Variante A der Vorschau, vom Nutzer gewaehlt und zuerst auf Citations gebaut
-   (citations-combo-chart.css, "DAS OFFENE BAND") -- hier dieselbe Bauart mit denselben
-   Variablen aus core: kein Kasten, die Einheit des Charts laeuft links und rechts um
-   --up-flach-aus bis an die Kanten, oben und unten je eine Linie, an den Seiten keine. Ueberschrift
-   und Werkzeuge sind die erste Zeile IM Band, 48 hoch wie Kopf und Fuss der flachen Tabelle
-   darunter (--up-flach-h), ohne Linie zum Diagramm.
-   ANDERS ALS AUF CITATIONS ist das Band hier nicht die Wurzel, sondern ihre erste Einheit
-   (.ubo-unit-chart, setzt ensureChrome): die Tabelle steht in derselben Wurzel darunter. Beide
-   tragen dasselbe data-flach, das die Masse aus core setzt -- Band und Tabelle laufen damit nie
-   auseinander. Gesetzt wird es nur von der Seite Brands (.brands_markup.py, und mit
-   data-leiste); dieselbe Komponente in Bubble bleibt im Kasten.
-   24 zwischen Band und Tabelle wie auf Citations (.ucs-main): beide gehoeren zur selben Auswahl.
-   Spezifitaet .up-root.ubo-root[data-flach="yes"] (0,3,0) und mehr: schlaegt die Kastenregeln
-   oben und die dunkle Kartenregel aus core (.up-root[data-theme="dark"] .ubo-box) ohne die
-   Ladereihenfolge. Das !important des ausgeblendeten Kastens (height 0) bleibt staerker, so klappt
-   das Band beim Ausblenden auf seine Ueberschriftzeile zusammen. */
-.up-root.ubo-root[data-flach="yes"] { gap: 24px; }
-.up-root.ubo-root[data-flach="yes"] .ubo-unit-chart {
-  margin-left: calc(-1 * var(--up-flach-aus)); margin-right: calc(-1 * var(--up-flach-aus));
-  /* Das Polster gibt den Auslauf zurueck: Ueberschrift und Diagramm stehen buendig mit
-     Filterzeile und Tabellenleiste. */
-  padding: 0 var(--up-flach-aus);
-  border-top: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border);
-}
-/* min-height und nicht height: auf dem Telefon bricht die Zeile in zwei (ubo-narrow-page unten). */
-.up-root.ubo-root[data-flach="yes"] .ubo-unit-chart > .ubo-head { min-height: var(--up-flach-h); margin-bottom: 0; }
-/* Dort stand die Ueberschrift ohne Polster direkt an der oberen Linie (gemessen bei 375: 1px
-   darunter). 16 darueber wie in der 48er Zeile (dort 15.6 bis zur Schrift), 8 unter den
-   Werkzeugen -- mit den 8 ueber dem Diagramm dieselben 16 wie zwischen Ueberschrift und Linie. */
-.up-root.ubo-root[data-flach="yes"].ubo-narrow-page .ubo-unit-chart > .ubo-head { padding: 16px 0 8px; }
-/* Der Kasten wird zur Flaeche: kein Rahmen, kein Radius, kein eigener Grund, auch im Dunkeln
-   nicht. 409 statt 427: die Ueberschrift steht jetzt im Band, die Zeichenflaeche bleibt mit 385
-   so hoch wie bisher (427 - 2 Rahmen - 24 - 16 = 409 - 8 - 16). */
-.up-root.ubo-root[data-flach="yes"] .ubo-box-chart {
-  border-width: 0; border-radius: 0; background: transparent; height: 409px;
-}
-/* Seitlich kein Polster mehr, das hat jetzt die Einheit; oben 8 statt 24, weil die 48er
-   Ueberschriftzeile den Abstand zur Linie schon mitbringt. */
-.up-root.ubo-root[data-flach="yes"] .ubo-box-chart > .ubo-panel-body { padding: 8px 0 16px; }
-/* Schmal (is-narrow) aus demselben Grund 18 weniger als die 380 im Kasten: 380 - 2 - 24 - 16 = 338
-   Zeichenflaeche, + 8 + 16. */
+   Variante A der Vorschau, vom Nutzer gewaehlt und zuerst auf Citations gebaut. Seit dem 15.10.
+   abends der Baustein in core (core.css "DAS OFFENE BAND"): die Einheit des Charts
+   (.ubo-unit-chart, setzt ensureChrome) ist das Band und zugleich seine einzige Einheit, die
+   Klassen setzt brands-overview.js ueber UC.bandTeile. Ueberschriftzeile, Flaeche, Polster, die
+   zweizeilige Ueberschrift auf dem Telefon (is-zweizeilig) und der Abstand zur Leiste darunter
+   (core "DIE ZEILE UNTER DEM BAND") kommen von dort. Gesetzt wird data-flach nur von der Seite
+   Brands (.brands_markup.py, mit data-leiste); dieselbe Komponente in Bubble bleibt im Kasten.
+   Hier bleibt, was nur diese Komponente hat:
+   - der Stapel aus Band und Tabelle: --up-stapel-luft ist der Abstand, den die Wurzel ohne Band
+     haette (24, wie .ucs-main) -- core gleicht ihn unter dem Band auf --up-band-luft aus;
+   - die Hoehen des Kastens. 409 statt 427: die Ueberschrift steht jetzt im Band, die
+     Zeichenflaeche bleibt mit 385 so hoch wie bisher (427 - 2 Rahmen - 24 - 16 = 409 - 8 - 16);
+     schmal (is-narrow) aus demselben Grund 18 weniger als die 380 im Kasten.
+   Spezifitaet (0,3,0) und mehr: schlaegt die Kastenregeln oben ohne die Ladereihenfolge. */
+.up-root.ubo-root[data-flach="yes"] { --up-stapel-luft: 24px; gap: var(--up-stapel-luft); }
+.up-root.ubo-root[data-flach="yes"] .ubo-box-chart { height: 409px; }
 .up-root.ubo-root[data-flach="yes"].is-narrow .ubo-box-chart { height: 362px; }
 
 /* ---------- DIE FESTE SPUR der Zahlen (core.css, --up-spur, 15.10.) ----------

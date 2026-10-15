@@ -229,6 +229,11 @@
     var startMode = (savedMode === "bar" || savedMode === "doughnut") ? savedMode : "doughnut";
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark){ root.setAttribute("data-theme","dark"); donutRoot.setAttribute("data-theme","dark"); } else { root.removeAttribute("data-theme"); donutRoot.removeAttribute("data-theme"); }
+    /* DAS OFFENE BAND (data-flach, Citations-Seite): der Baustein aus core (core.css "DAS OFFENE
+       BAND", UC.bandTeile) -- die Wurzel ist das Band, die zwei Einheiten stehen mit der
+       Trennlinie aus core nebeneinander. Hier standen bis zum 15.10. die eigenen Regeln dafuer. */
+    var BAND = root.getAttribute("data-flach") === "yes" && !!UC.bandTeile;
+    if (BAND) UC.bandTeile(root, { zwei: true, einheit: ".combo-unit", kopf: ".combo-head", flaeche: ".combo-box", inhalt: ".combo-panel-body" });
     /* OR two independent loading signals (data-processing/data-processing2), same convention as
        the other three chart/table components. */
     function readProcessing(){
@@ -389,13 +394,25 @@
     var hideBtns = Array.prototype.slice.call(root.querySelectorAll(".combo-hide"));
     if (hideBtns.length && inner){
       var HIDDEN = (window.__ccHidden = window.__ccHidden || {});
+      /* ALS BAND (15.10.): ausgeblendet ist es ganz weg, der Knopf zum Einblenden steht im Kopf
+         der Seite (UC.bandAus) und geht denselben Weg wie dieser Knopf hier. Dazu ueber das
+         Neuladen hinaus gemerkt -- der Speicher am Fenster bleibt der erste. */
+      if (BAND && HIDDEN[instanceId] == null && UC.bandAusGemerkt && UC.bandAusGemerkt(instanceId)) HIDDEN[instanceId] = true;
+      var bandStellen = function(){
+        if (!BAND || !UC.bandAus) return;
+        UC.bandAus(root, root.classList.contains("is-hidden-view"), { id: instanceId,
+          zeigen: function(){ if (root.classList.contains("is-hidden-view")) hideBtns[0].click(); } });
+      };
       if (HIDDEN[instanceId]){ root.classList.add("is-hidden-view"); }
+      bandStellen();
       hideBtns.forEach(function(hideBtn){
         if (hideBtn.getAttribute("data-cc-bound") === "1") return;
         hideBtn.setAttribute("data-cc-bound", "1");
         hideBtn.addEventListener("click", function(){
           var collapsed = root.classList.toggle("is-hidden-view");
           HIDDEN[instanceId] = collapsed;
+          if (BAND && UC.bandAusMerken) UC.bandAusMerken(instanceId, collapsed);
+          bandStellen();
           hideBtn.setAttribute("data-tip", collapsed ? "Show" : "Hide");
           hideBtn.setAttribute("aria-label", collapsed ? "Show" : "Hide");
           if (collapsed){
