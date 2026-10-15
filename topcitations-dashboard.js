@@ -86,6 +86,13 @@
     var myCtrlId = "tcd_" + Math.random().toString(36).slice(2) + "_" + Date.now();
     var isDark = isYes(root.getAttribute("data-isdark"));
     if (isDark) root.setAttribute("data-theme","dark"); else root.removeAttribute("data-theme");
+    /* DAS OFFENE BAND (data-flach, Dashboard-Seite, 15.10.): Ring und Top Domains/URLs als EIN
+       Band mit zwei Einheiten und der Trennlinie aus core (core.css "DAS OFFENE BAND"). Links wird
+       der Kasten zur Flaeche, rechts steht die Tabelle flach in ihrer Einheit
+       (topcitations-dashboard.css). Ohne das Attribut (Bubble) bleibt alles im Kasten. */
+    if (root.getAttribute("data-flach") === "yes" && UC.bandTeile)
+      UC.bandTeile(root, { zwei: true, einheit: ".tcd-unit", kopf: ".tcd-head", flaeche: ".tcd-unit-left > .tcd-box",
+        inhalt: ".tcd-unit-left .tcd-panel-body" });
 
     /* EIN Weg nach draussen statt sieben gleicher Handmuster. Neu ist nur der LOKALE MODUS
        (08.10., Dashboard-Seite): data-local="yes" heisst, eine Seite hat diesen Baustein

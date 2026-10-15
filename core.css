@@ -3625,9 +3625,10 @@
        Abstand zwischen Bloecken. Der Stapel setzt seinen Abstand als --up-stapel-luft (gap:
        var(--up-stapel-luft)); der Rand gleicht ihn hier auf die 16 aus. Ein Stapel ohne die
        Variable bekommt die 16 obendrauf -- darum setzt jede Seite mit Band sie.
-       Kein :has() im :has(): das verwirft der Browser samt der ganzen Regel (gemessen, die erste
-       Fassung schloss so auch Gruppen aus, die mit einem Band BEGINNEN -- die gibt es nicht). */
-    :is(.up-band, :has(> .up-band:last-child)):has(+ :not(.up-band)) {
+       Kein :has() im :has(): das verwirft der Browser samt der ganzen Regel (gemessen). Darum
+       steht "danach beginnt eine Huelle mit einem Band" (Dashboard: .uds-teil) als eigenes
+       :not(:has(...)) daneben und nicht im ersten :has(). */
+    :is(.up-band, :has(> .up-band:last-child)):has(+ :not(.up-band)):not(:has(+ * > .up-band:first-child)) {
       margin-bottom: calc(var(--up-band-luft) - var(--up-stapel-luft, 0px));
     }
     /* Und darunter dieselbe Luft: eine Abschnittsueberschrift (.up-sec-head, Shopping) direkt ueber

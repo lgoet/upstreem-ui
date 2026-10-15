@@ -15,6 +15,12 @@ Was ersetzt wird:
     Karten, Werkzeugleiste klebt), dazu data-merken="yes" an den Responses (ZUSATZ)
   - die data-*-fn-Attribute fallen weg: die Seite antwortet selbst, Bubble ist nicht dabei
   - data-local="yes" an jede Wurzel
+  - data-flach="yes" an jede Wurzel (15.10. abends, wie .citations_markup.py): Visibility over Time
+    und Top Citations als offene Baender (core.css "DAS OFFENE BAND", die Tabellen darin flach),
+    die Responses als flache Tabelle (core.css "DIE FLACHE TABELLE"). Die Responses behalten ihre
+    Ueberschrift -- keine eine Leiste: auf dem Dashboard steht sie unter zwei Baendern, und ohne
+    Ueberschrift hiesse die Tabelle nichts (dieselbe Entscheidung wie Recent Appearances in
+    Shopping). Die Vorlagen bleiben im Kasten, wie ein eingebautes Bubble-Element sie kennt.
   - data-sticky-top="171" -> 16: die 171 waren der Kopf der alten Bubble-Ansicht ueber der Tabelle.
     Der Kopf dieser Seite klebt nicht, also klebt die Leiste 16 unter der Oberkante -- derselbe
     Wert wie auf Dashboard und Opportunities (core: stickyTopSetzen). 0 lag direkt am Rand
@@ -97,6 +103,8 @@ for schluessel, pfad, kennung in TEILE:
     m = m.replace('data-sticky-top="171"', 'data-sticky-top="16"')
     m = re.sub(r'\s*data-[a-z0-9-]+-fn="bubble_fn_[^"]*"', "", m)
     m = re.sub(r'(<div class="up-root [^"]*")', lambda t: t.group(1) + ' data-local="yes"' + ZUSATZ.get(schluessel, ""), m, count=1)
+    # NACH data-local, direkt hinter class -- dieselbe Stelle wie in .citations_markup.py.
+    m = re.sub(r'(<div class="up-root [^"]*")', r'\1 data-flach="yes"', m, count=1)
     rest = [x for x in re.findall(r'"[A-Z][A-Z0-9_]{3,}"', m)]
     if rest:
         print("ABBRUCH -- unersetzte Platzhalter in %s: %s" % (pfad, ", ".join(sorted(set(rest)))))

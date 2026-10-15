@@ -48,6 +48,24 @@
 
 .tcd-panel-body { flex: 1 1 auto; min-height: 0; padding: 16px; position: relative; display: flex; flex-direction: column; transition: opacity 200ms ease; }
 
+/* ---------- DAS OFFENE BAND (data-flach="yes" an der Wurzel, Dashboard-Seite, 15.10.) ----------
+   Ring und Top Domains/URLs als EIN Band mit zwei Einheiten, wie Citations (core.css "DAS OFFENE
+   BAND"; die Klassen setzt topcitations-dashboard.js ueber UC.bandTeile). Dieselbe Bauart wie
+   Visibility over Time darueber (visibility-chart.css), mit denselben Massen. Gesetzt wird
+   data-flach nur von der Dashboard-Seite (.dashboard_markup.py); die Bubble-Vorlage bleibt im
+   Kasten. Spezifitaet (0,4,0) und mehr: schlaegt die Kastenregeln oben und die dunkle Kartenregel
+   aus core (.up-root[data-theme="dark"] .tcd-box) ohne die Ladereihenfolge. */
+/* Beide Kaesten so hoch wie die Tabelle: 1 Linie + 48 Kopf + 8 x 55 Zeilen = 489. */
+.up-root.tcd-root[data-flach="yes"] .tcd-box { height: 489px; }
+/* Rechts die Tabelle flach in ihrer Einheit: bis an die Raender der Einheit, oben eine Linie unter
+   der Ueberschriftzeile, sonst kein Rahmen, kein Radius, kein eigener Grund. */
+.up-root.tcd-root[data-flach="yes"] .tcd-unit-right > .tcd-box {
+  margin-left: calc(-1 * var(--up-flach-aus)); margin-right: calc(-1 * var(--up-flach-aus));
+  border-width: 1px 0 0; border-color: var(--vc-border); border-radius: 0; background: transparent;
+}
+.up-root.tcd-root[data-flach="yes"] .tct-table { background: transparent; }
+.up-root.tcd-root[data-flach="yes"] .tct-thead { height: var(--up-flach-h); flex-basis: var(--up-flach-h); background: transparent; }
+
 /* ---------- icon buttons (32x32) — local, see file header for why ---------- */
 /* dark button tooltip (own implementation — see file header) */
 

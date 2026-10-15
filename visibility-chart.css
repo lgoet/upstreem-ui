@@ -49,6 +49,30 @@
 .vot-root.is-narrow .vot-max-right { display: none; }
 .vot-root.is-narrow .vot-max-top { display: none; }
 
+/* ---------- DAS OFFENE BAND (data-flach="yes" an der Wurzel, Dashboard-Seite, 15.10.) ----------
+   Chart und Top Brands als EIN Band mit zwei Einheiten, wie Citations (core.css "DAS OFFENE
+   BAND"; die Klassen setzt visibility-chart.js ueber UC.bandTeile). Kein Kasten, bis an die
+   Kanten, oben und unten eine Linie, die Ueberschriften als erste Zeile im Band, zwischen Chart und
+   Tabelle die Trennlinie von Kante zu Kante (gestapelt waagerecht). Gesetzt wird data-flach nur
+   von der Dashboard-Seite (.dashboard_markup.py); die Bubble-Vorlage bleibt im Kasten.
+   Hier steht, was nur diese Komponente hat. Spezifitaet (0,4,0) und mehr: schlaegt die
+   Kastenregeln oben und die dunkle Kartenregel aus core (.up-root[data-theme="dark"] .vot-box)
+   ohne die Ladereihenfolge. */
+/* Beide Kaesten so hoch wie die Tabelle: 1 Linie + 48 Kopf + 8 x 55 Zeilen = 489 (im Kasten
+   1 + 45 + 8 x 55 + 1 = 487). Unten ohne eigene Linie -- die Unterkante des Bandes schliesst die
+   letzte Zeile. Die Kurve links waechst mit, wie im Kasten. */
+.up-root.vot-root[data-flach="yes"] .vot-box { height: 489px; }
+/* Rechts die Tabelle flach in ihrer Einheit, wie Product Movement in Shopping: bis an die Raender
+   der Einheit (Trennlinie, Kante der Seite), oben eine Linie unter der Ueberschriftzeile, sonst
+   kein Rahmen, kein Radius, kein eigener Grund. */
+.up-root.vot-root[data-flach="yes"] .vot-box-right {
+  margin-left: calc(-1 * var(--up-flach-aus)); margin-right: calc(-1 * var(--up-flach-aus));
+  border-width: 1px 0 0; border-color: var(--vc-border); border-radius: 0; background: transparent;
+}
+.up-root.vot-root[data-flach="yes"] .vt-table { background: transparent; }
+/* Der Kopf wie der der flachen Tabelle: 48 hoch (--up-flach-h), ohne eigenen Grund. */
+.up-root.vot-root[data-flach="yes"] .vt-thead { height: var(--up-flach-h); flex-basis: var(--up-flach-h); background: transparent; }
+
 /* maximize icon swap */
 .vot-maximize .ic-min { display: none; }
 .vot-root.is-max .vot-maximize .ic-max { display: none; }
