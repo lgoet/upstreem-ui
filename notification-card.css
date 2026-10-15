@@ -1,44 +1,52 @@
 /* upstreem notification-card.css — die schwebende Benachrichtigung (Praefix `unc`).
-   Braucht core.css: Farben aus --vc-*, die drei Knopfarten (.up-iconbtn, .up-btn-sec) von dort.
-   Hier steht nur, was es nirgends sonst gibt: die Karte, ihre Zierschichten und die Einblendung. */
+   Braucht core.css: die umgekehrten Token (--vc-inverse-*, --vc-toast-*), die Tiefe --up-e-4 und
+   die Knoepfe .up-iconbtn.is-24 / .up-btn-sec.
+   SEIT DEM 16.10. VARIANTE C "INVERS" der Leinwand "Notification Varianten" (Vorbild Sonner und
+   UC.toast): die schmale Karte, umgekehrt zum Thema -- im Hellen dunkel, im Dunkeln hell, die
+   Seite dahinter bleibt, wie sie ist. Die Masse unten sind die der Vorlage, Zahl fuer Zahl.
+   Vorher: 424 breit, weisser Kasten mit Kopfzeile, Logo, Zeichenkachel, Zierlinien und Fusszeile. */
 
 /* ---- Der schwebende Rahmen --------------------------------------------------------------------
-   32px zu beiden Kanten, wie vorgegeben. z-index 2147483500 liegt ueber allem in dieser App --
-   das create-with-ai-Modal steht auf 2147483000, dessen Toast und die Dropdowns auf ...001 --
-   aber UNTER quick-actions (2147483600). Das ist der einzige Bereich, der noch darueber gehoert.
-   Kein pointer-events auf der Wurzel: solange keine Karte offen ist, darf hier nichts klickbar
-   sein, sonst faengt ein unsichtbares Feld unten rechts Klicks der App ab. */
-/* Die Positionierung sitzt an der KARTE, nicht an der Wurzel. Bubble setzt der Wurzel ein
-   eigenes position:relative -- damit bezog sich right/bottom auf das 1x1-Hostelement und die
-   Karte landete 32px ausserhalb davon, bei x/y = -32. Die Wurzel bleibt deshalb unberuehrt: sie
-   ist nur der Anker fuer den Loader, und was Bubble mit ihr macht, ist dann gleichgueltig. */
-/* Die Wurzel ist nur der Anker fuer den Loader -- die Karte haengt am body. Nichts an ihr darf
-   Klicks fangen oder Platz brauchen. */
+   z-index 2147483500 liegt ueber allem in dieser App -- das create-with-ai-Modal steht auf
+   2147483000, dessen Toast und die Dropdowns auf ...001 -- aber UNTER quick-actions (2147483600).
+   Die Positionierung sitzt an der KARTE, nicht an der Wurzel: Bubble setzt der Wurzel ein eigenes
+   position:relative, damit bezog sich right/bottom auf das 1x1-Hostelement. Die Wurzel ist nur der
+   Anker fuer den Loader -- die Karte haengt am body. Nichts an ihr darf Klicks fangen. */
 .unc-root { pointer-events: none; }
-/* Sichtbarkeit ueber eine Klasse AN DER KARTE: sie steht nicht mehr unter der Wurzel, ein
-   .unc-root:not(.is-open) .unc-card griffe dort nicht mehr. */
+/* Sichtbarkeit ueber eine Klasse AN DER KARTE: sie steht nicht unter der Wurzel, ein
+   .unc-root:not(.is-open) .unc-card griffe dort nicht. */
 .unc-card:not(.is-shown) { display: none; }
 
+/* 16 zu beiden Kanten (vorher 8): die Vorlage setzt die Karte mit 16 ab, wie UC.toast seine
+   16 seitlich. 360 breit -- die schmalste der vier Varianten, so breit wie ein Toast mit Knopf.
+   Polster 14 oben und unten, links 16, rechts nur 10: dort steht das X, und dessen 24er-Flaeche
+   bringt ihre eigene Luft mit -- mit 16 saesse das Zeichen sichtbar weiter innen als der Text links.
+   Der Rand hat die Farbe der Flaeche: er ist da, damit die Karte im Hellen dieselbe Kante hat wie
+   im Dunkeln, ohne eine zweite Linie um den Kasten zu zeichnen. */
 .unc-card {
-  position: fixed; right: 8px; bottom: 8px; z-index: 2147483500;
-  width: 424px; box-sizing: border-box; overflow: hidden;
-  background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl);
-  /* e-4, die Tiefe von allem, was ueber der ganzen Seite liegt (28.09. vereinheitlicht). Hier
-     standen vier eigene Lagen je Thema -- eine Kante ohne Versatz, damit die Karte oben und rechts
-     nicht kantig abgeschnitten wirkt, und drei nach unten. Die Kante zeichnet jetzt der Rahmen
-     (1px --vc-border), und e-4 streut mit 48px weit genug, um die Karte vom Grund zu loesen. */
+  position: fixed; right: 16px; bottom: 16px; z-index: 2147483500;
+  width: 360px; box-sizing: border-box; overflow: hidden;
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 10px 14px 16px;
+  background: var(--vc-inverse-bg); color: var(--vc-inverse-ink);
+  border: 1px solid var(--vc-inverse-bg); border-radius: var(--up-r-2xl);
+  /* e-4, die Tiefe von allem, was ueber der ganzen Seite liegt (STYLEGUIDE: Benachrichtigung,
+     Toast, Dialog). */
   box-shadow: var(--up-e-4);
-  /* 420ms mit dieser Kurve: schnell heraus, weich hinein -- die Karte soll auffallen, ohne zu
-     springen. `both` haelt den Anfangszustand, sonst blitzt sie vor dem ersten Bild auf. */
-  animation: unc-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  -webkit-font-smoothing: antialiased;
+  /* DIE EINBLENDUNG (Vorlage C, Nutzerwunsch "Bewegung wie mobbin"): 1s easeOutExpo aus 12px.
+     1s liegt bewusst AUSSERHALB der Skala (--up-t-auftritt ist 600ms fuer den Seitenwechsel):
+     die Karte kommt einmal je Sitzung und soll ankommen, nicht aufploppen -- der groesste Teil
+     der Strecke liegt ohnehin in den ersten 200ms, der Rest setzt weich auf. Nur opacity und
+     transform. `both` haelt den Anfangszustand, sonst blitzt sie vor dem ersten Bild auf. */
+  animation: unc-in 1s var(--up-ease-expo) both;
 }
 @keyframes unc-in {
-  from { opacity: 0; transform: translateY(14px) scale(0.985); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: translateY(12px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
 }
-/* Rueckwaerts beim Schliessen, halb so lang -- Verschwinden darf schneller sein als Erscheinen. */
-/* Die eigene Dunkel-Regel fuer den Schatten ist entfallen: --up-e-4 dreht mit dem data-theme der
-   Karte selbst (dunkel .46 statt .20), dieselbe Staffelung, die hier von Hand stand. */
+/* Rueckwaerts beim Schliessen, schneller -- Verschwinden darf schneller sein als Erscheinen.
+   180ms wartet auch das JS (schliessen), bevor es neu zeichnet. */
 .unc-card.is-closing {
   animation: unc-out 180ms cubic-bezier(0.4, 0, 1, 1) both;
 }
@@ -46,179 +54,137 @@
   from { opacity: 1; transform: translateY(0) scale(1); }
   to   { opacity: 0; transform: translateY(8px) scale(0.99); }
 }
-/* Wer Bewegung abgestellt hat, bekommt sie nicht: die Karte ist eine Meldung, keine Animation. */
+
+/* ---- Die Teile, gestaffelt -----------------------------------------------------------------------
+   Nach der Karte im 100-ms-Takt: Zeichen und Bezeichnung, dann Titel und Text, dann die Knoepfe.
+   Dieselbe Kurve und Dauer wie die Karte, aber nur 6px Weg -- die Teile setzen sich in der Karte,
+   sie kommen nicht von aussen. Das X faehrt mit der Karte, ohne eigene Stufe. */
+.unc-ic, .unc-type { animation: unc-teil 1s var(--up-ease-expo) 100ms both; }
+.unc-copy          { animation: unc-teil 1s var(--up-ease-expo) 200ms both; }
+.unc-foot          { animation: unc-teil 1s var(--up-ease-expo) 300ms both; }
+@keyframes unc-teil {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ---- Der Glanz ------------------------------------------------------------------------------------
+   Ab 0,6s wandert ein Lichtstreifen einmal schraeg ueber die Karte, danach steht sie still. Die Lage
+   deckt die Innenflaeche und schneidet den Streifen an der Rundung; der Streifen (45% breit, oben
+   und unten 20% ueber den Rand, damit die Schraege keine Ecke freilaesst) faehrt von -120% bis
+   320% seiner Breite -- also ganz von links ausserhalb bis ganz rechts ausserhalb.
+   Die Kurve ist KEIN Auftritt: langsam los, gleichmaessig durch, weich aus -- ein Streifen mit
+   easeOutExpo waere nach 200ms fast durch und laege dann eine Sekunde am rechten Rand.
+   1.6s und die Verzoegerung von 600ms sind die der Vorlage: der Glanz beginnt, wenn die Karte
+   steht, und ist vorbei, bevor man sie gelesen hat.
+   --vc-inverse-glanz (core.css, Block am Ende): Licht ist in beiden Themen weiss -- auf der
+   dunklen Karte ein Hauch, auf der hellen kraeftig. */
+.unc-glanz {
+  position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none;
+}
+.unc-glanz::before {
+  content: ""; position: absolute; top: -20%; bottom: -20%; left: 0; width: 45%;
+  background: linear-gradient(100deg, transparent 0%, var(--vc-inverse-glanz) 50%, transparent 100%);
+  transform: translateX(-120%) skewX(-12deg);
+  animation: unc-glanz 1.6s cubic-bezier(.45, .05, .3, 1) 600ms both;
+}
+@keyframes unc-glanz {
+  from { transform: translateX(-120%) skewX(-12deg); }
+  to   { transform: translateX(320%) skewX(-12deg); }
+}
+
+/* Wer Bewegung abgestellt hat, bekommt sie nicht: keine Einblendung, kein Glanz. Die Karte ist
+   eine Meldung, keine Animation. */
 @media (prefers-reduced-motion: reduce) {
-  .unc-card, .unc-card.is-closing { animation: none; }
+  .unc-card, .unc-card.is-closing, .unc-ic, .unc-type, .unc-copy, .unc-foot { animation: none; }
+  .unc-glanz { display: none; }
 }
 
-/* ---- Zierschichten ---------------------------------------------------------------------------
-   Alle drei ohne Mauszeiger-Ereignisse und unter dem Inhalt. Sie stehen als eigene Elemente im
-   Markup, weil drei Lagen mit ::before/::after nicht gehen. */
-.unc-wash, .unc-rules, .unc-hair { position: absolute; pointer-events: none; }
-.unc-wash {
-  inset: 0 0 auto 0; height: 168px;
-  background: radial-gradient(120% 100% at 100% 0%,
-    rgba(31,31,31,0.07) 0%, rgba(31,31,31,0.015) 45%, rgba(31,31,31,0) 75%);
+/* ---- Zeichen und Text ----------------------------------------------------------------------------
+   Alles, was ueber dem Glanz liegen soll, bekommt position:relative -- sonst malte die absolute
+   Lage davor darueber. Das X ist .up-iconbtn und bringt position:relative selbst mit. */
+.unc-ic {
+  position: relative; flex: 0 0 auto; width: 18px; height: 20px;
+  display: grid; place-items: center; color: var(--vc-inverse-ink);
 }
-/* Die Linien sind ein SVG, kein Hintergrundmuster: sieben gebogene Kurven laufen sich mit einem
-   repeating-linear-gradient nicht nachbauen. fill:none und die Strichfarbe stehen hier statt am
-   Element, damit das Dark-Mode-Gegenstueck nur eine Zeile braucht. */
-.unc-rules { inset: 0; width: 100%; height: 100%; fill: none; stroke: rgba(31,31,31,0.05); stroke-width: 1; }
-.unc-hair {
-  top: 0; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 30%,
-    rgba(255,255,255,0.9) 70%, rgba(255,255,255,0) 100%);
+.unc-ic svg { width: 18px; height: 18px; display: block; }
+.unc-txt {
+  position: relative; flex: 1 1 auto; min-width: 0;
+  display: flex; flex-direction: column;
 }
-/* Im Dark Mode sind alle drei Lagen aus dunkler Tinte gebaut und damit unsichtbar bis stoerend --
-   die Lichtkante wird zu einem grauen Strich. Also weg und stattdessen ein Hauch Helligkeit. */
-.unc-card[data-theme="dark"] .unc-wash {
-  background: radial-gradient(120% 100% at 100% 0%,
-    rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.012) 45%, rgba(255,255,255,0) 75%);
-}
-.unc-card[data-theme="dark"] .unc-rules { stroke: rgba(255,255,255,0.05); }
-.unc-card[data-theme="dark"] .unc-hair {
-  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.10) 30%,
-    rgba(255,255,255,0.10) 70%, rgba(255,255,255,0) 100%);
-}
-
-/* ---- Kopfzeile -------------------------------------------------------------------------------
-   40px hoch, links das Logo, rechts das X. Links 16px wie der Rumpf, rechts nur 12px: der
-   Icon-Knopf hat eigene Polsterung, und 16 sahen daneben nach 20 aus. */
-.unc-head {
-  position: relative; display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; height: 40px; padding: 0 12px 0 16px;
-  border-bottom: 1px solid var(--vc-border);
-}
-.unc-logo { height: 14px; width: auto; display: block; opacity: 0.9; }
-/* Der Schriftzug kommt als dunkles SVG von der Marken-URL -- im Dark Mode waere er auf der
-   dunklen Karte unsichtbar. brightness(0) macht ihn schwarz, invert(1) weiss, und die letzte
-   Stufe nimmt ihn auf 0.88 zurueck: das ist #e0e0e0, dieselbe Helligkeit wie die Schrift daneben.
-   Ein zweites Logo-Bild waere die Alternative, dafuer muesste Bubble aber zwei URLs pflegen. */
-.unc-card[data-theme="dark"] .unc-logo {
-  filter: brightness(0) invert(1) brightness(0.88);
-  opacity: 1;
-}
-/* Das X ist kleiner als der Standard-Icon-Knopf (32px): in einer 40px-Zeile waere der zu
-   wuchtig. Radius 7 statt 8, damit er bei 24px nicht rund wirkt. */
-.unc-card .up-iconbtn.unc-x { width: 24px; height: 24px; border-radius: var(--up-r-s); }
-.unc-card .up-iconbtn.unc-x svg { width: 11px; height: 11px; }
-
-/* ---- Rumpf -----------------------------------------------------------------------------------
-   backdrop-filter blurrt, was HINTER dem Rumpf liegt -- und das sind die sieben Zierkurven
-   (.unc-rules, absolut ueber die ganze Karte). Sie liefen quer durch die Textzeilen und machten
-   sie unruhig. 8px reichen: die Linien sind einen Pixel stark, ein Bruchteil davon bleibt als
-   Hauch stehen, der Text steht wieder auf einer ruhigen Flaeche.
-   Nicht die Linien wegzunehmen ist Absicht -- oben und unten bleiben sie sichtbar, sie sind die
-   Handschrift der Karte.
-   Browser ohne backdrop-filter lassen die Zeile fallen und zeigen den Stand von vorher. */
-.unc-body {
-  position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 16px;
-  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-}
-/* Die Symbolflaeche traegt IMMER das dunkle Grau, unabhaengig vom Thema: sie ist die Marke in
-   dieser Karte, und ein im Dark Mode helles Feld waere ein zweiter Akzent neben dem Knopf.
-   Die Lichtkante innen laesst die Flaeche gewoelbt wirken statt aufgeklebt. */
-.unc-tile {
-  flex: 0 0 auto; width: 44px; height: 44px; border-radius: var(--up-r-xl); box-sizing: border-box;
-  display: grid; place-items: center; color: var(--vc-text);   /* war #1f1f1f -- eine Ziffer neben --vc-text */
-  background: linear-gradient(150deg, #ffffff 0%, #efeeeb 100%);
-  border: 1px solid rgba(31,31,31,0.11);
-  /* Zwei Schatten: die Lichtkante innen laesst die Flaeche gewoelbt wirken, der weiche darunter
-     hebt sie von der Karte ab. Ohne den zweiten liegt sie flach auf. Der zweite ist e-1 (28.09.;
-     vorher 0 1px 2px .05 -- praktisch derselbe Wert); die Lichtkante ist eine innere Linie und
-     keine Tiefe, sie bleibt. */
-  box-shadow: inset 0 1px 0 #ffffff, var(--up-e-1);
-}
-/* Im Dark Mode waere ein weisses Feld der hellste Punkt der Karte und zoege alle Aufmerksamkeit.
-   Dieselbe Bauart, nur aus der dunklen Palette: heller als die Karte, aber nicht leuchtend. */
-.unc-card[data-theme="dark"] .unc-tile {
-  color: var(--vc-text);
-  background: linear-gradient(150deg, #232326 0%, #1e1e1e 100%);
-  border-color: rgba(255,255,255,0.10);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), var(--up-e-1);
-}
-.unc-tile svg { width: 20px; height: 20px; display: block; }
-/* padding-top 1px: die Grossbuchstaben der Typzeile sitzen optisch zu hoch gegen die Flaeche. */
-.unc-txt { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding-top: 1px; }
-/* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
-   Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
+/* Die Bezeichnung in Mono, normale Schreibung (keine Versalien, 21.09.), in der Nebenfarbe der
+   umgekehrten Karte. line-height 20 = die Zeile, auf der das Zeichen links mittig sitzt. */
 .unc-type {
   font-family: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px; font-weight: 600;
-  color: var(--vc-third);
+  font-size: var(--up-fs-s); line-height: 20px; font-weight: var(--up-fw-m);
+  color: var(--vc-inverse-sub);
 }
+.unc-copy { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
 .unc-title {
-  font-size: 15px; font-weight: 600; letter-spacing: -0.012em; line-height: 1.25;
-  color: var(--vc-text);
+  font-size: var(--up-fs-l); line-height: 20px; font-weight: var(--up-fw-h); letter-spacing: -0.01em;
+  color: var(--vc-inverse-ink); overflow-wrap: break-word;
 }
-/* text-wrap: pretty verhindert eine einzelne Silbe in der letzten Zeile. Browser ohne die
-   Eigenschaft ignorieren sie, der Umbruch bleibt dann der normale. */
+/* text-wrap: pretty verhindert eine einzelne Silbe in der letzten Zeile. break-word wie beim
+   Toast: eine lange Adresse im Text bricht, statt die Karte zu sprengen. */
 .unc-desc {
-  font-size: 13px; font-weight: 400; line-height: 1.5; color: var(--vc-muted);
-  text-wrap: pretty;
+  font-size: var(--up-fs-m); line-height: 20px; font-weight: var(--up-fw-n);
+  color: var(--vc-inverse-sub); text-wrap: pretty; overflow-wrap: break-word;
 }
 
-/* ---- Fusszeile -------------------------------------------------------------------------------
-   Ohne Meta-Zeile: die Knoepfe stehen rechts, also schiebt sie flex-end dorthin. Kommt spaeter
-   eine Meta-Zeile links dazu, wird daraus space-between und sonst nichts. */
-.unc-foot {
-  position: relative; display: flex; align-items: center; justify-content: flex-end; gap: 8px;
-  padding: 12px 16px; border-top: 1px solid var(--vc-border);
-  background: linear-gradient(180deg, rgba(31,31,31,0.012) 0%, rgba(31,31,31,0.03) 100%);
+/* ---- Knoepfe -------------------------------------------------------------------------------------
+   Linksbuendig unter dem Text, 14 Luft darueber. Beide tragen .up-btn-sec (32 hoch, Radius 6,
+   Schnitt 500); hier stehen nur Polster 12 und Schrift 13 der Vorlage und die Farben der
+   umgekehrten Flaeche. Der Hauptknopf ist ein <a>, damit target=_blank und die Mitteltaste des
+   Browsers wirken -- deshalb text-decoration und box-sizing ausdruecklich.
+   Spezifitaet (0,3,0) bis (0,5,0): .up-btn-sec:hover wiegt (0,2,0).
+   ZU LANGE BESCHRIFTUNG (gemessen bei 375: "Review all recent account activity now" war 259 breit
+   in einer 249er-Spalte, beide Knoepfe ragten aus der Karte und wurden abgeschnitten): die Knoepfe
+   brechen in eine zweite Zeile um, und ein einzelner Knopf, der allein nicht passt, kuerzt mit
+   Auslassung. Dafuer display:block mit line-height 30 statt inline-flex -- an einem Flex-Behaelter
+   greift text-overflow nicht. 30 + 2 Rand = die 32 von .up-btn-sec, die Geometrie bleibt. */
+.unc-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 14px; }
+.unc-foot .up-btn-sec {
+  padding: 0 12px; box-sizing: border-box; font-size: var(--up-fs-m);
+  display: block; line-height: 30px; max-width: 100%; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-decoration: none;
+  transition: background-color var(--up-t-1) var(--up-ease), color var(--up-t-1) var(--up-ease),
+              border-color var(--up-t-1) var(--up-ease);
 }
-.unc-card[data-theme="dark"] .unc-foot {
-  background: linear-gradient(180deg, rgba(255,255,255,0.01) 0%, rgba(255,255,255,0.025) 100%);
+/* Der Zweitknopf ist die leise Antwort: nur Text in der Nebenfarbe, Flaeche erst beim Zeigen. */
+.unc-foot .up-btn-sec.unc-second { border-color: transparent; background: transparent; color: var(--vc-inverse-sub); }
+.unc-foot .up-btn-sec.unc-second:hover { background: var(--vc-toast-flaeche); color: var(--vc-inverse-ink); }
+/* Gefuellt (feature, announcement, security, whats_new): die Schrift der Karte als Flaeche, die
+   Flaeche der Karte als Schrift -- im Hellen ein weisser Knopf auf der dunklen Karte, im Dunkeln
+   ein dunkler auf der hellen. Der Hover zieht 14% zur Kartenfarbe, dieselbe Formel wie der
+   Hauptknopf der Anleitung in core (.up-anl-btn.is-pri). */
+.unc-foot .up-btn-sec.unc-primary.is-solid {
+  background: var(--vc-inverse-ink); border-color: var(--vc-inverse-ink); color: var(--vc-inverse-bg);
 }
-/* Der zweite Knopf ist die leise Antwort: kein Rahmen, keine Flaeche, bis man darauf zeigt.
-   .up-btn-sec bringt Hoehe, Schrift und Radius mit -- hier fallen nur Rahmen und Farbe weg. */
-.unc-foot .up-btn-sec.unc-second {
-  height: 28px; padding: 0 10px; border-radius: var(--up-r-m);
-  border-color: transparent; background: transparent; color: var(--vc-muted);
-  font-size: 12.5px;
+.unc-foot .up-btn-sec.unc-primary.is-solid:hover {
+  background: color-mix(in srgb, var(--vc-inverse-ink) 86%, var(--vc-inverse-bg));
+  border-color: color-mix(in srgb, var(--vc-inverse-ink) 86%, var(--vc-inverse-bg));
+  color: var(--vc-inverse-bg);
 }
-.unc-foot .up-btn-sec.unc-second:hover {
-  color: var(--vc-text); background: var(--vc-heading-bg); border-color: transparent;
+/* Umrandet (maintenance, tip): dort ist die Nachricht nicht dringend, ein gefuellter Knopf waere
+   ein Draengeln. Der Rand ist die Schrift der Karte zu 22% (Vorlage: Weiss .22 im Hellen). */
+.unc-foot .up-btn-sec.unc-primary.is-line {
+  background: transparent; border-color: color-mix(in srgb, var(--vc-inverse-ink) 22%, transparent);
+  color: var(--vc-inverse-ink);
 }
-/* Der Hauptknopf ist ein <a>, damit target=_blank und die Mitteltaste des Browsers wirken --
-   ein <button> mit window.open waere beides nicht. Deshalb traegt er die Knopf-Geometrie selbst
-   statt .up-btn: das setzt Dinge, die auf einem Link nicht greifen (appearance, font-family). */
-.unc-primary {
-  display: inline-flex; align-items: center; justify-content: center;
-  height: 28px; padding: 0 13px; border-radius: var(--up-r-m); box-sizing: border-box;
-  font-family: inherit; font-size: 12.5px; font-weight: 500; line-height: 1;
-  text-decoration: none; cursor: pointer; white-space: nowrap;
-  border: 1px solid var(--vc-border); background: var(--vc-bg); color: var(--vc-text);
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
-}
-.unc-primary:hover { background: var(--vc-heading-bg); }
-/* Dunkel bei feature, announcement und security -- dort ist die Nachricht dringend genug, dass
-   der Knopf die Aufmerksamkeit bekommt. Die Farben sind fest und nicht aus --vc-*: der Knopf
-   soll in beiden Themen derselbe dunkle Block sein, wie die Symbolflaeche darueber. */
-/* Der Knopf traegt die Textfarbe als Flaeche und die Kartenfarbe als Schrift -- dasselbe Muster
-   wie das Spaltenabzeichen in prompts-table. Damit dreht er sich im Dark Mode von selbst mit:
-   --vc-text ist dort #e0e0e0, die Schrift wird dunkel. Feste Werte waeren ein zweiter Ort, an dem
-   dieselbe Umkehr gepflegt werden muesste. */
-/* Der gefuellte Knopf in zwei Fassungen, jede mit eigener Klasse -- keine ueberschreibt die
-   andere. Welche gilt, setzt das JS nach dem Thema. Eine einzige Klasse plus eine
-   [data-theme="dark"]-Regel darueber hat in der App nicht gegriffen; die Ursache blieb offen, und
-   zwei unabhaengige Klassen kommen ohne diese Kaskade aus. */
-.unc-primary.is-solid {
-  background: #1f1f1f; border-color: #1f1f1f; color: #ffffff;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
-}
-.unc-primary.is-solid:hover { background: #333333; border-color: #333333; }
-/* Im Dark Mode gedreht: helle Flaeche, dunkle Schrift. Die Lichtkante innen ist auf Hell
-   unsichtbar bis schmutzig, also weg. */
-.unc-primary.is-solid-inv {
-  background: #e0e0e0; border-color: #e0e0e0; color: #1f1f1b; box-shadow: none;
-}
-.unc-primary.is-solid-inv:hover { background: #ffffff; border-color: #ffffff; }
+.unc-foot .up-btn-sec.unc-primary.is-line:hover { background: var(--vc-toast-flaeche); color: var(--vc-inverse-ink); }
 
-/* ---- Schmale Breiten -------------------------------------------------------------------------
-   Unter 440px passt eine 384px-Karte mit 32px Rand nicht mehr: sie spannt sich dann von Kante zu
-   Kante mit 16px Luft, wie in der Vorlage vorgegeben. */
+/* Das X: .up-iconbtn.is-24 aus core (24x24, Zeichen 14), 2px hoeher als die erste Textzeile, damit
+   seine Mitte auf deren Mitte sitzt. Farben der umgekehrten Karte; [data-theme] im Selektor, weil
+   core das Zeichen im Dunkeln ueber .up-root[data-theme="dark"] .up-iconbtn (0,3,0) und dessen
+   Hover (0,4,0) faerbt -- der Traeger IST eine .up-root. */
+.unc-card[data-theme] .up-iconbtn.unc-x {
+  margin-top: -2px; color: var(--vc-inverse-sub); background: transparent;
+  transition: background-color var(--up-t-1) var(--up-ease), color var(--up-t-1) var(--up-ease);
+}
+.unc-card[data-theme] .up-iconbtn.unc-x:hover { color: var(--vc-inverse-ink); background: var(--vc-toast-flaeche); }
+
+/* ---- Schmale Breiten -----------------------------------------------------------------------------
+   Unter 480 spannt die Karte von Kante zu Kante mit 16px Luft seitlich (unveraendert seit vor dem
+   16.10.). Unten 8: auf dem Telefon ist jeder Pixel Hoehe Inhalt. */
 @media (max-width: 480px) {
-  /* Unten 8 wie in der grossen Fassung; seitlich bleiben 16, dort spannt die Karte ueber die
-     ganze Breite und 8px Rand saehen aus wie ein Fehler im Layout. */
   .unc-card { left: 16px; right: 16px; bottom: 8px; width: auto; }
 }

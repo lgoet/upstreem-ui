@@ -626,7 +626,8 @@ Hebung weg (`scale(.99)`), bei `prefers-reduced-motion` gibt es keine Hebung.
 
 Eine Karte mit Schatten in Ruhe gibt es nur noch an einer Stelle: die Tarifkarte (`.up-plan`,
 `--up-e-1`), die am 28.09. samt Schatten von der Landingpage übernommen wurde. Zeichen-Kacheln
-(`.up-lb-tile`, `.unc-tile`, `.uev-avatar`) sind keine Karten und behalten `--up-e-1`.
+(`.up-lb-tile`, `.uev-avatar`) sind keine Karten und behalten `--up-e-1`. (`.unc-tile` gibt es
+seit dem 16.10. nicht mehr, siehe §49.)
 
 ---
 
@@ -3309,3 +3310,38 @@ weiter angezeigt, aber die Gruppenliste der Tabelle kam leer zurück.
 `makeFire` in core.js stellt `team_id` deshalb voran. Der Schwanz jedes Payloads bleibt damit
 byte-identisch zu dem Stand, bevor es Team-Scoping gab. Wer ein weiteres globales Feld ergänzt,
 macht es genauso.
+
+## 49. Die schwebende Benachrichtigung (`notification-card`, Präfix `unc`, seit 16.10.)
+
+Variante C „Invers“ der Leinwand „Notification Varianten“: die schmale Karte in der Sprache von
+`UC.toast`, **umgekehrt zum Thema** (im Hellen dunkel, im Dunkeln hell), die Seite dahinter behält
+ihr Thema. Vorher (bis 15.10.): 424 breit, weiß, Kopfzeile mit Logo, Zeichenkachel, Zierlinien.
+
+| Teil | Wert |
+|---|---|
+| Lage | `position: fixed`, rechts und unten **16**, unter 480px Breite links/rechts 16, unten 8, volle Breite |
+| Karte | 360 breit, Polster `14 10 14 16`, `gap 12`, Radius `--up-r-2xl` (12), Rand 1px in der Flächenfarbe, `--up-e-4` |
+| Farben | Fläche `--vc-inverse-bg`, Schrift `--vc-inverse-ink`, Nebenschrift `--vc-inverse-sub`, Hover-Fläche `--vc-toast-flaeche` |
+| Zeichen | eigene Spalte 18×20, `UC.icon(name, 1.5)` in 18px, Strich |
+| Bezeichnung | Geist Mono 12/20, 500, Nebenschrift, normale Schreibung |
+| Titel / Text | 14/20 600 (−0.01em) / 13/20 400 Nebenschrift; 4 Abstand, 4 über dem Titel |
+| Knöpfe | linksbündig, 14 darüber, `gap 8`, Hauptknopf zuerst; beide `.up-btn-sec` (32, Radius 6) mit Polster 12 und 13px |
+| Hauptknopf | gefüllt (`--vc-inverse-ink` als Fläche) bei feature, announcement, security, whats_new; umrandet (Tinte zu 22 %) bei maintenance, tip |
+| Zweitknopf | nur Text in der Nebenschrift, Fläche erst beim Hover |
+| X | `.up-iconbtn.is-24` (Radius 4 nach Geist), 2px über der ersten Zeile |
+
+**Bewegung.** Karte 1 s easeOutExpo (`--up-ease-expo`) aus 12px und `scale(.985)`; Zeichen und
+Bezeichnung, Titel und Text, Knöpfe folgen mit 100, 200, 300 ms Verzögerung (6px Weg). Ab 600 ms
+läuft der Glanz (`--vc-inverse-glanz`) einmal schräg über die Karte, 1.6 s,
+`cubic-bezier(.45,.05,.3,1)`. Nur `opacity` und `transform`. Eine **neue** Nachricht (andere id)
+spielt die Einblendung neu ab, dieselbe noch einmal nicht. Bei `prefers-reduced-motion` keine
+Bewegung und kein Glanz.
+
+**Thema zur Laufzeit.** Die Karte hängt am `<body>` und trägt `data-theme` selbst. Sie folgt
+`UC.onTheme` und einem Beobachter auf `data-theme`/`data-isdark` der Wurzel; vorher blieb sie bis
+zum nächsten Datensatz im alten Thema.
+
+**Zu lange Knopfbeschriftung** bricht in eine zweite Zeile um; ein einzelner Knopf, der allein
+nicht passt, kürzt mit Auslassung.
+
+`data-logo` wird weiter angenommen (Vertrag), aber nicht mehr gezeichnet.

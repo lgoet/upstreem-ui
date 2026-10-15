@@ -8179,3 +8179,24 @@ html[data-up-hell="grau"] .up-root:not([data-theme="dark"]) :is(.up-ph-iconbtn, 
 html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up-iconbtn)[aria-pressed="true"],
 html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up-iconbtn)[aria-pressed="true"]:hover {
   background: var(--up-wahl-bg); box-shadow: inset 0 0 0 1px var(--up-wahl-rand); }
+
+/* ================= DIE UMGEKEHRTE KARTE: NEBENSCHRIFT UND GLANZ (16.10., Benachrichtigung) =====
+   Eigener Block fuer die schwebende Benachrichtigung (notification-card.css, Variante C "Invers"
+   der Leinwand "Notification Varianten"). Zwei Werte, die die umgekehrte Karte bisher nicht hatte;
+   an denselben Selektoren wie --vc-inverse-bg/-ink oben, damit sie auch am <body> aufloesen.
+   --vc-inverse-sub  die Nebenschrift (Bezeichnung, Text, Zweitknopf, X). Im Hellen derselbe Wert
+                     wie --vc-toast-sub. Im Dunkeln NICHT --vc-toast-sub (#6b6f78): auf #eeedef sind
+                     das 4.32:1 und damit unter den 4.5, die 13px-Text braucht; #5f636b aus der
+                     Vorlage hat 5.17:1. Gerechnet mit den WCAG-Leuchtdichten.
+   --vc-inverse-glanz  der Lichtstreifen, der einmal ueber die Karte wandert. Licht ist in beiden
+                     Themen weiss -- kein vorhandenes Token traegt Weiss in beiden (--vc-inverse-ink
+                     ist im Dunkeln #1f1f1b). Auf der dunklen Karte ein Hauch (9%), auf der hellen
+                     kraeftig (75%), sonst ist er auf #eeedef nicht zu sehen. Werte der Vorlage. */
+:root, .up-root, [data-theme="light"] {
+  --vc-inverse-sub: #a0a0a0;
+  --vc-inverse-glanz: rgba(255,255,255,.09);
+}
+[data-theme="dark"], .up-root[data-theme="dark"] {
+  --vc-inverse-sub: #5f636b;
+  --vc-inverse-glanz: rgba(255,255,255,.75);
+}
