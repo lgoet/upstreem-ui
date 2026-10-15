@@ -325,12 +325,20 @@
           var c = cells[i];
           if (!c.querySelector(".up-trend")) continue;
           if (getComputedStyle(c).display === "none") continue;
-          /* Passt der Inhalt in die Zelle? scrollWidth ist die Breite, die er BRAUCHT,
-             clientWidth die, die er hat. Hier stand vorher ein Abstand des Trends zur rechten
-             Zellkante ("weniger als 8px = zu eng"): der ist bei voller Breite schon erfuellt
-             (gemessen: Sentiment hat dort 7px) und meldete darum dauerhaft "zu eng".
-             1px Toleranz gegen die Rundung der Prozentspalten. */
-          if (c.scrollWidth > c.clientWidth + 1){ eng[k] = true; break; }
+          /* Passt der Inhalt in die Zelle? Seit dem 15.10. spaet steht er RECHTS (die Zahl an
+             der Kante, der Trend per order davor, CSS "RECHTSBUENDIG"). Wird es zu eng, laeuft er
+             darum nach LINKS ueber -- und den Ueberlauf nach links zaehlt scrollWidth nicht mit
+             (hier stand bis dahin scrollWidth gegen clientWidth; der hat seitdem nie mehr
+             angeschlagen). Gemessen wird also die linke Kante des Inhalts gegen die der Zelle:
+             ins linke Polster (8px) darf er, ueber die Spaltenlinie in die Nachbarspalte nicht.
+             Das ist dieselbe Duldung wie vorher rechts, wo er ins Polster laufen durfte.
+             0.5px Toleranz gegen die Rundung der Prozentspalten. */
+          var cr = c.getBoundingClientRect(), links = Infinity;
+          for (var j = 0; j < c.children.length; j++){
+            var kr = c.children[j].getBoundingClientRect();
+            if (kr.width) links = Math.min(links, kr.left);
+          }
+          if (links < cr.left + c.clientLeft - 0.5){ eng[k] = true; break; }
         }
       });
       var irgendeine = false;

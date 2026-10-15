@@ -372,10 +372,14 @@
         if (getComputedStyle(c).display === "none") continue;
         var trend = c.querySelector(".up-trend");
         if (!trend) continue;
+        /* Seit dem 15.10. spaet steht der Inhalt RECHTS (die Zahl an der Kante, der Trend per
+           order davor, CSS "RECHTSBUENDIG"). Zu eng heisst damit: der Trend laeuft nach LINKS.
+           Gemessen wird darum seine linke Kante gegen die der Zelle -- ins linke Polster (8px)
+           darf er, ueber die Spaltenlinie nicht. Vorher stand hier der Abstand seiner RECHTEN
+           Kante zur Zellkante (unter 8px = zu eng); dort steht jetzt immer die Zahl. */
         var cRect = c.getBoundingClientRect();
         var tRect = trend.getBoundingClientRect();
-        var clearance = cRect.right - tRect.right;
-        if (clearance < 8){ tooTight = true; break; }
+        if (tRect.left < cRect.left + c.clientLeft - 0.5){ tooTight = true; break; }
       }
       tableEl.classList.toggle("tct-hide-trend", tooTight);
       checkTrendFit.__busy = false;

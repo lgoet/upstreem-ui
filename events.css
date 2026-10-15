@@ -182,6 +182,12 @@
    ihrer Spur rechts, Kopf und Zelle bleiben links (das ist keine Rechtsbuendigkeit der Spalte).
    Change und First cited tragen keine .up-num, die Zuordnung laeuft dort ins Leere. */
 .uev-markt .uev-td-zahl, .uev-urls .uev-td-zahl { --up-spur: var(--up-spur-pct1); }
+/* RECHTSBUENDIG (core.css, 15.10. spaet): Before und After stellt core schon an die rechte Kante
+   (die Zelle hat eine .up-num). Change traegt NUR einen Trend, und den erkennt die Regel aus core
+   nicht als Zahlzelle -- er stuende links, waehrend die zwei Werte daneben rechts stehen. Hier
+   rueckt er mit, ebenso die Skelett-Balken der Zahlenspalten, damit das Skelett dieselbe Tabelle
+   ankuendigt. First cited ist ein Chip, kein Wert, und bleibt links. */
+.uev-markt .uev-td-zahl, .uev-urls .uev-td-zahl:not(.uev-td-beob) { justify-content: flex-end; }
 /* Die erste Spalte nie schmaler als ihr Inhalt braucht -- bei 800px Fensterbreite blieb von der
    URL-Spalte nur das Favicon (03.10. gesehen). Reicht der Platz nicht, scrollt die Tabelle in
    ihrem Rahmen (Spezifikation 87): Kopf und Koerper so breit wie die Summe der Spalten, der
