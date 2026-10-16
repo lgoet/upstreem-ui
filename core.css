@@ -1645,6 +1645,12 @@
       transition: opacity .14s ease;
     }
     .up-export:hover { opacity: .9; }
+    /* Gesperrt (17.10.: Export auf den Reitern Inactive von Prompts und Brands): gedimmt wie
+       .up-btn-pri:disabled, der Hover aendert nichts. aria-disabled gleichwertig mit disabled --
+       der gesperrte Export braucht sein mouseover fuer den Tooltip mit dem Grund. Mit :hover (0,3,0)
+       ueber .up-export:hover (0,2,0), nicht ueber die Reihenfolge. */
+    .up-export:is(:disabled, [aria-disabled="true"]),
+    .up-export:is(:disabled, [aria-disabled="true"]):hover { opacity: .4; cursor: default; }
     .up-export svg { width: 16px; height: 16px; flex: 0 0 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
     /* ---------- search (slides out from the magnifier) ---------- */

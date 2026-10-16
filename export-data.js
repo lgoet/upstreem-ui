@@ -100,6 +100,8 @@
       "Your session has expired": "Deine Sitzung ist abgelaufen", "Please sign in again.": "Bitte melde dich neu an.",
       "Please wait {n} seconds and try again.": "Warte {n} Sekunden und versuch es noch einmal.",
       "Please wait 1 second and try again.": "Warte eine Sekunde und versuch es noch einmal.",
+      "Inactive prompts can't be exported": "Inaktive Prompts lassen sich nicht exportieren",
+      "Only active prompts are exported.": "Exportiert werden nur aktive Prompts.",
       "Data": "Daten", "Soon": "Bald",
       "All columns": "Alle Spalten", "{n} columns": "{n} Spalten",
       "{k} of {n} columns": "{k} von {n} Spalten",
@@ -238,8 +240,10 @@
     { key: "branded",   params: ["p_branded"],          icon: "flag",        name: "Branded",
       aktiv: function(v, art){ return art === "prompts" ? (v === "branded" || v === "non_branded") : (voll(v) && v !== "non_branded"); },
       vorgabe: function(art){ return art === "prompts" ? undefined : "non_branded"; } },
-    { key: "status",    params: ["p_status"],           icon: "power",       name: "Status",
-      aktiv: function(v){ return voll(v) && v !== "active"; } },
+    /* Kein Chip fuer Status (17.10., Regel des Nutzers: "Inaktive Prompts und Brands = kein Export
+       moeglich"). Bis dahin stand hier "Status: Inactive", sobald die Seite vom Reiter Inactive
+       exportierte. p_status geht nur noch als active hinaus (exportParameter), die Datenbank
+       weist jeden anderen Wert mit 400 ab -- ein Chip dafuer haette nichts mehr zu waehlen. */
     { key: "mentioned", params: ["p_mentioned"],        icon: "megaphone",   name: "Brand",
       aktiv: function(v){ return v === "yes" || v === "no"; } },
     { key: "brands",    params: ["p_company_ids", "p_mentioned_brands"], icon: "squareStack", name: "Brands" },
@@ -706,7 +710,6 @@
         case "citation_types": return liste(function(k){ return C.typLabel ? C.typLabel(k, "citation") : ""; });
         case "url_types": return liste(function(k){ return C.typLabel ? C.typLabel(k, "url") : ""; });
         case "branded": var b = art === "prompts" ? (v === "branded" ? tr("Branded") : "Non-branded") : tr("Included"); return { kurz: b, lang: b };
-        case "status": var st = v === "inactive" ? tr("Inactive") : String(v); return { kurz: st, lang: st };
         case "mentioned": var me = v === "yes" ? tr("Mentioned") : tr("Not mentioned"); return { kurz: me, lang: me };
         case "segment": var sg = { you: "You", competition: "Competition", other: "Other" }[v]; sg = sg ? tr(sg) : String(v); return { kurz: sg, lang: sg };
         case "product": var pr = tr("This product"); return { kurz: pr, lang: pr };
@@ -1533,6 +1536,8 @@
       var drawerP = FILTER.map(function(f){ return f.param; });
       Object.keys(x).forEach(function(n){
         if (!/^p_[a-z0-9_]+$/.test(n) || Object.prototype.hasOwnProperty.call(p, n) || kennt.indexOf(n) < 0 || drawerP.indexOf(n) >= 0) return;
+        /* Der Status der Seite geht nie mit -- darunter steht er fest auf active. */
+        if (n === "p_status") return;
         var c = seitenChip(n);
         if (c && state.weg[c.key]){
           var vg = c.vorgabe ? c.vorgabe(art) : undefined;
@@ -1542,6 +1547,12 @@
         if (!voll(x[n])) return;
         p[n] = x[n];
       });
+      /* NUR AKTIVE PROMPTS (17.10., Regel des Nutzers; DB-Auftrag exporte_17_10 Teil B). Gilt fuer
+         jeden Weg in den Dialog -- auch Cmd+K, das Dashboard oder einen Kontext, den eine Seite vom
+         Reiter Inactive gemeldet hat: ausdruecklich active, nicht bloss weggelassen, damit es nicht
+         am Standardwert der Funktion haengt. Nur wo die Funktion den Parameter kennt (Prompts);
+         Brands hat keinen, export_brands_v2 liefert ohnehin nur aktive. */
+      if (kennt.indexOf("p_status") >= 0) p.p_status = "active";
       /* Eine Sortierung, die die Funktion nicht kennt, faellt weg (ihre eigene gilt) -- sonst
          scheiterte der ganze Export an der Reihenfolge der Zeilen. */
       var ord = ORDNUNG[art === "urls" && p.p_domain ? "urls_domain" : art];
@@ -1589,6 +1600,10 @@
          kaeme sonst als "kein Zugriff aufs Team" heraus. */
       if ((erg && erg.status === 401) || /not authenticated|permission denied|jwt/i.test(m)) return ["Your session has expired", "Please sign in again."];
       if (/forbidden|role_required/.test(m) || (erg && erg.status === 403)) return ["You can't export this team's data", "Ask a team owner for access."];
+      /* 400 exports_invalid_param mit hint "p_status: active only" (DB-Auftrag exporte_17_10 Teil B):
+         derselbe Satz wie am gesperrten Knopf der Seite statt "didn't work". Vor der Zeitraum-Regel
+         darunter -- die nimmt jeden ungueltigen Parameter, dessen hint "date" enthaelt. */
+      if (/invalid_param/.test(m) && /p_status/.test(h)) return ["Inactive prompts can't be exported", "Only active prompts are exported."];
       /* Der dritte Wert sagt, wohin der Satz gehoert: "zeit" an das Feld Date range (Leinwand C:
          roter Rahmen, Satz darunter). Ein ungueltiger Parameter, dessen hint keinen Zeitraum nennt
          (Sortierung, Seitengroesse), ist kein Fehler des Zeitraums -- den aendern hilft dort nicht. */
