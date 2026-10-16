@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261159;
+  var BUILD = 20261160;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -28719,6 +28719,10 @@
     adCardHtml: adCardHtml, adFormatLabel: adFormatLabel, bildUrl: bildUrl, makeSeitenDrawer: makeSeitenDrawer, balkenGrau: balkenGrau,
     barLogoErsatz: barLogoErsatz,
     faviconUrl: faviconUrl, topicChipHtml: topicChipHtml, topicEmoji: topicEmoji,
+    /* 16.10. spaet fuer das Feld in Schritt 3 der Events: wer ein Favicon VORAB prueft (ein Bild
+       ausserhalb des Dokuments, das der Rueckfall hier nicht sieht), erkennt Googles Platzhalter
+       mit derselben Regel wie der Rueckfall. */
+    favPlatzhalter: favPlatzhalter,
     marketChip: marketChip,
     aufResize: aufResize,
     beobachteGroesse: beobachteGroesse,
