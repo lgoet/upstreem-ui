@@ -80,6 +80,12 @@ Das Attribut überschreibt an jeder hellen Wurzel fünf Marken und sonst nichts:
 | `--vc-heading-bg` (Hover, Kopfzeilen) | `#f9f8f9` | `#f2f2f2` | Geist Gray 100; `#f9f8f9` wäre auf `#fafafa` unsichtbar |
 | `--vc-field` (Eingabefeld) | `#f9f8f9` | `--vc-bg` (weiß) | Vercel: Felder weiß mit Rahmen |
 
+Die leise Fläche des grauen Light steht als Marke `--up-leise-grau` (`#f2f2f2`) an `<html>`, damit
+sie auch Flächen mit eigener Palette erreicht. Die Dialogkarte aller core-Dialoge
+(`.up-topicmodal-card`) setzt `--vc-heading-bg` selbst und nimmt sie seit dem 16.10. ebenfalls:
+Schließen-Hover, gesperrte Knöpfe und Flaggen ohne Bild `#f2f2f2` statt `#f9f8f9` (auf der weißen
+Karte 13 statt 6 Stufen). Im Dunkeln bleibt die Karte bei `#1f1f1f`.
+
 **Innerhalb einer weißen Fläche ist der Grund weiß:** Drawer (`.up-kdr`, `[id^="drawer-"]`),
 Portale (`.up-portal`), `.up-band`, `.up-box`, die flache Tabelle und ihr Band setzen
 `--up-surface` wieder auf `--vc-bg`. Was dort „Seitenfarbe“ sagt (klebender Kopf, Gesamtzeile),
@@ -612,6 +618,24 @@ dunklen Block ausgeschrieben); die Kante tragen dort die helleren Rahmen.
 `--up-dd-shadow` **ist** `var(--up-e-2)`, nicht mehr eine eigene Zahl. Bis 15.10. war jede Stufe
 eine breite Lage (Menüs `0 10px 28px rgba(0,0,0,.14)`, Tooltips `0 4px 14px rgba(0,0,0,.18)`);
 diese Werte gelten nirgends mehr.
+
+### Der Schleier hinter Drawern (seit 16.10.)
+
+Ein Token für alle Drawer: `--vc-drawer-schleier` = **`rgba(0,0,0,.2)`, hell und dunkel derselbe
+Wert**, dazu `blur(1.5px)` nur im offenen Zustand, Deckkraft 160 ms hinaus und 200 ms herein (beides
+setzt das Kopf-Skript an `[id^="backdrop-"]` mit `!important`; die Schleier aus core tragen dieselben
+Werte für Seiten ohne Kopf-Skript). Es gilt für die Kern-Drawer (`.up-kdr-scrim`: Brand, Prompt,
+Domain, URL, Response, Brand Editor), den Seiten-Drawer (`.up-sdrawer-scrim`, Ad-Detail), den
+Opportunity-Drawer (`.uo-scrim`) und die Liste früherer Recherchen (`.upr-side-scrim`).
+
+Schwarz wie die Floating Groups der Bubble-Zeit. Vom 11. bis 16.10. stand hier 18 % der Schrift
+(hell) und 45 % von `--vc-text-invert` (dunkel) – das ist `#1f1f1b`, also heller als der dunkle
+Grund `#0a0a0a`: der Schleier hellte die Seite auf, und zwei gestapelte Drawer (Prompt, darüber URL)
+legten einen grauen Nebel über Seite und ersten Drawer. Schwarz kann nur abdunkeln.
+Opportunity und Recherche-Liste waren bis dahin durchsichtig und nur unscharf.
+
+Nicht für Dialoge: `.up-topicmodal-backdrop` behält `.30`/`.35` (§27), der mobile Schleier der
+Seitenleiste (`.usn-scrim`) und Miras Vorschau ihre `.30`/`.45`.
 
 ### Karten: ruhend ohne Schatten, Hover nur die Fläche (seit 15.10.)
 
@@ -1171,6 +1195,24 @@ Info-Zeichen der anderen mit `margin-left: auto` steht.
 `aria-hidden`: das Wort daneben sagt alles. Neue Tabellen bekommen ihr Kopfzeichen über
 `UC.kopfZeichenHtml` und je Spalte eine `art` (Abschnitt 8d).
 
+**Das Wort kürzt, die Zeichen bleiben** (seit 16.10., gemeldet: im Deutschen stand das
+Info-Zeichen an „Brand-Erwähnungen“ außerhalb der Kopfzelle). In jeder Kopfzelle (`.up-th`,
+`.vt-th`, `.tct-th`) steht das Wort in `.up-th-txt` (`min-width: 0`, „…“); Kopfzeichen,
+Info-Zeichen und Sortierpfeil schrumpfen nie. Reicht die Spalte nicht, kürzt das Wort – das
+Info-Zeichen bleibt immer in der Zelle.
+
+```
+Nackter Text   <div class="up-th">Market<span class="up-th-info">…</span></div> packt core selbst
+               ein (kopfTexte, über den Beobachter, auch für Köpfe, die eine Komponente später neu
+               schreibt). Ein nackter Text ist ein anonymes Flex-Kind und schrumpft nie -- genau
+               daran lag es. Neue Köpfe schreiben .up-th-txt gleich selbst
+Voller Wortlaut  mit Info-Zeichen nennt ihn die Erklärkarte (Titel = Etikett); ohne zeigt ihn ein
+               Tooltip, solange das Wort wirklich gekürzt ist (data-tip beim Überfahren)
+Breiten        werden dafür nicht vergrößert (Wunsch: lieber kürzen); nur wo sonst kaum mehr als
+               ein Buchstabe stünde
+Ausgenommen    "Mentioned?" (.up-th-mentlbl baut die Tabelle selbst) und die Landingpage
+```
+
 **Tabellenköpfe im Drawer** (seit 15.10. spät, `core.css` „DIE TABELLENKOEPFE IM DRAWER“): jede
 Tabelle in einem Drawer (`.up-kdr`, `[id^="drawer-"]`) trägt den Kopf der Seitentabellen, behält
 aber ihren Kasten mit Rand und Radius 12 — sie wird **nicht** flach. **Im Dunkeln** (nach Geist)
@@ -1248,8 +1290,9 @@ Filterzeile    die Seite hängt sie in .up-leiste-scope (display: contents, wie 
 Reiterwechsel  Filterzeile und Band wandern zur Tabelle des Reiters (das Element, nicht eine
                Kopie: Zustand und Handler bleiben); die Werkzeuge bleiben in ihrer Tabelle
 Kleben         makeSticky wie jede Tabelle: Kopf, Reiter und Chart scrollen weg, die Leiste
-               klebt bei --up-sticky-top (16), der Spaltenkopf direkt darunter
-               (--up-thead-off = gemessene Höhe der Leiste), das Band scrollt dazwischen weg.
+               klebt bei --up-sticky-top (16), der Spaltenkopf darunter (--up-thead-off =
+               gemessene Höhe der Leiste; flach + 1px für die Linie über ihm, siehe unten),
+               das Band scrollt dazwischen weg.
                Seit 16.10. AUCH UNTER 1000 (Telefon), für jede Wurzel mit data-leiste oder
                data-kleb-fuss: Leiste und Spaltenkopf kleben, der Fuß nie (8e). Der Spaltenkopf
                geht dort ohne Bruch mit, weil schmal Spalten weichen statt waagrecht zu scrollen
@@ -1265,7 +1308,13 @@ Deck           über der klebenden Leiste bis zur Oberkante des Scrollbereichs (
                Seiten 16 + 1, Drawer 72 + 1 (48 und 25, unter dem Glaskopf mit). Am Ende der
                Wurzel gehen sie mit der Leiste; keine Lage ändert sich
 Linie          unter der Leiste NUR, solange sie klebt (.is-geklebt: das Deck steht höher als
-               die Leiste – keine gelernte Ruhelage mehr), eingeblendet (--up-t-2)
+               die Leiste – keine gelernte Ruhelage mehr), eingeblendet (--up-t-2); seit 16.10.
+               1px UNTER der Leiste (bottom -1px), auf der Zeile der Linie des Spaltenkopfs
+Linie über     dem klebenden Spaltenkopf (flach, jede Tabelle mit makeSticky, mit und ohne
+dem Kopf       Band): der Kopf trägt sie selbst als Schatten 0 -1px 0 --vc-border und klebt
+               1px tiefer (top + 1px). In Ruhe liegt der Schatten genau auf dem Rand des
+               Kastens; klebend steht Leiste – Linie – Kopf wie in Ruhe. Reines sticky.
+               Wer darunter klebt, rechnet + 1px mit (offene Gruppe, Kopf der Gruppenliste)
 Abstände       Leiste 16 unten, Band 16 unten; der Stapel der Wurzel fällt auf 0
 ```
 
@@ -1278,6 +1327,19 @@ Probe eine geklebte Lage als Ruhe – beim Zurückscrollen fiel die Klasse weg, 
 weiter klebte. Gemessen vorher 24–45 Treffer auf Zeilen bzw. Chart in diesem Streifen, nachher 0
 (Seiten, Drawer, 1440/1100/375, hell/dunkel, auch mit entfernter Klasse). Der Streifen bleibt für
 das, was über 2 x Leistenhöhe hinausgeht.
+
+Warum der Spaltenkopf 1px unter der Leiste klebt (16.10., „wenn die Topbar sticky wird,
+verschwindet die Top-Border über der Header-Row“): in Ruhe ist die Linie über dem Kopf der obere
+Rand des flachen Kastens, der Kopf selbst hat keine. Bis 0ed044e scrollte der Kasten von All
+Prompts, Responses und Teams in sich (feste Höhe), sein Rand blieb stehen; seitdem scrollt
+`#main`, und der Rand lief unter die Leiste. Gemessen vorher: 0 Linien über dem klebenden Kopf in
+jeder Lage (All Prompts flach und gruppiert samt Gruppenliste, Responses, Teams; 1440/1100/375,
+hell/dunkel); mit Band (Domains, URLs) kam sie nur von der Linie der Leiste, nach einem Sprung
+erst mit der Klasse (gemessen 15–49 ms ohne). Ein Schatten 1px über dem Kopf läge in der letzten
+Zeile der Leiste, und die malt über dem Kopf (Ebene 6 gegen 5) – darum klebt der Kopf 1px tiefer,
+und der Schatten füllt genau den Pixel, auf dem in Ruhe der Rand steht. Nachher überall genau 1
+Linie (auch die Tabellenansicht des Dashboards), im Sprung sofort; in Ruhe alle Lagen gleich. Die Drawer-Tabellen
+(Kasten mit Rahmen) tragen ihren Rand klebend ohnehin selbst und bleiben, wie sie sind.
 
 Warum in der Wurzel der Tabelle und nicht als Leiste der Seite: Domains, URLs und Brands
 hängen Klicks, Suche, Tooltips und Menüs an ihre Wurzel (`ownsTarget`, `root.contains`); ein
@@ -1893,6 +1955,12 @@ Lösung: Box-Border transparent, sichtbare Border auf `.udt-thead` (oben + Seite
 runde obere Ecken) und `.udt-tbody` (Seiten + unten, runde untere Ecken). Beide volle
 Breite, exakt fluchtend, kein Versatz. Der `.udt-table`-Hintergrund muss dabei
 transparent werden (sonst überdeckt er die Border).
+
+> **Stand 16.10.:** Die flache Tabelle (`data-flach`) hat keinen Kasten-Rahmen am Kopf; ihre
+> Linie über dem Kopf ist der obere Rand des Kastens und scrollt klebend unter die Leiste. Dort
+> trägt der klebende Kopf sie selbst als Schatten `0 -1px 0` und klebt dafür 1px tiefer (8b,
+> „Linie über dem Kopf“) – ein Rand im Kopf läge eine Zeile zu tief, ein Schatten ohne den
+> Versatz unter der Leiste.
 
 **8. Der Eck-Zipfel (der letzte Boss).** Eine runde Ecke ist an der Ecke per Definition
 transparent — dahinter scrollt die gerade Seiten-Border des Bodys vorbei und schaut
@@ -2726,7 +2794,8 @@ backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
 Dieselbe 30%-Abdunkelung liest im Dark Mode heller/ausgewaschener als im Light Mode — daher der
 eigene, etwas dunklere Wert. Der Blur bleibt in beiden Themes bei `1.5px`: subtil genug, um den
 Hintergrund als "außer Fokus" zu lesen, ohne selbst sichtbar zu wirken oder auf schwächerer
-Hardware zu ruckeln.
+Hardware zu ruckeln. **Drawer** haben einen eigenen, leichteren Schleier (`--vc-drawer-schleier`,
+Schwarz zu 20 %, §3 „Der Schleier hinter Drawern“) – nicht diesen.
 
 **Karte** — EIN Flex-Column-Container, EIN Padding-Wert, EIN Gap-Wert zwischen allen
 Top-Level-Blöcken (Header, jedes Feld, Footer):

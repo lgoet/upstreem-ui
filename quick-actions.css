@@ -653,7 +653,11 @@
 }
 .mqa-tip-arrow { color: var(--vc-fourth); font-size: 11px; }
 .mqa-tip .mqa-mini { color: var(--am-inv-bg); }
-.mqa-tip[data-theme="dark"] .mqa-tip-key { background: #232326; border-color: #4a4a4a; }
+/* Im Dunkeln die Taste nach Geist wie die Esc-Taste der Eingabezeile (.mqa-overlay .mqa-kbd): Grund
+   der Karte, Rand der schwebenden Schicht -- beide aus der Palette dieser Datei, die im Dunkeln auf
+   core zeigt (--up-menu-bg #0f0f0f, --up-menu-border #333333). Bis zum 16.10. standen hier die
+   Werte aus Linears Leiter (#232326 / #4a4a4a), die beim Umzug nach Geist liegen geblieben waren. */
+.mqa-tip[data-theme="dark"] .mqa-tip-key { background: var(--am-card); border-color: var(--am-border); }
 .mqa-modal:not(.has-results) .mqa-sep { display: none; }   /* no separator when there are no results/skeleton above */
 
 /* ---------- skeleton ----------

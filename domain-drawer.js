@@ -139,6 +139,20 @@
       '<span class="up-tag-lbl">' + esc(label) + '</span></span>';
   }
   function typLabel(typ) { return UC.typeLabel ? UC.typeLabel(str(typ), "citation") : str(typ); }
+  /* Das Ziel des Titels (16.10.: Klick auf die Domain oeffnet sie in einem neuen Tab). Nur ein
+     echter Hostname wird zum Link: der Name faellt auf S.domain zurueck, und das kommt aus der
+     Adresse (?detail=domain:...), ist also frei eingebbar. Erst grob nach Zeichen eines Hostnamens
+     (kein Schema, kein Pfad, kein @), dann ueber URL -- das schreibt eine Umlautdomain als xn-- --,
+     und erst der so gelesene Host muss in Labels mit Endung aus Buchstaben passen. Ziffern als
+     Endung heisst IP-Adresse: kein Link. Leer heisst: der Titel bleibt Text. */
+  var HOSTNAME = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:[a-z]{2,63}|xn--[a-z0-9-]{1,59})$/;
+  function domainLink(dom) {
+    dom = str(dom).trim().toLowerCase();
+    if (!dom || /[^\w.\-\u00a0-\uffff]/.test(dom)) return "";
+    var host = "";
+    try { host = new URL("https://" + dom).hostname; } catch (e) { return ""; }
+    return HOSTNAME.test(host) ? "https://" + host : "";
+  }
   function kopfZeichnen() {
     var r = S.root;
     if (!r) return;
@@ -163,7 +177,12 @@
     }
     var dom = str(d.domain) || S.domain;
     elLogo.innerHTML = logoHtml(d);
-    elName.textContent = dom;
+    /* Ein echter Link (Tab, Enter, Mittelklick, "In neuem Tab oeffnen" gehen von selbst), kein
+       Knopf mit window.open. noreferrer: die fremde Seite erfaehrt nicht, aus welcher Ansicht der
+       App der Besuch kam. */
+    var ziel = domainLink(dom);
+    elName.innerHTML = ziel ? '<a class="uddr-titel-link" href="' + esc(ziel) + '" target="_blank" rel="noopener noreferrer">' +
+      esc(dom) + '</a>' : esc(dom);
     elTyp.innerHTML = typChip(d.citation_type, d.citation_type_label);
     /* Darunter: wem die Domain gehoert (eine verfolgte Marke) und wann sie zuletzt zitiert wurde --
        die leise Zeile des Kopfes, wie die Domain unter dem Markennamen. */
