@@ -744,6 +744,12 @@
           '<button type="button" class="uap-close" data-act="close" aria-label="Close">' + ICON.x + '</button>' +
         '</div>' +
 
+        /* Der Rumpf (17.10.): Umschalter, Eingabe und Liste in EINER Rollflaeche zwischen Kopf
+           und Fuss. Im niedrigen Fenster rollt er, Kopf und Fuss mit den Knoepfen bleiben stehen.
+           Vorher lagen die vier direkt in der Karte, die nie rollt (overflow: visible wegen der
+           Menues im Fuss) -- und so gab die Liste als einzige nach: bei 1024x440 4px hoch. */
+        '<div class="uap-rumpf">' +
+
         /* Der grosse Umschalter aus core (27.09.). Vorher ein Nachbau mit eingerueckten Reitern,
            Rahmen, Schatten und einer Pille aus --vc-bg -- im Dunkeln die Farbe der Karte, auf
            der er lag. uap-tabs/uap-tab bleiben als Griff fuer M.tabs und die Klick-Delegation. */
@@ -790,6 +796,8 @@
              warum das Aufgehen ueberhaupt animierbar wurde: von null auf die echte Hoehe ist
              eine Bewegung, von Platzhalter auf Inhalt waere nur ein Austausch gewesen. */
           '<div class="uap-capnote" hidden></div>' +
+        '</div>' +
+
         '</div>' +
 
         /* Market and Topics sit IN the footer rather than as two more stacked blocks. §27's 32px
