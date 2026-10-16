@@ -468,7 +468,7 @@
       if (isBusy() || !state.hasData){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = skeletonRows(state.pageSize); return; }
       /* Der Lesefehler kommt VOR dem Leerzustand. Andersherum liest sich ein zerrissener Payload
          als "No URLs yet", und der Nutzer sucht den Fehler in seinen Filtern. */
-      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = UC.leseFehlerHtml("URLs"); return; }
+      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = UC.leseFehlerHtml("the URL list"); return; }
       if (!state.rows.length){
         var filtered = filterAktiv();
         if (filtered){ clearEmptyGrace(); renderEmptyState(true); return; }

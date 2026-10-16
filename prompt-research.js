@@ -1817,7 +1817,7 @@
     gemerkterVerlauf = null;
     previousResearches = [];
     if (historyCountEl) historyCountEl.textContent = '0';
-    if (historyList) historyList.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml('researches') : '';
+    if (historyList) historyList.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml('the research list') : '';
     setActionLoading(false);
   };
   api.setComplete = function(data){ Array.isArray(data) ? renderSuggestedPrompts(data) : setResearchState('idle'); };

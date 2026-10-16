@@ -1579,7 +1579,7 @@
           /* Reihenfolge wie ueberall im Haus: Fehler VOR dem Skelett. Sonst sieht ein Ausfall
              aus wie "gleich da", und das ist die Meldung, die niemand findet. */
           (state.plansFehler
-            ? (UC.leseFehlerHtml ? UC.leseFehlerHtml("plans")
+            ? (UC.leseFehlerHtml ? UC.leseFehlerHtml("the plans")
                 : '<p class="uob-sub" style="margin-top:18px">We could not load the plans. ' +
                   'Please reload the page.</p>')
             : !state.plans.length && !state.plansGeholt

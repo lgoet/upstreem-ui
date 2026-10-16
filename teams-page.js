@@ -82,7 +82,7 @@
              Serverfehler (Code und Meldung der RPC) ist etwas anderes als eine Antwort ohne rows.
              Das UI zeigt in beiden Faellen den Lesefehler (teams.js). Form wie die anderen Seiten:
              "[seite] kanal:" und der Befund. */
-          if (!s && window.console) console.error("[teams-page] teams:", erg.ok ? "Antwort ohne rows" : (erg.fehler || erg.status));
+          if (!s && window.console) console.warn("[teams-page] teams:", erg.ok ? "Antwort ohne rows" : (erg.fehler || erg.status));
           if (!s) return false;
           alle = alle.concat(s.rows);
           /* Hoechstens zehn Seiten: eine kaputte Zaehlung soll keine Schleife werden. */

@@ -1169,7 +1169,7 @@
          inaktivFehler: die Liste der INAKTIVEN war unlesbar (11.10.) -- nur im Reiter Inactive. */
       if (state.leseFehler || (inactive && state.inaktivFehler)){
         if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; }
-        tableEl.innerHTML = UC.leseFehlerHtml("brands");
+        tableEl.innerHTML = UC.leseFehlerHtml("the brand list");
         applyCols();
         return;
       }

@@ -244,7 +244,6 @@
     "The date range is not valid.": "Der Zeitraum ist ungültig.",
     "Too many requests. Please wait a moment.": "Zu viele Anfragen. Bitte warte einen Moment.",
     "This is taking longer than expected. Please try again.": "Das dauert länger als erwartet. Bitte erneut versuchen.",
-    "Try again": "Erneut versuchen",
     /* Die Saetze der Zusammenfassung -- Muster, deren Platzhalter erst NACH dem Uebersetzen gefuellt
        werden (die Reihenfolge im Deutschen ist eine andere). */
     "{brand} holds {sos} Share of Shelf, up from {prev}.": "{brand} hält {sos} Share of Shelf, nach {prev} davor.",

@@ -677,7 +677,7 @@
       }
       /* Der Lesefehler kommt VOR dem Leerzustand. Andersherum liest sich ein zerrissener
          Payload als leeres Ergebnis, und der Nutzer sucht den Fehler in seinen Filtern. */
-      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; container.innerHTML = UC.leseFehlerHtml("responses"); return; }
+      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; container.innerHTML = UC.leseFehlerHtml("the response list"); return; }
       if (!state.rows.length){
         if (anyFilterActive()){ clearEmptyGrace(); letztesBody = null; container.innerHTML = emptyHtml(true); return; }
         /* LEER HEISST SOFORT LEER (07.10. angefordert: "wenn leere Daten reinkommen, sofort den

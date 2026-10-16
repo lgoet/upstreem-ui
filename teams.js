@@ -803,7 +803,7 @@
            wichtigste ist der letzte: solange NIE Daten ankamen, darf hier keine Aussage ueber
            das Ergebnis stehen -- ein ausgefallener Aufruf sah sonst genauso aus wie eine
            Antwort ohne Teams. */
-        if (state.parseError) return UC.leseFehlerHtml("teams");
+        if (state.parseError) return UC.leseFehlerHtml("the team list");
         var suche = !!String(state.query || "").trim();
         /* Symbol und Markup aus dem Baustein; die Wortwahl bleibt, weil sie hier drei Faelle
            unterscheidet, die nur diese Liste kennt. Kein Raeum-Knopf -- die Suche steht ueber
@@ -939,7 +939,6 @@
                Aufrufer und meldet sie selbst (teams-page). Der alte Satz verwies auf eine Warnung
                von normParams, die es seit dem Laden ueber UC.rpc nicht mehr gibt -- und liess eine
                fehlende RPC-Antwort aussehen wie zerrissenes JSON. */
-            if (window.console) console.error("[teams] Zeilen nicht lesbar");
             render();
             return;
           }

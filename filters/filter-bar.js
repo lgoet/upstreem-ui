@@ -1860,7 +1860,10 @@
        dazukommt (UC.watchRoots hat im Gegentest nicht angeschlagen, siehe die Runde davor).
        initAll richtet nur ein, was noch keinen Controller hat -- der Lauf kostet ein
        querySelectorAll. */
-    setInterval(function () {
+    function waechterLauf() {
+      /* Im Hintergrund-Tab nichts tun (QS-14): dort sieht niemand eine Leiste, und der Wechsel
+         zurueck holt den Lauf unten nach. */
+      if (document.hidden) return;
       waechter(); initAll();
       /* Und einmal je Leiste die Sichtbarkeitsfrage: kostet drei getAttribute und faengt den Fall,
          den kein Beobachter sehen kann -- eine von Bubble neu gerenderte Wurzel. */
@@ -1868,7 +1871,9 @@
         var c = WURZELN[i].__ufbCtrl;
         if (c && c.pruefeSicht) c.pruefeSicht();
       }
-    }, WAECHTER_MS);
+    }
+    setInterval(waechterLauf, WAECHTER_MS);
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) waechterLauf(); });
     /* Eigenes Netz fuer eine Leiste, die SPAETER erscheint. UC.watchRoots ist dafuer gedacht, hat
        im Gegentest aber nicht angeschlagen (eine frisch eingehaengte Wurzel blieb 2,2s
        uneingerichtet, Zaehler 0). Die Zeitstaffel oben faengt den Normalfall -- Bubble baut das

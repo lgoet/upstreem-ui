@@ -209,7 +209,7 @@
       /* Der Lesefehler kommt VOR dem Skelett -- sonst sieht endloses Laden aus wie "gleich da". */
       if (state.leseFehler){
         if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
-        tableEl.innerHTML = UC.leseFehlerHtml("brands");
+        tableEl.innerHTML = UC.leseFehlerHtml("the brand list");
       }
       else if (state.loading || !state.hasTable){
         if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }

@@ -4032,7 +4032,7 @@
       }
       /* Der Lesefehler kommt VOR dem Leerzustand. Andersherum liest sich ein zerrissener
          Payload als leeres Ergebnis, und der Nutzer sucht den Fehler in seinen Filtern. */
-      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = UC.leseFehlerHtml("prompts"); applyCols(); return; }
+      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = UC.leseFehlerHtml("the prompt list"); applyCols(); return; }
       if (!state.rows.length){
         var filtered = !!state.query || !!state.brandMentioned;
         if (filtered){ clearEmptyGrace(); renderEmptyState(true); return; }

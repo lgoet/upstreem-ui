@@ -9198,14 +9198,19 @@
     return true;
   }
   function heimWennVerdeckt(){
+    /* Ein Tab im Hintergrund zeigt ohnehin nichts: die Uhr unten (400ms) misst dort nicht. Beim
+       Zurueckkommen holt der Sichtbarkeitswechsel die Pruefung nach (QS-14, Akku im Leerlauf). */
+    if (document.hidden) return;
     if (!istLauncher()) return;
     if (platzSichtbar()) return;
     launcherAus();
   }
+  function heimSichtWechsel(){ if (!document.hidden) heimWennVerdeckt(); }
   function heimWacheAus(){
     if (_heimWacht){ try { _heimWacht.disconnect(); } catch(e){} }
     _heimWacht = null;
     if (_heimUhr){ clearInterval(_heimUhr); _heimUhr = null; }
+    document.removeEventListener('visibilitychange', heimSichtWechsel);
   }
   function heimWacheAn(){
     heimWacheAus();
@@ -9227,6 +9232,7 @@
        Der Preis ist klein und zeitlich begrenzt: ein Lauf ueber rund zehn Vorfahren, und nur
        solange Mira ausgeliehen ist. Sobald sie zu Hause ist, raeumt heimWacheAus die Uhr ab. */
     _heimUhr = setInterval(heimWennVerdeckt, 400);
+    document.addEventListener('visibilitychange', heimSichtWechsel);
   }
   function launcherAn(slot, opts){
     if (root.__amTot || !slot || slot.nodeType !== 1) return false;
@@ -10797,6 +10803,7 @@
        zwanzig Sekunden. visible() fragt zuerst messbar() und liest in einer geparkten Ansicht
        keinen Layoutwert; offen sind es zwei Rechtecke alle zwei Sekunden. */
     function watch(){
+      if (document.hidden) return;                      /* Hintergrund-Tab: nichts zu messen (QS-14) */
       elternBeobachten();
       if (!visible()) return;
       fit();

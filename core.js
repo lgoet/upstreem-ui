@@ -1810,6 +1810,7 @@
     "Please check the email address": "Bitte prüf die E-Mail-Adresse",
     "Please check the industry": "Bitte prüf die Branche",
     "Please sign in again": "Bitte melde dich neu an",
+    "Please sign in again.": "Bitte melde dich neu an.",
     "Please wait a few minutes before sending it again.": "Warte ein paar Minuten, bevor du sie noch einmal sendest.",
     "Please wait a moment": "Einen Moment bitte",
     "Refresh the page to see the current list.": "Lade die Seite neu, um die aktuelle Liste zu sehen.",
@@ -2097,6 +2098,11 @@
     "Table settings": "Tabelle einstellen",
     "Sort, search and table settings": "Sortieren, suchen und Tabelle einstellen",
     "List view": "Listenansicht",
+    /* Beschriftungen, die in DE englisch blieben (Durchlauf aller Seiten, 17.10.) */
+    "Board view": "Board-Ansicht",
+    "Dashboard view": "Dashboard-Ansicht",
+    "Active Opportunities": "Aktive Opportunities",
+    "The page's SEO description": "Die SEO-Beschreibung der Seite",
     "Wide view": "Breite Ansicht",
     "Switch to list view": "Zur Listenansicht",
     "Switch to wide view": "Zur breiten Ansicht",
@@ -2385,7 +2391,7 @@
     /* preferences */
     "Charts": "Charts",
     "Choose how upstreem looks and formats your data":
-      "Wähle, wie upstreem aussieht und deine Daten formatiert",
+      "Wie upstreem aussieht und deine Daten darstellt",
     "How lines and legends are drawn across every chart":
       "Wie Linien und Legenden in allen Charts gezeichnet werden",
     "My Preferences": "Meine Präferenzen",
@@ -2655,7 +2661,7 @@
     "Name saved.": "Name gespeichert.",
     "Every change to this brand, newest first": "Jede Änderung an dieser Brand, die neueste zuerst",
     "Show older entries": "Ältere Einträge zeigen",
-    "Event types": "Ereignisarten",
+    "Event types": "Event-Typen",
     "All events": "Alle Ereignisse",
     "Aliases": "Aliasse",
     "Color": "Farbe",
@@ -3360,7 +3366,28 @@
     /* Was im Lesefehler steht ("{was} konnte nicht geladen werden") -- im Singular, weil der Satz
        "konnte" sagt, wie bei team-orga. */
     "your subscription": "Dein Abo",
-    "the plans": "Die Tarifliste"
+    "the plans": "Die Tarifliste",
+    /* Dazu die uebrigen Argumente von leseFehlerHtml (QS-10): bis dahin stand in DE etwa "your
+       brand settings konnte nicht geladen werden", weil nur ein Teil davon im Katalog war. Alle
+       Schluessel hier und im Singular, damit "konnte" stimmt. Sie stehen in core, nicht in der
+       Komponente: ein Schluessel wie "prompts" laege sonst nur im Katalog, solange ads.js geladen
+       ist, und der Lesefehler der Prompts-Tabelle bliebe davor englisch. */
+    "your brand settings": "Deine Brand-Einstellungen",
+    "the brand list": "Die Brand-Liste",
+    "the topic list": "Die Topic-Liste",
+    "the URL list": "Die URL-Liste",
+    "the domain list": "Die Domain-Liste",
+    "the citation list": "Die Liste der Web-Quellen",
+    "the prompt list": "Die Prompt-Liste",
+    "the response list": "Die Response-Liste",
+    "the team list": "Die Team-Liste",
+    "the event list": "Die Event-Liste",
+    "the event": "Das Event",
+    "the analysis": "Die Analyse",
+    "the overview": "Die Übersicht",
+    "the opportunity list": "Die Opportunity-Liste",
+    "the research list": "Die Research-Liste",
+    "the radar": "Das Radar"
   });
 
   /* Access Gate (28.09.): die Sperre der App ohne laufendes Abo. Die Tarifliste darin nimmt die
@@ -4637,7 +4664,10 @@
     var n = Number(v);
     return isFinite(n) ? n : null;
   }
-  function fmt1(v){ var n = toNum(v); return n == null ? "–" : (Math.round(n * 10) / 10).toFixed(1); }
+  /* Eine Stelle im Zahlenformat des Nutzers (fmtNum), nicht roh mit toFixed: sonst stand in einer
+     deutschen Zeile die Visibility mit Komma ("41,6%") neben Rang und Trend mit Punkt ("5.1",
+     "0.2"; QS-09). Alle Komponenten holen fmt1 von hier. */
+  function fmt1(v){ var n = toNum(v); return n == null ? "–" : fmtNum(Math.round(n * 10) / 10, 1, false); }
   /* Ganze Zahlen MIT Tausendertrennung nach der Einstellung des Nutzers -- 12.345 statt 12345.
      Vorher stand hier String(Math.round(n)) ohne jede Trennung; bei vierstelligen Mention Counts
      ist das der Unterschied zwischen einer Zahl und einer Ziffernfolge. */
@@ -5987,7 +6017,8 @@
     if (shown === 0) return "";                       // "+0%" is noise, not information
     var goingUp = d > 0;
     var positive = opts.inverted ? !goingUp : goingUp;
-    var txt = (opts.decimals ? shown.toFixed(1) : String(shown)) + (opts.suffix || "");
+    /* Mit Stelle im Zahlenformat des Nutzers (QS-09): 0,3 in DE, 0.3 in EN */
+    var txt = (opts.decimals ? fmtNum(shown, 1, false) : String(shown)) + (opts.suffix || "");
     return '<span class="' + (opts.cls || "up-trend") + " " + (positive ? "pos" : "neg") + '">' +
       (goingUp ? TREND_UP : TREND_DOWN) + txt + '</span>';
   }
@@ -11641,7 +11672,13 @@
      240 von 240 Texten, also gar keine Ersparnis. */
   function spracheLauf(scope){
     var start = (scope && scope.querySelectorAll) ? scope : document.body;
-    try { document.documentElement.setAttribute("data-up-locale", getPref("locale") || "en"); } catch(e){}
+    try {
+      document.documentElement.setAttribute("data-up-locale", getPref("locale") || "en");
+      /* lang mit der Sprache der App (QS-12): Bildschirmleser sprechen sonst Deutsch mit
+         englischer Stimme, und die Silbentrennung greift nicht. Die Host-App setzt es vor dem
+         ersten Bild schon aus dem Speicher; hier der Rueckhalt fuer jeden anderen Wirt. */
+      document.documentElement.setAttribute("lang", getPref("locale") === "de" ? "de" : "en");
+    } catch(e){}
     var bereiche = sichtbareBereiche(start);
     /* ---- DIE ELEMENTE AUF DEM WEG (24.09. gefunden) ----------------------------------------
        sichtbareBereiche STEIGT AB, solange ein Element Kinder hat, und gibt am Ende nur die
@@ -17122,14 +17159,18 @@
          es nur Signaturen und weckt, wer sich geaendert hat. Die Arbeit selbst landet ueber
          scheduleAll im naechsten Bild und faellt damit auch unter die Pause waehrend einer
          Ziehbewegung -- in der Konsole des Nutzers stand dieser Rueckruf mit 58ms. */
-      G.iv = setInterval(function(){
+      var netzLauf = function(){
+        /* Im Hintergrund-Tab nicht (QS-14); der Wechsel zurueck holt den Lauf nach. */
+        if (document.hidden) return;
         try { pruefen(true); } catch(e){}
         /* Und die Nachzuegler des Lazy-Mount: Komponenten, die eine geparkte Wurzel
            uebersprungen haben, schauen nach, ob sie inzwischen gerendert wird. Wer nichts
            uebersprungen hat, kostet hier einen booleschen Vergleich. */
         var n = window.__upNachholen;
         if (n) for (var i = 0; i < n.length; i++){ try { n[i](); } catch(e){} }
-      }, 1500);
+      };
+      G.iv = setInterval(netzLauf, 1500);
+      document.addEventListener("visibilitychange", function(){ if (!document.hidden) netzLauf(); });
     }
   }
 
@@ -17566,6 +17607,26 @@
   }
   function truncate(s, n){ s = String(s == null ? "" : s); return s.length > n ? s.slice(0, n-1) + "…" : s; }
   var MONTHS_LONG = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  /* Monats- und Wochentagsnamen der Kalender in der Sprache der App (QS-08). Der Browser kennt sie
+     in jeder Sprache (Intl), ohne Katalog -- ein Katalog liefe bei den Kuerzeln aus ("Mo" ist
+     deutsch wie englisch, "Tu" heisst "Di"). Feste Bezugstage in UTC (Montag, der 1.1.2024; der
+     15. des Monats), damit weder die Zeitzone des Nutzers noch ein Sommerzeitwechsel den Tag
+     verschiebt. Die Woche beginnt in beiden Sprachen mit Montag, wie das Raster der Kalender.
+     Zwei Buchstaben fuer den Wochentag ("Mo", "Di"), "Mo." und "Mon" darauf gekuerzt. Ohne Intl
+     bleibt das Englische. Gibt { mon: [12 lange Monate], dow: [7 Wochentage ab Montag] } zurueck. */
+  var KAL_NAMEN = {};
+  function kalenderNamen(){
+    var sprache = getPref("locale") === "de" ? "de" : "en";
+    if (KAL_NAMEN[sprache]) return KAL_NAMEN[sprache];
+    var mon = MONTHS_LONG.slice(), dow = ["Mo","Tu","We","Th","Fr","Sa","Su"];
+    try {
+      var fm = new Intl.DateTimeFormat(sprache, { month: "long", timeZone: "UTC" });
+      var fd = new Intl.DateTimeFormat(sprache, { weekday: "short", timeZone: "UTC" });
+      mon = mon.map(function(_, i){ return fm.format(new Date(Date.UTC(2024, i, 15))); });
+      dow = dow.map(function(_, i){ return fd.format(new Date(Date.UTC(2024, 0, 1 + i))).replace(/[.\s]/g, "").slice(0, 2); });
+    } catch(e){}
+    return (KAL_NAMEN[sprache] = { mon: mon, dow: dow });
+  }
   /* Bringt alles, was als Tagesangabe hereinkommt, auf YYYY-MM-DD. Der RPC liefert ISO, aber ein
      Bubble-Ausdruck kann ein formatiertes Datum schicken ("Aug 8, 2026 12:00 am"). Vorher gab
      chartDateFmt so einen String ROH zurueck -- dann stand in einer Achse ein Datum mit Uhrzeit,
@@ -18023,7 +18084,7 @@
         if (einheitFn || nachkommaFn){
           val = ttEinheit() === "%"
             ? fmtPct(dp.parsed.y, ttNachkomma())
-            : Number(dp.parsed.y).toFixed(ttNachkomma()) + ttEinheit();
+            : fmtNum(Number(dp.parsed.y), ttNachkomma(), false) + ttEinheit();
         } else {
           val = fmtPct(dp.parsed.y);
         }
@@ -20558,6 +20619,7 @@
        Dieselbe Ueberlegung wie in makeLine, nur braucht der Doughnut seine Daten zurueck: er hat
        kein lastBuilt wie die Linie. */
     var letzteZeichnung = null;
+    var barsRo = null;
     onTheme(function(){
       if (!isOwner() || !letzteZeichnung) return;
       if (letzteZeichnung.art === "donut") renderDonut(letzteZeichnung.daten, { neu: true });
@@ -20567,6 +20629,10 @@
 
     function destroy(){
       if (chart){ try { chart.destroy(); } catch(e){} chart = null; }
+      /* Der Beobachter der Balken haengt an body, und body bleibt stehen, wenn die Balken neu
+         gezeichnet werden: jedes Zeichnen liess einen weiteren zurueck (Domain-Drawer: 20 auf
+         einem Element nach 10 Oeffnungen). */
+      if (barsRo){ try { barsRo.disconnect(); } catch(e){} barsRo = null; }
       var cv = body.querySelector("canvas");
       if (cv && window.Chart && window.Chart.getChart){ var ex = window.Chart.getChart(cv); if (ex) try { ex.destroy(); } catch(e){} }
       /* Der Wirt traegt seine Positionierung nur, solange der Leerzustand in ihm steht (empty
@@ -20865,7 +20931,7 @@
       });
       setTimeout(function(){ placed = true; fitBars(); placeAll(); }, 640);
       if (window.ResizeObserver){
-        var ro = new ResizeObserver(function(){ fitBars(); if (placed) placeAll(); });
+        var ro = barsRo = new ResizeObserver(function(){ fitBars(); if (placed) placeAll(); });
         ro.observe(body);
         rows.forEach(function(row){ var t = row.querySelector(".up-bar-track"); if (t) ro.observe(t); });
       }
@@ -29356,7 +29422,7 @@
     /* Die Einstellungen des Nutzers und ihre Werkzeuge. getPref/setPref sind der ganze Zugang --
        die Ablage selbst bleibt privat, damit niemand einen Wert hineinschreibt, den kein
        Formatierer kennt. */
-    getPref: getPref, setPref: setPref, setLocaleReload: setLocaleReload,
+    getPref: getPref, setPref: setPref, setLocaleReload: setLocaleReload, kalenderNamen: kalenderNamen,
     openDrawers: openDrawers, closeAllDrawers: closeAllDrawers, drawerOeffnen: drawerOeffnen,
     kernDrawer: kernDrawer, kernDrawerAktiv: kernDrawerAktiv, teamWarten: teamWarten, markenNachladen: markenNachladen,
     appStart: appStart, appStartAktiv: appStartAktiv, appTeamWechseln: appTeamWechseln, appTeilNachladen: appTeilNachladen,

@@ -68,7 +68,6 @@
        Oberflaeche ja, Eigennamen und Fachbegriffe der Ausgabe nein. */
     if (UC.addMessages) UC.addMessages("de", {
       "My Preferences": "Meine Präferenzen",
-      "Choose how upstreem looks and formats your data": "Wie upstreem aussieht und deine Daten darstellt",
       "Profile": "Profil",
       "Your name and picture, as your team sees them": "Dein Name und Bild, so wie dein Team sie sieht",
       "How lines and legends are drawn across every chart": "Wie Linien und Legenden in allen Charts gezeichnet werden",

@@ -773,7 +773,7 @@
     "Track important changes and understand how AI performance develops around them.":
       "Halte wichtige Änderungen fest und sieh, wie sich die AI Performance um sie herum entwickelt.",
     "Create event": "Event anlegen", "Search events…": "Events durchsuchen…", "Search events": "Events durchsuchen",
-    "Event type": "Event-Typ", "Event types": "Event-Typen", "Search types…": "Typen durchsuchen…",
+    "Event type": "Event-Typ", "Search types…": "Typen durchsuchen…",
     "No events yet": "Noch keine Events",
     "Add important launches, content changes, campaigns or other changes to understand how your AI performance develops around them.":
       "Lege wichtige Launches, Content-Änderungen, Kampagnen oder andere Änderungen an, um zu sehen, wie sich deine AI Performance um sie herum entwickelt.",
@@ -838,10 +838,8 @@
     "Remove URL": "URL entfernen", "Remove this URL from the event?": "Diese URL aus dem Event entfernen?",
     "Only the link to this event is removed. The URL and its citations stay untouched.":
       "Nur die Zuordnung zu diesem Event wird entfernt. Die URL und ihre Zitate bleiben unberührt.",
-    "Please sign in again.": "Bitte neu anmelden.",
     "You don't have permission to do that.": "Dafür fehlt dir die Berechtigung.",
     "Too many requests. Please wait a moment and try again.": "Zu viele Anfragen. Bitte kurz warten und erneut versuchen.",
-    "Please enter a name.": "Bitte einen Namen eingeben.",
     "The date must be within the last 6 months.": "Das Datum muss in den letzten 6 Monaten liegen.",
     "Please select at least one topic.": "Bitte mindestens ein Topic wählen.",
     "One of the topics is no longer available.": "Ein Topic ist nicht mehr verfügbar.",
@@ -1324,7 +1322,18 @@
      am Ende weg. Die SCHREIBWEISE (lee-up.de/blog/*) steht immer sichtbar: sie ist das, was die
      Regel trifft, in einer Zeile. */
   var ZIEL_MAX = 50;
-  function hostOk(h) { return /^(?=.{3,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(String(h || "")); }
+  /* Die Endung darf auch eine Punycode-Endung sein (xn--...): ".中国" wird zu "xn--fiqs8s". */
+  function hostOk(h) { return /^(?=.{3,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:[a-z]{2,63}|xn--[a-z0-9-]{1,59})$/.test(String(h || "")); }
+  /* Ein Host mit Umlaut (muller.de mit u-Umlaut, EV-14) wird in Punycode umgewandelt, so wie ihn die
+     Zitate der Datenbank tragen (xn--mller-kva.de; gemessen: 17 Domains xn-- in 30 Tagen, 0 mit
+     Umlaut). Das Wandeln macht der Browser selbst (URL, IDNA): kein eigener Umwandler, der bei
+     einer Sonderregel falsch rechnet. Reines ASCII bleibt unberuehrt; was sich nicht wandeln laesst,
+     bleibt stehen und faellt dann an hostOk durch. */
+  function hostAscii(h) {
+    h = String(h == null ? "" : h);
+    if (!/[^\x00-\x7f]/.test(h)) return h;
+    try { return new URL("http://" + h).hostname || h; } catch (e) { return h; }
+  }
   function zerlegen(s) {
     s = String(s == null ? "" : s).trim();
     if (!s || /\s/.test(s)) return null;
@@ -1333,12 +1342,15 @@
     rest = rest.replace(/^\*\./, "");
     var m = /^([^\/?#]+)([^?#]*)(\?[^#]*)?(#.*)?$/.exec(rest);
     if (!m) return null;
-    var host = m[1].toLowerCase().replace(/^www\./, ""), pfad = m[2] || "";
+    /* anzeige: der Host so, wie er eingegeben wurde (klein, ohne www); host: derselbe in Punycode,
+       der Wert, mit dem verglichen, gesendet und gesucht wird. hostTyp/hostTypAscii: mit www, fuer
+       das url-Ziel, das die Schreibweise behaelt. */
+    var anzeige = m[1].toLowerCase().replace(/^www\./, ""), host = hostAscii(anzeige), pfad = m[2] || "";
     var stern = /\*$/.test(pfad);
     pfad = pfad.replace(/\/?\*$/, "");
     var schraeg = /\/$/.test(pfad);
     pfad = pfad.replace(/\/+$/, "");
-    return { schema: schema, host: host, pfad: pfad, stern: stern, schraeg: schraeg, alle: alle, query: m[3] || "", roh: s };
+    return { schema: schema, host: host, anzeige: anzeige, hostTyp: m[1], hostTypAscii: hostAscii(m[1].toLowerCase()), pfad: pfad, stern: stern, schraeg: schraeg, alle: alle, query: m[3] || "", roh: s };
   }
   /* Mehrere Eintraege: je Zeile (oder durch Leerzeichen bzw. Komma getrennt) -- eine Adresse
      enthaelt keines davon. */
@@ -1380,17 +1392,19 @@
     var z = zerlegen(text);
     if (!z || !hostOk(z.host)) return { fehler: "host", roh: String(text || "").trim() };
     if (art === "url") {
-      var u = (z.schema ? z.roh : "https://" + z.roh).replace(/#.*$/, "");
+      var u0 = (z.schema ? z.roh : "https://" + z.roh).replace(/#.*$/, "");
+      /* Gesendet wird der Host in Punycode, gezeigt die Eingabe */
+      var u = z.hostTypAscii !== z.hostTyp.toLowerCase() ? u0.replace(z.hostTyp, z.hostTypAscii) : u0;
       if (u.length > 2048) return { fehler: "host", roh: z.roh };
-      return { kind: "url", input: u, key: "url|" + urlSchluessel(u), zeigen: urlZeigen(u) };
+      return { kind: "url", input: u, key: "url|" + urlSchluessel(u), zeigen: urlZeigen(u0) };
     }
     if (art === "path") {
       if (!z.pfad) return { fehler: "pfad", roh: z.roh };
       var v = z.host + z.pfad;
-      return { kind: "path", input: v, key: "path|" + v.toLowerCase(), zeigen: v + "/*" };
+      return { kind: "path", input: v, key: "path|" + v.toLowerCase(), zeigen: z.anzeige + z.pfad + "/*" };
     }
-    if (art === "host_all") return { kind: "host_all", input: z.host, key: "host_all|" + z.host, zeigen: "*." + z.host + "/*" };
-    return { kind: "host", input: z.host, key: "host|" + z.host, zeigen: z.host + "/*" };
+    if (art === "host_all") return { kind: "host_all", input: z.host, key: "host_all|" + z.host, zeigen: "*." + z.anzeige + "/*" };
+    return { kind: "host", input: z.host, key: "host|" + z.host, zeigen: z.anzeige + "/*" };
   }
   /* Ein Ziel aus der Datenbank (targets[] von get_impact_event_v3) in derselben Form. value ist
      normalisiert, input die Eingabe des Nutzers -- gezeigt wird value. */
@@ -2034,7 +2048,7 @@
       if (stand.fehler && !(UC.getEvents && UC.getEvents().length)) {
         zahlSetzen(null);
         elListe.className = "uev-liste";
-        elListe.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("events") : "";
+        elListe.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("the event list") : "";
         return;
       }
       if (!stand.geladen) {
@@ -2277,7 +2291,7 @@
       var d = dieDetail() || mitZielen(listeEvent(state.eventId));
       if (!d) {
         el.innerHTML = state.detailFehler
-          ? '<div class="uev-fehlerkopf">' + (UC.leseFehlerHtml ? UC.leseFehlerHtml("event") : esc(t("This event could not be loaded."))) +
+          ? '<div class="uev-fehlerkopf">' + (UC.leseFehlerHtml ? UC.leseFehlerHtml("the event") : esc(t("This event could not be loaded."))) +
               '<button type="button" class="up-btn-sec uev-zurueck">' + esc(t("Back to overview")) + '</button></div>'
           : '<div class="up-box uev-hero is-sk"><div class="uev-hero-band uev-sk-band"></div><div class="uev-hero-body">' +
               '<span class="uev-avatar is-gross uev-sk-avatar"></span><span class="uev-sk uev-sk-titel" style="width:36%"></span>' +
@@ -2523,7 +2537,7 @@
       var el = elMain.querySelector('[data-sek="kpis"]'), a = dieAnalyse();
       if (!a) {
         el.innerHTML = state.analyseFehler && !state.analyseLaden
-          ? '<div class="uev-kpifehler">' + (UC.leseFehlerHtml ? UC.leseFehlerHtml("analysis") : "") + '</div>'
+          ? '<div class="uev-kpifehler">' + (UC.leseFehlerHtml ? UC.leseFehlerHtml("the analysis") : "") + '</div>'
           : [0, 1, 2].map(function () { return UC.kpiKarteSkelett("uev-kpi"); }).join("");
         return;
       }
@@ -3868,8 +3882,10 @@
     var WARTE_MS = 25000;       /* wie die Warte-Uhren der Drawer: laenger braucht keine RPC hier */
     var MONATE = ["January", "February", "March", "April", "May", "June", "July", "August",
                   "September", "October", "November", "December"];
-    /* Wie im Kalender von date-range.js und ebenso unuebersetzt: dieselben Zellen, dieselben Koepfe. */
+    /* Die Kopfzeile des Kalenders in der Sprache der App, wie in date-range.js (UC.kalenderNamen);
+       ohne die Funktion das Englische. */
     var WOCHENTAGE = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+    function kalNamen() { return UC.kalenderNamen ? UC.kalenderNamen() : { mon: MONATE.map(function (m) { return t(m); }), dow: WOCHENTAGE }; }
     /* Die erste Reihe der Topic-Palette: die kraeftigen Toene. Eine Event-Farbe ist auch die Farbe
        des Markers in jedem Diagramm, eine 1,5px-Linie auf hellem UND dunklem Grund -- die blassen
        und die tiefen Reihen verschwinden dort auf je einem der beiden (Spezifikation 50). */
@@ -4069,10 +4085,10 @@
       return '<div class="udr-month">' +
         '<div class="udr-month-head">' +
           '<button type="button" class="udr-nav udr-prev" data-monat="-1" aria-label="' + esc(t("Previous month")) + '"' + (vor ? "" : " disabled") + '>' + UC.icon("chevronLeft", 1.8) + '</button>' +
-          '<span class="udr-month-title">' + esc(t(MONATE[monat.getMonth()])) + ' ' + monat.getFullYear() + '</span>' +
+          '<span class="udr-month-title">' + esc(kalNamen().mon[monat.getMonth()]) + ' ' + monat.getFullYear() + '</span>' +
           '<button type="button" class="udr-nav udr-next" data-monat="1" aria-label="' + esc(t("Next month")) + '"' + (nach ? "" : " disabled") + '>' + UC.icon("chevronRight", 1.8) + '</button>' +
         '</div>' +
-        '<div class="udr-dows">' + WOCHENTAGE.map(function (w) { return '<span class="udr-dow">' + w + '</span>'; }).join("") + '</div>' +
+        '<div class="udr-dows">' + kalNamen().dow.map(function (w) { return '<span class="udr-dow">' + w + '</span>'; }).join("") + '</div>' +
         '<div class="udr-grid">' + zellen + '</div></div>';
     }
     /* Der Text im Wahlknopf: ein Tag, ein Zeitraum oder die halbe Wahl ("1 Sep – End date"). */

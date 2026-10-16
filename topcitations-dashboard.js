@@ -439,7 +439,7 @@
          die Lieferung ist schon da und war unlesbar. */
       if (state.listenFehler){
         if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
-        tableEl.innerHTML = head + UC.leseFehlerHtml("citations");
+        tableEl.innerHTML = head + UC.leseFehlerHtml("the citation list");
         return;
       }
       if (!rows.length){
