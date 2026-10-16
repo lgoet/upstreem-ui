@@ -1233,6 +1233,8 @@
     "The model that produced this response.": "Das Modell, das diese Response erzeugt hat.",
     "The sources the model cited for this response.":
       "Die Quellen, die das Modell für diese Response zitiert hat.",
+    "The brand's position among all brands mentioned in this response. If it's mentioned more than once, the best position counts. A lower number is better.":
+      "Die Position der Brand unter allen Brands, die in dieser Response erwähnt werden. Wird sie mehrfach erwähnt, zählt die beste Position. Kleiner ist besser.",
     "Which of your tracked brands are mentioned in this response. Hover a logo to see its name.":
       "Welche deiner beobachteten Brands in dieser Response erwähnt werden. Fahre über ein Logo, um den Namen zu sehen.",
     "Which of your tracked brands are mentioned on this page. Hover a logo to see its name.":

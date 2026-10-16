@@ -1501,20 +1501,22 @@
        have no other table's column to match yet, so they stay local. */
     var EXPLAIN_LOCAL = {
       citations: { h: "Citations", t: "The sources the model cited for this response." },
-      model:     { h: "Model",     t: "The model that produced this response." }
+      model:     { h: "Model",     t: "The model that produced this response." },
+      /* Rank je Antwort ist KEIN Mittel (17.10., DB-Rueckmeldung Abschnitt 4): die Datenbank nimmt
+         die Erwaehnung der Messmarke mit dem besten Rang, bei jeder Sortierung gleich. Der geteilte
+         Satz aus core ("average position") stimmt fuer Tabellen mit Mittelwerten, hier nicht. */
+      rank:      { h: "Rank",      t: "The brand's position among all brands mentioned in this response. If it's mentioned more than once, the best position counts. A lower number is better." }
     };
     function explainInfo(kind){
       if (EXPLAIN_LOCAL[kind]) return EXPLAIN_LOCAL[kind];
       if (UC.explainCopy){
         if (kind === "sentiment") return UC.explainCopy("sentiment", { scope: " for this response" });
-        if (kind === "rank") return UC.explainCopy("rank", { scope: " for this response" });
         if (kind === "brands") return UC.explainCopy("brands", { scope: " in this response" });
       }
       /* Fallback for a page where an older core.js (no explainCopy yet) won the mixed-pin race —
          same wording UC.EXPLAIN_TEXT would have produced, just not shared from one place. */
       var FALLBACK = {
         sentiment: { h: "Sentiment", t: "How positively the brand is described when it's mentioned for this response." },
-        rank:      { h: "Rank", t: "The brand's average position among all brands mentioned for this response. A lower number is better." },
         brands:    { h: "Brand Mentions", t: "Which of your tracked brands are mentioned in this response. Hover a logo to see its name." }
       };
       return FALLBACK[kind] || null;
