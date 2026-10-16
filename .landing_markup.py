@@ -23,9 +23,11 @@ ZIEL = "landing-hero.js"
 # Reihenfolge ist die Reihenfolge im Fenster: Leiste, Seitenkopf, Chart, Zitate.
 TEILE = [
     ("usn", "bubble/sidebar_bubble.html", "lh-usn"),
-    ("dph", "page-headers/bubble/dashboard_page_header_bubble.html", "lh-dph"),
-    ("vot", "bubble/visibility_chart_bubble.html", "lh-vot"),
-    ("tcd", "bubble/topcitations_dashboard_bubble.html", "lh-tcd"),
+    # Erste Szene: die Dashboard-Seite der App als EINE Komponente (dashboard-page.js, seit 16.10.
+    # auch hier). Sie baut Kopf, Filterleiste und die flachen Baender mit Visibility-Chart und Top
+    # Citations selbst -- genau wie in der App. Die alten Einzelteile (Seitenkopf dph, vot, tcd)
+    # nutzt die App seit Oktober nicht mehr.
+    ("uds", "bubble/dashboard_page_bubble.html", "lh-uds"),
     # Quick Actions traegt keine data-instance -- die Kennung unten wird also nicht gesetzt und
     # steht nur da, damit die Zeile dieselbe Form hat wie die anderen.
     ("mqa", "bubble/quick_actions_bubble.html", "lh-mqa"),
@@ -33,12 +35,12 @@ TEILE = [
     # Regeln), also bleibt die id im Markup stehen -- eine zweite Instanz auf der Seite gibt es
     # nicht, und damit ist der Singleton unproblematisch.
     ("mira", "bubble/ask_mira_bubble.html", "lh-mira"),
-    # Dritte Szene: die Prompts-Seite, Kopf und Tabelle.
-    ("pph", "page-headers/bubble/prompts_page_header_bubble.html", "lh-pph"),
-    ("upt", "bubble/prompts_table_bubble.html", "lh-upt"),
-    # Vierte Szene: das Opportunities-Brett.
-    ("oph", "page-headers/bubble/opportunities_page_header_bubble.html", "lh-oph"),
-    ("uo", "bubble/opportunities_bubble.html", "lh-uo"),
+    # Dritte Szene: Prompt Insights als EINE Komponente (prompts-page.js, seit 16.10. auch hier) --
+    # Kopf mit Reitern, Leiste, flache Tabelle mit Gruppenspalte, wie in der App.
+    ("upi", "bubble/prompts_page_bubble.html", "lh-upi"),
+    # Vierte Szene: die Opportunities-Seite als EINE Komponente (opportunities-page.js, seit 16.10.
+    # auch hier) -- Kopf mit "Look for new Opportunities" und das Brett darin.
+    ("uop", "bubble/opportunities_page_bubble.html", "lh-uop"),
     # Die drei Nebenfenster, die beim Scrollen erscheinen: die Antwortkarte rechts kommt aus der
     # Responses-Tabelle im Kartenmodus. Die zwei anderen Fenster brauchen keine Vorlage -- das
     # Team-Dropdown und der Doughnut entstehen aus geteilten Bauteilen (sidebar.css, UC.makeTypeChart).
@@ -47,9 +49,9 @@ TEILE = [
     # die Komponente baut alles selbst -- und genau deshalb steht sie hier: so bleiben ihre
     # Attribute (data-brand und der Rest) in derselben Form wie in der App.
     ("udd", "bubble/domain_detail_bubble.html", "lh-udd"),
-    # Fuenfte Szene: die Performance-Seite, Kopf und Heatmap.
-    ("hph", "page-headers/bubble/performance_page_header_bubble.html", "lh-hph"),
-    ("uhm", "bubble/performance_radar_bubble.html", "lh-uhm"),
+    # Fuenfte Szene: die Performance-Seite als EINE Komponente (performance-page.js, seit 16.10.
+    # auch hier) -- Kopf, Leiste und der Radar.
+    ("upf", "bubble/performance_page_bubble.html", "lh-upf"),
     # Sechste Szene (06.10.): Shopping. Eine Komponente mit eigenem Kopf (Krumen, Reiter) -- kein
     # eigener Seitenkopf daneben noetig.
     ("ush", "bubble/shopping_bubble.html", "lh-ush"),
@@ -147,6 +149,9 @@ for schluessel, pfad, kennung in TEILE:
     m = m.replace('data-instance="ROOTID_[dynamic id]"', 'data-instance="%s"' % kennung)
     # Shopping traegt in der Vorlage eine feste Kennung (alle Run-JS-Schritte heissen so).
     m = m.replace('data-instance="shopping_page"', 'data-instance="%s"' % kennung)
+    # Die Seiten der App (dashboard-page.js ...) tragen ebenfalls eine feste Kennung.
+    m = re.sub(r'data-instance="(dashboard|prompts|opportunities|performance|mira)_page"',
+               'data-instance="%s"' % kennung, m)
     # Der Umschalter schreibt seine Attribute mit Leerraum um das "=" (view_switch_bubble.html).
     m = re.sub(r'data-instance\s*=\s*"VIEWSWITCH_\[dynamic id\]"', 'data-instance="%s"' % kennung, m)
     for k, v in ERSATZ.items():
@@ -168,6 +173,10 @@ for schluessel, pfad, kennung in TEILE:
     # alle sieben Seitenkoepfe, und die anderen sechs kennen kein Power. (21.09. gemeldet: "Der
     # Pageheader ist falsch. Den solltest du auch gar nicht aendern.")
     m = m.replace('data-mode-default="power"', 'data-mode-default="standard"')
+    # Die Dashboard-Seite zeigt im Fenster die Analytic-Ansicht (Chart und Top Citations), nicht
+    # das Agentic Dashboard. Ihre Vorlage traegt keinen Modus; ohne ihn naehme sie "standard"
+    # ohnehin, ausdruecklich steht er hier, damit es nicht am Rueckfall in core haengt.
+    m = m.replace('class="up-root uds-root"', 'class="up-root uds-root" data-mode-default="standard"')
     # Die Schublade der Opportunities bleibt IM Fenster. Ohne das wandert sie in die oberste Ebene
     # des Browsers und liegt ueber der ganzen Seite -- siehe opportunities.js, data-portal.
     m = m.replace('class="up-root uo-root"', 'class="up-root uo-root" data-portal="inline"')
