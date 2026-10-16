@@ -5445,6 +5445,13 @@
        drei stehende Toasts mit Adressen verschiedener Laenge sprangen sonst als Treppe. 380 liegt
        unter dem Deckel von 420 und laesst an Host und Pfad genug stehen. */
     .up-toast.is-reich { width: min(380px, calc(100vw - 32px)); }
+    /* AM TELEFON NIE UEBER EINEM OFFENEN DIALOG (Audit EV-03, Rest): die stehenden Meldungen liegen im Top
+       Layer ueber jedem Dialog und deckten bei 375 Breite Felder des "Create event"-Dialogs (Datum, Typ).
+       Solange ein Dialog offen ist, sind sie unsichtbar, aber nicht geschlossen: danach stehen sie wieder
+       da, und gelesen ist nichts. Ab 500 Breite ist daneben Platz, dort bleibt alles wie es war. */
+    @media (max-width: 499px) {
+      html:has(.up-modal-backdrop.is-shown) .up-toast.is-bleibt { visibility: hidden; }
+    }
     .up-toast.is-klick { cursor: pointer; }
     .up-toast.is-klick:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
     /* Die Adressen: eine Zeile je Seite, Favicon 14 vor dem gekuerzten Text, leiser als der Satz

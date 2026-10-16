@@ -14889,7 +14889,7 @@
      Waehrend einer laufenden Aktion (busy) schliesst nichts davon -- wie in add-brand.
      Der Fokus geht beim Schliessen an den Ausloeser zurueck.
      cfg: { titel, unter, inhaltHtml, breit, knoepfe: [{ id, text, art: "pri"|"sec"|"gefahr", aktion }],
-            isDark(), onClose, onOpen(api) }
+            isDark(), onClose, onOpen(api), vorSchliessen(api) }
      aktion: Funktion(api) -- gibt sie false zurueck, bleibt das Popup offen; ohne aktion schliesst
      der Knopf. Rueckgabe: { el, karte, body, schliessen, busy(id, an), fehler(text), knopf(id) }. */
   function makeModal(cfg){
@@ -14944,18 +14944,26 @@
       }
       return !!el.querySelector(".utf-wrap.is-open, .umf-wrap.is-open, .umk-wrap.is-open");
     }
+    /* Schliessen durch den Nutzer (Escape, X, Klick auf den Schleier) fragt vorher cfg.vorSchliessen:
+       gibt sie false zurueck, bleibt das Popup offen (der Aufrufer fragt dann selbst nach, etwa
+       "Discard this event?", wenn schon etwas eingegeben wurde). schliessen() von Hand und die
+       Knoepfe fragen nie -- sie sind die Entscheidung selbst. */
+    function darfZu(){
+      if (typeof cfg.vorSchliessen !== "function") return true;
+      try { return cfg.vorSchliessen(api) !== false; } catch(e){ return true; }
+    }
     function taste(e){
       if (e.key !== "Escape") return;
       if (offenesMenue()) return;
-      e.stopPropagation(); e.preventDefault(); if (!istBusy()) schliessen();
+      e.stopPropagation(); e.preventDefault(); if (!istBusy() && darfZu()) schliessen();
     }
     document.addEventListener("keydown", taste, true);
     el.addEventListener("mousedown", function(e){ druckAufSchleier = e.target === el; });
     el.addEventListener("click", function(e){
-      if (e.target === el && druckAufSchleier && !istBusy()) schliessen();
+      if (e.target === el && druckAufSchleier && !istBusy() && darfZu()) schliessen();
       druckAufSchleier = false;
     });
-    el.querySelector(".up-popup-close").addEventListener("click", function(){ if (!istBusy()) schliessen(); });
+    el.querySelector(".up-popup-close").addEventListener("click", function(){ if (!istBusy() && darfZu()) schliessen(); });
     var api = {
       el: el, karte: karte, body: body, schliessen: schliessen,
       knopf: function(id){ return el.querySelector('[data-upm-knopf="' + id + '"]'); },
