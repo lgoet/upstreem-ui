@@ -273,6 +273,27 @@ Weiß bei 3.08 und damit unter AA. Jetzt auf Weiß 5.33 und 5.37.
   `data-theme="dark"` BG `#f0f0f0`, Text `--vc-text-invert` (Geists Tooltip ist im Dunkeln
   ebenfalls hell: gemessen `#fff` mit `#171717`)
 
+### Komponentenfarben: Prompts-Tabelle, Brands (seit 17.10., `core.css` am hellen `:root`-Block)
+
+`prompts-table.*` und `brands-overview.*` führen keine eigenen Farbwerte mehr. Die Marken sind
+**feste Werte**, weil die Schichten am `<body>` ihre Fassung über ihr eigenes `data-theme` wählen
+(die Massenleiste sogar umgekehrt zum App-Thema) – beide Fassungen stehen nebeneinander:
+
+- **Massenleiste** `--vc-upt-leiste-hell-*` / `--vc-upt-leiste-dunkel-*`: `grund` (`#e0e0e0` /
+  `#1f1f1b`), `text`, `muted`, `rand`, `trenner`, `flaeche`, `hover`, `third`, `rand-hover`,
+  `surface`, `akzent`, `akzent-fg`, `schalter-aus`, `fokus`, `fokus-ring`. Dazu
+  `--vc-upt-gefahr-ink` (Weiß auf dem scharfen Löschknopf) und `--vc-upt-farbfeld-rand`.
+- **Topic-Zelle und Popup**: `--vc-upt-zelle-leer` (`#a0a5ad`), `--vc-upt-zelle-leer-dunkel`
+  (`#555`), `--vc-upt-popup-grund`/`-rand`, `--vc-upt-popup-dunkel-grund`/`-rand` (Rückfall für
+  `--up-menu-bg`/`-border` außerhalb von Geist-Dunkel), `--vc-upt-topic-ohne-farbe` (`#6b7280`).
+- **Brands**: `--vc-ubo-schicht-*` (Tooltip der Landschaft und Aktionsmenü, hell; `-dunkel-text`,
+  `-dunkel-muted`, `-dunkel-logo`, `-dunkel-third`), `--vc-ubo-logo-schatten`,
+  `--vc-ubo-marke-ohne-farbe`. Einziger Themenwert: `--vc-ubo-raster` (gestricheltes Raster,
+  hell `rgba(0,0,0,0.09)`, dunkel `rgba(255,255,255,0.09)`).
+- **Palette des Inline-Topic-Erstellers** der Massenleiste: `UC.TOPIC_COLOR_PALETTE_INLINE` in
+  `core.js` – die alten 30 Werte von vor dem OKLCh-Umbau, unverändert. Nicht dieselbe wie
+  `UC.TOPIC_COLOR_PALETTE`; der Umzug darauf ist offen.
+
 ---
 
 ## 1a. Citation-Type-Farben (Stand 15.10.)

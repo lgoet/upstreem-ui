@@ -171,13 +171,15 @@
 /* Rahmen einer SCHWEBENDEN Schicht: border-tertiary, nicht -secondary. Diese Flaeche liegt auf
    allem und traegt Weiss (hell) bzw. die Menuestufe (dunkel) -- der Rahmen muss eine Stufe
    kraeftiger sein als der auf einer Karte, sonst loest sich die Kante gegen die Seite auf.
-   Dieselbe Zuordnung wie #3e3e44 im Dunkeln. */
+   Dieselbe Zuordnung wie #3e3e44 im Dunkeln.
+   Die WERTE beider Schichten (Tooltip, Aktionsmenue) stehen seit dem 17.10. in core.css (Block
+   "Komponentenfarben: Prompts-Tabelle, Brands", --vc-ubo-schicht-...), fest je Fassung. */
 .ubo-mxtip {
-  --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-border: #dcdbdd; --vc-bg: #ffffff;
+  --vc-text: var(--vc-ubo-schicht-text); --vc-muted: var(--vc-ubo-schicht-muted); --vc-border: var(--vc-ubo-schicht-rand); --vc-bg: var(--vc-ubo-schicht-grund);
   /* .up-logo-box braucht --vt-logo-bg, .up-hash braucht --vc-third. Ohne die beiden steht im
      Dark Mode ein Logo mit transparentem Hintergrund ohne helle Unterlage auf #1b1b1b, und das
      "#" der Rangzeile rendert in voller Textstaerke statt gedaempft. */
-  --vt-logo-bg: #ffffff; --vc-third: #9e9e9e;
+  --vt-logo-bg: var(--vc-ubo-schicht-logo); --vc-third: var(--vc-ubo-schicht-third);
   position: fixed; left: 0; top: 0; z-index: 100050; pointer-events: none;
   min-width: 208px; padding: 10px 12px; border-radius: var(--up-r-l);
   background: var(--vc-bg); border: 1px solid var(--vc-border);
@@ -195,8 +197,8 @@
    (core, dunkler Block an :root -- er erreicht dieses Element, weil es data-theme selbst traegt)
    statt einer Kopie der Linear-Werte: Background 1 und Gray 500. */
 /* Schrift im Dunkeln nach Geist (16.10.): Wert fuer Wert getauscht (#e0e0e0 -> #ededed, #a0a0a0 -> #a1a1a1), Flaeche am <body> mit eigener Leiter. */
-.ubo-mxtip[data-theme="dark"] { --vc-text: #ededed; --vc-muted: #a1a1a1; --vc-border: var(--up-menu-border); --vc-bg: var(--up-menu-bg);
-  --vt-logo-bg: #e0e0e0; --vc-third: #808080; }
+.ubo-mxtip[data-theme="dark"] { --vc-text: var(--vc-ubo-schicht-dunkel-text); --vc-muted: var(--vc-ubo-schicht-dunkel-muted); --vc-border: var(--up-menu-border); --vc-bg: var(--up-menu-bg);
+  --vt-logo-bg: var(--vc-ubo-schicht-dunkel-logo); --vc-third: var(--vc-ubo-schicht-dunkel-third); }
 .ubo-mxtip * { box-sizing: border-box; }
 .ubo-mxtip-head { display: flex; align-items: center; gap: 8px; }
 .ubo-mxtip-name { font-size: 13px; font-weight: 500; color: var(--vc-text); white-space: nowrap; }
@@ -258,8 +260,8 @@
 /* Wer eine Palette aufmacht, macht sie vollstaendig auf. Dieses Panel haengt am body und
    erbt nichts von .up-root -- jedes hier NICHT deklarierte Token faellt still aus. */
 .ubo-actmenu {
-  --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-border: #dcdbdd; --vc-bg: #ffffff; --vc-heading-bg: #f9f8f9;
-  --up-sel-bg: #f4f2f4;   /* .up-pop-opt faerbt sich sonst beim Ueberfahren nicht */
+  --vc-text: var(--vc-ubo-schicht-text); --vc-muted: var(--vc-ubo-schicht-muted); --vc-border: var(--vc-ubo-schicht-rand); --vc-bg: var(--vc-ubo-schicht-grund); --vc-heading-bg: var(--vc-ubo-schicht-kopf);
+  --up-sel-bg: var(--vc-ubo-schicht-wahl);   /* .up-pop-opt faerbt sich sonst beim Ueberfahren nicht */
   position: fixed; z-index: 100050; min-width: 200px; padding: 6px;
   background: var(--vc-bg); border: 1px solid var(--vc-border); border-radius: var(--up-dd-radius);
   box-shadow: var(--up-e-2);
@@ -276,7 +278,7 @@
    gleichwertigen Marken (Hover einer Zeile, gewaehlter Chip), weil die helle Grundregel oben
    --vc-heading-bg und --up-sel-bg selbst setzt und ein Verweis auf sich selbst ungueltig waere. */
 /* Schrift im Dunkeln nach Geist (16.10.): Wert fuer Wert getauscht (#e0e0e0 -> #ededed, #a0a0a0 -> #a1a1a1), Flaeche am <body> mit eigener Leiter. */
-.ubo-actmenu[data-theme="dark"] { --vc-text: #ededed; --vc-muted: #a1a1a1; --vc-border: var(--up-menu-border);
+.ubo-actmenu[data-theme="dark"] { --vc-text: var(--vc-ubo-schicht-dunkel-text); --vc-muted: var(--vc-ubo-schicht-dunkel-muted); --vc-border: var(--up-menu-border);
   --vc-bg: var(--up-menu-bg); --vc-heading-bg: var(--vt-row-hover-solid); --up-sel-bg: var(--up-chip-an); }
 /* Im grauen Hell die leise Flaeche der App (17.10.), nach dem Muster der core-Dialoge: die helle
    Grundregel oben setzt --vc-heading-bg selbst (#f9f8f9) und erreicht die Marke --up-leise-grau
