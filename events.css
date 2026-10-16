@@ -137,6 +137,11 @@
    Abschnitt dieselben 40. */
 .uev-detail { display: flex; flex-direction: column; gap: 40px; }
 .uev-detail .uev-sec-head { align-items: flex-start; }
+/* LUFT UNTER DER LETZTEN ZEILE (17.10., Nutzer: "Vergleichsgruppe 67 Prompts klebt fast ganz
+   unten am Rand"): gemessen 0 vom letzten Satz bis zur Unterkante von #main, in der Uebersicht
+   ebenso von der letzten Karte. 64 wie jede andere Seite der App (core.css, .ucs-main bis
+   .uss-main: "Unten 64"). Am Bereich, nicht am Detail: Uebersicht und Detail teilen ihn. */
+.uev-root .uev-main { padding-bottom: 64px; }
 .uev-steuerblock { display: flex; flex-direction: column; gap: 16px; }
 /* DER KOPF DES DETAILS (03.10. neu): dieselbe Sprache wie die Karte, eine Nummer groesser --
    Band 96, Profilbild 64, Name in der groessten Stufe der App (Dashboards: hoechstens 22-24px).
@@ -381,7 +386,11 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 /* Hoechstens fuenfeinhalb Treffer, der Rest scrollt (04.10.) -- die halbe Zeile zeigt, dass es
    weitergeht, wie .up-vbody in core (412.5 = 7.5 Zeilen). Gemessen: Zeile 51, Abstand 2, oben 8
    -> 8 + 5 x (51 + 2) + 51 / 2 = 298.5. */
-.uev-treffer-klapp .uev-urltreffer { padding-top: 8px; max-height: 298.5px; overflow-y: auto; overscroll-behavior: contain; }
+/* overscroll-behavior auto (17.10.): die Liste steht IM FLUSS der Dialogkarte und reicht das Rad
+   an ihrem Ende an die Karte weiter, wie jede Liste in einer Seite; die Karte selbst haelt mit
+   contain die Seite dahinter still. Mit contain blieb die Karte unter dem Zeiger stehen, auch
+   ohne Ueberlauf (siehe .uev-sm-baum). */
+.uev-treffer-klapp .uev-urltreffer { padding-top: 8px; max-height: 298.5px; overflow-y: auto; overscroll-behavior: auto; }
 .uev-urltreffer .uev-urlnote { padding: 8px 10px; }
 .uev-urlsk { display: flex; align-items: center; gap: 11px; padding: 8px 10px; }
 .uev-urlsk .uev-urlsk-av { width: 30px; height: 30px; border-radius: var(--up-r-m); flex: 0 0 auto; }
@@ -584,11 +593,21 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
    4 zwischen ihnen statt der 12 zwischen den Teilen des Waehlers. */
 .uev-sm-saetze { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .uev-sm-deckel[hidden] { display: none; }
+/* Suchfeld, Baum und Fuss tragen eigene display-Regeln (core), gegen die das hidden-Attribut allein
+   nicht ankommt (smZeichnen: leere Sitemap, nichts mehr zu waehlen). */
+.uev-sm-inhalt [hidden] { display: none; }
 .uev-sm-inhalt .uev-sm-suchw { margin: 0; }
 /* Die Zeilen ruecken um ihr Polster (6) nach aussen, wie Topics und Arten: der Pfeil des obersten
    Ordners steht an der Kante von Feld und Suche, nur die Hoverflaeche reicht darueber (15.10.
    spaet, vorher im Kasten 15 eingerueckt). */
-.uev-sm-baum { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; gap: 2px; margin: 0 -6px; padding: 0; }
+/* overscroll-behavior auto (17.10., Nutzer: "Das Popup kann nicht scrollen, wenn der Zeiger
+   darueber ist -- auch wenn es nichts zu scrollen gibt"): contain hielt das Rad im Baum fest, an
+   seinem Ende und ebenso, wenn er gar nicht rollen konnte (gemessen mit echtem Rad: Baum 36 hoch
+   ohne Ueberlauf, die Karte blieb bei 0). Der Baum steht im Fluss der Dialogkarte, und die traegt contain
+   selbst (core.css, "Scroll-Chaining schuetzen") -- die Seite dahinter bleibt also still, auch
+   ohne die Sperre an #main. Gegen die contain-Regel fuer .up-filter-list aus core (0,0,0) reicht
+   die eine Klasse. */
+.uev-sm-baum { max-height: 320px; overflow-y: auto; overscroll-behavior: auto; gap: 2px; margin: 0 -6px; padding: 0; }
 .uev-sm-baum .uev-sm-reihe { padding-left: calc(6px + var(--uev-tiefe, 0) * 16px); min-height: 36px; }
 .uev-sm-reihe:focus-visible { outline: 0; box-shadow: inset 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 .uev-sm-reihe .uev-sm-klapp { color: var(--vc-third); }

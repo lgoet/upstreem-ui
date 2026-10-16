@@ -164,8 +164,21 @@ am Einführungstag schon dastand, ist als Bestand vermerkt und blockiert nie ein
 gemeldet wird nur, was **dazukommt**. Ein Prüfer, der am ersten Tag tausend Treffer meldet, wird
 weggeklickt. Der Bestand (Stand 21.09.: **1295** Angaben — 673 Farbliterale, 318 Schriftgrößen,
 268 Dauern, 65 Radien) wird abgebaut, wenn eine Datei ohnehin angefasst wird; Stand 15.10.:
-**900** (444 Farbliterale, 192 Schriftgrößen, 257 Dauern, 7 Radien). Nach dem Aufräumen
+**900** (444 Farbliterale, 192 Schriftgrößen, 257 Dauern, 7 Radien); Stand 17.10.: **436**
+(0 Farbliterale, 183 Schriftgrößen, 246 Dauern, 7 Radien). Nach dem Aufräumen
 einer Datei: `python3 .check_skala.py --grundlinie`.
+
+**Farben stehen nur noch in `core.css` (seit 17.10.).** Auf Wunsch („alles, was wir an Farben
+nutzen, nach core“) tragen die Komponenten keinen Farbwert mehr: jede Farbe ist ein Token in
+einem der Blöcke „Komponentenfarben: …“ am Ende der beiden Themenblöcke
+(`:root, .up-root, [data-theme="light"]` und `[data-theme="dark"], .up-root[data-theme="dark"]`),
+damit sie auch Flächen am `<body>` erreichen. Umgezogen ohne sichtbare Änderung, gemessen über
+rund 3,5 Mio. berechnete Farbwerte in vier Themen. Eine neue Farbe ist ein neues Token dort, nie
+ein Literal in der Komponente – `.check_skala.py` meldet jedes neue. JS setzt Farben als
+`var(--vc-…)` oder liest sie per `getComputedStyle`. Bewusst ausgenommen: Masken (Deckkraft, keine
+Themenfarbe), gespeicherte Daten (Markenfarben im Brand Editor, Coloris-Vorschläge), Demodaten
+(`events-demo.js`), Kommentare. Bubble-Vorlagen in `bubble/` ziehen mit (sonst bringt ein neuer
+Lauf der `.…_markup.py`-Skripte die Literale zurück).
 
 Er erkennt auch, wenn ein bekannter Wert nur **häufiger** wird: eine 16. Angabe auf `12.5px` in
 einer Datei mit 15 im Bestand fällt auf ("Bestand war 15").
@@ -188,7 +201,7 @@ muss.
 
 | Thema | Regel | Wo |
 |---|---|---|
-| Thema | Nur **Light, Dark, System**. „Hell klassisch“/Legacy Light gibt es nicht mehr. Light ist wie bei Vercel: Seite, Seitenleiste und Leisten grau, Tabellen, Inhalte und Charts weiß | `html[data-up-hell="grau"]` aus `hellAnwenden()`, `UC.themeSchalterHtml` |
+| Thema | Nur **Light, Dark, System**. „Hell klassisch“/Legacy Light gibt es nicht mehr. Light ist wie bei Vercel: Seite, Seitenleiste und Leisten grau, Tabellen, Inhalte und Charts weiß. Seit 17.10. trägt im grauen Hell auch `<html>` die leise Fläche (`--vc-heading-bg: var(--up-leise-grau)`, #f2f2f2 statt #f9f8f9) | `html[data-up-hell="grau"]` aus `hellAnwenden()`, `UC.themeSchalterHtml` |
 | Auswahl | Gewählte Zustände im Light `#ededed` (Geists Seitennavigation). Seitenleiste **ohne** Rand, Sub-Navigation, Preferences und gedrückte Knöpfe mit einem Hauch Rand (3 %) | `--up-wahl-bg`, `--up-wahl-rand` |
 | Knopf-Hover | Nur die Fläche ändert sich, der Rand bleibt; Fokus 2px-Outline mit 2px Abstand | `--up-knopf-hover`, `--up-knopf-rand-hover`, `--up-knopf-fokus-abstand` |
 | Drawer-Schleier (16.10.) | Schwarz zu 20 %, **hell und dunkel gleich**, Unschärfe 1.5px; nie aus `--vc-text`/`--vc-text-invert` mischen (das hellte im Dunkeln die Seite auf). Dialoge behalten `.30`/`.35` | `--vc-drawer-schleier` |
