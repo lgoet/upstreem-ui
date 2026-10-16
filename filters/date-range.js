@@ -328,7 +328,8 @@
           '<button class="udr-trigger" type="button" aria-haspopup="dialog" aria-expanded="false">' +
             ICON_CAL + '<span class="udr-label"></span>' + ICON_CHEV.replace('<svg ', '<svg class="udr-chev" ') +
           '</button>' +
-          '<div class="udr-menu" role="dialog" aria-label="Choose date range" aria-hidden="true">' +
+          /* is-right von Anfang an: die RUHELAGE des geschlossenen Panels (siehe ruheSpaeter). */
+          '<div class="udr-menu is-right" role="dialog" aria-label="Choose date range" aria-hidden="true">' +
             '<div class="udr-presets">' +
               /* data-i18n TRAEGT DEN ENGLISCHEN SCHLUESSEL, obwohl hier schon uebersetzt wird.
                  Ohne das gibt es zwei Quellen fuer denselben Text und sie widersprechen sich: der
@@ -390,11 +391,12 @@
          dropdownOpened wird darum bei jedem Oeffnen frisch von window.UpstreemCore geholt. Die
          Registries selbst (OPEN_DD, POPOVERS) liegen ohnehin auf window und werden von allen
          Kopien geteilt -- es zaehlt also nur, dass die AUFRUFENDE Funktion aktuell ist. */
-      var isPanelOpen = false, unregister = null;
+      var isPanelOpen = false, unregister = null, ruheUhr = null;
       function setOpen(v) {
         v = !!v;
         if (isPanelOpen === v) return;
         isPanelOpen = v;
+        clearTimeout(ruheUhr); ruheUhr = null;
         wrap.classList.toggle("is-open", v);
         menu.classList.toggle("is-shown", v);
         menu.setAttribute("aria-hidden", v ? "false" : "true");
@@ -416,6 +418,28 @@
         pendingStart = null; hoverDate = null;
         viewMonth = monthOf(committed.to, -1);
         render();
+        ruheSpaeter();
+      }
+      /* DIE RUHELAGE: GESCHLOSSEN STEHT DAS PANEL RECHTS AM KNOPF (16.10.). Es ist dann
+         unsichtbar, bleibt aber im Layout (STYLEGUIDE 6) -- und linksbuendig ragte es nach rechts
+         aus #main: gemessen auf All Prompts und Brands > Tracked bei 1100 bis 1216 (#main liess
+         sich um 116px seitlich schieben), bei 375 bis 474 (99px). #main hat overflow-x hidden, ist
+         aber weiter ein Scrollbehaelter; ein Fokus oder ein scrollIntoView schob die Seite also
+         seitlich. Was LINKS hinausragt, zaehlt beim Scrollen nicht; dieselbe Regel traegt das
+         Filters-Panel seit dem 08.10. (filter-bar.css, lageSpaeterLoesen).
+         Die Lage, die das Oeffnen gemessen hat, gilt bis zum Ende des Ausblendens -- frueher
+         zurueckgestellt, spraenge das Panel waehrend des Zugehens auf die andere Seite. 300ms wie
+         dort: die Transition dauert 140, der Rest ist Luft fuer einen langsamen Frame. Beim
+         Oeffnen nimmt der Klick-Handler is-right ohnehin wieder ab und entscheidet neu, bevor
+         core die Lage fuer den Top Layer abgreift (eine Aufgabe spaeter). */
+      function ruheSpaeter() {
+        ruheUhr = setTimeout(function () {
+          ruheUhr = null;
+          if (isPanelOpen) return;
+          menu.classList.add("is-right");
+          menu.style.marginLeft = "";
+          menu.style.marginRight = "";
+        }, 300);
       }
       var pop = { open: function () { setOpen(true); },
                   close: function () { setOpen(false); },

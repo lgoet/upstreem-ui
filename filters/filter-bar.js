@@ -1359,10 +1359,15 @@
         if (!vw || !r.width) return null;
         var a = anker ? anker.getBoundingClientRect() : null;
         var breite = elMenu.offsetWidth, rand = vw < 500 ? 16 : 8;
+        /* Nicht das Fenster, sondern die Flaeche rechts der Seitenleiste und innerhalb von #main
+           (16.10.) -- dieselbe Grenze, an der UC.makeSubmenu das Untermenue misst. Am Fenster
+           gerechnet, konnte das Panel bei knapper Breite unter die feste Seitenleiste geschoben
+           werden. Unter 500px ist die Leiste 0 breit, dort bleibt alles wie zuvor. */
+        var f = UC.inhaltsFlaeche ? UC.inhaltsFlaeche(elMenu) : { links: 0, rechts: vw };
         /* "left: 0" zaehlt ab der Polsterkante der Schale, also plus ihr Rahmen. */
         var start = r.left + elMore.clientLeft, links = a ? a.left : start;
-        if (links + breite > vw - rand) links = (a ? a.right : r.right - elMore.clientLeft) - breite;
-        links = Math.max(rand, Math.min(links, vw - rand - breite));
+        if (links + breite > f.rechts - rand) links = (a ? a.right : r.right - elMore.clientLeft) - breite;
+        links = Math.max(f.links + rand, Math.min(links, f.rechts - rand - breite));
         /* Senkrecht nur fuer den Chip: steht er tiefer als der Knopf (umbrochene Leiste), rueckt
            das Panel um genau diesen Abstand nach unten. top der CSS bleibt sonst unberuehrt. */
         var tiefer = a ? Math.round(a.bottom - r.bottom) : 0;

@@ -21,6 +21,14 @@
    Knopf braucht (ein button zentriert seinen Text von sich aus) und was diese Seite zusaetzlich
    hat: die Zaehler-Plakette und ein breiterer Textabschnitt als der des Bauteils. */
 .utm-topicchip { text-align: left; max-width: 100%; }
+/* Grund der Themen-Chips auf dieser Seite (17.10., Nutzer: "im Lightmode weiss, im Darkmode in der
+   etwas helleren Field-Farbe"): die Chips stehen hier direkt auf dem grauen Seitengrund, nicht in
+   einer Karte -- als weisse Plaettchen (dunkel --vc-field, eine Stufe ueber dem Grund) heben sie
+   sich ab. --vc-field ist im grauen Hell genau --vc-bg (weiss) und im Geist-Dunkel #0f0f0f, also
+   ein Token fuer beide. :where() haelt die Spezifitaet bei (0,2,0): Hover (0,3,0) und gewaehlt
+   (.is-on) aus core gelten weiter, das Skelett (.up-tsk) behaelt seinen Verlauf. */
+.utm-chipgrid .up-topicchip:where(:not(.is-on):not(.up-tsk)),
+.utm-cg .up-topicchip:where(:not(.is-on):not(.up-tsk)) { background: var(--vc-field); }
 .utm-topicchip .utm-topicchip-lbl { max-width: 240px; }
 /* Alias: .utm-topicchip-e traegt jetzt dieselben Werte wie .up-topicchip-e in core, statt eigene.
    Die Klasse bleibt stehen und nicht nur im Markup -- .contract_diff.py liest Klassennamen aus den
