@@ -610,6 +610,12 @@
      "Ereignis" im Aktivitaetsprotokoll der Teams um. Vor jedem neuen Eintrag in core.js suchen. */
 
   if (UC.addMessages) UC.addMessages("de", {
+    "Notify me": "Benachrichtige mich",
+    "Get a note when a page is cited for the first time.": "Du bekommst eine Nachricht, wenn eine Seite zum ersten Mal zitiert wird.",
+    "Get a note when a page is cited for the first time and when the campaign ends.": "Du bekommst eine Nachricht, wenn eine Seite zum ersten Mal zitiert wird und wenn die Kampagne endet.",
+    "Notifications on": "Benachrichtigungen an",
+    "Notifications off": "Benachrichtigungen aus",
+    "The setting could not be saved. Please try again.": "Die Einstellung konnte nicht gespeichert werden. Bitte versuch es noch einmal.",
     "Track important changes and understand how AI performance develops around them.":
       "Halte wichtige Änderungen fest und sieh, wie sich die AI Performance um sie herum entwickelt.",
     "Create event": "Event anlegen", "Search events…": "Events durchsuchen…", "Search events": "Events durchsuchen",
@@ -974,6 +980,24 @@
      einmal gefragt, und bis dahin gilt der Rueckfall. NICHT ueber UC.ohneBubble: das ist kein
      Rueckweg an Bubble, sondern die Frage, was die Datenbank kann. */
   var ZIELE_DA = { stand: null, laeuft: null }, SITEMAP_DA = { stand: null, laeuft: null };
+  /* MELDUNGEN JE EVENT (17.10., Teil A des DB-Auftrags events_ausbau_17_10): gibt es sie? Die
+     Antwort kennt core (UC.eventMeldungenDa, aus dem einen Aufruf beim App-Start). Bis sie da ist
+     und solange sie nicht true ist, gibt es keinen Schalter "Notify me" -- ein Schalter, der nichts
+     bewirkt, waere einer zu viel. MELD_AN: was in dieser Sitzung je Event umgelegt wurde (das Detail
+     kommt aus dem Zwischenspeicher und kennt den neuen Stand erst nach dem naechsten Laden). */
+  var MELD_DA = { stand: null, warten: [] }, MELD_AN = {};
+  function meldDa() { return MELD_DA.stand === true; }
+  function meldDaFragen(fertig) {
+    if (MELD_DA.stand !== null) { if (fertig) fertig(MELD_DA.stand); return; }
+    if (fertig) MELD_DA.warten.push(fertig);
+    if (MELD_DA.laeuft || !UC.eventMeldungenDa) return;
+    MELD_DA.laeuft = true;
+    UC.eventMeldungenDa().then(function (da) {
+      MELD_DA.stand = da === true;
+      var w = MELD_DA.warten; MELD_DA.warten = [];
+      w.forEach(function (f) { try { f(MELD_DA.stand); } catch (e) {} });
+    }, function () { MELD_DA.stand = false; });
+  }
   function fehltFn(erg) {
     var f = (erg && erg.fehler) || {};
     return !!erg && !erg.ok && (/PGRST202/.test(String(f.code || "")) ||
@@ -1645,6 +1669,7 @@
              sonst der Platz fuer die Krume (gemessen 16.10.: "Overview" auf 9px gedrueckt). */
           (wo === "kopf" && pinDa() ? '<button type="button" class="up-optrow uev-mehr-pin" role="menuitem" data-aktion="pin" data-event-id="' + esc(ev.id) + '">' + UC.icon("pin", 2) +
             '<span class="up-aktionsmenue-lbl">' + esc(t(istAngeheftet(ev.id) ? "Unpin from sidebar" : "Pin to sidebar")) + '</span></button>' : '') +
+          (wo === "kopf" ? notifyZeileHtml(ev) : '') +
           (kannLoeschen ? '<div class="up-aktionsmenue-div"></div><button type="button" class="up-optrow is-gefahr" role="menuitem" data-aktion="delete" data-event-id="' + esc(ev.id) + '">' + UC.icon("trash", 2) + '<span class="up-aktionsmenue-lbl">' + esc(t("Delete")) + '</span></button>' : '') +
         '</div></span>';
     }
@@ -2023,6 +2048,72 @@
        nichts bewirken kann, waere einer zu viel. Name, Zeichen und Farbe haelt die Leiste selbst
        aktuell (Event-Store), geloeschte Events nimmt sie heraus. */
     function pinDa() { return typeof window.upstreemPinToSidebar === "function"; }
+
+    /* ---- "NOTIFY ME" (17.10., Meldungen je Event) ------------------------------------------
+       Je Nutzer und Event (set_impact_event_notify_v1), Standard an. Im Detail als Zeile im Menue
+       "..." neben Bearbeiten, Anheften und Loeschen, im Anlegen als Schalter unter "Pin to
+       sidebar". Ein Satz sagt, was man bekommt -- ohne Fachwort. Kampagnen (mit Enddatum, Teil B)
+       melden zusaetzlich ihren Abschluss. */
+    function istKampagne(x) { return !!(x && (x.end_date || x.endDatum || x.ende)); }
+    function notifySatz(x) {
+      return t(istKampagne(x) ? "Get a note when a page is cited for the first time and when the campaign ends."
+        : "Get a note when a page is cited for the first time.");
+    }
+    function notifyAn(ev) {
+      var id = ev && ev.id != null ? String(ev.id) : "";
+      if (id && Object.prototype.hasOwnProperty.call(MELD_AN, id)) return MELD_AN[id];
+      return !(ev && ev.notify === false);
+    }
+    /* Einmal je Wurzel nach core fragen; kommt "da" erst nach dem Zeichnen, Kopf und Schritt 4
+       nachziehen. */
+    var meldGefragt = false;
+    function meldAnstossen() {
+      if (meldGefragt) return;
+      meldGefragt = true;
+      meldDaFragen(function (da) {
+        if (!da) return;
+        try { if (state.eventId && dieDetail()) renderKopf(); } catch (e) {}
+        notifyNachtragen();
+      });
+    }
+    function notifyZeileHtml(ev) {
+      meldAnstossen();
+      if (!meldDa() || !ev || ev.id == null) return "";
+      var an = notifyAn(ev);
+      return '<button type="button" class="up-optrow uev-mehr-notify" role="menuitemcheckbox" aria-checked="' + an + '" data-aktion="notify" data-event-id="' + esc(ev.id) + '">' +
+        UC.icon("bell", 2) +
+        '<span class="uev-notify-txt"><span class="up-aktionsmenue-lbl">' + esc(t("Notify me")) + '</span>' +
+          '<span class="uev-notify-satz">' + esc(notifySatz(ev)) + '</span></span>' +
+        '<span class="up-switch' + (an ? " is-on" : "") + '" aria-hidden="true"></span></button>';
+    }
+    function notifyZeilenSync(id) {
+      [].forEach.call(document.querySelectorAll('.uev-mehr-notify[data-event-id="' + String(id).replace(/"/g, "") + '"]'), function (b) {
+        var an = MELD_AN[id] !== false;
+        b.setAttribute("aria-checked", String(an));
+        var sw = b.querySelector(".up-switch");
+        if (sw) sw.classList.toggle("is-on", an);
+      });
+    }
+    /* Sofort umgelegt, dann gespeichert; scheitert es, springt der Schalter zurueck und sagt es
+       (das ist eine Handlung des Nutzers -- anders als das stille Holen beim Start). still: nach
+       dem Anlegen, ohne eigene Meldung. */
+    function notifySetzen(id, an, still) {
+      id = String(id);
+      var vorher = Object.prototype.hasOwnProperty.call(MELD_AN, id) ? MELD_AN[id] : null;
+      MELD_AN[id] = !!an;
+      notifyZeilenSync(id);
+      var tm = team();
+      if (!UC.rpc || !tm) return;
+      UC.rpc("set_impact_event_notify_v1", { p_team: tm, p_event_id: id, p_notify: !!an }, { timeoutMs: 15000 }).then(function (erg) {
+        if (erg && erg.ok) {
+          if (!still && UC.toast) UC.toast(t(an ? "Notifications on" : "Notifications off"));
+          return;
+        }
+        if (vorher === null) delete MELD_AN[id]; else MELD_AN[id] = vorher;
+        notifyZeilenSync(id);
+        if (UC.toast) UC.toast(t("The setting could not be saved. Please try again."), { kind: "error" });
+      });
+    }
     function istAngeheftet(id) {
       try { return !!(id != null && window.upstreemIsPinned && window.upstreemIsPinned({ type: "event", id: String(id) })); } catch (e) { return false; }
     }
@@ -3067,6 +3158,13 @@
         return;
       }
       var ak = e.target.closest("[data-aktion]");
+      if (ak && ak.getAttribute("data-aktion") === "notify") {
+        /* Ein Schalter im Menue schliesst es nicht: man sieht, dass er umgelegt ist. */
+        e.stopPropagation();
+        var nid = ak.getAttribute("data-event-id");
+        notifySetzen(nid, ak.getAttribute("aria-checked") !== "true", false);
+        return;
+      }
       if (ak) {
         e.stopPropagation(); mehrSchliessen();
         var eid = ak.getAttribute("data-event-id");
@@ -3807,7 +3905,7 @@
        Seitenleiste, dann was getrackt wird (kurz) und das Schloss. Der Bearbeiten-Dialog behaelt
        das offene Raster (coverFeld): er hat keine Vorschau, an der ein Knopf stehen koennte. */
     function pruefFelder(e) {
-      return '<div class="uev-vorschaublock"><div class="uev-pruef"></div>' + coverWahlHtml(e) + anheftenHtml(e) + '</div>' +
+      return '<div class="uev-vorschaublock"><div class="uev-pruef"></div>' + coverWahlHtml(e) + anheftenHtml(e) + notifySchalterHtml(e) + '</div>' +
         feld("Tracking", '<div class="uev-pruefziele"></div>') +
         gesperrtHinweis("Date and scope can't be changed later");
     }
@@ -3853,6 +3951,29 @@
       return '<button type="button" class="uev-anheften" role="switch" aria-checked="' + !!e.anheften + '" data-anheften>' +
         '<span class="uev-anheften-txt">' + esc(t("Pin to sidebar")) + '</span>' +
         '<span class="up-switch' + (e.anheften ? " is-on" : "") + '" aria-hidden="true"></span></button>';
+    }
+    /* "Notify me" unter "Pin to sidebar": derselbe Baustein, dazu der Satz unter der Beschriftung. */
+    function notifySchalterHtml(e) {
+      meldAnstossen();
+      if (!meldDa()) return "";
+      var an = e.notify !== false;
+      return '<button type="button" class="uev-anheften uev-notify" role="switch" aria-checked="' + an + '" data-notify>' +
+        '<span class="uev-anheften-txt uev-notify-txt"><span>' + esc(t("Notify me")) + '</span>' +
+          '<span class="uev-notify-satz">' + esc(notifySatz(e)) + '</span></span>' +
+        '<span class="up-switch' + (an ? " is-on" : "") + '" aria-hidden="true"></span></button>';
+    }
+    function notifyNeu(p) {
+      var b = im("[data-notify]");
+      if (!b) return;
+      b.setAttribute("aria-checked", String(p.e.notify !== false));
+      var sw = b.querySelector(".up-switch");
+      if (sw) sw.classList.toggle("is-on", p.e.notify !== false);
+    }
+    /* Kam die Antwort aus core erst nach dem Zeichnen von Schritt 4: den Schalter nachtragen. */
+    function notifyNachtragen() {
+      var blk = im(".uev-vorschaublock");
+      if (!blk || !popup || blk.querySelector("[data-notify]")) return;
+      blk.insertAdjacentHTML("beforeend", notifySchalterHtml(popup.e));
     }
     function anheftenNeu(p) {
       var b = im("[data-anheften]");
@@ -5475,6 +5596,12 @@
       /* Der Zeitraum (17.10.): p_end_date an create_impact_event_v4 -- ohne Ende steht der
          Parameter gar nicht im Body, v4 setzt null (Vertrag B.3). */
       if (kampagneDa() && e.bereich && e.ende) b.p_end_date = e.ende;
+      /* p_notify NUR an create_impact_event_v4 (Teil B/A): v3 kennt den Parameter nicht, und
+         PostgREST lehnt einen unbekannten mit PGRST202 ab -- das Anlegen schluege fehl. Mit v3
+         geht ein "aus" nach dem Anlegen ueber set_impact_event_notify_v1 (popupDetailKam).
+         v4 geht ueber KAMPAGNE_FN, sobald kampagneDa() (rufen) -- KANAL.uevCreate.fn bleibt v3. */
+      p.notifyGesendet = false;
+      if (meldDa() && !p.planEventId && (kampagneDa() || /_v4$/.test(String(KANAL.uevCreate.fn)))) { b.p_notify = e.notify !== false; p.notifyGesendet = true; }
       if (!vorabPruefen(p, b)) return;
       /* Ein GEPLANTES Event bearbeiten (17.10.): derselbe Assistent, derselbe Body, dazu die
          Kennung -- an update_impact_event_v3 (Vertrag B.3: Umfangs-Parameter wie create v4).
@@ -5625,6 +5752,8 @@
         /* Erst jetzt, mit der Kennung aus der Antwort, an die Leiste (Schalter in Schritt 4). Die
            Meldung nennt es mit, statt einen zweiten Toast zu zeigen. */
         var angeheftet = !!p.e.anheften && eventAnheften(d, true);
+        if (meldDa() && p.e.notify === false && !p.notifyGesendet && id) notifySetzen(id, false, true);
+        else if (meldDa() && id) MELD_AN[String(id)] = p.e.notify !== false;
         if (UC.toast) UC.toast(t("Event created"), angeheftet ? { desc: t("Pinned to sidebar") } : undefined);
         oeffnen(id, true, false, true);
         if (anlInsDetail) setTimeout(function () { anlInsDetail = false; anleitungZeige("d1"); }, 60);
@@ -5939,6 +6068,7 @@
       }
       if (x.closest(".uev-cover-knopf")) { coverWahlSchalten(p, !p.coverOffen); return; }
       if (x.closest("[data-anheften]")) { p.e.anheften = !p.e.anheften; anheftenNeu(p); return; }
+      if (x.closest("[data-notify]")) { p.e.notify = p.e.notify === false; notifyNeu(p); return; }
       var pk = x.closest("[data-pick]");
       if (pk) { var k = pk.getAttribute("data-pick"); p.e.offen = p.e.offen === k ? null : k; aussehenKlappen(); return; }
       var ze = x.closest("[data-zeichen]");
