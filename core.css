@@ -2263,13 +2263,20 @@
       /* 100% ist die Polsterbox des Panels; +1 ueberspringt seinen Rahmen. Der sichtbare
          Abstand ist damit genau --up-sub-gap. Vorher stand hier zusaetzlich --up-dd-pad,
          und der sichtbare Abstand war 14px (gemessen: offsetLeft 261, Panel 246 + 1). */
-      left: calc(100% + var(--up-sub-gap) + 1px);
+      /* --up-sub-schub: reicht auf keiner Seite der Platz, schiebt UC.makeSubmenu das
+         Untermenue um genau den fehlenden Rest ueber das Panel zurueck (16.10., seiteWaehlen in
+         core.js). Sonst 0. */
+      left: calc(100% + var(--up-sub-gap) + 1px - var(--up-sub-schub, 0px));
       z-index: 2;
       /* FESTE Breite. Vorher stand hier nur min-width: 220px, und eine absolut positionierte
          Schale ohne Breite nimmt die ihres Inhalts -- ein langer Name (die eigenen Gruppierungen
          der Topics) machte den Kasten breiter, und beim Wechsel der Zeile sprang die Breite.
-         Ueber ein Token, damit ein Aufrufer sie setzen kann, ohne die Regel zu ueberschreiben. */
-      width: var(--up-sub-w, 300px); max-width: calc(100vw - 24px);
+         Ueber ein Token, damit ein Aufrufer sie setzen kann, ohne die Regel zu ueberschreiben.
+         --up-sub-platz: der Platz neben dem Panel, wenn er fuer die volle Breite nicht reicht
+         (16.10., UC.makeSubmenu misst ihn an der Inhaltsflaeche) -- dann wird das Untermenue
+         schmaler statt unter die Seitenleiste oder ueber #main hinaus. Ohne Messung gilt das
+         Fenster wie bisher. */
+      width: var(--up-sub-w, 300px); max-width: var(--up-sub-platz, calc(100vw - 24px));
       background: var(--vc-bg); border: 1px solid var(--vc-border);
       border-radius: var(--up-dd-radius); box-shadow: var(--up-dd-shadow); padding: var(--up-dd-pad);
       opacity: 0; transform: translateX(-4px) scale(0.985); pointer-events: none;
@@ -3441,6 +3448,12 @@
       display: flex; flex-direction: column; gap: 4px;
     }
     .up-scale-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    /* Im grauen Hell die leise Flaeche der App (17.10.), nach dem Muster der core-Dialoge
+       (.up-topicmodal-card): die Grundregel setzt --vc-heading-bg selbst (#f9f8f9) und erreicht die
+       Marke --up-leise-grau (#f2f2f2) sonst nicht. Das Menue traegt data-theme selbst, also zieht
+       --up-knopf-hover hier mit. --vc-switch-bg bleibt: auch an der Wurzel aendert das graue Hell
+       ihn nicht. Nur mit dem Marker am <html>, nur im Hellen; (0,3,1) gegen (0,1,0). */
+    html[data-up-hell="grau"] .up-scale-menu:not([data-theme="dark"]) { --vc-heading-bg: var(--up-leise-grau); }
     /* Same brightened dark border as every other dropdown menu in the app — a plain --vc-border
        black-ish tone reads as blurry/edgeless against a dark surface. */
     .up-scale-menu[data-theme="dark"] {

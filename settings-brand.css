@@ -333,6 +333,19 @@
   --vc-heading-bg: inherit; --vc-hover-border: #707070; --up-surface: var(--vc-bg);
   --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
 }
+/* IM GRAUEN HELL DIE LEISE FLAECHE DER APP (17.10.), nach dem Muster der core-Dialoge
+   (.up-topicmodal-card): die Karte setzt ihre leise Flaeche oben selbst auf den Wert vor dem grauen
+   Hell (#f9f8f9) und erreicht damit die Marke --up-leise-grau (#f2f2f2) nicht.
+   ZWEI Ziele, und der Schleier ist das wichtigere: --up-knopf-hover (Hover von "Cancel",
+   .up-btn-sec) wird an [data-theme] berechnet, also am Schleier, und der ist keine .up-root -- er
+   bekam seine leise Flaeche von :root (#f9f8f9). Gemessen vorher: Cancel-Hover #f9f8f9 auf der
+   weissen Karte. Im core-Dialog ist der Schleier eine .up-root und traegt das Grau schon.
+   Nur mit dem Marker am <html> (ohne ihn bleibt der alte Wert) und nur im Hellen; (0,3,1) und
+   (0,4,1) gegen die Grundregeln (0,1,0), die dunklen Fassungen schliesst das :not() aus. */
+html[data-up-hell="grau"] .usb-dlg-backdrop:not([data-theme="dark"]),
+html[data-up-hell="grau"] .usb-dlg-backdrop:not([data-theme="dark"]) .usb-dlg {
+  --vc-heading-bg: var(--up-leise-grau);
+}
 @media (prefers-reduced-motion: reduce){ .usb-dlg-backdrop, .usb-dlg { transition-duration: 1ms; } }
 .usb-dlg * { box-sizing: border-box; }
 
