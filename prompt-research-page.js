@@ -292,9 +292,14 @@
             ? (frei ? t("Only {n} prompt slots are left in your plan.").replace("{n}", frei) : t("There are no prompt slots left in your plan."))
             : art === "tag" ? t(wer === "user" ? "You have reached today's limit for researches. You can start new ones tomorrow."
                                                 : "Your team has reached today's limit for researches. You can start new ones tomorrow.")
-            : art === "rate" ? t("Too many researches in a short time. Please wait a minute and try again.")
+            /* Mit hint (Sekunden) die genaue Wartezeit, sonst der Satz wie bisher (16.10.). */
+            : art === "rate" ? (UC.warteSekunden && UC.warteSekunden(erg)
+                ? t("Too many researches in a short time.") + " " + UC.warteSatz(erg)
+                : t("Too many researches in a short time. Please wait a minute and try again."))
             : art === "nichtDa" ? t("Prompt research is not available yet.")
             : art === "eingabe" ? t("Use 1 to 20 keywords with at most 300 characters in total, and choose a market.")
+            /* team_access_* (Tarif, Abo): der Satz der App, das Gate kommt dazu (core, edge()). */
+            : art === "zugang" ? t("Your team doesn't have access right now.")
             : art === "rechte" ? t("You do not have access to this team.")
             : t("The research could not be started. Please try again."));
           return;
@@ -342,7 +347,8 @@
             else if (art === "tag") satz("Daily limit reached", "error",
               frei === 1 ? "You can add or reactivate 1 more prompt today."
               : frei ? t("You can add or reactivate {n} more prompts today.").replace("{n}", frei) : "You can add or reactivate more prompts tomorrow.");
-            else if (art === "rate") satz("Too many changes in a short time", "error", "Wait a minute and try again.");
+            else if (art === "rate") satz("Too many changes in a short time", "error", UC.warteSatz ? UC.warteSatz(erg, t("Wait a minute and try again.")) : "Wait a minute and try again.");
+            else if (art === "zugang") satz("Couldn't save the change", "error", "Your team doesn't have access right now.");
             else satz("Couldn't save the change", "error", "Try again.");
             return null;
           }
@@ -390,7 +396,9 @@
         return schreiben(D.loeschen(tm, jobId)).then(function (erg) {
           if (!erg.ok && D.fehlerArt(erg) !== "weg") {
             pr("setActionLoading", false);
-            if (D.fehlerArt(erg) === "rate") satz("Too many changes in a short time", "error", "Wait a minute and try again.");
+            var artL = D.fehlerArt(erg);
+            if (artL === "rate") satz("Too many changes in a short time", "error", UC.warteSatz ? UC.warteSatz(erg, t("Wait a minute and try again.")) : "Wait a minute and try again.");
+            else if (artL === "zugang") satz("Couldn't delete the research", "error", "Your team doesn't have access right now.");
             else satz("Couldn't delete the research", "error", "Try again.");
             return null;
           }

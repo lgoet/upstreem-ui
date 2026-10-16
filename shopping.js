@@ -2902,7 +2902,13 @@
         p_search: suchText(tb.suche), p_merchant: tb.haendler ? str(tb.haendler) : null,
         p_company_id: tb.marke && tb.marke.id ? str(tb.marke.id) : null } : {};
       var detail = s === "detail" && state.produktId;
-      var basis = filterAktiv();
+      /* Die lesbaren Werte, die der Dialog nicht selbst findet (16.10.): der Titel des Produkts
+         (wie in den Krumen) und der Name der Marke, auf die die Produkttabelle gefiltert ist. Jeder
+         Filter steht im Dialog als eigener Chip und laesst sich abwaehlen (export-data.js, SEITE). */
+      var d = detail ? dasDetail() : null, titel = d && d.product ? str(d.product.title).trim() || str(d.product.listing_title).trim() : "";
+      var namen = {};
+      if (titel) namen.product = titel;
+      if (prod.p_company_id && tb.marke && str(tb.marke.name).trim()) namen.company = str(tb.marke.name).trim();
       return {
         export_type: { products: "shop_products", brands: "shop_brands", merchants: "shop_merchants", detail: "shop_appearances" }[s] || "shop_products",
         date_from: f.von || "", date_to: f.bis || "", preset: f.preset || "",
@@ -2913,12 +2919,7 @@
           /* Im Product Detail die Auftritte DIESES Produkts (die Tabelle Recent Appearances). */
           shop_appearances: neu(detail ? { p_source_product_id: str(state.produktId) } : prod)
         },
-        filter_aktiv: {
-          shop_products: basis || !!(prod.p_segment || prod.p_search || prod.p_merchant || prod.p_company_id),
-          shop_brands: basis || !!(s === "brands" && suchText(state.brands.suche)),
-          shop_merchants: basis || !!(s === "merchants" && suchText(state.merchants.suche)),
-          shop_appearances: basis || !!detail || !!(prod.p_segment || prod.p_search || prod.p_merchant || prod.p_company_id)
-        }
+        namen: namen
       };
     }
     function exportOeffnen() {

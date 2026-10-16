@@ -1226,7 +1226,8 @@
   function duZeitraum() {
     var k = DU.slot ? DU.slot.querySelector(".uud-dw-daten") : null, r = null;
     try { r = k && k.__udrCtrl && k.__udrCtrl.getRange ? k.__udrCtrl.getRange() : null; } catch (e) { r = null; }
-    return { von: r && r.from ? duStr(r.from) : null, bis: r && r.to ? duStr(r.to) : null };
+    /* preset (16.10.): fuer den Export-Dialog, der dasselbe Preset zeigt statt "Custom range". */
+    return { von: r && r.from ? duStr(r.from) : null, bis: r && r.to ? duStr(r.to) : null, preset: r && r.preset ? duStr(r.preset) : "" };
   }
   function duEigeneMarke() {
     var l = UC.getBrands ? UC.getBrands() : [];
@@ -1444,7 +1445,12 @@
           return;
         }
         tab.setAttribute("data-export-instance", k);
-        try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: "prompt_runs", url: DU.kanon }); } catch (err) {}
+        /* Seit 16.10. dazu Zeitraum und Filter der Tabelle (Suche, Brand, Brands, Rank, Sentiment)
+           als Chips im Dialog, jeder abwaehlbar -- dieselben Parameter wie beim Laden (export-data.js
+           KENNT); die Adresse bleibt der Filter des Drawers. */
+        var z = duZeitraum(), DDy = window.UpstreemDashboardDaten, teil0 = DDy && DDy.responsesTeile ? DDy.responsesTeile({ team: UC.getTeam ? UC.getTeam() : "", von: z.von, bis: z.bis }, DU.resp)[0] : null;
+        try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: "prompt_runs", url: DU.kanon,
+          date_from: z.von || "", date_to: z.bis || "", preset: z.preset, params: { prompt_runs: teil0 ? teil0.params : {} } }); } catch (err) {}
       }, true);
       /* Neuer Zeitraum: Seite und Antworten neu (die Kennzahlen gelten fuer den Zeitraum). */
       ctx.slot.addEventListener("change", function (e) {

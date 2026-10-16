@@ -29,6 +29,16 @@
    Versalhoehe der 28er Schrift; der Chip bricht unter die Domain, wenn sie lang ist. */
 .uddr-titelzeile { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; min-width: 0; }
 .uddr-titelzeile .up-dk-titel { min-width: 0; }
+/* Die Domain im Titel ist ein Link nach draussen (16.10. bestellt: Hover unterstreicht, Klick oeffnet
+   sie in einem neuen Tab). In Ruhe nichts davon zu sehen -- Farbe und Schrift des Titels, kein Zeichen
+   dazu --, beim Hover unterstrichen wie die Textlinks der Drawer-Koepfe (.up-dk-held-link in core,
+   .uud-link im URL-Drawer: 3px unter der Grundlinie); der Fokus ebenso wie dort.
+   inline-block, damit der Kasten die Zeilenhoehe des Titels hat (33.6) und nicht die Schrifthoehe
+   (36.5): inline lag der Fokusring 1.5px auf der Zeile darunter. Titel und Zeile darunter bleiben
+   dabei, wo sie waren (gemessen, auch zweizeilig). */
+.uddr-titel-link { display: inline-block; color: inherit; text-decoration: none; border-radius: var(--up-r-xs); }
+.uddr-titel-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.uddr-titel-link:focus-visible { outline: var(--up-focus-w) solid var(--vc-text); outline-offset: 2px; }
 .uddr-typwahl { display: inline-flex; flex: 0 0 auto; }
 .uddr-typwahl:empty { display: none; }
 .uddr-zuletzt { white-space: nowrap; color: var(--vc-third); font-size: var(--up-fs-m); line-height: 20px; }

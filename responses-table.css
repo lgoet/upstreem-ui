@@ -292,8 +292,8 @@
    Rechteck, ist aber gemalt -- ohne diesen Einzug liegt er beim letzten Chip 4px IM Polster, und
    das "+N" schliesst hart mit der Polsterkante ab. Gemessen: 4px drueber ohne "+N", 0px mit dem
    Einzug. Damit hat auch das "+N" dieselbe Luft wie der Ring der Chips.
-   Seit 15.10. ist der Ring 1px (Geist-AvatarGroup, core --up-stack-ring-w), also der Einzug auch;
-   seit 15.10. nachts wieder ein sichtbarer Abstand, 3px -- der Einzug folgt der Marke von selbst. */
+   Der Einzug liest die Marke des Rings (core --up-stack-ring-w): 4, dicht 3.52 -- vom 15. zum 16.10.
+   folgte er so auch den Geist-Werten 1 und 3. */
 .urt-card-citations { margin-left: auto; padding-right: var(--up-stack-ring-w); }
 .urt-card-ment { flex: 0 0 auto; }
 /* "Deine Marke erwaehnt": runde Marke im Gruen der App, getoent statt voll (Entwurf). Zwei Klassen

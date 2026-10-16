@@ -530,7 +530,6 @@
           '<span class="udt-sk-bar udt-sk-share"></span>' +
           '<span class="udt-sk-bar udt-sk-type"></span>' +
           '<span class="udt-sk-bar udt-sk-date"></span>' +
-          '<span></span>' +
         '</div>';
       var out = "";
       for (var i = 0; i < (count || SUB_SKELETON_ROWS); i++) out += one;
@@ -603,7 +602,6 @@
         '<span class="udt-sub-h-num">Domain Share</span>' +
         '<span>Type</span>' +
         '<span>Last Seen</span>' +
-        '<span></span>' +
       '</div>';
     }
     function subFootHtml(total, cur, pageCount, from, shown){
@@ -670,7 +668,8 @@
         '<span class="' + shareCls + '">' + shareTxt + '</span>' +
         '<span class="udt-sub-type">' + urlTagHtml(u.url_type) + '</span>' +
         '<span class="udt-sub-date">' + esc(fmtDate(u.last_seen)) + '</span>' +
-        '<span class="udt-sub-goto">' + GOTO_SVG + '</span>' +
+        /* Kein Pfeil am Ende mehr (16.10., kein hereingleitendes Zeichen in Tabellen): Kopf,
+           Skelett und Raster (--udt-subcols) haben ihre fuenfte Spalte mit ihm verloren. */
       '</div>';
     }
     var subTypeOpen = false, subEnter = false, subReqSeq = 0;
@@ -799,27 +798,33 @@
         }
         return;
       }
-      var prevDom = state.expandedDomain;
-      if (prevDom){
-        var prevRow = root.querySelector('.up-row[data-domain="' + cssEsc(prevDom) + '"]');
-        if (prevRow){
-          prevRow.classList.remove("is-expanded");
-          syncPagesBtns(prevRow, false);
-          var prevSub = prevRow.nextElementSibling;
-          if (prevSub && prevSub.classList.contains("udt-subrows")) prevSub.remove();
-        }
-      }
-      state.expandedDomain = dom;
-      resetSubState();
-      subEnter = true;
       var newRow = root.querySelector('.up-row[data-domain="' + cssEsc(dom) + '"]');
-      if (newRow){
-        newRow.classList.add("is-expanded");
-        syncPagesBtns(newRow, true);
+      function oeffnen(){
+        var prevDom = state.expandedDomain;
+        if (prevDom){
+          var prevRow = root.querySelector('.up-row[data-domain="' + cssEsc(prevDom) + '"]');
+          if (prevRow){
+            prevRow.classList.remove("is-expanded");
+            syncPagesBtns(prevRow, false);
+            var prevSub = prevRow.nextElementSibling;
+            if (prevSub && prevSub.classList.contains("udt-subrows")) prevSub.remove();
+          }
+        }
+        state.expandedDomain = dom;
+        resetSubState();
+        subEnter = true;
+        if (newRow){
+          newRow.classList.add("is-expanded");
+          syncPagesBtns(newRow, true);
+        }
+        /* Delayed: the panel's own entrance animation gets to finish uninterrupted before the
+           response can possibly land and force a second render mid-flight — see fetchSubPage. */
+        fetchSubPage(SUB_ANIM_MS);
       }
-      /* Delayed: the panel's own entrance animation gets to finish uninterrupted before the
-         response can possibly land and force a second render mid-flight — see fetchSubPage. */
-      fetchSubPage(SUB_ANIM_MS);
+      /* Steht der vorige Drilldown UEBER dieser Zeile, faellt seine Hoehe beim Schliessen weg und
+         zoege die angeklickte Zeile mit nach oben (16.10. gemeldet: bis unter die Leiste oder aus
+         dem Bild). UC.zeileHalten haelt sie an ihrer Stelle -- Begruendung dort. */
+      if (UC.zeileHalten) UC.zeileHalten(newRow, oeffnen, { dauer: SUB_ANIM_MS }); else oeffnen();
     }
     /* Sub-search input. Delegated on the root because the whole block is re-rendered on every
        fetch — a listener bound to the input itself would die with it. The input is NOT re-created

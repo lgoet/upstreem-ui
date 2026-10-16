@@ -19,26 +19,42 @@
 (function(){
   "use strict";
 
-  /* gruppe (16.10.): der Dialog zeigt nur die Datensaetze EINER Gruppe -- die des gewaehlten Typs.
-     "" sind die Datensaetze von Prompts, Citations und Brands; Shopping und Ads oeffnen ihn mit
-     ihren eigenen (export_type aus ihrer Gruppe), und nach dem Schliessen gilt wieder der letzte
-     Typ der Grundgruppe (stammTyp) -- ein spaeteres Oeffnen ohne Typ zeigt nie Shopping. */
+  /* VARIANTE C "Zweispaltig" (16.10., vom Nutzer gewaehlt): links ALLE Datensaetze der App in ihren
+     Bereichen, rechts die Einstellungen des gewaehlten. Vorbild Figmas Export-Fenster (Liste links,
+     Einstellungen rechts), die Einstellungsflaechen von Notion und Linear, die Spaltenwahl wie
+     Attio und Airtable (die sichtbaren Spalten sind die Datei).
+     gruppe: "" sind die Datensaetze von Prompts, Citations und Brands, die es auch ohne die App
+     (Bubble-Weg) gibt; Shopping und Ads gibt es nur in der App und nur mit ihrer Datenbank (pruefen).
+     Nach dem Schliessen gilt wieder der letzte Typ der Grundgruppe (stammTyp) -- ein spaeteres
+     Oeffnen ohne Typ (Cmd+K) zeigt nie Shopping, dessen Seitenfilter dann nicht mehr gelten.
+     icon: das Zeichen der Leinwand (Hugeicons aus core), beschr: der Satz unter der Ueberschrift
+     rechts -- was eine Zeile der Datei ist und was sie traegt, nach den Spalten aus
+     export_columns_v1 (Vertrag VOR_NEXTJS_V1 Abschnitt 3, Auftrag Exporte Shopping/Ads 16.10.). */
   var TYPES = [
-    { value: "prompts",     label: "Prompts",   gruppe: "" },
-    { value: "prompt_runs", label: "Responses", gruppe: "" },
-    { value: "domains",     label: "Domains",   gruppe: "" },
-    { value: "urls",        label: "URLs",      gruppe: "" },
-    { value: "brands",      label: "Brands",    gruppe: "" },
-    { value: "shop_products",    label: "Products",         gruppe: "shopping" },
-    { value: "shop_brands",      label: "Brands",           gruppe: "shopping" },
-    { value: "shop_merchants",   label: "Merchants",        gruppe: "shopping" },
-    { value: "shop_appearances", label: "Appearances",      gruppe: "shopping" },
-    { value: "ads_advertisers",  label: "Advertisers",      gruppe: "ads" },
-    { value: "ads_library",      label: "Ad Library",       gruppe: "ads" },
-    /* kachel: der Name auf der Kachel, wo label nicht passt. "Prompts with Ads" braucht 112px Text,
-       die Kachel hat bei drei Spalten 103 (gemessen 16.10.) -- "Prompts" ist das Wort des
-       Umschalters Ads | Prompts in der Ad Library; die Zusammenfassung nennt den ganzen Namen. */
-    { value: "ads_prompts",      label: "Prompts with Ads", kachel: "Prompts", gruppe: "ads" }
+    { value: "prompts",     label: "Prompts",   gruppe: "", icon: "zap",
+      beschr: "Every tracked prompt with its topics, metrics and the brands it mentions most." },
+    { value: "prompt_runs", label: "Responses", gruppe: "", icon: "response",
+      beschr: "Every answer a model gave, with its prompt and the brands it mentions." },
+    { value: "domains",     label: "Domains",   gruppe: "", icon: "domain",
+      beschr: "Every cited domain with its share and how often it appeared in answers." },
+    { value: "urls",        label: "URLs",      gruppe: "", icon: "link",
+      beschr: "Every cited page with its share, type and when it was first and last seen." },
+    { value: "brands",      label: "Brands",    gruppe: "", icon: "squareStack",
+      beschr: "Every brand with its visibility, rank and sentiment." },
+    { value: "shop_products",    label: "Products",         gruppe: "shopping", icon: "stackStar",
+      beschr: "Every product in shopping results with its visibility, position, price and merchants." },
+    { value: "shop_brands",      label: "Brands",           gruppe: "shopping", icon: "squareStack",
+      beschr: "Every brand in shopping results with its share of shelf, presence and top product." },
+    { value: "shop_merchants",   label: "Merchants",        gruppe: "shopping", icon: "store",
+      beschr: "Every merchant with its share, products and average position." },
+    { value: "shop_appearances", label: "Appearances",      gruppe: "shopping", icon: "eye",
+      beschr: "One row for each time a product appeared in an answer, with position, price and merchant." },
+    { value: "ads_advertisers",  label: "Advertisers",      gruppe: "ads", icon: "bank",
+      beschr: "Every advertiser with its ad share, appearances and the prompts it showed up in." },
+    { value: "ads_library",      label: "Ad Library",       gruppe: "ads", icon: "album",
+      beschr: "Every ad seen in an answer, with its text, landing page, prompt and tracking parameters." },
+    { value: "ads_prompts",      label: "Prompts with Ads", gruppe: "ads", icon: "marketing",
+      beschr: "Every prompt that showed ads, with its ad coverage and advertisers." }
   ];
   /* Der Satz, solange es die Exporte einer Gruppe noch nicht gibt. Ganz ohne Technik: der Nutzer
      kann nichts tun ausser warten, und genau das sagt er. */
@@ -61,12 +77,195 @@
       "Exports for Shopping are coming soon.": "Exporte für Shopping kommen bald.",
       "Exports for Ads are coming soon.": "Exporte für Ads kommen bald.",
       "This export is coming soon.": "Dieser Export kommt bald.",
-      "Current page filters apply.": "Es gelten die aktuellen Filter der Seite.",
       "Advertisers": "Werbetreibende", "Ad Library": "Anzeigenbibliothek",
-      "Prompts with Ads": "Prompts mit Ads", "Appearances": "Auftritte"
+      "Prompts with Ads": "Prompts mit Ads", "Appearances": "Auftritte",
+      /* Variante C (16.10.). "Export data", "Done", "Back", "Cancel", "Filters", "Columns",
+         "Date range", "Custom range", "Exporting…", "{n} rows exported" und die Saetze der Fehler
+         stehen schon in core und werden hier NICHT eingetragen (Katalog-Kollision). "Filter" ist
+         dort das Verb ("Filtern") -- das Feld heisst darum "Filters". */
+      "Export {typ}": "{typ} exportieren",
+      "Exporting {typ}": "Export läuft: {typ}",
+      "Remove filter {name}": "Filter {name} entfernen",
+      "Filtered to {name}": "Gefiltert auf {name}",
+      "This prompt": "Dieser Prompt", "This brand": "Diese Brand",
+      /* Seitenfilter (16.10.): die Namen der Chips stehen in core, wo die Filterleiste sie schon
+         braucht (Topic, Model, Market, Intent, Prompt type, Brand, Brands, Rank, Sentiment, Citation
+         type, URL type, Status, Search) und werden hier NICHT eingetragen. Segment, Merchant,
+         Product, Advertiser und Format stehen in shopping.js bzw. ads.js -- mit demselben Wert auch
+         hier, damit der Dialog deutsch ist, wenn die Seite nie geladen wurde (wie die Namen oben). */
+      "Segment": "Segment", "Merchant": "Händler", "Product": "Produkt", "Advertiser": "Werbetreibender", "Format": "Format",
+      "This product": "Dieses Produkt",
+      "Restore filters": "Filter wiederherstellen",
+      "Without filters, every row in the date range is exported.": "Ohne Filter geht jede Zeile im Zeitraum in die Datei.",
+      "Your session has expired": "Deine Sitzung ist abgelaufen", "Please sign in again.": "Bitte melde dich neu an.",
+      "Please wait {n} seconds and try again.": "Warte {n} Sekunden und versuch es noch einmal.",
+      "Please wait 1 second and try again.": "Warte eine Sekunde und versuch es noch einmal.",
+      "Data": "Daten", "Soon": "Bald",
+      "All columns": "Alle Spalten", "{n} columns": "{n} Spalten",
+      "{k} of {n} columns": "{k} von {n} Spalten",
+      "Choose at least one column.": "Wähl mindestens eine Spalte.",
+      "Safe to open in Excel and Sheets. Up to {n} rows.": "Sicher in Excel und Sheets zu öffnen. Bis zu {n} Zeilen.",
+      "{k} of {n} rows": "{k} von {n} Zeilen", "{n} rows": "{n} Zeilen",
+      "Export progress": "Fortschritt des Exports",
+      "Closing this window stops the export.": "Wenn du das Fenster schließt, bricht der Export ab.",
+      "Loading columns": "Spalten werden geladen", "Columns loaded": "Spalten geladen",
+      "Fetching rows": "Zeilen werden abgerufen", "Building the file": "Datei wird erstellt",
+      "Page {k} of {n}": "Seite {k} von {n}", "Page {k}": "Seite {k}",
+      "Cancel export": "Export abbrechen", "Export another": "Weiterer Export",
+      "Download again": "Erneut herunterladen",
+      "The download started on its own. If nothing arrived, download the file again.":
+        "Der Download startet von selbst. Kam nichts an, lad die Datei erneut herunter.",
+      "{groesse}, {n} columns, CSV": "{groesse}, {n} Spalten, CSV",
+      "{groesse}, 1 column, CSV": "{groesse}, 1 Spalte, CSV",
+      /* Die Saetze unter der Ueberschrift (TYPES.beschr). Brand, Prompt, Topic, Visibility, Rank
+         und Sentiment bleiben englisch wie ueberall in der App. */
+      "Every tracked prompt with its topics, metrics and the brands it mentions most.":
+        "Jeder getrackte Prompt mit seinen Topics, Kennzahlen und den Brands, die er am häufigsten nennt.",
+      "Every answer a model gave, with its prompt and the brands it mentions.":
+        "Jede Antwort eines Modells mit ihrem Prompt und den Brands, die sie nennt.",
+      "Every cited domain with its share and how often it appeared in answers.":
+        "Jede zitierte Domain mit ihrem Anteil und wie oft sie in Antworten vorkam.",
+      "Every cited page with its share, type and when it was first and last seen.":
+        "Jede zitierte Seite mit Anteil, Typ und wann sie zuerst und zuletzt auftauchte.",
+      "Every brand with its visibility, rank and sentiment.":
+        "Jede Brand mit ihrer Visibility, ihrem Rank und ihrem Sentiment.",
+      "Every product in shopping results with its visibility, position, price and merchants.":
+        "Jedes Produkt aus den Shopping-Ergebnissen mit Visibility, Position, Preis und Händlern.",
+      "Every brand in shopping results with its share of shelf, presence and top product.":
+        "Jede Brand aus den Shopping-Ergebnissen mit Share of Shelf, Präsenz und Top-Produkt.",
+      "Every merchant with its share, products and average position.":
+        "Jeder Händler mit Anteil, Produkten und durchschnittlicher Position.",
+      "One row for each time a product appeared in an answer, with position, price and merchant.":
+        "Eine Zeile für jeden Auftritt eines Produkts in einer Antwort, mit Position, Preis und Händler.",
+      "Every advertiser with its ad share, appearances and the prompts it showed up in.":
+        "Jeder Werbetreibende mit Anteil an den Ads, Auftritten und den Prompts, in denen er erschien.",
+      "Every ad seen in an answer, with its text, landing page, prompt and tracking parameters.":
+        "Jede Ad aus einer Antwort mit Text, Zielseite, Prompt und Tracking-Parametern.",
+      "Every prompt that showed ads, with its ad coverage and advertisers.":
+        "Jeder Prompt mit Ads, mit seiner Ad-Abdeckung und den Werbetreibenden."
     });
   }
   function tr(x){ var C = window.UpstreemCore; return C && C.t ? C.t(x) : x; }
+  /* Der Bereich der App, zu dem ein Datensatz gehoert: die Ueberschriften der Liste links, in der
+     Reihenfolge der Seitenleiste. Ads traegt dort "Beta" (sidebar.js), Shopping seit dem 05.10. nicht. */
+  var QUELLE = { prompts: "Prompt Insights", prompt_runs: "Prompt Insights", domains: "Citations",
+                 urls: "Citations", brands: "Brands", shopping: "Shopping", ads: "Ads" };
+  function quelleVon(v){ return QUELLE[gruppeVon(v) || v] || ""; }
+  var BETA = { Ads: true };
+  /* DER KONTEXTFILTER GILT NUR IN SEINEM SCOPE (16.10., Auftrag zu Variante C: "dass er in den
+     korrekten Situationen Filter mitsetzt -- dann aber auch nur fuer den Scope, wo man gerade ist").
+     Ein Drawer setzt seinen Filter (Domain, Adresse, Prompt, Brand) mit setContext. Er gilt fuer
+     genau die Datensaetze, die der Drawer selbst gefiltert zeigt UND deren Funktion ihn als
+     Parameter kennt -- diese Liste, dieselbe wie in exportParameter. Der Domain-Drawer zeigt URLs
+     und Responses von adac.de: dort steht der Chip, dort geht p_domain mit. Waehlt man links
+     Prompts oder Shopping, ist er weg (kein Chip, kein Parameter); zurueck auf URLs ist er wieder
+     da -- der Wert bleibt fuer die Dauer des Oeffnens stehen, nur sein Geltungsbereich entscheidet.
+     Links traegt jeder Datensatz im Scope das Filterzeichen, damit man sieht, wo er gilt. */
+  var FILTER = [
+    { feld: "url",      param: "p_url",       typen: ["prompt_runs"],                    icon: "link" },
+    { feld: "domain",   param: "p_domain",    typen: ["prompt_runs", "urls"],            icon: "domain" },
+    { feld: "promptId", param: "p_prompt_id", typen: ["prompt_runs"],                    icon: "zap",         ersatz: "This prompt" },
+    { feld: "brandId",  param: "p_brand",     typen: ["prompt_runs", "domains", "urls"], icon: "squareStack", ersatz: "This brand" }
+  ];
+  /* DIE FILTER DER SEITE GEHEN MIT, SICHTBAR UND ABWAEHLBAR (16.10., Frage des Nutzers "wirklich
+     alle? Machen andere Apps das auch so?"). Gemessen an den Hilfeseiten: der Export folgt der
+     gefilterten Ansicht -- alle Zeilen, die die Filter treffen, nicht nur die sichtbare Seite --
+     bei Profound, Scrunch, AthenaHQ, Search Console, Semrush, Airtable, Attio, Notion, Stripe,
+     Vercel; der Zeitraum ist der der Ansicht. Die aktiven Filter zeigt dort kein Dialog (Search
+     Console schreibt sie in die Datei), ohne Filter exportieren laesst nur Shopify waehlen. Hier
+     beides: jeder Filter, der mitgeht, steht als Chip im Feld Filters, jeder laesst sich abwaehlen
+     (dann exportiert der Dialog, was die Seite ohne ihn zeigt), "Restore filters" holt alle
+     zurueck. Nichts geht still mit.
+     Die Seite meldet je Datensatz die Parameter ihrer eigenen Liste (setContext params), ohne
+     Team, Zeitraum und Seite. Es gilt nur, was die Exportfunktion als Parameter kennt (KENNT, die
+     Signaturen aus der Datenbank, 16.10. gelesen) -- ein fremder Name liesse PostgREST die Funktion
+     gar nicht finden (PGRST202). Ein Filter gilt fuer die Datensaetze, die die Seite gefiltert
+     zeigt: die Filter der Leiste fuer alle ihrer Seite, die einer Tabelle (Suche, Rank ...) nur fuer
+     den Datensatz des offenen Reiters -- das entscheidet die Seite, indem sie sie nur dort meldet.
+     Die Sortierung geht als Reihenfolge der Zeilen mit (sie aendert keine Zeile, also kein Chip),
+     ausser sie ist der Funktion fremd (ORDNUNG). */
+  var GRUND_P = ["p_models", "p_markets", "p_tag_ids", "p_intents", "p_branded"];
+  var KENNT = {
+    prompts:          GRUND_P.concat(["p_tagmode", "p_untagged", "p_search", "p_mentioned", "p_company_ids", "p_status", "p_order"]),
+    prompt_runs:      GRUND_P.concat(["p_tagmode", "p_order", "p_mentioned", "p_company_ids", "p_sentiment_min", "p_sentiment_max",
+                                      "p_rank_min", "p_rank_max", "p_search", "p_url", "p_domain", "p_prompt_id", "p_brand"]),
+    domains:          GRUND_P.concat(["p_tagmode", "p_mentioned", "p_mentioned_brands", "p_citation_types", "p_url_types", "p_search", "p_order", "p_brand"]),
+    urls:             GRUND_P.concat(["p_tagmode", "p_domain", "p_mentioned", "p_mentioned_brands", "p_citation_types", "p_url_types", "p_search", "p_order", "p_brand"]),
+    brands:           GRUND_P.concat(["p_tagmode", "p_search", "p_order"]),
+    /* Shopping und Ads nach bubble/exporte_16_10/exporte_shopping_ads_v1.sql. Ads kennt kein p_tagmode. */
+    shop_products:    GRUND_P.concat(["p_tagmode", "p_segment", "p_search", "p_merchant", "p_company_id", "p_order"]),
+    shop_brands:      GRUND_P.concat(["p_tagmode", "p_search", "p_order"]),
+    shop_merchants:   GRUND_P.concat(["p_tagmode", "p_search", "p_order"]),
+    shop_appearances: GRUND_P.concat(["p_tagmode", "p_segment", "p_search", "p_merchant", "p_company_id", "p_source_product_id"]),
+    ads_advertisers:  GRUND_P.concat(["p_advertisers", "p_ad_formats", "p_search", "p_sort"]),
+    ads_library:      GRUND_P.concat(["p_advertisers", "p_ad_formats", "p_search"]),
+    ads_prompts:      GRUND_P.concat(["p_advertisers", "p_ad_formats", "p_search", "p_sort"])
+  };
+  /* Die Sortierungen, die die Exportfunktionen annehmen (Datenbank, 16.10.). Eine andere liesse den
+     ganzen Export mit exports_invalid_param scheitern -- dann lieber die Reihenfolge der Funktion.
+     URLs einer Domain (p_domain) kennen andere (domainshare statt share). Shopping und Ads pruefen
+     ihre Seiten selbst gegen dieselben Listen (ORDER in shopping.js/ads.js). */
+  var ORDNUNG = {
+    prompts: ["visibility_desc", "visibility_asc", "rank_asc", "rank_desc", "sentiment_desc", "sentiment_asc",
+              "name_asc", "name_desc", "created_at_desc", "created_at_asc"],
+    prompt_runs: ["run_at_desc", "run_at_asc", "rank_asc", "rank_desc", "sentiment_asc", "sentiment_desc"],
+    domains: ["share_desc", "share_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "last_used_asc",
+              "domain_asc", "domain_desc", "urls_count_desc", "urls_count_asc"],
+    urls: ["share_desc", "share_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "last_used_asc", "domain_asc", "url_asc"],
+    urls_domain: ["domainshare_desc", "domainshare_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "url_asc"],
+    brands: ["visibility_desc", "visibility_asc", "rank_asc", "rank_desc", "sentiment_desc", "sentiment_asc",
+             "mentions_desc", "mentions_asc", "name_asc", "name_desc"]
+  };
+  /* Die Chips der Seitenfilter, in der Reihenfolge der Filterleiste (Topics, Models, Markets,
+     Intent), davor das Produkt eines Details und die Suche, danach die Filter der Tabellen. Name und Zeichen wie in der Leiste
+     (filters/filter-bar.js FILTERS), damit derselbe Filter hier nicht anders heisst. Ein Chip fasst
+     die Parameter zusammen, die nur gemeinsam Sinn haben (Topics mit ihrem Modus, Rank von bis).
+     aktiv: ob der Wert ein Filter ist -- die Vorgabe der Funktion (Status active, Mentioned all,
+     Segment all) ist keiner. Branded ist bei Prompts der Filter der Tabelle (Prompt type), sonst
+     die Brille der App (UC.intentFilterParams): "non_branded" ist dort die Vorgabe der ganzen App
+     und kein Chip, wie in der Filterleiste; "all" ist die Abweichung ("Branded: Included"), und
+     abgewaehlt gilt wieder die Vorgabe (vorgabe), wie beim X der Leiste. */
+  function voll(v){ return v != null && v !== "" && !(Array.isArray(v) && !v.length); }
+  var SEITE = [
+    /* Das Produkt zuerst: es ist kein Filter neben anderen, sondern der Gegenstand der Seite
+       (Product Detail), wie die Filter der Drawer vor allen anderen stehen. */
+    { key: "product",   params: ["p_source_product_id"], icon: "stackStar",  name: "Product" },
+    { key: "search",    params: ["p_search"],           icon: "search",      name: "Search" },
+    { key: "topics",    params: ["p_tag_ids", "p_tagmode"], icon: "tags",    name: "Topic" },
+    { key: "models",    params: ["p_models"],           icon: "layers",      name: "Model" },
+    { key: "markets",   params: ["p_markets"],          icon: "mapPin",      name: "Market" },
+    { key: "intents",   params: ["p_intents"],          icon: "signpost",    name: "Intent" },
+    { key: "branded",   params: ["p_branded"],          icon: "flag",        name: "Branded",
+      aktiv: function(v, art){ return art === "prompts" ? (v === "branded" || v === "non_branded") : (voll(v) && v !== "non_branded"); },
+      vorgabe: function(art){ return art === "prompts" ? undefined : "non_branded"; } },
+    { key: "status",    params: ["p_status"],           icon: "power",       name: "Status",
+      aktiv: function(v){ return voll(v) && v !== "active"; } },
+    { key: "mentioned", params: ["p_mentioned"],        icon: "megaphone",   name: "Brand",
+      aktiv: function(v){ return v === "yes" || v === "no"; } },
+    { key: "brands",    params: ["p_company_ids", "p_mentioned_brands"], icon: "squareStack", name: "Brands" },
+    { key: "rank",      params: ["p_rank_min", "p_rank_max"], icon: "hash",  name: "Rank" },
+    { key: "sentiment", params: ["p_sentiment_min", "p_sentiment_max"], icon: "smile", name: "Sentiment" },
+    { key: "citation_types", params: ["p_citation_types"], icon: "newspaper", name: "Citation type" },
+    { key: "url_types", params: ["p_url_types"],        icon: "linkFeather", name: "URL type" },
+    { key: "segment",   params: ["p_segment"],          icon: "swords",      name: "Segment",
+      aktiv: function(v){ return voll(v) && v !== "all"; } },
+    { key: "company",   params: ["p_company_id"],       icon: "squareStack", name: "Brand" },
+    { key: "merchant",  params: ["p_merchant"],         icon: "store",       name: "Merchant" },
+    { key: "advertisers", params: ["p_advertisers"],    icon: "bank",        name: "Advertiser" },
+    { key: "ad_formats", params: ["p_ad_formats"],      icon: "image",       name: "Format" }
+  ];
+  /* Der Chip, zu dem ein Parameter gehoert (p_tagmode zu Topics). */
+  function seitenChip(param){
+    for (var i = 0; i < SEITE.length; i++) if (SEITE[i].params.indexOf(param) >= 0) return SEITE[i];
+    return null;
+  }
+  function seitenChipKey(key){
+    for (var i = 0; i < SEITE.length; i++) if (SEITE[i].key === key) return SEITE[i];
+    return null;
+  }
+  /* Zeichen aus core (Hugeicons). Ohne core gibt es keins -- diese Datei kommt ohne core aus, und
+     ein Knopf ohne Zeichen ist besser als ein selbst gezeichnetes. */
+  function ic(name){ var C = window.UpstreemCore; return C && C.icon ? C.icon(name, 2) : ""; }
   /* Keys are deliberately the SAME strings the date range picker uses for its own presets,
      so syncing the two is a straight pass-through with nothing to translate. */
   var PRESETS = [
@@ -75,9 +274,6 @@
     { key: "last3",  label: "Last 3 Months", months: 3 },
     { key: "last6",  label: "Last 6 Months", months: 6 }
   ];
-
-  var CHECK_SVG = '<span class="uex-opt-check" aria-hidden="true">' +
-    '<svg viewBox="0 0 24 24"><path d="M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7"/></svg></span>';
 
   function isYes(v){ return /^(1|true|yes|y)$/i.test(String(v == null ? "" : v).trim()); }
   /* Kennt core ein Thema, gewinnt core: data-isdark ist die Momentaufnahme aus dem Moment, in dem
@@ -189,10 +385,22 @@
       to: parseIso(saved.to) || today,
       open: false,
       processing: false,
-      /* Kontext einer Seite mit eigener Gruppe (Shopping, Ads; setContext): die Parameter je Typ
-         und ob davon Filter der Seite sind. Wie url/domain nur fuer DIESEN Export, beim
-         Schliessen geleert. */
-      params: {}, filterAktiv: {}, zeitVonSeite: false
+      /* Kontext der Seite (setContext): die Parameter ihrer Listen je Datensatz (params), lesbare
+         Werte zu Chips, die der Dialog nicht selbst aufloesen kann (namen: Produkt, Marke einer
+         Shopping-Zeile), und die in diesem Oeffnen abgewaehlten Chips (weg, je Schluessel -- auch
+         die Filter der Drawer). Wie url/domain nur fuer DIESEN Export, beim Schliessen geleert. */
+      params: {}, namen: {}, weg: {}, zeitVonSeite: false,
+      /* VARIANTE C (16.10.). phase: "wahl" (Einstellungen), "laeuft" (der Export blaettert) oder
+         "fertig" (Datei heruntergeladen). schritt: am Telefon die Haelfte, die zu sehen ist
+         ("liste" links oder "einst" rechts; breit ohne Wirkung). offen: "zeit", solange die
+         Ersatzliste der Zeitraeume aufgeklappt ist (nur ohne Kalender). lauf: Zaehler des laufenden
+         Exports, ergebnis: die fertige Datei fuer "Download again". fehler: der rote Satz im Fuss,
+         zeitFehler: der am Feld Date range (ein Zeitraum, den die Datenbank ablehnt -- wie auf der
+         Leinwand am Feld, nicht im Fuss). filterLabel: der Name zum Filter eines Drawers (Brand,
+         Prompt) fuer den Chip. ohne: je Spaltensatz die abgewaehlten Spalten -- eine Einstellung,
+         also im Speicher. */
+      phase: "wahl", schritt: "einst", offen: "", lauf: null, ergebnis: null, fehler: "", zeitFehler: "", filterLabel: "",
+      ohne: (saved.ohne && typeof saved.ohne === "object") ? saved.ohne : {}
     };
     if (gruppeVon(state.type)) state.type = TYPES[0].value;
     state.stammTyp = state.type;
@@ -218,7 +426,7 @@
     function persist(){
       STORE[instanceId] = {
         type: state.stammTyp, token: state.token, preset: state.preset,
-        from: isoDate(state.from), to: isoDate(state.to)
+        from: isoDate(state.from), to: isoDate(state.to), ohne: state.ohne
       };
     }
 
@@ -235,56 +443,130 @@
     overlay.className = "up-root up-portal up-topicmodal-backdrop uex-overlay";
     overlay.setAttribute("aria-hidden", "true");
     overlay.inert = true;
+    /* VARIANTE C "Zweispaltig" (16.10., vom Nutzer gewaehlt, Leinwand "Export-Varianten" C). Links
+       die Liste aller Datensaetze in ihren Bereichen (alle zwoelf ohne Rollen), rechts die
+       Einstellungen des gewaehlten: Ueberschrift mit Satz, Filter aus dem Kontext, Zeitraum,
+       Spalten aus export_columns_v1 als Checkliste, Format. Im Fuss der Dateiname als Vorschau und
+       die zwei Knoepfe. Laeuft der Export, steht rechts der echte Fortschritt (Zeilen von
+       total_count) mit seinen drei Schritten, links ruht die Liste; fertig steht rechts die Datei.
+       Am Telefon zwei Schritte: Liste, dann Einstellungen mit "Back" (data-schritt).
+       Vorbelegt wie Variante D: Datensatz der Seite, Filter des Drawers, Zeitraum -- ein Klick
+       (Enter) genuegt.
+       DAS GERUEST STEHT EINMAL, gezeichnet wird nur hinein (zeichnen). Ein innerHTML ueber den
+       ganzen Inhalt bei jedem Klick haette zweierlei gekostet: den Fokus (wer mit der Tastatur
+       Spalten abwaehlt, stuende danach im Nichts) und den Kalender, dessen Knoten hier lebt und
+       seinen Zustand behalten muss. */
+    var titelId = "uex-titel-" + String(instanceId).replace(/[^a-z0-9_-]/gi, "") + "-" + Math.random().toString(36).slice(2, 7);
     overlay.innerHTML =
-      '<div class="up-topicmodal-card uex-dialog" role="dialog" aria-modal="true" aria-label="Export data">' +
+      '<div class="up-topicmodal-card uex-dialog" role="dialog" aria-modal="true" aria-labelledby="' + titelId + '" data-phase="wahl" data-schritt="einst">' +
         '<div class="up-topicmodal-head uex-head">' +
-          '<div class="up-topicmodal-heading">' +
-            '<h2 class="up-topicmodal-title">Export Data</h2>' +
-          '</div>' +
+          '<h2 class="up-topicmodal-title uex-titel" id="' + titelId + '"></h2>' +
           /* .up-popup-close ist der Knopf JEDES Popups: kein Rahmen, Hover nur Flaeche und
-             Primaerfarbe. Der eigene hatte einen Rahmen, der erst beim Ueberfahren erschien --
-             der Knopf sprang und sah aus wie nirgends sonst in der App. */
-          '<button class="up-popup-close uex-close" type="button" aria-label="Close">' +
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
-              'stroke-linecap="round"><path d="M18 6L6.00081 17.9992M17.9992 18L6 6.00085"/></svg>' +
-          '</button>' +
+             Primaerfarbe. */
+          '<button class="up-popup-close uex-close" type="button">' + (ic("x") || "&times;") + '</button>' +
         '</div>' +
-        '<div class="uex-body">' +
-          /* Zeitraum ZUERST. Nicht aus Gewohnheit, sondern weil der Kalender sein Panel unter
-             dem Custom-Knopf oeffnet und dafuer Platz braucht: stand der Block unten, blieben
-             darunter rund 290px, und der Picker wich nach oben aus und legte sich ueber den
-             Dialog. Die Alternative waere gewesen, diesen einen Dialog anders zu platzieren als
-             jedes andere Popup der App -- genau die Ausnahme, die der Styleguide verhindern soll.
-             Die Zusammenfassung bleibt beim Zeitraum, sie nennt beides. */
-          '<div class="uex-section">' +
-            '<span class="uex-label">Time range</span>' +
-            '<div class="uex-grid is-presets"></div>' +
-            '<div class="uex-custom-wrap">' +
-              '<button class="uex-opt uex-custom-btn" type="button">' +
-                '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 2V6M8 2V6"/><path d="M13 4H11C7.22876 4 5.34315 4 4.17157 5.17157C3 6.34315 3 8.22876 3 12V14C3 17.7712 3 19.6569 4.17157 20.8284C5.34315 22 7.22876 22 11 22H13C16.7712 22 18.6569 22 19.8284 20.8284C21 19.6569 21 17.7712 21 14V12C21 8.22876 21 6.34315 19.8284 5.17157C18.6569 4 16.7712 4 13 4Z"/><path d="M3 10H21"/></svg>' +
-                '<span class="uex-opt-label uex-custom-text">Custom range</span>' +
-                '<span class="uex-opt-check" aria-hidden="true">' +
-                  '<svg viewBox="0 0 24 24"><path d="M5 13.2592L7.58583 15.9568C8.2525 16.6523 8.58583 17 9.00004 17C9.41425 17 9.74759 16.6523 10.4143 15.9568L19 7"/></svg>' +
-                '</span>' +
-              '</button>' +
-              '<div class="uex-cal-slot"></div>' +
+        '<div class="uex-rumpf">' +
+          /* Die Liste ist eine Radiogruppe ueber alle Bereiche: Pfeiltasten wandern durch alle
+             zwoelf, nur der gewaehlte ist ein Tab-Halt. Die Bereichsnamen haengen per
+             aria-describedby an ihren Eintraegen -- "Brands" gibt es zweimal. */
+          '<div class="uex-nav" role="radiogroup"></div>' +
+          '<div class="uex-body">' +
+            /* Nur am Telefon (CSS): zurueck zur Liste. */
+            '<button class="uex-zurueck" type="button">' + ic("arrowLeft") + '<span class="uex-zurueck-text"></span></button>' +
+            '<div class="uex-wahl">' +
+              '<div class="uex-titelblock">' +
+                '<h3 class="uex-h3" id="' + titelId + '-h"></h3>' +
+                '<p class="uex-beschr"></p>' +
+              '</div>' +
+              '<div class="uex-feld uex-feld-filter">' +
+                /* Der Kopf wie bei den Spalten: Etikett links, rechts der leise Knopf aus core
+                   (.up-filter-reset), der die abgewaehlten Filter zurueckholt. */
+                '<div class="uex-spalten-kopf uex-filter-kopf">' +
+                  '<span class="uex-feld-label" id="' + titelId + '-f"></span>' +
+                  '<button class="up-filter-reset uex-filter-zurueck" type="button" data-uex-filterzurueck="1" hidden></button>' +
+                '</div>' +
+                '<div class="uex-chips" role="group" aria-labelledby="' + titelId + '-f"></div>' +
+                '<p class="uex-filter-leer"></p>' +
+              '</div>' +
+              '<div class="uex-feld uex-feld-zeit">' +
+                '<span class="uex-feld-label" id="' + titelId + '-z"></span>' +
+                /* DAS FELD IST DER KALENDER AUS filters/date-range.js. Sein Ausloeser liegt
+                   UNSICHTBAR ueber dem Feld und nimmt den Mausklick; sein Feld (Presets, Reset,
+                   Monate) oeffnet darunter, und core hebt es in die oberste Ebene. Dasselbe Feld wie
+                   in jeder Werkzeugleiste der App, nichts nachgebaut. Mit der Tastatur steht man auf
+                   dem sichtbaren Knopf, Enter klickt den Ausloeser. Der Picker schliesst sein Feld
+                   ueber einen Klick-Waechter am Dokument, sobald ein Klick ausserhalb seiner Wurzel
+                   landet -- ein eigener Knopf daneben wuerde also immer schliessen-und-wieder-oeffnen. */
+                '<div class="uex-zeit-wrap">' +
+                  '<button class="uex-zeitfeld" type="button" aria-haspopup="dialog" aria-expanded="false" aria-labelledby="' + titelId + '-z ' + titelId + '-zw">' +
+                    '<span class="uex-zf-ic">' + ic("calendar") + '</span>' +
+                    '<span class="uex-zf-wert" id="' + titelId + '-zw"></span>' +
+                    '<span class="uex-zf-sub"></span>' +
+                    '<span class="uex-zf-chev">' + ic("chevronDown") + '</span>' +
+                  '</button>' +
+                  '<div class="uex-cal-slot"></div>' +
+                '</div>' +
+                /* Ohne Kalender (Loader ohne date-range.js) die vier Presets als Liste unter dem
+                   Feld -- die Wahl bleibt moeglich, nur der freie Zeitraum fehlt, und das sagt der
+                   Satz darunter. */
+                '<div class="uex-optionen uex-presets" role="radiogroup" aria-labelledby="' + titelId + '-z" hidden></div>' +
+                '<div class="up-fehlerzeile uex-zeit-fehler" role="alert"><span></span></div>' +
+              '</div>' +
+              '<div class="uex-feld uex-feld-spalten" role="group" aria-labelledby="' + titelId + '-s">' +
+                '<div class="uex-spalten-kopf">' +
+                  '<span class="uex-feld-label" id="' + titelId + '-s"></span>' +
+                  '<span class="uex-spalten-zahl"></span>' +
+                  '<button class="up-filter-reset uex-alle" type="button" data-uex-alle="1"></button>' +
+                '</div>' +
+                '<div class="uex-spalten"></div>' +
+                '<div class="uex-spalten-satz"></div>' +
+              '</div>' +
+              /* Format ohne Wahl: es gibt nur CSV. Die Leinwand zeigt CSV | Excel -- einen
+                 Umschalter mit einer einzigen Moeglichkeit gaebe es nur zum Ansehen, und eine
+                 Excel-Datei baut die App nicht (das hiesse eine Bibliothek im Browser). Also steht
+                 das Format fest da, und der Hinweis darunter sagt, dass Excel die Datei sicher
+                 oeffnet. */
+              '<div class="uex-feld uex-feld-format">' +
+                '<span class="uex-feld-label"></span>' +
+                '<span class="uex-format-wert">CSV</span>' +
+              '</div>' +
+              '<div class="uex-hinweis"></div>' +
             '</div>' +
-            '<div class="uex-summary"></div>' +
-          '</div>' +
-          '<div class="uex-section">' +
-            '<span class="uex-label">What to export</span>' +
-            '<div class="uex-grid is-types"></div>' +
+            '<div class="uex-lauf" hidden>' +
+              '<div class="uex-titelblock">' +
+                '<h3 class="uex-h3 uex-lauf-titel"></h3>' +
+                '<p class="uex-beschr uex-lauf-satz"></p>' +
+              '</div>' +
+              '<div class="uex-fortschritt">' +
+                '<div class="uex-balken" role="progressbar" aria-valuemin="0"><div class="uex-balken-f"></div></div>' +
+                '<div class="uex-zahlen"><span class="uex-zahl-n"></span><span class="uex-zahl-pct"></span></div>' +
+              '</div>' +
+              '<ol class="uex-schritte" aria-live="polite"></ol>' +
+            '</div>' +
+            '<div class="uex-fertig" hidden>' +
+              '<span class="uex-fertig-ic">' + ic("checkCircle") + '</span>' +
+              '<div class="uex-titelblock">' +
+                '<h3 class="uex-h3 uex-fertig-titel"></h3>' +
+                '<p class="uex-beschr uex-fertig-satz"></p>' +
+              '</div>' +
+              '<div class="uex-datei">' +
+                '<span class="uex-datei-ic">' + ic("fileText") + '</span>' +
+                '<span class="uex-datei-text"><span class="uex-datei-name"></span><span class="uex-datei-meta"></span></span>' +
+                '<button class="up-btn-sec uex-nochmal" type="button">' + ic("download") + '<span class="uex-nochmal-text"></span></button>' +
+              '</div>' +
+              '<p class="uex-beschr uex-gekappt" hidden></p>' +
+            '</div>' +
           '</div>' +
         '</div>' +
         '<div class="uex-foot">' +
-          '<button class="uex-submit" type="button">' +
-            '<span class="uex-submit-icon">' +
-              '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.9504 12.1817C17.1981 12.814 16.5076 13.5726 15.1267 15.0899C13.6702 16.6902 12.9201 17.4904 12 17.5C11.0799 17.4904 10.3298 16.6902 8.87331 15.0899C7.49239 13.5726 6.80193 12.814 7.04964 12.1817C7.05868 12.1586 7.06851 12.1359 7.0791 12.1135C7.34928 11.542 8.24477 11.5029 10 11.5002V4.99998C10 4.53501 10 4.30253 10.0511 4.11179C10.1898 3.59414 10.5941 3.1898 11.1118 3.05111C11.3025 3 11.535 3 12 3C12.4649 3 12.6974 3 12.8882 3.05111C13.4058 3.1898 13.8102 3.59414 13.9489 4.11179C14 4.30253 14 4.53501 14 4.99998V11.5002C15.7552 11.5029 16.6507 11.542 16.9209 12.1135C16.9315 12.1359 16.9413 12.1586 16.9504 12.1817Z"/><path d="M5.00006 21H19.0001"/></svg>' +
-            '</span>' +
-            '<span class="uex-submit-text">Export</span>' +
-          '</button>' +
-          '<div class="uex-secondary">' +
-            '<button class="uex-cancel" type="button">Cancel</button>' +
+          /* Links der Dateiname als Vorschau -- oder, wenn etwas schiefging, der rote Satz an
+             seiner Stelle: dort steht er neben dem Knopf, der es erneut versucht, und rollt nie
+             aus dem Bild. */
+          '<div class="uex-foot-info"><span class="uex-foot-ic">' + ic("fileText") + '</span><span class="uex-foot-name"></span></div>' +
+          '<div class="up-fehlerzeile uex-fehler" role="alert"><span></span></div>' +
+          '<div class="uex-foot-knoepfe">' +
+            '<button class="up-btn-sec uex-zweit" type="button"><span class="uex-zweit-text"></span></button>' +
+            '<button class="up-btn-pri uex-submit" type="button"><span class="uex-submit-icon"></span><span class="uex-submit-text"></span></button>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -299,24 +581,30 @@
     overlay.setAttribute("data-uex-instance", instanceId);
     document.body.appendChild(overlay);
 
-    var elTypes   = overlay.querySelector(".uex-grid.is-types");
-    var elPresets = overlay.querySelector(".uex-grid.is-presets");
-    var elCustomBtn = overlay.querySelector(".uex-custom-btn");
-    var elCustomTxt = overlay.querySelector(".uex-custom-text");
-    var elCustomWrap = overlay.querySelector(".uex-custom-wrap");
-    var elCalSlot = overlay.querySelector(".uex-cal-slot");
-    var elSummary = overlay.querySelector(".uex-summary");
-    var elBody    = overlay.querySelector(".uex-body");
-    var elDialog  = overlay.querySelector(".uex-dialog");
-    var elBody    = overlay.querySelector(".uex-body");
-    var elClose   = overlay.querySelector(".uex-close");
-    var elCancel  = overlay.querySelector(".uex-cancel");
-    var elSubmit  = overlay.querySelector(".uex-submit");
-    var elSubmitIcon = overlay.querySelector(".uex-submit-icon");
-    var elSubmitText = overlay.querySelector(".uex-submit-text");
+    function q(sel){ return overlay.querySelector(sel); }
+    var elDialog  = q(".uex-dialog");
+    var elBody    = q(".uex-body");
+    var elTitel   = q(".uex-titel");
+    var elNav     = q(".uex-nav");
+    var elClose   = q(".uex-close");
+    var elZurueck = q(".uex-zurueck");
+    var elWahl    = q(".uex-wahl");
+    var elLauf    = q(".uex-lauf");
+    var elFertig  = q(".uex-fertig");
+    var elFehler  = q(".uex-fehler");
+    var elHinweis = q(".uex-hinweis");
+    var elPresets = q(".uex-presets");
+    var elZeitWrap = q(".uex-zeit-wrap");
+    var elZeitfeld = q(".uex-zeitfeld");
+    var elZeitFehler = q(".uex-zeit-fehler");
+    var elCalSlot = q(".uex-cal-slot");
+    var elFoot    = q(".uex-foot");
+    var elFootInfo = q(".uex-foot-info");
+    var elZweit   = q(".uex-zweit");
+    var elSubmit  = q(".uex-submit");
+    var elSubmitIcon = q(".uex-submit-icon");
+    var elSubmitText = q(".uex-submit-text");
     var SPINNER_SVG = '<span class="uex-spin" aria-hidden="true"></span>';
-    var EXPORT_SVG =
-      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.9504 12.1817C17.1981 12.814 16.5076 13.5726 15.1267 15.0899C13.6702 16.6902 12.9201 17.4904 12 17.5C11.0799 17.4904 10.3298 16.6902 8.87331 15.0899C7.49239 13.5726 6.80193 12.814 7.04964 12.1817C7.05868 12.1586 7.06851 12.1359 7.0791 12.1135C7.34928 11.542 8.24477 11.5029 10 11.5002V4.99998C10 4.53501 10 4.30253 10.0511 4.11179C10.1898 3.59414 10.5941 3.1898 11.1118 3.05111C11.3025 3 11.535 3 12 3C12.4649 3 12.6974 3 12.8882 3.05111C13.4058 3.1898 13.8102 3.59414 13.9489 4.11179C14 4.30253 14 4.53501 14 4.99998V11.5002C15.7552 11.5029 16.6507 11.542 16.9209 12.1135C16.9315 12.1359 16.9413 12.1586 16.9504 12.1817Z"/><path d="M5.00006 21H19.0001"/></svg>';
 
     function syncTheme(){
       var dark = dunkelJetzt(root.getAttribute("data-isdark"));
@@ -325,46 +613,431 @@
       else { root.removeAttribute("data-theme"); overlay.removeAttribute("data-theme"); }
     }
 
-    function renderTypes(){
-      var g = gruppeVon(state.type);
-      elTypes.innerHTML = TYPES.filter(function(t){ return t.gruppe === g; }).map(function(t){
-        return '<button class="uex-opt' + (t.value === state.type ? " is-active" : "") +
-               '" type="button" data-type="' + esc(t.value) + '">' +
-               '<span class="uex-opt-label">' + esc(tr(t.kachel || t.label)) + '</span>' + CHECK_SVG + '</button>';
+    /* ---------------- zeichnen ----------------
+       Hilfen: setzen() schreibt nur, wenn sich etwas aendert -- sonst verloere ein fokussierter
+       Knopf in einer Liste bei jedem Neuzeichnen seinen Fokus. */
+    function setzen(el, html){ if (el && el.__uexHtml !== html){ el.__uexHtml = html; el.innerHTML = html; } }
+    function text(el, s){ if (el && el.textContent !== s) el.textContent = s; }
+    function zahl(n){ var C = window.UpstreemCore; return C && C.fmtInt ? C.fmtInt(n) : String(n); }
+    function datum(d){
+      var C = window.UpstreemCore;
+      /* Das Datumsformat des Nutzers (UC.fmtDate). Als lokaler Zeitpunkt, nicht als "2026-07-15":
+         den liest Date als UTC-Mitternacht, und westlich von UTC stuende der Vortag da. */
+      return C && C.fmtDate ? C.fmtDate(isoDate(d) + "T00:00:00") : prettyDate(d);
+    }
+    /* Zeitraum wie im Styleguide (1c): beide Enden im App-Format, Halbgeviertstrich dazwischen. */
+    function spanne(f, t){ return datum(f) + " – " + datum(t); }
+    function presetSpanne(p){
+      var t = startOfDay(new Date());
+      return spanne(p.days ? addDays(t, -(p.days - 1)) : addMonths(t, -p.months), t);
+    }
+    function groesse(b){
+      var C = window.UpstreemCore, f = C && C.fmtNum ? function(v, n){ return C.fmtNum(v, n); } : function(v, n){ return v.toFixed(n); };
+      if (b < 1024) return b + " B";
+      if (b < 1048576) return f(b / 1024, b < 10240 ? 1 : 0) + " KB";
+      return f(b / 1048576, 1) + " MB";
+    }
+    /* Roving tabindex in einer Radiogruppe: nur die gewaehlte Zeile ist ein Tab-Halt, die Pfeile
+       wandern (Tastatur unten). an: die Klasse des gewaehlten Zustands (.is-active an der
+       Menuezeile, .is-on an der Zeile der Liste). */
+    function radioStand(btn, an, klasse){
+      btn.classList.toggle(klasse || "is-active", an);
+      btn.setAttribute("aria-checked", an ? "true" : "false");
+      btn.setAttribute("tabindex", an ? "0" : "-1");
+    }
+
+    function selbstMoeglich(art){
+      var cfg = EXPORTE[art];
+      return !!(cfg && kern() && (cfg.neu || !BUBBLE_TYP[art]));
+    }
+    function gewaehlteSpalten(art){
+      var e = spaltenVon(art), cfg = EXPORTE[art];
+      if (!e || !e.spalten || !cfg) return null;
+      var aus = state.ohne[cfg.spalten] || {};
+      return e.spalten.filter(function(c){ return !aus[c.key]; });
+    }
+    function keineSpalten(){
+      if (!selbstMoeglich(state.type)) return false;
+      var g = gewaehlteSpalten(state.type);
+      return !!g && g.length === 0;
+    }
+    function kurzUrl(u){ return String(u).replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/$/, ""); }
+    /* Der Dateiname, wie exportSelbst ihn vergibt -- im Fuss als Vorschau, im Fertig-Zustand der
+       echte. Eine Quelle fuer beide, damit die Vorschau nie etwas anderes verspricht. */
+    function dateiName(art){
+      var cfg = EXPORTE[art];
+      var typName = (cfg && cfg.datei) || (typVon(art) || { label: art }).label;
+      return "upstreem-" + typName.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + isoDate(state.from) + "-" + isoDate(state.to) + ".csv";
+    }
+
+    /* ---- Kontext: welche Filter gelten fuer diesen Datensatz? ----
+       Die Drawer-Filter nur im Scope (FILTER oben), die Seitenfilter nur fuer die Datensaetze, fuer
+       die die Seite sie gemeldet hat, und nur, wenn die Funktion sie kennt (KENNT). Seitenfilter nur
+       auf dem Weg ueber die App: der Bubble-Weg traegt sie nicht (seine Nutzlast kennt nur Adresse,
+       Domain, Prompt und Brand), ein Chip stuende dort fuer einen Filter, der nicht gilt.
+       mitWeg: auch die abgewaehlten (fuer "Restore filters"); sie tragen weg: true. */
+    function namenListe(werte, fn){
+      var l = (Array.isArray(werte) ? werte : [werte]).map(function(v){ var n = fn ? fn(String(v)) : ""; return n || String(v); });
+      /* Wie die Chips der Filterleiste: zwei Namen, dann "+n" -- der ganze Satz steht im title. */
+      return { kurz: l.length > 2 ? l.slice(0, 2).join(", ") + ", +" + (l.length - 2) : l.join(", "), lang: l.join(", ") };
+    }
+    function finde(liste, feld, id){
+      for (var i = 0; i < liste.length; i++){
+        var x = liste[i]; if (!x) continue;
+        for (var j = 0; j < feld.length; j++) if (x[feld[j]] != null && String(x[feld[j]]).toLowerCase() === String(id).toLowerCase()) return x;
+      }
+      return null;
+    }
+    /* Der lesbare Wert eines Chips. Namen kommen aus den Ablagen von core (dieselben, aus denen die
+       Filter ihre Zeilen bauen); was dort fehlt, bleibt als roher Schluessel stehen -- "Model:
+       gpt-4o" ist eine Auskunft, eine Zahl waere keine (wie in der Filterleiste). */
+    function chipWert(c, x, art){
+      var C = window.UpstreemCore || {}, n = state.namen[c.key];
+      if (n) return { kurz: String(n), lang: String(n) };
+      var v = x[c.params[0]];
+      function liste(fn){ return namenListe(v, fn); }
+      switch (c.key){
+        case "search": var s = "“" + String(v) + "”"; return { kurz: s, lang: s };
+        case "models": return liste(function(k){ var m = finde(C.getModels ? C.getModels() : [], ["key", "model"], k); return m ? String(m.display_name || m.name || "") : ""; });
+        case "markets": return liste(function(k){ return C.landName ? C.landName(k) : k; });
+        case "topics": return liste(function(k){ var t = finde(C.getTopics ? C.getTopics() : [], ["topic_id", "tag_id", "id"], k); return t ? String(t.name || "") : ""; });
+        case "intents": return liste(function(k){ var a = C.intentArt ? C.intentArt(k) : null; return a && C.intentName ? C.intentName(a) : ""; });
+        case "brands": return liste(function(k){ var b = finde(C.getBrands ? C.getBrands() : [], ["company_id", "id"], k); return b ? String(b.name || "") : ""; });
+        case "citation_types": return liste(function(k){ return C.typLabel ? C.typLabel(k, "citation") : ""; });
+        case "url_types": return liste(function(k){ return C.typLabel ? C.typLabel(k, "url") : ""; });
+        case "branded": var b = art === "prompts" ? (v === "branded" ? tr("Branded") : "Non-branded") : tr("Included"); return { kurz: b, lang: b };
+        case "status": var st = v === "inactive" ? tr("Inactive") : String(v); return { kurz: st, lang: st };
+        case "mentioned": var me = v === "yes" ? tr("Mentioned") : tr("Not mentioned"); return { kurz: me, lang: me };
+        case "segment": var sg = { you: "You", competition: "Competition", other: "Other" }[v]; sg = sg ? tr(sg) : String(v); return { kurz: sg, lang: sg };
+        case "product": var pr = tr("This product"); return { kurz: pr, lang: pr };
+        case "company": return liste(function(k){ var b2 = finde(C.getBrands ? C.getBrands() : [], ["company_id", "id"], k); return b2 ? String(b2.name || "") : ""; });
+        case "rank": case "sentiment":
+          /* Ein Bereich wie im Chip der Leiste: "1–3"; offen nach oben "5+". */
+          var lo = x[c.params[0]], hi = x[c.params[1]], r = voll(lo) && voll(hi) ? lo + "–" + hi : (voll(lo) ? lo + "+" : (c.key === "rank" ? "1" : "0") + "–" + hi);
+          return { kurz: String(r), lang: String(r) };
+      }
+      return liste(null);
+    }
+    function filterFuer(art, mitWeg){
+      var out = [];
+      FILTER.forEach(function(f){
+        var v = state[f.feld];
+        if (!v || f.typen.indexOf(art) < 0) return;
+        if (state.weg[f.feld] && !mitWeg) return;
+        var l = f.feld === "url" ? kurzUrl(v) : (f.feld === "domain" ? String(v) : (state.filterLabel || tr(f.ersatz)));
+        out.push({ feld: f.feld, icon: f.icon, label: l, title: l, weg: !!state.weg[f.feld] });
+      });
+      var x = state.params[art], kennt = KENNT[art] || [];
+      if (!x || !selbstMoeglich(art)) return out;
+      SEITE.forEach(function(c){
+        var haupt = c.params.filter(function(n){ return n !== "p_tagmode" && kennt.indexOf(n) >= 0 && (c.aktiv ? c.aktiv(x[n], art) : voll(x[n])); });
+        if (!haupt.length) return;
+        if (state.weg[c.key] && !mitWeg) return;
+        /* Der erste gesetzte Parameter traegt den Wert (Brands: p_company_ids ODER p_mentioned_brands). */
+        var cc = { key: c.key, params: haupt.concat(c.params.filter(function(n){ return haupt.indexOf(n) < 0; })) };
+        var w = chipWert(cc, x, art);
+        var name = tr(c.key === "branded" && art === "prompts" ? "Prompt type" : c.name);
+        out.push({ feld: c.key, icon: c.icon, label: name + ": " + w.kurz, title: name + ": " + w.lang, weg: !!state.weg[c.key] });
+      });
+      return out;
+    }
+    function filterChipsHtml(art){
+      /* Das Kreuz nur, solange gewaehlt wird -- im Lauf und danach aendert es nichts mehr. */
+      var wahl = state.phase === "wahl";
+      return filterFuer(art).map(function(f){
+        return '<span class="up-entchip is-static uex-chip' + (wahl ? "" : " is-fest") + '" title="' + esc(f.title) + '">' +
+          '<span class="uex-chip-ic">' + ic(f.icon) + '</span><span class="uex-chip-lbl">' + esc(f.label) + '</span>' +
+          (wahl ? '<button class="up-iconbtn is-20 uex-chip-x" type="button" data-uex-filterweg="' + esc(f.feld) + '" aria-label="' +
+            esc(tr("Remove filter {name}").replace("{name}", f.title)) + '">' + ic("x") + '</button>' : '') + '</span>';
       }).join("");
     }
-    function renderPresets(){
-      elPresets.innerHTML = PRESETS.map(function(p){
-        return '<button class="uex-opt' + (p.key === state.preset ? " is-active" : "") +
-               '" type="button" data-preset="' + esc(p.key) + '">' +
-               '<span class="uex-opt-label">' + esc(p.label) + '</span>' + CHECK_SVG + '</button>';
-      }).join("");
+
+    /* Welche Datensaetze links stehen: alle der Grundgruppe, Shopping und Ads nur in der App (ohne
+       core und Team gibt es ihren Export nicht -- ein Eintrag, der nur einen Fehler bringt, steht
+       besser gar nicht da). Ist einer davon gewaehlt, steht seine Gruppe trotzdem. */
+    function sichtbareTypen(art){
+      var k = !!kern(), g = gruppeVon(art);
+      return TYPES.filter(function(t){ return !t.gruppe || k || t.gruppe === g; });
+    }
+    function navZeichnen(art){
+      var typen = sichtbareTypen(art), html = "", zuletzt = null, nr = 0;
+      typen.forEach(function(t){
+        var bereich = quelleVon(t.value);
+        if (bereich !== zuletzt){
+          zuletzt = bereich; nr++;
+          html += '<div class="uex-bereich" id="' + titelId + '-b' + nr + '"><span class="uex-bereich-name">' + esc(tr(bereich)) + '</span>' +
+            (BETA[bereich] ? '<span class="up-marke is-akzent uex-beta">' + esc(tr("Beta")) + '</span>' : '') + '</div>';
+        }
+        html += '<button class="up-optrow uex-navitem" type="button" role="radio" aria-checked="false" tabindex="-1" data-type="' + t.value + '" aria-describedby="' + titelId + '-b' + nr + '">' +
+          '<span class="uex-nav-ic">' + ic(t.icon) + '</span><span class="uex-nav-lbl">' + esc(tr(t.label)) + '</span><span class="uex-nav-zusatz"></span></button>';
+      });
+      setzen(elNav, html);
+      elNav.setAttribute("aria-label", tr("Data"));
+      [].forEach.call(elNav.querySelectorAll("[data-type]"), function(b){
+        var v = b.getAttribute("data-type");
+        radioStand(b, v === art, "is-on");
+        /* Der ganze Name im title: lange Namen (deutsch) enden mit Auslassungspunkten. */
+        var lbl = b.querySelector(".uex-nav-lbl");
+        if (lbl) lbl.title = lbl.textContent;
+        /* Rechts am Eintrag: "Soon", wenn es den Export noch nicht gibt, sonst das Filterzeichen,
+           wenn ein Filter aus dem Kontext fuer ihn gilt -- so sieht man, wo der Scope liegt, auch
+           wenn gerade ein anderer Datensatz gewaehlt ist. */
+        var bald = baldSatz(v), f = filterFuer(v), z = "";
+        if (bald) z = '<span class="uex-nav-bald">' + esc(tr("Soon")) + '</span>';
+        else if (f.length){
+          var name = tr("Filtered to {name}").replace("{name}", f.map(function(x){ return x.title; }).join(", "));
+          z = '<span class="uex-nav-filter" title="' + esc(name) + '" aria-label="' + esc(name) + '" role="img">' + ic("listFilter") + '</span>';
+        }
+        setzen(b.querySelector(".uex-nav-zusatz"), z);
+      });
+    }
+
+    function filterZeichnen(art){
+      var html = filterChipsHtml(art);
+      /* Abgewaehlte, die fuer diesen Datensatz gaelten: dann steht das Feld weiter da, mit "Restore
+         filters" im Kopf (wie "Select all" bei den Spalten) -- und sind alle weg, sagt der Satz,
+         was jetzt in die Datei geht. Im Lauf und danach aendert das nichts mehr. */
+      var zurueck = state.phase === "wahl" && filterFuer(art, true).some(function(f){ return f.weg; });
+      q(".uex-feld-filter").hidden = !html && !zurueck;
+      /* data-i18n mit dem englischen Schluessel: das deutsche "Filter" ist selbst ein Schluessel in
+         core ("Filter" -> "Filtern", das Verb), und der Sprachlauf von core machte daraus sonst
+         "Filtern" (gemessen 16.10.). Mit dem Schluessel erkennt er den Text als fertig. */
+      var lab = q(".uex-feld-filter .uex-feld-label");
+      lab.setAttribute("data-i18n", "Filters");
+      text(lab, tr("Filters"));
+      var knopf = q(".uex-filter-zurueck");
+      text(knopf, tr("Restore filters"));
+      knopf.hidden = !zurueck;
+      setzen(q(".uex-chips"), html);
+      var leer = q(".uex-filter-leer");
+      text(leer, !html && zurueck ? tr("Without filters, every row in the date range is exported.") : "");
+    }
+
+    function zeitZeichnen(){
       var custom = state.preset === "custom";
-      elCustomBtn.classList.toggle("is-active", custom);
-      // once a custom range is picked the button shows it, so the row is never just a dead label
-      elCustomTxt.textContent = custom
-        ? (prettyDate(state.from) + " – " + prettyDate(state.to))
-        : "Custom range";
+      var p = PRESETS.filter(function(x){ return x.key === state.preset; })[0];
+      text(q(".uex-feld-zeit .uex-feld-label"), tr("Date range"));
+      text(q(".uex-zf-wert"), custom || !p ? tr("Custom range") : tr(p.label));
+      text(q(".uex-zf-sub"), spanne(state.from, state.to));
+      /* Ein Zeitraum, den die Datenbank ablehnt, steht am Feld (Leinwand: roter Rahmen, Satz
+         darunter), nicht im Fuss -- dort, wo man ihn aendert. */
+      elZeitfeld.classList.toggle("is-fehler", !!state.zeitFehler);
+      elZeitfeld.setAttribute("aria-invalid", state.zeitFehler ? "true" : "false");
+      var mitCal = elZeitWrap.classList.contains("has-cal");
+      /* Ohne Kalender: die Ersatzliste der Presets, mit dem Satz, warum der freie Zeitraum fehlt. */
+      var listeAuf = !mitCal && state.offen === "zeit";
+      elPresets.hidden = !listeAuf;
+      if (!mitCal) elZeitfeld.setAttribute("aria-expanded", listeAuf ? "true" : "false");
+      if (listeAuf){
+        setzen(elPresets, PRESETS.map(function(x){
+          return '<button class="up-pop-opt uex-opt" type="button" role="radio" aria-checked="false" tabindex="-1" data-preset="' + x.key + '">' +
+            '<span class="up-pop-opt-l"><span class="uex-opt-label">' + esc(tr(x.label)) + '</span></span>' +
+            '<span class="uex-opt-sub"></span><span class="up-check" aria-hidden="true">' + ic("check") + '</span></button>';
+        }).join("") + '<p class="uex-presets-satz">' + esc(tr("Custom range is unavailable. Please reload the page.")) + '</p>');
+        [].forEach.call(elPresets.querySelectorAll("[data-preset]"), function(b){
+          var x = PRESETS.filter(function(y){ return y.key === b.getAttribute("data-preset"); })[0];
+          text(b.querySelector(".uex-opt-sub"), x ? presetSpanne(x) : "");
+          radioStand(b, b.getAttribute("data-preset") === state.preset);
+        });
+      }
+      elZeitFehler.classList.toggle("is-on", !!state.zeitFehler);
+      text(elZeitFehler.querySelector("span"), state.zeitFehler || "");
     }
-    function renderSummary(){
-      var label = typVon(state.type);
-      /* Fehlt der Export noch (Shopping, Ads), steht statt der Zusammenfassung der Satz, und der
-         Knopf ruht -- kein Fehler, kein Klick ins Leere. */
-      var bald = baldSatz(state.type);
-      if (bald){ elSummary.textContent = bald; knopfStand(); return; }
-      elSummary.innerHTML =
-        "Exporting <b>" + esc(label ? tr(label.label) : state.type) + "</b> from <b>" +
-        esc(prettyDate(state.from)) + "</b> to <b>" + esc(prettyDate(state.to)) +
-        "</b> &mdash; <b>" + dayCount(state.from, state.to) + "</b> days." +
-        /* Die Seite gibt ihre Filter mit (setContext params) -- dann sagt es der Dialog. */
-        (state.filterAktiv[state.type] ? " " + esc(tr("Current page filters apply.")) : "");
+
+    function spaltenZeichnen(art){
+      var cfg = EXPORTE[art], e = spaltenVon(art), sel = gewaehlteSpalten(art);
+      var kann = selbstMoeglich(art) && !!sel;
+      /* Skelett, solange gefragt wird oder noch nie gefragt wurde. Hat die Frage keine Antwort
+         gebracht (Netz, Zeitablauf: versucht, stand weiter null), steht "All columns" -- sonst
+         liefe das Skelett endlos, und Laden saehe aus wie kaputt. */
+      var laedt = selbstMoeglich(art) && !sel && !!e && (e.laeuft || e.stand === null && !e.versucht && !!cfg && !BUBBLE_TYP[art]);
+      var n = kann ? e.spalten.length : 0, k = kann ? sel.length : 0;
+      text(q(".uex-feld-spalten .uex-feld-label"), tr("Columns"));
+      var zahlEl = q(".uex-spalten-zahl");
+      text(zahlEl, kann ? (k === n ? tr("{n} columns").replace("{n}", zahl(n)) : tr("{k} of {n} columns").replace("{k}", zahl(k)).replace("{n}", zahl(n))) : "");
+      var alle = q(".uex-alle");
+      text(alle, tr("Select all"));
+      alle.hidden = !kann || k === n;
+      var gitter = q(".uex-spalten"), satz = q(".uex-spalten-satz");
+      if (kann){
+        /* Die Checkliste aus core (.up-filter-item/-check), zweispaltig wie auf der Leinwand. Gebaut
+           je Spaltensatz, danach nur der Stand. */
+        var aus = state.ohne[cfg.spalten] || {};
+        setzen(gitter, e.spalten.map(function(c){
+          var name = tr(c.header || c.key);
+          return '<button class="up-filter-item uex-spalte" type="button" role="checkbox" aria-checked="true" data-spalte="' + esc(c.key) + '" title="' + esc(name) + '">' +
+            '<span class="up-filter-check">' + ic("check") + '</span><span class="uex-spalte-lbl">' + esc(name) + '</span></button>';
+        }).join(""));
+        [].forEach.call(gitter.querySelectorAll("[data-spalte]"), function(b){
+          var an = !aus[b.getAttribute("data-spalte")];
+          b.classList.toggle("is-checked", an);
+          b.setAttribute("aria-checked", an ? "true" : "false");
+        });
+        gitter.classList.remove("is-laden");
+        /* Keine Spalte gewaehlt: der Knopf ruht, der Satz sagt warum -- direkt unter der Liste. */
+        setzen(satz, k === 0 ? ic("info") + '<span>' + esc(tr("Choose at least one column.")) + '</span>' : "");
+        return;
+      }
+      if (laedt){
+        /* Das Skelett nur beim ersten Laden des Spaltensatzes (danach steht er im Speicher DA). */
+        setzen(gitter, [62, 48, 70, 40, 56, 66, 44, 52].map(function(w){
+          return '<span class="uex-spalte-sk"><span class="up-skelett uex-sk-box"></span><span class="up-skelett uex-sk-text" style="width:' + w + '%"></span></span>';
+        }).join(""));
+        gitter.classList.add("is-laden");
+        setzen(satz, "");
+        return;
+      }
+      /* Ohne Spaltenliste (Bubble-Weg, oder export_columns_v1 hat nicht geantwortet): die Datei
+         hat alle Spalten, und genau das steht da. */
+      setzen(gitter, ""); gitter.classList.remove("is-laden");
+      setzen(satz, '<span>' + esc(tr("All columns")) + '</span>');
+    }
+
+    function hinweisZeichnen(art){
+      var cfg = EXPORTE[art];
+      if (cfg && selbstMoeglich(art)){
+        /* Die Grenze vorab (Ahrefs): so viele Zeilen passen in einen Lauf -- Seitengroesse mal die
+           60 Seiten, die die Datenbank je Minute erlaubt. Formelschutz macht die Datenbank
+           (csv_safe_v1); beides gilt nur fuer den Weg ueber die App, nicht fuer Bubble. */
+        setzen(elHinweis, ic("shieldCheck") + '<span>' + esc(tr("Safe to open in Excel and Sheets. Up to {n} rows.").replace("{n}", zahl(cfg.seite * MAX_SEITEN))) + '</span>');
+        elHinweis.hidden = false; return;
+      }
+      setzen(elHinweis, ""); elHinweis.hidden = true;
+    }
+
+    function wahlZeichnen(art){
+      var label = typVon(art);
+      text(q(".uex-wahl .uex-h3"), label ? tr(label.label) : art);
+      text(q(".uex-wahl .uex-beschr"), label ? tr(label.beschr) : "");
+      /* Fehlt der Export noch (Shopping, Ads), steht unter der Ueberschrift nur der Satz, und der
+         Knopf ruht -- Zeitraum und Spalten haetten dann nichts, wofuer sie gelten. */
+      var bald = baldSatz(art);
+      elWahl.classList.toggle("is-bald", !!bald);
+      filterZeichnen(art);
+      zeitZeichnen();
+      spaltenZeichnen(art);
+      text(q(".uex-feld-format .uex-feld-label"), tr("Format"));
+      if (bald){
+        elHinweis.classList.add("is-bald");
+        setzen(elHinweis, ic("clock") + '<span>' + esc(bald) + '</span>');
+        elHinweis.hidden = false;
+      } else {
+        elHinweis.classList.remove("is-bald");
+        hinweisZeichnen(art);
+      }
+    }
+
+    function laufZeichnen(){
+      var L = state.lauf, art = state.type, label = typVon(art);
+      if (!L) return;
+      text(q(".uex-lauf-titel"), tr("Exporting {typ}").replace("{typ}", label ? tr(label.label) : art));
+      text(q(".uex-lauf-satz"), tr("Closing this window stops the export."));
+      var max = L.gesamt != null ? Math.min(L.gesamt, L.kappe) : null;
+      var bar = q(".uex-balken");
+      /* Der Balken zeigt nur echten Fortschritt (Zeilen von total_count). Kennt die Antwort keine
+         Gesamtzahl, steht kein Balken da statt eines erfundenen -- vor der ersten Seite steht er
+         leer, weil die Gesamtzahl mit ihr kommt. */
+      var mitBalken = max != null || L.seiten === 0;
+      bar.hidden = !mitBalken;
+      bar.setAttribute("aria-label", tr("Export progress"));
+      if (max != null){ bar.setAttribute("aria-valuemax", String(max)); bar.setAttribute("aria-valuenow", String(Math.min(L.zeilen, max))); }
+      else { bar.removeAttribute("aria-valuemax"); bar.setAttribute("aria-valuenow", "0"); }
+      var anteil = max ? Math.min(100, L.zeilen / max * 100) : 0;
+      q(".uex-balken-f").style.width = anteil.toFixed(1) + "%";
+      text(q(".uex-zahl-n"), max != null ? tr("{k} of {n} rows").replace("{k}", zahl(L.zeilen)).replace("{n}", zahl(max))
+        : tr("{n} rows").replace("{n}", zahl(L.zeilen)));
+      text(q(".uex-zahl-pct"), max ? zahl(Math.floor(anteil)) + "%" : "");
+      /* Die drei Schritte der Leinwand: Spalten, Zeilen, Datei. Fertig mit Haken, der laufende mit
+         dem Kreisel, der kommende mit der Uhr (ein gestrichelter Kreis steht nicht im Zeichensatz
+         von core, und selbst gezeichnet wird keins). */
+      var seitenGesamt = max != null ? Math.max(1, Math.ceil(max / L.limit)) : null;
+      var k = seitenGesamt ? Math.min(L.seiten + 1, seitenGesamt) : L.seiten + 1;
+      var schritte = [
+        { stand: L.spalten != null ? "fertig" : "aktiv", label: L.spalten != null ? tr("Columns loaded") : tr("Loading columns"),
+          meta: L.spalten != null ? tr("{n} columns").replace("{n}", zahl(L.spalten)) : "" },
+        { stand: L.spalten == null ? "kommt" : "aktiv", label: tr("Fetching rows"),
+          meta: L.spalten == null ? "" : (seitenGesamt ? tr("Page {k} of {n}").replace("{n}", zahl(seitenGesamt)) : tr("Page {k}")).replace("{k}", zahl(k)) },
+        { stand: "kommt", label: tr("Building the file"), meta: "" }
+      ];
+      setzen(q(".uex-schritte"), schritte.map(function(s){
+        var zeichen = s.stand === "fertig" ? ic("checkCircle") : (s.stand === "aktiv" ? SPINNER_SVG : ic("clock"));
+        return '<li class="uex-schritt is-' + s.stand + '"><span class="uex-schritt-ic">' + zeichen + '</span>' +
+          '<span class="uex-schritt-lbl">' + esc(s.label) + '</span><span class="uex-schritt-meta">' + esc(s.meta) + '</span></li>';
+      }).join(""));
+    }
+
+    function fertigZeichnen(){
+      var E = state.ergebnis;
+      if (!E) return;
+      text(q(".uex-fertig-titel"), E.n === 1 ? tr("1 row exported") : tr("{n} rows exported").replace("{n}", zahl(E.n)));
+      text(q(".uex-fertig-satz"), tr("The download started on its own. If nothing arrived, download the file again."));
+      var nm = q(".uex-datei-name");
+      text(nm, E.name); nm.title = E.name;
+      /* Die Groesse ist die der Datei, die der Browser gerade gebaut hat (Blob.size) -- gemessen,
+         nicht geschaetzt; die Datenbank liefert keine. */
+      text(q(".uex-datei-meta"), (E.spalten === 1 ? tr("{groesse}, 1 column, CSV") : tr("{groesse}, {n} columns, CSV").replace("{n}", zahl(E.spalten)))
+        .replace("{groesse}", groesse(E.groesse)));
+      text(q(".uex-nochmal-text"), tr("Download again"));
+      var s = q(".uex-gekappt");
+      s.hidden = !E.gekappt;
+      text(s, E.gekappt ? tr("The export was cut at {n} rows. Choose a shorter range for the rest.").replace("{n}", zahl(E.n)) : "");
+    }
+
+    function fussZeichnen(art){
+      var label = typVon(art), ph = state.phase;
+      /* Links: der Dateiname -- als Vorschau, im Lauf der kommende, fertig der echte. Nur wo die
+         App die Datei selbst baut; den Namen der Bubble-Datei kennt sie nicht. */
+      var name = ph === "fertig" && state.ergebnis ? state.ergebnis.name
+        : (selbstMoeglich(art) && !baldSatz(art) ? dateiName(art) : "");
+      var fehler = ph === "wahl" ? state.fehler : "";
+      elFehler.classList.toggle("is-on", !!fehler);
+      text(elFehler.querySelector("span"), fehler || "");
+      elFootInfo.hidden = !!fehler || !name;
+      var nm = q(".uex-foot-name");
+      text(nm, name); nm.title = name;
+      text(q(".uex-zweit-text"), ph === "laeuft" ? tr("Cancel export") : (ph === "fertig" ? tr("Export another") : tr("Cancel")));
+      /* Der Bubble-Weg wartet auf upstreemExportResolve: schliessen kann ihn dann nur Bubble. */
+      elZweit.disabled = !!state.processing;
+      if (ph === "fertig"){
+        setzen(elSubmitIcon, "");
+        text(elSubmitText, tr("Done"));
+        elSubmit.disabled = false;
+        elSubmit.classList.remove("is-busy");
+        return;
+      }
+      var busy = ph === "laeuft" || !!state.processing;
+      setzen(elSubmitIcon, busy ? SPINNER_SVG : ic("download"));
+      text(elSubmitText, busy ? tr("Exporting…") : tr("Export {typ}").replace("{typ}", label ? tr(label.label) : art));
+      elSubmit.classList.toggle("is-busy", busy);
       knopfStand();
     }
-    /* renderAll zeichnet Typen, Voreinstellungen und Zusammenfassung -- also den GANZEN Inhalt
-       des Dialogs. Am Aufruf beim Oeffnen stand ein leerer Faenger ohne Rueckfall: warf hier
-       etwas, ging der Dialog leer auf, und leer sah damit genauso aus wie kaputt. Jetzt sagt er,
-       dass er sich nicht aufbauen liess, und was zu tun ist. Kein interner Name, kein Verweis
-       auf die Konsole.
+
+    function zeichnen(){
+      var art = state.type;
+      text(elTitel, tr("Export data"));
+      elClose.setAttribute("aria-label", tr("Close"));
+      text(q(".uex-zurueck-text"), tr("Back"));
+      elDialog.setAttribute("data-phase", state.phase);
+      elDialog.setAttribute("data-schritt", state.schritt);
+      elWahl.hidden = state.phase !== "wahl";
+      elLauf.hidden = state.phase !== "laeuft";
+      elFertig.hidden = state.phase !== "fertig";
+      /* Im Lauf und danach ruht die Liste: ein anderer Datensatz gilt erst fuer den naechsten
+         Export ("Export another"). inert nimmt sie auch aus der Tab-Folge. */
+      var ruht = state.phase !== "wahl" || !!state.processing;
+      elNav.classList.toggle("is-ruht", ruht);
+      elNav.inert = ruht;
+      elBody.classList.toggle("is-processing", !!state.processing);
+      navZeichnen(art);
+      if (state.phase === "wahl") wahlZeichnen(art);
+      if (state.phase === "laeuft") laufZeichnen();
+      if (state.phase === "fertig") fertigZeichnen();
+      fussZeichnen(art);
+    }
+    /* renderAll zeichnet den GANZEN Inhalt des Dialogs. Am Aufruf beim Oeffnen stand ein leerer
+       Faenger ohne Rueckfall: warf hier etwas, ging der Dialog leer auf, und leer sah damit
+       genauso aus wie kaputt. Jetzt sagt er, dass er sich nicht aufbauen liess, und was zu tun
+       ist. Kein interner Name, kein Verweis auf die Konsole.
        window.UpstreemCore direkt und mit Rueckfall, wie ueberall in dieser Datei: sie kommt ohne
        core aus (siehe setContext), und gerade der Fehlerfall darf nicht an einem fehlenden UC
        scheitern. */
@@ -381,7 +1054,7 @@
           '</div>';
     }
     function renderAll(){
-      try { renderTypes(); renderPresets(); renderSummary(); }
+      try { zeichnen(); }
       catch(e){ aufbauFehler(); }
     }
 
@@ -435,13 +1108,11 @@
        jede bestaetigte Auswahl zurueck. Panelposition, Presets, Grenzen und die drei bubble_fn_udr_*-Workflows
        bleiben damit genau die, die sich bewaehrt haben. */
     var calBuilt = false;
-    /* Eigene Kennung, abgeleitet von der Instanz: zwei Export-Elemente auf einer Seite bekommen
-       so zwei Picker, die sich nicht gegenseitig umstellen. data-calendar-id wird weiterhin
-       gelesen -- wer schon ein Element verdrahtet hat, behaelt es. */
     /* Die Kennung des eigenen Pickers IST die Instanz-Kennung. Ein Praefix davor war unnoetig:
        date-range sucht nur unter .udr-root-Elementen, und das Export-Element traegt diese Klasse
        nicht -- eine Kollision ist damit ausgeschlossen. Gleiche Kennung heisst: in der Konsole
-       steht der Name, den man auch im Editor sieht. */
+       steht der Name, den man auch im Editor sieht. data-calendar-id wird weiterhin gelesen --
+       wer schon ein Element verdrahtet hat, behaelt es. */
     function calendarId(){
       var vorgabe = String(root.getAttribute("data-calendar-id") || "").trim();
       if (vorgabe && vorgabe !== "dates_v2_export") return vorgabe;
@@ -457,6 +1128,28 @@
       }
       return null;
     }
+    /* Die Wurzel des Kalenders schon beim Aufbau des Controllers anlegen, nicht erst beim Oeffnen
+       (16.10. gemessen): date-range.js baut neue Wurzeln in seinem Takt (bis 1,5 s), und solange
+       war "Custom range" direkt nach dem ersten Oeffnen ein toter Klick. Nur anlegen -- ob der
+       Kalender fehlt, entscheidet weiter adoptCalendar beim Oeffnen. */
+    function kalenderAnlegen(){
+      var vorhanden = findCalendar();
+      if (calBuilt || (vorhanden && vorhanden.parentNode !== elCalSlot)) return;
+      calBuilt = true;
+      var d = document.createElement("div");
+      d.className = "udr-root";
+      d.setAttribute("data-instance", calendarId());
+      /* Lokal (13.10.): der Dialog liest den Zeitraum ueber __udrCtrl und upstreem:date-range, beides
+         kommt auch lokal. Ohne das feuerte jede Wahl die Bubble-Namen bubble_fn_udr_date_* -- und
+         lag noch ein alter Kalender mit genau diesen Namen auf der Seite, lud der seine Ansicht neu. */
+      d.setAttribute("data-local", "yes");
+      /* Dieselbe Untergrenze, die der Picker sonst auch hat -- ohne Angabe faellt er auf den
+         1.1.2024 zurueck, und ein Export darf nicht weiter zurueckreichen als die Daten. */
+      var min = root.getAttribute("data-min-date");
+      if (min) d.setAttribute("data-min-date", min);
+      elCalSlot.innerHTML = "";
+      elCalSlot.appendChild(d);
+    }
     function adoptCalendar(){
       var vorhanden = findCalendar();
       /* Liegt schon einer auf der Seite -- etwa weil data-calendar-id auf ein bestehendes Element
@@ -465,25 +1158,9 @@
       if (vorhanden && vorhanden.parentNode !== elCalSlot){
         watchCalendarOpenState(); syncCalendarToState(); return;
       }
-      if (!calBuilt){
-        calBuilt = true;
-        var d = document.createElement("div");
-        d.className = "udr-root";
-        d.setAttribute("data-instance", calendarId());
-        /* Lokal (13.10.): der Dialog liest den Zeitraum ueber __udrCtrl und upstreem:date-range, beides
-           kommt auch lokal. Ohne das feuerte jede Wahl die Bubble-Namen bubble_fn_udr_date_* -- und
-           lag noch ein alter Kalender mit genau diesen Namen auf der Seite, lud der seine Ansicht neu. */
-        d.setAttribute("data-local", "yes");
-        /* Dieselbe Untergrenze, die der Picker sonst auch hat -- ohne Angabe faellt er auf den
-           1.1.2024 zurueck, und ein Export darf nicht weiter zurueckreichen als die Daten. */
-        var min = root.getAttribute("data-min-date");
-        if (min) d.setAttribute("data-min-date", min);
-        elCalSlot.innerHTML = "";
-        elCalSlot.appendChild(d);
-      }
+      kalenderAnlegen();
       /* KEIN resetUpstreemDateRangePicker mehr. Der Aufruf sollte den Aufbau anstossen, fand das
          Element aber nicht -- und jeder Fehlversuch schrieb eine lange Warnung in die Konsole.
-         Mit den Wiederholungen wurden daraus zwoelf Warnungen pro Oeffnen.
          Das Element steht im DOM; date-range.js sucht ohnehin alle 1,5s nach neuen Wurzeln und
          baut sie auf. Hier wird nur noch abgewartet, ob der Controller erscheint. Bis zu 20
          Versuche a 150ms sind 3 Sekunden -- laenger als der Takt dort, also reicht es in jedem
@@ -502,52 +1179,58 @@
        einem halben Zustand zurueck. */
     function sicherFertig(cal){
       try { fertig(cal); }
-      /* Still: der Custom-Bereich zeigt im Dialog selbst, ob er benutzbar ist. Eine
-         Konsolenzeile daneben ist Debug-Ausgabe in der ausgelieferten App. */
+      /* Still: der Custom-Bereich zeigt im Dialog selbst, ob er benutzbar ist. */
       catch(e){}
     }
     /* Zweiter Teil von adoptCalendar, aufgerufen sobald der Picker steht oder endgueltig fehlt. */
     function fertig(cal){
-      var note = elCustomWrap.querySelector(".uex-cal-missing");
-      if (!cal){
-        /* date-range.js ist nicht geladen. Dann fehlt der Loader-Block, und das gehoert gesagt --
-           ein stumm ausgegrauter Knopf sieht aus wie eine Design-Entscheidung. */
-        elCustomBtn.disabled = true;
-        elCustomBtn.style.opacity = "0.45";
-        elCustomBtn.style.cursor = "default";
-        if (!note){
-          note = document.createElement("span");
-          note.className = "uex-cal-missing";
-          elCustomWrap.appendChild(note);
-        }
-        /* Der Nutzer bekommt zu lesen, was er tun kann -- nicht, welche Datei fehlt. Vorher stand
-           hier "Date picker could not be created -- is filters/date-range.js loaded?": ein
-           Dateiname im Nutzer-UI, und die Frage richtet sich an jemanden, der nicht davorsitzt.
-           Der Grund gehoert in die Konsole (eine Zeile darunter), nicht auf den Bildschirm. */
-        note.textContent = "Custom range is unavailable. Please reload the page.";
+      if (!cal || !cal.__udrCtrl){
+        /* date-range.js ist nicht geladen. Dann fehlt der Loader-Block: das Feld bleibt ein Knopf und
+           klappt die vier Presets als Liste auf (zeitZeichnen), deren letzter Satz sagt, was zu tun
+           ist. Der Grund gehoert in die Konsole. */
+        elZeitWrap.classList.remove("has-cal");
+        renderAll();
         if (window.console) console.error("upstreem export-data: filters/date-range.js fehlt im " +
           "Loader-Block dieses Elements, deshalb gibt es keinen Kalender.");
         return;
       }
-      elCustomBtn.disabled = false;
-      elCustomBtn.style.opacity = "";
-      elCustomBtn.style.cursor = "";
-      if (note && note.parentNode) note.parentNode.removeChild(note);
+      /* has-cal: der unsichtbare Ausloeser liegt ueber dem Feld und nimmt den Mausklick. Erst jetzt
+         -- bis dahin nimmt das Feld selbst den Klick (Ersatzliste), sonst waere er ein toter Klick. */
+      elZeitWrap.classList.add("has-cal");
+      if (state.offen === "zeit") state.offen = "";
       watchCalendarOpenState();
       syncCalendarToState();
+      renderAll();
     }
     /* The picker keeps aria-expanded on its trigger in sync with its panel, which makes it the
        cleanest signal for "the calendar is currently open" — no polling, no reaching into the
-       picker's internals. Used to give the Custom-range row its half-selected border. */
+       picker's internals. Der unsichtbare Ausloeser ist kein Tab-Halt (tabindex -1): mit der
+       Tastatur steht man auf dem sichtbaren Feld, und das oeffnet den Kalender per Klick auf ihn.
+       Geht der Kalender zu und der Fokus stand auf dem unsichtbaren Ausloeser (der Picker gibt ihn
+       dorthin zurueck), wandert er auf das sichtbare Feld -- sonst stuende er im Unsichtbaren. */
     function watchCalendarOpenState(){
       var trig = elCalSlot.querySelector(".udr-trigger");
       if (!trig || trig.__uexWatched) return;
       trig.__uexWatched = true;
+      trig.setAttribute("tabindex", "-1");
+      trig.setAttribute("aria-hidden", "true");
       var apply = function(){
-        elCustomBtn.classList.toggle("is-cal-open", trig.getAttribute("aria-expanded") === "true");
+        var auf = trig.getAttribute("aria-expanded") === "true";
+        elZeitfeld.classList.toggle("is-cal-open", auf);
+        elZeitfeld.setAttribute("aria-expanded", auf ? "true" : "false");
+        if (!auf && document.activeElement === trig){ try { elZeitfeld.focus({ preventScroll: true }); } catch(e){} }
       };
       new MutationObserver(apply).observe(trig, { attributes: true, attributeFilter: ["aria-expanded"] });
       apply();
+    }
+    /* true, wenn der Kalender da ist und angestossen wurde; sonst klappt der Aufrufer die
+       Ersatzliste auf. */
+    function kalenderOeffnen(){
+      if (!elZeitWrap.classList.contains("has-cal")) return false;
+      var trig = elCalSlot.querySelector(".udr-trigger");
+      if (!trig) return false;
+      try { trig.click(); } catch(e){}
+      return true;
     }
     /* The popup is what the user is looking at, so the popup's selection wins: on adoption the
        picker is driven to match it. Only when the popup is on a custom range (which came FROM the
@@ -570,23 +1253,18 @@
       var t = parseIso(cal.getAttribute("data-date-to"));
       if (f && t){ state.from = f; state.to = t; renderAll(); }
     }
-    /* Nichts mehr zurueckzuschieben -- der Picker gehoert dieser Komponente und bleibt, wo er ist.
-       Die Funktion bleibt als leerer Aufruf bestehen, damit die beiden Aufrufstellen unveraendert
-       lesbar sind. */
-    /* Beim Schliessen des Dialogs muss auch das Kalenderfeld zu. Sonst bleibt das Panel offen im
-       Dokument stehen -- es haengt in .udr-wrap innerhalb des Dialogs, wandert also mit ihm aus
-       dem Bild, ist aber beim naechsten Oeffnen sofort wieder aufgeklappt.
-       Ueber den Trigger, nicht ueber die Klassen: der Picker haelt seinen Zustand intern
-       (setOpen), und ein von aussen entferntes is-open liesse ihn glauben, er sei noch offen --
-       der naechste Klick wuerde dann zumachen statt aufmachen. Sein Controller bietet kein
-       close() an, der Trigger schaltet aber um, und aria-expanded sagt verlaesslich, ob das
-       noetig ist. */
+    /* Beim Schliessen des Dialogs muss auch das Kalenderfeld zu. Ueber den Trigger, nicht ueber
+       die Klassen: der Picker haelt seinen Zustand intern (setOpen), und ein von aussen entferntes
+       is-open liesse ihn glauben, er sei noch offen -- der naechste Klick wuerde dann zumachen
+       statt aufmachen. Sein Controller bietet kein close() an, der Trigger schaltet aber um, und
+       aria-expanded sagt verlaesslich, ob das noetig ist. */
     function closeCalendar(){
       var trig = elCalSlot.querySelector(".udr-trigger");
       if (trig && trig.getAttribute("aria-expanded") === "true"){
         try { trig.click(); } catch(e){}
       }
-      elCustomBtn.classList.remove("is-cal-open");
+      elZeitfeld.classList.remove("is-cal-open");
+      if (elZeitWrap.classList.contains("has-cal")) elZeitfeld.setAttribute("aria-expanded", "false");
     }
     function returnCalendar(){ closeCalendar(); }
 
@@ -598,13 +1276,29 @@
         if (!d || String(d.instance_id || "") !== calendarId()) return;
         var f = parseIso(d.date_from), t = parseIso(d.date_to);
         if (!f || !t) return;
-        state.preset = "custom"; state.from = f; state.to = t;
+        /* Seit Variante C waehlt man auch die Presets im Feld des Kalenders (vorher standen sie als
+           Liste im Dialog, der Kalender kam nur fuer den freien Zeitraum). Das Ereignis traegt den
+           Schluessel des Presets -- gleiche Schluessel hier und dort --, ein freier Zeitraum keinen. */
+        var pk = String(d.preset || "");
+        state.preset = PRESETS.some(function(x){ return x.key === pk; }) ? pk : "custom";
+        state.from = f; state.to = t;
+        /* Ein neuer Zeitraum ist eine neue Wahl -- der rote Satz zum alten ("zu lang") gilt nicht mehr. */
+        state.fehler = ""; state.zeitFehler = "";
         persist(); renderAll();
       });
     }
 
     /* ---------------- open / close ---------------- */
     var lastFocus = null;
+    function fokus(el){ try { if (el && !el.hidden && !el.disabled) { el.focus({ preventScroll: true }); return true; } } catch(e){} return false; }
+    /* Nach jedem Phasenwechsel steht der Fokus auf dem Knopf, der jetzt zaehlt -- der alte ist
+       dann oft verschwunden (Cancel export nach dem Ende), und Fokus im Nichts heisst: die
+       naechste Taste geht an die Seite dahinter. */
+    function fokusFuss(){ if (!fokus(elSubmit) && !fokus(elZweit)) fokus(elClose); }
+    /* Am Telefon steht immer nur eine Haelfte da (CSS, unter 640). Die Frage stellt nur, wer den
+       Fokus setzt oder einen Schritt wechselt -- gezeichnet wird ueber data-schritt. */
+    function schmal(){ try { return !!(window.matchMedia && window.matchMedia("(max-width: 640px)").matches); } catch(e){ return false; } }
+    function gewaehlterEintrag(){ return elNav.querySelector('[data-type][aria-checked="true"]'); }
     function openPopup(){
       if (state.open) return;
       /* Das eigene Overlay MUSS im Dokument haengen. Auf einer Seite mit mehreren Elementen
@@ -621,15 +1315,19 @@
         document.body.appendChild(overlay);
       }
       syncTheme();
+      /* Am Telefon oeffnet der Dialog auf den Einstellungen des vorbelegten Datensatzes: jeder
+         Einstieg bringt einen mit, und der Schnellweg (ein Klick) soll auch dort gelten. Die Liste
+         ist einen Schritt zurueck ("Back"). */
+      state.phase = "wahl"; state.schritt = "einst"; state.offen = ""; state.fehler = ""; state.zeitFehler = ""; state.lauf = null; state.ergebnis = null;
       /* Der Kalender ist Beiwerk, das Oeffnen ist die Hauptsache. Wirft irgendetwas beim Anlegen
          oder Suchen des Pickers, kam der Dialog frueher gar nicht mehr hoch -- gemessen beim
          Nutzer: is-open blieb false, kein Inline-Stil, der Dialog unsichtbar da. Ein Fehler hier
          darf hoechstens den Custom-Bereich kosten, nie den ganzen Export. */
       try { adoptCalendar(); }
-      /* Still, aus demselben Grund. Der Dialog oeffnet, und fehlt der Kalender, steht das
-         als Hinweis unter dem Custom-Knopf. */
+      /* Still, aus demselben Grund. Fehlt der Kalender, klappt das Feld die Presets als Liste auf. */
       catch(e){}
       pruefen();
+      spaltenHolen(state.type);
       renderAll();
       lastFocus = document.activeElement;
       overlay.inert = false;
@@ -639,20 +1337,30 @@
       document.body.classList.add("uex-popup-open");   // lifts the picker's panel above us
       if (btn) btn.setAttribute("aria-expanded", "true");
       state.open = true;
-      try { overlay.querySelector(".uex-submit").focus({ preventScroll: true }); } catch(e){}
+      /* Ein Klick genuegt: der Fokus steht auf "Export ...", Enter exportiert. Ruht der Knopf
+         (Shopping, Ads: kommt bald), steht er auf dem Schliessen-Knopf. */
+      fokusFuss();
     }
     function closePopup(){
       if (!state.open) return;
       /* Der Filter des Drawers gilt nur fuer DIESEN Export (siehe setContext). */
-      state.url = ""; state.domain = ""; state.promptId = ""; state.brandId = "";
-      /* Ebenso Kontext und Gruppe von Shopping und Ads: danach gilt wieder die Grundgruppe. */
-      state.params = {}; state.filterAktiv = {}; state.zeitVonSeite = false;
+      state.url = ""; state.domain = ""; state.promptId = ""; state.brandId = ""; state.filterLabel = "";
+      /* Ebenso der Kontext der Seite und die Gruppe von Shopping und Ads: danach gilt wieder die
+         Grundgruppe, und ein spaeteres Oeffnen ohne Kontext (Cmd+K) traegt keinen Filter mit. */
+      state.params = {}; state.namen = {}; state.weg = {}; state.zeitVonSeite = false;
       if (gruppeVon(state.type)) state.type = state.stammTyp;
+      /* Schliessen bricht einen laufenden Export ab (das sagt der Satz unter dem Balken): die
+         naechste Seite wird nicht mehr geholt, nichts heruntergeladen. */
+      state.phase = "wahl"; state.schritt = "einst"; state.offen = ""; state.fehler = ""; state.zeitFehler = ""; state.lauf = null; state.ergebnis = null;
       // never hide a focused element from assistive tech — move focus out FIRST
       if (overlay.contains(document.activeElement)){
         try {
-          if (lastFocus && lastFocus.isConnected) lastFocus.focus({ preventScroll: true });
-          else if (btn) btn.focus({ preventScroll: true });
+          /* Zurueck auf den Ausloeser -- aber nur, wenn er ausserhalb liegt und fokussierbar ist.
+             Kam das Oeffnen aus einem Skript (Fokus auf body) oder lag er selbst im Dialog, blieb
+             der Fokus sonst auf einem Knopf im verdeckten Dialog stehen (gemessen 16.10.). */
+          var ziel = lastFocus && lastFocus.isConnected && lastFocus !== document.body && !overlay.contains(lastFocus) ? lastFocus : btn;
+          if (ziel) ziel.focus({ preventScroll: true });
+          if (overlay.contains(document.activeElement)) document.activeElement.blur();
         } catch(e){ try { document.activeElement.blur(); } catch(e2){} }
       }
       overlay.classList.remove("is-open", "is-shown");
@@ -662,19 +1370,17 @@
       if (btn) btn.setAttribute("aria-expanded", "false");
       state.open = false;
       if (state.processing) setProcessing(false);   // defensive: don't leave a stale timer/state behind
-      /* SOFORT, nicht verzoegert: das Panel soll mit dem Dialog verschwinden, nicht erst danach.
-         Zurueckzuschieben gibt es nichts mehr -- der Kalender gehoert dieser Komponente. */
+      /* SOFORT, nicht verzoegert: das Panel soll mit dem Dialog verschwinden, nicht erst danach. */
       closeCalendar();
     }
 
+    /* Der BUBBLE-Weg (fireExportBubble): der Dialog wartet auf upstreemExportResolve und ist so
+       lange gesperrt -- schliessen kann ihn nur Bubble. Der Weg ueber die App laeuft dagegen in
+       der Phase "laeuft" und laesst sich jederzeit abbrechen. */
     function setProcessing(on){
       state.processing = !!on;
-      elBody.classList.toggle("is-processing", state.processing);
       elClose.disabled = state.processing;
-      elCancel.disabled = state.processing;
-      knopfStand();
-      elSubmitIcon.innerHTML = state.processing ? SPINNER_SVG : EXPORT_SVG;
-      elSubmitText.textContent = state.processing ? "Exporting…" : "Export";
+      renderAll();
       if (state.processing){
         // Safety net only — this should essentially never fire for a real export. It exists so a
         // missing/forgotten window.upstreemExportResolve() call can't strand the dialog in a
@@ -719,8 +1425,9 @@
     };
     /* ---- GIBT ES DEN EXPORT SCHON? (16.10.) -------------------------------------------------------
        Fuer die Typen mit neu fragt der Dialog beim Oeffnen export_columns_v1 nach den Spalten jedes
-       Typs seiner Gruppe: ein Aufruf, der keine Daten liest und nicht ins Ratenlimit der Exporte
-       zaehlt. Kennt die Datenbank den Export nicht, antwortet sie 400 exports_invalid_param mit hint
+       dieser Typen (seit Variante C alle sieben: die Liste links zeigt sie alle und sagt "Soon",
+       wo es den Export noch nicht gibt): ein Aufruf, der keine Daten liest und nicht ins
+       Ratenlimit der Exporte zaehlt. Je Typ einmal im Seitenleben. Kennt die Datenbank den Export nicht, antwortet sie 400 exports_invalid_param mit hint
        "p_export: ..." (vor_nextjs_v1.sql) -- dann "kommt bald" statt eines Fehlers. Ebenso 404
        PGRST202 (Funktion fehlt ganz) und, beim Export selbst, PGRST202 der Datenfunktion. Alles
        andere (Netz, Zeitablauf, 5xx) heisst "unbekannt": der Knopf geht, und beim naechsten Oeffnen
@@ -739,20 +1446,28 @@
           (erg.status === 404 && /could not find the function/i.test(m + " " + String(f.details || "")))) return true;
       return erg.status === 400 && /exports_invalid_param/.test(m) && /p_export/.test(h);
     }
+    /* Der Eintrag je Spaltensatz, fuer JEDEN Typ (die Spalten stehen rechts als Checkliste).
+       daVon bleibt der Eintrag nur fuer die neuen Typen -- nur dort heisst ein fehlender
+       Spaltensatz "kommt bald". */
+    function spaltenVon(art){
+      var cfg = EXPORTE ? EXPORTE[art] : null;
+      if (!cfg) return null;
+      return DA[cfg.spalten] || (DA[cfg.spalten] = { stand: null, spalten: null, laeuft: false });
+    }
     function daVon(art){
       var cfg = EXPORTE ? EXPORTE[art] : null;
       if (!cfg || !cfg.neu) return null;
-      return DA[cfg.spalten] || (DA[cfg.spalten] = { stand: null, spalten: null, laeuft: false });
+      return spaltenVon(art);
     }
     function pruefen(){
-      var g = gruppeVon(state.type), k = kern();
-      if (!g || !k) return;
+      var k = kern();
+      if (!k) return;
       TYPES.forEach(function(x){
-        if (x.gruppe !== g) return;
+        if (!x.gruppe) return;
         var e = daVon(x.value), cfg = EXPORTE[x.value];
         if (!e || e.stand !== null || e.laeuft) return;
         e.laeuft = true;
-        function fertig(){ e.laeuft = false; daGeaendert(); }
+        function fertig(){ e.laeuft = false; e.versucht = true; daGeaendert(); }
         k.rpc("export_columns_v1", { p_export: cfg.spalten }, { timeoutMs: 20000 }).then(function(erg){
           var r = spaltenAus(erg);
           if (r){ e.stand = true; e.spalten = r; }
@@ -761,6 +1476,21 @@
         }, fertig);
       });
     }
+    /* Die Spalten eines Typs der Grundgruppe schon beim Waehlen (Leinwand C: "braucht
+       export_columns_v1 schon beim Waehlen, nicht erst beim Export"). Derselbe Aufruf, den der
+       Export ohnehin als ersten macht -- er wird danach nicht wiederholt. Scheitert er, steht
+       "All columns" ohne Wahl da, und der Export fragt selbst. */
+    function spaltenHolen(art){
+      var cfg = EXPORTE[art], e = spaltenVon(art), k = kern();
+      if (!cfg || cfg.neu || !e || !k || e.stand !== null || e.laeuft || BUBBLE_TYP[art]) return;
+      e.laeuft = true;
+      function ende(){ e.laeuft = false; e.versucht = true; daGeaendert(); }
+      k.rpc("export_columns_v1", { p_export: cfg.spalten }, { timeoutMs: 20000 }).then(function(erg){
+        var r = spaltenAus(erg);
+        if (r){ e.stand = true; e.spalten = r; }
+        ende();
+      }, ende);
+    }
     function gesperrt(art){ var e = daVon(art); return !!e && (e.stand === false || e.laeuft); }
     function baldSatz(art){
       var e = daVon(art), g = gruppeVon(art);
@@ -768,7 +1498,11 @@
       var alle = TYPES.every(function(x){ var d = x.gruppe === g ? daVon(x.value) : null; return !d || d.stand === false; });
       return tr(alle && GRUPPEN[g] ? GRUPPEN[g].bald : "This export is coming soon.");
     }
-    function knopfStand(){ elSubmit.disabled = state.processing || gesperrt(state.type); }
+    /* Der gesperrte Knopf ist der core-Knopf im disabled-Zustand (.up-btn-pri:disabled, 40 %),
+       nicht mehr ein auf 70 % gedimmter -- der las sich fast wie aktiv. */
+    /* Im Lauf ruht er ebenfalls (Leinwand: "Exporting…" mit Kreisel, 70 %) -- der Fokus steht dann
+       auf "Cancel export" (fokusFuss), dem einzigen Knopf, der jetzt etwas tut. */
+    function knopfStand(){ elSubmit.disabled = state.processing || state.phase === "laeuft" || gesperrt(state.type) || keineSpalten(); }
     /* Obergrenze an Seiten je Export: die Datenbank erlaubt 60 Seiten je Minute und Typ. Mehr als
        das passt nicht in einen Lauf, und eine Schleife ohne Ende waere der schlimmere Fehler. */
     var MAX_SEITEN = 60;
@@ -782,30 +1516,36 @@
     }
     function exportParameter(art, team, offset, limit){
       var p = { p_team: team, p_date_from: isoDate(state.from), p_date_to: isoDate(state.to), p_offset: offset, p_limit: limit };
-      /* Die Filter des Drawers (setContext) -- nur dort, wo die Funktion sie kennt. Ein Parameter,
-         den sie nicht hat, liesse PostgREST die Funktion gar nicht finden (PGRST202). */
-      if (art === "prompt_runs"){
-        if (state.url) p.p_url = String(state.url);
-        if (state.domain) p.p_domain = String(state.domain);
-        if (state.promptId) p.p_prompt_id = String(state.promptId);
-        if (state.brandId) p.p_brand = String(state.brandId);
-      } else if (art === "domains"){
-        if (state.brandId) p.p_brand = String(state.brandId);
-      } else if (art === "urls"){
-        if (state.domain) p.p_domain = String(state.domain);
-        if (state.brandId) p.p_brand = String(state.brandId);
-      } else if (EXPORTE[art] && EXPORTE[art].neu){
-        /* Shopping und Ads: die Parameter der Seite (setContext params), in den Namen der Liste.
-           Team, Zeitraum und Seite gehoeren dem Dialog und werden nie ueberschrieben; null heisst
-           "kein Filter" und bleibt draussen -- jede Funktion hat dafuer ihren Standardwert, und ein
-           Name weniger ist ein Grund weniger fuer PGRST202. */
-        var x = state.params[art] || {};
-        Object.keys(x).forEach(function(n){
-          if (!/^p_[a-z0-9_]+$/.test(n) || Object.prototype.hasOwnProperty.call(p, n)) return;
-          if (x[n] == null || (Array.isArray(x[n]) && !x[n].length)) return;
-          p[n] = x[n];
-        });
-      }
+      /* Die Filter des Drawers (setContext) -- nur im Scope (FILTER) und nur, solange ihr Chip steht. */
+      FILTER.forEach(function(f){
+        if (state[f.feld] && f.typen.indexOf(art) >= 0 && !state.weg[f.feld]) p[f.param] = String(state[f.feld]);
+      });
+      /* Die Parameter der Seite (setContext params), in den Namen ihrer Liste -- nur die, die die
+         Funktion kennt (KENNT). Team, Zeitraum, Seite und ein Filter des Drawers werden nie
+         ueberschrieben; null heisst "kein Filter" und bleibt draussen -- jede Funktion hat dafuer
+         ihren Standardwert, und ein Name weniger ist ein Grund weniger fuer PGRST202. Ein
+         abgewaehlter Chip nimmt alle seine Parameter mit (Topics samt Modus) oder setzt die
+         Vorgabe der App (Branded). Auf dem Bubble-Weg gibt es keine (filterFuer). */
+      var x = state.params[art] || {}, kennt = KENNT[art] || [];
+      /* Die Parameter der Drawer-Filter (p_url, p_domain, p_prompt_id, p_brand) kommen NUR ueber
+         ihren Chip: meldet ein Drawer sie auch in params, ginge ein abgewaehlter Filter sonst still
+         ueber die Liste wieder mit. */
+      var drawerP = FILTER.map(function(f){ return f.param; });
+      Object.keys(x).forEach(function(n){
+        if (!/^p_[a-z0-9_]+$/.test(n) || Object.prototype.hasOwnProperty.call(p, n) || kennt.indexOf(n) < 0 || drawerP.indexOf(n) >= 0) return;
+        var c = seitenChip(n);
+        if (c && state.weg[c.key]){
+          var vg = c.vorgabe ? c.vorgabe(art) : undefined;
+          if (vg !== undefined) p[n] = vg;
+          return;
+        }
+        if (!voll(x[n])) return;
+        p[n] = x[n];
+      });
+      /* Eine Sortierung, die die Funktion nicht kennt, faellt weg (ihre eigene gilt) -- sonst
+         scheiterte der ganze Export an der Reihenfolge der Zeilen. */
+      var ord = ORDNUNG[art === "urls" && p.p_domain ? "urls_domain" : art];
+      if (ord && p.p_order != null && ord.indexOf(String(p.p_order)) < 0) delete p.p_order;
       return p;
     }
     function csvFeld(v, typ){
@@ -820,10 +1560,11 @@
         return spalten.map(function(c){ return csvFeld(z ? z[c.key] : null, c.type); }).join(",");
       });
       /* BOM: ohne ihn liest Excel die Datei als Windows-1252, und jeder Umlaut zerfaellt. */
-      return "\uFEFF" + [kopf].concat(rumpf).join("\r\n");
+      return "﻿" + [kopf].concat(rumpf).join("\r\n");
     }
-    function herunterladen(text, name){
-      var blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+    /* Die Datei als Blob -- er bleibt fuer "Download again" stehen, bis der Dialog schliesst. Je
+       Herunterladen eine eigene Objekt-Adresse, nach 4 s wieder freigegeben. */
+    function herunterladen(blob, name){
       var url = URL.createObjectURL(blob);
       var a = document.createElement("a");
       a.href = url; a.download = name; a.rel = "noopener";
@@ -832,19 +1573,40 @@
     }
     function exportSatz(erg){
       var m = erg && erg.fehler ? String(erg.fehler.message || "") : "";
-      if (/rate_limited/.test(m) || (erg && erg.status === 429)) return ["Too many exports in a short time", "Please wait a minute and try again."];
+      var h = erg && erg.fehler ? String(erg.fehler.hint || "") : "";
+      /* 429: der hint ist die Zahl der Sekunden bis zum Ende des Minutenfensters (DB-Rueckmeldung
+         16.10., Klarstellung 7) -- die steht im Satz; ohne Zahl bleibt es bei der Minute. */
+      if (/rate_limited/.test(m) || (erg && erg.status === 429)){
+        var sek = /^\d+$/.test(h.trim()) ? Number(h) : 0;
+        return ["Too many exports in a short time", sek === 1 ? "Please wait 1 second and try again."
+          : (sek > 1 ? { satz: "Please wait {n} seconds and try again.", n: sek } : "Please wait a minute and try again.")];
+      }
+      /* 402 team_access_*: core zeigt dazu selbst die Sperre der App (rpc -> appZugangWeg), wie bei
+         jeder anderen Abfrage; hier steht nur der Satz. */
       if (/team_access/.test(m) || (erg && erg.status === 402)) return ["Exports are not available for this team", "Check your plan in Billing."];
+      /* 401 (kein oder abgelaufenes Token -- PostgREST meldet es als "permission denied for
+         function", die Rolle anon darf die Exporte nicht ausfuehren). Vor 403: dieselbe Meldung
+         kaeme sonst als "kein Zugriff aufs Team" heraus. */
+      if ((erg && erg.status === 401) || /not authenticated|permission denied|jwt/i.test(m)) return ["Your session has expired", "Please sign in again."];
       if (/forbidden|role_required/.test(m) || (erg && erg.status === 403)) return ["You can't export this team's data", "Ask a team owner for access."];
-      if (/invalid_param|invalid_date/.test(m)) return ["This date range can't be exported", "Choose a shorter range and try again."];
+      /* Der dritte Wert sagt, wohin der Satz gehoert: "zeit" an das Feld Date range (Leinwand C:
+         roter Rahmen, Satz darunter). Ein ungueltiger Parameter, dessen hint keinen Zeitraum nennt
+         (Sortierung, Seitengroesse), ist kein Fehler des Zeitraums -- den aendern hilft dort nicht. */
+      if (/invalid_date/.test(m) || (/invalid_param/.test(m) && (!h || /date/i.test(h)))) return ["This date range can't be exported", "Choose a shorter range and try again.", "zeit"];
       return ["The export didn't work", "Please try again."];
     }
-    /* Ganze Saetze durch den Katalog, die Zahl erst danach ({n}) -- zusammengesetzt kam im
-       deutschen UI Englisch heraus. */
-    function meldenToast(text, art, desc, n){
-      var k = window.UpstreemCore, tr = k && k.t ? k.t : function(x){ return x; };
-      var z = function(x){ return String(tr(x)).replace("{n}", String(n)); };
-      if (k && k.toast) k.toast(z(text), { kind: art, desc: desc ? z(desc) : "" });
+    /* Fehler stehen als roter Satz im Dialog (.up-fehlerzeile), nicht als Toast -- der Dialog
+       bleibt offen, die Wahl steht noch da, und ein zweiter Klick versucht es erneut. Ganze Saetze
+       durch den Katalog, zwei Saetze hintereinander. */
+    function fehlerSetzen(paar){
+      /* Der zweite Satz kann eine Zahl tragen ({ satz, n }): erst uebersetzen, dann einsetzen --
+         "Warte 12 Sekunden ..." steht in keinem Katalog, nur der Satz mit {n}. */
+      var zwei = paar[1] && typeof paar[1] === "object" ? tr(paar[1].satz).replace("{n}", zahl(paar[1].n)) : tr(paar[1]);
+      var satz = tr(paar[0]) + ". " + zwei;
+      if (paar[2] === "zeit"){ state.zeitFehler = satz; state.fehler = ""; }
+      else { state.fehler = satz; state.zeitFehler = ""; }
     }
+    var laufZaehler = 0;
     /* true: die Komponente exportiert selbst. false: Bubble-Weg. */
     function exportSelbst(){
       var art = state.type, cfg = EXPORTE[art], k = kern();
@@ -852,29 +1614,48 @@
       var team = k.getTeam(), zeilen = [], seiten = 0, spalten = null;
       /* neu (Shopping, Ads): was pruefen schon weiss, gilt; fehlt der Export, steht der Satz im
          Dialog statt eines Fehlers. Einen Bubble-Weg gibt es fuer diese Typen nicht. */
-      var da = daVon(art);
-      setProcessing(true);
-      function fertig(){ setProcessing(false); }
-      function scheitern(erg){
-        var s = exportSatz(erg);
-        fertig();
-        meldenToast(s[0], "error", s[1]);
-      }
-      function auchBubble(){ BUBBLE_TYP[art] = true; fertig(); fireExportBubble(); }
-      function fehlt(){ da.stand = false; fertig(); daGeaendert(); }
-      if (da && da.stand === true && da.spalten){ spalten = da.spalten; seite(0); return true; }
+      var da = daVon(art), sp = spaltenVon(art);
+      /* Alles, was der Lauf braucht, EINMAL beim Start: Filter, Zeitraum und Spaltenwahl. Ein
+         setContext oder eine Wahl waehrend des Laufs darf die spaeteren Seiten nicht umstellen. */
+      var basis = exportParameter(art, team, 0, cfg.seite);
+      var name = dateiName(art);
+      var aus = state.ohne[cfg.spalten] || {};
+      function gewaehlt(){ return spalten.filter(function(c){ return !aus[c.key]; }); }
+      /* Jeder Lauf hat seine Nummer. Abbrechen, Schliessen oder ein neuer Lauf machen die Antworten
+         des alten wertlos -- ohne die Nummer haette eine verspaetete Seite des abgebrochenen Laufs
+         den neuen weitergefuehrt. */
+      var nr = ++laufZaehler;
+      state.fehler = ""; state.zeitFehler = ""; state.offen = "";
+      /* spalten: wie viele Spalten die Datei hat, sobald der Spaltensatz da ist (erster Schritt). */
+      state.lauf = { nr: nr, zeilen: 0, gesamt: null, seiten: 0, limit: cfg.seite, kappe: cfg.seite * MAX_SEITEN, spalten: null };
+      state.phase = "laeuft";
+      closeCalendar();
+      renderAll(); fokusFuss();
+      function aktiv(){ return state.open && state.phase === "laeuft" && !!state.lauf && state.lauf.nr === nr; }
+      /* Zurueck zur Wahl; steht der Fehler am Zeitraum, steht der Fokus dort. */
+      function zurueck(){ state.lauf = null; state.phase = "wahl"; renderAll(); if (!(state.zeitFehler && fokus(elZeitfeld))) fokusFuss(); }
+      function scheitern(erg){ if (!aktiv()) return; fehlerSetzen(exportSatz(erg)); zurueck(); }
+      function auchBubble(){ if (!aktiv()) return; BUBBLE_TYP[art] = true; state.lauf = null; state.phase = "wahl"; renderAll(); fireExportBubble(); }
+      function fehlt(){ if (!aktiv()) return; da.stand = false; zurueck(); daGeaendert(); }
+      if (sp && sp.stand === true && sp.spalten){ spalten = sp.spalten; state.lauf.spalten = gewaehlt().length; seite(0); return true; }
       k.rpc("export_columns_v1", { p_export: cfg.spalten }, { timeoutMs: 20000 }).then(function(erg){
+        if (!aktiv()) return;
         if (da && exportFehlt(erg)) { fehlt(); return; }
         if (!da && ohneRpc(erg)) { auchBubble(); return; }
         var r = spaltenAus(erg);
         if (!r) { scheitern(erg); return; }
-        if (da){ da.stand = true; da.spalten = r; }
+        if (sp){ sp.stand = true; sp.spalten = r; }
         spalten = r;
+        state.lauf.spalten = gewaehlt().length;
+        renderAll();
         seite(0);
       }, scheitern);
       function seite(offset){
-        if (!state.processing) return;            /* Dialog geschlossen: abgebrochen */
-        k.rpc(cfg.fn, exportParameter(art, team, offset, cfg.seite), { timeoutMs: 120000 }).then(function(erg){
+        if (!aktiv()) return;            /* abgebrochen oder Dialog geschlossen */
+        var p = {}; Object.keys(basis).forEach(function(n){ p[n] = basis[n]; });
+        p.p_offset = offset;
+        k.rpc(cfg.fn, p, { timeoutMs: 120000 }).then(function(erg){
+          if (!aktiv()) return;
           if (da && exportFehlt(erg)) { fehlt(); return; }
           if (!da && ohneRpc(erg)) { auchBubble(); return; }
           var d = erg && erg.ok ? erg.daten : null;
@@ -882,27 +1663,47 @@
           zeilen = zeilen.concat(d.rows);
           seiten++;
           var m = d.meta || {};
+          var gesamt = m.total_count == null || m.total_count === "" ? NaN : Number(m.total_count);
+          state.lauf.zeilen = zeilen.length; state.lauf.seiten = seiten;
+          if (isFinite(gesamt)) state.lauf.gesamt = gesamt;
           if (m.has_more === true && seiten < MAX_SEITEN && d.rows.length){
+            renderAll();
             seite(Number(m.offset || offset) + Number(m.limit || cfg.seite));
             return;
           }
-          var typName = cfg.datei || (typVon(art) || { label: art }).label;
-          var name = "upstreem-" + typName.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + isoDate(state.from) + "-" + isoDate(state.to) + ".csv";
-          herunterladen(csvBauen(spalten, zeilen), name);
-          setProcessing(false);
-          closePopup();
-          var desc = m.has_more === true ? "The export was cut at {n} rows. Choose a shorter range for the rest." : "";
-          meldenToast(zeilen.length === 1 ? "1 row exported" : "{n} rows exported", m.has_more === true ? "neutral" : "success", desc, zeilen.length);
+          var g = gewaehlt();
+          var blob = new Blob([csvBauen(g, zeilen)], { type: "text/csv;charset=utf-8" });
+          herunterladen(blob, name);
+          state.ergebnis = { n: zeilen.length, name: name, blob: blob, groesse: blob.size, spalten: g.length, gekappt: m.has_more === true };
+          state.lauf = null; state.phase = "fertig";
+          renderAll(); fokusFuss();
         }, scheitern);
       }
       return true;
     }
+    function abbrechen(){
+      if (state.phase !== "laeuft") return;
+      state.lauf = null; state.phase = "wahl";
+      renderAll(); fokusFuss();
+    }
+    /* "Export another" (fertig): zurueck zu den Einstellungen, Datensatz und Wahl bleiben -- links
+       ist die Liste wieder frei. Die fertige Datei verfaellt damit. */
+    function nochEinExport(){
+      if (state.phase !== "fertig") return;
+      state.ergebnis = null; state.phase = "wahl";
+      renderAll(); fokusFuss();
+    }
+    function nochmal(){
+      var E = state.ergebnis;
+      if (E && E.blob) herunterladen(E.blob, E.name);
+    }
     function fireExport(){
-      if (state.processing) return;   // already sent, ignore a repeat click
-      if (gesperrt(state.type)) return;
+      if (state.processing || state.phase !== "wahl") return;   // already sent, ignore a repeat click
+      if (gesperrt(state.type) || keineSpalten()) return;
+      state.fehler = "";
       if (exportSelbst()) return;
       /* Shopping und Ads gibt es nur in der App: ohne core oder Team kein Bubble-Weg, sondern ein Satz. */
-      if (EXPORTE[state.type] && EXPORTE[state.type].neu){ meldenToast("The export didn't work", "error", "Please try again."); return; }
+      if (EXPORTE[state.type] && EXPORTE[state.type].neu){ fehlerSetzen(["The export didn't work", "Please try again."]); renderAll(); return; }
       fireExportBubble();
     }
     function fireExportBubble(){
@@ -956,18 +1757,13 @@
       } else {
         /* NIEMAND EMPFAENGT (14.10.): bis hierher drehte der Knopf 90 s und ging dann still zurueck --
            in der App, wo es keinen Bubble-Workflow gibt, bei jedem Export, der hierher fiel. Jetzt
-           sofort ein Satz, und der Dialog bleibt offen. */
-        meldenToast("The export didn't work", "error", "Please try again.");
-        // Visible on purpose: silently doing nothing here is exactly what made this look like
-        // "clicking Export just closes the popup and nothing happens" — the dialog used to close
-        // unconditionally regardless of whether Bubble ever received anything. Check that a
-        // Toolbox "Javascript to Bubble" element exposes exactly this name.
-        /* Knapp und ohne Namensliste. Die Liste war eine Diagnosehilfe fuer eine Runde und
-           haette sonst bei jedem Fehlversuch zweihundert Namen in die Konsole geschrieben.
-           Die Meldung selbst bleibt: ein Export, der stumm nichts tut, ist der schlimmere Fall.
-           Haeufigste Ursache, gemessen: das Element ist unsichtbar -- Bubble veroeffentlicht
-           bubble_fn_* nur fuer sichtbare Elemente. In der App (ohneBubble) gibt es kein solches
-           Element -- dort sagt es der Satz oben, die Konsole bleibt still. */
+           sofort ein Satz, und der Dialog bleibt offen (seit Variante D als roter Satz im Dialog). */
+        fehlerSetzen(["The export didn't work", "Please try again."]);
+        renderAll();
+        /* Knapp und ohne Namensliste. Die Meldung selbst bleibt: ein Export, der stumm nichts tut,
+           ist der schlimmere Fall. Haeufigste Ursache, gemessen: das Element ist unsichtbar --
+           Bubble veroeffentlicht bubble_fn_* nur fuer sichtbare Elemente. In der App (ohneBubble)
+           gibt es kein solches Element -- dort sagt es der Satz oben, die Konsole bleibt still. */
         var kk = window.UpstreemCore;
         if (!(kk && kk.ohneBubble && kk.ohneBubble())) console.warn("[upstreem-export] " + fnName + " nicht gefunden. Ist das " +
           "JavaScriptToBubble-Element auf dieser Seite SICHTBAR? Unsichtbare Elemente " +
@@ -983,16 +1779,131 @@
     /* Nur wenn es einen gibt -- siehe oben. */
     if (btn) btn.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); openPopup(); });
 
+    /* Ein Druck, der IM Dialog begann und auf dem Schleier endet (Text markieren und darueber
+       hinausziehen), schliesst nicht -- dieselbe Regel wie in UC.makeModal. */
+    var druckAufSchleier = false;
+    overlay.addEventListener("mousedown", function(e){ druckAufSchleier = e.target === overlay; });
     overlay.addEventListener("click", function(e){
       if (state.processing) return;   // locked until window.upstreemExportResolve() is called
-      // click on the backdrop (not inside the dialog) closes
-      if (!elDialog.contains(e.target)){ closePopup(); return; }
-      var typeBtn = e.target.closest("[data-type]");
-      if (typeBtn){ typSetzen(typeBtn.getAttribute("data-type")); pruefen(); persist(); renderAll(); return; }
-      var presetBtn = e.target.closest("[data-preset]");
-      if (presetBtn){ applyPreset(presetBtn.getAttribute("data-preset")); return; }
-      if (e.target.closest(".uex-close") || e.target.closest(".uex-cancel")){ closePopup(); return; }
-      if (e.target.closest(".uex-submit")){ fireExport(); return; }
+      // click on the backdrop (not inside the dialog) closes -- auch waehrend des Laufs (Abbruch)
+      if (!elDialog.contains(e.target)){
+        if (e.target === overlay && druckAufSchleier) closePopup();
+        druckAufSchleier = false;
+        return;
+      }
+      druckAufSchleier = false;
+      var t = e.target;
+      if (t.closest(".uex-close")){ closePopup(); return; }
+      var weg = t.closest("[data-uex-filterweg]");
+      if (weg){
+        /* Abgewaehlt gilt fuer dieses Oeffnen und fuer jeden Datensatz, in dessen Scope der Filter
+           liegt -- der Wert bleibt stehen, damit "Restore filters" ihn zurueckholt. Der Fokus geht
+           auf das naechste Kreuz, sonst auf "Restore filters" (es steht jetzt da): die Tastatur
+           bleibt im Feld, statt auf den Export zu springen. */
+        var feld = weg.getAttribute("data-uex-filterweg");
+        var kreuze = [].slice.call(overlay.querySelectorAll(".uex-chips [data-uex-filterweg]"));
+        var nr = kreuze.indexOf(weg);
+        if (feld) state.weg[feld] = true;
+        renderAll();
+        var rest = overlay.querySelectorAll(".uex-chips [data-uex-filterweg]");
+        if (!fokus(rest[Math.min(nr, rest.length - 1)]) && !fokus(q(".uex-filter-zurueck"))) fokusFuss();
+        return;
+      }
+      if (t.closest("[data-uex-filterzurueck]")){
+        state.weg = {};
+        renderAll();
+        if (!fokus(q(".uex-chips [data-uex-filterweg]"))) fokusFuss();
+        return;
+      }
+      var typeBtn = t.closest("[data-type]");
+      if (typeBtn){
+        typSetzen(typeBtn.getAttribute("data-type"));
+        state.fehler = ""; state.zeitFehler = ""; state.offen = "";
+        pruefen(); spaltenHolen(state.type); persist();
+        /* Am Telefon ist die Wahl der Schritt nach rechts; der Fokus geht auf "Back", den
+           Anfang der neuen Haelfte. Breit bleibt er auf dem Eintrag. */
+        var weiter = schmal();
+        if (weiter) state.schritt = "einst";
+        renderAll();
+        if (weiter) fokus(elZurueck);
+        return;
+      }
+      if (t.closest(".uex-zurueck")){
+        state.schritt = "liste"; closeCalendar();
+        renderAll(); fokus(gewaehlterEintrag());
+        return;
+      }
+      var presetBtn = t.closest("[data-preset]");
+      if (presetBtn){
+        state.fehler = ""; state.zeitFehler = ""; state.offen = "";
+        applyPreset(presetBtn.getAttribute("data-preset"));
+        fokus(elZeitfeld);
+        return;
+      }
+      /* Hier kommt nur an, was den unsichtbaren Ausloeser nicht trifft: die Tastatur (Enter auf
+         dem Feld) und die Maus, solange es keinen Kalender gibt. Gestoppt, damit der
+         Aussen-Klick-Waechter der Dropdowns das eben geoeffnete Feld nicht gleich wieder schliesst. */
+      if (t.closest(".uex-zeitfeld")){
+        e.stopPropagation();
+        if (!kalenderOeffnen()){ state.offen = state.offen === "zeit" ? "" : "zeit"; renderAll(); }
+        return;
+      }
+      var sp = t.closest("[data-spalte]");
+      if (sp){
+        var cfg = EXPORTE[state.type];
+        if (!cfg) return;
+        var aus = state.ohne[cfg.spalten] || (state.ohne[cfg.spalten] = {});
+        var key = sp.getAttribute("data-spalte");
+        if (aus[key]) delete aus[key]; else aus[key] = true;
+        persist(); renderAll(); return;
+      }
+      if (t.closest("[data-uex-alle]")){
+        var c2 = EXPORTE[state.type];
+        if (c2) delete state.ohne[c2.spalten];
+        persist(); renderAll();
+        /* Der Knopf ist danach weg (alle gewaehlt) -- der Fokus geht auf die erste Spalte. */
+        fokus(q(".uex-spalten [data-spalte]"));
+        return;
+      }
+      if (t.closest(".uex-nochmal")){ nochmal(); return; }
+      if (t.closest(".uex-zweit")){
+        if (state.phase === "laeuft") abbrechen();
+        else if (state.phase === "fertig") nochEinExport();
+        else closePopup();
+        return;
+      }
+      if (t.closest(".uex-submit")){ if (state.phase === "fertig") closePopup(); else fireExport(); return; }
+    });
+
+    /* Tastatur im Dialog: Pfeile in einer Radiogruppe (die Liste links, die Ersatzliste der
+       Zeitraeume) wandern und waehlen; Tab bleibt im Fenster (aria-modal verspricht das, dieselbe
+       Falle wie im Tarif-Fenster in core). Am Telefon waehlen die Pfeile in der Liste NICHT -- dort
+       hiesse Waehlen den Schritt wechseln; Enter oder Leertaste waehlt. */
+    overlay.addEventListener("keydown", function(e){
+      if (!state.open) return;
+      if (e.key === "Tab"){
+        var f = [].filter.call(elDialog.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+          function(x){ return !x.disabled && x.tabIndex >= 0 && x.getClientRects().length > 0 && !x.closest("[hidden]") && !x.closest(".uex-cal-slot"); });
+        if (!f.length) return;
+        var erst = f[0], letzt = f[f.length - 1], akt = document.activeElement;
+        if (e.shiftKey && (akt === erst || !elDialog.contains(akt))){ e.preventDefault(); letzt.focus(); }
+        else if (!e.shiftKey && (akt === letzt || !elDialog.contains(akt))){ e.preventDefault(); erst.focus(); }
+        return;
+      }
+      var r = e.target && e.target.closest ? e.target.closest('[role="radio"]') : null;
+      var grp = r && r.closest('[role="radiogroup"]');
+      if (!grp) return;
+      var schritt = (e.key === "ArrowDown" || e.key === "ArrowRight") ? 1 : ((e.key === "ArrowUp" || e.key === "ArrowLeft") ? -1 : 0);
+      if (!schritt) return;
+      e.preventDefault();
+      var alle = [].slice.call(grp.querySelectorAll('[role="radio"]'));
+      var i = alle.indexOf(r);
+      var ziel = alle[(i + schritt + alle.length) % alle.length];
+      if (!ziel) return;
+      fokus(ziel);
+      if (grp === elNav && schmal()) return;
+      ziel.click();
+      fokus(ziel);
     });
 
     document.addEventListener("keydown", function(e){
@@ -1002,12 +1913,22 @@
            immer ins Leere und Escape schloss den Dialog samt offenem Kalender. */
         var calPanel = document.querySelector(".udr-menu.is-shown, .udr-wrap.is-open");
         if (calPanel) return;
+        /* Ebenso die Ersatzliste der Zeitraeume (ohne Kalender): erst sie, dann der Dialog. */
+        if (state.offen === "zeit"){
+          e.preventDefault(); e.stopPropagation();
+          state.offen = ""; renderAll(); fokus(elZeitfeld);
+          return;
+        }
+        /* Auch waehrend des Laufs: Schliessen bricht ab (der Satz unter dem Balken sagt es). */
         closePopup();
       }
-    });
+    /* EINFANGPHASE (16.10. gemessen): core schliesst offene Dropdowns mit einem eigenen keydown am
+       Dokument, der VOR diesem lief -- hier war das Kalenderfeld dann schon zu, und dasselbe Escape
+       schloss den ganzen Dialog. In der Einfangphase sieht diese Pruefung das Feld noch offen. */
+    }, true);
 
-    /* Eine Antwort von pruefen (oder ein fehlender Export beim Klick) zeichnet den offenen Dialog
-       neu -- auch wenn ein anderer Controller gefragt hat. */
+    /* Eine Antwort von pruefen/spaltenHolen (oder ein fehlender Export beim Klick) zeichnet den
+       offenen Dialog neu -- auch wenn ein anderer Controller gefragt hat. */
     window.addEventListener("uex-verfuegbar", function(){ if (state.open) renderAll(); });
 
     new MutationObserver(syncTheme).observe(root, {
@@ -1024,6 +1945,9 @@
       if (tok != null && tok !== "EXPORT_ACCESSTOKEN" && tok !== state.token){ state.token = tok; persist(); }
     }).observe(root, { attributes: true, attributeFilter: ["data-export-type", "data-token"] });
 
+    /* Der Kalender wird gleich angelegt (siehe kalenderAnlegen); ein Fehler dabei kostet nur den
+       Custom-Bereich, den Dialog nie. */
+    try { kalenderAnlegen(); } catch(e){}
     renderAll();
 
     return {
@@ -1058,6 +1982,9 @@
           else { try { opts = JSON.parse(opts); } catch (e){ opts = null; } }
         }
         opts = opts || {};
+        /* Waehrend ein Export laeuft oder fertig dasteht, bleibt der Dialog bei seinem Datensatz --
+           ein neuer Kontext gilt fuer das naechste Oeffnen. */
+        if (state.open && state.phase !== "wahl") return true;
         var t = normType(opts.export_type != null ? opts.export_type : opts.type);
         if (t) typSetzen(t);
         var tok = (opts.export_accesstoken != null) ? opts.export_accesstoken : opts.token;
@@ -1071,17 +1998,24 @@
         state.domain = opts.domain != null ? String(opts.domain) : "";
         state.promptId = opts.prompt_id != null ? String(opts.prompt_id) : "";
         state.brandId = opts.brand_id != null ? String(opts.brand_id) : "";
-        /* SHOPPING UND ADS (16.10.): params je Typ der Gruppe (die Filter der Seite in den Namen der
-           Liste), filter_aktiv je Typ (ob die Zusammenfassung "Current page filters apply." sagt)
-           und der Zeitraum der Seite als Vorgabe. Bei jedem Aufruf neu gesetzt, auch auf leer, und
-           beim Schliessen geleert (closePopup) -- ein Kontext gilt fuer DIESEN Export. */
-        state.params = {}; state.filterAktiv = {};
+        /* filter_label (16.10.): der lesbare Name zu prompt_id bzw. brand_id fuer den Chip im Feld
+           Filters und das Filterzeichen links ("Filtered to VW"). Ohne ihn steht dort "This brand" /
+           "This prompt". */
+        state.filterLabel = opts.filter_label != null ? String(opts.filter_label) : "";
+        /* DIE FILTER DER SEITE (16.10., erst Shopping und Ads, seit dem Abend jede Seite): params je
+           Datensatz (die Parameter ihrer Liste, siehe KENNT), namen je Chip (lesbare Werte, die der
+           Dialog nicht selbst findet) und der Zeitraum der Seite als Vorgabe. Bei jedem Aufruf neu
+           gesetzt, auch auf leer, und beim Schliessen geleert (closePopup) -- ein Kontext gilt fuer
+           DIESEN Export; abgewaehlte Chips eines frueheren Kontexts gelten nicht mehr.
+           filter_aktiv (die erste Fassung von Shopping und Ads, ein Chip "Page filters" ohne
+           Kreuz) wird nicht mehr gelesen: die Chips entstehen jetzt aus den Parametern selbst. */
+        state.params = {}; state.namen = {}; state.weg = {};
         var pr = opts.params && typeof opts.params === "object" ? opts.params : {};
         Object.keys(pr).forEach(function(n){
-          if (gruppeVon(n) && pr[n] && typeof pr[n] === "object" && !Array.isArray(pr[n])) state.params[n] = pr[n];
+          if (typVon(n) && pr[n] && typeof pr[n] === "object" && !Array.isArray(pr[n])) state.params[n] = pr[n];
         });
-        var fa = opts.filter_aktiv && typeof opts.filter_aktiv === "object" ? opts.filter_aktiv : {};
-        Object.keys(fa).forEach(function(n){ if (typVon(n)) state.filterAktiv[n] = fa[n] === true; });
+        var nm = opts.namen && typeof opts.namen === "object" ? opts.namen : {};
+        Object.keys(nm).forEach(function(n){ if (seitenChipKey(n) && voll(nm[n]) && typeof nm[n] !== "object") state.namen[n] = String(nm[n]); });
         /* Ein Preset der Seite ist dasselbe Preset hier (gleiche Schluessel wie der Kalender); ein
            freier Zeitraum wird beim Oeffnen in den Picker gegeben (syncCalendarToState). */
         var zf = parseIso(opts.date_from), zt = parseIso(opts.date_to);

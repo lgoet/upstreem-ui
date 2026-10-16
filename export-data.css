@@ -4,24 +4,15 @@
      Posten: jeder kostet einen vollen Durchlauf ueber das Dokument je Style-Neuberechnung,
      gemessen am 03.09. rund 8ms pro Regel, unabhaengig von den Treffern. */
   /* .uex-overlay traegt selbst up-root up-portal (export-data.js), ist also mitgedeckt. */
-  /* Same token names and values as the Create-with-AI popup, so both read as one UI. */
-  /* Kein eigener Tokensatz mehr. Die Standalone-Fassung fuehrte --am-* mit eigenen Hex-Werten
-     und einem eigenen Dark-Block -- zwei Paletten in einer App laufen genau so lange gleich, bis
-     jemand eine davon anfasst. Alles kommt jetzt aus core (--vc-*), das Umschalten macht ohnehin
-     .up-root[data-theme="dark"].
-     Die Werte darunter gibt es in core nicht: der Schleier hinter dem Dialog und der Ton fuer
-     den zweiten Knopf. Der Schatten stand hier auch (--uex-shadow) -- er war seit dem Umzug der
-     Karte auf .up-topicmodal-card nicht mehr in Gebrauch, die Karte traegt --up-e-4 aus core.
-     Am 28.09. entfernt. */
+  /* Kein eigener Tokensatz. Alles kommt aus core (--vc-*, --up-*), das Umschalten macht ohnehin
+     .up-root[data-theme="dark"] bzw. die Karte des Core-Popups. --uex-t/--uex-ease gelten nur noch
+     fuer den alten Knopf (.uex-btn); --uex-scrim ist seit dem Schleier aus core ohne Verwendung
+     und am 16.10. entfallen. */
   .uex-root, .uex-overlay {
-    --uex-scrim: rgba(17,18,20,0.34);
     --uex-t: 200ms;
     --uex-ease: cubic-bezier(.4, 0, .2, 1);
     font-family: inherit;
     -webkit-font-smoothing: antialiased;
-  }
-  .uex-overlay[data-theme="dark"], .up-root[data-theme="dark"] .uex-root {
-    --uex-scrim: rgba(0,0,0,0.60);
   }
 
   /* ---------- Traeger ----------
@@ -53,193 +44,343 @@
     stroke-linecap: round; stroke-linejoin: round;
   }
 
-  /* ---------- Dialog ----------
-     Schleier, Weichzeichner, Einblendung, Karte, Kopfzeile und Schliessknopf kommen aus core
-     (.up-topicmodal-backdrop / -card / -head / -title / .up-popup-close). Hier steht nur noch,
-     was DIESER Dialog anders braucht: er ist breiter als die 420px der Vorlage, weil drei
-     Typ-Kacheln nebeneinander passen muessen, und er hat eine feste Fusszeile.
-     Vorher stand hier ein kompletter Nachbau mit eigenen Werten -- 34%-Schleier ohne Blur,
-     eigene Kurve, ein Schliessknopf mit Hover-Rahmen. Genau das, was der Styleguide verbietet. */
-  .uex-overlay.uex-overlay {
-    z-index: 2147482500;
-    /* OBEN verankert statt zentriert. Das Core-Popup zentriert, und das ist fuer eine Karte ohne
-       eigenes Aufklappmenue auch richtig -- hier nicht: der Kalender oeffnet sein Panel unter dem
-       Custom-Knopf, und bei zentriertem Dialog blieben darunter nur rund 150px. Der Picker weicht
-       dann nach oben aus und legt sich ueber den Dialog, statt 4px darunter zu stehen.
-       Oben verankert liegt der Knopf hoch genug, dass das Panel nach unten passt.
-       align-items schlaegt die Core-Regel ueber die doppelte Klasse, nicht ueber die Reihenfolge. */
-  }
+  /* ---------- Dialog, Variante C "Zweispaltig" (16.10.) ----------
+     Schleier, Weichzeichner, Einblendung, Karte (Radius 12, Tiefe e-4, Palette hell/dunkel),
+     Kopfzeile, Titel 22/500 und Schliessknopf kommen aus core (.up-topicmodal-backdrop / -card /
+     -head / -title, .up-popup-close). Hier steht nur, was DIESER Dialog anders braucht.
+     Werte aus der Leinwand C: Breite 760, Kopf 16, Rumpf 548 hoch mit Liste 232 links (Polster
+     4/8/8) und Einstellungen rechts (Polster 20/24, Abstand 22 zwischen den Feldern), Fuss 12/16
+     auf dem Grund der Seite. Die Karte selbst hat darum kein Polster und keinen Abstand: Liste
+     und Einstellungen rollen je fuer sich, Kopf und Fuss bleiben stehen. */
+  .uex-overlay.uex-overlay { z-index: 2147482500; }
   .uex-dialog.uex-dialog {
-    max-width: 520px;
-    /* Die Karte darf nicht bis zum unteren Rand wachsen -- sonst steht der Custom-Knopf wieder
-       so tief, dass das Panel keinen Platz hat. 78vh laesst rund ein Fuenftel des Fensters frei,
-       und das reicht dem Kalender. Der Inhalt scrollt ohnehin. */
-    max-height: min(78vh, 720px);
-    /* Kein margin-bottom:auto mehr. Das schob die Karte nach oben, um dem Kalender Platz zu
-       machen -- und machte diesen einen Dialog zur Ausnahme unter allen Popups der App. Die
-       eigentliche Ursache war eine andere (die fehlende .udr-wrap-Zeile weiter unten); der
-       Platz reicht auch zentriert. */
-    /* Der Inhalt scrollt, nicht die Karte: sonst wandert die Fusszeile mit dem Scrollen weg.
-       gap 0, weil die Abschnitte ihre Abstaende selbst tragen (siehe .uex-section). */
+    max-width: 760px;
+    max-height: min(calc(100dvh - 48px), 720px);
     padding: 0; gap: 0; overflow: hidden;
   }
-  .uex-head { padding: 14px 14px 0 14px; }
+  .uex-head { padding: 16px; }
 
-  /* scrollbar-gutter: stable -- die Rinne wird IMMER reserviert, nicht erst wenn die Leiste
-     auftaucht. Unter Windows nimmt eine klassische Leiste rund 15px, und ohne diese Zeile
-     ruckt der ganze Inhalt um 15px, sobald er einmal ueber die Hoehe hinauswaechst (ein
-     aufgeklappter Abschnitt, eine Liste, die laenger wird). Auf macOS liegt die Leiste ueber
-     dem Inhalt, dort aendert die Zeile nichts. Gleiche Ursache wie die versetzten
-     Spaltentitel in Performance Detail, nur ohne Tabellenkopf daneben. */
-  .uex-body { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: 22px 16px 18px; scrollbar-gutter: stable; }
-  /* ---------- processing state: export was sent, waiting on window.upstreemExportResolve() ---------- */
-  .uex-body.is-processing { opacity: 0.42; pointer-events: none; filter: grayscale(0.3); transition: opacity var(--uex-t) var(--uex-ease); }
-  .uex-close:disabled { opacity: 0.35; pointer-events: none; }
-  .uex-submit:disabled { opacity: 0.7; cursor: default; }
-  .uex-spin {
-    display: inline-block;
-    width: 16px; height: 16px; flex: 0 0 16px;
-    border-radius: var(--up-r-voll); border: 2px solid rgba(255,255,255,0.35); border-top-color: currentColor;
-    animation: uex-spin 0.7s linear infinite;
-  }
-  @keyframes uex-spin { to { transform: rotate(360deg); } }
-  /* separator sits inside .uex-body, so it automatically stops at the body's 22px side padding */
-  .uex-section + .uex-section {
-    margin-top: 22px; padding-top: 22px;
+  /* Der Rumpf ist 548 hoch und gibt nach, wenn das Fenster niedriger ist (flex-shrink unter der
+     max-height der Karte) -- dann rollen Liste und Einstellungen, nie die Karte. */
+  .uex-rumpf {
+    flex: 0 1 548px; min-height: 0;
+    display: grid; grid-template-columns: 232px minmax(0, 1fr);
     border-top: 1px solid var(--vc-border);
   }
-  /* Der Kalender oeffnet sein Panel 4px unter seinem TRIGGER. Der ist fest 32px hoch, die Zeile
-     hier ist hoeher -- ohne diese Regel begann das Panel im Knopf statt darunter. Beide Selektoren
-     noetig: das eigene .udr-root traegt die Klasse, ein von aussen vorgegebenes den Marker. */
-  /* Die GANZE Kette muss auf Knopfhoehe: root -> wrap -> trigger. Das Panel haengt in .udr-wrap
-     und oeffnet 4px unter dem TRIGGER; war der wrap nicht gestreckt, blieb der Trigger bei seinen
-     festen 32px und das Panel begann 7px UEBER der Knopfunterkante -- gemessen -7 statt +4.
-     .udr-wrap fehlte in der Standalone-Fassung, deshalb hat die Positionierung dort nie
-     gestimmt. */
+
+  /* ---------- Links: die Datensaetze ----------
+     Auf dem Grund der Seite (Leinwand: Fuss und Liste eine Stufe unter der Karte), im Hellen
+     --up-seite-grau, im Dunkeln --up-seite-dunkel -- beide stehen an html. .uex-nav steht in core in
+     der Liste der Rollflaechen von Popups (Seitensperre, contain). */
+  .uex-nav {
+    min-height: 0; overflow-y: auto; overflow-x: hidden;
+    padding: 4px 8px 8px;
+    display: flex; flex-direction: column;
+    border-right: 1px solid var(--vc-border);
+    background: var(--up-seite-grau);
+  }
+  .uex-overlay[data-theme="dark"] .uex-nav { background: var(--up-seite-dunkel); }
+  /* Im Lauf und danach ruht die Liste (Leinwand: 45 %). */
+  .uex-nav.is-ruht { opacity: .45; transition: opacity var(--up-t-2) var(--up-ease); }
+  /* Der Bereich: 28 hoch, Schrift 12 in der vierten Textfarbe; "Beta" ist die Marke der
+     Seitenleiste (.up-marke.is-akzent aus core). 20 hoch passt sie mittig in die 20 Inhalt. */
+  .uex-bereich {
+    flex: 0 0 auto; height: 28px; padding: 6px 8px 2px;
+    display: flex; align-items: center; gap: 6px; min-width: 0;
+    font-size: var(--up-fs-s); color: var(--vc-fourth);
+  }
+  /* Die Zeile ist .up-optrow aus core, wie die Navigation der Preferences. Masse nach der
+     Leinwand und nach Rolle: 32 hoch (Knopfstufe), Radius 6 (25 bis 36 hoch), Schrift 13, Abstand
+     8, Zeichen 16. Ohne den Abstand von 4, den core zwischen zwei Zeilen setzt: die Leinwand steht
+     ohne, und nur so passen alle zwoelf in die 548 (12 x 32 + 5 x 28 + 12 = 536). */
+  .uex-nav .up-optrow.uex-navitem {
+    flex: 0 0 auto; height: var(--up-h-btn); padding: 0 8px; gap: 8px;
+    border-radius: var(--up-r-m);
+    font-size: var(--up-fs-m); font-weight: var(--up-fw-n); color: var(--vc-muted);
+    transition: background-color var(--up-t-1) var(--up-ease), color var(--up-t-1) var(--up-ease);
+  }
+  .uex-nav .up-optrow.uex-navitem + .up-optrow.uex-navitem { margin-top: 0; }
+  /* Hover und gewaehlt wie in den Preferences (preferences.css .ums-nav): der Hover die halbe
+     Staerke des Gewaehlt-Tons, gewaehlt mit Flaeche UND Gewicht. */
+  .uex-nav .up-optrow.uex-navitem:hover { background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); color: var(--vc-text); }
+  .uex-nav .up-optrow.uex-navitem.is-on,
+  .uex-nav .up-optrow.uex-navitem.is-on:hover { background: color-mix(in srgb, var(--vc-text) 5%, transparent); color: var(--vc-text); font-weight: var(--up-fw-m); }
+  .uex-overlay[data-theme="dark"] .uex-nav .up-optrow.uex-navitem:hover { background: color-mix(in srgb, var(--up-sel-bg) 50%, transparent); }
+  .uex-overlay[data-theme="dark"] .uex-nav .up-optrow.uex-navitem.is-on,
+  .uex-overlay[data-theme="dark"] .uex-nav .up-optrow.uex-navitem.is-on:hover { background: var(--up-sel-bg); }
+  /* Im grauen Hell und im Dunkeln nach Geist der Gewaehlt-Zustand der Navigation aus core
+     (--up-wahl-bg, Rand als Ring innen) -- derselbe wie Seitenleiste und Preferences. */
+  html[data-up-hell="grau"] .uex-overlay:not([data-theme="dark"]) .uex-nav .up-optrow.uex-navitem.is-on,
+  html[data-up-hell="grau"] .uex-overlay:not([data-theme="dark"]) .uex-nav .up-optrow.uex-navitem.is-on:hover,
+  html[data-up-dunkel="geist"] .uex-overlay[data-theme="dark"] .uex-nav .up-optrow.uex-navitem.is-on,
+  html[data-up-dunkel="geist"] .uex-overlay[data-theme="dark"] .uex-nav .up-optrow.uex-navitem.is-on:hover {
+    background: var(--up-wahl-bg); box-shadow: inset 0 0 0 1px var(--up-wahl-rand); }
+  /* Der Hover im Dunkeln nach Geist wie im Licht -- wie die Preferences seit dem 16.10.
+     (preferences.css): auf dem Seitengrund war die halbe --up-sel-bg praktisch gleich dem
+     Gewaehlten. (0,7,1); das Gewaehlte unter dem Zeiger behaelt seinen Grund (0,8,1). */
+  html[data-up-dunkel="geist"] .uex-overlay[data-theme="dark"] .uex-nav .up-optrow.uex-navitem:hover {
+    background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); }
+  .uex-nav .uex-navitem:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: -2px; }
+  .uex-nav-ic { display: inline-flex; flex: 0 0 16px; color: var(--vc-third); }
+  .uex-nav-ic svg { width: 16px; height: 16px; display: block; }
+  .uex-navitem.is-on .uex-nav-ic { color: var(--vc-text); }
+  .uex-nav-lbl { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .uex-nav-zusatz { flex: 0 0 auto; display: inline-flex; align-items: center; }
+  .uex-nav-zusatz:empty { display: none; }
+  .uex-nav-bald { font-size: var(--up-fs-s); font-weight: var(--up-fw-n); color: var(--vc-fourth); }
+  .uex-nav-filter { display: inline-flex; color: var(--vc-third); }
+  .uex-nav-filter svg { width: 14px; height: 14px; display: block; }
+
+  /* ---------- Rechts: die Einstellungen ----------
+     scrollbar-gutter: stable -- die Rinne wird IMMER reserviert, nicht erst wenn die Leiste
+     auftaucht: unter Windows ruckte der Inhalt sonst um 15px, sobald die Spaltenliste die Hoehe
+     ueberschreitet. .uex-body steht in core in der Liste der Rollflaechen von Popups. */
+  .uex-body { min-height: 0; min-width: 0; overflow-y: auto; overflow-x: hidden; padding: 20px 24px; scrollbar-gutter: stable; }
+  /* hidden muss gegen display: flex gewinnen -- das Attribut allein verliert. */
+  .uex-body > [hidden], .uex-feld[hidden], .uex-hinweis[hidden], .uex-presets[hidden], .uex-alle[hidden], .uex-filter-zurueck[hidden],
+  .uex-balken[hidden], .uex-gekappt[hidden], .uex-foot-info[hidden] { display: none; }
+  .uex-wahl { display: flex; flex-direction: column; gap: 22px; }
+  /* Der Bubble-Weg wartet auf window.upstreemExportResolve(): die Wahl ruht und ist gedimmt. */
+  .uex-body.is-processing .uex-wahl { opacity: .42; pointer-events: none; transition: opacity var(--up-t-2) var(--up-ease); }
+  /* Gibt es den Export noch nicht (Shopping, Ads), stehen nur Ueberschrift und der Satz da. */
+  .uex-wahl.is-bald > .uex-feld { display: none; }
+
+  .uex-titelblock { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .uex-h3 { margin: 0; font-size: var(--up-fs-xl); font-weight: var(--up-fw-h); line-height: 20px; color: var(--vc-text); overflow-wrap: anywhere; }
+  .uex-beschr { margin: 0; font-size: var(--up-fs-m); line-height: 18px; color: var(--vc-third); }
+  /* Ein Feld: Etikett 14/500 in der Schriftfarbe (STYLEGUIDE 27, Feld-Headings), 8 zum Inhalt. */
+  .uex-feld { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .uex-feld-label { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); line-height: 17px; color: var(--vc-text); }
+
+  /* Filters: der Chip ist .up-entchip aus core (is-static), auf die Chip-Stufe 24 gebracht -- und
+     zwar alles zusammen (§1): Polster links 8 und rechts 2 fuer das Kreuz, Abstand 6, Radius nach
+     Rolle (bis 24 hoch: 4), Schrift 12/500. Ohne Rahmen, mit der leisen Flaeche: der subtile Chip
+     der App (wie .up-marke.is-leise), kein Punkt. Drei Klassen gegen die zwei von core. */
+  .uex-chips { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
+  .uex-chips .up-entchip.uex-chip {
+    height: var(--up-h-chip); padding: 0 2px 0 8px; gap: 6px; max-width: 100%;
+    border-color: transparent; border-radius: var(--up-r-s); background: var(--up-sel-bg);
+    color: var(--vc-text); font-size: var(--up-fs-s); font-weight: var(--up-fw-m); line-height: 1;
+  }
+  .uex-chips .up-entchip.uex-chip.is-fest { padding-right: 8px; }
+  .uex-chip-ic { display: inline-flex; flex: 0 0 auto; color: var(--vc-third); }
+  .uex-chip-ic svg { width: 12px; height: 12px; display: block; }
+  .uex-chip-lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Das Kreuz ist .up-iconbtn.is-20 aus core; nur das Zeichen eine Stufe kleiner, damit es im
+     24er-Chip nicht schwerer wirkt als der Name. */
+  .uex-chip .up-iconbtn.uex-chip-x svg { width: 11px; height: 11px; }
+  /* Seitenfilter (16.10.): der Kopf des Feldes ist der Kopf der Spalten (.uex-spalten-kopf, Etikett
+     plus leiser Knopf rechts) -- "Restore filters" steht, wo bei den Spalten "Select all" steht.
+     Leer (alle abgewaehlt) sagt ein Satz in der Stufe des Hinweises, was jetzt in die Datei geht;
+     ohne Satz nimmt er keinen Platz (sonst stuende unter den Chips ein Loch von 8). */
+  .uex-chips:empty { display: none; }
+  .uex-filter-leer { margin: 0; font-size: var(--up-fs-s); line-height: 16px; color: var(--vc-third); }
+  .uex-filter-leer:empty { display: none; }
+
+  /* Date range: das Feld. 40 hoch (Feldstufe; die Leinwand hat 36, das liegt zwischen den Stufen),
+     Radius 8 nach Rolle (ab 37), Rand 1. Hover wie der Kalender der Werkzeugleisten
+     (filters/date-range.css .udr-trigger): Flaeche plus eine Stufe kraeftigere Kante.
+     .check_reinvention.py haelt es fuer einen Zwilling von .up-seg-btn -- ist es nicht: das ist ein
+     Eingabefeld (Wert, Nebenangabe, Winkel) in der Feldstufe, kein Knopf in einem Umschalter. Der
+     naechste Verwandte, .udr-trigger, ist 32 hoch und traegt keine Nebenangabe; sein Ausloeser
+     liegt unsichtbar darueber und macht die Arbeit. */
+  .uex-zeit-wrap { position: relative; }
+  .uex-zeitfeld {
+    width: 100%; height: var(--up-h-gross); margin: 0; padding: 0 10px 0 12px;
+    display: flex; align-items: center; gap: 8px; min-width: 0;
+    border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
+    background: var(--up-surface); color: var(--vc-text);
+    font-family: inherit; font-size: var(--up-fs-m); text-align: left; cursor: pointer;
+    transition: background-color var(--up-t-1) var(--up-ease), border-color var(--up-t-1) var(--up-ease);
+  }
+  /* Mit Kalender nimmt sein unsichtbarer Ausloeser darueber den Mausklick; das Feld ist dann
+     Anzeige und Tastatur-Halt. */
+  .uex-zeit-wrap.has-cal .uex-zeitfeld { pointer-events: none; }
+  .uex-zeit-wrap:hover .uex-zeitfeld, .uex-zeitfeld.is-cal-open, .uex-zeitfeld[aria-expanded="true"] {
+    background: var(--up-knopf-hover); border-color: var(--up-knopf-rand-hover);
+  }
+  .uex-zeitfeld:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
+  /* Ein Zeitraum, den die Datenbank ablehnt: roter Rand (Leinwand), der Satz darunter. Zwei
+     Klassen gegen den Hover. */
+  .uex-zeitfeld.uex-zeitfeld.is-fehler { border-color: var(--vt-down); }
+  .uex-zf-ic, .uex-zf-chev { display: inline-flex; flex: 0 0 16px; color: var(--vc-third); }
+  .uex-zf-ic svg, .uex-zf-chev svg { width: 16px; height: 16px; display: block; }
+  .uex-zf-wert { flex: 0 1 auto; min-width: 0; font-weight: var(--up-fw-m); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .uex-zf-sub {
+    flex: 1 1 auto; min-width: 0; text-align: right;
+    font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .uex-zeit-fehler > span { padding-top: 0; }
+  .uex-feld-zeit > .up-fehlerzeile:not(.is-on) { margin-top: -8px; }
+  /* Der Kalender aus core liegt UNSICHTBAR ueber dem Feld. Die GANZE Kette muss auf Feldhoehe:
+     root -> wrap -> trigger -- das Feld des Pickers oeffnet 4px unter dem TRIGGER; war der wrap
+     nicht gestreckt, begann es im Feld statt darunter (die fehlende .udr-wrap-Zeile der
+     Standalone-Fassung). Sein Feld hebt
+     core in die oberste Ebene (popover): weder die Deckkraft 0 hier noch das overflow der Karte
+     schneiden es ab. Bis der Kalender steht, nimmt das Feld selbst den Klick. */
+  .uex-cal-slot { position: absolute; inset: 0; opacity: 0; z-index: 2; overflow: hidden; }
+  .uex-zeit-wrap:not(.has-cal) .uex-cal-slot { pointer-events: none; }
   .uex-cal-slot > .udr-root, .uex-cal-slot [data-udr-root],
   .uex-cal-slot .udr-wrap,
   .uex-cal-slot .udr-trigger { height: 100%; width: 100%; }
-  /* Etikett-Behandlung aus core (.up-label): 12px / 600 / --vc-third, normale
-     Schreibung. Versalien und Sperrung sind am 21.09. aus der ganzen App raus. */
-  .uex-label {
-    display: block; margin-bottom: 12px;
-    color: var(--vc-third);
-    font-size: 12px; font-weight: 600; line-height: 1;
-  }
-
-  /* ---------- option buttons (types + presets share one look) ----------
-     Card + rounded check badge, same pattern as the AI-assistant picker in Create with AI:
-     hover and selected both go to --vc-hover-border, the fill stays --vc-bg, and the
-     selection is carried by the badge rather than by a heavier background. */
-  .uex-grid { display: grid; gap: 8px; }
-  .uex-grid.is-types { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .uex-grid.is-presets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .uex-opt {
-    position: relative;
-    display: flex; align-items: center; gap: 10px;
-    min-height: 46px; padding: 12px 38px 12px 14px;
-    border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
-    background: var(--vc-bg); color: var(--vc-text);
-    font: inherit; font-size: 13.5px; font-weight: 520; line-height: 1.15;
-    text-align: left; cursor: pointer; outline: 0;
-    transition: border-color var(--uex-t) var(--uex-ease), background var(--uex-t) var(--uex-ease);
-  }
-  .uex-opt:hover { border-color: var(--vc-hover-border); background: var(--vc-heading-bg); }
-  .uex-opt.is-active { border-color: var(--vc-hover-border); background: var(--vc-bg); font-weight: 580; }
-  .uex-opt-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .uex-opt-check {
-    position: absolute; top: 50%; right: 14px; transform: translateY(-50%);
-    width: 16px; height: 16px; border-radius: var(--up-r-voll);
-    background: var(--up-accent); color: var(--up-accent-fg);
-    display: none; align-items: center; justify-content: center;
-  }
-  .uex-opt-check svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
-  .uex-opt.is-active .uex-opt-check { display: inline-flex; }
-
-  /* ---------- custom range (the adopted picker hides behind this button) ---------- */
-  .uex-custom-wrap { position: relative; margin-top: 8px; }
-  .uex-custom-btn { width: 100%; }
-  .uex-custom-btn > svg {
-    width: 16px; height: 16px; flex: 0 0 16px;
-    fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
-  }
-  /* Der Kalender gehoert jetzt DIESER Komponente: sie legt sich ihr eigenes .udr-root hier
-     hinein, statt ein fremdes von der Seite zu holen und nach dem Schliessen zurueckzuschieben.
-     Damit entfaellt das externe dates_v2_export-Element samt der Fehlermeldung, wenn es fehlt.
-     Der Aufbau bleibt aber derselbe wie vorher: der Picker liegt UNSICHTBAR ueber dem
-     gestalteten Knopf und bekommt die Klicks -- der Knopf darunter ist reine Anzeige. Das ist
-     kein Umweg, sondern noetig: der Picker schliesst sein Panel ueber einen Klick-Wachter am
-     Dokument, sobald der Klick ausserhalb seiner eigenen Wurzel landet. Ein eigener Knopf
-     daneben wuerde also immer schliessen-und-wieder-oeffnen, und das Panel liesse sich nie
-     zuklappen. Laesst man den Trigger des Pickers den Klick nehmen, bleibt sein Umschalten heil. */
-  .uex-cal-slot {
-    position: absolute; left: 0; top: 0; right: 0; height: 100%;
-    opacity: 0; z-index: 2; overflow: hidden;
-  }
-  .uex-custom-btn { pointer-events: none; }   /* visual only — the slot above handles input */
-  /* hover has to come from the wrapper, since the button itself never sees the pointer */
-  /* Menue-Ausloeser (Kalender) nach Geist, 15.10.: Flaeche plus eine Stufe kraeftigere Kante. */
-  .uex-custom-wrap:hover .uex-custom-btn { border-color: var(--up-knopf-rand-hover); background: var(--up-knopf-hover); }
-  /* Der Picker oeffnet sein Panel 4px unter seinem TRIGGER. Der ist fest 32px hoch, dieser Knopf
-     ist hoeher -- das Panel begann also im Knopf und ueberlappte ihn. Den Trigger auf die volle
-     Knopfgroesse zu ziehen legt das Panel exakt 4px darunter. */
-  /* Regel steht weiter oben, zusammen mit der Begruendung. Hier stand sie ein zweites Mal, mit
-     !important -- das verbietet CLAUDE.md, und noetig war es nie: es gibt keine Gegenregel. */
-  /* While the calendar is open the row sits half-way between the resting border and the selected
-     one, so it reads as "in use" without claiming to be the committed selection. The two values
-     sind die vorab gerechneten Mittelwerte zwischen --vc-border und --vc-hover-border je Thema --
-     bewusst als feste Werte und nicht als color-mix() zur Laufzeit, das hier auf die schlichte
-     Rahmenfarbe aufloeste. */
-  .uex-custom-btn.is-cal-open { border-color: #a7a8aa; }
-  .uex-overlay[data-theme="dark"] .uex-custom-btn.is-cal-open { border-color: #525252; }
-/* Der Picker baut sein eigenes Markup in den Slot. Er soll die Flaeche ausfuellen und sonst
-   nichts von sich zeigen -- sichtbar ist der Knopf darunter. */
-
-  .uex-cal-missing {
-    display: block; margin-top: 10px;
-    font-size: 11.5px; color: var(--vc-third);
-  }
-  /* Das Panel heisst .udr-menu, nicht .udr-panel. Die Standalone-Fassung zielte durchgehend auf
-     einen Selektor, den es gar nicht gibt -- die Anhebung hat also nie gewirkt, und der Kalender
-     lag nur deshalb nicht hinter dem Dialog, weil er in .udr-wrap steckt und nicht an <body>
-     haengt. Die Regel bleibt als Absicherung, jetzt mit dem richtigen Namen. */
-  /* Doppelte Klasse statt !important: das Panel setzt seinen z-index in einer eigenen Regel,
-     und die hat dieselbe Spezifitaet wie eine einfache body-Regel hier. CLAUDE.md verbietet
-     !important -- ueber Spezifitaet loesen ist ohnehin der verlaesslichere Weg, weil er nicht
-     von der Ladereihenfolge abhaengt. */
+  /* Das Panel heisst .udr-menu, nicht .udr-panel (so zielte die Standalone-Fassung ins Leere).
+     Doppelte Klasse statt !important: das Panel setzt seinen z-index
+     in einer eigenen Regel mit derselben Spezifitaet wie eine einfache body-Regel hier. */
   body.uex-popup-open .udr-menu.udr-menu { z-index: 2147482600; }
-
-  .uex-summary {
-    margin-top: 18px; padding: 12px 14px;
-    border-radius: var(--up-r-2xl); background: var(--vc-heading-bg);
-    color: var(--vc-muted); font-size: 12px; line-height: 1.5;
+  /* Ohne Kalender: die vier Presets als Liste unter dem Feld -- die Menuezeile aus core
+     (.up-pop-opt mit .up-check), hier als Knopf mit role=radio. Rahmen und Radius wie das Feld. */
+  .uex-presets { display: flex; flex-direction: column; gap: 2px; padding: 4px; border: 1px solid var(--vc-border); border-radius: var(--up-r-l); }
+  .uex-opt { width: 100%; margin: 0; border: 0; background: transparent; font-family: inherit; text-align: left; }
+  .uex-opt:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: -2px; }
+  .uex-opt-label { white-space: nowrap; }
+  .uex-opt-sub {
+    margin-left: auto; min-width: 0; font-size: var(--up-fs-s); font-weight: var(--up-fw-n); color: var(--vc-third);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums;
   }
-  .uex-summary b { color: var(--vc-text); font-weight: 600; }
+  .uex-presets-satz { margin: 4px 8px; font-size: var(--up-fs-s); line-height: 16px; color: var(--vc-third); }
 
-  /* ---------- footer (same pattern as the Create-with-AI popup) ---------- */
-  .uex-foot { flex: 0 0 auto; padding: 16px; border-top: 1px solid var(--vc-border); background: var(--up-surface); }
-  .uex-submit {
-    width: 100%; height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 9px;
-    border: 1px solid var(--up-accent); border-radius: var(--up-r-l);
-    background: var(--up-accent); color: var(--up-accent-fg);
-    font: inherit; font-size: 14.5px; font-weight: 580; cursor: pointer;
-    transition: opacity var(--uex-t) var(--uex-ease);
+  /* Columns: Kopf mit Etikett, Zaehler und "Select all" (.up-filter-reset aus core), darunter die
+     Checkliste aus core (.up-filter-item/-check) zweispaltig. Das Gitter rueckt um das Polster der
+     Zeile (9) nach aussen, damit die Kaestchen unter dem Etikett stehen und der Hover bis an die
+     Kante reicht. */
+  .uex-spalten-kopf { display: flex; align-items: center; gap: 8px; min-height: var(--up-h-chip); }
+  .uex-spalten-kopf .uex-feld-label { flex: 1 1 auto; min-width: 0; }
+  .uex-spalten-zahl { flex: 0 0 auto; font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; }
+  .uex-spalten { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 12px; margin: 0 -9px; }
+  .uex-spalten:empty { display: none; }
+  .uex-spalte { width: 100%; margin: 0; border: 0; background: transparent; color: var(--vc-text);
+    font-family: inherit; font-size: var(--up-fs-m); text-align: left; }
+  .uex-spalte:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: -2px; }
+  .uex-spalte-lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Das Skelett nur beim ersten Laden eines Spaltensatzes: Kaestchen und Name, in der Hoehe der
+     Zeile (6 + 18 + 6), damit nichts springt, wenn die Spalten kommen. */
+  .uex-spalte-sk { display: flex; align-items: center; gap: 10px; height: 30px; padding: 0 9px; }
+  .uex-sk-box { flex: 0 0 16px; width: 16px; height: 16px; border-radius: var(--up-r-xs); }
+  .uex-sk-text { height: 10px; }
+  .uex-spalten-satz { display: flex; align-items: center; gap: 6px; font-size: var(--up-fs-s); line-height: 16px; color: var(--vc-third); }
+  .uex-spalten-satz:empty { display: none; }
+  .uex-spalten-satz svg { width: 14px; height: 14px; flex: 0 0 14px; display: block; }
+
+  /* Format: Etikett links, der Wert rechts -- fest CSV (siehe export-data.js). */
+  .uex-feld.uex-feld-format { flex-direction: row; align-items: center; justify-content: space-between; gap: 16px; }
+  .uex-format-wert { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); }
+
+  /* Der Hinweis unter den Feldern (Grenze vorab, "kommt bald"). */
+  .uex-hinweis {
+    display: flex; align-items: center; gap: 6px;
+    font-size: var(--up-fs-s); line-height: 16px; color: var(--vc-third);
   }
-  .uex-submit:hover { opacity: .9; }
-  .uex-submit svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .uex-secondary { display: flex; gap: 8px; margin-top: 8px; }
-  .uex-cancel {
-    flex: 1 1 0; height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  .uex-hinweis svg { width: 14px; height: 14px; flex: 0 0 14px; display: block; }
+  .uex-hinweis.is-bald { color: var(--vc-muted); }
+
+  /* ---------- Laeuft ----------
+     Ueberschrift und Satz wie in der Wahl, darunter der Balken (6 hoch, voll rund) mit "k of n
+     rows" und Prozent, dann die drei Schritte. Der Balken zeigt echten Fortschritt (Zeilen von
+     total_count), keine erfundene Kurve. */
+  .uex-lauf, .uex-fertig { display: flex; flex-direction: column; gap: 20px; padding-top: 4px; }
+  .uex-fortschritt { display: flex; flex-direction: column; gap: 8px; }
+  .uex-balken { height: 6px; border-radius: var(--up-r-voll); background: var(--up-sel-bg); overflow: hidden; }
+  .uex-balken-f { width: 0; height: 100%; border-radius: inherit; background: var(--up-accent); transition: width var(--up-t-2) var(--up-ease); }
+  .uex-zahlen { display: flex; justify-content: space-between; gap: 12px; font-size: var(--up-fs-s); color: var(--vc-muted); font-variant-numeric: tabular-nums; }
+  .uex-zahl-pct { color: var(--vc-third); }
+  .uex-schritte { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
+  .uex-schritt { display: flex; align-items: center; gap: 10px; font-size: var(--up-fs-m); color: var(--vc-text); }
+  .uex-schritt.is-kommt { color: var(--vc-third); }
+  .uex-schritt-ic { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 16px; width: 16px; height: 16px; color: var(--vc-third); }
+  .uex-schritt-ic svg { width: 16px; height: 16px; display: block; }
+  .uex-schritt.is-aktiv .uex-schritt-ic { color: var(--vc-text); }
+  .uex-schritt.is-kommt .uex-schritt-ic { color: var(--vc-fourth); }
+  .uex-schritt-lbl { flex: 1 1 auto; min-width: 0; }
+  .uex-schritt-meta { flex: 0 0 auto; font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; }
+
+  /* ---------- Fertig ----------
+     Haken 28 in --vt-up, Ueberschrift und Satz, die Datei als Kachel (Rahmen 1, Radius 8 nach Rolle
+     einer Kachel, Polster 12/12/12/14) mit "Download again". */
+  .uex-fertig-ic { display: inline-flex; color: var(--vt-up); }
+  .uex-fertig-ic svg { width: 28px; height: 28px; display: block; }
+  .uex-datei {
+    display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 14px; min-width: 0;
     border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
-    background: var(--vc-bg); color: var(--vc-muted);
-    font: inherit; font-size: 13px; font-weight: 520; cursor: pointer;
-    transition: background var(--uex-t) var(--uex-ease), color var(--uex-t) var(--uex-ease), border-color var(--uex-t) var(--uex-ease);
   }
-  /* Geist-Sekundaerknopf (15.10.): nur die Flaeche, der Rand bleibt. */
-  .uex-cancel:hover { background: var(--up-knopf-hover); color: var(--vc-text); }
+  .uex-datei-ic { display: inline-flex; flex: 0 0 20px; color: var(--vc-third); }
+  .uex-datei-ic svg { width: 20px; height: 20px; display: block; }
+  .uex-datei-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  /* Dieselbe Mono-Familie wie .up-log-mono in core: ui-monospace ist ueberall da (Mac: SF Mono),
+     Geist Mono wird in der App nicht geladen. */
+  .uex-datei-name, .uex-foot-name {
+    min-width: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: var(--up-fs-s); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .uex-datei-name { color: var(--vc-text); }
+  .uex-datei-meta { font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; }
+  .uex-datei .uex-nochmal { flex: 0 0 auto; white-space: nowrap; }
 
-  @media (max-width: 560px) {
-    .uex-overlay { padding: 0; }
-    .uex-dialog { width: 100%; height: 100vh; height: 100dvh; max-height: none; border-radius: 0; border: 0; }
-    .uex-grid.is-types { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* ---------- Fuss ----------
+     Links der Dateiname (Zeichen 14, Mono 12, dritte Textfarbe) oder an seiner Stelle der rote
+     Satz; rechts zwei Knoepfe aus core in der Knopfstufe 32 wie auf der Leinwand. */
+  .uex-foot {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 16px; padding: 12px 16px;
+    border-top: 1px solid var(--vc-border); background: var(--up-seite-grau);
+  }
+  .uex-overlay[data-theme="dark"] .uex-foot { background: var(--up-seite-dunkel); }
+  .uex-foot-info { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; color: var(--vc-third); }
+  .uex-foot-ic { display: inline-flex; flex: 0 0 14px; }
+  .uex-foot-ic svg { width: 14px; height: 14px; display: block; }
+  .uex-foot > .uex-fehler { flex: 1 1 auto; min-width: 0; }
+  .uex-foot > .uex-fehler:not(.is-on) { display: none; }
+  .uex-foot > .uex-fehler > span { padding-top: 0; }
+  .uex-foot-knoepfe { flex: 0 0 auto; margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .uex-submit-icon { display: inline-flex; }
+  .uex-submit-icon:empty { display: none; }
+  /* Gesperrt ist der core-Knopf im disabled-Zustand (40 %). Nur der laufende Knopf ist kein
+     gesperrter: er dreht und bleibt fast satt (Leinwand 70 %). */
+  .uex-foot .up-btn-pri.is-busy:disabled { opacity: .7; cursor: progress; }
+  .uex-spin {
+    display: inline-block;
+    width: 16px; height: 16px; flex: 0 0 16px;
+    border-radius: var(--up-r-voll); border: 2px solid color-mix(in srgb, currentColor 35%, transparent); border-top-color: currentColor;
+    animation: uex-spin 0.7s linear infinite;
+  }
+  /* Im 32er-Knopf so gross wie dessen Zeichen (14). */
+  .uex-submit .uex-spin { width: 14px; height: 14px; flex-basis: 14px; }
+  @keyframes uex-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){ .uex-spin { animation-duration: 2s; } }
+
+  /* ---------- Telefon: zwei Schritte ----------
+     Unter 640 passt die Liste nicht neben die Einstellungen (232 + 24 + zwei Spalten). Wie auf der
+     Leinwand beschrieben: erst die Liste, dann die Einstellungen mit "Back" (data-schritt). Der
+     Dialog oeffnet auf den Einstellungen des vorbelegten Datensatzes -- der Schnellweg gilt auch
+     hier. Die Karte bleibt eine Karte: 16px Rand rundum wie jede Seite, und sie steht in voller
+     Fensterhoehe -- sonst sprang sie bei jedem Schrittwechsel auf eine andere Hoehe (gemessen 780,
+     599, 548 fuer Einstellungen, Liste und einen Datensatz mit zwei Spalten). Die Spalten
+     einspaltig, die Knoepfe teilen sich die Breite. */
+  /* "Back" ist ein Textknopf ohne Rahmen (border: 0) -- .check_reinvention.py liest ihn als
+     Pille. In core gibt es dafuer nur .up-subback, und das steht nur in Drill-Menues (sonst
+     display: none). Hoehe 28 (Umschalterstufe), Radius 6 nach Rolle, Hover wie jeder Knopf. */
+  .uex-zurueck { display: none; }
+  @media (max-width: 640px) {
+    .uex-overlay.uex-overlay { padding: 16px; }
+    .uex-dialog.uex-dialog { height: calc(100dvh - 32px); max-height: calc(100dvh - 32px); }
+    .uex-rumpf { flex: 1 1 auto; grid-template-columns: minmax(0, 1fr); }
+    .uex-nav { border-right: 0; }
+    .uex-dialog[data-schritt="liste"] .uex-body,
+    .uex-dialog[data-schritt="liste"] .uex-foot,
+    .uex-dialog[data-schritt="einst"] .uex-nav { display: none; }
+    .uex-body { padding: 16px; }
+    .uex-dialog[data-phase="wahl"] .uex-zurueck {
+      display: inline-flex; align-items: center; gap: 4px; height: var(--up-h-seg); margin: -4px 0 12px -6px; padding: 0 8px 0 4px;
+      border: 0; border-radius: var(--up-r-m); background: transparent; color: var(--vc-muted);
+      font-family: inherit; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); cursor: pointer;
+    }
+    .uex-zurueck:hover { background: var(--up-knopf-hover); color: var(--vc-text); }
+    .uex-zurueck:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: -2px; }
+    .uex-zurueck svg { width: 16px; height: 16px; display: block; }
+    .uex-spalten { grid-template-columns: minmax(0, 1fr); }
+    .uex-foot { flex-wrap: wrap; gap: 10px; }
+    .uex-foot-info, .uex-foot > .uex-fehler { flex-basis: 100%; }
+    .uex-foot-knoepfe { width: 100%; margin-left: 0; }
+    .uex-foot-knoepfe > .up-btn-pri, .uex-foot-knoepfe > .up-btn-sec { flex: 1 1 0; min-width: 0; }
+    .uex-datei { flex-wrap: wrap; }
+    .uex-datei .uex-nochmal { flex: 1 1 100%; }
   }

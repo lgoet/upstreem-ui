@@ -53,6 +53,8 @@
 .ubl-sectext > .ubl-err:not(.is-on) { display: none; }
 
 /* ---------- Tabelle (Schale wie team-orga .uto-table) ---------- */
+/* Der Kopf 45 gilt ausserhalb der Settings-Seite; dort setzt core seit dem 16.10. den Kopf der
+   Drawer-Tabellen (48, im Hellen ohne Grund, "DIE TABELLENKOEPFE IM DRAWER"). */
 .ubl-table { border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); background: var(--vc-bg); min-width: 0;
   --up-cols: 200px minmax(0, 1fr); }
 .ubl-table .up-thead { height: 45px; flex: 0 0 45px; }
@@ -71,7 +73,9 @@
    .up-box). Kopf 48 mit 13/500, Linie darunter, Rahmen nur oben und unten kommen aus core. Hier
    nur, was die Schale anders hat als .up-box: kein Ausschnitt (die Schale hatte nie einen, wie
    ihr Vorbild in team-orga -- .up-box braechte overflow: hidden mit), und ohne Kasten keine
-   runden Ecken an Kopf und letzter Zeile. */
+   runden Ecken an Kopf und letzter Zeile.
+   Die Settings-Seite setzt das Attribut seit dem 16.10. NICHT mehr (Kasten wie im Drawer, siehe
+   settings-page.js); die Fassung bleibt fuer einen Einbau, der es setzt. */
 .ubl-root[data-flach="yes"] .ubl-table { overflow: visible; }
 .ubl-root[data-flach="yes"] .ubl-table > .up-thead,
 .ubl-root[data-flach="yes"] .ubl-table > *:last-child { border-radius: 0; }

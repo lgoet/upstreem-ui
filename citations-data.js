@@ -244,11 +244,14 @@
   }
 
   /* Ein Fehler als Art -- die Seite waehlt danach ihren Satz. Gelesen wird message, nicht der
-     Status: gegen Prod gemessen kommt citations_rate_limited als HTTP 500 (Vertrag 08.10.). */
+     Status: bis befunde_db_v1.sql kommen citations_rate_limited (P0429) und team_access_*
+     (P0403, require_team_access) als HTTP 500, danach als 429 (PT429) und 402 (PT402). message
+     und hint bleiben gleich, also traegt message beide Fassungen. Der Status zaehlt nur
+     zusaetzlich (429/402 ohne die gewohnte message). */
   function fehlerArt(erg) {
-    var f = (erg && erg.fehler) || {}, m = str(f.message).toLowerCase(), c = str(f.code);
-    if (/rate_limited/.test(m)) return "rate";
-    if (m === "forbidden" || c === "42501" || c === "P0403" || /team_access|not authenticated/.test(m) || erg.status === 401 || erg.status === 403) return "zugang";
+    var f = (erg && erg.fehler) || {}, m = str(f.message).toLowerCase(), c = str(f.code), s = erg ? erg.status : 0;
+    if (/rate_limited/.test(m) || c === "PT429" || s === 429) return "rate";
+    if (m === "forbidden" || c === "42501" || /^team_access_|not authenticated/.test(m) || s === 401 || s === 402 || s === 403) return "zugang";
     if (/invalid_param|invalid_date|domain_required|team_required/.test(m)) return "param";
     if (m === "network" || m === "timeout" || erg.status === 0) return "netz";
     return "x";
@@ -266,10 +269,14 @@
      XX000, Netz) -- ein Rate-Limit, ein Rechte- oder ein Parameterfehler wird durch Wiederholen
      nicht besser, und ein Rate-Limit sogar schlimmer. Abgebrochen oder ueberholt: kein Versuch. */
   var WIEDERHOLEN = [800, 2000];
+  /* Ratengrenze und Zugang zuerst und an message (16.10.): beide kamen bis befunde_db_v1.sql als
+     HTTP 500 (P0429, P0403) -- ein team_access_* wurde so zweimal wiederholt, die Seite stand
+     knapp 3 s laenger im Skelett, und jeder Versuch kostete einen Aufruf. Seitdem 429 und 402. */
   function serverFehler(erg) {
     if (!erg || erg.ok || erg.ueberholt) return false;
     var f = erg.fehler || {}, m = str(f.message).toLowerCase(), c = str(f.code);
-    if (/rate_limited/.test(m) || c === "PT429" || c === "P0429" || erg.status === 429) return false;
+    var art = fehlerArt(erg);
+    if (art === "rate" || art === "zugang") return false;
     if (m === "aborted" || m === "timeout") return false;
     return c === "XX000" || erg.status >= 500 || m === "network";
   }

@@ -733,8 +733,29 @@
       teil.setAttribute("data-export-instance", k);
       var typ = teil.classList.contains("vot-root") ? "brands" : teil.classList.contains("urt-root") ? "prompt_runs"
         : (P.top.modus === "url" ? "urls" : "domains");
-      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: typ, prompt_id: P.id }); } catch (err) {}
+      /* filter_label (16.10.): der Prompt-Text fuer den Chip im Kopf des Export-Dialogs. */
+      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, exportKontext(typ)); } catch (err) {}
     }, true);
+  }
+  /* WAS DER EXPORT MITNIMMT (16.10., wie die Seiten, export-data.js KENNT): der Prompt als Filter
+     des Drawers (gilt nur fuer Responses -- die uebrigen Exportfunktionen kennen p_prompt_id
+     nicht), dazu Zeitraum und Filter des Drawers als Chips, jeder abwaehlbar: das Modell fuer
+     alle, die Filter eines Bausteins fuer seinen Datensatz. Dieselben Bauer wie beim Laden, ohne
+     den Intent-Filter der App (ein Prompt, filterStand ohneIntent). */
+  function exportKontext(typ) {
+    var r = null, c = kalender(), f = filterStand(), tp = P.top;
+    try { r = c && c.getRange ? c.getRange() : null; } catch (e) { r = null; }
+    var resp = D.responsesTeile(f, P.resp)[0];
+    return {
+      export_type: typ, prompt_id: P.id, filter_label: P.zeile ? str(P.zeile.prompt_text) : "",
+      date_from: r && r.from ? r.from : P.f.von, date_to: r && r.to ? r.to : P.f.bis, preset: r && r.preset ? r.preset : "",
+      params: {
+        brands: D.overview(f, { order: P.vis.order }).params,
+        domains: D.topListe(f, "domain", { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen }).params,
+        urls: D.topListe(f, "url", { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen, urlTypen: tp.modus === "url" ? tp.urlTypen : null }).params,
+        prompt_runs: resp ? resp.params : {}
+      }
+    };
   }
 
   UC.kernDrawer("prompt", {

@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261148;
+  var BUILD = 20261156;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -700,6 +700,7 @@
     "The research could not be started. Please try again.": "Die Recherche konnte nicht gestartet werden. Versuch es noch einmal.",
     "The research was deleted.": "Die Recherche wurde gelöscht.",
     "Too many researches in a short time. Please wait a minute and try again.": "Zu viele Recherchen in kurzer Zeit. Warte eine Minute und versuch es dann noch einmal.",
+    "Too many researches in a short time.": "Zu viele Recherchen in kurzer Zeit.",
     /* Tagesgrenzen aus missbrauch_14_10 (30 Recherchen je Team, 60 je Nutzer, 2000 KI-Erkennungen je Team). */
     "Your team has reached today's limit for researches. You can start new ones tomorrow.": "Dein Team hat das Tageslimit für Recherchen erreicht. Neue kannst du morgen starten.",
     "You have reached today's limit for researches. You can start new ones tomorrow.": "Du hast das Tageslimit für Recherchen erreicht. Neue kannst du morgen starten.",
@@ -1871,6 +1872,8 @@
     "Please choose a business model": "Bitte wähl ein Geschäftsmodell",
     "Please choose a market from the list": "Bitte wähl einen Markt aus der Liste",
     "Please try again in {n} minutes.": "Versuch es in {n} Minuten noch einmal.",
+    "Please try again in {n} seconds.": "Versuch es in {n} Sekunden noch einmal.",
+    "Please try again in 1 second.": "Versuch es in einer Sekunde noch einmal.",
     "Refresh the page to see the current plans.": "Lade die Seite neu, um die aktuellen Tarife zu sehen.",
     "Revoke invites that are no longer needed, then try again.": "Zieh Einladungen zurück, die du nicht mehr brauchst, und versuch es dann noch einmal.",
     "Switch to another team to continue.": "Wechsle in ein anderes Team, um weiterzumachen.",
@@ -1927,6 +1930,7 @@
     "Choose a plan in Billing to change these settings.": "Wähle unter Billing einen Tarif, um diese Einstellungen zu ändern.",
     "Your brand isn't set up yet": "Deine Brand ist noch nicht eingerichtet",
     "Please contact support.": "Bitte wende dich an den Support.",
+    "Please try again in a moment. If it keeps failing, contact support.": "Versuch es gleich noch einmal. Klappt es weiter nicht, wende dich an den Support.",
     "Use 1 to 60 characters, with at least one letter or digit.": "Nutze 1 bis 60 Zeichen, mit mindestens einem Buchstaben oder einer Ziffer.",
     "Pick an emoji from the emoji picker.": "Wähl ein Emoji aus der Auswahl.",
     "They are tracked again with their next daily run.": "Sie werden mit ihrem nächsten täglichen Lauf wieder erfasst.",
@@ -6061,11 +6065,11 @@
       /* is-last marks the final CHIP (a "+N" badge may follow it, so :last-child will not do).
          The left-spread hover rules need to target it, and CSS forbids :has() inside :has() —
          which is what an inline "item not followed by another item" selector would require. */
-      /* --up-stack-z: das ERSTE Mitglied liegt oben (Geist-AvatarGroup, 15.10.) -- absteigende
-         Stufen, die core.css als z-index liest. Als Variable und nicht als z-index im style: so
-         behaelt die Hover-Regel (.up-stack-item:hover, z-index 20) das letzte Wort. */
+      /* Keine Stufe je Chip (16.10.): vom 15. zum 16.10. lag als Geist-AvatarGroup das ERSTE Mitglied
+         oben (--up-stack-z); seit der Rueckkehr zu den Logoplatten wieder der spaetere, also die
+         Reihenfolge im Dokument. */
       return '<span class="up-stack-item' + (favGlobus ? " up-fav" : "") + (logo ? " has-img" : "") + (mi === last ? " is-last" : "") +
-             '" style="--up-stack-z:' + (shown.length - mi) + '" data-brandtip="' + esc(tip) + '">' +
+             '" data-brandtip="' + esc(tip) + '">' +
                '<span class="up-stack-vis">' +
                  '<span class="up-stack-ltr">' + esc(initial) + '</span>' +
                  (logo ? '<img src="' + esc(logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"' +
@@ -8192,6 +8196,117 @@
     if (!th || th.querySelector(".up-th-ic")) return;
     var html = kopfZeichenHtml(name);
     if (html) th.insertAdjacentHTML("afterbegin", html);
+  }
+
+  /* ---------- kopfTexte ----------
+     DER TEXT EINES SPALTENKOPFS STEHT IN EINEM EIGENEN ELEMENT (16.10.). Gemeldet im deutschen
+     Setting: in der Prompt-Tabelle lag das Info-Zeichen an "Brand-Erwaehnungen" ausserhalb der
+     Kopfzelle. Der Kopf steht im Markup als NACKTER Textknoten neben seinen Zeichen
+     (<div class="up-th">Brand Mentions<span class="up-th-info">...</span></div>, ebenso Market,
+     Topics, Citations, Type, die Koepfe von Teams, Team-Verwaltung und Events). Ein nackter Text in
+     einem Flex-Kasten wird ein ANONYMES Flex-Kind, und das schrumpft nie unter seine Textbreite:
+     min-width und text-overflow lassen sich an ihm nicht setzen. Ist das Wort laenger als die
+     Spalte, schiebt es das Info-Zeichen ueber das Polster hinaus, und overflow: hidden der Zelle
+     schneidet es ab. Gemessen bei 1440 (Prompt-Tabelle, Gruppenansicht, Spalte 180.8 breit):
+     Text 3.8px im Polster, Info-Zeichen 24.8px ueber der Inhaltskante, davon 8.8 ausserhalb der
+     Zelle. Englisch passte es knapp, "Brand-Erwaehnungen" ist 21px laenger als "Brand Mentions".
+     .up-th-txt (core.css) schrumpft und kuerzt mit "…", Zeichen, Info und Sortierpfeil behalten
+     ihre Breite. Also bekommt jeder nackte Text eines Kopfs diese Huelle -- EINMAL hier und nicht
+     in jedem Markup: Koepfe bauen ein Dutzend Dateien, die meisten aus handgemachtem Markup, und
+     eine Komponente, die ihren Kopf spaeter neu schreibt, faellt wieder in die nackte Form. Der
+     Beobachter ruft das fuer jeden frischen Ast (laufUeber) und fuer jeden neuen Kopftext.
+     Ein Kopf, der schon .up-th-txt traegt, hat keinen nackten Text und bleibt, wie er ist.
+     Der volle Wortlaut bleibt erreichbar: die Erklaerkarte am Info-Zeichen traegt ihn als Titel,
+     ohne Info-Zeichen zeigt ihn ein Tooltip (kopfTipPruefen), und ein Vorleser liest ihn ohnehin
+     ganz (die Kuerzung ist nur gezeichnet).
+     AUSGENOMMEN:
+       .up-th-mentioned/.up-th-ment  responses-table und urls-table bauen ihr Etikett
+                                     .up-th-mentlbl selbst und lesen es dafuer aus th.textContent;
+                                     stuende das Wort schon in einer Huelle, stuende es danach zweimal.
+       .ulh-root                     die Landingpage (eigene Sitzung): ihre Vorschauen haben feste
+                                     Spaltenbreiten und eine Bewegung, waehrend der jede DOM-Aenderung
+                                     gezaehlt wird.
+     data-i18n zieht mit: hat der Sprachlauf das Wort schon am Kopf uebersetzt, steht das englische
+     Original dort -- es gehoert jetzt an die Huelle, sonst fuehrt kein Weg zurueck auf Englisch. */
+  var KOPF_KLASSEN = ["up-th", "vt-th", "tct-th"];
+  var KOPF_SEL = ".up-th, .vt-th, .tct-th";
+  function kopfTextEinpacken(th){
+    if (!th || th.nodeType !== 1) return null;
+    if (th.classList.contains("up-th-mentioned") || th.classList.contains("up-th-ment")) return null;
+    if (th.closest(".ulh-root")) return null;
+    var erste = null;
+    for (var k = th.firstChild; k; k = k.nextSibling){
+      if (k.nodeType !== 3 || !/\S/.test(k.nodeValue || "")) continue;
+      var huelle = document.createElement("span");
+      huelle.className = "up-th-txt";
+      th.insertBefore(huelle, k);
+      huelle.appendChild(k);
+      k = huelle;
+      if (!erste) erste = huelle;
+    }
+    if (erste && th.hasAttribute("data-i18n")){
+      erste.setAttribute("data-i18n", th.getAttribute("data-i18n"));
+      th.removeAttribute("data-i18n");
+    }
+    return erste;
+  }
+  /* wurzel: ein Element oder das Dokument. Auch der Kopf, IN dem ein frischer Ast steckt (ein
+     Info-Zeichen, das eine Komponente nachtraeglich einsetzt). getElementsByClassName statt
+     querySelectorAll: es laeuft fuer jeden frischen Ast mit, und die meisten enthalten keinen Kopf. */
+  function kopfTexte(wurzel){
+    if (!wurzel) return;
+    var start = wurzel.nodeType === 9 ? wurzel.documentElement : wurzel;
+    if (!start || start.nodeType !== 1) return;
+    var umgebend = start.closest(KOPF_SEL);
+    if (umgebend) kopfTextEinpacken(umgebend);
+    for (var i = 0; i < KOPF_KLASSEN.length; i++){
+      var l = start.getElementsByClassName(KOPF_KLASSEN[i]);
+      for (var j = 0; j < l.length; j++) kopfTextEinpacken(l[j]);
+    }
+  }
+  /* DER VOLLE WORTLAUT EINES GEKUERZTEN KOPFS OHNE INFO-ZEICHEN. Mit Info-Zeichen nennt ihn die
+     Erklaerkarte (Titel = Etikett), ein zweiter Tooltip daneben waere doppelt. Ohne -- "Zuletzt
+     gesehen", "Bewertung", "Werbetreibende", "Anzahl Erwaehnungen" stehen im Deutschen gekuerzt --
+     gab es keinen Weg zum ganzen Wort. Also bekommt das Etikett beim Ueberfahren ein data-tip,
+     solange es WIRKLICH gekuerzt ist, und der Tooltip der Tabelle (makeTooltips, delegiert an
+     ihrer Wurzel) zeigt es. Gemessen wird erst beim Ueberfahren: die Breite haengt an Spalten,
+     Fenster und Sprache, und nur dieser Augenblick zaehlt. Range gegen Kasten, nicht scrollWidth:
+     das rundet, und "…" steht schon bei 0.09px Ueberhang. In der Einfangphase am Dokument, damit
+     das Attribut steht, bevor der Tooltip der Wurzel (Sprudelphase) nach ihm fragt.
+     data-tip-kopf markiert das eigene Attribut -- ein data-tip, das die Komponente selbst setzt,
+     bleibt unangetastet. .up-th-mentlbl ("<Marke> mentioned?") ist dasselbe Etikett mit eigener
+     Klasse (responses-table, urls-table). */
+  function kopfTipPruefen(e){
+    var t = e.target;
+    if (!t || t.nodeType !== 1 || !t.closest) return;
+    var txt = t.closest(".up-th-txt, .up-th-mentlbl");
+    if (!txt) return;
+    var th = txt.closest(KOPF_SEL);
+    if (!th || th.querySelector(".up-th-info") || th.closest(".ulh-root")) return;
+    var eigen = txt.getAttribute("data-tip-kopf") === "1";
+    if (txt.hasAttribute("data-tip") && !eigen) return;
+    var r = document.createRange();
+    r.selectNodeContents(txt);
+    if (r.getBoundingClientRect().width > txt.getBoundingClientRect().width + 0.05){
+      txt.setAttribute("data-tip", (txt.textContent || "").trim());
+      txt.setAttribute("data-tip-kopf", "1");
+    } else if (eigen){
+      txt.removeAttribute("data-tip");
+      txt.removeAttribute("data-tip-kopf");
+    }
+  }
+  if (!window.__upKopfTip){
+    window.__upKopfTip = true;
+    document.addEventListener("mouseover", function(e){ try { kopfTipPruefen(e); } catch(err){} }, true);
+  }
+  /* Fuer den Beobachter: ein neuer Textknoten direkt in einem Kopf (eine Komponente schreibt
+     th.textContent neu) wird eingepackt, und die Sprache geht danach an die Huelle. */
+  function kopfOderSelbst(el){
+    if (el && el.nodeType === 1 && el.matches && el.matches(KOPF_SEL)){
+      var h = kopfTextEinpacken(el);
+      if (h) return h;
+    }
+    return el;
   }
 
   /* ---------- makeHeadSort ----------
@@ -10933,6 +11048,11 @@
       kasten.classList.remove("has-img");
       if (kasten.style && kasten.style.visibility === "hidden") kasten.style.visibility = "";
       if (img && img.parentNode) img.parentNode.removeChild(img);
+      /* Die Kachel der Suchzeile (entityAvatar) zeigt ihren Rueckfall nur mit is-fb. Ihr eigenes
+         onerror setzt es -- aber Googles Platzhalter LAEDT (16px, gemessen 16.10. mit Status 404
+         und Bild) und kommt nur ueber favPlatzhalter hierher: das Bild war weg, der Rueckfall
+         blieb unsichtbar, und die Kachel stand leer da. */
+      if (kasten.classList.contains("up-es-av")) kasten.classList.add("is-fb");
       var zeigtSchon = kasten.classList.contains("up-fav") || kasten.querySelector(FAV_BUCHSTABE);
       if (!zeigtSchon) kasten.classList.add("up-globus-an");
       return;
@@ -11746,8 +11866,13 @@
     window.__upFrueh = rest;
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ toolbarLauf(); });
-  else toolbarLauf();
+  /* Die Spaltenkoepfe, die beim Start schon stehen (kopfTexte). VOR toolbarLauf, damit der
+     Sprachlauf darin die Huelle schon vorfindet. Eigener Aufruf und nicht in toolbarLauf: der
+     geht nur ueber die sichtbaren Aeste und faellt mit __upOhneToolbar ganz aus -- ein Kopf, der
+     sein Info-Zeichen aus der Zelle schiebt, ist kein Werkzeugleistenthema. */
+  function kopfTexteVoll(){ sicher("kopfTexte", function(){ kopfTexte(document); }); }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ kopfTexteVoll(); toolbarLauf(); });
+  else { kopfTexteVoll(); toolbarLauf(); }
   frueheNachholen();
   /* frueheNachholen bleibt gestaffelt: es arbeitet nur eine Warteschlange ab und kostet nichts,
      wenn sie leer ist. Die Komponenten kommen zu verschiedenen Zeiten an, und ein Aufruf, der
@@ -11762,7 +11887,7 @@
      alles ein, was zwischen dem ersten Lauf und dem Ende des Aufbaus ohne Mutation entstanden
      ist (Attributwechsel an schon stehenden Knoten zum Beispiel). Ist die Seite beim Laden von
      core schon fertig, ersetzt ein einzelner Nachlauf das load-Ereignis. */
-  function seiteFertig(){ sicher("toolbarLauf", function(){ toolbarLauf(); }); }
+  function seiteFertig(){ kopfTexteVoll(); sicher("toolbarLauf", function(){ toolbarLauf(); }); }
   if (document.readyState === "complete") setTimeout(seiteFertig, 1200);
   else window.addEventListener("load", function(){ setTimeout(seiteFertig, 200); });
   /* ── Der Beobachter, und warum er so aussieht ─────────────────────────────────────────────
@@ -11839,6 +11964,8 @@
       for (var t3 = 0; t3 < ziele.length; t3++){
         (function(el){
           sicher("stampGran", function(){ stampGran(el); });
+          /* Vor dem Sprachlauf: er findet das Wort dann schon in seiner Huelle (kopfTexte). */
+          sicher("kopfTexte", function(){ kopfTexte(el); });
           sicher("spracheLauf", function(){ spracheLauf(el); });
         })(ziele[t3]);
       }
@@ -11875,10 +12002,10 @@
           for (var nt = 0; nt < neuT.length; nt++){
             if (neuT[nt].nodeType !== 3) continue;
             var p3 = neuT[nt].parentElement;
-            if (p3) sicher("spracheKnoten", (function(el){ return function(){ spracheEinen(el); }; })(p3));
+            if (p3) sicher("spracheKnoten", (function(el){ return function(){ spracheEinen(kopfOderSelbst(el)); }; })(p3));
           }
         }
-        if (mz) sicher("spracheKnoten", (function(el){ return function(){ spracheEinen(el); }; })(mz));
+        if (mz) sicher("spracheKnoten", (function(el){ return function(){ spracheEinen(kopfOderSelbst(el)); }; })(mz));
       }
       var neueElemente = false;
       for (var i = 0; i < muts.length && !neueElemente; i++){
@@ -13123,6 +13250,56 @@
     return { selectPage: selectPage, positionUnderline: positionUnderline };
   }
 
+  /* ---------- Der Umschalter der Seitenleiste im Seitenkopf (16.10. angefordert) ----------
+     "Sidebar-Button im Mobile: in die richtige Topbar, ganz links, nicht floaten. Die Elemente
+     darin machen Platz." Bis hierher schwebte auf dem Telefon ein eigener Knopf der Seitenleiste
+     (.usn-fab, fixed bei 0/32) ueber der Seite -- seit die Leiste der Tabellen auch dort oben
+     klebt, lag er auf der linken unteren Ecke ihres ersten Knopfs.
+     Jetzt steht er im Fluss der Kopfzeile: erstes Kind von .up-ph-top, vor der Krume, und er
+     scrollt mit ihr weg. Gezeigt wird er nur, wenn die Seitenleiste ganz ausgeblendet ist
+     (sidebar.js setzt html[data-usn-modus="hint"], heute unter 500px Fensterbreite); auf dem
+     Desktop ist er display: none und nimmt keinen Platz.
+     Der Klick geht als Ereignis an window und nicht an eine Funktion der Seitenleiste: core
+     laedt vor sidebar.js und kennt sie nicht, und ein Ereignis an window erreicht sie auch dann,
+     wenn eine Seite Klicks in ihrem Kopf anhaelt. Die Leiste macht damit, was ihr eigener
+     Knopf machte (auf, zu, Schleier, Escape -- alles dort).
+     .up-ph-iconbtn wie Refresh und Docs in derselben Zeile; das Zeichen ist das der Leiste
+     (panelLeft), in der Strichstaerke der Nachbarn (1.8, dashboard-page.js). Das Etikett bleibt
+     englisch wie die ganze Seitenleiste (sidebar.js, kein Katalog). */
+  function seitenleistenKnopf(){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "up-ph-iconbtn up-ph-seitenleiste";
+    b.setAttribute("aria-label", "Open navigation");
+    b.innerHTML = icon("panelLeft", 1.8);
+    b.addEventListener("click", function(){
+      try { window.dispatchEvent(new CustomEvent("up-seitenleiste", { detail: { aktion: "umschalten" } })); } catch(e){}
+    });
+    /* Der Seitenleiste sagen, dass es in einer Ansicht jetzt einen Kopfknopf gibt -- sie zeigt
+       ihren schwebenden Knopf nur noch, wo keiner ist (sidebar.js kopfKnopfDa). Einen Takt
+       spaeter: der Knopf wird erst nach dieser Rueckgabe eingehaengt. */
+    setTimeout(function(){
+      try { window.dispatchEvent(new CustomEvent("up-seitenleiste-knopf")); } catch(e){}
+    }, 0);
+    return b;
+  }
+  /* Haengt den Umschalter vor das Kind von zeile, das el enthaelt. Nur in einer Ansicht der App
+     ([id^="view-"]): die Landingpage fuehrt Seitenkopf und Seitenleiste im Schaufenster, nimmt dort
+     der Leiste ihre Telefon-Handhaben ab (landing-hero.js leisteHolen) und haelt sie eingeklappt --
+     ein Umschalter in ihrem Kopf haette nichts zu oeffnen. Einmal je Zeile. */
+  function seitenleistenKnopfEinsetzen(zeile, el){
+    if (!zeile || !el || !zeile.contains(el) || zeile === el) return null;
+    if (!zeile.closest || !zeile.closest('[id^="view-"]')) return null;
+    var da = zeile.querySelector(":scope > .up-ph-seitenleiste");
+    if (da) return da;
+    var vor = el;
+    while (vor.parentNode && vor.parentNode !== zeile) vor = vor.parentNode;
+    if (vor.parentNode !== zeile) return null;
+    var b = seitenleistenKnopf();
+    zeile.insertBefore(b, vor);
+    return b;
+  }
+
   /* ---------- Brotkrumen im Seitenkopf (29.09. angefordert) ----------
      "in der heading oben auch so kleine breadcrumbs, je nach dem wo in der page navigation man
      sich aktuell befindet": das Zeichen der Seite, ihr Name, ein Chevron und die Unterseite.
@@ -13203,6 +13380,29 @@
                 letzte, i + 1, !!klicks[i + 1]);
       });
       h.innerHTML = html;
+      krumeEinpassen();
+    }
+    /* DIE KRUME MACHT PLATZ FUER DEN UMSCHALTER DER SEITENLEISTE (16.10.). Steht er links in der
+       Zeile (nur auf dem Telefon, html[data-usn-modus="hint"]), fehlen der Krume 32px -- gemessen
+       bei 375 endete "Prompt Insights > All Prompts" in "Prompt ... > All Pr...". Dann faellt
+       zuerst der NAME der ersten Stufe weg, ihr Zeichen bleibt: "Zeichen > All Prompts". Gemessen
+       und nicht an einer Breite festgemacht (wie makePageNav einpassen): wo die ganze Krume passt,
+       bleibt sie ganz. Gekuerzt heisst: der Text eines Namens ist breiter als sein Kasten, mit
+       Range gemessen (scrollWidth rundet, und das "..." steht schon bei 0,09px Ueberhang).
+       Nur im hint-Zustand gemessen -- sonst wird nur die Klasse geloescht, die CSS greift dort
+       ohnehin nicht, und der Desktop rechnet nichts dazu. Eine einzelne Stufe (Dashboard,
+       Opportunities) hat nichts abzugeben und bleibt, wie sie ist. */
+    function krumeEinpassen(){
+      if (!h.isConnected) return;
+      var war = h.classList.contains("is-knapp");
+      var hint = document.documentElement.getAttribute("data-usn-modus") === "hint";
+      if (!hint || h.querySelectorAll(".up-ph-crumb").length < 2){ if (war) h.classList.remove("is-knapp"); return; }
+      if (war) h.classList.remove("is-knapp");
+      var zuViel = [].some.call(h.querySelectorAll(".up-ph-crumbname"), function(n){
+        var rg = document.createRange(); rg.selectNodeContents(n);
+        return rg.getBoundingClientRect().width > n.getBoundingClientRect().width + 0.01;
+      });
+      if (zuViel) h.classList.add("is-knapp");
     }
     h.addEventListener("click", function(e){
       var b = e.target && e.target.closest ? e.target.closest("[data-up-krume]") : null;
@@ -13223,7 +13423,16 @@
       if (nav && nav.__upStrichNeu) nav.__upStrichNeu();
     }
     root.classList.add("has-crumbs");
+    /* Der Umschalter der Seitenleiste ganz links in der Kopfzeile (seitenleistenKnopf oben) -- hier,
+       weil JEDER Seitenkopf der App durch diese Funktion geht, auch der Platzhalter einer Ansicht
+       (seitenVorab): der Knopf steht also schon, bevor die Seite selbst da ist, und springt nicht.
+       VOR dem ersten Zeichnen, damit krumeEinpassen schon mit ihm misst. */
+    seitenleistenKnopfEinsetzen(h.closest ? h.closest(".up-ph-top") : null, h);
     zeichnen();
+    /* Erscheint oder verschwindet der Umschalter (Fensterbreite, oder die Seitenleiste meldet ihren
+       Zustand erst nach diesem Aufbau), aendert sich die Breite der Huelle um die Krume, nicht die
+       der Wurzel -- also dort beobachten. */
+    if (onResize && h.parentNode && h.parentNode !== root) onResize(h.parentNode, krumeEinpassen);
     if (quelle && window.MutationObserver){
       new MutationObserver(zeichnen).observe(quelle, { subtree: true, childList: true, characterData: true,
         attributes: true, attributeFilter: ["class", "aria-selected"] });
@@ -15341,26 +15550,58 @@
      tiefer in ihrer Wurzel als in Ruhe), und nur dann malt der Streifen (core.css).
      EIN Zuhoerer fuer die ganze Seite, in der Einfangphase (scroll blubbert nicht, und Drawer
      scrollen in ihrem eigenen Behaelter), je Bild hoechstens einmal: zwei Lesungen je Tabelle,
-     geschrieben wird nur bei einem Wechsel. */
+     geschrieben wird nur bei einem Wechsel.
+     SEIT DEM 16.10. OHNE GELERNTE RUHELAGE. Bis dahin galt der kleinste je gesehene Abstand der
+     Leiste zum Anfang ihrer Wurzel als Ruhe. Jedes applySticky (Nachlauf der Kopfsuche bis 4,8 s
+     nach dem Laden, Groessenwechsel, ein neuer Seitenkopf irgendwo) loeschte ihn -- lief es,
+     waehrend die Leiste klebte, lernte der naechste Durchlauf eine GEKLEBTE Lage als Ruhe, und
+     etwas Zurueckscrollen nahm die Klasse weg, obwohl die Leiste weiter klebte (gemessen:
+     Prompts 2000 -> 400, 24 Zeilentreffer ueber der Leiste bis ganz nach oben). Jetzt liest die
+     Probe das Deck (klebDeckStellen): in Ruhe liegt es deckungsgleich unter der Leiste, klebend
+     steht es hoeher -- ein Vergleich zweier Lagen im selben Bild, nichts zu lernen. Die Klasse
+     traegt nur noch den Streifen (Rest ueber 2 x Leistenhoehe) und die Linie unter der Leiste;
+     gedeckt wird schon vom Deck selbst, ohne Bildverzug. */
   var KLEB_WURZELN = [];
   var _klebRaf = 0;
+  /* DAS DECK (16.10., CSS .up-kleb-deck in core.css): zwei leere Kaesten direkt vor der Leiste,
+     der obere zuerst. Gemerkt an der Leiste, nicht gesucht -- wandert die Leiste (bandUnterLeiste),
+     kommen sie mit. Bewegt wird nur, was nicht schon steht; gibt die Leiste zurueck, was jetzt
+     direkt vor ihr liegt (der untere Kasten). */
+  function klebDeckStellen(head){
+    if (!head || !head.parentNode) return null;
+    var u = head.__upDeckU, o = head.__upDeckO;
+    if (!u || !o){
+      o = document.createElement("div"); o.className = "up-kleb-deck is-oben"; o.setAttribute("aria-hidden", "true");
+      u = document.createElement("div"); u.className = "up-kleb-deck"; u.setAttribute("aria-hidden", "true");
+      head.__upDeckO = o; head.__upDeckU = u;
+    }
+    if (u.parentNode !== head.parentNode || u.nextSibling !== head) head.parentNode.insertBefore(u, head);
+    if (o.parentNode !== head.parentNode || o.nextSibling !== u) head.parentNode.insertBefore(o, u);
+    return u;
+  }
   function klebPruefenAlle(){
     _klebRaf = 0;
     /* Der klebende Fuss liest zuerst (alle Tabellen), geschrieben wird erst nach der Leiste --
        so erzwingt keine Klasse von hier eine Neuberechnung mitten in den Lesungen dort. */
     var fuss = fussLesen();
     KLEB_WURZELN = KLEB_WURZELN.filter(function(w){ return w.root.isConnected; });
+    /* Erst alle lesen, dann schreiben: eine Klasse zwischen zwei Tabellen erzwaenge sonst je Tabelle
+       eine neue Berechnung. */
+    var wechsel = [];
     KLEB_WURZELN.forEach(function(w){
       var head = w.head && w.head.isConnected ? w.head : (w.head = w.root.querySelector(".up-head"));
-      if (!head || !w.root.classList.contains("up-sticky")){ w.root.classList.remove("is-geklebt"); return; }
-      var d = head.getBoundingClientRect().top - w.root.getBoundingClientRect().top;
-      /* d in Ruhe: der Abstand der Leiste zum Anfang ihrer Wurzel. Der kleinste je gesehene Wert ist
-         die Ruhelage; klebt die Leiste, waechst d um die Strecke, die die Wurzel schon unter ihr
-         weggescrollt ist. */
-      if (w.ruhe == null || d < w.ruhe) w.ruhe = d;
-      var klebt = d > w.ruhe + 0.5;
-      if (klebt !== w.root.classList.contains("is-geklebt")) w.root.classList.toggle("is-geklebt", klebt);
+      var klebt = false;
+      if (head && w.root.classList.contains("up-sticky")){
+        var deck = head.__upDeckU;
+        /* Nur wenn eine Komponente die Leiste umgehaengt hat: dann zieht das Deck nach. */
+        if (!deck || deck.nextSibling !== head) deck = klebDeckStellen(head);
+        /* Klebend steht das Deck mindestens 1px hoeher als die Leiste (core.css: Zone + 1), in Ruhe
+           auf derselben Hoehe. */
+        klebt = !!deck && deck.getBoundingClientRect().top < head.getBoundingClientRect().top - 0.5;
+      }
+      if (klebt !== w.root.classList.contains("is-geklebt")) wechsel.push([w.root, klebt]);
     });
+    wechsel.forEach(function(z){ z[0].classList.toggle("is-geklebt", z[1]); });
     fussSchreiben(fuss);
   }
   function klebPlanen(){ if (!_klebRaf) _klebRaf = requestAnimationFrame(klebPruefenAlle); }
@@ -15369,8 +15610,8 @@
     window.addEventListener("resize", klebPlanen, { passive: true });
   } catch(e){}
   function klebAnmelden(root, head){
-    for (var i = 0; i < KLEB_WURZELN.length; i++) if (KLEB_WURZELN[i].root === root){ KLEB_WURZELN[i].ruhe = null; klebPlanen(); return; }
-    KLEB_WURZELN.push({ root: root, head: head || null, ruhe: null });
+    for (var i = 0; i < KLEB_WURZELN.length; i++) if (KLEB_WURZELN[i].root === root){ if (head) KLEB_WURZELN[i].head = head; klebPlanen(); return; }
+    KLEB_WURZELN.push({ root: root, head: head || null });
     klebPlanen();
   }
 
@@ -15607,6 +15848,105 @@
     liste.forEach(function(z){ fussStellen(z.w, z.fuellt, z.unten, z.bereit); });
   }
 
+  /* DIE ANGEKLICKTE ZEILE BLEIBT STEHEN (16.10.). Gemeldet an der Domains-Tabelle: oben ein
+     offener Drilldown mit 15 URLs, weiter unten einer mit 5 geoeffnet -- der obere schliesst
+     (richtig), aber die Hoehe, die oben wegfaellt, zieht die angeklickte Zeile mit nach oben, oft
+     unter die klebende Leiste oder ganz aus dem Bild (gemessen 1440x900: 600 -> 15, Leiste endet
+     bei 112). Dieselbe Bauart hat die Gruppenansicht der Prompt-Tabelle.
+     WARUM DER BROWSER DAS NICHT SELBST AUFFAENGT: seine Scroll-Verankerung (overflow-anchor) ist
+     am einen Scrollbereich abgeschaltet -- der Wirt setzt #main { overflow-anchor: none }
+     (kopf.css), weil sie beim Laden der Ansichten staendig nachkorrigierte. Und eingeschaltet
+     waehlte sie oft den falschen Anker: das erste sichtbare Element von oben, und das liegt hier
+     meist IM Drilldown, der gerade entfernt wird -- ein entfernter Anker korrigiert nichts.
+     Also fuer genau diese eine Aenderung von Hand: Lage der Zeile vorher lesen, aendern, dieselbe
+     Lage danach lesen und den Scrollbereich um den Unterschied schieben -- im selben Zug, bevor
+     das naechste Bild gemalt wird, es springt also nichts. Geschoben wird der naechste Vorfahre,
+     der wirklich scrollt (#main, im Drawer sein Koerper), sonst das Dokument.
+     Danach MINDESTENS: die Oberkante steht unter Leiste und Spaltenkopf, wenn die kleben -- fuer
+     eine halb unter dem Kopf angeklickte Zeile und eine per Tab erreichte (der Browser rollt beim
+     Fokus nur ins Bild, nicht unter den klebenden Kopf).
+     el muss im Fluss stehen und darf nicht selbst kleben: ein klebendes Element meldet die Lage,
+     an der es klebt, nicht die, an der es steht (die offene Gruppe der Prompt-Tabelle klebt --
+     dort wird ihr Abschnitt gehalten). */
+  function scrollerVon(el){
+    var a = el.parentElement, oy;
+    while (a && a !== document.body && a !== document.documentElement){
+      try { oy = window.getComputedStyle(a).overflowY; } catch(e){ break; }
+      if ((oy === "auto" || oy === "scroll" || oy === "overlay") && a.scrollHeight > a.clientHeight + 1) return a;
+      a = a.parentElement;
+    }
+    return document.scrollingElement || document.documentElement;
+  }
+  /* Die Kante, unter der eine Zeile zu sehen ist: Unterkante von Leiste und Spaltenkopf der
+     eigenen Tabelle, solange sie kleben, sonst der obere Rand des Scrollbereichs. Ein Kopf, der
+     gerade nicht klebt, steht im Fluss ueber der Zeile und verschiebt die Kante nicht. */
+  function klebKante(el, sc){
+    var oben = sc === (document.scrollingElement || document.documentElement) ? 0
+             : sc.getBoundingClientRect().top + (sc.clientTop || 0);
+    var root = el.closest ? el.closest(".up-root") : null;
+    if (!root) return oben;
+    Array.prototype.forEach.call(root.querySelectorAll(".up-head, .up-thead"), function(k){
+      if (!k.getClientRects().length) return;
+      var p = "";
+      try { p = window.getComputedStyle(k).position; } catch(e){}
+      if (p === "sticky" || p === "fixed") oben = Math.max(oben, k.getBoundingClientRect().bottom);
+    });
+    return oben;
+  }
+  /* AM ENDE DER SEITE reicht der Inhalt im ersten Bild oft nicht: schliesst der vorige Aufklapper
+     UNTER der Zeile, waechst der neue erst ab Hoehe 0 (grid-template-rows 0fr -> 1fr), und der
+     Browser zieht den Scrollbereich auf sein neues Ende -- die Zeile sackt ab (gemessen Prompt
+     Insights 1440x900: +43). Fuer die Dauer der Bewegung bekommt die Tabelle darum unten genau
+     den fehlenden Rand; danach ist der neue Aufklapper gewachsen und traegt die Lage selbst.
+     Reicht auch sein volles Mass nicht (nichts mehr darunter), sinkt die Zeile am Ende der
+     Bewegung um den Rest -- nach unten, also weiter im Bild. Gemerkt an der Wurzel, damit ein
+     zweiter Klick waehrend der Bewegung den Rand nicht doppelt nimmt und der alte Wert sicher
+     zurueckkommt. Uhr statt rAF: im verdeckten Fenster laeuft kein rAF, der Rand bliebe stehen. */
+  function haltRand(el, px, dauer){
+    var root = el.closest ? el.closest(".up-root") : null;
+    if (!root || !(px > 0)) return;
+    var r = root.__upHaltRand;
+    if (!r){
+      var basis = 0;
+      try { basis = parseFloat(window.getComputedStyle(root).marginBottom) || 0; } catch(e){}
+      r = root.__upHaltRand = { alt: root.style.marginBottom, basis: basis, px: 0, uhr: 0 };
+    }
+    r.px += px;
+    root.style.marginBottom = (r.basis + r.px) + "px";
+    clearTimeout(r.uhr);
+    r.uhr = setTimeout(function(){
+      root.style.marginBottom = r.alt;
+      if (root.__upHaltRand === r) root.__upHaltRand = null;
+    }, (dauer || 0) + 40);
+  }
+  /* o.dauer: wie lange die Bewegung des neuen Aufklappers laeuft (ms) -- nur dann gibt es den
+     Rand am Seitenende. */
+  function zeileHalten(el, aendern, o){
+    o = o || {};
+    if (!el || !el.isConnected || !el.getBoundingClientRect){ aendern(); return; }
+    /* Die Kante VOR der Aenderung, an der der Nutzer die Zeile gesehen hat. Was oben wegfaellt,
+       rueckt den Tabellenanfang nur naeher an die gehaltene Zeile: loest sich der Kopf dadurch,
+       steht er im Fluss UEBER ihr und verdeckt nichts. Klebt er vorher nicht, klebt er danach
+       erst recht nicht. */
+    var sc = scrollerVon(el), vor = el.getBoundingClientRect().top, kante = klebKante(el, sc);
+    aendern();
+    if (!el.isConnected) return;
+    var d = el.getBoundingClientRect().top - vor;
+    /* Halb unter dem klebenden Kopf: so weit zurueck, dass die Oberkante frei steht. */
+    var frei = Math.min(0, vor - kante);
+    /* Nach oben begrenzt die 0: fiel ueber der Zeile mehr weg, als darueber gescrollt war, steht
+       sie danach hoeher -- im Fluss unter einem Kopf, der dann nicht mehr klebt, also im Bild. */
+    var ziel = Math.max(0, sc.scrollTop + d + frei);
+    /* Der Rand auch dann, wenn nichts zu schieben ist: der Browser zieht den Scrollbereich nicht
+       immer schon beim Lesen auf sein neues Ende, sondern erst beim naechsten Bild -- dann stuende
+       die Zeile jetzt richtig und saenke danach ab. */
+    var fehlt = ziel - (sc.scrollHeight - sc.clientHeight);
+    if (fehlt > 0.5 && o.dauer) haltRand(el, Math.ceil(fehlt), o.dauer);
+    if (Math.abs(sc.scrollTop - ziel) < 0.5) return;
+    /* instant: ein scroll-behavior: smooth am Bereich liesse die Zeile sonst sichtbar wandern. */
+    try { sc.scrollTo({ top: ziel, left: sc.scrollLeft, behavior: "instant" }); } catch(e){ sc.scrollTop = ziel; }
+  }
+
   /* DIE LEISTE UEBER DEM BAND (16.10., Variante A der Leinwand "Citations Seitenaufbau", fuer
      Citations und Brands > Tracked gewaehlt). Die eine Leiste einer Tabelle (data-leiste="yes",
      ihr .up-head) steht OBEN, ueber dem Chart: links Kalender und Filter, die fuer Chart UND
@@ -15629,6 +15969,8 @@
     var alt = band.parentNode;
     if (alt && alt !== root && alt.classList && alt.classList.contains("has-leistenband")) alt.classList.remove("has-leistenband");
     if (kopf.parentNode !== root) root.insertBefore(kopf, root.firstChild);
+    /* Hat die Leiste schon ihr Deck (makeSticky lief vor dem Umzug), kommt es mit. */
+    if (kopf.__upDeckU) klebDeckStellen(kopf);
     if (kopf.nextElementSibling !== band) root.insertBefore(band, kopf.nextSibling);
     if (!root.classList.contains("has-leistenband")) root.classList.add("has-leistenband");
     return true;
@@ -15748,6 +16090,9 @@
          noch ein Scroller liegt. */
       stickyTopSetzen(on);
       if (on){ syncTheadOffset(); syncDeckstreifen(); }
+      /* Das Deck ueber der Leiste (klebDeckStellen): erst, wenn sie klebt -- eine Tabelle, die nie
+         klebt, bekommt keine Kaesten. Ohne .up-sticky sind sie ohnehin unsichtbar. */
+      if (on && headEl) klebDeckStellen(headEl);
       klebAnmelden(root, headEl);
       /* Der klebende Fuss (siehe klebFuss): per Attribut, fuer jede Tabelle mit makeSticky. Hier
          und nicht beim Aufbau: eine Seite darf das Attribut setzen, solange die Tabelle sich
@@ -16131,8 +16476,11 @@
         else if (!willAus && typeof sw.__zeigen === "function") sw.__zeigen();
       });
       /* Vor den ersten Knopf des Kopfs, und zwar an den Anfang seiner Huelle: steht er direkt im
-         Kopf (Citations), davor; steht er in einer Werkzeuggruppe (Brands), als ihr erstes Kind. */
-      var erster = kopf.querySelector(".up-ph-addbtn, .up-ph-iconbtn");
+         Kopf (Citations), davor; steht er in einer Werkzeuggruppe (Brands), als ihr erstes Kind.
+         Der Umschalter der Seitenleiste zaehlt nicht mit (16.10.): er traegt dieselbe Klasse wie
+         die Knoepfe rechts, steht aber links vor der Krume -- als "erster Knopf" gelesen landete
+         der Bandschalter gemessen bei 375 vor ihm, ganz links in der Zeile. */
+      var erster = kopf.querySelector(".up-ph-addbtn, .up-ph-iconbtn:not(.up-ph-seitenleiste)");
       if (!erster || !erster.parentNode) kopf.appendChild(sw);
       else if (erster.parentNode === kopf) kopf.insertBefore(sw, erster);
       else erster.parentNode.insertBefore(sw, erster.parentNode.firstChild);
@@ -18185,22 +18533,25 @@
     return { el: el, zeigen: zeigen };
   }
 
-  /* ---------- DAS LADEBILD FUER LANGE LAEUFE (30.09., zweite Fassung 01.10.) ----------
-     EIN Ladebild fuer alle langen Laeufe: Opportunities (Suche), Prompt Research (Recherche) und
-     Explore Brands (Scan). Bis zum 01.10. trugen die zwei letzten je eine eigene Kopie -- und die
-     drei sahen verschieden aus ("das ist ein core-Thema").
-     DIE FORM kommt vom Ladebild in Explore Brands (01.10.: "nimm den als Grundlage"): Kachel mit
-     dem Zeichen der Seite in der Mitte, darunter Titel und wechselnde Statuszeile. Geaendert, wie
-     gewuenscht: die Kachel schwebt nicht mehr auf und ab, und die zwei pulsierenden Ringe sind EIN
-     duenner Kreis, auf dem ein Bogen umlaeuft -- ein Spinner. Er ist das einzige, was sich bewegt,
-     und damit das Zeichen "hier wird gearbeitet".
-     KEIN BALKEN MEHR. Er lief auf einer erfundenen Kurve gegen 92 Prozent -- kein Lauf hier kennt
+  /* ---------- DAS LADEBILD FUER LANGE LAEUFE (30.09., zweite Fassung 01.10., dritte 16.10.) ----------
+     EIN Ladebild fuer alle langen Laeufe: Opportunities (Suche), Prompt Research (Recherche),
+     Explore Brands (Scan) und die Sitemap im Anlegen-Dialog der Events. Bis zum 01.10. trugen zwei
+     davon je eine eigene Kopie -- und sie sahen verschieden aus ("das ist ein core-Thema").
+     DIE FORM kommt vom Ladebild in Explore Brands (01.10.: "nimm den als Grundlage"): das Zeichen
+     der Seite in der Mitte eines Kreises, darunter Titel und wechselnde Statuszeile. Die zwei
+     pulsierenden Ringe von damals sind EIN duenner Kreis, auf dem ein Bogen umlaeuft -- ein Spinner.
+     Er ist das einzige, was sich dreht, und damit das Zeichen "hier wird gearbeitet".
+     SEIT DEM 16.10. ENTSCHLACKT (Variante A): keine Kachel mehr um das Zeichen, Kreis 48 statt 72,
+     Bogen in Textfarbe, die Statuszeile blendet ueber statt zu schieben. Die Masse stehen in
+     core.css am Ladebild.
+     KEIN BALKEN. Er lief auf einer erfundenen Kurve gegen 92 Prozent -- kein Lauf hier kennt
      seinen Fortschritt, und ein Balken behauptet einen.
      cfg:  icon     Name aus UC.icon: das Zeichen, das die Seite im Seitenkopf traegt
            name     der Titel, sub die leisere Zeile darunter (leer = keine)
            saetze   die wechselnde Statuszeile -- ein Feld oder eine Funktion, die es beim Start
                     liefert (prompt-research legt seine Liste erst nach dem Bauen an)
            satzMs   Wechsel der Statuszeile (2800)
+           kompakt  die kleine Form fuer einen Teilschritt in einem Dialog (Kreis 40, Zeichen 16)
      start(seit)  seit wird angenommen und nicht mehr gebraucht (es gibt keinen Balken, der an
                   einer Stelle weiterfahren muesste) -- die Aufrufer bleiben, wie sie sind.
      stop()       der Bogen schliesst sich zum vollen Kreis, das Drehen haelt an: "fertig". Wer
@@ -18212,7 +18563,7 @@
     cfg = cfg || {};
     if (!host) return null;
     var el = document.createElement("div");
-    el.className = "up-lb";
+    el.className = "up-lb" + (cfg.kompakt ? " is-kompakt" : "");
     el.setAttribute("role", "status");
     el.setAttribute("aria-live", "polite");
     function zeile(klasse, text){
@@ -18220,12 +18571,13 @@
         esc(text ? t_(text) : "") + '</div>';
     }
     /* pathLength 100: der Bogen ist damit in Prozent des Umfangs angegeben (CSS, stroke-dasharray)
-       und haengt nicht am Radius. */
+       und haengt nicht am Radius. viewBox 48 wie der Kreis in voller Groesse: dort ist eine Einheit
+       ein Pixel; r 23.25 ist der Rand minus halber Strich (1.5). */
     el.innerHTML =
       '<div class="up-lb-mark">' +
-        '<svg class="up-lb-spin" viewBox="0 0 72 72" aria-hidden="true">' +
-          '<circle class="up-lb-spur" cx="36" cy="36" r="35"/>' +
-          '<circle class="up-lb-bogen" cx="36" cy="36" r="35" pathLength="100"/>' +
+        '<svg class="up-lb-spin" viewBox="0 0 48 48" aria-hidden="true">' +
+          '<circle class="up-lb-spur" cx="24" cy="24" r="23.25"/>' +
+          '<circle class="up-lb-bogen" cx="24" cy="24" r="23.25" pathLength="100"/>' +
         '</svg>' +
         '<span class="up-lb-tile">' + (cfg.icon ? icon(cfg.icon, 2) : "") + '</span>' +
       '</div>' +
@@ -23720,9 +24072,13 @@
             return { ok: true, status: x.r.status, daten: aus };
           }
           var f = d && typeof d === "object" ? d : {};
-          /* 402 team_access_*: der Zugang des Teams ist weg -- das Gate zeigen, nicht nur einen
-             Fehler (Vertrag App-Start, Abschnitt 3). */
-          if (x.r.status === 402 && /^team_access_/.test(String(f.message || ""))) setTimeout(appZugangWeg, 0);
+          /* team_access_*: der Zugang des Teams ist weg -- das Gate zeigen, nicht nur einen
+             Fehler (Vertrag App-Start, Abschnitt 3). Erkannt an message, NICHT am Status (16.10.):
+             require_team_access meldete bis befunde_db_v1.sql P0403 = HTTP 500, erst danach PT402
+             = 402 (_app_gate_v1 schon immer 402). Am Status allein fehlte das Gate bis zum
+             Einspielen auf Dashboard, Citations, Prompts und allen anderen Seiten mit dem alten
+             Baustein -- message ist vorher und nachher dieselbe. */
+          if (/^team_access_/.test(String(f.message || ""))) setTimeout(appZugangWeg, 0);
           return { ok: false, status: x.r.status, fehler: {
             code: String(f.code || ""), message: String(f.message || ("http_" + x.r.status)),
             hint: String(f.hint || ""), details: String(f.details || "") } };
@@ -23796,6 +24152,12 @@
               return { ok: true, status: r.status, daten: d };
             }
             var f = d && typeof d === "object" ? d : {};
+            /* Dieselbe Zugangssperre wie in rpc() (16.10.): start-job, mira-send und
+               mira-export-pdf reichen den Fehler der Datenbank unveraendert durch -- message
+               team_access_*, bis befunde_db_v1.sql mit 500, danach mit 402. Nur message, nicht
+               error: die Billing-Functions schreiben ihre Codes in error und pruefen keinen Zugang
+               (sonst sperrte sich die Kasse im Gate selbst). */
+            if (/^team_access_/.test(String(f.message || ""))) setTimeout(appZugangWeg, 0);
             /* Die Edge Functions der Settings (create-team-checkout, 11.10.) antworten mit
                {success:false, error:<code>, code, hint} -- der Code steht in error, nicht in
                message. Ohne diesen Rueckfall kaeme nur "http_409" an, und die Seite koennte
@@ -23823,6 +24185,34 @@
       }
       return erg;
     });
+  }
+
+  /* ══ WARTEZEIT EINER RATENGRENZE (16.10.) ════════════════════════════════════════════════════
+     Jede Ratengrenze der Datenbank meldet <bereich>_rate_limited mit hint = Sekunden bis zum
+     naechsten Minutenfenster (rpc_lexikon, Konventionen); die Edge Functions tragen retry_after
+     (siehe edge()). Die Seiten erkennen die Grenze an message, nicht am Status --
+     citations_rate_limited kam bis befunde_db_v1.sql als HTTP 500, danach als 429 -- und sagen
+     hiermit, wie lange es dauert, statt "warte kurz".
+     warteSekunden(erg): die Sekunden, oder null, wenn hint fehlt, leer, 0 oder keine ganze Zahl
+     ist (dann meint er etwas anderes, etwa "max" bei den Einladungen) oder ueber einer Stunde
+     liegt. warteSatz(erg, vorgabe): der Satz dazu; ohne Zahl die vorgabe des Aufrufers. */
+  function warteSekunden(erg){
+    var f = (erg && erg.fehler) || {};
+    var r = Number(f.retry_after);
+    if (f.retry_after != null && isFinite(r) && r > 0 && r <= 3600) return Math.ceil(r);
+    var h = String(f.hint == null ? "" : f.hint).trim();
+    if (!/^\d+$/.test(h)) return null;
+    var n = Number(h);
+    return n >= 1 && n <= 3600 ? n : null;
+  }
+  function warteSatz(erg, vorgabe){
+    var n = warteSekunden(erg);
+    if (n == null) return vorgabe == null ? t("Please wait a moment and try again.") : vorgabe;
+    if (n === 1) return t("Please try again in 1 second.");
+    /* Bis anderthalb Minuten in Sekunden -- das Fenster ist eine Minute, "in 1 minute" fuer 61
+       Sekunden waere ungenauer als die Zahl selbst. */
+    if (n < 90) return t("Please try again in {n} seconds.").replace("{n}", String(n));
+    return t("Please try again in {n} minutes.").replace("{n}", String(Math.ceil(n / 60)));
   }
 
   /* ══ REALTIME: OEFFENTLICHE BROADCAST-KANAELE (10.10.) ═══════════════════════════════════════
@@ -24475,6 +24865,14 @@
     folders:  '<path d="M16.2627 10.5H7.73725C5.15571 10.5 3.86494 10.5 3.27143 11.3526C2.67793 12.2052 3.11904 13.4258 4.00126 15.867L5.08545 18.867C5.54545 20.1398 5.77545 20.7763 6.2889 21.1381C6.80235 21.5 7.47538 21.5 8.82143 21.5H15.1786C16.5246 21.5 17.1976 21.5 17.7111 21.1381C18.2245 20.7763 18.4545 20.1398 18.9146 18.867L19.9987 15.867C20.881 13.4258 21.3221 12.2052 20.7286 11.3526C20.1351 10.5 18.8443 10.5 16.2627 10.5Z"/>' +
              '<path d="M19 8C19 7.53406 19 7.30109 18.9239 7.11732C18.8224 6.87229 18.6277 6.67761 18.3827 6.57612C18.1989 6.5 17.9659 6.5 17.5 6.5H6.5C6.03406 6.5 5.80109 6.5 5.61732 6.57612C5.37229 6.67761 5.17761 6.87229 5.07612 7.11732C5 7.30109 5 7.53406 5 8"/>' +
              '<path d="M16.5 4C16.5 3.53406 16.5 3.30109 16.4239 3.11732C16.3224 2.87229 16.1277 2.67761 15.8827 2.57612C15.6989 2.5 15.4659 2.5 15 2.5H9C8.53406 2.5 8.30109 2.5 8.11732 2.57612C7.87229 2.67761 7.67761 2.87229 7.57612 3.11732C7.5 3.30109 7.5 3.53406 7.5 4"/>',
+    /* Hugeicons FolderTree (16.10. vom Nutzer fuer "Load from sitemap" in den Events bestimmt,
+       statt folders). Pfade woertlich aus @hugeicons/core-free-icons@4.3.5
+       (dist/esm/FolderTreeIcon.js, ueber jsDelivr und unpkg gelesen, beide gleich), nicht
+       nachgezeichnet: ein Ordner oben, einer unten, die Linie des Baums links. */
+    folderTree: '<path d="M12 7V5.33333C12 4.55608 12 4.16746 12.1405 3.86607C12.2896 3.54646 12.5465 3.28958 12.8661 3.14054C13.1675 3 13.5561 3 14.3333 3C14.7406 3 14.9443 3 15.1321 3.04949C15.3321 3.10217 15.519 3.19563 15.6811 3.324C15.8334 3.44459 15.9556 3.6075 16.2 3.93333L17 5H18.5C19.4346 5 19.9019 5 20.25 5.20096C20.478 5.33261 20.6674 5.52197 20.799 5.75C21 6.09808 21 6.56538 21 7.5C21 8.43462 21 8.90192 20.799 9.25C20.6674 9.47803 20.478 9.66739 20.25 9.79904C19.9019 10 19.4346 10 18.5 10H15C13.5858 10 12.8787 10 12.4393 9.56066C12 9.12132 12 8.41421 12 7Z"/>' +
+                '<path d="M12 18V16.3333C12 15.5561 12 15.1675 12.1405 14.8661C12.2896 14.5465 12.5465 14.2896 12.8661 14.1405C13.1675 14 13.5561 14 14.3333 14C14.7406 14 14.9443 14 15.1321 14.0495C15.3321 14.1022 15.519 14.1956 15.6811 14.324C15.8334 14.4446 15.9556 14.6075 16.2 14.9333L17 16H18.5C19.4346 16 19.9019 16 20.25 16.201C20.478 16.3326 20.6674 16.522 20.799 16.75C21 17.0981 21 17.5654 21 18.5C21 19.4346 21 19.9019 20.799 20.25C20.6674 20.478 20.478 20.6674 20.25 20.799C19.9019 21 19.4346 21 18.5 21H15C13.5858 21 12.8787 21 12.4393 20.5607C12 20.1213 12 19.4142 12 18Z"/>' +
+                '<path d="M8 7H7C6.07003 7 5.60504 7 5.22354 6.89778C4.18827 6.62038 3.37962 5.81173 3.10222 4.77646C3 4.39496 3 3.92997 3 3"/>' +
+                '<path d="M3 3V13C3 14.8692 3 15.8038 3.40192 16.5C3.66523 16.9561 4.04394 17.3348 4.5 17.5981C5.19615 18 6.13077 18 8 18"/>',
     listTodo: '<path d="M12 21C15.7497 21 17.6246 21 18.9389 20.0451C19.3634 19.7367 19.7367 19.3634 20.0451 18.9389C21 17.6246 21 15.7497 21 12C21 8.25027 21 6.3754 20.0451 5.06107C19.7367 4.6366 19.3634 4.26331 18.9389 3.95491C17.6246 3 15.7497 3 12 3C8.25027 3 6.3754 3 5.06107 3.95491C4.6366 4.26331 4.26331 4.6366 3.95491 5.06107C3 6.3754 3 8.25027 3 12C3 15.7497 3 17.6246 3.95491 18.9389C4.26331 19.3634 4.6366 19.7367 5.06107 20.0451C6.3754 21 8.25027 21 12 21Z"/>' +
               '<path d="M12 7V11M17 7V17M7 7V14"/>',
     /* Lucide "database-search" -- der Zylinder mit der Lupe unten rechts. Uebertragen und
@@ -27999,6 +28397,7 @@
     granAvailability: granAvailability,
     granFuerZeitraum: granFuerZeitraum,
     rpc: rpc, edge: edge, kanal: kanal, nutzerId: nutzerId,
+    warteSekunden: warteSekunden, warteSatz: warteSatz,
     rpcBereit: rpcBereit,
     /* Die upstreem-Wortmarke, EINE Quelle (08.10.): Seiten ohne eigenes data-logo nehmen sie von
        hier, statt die Adresse in jedes Element zu schreiben. */
@@ -28271,6 +28670,8 @@
     makeLeistenFilter: makeLeistenFilter,
     bandTeile: bandTeile, bandAus: bandAus, bandAusGemerkt: bandAusGemerkt, bandAusMerken: bandAusMerken,
     bandUnterLeiste: bandUnterLeiste, klebFuss: klebFuss,
+    /* Aufklapper in Tabellen (Drilldown, Gruppe): die angeklickte Zeile bleibt stehen. */
+    zeileHalten: zeileHalten,
     bandSchalterHtml: bandSchalterHtml,
     rafThrottle: rafThrottle,
     einmalProBild: einmalProBild,
@@ -28297,6 +28698,7 @@
     cgDelete: cgDelete,
     makePageNav: makePageNav,
     makePageCrumbs: makePageCrumbs,
+    seitenleistenKnopfEinsetzen: seitenleistenKnopfEinsetzen,
     makePageHeaderMeta: makePageHeaderMeta,
     syncTheme: syncTheme,
     themeOnly: themeOnly,

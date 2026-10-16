@@ -217,7 +217,10 @@
         var st = erg.ok ? D.zuStart(erg.daten) : null;
         if (!st) {
           var f = (erg.fehler && erg.fehler.message) || "";
-          if (/rate_limited/.test(f)) sucheEnde("Too many searches in a short time", "Wait a minute and try again.");
+          /* Wartezeit aus hint (Sekunden, core); team_access_* (bis befunde_db_v1.sql 500, danach
+             402) mit dem Satz der App -- das Gate zeigt core dazu (edge()). */
+          if (/rate_limited/.test(f)) sucheEnde("Too many searches in a short time", UC.warteSatz ? UC.warteSatz(erg, t("Wait a minute and try again.")) : "Wait a minute and try again.");
+          else if (/^team_access_/.test(f)) sucheEnde("The search couldn't be started", "Your team doesn't have access right now.");
           else sucheEnde("The search couldn't be started", "Try again.");
           return;
         }
@@ -300,7 +303,8 @@
         if (!erg.ok) {
           zuruecklegen(zurueck, meinNr);
           var f = (erg.fehler && erg.fehler.message) || "";
-          if (/rate_limited/.test(f)) satz("Too many changes in a short time", "error", "Wait a minute and try again.");
+          if (/rate_limited/.test(f)) satz("Too many changes in a short time", "error", UC.warteSatz ? UC.warteSatz(erg, t("Wait a minute and try again.")) : "Wait a minute and try again.");
+          else if (/^team_access_/.test(f)) satz("Couldn't save the change", "error", "Your team doesn't have access right now.");
           else satz("Couldn't save the change", "error", "Try again.");
           return;
         }

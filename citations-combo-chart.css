@@ -128,10 +128,16 @@
 .combo-filter-toggle:hover { color: var(--vc-text); background: transparent; }
 .combo-filter-item { display: flex; align-items: center; gap: 10px; padding: 7px 9px; border-radius: var(--up-r-m); cursor: pointer; font-size: 13px; color: var(--vc-text); }
 .combo-filter-item:hover { background: var(--vc-heading-bg); }
-.combo-filter-check { width: 16px; height: 16px; border-radius: var(--up-r-xs); border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; }
+.combo-filter-check { width: 16px; height: 16px; border-radius: var(--up-r-xs); border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff;
+  transition: background-color var(--up-cb-t) var(--up-cb-ease), border-color var(--up-cb-t) var(--up-cb-ease); }
 .combo-filter-check svg { width: 11px; height: 11px; display: none; }
 .combo-filter-item.is-checked .combo-filter-check { background: var(--cc-fltclr, #14b8a6); border-color: var(--cc-fltclr, #14b8a6); }
 .combo-filter-item.is-checked .combo-filter-check svg { display: block; }
+/* Leere Checkbox beim Ueberfahren der Zeile wie in jedem Dropdown aus core (16.10., Begruendung
+   an .up-filter-check in core.css): der Rand geht auf --vc-third, weich ueber den Uebergang aus
+   core (--up-cb-t) -- den hatte dieses Kaestchen vorher nicht. Eigene Regel, weil das Bauteil
+   ein eigenes Kaestchen traegt (gewaehlt in der Farbe seiner Reihe im Chart, nicht im Akzent). */
+.combo-filter-item:not(.is-checked):hover .combo-filter-check { border-color: var(--vc-third); }
 .combo-filter-favicon { width: 16px; height: 16px; min-width: 16px; border-radius: var(--up-r-xs); object-fit: cover; flex: 0 0 auto; }
 .combo-filter-dot { width: 10px; height: 10px; min-width: 10px; border-radius: 3px; flex: 0 0 auto; }
 .combo-filter-name { flex: 1 1 auto; min-width: 0; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
