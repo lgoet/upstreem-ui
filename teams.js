@@ -935,8 +935,11 @@
           if (state.parseError) {
             state.rows = [];
             state.busy = false;
-            if (window.console) console.error("[teams] Die Zeilen liessen sich nicht lesen. Die " +
-              "Konsolenwarnung darueber zeigt, an welcher Stelle das JSON gerissen ist.");
+            /* Knapp und ohne Anleitung: die Ursache (Serverfehler, falsche Form) kennt nur der
+               Aufrufer und meldet sie selbst (teams-page). Der alte Satz verwies auf eine Warnung
+               von normParams, die es seit dem Laden ueber UC.rpc nicht mehr gibt -- und liess eine
+               fehlende RPC-Antwort aussehen wie zerrissenes JSON. */
+            if (window.console) console.error("[teams] Zeilen nicht lesbar");
             render();
             return;
           }

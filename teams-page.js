@@ -78,6 +78,11 @@
         return lader.laden("teams_" + offset, D.teams(tm, offset), { frisch: !!frisch }).then(function (erg) {
           if (nr !== ladeNr || erg.ueberholt) return null;
           var s = erg.ok ? D.zuSeite(erg.daten) : null;
+          /* Die Ursache gehoert in die Konsole, sonst liest sich jeder Ausfall gleich: ein
+             Serverfehler (Code und Meldung der RPC) ist etwas anderes als eine Antwort ohne rows.
+             Das UI zeigt in beiden Faellen den Lesefehler (teams.js). Form wie die anderen Seiten:
+             "[seite] kanal:" und der Befund. */
+          if (!s && window.console) console.error("[teams-page] teams:", erg.ok ? "Antwort ohne rows" : (erg.fehler || erg.status));
           if (!s) return false;
           alle = alle.concat(s.rows);
           /* Hoechstens zehn Seiten: eine kaputte Zaehlung soll keine Schleife werden. */
