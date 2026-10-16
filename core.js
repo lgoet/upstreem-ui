@@ -876,13 +876,10 @@
     /* Das Urteil unter einer Kennzahl der Events (EXPLAIN_TEXT effekt_*, 17.10.). */
     "Clear effect": "Klarer Effekt",
     "Within normal range": "Im normalen Rahmen",
-    "Not enough data yet": "Noch zu wenig Daten",
     "AI answers vary from day to day. This change is more than twice as large as the usual ups and downs, so it is very likely caused by the event.":
       "KI-Antworten schwanken von Tag zu Tag. Diese Veränderung ist mehr als doppelt so groß wie die üblichen Schwankungen, geht also sehr wahrscheinlich auf das Event zurück.",
     "AI answers vary from day to day. This change is within the usual ups and downs, so it may be chance.":
       "KI-Antworten schwanken von Tag zu Tag. Diese Veränderung liegt im Rahmen der üblichen Schwankungen, kann also Zufall sein.",
-    "Too few answers so far to tell. Check back in a few days.":
-      "Bisher gibt es zu wenige Antworten, um das zu sagen. Schau in ein paar Tagen wieder rein.",
     "domain": "Domain",
     "URL": "URL",
 
@@ -4848,7 +4845,6 @@
        Schwelle der DB ist das Zweifache (Auftrag D.2) -- darum "mehr als doppelt so gross". */
     effekt_klar:    { h: "Clear effect", t: "AI answers vary from day to day. This change is more than twice as large as the usual ups and downs, so it is very likely caused by the event." },
     effekt_rauschen:{ h: "Within normal range", t: "AI answers vary from day to day. This change is within the usual ups and downs, so it may be chance." },
-    effekt_wenig:   { h: "Not enough data yet", t: "Too few answers so far to tell. Check back in a few days." },
     /* Die Zeile "Brand Colors" in der Farbauswahl. Sie steht hier und nicht im Einstellungsfenster,
        weil die Auswahl aus core kommt (colorScaleOptionsHtml) und der Erklaerkasten derselbe ist,
        den die Spaltenkoepfe benutzen -- eine Quelle fuer beide. */
@@ -12549,7 +12545,12 @@
       /* Die Sonderbehandlung der rechten Platzierung zuruecknehmen -- der naechste Chip kann
          wieder unter seinem Ausloeser sitzen und soll dann normal einfahren. */
       tip.style.transitionProperty = "";
-      tip.classList.remove("is-on"); tip.classList.remove("is-wide");
+      tip.classList.remove("is-on");
+      /* is-wide erst nach dem Ausblenden (17.10.): sofort entfernt, schrumpfte der grosse Tooltip
+         waehrend der 140ms zum einzeiligen Chip (Hoehe, Umbruch, Ecke) -- ein Sprung der Form
+         bei noch sichtbarem Kasten. paint() setzt is-wide bei jedem Zeigen ohnehin neu. */
+      clearTimeout(S.weitUhr);
+      if (tip.classList.contains("is-wide")) S.weitUhr = setTimeout(function(){ if (!S.btn) tip.classList.remove("is-wide"); }, 200);
     }
     function paint(el, text, wide){
       if (!text || !el || !document.contains(el)) return;
@@ -12580,6 +12581,7 @@
          der elf Kopfzeilen, und das ist vom Pin aus nicht erreichbar. Wer nicht im Katalog steht,
          geht unveraendert durch -- t_ gibt unbekannten Text zurueck, wie er kam. */
       tip.textContent = t_(text);
+      clearTimeout(S.weitUhr);
       tip.classList.toggle("is-wide", !!wide);
 
       S.wide = !!wide;
@@ -14864,7 +14866,17 @@
         var b = r.querySelector("[aria-expanded]");
         if (b) b.setAttribute("aria-expanded", an ? "true" : "false");
         if (an && !drill() && !SHELL) seiteWaehlen(r);
-        if (!an && !SHELL) r.classList.remove("is-flipleft");
+        /* Die Seite bleibt, bis das Untermenue ausgeblendet ist (17.10.): is-flipleft sofort zu
+           entfernen setzte das noch sichtbare Panel waehrend der Ueberblendung auf die andere
+           Seite. Das naechste Oeffnen entscheidet ohnehin neu (seiteWaehlen toggelt). Der
+           Vergleich im Timer faengt den Fall ab, dass die Zeile inzwischen wieder offen ist. */
+        if (an){ clearTimeout(r.__flipUhr); r.__flipUhr = null; }
+        else if (!SHELL && r.classList.contains("is-flipleft") && !r.__flipUhr){
+          r.__flipUhr = setTimeout(function(){
+            r.__flipUhr = null;
+            if (r.getAttribute(KEY) !== offen) r.classList.remove("is-flipleft");
+          }, 260);
+        }
       });
       if (!SHELL) return;
       SHELL.classList.toggle("is-shown", !!offen);
@@ -19670,6 +19682,29 @@
       });
     }
     var evmEbene = null, evmSig = "", evmZeiger = "", evmDraussen = null;
+    /* DIE ANDEREN EVENTS LEISER (17.10., cfg.markerDimmen; Event-Detail: "die anderen Events sind zu
+       dominant"): Pins, Hilfslinien und Baender aller Events ausser dem Fokus-Event stehen mit
+       --up-evm-dim gedeckt, beim Hover, Fokus oder nach einem Tipp mit voller Staerke. Die Pins
+       tut die CSS (:hover); die Leinwand kennt den Hover nicht, deshalb merkt sich evmHell die Ids
+       der gerade gezeigten Gruppe und zeichnet neu. Ohne cfg.markerDimmen aendert sich nichts. */
+    var evmHell = [];
+    function evmDim(){
+      if (!cfg.markerDimmen) return 1;
+      var v = NaN;
+      try { v = parseFloat(getComputedStyle(wrap).getPropertyValue("--up-evm-dim")); } catch(e){}
+      return isFinite(v) ? Math.max(0, Math.min(1, v)) : 0.45;
+    }
+    function evmHellSetzen(ort){
+      if (!cfg.markerDimmen) return;
+      var ids = [];
+      if (ort){
+        var k = ort.querySelectorAll("[data-event-id]");
+        for (var i = 0; i < k.length; i++){ var d = k[i].getAttribute("data-event-id"); if (ids.indexOf(d) < 0) ids.push(d); }
+      }
+      if (ids.join("|") === evmHell.join("|")) return;
+      evmHell = ids;
+      try { if (chart) chart.draw(); } catch(e){}
+    }
     function evmEbeneWeg(){
       if (evmEbene && evmEbene.parentNode) evmEbene.parentNode.removeChild(evmEbene);
       if (evmDraussen){ document.removeEventListener("pointerdown", evmDraussen, true); evmDraussen = null; }
@@ -19683,6 +19718,7 @@
         var s1 = o[i].querySelector(".up-evm-stapel");
         if (s1) s1.setAttribute("aria-expanded", "false");
       }
+      if (!ausser) evmHellSetzen(null);
     }
     /* Tooltip und Karte bleiben im Diagramm (Vorgabe: "an Chart-Raendern spiegeln", "nicht
        abschneiden"): gemessen, sobald sie gezeigt werden -- visibility:hidden laesst die Breite
@@ -19744,7 +19780,7 @@
       if (!gruppen.length){ evmEbeneWeg(); return; }
       if (!evmEbene || !evmEbene.isConnected){
         evmEbene = document.createElement("div");
-        evmEbene.className = "up-evm-layer";
+        evmEbene.className = "up-evm-layer" + (cfg.markerDimmen ? " is-gedimmt" : "");
         wrap.appendChild(evmEbene);
         evmSig = "";
         /* Touch: der erste Tipp zeigt Tooltip bzw. Karte (Vorgabe: "Touch: Tap"), erst der
@@ -19753,11 +19789,23 @@
         evmEbene.addEventListener("pointerdown", function(e){ evmZeiger = e.pointerType || ""; });
         evmEbene.addEventListener("mouseover", function(e){
           var o = e.target && e.target.closest ? e.target.closest(".up-evm-ort") : null;
-          if (o) evmPlatzieren(o);
+          if (o){ evmPlatzieren(o); evmHellSetzen(o); }
+        });
+        /* Zeiger weg: zurueck in die Dimmung, es sei denn, eine Karte ist per Tipp offen geblieben. */
+        evmEbene.addEventListener("mouseout", function(e){
+          var o = e.target && e.target.closest ? e.target.closest(".up-evm-ort") : null;
+          if (!o || (e.relatedTarget && o.contains(e.relatedTarget))) return;
+          var offen = evmEbene.querySelector(".up-evm-ort.is-offen");
+          evmHellSetzen(offen);
         });
         evmEbene.addEventListener("focusin", function(e){
           var o = e.target && e.target.closest ? e.target.closest(".up-evm-ort") : null;
-          if (o) evmPlatzieren(o);
+          if (o){ evmPlatzieren(o); evmHellSetzen(o); }
+        });
+        evmEbene.addEventListener("focusout", function(e){
+          var o = e.target && e.target.closest ? e.target.closest(".up-evm-ort") : null;
+          if (!o || (e.relatedTarget && o.contains(e.relatedTarget))) return;
+          evmHellSetzen(evmEbene.querySelector(".up-evm-ort.is-offen"));
         });
         evmEbene.addEventListener("click", function(e){
           var z = e.target && e.target.closest ? e.target.closest(".up-evm-zeile") : null;
@@ -19770,6 +19818,7 @@
             ort.classList.toggle("is-offen", !offen);
             if (k.classList.contains("up-evm-stapel")) k.setAttribute("aria-expanded", String(!offen));
             evmPlatzieren(ort);
+            evmHellSetzen(offen ? null : ort);
             return;
           }
           evmZu(null);
@@ -19807,12 +19856,14 @@
            dem Bild beginnt am linken Rand, ein Ende danach endet am rechten; liegt beides
            daneben, kein Band. Der Pin steht weiter am Start. */
         var baender = liste.filter(function(m){ return m && m.ende; }), bandFarbe = baender.length ? evmBandFarbe(wrap) : "";
+        var dim = evmDim();
         if (bandFarbe){
           ctx.save();
           ctx.fillStyle = bandFarbe;
           baender.forEach(function(m){
             var a = evmXGekappt(c, m.date), b = evmXGekappt(c, m.ende);
             if (a == null || b == null || b < a) return;
+            ctx.globalAlpha = m.fokus || evmHell.indexOf(m.id) >= 0 ? 1 : dim;
             ctx.fillRect(Math.round(a), ca.top, Math.max(1, Math.round(b - a)), ca.bottom - ca.top);
           });
           ctx.restore();
@@ -19825,6 +19876,7 @@
         ctx.lineCap = "round";
         gruppen.forEach(function(g){
           var x = Math.round(g.x) + 0.5;
+          ctx.globalAlpha = g.fokus || g.items.some(function(m){ return evmHell.indexOf(m.id) >= 0; }) ? 1 : dim;
           ctx.setLineDash(g.fokus ? [] : [1, 3]);
           ctx.beginPath(); ctx.moveTo(x, ca.top - EVM_UEBER + EVM_PIN / 2 - 1); ctx.lineTo(x, ca.bottom);
           ctx.stroke();
@@ -21349,11 +21401,53 @@
      dropdownOpened, ddClose), und vier davon setzen nur Klassen. Wuerde die Freigabe nur an einer
      davon haengen, bliebe das Panel unsichtbar im Top Layer stehen und wuerde Klicks fressen.
      Eine Funktion, die JEDER Schliesspfad ruft, und die nichts tut wenn es nichts zu tun gibt. */
+  /* DIE LAGE BLEIBT BIS ZUM ENDE DES AUSBLENDENS (17.10., "flasht beim Zugehen nochmal unten auf",
+     mehrfach gemeldet, zuletzt am Typ-Menue des Event-Dialogs). Die Freigabe lief bisher im
+     selben Augenblick wie das Entfernen von .is-shown: das Panel fiel aus dem Top Layer zurueck,
+     bekam sein position/left/top aus der CSS wieder -- also die Lage UNTER dem Ausloeser -- und
+     blendete dort 140ms lang aus. Wer nach oben aufgeklappt hatte, sah das Menue beim Zugehen
+     kurz an der anderen Kante (gemessen am Typ-Menue: Oberkante 328 -> 399 im ersten Bild des
+     Ausblendens, bei voller Deckkraft). Dieselbe Familie wie die Erklaerkarte (makeExplain
+     raeumt is-flipped erst nach dem Ausblenden auf), nur eine Ebene tiefer: dort fiel die
+     Klasse, hier die ganze Escape-Lage.
+     Jetzt: Die Lage wird eingefroren (place() rechnet nicht mehr, auch nicht fuer Rollen,
+     Groessenaenderungen und Fenster), das Panel ist fuer Zeiger weg (pointer-events), und erst
+     nach der Ueberblendung -- gemessen an der Dauer, die das Panel selbst traegt, nicht an einer
+     festen Zahl -- laeuft die eigentliche Freigabe. Das Panel bleibt so lange auch im Top Layer
+     und blendet NICHT hinter dem Menue aus, aus dem es geoeffnet wurde. Oeffnet es in der Zeit
+     wieder (menuEscape), wird der Aufschub abgebrochen und die Lage frisch gerechnet: das Panel
+     steht ja noch im Top Layer. Gilt fuer JEDEN Schliessweg, weil alle dropEscape rufen. */
+  function ausblendDauer(panel){
+    var ms = 0;
+    try {
+      var cs = window.getComputedStyle(panel);
+      var d = String(cs.transitionDuration || "").split(","), v = String(cs.transitionDelay || "").split(",");
+      for (var i = 0; i < d.length; i++){
+        var a = parseFloat(d[i]) || 0, b = parseFloat(v[i % v.length]) || 0;
+        /* "0.14s" oder "140ms" */
+        var sd = /ms\s*$/.test(d[i]) ? a : a * 1000, sv = /ms\s*$/.test(v[i % v.length]) ? b : b * 1000;
+        ms = Math.max(ms, sd + sv);
+      }
+    } catch(e){}
+    return ms;
+  }
   function dropEscape(panel){
     if (!panel || !panel.__upEscapeRelease) return;
+    if (panel.__upEscapeUhr) return;               // das Ausblenden laeuft schon
     var fn = panel.__upEscapeRelease;
-    panel.__upEscapeRelease = null;
-    try { fn(); } catch(e){}
+    var dauer = ausblendDauer(panel);
+    if (!(dauer > 0) || !panel.__upEscapeHalten){
+      panel.__upEscapeRelease = null;
+      try { fn(); } catch(e){}
+      return;
+    }
+    panel.__upEscapeHalten(true);
+    panel.__upEscapeUhr = setTimeout(function(){
+      panel.__upEscapeUhr = null;
+      if (panel.__upEscapeRelease !== fn) return;
+      panel.__upEscapeRelease = null;
+      try { fn(); } catch(e){}
+    }, Math.ceil(dauer) + 60);
   }
 
   /* Die Quick-Actions-Palette muss GANZ vorne bleiben. Sie steht auf z-index 2147483647, und der
@@ -21409,7 +21503,15 @@
 
   function menuEscape(panel, owner){
     if (!panel || !owner || typeof panel.showPopover !== "function") return null;
-    if (panel.__upEscapeRelease) return null;
+    if (panel.__upEscapeRelease){
+      /* Es blendet gerade aus und steht noch im Top Layer (dropEscape): der Aufschub wird
+         abgebrochen, die Lage frisch gerechnet. Nichts neu zu eskalieren. */
+      if (panel.__upEscapeUhr){
+        clearTimeout(panel.__upEscapeUhr); panel.__upEscapeUhr = null;
+        try { if (panel.__upEscapeHalten) panel.__upEscapeHalten(false); } catch(e){}
+      }
+      return null;
+    }
     if (paletteOpen()) return null;
     /* Ausdrueckliche Abwahl fuer Panels, die selbst schon in einer Overlay-Flaeche haengen und
        dort nichts zu befreien haben. inOverlay() sagt nur "ein Vorfahre ist position:fixed" --
@@ -21508,9 +21610,10 @@
     function measure(){ pw = panel.offsetWidth; ph = panel.offsetHeight; }
     measure();
 
-    var raf = null;
+    var raf = null, fest = false, prevPE = panel.style.pointerEvents;
     function place(){
       raf = null;
+      if (fest) return;                    // blendet aus: die Lage bleibt, wie sie war (dropEscape)
       if (!document.contains(owner)){ return; }
       var r = owner.getBoundingClientRect();
       var vw = window.innerWidth || document.documentElement.clientWidth;
@@ -21547,7 +21650,14 @@
       try { ro.observe(panel); } catch(e){ ro = null; }
     }
 
+    panel.__upEscapeHalten = function(an){
+      fest = !!an;
+      panel.style.pointerEvents = fest ? "none" : prevPE;
+      if (!fest){ measure(); place(); }
+    };
     panel.__upEscapeRelease = function release(){
+      panel.__upEscapeHalten = null;
+      panel.style.pointerEvents = prevPE;
       if (raf){ cancelAnimationFrame(raf); raf = null; }
       if (ro){ try { ro.disconnect(); } catch(e){} ro = null; }
       window.removeEventListener("scroll", schedule, true);

@@ -415,26 +415,86 @@
     var c = z && z.confidence && typeof z.confidence === "object" ? z.confidence[feld] : null;
     return c && typeof c === "object" && KONF[c.verdict] ? c : null;
   }
-  /* Die Gruende der DB (reasons[], feste Codes) als Saetze fuer die Erklaerkarte, ohne
-     Statistikbegriffe: was fehlt, damit das Urteil moeglich wird. {n}: min_runs des Blocks (50, bei
-     Rang und Sentiment 30). Ein unbekannter Code sagt nichts -- nie der Code selbst. */
-  var KONF_GRUND = {
-    no_after_data: "There are no answers after the event yet.",
-    no_value: "There is nothing to compare yet.",
-    runs_before_low: "Too few answers before the event (at least {n} needed).",
-    runs_after_low: "Too few answers after the event (at least {n} needed).",
-    prompts_low: "Too few prompts have a value.",
-    comparison_runs_before_low: "Too few answers in the comparison group before the event.",
-    comparison_runs_after_low: "Too few answers in the comparison group after the event.",
-    comparison_prompts_low: "Too few prompts in the comparison group have a value.",
-    noise_points_low: "There isn't enough history before the event to tell what is normal.",
-    before_days_low: "Fewer than 7 days of data before the event.",
-    after_days_low: "Fewer than 7 days of data after the event.",
-    comparable_set_mismatch: "These numbers can't be compared reliably yet."
-  };
-  /* In den Schluessel der Erklaerkarte (data-explain): nur bekannte Codes, Komma-getrennt. */
-  function konfGruende(c) {
-    return (c && isArr(c.reasons) ? c.reasons : []).filter(function (r) { return KONF_GRUND[r]; }).slice(0, 3).join(",");
+  /* DAS URTEIL FEHLT NIE OHNE GRUND (17.10., Nutzer: "Jeden Tag, wo er reinschaut: zu wenig Daten.
+     Dann guckt er nicht mehr rein"). Ein Block mit too_little_data zeigt an der Kachel KEIN Urteil
+     und keinen Chip mehr -- nur die gemessene Zahl und die Fallzahl. Was fehlt, sagt EINE ruhige
+     Zeile unter den Kacheln (konfHinweisHtml), mit der Zahl und, wenn die Zeit es loest, mit dem
+     Tag. Die Schwellen sind die der Datenbank (_impact_event_confidence_block_v1, gelesen 17.10.):
+     7 Tage mit Daten vor und nach dem Event, 6 von 8 Wochen Verlauf, 5 Prompts je Seite, 50 Laeufe
+     (bei Rang und Sentiment 30, steht je Block als min_runs). */
+  var KONF_MIN_TAGE = 7, KONF_MIN_WOCHEN = 6, KONF_MIN_PROMPTS = 5;
+  var KONF_FELD = { visibility: "Visibility", rank: "Rank", sentiment: "Sentiment", share_of_citations: "Share of all citations", global_share: "Global share" };
+  function konfFeldName(feld) { return t(KONF_FELD[feld] || feld); }
+  /* Was mit den Tagen von allein kommt: bei einem Block mit Zeitgrund nennt nur der Zeitsatz es. */
+  var KONF_ZEIT_LOESUNG = { after_days_low: 1, no_after_data: 1, runs_after_low: 1, comparison_runs_after_low: 1, comparison_prompts_low: 1, prompts_low: 1 };
+  /* "A, B and C" -- die Kennzahlen eines Satzes. */
+  function konfListe(l) {
+    var n = l.map(konfFeldName);
+    if (n.length < 2) return n.join("");
+    return n.slice(0, -1).join(", ") + " " + t("and") + " " + n[n.length - 1];
+  }
+  /* Die Saetze zu den Bloecken ohne Urteil. bloecke: [{ feld, c }] aller Kennzahlen, die die Seite
+     zeigt (auch der mit Urteil -- nur too_little_data zaehlt). Rueckgabe: { saetze: [Text], zeit: bool }. */
+  function konfSaetze(bloecke) {
+    var gruppen = [], nach = {}, zeitMin = null;
+    function zu(code, feld, schl, werte) {
+      var k = code + "|" + JSON.stringify(werte);
+      if (!nach[k]) { nach[k] = { schl: schl, werte: werte, felder: [] }; gruppen.push(nach[k]); }
+      if (nach[k].felder.indexOf(feld) < 0) nach[k].felder.push(feld);
+    }
+    bloecke.forEach(function (b) {
+      var c = b.c;
+      if (!c || c.verdict !== "too_little_data") return;
+      var R = isArr(c.reasons) ? c.reasons : [], f = b.feld, af = c.affected || {}, cm = c.comparison || {};
+      var minR = num(c.min_runs) || 50, zeit = R.indexOf("after_days_low") >= 0 || R.indexOf("no_after_data") >= 0;
+      function kl(x, y) { x = num(x); y = num(y); return Math.min(x == null ? 0 : x, y == null ? 0 : y); }
+      if (zeit) { var da = num(c.days_after) || 0; zeitMin = zeitMin == null ? da : Math.min(zeitMin, da); }
+      /* Eine Aussage je Seite statt je Code der DB: "vorher und nachher" in EINEM Satz, mit beiden
+         Zahlen -- sonst stuende jede Seite einzeln da und die Zeile wuerde zur Liste. */
+      var gesehen = {};
+      R.forEach(function (r) {
+        if (zeit && KONF_ZEIT_LOESUNG[r]) return;
+        var k = r === "runs_before_low" || r === "runs_after_low" ? "own" : r === "comparison_runs_before_low" || r === "comparison_runs_after_low" ? "cmp" : r;
+        if (gesehen[k]) return;
+        gesehen[k] = 1;
+        if (k === "no_value") zu(k, f, "For {metrics}, there is nothing to compare yet.", {});
+        else if (k === "own") zu(k, f, "For {metrics}, the affected prompts have {a} answers before and {b} after the event, at least {m} are needed on each side.", { a: zahl(num(af.runs_before) || 0), b: zahl(num(af.runs_after) || 0), m: zahl(minR) });
+        else if (k === "cmp") zu(k, f, "For {metrics}, the comparison group has {a} answers before and {b} after the event, at least {m} are needed on each side.", { a: zahl(num(cm.runs_before) || 0), b: zahl(num(cm.runs_after) || 0), m: zahl(minR) });
+        else if (k === "prompts_low") zu(k, f, "For {metrics}, only {a} prompts have a value, at least {m} are needed.", { a: zahl(kl(af.prompts_before, af.prompts_after)), m: KONF_MIN_PROMPTS });
+        else if (k === "comparison_prompts_low") zu(k, f, "For {metrics}, only {a} prompts in the comparison group have a value, at least {m} are needed.", { a: zahl(kl(cm.prompts_before, cm.prompts_after)), m: KONF_MIN_PROMPTS });
+        else if (k === "noise_points_low") zu(k, f, "For {metrics}, there is too little history before the event to tell what is normal: {a} of {m} weeks have data.", { a: zahl(num(c.noise_points) || 0), m: KONF_MIN_WOCHEN });
+        else if (k === "before_days_low") zu(k, f, "For {metrics}, there are only {a} days of data before the event, at least {m} are needed.", { a: zahl(num(c.days_before) || 0), m: KONF_MIN_TAGE });
+        else if (k === "comparable_set_mismatch") zu(k, f, "For {metrics}, these numbers can't be compared reliably yet.", {});
+      });
+    });
+    var saetze = [];
+    if (zeitMin != null) {
+      /* Der Tag, an dem die siebte Tagesreihe voll ist, wenn jeden Tag Daten kommen: heute + was
+         fehlt. Die Datenbank zaehlt Tage MIT Daten, es ist also eine Voraussage, keine Zusage --
+         daher "follows from", nicht "on". */
+      var fehlt = Math.max(1, KONF_MIN_TAGE - zeitMin);
+      saetze.push(ersetze(t("A reliable result follows from {date}: it needs {m} days of data after the event, {a} so far."),
+        { date: datum(isoAus(tagMs(heuteIso()) + fehlt * 864e5)), m: KONF_MIN_TAGE, a: zahl(zeitMin) }));
+    }
+    /* Mehr als zwei Saetze neben der Zeit lesen sich als Liste: dann ein Satz mit den Kennzahlen, ohne
+       Zahlen. Die genauen Zahlen stehen in der Erklaerung an der Zahl jeder Kachel (Tooltip). */
+    if (gruppen.length > 2) {
+      var alle = [];
+      gruppen.forEach(function (g) { g.felder.forEach(function (x) { if (alle.indexOf(x) < 0) alle.push(x); }); });
+      saetze.push(ersetze(t("For {metrics}, there are still too few answers for a reliable result."), { metrics: konfListe(alle) }));
+    } else gruppen.forEach(function (g) {
+      var w = {}; for (var k in g.werte) w[k] = g.werte[k];
+      w.metrics = konfListe(g.felder);
+      saetze.push(ersetze(t(g.schl), w));
+    });
+    return { saetze: saetze, zeit: zeitMin != null };
+  }
+  /* Die eine Zeile unter den Kacheln: Zeichen (Uhr, wenn es die Zeit loest, sonst Info) und der Satz.
+     Leer, wenn alle Urteile da sind. */
+  function konfHinweisHtml(bloecke) {
+    var s = konfSaetze(bloecke);
+    if (!s.saetze.length) return "";
+    return '<span class="uev-angabe uev-konfnote-t">' + UC.icon(s.zeit ? "clock" : "info", 2) + '<span>' + esc(s.saetze.join(" ")) + '</span></span>';
   }
   function konfText(code) {
     var e = UC.explainCopy ? UC.explainCopy(KONF[code].schl) : null;
@@ -449,16 +509,18 @@
   }
   /* Die Zeile selbst. n: Laeufe der betroffenen Seite vorher + nachher (affected.runs_*), beim
      Rang die Laeufe mit Rang, beim Sentiment die im 30-Tage-Fenster -- so liefert es die DB je
-     Kennzahl. Ohne beide Zahlen nur das Urteil. Der Tooltip an der Zahl nennt die zwei Seiten. */
+     Kennzahl. Ohne beide Zahlen nur das Urteil. Der Tooltip an der Zahl nennt die Kennzahl und die
+     zwei Seiten. Ein Block ohne Urteil (too_little_data) zeigt nur die Fallzahl, keinen Chip. */
   function konfZeile(c, feld, n, vorher, nachher, richtung, klickbar) {
-    var k = KONF[c.verdict], tx = konfText(c.verdict);
-    var zahlTxt = n == null ? "" : n === 1 ? t("Based on 1 answer") : ersetze(t("Based on {n} answers"), { n: zahl(n) });
-    var tip = vorher != null && nachher != null ? ersetze(t("{a} before the event, {b} after"), { a: zahl(vorher), b: zahl(nachher) }) : "";
+    var k = KONF[c.verdict], ohne = c.verdict === "too_little_data", tx = ohne ? null : konfText(c.verdict);
+    var zahlTxt = !n ? "" : n === 1 ? t("Based on 1 answer") : ersetze(t("Based on {n} answers"), { n: zahl(n) });
+    var tip = vorher != null && nachher != null ? ersetze(t("{m}: {a} answers before the event, {b} after"), { m: konfFeldName(feld), a: zahl(vorher), b: zahl(nachher) }) : "";
+    if (ohne && !zahlTxt) return "";
     return '<span class="uev-konf">' +
       (zahlTxt ? '<span class="uev-konf-n"' + (tip ? ' data-tip="' + esc(tip) + '"' : '') + '>' + esc(zahlTxt) + '</span>' : '') +
-      '<span class="uev-konf-urteil ' + k.kl + (richtung ? " is-" + richtung : "") + (klickbar ? ' uev-erklaer" tabindex="0" data-explain="' +
-        esc(["konf", c.verdict, n == null ? "" : n, richtung, konfGruende(c), num(c.min_runs) || ""].join("|")) : '') + '">' +
-        UC.icon(k.ic, 2) + '<span>' + esc(tx.h) + '</span></span>' +
+      (ohne ? '' : '<span class="uev-konf-urteil ' + k.kl + (richtung ? " is-" + richtung : "") + (klickbar ? ' uev-erklaer" tabindex="0" data-explain="' +
+        esc(["konf", c.verdict, n == null ? "" : n, richtung, feld].join("|")) : '') + '">' +
+        UC.icon(k.ic, 2) + '<span>' + esc(tx.h) + '</span></span>') +
     '</span>';
   }
   function konfidenzHtml(c, feld) {
@@ -470,29 +532,29 @@
   }
   /* Kurz, nur das Zeichen (17.10.): fuer Zeilen, die schon Bezeichnung, Wert und Trend tragen --
      die Abschnitte des Abschlussberichts einer Kampagne (renderBericht). Das Wort steht als
-     aria-label, die Fallzahl in der Erklaerkarte, dieselbe wie an der Kachel. */
+     aria-label, die Fallzahl in der Erklaerkarte, dieselbe wie an der Kachel. Ohne Urteil
+     (too_little_data) steht nichts: die Zeile unter dem Bericht sagt, was fehlt. */
   function konfZeichenHtml(c, feld) {
-    if (!c) return "";
+    if (!c || c.verdict === "too_little_data") return "";
     var af = c.affected && typeof c.affected === "object" ? c.affected : {};
     var vb = num(af.runs_before), va = num(af.runs_after), k = KONF[c.verdict];
     var n = vb == null && va == null ? null : (vb || 0) + (va || 0), r = konfRichtung(c, feld);
-    return '<span class="uev-konf-urteil is-zeichen ' + k.kl + (r ? " is-" + r : "") + ' uev-erklaer" tabindex="0" role="img" aria-label="' + esc(konfText(c.verdict).h) +
-      '" data-explain="' + esc(["konf", c.verdict, n == null ? "" : n, r, konfGruende(c), num(c.min_runs) || ""].join("|")) + '">' + UC.icon(k.ic, 2) + '</span>';
+    return '<span class="uev-konf-urteil is-zeichen ' + k.kl + (r ? " is-" + r : "") + ' uev-erklaer" tabindex="0" role="img" aria-label="' + esc(konfFeldName(feld) + ": " + konfText(c.verdict).h) +
+      '" data-explain="' + esc(["konf", c.verdict, n == null ? "" : n, r, feld].join("|")) + '">' + UC.icon(k.ic, 2) + '</span>';
   }
   /* Die Erklaerkarte am Urteil (Format CLAUDE.md/Memory): helle Platte mit der Zeile, wie die
-     Kachel sie zeigt, Titel = das Wort des Urteils, der Satz aus core. Der Schluessel traegt, was
-     die Platte braucht: konf|<code>|<n>|<richtung>. */
+     Kachel sie zeigt, Titel = das Wort des Urteils, der Satz nennt die Kennzahl (Nutzer: "was ist
+     'das'?"). Der Schluessel traegt, was die Platte braucht: konf|<code>|<n>|<richtung>|<feld>. */
+  var KONF_SATZ = {
+    clear_effect: "AI answers vary from day to day. The change in {metric} is more than twice as large as the usual ups and downs, so it is very likely caused by the event.",
+    within_noise: "AI answers vary from day to day. The change in {metric} is within the usual ups and downs, so it may be chance."
+  };
   function konfErklaerung(key) {
     var p = String(key).split("|"), code = p[1];
-    if (!KONF[code]) return "";
+    if (!KONF[code] || !KONF_SATZ[code]) return "";
     var n = p[2] === "" ? null : num(p[2]), tx = konfText(code);
-    /* Die Gruende nur beim Urteil "Not enough data yet": dort sind sie das, was der Nutzer wissen
-       will. Bei den anderen Urteilen liefert die DB keine (reasons []). */
-    var gruende = code === "too_little_data" && p[4] ? p[4].split(",").filter(function (r) { return KONF_GRUND[r]; }) : [];
-    var min = num(p[5]) || 50;
-    return '<div class="up-explain-vis uev-explain-konf">' + konfZeile({ verdict: code }, "", n, null, null, p[3] || "", false) + '</div>' +
-      '<div class="up-explain-h">' + esc(tx.h) + '</div><div class="up-explain-t">' + esc(tx.t) + '</div>' +
-      gruende.map(function (r) { return '<div class="up-explain-t uev-explain-grund">' + esc(ersetze(t(KONF_GRUND[r]), { n: zahl(min) })) + '</div>'; }).join("");
+    return '<div class="up-explain-vis uev-explain-konf">' + konfZeile({ verdict: code }, p[4] || "", n, null, null, p[3] || "", false) + '</div>' +
+      '<div class="up-explain-h">' + esc(tx.h) + '</div><div class="up-explain-t">' + esc(ersetze(t(KONF_SATZ[code]), { metric: konfFeldName(p[4] || "") })) + '</div>';
   }
 
   /* Die Fehler-Codes des Vertrags (Tabelle 4) als Satz fuer den Nutzer. Nie der Code selbst,
@@ -1085,7 +1147,28 @@
   if (UC.addMessages) UC.addMessages("de", {
     "Based on {n} answers": "Aus {n} Antworten",
     "Based on 1 answer": "Aus 1 Antwort",
-    "{a} before the event, {b} after": "{a} vor dem Event, {b} danach",
+    "{m}: {a} answers before the event, {b} after": "{m}: {a} Antworten vor dem Event, {b} danach",
+    "and": "und",
+    "You can refresh again at {time}.": "Du kannst um {time} wieder aktualisieren.",
+    "A reliable result follows from {date}: it needs {m} days of data after the event, {a} so far.":
+      "Ein belastbares Ergebnis gibt es ab dem {date}: dafür braucht es {m} Tage mit Daten nach dem Event, bisher {a}.",
+    "For {metrics}, there is nothing to compare yet.": "Für {metrics} gibt es noch nichts zu vergleichen.",
+    "For {metrics}, the affected prompts have {a} answers before and {b} after the event, at least {m} are needed on each side.":
+      "Für {metrics} haben die betroffenen Prompts {a} Antworten vor und {b} nach dem Event, nötig sind auf jeder Seite mindestens {m}.",
+    "For {metrics}, the comparison group has {a} answers before and {b} after the event, at least {m} are needed on each side.":
+      "Für {metrics} hat die Vergleichsgruppe {a} Antworten vor und {b} nach dem Event, nötig sind auf jeder Seite mindestens {m}.",
+    "For {metrics}, only {a} prompts have a value, at least {m} are needed.": "Für {metrics} haben nur {a} Prompts einen Wert, nötig sind mindestens {m}.",
+    "For {metrics}, only {a} prompts in the comparison group have a value, at least {m} are needed.":
+      "Für {metrics} haben in der Vergleichsgruppe nur {a} Prompts einen Wert, nötig sind mindestens {m}.",
+    "For {metrics}, there are still too few answers for a reliable result.": "Für {metrics} gibt es noch zu wenige Antworten für ein belastbares Ergebnis.",
+    "For {metrics}, there is too little history before the event to tell what is normal: {a} of {m} weeks have data.":
+      "Für {metrics} gibt es vor dem Event zu wenig Verlauf, um zu erkennen, was normal ist: {a} von {m} Wochen haben Daten.",
+    "For {metrics}, there are only {a} days of data before the event, at least {m} are needed.": "Für {metrics} gibt es vor dem Event nur {a} Tage mit Daten, nötig sind mindestens {m}.",
+    "For {metrics}, these numbers can't be compared reliably yet.": "Für {metrics} lassen sich diese Zahlen noch nicht verlässlich vergleichen.",
+    "AI answers vary from day to day. The change in {metric} is more than twice as large as the usual ups and downs, so it is very likely caused by the event.":
+      "KI-Antworten schwanken von Tag zu Tag. Die Veränderung bei {metric} ist mehr als doppelt so groß wie die üblichen Schwankungen, geht also sehr wahrscheinlich auf das Event zurück.",
+    "AI answers vary from day to day. The change in {metric} is within the usual ups and downs, so it may be chance.":
+      "KI-Antworten schwanken von Tag zu Tag. Die Veränderung bei {metric} liegt im Rahmen der üblichen Schwankungen, kann also Zufall sein.",
     "Under each number you see how many answers it rests on, and whether the change stands out from the usual ups and downs.":
       "Unter jeder Zahl siehst du, auf wie vielen Antworten sie beruht und ob sich die Veränderung von den üblichen Schwankungen abhebt.",
     "{a} of {b} pages cited": "{a} von {b} Seiten zitiert",
@@ -1109,18 +1192,6 @@
     "{n} new pages since the event, {c} cited": "{n} neue Seiten seit dem Event, {c} zitiert",
     "First cited and New URLs always cover all models and markets, whatever the filters say.": "\u201eErstmals zitiert\u201c und \u201eNeue URLs\u201c umfassen immer alle Modelle und Märkte, egal welche Filter gesetzt sind.",
     "Not affected by your filters": "Unabhängig von deinen Filtern",
-    "There are no answers after the event yet.": "Nach dem Event gibt es noch keine Antworten.",
-    "There is nothing to compare yet.": "Es gibt noch nichts zu vergleichen.",
-    "Too few answers before the event (at least {n} needed).": "Zu wenige Antworten vor dem Event (mindestens {n} nötig).",
-    "Too few answers after the event (at least {n} needed).": "Zu wenige Antworten nach dem Event (mindestens {n} nötig).",
-    "Too few prompts have a value.": "Zu wenige Prompts haben einen Wert.",
-    "Too few answers in the comparison group before the event.": "Zu wenige Antworten in der Vergleichsgruppe vor dem Event.",
-    "Too few answers in the comparison group after the event.": "Zu wenige Antworten in der Vergleichsgruppe nach dem Event.",
-    "Too few prompts in the comparison group have a value.": "Zu wenige Prompts der Vergleichsgruppe haben einen Wert.",
-    "There isn't enough history before the event to tell what is normal.": "Vor dem Event gibt es zu wenig Verlauf, um zu erkennen, was normal ist.",
-    "Fewer than 7 days of data before the event.": "Weniger als 7 Tage mit Daten vor dem Event.",
-    "Fewer than 7 days of data after the event.": "Weniger als 7 Tage mit Daten nach dem Event.",
-    "These numbers can't be compared reliably yet.": "Diese Zahlen lassen sich noch nicht verlässlich vergleichen.",
     "The sitemap couldn't be refreshed. Please try again later.": "Die Sitemap ließ sich nicht aktualisieren. Versuch es bitte später noch einmal.",
     "Page coverage couldn't be loaded.": "Die Seitenabdeckung ließ sich nicht laden.",
     "Cited ({n})": "Zitiert ({n})",
@@ -2235,6 +2306,8 @@
           /* Der Abschlussbericht einer Kampagne (17.10.): Vorher, Waehrend, Danach an der Stelle
              der Kennzahlen -- dieselben drei Kennzahlen je Abschnitt. */
           '<div class="uev-bericht" data-sek="bericht"></div>' +
+          /* Die eine Zeile zu den Urteilen (17.10.): was fehlt, damit es eins gibt (konfHinweisHtml). */
+          '<div class="uev-konfnote" data-sek="konfnote" hidden></div>' +
           '</div>' +
           '<section class="uev-sek uev-sek-chart">' +
             sekKopf("Performance around event", "How your brand developed in the affected prompts before and after the event.",
@@ -2271,6 +2344,8 @@
            (core, chartLeerHtml) -- leer wegen des Filters ist etwas anderes als noch keine Daten. */
         gefiltert: analyseGefiltert,
         markers: chartMarker,
+        /* Die anderen Events im Zeitraum leiser (17.10.): das Event dieser Seite ist der Gegenstand. */
+        markerDimmen: true,
         onMarker: function (id) { if (id && id !== state.eventId) oeffnen(id, true); }
       });
       seitenAnlegen();
@@ -2646,6 +2721,7 @@
         el.innerHTML = state.analyseFehler && !state.analyseLaden
           ? '<div class="uev-kpifehler">' + (UC.leseFehlerHtml ? UC.leseFehlerHtml("the analysis") : "") + '</div>'
           : [0, 1, 2].map(function () { return UC.kpiKarteSkelett("uev-kpi"); }).join("");
+        renderKonfNote();
         return;
       }
       var leer = !(a.cohort && num(a.cohort.comparable_prompt_count) > 0);
@@ -2666,6 +2742,24 @@
       /* Je Event gemerkt: dasselbe Event noch einmal gezeichnet zaehlt nicht von vorn, ein anderes
          schon. */
       if (UC.hochzaehlen) UC.hochzaehlen(el, "events|" + instanceId + "|" + state.eventId);
+      renderKonfNote();
+    }
+    /* Die Zeile unter den Kacheln (oder dem Abschlussbericht), wenn ein Urteil fehlt: dieselben
+       Bloecke wie die Kacheln, bei der Kampagne auch die des Nachlaufs. Leer und verborgen, wenn alle
+       Urteile da sind oder die Analyse keine Konfidenz mitbringt. */
+    function renderKonfNote() {
+      var el = elMain.querySelector('[data-sek="konfnote"]'), a = dieAnalyse();
+      if (!el) return;
+      var l = [];
+      if (a && a.cohort && num(a.cohort.comparable_prompt_count) > 0) {
+        METRIKEN.forEach(function (m) {
+          var c = konfVon(a, m.key);
+          if (c) { l.push({ feld: m.key, c: c }); if (c.post && typeof c.post === "object" && istFertig(dasEvent())) l.push({ feld: m.key, c: konfVon(a, m.key, "post") }); }
+        });
+      }
+      var h = konfHinweisHtml(l.filter(function (x) { return x.c; }));
+      el.innerHTML = h;
+      el.hidden = !h;
     }
 
     /* ---- GEPLANT UND ABGESCHLOSSEN (17.10., Kampagnen) ---------------------------------------
@@ -2705,6 +2799,7 @@
       var an = kampagneDa() && istFertig(ev) && !!a;
       if (kp) kp.hidden = an;
       if (!an) { el.innerHTML = ""; return; }
+      renderKonfNote();
       var w = a.windows || {}, z = phasenZeiten(ev, w), final = w.report_final === true || ev.report_final === true;
       var leer = !(a.cohort && num(a.cohort.comparable_prompt_count) > 0);
       el.innerHTML = PHASEN.map(function (ph) {
@@ -3120,6 +3215,7 @@
         yOhneDeckel: true, yGanz: true, legendeImmer: true,
         tipLabel: function () { return ""; },
         markers: chartMarker,
+        markerDimmen: true,
         onMarker: function (id) { if (id && id !== state.eventId) oeffnen(id, true); }
       }) : null;
       return sek;
@@ -3282,7 +3378,15 @@
        not_cited, die ersten ABD_LIMIT Seiten je Ziel); "Show N more" holt je Ziel nach. Ohne die
        Funktion (PGRST202) bleibt alles wie bisher (ABD_DA). Ein Lesefehler der Sitemap loescht in
        der DB nichts -- darum steht der Satz dann ueber den zuletzt gelesenen Seiten. */
-    var ABD_LIMIT = 20, ABD_MEHR = 50, abdGefragt = {}, abdUhrId = null, abdSegJetzt = {};
+    /* ABD_LIMIT: so viele Seiten je Ziel kommen beim ersten Abruf -- der Baum der Ordner braucht mehr, als er
+       zeigt (die DB erlaubt 200). Sichtbar sind ABD_SICHT Eintraege je Ebene (Ordner, Unterordner und Seiten
+       zusammen), dann "Show more" (17.10., Nutzer: "standardmaessig immer 10"). */
+    var ABD_LIMIT = 100, ABD_MEHR = 50, ABD_SICHT = 10, abdGefragt = {}, abdUhrId = null, abdSegJetzt = {};
+    /* Ein automatischer Refresh je Event und Seitenaufruf (17.10.): die DB erlaubt einen je Stunde und Event,
+       die UI fragt nie in einer Schleife. Der Zustand ist nicht gespeichert -- Neuladen darf es einmal neu
+       versuchen. abdFehlerSt: der letzte Ausgang eines Refreshs je Event ({ art: "zeit", bis } oder
+       { art: "fehler" }), abdBaumZ: aufgeklappte Ordner und gezeigte Eintraege je Ziel. */
+    var abdAuto = {}, abdFehlerSt = {}, abdBaumZ = {}, abdLb = {};
     function abdLesbar(d) { return !!d && typeof d === "object" && isArr(d.targets); }
     function abdZiel(d, id, wert) {
       var l = d && isArr(d.targets) ? d.targets : [], i;
@@ -3304,13 +3408,26 @@
       abdRpc("get_impact_event_coverage_v1", { p_event_id: eid, p_target_id: null, p_filter: "not_cited", p_limit: ABD_LIMIT, p_offset: 0 }).then(function (erg) {
         e.laedt = false;
         if (fehltFn(erg)) { ABD_DA.stand = false; delete state.abd[eid]; }
-        else if (erg.ok && abdLesbar(erg.daten)) { ABD_DA.stand = true; e.daten = erg.daten; e.fehler = false; e.mehr = {}; }
+        else if (erg.ok && abdLesbar(erg.daten)) { ABD_DA.stand = true; e.daten = erg.daten; e.fehler = false; e.mehr = {}; abdAutoPruefen(eid); }
         /* Gescheitert oder unlesbar: mit einem Stand von vorhin bleibt der stehen (die Seiten sind
            ja nicht falsch), ohne einen steht der Satz statt der Zeile -- nie ein endloses Skelett. */
         else e.fehler = !e.daten;
         persist();
         if (root.isConnected !== false && state.ansicht === "detail" && state.eventId === eid) abdAlle();
       });
+    }
+    /* DIE SITEMAP GLEICH LADEN (17.10.): ein Ziel mit Sitemap, das noch nie gelesen wurde (status
+       "pending"), wartete bisher auf den Knopf "Refresh" oder auf die naechste Nacht -- direkt nach dem
+       Anlegen stand der Abschnitt leer da. Jetzt stoesst die Seite EINEN Refresh an, sobald die DB ihn
+       erlaubt (can_refresh) und nur einmal je Event und Seitenaufruf (abdAuto): scheitert er, steht der
+       Satz dazu und der Knopf "Try again", nie eine Wiederholung von allein. Nach dem Hinzufuegen eines
+       Ziels (setDetail) wird abdAuto fuer das Event frei. */
+    function abdAutoPruefen(eid) {
+      var e = state.abd[eid], d = e && e.daten;
+      if (!d || abdAuto[eid] || e.neuLaeuft || !UC.edge || d.can_refresh !== true) return;
+      if (!(isArr(d.targets) && d.targets.some(function (x) { return x && String(x.status || "") === "pending"; }))) return;
+      abdAuto[eid] = 1;
+      abdAktualisieren(true);
     }
     /* Nur die Teile der Abdeckung neu, nicht die ganzen Ziel-Abschnitte (deren Diagramme blieben
        sonst bei jeder Minute der Sperr-Uhr neu gezeichnet). */
@@ -3342,58 +3459,73 @@
                       : (n === 1 ? "{n} cited page not in your sitemap" : "{n} cited pages not in your sitemap");
       return { text: ersetze(t(k), { n: zahl(n) }), html: esc(t(k)).replace("{n}", '<span class="uev-abd-z">' + esc(zahl(n)) + '</span>') };
     }
+    /* "wieder moeglich um 14:32" (bei einem anderen Tag mit Datum davor). */
+    function abdUm(ms) {
+      var x = new Date(ms), zeit = x.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      return x.toDateString() === new Date().toDateString() ? zeit : datum(isoAus(ms)) + " " + zeit;
+    }
+    /* DER KOPF DES ABSCHNITTS (17.10., aufgeraeumt): links die Zahl als Text ("12 of 43 pages cited" --
+       KEIN Balken, der Nutzer lehnt Fortschrittsbalken ab), rechts leise der Stand ("Last checked 5 min
+       ago") und der ruhige Knopf. Darunter ein Satz, wenn etwas zu sagen ist: der Refresh war zu frueh
+       (nur die Zeit), oder er ist gescheitert (mit "Try again"). */
     function abdKopfHtml(e, d, z) {
-      var st = String(z.status || ""), pc = num(z.page_count), cc = num(z.cited_count), teile = [];
-      /* Zitierte Seiten, die NICHT in der Sitemap stehen (cited_outside_sitemap, 17.10.): cited_count
-         zaehlt nur Seiten der Sitemap. Der Satz steht nur bei > 0; null (nie gelesen) heisst nichts. */
+      var eid = state.eventId, st = String(z.status || ""), pc = num(z.page_count), cc = num(z.cited_count), links = [], rechts = [];
       var aussen = num(z.cited_outside_sitemap);
       var plus = aussen > 0 ? abdPlusSatz(aussen, pc > 0) : "";
       if (st === "pending") {
-        teile.push('<span class="uev-angabe">' + UC.icon("clock", 2) + '<span>' + esc(t("We're reading your sitemap for the first time.")) + '</span></span>');
+        links.push('<span class="uev-angabe">' + UC.icon("clock", 2) + '<span>' + esc(t("We're reading your sitemap for the first time.")) + '</span></span>');
       } else if (pc > 0 && cc != null) {
-        var anteil = Math.max(0, Math.min(100, cc / pc * 100));
         var satz = esc(t(pc === 1 ? "{a} of {b} page cited" : "{a} of {b} pages cited"))
           .replace("{a}", '<span class="uev-abd-z">' + esc(zahl(cc)) + '</span>').replace("{b}", '<span class="uev-abd-z">' + esc(zahl(pc)) + '</span>');
-        var aria = ersetze(t(pc === 1 ? "{a} of {b} page cited" : "{a} of {b} pages cited"), { a: zahl(cc), b: zahl(pc) }) + (plus ? ", " + plus.text : "");
-        teile.push('<span class="uev-abd-stand"><span class="uev-abd-satz">' + satz + (plus ? ", " + plus.html : "") + '</span>' +
-          '<span class="uev-abd-balken" role="img" aria-label="' + esc(aria) + '"><span class="uev-abd-balken-f" style="width:' + anteil.toFixed(1) + '%"></span></span></span>');
+        links.push('<span class="uev-abd-satz">' + satz + (plus ? ", " + plus.html : "") + '</span>');
       } else if (pc === 0) {
-        teile.push('<span class="uev-abd-leise">' + esc(t("No pages in your sitemap match this rule.")) + (plus ? " " + plus.html + "." : "") + '</span>');
+        links.push('<span class="uev-abd-leise">' + esc(t("No pages in your sitemap match this rule.")) + (plus ? " " + plus.html + "." : "") + '</span>');
       }
       if (z.truncated === true && num(z.page_limit) > 0) {
         /* Die DB behaelt die zuletzt geaenderten Seiten (lastmod, neueste zuerst), nicht die ersten
            der Datei; matched_total sagt, wie viele die Regel in der Sitemap trifft. */
         var gesamt = num(z.matched_total);
-        teile.push('<span class="uev-angabe">' + UC.icon("info", 2) + '<span>' + esc(gesamt > num(z.page_limit)
+        links.push('<span class="uev-angabe">' + UC.icon("info", 2) + '<span>' + esc(gesamt > num(z.page_limit)
           ? ersetze(t("The {n} most recently updated of {total} pages"), { n: zahl(z.page_limit), total: zahl(gesamt) })
           : ersetze(t("Only the {n} most recently updated pages"), { n: zahl(z.page_limit) })) + '</span></span>');
       }
       var zeit = z.last_checked_at || d.last_checked_at;
       var wann = zeit && UC.relativeTime ? UC.relativeTime(zeit) : "";
-      if (wann) teile.push('<span class="uev-abd-leise">' + esc(ersetze(t("Last checked {when}"), { when: wann })) + '</span>');
+      if (wann) rechts.push('<span class="uev-abd-leise">' + esc(ersetze(t("Last checked {when}"), { when: wann })) + '</span>');
+      var fs = abdFehlerSt[eid] || null, sperre = "";
       /* "Refresh" nur, wenn die DB die Sperre mitliefert -- ohne next_refresh_at im Vertrag gaebe es
          keinen Weg, "gesperrt" ehrlich zu zeigen. Gesperrt ueber aria-disabled statt disabled: ein
-         abgeschalteter Knopf bekommt in Chrome kein pointerenter, der Tooltip kaeme nie. */
+         abgeschalteter Knopf bekommt in Chrome kein pointerenter, der Tooltip kaeme nie. Der Lader beim
+         Laufen ist der Standard der App (makeLadebild, abdFuellen), nicht ein Zeichen im Knopf. */
       if ("next_refresh_at" in d) {
         var warte = abdWarteMs(d), laeuft = !!e.neuLaeuft, zu = warte > 0 || laeuft;
         var tip = warte > 0 ? ersetze(t("You can refresh again in {n} min"), { n: Math.max(1, Math.ceil(warte / 60000)) }) : t("Check your sitemap for new pages");
-        teile.push('<button type="button" class="up-quietbtn uev-abd-neu' + (zu ? " is-aus" : "") + '" aria-disabled="' + zu + '" data-tip="' + esc(tip) + '">' +
-          UC.icon(laeuft ? "loader" : "refreshCw", 2) + '<span>' + esc(t(laeuft ? "Checking…" : "Refresh")) + '</span></button>');
+        var retry = !zu && fs && fs.art === "fehler";
+        rechts.push('<button type="button" class="up-quietbtn uev-abd-neu' + (zu ? " is-aus" : "") + '" aria-disabled="' + zu + '" data-tip="' + esc(tip) + '">' +
+          (laeuft ? '' : UC.icon("refreshCw", 2)) + '<span>' + esc(t(laeuft ? "Checking…" : retry ? "Try again" : "Refresh")) + '</span></button>');
         abdUhr(warte);
+        if (warte > 0 && fs && fs.art === "zeit") sperre = '<span class="uev-abd-leise">' + esc(ersetze(t("You can refresh again at {time}."), { time: abdUm(Date.now() + warte) })) + '</span>';
       }
       /* Lesefehler der Sitemap (not_found, timeout, too_large, invalid_xml, blocked): EIN Satz fuer
          alle -- der naechste Versuch kommt ohnehin morgen von selbst. Rot wie jeder Fehler der App
-         (.up-fehlerzeile, kein Kasten). */
+         (.up-fehlerzeile, kein Kasten). Ein gescheiterter Refresh sagt es auch so. */
       var fehler = st && st !== "ok" && st !== "pending";
-      return '<div class="uev-abd-zeile1">' + teile.join("") + '</div>' +
-        (fehler ? '<div class="up-fehlerzeile is-on uev-abd-fehler"><span>' + esc(t("We couldn't read your sitemap. We'll try again tomorrow.")) + '</span></div>' : '');
+      var satzFehler = fs && fs.art === "fehler" && !e.neuLaeuft ? t("The sitemap couldn't be refreshed. Please try again later.")
+        : fehler ? t("We couldn't read your sitemap. We'll try again tomorrow.") : "";
+      return '<div class="uev-abd-zeile1"><div class="uev-abd-links">' + links.join("") + '</div><div class="uev-abd-rechts">' + rechts.join("") + '</div></div>' +
+        (sperre ? '<div class="uev-abd-zeile2">' + sperre + '</div>' : '') +
+        (satzFehler ? '<div class="up-fehlerzeile is-on uev-abd-fehler"><span>' + esc(satzFehler) + '</span></div>' : '');
     }
-    function abdSeiteHtml(zt, p) {
+    /* opt.tiefe/opt.name: im Baum steht die Seite eingerueckt und mit dem Teil des Pfads nach dem Ordner. */
+    function abdSeiteHtml(zt, p, opt) {
+      opt = opt || {};
       var hp = hostPfad(p.url || ""), weg = !!p.missing_since;
-      var pfad = zt.kind === "host_all" ? hp.host + (hp.start ? "" : hp.pfad) : pfadText(hp);
+      var pfad = opt.name != null ? opt.name : zt.kind === "host_all" ? hp.host + (hp.start ? "" : hp.pfad) : pfadText(hp);
       var wann = p.lastmod ? ersetze(t("Updated {date}"), { date: datum(p.lastmod) })
         : p.first_seen_at ? ersetze(t("In sitemap since {date}"), { date: datum(p.first_seen_at) }) : "";
-      return '<div class="uev-abd-seite' + (weg ? " is-weg" : "") + '" data-tip="' + esc(t("This page opens once an AI answer cites it.")) + '">' +
+      /* Der Hinweis "oeffnet sich erst, wenn zitiert" kommt erst beim KLICK auf die Zeile (17.10.), nicht
+         mehr bei jedem Ueberfahren: data-abd-seite, events.js Klickweg. */
+      return '<div class="uev-abd-seite' + (weg ? " is-weg" : "") + '" data-abd-seite="1"' + (opt.tiefe ? ' style="--uev-tiefe:' + opt.tiefe + '"' : '') + '>' +
         zielFavKlein(p.url || "", '<span class="uev-abd-fav0">' + UC.icon("globe", 2) + '</span>') +
         '<span class="uev-abd-pfad" title="' + esc(p.url || "") + '">' + esc(pfad) + '</span>' +
         (p.is_new === true ? '<span class="up-marke is-leise uev-abd-marke">' + esc(t("New since event")) + '</span>' : '') +
@@ -3401,15 +3533,60 @@
         (wann ? '<span class="uev-abd-datum">' + esc(wann) + '</span>' : '') +
       '</div>';
     }
+    /* DER BAUM DER NOCH NICHT ZITIERTEN SEITEN (17.10.): dieselbe Zerlegung wie im Sitemap-Waehler (smBaum,
+       nicht nachgebaut), nur ohne Auswahl -- Ordner klappen auf, Seiten stehen darunter. Je Ebene
+       ABD_SICHT Eintraege (Ordner, Unterordner und Seiten zusammen), dann "Show more". Ohne Ordner in den
+       geladenen Seiten steht eine flache Liste mit derselben Regel. */
+    function abdBaumSt(zid) {
+      var k = String(state.eventId) + "|" + zid;
+      return abdBaumZ[k] || (abdBaumZ[k] = { auf: {}, mehr: {} });
+    }
+    function abdOrdnerHtml(x, offen, tiefe, mitZahl) {
+      var name = x.art === "host" ? x.host : smOrdnerName(x);
+      return '<button type="button" class="uev-abd-ordner" data-abd-klapp="' + esc(x.key) + '" aria-expanded="' + offen + '" style="--uev-tiefe:' + tiefe + '">' +
+        UC.icon(offen ? "chevronDown" : "chevronRight", 2) + '<span class="uev-abd-ic">' + UC.icon(offen ? "folderOpen" : "folder", 2) + '</span>' +
+        '<span class="uev-abd-pfad">' + esc(name) + '</span>' +
+        (mitZahl ? '<span class="uev-abd-datum">' + esc(ersetze(t(x.n === 1 ? "{n} page" : "{n} pages"), { n: zahl(x.n) })) + '</span>' : '') +
+      '</button>';
+    }
+    function abdEintraege(zt, eintraege, key, st, tiefe, nachLoc, mitZahl, eltern) {
+      var sicht = ABD_SICHT + (st.mehr[key] || 0), aus = "";
+      eintraege.slice(0, sicht).forEach(function (x) {
+        if (x.art === "seite") {
+          var name = eltern === undefined ? null : (x.pfad === "/" ? t("Homepage") : x.pfad.slice((eltern && eltern.pfad || "").length) || x.pfad);
+          aus += abdSeiteHtml(zt, nachLoc[x.loc] || { url: x.loc }, { tiefe: tiefe, name: name });
+          return;
+        }
+        var offen = !!st.auf[x.key];
+        aus += abdOrdnerHtml(x, offen, tiefe, mitZahl);
+        if (offen) aus += abdEintraege(zt, x.kinder.concat(x.seiten), x.key, st, tiefe + 1, nachLoc, mitZahl, x);
+      });
+      if (eintraege.length > sicht) {
+        aus += '<button type="button" class="up-quietbtn uev-abd-mehr-baum" data-abd-baum-mehr="' + esc(key) + '" data-ziel-id="' + esc(zt.id) + '" style="--uev-tiefe:' + tiefe + '">' +
+          esc(ersetze(t("Show {n} more"), { n: zahl(Math.min(ABD_SICHT, eintraege.length - sicht)) })) + '</button>';
+      }
+      return aus;
+    }
     function abdListeHtml(zt, z, e) {
       var m = e.mehr && e.mehr[zt.id], seiten = (isArr(z.pages) ? z.pages : []).concat(m && isArr(m.pages) ? m.pages : []);
       var total = num(z.pages_total);
       if (!seiten.length) {
         return '<div class="up-box uev-leerbox">' + UC.leerHtml({ mini: true, titel: total === 0 ? "Every page from your sitemap is cited." : "No data yet" }) + '</div>';
       }
-      var rest = total != null ? total - seiten.length : 0;
-      return '<div class="uev-abd-seiten">' + seiten.map(function (p) { return abdSeiteHtml(zt, p || {}); }).join("") + '</div>' +
-        (rest > 0 ? '<button type="button" class="up-quietbtn uev-abd-mehr" data-ziel-id="' + esc(zt.id) + '"' + (m && m.laedt ? ' disabled' : '') + '>' +
+      var rest = total != null ? total - seiten.length : 0, st = abdBaumSt(zt.id);
+      var P = { sm: {} }, nachLoc = {};
+      seiten.forEach(function (p) { if (p && p.url) nachLoc[p.url] = p; });
+      smBaum(P, seiten.filter(function (p) { return p && p.url; }).map(function (p) { return { loc: p.url, lastmod: String(p.lastmod || p.first_seen_at || "").slice(0, 10) }; }));
+      var hosts = P.sm.hosts || [], mitOrdnern = hosts.length > 1 || hosts.some(function (h) { return h.kinder.length > 0; });
+      /* Die Zahl an einem Ordner nur, wenn alle Seiten geladen sind: sonst stuende dort die Zahl der
+         bisher geladenen, und "Show more" machte aus ihr eine andere. */
+      var mitZahl = rest <= 0, wurzel, eltern;
+      if (!mitOrdnern) { wurzel = seiten.filter(function (p) { return p && p.url; }).map(function (p) { return { art: "seite", loc: p.url }; }); eltern = undefined; }
+      else if (hosts.length === 1) { wurzel = hosts[0].kinder.concat(hosts[0].seiten); eltern = hosts[0]; }
+      else { wurzel = hosts; eltern = null; }
+      var sichtbar = ABD_SICHT + (st.mehr.wurzel || 0);
+      return '<div class="uev-abd-seiten">' + abdEintraege(zt, wurzel, "wurzel", st, 0, nachLoc, mitZahl, eltern) + '</div>' +
+        (rest > 0 && wurzel.length <= sichtbar ? '<button type="button" class="up-quietbtn uev-abd-mehr" data-ziel-id="' + esc(zt.id) + '"' + (m && m.laedt ? ' disabled' : '') + '>' +
           (m && m.laedt ? UC.icon("loader", 2) : '') + '<span>' + esc(ersetze(t("Show {n} more"), { n: zahl(Math.min(ABD_MEHR, rest)) })) + '</span></button>' : '');
     }
     function abdFuellen(sek, zt) {
@@ -3417,7 +3594,7 @@
       var block = sek.querySelector(".uev-ziel-block");
       if (!kopf || !seg || !liste || !block) return;
       var e = state.eventId ? state.abd[state.eventId] : null, d = e && e.daten, z = d ? abdZiel(d, zt.id, zt.value) : null;
-      function ohneListe() { block.classList.remove("has-abd", "zeigt-offen"); seg.innerHTML = ""; liste.innerHTML = ""; }
+      function ohneListe() { block.classList.remove("has-abd", "zeigt-offen", "zeigt-lade"); seg.innerHTML = ""; liste.innerHTML = ""; }
       if (!e || ABD_DA.stand === false || (d && !z)) { kopf.hidden = true; kopf.innerHTML = ""; ohneListe(); return; }
       if (!d) {
         /* Noch nichts da: eine leise Skelettzeile, solange gefragt wird (sie hat die Hoehe der
@@ -3430,6 +3607,22 @@
       }
       kopf.hidden = false;
       kopf.innerHTML = abdKopfHtml(e, d, z);
+      /* Beim Aktualisieren der Lader der App (makeLadebild, kompakt, wie der Waehler im Anlegen-Dialog)
+         an der Stelle der Liste -- bleibt stehen, solange der Lauf dauert, und wird nicht bei jedem
+         Neuzeichnen neu gebaut (der Bogen liefe sonst von vorn). */
+      if (e.neuLaeuft) {
+        block.classList.remove("zeigt-offen"); block.classList.add("has-abd", "zeigt-lade");
+        seg.innerHTML = "";
+        if (!liste.querySelector(".up-lb")) {
+          liste.innerHTML = '<div class="uev-abd-lb"></div>';
+          abdLb[zt.id] = UC.makeLadebild ? UC.makeLadebild(liste.querySelector(".uev-abd-lb"), { icon: "tickets", name: "Reading your sitemap",
+            saetze: ["Looking for your sitemap\u2026", "Reading pages\u2026", "Sorting pages into folders\u2026"], kompakt: true }) : null;
+          if (abdLb[zt.id]) abdLb[zt.id].start();
+        }
+        return;
+      }
+      block.classList.remove("zeigt-lade");
+      if (abdLb[zt.id]) { try { abdLb[zt.id].stop(); } catch (x) {} abdLb[zt.id] = null; }
       var pc = num(z.page_count), cc = num(z.cited_count);
       if (!(pc > 0) || cc == null) { ohneListe(); return; }
       var nicht = num(z.pages_total) != null ? num(z.pages_total) : Math.max(0, pc - cc);
@@ -3469,7 +3662,7 @@
       abdRpc("get_impact_event_coverage_v1", { p_event_id: eid, p_target_id: zielId, p_filter: "not_cited", p_limit: ABD_MEHR, p_offset: von }).then(function (erg) {
         m.laedt = false;
         var z2 = erg.ok && abdLesbar(erg.daten) ? abdZiel(erg.daten, zielId, null) : null;
-        if (z2 && isArr(z2.pages)) m.pages = m.pages.concat(z2.pages);
+        if (z2 && isArr(z2.pages)) { m.pages = m.pages.concat(z2.pages); abdBaumSt(zielId).mehr.wurzel = (abdBaumSt(zielId).mehr.wurzel || 0) + ABD_SICHT; }
         else if (UC.toast) UC.toast(fehlerText(String((erg.fehler || {}).message || ""), ""), { kind: "error" });
         if (root.isConnected !== false && state.eventId === eid) abdAlle();
       });
@@ -3489,13 +3682,17 @@
       if (!(sek > 0)) sek = 3600;
       d.next_refresh_at = new Date(Date.now() + sek * 1000).toISOString();
     }
-    function abdAktualisieren() {
+    /* auto: von abdAutoPruefen angestossen -- Fehler stehen dann als Satz im Kopf (abdFehlerSt), nie als
+       Toast mitten in der Seite; derselbe Weg gilt fuer den Knopf. */
+    function abdAktualisieren(auto) {
       var eid = state.eventId, e = eid ? state.abd[eid] : null, d = e && e.daten;
       if (!d || e.neuLaeuft || abdWarteMs(d) > 0) return;
+      delete abdFehlerSt[eid];
       e.neuLaeuft = true; abdAlle();
-      function fertig(text) {
-        e.neuLaeuft = false; persist();
-        if (text && UC.toast) UC.toast(text, { kind: "error" });
+      function fertig(fehler) {
+        e.neuLaeuft = false;
+        if (fehler) abdFehlerSt[eid] = fehler; else delete abdFehlerSt[eid];
+        persist();
         if (root.isConnected !== false && state.eventId === eid) abdAlle();
       }
       function zuFrueh(f) { return String(f.message || "") === "impact_event_sitemap_refresh_too_soon"; }
@@ -3504,14 +3701,22 @@
         return UC.edge("sitemap-lesen", { team_id: tm, event_id: eid, mode: "event_refresh", filter: "not_cited", limit: ABD_LIMIT, offset: 0 }, { timeoutMs: 120000 });
       }).then(function (erg) {
         erg = erg || { ok: false, status: 0, fehler: {} };
-        var f = erg.fehler || {};
-        if (erg.ok && erg.daten && erg.daten.ok !== false && abdLesbar(erg.daten)) { e.daten = erg.daten; e.mehr = {}; fertig(""); return; }
-        if (zuFrueh(f)) {
-          abdZuFrueh(d, f); fertig("");
-          if (state.eventId === eid) abdAnfordern(eid);
+        var f = erg.fehler || {}, dd = erg.daten && erg.daten.ok === false ? erg.daten : null;
+        if (erg.ok && erg.daten && erg.daten.ok !== false && abdLesbar(erg.daten)) { e.daten = erg.daten; e.mehr = {}; abdBaumZ = {}; fertig(null); return; }
+        /* Zu frueh (Refresh 1 je Stunde und Event) oder zu viele Abrufe (10 je Minute und Nutzer): kein
+           Fehler und kein Wiederholen, nur die Zeit, ab der es wieder geht. */
+        var code = dd ? String(dd.error || "") : String(f.message || "");
+        if (zuFrueh(f) || code === "impact_event_sitemap_refresh_too_soon" || code === "rate_limited" || code === "impact_event_rate_limited" || erg.status === 429) {
+          var sek = num(f.retry_after) || num(dd && dd.retry_after);
+          if (!(sek > 0) && /^\d+$/.test(String(f.hint || (dd && dd.hint) || ""))) sek = parseInt(f.hint || dd.hint, 10);
+          var nr = (dd && dd.next_refresh_at) || (f.details && f.details.next_refresh_at) || "";
+          if (nr && isFinite(Date.parse(nr))) d.next_refresh_at = nr;
+          else abdZuFrueh(d, { retry_after: sek > 0 ? sek : 0, hint: "" });
+          fertig({ art: "zeit" });
+          if (state.eventId === eid && zuFrueh(f)) abdAnfordern(eid);
           return;
         }
-        fertig(t("The sitemap couldn't be refreshed. Please try again later."));
+        fertig({ art: "fehler" });
       });
     }
 
@@ -3863,6 +4068,16 @@
       if (anu) { abdAktualisieren(); return; }
       var amh = e.target.closest(".uev-abd-mehr");
       if (amh) { abdMehr(amh.getAttribute("data-ziel-id")); return; }
+      /* Der Baum der Seiten (17.10.): Ordner auf und zu, "Show more" je Ebene. */
+      var akl = e.target.closest("[data-abd-klapp]");
+      if (akl) {
+        var asek = akl.closest(".uev-zielsek"), ast = abdBaumSt(asek ? asek.getAttribute("data-ziel-id") : ""), ak = akl.getAttribute("data-abd-klapp");
+        ast.auf[ak] = !ast.auf[ak]; abdAlle(); return;
+      }
+      var abm = e.target.closest("[data-abd-baum-mehr]");
+      if (abm) { var ast2 = abdBaumSt(abm.getAttribute("data-ziel-id")), ak2 = abm.getAttribute("data-abd-baum-mehr"); ast2.mehr[ak2] = (ast2.mehr[ak2] || 0) + ABD_SICHT; abdAlle(); return; }
+      /* Eine Seite, die noch nicht zitiert ist, oeffnet sich nicht: das sagt die Zeile erst auf den Klick. */
+      if (e.target.closest("[data-abd-seite]")) { if (UC.toast) UC.toast(t("This page opens once an AI answer cites it."), { kind: "neutral" }); return; }
       if (e.target.closest(".uev-anl-toggle")) { anleitungUmschalten(); return; }
       /* Zitierte URL einer Regel: die Antwort, in der sie zuerst zitiert wurde (15.10.). */
       var zz = e.target.closest(".uev-zitzeile");
@@ -7419,7 +7634,7 @@
         if (!lesen && wartend.zielWeg && wartend.zielWeg.eventId === id) { var api3 = wartend.zielWeg.api; clearTimeout(wartend.zielWeg.uhr); wartend.zielWeg = null; api3.busy("ok", false); api3.schliessen(); listeNeu(); }
         if (!lesen) popupDetailKam(d, neu);
         if (state.ansicht === "detail" && state.eventId === id) {
-          if (urlsNeu) { delete abdGefragt[id]; analyseAnfordern(); responsesAnfordern(false, true); }
+          if (urlsNeu) { delete abdGefragt[id]; delete abdAuto[id]; analyseAnfordern(); responsesAnfordern(false, true); }
           renderDetail();
           if (!urlsNeu && isArr(d.urls) && d.urls.length) responsesAnfordern();
         }

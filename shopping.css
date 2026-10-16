@@ -138,14 +138,16 @@
    waagerechten Scrollen nichts durchscheint -- im Kasten den der Karte (--vc-bg) und im Kopf den
    Kopfgrund. Flach liegt die Tabelle auf der Seite (--up-surface): der alte Grund stuende dunkel
    als hellerer Streifen da, und im Kopf als grauer Block in der Kopfzeile. Die Linie unter dem
-   Kopf zieht flach der Kopf als Schatten nach innen -- die deckende erste Kopfzelle liegt darueber
-   und braucht die Linie darum selbst, neben ihrem Trenner nach rechts.
+   Kopf traegt die deckende erste Kopfzelle schon selbst (.up-th hat in core border-bottom); hier
+   steht darum nur ihr Trenner nach rechts. Bis 17.10. stand zusaetzlich ein Schatten nach innen
+   unten -- der lag einen Pixel UEBER dem Rand, zusammen eine 2px-Linie unter Brand und Product
+   (gemeldet; in Ads am 15.10. schon einmal behoben, hier nie nachgezogen).
    Ohne .up-root davor (0,5,0): die angepinnte Zeile (0,6,0, oben) behaelt ihren Grund durch
    Spezifitaet, nicht durch die Reihenfolge. */
 [data-flach="yes"] .up-colscroll .up-row > .up-td:first-child { background: var(--up-surface); }
 [data-flach="yes"] .up-colscroll .up-row:not(.is-angepinnt):hover > .up-td:first-child { background: var(--vt-row-hover); }
 [data-flach="yes"] .up-colscroll .up-thead > .up-th:first-child {
-  background: var(--up-surface); box-shadow: 1px 0 0 var(--vc-border), inset 0 -1px 0 var(--vc-border); }
+  background: var(--up-surface); box-shadow: 1px 0 0 var(--vc-border); }
 /* Die Gesamtzeile (UC.makeZaehlZeile) steht im Scrollkasten hinter den Zeilen und scrollt mit:
    ihre erste Zelle steht wie die der Zeilen, mit demselben deckenden Grund (der Grund der Zeile,
    --up-surface aus core) und demselben Trenner nach rechts. Die Linie ueber der Zeile zieht core

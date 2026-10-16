@@ -5,6 +5,8 @@
                  Pakets, das nur als Ganzes stimmt (Schrift ohne Hoehe, Punkt ohne Radius, ...).
   B) NACHGEBAUT  eine eigene Klasse definiert dieselbe Kombination von Eigenschaften wie ein
                  vorhandenes Core-Bauteil -- also vermutlich ein Zwilling davon.
+  C) DOPPELLINIE eine Kopfzelle (.up-th) mit Schatten nach innen unten: zusammen mit ihrem
+                 border-bottom aus core eine 2px-Linie.
 
 Verdachtsmeldungen, keine Gewissheiten. Jeden Treffer beheben ODER mit einem Satz begruenden.
 
@@ -125,6 +127,18 @@ def pruefe(pfad):
                                     "definiert %s -- sieht aus wie %s"
                                     % (", ".join(sorted(sig)), was)))
                     break
+    # C) Doppellinie unter der Kopfzelle (17.10.): jede .up-th hat in core border-bottom, die
+    #    Linie unter dem Kopf steht also schon. Ein Schatten nach innen unten an der Kopfzelle
+    #    liegt einen Pixel UEBER diesem Rand und ergibt eine 2px-Linie. Gemeldet in Ads (15.10.
+    #    behoben) und in Shopping (17.10., unter Brand und Product): dieselbe Regel, zweimal
+    #    einzeln geschrieben. Der Kopf selbst (.up-thead) darf seinen Schatten haben, das ist core.
+    txt = re.sub(r"/\*.*?\*/", "", open(pfad, encoding="utf-8").read(), flags=re.S)
+    for m in re.finditer(r"([^{}]+)\{([^{}]*)\}", txt):
+        sel = " ".join(m.group(1).split())
+        if re.search(r"\.up-th(?![\w-])", sel) and re.search(r"box-shadow\s*:[^;]*inset\s+0\s+-\d+(px)?\b", m.group(2)):
+            treffer.append((txt[:m.start()].count("\n") + 1, "DOPPELLINIE", sel,
+                            "Schatten nach innen unten an der Kopfzelle -- die Linie traegt .up-th "
+                            "mit border-bottom schon, zusammen 2px"))
     return treffer
 
 

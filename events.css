@@ -777,20 +777,27 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
    zwischen zwei Saetzen der breiten Erklaerkarte (.uev-explain-breit). */
 .up-explain-t.uev-explain-grund { margin-top: 8px; }
 
+/* Die eine Zeile unter den Kacheln, wenn ein Urteil fehlt (events.js konfHinweisHtml): dieselbe Schrift
+   wie die Hinweise oben (.uev-hinweise), kein Kasten, keine Farbe. Das Zeichen steht an der ersten
+   Zeile, falls der Satz umbricht. hidden gewinnt gegen das display der Angabe nicht von selbst. */
+.uev-konfnote { color: var(--vc-third); font-size: var(--up-fs-m); min-width: 0; }
+.uev-konfnote[hidden] { display: none; }
+.uev-konfnote .uev-angabe { align-items: flex-start; max-width: 100%; }
+.uev-konfnote .uev-angabe svg { margin-top: 3px; }
+
 /* ---- SEITENABDECKUNG JE REGEL (17.10., Auftrag Teil C, events.js abdFuellen) -----------------
-   Im Kopf des Regel-Abschnitts unter dem Untertitel: "12 of 43 pages cited" mit duennem Balken,
-   "Last checked" und "Refresh" in einer Zeile, Abstand 12 wie die Hinweise oben (.uev-hinweise).
-   Der Balken nach dem Fortschritt des Exports (export-data.css .uex-balken: 6 hoch, voll rund,
-   Spur --up-sel-bg, Fuellung --up-accent), hier 4 hoch und 96 breit -- er stuetzt den Satz, er ist
-   nicht die Aussage. Search Console zeigt dasselbe als Balken unter der Zahl. */
+   Im Kopf des Regel-Abschnitts unter dem Untertitel EINE Zeile: links die Zahl als Text ("12 of 43
+   pages cited"), rechts leise der Stand ("Last checked 5 min ago") und der ruhige Knopf "Refresh".
+   KEIN Balken (17.10.: der Nutzer lehnt Fortschrittsbalken ab, der Satz sagt es). Darunter nur,
+   wenn es etwas zu sagen gibt, ein Satz: die Zeit bis zum naechsten Refresh, oder der Fehler. */
 .uev-abd { display: flex; flex-direction: column; margin-top: 8px; min-width: 0; }
 .uev-abd[hidden] { display: none; }
-.uev-abd-zeile1 { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; min-height: var(--up-h-seg); font-size: var(--up-fs-s); color: var(--vc-third); }
-.uev-abd-stand { display: inline-flex; align-items: center; gap: 8px; }
-.uev-abd-satz { color: var(--vc-muted); white-space: nowrap; }
+.uev-abd-zeile1 { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px; min-height: var(--up-h-seg); font-size: var(--up-fs-s); color: var(--vc-third); }
+.uev-abd-links, .uev-abd-rechts { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; min-width: 0; }
+.uev-abd-rechts { margin-left: auto; }
+.uev-abd-zeile2 { display: flex; justify-content: flex-end; font-size: var(--up-fs-s); color: var(--vc-third); }
+.uev-abd-satz { color: var(--vc-muted); }
 .uev-abd-z { color: var(--vc-text); font-weight: var(--up-fw-m); font-variant-numeric: tabular-nums; }
-.uev-abd-balken { display: block; width: 96px; height: 4px; flex: 0 0 auto; border-radius: var(--up-r-voll); background: var(--up-sel-bg); overflow: hidden; }
-.uev-abd-balken-f { display: block; height: 100%; border-radius: inherit; background: var(--up-accent); }
 .uev-abd-leise { white-space: nowrap; }
 .uev-abd-sk { width: 220px; }
 /* "Refresh" leise wie "Show N more" im Sitemap-Waehler (.uev-sm-mehr: Hoehe 28, Schrift 12). */
@@ -813,6 +820,12 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-ziel-block.is-leer.has-abd > .uev-abd-seg { display: flex; }
 .uev-ziel-block.is-leer.has-abd.zeigt-offen > .uev-abd-liste { display: flex; }
 .uev-ziel-block.is-leer.has-abd.zeigt-offen > .uev-zielleer { display: none; }
+/* Beim Aktualisieren steht der Lader der App (makeLadebild kompakt) an der Stelle der Liste. */
+.uev-ziel-block.has-abd.zeigt-lade > .uev-abd-liste { display: flex; align-self: stretch; align-items: center; }
+.uev-ziel-block.has-abd.zeigt-lade > .uev-ziel-tab,
+.uev-ziel-block.has-abd.zeigt-lade > .uev-ziel-hinweis,
+.uev-ziel-block.is-leer.has-abd.zeigt-lade > .uev-zielleer { display: none; }
+.uev-abd-lb { width: 100%; padding: 24px 0; }
 .uev-abd-liste { flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
 /* Die leise Liste: Zeilen 40 hoch (--up-h-gross), Haarlinie dazwischen, kein Kasten, kein Hover --
    die Seite oeffnet nichts, der Tooltip sagt warum. Favicon 16, Pfad 13, Datum 12 wie die Reihen
@@ -828,6 +841,18 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 /* Aus der Sitemap verschwunden: markiert, nicht versteckt -- Pfad und Bild zurueckgenommen, die
    Marke bleibt voll lesbar. */
 .uev-abd-seite.is-weg > .uev-abd-pfad, .uev-abd-seite.is-weg > .uev-fav, .uev-abd-seite.is-weg > .uev-abd-fav0 { opacity: .55; }
+/* Der Baum (17.10.): Ordnerzeilen wie Seitenzeilen, je Ebene 20 eingerueckt (--uev-tiefe, wie im
+   Sitemap-Waehler). Die Ordnerzeile ist ein Knopf ueber die ganze Zeile; Zeichen statt Drehung. */
+.uev-abd-seite { padding-left: calc(var(--uev-tiefe, 0) * 20px); }
+.uev-abd-ordner { display: flex; align-items: center; gap: 8px; width: 100%; min-height: var(--up-h-gross); min-width: 0; margin: 0; padding: 0 0 0 calc(var(--uev-tiefe, 0) * 20px);
+  border: 0; border-bottom: 1px solid var(--vc-border); background: none; font: inherit; font-size: var(--up-fs-m); color: var(--vc-text); text-align: left; cursor: pointer; }
+.uev-abd-seiten > .uev-abd-ordner:first-child { border-top: 1px solid var(--vc-border); }
+.uev-abd-ordner > svg { width: 14px; height: 14px; flex: 0 0 14px; color: var(--vc-third); }
+.uev-abd-ordner:hover { background: var(--up-sel-bg); }
+.uev-abd-ordner:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: -2px; }
+.uev-abd-ic { display: inline-flex; color: var(--vc-third); }
+.uev-abd-ic svg { width: 16px; height: 16px; }
+.uev-abd-mehr-baum { height: var(--up-h-seg); font-size: var(--up-fs-s); margin: 6px 0 6px calc(var(--uev-tiefe, 0) * 20px); }
 .uev-abd-mehr { height: var(--up-h-seg); font-size: var(--up-fs-s); }
 .uev-abd-mehr svg { width: 14px; height: 14px; flex: 0 0 14px; }
 /* Telefon: das Datum weicht, Pfad und Marken bleiben -- wie im Sitemap-Waehler (.uev-sm-datum). */
