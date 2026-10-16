@@ -654,6 +654,7 @@
     "Date and scope can't be changed": "Datum und Umfang nicht änderbar",
     "Select a type": "Typ wählen", "Create without URLs?": "Ohne URLs anlegen?",
     "Cover image": "Titelbild", "Remove cover": "Titelbild entfernen",
+    "Change cover": "Titelbild ändern", "Add cover": "Titelbild hinzufügen", "Unpin from sidebar": "Von der Seitenleiste lösen",
     "Blue wave": "Blaue Welle", "Pink wave": "Rosa Welle", "Teal wave": "Petrol-Welle",
     "Blue mosaic": "Blaues Mosaik", "Pink mosaic": "Rosa Mosaik", "Sand mosaic": "Sandfarbenes Mosaik",
     "Step {n} of 3": "Schritt {n} von 3", "URLs & review": "URLs & Prüfen",
@@ -718,7 +719,8 @@
     "Please add a path, e.g. example.com/blog.": "Gib bitte einen Pfad an, z. B. example.com/blog.",
     "Please enter a valid domain.": "Gib bitte eine gültige Domain ein.",
     "This can't be used: {wert}": "Das lässt sich nicht verwenden: {wert}",
-    "This target is already in the list.": "Dieses Ziel steht schon in der Liste.",
+    "{ziel} is already in the list.": "{ziel} steht schon in der Liste.",
+    "{ziel} is already covered by {regel}.": "{ziel} ist schon in {regel} enthalten.",
     "Add one URL at a time.": "Füg eine URL nach der anderen hinzu.",
     "This looks like a sitemap.": "Das sieht nach einer Sitemap aus.",
     "This looks like a sitemap. Please add the pages or the domain instead.": "Das sieht nach einer Sitemap aus. Füg stattdessen die Seiten oder die Domain hinzu.",
@@ -745,17 +747,14 @@
     "Checking the last {n} days…": "Die letzten {n} Tage werden geprüft…", "Last {n} days:": "Letzte {n} Tage:",
     "{n} URL matches": "{n} URL passt", "{n} URLs match": "{n} URLs passen",
     "{n} citation": "{n} Zitat", "{n} citations": "{n} Zitate", "in {n} prompt": "in {n} Prompt", "in {n} prompts": "in {n} Prompts",
-    "Similar, but not matching": "Ähnlich, aber nicht passend", "Other host": "Anderer Host",
-    "Not under this path": "Nicht unter diesem Pfad", "Other spelling": "Andere Schreibweise",
     "No citations for {alt}. AI answers cite this page as {url}.": "Keine Zitate für {alt}. KI-Antworten zitieren diese Seite als {url}.",
     "Use {url}": "{url} verwenden",
     "We haven't seen this domain in your citations. Did you mean {host}?": "Diese Domain kommt in deinen Zitaten nicht vor. Meintest du {host}?",
     "We haven't seen {alt} in your citations. Did you mean {host}?": "{alt} kommt in deinen Zitaten nicht vor. Meintest du {host}?",
-    "Use {host}": "{host} verwenden", "Similar domain": "Ähnliche Domain",
+    "Use {host}": "{host} verwenden",
     "This subdomain hasn't been cited yet. It will be counted from its first citation.": "Diese Subdomain wurde noch nicht zitiert. Sie zählt ab dem ersten Zitat.",
     "This domain hasn't been cited yet. It will be counted from its first citation.": "Diese Domain wurde noch nicht zitiert. Sie zählt ab dem ersten Zitat.",
     "No cited page matches yet. Matching pages count from their first citation.": "Noch passt keine zitierte Seite. Passende Seiten zählen ab ihrem ersten Zitat.",
-    "Only pages that AI answers to your tracked prompts cite can be counted.": "Zählen können nur Seiten, die KI-Antworten auf deine getrackten Prompts zitieren.",
     "{host} doesn't count as your domain yet.": "{host} zählt noch nicht als deine Domain.",
     "Count as your domain": "Als deine Domain zählen",
     "The preview could not be loaded.": "Die Vorschau konnte nicht geladen werden.",
@@ -823,6 +822,11 @@
     "Name, date and type": "Name, Datum und Typ",
     "The date is the comparison point: Upstreem compares the days before it with the days after it.":
       "Das Datum ist der Vergleichspunkt: Upstreem vergleicht die Tage davor mit den Tagen danach.",
+    /* 16.10. spaet: die Karte sagt, was fehlt, solange Next gesperrt ist */
+    "Pick the type that fits. It sets the icon, and you can filter your events by type.":
+      "Wähl den passenden Typ. Er legt das Icon fest, und du kannst deine Events danach filtern.",
+    "Select at least one topic, or switch to All active Prompts.": "Wähl mindestens ein Topic oder wechsle zu „Alle aktiven Prompts“.",
+    "Add a URL, a path or a domain, or choose Brand metrics only.": "Füg eine URL, einen Pfad oder eine Domain hinzu, oder wähl „Nur Markenwerte“.",
     "Which prompts are affected?": "Welche Prompts sind betroffen?",
     "These prompts are fixed when you create the event, and your other prompts form a comparison group that shows what would have happened anyway.":
       "Diese Prompts werden beim Anlegen festgehalten, und deine übrigen Prompts bilden eine Vergleichsgruppe, die zeigt, was ohnehin passiert wäre.",
@@ -1497,6 +1501,10 @@
            Mitgliederliste -- vorher erbten die Zeilen hier die 16px der Seite (03.10. gemessen). */
         '<div class="up-menu uev-mehrmenu up-aktionsmenue" role="menu" aria-hidden="true">' +
           '<button type="button" class="up-optrow" role="menuitem" data-aktion="edit" data-event-id="' + esc(ev.id) + '">' + UC.icon("squarePen", 2) + '<span class="up-aktionsmenue-lbl">' + esc(t("Edit")) + '</span></button>' +
+          /* Am Telefon (is-vnarrow) steht das Anheften hier statt als Knopf im Kopf -- dort fehlt
+             sonst der Platz fuer die Krume (gemessen 16.10.: "Overview" auf 9px gedrueckt). */
+          (wo === "kopf" && pinDa() ? '<button type="button" class="up-optrow uev-mehr-pin" role="menuitem" data-aktion="pin" data-event-id="' + esc(ev.id) + '">' + UC.icon("pin", 2) +
+            '<span class="up-aktionsmenue-lbl">' + esc(t(istAngeheftet(ev.id) ? "Unpin from sidebar" : "Pin to sidebar")) + '</span></button>' : '') +
           (kannLoeschen ? '<div class="up-aktionsmenue-div"></div><button type="button" class="up-optrow is-gefahr" role="menuitem" data-aktion="delete" data-event-id="' + esc(ev.id) + '">' + UC.icon("trash", 2) + '<span class="up-aktionsmenue-lbl">' + esc(t("Delete")) + '</span></button>' : '') +
         '</div></span>';
     }
@@ -1667,6 +1675,7 @@
       /* "Add" statt "Add URL" (15.10.): derselbe Dialog nimmt jetzt auch Regeln. Ohne Ziele in der
          Datenbank bleibt es beim alten Wort -- der Dialog kann dann nur eine URL. */
       elAktion.innerHTML = anleitungKnopf() + seitenInfoKnopf() +
+        '<span class="uev-kopfpin"></span>' +
         '<button class="up-btn-sec uev-addurl-kopf" type="button">' + UC.icon("plus", 1.8) + '<span class="uev-addurl-txt">' + esc(t(zieleDa() ? "Add" : "Add URL")) + '</span></button>' +
         '<span class="uev-kopfmehr"></span>';
       elMain.innerHTML =
@@ -1826,6 +1835,7 @@
               '<span class="uev-avatar is-gross uev-sk-avatar"></span><span class="uev-sk uev-sk-titel" style="width:36%"></span>' +
               '<span class="uev-sk uev-sk-meta" style="width:22%"></span><span class="uev-sk uev-sk-text" style="width:58%"></span></div></div>';
         elAktion.querySelector(".uev-kopfmehr").innerHTML = "";
+        pinKnopfSetzen(null);
         return;
       }
       var f = farbe(d), cv = coverVon(d);
@@ -1841,6 +1851,59 @@
           '</div>' +
         '</div>';
       elAktion.querySelector(".uev-kopfmehr").innerHTML = mehrMenue(d, "kopf");
+      pinKnopfSetzen(d);
+    }
+
+    /* ---- AN DIE SEITENLEISTE HEFTEN (16.10. angefordert: "im Event-Detail oben in der Kopfleiste
+       und direkt in Schritt 4 unter der Vorschau") -----------------------------------------------
+       Die Liste gehoert der Seitenleiste (sidebar.js, "Pinned", teamgebunden im localStorage) --
+       hier nur derselbe Weg wie aus jedem Drawer (window.upstreemPinToSidebar), dazu Abfrage und
+       Abnehmen. Ohne Seitenleiste auf der Seite gibt es weder Knopf noch Schalter: ein Knopf, der
+       nichts bewirken kann, waere einer zu viel. Name, Zeichen und Farbe haelt die Leiste selbst
+       aktuell (Event-Store), geloeschte Events nimmt sie heraus. */
+    function pinDa() { return typeof window.upstreemPinToSidebar === "function"; }
+    function istAngeheftet(id) {
+      try { return !!(id != null && window.upstreemIsPinned && window.upstreemIsPinned({ type: "event", id: String(id) })); } catch (e) { return false; }
+    }
+    function eventAnheften(ev, still) {
+      if (!pinDa() || !ev || ev.id == null || ev.id === "") return false;
+      try {
+        return window.upstreemPinToSidebar({ type: "event", id: String(ev.id), label: String(ev.name || ""), icon: zeichen(ev), color: farbe(ev), still: !!still }) !== false;
+      } catch (e) { return false; }
+    }
+    function eventAbheften(id) {
+      try { if (window.upstreemUnpinFromSidebar) window.upstreemUnpinFromSidebar({ type: "event", id: String(id) }); } catch (e) {}
+    }
+    /* Kein gefuelltes Zeichen fuer "angeheftet": den Zustand zeigt der Knopfgrund (aria-pressed,
+       core), der Tooltip sagt, was ein Klick tut. Der Knopf wird nur neu gesetzt, wenn ein anderes
+       Event offen ist -- renderKopf laeuft bei jeder Lieferung der Liste, und ein ersetzter Knopf
+       verloere den Fokus der Tastatur. */
+    function pinKnopfSetzen(d) {
+      var w = elAktion.querySelector(".uev-kopfpin");
+      if (!w) return;
+      var id = d && d.id != null && pinDa() ? String(d.id) : "";
+      if (w.getAttribute("data-fuer") !== id) {
+        w.setAttribute("data-fuer", id);
+        w.innerHTML = id ? '<button type="button" class="up-iconbtn uev-pinknopf" aria-pressed="false">' + UC.icon("pin", 2) + '</button>' : "";
+      }
+      pinKnopfSync();
+    }
+    function pinKnopfSync() {
+      var b = elAktion && elAktion.querySelector(".uev-pinknopf");
+      if (!b) return;
+      var an = istAngeheftet(state.eventId), lbl = t(an ? "Unpin from sidebar" : "Pin to sidebar");
+      var ml = elAktion.querySelector(".uev-mehr-pin .up-aktionsmenue-lbl");
+      if (ml) ml.textContent = lbl;
+      b.setAttribute("aria-pressed", String(an));
+      b.setAttribute("aria-label", lbl);
+      b.setAttribute("data-tip", lbl);
+    }
+    function pinUmschalten() {
+      var id = state.eventId;
+      if (!id) return;
+      if (istAngeheftet(id)) eventAbheften(id);
+      else eventAnheften(dieDetail() || listeEvent(id) || { id: id }, false);
+      pinKnopfSync();
     }
 
     /* ============================================================================================
@@ -2730,6 +2793,7 @@
       if (!e.target.closest) return;
       if (e.target.closest(".uev-anlegen, [data-uev-create]")) { e.preventDefault(); popupAnlegen(); return; }
       if (e.target.closest(".uev-zurueck")) { zurUebersicht(true); return; }
+      if (e.target.closest(".uev-pinknopf")) { pinUmschalten(); return; }
       var si = e.target.closest(".uev-seiteninfo");
       if (si) { if (seitenKarte && !seitenKarte.el.classList.contains("is-on")) seitenKarte.show(si); return; }
       /* Der Knopf im gefilterten Leerzustand (UC.leerHtml traegt data-clearall): Suche und
@@ -2759,6 +2823,7 @@
         var eid = ak.getAttribute("data-event-id");
         if (ak.getAttribute("data-aktion") === "edit") popupBearbeiten(eid);
         if (ak.getAttribute("data-aktion") === "delete") loeschenFragen(eid);
+        if (ak.getAttribute("data-aktion") === "pin") pinUmschalten();
         return;
       }
       if (e.target.closest(".uev-mehr")) return;
@@ -3422,12 +3487,66 @@
           '<div class="uev-sm-ort"></div>' +
         '</div>';
     }
-    /* Schritt 4: was getrackt wird (kurz), das Titelbild, die Vorschau der Karte, das Schloss. */
+    /* Schritt 4 (16.10. umgebaut, Nutzer: "Der Picker der Titelbilder ist mir zu prominent"):
+       OBEN die Vorschau der Karte, schon mit einem zufaelligen Titelbild (coverZufall). Das Bild
+       aendert ein kleiner Knopf unten rechts im Band, der beim Ueberfahren erscheint; er klappt die
+       Kacheln unter der Vorschau auf, dort auch "Remove cover". Darunter der Schalter fuer die
+       Seitenleiste, dann was getrackt wird (kurz) und das Schloss. Der Bearbeiten-Dialog behaelt
+       das offene Raster (coverFeld): er hat keine Vorschau, an der ein Knopf stehen koennte. */
     function pruefFelder(e) {
-      return feld("Tracking", '<div class="uev-pruefziele"></div>') +
-        coverFeld(e) +
-        '<div class="uev-pruef"></div>' +
+      return '<div class="uev-vorschaublock"><div class="uev-pruef"></div>' + coverWahlHtml(e) + anheftenHtml(e) + '</div>' +
+        feld("Tracking", '<div class="uev-pruefziele"></div>') +
         gesperrtHinweis("Date and scope can't be changed later");
+    }
+    /* Die Kacheln unter der Vorschau, zugeklappt bis zum Klick auf den Knopf im Band. Dieselben
+       Kacheln und dieselbe Fusszeile wie coverFeld -- coverNeu stellt beide gleich. Die
+       Fehlerzeile des Felds "cover" steht hier; ein Fehler klappt die Wahl auf (feldFehlerZeigen). */
+    function coverWahlHtml(e) {
+      return klapp(false, '<div class="uev-cover-wahl-in" id="uev-cover-wahl-' + esc(instanceId) + '">' +
+          '<div class="uev-cover-raster" role="group" aria-label="' + esc(t("Cover image")) + '">' + coverKacheln(e) + '</div>' +
+          klapp(!!e.cover, '<div class="uev-cover-fuss"><button type="button" class="up-quietbtn uev-cover-weg">' + esc(t("Remove cover")) + '</button></div>', "uev-cover-klapp") +
+          feldFehlerHtml("cover") +
+        '</div>', "uev-cover-wahl");
+    }
+    /* Der Knopf im Band der Vorschau. Ohne Titelbild heisst er "Add cover" und steht an derselben
+       Stelle -- der Weg zurueck zu einem Bild ist derselbe. */
+    function coverKnopfHtml(p) {
+      var offen = !!p.coverOffen;
+      return '<div class="uev-cover-aktion' + (offen ? " is-offen" : "") + '">' +
+        '<button type="button" class="up-btn-sec uev-cover-knopf" aria-expanded="' + offen + '" aria-controls="uev-cover-wahl-' + esc(instanceId) + '">' +
+          UC.icon("image", 2) + '<span>' + esc(t(p.e.cover ? "Change cover" : "Add cover")) + '</span></button></div>';
+    }
+    function coverWahlSchalten(p, auf) {
+      p.coverOffen = !!auf;
+      klappen(im(".uev-cover-wahl"), p.coverOffen);
+      var a = im(".uev-cover-aktion"), b = im(".uev-cover-knopf");
+      if (a) a.classList.toggle("is-offen", p.coverOffen);
+      if (b) b.setAttribute("aria-expanded", String(p.coverOffen));
+    }
+    /* EIN ZUFAELLIGES TITELBILD, EINMAL (16.10.): beim ersten Oeffnen von Schritt 4, und nur, wenn
+       noch keins gewaehlt ist. Danach ist entschieden -- Zurueck und wieder Vor wuerfelt nicht neu,
+       und ein bewusst entferntes Bild bleibt weg. Das Motiv steht schon beim Oeffnen des Popups
+       fest (popupAnlegen) und laedt dort vor, damit die Vorschau es ohne Skelett zeigt. Nur im
+       Anlegen: ein bestehendes Event bekommt nie ein Bild aus dem Zufall. */
+    function coverZufall(p) {
+      if (p.art !== "anlegen" || p.e.coverEntschieden) return;
+      p.e.coverEntschieden = true;
+      if (!p.e.cover && p.zufallsCover) p.e.cover = p.zufallsCover;
+    }
+    /* Der Schalter unter der Vorschau. Angeheftet wird erst, wenn das Anlegen gelungen ist und die
+       Kennung da ist (popupDetailKam) -- scheitert es, haengt nichts in der Leiste. */
+    function anheftenHtml(e) {
+      if (!pinDa()) return "";
+      return '<button type="button" class="uev-anheften" role="switch" aria-checked="' + !!e.anheften + '" data-anheften>' +
+        '<span class="uev-anheften-txt">' + esc(t("Pin to sidebar")) + '</span>' +
+        '<span class="up-switch' + (e.anheften ? " is-on" : "") + '" aria-hidden="true"></span></button>';
+    }
+    function anheftenNeu(p) {
+      var b = im("[data-anheften]");
+      if (!b) return;
+      b.setAttribute("aria-checked", String(!!p.e.anheften));
+      var sw = b.querySelector(".up-switch");
+      if (sw) sw.classList.toggle("is-on", !!p.e.anheften);
     }
     function pruefZieleZeigen() {
       var p = popup, el = im(".uev-pruefziele");
@@ -3460,7 +3579,32 @@
        einmal) -- daran misst der Deckel eine eingefuegte Liste, bevor jemand "Add" drueckt. */
     function eingabeNeu(p, r) {
       var da = {};
-      return r.gut.filter(function (z) { if (da[z.key] || zielGewaehlt(p, z) || zielImEvent(p, z)) return false; da[z.key] = 1; return true; }).length;
+      return r.gut.filter(function (z) { if (da[z.key] || zielInListe(p, z) || zielImEvent(p, z)) return false; da[z.key] = 1; return true; }).length;
+    }
+    /* Steht das Ziel schon in der Liste -- genau so, oder unter einer Regel der Liste (eine URL unter
+       lee-up.de/*, ein Pfad unter einer Domain)? Gibt den Eintrag der Liste zurueck, sonst null.
+       Dieselbe Pfadgrenze wie die Datenbank und der Sitemap-Waehler (smVorhanden, Vertrag
+       Abschnitt 1): /blog deckt /blog und /blog/..., nicht /blogger; die Query zaehlt nicht;
+       host_all deckt jede Unterdomain, host nur genau diesen Host. Ein gedecktes Ziel waere doppelt
+       getrackt und zaehlte gegen den Deckel -- im Waehler steht dieselbe Seite darum "Included in
+       the folder" und gesperrt. */
+    function zielInListe(p, z) {
+      var l = p.e.ziele, i;
+      for (i = 0; i < l.length; i++) if (l[i].key === z.key) return l[i];
+      var a = zerlegen(z.input);
+      if (!a || !a.host) return null;
+      for (i = 0; i < l.length; i++) {
+        var x = l[i], r = x.kind === "url" ? null : zerlegen(x.input);
+        if (!r || !r.host) continue;
+        if (x.kind === "host_all" ? !(a.host === r.host || a.host.slice(-r.host.length - 1) === "." + r.host) : a.host !== r.host) continue;
+        if (x.kind === "path") {
+          if (z.kind !== "host" && z.kind !== "host_all" && (a.pfad === r.pfad || a.pfad.indexOf(r.pfad + "/") === 0)) return x;
+          continue;
+        }
+        if (x.kind === "host" && z.kind === "host_all") continue;
+        return x;
+      }
+      return null;
     }
     function schlechtText(z) {
       if (z.fehler === "pfad") return t("Please add a path, e.g. example.com/blog.");
@@ -3477,12 +3621,28 @@
         return false;
       }
       if (r.schlecht.length) { feldFehler("ziele", schlechtText(r.schlecht[0])); return false; }
-      var neu = r.gut.filter(function (z) { return !zielGewaehlt(p, z); });
-      if (neu.some(function (z) { return zielImEvent(p, z); })) { feldFehler("ziele", fehlerText(zieleDa() ? "impact_event_target_duplicate" : "impact_event_url_duplicate")); return false; }
-      if (!neu.length) { feldFehler("ziele", t("This target is already in the list.")); return false; }
-      if (neu.length > zielFrei(p)) { feldFehler("ziele", zuVielText(p)); return false; }
+      /* EIN DOPPEL SPERRT NICHTS MEHR (16.10. spaet, Nutzer: nach Back aus Schritt 4 dieselbe URL
+         noch einmal eingegeben -> "Dieses Ziel steht schon in der Liste.", und Continue ging erst
+         nach dem Leeren des Feldes weiter). Was schon in der Liste steht oder von einer Regel darin
+         gedeckt ist, faellt still heraus: das Feld wird leer, die vorhandene Zeile leuchtet kurz
+         auf und kommt ins Bild, und am Feld steht leise, wo es schon ist -- kein Fehler, denn das
+         Ziel ist ja getrackt. Ebenso im Add-Dialog ein Ziel, das das Event schon hat; nur wenn dort
+         NICHTS Neues bleibt und die Liste leer ist, sagt der Fehler, dass es nichts hinzuzufuegen
+         gibt (sonst schlosse "Add" den Dialog, ohne etwas zu tun). */
+      var neu = [], schon = [], imEvent = 0, da = {};
+      p.schreibNotiz = null;
+      r.gut.forEach(function (z) {
+        if (da[z.key]) return;
+        da[z.key] = 1;
+        var x = zielInListe(p, z);
+        if (x) { if (schon.indexOf(x) < 0) schon.push(x); if (!p.schreibNotiz) p.schreibNotiz = { z: z, x: x }; }
+        else if (zielImEvent(p, z)) { imEvent++; if (!p.schreibNotiz) p.schreibNotiz = { z: z }; }
+        else neu.push(z);
+      });
+      if (!neu.length && imEvent && !p.e.ziele.length) { p.schreibNotiz = null; feldFehler("ziele", fehlerText(zieleDa() ? "impact_event_target_duplicate" : "impact_event_url_duplicate")); return false; }
+      if (neu.length > zielFrei(p)) { p.schreibNotiz = null; feldFehler("ziele", zuVielText(p)); return false; }
       neu.forEach(function (z) { p.e.ziele.push(z); });
-      artNachZiel(p, neu[0]);
+      if (neu.length) artNachZiel(p, neu[0]);
       p.e.eingabe = ""; p.e.artVonHand = false;
       var inp = im(".uev-zielein");
       if (inp) { inp.value = ""; feldHoehe(inp); }
@@ -3491,7 +3651,23 @@
       feldFehler("ziele", "");
       p.api.fehler("");
       zieleZeigen(p);
+      if (!neu.length && schon.length) zielBlitz(p, schon);
       return true;
+    }
+    /* Die vorhandenen Zeilen kurz hervorheben und ins Bild holen (nearest: wer zu sehen ist,
+       bleibt). Ueber die Stelle in der Liste, nicht ueber einen Text: zwei Ziele koennen gleich
+       aussehen. */
+    function zielBlitz(p, eintraege) {
+      var reihen = p.api.el.querySelectorAll(".uev-zielliste .uev-urlwahl"), erste = null;
+      eintraege.forEach(function (x) {
+        var r = reihen[p.e.ziele.indexOf(x)];
+        if (!r) return;
+        r.classList.remove("is-blitz");
+        void r.offsetWidth;   /* die Animation laeuft auch beim zweiten Mal von vorn */
+        r.classList.add("is-blitz");
+        if (!erste) erste = r;
+      });
+      try { if (erste) erste.scrollIntoView({ block: "nearest" }); } catch (e) {}
     }
     /* Ein Ziel kam dazu, aber noch keine Art ist gewaehlt (oder "Brand metrics only"): dann ist es
        jetzt die Art dieses Ziels -- sonst stuende ein Ziel in einer Liste, die nicht gilt. */
@@ -3519,8 +3695,7 @@
       if (inp) {
         var art = offen && e.zielArt ? e.zielArt : "";
         inp.placeholder = platzhalter(art); inp.setAttribute("aria-label", platzhalter(art));
-        var ic = im(".uev-zieleingabe .uev-urlsuche-ic");
-        if (ic) ic.innerHTML = UC.icon(ART_ZEICHEN[art] || "link", 2);
+        feldFavicon(p);
       }
       schreibweiseZeigen(p);
       zielListeZeigen(p);
@@ -3532,6 +3707,57 @@
          ist, haengen an ihr (16.10.: ein entferntes Ziel stand sonst bis zum naechsten Klick im
          Baum als getrackt da). */
       if (p.sm && p.sm.offen && p.sm.antwort && !p.sm.laeuft) smZeichnen(p);
+    }
+    /* DAS FAVICON IM FELD (16.10. spaet, Nutzer: "soll der Globus daneben direkt das Google-S2-
+       Favicon dieser Domain anzeigen, wenn erreichbar"). Dieselbe Quelle wie die Zeilen der Liste
+       (zielFavUrl: UC.faviconUrl, Google S2 ueber UC.fremdUrl). Damit beim Tippen nichts flackert:
+       erst FELD_FAV_MS nach dem letzten Zeichen und nur fuer einen lesbaren Host (hostOk), und das
+       Bild wird VORHER geladen, ausserhalb des Dokuments. Erst wenn es da ist und nicht Googles
+       16px-Platzhalter ist (UC.favPlatzhalter, dieselbe Regel wie der Rueckfall in core), tritt es
+       an die Stelle des Zeichens; sonst bleibt das Zeichen der Art (bei einer Domain der Globus).
+       Ein Bild, das im Feld selbst scheitert, liesse den freien Globus aus core NEBEN dem Zeichen
+       stehen. Je Host einmal gefragt (favGeprueft), auch ueber Dialoge hinweg. Mehrere Eintraege
+       zeigen ein Favicon nur, wenn alle denselben Host haben. */
+    var FELD_FAV_MS = 300, favGeprueft = {};
+    function feldHost(p) {
+      var tl = eingabeTeile(p.e.eingabe), h = "";
+      for (var i = 0; i < tl.length; i++) {
+        var z = zerlegen(tl[i]);
+        if (!z || !hostOk(z.host) || (h && z.host !== h)) return "";
+        h = z.host;
+      }
+      return h;
+    }
+    function feldZeichen(p) {
+      var ic = im(".uev-zieleingabe .uev-urlsuche-ic");
+      if (!ic) return;
+      var art = p.e.zielArt && p.e.zielArt !== "marke" ? p.e.zielArt : "";
+      var h = feldHost(p), src = h && favGeprueft[h] ? favGeprueft[h] : "";
+      var sig = src || "ic:" + (ART_ZEICHEN[art] || "link");
+      if (ic.getAttribute("data-zeichen") === sig) return;
+      ic.setAttribute("data-zeichen", sig);
+      ic.classList.toggle("has-fav", !!src);
+      ic.innerHTML = src ? '<img class="uev-fav" src="' + esc(src) + '" width="16" height="16" alt="" referrerpolicy="no-referrer"/>' : UC.icon(ART_ZEICHEN[art] || "link", 2);
+    }
+    function feldFavicon(p) {
+      if (!p) return;
+      clearTimeout(p.favUhr);
+      feldZeichen(p);
+      var h = feldHost(p);
+      if (!h || favGeprueft[h] != null) return;
+      p.favUhr = setTimeout(function () {
+        if (popup !== p || feldHost(p) !== h || favGeprueft[h] != null) return;
+        var src = zielFavUrl(h);
+        if (!src) { favGeprueft[h] = ""; return; }
+        var img = new Image();
+        img.referrerPolicy = "no-referrer";
+        img.onload = function () {
+          favGeprueft[h] = img.naturalWidth > 0 && !(UC.favPlatzhalter && UC.favPlatzhalter(img)) ? src : "";
+          if (popup === p) feldZeichen(p);
+        };
+        img.onerror = function () { favGeprueft[h] = ""; };
+        img.src = src;
+      }, FELD_FAV_MS);
     }
     function artWaehlen(p, k, vonHand) {
       if (!p || k === p.e.zielArt) return;
@@ -3554,7 +3780,14 @@
       var el = im(".uev-schreibweise"), knopf = im(".uev-zielhinzu");
       if (!el) return;
       var e = p.e, r = eingabeLesen(p), html = "", zuViel = false;
-      if (!r.teile.length) {
+      var nz = p.schreibNotiz;
+      if (!r.teile.length && nz && (nz.x ? e.ziele.indexOf(nz.x) >= 0 : true) && e.zielArt !== "marke") {
+        /* Das eben Eingegebene stand schon da (eingabeUebernehmen): leise sagen, wo -- bis zur
+           naechsten Eingabe, und nur, solange der Eintrag noch in der Liste steht. */
+        html = '<span class="uev-schreib-satz">' + esc(!nz.x ? fehlerText(zieleDa() ? "impact_event_target_duplicate" : "impact_event_url_duplicate")
+          : nz.x.key === nz.z.key ? ersetze(t("{ziel} is already in the list."), { ziel: nz.z.zeigen })
+          : ersetze(t("{ziel} is already covered by {regel}."), { ziel: nz.z.zeigen, regel: nz.x.zeigen })) + '</span>';
+      } else if (!r.teile.length) {
         var a = ARTEN.filter(function (x) { return x.k === e.zielArt; })[0];
         html = a && a.bsp ? '<span class="uev-schreib-lbl">' + esc(t("e.g.")) + '</span><span class="uev-notation is-leise">' + esc(e.zielArt === "host" && e.unterdomains ? a.bspAlle : a.bsp) + '</span>' : "";
       } else if (r.vorschlag === "sitemap") {
@@ -3678,7 +3911,7 @@
          meistzitierte URL der Domain, sonst die zuletzt zitierte -- und fuehrt den Eintrag ueber
          die Domain weiter, wenn es keine gibt). */
       var nahAlle = isArr(d.near_misses) ? d.near_misses.filter(function (x) { return x && (x.url || (x.reason === "similar_host" && x.host)); }) : [];
-      var nah = nahAlle.slice(0, 5), pts = isArr(d.per_target) ? d.per_target.filter(Boolean) : [];
+      var pts = isArr(d.per_target) ? d.per_target.filter(Boolean) : [];
       var hosts = {};
       l.forEach(function (z) { var h = zielHost(z); if (h) hosts[h] = 1; });
       var hl = Object.keys(hosts), h1 = hl.length === 1 ? hl[0] : "";
@@ -3711,8 +3944,9 @@
         return '<p class="uev-vz-satz"><span>' + esc(satz) + '</span>' +
           '<button type="button" class="up-quietbtn uev-vz-statt" data-statt-alt="' + esc(v.alt) + '" data-statt-neu="' + esc(v.neu) + '">' + esc(ersetze(t("Use {host}"), { host: v.neu })) + '</button></p>';
       }).join("");
-      var leiseHtml = '<p class="uev-vz-satz is-leise">' + esc(t("Only pages that AI answers to your tracked prompts cite can be counted.")) + '</p>';
-      if (!n && (variantenHtml || tippHtml)) html += variantenHtml + tippHtml + (tippHtml ? leiseHtml : "");
+      /* Der leise Satz "Only pages that AI answers ... can be counted" ist seit dem 16.10. spaet weg
+         (Nutzer: entfernen) -- er stand unter jedem Null-Treffer und sagte nichts, was man tun kann. */
+      if (!n && (variantenHtml || tippHtml)) html += variantenHtml + tippHtml;
       else if (!n) {
         /* Null Treffer: je Fall ein eigener Satz (Entscheidung des Nutzers 15.10.). "Diese Domain
            wurde noch nicht zitiert" nur bei EINEM Host und nach per_target -- das oberste
@@ -3724,20 +3958,14 @@
         if (h1Neu && h1.split(".").length > 2) satz = esc(t("This subdomain hasn't been cited yet. It will be counted from its first citation."));
         else if (h1Neu) satz = esc(t("This domain hasn't been cited yet. It will be counted from its first citation."));
         else satz = esc(t("No cited page matches yet. Matching pages count from their first citation."));
-        html += '<p class="uev-vz-satz">' + satz + '</p>' + leiseHtml;
+        html += '<p class="uev-vz-satz">' + satz + '</p>';
       } else html += variantenHtml + tippHtml;
-      if (nah.length) {
-        /* Die Gruende der Datenbank (Abschnitt 4, dazu similar_host aus v2), je ein eigenes
-           Etikett. Bei url_variant steht die Adresse mit www und Schema da -- ohne sie saehe sie aus
-           wie das Ziel selbst. Bei similar_host nur die Domain: um sie geht es, die URL dahinter ist
-           nur ihr meistzitiertes Beispiel. */
-        var GRUND = { path_boundary: "Not under this path", url_variant: "Other spelling", other_host: "Other host", similar_host: "Similar domain" };
-        html += '<div class="uev-vz-titel">' + esc(t("Similar, but not matching")) + '</div><div class="uev-vz-liste is-leise">' + nah.map(function (x) {
-          var hp = hostPfad(x.url), txt = x.reason === "similar_host" ? String(x.host || hp.host) : x.reason === "url_variant" ? urlZeigen(x.url) : hp.host + (hp.start ? "" : hp.pfad);
-          return '<div class="uev-vz-reihe"><span class="uev-vz-url" title="' + esc(x.url || x.host || "") + '">' + esc(txt) + '</span>' +
-            (GRUND[x.reason] ? '<span class="uev-vz-wert">' + esc(t(GRUND[x.reason])) + '</span>' : '') + '</div>';
-        }).join("") + '</div>';
-      }
+      /* "SIMILAR, BUT NOT MATCHING" IST WEG (16.10. spaet, Nutzer: "Die Plakette unten bringt nichts,
+         weil man nichts damit machen kann"). Die Beinahe-Treffer, mit denen man etwas tun kann,
+         stehen schon oben als Vorschlag mit Knopf: dieselbe Seite in anderer Schreibweise
+         (url_variant -> "Use {url}") und der Tippfehler im Host (similar_host bzw. vor v2 ein
+         aehnlicher other_host -> "Did you mean ...? Use {host}"). Der Rest (path_boundary, ein
+         anderer Host derselben Domain) war nur eine Liste ohne Handgriff. */
       /* "Count as your domain" (Nutzer 15.10.: "JA, das soll direkt angeboten werden"): nur fuer
          EINEN Host -- bei mehreren sagt die Vorschau nicht, welcher gemeint ist. Eingestuft wird
          genau dieser Host, auch bei host_all: jede Unterdomain ist eine eigene domain_norm, die
@@ -3761,7 +3989,11 @@
       var vertippt = !!h1 && tipps.some(function (v) { return v.alt === h1; });
       var hostRolle = d.host_role, je1 = pts.filter(function (pt) { return pt.host && String(pt.host) === h1; });
       if (je1.length) hostRolle = je1.some(function (pt) { return pt.host_role === "own"; }) ? "own" : je1[0].host_role;
-      if (h1 && darf && !vertippt && hostRolle !== "own" && !(p.eigen && p.eigen[h1])) {
+      /* NICHT FUER EINEN GETRACKTEN WETTBEWERBER (16.10. spaet, Nutzer: "Natuerlich"): host_role
+         "competitor" kommt aus derselben Einstufung wie im Domain-Drawer (_citations_g_domtype_v1,
+         Competition), und domain_classify_v1 lehnt genau diese Domains ab (tracked_competitor) --
+         der Knopf fuehrte nur zu einer Fehlermeldung. */
+      if (h1 && darf && !vertippt && hostRolle !== "own" && hostRolle !== "competitor" && !(p.eigen && p.eigen[h1])) {
         html += '<div class="uev-vz-eigen"><span>' + esc(ersetze(t("{host} doesn't count as your domain yet."), { host: h1 })) + '</span>' +
           '<button type="button" class="up-btn-sec uev-vz-eigenbtn" data-eigen-host="' + esc(h1) + '"' + (p.eigenLaeuft ? ' disabled' : '') + '>' +
             (p.eigenLaeuft ? '<span class="up-modal-spin"></span>' : '') + '<span>' + esc(t("Count as your domain")) + '</span></button></div>';
@@ -4555,7 +4787,7 @@
         affected_url_count: mit.filter(function (z) { return z.kind === "url"; }).length,
         targets: mit.map(function (z) { return { kind: z.kind }; }) };
       el.innerHTML = '<span class="up-topicmodal-label">' + esc(t("Preview")) + '</span>' +
-        '<div class="uev-vorschau">' + karteHtml(ev, true) + '</div>';
+        '<div class="uev-vorschau">' + karteHtml(ev, true) + coverKnopfHtml(p) + '</div>';
       pruefZieleZeigen();
     }
     /* Schritt 3 ist bereit: eine Art ist gewaehlt, und ausser bei "Brand metrics only" steht ein
@@ -4615,6 +4847,8 @@
          in einer sichtbaren Wurzel (makeMount), und in einem verdeckten Schritt stuende er erst
          nach dem naechsten Blick des Waechters da. */
       var box = p.api.body.querySelector('.uev-schritt[data-schritt="' + n + '"]');
+      /* Vor dem Bau: die Kacheln zeigen das gewuerfelte Bild schon als gewaehlt. */
+      if (n === 4) coverZufall(p);
       if (box && !box.__uevGebaut) {
         box.__uevGebaut = 1;
         if (n === 2) { box.innerHTML = umfangFelder(p.e); topicsZeigen(); }
@@ -4858,6 +5092,8 @@
     }
     function geloeschtFertig(id, listeFrisch) {
       state.geloescht[id] = 1;
+      /* Sofort, nicht erst mit der naechsten Liste (die Leiste gleicht sonst selbst ab). */
+      eventAbheften(id);
       delete state.detail[id];
       persist();
       if (wartend.del) { var api2 = wartend.del.api; clearTimeout(wartend.del.uhr); wartend.del = null; api2.schliessen(); }
@@ -4915,7 +5151,10 @@
       p.api.schliessen();
       listeNeu();
       if (art === "anlegen") {
-        if (UC.toast) UC.toast(t("Event created"));
+        /* Erst jetzt, mit der Kennung aus der Antwort, an die Leiste (Schalter in Schritt 4). Die
+           Meldung nennt es mit, statt einen zweiten Toast zu zeigen. */
+        var angeheftet = !!p.e.anheften && eventAnheften(d, true);
+        if (UC.toast) UC.toast(t("Event created"), angeheftet ? { desc: t("Pinned to sidebar") } : undefined);
         oeffnen(id, true, false, true);
         if (anlInsDetail) setTimeout(function () { anlInsDetail = false; anleitungZeige("d1"); }, 60);
       }
@@ -4957,6 +5196,7 @@
         zieleZeigen(p, true);
       }
       if (gz) zielListeZeigen(p);
+      if (f === "cover" && p.art === "anlegen") coverWahlSchalten(p, true);
       if (!feldFehler(f, txt)) p.api.fehler(txt);
     }
     function popupFehlerKam(txt, code, hint) {
@@ -4994,7 +5234,16 @@
       el.addEventListener("click", popupKlick);
       el.addEventListener("input", popupEingabe);
       el.addEventListener("keydown", popupTaste);
+      el.addEventListener("focusout", popupFokusWeg);
       knoepfeSync();
+    }
+    /* Das Namensfeld wird mit Inhalt verlassen: von hier an zeigt die Anleitung auf den Typ
+       (anlW1Feld). Nur im Anlegen; einmal gesetzt, bleibt es -- ein leerer Name geht ohnehin vor. */
+    function popupFokusWeg(ev) {
+      var p = popup, x = ev.target;
+      if (!p || p.art !== "anlegen" || p.anlNameFertig || !x || !x.matches || !x.matches('[data-feld="name"]') || !p.e.name.trim()) return;
+      p.anlNameFertig = true;
+      anlW1Folgen();
     }
     /* Hoechstens 200 Events je Team (409 impact_event_limit_reached, 13.10.): steht die Liste
        schon bei 200, sagt es der Knopf, bevor jemand drei Schritte ausfuellt. Entscheidend bleibt
@@ -5020,6 +5269,9 @@
       });
       api.body.querySelector('.uev-schritt[data-schritt="1"]').__uevGebaut = 1;
       var p = { art: "anlegen", api: api, e: e, schritt: 1, knopf: "weiter", pops: {}, vorschauen: {}, topicSuche: "" };
+      /* Das Titelbild fuer Schritt 4 (coverZufall) jetzt schon waehlen und vorladen. */
+      p.zufallsCover = COVERS[Math.floor(Math.random() * COVERS.length)].key;
+      coverLaden(coverVon({ cover: p.zufallsCover }));
       sucheBauen(p);
       popupAufbauen(p);
       schritt(1);
@@ -5146,8 +5398,15 @@
       var tg = x.closest(".uev-datumwahl [data-tag]");
       if (tg) { if (tg.disabled) return; p.e.datum = tg.getAttribute("data-tag"); menueZu("datum"); datumNeu(); knoepfeSync(); return; }
       var cvk = x.closest("[data-cover]");
-      if (cvk) { var ck = cvk.getAttribute("data-cover"); p.e.cover = p.e.cover === ck ? null : ck; feldFehler("cover", ""); coverNeu(); pruefenZeigen(); knoepfeSync(); return; }
-      if (x.closest(".uev-cover-weg")) { p.e.cover = null; coverNeu(); pruefenZeigen(); knoepfeSync(); return; }
+      if (cvk) { var ck = cvk.getAttribute("data-cover"); p.e.cover = p.e.cover === ck ? null : ck; p.e.coverEntschieden = true; feldFehler("cover", ""); coverNeu(); pruefenZeigen(); knoepfeSync(); return; }
+      if (x.closest(".uev-cover-weg")) {
+        p.e.cover = null; p.e.coverEntschieden = true; coverNeu(); pruefenZeigen(); knoepfeSync();
+        /* Der Knopf klappt mit dem Bild weg -- der Fokus geht an den Knopf im Band, nicht ins Leere. */
+        var ck2 = im(".uev-cover-knopf"); if (ck2) { try { ck2.focus({ preventScroll: true }); } catch (e) {} }
+        return;
+      }
+      if (x.closest(".uev-cover-knopf")) { coverWahlSchalten(p, !p.coverOffen); return; }
+      if (x.closest("[data-anheften]")) { p.e.anheften = !p.e.anheften; anheftenNeu(p); return; }
       var pk = x.closest("[data-pick]");
       if (pk) { var k = pk.getAttribute("data-pick"); p.e.offen = p.e.offen === k ? null : k; aussehenKlappen(); return; }
       var ze = x.closest("[data-zeichen]");
@@ -5255,6 +5514,7 @@
       if (x.matches(".uev-typeigen")) { var add = im(".uev-typeigen-add"); if (add) add.disabled = !typEigenOk(p); return; }
       if (x.matches(".uev-zielein")) {
         feldFehler("ziele", "");
+        p.schreibNotiz = null;
         feldHoehe(x);
         p.e.eingabe = x.value;
         /* Die passende Art vorschlagen, solange niemand selbst eine gewaehlt hat (15.10.). Leer
@@ -5275,6 +5535,7 @@
         schreibweiseZeigen(p);
         trefferZeigen();
         vzAnfordern(p);
+        feldFavicon(p);
         knoepfeSync();
         return;
       }
@@ -5293,7 +5554,15 @@
       if (x.matches('[data-feld="name"]')) {
         ev.preventDefault();
         var b = p.api.knopf(p.knopf);
-        if (b && !b.disabled) b.click();
+        if (b && !b.disabled) { b.click(); return; }
+        /* Gesperrt, weil der Typ fehlt (16.10. spaet): Enter fuehrt dorthin, statt nichts zu tun.
+           Die Anleitung geht hier selbst mit -- ein focusout kommt nicht verlaesslich (gemessen: in
+           einem Fenster ohne Fokus blieb es bei focus() aus). */
+        if (p.art === "anlegen" && p.e.name.trim() && !p.e.typ) {
+          var tb = im('[data-wahl="typ"]');
+          try { if (tb) tb.focus(); } catch (e) {}
+          if (!p.anlNameFertig) { p.anlNameFertig = true; anlW1Folgen(); }
+        }
         return;
       }
       /* Enter im Zielfeld uebernimmt die Eingabe; Umschalt+Enter ist eine neue Zeile (mehrere URLs). */
@@ -5401,6 +5670,31 @@
       weiterAus: function () { return !popup || popup.art !== "anlegen" || !!popup.warte || !schrittOk(popup); },
       zurueck: id === "w1" ? false : function () { if (popup) schritt(popup.schritt - 1); } }; }
     function anlSchritt(o, extra) { for (var k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) o[k] = extra[k]; return o; }
+    /* SCHRITT w1 WANDERT ZUM OFFENEN FELD (16.10. spaet, Nutzer: "Wenn man den Namen eingegeben hat,
+       kann man nicht auf Weiter klicken"). Pflicht sind Name, Datum und Typ; das Datum steht von Haus
+       aus auf heute, der Typ hat keine Vorbelegung, und Next ist gesperrt wie Continue. Bis dahin
+       zeigte die Karte weiter auf den fertigen Namen -- eine Sackgasse. Jetzt wie in einer
+       Produkttour: solange man tippt, bleibt sie am Namen; ist das Feld verlassen (Tab, Klick,
+       Enter), zeigt sie auf das naechste offene Pflichtfeld und sagt, was es tut. Nach der Wahl
+       bleibt sie dort stehen, Next ist frei -- kein Zurueckspringen unter dem Zeiger. */
+    function anlW1Feld() {
+      var p = popup;
+      if (!p || p.art !== "anlegen" || !p.e.name.trim()) return "name";
+      if (!p.e.datum) return "datum";
+      return p.anlNameFertig ? "typ" : "name";
+    }
+    function anlW1Ziel() {
+      var f = anlW1Feld();
+      return im(f === "typ" ? '[data-wahl="typ"]' : f === "datum" ? '[data-wahl="datum"]' : '[data-feld="name"]');
+    }
+    /* Der Name ist fertig: die Karte geht mit, falls sie noch in w1 steht. Das Feld darunter holt
+       sie selbst ins Bild (nearest: wer schon zu sehen ist, bleibt). */
+    function anlW1Folgen() {
+      if (!anleitung || !anleitung.laeuft() || anleitung.index() !== anleitung.indexVon("w1")) return;
+      var z = anlW1Ziel();
+      try { if (z) z.scrollIntoView({ block: "nearest" }); } catch (e) {}
+      anleitung.neu();
+    }
     var ANL_SCHRITTE = [
       { id: "kopf", seiten: ["unten", "links"], zurueck: false,
         ziel: function () { return elAktion.querySelector(".uev-anlegen"); },
@@ -5408,21 +5702,33 @@
         text: "An event marks a change, such as a relaunch or a campaign, and Upstreem compares your AI results before and after it.",
         vis: function () { return anlZeile("tickets", t("Website relaunch")) + anlZeile("calendar", datum(heuteIso())); },
         weiter: function () { popupAnlegen(); } },
-      anlSchritt({ id: "w1", ziel: function () { return im('[data-feld="name"]'); },
+      anlSchritt({ id: "w1", ziel: anlW1Ziel,
         titel: "Name, date and type",
-        text: "The date is the comparison point: Upstreem compares the days before it with the days after it.",
-        vis: function () { return anlZeile("calendar", datum(heuteIso())) + '<span class="up-explain-row"><span>' + esc(t("Before")) + '</span>' + UC.icon("arrowRight", 2) + '<span>' + esc(t("After")) + '</span></span>'; } }, anlImPopup("w1")),
+        text: function () { return anlW1Feld() === "typ" && !popup.e.typ ? "Pick the type that fits. It sets the icon, and you can filter your events by type."
+          : "The date is the comparison point: Upstreem compares the days before it with the days after it."; },
+        vis: function () {
+          if (anlW1Feld() === "typ" && !popup.e.typ) return anlZeile("globe", t("Website relaunch")) + anlZeile("rocket", t("Product launch"));
+          return anlZeile("calendar", datum(heuteIso())) + '<span class="up-explain-row"><span>' + esc(t("Before")) + '</span>' + UC.icon("arrowRight", 2) + '<span>' + esc(t("After")) + '</span></span>'; } }, anlImPopup("w1")),
+      /* Gesperrt sagt die Karte, was fehlt (16.10. spaet): ohne Topic blieb Next aus, und der Satz
+         erklaerte nur die Vergleichsgruppe -- der Hinweis im Popup steht unter der Liste, auf
+         kleinen Fenstern ausserhalb des Bildes. */
       anlSchritt({ id: "w2", ziel: function () { return im(".uev-umfang"); },
         titel: "Which prompts are affected?",
-        text: "These prompts are fixed when you create the event, and your other prompts form a comparison group that shows what would have happened anyway.",
+        text: function () {
+          var s = "These prompts are fixed when you create the event, and your other prompts form a comparison group that shows what would have happened anyway.";
+          return popup && popup.e.modus === "topics" && !popup.e.topics.length ? t(s) + " " + t("Select at least one topic, or switch to All active Prompts.") : s;
+        },
         vis: anlLegende }, anlImPopup("w2")),
       /* Ziel ist das Feld oben (15.10. spaet umgestellt): der Satz spricht von der Regel, die man
          dort eintippt, und von der Sitemap, die rechts in seinem Kopf steht. */
       anlSchritt({ id: "w3", ziel: function () { return im(".uev-eingabe-teil") || im(".uev-ziel"); },
         titel: "What should we track?",
-        text: function () { return zieleDa()
-          ? "A rule like example.com/blog/* also counts new articles once an AI cites them, and you can load your sitemap or count a domain as yours right here."
-          : "Pick the pages that belong to this change, or keep it to brand metrics."; },
+        text: function () {
+          if (!zieleDa()) return "Pick the pages that belong to this change, or keep it to brand metrics.";
+          var s = "A rule like example.com/blog/* also counts new articles once an AI cites them, and you can load your sitemap or count a domain as yours right here.";
+          /* Wie in w2: gesperrt steht dabei, womit es weitergeht. */
+          return popup && !schrittOk(popup) ? t(s) + " " + t("Add a URL, a path or a domain, or choose Brand metrics only.") : s;
+        },
         vis: function () { return zieleDa() ? anlZeile("folder", "example.com/blog/*") + anlZeile("globe", "*.example.com/*") : anlZeile("link", "example.com/blog/launch"); } }, anlImPopup("w3")),
       anlSchritt({ id: "w4", ziel: function () { return im(".uev-vorschau") || im(".uev-pruef"); },
         titel: "Check and create",
@@ -5514,6 +5820,9 @@
        zur Uebersicht gemacht -- beim Zurueckkommen waere es weg gewesen. */
     function aufEvents() { var v = UC.currentView ? UC.currentView() : ""; return !v || v === "events"; }
     window.addEventListener("popstate", function () { if (root.isConnected && aufEvents()) adresseLesen(false); });
+    /* Die Leiste aendert ihre Liste auch ohne uns (x an der Zeile, der elfte Pin draengt den
+       aeltesten hinaus, Teamwechsel) -- der Knopf im Kopf zeigt dann den neuen Stand. */
+    window.addEventListener("up-pins-change", function () { if (root.isConnected) pinKnopfSync(); });
     window.addEventListener("up-event-open", function (e) {
       if (!root.isConnected || !e.detail) return;
       oeffnen(e.detail.id, false);
