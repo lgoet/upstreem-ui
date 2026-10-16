@@ -4167,3 +4167,28 @@ abgeschlossenen Kampagnen „Campaign completed, your report is ready“ mit Ber
 Klick schreiben „gelesen“ (`mark_impact_event_notices_read_v1`), der nächste rückt nach. Fehlt die
 Funktion (PGRST202), gibt es weder Toasts noch die Schalter „Notify me“; jeder andere Fehler beim
 Holen bleibt still (nur `console.error`).
+
+## 51. Kampagnen mit Zeitraum und Event-Status (seit 17.10.)
+
+Vertrag: `bubble/events_ausbau_db_auftrag_17_10.md` Teil B und Nachtrag. Alles hinter dem Schalter
+`KAMPAGNE_DA` in events.js (Prüfaufruf `cached_impact_event_analysis_v4` mit der Null-Kennung, oder
+eine Zeile des Speichers trägt `status`). Fehlt v4 (PGRST202): heutiger Stand, nichts davon sichtbar.
+
+- **Status** nur aus der Datenbank (`status`, `day_number`, `day_count`), nie abgeleitet. Gezeigt als
+  dritte Angabe neben Datum und Typ (Zeichen + Text, keine Pille): „Planned“ (Uhr), „Running, day 5
+  of 21“ (Zeitschaltuhr, Akzent-Tinte), „Completed“ (Haken im Kreis, nur mit Ende), offenes Tages-Event
+  „Day 45“. Kampagnen zeigen den Zeitraum statt des Tages („1 Sep – 30 Sep 2026“, Jahr nur am Ende).
+- **Anlegen, Schritt 1:** Segment „Single day | Date range“ (`.up-seg`) über dem Wahlknopf, darunter
+  ein Satz, was die Wahl bewirkt. Kalender wie date-range (`.udr-day` mit `is-start/is-in/is-end`,
+  Ecken je Wochenzeile). Start bis heute + 365, Länge höchstens 183 Tage; erster Klick Anfang, zweiter
+  Ende, ein Tag vor dem Anfang ist ein neuer Anfang.
+- **Bearbeiten:** geplant = der volle Assistent vorbelegt („Edit event“, letzter Knopf „Save“,
+  `update_impact_event_v3` mit dem vollen Stand). Laufende Kampagne = das bisherige Popup plus Feld
+  „End date“ (ab heute, höchstens 183 Tage ab Start); `forbidden` steht am Feld mit Grund.
+- **Detail:** geplant ohne Steuerung/Chart/Ergebnisse, statt Skelett `UC.leerHtml` „Starts on …“ mit
+  Knopf „Edit event“, Ziele als Zeile „Tracking“ im Umfang. Kampagne ohne Fenster-Umschalter, Hinweis
+  „So far, compared with the N days before the start“. Abgeschlossen = Bericht: drei Abschnitte
+  Before / During / After in einem Kasten (Linien wie das Kennzahlen-Band, am Telefon untereinander),
+  „Follow-up period, until …“ bis `report_final`. Offene Events: Fenster „Since event“ zusätzlich.
+- **Liniendiagramme (core):** Marker mit `ende` zeichnen ein Band in `--vc-kalender-band` hinter die
+  Linien, an den Rändern gekappt; geplante Events (`status: "planned"`) gar nicht.

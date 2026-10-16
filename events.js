@@ -2319,7 +2319,8 @@
           return '<div class="uev-phase-zeile"><dt>' + esc(t(m.label)) + '</dt><dd>' + wertHtml(m.key, v) + (d != null ? trendHtml(m.key, d) : '') + '</dd></div>';
         }).join("");
         var fuss = "";
-        if (ph.key === "post" && !final && bis) fuss = ersetze(t("Follow-up period, until {date}"), { date: datum(bis) });
+        /* Bis zum GEPLANTEN Ende des Nachlaufs (post_to), nicht bis heute (effective_post_to). */
+        if (ph.key === "post" && !final && (w.post_to || bis)) fuss = ersetze(t("Follow-up period, until {date}"), { date: datum(w.post_to || bis) });
         if (ph.key === "post" && !von) fuss = t("Starts after the campaign ends");
         return '<div class="uev-phase is-' + ph.key + '">' +
           '<div class="uev-phase-kopf"><span class="uev-phase-titel">' + esc(t(ph.titel)) + '</span>' +
@@ -5611,6 +5612,10 @@
       if (p.planEventId) {
         b.p_event_id = p.planEventId;
         delete b.p_urls;
+        /* Im Bearbeiten heisst null "unveraendert" (Vertrag 3.5) -- hier steht der volle Stand,
+           also "" fuer geleert (Beschreibung, Zeichen, Farbe, Titelbild). */
+        b.p_description = e.text.trim(); b.p_icon = e.icon ? iconFuerDb(e.icon) : ""; b.p_color = e.farbe ? String(e.farbe).toLowerCase() : "";
+        b.p_cover = e.cover || "";
         b.p_targets = mit.map(function (z) { return { kind: z.kind, input: z.input }; });
         p.gesendet = mit.slice();
         if (!(e.bereich && e.ende) && p.alt && p.alt.ende) b.p_clear_end_date = true;
@@ -6055,7 +6060,10 @@
       if (dmo) {
         var ber = dmo.getAttribute("data-datummodus") === "bereich";
         if (ber === !!p.e.bereich) return;
-        p.e.bereich = ber; p.e.ende = null; p.e.wahlEnde = ber && !!p.e.datum; p.e.monat = null;
+        /* Nach dem Umschalten waehlt der erste Klick den ANFANG (gemessen 17.10.: mit dem Tag von
+           vorher als Anfang war der erste Klick das Ende, und ein Start in der Zukunft gelang nur
+           im zweiten Anlauf). */
+        p.e.bereich = ber; p.e.ende = null; p.e.wahlEnde = false; p.e.monat = null;
         feldFehler("datum", ""); datumNeu(); knoepfeSync(); return;
       }
       var cvk = x.closest("[data-cover]");
