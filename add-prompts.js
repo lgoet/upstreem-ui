@@ -377,7 +377,8 @@
 
   function topicHex(t) {
     var dark = UC.getUpstreemTheme ? UC.getUpstreemTheme() === "dark" : false;
-    return (dark ? t.hex_dark : t.hex_light) || t.hex_light || t.hex_dark || "#808080";
+    /* Ohne Farbe: der Ersatz aus core (17.10.), aufgeloest am Punkt (inline). */
+    return (dark ? t.hex_dark : t.hex_light) || t.hex_light || t.hex_dark || "var(--vc-thema-ersatz-filter)";
   }
   function selectedTagIds() {
     return Object.keys(S.tags).filter(function (k) { return S.tags[k]; });

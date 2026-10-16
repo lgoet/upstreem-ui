@@ -22,7 +22,7 @@
 .up-root.uhm-root {
   /* Die fuenf Farbstufen stehen jetzt in core.css -- zwei Komponenten lesen sie. Hier bleibt nur,
      was wirklich nur diese Komponente hat. */
-  --uhm-empty: #f9f8f9;
+  --uhm-empty: var(--vc-matrix-leer);
   --uhm-lead: 176px;
   /* Hier stand bis zum 15.10. ein eigener Panel-Radius (--up-dd-radius: 16 statt der App-Vorgabe
      14). Entfallen mit der Geist-Skala: Settings-Menue und Fader-Picker tragen jetzt den Menue-
@@ -135,7 +135,7 @@
   display: flex; align-items: center; justify-content: center;
   font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums;
   cursor: default; user-select: none; min-width: 0;
-  color: rgba(255,255,255,0.94);
+  color: var(--vc-matrix-ink);
   transition: background-color 220ms cubic-bezier(.2,0,.38,.9), color 220ms cubic-bezier(.2,0,.38,.9),
               filter 120ms ease, transform 120ms ease;
 }
@@ -150,10 +150,10 @@
    ein Overlay laege darueber und truebte die Zahlen.
    Leere Zellen und das Skelett bleiben aussen vor: dort gibt es keine Flaeche zu woelben. */
 .uhm-cell:not(.is-empty):not(.is-sk) {
-  box-shadow: inset 0 10px 12px -8px rgba(255,255,255,0.30),
-              inset 0 -10px 12px -8px rgba(0,0,0,0.07);
+  box-shadow: inset 0 10px 12px -8px var(--vc-matrix-glanz),
+              inset 0 -10px 12px -8px var(--vc-matrix-tiefe);
 }
-.uhm-cell.is-onlight { color: rgba(0,0,0,0.78); }
+.uhm-cell.is-onlight { color: var(--vc-matrix-ink-hell); }
 .uhm-cell:not(.is-empty):not(.is-sk) { cursor: pointer; }
 .uhm-cell:not(.is-empty):not(.is-sk):hover { filter: brightness(0.93); transform: scale(1.02); }
 .up-root[data-theme="dark"] .uhm-cell:not(.is-empty):not(.is-sk):hover { filter: brightness(1.14); }
@@ -279,8 +279,8 @@
    Body-mounted (the grid box clips for its rounded corners), theme carried on the element itself
    because it lives outside the themed root. Same construction as the Landscape chart's chip. */
 .uhm-tip {
-  --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-third: #9e9e9e; --vc-border: #dcdbdd;
-  --vc-bg: #ffffff; --vt-logo-bg: #ffffff;
+  --vc-text: var(--vc-schicht-text); --vc-muted: var(--vc-schicht-muted); --vc-third: var(--vc-schicht-third); --vc-border: var(--vc-schicht-border);
+  --vc-bg: var(--vc-schicht-flaeche); --vt-logo-bg: var(--vc-schicht-logo-platte);
   /* --vt-up/--vt-down standen hier als eigene Kopie (#2ea84a / #b0200c), weil die Marke an .up-root
      den Tooltip am <body> nicht erreichte. Seit dem 15.10. stehen sie an :root und an jedem
      [data-theme="dark"] (core, Geist) -- die Kopie haette die neuen Farben hier ueberdeckt. */
@@ -301,8 +301,8 @@
 /* Grund und Rand seit dem 15.10. aus den Marken einer schwebenden Schicht (core, Geist). */
 /* Schrift im Dunkeln nach Geist (16.10.): Wert fuer Wert getauscht (#e0e0e0 -> #ededed, #a0a0a0 -> #a1a1a1), Flaeche am <body> mit eigener Leiter. */
 .uhm-tip[data-theme="dark"] {
-  --vc-text: #ededed; --vc-muted: #a1a1a1; --vc-third: #808080; --vc-border: var(--up-menu-border);
-  --vc-bg: var(--up-menu-bg); --vt-logo-bg: #e0e0e0;
+  --vc-text: var(--vc-schicht-text); --vc-muted: var(--vc-schicht-muted); --vc-third: var(--vc-schicht-third); --vc-border: var(--up-menu-border);
+  --vc-bg: var(--up-menu-bg); --vt-logo-bg: var(--vc-schicht-logo-platte);
 }
 .uhm-tip * { box-sizing: border-box; }
 .uhm-tip-head { display: flex; align-items: center; gap: 8px; }

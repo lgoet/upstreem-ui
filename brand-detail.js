@@ -517,7 +517,7 @@
          Eine gesetzte Markenfarbe gewinnt weiterhin und kommt aus dem RPC: daran aendert sich
          nichts, sie ist die Aussage der Marke und nicht die der Oberflaeche. */
       var farbe = String(c.color || c.brand_color || "").trim() ||
-                  (UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : "#1f1f1b");
+                  (UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : getComputedStyle(root).getPropertyValue("--vc-text").trim());
       line.render(UC.buildLineDatasets(pts, [{
         company_id: cid, name: c.name || "", color: farbe,
         favicon_url: c.logo_url || c.favicon_url || ""

@@ -128,7 +128,7 @@
    Grund der Spalte, ein Hover darin waere unsichtbar. Dieselben Werte wie .ums-nav: 3.5% fuer
    "worauf zeige ich", 5% fuer "was ist gewaehlt" -- der Hover ist die halbe Staerke, so bleiben
    beide unterscheidbar, ohne einen dritten Ton zu erfinden. */
-.udr-preset:hover { background: #eaeaea; }
+.udr-preset:hover { background: var(--vc-kalender-hover); }
 /* Die aktive Zeile traegt FLAECHE UND GEWICHT, kein Zeichen mehr. Das rechts ausgerichtete
    Quadrat in Primaerfarbe (.is-active::after, 6x6) ist raus -- angefordert, und es war ohnehin
    der Rest aus der Zeit vor der gefuellten Spalte: damals war die Flaeche --vc-heading-bg, also
@@ -142,7 +142,7 @@
    bestehenden Element beim Themenwechsel nicht neu (Begruendung und Messung in core.css bei
    .up-switch). Die Zahlen hier sind genau diese Mischungen, einmal ausgerechnet. */
 .udr-preset.is-active,
-.udr-preset.is-active:hover { background: #e2e2e1; font-weight: 550; }
+.udr-preset.is-active:hover { background: var(--vc-kalender-wahl); font-weight: 550; }
 /* Im Dunkeln waere dieselbe Mischung ein fast weisser Schleier -- dort dieselbe eigene
    Auswahlflaeche wie in der Hauptsidebar und im Einstellungsfenster. */
 /* Im Dunkeln war es schlimmer als hell: --up-sel-bg ist rgba(42,42,42,.6), und GENAU DAS ist
@@ -150,9 +150,8 @@
    Untergrunds und war unsichtbar -- kein zu schwacher Kontrast, sondern gar keiner. Jetzt eine
    eigene Flaeche aus der Textfarbe, wie hell auch, nur staerker: #e0e0e0 mit 12% auf ~#212121
    ergibt ~#3a3a3a. */
-.up-root[data-theme="dark"] .udr-preset:hover { background: #2d2d2d; }
-.up-root[data-theme="dark"] .udr-preset.is-active,
-.up-root[data-theme="dark"] .udr-preset.is-active:hover { background: #383838; }
+/* Die dunklen Werte (#2d2d2d, #383838) traegt seit dem 17.10. die Marke selbst (core,
+   --vc-kalender-hover/-wahl); die eigenen dunklen Regeln sind entfallen. */
 /* Farbe SEKUNDAER (--vc-muted) -- ausdruecklich so bestellt und schon vorher so: Reset ist die
    Ausweichhandlung, "Ueberall anwenden" die Aussage. Beim Ueberfahren primaer, wie jede
    gedaempfte Zeile der App. */
@@ -219,8 +218,7 @@
    Kopfzeile der App -- hell kaum vom Panelgrund zu trennen, dunkel gar nicht. Dieselbe Leiter
    wie bei den Preset-Zeilen, eine Stufe schwaecher als deren Auswahl: das Band ist eine Flaeche
    ueber sieben Zellen, es traegt schon durch seine Groesse. */
-.udr-day.is-in { border-radius: 0; background: #ededed; }
-.up-root[data-theme="dark"] .udr-day.is-in { background: #313131; }
+.udr-day.is-in { border-radius: 0; background: var(--vc-kalender-band); }
 .udr-day.is-start, .udr-day.is-end {
   border-color: var(--vc-text); background: var(--vc-text); color: var(--vc-bg);
   border-radius: 0;
@@ -252,7 +250,7 @@
 .udr-day.is-today:not(.is-start):not(.is-end) { border-color: var(--vc-border); }
 .udr-day.is-today.is-start, .udr-day.is-today.is-end { color: color-mix(in srgb, var(--vt-down) 55%, var(--vc-bg)); }
 .up-root[data-theme="dark"] .udr-day.is-start,
-.up-root[data-theme="dark"] .udr-day.is-end { border-color: #e0e0e0; background: #e0e0e0; color: #1f1f1b; }
+.up-root[data-theme="dark"] .udr-day.is-end { border-color: var(--vc-kalender-ende); background: var(--vc-kalender-ende); color: var(--vc-text-invert); }
 .up-root[data-theme="dark"] .udr-day.is-today { color: color-mix(in srgb, var(--vt-down) 70%, var(--vc-text)); }
 .up-root[data-theme="dark"] .udr-day.is-today.is-start,
 .up-root[data-theme="dark"] .udr-day.is-today.is-end { color: color-mix(in srgb, var(--vt-down) 60%, var(--vc-bg)); }
@@ -320,8 +318,7 @@
    gedaempft. Kleiner UND primaer ist kein Widerspruch: die Zeile ist die laengste der Spalte und
    muss mit dem Schalter in eine Zeile passen. */
 .udr-sync-lbl { font-size: 12.5px; font-weight: 500; color: var(--vc-text); line-height: 1.25; }
-.udr-sync:hover { background: #eaeaea; }
-.up-root[data-theme="dark"] .udr-sync:hover { background: #2d2d2d; }
+.udr-sync:hover { background: var(--vc-kalender-hover); }
 .udr-sync:focus-visible { outline: 2px solid var(--vc-focus, var(--vc-text)); outline-offset: -2px; }
 /* Der Schalter nach rechts: die Beschriftung ist die Aussage, der Schalter der Zustand.
    Zeiger-Ereignisse aus: geklickt wird die ganze Zeile, und ein eigener Treffer auf dem Schalter

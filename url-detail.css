@@ -229,8 +229,9 @@
 .uud-fehler {
   order: -1;
   padding: 10px 12px; border-radius: var(--up-r-l);
-  border: 1px solid var(--vc-neg-border, rgba(200, 60, 60, .28));
-  background: var(--vc-neg-bg, rgba(200, 60, 60, .08));
+  /* Ohne Rueckfall (17.10.): --vc-neg-border/-bg stehen in core an :root und an [data-theme="dark"]. */
+  border: 1px solid var(--vc-neg-border);
+  background: var(--vc-neg-bg);
   font-size: 13px; line-height: 1.45; color: var(--vc-text);
 }
 
