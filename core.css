@@ -1223,21 +1223,25 @@
    so wie oben beschrieben, nur innerhalb der Liste.
    :where() traegt keine Spezifitaet bei: die Ruecksetzregel bleibt bei (0,2,0), und die
    contain-Regel bei (0,0,0) -- jede eigene Angabe einer Komponente gewinnt weiterhin. Ein neues
-   Popup mit eigener Rollflaeche traegt sich in BEIDE Listen ein (sie sind gleich). */
+   Popup mit eigener Rollflaeche traegt sich in BEIDE Listen ein (sie sind gleich).
+   NICHT HIERHER: eine Liste IM FLUSS einer Dialogkarte (17.10., Sitemap-Baum und Treffer der
+   Events). Sie reicht das Rad an die Karte weiter, wie jede Liste in einer Seite, und die Karte
+   haelt mit ihrem eigenen contain die Seite still. Mit contain blieb die Karte stehen, solange der
+   Zeiger ueber der Liste war -- an ihrem Ende und auch ganz ohne Ueberlauf (gemessen mit echtem
+   Rad; gemeldet: "Das Popup kann nicht scrollen, wenn der Zeiger darueber ist"). Traegt die Liste
+   eine Klasse von hier (.up-filter-list), setzt die Komponente auto selbst. */
 .up-root.up-root, .up-root.up-root *:not(:where(
   .up-topicmodal-card, .uex-body, .uex-nav, .uca-body, .uca-bld-list, .uca-how, .ums-aside, .ums-main,
   .am-set-aside, .am-set-main, .uap-list, .uap-list-opts, .upt-gm-list, .up-cgm-list, .upt-topiclist,
   .up-kdr-koerper, .up-sdrawer-body, .uo-m-body,
   .up-filter-list, .utf-list, .umf-list, .umk-list, .upr-dd-list, .combo-filter-menu,
-  .am-rep-range-menu, .am-pick-scroll, .up-cols-menu, .usn-menu, .usn-teamlist, .uob-help-body,
-  .uev-urltreffer, .uev-sm-baum)) { overscroll-behavior: auto !important; }
+  .am-rep-range-menu, .am-pick-scroll, .up-cols-menu, .usn-menu, .usn-teamlist, .uob-help-body)) { overscroll-behavior: auto !important; }
 :where(
   .up-topicmodal-card, .uex-body, .uex-nav, .uca-body, .uca-bld-list, .uca-how, .ums-aside, .ums-main,
   .am-set-aside, .am-set-main, .uap-list, .uap-list-opts, .upt-gm-list, .up-cgm-list, .upt-topiclist,
   .up-kdr-koerper, .up-sdrawer-body, .uo-m-body,
   .up-filter-list, .utf-list, .umf-list, .umk-list, .upr-dd-list, .combo-filter-menu,
-  .am-rep-range-menu, .am-pick-scroll, .up-cols-menu, .usn-menu, .usn-teamlist, .uob-help-body,
-  .uev-urltreffer, .uev-sm-baum) { overscroll-behavior: contain; }
+  .am-rep-range-menu, .am-pick-scroll, .up-cols-menu, .usn-menu, .usn-teamlist, .uob-help-body) { overscroll-behavior: contain; }
 /* DIE SEITENSPERRE (15.10.), gesetzt von core.js (seitenSperreAbgleichen), solange ein modales
    Popup am body offen ist. Sie deckt, was contain nicht kann: das Rad ueber dem Schleier und ueber
    Kopf und Fuss einer Karte, die selbst nicht rollen. Wie die Sperre des Kopf-Skripts fuer seine
