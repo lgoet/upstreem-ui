@@ -11335,6 +11335,24 @@
     return wunsch >= 32 && img.naturalWidth > 0 && img.naturalWidth <= 16;
   }
 
+  /* DIE ELTERN-DOMAIN ALS ZWEITE STUFE (17.10., Nutzer: ratgeber.lee-up.de zeigte nirgends ein Favicon,
+     andere Ziele schon). Gemessen: Google liefert fuer ratgeber.lee-up.de, blog.apple.com und jede
+     frische Unterdomain seinen 16px-Platzhalter, fuer lee-up.de und apple.com 64px -- eine
+     Unterdomain hat selten ein eigenes Favicon, ihre Hauptseite fast immer. Die Regel aus der
+     Struktur, ohne Liste: das erste Label weglassen, solange mindestens zwei bleiben (aus
+     blog.example.co.uk wird example.co.uk, dort ist Schluss -- co.uk waere schon die Endung, und
+     Googles Platzhalter dafuer faellt auf den Globus). Gibt "" zurueck, wenn es keine Eltern gibt. */
+  function faviconEltern(domainOderUrl){
+    /* Eigener Host-Zuschnitt: favHost gibt es in dieser Datei zweimal (weiter unten die Fassung der
+       Favicon-Farbe, die schon auf die Registrierungsebene kuerzt) -- fuer die Stufen hier waere
+       das die letzte, nicht die naechste. */
+    var h = String(domainOderUrl == null ? "" : domainOderUrl).trim();
+    if (h.indexOf("//") >= 0){ try { h = new URL(h.indexOf("//") === 0 ? "https:" + h : h).hostname; } catch (e) { return ""; } }
+    else h = h.split(/[\/?#]/)[0];
+    var l = h.replace(/^www\./i, "").replace(/:\d+$/, "").toLowerCase().split(".");
+    return l.length > 2 ? l.slice(1).join(".") : "";
+  }
+
   /* ---- ERST GOOGLE, DANN DER GLOBUS (12.10. angefordert: "wenn Favicons nicht laden, automatisch
      Google s2 nutzen -- Domains sind ja immer vorhanden") --------------------------------------
      Bevor der Rueckfall oben greift, bekommt ein gescheitertes Favicon EINEN zweiten Versuch ueber
@@ -11401,7 +11419,24 @@
     return "";
   }
   /* true: das Bild laedt gleich ueber Google neu (dann nichts weiter tun). */
+  /* Das Bild kam schon von Google (Platzhalter oder Fehler): dieselbe Anfrage fuer die Eltern-Domain
+     (faviconEltern), mit derselben Groesse. true: laedt gleich neu. */
+  function favElternVersuch(img){
+    var src = img.getAttribute("src") || "";
+    var m = /^(.*google\.com\/s2\/favicons\?domain=)([^&]+)(.*)$/i.exec(src);
+    if (!m) return false;
+    var h = "";
+    try { h = decodeURIComponent(m[2]); } catch(e){ return false; }
+    var eltern = faviconEltern(h);
+    if (!eltern) return false;
+    if (img.style && img.style.visibility === "hidden") img.style.visibility = "";
+    var k = img.closest ? img.closest(FAV_KASTEN) : null;
+    if (k && k.style && k.style.visibility === "hidden") k.style.visibility = "";
+    img.setAttribute("src", m[1] + encodeURIComponent(eltern) + m[3]);
+    return true;
+  }
   function favZweiterVersuch(img){
+    if (FAV_S2.test(img.getAttribute("src") || "")) return favElternVersuch(img);
     if (img.__upFavS2) return false;
     var src = img.getAttribute("src") || "";
     if (!src || FAV_S2.test(src)) return false;
@@ -11429,6 +11464,7 @@
     var el = e && e.target;
     if (!el || el.tagName !== "IMG" || el.__upFavWeg) return;
     if (!istFavicon(el) || !favPlatzhalter(el)) return;
+    if (favElternVersuch(el)) return;
     el.__upFavWeg = 1;
     var kasten = el.closest ? el.closest(FAV_KASTEN) : null;
     sicher("faviconPlatzhalter", function(){ faviconRueckfall(el, kasten); });
@@ -11448,6 +11484,7 @@
       if (b.naturalWidth !== 0 && !favPlatzhalter(b)) continue;
       if (!b.getAttribute("src") || !istFavicon(b)) continue;
       if (b.naturalWidth === 0 && favZweiterVersuch(b)) continue;
+      if (b.naturalWidth !== 0 && FAV_S2.test(b.getAttribute("src") || "") && favElternVersuch(b)) continue;   /* Googles Platzhalter: erst die Eltern-Domain */
       b.__upFavWeg = 1;
       var kn = b.closest ? b.closest(FAV_KASTEN) : null;
       sicher("faviconNachsehen", (function(bild, kk){ return function(){ faviconRueckfall(bild, kk); }; })(b, kn));
@@ -29530,7 +29567,7 @@
     /* 16.10. spaet fuer das Feld in Schritt 3 der Events: wer ein Favicon VORAB prueft (ein Bild
        ausserhalb des Dokuments, das der Rueckfall hier nicht sieht), erkennt Googles Platzhalter
        mit derselben Regel wie der Rueckfall. */
-    favPlatzhalter: favPlatzhalter,
+    favPlatzhalter: favPlatzhalter, faviconEltern: faviconEltern,
     marketChip: marketChip,
     aufResize: aufResize,
     beobachteGroesse: beobachteGroesse,

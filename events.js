@@ -726,7 +726,7 @@
      stehen schon in core bzw. oben -- nicht noch einmal (Katalog-Kollision). */
   if (UC.addMessages) UC.addMessages("de", {
     "Planned": "Geplant", "Completed": "Abgeschlossen", "Running, day {n} of {m}": "Läuft, Tag {n} von {m}", "Day {n}": "Tag {n}",
-    "Single day": "Einzelner Tag", "Select dates": "Zeitraum wählen", "End date": "Enddatum", "Since event": "Seit Event",
+    "Start date": "Startdatum", "End date": "Enddatum", "Since event": "Seit Event",
     "Planned events can be fully edited until they start.": "Geplante Events kannst du bis zum Start komplett ändern.",
     "We compare the campaign with the same number of days before it, and show what happens after it ends.":
       "Wir vergleichen die Kampagne mit gleich vielen Tagen davor und zeigen, was nach ihrem Ende passiert.",
@@ -752,7 +752,7 @@
     "The prompt selection is fixed on the start date.": "Die Auswahl der Prompts steht am Starttag fest.",
     "{n} of {m} days after the event observed so far": "{n} von {m} Tagen nach dem Event bisher beobachtet",
     "The numbers after the event only use the days that have data so far.": "Die Zahlen nach dem Event nutzen nur die Tage, für die es bisher Daten gibt.",
-    "A running event can't switch between a single day and a date range.": "Ein laufendes Event kann nicht zwischen einem einzelnen Tag und einem Zeitraum wechseln.",
+    "A running event can't switch between a start date and a date range.": "Ein laufendes Event kann nicht zwischen einem Startdatum und einem Zeitraum wechseln.",
     "This can't be changed after the event has started.": "Das lässt sich nach dem Start des Events nicht mehr ändern.",
     "The scope can't be changed after the event has started.": "Der Umfang lässt sich nach dem Start des Events nicht mehr ändern.",
     "The sitemap address can't be used. Please check it.": "Die Sitemap-Adresse kann nicht verwendet werden. Bitte prüf sie."
@@ -999,8 +999,9 @@
     "Loading a sitemap isn't available right now.": "Das Laden einer Sitemap ist gerade nicht verfügbar.",
     "Too many sitemap requests. Please try again in 1 minute.": "Zu viele Sitemap-Abrufe. Versuch es bitte in 1 Minute noch einmal.",
     "Too many sitemap requests. Please try again in {n} minutes.": "Zu viele Sitemap-Abrufe. Versuch es bitte in {n} Minuten noch einmal.",
-    "Newest change": "Jüngste Änderung", "Select all in folder": "Alle im Ordner auswählen",
-    "Track everything under {path}": "Alles unter {path} tracken", "Included in the folder": "Im Ordner enthalten",
+    "Newest change": "Jüngste Änderung",
+    "Included in {ordner}. Clear that folder to choose this page on its own.": "Schon in {ordner} enthalten. Nimm den Ordner ab, um diese Seite einzeln zu wählen.",
+    "Track everything under {path}": "Alles unter {path} tracken",
     /* 17.10.: eine Seite unter einer Regel bleibt waehlbar und sagt leise, wo sie schon mitzaehlt (smZustand) */
     "In {regel}": "In {regel}",
     "Also covered by {regel}. Adding it gives it its own row.": "Auch in {regel} enthalten. Hinzugefügt bekommt es eine eigene Zeile.",
@@ -1013,8 +1014,6 @@
     "You can add 1 more target. A folder counts as one and covers every page in it.": "Du kannst noch ein Ziel hinzufügen. Ein Ordner zählt als eins und deckt jede Seite darin ab.",
     "That's the most you can add. To cover more pages, select a folder instead.": "Mehr geht nicht. Für weitere Seiten wähl stattdessen einen Ordner.",
     "No more targets fit into this event.": "In dieses Event passen keine weiteren Ziele.",
-    "Too many pages, select the folder instead": "Zu viele Seiten, wähl stattdessen den Ordner",
-    "Too many pages, select the domain instead": "Zu viele Seiten, wähl stattdessen die Domain",
     "You can add 1 more target to this event.": "Du kannst diesem Event noch ein Ziel hinzufügen.",
     /* Auswertung je Regel */
     "Everything under this path, including pages added later.": "Alles unter diesem Pfad, auch Seiten, die später dazukommen.",
@@ -1183,15 +1182,18 @@
      der Edge Function sitemap-lesen. Bis dahin bietet Schritt 3 nur "Brand metrics only" und
      "Specific URLs" ueber die v2-Wege, und es gibt keinen Sitemap-Knopf.
      Gefragt wird EINMAL je Seitenaufruf und fuer alle Wurzeln, beim ersten Oeffnen von Anlegen
-     oder Detail -- mit einem Aufruf, der nichts aendert: die Vorschau mit leerer Zielliste, die
-     Edge Function mit leerer Adresse (sie lehnt die ab, ohne etwas abzurufen). Eine fehlende
-     Funktion erkennt PostgREST an PGRST202, eine fehlende Edge Function das Gateway von Supabase
-     an 404 NOT_FOUND ("Requested function was not found"), eine ohne Gate an 503 not_configured
-     (siehe edgeFehlt); jede andere Antwort heisst "da" -- auch die 400 invalid_input, mit der die
-     Function die leere url ablehnt (ohne Abruf und ohne Zaehlung im Ratenlimit, bestaetigt im
-     Nachtrag 15.10. fuer Version 4: "das bleibt so").
-     Netzfehler, Zeitablauf und bei der Edge Function ein anderer 5xx (502 edge_failed) heissen
-     "noch unbekannt" -- dann wird beim naechsten Oeffnen noch
+     oder Detail -- nur mit einem Aufruf, der gelingt und nichts aendert: die Vorschau mit leerer
+     Zielliste. Die Edge Function wird NICHT mehr zur Probe gerufen (17.10., Nutzer: im Netzwerk
+     stand bei jedem ersten Anlegen ein roter Abruf, 400 invalid_input auf die absichtlich leere
+     url -- ein Fehlschlag, den wir selbst bestellen): der Sitemap-Knopf steht mit den Zielen da,
+     und was die Function wirklich kann, sagt der erste echte Abruf (smLaden: 404 NOT_FOUND und
+     503 not_configured nehmen den Knopf fuer den Rest des Tabs weg und sagen es als Satz, 502
+     edge_failed heisst "noch einmal versuchen"). Ebenso kein Aufruf der Analyse mit der Null-
+     Kennung mehr (400 invalid_param): siehe KAMPAGNE_DA. Eine fehlende Funktion erkennt
+     PostgREST an PGRST202, eine fehlende Edge Function das Gateway von Supabase an 404
+     NOT_FOUND ("Requested function was not found"), eine ohne Gate an 503 not_configured (siehe
+     edgeFehlt).
+     Netzfehler und Zeitablauf heissen "noch unbekannt" -- dann wird beim naechsten Oeffnen noch
      einmal gefragt, und bis dahin gilt der Rueckfall. NICHT ueber UC.ohneBubble: das ist kein
      Rueckweg an Bubble, sondern die Frage, was die Datenbank kann. */
   var ZIELE_DA = { stand: null, laeuft: null }, SITEMAP_DA = { stand: null, laeuft: null };
@@ -1251,10 +1253,12 @@
      beginnen. Status, Tag x von y und der Abschlussbericht kommen von der Datenbank (status,
      day_number, day_count, report_final_on, report_final) -- gebaut GEGEN den Vertrag, bevor
      die DB ihn liefert. Darum wie ZIELE_DA ein Schalter: KAMPAGNE_DA.stand wird true, sobald
-     cached_impact_event_analysis_v4 antwortet (Pruefaufruf mit der Null-Kennung, aendert nichts)
-     oder eine Zeile des Speichers status traegt; false bei PGRST202. Bis dahin bleibt alles beim
-     heutigen Stand: kein Zeitraum im Anlegen, kein Status, Analyse v3 -- nie ein Fehler, nie
-     halb. */
+     eine Zeile des Speichers status traegt (kampagneAbleiten); false bei PGRST202 (ein echter
+     Aufruf) oder wenn Events da sind und keins einen status hat. Kein Pruefaufruf mehr (17.10.): die
+     Analyse mit der Null-Kennung antwortete absichtlich 400 invalid_param und stand als roter Abruf im
+     Netzwerk. Hat das Team noch kein Event, gilt Teil B als da (die Datenbank hat ihn seit dem
+     17.10.); fehlt er doch, faengt das der erste echte Aufruf ab (PGRST202 in rufen: Rueckfall auf v3
+     bzw. ein Satz bei einem Zeitraum). */
   var KAMPAGNE_DA = { stand: null, laeuft: null };
   var KAMPAGNE_FN = { uevAnalysis: "cached_impact_event_analysis_v4", uevCreate: "create_impact_event_v4", uevUpdate: "update_impact_event_v3" };
   /* Vertrag B.1: Laenge hoechstens 183 Tage (Start und Ende zaehlen mit), Start bis heute + 365. */
@@ -1265,6 +1269,13 @@
      beantwortet, ohne einen Aufruf. */
   function kampagneMerken(ev) {
     if (KAMPAGNE_DA.stand == null && ev && typeof ev.status === "string" && ev.status) KAMPAGNE_DA.stand = true;
+  }
+  /* Die Frage ohne Aufruf: aus der geladenen Liste. Events da und keins mit status heisst Teil B fehlt;
+     keine Events (geladen) heisst nichts Gegenteiliges -- die Datenbank hat ihn, also da. */
+  function kampagneAbleiten(l, geladen) {
+    if (KAMPAGNE_DA.stand != null) return;
+    l.forEach(kampagneMerken);
+    if (KAMPAGNE_DA.stand == null && geladen) KAMPAGNE_DA.stand = l.length ? false : true;
   }
   /* Der Status NUR, wenn die Datenbank ihn liefert. Hier abgeleitet waere er eine Angabe, die die
      Datenbank nicht kennt -- ein "Day 45" auf jedem alten Event, bevor es Teil B gibt. */
@@ -1317,7 +1328,7 @@
     "p_end_date: max 183 days": "A campaign can run for at most 183 days.",
     "p_end_date: >= today": "The end date can't be in the past.",
     /* Ein Tages-Event wird keine Kampagne und umgekehrt, sobald es laeuft (Teil B). */
-    "p_end_date: day event": "A running event can't switch between a single day and a date range."
+    "p_end_date: day event": "A running event can't switch between a start date and a date range."
   };
   /* Der Satz zum erlaubten Start: mit Kampagnen (v4) bis heute + 365, davor nur zurueck. */
   function STARTFENSTER() {
@@ -1492,22 +1503,38 @@
     var x = z && zerlegen(z.input);
     return x ? x.host : "";
   }
-  /* Zwei Hosts, die sich nur um einen Tippfehler unterscheiden (hoechstens zwei Zeichen) --
-     fuer "Did you mean ...?", solange die Datenbank selbst keinen Vorschlag macht (vor
-     events_ziele_v2.sql, siehe tippVorschlaege). Eine Unterdomain des anderen ist kein
-     Tippfehler: m.lee-up.de liegt zwei Zeichen von lee-up.de entfernt und waere sonst ein
-     falscher Vorschlag. */
-  function aehnlich(a, b) {
-    a = String(a || ""); b = String(b || "");
-    if (!a || !b || a === b || Math.abs(a.length - b.length) > 2) return false;
-    if (a.slice(-(b.length + 1)) === "." + b || b.slice(-(a.length + 1)) === "." + a) return false;
+  /* Zwei Hosts, die sich nur um einen TIPPFEHLER unterscheiden -- fuer "Did you mean ...?" (17.10.,
+     Nutzer: "apple.de" schlug "aptly.de" vor). Die Datenbank liefert jede Domain des Teams mit
+     Abstand <= 2 (similar_host), egal wie lang der Name ist; bei fuenf Buchstaben sind zwei
+     Aenderungen aber schon ein anderes Wort. Darum die Regel aus der Struktur, ohne Wortlisten:
+     - Endung (das letzte Label) und Name (alles davor) werden getrennt gelesen.
+     - Gleiche Endung: der Abstand der Namen (eine Vertauschung zweier Nachbarzeichen zaehlt eins,
+       wie in der Datenbank) darf hoechstens ein Fuenftel der Namenslaenge sein, hoechstens 2. Also
+       unter 5 Zeichen gar keiner (bmw/bmx sind zwei Marken), bis 9 Zeichen einer, ab 10 zwei.
+     - Andere Endung: nur, wenn der Name gleich ist und die Endungen sich um ein Zeichen
+       unterscheiden (lee-up.de, lee-up.dr); ein Tippfehler im Namen UND in der Endung ist keiner.
+     - Eine Unterdomain des anderen ist kein Tippfehler: m.lee-up.de liegt zwei Zeichen von
+       lee-up.de entfernt und waere sonst ein falscher Vorschlag. */
+  function editAbstand(a, b) {
     var m = [], i, j;
     for (i = 0; i <= a.length; i++) { m[i] = [i]; }
     for (j = 0; j <= b.length; j++) m[0][j] = j;
     for (i = 1; i <= a.length; i++) for (j = 1; j <= b.length; j++) {
       m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1));
+      if (i > 1 && j > 1 && a.charAt(i - 1) === b.charAt(j - 2) && a.charAt(i - 2) === b.charAt(j - 1)) m[i][j] = Math.min(m[i][j], m[i - 2][j - 2] + 1);
     }
-    return m[a.length][b.length] <= 2;
+    return m[a.length][b.length];
+  }
+  function aehnlich(a, b) {
+    a = String(a || "").toLowerCase(); b = String(b || "").toLowerCase();
+    if (!a || !b || a === b) return false;
+    if (a.slice(-(b.length + 1)) === "." + b || b.slice(-(a.length + 1)) === "." + a) return false;
+    var ia = a.lastIndexOf("."), ib = b.lastIndexOf(".");
+    if (ia < 1 || ib < 1) return false;
+    var na = a.slice(0, ia), nb = b.slice(0, ib), ta = a.slice(ia + 1), tb = b.slice(ib + 1);
+    if (ta !== tb) return na === nb && ta.length >= 2 && tb.length >= 2 && editAbstand(ta, tb) === 1;
+    var d = editAbstand(na, nb);
+    return d > 0 && d <= Math.min(2, Math.floor(Math.max(na.length, nb.length) / 5));
   }
   /* "DID YOU MEAN ...?" (15.10. spaet, Nachtrag der Datenbank Abschnitt 3): je Host, den das Team
      nie zitiert hat, hoechstens EIN Vorschlag { alt, neu } -- in der Reihenfolge der Ziele.
@@ -1546,7 +1573,7 @@
       nahAlle.forEach(function (x) {
         if (neu) return;
         var passt = x.target_input == null || hostVon(x.target_input) === h;
-        if (mitDb) { if (x.reason === "similar_host" && x.target_input != null && passt && x.host && String(x.host) !== h) neu = String(x.host); }
+        if (mitDb) { if (x.reason === "similar_host" && x.target_input != null && passt && x.host && String(x.host) !== h && aehnlich(h, String(x.host))) neu = String(x.host); }
         else if (x.url && passt) { var nh = hostPfad(x.url).host; if (aehnlich(nh, h)) neu = nh; }
       });
       if (neu) aus.push({ alt: h, neu: neu });
@@ -4203,38 +4230,57 @@
         '<div class="udr-dows">' + kalNamen().dow.map(function (w) { return '<span class="udr-dow">' + w + '</span>'; }).join("") + '</div>' +
         '<div class="udr-grid">' + zellen + '</div></div>';
     }
-    /* Der Text im Wahlknopf: ein Tag, ein Zeitraum oder die halbe Wahl ("1 Sep – End date"). */
-    function datumText(e) {
-      if (!e.datum) return t(e.bereich ? "Select dates" : "Select a date");
-      if (!e.bereich) return datum(e.datum);
-      return e.ende ? zeitraum(e.datum, e.ende) : datum(e.datum) + " – " + t("End date");
+    /* Die Texte der Wahlknoepfe: der Start, das Ende. Jeder zeigt nur SEIN Datum -- mit Zeitraum
+       stehen zwei Felder da (Nutzer 17.10.: "niemand errät, dass man im Kalender eine Spanne
+       ziehen kann"), und jedes sagt ueber seinem Knopf, was es ist. */
+    function datumText(e) { return e.datum ? datum(e.datum) : t("Select a date"); }
+    function endeText(e) { return e.ende ? datum(e.ende) : t("Select a date"); }
+    function datumModus(e) { return e.bereich ? "bereich" : "tag"; }
+    /* Das Feld des Starts, mit dem Kalender darunter. */
+    function startWahl(e) {
+      return '<div class="up-filter uev-wahl" data-wahlwrap="datum">' + wahlKnopf("datum", "calendar", datumText(e), !e.datum) +
+        '<div class="up-menu uev-wahlmenu uev-datumwahl" aria-hidden="true">' + kalender(e) + '</div></div>';
+    }
+    /* Einzeln: ein Feld. Zeitraum: zwei Felder nebeneinander, Startdatum und Enddatum; beide oeffnen
+       einen Kalender mit demselben Band, die Wahl im einen fuellt das andere mit (datumKlick). */
+    function datumInhalt(e) {
+      if (!e.bereich) return startWahl(e);
+      return '<div class="uev-datumpaar">' +
+        '<div class="uev-datumfach"><span class="uev-datum-lbl">' + esc(t("Start date")) + '</span>' + startWahl(e) + '</div>' +
+        '<div class="uev-datumfach"><span class="uev-datum-lbl">' + esc(t("End date")) + '</span>' + endeFeld(e) + '</div></div>';
     }
     function datumFeld(e) {
-      /* "Single day | Date range" (17.10.) nur mit Kampagnen in der Datenbank; das Segment aus core
+      /* "Start date | Date range" (17.10.) nur mit Kampagnen in der Datenbank; das Segment aus core
          (.up-seg) wie der Umschalter Or/And der Topics. Ein geplantes Event, das schon begonnen
          haette, gibt es nicht -- im Bearbeiten geplanter Events ist beides frei. */
       var seg = kampagneDa() ? '<div class="up-seg uev-datummodus" role="group" aria-label="' + esc(t("Date")) + '">' +
-          '<button class="up-seg-btn' + (!e.bereich ? " is-active" : "") + '" type="button" data-datummodus="tag" aria-pressed="' + !e.bereich + '">' + esc(t("Single day")) + '</button>' +
+          '<button class="up-seg-btn' + (!e.bereich ? " is-active" : "") + '" type="button" data-datummodus="tag" aria-pressed="' + !e.bereich + '">' + esc(t("Start date")) + '</button>' +
           '<button class="up-seg-btn' + (e.bereich ? " is-active" : "") + '" type="button" data-datummodus="bereich" aria-pressed="' + !!e.bereich + '">' + esc(t("Date range")) + '</button>' +
         '</div>' : '';
       return '<div class="uev-datumfeld">' + seg +
-        '<div class="up-filter uev-wahl" data-wahlwrap="datum">' + wahlKnopf("datum", "calendar", datumText(e), !e.datum || (e.bereich && !e.ende)) +
-        '<div class="up-menu uev-wahlmenu uev-datumwahl" aria-hidden="true">' + kalender(e) + '</div></div>' +
+        '<div class="uev-datuminhalt" data-modus="' + datumModus(e) + '">' + datumInhalt(e) + '</div>' +
         (kampagneDa() ? '<span class="uev-datumhilfe">' + esc(datumHilfe(e)) + '</span>' : '') + '</div>';
     }
-    /* Das Ende einer LAUFENDEN Kampagne (17.10., Vertrag B.3): ab heute, hoechstens 183 Tage nach
-       dem Start. Derselbe Kalender, der Zeitraum Start bis Ende als Band. */
+    /* Das Ende: ab dem Start, hoechstens 183 Tage lang (Vertrag B.1/B.3). Im Bearbeiten einer
+       LAUFENDEN Kampagne steht der Start fest (e.start) und das Ende gilt ab heute; im Anlegen ist
+       es der gerade gewaehlte Start (e.datum), und das Ende darf auch in der Vergangenheit liegen
+       (eine schon beendete Kampagne). Derselbe Kalender, der Zeitraum als Band. */
     function endeKalender(e) {
-      return kalender({ bereich: true, wahlEnde: true, datum: e.start, ende: e.ende, monat: e.endeMonat || tagAus(e.ende), endeAb: heuteIso() });
+      var s = e.start || e.datum;
+      return kalender({ bereich: true, wahlEnde: true, datum: s, ende: e.ende, monat: e.endeMonat || tagAus(e.ende) || tagAus(s), endeAb: e.start ? heuteIso() : s });
     }
     function endeFeld(e) {
-      return '<div class="up-filter uev-wahl" data-wahlwrap="ende">' + wahlKnopf("ende", "calendar", e.ende ? datum(e.ende) : t("End date"), !e.ende) +
+      return '<div class="up-filter uev-wahl" data-wahlwrap="ende">' + wahlKnopf("ende", "calendar", endeText(e), !e.ende) +
         '<div class="up-menu uev-wahlmenu uev-endewahl" aria-hidden="true">' + endeKalender(e) + '</div></div>';
     }
     function endeNeu() {
       var p = popup, b = im('[data-wahl="ende"]');
       if (!p) return;
-      if (b) b.querySelector(".up-modal-wahl-txt").textContent = p.e.ende ? datum(p.e.ende) : t("End date");
+      if (b) {
+        var tx = b.querySelector(".up-modal-wahl-txt");
+        tx.textContent = endeText(p.e);
+        tx.classList.toggle("is-leer", !p.e.ende);
+      }
       var m = im(".uev-endewahl");
       if (m) m.innerHTML = endeKalender(p.e);
     }
@@ -4462,7 +4508,8 @@
        domain" anbieten (gemessen 15.10. spaet im Rueckfall: der Platzhalter versprach Pfad und
        Domain, eingetragen wurde beides als URL). */
     function platzhalter(art) { return t(ART_PLATZHALTER[art || (zieleDa() ? "" : "url")]); }
-    function sitemapDa() { return zieleDa() && SITEMAP_DA.stand === true; }
+    /* Da, solange nichts Gegenteiliges feststeht (SITEMAP_DA.stand false erst nach einem echten Abruf). */
+    function sitemapDa() { return zieleDa() && SITEMAP_DA.stand !== false; }
     function artenFuer(p) {
       return ARTEN.filter(function (a) {
         if (a.k === "marke") return p.art === "anlegen";
@@ -4915,6 +4962,25 @@
       ic.classList.toggle("has-fav", !!src);
       ic.innerHTML = src ? '<img class="uev-fav" src="' + esc(src) + '" width="16" height="16" alt="" referrerpolicy="no-referrer"/>' : UC.icon(ART_ZEICHEN[art] || "link", 2);
     }
+    /* Sucht das Favicon eines Hosts, bei einer Unterdomain ohne eigenes (Googles Platzhalter oder
+       ein Fehler) das der Eltern-Domain, dann das der naechsten (UC.faviconEltern, dieselbe Regel
+       wie der Rueckfall der Bilder in core). fertig(src): die Adresse des ersten echten Bildes, "" wenn
+       keines da ist -- dann bleibt das Zeichen der Art. */
+    function favSuchen(h, fertig) {
+      var src = zielFavUrl(h);
+      if (!src) { fertig(""); return; }
+      var img = new Image();
+      img.referrerPolicy = "no-referrer";
+      function weiter() {
+        var el = UC.faviconEltern ? UC.faviconEltern(h) : "";
+        if (el) favSuchen(el, fertig); else fertig("");
+      }
+      img.onload = function () {
+        if (img.naturalWidth > 0 && !(UC.favPlatzhalter && UC.favPlatzhalter(img))) fertig(src); else weiter();
+      };
+      img.onerror = weiter;
+      img.src = src;
+    }
     function feldFavicon(p) {
       if (!p) return;
       clearTimeout(p.favUhr);
@@ -4923,16 +4989,10 @@
       if (!h || favGeprueft[h] != null) return;
       p.favUhr = setTimeout(function () {
         if (popup !== p || feldHost(p) !== h || favGeprueft[h] != null) return;
-        var src = zielFavUrl(h);
-        if (!src) { favGeprueft[h] = ""; return; }
-        var img = new Image();
-        img.referrerPolicy = "no-referrer";
-        img.onload = function () {
-          favGeprueft[h] = img.naturalWidth > 0 && !(UC.favPlatzhalter && UC.favPlatzhalter(img)) ? src : "";
+        favSuchen(h, function (src) {
+          favGeprueft[h] = src;
           if (popup === p) feldZeichen(p);
-        };
-        img.onerror = function () { favGeprueft[h] = ""; };
-        img.src = src;
+        });
       }, FELD_FAV_MS);
     }
     function artWaehlen(p, k, vonHand) {
@@ -5311,7 +5371,9 @@
        fuer Edge Functions (UC.edge); gespeichert wird NICHTS ausser den Zielen, die man danach
        uebernimmt. Die Seiten stehen als Baum nach Host und Ordnern, je Ordner die Zahl der Seiten
        und das juengste lastmod; ein Ordner waehlt eine Regel (Pfad, beim Host die ganze Domain),
-       eine Seite eine URL, "Select all in folder" alle Seiten darin einzeln. Was ein gewaehlter
+       eine Seite eine URL. Es gibt KEIN "Select all in folder" mehr (17.10., Nutzer: der Ordner hatte
+       danach keinen Auswahlzustand): wer viele Seiten will, waehlt den Ordner, und der ist EINE Regel.
+       Was ein gewaehlter
        Ordner schon enthaelt, steht gewaehlt und gesperrt. Gezeichnet werden nur aufgeklappte
        Ordner und je Ordner zuerst 50 Seiten -- eine Sitemap darf 50 000 haben.
        Laden mit dem Ladebild aus core (Spinner, kein Skelett: der Abschnitt ist selten). Jeder
@@ -5399,12 +5461,35 @@
       for (var i = 0; i < p.e.ziele.length; i++) { var h = zielHost(p.e.ziele[i]); if (h) return h; }
       return "";
     }
+    /* Der Waehler zu einer Eingabe. DAS FELD FOLGT DER EINGABE (17.10., Nutzer: eine Domain
+       eingegeben, den Waehler geoeffnet und zugemacht, eine ANDERE eingegeben und wieder geoeffnet:
+       dort stand die alte). p.sm blieb nach dem Schliessen stehen, samt Adresse, geladener Sitemap,
+       Auswahl und Fehler. Jetzt merkt sich p.sm.vorschlag, aus welcher Eingabe er zuletzt kam
+       (smVorschlag): ist es beim Oeffnen eine andere, beginnt der Waehler von vorn -- Adresse,
+       Baum, Auswahl, Suche und Fehler gehoeren zur alten Sitemap und gelten nicht fuer die neue. Ist es
+       dieselbe, bleibt alles stehen, auch was jemand im Feld des Waehlers selbst getippt hat. */
+    function smNeu() {
+      return { offen: false, laeuft: false, fehler: "", antwort: null, knoten: {}, hosts: [], vorh: null, auf: {}, wahl: { ordner: {}, urls: {} }, suche: "", mehr: {}, url: "", vorschlag: null, seq: 0 };
+    }
     function smOeffnen(p, url, laden) {
       if (!p || !sitemapDa()) return;
-      if (!p.sm) p.sm = { offen: false, laeuft: false, fehler: "", antwort: null, knoten: {}, auf: {}, wahl: { ordner: {}, urls: {} }, suche: "", mehr: {}, url: "" };
+      var jetzt = smVorschlag(p);
+      if (!p.sm) p.sm = smNeu();
+      else if (p.sm.vorschlag !== jetzt) {
+        /* Eine laufende Anfrage der alten Eingabe verfaellt (seq), ihr Ladebild geht mit. */
+        if (p.sm.lb) { try { p.sm.lb.stop(); } catch (e) {} }
+        var seq = (p.sm.seq || 0) + 1;
+        p.sm = smNeu();
+        p.sm.seq = seq;
+      }
+      p.sm.vorschlag = jetzt;
       p.sm.offen = true;
-      if (url) p.sm.url = url; else if (!p.sm.url) p.sm.url = smVorschlag(p);
+      if (url) p.sm.url = url; else if (!p.sm.url) p.sm.url = jetzt;
       smZeichnen(p);
+      /* Steht der Waehler schon da (der Hinweis "This looks like a sitemap" oeffnet ihn mit einer neuen
+         Adresse), zeigt sein Feld die neue -- smZeichnen setzt sie nur beim ersten Bauen. */
+      var fe = im(".uev-sm-ein");
+      if (fe && fe.value !== p.sm.url) fe.value = p.sm.url;
       smInSicht();
       if (laden && p.sm.url) smLaden(p);
       /* preventScroll: den Weg dorthin macht smInSicht -- ein zweiter, sofortiger Sprung des
@@ -5425,6 +5510,7 @@
     }
     function smZu(p) {
       if (!p || !p.sm) return;
+      smSperreWeg(p);
       p.sm.offen = false;
       if (p.sm.lb) { try { p.sm.lb.stop(); } catch (e) {} p.sm.lb = null; }
       var ort = im(".uev-sm-ort");
@@ -5516,19 +5602,17 @@
       }
       hosts.sort(function (a, b) { return b.n - a.n; });
       hosts.forEach(ordnen);
-      /* alle: die Seiten darunter, jede einmal (n zaehlt eine doppelt gelistete Adresse doppelt)
-         -- so viele waehlt "Select all in folder", und daran misst der Deckel, ob es passt. */
-      (function zaehlen(l) { l.forEach(function (k) { zaehlen(k.kinder); k.alle = k.seiten.length; k.kinder.forEach(function (c) { k.alle += c.alle; }); }); })(hosts);
       p.sm.knoten = knoten; p.sm.hosts = hosts; p.sm.vorh = null;
       p.sm.auf = {}; p.sm.wahl = { ordner: {}, urls: {} }; p.sm.mehr = {}; p.sm.suche = "";
       /* Ein Host: gleich aufgeklappt -- sonst stuende eine einzelne Zeile da. */
       if (hosts.length === 1) p.sm.auf[hosts[0].key] = true;
     }
     /* Gedeckt: ein Vorfahr ist als Regel gewaehlt -- die Seite ist darin schon enthalten. */
-    function smGedeckt(p, k) {
-      for (var e = k.eltern; e; e = e.eltern) if (p.sm.wahl.ordner[e.key]) return true;
-      return false;
+    function smGedecktDurch(p, k) {
+      for (var e = k.eltern; e; e = e.eltern) if (p.sm.wahl.ordner[e.key]) return e;
+      return null;
     }
+    function smGedeckt(p, k) { return !!smGedecktDurch(p, k); }
     /* Gewaehlt und zaehlt: nicht in einem gewaehlten Ordner und nicht schon getrackt. */
     function smGewaehlt(p) {
       var v = smVorhanden(p);
@@ -5548,7 +5632,7 @@
        mitzaehlt. Bis dahin stand bei einem Event mit ganzer Domain jede Seite gesperrt da und der
        Satz "Everything in this sitemap is already added.". Gerechnet einmal je Stand der Liste
        (sig) und je geladener Sitemap, nicht bei jedem Zeichnen -- eine Sitemap darf 50 000 Seiten
-       haben. an[key]: der Knoten selbst; n[key]: getrackte Seiten darunter; regel[key]: die Regel,
+       haben. an[key]: der Knoten selbst; regel[key]: die Regel,
        unter die er faellt (nur, wenn er nicht selbst drin ist). */
     function smVorhanden(p) {
       var l = p.e.ziele.slice(), d = p.art === "ziel" ? state.detail[p.eventId] : null;
@@ -5556,7 +5640,7 @@
       else if (d && isArr(d.urls)) d.urls.forEach(function (u) { var y = zielBauen(u && u.url, "url"); if (!y.fehler) l.push(y); });
       var sig = l.map(function (z) { return z.key; }).join("\n");
       if (p.sm.vorh && p.sm.vorh.sig === sig && p.sm.vorh.knoten === p.sm.knoten) return p.sm.vorh;
-      var v = p.sm.vorh = { sig: sig, knoten: p.sm.knoten, an: {}, n: {}, regel: {} };
+      var v = p.sm.vorh = { sig: sig, knoten: p.sm.knoten, an: {}, regel: {} };
       if (!l.length) return v;
       /* Je Art die Schluessel: smZielVon laeuft nur fuer Knoten, deren Art ueberhaupt drin ist --
          bei 50 000 Seiten und keinem url-Ziel also kein zielBauen je Seite. */
@@ -5586,7 +5670,6 @@
         var k = p.sm.knoten[key], art = k.art === "seite" || k.art === "host" ? k.art : "ordner";
         if (mit[art] && schl[art][smZielVon(k).key]) {
           v.an[key] = true;
-          if (k.art === "seite") for (var e = k.eltern; e; e = e.eltern) v.n[e.key] = (v.n[e.key] || 0) + 1;
           return;
         }
         var r = deckt(k);
@@ -5598,24 +5681,17 @@
        Je Zeichnen einmal: wie viele Ziele die Auswahl ergibt (anzahl), wie viele hineinpassen
        (frei, zielFrei), und je Ordner, wie viele gewaehlte Ziele darunter liegen. Daraus folgt:
        eine Seite geht, solange anzahl < frei; ein Ordner geht, wenn er nach dem Ersetzen dessen,
-       was er enthaelt, noch passt (bei voller Auswahl ein Tausch vieler Seiten gegen eine Regel);
-       "Select all in folder" steht nur da, wenn alle Seiten darin passen -- sonst der Hinweis,
-       den Ordner selbst zu waehlen. Die Auswahl ist selbst gedeckelt, die Schleife also kurz. */
+       was er enthaelt, noch passt (bei voller Auswahl ein Tausch vieler Seiten gegen eine Regel).
+       Die Auswahl ist selbst gedeckelt, die Schleife also kurz. */
     function smDeckel(p) {
-      var v = smVorhanden(p), gew = smGewaehlt(p), dk = { v: v, gew: gew, anzahl: gew.ordner.length + gew.urls.length, frei: zielFrei(p), unter: {}, unterOrdner: {}, unterSeiten: {} };
-      function hoch(key, ordner) {
-        var k = p.sm.knoten[key];
-        for (var e = k.eltern; e; e = e.eltern) {
-          dk.unter[e.key] = (dk.unter[e.key] || 0) + 1;
-          if (ordner) { dk.unterOrdner[e.key] = (dk.unterOrdner[e.key] || 0) + 1; dk.unterSeiten[e.key] = (dk.unterSeiten[e.key] || 0) + smWaehlbar(v, k); }
-        }
+      var v = smVorhanden(p), gew = smGewaehlt(p), dk = { v: v, gew: gew, anzahl: gew.ordner.length + gew.urls.length, frei: zielFrei(p), unter: {} };
+      function hoch(key) {
+        for (var e = p.sm.knoten[key].eltern; e; e = e.eltern) dk.unter[e.key] = (dk.unter[e.key] || 0) + 1;
       }
-      gew.ordner.forEach(function (key) { hoch(key, true); });
-      gew.urls.forEach(function (key) { hoch(key, false); });
+      gew.ordner.forEach(hoch);
+      gew.urls.forEach(hoch);
       return dk;
     }
-    /* Seiten unter einem Ordner, die noch nicht getrackt sind. */
-    function smWaehlbar(v, k) { return (k.alle || 0) - (v.n[k.key] || 0); }
     /* Wie viele Ziele diese Sitemap HOECHSTENS noch hergibt, ohne den Deckel (17.10.). Bis dahin
        stand unten "0 of 49 selected", auch wenn eine gewaehlte Domain jede Seite schon deckte
        (Nutzer: "wirkt verwirrend") -- der Nenner war der freie Platz im Event, nicht das, was
@@ -5640,13 +5716,6 @@
     }
     /* Passt dieser (noch nicht gewaehlte) Knoten dazu? Ein Ordner ersetzt, was darunter gewaehlt ist. */
     function smPasst(dk, k) { return dk.anzahl + 1 - (k.art === "seite" ? 0 : dk.unter[k.key] || 0) <= dk.frei; }
-    /* Wie viele Seiten "Select all in folder" dazunaehme: jede noch nicht getrackte darunter, ausser
-       denen in einem schon gewaehlten Unterordner (dessen Regel bleibt). */
-    function smAlleNeu(dk, k) { return smWaehlbar(dk.v, k) - (dk.unterSeiten[k.key] || 0); }
-    function smAllePasst(dk, k) {
-      var neu = smAlleNeu(dk, k);
-      return neu > 0 && dk.anzahl - (dk.unter[k.key] || 0) + (dk.unterOrdner[k.key] || 0) + neu <= dk.frei;
-    }
     function smOrdnerName(k) { return k.art === "host" ? k.host : k.pfad.slice(k.pfad.lastIndexOf("/")) ; }
     /* Der Zustand einer Zeile (16.10.): getrackt ("Already added", aus core), im gewaehlten Ordner
        enthalten, gewaehlt -- oder VOLL: nicht gewaehlt und passt nicht mehr hinein. Voll ist
@@ -5657,9 +5726,15 @@
       var vorh = !!dk.v.an[k.key], gedeckt = !vorh && smGedeckt(p, k), gesperrt = vorh || gedeckt;
       var an = gesperrt || !!(k.art === "seite" ? p.sm.wahl.urls[k.key] : p.sm.wahl.ordner[k.key]);
       var voll = !an && !smPasst(dk, k), regel = gesperrt ? null : dk.v.regel[k.key] || null;
+      /* tip: der Tooltip der Zeile, NUR fuer eine waehlbare Seite unter einer Regel (sie bleibt bedienbar).
+         hinweis: warum eine gesperrte Zeile sich nicht aendern laesst -- er steht erst nach einem KLICK
+         darauf (smSperre), nie beim Ueberfahren: Zeilen unter einem gewaehlten Ordner stehen gewaehlt und
+         gedaempft da, und ein Tooltip auf jeder davon deckte beim Hinunterfahren die naechsten zu. */
+      var ord = gedeckt ? smGedecktDurch(p, k) : null;
       return { an: an, gesperrt: gesperrt, vorh: vorh, voll: voll, regel: regel,
-        tip: vorh ? t("Already added") : gedeckt ? t("Included in the folder") : voll ? t("No more targets fit into this event.")
-          : regel ? ersetze(t("Also covered by {regel}. Adding it gives it its own row."), { regel: regel.zeigen }) : "" };
+        tip: regel ? ersetze(t("Also covered by {regel}. Adding it gives it its own row."), { regel: regel.zeigen }) : "",
+        hinweis: vorh ? t("Already added") : gedeckt ? ersetze(t("Included in {ordner}. Clear that folder to choose this page on its own."), { ordner: ord ? ord.host + (ord.pfad || "") : "" })
+          : voll ? t("No more targets fit into this event.") : "" };
     }
     /* Der leise Hinweis in der Zeile, unter welcher Regel sie schon mitzaehlt (wie das Datum: Text
        in --vc-third, kein Kasten, keine Pille). Steht auch fuer Touch da, wo kein Tooltip kommt. */
@@ -5693,24 +5768,7 @@
         '<span class="uev-sm-name">' + esc(titel) + '</span>' +
         '<span class="uev-sm-angaben">' + smRegelText(z) + '<span class="uev-sm-n">' + esc(ersetze(t(k.n === 1 ? "{n} page" : "{n} pages"), { n: zahl(k.n) })) + '</span>' +
           (k.neu ? '<span class="uev-sm-datum" data-tip="' + esc(t("Newest change")) + '">' + esc(datum(k.neu)) + '</span>' : '') + '</span>' +
-        smAlleHtml(dk, k, z, "uev-sm-alle", ' tabindex="-1"') +
       '</div>';
-    }
-    /* "Select all in folder" -- oder, wenn die Seiten darin nicht mehr hineinpassen, der Hinweis,
-       den Ordner (beim Host die Domain) selbst zu waehlen: eine Regel, die jede Seite darin
-       deckt. Nichts, wenn der Ordner gewaehlt, gesperrt oder voll ist oder nichts mehr zu waehlen
-       hat. In der Zeile (Hover-Tausch) und fuer Touch als eigene Zeile darunter.
-       Ausnahme seit 17.10.: ein Ordner, der selbst schon drin ist ("Already added", z.vorh) --
-       seine Seiten sind waehlbar (eigene Zeilen, deckendeRegel), bei einem Event mit ganzer Domain
-       sonst nur Stueck fuer Stueck. Passen sie nicht, steht dort nichts: den Ordner noch einmal zu
-       waehlen, waere ein Doppel. */
-    function smAlleHtml(dk, k, z, klasse, extra) {
-      /* Kaeme nichts dazu (jede Seite darin schon gewaehlt oder getrackt), steht nichts da. */
-      var dazu = smAlleNeu(dk, k) - ((dk.unter[k.key] || 0) - (dk.unterOrdner[k.key] || 0));
-      if ((z.an && !z.vorh) || z.voll || dazu <= 0) return "";
-      if (z.vorh && !smAllePasst(dk, k)) return "";
-      if (smAllePasst(dk, k)) return '<button type="button" class="up-quietbtn ' + klasse + '" data-sm-alle="' + esc(k.key) + '"' + extra + '>' + esc(t("Select all in folder")) + '</button>';
-      return '<span class="' + klasse + ' is-nein"' + extra.replace(/ tabindex="-1"/, "") + '>' + esc(t(k.art === "host" ? "Too many pages, select the domain instead" : "Too many pages, select the folder instead")) + '</span>';
     }
     function smReihen(p, dk) {
       var aus = [], q = String(p.sm.suche || "").trim().toLowerCase();
@@ -5728,8 +5786,6 @@
       function geh(k) {
         aus.push(smReihe(p, k, false, dk));
         if (!p.sm.auf[k.key]) return;
-        /* Fuer Touch (CSS blendet sie nur dort ein): "Select all in folder" als eigene Zeile. */
-        aus.push(smAlleHtml(dk, k, smZustand(p, dk, k), "uev-sm-alle-reihe", ' style="--uev-tiefe:' + (k.tiefe + 1) + '"'));
         k.kinder.forEach(geh);
         var max = SM_SEITEN + (p.sm.mehr[k.key] || 0);
         k.seiten.slice(0, max).forEach(function (s) { aus.push(smReihe(p, s, false, dk)); });
@@ -5785,6 +5841,7 @@
           '<div class="up-ment-searchwrap uev-sm-suchw"><input class="up-ment-search uev-sm-suche" type="text" placeholder="' + esc(t("Search pages…")) + '" aria-label="' + esc(t("Search pages…")) + '" autocomplete="off" spellcheck="false"/>' +
             '<button class="up-ment-searchclear uev-sm-suche-x" type="button" aria-label="' + esc(t("Clear search")) + '">' + UC.icon("x", 2) + '</button></div>' +
           '<div class="up-filter-list uev-sm-baum" role="tree" aria-multiselectable="true" aria-label="' + esc(t("Pages")) + '"></div>' +
+          '<p class="up-modal-hinweis uev-sm-sperre" aria-live="polite" hidden></p>' +
           '<div class="uev-sm-fuss"><span class="uev-sm-zahl"></span><button type="button" class="up-btn-pri uev-sm-nehmen">' + esc(t("Add selection")) + '</button></div>';
       }
       var hq = inh.querySelector(".uev-sm-quelle");
@@ -5832,12 +5889,27 @@
       inh.querySelector(".uev-sm-zahl").textContent = nenner ? ersetze(t("{n} of {total} selected"), { n: zahl(anzahl), total: zahl(nenner) }) : "";
       inh.querySelector(".uev-sm-nehmen").disabled = !anzahl || anzahl > dk.frei;
     }
+    /* Der Grund, warum eine Zeile gesperrt ist: ein Satz unter dem Baum, nach einem Klick darauf, vier Sekunden. */
+    function smSperre(p, text) {
+      var el = im(".uev-sm-sperre");
+      if (!el) return;
+      clearTimeout(p.sm.sperreUhr);
+      el.textContent = text || "";
+      el.hidden = !text;
+      if (text) p.sm.sperreUhr = setTimeout(function () { smSperreWeg(p); }, 4000);
+    }
+    function smSperreWeg(p) {
+      if (p && p.sm) clearTimeout(p.sm.sperreUhr);
+      var el = im(".uev-sm-sperre");
+      if (el) { el.textContent = ""; el.hidden = true; }
+    }
     function smUmschalten(p, key) {
       var k = p.sm.knoten[key];
       if (!k) return;
       /* Gesperrt (getrackt, im Ordner) oder voll: nichts aendern -- auch nicht per Tastatur. */
       var z = smZustand(p, smDeckel(p), k);
-      if (z.gesperrt || z.voll) return;
+      if (z.gesperrt || z.voll) { smSperre(p, z.hinweis); return; }
+      smSperreWeg(p);
       if (k.art === "seite") { if (p.sm.wahl.urls[key]) delete p.sm.wahl.urls[key]; else p.sm.wahl.urls[key] = true; }
       else {
         if (p.sm.wahl.ordner[key]) delete p.sm.wahl.ordner[key];
@@ -5850,23 +5922,6 @@
           });
         }
       }
-      smZeichnen(p);
-      smFokus(p, key);
-    }
-    function smAlleImOrdner(p, key) {
-      var k = p.sm.knoten[key], dk = k && smDeckel(p);
-      /* Nur, wenn alle hineinpassen -- der Knopf steht sonst gar nicht da, aber ein Klick aus einem
-         aelteren Bild darf den Deckel nicht umgehen. Getrackte Seiten und die in einem gewaehlten
-         Unterordner bleiben, wie sie sind. */
-      if (!k || !smAllePasst(dk, k)) return;
-      var z = smZustand(p, dk, k);
-      if ((z.an && !z.vorh) || z.voll) return;
-      (function geh(n) {
-        if (n !== k && p.sm.wahl.ordner[n.key]) return;
-        n.seiten.forEach(function (s) { if (!dk.v.an[s.key]) p.sm.wahl.urls[s.key] = true; });
-        n.kinder.forEach(geh);
-      })(k);
-      p.sm.auf[key] = true;
       smZeichnen(p);
       smFokus(p, key);
     }
@@ -5940,13 +5995,23 @@
         fd.parentNode.replaceChild(tmp.firstChild, fd);
         return;
       }
+      /* Einzeln oder Zeitraum: die Felder darunter wechseln, der Umschalter bleibt stehen (sein Schieber
+         faehrt sonst nicht). Offene Menues vorher zu -- ihre Huelle ist gleich weg. */
+      var inh = im(".uev-datuminhalt");
+      if (inh && inh.getAttribute("data-modus") !== datumModus(p.e)) {
+        menueZu("datum"); menueZu("ende");
+        inh.setAttribute("data-modus", datumModus(p.e));
+        inh.innerHTML = datumInhalt(p.e);
+        b = im('[data-wahl="datum"]');
+      }
       if (b) {
         var tx = b.querySelector(".up-modal-wahl-txt");
         tx.textContent = datumText(p.e);
-        tx.classList.toggle("is-leer", !p.e.datum || (!!p.e.bereich && !p.e.ende));
+        tx.classList.toggle("is-leer", !p.e.datum);
       }
       var m = im(".uev-datumwahl");
       if (m) m.innerHTML = kalender(p.e);
+      endeNeu();
       var sg = im(".uev-datummodus");
       if (sg) {
         var sb = sg.querySelectorAll("[data-datummodus]");
@@ -6562,6 +6627,7 @@
       clearTimeout(p.warteUhr); clearTimeout(p.vorschauUhr);
       if (p.zv) clearTimeout(p.zv.uhr);
       if (p.sm && p.sm.lb) { try { p.sm.lb.stop(); } catch (e) {} }
+      if (p.sm) clearTimeout(p.sm.sperreUhr);
       if (p.maschine) p.maschine.abbrechen();
       popup = null;
       /* Die Anleitung steht noch in einem Schritt des Popups (nicht auf dem Weg ins Detail):
@@ -6739,6 +6805,7 @@
         if (!w || !UC.makePopover) return;
         if (w.classList.contains("is-open")) { menueZu(art); return; }
         if (art === "datum") { p.e.monat = null; datumNeu(); }
+        if (art === "ende") { p.e.endeMonat = null; endeNeu(); }
         if (art === "typ") {
           p.typSuche = "";
           var ts = w.querySelector(".uev-typsuche"), te = w.querySelector(".uev-typeigen");
@@ -6770,7 +6837,7 @@
       /* Das Ende einer laufenden Kampagne (17.10.): eigener Kalender im Bearbeiten-Popup. */
       if (mo && x.closest(".uev-endewahl")) {
         if (mo.disabled) return;
-        var ak2 = p.e.endeMonat || tagAus(p.e.ende) || grenzen().heute;
+        var ak2 = p.e.endeMonat || tagAus(p.e.ende) || tagAus(p.e.start || p.e.datum) || grenzen().heute;
         p.e.endeMonat = new Date(ak2.getFullYear(), ak2.getMonth() + parseInt(mo.getAttribute("data-monat"), 10), 1);
         endeNeu();
         return;
@@ -6778,7 +6845,7 @@
       var te = x.closest(".uev-endewahl [data-tag]");
       if (te) {
         if (te.disabled) return;
-        p.e.ende = te.getAttribute("data-tag"); feldFehler("datum", ""); menueZu("ende"); endeNeu(); knoepfeSync(); return;
+        p.e.ende = te.getAttribute("data-tag"); feldFehler("datum", ""); menueZu("ende"); datumNeu(); knoepfeSync(); return;
       }
       if (mo) {
         if (mo.disabled) return;
@@ -6793,23 +6860,25 @@
         if (tg.disabled) return;
         var tag = tg.getAttribute("data-tag");
         feldFehler("datum", "");
-        /* Zeitraum (17.10.): erst der Anfang, das Menue bleibt offen, dann das Ende. Ein Tag vor
-           dem Anfang ist ein neuer Anfang -- so wie im Kalender der Filterleiste. */
-        if (p.e.bereich && !(p.e.wahlEnde && p.e.datum && tag >= p.e.datum)) {
-          p.e.datum = tag; p.e.ende = null; p.e.wahlEnde = true; datumNeu(); knoepfeSync(); return;
-        }
-        if (p.e.bereich) { p.e.ende = tag; p.e.wahlEnde = false; }
-        else p.e.datum = tag;
-        menueZu("datum"); datumNeu(); knoepfeSync(); return;
+        p.e.datum = tag;
+        /* Mit Zeitraum (17.10.): ein Ende, das nicht mehr zum neuen Start passt (davor, oder laenger als
+           183 Tage), faellt weg; fehlt das Ende, geht gleich der Kalender des Endes auf -- der Start
+           fuellt das Feld, und das Ende ist das, was noch fehlt. */
+        if (p.e.bereich && p.e.ende && (p.e.ende < tag || Math.round((tagAus(p.e.ende) - tagAus(tag)) / 86400000) + 1 > KAMPAGNE_TAGE)) p.e.ende = null;
+        p.e.endeMonat = null;
+        menueZu("datum"); datumNeu(); knoepfeSync();
+        if (p.e.bereich && !p.e.ende) setTimeout(function () {
+          var eb = popup === p ? im('[data-wahl="ende"]') : null;
+          if (eb && !eb.closest(".uev-wahl").classList.contains("is-open")) eb.click();
+        }, 0);
+        return;
       }
       var dmo = x.closest("[data-datummodus]");
       if (dmo) {
         var ber = dmo.getAttribute("data-datummodus") === "bereich";
         if (ber === !!p.e.bereich) return;
-        /* Nach dem Umschalten waehlt der erste Klick den ANFANG (gemessen 17.10.: mit dem Tag von
-           vorher als Anfang war der erste Klick das Ende, und ein Start in der Zukunft gelang nur
-           im zweiten Anlauf). */
-        p.e.bereich = ber; p.e.ende = null; p.e.wahlEnde = false; p.e.monat = null;
+        /* Das Ende ist nach dem Umschalten leer, in beide Richtungen; der Start bleibt. */
+        p.e.bereich = ber; p.e.ende = null; p.e.wahlEnde = false; p.e.monat = null; p.e.endeMonat = null;
         feldFehler("datum", ""); datumNeu(); knoepfeSync(); return;
       }
       var cvk = x.closest("[data-cover]");
@@ -6906,8 +6975,6 @@
       if (x.closest(".uev-sm-suche-x")) { p.sm.suche = ""; var sx = im(".uev-sm-suche"); if (sx) { sx.value = ""; try { sx.focus(); } catch (e2) {} } smZeichnen(p); return; }
       var sk = x.closest("[data-sm-klapp]");
       if (sk) { var kk = sk.getAttribute("data-sm-klapp"); p.sm.auf[kk] = !p.sm.auf[kk]; smZeichnen(p); smFokus(p, kk); return; }
-      var sal = x.closest("[data-sm-alle]");
-      if (sal) { smAlleImOrdner(p, sal.getAttribute("data-sm-alle")); return; }
       var sme = x.closest("[data-sm-mehr]");
       if (sme) { var km = sme.getAttribute("data-sm-mehr"); p.sm.mehr[km] = (p.sm.mehr[km] || 0) + SM_MEHR; smZeichnen(p); return; }
       var sw = x.closest("[data-sm-wahl]");
@@ -6962,7 +7029,9 @@
         knoepfeSync();
         return;
       }
-      if (x.matches(".uev-sm-suche")) { p.sm.suche = x.value; smZeichnen(p); return; }
+      if (x.matches(".uev-sm-suche")) { p.sm.suche = x.value; smSperreWeg(p); smZeichnen(p); return; }
+      /* Was im Feld des Waehlers steht, bleibt beim Zu- und Wiederaufmachen stehen (smOeffnen). */
+      if (x.matches(".uev-sm-ein")) { p.sm.url = x.value; return; }
     }
     /* Enter: im Namen weiter zum naechsten Schritt (wie Speichern im Topic-Dialog), in der Suche
        die eingefuegte Adresse als neues Ziel uebernehmen. */
@@ -7039,7 +7108,7 @@
        Zeile, die es nicht gibt, kann nicht von einer Datenbank ohne diese Felder kommen. */
     function flagsAusListe() {
       var l = UC.getEvents ? UC.getEvents() : [];
-      l.forEach(kampagneMerken);
+      kampagneAbleiten(l, listeGeladen());
       if (ZIELE_DA.stand == null && l.some(function (ev) { return ev && (ev.target_count != null || isArr(ev.target_kinds)); })) ZIELE_DA.stand = true;
     }
     /* Was eine Probe festgestellt hat, gilt fuer die Sitzung des Tabs (sessionStorage, je Team): ein
@@ -7063,10 +7132,12 @@
     function verfuegbarkeitStart() {
       if (demo || !UC.rpc) return;
       flagsAusListe();
+      /* Kam die Liste erst nach dem Oeffnen des Anlegens, gibt es den Zeitraum jetzt (kampagneAbleiten). */
+      if (popup && popup.art === "anlegen" && !popup.planEventId) datumNeu();
       if (!(UC.getEvents ? UC.getEvents() : []).length) return;
-      if (ZIELE_DA.stand == null || KAMPAGNE_DA.stand == null) verfuegbarkeitHolen(null, true);
+      if (ZIELE_DA.stand == null) verfuegbarkeitHolen(null);
     }
-    function verfuegbarkeitHolen(fertig, ohneSitemap) {
+    function verfuegbarkeitHolen(fertig) {
       if (demo || !UC.rpc) return;
       flagsAusListe();
       teamHolen().then(function (tm) {
@@ -7082,29 +7153,7 @@
             ZIELE_DA.laeuft = null;
             if (fehltFn(erg)) ZIELE_DA.stand = false; else if (!unbekannt(erg)) ZIELE_DA.stand = true;
           })));
-        var b = SITEMAP_DA.stand != null || !UC.edge || ohneSitemap ? null : (SITEMAP_DA.laeuft || (SITEMAP_DA.laeuft =
-          UC.edge("sitemap-lesen", { team_id: tm, url: "" }, { timeoutMs: 15000 }).then(function (erg) {
-            SITEMAP_DA.laeuft = null;
-            /* Ein 5xx ausser 503 not_configured (sitemap-lesen Version 4: 502 edge_failed bei einem
-               unerwarteten Fehler, etwa wenn die Pruefung des JWT scheitert) heisst "noch
-               unbekannt", nicht "da": bis Version 3 brach derselbe Fall ohne CORS ab, der Browser
-               sah einen Netzfehler (status 0), und dann wurde beim naechsten Oeffnen neu gefragt.
-               Ein Knopf, der nur auf eine kaputte Function zeigt, waere das Gegenteil von "nichts
-               zeigen, was nicht funktioniert". */
-            if (edgeFehlt(erg)) SITEMAP_DA.stand = false; else if (!unbekannt(erg) && !(erg.status >= 500)) SITEMAP_DA.stand = true;
-          })));
-        /* Kampagnen (17.10.): die Analyse v4 mit der Null-Kennung. Die Datenbank prueft die Kennung
-           VOR Zugang und Ratengrenze (Rueckmeldung 8): 400 impact_event_invalid_param, hint p_event_id
-           heisst "Funktion da" und zaehlt nichts; PGRST202 heisst "fehlt". Alles andere (Netz,
-           Zeit, 5xx) bleibt unbekannt, damit ein Ausfall nicht als "da" gilt. */
-        var c = KAMPAGNE_DA.stand != null ? null : (KAMPAGNE_DA.laeuft || (KAMPAGNE_DA.laeuft =
-          UC.rpc(KAMPAGNE_FN.uevAnalysis, { p_team: tm, p_event_id: NULL_ID }, { timeoutMs: 15000 }).then(function (erg) {
-            KAMPAGNE_DA.laeuft = null;
-            var m = String(erg && erg.fehler && erg.fehler.message || "");
-            if (fehltFn(erg)) KAMPAGNE_DA.stand = false;
-            else if (erg && (erg.ok || /^impact_event_(invalid_param|not_found)$/.test(m))) KAMPAGNE_DA.stand = true;
-          })));
-        return Promise.all([a, b, c]).then(function () { daMerken(tm); });
+        return a ? a.then(function () { daMerken(tm); }) : (daMerken(tm), null);
       }).then(function () {
         if (root.isConnected === false) return;
         /* Hat die Antwort das Fenster des offenen Events veraendert (Kampagne, "Since event"),

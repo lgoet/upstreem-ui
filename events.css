@@ -292,6 +292,9 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-wahl { position: relative; }
 .uev-wahl .uev-wahlmenu { left: 0; right: 0; width: auto; }
 .uev-wahl .uev-datumwahl { right: auto; }
+/* Mit Zeitraum sitzt das Menue des Endes am rechten Rand seines Feldes: es ist breiter als das halbe Feld
+   und liefe sonst rechts aus dem Dialog. */
+.uev-datumpaar .uev-wahl .uev-endewahl { left: auto; right: 0; }
 /* Die Typ-Auswahl ist das Menue der Branche (.up-ment-menu) -- hier so breit wie ihr Feld statt
    der 320, die es sonst hoechstens hat, und die Liste so hoch wie dort (256), damit "Add your own"
    darunter immer zu sehen ist. */
@@ -648,8 +651,7 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
    Der letzte Teil von Schritt 3 bzw. des Add-Dialogs, offen hinter der Linie der Teile (15.10.
    spaet, vorher ein Feldkasten zwischen Eingabe und Liste). Der Baum sind die Zeilen der Filter
    aus core (.up-filter-item mit .up-filter-check -- gewaehlt ist gewaehlt wie in jedem Filter),
-   je Ebene 16px eingerueckt. Rechts Zahl der Seiten und juengstes lastmod; beim Ueberfahren steht
-   an ihrer Stelle "Select all in folder" (Hover-Tausch wie in den Listen der App, nie darueber). */
+   je Ebene 16px eingerueckt. Rechts Zahl der Seiten und juengstes lastmod. */
 .uev-sm { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 /* Das X rueckt um sein Polster (8) nach aussen: sein Zeichen schliesst mit der Kante ab. */
 .uev-sm-kopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: -4px -8px -4px 0; }
@@ -697,34 +699,13 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
    wie das Datum daneben. Gekappt, damit ein langer Pfad dem Namen nicht den Platz nimmt; den
    ganzen Satz traegt der Tooltip der Zeile. */
 .uev-sm-in { min-width: 0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
-.uev-sm-reihe .uev-sm-alle { display: none; height: var(--up-h-chip); border-radius: var(--up-r-s); font-size: var(--up-fs-s); }
-/* Getauscht wird nur, wo etwas zum Tauschen steht (:has, 16.10.): ein gewaehlter, gesperrter
-   oder voller Ordner behaelt beim Ueberfahren Zahl und Datum, statt eine leere Stelle zu zeigen. */
-.uev-sm-reihe.is-ordner:is(:hover, :focus-within):has(.uev-sm-alle) .uev-sm-angaben { display: none; }
-.uev-sm-reihe.is-ordner:hover .uev-sm-alle, .uev-sm-reihe.is-ordner:focus-within .uev-sm-alle { display: inline-flex; }
-/* Passen die Seiten nicht mehr hinein (16.10.), steht an der Stelle von "Select all in folder" der
-   Hinweis, den Ordner selbst zu waehlen: leiser Text, kein Knopf -- ein Klick darauf trifft die
-   Zeile und waehlt damit genau diesen Ordner. Polster 8 wie der Knopf, den er vertritt. */
-.uev-sm-reihe .uev-sm-alle.is-nein { align-items: center; padding: 0 8px; color: var(--vc-third); white-space: nowrap; }
-/* Als eigene Zeile (Touch) darf er umbrechen: tief eingerueckt reichte er bei 375 sonst ueber den
-   Rand des Baums hinaus. */
-.uev-sm-alle-reihe.is-nein { align-items: center; height: auto; min-height: var(--up-h-seg); padding: 4px 8px; color: var(--vc-third); }
-/* Ohne Zeiger kein Ueberfahren: dort steht "Select all in folder" als eigene Zeile unter dem
-   aufgeklappten Ordner (in der Zeile selbst blieb dem Namen bei 375 gemessen 0px). */
-.uev-sm-alle-reihe { display: none; align-self: flex-start; margin-left: calc(var(--uev-tiefe, 0) * 16px + 32px); height: var(--up-h-seg); font-size: var(--up-fs-s); }
-@media (hover: none) {
-  .uev-sm-reihe.is-ordner .uev-sm-alle, .uev-sm-reihe.is-ordner:focus-within .uev-sm-alle { display: none; }
-  .uev-sm-reihe.is-ordner:is(:hover, :focus-within):has(.uev-sm-alle) .uev-sm-angaben { display: inline-flex; }
-  .uev-sm-alle-reihe { display: inline-flex; }
-}
 /* Telefon: das Datum weicht, die Zahl der Seiten bleibt -- der Name braucht den Platz. */
 @media (max-width: 520px) { .uev-sm-reihe .uev-sm-datum { display: none; } .uev-sm-in { max-width: 96px; } }
 /* In einem gewaehlten Ordner (oder schon getrackt): gewaehlt, aber nicht einzeln zu aendern.
-   Voll (16.10.): passt nicht mehr hinein -- ebenso gedaempft, aber ohne Haken; der Grund steht im
-   Tooltip und im Satz ueber dem Baum. */
-/* Gedaempft wird je Kind, nicht die Zeile (17.10.): ein Ordner, der schon drin ist, traegt beim
-   Ueberfahren "Select all in folder" fuer seine Seiten -- der Knopf bleibt voll lesbar. */
-.uev-sm-reihe.is-gedeckt > :not(.uev-sm-alle), .uev-sm-reihe.is-voll { opacity: .55; }
+   Voll (16.10.): passt nicht mehr hinein -- ebenso gedaempft, aber ohne Haken. Der Grund steht erst nach
+   einem Klick auf die Zeile da (.uev-sm-sperre), nie als Tooltip beim Ueberfahren. */
+.uev-sm-reihe.is-gedeckt, .uev-sm-reihe.is-voll { opacity: .55; }
+.uev-sm-sperre { margin: 0; }
 .uev-sm-reihe.is-gedeckt, .uev-sm-reihe.is-voll { cursor: default; }
 .uev-sm-reihe.is-gedeckt:hover, .uev-sm-reihe.is-voll:hover { background: transparent; }
 .uev-sm-mehr { align-self: flex-start; margin-left: calc(var(--uev-tiefe, 0) * 16px + 32px); height: var(--up-h-seg); font-size: var(--up-fs-s); }
@@ -902,10 +883,15 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-phase-fuss { margin: 0; font-size: var(--up-fs-s); color: var(--vc-third); }
 .uev-root.is-vnarrow .uev-bericht { grid-template-columns: minmax(0, 1fr); }
 .uev-root.is-vnarrow .uev-phase + .uev-phase { border-left: 0; border-top: 1px solid var(--vc-border); }
-/* Anlegen, Schritt 1: Umschalter "Single day | Date range" ueber dem Wahlknopf, darunter ein Satz,
-   was die Wahl bewirkt. */
+/* Anlegen, Schritt 1: Umschalter "Start date | Date range" ueber dem Wahlknopf, darunter ein Satz,
+   was die Wahl bewirkt. Mit Zeitraum zwei gleich breite Felder nebeneinander, je mit seinem Namen
+   darueber (leiser als das Etikett des ganzen Feldes). */
 .uev-datumfeld { display: flex; flex-direction: column; align-items: stretch; gap: 8px; min-width: 0; }
 .uev-datumfeld > .up-seg { align-self: flex-start; }
+.uev-datuminhalt { min-width: 0; }
+.uev-datumpaar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.uev-datumfach { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.uev-datum-lbl { font-size: var(--up-fs-s); line-height: 1.4; color: var(--vc-third); }
 .uev-datumhilfe { font-size: var(--up-fs-s); line-height: 1.5; color: var(--vc-third); }
 /* Das Urteil als Zeichen allein (17.10., Teil D, konfZeichenHtml): in den Zeilen des
    Abschlussberichts hinter dem Trend, 14 wie die Zeichen der Angaben. */
