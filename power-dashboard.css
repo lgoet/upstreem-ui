@@ -548,8 +548,8 @@
 .upw-li-val { flex: 0 0 123px; display: inline-flex; align-items: center; justify-content: flex-end;
   column-gap: var(--up-spur-abstand); }
 .upw-li-val > .up-num { flex: 0 0 auto; min-width: var(--up-spur-pct1); text-align: right; }
-/* Der Trend an der LINKEN Kante des Wertfelds (15.10. spaet, wie core: "die Trends ueberall links"). */
-.upw-li-val > .up-trend { order: -1; margin-right: auto; }
+/* Der Trend mit festem Platz direkt vor der Zahl (17.10., core.css "RECHTSBUENDIG, DER TREND DIREKT
+   VOR DEM WERT" -- dieselbe Regel erreicht .upw-li-val). */
 /* Die eigene Marke traegt ihren Namen fetter -- dasselbe Mittel, mit dem die grossen Tabellen sie
    hervorheben, nur ohne deren Zeilenflaeche. */
 .upw-li.is-own .upw-li-name { font-weight: 600; }

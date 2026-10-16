@@ -1477,22 +1477,42 @@ etwa `[data-brand]` einer Markenzeile im Menü „Filters“ als Wahl der eigene
 
 ---
 
-## 8c. Zahlen in Zellen: rechtsbündig in fester Spur (seit 15.10.)
+## 8c. Zahlen in Zellen: rechtsbündig in fester Spur (seit 15.10., Trend und Kopf seit 17.10.)
 
-**Eine Zahlzelle stellt ihren Wert an die rechte Zellkante, der Trend steht an der linken.**
-Erkannt am Inhalt, nicht an der Spaltenklasse: direktes Kind ist `.up-num`, `.up-rank-group`
-oder `.up-sent` (ohne `.up-pille`). Der Kopf bleibt linksbündig.
+**Eine Zahlzelle stellt ihren Wert an die rechte Zellkante, der Trend steht direkt davor (17.10.;
+bis dahin an der linken Zellkante).** Trend und Wert sitzen zusammen rechtsbündig, der Wert ganz
+rechts. Erkannt am Inhalt, nicht an der Spaltenklasse: direktes Kind ist `.up-num`,
+`.up-rank-group` oder `.up-sent` (ohne `.up-pille`); dieselben Regeln gelten für die Zellen von
+Top Brands (`.vt-td`), Top Citations (`.tct-td`) und die Wertspalte der Listen der Power-Übersicht
+(`.upw-li-val`).
 
 ```css
-.up-td:has(> :where(.up-num, .up-rank-group, .up-sent:not(.up-pille))) { justify-content: flex-end; }
-.up-td.up-td:has(> :where(.up-trend, .up-varring)) { column-gap: var(--up-spur-abstand); }   /* 12 */
-.up-td > :where(.up-trend, .up-varring) { order: -1; margin-right: auto; }
+:is(.up-td, .vt-td, .tct-td):has(> :where(.up-num, .up-rank-group, .up-sent:not(.up-pille), .tct-num, .tct-used)) { justify-content: flex-end; }
+:is(.up-td, .vt-td, .tct-td):is(.up-td, .vt-td, .tct-td):has(> :where(.up-trend, .up-varring)) { column-gap: var(--up-spur-abstand); }   /* 12 */
+:is(.up-td, .vt-td, .tct-td, .upw-li-val) > :where(.up-trend, .up-varring) { order: -1; }
+/* der feste Platz des Trends, nur in einer Zelle mit Wert */
+... > .up-trend { flex: 0 1 var(--up-spur-trend); justify-content: flex-end; }                   /* 66 */
+.up-td > .up-rank-group { min-width: calc(var(--up-spur, var(--up-spur-rang)) + 16px); justify-content: flex-end; }
+.up-td > .up-sent:not(.up-pille) { min-width: calc(var(--up-spur, var(--up-spur-note)) + 9px); justify-content: flex-end; }
 .up-td > .up-num { min-width: var(--up-spur, 0); text-align: right; }
 ```
 
-So beginnt der Trend in jeder Zeile auf demselben Pixel, egal wie breit Zahl oder Trend sind;
-die 12 sind der kleinste Abstand, wenn es eng wird. Wird es zu eng, läuft der Trend links aus dem
-Bild, nicht die Zahl. Die rechte Kante ist dieselbe wie die der Gesamtzeile darunter.
+**Der feste Platz des Trends** (`--up-spur-trend`, 66px, gemessen am breitesten Chip „100.0%“):
+der Chip steht rechtsbündig in einem Platz fester Breite, in jeder Zeile gleich weit vor dem
+Wert; die rechten Kanten aller Trends einer Spalte stehen untereinander. Fehlt der Trend, bleibt
+der Platz leer: der Wert steht am rechten Rand und damit auf demselben Pixel (ein unsichtbarer
+Platzhalter änderte daran nichts). Der Platz ist ein Basiswert (`flex: 0 1`): wird die Spalte
+enger als Platz + 12 + Wert, gibt er bis auf die Breite des Chips nach, der Chip wird nie
+gekürzt. Eine Zelle nur mit Trend (Shopping „Change“) bleibt links wie bisher. Rang und Sentiment
+sind Hüllen: ihre Spur gilt für die ganze Hülle (Zeichen 12 + 4 bzw. Balken 3 + 6 plus die Spur
+der Zahl, ohne `--up-spur` das Format der Hülle), der Inhalt steht darin rechts.
+
+**Der Kopf einer Zahlenspalte** (`.up-th-zahl`, gesetzt von `zahlSpalten` in core.js nach dem
+Inhalt der Spalte, keine Liste von Namen): Text rechtsbündig auf demselben Pixel wie die Werte,
+das Sortierzeichen links neben dem Text, das Info-Zeichen (erscheint nur beim Überfahren) noch
+weiter links, das Zeichen vor dem Wort (`.up-th-ic`) bleibt vor dem Wort. Textspalten und
+Datumsspalten, deren Zellen ihre Ziffern links setzen, bleiben links (der Kopf folgt der
+berechneten Ausrichtung der Zellen, `justify-content`).
 
 **Die Spur** ist eine Mindestbreite je Format, gemessen in der Zellschrift (14/500, Geist,
 Tabellenziffern) am **größten** Wert der Skala, auf ganze Pixel aufgerundet. Die Komponente
@@ -2784,10 +2804,12 @@ applySticky();   /* einmal sofort */
 
 - **Zahlen:** `font-variant-numeric: tabular-nums` (Beträge, %, Trend), damit Werte sauber
   untereinander vergleichbar sind.
-- **Ausrichtung:** Text und alle Spaltenköpfe linksbündig, nie zentriert (Ausnahme: die
-  Indexspalte „#“). **Zahlen stehen seit dem 15.10. rechtsbündig an der Zellkante, der Trend an
-  der linken Kante** (Abschnitt 8c, feste Spur `--up-spur-*`, Abstand `--up-spur-abstand` 12).
-  Datumsspalten bleiben links. Bis 15.10. standen Zahl und Trend links nebeneinander.
+- **Ausrichtung:** Text und Spaltenköpfe von Textspalten linksbündig, nie zentriert (Ausnahme: die
+  Indexspalte „#“). **Zahlen stehen seit dem 15.10. rechtsbündig an der Zellkante, der Trend seit
+  dem 17.10. direkt davor in einem festen Platz, der Kopf einer Zahlenspalte rechtsbündig mit dem
+  Sortierzeichen links vom Text** (Abschnitt 8c, feste Spur `--up-spur-*`, Abstand
+  `--up-spur-abstand` 12, `--up-spur-trend` 66). Datumsspalten bleiben links. Bis 15.10. standen
+  Zahl und Trend links nebeneinander, bis 17.10. der Trend an der linken Zellkante.
 - **`aria-sort`** am aktiven Spaltenkopf setzen (`ascending`/`descending`/`none`).
 
 ## 23b. Abstände an Separatoren

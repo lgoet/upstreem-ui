@@ -300,13 +300,8 @@
 /* Nur die direkte Zahl (15.10. spaet, wie core): in Rang und Sentiment schob die Spur die Zahl von
    ihrem Zeichen weg ("# 1" mit 24 statt 4). */
 .vt-td > .up-num { min-width: var(--up-spur, 0); text-align: right; }
-/* RECHTSBUENDIG, DER TREND LINKS DAVOR (core.css, 15.10. spaet: "Zahlen rechtsbuendig auf einer
-   Spur, Trends links davon mit gap"): der Wert an der rechten Zellkante, der Trend per order davor,
-   Abstand --up-spur-abstand. Die Regel aus core erkennt nur .up-td, darum hier fuer .vt-td.
+/* Wert rechts, Trend mit festem Platz direkt davor, Abstand --up-spur-abstand: seit 17.10. EINE
+   Regel in core.css ("RECHTSBUENDIG, DER TREND DIREKT VOR DEM WERT"), die auch .vt-td erreicht.
    Wird es zu eng, laeuft der Trend nach LINKS ins Polster, die Zahl bleibt an der Kante (in jeder
    Zeile dieselbe); erreicht er die Spaltenlinie, nimmt trendFitJetzt() ihn weg (es misst dafuer
    die linke Kante, siehe dort). */
-.vot-root .vt-td-visibility, .vot-root .vt-td-ranking, .vot-root .vt-td-sentiment {
-  justify-content: flex-end; column-gap: var(--up-spur-abstand); }
-/* Der Trend an der LINKEN Zellkante (15.10. spaet, wie core: "die Trends ueberall links"). */
-.vt-td > .up-trend { order: -1; margin-right: auto; }
