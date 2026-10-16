@@ -747,7 +747,7 @@
     try { r = c && c.getRange ? c.getRange() : null; } catch (e) { r = null; }
     var resp = D.responsesTeile(f, P.resp)[0];
     return {
-      export_type: typ, prompt_id: P.id, filter_label: P.zeile ? str(P.zeile.prompt_text) : "",
+      export_type: typ, prompt_id: P.id, filter_label: P.zeile ? str(P.zeile.prompt_text) : "", ohne_brille: true,
       date_from: r && r.from ? r.from : P.f.von, date_to: r && r.to ? r.to : P.f.bis, preset: r && r.preset ? r.preset : "",
       params: {
         brands: D.overview(f, { order: P.vis.order }).params,

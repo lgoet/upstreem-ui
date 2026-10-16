@@ -741,7 +741,7 @@
 
     /* Die Parameter der Seite fuer einen Datensatz ueber der Brille der App (siehe brille). */
     function seitenParams(art){
-      var out = brille(art), x = state.params[art];
+      var out = state.ohneBrille ? {} : brille(art), x = state.params[art];
       if (x) Object.keys(x).forEach(function(n){ if (voll(x[n]) || !Object.prototype.hasOwnProperty.call(out, n)) out[n] = x[n]; });
       return out;
     }
@@ -1462,7 +1462,7 @@
       state.url = ""; state.domain = ""; state.promptId = ""; state.brandId = ""; state.filterLabel = "";
       /* Ebenso der Kontext der Seite und die Gruppe von Shopping und Ads: danach gilt wieder die
          Grundgruppe, und ein spaeteres Oeffnen ohne Kontext (Cmd+K) traegt keinen Filter mit. */
-      state.params = {}; state.namen = {}; state.weg = {}; state.zeitVonSeite = false;
+      state.params = {}; state.namen = {}; state.weg = {}; state.zeitVonSeite = false; state.ohneBrille = false;
       /* Der eigene Dateiname ebenso: das naechste Oeffnen beginnt mit dem Vorschlag. */
       state.eigenName = null; state.namenEdit = false;
       if (gruppeVon(state.type)) state.type = state.stammTyp;
@@ -2217,6 +2217,11 @@
            filter_aktiv (die erste Fassung von Shopping und Ads, ein Chip "Page filters" ohne
            Kreuz) wird nicht mehr gelesen: die Chips entstehen jetzt aus den Parametern selbst. */
         state.params = {}; state.namen = {}; state.weg = {};
+        /* ohne_brille (17.10.): Ein Drawer, dessen Listen ohne den Intent-/Branded-Filter der App laufen (Prompt-
+           Detail: EIN Prompt, filterStand ohneIntent), meldet das hier. Sonst haengte der Export die Vorgabe
+           non_branded der App an, und die Datei eines als branded erkannten Prompts waere leer, waehrend der
+           Drawer seine Laeufe zeigt (Paritaetsaudit PAR-01, entstanden mit der Behebung von EXP-02). */
+        state.ohneBrille = !!opts.ohne_brille;
         var pr = opts.params && typeof opts.params === "object" ? opts.params : {};
         Object.keys(pr).forEach(function(n){
           if (typVon(n) && pr[n] && typeof pr[n] === "object" && !Array.isArray(pr[n])) state.params[n] = pr[n];
