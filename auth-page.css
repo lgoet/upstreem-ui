@@ -28,7 +28,7 @@
      der Uebergaenge bleiben davon unberuehrt. */
   --uau-in: 420ms;
   --uau-ease: cubic-bezier(.4, 0, .2, 1);
-  --uau-hover: #f7f8fa;
+  --uau-hover: var(--vc-auth-hover);
 
   min-height: 100vh;
   display: flex; align-items: stretch; justify-content: center;
@@ -190,7 +190,7 @@
 .uau-input:disabled { opacity: .55; cursor: default; }
 /* Ein Feld mit Fehler faerbt seinen Rahmen -- aber NICHT waehrend es den Fokus hat: sonst
    wechselt die Farbe genau in dem Moment, in dem der Nutzer den Fehler beheben will. */
-.uau-field.is-err .uau-input:not(:focus) { border-color: var(--vc-neg, #c8412e); }
+.uau-field.is-err .uau-input:not(:focus) { border-color: var(--vc-neg); }
 
 /* ---------- festgesetzte Adresse (Einladung) ----------
    Das Feld bleibt lesbar und fokussierbar, es ist nur nicht aenderbar. Deshalb kein
@@ -231,7 +231,7 @@
   transition: grid-template-rows var(--uau-t) var(--uau-ease), opacity var(--uau-t) var(--uau-ease);
 }
 .uau-err > span { overflow: hidden; min-height: 0; display: block;
-  font-size: 12px; line-height: 1.4; color: var(--vc-neg, #c8412e); padding-top: 5px; }
+  font-size: 12px; line-height: 1.4; color: var(--vc-neg); padding-top: 5px; }
 .uau-field.is-err .uau-err { grid-template-rows: 1fr; opacity: 1; }
 
 /* ---------- Passwortstaerke ---------- */
@@ -252,10 +252,10 @@
 }
 /* Vier Stufen, vier Farben. Die Balken fuellen sich von links, damit die Staerke auch ohne den
    Text ablesbar ist -- Farbe allein reicht nicht, wenn jemand sie nicht unterscheiden kann. */
-.uau-strength[data-level="1"] .uau-bar.is-on { background: var(--vc-neg, #c8412e); }
-.uau-strength[data-level="2"] .uau-bar.is-on { background: #d98324; }
-.uau-strength[data-level="3"] .uau-bar.is-on { background: #b8a02a; }
-.uau-strength[data-level="4"] .uau-bar.is-on { background: var(--vc-pos, #2e9e63); }
+.uau-strength[data-level="1"] .uau-bar.is-on { background: var(--vc-neg); }
+.uau-strength[data-level="2"] .uau-bar.is-on { background: var(--vc-auth-staerke-mittel); }
+.uau-strength[data-level="3"] .uau-bar.is-on { background: var(--vc-auth-staerke-gut); }
+.uau-strength[data-level="4"] .uau-bar.is-on { background: var(--vc-pos); }
 .uau-strength-txt {
   font-size: 12px; font-weight: 500; color: var(--vc-muted);
   flex: 0 0 auto; min-width: 74px; text-align: right;
@@ -316,14 +316,12 @@
 .uau-check input:checked {
   background-color: var(--up-accent); border-color: var(--up-accent);
   /* Der Haken als data-URI, weil ein Pseudo-Element an input nicht geht. Geometrie identisch
-     zum ICON.check dieser Datei und zu core: polyline 20 6 / 9 17 / 4 12, Strichstaerke 2.4. */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
-}
-/* Im Dunkeln ist die gefuellte Box --vc-text, also HELL (#e0e0e0) -- ein weisser Haken darauf
-   ist unsichtbar. Zwei data-URIs statt currentColor, weil ein Hintergrundbild keine Farbe vom
-   Element erbt. */
-.uau-root[data-theme="dark"] .uau-check input:checked {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231b1b1b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+     zum ICON.check dieser Datei und zu core: polyline 20 6 / 9 17 / 4 12, Strichstaerke 2.4.
+     Im Dunkeln ist die gefuellte Box --vc-text, also HELL (#e0e0e0) -- ein weisser Haken darauf
+     waere unsichtbar. Zwei data-URIs statt currentColor, weil ein Hintergrundbild keine Farbe vom
+     Element erbt; seit dem 17.10. beide als --vc-auth-haken in core, je Thema (der Strich ist
+     eine Farbe, auch wenn er im Bild steht). */
+  background-image: var(--vc-auth-haken);
 }
 .uau-check input:focus-visible {
   outline: 0; border-color: var(--up-focus);
@@ -370,6 +368,11 @@
 .uau-google:hover:not(:disabled) { background: var(--uau-hover); }
 .uau-google:disabled { opacity: .55; cursor: default; }
 .uau-google svg { width: 19px; height: 19px; display: block; flex: 0 0 auto; }
+/* Googles vier Farben (Fremdmarke, in jedem Thema gleich) aus core. */
+.uau-google .uau-g-blau  { fill: var(--vc-marke-google-blau); }
+.uau-google .uau-g-gruen { fill: var(--vc-marke-google-gruen); }
+.uau-google .uau-g-gelb  { fill: var(--vc-marke-google-gelb); }
+.uau-google .uau-g-rot   { fill: var(--vc-marke-google-rot); }
 
 /* Der Spinner ersetzt die Beschriftung nicht, er tritt daneben -- ein Knopf, dessen Text
    verschwindet, wirkt kaputt statt beschaeftigt. */
@@ -466,7 +469,7 @@
 .uau-pane.is-off { opacity: 0; transform: translateY(6px); pointer-events: none; }
 .uau-done-ic {
   width: 44px; height: 44px; border-radius: 50%;
-  background: var(--vc-pos-bg, rgba(46,158,99,.12)); color: var(--vc-pos, #2e9e63);
+  background: var(--vc-pos-bg); color: var(--vc-pos);
   display: inline-flex; align-items: center; justify-content: center; margin-bottom: 18px;
 }
 .uau-done-ic svg { width: 22px; height: 22px; display: block; }
@@ -485,30 +488,23 @@
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: clamp(16px, 1.8vw, 26px); text-align: center;
   padding: clamp(32px, 4vw, 64px) clamp(28px, 3.6vw, 56px);
-  background: linear-gradient(to bottom,
-              rgba(246, 247, 248, 0) 16%, #f6f7f8 34%, #e8eaec 60%, #dbdde1 100%);
+  /* Verlauf, Lichter und Muster stehen seit dem 17.10. als Token in core (--vc-auth-panel-*), je
+     Thema -- die dunklen Fassungen samt Begruendung dort; eigene Dunkel-Regeln braucht es nicht mehr. */
+  background: var(--vc-auth-panel-verlauf);
 }
 /* Die Lichter unten (wortgleich .ulh-bg-foto::after): zwei Ovale leicht neben der Mitte und eine
    flache Glocke, mit eigener Blende ab 34% -- die Begruendung fuer die eigene Ebene steht dort. */
 .uau-panel::before {
   content: ""; position: absolute; z-index: 0; pointer-events: none;
   left: 0; right: 0; top: 0; bottom: 0;
-  background:
-    radial-gradient(58% 72% at 44% 100%,
-      rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .24) 28%,
-      rgba(255, 255, 255, .1) 62%, rgba(255, 255, 255, 0) 100%),
-    radial-gradient(34% 52% at 61% 97%,
-      rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, .09) 40%,
-      rgba(255, 255, 255, .03) 72%, rgba(255, 255, 255, 0) 100%),
-    linear-gradient(to right,
-      rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .02) 18%, rgba(255, 255, 255, .06) 32%,
-      rgba(255, 255, 255, .09) 44%, rgba(255, 255, 255, .1) 50%, rgba(255, 255, 255, .09) 56%,
-      rgba(255, 255, 255, .06) 68%, rgba(255, 255, 255, .02) 82%, rgba(255, 255, 255, 0) 100%);
+  background: var(--vc-auth-panel-lichter);
+  /* Die Blende ist Deckkraft, keine Themenfarbe: Schwarz heisst hier nur "voll sichtbar" und bleibt
+     in jedem Thema dasselbe (.check_skala.py nimmt mask-* deshalb aus). */
   -webkit-mask-image: linear-gradient(to bottom, transparent 34%, #000 60%);
   mask-image: linear-gradient(to bottom, transparent 34%, #000 60%);
 }
 
-/* --uau-hover ist #f7f8fa, ein Hellgrau. Im Dunkeln blitzte der Google-Knopf beim Ueberfahren
+/* --uau-hover ist hell #f7f8fa (--vc-auth-hover), ein Hellgrau. Im Dunkeln blitzte der Google-Knopf beim Ueberfahren
    also weiss auf. EINMAL umdefiniert statt an jeder Stelle einzeln -- alles, was den Ton nutzt,
    zieht damit mit (Google-Knopf und Theme-Schalter). */
 .uau-root[data-theme="dark"] { --uau-hover: var(--vc-heading-bg); }
@@ -518,11 +514,9 @@
    Hellen wird es nach unten DUNKLER (Weiss -11/-28/-43), hier nach unten HELLER, vom Seitengrund
    --vc-bg (#1c1c1f) aus um +5/+13/+21 -- und der Blauanteil waechst mit der Tiefe wie dort,
    seit dem 07.10. ebenso etwa halbiert (b minus r: 3, 4, 4). Die Lichter auf ein Viertel: weisse Ovale mit voller Staerke stuenden
-   auf dem dunklen Grau als Flecken da. */
-.uau-root[data-theme="dark"] .uau-panel {
-  background: linear-gradient(to bottom,
-              rgba(28, 28, 31, 0) 16%, #212224 34%, #2a2b2e 60%, #323336 100%);
-}
+   auf dem dunklen Grau als Flecken da.
+   Seit dem 17.10. stehen die Toene als --vc-auth-panel-verlauf im dunklen Block von core und
+   wechseln mit dem Thema; hier bleibt nur die Deckkraft der Lichter. */
 .uau-root[data-theme="dark"] .uau-panel::before { opacity: .25; }
 /* ---------- Das Linienmuster aus der Landingpage (21.09. angefordert) ----------
    WORTGLEICH von .ulh-bg-grid uebernommen, nicht nachempfunden: senkrechte 1px-Striche alle
@@ -538,10 +532,9 @@
 .uau-panel::after {
   content: ""; position: absolute; z-index: 0; pointer-events: none;
   left: 0; right: 0; top: 0; bottom: 0;
-  background: repeating-linear-gradient(to right,
-              rgba(255, 255, 255, .55) 0, rgba(255, 255, 255, .55) 1px,
-              transparent 1px, transparent 8px);
-  /* Zwei Angaben, weil Safari die Kurzform noch mit Praefix braucht -- wie dort. */
+  background: var(--vc-auth-panel-raster);
+  /* Zwei Angaben, weil Safari die Kurzform noch mit Praefix braucht -- wie dort. Die Blende ist
+     Deckkraft, keine Themenfarbe (siehe .uau-panel::before). */
   -webkit-mask-image: linear-gradient(to bottom, transparent 16%, rgba(0,0,0,.18) 32%,
                       rgba(0,0,0,.62) 50%, #000 66%);
   mask-image: linear-gradient(to bottom, transparent 16%, rgba(0,0,0,.18) 32%,
@@ -554,12 +547,8 @@
    IN ihr. Schwarz mit .30 kehrt das um: dieselbe Zeichnung, dieselben 8px, nur eingegraben
    statt aufgelegt.
    Die Rechnung ist nicht dieselbe wie im Hellen: auf einem dunklen Grund braucht eine dunkle
-   Linie mehr Deckkraft als eine helle, um ueberhaupt gesehen zu werden -- .30 statt .26. */
-.uau-root[data-theme="dark"] .uau-panel::after {
-  background: repeating-linear-gradient(to right,
-              rgba(0, 0, 0, .30) 0, rgba(0, 0, 0, .30) 1px,
-              transparent 1px, transparent 8px);
-}
+   Linie mehr Deckkraft als eine helle, um ueberhaupt gesehen zu werden -- .30 statt .26.
+   Beide Fassungen seit dem 17.10. als --vc-auth-panel-raster in core, je Thema. */
 /* Ueberschrift und Satz in den Schriftfarben der App (07.10.): das Navy und seine helleren
    Dunkel-Fassungen waren auf das blaue Bild abgestimmt, auf Grau stuenden sie als Blaustich da.
    Mit den Tokens wechseln sie von selbst mit dem Thema. */

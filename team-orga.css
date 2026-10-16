@@ -273,7 +273,7 @@
 .uto-err { display: none; font-size: 12.5px; font-weight: 400; color: var(--vt-down); line-height: 1.4; }
 .uto-field.is-err .uto-err { display: block; }
 .uto-field.is-err .uto-in { border-color: var(--vt-down); }
-.uto-field.is-err .uto-in:focus { border-color: var(--vt-down); box-shadow: 0 0 0 var(--up-focus-w) rgba(176,32,12,0.16); }
+.uto-field.is-err .uto-in:focus { border-color: var(--vt-down); box-shadow: 0 0 0 var(--up-focus-w) var(--vc-fehler-ring-fest); }
 
 /* Die Rollenwahl ist ein Umschalter mit zwei Seiten -- .up-seg aus core, dieselbe Bauart wie der
    Single/Multi-Schalter in den Filtern. Ein Auswahlfeld waere fuer zwei Werte ein Klick zu viel. */

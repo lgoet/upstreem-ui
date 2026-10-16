@@ -236,28 +236,31 @@
      die Leiste HELL ist, und das ist sie im dunklen Thema der App. */
   /* --vc-border ist WOERTLICH der Wert des hellen Themas aus core.css -- fuer RAHMEN, also
      das Topic-Suchfeld und den Knopf "Add Topic". Die TRENNER fuehren einen eigenen Wert
-     darunter, siehe --upt-sep-farbe. */
-  --vc-text: #1f1f1b; --vc-muted: #6b6f78; --vc-border: #e4e2e4;
+     darunter, siehe --upt-sep-farbe.
+     Die WERTE beider Fassungen stehen seit dem 17.10. in core.css (Block "Komponentenfarben:
+     Prompts-Tabelle, Brands", --vc-upt-leiste-hell-... und -dunkel-...); hier steht nur noch, welche
+     Rolle der Leiste welche Marke nimmt. */
+  --vc-text: var(--vc-upt-leiste-hell-text); --vc-muted: var(--vc-upt-leiste-hell-muted); --vc-border: var(--vc-upt-leiste-hell-rand);
   /* TRENNER SIND KEINE RAHMEN (23.09.). Ein Rahmen laeuft um ein Bauteil und wird von dessen
      Inhalt mitgetragen; ein Trenner steht allein auf der Flaeche und muss sich selbst behaupten.
      Der Grund dieser Leiste ist #e0e0e0 -- auf dem liegt der Rahmenwert #e4e2e4 HELLER als der
      Grund, die Trenner waren damit praktisch unsichtbar (am 23.09. gemeldet: "kaum zu sehen").
      Im hellen Thema von core liegt derselbe Wert auf Weiss und damit richtig; hier nicht.
      #c6c5c7 ist der Grund um 13% abgedunkelt -- sichtbar, ohne ein harter Strich zu werden. */
-  --upt-sep-farbe: #c6c5c7;
-  --vc-heading-bg: #f9f8f9; --vc-switch-bg: #f9f8f9; --vc-third: #9e9e9e;
-  --vt-row-hover-solid: #f9f8f9;
-  --vc-hover-border: #6f6f6f; --up-surface: #ffffff;
+  --upt-sep-farbe: var(--vc-upt-leiste-hell-trenner);
+  --vc-heading-bg: var(--vc-upt-leiste-hell-flaeche); --vc-switch-bg: var(--vc-upt-leiste-hell-flaeche); --vc-third: var(--vc-upt-leiste-hell-third);
+  --vt-row-hover-solid: var(--vc-upt-leiste-hell-hover);
+  --vc-hover-border: var(--vc-upt-leiste-hell-rand-hover); --up-surface: var(--vc-upt-leiste-hell-surface);
   /* Der Akzent muss mitdrehen. Sein Standardwert IST die Schriftfarbe des Themas -- also genau
      der Grund dieser Leiste, und ein Primaerknopf darauf waere unsichtbar. Hier steht deshalb
      der Akzent des anderen Themas; eine selbst gewaehlte Akzentfarbe (html[data-accent]) traegt
      das JS weiter nach, siehe akzentSyncen. */
-  --up-accent: #1f1f1b; --up-accent-fg: #ffffff; --up-accent-ink: #1f1f1b;
-  --up-switch-off: #d6d6d4;
+  --up-accent: var(--vc-upt-leiste-hell-akzent); --up-accent-fg: var(--vc-upt-leiste-hell-akzent-fg); --up-accent-ink: var(--vc-upt-leiste-hell-akzent);
+  --up-switch-off: var(--vc-upt-leiste-hell-schalter-aus);
   /* Fokus-Tokens gehoeren mit in diese Liste. Die Bar haengt am body, nicht unter .up-root, wo sie
      definiert sind. Fehlen sie, ist var(--up-focus) leer und die :focus-within-Regel des
      Topic-Suchfeldes ist ungueltig -- sie steht dann zwar in der Datei, tut aber nichts. */
-  --up-focus: #4A9EFF; --up-focus-ring: rgba(74,158,255,0.20); --up-focus-w: 2px;
+  --up-focus: var(--vc-upt-leiste-hell-fokus); --up-focus-ring: var(--vc-upt-leiste-hell-fokus-ring); --up-focus-w: 2px;
   /* The one gap used on BOTH sides of every separator inside the bar — see STYLEGUIDE "Abstände
      an Separatoren". Hardcoding it per rule is what left the panel at 12px while the head and
      foot sat at 10px, which only became obvious once a picker opened and stacked three of those
@@ -307,7 +310,7 @@
   /* Der Grund ist die SCHRIFTFARBE des Themas, nicht --up-surface. Im Hellen also #1f1f1b,
      im Dunkeln #e0e0e0 (siehe die Dunkel-Regel weiter unten). Kein Rahmen mehr: eine Flaeche,
      die sich so deutlich vom Seitengrund abhebt, braucht keine Kontur. */
-  background: #e0e0e0;
+  background: var(--vc-upt-leiste-hell-grund);
   border: 0;
   box-shadow: var(--up-e-3);
   font-family: Geist, Inter, system-ui, -apple-system, sans-serif;
@@ -345,27 +348,27 @@
   /* Die DUNKLE Leiste -- sie steht im HELLEN Thema der App (data-theme nennt ihr eigenes
      Thema, siehe oben). Grund #1f1f1b, also die Schriftfarbe des hellen Themas, und darin die
      dunkle Palette. Spiegelbild der Regel oben. */
-  --vc-text: #e0e0e0; --vc-muted: #a0a0a0; --vc-border: #3e3e44;
+  --vc-text: var(--vc-upt-leiste-dunkel-text); --vc-muted: var(--vc-upt-leiste-dunkel-muted); --vc-border: var(--vc-upt-leiste-dunkel-rand);
   /* MUSS hier stehen, nicht nur oben. --upt-sep-farbe gibt es seit dem 23.09.; ohne diese Zeile
      erbt die dunkle Leiste den HELLEN Trennerwert aus der Grundregel und zeichnet #c6c5c7 auf
      #1f1f1b -- gemessen, ein greller Strich. Der Wert ist derselbe, den die Trenner hier vorher
      ueber --vc-border trugen: an dieser Leiste war nie etwas auszusetzen. */
-  --upt-sep-farbe: #3e3e44;
-  --vc-heading-bg: #232326; --vc-switch-bg: #232326; --vc-third: #808080;
+  --upt-sep-farbe: var(--vc-upt-leiste-dunkel-trenner);
+  --vc-heading-bg: var(--vc-upt-leiste-dunkel-flaeche); --vc-switch-bg: var(--vc-upt-leiste-dunkel-flaeche); --vc-third: var(--vc-upt-leiste-dunkel-third);
   /* HOEHER ALS DIE ANDEREN ZWEI (23.09.). --vt-row-hover-solid faerbt hier den Hover und den
      offenen Zustand der vier Werkzeugknoepfe. #232326 auf dem Grund #1f1f1b sind vier Stufen
      Unterschied -- auf einer Tabellenzeile reicht das, auf einem 32px-Knopf nicht: gemeldet als
      "kann man kaum erkennen". #33333a hebt den Knopf deutlich ab und bleibt weit unter der
      Schriftfarbe. Die zwei Nachbarwerte bleiben, wo sie sind: sie faerben Flaechen (Kopfzeilen,
      Schalter), und die sollen ruhig bleiben. */
-  --vt-row-hover-solid: #33333a;
-  --vc-hover-border: #707070; --up-surface: #232326;
-  --up-accent: #e0e0e0; --up-accent-fg: #1b1b1b; --up-accent-ink: #e0e0e0;
-  --up-switch-off: #444444;
+  --vt-row-hover-solid: var(--vc-upt-leiste-dunkel-hover);
+  --vc-hover-border: var(--vc-upt-leiste-dunkel-rand-hover); --up-surface: var(--vc-upt-leiste-dunkel-surface);
+  --up-accent: var(--vc-upt-leiste-dunkel-akzent); --up-accent-fg: var(--vc-upt-leiste-dunkel-akzent-fg); --up-accent-ink: var(--vc-upt-leiste-dunkel-akzent);
+  --up-switch-off: var(--vc-upt-leiste-dunkel-schalter-aus);
   /* Wortgleich aus core.css (dort am dunklen Thema, Zeile ~3660). Hier stand bis zum 22.09. die
      HELLE Fokusfarbe -- beim Tausch der beiden Paletten mitgewandert und nicht mitgedreht. */
-  --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
-  background: #1f1f1b;
+  --up-focus: var(--vc-upt-leiste-dunkel-fokus); --up-focus-ring: var(--vc-upt-leiste-dunkel-fokus-ring);
+  background: var(--vc-upt-leiste-dunkel-grund);
   box-shadow: var(--up-e-3);
 }
 /* Same dim treatment the table itself gets from .up-root.is-reloading (core.css) — this bar lives
@@ -458,9 +461,9 @@
    In Ruhe neutral wie jedes andere Werkzeug, erst Hover und der scharfgestellte Zustand
    werden rot. */
 .upt-bulkbar-delete:hover { color: var(--vt-down); background: color-mix(in srgb, var(--vt-down) 14%, transparent); }
-/* #fff bleibt Literal und das ist Absicht: Weiss auf dem Gefahrenrot ist in BEIDEN Themen
-   richtig, --up-accent-fg waere im Dunkeln fast schwarz. */
-.upt-bulkbar-delete.is-armed { background: var(--vt-down); color: #fff; }
+/* Weiss auf dem Gefahrenrot ist in BEIDEN Themen richtig, --up-accent-fg waere im Dunkeln fast
+   schwarz -- darum eine eigene Marke aus core (--vc-upt-gefahr-ink, fest, seit 17.10.). */
+.upt-bulkbar-delete.is-armed { background: var(--vt-down); color: var(--vc-upt-gefahr-ink); }
 .upt-bulkbar-delete.is-armed:hover { opacity: .9; }
 /* Haelt die letzte Zeile frei, solange die Leiste steht: sie sitzt 24px ueber dem unteren
    Rand und ist 48 hoch, endet also bei 72 -- 92 laesst 20px Luft (vorher 80 + 48 + 20 = 148). */
@@ -559,7 +562,7 @@
 }
 .upt-topiccreate-pick svg { width: 16px; height: 16px; display: block; }
 .upt-topiccreate-swatch { width: 16px; height: 16px; border-radius: 50%; display: block;
-  border: 1px solid rgba(0,0,0,.14); }
+  border: 1px solid var(--vc-upt-farbfeld-rand); }
 /* Grows the panel inline instead of floating — a floating popover here would sit inside
    .upt-topiclist's own scroll/overflow (or .upt-bulkpanel's, needed for its collapse animation)
    and get clipped by one of them. See .is-picking / .upt-topiclist.is-create above. */

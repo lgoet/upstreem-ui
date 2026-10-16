@@ -1556,7 +1556,7 @@
       hochzaehlen(el);
     }
     function linieZeichnen(labels, werte, label) {
-      var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : "#1f1f1b";
+      var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : getComputedStyle(root).getPropertyValue("--vc-text").trim();
       linie.render({ labels: labels, datasets: [{ label: label, __id: "ads", __baseColor: tinte, borderColor: tinte, data: werte }] });
     }
     function zeichneOvChart(d) {
@@ -1586,7 +1586,7 @@
       var max = Math.max.apply(null, l.map(function (x) { return anteilWert(x.ad_share_pct); })) || 1;
       balken.render(l.map(function (x, i) {
         var n = str(x.advertiser_name).trim(), info_ = advInfo(n, x.company_id), v = anteilWert(x.ad_share_pct);
-        return { key: n, name: n, share: v / max * 100, wert: pct(v), color: UC.balkenGrau ? UC.balkenGrau(i, isDark()) : "#1f1f1b",
+        return { key: n, name: n, share: v / max * 100, wert: pct(v), color: UC.balkenGrau ? UC.balkenGrau(i, isDark()) : getComputedStyle(root).getPropertyValue("--vc-text").trim(),
                  /* Ohne Logo und bei einem Bild, das nicht laedt: das Bank-Zeichen im Kaestchen (core). */
                  logo: info_.logo || undefined, ersatz: ADV_ZEICHEN };
       }));
