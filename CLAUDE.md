@@ -221,6 +221,28 @@ muss.
 Neue Tabellen bekommen Kopfzeichen über `UC.kopfZeichenHtml` und je Spalte eine `art`.
 
 
+## 1e. Stand 17.10.: Tabellenkopf, Tabellen-Rollen, Menü-Lage
+
+Vier Regeln aus der Fix-Runde vom 17.10., jede aus einem gemessenen Fehler:
+
+- **Die Linie unter dem Tabellenkopf trägt die Kopfzelle selbst.** Jede `.up-th` hat in core
+  `border-bottom`. Ein Schatten nach innen unten (`inset 0 -1px 0`) an einer Kopfzelle liegt einen
+  Pixel DARÜBER und ergibt eine 2px-Linie. Gemeldet in Ads (15.10., behoben) und in Shopping unter
+  Brand und Product (17.10.): dieselbe Regel, zweimal einzeln geschrieben. Die stehende erste
+  Kopfzelle (`.up-colscroll`) setzt nur ihren Trenner nach rechts (`box-shadow: 1px 0 0`).
+  `.check_reinvention.py` meldet `DOPPELLINIE`; gemessen mit einem Zeilenzähler je Kopfzelle (1 = richtig).
+- **Tabellen-Rollen.** `.up-table` = `table`, `.up-thead`/`.up-row` = `row`, `.up-th` = `columnheader`,
+  `.up-td` = `cell`; `aria-sort` nur an der sortierten Spalte. Die Zeile ist kein `role=button`:
+  Tabulatorstopp (`tabindex=0`) und Enter bleiben; aufklappende Zeilen (Ads) behalten `role=button` mit
+  `aria-expanded`. Kein `grid`: das verlangt ein Pfeiltastenmodell, das die Listen nicht haben.
+- **Fokus an Kopf und Zeile liegt innen** (Abstand `-2px`), weil Köpfe und Zeilen Kante an Kante
+  stoßen und ein Ring außen am Rand des Kastens abgeschnitten würde. Sortierköpfe bedienen Enter und Leertaste.
+- **Die Lage eines Menüs bleibt bis zum Ende der Ausblendebewegung.** Oben/unten, links/rechts und die
+  Top-Layer-Freigabe werden beim Öffnen einmal bestimmt; zurückgesetzt wird erst danach per Zeitgeber in
+  der Dauer des eigenen Übergangs (nie beim Entfernen von `.is-shown`, nie durch Neuberechnen beim
+  Schließen), und ein Wiederöffnen in dieser Zeit bricht das Zurücksetzen ab (`dropEscape`, `ausblendDauer`
+  in core). Vorher blitzte ein nach oben geöffnetes Menü beim Zugehen unten auf (71 px Sprung, 15 von 15 Bildern).
+
 ## 2. Daten von Bubble: leer und kaputt sind zwei Dinge
 
 Jeder Setter bekommt Text aus einem Bubble-Ausdruck. Fünf Arten, wie der beschädigt ankommt:

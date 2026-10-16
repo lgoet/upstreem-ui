@@ -4226,3 +4226,21 @@ eine Zeile des Speichers trägt `status`). Fehlt v4 (PGRST202): heutiger Stand, 
   „Follow-up period, until …“ bis `report_final`. Offene Events: Fenster „Since event“ zusätzlich.
 - **Liniendiagramme (core):** Marker mit `ende` zeichnen ein Band in `--vc-kalender-band` hinter die
   Linien, an den Rändern gekappt; geplante Events (`status: "planned"`) gar nicht.
+
+## 52. Tabellenkopf, Tabellen-Rollen und Menü-Lage (Stand 17.10.)
+
+Gleiche Inhalte wie CLAUDE.md §1e, mit den Messwerten.
+
+- **Kopflinie.** Eine Kopfzelle zeigt am Unterrand genau eine Pixelzeile Linie: ihr `border-bottom`
+  aus core. Der Kopf (`.up-thead`) malt flach zusätzlich `inset 0 -1px 0` in dieselbe Pixelzeile
+  (durchsichtige Zellen) bzw. wird von der deckenden Zelle überdeckt, beides ergibt eine Linie. Ein
+  eigener Schatten nach innen unten an der Zelle landet eine Zeile höher: Shopping Brand/Product
+  zeigte Zeilen 46 bis 48 statt 47 bis 48 (gemessen). Alle acht Köpfe mit Daten messen danach 1;
+  die alte Regel gibt im selben Aufbau 2 (Gegenprobe).
+- **Rollen und Fokus.** Siehe §1e. Ein Fokusring außen wird an der Kante des Kastens abgeschnitten,
+  darum liegt er innen (`outline-offset: -2px`).
+- **Menü-Lage.** Platzierung bis zum Ende des Ausblendens halten; Dauer aus dem berechneten Stil des
+  Panels lesen, nie als feste Zahl. Gilt für alle Menüarten, die in den Top Layer gehoben werden
+  (Dialog, Drawer). Frühere Einzelfixes (Erklärkarte, Onboarding, Radar, Filterleiste, Untermenü) galten
+  jeweils nur dem gemeldeten Pfad.
+
