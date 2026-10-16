@@ -268,10 +268,19 @@
   border-radius: var(--up-r-m); box-shadow: none; border: 1px solid var(--vc-border); }
 /* Im Dunkeln kein Rahmen: die Logokachel ist dort selbst hell und traegt die Form allein --
    dieselbe Entscheidung wie beim Marken-Chip in den Mentions und beim Zitations-Chip im Text.
-   Ein Marken-Chip soll nicht an drei Orten drei Rahmen-Regeln haben. */
-.up-root[data-theme="dark"] .urd-cc-foot .up-stack-vis,
-.up-root[data-theme="dark"] .urd-cr-ments .up-stack-vis {
-  border-color: transparent; background-clip: padding-box; }
+   Ein Marken-Chip soll nicht an drei Orten drei Rahmen-Regeln haben.
+   DER HELLE RAND IST EINEN PIXEL BREIT, an JEDEM Chip der Reihe (16.10.) -- wie an den Chips der
+   Antwortkarten und der Tabellen (core .up-stack-vis im Dunkeln: Platte nur unter dem Bild, den
+   Pixel malt dessen Schatten). Hier stand background-clip: padding-box, und das traf nur den
+   ERSTEN Chip: an jedem Folgechip gewinnt die Dunkel-Regel aus core (0,5,0, die Flaeche in der
+   Ringfarbe, die im Stapel den Vorgaenger zudeckt) gegen diese (0,4,0). Gemessen: erster Chip
+   Platte 24 bei 20 Bild (2px Rand), alle weiteren 22 (1px) und dazu ein 26er Quadrat in #0f0f0f,
+   das auf der ueberfahrenen Zeile der Liste (#1f1f1f) dunkel stand.
+   In dieser Reihe ueberlappt nichts (4px Abstand), es gibt also nichts zuzudecken: Platte unter dem
+   Bild fuer alle, sonst durchsichtig. (0,6,0) schlaegt die Folgechip-Regel aus core. */
+.up-root[data-theme="dark"] .urd-cc-foot .up-stack .up-stack-item .up-stack-vis,
+.up-root[data-theme="dark"] .urd-cr-ments .up-stack .up-stack-item .up-stack-vis {
+  border-color: transparent; background: var(--vt-logo-bg) content-box; }
 .urd-cc-foot .up-stack-item img, .urd-cr-ments .up-stack-item img { border-radius: calc(var(--up-r-m) - 3px); }
 /* Ohne Ueberlappung gibt es nichts auseinanderzuschieben: das SEITLICHE Wegruecken der Nachbarn
    faellt weg, sonst zappelt die ganze Reihe, wenn man ueber einen Chip faehrt.

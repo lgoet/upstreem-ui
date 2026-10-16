@@ -80,6 +80,12 @@ Das Attribut überschreibt an jeder hellen Wurzel fünf Marken und sonst nichts:
 | `--vc-heading-bg` (Hover, Kopfzeilen) | `#f9f8f9` | `#f2f2f2` | Geist Gray 100; `#f9f8f9` wäre auf `#fafafa` unsichtbar |
 | `--vc-field` (Eingabefeld) | `#f9f8f9` | `--vc-bg` (weiß) | Vercel: Felder weiß mit Rahmen |
 
+Die leise Fläche des grauen Light steht als Marke `--up-leise-grau` (`#f2f2f2`) an `<html>`, damit
+sie auch Flächen mit eigener Palette erreicht. Die Dialogkarte aller core-Dialoge
+(`.up-topicmodal-card`) setzt `--vc-heading-bg` selbst und nimmt sie seit dem 16.10. ebenfalls:
+Schließen-Hover, gesperrte Knöpfe und Flaggen ohne Bild `#f2f2f2` statt `#f9f8f9` (auf der weißen
+Karte 13 statt 6 Stufen). Im Dunkeln bleibt die Karte bei `#1f1f1f`.
+
 **Innerhalb einer weißen Fläche ist der Grund weiß:** Drawer (`.up-kdr`, `[id^="drawer-"]`),
 Portale (`.up-portal`), `.up-band`, `.up-box`, die flache Tabelle und ihr Band setzen
 `--up-surface` wieder auf `--vc-bg`. Was dort „Seitenfarbe“ sagt (klebender Kopf, Gesamtzeile),
