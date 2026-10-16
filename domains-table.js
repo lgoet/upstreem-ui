@@ -879,7 +879,7 @@
       if (isBusy() || !state.hasData){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = skeletonRows(state.pageSize); return; }
       /* Der Lesefehler kommt VOR dem Leerzustand. Andersherum liest sich ein zerrissener
          Payload als leeres Ergebnis, und der Nutzer sucht den Fehler in seinen Filtern. */
-      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = UC.leseFehlerHtml("domains"); return; }
+      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = UC.leseFehlerHtml("domains", state.leseFehlerArt); return; }
       if (!state.rows.length){
         var filtered = !!state.query ||
           Object.keys(state.appliedSel).some(function(k){ return state.appliedSel[k]; }) ||
@@ -1279,8 +1279,10 @@
        (setDomainsTableSummenQuelle), ohne sie steht bei einer gewaehlten Berechnung "–" (core). */
     var SUM_RECHNEN = {
       share: [
-        { key: "eigen",   label: "Your domains",       kurz: "yours",   feld: "own_share_pct",            art: "pct" },
-        { key: "top10",   label: "Top 10 share",       kurz: "top 10",  feld: "top10_share_pct",          art: "pct" }
+        /* Die Bezeichnung nennt die Grundlage (17.10., SUM-04): beide Werte sind Anteile an allen ZITATEN
+           (Used), nicht am Anteil der Antworten, den die Spalte Share darueber zeigt. Die Zahlen bleiben. */
+        { key: "eigen",   label: "Your share of citations",  kurz: "yours",   feld: "own_share_pct",            art: "pct" },
+        { key: "top10",   label: "Top 10 share of citations", kurz: "top 10",  feld: "top10_share_pct",          art: "pct" }
       ],
       used: [
         { key: "summe",   label: "Total citations",    kurz: "total",   feld: "citations_total",          art: "anzahl" },
@@ -2010,7 +2012,7 @@
            und das Skelett laeuft endlos weiter. Genau so gemessen am 24.08. mit einem
            abgeschnittenen Payload. Ein Ladezustand muss IMMER enden (CLAUDE.md §2). */
         if (params.__parseError){
-          state.leseFehler = true; state.rows = []; state.hasData = true;
+          state.leseFehler = true; state.leseFehlerArt = typeof params.__parseError === "string" ? params.__parseError : ""; state.rows = []; state.hasData = true;
           state.loading = false; state.softReload = false; dim.end(); state.extLoading = false;
           persist(); render(); return;
         }

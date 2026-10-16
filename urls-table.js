@@ -47,6 +47,7 @@
   if (UC.addMessages) UC.addMessages("de", {
     "Your URLs": "Eigene URLs", "yours": "eigene",
     "Top 10 share": "Anteil der Top 10", "top 10": "Top 10",
+    "Your share of citations": "Dein Anteil an den Zitierungen", "Top 10 share of citations": "Anteil der Top 10 an den Zitierungen",
     "Largest URL type": "Größter URL-Typ", "largest": "größter",
     "Mention rate": "Erwähnungsrate", "mention rate": "Erwähnungsrate",
     "Avg. brands per URL": "Ø Brands je URL", "per URL": "je URL", "Brands seen": "Gesehene Brands",
@@ -468,7 +469,7 @@
       if (isBusy() || !state.hasData){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = skeletonRows(state.pageSize); return; }
       /* Der Lesefehler kommt VOR dem Leerzustand. Andersherum liest sich ein zerrissener Payload
          als "No URLs yet", und der Nutzer sucht den Fehler in seinen Filtern. */
-      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = UC.leseFehlerHtml("URLs"); return; }
+      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = UC.leseFehlerHtml("URLs", state.leseFehlerArt); return; }
       if (!state.rows.length){
         var filtered = filterAktiv();
         if (filtered){ clearEmptyGrace(); renderEmptyState(true); return; }
@@ -1019,8 +1020,9 @@
        (setUrlsTableSummenQuelle), ohne sie steht bei einer gewaehlten Berechnung "–" (core). */
     var SUM_RECHNEN = {
       share: [
-        { key: "eigen",   label: "Your URLs",           kurz: "yours",        feld: "own_share_pct",      art: "pct" },
-        { key: "top10",   label: "Top 10 share",        kurz: "top 10",       feld: "top10_share_pct",    art: "pct" }
+        /* Grundlage genannt (17.10., SUM-04): Anteile an allen Zitaten, nicht an den Antworten wie die Spalte. */
+        { key: "eigen",   label: "Your share of citations",   kurz: "yours",        feld: "own_share_pct",      art: "pct" },
+        { key: "top10",   label: "Top 10 share of citations", kurz: "top 10",       feld: "top10_share_pct",    art: "pct" }
       ],
       type: [
         /* Der Name wie im Chip der Zelle (UC.typLabel), der Anteil statt kurz dahinter. */
@@ -1715,7 +1717,7 @@
            und das Skelett laeuft endlos weiter. Genau so gemessen am 24.08. mit einem
            abgeschnittenen Payload. Ein Ladezustand muss IMMER enden (CLAUDE.md §2). */
         if (params.__parseError){
-          state.leseFehler = true; state.rows = []; state.hasData = true;
+          state.leseFehler = true; state.leseFehlerArt = typeof params.__parseError === "string" ? params.__parseError : ""; state.rows = []; state.hasData = true;
           state.loading = false; state.softReload = false; dim.end(); state.extLoading = false;
           persist(); render(); return;
         }

@@ -4430,7 +4430,7 @@
       vorspann: LEISTE ? dispGruppe : null, nachspann: LEISTE ? dispFuss : null,
       /* Spalten als Chips und die Zeilenhoehe beschriftet, wie in Entwurf B (15.10. gewaehlt). */
       form: LEISTE ? "chips" : null,
-      onChange: function(){ render(); }
+      onChange: function(){ render(); summeMelden(); }
     });
     function dispGruppe(){
       if (!elGrpMenu) return null;
@@ -4813,6 +4813,9 @@
       root: root, nach: elTbody, group: POP_GROUP,
       onWahl: function(spalte, modus){
         if (!SUM_MODI[spalte]) return;
+        /* "Try again" in der Zelle, deren Berechnung nicht geholt werden konnte (17.10.): dieselbe
+           Abfrage noch einmal, die Wahl bleibt. summeGemeldet vergessen, sonst gilt sie als gemeldet. */
+        if (modus === UC.SUM_NEU){ summeGemeldet = ""; summeMelden(); return; }
         if (modus !== SUM_AUS && !SUM_MODI[spalte].some(function(m){ return m.key === modus; })) return;
         sumWahl[spalte] = modus;
         sumSchreiben();
@@ -4824,8 +4827,14 @@
        bevor sie die Summe holt (summeLaden). Inaktiv laeuft keine Kennzahl. */
     function summeFelder(){
       if (!sumKit || state.status === "inactive" || sumWahl.an === false) return [];
-      var f = [];
+      var f = [], sicht = {};
+      /* Nur Spalten, die im Bild stehen (17.10., SUM-03): bei 375 breit sind alle Kennzahlspalten aus
+         dem Raster, und ihre Abfrage zaehlt trotzdem gegen das Ratenlimit der Summen. */
+      colsKit.effectiveCols().forEach(function(c){ sicht[c.key] = true; });
+      /* Telefon (is-vnarrow): nur die Anzahl steht in der Zeile (core.css .up-root.is-vnarrow .up-sumzelle). */
+      if (root.classList.contains("is-vnarrow")) sicht = {};
       Object.keys(SUM_MODI).forEach(function(sp){
+        if (!sicht[sp]) return;
         var m = SUM_MODI[sp].filter(function(x){ return x.key === sumWahl[sp]; })[0];
         if (!m || m.lokal) return;
         [m.feld, m.anteil].forEach(function(x){ if (x && f.indexOf(x) < 0) f.push(x); });
@@ -4895,20 +4904,29 @@
           z.menu = { wahl: m ? m.key : SUM_AUS,
             optionen: [{ key: SUM_AUS, label: "None" }].concat(modi.map(function(x){ return { key: x.key, label: x.label }; })) };
           if (m){
-            var v = null, kurz = m.kurz;
+            var v = null, kurz = m.kurz, fehler = false;
             if (m.lokal) v = (g || state.leseFehler) ? null : state.ohneTopic;
             /* Im Listenmodus einer Gruppe: was ihr Kopf kennt (die Mittelwerte), sonst "–". */
             else if (g) v = m.gruppe ? g[m.gruppe] : null;
             else if (state.leseFehler) v = null;
             /* Eigenes Skelett, solange die Summe unterwegs ist -- die Zeilen warten nicht darauf. */
             else if (summeLaedt && !Object.prototype.hasOwnProperty.call(S, m.feld)) z.laedt = true;
+            /* Die Abfrage ist gescheitert (429, Zeitueberschreitung, 5xx, unlesbar): eigener Zustand,
+               nicht "–" (= kein Wert). Das Menue der Zelle bietet "Try again" an. */
+            else if (state.summeFehler) fehler = true;
             else {
               v = S[m.feld];
               if (m.name) v = m.name(v);
               if (m.anteil){ var a = toNum(S[m.anteil]); if (a != null && v != null) kurz = UC.fmtPct(a, 0); }
             }
-            z.html = UC.sumPaarHtml(v, kurz, m.art);
-            z.tip = m.label;
+            if (fehler){
+              z.html = UC.sumFehlerHtml();
+              z.menu.optionen = [{ key: UC.SUM_NEU, label: "Try again", aktion: true }].concat(z.menu.optionen);
+              z.tip = "Couldn't load. Choose Try again.";
+            } else {
+              z.html = UC.sumPaarHtml(v, kurz, m.art);
+              z.tip = m.label;
+            }
             z.sk = m.lokal ? 90 : 56;
           }
         }
@@ -4917,14 +4935,16 @@
       sumKit.zeichnen({ laedt: laedt, ersteSk: 84, erste: erste, sichtbar: sicht, zellen: zellen });
     }
     if (sumKit){ sumKit.zeigen(sumWahl.an); renderSumme(); }
+    /* Wird eine Spalte durch die Breite sichtbar (oder unsichtbar), ziehen die Summen mit (SUM-03). */
+    if (sumKit && colsKit.beiSpalten) colsKit.beiSpalten(function(){ renderSumme(); summeMelden(); });
     /* Die Antwort der eigenen Summen-Abfrage (prompts-page.js summeLaden, setPromptsTableSumme):
        { laedt: true } -- unterwegs, die alten Werte gelten fuer den neuen Filter nicht mehr;
        { daten: {...} } -- da; { fehler: true } -- gescheitert, die Zellen zeigen "–". */
     function summeSetzen(d){
       d = d || {};
-      if (d.laedt){ state.summeLaedt = true; state.summe = {}; }
-      else if (d.daten && typeof d.daten === "object"){ state.summeLaedt = false; state.summe = d.daten; }
-      else { state.summeLaedt = false; state.summe = {}; }
+      if (d.laedt){ state.summeLaedt = true; state.summeFehler = false; state.summe = {}; }
+      else if (d.daten && typeof d.daten === "object"){ state.summeLaedt = false; state.summeFehler = false; state.summe = d.daten; }
+      else { state.summeLaedt = false; state.summeFehler = !!d.fehler; state.summe = {}; }
       renderSumme();
     }
 

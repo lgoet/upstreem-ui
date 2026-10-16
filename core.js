@@ -728,6 +728,9 @@
     "Sort by": "Sortieren nach",
     /* Lesefehler. {was} ist der Name dessen, was nicht geladen werden konnte. */
     "Could not load {was}": "{was} konnte nicht geladen werden",
+    "Not found": "Nicht gefunden",
+    "This data could not be found.": "Diese Daten wurden nicht gefunden.",
+    "Something went wrong on our side. Try again in a moment.": "Auf unserer Seite ist etwas schiefgelaufen. Versuch es gleich noch einmal.",
     "The data could not be read. Please reload the page.":
       "Die Daten konnten nicht gelesen werden. Bitte lade die Seite neu.",
     "data": "Die Daten",
@@ -1760,6 +1763,7 @@
     "Adding brands isn't available on this page": "Brands hinzufügen ist auf dieser Seite nicht möglich",
     "Brand activated again": "Brand wieder aktiviert",
     "Your workspace could not be loaded. Please reload the page.": "Dein Arbeitsbereich konnte nicht geladen werden. Lade die Seite bitte neu.",
+    "Your workspace could not be loaded.": "Dein Arbeitsbereich konnte nicht geladen werden.",
     "Too many team switches. Please wait a moment.": "Zu viele Teamwechsel. Warte bitte einen Moment.",
     "You no longer have access to this team.": "Du hast keinen Zugriff mehr auf dieses Team.",
     "The team could not be switched. Please try again.": "Das Team konnte nicht gewechselt werden. Versuch es noch einmal.",
@@ -1971,6 +1975,7 @@
     "Search is not available right now. Please try again.": "Die Suche ist gerade nicht verfügbar. Versuch es noch einmal.",
     "{n} rows exported": "{n} Zeilen exportiert",
     "The export was cut at {n} rows. Choose a shorter range for the rest.": "Der Export endet nach {n} Zeilen. Wähl für den Rest einen kürzeren Zeitraum.",
+    "The file has {n} rows, but {gesamt} were expected. It may be incomplete. Export again to be sure.": "Die Datei hat {n} Zeilen, erwartet wurden {gesamt}. Sie ist möglicherweise unvollständig. Exportiere noch einmal, um sicherzugehen.",
     "Too many exports in a short time": "Zu viele Exporte in kurzer Zeit",
     "Please wait a minute and try again.": "Warte eine Minute und versuch es noch einmal.",
     "Exports are not available for this team": "Für dieses Team sind keine Exporte möglich",
@@ -7732,6 +7737,7 @@
     ensureFirstGrip();
 
     var lastTpl = null, lastSigCols = null;
+    var spaltenHoerer = [], lastSichtSig = null;
     function applyCols(){
       /* Tables that render their own <thead> markup (brands-overview swaps between two different
          head layouts) throw the grip away on every render, so re-ensure it here instead of only
@@ -7859,11 +7865,20 @@
          Rasterzeile um (im Skelett davor waren sie ausgeblendet). Also traegt der Kopf den Stempel
          genauso wie jede Zeile. */
       var rowsStale = !!root.querySelector('.up-row:not([data-up-colsig="' + sigCols + '"]), .up-thead:not([data-up-colsig="' + sigCols + '"])');
-      if (sigCols === lastSigCols && !rowsStale) return;
+      /* Die Gesamtzeile zeigt unter is-vnarrow gar keine Kennzahlzellen (CSS), auch wenn die Spaltenmenge
+         dieselbe bleibt: der Wechsel zaehlt deshalb mit in die Signatur fuer die Hoerer. */
+      var sichtSig = sigCols + (root.classList.contains("is-vnarrow") ? "|v" : "");
+      var sichtNeu = lastSichtSig !== null && sichtSig !== lastSichtSig;
+      lastSichtSig = sichtSig;
+      if (sigCols === lastSigCols && !rowsStale){
+        if (sichtNeu) spaltenHoerer.forEach(function(fn){ try { fn(); } catch(e){} });
+        return;
+      }
       /* Aendert die Breite, welche Spalten Platz haben, muss das Menue es mitsagen -- auch wenn
          es gerade offen ist, waehrend jemand das Fenster zieht. Nur beim Wechsel der Menge,
          nicht bei jedem Bild. */
-      if (lastSigCols !== null && sigCols !== lastSigCols) populateCols();
+      var spaltenNeu = lastSigCols !== null && sigCols !== lastSigCols;
+      if (spaltenNeu) populateCols();
       lastSigCols = sigCols;
       COLUMNS.forEach(function(c){
         var sel = [];
@@ -7877,6 +7892,9 @@
       Array.prototype.forEach.call(root.querySelectorAll(".up-row, .up-thead"), function(r){
         r.setAttribute("data-up-colsig", sigCols);
       });
+      /* Erst nach dem Umstellen der Zellen: die Gesamtzeile holt, was eine jetzt sichtbare Spalte
+         braucht (17.10., SUM-03: vorher holte sie auch fuer ausgeblendete und danach nie nach). */
+      if (spaltenNeu || sichtNeu) spaltenHoerer.forEach(function(fn){ try { fn(); } catch(e){} });
     }
     /* drag the lead column's right edge; everything else keeps its responsive track */
     function startResize(e){
@@ -8068,7 +8086,10 @@
       readCols: readCols, writeCols: writeCols, readWidths: readWidths, writeWidths: writeWidths,
       visibleCols: visibleCols, effectiveCols: effectiveCols, layoutKeys: layoutKeys, colMin: colMin,
       applyCols: applyCols, startResize: startResize, populateCols: populateCols,
-      toggleCol: toggleCol, selectAllCols: selectAllCols, syncColsBadge: syncColsBadge
+      toggleCol: toggleCol, selectAllCols: selectAllCols, syncColsBadge: syncColsBadge,
+      /* fn() laeuft, wenn sich die Menge der gezeigten Spalten durch die Breite aendert (nicht beim
+         ersten Aufbau). Fuer alles, was nur fuer sichtbare Spalten arbeiten soll (Summenzeile). */
+      beiSpalten: function(fn){ if (typeof fn === "function" && spaltenHoerer.indexOf(fn) < 0) spaltenHoerer.push(fn); }
     };
   }
 
@@ -22810,10 +22831,17 @@
         APP.laeuft = false;
         /* Gibt es app_start_v1 noch nicht (SQL nicht eingespielt: 404 / PGRST202), bleibt alles beim
            Bubble-Weg -- Teamwechsel, Nachladen und Wegklicken gehen dann weiter an Bubble, statt an
-           Funktionen, die es nicht gibt. Kein Satz im Bild: der Bubble-Seitenaufbau laeuft ja. */
-        var fehlt = erg && (erg.status === 404 || /PGRST202|Could not find the function/.test(String(erg.fehler && (erg.fehler.code + " " + erg.fehler.message))));
+           Funktionen, die es nicht gibt. Kein Satz im Bild: der Bubble-Seitenaufbau laeuft ja.
+           NUR AUSSERHALB DER APP (17.10., VTR-03): ohne Bubble (ohneBubble(), die App) gibt es diesen
+           Seitenaufbau nicht, und der stille Abbruch liess die Seiten ohne Team, ohne Satz und ohne
+           appFertig() stehen. Dort zaehlt ein 404 wie jeder andere Fehler. */
+        var fehlt = !ohneBubble() && erg && (erg.status === 404 || /PGRST202|Could not find the function/.test(String(erg.fehler && (erg.fehler.code + " " + erg.fehler.message))));
         if (fehlt){ APP.aktiv = false; return null; }
-        if (typeof toast === "function") toast(t_("Your workspace could not be loaded. Please reload the page."), { kind: "error" });
+        /* Bleibt stehen und bietet den neuen Versuch an (der Start laeuft dann von vorn): ein Satz, der
+           nach vier Sekunden verschwindet, liesse eine leere App zurueck. Ein Schluessel, damit ein
+           zweiter Fehlschlag den Toast nicht verdoppelt. */
+        if (typeof toast === "function") toast(t_("Your workspace could not be loaded."), { kind: "error", bleibt: true, schluessel: "app-start",
+          desc: "Check your connection and try again.", action: { label: t_("Try again"), onClick: function(){ appStart(); } } });
         appFertig();
         return null;
       }
@@ -26644,11 +26672,31 @@
      nennt bewusst KEIN Substantiv, damit er zu jedem passt, und er sagt, was der Nutzer tun
      kann. Keine Diagnose, keine internen Namen, kein Verweis auf die Konsole -- das liest hier
      niemand, den es angeht. */
-  function leseFehlerHtml(was){
+  /* NACH URSACHE (17.10., QS-13): "could not be read" stimmt nur fuer eine Antwort, die ankam und
+     nicht lesbar war. Bei einem Serverfehler (5xx, Zeitueberschreitung, Netz) hilft Neuladen nicht
+     als Erstes, bei 404 ist nichts unlesbar, sondern nichts da, beim Ratenlimit hilft Warten.
+     art: "" (Vorgabe: unlesbar), "server", "rate", "weg". Die Seite, die den Fehler kennt, nennt
+     sie (fehlerSatzArt(erg)) und reicht sie als __parseError: "<art>" an die Komponente weiter;
+     ein wahrer Wert wie bisher bleibt "unlesbar". */
+  function fehlerSatzArt(erg){
+    if (!erg || erg.ok) return "";
+    var f = erg.fehler || {}, m = String(f.message || "").toLowerCase(), c = String(f.code || ""), s = erg.status | 0;
+    if (m === "aborted" || m === "unreadable_response") return "";
+    if (s === 429|| /rate_?limit/.test(m) || c === "PT429") return "rate";
+    if (s === 404 || c === "PGRST202" || /not.?found/.test(m)) return "weg";
+    return "server";
+  }
+  function leseFehlerHtml(was, art){
+    art = typeof art === "string" ? art : "";
+    var titel = art === "weg" ? "Not found" : t_("Could not load {was}").replace("{was}", t_(was || "data"));
+    var satz = art === "server" ? "Something went wrong on our side. Try again in a moment."
+             : art === "rate" ? "Too many requests in a short time. Please wait a moment."
+             : art === "weg" ? "This data could not be found."
+             : "The data could not be read. Please reload the page.";
     return '<div class="up-empty">' +
       '<div class="up-empty-ic">' + icon("info", 1.6) + '</div>' +
-      '<div class="up-empty-h">' + esc(t_("Could not load {was}").replace("{was}", t_(was || "data"))) + '</div>' +
-      '<div class="up-empty-t">' + esc(t_("The data could not be read. Please reload the page.")) + '</div>' +
+      '<div class="up-empty-h">' + esc(t_(titel)) + '</div>' +
+      '<div class="up-empty-t">' + esc(t_(satz)) + '</div>' +
     '</div>';
   }
 
@@ -28602,7 +28650,10 @@
     "lowest": "niedrigster",
     "newest": "neuester",
     "most common": "am häufigsten",
-    "Summary row": "Summenzeile"
+    "Summary row": "Summenzeile",
+    /* Der Fehlerzustand einer Berechnung (17.10.): "–" heisst "kein Wert", das hier "ging schief". */
+    "Couldn't load": "Nicht geladen",
+    "Couldn't load. Choose Try again.": "Nicht geladen. Wähle „Noch einmal versuchen“."
   });
   /* Ein Wert der Zeile als Text, nach den Formaten von CLAUDE.md 2b. art: "anzahl" (ganze Zahl,
      dieselbe Form wie der Zaehler im Tabellenkopf), "pct" (Visibility, eine Stelle), "rang" (immer
@@ -28632,6 +28683,15 @@
     else if (label) lab = '<span class="up-sumlabel">' + esc(t_(label)) + '</span>';
     return '<span class="up-sumpaar"><span class="up-sumwert' + (txt == null ? " is-leer" : "") + (istText ? " is-text" : "") + '">' +
       esc(txt == null ? "–" : txt) + '</span>' + lab + '</span>';
+  }
+  /* Eine Berechnung, die NICHT geholt werden konnte (17.10.): ein eigener Zustand und nicht "–".
+     Ein Strich heisst "es gibt keinen Wert" (null, kein Treffer); hier gab es einen Fehler (429,
+     Zeitueberschreitung, 5xx), und der soll nicht wie "kein Wert" aussehen (CLAUDE.md 2: leer und
+     kaputt nie gleich). Kleiner als ein Wert (13, nicht 16) und in der Fehlerfarbe, damit er in
+     eine schmale Zelle passt und nicht mit einer Zahl verwechselt wird. Der Weg zurueck steht im
+     Menue der Zelle (SUM_NEU, "Try again"). */
+  function sumFehlerHtml(){
+    return '<span class="up-sumpaar"><span class="up-sumwert is-text is-fehler">' + esc(t_("Couldn't load")) + '</span></span>';
   }
   /* cfg: { root, nach (das Element, hinter dem die Zeile steht, ueblich .up-tbody), group (die
      Popover-Gruppe der Tabelle), onWahl(spalte, modus) }.
@@ -28681,6 +28741,9 @@
       var z = zelleVon(key), m = z && z.menu;
       if (!m || !isArr(m.optionen) || !m.optionen.length) return false;
       menu.innerHTML = m.optionen.map(function(o){
+        /* Eine Aktion ("Try again") ist keine Wahl: kein Haken, ein Trenner dahinter. */
+        if (o.aktion) return '<div class="up-pop-opt" role="menuitem" data-sum-wahl="' + esc(o.key) + '">' +
+          '<span>' + esc(t_(o.label)) + '</span></div><div class="up-pop-div"></div>';
         var an = o.key === m.wahl;
         return '<div class="up-pop-opt' + (an ? " is-active" : "") + '" role="menuitemradio" aria-checked="' +
                  (an ? "true" : "false") + '" data-sum-wahl="' + esc(o.key) + '">' +
@@ -28808,11 +28871,23 @@
          dann; getrennt von der Tabelle (die Zeilen warten nie darauf, "nicht die gesamte Tabelle
          im Skeleton, wenn man unten eine groessere Berechnung baut"), mit eigenem Skelett in der
          Zelle; je Filterstand einmal, Blaettern und Sortieren aendern sig nicht und holen nichts.
-         Scheitert es, steht "–" (sumPaarHtml), und die naechste Aenderung versucht es neu.
+         Scheitert es, steht "Couldn't load" (sumFehlerHtml, NICHT "–": ein Strich heisst "kein Wert"),
+         und das Menue der Zelle bietet "Try again" an. Ein neuer Versuch kommt von selbst bei einer
+         neuen Wahl und, hoechstens alle 20 Sekunden, beim naechsten Zeichnen der Tabelle (17.10.: vorher
+         blieb der Fehler fuer den Filterstand fuer immer stehen, auch ein einzelnes 429).
+         Geholt wird nur, was eine SICHTBARE Spalte braucht (ausgeblendete: mobil, Display-Menue);
+         wird sie eingeblendet, holt das naechste Zeichnen nach.
      Die Anzahl kommt von der Tabelle (cfg.anzahl, die Gesamtzahl ihres Servers, nicht die
      Zeilen der Seite); null wird "–", nie 0 (sumPaarHtml).
      cfg.onUmschalten(an): danach z. B. die feste Hoehe neu planen. */
   var SUM_AUS = "aus";
+  /* Die Aktion "Try again" im Menue einer Zelle, deren Berechnung nicht geholt werden konnte. Ein
+     eigener Schluessel, der mit keiner Berechnung (z. B. "neu" in Domains) kollidiert. */
+  var SUM_NEU = "__neu";
+  /* So lange gilt ein gescheiterter Abruf als gescheitert, bevor ein Zeichnen ihn wiederholt: kurz
+     genug, dass ein einzelnes 429 oder ein Timeout nicht haengen bleibt, lang genug, dass eine
+     fehlende Funktion keine Anfrage je Zeichnen ausloest. */
+  var SUM_SPERRE_MS = 20000;
   function makeZaehlZeile(cfg){
     cfg = cfg || {};
     var key = prefKey((cfg.praefix || "up") + "_summe__" + (cfg.instanceId || ""));
@@ -28841,10 +28916,14 @@
     }
     var kit = makeSumZeile({ root: cfg.root, nach: cfg.nach, group: cfg.group || null,
       onWahl: function(spalte, modus){
+        if (modus === SUM_NEU){ vergessen(spalte); zeichnen(); return; }
         if (modus === SUM_AUS) delete wahl[spalte];
         else if (optionVon(spalte, modus)) wahl[spalte] = modus;
         else return;
         merken();
+        /* Eine neue Wahl ist ein neuer Versuch (so stand es immer im Kommentar): ein frueherer
+           Fehlschlag dieser Spalte gilt nicht mehr. */
+        vergessen(spalte);
         zeichnen();
       } });
     if (!kit.el) return { zeichnen: function(){}, schalter: function(){ return null; }, an: function(){ return false; }, setzen: function(){} };
@@ -28896,16 +28975,47 @@
       }
       return vorrat[sig];
     }
+    /* Die Felder einer Spalte, die der Server liefern muss (lokal gerechnete: keine). */
+    function felderVon(sp){
+      var o = optionVon(sp, wahl[sp]), f = [];
+      if (!o || typeof o.lokal === "function") return f;
+      [o.feld, o.anteil].concat(isArr(o.felder) ? o.felder : []).forEach(function(x){
+        if (x && f.indexOf(x) < 0) f.push(x);
+      });
+      return f;
+    }
+    /* Welche Spalten gerade im Bild stehen (null: unbekannt, dann zaehlen alle). Eine ausgeblendete
+       Spalte (Telefon, Display-Menue) zeigt ihren Wert niemandem, die Abfrage zaehlt aber gegen das
+       Ratenlimit der Summen (SUM-03). */
+    function sichtbareSpalten(){
+      var c = typeof cfg.cols === "function" ? cfg.cols() : null, s = {};
+      if (!c || typeof c.effectiveCols !== "function") return null;
+      /* Telefon (is-vnarrow): die Zeile zeigt nur die Anzahl (CSS), keine Kennzahlzelle. */
+      if (cfg.root && cfg.root.classList && cfg.root.classList.contains("is-vnarrow")) return s;
+      try { c.effectiveCols().forEach(function(x){ s[x.key] = true; }); } catch(err){ return null; }
+      return s;
+    }
     function serverFelder(){
-      var f = [];
+      var f = [], sicht = sichtbareSpalten();
       Object.keys(wahl).forEach(function(sp){
-        var o = optionVon(sp, wahl[sp]);
-        if (!o || typeof o.lokal === "function") return;
-        [o.feld, o.anteil].concat(isArr(o.felder) ? o.felder : []).forEach(function(x){
-          if (x && f.indexOf(x) < 0) f.push(x);
-        });
+        if (sicht && !sicht[sp]) return;
+        felderVon(sp).forEach(function(x){ if (f.indexOf(x) < 0) f.push(x); });
       });
       return f.sort();
+    }
+    /* Ein frueherer Fehlschlag dieser Spalte gilt nicht mehr: neue Wahl oder "Try again". */
+    function vergessen(sp){
+      var e = quelle ? vorrat[sigJetzt()] : null;
+      if (!e) return;
+      felderVon(sp).forEach(function(f){ delete e.gescheitert[f]; });
+    }
+    /* Ein Fehlschlag, der aelter ist als die Sperre, wird beim naechsten Zeichnen neu versucht. */
+    function abgelaufenVergessen(){
+      var e = quelle ? vorrat[sigJetzt()] : null, jetzt = Date.now();
+      if (!e) return;
+      Object.keys(e.gescheitert).forEach(function(f){
+        if (jetzt - e.gescheitert[f] > SUM_SPERRE_MS) delete e.gescheitert[f];
+      });
     }
     function holenWennNoetig(){
       if (!quelle) return;
@@ -28920,22 +29030,32 @@
         fehlt.forEach(function(f){
           delete unterwegs[sig + "|" + f];
           if (!ziel) return;
-          /* Ein gescheiterter Abruf gilt fuer DIESEN Filterstand als gescheitert ("–") und wird
-             nicht bei jedem Zeichnen der Tabelle wiederholt -- die Tabelle zeichnet oft, und eine
-             fehlende Funktion waere sonst eine Anfrage je Zeichnen. Ein neuer Filterstand oder
-             eine neue Wahl versucht es wieder. */
-          if (d && typeof d === "object"){ ziel.hat[f] = true; ziel.daten[f] = d[f]; }
-          else ziel.gescheitert[f] = true;
+          /* Ein gescheiterter Abruf gilt fuer DIESEN Filterstand als gescheitert (Zelle: "Couldn't
+             load") und wird nicht bei jedem Zeichnen der Tabelle wiederholt -- die Tabelle zeichnet
+             oft, und eine fehlende Funktion waere sonst eine Anfrage je Zeichnen. Er wird aber mit
+             Uhrzeit gemerkt und nicht fuer immer: eine neue Wahl, "Try again" und ein Zeichnen nach
+             SUM_SPERRE_MS versuchen es wieder (vorher blieb ein einzelnes 429 stehen). */
+          if (d && typeof d === "object"){ ziel.hat[f] = true; ziel.daten[f] = d[f]; delete ziel.gescheitert[f]; }
+          else ziel.gescheitert[f] = Date.now();
         });
         zeichnen(true);
       }, function(){
         var ziel = vorrat[sig];
-        fehlt.forEach(function(f){ delete unterwegs[sig + "|" + f]; if (ziel) ziel.gescheitert[f] = true; });
+        fehlt.forEach(function(f){ delete unterwegs[sig + "|" + f]; if (ziel) ziel.gescheitert[f] = Date.now(); });
         zeichnen(true);
       });
     }
+    var spaltenAngemeldet = false;
     function zeichnen(ausAntwort){
+      /* Vor dem Zeichnen, damit die Zelle gleich das Skelett zeigt und nicht erst "Couldn't load". */
+      if (!ausAntwort && an) abgelaufenVergessen();
       var sicht = {}, kitCols = typeof cfg.cols === "function" ? cfg.cols() : null;
+      /* Die Spaltenmenge aendert sich mit der Breite, ohne dass die Tabelle neu zeichnet (applyCols
+         allein): dann soll die Zeile mitziehen. Einmal anmelden, sobald das Kit da ist. */
+      if (!spaltenAngemeldet && kitCols && typeof kitCols.beiSpalten === "function"){
+        spaltenAngemeldet = true;
+        kitCols.beiSpalten(function(){ zeichnen(false); });
+      }
       if (kitCols && typeof kitCols.effectiveCols === "function"){
         try { kitCols.effectiveCols().forEach(function(c){ sicht[c.key] = true; }); } catch(e){}
       }
@@ -28945,22 +29065,29 @@
         var z = { key: k }, l = rechnen[k];
         if (!isArr(l) || !l.length) return z;
         var o = optionVon(k, wahl[k]);
-        z.menu = { wahl: o ? o.key : SUM_AUS,
-          optionen: [{ key: SUM_AUS, label: "None" }].concat(l.map(function(x){ return { key: x.key, label: x.label }; })) };
+        var optionen = [{ key: SUM_AUS, label: "None" }].concat(l.map(function(x){ return { key: x.key, label: x.label }; }));
+        z.menu = { wahl: o ? o.key : SUM_AUS, optionen: optionen };
         if (!o) return z;
-        var v = null, kurz = o.kurz;
+        var v = null, kurz = o.kurz, fehler = false;
         if (typeof o.lokal === "function"){ try { v = o.lokal(); } catch(err){ v = null; } }
         else if (e){
           var noetig = [o.feld].concat(isArr(o.felder) ? o.felder : []).filter(Boolean);
           var offenF = noetig.filter(function(f){ return !e.hat[f] && !e.gescheitert[f]; });
           if (offenF.length){ z.laedt = true; z.sk = 56; }
+          else if (noetig.some(function(f){ return !!e.gescheitert[f]; })) fehler = true;
           else if (typeof o.wert === "function"){ try { v = o.wert(e.daten); } catch(err){ v = null; } }
           else v = e.daten[o.feld];
           if (v != null && typeof o.name === "function"){ try { v = o.name(v); } catch(err){} }
           if (v != null && o.anteil){ var an_ = toNum(e.daten[o.anteil]); if (an_ != null) kurz = fmtPct(an_, 0); }
         }
-        z.html = sumPaarHtml(v, kurz, o.art);
-        z.tip = o.label;
+        if (fehler){
+          z.html = sumFehlerHtml();
+          z.menu.optionen = [{ key: SUM_NEU, label: "Try again", aktion: true }].concat(optionen);
+          z.tip = "Couldn't load. Choose Try again.";
+        } else {
+          z.html = sumPaarHtml(v, kurz, o.art);
+          z.tip = o.label;
+        }
         z.sk = z.sk || 56;
         return z;
       });
@@ -29060,7 +29187,7 @@
     parseLoose: parseLoose,
     normParams: normParams,
     makeToolGroup: makeToolGroup,
-    leseFehlerHtml: leseFehlerHtml,
+    leseFehlerHtml: leseFehlerHtml, fehlerSatzArt: fehlerSatzArt,
     leerHtml: leerHtml,
     /* Der Leerzustand eines Charts (15.10.): fuer Flaechen, die keinen der Chart-Bausteine
        benutzen (Landschaft in brands-overview, Heatmap des Performance Radar). */
@@ -29373,7 +29500,7 @@
     lineWidthSwitchHtml: lineWidthSwitchHtml, colorScaleOptionsHtml: colorScaleOptionsHtml,
     flagHtml: flagHtml, flagUrl: flagUrl, wireFlags: wireFlags,
     /* Die Gesamtzeile einer Tabelle (15.10., siehe makeSumZeile). */
-    makeSumZeile: makeSumZeile, sumPaarHtml: sumPaarHtml, makeZaehlZeile: makeZaehlZeile
+    makeSumZeile: makeSumZeile, sumPaarHtml: sumPaarHtml, sumFehlerHtml: sumFehlerHtml, SUM_NEU: SUM_NEU, makeZaehlZeile: makeZaehlZeile
   };
 
   /* ---- Verdraengungssperre -------------------------------------------------------------------

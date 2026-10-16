@@ -9045,6 +9045,10 @@ html[data-usn-modus="hint"] .up-ph-heading.is-knapp > .up-ph-crumb:first-child:n
 /* Ein fehlender Wert ist "–" in der Farbe jeder leeren Zelle (.up-num.is-empty) und nie 0: eine
    Null in der Primaerfarbe waere eine Aussage, die niemand gemacht hat. */
 .up-sumwert.is-leer { color: var(--vc-fourth); }
+/* Eine Berechnung, die nicht geholt werden konnte (sumFehlerHtml, 17.10.): ein eigener Zustand und
+   nicht der Strich fuer "kein Wert". 13 statt 16, damit der Satz in eine schmale Zelle passt und
+   nicht wie eine Zahl aussieht; Fehlerfarbe wie jeder Fehlersatz der App (.up-fehlerzeile). */
+.up-sumwert.is-fehler { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vt-down); }
 .up-sumlabel {
   min-width: 0; overflow: hidden; text-overflow: ellipsis;
   font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-fourth);

@@ -67,7 +67,7 @@
     var ladeNr = 0;
     function laden(frisch) {
       if (!sichtbarTest(root)) { beiSicht(root, "laden", function () { laden(frisch); }, sichtbarTest); return; }
-      var nr = ++ladeNr, tm = team(), alle = [];
+      var nr = ++ladeNr, tm = team(), alle = [], fehlerArt = "";
       var ersteAnfrage = D.teams(tm, 0);
       /* Das Skelett nur, wenn die Antwort nicht schon im Speicher liegt -- sonst blitzte es bei
          jedem Neuaufbau kurz auf. */
@@ -83,7 +83,7 @@
              Das UI zeigt in beiden Faellen den Lesefehler (teams.js). Form wie die anderen Seiten:
              "[seite] kanal:" und der Befund. */
           if (!s && window.console) console.error("[teams-page] teams:", erg.ok ? "Antwort ohne rows" : (erg.fehler || erg.status));
-          if (!s) return false;
+          if (!s) { fehlerArt = UC.fehlerSatzArt ? UC.fehlerSatzArt(erg) : ""; return false; }
           alle = alle.concat(s.rows);
           /* Hoechstens zehn Seiten: eine kaputte Zaehlung soll keine Schleife werden. */
           if (s.total > alle.length && s.rows.length && offset < 900) return seite(offset + 100);
@@ -94,7 +94,7 @@
         if (ok === null || nr !== ladeNr) return;
         try {
           if (ok) window.renderTeams({ instanceId: idUts, rows: alle, currentTeamId: tm });
-          else window.renderTeams({ instanceId: idUts, __parseError: true });
+          else window.renderTeams({ instanceId: idUts, __parseError: fehlerArt || true });
         } catch (e) {}
         if (auftritt) auftritt.bereit();
       });

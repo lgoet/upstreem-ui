@@ -4298,7 +4298,12 @@
           '<span class="am-prev-item-title"></span></div>'
       : '';
     var recentsHTML = recentsAlle.slice(0, S.prevFenster).map(chatItemHTML).join('');
-    if (!recentsHTML && !_neueZeile) recentsHTML = '<div class="am-prev-proj-empty">No recent chats</div>';
+    /* LEER IST NICHT KAPUTT (17.10., QS-04): scheiterte das Laden der Liste (S.chatsFehler, gesetzt von
+       askMiraSetChatsError), steht hier der Fehler mit "Try again" und nicht "No recent chats". */
+    if (!recentsHTML && !_neueZeile) recentsHTML = S.chatsFehler
+      ? '<div class="am-prev-proj-empty am-prev-fehler">Couldn\'t load your chats</div>' +
+        '<button class="am-prev-mehr" type="button" data-chats-retry>Try again</button>'
+      : '<div class="am-prev-proj-empty">No recent chats</div>';
     /* Waehrend auf die naechste Seite gewartet wird, stehen unten drei Skelettzeilen (15.09.
        angefordert). Vorher passierte sichtbar nichts, bis die Antwort da war -- und wer nichts
        sieht, scrollt noch einmal, was den naechsten Aufruf ausloest.
@@ -7077,7 +7082,16 @@
     try { listeNachholen('reconnect'); } catch(e){}
     return true;
   };
+  /* Die Chatliste konnte nicht geladen werden (an = true) bzw. ist wieder da (false). Gezeigt wird der
+     Fehler nur, solange es keine Chats gibt: eine schon stehende Liste bleibt bei einem misslungenen
+     Nachfassen, wie sie ist. */
+  window.askMiraSetChatsError = function(an){
+    S.chatsFehler = (an === true || an === 'yes' || an === 'true');
+    if (!_prevLoaded) prevGeladenSetzen(true);
+    renderPrevious();
+  };
   window.askMiraSetPreviousChats = function(chats){
+    S.chatsFehler = false;
     if (typeof chats === 'string'){
       var parsed = looseJsonParse(chats);
       if (parsed == null){
@@ -8730,6 +8744,15 @@
   /* ---- click delegation ---- */
   elPrevList.addEventListener('click', function(e){
     if (e.target.closest('[data-add-project]')){ e.stopPropagation(); createProject(); return; }
+    /* "Try again" im Fehlerzustand der Liste: Skelett, dann holt die Seite die Liste neu (derselbe Weg
+       wie das Nachholen nach dem Hintergrund). Fehlt der Haken (Bubble-Modus ohne ihn), bleibt es beim Fehler. */
+    if (e.target.closest('[data-chats-retry]')){
+      e.stopPropagation();
+      if (typeof amBfn('refresh_chats') !== 'function') return;
+      prevGeladenSetzen(false); renderPrevious();
+      listeNachholen('retry');
+      return;
+    }
     /* "Show all N" / "Show less" an einem Projekt. */
     var mehr = e.target.closest('[data-proj-more]');
     if (mehr){

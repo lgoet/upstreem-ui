@@ -588,7 +588,9 @@
               var p = erg.ok ? (art === "urls" ? D.zuUrls(erg.daten) : D.zuDomains(erg.daten)) : null;
               if (!p) {
                 state.fehler[art] = erg.ok ? "x" : D.fehlerArt(erg);
-                try { window[render]({ instanceId: id, __parseError: true }); } catch (e) {}
+                /* Die Ursache an die Tabelle (17.10., QS-13): Serverfehler, nicht gefunden, Ratenlimit oder
+                   unlesbar bekommen je ihren Satz. */
+                try { window[render]({ instanceId: id, __parseError: (!erg.ok && UC.fehlerSatzArt && UC.fehlerSatzArt(erg)) || true }); } catch (e) {}
                 return;
               }
               state.fehler[art] = null;
