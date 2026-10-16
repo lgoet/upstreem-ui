@@ -86,6 +86,12 @@ sie auch Flächen mit eigener Palette erreicht. Die Dialogkarte aller core-Dialo
 Schließen-Hover, gesperrte Knöpfe und Flaggen ohne Bild `#f2f2f2` statt `#f9f8f9` (auf der weißen
 Karte 13 statt 6 Stufen). Im Dunkeln bleibt die Karte bei `#1f1f1f`.
 
+**Das Grundgrau am `<html>` (seit 17.10.):** `html[data-up-hell="grau"]` setzt `--vc-heading-bg`
+selbst auf `--up-leise-grau`. Vorher stand an `:root` noch `#f9f8f9`, und jede Fläche am `<body>`
+ohne eigene Palette (helles `[data-theme]`, keine `.up-root`) trug im grauen Light die alte leise
+Fläche und den alten Knopf-Hover (`--up-knopf-hover` rechnet aus ihr). Wurzeln, eigene Paletten und
+dunkle Elemente setzen die Marke weiter selbst; ohne das Attribut (Landingpage, Dunkel) bleibt es.
+
 **Innerhalb einer weißen Fläche ist der Grund weiß:** Drawer (`.up-kdr`, `[id^="drawer-"]`),
 Portale (`.up-portal`), `.up-band`, `.up-box`, die flache Tabelle und ihr Band setzen
 `--up-surface` wieder auf `--vc-bg`. Was dort „Seitenfarbe“ sagt (klebender Kopf, Gesamtzeile),

@@ -1258,6 +1258,14 @@
          Seitenleiste traegt seither gar keinen (sidebar.css). */
       --up-wahl-bg: #ededed;
       --up-wahl-rand: rgba(0,0,0,.03);
+      /* DAS GRUNDGRAU AM <html> (17.10., bestaetigt: "also ja"). Die leise Flaeche stand an :root noch
+         auf #f9f8f9 (Block "DIE SCHRIFTSTUFEN GELTEN IM GANZEN DOKUMENT") -- jede Flaeche am <body>
+         ohne eigene Palette (helles [data-theme], keine .up-root) trug darum im grauen Hell die alte,
+         zu blasse leise Flaeche und den alten Knopf-Hover (--up-knopf-hover rechnet aus ihr). An der
+         Wurzel steht das Grau schon (unten, .up-root); hier dieselbe Marke fuer alles darueber.
+         (0,1,1) schlaegt :root (0,1,0); jede Wurzel, jede eigene Palette und jedes dunkle Element
+         setzt sie weiter selbst. Ohne das Attribut (Landingpage, erstes Bild, Dunkel) bleibt es. */
+      --vc-heading-bg: var(--up-leise-grau);
     }
     /* Der Grund hinter allem (html/body). Das Kopf-Skript der App malt ihn weiss (kopf.css,
        html[data-up-pagetheme="light"] body, 0,1,2); hier eine Stufe spezifischer (0,2,2) statt
