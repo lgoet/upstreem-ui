@@ -721,6 +721,7 @@
     "This can't be used: {wert}": "Das lässt sich nicht verwenden: {wert}",
     "{ziel} is already in the list.": "{ziel} steht schon in der Liste.",
     "{ziel} is already covered by {regel}.": "{ziel} ist schon in {regel} enthalten.",
+    "{ziel} is also covered by {regel} and gets its own row.": "{ziel} ist auch in {regel} enthalten und bekommt eine eigene Zeile.",
     "Add one URL at a time.": "Füg eine URL nach der anderen hinzu.",
     "This looks like a sitemap.": "Das sieht nach einer Sitemap aus.",
     "This looks like a sitemap. Please add the pages or the domain instead.": "Das sieht nach einer Sitemap aus. Füg stattdessen die Seiten oder die Domain hinzu.",
@@ -3436,14 +3437,20 @@
        Add-Button ist kleiner als das Inputfeld, sieht inkonsistent aus"). Darunter die
        Schreibweise, die Fehlerzeile und die Treffer der URL-Suche -- direkt am Feld, zu dem sie
        gehoeren. "Load from sitemap" steht NICHT mehr hier, sondern rechts im Kopf des Feldes
-       (zielKopf): zwischen Eingabe und Ergebnissen unterbrach es den Fluss. */
+       (zielKopf): zwischen Eingabe und Ergebnissen unterbrach es den Fluss.
+       DIE VORSCHLAEGE DER VORSCHAU (17.10., Nutzer: "unters Feld und aufgeraeumter") stehen in
+       derselben Spalte wie das Feld (.uev-feldspalte) und damit genau so breit wie es, nicht wie
+       Feld plus "Add" -- siehe vorschlaegeZeigen. */
     function eingabeHtml(p) {
       var e = p.e, art = e.zielArt && e.zielArt !== "marke" ? e.zielArt : "";
       return '<div class="uev-zieleingabe">' +
           '<div class="uev-zielzeile">' +
-            '<div class="uev-urlsuche"><span class="uev-urlsuche-ic">' + UC.icon(ART_ZEICHEN[art] || "link", 2) + '</span>' +
-              '<textarea class="up-topicmodal-name uev-urlein uev-zielein" rows="1" placeholder="' + esc(platzhalter(art)) + '" autocomplete="off" spellcheck="false" inputmode="url"' +
-                ' aria-label="' + esc(platzhalter(art)) + '">' + esc(e.eingabe || "") + '</textarea></div>' +
+            '<div class="uev-feldspalte">' +
+              '<div class="uev-urlsuche"><span class="uev-urlsuche-ic">' + UC.icon(ART_ZEICHEN[art] || "link", 2) + '</span>' +
+                '<textarea class="up-topicmodal-name uev-urlein uev-zielein" rows="1" placeholder="' + esc(platzhalter(art)) + '" autocomplete="off" spellcheck="false" inputmode="url"' +
+                  ' aria-label="' + esc(platzhalter(art)) + '">' + esc(e.eingabe || "") + '</textarea></div>' +
+              klapp(false, '<div class="uev-vorschlaege" aria-live="polite"></div>', "uev-vorschlag-klapp") +
+            '</div>' +
             '<button type="button" class="up-btn-sec is-lg uev-zielhinzu" disabled>' + esc(t("Add")) + '</button>' +
           '</div>' +
           '<div class="uev-schreibweise" aria-live="polite"></div>' +
@@ -3574,6 +3581,23 @@
       if (isArr(d.targets) && d.targets.some(function (x) { var y = zielAusDb(x); return y && y.key === z.key; })) return true;
       return z.kind === "url" && isArr(d.urls) && d.urls.some(function (u) { return "url|" + urlSchluessel(u.url) === z.key; });
     }
+    /* Faellt dieses Ziel (im Add-Dialog) unter eine Regel, die das Event schon hat? Gibt die Regel
+       zurueck, sonst null. ES SPERRT NICHT (17.10., Nutzer: "already covered ... korrekt und
+       konsistent?"): das Detail wertet JEDES Ziel fuer sich aus -- ein url-Ziel bekommt seine Zeile
+       in "Affected URLs" mit Global share vorher, nachher und Change, ein Pfad seinen eigenen
+       Abschnitt mit Kennzahlen und Verlauf (get_impact_event_v3 targets[], analysis_v3 je Ziel,
+       Responses je p_event_target_id). Die Domain-Regel zeigt dieselbe Seite nur, sobald sie
+       zitiert ist, und ohne den Anteil vorher. Eine Seite unter einer Domain-Regel ist also keine
+       Wiederholung, sondern eine eigene Zeile -- sie kommt dazu, und am Feld steht leise, unter
+       welcher Regel sie schon mitzaehlt. Genau gleiche Ziele bleiben Doppel (zielImEvent). */
+    function zielInEventRegel(p, z) {
+      if (p.art !== "ziel") return null;
+      var d = state.detail[p.eventId];
+      if (!d || !isArr(d.targets)) return null;
+      var l = [];
+      d.targets.forEach(function (x) { var y = zielAusDb(x); if (y && y.kind !== "url") l.push(y); });
+      return deckendeRegel(l, z);
+    }
     function zielGewaehlt(p, z) { return p.e.ziele.some(function (x) { return x.key === z.key; }); }
     /* Wie viele Eintraege der Eingabe NEU waeren (nicht schon in der Liste oder im Event, jeder
        einmal) -- daran misst der Deckel eine eingefuegte Liste, bevor jemand "Add" drueckt. */
@@ -3591,7 +3615,12 @@
     function zielInListe(p, z) {
       var l = p.e.ziele, i;
       for (i = 0; i < l.length; i++) if (l[i].key === z.key) return l[i];
-      var a = zerlegen(z.input);
+      return deckendeRegel(l, z);
+    }
+    /* Die Regel einer Liste, unter die z faellt (ohne genau gleiche Eintraege) -- geteilt von der
+       Liste des Dialogs (zielInListe) und den Regeln, die das Event schon hat (zielInEventRegel). */
+    function deckendeRegel(l, z) {
+      var i, a = zerlegen(z.input);
       if (!a || !a.host) return null;
       for (i = 0; i < l.length; i++) {
         var x = l[i], r = x.kind === "url" ? null : zerlegen(x.input);
@@ -3629,7 +3658,7 @@
          Ziel ist ja getrackt. Ebenso im Add-Dialog ein Ziel, das das Event schon hat; nur wenn dort
          NICHTS Neues bleibt und die Liste leer ist, sagt der Fehler, dass es nichts hinzuzufuegen
          gibt (sonst schlosse "Add" den Dialog, ohne etwas zu tun). */
-      var neu = [], schon = [], imEvent = 0, da = {};
+      var neu = [], schon = [], imEvent = 0, da = {}, regelNotiz = null;
       p.schreibNotiz = null;
       r.gut.forEach(function (z) {
         if (da[z.key]) return;
@@ -3637,8 +3666,15 @@
         var x = zielInListe(p, z);
         if (x) { if (schon.indexOf(x) < 0) schon.push(x); if (!p.schreibNotiz) p.schreibNotiz = { z: z, x: x }; }
         else if (zielImEvent(p, z)) { imEvent++; if (!p.schreibNotiz) p.schreibNotiz = { z: z }; }
-        else neu.push(z);
+        else {
+          neu.push(z);
+          var rg = zielInEventRegel(p, z);
+          if (rg && !regelNotiz) regelNotiz = { z: z, x: rg, eigen: true };
+        }
       });
+      /* Die Notiz zum Doppel geht vor (sie erklaert, warum etwas NICHT dazukam); sonst die zur
+         eigenen Zeile unter einer Regel des Events. */
+      if (!p.schreibNotiz) p.schreibNotiz = regelNotiz;
       if (!neu.length && imEvent && !p.e.ziele.length) { p.schreibNotiz = null; feldFehler("ziele", fehlerText(zieleDa() ? "impact_event_target_duplicate" : "impact_event_url_duplicate")); return false; }
       if (neu.length > zielFrei(p)) { p.schreibNotiz = null; feldFehler("ziele", zuVielText(p)); return false; }
       neu.forEach(function (z) { p.e.ziele.push(z); });
@@ -3781,10 +3817,11 @@
       if (!el) return;
       var e = p.e, r = eingabeLesen(p), html = "", zuViel = false;
       var nz = p.schreibNotiz;
-      if (!r.teile.length && nz && (nz.x ? e.ziele.indexOf(nz.x) >= 0 : true) && e.zielArt !== "marke") {
+      if (!r.teile.length && nz && (nz.eigen ? zielGewaehlt(p, nz.z) : nz.x ? e.ziele.indexOf(nz.x) >= 0 : true) && e.zielArt !== "marke") {
         /* Das eben Eingegebene stand schon da (eingabeUebernehmen): leise sagen, wo -- bis zur
            naechsten Eingabe, und nur, solange der Eintrag noch in der Liste steht. */
         html = '<span class="uev-schreib-satz">' + esc(!nz.x ? fehlerText(zieleDa() ? "impact_event_target_duplicate" : "impact_event_url_duplicate")
+          : nz.eigen ? ersetze(t("{ziel} is also covered by {regel} and gets its own row."), { ziel: nz.z.zeigen, regel: nz.x.zeigen })
           : nz.x.key === nz.z.key ? ersetze(t("{ziel} is already in the list."), { ziel: nz.z.zeigen })
           : ersetze(t("{ziel} is already covered by {regel}."), { ziel: nz.z.zeigen, regel: nz.x.zeigen })) + '</span>';
       } else if (!r.teile.length) {
@@ -3883,14 +3920,19 @@
       var el = im(".uev-vz");
       if (!el || popup !== p) return;
       var l = vzListe(p);
-      if (!l.length) { el.innerHTML = ""; el.hidden = true; return; }
+      if (!l.length) { el.innerHTML = ""; el.hidden = true; vorschlaegeZeigen(p, l, []); return; }
       el.hidden = false;
       var res = p.zv && p.zv.soll && p.zv.akt === p.zv.soll ? vzErgebnis(p) : null;
       if (!res) {
+        /* Waehrend die Vorschau neu fragt, bleiben die Vorschlaege stehen (beim Tippen fragt sie je
+           Zeichen neu -- sonst klappten sie bei jedem Zeichen zu und wieder auf); nur was nicht mehr
+           in der Liste steht, faellt sofort weg (vorschlaegeZeigen). */
+        vorschlaegeZeigen(p, l, null);
         el.innerHTML = '<p class="uev-vz-laeuft"><span class="up-modal-spin"></span><span>' + esc(ersetze(t("Checking the last {n} days…"), { n: VZ_TAGE })) + '</span></p>';
         return;
       }
       if (res.fehler) {
+        vorschlaegeZeigen(p, l, []);
         el.innerHTML = '<div class="up-fehlerzeile is-on"><span>' + esc(t("The preview could not be loaded.")) + '</span></div>';
         return;
       }
@@ -3930,24 +3972,28 @@
         });
         if (best && !varianten.some(function (v) { return v.alt === String(pt.input); })) varianten.push({ alt: String(pt.input), neu: String(best.url) });
       });
-      var variantenHtml = varianten.map(function (v) {
-        return '<p class="uev-vz-satz"><span>' + esc(ersetze(t("No citations for {alt}. AI answers cite this page as {url}."), { alt: urlZeigen(v.alt), url: urlZeigen(v.neu) })) + '</span>' +
-          '<button type="button" class="up-quietbtn uev-vz-statt" data-variante-alt="' + esc(v.alt) + '" data-variante-neu="' + esc(v.neu) + '">' + esc(ersetze(t("Use {url}"), { url: urlZeigen(v.neu) })) + '</button></p>';
-      }).join("");
+      var vorschlaege = varianten.map(function (v) {
+        return { art: "variante", alt: v.alt, neu: v.neu,
+          satz: ersetze(t("No citations for {alt}. AI answers cite this page as {url}."), { alt: urlZeigen(v.alt), url: urlZeigen(v.neu) }),
+          knopf: ersetze(t("Use {url}"), { url: urlZeigen(v.neu) }) };
+      });
       /* Tippfehler im Host: je unbekanntem Host ein Vorschlag (tippVorschlaege, 15.10. spaet) --
          wie die Schreibweisen oben auch dann, wenn ein anderes Ziel schon trifft. Bei EINEM Host
          der Satz wie bisher ("this domain"), bei mehreren nennt er den Host. */
       var tipps = tippVorschlaege(d, h1);
-      var tippHtml = tipps.map(function (v) {
-        var satz = h1 ? ersetze(t("We haven't seen this domain in your citations. Did you mean {host}?"), { host: v.neu })
-          : ersetze(t("We haven't seen {alt} in your citations. Did you mean {host}?"), { alt: v.alt, host: v.neu });
-        return '<p class="uev-vz-satz"><span>' + esc(satz) + '</span>' +
-          '<button type="button" class="up-quietbtn uev-vz-statt" data-statt-alt="' + esc(v.alt) + '" data-statt-neu="' + esc(v.neu) + '">' + esc(ersetze(t("Use {host}"), { host: v.neu })) + '</button></p>';
-      }).join("");
-      /* Der leise Satz "Only pages that AI answers ... can be counted" ist seit dem 16.10. spaet weg
+      tipps.forEach(function (v) {
+        vorschlaege.push({ art: "host", alt: v.alt, neu: v.neu,
+          satz: h1 ? ersetze(t("We haven't seen this domain in your citations. Did you mean {host}?"), { host: v.neu })
+            : ersetze(t("We haven't seen {alt} in your citations. Did you mean {host}?"), { alt: v.alt, host: v.neu }),
+          knopf: ersetze(t("Use {host}"), { host: v.neu }) });
+      });
+      /* Die Vorschlaege stehen seit dem 17.10. unter dem Feld (vorschlaegeZeigen), nicht mehr hier --
+         im Vorschaubereich keine Doppelung. Bei null Treffern ersetzt ein Vorschlag weiter den Satz
+         darunter: er sagt schon, warum nichts trifft, und was man tun kann.
+         Der leise Satz "Only pages that AI answers ... can be counted" ist seit dem 16.10. spaet weg
          (Nutzer: entfernen) -- er stand unter jedem Null-Treffer und sagte nichts, was man tun kann. */
-      if (!n && (variantenHtml || tippHtml)) html += variantenHtml + tippHtml;
-      else if (!n) {
+      vorschlaegeZeigen(p, l, vorschlaege);
+      if (!n && !vorschlaege.length) {
         /* Null Treffer: je Fall ein eigener Satz (Entscheidung des Nutzers 15.10.). "Diese Domain
            wurde noch nicht zitiert" nur bei EINEM Host und nach per_target -- das oberste
            host_known gilt nur fuer das erste gueltige Ziel (Nachtrag 4.2); bei mehreren Hosts
@@ -3959,7 +4005,7 @@
         else if (h1Neu) satz = esc(t("This domain hasn't been cited yet. It will be counted from its first citation."));
         else satz = esc(t("No cited page matches yet. Matching pages count from their first citation."));
         html += '<p class="uev-vz-satz">' + satz + '</p>';
-      } else html += variantenHtml + tippHtml;
+      }
       /* "SIMILAR, BUT NOT MATCHING" IST WEG (16.10. spaet, Nutzer: "Die Plakette unten bringt nichts,
          weil man nichts damit machen kann"). Die Beinahe-Treffer, mit denen man etwas tun kann,
          stehen schon oben als Vorschlag mit Knopf: dieselbe Seite in anderer Schreibweise
@@ -3999,6 +4045,38 @@
             (p.eigenLaeuft ? '<span class="up-modal-spin"></span>' : '') + '<span>' + esc(t("Count as your domain")) + '</span></button></div>';
       }
       el.innerHTML = html;
+    }
+    /* DIE VORSCHLAEGE UNTER DEM FELD (17.10.): je Vorschlag eine Zeile -- Zeichen, Satz, rechts der
+       leise Knopf "Use ...". Kein Kasten, keine Pille (wie die Fehlerzeile aus core nur Text); der
+       Platz entsteht erst mit einem Vorschlag und klappt weich auf (klapp, wie die Treffer der
+       Suche), also kein Sprung beim Erscheinen. Hoechstens drei.
+       neu: die Vorschlaege einer frischen Antwort; [] keine; null die Vorschau fragt gerade neu --
+       dann bleiben die alten stehen, aber nur, solange ihr Ziel noch in der Liste bzw. im Feld
+       steht (l = vzListe). So verschwindet ein Vorschlag nach "Use ..." sofort, und beim Tippen
+       flackert nichts. */
+    function vorschlaegeZeigen(p, l, neu) {
+      var kl = im(".uev-vorschlag-klapp"), box = kl && kl.querySelector(".uev-vorschlaege");
+      if (!box) return;
+      if (neu) p.vorschlaege = neu;
+      var hosts = {}, urls = {};
+      l.forEach(function (z) { var h = zielHost(z); if (h) hosts[h] = 1; if (z.kind === "url") urls[z.key] = 1; });
+      var liste = (p.vorschlaege || []).filter(function (v) {
+        return v.art === "host" ? !!hosts[v.alt] : !!urls["url|" + urlSchluessel(v.alt)];
+      }).slice(0, 3);
+      var sig = liste.map(function (v) { return v.art + "|" + v.alt + "|" + v.neu; }).join(" ");
+      if (box.getAttribute("data-sig") !== sig) {
+        box.setAttribute("data-sig", sig);
+        /* Zugeklappt bleibt der alte Inhalt stehen, bis die Bewegung vorbei ist (sonst fiele die
+           Hoehe sofort auf 0); er ist dann unsichtbar und ohne Fokus (visibility). */
+        if (liste.length) box.innerHTML = liste.map(function (v) {
+          var a = v.art === "host" ? "statt" : "variante";
+          return '<div class="uev-vorschlag"><span class="uev-vorschlag-ic">' + UC.icon("bulb", 2) + '</span>' +
+            '<span class="uev-vorschlag-satz">' + esc(v.satz) + '</span>' +
+            '<button type="button" class="up-quietbtn uev-vorschlag-knopf" data-' + a + '-alt="' + esc(v.alt) + '" data-' + a + '-neu="' + esc(v.neu) + '" title="' + esc(v.knopf) + '">' +
+              '<span>' + esc(v.knopf) + '</span></button></div>';
+        }).join("");
+      }
+      klappen(kl, !!liste.length);
     }
     /* Einen Host als eigene Domain zaehlen: derselbe Weg wie "Count as: Your own site" im
        Domain-Drawer (domain_classify_v1, p_role "own"). Die Datenbank leert ihre Caches selbst;
@@ -5471,9 +5549,16 @@
       var eb = x.closest("[data-eigen-host]");
       if (eb) { if (!eb.disabled) alsEigeneZaehlen(p, eb.getAttribute("data-eigen-host")); return; }
       var st = x.closest("[data-statt-alt]");
-      if (st) { hostErsetzen(p, st.getAttribute("data-statt-alt"), st.getAttribute("data-statt-neu")); return; }
+      /* Nach "Use ..." verschwindet der Knopf mit seinem Vorschlag -- der Fokus geht ins Feld
+         zurueck, statt mit dem Knopf aus dem Dialog zu fallen. */
       var va = x.closest("[data-variante-alt]");
-      if (va) { urlErsetzen(p, va.getAttribute("data-variante-alt"), va.getAttribute("data-variante-neu")); return; }
+      if (st || va) {
+        if (st) hostErsetzen(p, st.getAttribute("data-statt-alt"), st.getAttribute("data-statt-neu"));
+        else urlErsetzen(p, va.getAttribute("data-variante-alt"), va.getAttribute("data-variante-neu"));
+        var f3 = im(".uev-zielein");
+        try { if (f3) f3.focus({ preventScroll: true }); } catch (e3) {}
+        return;
+      }
       /* ---- Sitemap ---- */
       var sa = x.closest(".uev-sm-auf");
       if (sa) { smOeffnen(p, sa.getAttribute("data-sm-url") || "", !!sa.getAttribute("data-sm-url")); return; }
