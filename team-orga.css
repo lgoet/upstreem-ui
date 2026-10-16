@@ -33,9 +33,10 @@
    Bereich ohne Grenze ueber die ganze Inhaltsspalte (1158 bei 1440) -- jetzt endet er an derselben
    Kante wie die beiden anderen Reiter, und die Tabellen sind so breit wie die im Marken-Editor
    (Drawer 720). Fuenf Spalten passen dort (gemessen: Name 199, E-Mail 217 bei 720); darum
-   schaltet team-orga.js erst unter 720 auf drei (narrowAt). Der Preis steht bei den Einladungen:
-   lange Adressen kuerzen sich (gemessen englisch E-Mail 166 und Invited by 118, deutsch 124 und 88
-   neben den 268 breiten Knoepfen). */
+   schaltet team-orga.js erst unter 720 auf drei (narrowAt). Bei den Einladungen kuerzten sich
+   daneben lange Adressen (englisch E-Mail 166 und Invited by 118, deutsch 124 und 88 neben 268
+   breiten Knoepfen mit Wort); seit dem 17.10. sind die Knoepfe nur Zeichen, Spur 99 in beiden
+   Sprachen, und E-Mail und Invited by bekommen 200 und 181 (gemessen bei 1440). */
 .uto-body { display: flex; flex-direction: column; gap: 40px; max-width: 720px; }
 .uto-body[hidden] { display: none; }
 .uto-loaderr[hidden] { display: none; }
@@ -111,15 +112,17 @@
 /* Ohne jede Aktion faellt die letzte Spalte weg -- eine Spalte mit leerem Kopf und leeren Zellen
    ist eine Spalte zu viel. */
 .uto-members.no-actions { --up-cols: minmax(0, 1.1fr) minmax(0, 1.2fr) 130px 108px; }
-/* 196 fuer die letzte Spalte: zwei Knoepfe mit Zeichen und Wort ("Resend" 82, "Revoke" 82) plus
-   6px Abstand und das Zellpolster. */
-.uto-invites { --up-cols: minmax(0, 1.4fr) 108px 130px minmax(0, 1fr) 196px; }
-/* Deutsch braucht mehr Platz: "Erneut senden" und "Zurückziehen" gegen "Resend" und "Revoke".
-   196px reichten fuer die englischen Woerter, im Deutschen brach der Knopf um. Die Marke setzt
-   core.js im Sprachlauf (data-up-locale am <html>), damit die Breite nicht in JS gerechnet werden
-   muss. Der Wert ist gemessen, nicht geraten -- siehe die Uebergabe. */
-:root[data-up-locale="de"] .uto-invites { --up-cols: minmax(0, 1.4fr) 108px 130px minmax(0, 1fr) 268px; }
-.uto-invites.no-actions { --up-cols: minmax(0, 1.4fr) 108px 130px minmax(0, 1fr); }
+/* Die letzte Spalte traegt seit dem 17.10. zwei reine Zeichenknoepfe (team-orga.js, invZelle) und
+   ist damit in jeder Sprache gleich breit -- vorher 196 englisch und 268 deutsch, mit Wort.
+   --uto-invact-w MISST team-orga.js (UC.makeAktionsSpur); der Rueckfall gilt bis zur ersten
+   Messung und ist dieselbe Summe: Spaltenlinie 1 + Polster 12 + 32 + 6 + 32 + Polster 16 = 99.
+   Die gewonnene Breite geht an E-Mail und "Invited by". Beide tragen eine Adresse, meist aus
+   derselben Firma, also etwa gleich lang; die Einladung steht in 13.5/500, der Einladende in
+   13/400, dieselbe Adresse ist links also 7 % breiter (gemessen 174 zu 163). 1.1 zu 1 gleicht das
+   aus und laesst den kleinen Rest der Einladung, um die es in der Zeile geht. Bei 1.4 zu 1 kuerzte
+   "Invited by" schon eine Adresse aus 18 Zeichen, waehrend daneben Platz frei war. */
+.uto-invites { --up-cols: minmax(0, 1.1fr) 108px 130px minmax(0, 1fr) var(--uto-invact-w, 99px); }
+.uto-invites.no-actions { --up-cols: minmax(0, 1.1fr) 108px 130px minmax(0, 1fr); }
 
 .uto-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .uto-nametxt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -198,23 +201,24 @@
 .uto-root:not(.is-vnarrow) .uto-inv-zusatz { display: none; }
 .uto-root.is-vnarrow .uto-inv-zusatz { display: block; margin-top: 2px; }
 .uto-inv-by { color: var(--vc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Zwei Knoepfe statt eines Punktmenues -- so vorgegeben. Das Bauteil ist .up-btn-sec.up-rowbtn aus
-   core (24px, Radius 7, Zeichen 13), derselbe kleine Zeilenknopf wie "Show Pages" in der
-   Domains-Tabelle. Geaendert wird daran NUR das Erscheinen: dort blendet er beim Ueberfahren ein,
-   hier stehen die zwei dauerhaft -- bei zwei Aktionen und einer Handvoll Zeilen ist Verstecken
-   kein Gewinn, sondern eine Suche. */
+/* Zwei Knoepfe statt eines Punktmenues -- so vorgegeben. Seit dem 17.10. reine Zeichen: das
+   Bauteil ist .up-iconbtn aus core (32x32, Radius 6, Zeichen 16, Hover Flaeche plus Textfarbe),
+   derselbe Knopf wie das Punktmenue der Mitglieder darueber -- in einer 52er Zeile dieselbe Groesse,
+   und Revoke steht genau unter den drei Punkten. Dauerhaft sichtbar wie dort. Abstand 6 wie .uto-act. */
 .uto-invact { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
-.uto-invact .up-rowbtn { opacity: 1; pointer-events: auto; }
+/* .up-iconbtn bringt keinen Fokusring mit (core.css, .up-es-themebtn). Hier der Ring, den die
+   Knoepfe als .up-btn-sec hatten: 2px Linie mit 2px Abstand. Die Zelle schneidet nicht ab
+   (overflow: visible oben), und 2 + 2 passen in die 6 zwischen den Knoepfen. */
+.uto-invact .up-iconbtn:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
 /* Widerrufen ist die Aktion, die etwas wegnimmt -- Warnfarbe erst beim Ueberfahren, wie im
-   Zeilenmenue der Mitglieder. */
-.uto-invact .uto-danger:hover { color: var(--vt-down); border-color: var(--vt-down); }
+   Zeilenmenue der Mitglieder. Die Flaeche bleibt die von .up-iconbtn. Fuenf Teile, weil core den
+   Hover im Dunkeln mit vier setzt (.up-root[data-theme="dark"] :is(.up-iconbtn):hover). */
+.uto-root .uto-invact .up-iconbtn.uto-danger:hover { color: var(--vt-down); }
 /* WAEHREND DES LADENS gesperrt (team-orga.js setzt disabled an jeden Knopf, bis alle drei
-   Tabellen zurueck sind). Das Aussehen ist das von .up-btn-sec:disabled aus core -- Deckkraft .45,
-   normaler Zeiger, kein Hover --, hier nur mit genug Gewicht gegen die eigenen Regeln oben:
-   .uto-invact .up-rowbtn setzt opacity: 1 mit derselben Spezifitaet wie core's :disabled, und die
-   Warnfarbe von Revoke haengt am Hover. */
-.uto-invact .up-rowbtn:disabled { opacity: .45; cursor: default; }
-.uto-invact .up-rowbtn:disabled:hover { color: var(--vc-muted); border-color: var(--vc-border); background: transparent; }
+   Tabellen zurueck sind): Deckkraft .45, normaler Zeiger, kein Hover -- wie vorher als
+   .up-btn-sec:disabled. Sechs Teile gegen die Warnfarbe oben, die sonst am Hover bliebe. */
+.uto-invact .up-iconbtn:disabled { opacity: .45; cursor: default; }
+.uto-root .uto-invact .up-iconbtn.up-iconbtn:disabled:hover { color: var(--vc-third); background: transparent; }
 .uto-act .up-iconbtn:disabled { opacity: .45; cursor: default; }
 .uto-root .uto-secbtn:disabled { opacity: .45; cursor: default; }
 .uto-logtoggle:disabled { cursor: default; }
@@ -285,30 +289,13 @@
 .uto-root.is-narrow .uto-members.no-actions { --up-cols: minmax(0, 1fr) 108px; }
 .uto-root.is-narrow .uto-mail, .uto-root.is-narrow .uto-when,
 .uto-root.is-narrow .uto-c-mail, .uto-root.is-narrow .uto-c-when { display: none; }
-/* SCHMAL: die beiden Knoepfe werden zu Zeichen. Gemeldet am 07.09.: "im Mobilmode werden keine
-   Buttons bei Pending Invites angezeigt" -- sie waren da, aber die Spalte war 196px breit und der
-   Text darin brauchte mehr, also stand nichts Brauchbares mehr.
-   Der Text verschwindet, nicht der Knopf: der Sinn steht im data-tip, und der Finger trifft ein
-   32px-Ziel besser als eine Beschriftung.
-   98px und nicht 72 (25.09. gemeldet, mit Bild: die Knoepfe standen links ueber der
-   Spaltenlinie in "Rolle"). Die 72 waren zwei 32px-Knoepfe plus 6px Luft plus 2px -- ohne die
-   POLSTERUNG der Zelle aus core (.up-td: 12 links, 16 rechts). Gemessen: 12 + 32 + 6 + 32 + 16 =
-   98. Bei 72 blieben 44px Inhalt fuer 70px Knoepfe; die 26px Ueberstand liefen wegen
-   justify-content: flex-end nach LINKS, 12 davon fing die linke Polsterung, 14 lagen ueber der
-   Linie -- genau so gemessen, in beiden Sprachen. */
-.uto-root.is-narrow .uto-invites { --up-cols: minmax(0, 1fr) 108px 98px; }
-:root[data-up-locale="de"] .uto-root.is-narrow .uto-invites { --up-cols: minmax(0, 1fr) 108px 98px; }
-.uto-root.is-narrow .uto-invact .up-rowbtn {
-  width: 32px; height: 32px; min-width: 32px; padding: 0; gap: 0; justify-content: center;
-}
-.uto-root.is-narrow .uto-invact .up-rowbtn span { display: none; }
-/* Und GANZ schmal (unter 500px, is-vnarrow) duerfen sie nicht wegfallen. core blendet dort jeden
-   .up-rowbtn aus -- gedacht fuer den optionalen Zeilenknopf in der fuehrenden Zelle ("Show Pages"
-   in der Domains-Tabelle), der den Namen aus dem Bild schiebt. Hier stehen sie in einer eigenen
-   Spalte und sind die einzigen Aktionen der Zeile: gemessen bei 380px waren beide display: none,
-   Resend und Revoke also auf dem Telefon gar nicht erreichbar. Vier Klassen gegen die drei von
-   core. */
-.uto-root.is-vnarrow .uto-invact .up-rowbtn { display: inline-flex; }
+/* SCHMAL: die Knopfspur bleibt dieselbe wie breit -- die Knoepfe sind seit dem 17.10. ueberall nur
+   Zeichen (vorher wurden sie erst hier dazu; gemeldet am 07.09.: "im Mobilmode werden keine
+   Buttons bei Pending Invites angezeigt"). Die Spur misst team-orga.js; der Rueckfall 99 rechnet
+   die Spaltenlinie mit, die alten 98 nicht (der zweite Knopf stand 1px ueber ihr, gemessen).
+   Ganz schmal (is-vnarrow) blendet core jeden .up-rowbtn aus -- .up-iconbtn nicht, Resend und
+   Revoke bleiben also auch auf dem Telefon erreichbar. */
+.uto-root.is-narrow .uto-invites { --up-cols: minmax(0, 1fr) 108px var(--uto-invact-w, 99px); }
 .uto-root.is-narrow .uto-invites.no-actions { --up-cols: minmax(0, 1fr) 108px; }
 .uto-root.is-narrow .uto-inv-by, .uto-root.is-narrow .uto-c-by { display: none; }
 /* Das Protokoll auf drei Spalten: Ziel und Details fallen weg. Fuenf Spalten auf 372px waeren

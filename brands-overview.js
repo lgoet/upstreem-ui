@@ -1320,6 +1320,30 @@
       root.classList.toggle("is-inactive-view", state.status === "inactive");
       var tag = root.querySelector(".ubo-status-tag");
       if (tag) tag.textContent = (state.status === "inactive") ? "(Inactive)" : "";
+      exportKnopfSperren();
+    }
+    /* INAKTIVE BRANDS LASSEN SICH NICHT EXPORTIEREN (17.10., Regel des Nutzers; export_brands_v2
+       liefert ohnehin nur aktive). Wie in prompts-table.js: auf Inactive ist der Export-Knopf
+       gesperrt, der Grund steht als Tooltip daran, auf Active ist er wieder frei. aria-disabled
+       statt disabled, weil ein Knopf mit disabled nicht in jedem Browser ein mouseover bekommt --
+       der Grund erschiene sonst nie. Abgewiesen wird der Klick im Klickweg unten; die Seite
+       (brands-page.js) setzt dann auch keinen Kontext. */
+    UC.addMessages && UC.addMessages("de", {
+      "Inactive brands can't be exported.": "Inaktive Brands lassen sich nicht exportieren."
+    });
+    function exportGesperrt(){ return state.status === "inactive"; }
+    function exportKnopfSperren(){
+      var zu = exportGesperrt();
+      [].forEach.call(root.querySelectorAll(".up-export:not(.up-ph-addbtn), .ubo-export"), function(b){
+        if (zu){
+          b.setAttribute("aria-disabled", "true");
+          b.setAttribute("data-tip", UC.t("Inactive brands can't be exported."));
+        } else if (b.getAttribute("aria-disabled") === "true"){
+          /* Nur zuruecknehmen, was die Sperre gesetzt hat -- der Knopf traegt sonst kein data-tip. */
+          b.removeAttribute("aria-disabled");
+          b.removeAttribute("data-tip");
+        }
+      });
     }
 
     function render(){
@@ -1720,6 +1744,9 @@
           return;
         }
         if (e.target.closest(".up-export, .ubo-export")){
+          /* Gesperrt (Inactive): weder Dialog noch Event -- auch eine alte Bubble-Verdrahtung am
+             Event exportierte sonst die inaktiven Zeilen. */
+          if (exportGesperrt()) return;
           /* Erst den Dialog, dann das eigene Event: wer data-export-instance gesetzt hat,
              bekommt den Dialog; das Event bleibt fuer bestehende Verdrahtungen bestehen. */
           openExport();

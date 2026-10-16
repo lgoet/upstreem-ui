@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261156;
+  var BUILD = 20261158;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -14277,6 +14277,30 @@
                 always closes every other one on the page regardless of group: two open dropdowns
                 is never a state we want. */
   var POPOVERS = (window.__upPopovers = window.__upPopovers || []);
+  /* ---------- inhaltsFlaeche ----------
+     Die Flaeche, in der ein Menue stehen darf, in Fensterkoordinaten: { links, rechts }.
+     DAS FENSTER IST ES NICHT (16.10.). #main ist so breit wie das Fenster, und die Seitenleiste
+     liegt FEST darueber (position: fixed, z 9900) -- was bis an den Fensterrand rechnet, steht
+     links unter ihr. Gemeldet bei 1024px auf Citations: das Untermenue Topics kippte nach links,
+     weil bis zum Fensterrand "Platz" war, und lag gemessen 144px unter der Leiste.
+     Ihre Breite kommt aus --up-sidebar-w, das sidebar.js an <html> schreibt (dieselbe Quelle wie
+     Toast und Massenleiste; 0 im hint-Zustand, dort geht sie nur ueber einem Schleier auf). Rechts
+     endet die Flaeche an der Innenkante von #main, also vor einer klassischen Bildlaufleiste.
+     Ausserhalb von #main (Portale am <body>) bleibt es beim Fenster. */
+  function inhaltsFlaeche(el){
+    var vw = window.innerWidth || document.documentElement.clientWidth || 0;
+    var f = { links: 0, rechts: vw };
+    var main = document.getElementById("main");
+    if (!main || !el || !main.contains(el)) return f;
+    try {
+      var mr = main.getBoundingClientRect();
+      f.links = Math.max(f.links, mr.left + main.clientLeft);
+      if (main.clientWidth) f.rechts = Math.min(f.rechts, mr.left + main.clientLeft + main.clientWidth);
+      var sb = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--up-sidebar-w"));
+      if (isFinite(sb) && sb > 0) f.links = Math.max(f.links, sb);
+    } catch(e){}
+    return f;
+  }
   /* ---------- makeSubmenu ----------
      Ein Dropdown NEBEN einem Dropdown: eine Zeile im Panel, aus der ein zweites Panel
      herausfaehrt. Die Geometrie steht in core.css (.up-subwrap / .up-submenu), hier steht das
@@ -14293,8 +14317,9 @@
          Dort wird aus dem Herausfahren ein HINEINGEHEN: .is-drill am Panel, .is-inside solange
          eine Zeile offen ist, und die erste Ebene tritt zurueck. Die Regeln dafuer stehen in
          core.css; hier fallen nur die Klassen und der Hover-Weg weg.
-       - Nach LINKS, und nach rechts nur wenn links kein Platz ist. Gemessen am Fenster, nicht
-         geraten.
+       - Nach RECHTS, nach links nur wenn rechts kein Platz ist, und reicht keine Seite, schmaler
+         oder ueber das Panel geschoben (seiteWaehlen). Gemessen an der Inhaltsflaeche
+         (inhaltsFlaeche: rechts von der Seitenleiste, innerhalb von #main), nicht geraten.
 
      cfg:
        panel      das Panel, in dem die Zeilen stehen (traegt is-drill / is-inside)
@@ -14405,26 +14430,65 @@
       for (var i = 0; i < l.length; i++) if (l[i].getAttribute(KEY) === key) return l[i];
       return null;
     }
-    /* Nach RECHTS, ausser rechts ist kein Platz -- dann nach links (.is-flipleft). Der Winkel in
-       der Zeile zeigt nach rechts, also gehoert das Panel dorthin; links ist der Ausweg.
-       Gemessen am Panel und an der Fensterbreite. min-width aus der CSS als Untergrenze: eine
-       Messung an einem Element, dessen Inhalt erst beim Oeffnen kommt, liefert sonst eine Breite,
-       die gleich nicht mehr gilt. */
+    /* WOHIN, UND WIE BREIT. Der Winkel in der Zeile zeigt nach rechts, also gehoert das
+       Untermenue dorthin; alles andere ist ein Ausweg. Bis zum 16.10. gab es zwei Lagen, gemessen
+       am FENSTER -- und ueber dem linken Teil des Fensters liegt die Seitenleiste (siehe
+       inhaltsFlaeche). Bei 1024px auf Citations passte rechts nichts, links "passte" es bis 8px
+       vor dem Fensterrand: Topics stand bei 106px, 144px davon unter der Leiste. Fuer die vollen
+       300 reicht dort keine Seite -- der Knopf steht bei 412, das Panel ist 340 breit, rechts
+       bleiben 259 frei, links 150. Darum zwei Lagen mehr:
+         1. rechts in voller Breite,
+         2. links in voller Breite,
+         3. die Seite mit mehr Platz, SCHMALER, bis MIN_B herunter. Schmaler statt ueberdeckt:
+            die Zeilen des Panels bleiben ganz zu sehen, und die eingezogenen Listen folgen der
+            Breite (width: 100%, filter-bar.css). Bei 1024px: 259 statt 300.
+         4. Reicht auch das nicht: rechts in MIN_B, um den fehlenden Rest ueber das Panel
+            geschoben (bei 920px mit offener Leiste: 61px ueber der Wertspalte). RECHTS, weil
+            dort nur die Werte der Zeilen liegen ("All", der Winkel); links laege es auf den
+            Namen, und auf die zeigt man, um die Zeile zu wechseln.
+            Darum nicht "unter dem Eintrag": dort deckte es die Zeilen darunter ganz zu, und der
+            Weg zu Markets fuehrte nur noch aus dem Panel heraus und wieder hinein.
+       Die Lage steht in zwei Variablen an der Schale (--up-sub-platz: hoechste Breite,
+       --up-sub-schub: Versatz nach links), die Regeln dazu in core.css bei .up-submenu. Die
+       Aufklapp-Bewegung des Panels (scale 0.985) verschiebt die gemessenen Kanten um hoechstens
+       1,5 % der Breite, also rund 3px -- der Rand von 8px nimmt das auf.
+       min-width aus der CSS als Untergrenze: eine Messung an einem Element, dessen Inhalt erst
+       beim Oeffnen kommt, liefert sonst eine Breite, die gleich nicht mehr gilt. */
+    var MIN_B = 220, RAND = 8;
     function seiteWaehlen(row){
-      /* Im Schalen-Modus traegt die Schale die Klasse, sonst die Zeile -- gemessen wird in
-         beiden Faellen der Kasten, der wirklich herausfaehrt. */
+      /* Im Schalen-Modus traegt die Schale die Lage, sonst die Zeile (die Variablen erbt das
+         Untermenue darin) -- gemessen wird in beiden Faellen der Kasten, der wirklich herausfaehrt. */
       var sub = SHELL || (row && row.querySelector(".up-submenu"));
       var ziel = SHELL || row;
       if (!sub || !ziel) return;
-      var breite = Math.max(sub.offsetWidth || 0, 220);
+      /* Die alte Lage zuerst weg, sonst misst offsetWidth die geschrumpfte Breite und haelt sie
+         fuer die volle. Nur wenn eine stand: ohne sie kein Schreiben vor dem Lesen. */
+      if (ziel.style.getPropertyValue("--up-sub-platz") || ziel.style.getPropertyValue("--up-sub-schub")){
+        ziel.style.removeProperty("--up-sub-platz");
+        ziel.style.removeProperty("--up-sub-schub");
+      }
+      var breite = Math.max(sub.offsetWidth || 0, MIN_B);
       var r = panel.getBoundingClientRect();
-      var vw = window.innerWidth || document.documentElement.clientWidth || 0;
-      var luecke = 24;   /* Polster + Abstand + Rahmen, grosszuegig gerundet */
-      var passtRechts = (r.right + luecke + breite) <= (vw - 8);
-      var passtLinks = (r.left - luecke - breite) >= 8;
-      /* Passt keine Seite, bleibt es bei rechts: dort schneidet das Fenster ab, links waere es
-         dasselbe -- und rechts ist die Richtung, die der Winkel ansagt. */
-      ziel.classList.toggle("is-flipleft", !passtRechts && passtLinks);
+      var f = inhaltsFlaeche(panel);
+      /* Der Abstand zwischen Panel und Untermenue, wie core.css ihn setzt:
+         calc(100% + --up-sub-gap + 1px) ab der Polsterkante, also gap + 1 - Rahmen. */
+      var gap = parseFloat(getComputedStyle(sub).getPropertyValue("--up-sub-gap"));
+      var abstand = (isFinite(gap) ? gap : 4) + 1 - (panel.clientLeft || 0);
+      var platzRechts = (f.rechts - RAND) - (r.right + abstand);
+      var platzLinks = (r.left - abstand) - (f.links + RAND);
+      var links = false, platz = 0, schub = 0;
+      if (platzRechts >= breite){ links = false; }
+      else if (platzLinks >= breite){ links = true; }
+      else if (Math.max(platzRechts, platzLinks) >= MIN_B){
+        links = platzLinks > platzRechts;
+        platz = Math.floor(Math.max(platzRechts, platzLinks));
+      } else {
+        platz = MIN_B;
+        schub = Math.ceil(MIN_B - platzRechts);
+      }
+      ziel.classList.toggle("is-flipleft", links);
+      if (platz) ziel.style.setProperty("--up-sub-platz", platz + "px");
+      if (schub) ziel.style.setProperty("--up-sub-schub", schub + "px");
     }
     function anwenden(animieren){
       panel.classList.toggle("is-drill", drill());
@@ -14445,7 +14509,10 @@
            Sichtbar ist er ohnehin nicht mehr (opacity 0, pointer-events none). */
         clearTimeout(zugUhr);
         SHELL.style.height = "";
-        SHELL.classList.remove("is-flipleft");
+        /* Die Lage (Seite, Breite, Versatz) bleibt ebenso stehen. Hier stand ein Zuruecksetzen
+           auf rechts in voller Breite: der ausblendende Kasten sprang dabei die ganze Breite des
+           Panels hinueber, und der unsichtbare ragte bei 1024px 26px ueber #main hinaus. Das
+           naechste Oeffnen misst ohnehin neu (anwenden -> seiteWaehlen), bevor gemalt wird. */
         return;
       }
       if (!drill()) seiteWaehlen(zeileVon(offen));
@@ -22101,7 +22168,33 @@
     if (aktivId) teams = teams.filter(function(t){ return String(t.id) === aktivId; })
       .concat(teams.filter(function(t){ return String(t.id) !== aktivId; }));
     appSidebars(function(id){ if (appRuf("setSidebarTeams")) window.setSidebarTeams(id, teams); });
+    /* Der Reiter traegt das aktive Team (17.10.). Hier, weil jede Teamliste mit aktivem Team durch
+       diese Funktion geht: der Start (appAnwenden) und das Nachladen nach einer Umbenennung
+       (account_updated, Teil "teams"). Ein Teamwechsel laedt die Seite mit ?teamid= neu und kommt
+       mit dem naechsten Start hier an; bis dahin steht dort nur die Marke aus dem Seitenkopf.
+       Nur die App kommt hierher: appStart laeuft nur mit der Seitenleiste der App, nicht in der
+       Vorfuehrung der Landingpage und nicht auf den festen Seiten. Fehlt das aktive Team in der
+       Liste, bleibt der Titel, wie er ist -- lieber der alte Name als gar keiner. */
+    if (aktivId && teams.length && String(teams[0].id) === aktivId) seitenTitel(teams[0].name);
     return teams;
+  }
+  /* DER TITEL IM BROWSER-REITER (17.10., gewuenscht: "upstreem | <Team>" auf der Hauptseite,
+     "upstreem | Sign in" usw. auf den festen Seiten). EIN Ort fuer die Form; die festen Seiten der
+     Next-App schreiben dieselbe ueber ihre Metadaten (title.template im Root-Layout). Ohne Teil nur
+     die Marke. Der Name kommt ungeprueft aus der Datenbank: Steuerzeichen und Zeilentrenner
+     werden zu einem Leerzeichen (ein Umbruch
+     trennt Woerter); die unsichtbaren Richtungszeichen (U+202A-202E, U+2066-2069, mit denen ein
+     Name die Marke davor optisch umdrehen koennte) fallen ganz weg -- als Leerzeichen rissen sie
+     ein Wort auseinander (gemessen: "Mercedes -Benz"). document.title ist Text, kein HTML --
+     also nichts zu maskieren. */
+  function seitenTitel(teil){
+    var t = String(teil == null ? "" : teil)
+      .replace(/[\u202a-\u202e\u2066-\u2069]+/g, "")
+      .replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]+/g, " ")
+      .replace(/\s+/g, " ").trim();
+    var neu = t ? "upstreem | " + t : "upstreem";
+    try { if (document.title !== neu) document.title = neu; } catch(e){}
+    return neu;
   }
   /* Aktive Prompts des Teams, die Zahl neben "Prompt Insights". null/undefined: nichts setzen -- die
      Leiste zeigt dann ihr Skelett weiter, statt einer falschen 0. */
@@ -28658,6 +28751,9 @@
     placeMenu: placeMenu,
     makePopover: makePopover,
     makeSubmenu: makeSubmenu,
+    /* Die Flaeche, in der ein Menue stehen darf (rechts der Seitenleiste, innerhalb von #main).
+       Fuer Panels, die ihre Lage selbst rechnen -- die Filterleiste tut es. */
+    inhaltsFlaeche: inhaltsFlaeche,
     closePopovers: closeAll,
     menuEscape: menuEscape,
     dropEscape: dropEscape,
@@ -28755,6 +28851,7 @@
     openDrawers: openDrawers, closeAllDrawers: closeAllDrawers, drawerOeffnen: drawerOeffnen,
     kernDrawer: kernDrawer, kernDrawerAktiv: kernDrawerAktiv, teamWarten: teamWarten, markenNachladen: markenNachladen,
     appStart: appStart, appStartAktiv: appStartAktiv, appTeamWechseln: appTeamWechseln, appTeilNachladen: appTeilNachladen,
+    seitenTitel: seitenTitel,
     anMira: anMira, miraBezug: miraBezug,
     onPrefs: onPrefs, getUpstreemThemeChoice: getUpstreemThemeChoice,
     getUpstreemThemeOption: getUpstreemThemeOption, setUpstreemThemeOption: setUpstreemThemeOption,

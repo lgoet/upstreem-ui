@@ -462,6 +462,15 @@
       var elInvites = root.querySelector("[data-uto-invites]");
       var elLogBox  = root.querySelector("[data-uto-logbox]");
       var elSecInvites = elInvites.closest(".uto-sec");
+      /* Die Knopfspur der Einladungen GEMESSEN (Regel "Aktionsspalte fit width"), nicht als Zahl
+         gerechnet: die alte schmale Fassung stand auf 98 und vergass die Spaltenlinie (1px), der
+         zweite Knopf lag dadurch einen Pixel ueber ihr. Nur echte Zeilen: die Skelettzelle hat
+         ein 0 breites Kind und ergaebe eine Spur aus Polster allein (29px), die beim Eintreffen
+         der Daten wieder aufspraenge. Bis zur ersten Messung gilt der Rueckfall aus team-orga.css. */
+      var invSpur = UC.makeAktionsSpur ? UC.makeAktionsSpur({
+        root: elInvites, zellen: ".up-row[data-uto-invrow] .uto-invact",
+        anwenden: function (px) { elInvites.style.setProperty("--uto-invact-w", px + "px"); }
+      }) : null;
       var elSecLog     = elLogBox.closest(".uto-sec");
       var elLog     = root.querySelector("[data-uto-log]");
       var elLogChev = root.querySelector("[data-uto-logchev]");
@@ -676,18 +685,19 @@
           '</span>' +
         '</div>';
       }
-      /* Und die Einladungen: ZWEI Knoepfe, kein Menue -- so vorgegeben. Beide aus core
-         (.up-btn-sec.up-rowbtn), nur dauerhaft sichtbar (team-orga.css). */
+      /* Und die Einladungen: ZWEI Knoepfe, kein Menue -- so vorgegeben. Seit dem 17.10. NUR
+         ZEICHEN ("Icon-only Button"): mit Wort belegten sie bei der 720 breiten Tabelle 196px
+         (englisch) bzw. 268px (deutsch), und E-Mail und "Invited by" kuerzten sich daneben. Der
+         Knopf ist .up-iconbtn aus core, derselbe 32er wie der Punktknopf der Mitglieder direkt
+         darueber. Das Wort steht im data-tip (Tooltip aus core) und im aria-label. */
       function invZelle(i) {
         return '<div class="up-td uto-invact">' +
-          /* data-tip an beiden: im schmalen Bild faellt die Beschriftung weg (team-orga.css),
-             und ein Knopf ohne Text muss trotzdem sagen, was er tut. */
-          '<button class="up-btn-sec up-rowbtn" type="button" data-uto-do="resend"' +
+          '<button class="up-iconbtn" type="button" data-uto-do="resend"' +
             ' data-tip="' + esc(UC.t("Resend")) + '" aria-label="' + esc(UC.t("Resend")) + '"' +
-            ' data-uto-i="' + i + '">' + UC.icon("send", 2) + '<span>' + esc(UC.t("Resend")) + '</span></button>' +
-          '<button class="up-btn-sec up-rowbtn uto-danger" type="button" data-uto-do="revoke"' +
+            ' data-uto-i="' + i + '">' + UC.icon("send", 2) + '</button>' +
+          '<button class="up-iconbtn uto-danger" type="button" data-uto-do="revoke"' +
             ' data-tip="' + esc(UC.t("Revoke")) + '" aria-label="' + esc(UC.t("Revoke")) + '"' +
-            ' data-uto-i="' + i + '">' + UC.icon("x", 2.4) + '<span>' + esc(UC.t("Revoke")) + '</span></button>' +
+            ' data-uto-i="' + i + '">' + UC.icon("x", 2.4) + '</button>' +
         '</div>';
       }
 
@@ -850,6 +860,7 @@
         mindestHoehe(elMembers, "members");
         mindestHoehe(elInvites, "invites");
         mindestHoehe(elLog, "log");
+        if (invSpur) invSpur.messen();
         /* Solange irgendein Abschnitt laedt, ist KEIN Knopf der Komponente klickbar (25.09.
            angefordert: "Buttons nicht klickbar, Loading einfach") -- auch nicht die Zeilen eines
            Abschnitts, der schon zurueck ist, waehrend die anderen noch laden. disabled und nicht
