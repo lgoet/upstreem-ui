@@ -2785,6 +2785,7 @@
     "Save current filters": "Aktuelle Filter speichern",
     "Name for these filters": "Name für diese Filter",
     "Delete {name}": "{name} löschen",
+    "Some filters no longer exist": "Einige Filter gibt es nicht mehr",
     /* Das Konto-Menue der Seitenleiste (07.09. ausdruecklich angefordert). */
     "Account Settings": "Kontoeinstellungen",
     "System": "System",
@@ -6637,27 +6638,35 @@
     try { window.dispatchEvent(new CustomEvent("up-intentfilter", { detail: neu })); } catch(e){}
     return true;
   }
+  /* EIN AUFRUF MIT DEM INTENT-FILTER (14.10., Rueckfall am 17.10. entfernt, VTR-05).
+     Fuer brand_detail_v1 und domain_detail_v1, die den Filter seit audit_14_10 kennen. Bis hierher
+     wiederholte die Funktion bei 404 PGRST202 denselben Aufruf OHNE p_intents/p_branded: kam je
+     ein PGRST202 (Schema-Cache, Signaturaenderung), zeigte der Drawer still ungefilterte Werte, als
+     waeren sie gefiltert -- leer und kaputt sahen gleich aus. Jetzt geht der Fehler an den Aufrufer
+     und steht als Fehlerzustand im Drawer. */
+  function rpcMitIntent(fn, params, opts){
+    var x = intentFilterParams(), mit = {}, k;
+    for (k in params) if (Object.prototype.hasOwnProperty.call(params, k)) mit[k] = params[k];
+    for (k in x) if (Object.prototype.hasOwnProperty.call(x, k)) mit[k] = x[k];
+    return rpc(fn, mit, opts);
+  }
+  /* WIRKSAM GEFILTERT? Alle vier wahlbaren Intents sind NICHT "kein Filter" fuer die Datenbank:
+     ein Prompt ohne Intent (jeder neue, bis er eingestuft ist: "Classifying", NULL) faellt aus
+     jeder Teilmenge heraus, und die vier Haken decken ihn nicht ab (FLT-03, 17.10.). Wer alle vier
+     waehlt, will alle sehen: dann geht kein p_intents hinaus, wie bei gar keiner Wahl. Die Haken
+     bleiben, wie sie sind (die Auswahl ist nicht unsere zu aendern), nur die Anfrage wird eine
+     ungefilterte. */
+  function intentWirksam(l){
+    l = Array.isArray(l) ? l : [];
+    if (!l.length) return false;
+    return !INTENTE.every(function(a){ return l.indexOf(a.key) >= 0; });
+  }
   /* Die Parameter fuer einen Aufruf. opts.branded === false: ohne p_branded (Prompts-Tabelle).
      Nicht freigegeben: leer -- dann geht kein einziger neuer Parameter hinaus. */
-  /* EIN AUFRUF MIT DEM INTENT-FILTER, DER NICHT AN EINEM FEHLENDEN PARAMETER STIRBT (14.10.).
-     Fuer Funktionen, die den Filter erst mit einem DB-Stand kennen (domain_detail_v1 und
-     brand_detail_v1 ab audit_14_10): ohne ihn antwortet PostgREST mit 404 PGRST202, und der
-     Drawer-Kopf waere leer. Dann einmal ohne die Filterparameter -- dasselbe wie vorher. */
-  function rpcMitIntent(fn, params, opts){
-    var x = intentFilterParams(), mit = {}, k, hat = false;
-    for (k in params) if (Object.prototype.hasOwnProperty.call(params, k)) mit[k] = params[k];
-    for (k in x) if (Object.prototype.hasOwnProperty.call(x, k)){ mit[k] = x[k]; hat = true; }
-    if (!hat) return rpc(fn, params, opts);
-    return rpc(fn, mit, opts).then(function(erg){
-      var code = erg && erg.fehler ? String(erg.fehler.code || "") : "";
-      if (erg && !erg.ok && erg.status === 404 && code === "PGRST202") return rpc(fn, params, opts);
-      return erg;
-    });
-  }
   function intentFilterParams(opts){
     if (!intentsLive()) return {};
     var f = intentFilterGet(), p = {};
-    if (f.intents.length) p.p_intents = f.intents.slice();
+    if (intentWirksam(f.intents)) p.p_intents = f.intents.slice();
     if (!opts || opts.branded !== false) p.p_branded = f.branded;
     return p;
   }
@@ -6670,7 +6679,7 @@
     f = f || {};
     function voll(x){ return !!(x && x.length); }
     if (voll(f.modelle) || voll(f.maerkte) || voll(f.topics)) return true;
-    return intentsLive() && intentFilterGet().intents.length > 0;
+    return intentsLive() && intentWirksam(intentFilterGet().intents);
   }
 
   /* Loading skeleton rows for a grid table.
