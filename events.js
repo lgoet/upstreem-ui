@@ -144,10 +144,18 @@
     return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : NaN;
   }
   function isoAus(ms) { return new Date(ms).toISOString().slice(0, 10); }
-  /* Der heutige Tag als Kalendertag. Der Vertrag rechnet im Berliner Tag; im Browser zaehlt der
-     Tag des Nutzers -- fuer das Ende des Responses-Fensters reicht das, die Analyse begrenzt
-     ohnehin selbst auf "heute". */
+  /* Der heutige Tag als Kalendertag: der BERLINER Tag. Die Datenbank rechnet Start, Status und
+     Tag x von y im Berliner Tag (Teil B: (now() at time zone 'Europe/Berlin')::date) -- mit dem Tag
+     des Browsers gab der Kalender in UTC+9 vor 07:00 Ortszeit einen Start frei, den die Datenbank
+     als "morgen" ablehnte (Audit EV-13). en-CA schreibt JJJJ-MM-TT; ein Browser ohne die Zeitzone
+     faellt auf den lokalen Tag zurueck. */
+  var BERLIN_TAG = null;
   function heuteIso() {
+    try {
+      BERLIN_TAG = BERLIN_TAG || new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" });
+      var b = BERLIN_TAG.format(new Date());
+      if (/^\d{4}-\d{2}-\d{2}$/.test(b)) return b;
+    } catch (e) {}
     var d = new Date();
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
@@ -302,16 +310,6 @@
   function pfadText(hp) { return hp.start ? t("Homepage") : hp.pfad; }
   /* Der Host genau, wie das Ziel ihn traegt (EV-08): mit www., und http:// nur dort, wo es nicht
      https ist. Nur fuer Zeilen, die sonst gleich aussaehen (hostPfad streicht beides). */
-  /* Der Koerper eines Ziels fuer p_targets (create/update/add): kind und input, bei einer Regel
-     (Pfad, Domain) dazu die Sitemap, aus der es gewaehlt wurde (sitemap_url, Teil B/C): so liest die
-     Seitenabdeckung genau die Datei, deren Baum der Nutzer gesehen hat. Eine URL-Seite bekommt
-     keine (die DB ignoriert sie dort), ein Ziel ohne bekannte Sitemap (getippt) auch nicht --
-     fehlt der Schluessel, bleibt eine vorhandene Sitemap eines Ziels unveraendert. */
-  function zielBody(z) {
-    var b = { kind: z.kind, input: z.input };
-    if (z.sitemap && z.kind !== "url") b.sitemap_url = z.sitemap;
-    return b;
-  }
   function hostGenau(url, hp) {
     try { var u = new URL(String(url)); return (u.protocol === "http:" ? "http://" : "") + u.hostname; } catch (e) { return hp.host; }
   }
@@ -534,6 +532,10 @@
        (ENDE_HINT); campaigns_unavailable ist wieder unserer: v4 war da und ist es nicht mehr. */
     "impact_event_invalid_end_date": "Please check the end date.",
     "impact_event_end_date_frozen": "This campaign has ended. Its end date can't be changed anymore.",
+    /* Nach dem Start (409, Teil B): Start und Umfang sind fest, auch wenn der Dialog sie nicht
+       mehr anbietet -- ein zweiter Tab oder ein Kollege kann den Stand verschoben haben. */
+    "impact_event_locked_field": "This can't be changed after the event has started.",
+    "impact_event_scope_frozen": "The scope can't be changed after the event has started.",
     "impact_event_campaigns_unavailable": "Date ranges aren't available right now. Please try again later."
   };
   /* impact_event_invalid_param nennt das Feld in hint -- je Feld ein eigener Satz, damit am Feld
@@ -547,6 +549,7 @@
     p_cover: "Please choose a different cover image.",
     p_tagmode: "Please choose Or or And.",
     p_event_date: "The date must be within the last 6 months.",
+    p_notify: "The setting could not be saved. Please try again.",
     p_url: "Please enter a valid URL.", p_urls: "Please enter a valid URL.",
     p_targets: "One of the targets can't be used. Please check the address."
   };
@@ -563,6 +566,8 @@
     unexpected_path: "A domain can't include a path. Use a path rule instead.",
     path_required: "Please add a path, e.g. example.com/blog.",
     invalid_entry: "One of the targets can't be used. Please check the address.",
+    /* sitemap_url je Ziel (Teil B): nur http(s), hoechstens 2048 Zeichen. */
+    invalid_sitemap_url: "The sitemap address can't be used. Please check it.",
     too_many_targets: "An event can track at most 50 targets."
   };
   function zielHint(h) {
@@ -683,9 +688,14 @@
     if (/^team_access_/.test(c)) return t("Your team doesn't have access right now.");
     /* Jedes Ratenlimit (<bereich>_rate_limited, 429) sagt dasselbe -- der Bereich ist intern. */
     if (/_rate_limited$/.test(c)) return t(FEHLER.impact_event_rate_limited);
-    if (c === "impact_event_invalid_param") return t(FEHLER_PARAM[h] || "Please check your input and try again.");
-    /* Mit Kampagnen darf der Start bis zu 12 Monate in der Zukunft liegen (Vertrag B.3). */
-    if (c === "impact_event_invalid_date" && kampagneDa()) return t("The start date must be within the last 6 months or the next 12 months.");
+    /* update_impact_event_v3 antwortet als einfaches Mitglied mit forbidden und hint
+       creator,owner,admin: dann sagt der Satz, WER es darf, statt eines allgemeinen "kein Recht". */
+    if (c === "forbidden" && /creator/.test(h)) return t(FEHLER.impact_event_forbidden);
+    /* Der Start (Teil B, hint "p_event_date: today-183 .. today+365"): von heute minus 183 Tagen
+       bis heute plus 365, auch als Parameterfehler. Der alte Satz ("within the last 6 months")
+       kennt die Zukunft nicht und waere mit Kampagnen falsch. */
+    if (c === "impact_event_invalid_date" || (c === "impact_event_invalid_param" && /^p_event_date/.test(h))) return t(STARTFENSTER());
+    if (c === "impact_event_invalid_param") return t(FEHLER_PARAM[h.split(":")[0].trim()] || "Please check your input and try again.");
     if (c === "impact_event_invalid_end_date") return t(ENDE_HINT[h] || FEHLER.impact_event_invalid_end_date);
     /* E1b: beim Anlegen steht in hint die URL selbst, die nicht ging -- bei mehreren ist das die
        einzige Stelle, die sagt, welche. Es ist die Eingabe des Nutzers; gezeigt wird sie als Text. */
@@ -702,7 +712,7 @@
     p_cover: "cover", p_event_date: "datum", p_end_date: "datum", p_tag_ids: "topics", p_tagmode: "topics", p_scope_mode: "topics", p_urls: "ziele", p_url: "ziele", p_targets: "ziele" };
   /* "ziele" (15.10.): URLs und Regeln stehen in EINEM Feld, Schritt 3 bzw. im Add-Dialog. */
   var FELD_VON_CODE = { impact_event_name_required: "name", impact_event_invalid_date: "datum",
-    impact_event_invalid_end_date: "datum", impact_event_end_date_frozen: "datum",
+    impact_event_invalid_end_date: "datum", impact_event_end_date_frozen: "datum", impact_event_locked_field: "datum", impact_event_scope_frozen: "topics",
     impact_event_topics_required: "topics", impact_event_invalid_topics: "topics", impact_event_tagmode_unavailable: "topics", impact_event_no_active_prompts: "topics",
     impact_event_invalid_url: "ziele", impact_event_url_duplicate: "ziele", impact_event_too_many_urls: "ziele",
     impact_event_invalid_target: "ziele", impact_event_too_many_targets: "ziele", impact_event_target_duplicate: "ziele", impact_event_targets_unavailable: "ziele" };
@@ -735,7 +745,17 @@
     "A campaign can run for at most 183 days.": "Eine Kampagne kann höchstens 183 Tage laufen.",
     "The end date can't be in the past.": "Das Enddatum kann nicht in der Vergangenheit liegen.",
     "This campaign has ended. Its end date can't be changed anymore.": "Diese Kampagne ist beendet. Ihr Enddatum lässt sich nicht mehr ändern.",
-    "Date ranges aren't available right now. Please try again later.": "Zeiträume sind gerade nicht verfügbar. Bitte versuch es später noch einmal."
+    "Date ranges aren't available right now. Please try again later.": "Zeiträume sind gerade nicht verfügbar. Bitte versuch es später noch einmal.",
+    "All active Prompts on the start date": "Alle aktiven Prompts am Starttag",
+    "{n} prompt was deleted since this event": "{n} Prompt wurde seit diesem Event gelöscht",
+    "{n} prompts were deleted since this event": "{n} Prompts wurden seit diesem Event gelöscht",
+    "The prompt selection is fixed on the start date.": "Die Auswahl der Prompts steht am Starttag fest.",
+    "{n} of {m} days after the event observed so far": "{n} von {m} Tagen nach dem Event bisher beobachtet",
+    "The numbers after the event only use the days that have data so far.": "Die Zahlen nach dem Event nutzen nur die Tage, für die es bisher Daten gibt.",
+    "A running event can't switch between a single day and a date range.": "Ein laufendes Event kann nicht zwischen einem einzelnen Tag und einem Zeitraum wechseln.",
+    "This can't be changed after the event has started.": "Das lässt sich nach dem Start des Events nicht mehr ändern.",
+    "The scope can't be changed after the event has started.": "Der Umfang lässt sich nach dem Start des Events nicht mehr ändern.",
+    "The sitemap address can't be used. Please check it.": "Die Sitemap-Adresse kann nicht verwendet werden. Bitte prüf sie."
   });
 
   /* DER KATALOG IST EINER FUER DIE GANZE APP. Ein Schluessel, den core schon kennt, steht hier
@@ -802,7 +822,6 @@
       "{n} Prompts kamen erst nach dem Event dazu. Sie stehen in der Kurve, aber nicht in den Vorher-Nachher-Zahlen.",
     "This topic was deleted after the event was created. Its prompts still count.":
       "Dieses Topic wurde nach dem Anlegen des Events gelöscht. Seine Prompts zählen weiter.",
-    "{n} Prompts deleted since": "{n} Prompts inzwischen gelöscht",
     "vs. comparison": "vs. Vergleich", "Comparison group": "Vergleichsgruppe", "No comparison group": "Keine Vergleichsgruppe",
     "How event analysis works": "So funktioniert die Event-Analyse",
     "An event marks a change, such as a relaunch or a campaign. Upstreem compares your AI performance before and after its date.":
@@ -892,7 +911,7 @@
      geprueft (Katalog-Kollision): keiner steht schon in core oder einer anderen Komponente. */
   if (UC.addMessages) UC.addMessages("de", {
     /* Schritte und Ziele */
-    "Step {n} of 4": "Schritt {n} von 4", "Tracking": "Tracking", "Check and create": "Prüfen und anlegen",
+    "Step {n} of 4": "Schritt {n} von 4", "Tracking": "Tracking", "Check and create": "Prüfen und anlegen", "Check and save": "Prüfen und speichern",
     "What should we track?": "Was sollen wir tracken?", "Choose what to track.": "Wähl aus, was getrackt werden soll.",
     "URLs, paths or domains": "URLs, Pfade oder Domains", "Add to tracking": "Zum Tracking hinzufügen",
     "Brand metrics only": "Nur Markenwerte", "Visibility, rank and sentiment": "Visibility, Rank und Sentiment",
@@ -1027,6 +1046,8 @@
       "Wähl die Seiten, die zu dieser Änderung gehören, oder bleib bei den Markenwerten.",
     "Check the preview and create the event, since date and prompts can't be changed later.":
       "Prüf die Vorschau und leg das Event an, denn Datum und Prompts lassen sich später nicht mehr ändern.",
+    "Check the preview and create the event. You can still change everything until it starts.":
+      "Prüf die Vorschau und leg das Event an. Bis zum Start kannst du noch alles ändern.",
     "Before and after": "Vorher und nachher",
     "Each number shows how your brand moved since the event, and vs. comparison shows how much more than in your other prompts.":
       "Jede Zahl zeigt, wie sich deine Marke seit dem Event bewegt hat, und vs. Vergleich, um wie viel mehr als in deinen übrigen Prompts.",
@@ -1264,15 +1285,17 @@
   /* Der Status als Angabe mit Zeichen, wie Datum und Typ -- keine Pille mit Punkt. Wenige
      Woerter, ohne Fachsprache: "Planned", "Running, day 5 of 21", "Completed"; ein offenes
      Tages-Event zaehlt nur seine Tage ("Day 45" -- das Datum steht schon daneben). */
+  /* Zeichen "activity", NICHT "timer": core kennt kein "timer" (UC.icon meldete es bei jedem Rendern
+     einer laufenden Kampagne und zeichnete eine leere Huelle). */
   function statusInfo(ev) {
     var s = statusVon(ev);
     if (!s) return null;
     if (s === "planned") return { s: s, ic: "clock", text: t("Planned") };
     if (istFertig(ev)) return { s: "completed", ic: "checkCircle", text: t("Completed") };
     var n = tagNummer(ev), m = mitEnde(ev) ? tagAnzahl(ev) : null;
-    if (n == null || n < 1) return { s: "running", ic: "timer", text: t("Running") };
-    if (m != null) return { s: "running", ic: "timer", text: ersetze(t("Running, day {n} of {m}"), { n: zahl(Math.min(n, m)), m: zahl(m) }) };
-    return { s: "running", ic: "timer", text: ersetze(t("Day {n}"), { n: zahl(n) }) };
+    if (n == null || n < 1) return { s: "running", ic: "activity", text: t("Running") };
+    if (m != null) return { s: "running", ic: "activity", text: ersetze(t("Running, day {n} of {m}"), { n: zahl(Math.min(n, m)), m: zahl(m) }) };
+    return { s: "running", ic: "activity", text: ersetze(t("Day {n}"), { n: zahl(n) }) };
   }
   /* Ein Zeitraum in einer Zeile: im selben Jahr steht das Jahr nur am Ende. */
   function zeitraum(a, b) {
@@ -1284,8 +1307,14 @@
   var ENDE_HINT = {
     "p_end_date: >= p_event_date": "The end date can't be before the start date.",
     "p_end_date: max 183 days": "A campaign can run for at most 183 days.",
-    "p_end_date: >= today": "The end date can't be in the past."
+    "p_end_date: >= today": "The end date can't be in the past.",
+    /* Ein Tages-Event wird keine Kampagne und umgekehrt, sobald es laeuft (Teil B). */
+    "p_end_date: day event": "A running event can't switch between a single day and a date range."
   };
+  /* Der Satz zum erlaubten Start: mit Kampagnen (v4) bis heute + 365, davor nur zurueck. */
+  function STARTFENSTER() {
+    return kampagneDa() ? "The start date must be within the last 6 months or the next 12 months." : "The date must be within the last 6 months.";
+  }
 
   /* ---- ZIELE AUS EINER EINGABE (15.10., Vertrag Abschnitt 1) --------------------------------
      Ein Ziel ist eine Regel: url (genau diese Adresse), path (alles unter host/pfad, Pfadgrenze
@@ -1365,6 +1394,17 @@
   }
   /* Ein Ziel aus der Datenbank (targets[] von get_impact_event_v3) in derselben Form. value ist
      normalisiert, input die Eingabe des Nutzers -- gezeigt wird value. */
+  /* Ein Ziel im Body an create_impact_event_v4, update_impact_event_v3 und add_impact_event_target_v1:
+     kind und input, dazu bei einem Regel-Ziel aus der Sitemap-Auswahl die Adresse der Sitemap
+     (sitemap_url, Teil B): daraus liest die Seitenabdeckung (Teil C). Fehlt der Schluessel, bleibt
+     eine schon gespeicherte Adresse, wie sie ist (update_impact_event_v3: fehlt oder null =
+     unveraendert); ein url-Ziel nimmt sie nicht (die Datenbank ignoriert sie dort). Dieselbe
+     Pruefung wie dort: http(s), hoechstens 2048 Zeichen. */
+  function zielKoerper(z) {
+    var o = { kind: z.kind, input: z.input }, sm = String(z.sitemapUrl || "");
+    if (sm && z.kind !== "url" && sm.length <= 2048 && /^https?:\/\/[^\/?#\s]+/i.test(sm)) o.sitemap_url = sm;
+    return o;
+  }
   function zielAusDb(t) {
     if (!t) return null;
     var k = String(t.kind || ""), v = String(t.value || t.input || "");
@@ -2438,9 +2478,20 @@
       if (kampagneDa() && mitEnde(ev) && !istGeplant(ev)) {
         var lk = num(w.campaign_days) || tagAnzahl(ev);
         if (istFertig(ev)) h.push(angabe("checkCircle", ersetze(t("Campaign report, {range}"), { range: zeitraum(ev.event_date, ev.end_date) })));
-        else if (lk) h.push(angabe("timer", ersetze(t("So far, compared with the {n} days before the start"), { n: zahl(lk) })));
+        else if (lk) h.push(angabe("activity", ersetze(t("So far, compared with the {n} days before the start"), { n: zahl(lk) })));
       }
-      if (seitAktiv(ev) && w.before_capped === true) h.push(angabe("info", ersetze(t("Compared with the {n} days before the event"), { n: zahl(num(w.before_days) || KAMPAGNE_TAGE) })));
+      /* "Since event" erkennt die Antwort selbst: windows.window = "since" (sonst "days" bzw. "campaign").
+         Das Vorher ist dann gleich lang wie das Nachher, hoechstens 183 Tage -- before_capped sagt,
+         dass es gekuerzt wurde, before_days, auf wie viele. */
+      if (w.window === "since" && w.before_capped === true) h.push(angabe("info", ersetze(t("Compared with the {n} days before the event"), { n: zahl(num(w.before_days) || KAMPAGNE_TAGE) })));
+      /* Ein unvollstaendiges "Nachher" (Audit EV-02): ein Event von gestern mit 30 Tagen waehlen
+         zeigt Zahlen aus EINEM Tag -- sie sahen aus wie ein 30-Tage-Vergleich. after_observed_days
+         zaehlt die Tage mit Daten, after_days die gewaehlte Laenge; after_complete false heisst
+         "noch nicht alle da". Bei Kampagnen sagt es der Satz oben (bisher, Nachlauf). */
+      var nach = num(w.after_observed_days), nachSoll = num(w.after_days);
+      if (w.mode !== "campaign" && w.after_complete === false && nach != null && nachSoll != null && nach < nachSoll)
+        h.push(angabe("info", ersetze(t("{n} of {m} days after the event observed so far"), { n: zahl(nach), m: zahl(nachSoll) }),
+          t("The numbers after the event only use the days that have data so far.")));
       if (w.limited_baseline === true) h.push(angabe("info", ersetze(t("Limited baseline ({n} days)"), { n: zahl(w.before_observed_days) }),
         t("Less historical data is available before this event for the selected period.")));
       var ov = isArr(a.overlaps) ? a.overlaps.length : 0;
@@ -3378,7 +3429,10 @@
           '</span>' + wertHtml + '</div>';
       }
       function prompts(n) { n = num(n); return n == null ? "–" : ersetze(t(n === 1 ? "{n} Prompt" : "{n} Prompts"), { n: zahl(n) }); }
-      if (d.scope_mode === "all") zeilen.push(zeile("Scope", '<span class="uev-scope-wert">' + esc(t("All active Prompts at event creation")) + '</span>'));
+      /* Solange die Kohorte offen ist (cohort_pending, ein geplantes Event), zaehlt die Auswahl am
+         STARTTAG, nicht am Tag des Anlegens: der Cron friert sie erst dann ein (Entscheidung 1). */
+      var offen = d.cohort_pending === true || istGeplant(d);
+      if (d.scope_mode === "all") zeilen.push(zeile("Scope", '<span class="uev-scope-wert">' + esc(t(offen ? "All active Prompts on the start date" : "All active Prompts at event creation")) + '</span>'));
       else {
         /* Mit And verknuepft (13.10., Spalte tag_mode): darunter in einem Satz, dass nur Prompts in
            ALLEN Topics zaehlen -- die Chips allein lesen sich als "irgendeins davon", und genau das
@@ -3405,7 +3459,13 @@
       if (num(c.post_only_prompt_count) > 0) neben.push(ersetze(t(num(c.post_only_prompt_count) === 1
         ? "{n} prompt was added after the event. It appears in the chart, but not in the before and after numbers."
         : "{n} prompts were added after the event. They appear in the chart, but not in the before and after numbers."), { n: zahl(c.post_only_prompt_count) }));
-      if (num(c.deleted_prompt_count) > 0) neben.push(ersetze(t("{n} Prompts deleted since"), { n: zahl(c.deleted_prompt_count) }));
+      /* Geloeschte Prompts zaehlen in der eingefrorenen Kohorte weiter als betroffen (Vertrag, cohort.
+         deleted_prompt_count): ohne den Satz wuerde die Zahl der betroffenen Prompts groesser
+         wirken als das, was heute in der Liste steht. Nur bei > 0, leise wie die Saetze darueber. */
+      if (num(c.deleted_prompt_count) > 0) neben.push(ersetze(t(num(c.deleted_prompt_count) === 1
+        ? "{n} prompt was deleted since this event"
+        : "{n} prompts were deleted since this event"), { n: zahl(c.deleted_prompt_count) }));
+      if (d.cohort_pending === true) neben.push(t("The prompt selection is fixed on the start date."));
       el.innerHTML = sekKopf("Event scope", "") + '<div class="uev-scope">' + zeilen.join("") +
         (neben.length ? '<div class="uev-scope-neben">' + neben.map(function (x) { return '<span>' + esc(x) + '</span>'; }).join("") + '</div>' : '') + '</div>';
     }
@@ -4411,7 +4471,12 @@
     function pruefFelder(e) {
       return '<div class="uev-vorschaublock"><div class="uev-pruef"></div>' + coverWahlHtml(e) + anheftenHtml(e) + notifySchalterHtml(e) + '</div>' +
         feld("Tracking", '<div class="uev-pruefziele"></div>') +
-        gesperrtHinweis("Date and scope can't be changed later");
+        gesperrtHinweis(startSatz(e));
+    }
+    /* Der Satz unter dem Pruefen: ein Event, das erst beginnt, ist bis dahin komplett aenderbar --
+       "can't be changed later" stimmt nur fuer einen Start bis heute (Audit EV-05). */
+    function startSatz(e) {
+      return kampagneDa() && e && e.datum && e.datum > heuteIso() ? "Planned events can be fully edited until they start." : "Date and scope can't be changed later";
     }
     /* Die Kacheln unter der Vorschau, zugeklappt bis zum Klick auf den Knopf im Band. Dieselben
        Kacheln und dieselbe Fusszeile wie coverFeld -- coverNeu stellt beide gleich. Die
@@ -5669,23 +5734,12 @@
         if (an) { try { l[i].focus({ preventScroll: false }); } catch (e) {} }
       }
     }
-    /* Die Sitemap-Datei, die der Waehler gelesen hat (source der Antwort, bei einem Rueckfall auf die
-       Domain die gefundene, nicht die getippte Adresse). Nur eine gueltige http(s)-Adresse bis 2048
-       Zeichen -- sonst keine, die DB lehnt anderes ab (invalid_sitemap_url). */
-    function smQuelle(p) {
-      var q = p && p.sm && p.sm.antwort ? String(p.sm.antwort.source || "").trim() : "";
-      return /^https?:\/\/[^\/?#\s]+/i.test(q) && q.length <= 2048 ? q : "";
-    }
     /* Die Auswahl als Ziele in die Liste (smZielVon). */
     function smUebernehmen(p) {
       var gew = smGewaehlt(p), neu = [];
-      var quelle = smQuelle(p);
-      gew.ordner.concat(gew.urls).forEach(function (key) {
-        var z = smZielVon(p.sm.knoten[key]);
-        if (z.fehler) return;
-        if (quelle && z.kind !== "url") z.sitemap = quelle;
-        neu.push(z);
-      });
+      /* Die Sitemap, aus der die Auswahl kommt, geht mit jedem Regel-Ziel mit (zielKoerper). */
+      var quelle = String(p.sm.antwort && p.sm.antwort.source || "");
+      gew.ordner.concat(gew.urls).forEach(function (key) { var z = smZielVon(p.sm.knoten[key]); if (!z.fehler) { if (quelle) z.sitemapUrl = quelle; neu.push(z); } });
       neu = neu.filter(function (z) { return !zielGewaehlt(p, z) && !zielImEvent(p, z); });
       /* Kam etwas unter einer Regel dazu, steht am Feld derselbe leise Satz wie nach der Eingabe
          (eingabeUebernehmen) -- gefragt VOR dem Hinzufuegen, sonst deckte die Auswahl sich selbst. */
@@ -5714,7 +5768,8 @@
     function im(sel) { return popup ? popup.api.el.querySelector(sel) : null; }
     /* Vier Schritte seit 15.10.: die Ziele sind ein eigener Schritt, das Pruefen der letzte. */
     function schrittText(n) {
-      return ersetze(t("Step {n} of 4"), { n: n }) + ": " + t(["Details", "Prompts", "Tracking", "Check and create"][n - 1]);
+      /* Beim Bearbeiten eines geplanten Events heisst der letzte Schritt "Check and save" (Audit EV-05). */
+      return ersetze(t("Step {n} of 4"), { n: n }) + ": " + t(["Details", "Prompts", "Tracking", popup && popup.planEventId ? "Check and save" : "Check and create"][n - 1]);
     }
     function typNeu() {
       var p = popup, tp = typVon(p.e.typ), b = im('[data-wahl="typ"]');
@@ -5871,6 +5926,13 @@
         affected_prompt_count: v && !v.fehler ? v.n : null,
         affected_url_count: mit.filter(function (z) { return z.kind === "url"; }).length,
         targets: mit.map(function (z) { return { kind: z.kind }; }) };
+      /* Eine Kampagne zeigt in der Vorschau ihren Zeitraum und ihren Stand, wie die Karte danach
+         (Audit EV-05: nur der Starttag stand da). Der Stand nur mit v4 -- sonst kennt die Karte
+         keinen Status. Tag x von y rechnet statusInfo aus den Daten, solange kein day_number da ist. */
+      if (kampagneDa()) {
+        ev.end_date = e.ende || null;
+        ev.status = e.datum > heuteIso() ? "planned" : "running";
+      }
       el.innerHTML = '<span class="up-topicmodal-label">' + esc(t("Preview")) + '</span>' +
         '<div class="uev-vorschau">' + karteHtml(ev, true) + coverKnopfHtml(p) + '</div>';
       pruefZieleZeigen();
@@ -5940,6 +6002,8 @@
         if (n === 3) box.innerHTML = zielFelder(p);
         if (n === 4) box.innerHTML = pruefFelder(p.e);
       }
+      /* Der Satz unter der Vorschau folgt dem Datum, auch wenn der Schritt schon einmal gebaut war. */
+      if (n === 4 && box) { var gs = box.querySelector(".uev-gesperrt > span:last-child"); if (gs) gs.textContent = t(startSatz(p.e)); }
       var sub = p.api.el.querySelector(".up-topicmodal-sub");
       if (sub) sub.textContent = schrittText(n);
       if (n === 2) { umfangNeu(); vorschauAnfordern(); }
@@ -6108,7 +6172,7 @@
       /* p.gesendet: dieselbe Reihenfolge wie p_targets bzw. p_urls -- der hint eines Fehlers
          ("p_targets[i]: ...") zeigt so auf das Ziel in der Liste. */
       p.zielFehler = null; p.gesendet = null;
-      if (mit.length && zieleDa()) { delete b.p_urls; b.p_targets = mit.map(zielBody); p.gesendet = mit.slice(); }
+      if (mit.length && zieleDa()) { delete b.p_urls; b.p_targets = mit.map(zielKoerper); p.gesendet = mit.slice(); }
       else if (mit.length) { p.gesendet = mit.filter(function (z) { return z.kind === "url"; }); b.p_urls = p.gesendet.map(function (z) { return z.input; }); }
       /* Der Zeitraum (17.10.): p_end_date an create_impact_event_v4 -- ohne Ende steht der
          Parameter gar nicht im Body, v4 setzt null (Vertrag B.3). */
@@ -6132,9 +6196,15 @@
            also "" fuer geleert (Beschreibung, Zeichen, Farbe, Titelbild). */
         b.p_description = e.text.trim(); b.p_icon = e.icon ? iconFuerDb(e.icon) : ""; b.p_color = e.farbe ? String(e.farbe).toLowerCase() : "";
         b.p_cover = e.cover || "";
-        b.p_targets = mit.map(zielBody);
+        b.p_targets = mit.map(zielKoerper);
         p.gesendet = mit.slice();
-        if (!(e.bereich && e.ende) && p.alt && p.alt.ende) b.p_clear_end_date = true;
+        /* Der volle Stand auch beim Verknuepfen der Topics: null heisst dort "unveraendert", und
+           ein von "And" auf "Or" gestelltes Event bliebe mit dem Weglassen auf "And" (gemessen am
+           Quelltext von update_impact_event_v3: v_mode = e.tag_mode bei null). */
+        b.p_tagmode = tagModusWirkt(e);
+        /* Aus Zeitraum wird Einzeltag: p_clear_end_date, NIE zusammen mit p_end_date (die Datenbank
+           antwortet sonst impact_event_invalid_param, hint p_clear_end_date). */
+        if (!(e.bereich && e.ende) && p.alt && p.alt.ende) { b.p_clear_end_date = true; delete b.p_end_date; }
         warten(p, "bearbeiten");
         rufen("uevUpdate", b, { popup: p });
         return;
@@ -6185,7 +6255,7 @@
         if (schon + p.e.ziele.length > ZIEL_MAX) { feldFehlerZeigen(p, "impact_event_too_many_targets", "", fehlerText("impact_event_too_many_targets")); return; }
         p.zielFehler = null; p.gesendet = p.e.ziele.slice();
         warten(p, "ziel");
-        rufen("uevAddTarget", { p_event_id: p.eventId, p_targets: p.e.ziele.map(zielBody) }, { popup: p });
+        rufen("uevAddTarget", { p_event_id: p.eventId, p_targets: p.e.ziele.map(zielKoerper) }, { popup: p });
         return;
       }
       /* 100 URLs je Event (409 impact_event_too_many_urls) -- das Detail kennt die Zahl schon. */
@@ -6803,17 +6873,56 @@
 
     /* Einmal je Seitenaufruf fragen, was die Datenbank kann (siehe ZIELE_DA oben). fertig laeuft
        danach -- auch dann, wenn schon alles bekannt war. */
-    function verfuegbarkeitHolen(fertig) {
+    /* Was die Zeilen des Speichers (team_context_v1.events) schon verraten, OHNE Aufruf (Audit
+       EV-12: bis dahin 1 bis 3 Pruefaufrufe je Seitenaufruf, darunter ein Edge-Aufruf): status heisst
+       "Kampagnen da" (Teil B), target_count/target_kinds heisst "Ziele da" (events_ziele). Eine
+       Zeile, die es nicht gibt, kann nicht von einer Datenbank ohne diese Felder kommen. */
+    function flagsAusListe() {
+      var l = UC.getEvents ? UC.getEvents() : [];
+      l.forEach(kampagneMerken);
+      if (ZIELE_DA.stand == null && l.some(function (ev) { return ev && (ev.target_count != null || isArr(ev.target_kinds)); })) ZIELE_DA.stand = true;
+    }
+    /* Was eine Probe festgestellt hat, gilt fuer die Sitzung des Tabs (sessionStorage, je Team): ein
+       Neuladen fragt nicht noch einmal. Nur eindeutige Antworten (true/false), nie "unbekannt" --
+       und ein "fehlt" haelt bis der Tab zu ist, auch wenn die Datenbank inzwischen nachzieht. */
+    var DA_SCHL = "up_events_da_v1";
+    function daLesen(tm) {
+      try { var o = JSON.parse(window.sessionStorage.getItem(DA_SCHL) || "null"); return o && o.team === tm ? o : null; } catch (e) { return null; }
+    }
+    function daMerken(tm) {
+      try {
+        window.sessionStorage.setItem(DA_SCHL, JSON.stringify({ team: tm,
+          ziele: ZIELE_DA.stand, sitemap: SITEMAP_DA.stand, kampagne: KAMPAGNE_DA.stand }));
+      } catch (e) {}
+    }
+    /* Beim Start der Ansicht und nach jeder neuen Liste: erst aus dem Speicher ableiten. Nur wenn
+       Events da sind (ihre Karten und Details haengen an den Schaltern) und etwas offen bleibt, geht
+       ein Aufruf hinaus -- OHNE die Edge Function: der Sitemap-Knopf steht erst im Anlegen- und im
+       Add-Dialog, und die beiden fragen selbst (verfuegbarkeitHolen(fertig)). Ein Team ohne Events
+       fragt gar nichts, bis jemand "Create event" drueckt. */
+    function verfuegbarkeitStart() {
       if (demo || !UC.rpc) return;
-      (UC.getEvents ? UC.getEvents() : []).forEach(kampagneMerken);
+      flagsAusListe();
+      if (!(UC.getEvents ? UC.getEvents() : []).length) return;
+      if (ZIELE_DA.stand == null || KAMPAGNE_DA.stand == null) verfuegbarkeitHolen(null, true);
+    }
+    function verfuegbarkeitHolen(fertig, ohneSitemap) {
+      if (demo || !UC.rpc) return;
+      flagsAusListe();
       teamHolen().then(function (tm) {
         if (!tm) return null;
+        var da = daLesen(tm);
+        if (da) {
+          if (ZIELE_DA.stand == null && typeof da.ziele === "boolean") ZIELE_DA.stand = da.ziele;
+          if (SITEMAP_DA.stand == null && typeof da.sitemap === "boolean") SITEMAP_DA.stand = da.sitemap;
+          if (KAMPAGNE_DA.stand == null && typeof da.kampagne === "boolean") KAMPAGNE_DA.stand = da.kampagne;
+        }
         var a = ZIELE_DA.stand != null ? null : (ZIELE_DA.laeuft || (ZIELE_DA.laeuft =
           UC.rpc("preview_impact_event_targets_v1", { p_team: tm, p_targets: [], p_days: VZ_TAGE }, { timeoutMs: 15000 }).then(function (erg) {
             ZIELE_DA.laeuft = null;
             if (fehltFn(erg)) ZIELE_DA.stand = false; else if (!unbekannt(erg)) ZIELE_DA.stand = true;
           })));
-        var b = SITEMAP_DA.stand != null || !UC.edge ? null : (SITEMAP_DA.laeuft || (SITEMAP_DA.laeuft =
+        var b = SITEMAP_DA.stand != null || !UC.edge || ohneSitemap ? null : (SITEMAP_DA.laeuft || (SITEMAP_DA.laeuft =
           UC.edge("sitemap-lesen", { team_id: tm, url: "" }, { timeoutMs: 15000 }).then(function (erg) {
             SITEMAP_DA.laeuft = null;
             /* Ein 5xx ausser 503 not_configured (sitemap-lesen Version 4: 502 edge_failed bei einem
@@ -6824,14 +6933,18 @@
                zeigen, was nicht funktioniert". */
             if (edgeFehlt(erg)) SITEMAP_DA.stand = false; else if (!unbekannt(erg) && !(erg.status >= 500)) SITEMAP_DA.stand = true;
           })));
-        /* Kampagnen (17.10.): die Analyse v4 mit der Null-Kennung -- liest nur, aendert nichts;
-           impact_event_not_found heisst "da", PGRST202 "fehlt". */
+        /* Kampagnen (17.10.): die Analyse v4 mit der Null-Kennung. Die Datenbank prueft die Kennung
+           VOR Zugang und Ratengrenze (Rueckmeldung 8): 400 impact_event_invalid_param, hint p_event_id
+           heisst "Funktion da" und zaehlt nichts; PGRST202 heisst "fehlt". Alles andere (Netz,
+           Zeit, 5xx) bleibt unbekannt, damit ein Ausfall nicht als "da" gilt. */
         var c = KAMPAGNE_DA.stand != null ? null : (KAMPAGNE_DA.laeuft || (KAMPAGNE_DA.laeuft =
-          UC.rpc(KAMPAGNE_FN.uevAnalysis, { p_team: tm, p_event_id: NULL_ID, p_window_days: 30, p_models: null, p_markets: null, p_intents: null, p_branded: null }, { timeoutMs: 15000 }).then(function (erg) {
+          UC.rpc(KAMPAGNE_FN.uevAnalysis, { p_team: tm, p_event_id: NULL_ID }, { timeoutMs: 15000 }).then(function (erg) {
             KAMPAGNE_DA.laeuft = null;
-            if (fehltFn(erg)) KAMPAGNE_DA.stand = false; else if (!unbekannt(erg)) KAMPAGNE_DA.stand = true;
+            var m = String(erg && erg.fehler && erg.fehler.message || "");
+            if (fehltFn(erg)) KAMPAGNE_DA.stand = false;
+            else if (erg && (erg.ok || /^impact_event_(invalid_param|not_found)$/.test(m))) KAMPAGNE_DA.stand = true;
           })));
-        return Promise.all([a, b, c]);
+        return Promise.all([a, b, c]).then(function () { daMerken(tm); });
       }).then(function () {
         if (root.isConnected === false) return;
         /* Hat die Antwort das Fenster des offenen Events veraendert (Kampagne, "Since event"),
@@ -6938,8 +7051,12 @@
         vis: function () { return zieleDa() ? anlZeile("folder", "example.com/blog/*") + anlZeile("globe", "*.example.com/*") : anlZeile("link", "example.com/blog/launch"); } }, anlImPopup("w3")),
       anlSchritt({ id: "w4", ziel: function () { return im(".uev-vorschau") || im(".uev-pruef"); },
         titel: "Check and create",
-        text: "Check the preview and create the event, since date and prompts can't be changed later.",
-        vis: function () { return anlZeile("lock", t("Date and scope can't be changed later")); },
+        text: function () {
+          return popup && popup.e && startSatz(popup.e) !== "Date and scope can't be changed later"
+            ? "Check the preview and create the event. You can still change everything until it starts."
+            : "Check the preview and create the event, since date and prompts can't be changed later.";
+        },
+        vis: function () { return anlZeile("lock", t(startSatz(popup && popup.e))); },
         knopf: "Create event" }, anlImPopup("w4")),
       { id: "d1", seiten: ["unten", "oben"], zurueck: false,
         ziel: function () { return elMain.querySelector('[data-sek="kpis"]'); },
@@ -7016,6 +7133,7 @@
 
     /* ---- Abos ----------------------------------------------------------------------------- */
     if (UC.onEvents) UC.onEvents(function () {
+      verfuegbarkeitStart();
       if (wartend.del && wartend.del.pruefen) loeschEntscheiden();
       state.listeZeitUm = false;
       if (listeUhrId) { clearTimeout(listeUhrId); listeUhrId = null; }
@@ -7234,8 +7352,9 @@
        sogar beim Teamwechsel"): ausserhalb nicht in der Adresse, beim Zurueckkommen wieder da, nach
        einem Teamwechsel weg -- auch ueber ein Neuladen hinweg. Vor dem ersten Stand, damit ein
        Parameter aus einem anderen Team gar nicht erst geoeffnet wird. */
-    /* Was die Datenbank schon kann (Ziele, Sitemap) -- einmal je Seitenaufruf, fuer alle Wurzeln. */
-    verfuegbarkeitHolen();
+    /* Was die Datenbank schon kann (Ziele, Kampagnen): aus der Liste abgeleitet, ein Aufruf nur,
+       wenn etwas offen bleibt (verfuegbarkeitStart); die Sitemap fragt der Dialog selbst. */
+    verfuegbarkeitStart();
     if (UC.ansichtsParameter) UC.ansichtsParameter({ ansicht: "events", schluessel: ["event"], owner: root,
       onTeamWechsel: function () { if (state.ansicht === "detail") zurUebersicht(false); } });
     /* Erster Stand: die Adresse entscheidet. spaet=true fuer einen Tiefenlink: seit 13.10. wartet

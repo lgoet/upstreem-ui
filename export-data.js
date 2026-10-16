@@ -100,6 +100,8 @@
       "Your session has expired": "Deine Sitzung ist abgelaufen", "Please sign in again.": "Bitte melde dich neu an.",
       "Please wait {n} seconds and try again.": "Warte {n} Sekunden und versuch es noch einmal.",
       "Please wait 1 second and try again.": "Warte eine Sekunde und versuch es noch einmal.",
+      "The file couldn't be created": "Die Datei konnte nicht erstellt werden",
+      "Choose fewer columns or a shorter date range and try again.": "Wähl weniger Spalten oder einen kürzeren Zeitraum und versuch es noch einmal.",
       "Inactive prompts can't be exported": "Inaktive Prompts lassen sich nicht exportieren",
       "Only active prompts are exported.": "Exportiert werden nur aktive Prompts.",
       "Data": "Daten", "Soon": "Bald",
@@ -157,7 +159,10 @@
   /* Der Teamname als Teil des Vorschlags: klein, Umlaute ausgeschrieben (ein "a" fuer "ä" liest
      sich falsch), andere Akzente ohne Zeichen (NFD trennt sie ab), alles uebrige -- Leerzeichen,
      Schraegstrich, Emoji -- wird zu einem "-". Gekuerzt wird VOR dem Abschneiden der Striche,
-     sonst endete ein langer Name auf "-". Leer, wenn nichts Lesbares uebrig bleibt. */
+     sonst endete ein langer Name auf "-". Leer, wenn nichts Lesbares uebrig bleibt: ein Teamname nur
+     aus Emoji oder japanischen Zeichen faellt ganz weg, dann steht vorne die Marke "upstreem"
+     (namenVorschlag) -- so gewollt (Audit EXP-14, 17.10.), die Datei bleibt kenntlich am Datensatz
+     und am Zeitraum. */
   function namensTeil(s, max){
     var t = String(s == null ? "" : s).toLowerCase()
       .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss");
@@ -173,11 +178,18 @@
      Rand (Windows schneidet sie, ein fuehrender Punkt versteckt die Datei auf dem Mac) und kein
      getipptes ".csv" -- das steht schon fest dahinter. */
   var VERBOTEN = /[\/\\:*?"<>|\u0000-\u001f\u007f-\u009f‎‏‪-‮⁦-⁩]/g;
+  /* Die Geraetenamen von Windows (17.10., Audit EXP-14): "CON.csv", "NUL.csv", "COM1.csv" lassen
+     sich dort nicht anlegen oder beschreiben, und das gilt auch mit Endung und fuer "con.x.csv"
+     (massgeblich ist der Teil vor dem ersten Punkt). Ein "_" davor macht daraus einen gewoehnlichen
+     Namen und laesst ihn erkennbar. Der Vorschlag trifft das nie (Team-Datensatz-Daten), nur ein
+     getippter Name. */
+  var RESERVIERT = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\.|$)/i;
   function stammSaeubern(s, fertig){
     var t = String(s == null ? "" : s).replace(VERBOTEN, "");
     if (!fertig) return t;
     t = t.replace(/\s+/g, " ").trim().replace(/\.csv$/i, "").replace(/^[.\s]+|[.\s]+$/g, "");
-    return t.length > STAMM_MAX ? t.slice(0, STAMM_MAX).replace(/[.\s]+$/, "") : t;
+    if (t.length > STAMM_MAX) t = t.slice(0, STAMM_MAX).replace(/[.\s]+$/, "");
+    return RESERVIERT.test(t) ? "_" + t : t;
   }
   /* Der Bereich der App, zu dem ein Datensatz gehoert: die Ueberschriften der Liste links, in der
      Reihenfolge der Seitenleiste. Ads traegt dort "Beta" (sidebar.js), Shopping seit dem 05.10. nicht. */
@@ -259,6 +271,23 @@
      und kein Chip, wie in der Filterleiste; "all" ist die Abweichung ("Branded: Included"), und
      abgewaehlt gilt wieder die Vorgabe (vorgabe), wie beim X der Leiste. */
   function voll(v){ return v != null && v !== "" && !(Array.isArray(v) && !v.length); }
+  /* DIE BRILLE DER APP ALS GRUNDLAGE JEDES DATENSATZES (17.10., Audit EXP-02). Intent und Branded
+     (UC.intentFilterParams) gelten fuer die ganze App, nicht fuer eine Seite. Bisher kamen sie nur
+     ueber die params, die die Seite fuer IHRE Datensaetze meldet: oeffnete Cmd+K den Dialog ohne
+     Kontext, oder wechselte man links auf einen Datensatz, den die Seite nicht gemeldet hatte
+     (Brands-Seite, links Responses), ging p_branded gar nicht mit -- die Datenbank nimmt dann "all",
+     und die Datei zaehlte Branded-Prompts, die die App ausblendet. Jetzt steht die Brille unter
+     den params der Seite (die gewinnen, auch ein "all" der Seite) und erscheint, wie dort, als Chip
+     (Intent) bzw. als Vorgabe ohne Chip (non_branded). Nur, was die Funktion kennt (KENNT). Die
+     Prompts-Tabelle nimmt davon nur die Intents: Branded ist dort ihr eigener Filter (Prompt type),
+     "branded: false" wie in der Tabelle selbst. Nicht freigegeben: leer, wie intentFilterParams. */
+  function brille(art){
+    var C = window.UpstreemCore, out = {}, kennt = KENNT[art] || [], f;
+    if (!C || typeof C.intentFilterParams !== "function") return out;
+    try { f = C.intentFilterParams(art === "prompts" ? { branded: false } : undefined) || {}; } catch(e){ f = {}; }
+    Object.keys(f).forEach(function(n){ if (kennt.indexOf(n) >= 0 && voll(f[n])) out[n] = f[n]; });
+    return out;
+  }
   var SEITE = [
     /* Das Produkt zuerst: es ist kein Filter neben anderen, sondern der Gegenstand der Seite
        (Product Detail), wie die Filter der Drawer vor allen anderen stehen. */
@@ -710,6 +739,12 @@
       btn.setAttribute("tabindex", an ? "0" : "-1");
     }
 
+    /* Die Parameter der Seite fuer einen Datensatz ueber der Brille der App (siehe brille). */
+    function seitenParams(art){
+      var out = brille(art), x = state.params[art];
+      if (x) Object.keys(x).forEach(function(n){ if (voll(x[n]) || !Object.prototype.hasOwnProperty.call(out, n)) out[n] = x[n]; });
+      return out;
+    }
     function selbstMoeglich(art){
       var cfg = EXPORTE[art];
       return !!(cfg && kern() && (cfg.neu || !BUBBLE_TYP[art]));
@@ -799,8 +834,8 @@
         var l = f.feld === "url" ? kurzUrl(v) : (f.feld === "domain" ? String(v) : (state.filterLabel || tr(f.ersatz)));
         out.push({ feld: f.feld, icon: f.icon, label: l, title: l, weg: !!state.weg[f.feld] });
       });
-      var x = state.params[art], kennt = KENNT[art] || [];
-      if (!x || !selbstMoeglich(art)) return out;
+      var x = seitenParams(art), kennt = KENNT[art] || [];
+      if (!selbstMoeglich(art)) return out;
       SEITE.forEach(function(c){
         var haupt = c.params.filter(function(n){ return n !== "p_tagmode" && kennt.indexOf(n) >= 0 && (c.aktiv ? c.aktiv(x[n], art) : voll(x[n])); });
         if (!haupt.length) return;
@@ -1434,6 +1469,7 @@
       /* Schliessen bricht einen laufenden Export ab (das sagt der Satz unter dem Balken): die
          naechste Seite wird nicht mehr geholt, nichts heruntergeladen. */
       state.phase = "wahl"; state.schritt = "einst"; state.offen = ""; state.fehler = ""; state.zeitFehler = ""; state.lauf = null; state.ergebnis = null;
+      laufStoppen();
       // never hide a focused element from assistive tech — move focus out FIRST
       if (overlay.contains(document.activeElement)){
         try {
@@ -1608,7 +1644,7 @@
          ihren Standardwert, und ein Name weniger ist ein Grund weniger fuer PGRST202. Ein
          abgewaehlter Chip nimmt alle seine Parameter mit (Topics samt Modus) oder setzt die
          Vorgabe der App (Branded). Auf dem Bubble-Weg gibt es keine (filterFuer). */
-      var x = state.params[art] || {}, kennt = KENNT[art] || [];
+      var x = seitenParams(art), kennt = KENNT[art] || [];
       /* Die Parameter der Drawer-Filter (p_url, p_domain, p_prompt_id, p_brand) kommen NUR ueber
          ihren Chip: meldet ein Drawer sie auch in params, ginge ein abgewaehlter Filter sonst still
          ueber die Liste wieder mit. */
@@ -1702,6 +1738,16 @@
       else { state.fehler = satz; state.zeitFehler = ""; }
     }
     var laufZaehler = 0;
+    /* DER ABBRUCH DER LAUFENDEN ANFRAGE (17.10., Audit EXP-13). Vorher setzte "Cancel export" nur den
+       Zustand zurueck: die Seite, die schon unterwegs war, lief in der Datenbank weiter (bis zu 30 s
+       statement_timeout) und zaehlte in die Ratengrenze (60 je Minute und Typ), und ihre Antwort
+       wurde erst danach verworfen. UC.rpc kennt opts.signal. Ein Griff je Lauf; Abbrechen, Schliessen
+       und der Start eines neuen Laufs geben ihn frei. */
+    var laufAbbruch = null;
+    function laufStoppen(){
+      var a = laufAbbruch; laufAbbruch = null;
+      if (a){ try { a.abort(); } catch(e){} }
+    }
     /* true: die Komponente exportiert selbst. false: Bubble-Weg. */
     function exportSelbst(){
       var art = state.type, cfg = EXPORTE[art], k = kern();
@@ -1720,6 +1766,9 @@
          des alten wertlos -- ohne die Nummer haette eine verspaetete Seite des abgebrochenen Laufs
          den neuen weitergefuehrt. */
       var nr = ++laufZaehler;
+      laufStoppen();
+      var ac = typeof AbortController !== "undefined" ? new AbortController() : null;
+      laufAbbruch = ac;
       state.fehler = ""; state.zeitFehler = ""; state.offen = "";
       /* spalten: wie viele Spalten die Datei hat, sobald der Spaltensatz da ist (erster Schritt). */
       state.lauf = { nr: nr, zeilen: 0, gesamt: null, seiten: 0, limit: cfg.seite, kappe: cfg.seite * MAX_SEITEN, spalten: null };
@@ -1730,10 +1779,21 @@
       /* Zurueck zur Wahl; steht der Fehler am Zeitraum, steht der Fokus dort. */
       function zurueck(){ state.lauf = null; state.phase = "wahl"; renderAll(); if (!(state.zeitFehler && fokus(elZeitfeld))) fokusFuss(); }
       function scheitern(erg){ if (!aktiv()) return; fehlerSetzen(exportSatz(erg)); zurueck(); }
+      /* Eine Ausnahme im Erfolgszweig (die Datei ist zu gross fuer einen String oder Blob, der Speicher
+         reicht nicht): das Promise wuerde sie still verwerfen, und der Dialog bliebe fuer immer auf
+         "Exporting..." (Audit EXP-03, gemessen 17.10.). Jetzt ein Satz, und der Dialog ist wieder
+         bedienbar -- Zeitraum und Spalten stehen noch da. */
+      function dateiFehler(){
+        if (!aktiv()) return;
+        fehlerSetzen(["The file couldn't be created", "Choose fewer columns or a shorter date range and try again."]);
+        zurueck();
+      }
+      /* opts fuer UC.rpc samt Abbruch-Signal dieses Laufs (falls der Browser AbortController kennt). */
+      function rpcOpts(o){ if (ac) o.signal = ac.signal; return o; }
       function auchBubble(){ if (!aktiv()) return; BUBBLE_TYP[art] = true; state.lauf = null; state.phase = "wahl"; renderAll(); fireExportBubble(); }
       function fehlt(){ if (!aktiv()) return; da.stand = false; zurueck(); daGeaendert(); }
       if (sp && sp.stand === true && sp.spalten){ spalten = sp.spalten; state.lauf.spalten = gewaehlt().length; seite(0); return true; }
-      k.rpc("export_columns_v1", { p_export: cfg.spalten }, { timeoutMs: 20000 }).then(function(erg){
+      k.rpc("export_columns_v1", { p_export: cfg.spalten }, rpcOpts({ timeoutMs: 20000 })).then(function(erg){
         if (!aktiv()) return;
         if (da && exportFehlt(erg)) { fehlt(); return; }
         if (!da && ohneRpc(erg)) { auchBubble(); return; }
@@ -1744,12 +1804,12 @@
         state.lauf.spalten = gewaehlt().length;
         renderAll();
         seite(0);
-      }, scheitern);
+      }, scheitern).catch(dateiFehler);
       function seite(offset){
         if (!aktiv()) return;            /* abgebrochen oder Dialog geschlossen */
         var p = {}; Object.keys(basis).forEach(function(n){ p[n] = basis[n]; });
         p.p_offset = offset;
-        k.rpc(cfg.fn, p, { timeoutMs: 120000 }).then(function(erg){
+        k.rpc(cfg.fn, p, rpcOpts({ timeoutMs: 120000 })).then(function(erg){
           if (!aktiv()) return;
           if (da && exportFehlt(erg)) { fehlt(); return; }
           if (!da && ohneRpc(erg)) { auchBubble(); return; }
@@ -1769,16 +1829,18 @@
           var g = gewaehlt();
           var blob = new Blob([csvBauen(g, zeilen)], { type: "text/csv;charset=utf-8" });
           herunterladen(blob, name);
+          if (laufAbbruch === ac) laufAbbruch = null;
           state.ergebnis = { n: zeilen.length, name: name, groesse: blob.size, spalten: g.length, gekappt: m.has_more === true };
           state.lauf = null; state.phase = "fertig";
           renderAll(); fokusFuss();
-        }, scheitern);
+        }, scheitern).catch(dateiFehler);
       }
       return true;
     }
     function abbrechen(){
       if (state.phase !== "laeuft") return;
       state.lauf = null; state.phase = "wahl";
+      laufStoppen();
       renderAll(); fokusFuss();
     }
     /* "Export another" (fertig): zurueck zu den Einstellungen, Datensatz und Wahl bleiben -- links

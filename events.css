@@ -876,6 +876,10 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-geplant-box { padding: 8px; }
 /* Kampagne: ihre Abschnitte stehen fest, kein Fenster-Umschalter. */
 .uev-detail.is-kampagne .uev-fenster { display: none; }
+/* "Since event" gibt es nur bei offenen, laufenden Events mit v4 (segSetzen setzt hidden). Das
+   display: inline-flex der Segmentknoepfe in core schlaegt das hidden-Attribut (Audit EV-01:
+   gemessen display flex bei hidden = true), also hier mit hoeherer Spezifitaet. */
+.uev-fenster .up-seg-btn.uev-fenster-seit[hidden] { display: none; }
 /* DER ABSCHLUSSBERICHT: drei Abschnitte in einem Kasten, getrennt durch Linien wie das
    Kennzahlen-Band (.up-kpiband). Je Abschnitt Titel und Zeitraum, darunter die drei Kennzahlen
    als Zeilen (Bezeichnung links, Wert mit Trend rechts). Am Telefon untereinander. */

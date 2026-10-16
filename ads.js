@@ -2430,7 +2430,11 @@
       var grund = grundBody();
       delete grund.p_team; delete grund.p_date_from; delete grund.p_date_to;
       function neu(extra) { return mit(mit({}, grund), extra || {}); }
-      var detail = s === "advertiser" && str(state.advertiser).trim() ? { p_advertisers: [str(state.advertiser).trim()] } : {};
+      /* Der Name GENAU so, wie ihn das Detail an get_ads_advertiser_detail_v2 schickt (detailAnfrage:
+         str(state.advertiser), ohne trim): die Datenbank vergleicht p_advertisers exakt, Gross- und
+         Kleinschreibung zaehlt (DB 17.10.), und ein getrimmter oder kleingeschriebener Name fuehrte
+         zu 0 Zeilen statt der 5 des Details (BMW USA). Nur die Leerpruefung schneidet ab. */
+      var detail = s === "advertiser" && str(state.advertiser).trim() ? { p_advertisers: [str(state.advertiser)] } : {};
       var advSuche = s === "advertisers" ? suchText(state.advertisers.suche) : null;
       /* Die Suche der Bibliothek gilt in beiden Modi (libAnfrage und promptAnfrage lesen sie). */
       var libSuche = s === "library" ? suchText(lb.suche) : null;
