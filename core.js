@@ -8479,6 +8479,9 @@
   var ZAHL_ZEILEN_MAX = 60;
   function istZahlWert(c){
     var cl = c.classList;
+    /* Der Strich fuer "kein Wert" (.is-empty) ist keine Zahl: in Teams steht er als .up-num in der
+       Plan-Spalte, deren Pillen Text sind -- ein Strich allein machte den Kopf zur Zahlenspalte. */
+    if (cl.contains("is-empty")) return false;
     return cl.contains("up-num") || cl.contains("up-rank-group") || cl.contains("tct-num") || cl.contains("tct-used") ||
       (cl.contains("up-sent") && !cl.contains("up-pille"));
   }
@@ -8487,7 +8490,7 @@
     if (!n || kopf.closest(".ulh-root")) return;
     var cont = kopf.parentElement;
     if (!cont) return;
-    var offen = 0, gesetzt = [];
+    var offen = 0, gesetzt = [], spurGeprueft = [];
     for (var i = 0; i < n; i++){
       var th = kopf.children[i];
       if (th.classList.contains("up-th-zahl") || !(th.classList.contains("up-th") || th.classList.contains("vt-th") || th.classList.contains("tct-th"))) gesetzt[i] = true;
@@ -8504,8 +8507,18 @@
         var td = r.children[k];
         var hat = false;
         for (var c = td.firstElementChild; c; c = c.nextElementSibling){ if (istZahlWert(c)){ hat = true; break; } }
+        var cs = null;
+        /* Die Spalte hat keine Zahl als direktes Kind, ihre Komponente hat sie aber als Zahlenspalte
+           ausgewiesen: --up-spur (die Spur ihres Formats, core.css "DIE FESTE SPUR") steht an der
+           Zelle. So die Kontingente in Teams ("12 / 50": die Zahl steht in einer Huelle). Je Spalte
+           einmal gelesen -- die Spur haengt an der Spaltenklasse, nicht an der Zeile. */
+        if (!hat && !spurGeprueft[k]){
+          spurGeprueft[k] = true;
+          cs = getComputedStyle(td);
+          hat = cs.getPropertyValue("--up-spur").trim() !== "";
+        }
         if (!hat) continue;
-        if (getComputedStyle(td).justifyContent !== "flex-end") continue;
+        if ((cs || getComputedStyle(td)).justifyContent !== "flex-end") continue;
         kopf.children[k].classList.add("up-th-zahl");
         gesetzt[k] = true; offen--;
       }
