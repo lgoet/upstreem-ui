@@ -4565,6 +4565,13 @@
     .up-root.is-resizing { cursor: col-resize; user-select: none; }
     .up-root.is-resizing .up-row { cursor: col-resize; }
     .up-th.is-sortable:hover { color: var(--vc-text); }
+    /* Tastaturfokus an Sortierkopf und Zeile (17.10.): Hausregel der Knoepfe, 2px Linie in
+       --up-focus. Der Abstand liegt INNEN (-2px): Kopf und Zeilen stossen Kante an Kante aneinander
+       und an den Rand des Kastens, ein Ring mit 2px Luft ausserhalb wuerde dort abgeschnitten
+       bzw. auf die Nachbarzeile gemalt. Ohne Regel zeichnete der Browser sein eigenes Blau (auto 1px). */
+    .up-th.is-sortable:focus-visible,
+    .up-row:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: calc(var(--up-focus-w) * -1); }
+    .up-th.is-sortable:focus-visible { color: var(--vc-text); }
 
     /* Kopf-Sortierer: zwei Chevrons uebereinander, je 2px zusammengezogen. Die Geometrie ist
        Lucide chevron-up / chevron-down. Der aktive zeigt in die Sortierrichtung. 15 statt 14 seit

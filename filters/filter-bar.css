@@ -356,6 +356,18 @@
    so lassen sich zwei uebereinanderliegende Regler greifen), und ein auto am Kind hebt jedes none
    der Vorfahren auf. visibility nimmt sie mit aus dem Treffertest. */
 .ufb-sub .up-ff-panel { visibility: hidden; }
+/* Das geschlossene Untermenue steht UNSICHTBAR (opacity 0) rechts neben dem Panel, und seine Box
+   zaehlt trotzdem zum scrollbaren Ueberhang: bei 768 Breite ragte es 13,5px ueber #main hinaus, die
+   Seite liess sich seitlich wischen (17.10. gemessen, Prompts und Brands). Geschlossen haengt es
+   deshalb an der RECHTEN Kante des Panels und ragt nach links (das erzeugt in LTR nie einen
+   scrollbaren Ueberhang); die Lage wechselt erst NACH dem Ausblenden (Verzoegerung = Dauer des
+   Ausblendens, --up-t-1), beim Oeffnen sofort -- dort gilt die Regel nicht mehr, und die Bewegung bleibt
+   die von core. is-flipleft liegt ohnehin links und braucht sie nicht. */
+.ufb-sub:not(.is-shown):not(.is-flipleft) {
+  left: auto; right: 0;
+  transition: opacity var(--up-t-1) ease, transform var(--up-t-1) ease, top var(--up-t-1) ease, height var(--up-t-1) ease,
+              left 0s linear var(--up-t-1), right 0s linear var(--up-t-1);
+}
 .ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .up-ff-panel { visibility: visible; }
 /* Die Huelle traegt keine eigene Geometrie -- sie ist nur der Schalter zwischen den drei
    Inhalten. */

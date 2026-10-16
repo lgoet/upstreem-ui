@@ -769,9 +769,12 @@
             if (erg.ueberholt) return null;
             return function () {
               var g = erg.ok ? D.zuGruppen(erg.daten) : null;
-              if (!g) { fehlerToast(erg, t("The groups could not be loaded")); g = []; }
+              /* Gescheitert ist nicht leer: die Tabelle bekommt den Fehler als dritten Wert und zeigt
+                 ihren Lesefehler statt "No groups" (der Toast allein verschwand nach Sekunden). */
+              var fehler = !g;
+              if (fehler) { fehlerToast(erg, t("The groups could not be loaded")); g = []; }
               eigeneAufraeumen(erg.ok ? D.abgelegteTopics(erg.daten) : []);
-              try { setter("setPromptsTableGroups")(ids.upt, g); } catch (e) {}
+              try { setter("setPromptsTableGroups")(ids.upt, g, fehler ? "error" : "ok"); } catch (e) {}
             };
           });
         }
