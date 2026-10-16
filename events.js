@@ -1140,7 +1140,8 @@
     "No competitors to compare yet": "Noch keine Wettbewerber zum Vergleichen",
     "Competitors you track appear here with their visibility before and after the event.":
       "Wettbewerber, die du trackst, erscheinen hier mit ihrer Visibility vor und nach dem Event.",
-    "This page opens once an AI answer cites it.": "Diese Seite lässt sich öffnen, sobald eine KI-Antwort sie zitiert."
+    "Not cited yet": "Noch nicht zitiert",
+    "No AI answer has mentioned this page so far. As soon as one does, you can open its details here.": "Bisher hat keine KI-Antwort diese Seite erwähnt. Sobald eine das tut, kannst du hier ihre Details öffnen."
   });
   /* 17.10.: Seitenabdeckung je Regel (Teil C) und Konfidenz je Kennzahl (Teil D). Gegen alle
      Kataloge geprueft; "Refresh" und "Show {n} more" stehen schon (core bzw. oben) und werden nur
@@ -2869,7 +2870,8 @@
        schreiben nur noch in den Inhalt. Die Zeilenzahl bleibt beim Wechsel des Events, die Seite
        beginnt wieder bei 1. */
     var SEITEN_GROESSE = UC.DEFAULT_PAGE_SIZE || 15;
-    var seitenGroesse = { markt: SEITEN_GROESSE, urls: SEITEN_GROESSE };
+    var URLS_SEITE = 10;   /* "Affected URLs": 10 Zeilen als Standard (Nutzer 17.10.); die Marktbewegung bleibt bei 15 */
+    var seitenGroesse = { markt: SEITEN_GROESSE, urls: URLS_SEITE };
     var seiten = {};
     function fussHtml() {
       return '<div class="up-foot uev-foot" hidden>' +
@@ -2892,7 +2894,9 @@
     function pagerAnlegen(el, n, zeichnen) {
       var st = { page: 1, pageSize: seitenGroesse[n] || SEITEN_GROESSE, totalCount: null, loading: false };
       var neu = function () { seitenGroesse[n] = st.pageSize; st.loading = false; zeichnen(); };
-      seiten[n] = { st: st, el: el, kit: UC.makePager ? UC.makePager({ root: el, state: st, onChange: neu }) : null };
+      seiten[n] = { st: st, el: el, kit: UC.makePager ? UC.makePager(n === "urls"
+          ? { root: el, state: st, onChange: neu, pageSizes: function () { return [URLS_SEITE, 25, 50, 100]; } }
+          : { root: el, state: st, onChange: neu }) : null };
       /* Die Klicks der Fusszeile wie in Shopping und Ads -- der Pager aus core zeichnet nur. */
       el.addEventListener("click", function (e) {
         var k = seiten[n] && seiten[n].kit;
@@ -2983,8 +2987,9 @@
        die Spalte heisst schon "First cited", der Chip sagt nur noch wann. Nie "noch nie zitiert"
        (Vertrag 5): gezaehlt wird nur in den betroffenen Prompts des eigenen Teams. Zitiert in der
        Schriftfarbe, nicht zitiert zurueckgenommen -- der Text sagt es, die Farbe stuetzt nur. */
-    /* still: die Zeile oeffnet nichts (urlZitiert) -- dann sagt der Chip am Zeiger in einem Satz,
-       warum (15.10. nachts). Derselbe Chip, dasselbe Wort wie in jeder anderen Zeile. */
+    /* still: die Zeile oeffnet nichts (urlZitiert). Der Chip bleibt derselbe wie in jeder anderen Zeile;
+       WARUM nichts aufgeht, sagt seit 17.10. erst der Klick auf die Zeile (nichtZitiertHinweis), nicht
+       mehr der Zeiger. */
     function beobachtung(o, still) {
       o = o || {};
       var st = o.status, txt, ja = true;
@@ -2997,8 +3002,7 @@
           : ersetze(t(n === 1 ? "After 1 day ({date})" : "After {n} days ({date})"), { n: zahl(n), date: datum(o.first_observed_day) });
       } else if (st === "not_observed_within_6_months") { txt = t("Not within 6 months"); ja = false; }
       else { txt = t("Not yet"); ja = false; }
-      return '<span class="up-marke is-leise uev-beob' + (ja ? " is-ja" : "") + '"' +
-        (still ? ' data-tip="' + esc(t("This page opens once an AI answer cites it.")) + '"' : '') + '>' + esc(txt) + '</span>';
+      return '<span class="up-marke is-leise uev-beob' + (ja ? " is-ja" : "") + '">' + esc(txt) + '</span>';
     }
     /* IST DIESE URL SCHON ZITIERT? (15.10. nachts: "Klick auf eine noch nicht zitierte URL oeffnet
        einen leeren, scheiternden URL-Detail-Drawer"). Das URL-Detail kennt nur Seiten, die das
@@ -3008,6 +3012,13 @@
        (observed_before_event) -- oder dem Team schon beim Hinzufuegen bekannt (team_kannte_url).
        Ohne Eintrag in der Analyse (laedt noch, gescheitert, Cache aelter als die URL) zaehlt nur das
        letzte; eine URL, von der niemand weiss, ob es sie zu oeffnen gibt, oeffnet nicht. */
+    /* Der Hinweis auf den Klick einer Seite ohne Zitat (Nutzer 17.10.: "Zeile nicht oeffenbar" las sich
+       wie ein Fehler). Er sagt, WARUM es noch nichts zu sehen gibt und WANN es etwas gibt: Titel
+       "Not cited yet", darunter der Satz. Ein stehender Toast unten, kein Tooltip am Zeiger. */
+    function nichtZitiertHinweis() {
+      if (UC.toast) UC.toast(t("Not cited yet"), { kind: "neutral",
+        desc: t("No AI answer has mentioned this page so far. As soon as one does, you can open its details here.") });
+    }
     function urlZitiert(u, an) {
       if (u && u.team_kannte_url === true) return true;
       if (!an) return false;
@@ -4050,7 +4061,10 @@
       var abm = e.target.closest("[data-abd-baum-mehr]");
       if (abm) { var ast2 = abdBaumSt(abm.getAttribute("data-ziel-id")), ak2 = abm.getAttribute("data-abd-baum-mehr"); ast2.mehr[ak2] = (ast2.mehr[ak2] || 0) + ABD_SICHT; abdAlle(); return; }
       /* Eine Seite, die noch nicht zitiert ist, oeffnet sich nicht: das sagt die Zeile erst auf den Klick. */
-      if (e.target.closest("[data-abd-seite]")) { if (UC.toast) UC.toast(t("This page opens once an AI answer cites it."), { kind: "neutral" }); return; }
+      if (e.target.closest("[data-abd-seite]")) { nichtZitiertHinweis(); return; }
+      /* Dasselbe fuer eine stille Zeile der Tabelle "Affected URLs" (uev-urlstill): erst der Klick
+         sagt es, nicht der Zeiger. "Remove" in der Zeile behaelt seinen eigenen Weg. */
+      if (e.target.closest(".uev-urlstill") && !e.target.closest(".uev-urlweg")) { nichtZitiertHinweis(); return; }
       if (e.target.closest(".uev-anl-toggle")) { anleitungUmschalten(); return; }
       /* Zitierte URL einer Regel: die Antwort, in der sie zuerst zitiert wurde (15.10.). */
       var zz = e.target.closest(".uev-zitzeile");
