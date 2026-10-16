@@ -1162,6 +1162,24 @@ Info-Zeichen der anderen mit `margin-left: auto` steht.
 `aria-hidden`: das Wort daneben sagt alles. Neue Tabellen bekommen ihr Kopfzeichen über
 `UC.kopfZeichenHtml` und je Spalte eine `art` (Abschnitt 8d).
 
+**Das Wort kürzt, die Zeichen bleiben** (seit 16.10., gemeldet: im Deutschen stand das
+Info-Zeichen an „Brand-Erwähnungen“ außerhalb der Kopfzelle). In jeder Kopfzelle (`.up-th`,
+`.vt-th`, `.tct-th`) steht das Wort in `.up-th-txt` (`min-width: 0`, „…“); Kopfzeichen,
+Info-Zeichen und Sortierpfeil schrumpfen nie. Reicht die Spalte nicht, kürzt das Wort – das
+Info-Zeichen bleibt immer in der Zelle.
+
+```
+Nackter Text   <div class="up-th">Market<span class="up-th-info">…</span></div> packt core selbst
+               ein (kopfTexte, über den Beobachter, auch für Köpfe, die eine Komponente später neu
+               schreibt). Ein nackter Text ist ein anonymes Flex-Kind und schrumpft nie -- genau
+               daran lag es. Neue Köpfe schreiben .up-th-txt gleich selbst
+Voller Wortlaut  mit Info-Zeichen nennt ihn die Erklärkarte (Titel = Etikett); ohne zeigt ihn ein
+               Tooltip, solange das Wort wirklich gekürzt ist (data-tip beim Überfahren)
+Breiten        werden dafür nicht vergrößert (Wunsch: lieber kürzen); nur wo sonst kaum mehr als
+               ein Buchstabe stünde
+Ausgenommen    "Mentioned?" (.up-th-mentlbl baut die Tabelle selbst) und die Landingpage
+```
+
 **Tabellenköpfe im Drawer** (seit 15.10. spät, `core.css` „DIE TABELLENKOEPFE IM DRAWER“): jede
 Tabelle in einem Drawer (`.up-kdr`, `[id^="drawer-"]`) trägt den Kopf der Seitentabellen, behält
 aber ihren Kasten mit Rand und Radius 12 — sie wird **nicht** flach. **Im Dunkeln** (nach Geist)

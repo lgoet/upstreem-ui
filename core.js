@@ -8194,6 +8194,117 @@
     if (html) th.insertAdjacentHTML("afterbegin", html);
   }
 
+  /* ---------- kopfTexte ----------
+     DER TEXT EINES SPALTENKOPFS STEHT IN EINEM EIGENEN ELEMENT (16.10.). Gemeldet im deutschen
+     Setting: in der Prompt-Tabelle lag das Info-Zeichen an "Brand-Erwaehnungen" ausserhalb der
+     Kopfzelle. Der Kopf steht im Markup als NACKTER Textknoten neben seinen Zeichen
+     (<div class="up-th">Brand Mentions<span class="up-th-info">...</span></div>, ebenso Market,
+     Topics, Citations, Type, die Koepfe von Teams, Team-Verwaltung und Events). Ein nackter Text in
+     einem Flex-Kasten wird ein ANONYMES Flex-Kind, und das schrumpft nie unter seine Textbreite:
+     min-width und text-overflow lassen sich an ihm nicht setzen. Ist das Wort laenger als die
+     Spalte, schiebt es das Info-Zeichen ueber das Polster hinaus, und overflow: hidden der Zelle
+     schneidet es ab. Gemessen bei 1440 (Prompt-Tabelle, Gruppenansicht, Spalte 180.8 breit):
+     Text 3.8px im Polster, Info-Zeichen 24.8px ueber der Inhaltskante, davon 8.8 ausserhalb der
+     Zelle. Englisch passte es knapp, "Brand-Erwaehnungen" ist 21px laenger als "Brand Mentions".
+     .up-th-txt (core.css) schrumpft und kuerzt mit "…", Zeichen, Info und Sortierpfeil behalten
+     ihre Breite. Also bekommt jeder nackte Text eines Kopfs diese Huelle -- EINMAL hier und nicht
+     in jedem Markup: Koepfe bauen ein Dutzend Dateien, die meisten aus handgemachtem Markup, und
+     eine Komponente, die ihren Kopf spaeter neu schreibt, faellt wieder in die nackte Form. Der
+     Beobachter ruft das fuer jeden frischen Ast (laufUeber) und fuer jeden neuen Kopftext.
+     Ein Kopf, der schon .up-th-txt traegt, hat keinen nackten Text und bleibt, wie er ist.
+     Der volle Wortlaut bleibt erreichbar: die Erklaerkarte am Info-Zeichen traegt ihn als Titel,
+     ohne Info-Zeichen zeigt ihn ein Tooltip (kopfTipPruefen), und ein Vorleser liest ihn ohnehin
+     ganz (die Kuerzung ist nur gezeichnet).
+     AUSGENOMMEN:
+       .up-th-mentioned/.up-th-ment  responses-table und urls-table bauen ihr Etikett
+                                     .up-th-mentlbl selbst und lesen es dafuer aus th.textContent;
+                                     stuende das Wort schon in einer Huelle, stuende es danach zweimal.
+       .ulh-root                     die Landingpage (eigene Sitzung): ihre Vorschauen haben feste
+                                     Spaltenbreiten und eine Bewegung, waehrend der jede DOM-Aenderung
+                                     gezaehlt wird.
+     data-i18n zieht mit: hat der Sprachlauf das Wort schon am Kopf uebersetzt, steht das englische
+     Original dort -- es gehoert jetzt an die Huelle, sonst fuehrt kein Weg zurueck auf Englisch. */
+  var KOPF_KLASSEN = ["up-th", "vt-th", "tct-th"];
+  var KOPF_SEL = ".up-th, .vt-th, .tct-th";
+  function kopfTextEinpacken(th){
+    if (!th || th.nodeType !== 1) return null;
+    if (th.classList.contains("up-th-mentioned") || th.classList.contains("up-th-ment")) return null;
+    if (th.closest(".ulh-root")) return null;
+    var erste = null;
+    for (var k = th.firstChild; k; k = k.nextSibling){
+      if (k.nodeType !== 3 || !/\S/.test(k.nodeValue || "")) continue;
+      var huelle = document.createElement("span");
+      huelle.className = "up-th-txt";
+      th.insertBefore(huelle, k);
+      huelle.appendChild(k);
+      k = huelle;
+      if (!erste) erste = huelle;
+    }
+    if (erste && th.hasAttribute("data-i18n")){
+      erste.setAttribute("data-i18n", th.getAttribute("data-i18n"));
+      th.removeAttribute("data-i18n");
+    }
+    return erste;
+  }
+  /* wurzel: ein Element oder das Dokument. Auch der Kopf, IN dem ein frischer Ast steckt (ein
+     Info-Zeichen, das eine Komponente nachtraeglich einsetzt). getElementsByClassName statt
+     querySelectorAll: es laeuft fuer jeden frischen Ast mit, und die meisten enthalten keinen Kopf. */
+  function kopfTexte(wurzel){
+    if (!wurzel) return;
+    var start = wurzel.nodeType === 9 ? wurzel.documentElement : wurzel;
+    if (!start || start.nodeType !== 1) return;
+    var umgebend = start.closest(KOPF_SEL);
+    if (umgebend) kopfTextEinpacken(umgebend);
+    for (var i = 0; i < KOPF_KLASSEN.length; i++){
+      var l = start.getElementsByClassName(KOPF_KLASSEN[i]);
+      for (var j = 0; j < l.length; j++) kopfTextEinpacken(l[j]);
+    }
+  }
+  /* DER VOLLE WORTLAUT EINES GEKUERZTEN KOPFS OHNE INFO-ZEICHEN. Mit Info-Zeichen nennt ihn die
+     Erklaerkarte (Titel = Etikett), ein zweiter Tooltip daneben waere doppelt. Ohne -- "Zuletzt
+     gesehen", "Bewertung", "Werbetreibende", "Anzahl Erwaehnungen" stehen im Deutschen gekuerzt --
+     gab es keinen Weg zum ganzen Wort. Also bekommt das Etikett beim Ueberfahren ein data-tip,
+     solange es WIRKLICH gekuerzt ist, und der Tooltip der Tabelle (makeTooltips, delegiert an
+     ihrer Wurzel) zeigt es. Gemessen wird erst beim Ueberfahren: die Breite haengt an Spalten,
+     Fenster und Sprache, und nur dieser Augenblick zaehlt. Range gegen Kasten, nicht scrollWidth:
+     das rundet, und "…" steht schon bei 0.09px Ueberhang. In der Einfangphase am Dokument, damit
+     das Attribut steht, bevor der Tooltip der Wurzel (Sprudelphase) nach ihm fragt.
+     data-tip-kopf markiert das eigene Attribut -- ein data-tip, das die Komponente selbst setzt,
+     bleibt unangetastet. .up-th-mentlbl ("<Marke> mentioned?") ist dasselbe Etikett mit eigener
+     Klasse (responses-table, urls-table). */
+  function kopfTipPruefen(e){
+    var t = e.target;
+    if (!t || t.nodeType !== 1 || !t.closest) return;
+    var txt = t.closest(".up-th-txt, .up-th-mentlbl");
+    if (!txt) return;
+    var th = txt.closest(KOPF_SEL);
+    if (!th || th.querySelector(".up-th-info") || th.closest(".ulh-root")) return;
+    var eigen = txt.getAttribute("data-tip-kopf") === "1";
+    if (txt.hasAttribute("data-tip") && !eigen) return;
+    var r = document.createRange();
+    r.selectNodeContents(txt);
+    if (r.getBoundingClientRect().width > txt.getBoundingClientRect().width + 0.05){
+      txt.setAttribute("data-tip", (txt.textContent || "").trim());
+      txt.setAttribute("data-tip-kopf", "1");
+    } else if (eigen){
+      txt.removeAttribute("data-tip");
+      txt.removeAttribute("data-tip-kopf");
+    }
+  }
+  if (!window.__upKopfTip){
+    window.__upKopfTip = true;
+    document.addEventListener("mouseover", function(e){ try { kopfTipPruefen(e); } catch(err){} }, true);
+  }
+  /* Fuer den Beobachter: ein neuer Textknoten direkt in einem Kopf (eine Komponente schreibt
+     th.textContent neu) wird eingepackt, und die Sprache geht danach an die Huelle. */
+  function kopfOderSelbst(el){
+    if (el && el.nodeType === 1 && el.matches && el.matches(KOPF_SEL)){
+      var h = kopfTextEinpacken(el);
+      if (h) return h;
+    }
+    return el;
+  }
+
   /* ---------- makeHeadSort ----------
      Clicking a column header walks that column's cycle (e.g. share:desc -> share:asc ->
      share_trend:desc …) and falls back to the table's default once the cycle is exhausted.
@@ -11751,8 +11862,13 @@
     window.__upFrueh = rest;
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ toolbarLauf(); });
-  else toolbarLauf();
+  /* Die Spaltenkoepfe, die beim Start schon stehen (kopfTexte). VOR toolbarLauf, damit der
+     Sprachlauf darin die Huelle schon vorfindet. Eigener Aufruf und nicht in toolbarLauf: der
+     geht nur ueber die sichtbaren Aeste und faellt mit __upOhneToolbar ganz aus -- ein Kopf, der
+     sein Info-Zeichen aus der Zelle schiebt, ist kein Werkzeugleistenthema. */
+  function kopfTexteVoll(){ sicher("kopfTexte", function(){ kopfTexte(document); }); }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", function(){ kopfTexteVoll(); toolbarLauf(); });
+  else { kopfTexteVoll(); toolbarLauf(); }
   frueheNachholen();
   /* frueheNachholen bleibt gestaffelt: es arbeitet nur eine Warteschlange ab und kostet nichts,
      wenn sie leer ist. Die Komponenten kommen zu verschiedenen Zeiten an, und ein Aufruf, der
@@ -11767,7 +11883,7 @@
      alles ein, was zwischen dem ersten Lauf und dem Ende des Aufbaus ohne Mutation entstanden
      ist (Attributwechsel an schon stehenden Knoten zum Beispiel). Ist die Seite beim Laden von
      core schon fertig, ersetzt ein einzelner Nachlauf das load-Ereignis. */
-  function seiteFertig(){ sicher("toolbarLauf", function(){ toolbarLauf(); }); }
+  function seiteFertig(){ kopfTexteVoll(); sicher("toolbarLauf", function(){ toolbarLauf(); }); }
   if (document.readyState === "complete") setTimeout(seiteFertig, 1200);
   else window.addEventListener("load", function(){ setTimeout(seiteFertig, 200); });
   /* ── Der Beobachter, und warum er so aussieht ─────────────────────────────────────────────
@@ -11844,6 +11960,8 @@
       for (var t3 = 0; t3 < ziele.length; t3++){
         (function(el){
           sicher("stampGran", function(){ stampGran(el); });
+          /* Vor dem Sprachlauf: er findet das Wort dann schon in seiner Huelle (kopfTexte). */
+          sicher("kopfTexte", function(){ kopfTexte(el); });
           sicher("spracheLauf", function(){ spracheLauf(el); });
         })(ziele[t3]);
       }
@@ -11880,10 +11998,10 @@
           for (var nt = 0; nt < neuT.length; nt++){
             if (neuT[nt].nodeType !== 3) continue;
             var p3 = neuT[nt].parentElement;
-            if (p3) sicher("spracheKnoten", (function(el){ return function(){ spracheEinen(el); }; })(p3));
+            if (p3) sicher("spracheKnoten", (function(el){ return function(){ spracheEinen(kopfOderSelbst(el)); }; })(p3));
           }
         }
-        if (mz) sicher("spracheKnoten", (function(el){ return function(){ spracheEinen(el); }; })(mz));
+        if (mz) sicher("spracheKnoten", (function(el){ return function(){ spracheEinen(kopfOderSelbst(el)); }; })(mz));
       }
       var neueElemente = false;
       for (var i = 0; i < muts.length && !neueElemente; i++){
