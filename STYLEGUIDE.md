@@ -613,6 +613,24 @@ dunklen Block ausgeschrieben); die Kante tragen dort die helleren Rahmen.
 eine breite Lage (Menüs `0 10px 28px rgba(0,0,0,.14)`, Tooltips `0 4px 14px rgba(0,0,0,.18)`);
 diese Werte gelten nirgends mehr.
 
+### Der Schleier hinter Drawern (seit 16.10.)
+
+Ein Token für alle Drawer: `--vc-drawer-schleier` = **`rgba(0,0,0,.2)`, hell und dunkel derselbe
+Wert**, dazu `blur(1.5px)` nur im offenen Zustand, Deckkraft 160 ms hinaus und 200 ms herein (beides
+setzt das Kopf-Skript an `[id^="backdrop-"]` mit `!important`; die Schleier aus core tragen dieselben
+Werte für Seiten ohne Kopf-Skript). Es gilt für die Kern-Drawer (`.up-kdr-scrim`: Brand, Prompt,
+Domain, URL, Response, Brand Editor), den Seiten-Drawer (`.up-sdrawer-scrim`, Ad-Detail), den
+Opportunity-Drawer (`.uo-scrim`) und die Liste früherer Recherchen (`.upr-side-scrim`).
+
+Schwarz wie die Floating Groups der Bubble-Zeit. Vom 11. bis 16.10. stand hier 18 % der Schrift
+(hell) und 45 % von `--vc-text-invert` (dunkel) – das ist `#1f1f1b`, also heller als der dunkle
+Grund `#0a0a0a`: der Schleier hellte die Seite auf, und zwei gestapelte Drawer (Prompt, darüber URL)
+legten einen grauen Nebel über Seite und ersten Drawer. Schwarz kann nur abdunkeln.
+Opportunity und Recherche-Liste waren bis dahin durchsichtig und nur unscharf.
+
+Nicht für Dialoge: `.up-topicmodal-backdrop` behält `.30`/`.35` (§27), der mobile Schleier der
+Seitenleiste (`.usn-scrim`) und Miras Vorschau ihre `.30`/`.45`.
+
 ### Karten: ruhend ohne Schatten, Hover nur die Fläche (seit 15.10.)
 
 Gemessen am 15.10. auf vercel.com. Geist legt eine ruhende Karte als `material-base` an:
@@ -2726,7 +2744,8 @@ backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
 Dieselbe 30%-Abdunkelung liest im Dark Mode heller/ausgewaschener als im Light Mode — daher der
 eigene, etwas dunklere Wert. Der Blur bleibt in beiden Themes bei `1.5px`: subtil genug, um den
 Hintergrund als "außer Fokus" zu lesen, ohne selbst sichtbar zu wirken oder auf schwächerer
-Hardware zu ruckeln.
+Hardware zu ruckeln. **Drawer** haben einen eigenen, leichteren Schleier (`--vc-drawer-schleier`,
+Schwarz zu 20 %, §3 „Der Schleier hinter Drawern“) – nicht diesen.
 
 **Karte** — EIN Flex-Column-Container, EIN Padding-Wert, EIN Gap-Wert zwischen allen
 Top-Level-Blöcken (Header, jedes Feld, Footer):
