@@ -357,8 +357,10 @@
 
 /* ---------- detail drawer ----------
    A right-hand slide-in panel: new to this component (core has a centred modal, §27, which is the
-   wrong shape for a record you read alongside the board). The scrim blurs the board rather than
-   dimming it, so the lane a card came from stays recognisable underneath. */
+   wrong shape for a record you read alongside the board). Der Schleier ist seit dem 16.10. der
+   aller Drawer (--vc-drawer-schleier, Schwarz zu 20 %, dazu 1.5px Unschaerfe): vorher blieb er
+   durchsichtig und nur unscharf, und dieser Drawer sah als einziger anders aus als die der App.
+   20 % lassen die Spalte, aus der die Karte kam, weiter erkennen. */
 /* Portal host. opportunities.js moves the scrim and the drawer out of the component and straight
    into <body>, because position:fixed only means "relative to the viewport" as long as no ancestor
    has a transform/filter/will-change -- any of those turns that ancestor into the containing block
@@ -391,7 +393,7 @@
    im Dokument steht. Ergebnis: der Drawer lag hinter der Navigation. Das war kein Entschluss,
    sondern ein Zusammenstoss -- die 9900 stammen aus der Zeit vor der Sidebar. */
 .uo-scrim {
-  position: fixed; inset: 0; z-index: 9903; display: none; background: transparent;
+  position: fixed; inset: 0; z-index: 9903; display: none; background: var(--vc-drawer-schleier);
   opacity: 0; pointer-events: none;
   transition: opacity 160ms ease; will-change: opacity;
 }

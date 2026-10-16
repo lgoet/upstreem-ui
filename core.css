@@ -297,6 +297,16 @@
          Seit dem 15.10. Geist medium ("further raised"): ebenfalls zwei Lagen, die dichte 2px, die
          weiche 8px mit -8px Streuung, die nur unter dem Chip austritt. */
       --up-e-chip: 0 2px 2px rgba(0,0,0,.04), 0 8px 8px -8px rgba(0,0,0,.04);
+      /* DER SCHLEIER DER DRAWER (16.10.): Schwarz zu 20 %, in beiden Themen derselbe Wert -- wie
+         die Floating Groups der Bubble-Zeit, aus denen die Drawer kommen (16.10. gemeldet: "wie
+         vorher in schwarzer Farbe, mit weniger Opacity"). Vom 11. bis 16.10. stand hier 18 % der
+         Schrift (hell) und 45 % von --vc-text-invert (dunkel). Das ist #1f1f1b, also HELLER als
+         der dunkle Grund #0a0a0a: gemessen wurde die Seite hinter dem Drawer heller statt dunkler,
+         ein grauer Nebel statt eines Schleiers. Schwarz kann nur abdunkeln.
+         Unschaerfe 1.5px und die Dauern 160/200ms gehoeren zum Schleier selbst bzw. zum
+         Kopf-Skript; hier steht nur die Farbe. Fuer alle Drawer: Kern-Drawer, Seiten-Drawer,
+         Opportunity und Prompt Research. Dialoge behalten ihre .30/.35 (STYLEGUIDE 27). */
+      --vc-drawer-schleier: rgba(0,0,0,.2);
       /* DIE UMGEKEHRTE KARTE (28.09.): Grund und Tinte der Erklaerkarte (.up-explain), die sich
          gegen das Thema dreht -- hell eine dunkle Karte, dunkel eine helle. Sie stand fuenfmal
          als Literal da (core, domains-table, visibility-chart, quick-actions, create-with-ai),
@@ -389,6 +399,8 @@
       --up-e-4: 0 32px 72px -12px rgba(0,0,0,.06), 0 8px 32px -12px rgba(0,0,0,.08), 0 8px 24px -12px rgba(0,0,0,.12);
       --up-e-drawer: -32px 0 72px -12px rgba(0,0,0,.06), -8px 0 32px -12px rgba(0,0,0,.08), -8px 0 24px -12px rgba(0,0,0,.12);
       --up-e-chip: 0 2px 2px rgba(0,0,0,.32), 0 8px 8px -8px rgba(0,0,0,.16);
+      /* Der Schleier der Drawer: derselbe Wert wie hell, mit Absicht (siehe dort). */
+      --vc-drawer-schleier: rgba(0,0,0,.2);
       /* Die Erklaerkarte im Dunkeln: heller Grund, die Schrift im Ton der hellen Karte. */
       --vc-inverse-bg: #eeedef;
       --vc-inverse-ink: #1f1f1b;
@@ -1049,6 +1061,13 @@
     html[data-up-hell="grau"] {
       --up-seite-grau: #fafafa;   /* Vercel Background 2 */
       --up-kante-grau: #ebebeb;   /* Vercel Gray 400, Default border */
+      /* Die leise Flaeche (Hover, Kopfflaechen) des grauen Hell, Vercel Gray 100 -- Begruendung
+         unten an --vc-heading-bg. Als Marke an <html> und nicht nur an der Wurzel, weil Flaechen mit
+         EIGENER Palette sie brauchen: die Dialogkarte (.up-topicmodal-card) setzt ihre leise Flaeche
+         selbst, und eine eigene Deklaration schlaegt jeden geerbten Wert der Wurzel -- ihr
+         Schliessen-Hover stand bis zum 16.10. auf dem alten #f9f8f9, 6 Stufen unter dem Weiss der
+         Karte statt 13. */
+      --up-leise-grau: #f2f2f2;
       /* DER GEWAEHLTE ZUSTAND DER NAVIGATION (15.10. abends angefordert: "rgba(0, 0, 0, 0.05) ist die
          Farbe fuer selected states -- Sidebar-selektierte Menues, in den Nav-/Subpage-Navigationen
          die Backgrounds der Container. Und da auch bitte weiterhin eine Border!").
@@ -1087,7 +1106,7 @@
          eines Knopfs in der Werkzeugleiste waere unsichtbar. Vercel nimmt dafuer Gray 100 (#f2f2f2,
          "Default background" einer Komponente; dasselbe, was 5 % Schwarz auf Weiss ergibt, Vercels
          Hover in Menues). Auf der Seite 8 Stufen, auf der Karte 13. */
-      --vc-heading-bg: #f2f2f2;
+      --vc-heading-bg: var(--up-leise-grau);
       /* Eingabefelder wie bei Vercel weiss mit Rahmen (Background 1): das bisherige #f9f8f9 waere
          auf der grauen Seite vom Grund nicht zu unterscheiden, nur der Rahmen bliebe. */
       --vc-field: var(--vc-bg);
@@ -5751,14 +5770,13 @@
    so. Ein Drawer, der anders faehrt als jeder andere der App, faellt auf; darum die benannte
    Ausnahme wie --up-dd-radius. */
 .up-root.up-sdrawer-host { display: contents; }
-/* Der Schleier wie im Entwurf ("with a scrim"): 18 % der Schrift im Hellen, im Dunkeln 45 % der
-   dunklen Gegenfarbe -- dieselben Werte wie dort (rgba 17,17,20 / .18 und 0,0,0 / .45), aus den
-   Marken statt als feste Farbe. */
+/* Der Schleier ist der aller Drawer (--vc-drawer-schleier, 16.10.): Schwarz zu 20 % in beiden
+   Themen. Vorher 18 % der Schrift und im Dunkeln 45 % von --vc-text-invert -- das hellte den
+   dunklen Grund auf (siehe am Token). */
 .up-sdrawer-scrim { position: fixed; inset: 0; z-index: 9903; display: none; opacity: 0;
-  background: color-mix(in srgb, var(--vc-text) 18%, transparent);
+  background: var(--vc-drawer-schleier);
   -webkit-backdrop-filter: blur(1.5px); backdrop-filter: blur(1.5px);
   transition: opacity 160ms ease; }
-.up-sdrawer-host[data-theme="dark"] .up-sdrawer-scrim { background: color-mix(in srgb, var(--vc-text-invert) 45%, transparent); }
 .up-sdrawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 9904; width: min(560px, 100vw); display: none;
   flex-direction: column; box-sizing: border-box; background: var(--vc-bg); border-left: 1px solid var(--vc-border);
   box-shadow: var(--up-e-drawer); color: var(--vc-text);
@@ -5805,13 +5823,16 @@
   transform: translateX(110%); transition: transform var(--up-t-2) cubic-bezier(.32, .72, 0, 1);
   will-change: transform; backface-visibility: hidden; outline: none; }
 .up-root.up-kdr.open { transform: none; transition-duration: var(--up-t-3); }
+/* Der Schleier aller Drawer (--vc-drawer-schleier, 16.10.): Schwarz zu 20 %, hell und dunkel
+   gleich. Bis 16.10. stand hier im Dunkeln 45 % von --vc-text-invert (#1f1f1b), und das hellte
+   den Grund #0a0a0a auf, statt ihn zurueckzunehmen. Die Unschaerfe von 1.5px setzt das
+   Kopf-Skript an [id^="backdrop-"].open; hier steht sie noch einmal fuer eine Seite ohne
+   Kopf-Skript (Pruefstand), erst offen, damit der geschlossene Schleier nichts rechnet. */
 .up-root.up-kdr-scrim { position: fixed; inset: 0; z-index: 9915; opacity: 0; pointer-events: none;
-  background: color-mix(in srgb, var(--vc-text) 18%, transparent);
+  background: var(--vc-drawer-schleier);
   transition: opacity var(--up-t-2) ease; }
-/* Im Dunkeln dieselbe Rechnung wie beim Seiten-Drawer (.up-sdrawer-scrim): 45 % der dunklen
-   Gegenfarbe, sonst hellt der Schleier die Seite auf statt sie zurueckzunehmen. */
-.up-root.up-kdr-scrim[data-theme="dark"] { background: color-mix(in srgb, var(--vc-text-invert) 45%, transparent); }
-.up-root.up-kdr-scrim.open { opacity: 1; pointer-events: auto; }
+.up-root.up-kdr-scrim.open { opacity: 1; pointer-events: auto;
+  -webkit-backdrop-filter: blur(1.5px); backdrop-filter: blur(1.5px); }
 @media (prefers-reduced-motion: reduce) { .up-root.up-kdr, .up-root.up-kdr-scrim { transition: opacity var(--up-t-1) ease; } }
 
 /* Der Kopf: 56 hoch (32er Knoepfe plus 12 darueber und darunter), steht, waehrend der Inhalt
@@ -6801,6 +6822,18 @@
   --vc-text: #ededed; --vc-muted: #c9c9c9; --vc-third: #a1a1a1; --vc-fourth: #7d7d7d; --vc-border: #333333;
   --vc-heading-bg: #1f1f1f; --vc-hover-border: #707070; --up-surface: #0f0f0f; --vc-sk: #1e1e1e; --up-switch-off: #454545;
   --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
+}
+/* IM GRAUEN HELL DIE LEISE FLAECHE DER APP (16.10.). Die helle Grundregel oben steht noch auf dem
+   Wert vor dem grauen Hell (#f9f8f9), und weil die Karte ihn selbst setzt, erreicht sie das Grau
+   der Wurzel (#f2f2f2, core "DAS GRAUE HELL") nicht -- die Wurzel ist der Schleier, die Karte sein
+   Kind. Gemessen vorher: der Hover des Schliessen-Knopfs #f9f8f9 auf der weissen Karte (6 Stufen),
+   der Schleier darueber #f2f2f2. Betrifft jede Flaeche in einem Dialog, die --vc-heading-bg traegt:
+   Schliessen-Hover, die Ablage im Prompt-Import, gesperrte Knoepfe, Flaggen ohne Bild.
+   Nur mit dem Marker am <html> (ohne ihn -- Landingpage, erstes Bild -- bleibt der alte Wert) und
+   nur im Hellen; (0,4,1) gegen die Grundregel (0,1,0), die dunkle Fassung (0,3,0) schliesst das
+   :not() aus. */
+html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-topicmodal-card {
+  --vc-heading-bg: var(--up-leise-grau);
 }
 @media (prefers-reduced-motion: reduce){ .up-topicmodal-backdrop, .up-topicmodal-card { transition-duration: 1ms; } }
 .up-topicmodal-card * { box-sizing: border-box; }

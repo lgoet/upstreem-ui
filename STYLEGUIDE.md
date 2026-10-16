@@ -80,6 +80,12 @@ Das Attribut überschreibt an jeder hellen Wurzel fünf Marken und sonst nichts:
 | `--vc-heading-bg` (Hover, Kopfzeilen) | `#f9f8f9` | `#f2f2f2` | Geist Gray 100; `#f9f8f9` wäre auf `#fafafa` unsichtbar |
 | `--vc-field` (Eingabefeld) | `#f9f8f9` | `--vc-bg` (weiß) | Vercel: Felder weiß mit Rahmen |
 
+Die leise Fläche des grauen Light steht als Marke `--up-leise-grau` (`#f2f2f2`) an `<html>`, damit
+sie auch Flächen mit eigener Palette erreicht. Die Dialogkarte aller core-Dialoge
+(`.up-topicmodal-card`) setzt `--vc-heading-bg` selbst und nimmt sie seit dem 16.10. ebenfalls:
+Schließen-Hover, gesperrte Knöpfe und Flaggen ohne Bild `#f2f2f2` statt `#f9f8f9` (auf der weißen
+Karte 13 statt 6 Stufen). Im Dunkeln bleibt die Karte bei `#1f1f1f`.
+
 **Innerhalb einer weißen Fläche ist der Grund weiß:** Drawer (`.up-kdr`, `[id^="drawer-"]`),
 Portale (`.up-portal`), `.up-band`, `.up-box`, die flache Tabelle und ihr Band setzen
 `--up-surface` wieder auf `--vc-bg`. Was dort „Seitenfarbe“ sagt (klebender Kopf, Gesamtzeile),
@@ -612,6 +618,24 @@ dunklen Block ausgeschrieben); die Kante tragen dort die helleren Rahmen.
 `--up-dd-shadow` **ist** `var(--up-e-2)`, nicht mehr eine eigene Zahl. Bis 15.10. war jede Stufe
 eine breite Lage (Menüs `0 10px 28px rgba(0,0,0,.14)`, Tooltips `0 4px 14px rgba(0,0,0,.18)`);
 diese Werte gelten nirgends mehr.
+
+### Der Schleier hinter Drawern (seit 16.10.)
+
+Ein Token für alle Drawer: `--vc-drawer-schleier` = **`rgba(0,0,0,.2)`, hell und dunkel derselbe
+Wert**, dazu `blur(1.5px)` nur im offenen Zustand, Deckkraft 160 ms hinaus und 200 ms herein (beides
+setzt das Kopf-Skript an `[id^="backdrop-"]` mit `!important`; die Schleier aus core tragen dieselben
+Werte für Seiten ohne Kopf-Skript). Es gilt für die Kern-Drawer (`.up-kdr-scrim`: Brand, Prompt,
+Domain, URL, Response, Brand Editor), den Seiten-Drawer (`.up-sdrawer-scrim`, Ad-Detail), den
+Opportunity-Drawer (`.uo-scrim`) und die Liste früherer Recherchen (`.upr-side-scrim`).
+
+Schwarz wie die Floating Groups der Bubble-Zeit. Vom 11. bis 16.10. stand hier 18 % der Schrift
+(hell) und 45 % von `--vc-text-invert` (dunkel) – das ist `#1f1f1b`, also heller als der dunkle
+Grund `#0a0a0a`: der Schleier hellte die Seite auf, und zwei gestapelte Drawer (Prompt, darüber URL)
+legten einen grauen Nebel über Seite und ersten Drawer. Schwarz kann nur abdunkeln.
+Opportunity und Recherche-Liste waren bis dahin durchsichtig und nur unscharf.
+
+Nicht für Dialoge: `.up-topicmodal-backdrop` behält `.30`/`.35` (§27), der mobile Schleier der
+Seitenleiste (`.usn-scrim`) und Miras Vorschau ihre `.30`/`.45`.
 
 ### Karten: ruhend ohne Schatten, Hover nur die Fläche (seit 15.10.)
 
@@ -1170,6 +1194,24 @@ Info-Zeichen der anderen mit `margin-left: auto` steht.
 
 `aria-hidden`: das Wort daneben sagt alles. Neue Tabellen bekommen ihr Kopfzeichen über
 `UC.kopfZeichenHtml` und je Spalte eine `art` (Abschnitt 8d).
+
+**Das Wort kürzt, die Zeichen bleiben** (seit 16.10., gemeldet: im Deutschen stand das
+Info-Zeichen an „Brand-Erwähnungen“ außerhalb der Kopfzelle). In jeder Kopfzelle (`.up-th`,
+`.vt-th`, `.tct-th`) steht das Wort in `.up-th-txt` (`min-width: 0`, „…“); Kopfzeichen,
+Info-Zeichen und Sortierpfeil schrumpfen nie. Reicht die Spalte nicht, kürzt das Wort – das
+Info-Zeichen bleibt immer in der Zelle.
+
+```
+Nackter Text   <div class="up-th">Market<span class="up-th-info">…</span></div> packt core selbst
+               ein (kopfTexte, über den Beobachter, auch für Köpfe, die eine Komponente später neu
+               schreibt). Ein nackter Text ist ein anonymes Flex-Kind und schrumpft nie -- genau
+               daran lag es. Neue Köpfe schreiben .up-th-txt gleich selbst
+Voller Wortlaut  mit Info-Zeichen nennt ihn die Erklärkarte (Titel = Etikett); ohne zeigt ihn ein
+               Tooltip, solange das Wort wirklich gekürzt ist (data-tip beim Überfahren)
+Breiten        werden dafür nicht vergrößert (Wunsch: lieber kürzen); nur wo sonst kaum mehr als
+               ein Buchstabe stünde
+Ausgenommen    "Mentioned?" (.up-th-mentlbl baut die Tabelle selbst) und die Landingpage
+```
 
 **Tabellenköpfe im Drawer** (seit 15.10. spät, `core.css` „DIE TABELLENKOEPFE IM DRAWER“): jede
 Tabelle in einem Drawer (`.up-kdr`, `[id^="drawer-"]`) trägt den Kopf der Seitentabellen, behält
@@ -2752,7 +2794,8 @@ backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
 Dieselbe 30%-Abdunkelung liest im Dark Mode heller/ausgewaschener als im Light Mode — daher der
 eigene, etwas dunklere Wert. Der Blur bleibt in beiden Themes bei `1.5px`: subtil genug, um den
 Hintergrund als "außer Fokus" zu lesen, ohne selbst sichtbar zu wirken oder auf schwächerer
-Hardware zu ruckeln.
+Hardware zu ruckeln. **Drawer** haben einen eigenen, leichteren Schleier (`--vc-drawer-schleier`,
+Schwarz zu 20 %, §3 „Der Schleier hinter Drawern“) – nicht diesen.
 
 **Karte** — EIN Flex-Column-Container, EIN Padding-Wert, EIN Gap-Wert zwischen allen
 Top-Level-Blöcken (Header, jedes Feld, Footer):
