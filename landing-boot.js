@@ -215,13 +215,23 @@
      und das Markup in .landing_markup.py -- in Framer bleibt es beim Pin. */
   css("core.css");
   css("sidebar.css");
-  css("page-headers/dashboard-page-header.css");
+  /* DIE SEITEN DER APP ALS GANZES (16.10.): seit Oktober baut die App jede Seite als EINE
+     Komponente (dashboard-page.js ...), mit Kopf, Kalender und Filterleiste und den flachen
+     Baendern. Das Fenster zeigt sie genauso. Die Filterleiste braucht ihre fuenf Bausteine. */
+  css("filters/date-range.css");
+  css("filters/filter-bar.css");
+  css("filters/models-filter.css");
+  css("filters/topics-filter.css");
+  css("filters/markets-filter.css");
+  css("dashboard-page.css");
   css("visibility-chart.css");
   css("topcitations-dashboard.css");
   css("quick-actions.css");
   css("ask-mira.css");
-  css("page-headers/prompts-page-header.css");
+  css("prompts-page.css");
   css("prompts-table.css");
+  css("topics-manager.css");
+  css("opportunities-page.css");
   css("opportunities.css");
   /* Nur fuer das kleine Fenster rechts: eine Antwortkarte. */
   css("responses-table.css");
@@ -232,7 +242,10 @@
      CSS und JS -- anders als die Vorschauen in den Karten ist sie nicht statisch, sie rechnet ihre
      Charts selbst. */
   css("domain-detail.css");
+  css("performance-page.css");
   css("performance-radar.css");
+  css("performance-detail.css");
+  css("urls-table.css");
   /* Sechste Szene: die Shopping-Seite, Komponente ganz (CSS und JS) wie Domain Detail. */
   css("shopping.css");
   /* Der Block "Events": die Event-Karte ist statisches Markup mit den Klassen von events.js. */
@@ -241,20 +254,35 @@
 
   js("core.js");
   js("sidebar.js");
-  js("page-headers/dashboard-page-header.js");
+  js("filters/date-range.js");
+  js("filters/filter-bar.js");
+  js("filters/models-filter.js");
+  js("filters/topics-filter.js");
+  js("filters/markets-filter.js");
+  /* Die Datenmodule der Seiten (ohne DOM). Die Seiten warten beim Start auf sie; ihre Abfragen
+     gehen auf der Landingpage nie hinaus (landing-hero.js, seitenLaderStill). */
+  js("citations-data.js");
+  js("dashboard-data.js");
   js("visibility-chart.js");
   js("topcitations-dashboard.js");
   js("quick-actions.js");
   js("ask-mira.js");
-  js("page-headers/prompts-page-header.js");
+  js("prompts-data.js");
   js("prompts-table.js");
-  js("page-headers/opportunities-page-header.js");
+  js("topics-manager.js");
+  js("opportunities-data.js");
   js("opportunities.js");
   js("responses-table.js");
-  js("page-headers/performance-page-header.js");
+  js("performance-data.js");
   js("performance-radar.js");
+  js("performance-detail.js");
+  js("urls-table.js");
   js("domain-detail.js");
   js("shopping.js");
+  js("dashboard-page.js");
+  js("prompts-page.js");
+  js("opportunities-page.js");
+  js("performance-page.js");
   /* Das Verhalten von Leiste und Fuss (13.10.): dieselbe Datei laden die eigenen Komponenten
      UpstreemTopbar.tsx und UpstreemFooter.tsx auf den anderen Seiten. VOR landing-hero.js, das
      sie ruft. */
