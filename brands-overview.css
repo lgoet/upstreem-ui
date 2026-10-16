@@ -278,6 +278,12 @@
 /* Schrift im Dunkeln nach Geist (16.10.): Wert fuer Wert getauscht (#e0e0e0 -> #ededed, #a0a0a0 -> #a1a1a1), Flaeche am <body> mit eigener Leiter. */
 .ubo-actmenu[data-theme="dark"] { --vc-text: #ededed; --vc-muted: #a1a1a1; --vc-border: var(--up-menu-border);
   --vc-bg: var(--up-menu-bg); --vc-heading-bg: var(--vt-row-hover-solid); --up-sel-bg: var(--up-chip-an); }
+/* Im grauen Hell die leise Flaeche der App (17.10.), nach dem Muster der core-Dialoge: die helle
+   Grundregel oben setzt --vc-heading-bg selbst (#f9f8f9) und erreicht die Marke --up-leise-grau
+   (#f2f2f2) sonst nicht. Das Menue traegt data-theme selbst, --up-knopf-hover wird also HIER
+   berechnet und zieht mit. Die Zeilen ueberfahren mit --up-sel-bg -- der bleibt, wie in jedem
+   Menue der App. Nur mit dem Marker am <html>, nur im Hellen; (0,3,1) gegen (0,1,0). */
+html[data-up-hell="grau"] .ubo-actmenu:not([data-theme="dark"]) { --vc-heading-bg: var(--up-leise-grau); }
 .ubo-actmenu * { box-sizing: border-box; }
 @media (prefers-reduced-motion: reduce){ .ubo-actmenu { transition-duration: 1ms; } }
 
