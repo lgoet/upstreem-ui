@@ -135,7 +135,13 @@
        nach der Vorgabe des Nutzers vor Brand Mentions und den Kennzahlen. Mobil aendert das
        nichts: unter vnarrow haben alle anderen Spalten ihr dropAt, Model steht dort allein, und
        autoFit wirft die letzte Spalte nie ab (kept > 1). */
-    { key: "model",      label: "Model",          w: "minmax(160px, 0.8fr)",  min: 160, minNarrow: 48, art: "typ" },
+    /* minNarrow 98 statt 48 (16.10.): die Zelle braucht mobil nur das Logo, der KOPF aber Wort und
+       Info-Zeichen. Bei 48 (gezogen 73, Untergrenze plus Reserve von startResize) stand das
+       Info-Zeichen 1.7px (en) bzw. 5.5px (de) ausserhalb der Zelle; seit der Kopftext kuerzt
+       (core kopfTexte), bliebe dort nur "M…" bzw. "Mo…". Gemessen (Klon des Kopfs, max-content,
+       samt Zellrand): "Model" 90.7, "Modell" 94.5 -- also 98. Ungezogen steht die Spalte mobil
+       ohnehin bei 138 (fr-Anteil); die Zahl begrenzt nur, wie weit Prompt sie verdraengen kann. */
+    { key: "model",      label: "Model",          w: "minmax(160px, 0.8fr)",  min: 160, minNarrow: 98, art: "typ" },
     /* 120 = 28px cell padding + the widest relative-time string ("59 minutes ago", 88px). */
     { key: "date",       label: "Date",           w: "minmax(120px, 0.6fr)",  min: 120, dropAt: "narrow",  art: "datum" }
   ];

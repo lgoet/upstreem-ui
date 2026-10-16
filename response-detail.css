@@ -261,25 +261,27 @@
 /* 26px Chip statt 28: Faktor 26/28 auf Radius (8 -> 7.4). Rahmen 1px und Polsterung 2px kommen
    aus core und bleiben -- ein Pixel skaliert nicht sinnvoll auf 0.93. Bild also 26 - 2 - 4 = 20px,
    Bildradius 7.4 - 3 = 4.4. Seit dem 15.10. wie der Chip in core (Geist-Skala): 6 und 6 - 3 = 3 --
-   der Faktor 26/28 aendert auf dieser Stufe nichts, das ergaebe 5.6 und 2.6. */
-/* Polster 3 HIER fest (15.10. nachts): der Chip in core ist eine Stufe gewachsen (32, Polster 4) --
-   diese Reihe bleibt bei 26 und behaelt ihr Bild von 26 - 2 - 6 = 18, das sie seit dem Kreis in core
-   (15.10. spaet, Polster 3) traegt. Ohne die Zeile schrumpfte es still auf 16. */
+   der Faktor 26/28 aendert auf dieser Stufe nichts, das ergaebe 5.6 und 2.6.
+   Polster wieder 2 aus core (16.10.): vom 15. zum 16.10. stand hier 3 fest, solange der Chip in core
+   ein Kreis mit mehr Polster war. */
 .urd-cc-foot .up-stack-vis, .urd-cr-ments .up-stack-vis {
-  border-radius: var(--up-r-m); box-shadow: none; border: 1px solid var(--vc-border); padding: 3px; }
+  border-radius: var(--up-r-m); box-shadow: none; border: 1px solid var(--vc-border); }
 /* Im Dunkeln kein Rahmen: die Logokachel ist dort selbst hell und traegt die Form allein --
    dieselbe Entscheidung wie beim Marken-Chip in den Mentions und beim Zitations-Chip im Text.
-   Ein Marken-Chip soll nicht an drei Orten drei Rahmen-Regeln haben. */
-.up-root[data-theme="dark"] .urd-cc-foot .up-stack-vis,
-.up-root[data-theme="dark"] .urd-cr-ments .up-stack-vis {
-  border-color: transparent; background-clip: padding-box; }
-.urd-cc-foot .up-stack-item img, .urd-cr-ments .up-stack-item img { border-radius: var(--up-r-xs); }
-/* Das "+N" ist seit 15.10. in core ein Kreis, der wie ein Mitglied des Stapels unter den letzten
-   Chip greift (Geist-AvatarGroup). In dieser REIHE steht es wie ein weiterer Chip: 26px, 4px Abstand,
-   ohne Ring -- dieselben Werte wie die Chips hier. Schrift 11 und Polster 4 fest: in core sind sie
-   seit 15.10. nachts mit dem 32er Kreis auf 12 und 5 gewachsen, diese Reihe bleibt bei 26. */
-.urd-cc-foot .up-stack-more, .urd-cr-ments .up-stack-more {
-  min-width: 26px; height: 26px; margin-left: 4px; box-shadow: none; padding: 0 4px; font-size: var(--up-fs-xs); }
+   Ein Marken-Chip soll nicht an drei Orten drei Rahmen-Regeln haben.
+   DER HELLE RAND IST EINEN PIXEL BREIT, an JEDEM Chip der Reihe (16.10.) -- wie an den Chips der
+   Antwortkarten und der Tabellen (core .up-stack-vis im Dunkeln: Platte nur unter dem Bild, den
+   Pixel malt dessen Schatten). Hier stand background-clip: padding-box, und das traf nur den
+   ERSTEN Chip: an jedem Folgechip gewinnt die Dunkel-Regel aus core (0,5,0, die Flaeche in der
+   Ringfarbe, die im Stapel den Vorgaenger zudeckt) gegen diese (0,4,0). Gemessen: erster Chip
+   Platte 24 bei 20 Bild (2px Rand), alle weiteren 22 (1px) und dazu ein 26er Quadrat in #0f0f0f,
+   das auf der ueberfahrenen Zeile der Liste (#1f1f1f) dunkel stand.
+   In dieser Reihe ueberlappt nichts (4px Abstand), es gibt also nichts zuzudecken: Platte unter dem
+   Bild fuer alle, sonst durchsichtig. (0,6,0) schlaegt die Folgechip-Regel aus core. */
+.up-root[data-theme="dark"] .urd-cc-foot .up-stack .up-stack-item .up-stack-vis,
+.up-root[data-theme="dark"] .urd-cr-ments .up-stack .up-stack-item .up-stack-vis {
+  border-color: transparent; background: var(--vt-logo-bg) content-box; }
+.urd-cc-foot .up-stack-item img, .urd-cr-ments .up-stack-item img { border-radius: calc(var(--up-r-m) - 3px); }
 /* Ohne Ueberlappung gibt es nichts auseinanderzuschieben: das SEITLICHE Wegruecken der Nachbarn
    faellt weg, sonst zappelt die ganze Reihe, wenn man ueber einen Chip faehrt.
    Das Anheben bleibt -- und zwar auf JEDEM Chip. Vorher hob nur der erste: core gibt dem ersten

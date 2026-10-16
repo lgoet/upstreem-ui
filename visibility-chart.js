@@ -251,7 +251,9 @@
     function trendChip(delta, decimals, inverted, suffix){
       return UC.trendChip(delta, { decimals: decimals, inverted: inverted, suffix: suffix });
     }
-    var ROW_GOTO = '<span class="up-row-goto">' + UC.GOTO_SVG + '</span>';
+    /* Kein Zeilenpfeil mehr (16.10., .up-row-goto in core). Hier kam er nie zum Vorschein -- die
+       Zeile ist .vt-row, nicht .up-row --, belegte aber 16px plus 12px Abstand und kuerzte so den
+       Markennamen. */
     /* Leer: der Leerzustand des Charts daneben (15.10., UC.tabelleLeerHtml) statt des knappen "No
        data" unter dem Kopf. Die Flaeche ist die der Skelettzeilen, im Band fuellt sie die Tabelle
        bis unten; gefiltert wie die Kurve. Das Zeichen ist das des Spaltenkopfs (squareStack). */
@@ -298,7 +300,7 @@
         var sent = UC.sentHtml(r.sentiment) + trendChip(r.sentiment_delta, true, false);
         return '<div class="vt-row' + gap + '" data-id="' + esc(String(r.company_id == null ? "" : r.company_id)) + '">' +
           '<div class="vt-td vt-td-idx">' + (pos != null ? pos : "") + '</div>' +
-          '<div class="vt-td vt-td-brand">' + logo + '<span class="vt-brand-name">' + esc(r.name == null ? "" : r.name) + '</span>' + ROW_GOTO + '</div>' +
+          '<div class="vt-td vt-td-brand">' + logo + '<span class="vt-brand-name">' + esc(r.name == null ? "" : r.name) + '</span></div>' +
           '<div class="vt-td vt-td-visibility">' + vis + '</div>' +
           '<div class="vt-td vt-td-ranking">' + rank + '</div>' +
           '<div class="vt-td vt-td-sentiment">' + sent + '</div></div>';

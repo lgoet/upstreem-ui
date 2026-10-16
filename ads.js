@@ -2434,7 +2434,8 @@
       var advSuche = s === "advertisers" ? suchText(state.advertisers.suche) : null;
       /* Die Suche der Bibliothek gilt in beiden Modi (libAnfrage und promptAnfrage lesen sie). */
       var libSuche = s === "library" ? suchText(lb.suche) : null;
-      var basis = filterAktiv();
+      /* Jeder Filter steht im Dialog als eigener Chip und laesst sich abwaehlen (export-data.js,
+         SEITE, 16.10.); die Namen der Werbetreibenden sind die Werte selbst. */
       return {
         export_type: s === "library" ? (lb.modus === "prompts" ? "ads_prompts" : "ads_library") : s === "advertiser" ? "ads_library" : "ads_advertisers",
         date_from: f.von || "", date_to: f.bis || "", preset: f.preset || "",
@@ -2442,11 +2443,6 @@
           ads_advertisers: neu({ p_search: advSuche, p_sort: orderOf("advertisers", state.advertisers) }),
           ads_library: neu(mit(mit({}, detail), { p_search: libSuche })),
           ads_prompts: neu(mit(mit({}, detail), { p_search: libSuche, p_sort: orderOf("prompts", state.prompts) }))
-        },
-        filter_aktiv: {
-          ads_advertisers: basis || !!advSuche,
-          ads_library: basis || !!libSuche || !!detail.p_advertisers,
-          ads_prompts: basis || !!libSuche || !!detail.p_advertisers
         }
       };
     }

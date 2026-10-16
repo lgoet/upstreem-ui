@@ -775,6 +775,12 @@
     "The sitemap could not be loaded. Please try again.": "Die Sitemap konnte nicht geladen werden. Versuch es bitte noch einmal.",
     "{n} pages from {source}": "{n} Seiten aus {source}", "Only the first {n} pages could be read.": "Nur die ersten {n} Seiten ließen sich lesen.",
     "This sitemap lists no pages.": "Diese Sitemap listet keine Seiten.", "{n} page": "{n} Seite",
+    /* 16.10.: Rueckfall von sitemap-lesen Version 5 (angegebene Datei war HTML) */
+    "This link isn't a sitemap. {n} pages from {source} instead.": "Dieser Link ist keine Sitemap. Stattdessen {n} Seiten aus {source}.",
+    "This link isn't a sitemap. 1 page from {source} instead.": "Dieser Link ist keine Sitemap. Stattdessen eine Seite aus {source}.",
+    "1 page from {source}": "Eine Seite aus {source}",
+    "This link isn't a sitemap, and {source} lists no pages.": "Dieser Link ist keine Sitemap, und {source} listet keine Seiten.",
+    "This link isn't a sitemap, and we couldn't find one for {domain}. Try the full link to your sitemap.xml.": "Dieser Link ist keine Sitemap, und für {domain} haben wir keine gefunden. Versuch den vollständigen Link zu deiner sitemap.xml.",
     "Please enter a valid sitemap link or domain.": "Gib bitte einen gültigen Sitemap-Link oder eine Domain ein.",
     "Loading a sitemap isn't available right now.": "Das Laden einer Sitemap ist gerade nicht verfügbar.",
     "Too many sitemap requests. Please try again in 1 minute.": "Zu viele Sitemap-Abrufe. Versuch es bitte in 1 Minute noch einmal.",
@@ -3742,11 +3748,18 @@
          antwortet mit dem Satz des Drawers; ein Knopf, der einem owner faelschlich fehlt, waere
          schlimmer (dieselbe Abwaegung wie prompts-data.js).
          Die Rolle des Hosts aus per_target (je Ziel); das oberste host_role nur, wenn per_target
-         den Host nicht fuehrt -- bei EINEM Host ist das erste gueltige Ziel dann ohnehin seins. */
+         den Host nicht fuehrt -- bei EINEM Host ist das erste gueltige Ziel dann ohnehin seins.
+         NICHT NEBEN EINEM TIPPFEHLER (Nutzer 16.10.): steht fuer diesen Host oben "Did you mean
+         ...?" (tipps, also similar_host der Datenbank), ist er wahrscheinlich vertippt.
+         domain_classify_v1 prueft nicht, ob die Domain je zitiert wurde, und gilt rueckwirkend --
+         ein Klick truege die falsch geschriebene Domain dauerhaft als eigene ein. Nach "Use {host}"
+         oder einer anderen Eingabe fragt die Vorschau neu, und fuer das dann eingetragene Ziel gilt
+         wieder diese Regel. Verglichen wird ueber den Host wie bei tipps selbst (www weg, klein). */
       var darf = typeof d.can_classify === "boolean" ? d.can_classify : (UC.teamRolle ? UC.teamRolle() : "") !== "member";
+      var vertippt = !!h1 && tipps.some(function (v) { return v.alt === h1; });
       var hostRolle = d.host_role, je1 = pts.filter(function (pt) { return pt.host && String(pt.host) === h1; });
       if (je1.length) hostRolle = je1.some(function (pt) { return pt.host_role === "own"; }) ? "own" : je1[0].host_role;
-      if (h1 && darf && hostRolle !== "own" && !(p.eigen && p.eigen[h1])) {
+      if (h1 && darf && !vertippt && hostRolle !== "own" && !(p.eigen && p.eigen[h1])) {
         html += '<div class="uev-vz-eigen"><span>' + esc(ersetze(t("{host} doesn't count as your domain yet."), { host: h1 })) + '</span>' +
           '<button type="button" class="up-btn-sec uev-vz-eigenbtn" data-eigen-host="' + esc(h1) + '"' + (p.eigenLaeuft ? ' disabled' : '') + '>' +
             (p.eigenLaeuft ? '<span class="up-modal-spin"></span>' : '') + '<span>' + esc(t("Count as your domain")) + '</span></button></div>';
@@ -3860,6 +3873,13 @@
       not_found: "We couldn't open this sitemap. Check the link, or enter just your domain.",
       invalid_xml: "This link isn't a sitemap. Enter your domain or the link to your sitemap.xml."
     };
+    /* DER RUECKFALL (sitemap-lesen Version 5, live 16.10.): liefert eine ausdruecklich angegebene
+       Datei HTML, liest die Function einmal die Sitemap derselben Domain (robots.txt, dann
+       /sitemap.xml und /sitemap_index.xml) und sagt das mit fallback: "host" -- auch, wenn auch das
+       scheitert. Dann ist der Link gar keine Sitemap UND die Domain hat keine auffindbare; der Satz
+       sagt beides und, wie die anderen, was stattdessen geht. Gelingt der Rueckfall, steht er in der
+       Quellzeile (smZeichnen): die Seiten kommen dann aus einer anderen Datei, als eingegeben war. */
+    var SM_FEHLER_RUECKFALL = "This link isn't a sitemap, and we couldn't find one for {domain}. Try the full link to your sitemap.xml.";
     var SM_FEHLER = {
       timeout: "The website took too long to answer. Please try again later.",
       too_large: "This sitemap is too large to read. Try one of the smaller sitemaps it lists.",
@@ -3901,7 +3921,9 @@
        hinaus, mit dem Schema und genau der Schreibweise, die getippt wurde: die Unterdomain
        bleibt, www bleibt, wie es bei einer getippten Domain schon immer blieb (die Function
        folgt Weiterleitungen selbst; ein fremdes www- oder Nicht-www-Ziel koennte es gar nicht
-       geben). Eine Datei geht unveraendert hinaus, und ihr Fehler bleibt ihr Fehler.
+       geben). Eine Datei geht unveraendert hinaus, und ihr Fehler bleibt ihr Fehler -- ausser die
+       Function ist selbst auf die Domain zurueckgefallen (Version 5, fallback "host", siehe
+       SM_FEHLER_RUECKFALL). Seiten gehen trotzdem weiter als Host hinaus: das spart den Umweg.
        { url, modus: "host" | "datei", domain (zum Zeigen, ohne www), umgestellt } oder null. */
     function smAnfrage(roh) {
       roh = String(roh == null ? "" : roh).trim();
@@ -3953,8 +3975,12 @@
       var k = im(".uev-sm-knopfzeile .uev-sm-auf");
       try { if (k) k.focus(); } catch (e) {}
     }
-    function smFehlerText(code, anf) {
+    /* rueckfall: die Antwort trug fallback "host" (Version 5) -- der Fehler gehoert dann der Domain,
+       nicht mehr der eingegebenen Datei. timeout, too_large und blocked sagen auch danach, was den
+       Abruf aufgehalten hat; nur "nicht gefunden" braucht den Hinweis auf den Link. */
+    function smFehlerText(code, anf, rueckfall) {
       if (anf && (code === "not_found" || code === "invalid_xml")) {
+        if (rueckfall) return ersetze(t(SM_FEHLER_RUECKFALL), { domain: anf.domain });
         return anf.modus === "datei" ? t(SM_FEHLER_DATEI[code]) : ersetze(t(SM_FEHLER_HOST), { domain: anf.domain });
       }
       return t(SM_FEHLER[code] || "The sitemap could not be loaded. Please try again.");
@@ -3991,7 +4017,7 @@
             if (kz0) kz0.parentNode.removeChild(kz0);
             schreibweiseZeigen(p);
           }
-          p.sm.fehler = code === "rate_limited" ? smWarteText(fe.retry_after) : smFehlerText(code, anf);
+          p.sm.fehler = code === "rate_limited" ? smWarteText(fe.retry_after) : smFehlerText(code, anf, !!d && d.fallback === "host");
         }
         smZeichnen(p);
         smInSicht();
@@ -4248,8 +4274,18 @@
           '<div class="uev-sm-fuss"><span class="uev-sm-zahl"></span><button type="button" class="up-btn-pri uev-sm-nehmen">' + esc(t("Add selection")) + '</button></div>';
       }
       var hq = inh.querySelector(".uev-sm-quelle");
-      hq.textContent = (d.urls.length ? ersetze(t("{n} pages from {source}"), { n: zahl(total), source: hostPfad(quelle).host + (hostPfad(quelle).start ? "" : hostPfad(quelle).pfad) })
-        : t("This sitemap lists no pages.")) + (d.truncated === true ? " " + ersetze(t("Only the first {n} pages could be read."), { n: zahl(d.urls.length) }) : "");
+      /* Rueckfall (fallback "host", Version 5): der Link war keine Sitemap, gelesen wurde die der
+         Domain -- das steht VOR der Zahl, sonst haelt man die Seiten fuer die des eingegebenen Links.
+         Die Quelle nennt die Zeile ohnehin. */
+      var rueck = d.fallback === "host", qName = hostPfad(quelle).host + (hostPfad(quelle).start ? "" : hostPfad(quelle).pfad);
+      /* Eine Seite in der Einzahl: der echte Fall aus Version 5 (excalidraw.com, total 1) las
+         sonst "1 pages". */
+      var eins = total === 1;
+      hq.textContent = (d.urls.length
+          ? ersetze(t(rueck ? (eins ? "This link isn't a sitemap. 1 page from {source} instead." : "This link isn't a sitemap. {n} pages from {source} instead.")
+              : (eins ? "1 page from {source}" : "{n} pages from {source}")), { n: zahl(total), source: qName })
+          : (rueck ? ersetze(t("This link isn't a sitemap, and {source} lists no pages."), { source: qName }) : t("This sitemap lists no pages.")))
+        + (d.truncated === true ? " " + ersetze(t("Only the first {n} pages could be read."), { n: zahl(d.urls.length) }) : "");
       var suche = inh.querySelector(".uev-sm-suche");
       if (suche && suche.value !== sm.suche && document.activeElement !== suche) suche.value = sm.suche;
       inh.querySelector(".uev-sm-suchw").classList.toggle("has-text", !!sm.suche);

@@ -139,6 +139,20 @@
       '<span class="up-tag-lbl">' + esc(label) + '</span></span>';
   }
   function typLabel(typ) { return UC.typeLabel ? UC.typeLabel(str(typ), "citation") : str(typ); }
+  /* Das Ziel des Titels (16.10.: Klick auf die Domain oeffnet sie in einem neuen Tab). Nur ein
+     echter Hostname wird zum Link: der Name faellt auf S.domain zurueck, und das kommt aus der
+     Adresse (?detail=domain:...), ist also frei eingebbar. Erst grob nach Zeichen eines Hostnamens
+     (kein Schema, kein Pfad, kein @), dann ueber URL -- das schreibt eine Umlautdomain als xn-- --,
+     und erst der so gelesene Host muss in Labels mit Endung aus Buchstaben passen. Ziffern als
+     Endung heisst IP-Adresse: kein Link. Leer heisst: der Titel bleibt Text. */
+  var HOSTNAME = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:[a-z]{2,63}|xn--[a-z0-9-]{1,59})$/;
+  function domainLink(dom) {
+    dom = str(dom).trim().toLowerCase();
+    if (!dom || /[^\w.\-\u00a0-\uffff]/.test(dom)) return "";
+    var host = "";
+    try { host = new URL("https://" + dom).hostname; } catch (e) { return ""; }
+    return HOSTNAME.test(host) ? "https://" + host : "";
+  }
   function kopfZeichnen() {
     var r = S.root;
     if (!r) return;
@@ -163,7 +177,12 @@
     }
     var dom = str(d.domain) || S.domain;
     elLogo.innerHTML = logoHtml(d);
-    elName.textContent = dom;
+    /* Ein echter Link (Tab, Enter, Mittelklick, "In neuem Tab oeffnen" gehen von selbst), kein
+       Knopf mit window.open. noreferrer: die fremde Seite erfaehrt nicht, aus welcher Ansicht der
+       App der Besuch kam. */
+    var ziel = domainLink(dom);
+    elName.innerHTML = ziel ? '<a class="uddr-titel-link" href="' + esc(ziel) + '" target="_blank" rel="noopener noreferrer">' +
+      esc(dom) + '</a>' : esc(dom);
     elTyp.innerHTML = typChip(d.citation_type, d.citation_type_label);
     /* Darunter: wem die Domain gehoert (eine verfolgte Marke) und wann sie zuletzt zitiert wurde --
        die leise Zeile des Kopfes, wie die Domain unter dem Markennamen. */
@@ -794,8 +813,25 @@
       }
       teil.setAttribute("data-export-instance", k);
       var typ = teil.classList.contains("urt-root") ? "prompt_runs" : "urls";
-      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: typ, domain: S.domain }); } catch (err) {}
+      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, exportKontext(typ)); } catch (err) {}
     }, true);
+  }
+  /* WAS DER EXPORT MITNIMMT (16.10., wie die Seiten, export-data.js KENNT): die Domain als Filter
+     des Drawers, dazu Zeitraum und Filter des Drawers als Chips, jeder abwaehlbar. Die Leiste gilt
+     fuer URLs und Responses, die Filter einer Tabelle (Suche, Typen, Brand, Brands, Rank,
+     Sentiment) nur fuer die des offenen Reiters. Dieselben Bauer wie beim Laden. */
+  function exportKontext(typ) {
+    var r = null, c = kalender(), f = filterStand(), u = S.urls, aufUrls = typ === "urls";
+    try { r = c && c.getRange ? c.getRange() : null; } catch (e) { r = null; }
+    var cf = { team: f.team, von: f.von, bis: f.bis, modelle: f.modelle, maerkte: f.maerkte, topics: f.topics, tagmode: f.tagmode,
+               erwaehnt: aufUrls ? u.erwaehnt : "all", marken: aufUrls ? u.marken : null, citationTypen: aufUrls ? u.citationTypen : null, urlTypen: null };
+    var urls = C.domainUrls(cf, S.domain, aufUrls ? { suche: u.suche, order: u.order, urlTypen: u.urlTypen } : { order: u.order });
+    var resp = D.responsesTeile(f, aufUrls ? { order: S.resp.order } : S.resp)[0];
+    return {
+      export_type: typ, domain: S.domain,
+      date_from: r && r.from ? r.from : S.f.von, date_to: r && r.to ? r.to : S.f.bis, preset: r && r.preset ? r.preset : "",
+      params: { urls: urls.params, prompt_runs: resp ? resp.params : {} }
+    };
   }
 
   UC.kernDrawer("domain", {

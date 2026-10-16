@@ -662,9 +662,6 @@
 .up-root.upt-root .upt-selcount .upt-selcount-clear { color: var(--upt-chip-ink); }
 .up-root.upt-root .upt-selcount .upt-selcount-clear:hover { background: color-mix(in srgb, var(--upt-chip-ink) 16%, transparent); color: var(--upt-chip-ink); }
 
-/* ---------- responsive: narrow first column and dropped columns ---------- */
-.up-root.is-vnarrow .upt-td-prompt .up-row-goto { display: none; }
-
 /* ---------- responsive: toolbar (mobile) ----------
    is-w3 is the gap-measured tier (see fitToolbar()) — same one urls-table drops its own brand
    toggle at. is-w1/is-w0 (sort, cols, export-shrink) are already generic in core.css and need no
@@ -1451,7 +1448,9 @@
    Tabellenkopf, an #main mit dessen Abstand. (Die Fassung fuer die feste Kastenhoehe, top am
    Kasten, ist mit ihr am 16.10. entfallen -- die Tabelle klebt seitdem wie Citations.) */
 .upt-root[data-flach="yes"] .upt-grp-head { padding-left: 0; padding-right: var(--up-flach-aus); }
-.up-root.upt-root[data-flach="yes"].up-sticky .upt-grp-head.is-open { top: calc(var(--up-sticky-top) + var(--up-thead-off) + var(--up-flach-h)); }
+/* + 1px: der klebende Spaltenkopf steht seit dem 16.10. 1px unter der Leiste (core.css, DIE LINIE
+   UEBER DEM KLEBENDEN KOPF) -- ohne das laege die Gruppe mit ihrem obersten Pixel unter ihm. */
+.up-root.upt-root[data-flach="yes"].up-sticky .upt-grp-head.is-open { top: calc(var(--up-sticky-top) + var(--up-thead-off) + var(--up-flach-h) + 1px); }
 /* Fuss einer Gruppe: so hoch wie der Fuss der Tabelle (48, 28er Knoepfe, je 10 darueber und
    darunter), links auf der Kante der Kaestchen (12, das Zellpolster), rechts mit dem Auslauf. */
 .upt-root[data-flach="yes"] .upt-grp-foot { min-height: var(--up-flach-h);
@@ -1479,6 +1478,12 @@
 }
 .up-root.upt-root[data-flach="yes"].up-sticky .upt-grp-sidehead::before,
 .up-root.upt-root[data-flach="yes"].up-sticky .upt-grp-sidehead::after { display: none; }
+/* Klebend wie der Spaltenkopf daneben (core.css, DIE LINIE UEBER DEM KLEBENDEN KOPF, 16.10.): 1px
+   tiefer, die obere Linie als Schatten ueber sich. In Ruhe liegt der Schatten auf dem oberen Rand
+   der Liste; klebend lief der mit ihr unter die Leiste, und ueber "Group" stand keine Linie. */
+.up-root.upt-root[data-flach="yes"].up-sticky .upt-grp-sidehead {
+  top: calc(var(--up-sticky-top) + var(--up-thead-off) + 1px); box-shadow: 0 -1px 0 var(--vc-border);
+}
 .up-root.upt-root[data-flach="yes"].up-sticky .upt-grp-sidelist { border: 0; border-radius: 0; }
 /* Ohne feste Kastenhoehe (16.10.) steht die Gruppenliste im Fluss neben dem Kasten: die Zeile ist
    so hoch wie das hoehere von beiden, die Liste scrollt nicht in sich, ihr Kopf klebt neben dem

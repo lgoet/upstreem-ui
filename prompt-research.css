@@ -784,7 +784,8 @@
    Was an inline panel under the composer; it is a page-level drawer now, so the list has room for
    every field a research carries. Geometry, timings and stacking are the host app's own drawer
    system: 6px off the top/right/bottom, 16px radius, slide in from the right, backdrop with a
-   1.5px blur. Stapelung siehe die Leiter unten am Schleier. */
+   1.5px blur. Stapelung siehe die Leiter unten am Schleier. Die Farbe des Schleiers ist seit dem
+   16.10. die aller Drawer (--vc-drawer-schleier, Schwarz zu 20 %); vorher war er durchsichtig. */
 /* The scrim and panel below live inside the component root (see the "sidebar" note in
    prompt-research.js). .upr-root.side-open / .side-in therefore match the root itself now -- there
    is no separate host element on <body> any more, and no .upr-portal rule to go with it. */
@@ -801,7 +802,7 @@
    im Dokument steht. Ergebnis: der Drawer lag hinter der Navigation. Das war kein Entschluss,
    sondern ein Zusammenstoss -- die 9900 stammen aus der Zeit vor der Sidebar. */
 .upr-side-scrim {
-  position: fixed; inset: 0; z-index: 9903; display: none; background: transparent;
+  position: fixed; inset: 0; z-index: 9903; display: none; background: var(--vc-drawer-schleier);
   opacity: 0; pointer-events: none; transition: opacity 160ms ease; will-change: opacity;
 }
 .upr-side {

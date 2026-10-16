@@ -341,7 +341,9 @@
     }
 
     /* ================= RIGHT: Top Domains / Top URLs table ================= */
-    var ROW_GOTO = '<span class="up-row-goto">' + UC.GOTO_SVG + '</span>';
+    /* Kein Zeilenpfeil mehr (16.10., .up-row-goto in core). Hier kam er nie zum Vorschein -- die
+       Zeile ist .tct-row, nicht .up-row --, belegte aber 16px plus 12px Abstand und kuerzte so den
+       Namen. */
     /* decimals defaults to true because most numbers here move in fractions. The SHARE column is
        the exception: its value is printed as a whole percent, so a trend with a decimal on it read
        as a different quantity than the number it sits next to. */
@@ -498,7 +500,7 @@
         var used = (r.used_total != null) ? '<span class="tct-used">' + esc(fmtTotal(r.used_total)) + '</span>' : "";
         return '<div class="tct-row" data-id="' + esc(String(idKey == null ? "" : idKey)) + '">' +
           '<div class="tct-td tct-td-idx">' + pos + '</div>' +
-          '<div class="tct-td tct-td-name">' + logo + '<span class="tct-name"' + (hoverTitle ? ' title="' + esc(hoverTitle) + '"' : '') + '>' + nameHtml + '</span>' + ROW_GOTO + '</div>' +
+          '<div class="tct-td tct-td-name">' + logo + '<span class="tct-name"' + (hoverTitle ? ' title="' + esc(hoverTitle) + '"' : '') + '>' + nameHtml + '</span></div>' +
           '<div class="tct-td tct-td-type">' + typeTag + '</div>' +
           '<div class="tct-td tct-td-share">' + share + '</div>' +
           '<div class="tct-td tct-td-used">' + used + '</div></div>';

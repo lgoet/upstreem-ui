@@ -628,8 +628,29 @@
       /* Bubble reicht brand_id an alle drei Exporte als p_brand weiter (Vertrag 12.10.).
          filter_label (16.10.): der Name der Marke fuer den Chip im Kopf des Export-Dialogs
          ("filtered to VW"); ohne ihn steht dort "This brand". */
-      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: typ, brand_id: B.id, filter_label: B.zeile ? str(B.zeile.name) : "" }); } catch (err) {}
+      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, exportKontext(typ)); } catch (err) {}
     }, true);
+  }
+  /* WAS DER EXPORT MITNIMMT (16.10., wie die Seiten, export-data.js KENNT): die Marke als Filter
+     des Drawers, dazu Zeitraum und Filter des Drawers als Chips, jeder abwaehlbar -- die Leiste fuer
+     alle Datensaetze, die Filter von Top Citations fuer Domains und URLs (URL-Typen nur im
+     URL-Modus), die der Responses fuer Responses. Beide Bausteine stehen zugleich da. Dieselben
+     Bauer wie beim Laden (Responses mit erwaehnt "all": p_mentioned meint hier die Marke). */
+  function exportKontext(typ) {
+    var r = null, c = kalender(), f = filterStand(), tp = B.top, rs = {}, k;
+    try { r = c && c.getRange ? c.getRange() : null; } catch (e) { r = null; }
+    for (k in B.resp) rs[k] = B.resp[k];
+    rs.erwaehnt = "all";
+    var resp = D.responsesTeile(f, rs)[0];
+    return {
+      export_type: typ, brand_id: B.id, filter_label: B.zeile ? str(B.zeile.name) : "",
+      date_from: r && r.from ? r.from : B.f.von, date_to: r && r.to ? r.to : B.f.bis, preset: r && r.preset ? r.preset : "",
+      params: {
+        domains: D.topListe(f, "domain", { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen }).params,
+        urls: D.topListe(f, "url", { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen, urlTypen: tp.modus === "url" ? tp.urlTypen : null }).params,
+        prompt_runs: resp ? resp.params : {}
+      }
+    };
   }
 
   /* Der Marken-Editor (brand-editor-drawer.js) meldet eine geaenderte Marke: der gemerkte Kopf ist
