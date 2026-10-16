@@ -1229,16 +1229,24 @@
    haelt mit ihrem eigenen contain die Seite still. Mit contain blieb die Karte stehen, solange der
    Zeiger ueber der Liste war -- an ihrem Ende und auch ganz ohne Ueberlauf (gemessen mit echtem
    Rad; gemeldet: "Das Popup kann nicht scrollen, wenn der Zeiger darueber ist"). Traegt die Liste
-   eine Klasse von hier (.up-filter-list), setzt die Komponente auto selbst. */
+   eine Klasse von hier (.up-filter-list), setzt die Komponente auto selbst.
+   Aus demselben Grund draussen (17.10.): die Themenliste im Fenster "New Grouping"
+   (.up-cgm-list/.upt-gm-list, UC.makeGroupingModal), ausgeklappt 240 hoch in einer Karte, die im
+   kurzen Fenster selbst rollt (1024x560: 69 zu rollen, die Karte stand ueber der Liste still).
+   Geprueft und BLEIBEN: .uap-list (die Karte von Add Prompts rollt nie, overflow: visible, die
+   Liste schrumpft statt der Karte), .uap-list-opts (Menue am Ausloeser), .uca-bld-list (einzige
+   Rollflaeche des Link-Builders, die Karte hat overflow: hidden),
+   .upt-topiclist (Auswahlleiste, kein Dialog; ihr Feld hat overflow: hidden). Die uebrigen sind
+   selbst Koerper oder Spalte ihrer Karte. */
 .up-root.up-root, .up-root.up-root *:not(:where(
   .up-topicmodal-card, .uex-body, .uex-nav, .uca-body, .uca-bld-list, .uca-how, .ums-aside, .ums-main,
-  .am-set-aside, .am-set-main, .uap-list, .uap-list-opts, .upt-gm-list, .up-cgm-list, .upt-topiclist,
+  .am-set-aside, .am-set-main, .uap-list, .uap-list-opts, .upt-topiclist,
   .up-kdr-koerper, .up-sdrawer-body, .uo-m-body,
   .up-filter-list, .utf-list, .umf-list, .umk-list, .upr-dd-list, .combo-filter-menu,
   .am-rep-range-menu, .am-pick-scroll, .up-cols-menu, .usn-menu, .usn-teamlist, .uob-help-body)) { overscroll-behavior: auto !important; }
 :where(
   .up-topicmodal-card, .uex-body, .uex-nav, .uca-body, .uca-bld-list, .uca-how, .ums-aside, .ums-main,
-  .am-set-aside, .am-set-main, .uap-list, .uap-list-opts, .upt-gm-list, .up-cgm-list, .upt-topiclist,
+  .am-set-aside, .am-set-main, .uap-list, .uap-list-opts, .upt-topiclist,
   .up-kdr-koerper, .up-sdrawer-body, .uo-m-body,
   .up-filter-list, .utf-list, .umf-list, .umk-list, .upr-dd-list, .combo-filter-menu,
   .am-rep-range-menu, .am-pick-scroll, .up-cols-menu, .usn-menu, .usn-teamlist, .uob-help-body) { overscroll-behavior: contain; }
