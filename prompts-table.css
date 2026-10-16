@@ -983,7 +983,6 @@
 .upt-grp-name { font-size: 14px; font-weight: 500; color: var(--vc-text);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
-.upt-grp-inactive { font-size: 11px; font-weight: 500; color: var(--vc-fourth); }
 /* Die Kennzahlen im Kopf sind DIESELBEN Bausteine wie in der Zelle darunter (.up-num,
    .up-rank-group, UC.sentHtml) und bekommen hier keine eigene Groesse: der Kopf unterscheidet
    sich durch Grund und Hoehe, nicht durch eine zweite Zahlenschrift. */

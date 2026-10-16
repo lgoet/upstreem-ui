@@ -347,8 +347,10 @@
   function abgelegteTopics(d) { var l = meta(d).dropped_tag_ids; return isArr(l) ? l.map(str).filter(Boolean) : []; }
 
   /* Seiten-Meta: Kontingent, Topics, Maerkte, Rolle (Vertrag 6.2 plus Rueckmeldung 2.1).
-     topics: fuer topics-manager und den Topic-Editor der Tabelle. prompt_count = aktiv + inaktiv,
-     wie get_tags_v2 heute zaehlt (so stehen die Zahlen in der Verwaltung wie bisher).
+     topics: fuer topics-manager und den Topic-Editor der Tabelle. prompt_count = NUR die AKTIVEN Prompts
+     des Topics (Nutzer 17.10.: "ich will nur die aktiven Counts sehen"; ein inaktiver Prompt laeuft nicht und
+     steht auch in der Prompt-Tabelle nicht im Reiter Active). Bis zum 17.10. stand hier aktiv + inaktiv, wie
+     get_tags_v2 zaehlt; liefert die DB nur das alte Feld prompt_count, bleibt es der Rueckfall.
      kontingent: in der Form des Kontingent-Stores von core ({used, total, plan}). */
   function zuSeite(d) {
     if (!d || typeof d !== "object" || isArr(d)) return null;
@@ -359,7 +361,7 @@
     return {
       topics: topics.map(function (t) {
         var o = topic(t), a = num(t.prompt_count_active), i = num(t.prompt_count_inactive);
-        o.prompt_count = a == null && i == null ? num(t.prompt_count) : (a || 0) + (i || 0);
+        o.prompt_count = a != null ? a : num(t.prompt_count);
         o.prompt_count_active = a; o.prompt_count_inactive = i;
         o.created_at = str(t.created_at); o.is_active = t.is_active !== false;
         return o;

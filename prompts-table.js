@@ -3338,9 +3338,10 @@
       var id = groupId(g), open = state.expandedGroup === id;
       var custom = isYes2(g.is_custom);
       var chip = groupChipHtml(g);
-      var nAct = toNum(g.prompts_count), nIn = toNum(g.prompts_count_inactive);
-      var counts = '<span class="up-num">' + (nAct == null ? "–" : UC.fmtTotal(nAct)) + '</span>' +
-        ((nIn != null && nIn > 0) ? '<span class="upt-grp-inactive">+' + UC.fmtTotal(nIn) + '</span>' : "");
+      /* Nur die aktiven Prompts der Gruppe (Nutzer 17.10.). Das "+N" der inaktiven stand hier bis dahin hinter der
+         Zahl: ein inaktiver Prompt laeuft nicht und gehoert in keine Zahl der Active-Ansicht. */
+      var nAct = toNum(g.prompts_count);
+      var counts = '<span class="up-num">' + (nAct == null ? "–" : UC.fmtTotal(nAct)) + '</span>';
       var visN = toNum(g.visibility_pct);
       var vis = '<span class="up-num' + (visN == null ? " is-empty" : "") + '">' +
                 (visN == null ? "–" : UC.fmtPct(visN)) + '</span>';
