@@ -302,6 +302,8 @@
     "Affected prompts are the prompts in the topics you chose. The comparison group is your other active prompts, which the event did not touch. They show what would have happened anyway.",
     "If the affected prompts improve more than the comparison group, the event likely made the difference. The analysis window sets how many days before and after are compared."
   ];
+  /* Der vierte Satz (17.10., Teil D): nur, wenn die Analyse confidence liefert (KONF_DA). */
+  var SEITE_SATZ_KONF = "Under each number you see how many answers it rests on, and whether the change stands out from the usual ups and downs.";
   /* DIE ZEICHNUNG IM HELLEN FELD DER KARTE (03.10., dritte Fassung). Wie das Liniendiagramm der
      App im Kleinen: weiche Kurven (Catmull-Rom, als Bezier vorgerechnet), leise Hilfslinien, unter
      der betroffenen Kurve eine Flaeche, die nach unten auslaeuft, Endpunkte wie die Kurvenenden im
@@ -358,6 +360,76 @@
     { key: "rank", label: "Rank" },
     { key: "sentiment", label: "Sentiment" }
   ];
+
+  /* ---- KONFIDENZ JE KENNZAHL (17.10., Auftrag Teil D) ---------------------------------------
+     Unter der Zahl einer Kachel klein die Fallzahl ("Based on 3,120 answers") und das Urteil der
+     DB als Angabe mit Zeichen -- keine Pille, keine Ampel-Flaeche. Die DB liefert nur Codes
+     (clear_effect | within_noise | too_little_data), die Worte stehen in core (EXPLAIN_TEXT
+     effekt_*), dort auch der Satz der Erklaerkarte. Ein unbekannter Code oder ein fehlender Block
+     zeigt NICHTS -- so sieht ein Event ohne confidence (v3, oder die DB hat Teil D noch nicht)
+     genau aus wie bisher.
+     Fuer jeden Abschnitt einer Kachel (Kampagnen, Teil B: confidence.<feld>.post fuer den
+     Nachlauf): konfVon(a, feld, "post") statt konfVon(a, feld) -- dieselbe Zeile, dieselbe Karte. */
+  var KONF = {
+    clear_effect:    { schl: "effekt_klar",     ic: "checkCircle", kl: "is-klar" },
+    within_noise:    { schl: "effekt_rauschen", ic: "activity",    kl: "is-rauschen" },
+    too_little_data: { schl: "effekt_wenig",    ic: "clock",       kl: "is-wenig" }
+  };
+  function konfVon(a, feld, abschnitt) {
+    var c = a && a.confidence && typeof a.confidence === "object" ? a.confidence[feld] : null;
+    if (c && abschnitt) c = c[abschnitt];
+    return c && typeof c === "object" && KONF[c.verdict] ? c : null;
+  }
+  /* Der Block eines Ziels (targets[].confidence, urls[].confidence): der Vertrag laesst offen, ob
+     er den Block selbst oder ihn unter dem Namen der Kennzahl traegt -- beides wird gelesen. */
+  function konfZiel(z, feld) {
+    var c = z && z.confidence && typeof z.confidence === "object" ? z.confidence : null;
+    if (!c) return null;
+    if (KONF[c.verdict]) return c;
+    return c[feld] && KONF[c[feld].verdict] ? c[feld] : null;
+  }
+  function konfText(code) {
+    var e = UC.explainCopy ? UC.explainCopy(KONF[code].schl) : null;
+    return e || { h: code, t: "" };
+  }
+  /* Gut oder schlecht: nur fuer das Zeichen eines klaren Effekts (Text bleibt leise). Rang
+     umgekehrt -- kleiner ist besser (CLAUDE.md 2b). */
+  function konfRichtung(c, feld) {
+    var e = num(c.effect);
+    if (c.verdict !== "clear_effect" || e == null || e === 0) return "";
+    return (feld === "rank" ? e < 0 : e > 0) ? "gut" : "schlecht";
+  }
+  /* Die Zeile selbst. n: Laeufe der betroffenen Seite vorher + nachher (affected.runs_*), beim
+     Rang die Laeufe mit Rang, beim Sentiment die im 30-Tage-Fenster -- so liefert es die DB je
+     Kennzahl. Ohne beide Zahlen nur das Urteil. Der Tooltip an der Zahl nennt die zwei Seiten. */
+  function konfZeile(c, feld, n, vorher, nachher, richtung, klickbar) {
+    var k = KONF[c.verdict], tx = konfText(c.verdict);
+    var zahlTxt = n == null ? "" : n === 1 ? t("Based on 1 answer") : ersetze(t("Based on {n} answers"), { n: zahl(n) });
+    var tip = vorher != null && nachher != null ? ersetze(t("{a} before the event, {b} after"), { a: zahl(vorher), b: zahl(nachher) }) : "";
+    return '<span class="uev-konf">' +
+      (zahlTxt ? '<span class="uev-konf-n"' + (tip ? ' data-tip="' + esc(tip) + '"' : '') + '>' + esc(zahlTxt) + '</span>' : '') +
+      '<span class="uev-konf-urteil ' + k.kl + (richtung ? " is-" + richtung : "") + (klickbar ? ' uev-erklaer" tabindex="0" data-explain="' +
+        esc(["konf", c.verdict, n == null ? "" : n, richtung].join("|")) : '') + '">' +
+        UC.icon(k.ic, 2) + '<span>' + esc(tx.h) + '</span></span>' +
+    '</span>';
+  }
+  function konfidenzHtml(c, feld) {
+    if (!c) return "";
+    var af = c.affected && typeof c.affected === "object" ? c.affected : {};
+    var vb = num(af.runs_before), va = num(af.runs_after);
+    var n = vb == null && va == null ? null : (vb || 0) + (va || 0);
+    return konfZeile(c, feld, n, vb, va, konfRichtung(c, feld), true);
+  }
+  /* Die Erklaerkarte am Urteil (Format CLAUDE.md/Memory): helle Platte mit der Zeile, wie die
+     Kachel sie zeigt, Titel = das Wort des Urteils, der Satz aus core. Der Schluessel traegt, was
+     die Platte braucht: konf|<code>|<n>|<richtung>. */
+  function konfErklaerung(key) {
+    var p = String(key).split("|"), code = p[1];
+    if (!KONF[code]) return "";
+    var n = p[2] === "" ? null : num(p[2]), tx = konfText(code);
+    return '<div class="up-explain-vis uev-explain-konf">' + konfZeile({ verdict: code }, "", n, null, null, p[3] || "", false) + '</div>' +
+      '<div class="up-explain-h">' + esc(tx.h) + '</div><div class="up-explain-t">' + esc(tx.t) + '</div>';
+  }
 
   /* Die Fehler-Codes des Vertrags (Tabelle 4) als Satz fuer den Nutzer. Nie der Code selbst,
      nie ein Funktionsname -- unbekanntes ist "Something went wrong". */
@@ -872,6 +944,36 @@
       "Wettbewerber, die du trackst, erscheinen hier mit ihrer Visibility vor und nach dem Event.",
     "This page opens once an AI answer cites it.": "Diese Seite lässt sich öffnen, sobald eine KI-Antwort sie zitiert."
   });
+  /* 17.10.: Seitenabdeckung je Regel (Teil C) und Konfidenz je Kennzahl (Teil D). Gegen alle
+     Kataloge geprueft; "Refresh" und "Show {n} more" stehen schon (core bzw. oben) und werden nur
+     benutzt, die drei Urteile und ihre Saetze stehen in core (EXPLAIN_TEXT effekt_*). */
+  if (UC.addMessages) UC.addMessages("de", {
+    "Based on {n} answers": "Aus {n} Antworten",
+    "Based on 1 answer": "Aus 1 Antwort",
+    "{a} before the event, {b} after": "{a} vor dem Event, {b} danach",
+    "Under each number you see how many answers it rests on, and whether the change stands out from the usual ups and downs.":
+      "Unter jeder Zahl siehst du, auf wie vielen Antworten sie beruht und ob sich die Veränderung von den üblichen Schwankungen abhebt.",
+    "{a} of {b} pages cited": "{a} von {b} Seiten zitiert",
+    "{a} of {b} page cited": "{a} von {b} Seite zitiert",
+    "Last checked {when}": "Zuletzt geprüft {when}",
+    "Checking…": "Wird geprüft …",
+    "You can refresh again in {n} min": "Du kannst in {n} Min. wieder aktualisieren",
+    "Check your sitemap for new pages": "Sitemap auf neue Seiten prüfen",
+    "We couldn't read your sitemap. We'll try again tomorrow.": "Wir konnten deine Sitemap nicht lesen. Wir versuchen es morgen wieder.",
+    "We're reading your sitemap for the first time.": "Wir lesen deine Sitemap zum ersten Mal.",
+    "No pages in your sitemap match this rule.": "Keine Seite deiner Sitemap passt zu dieser Regel.",
+    "Only the first {n} pages": "Nur die ersten {n} Seiten",
+    "The sitemap couldn't be refreshed. Please try again later.": "Die Sitemap ließ sich nicht aktualisieren. Versuch es bitte später noch einmal.",
+    "Page coverage couldn't be loaded.": "Die Seitenabdeckung ließ sich nicht laden.",
+    "Cited ({n})": "Zitiert ({n})",
+    "Not cited yet ({n})": "Noch nicht zitiert ({n})",
+    "New since event": "Neu seit dem Event",
+    "No longer in sitemap": "Nicht mehr in der Sitemap",
+    "Updated {date}": "Aktualisiert am {date}",
+    "In sitemap since {date}": "Seit {date} in der Sitemap",
+    "Not in the sitemap since {date}": "Seit {date} nicht mehr in der Sitemap",
+    "Every page from your sitemap is cited.": "Jede Seite deiner Sitemap wird zitiert."
+  });
 
   /* Spaltenzahl der Karten: nach dem PLATZ (wie response-detail.spalten -- dieselben Schwellen,
      dieselbe Begruendung: ein springendes Raster ist schlimmer als eine kurze letzte Reihe). */
@@ -935,6 +1037,15 @@
      einmal gefragt, und bis dahin gilt der Rueckfall. NICHT ueber UC.ohneBubble: das ist kein
      Rueckweg an Bubble, sondern die Frage, was die Datenbank kann. */
   var ZIELE_DA = { stand: null, laeuft: null }, SITEMAP_DA = { stand: null, laeuft: null };
+  /* DER EVENTS-AUSBAU (17.10., bubble/events_ausbau_db_auftrag_17_10.md, Teile C und D) -- die DB
+     baut ihn erst noch, die Oberflaeche steht schon gegen die ausgeschriebenen Antwortformen.
+     ABD_DA: gibt es get_impact_event_coverage_v1? Gefragt wird mit dem ersten echten Abruf (der
+     nichts aendert); PGRST202 heisst "noch nicht eingespielt" und bleibt fuer die ganze Seite --
+     dann steht jeder Regel-Abschnitt wie bisher da, ohne Abdeckung, ohne Fehler.
+     KONF_DA: hat schon eine Analyse ein Feld confidence mitgebracht? Erst dann nennt die
+     Seitenerklaerung die Fallzahlen und Urteile -- ein Satz ueber etwas, das nirgends steht,
+     waere einer zu viel. */
+  var ABD_DA = { stand: null }, KONF_DA = { stand: false };
   function fehltFn(erg) {
     var f = (erg && erg.fehler) || {};
     return !!erg && !erg.ok && (/PGRST202/.test(String(f.code || "")) ||
@@ -1291,6 +1402,7 @@
        und Satz statt einer langen Tooltip-Zeile. */
     if (UC.makeExplain) UC.makeExplain({ root: root, triggerSel: ".uev-erklaer", getIsDark: isDark,
       html: function (key) {
+        if (String(key || "").indexOf("konf|") === 0) return konfErklaerung(key);
         var e = ERKLAERUNG[key];
         if (!e) return "";
         /* Beispielwerte als die Chips der Tabelle (.up-marke.is-leise, 03.10. angefordert). Die
@@ -1306,7 +1418,7 @@
     var seitenKarte = UC.makeExplain ? UC.makeExplain({ root: root, triggerSel: ".uev-seiteninfo", cls: "uev-explain-breit", getIsDark: isDark,
       html: function () {
         return seiteZeichnung() + '<div class="up-explain-h">' + esc(t("How event analysis works")) + '</div>' +
-          SEITE_SAETZE.map(function (x) { return '<div class="up-explain-t">' + esc(t(x)) + '</div>'; }).join("");
+          SEITE_SAETZE.concat(KONF_DA.stand ? [SEITE_SATZ_KONF] : []).map(function (x) { return '<div class="up-explain-t">' + esc(t(x)) + '</div>'; }).join("");
       } }) : null;
     /* Per Klick (Touch hat kein Zeigen): oeffnen, wenn zu; schliessen tut ein Druck daneben. */
     document.addEventListener("pointerdown", function (e) {
@@ -1331,12 +1443,16 @@
       analyse: gemerkt("analyse", {}), analyseLaden: false, analyseFehler: false,
       fenster: gemerkt("fenster", 30), metrik: gemerkt("metrik", "visibility"),
       modelle: gemerkt("modelle", null), maerkte: gemerkt("maerkte", null),
-      respUrl: "", geloescht: {}
+      respUrl: "", geloescht: {},
+      /* Seitenabdeckung je Event (Teil C) und die Wahl des Umschalters je Ziel -- gemerkt wie Detail
+         und Analyse, damit ein Neuaufbau (Thema) kein Skelett zeigt. */
+      abd: gemerkt("abd", {}), abdSeg: gemerkt("abdSeg", {})
     };
     function persist() {
       if (root.isConnected === false) return;
       STORE[instanceId] = { suche: state.suche, typen: state.typen, detail: state.detail, analyse: state.analyse,
-        fenster: state.fenster, metrik: state.metrik, modelle: state.modelle, maerkte: state.maerkte };
+        fenster: state.fenster, metrik: state.metrik, modelle: state.modelle, maerkte: state.maerkte,
+        abd: state.abd, abdSeg: state.abdSeg };
     }
     function dieDetail() { return state.eventId ? state.detail[state.eventId] || null : null; }
     /* Der Intent-Filter der App gehoert in die Signatur (13.10.): sonst zeigte ein Wechsel die
@@ -2004,6 +2120,8 @@
            Rank und Sentiment zeigten einen nackten Strich ohne Grund. Der Strich bleibt -- er ist der
            Wert einer Kachel ohne Zahl (Vertrag 5: "KPI-Karten - und Noch keine vergleichbaren Daten"). */
         if (leer) teile.fussHtml = esc(t("No comparable data yet"));
+        /* Fallzahl und Urteil (17.10., Teil D) als zweite Zeile im Fuss: ohne confidence leer. */
+        else teile.fussHtml = (teile.fussHtml || "") + konfidenzHtml(konfVon(a, m.key), m.key);
         teile.label = m.label;
         /* Die drei Kennzahlen in EINEM Kasten: das Kennzahlen-Band aus core (.up-kpiband am
            Behaelter, 04.10.), senkrechte Linien ueber die volle Hoehe. */
@@ -2365,6 +2483,9 @@
             '<span class="up-heading up-sec-h uev-ziel-h"><span class="uev-ziel-ic">' + UC.icon(ART_ZEICHEN[zt.kind] || "link", 2) + '</span>' +
               '<span class="uev-notation is-titel">' + esc(x.zeigen) + '</span></span>' +
             '<span class="up-sec-sub">' + esc(t(ART_SATZ[zt.kind] || ART_SATZ.path)) + '</span>' +
+            /* Die Seitenabdeckung aus der Sitemap (17.10., Teil C, abdFuellen): leer und verborgen,
+               solange die DB sie nicht liefert. */
+            '<div class="uev-abd" hidden></div>' +
           '</div>' +
           '<button type="button" class="up-btn-sec uev-zielweg" data-ziel-id="' + esc(zt.id) + '">' + UC.icon("trash", 2) + '<span>' + esc(t("Remove")) + '</span></button>' +
         '</div>' +
@@ -2374,7 +2495,11 @@
           '<div class="up-box uev-chartbox uev-zielchart"><div class="up-line-wrap uev-linewrap uev-ziel-linie"><canvas></canvas></div><div class="up-legend uev-legende"></div></div>' +
           /* cited_urls_truncated (15.10.): die Tabelle traegt hoechstens 200 URLs, die neuesten. */
           '<div class="uev-hinweise uev-ziel-hinweis" hidden></div>' +
+          /* Umschalter "Cited | Not cited yet" und die Liste der noch nicht zitierten Seiten
+             (17.10., Teil C): sichtbar nur mit .has-abd am Block, siehe events.css. */
+          '<div class="uev-abd-seg"></div>' +
           '<div class="uev-ziel-tab"><div class="uev-tabinhalt"></div>' + fussHtml() + '</div>' +
+          '<div class="uev-abd-liste"></div>' +
           /* Der Leerzustand des ganzen Ziels (zielFuellen, is-leer am Block): statt Kennzahlen,
              Verlauf und Tabelle. Die drei bleiben stehen, nur verborgen -- das Diagramm ueberlebt so
              den Wechsel zurueck, sobald das erste Zitat kommt. */
@@ -2399,6 +2524,9 @@
       var host = elMain.querySelector('[data-sek="ziele"]'), d = dieDetail(), a = dieAnalyse();
       if (!host) return;
       var liste = regelZiele(d), da = {};
+      /* Die Abdeckung VOR dem Zeichnen anfragen: so steht e.laedt schon, wenn abdFuellen einen
+         gemerkten Stand von vorhin zeigt (die Vorgabe des Umschalters richtet sich nach dem frischen). */
+      if (liste.length && state.eventId && !abdGefragt[state.eventId]) { abdGefragt[state.eventId] = 1; abdAnfordern(state.eventId); }
       liste.forEach(function (zt, i) {
         da[String(zt.id)] = 1;
         var sek = null, alle = host.querySelectorAll(".uev-zielsek");
@@ -2406,6 +2534,7 @@
         if (!sek) sek = zielSekAnlegen(host, zt);
         else host.appendChild(sek);
         zielFuellen(sek, zt, zielAuswertung(a, zt, i, liste), a);
+        abdFuellen(sek, zt);
       });
       /* Entfernte Ziele: Abschnitt, Diagramm und Pager weg. */
       [].slice.call(host.querySelectorAll(".uev-zielsek")).forEach(function (sek) {
@@ -2470,7 +2599,8 @@
         UC.kpiKarte({ label: "Cited URLs", wertHtml: zahlWert(z.matched_url_count != null ? z.matched_url_count : zt.matched_url_count), fussHtml: esc(t("In the whole period")), klasse: "uev-kpi" }),
         UC.kpiKarte({ label: "Citation count", vorherHtml: zahlWert(z.citations_before), wertHtml: zahlWert(z.citations_after), fussHtml: esc(t("Before and after the event")), klasse: "uev-kpi" }),
         UC.kpiKarte({ label: "Share of all citations", vorherHtml: wertHtml("visibility", sb), wertHtml: wertHtml("visibility", sa),
-          trendHtml: sb != null && sa != null ? trendHtml("visibility", sa - sb) : "", klasse: "uev-kpi" }),
+          trendHtml: sb != null && sa != null ? trendHtml("visibility", sa - sb) : "",
+          fussHtml: konfidenzHtml(konfZiel(z, "share_of_citations"), "share_of_citations"), klasse: "uev-kpi" }),
         /* new_urls_before (15.10.): wie die Zitate vorher und nachher -- so sieht man, ob nach dem
            Event mehr neue Seiten zitiert wurden als davor. Ohne das Feld wie bisher nur nachher. */
         num(z.new_urls_before) != null
@@ -2531,6 +2661,236 @@
           '</div>';
         }).join("") + '</div></div>';
     }
+    /* ---- SEITENABDECKUNG JE REGEL (17.10., Auftrag Teil C, Vorbild: "Seitenindexierung" der
+       Google Search Console) ------------------------------------------------------------------
+       Im Kopf jedes Regel-Abschnitts: "12 of 43 pages cited" mit duennem Balken, wann die Sitemap
+       zuletzt gelesen wurde und "Refresh" (hoechstens einmal je Stunde, die DB sagt wann wieder:
+       next_refresh_at). Darunter der Umschalter "Cited | Not cited yet": Cited ist die Tabelle der
+       zitierten URLs, die es schon gab; Not cited yet die leise Liste der Seiten aus der Sitemap,
+       die noch keine Antwort zitiert hat.
+       EIN Abruf je Event beim Oeffnen (get_impact_event_coverage_v1, alle Ziele, Filter
+       not_cited, die ersten ABD_LIMIT Seiten je Ziel); "Show N more" holt je Ziel nach. Ohne die
+       Funktion (PGRST202) bleibt alles wie bisher (ABD_DA). Ein Lesefehler der Sitemap loescht in
+       der DB nichts -- darum steht der Satz dann ueber den zuletzt gelesenen Seiten. */
+    var ABD_LIMIT = 20, ABD_MEHR = 50, abdGefragt = {}, abdUhrId = null, abdSegJetzt = {};
+    function abdLesbar(d) { return !!d && typeof d === "object" && isArr(d.targets); }
+    function abdZiel(d, id, wert) {
+      var l = d && isArr(d.targets) ? d.targets : [], i;
+      for (i = 0; i < l.length; i++) if (l[i] && l[i].target_id != null && String(l[i].target_id) === String(id)) return l[i];
+      for (i = 0; i < l.length; i++) if (l[i] && wert != null && String(l[i].value) === String(wert)) return l[i];
+      return null;
+    }
+    function abdRpc(fn, o) {
+      var tm = team();
+      return (tm ? Promise.resolve(tm) : (UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(""))).then(function (tm2) {
+        if (!tm2) return { ok: false, status: 0, fehler: { code: "", message: "", hint: "", details: "" } };
+        return UC.rpc(fn, mitTeam(o, tm2), { timeoutMs: 20000 });
+      }).then(function (erg) { return erg || { ok: false, status: 0, fehler: {} }; });
+    }
+    function abdAnfordern(eid) {
+      if (demo || ABD_DA.stand === false || !UC.rpc || !eid) return;
+      var e = state.abd[eid] || (state.abd[eid] = { daten: null, fehler: false, mehr: {} });
+      e.laedt = true;
+      abdRpc("get_impact_event_coverage_v1", { p_event_id: eid, p_target_id: null, p_filter: "not_cited", p_limit: ABD_LIMIT, p_offset: 0 }).then(function (erg) {
+        e.laedt = false;
+        if (fehltFn(erg)) { ABD_DA.stand = false; delete state.abd[eid]; }
+        else if (erg.ok && abdLesbar(erg.daten)) { ABD_DA.stand = true; e.daten = erg.daten; e.fehler = false; e.mehr = {}; }
+        /* Gescheitert oder unlesbar: mit einem Stand von vorhin bleibt der stehen (die Seiten sind
+           ja nicht falsch), ohne einen steht der Satz statt der Zeile -- nie ein endloses Skelett. */
+        else e.fehler = !e.daten;
+        persist();
+        if (root.isConnected !== false && state.ansicht === "detail" && state.eventId === eid) abdAlle();
+      });
+    }
+    /* Nur die Teile der Abdeckung neu, nicht die ganzen Ziel-Abschnitte (deren Diagramme blieben
+       sonst bei jeder Minute der Sperr-Uhr neu gezeichnet). */
+    function abdAlle() {
+      var host = elMain.querySelector('[data-sek="ziele"]'), d = dieDetail();
+      if (!host || !d) return;
+      regelZiele(d).forEach(function (zt) {
+        var sek = host.querySelector('.uev-zielsek[data-ziel-id="' + String(zt.id).replace(/"/g, "") + '"]');
+        if (sek) abdFuellen(sek, zt);
+      });
+    }
+    /* Die Sperr-Uhr: solange "Refresh" gesperrt ist, jede Minute die Wartezeit neu, am Ende frei. */
+    function abdUhr(warteMs) {
+      if (abdUhrId) { clearTimeout(abdUhrId); abdUhrId = null; }
+      if (!(warteMs > 0)) return;
+      abdUhrId = setTimeout(function () {
+        abdUhrId = null;
+        if (root.isConnected !== false && state.ansicht === "detail") abdAlle();
+      }, Math.min(warteMs, 60000) + 50);
+    }
+    function abdWarteMs(d) {
+      var nr = d && d.next_refresh_at ? Date.parse(d.next_refresh_at) : NaN;
+      return isFinite(nr) ? nr - Date.now() : 0;
+    }
+    function abdKopfHtml(e, d, z) {
+      var st = String(z.status || ""), pc = num(z.page_count), cc = num(z.cited_count), teile = [];
+      if (st === "pending") {
+        teile.push('<span class="uev-angabe">' + UC.icon("clock", 2) + '<span>' + esc(t("We're reading your sitemap for the first time.")) + '</span></span>');
+      } else if (pc > 0 && cc != null) {
+        var anteil = Math.max(0, Math.min(100, cc / pc * 100));
+        var satz = esc(t(pc === 1 ? "{a} of {b} page cited" : "{a} of {b} pages cited"))
+          .replace("{a}", '<span class="uev-abd-z">' + esc(zahl(cc)) + '</span>').replace("{b}", '<span class="uev-abd-z">' + esc(zahl(pc)) + '</span>');
+        var aria = ersetze(t(pc === 1 ? "{a} of {b} page cited" : "{a} of {b} pages cited"), { a: zahl(cc), b: zahl(pc) });
+        teile.push('<span class="uev-abd-stand"><span class="uev-abd-satz">' + satz + '</span>' +
+          '<span class="uev-abd-balken" role="img" aria-label="' + esc(aria) + '"><span class="uev-abd-balken-f" style="width:' + anteil.toFixed(1) + '%"></span></span></span>');
+      } else if (st === "ok") {
+        teile.push('<span class="uev-abd-leise">' + esc(t("No pages in your sitemap match this rule.")) + '</span>');
+      }
+      if (z.truncated === true && num(z.page_limit) > 0) {
+        teile.push('<span class="uev-angabe">' + UC.icon("info", 2) + '<span>' + esc(ersetze(t("Only the first {n} pages"), { n: zahl(z.page_limit) })) + '</span></span>');
+      }
+      var zeit = z.last_checked_at || d.last_checked_at;
+      var wann = zeit && UC.relativeTime ? UC.relativeTime(zeit) : "";
+      if (wann) teile.push('<span class="uev-abd-leise">' + esc(ersetze(t("Last checked {when}"), { when: wann })) + '</span>');
+      /* "Refresh" nur, wenn die DB die Sperre mitliefert -- ohne next_refresh_at im Vertrag gaebe es
+         keinen Weg, "gesperrt" ehrlich zu zeigen. Gesperrt ueber aria-disabled statt disabled: ein
+         abgeschalteter Knopf bekommt in Chrome kein pointerenter, der Tooltip kaeme nie. */
+      if ("next_refresh_at" in d) {
+        var warte = abdWarteMs(d), laeuft = !!e.neuLaeuft, zu = warte > 0 || laeuft;
+        var tip = warte > 0 ? ersetze(t("You can refresh again in {n} min"), { n: Math.max(1, Math.ceil(warte / 60000)) }) : t("Check your sitemap for new pages");
+        teile.push('<button type="button" class="up-quietbtn uev-abd-neu' + (zu ? " is-aus" : "") + '" aria-disabled="' + zu + '" data-tip="' + esc(tip) + '">' +
+          UC.icon(laeuft ? "loader" : "refreshCw", 2) + '<span>' + esc(t(laeuft ? "Checking…" : "Refresh")) + '</span></button>');
+        abdUhr(warte);
+      }
+      /* Lesefehler der Sitemap (not_found, timeout, too_large, invalid_xml, blocked): EIN Satz fuer
+         alle -- der naechste Versuch kommt ohnehin morgen von selbst. Rot wie jeder Fehler der App
+         (.up-fehlerzeile, kein Kasten). */
+      var fehler = st && st !== "ok" && st !== "pending";
+      return '<div class="uev-abd-zeile1">' + teile.join("") + '</div>' +
+        (fehler ? '<div class="up-fehlerzeile is-on uev-abd-fehler"><span>' + esc(t("We couldn't read your sitemap. We'll try again tomorrow.")) + '</span></div>' : '');
+    }
+    function abdSeiteHtml(zt, p) {
+      var hp = hostPfad(p.url || ""), weg = !!p.missing_since;
+      var pfad = zt.kind === "host_all" ? hp.host + (hp.start ? "" : hp.pfad) : pfadText(hp);
+      var wann = p.lastmod ? ersetze(t("Updated {date}"), { date: datum(p.lastmod) })
+        : p.first_seen_at ? ersetze(t("In sitemap since {date}"), { date: datum(p.first_seen_at) }) : "";
+      return '<div class="uev-abd-seite' + (weg ? " is-weg" : "") + '" data-tip="' + esc(t("This page opens once an AI answer cites it.")) + '">' +
+        zielFavKlein(p.url || "", '<span class="uev-abd-fav0">' + UC.icon("globe", 2) + '</span>') +
+        '<span class="uev-abd-pfad" title="' + esc(p.url || "") + '">' + esc(pfad) + '</span>' +
+        (p.is_new === true ? '<span class="up-marke is-leise uev-abd-marke">' + esc(t("New since event")) + '</span>' : '') +
+        (weg ? '<span class="up-marke is-leise uev-abd-marke">' + esc(t("No longer in sitemap")) + '</span>' : '') +
+        (wann ? '<span class="uev-abd-datum">' + esc(wann) + '</span>' : '') +
+      '</div>';
+    }
+    function abdListeHtml(zt, z, e) {
+      var m = e.mehr && e.mehr[zt.id], seiten = (isArr(z.pages) ? z.pages : []).concat(m && isArr(m.pages) ? m.pages : []);
+      var total = num(z.pages_total);
+      if (!seiten.length) {
+        return '<div class="up-box uev-leerbox">' + UC.leerHtml({ mini: true, titel: total === 0 ? "Every page from your sitemap is cited." : "No data yet" }) + '</div>';
+      }
+      var rest = total != null ? total - seiten.length : 0;
+      return '<div class="uev-abd-seiten">' + seiten.map(function (p) { return abdSeiteHtml(zt, p || {}); }).join("") + '</div>' +
+        (rest > 0 ? '<button type="button" class="up-quietbtn uev-abd-mehr" data-ziel-id="' + esc(zt.id) + '"' + (m && m.laedt ? ' disabled' : '') + '>' +
+          (m && m.laedt ? UC.icon("loader", 2) : '') + '<span>' + esc(ersetze(t("Show {n} more"), { n: zahl(Math.min(ABD_MEHR, rest)) })) + '</span></button>' : '');
+    }
+    function abdFuellen(sek, zt) {
+      var kopf = sek.querySelector(".uev-abd"), seg = sek.querySelector(".uev-abd-seg"), liste = sek.querySelector(".uev-abd-liste");
+      var block = sek.querySelector(".uev-ziel-block");
+      if (!kopf || !seg || !liste || !block) return;
+      var e = state.eventId ? state.abd[state.eventId] : null, d = e && e.daten, z = d ? abdZiel(d, zt.id, zt.value) : null;
+      function ohneListe() { block.classList.remove("has-abd", "zeigt-offen"); seg.innerHTML = ""; liste.innerHTML = ""; }
+      if (!e || ABD_DA.stand === false || (d && !z)) { kopf.hidden = true; kopf.innerHTML = ""; ohneListe(); return; }
+      if (!d) {
+        /* Noch nichts da: eine leise Skelettzeile, solange gefragt wird (sie hat die Hoehe der
+           Zeile, die kommt), danach der Satz -- nie beides gleich. */
+        kopf.hidden = !(e.laedt || e.fehler);
+        kopf.innerHTML = e.fehler ? '<div class="uev-abd-zeile1"><span class="uev-abd-leise">' + esc(t("Page coverage couldn't be loaded.")) + '</span></div>'
+          : e.laedt ? '<div class="uev-abd-zeile1"><span class="uev-sk uev-abd-sk"></span></div>' : "";
+        ohneListe();
+        return;
+      }
+      kopf.hidden = false;
+      kopf.innerHTML = abdKopfHtml(e, d, z);
+      var pc = num(z.page_count), cc = num(z.cited_count);
+      if (!(pc > 0) || cc == null) { ohneListe(); return; }
+      var nicht = num(z.pages_total) != null ? num(z.pages_total) : Math.max(0, pc - cc);
+      /* Vorgabe: Cited, wenn es Zitate gibt und das Ziel nicht im Leerzustand steht -- sonst gleich
+         die Liste, sie ist dann das Einzige, was etwas zu sagen hat. */
+      /* Einmal gewaehlt, bleibt die Vorgabe fuer dieses Oeffnen stehen -- sonst sprang die Liste
+         unter dem Blick auf die Tabelle, sobald ein "Refresh" die erste zitierte Seite brachte. */
+      var wahl = state.abdSeg[zt.id] || abdSegJetzt[zt.id] || (cc > 0 && !block.classList.contains("is-leer") ? "zitiert" : "offen");
+      if (!e.laedt) abdSegJetzt[zt.id] = wahl;
+      function knopf(w, txt, n) {
+        return '<button class="up-seg-btn' + (wahl === w ? " is-active" : "") + '" type="button" data-abd-seg="' + w + '" data-ziel-id="' + esc(zt.id) + '">' +
+          esc(ersetze(t(txt), { n: zahl(n) })) + '</button>';
+      }
+      seg.innerHTML = '<div class="up-seg uev-abd-schalter" role="group" aria-label="' + esc(t("Pages")) + '">' +
+        knopf("zitiert", "Cited ({n})", cc) + knopf("offen", "Not cited yet ({n})", nicht) + '</div>';
+      block.classList.add("has-abd");
+      block.classList.toggle("zeigt-offen", wahl === "offen");
+      liste.innerHTML = wahl === "offen" ? abdListeHtml(zt, z, e) : "";
+      if (UC.segJetzt) { try { UC.segJetzt(seg.querySelector(".up-seg")); } catch (x) {} }
+    }
+    function abdSegWaehlen(zielId, w) {
+      if (!zielId || (w !== "zitiert" && w !== "offen")) return;
+      state.abdSeg[zielId] = w; persist();
+      abdAlle();
+    }
+    function abdMehr(zielId) {
+      var eid = state.eventId, e = eid ? state.abd[eid] : null, d = e && e.daten;
+      var z = d ? abdZiel(d, zielId, null) : null;
+      if (!z) return;
+      var m = e.mehr[zielId] || (e.mehr[zielId] = { pages: [], laedt: false });
+      if (m.laedt) return;
+      m.laedt = true; abdAlle();
+      var von = (isArr(z.pages) ? z.pages.length : 0) + m.pages.length;
+      abdRpc("get_impact_event_coverage_v1", { p_event_id: eid, p_target_id: zielId, p_filter: "not_cited", p_limit: ABD_MEHR, p_offset: von }).then(function (erg) {
+        m.laedt = false;
+        var z2 = erg.ok && abdLesbar(erg.daten) ? abdZiel(erg.daten, zielId, null) : null;
+        if (z2 && isArr(z2.pages)) m.pages = m.pages.concat(z2.pages);
+        else if (UC.toast) UC.toast(fehlerText(String((erg.fehler || {}).message || ""), ""), { kind: "error" });
+        if (root.isConnected !== false && state.eventId === eid) abdAlle();
+      });
+    }
+    /* "Refresh": die Edge Function sitemap-lesen im Modus event_refresh (Auftrag C.3) antwortet mit
+       der Abdeckung selbst. Hat die DB das Anstossen lieber als RPC gebaut
+       (refresh_impact_event_sitemaps_v1, C.5: { queued, next_refresh_at }), antwortet die
+       Function auf den Modus noch mit 400 invalid_input -- dann die RPC und die Abdeckung kurz
+       danach neu. "Zu frueh" (impact_event_sitemap_refresh_too_soon) ist kein Fehler: der Knopf
+       sperrt sich mit der Wartezeit, die die DB nennt. */
+    function abdZuFrueh(d, f) {
+      var nr = "";
+      try { var det = f.details && String(f.details).charAt(0) === "{" ? JSON.parse(f.details) : null; if (det && det.next_refresh_at) nr = det.next_refresh_at; } catch (x) {}
+      if (!nr && /^\d+/.test(String(f.hint || ""))) nr = new Date(Date.now() + parseInt(f.hint, 10) * 1000).toISOString();
+      if (!nr) nr = new Date(Date.now() + 3600000).toISOString();
+      d.next_refresh_at = nr;
+    }
+    function abdAktualisieren() {
+      var eid = state.eventId, e = eid ? state.abd[eid] : null, d = e && e.daten;
+      if (!d || e.neuLaeuft || abdWarteMs(d) > 0) return;
+      e.neuLaeuft = true; abdAlle();
+      function fertig(text) {
+        e.neuLaeuft = false; persist();
+        if (text && UC.toast) UC.toast(text, { kind: "error" });
+        if (root.isConnected !== false && state.eventId === eid) abdAlle();
+      }
+      function zuFrueh(f) { return String(f.message || "") === "impact_event_sitemap_refresh_too_soon"; }
+      var tm = team();
+      (UC.edge ? UC.edge("sitemap-lesen", { team_id: tm, event_id: eid, mode: "event_refresh" }, { timeoutMs: 120000 }) : Promise.resolve(null)).then(function (erg) {
+        erg = erg || { ok: false, status: 404, fehler: { code: "NOT_FOUND", message: "" } };
+        var f = erg.fehler || {};
+        if (erg.ok && abdLesbar(erg.daten)) { e.daten = erg.daten; e.mehr = {}; fertig(""); return; }
+        if (zuFrueh(f)) { abdZuFrueh(d, f); fertig(""); return; }
+        if (!(edgeFehlt(erg) || (erg.status === 400 && String(f.message || "") === "invalid_input"))) {
+          fertig(t("The sitemap couldn't be refreshed. Please try again later.")); return;
+        }
+        abdRpc("refresh_impact_event_sitemaps_v1", { p_event_id: eid }).then(function (r2) {
+          var f2 = r2.fehler || {};
+          if (r2.ok && r2.daten && typeof r2.daten === "object") {
+            if (r2.daten.next_refresh_at) d.next_refresh_at = r2.daten.next_refresh_at;
+            fertig("");
+            setTimeout(function () { if (state.eventId === eid) abdAnfordern(eid); }, 5000);
+            return;
+          }
+          if (zuFrueh(f2)) { abdZuFrueh(d, f2); fertig(""); return; }
+          fertig(t("The sitemap couldn't be refreshed. Please try again later."));
+        });
+      });
+    }
+
     function modellName(k) {
       var l = UC.getModels ? UC.getModels() : [];
       for (var i = 0; i < l.length; i++) if (String(l[i].key || l[i].model || "") === String(k)) return String(l[i].display_name || l[i].name || k);
@@ -2763,7 +3123,7 @@
       var schonOffen = state.ansicht === "detail" && state.eventId === id;
       state.ansicht = "detail"; state.eventId = id; state.respUrl = "";
       adresseSetzen(id, neuerEintrag);
-      if (!schonOffen) { baueDetail(); }
+      if (!schonOffen) { delete abdGefragt[id]; abdSegJetzt = {}; baueDetail(); }
       var ohneAbruf = frisch && !!state.detail[id];
       state.detailLaden = !ohneAbruf;
       renderDetail();
@@ -2835,6 +3195,13 @@
       if (uw) { urlEntfernenFragen(uw.getAttribute("data-url-id")); return; }
       var zw = e.target.closest(".uev-zielweg");
       if (zw) { zielEntfernenFragen(zw.getAttribute("data-ziel-id")); return; }
+      /* Seitenabdeckung (17.10., Teil C): Umschalter, "Refresh", "Show N more". */
+      var asg = e.target.closest("[data-abd-seg]");
+      if (asg) { abdSegWaehlen(asg.getAttribute("data-ziel-id"), asg.getAttribute("data-abd-seg")); return; }
+      var anu = e.target.closest(".uev-abd-neu");
+      if (anu) { abdAktualisieren(); return; }
+      var amh = e.target.closest(".uev-abd-mehr");
+      if (amh) { abdMehr(amh.getAttribute("data-ziel-id")); return; }
       if (e.target.closest(".uev-anl-toggle")) { anleitungUmschalten(); return; }
       /* Zitierte URL einer Regel: die Antwort, in der sie zuerst zitiert wurde (15.10.). */
       var zz = e.target.closest(".uev-zitzeile");
@@ -6017,7 +6384,7 @@
         if (!lesen && wartend.zielWeg && wartend.zielWeg.eventId === id) { var api3 = wartend.zielWeg.api; clearTimeout(wartend.zielWeg.uhr); wartend.zielWeg = null; api3.busy("ok", false); api3.schliessen(); listeNeu(); }
         if (!lesen) popupDetailKam(d, neu);
         if (state.ansicht === "detail" && state.eventId === id) {
-          if (urlsNeu) { analyseAnfordern(); responsesAnfordern(false, true); }
+          if (urlsNeu) { delete abdGefragt[id]; analyseAnfordern(); responsesAnfordern(false, true); }
           renderDetail();
           if (!urlsNeu && isArr(d.urls) && d.urls.length) responsesAnfordern();
         }
@@ -6039,6 +6406,7 @@
            so nicht die aktuelle. */
         var sig = analyseSig(id, fen);
         state.analyse[sig] = a;
+        if (a.confidence && typeof a.confidence === "object") KONF_DA.stand = true;
         persist();
         if (state.ansicht === "detail" && state.eventId === id) renderDetail();
         return true;

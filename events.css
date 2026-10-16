@@ -749,3 +749,85 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-ziel-block.is-leer > :not(.uev-zielleer),
 .uev-ziel-block:not(.is-leer) > .uev-zielleer { display: none; }
 .uev-root.is-narrow .uev-zielsek .uev-sec-head { flex-wrap: wrap; }
+
+/* ---- KONFIDENZ JE KENNZAHL (17.10., Auftrag Teil D, events.js konfidenzHtml) -----------------
+   Unter der Zahl im Fuss der Kachel (.up-kpi-foot, 11 in --vc-third) eine eigene Zeile: die
+   Fallzahl leise, daneben das Urteil als Angabe mit Zeichen -- keine Pille, keine Flaeche. Die Zeile
+   ist eine eigene Reihe im Fuss (der ist in core flex mit Umbruch, Reihenabstand 4): volle Breite,
+   sonst rutschte sie schmal neben "vs. comparison" -- am Telefon gemessen. Der Vergleich darueber
+   bleibt, wie er war. Farbe nur am Zeichen eines klaren Effekts (gut --vt-up, schlecht --vt-down);
+   der Text bleibt in der Schrift des Fusses, bei "Clear effect" eine Stufe kraeftiger. */
+.uev-konf { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 12px; font-size: var(--up-fs-xs); color: var(--vc-third); }
+.up-kpi-foot > .uev-konf { flex: 1 0 100%; }
+.uev-konf-n { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.uev-konf-urteil { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; border-radius: var(--up-r-xs); outline: 0; }
+.uev-konf-urteil.uev-erklaer { cursor: help; }
+.uev-konf-urteil:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: 2px; }
+.uev-konf-urteil svg { width: 12px; height: 12px; flex: 0 0 auto; }
+.uev-konf-urteil.is-klar { color: var(--vc-muted); }
+.uev-konf-urteil.is-gut svg { color: var(--vt-up); }
+.uev-konf-urteil.is-schlecht svg { color: var(--vt-down); }
+/* In der Erklaerkarte: die Platte haengt am <body>, ausserhalb von .up-root -- --vc-third und
+   --vc-muted loesen dort nicht auf. Also die Schrift der Platte (erbt) und zwei Drittel davon fuer
+   die Fallzahl, wie der Satz unter der Platte. Die Trendfarben stehen an :root und gehen. */
+.uev-explain-konf .uev-konf { margin-top: 0; font-size: var(--up-fs-s); color: inherit; }
+.uev-explain-konf .uev-konf-n { color: color-mix(in srgb, currentColor 68%, transparent); }
+.uev-explain-konf .uev-konf-urteil { color: inherit; }
+.uev-explain-konf .uev-konf-urteil svg { width: 14px; height: 14px; }
+
+/* ---- SEITENABDECKUNG JE REGEL (17.10., Auftrag Teil C, events.js abdFuellen) -----------------
+   Im Kopf des Regel-Abschnitts unter dem Untertitel: "12 of 43 pages cited" mit duennem Balken,
+   "Last checked" und "Refresh" in einer Zeile, Abstand 12 wie die Hinweise oben (.uev-hinweise).
+   Der Balken nach dem Fortschritt des Exports (export-data.css .uex-balken: 6 hoch, voll rund,
+   Spur --up-sel-bg, Fuellung --up-accent), hier 4 hoch und 96 breit -- er stuetzt den Satz, er ist
+   nicht die Aussage. Search Console zeigt dasselbe als Balken unter der Zahl. */
+.uev-abd { display: flex; flex-direction: column; margin-top: 8px; min-width: 0; }
+.uev-abd[hidden] { display: none; }
+.uev-abd-zeile1 { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; min-height: var(--up-h-seg); font-size: var(--up-fs-s); color: var(--vc-third); }
+.uev-abd-stand { display: inline-flex; align-items: center; gap: 8px; }
+.uev-abd-satz { color: var(--vc-muted); white-space: nowrap; }
+.uev-abd-z { color: var(--vc-text); font-weight: var(--up-fw-m); font-variant-numeric: tabular-nums; }
+.uev-abd-balken { display: block; width: 96px; height: 4px; flex: 0 0 auto; border-radius: var(--up-r-voll); background: var(--up-sel-bg); overflow: hidden; }
+.uev-abd-balken-f { display: block; height: 100%; border-radius: inherit; background: var(--up-accent); }
+.uev-abd-leise { white-space: nowrap; }
+.uev-abd-sk { width: 220px; }
+/* "Refresh" leise wie "Show N more" im Sitemap-Waehler (.uev-sm-mehr: Hoehe 28, Schrift 12). */
+.uev-abd-neu { height: var(--up-h-seg); font-size: var(--up-fs-s); color: var(--vc-muted); }
+.uev-abd-neu svg { width: 14px; height: 14px; flex: 0 0 14px; }
+.uev-abd-neu:hover { color: var(--vc-text); }
+.uev-abd-neu.is-aus { opacity: .45; cursor: default; }
+.uev-abd-neu.is-aus:hover { background: transparent; color: var(--vc-muted); }
+.uev-abd-fehler > span { padding-top: 2px; }
+
+/* Umschalter und Liste: nur mit .has-abd am Block (events.js), sonst ist der Block wie bisher.
+   Die Liste ersetzt die Tabelle der zitierten URLs (.zeigt-offen) -- auch im Leerzustand des
+   Ziels, dort steht dann statt "No cited pages yet" die Liste der Seiten, die es gibt. Die
+   Selektoren tragen eine Klasse mehr als die Leerzustands-Regel darueber (is-leer). */
+.uev-ziel-block > .uev-abd-seg, .uev-ziel-block > .uev-abd-liste { display: none; }
+.uev-ziel-block.has-abd > .uev-abd-seg { display: flex; }
+.uev-ziel-block.has-abd.zeigt-offen > .uev-abd-liste { display: flex; }
+.uev-ziel-block.has-abd.zeigt-offen > .uev-ziel-tab,
+.uev-ziel-block.has-abd.zeigt-offen > .uev-ziel-hinweis { display: none; }
+.uev-ziel-block.is-leer.has-abd > .uev-abd-seg { display: flex; }
+.uev-ziel-block.is-leer.has-abd.zeigt-offen > .uev-abd-liste { display: flex; }
+.uev-ziel-block.is-leer.has-abd.zeigt-offen > .uev-zielleer { display: none; }
+.uev-abd-liste { flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+/* Die leise Liste: Zeilen 40 hoch (--up-h-gross), Haarlinie dazwischen, kein Kasten, kein Hover --
+   die Seite oeffnet nichts, der Tooltip sagt warum. Favicon 16, Pfad 13, Datum 12 wie die Reihen
+   des Sitemap-Waehlers. */
+.uev-abd-seiten { display: flex; flex-direction: column; align-self: stretch; min-width: 0; }
+.uev-abd-seite { display: flex; align-items: center; gap: 10px; min-height: var(--up-h-gross); min-width: 0; border-bottom: 1px solid var(--vc-border); font-size: var(--up-fs-m); color: var(--vc-text); cursor: default; }
+.uev-abd-seite:first-child { border-top: 1px solid var(--vc-border); }
+.uev-abd-fav0 { display: inline-flex; color: var(--vc-third); }
+.uev-abd-fav0 svg { width: 16px; height: 16px; }
+.uev-abd-pfad { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uev-abd-marke { flex: 0 0 auto; }
+.uev-abd-datum { flex: 0 0 auto; font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Aus der Sitemap verschwunden: markiert, nicht versteckt -- Pfad und Bild zurueckgenommen, die
+   Marke bleibt voll lesbar. */
+.uev-abd-seite.is-weg > .uev-abd-pfad, .uev-abd-seite.is-weg > .uev-fav, .uev-abd-seite.is-weg > .uev-abd-fav0 { opacity: .55; }
+.uev-abd-mehr { height: var(--up-h-seg); font-size: var(--up-fs-s); }
+.uev-abd-mehr svg { width: 14px; height: 14px; flex: 0 0 14px; }
+/* Telefon: das Datum weicht, Pfad und Marken bleiben -- wie im Sitemap-Waehler (.uev-sm-datum). */
+.uev-root.is-vnarrow .uev-abd-datum { display: none; }
+.uev-root.is-vnarrow .uev-abd-satz { white-space: normal; }

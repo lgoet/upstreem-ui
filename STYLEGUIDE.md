@@ -2056,6 +2056,40 @@ offener Wahl und ohne Zeiger immer; „Change cover“ bzw. ohne Bild „Add cov
 Kacheln unter der Vorschau auf (12 Abstand), dort „Remove cover“. Der Bearbeiten-Dialog behält das
 offene Raster: er hat keine Vorschau.
 
+### Events: Konfidenz und Seitenabdeckung (seit 17.10., UI vor der DB)
+
+Gebaut gegen `bubble/events_ausbau_db_auftrag_17_10.md` (Teile C und D). Beides ist ein
+Feature-Schalter: ohne das Feld bzw. die Funktion sieht das Detail genau aus wie vorher – kein
+Fehler, keine halbe Zeile.
+
+```
+Konfidenz     Je Kachel (Visibility, Rank, Sentiment, Share of all citations einer Regel) eine
+(Teil D)      eigene Reihe im Fuss (.uev-konf, flex: 1 0 100% – der Fuss aus core ist flex mit
+              Umbruch): "Based on 3,120 answers" leise (11, --vc-third; Tooltip "1,840 before the
+              event, 1,795 after"), daneben das Urteil als Angabe mit Zeichen, keine Pille:
+                clear_effect     checkCircle  "Clear effect" (Text --vc-muted, nur das Zeichen
+                                              in --vt-up/--vt-down nach gut/schlecht, Rang umgekehrt)
+                within_noise     activity     "Within normal range"
+                too_little_data  clock        "Not enough data yet"
+              Erklärkarte am Urteil: Platte = dieselbe Reihe, Titel = Wort des Urteils, Satz aus
+              UC.explainCopy("effekt_klar" | "effekt_rauschen" | "effekt_wenig") – ohne
+              Statistik-Worte. Je Abschnitt einer Kachel (Kampagne: Nachlauf) konfVon(a, feld,
+              "post") statt konfVon(a, feld). Die Seitenerklärung nennt die Reihe erst, wenn eine
+              Analyse confidence geliefert hat.
+Abdeckung     Im Kopf jedes Regel-Abschnitts unter dem Untertitel (.uev-abd): "12 of 43 pages
+(Teil C)      cited" (Zahlen in --vc-text), Balken 96 x 4 voll rund (Spur --up-sel-bg, Füllung
+              --up-accent, Vorbild .uex-balken), "Last checked 3 hours ago" (UC.relativeTime),
+              "Refresh" als .up-quietbtn auf 28/12. Gesperrt über aria-disabled (Tooltip "You can
+              refresh again in 40 min" braucht Zeigerereignisse), die Uhr zählt je Minute.
+              Lesefehler der Sitemap: EIN roter Satz (.up-fehlerzeile) über den alten Seiten.
+              Darunter, über der Tabelle, .up-seg "Cited (12) | Not cited yet (31)"; Not cited yet
+              ersetzt die Tabelle durch eine leise Liste (Zeile 40, Haarlinie, kein Hover, Favicon
+              16, Pfad 13, Datum 12 "Updated 12. Oct" bzw. "In sitemap since …", unter 520 weg),
+              Marken .up-marke.is-leise "New since event" / "No longer in sitemap" (Pfad dann
+              zurückgenommen, nie versteckt), "Show 50 more" wie im Sitemap-Wähler. Im Leerzustand
+              des Ziels steht die Liste statt "No cited pages yet".
+```
+
 ### Sticky Table-Header (nur wenn die Komponente direkt injiziert ist)
 
 Ein seitenweit klebender Header ist nur möglich, wenn die Komponente **direkt in die
