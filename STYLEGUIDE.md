@@ -2020,6 +2020,42 @@ gleich Krume und rechten Knöpfen, keine Überlappung in der Kopfzeile, keine ab
 die klebende Leiste nirgends mehr überdeckt (vorher traf `elementFromPoint` bei 21/43 und 26/46
 den schwebenden Knopf). Desktop 1440: alle Kopfzeilen auf den Zehntelpixel wie vorher.
 
+### Angeheftete Events in der Seitenleiste (seit 16.10.)
+
+„Events direkt in Schritt 4 unter der Vorschau und im Event-Detail oben in der Kopfleiste an die
+Sidebar pinnen. Dort einfach mit ihrem Icon, in der Farbe des Events.“ Dieselbe Gruppe „Pinned“
+wie Marken, Prompts, Domains und URLs (localStorage je Team, höchstens zehn, der älteste fällt
+heraus), kein zweiter Weg:
+
+```
+Zeile         .usn-pin wie jeder Pin; statt der Logoplatte das Event-Zeichen (.usn-pin-ev):
+              22er Spalte, Zeichen 18, Strich 1.5 wie die Menüpunkte (.usn-ic), ohne Platte,
+              Farbe = Feld color des Events; ohne Farbe --vc-muted wie die Menüpunkte
+Stand         Name, Zeichen und Farbe kommen aus dem Event-Store (UC.getEvents), nicht vom
+              Anheften: umbenannt, umgefärbt, anderes Zeichen -> die Zeile zieht mit. Ein von
+              Hand umbenannter Pin (Stift in der Leiste) behält seinen Namen (eigen)
+Weg           window.upstreemPinToSidebar({ type: "event", id, label, icon, color, still }),
+              upstreemIsPinned({ type, id }), upstreemUnpinFromSidebar({ type, id });
+              jede Änderung der Liste meldet "up-pins-change" an window
+Klick         UC.eventOeffnen(id) wie ein Marker im Chart; auf dem Telefon fährt die Leiste ein
+Gelöscht      fehlt das Event in einer gelieferten Liste (nicht bei fehler), geht der Pin; ein
+              gerade angelegtes Event zählt erst, wenn eine Liste es einmal gezeigt hat
+Kopf Detail   .up-iconbtn mit Zeichen pin, Zustand nur über aria-pressed (Knopfgrund aus core,
+              kein gefülltes Zeichen), Tooltip "Pin to sidebar" / "Unpin from sidebar"; unter
+              is-vnarrow (520) als Zeile im Menü "…" statt im Kopf – sonst bleibt der Krume kein Platz
+Schritt 4     Schalter "Pin to sidebar" (.up-switch in einer Zeile mit role="switch") unter der
+              Vorschau; angeheftet wird erst nach gelungenem Anlegen, die Meldung "Event created"
+              nennt es als zweite Zeile (still, kein zweiter Toast)
+```
+
+Das Titelbild in Schritt 4 sitzt seit demselben Tag AN der Vorschau: die Karte steht oben, schon
+mit einem zufälligen Motiv (einmal je Anlegen, Zurück/Vor würfelt nicht neu, „Remove cover“ bleibt
+entfernt). Unten rechts im Band ein `.up-btn-sec` auf 28 (`--up-h-seg`, Radius 6, Schrift 12,
+Zeichen 13, Grund `--vc-bg`, Schatten e-1), sichtbar beim Überfahren des Bands, mit Fokus, bei
+offener Wahl und ohne Zeiger immer; „Change cover“ bzw. ohne Bild „Add cover“. Er klappt die
+Kacheln unter der Vorschau auf (12 Abstand), dort „Remove cover“. Der Bearbeiten-Dialog behält das
+offene Raster: er hat keine Vorschau.
+
 ### Sticky Table-Header (nur wenn die Komponente direkt injiziert ist)
 
 Ein seitenweit klebender Header ist nur möglich, wenn die Komponente **direkt in die

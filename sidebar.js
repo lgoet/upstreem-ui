@@ -371,7 +371,19 @@
          liest -- genau das, was hier nicht passieren darf. */
       if (!k) return;
       try { localStorage.setItem(k, JSON.stringify(l)); } catch(e){}
+      pinsMelden();
     }
+    /* Wer einen Pin-Knopf zeigt (Kopf des Event-Details), muss sehen, wenn sich die Liste
+       anderswo aendert: x in der Leiste, der elfte Pin draengt den aeltesten hinaus, Teamwechsel.
+       Ein Ereignis am window statt eines Abos -- die Leiste kennt ihre Leser nicht und soll sie
+       nicht kennen (wie bei upstreemPinToSidebar). */
+    function pinsMelden(){
+      try { window.dispatchEvent(new CustomEvent("up-pins-change")); } catch(e){}
+    }
+    /* Event-Pins, deren Event die Liste noch nicht gezeigt hat (siehe eventPinsAbgleichen). Hier
+       oben und nicht dort: pinsNachziehen kann schon waehrend des Aufbaus laufen (renderTeam),
+       bevor die Zeilen weiter unten ausgefuehrt sind. */
+    var eventUngesehen = {};
     function zuLesen(){
       try { var r = JSON.parse(localStorage.getItem(ZU_KEY) || "[]"); return Array.isArray(r) ? r : []; }
       catch(e){ return []; }
@@ -763,6 +775,17 @@
        Dieselbe Zeilenform wie ein Menuepunkt, damit die Gruppe kein Fremdkoerper ist. Das Bild
        ist .up-logo-box aus core -- beim Prompt die Flagge des Marktes, sonst Logo bzw. Favicon.
        Faellt es aus, bleibt der Anfangsbuchstabe. */
+    /* Das Bild vorne in der Zeile. Ein Event hat kein Logo (16.10. angefordert: "einfach mit
+       ihrem Icon, in der Farbe des Events"): sein Zeichen in der Groesse und Strichstaerke der
+       Menuepunkte, gefaerbt wie ueberall, wo das Event steht (Karte, Kopf des Details). Ohne Farbe
+       bleibt es leise wie die Zeichen der Menuepunkte. Ein unbekannter Name faellt auf das Zeichen
+       von "Other" zurueck -- UC.icon schriebe sonst ein leeres Zeichen und einen Fehler. */
+    function pinBild(pin, name){
+      if (pin.type !== "event") return logoHtml(name, pin.logo);
+      var z = pin.icon && UC.iconFormen && UC.iconFormen(pin.icon) ? pin.icon : "pin";
+      var f = /^#[0-9a-f]{6}$/i.test(String(pin.color || "")) ? String(pin.color) : "";
+      return '<span class="usn-pin-ev"' + (f ? ' style="--usn-ev-ton:' + esc(f) + '"' : '') + '>' + ic(z) + '</span>';
+    }
     function pinHtml(pin, i){
       /* Waehrend des Umbenennens ist die Zeile KEIN Knopf. Ein <input> in einem <button> ist
          verschachtelte Bedienung: der Browser haengt es aus dem Knopf heraus, und die Zeile
@@ -772,7 +795,7 @@
          weder Navigation noch Ziehen anspringen. */
       if (state.umbenennen && state.umbenennen.i === i){
         return '<div class="usn-item usn-pin is-renaming" data-pinedit="' + i + '">' +
-          '<span class="usn-pin-ic">' + logoHtml(state.umbenennen.wert, pin.logo) + '</span>' +
+          '<span class="usn-pin-ic">' + pinBild(pin, state.umbenennen.wert) + '</span>' +
           '<input class="usn-pin-in" type="text" data-pinin maxlength="60" ' +
             'aria-label="Rename pinned item" value="' + esc(state.umbenennen.wert) + '" />' +
         '</div>';
@@ -785,7 +808,7 @@
       return '<button class="usn-item usn-pin" type="button" data-pin="' + i + '" ' +
         'data-pinid="' + esc(pin.type + ":" + pin.id) + '" data-tip="' + esc(pin.label || "") + '" ' +
         'data-tip-place="right">' +
-        '<span class="usn-pin-ic">' + logoHtml(pin.label, pin.logo) + '</span>' +
+        '<span class="usn-pin-ic">' + pinBild(pin, pin.label) + '</span>' +
         '<span class="usn-txt">' + esc(pin.label || "") + '</span>' +
         '<span class="usn-pin-edit" data-rename="' + i + '" role="button" tabindex="-1" ' +
         'aria-label="Rename">' + ic("squarePen") + '</span>' +
@@ -818,6 +841,9 @@
       var wert = (u.wert || "").trim();
       if (uebernehmen && pin && wert && wert !== pin.label){
         pin.label = wert;
+        /* Der eigene Name gewinnt (16.10.): ein Event-Pin folgt sonst dem Namen des Events
+           (eventPinsAbgleichen) -- nach dem Umbenennen hier nicht mehr. */
+        pin.eigen = true;
         pinsSchreiben(state.pins);
       }
       renderNav();
@@ -1505,6 +1531,15 @@
       if (pb){
         if (gezogen){ gezogen = false; return; }      /* der Klick gehoert zum Ziehen davor */
         var pin = state.pins[parseInt(pb.getAttribute("data-pin"), 10)];
+        /* Ein Event ist kein Drawer, sondern das Detail in der Ansicht "events" (16.10.):
+           UC.eventOeffnen ist derselbe Weg wie ein Marker im Chart -- Adresse, Ansichtswechsel
+           ueber usnNavigieren, Ereignis an eine offene Events-Komponente. Bubble kennt diese Art
+           nicht, also kein usnPinned. */
+        if (pin && pin.type === "event" && UC.eventOeffnen){
+          UC.eventOeffnen(pin.id);
+          if (state.klasse === "hint"){ state.offen = false; anwenden(); }
+          return;
+        }
         /* Alle vier Pin-Arten (prompt, brand, domain, url) sind core-Drawer: direkt oeffnen
            (13.10.). Der Bubble-Workflow usnPinned nur noch, wenn es kein openDrawer gibt --
            beides zugleich oeffnete den Drawer zweimal. */
@@ -1815,14 +1850,23 @@
          naechsten Seitenaufbau tabu, auch wenn die Leiste inzwischen neu gebaut wurde. */
       var frischGewechselt = wechselMarke() && wechselMarke() === String(t);
       state.pins = (erstesMal && !frischGewechselt) ? pinsLesen() : [];
-      renderNav();
+      if (!eventPinsAbgleichen()) renderNav();
+      pinsMelden();
     }
     function pinHinzu(p){
       if (!p || !p.type || p.id == null) return false;
       var id = String(p.id);
       /* Schon angeheftet? Dann nach oben holen statt doppelt fuehren. */
       state.pins = state.pins.filter(function(x){ return !(x.type === p.type && String(x.id) === id); });
-      state.pins.unshift({ type: p.type, id: id, label: String(p.label || id), logo: String(p.logo || "") });
+      var neu = { type: p.type, id: id, label: String(p.label || id), logo: String(p.logo || "") };
+      /* Ein Event traegt Zeichen und Farbe statt eines Logos (16.10., siehe pinBild). */
+      if (p.type === "event"){
+        neu.icon = String(p.icon || ""); neu.color = String(p.color || "");
+        /* Steht es noch nicht im Event-Store (gerade angelegt, die frische Liste ist unterwegs),
+           darf der naechste Abgleich es nicht als geloescht werten. */
+        if (!eventAusStore(id)) eventUngesehen[id] = true;
+      }
+      state.pins.unshift(neu);
       /* Ueber der Grenze faellt der LETZTE der Liste heraus -- also der aelteste, weil Neues oben
          einsortiert wird. */
       if (state.pins.length > PIN_MAX) state.pins = state.pins.slice(0, PIN_MAX);
@@ -1832,9 +1876,71 @@
       var iz = state.zu.indexOf("Pinned");
       if (iz >= 0){ state.zu.splice(iz, 1); zuSchreiben(state.zu); }
       renderNav();
-      if (UC.toast) UC.toast("Pinned to sidebar", { icon: "check" });
+      /* still: der Aufrufer sagt es selbst (das Anlegen eines Events nennt das Anheften in seiner
+         eigenen Meldung -- zwei Toasts fuer einen Klick waeren einer zu viel). */
+      if (UC.toast && !p.still) UC.toast("Pinned to sidebar", { icon: "check" });
       return true;
     }
+    function pinIndex(p){
+      if (!p || !p.type || p.id == null) return -1;
+      var id = String(p.id);
+      for (var i = 0; i < state.pins.length; i++) if (state.pins[i].type === p.type && String(state.pins[i].id) === id) return i;
+      return -1;
+    }
+
+    /* ---- Event-Pins folgen dem Event (16.10.) --------------------------------------------------
+       Name, Zeichen und Farbe kommen aus dem Event-Store von core (UC.getEvents), nicht aus dem
+       Stand beim Anheften: wer ein Event umbenennt, umfaerbt oder ihm ein anderes Zeichen gibt,
+       sieht das auch hier. Der Speicher fuehrt den letzten bekannten Stand nur, damit die Zeile
+       nach einem Neuladen sofort richtig dasteht, bevor die Liste kommt.
+       Ein Event, das in einer GELIEFERTEN Liste fehlt, ist geloescht (oder gehoert nicht mehr
+       zum Team) -- sein Pin geht. Eine leere gelieferte Liste ist laut core wirklich leer; eine
+       unlesbare (fehler) entscheidet nichts. Ausgenommen sind Pins, deren Event die Liste noch nie
+       gezeigt hat (eventUngesehen, oben bei pinsMelden angelegt): das gerade angelegte Event
+       steht erst in der naechsten. */
+    function eventAusStore(id){
+      var l = UC.getEvents ? UC.getEvents() : [];
+      for (var i = 0; i < l.length; i++) if (l[i] && String(l[i].id) === String(id)) return l[i];
+      return null;
+    }
+    /* Dieselbe Aufloesung wie events.js (zeichen): p_icon kommt als file-text aus der Datenbank,
+       die Namen von UC.icon sind camelCase; ein fremder Wert (aeltere Events tragen Emojis) faellt
+       auf das Zeichen des Typs zurueck. */
+    function eventZeichen(ev){
+      var v = String(ev.icon || "").replace(/-([a-z0-9])/g, function(_, z){ return z.toUpperCase(); });
+      if (v && UC.iconFormen && UC.iconFormen(v)) return v;
+      var ty = UC.eventTyp ? UC.eventTyp(ev.event_type) : null;
+      return (ty && ty.icon) || "pin";
+    }
+    /* true, wenn neu gezeichnet wurde. */
+    function eventPinsAbgleichen(){
+      var st = UC.eventsStand ? UC.eventsStand() : null;
+      if (!st || !st.geladen || st.fehler) return false;
+      var geaendert = false;
+      state.pins = state.pins.filter(function(pin){
+        if (pin.type !== "event") return true;
+        var ev = eventAusStore(pin.id);
+        if (!ev){ if (eventUngesehen[pin.id]) return true; geaendert = true; return false; }
+        delete eventUngesehen[pin.id];
+        var name = String(ev.name || "").trim(), z = eventZeichen(ev);
+        var f = /^#[0-9a-f]{6}$/i.test(String(ev.color || "")) ? String(ev.color) : "";
+        if (!pin.eigen && name && pin.label !== name){ pin.label = name; geaendert = true; }
+        if (pin.icon !== z){ pin.icon = z; geaendert = true; }
+        if (pin.color !== f){ pin.color = f; geaendert = true; }
+        return true;
+      });
+      if (!geaendert) return false;
+      /* Ein offenes Umbenennen zeigt auf einen Index -- faellt davor ein Pin weg, stimmt er nicht
+         mehr. Dann lieber abbrechen als den Namen an die falsche Zeile schreiben. */
+      if (state.umbenennen) state.umbenennen = null;
+      pinsSchreiben(state.pins);
+      renderNav();
+      return true;
+    }
+    try { if (UC.onEvents) UC.onEvents(function(){ eventPinsAbgleichen(); }, root); } catch(e){}
+    /* Steht die Liste schon (Neuaufbau der Leiste), gleich einmal: sonst zeigten die Pins bis zur
+       naechsten Lieferung den gespeicherten Stand. */
+    try { eventPinsAbgleichen(); } catch(e){}
     /* ---- Pins umsortieren ----
        Eigene Zeiger-Behandlung statt der HTML5-Drag-API: die braucht ein draggable-Attribut,
        zeichnet ein eigenes Geisterbild und laesst sich in einem position:fixed-Container nur mit
@@ -1901,6 +2007,16 @@
     /* Der Weg, den quick-actions ruft. Auf window, weil die Palette die Leiste nicht kennt und
        nicht kennen soll. */
     window.upstreemPinToSidebar = function(p){ return pinHinzu(p); };
+    /* Dazu Abfrage und Abnehmen (16.10., Pin-Knopf im Kopf des Event-Details): derselbe Schluessel
+       aus Art und Kennung wie beim Anheften. */
+    window.upstreemIsPinned = function(p){ return pinIndex(p) >= 0; };
+    window.upstreemUnpinFromSidebar = function(p){
+      var i = pinIndex(p);
+      if (i < 0) return false;
+      if (state.umbenennen) state.umbenennen = null;
+      pinEntfernen(i);
+      return true;
+    };
 
     /* Der Marken-Store von core: Startwert holen, dann auf Aenderungen hoeren. onBrands nimmt
        den Root als Besitzer, damit das Abo mit dem Element verschwindet. */

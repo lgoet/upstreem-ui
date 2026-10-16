@@ -1165,6 +1165,7 @@
           '</span>');
         }
         elChips.innerHTML = teile.join("");
+        chipZustand();
       }
 
       /* EINE Entscheidung fuer beide Dinge, die von der Seitenbreite abhaengen: bricht die Leiste
@@ -1302,17 +1303,51 @@
         elMenu.classList.toggle("is-drill", hinein());
         if (sub) sub.sync();
       }
+      /* Welcher Chip sein Dropdown offen hat (Schluessel des Filters), sonst null. Der Zustand steht
+         am Chip, solange das Panel vom Chip aus offen ist, und wird bei jedem Neuschreiben der
+         Chips wieder gesetzt (renderChips). */
+      var chipOffen = null;
+      /* Welcher Chip zuletzt zuging und wann -- fuer den zweiten Klick (pointerdown unten). */
+      var zuVomChip = null, zuZeit = 0;
+      function chipZustand() {
+        [].forEach.call(elChips.querySelectorAll(".ufb-chip[data-chip]"), function (c) {
+          var an = chipOffen !== null && c.getAttribute("data-chip") === chipOffen;
+          c.classList.toggle("is-open", an);
+          var auf = c.querySelector("[data-chip-open]");
+          if (auf) auf.setAttribute("aria-expanded", an ? "true" : "false");
+        });
+      }
 
       /* ---------------- Panel ---------------- */
       var pop = UC.makePopover({
         wrap: elMore, menu: elMenu, opener: elBtn, group: "ufb-" + instanceId,
         /* makePopover setzt aria-hidden am Menue, aber nicht aria-expanded am Knopf -- das
            gehoert dem Aufrufer, weil nur er weiss, welches Element der Ausloeser ist. */
-        onClose: function () { sub.close(); vomChip = false; elBtn.setAttribute("aria-expanded", "false"); lageSpaeterLoesen(); }
+        onClose: function () {
+          var warChip = chipOffen;
+          sub.close(); vomChip = false; elBtn.setAttribute("aria-expanded", "false"); lageSpaeterLoesen();
+          chipOffen = null;
+          zuVomChip = warChip; zuZeit = performance.now();
+          elMore.classList.remove("is-vomchip");
+          chipZustand();
+          /* Fokus zurueck an den Chip, wenn er im Panel stand oder verloren ist (render() hat den
+             angeklickten Chip neu geschrieben, der Fokus fiel dabei auf body) -- sonst bliebe er
+             nach Escape in einem unsichtbaren Panel. Ein Klick daneben setzt seinen eigenen Fokus
+             danach selbst (mousedown kommt nach pointerdown). */
+          var a = document.activeElement;
+          if (warChip && (!a || a === document.body || elMenu.contains(a))) {
+            var auf = elChips.querySelector('[data-chip-open="' + cssEsc(warChip) + '"]');
+            if (auf) { try { auf.focus({ preventScroll: true }); } catch (e) {} }
+          }
+        }
       });
       elBtn.addEventListener("click", function (e) {
         e.stopPropagation();
-        if (pop.isOpen()) { pop.close(false); return; }
+        /* Offen vom Chip: der Knopf ist dann nicht der Ausloeser, ein Klick darauf wechselt zur
+           Liste aller Filter (statt nur zu schliessen) -- der Zustand wandert mit. */
+        if (pop.isOpen() && !vomChip) { pop.close(false); return; }
+        /* chipOffen vorher leeren: der Fokus soll beim Knopf bleiben, nicht an den Chip zurueck. */
+        if (pop.isOpen()) { chipOffen = null; pop.close(false); }
         elMenu.classList.remove("is-vomchip");
         /* Nach einem Oeffnen vom Chip steht noch is-drill am Panel, bis render() laeuft -- und die
            Messung unten nimmt die Breite des Panels. Nur dann einmal vorher richtigstellen. */
@@ -1390,18 +1425,27 @@
         if (pop.isOpen()) pop.close(false);
         clearTimeout(lageUhr); lageUhr = null;
         vomChip = !!anker;
+        /* ERST MESSEN, DANN SCHREIBEN -- wie beim Knopf "Filters" (16.10., gemeldet: "vor dem
+           Aufgehen ist ein kleiner Delay, bei jedem Klick auf einen Chip"). Hier stand die Messung
+           NACH render(): render() schreibt die Chips neu und stellt Klassen an der Wurzel, und das
+           Lesen danach erzwang ein ganzes Layout der Seite, bevor das Panel aufging (gemessen auf
+           24671 Knoten: 13.9 von 30.6ms des Klicks; beim Knopf 0). Vorher gelesen liegt alles,
+           was die Messung braucht, schon fest:
+             - die Breite des Panels haengt nur an is-drill. Die Klasse wird hier vorab gestellt,
+               aus derselben Funktion wie in render() -- dasselbe Vorgehen wie im Klick auf
+               "Filters" oben;
+             - der angeklickte Chip haengt noch im Dokument und steht dort, wo ihn render() gleich
+               wieder hinschreibt (gleiche Filter, gleicher Text). Danach misst er 0. */
+        if (elMenu.classList.contains("is-drill") !== hinein()) elMenu.classList.toggle("is-drill", hinein());
+        var lage = lageMessen(anker);
+        /* Der Chip zeigt sein offenes Dropdown, nicht der Knopf "Filters" (16.10. gemeldet).
+           renderChips() setzt den Zustand beim Neuschreiben gleich mit. */
+        chipOffen = anker ? key : null;
+        elMore.classList.toggle("is-vomchip", vomChip);
         einziehen();
         liste.forEach(nachziehen);
         spiegelnAlle();
         render();
-        /* render() schreibt die Chips NEU -- der Chip, auf den geklickt wurde, haengt danach nicht
-           mehr im Dokument und misst 0 (das Panel stand am linken Fensterrand, gemessen 15.10.).
-           Also den frischen Chip desselben Filters nehmen. */
-        if (anker) anker = elChips.querySelector('.ufb-chip[data-chip="' + cssEsc(key) + '"]') || null;
-        /* Hier NACH render() gemessen (anders als beim Knopf): erst render() setzt is-drill, und
-           daran haengt die Breite des Panels, nach der sich die Lage richtet. Ein einzelner Klick,
-           kein Pfad, der bei jeder Bewegung laeuft. */
-        var lage = lageMessen(anker);
         /* Vom Chip: KEIN "Back" oben (15.10. abgelehnt -- der Chip ist der Weg hinein, das Menue zeigt
            nur diesen einen Filter). Die Klasse nimmt onClose wieder weg. */
         elMenu.classList.toggle("is-vomchip", vomChip);
@@ -1410,7 +1454,8 @@
            landete das Panel am linken Fensterrand statt unter dem Chip (gemessen: left 8). */
         lageSetzen(lage);
         pop.open();
-        elBtn.setAttribute("aria-expanded", "true");
+        /* Vom Chip ist der CHIP der Ausloeser (aria-expanded traegt renderChips), der Knopf bleibt zu. */
+        elBtn.setAttribute("aria-expanded", anker ? "false" : "true");
         sub.open(key, true);
       }
       /* Nach dem Schliessen gilt die gemessene Lage nicht mehr: rueckt der Knopf spaeter (ein
@@ -1559,7 +1604,13 @@
       var chipZu = null;
       root.addEventListener("pointerdown", function (e) {
         var co = e.target.closest && e.target.closest("[data-chip-open]");
-        chipZu = co && pop.isOpen() && vomChip && sub.current() === co.getAttribute("data-chip-open") ? co.getAttribute("data-chip-open") : null;
+        var k = co ? co.getAttribute("data-chip-open") : null;
+        /* Meist ist das Panel HIER schon zu: core schliesst jedes Dropdown in der Capture-Phase
+           (Draussen-Zuhoerer an document), also vor diesem Zuhoerer. Dann zaehlt, ob DIESER Druck
+           es eben geschlossen hat -- onClose merkt sich Chip und Zeit (16.10.: der zweite Klick
+           oeffnete sonst sofort wieder). */
+        var ebenZu = zuVomChip !== null && zuVomChip === k && zuZeit >= e.timeStamp;
+        chipZu = k && ((pop.isOpen() && vomChip && sub.current() === k) || ebenZu) ? k : null;
       });
 
       /* ---------------- auf Aenderungen der Filter hoeren ----------------

@@ -1054,6 +1054,12 @@ html[data-up-dunkel="geist"] .usn-scrim[data-theme="dark"] {
   padding: 1px; border: 0; }
 .usn-pin-ic .up-logo-box img { width: 100%; height: 100%; border-radius: calc(var(--up-r-s) - 1px); }
 .usn-pin-ic .up-logo-ltr { font-size: 7.9px; }
+/* Ein angeheftetes Event (16.10.): kein Logo, sein Zeichen in der Event-Farbe -- dieselbe Spalte
+   und dieselben 18px wie die Zeichen der Menuepunkte (.usn-ic), ohne Platte. Ohne Farbe leise wie
+   jene. Die Farbe kommt aus den Daten (Feld color), nicht aus der Palette. */
+.usn-pin-ev { width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center;
+  color: var(--usn-ev-ton, var(--vc-muted)); }
+.usn-pin-ev svg { width: 18px; height: 18px; display: block; }
 /* Dasselbe Bauteil noch eine Stufe kleiner: im Konto-Menue sind die Icons 15px (siehe
    .usn-menu .up-pop-opt svg weiter unten), nicht 17. Faktor 15/24 auf ALLE Werte:
    Radius 8 -> 5, Bild 22 -> 13.75, Bildradius 7 -> 4.4, Buchstabe 11 -> 7. */
