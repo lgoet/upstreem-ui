@@ -1514,11 +1514,12 @@
        than reusing the row's own — two swatches at the identical luminance would look like the
        same gray twice. */
     var TOPIC_COLOR_COLS = 10;   // must match .upt-colorgrid's column count
-    /* Die dreissig Werte stehen seit dem 17.10. in core (UC.TOPIC_COLOR_PALETTE_INLINE, dieselben
-       Werte in derselben Reihenfolge) -- keine Komponente fuehrt mehr eigene Farbwerte. Es ist
-       NICHT die neue OKLCh-Palette von core (UC.TOPIC_COLOR_PALETTE); der Umzug darauf aendert,
-       was der Ersteller anbietet, und ist eine eigene Entscheidung. */
-    var TOPIC_COLOR_PALETTE = UC.TOPIC_COLOR_PALETTE_INLINE;
+    /* Seit dem 17.10. dieselbe Palette wie Topics-Manager und "New Topic" (UC.TOPIC_COLOR_PALETTE,
+       OKLCh, drei Reihen zu zehn -- passt zu TOPIC_COLOR_COLS). Vorher bot nur dieser Ersteller
+       noch die dreissig handgesuchten Werte von vor dem Umbau an, und ein hier angelegtes Topic
+       trug eine Farbe, die der Manager nicht kannte und hinten anhaengte (Nutzer: "umstellen").
+       Der Absatz darueber beschreibt die alte Auswahl und gilt nur noch als Geschichte. */
+    var TOPIC_COLOR_PALETTE = UC.TOPIC_COLOR_PALETTE;
     /* Each ROW is one tone scale across the full hue range, each COLUMN one hue — so scanning
        down picks a mood and across picks a color. The check mark itself is a fixed white (dark
        mode: primary text color, see core.css) rather than per-swatch contrast-solved ink — with
