@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261161;
+  var BUILD = 20261162;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -22191,7 +22191,14 @@
        Nur die App kommt hierher: appStart laeuft nur mit der Seitenleiste der App, nicht in der
        Vorfuehrung der Landingpage und nicht auf den festen Seiten. Fehlt das aktive Team in der
        Liste, bleibt der Titel, wie er ist -- lieber der alte Name als gar keiner. */
-    if (aktivId && teams.length && String(teams[0].id) === aktivId) seitenTitel(teams[0].name);
+    if (aktivId && teams.length && String(teams[0].id) === aktivId){
+      /* Derselbe Name traegt den Dateinamen eines Exports (export-data.js, UC.teamName, 17.10.).
+         Gemerkt statt aus dem Reitertitel zurueckgelesen: der ist schon fuer die Anzeige
+         gesaeubert und gehoert der Seite. Nur hier gesetzt, also leer ohne App-Start (Bubble,
+         Vorfuehrung) -- der Export faellt dann auf die Marke zurueck. */
+      APP.teamName = String(teams[0].name == null ? "" : teams[0].name);
+      seitenTitel(teams[0].name);
+    }
     return teams;
   }
   /* DER TITEL IM BROWSER-REITER (17.10., gewuenscht: "upstreem | <Team>" auf der Hauptseite,
@@ -24125,6 +24132,9 @@
      "" solange unbekannt. Die Datenbank prueft jedes Recht selbst -- das hier entscheidet nur, was
      die Oberflaeche anbietet. */
   function teamRolle(){ return (window.__upApp && window.__upApp.rolle) || ""; }
+  /* Der Name des aktiven Teams, roh wie aus team_context_v1 (appTeamsSetzen); leer heisst
+     unbekannt. Wer ihn in eine Datei oder Adresse schreibt, saeubert ihn selbst. */
+  function teamName(){ return (window.__upApp && window.__upApp.teamName) || ""; }
   function fremdUmschreiben(t){
     var b = fremdBasis();
     return b && typeof t === "string" ? t.replace(FREMD_BILD, b + "$1") : t;
@@ -28667,7 +28677,7 @@
     parseLinkedinUrl: parseLinkedinUrl,
     esc: esc,
     parseBubbleJson: parseBubbleJson, PASSWORT: PASSWORT, rechtLinksHtml: rechtLinksHtml,
-    pwZeichen: pwZeichen, pwZuLang: pwZuLang, ohneBubble: ohneBubble, teamRolle: teamRolle, fremdUrl: fremdUrl,
+    pwZeichen: pwZeichen, pwZuLang: pwZuLang, ohneBubble: ohneBubble, teamRolle: teamRolle, teamName: teamName, fremdUrl: fremdUrl,
     readBubble: readBubble, bubbleObjekt: bubbleObjekt, bubbleFehler: bubbleFehler,
     wennBody: wennBody,
     citeName: citeName,
