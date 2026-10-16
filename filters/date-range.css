@@ -157,8 +157,13 @@
   border: 0; border-radius: var(--up-r-s); background: transparent; color: var(--vc-muted);
   font-family: inherit; font-size: 13.5px; font-weight: 500; text-align: left; cursor: pointer;
 }
+/* Der Hover gilt in BEIDEN Themen (16.10.): 3,5 % der Schrift wie die Zeilen der Seitenleiste und
+   der Preferences im Dunkeln nach Geist. Hier stand fuer das Dunkle eine eigene Regel mit der alten
+   Formel (--up-sel-bg zur Haelfte) -- und die Spalte traegt im Menue selbst --up-sel-bg (core: im
+   Menue ist --vc-heading-bg = --up-sel-bg). Die halbe Auswahlflaeche auf der ganzen ergab genau den
+   Spaltengrund: gemessen #242424 auf #242424, der Hover war unsichtbar. Jetzt #2b2b2b, 7 Stufen
+   darueber, neben dem Hover der Zeitraeume (#2d2d2d). */
 .udr-reset:hover { background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); color: var(--vc-text); }
-.up-root[data-theme="dark"] .udr-reset:hover { background: color-mix(in srgb, var(--up-sel-bg) 50%, transparent); }
 /* Der Trenner zwischen Spalte und Kalender ist die KANTE der Spalte (border-right). Das Element
    bleibt im Markup, weil es im gestapelten Bild gebraucht wird -- dort liegt die Spalte unter dem
    Kalender und hat keine rechte Kante mehr. */

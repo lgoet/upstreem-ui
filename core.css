@@ -1061,6 +1061,13 @@
     html[data-up-hell="grau"] {
       --up-seite-grau: #fafafa;   /* Vercel Background 2 */
       --up-kante-grau: #ebebeb;   /* Vercel Gray 400, Default border */
+      /* Die leise Flaeche (Hover, Kopfflaechen) des grauen Hell, Vercel Gray 100 -- Begruendung
+         unten an --vc-heading-bg. Als Marke an <html> und nicht nur an der Wurzel, weil Flaechen mit
+         EIGENER Palette sie brauchen: die Dialogkarte (.up-topicmodal-card) setzt ihre leise Flaeche
+         selbst, und eine eigene Deklaration schlaegt jeden geerbten Wert der Wurzel -- ihr
+         Schliessen-Hover stand bis zum 16.10. auf dem alten #f9f8f9, 6 Stufen unter dem Weiss der
+         Karte statt 13. */
+      --up-leise-grau: #f2f2f2;
       /* DER GEWAEHLTE ZUSTAND DER NAVIGATION (15.10. abends angefordert: "rgba(0, 0, 0, 0.05) ist die
          Farbe fuer selected states -- Sidebar-selektierte Menues, in den Nav-/Subpage-Navigationen
          die Backgrounds der Container. Und da auch bitte weiterhin eine Border!").
@@ -1099,7 +1106,7 @@
          eines Knopfs in der Werkzeugleiste waere unsichtbar. Vercel nimmt dafuer Gray 100 (#f2f2f2,
          "Default background" einer Komponente; dasselbe, was 5 % Schwarz auf Weiss ergibt, Vercels
          Hover in Menues). Auf der Seite 8 Stufen, auf der Karte 13. */
-      --vc-heading-bg: #f2f2f2;
+      --vc-heading-bg: var(--up-leise-grau);
       /* Eingabefelder wie bei Vercel weiss mit Rahmen (Background 1): das bisherige #f9f8f9 waere
          auf der grauen Seite vom Grund nicht zu unterscheiden, nur der Rahmen bliebe. */
       --vc-field: var(--vc-bg);
@@ -6815,6 +6822,18 @@
   --vc-text: #ededed; --vc-muted: #c9c9c9; --vc-third: #a1a1a1; --vc-fourth: #7d7d7d; --vc-border: #333333;
   --vc-heading-bg: #1f1f1f; --vc-hover-border: #707070; --up-surface: #0f0f0f; --vc-sk: #1e1e1e; --up-switch-off: #454545;
   --up-focus: #6DB2FF; --up-focus-ring: rgba(109,178,255,0.28);
+}
+/* IM GRAUEN HELL DIE LEISE FLAECHE DER APP (16.10.). Die helle Grundregel oben steht noch auf dem
+   Wert vor dem grauen Hell (#f9f8f9), und weil die Karte ihn selbst setzt, erreicht sie das Grau
+   der Wurzel (#f2f2f2, core "DAS GRAUE HELL") nicht -- die Wurzel ist der Schleier, die Karte sein
+   Kind. Gemessen vorher: der Hover des Schliessen-Knopfs #f9f8f9 auf der weissen Karte (6 Stufen),
+   der Schleier darueber #f2f2f2. Betrifft jede Flaeche in einem Dialog, die --vc-heading-bg traegt:
+   Schliessen-Hover, die Ablage im Prompt-Import, gesperrte Knoepfe, Flaggen ohne Bild.
+   Nur mit dem Marker am <html> (ohne ihn -- Landingpage, erstes Bild -- bleibt der alte Wert) und
+   nur im Hellen; (0,4,1) gegen die Grundregel (0,1,0), die dunkle Fassung (0,3,0) schliesst das
+   :not() aus. */
+html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-topicmodal-card {
+  --vc-heading-bg: var(--up-leise-grau);
 }
 @media (prefers-reduced-motion: reduce){ .up-topicmodal-backdrop, .up-topicmodal-card { transition-duration: 1ms; } }
 .up-topicmodal-card * { box-sizing: border-box; }
