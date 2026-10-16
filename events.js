@@ -5422,8 +5422,13 @@
         var b = p.api.knopf(p.knopf);
         if (b && !b.disabled) { b.click(); return; }
         /* Gesperrt, weil der Typ fehlt (16.10. spaet): Enter fuehrt dorthin, statt nichts zu tun.
-           Der Fokus wandert, das focusout nimmt die Anleitung mit. */
-        if (p.art === "anlegen" && p.e.name.trim() && !p.e.typ) { var tb = im('[data-wahl="typ"]'); try { if (tb) tb.focus(); } catch (e) {} }
+           Die Anleitung geht hier selbst mit -- ein focusout kommt nicht verlaesslich (gemessen: in
+           einem Fenster ohne Fokus blieb es bei focus() aus). */
+        if (p.art === "anlegen" && p.e.name.trim() && !p.e.typ) {
+          var tb = im('[data-wahl="typ"]');
+          try { if (tb) tb.focus(); } catch (e) {}
+          if (!p.anlNameFertig) { p.anlNameFertig = true; anlW1Folgen(); }
+        }
         return;
       }
       /* Enter im Zielfeld uebernimmt die Eingabe; Umschalt+Enter ist eine neue Zeile (mehrere URLs). */
