@@ -28708,6 +28708,10 @@
     adCardHtml: adCardHtml, adFormatLabel: adFormatLabel, bildUrl: bildUrl, makeSeitenDrawer: makeSeitenDrawer, balkenGrau: balkenGrau,
     barLogoErsatz: barLogoErsatz,
     faviconUrl: faviconUrl, topicChipHtml: topicChipHtml, topicEmoji: topicEmoji,
+    /* 16.10. spaet fuer das Feld in Schritt 3 der Events: wer ein Favicon VORAB prueft (ein Bild
+       ausserhalb des Dokuments, das der Rueckfall hier nicht sieht), erkennt Googles Platzhalter
+       mit derselben Regel wie der Rueckfall. */
+    favPlatzhalter: favPlatzhalter,
     marketChip: marketChip,
     aufResize: aufResize,
     beobachteGroesse: beobachteGroesse,

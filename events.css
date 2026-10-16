@@ -400,6 +400,12 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-urlwahl .uev-urlwahl-weg { margin-right: -8px; }
 .uev-urlwahl .uev-url-txt { flex: 1 1 auto; }
 .uev-urlwahl-neu { flex: 0 0 auto; font-size: var(--up-fs-xs); color: var(--vc-third); }
+/* Ein Ziel wurde noch einmal eingegeben (16.10. spaet): seine Zeile leuchtet kurz im Grund der
+   Auswahl auf, statt dass ein Fehler am Feld Continue sperrt. Der Schatten in derselben Farbe
+   zieht den Grund ueber die randlose Zeile hinaus, ohne das Raster zu verschieben. Etwa eine
+   Sekunde: kuerzer sieht man es neben dem Feld nicht, laenger wirkt es wie ein Zustand. */
+@keyframes uev-blitz { from { background-color: var(--up-wahl-bg); box-shadow: 0 0 0 6px var(--up-wahl-bg); } }
+.uev-urlwahl.is-blitz { border-radius: var(--up-r-xs); animation: uev-blitz calc(var(--up-t-3) * 4) var(--up-ease) both; }
 .uev-urlauswahl { display: flex; flex-direction: column; gap: 8px; }
 .uev-urlauswahl:empty { display: none; }
 
@@ -546,10 +552,7 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-vz-reihe { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-width: 0; font-size: var(--up-fs-s); line-height: 1.5; }
 .uev-vz-url { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--vc-muted); }
 .uev-vz-wert { flex: 0 0 auto; color: var(--vc-third); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.uev-vz-liste.is-leise .uev-vz-url { color: var(--vc-third); }
-.uev-vz-titel { margin-top: 4px; font-size: var(--up-fs-s); font-weight: var(--up-fw-m); color: var(--vc-third); }
 .uev-vz-satz { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; line-height: 1.45; color: var(--vc-muted); }
-.uev-vz-satz.is-leise { font-size: var(--up-fs-s); color: var(--vc-third); }
 .uev-vz-satz .up-quietbtn { height: var(--up-h-chip); border-radius: var(--up-r-s); }
 .uev-vz-eigen { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding-top: 12px;
   border-top: 1px solid var(--vc-border); color: var(--vc-muted); }
