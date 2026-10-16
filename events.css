@@ -557,6 +557,26 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
    spaet: scrollHeight 56 -> 38). */
 .uev-zieleingabe .uev-zielein::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .uev-zielzeile .uev-zielhinzu { flex: 0 0 auto; }
+/* Feld und Vorschlaege in einer Spalte (17.10.): die Vorschlaege sind so breit wie das Feld, ihr
+   "Use ..." endet an seiner rechten Kante, nicht unter "Add". */
+.uev-feldspalte { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; }
+/* Je Vorschlag eine Zeile: Zeichen, Satz, leiser Knopf -- ohne Kasten und ohne Pille, nur Text wie
+   .up-fehlerzeile. 8 vom Feld (das gap der Eingabe), zu ist die Zeile 0 hoch und zieht nichts nach.
+   Das Polster sitzt im Inneren des Klappers: an .uev-klapp-in selbst hielte es auch zugeklappt 8 offen. */
+.uev-vorschlaege { display: flex; flex-direction: column; gap: 2px; padding-top: 8px; }
+.uev-vorschlag { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; min-width: 0; min-height: var(--up-h-chip);
+  font-size: var(--up-fs-s); line-height: 1.4; color: var(--vc-muted); }
+.uev-vorschlag-ic { flex: 0 0 auto; display: inline-flex; color: var(--vc-third); }
+.uev-vorschlag-ic svg { width: 14px; height: 14px; }
+/* Der Satz gibt nach, der Knopf nicht: sein Wert ist das, was man uebernimmt, und wird nicht
+   gekuerzt (bei 800 stand bis dahin "Use www.lee-u..."). Reicht der Platz nicht, rutscht der Knopf
+   rechtsbuendig in die naechste Zeile; erst ein Wert breiter als das Feld kuerzt sich. */
+.uev-vorschlag-satz { flex: 1 1 180px; min-width: 0; }
+/* Der leise Knopf aus core auf 24 (Faktor 24/32 auf Polster; Schrift auf die Stufe 12, Radius
+   nach Rolle: bis 24 -> 4). */
+.uev-vorschlag .up-quietbtn.uev-vorschlag-knopf { flex: 0 1 auto; max-width: 100%; min-width: 0; margin-left: auto; height: var(--up-h-chip); padding: 0 6px;
+  border-radius: var(--up-r-s); font-size: var(--up-fs-s); }
+.uev-vorschlag-knopf > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .uev-schreibweise { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: var(--up-h-chip); font-size: var(--up-fs-s); color: var(--vc-third); }
 .uev-schreibweise:empty { display: none; }
 .uev-schreib-lbl, .uev-schreib-satz { color: var(--vc-third); }
