@@ -51,6 +51,7 @@
       "Mira antwortet in diesem Chat noch. Warte auf die Antwort und sende dann erneut.",
     "Too many messages in a short time. Wait a minute and try again.":
       "Zu viele Nachrichten in kurzer Zeit. Warte eine Minute und versuch es noch einmal.",
+    "Too many messages in a short time.": "Zu viele Nachrichten in kurzer Zeit.",
     "Mira couldn't start this answer. Try again.": "Mira konnte diese Antwort nicht starten. Versuch es noch einmal.",
     "This message couldn't be sent. Shorten it and try again.":
       "Diese Nachricht konnte nicht gesendet werden. Kürze sie und versuch es noch einmal.",
@@ -323,9 +324,14 @@
     function sendeFehlerSatz(erg) {
       var art = D.fehlerArt(erg);
       if (art === "laeuft") return t("Mira is still answering in this chat. Wait for the answer, then send again.");
-      if (art === "rate") return t("Too many messages in a short time. Wait a minute and try again.");
+      /* Mit hint (Sekunden bis zum naechsten Minutenfenster) die genaue Wartezeit (16.10.). */
+      if (art === "rate") return UC.warteSekunden && UC.warteSekunden(erg)
+        ? t("Too many messages in a short time.") + " " + UC.warteSatz(erg)
+        : t("Too many messages in a short time. Wait a minute and try again.");
       if (art === "start") return t("Mira couldn't start this answer. Try again.");
       if (art === "eingabe") return t("This message couldn't be sent. Shorten it and try again.");
+      /* Der Satz der App fuer team_access_* (core) -- das Gate kommt dazu (core, edge()). */
+      if (art === "zugang") return t("Your team doesn't have access right now.");
       if (art === "rechte") return t("You don't have access to this team.");
       if (art === "netz") return t("Mira couldn't be reached. Check your connection and try again.");
       if (art === "zeit") return t("Mira is taking too long to respond. Try again in a moment.");
@@ -379,7 +385,9 @@
         return schreiben(a).then(function (erg) {
           if (!erg.ok) {
             var art = D.fehlerArt(erg);
-            if (art === "rate") satz("Too many changes in a short time", "error", "Wait a minute and try again.");
+            /* Die Wartezeit aus hint (Sekunden, core warteSatz), sonst wie bisher. */
+            if (art === "rate") satz("Too many changes in a short time", "error", UC.warteSatz ? UC.warteSatz(erg, t("Wait a minute and try again.")) : "Wait a minute and try again.");
+            else if (art === "zugang") satz(fehlerTitel, "error", "Your team doesn't have access right now.");
             else satz(fehlerTitel, "error", "Try again.");
             return listeLaden(true);
           }
@@ -393,7 +401,9 @@
       UC.edge(D.FN.pdf, { team_id: tm, session_id: chat, assistant_message_id: amid }, { datei: true, timeoutMs: 150000 }).then(function (erg) {
         am("askMiraSetExportPending", amid, false);
         if (!erg.ok || !erg.daten || !erg.daten.blob) {
-          satz("Couldn't create the PDF", "error", D.fehlerArt(erg) === "weg" ? "This answer no longer exists." : "Try again.");
+          var artP = D.fehlerArt(erg);
+          satz("Couldn't create the PDF", "error", artP === "weg" ? "This answer no longer exists."
+            : artP === "zugang" ? "Your team doesn't have access right now." : "Try again.");
           return;
         }
         try {

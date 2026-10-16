@@ -700,6 +700,7 @@
     "The research could not be started. Please try again.": "Die Recherche konnte nicht gestartet werden. Versuch es noch einmal.",
     "The research was deleted.": "Die Recherche wurde gelöscht.",
     "Too many researches in a short time. Please wait a minute and try again.": "Zu viele Recherchen in kurzer Zeit. Warte eine Minute und versuch es dann noch einmal.",
+    "Too many researches in a short time.": "Zu viele Recherchen in kurzer Zeit.",
     /* Tagesgrenzen aus missbrauch_14_10 (30 Recherchen je Team, 60 je Nutzer, 2000 KI-Erkennungen je Team). */
     "Your team has reached today's limit for researches. You can start new ones tomorrow.": "Dein Team hat das Tageslimit für Recherchen erreicht. Neue kannst du morgen starten.",
     "You have reached today's limit for researches. You can start new ones tomorrow.": "Du hast das Tageslimit für Recherchen erreicht. Neue kannst du morgen starten.",
@@ -1871,6 +1872,8 @@
     "Please choose a business model": "Bitte wähl ein Geschäftsmodell",
     "Please choose a market from the list": "Bitte wähl einen Markt aus der Liste",
     "Please try again in {n} minutes.": "Versuch es in {n} Minuten noch einmal.",
+    "Please try again in {n} seconds.": "Versuch es in {n} Sekunden noch einmal.",
+    "Please try again in 1 second.": "Versuch es in einer Sekunde noch einmal.",
     "Refresh the page to see the current plans.": "Lade die Seite neu, um die aktuellen Tarife zu sehen.",
     "Revoke invites that are no longer needed, then try again.": "Zieh Einladungen zurück, die du nicht mehr brauchst, und versuch es dann noch einmal.",
     "Switch to another team to continue.": "Wechsle in ein anderes Team, um weiterzumachen.",
@@ -1927,6 +1930,7 @@
     "Choose a plan in Billing to change these settings.": "Wähle unter Billing einen Tarif, um diese Einstellungen zu ändern.",
     "Your brand isn't set up yet": "Deine Brand ist noch nicht eingerichtet",
     "Please contact support.": "Bitte wende dich an den Support.",
+    "Please try again in a moment. If it keeps failing, contact support.": "Versuch es gleich noch einmal. Klappt es weiter nicht, wende dich an den Support.",
     "Use 1 to 60 characters, with at least one letter or digit.": "Nutze 1 bis 60 Zeichen, mit mindestens einem Buchstaben oder einer Ziffer.",
     "Pick an emoji from the emoji picker.": "Wähl ein Emoji aus der Auswahl.",
     "They are tracked again with their next daily run.": "Sie werden mit ihrem nächsten täglichen Lauf wieder erfasst.",
@@ -24068,9 +24072,13 @@
             return { ok: true, status: x.r.status, daten: aus };
           }
           var f = d && typeof d === "object" ? d : {};
-          /* 402 team_access_*: der Zugang des Teams ist weg -- das Gate zeigen, nicht nur einen
-             Fehler (Vertrag App-Start, Abschnitt 3). */
-          if (x.r.status === 402 && /^team_access_/.test(String(f.message || ""))) setTimeout(appZugangWeg, 0);
+          /* team_access_*: der Zugang des Teams ist weg -- das Gate zeigen, nicht nur einen
+             Fehler (Vertrag App-Start, Abschnitt 3). Erkannt an message, NICHT am Status (16.10.):
+             require_team_access meldete bis befunde_db_v1.sql P0403 = HTTP 500, erst danach PT402
+             = 402 (_app_gate_v1 schon immer 402). Am Status allein fehlte das Gate bis zum
+             Einspielen auf Dashboard, Citations, Prompts und allen anderen Seiten mit dem alten
+             Baustein -- message ist vorher und nachher dieselbe. */
+          if (/^team_access_/.test(String(f.message || ""))) setTimeout(appZugangWeg, 0);
           return { ok: false, status: x.r.status, fehler: {
             code: String(f.code || ""), message: String(f.message || ("http_" + x.r.status)),
             hint: String(f.hint || ""), details: String(f.details || "") } };
@@ -24144,6 +24152,12 @@
               return { ok: true, status: r.status, daten: d };
             }
             var f = d && typeof d === "object" ? d : {};
+            /* Dieselbe Zugangssperre wie in rpc() (16.10.): start-job, mira-send und
+               mira-export-pdf reichen den Fehler der Datenbank unveraendert durch -- message
+               team_access_*, bis befunde_db_v1.sql mit 500, danach mit 402. Nur message, nicht
+               error: die Billing-Functions schreiben ihre Codes in error und pruefen keinen Zugang
+               (sonst sperrte sich die Kasse im Gate selbst). */
+            if (/^team_access_/.test(String(f.message || ""))) setTimeout(appZugangWeg, 0);
             /* Die Edge Functions der Settings (create-team-checkout, 11.10.) antworten mit
                {success:false, error:<code>, code, hint} -- der Code steht in error, nicht in
                message. Ohne diesen Rueckfall kaeme nur "http_409" an, und die Seite koennte
@@ -24171,6 +24185,34 @@
       }
       return erg;
     });
+  }
+
+  /* ══ WARTEZEIT EINER RATENGRENZE (16.10.) ════════════════════════════════════════════════════
+     Jede Ratengrenze der Datenbank meldet <bereich>_rate_limited mit hint = Sekunden bis zum
+     naechsten Minutenfenster (rpc_lexikon, Konventionen); die Edge Functions tragen retry_after
+     (siehe edge()). Die Seiten erkennen die Grenze an message, nicht am Status --
+     citations_rate_limited kam bis befunde_db_v1.sql als HTTP 500, danach als 429 -- und sagen
+     hiermit, wie lange es dauert, statt "warte kurz".
+     warteSekunden(erg): die Sekunden, oder null, wenn hint fehlt, leer, 0 oder keine ganze Zahl
+     ist (dann meint er etwas anderes, etwa "max" bei den Einladungen) oder ueber einer Stunde
+     liegt. warteSatz(erg, vorgabe): der Satz dazu; ohne Zahl die vorgabe des Aufrufers. */
+  function warteSekunden(erg){
+    var f = (erg && erg.fehler) || {};
+    var r = Number(f.retry_after);
+    if (f.retry_after != null && isFinite(r) && r > 0 && r <= 3600) return Math.ceil(r);
+    var h = String(f.hint == null ? "" : f.hint).trim();
+    if (!/^\d+$/.test(h)) return null;
+    var n = Number(h);
+    return n >= 1 && n <= 3600 ? n : null;
+  }
+  function warteSatz(erg, vorgabe){
+    var n = warteSekunden(erg);
+    if (n == null) return vorgabe == null ? t("Please wait a moment and try again.") : vorgabe;
+    if (n === 1) return t("Please try again in 1 second.");
+    /* Bis anderthalb Minuten in Sekunden -- das Fenster ist eine Minute, "in 1 minute" fuer 61
+       Sekunden waere ungenauer als die Zahl selbst. */
+    if (n < 90) return t("Please try again in {n} seconds.").replace("{n}", String(n));
+    return t("Please try again in {n} minutes.").replace("{n}", String(Math.ceil(n / 60)));
   }
 
   /* ══ REALTIME: OEFFENTLICHE BROADCAST-KANAELE (10.10.) ═══════════════════════════════════════
@@ -28355,6 +28397,7 @@
     granAvailability: granAvailability,
     granFuerZeitraum: granFuerZeitraum,
     rpc: rpc, edge: edge, kanal: kanal, nutzerId: nutzerId,
+    warteSekunden: warteSekunden, warteSatz: warteSatz,
     rpcBereit: rpcBereit,
     /* Die upstreem-Wortmarke, EINE Quelle (08.10.): Seiten ohne eigenes data-logo nehmen sie von
        hier, statt die Adresse in jedes Element zu schreiben. */

@@ -431,7 +431,8 @@
       }
       if (/own_brand/.test(m)) return t("This is your own brand");
       if (/forbidden/.test(m) || /^team_access_/.test(m)) return zwei("You don't have permission for this", t("Refresh the page and try again."));
-      if (/rate_limited/.test(m) || (erg && erg.status === 429)) return zwei("Too many requests", t("Please wait a moment and try again."));
+      /* Die Wartezeit aus hint in Sekunden (core), sonst wie bisher. */
+      if (/rate_limited/.test(m) || (erg && erg.status === 429)) return zwei("Too many requests", UC.warteSatz ? UC.warteSatz(erg, t("Please wait a moment and try again.")) : t("Please wait a moment and try again."));
       if (/invalid_param/.test(m)) return t("Please check the name and domain");
       return t("The brand could not be added");
     }
