@@ -6675,7 +6675,12 @@
     var list = coerceRows(rows);
     var ctrl = id ? resolve(id) : initRoot(document.querySelector(".upt-root"));
     if (!ctrl || !ctrl.setGroups){ warnNoRoot("setPromptsTableGroups", id); return false; }
-    if (!list.length && window.console){
+    /* Nur warnen, wenn die Nutzlast NICHT als leere Liste lesbar war. Eine echte leere Liste
+       ist der Normalfall eines Filters ohne Treffer und kam sonst bei JEDEM Filterwechsel als
+       Warnung (gemessen 16.10.: 3 je Zyklus, 150 nach 50 Zyklen) -- mit Preserve log
+       verlangsamt das die Konsole spuerbar, und die App soll nicht loggen (CLAUDE.md §5). */
+    var rohLeer = typeof rows === "string" ? UC.parseBubbleJson(rows) : rows;
+    if (!list.length && !Array.isArray(rohLeer) && window.console){
       console.warn("[prompts-table] setPromptsTableGroups got 0 groups. Second argument was: " +
         describeArg(rows) + ". Expected an array of group rows (or the JSON string of one).");
     }
