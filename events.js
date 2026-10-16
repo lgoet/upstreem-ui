@@ -18,18 +18,27 @@
                 Liniendiagrammen. Diese Komponente liest nur; nach jeder gelungenen Aenderung
                 ruft sie UC.eventsChanged(), und core laedt den Teil neu.
      Kanal            RPC (UC.rpc, Antwort als normales JSON)   Antwort geht an
-       uevDetail        get_impact_event_v2                     setDetail
-       uevAnalysis      cached_impact_event_analysis_v2         setAnalysis
+       uevDetail        get_impact_event_v3                     setDetail
+       uevAnalysis      cached_impact_event_analysis_v3         setAnalysis
        uevScopePreview  preview_impact_event_scope_v2           setVorschau
-       uevCreate        create_impact_event_v2                  setDetail (Popup)
+       uevCreate        create_impact_event_v3                  setDetail (Popup)
        uevUpdate        update_impact_event_v2                  setDetail (Popup)
-       uevAddUrl        add_impact_event_url_v2                 setDetail (Popup)
-       uevRemoveUrl     remove_impact_event_url_v2              setDetail (Bestaetigung)
+       uevAddTarget     add_impact_event_target_v1              setDetail (Popup, auch eine URL)
+       uevRemoveUrl     remove_impact_event_target_v1           setDetail (Bestaetigung)
+       uevRemoveTarget  remove_impact_event_target_v1           setDetail (Bestaetigung)
        uevDelete        delete_impact_event_v2                  setGeloescht
-     ZIELE (15.10., bubble/events_ziele_db_auftrag_15_10.md): Detail und Analyse fragen zuerst
-     get_impact_event_v3 / cached_impact_event_analysis_v3 und fallen still auf v2 zurueck; Anlegen
-     mit Zielen geht an create_impact_event_v3, "Add" an add_impact_event_target_v1, eine Regel
-     entfernen an remove_impact_event_target_v1. Direkt, ohne Kanal: die Vorschau
+     NUR NOCH v3 (17.10., Frage des DB-Chats: wer ruft noch get_impact_event_v2?): Detail, Analyse
+     und Anlegen gehen IMMER an die v3-Fassung, eine URL hinzufuegen und entfernen an die
+     Ziel-Funktionen (die kennen url-Ziele mit denselben IDs wie urls[]). Bis 17.10. fielen Detail
+     und Analyse bei fehlender v3 still auf v2 zurueck, Anlegen ohne Ziele ging an
+     create_impact_event_v2 und eine URL an add/remove_impact_event_url_v2. v3 ist eine echte
+     Obermenge von v2 (gelesen 17.10.: _impact_event_detail_v3 und _impact_event_analysis_v3 rufen
+     die v2-Rechnung und haengen targets[] an, ohne Regel-Ziele ein leeres targets[]; url-Ziele
+     kommen aus impact_event_url, also auch alte Events aus v1/v2). Scheitert v3, zeigt die
+     Oberflaeche den Fehlerzustand (CLAUDE.md §2) statt still eine andere Fassung zu fragen.
+     update_impact_event_v2, delete_impact_event_v2 und preview_impact_event_scope_v2 haben keinen
+     Nachfolger und bleiben. uevAddUrl gibt es nur noch im Klick-Dummy (events-demo.js).
+     Direkt, ohne Kanal: die Vorschau
      (preview_impact_event_targets_v1), "Count as your domain" (domain_classify_v1) und die Sitemap
      (Edge Function sitemap-lesen, UC.edge). Was davon fehlt, bietet die Oberflaeche nicht an
      (ZIELE_DA, SITEMAP_DA).
@@ -880,19 +889,25 @@
      im Rueckweg den Namen des Bubble-Elements traegt. ms: laenger als die Analyse (E9: 3,4 s
      ungecacht) braucht keine; die Schreibwege so lang wie die Warte-Uhr der Popups (WARTE_MS),
      damit die RPC endet, bevor das Popup "dauert zu lange" sagt. */
-  /* ZIELE (15.10., bubble/events_ziele_db_auftrag_15_10.md): fn3 ist die Fassung mit Zielen.
-     v3immer: Lesekanaele fragen zuerst v3 und fallen bei fehlender Funktion still auf v2 zurueck
-     (dieselben Parameter, nur ohne targets[] in der Antwort). Schreibkanaele nehmen fn3 nur, wenn
-     der Aufruf Ziele traegt (rufen(..., v3)). nurDirekt: kein Rueckweg an Bubble -- die Kanaele
-     gibt es erst seit der App. */
+  /* NUR NOCH v3 (17.10.): Detail, Analyse und Anlegen kennen genau eine Fassung -- die mit
+     Zielen. Kein stiller Rueckfall auf v2 mehr (bis 17.10. fn3/v3immer/RUECKFALL3): der fragte bei
+     einer fehlenden v3 eine andere Funktion und zeigte deren Antwort, als waere nichts gewesen.
+     Die DB raeumt die alten Funktionen nach dem Abschalten von Bubble auf; ein Aufruf, der sie
+     noch braucht, waere dann eine 404 an einer Stelle, die niemand mehr ansieht. nurDirekt: kein
+     Rueckweg an Bubble -- die Kanaele gibt es erst seit der App. */
   var KANAL = {
-    uevDetail:       { fn: "get_impact_event_v2",             fn3: "get_impact_event_v3", v3immer: true, attr: "data-detail-fn", ms: 20000 },
-    uevAnalysis:     { fn: "cached_impact_event_analysis_v2", fn3: "cached_impact_event_analysis_v3", v3immer: true, attr: "data-analysis-fn", ms: 24000 },
+    uevDetail:       { fn: "get_impact_event_v3",             attr: "data-detail-fn",    ms: 20000 },
+    uevAnalysis:     { fn: "cached_impact_event_analysis_v3", attr: "data-analysis-fn",  ms: 24000 },
     uevScopePreview: { fn: "preview_impact_event_scope_v2",   attr: "data-preview-fn",   ms: 20000 },
-    uevCreate:       { fn: "create_impact_event_v2",          fn3: "create_impact_event_v3", attr: "data-create-fn", ms: 24000, schreibt: true },
+    uevCreate:       { fn: "create_impact_event_v3",          attr: "data-create-fn",    ms: 24000, schreibt: true },
     uevUpdate:       { fn: "update_impact_event_v2",          attr: "data-update-fn",    ms: 24000, schreibt: true },
+    /* Nur noch der Klick-Dummy (zielSenden): ausserhalb geht eine URL als url-Ziel an
+       add_impact_event_target_v1. fn bleibt fuer den Rueckweg-Vertrag stehen, gerufen wird sie nie. */
     uevAddUrl:       { fn: "add_impact_event_url_v2",         attr: "data-addurl-fn",    ms: 24000, schreibt: true },
-    uevRemoveUrl:    { fn: "remove_impact_event_url_v2",      attr: "data-removeurl-fn", ms: 24000, schreibt: true },
+    /* Eine URL entfernen (17.10.): remove_impact_event_target_v1 loescht auch url-Ziele, die ID
+       ist dieselbe wie urls[].id (gelesen 17.10.). Der Kanal bleibt, weil die Bestaetigung und
+       ihr Fehlertext der URL gehoeren (wartend.urlWeg). */
+    uevRemoveUrl:    { fn: "remove_impact_event_target_v1",   attr: "data-removeurl-fn", ms: 24000, schreibt: true },
     uevDelete:       { fn: "delete_impact_event_v2",          attr: "data-delete-fn",    ms: 24000, schreibt: true },
     uevAddTarget:    { fn: "add_impact_event_target_v1",      attr: "", ms: 24000, schreibt: true, nurDirekt: true },
     uevRemoveTarget: { fn: "remove_impact_event_target_v1",   attr: "", ms: 24000, schreibt: true, nurDirekt: true }
@@ -901,8 +916,6 @@
      Wurzeln. Nach einem Neuladen wird wieder zuerst v2 versucht: ist das SQL inzwischen
      eingespielt, laeuft der neue Weg ohne Zutun. */
   var RUECKFALL = {};
-  /* Dasselbe fuer v3: ein Lesekanal, dessen v3 fehlt, fragt fuer den Rest der Sitzung gleich v2. */
-  var RUECKFALL3 = {};
 
   /* ---- WAS DIE DATENBANK SCHON KANN (15.10.) ----------------------------------------------
      "Nichts zeigen, was nicht funktioniert": Regel-Ziele (Pfad, Domain) und die Vorschau gibt es
@@ -1169,13 +1182,11 @@
       var k = KANAL[kanal], b = body(o);
       if (spaet && fireBubble.spaet) fireBubble.spaet(k.attr, kanal, b); else fireBubble(k.attr, kanal, b);
     }
-    /* v3 (15.10.): true -- der Aufruf traegt Ziele und braucht die Fassung mit Zielen (fn3). */
-    function rufen(kanal, o, kx, spaet, v3) {
+    function rufen(kanal, o, kx, spaet) {
       kx = kx || {};
       if (demo) { demoAntwort(kanal, body(o), kx); return; }
       var k = KANAL[kanal];
-      var mitV3 = !!k.fn3 && !RUECKFALL3[kanal] && (k.v3immer || v3 === true);
-      if (!mitV3 && (RUECKFALL[kanal] || !UC.rpc)) {
+      if (RUECKFALL[kanal] || !UC.rpc) {
         if (k.nurDirekt) { kam(kanal, { ok: false, status: 0, fehler: { code: "", message: "", hint: "", details: "" } }, kx); return; }
         bubbleRufen(kanal, o, spaet);
         return;
@@ -1185,20 +1196,9 @@
         /* Kein Team nach 10 s: kein Aufruf ohne p_team (der Server antwortete mit forbidden) --
            die Stelle, die wartet, bekommt den allgemeinen Fehler statt ewig zu laden. */
         if (!tm2) return { ok: false, status: 0, fehler: { code: "", message: "", hint: "", details: "" } };
-        return UC.rpc(mitV3 ? k.fn3 : k.fn, mitTeam(o, tm2), { timeoutMs: k.ms });
+        return UC.rpc(k.fn, mitTeam(o, tm2), { timeoutMs: k.ms });
       }).then(function (erg) {
         erg = erg || { ok: false, status: 0, fehler: {} };
-        /* v3 fehlt (SQL noch nicht eingespielt): ein Lesekanal fragt still v2 -- dieselben
-           Parameter, die Antwort hat nur keine Ziele. Ein Schreibaufruf MIT Zielen kann nicht
-           still zurueckfallen (v2 kennt p_targets nicht); er meldet es am Feld der Ziele, und die
-           Oberflaeche bietet ab jetzt nur noch, was v2 kann. */
-        if (mitV3 && fehltFn(erg)) {
-          RUECKFALL3[kanal] = true;
-          if (k.v3immer) { rufen(kanal, o, kx, spaet); return; }
-          ZIELE_DA.stand = false;
-          kam(kanal, { ok: false, status: 404, fehler: { code: "", message: "impact_event_targets_unavailable", hint: "p_targets", details: "" } }, kx);
-          return;
-        }
         /* "And" (p_tagmode) und die Funktion kennt den Parameter noch nicht: PostgREST meldet das
            als fehlende Funktion (PGRST202), obwohl es sie gibt. Das ist KEIN Grund fuer den
            Rueckweg zu Bubble -- der wuerde den Kanal fuer die ganze Sitzung umstellen, und Bubble
@@ -1272,7 +1272,8 @@
         return;
       }
       if (kanal === "uevDelete") { loeschFehler(txt); return; }
-      if (kanal === "uevRemoveUrl") { urlWegFehler(txt); return; }
+      /* Seit 17.10. antwortet remove_impact_event_target_v1: "Ziel schon weg" heisst hier "URL schon weg". */
+      if (kanal === "uevRemoveUrl") { urlWegFehler(code === "impact_event_target_not_found" ? fehlerText("impact_event_url_not_found", hint) : txt); return; }
       if (kanal === "uevRemoveTarget") {
         zielWegFehler(txt);
         /* impact_event_target_not_found: das Ziel ist schon weg (anderer Tab, Kollege) -- das
@@ -2919,7 +2920,8 @@
                     if (wartend.urlWeg) return false;
                     api.busy("ok", true); api.fehler("");
                     wartend.urlWeg = { eventId: d.id, urlId: urlId, api: api, uhr: warteUhr("urlWeg", api) };
-                    rufen("uevRemoveUrl", { p_event_id: d.id, p_url_id: urlId }, { eventId: d.id });
+                    /* Der Klick-Dummy (events-demo.js) kennt den alten Parameter, die Datenbank den neuen. */
+                    rufen("uevRemoveUrl", demo ? { p_event_id: d.id, p_url_id: urlId } : { p_event_id: d.id, p_target_id: urlId }, { eventId: d.id });
                     return false;
                   } }],
         onClose: function () { if (wartend.urlWeg && wartend.urlWeg.api === m) wartend.urlWeg = null; }
@@ -5149,7 +5151,7 @@
       else if (mit.length) { p.gesendet = mit.filter(function (z) { return z.kind === "url"; }); b.p_urls = p.gesendet.map(function (z) { return z.input; }); }
       if (!vorabPruefen(p, b)) return;
       warten(p, "anlegen");
-      rufen("uevCreate", b, { popup: p }, false, !!b.p_targets);
+      rufen("uevCreate", b, { popup: p });
     }
     /* Vertrag 3.5: null heisst unveraendert, "" leert (Beschreibung, Zeichen, Farbe). Ein leerer
        Name ist nicht erlaubt -- der Knopf ist dann gar nicht erst frei. */
@@ -5174,16 +5176,18 @@
       warten(p, "bearbeiten");
       rufen("uevUpdate", b, { popup: p });
     }
-    /* Der Add-Dialog (15.10.): mit Zielen in der Datenbank alle auf einmal ueber
-       add_impact_event_target_v1 (auch eine Auswahl aus der Sitemap), sonst wie bisher genau eine
-       URL ueber add_impact_event_url_v2. Was noch im Feld steht, kommt vorher dazu. */
+    /* Der Add-Dialog (15.10.): alle auf einmal ueber add_impact_event_target_v1 (auch eine Auswahl
+       aus der Sitemap). Seit 17.10. auch dann, wenn die Regel-Ziele (noch) nicht angeboten werden:
+       eine URL ist dort ein url-Ziel, add_impact_event_url_v2 braucht die App nicht mehr. Nur der
+       Klick-Dummy geht den alten Weg (genau eine URL, uevAddUrl). Was noch im Feld steht, kommt
+       vorher dazu. */
     function zielSenden() {
       var p = popup;
       if (!p || p.warte) return;
       if (String(p.e.eingabe || "").trim() && !eingabeUebernehmen(p)) return;
       if (!p.e.ziele.length) return;
       var d = state.detail[p.eventId];
-      if (zieleDa()) {
+      if (!demo) {
         var schon = d && isArr(d.targets) ? d.targets.length : 0;
         if (schon + p.e.ziele.length > ZIEL_MAX) { feldFehlerZeigen(p, "impact_event_too_many_targets", "", fehlerText("impact_event_too_many_targets")); return; }
         p.zielFehler = null; p.gesendet = p.e.ziele.slice();
@@ -5974,7 +5978,7 @@
 
     /* ---- Setter --------------------------------------------------------------------------- */
     var ctrl = {
-      /* quelle (13.10.): "lesen" -- die Antwort auf get_impact_event_v2, sie schliesst kein
+      /* quelle (13.10.): "lesen" -- die Antwort auf get_impact_event_v3 (bis 17.10. v2), sie schliesst kein
          wartendes Popup und keine Bestaetigung; "schreiben" -- die Antwort einer Aenderung. Ohne
          quelle (die alten Bubble-Setter) wie bisher: jedes Detail darf beides. raw darf Text
          (Bubble) oder schon ein Objekt (UC.rpc) sein -- objekt() nimmt beides. */
@@ -6056,7 +6060,7 @@
           if (o && o.hint != null && hint == null) hint = String(o.hint);
         }
         var txt = fehlerText(code, hint), weg = String(code) === "impact_event_not_found";
-        /* wo "lesen" (13.10.): die RPC get_impact_event_v2 ist gescheitert, und genau sie -- kein
+        /* wo "lesen" (13.10.): die RPC get_impact_event_v3 (bis 17.10. v2) ist gescheitert, und genau sie -- kein
            Popup wartet darauf. Ein Event, das es nicht mehr gibt, verliert dabei sein gemerktes
            Detail (sonst stuende es weiter im Kopf), und die Liste laedt neu. */
         if (wo === "lesen") {
