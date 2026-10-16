@@ -2849,16 +2849,45 @@ fehlen Shopping und Ads ganz.
 gefiltert zeigt **und** deren Funktion ihn als Parameter kennt (`FILTER` in export-data.js, dieselbe
 Liste wie `exportParameter`): Domain → URLs, Responses; Adresse → Responses; Prompt → Responses;
 Brand → Responses, Domains, URLs. Wählt man links einen anderen Datensatz, ist er dort weg (kein
-Chip, kein Parameter); zurück auf einen Datensatz im Scope ist er wieder da. Die Seitenfilter von
-Shopping und Ads gelten je Datensatz, für den die Seite sie meldet (`params`, `filter_aktiv`). Der
-Zeitraum ist eine Einstellung des Dialogs, kein Filter: er bleibt beim Wechsel stehen und steht
-sichtbar im Feld.
+Chip, kein Parameter); zurück auf einen Datensatz im Scope ist er wieder da. Der Zeitraum ist eine
+Einstellung des Dialogs, kein Filter: er bleibt beim Wechsel stehen und steht sichtbar im Feld.
+
+**Die Filter der Seite gehen mit, sichtbar und abwählbar (seit 16.10. abends).** Recherche an den
+Hilfeseiten: der Export folgt der gefilterten Ansicht – alle Zeilen, die die Filter treffen, nicht nur
+die sichtbare Seite – bei Profound, Scrunch, AthenaHQ, Search Console, Semrush, Airtable, Attio,
+Notion, Stripe und Vercel, im Zeitraum der Ansicht. Die Filter zeigt dort kein Dialog (Search Console
+schreibt sie in die Datei), „ohne Filter“ bietet nur Shopify an. Hier beides:
+- Jeder Einstieg (Seiten: Prompt Insights, Citations, Brands, Dashboard, Performance, Shopping, Ads;
+  Drawer: Domain, URL, Brand, Prompt) gibt über `setContext` den **Zeitraum** (`date_from`,
+  `date_to`, `preset`) und je Datensatz die **Parameter seiner eigenen Liste** (`params`) mit –
+  dieselben Bauer wie beim Laden, Team, Zeitraum und Seite darin übergeht der Dialog.
+- Es gilt nur, was die Exportfunktion kennt (`KENNT`, Signaturen der Datenbank); eine Sortierung, die
+  sie nicht kennt, fällt weg (`ORDNUNG`). Die Leiste gilt für alle Datensätze der Seite, die Filter
+  einer Tabelle (Suche, Status, Prompt type, Brand, Brands, Rank, Sentiment, Typen) nur für den
+  Datensatz des offenen Reiters – die des anderen sieht man gerade nicht. Auf dem Dashboard und im
+  Brand- und Prompt-Drawer stehen alle Bausteine zugleich da, dort gilt jeder Baustein für seinen.
+- Jeder Filter ist ein Chip (`SEITE` in export-data.js: Name und Zeichen wie in der Filterleiste,
+  „Model: ChatGPT, Perplexity, +1“, der ganze Wert im `title`), mit Kreuz. Abgewählt exportiert der
+  Dialog, was die Seite ohne ihn zeigt (beim X der Leiste dasselbe): der Parameter fällt weg, bei
+  Branded gilt wieder die Vorgabe der App („non_branded“). Keine Chips sind die Vorgaben (Status
+  active, Mentioned all, Segment all, Branded „non_branded“ außer bei Prompts).
+- „Restore filters“ (`.up-filter-reset`, rechts im Kopf des Feldes wie „Select all“ bei den Spalten)
+  holt alle abgewählten zurück; sind alle weg, sagt ein Satz (12/16, `--vc-third`): „Without filters,
+  every row in the date range is exported.“ Abgewählt gilt für dieses Öffnen und jeden Datensatz.
+- Die Sortierung der Tabelle geht als Reihenfolge der Zeilen mit, ohne Chip (sie ändert keine Zeile).
+  Werte, die der Dialog nicht selbst findet, gibt die Seite in `namen` mit (Produkt, Marke einer
+  Shopping-Zeile). `filter_aktiv` und der Chip „Page filters“ der ersten Fassung sind weg.
+- Seitenfilter nur auf dem Weg über die App; der Bubble-Weg trägt nur die vier Drawer-Filter, dort
+  stehen keine Seitenchips. Cmd+K öffnet ohne Kontext, also ohne Filter.
 
 **Rechts, die Einstellungen:** Überschrift 16/600 mit Satz 13 (`--vc-third`, `TYPES.beschr`), dann
 Felder mit Etikett 14/500:
-- **Filters** (nur wenn einer gilt): `.up-entchip.is-static` auf der Chip-Stufe 24 (Polster 8/2,
-  Abstand 6, Radius 4, Grund `--up-sel-bg`), Zeichen 12, Kreuz `.up-iconbtn.is-20`; „Page filters“
-  ohne Kreuz. Das Etikett trägt `data-i18n="Filters"` – das deutsche „Filter“ ist selbst ein Schlüssel.
+- **Filters** (nur wenn einer gilt oder einer abgewählt ist): Kopf wie bei den Spalten (24 hoch,
+  Etikett links, „Restore filters“ rechts), darunter `.up-entchip.is-static` auf der Chip-Stufe 24
+  (Polster 8/2, Abstand 6, Radius 4, Grund `--up-sel-bg`), Zeichen 12, Kreuz `.up-iconbtn.is-20`;
+  zuerst die Filter des Drawers, dann Produkt, Suche, die Leiste, die Tabelle. Nach einem Kreuz steht
+  der Fokus auf dem nächsten Kreuz, sonst auf „Restore filters“. Das Etikett trägt
+  `data-i18n="Filters"` – das deutsche „Filter“ ist selbst ein Schlüssel.
 - **Date range**: ein Feld 40 hoch, Radius 8, mit Kalenderzeichen, Wert, Zeitraum rechts und Winkel.
   Der Kalender aus `filters/date-range.js` liegt **unsichtbar** darüber und nimmt den Mausklick, sein
   Feld (Presets, Reset, Monate) öffnet darunter in der obersten Ebene; Tastatur: Enter auf dem Feld.
@@ -2877,7 +2906,11 @@ soon.“ und der gesperrte Knopf.
 
 **Fuß:** links der Dateiname als Vorschau (Zeichen 14, Mono 12, `--vc-third`, derselbe Name, den der
 Export vergibt), bei einem Fehler an seiner Stelle der rote Satz (`.up-fehlerzeile`, kein Kasten, kein
-Toast); rechts zwei Knöpfe aus core in der Knopfstufe 32: „Cancel“ | „Export {Datensatz}“.
+Toast); rechts zwei Knöpfe aus core in der Knopfstufe 32: „Cancel“ | „Export {Datensatz}“. Die
+Sätze je Fehler (`exportSatz`): 429 nennt die Wartezeit aus dem hint („Please wait 10 seconds and try
+again.“), 401 „Your session has expired. Please sign in again.“, 402 `team_access_*` den Satz zum
+Tarif (die Sperre der App zeigt core selbst), 403 kein Zugriff aufs Team, ein abgelehnter Zeitraum am
+Feld Date range, alles andere „The export didn't work. Please try again.“
 
 **Läuft:** links ruht die Liste (45 %, `inert`). Rechts „Exporting {Datensatz}“ mit „Closing this
 window stops the export.“, der Balken 6 hoch in `--up-accent` auf `--up-sel-bg` (nur mit echter

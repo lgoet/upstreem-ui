@@ -1133,8 +1133,29 @@
         return;
       }
       tab.setAttribute("data-export-instance", k);
-      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: tab.classList.contains("urt-root") ? "prompt_runs" : "prompts" }); } catch (err) {}
+      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, exportKontext(tab.classList.contains("urt-root") ? "prompt_runs" : "prompts")); } catch (err) {}
     }, true);
+    /* WAS DER EXPORT MITNIMMT (16.10.): Zeitraum und Filter der Ansicht, wie Search Console,
+       Profound und die uebrigen Vorbilder (export-data.js, KENNT) -- im Dialog als Chips, jeder
+       abwaehlbar. Die Parameter sind die der Listen dieser Seite (dieselben Bauer wie beim Laden);
+       Team, Zeitraum und Seite darin uebergeht der Dialog. Die Filter der Leiste gelten fuer beide
+       Datensaetze der Seite, die einer Tabelle (Suche, Status, Prompt type, Brand, Brands, Rank,
+       Sentiment) nur fuer den Datensatz des offenen Reiters -- die des anderen sieht man gerade
+       nicht (die Leiste blendet sie aus), also gehen sie nicht still mit. Die Sortierung je Tabelle
+       geht als Reihenfolge der Zeilen mit. */
+    function exportKontext(typ) {
+      var r = null, c = kalender();
+      try { r = c && c.getRange ? c.getRange() : null; } catch (e) { r = null; }
+      var f = filterStand(), aufPrompts = state.tab !== "responses";
+      var p = aufPrompts ? state.p : { order: state.p.order, status: "active", suche: "", erwaehnt: "all", firmen: null, branded: "all" };
+      var rs = aufPrompts ? { order: state.resp.order, suche: "", erwaehnt: "all", firmen: null, sentMin: null, sentMax: null, rankMin: null, rankMax: null } : state.resp;
+      var resp = D.responses(f, rs)[0];
+      return {
+        export_type: typ,
+        date_from: r && r.from ? r.from : state.f.von, date_to: r && r.to ? r.to : state.f.bis, preset: r && r.preset ? r.preset : "",
+        params: { prompts: D.liste(f, p).params, prompt_runs: resp ? resp.params : {} }
+      };
+    }
 
     /* ---- Knoepfe im Kopf -------------------------------------------------------------------- */
     /* "Add Prompts": der Dialog der App, aber gespeichert wird HIER (onSubmit), nicht ueber den

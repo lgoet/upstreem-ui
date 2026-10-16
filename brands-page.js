@@ -688,8 +688,24 @@
         return;
       }
       tab.setAttribute("data-export-instance", k);
-      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: "brands" }); } catch (err) {}
+      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, exportKontext()); } catch (err) {}
     }, true);
+    /* WAS DER EXPORT MITNIMMT (16.10., wie prompts-page.js): Zeitraum, Filter der Leiste und die
+       Suche der Tabelle als Chips im Dialog, jeder abwaehlbar; die Sortierung als Reihenfolge. Die
+       Suche filtert Brands Overview im Browser (state.query, gemerkt am Fenster je Instanz) -- im
+       Export sucht export_brands_v2 dasselbe ueber p_search. */
+    function exportKontext() {
+      var r = null, c = kalender();
+      try { r = c && c.getRange ? c.getRange() : null; } catch (e) { r = null; }
+      var p = D.tabelle(filterStand(), state.order, 0).params, ansicht = (window.__uboView || {})[ids.ubo] || {};
+      var q = typeof ansicht.query === "string" ? ansicht.query.trim() : "";
+      if (q) p.p_search = q.slice(0, 200);
+      return {
+        export_type: "brands",
+        date_from: r && r.from ? r.from : state.f.von, date_to: r && r.to ? r.to : state.f.bis, preset: r && r.preset ? r.preset : "",
+        params: { brands: p }
+      };
+    }
 
     /* ---- Add Brand ------------------------------------------------------------------------------
        Seit 13.10. speichert der Dialog (add-brand.js) selbst ueber brand_add_v1, auf jeder Seite,

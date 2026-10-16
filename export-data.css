@@ -137,7 +137,7 @@
      ueberschreitet. .uex-body steht in core in der Liste der Rollflaechen von Popups. */
   .uex-body { min-height: 0; min-width: 0; overflow-y: auto; overflow-x: hidden; padding: 20px 24px; scrollbar-gutter: stable; }
   /* hidden muss gegen display: flex gewinnen -- das Attribut allein verliert. */
-  .uex-body > [hidden], .uex-feld[hidden], .uex-hinweis[hidden], .uex-presets[hidden], .uex-alle[hidden],
+  .uex-body > [hidden], .uex-feld[hidden], .uex-hinweis[hidden], .uex-presets[hidden], .uex-alle[hidden], .uex-filter-zurueck[hidden],
   .uex-balken[hidden], .uex-gekappt[hidden], .uex-foot-info[hidden] { display: none; }
   .uex-wahl { display: flex; flex-direction: column; gap: 22px; }
   /* Der Bubble-Weg wartet auf window.upstreemExportResolve(): die Wahl ruht und ist gedimmt. */
@@ -169,6 +169,13 @@
   /* Das Kreuz ist .up-iconbtn.is-20 aus core; nur das Zeichen eine Stufe kleiner, damit es im
      24er-Chip nicht schwerer wirkt als der Name. */
   .uex-chip .up-iconbtn.uex-chip-x svg { width: 11px; height: 11px; }
+  /* Seitenfilter (16.10.): der Kopf des Feldes ist der Kopf der Spalten (.uex-spalten-kopf, Etikett
+     plus leiser Knopf rechts) -- "Restore filters" steht, wo bei den Spalten "Select all" steht.
+     Leer (alle abgewaehlt) sagt ein Satz in der Stufe des Hinweises, was jetzt in die Datei geht;
+     ohne Satz nimmt er keinen Platz (sonst stuende unter den Chips ein Loch von 8). */
+  .uex-chips:empty { display: none; }
+  .uex-filter-leer { margin: 0; font-size: var(--up-fs-s); line-height: 16px; color: var(--vc-third); }
+  .uex-filter-leer:empty { display: none; }
 
   /* Date range: das Feld. 40 hoch (Feldstufe; die Leinwand hat 36, das liegt zwischen den Stufen),
      Radius 8 nach Rolle (ab 37), Rand 1. Hover wie der Kalender der Werkzeugleisten

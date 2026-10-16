@@ -87,8 +87,19 @@
       "Exporting {typ}": "Export läuft: {typ}",
       "Remove filter {name}": "Filter {name} entfernen",
       "Filtered to {name}": "Gefiltert auf {name}",
-      "Page filters": "Filter der Seite",
       "This prompt": "Dieser Prompt", "This brand": "Diese Brand",
+      /* Seitenfilter (16.10.): die Namen der Chips stehen in core, wo die Filterleiste sie schon
+         braucht (Topic, Model, Market, Intent, Prompt type, Brand, Brands, Rank, Sentiment, Citation
+         type, URL type, Status, Search) und werden hier NICHT eingetragen. Segment, Merchant,
+         Product, Advertiser und Format stehen in shopping.js bzw. ads.js -- mit demselben Wert auch
+         hier, damit der Dialog deutsch ist, wenn die Seite nie geladen wurde (wie die Namen oben). */
+      "Segment": "Segment", "Merchant": "Händler", "Product": "Produkt", "Advertiser": "Werbetreibender", "Format": "Format",
+      "This product": "Dieses Produkt",
+      "Restore filters": "Filter wiederherstellen",
+      "Without filters, every row in the date range is exported.": "Ohne Filter geht jede Zeile im Zeitraum in die Datei.",
+      "Your session has expired": "Deine Sitzung ist abgelaufen", "Please sign in again.": "Bitte melde dich neu an.",
+      "Please wait {n} seconds and try again.": "Warte {n} Sekunden und versuch es noch einmal.",
+      "Please wait 1 second and try again.": "Warte eine Sekunde und versuch es noch einmal.",
       "Data": "Daten", "Soon": "Bald",
       "All columns": "Alle Spalten", "{n} columns": "{n} Spalten",
       "{k} of {n} columns": "{k} von {n} Spalten",
@@ -151,11 +162,107 @@
      da -- der Wert bleibt fuer die Dauer des Oeffnens stehen, nur sein Geltungsbereich entscheidet.
      Links traegt jeder Datensatz im Scope das Filterzeichen, damit man sieht, wo er gilt. */
   var FILTER = [
-    { feld: "url",      typen: ["prompt_runs"],                    icon: "link" },
-    { feld: "domain",   typen: ["prompt_runs", "urls"],            icon: "domain" },
-    { feld: "promptId", typen: ["prompt_runs"],                    icon: "zap",         ersatz: "This prompt" },
-    { feld: "brandId",  typen: ["prompt_runs", "domains", "urls"], icon: "squareStack", ersatz: "This brand" }
+    { feld: "url",      param: "p_url",       typen: ["prompt_runs"],                    icon: "link" },
+    { feld: "domain",   param: "p_domain",    typen: ["prompt_runs", "urls"],            icon: "domain" },
+    { feld: "promptId", param: "p_prompt_id", typen: ["prompt_runs"],                    icon: "zap",         ersatz: "This prompt" },
+    { feld: "brandId",  param: "p_brand",     typen: ["prompt_runs", "domains", "urls"], icon: "squareStack", ersatz: "This brand" }
   ];
+  /* DIE FILTER DER SEITE GEHEN MIT, SICHTBAR UND ABWAEHLBAR (16.10., Frage des Nutzers "wirklich
+     alle? Machen andere Apps das auch so?"). Gemessen an den Hilfeseiten: der Export folgt der
+     gefilterten Ansicht -- alle Zeilen, die die Filter treffen, nicht nur die sichtbare Seite --
+     bei Profound, Scrunch, AthenaHQ, Search Console, Semrush, Airtable, Attio, Notion, Stripe,
+     Vercel; der Zeitraum ist der der Ansicht. Die aktiven Filter zeigt dort kein Dialog (Search
+     Console schreibt sie in die Datei), ohne Filter exportieren laesst nur Shopify waehlen. Hier
+     beides: jeder Filter, der mitgeht, steht als Chip im Feld Filters, jeder laesst sich abwaehlen
+     (dann exportiert der Dialog, was die Seite ohne ihn zeigt), "Restore filters" holt alle
+     zurueck. Nichts geht still mit.
+     Die Seite meldet je Datensatz die Parameter ihrer eigenen Liste (setContext params), ohne
+     Team, Zeitraum und Seite. Es gilt nur, was die Exportfunktion als Parameter kennt (KENNT, die
+     Signaturen aus der Datenbank, 16.10. gelesen) -- ein fremder Name liesse PostgREST die Funktion
+     gar nicht finden (PGRST202). Ein Filter gilt fuer die Datensaetze, die die Seite gefiltert
+     zeigt: die Filter der Leiste fuer alle ihrer Seite, die einer Tabelle (Suche, Rank ...) nur fuer
+     den Datensatz des offenen Reiters -- das entscheidet die Seite, indem sie sie nur dort meldet.
+     Die Sortierung geht als Reihenfolge der Zeilen mit (sie aendert keine Zeile, also kein Chip),
+     ausser sie ist der Funktion fremd (ORDNUNG). */
+  var GRUND_P = ["p_models", "p_markets", "p_tag_ids", "p_intents", "p_branded"];
+  var KENNT = {
+    prompts:          GRUND_P.concat(["p_tagmode", "p_untagged", "p_search", "p_mentioned", "p_company_ids", "p_status", "p_order"]),
+    prompt_runs:      GRUND_P.concat(["p_tagmode", "p_order", "p_mentioned", "p_company_ids", "p_sentiment_min", "p_sentiment_max",
+                                      "p_rank_min", "p_rank_max", "p_search", "p_url", "p_domain", "p_prompt_id", "p_brand"]),
+    domains:          GRUND_P.concat(["p_tagmode", "p_mentioned", "p_mentioned_brands", "p_citation_types", "p_url_types", "p_search", "p_order", "p_brand"]),
+    urls:             GRUND_P.concat(["p_tagmode", "p_domain", "p_mentioned", "p_mentioned_brands", "p_citation_types", "p_url_types", "p_search", "p_order", "p_brand"]),
+    brands:           GRUND_P.concat(["p_tagmode", "p_search", "p_order"]),
+    /* Shopping und Ads nach bubble/exporte_16_10/exporte_shopping_ads_v1.sql. Ads kennt kein p_tagmode. */
+    shop_products:    GRUND_P.concat(["p_tagmode", "p_segment", "p_search", "p_merchant", "p_company_id", "p_order"]),
+    shop_brands:      GRUND_P.concat(["p_tagmode", "p_search", "p_order"]),
+    shop_merchants:   GRUND_P.concat(["p_tagmode", "p_search", "p_order"]),
+    shop_appearances: GRUND_P.concat(["p_tagmode", "p_segment", "p_search", "p_merchant", "p_company_id", "p_source_product_id"]),
+    ads_advertisers:  GRUND_P.concat(["p_advertisers", "p_ad_formats", "p_search", "p_sort"]),
+    ads_library:      GRUND_P.concat(["p_advertisers", "p_ad_formats", "p_search"]),
+    ads_prompts:      GRUND_P.concat(["p_advertisers", "p_ad_formats", "p_search", "p_sort"])
+  };
+  /* Die Sortierungen, die die Exportfunktionen annehmen (Datenbank, 16.10.). Eine andere liesse den
+     ganzen Export mit exports_invalid_param scheitern -- dann lieber die Reihenfolge der Funktion.
+     URLs einer Domain (p_domain) kennen andere (domainshare statt share). Shopping und Ads pruefen
+     ihre Seiten selbst gegen dieselben Listen (ORDER in shopping.js/ads.js). */
+  var ORDNUNG = {
+    prompts: ["visibility_desc", "visibility_asc", "rank_asc", "rank_desc", "sentiment_desc", "sentiment_asc",
+              "name_asc", "name_desc", "created_at_desc", "created_at_asc"],
+    prompt_runs: ["run_at_desc", "run_at_asc", "rank_asc", "rank_desc", "sentiment_asc", "sentiment_desc"],
+    domains: ["share_desc", "share_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "last_used_asc",
+              "domain_asc", "domain_desc", "urls_count_desc", "urls_count_asc"],
+    urls: ["share_desc", "share_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "last_used_asc", "domain_asc", "url_asc"],
+    urls_domain: ["domainshare_desc", "domainshare_asc", "share_delta_desc", "share_delta_asc", "last_used_desc", "url_asc"],
+    brands: ["visibility_desc", "visibility_asc", "rank_asc", "rank_desc", "sentiment_desc", "sentiment_asc",
+             "mentions_desc", "mentions_asc", "name_asc", "name_desc"]
+  };
+  /* Die Chips der Seitenfilter, in der Reihenfolge der Filterleiste (Topics, Models, Markets,
+     Intent), davor das Produkt eines Details und die Suche, danach die Filter der Tabellen. Name und Zeichen wie in der Leiste
+     (filters/filter-bar.js FILTERS), damit derselbe Filter hier nicht anders heisst. Ein Chip fasst
+     die Parameter zusammen, die nur gemeinsam Sinn haben (Topics mit ihrem Modus, Rank von bis).
+     aktiv: ob der Wert ein Filter ist -- die Vorgabe der Funktion (Status active, Mentioned all,
+     Segment all) ist keiner. Branded ist bei Prompts der Filter der Tabelle (Prompt type), sonst
+     die Brille der App (UC.intentFilterParams): "non_branded" ist dort die Vorgabe der ganzen App
+     und kein Chip, wie in der Filterleiste; "all" ist die Abweichung ("Branded: Included"), und
+     abgewaehlt gilt wieder die Vorgabe (vorgabe), wie beim X der Leiste. */
+  function voll(v){ return v != null && v !== "" && !(Array.isArray(v) && !v.length); }
+  var SEITE = [
+    /* Das Produkt zuerst: es ist kein Filter neben anderen, sondern der Gegenstand der Seite
+       (Product Detail), wie die Filter der Drawer vor allen anderen stehen. */
+    { key: "product",   params: ["p_source_product_id"], icon: "stackStar",  name: "Product" },
+    { key: "search",    params: ["p_search"],           icon: "search",      name: "Search" },
+    { key: "topics",    params: ["p_tag_ids", "p_tagmode"], icon: "tags",    name: "Topic" },
+    { key: "models",    params: ["p_models"],           icon: "layers",      name: "Model" },
+    { key: "markets",   params: ["p_markets"],          icon: "mapPin",      name: "Market" },
+    { key: "intents",   params: ["p_intents"],          icon: "signpost",    name: "Intent" },
+    { key: "branded",   params: ["p_branded"],          icon: "flag",        name: "Branded",
+      aktiv: function(v, art){ return art === "prompts" ? (v === "branded" || v === "non_branded") : (voll(v) && v !== "non_branded"); },
+      vorgabe: function(art){ return art === "prompts" ? undefined : "non_branded"; } },
+    { key: "status",    params: ["p_status"],           icon: "power",       name: "Status",
+      aktiv: function(v){ return voll(v) && v !== "active"; } },
+    { key: "mentioned", params: ["p_mentioned"],        icon: "megaphone",   name: "Brand",
+      aktiv: function(v){ return v === "yes" || v === "no"; } },
+    { key: "brands",    params: ["p_company_ids", "p_mentioned_brands"], icon: "squareStack", name: "Brands" },
+    { key: "rank",      params: ["p_rank_min", "p_rank_max"], icon: "hash",  name: "Rank" },
+    { key: "sentiment", params: ["p_sentiment_min", "p_sentiment_max"], icon: "smile", name: "Sentiment" },
+    { key: "citation_types", params: ["p_citation_types"], icon: "newspaper", name: "Citation type" },
+    { key: "url_types", params: ["p_url_types"],        icon: "linkFeather", name: "URL type" },
+    { key: "segment",   params: ["p_segment"],          icon: "swords",      name: "Segment",
+      aktiv: function(v){ return voll(v) && v !== "all"; } },
+    { key: "company",   params: ["p_company_id"],       icon: "squareStack", name: "Brand" },
+    { key: "merchant",  params: ["p_merchant"],         icon: "store",       name: "Merchant" },
+    { key: "advertisers", params: ["p_advertisers"],    icon: "bank",        name: "Advertiser" },
+    { key: "ad_formats", params: ["p_ad_formats"],      icon: "image",       name: "Format" }
+  ];
+  /* Der Chip, zu dem ein Parameter gehoert (p_tagmode zu Topics). */
+  function seitenChip(param){
+    for (var i = 0; i < SEITE.length; i++) if (SEITE[i].params.indexOf(param) >= 0) return SEITE[i];
+    return null;
+  }
+  function seitenChipKey(key){
+    for (var i = 0; i < SEITE.length; i++) if (SEITE[i].key === key) return SEITE[i];
+    return null;
+  }
   /* Zeichen aus core (Hugeicons). Ohne core gibt es keins -- diese Datei kommt ohne core aus, und
      ein Knopf ohne Zeichen ist besser als ein selbst gezeichnetes. */
   function ic(name){ var C = window.UpstreemCore; return C && C.icon ? C.icon(name, 2) : ""; }
@@ -278,10 +385,11 @@
       to: parseIso(saved.to) || today,
       open: false,
       processing: false,
-      /* Kontext einer Seite mit eigener Gruppe (Shopping, Ads; setContext): die Parameter je Typ
-         und ob davon Filter der Seite sind. Wie url/domain nur fuer DIESEN Export, beim
-         Schliessen geleert. */
-      params: {}, filterAktiv: {}, zeitVonSeite: false,
+      /* Kontext der Seite (setContext): die Parameter ihrer Listen je Datensatz (params), lesbare
+         Werte zu Chips, die der Dialog nicht selbst aufloesen kann (namen: Produkt, Marke einer
+         Shopping-Zeile), und die in diesem Oeffnen abgewaehlten Chips (weg, je Schluessel -- auch
+         die Filter der Drawer). Wie url/domain nur fuer DIESEN Export, beim Schliessen geleert. */
+      params: {}, namen: {}, weg: {}, zeitVonSeite: false,
       /* VARIANTE C (16.10.). phase: "wahl" (Einstellungen), "laeuft" (der Export blaettert) oder
          "fertig" (Datei heruntergeladen). schritt: am Telefon die Haelfte, die zu sehen ist
          ("liste" links oder "einst" rechts; breit ohne Wirkung). offen: "zeit", solange die
@@ -371,8 +479,14 @@
                 '<p class="uex-beschr"></p>' +
               '</div>' +
               '<div class="uex-feld uex-feld-filter">' +
-                '<span class="uex-feld-label" id="' + titelId + '-f"></span>' +
+                /* Der Kopf wie bei den Spalten: Etikett links, rechts der leise Knopf aus core
+                   (.up-filter-reset), der die abgewaehlten Filter zurueckholt. */
+                '<div class="uex-spalten-kopf uex-filter-kopf">' +
+                  '<span class="uex-feld-label" id="' + titelId + '-f"></span>' +
+                  '<button class="up-filter-reset uex-filter-zurueck" type="button" data-uex-filterzurueck="1" hidden></button>' +
+                '</div>' +
                 '<div class="uex-chips" role="group" aria-labelledby="' + titelId + '-f"></div>' +
+                '<p class="uex-filter-leer"></p>' +
               '</div>' +
               '<div class="uex-feld uex-feld-zeit">' +
                 '<span class="uex-feld-label" id="' + titelId + '-z"></span>' +
@@ -557,33 +671,85 @@
     }
 
     /* ---- Kontext: welche Filter gelten fuer diesen Datensatz? ----
-       Die Drawer-Filter nur im Scope (FILTER oben), die Seitenfilter von Shopping und Ads nur fuer
-       den Datensatz, fuer den die Seite sie gemeldet hat (filter_aktiv je Typ). */
-    function filterFuer(art){
+       Die Drawer-Filter nur im Scope (FILTER oben), die Seitenfilter nur fuer die Datensaetze, fuer
+       die die Seite sie gemeldet hat, und nur, wenn die Funktion sie kennt (KENNT). Seitenfilter nur
+       auf dem Weg ueber die App: der Bubble-Weg traegt sie nicht (seine Nutzlast kennt nur Adresse,
+       Domain, Prompt und Brand), ein Chip stuende dort fuer einen Filter, der nicht gilt.
+       mitWeg: auch die abgewaehlten (fuer "Restore filters"); sie tragen weg: true. */
+    function namenListe(werte, fn){
+      var l = (Array.isArray(werte) ? werte : [werte]).map(function(v){ var n = fn ? fn(String(v)) : ""; return n || String(v); });
+      /* Wie die Chips der Filterleiste: zwei Namen, dann "+n" -- der ganze Satz steht im title. */
+      return { kurz: l.length > 2 ? l.slice(0, 2).join(", ") + ", +" + (l.length - 2) : l.join(", "), lang: l.join(", ") };
+    }
+    function finde(liste, feld, id){
+      for (var i = 0; i < liste.length; i++){
+        var x = liste[i]; if (!x) continue;
+        for (var j = 0; j < feld.length; j++) if (x[feld[j]] != null && String(x[feld[j]]).toLowerCase() === String(id).toLowerCase()) return x;
+      }
+      return null;
+    }
+    /* Der lesbare Wert eines Chips. Namen kommen aus den Ablagen von core (dieselben, aus denen die
+       Filter ihre Zeilen bauen); was dort fehlt, bleibt als roher Schluessel stehen -- "Model:
+       gpt-4o" ist eine Auskunft, eine Zahl waere keine (wie in der Filterleiste). */
+    function chipWert(c, x, art){
+      var C = window.UpstreemCore || {}, n = state.namen[c.key];
+      if (n) return { kurz: String(n), lang: String(n) };
+      var v = x[c.params[0]];
+      function liste(fn){ return namenListe(v, fn); }
+      switch (c.key){
+        case "search": var s = "“" + String(v) + "”"; return { kurz: s, lang: s };
+        case "models": return liste(function(k){ var m = finde(C.getModels ? C.getModels() : [], ["key", "model"], k); return m ? String(m.display_name || m.name || "") : ""; });
+        case "markets": return liste(function(k){ return C.landName ? C.landName(k) : k; });
+        case "topics": return liste(function(k){ var t = finde(C.getTopics ? C.getTopics() : [], ["topic_id", "tag_id", "id"], k); return t ? String(t.name || "") : ""; });
+        case "intents": return liste(function(k){ var a = C.intentArt ? C.intentArt(k) : null; return a && C.intentName ? C.intentName(a) : ""; });
+        case "brands": return liste(function(k){ var b = finde(C.getBrands ? C.getBrands() : [], ["company_id", "id"], k); return b ? String(b.name || "") : ""; });
+        case "citation_types": return liste(function(k){ return C.typLabel ? C.typLabel(k, "citation") : ""; });
+        case "url_types": return liste(function(k){ return C.typLabel ? C.typLabel(k, "url") : ""; });
+        case "branded": var b = art === "prompts" ? (v === "branded" ? tr("Branded") : "Non-branded") : tr("Included"); return { kurz: b, lang: b };
+        case "status": var st = v === "inactive" ? tr("Inactive") : String(v); return { kurz: st, lang: st };
+        case "mentioned": var me = v === "yes" ? tr("Mentioned") : tr("Not mentioned"); return { kurz: me, lang: me };
+        case "segment": var sg = { you: "You", competition: "Competition", other: "Other" }[v]; sg = sg ? tr(sg) : String(v); return { kurz: sg, lang: sg };
+        case "product": var pr = tr("This product"); return { kurz: pr, lang: pr };
+        case "company": return liste(function(k){ var b2 = finde(C.getBrands ? C.getBrands() : [], ["company_id", "id"], k); return b2 ? String(b2.name || "") : ""; });
+        case "rank": case "sentiment":
+          /* Ein Bereich wie im Chip der Leiste: "1–3"; offen nach oben "5+". */
+          var lo = x[c.params[0]], hi = x[c.params[1]], r = voll(lo) && voll(hi) ? lo + "–" + hi : (voll(lo) ? lo + "+" : (c.key === "rank" ? "1" : "0") + "–" + hi);
+          return { kurz: String(r), lang: String(r) };
+      }
+      return liste(null);
+    }
+    function filterFuer(art, mitWeg){
       var out = [];
       FILTER.forEach(function(f){
         var v = state[f.feld];
         if (!v || f.typen.indexOf(art) < 0) return;
-        out.push({ feld: f.feld, icon: f.icon,
-          label: f.feld === "url" ? kurzUrl(v) : (f.feld === "domain" ? String(v) : (state.filterLabel || tr(f.ersatz))) });
+        if (state.weg[f.feld] && !mitWeg) return;
+        var l = f.feld === "url" ? kurzUrl(v) : (f.feld === "domain" ? String(v) : (state.filterLabel || tr(f.ersatz)));
+        out.push({ feld: f.feld, icon: f.icon, label: l, title: l, weg: !!state.weg[f.feld] });
+      });
+      var x = state.params[art], kennt = KENNT[art] || [];
+      if (!x || !selbstMoeglich(art)) return out;
+      SEITE.forEach(function(c){
+        var haupt = c.params.filter(function(n){ return n !== "p_tagmode" && kennt.indexOf(n) >= 0 && (c.aktiv ? c.aktiv(x[n], art) : voll(x[n])); });
+        if (!haupt.length) return;
+        if (state.weg[c.key] && !mitWeg) return;
+        /* Der erste gesetzte Parameter traegt den Wert (Brands: p_company_ids ODER p_mentioned_brands). */
+        var cc = { key: c.key, params: haupt.concat(c.params.filter(function(n){ return haupt.indexOf(n) < 0; })) };
+        var w = chipWert(cc, x, art);
+        var name = tr(c.key === "branded" && art === "prompts" ? "Prompt type" : c.name);
+        out.push({ feld: c.key, icon: c.icon, label: name + ": " + w.kurz, title: name + ": " + w.lang, weg: !!state.weg[c.key] });
       });
       return out;
     }
     function filterChipsHtml(art){
       /* Das Kreuz nur, solange gewaehlt wird -- im Lauf und danach aendert es nichts mehr. */
       var wahl = state.phase === "wahl";
-      var chips = filterFuer(art).map(function(f){
-        return '<span class="up-entchip is-static uex-chip' + (wahl ? "" : " is-fest") + '" title="' + esc(f.label) + '">' +
+      return filterFuer(art).map(function(f){
+        return '<span class="up-entchip is-static uex-chip' + (wahl ? "" : " is-fest") + '" title="' + esc(f.title) + '">' +
           '<span class="uex-chip-ic">' + ic(f.icon) + '</span><span class="uex-chip-lbl">' + esc(f.label) + '</span>' +
-          (wahl ? '<button class="up-iconbtn is-20 uex-chip-x" type="button" data-uex-filterweg="' + f.feld + '" aria-label="' +
-            esc(tr("Remove filter {name}").replace("{name}", f.label)) + '">' + ic("x") + '</button>' : '') + '</span>';
-      });
-      /* Shopping und Ads geben die Filter der Seite als Parameter mit (setContext params). Die
-         lassen sich hier nicht einzeln abwaehlen -- sie stehen in der Leiste der Seite --, also
-         ein Chip ohne Kreuz: er sagt, dass sie gelten. */
-      if (state.filterAktiv[art]) chips.push('<span class="up-entchip is-static uex-chip is-fest">' +
-        '<span class="uex-chip-ic">' + ic("listFilter") + '</span><span class="uex-chip-lbl">' + esc(tr("Page filters")) + '</span></span>');
-      return chips.join("");
+          (wahl ? '<button class="up-iconbtn is-20 uex-chip-x" type="button" data-uex-filterweg="' + esc(f.feld) + '" aria-label="' +
+            esc(tr("Remove filter {name}").replace("{name}", f.title)) + '">' + ic("x") + '</button>' : '') + '</span>';
+      }).join("");
     }
 
     /* Welche Datensaetze links stehen: alle der Grundgruppe, Shopping und Ads nur in der App (ohne
@@ -618,8 +784,8 @@
            wenn gerade ein anderer Datensatz gewaehlt ist. */
         var bald = baldSatz(v), f = filterFuer(v), z = "";
         if (bald) z = '<span class="uex-nav-bald">' + esc(tr("Soon")) + '</span>';
-        else if (f.length || state.filterAktiv[v]){
-          var name = f.length ? tr("Filtered to {name}").replace("{name}", f.map(function(x){ return x.label; }).join(", ")) : tr("Page filters");
+        else if (f.length){
+          var name = tr("Filtered to {name}").replace("{name}", f.map(function(x){ return x.title; }).join(", "));
           z = '<span class="uex-nav-filter" title="' + esc(name) + '" aria-label="' + esc(name) + '" role="img">' + ic("listFilter") + '</span>';
         }
         setzen(b.querySelector(".uex-nav-zusatz"), z);
@@ -628,14 +794,23 @@
 
     function filterZeichnen(art){
       var html = filterChipsHtml(art);
-      q(".uex-feld-filter").hidden = !html;
+      /* Abgewaehlte, die fuer diesen Datensatz gaelten: dann steht das Feld weiter da, mit "Restore
+         filters" im Kopf (wie "Select all" bei den Spalten) -- und sind alle weg, sagt der Satz,
+         was jetzt in die Datei geht. Im Lauf und danach aendert das nichts mehr. */
+      var zurueck = state.phase === "wahl" && filterFuer(art, true).some(function(f){ return f.weg; });
+      q(".uex-feld-filter").hidden = !html && !zurueck;
       /* data-i18n mit dem englischen Schluessel: das deutsche "Filter" ist selbst ein Schluessel in
          core ("Filter" -> "Filtern", das Verb), und der Sprachlauf von core machte daraus sonst
          "Filtern" (gemessen 16.10.). Mit dem Schluessel erkennt er den Text als fertig. */
       var lab = q(".uex-feld-filter .uex-feld-label");
       lab.setAttribute("data-i18n", "Filters");
       text(lab, tr("Filters"));
+      var knopf = q(".uex-filter-zurueck");
+      text(knopf, tr("Restore filters"));
+      knopf.hidden = !zurueck;
       setzen(q(".uex-chips"), html);
+      var leer = q(".uex-filter-leer");
+      text(leer, !html && zurueck ? tr("Without filters, every row in the date range is exported.") : "");
     }
 
     function zeitZeichnen(){
@@ -1170,8 +1345,9 @@
       if (!state.open) return;
       /* Der Filter des Drawers gilt nur fuer DIESEN Export (siehe setContext). */
       state.url = ""; state.domain = ""; state.promptId = ""; state.brandId = ""; state.filterLabel = "";
-      /* Ebenso Kontext und Gruppe von Shopping und Ads: danach gilt wieder die Grundgruppe. */
-      state.params = {}; state.filterAktiv = {}; state.zeitVonSeite = false;
+      /* Ebenso der Kontext der Seite und die Gruppe von Shopping und Ads: danach gilt wieder die
+         Grundgruppe, und ein spaeteres Oeffnen ohne Kontext (Cmd+K) traegt keinen Filter mit. */
+      state.params = {}; state.namen = {}; state.weg = {}; state.zeitVonSeite = false;
       if (gruppeVon(state.type)) state.type = state.stammTyp;
       /* Schliessen bricht einen laufenden Export ab (das sagt der Satz unter dem Balken): die
          naechste Seite wird nicht mehr geholt, nichts heruntergeladen. */
@@ -1340,31 +1516,36 @@
     }
     function exportParameter(art, team, offset, limit){
       var p = { p_team: team, p_date_from: isoDate(state.from), p_date_to: isoDate(state.to), p_offset: offset, p_limit: limit };
-      /* Die Filter des Drawers (setContext) -- nur dort, wo die Funktion sie kennt. Ein Parameter,
-         den sie nicht hat, liesse PostgREST die Funktion gar nicht finden (PGRST202). Dieselbe
-         Liste steht oben in FILTER (Chip und Scope). */
-      if (art === "prompt_runs"){
-        if (state.url) p.p_url = String(state.url);
-        if (state.domain) p.p_domain = String(state.domain);
-        if (state.promptId) p.p_prompt_id = String(state.promptId);
-        if (state.brandId) p.p_brand = String(state.brandId);
-      } else if (art === "domains"){
-        if (state.brandId) p.p_brand = String(state.brandId);
-      } else if (art === "urls"){
-        if (state.domain) p.p_domain = String(state.domain);
-        if (state.brandId) p.p_brand = String(state.brandId);
-      } else if (EXPORTE[art] && EXPORTE[art].neu){
-        /* Shopping und Ads: die Parameter der Seite (setContext params), in den Namen der Liste.
-           Team, Zeitraum und Seite gehoeren dem Dialog und werden nie ueberschrieben; null heisst
-           "kein Filter" und bleibt draussen -- jede Funktion hat dafuer ihren Standardwert, und ein
-           Name weniger ist ein Grund weniger fuer PGRST202. */
-        var x = state.params[art] || {};
-        Object.keys(x).forEach(function(n){
-          if (!/^p_[a-z0-9_]+$/.test(n) || Object.prototype.hasOwnProperty.call(p, n)) return;
-          if (x[n] == null || (Array.isArray(x[n]) && !x[n].length)) return;
-          p[n] = x[n];
-        });
-      }
+      /* Die Filter des Drawers (setContext) -- nur im Scope (FILTER) und nur, solange ihr Chip steht. */
+      FILTER.forEach(function(f){
+        if (state[f.feld] && f.typen.indexOf(art) >= 0 && !state.weg[f.feld]) p[f.param] = String(state[f.feld]);
+      });
+      /* Die Parameter der Seite (setContext params), in den Namen ihrer Liste -- nur die, die die
+         Funktion kennt (KENNT). Team, Zeitraum, Seite und ein Filter des Drawers werden nie
+         ueberschrieben; null heisst "kein Filter" und bleibt draussen -- jede Funktion hat dafuer
+         ihren Standardwert, und ein Name weniger ist ein Grund weniger fuer PGRST202. Ein
+         abgewaehlter Chip nimmt alle seine Parameter mit (Topics samt Modus) oder setzt die
+         Vorgabe der App (Branded). Auf dem Bubble-Weg gibt es keine (filterFuer). */
+      var x = state.params[art] || {}, kennt = KENNT[art] || [];
+      /* Die Parameter der Drawer-Filter (p_url, p_domain, p_prompt_id, p_brand) kommen NUR ueber
+         ihren Chip: meldet ein Drawer sie auch in params, ginge ein abgewaehlter Filter sonst still
+         ueber die Liste wieder mit. */
+      var drawerP = FILTER.map(function(f){ return f.param; });
+      Object.keys(x).forEach(function(n){
+        if (!/^p_[a-z0-9_]+$/.test(n) || Object.prototype.hasOwnProperty.call(p, n) || kennt.indexOf(n) < 0 || drawerP.indexOf(n) >= 0) return;
+        var c = seitenChip(n);
+        if (c && state.weg[c.key]){
+          var vg = c.vorgabe ? c.vorgabe(art) : undefined;
+          if (vg !== undefined) p[n] = vg;
+          return;
+        }
+        if (!voll(x[n])) return;
+        p[n] = x[n];
+      });
+      /* Eine Sortierung, die die Funktion nicht kennt, faellt weg (ihre eigene gilt) -- sonst
+         scheiterte der ganze Export an der Reihenfolge der Zeilen. */
+      var ord = ORDNUNG[art === "urls" && p.p_domain ? "urls_domain" : art];
+      if (ord && p.p_order != null && ord.indexOf(String(p.p_order)) < 0) delete p.p_order;
       return p;
     }
     function csvFeld(v, typ){
@@ -1392,13 +1573,25 @@
     }
     function exportSatz(erg){
       var m = erg && erg.fehler ? String(erg.fehler.message || "") : "";
-      if (/rate_limited/.test(m) || (erg && erg.status === 429)) return ["Too many exports in a short time", "Please wait a minute and try again."];
+      var h = erg && erg.fehler ? String(erg.fehler.hint || "") : "";
+      /* 429: der hint ist die Zahl der Sekunden bis zum Ende des Minutenfensters (DB-Rueckmeldung
+         16.10., Klarstellung 7) -- die steht im Satz; ohne Zahl bleibt es bei der Minute. */
+      if (/rate_limited/.test(m) || (erg && erg.status === 429)){
+        var sek = /^\d+$/.test(h.trim()) ? Number(h) : 0;
+        return ["Too many exports in a short time", sek === 1 ? "Please wait 1 second and try again."
+          : (sek > 1 ? { satz: "Please wait {n} seconds and try again.", n: sek } : "Please wait a minute and try again.")];
+      }
+      /* 402 team_access_*: core zeigt dazu selbst die Sperre der App (rpc -> appZugangWeg), wie bei
+         jeder anderen Abfrage; hier steht nur der Satz. */
       if (/team_access/.test(m) || (erg && erg.status === 402)) return ["Exports are not available for this team", "Check your plan in Billing."];
+      /* 401 (kein oder abgelaufenes Token -- PostgREST meldet es als "permission denied for
+         function", die Rolle anon darf die Exporte nicht ausfuehren). Vor 403: dieselbe Meldung
+         kaeme sonst als "kein Zugriff aufs Team" heraus. */
+      if ((erg && erg.status === 401) || /not authenticated|permission denied|jwt/i.test(m)) return ["Your session has expired", "Please sign in again."];
       if (/forbidden|role_required/.test(m) || (erg && erg.status === 403)) return ["You can't export this team's data", "Ask a team owner for access."];
       /* Der dritte Wert sagt, wohin der Satz gehoert: "zeit" an das Feld Date range (Leinwand C:
          roter Rahmen, Satz darunter). Ein ungueltiger Parameter, dessen hint keinen Zeitraum nennt
          (Sortierung, Seitengroesse), ist kein Fehler des Zeitraums -- den aendern hilft dort nicht. */
-      var h = erg && erg.fehler ? String(erg.fehler.hint || "") : "";
       if (/invalid_date/.test(m) || (/invalid_param/.test(m) && (!h || /date/i.test(h)))) return ["This date range can't be exported", "Choose a shorter range and try again.", "zeit"];
       return ["The export didn't work", "Please try again."];
     }
@@ -1406,7 +1599,10 @@
        bleibt offen, die Wahl steht noch da, und ein zweiter Klick versucht es erneut. Ganze Saetze
        durch den Katalog, zwei Saetze hintereinander. */
     function fehlerSetzen(paar){
-      var satz = tr(paar[0]) + ". " + tr(paar[1]);
+      /* Der zweite Satz kann eine Zahl tragen ({ satz, n }): erst uebersetzen, dann einsetzen --
+         "Warte 12 Sekunden ..." steht in keinem Katalog, nur der Satz mit {n}. */
+      var zwei = paar[1] && typeof paar[1] === "object" ? tr(paar[1].satz).replace("{n}", zahl(paar[1].n)) : tr(paar[1]);
+      var satz = tr(paar[0]) + ". " + zwei;
       if (paar[2] === "zeit"){ state.zeitFehler = satz; state.fehler = ""; }
       else { state.fehler = satz; state.zeitFehler = ""; }
     }
@@ -1600,12 +1796,24 @@
       if (t.closest(".uex-close")){ closePopup(); return; }
       var weg = t.closest("[data-uex-filterweg]");
       if (weg){
-        /* Der Filter des Drawers gilt nur fuer diesen Export -- abgewaehlt exportiert der Dialog
-           den ganzen Datensatz. Der Chip ist danach weg, der Fokus geht auf "Export ...". */
+        /* Abgewaehlt gilt fuer dieses Oeffnen und fuer jeden Datensatz, in dessen Scope der Filter
+           liegt -- der Wert bleibt stehen, damit "Restore filters" ihn zurueckholt. Der Fokus geht
+           auf das naechste Kreuz, sonst auf "Restore filters" (es steht jetzt da): die Tastatur
+           bleibt im Feld, statt auf den Export zu springen. */
         var feld = weg.getAttribute("data-uex-filterweg");
-        if (feld === "url" || feld === "domain" || feld === "promptId" || feld === "brandId") state[feld] = "";
-        if (feld === "promptId" || feld === "brandId") state.filterLabel = "";
-        renderAll(); fokusFuss(); return;
+        var kreuze = [].slice.call(overlay.querySelectorAll(".uex-chips [data-uex-filterweg]"));
+        var nr = kreuze.indexOf(weg);
+        if (feld) state.weg[feld] = true;
+        renderAll();
+        var rest = overlay.querySelectorAll(".uex-chips [data-uex-filterweg]");
+        if (!fokus(rest[Math.min(nr, rest.length - 1)]) && !fokus(q(".uex-filter-zurueck"))) fokusFuss();
+        return;
+      }
+      if (t.closest("[data-uex-filterzurueck]")){
+        state.weg = {};
+        renderAll();
+        if (!fokus(q(".uex-chips [data-uex-filterweg]"))) fokusFuss();
+        return;
       }
       var typeBtn = t.closest("[data-type]");
       if (typeBtn){
@@ -1794,17 +2002,20 @@
            Filters und das Filterzeichen links ("Filtered to VW"). Ohne ihn steht dort "This brand" /
            "This prompt". */
         state.filterLabel = opts.filter_label != null ? String(opts.filter_label) : "";
-        /* SHOPPING UND ADS (16.10.): params je Typ der Gruppe (die Filter der Seite in den Namen der
-           Liste), filter_aktiv je Typ (ob der Kopf den Chip "Page filters" zeigt) und der Zeitraum
-           der Seite als Vorgabe. Bei jedem Aufruf neu gesetzt, auch auf leer, und beim Schliessen
-           geleert (closePopup) -- ein Kontext gilt fuer DIESEN Export. */
-        state.params = {}; state.filterAktiv = {};
+        /* DIE FILTER DER SEITE (16.10., erst Shopping und Ads, seit dem Abend jede Seite): params je
+           Datensatz (die Parameter ihrer Liste, siehe KENNT), namen je Chip (lesbare Werte, die der
+           Dialog nicht selbst findet) und der Zeitraum der Seite als Vorgabe. Bei jedem Aufruf neu
+           gesetzt, auch auf leer, und beim Schliessen geleert (closePopup) -- ein Kontext gilt fuer
+           DIESEN Export; abgewaehlte Chips eines frueheren Kontexts gelten nicht mehr.
+           filter_aktiv (die erste Fassung von Shopping und Ads, ein Chip "Page filters" ohne
+           Kreuz) wird nicht mehr gelesen: die Chips entstehen jetzt aus den Parametern selbst. */
+        state.params = {}; state.namen = {}; state.weg = {};
         var pr = opts.params && typeof opts.params === "object" ? opts.params : {};
         Object.keys(pr).forEach(function(n){
-          if (gruppeVon(n) && pr[n] && typeof pr[n] === "object" && !Array.isArray(pr[n])) state.params[n] = pr[n];
+          if (typVon(n) && pr[n] && typeof pr[n] === "object" && !Array.isArray(pr[n])) state.params[n] = pr[n];
         });
-        var fa = opts.filter_aktiv && typeof opts.filter_aktiv === "object" ? opts.filter_aktiv : {};
-        Object.keys(fa).forEach(function(n){ if (typVon(n)) state.filterAktiv[n] = fa[n] === true; });
+        var nm = opts.namen && typeof opts.namen === "object" ? opts.namen : {};
+        Object.keys(nm).forEach(function(n){ if (seitenChipKey(n) && voll(nm[n]) && typeof nm[n] !== "object") state.namen[n] = String(nm[n]); });
         /* Ein Preset der Seite ist dasselbe Preset hier (gleiche Schluessel wie der Kalender); ein
            freier Zeitraum wird beim Oeffnen in den Picker gegeben (syncCalendarToState). */
         var zf = parseIso(opts.date_from), zt = parseIso(opts.date_to);
