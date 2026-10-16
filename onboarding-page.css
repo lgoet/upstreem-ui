@@ -433,9 +433,9 @@
      Beide Tokens hier neu setzen statt einzelne Farbregeln nachzuziehen -- dann stimmt alles, was
      in der Kachel liegt, auch das, was spaeter dazukommt. Dieselbe Loesung wie bei .uhm-tip im
      Performance Radar: eine Flaeche, die dem Thema der Komponente nicht folgt, bringt ihre eigenen
-     Farben mit. Die Werte sind die HELLEN aus core.css -- literal, weil es zu einer festen hellen
-     Flaeche kein Token gibt, das in beiden Modi dunkel bleibt. */
-  --vc-text: #1f1f1b; --vc-muted: #6b6f78;
+     Farben mit. Die Werte sind die HELLEN aus core.css; seit dem 17.10. als eigene Token in core
+     (--vc-ob-kachel-*), die in beiden Modi dunkel bleiben. */
+  --vc-text: var(--vc-ob-kachel-text); --vc-muted: var(--vc-ob-kachel-muted);
 }
 /* Der Globus im Rueckfall: Primaerfarbe, und er fuellt die Kachel NICHT aus -- er ist ein
    Zeichen, kein Bild. Sichtbar ist er nur, wenn has-img fehlt; liegt ein echtes Favicon darueber,
@@ -544,8 +544,8 @@
 .uob-input:disabled { opacity: .55; cursor: default; }
 /* Wie auf der Anmeldeseite: der Rahmen faerbt sich NICHT, solange das Feld den Fokus hat --
    sonst wechselt die Farbe genau in dem Moment, in dem jemand den Fehler beheben will. */
-.uob-field.is-err .uob-input:not(:focus) { border-color: var(--vc-neg, #c8412e); }
-.uob-field.is-err .uob-select:not(:focus) { border-color: var(--vc-neg, #c8412e); }
+.uob-field.is-err .uob-input:not(:focus) { border-color: var(--vc-neg); }
+.uob-field.is-err .uob-select:not(:focus) { border-color: var(--vc-neg); }
 /* Hinweis unter einem Feld. Immer da, nicht eingeklappt: er sagt etwas ueber die Eingabe, die
    noch kommt, und muss deshalb VOR dem Tippen dastehen. */
 .uob-hint { font-size: 11.5px; line-height: 1.4; color: var(--vc-third); padding-top: 5px; }
@@ -554,7 +554,7 @@
   transition: grid-template-rows var(--uob-t) var(--uob-ease), opacity var(--uob-t) var(--uob-ease);
 }
 .uob-err > span { overflow: hidden; min-height: 0; display: block;
-  font-size: 12px; line-height: 1.4; color: var(--vc-neg, #c8412e); padding-top: 5px; }
+  font-size: 12px; line-height: 1.4; color: var(--vc-neg); padding-top: 5px; }
 .uob-field.is-err .uob-err { grid-template-rows: 1fr; opacity: 1; }
 
 /* Der Switcher fuer das Geschaeftsmodell. Er ist .up-seg/.up-seg-btn aus core und wird hier nur
@@ -800,9 +800,9 @@
      Beide Tokens hier neu setzen statt einzelne Farbregeln nachzuziehen -- dann stimmt alles, was
      in der Kachel liegt, auch das, was spaeter dazukommt. Dieselbe Loesung wie bei .uhm-tip im
      Performance Radar: eine Flaeche, die dem Thema der Komponente nicht folgt, bringt ihre eigenen
-     Farben mit. Die Werte sind die HELLEN aus core.css -- literal, weil es zu einer festen hellen
-     Flaeche kein Token gibt, das in beiden Modi dunkel bleibt. */
-  --vc-text: #1f1f1b; --vc-muted: #6b6f78;
+     Farben mit. Die Werte sind die HELLEN aus core.css; seit dem 17.10. als eigene Token in core
+     (--vc-ob-kachel-*), die in beiden Modi dunkel bleiben. */
+  --vc-text: var(--vc-ob-kachel-text); --vc-muted: var(--vc-ob-kachel-muted);
 }
 .uob-item-logo img { width: 22px; height: 22px; border-radius: var(--up-r-s); display: block; object-fit: contain; }
 /* Im Dunkeln kein Rahmen, sondern die helle Flaeche --vt-logo-bg -- dieselbe Loesung wie bei
@@ -1179,7 +1179,7 @@
   transition: grid-template-rows var(--uob-t) var(--uob-ease), opacity var(--uob-t) var(--uob-ease);
 }
 .uob-plan-note > span { overflow: hidden; min-height: 0; display: block;
-  font-size: 11.5px; color: var(--vc-pos, #2e9e63); padding-top: 4px; }
+  font-size: 11.5px; color: var(--vc-pos); padding-top: 4px; }
 .uob-plan-note.is-on { grid-template-rows: 1fr; opacity: 1; }
 .uob-plan-feats { margin-top: 13px; display: flex; flex-direction: column; gap: 6px; }
 .uob-plan-feat { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 1.35; color: var(--vc-muted); }

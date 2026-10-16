@@ -81,12 +81,14 @@
   ];
 
   /* Die Google-Marke, vier Farben, wie vorgegeben. Nicht ueber UC.icon: das ist ein Feather-Satz
-     aus einfarbigen Strichzeichnungen, und ein Markenzeichen gehoert nicht hineingemischt. */
+     aus einfarbigen Strichzeichnungen, und ein Markenzeichen gehoert nicht hineingemischt.
+     Die Farben selbst seit dem 17.10. als Token in core (--vc-marke-google-*), gesetzt ueber die
+     Klassen in auth-page.css: die Farbe steht damit in der CSS und nicht im Markup. */
   var G_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-    '<path fill="#4285F4" d="M23.5 12.27c0-.79-.07-1.54-.2-2.27H12v4.51h6.47a5.54 5.54 0 0 1-2.4 3.63v3.02h3.88c2.27-2.09 3.55-5.17 3.55-8.89z"/>' +
-    '<path fill="#34A853" d="M12 24c3.24 0 5.96-1.08 7.95-2.91l-3.88-3.01c-1.08.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.29v3.11A12 12 0 0 0 12 24z"/>' +
-    '<path fill="#FBBC05" d="M5.27 14.27a7.2 7.2 0 0 1 0-4.54V6.62H1.29a12 12 0 0 0 0 10.76l3.98-3.11z"/>' +
-    '<path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.29 6.62l3.98 3.11C6.22 6.86 8.87 4.75 12 4.75z"/></svg>';
+    '<path class="uau-g-blau" d="M23.5 12.27c0-.79-.07-1.54-.2-2.27H12v4.51h6.47a5.54 5.54 0 0 1-2.4 3.63v3.02h3.88c2.27-2.09 3.55-5.17 3.55-8.89z"/>' +
+    '<path class="uau-g-gruen" d="M12 24c3.24 0 5.96-1.08 7.95-2.91l-3.88-3.01c-1.08.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.29v3.11A12 12 0 0 0 12 24z"/>' +
+    '<path class="uau-g-gelb" d="M5.27 14.27a7.2 7.2 0 0 1 0-4.54V6.62H1.29a12 12 0 0 0 0 10.76l3.98-3.11z"/>' +
+    '<path class="uau-g-rot" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.29 6.62l3.98 3.11C6.22 6.86 8.87 4.75 12 4.75z"/></svg>';
 
   /* Woertlich aus dem Zeichensatz in core.js (Hugeicons stroke-rounded, seit dem 22.09.) --
      am 23.09. Pfad fuer Pfad gegengeprueft: SUN/MOON/LOCK/CHECK/MIC sind buchstabengleich
@@ -659,7 +661,14 @@
       if (soll !== state.mode){ state.mode = soll; state.errs = {}; state.formErr = ""; render(); }
     }
 
-    function render(){ renderTexte(); zeigeFehler(); renderStaerke(); renderMailFest(); renderCode(); }
+    /* Der Reiter nennt, was zu sehen ist (17.10.): /signup ist ohne Einladung der Login (setMode),
+       also "Sign in", mit Einladung "Sign up". Der Seitenkopf der Next-App liefert "Sign in" vorab;
+       hier zieht er mit jedem Wechsel nach -- Klick, Zurueck-Knopf, spaetes Token. Englisch wie die
+       Metadaten der uebrigen festen Seiten. */
+    function render(){
+      renderTexte(); zeigeFehler(); renderStaerke(); renderMailFest(); renderCode();
+      if (typeof UC.seitenTitel === "function") UC.seitenTitel(state.mode === "signup" ? "Sign up" : "Sign in");
+    }
 
     /* ---------------- Pruefen ---------------- */
     function pruefe(){

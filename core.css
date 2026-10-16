@@ -381,6 +381,160 @@
          wo es deklariert ist -- stuende es nur hier, erbte ein dunkles Portal den hellen Glanz. */
       --up-sk-glanz: rgba(0,0,0,.03);
       --up-sk-verlauf: linear-gradient(90deg, rgba(0,0,0,0) 0%, var(--up-sk-glanz) 50%, rgba(0,0,0,0) 100%) 0 0 / 150% 100% repeat-x;
+      /* ---- Komponentenfarben: Quick Actions, Anmeldung, Onboarding (17.10.) ---- */
+      /* Bis zum 17.10. standen diese Werte als Literal in quick-actions.css, auth-page.css/.js und
+         onboarding-page.css/.js ("alles, was wir an Farben nutzen, nach core"). Wert fuer Wert
+         uebernommen, nichts nachgestellt: dieselbe Zeichenkette, damit auch die aufgeloesten
+         Variablen der Komponenten (--am-*, --uau-*) gleich bleiben. An :root, weil die Palette der
+         Quick Actions am <body> haengt.
+         QUICK ACTIONS (Palette --am-* in quick-actions.css). Hell eigene, etwas blaustichige Graue;
+         im Dunkeln zeigt die Palette auf die Menue-Token -- die dunklen Werte unten sind genau diese
+         Verweise, wie sie quick-actions.css im dunklen Block weiterhin selbst setzt. */
+      --vc-qa-rand: #e5e7eb;                 /* --am-border */
+      --vc-qa-rand-stark: #d9dde3;           /* --am-border-strong: Hover-Kante des Knopfes, Rollbalken */
+      --vc-qa-weich: #f7f8fa;                /* --am-soft: Grund des Knopfes beim Ueberfahren */
+      --vc-qa-weich-2: #f3f4f6;              /* --am-soft-2: Chips, Avatare, Tastenkuerzel */
+      --vc-qa-karte: #ffffff;                /* --am-card: die offene Palette, voll deckend */
+      --vc-qa-knopf: rgba(255,255,255,0.60); /* --am-trigger-bg: nur der geschlossene Knopf, 60 % Weiss */
+      --vc-qa-hover: #eef0f3;                /* --am-hover-bg: Zeichenknoepfe (Chip-x, Leeren, Stern) */
+      /* Der Schleier hinter der Palette: hell der Grund der Karte zu 80 % (Geist), dunkel Schwarz. */
+      --vc-qa-schleier: color-mix(in srgb, var(--vc-qa-karte) 80%, transparent);
+      /* Beschriftungs-Chip der zwei Knoepfe im Eingabefeld (.mqa-btip): wie .up-tip in BEIDEN
+         Themen die dunkle Karte -- deshalb nicht --vc-inverse-*, das sich im Dunkeln dreht. */
+      --vc-qa-tip-bg: #1f1f1b;
+      --vc-qa-tip-ink: #ffffff;
+      /* Die Taste "/" in der Erklaerkarte der Filter (.mqa-tip-key): hell eine helle Taste auf der
+         dunklen Karte; dunkel Grund und Rand der Palette. */
+      --vc-qa-taste-bg: #f4f4f5;
+      --vc-qa-taste-rand: #e4e2e4;
+      /* Ueberschrift des Fehlerzustands (.mqa-error .mqa-empty-title), in beiden Themen derselbe Ton. */
+      --vc-qa-fehler: #b4451f;
+      /* ANMELDUNG (auth-page). Der Hover des Google-Knopfes und des Themenschalters; dunkel die
+         Kopfflaeche, wie auth-page.css sie im dunklen Zweig selbst setzt. */
+      --vc-auth-hover: #f7f8fa;
+      /* Passwortstaerke: Stufe 2 ("Fair") und 3 ("Good"). 1 und 4 sind --vc-neg und --vc-pos. */
+      --vc-auth-staerke-mittel: #d98324;
+      --vc-auth-staerke-gut: #b8a02a;
+      /* Der Haken im gewaehlten Kaestchen (.uau-check): weiss auf der dunklen Akzentflaeche. */
+      --vc-auth-haken: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+      /* Die rechte Spalte: der graue Verlauf der Landingpage (wortgleich .ulh-bg-foto in
+         landing-hero.css -- wer eine Seite aendert, aendert die andere mit), die Lichter unten
+         (.ulh-bg-foto::after; im Dunkeln dimmt auth-page.css sie auf ein Viertel) und das
+         Linienmuster (.ulh-bg-grid). Begruendung der dunklen Fassungen im dunklen Block. */
+      --vc-auth-panel-verlauf: linear-gradient(to bottom,
+              rgba(246, 247, 248, 0) 16%, #f6f7f8 34%, #e8eaec 60%, #dbdde1 100%);
+      --vc-auth-panel-lichter:
+    radial-gradient(58% 72% at 44% 100%,
+      rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .24) 28%,
+      rgba(255, 255, 255, .1) 62%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(34% 52% at 61% 97%,
+      rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, .09) 40%,
+      rgba(255, 255, 255, .03) 72%, rgba(255, 255, 255, 0) 100%),
+    linear-gradient(to right,
+      rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .02) 18%, rgba(255, 255, 255, .06) 32%,
+      rgba(255, 255, 255, .09) 44%, rgba(255, 255, 255, .1) 50%, rgba(255, 255, 255, .09) 56%,
+      rgba(255, 255, 255, .06) 68%, rgba(255, 255, 255, .02) 82%, rgba(255, 255, 255, 0) 100%);
+      --vc-auth-panel-raster: repeating-linear-gradient(to right,
+              rgba(255, 255, 255, .55) 0, rgba(255, 255, 255, .55) 1px,
+              transparent 1px, transparent 8px);
+      /* Fremdmarke: das Google-Zeichen im Anmeldeknopf, Googles vier Farben, in jedem Thema gleich. */
+      --vc-marke-google-blau: #4285F4;
+      --vc-marke-google-gruen: #34A853;
+      --vc-marke-google-gelb: #FBBC05;
+      --vc-marke-google-rot: #EA4335;
+      /* ONBOARDING. Schrift in den Logokacheln (.uob-ident-logo, .uob-item-logo): die Kachel ist in
+         BEIDEN Themen hell, also traegt sie in beiden die hellen Schriftfarben (Begruendung in
+         onboarding-page.css). */
+      --vc-ob-kachel-text: #1f1f1b;
+      --vc-ob-kachel-muted: #6b6f78;
+      /* Themenfarbe, wenn die Themenpalette aus core fehlt (onboarding-page.js). */
+      --vc-ob-thema-rueckfall: #6b7280;
+      /* ---- Komponentenfarben: Mira (17.10.) ----
+         Alles, was ask-mira.css und ask-mira.js bis heute als Literal trugen ("alles, was wir an
+         Farben nutzen -> core"), mit GENAU den Werten von vorher -- die Umstellung aendert keinen
+         einzigen Bildpunkt, gemessen per Fingerabdruck ueber vier Themen. Mira liest sie ueber
+         ihre --am-* oder direkt; die --am-*-Namen bleiben.
+         Hier, an :root, .up-root und [data-theme="light"], und nicht an #ask-mira: das Chat-Menue
+         (.am-cm), das Einstellungsfenster (.am-set-backdrop) und das Mini-Menue haengen am <body>.
+         GLEICH IN ALLEN VIER THEMEN (hell, grau-hell, dunkel, Geist-dunkel) und deshalb nur hier:
+         .up-root trifft auch eine dunkle Wurzel, :root alles am <body>. So standen sie auch in der
+         Komponente -- ein Literal ohne Dunkel-Regel. Die Rollen:
+           status*            der Punkt "Ready" und sein Puls, der Ring beim Laden
+           opp-*              die vier Status einer Opportunity (Punkt im Statusmenue); erledigt
+                              auch der Knopf "Add as opportunity" nach dem Anlegen
+           thema-rueckfall    ein Topic ohne Farbe (hex_light/hex_dark leer)
+           logo-rueckfall     der Buchstabenkasten, wenn ein Logo im Lauf nicht laedt
+           auf-farbe          Schrift und Zeichen auf einer Farbflaeche (Buchstabenkasten, Pille
+                              "neue Nachricht", gewaehlter Haken hell, Punkte auf der Reglerfuellung)
+           lauf-glanz         der Lichtstreifen ueber dem laufenden Schritt
+           signal*            das Blau fuer "neue Nachricht" (Pille im Chat, Punkt in der Chatliste)
+           regler-*           Daumen und gefuellter Halt des Aufwand-Reglers
+           haken-rand         der leere Haken im Einstellungs-Dropdown
+           aufnahme-punkt     der rote Punkt des Diktiermodus
+           speichern/loeschen Hover der Mini-Knoepfe und "Delete" im Chat-Menue */
+      --vc-mira-status: #2ec27e;
+      --vc-mira-status-puls: rgba(46,194,126,0.5);
+      --vc-mira-status-puls-an: rgba(46,194,126,0.45);
+      --vc-mira-status-puls-aus: rgba(46,194,126,0);
+      --vc-mira-status-laden: rgba(31,31,27,0.4);
+      --vc-mira-opp-offen: #9ca3af;
+      --vc-mira-opp-laeuft: #2384E2;
+      --vc-mira-opp-erledigt: #15803d;
+      --vc-mira-opp-ignoriert: #b4451f;
+      --vc-mira-thema-rueckfall: #6b7280;
+      --vc-mira-logo-rueckfall: #9ca3af;
+      --vc-mira-auf-farbe: #fff;
+      --vc-mira-lauf-glanz: rgba(255,255,255,0.85);
+      --vc-mira-signal: #2f6df6;
+      --vc-mira-signal-hover: #2b63dd;
+      --vc-mira-signal-schein: rgba(47,109,246,0.30);
+      --vc-mira-regler-punkt: rgba(255,255,255,0.85);
+      --vc-mira-regler-daumen: #ffffff;
+      --vc-mira-haken-rand: #b7bbc2;
+      --vc-mira-aufnahme-punkt: #e5484d;
+      --vc-mira-speichern: #1a7f4b;
+      --vc-mira-loeschen: #c0392b;
+      /* JE THEMA VERSCHIEDEN, hier die helle Fassung (grau-hell gleich), die dunkle im naechsten
+         Block (Geist-dunkel gleich). Wo die Komponente hell und dunkel je ein Literal fuehrte, wechselt
+         jetzt das Token, und ihre Dunkel-Regel ist entfallen. Steht ein var() darin, ist das der Wert,
+         den Miras eigene Regel in diesem Thema schon aus einer Marke nahm -- dort bleibt die Regel
+         stehen, und die Zeile hier haelt das Token in beiden Themen vollstaendig.
+           akzent*            Miras Violett und Blau (die Mini-Knoepfe "an")
+           blase-*            die Blase des Nutzers (dunkel #2f2f2f, hell die Kopfflaeche)
+           raster             das 44px-Raster hinter der Schale
+           positiv/negativ/quelle/unklar  die Markierungen im Antworttext (Grund und Schrift)
+           tabelle-streifen   jede zweite Zeile einer Tabelle in der Antwort
+           composer-schale    die leise Flaeche um das Eingabefeld
+           gewaehlt           gewaehlte Zeile im Modell-Menue und im Einstellungs-Dropdown
+           entfernen-hover    das X an einem Zitat und an einem Chip im Picker
+           picker-schatten    die Farbe des Schattens nach oben (die Masse stehen in der Regel)
+           aufnahme-*         Hover der beiden Knoepfe im Diktiermodus, seine Fehlerzeile
+           schleier           ueber der Seite, wenn die Chatliste am Telefon aufliegt
+           haken-an           der gewaehlte Haken im Dunkeln (hell traegt er --am-primary)
+           skelett-blase-*    die zwei Toene des Skeletts in der Blase des Nutzers */
+      --vc-mira-akzent: #7c5cff;
+      --vc-mira-akzent-2: #4f8bff;
+      --vc-mira-akzent-soft: rgba(124,92,255,0.10);
+      --vc-mira-blase-bg: var(--vc-heading-bg);
+      --vc-mira-blase-ink: var(--vc-text);
+      --vc-mira-raster: rgba(31,31,27,0.022);
+      --vc-mira-positiv-bg: rgba(22,163,74,0.09);    --vc-mira-positiv-ink: #166534;
+      --vc-mira-negativ-bg: rgba(220,38,38,0.14);    --vc-mira-negativ-ink: #991b1b;
+      --vc-mira-quelle-bg: rgba(37,99,235,0.085);    --vc-mira-quelle-ink: #1d4ed8;
+      --vc-mira-unklar-bg: rgba(217,119,6,0.10);     --vc-mira-unklar-ink: #92400e;
+      --vc-mira-tabelle-streifen: rgba(0,0,0,0.012);
+      --vc-mira-composer-schale: #f9f8f9;
+      --vc-mira-gewaehlt: #f0f0ef;
+      --vc-mira-entfernen-hover: rgba(0,0,0,0.06);
+      --vc-mira-picker-schatten: rgba(0,0,0,0.06);
+      --vc-mira-aufnahme-weg-hover: #e9e9ec;
+      --vc-mira-aufnahme-ok-hover: #585855;
+      --vc-mira-aufnahme-fehler: var(--vt-down);
+      --vc-mira-schleier: rgba(0,0,0,.30);
+      --vc-mira-haken-an: var(--vc-text);
+      --vc-mira-skelett-blase-a: rgba(255,255,255,0.35);
+      --vc-mira-skelett-blase-b: rgba(255,255,255,0.6);
+      /* ---- Ende Komponentenfarben: Mira ---- */
 
       /* ---- Komponentenfarben: übrige Bereiche (17.10.) ---- */
       /* "Alles, was wir an Farben nutzen, nach core" (17.10.). Die Werte sind GENAU die, die bis
@@ -557,6 +711,86 @@
       /* Der Glanz des Skeletts im Dunkeln: Weiss statt Schwarz (Begruendung im hellen Block). */
       --up-sk-glanz: rgba(255,255,255,.025);
       --up-sk-verlauf: linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--up-sk-glanz) 50%, rgba(255,255,255,0) 100%) 0 0 / 150% 100% repeat-x;
+      /* ---- Komponentenfarben: Quick Actions, Anmeldung, Onboarding (17.10.) ---- */
+      /* Quick Actions im Dunkeln: die Menue-Token, auf die die Palette schon seit dem 07.09. zeigt
+         (Zuordnung im Kopf von quick-actions.css). Ein var() hier wird am Element mit
+         data-theme="dark" aufgeloest -- Palette und Overlay tragen das Attribut selbst. */
+      --vc-qa-rand: var(--up-menu-border);
+      --vc-qa-rand-stark: var(--vc-border);
+      --vc-qa-weich: var(--up-sel-bg);
+      /* Halbdurchsichtig (Linears --color-bg-translucent): liegt mal auf der Karte, mal auf der
+         aktiven Zeile und bleibt auf beiden eine leise Stufe darueber. */
+      --vc-qa-weich-2: #ffffff0d;
+      --vc-qa-karte: var(--up-menu-bg);
+      --vc-qa-knopf: var(--vc-field);
+      --vc-qa-hover: var(--up-sel-bg);
+      --vc-qa-schleier: rgba(0,0,0,0.55);
+      --vc-qa-tip-bg: #1f1f1b;
+      --vc-qa-tip-ink: #ffffff;
+      --vc-qa-taste-bg: var(--vc-qa-karte);
+      --vc-qa-taste-rand: var(--vc-qa-rand);
+      --vc-qa-fehler: #b4451f;
+      --vc-auth-hover: var(--vc-heading-bg);
+      --vc-auth-staerke-mittel: #d98324;
+      --vc-auth-staerke-gut: #b8a02a;
+      /* Im Dunkeln ist die Akzentflaeche hell, der Haken also dunkel (#1b1b1b). */
+      --vc-auth-haken: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231b1b1b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+      /* Die rechte Spalte der Anmeldung im Dunkeln: dasselbe Grau, gegenlaeufig. Im Hellen wird es
+         nach unten DUNKLER (Weiss -11/-28/-43), hier nach unten HELLER, vom alten Seitengrund
+         #1c1c1f aus um +5/+13/+21, der Blauanteil waechst mit der Tiefe wie dort. Das Linienmuster
+         dunkel statt hell (21.09.: "die line pattern rechts dunkler machen"): weisse Striche
+         leuchteten auf dem dunklen Grau als Gitter VOR der Flaeche; Schwarz mit .30 graebt sie ein.
+         Die Lichter bleiben dieselben, auth-page.css nimmt sie im Dunkeln auf ein Viertel. */
+      --vc-auth-panel-verlauf: linear-gradient(to bottom,
+              rgba(28, 28, 31, 0) 16%, #212224 34%, #2a2b2e 60%, #323336 100%);
+      --vc-auth-panel-lichter:
+    radial-gradient(58% 72% at 44% 100%,
+      rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .24) 28%,
+      rgba(255, 255, 255, .1) 62%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(34% 52% at 61% 97%,
+      rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, .09) 40%,
+      rgba(255, 255, 255, .03) 72%, rgba(255, 255, 255, 0) 100%),
+    linear-gradient(to right,
+      rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .02) 18%, rgba(255, 255, 255, .06) 32%,
+      rgba(255, 255, 255, .09) 44%, rgba(255, 255, 255, .1) 50%, rgba(255, 255, 255, .09) 56%,
+      rgba(255, 255, 255, .06) 68%, rgba(255, 255, 255, .02) 82%, rgba(255, 255, 255, 0) 100%);
+      --vc-auth-panel-raster: repeating-linear-gradient(to right,
+              rgba(0, 0, 0, .30) 0, rgba(0, 0, 0, .30) 1px,
+              transparent 1px, transparent 8px);
+      --vc-marke-google-blau: #4285F4;
+      --vc-marke-google-gruen: #34A853;
+      --vc-marke-google-gelb: #FBBC05;
+      --vc-marke-google-rot: #EA4335;
+      --vc-ob-kachel-text: #1f1f1b;
+      --vc-ob-kachel-muted: #6b6f78;
+      --vc-ob-thema-rueckfall: #6b7280;
+      /* ---- Komponentenfarben: Mira (17.10.) ----
+         Die dunklen Fassungen der Mira-Farben, die je Thema verschieden sind (Rollen und
+         Begruendung im hellen Block). Geist-dunkel traegt dieselben Werte -- so stand es auch in
+         der Komponente: ihre Dunkel-Regeln hingen nur an data-theme, nie an html[data-up-dunkel]. */
+      --vc-mira-akzent: #9d83ff;
+      --vc-mira-akzent-2: #6ba0ff;
+      --vc-mira-akzent-soft: rgba(157,131,255,0.13);
+      --vc-mira-blase-bg: #2f2f2f;
+      --vc-mira-blase-ink: #ececec;
+      --vc-mira-raster: rgba(255,255,255,0.022);
+      --vc-mira-positiv-bg: rgba(34,197,94,0.12);    --vc-mira-positiv-ink: #86efac;
+      --vc-mira-negativ-bg: rgba(248,113,113,0.18);  --vc-mira-negativ-ink: #fecaca;
+      --vc-mira-quelle-bg: rgba(96,165,250,0.12);    --vc-mira-quelle-ink: #bfdbfe;
+      --vc-mira-unklar-bg: rgba(251,191,36,0.13);    --vc-mira-unklar-ink: #fde68a;
+      --vc-mira-tabelle-streifen: rgba(255,255,255,0.022);
+      --vc-mira-composer-schale: var(--vc-heading-bg);
+      --vc-mira-gewaehlt: var(--up-sel-bg);
+      --vc-mira-entfernen-hover: rgba(255,255,255,0.08);
+      --vc-mira-picker-schatten: rgba(0,0,0,0.3);
+      --vc-mira-aufnahme-weg-hover: var(--up-sel-bg);
+      --vc-mira-aufnahme-ok-hover: #a0a0a0;
+      --vc-mira-aufnahme-fehler: #e07068;
+      --vc-mira-schleier: rgba(0,0,0,.45);
+      --vc-mira-haken-an: #e0e0e0;
+      --vc-mira-skelett-blase-a: rgba(255,255,255,0.12);
+      --vc-mira-skelett-blase-b: rgba(255,255,255,0.22);
+      /* ---- Ende Komponentenfarben: Mira ---- */
 
       /* ---- Komponentenfarben: übrige Bereiche (17.10.) ---- */
       /* Die dunklen Werte der Marken, die mit dem Thema drehen (Begruendung im hellen Block). Es
@@ -4521,13 +4755,14 @@
     }
     .up-root[data-kleb-fuss="yes"].is-fuss-still .up-box .up-sumrow,
     .up-root[data-kleb-fuss="yes"].is-fuss-still > .up-foot { transition: none; }
-    /* Der Schatten: die Tiefe einer frei schwebenden Leiste (--up-e-3, "Leiste, Kasten"), aber
-       nach OBEN -- die Ebene liegt deckungsgleich auf dem Teil und ist gespiegelt (scaleY(-1)), so
-       wirft derselbe Wert nach oben statt nach unten, ohne eine zweite Zahl. Nur Deckkraft blendet. */
+    /* Der Schatten: Geists "small" (--up-e-1, 2px), nach OBEN -- die Ebene liegt deckungsgleich auf
+       dem Teil und ist gespiegelt (scaleY(-1)), so wirft derselbe Wert nach oben statt nach unten,
+       ohne eine zweite Zahl. Nur Deckkraft blendet. Bis 17.10. war es --up-e-3 (Geists "modal", bis
+       32px weit): dem Nutzer "zu dolle" -- die Linie traegt die Kante, der Schatten nur einen Hauch. */
     .up-root[data-kleb-fuss="yes"] .up-box .up-sumrow::before,
     .up-root[data-kleb-fuss="yes"] > .up-foot::before {
       content: ""; position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none;
-      box-shadow: var(--up-e-3); transform: scaleY(-1); opacity: 0;
+      box-shadow: var(--up-e-1); transform: scaleY(-1); opacity: 0;
       transition: opacity var(--up-t-2) var(--up-ease-expo);
     }
     .up-root[data-kleb-fuss="yes"].is-fuss-klebt .up-box .up-sumrow::before,

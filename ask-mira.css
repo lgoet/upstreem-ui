@@ -25,6 +25,11 @@
      brand/prompt/response/url highlight chips are behaviour-critical and must not be re-styled.
      The three values with no core counterpart (the Mira accent, the user-bubble tint and the two
      shadows) stay as they were. */
+  /* SEIT DEM 17.10. KEIN FARBWERT MEHR IN DIESER DATEI ("alles, was wir an Farben nutzen -> core").
+     Was hier als Literal stand, steht jetzt als --vc-mira-* in core.css (Block "Komponentenfarben:
+     Mira"), hell und dunkel, mit genau den Werten von vorher. Wo hell und dunkel ein Literalpaar
+     waren, wechselt das Token selbst mit data-theme, und die eigene Dunkel-Regel ist weggefallen;
+     Dunkel-Regeln, die schon ein Token trugen, stehen unveraendert. Die --am-*-Namen bleiben. */
   /* ZWEI ORTE, EINE PALETTE. Das Einstellungsfenster haengt am BODY (Portal, wegen der
      Stapelung) und liegt damit AUSSERHALB von #ask-mira -- die Werte unten erreichten es nicht.
      Gemessen: --am-soft-2 kam dort leer an, und eine Kurzschreibweise mit einem leeren Wert
@@ -77,10 +82,11 @@
        auf der Flaeche: e-1). Die dunkle Fassung kommt mit data-theme; ihr eigener Block ist weg. */
     --am-shadow: var(--up-e-2);
     --am-shadow-sm: var(--up-e-1);
-    /* Mira accent (violet -> blue, kept subtle) — no core counterpart, this is the agent's own. */
-    --am-accent: #7c5cff;
-    --am-accent-2: #4f8bff;
-    --am-accent-soft: rgba(124,92,255,0.10);
+    /* Mira accent (violet -> blue, kept subtle) — the agent's own. Aus core (17.10.): das Token
+       wechselt selbst mit data-theme, die drei Zeilen im Dunkel-Block unten sind entfallen. */
+    --am-accent: var(--vc-mira-akzent);
+    --am-accent-2: var(--vc-mira-akzent-2);
+    --am-accent-soft: var(--vc-mira-akzent-soft);
     --am-radius: var(--up-r-2xl);
   }
   #ask-mira {
@@ -134,8 +140,8 @@
     position: absolute; inset: 0;
     pointer-events: none;
     background:
-      linear-gradient(to right, rgba(31,31,27,0.022) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(31,31,27,0.022) 1px, transparent 1px);
+      linear-gradient(to right, var(--vc-mira-raster) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--vc-mira-raster) 1px, transparent 1px);
     background-size: 44px 44px;
     mask-image: radial-gradient(circle at 50% 0%, rgba(0,0,0,0.6), transparent 70%);
     opacity: 0.5;
@@ -208,10 +214,10 @@
     font-size: 11px; font-weight: 600; color: var(--am-muted);
   }
   .am-status-dot {
-    width: 6px; height: 6px; border-radius: var(--up-r-voll); background: #2ec27e;
-    box-shadow: 0 0 0 0 rgba(46,194,126,0.5); animation: amDotPulse 2s ease-in-out infinite;
+    width: 6px; height: 6px; border-radius: var(--up-r-voll); background: var(--vc-mira-status);
+    box-shadow: 0 0 0 0 var(--vc-mira-status-puls); animation: amDotPulse 2s ease-in-out infinite;
   }
-  #ask-mira.is-loading .am-status-dot { background: var(--am-primary); box-shadow: 0 0 0 0 rgba(31,31,27,0.4); }
+  #ask-mira.is-loading .am-status-dot { background: var(--am-primary); box-shadow: 0 0 0 0 var(--vc-mira-status-laden); }
   /* The description. 15px/1.4 and 12px below the title row are core.css's .up-ph-desc values --
      matched by hand rather than by using the class, because this one also has to disappear in the
      compact topbar mode below, which the kit knows nothing about. */
@@ -335,8 +341,8 @@
     --am-user-text: var(--vc-text);
   }
   #ask-mira[data-theme="dark"][data-bubbles="contrast"] .am-msg-skel {
-    --am-user-bg: #2f2f2f;
-    --am-user-text: #ececec;
+    --am-user-bg: var(--vc-mira-blase-bg);
+    --am-user-text: var(--vc-mira-blase-ink);
   }
   /* long user messages: clamp to USER_CLAMP chars + "Mehr anzeigen" toggle */
   .am-user-body .am-user-p { margin: 0; }
@@ -618,7 +624,7 @@
   .am-oppc-ic { width: 15px; height: 15px; flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; }
   .am-oppc-ic svg { width: 15px; height: 15px; display: block; }
   .am-oppc-btn.is-loading { color: var(--am-muted); }
-  .am-oppc-btn.is-done { color: #15803d; border-color: color-mix(in srgb, #15803d 34%, var(--am-border)); background: color-mix(in srgb, #15803d 9%, var(--am-card)); }
+  .am-oppc-btn.is-done { color: var(--vc-mira-opp-erledigt); border-color: color-mix(in srgb, var(--vc-mira-opp-erledigt) 34%, var(--am-border)); background: color-mix(in srgb, var(--vc-mira-opp-erledigt) 9%, var(--am-card)); }
   .am-oppc-btn.is-exists { color: var(--am-muted); background: var(--am-soft); }
   .am-oppc-btn.is-confirm .am-oppc-ic { animation: amOppcPop .42s cubic-bezier(.22,1,.36,1); }
   @keyframes amOppcPop { 0% { transform: scale(.4); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
@@ -645,11 +651,12 @@
     display: inline; box-decoration-break: clone; -webkit-box-decoration-break: clone;
     border-radius: 0.28em; padding: 0.05em 0.22em; line-height: inherit; font-weight: 500;
   }
-  /* Light mode */
-  #ask-mira .am-bubble span[data-mira-sentiment="positive"]    { background: rgba(22,163,74,0.09);  color:#166534; }
-  #ask-mira .am-bubble span[data-mira-sentiment="negative"]    { background: rgba(220,38,38,0.14);  color:#991b1b; }
-  #ask-mira .am-bubble span[data-mira-source-signal="likely"]  { background: rgba(37,99,235,0.085); color:#1d4ed8; }
-  #ask-mira .am-bubble span[data-mira-source-signal="unclear"] { background: rgba(217,119,6,0.10);  color:#92400e; }
+  /* Hell und dunkel aus core (17.10.): die Tokens wechseln mit data-theme, die vier Dunkel-Regeln
+     weiter unten sind entfallen. */
+  #ask-mira .am-bubble span[data-mira-sentiment="positive"]    { background: var(--vc-mira-positiv-bg); color: var(--vc-mira-positiv-ink); }
+  #ask-mira .am-bubble span[data-mira-sentiment="negative"]    { background: var(--vc-mira-negativ-bg); color: var(--vc-mira-negativ-ink); }
+  #ask-mira .am-bubble span[data-mira-source-signal="likely"]  { background: var(--vc-mira-quelle-bg); color: var(--vc-mira-quelle-ink); }
+  #ask-mira .am-bubble span[data-mira-source-signal="unclear"] { background: var(--vc-mira-unklar-bg); color: var(--vc-mira-unklar-ink); }
   /* A page-level "scroll fix" may force `touch-action: pan-y !important` on every element.
      touch-action is intersected along the ancestor chain, so pan-y on the table's ancestors
      blocks horizontal panning even if the scroll container itself allows pan-x.
@@ -681,7 +688,7 @@
   }
   .am-bubble tbody td { padding: 9px 12px; border-bottom: 1px solid var(--am-border); vertical-align: top; white-space: normal; overflow-wrap: break-word; }
   .am-bubble tbody tr:last-child td { border-bottom: 0; }
-  .am-bubble tbody tr:nth-child(even) td { background: rgba(0,0,0,0.012); }
+  .am-bubble tbody tr:nth-child(even) td { background: var(--vc-mira-tabelle-streifen); }
   .am-bubble th a, .am-bubble td a { overflow-wrap: anywhere; }
 
   /* ===== Mobile: keep tables horizontally scrollable instead of squashing columns ===== */
@@ -766,7 +773,7 @@
     /* alias the page's --uo-* tokens onto Mira's --am-* tokens so the card looks identical in light & dark */
     --uo-card: var(--am-card); --uo-text: var(--am-text); --uo-muted: var(--am-muted); --uo-muted-2: var(--am-muted-2);
     --uo-border: var(--am-border); --uo-border-strong: var(--am-border-strong); --uo-soft: var(--am-soft); --uo-soft-2: var(--am-soft-2);
-    --uo-primary: var(--am-primary); --uo-hover-bg: var(--am-soft); --uo-hover-border: var(--vc-hover-border, #6f6f6f);
+    --uo-primary: var(--am-primary); --uo-hover-bg: var(--am-soft); --uo-hover-border: var(--vc-hover-border);
     --uo-pot-a: var(--am-border-strong); --uo-pot-b: var(--am-text); --uo-shadow-sm: var(--am-shadow-sm); --uo-shadow: var(--am-shadow);
     display: flex; flex-direction: column; gap: 12px; margin-top: 18px;
   }
@@ -817,10 +824,10 @@
   /* --vt-up/--vt-down statt der hellen Werte: im Dunkeln stehen dort #60d25d und #d25d5d, und
      genau diese zwei Zeilen zeigten das dunkle Rot #b0200c auf dunklem Grund. Rueckfall auf die
      alten Werte, falls die Marke einmal nicht ankommt. */
-  #ask-mira .uo-kpi-val .is-pos { color: var(--vt-up, #2ea84a); } #ask-mira .uo-kpi-val .is-neg { color: var(--vt-down, #b0200c); }
+  #ask-mira .uo-kpi-val .is-pos { color: var(--vt-up); } #ask-mira .uo-kpi-val .is-neg { color: var(--vt-down); }
   #ask-mira .uo-trend { font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
   #ask-mira .uo-trend svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  #ask-mira .uo-trend.up { color: var(--vt-up, #2ea84a); } #ask-mira .uo-trend.down { color: var(--vt-down, #b0200c); }
+  #ask-mira .uo-trend.up { color: var(--vt-up); } #ask-mira .uo-trend.down { color: var(--vt-down); }
   #ask-mira .uo-meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 2px 18px; }
   #ask-mira .uo-meta-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--uo-border); }
   #ask-mira .uo-meta-k { font-size: 13px; color: var(--uo-muted); } #ask-mira .uo-meta-v { font-size: 13px; font-weight: 600; color: var(--uo-text); text-align: right; }
@@ -1007,7 +1014,7 @@
      Jetzt bekommt jede Zeile den Glanz da, wo ihr Text wirklich steht. */
   .am-run-step:not(.is-done) .am-run-txt:not(.am-think-loop),
   .am-run-step:not(.is-done) .am-think-text {
-    background-image: linear-gradient(100deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0) 70%);
+    background-image: linear-gradient(100deg, rgba(255,255,255,0) 30%, var(--vc-mira-lauf-glanz) 50%, rgba(255,255,255,0) 70%);
     background-color: currentColor;
     background-size: 200% 100%; background-repeat: no-repeat; background-position: -120% 0;
     -webkit-background-clip: text; background-clip: text;
@@ -1066,14 +1073,14 @@
   }
 
   /* brand + favicon chip = exactly the inline-logo style (24px, radius 8, soft bg, border, cover) */
-  .am-tload-logo { width: 24px; height: 24px; border-radius: var(--up-r-m); background: var(--am-soft); border: 1px solid var(--am-border); overflow: hidden; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff; font-size: 11px; font-weight: 600; }
+  .am-tload-logo { width: 24px; height: 24px; border-radius: var(--up-r-m); background: var(--am-soft); border: 1px solid var(--am-border); overflow: hidden; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--vc-mira-auf-farbe); font-size: 11px; font-weight: 600; }
   .am-tload-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .am-tload-logo.is-fb { background: var(--fb,#9ca3af) !important; border-radius: var(--up-r-s); }
+  .am-tload-logo.is-fb { background: var(--fb, var(--vc-mira-logo-rueckfall)) !important; border-radius: var(--up-r-s); }
   .am-tload-logo.is-fb img { display: none; }
   /* AI model = resp-ic style (transparent, no box, contain) */
-  .am-tload-ai { width: 24px; height: 24px; border-radius: var(--up-r-m); overflow: hidden; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; background: transparent; color: #fff; font-size: 11px; font-weight: 600; }
+  .am-tload-ai { width: 24px; height: 24px; border-radius: var(--up-r-m); overflow: hidden; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; background: transparent; color: var(--vc-mira-auf-farbe); font-size: 11px; font-weight: 600; }
   .am-tload-ai img { width: 24px; height: 24px; object-fit: contain; display: block; border-radius: var(--up-r-m); }
-  .am-tload-ai.is-fb { background: var(--fb,#9ca3af) !important; border-radius: var(--up-r-m); }
+  .am-tload-ai.is-fb { background: var(--fb, var(--vc-mira-logo-rueckfall)) !important; border-radius: var(--up-r-m); }
   .am-tload-ai.is-fb img { display: none; }
   @media (prefers-reduced-motion: reduce){
     .am-run-step, .am-run-lead > *, .am-run-spin { transition: none !important; }
@@ -1190,7 +1197,7 @@
   }
   /* --vt-row-hover-solid traegt #f9f8f9 hell und #232326 dunkel -- genau die zwei Werte, die
      hier als Literal und Dunkel-Regel standen. Die Regel darunter faellt weg. (22.09.) */
-  .am-suggest-card:hover { border-color: var(--vc-hover-border, #6f6f6f); background: var(--vt-row-hover-solid, #f9f8f9); }
+  .am-suggest-card:hover { border-color: var(--vc-hover-border); background: var(--vt-row-hover-solid); }
   .am-suggest-card > span:nth-child(2) { min-width: 0; flex: 1 1 auto; }
   .am-suggest-ic {
     width: 22px; height: 22px; flex: 0 0 auto;
@@ -1649,13 +1656,13 @@
   .am-scroll-label { display: none; font-size: 13px; font-weight: 600; line-height: 1; }
   .am-scroll-bottom.has-new {
     width: auto; padding: 0 15px 0 11px; gap: 7px;
-    background: #2f6df6; border-color: #2f6df6; color: #fff;
+    background: var(--vc-mira-signal); border-color: var(--vc-mira-signal); color: var(--vc-mira-auf-farbe);
     /* AUSNAHME von den Tiefen (28.09. geprueft): das ist ein blauer Schein in der Farbe der Pille,
        keine Tiefe -- er gehoert zur Meldung "neue Nachricht" wie ihr Blau und faellt mit ihr weg. */
-    box-shadow: 0 6px 16px rgba(47,109,246,0.30);
+    box-shadow: 0 6px 16px var(--vc-mira-signal-schein);
   }
-  .am-scroll-bottom.has-new:hover { background: #2b63dd; border-color: #2b63dd; }
-  .am-scroll-bottom.has-new svg { stroke: #fff; }
+  .am-scroll-bottom.has-new:hover { background: var(--vc-mira-signal-hover); border-color: var(--vc-mira-signal-hover); }
+  .am-scroll-bottom.has-new svg { stroke: var(--vc-mira-auf-farbe); }
   .am-scroll-bottom.has-new .am-scroll-label { display: inline-block; }
   /* grey shell that holds the composer + the settings tray (matches the requested #f5f5f5 look) */
   .am-composer-shell {
@@ -1663,7 +1670,7 @@
     /* MIT dem Feld (09.09. auf 32, 30.09. auf 16). Der Kommentar sagte schon immer
        "deckungsgleich mit dem Feld darin", und genau deshalb muss dieser Wert mitwandern: stuenden
        beide verschieden, schauten die Ecken des einen hinter dem anderen hervor. */
-    background: #f9f8f9; border-radius: var(--up-r-2xl); padding: 0;
+    background: var(--vc-mira-composer-schale); border-radius: var(--up-r-2xl); padding: 0;
     transition: background 200ms ease, padding-bottom 300ms cubic-bezier(.4,0,.2,1);
   }
   .am-composer-shell.is-settings-open { padding-bottom: 16px; }   /* grey only overhangs while the tray is open */
@@ -1727,7 +1734,7 @@
   .am-model-opt + .am-model-opt { margin-top: 8px; }
   .am-model-opt[data-model="pro"] { height: 64px; }
   .am-model-opt[data-model="flash"] { height: 64px; }
-  .am-model-opt.is-active { background: #f0f0ef; }
+  .am-model-opt.is-active { background: var(--vc-mira-gewaehlt); }
   /* Farbe statt Deckkraft -- dafuer gibt es die vierte Stufe (24.09.). */
   .am-model-opt:not(.is-active) { color: var(--am-muted-3); }
   .am-model-opt:not(.is-active):hover { color: var(--am-text); }
@@ -1859,7 +1866,7 @@
   }
   .am-inline-quote-remove svg { width: 12px !important; height: 12px !important; min-width: 12px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
   .am-inline-quote-body:hover .am-inline-quote-remove { width: 15px; max-width: 15px; opacity: 1; margin-left: 4px; }
-  .am-inline-quote-remove:hover { color: var(--am-text); background: rgba(0,0,0,0.06); }
+  .am-inline-quote-remove:hover { color: var(--am-text); background: var(--vc-mira-entfernen-hover); }
   @media (hover: none) { .am-inline-quote-remove { width: 15px; max-width: 15px; opacity: 0.85; margin-left: 4px; } }
 
   /* floating Ask-Mira button above a text selection */
@@ -1883,8 +1890,6 @@
   .am-ask-sel:hover { background: var(--vt-row-hover-solid, var(--am-soft)); }
   .am-ask-sel .am-ic { width: 14px; height: 14px; }
   @keyframes amAskSelIn { from { opacity: 0; transform: translate(-50%, calc(-100% + 4px)); } to { opacity: 1; transform: translate(-50%, -100%); } }
-
-  #ask-mira[data-theme="dark"] .am-inline-quote-remove:hover { background: rgba(255,255,255,0.08); }
 
   .am-actions { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
 
@@ -2007,8 +2012,8 @@
   .am-eff-head:hover { background: var(--up-sel-bg, var(--am-soft)); }
   .am-eff-head .am-eff-ic { color: var(--am-text); }
   .am-eff-hname { flex: 1 1 auto; min-width: 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .am-eff-hlvl { flex: 0 0 auto; font-weight: 600; color: var(--up-blau-text, #286fe1); transition: color 200ms ease; }
-  #ask-mira.is-ultra .am-eff-hlvl { color: var(--up-lila-text, #8e58d8); }
+  .am-eff-hlvl { flex: 0 0 auto; font-weight: 600; color: var(--up-blau-text); transition: color 200ms ease; }
+  #ask-mira.is-ultra .am-eff-hlvl { color: var(--up-lila-text); }
   /* KEIN Drehen des Chevrons beim Oeffnen -- mehrfach angemahnt. Es zeigt nach rechts und
      bleibt dort; dass etwas offen ist, sagt die ausgeklappte Liste selbst. */
   .am-eff-hchev { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor;
@@ -2053,10 +2058,10 @@
   .am-eff-slider { padding: 0 6px; }
   .am-eff-track {
     position: relative; height: 28px; border-radius: var(--up-r-voll); cursor: pointer;
-    background: var(--up-switch-off, #d6d6d4); overflow: hidden;
+    background: var(--up-switch-off); overflow: hidden;
     transition: background 200ms ease;
   }
-  #ask-mira[data-theme="dark"] .am-eff-track { background: var(--up-switch-off, #444444); }
+  #ask-mira[data-theme="dark"] .am-eff-track { background: var(--up-switch-off); }
   /* BREITE statt transform (15.09.). Hier stand scaleX, mit der Begruendung, eine Breite lasse
      den Browser neu umbrechen. Das stimmt -- kostet hier aber nichts (ein absolut gesetztes
      Element in einer 28px-Schiene, drei Stufen, kein Dauerlauf) und der Preis war hoch: scaleX
@@ -2070,7 +2075,7 @@
      right: auto, weil inset: 0 sonst beide Kanten festnagelt und eine Breite nichts bewirkt. */
   .am-eff-fill {
     position: absolute; top: 0; bottom: 0; left: 0; right: auto; width: 0;
-    border-radius: var(--up-r-voll); background: var(--up-blau, #3b82f6);
+    border-radius: var(--up-r-voll); background: var(--up-blau);
     transition: width 200ms ease;
   }
   /* Der Verlauf fuer Ultra liegt als EIGENE Schicht darueber und wird eingeblendet. Ein
@@ -2082,8 +2087,8 @@
        schneidet den Bogen, den OKLCh zwischen Blau und Lila zieht -- die Mitte waere um vier
        Prozent matter als beide Enden, und zwar genau dort, wo man hinsieht. Der Stopp in der
        Mitte legt die Gerade auf den Bogen zurueck. */
-    background: linear-gradient(90deg, var(--up-blau, #3b82f6) 0%,
-      var(--up-lila-halb, #7473f4) 50%, var(--up-lila, #9a65e6) 100%);
+    background: linear-gradient(90deg, var(--up-blau) 0%,
+      var(--up-lila-halb) 50%, var(--up-lila) 100%);
     transition: opacity 200ms ease;
     pointer-events: none;
   }
@@ -2093,7 +2098,7 @@
      stehen. Von links nach rechts staerker: links ganz weg, ab etwa der Mitte voll da.
      Beide Schreibweisen, weil -webkit-mask in Safari noch die einzige ist, die greift. */
   .am-eff-dots {
-    position: absolute; inset: 0; border-radius: var(--up-r-voll); color: #ffffff; pointer-events: none;
+    position: absolute; inset: 0; border-radius: var(--up-r-voll); color: var(--vc-mira-auf-farbe); pointer-events: none;
     -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.25) 30%,
       rgba(0,0,0,0.7) 60%, #000 100%);
     mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.25) 30%,
@@ -2110,7 +2115,7 @@
     position: absolute; top: 50%; width: 4px; height: 4px; margin-top: -2px; border-radius: var(--up-r-voll);
     background: var(--vc-muted); pointer-events: none; transition: background 200ms ease;
   }
-  .am-eff-dot.is-fill { background: rgba(255,255,255,0.85); }
+  .am-eff-dot.is-fill { background: var(--vc-mira-regler-punkt); }
   /* GANZE PIXEL (25.09. gemeldet: "wenn der Switcher auf Mittel steht, sollte um den weissen
      Knopf eine gleichmaessige, ueberall gleich hohe und breite blaue Flaeche sein -- es sind nur
      ein paar px, aber man erkennt, dass sie nicht ueberall gleich ist").
@@ -2126,7 +2131,7 @@
      Rundung der Fuellung (14) und die des Daumens (11) plus Einzug (3) bleiben konzentrisch. */
   .am-eff-thumb {
     position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: var(--up-r-voll);
-    background: #ffffff; box-shadow: var(--up-e-1); pointer-events: none;
+    background: var(--vc-mira-regler-daumen); box-shadow: var(--up-e-1); pointer-events: none;
     transition: transform 200ms ease;
   }
   /* Weiss in BEIDEN Themen, und das ist gerechnet: der dunkle Daumen der Schalterfamilie
@@ -2226,7 +2231,7 @@
     position: absolute; bottom: calc(100% + 8px); left: 0; right: 0; z-index: 60;
     box-sizing: border-box; display: flex; flex-direction: column; padding: 16px;
     border: 1px solid var(--up-menu-border, var(--am-border)); border-radius: var(--up-r-2xl);
-    background: var(--up-menu-bg, var(--am-card)); box-shadow: 0 -2px 16px rgba(0,0,0,0.06);
+    background: var(--up-menu-bg, var(--am-card)); box-shadow: 0 -2px 16px var(--vc-mira-picker-schatten);
     /* AUSNAHME von den Tiefen (28.09. geprueft): das Panel liegt 8px neben dem Eingabefeld und
        bildet mit ihm ein Paar, sein Schatten wirft darum vom Feld WEG (hier nach oben, im Dashboard
        gespiegelt nach unten). Jede Stufe der Skala reicht ueber diese 8px auf das Feld -- e-2
@@ -2239,7 +2244,6 @@
     transition: opacity 200ms ease, transform 200ms ease;
   }
   #ask-mira.is-pick-open .am-pick-panel { opacity: 1; transform: none; pointer-events: auto; }
-  #ask-mira[data-theme="dark"] .am-pick-panel { box-shadow: 0 -2px 16px rgba(0,0,0,0.3); }
 
   /* Ohne eigenes Seitenpolster UND ohne feste Hoehe -- beides stellte frueher den Abstand zum
      Rand, seit dem 13.09. macht das Panel es mit seinen 16px rundum. Die 50px waren dabei der
@@ -2389,8 +2393,7 @@
   }
   .am-pick-chip-x svg { width: 11px; height: 11px; fill: none; stroke: currentColor;
     stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
-  .am-pick-chip-x:hover { color: var(--am-text); background: rgba(0,0,0,0.06); }
-  #ask-mira[data-theme="dark"] .am-pick-chip-x:hover { background: rgba(255,255,255,0.08); }
+  .am-pick-chip-x:hover { color: var(--am-text); background: var(--vc-mira-entfernen-hover); }
 
   /* ---- DIE BEFEHLSLISTE im Ergebnisbereich ----------------------------------------------
      Dieselbe Zeilenform wie ein Treffer (.am-pick-row), damit Klick und Pfeiltasten nicht
@@ -2504,7 +2507,7 @@
   .am-pick-sk-lines { flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px; }
   .am-pick-sk-line { height: 9px; border-radius: var(--up-sk-r, 5px); }
   /* Skelett aus core nach Geist (15.10.); amPickSk bleibt fuer den Vertrag stehen. */
-  .am-pick-sk-av, .am-pick-sk-line { background: var(--vc-sk, #eeedef) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
+  .am-pick-sk-av, .am-pick-sk-line { background: var(--vc-sk) var(--up-sk-verlauf); animation: var(--up-sk-bewegung); }
   @keyframes amPickSk { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
 
   /* ---- Die uebernommenen Treffer im Feld -----------------------------------------------
@@ -2626,7 +2629,7 @@
   }
   /* Siehe .am-suggest-card: zwei Marken statt vier Literalen, --up-accent-ink traegt
      #1f1f1b hell und #e0e0e0 dunkel. Die Dunkel-Regel weiter unten faellt weg. */
-  .am-icon-action:hover { background: var(--vt-row-hover-solid, #f9f8f9); color: var(--up-accent-ink, #1f1f1b); }
+  .am-icon-action:hover { background: var(--vt-row-hover-solid); color: var(--up-accent-ink); }
   /* DIE FLAECHE BEIM UEBERFAHREN IST 32x32, der Knopf bleibt 40x40. Das Ziel, das man treffen
      muss, soll gross sein; die Farbe, die man sieht, klein -- ein 40er Feld hinter einem 18px
      grossen Zeichen wirkt wie ein zweiter Knopf. Ueber ::before und nicht ueber die
@@ -2693,7 +2696,7 @@
   .am-composer.is-recording .am-rec { display: flex; animation: amRecIn 180ms ease both; }
   @keyframes amRecIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
   .am-rec-live { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; }
-  .am-rec-dot { width: 8px; height: 8px; border-radius: 50%; background: #e5484d; animation: amRecPulse 1.4s ease-in-out infinite; }
+  .am-rec-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--vc-mira-aufnahme-punkt); animation: amRecPulse 1.4s ease-in-out infinite; }
   @keyframes amRecPulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.82); } }
   .am-rec-time { font-size: 13px; font-weight: 600; color: var(--am-text); font-variant-numeric: tabular-nums; min-width: 34px; }
   .am-rec-wave { flex: 0 1 256px; max-width: 256px; min-width: 40px; height: 30px; }
@@ -2712,16 +2715,15 @@
   .am-rec-btn:active { transform: scale(0.94); }
   .am-rec-btn .am-ic { width: 18px; height: 18px; }
   .am-rec-cancel { background: var(--am-soft-2); color: var(--am-text); }
-  .am-rec-cancel:hover { background: #e9e9ec; }
+  .am-rec-cancel:hover { background: var(--vc-mira-aufnahme-weg-hover); }
   .am-rec-confirm { background: var(--am-primary); color: var(--am-bg); box-shadow: var(--up-e-1); }
-  .am-rec-confirm:hover { background: #585855; box-shadow: none; }
+  .am-rec-confirm:hover { background: var(--vc-mira-aufnahme-ok-hover); box-shadow: none; }
   /* Die Fehlerzeile der Spracheingabe in --vt-down (15.10., Geist Red 900) statt des festen alten
      Rots -- im Dunkeln stand hier dasselbe dunkle #b0200c auf dunklem Grund. */
   .am-rec-note { max-width: 920px; margin: 8px auto 0; width: 100%; text-align: center; font-size: 12px; line-height: 1.4; color: var(--vt-down); display: none; }
   .am-rec-note.is-on { display: block; animation: amRecIn 160ms ease both; }
   #ask-mira[data-theme="dark"] .am-rec-cancel:hover { background: var(--up-sel-bg); }   /* Gray 200, vorher #2f2f2f */
-  #ask-mira[data-theme="dark"] .am-rec-confirm:hover { background: #a0a0a0; box-shadow: none; }
-  #ask-mira[data-theme="dark"] .am-rec-note { color: #e07068; }
+  #ask-mira[data-theme="dark"] .am-rec-note { color: var(--vc-mira-aufnahme-fehler); }
   @media (max-width: 640px) {
     .am-rec { gap: 9px; }
     .am-rec-wave { flex: 1 1 auto; max-width: 256px; }
@@ -2755,7 +2757,7 @@
        Die zwei Werte sind woertlich die von .usn-scrim in sidebar.css: .30 hell, .45 dunkel,
        dazu eine leichte Unschaerfe. Zwei Blenden in einer App sollen gleich aussehen. */
     display: none;
-    position: absolute; inset: 0; z-index: 8; background: rgba(0,0,0,.30);
+    position: absolute; inset: 0; z-index: 8; background: var(--vc-mira-schleier);
     backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); opacity: 0; pointer-events: none;
     transition: opacity 200ms ease;
   }
@@ -2810,7 +2812,6 @@
      Dass mein frueherer Test ihn trotzdem "schliessen" sah, lag daran, dass ein
      scrim.click() im Skript pointer-events gar nicht erst fragt. */
   #ask-mira.prev-open .am-prev-scrim { opacity: 1; pointer-events: auto; }
-  #ask-mira[data-theme="dark"] .am-prev-scrim { background: rgba(0,0,0,.45); }
   /* DER UEBERGANG, und zwar ASYMMETRISCH -- dieselbe Ueberlegung wie in sidebar.css an
      .usn-txt (23.09. angefordert: "warum machen wir da nicht die gleiche logik wie in der
      hauptsidebar"). Die grosse Leiste faehrt 200ms ueber margin-right heraus, die schmale
@@ -3345,17 +3346,17 @@
     text-align: left; cursor: pointer; font-size: 14px; font-weight: 500;
   }
   .am-dd-opt:hover { background: var(--am-soft); }
-  .am-dd-opt.is-selected { background: #f0f0ef; }
+  .am-dd-opt.is-selected { background: var(--vc-mira-gewaehlt); }
   .am-dd-check {
-    width: 14px; height: 14px; border: 1.5px solid #b7bbc2; border-radius: 3px;
+    width: 14px; height: 14px; border: 1.5px solid var(--vc-mira-haken-rand); border-radius: 3px;
     display: inline-flex; align-items: center; justify-content: center;
   }
-  .am-dd-opt.is-selected .am-dd-check { background: var(--am-primary); border-color: var(--am-primary); color: #fff; }
+  .am-dd-opt.is-selected .am-dd-check { background: var(--am-primary); border-color: var(--am-primary); color: var(--vc-mira-auf-farbe); }
   .am-dd-opt.is-selected .am-dd-check::before { content: "✓"; font-size: 11px; line-height: 1; }
   /* Dunkel nach Geist (15.10.): Hover Gray 100, gewaehlt Gray 200 -- die Stufen jedes Menues. */
   #ask-mira[data-theme="dark"] .am-dd-opt:hover { background: var(--vt-row-hover-solid); }
   #ask-mira[data-theme="dark"] .am-dd-opt.is-selected { background: var(--up-sel-bg); }
-  #ask-mira[data-theme="dark"] .am-dd-opt.is-selected .am-dd-check { background: #e0e0e0; border-color: #e0e0e0; color: var(--vc-text-invert); }
+  #ask-mira[data-theme="dark"] .am-dd-opt.is-selected .am-dd-check { background: var(--vc-mira-haken-an); border-color: var(--vc-mira-haken-an); color: var(--vc-text-invert); }
   .am-newchat:hover { background: var(--am-soft); }
   #ask-mira .am-newchat .am-ic { width: 14px; height: 14px; }
   .am-prev-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 6px 10px 16px; display: flex; flex-direction: column; gap: 2px; }
@@ -3431,8 +3432,7 @@
   .am-skel-line:last-child { margin-bottom: 0; }
   /* In der Blase des Nutzers bleiben die Toene der Blase (Weiss darueber); Kachel und Lauf wie
      oben, also dieselbe Bewegung. */
-  .am-msg-skel.is-user .am-skel-line { background: linear-gradient(90deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.35) 100%) 0 0 / 150% 100% repeat-x; }
-  #ask-mira[data-theme="dark"] .am-msg-skel.is-user .am-skel-line { background: linear-gradient(90deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0.12) 100%) 0 0 / 150% 100% repeat-x; }
+  .am-msg-skel.is-user .am-skel-line { background: linear-gradient(90deg, var(--vc-mira-skelett-blase-a) 0%, var(--vc-mira-skelett-blase-b) 50%, var(--vc-mira-skelett-blase-a) 100%) 0 0 / 150% 100% repeat-x; }
 
   /* ---- top-level sections (Projects / Recents) ---- */
   .am-prev-section { display: flex; flex-direction: column; }
@@ -3525,7 +3525,7 @@
   .am-prev-item.has-antwort .am-prev-spin .am-act-spinner { display: none; }
   .am-prev-item.has-antwort .am-prev-spin::before {
     content: ""; width: 8px; height: 8px; margin: 0 2px; border-radius: var(--up-r-voll);
-    background: #2f6df6; flex: 0 0 auto;
+    background: var(--vc-mira-signal); flex: 0 0 auto;
     /* Kein Pulsieren: der Punkt sagt "fertig", nicht "es passiert etwas". */
   }
   .am-prev-pin-ind { display: none; flex: 0 0 auto; color: var(--am-muted-2); }
@@ -3571,8 +3571,8 @@
   /* Entfallen: der Inhalt stand vollstaendig im Kit (core.css, Zeichenknopf). */
   .am-prev-mini:hover { background: var(--am-soft-2); color: var(--am-text); }
   .am-prev-mini svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .am-prev-mini[data-prev-act="save"]:hover, .am-prev-mini[data-proj-act="save"]:hover { color: #1a7f4b; }
-  .am-prev-mini[data-prev-act="delete"]:hover, .am-prev-mini[data-proj-act="delete"]:hover { color: #c0392b; }
+  .am-prev-mini[data-prev-act="save"]:hover, .am-prev-mini[data-proj-act="save"]:hover { color: var(--vc-mira-speichern); }
+  .am-prev-mini[data-prev-act="delete"]:hover, .am-prev-mini[data-proj-act="delete"]:hover { color: var(--vc-mira-loeschen); }
   .am-prev-mini.is-on { color: var(--am-accent); }
   /* Diese Zeile stand hier, seit die drei Punkte ein gefuellter Glyph waren. Das Zeichen kommt
      inzwischen aus core (UC.icon("moreHorizontal")), und das ist Lucide "ellipsis": drei
@@ -3611,8 +3611,8 @@
   .am-cm-opt > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .am-cm-opt .am-cm-caret { margin-left: auto; flex: 0 0 auto; width: 15px; height: 15px; color: var(--am-muted); }
   .am-cm-caret svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .am-cm-opt.am-cm-danger:hover { color: #c0392b; }
-  .am-cm-opt.am-cm-danger:hover > svg { color: #c0392b; }
+  .am-cm-opt.am-cm-danger:hover { color: var(--vc-mira-loeschen); }
+  .am-cm-opt.am-cm-danger:hover > svg { color: var(--vc-mira-loeschen); }
   .am-cm-sep { height: 1px; background: var(--am-border); margin: 6px 4px; }
   /* submenu */
   .am-cm-sub { position: relative; }
@@ -3656,7 +3656,7 @@
   @keyframes amOrbitPulse { 0%,100% { opacity: 0.5; transform: scale(0.97); } 50% { opacity: 0.9; transform: scale(1.03); } }
   @keyframes amDriftPoint { 0%,100% { transform: translate(0,0) scale(1); opacity: 0.35; } 45% { transform: translate(6px,-7px) scale(1.1); opacity: 0.7; } 75% { transform: translate(-3px,5px) scale(0.92); opacity: 0.5; } }
   @keyframes amDriftSpark { 0%,100% { transform: translate(0,0) rotate(0deg); opacity: 0.35; } 50% { transform: translate(-3px,7px) rotate(12deg); opacity: 0.65; } }
-  @keyframes amDotPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(46,194,126,0.45); } 50% { box-shadow: 0 0 0 4px rgba(46,194,126,0); } }
+  @keyframes amDotPulse { 0%,100% { box-shadow: 0 0 0 0 var(--vc-mira-status-puls-an); } 50% { box-shadow: 0 0 0 4px var(--vc-mira-status-puls-aus); } }
   @keyframes amMsgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   @keyframes amSpin { to { transform: rotate(360deg); } }
 
@@ -3868,31 +3868,19 @@
      override the workspace's own setting. Two theme systems on one element is how you get a light
      app with a dark agent panel. */
   #ask-mira[data-theme="dark"] {
-    --am-user-bg: #2f2f2f;
-    --am-user-text: #ececec;
-    --am-accent: #9d83ff;
-    --am-accent-2: #6ba0ff;
-    --am-accent-soft: rgba(157,131,255,0.13);
+    --am-user-bg: var(--vc-mira-blase-bg);
+    --am-user-text: var(--vc-mira-blase-ink);
   }
-  #ask-mira[data-theme="dark"] .am-shell::before {
-    background:
-      linear-gradient(to right, rgba(255,255,255,0.022) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,0.022) 1px, transparent 1px);
-    background-size: 44px 44px;
-  }
-  #ask-mira[data-theme="dark"] .am-bubble tbody tr:nth-child(even) td { background: rgba(255,255,255,0.022); }
   /* Rand und Hover aus den Marken (15.10.): vorher Linears border-primary #23252a, auf dem neuen
      Grund nicht mehr zu sehen, und ein Hover in #1e1e1e mit #555. */
   #ask-mira[data-theme="dark"] .am-ev-pill { background: transparent; color: var(--am-muted-2); }
   #ask-mira[data-theme="dark"] .am-ev-pill:hover { background: var(--am-soft); border-color: var(--up-chip-rand-hover); }
 
   /* Inline markers — dark mode. Explicit data-theme only; the OS-preference twins that used
-     to sit next to every one of these are gone, see the token block above. */
+     to sit next to every one of these are gone, see the token block above. Die vier Farb-
+     markierungen (Sentiment, Quelle) brauchen seit dem 17.10. keine Regel mehr hier: ihre
+     --vc-mira-*-Tokens wechseln selbst mit data-theme. */
   #ask-mira[data-theme="dark"] .am-bubble blockquote { border-left-color: var(--am-border); }   /* Gray 400, vorher #28282c */
-  #ask-mira[data-theme="dark"] .am-bubble span[data-mira-sentiment="positive"]    { background: rgba(34,197,94,0.12);  color:#86efac; }
-  #ask-mira[data-theme="dark"] .am-bubble span[data-mira-sentiment="negative"]    { background: rgba(248,113,113,0.18); color:#fecaca; }
-  #ask-mira[data-theme="dark"] .am-bubble span[data-mira-source-signal="likely"]  { background: rgba(96,165,250,0.12);  color:#bfdbfe; }
-  #ask-mira[data-theme="dark"] .am-bubble span[data-mira-source-signal="unclear"] { background: rgba(251,191,36,0.13);  color:#fde68a; }
 
   /* Dark-mode hover / focus parity with prompt research */
   #ask-mira[data-theme="dark"] .am-icon-action[aria-expanded="true"] { background: var(--up-sel-bg); color: var(--am-text); }   /* Gray 200, vorher #242424 */
