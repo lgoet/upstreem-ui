@@ -19168,9 +19168,14 @@
      meckert die App beim Start nicht: nur console.error. Scheitert "gelesen", bleibt der Toast
      trotzdem zu; der naechste Start zeigt ihn wieder. */
   var EVM = (window.__upEventMeldungen = window.__upEventMeldungen || { stand: null, lauf: null, schlange: [], mehr: 0, offen: 0 });
-  var EVM_SICHTBAR = 3;
+  /* Wie viele Meldungen gleichzeitig stehen: drei, am Telefon eine (Audit EV-03: bei 375 Breite
+     deckten vier Toasts fast die halbe Hoehe samt offenem Dialog). Der Rest steht im Hinweis
+     darunter ("N weitere Events"), nichts geht verloren -- gelesen wird es mit dem Klick auf die
+     eine Meldung oder im Event selbst. Gemessen bei JEDEM Zeigen, ein gedrehtes Geraet gilt gleich. */
+  function evmSichtbar(){ return (window.innerWidth || 1024) < 500 ? 1 : 3; }
   addMessages("de", {
     "{n} pages cited for the first time": "{n} Seiten zum ersten Mal zitiert",
+    "1 page cited for the first time": "1 Seite zum ersten Mal zitiert",
     "{url} cited for the first time": "{url} zum ersten Mal zitiert",
     "Campaign completed, your report is ready": "Kampagne abgeschlossen, dein Bericht ist fertig",
     "1 more event has updates": "1 weiteres Event hat Neuigkeiten",
@@ -19201,7 +19206,9 @@
     if (n === 1 && urls.length){
       h += '<span class="up-toast-d">' + esc(t_("{url} cited for the first time").replace("{url}", evmKurz(urls[0], true))) + '</span>';
     } else if (n > 0){
-      h += '<span class="up-toast-d">' + esc(t_("{n} pages cited for the first time").replace("{n}", String(n))) + '</span>';
+      /* Eine Zahl ohne Adresse (Ueberlauf: ab 500 neuen URLs am Tag listet die Datenbank nicht mehr,
+         zaehlt aber weiter) -- nie "1 pages" (Audit EV-04). */
+      h += '<span class="up-toast-d">' + esc(n === 1 ? t_("1 page cited for the first time") : t_("{n} pages cited for the first time").replace("{n}", String(n))) + '</span>';
       var zeigen = urls.slice(0, 3);
       if (zeigen.length){
         h += '<span class="up-toast-liste">' + zeigen.map(function(u){
@@ -19254,19 +19261,27 @@
         /* Der naechste rueckt nach -- erst, wenn der alte weg ist (Abgang 120 ms), sonst stehen
            fuer einen Moment vier da. */
         setTimeout(function(){
-          if (EVM.schlange.length && EVM.offen < EVM_SICHTBAR) evmZeigen(EVM.schlange.shift());
+          if (EVM.schlange.length && EVM.offen < evmSichtbar()) evmZeigen(EVM.schlange.shift());
           evmHinweis();
         }, 140);
       }
     });
   }
+  /* "Die Funktion fehlt" gilt fuer die Sitzung dieses Tabs: ein Neuladen fragt nicht noch einmal
+     (Audit EV-12: ein Aufruf je Seitenaufbau, der nur 404 sagte). Nur DIESE Antwort -- eine echte
+     Liste wird bei jedem Start neu geholt, sie ist ja die Meldung selbst. */
+  var EVM_FEHLT = "up_evm_fehlt_v1";
+  function evmFehltGemerkt(){ try { return window.sessionStorage.getItem(EVM_FEHLT) === String(APP.team); } catch(e){ return false; } }
+  function evmFehltMerken(){ try { window.sessionStorage.setItem(EVM_FEHLT, String(APP.team)); } catch(e){} }
   function eventMeldungenStart(){
     if (EVM.lauf) return EVM.lauf;
     if (!APP.team) return Promise.resolve(false);
+    if (evmFehltGemerkt()){ EVM.stand = false; EVM.lauf = Promise.resolve(false); return EVM.lauf; }
     EVM.lauf = rpc("list_impact_event_notices_v1", { p_team: APP.team }, { timeoutMs: 15000 }).then(function(erg){
       var f = (erg && erg.fehler) || {};
       if (erg && !erg.ok && (/PGRST202/.test(String(f.code || "")) || (erg.status === 404 && /could not find the function/i.test(String(f.message || "") + " " + String(f.details || ""))))){
         EVM.stand = false;
+        evmFehltMerken();
         return false;
       }
       if (!erg || !erg.ok){
@@ -19284,8 +19299,9 @@
       }) : null;
       if (!liste){ console.error("[events] notices could not be read"); return false; }
       EVM.mehr = Math.max(0, toNum(d.more_events) || 0);
-      liste.slice(0, EVM_SICHTBAR).forEach(evmZeigen);
-      EVM.schlange = liste.slice(EVM_SICHTBAR);
+      var sichtbar = evmSichtbar();
+      liste.slice(0, sichtbar).forEach(evmZeigen);
+      EVM.schlange = liste.slice(sichtbar);
       evmHinweis();
       return true;
     }, function(err){ console.error("[events] notices could not be loaded:", err); return false; });
