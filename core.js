@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261163;
+  var BUILD = 20261164;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -6983,6 +6983,7 @@
       el.removeAttribute("data-seite");
       var w = el.offsetWidth, h = el.offsetHeight;
       if (!z || !sichtbar(z)){
+        zuruecktreten(false);
         el.setAttribute("data-seite", "mitte");
         el.style.left = Math.max(RAND, Math.round((vw - w) / 2)) + "px";
         el.style.top = Math.max(RAND, Math.round((vh - h) / 2)) + "px";
@@ -7003,8 +7004,10 @@
         w = el.offsetWidth; h = el.offsetHeight;
         el.style.left = Math.max(RAND, Math.round((vw - w) / 2)) + "px";
         el.style.top = Math.max(RAND, Math.round(vh - h - RAND)) + "px";
+        zuruecktreten(irgendeinMenueOffen());
         return;
       }
+      zuruecktreten(false);
       if (seite === "rechts" || seite === "links"){
         left = seite === "rechts" ? rx.right + ABSTAND : rx.left - ABSTAND - w;
         top = klemmen(r.top + r.height / 2 - h / 2, RAND, vh - h - RAND);
@@ -7036,6 +7039,58 @@
       }
       return false;
     }
+    /* ZURUECKTRETEN IM DOCK (17.10.). Am Telefon liegt die Karte unten am Fenster -- genau dort,
+       wohin ein Menue aufklappt. Gemessen bei 375 breit: Typ-Menue 373-804, Karte 648-804, also
+       156px Ueberdeckung, darunter "Add your own". Wie Produkt-Touren (Appcues, Userpilot,
+       Intercom) tritt die Karte zurueck, solange ein Menue offen steht, und kommt nach dem
+       Schliessen an derselben Stelle auf demselben Schritt wieder. Gewaehlt, weil es das RUHIGSTE
+       Muster ist: nur die Deckkraft aendert sich, die Karte springt nirgendwohin. An den oberen
+       Rand docken haette Kopf und Feld des Popups zugedeckt, an denen der Nutzer gerade arbeitet,
+       und waere bei jedem Oeffnen quer ueber das Bild gesprungen.
+       Kein Geometrietest gegen das Menue: die Panels werden erst einen Takt nach dem Oeffnen
+       gelegt (dropdownOpened) und blenden 140ms ueber die Deckkraft ein -- ein Test in dieser
+       Zeit trifft eine Lage, die es gleich nicht mehr gibt, und die Karte blinzelte. Im Dock
+       deckt ein offenes Menue die Karte ohnehin fast immer: beide liegen in der unteren Haelfte
+       eines schmalen Fensters. Neben dem Ziel (rechts, links, unten, oben) bleibt alles wie es war.
+       Offen heisst: Popover mit is-open, oder ein Panel aus dem Dropdown-Register, das man sieht.
+       Das Register allein reicht nicht -- ein per Escape geschlossenes Panel bleibt gemessen
+       darin stehen (Deckkraft 0, ohne is-shown). */
+    function panelOffen(p){
+      if (!p || !document.contains(p) || !sichtbar(p)) return false;
+      if (p.classList && (p.classList.contains("is-shown") || p.classList.contains("is-open"))) return true;
+      var op = 1;
+      try { op = parseFloat(getComputedStyle(p).opacity); } catch(e){}
+      return op > 0;
+    }
+    function irgendeinMenueOffen(){
+      var i, p;
+      for (i = 0; i < POPOVERS.length; i++){
+        p = POPOVERS[i];
+        if (p.wrap && p.wrap.classList && p.wrap.classList.contains("is-open") && panelOffen(p.menu || p.wrap)) return true;
+      }
+      for (i = 0; i < OPEN_DD.length; i++){
+        if (OPEN_DD[i] && panelOffen(OPEN_DD[i].panel)) return true;
+      }
+      return false;
+    }
+    var zurueckGetreten = false;
+    function zuruecktreten(an){
+      an = !!an;
+      if (an === zurueckGetreten) return;
+      zurueckGetreten = an;
+      el.classList.toggle("is-zurueck", an);
+      el.setAttribute("aria-hidden", an ? "true" : "false");
+    }
+    /* Menues gehen auf Klick, Taste oder Druck daneben auf und zu, ohne dass ein Ereignis die
+       Karte erreicht. Darum nach jeder Eingabe neu legen: einmal sofort nach dem Takt des
+       Oeffnens, einmal nach dessen Einblendung (140ms). setTimeout statt rAF, wie ueberall hier. */
+    var pruefT1 = null, pruefT2 = null;
+    function menuePruefen(){
+      if (!offen) return;
+      clearTimeout(pruefT1); clearTimeout(pruefT2);
+      pruefT1 = setTimeout(lageBald, 0);
+      pruefT2 = setTimeout(lageBald, 160);
+    }
     function feldFokus(a){
       if (!a || a === document.body) return false;
       var tag = String(a.tagName || "").toLowerCase();
@@ -7044,6 +7099,7 @@
     }
     function taste(e){
       if (!offen) return;
+      menuePruefen();
       if (e.key === "Escape"){
         if (menueOffen()) return;
         e.preventDefault(); e.stopPropagation();
@@ -7052,6 +7108,9 @@
         return;
       }
       if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      /* Zurueckgetreten blaettert sie nicht -- eine Karte, die man nicht sieht, wechselt nicht
+         unbemerkt den Schritt. */
+      if (zurueckGetreten) return;
       var a = document.activeElement;
       if (!(el.contains(a) || !a || a === document.body) || (feldFokus(a) && !el.contains(a))) return;
       var b = el.querySelector(e.key === "ArrowRight" ? '[data-anl="weiter"]' : '[data-anl="zurueck"]');
@@ -7068,12 +7127,19 @@
       window.addEventListener("keydown", taste, true);
       window.addEventListener("scroll", aufScroll, { capture: true, passive: true });
       window.addEventListener("resize", aufScroll);
+      document.addEventListener("pointerdown", menuePruefen, true);
+      document.addEventListener("click", menuePruefen, true);
+      window.addEventListener("up-popover-close", menuePruefen);
       if (!themaAb && typeof onTheme === "function") themaAb = onTheme(aufThema);
     }
     function abmelden(){
       window.removeEventListener("keydown", taste, true);
       window.removeEventListener("scroll", aufScroll, { capture: true, passive: true });
       window.removeEventListener("resize", aufScroll);
+      document.removeEventListener("pointerdown", menuePruefen, true);
+      document.removeEventListener("click", menuePruefen, true);
+      window.removeEventListener("up-popover-close", menuePruefen);
+      clearTimeout(pruefT1); clearTimeout(pruefT2);
       if (themaAb){ try { themaAb(); } catch(e){} themaAb = null; }
       if (ro){ try { ro.disconnect(); } catch(e){} ro = null; beobachtet = null; }
     }
@@ -7109,6 +7175,7 @@
       offen = false;
       var fokusDrin = el.contains(document.activeElement);
       abmelden();
+      zuruecktreten(false);
       el.classList.remove("is-on");
       /* Aus dem Top Layer und aus dem Baum erst nach der Ueberblendung von .up-explain (140ms). */
       zuT = setTimeout(function(){ if (offen) return; obenRaus(); if (el.parentNode) el.parentNode.removeChild(el); }, 200);
