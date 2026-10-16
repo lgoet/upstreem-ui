@@ -102,7 +102,11 @@
     /* Teamwechsel: FRISCH, nicht aus dem Speicher -- zwischen zwei Wechseln koennen sich die
        Zaehlerstaende (Prompts, Brands) geaendert haben. Nur der Neuaufbau (Themenwechsel) nimmt
        den Speicher. */
-    if (UC.onTeamChange) UC.onTeamChange(function () { if (gem.team !== team()) { gem.team = team(); laden(true); } }, root);
+    var ohneTeamUhr = null;
+    if (UC.onTeamChange) UC.onTeamChange(function () {
+      if (ohneTeamUhr) { clearTimeout(ohneTeamUhr); ohneTeamUhr = null; }
+      if (gem.team !== team()) { gem.team = team(); laden(true); }
+    }, root);
 
     var ctrl = {
       root: root,
@@ -111,7 +115,17 @@
     };
     root.__utpCtrl = ctrl;
     /* Erst nach dem Aufbau der Tabelle: teams.js richtet sich ueber watchRoots ein. */
-    setTimeout(function () { gem.team = team(); laden(false); }, 0);
+    /* Ohne Team noch NICHT laden (17.10.): beim Direkteinstieg kommt das Team aus app_start erst
+       nach dem Aufbau, der Teamwechsel-Abonnent oben lud dann ein zweites Mal -- zwei Aufrufe je
+       Einstieg, im Fehlerfall zwei Meldungspaare. Wie Citations wartet die Seite auf das erste
+       setUpstreemTeam. Anders als dort laedt sie nach 2 s trotzdem: teams_portfolio_v1 braucht kein
+       Team, und wer (noch) keins hat, muss hier eines anlegen koennen. */
+    /* ladeNr: hat der Abonnent schon geladen (Team kam vor diesem Takt), nicht noch einmal. */
+    setTimeout(function () {
+      if (ladeNr) return;
+      if (team()) { gem.team = team(); laden(false); return; }
+      ohneTeamUhr = setTimeout(function () { ohneTeamUhr = null; if (ladeNr) return; gem.team = team(); laden(false); }, 2000);
+    }, 0);
     return ctrl;
   }
 
