@@ -1129,6 +1129,9 @@
       var b = e.target && e.target.closest ? e.target.closest(".up-export") : null;
       var tab = b && b.closest(".upt-root, .urt-root");
       if (!tab || !root.contains(tab)) return;
+      /* Gesperrt (Reiter Inactive, prompts-table exportKnopfSperren): kein Kontext, kein Hinweis --
+         der Grund steht schon als Tooltip am Knopf. */
+      if (b.getAttribute("aria-disabled") === "true") return;
       var k = exportKennung();
       if (!k || typeof window.upstreemExportOpen !== "function") {
         e.stopPropagation();

@@ -1331,6 +1331,31 @@
                '" type="button" data-status="' + p[0] + '">' + p[1] + '</button>';
       }).join("");
       root.classList.toggle("is-inactive-view", state.status === "inactive");
+      exportKnopfSperren();
+    }
+    /* INAKTIVE PROMPTS LASSEN SICH NICHT EXPORTIEREN (17.10., Regel des Nutzers; die Datenbank weist
+       p_status inactive nach exporte_17_10 Teil B ebenfalls ab). Auf dem Reiter Inactive ist der
+       Export-Knopf gesperrt, der Grund steht als Tooltip daran; auf Active ist er wieder frei.
+       aria-disabled statt disabled: an einem Knopf mit disabled kommt nicht in jedem Browser ein
+       mouseover an (WebKit hat dazu kein Signal gegeben), dann erschiene der Grund nie -- und ein
+       Knopf, der nur nicht reagiert, sieht nach kaputt aus. Abgewiesen wird der Klick in
+       openExport; die Seite (prompts-page.js) setzt dann auch keinen Kontext. */
+    UC.addMessages && UC.addMessages("de", {
+      "Inactive prompts can't be exported.": "Inaktive Prompts lassen sich nicht exportieren."
+    });
+    function exportGesperrt(){ return state.status === "inactive"; }
+    function exportKnopfSperren(){
+      var zu = exportGesperrt();
+      [].forEach.call(root.querySelectorAll(".up-export:not(.up-ph-addbtn)"), function(b){
+        if (zu){
+          b.setAttribute("aria-disabled", "true");
+          b.setAttribute("data-tip", UC.t("Inactive prompts can't be exported."));
+        } else if (b.getAttribute("aria-disabled") === "true"){
+          /* Nur zuruecknehmen, was die Sperre gesetzt hat -- der Knopf traegt sonst kein data-tip. */
+          b.removeAttribute("aria-disabled");
+          b.removeAttribute("data-tip");
+        }
+      });
     }
     function setStatus(next){
       if (next !== "active" && next !== "inactive") return;
@@ -4522,6 +4547,7 @@
        Hands off to the shared export popup component, exactly like urls-table/domains-table:
        put that popup's instanceId in data-export-instance. */
     function openExport(){
+      if (exportGesperrt()) return;   /* Reiter Inactive: kein Export (exportKnopfSperren) */
       var id = String(root.getAttribute("data-export-instance") || "").trim();
       var fn = window.upstreemExportOpen
         || (window.parent && window.parent.upstreemExportOpen)
