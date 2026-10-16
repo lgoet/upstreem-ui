@@ -48,7 +48,7 @@
      Schleier, Weichzeichner, Einblendung, Karte (Radius 12, Tiefe e-4, Palette hell/dunkel),
      Kopfzeile, Titel 22/500 und Schliessknopf kommen aus core (.up-topicmodal-backdrop / -card /
      -head / -title, .up-popup-close). Hier steht nur, was DIESER Dialog anders braucht.
-     Werte aus der Leinwand C: Breite 760, Kopf 16, Rumpf 548 hoch mit Liste 232 links (Polster
+     Werte aus der Leinwand C: Breite 760, Kopf 16, Rumpf 548 (seit 17.10. 565) hoch mit Liste 232 links (Polster
      4/8/8) und Einstellungen rechts (Polster 20/24, Abstand 22 zwischen den Feldern), Fuss 12/16
      auf dem Grund der Seite. Die Karte selbst hat darum kein Polster und keinen Abstand: Liste
      und Einstellungen rollen je fuer sich, Kopf und Fuss bleiben stehen. */
@@ -60,10 +60,13 @@
   }
   .uex-head { padding: 16px; }
 
-  /* Der Rumpf ist 548 hoch und gibt nach, wenn das Fenster niedriger ist (flex-shrink unter der
-     max-height der Karte) -- dann rollen Liste und Einstellungen, nie die Karte. */
+  /* Der Rumpf ist 565 hoch und gibt nach, wenn das Fenster niedriger ist (flex-shrink unter der
+     max-height der Karte) -- dann rollen Liste und Einstellungen, nie die Karte. 565 = die volle
+     Liste ohne Rollen: 12 Zeilen x 32 + 5 Bereiche x 28 + 7 Abstaende x 4 (nur zwischen zwei
+     Zeilen) + Polster 4/8 = 564, plus die Linie oben (1). Gemessen 17.10.: mit 564 rollte die
+     volle Liste um 1px. Die Leinwand hatte 548, ohne die Abstaende. */
   .uex-rumpf {
-    flex: 0 1 548px; min-height: 0;
+    flex: 0 1 565px; min-height: 0;
     display: grid; grid-template-columns: 232px minmax(0, 1fr);
     border-top: 1px solid var(--vc-border);
   }
@@ -91,15 +94,15 @@
   }
   /* Die Zeile ist .up-optrow aus core, wie die Navigation der Preferences. Masse nach der
      Leinwand und nach Rolle: 32 hoch (Knopfstufe), Radius 6 (25 bis 36 hoch), Schrift 13, Abstand
-     8, Zeichen 16. Ohne den Abstand von 4, den core zwischen zwei Zeilen setzt: die Leinwand steht
-     ohne, und nur so passen alle zwoelf in die 548 (12 x 32 + 5 x 28 + 12 = 536). */
+     8, Zeichen 16. Zwischen zwei Zeilen die 4 von core (.up-optrow + .up-optrow) wie in jedem
+     Menue der App (Nutzer 17.10.: "wie ueberall 4px gap"); bis dahin stand hier 0 nach der
+     Leinwand. Der Rumpf ist dafuer 565 statt 548 hoch, siehe .uex-rumpf. */
   .uex-nav .up-optrow.uex-navitem {
     flex: 0 0 auto; height: var(--up-h-btn); padding: 0 8px; gap: 8px;
     border-radius: var(--up-r-m);
     font-size: var(--up-fs-m); font-weight: var(--up-fw-n); color: var(--vc-muted);
     transition: background-color var(--up-t-1) var(--up-ease), color var(--up-t-1) var(--up-ease);
   }
-  .uex-nav .up-optrow.uex-navitem + .up-optrow.uex-navitem { margin-top: 0; }
   /* Hover und gewaehlt wie in den Preferences (preferences.css .ums-nav): der Hover die halbe
      Staerke des Gewaehlt-Tons, gewaehlt mit Flaeche UND Gewicht. */
   .uex-nav .up-optrow.uex-navitem:hover { background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); color: var(--vc-text); }
