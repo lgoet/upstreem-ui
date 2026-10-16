@@ -391,7 +391,7 @@
       // share_pct isn't in the URL payload; global_share_pct is the equivalent figure
       var share = dm ? r.domainshare_pct
                      : ((r.global_share_pct != null) ? r.global_share_pct : r.share_pct);
-      return '<div class="up-row" data-url="' + esc(url) + '" tabindex="0" role="button">' +
+      return '<div class="up-row" data-url="' + esc(url) + '" tabindex="0">' +
         '<div class="up-td uut-td-domain">' +
           '<span class="uut-logo-box up-fav' + (fav ? " has-img" : "") + '">' +
             '<span class="uut-logo-ltr">' + esc(initial) + '</span>' +
@@ -737,6 +737,7 @@
     var pagerKit = UC.makePager({
       root: root, state: state,
       onClamp: function(){ persist(); },
+      neuLaden: true,   /* Server-Tabelle: eine geklemmte Seite wird neu geholt (TAB-02) */
       onChange: function(){ persist(); renderTable(); firePage(); }
     });
     var pageCount = pagerKit.pageCount, offset = pagerKit.offset;

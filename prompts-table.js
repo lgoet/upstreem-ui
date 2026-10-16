@@ -802,6 +802,10 @@
          is precisely what made render() fire uptGroups once per re-render. */
       groups: Array.isArray(saved.groups) ? saved.groups : [],
       groupsHasData: !!saved.groupsHasData,
+      /* Die Gruppenliste kam nicht an (Abfrage gescheitert): ein Zustand FUER SICH, nicht "keine
+         Gruppen". Mit gemerkt, sonst hiess ein Neuaufbau nach dem Fehler "es gibt keine Gruppen"
+         (CLAUDE.md §2, derselbe Grund wie leseFehler oben). */
+      groupsFehler: !!saved.groupsFehler,
       groupsLoading: false,
       groupSort: readGroupSort(),           // "count" (default) | "visibility" | "name"
       groupSortDir: readGroupSortDir(),     // "desc" (default) | "asc" -- direction for the Sorter above
@@ -897,7 +901,7 @@
         rows: state.rows, totalCount: state.totalCount, ohneTopic: state.ohneTopic, summe: state.summe, hasData: state.hasData,
         leseFehler: !!state.leseFehler,
         flatAsked: state.flatAsked,
-        groups: state.groups, groupsHasData: state.groupsHasData
+        groups: state.groups, groupsHasData: state.groupsHasData, groupsFehler: !!state.groupsFehler
       };
       /* Die Werkzeugleiste haengt hier mit dran, weil ein Filter sich ohne render() aendern
          kann: die Sucheingabe setzt state.query SOFORT und ruft persist(), rendert aber erst
@@ -1251,6 +1255,8 @@
     function syncSelectAll(){
       var box = root.querySelector("[data-selectall]");
       if (!box) return;
+      /* Ein Haken ohne Namen liest ein Vorleser als "Kontrollkasten" (17.10., Audit TAB-06). */
+      box.setAttribute("aria-label", t("Select all"));
       /* Same reasoning as toggleSelectAll() above -- while a real group is open in wide grouping
          view, this box's checked/indeterminate state has to read off that group's own rows
          (state.gRows), not state.rows, or it never agrees with what's actually on screen. Mirrors
@@ -2553,9 +2559,9 @@
          should already cover, but that individually never got a state.selected[id]=true entry. */
       var checked = (alleGewaehlt() && !state.excluded[id]) || !!state.selected[id];
       var text = String(r.prompt_text == null ? "" : r.prompt_text);
-      return '<div class="up-row' + (checked ? " is-selected" : "") + '" data-id="' + esc(id) + '" tabindex="0" role="button">' +
+      return '<div class="up-row' + (checked ? " is-selected" : "") + '" data-id="' + esc(id) + '" tabindex="0">' +
         '<div class="up-td upt-td-prompt">' +
-          '<span class="upt-check' + (checked ? " is-checked" : "") + '" role="checkbox" tabindex="0" aria-checked="' + (checked ? "true" : "false") + /* Der Haken steht IMMER im DOM, auch ungehakt. Die CSS blendet ihn ueber opacity und
+          '<span class="upt-check' + (checked ? " is-checked" : "") + '" role="checkbox" tabindex="0" aria-label="' + esc(t("Select prompt") + ": " + text) + '" aria-checked="' + (checked ? "true" : "false") + /* Der Haken steht IMMER im DOM, auch ungehakt. Die CSS blendet ihn ueber opacity und
              scale ein (.upt-check svg / .is-checked svg) -- ohne Element im Baum kann dieser
              Uebergang nie laufen, und der Haken poppte statt zu wachsen. */
           '" data-select="' + esc(id) + '">' + CHECK_SVG + '</span>' +
@@ -3245,7 +3251,7 @@
       var gChecked = state.gSelectAllGroup === id || allSel;
       var gIndet = !gChecked && anySel;
       return '<span class="upt-check upt-grp-selectall is-visible' + (gChecked ? " is-checked" : (gIndet ? " is-indeterminate" : "")) +
-        '" role="checkbox" tabindex="0" aria-checked="' + (gChecked ? "true" : (gIndet ? "mixed" : "false")) +
+        '" role="checkbox" tabindex="0" aria-label="' + esc(t("Select all")) + '" aria-checked="' + (gChecked ? "true" : (gIndet ? "mixed" : "false")) +
         /* Haken immer im DOM, siehe rowHtml -- sonst laeuft der Uebergang nicht. */
         '" data-grp-selectall="' + esc(id) + '">' + CHECK_SVG + '</span>';
     }
@@ -3468,8 +3474,8 @@
         if (p === "gap") return '<span class="up-page-gap">…</span>';
         return '<button class="up-page' + (p === cur ? " is-active" : "") + '" type="button" data-grppage="' + p + '">' + p + '</button>';
       }).join("");
-      var info = total ? '<span class="up-pager-info">' + UC.fmtTotal(from + 1) + '–' +
-        UC.fmtTotal(from + shown) + ' of ' + UC.fmtTotal(total) + '</span>' : "";
+      var info = total ? '<span class="up-pager-info">' + UC.fmtInt(from + 1) + '–' +
+        UC.fmtInt(from + shown) + ' of ' + UC.fmtInt(total) + '</span>' : "";
       return '<div class="upt-grp-foot">' +
         '<div class="up-pagesize"><span class="up-pagesize-lbl">Rows</span>' +
           '<div class="up-pagesize-seg" role="group" aria-label="Rows per page">' + sizes + '</div></div>' +
@@ -3519,8 +3525,11 @@
          briefly) but never overshoots into a false-positive flash like this did. */
       /* Der Fehlerfall VOR dem Skelett: endloses Laden sieht aus wie "gleich da", und genau so
          wurde es gemeldet. */
-      if (state.groupsTimeout && !state.groupsHasData){
-        elTbody.innerHTML = UC.leerHtml({ titel: "No groups", text: "No group data available." });
+      /* Gescheitert und ausgeblieben sehen gleich aus und heissen beide "kaputt", nie "leer": vorher
+         stand hier "No groups / No group data available." (17.10. gemessen, nur ein Toast sagte die
+         Wahrheit und verschwand). Der Kasten ist derselbe wie in der flachen Tabelle. */
+      if (state.groupsFehler || (state.groupsTimeout && !state.groupsHasData)){
+        elTbody.innerHTML = UC.leseFehlerHtml("groups");
         applyCols();
         if (state.groupsWide && elGrpSidelist) elGrpSidelist.innerHTML = "";
         return;
@@ -3928,6 +3937,7 @@
     function fetchGroups(){
       state.groupsLoading = true;
       state.groupsTimeout = false;
+      state.groupsFehler = false;
       grpTimeoutStarten();
       renderTable();
       /* Hidden groupings are simply not sent: the server never computes a section nobody wants to
@@ -3988,7 +3998,9 @@
        just on a full renderTable() pass. */
     function syncFlatFootVisibility(){
       var grouped = groupingOn();
-      var showFlatFoot = !grouped || (state.groupsWide && !state.expandedGroup);
+      /* Ohne Gruppenliste keine Seitenleiste: "1-15 of 102" gehoert zur flachen Liste, die hier nicht
+         gezeigt wird, und stuende unter dem Fehler als waere nichts gewesen. */
+      var showFlatFoot = !grouped || (state.groupsWide && !state.expandedGroup && !state.groupsFehler);
       /* Explicit "flex"/"none" with !important BOTH ways, not a clear-to-"" for the show case --
          .up-root.is-grouped .up-foot{display:none} in prompts-table.css would otherwise still win
          while grouped (an absent inline style loses to ANY class rule, !important or not), which is
@@ -4158,7 +4170,7 @@
       }).join("");
       html += '<div class="up-pop-div"></div>' +
         '<div class="up-pop-row"><span class="up-pop-label">Descending</span>' +
-          '<span class="up-switch' + (state.groupSortDir === "desc" ? " is-on" : "") + '" role="switch" data-grpside-sortdir></span>' +
+          '<span class="up-switch' + (state.groupSortDir === "desc" ? " is-on" : "") + '" role="switch" aria-label="Descending" aria-checked="' + (state.groupSortDir === "desc" ? "true" : "false") + '" data-grpside-sortdir></span>' +
         '</div>';
       elGrpSideSortMenu.innerHTML = html;
     }
@@ -4507,6 +4519,7 @@
          the Inactive tab, showing the wrong page count and "X-Y of Z" for that view. */
       total: currentTotal,
       onClamp: function(){ persist(); },
+      neuLaden: true,   /* Server-Tabelle: eine geklemmte Seite wird neu geholt (TAB-02) */
       onChange: function(){ persist(); renderTable(); firePage(); }
     });
     var pageCount = pagerKit.pageCount, offset = pagerKit.offset;
@@ -4771,7 +4784,8 @@
       "Avg. brands per prompt": "Ø Marken je Prompt", "per prompt": "je Prompt",
       "Competitors seen": "Gesehene Wettbewerber", "competitors": "Wettbewerber",
       "Most common intent": "Häufigster Intent", "Markets used": "Genutzte Märkte",
-      "Most common market": "Häufigster Markt", "Added last 7 days": "Neu in 7 Tagen", "last 7 days": "in 7 Tagen"
+      "Most common market": "Häufigster Markt", "Added last 7 days": "Neu in 7 Tagen", "last 7 days": "in 7 Tagen",
+      "groups": "Gruppen", "Select prompt": "Prompt auswählen"
     });
     /* "aus" ist die Wahl "None": keine Berechnung, die Zelle zeigt "+ Calculation". */
     var SUM_AUS = "aus";
@@ -4882,6 +4896,9 @@
         n = tot != null ? tot : ((state.hasData && state.rows.length) ? state.rows.length : null);
         /* Ein unlesbarer Payload hat keine Anzahl -- die im Speicher ist die eines anderen Stands. */
         if (state.leseFehler){ n = null; S = {}; }
+        /* Fehlt die Gruppenliste, steht in der Gruppenansicht keine Zeile da, die man zaehlen
+           koennte: die flache Gesamtzahl waere eine Zahl ohne Gegenstueck. */
+        if (state.groupsFehler && groupingOn()){ n = null; S = {}; }
       }
       var erste = UC.sumPaarHtml(n, "count", "anzahl");
       var zellen = COLUMNS.map(function(c){
@@ -6162,7 +6179,7 @@
         return { an: groupingOn(), modus: groupModeWirksam(), eigene: eigene, nach: intentsMoeglich() ? state.groupBy : "topic" };
       },
       /* ---- grouped view: the two setters Bubble calls back into ---- */
-      setGroups: function(rows){
+      setGroups: function(rows, fehler){
         /* Die Gruppe der noch nicht zugeordneten Prompts (group_key "pending") ist keine Gruppe,
            die man waehlen soll (14.10.): sie ist ein Zwischenzustand von Sekunden. Ihre Prompts
            stehen gleich danach in ihrer Intent-Gruppe. */
@@ -6172,6 +6189,7 @@
         state.groupsHasData = true;
         state.groupsLoading = false;
         state.groupsTimeout = false;
+        state.groupsFehler = !!fehler;
         clearTimeout(grpTimeout);
         GROUPS_PENDING[instanceId] = false;   // the pending poll has landed; a later one may run
         /* A fresh header set invalidates whatever section was open — the sections themselves may
@@ -6670,7 +6688,7 @@
     }
     return [];
   }
-  function doGroups(id, rows){
+  function doGroups(id, rows, fehler){
     /* Called as setPromptsTableGroups(ROWS) with the id left out: treat the first argument as
        the rows and fall back to the only root on the page. */
     if (rows === undefined && (Array.isArray(id) || (id && typeof id === "object"))){ rows = id; id = null; }
@@ -6686,7 +6704,7 @@
       console.warn("[prompts-table] setPromptsTableGroups got 0 groups. Second argument was: " +
         describeArg(rows) + ". Expected an array of group rows (or the JSON string of one).");
     }
-    ctrl.setGroups(list);
+    ctrl.setGroups(list, fehler === true || fehler === "error");
     return true;
   }
   function doGroupPrompts(id, rows, requestId){

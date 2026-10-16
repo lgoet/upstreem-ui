@@ -405,7 +405,7 @@
             CHEV_SVG +
           '</button>'
         : '<span class="up-pages">' + fmtTotal(pages || 0) + " pages" + '</span>';
-      return '<div class="up-row' + (isOpen ? " is-expanded" : "") + '" data-domain="' + esc(dom) + '" tabindex="0" role="button">' +
+      return '<div class="up-row' + (isOpen ? " is-expanded" : "") + '" data-domain="' + esc(dom) + '" tabindex="0">' +
         '<div class="up-td up-td-domain">' +
           '<span class="udt-logo-box up-fav' + (fav ? " has-img" : "") + '">' +
             '<span class="udt-logo-ltr">' + esc(initial) + '</span>' +
@@ -616,7 +616,7 @@
         if (p === "gap") return '<span class="up-page-gap">…</span>';
         return '<button class="up-page' + (p === cur ? " is-active" : "") + '" type="button" data-subpage="' + p + '">' + p + '</button>';
       }).join("");
-      var info = total ? '<span class="up-pager-info">' + fmtInt(from + 1) + '–' + fmtInt(from + shown) + ' of ' + fmtTotal(total) + '</span>' : "";
+      var info = total ? '<span class="up-pager-info">' + fmtInt(from + 1) + '–' + fmtInt(from + shown) + ' of ' + fmtInt(total) + '</span>' : "";
       return '<div class="udt-sub-foot">' +
         '<div class="up-pagesize"><span class="up-pagesize-lbl">Rows</span>' +
           '<div class="up-pagesize-seg" role="group" aria-label="Rows per page">' + sizes + '</div></div>' +
@@ -1056,6 +1056,7 @@
     var pagerKit = UC.makePager({
       root: root, state: state,
       onClamp: function(){ persist(); },
+      neuLaden: true,   /* Server-Tabelle: eine geklemmte Seite wird neu geholt (TAB-02) */
       onChange: function(){ closeDrilldown(); persist(); renderTable(); firePage(); }
     });
     var pageCount = pagerKit.pageCount, offset = pagerKit.offset;
