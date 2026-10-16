@@ -105,6 +105,10 @@
 .uev-angabe { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
 .uev-angabe svg { width: 14px; height: 14px; flex: 0 0 auto; }
 .uev-angabe-datum { font-variant-numeric: tabular-nums; }
+/* "5 new pages since the event, 2 cited" auf der Karte (Teil C): eine ruhige Angabe mit Zeichen unter der
+   Beschreibung, leiser als die Kennzahlen darunter; der Text darf umbrechen, das Zeichen bleibt oben. */
+.uev-karte-neu { margin-top: 12px; align-items: flex-start; font-size: var(--up-fs-s); line-height: 1.4; color: var(--vc-muted); }
+.uev-karte-neu svg { margin-top: 1px; }
 /* Der Umfang als Raster: Bezeichnung ueber dem Wert, drei gleich breite Zellen. */
 .uev-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; width: 100%; margin: 0; }
 .uev-stat { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -788,6 +792,9 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-explain-konf .uev-konf-n { color: color-mix(in srgb, currentColor 68%, transparent); }
 .uev-explain-konf .uev-konf-urteil { color: inherit; }
 .uev-explain-konf .uev-konf-urteil svg { width: 14px; height: 14px; }
+/* Die Gruende der DB unter dem Satz des Urteils "Not enough data yet": je eine Zeile, Abstand wie
+   zwischen zwei Saetzen der breiten Erklaerkarte (.uev-explain-breit). */
+.up-explain-t.uev-explain-grund { margin-top: 8px; }
 
 /* ---- SEITENABDECKUNG JE REGEL (17.10., Auftrag Teil C, events.js abdFuellen) -----------------
    Im Kopf des Regel-Abschnitts unter dem Untertitel: "12 of 43 pages cited" mit duennem Balken,
@@ -844,7 +851,12 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-abd-mehr svg { width: 14px; height: 14px; flex: 0 0 14px; }
 /* Telefon: das Datum weicht, Pfad und Marken bleiben -- wie im Sitemap-Waehler (.uev-sm-datum). */
 .uev-root.is-vnarrow .uev-abd-datum { display: none; }
-.uev-root.is-vnarrow .uev-abd-satz { white-space: normal; }
+.uev-root.is-vnarrow .uev-abd-satz, .uev-root.is-vnarrow .uev-abd-leise { white-space: normal; }
+/* EV-10: die leise Zeile unter "Affected URLs" (nur mit gesetztem Filter); die Zeile mit gleichem Hinweis in den
+   Regel-Abschnitten steht in .uev-ziel-hinweis. Der Text darf umbrechen. */
+.uev-urls-hinweis { margin-top: 12px; }
+.uev-filterhinweis { align-items: flex-start; }
+.uev-filterhinweis svg { margin-top: 3px; }
 
 /* ---- KAMPAGNEN MIT ZEITRAUM (17.10., DB-Auftrag Teil B) ------------------------------------
    Der Status als dritte Angabe neben Datum und Typ: Zeichen + Text, keine Pille. Laufend in der

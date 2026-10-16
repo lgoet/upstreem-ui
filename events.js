@@ -256,6 +256,17 @@
       (st ? '<span class="uev-angabe uev-status is-' + st.s + '">' + UC.icon(st.ic, 2) + '<span>' + esc(st.text) + '</span></span>' : '') +
     '</div>';
   }
+  /* NEUE SEITEN AUF DER KARTE (17.10., Teil C): new_page_count und new_page_cited_count aus
+     list_impact_events_v3 -- Seiten der Sitemap, die seit dem Event neu sind, und wie viele davon
+     schon zitiert werden. null heisst "noch kein Regel-Ziel gelesen" (nichts zeigen, keine 0),
+     0 heisst "nichts Neues" (auch nichts zeigen). Eine ruhige Angabe mit Zeichen, keine Pille. */
+  function neueSeitenHtml(ev) {
+    var n = num(ev && ev.new_page_count), c = num(ev && ev.new_page_cited_count);
+    if (!(n > 0) || (ev.status === "planned")) return "";
+    var k = n === 1 ? (c > 0 ? "{n} new page since the event, cited" : "{n} new page since the event, not cited yet")
+                    : (c > 0 ? "{n} new pages since the event, {c} cited" : "{n} new pages since the event, none cited yet");
+    return '<span class="uev-angabe uev-karte-neu">' + UC.icon("fileText", 2) + '<span>' + esc(ersetze(t(k), { n: zahl(n), c: zahl(c) })) + '</span></span>';
+  }
   /* Der Umfang als Kennzahlen-Raster (Vorlage des Nutzers vom 03.10.: Bezeichnung ueber dem Wert).
      Immer drei Zellen an derselben Stelle, auch bei 0 URLs -- in einer Reihe Karten sucht das Auge
      die Zahl dort, wo sie auf der Nachbarkarte stand; der Vertrag (3.1) zeigt die URLs ebenfalls
@@ -289,6 +300,21 @@
     } catch (e) { return { host: String(url || ""), pfad: "", start: false }; }
   }
   function pfadText(hp) { return hp.start ? t("Homepage") : hp.pfad; }
+  /* Der Host genau, wie das Ziel ihn traegt (EV-08): mit www., und http:// nur dort, wo es nicht
+     https ist. Nur fuer Zeilen, die sonst gleich aussaehen (hostPfad streicht beides). */
+  /* Der Koerper eines Ziels fuer p_targets (create/update/add): kind und input, bei einer Regel
+     (Pfad, Domain) dazu die Sitemap, aus der es gewaehlt wurde (sitemap_url, Teil B/C): so liest die
+     Seitenabdeckung genau die Datei, deren Baum der Nutzer gesehen hat. Eine URL-Seite bekommt
+     keine (die DB ignoriert sie dort), ein Ziel ohne bekannte Sitemap (getippt) auch nicht --
+     fehlt der Schluessel, bleibt eine vorhandene Sitemap eines Ziels unveraendert. */
+  function zielBody(z) {
+    var b = { kind: z.kind, input: z.input };
+    if (z.sitemap && z.kind !== "url") b.sitemap_url = z.sitemap;
+    return b;
+  }
+  function hostGenau(url, hp) {
+    try { var u = new URL(String(url)); return (u.protocol === "http:" ? "http://" : "") + u.hostname; } catch (e) { return hp.host; }
+  }
   /* fremdUrl: in der App ueber die eigene Adresse (core, Datenschutz 14.10.). */
   function favicon(url) {
     var h = hostPfad(url).host;
@@ -356,7 +382,7 @@
     vergleich: { h: "Comparison", t: "Upstreem compares the affected Prompts with other eligible Prompts that were active when this event was created." },
     /* Die Spalte "First cited" der URL-Tabelle (03.10.: "bitte einen Explainer, der die Metrik
        erklaert"). Beispielwerte oben wie in jeder Spaltenerklaerung. */
-    zitiert: { h: "First cited", t: "When an AI response first cited this URL for the affected prompts after the event. \u201cBefore event start\u201d means it was also cited in the six months before the event.",
+    zitiert: { h: "First cited", t: "When an AI response first cited this URL for the affected prompts after the event. \u201cBefore event start\u201d means it was also cited in the six months before the event. This always covers all models and markets, whatever the filters say.",
       chips: [{ text: "After 10 days (18. Sep 2026)", ja: true }, { text: "Not yet" }] }
   };
   var METRIKEN = [
@@ -384,13 +410,33 @@
     if (c && abschnitt) c = c[abschnitt];
     return c && typeof c === "object" && KONF[c.verdict] ? c : null;
   }
-  /* Der Block eines Ziels (targets[].confidence, urls[].confidence): der Vertrag laesst offen, ob
-     er den Block selbst oder ihn unter dem Namen der Kennzahl traegt -- beides wird gelesen. */
+  /* Der Block eines Ziels, so wie die DB ihn liefert (Rueckmeldung 17.10., Frage 15): der Block
+     steht UNTER dem Namen seiner Kennzahl -- targets[].confidence.share_of_citations bei einer
+     Regel, urls[].confidence.global_share bei einer URL. */
   function konfZiel(z, feld) {
-    var c = z && z.confidence && typeof z.confidence === "object" ? z.confidence : null;
-    if (!c) return null;
-    if (KONF[c.verdict]) return c;
-    return c[feld] && KONF[c[feld].verdict] ? c[feld] : null;
+    var c = z && z.confidence && typeof z.confidence === "object" ? z.confidence[feld] : null;
+    return c && typeof c === "object" && KONF[c.verdict] ? c : null;
+  }
+  /* Die Gruende der DB (reasons[], feste Codes) als Saetze fuer die Erklaerkarte, ohne
+     Statistikbegriffe: was fehlt, damit das Urteil moeglich wird. {n}: min_runs des Blocks (50, bei
+     Rang und Sentiment 30). Ein unbekannter Code sagt nichts -- nie der Code selbst. */
+  var KONF_GRUND = {
+    no_after_data: "There are no answers after the event yet.",
+    no_value: "There is nothing to compare yet.",
+    runs_before_low: "Too few answers before the event (at least {n} needed).",
+    runs_after_low: "Too few answers after the event (at least {n} needed).",
+    prompts_low: "Too few prompts have a value.",
+    comparison_runs_before_low: "Too few answers in the comparison group before the event.",
+    comparison_runs_after_low: "Too few answers in the comparison group after the event.",
+    comparison_prompts_low: "Too few prompts in the comparison group have a value.",
+    noise_points_low: "There isn't enough history before the event to tell what is normal.",
+    before_days_low: "Fewer than 7 days of data before the event.",
+    after_days_low: "Fewer than 7 days of data after the event.",
+    comparable_set_mismatch: "These numbers can't be compared reliably yet."
+  };
+  /* In den Schluessel der Erklaerkarte (data-explain): nur bekannte Codes, Komma-getrennt. */
+  function konfGruende(c) {
+    return (c && isArr(c.reasons) ? c.reasons : []).filter(function (r) { return KONF_GRUND[r]; }).slice(0, 3).join(",");
   }
   function konfText(code) {
     var e = UC.explainCopy ? UC.explainCopy(KONF[code].schl) : null;
@@ -413,7 +459,7 @@
     return '<span class="uev-konf">' +
       (zahlTxt ? '<span class="uev-konf-n"' + (tip ? ' data-tip="' + esc(tip) + '"' : '') + '>' + esc(zahlTxt) + '</span>' : '') +
       '<span class="uev-konf-urteil ' + k.kl + (richtung ? " is-" + richtung : "") + (klickbar ? ' uev-erklaer" tabindex="0" data-explain="' +
-        esc(["konf", c.verdict, n == null ? "" : n, richtung].join("|")) : '') + '">' +
+        esc(["konf", c.verdict, n == null ? "" : n, richtung, konfGruende(c), num(c.min_runs) || ""].join("|")) : '') + '">' +
         UC.icon(k.ic, 2) + '<span>' + esc(tx.h) + '</span></span>' +
     '</span>';
   }
@@ -433,7 +479,7 @@
     var vb = num(af.runs_before), va = num(af.runs_after), k = KONF[c.verdict];
     var n = vb == null && va == null ? null : (vb || 0) + (va || 0), r = konfRichtung(c, feld);
     return '<span class="uev-konf-urteil is-zeichen ' + k.kl + (r ? " is-" + r : "") + ' uev-erklaer" tabindex="0" role="img" aria-label="' + esc(konfText(c.verdict).h) +
-      '" data-explain="' + esc(["konf", c.verdict, n == null ? "" : n, r].join("|")) + '">' + UC.icon(k.ic, 2) + '</span>';
+      '" data-explain="' + esc(["konf", c.verdict, n == null ? "" : n, r, konfGruende(c), num(c.min_runs) || ""].join("|")) + '">' + UC.icon(k.ic, 2) + '</span>';
   }
   /* Die Erklaerkarte am Urteil (Format CLAUDE.md/Memory): helle Platte mit der Zeile, wie die
      Kachel sie zeigt, Titel = das Wort des Urteils, der Satz aus core. Der Schluessel traegt, was
@@ -442,8 +488,13 @@
     var p = String(key).split("|"), code = p[1];
     if (!KONF[code]) return "";
     var n = p[2] === "" ? null : num(p[2]), tx = konfText(code);
+    /* Die Gruende nur beim Urteil "Not enough data yet": dort sind sie das, was der Nutzer wissen
+       will. Bei den anderen Urteilen liefert die DB keine (reasons []). */
+    var gruende = code === "too_little_data" && p[4] ? p[4].split(",").filter(function (r) { return KONF_GRUND[r]; }) : [];
+    var min = num(p[5]) || 50;
     return '<div class="up-explain-vis uev-explain-konf">' + konfZeile({ verdict: code }, "", n, null, null, p[3] || "", false) + '</div>' +
-      '<div class="up-explain-h">' + esc(tx.h) + '</div><div class="up-explain-t">' + esc(tx.t) + '</div>';
+      '<div class="up-explain-h">' + esc(tx.h) + '</div><div class="up-explain-t">' + esc(tx.t) + '</div>' +
+      gruende.map(function (r) { return '<div class="up-explain-t uev-explain-grund">' + esc(ersetze(t(KONF_GRUND[r]), { n: zahl(min) })) + '</div>'; }).join("");
   }
 
   /* Die Fehler-Codes des Vertrags (Tabelle 4) als Satz fuer den Nutzer. Nie der Code selbst,
@@ -725,8 +776,8 @@
     "First cited": "Erstmals zitiert", "Global share before": "Global Share vorher", "Global share after": "Global Share nachher",
     "On event day": "Am Event-Tag", "After {n} days ({date})": "Nach {n} Tagen ({date})", "After 1 day ({date})": "Nach 1 Tag ({date})",
     "Before event start": "Vor Eventstart", "After 10 days (18. Sep 2026)": "Nach 10 Tagen (18. Sep 2026)",
-    "When an AI response first cited this URL for the affected prompts after the event. \u201cBefore event start\u201d means it was also cited in the six months before the event.":
-      "Wann eine KI-Antwort diese URL nach dem Event zum ersten Mal für die betroffenen Prompts zitiert hat. \u201eVor Eventstart\u201c heißt: auch in den sechs Monaten vor dem Event zitiert.",
+    "When an AI response first cited this URL for the affected prompts after the event. \u201cBefore event start\u201d means it was also cited in the six months before the event. This always covers all models and markets, whatever the filters say.":
+      "Wann eine KI-Antwort diese URL nach dem Event zum ersten Mal für die betroffenen Prompts zitiert hat. \u201eVor Eventstart\u201c heißt: auch in den sechs Monaten vor dem Event zitiert. Das gilt immer für alle Modelle und Märkte, egal welche Filter gesetzt sind.",
     "Not yet": "Noch nicht", "Not within 6 months": "Nicht in 6 Monaten",
     "No URLs added yet": "Noch keine URLs",
     "Add pages, articles or external sources associated with this event.":
@@ -1018,7 +1069,30 @@
     "We couldn't read your sitemap. We'll try again tomorrow.": "Wir konnten deine Sitemap nicht lesen. Wir versuchen es morgen wieder.",
     "We're reading your sitemap for the first time.": "Wir lesen deine Sitemap zum ersten Mal.",
     "No pages in your sitemap match this rule.": "Keine Seite deiner Sitemap passt zu dieser Regel.",
-    "Only the first {n} pages": "Nur die ersten {n} Seiten",
+    "The {n} most recently updated of {total} pages": "Die {n} zuletzt geänderten von {total} Seiten",
+    "Only the {n} most recently updated pages": "Nur die {n} zuletzt geänderten Seiten",
+    "plus {n} cited page not in your sitemap": "dazu {n} zitierte Seite, die nicht in deiner Sitemap steht",
+    "plus {n} cited pages not in your sitemap": "dazu {n} zitierte Seiten, die nicht in deiner Sitemap stehen",
+    "{n} cited page not in your sitemap": "{n} zitierte Seite steht nicht in deiner Sitemap",
+    "{n} cited pages not in your sitemap": "{n} zitierte Seiten stehen nicht in deiner Sitemap",
+    "{n} new page since the event, cited": "{n} neue Seite seit dem Event, zitiert",
+    "{n} new page since the event, not cited yet": "{n} neue Seite seit dem Event, noch nicht zitiert",
+    "{n} new pages since the event, none cited yet": "{n} neue Seiten seit dem Event, noch keine zitiert",
+    "{n} new pages since the event, {c} cited": "{n} neue Seiten seit dem Event, {c} zitiert",
+    "First cited and New URLs always cover all models and markets, whatever the filters say.": "\u201eErstmals zitiert\u201c und \u201eNeue URLs\u201c umfassen immer alle Modelle und Märkte, egal welche Filter gesetzt sind.",
+    "Not affected by your filters": "Unabhängig von deinen Filtern",
+    "There are no answers after the event yet.": "Nach dem Event gibt es noch keine Antworten.",
+    "There is nothing to compare yet.": "Es gibt noch nichts zu vergleichen.",
+    "Too few answers before the event (at least {n} needed).": "Zu wenige Antworten vor dem Event (mindestens {n} nötig).",
+    "Too few answers after the event (at least {n} needed).": "Zu wenige Antworten nach dem Event (mindestens {n} nötig).",
+    "Too few prompts have a value.": "Zu wenige Prompts haben einen Wert.",
+    "Too few answers in the comparison group before the event.": "Zu wenige Antworten in der Vergleichsgruppe vor dem Event.",
+    "Too few answers in the comparison group after the event.": "Zu wenige Antworten in der Vergleichsgruppe nach dem Event.",
+    "Too few prompts in the comparison group have a value.": "Zu wenige Prompts der Vergleichsgruppe haben einen Wert.",
+    "There isn't enough history before the event to tell what is normal.": "Vor dem Event gibt es zu wenig Verlauf, um zu erkennen, was normal ist.",
+    "Fewer than 7 days of data before the event.": "Weniger als 7 Tage mit Daten vor dem Event.",
+    "Fewer than 7 days of data after the event.": "Weniger als 7 Tage mit Daten nach dem Event.",
+    "These numbers can't be compared reliably yet.": "Diese Zahlen lassen sich noch nicht verlässlich vergleichen.",
     "The sitemap couldn't be refreshed. Please try again later.": "Die Sitemap ließ sich nicht aktualisieren. Versuch es bitte später noch einmal.",
     "Page coverage couldn't be loaded.": "Die Seitenabdeckung ließ sich nicht laden.",
     "Cited ({n})": "Zitiert ({n})",
@@ -1817,6 +1891,7 @@
           '<h3 class="uev-karte-titel">' + esc(ev.name || "") + '</h3>' +
           angabenHtml(ev, "uev-karte-meta") +
           (ev.description ? '<p class="uev-karte-text">' + esc(ev.description) + '</p>' : '') +
+          neueSeitenHtml(ev) +
           kennzahlenHtml(ev) +
         '</div>' +
       '</article>';
@@ -1844,7 +1919,13 @@
       if (demo || !UC.rpc || LISTE3.fehlt || LISTE3.laeuft || ZIELE_DA.stand === false) return;
       var st = listenStand(), l = UC.getEvents ? UC.getEvents() : [];
       if (!st.geladen || !l.length || LISTE3.seq === st.seq) return;
-      if (l.some(function (ev) { return ev && ev.target_count != null; })) return;
+      /* Zwei Gruende, die Liste zu holen: die Ziele (fehlen im Speicher, bis die DB sie dort
+         liefert) und die neuen Seiten der Karte (new_page_count steht NICHT im Team-Kontext, nur in
+         list_impact_events_v3 -- Rueckmeldung 17.10., Frage 14). Letztere nur, wenn ein Event eine
+         Regel traegt: ohne Regel-Ziel gibt es keine Sitemap-Seiten (die DB liefert dann null). */
+      var zieleFehlen = !l.some(function (ev) { return ev && ev.target_count != null; });
+      var seitenMoeglich = l.some(function (ev) { return ev && (!isArr(ev.target_kinds) || ev.target_kinds.some(function (k) { return k && k !== "url"; })); });
+      if (!zieleFehlen && !seitenMoeglich) return;
       LISTE3.laeuft = true; LISTE3.seq = st.seq;
       teamHolen().then(function (tm) {
         return tm ? UC.rpc("list_impact_events_v3", { p_team: tm }, { timeoutMs: 15000 }) : null;
@@ -1855,7 +1936,12 @@
         if (!erg.ok || !isArr(erg.daten)) { if (unbekannt(erg)) LISTE3.seq = -1; return; }
         var je = {};
         erg.daten.forEach(function (r) {
-          if (r && r.id != null && num(r.target_count) != null && isArr(r.target_kinds)) je[String(r.id)] = { target_count: num(r.target_count), target_kinds: r.target_kinds };
+          if (!r || r.id == null) return;
+          var z = {};
+          if (num(r.target_count) != null && isArr(r.target_kinds)) { z.target_count = num(r.target_count); z.target_kinds = r.target_kinds; }
+          /* Der Schluessel muss da sein (Teil C eingespielt); sein Wert darf null sein. */
+          if (Object.prototype.hasOwnProperty.call(r, "new_page_count")) { z.new_page_count = num(r.new_page_count); z.new_page_cited_count = num(r.new_page_cited_count); }
+          if (z.target_count != null || z.new_page_count !== undefined) je[String(r.id)] = z;
         });
         LISTE3.je = je;
         if (root.isConnected !== false && state.ansicht === "uebersicht") renderListe();
@@ -1865,10 +1951,13 @@
        gehoert dem Speicher in core. */
     function mitZielen(ev) {
       var z = ev && LISTE3.je[String(ev.id)];
-      if (!z || ev.target_count != null) return ev;
+      if (!z) return ev;
+      var ziele = z.target_count != null && ev.target_count == null, seiten = z.new_page_count !== undefined;
+      if (!ziele && !seiten) return ev;
       var k = {};
       for (var f in ev) if (Object.prototype.hasOwnProperty.call(ev, f)) k[f] = ev[f];
-      k.target_count = z.target_count; k.target_kinds = z.target_kinds;
+      if (ziele) { k.target_count = z.target_count; k.target_kinds = z.target_kinds; }
+      if (seiten) { k.new_page_count = z.new_page_count; k.new_page_cited_count = z.new_page_cited_count; }
       return k;
     }
     function listeUhr() {
@@ -2095,6 +2184,13 @@
     function analyseGefiltert() {
       return UC.seitenFilterAktiv ? UC.seitenFilterAktiv({ modelle: state.modelle, maerkte: state.maerkte })
         : !!((state.modelle && state.modelle.length) || (state.maerkte && state.maerkte.length));
+    }
+    /* EV-10 (Audit 17.10.): "First cited" und "New URLs" rechnen ueber die ganze Kohorte, alle Modelle
+       und alle Maerkte -- auch bei gesetztem Filter, waehrend Global share, Citation count und
+       Share of all citations ihm folgen. Eine leise Zeile, nur wenn ein Filter gesetzt ist. */
+    var FILTER_HINWEIS = "First cited and New URLs always cover all models and markets, whatever the filters say.";
+    function filterHinweisHtml() {
+      return analyseGefiltert() ? '<span class="uev-angabe uev-filterhinweis">' + UC.icon("info", 2) + '<span>' + esc(t(FILTER_HINWEIS)) + '</span></span>' : "";
     }
     function segSetzen() {
       var fb = elMain.querySelectorAll(".uev-fenster [data-fenster]"), ev = dasEvent(), seit = seitAktiv(ev);
@@ -2712,11 +2808,17 @@
          Kennzahlen und Diagramm oben. */
       var kaputt = !a && state.analyseFehler && !state.analyseLaden;
       var ab = seitenStand("urls", urls.length);
+      /* EV-08: hostPfad streicht www und Schema -- zwei URL-Ziele, die sich nur darin unterscheiden
+         (https://lee-up.de/solar und https://www.lee-up.de/solar: 0 gegen 210 Zitate), stuenden
+         sonst gleich da. Nur bei so einer Kollision zeigt die Zeile den Host genau (www., http://). */
+      var gleich = {};
+      urls.forEach(function (u) { var h = hostPfad(u.url), k = h.host + h.pfad; gleich[k] = (gleich[k] || 0) + 1; });
       platz.innerHTML = sekKopf("Affected URLs", "Pages, articles or external sources associated with this event. Global share is measured in the affected prompts.") +
         '<div class="up-vartable uev-urls">' +
           tabKopf("URL", [{ t: "First cited", k: "uev-th-beob", info: "zitiert" }, { t: "Global share before" }, { t: "Global share after" }, { t: "Change" }]) +
           '<div class="up-tbody up-vbody">' + urls.slice(ab.von, ab.bis).map(function (u) {
             var an = proId[u.id], hp = hostPfad(u.url), gs = an && an.global_share ? an.global_share : null;
+            var hostTxt = gleich[hp.host + hp.pfad] > 1 ? hostGenau(u.url, hp) : hp.host;
             /* Ohne Eintrag: laedt die Analyse noch, das Skelett; ist sie da, kennt die URL aber
                nicht (gerade hinzugefuegt, Cache aelter), oder ist sie gescheitert, Striche -- und bei
                einer vorhandenen Analyse "Not yet" wie jede nicht beobachtete URL. */
@@ -2732,7 +2834,7 @@
                  Bauteil .up-btn-sec.up-rowbtn aus core, wie "Edit" in brands-overview. Nur "Remove":
                  der Knopf "Responses" filterte die Tabelle darunter und war unverstaendlich (03.10.). */
               '<div class="up-td up-var-name uev-td-url"><span class="up-fav up-logo-box has-img"><img src="' + esc(favicon(u.url)) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>' +
-                '<span class="uev-url-txt"><span class="uev-url-host">' + esc(hp.host) + '</span>' +
+                '<span class="uev-url-txt"><span class="uev-url-host">' + esc(hostTxt) + '</span>' +
                 '<span class="uev-url-pfad" title="' + esc(u.url) + '">' + esc(pfadText(hp)) + '</span></span>' +
                 '<button type="button" class="up-btn-sec up-rowbtn uev-urlweg" data-url-id="' + esc(u.id) + '" aria-label="' + esc(t("Remove")) + '">' + UC.icon("trash", 2) + '<span>' + esc(t("Remove")) + '</span></button>' +
               '</div>' +
@@ -2741,7 +2843,8 @@
               '<div class="up-td uev-td-zahl">' + (an ? wertHtml("visibility", gs && gs.after) : sk) + '</div>' +
               '<div class="up-td uev-td-zahl">' + (an ? trendHtml("visibility", gs && gs.delta) : sk) + '</div>' +
             '</div>';
-          }).join("") + '</div></div>';
+          }).join("") + '</div></div>' +
+        (analyseGefiltert() ? '<div class="uev-hinweise uev-urls-hinweis">' + filterHinweisHtml() + '</div>' : '');
     }
 
     /* ---- DIE REGEL-ZIELE (15.10., Vertrag Abschnitt 5: targets[] von
@@ -2879,9 +2982,12 @@
       var kpis = sek.querySelector(".uev-zielkpis"), linie2 = zielLinien[zt.id], platz = sek.querySelector(".uev-tabinhalt");
       var n = "ziel-" + zt.id, hinweis = sek.querySelector(".uev-ziel-hinweis");
       var mehr = !!(z && z.cited_urls_truncated === true && isArr(z.cited_urls) && z.cited_urls.length);
+      /* EV-10: mit gesetztem Filter dazu die leise Zeile, dass "First cited" und "New URLs" ihn nicht
+         kennen -- nur, wo die Tabelle und die Kachel auch stehen (nicht im Leerzustand, siehe unten). */
+      var filterZeile = z && !zielOhneZitate(z, zt) ? filterHinweisHtml() : "";
       if (hinweis) {
-        hinweis.hidden = !mehr;
-        hinweis.innerHTML = mehr ? '<span class="uev-angabe">' + UC.icon("info", 2) + '<span>' + esc(ersetze(t("Showing the newest {n} URLs"), { n: zahl(z.cited_urls.length) })) + '</span></span>' : "";
+        hinweis.hidden = !mehr && !filterZeile;
+        hinweis.innerHTML = (mehr ? '<span class="uev-angabe">' + UC.icon("info", 2) + '<span>' + esc(ersetze(t("Showing the newest {n} URLs"), { n: zahl(z.cited_urls.length) })) + '</span></span>' : "") + filterZeile;
       }
       var kopf = tabKopf("URL", [{ t: "First cited", k: "uev-th-beob" }, { t: "Citations after" }, { t: "Prompts" }, { t: "Models" }]);
       /* EIN Leerzustand fuer das ganze Ziel statt vier Nullen, einer flachen Linie und einer grauen
@@ -2923,6 +3029,9 @@
         return;
       }
       function zahlWert(v) { v = num(v); return v == null ? '<span class="up-num is-empty">\u2013</span>' : '<span class="up-num">' + esc(zahl(v)) + '</span>'; }
+      /* Der Fuss der Kachel "New URLs": mit gesetztem Filter sagt der Zeiger, dass er sie nicht
+         einschraenkt (EV-10). */
+      function neuFuss(html) { return analyseGefiltert() ? '<span data-tip="' + esc(t("Not affected by your filters")) + '">' + html + '</span>' : html; }
       var sb = num(z.share_of_citations_before), sa = num(z.share_of_citations_after);
       kpis.innerHTML = [
         UC.kpiKarte({ label: "Cited URLs", wertHtml: zahlWert(z.matched_url_count != null ? z.matched_url_count : zt.matched_url_count), fussHtml: esc(t("In the whole period")), klasse: "uev-kpi" }),
@@ -2933,8 +3042,8 @@
         /* new_urls_before (15.10.): wie die Zitate vorher und nachher -- so sieht man, ob nach dem
            Event mehr neue Seiten zitiert wurden als davor. Ohne das Feld wie bisher nur nachher. */
         num(z.new_urls_before) != null
-          ? UC.kpiKarte({ label: "New URLs", vorherHtml: zahlWert(z.new_urls_before), wertHtml: zahlWert(z.new_urls_after), fussHtml: esc(t("First cited, before and after the event")), klasse: "uev-kpi" })
-          : UC.kpiKarte({ label: "New URLs", wertHtml: zahlWert(z.new_urls_after), fussHtml: esc(t("First cited after the event")), klasse: "uev-kpi" })
+          ? UC.kpiKarte({ label: "New URLs", vorherHtml: zahlWert(z.new_urls_before), wertHtml: zahlWert(z.new_urls_after), fussHtml: neuFuss(esc(t("First cited, before and after the event"))), klasse: "uev-kpi" })
+          : UC.kpiKarte({ label: "New URLs", wertHtml: zahlWert(z.new_urls_after), fussHtml: neuFuss(esc(t("First cited after the event"))), klasse: "uev-kpi" })
       ].join("");
       var tage = isArr(z.daily) ? z.daily : [];
       if (linie2) {
@@ -3054,22 +3163,38 @@
       var nr = d && d.next_refresh_at ? Date.parse(d.next_refresh_at) : NaN;
       return isFinite(nr) ? nr - Date.now() : 0;
     }
+    /* "plus 3 cited pages not in your sitemap": mit plus hinter der Zahl der zitierten Seiten, ohne
+       plus als eigener Satz (keine Seite der Sitemap trifft die Regel). html mit der Zahl betont. */
+    function abdPlusSatz(n, mitPlus) {
+      var k = mitPlus ? (n === 1 ? "plus {n} cited page not in your sitemap" : "plus {n} cited pages not in your sitemap")
+                      : (n === 1 ? "{n} cited page not in your sitemap" : "{n} cited pages not in your sitemap");
+      return { text: ersetze(t(k), { n: zahl(n) }), html: esc(t(k)).replace("{n}", '<span class="uev-abd-z">' + esc(zahl(n)) + '</span>') };
+    }
     function abdKopfHtml(e, d, z) {
       var st = String(z.status || ""), pc = num(z.page_count), cc = num(z.cited_count), teile = [];
+      /* Zitierte Seiten, die NICHT in der Sitemap stehen (cited_outside_sitemap, 17.10.): cited_count
+         zaehlt nur Seiten der Sitemap. Der Satz steht nur bei > 0; null (nie gelesen) heisst nichts. */
+      var aussen = num(z.cited_outside_sitemap);
+      var plus = aussen > 0 ? abdPlusSatz(aussen, pc > 0) : "";
       if (st === "pending") {
         teile.push('<span class="uev-angabe">' + UC.icon("clock", 2) + '<span>' + esc(t("We're reading your sitemap for the first time.")) + '</span></span>');
       } else if (pc > 0 && cc != null) {
         var anteil = Math.max(0, Math.min(100, cc / pc * 100));
         var satz = esc(t(pc === 1 ? "{a} of {b} page cited" : "{a} of {b} pages cited"))
           .replace("{a}", '<span class="uev-abd-z">' + esc(zahl(cc)) + '</span>').replace("{b}", '<span class="uev-abd-z">' + esc(zahl(pc)) + '</span>');
-        var aria = ersetze(t(pc === 1 ? "{a} of {b} page cited" : "{a} of {b} pages cited"), { a: zahl(cc), b: zahl(pc) });
-        teile.push('<span class="uev-abd-stand"><span class="uev-abd-satz">' + satz + '</span>' +
+        var aria = ersetze(t(pc === 1 ? "{a} of {b} page cited" : "{a} of {b} pages cited"), { a: zahl(cc), b: zahl(pc) }) + (plus ? ", " + plus.text : "");
+        teile.push('<span class="uev-abd-stand"><span class="uev-abd-satz">' + satz + (plus ? ", " + plus.html : "") + '</span>' +
           '<span class="uev-abd-balken" role="img" aria-label="' + esc(aria) + '"><span class="uev-abd-balken-f" style="width:' + anteil.toFixed(1) + '%"></span></span></span>');
-      } else if (st === "ok") {
-        teile.push('<span class="uev-abd-leise">' + esc(t("No pages in your sitemap match this rule.")) + '</span>');
+      } else if (pc === 0) {
+        teile.push('<span class="uev-abd-leise">' + esc(t("No pages in your sitemap match this rule.")) + (plus ? " " + plus.html + "." : "") + '</span>');
       }
       if (z.truncated === true && num(z.page_limit) > 0) {
-        teile.push('<span class="uev-angabe">' + UC.icon("info", 2) + '<span>' + esc(ersetze(t("Only the first {n} pages"), { n: zahl(z.page_limit) })) + '</span></span>');
+        /* Die DB behaelt die zuletzt geaenderten Seiten (lastmod, neueste zuerst), nicht die ersten
+           der Datei; matched_total sagt, wie viele die Regel in der Sitemap trifft. */
+        var gesamt = num(z.matched_total);
+        teile.push('<span class="uev-angabe">' + UC.icon("info", 2) + '<span>' + esc(gesamt > num(z.page_limit)
+          ? ersetze(t("The {n} most recently updated of {total} pages"), { n: zahl(z.page_limit), total: zahl(gesamt) })
+          : ersetze(t("Only the {n} most recently updated pages"), { n: zahl(z.page_limit) })) + '</span></span>');
       }
       var zeit = z.last_checked_at || d.last_checked_at;
       var wann = zeit && UC.relativeTime ? UC.relativeTime(zeit) : "";
@@ -3146,8 +3271,11 @@
         return '<button class="up-seg-btn' + (wahl === w ? " is-active" : "") + '" type="button" data-abd-seg="' + w + '" data-ziel-id="' + esc(zt.id) + '">' +
           esc(ersetze(t(txt), { n: zahl(n) })) + '</button>';
       }
+      /* Die Tabelle "Cited" listet ALLE zitierten Seiten der Regel, auch die ausserhalb der Sitemap:
+         die Zahl am Reiter zaehlt sie mit (cited_count allein waere kleiner als die Tabelle). */
+      var zit = cc + (num(z.cited_outside_sitemap) > 0 ? num(z.cited_outside_sitemap) : 0);
       seg.innerHTML = '<div class="up-seg uev-abd-schalter" role="group" aria-label="' + esc(t("Pages")) + '">' +
-        knopf("zitiert", "Cited ({n})", cc) + knopf("offen", "Not cited yet ({n})", nicht) + '</div>';
+        knopf("zitiert", "Cited ({n})", zit) + knopf("offen", "Not cited yet ({n})", nicht) + '</div>';
       block.classList.add("has-abd");
       block.classList.toggle("zeigt-offen", wahl === "offen");
       liste.innerHTML = wahl === "offen" ? abdListeHtml(zt, z, e) : "";
@@ -3174,18 +3302,20 @@
         if (root.isConnected !== false && state.eventId === eid) abdAlle();
       });
     }
-    /* "Refresh": die Edge Function sitemap-lesen im Modus event_refresh (Auftrag C.3) antwortet mit
-       der Abdeckung selbst. Hat die DB das Anstossen lieber als RPC gebaut
-       (refresh_impact_event_sitemaps_v1, C.5: { queued, next_refresh_at }), antwortet die
-       Function auf den Modus noch mit 400 invalid_input -- dann die RPC und die Abdeckung kurz
-       danach neu. "Zu frueh" (impact_event_sitemap_refresh_too_soon) ist kein Fehler: der Knopf
-       sperrt sich mit der Wartezeit, die die DB nennt. */
+    /* "Refresh": die Edge Function sitemap-lesen im Modus event_refresh (Rueckmeldung 17.10.,
+       Plattform-Version 9) liest die Quellen des Events und antwortet mit der Abdeckung selbst, im
+       Format von get_impact_event_coverage_v1 -- darum dieselben Filter, Seitenzahl und Versatz
+       wie beim ersten Abruf mitschicken, sonst kaeme die Antwort mit alle Seiten, 50 Stueck, und
+       die Liste "Not cited yet" zeigte plotzlich auch zitierte. Den Rueckweg ueber eine RPC gibt es
+       nicht mehr (die DB hat nur diesen Weg gebaut).
+       "Zu frueh" (429 impact_event_sitemap_refresh_too_soon, hint und retry_after = Sekunden) ist
+       kein Fehler: der Knopf sperrt sich mit der Wartezeit, die die DB nennt, und die Abdeckung wird
+       neu geholt -- sie traegt den genauen Zeitpunkt (next_refresh_at). */
     function abdZuFrueh(d, f) {
-      var nr = "";
-      try { var det = f.details && String(f.details).charAt(0) === "{" ? JSON.parse(f.details) : null; if (det && det.next_refresh_at) nr = det.next_refresh_at; } catch (x) {}
-      if (!nr && /^\d+/.test(String(f.hint || ""))) nr = new Date(Date.now() + parseInt(f.hint, 10) * 1000).toISOString();
-      if (!nr) nr = new Date(Date.now() + 3600000).toISOString();
-      d.next_refresh_at = nr;
+      var sek = num(f.retry_after);
+      if (!(sek > 0) && /^\d+$/.test(String(f.hint || ""))) sek = parseInt(f.hint, 10);
+      if (!(sek > 0)) sek = 3600;
+      d.next_refresh_at = new Date(Date.now() + sek * 1000).toISOString();
     }
     function abdAktualisieren() {
       var eid = state.eventId, e = eid ? state.abd[eid] : null, d = e && e.daten;
@@ -3197,26 +3327,19 @@
         if (root.isConnected !== false && state.eventId === eid) abdAlle();
       }
       function zuFrueh(f) { return String(f.message || "") === "impact_event_sitemap_refresh_too_soon"; }
-      var tm = team();
-      (UC.edge ? UC.edge("sitemap-lesen", { team_id: tm, event_id: eid, mode: "event_refresh" }, { timeoutMs: 120000 }) : Promise.resolve(null)).then(function (erg) {
-        erg = erg || { ok: false, status: 404, fehler: { code: "NOT_FOUND", message: "" } };
+      teamHolen().then(function (tm) {
+        if (!tm || !UC.edge) return { ok: false, status: 0, fehler: { message: "network" } };
+        return UC.edge("sitemap-lesen", { team_id: tm, event_id: eid, mode: "event_refresh", filter: "not_cited", limit: ABD_LIMIT, offset: 0 }, { timeoutMs: 120000 });
+      }).then(function (erg) {
+        erg = erg || { ok: false, status: 0, fehler: {} };
         var f = erg.fehler || {};
-        if (erg.ok && abdLesbar(erg.daten)) { e.daten = erg.daten; e.mehr = {}; fertig(""); return; }
-        if (zuFrueh(f)) { abdZuFrueh(d, f); fertig(""); return; }
-        if (!(edgeFehlt(erg) || (erg.status === 400 && String(f.message || "") === "invalid_input"))) {
-          fertig(t("The sitemap couldn't be refreshed. Please try again later.")); return;
+        if (erg.ok && erg.daten && erg.daten.ok !== false && abdLesbar(erg.daten)) { e.daten = erg.daten; e.mehr = {}; fertig(""); return; }
+        if (zuFrueh(f)) {
+          abdZuFrueh(d, f); fertig("");
+          if (state.eventId === eid) abdAnfordern(eid);
+          return;
         }
-        abdRpc("refresh_impact_event_sitemaps_v1", { p_event_id: eid }).then(function (r2) {
-          var f2 = r2.fehler || {};
-          if (r2.ok && r2.daten && typeof r2.daten === "object") {
-            if (r2.daten.next_refresh_at) d.next_refresh_at = r2.daten.next_refresh_at;
-            fertig("");
-            setTimeout(function () { if (state.eventId === eid) abdAnfordern(eid); }, 5000);
-            return;
-          }
-          if (zuFrueh(f2)) { abdZuFrueh(d, f2); fertig(""); return; }
-          fertig(t("The sitemap couldn't be refreshed. Please try again later."));
-        });
+        fertig(t("The sitemap couldn't be refreshed. Please try again later."));
       });
     }
 
@@ -5546,10 +5669,23 @@
         if (an) { try { l[i].focus({ preventScroll: false }); } catch (e) {} }
       }
     }
+    /* Die Sitemap-Datei, die der Waehler gelesen hat (source der Antwort, bei einem Rueckfall auf die
+       Domain die gefundene, nicht die getippte Adresse). Nur eine gueltige http(s)-Adresse bis 2048
+       Zeichen -- sonst keine, die DB lehnt anderes ab (invalid_sitemap_url). */
+    function smQuelle(p) {
+      var q = p && p.sm && p.sm.antwort ? String(p.sm.antwort.source || "").trim() : "";
+      return /^https?:\/\/[^\/?#\s]+/i.test(q) && q.length <= 2048 ? q : "";
+    }
     /* Die Auswahl als Ziele in die Liste (smZielVon). */
     function smUebernehmen(p) {
       var gew = smGewaehlt(p), neu = [];
-      gew.ordner.concat(gew.urls).forEach(function (key) { var z = smZielVon(p.sm.knoten[key]); if (!z.fehler) neu.push(z); });
+      var quelle = smQuelle(p);
+      gew.ordner.concat(gew.urls).forEach(function (key) {
+        var z = smZielVon(p.sm.knoten[key]);
+        if (z.fehler) return;
+        if (quelle && z.kind !== "url") z.sitemap = quelle;
+        neu.push(z);
+      });
       neu = neu.filter(function (z) { return !zielGewaehlt(p, z) && !zielImEvent(p, z); });
       /* Kam etwas unter einer Regel dazu, steht am Feld derselbe leise Satz wie nach der Eingabe
          (eingabeUebernehmen) -- gefragt VOR dem Hinzufuegen, sonst deckte die Auswahl sich selbst. */
@@ -5972,7 +6108,7 @@
       /* p.gesendet: dieselbe Reihenfolge wie p_targets bzw. p_urls -- der hint eines Fehlers
          ("p_targets[i]: ...") zeigt so auf das Ziel in der Liste. */
       p.zielFehler = null; p.gesendet = null;
-      if (mit.length && zieleDa()) { delete b.p_urls; b.p_targets = mit.map(function (z) { return { kind: z.kind, input: z.input }; }); p.gesendet = mit.slice(); }
+      if (mit.length && zieleDa()) { delete b.p_urls; b.p_targets = mit.map(zielBody); p.gesendet = mit.slice(); }
       else if (mit.length) { p.gesendet = mit.filter(function (z) { return z.kind === "url"; }); b.p_urls = p.gesendet.map(function (z) { return z.input; }); }
       /* Der Zeitraum (17.10.): p_end_date an create_impact_event_v4 -- ohne Ende steht der
          Parameter gar nicht im Body, v4 setzt null (Vertrag B.3). */
@@ -5996,7 +6132,7 @@
            also "" fuer geleert (Beschreibung, Zeichen, Farbe, Titelbild). */
         b.p_description = e.text.trim(); b.p_icon = e.icon ? iconFuerDb(e.icon) : ""; b.p_color = e.farbe ? String(e.farbe).toLowerCase() : "";
         b.p_cover = e.cover || "";
-        b.p_targets = mit.map(function (z) { return { kind: z.kind, input: z.input }; });
+        b.p_targets = mit.map(zielBody);
         p.gesendet = mit.slice();
         if (!(e.bereich && e.ende) && p.alt && p.alt.ende) b.p_clear_end_date = true;
         warten(p, "bearbeiten");
@@ -6049,7 +6185,7 @@
         if (schon + p.e.ziele.length > ZIEL_MAX) { feldFehlerZeigen(p, "impact_event_too_many_targets", "", fehlerText("impact_event_too_many_targets")); return; }
         p.zielFehler = null; p.gesendet = p.e.ziele.slice();
         warten(p, "ziel");
-        rufen("uevAddTarget", { p_event_id: p.eventId, p_targets: p.e.ziele.map(function (z) { return { kind: z.kind, input: z.input }; }) }, { popup: p });
+        rufen("uevAddTarget", { p_event_id: p.eventId, p_targets: p.e.ziele.map(zielBody) }, { popup: p });
         return;
       }
       /* 100 URLs je Event (409 impact_event_too_many_urls) -- das Detail kennt die Zahl schon. */
