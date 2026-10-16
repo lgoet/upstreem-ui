@@ -1027,7 +1027,6 @@
     "No longer in sitemap": "Nicht mehr in der Sitemap",
     "Updated {date}": "Aktualisiert am {date}",
     "In sitemap since {date}": "Seit {date} in der Sitemap",
-    "Not in the sitemap since {date}": "Seit {date} nicht mehr in der Sitemap",
     "Every page from your sitemap is cited.": "Jede Seite deiner Sitemap wird zitiert."
   });
 
