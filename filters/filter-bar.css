@@ -64,9 +64,15 @@
 .ufb-btn { flex: 0 0 auto; padding: 0 10px;
   border: 1px solid var(--vc-border); background: var(--vc-bg); color: var(--vc-muted); }
 /* Geist-Menue-Ausloeser (15.10.): Flaeche plus eine Stufe kraeftigere Kante statt --vc-hover-border (core, --up-knopf-*). */
-.ufb-btn:hover, .ufb-more.is-open .ufb-btn {
+.ufb-btn:hover, .ufb-more.is-open:not(.is-vomchip) .ufb-btn {
   color: var(--vc-text); background: var(--up-knopf-hover); border-color: var(--up-knopf-rand-hover);
 }
+/* Vom Chip geoeffnet (16.10. gemeldet): offen ist dann das Dropdown des CHIPS, der Knopf bleibt in
+   Ruhe. is-vomchip setzt filter-bar.js an .ufb-more. Die Flaeche muss hier ausdruecklich zurueck,
+   weil core sie jedem offenen leisen Ausloeser gibt (.is-open > .up-quietbtn). Im Dunkeln eigene
+   Zeile: dort ist die Ruhe durchsichtig, nicht --vc-bg. */
+.ufb-more.is-vomchip > .ufb-btn:not(:hover) { background: var(--vc-bg); }
+.up-root[data-theme="dark"] .ufb-more.is-vomchip > .ufb-btn:not(:hover) { background: transparent; }
 /* Der Fokusring des Datumsfilters, wortgleich -- der fehlte hier. Beim Durchtabben durch die
    Werkzeugzeile bekam der Nachbar einen Ring und dieser Knopf nicht, und im Dunkeln ist das der
    einzige Hinweis, wo der Fokus steht. */
@@ -79,7 +85,7 @@
 /* Hover/offen wieder anschalten -- gleiche Spezifitaet wie die Regel oben, und die steht spaeter.
    Ohne diese Zeile war der Knopf auch bei offenem Panel flaechenlos. */
 .up-root[data-theme="dark"] .ufb-btn:hover,
-.up-root[data-theme="dark"] .ufb-more.is-open .ufb-btn { background: var(--vc-heading-bg); }
+.up-root[data-theme="dark"] .ufb-more.is-open:not(.is-vomchip) .ufb-btn { background: var(--vc-heading-bg); }
 /* Beschriftung und BEIDE Zeichen in der Primaerfarbe -- genau die Aufteilung des Datumsfilters:
    dort traegt der Knopf selbst --vc-muted, waehrend .udr-label und .udr-trigger svg auf
    --vc-text stehen ("the label is the value"). Die Zeichen kommen aus UC.icon mit
@@ -464,8 +470,12 @@
   font: inherit; cursor: pointer; outline: 0;
 }
 .up-entchip.ufb-chip.is-klick { cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; }
-.up-entchip.ufb-chip.is-klick:hover { background: var(--up-knopf-hover); border-color: var(--up-knopf-rand-hover); }
-.up-root[data-theme="dark"] .up-entchip.ufb-chip.is-klick:hover { background: var(--vc-heading-bg); }
+/* is-open: der Chip, dessen Dropdown gerade offen ist, zeigt das wie der Knopf "Filters" seinen
+   offenen Zustand -- dieselbe Flaeche wie beim Ueberfahren (filter-bar.js, chipZustand). */
+.up-entchip.ufb-chip.is-klick:hover,
+.up-entchip.ufb-chip.is-klick.is-open { background: var(--up-knopf-hover); border-color: var(--up-knopf-rand-hover); }
+.up-root[data-theme="dark"] .up-entchip.ufb-chip.is-klick:hover,
+.up-root[data-theme="dark"] .up-entchip.ufb-chip.is-klick.is-open { background: var(--vc-heading-bg); }
 .ufb-chip-auf:focus-visible { box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); border-radius: var(--up-r-s); }
 
 /* Ohne den Branded-Schalter des Intent-Filters (data-branded-visible="no"): auf All Prompts gilt
