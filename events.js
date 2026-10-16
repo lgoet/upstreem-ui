@@ -654,6 +654,7 @@
     "Date and scope can't be changed": "Datum und Umfang nicht änderbar",
     "Select a type": "Typ wählen", "Create without URLs?": "Ohne URLs anlegen?",
     "Cover image": "Titelbild", "Remove cover": "Titelbild entfernen",
+    "Change cover": "Titelbild ändern", "Add cover": "Titelbild hinzufügen", "Unpin from sidebar": "Von der Seitenleiste lösen",
     "Blue wave": "Blaue Welle", "Pink wave": "Rosa Welle", "Teal wave": "Petrol-Welle",
     "Blue mosaic": "Blaues Mosaik", "Pink mosaic": "Rosa Mosaik", "Sand mosaic": "Sandfarbenes Mosaik",
     "Step {n} of 3": "Schritt {n} von 3", "URLs & review": "URLs & Prüfen",
@@ -1500,6 +1501,10 @@
            Mitgliederliste -- vorher erbten die Zeilen hier die 16px der Seite (03.10. gemessen). */
         '<div class="up-menu uev-mehrmenu up-aktionsmenue" role="menu" aria-hidden="true">' +
           '<button type="button" class="up-optrow" role="menuitem" data-aktion="edit" data-event-id="' + esc(ev.id) + '">' + UC.icon("squarePen", 2) + '<span class="up-aktionsmenue-lbl">' + esc(t("Edit")) + '</span></button>' +
+          /* Am Telefon (is-vnarrow) steht das Anheften hier statt als Knopf im Kopf -- dort fehlt
+             sonst der Platz fuer die Krume (gemessen 16.10.: "Overview" auf 9px gedrueckt). */
+          (wo === "kopf" && pinDa() ? '<button type="button" class="up-optrow uev-mehr-pin" role="menuitem" data-aktion="pin" data-event-id="' + esc(ev.id) + '">' + UC.icon("pin", 2) +
+            '<span class="up-aktionsmenue-lbl">' + esc(t(istAngeheftet(ev.id) ? "Unpin from sidebar" : "Pin to sidebar")) + '</span></button>' : '') +
           (kannLoeschen ? '<div class="up-aktionsmenue-div"></div><button type="button" class="up-optrow is-gefahr" role="menuitem" data-aktion="delete" data-event-id="' + esc(ev.id) + '">' + UC.icon("trash", 2) + '<span class="up-aktionsmenue-lbl">' + esc(t("Delete")) + '</span></button>' : '') +
         '</div></span>';
     }
@@ -1670,6 +1675,7 @@
       /* "Add" statt "Add URL" (15.10.): derselbe Dialog nimmt jetzt auch Regeln. Ohne Ziele in der
          Datenbank bleibt es beim alten Wort -- der Dialog kann dann nur eine URL. */
       elAktion.innerHTML = anleitungKnopf() + seitenInfoKnopf() +
+        '<span class="uev-kopfpin"></span>' +
         '<button class="up-btn-sec uev-addurl-kopf" type="button">' + UC.icon("plus", 1.8) + '<span class="uev-addurl-txt">' + esc(t(zieleDa() ? "Add" : "Add URL")) + '</span></button>' +
         '<span class="uev-kopfmehr"></span>';
       elMain.innerHTML =
@@ -1829,6 +1835,7 @@
               '<span class="uev-avatar is-gross uev-sk-avatar"></span><span class="uev-sk uev-sk-titel" style="width:36%"></span>' +
               '<span class="uev-sk uev-sk-meta" style="width:22%"></span><span class="uev-sk uev-sk-text" style="width:58%"></span></div></div>';
         elAktion.querySelector(".uev-kopfmehr").innerHTML = "";
+        pinKnopfSetzen(null);
         return;
       }
       var f = farbe(d), cv = coverVon(d);
@@ -1844,6 +1851,59 @@
           '</div>' +
         '</div>';
       elAktion.querySelector(".uev-kopfmehr").innerHTML = mehrMenue(d, "kopf");
+      pinKnopfSetzen(d);
+    }
+
+    /* ---- AN DIE SEITENLEISTE HEFTEN (16.10. angefordert: "im Event-Detail oben in der Kopfleiste
+       und direkt in Schritt 4 unter der Vorschau") -----------------------------------------------
+       Die Liste gehoert der Seitenleiste (sidebar.js, "Pinned", teamgebunden im localStorage) --
+       hier nur derselbe Weg wie aus jedem Drawer (window.upstreemPinToSidebar), dazu Abfrage und
+       Abnehmen. Ohne Seitenleiste auf der Seite gibt es weder Knopf noch Schalter: ein Knopf, der
+       nichts bewirken kann, waere einer zu viel. Name, Zeichen und Farbe haelt die Leiste selbst
+       aktuell (Event-Store), geloeschte Events nimmt sie heraus. */
+    function pinDa() { return typeof window.upstreemPinToSidebar === "function"; }
+    function istAngeheftet(id) {
+      try { return !!(id != null && window.upstreemIsPinned && window.upstreemIsPinned({ type: "event", id: String(id) })); } catch (e) { return false; }
+    }
+    function eventAnheften(ev, still) {
+      if (!pinDa() || !ev || ev.id == null || ev.id === "") return false;
+      try {
+        return window.upstreemPinToSidebar({ type: "event", id: String(ev.id), label: String(ev.name || ""), icon: zeichen(ev), color: farbe(ev), still: !!still }) !== false;
+      } catch (e) { return false; }
+    }
+    function eventAbheften(id) {
+      try { if (window.upstreemUnpinFromSidebar) window.upstreemUnpinFromSidebar({ type: "event", id: String(id) }); } catch (e) {}
+    }
+    /* Kein gefuelltes Zeichen fuer "angeheftet": den Zustand zeigt der Knopfgrund (aria-pressed,
+       core), der Tooltip sagt, was ein Klick tut. Der Knopf wird nur neu gesetzt, wenn ein anderes
+       Event offen ist -- renderKopf laeuft bei jeder Lieferung der Liste, und ein ersetzter Knopf
+       verloere den Fokus der Tastatur. */
+    function pinKnopfSetzen(d) {
+      var w = elAktion.querySelector(".uev-kopfpin");
+      if (!w) return;
+      var id = d && d.id != null && pinDa() ? String(d.id) : "";
+      if (w.getAttribute("data-fuer") !== id) {
+        w.setAttribute("data-fuer", id);
+        w.innerHTML = id ? '<button type="button" class="up-iconbtn uev-pinknopf" aria-pressed="false">' + UC.icon("pin", 2) + '</button>' : "";
+      }
+      pinKnopfSync();
+    }
+    function pinKnopfSync() {
+      var b = elAktion && elAktion.querySelector(".uev-pinknopf");
+      if (!b) return;
+      var an = istAngeheftet(state.eventId), lbl = t(an ? "Unpin from sidebar" : "Pin to sidebar");
+      var ml = elAktion.querySelector(".uev-mehr-pin .up-aktionsmenue-lbl");
+      if (ml) ml.textContent = lbl;
+      b.setAttribute("aria-pressed", String(an));
+      b.setAttribute("aria-label", lbl);
+      b.setAttribute("data-tip", lbl);
+    }
+    function pinUmschalten() {
+      var id = state.eventId;
+      if (!id) return;
+      if (istAngeheftet(id)) eventAbheften(id);
+      else eventAnheften(dieDetail() || listeEvent(id) || { id: id }, false);
+      pinKnopfSync();
     }
 
     /* ============================================================================================
@@ -2733,6 +2793,7 @@
       if (!e.target.closest) return;
       if (e.target.closest(".uev-anlegen, [data-uev-create]")) { e.preventDefault(); popupAnlegen(); return; }
       if (e.target.closest(".uev-zurueck")) { zurUebersicht(true); return; }
+      if (e.target.closest(".uev-pinknopf")) { pinUmschalten(); return; }
       var si = e.target.closest(".uev-seiteninfo");
       if (si) { if (seitenKarte && !seitenKarte.el.classList.contains("is-on")) seitenKarte.show(si); return; }
       /* Der Knopf im gefilterten Leerzustand (UC.leerHtml traegt data-clearall): Suche und
@@ -2762,6 +2823,7 @@
         var eid = ak.getAttribute("data-event-id");
         if (ak.getAttribute("data-aktion") === "edit") popupBearbeiten(eid);
         if (ak.getAttribute("data-aktion") === "delete") loeschenFragen(eid);
+        if (ak.getAttribute("data-aktion") === "pin") pinUmschalten();
         return;
       }
       if (e.target.closest(".uev-mehr")) return;
@@ -3425,12 +3487,66 @@
           '<div class="uev-sm-ort"></div>' +
         '</div>';
     }
-    /* Schritt 4: was getrackt wird (kurz), das Titelbild, die Vorschau der Karte, das Schloss. */
+    /* Schritt 4 (16.10. umgebaut, Nutzer: "Der Picker der Titelbilder ist mir zu prominent"):
+       OBEN die Vorschau der Karte, schon mit einem zufaelligen Titelbild (coverZufall). Das Bild
+       aendert ein kleiner Knopf unten rechts im Band, der beim Ueberfahren erscheint; er klappt die
+       Kacheln unter der Vorschau auf, dort auch "Remove cover". Darunter der Schalter fuer die
+       Seitenleiste, dann was getrackt wird (kurz) und das Schloss. Der Bearbeiten-Dialog behaelt
+       das offene Raster (coverFeld): er hat keine Vorschau, an der ein Knopf stehen koennte. */
     function pruefFelder(e) {
-      return feld("Tracking", '<div class="uev-pruefziele"></div>') +
-        coverFeld(e) +
-        '<div class="uev-pruef"></div>' +
+      return '<div class="uev-vorschaublock"><div class="uev-pruef"></div>' + coverWahlHtml(e) + anheftenHtml(e) + '</div>' +
+        feld("Tracking", '<div class="uev-pruefziele"></div>') +
         gesperrtHinweis("Date and scope can't be changed later");
+    }
+    /* Die Kacheln unter der Vorschau, zugeklappt bis zum Klick auf den Knopf im Band. Dieselben
+       Kacheln und dieselbe Fusszeile wie coverFeld -- coverNeu stellt beide gleich. Die
+       Fehlerzeile des Felds "cover" steht hier; ein Fehler klappt die Wahl auf (feldFehlerZeigen). */
+    function coverWahlHtml(e) {
+      return klapp(false, '<div class="uev-cover-wahl-in" id="uev-cover-wahl-' + esc(instanceId) + '">' +
+          '<div class="uev-cover-raster" role="group" aria-label="' + esc(t("Cover image")) + '">' + coverKacheln(e) + '</div>' +
+          klapp(!!e.cover, '<div class="uev-cover-fuss"><button type="button" class="up-quietbtn uev-cover-weg">' + esc(t("Remove cover")) + '</button></div>', "uev-cover-klapp") +
+          feldFehlerHtml("cover") +
+        '</div>', "uev-cover-wahl");
+    }
+    /* Der Knopf im Band der Vorschau. Ohne Titelbild heisst er "Add cover" und steht an derselben
+       Stelle -- der Weg zurueck zu einem Bild ist derselbe. */
+    function coverKnopfHtml(p) {
+      var offen = !!p.coverOffen;
+      return '<div class="uev-cover-aktion' + (offen ? " is-offen" : "") + '">' +
+        '<button type="button" class="up-btn-sec uev-cover-knopf" aria-expanded="' + offen + '" aria-controls="uev-cover-wahl-' + esc(instanceId) + '">' +
+          UC.icon("image", 2) + '<span>' + esc(t(p.e.cover ? "Change cover" : "Add cover")) + '</span></button></div>';
+    }
+    function coverWahlSchalten(p, auf) {
+      p.coverOffen = !!auf;
+      klappen(im(".uev-cover-wahl"), p.coverOffen);
+      var a = im(".uev-cover-aktion"), b = im(".uev-cover-knopf");
+      if (a) a.classList.toggle("is-offen", p.coverOffen);
+      if (b) b.setAttribute("aria-expanded", String(p.coverOffen));
+    }
+    /* EIN ZUFAELLIGES TITELBILD, EINMAL (16.10.): beim ersten Oeffnen von Schritt 4, und nur, wenn
+       noch keins gewaehlt ist. Danach ist entschieden -- Zurueck und wieder Vor wuerfelt nicht neu,
+       und ein bewusst entferntes Bild bleibt weg. Das Motiv steht schon beim Oeffnen des Popups
+       fest (popupAnlegen) und laedt dort vor, damit die Vorschau es ohne Skelett zeigt. Nur im
+       Anlegen: ein bestehendes Event bekommt nie ein Bild aus dem Zufall. */
+    function coverZufall(p) {
+      if (p.art !== "anlegen" || p.e.coverEntschieden) return;
+      p.e.coverEntschieden = true;
+      if (!p.e.cover && p.zufallsCover) p.e.cover = p.zufallsCover;
+    }
+    /* Der Schalter unter der Vorschau. Angeheftet wird erst, wenn das Anlegen gelungen ist und die
+       Kennung da ist (popupDetailKam) -- scheitert es, haengt nichts in der Leiste. */
+    function anheftenHtml(e) {
+      if (!pinDa()) return "";
+      return '<button type="button" class="uev-anheften" role="switch" aria-checked="' + !!e.anheften + '" data-anheften>' +
+        '<span class="uev-anheften-txt">' + esc(t("Pin to sidebar")) + '</span>' +
+        '<span class="up-switch' + (e.anheften ? " is-on" : "") + '" aria-hidden="true"></span></button>';
+    }
+    function anheftenNeu(p) {
+      var b = im("[data-anheften]");
+      if (!b) return;
+      b.setAttribute("aria-checked", String(!!p.e.anheften));
+      var sw = b.querySelector(".up-switch");
+      if (sw) sw.classList.toggle("is-on", !!p.e.anheften);
     }
     function pruefZieleZeigen() {
       var p = popup, el = im(".uev-pruefziele");
@@ -4671,7 +4787,7 @@
         affected_url_count: mit.filter(function (z) { return z.kind === "url"; }).length,
         targets: mit.map(function (z) { return { kind: z.kind }; }) };
       el.innerHTML = '<span class="up-topicmodal-label">' + esc(t("Preview")) + '</span>' +
-        '<div class="uev-vorschau">' + karteHtml(ev, true) + '</div>';
+        '<div class="uev-vorschau">' + karteHtml(ev, true) + coverKnopfHtml(p) + '</div>';
       pruefZieleZeigen();
     }
     /* Schritt 3 ist bereit: eine Art ist gewaehlt, und ausser bei "Brand metrics only" steht ein
@@ -4731,6 +4847,8 @@
          in einer sichtbaren Wurzel (makeMount), und in einem verdeckten Schritt stuende er erst
          nach dem naechsten Blick des Waechters da. */
       var box = p.api.body.querySelector('.uev-schritt[data-schritt="' + n + '"]');
+      /* Vor dem Bau: die Kacheln zeigen das gewuerfelte Bild schon als gewaehlt. */
+      if (n === 4) coverZufall(p);
       if (box && !box.__uevGebaut) {
         box.__uevGebaut = 1;
         if (n === 2) { box.innerHTML = umfangFelder(p.e); topicsZeigen(); }
@@ -4974,6 +5092,8 @@
     }
     function geloeschtFertig(id, listeFrisch) {
       state.geloescht[id] = 1;
+      /* Sofort, nicht erst mit der naechsten Liste (die Leiste gleicht sonst selbst ab). */
+      eventAbheften(id);
       delete state.detail[id];
       persist();
       if (wartend.del) { var api2 = wartend.del.api; clearTimeout(wartend.del.uhr); wartend.del = null; api2.schliessen(); }
@@ -5031,7 +5151,10 @@
       p.api.schliessen();
       listeNeu();
       if (art === "anlegen") {
-        if (UC.toast) UC.toast(t("Event created"));
+        /* Erst jetzt, mit der Kennung aus der Antwort, an die Leiste (Schalter in Schritt 4). Die
+           Meldung nennt es mit, statt einen zweiten Toast zu zeigen. */
+        var angeheftet = !!p.e.anheften && eventAnheften(d, true);
+        if (UC.toast) UC.toast(t("Event created"), angeheftet ? { desc: t("Pinned to sidebar") } : undefined);
         oeffnen(id, true, false, true);
         if (anlInsDetail) setTimeout(function () { anlInsDetail = false; anleitungZeige("d1"); }, 60);
       }
@@ -5073,6 +5196,7 @@
         zieleZeigen(p, true);
       }
       if (gz) zielListeZeigen(p);
+      if (f === "cover" && p.art === "anlegen") coverWahlSchalten(p, true);
       if (!feldFehler(f, txt)) p.api.fehler(txt);
     }
     function popupFehlerKam(txt, code, hint) {
@@ -5145,6 +5269,9 @@
       });
       api.body.querySelector('.uev-schritt[data-schritt="1"]').__uevGebaut = 1;
       var p = { art: "anlegen", api: api, e: e, schritt: 1, knopf: "weiter", pops: {}, vorschauen: {}, topicSuche: "" };
+      /* Das Titelbild fuer Schritt 4 (coverZufall) jetzt schon waehlen und vorladen. */
+      p.zufallsCover = COVERS[Math.floor(Math.random() * COVERS.length)].key;
+      coverLaden(coverVon({ cover: p.zufallsCover }));
       sucheBauen(p);
       popupAufbauen(p);
       schritt(1);
@@ -5271,8 +5398,15 @@
       var tg = x.closest(".uev-datumwahl [data-tag]");
       if (tg) { if (tg.disabled) return; p.e.datum = tg.getAttribute("data-tag"); menueZu("datum"); datumNeu(); knoepfeSync(); return; }
       var cvk = x.closest("[data-cover]");
-      if (cvk) { var ck = cvk.getAttribute("data-cover"); p.e.cover = p.e.cover === ck ? null : ck; feldFehler("cover", ""); coverNeu(); pruefenZeigen(); knoepfeSync(); return; }
-      if (x.closest(".uev-cover-weg")) { p.e.cover = null; coverNeu(); pruefenZeigen(); knoepfeSync(); return; }
+      if (cvk) { var ck = cvk.getAttribute("data-cover"); p.e.cover = p.e.cover === ck ? null : ck; p.e.coverEntschieden = true; feldFehler("cover", ""); coverNeu(); pruefenZeigen(); knoepfeSync(); return; }
+      if (x.closest(".uev-cover-weg")) {
+        p.e.cover = null; p.e.coverEntschieden = true; coverNeu(); pruefenZeigen(); knoepfeSync();
+        /* Der Knopf klappt mit dem Bild weg -- der Fokus geht an den Knopf im Band, nicht ins Leere. */
+        var ck2 = im(".uev-cover-knopf"); if (ck2) { try { ck2.focus({ preventScroll: true }); } catch (e) {} }
+        return;
+      }
+      if (x.closest(".uev-cover-knopf")) { coverWahlSchalten(p, !p.coverOffen); return; }
+      if (x.closest("[data-anheften]")) { p.e.anheften = !p.e.anheften; anheftenNeu(p); return; }
       var pk = x.closest("[data-pick]");
       if (pk) { var k = pk.getAttribute("data-pick"); p.e.offen = p.e.offen === k ? null : k; aussehenKlappen(); return; }
       var ze = x.closest("[data-zeichen]");
@@ -5686,6 +5820,9 @@
        zur Uebersicht gemacht -- beim Zurueckkommen waere es weg gewesen. */
     function aufEvents() { var v = UC.currentView ? UC.currentView() : ""; return !v || v === "events"; }
     window.addEventListener("popstate", function () { if (root.isConnected && aufEvents()) adresseLesen(false); });
+    /* Die Leiste aendert ihre Liste auch ohne uns (x an der Zeile, der elfte Pin draengt den
+       aeltesten hinaus, Teamwechsel) -- der Knopf im Kopf zeigt dann den neuen Stand. */
+    window.addEventListener("up-pins-change", function () { if (root.isConnected) pinKnopfSync(); });
     window.addEventListener("up-event-open", function (e) {
       if (!root.isConnected || !e.detail) return;
       oeffnen(e.detail.id, false);
