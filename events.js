@@ -788,6 +788,8 @@
     "Newest change": "Jüngste Änderung", "Select all in folder": "Alle im Ordner auswählen",
     "Track everything under {path}": "Alles unter {path} tracken", "Included in the folder": "Im Ordner enthalten",
     "Show {n} more": "{n} weitere zeigen", "No matching pages": "Keine passenden Seiten", "Add selection": "Auswahl übernehmen",
+    /* 17.10.: nichts mehr zu waehlen, weil alles schon getrackt ist (smHoechstens) */
+    "Everything in this sitemap is already added.": "Alles aus dieser Sitemap ist bereits hinzugefügt.",
     "Expand": "Aufklappen", "Collapse": "Zuklappen",
     /* 16.10.: der Deckel im Waehler und am Feld (ZIEL_MAX je Event) */
     "You can add {n} more targets. A folder counts as one and covers every page in it.": "Du kannst noch {n} Ziele hinzufügen. Ein Ordner zählt als eins und deckt jede Seite darin ab.",
@@ -4137,6 +4139,27 @@
     }
     /* Seiten unter einem Ordner, die noch nicht getrackt sind. */
     function smWaehlbar(v, k) { return (k.alle || 0) - (v.n[k.key] || 0); }
+    /* Wie viele Ziele diese Sitemap HOECHSTENS noch hergibt, ohne den Deckel (17.10.). Bis dahin
+       stand unten "0 of 49 selected", auch wenn eine gewaehlte Domain jede Seite schon deckte
+       (Nutzer: "wirkt verwirrend") -- der Nenner war der freie Platz im Event, nicht das, was
+       hier ueberhaupt waehlbar ist. Gezaehlt wie die Auswahl selbst: ein Ordner zaehlt eins,
+       seine Seiten einzeln zaehlen mehr, beides zugleich geht nicht (smGedeckt) -- je Ordner
+       also das Groessere. Ein getrackter Knoten gibt nichts her, und was darunter liegt, deckt
+       dieselbe Regel. Ein Ordner, dessen Seiten alle schon als URL drin sind, bleibt waehlbar:
+       seine Regel zaehlt auch Seiten, die erst spaeter dazukommen. Einmal je v (smVorhanden). */
+    function smHoechstens(p, v) {
+      if (v.max != null) return v.max;
+      function geh(k) {
+        if (v.an[k.key]) return 0;
+        var s = 0;
+        k.seiten.forEach(function (x) { if (!v.an[x.key]) s++; });
+        k.kinder.forEach(function (c) { s += geh(c); });
+        return Math.max(1, s);
+      }
+      var n = 0;
+      (p.sm.hosts || []).forEach(function (h) { n += geh(h); });
+      return (v.max = n);
+    }
     /* Passt dieser (noch nicht gewaehlte) Knoten dazu? Ein Ordner ersetzt, was darunter gewaehlt ist. */
     function smPasst(dk, k) { return dk.anzahl + 1 - (k.art === "seite" ? 0 : dk.unter[k.key] || 0) <= dk.frei; }
     /* Wie viele Seiten "Select all in folder" dazunaehme: jede noch nicht getrackte darunter, ausser
@@ -4294,15 +4317,28 @@
       baum.scrollTop = oben;
       var roving = baum.querySelector('.uev-sm-reihe[tabindex="-1"]');
       if (roving && !baum.querySelector('.uev-sm-reihe[tabindex="0"]')) roving.tabIndex = 0;
-      /* Wie viele noch gehen, VOR dem Waehlen (16.10.): oben der Satz, unten "3 of 50 selected" --
-         bezogen auf das, was in diesem Event noch frei ist, nicht auf 50. */
+      /* Eine Sitemap ohne Seiten: nur der Satz oben. Suchfeld, leerer Baum und "0 of 48 selected"
+         standen bis 17.10. trotzdem da. */
+      var fuss = inh.querySelector(".uev-sm-fuss");
+      inh.querySelector(".uev-sm-suchw").hidden = baum.hidden = !d.urls.length;
+      /* Wie viele noch gehen, VOR dem Waehlen (16.10.): oben der Satz, unten "3 of 50 selected".
+         Seit 17.10. ist der Nenner das, was hier wirklich noch geht -- der freie Platz im Event
+         ODER was die Sitemap hergibt (smHoechstens), das Kleinere. Gibt sie nichts her (alles
+         schon getrackt) oder ist das Event voll, gibt es nichts zu waehlen: dann weder Zahl noch
+         Knopf, oben steht der Grund. Der Satz zum Deckel steht nur, wenn der Deckel hier
+         ueberhaupt greifen kann -- bei drei waehlbaren Seiten stand sonst "You can add 48 more
+         targets" neben "0 of 3 selected". */
+      var hoechst = smHoechstens(p, dk.v), nenner = Math.min(dk.frei, hoechst);
       var rest = dk.frei - anzahl, dl = inh.querySelector(".uev-sm-deckel");
-      dl.textContent = !d.urls.length ? "" : !dk.frei ? fehlerText("impact_event_too_many_targets")
+      dl.textContent = !d.urls.length ? "" : !hoechst ? t("Everything in this sitemap is already added.")
+        : !dk.frei ? fehlerText("impact_event_too_many_targets")
+        : hoechst <= dk.frei ? ""
         : rest <= 0 ? t("That's the most you can add. To cover more pages, select a folder instead.")
         : rest === 1 ? t("You can add 1 more target. A folder counts as one and covers every page in it.")
         : ersetze(t("You can add {n} more targets. A folder counts as one and covers every page in it."), { n: zahl(rest) });
       dl.hidden = !dl.textContent;
-      inh.querySelector(".uev-sm-zahl").textContent = dk.frei ? ersetze(t("{n} of {total} selected"), { n: zahl(anzahl), total: zahl(dk.frei) }) : ersetze(t("{n} selected"), { n: zahl(anzahl) });
+      fuss.hidden = !d.urls.length || !nenner;
+      inh.querySelector(".uev-sm-zahl").textContent = nenner ? ersetze(t("{n} of {total} selected"), { n: zahl(anzahl), total: zahl(nenner) }) : "";
       inh.querySelector(".uev-sm-nehmen").disabled = !anzahl || anzahl > dk.frei;
     }
     function smUmschalten(p, key) {
