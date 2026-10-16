@@ -845,3 +845,48 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 /* Telefon: das Datum weicht, Pfad und Marken bleiben -- wie im Sitemap-Waehler (.uev-sm-datum). */
 .uev-root.is-vnarrow .uev-abd-datum { display: none; }
 .uev-root.is-vnarrow .uev-abd-satz { white-space: normal; }
+
+/* ---- KAMPAGNEN MIT ZEITRAUM (17.10., DB-Auftrag Teil B) ------------------------------------
+   Der Status als dritte Angabe neben Datum und Typ: Zeichen + Text, keine Pille. Laufend in der
+   Akzent-Tinte -- das Einzige, was sich gerade bewegt; geplant und abgeschlossen leise wie Datum. */
+.uev-angabe.uev-status.is-running { color: var(--up-accent-ink); }
+/* Leere Plaetze stehen nicht im Raster: sonst 40 bzw. 16 Abstand fuer nichts. */
+.uev-geplant:empty, .uev-bericht:empty { display: none; }
+.uev-steuerblock .uev-kpis[hidden] { display: none; }
+/* Geplant: es gibt noch keine Ergebnisse -- ohne Steuerung, Kennzahlen, Chart, Markt, URLs und
+   Ziel-Abschnitte. Kopf, der Zustand und "Event scope" (mit den Zielen) bleiben. */
+.uev-detail.is-geplant .uev-steuerblock,
+.uev-detail.is-geplant .uev-sek-chart,
+.uev-detail.is-geplant [data-sek="ziele"],
+.uev-detail.is-geplant [data-sek="urls"],
+.uev-detail.is-geplant [data-sek="markt"],
+.uev-detail.is-geplant [data-sek="resp"] { display: none; }
+.uev-geplant-box { padding: 8px; }
+/* Kampagne: ihre Abschnitte stehen fest, kein Fenster-Umschalter. */
+.uev-detail.is-kampagne .uev-fenster { display: none; }
+/* DER ABSCHLUSSBERICHT: drei Abschnitte in einem Kasten, getrennt durch Linien wie das
+   Kennzahlen-Band (.up-kpiband). Je Abschnitt Titel und Zeitraum, darunter die drei Kennzahlen
+   als Zeilen (Bezeichnung links, Wert mit Trend rechts). Am Telefon untereinander. */
+.uev-bericht { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid var(--vc-border); border-radius: var(--up-r-2xl); background: var(--vc-bg); }
+.uev-phase { display: flex; flex-direction: column; gap: 12px; padding: 16px; min-width: 0; }
+.uev-phase + .uev-phase { border-left: 1px solid var(--vc-border); }
+.uev-phase-kopf { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.uev-phase-titel { font-size: var(--up-fs-l); font-weight: var(--up-fw-m); color: var(--vc-text); }
+.uev-phase-zeit { font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; }
+.uev-phase-werte { display: flex; flex-direction: column; gap: 8px; margin: 0; }
+.uev-phase-zeile { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: var(--up-h-chip); }
+.uev-phase-zeile dt { font-size: var(--up-fs-m); color: var(--vc-muted); }
+.uev-phase-zeile dd { display: inline-flex; align-items: center; gap: 6px; margin: 0; }
+.uev-phase-fuss { margin: 0; font-size: var(--up-fs-s); color: var(--vc-third); }
+.uev-root.is-vnarrow .uev-bericht { grid-template-columns: minmax(0, 1fr); }
+.uev-root.is-vnarrow .uev-phase + .uev-phase { border-left: 0; border-top: 1px solid var(--vc-border); }
+/* Anlegen, Schritt 1: Umschalter "Single day | Date range" ueber dem Wahlknopf, darunter ein Satz,
+   was die Wahl bewirkt. */
+.uev-datumfeld { display: flex; flex-direction: column; align-items: stretch; gap: 8px; min-width: 0; }
+.uev-datumfeld > .up-seg { align-self: flex-start; }
+.uev-datumhilfe { font-size: var(--up-fs-s); line-height: 1.5; color: var(--vc-third); }
+/* Das Urteil als Zeichen allein (17.10., Teil D, konfZeichenHtml): in den Zeilen des
+   Abschlussberichts hinter dem Trend, 14 wie die Zeichen der Angaben. */
+.uev-konf-urteil.is-zeichen { color: var(--vc-third); }
+.uev-konf-urteil.is-zeichen svg { width: 14px; height: 14px; }
