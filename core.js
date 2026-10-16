@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261173;
+  var BUILD = 20261174;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -12647,34 +12647,17 @@
         try { still = S.btn.matches(":hover"); } catch(err){ still = true; }
         if (!still) hideTip();
       });
-      /* Keep an open tooltip glued to its trigger while the page scrolls: a cheap
-         compositor-only transform nudge per frame, then one full reposition once scrolling
-         settles. Just hiding on scroll reads as "the tooltip vanished", not "it is attached". */
-      var repositionRaf = null, settleTimer = null;
+      /* Beim Scrollen gibt es keinen Tooltip (17.10., Nutzer: "hover, Tooltip kommt, scrollen: dann
+         springt das Tooltip hin und her -- on scroll einfach ausblenden"). Bis dahin zog ihn ein
+         Transform pro Frame dem Ausloeser hinterher und setzte ihn danach neu: gemessen hinkte er dem
+         Ausloeser um bis zu 35px nach und sprang in Stufen (206, 181, 131, 106, 81, 56 px). Jetzt
+         verschwindet er beim ersten Scroll-Ereignis (jedes scrollende Element: capture) und ein noch
+         wartender Tooltip kommt gar nicht erst. S.lastScrollAt haelt die Mausereignisse, die der Browser
+         beim Verschieben des Inhalts unter dem ruhenden Zeiger nachliefert, 200ms lang zurueck -- so
+         erscheint auch kein anderer Tooltip mitten im Scrollen. */
       window.addEventListener("scroll", function(){
         S.lastScrollAt = Date.now();
-        if (!S.btn) return;
-        if (repositionRaf) return;
-        repositionRaf = requestAnimationFrame(function(){
-          repositionRaf = null;
-          if (!S.btn || !S.placedRect) return;
-          var r = S.btn.getBoundingClientRect();
-          /* Ist der Ausloeser aus dem Bild gescrollt, hat ein Tooltip an seiner Stelle keinen
-             Sinn mehr -- er stand vorher irgendwo am Rand und zeigte auf nichts. */
-          var vh = window.innerHeight || document.documentElement.clientHeight;
-          if (r.bottom < 0 || r.top > vh){ hideTip(); return; }
-          tip.style.transform = "translate(" + Math.round(r.left - S.placedRect.left) + "px," + Math.round(r.top - S.placedRect.top) + "px)";
-          clearTimeout(settleTimer);
-          /* Das Nachsetzen erst, wenn das Scrollen WIRKLICH ruht. Vorher lief es stur 150ms nach
-             dem letzten Frame -- bei laufendem Scrollen also mitten in der Bewegung, und dann
-             kaempften zwei Positionen um dasselbe Element: das Transform folgte der alten
-             Verankerung, placeTip setzte eine neue. Das war das Springen. */
-          settleTimer = setTimeout(function(){
-            if (!S.btn) return;
-            if (Date.now() - S.lastScrollAt < 140){ return; }
-            placeTip();
-          }, 160);
-        });
+        if (S.btn || S.timer || tip.classList.contains("is-on")) hideTip();
       }, { capture: true, passive: true });
       window.addEventListener("blur", hideTip);
     }
