@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261170;
+  var BUILD = 20261171;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -2790,6 +2790,7 @@
     "Save current filters": "Aktuelle Filter speichern",
     "Name for these filters": "Name für diese Filter",
     "Delete {name}": "{name} löschen",
+    "Some filters no longer exist": "Einige Filter gibt es nicht mehr",
     /* Das Konto-Menue der Seitenleiste (07.09. ausdruecklich angefordert). */
     "Account Settings": "Kontoeinstellungen",
     "System": "System",
@@ -6642,27 +6643,35 @@
     try { window.dispatchEvent(new CustomEvent("up-intentfilter", { detail: neu })); } catch(e){}
     return true;
   }
+  /* EIN AUFRUF MIT DEM INTENT-FILTER (14.10., Rueckfall am 17.10. entfernt, VTR-05).
+     Fuer brand_detail_v1 und domain_detail_v1, die den Filter seit audit_14_10 kennen. Bis hierher
+     wiederholte die Funktion bei 404 PGRST202 denselben Aufruf OHNE p_intents/p_branded: kam je
+     ein PGRST202 (Schema-Cache, Signaturaenderung), zeigte der Drawer still ungefilterte Werte, als
+     waeren sie gefiltert -- leer und kaputt sahen gleich aus. Jetzt geht der Fehler an den Aufrufer
+     und steht als Fehlerzustand im Drawer. */
+  function rpcMitIntent(fn, params, opts){
+    var x = intentFilterParams(), mit = {}, k;
+    for (k in params) if (Object.prototype.hasOwnProperty.call(params, k)) mit[k] = params[k];
+    for (k in x) if (Object.prototype.hasOwnProperty.call(x, k)) mit[k] = x[k];
+    return rpc(fn, mit, opts);
+  }
+  /* WIRKSAM GEFILTERT? Alle vier wahlbaren Intents sind NICHT "kein Filter" fuer die Datenbank:
+     ein Prompt ohne Intent (jeder neue, bis er eingestuft ist: "Classifying", NULL) faellt aus
+     jeder Teilmenge heraus, und die vier Haken decken ihn nicht ab (FLT-03, 17.10.). Wer alle vier
+     waehlt, will alle sehen: dann geht kein p_intents hinaus, wie bei gar keiner Wahl. Die Haken
+     bleiben, wie sie sind (die Auswahl ist nicht unsere zu aendern), nur die Anfrage wird eine
+     ungefilterte. */
+  function intentWirksam(l){
+    l = Array.isArray(l) ? l : [];
+    if (!l.length) return false;
+    return !INTENTE.every(function(a){ return l.indexOf(a.key) >= 0; });
+  }
   /* Die Parameter fuer einen Aufruf. opts.branded === false: ohne p_branded (Prompts-Tabelle).
      Nicht freigegeben: leer -- dann geht kein einziger neuer Parameter hinaus. */
-  /* EIN AUFRUF MIT DEM INTENT-FILTER, DER NICHT AN EINEM FEHLENDEN PARAMETER STIRBT (14.10.).
-     Fuer Funktionen, die den Filter erst mit einem DB-Stand kennen (domain_detail_v1 und
-     brand_detail_v1 ab audit_14_10): ohne ihn antwortet PostgREST mit 404 PGRST202, und der
-     Drawer-Kopf waere leer. Dann einmal ohne die Filterparameter -- dasselbe wie vorher. */
-  function rpcMitIntent(fn, params, opts){
-    var x = intentFilterParams(), mit = {}, k, hat = false;
-    for (k in params) if (Object.prototype.hasOwnProperty.call(params, k)) mit[k] = params[k];
-    for (k in x) if (Object.prototype.hasOwnProperty.call(x, k)){ mit[k] = x[k]; hat = true; }
-    if (!hat) return rpc(fn, params, opts);
-    return rpc(fn, mit, opts).then(function(erg){
-      var code = erg && erg.fehler ? String(erg.fehler.code || "") : "";
-      if (erg && !erg.ok && erg.status === 404 && code === "PGRST202") return rpc(fn, params, opts);
-      return erg;
-    });
-  }
   function intentFilterParams(opts){
     if (!intentsLive()) return {};
     var f = intentFilterGet(), p = {};
-    if (f.intents.length) p.p_intents = f.intents.slice();
+    if (intentWirksam(f.intents)) p.p_intents = f.intents.slice();
     if (!opts || opts.branded !== false) p.p_branded = f.branded;
     return p;
   }
@@ -6675,7 +6684,7 @@
     f = f || {};
     function voll(x){ return !!(x && x.length); }
     if (voll(f.modelle) || voll(f.maerkte) || voll(f.topics)) return true;
-    return intentsLive() && intentFilterGet().intents.length > 0;
+    return intentsLive() && intentWirksam(intentFilterGet().intents);
   }
 
   /* Loading skeleton rows for a grid table.
@@ -7449,6 +7458,13 @@
     function prioOf(c){
       var r = vorrangRang(c.key);
       if (r >= 0) return 1e6 + r;
+      /* Die Spalte, nach der GERADE sortiert wird, faellt der Breite wegen nie vor den anderen
+         (17.10., Audit TAB-09): in den Responses sortiert die Standardwahl nach Datum, und die
+         Datumsspalte fiel als erste weg -- die Tabelle war nach etwas geordnet, das nirgends zu
+         sehen war, und kein Kopf trug den Pfeil. Wie eine angeklickte Spalte, nur unter dem
+         ausdruecklichen Wunsch im Menue (1e6). Spaltenschluessel und Sortierfeld heissen in allen
+         Tabellen gleich (date, created, rank, ...); wo eines fehlt, aendert sich nichts. */
+      if (state.sortField != null && state.sortField === c.key) return 5e5;
       var unter = c.prio != null ? c.prio : (COLUMNS.length - COLUMNS.indexOf(c));
       var a = (c.art && SPALTEN_ART[c.art] != null) ? SPALTEN_ART[c.art] : null;
       return a != null ? a * 1000 + unter : unter;
@@ -7984,7 +8000,7 @@
                  '<span class="up-pop-label">' + esc(t_(c.label)) +
                    (platzlos ? '<span class="up-pop-hint">' + esc(t_("No space")) + '</span>' : "") +
                  '</span>' +
-                 '<span class="up-switch' + (on ? " is-on" : "") + '" role="switch" aria-checked="' + (on ? "true" : "false") + '"></span>' +
+                 '<span class="up-switch' + (on ? " is-on" : "") + '" role="switch" aria-label="' + esc(t_(c.label)) + '" aria-checked="' + (on ? "true" : "false") + '"></span>' +
                '</div>';
       }).join("");
       var densePart = cfg.dense
@@ -8186,8 +8202,23 @@
       if (!el) return;
       var total = pageCount();
       var cur = Math.min(state.page, total);
-      if (cur !== state.page){ state.page = cur; if (cfg.onClamp) cfg.onClamp(); }
       var t = totalOf();
+      if (cur !== state.page){
+        state.page = cur;
+        if (cfg.onClamp) cfg.onClamp();
+        /* Schrumpft die Liste unter die aktuelle Seite (Refresh nach dem Loeschen, ein anderer
+           Zeitraum-Stand), zeigte der Zaehler "1-20 of 20" ueber einer Tabelle ohne Zeilen: die
+           Seite wurde nur umgeschrieben, die Zeilen der letzten Seite (leer) blieben stehen und
+           nichts holte Seite 1 (17.10. gemessen, Prompts: 1 Anfrage mit Offset 25, danach
+           Leerzustand). cfg.neuLaden = der Server liefert die Zeilen: dann wird die geklemmte
+           Seite geholt wie nach einem Klick auf sie. Nur bei bekannter, positiver Gesamtzahl und
+           ohne laufende Anfrage: waehrend einer kann die Zahl noch die des alten Stands sein.
+           Das Skelett (loading) deckt die leeren Zeilen, bis die Antwort kommt. */
+        if (cfg.neuLaden && cfg.onChange && t != null && t > 0 && !state.loading){
+          state.loading = true;
+          cfg.onChange("klemme");
+        }
+      }
       var info = "";
       if (t != null && t > 0){
         var from = offset() + 1;
@@ -8197,7 +8228,7 @@
         info = '<span class="up-pager-info">' +
           esc(t_("{from}–{to} of {total}")
                 .replace("{from}", fmtInt(from)).replace("{to}", fmtInt(to))
-                .replace("{total}", fmtTotal(t))) + '</span>';
+                .replace("{total}", fmtInt(t))) + '</span>';
       }
       var pages = pageWindow(cur, total).map(function(p){
         if (p === "gap") return '<span class="up-page-gap">…</span>';
@@ -8229,7 +8260,7 @@
       if (!el) return;
       el.innerHTML = sizesOf().map(function(n){
         return '<button class="up-pagesize-btn' + (n === state.pageSize ? " is-active" : "") +
-               '" type="button" data-pagesize="' + n + '">' + n + '</button>';
+               '" type="button" aria-pressed="' + (n === state.pageSize ? "true" : "false") + '" data-pagesize="' + n + '">' + n + '</button>';
       }).join("");
       syncFootWrap();
     }
@@ -8338,8 +8369,83 @@
      Original dort -- es gehoert jetzt an die Huelle, sonst fuehrt kein Weg zurueck auf Englisch. */
   var KOPF_KLASSEN = ["up-th", "vt-th", "tct-th"];
   var KOPF_SEL = ".up-th, .vt-th, .tct-th";
+  /* ---------- Tabellen fuer Tastatur und Vorleser (17.10., Audit TAB-04/05/06/12) ----------
+     DER BEFUND: ein Sortierkopf war ein div mit click -- ohne Tabulatorstopp, ohne Taste, ohne
+     Rolle. Wer ohne Maus arbeitet, kam an keine Sortierung heran, und ein Vorleser las keine
+     Tabelle, sondern lose Texte (kein einziges role auf der Prompt-Seite).
+     Die Rollen setzt EINMAL dieser Lauf (dort, wo schon jeder frische Ast vorbeikommt), nicht je
+     Datei: Koepfe und Zeilen bauen ein Dutzend Dateien aus handgemachtem Markup, und eine
+     Komponente, die ihre Zeilen neu schreibt, faellt sonst wieder aus der Semantik.
+     TABELLE und nicht GRID (WAI-ARIA): ein grid verlangt ein Tastaturmodell (ein Tabulatorstopp,
+     Pfeiltasten von Zelle zu Zelle) und taugt fuer Tabellen, die man wie eine Tabellenkalkulation
+     bedient. Diese hier sind Listen, deren Zeile eine Handlung ausloest (oeffnet das Detail): jede
+     Zeile bleibt ein Tabulatorstopp mit Enter, ihre Knoepfe und Haken sind echte Bedienelemente
+     darin. Ein role=grid ohne Pfeiltasten waere ein Versprechen, das die Tabelle nicht haelt.
+     Und die Zeile ist KEIN role=button mehr (das war sie bis dahin): ein Knopf darf keine Knoepfe
+     enthalten, und genau das tut sie (Haken, Seitenknopf, Menue).
+     Sortierkopf: role=columnheader, focusierbar, Enter und Leertaste sortieren (document-weit,
+     weiter unten). aria-sort steht nur an der sortierten Spalte (makeHeadSort). */
+  function kopfBedienen(th){
+    if (th.closest(".ulh-root")) return;
+    var tr = th.parentElement;
+    /* columnheader gehoert in eine Zeile in einer Tabelle: nur der Kopf der .up-table-Tabellen */
+    if (tr && tr.classList.contains("up-thead") && th.classList.contains("up-th")){
+      if (!tr.hasAttribute("role")) tr.setAttribute("role", "row");
+      if (!th.hasAttribute("role")) th.setAttribute("role", "columnheader");
+      var tab = tr.parentElement;
+      if (tab && tab.classList.contains("up-table") && !tab.hasAttribute("role")) tab.setAttribute("role", "table");
+    }
+    if (th.classList.contains("is-sortable") && !th.hasAttribute("tabindex")) th.setAttribute("tabindex", "0");
+  }
+  function zeileBedienen(r){
+    var rl = r.getAttribute("role");
+    if (rl === "button" && r.hasAttribute("aria-expanded")) return;   /* eine aufklappende Zeile (Ads) hat ihre eigene Rolle */
+    if (rl && rl !== "button" && rl !== "row") return;
+    if (rl !== "row") r.setAttribute("role", "row");
+    for (var c = r.firstElementChild; c; c = c.nextElementSibling){
+      if (c.classList.contains("up-td") && !c.hasAttribute("role")) c.setAttribute("role", "cell");
+    }
+  }
+  function tabelleBedienen(start){
+    var tab = start.closest(".up-table");
+    var ziele = [];
+    if (tab) ziele.push([tab, start]);
+    else {
+      var l = start.getElementsByClassName("up-table");
+      for (var i = 0; i < l.length; i++) ziele.push([l[i], l[i]]);
+    }
+    for (var z = 0; z < ziele.length; z++){
+      var t = ziele[z][0], bereich = ziele[z][1];
+      if (t.closest(".ulh-root")) continue;
+      if (!t.hasAttribute("role")) t.setAttribute("role", "table");
+      var tb = t.getElementsByClassName("up-tbody");
+      for (var b = 0; b < tb.length; b++) if (!tb[b].hasAttribute("role")) tb[b].setAttribute("role", "rowgroup");
+      /* Ein frischer Ast kann die Zeile selbst sein, in einer Zeile liegen (eine Zelle, die sich
+         neu zeichnet) oder viele Zeilen tragen (der ganze Rumpf). */
+      var eigene = bereich.closest ? bereich.closest(".up-row") : null;
+      if (eigene && t.contains(eigene)) zeileBedienen(eigene);
+      var zl = bereich.getElementsByClassName("up-row");
+      for (var k = 0; k < zl.length; k++) zeileBedienen(zl[k]);
+    }
+  }
+  /* Enter und Leertaste an einem fokussierten Sortierkopf = Klick darauf. Der Klick ist der eine
+     Weg, den jede Tabelle schon behandelt (headSortClick hinter .up-th.is-sortable); ein zweiter
+     Weg je Datei waere ein Dutzend Kopien. Nur wenn der Kopf SELBST den Fokus hat: der Haken
+     "Alle waehlen" im Kopf der Prompt-Tabelle und das Info-Zeichen haben ihre eigene Taste. */
+  if (!window.__upKopfTaste){
+    window.__upKopfTaste = true;
+    document.addEventListener("keydown", function(e){
+      if (e.key !== "Enter" && e.key !== " ") return;
+      var th = e.target;
+      if (!th || th.nodeType !== 1 || !th.classList || !th.classList.contains("is-sortable") || !th.classList.contains("up-th")) return;
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+      e.preventDefault();      /* die Leertaste scrollt sonst die Seite */
+      th.click();
+    });
+  }
   function kopfTextEinpacken(th){
     if (!th || th.nodeType !== 1) return null;
+    kopfBedienen(th);
     if (th.classList.contains("up-th-mentioned") || th.classList.contains("up-th-ment")) return null;
     if (th.closest(".ulh-root")) return null;
     var erste = null;
@@ -8371,6 +8477,7 @@
       var l = start.getElementsByClassName(KOPF_KLASSEN[i]);
       for (var j = 0; j < l.length; j++) kopfTextEinpacken(l[j]);
     }
+    tabelleBedienen(start);
   }
   /* DER VOLLE WORTLAUT EINES GEKUERZTEN KOPFS OHNE INFO-ZEICHEN. Mit Info-Zeichen nennt ihn die
      Erklaerkarte (Titel = Etikett), ein zweiter Tooltip daneben waere doppelt. Ohne -- "Zuletzt
@@ -8434,7 +8541,12 @@
           : (state.sortField === col);
         if (owns) el.classList.add(state.sortDir === "asc" ? "is-asc" : "is-desc");
         var th = el.closest(".up-th");
-        if (th) th.setAttribute("aria-sort", owns ? (state.sortDir === "asc" ? "ascending" : "descending") : "none");
+        /* Nur die sortierte Spalte traegt aria-sort (WAI-ARIA, Sortable Table): "none" an jeder
+           anderen liest ein Vorleser als lauter Sortierzustaende, obwohl nur einer gilt. */
+        if (th){
+          if (owns) th.setAttribute("aria-sort", state.sortDir === "asc" ? "ascending" : "descending");
+          else th.removeAttribute("aria-sort");
+        }
       });
       if (!TREND) return;
       /* show "Trend" next to the Share label while the trend key is the active sort */
@@ -12904,7 +13016,7 @@
     }).join("");
     html += '<div class="up-pop-div"></div>' +
       '<div class="up-pop-row"><span class="up-pop-label">Descending</span>' +
-        '<span class="up-switch' + (sortDir === "desc" ? " is-on" : "") + '" role="switch" data-sortdir></span>' +
+        '<span class="up-switch' + (sortDir === "desc" ? " is-on" : "") + '" role="switch" aria-label="' + esc(t_("Descending")) + '" aria-checked="' + (sortDir === "desc" ? "true" : "false") + '" data-sortdir></span>' +
       '</div>';
     return html;
   }
@@ -28952,7 +29064,7 @@
         schalterEl.className = "up-zaehl-schalter";
         schalterEl.innerHTML = '<div class="up-pop-div"></div>' +
           '<div class="up-pop-row" data-sum-schalter><span class="up-pop-label">' + esc(t("Summary row")) + '</span>' +
-          '<span class="up-switch" role="switch" aria-checked="false"></span></div>';
+          '<span class="up-switch" role="switch" aria-label="' + esc(t("Summary row")) + '" aria-checked="false"></span></div>';
         schalterEl.addEventListener("click", function(e){
           if (!e.target.closest || !e.target.closest("[data-sum-schalter]")) return;
           e.stopPropagation();

@@ -615,7 +615,7 @@
         renderList();
         var cur = elList.querySelector(".utf-opt.is-cursor");
         if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: "nearest" });
-      } else if (e.key === "Enter" && cursor >= 0 && rows[cursor]) {
+      } else if (e.key === "Enter" && cursor >= 0 && rows[cursor] && !e.defaultPrevented) {
         e.preventDefault();
         toggle(rows[cursor].getAttribute("data-id"));
       }
@@ -671,6 +671,23 @@
       var b = e.target.closest ? e.target.closest(".utf-opt") : null;
       if (!b) return;
       toggle(b.getAttribute("data-id"));
+    });
+    /* Enter und Leertaste auf einer fokussierten Zeile (17.10., FLT-05). Der Zuhoerer am Dokument
+       oben gilt nur bei offenem Panel (open) -- in der Filterleiste bleibt open absichtlich false,
+       dort waren die Zeilen (tabindex 0) erreichbar, aber ohne Wirkung. Wie beim Intent-Filter:
+       die Taste klickt die Zeile. preventDefault, damit der Zuhoerer oben dieselbe Taste nicht noch
+       einmal als Cursor-Wahl nimmt (defaultPrevented), und die Seite nicht mit der Leertaste scrollt. */
+    root.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      var r = e.target.closest && e.target.closest(".utf-opt");
+      if (!r || !elList.contains(r)) return;
+      e.preventDefault();
+      /* Die Liste wird beim Wahlen neu gezeichnet: der Fokus bliebe sonst am entfernten Knoten
+         haengen, und mit der Tastatur ginge es nicht weiter. Dieselbe Stelle wieder fokussieren. */
+      var nr = [].indexOf.call(elList.querySelectorAll(".utf-opt"), r);
+      r.click();
+      var neu = elList.querySelectorAll(".utf-opt")[nr];
+      if (neu && neu !== r) { try { neu.focus(); } catch (e2) {} }
     });
     function toggleGroup(key) {
       var list = readCustomGroups(), g = null;
