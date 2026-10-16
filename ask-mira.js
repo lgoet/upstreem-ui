@@ -1809,7 +1809,9 @@
     improve_existing_content: amFormen("trendingUp")
   };
   var _OPP_CITE = { Brand_Platform:'Brand Platforms', UGC_Community:'UGC / Community', Competition:'Competition', Editorial:'Editorial', Institutional:'Institutional', Knowledge_Base:'Knowledge Base', You:'Your Content' };
-  var _OPP_STAT_COLOR = { pending:'#9ca3af', in_progress:'#2384E2', done:'#15803d', ignored:'#b4451f' };
+  /* Die Statusfarben aus core (17.10., --vc-mira-opp-*): als var() ins Inline-Style, aufgeloest am
+     Punkt selbst -- Mira und ihre Menues sind .up-root, dort stehen die Tokens. */
+  var _OPP_STAT_COLOR = { pending:'var(--vc-mira-opp-offen)', in_progress:'var(--vc-mira-opp-laeuft)', done:'var(--vc-mira-opp-erledigt)', ignored:'var(--vc-mira-opp-ignoriert)' };
   // the four canonical statuses a card can move between (label = exact DB status value)
   /* DIESELBEN NAMEN WIE IM OPPORTUNITIES-BOARD (19.09. gemeldet: "die Statusnamen sind andere
      als in der Tabelle, das geht gar nicht").
@@ -1820,10 +1822,10 @@
      Die Trennung ist dieselbe wie in COLUMNS in opportunities.js -- und sie ist noetig, nicht
      kosmetisch: an Bubble geht weiterhin status, nicht label. */
   var OPP_STATUSES = [
-    { key:'pending',     label:'Pending',     status:'Created',     color:'#9ca3af' },
-    { key:'in_progress', label:'In Progress', status:'In Progress', color:'#2384E2' },
-    { key:'done',        label:'Done',        status:'Done',        color:'#15803d' },
-    { key:'ignored',     label:'Ignored',     status:'Ignored',     color:'#b4451f' }
+    { key:'pending',     label:'Pending',     status:'Created',     color:'var(--vc-mira-opp-offen)' },
+    { key:'in_progress', label:'In Progress', status:'In Progress', color:'var(--vc-mira-opp-laeuft)' },
+    { key:'done',        label:'Done',        status:'Done',        color:'var(--vc-mira-opp-erledigt)' },
+    { key:'ignored',     label:'Ignored',     status:'Ignored',     color:'var(--vc-mira-opp-ignoriert)' }
   ];
   var OPP_STATUS_MAP = {}; OPP_STATUSES.forEach(function(s){ OPP_STATUS_MAP[s.key] = s; });
   function statusOptionsHtml(currentKey){
@@ -1866,7 +1868,7 @@
     var hidden = list.length - shown.length;
     var html = shown.map(function(t){
       t = t || {};
-      var color = t.hex_light || t.hex_dark || '#6b7280';
+      var color = t.hex_light || t.hex_dark || 'var(--vc-mira-thema-rueckfall)';   // Topic ohne Farbe: Token aus core
       return '<span class="up-topicchip is-static" style="--ust-tag-color:'+_escAttr(color)+';">'+
         (t.emoji?'<span class="up-topicchip-e">'+esc(t.emoji)+'</span>':'')+
         '<span class="up-topicchip-lbl">'+esc(t.name||'')+'</span></span>';
@@ -3483,7 +3485,7 @@
     return out.slice(0, 20);
   }
   function _tlTopicList(){
-    return (S.topics || []).slice(0, 20).map(function(t){ return { name: t.name || '', color: (t.hex_light || t.hex_dark || '#6b7280') }; });
+    return (S.topics || []).slice(0, 20).map(function(t){ return { name: t.name || '', color: (t.hex_light || t.hex_dark || 'var(--vc-mira-thema-rueckfall)') }; });
   }
   function _tlChip(cls, src, fbSrc, label, color){
     var w = document.createElement('span'); w.className = cls;
@@ -3492,7 +3494,7 @@
       var triedFb = false;
       im.onerror = function(){
         if (fbSrc && !triedFb){ triedFb = true; im.src = fbSrc; return; }   // try the favicon fallback first
-        w.classList.add('is-fb'); w.style.setProperty('--fb', color || '#9ca3af'); w.textContent = String(label || '?').charAt(0).toUpperCase();
+        w.classList.add('is-fb'); w.style.setProperty('--fb', color || 'var(--vc-mira-logo-rueckfall)'); w.textContent = String(label || '?').charAt(0).toUpperCase();
       };
       im.src = src; w.appendChild(im);
     } else { w.style.background = 'var(--am-soft)'; }   // placeholder chip when no asset
@@ -3592,7 +3594,7 @@
     if (!l.length) return;                             /* keine Logos -> keine leeren Kaesten */
     l.forEach(function(it, i){
       var c = (st.kind === 'responses')
-        ? _tlChip('am-tload-ai', it.src, '', it.label, '#9ca3af')
+        ? _tlChip('am-tload-ai', it.src, '', it.label, 'var(--vc-mira-logo-rueckfall)')
         : _tlChip('am-tload-logo', it.src, it.fb_src, it.label, it.color);
       c.style.transitionDelay = (i * 70) + 'ms';       /* die drei Logos kommen nacheinander */
       lead.appendChild(c);
@@ -10442,7 +10444,7 @@
       ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
       var barW=2, gap=2, step=barW+gap, n=Math.floor(W/step), mid=H/2;
       while (levels.length>n) levels.shift();
-      ctx.fillStyle = (getComputedStyle(root).getPropertyValue('--am-text').trim() || '#1f1f1b');
+      ctx.fillStyle = (getComputedStyle(root).getPropertyValue('--am-text').trim() || getComputedStyle(root).color);   // Rueckfall: die Schrift der Wurzel, die selbst aus --am-text kommt
       for (var b=0;b<levels.length;b++){
         var amp = Math.min(1, levels[b]*2.6), h = Math.max(2, amp*(H-4)), x = W-(levels.length-b)*step, y=mid-h/2, r=barW/2;
         ctx.globalAlpha = 0.32 + 0.68*amp;

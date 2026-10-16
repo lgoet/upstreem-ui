@@ -381,6 +381,92 @@
          wo es deklariert ist -- stuende es nur hier, erbte ein dunkles Portal den hellen Glanz. */
       --up-sk-glanz: rgba(0,0,0,.03);
       --up-sk-verlauf: linear-gradient(90deg, rgba(0,0,0,0) 0%, var(--up-sk-glanz) 50%, rgba(0,0,0,0) 100%) 0 0 / 150% 100% repeat-x;
+      /* ---- Komponentenfarben: Mira (17.10.) ----
+         Alles, was ask-mira.css und ask-mira.js bis heute als Literal trugen ("alles, was wir an
+         Farben nutzen -> core"), mit GENAU den Werten von vorher -- die Umstellung aendert keinen
+         einzigen Bildpunkt, gemessen per Fingerabdruck ueber vier Themen. Mira liest sie ueber
+         ihre --am-* oder direkt; die --am-*-Namen bleiben.
+         Hier, an :root, .up-root und [data-theme="light"], und nicht an #ask-mira: das Chat-Menue
+         (.am-cm), das Einstellungsfenster (.am-set-backdrop) und das Mini-Menue haengen am <body>.
+         GLEICH IN ALLEN VIER THEMEN (hell, grau-hell, dunkel, Geist-dunkel) und deshalb nur hier:
+         .up-root trifft auch eine dunkle Wurzel, :root alles am <body>. So standen sie auch in der
+         Komponente -- ein Literal ohne Dunkel-Regel. Die Rollen:
+           status*            der Punkt "Ready" und sein Puls, der Ring beim Laden
+           opp-*              die vier Status einer Opportunity (Punkt im Statusmenue); erledigt
+                              auch der Knopf "Add as opportunity" nach dem Anlegen
+           thema-rueckfall    ein Topic ohne Farbe (hex_light/hex_dark leer)
+           logo-rueckfall     der Buchstabenkasten, wenn ein Logo im Lauf nicht laedt
+           auf-farbe          Schrift und Zeichen auf einer Farbflaeche (Buchstabenkasten, Pille
+                              "neue Nachricht", gewaehlter Haken hell, Punkte auf der Reglerfuellung)
+           lauf-glanz         der Lichtstreifen ueber dem laufenden Schritt
+           signal*            das Blau fuer "neue Nachricht" (Pille im Chat, Punkt in der Chatliste)
+           regler-*           Daumen und gefuellter Halt des Aufwand-Reglers
+           haken-rand         der leere Haken im Einstellungs-Dropdown
+           aufnahme-punkt     der rote Punkt des Diktiermodus
+           speichern/loeschen Hover der Mini-Knoepfe und "Delete" im Chat-Menue */
+      --vc-mira-status: #2ec27e;
+      --vc-mira-status-puls: rgba(46,194,126,0.5);
+      --vc-mira-status-puls-an: rgba(46,194,126,0.45);
+      --vc-mira-status-puls-aus: rgba(46,194,126,0);
+      --vc-mira-status-laden: rgba(31,31,27,0.4);
+      --vc-mira-opp-offen: #9ca3af;
+      --vc-mira-opp-laeuft: #2384E2;
+      --vc-mira-opp-erledigt: #15803d;
+      --vc-mira-opp-ignoriert: #b4451f;
+      --vc-mira-thema-rueckfall: #6b7280;
+      --vc-mira-logo-rueckfall: #9ca3af;
+      --vc-mira-auf-farbe: #fff;
+      --vc-mira-lauf-glanz: rgba(255,255,255,0.85);
+      --vc-mira-signal: #2f6df6;
+      --vc-mira-signal-hover: #2b63dd;
+      --vc-mira-signal-schein: rgba(47,109,246,0.30);
+      --vc-mira-regler-punkt: rgba(255,255,255,0.85);
+      --vc-mira-regler-daumen: #ffffff;
+      --vc-mira-haken-rand: #b7bbc2;
+      --vc-mira-aufnahme-punkt: #e5484d;
+      --vc-mira-speichern: #1a7f4b;
+      --vc-mira-loeschen: #c0392b;
+      /* JE THEMA VERSCHIEDEN, hier die helle Fassung (grau-hell gleich), die dunkle im naechsten
+         Block (Geist-dunkel gleich). Wo die Komponente hell und dunkel je ein Literal fuehrte, wechselt
+         jetzt das Token, und ihre Dunkel-Regel ist entfallen. Steht ein var() darin, ist das der Wert,
+         den Miras eigene Regel in diesem Thema schon aus einer Marke nahm -- dort bleibt die Regel
+         stehen, und die Zeile hier haelt das Token in beiden Themen vollstaendig.
+           akzent*            Miras Violett und Blau (die Mini-Knoepfe "an")
+           blase-*            die Blase des Nutzers (dunkel #2f2f2f, hell die Kopfflaeche)
+           raster             das 44px-Raster hinter der Schale
+           positiv/negativ/quelle/unklar  die Markierungen im Antworttext (Grund und Schrift)
+           tabelle-streifen   jede zweite Zeile einer Tabelle in der Antwort
+           composer-schale    die leise Flaeche um das Eingabefeld
+           gewaehlt           gewaehlte Zeile im Modell-Menue und im Einstellungs-Dropdown
+           entfernen-hover    das X an einem Zitat und an einem Chip im Picker
+           picker-schatten    die Farbe des Schattens nach oben (die Masse stehen in der Regel)
+           aufnahme-*         Hover der beiden Knoepfe im Diktiermodus, seine Fehlerzeile
+           schleier           ueber der Seite, wenn die Chatliste am Telefon aufliegt
+           haken-an           der gewaehlte Haken im Dunkeln (hell traegt er --am-primary)
+           skelett-blase-*    die zwei Toene des Skeletts in der Blase des Nutzers */
+      --vc-mira-akzent: #7c5cff;
+      --vc-mira-akzent-2: #4f8bff;
+      --vc-mira-akzent-soft: rgba(124,92,255,0.10);
+      --vc-mira-blase-bg: var(--vc-heading-bg);
+      --vc-mira-blase-ink: var(--vc-text);
+      --vc-mira-raster: rgba(31,31,27,0.022);
+      --vc-mira-positiv-bg: rgba(22,163,74,0.09);    --vc-mira-positiv-ink: #166534;
+      --vc-mira-negativ-bg: rgba(220,38,38,0.14);    --vc-mira-negativ-ink: #991b1b;
+      --vc-mira-quelle-bg: rgba(37,99,235,0.085);    --vc-mira-quelle-ink: #1d4ed8;
+      --vc-mira-unklar-bg: rgba(217,119,6,0.10);     --vc-mira-unklar-ink: #92400e;
+      --vc-mira-tabelle-streifen: rgba(0,0,0,0.012);
+      --vc-mira-composer-schale: #f9f8f9;
+      --vc-mira-gewaehlt: #f0f0ef;
+      --vc-mira-entfernen-hover: rgba(0,0,0,0.06);
+      --vc-mira-picker-schatten: rgba(0,0,0,0.06);
+      --vc-mira-aufnahme-weg-hover: #e9e9ec;
+      --vc-mira-aufnahme-ok-hover: #585855;
+      --vc-mira-aufnahme-fehler: var(--vt-down);
+      --vc-mira-schleier: rgba(0,0,0,.30);
+      --vc-mira-haken-an: var(--vc-text);
+      --vc-mira-skelett-blase-a: rgba(255,255,255,0.35);
+      --vc-mira-skelett-blase-b: rgba(255,255,255,0.6);
+      /* ---- Ende Komponentenfarben: Mira ---- */
 }
 [data-theme="dark"], .up-root[data-theme="dark"] {
       /* Die Tiefen im dunklen Thema, wie Geist sie an .dark-theme fuehrt (15.10.): auf dunklem
@@ -433,6 +519,33 @@
       /* Der Glanz des Skeletts im Dunkeln: Weiss statt Schwarz (Begruendung im hellen Block). */
       --up-sk-glanz: rgba(255,255,255,.025);
       --up-sk-verlauf: linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--up-sk-glanz) 50%, rgba(255,255,255,0) 100%) 0 0 / 150% 100% repeat-x;
+      /* ---- Komponentenfarben: Mira (17.10.) ----
+         Die dunklen Fassungen der Mira-Farben, die je Thema verschieden sind (Rollen und
+         Begruendung im hellen Block). Geist-dunkel traegt dieselben Werte -- so stand es auch in
+         der Komponente: ihre Dunkel-Regeln hingen nur an data-theme, nie an html[data-up-dunkel]. */
+      --vc-mira-akzent: #9d83ff;
+      --vc-mira-akzent-2: #6ba0ff;
+      --vc-mira-akzent-soft: rgba(157,131,255,0.13);
+      --vc-mira-blase-bg: #2f2f2f;
+      --vc-mira-blase-ink: #ececec;
+      --vc-mira-raster: rgba(255,255,255,0.022);
+      --vc-mira-positiv-bg: rgba(34,197,94,0.12);    --vc-mira-positiv-ink: #86efac;
+      --vc-mira-negativ-bg: rgba(248,113,113,0.18);  --vc-mira-negativ-ink: #fecaca;
+      --vc-mira-quelle-bg: rgba(96,165,250,0.12);    --vc-mira-quelle-ink: #bfdbfe;
+      --vc-mira-unklar-bg: rgba(251,191,36,0.13);    --vc-mira-unklar-ink: #fde68a;
+      --vc-mira-tabelle-streifen: rgba(255,255,255,0.022);
+      --vc-mira-composer-schale: var(--vc-heading-bg);
+      --vc-mira-gewaehlt: var(--up-sel-bg);
+      --vc-mira-entfernen-hover: rgba(255,255,255,0.08);
+      --vc-mira-picker-schatten: rgba(0,0,0,0.3);
+      --vc-mira-aufnahme-weg-hover: var(--up-sel-bg);
+      --vc-mira-aufnahme-ok-hover: #a0a0a0;
+      --vc-mira-aufnahme-fehler: #e07068;
+      --vc-mira-schleier: rgba(0,0,0,.45);
+      --vc-mira-haken-an: #e0e0e0;
+      --vc-mira-skelett-blase-a: rgba(255,255,255,0.12);
+      --vc-mira-skelett-blase-b: rgba(255,255,255,0.22);
+      /* ---- Ende Komponentenfarben: Mira ---- */
 }
 .up-root {
       /* --vc-muted ist um vier Einheiten dunkler als vorher (#6f737c), und das ist KEINE neue
