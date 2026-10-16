@@ -91,7 +91,7 @@
            mit ihnen am Chip stuende ihr Rahmen wieder ueber dem Chip aus core. */
         '.ust-cell .upt-zchip.upt-zchip,.ust-topics-popup .upt-zchip.upt-zchip{flex:0 0 auto;user-select:none;}',
         '.ust-cell .upt-zchip.upt-zchip,.ust-cell .upt-zmehr.upt-zmehr{cursor:pointer;}',
-        '.ust-cell .ust-empty{display:inline-flex;align-items:center;color:#a0a5ad;font-size:13px;line-height:1;}',
+        '.ust-cell .ust-empty{display:inline-flex;align-items:center;color:var(--vc-upt-zelle-leer);font-size:13px;line-height:1;}',
         /* Dash shrinks/fades out, "+ Add" grows/fades in from width:0 — same idiom as the topic
            chip checkbox elsewhere in this file (a max-width transition, not display, since
            display can\'t be animated). Hover trigger lives on .upt-td-topics in prompts-table.css
@@ -99,7 +99,7 @@
            that opens the Edit Topics popup from anywhere in the cell, openEditTopicsModal). */
         '.ust-cell .ust-empty-dash{display:inline-block;transition:opacity 140ms ease,max-width 180ms cubic-bezier(.2,0,.38,.9);}',
         '.ust-cell .ust-empty-add{display:inline-flex;align-items:center;gap:3px;max-width:0;opacity:0;overflow:hidden;white-space:nowrap;transition:max-width 180ms cubic-bezier(.2,0,.38,.9),opacity 140ms ease,margin-left 180ms cubic-bezier(.2,0,.38,.9);}',
-        '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty{color:var(--vc-text,#1f1f1b);}',
+        '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty{color:var(--vc-text);}',
         '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty-dash{opacity:0;max-width:0;}',
         /* 120 statt 50 (30.09. gemeldet: im Deutschen stand "+ Hinzufü"). max-width ist hier nur
            die Obergrenze der Aufklapp-Bewegung, nicht die Breite: "+ Add" ist 30px, "+ Hinzufuegen"
@@ -107,8 +107,8 @@
         '.up-root:not(.is-inactive-view) .upt-td-topics:hover .ust-empty-add{max-width:120px;opacity:1;margin-left:4px;}',
         /* "+N" ist der "+N"-Chip aus core (.up-topicchip.is-mehr: ohne Punkt, enger, leiser). */
         '.ust-cell .upt-zmehr.upt-zmehr{flex:0 0 auto;user-select:none;}',
-        '.ust-cell[data-theme="dark"] .ust-empty{color:#555;}',
-        '.ust-topics-popup.ust-topics-popup{position:fixed;z-index:2147483000;display:none;pointer-events:none;max-width:320px;padding:10px;border:1px solid #d9dde3;border-radius:var(--up-r-l);background:#fff;box-shadow:var(--up-e-2);font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
+        '.ust-cell[data-theme="dark"] .ust-empty{color:var(--vc-upt-zelle-leer-dunkel);}',
+        '.ust-topics-popup.ust-topics-popup{position:fixed;z-index:2147483000;display:none;pointer-events:none;max-width:320px;padding:10px;border:1px solid var(--vc-upt-popup-rand);border-radius:var(--up-r-l);background:var(--vc-upt-popup-grund);box-shadow:var(--up-e-2);font-family:Geist,Inter,system-ui,-apple-system,sans-serif;}',
         '.ust-topics-popup .ust-popup-inner{display:flex;flex-wrap:wrap;gap:8px;}',
         /* Border brightened vs. the plain --vc-border dark value (#353535) — against this popup's
            #151515 background that reads as barely-there/blurry. Same #454545 fix already applied
@@ -125,8 +125,10 @@
            eines Popovers sind --up-menu-bg (Background 1) und --up-menu-border (Gray 500); das
            Popup haengt am <body> mit eigenem data-theme, dort stehen beide Marken. Vorher Linears
            #232326 und #3e3e44 -- daneben jedes andere Menue in Geists Toenen. Die Rueckfallwerte
-           seit "eine Stufe ruhiger" (15.10. abends) wie die Marken: #0f0f0f und #333333. */
-        '.ust-topics-popup[data-theme="dark"]{background:var(--up-menu-bg,#0f0f0f);border-color:var(--up-menu-border,#333333);}'
+           seit "eine Stufe ruhiger" (15.10. abends) wie die Marken: #0f0f0f und #333333.
+           Der Rueckfall BLEIBT (17.10., jetzt als Marke aus core): am <body> stehen die zwei
+           Menue-Marken nur unter html[data-up-dunkel="geist"], im Dunkel ohne Geist traegt er. */
+        '.ust-topics-popup[data-theme="dark"]{background:var(--up-menu-bg,var(--vc-upt-popup-dunkel-grund));border-color:var(--up-menu-border,var(--vc-upt-popup-dunkel-rand));}'
       ].join('');
       document.head.appendChild(style);
 
@@ -135,11 +137,13 @@
       upBody(function(b){ b.appendChild(popup); });
 
       function esc(v){ var d=document.createElement('div'); d.textContent=String(v==null?'':v); return d.innerHTML; }
-      function normHex(h){ h=String(h||'#6b7280').trim(); return h.charAt(0)==='#'?h:'#'+h; }
+      /* Ohne Farbe: die Marke aus core (--vc-upt-topic-ohne-farbe), als var() -- der Wert landet nur
+         in --ust-tag-color eines style-Attributs, dort loest der Browser ihn auf. */
+      function normHex(h){ if(!h) return 'var(--vc-upt-topic-ohne-farbe)'; h=String(h).trim(); return h.charAt(0)==='#'?h:'#'+h; }
       function normTag(t){
         if(!t||typeof t!=='object') return null;
         var name=String(t.name||t.tag_name||'').trim(); if(!name) return null;
-        var hex=t.hex_light||t.hex_dark||'#6b7280';
+        var hex=t.hex_light||t.hex_dark||'';
         return { id:t.id||t.tag_id||null, name:name, emoji:t.emoji?String(t.emoji):'', color:normHex(hex) };
       }
       function tagHtml(t){
@@ -1510,11 +1514,11 @@
        than reusing the row's own — two swatches at the identical luminance would look like the
        same gray twice. */
     var TOPIC_COLOR_COLS = 10;   // must match .upt-colorgrid's column count
-    var TOPIC_COLOR_PALETTE = [
-      /* vibrant */ "#de1b22", "#b65616", "#8d6a11", "#108440", "#107c84", "#1b6eda", "#9145e8", "#d51a8b", "#666666", "#7d7d7d",
-      /* muted   */ "#b47476", "#a87b5d", "#988552", "#4f926b", "#509195", "#6a88af", "#977ab8", "#b27098", "#787878", "#949494",
-      /* deep    */ "#ab2b2f", "#8b4c23", "#725a1d", "#1b6a3c", "#1b656a", "#295ea3", "#7a33cc", "#a32972", "#575757", "#6f6f6f"
-    ];
+    /* Die dreissig Werte stehen seit dem 17.10. in core (UC.TOPIC_COLOR_PALETTE_INLINE, dieselben
+       Werte in derselben Reihenfolge) -- keine Komponente fuehrt mehr eigene Farbwerte. Es ist
+       NICHT die neue OKLCh-Palette von core (UC.TOPIC_COLOR_PALETTE); der Umzug darauf aendert,
+       was der Ersteller anbietet, und ist eine eigene Entscheidung. */
+    var TOPIC_COLOR_PALETTE = UC.TOPIC_COLOR_PALETTE_INLINE;
     /* Each ROW is one tone scale across the full hue range, each COLUMN one hue — so scanning
        down picks a mood and across picks a color. The check mark itself is a fixed white (dark
        mode: primary text color, see core.css) rather than per-swatch contrast-solved ink — with
@@ -2004,8 +2008,10 @@
             : shown.map(function(t){
                 var id = topicId(t);
                 var on = isStaged(id);
-                var color = String(t.hex_light || t.hex_dark || "#6b7280");
-                if (color.charAt(0) !== "#") color = "#" + color;
+                var color = String(t.hex_light || t.hex_dark || "");
+                /* Ohne Farbe die Marke aus core (17.10.); der Wert geht nur in --ust-tag-color. */
+                if (!color) color = "var(--vc-upt-topic-ohne-farbe)";
+                else if (color.charAt(0) !== "#") color = "#" + color;
                 return '<button type="button" class="up-topicchip is-gross up-chiphover' + (on ? " is-on" : "") +
                  '" data-topic="' + esc(id) + '" style="--ust-tag-color:' + esc(color) + '">' +
                  (t.emoji ? '<span class="up-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
@@ -2419,8 +2425,9 @@
     }
     function etChipHtml(t, on){
       var id = topicId(t);
-      var color = String(t.hex_light || t.hex_dark || "#6b7280");
-      if (color.charAt(0) !== "#") color = "#" + color;
+      var color = String(t.hex_light || t.hex_dark || "");
+      if (!color) color = "var(--vc-upt-topic-ohne-farbe)";
+      else if (color.charAt(0) !== "#") color = "#" + color;
       return '<button type="button" class="up-topicchip is-gross up-chiphover' + (on ? " is-on" : "") +
         '" data-et-topic="' + esc(id) + '" style="--ust-tag-color:' + esc(color) + '">' +
         (t.emoji ? '<span class="up-topicchip-e">' + esc(t.emoji) + '</span>' : "") +
@@ -3294,7 +3301,7 @@
         /* A custom group has no emoji, but it does carry the colour the user picked (or the mix
            of its topics' colours) as a 6px dot in front of the name. */
         var cg = readCustomGroups().filter(function(c){ return c.key === g.group_key; })[0];
-        var cgCol = (cg && cg.color) || "#6b7280";
+        var cgCol = (cg && cg.color) || "var(--vc-upt-topic-ohne-farbe)";
         return '<span class="upt-grp-cdot" style="background:' + esc(cgCol) + '"></span>' +
                '<span class="upt-grp-name">' + esc(label) + '</span>';
       }
@@ -3311,8 +3318,9 @@
       }
       /* core's .up-topicchip — the same chip the topic popover and the grouping popup draw.
          Read-only here, so no checkbox slot; everything else is identical by construction. */
-      var hex = String(g.tag_hex_light || g.tag_hex_dark || "#6b7280");
-      if (hex.charAt(0) !== "#") hex = "#" + hex;
+      var hex = String(g.tag_hex_light || g.tag_hex_dark || "");
+      if (!hex) hex = "var(--vc-upt-topic-ohne-farbe)";
+      else if (hex.charAt(0) !== "#") hex = "#" + hex;
       return '<span class="up-topicchip is-static" style="--ust-tag-color:' + esc(hex) + '">' +
                (g.tag_emoji ? '<span class="up-topicchip-e">' + esc(g.tag_emoji) + '</span>' : "") +
                '<span class="up-topicchip-lbl">' + esc(label) + '</span>' +
@@ -6043,7 +6051,7 @@
       var liste = Array.isArray(rows) ? rows.filter(Boolean) : [];
       var mitZahl = liste.map(function(t){
         return { key: String(t.id == null ? (t.name || "") : t.id), name: String(t.name == null ? "" : t.name),
-                 farbe: (isDark ? (t.hex_dark || t.hex_light) : (t.hex_light || t.hex_dark)) || "#3b82f6",
+                 farbe: (isDark ? (t.hex_dark || t.hex_light) : (t.hex_light || t.hex_dark)) || "var(--up-blau)",
                  n: toNum(t.prompt_count) };
       }).filter(function(x){ return x.n != null && x.n > 0; });
       mitZahl.sort(function(a, b){ return b.n - a.n || a.name.localeCompare(b.name); });

@@ -84,8 +84,9 @@
 .uab-err { display: none; font-size: 12.5px; font-weight: 400; color: var(--vt-down); line-height: 1.4; }
 .uab-field.is-err .uab-err { display: block; }
 .uab-field.is-err .uab-in { border-color: var(--vt-down); }
-.uab-field.is-err .uab-in:focus { border-color: var(--vt-down); box-shadow: 0 0 0 var(--up-focus-w) rgba(176,32,12,0.16); }
-.up-root[data-theme="dark"] .uab-field.is-err .uab-in:focus { box-shadow: 0 0 0 var(--up-focus-w) rgba(210,93,93,0.24); }
+/* Hell rgba(176,32,12,.16), dunkel rgba(210,93,93,.24): seit dem 17.10. eine Marke aus core, die mit
+   dem Thema dreht -- die eigene dunkle Regel ist entfallen. */
+.uab-field.is-err .uab-in:focus { border-color: var(--vt-down); box-shadow: 0 0 0 var(--up-focus-w) var(--vc-fehler-ring); }
 
 /* ---- Meldung des Workflows ----
    Steht unter den Feldern, ueber der Fusszeile, und nimmt nur Platz weg, wenn sie etwas sagt.
@@ -93,11 +94,11 @@
 .uab-formerr {
   display: none;
   padding: 10px 12px; border-radius: var(--up-r-m);
-  border: 1px solid var(--vt-down); background: rgba(176,32,12,0.06);
+  border: 1px solid var(--vt-down); background: var(--vc-fehler-flaeche);
   color: var(--vt-down); font-size: 12.5px; font-weight: 500; line-height: 1.45;
 }
 .uab-card.has-formerr .uab-formerr { display: block; }
-.up-root[data-theme="dark"] .uab-formerr { background: rgba(210,93,93,0.10); }
+/* Dunkel rgba(210,93,93,.10) traegt seit dem 17.10. die Marke --vc-fehler-flaeche selbst. */
 
 /* ---- Fuss ---- */
 .uab-foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }

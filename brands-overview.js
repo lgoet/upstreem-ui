@@ -171,28 +171,31 @@
     var tipX = 0, tipY = 0;
 
     /* One source of truth for colour: the same CSS custom properties every other component reads,
-       resolved live so a theme flip needs no second palette here. */
-    function tok(name, fallback){
+       resolved live so a theme flip needs no second palette here.
+       KEIN Rueckfallwert mehr (17.10., "alle Farben nach core"): jede gelesene Marke steht an jeder
+       Wurzel in jedem Thema (core.css), und die Rueckfaelle hier waren Kopien alter Werte -- die
+       dunklen (#34343a, #a0a0a0) laengst nicht mehr die des dunklen Themas. Ohne Wurzel (abgehaengt)
+       kommt "" zurueck, und den nimmt der Canvas nicht an. */
+    function tok(name){
       try {
         var v = getComputedStyle(wrap).getPropertyValue(name);
-        v = (v || "").trim();
-        return v || fallback;
-      } catch(e){ return fallback; }
+        return (v || "").trim();
+      } catch(e){ return ""; }
     }
     function theme(){
-      var dark = isDark();
       return {
-        grid:    tok("--vc-border", dark ? "#34343a" : "#e4e2e4"),
-        /* Derselbe Wert wie core's themeColors().grid -- am 07.09. von 8 auf 9 Prozent
-           angehoben ("die Gridlines minimal kraeftiger"). Die Begruendung fuer genau 9 steht
-           dort; hier steht der Wert nur mit, weil dieses Chart sein Raster selbst zeichnet. */
-        gridSoft: dark ? "rgba(255,255,255,0.09)" : "rgba(0,0,0,0.09)",
-        font:    tok("--vc-muted",  dark ? "#a0a0a0" : "#6b6f78"),
-        axis:    tok("--vc-border", dark ? "#34343a" : "#e4e2e4"),
-        quad:    tok("--vc-border", dark ? "#34343a" : "#e4e2e4"),
-        quadTxt: tok("--vc-third",  dark ? "#808080" : "#9e9e9e"),
-        logoBg:  tok("--vt-logo-bg", "#ffffff"),
-        logoBd:  tok("--vc-border", dark ? "#34343a" : "#e4e2e4")
+        grid:    tok("--vc-border"),
+        /* Am 07.09. von 8 auf 9 Prozent angehoben ("die Gridlines minimal kraeftiger"). Dieses
+           Chart zeichnet sein Raster selbst; der Wert steht seit dem 17.10. in core
+           (--vc-ubo-raster, hell Schwarz, dunkel Weiss, je 9 Prozent). */
+        gridSoft: tok("--vc-ubo-raster"),
+        font:    tok("--vc-muted"),
+        axis:    tok("--vc-border"),
+        quad:    tok("--vc-border"),
+        quadTxt: tok("--vc-third"),
+        logoBg:  tok("--vt-logo-bg"),
+        logoBd:  tok("--vc-border"),
+        logoSchatten: tok("--vc-ubo-logo-schatten")
       };
     }
 
@@ -351,7 +354,7 @@
             /* Was 0.42/14/4 — a drop shadow that heavy exists nowhere else in this app. The app's
                floating layers sit around 0.10-0.16 alpha; a hovered chip should read as lifted,
                not as cut out of the chart. */
-            if (over){ ctx.shadowColor = "rgba(0,0,0,0.14)"; ctx.shadowBlur = 8; ctx.shadowOffsetY = 2; }
+            if (over){ ctx.shadowColor = t.logoSchatten; ctx.shadowBlur = 8; ctx.shadowOffsetY = 2; }
             ctx.fillStyle = t.logoBg;
             rrect(ctx, rx, ry, s, s, rOut);
             ctx.fill();
@@ -1494,7 +1497,7 @@
         var fav = c.favicon_url || c.logo_url || c.favicon || "";
         var logo = fav
           ? '<span class="up-ment-logo"><img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>'
-          : '<span class="up-ment-logo" style="background:' + esc(c.color || "#9e9e9e") + '"></span>';
+          : '<span class="up-ment-logo" style="background:' + esc(c.color || "var(--vc-ubo-marke-ohne-farbe)") + '"></span>';
         return '<div class="up-filter-item' + (checked ? " is-checked" : "") + (disabled ? " is-disabled" : "") +
           '" data-id="' + esc(id) + '" data-name="' + esc(nm.toLowerCase()) + '" title="' + esc(nm) + '">' +
           '<span class="up-filter-check">' + CHECK_SVG + '</span>' + logo +

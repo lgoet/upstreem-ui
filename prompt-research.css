@@ -52,10 +52,11 @@
   overflow: visible;
   /* Volume meter ramp: four steps from "barely searched" to "high demand". Kept as the standalone
      had them -- these are not the app's up/down colours and must not drift into them. */
-  --upr-vol-1: #d2865d; --upr-vol-2: #d9b85d; --upr-vol-3: #9fd25d; --upr-vol-4: #60d25d;
-  --upr-vol-track: #e8eaee;
+  --upr-vol-1: var(--vc-volumen-1); --upr-vol-2: var(--vc-volumen-2); --upr-vol-3: var(--vc-volumen-3); --upr-vol-4: var(--vc-volumen-4);
+  /* Hell #e8eaee, dunkel #303030 -- seit dem 17.10. dreht die Marke selbst (core), die dunkle
+     Regel an .upr-root ist damit entfallen. */
+  --upr-vol-track: var(--vc-volumen-spur);
 }
-.up-root[data-theme="dark"].upr-root { --upr-vol-track: #303030; }
 .upr-root button, .upr-root input, .upr-root textarea { font-family: inherit; }
 
 /* ---------- hero shell ---------- */
@@ -85,18 +86,15 @@
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(to right, rgba(31, 31, 27, 0.025) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(31, 31, 27, 0.025) 1px, transparent 1px);
+    linear-gradient(to right, var(--vc-raster-linie) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--vc-raster-linie) 1px, transparent 1px);
   background-size: 44px 44px;
   mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.76), transparent 72%);
   -webkit-mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.76), transparent 72%);
   opacity: 0.42;
 }
-.up-root[data-theme="dark"].upr-root .upr-shell::before {
-  background:
-    linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-}
+/* Im Dunkeln Weiss zu 3,5 % statt Schrift zu 2,5 %: die Marke --vc-raster-linie dreht mit dem
+   Thema (core, 17.10.), die eigene dunkle Regel ist entfallen. */
 .upr-content {
   width: min(100%, 900px);
   margin: 0 auto;
@@ -608,7 +606,7 @@
    Auswahlfeld, also 18x13 statt 22x16 -- dasselbe Verhaeltnis, derselbe Radius. */
 .upr-market-flag {
   width: 18px; height: 13px; border-radius: 3px; overflow: hidden; background: var(--vc-heading-bg);
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+  box-shadow: inset 0 0 0 1px var(--vc-flagge-rand);
   display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
 }
 .upr-market-flag img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -650,7 +648,7 @@
 }
 .upr-menu-item svg { width: 16px; height: 16px; flex: 0 0 auto; display: block; }
 /* Siehe core: --vt-down traegt im Dunkeln #d25d5d, das Literal hier zeigte dort das helle Rot. */
-.upr-menu-item.is-danger { color: var(--vt-down, #b0200c); }
+.upr-menu-item.is-danger { color: var(--vt-down); }
 /* Der Grund aus der Marke statt aus dem alten Rot (15.10., Geist Red 900 -- im Dunkeln das hellere). */
 .upr-menu-item.is-danger:hover { background: color-mix(in srgb, var(--vt-down) 8%, transparent); }
 /* Column widths for core's .up-thead/.up-row grid. Prompt gets the room, actions a fixed lane.
@@ -885,7 +883,7 @@
 .upr-history-item:not(.is-still):hover .upr-history-actions,
 .upr-history-item:focus-visible .upr-history-actions,
 .upr-history-actions:focus-within { opacity: 1; pointer-events: auto; }
-.upr-history-delete:hover { color: var(--vt-down, #b0200c); }
+.upr-history-delete:hover { color: var(--vt-down); }
 /* OHNE ZEIGER (Telefon, Tablet) gibt es keinen Hover: dort stehen Markt und Modell und daneben
    die Knoepfe, beide sichtbar -- sonst kaeme man dort nicht ans Loeschen. */
 @media (hover: none) {
@@ -977,10 +975,10 @@
 /* Die Vorschau-Leiste in der Erklaerkarte. Die Karte haengt am document.body, dort loesen die
    --upr-vol-*-Tokens nicht auf -- darum feste Werte, aber MIT Dark-Pendant. Vorher standen sie
    inline im JS und blieben im Dark Mode hell. */
-.up-explain .upr-vol-demo .upr-volume-seg { background: #e8eaee; }
-.up-explain .upr-vol-demo .upr-volume-seg.is-filled { background: #9fd25d; }
-.up-explain[data-theme="dark"] .upr-vol-demo .upr-volume-seg { background: #303030; }
-.up-explain[data-theme="dark"] .upr-vol-demo .upr-volume-seg.is-filled { background: #9fd25d; }
+.up-explain .upr-vol-demo .upr-volume-seg { background: var(--vc-volumen-spur); }
+.up-explain .upr-vol-demo .upr-volume-seg.is-filled { background: var(--vc-volumen-3); }
+/* Das Dark-Pendant (#303030) traegt seit dem 17.10. die Marke selbst: sie loest an der Karte
+   ([data-theme]) auf, die eigenen dunklen Regeln sind entfallen. */
 
 /* Das Zeichen in den zwei Knoepfen "Previous Researches" ist die Seitenleiste aus core, gespiegelt:
    die Liste faehrt von RECHTS herein, die Leiste der App von links. Gedreht und nicht als zweite
