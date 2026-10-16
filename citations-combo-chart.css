@@ -15,7 +15,8 @@
    buttons never had (only the icon colour changes). */
 
 /* ---------- root layout: side-by-side line + doughnut/bar ---------- */
-.up-root.combo-root { flex-direction: row; align-items: stretch; gap: 16px; --cc-primary: #14b8a6; }
+/* --cc-primary (#14b8a6) ist am 17.10. entfallen: keine Regel und kein Skript las es mehr. */
+.up-root.combo-root { flex-direction: row; align-items: stretch; gap: 16px; }
 .combo-root.is-max, .combo-root.is-narrow { flex-direction: column; gap: 32px; }
 
 /* ---------- two units: each = header + bordered chart-box ---------- */
@@ -128,10 +129,11 @@
 .combo-filter-toggle:hover { color: var(--vc-text); background: transparent; }
 .combo-filter-item { display: flex; align-items: center; gap: 10px; padding: 7px 9px; border-radius: var(--up-r-m); cursor: pointer; font-size: 13px; color: var(--vc-text); }
 .combo-filter-item:hover { background: var(--vc-heading-bg); }
-.combo-filter-check { width: 16px; height: 16px; border-radius: var(--up-r-xs); border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: #fff;
+.combo-filter-check { width: 16px; height: 16px; border-radius: var(--up-r-xs); border: 1.5px solid var(--vc-border); display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; color: var(--vc-ink-auf-farbe);
   transition: background-color var(--up-cb-t) var(--up-cb-ease), border-color var(--up-cb-t) var(--up-cb-ease); }
 .combo-filter-check svg { width: 11px; height: 11px; display: none; }
-.combo-filter-item.is-checked .combo-filter-check { background: var(--cc-fltclr, #14b8a6); border-color: var(--cc-fltclr, #14b8a6); }
+/* Ohne Rueckfall (17.10.): --cc-fltclr setzt das Skript an JEDER Zeile inline (citations-combo-chart.js). */
+.combo-filter-item.is-checked .combo-filter-check { background: var(--cc-fltclr); border-color: var(--cc-fltclr); }
 .combo-filter-item.is-checked .combo-filter-check svg { display: block; }
 /* Leere Checkbox beim Ueberfahren der Zeile wie in jedem Dropdown aus core (16.10., Begruendung
    an .up-filter-check in core.css): der Rand geht auf --vc-third, weich ueber den Uebergang aus

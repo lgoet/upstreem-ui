@@ -381,6 +381,130 @@
          wo es deklariert ist -- stuende es nur hier, erbte ein dunkles Portal den hellen Glanz. */
       --up-sk-glanz: rgba(0,0,0,.03);
       --up-sk-verlauf: linear-gradient(90deg, rgba(0,0,0,0) 0%, var(--up-sk-glanz) 50%, rgba(0,0,0,0) 100%) 0 0 / 150% 100% repeat-x;
+
+      /* ---- Komponentenfarben: übrige Bereiche (17.10.) ---- */
+      /* "Alles, was wir an Farben nutzen, nach core" (17.10.). Die Werte sind GENAU die, die bis
+         heute als Literal in der Komponente standen -- nichts ist dabei neu gewaehlt, gemessen an
+         jeder Flaeche hell, grau-hell, dunkel und Geist-dunkel. Hier und nicht an .up-root, weil die
+         Haelfte davon an Flaechen am <body> haengt (Dialoge, Tooltips, Erklaerkarten, Schleier).
+         ZWEI ARTEN. Was nur in diesem Block steht, gilt in BEIDEN Themen (die Komponente hatte keine
+         dunkle Fassung) -- die dunkle Liste unten setzt es nicht noch einmal. Was in beiden Bloecken
+         steht, dreht mit dem Thema; aufgeloest wird es am naechsten [data-theme], also genau dort,
+         wo vorher die dunkle Regel der Komponente griff. */
+      /* Schrift und Zeichen auf einer kraeftigen Farbflaeche: der rote Knopf und das rote Kopfband
+         des Gefahrendialogs (settings-brand), der Haken der farbigen Checkbox (Combo-Chart), das
+         Zeichen auf der Ueberblendung des Profilbilds (Preferences). In beiden Themen Weiss. */
+      --vc-ink-auf-farbe: #ffffff;
+      --vc-ink-auf-farbe-leise: rgba(255,255,255,.82);
+      --vc-hover-auf-farbe: rgba(255,255,255,.16);
+      /* Der Mischpartner, mit dem ein kraeftiger Knopf beim Ueberfahren dunkler wird
+         (color-mix(in srgb, var(--vt-down) 86%, var(--vc-abdunkeln))). */
+      --vc-abdunkeln: #000000;
+      /* Die feine Kante um Flaggen (Branchen-/Marktwahl, Prompt Research), damit eine weisse
+         Fahne nicht im Grund verschwindet. */
+      --vc-flagge-rand: rgba(0,0,0,.08);
+      /* Der Rand des Farbfelds im Brand Editor, Ruhe und Hover. */
+      --vc-farbfeld-rand: rgba(0,0,0,.14);
+      --vc-farbfeld-rand-hover: rgba(0,0,0,.28);
+      /* Die Ueberblendung auf dem Profilbild (Preferences), beim Zeigen. */
+      --vc-bild-ueberblendung: rgba(0,0,0,.45);
+      /* Der Schleier hinter der ausgefahrenen Seitenleiste (hint-Zustand). In BEIDEN Themen .30:
+         die dunkle Regel in sidebar.css (.45) war schwaecher (0,2,0) als die helle (0,3,0) und hat
+         nie gegriffen -- gemessen 17.10. Bleibt so, eine Angleichung waere eine eigene Entscheidung. */
+      --vc-seitenleiste-schleier: rgba(0,0,0,.30);
+      /* Der Fehlerring im Team-Formular: der helle Ring von --vc-fehler-ring, in BEIDEN Themen
+         (team-orga hatte nie eine dunkle Fassung). */
+      --vc-fehler-ring-fest: rgba(176,32,12,.16);
+      /* Fokus des Export-Knopfs (.uex-btn, 12 % der Schrift), in beiden Themen. */
+      --vc-fokus-schatten-leise: rgba(31,31,27,.12);
+      /* Die Zellen der Performance-Matrix (performance-radar): Ziffer auf dunkler und auf heller
+         Flaeche, dazu der Schimmer (Glanz oben, Tiefe unten). Die Flaeche selbst kommt aus der
+         Heat-Rampe (--uhm-h0 ...). */
+      --vc-matrix-ink: rgba(255,255,255,.94);
+      --vc-matrix-ink-hell: rgba(0,0,0,.78);
+      --vc-matrix-glanz: rgba(255,255,255,.30);
+      --vc-matrix-tiefe: rgba(0,0,0,.07);
+      /* Die Volumen-Leiter von Prompt Research, von "kaum gesucht" bis "hohe Nachfrage". Bewusst
+         nicht --vt-up/--vt-down: eine eigene Skala. Die Spur dreht mit dem Thema (unten). */
+      --vc-volumen-1: #d2865d; --vc-volumen-2: #d9b85d; --vc-volumen-3: #9fd25d; --vc-volumen-4: #60d25d;
+      /* Die Spalten der Opportunities (Punkt vor dem Spaltennamen): Statusfarben, nicht die
+         Up/Down- oder Zitationsfarben. */
+      --vc-status-offen: #9ca3af;
+      --vc-status-in-arbeit: #2384E2;
+      --vc-status-erledigt: #15803d;
+      --vc-status-ignoriert: #b4451f;
+      /* Die Farbe einer Topic, die selbst keine traegt (hex_light und hex_dark leer). Die Dateien
+         hatten je einen eigenen Ersatz, und der bleibt: Opportunities, Radar, Performance-Detail,
+         Topics Manager und die Ergebnistabelle von Prompt Research #6b7280; die Vorschlaege und
+         der Editor von Prompt Research #6b6f78; dessen Ladechips #9ca3af; Filterliste und
+         Add Prompts #808080. Gelesen per getComputedStyle (die Werte gehen dort in Daten ein). */
+      --vc-thema-ersatz: #6b7280;
+      --vc-thema-ersatz-vorschlag: #6b6f78;
+      --vc-thema-ersatz-lader: #9ca3af;
+      --vc-thema-ersatz-filter: #808080;
+      /* Die Platte hinter einem Logo ohne Bild (Visibility Chart, Erwaehnungen). */
+      --vc-logo-ersatz: #9e9e9e;
+
+      /* AB HIER DREHT ES MIT DEM THEMA (dunkle Werte in der Liste darunter). */
+      /* Der Schleier hinter einem Dialog (STYLEGUIDE 27): .30 hell, .35 dunkel -- Gefahrendialog
+         der Settings. */
+      --vc-dialog-schleier: rgba(0,0,0,.30);
+      /* Die Schicht am <body> mit eigener Leiter: Gefahrendialog (settings-brand .usb-dlg) und
+         Tooltip der Performance-Matrix (.uhm-tip). Ihre Schrift ist eine Stufe leiser als die der
+         Wurzel (#6b6f78 als zweite, #9e9e9e als dritte Stufe), ihr Rand der eines Menues. */
+      --vc-schicht-text: #1f1f1b;
+      --vc-schicht-muted: #6b6f78;
+      --vc-schicht-third: #9e9e9e;
+      --vc-schicht-border: #dcdbdd;
+      --vc-schicht-flaeche: #ffffff;
+      --vc-schicht-leise: #f9f8f9;
+      --vc-schicht-hover-rand: #6f6f6f;
+      --vc-schicht-fokus: #4A9EFF;
+      --vc-schicht-fokus-ring: rgba(74,158,255,0.20);
+      --vc-schicht-logo-platte: #ffffff;
+      /* Die leere Zelle der Performance-Matrix (keine Messung). Im Dunkeln die leise Flaeche der
+         Wurzel; im Hellen fest -- auch im grauen Hell, wie bisher. */
+      --vc-matrix-leer: #f9f8f9;
+      /* Die Spur der Volumen-Leiter (Prompt Research, auch in ihrer Erklaerkarte). */
+      --vc-volumen-spur: #e8eaee;
+      /* Das Millimeterpapier hinter dem Start von Prompt Research. */
+      --vc-raster-linie: rgba(31,31,27,0.025);
+      /* Der Kalender (filters/date-range): Hover einer Zeile, gewaehlter Zeitraum, das Band
+         zwischen Anfang und Ende und der Endpunkt. Feste Mischungen, nicht color-mix -- Chrome
+         rechnet die beim Themenwechsel nicht neu (Begruendung in date-range.css). Der Endpunkt
+         traegt im Hellen die Schrift (Regel mit --vc-text), das Token nur im Dunkeln. */
+      --vc-kalender-hover: #eaeaea;
+      --vc-kalender-wahl: #e2e2e1;
+      --vc-kalender-band: #ededed;
+      --vc-kalender-ende: #1f1f1b;
+      /* Die Karten der Opportunities: die leiseste durchscheinende Flaeche ueber dem Grund (Linear,
+         2 % Schwarz hell, 5 % Weiss dunkel). Im grauen Hell und im Geist-Dunkel setzt core die
+         Karte ohnehin auf --vc-bg. Dazu der Anfang des Potenzial-Verlaufs. */
+      --vc-flaeche-durchscheinend: #00000005;
+      --vc-potenzial-anfang: #c4c9d0;
+      /* Erklaerkarten: die Beispielplatte zeigt die Balken und Logos so, wie sie im jeweiligen Thema
+         auf ihr stehen -- Potenzial-Balken (Opportunities), Platzhalterlogo (Discover Brands),
+         Syntaxfarben der Formatvorschau (Create with AI). */
+      --vc-erklaer-potenzial-leer: #e4e2e4;
+      --vc-erklaer-potenzial-a: #c4c9d0;
+      --vc-erklaer-potenzial-b: #1f1f1b;
+      --vc-erklaer-logo-platte: #f0f0ef;
+      --vc-syntax-auszeichnung: #7c3aed;
+      --vc-syntax-attribut: #b45309;
+      --vc-syntax-zeichenkette: #15803d;
+      /* Der Schleier hinter dem Fenster von Create with AI. */
+      --vc-ki-schleier: rgba(17,18,20,0.34);
+      /* Fehler im Feld (Add Brand): Fokusring und Flaeche der Meldung. */
+      --vc-fehler-ring: rgba(176,32,12,0.16);
+      --vc-fehler-flaeche: rgba(176,32,12,0.06);
+      /* Der Punkt einer Akzentwahl in den Preferences: die TINTE des Akzents im jeweiligen Thema
+         (Begruendung in core bei --up-accent-ink); Standard und Blau sind die Schrift bzw. die
+         Chartfarbe. */
+      --vc-akzent-punkt-standard: #1f1f1b;
+      --vc-akzent-punkt-blau: #3f66b0;
+      --vc-akzent-punkt-azur: #0075DE;
+      --vc-akzent-punkt-indigo: #5E6AD2;
+      --vc-akzent-punkt-terrakotta: #BD5836;
 }
 [data-theme="dark"], .up-root[data-theme="dark"] {
       /* Die Tiefen im dunklen Thema, wie Geist sie an .dark-theme fuehrt (15.10.): auf dunklem
@@ -433,6 +557,49 @@
       /* Der Glanz des Skeletts im Dunkeln: Weiss statt Schwarz (Begruendung im hellen Block). */
       --up-sk-glanz: rgba(255,255,255,.025);
       --up-sk-verlauf: linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--up-sk-glanz) 50%, rgba(255,255,255,0) 100%) 0 0 / 150% 100% repeat-x;
+
+      /* ---- Komponentenfarben: übrige Bereiche (17.10.) ---- */
+      /* Die dunklen Werte der Marken, die mit dem Thema drehen (Begruendung im hellen Block). Es
+         sind die Werte der bisherigen dunklen Regeln der Komponenten, unveraendert. Die Marken,
+         die nur oben stehen, gelten in beiden Themen. */
+      --vc-dialog-schleier: rgba(0,0,0,.35);
+      /* Die Schicht am <body> im Dunkeln (Geist-Leiter, Wert fuer Wert wie bisher). Rand, Flaeche
+         und leise Flaeche nehmen dort die Marken der schwebenden Schicht bzw. erben -- das steht
+         weiter in der Komponente, hier nur dieselbe Zuordnung. */
+      --vc-schicht-text: #ededed;
+      --vc-schicht-muted: #a1a1a1;
+      --vc-schicht-third: #808080;
+      --vc-schicht-border: var(--up-menu-border);
+      --vc-schicht-flaeche: var(--up-menu-bg);
+      --vc-schicht-leise: var(--vc-heading-bg);
+      --vc-schicht-hover-rand: #707070;
+      --vc-schicht-fokus: #6DB2FF;
+      --vc-schicht-fokus-ring: rgba(109,178,255,0.28);
+      --vc-schicht-logo-platte: #e0e0e0;
+      --vc-matrix-leer: var(--vc-heading-bg);
+      --vc-volumen-spur: #303030;
+      --vc-raster-linie: rgba(255,255,255,0.035);
+      --vc-kalender-hover: #2d2d2d;
+      --vc-kalender-wahl: #383838;
+      --vc-kalender-band: #313131;
+      --vc-kalender-ende: #e0e0e0;
+      --vc-flaeche-durchscheinend: #ffffff0d;
+      --vc-potenzial-anfang: #4a4f56;
+      --vc-erklaer-potenzial-leer: #23252a;
+      --vc-erklaer-potenzial-a: #4a4a4a;
+      --vc-erklaer-potenzial-b: #e0e0e0;
+      --vc-erklaer-logo-platte: #303030;
+      --vc-syntax-auszeichnung: #c4b5fd;
+      --vc-syntax-attribut: #fcd34d;
+      --vc-syntax-zeichenkette: #86efac;
+      --vc-ki-schleier: rgba(0,0,0,0.60);
+      --vc-fehler-ring: rgba(210,93,93,0.24);
+      --vc-fehler-flaeche: rgba(210,93,93,0.10);
+      --vc-akzent-punkt-standard: #e0e0e0;
+      --vc-akzent-punkt-blau: #83abf4;
+      --vc-akzent-punkt-azur: #3D97F0;
+      --vc-akzent-punkt-indigo: #7C8AF0;
+      --vc-akzent-punkt-terrakotta: #D97757;
 }
 .up-root {
       /* --vc-muted ist um vier Einheiten dunkler als vorher (#6f737c), und das ist KEINE neue

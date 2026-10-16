@@ -171,7 +171,8 @@
 
     function chipHtml(t){
       var id = String(t.id);
-      var color = String(t.hex_light || t.hex_dark || "#6b7280");
+      /* Ohne Farbe: der Ersatz aus core (17.10.), gelesen -- danach folgt die Pruefung auf "#". */
+      var color = String(t.hex_light || t.hex_dark || getComputedStyle(document.documentElement).getPropertyValue("--vc-thema-ersatz").trim());
       if (color.charAt(0) !== "#") color = "#" + color;
       /* .up-topicchip aus core traegt das Aussehen -- dasselbe Bauteil, das die Gruppierungs-Chips
          unten schon benutzen und das in der Prompts-Tabelle (.ust-tag) dieselben Werte hat: 28px,
@@ -281,7 +282,7 @@
           return '<span class="up-topicchip is-static is-gross is-weg utm-cg-chip is-gone" title="This topic no longer exists">' +
             '<span class="up-topicchip-lbl">Deleted topic</span></span>';
         }
-        var color = String(t.hex_light || t.hex_dark || "#6b7280");
+        var color = String(t.hex_light || t.hex_dark || getComputedStyle(document.documentElement).getPropertyValue("--vc-thema-ersatz").trim());
         if (color.charAt(0) !== "#") color = "#" + color;
         return '<span class="up-topicchip is-static is-gross utm-cg-chip" style="--ust-tag-color:' + esc(color) + '">' +
           (t.emoji ? '<span class="up-topicchip-e">' + esc(t.emoji) + '</span>' : "") +

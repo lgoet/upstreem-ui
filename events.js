@@ -1970,8 +1970,8 @@
          Kurve in brand-detail. Der Vergleich gestrichelt in der VIERTEN Schriftfarbe (03.10.:
          "heller"). Keine
          Event-Farbe fuer Reihen (Spezifikation 29). */
-      var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : token("--vc-text", "#1f1f1b");
-      var grau = token("--vc-fourth", "#80858e");
+      var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : token("--vc-text");
+      var grau = token("--vc-fourth");
       var ds = [{ label: aName, __id: "affected", __baseColor: tinte, borderColor: tinte,
                   __favicon: a.affected && a.affected.logo_url ? a.affected.logo_url : undefined,
                   data: tr.map(function (p) { return num(p["affected_" + feld]); }) }];
@@ -2414,8 +2414,8 @@
            leeres Achsenkreuz (wie renderChart). */
         if (!tage.some(function (p) { return num(p.runs) !== 0 && (num(p.citations) != null || num(p.new_urls) != null); })) linie2.empty();
         else {
-          var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : token("--vc-text", "#1f1f1b");
-          var grau = token("--vc-fourth", "#80858e");
+          var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : token("--vc-text");
+          var grau = token("--vc-fourth");
           /* Ein Tag ohne Lauf (runs 0) hat KEINE Zahl: citations kommt dort als null (Vertrag
              Abschnitt 5, wie v2), und die neuen URLs dieses Tages sind ebenso keine Beobachtung.
              __luecken aus core: die Linie bricht dort ab, statt den Tag zu ueberbruecken -- eine

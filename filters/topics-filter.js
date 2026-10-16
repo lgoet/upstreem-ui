@@ -86,7 +86,7 @@
        checkboxes draw, so the tick cannot look "a bit different" next to them. */
     check: UC.icon("check", 3),
     cbOff: '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/></svg>',
-    cbOn:  '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M17.2 8.8 10.4 15.6 6.8 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    cbOn:  '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M17.2 8.8 10.4 15.6 6.8 12" fill="none" style="stroke:var(--vc-ink-auf-farbe)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     plus: '<svg viewBox="0 0 24 24"><path d="M11.9922 4.00012V20.0001M19.9922 12.0001H3.99222"/></svg>',
     /* prompts-table's GRP_ICON verbatim. The same control has to look the same in both places, and
        these two are the only ones in the app that open custom groupings. */
@@ -269,7 +269,8 @@
       return name === "prompts";
     }
     /* ---------------- data helpers ---------------- */
-    function hex(t) { return (isDark ? t.hex_dark : t.hex_light) || t.hex_light || t.hex_dark || "#808080"; }
+    /* Ohne Farbe: der Ersatz aus core (17.10.); beide Verwender setzen ihn inline, er loest dort auf. */
+    function hex(t) { return (isDark ? t.hex_dark : t.hex_light) || t.hex_light || t.hex_dark || "var(--vc-thema-ersatz-filter)"; }
     function isSel(id) { return selected.indexOf(id) >= 0; }
     function visible() {
       var q = query.toLowerCase();

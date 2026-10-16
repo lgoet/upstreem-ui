@@ -626,7 +626,7 @@
         var fav = c.favicon_url || c.logo_url || c.favicon || c.logo || "";
         var logo = fav
           ? '<span class="up-ment-logo"><img src="' + esc(fav) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>'
-          : '<span class="up-ment-logo" style="background:' + esc(c.color || "#9e9e9e") + '"></span>';
+          : '<span class="up-ment-logo" style="background:' + esc(c.color || "var(--vc-logo-ersatz)") + '"></span>';
         return '<div class="up-filter-item' + (checked ? " is-checked" : "") + (disabled ? " is-disabled" : "") + '" data-id="' + esc(id) + '" data-name="' + esc(nm.toLowerCase()) + '" title="' + esc(nm) + '">' +
           '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
           logo + '<span class="up-ment-name">' + esc(nm) + '</span></div>';
