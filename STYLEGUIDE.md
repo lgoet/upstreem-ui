@@ -294,6 +294,26 @@ Weiß bei 3.08 und damit unter AA. Jetzt auf Weiß 5.33 und 5.37.
   `core.js` – die alten 30 Werte von vor dem OKLCh-Umbau, unverändert. Nicht dieselbe wie
   `UC.TOPIC_COLOR_PALETTE`; der Umzug darauf ist offen.
 
+### Komponentenfarben: Quick Actions, Anmeldung, Onboarding (seit 17.10.)
+Diese drei Bereiche tragen keine Farbliterale mehr; ihre Werte stehen in `core.css` im Block
+„Komponentenfarben: Quick Actions, Anmeldung, Onboarding“, je im hellen und im dunklen
+Themenblock (an `:root`, weil die Quick Actions am `<body>` hängen). Werte unverändert übernommen.
+- **Quick Actions** (`--am-*` in `quick-actions.css` zeigt darauf): `--vc-qa-rand`, `-rand-stark`,
+  `-weich`, `-weich-2`, `-karte`, `-knopf`, `-hover`, `-schleier` (hell `#e5e7eb`, `#d9dde3`,
+  `#f7f8fa`, `#f3f4f6`, `#fff`, 60 % Weiß, `#eef0f3`, Karte zu 80 %; dunkel die Menü-Token,
+  `#ffffff0d`, Schwarz 55 %), `--vc-qa-tip-bg/-ink` (Beschriftungs-Chip, in beiden Themen
+  `#1f1f1b`/`#fff`), `--vc-qa-taste-bg/-rand` (Taste in der Filter-Erklärkarte), `--vc-qa-fehler`
+  (`#b4451f`). Steigen/Fallen sind `--vt-up`/`--vt-down`.
+- **Anmeldung**: `--vc-auth-hover`, `--vc-auth-staerke-mittel`/`-gut` (Passwortstärke 2 und 3;
+  1 und 4 sind `--vc-neg`/`--vc-pos`), `--vc-auth-haken` (Haken im Kästchen als data-URI),
+  `--vc-auth-panel-verlauf`/`-lichter`/`-raster` (die rechte Spalte, wortgleich zur Landingpage).
+- **Fremdmarke Google**: `--vc-marke-google-blau`/`-gruen`/`-gelb`/`-rot`, über die Klassen
+  `.uau-g-*` in `auth-page.css` (die Farbe steht in der CSS, nicht im Markup).
+- **Onboarding**: `--vc-ob-kachel-text`/`-muted` (Schrift in den Logokacheln, die in beiden
+  Themen hell sind), `--vc-ob-thema-rueckfall` (Themenfarbe ohne Palette, JS).
+- Nicht ersetzt, mit Absicht: die Blenden in `mask-image` (`#000`, `rgba(0,0,0,.18/.62)`) sind
+  Deckkraft, keine Themenfarbe.
+
 ---
 
 ## 1a. Citation-Type-Farben (Stand 15.10.)
@@ -1544,7 +1564,7 @@ Grund          deckend: Gesamtzeile wie bisher, Pagination --up-surface; sie lä
 Schatten       NUR wenn er wirklich klebt (.is-fuss-klebt; die Marke .up-fuss-marke, ein Kind
                der Wurzel direkt vor der Pagination, liest den natürlichen Platz – vor der
                Pagination und nicht hinter dem Kasten, weil der in der Gruppenspalte von
-               All Prompts in einer Zeile neben der Gruppenliste steht): --up-e-3 nach oben
+               All Prompts in einer Zeile neben der Gruppenliste steht): --up-e-1 (Geist small, seit 17.10.; vorher --up-e-3, zu kräftig) nach oben
                gespiegelt, auf dem obersten Teil (ohne Gesamtzeile die Pagination,
                .is-fuss-ohne-summe)
 Gruppenspalte  All Prompts mit is-groups-wide: die Gruppenliste steht im Fluss neben dem Kasten
