@@ -192,7 +192,7 @@
         '<div class="vt-th vt-th-idx">' + UC.HASH_ICON + '</div>' +
         '<div class="vt-th vt-th-brand">' + (UC.kopfZeichenHtml ? UC.kopfZeichenHtml("squareStack") : "") + 'Brand</div>' +
         '<div class="vt-th vt-th-visibility">Visibility<span class="up-th-info" data-explain="visibility"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V12"/><path d="M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z"/></svg></span></div>' +
-        '<div class="vt-th vt-th-ranking">Ranking<span class="up-th-info" data-explain="ranking"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V12"/><path d="M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z"/></svg></span></div>' +
+        '<div class="vt-th vt-th-ranking">Rank<span class="up-th-info" data-explain="ranking"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V12"/><path d="M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z"/></svg></span></div>' +
         '<div class="vt-th vt-th-sentiment">Sentiment<span class="up-th-info" data-explain="sentiment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V12"/><path d="M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z"/></svg></span></div></div>';
     }
     function tableSkeletonHtml(){
@@ -209,7 +209,7 @@
       /* Der Lesefehler kommt VOR dem Skelett -- sonst sieht endloses Laden aus wie "gleich da". */
       if (state.leseFehler){
         if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
-        tableEl.innerHTML = UC.leseFehlerHtml("brands");
+        tableEl.innerHTML = UC.leseFehlerHtml("the brand list");
       }
       else if (state.loading || !state.hasTable){
         if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
@@ -407,14 +407,14 @@
        "Ranking" is just this table's own heading for it, kept as-is). */
     var EXPLAIN_FALLBACK = {
       visibility: { h: "Visibility", t: "How often the brand appears in AI answers for the tracked prompts, plus the change against the previous period." },
-      ranking:    { h: "Ranking", t: "The brand's average position among all brands mentioned, plus the change against the previous period. A lower number is better." },
+      ranking:    { h: "Rank", t: "The brand's average position among all brands mentioned, plus the change against the previous period. A lower number is better." },
       sentiment:  { h: "Sentiment", t: "How positively the brand is described when it's mentioned, plus the change against the previous period." }
     };
     function explainInfo(kind){
       if (UC.explainCopy){
         var trend = ", plus the change against the previous period";
         if (kind === "visibility") return UC.explainCopy("visibility", { scope: " for the tracked prompts", trend: trend });
-        if (kind === "ranking"){ var r = UC.explainCopy("rank", { trend: trend }); return r ? { h: "Ranking", t: r.t } : null; }
+        if (kind === "ranking"){ var r = UC.explainCopy("rank", { trend: trend }); return r ? { h: "Rank", t: r.t } : null; }
         if (kind === "sentiment") return UC.explainCopy("sentiment", { trend: trend });
       }
       return EXPLAIN_FALLBACK[kind] || null;
@@ -693,7 +693,7 @@
     seedFilterSelection(); populateFilter();
 
     /* ---- sort dropdown (Visibility default | Ranking | Sentiment) → fires sort_table (new RPC) ---- */
-    var SORT_LABELS = [["visibility","Visibility"],["ranking","Ranking"],["sentiment","Sentiment"]];
+    var SORT_LABELS = [["visibility","Visibility"],["ranking","Rank"],["sentiment","Sentiment"]];
     var SORT_OUT_FIELD = { visibility: "visibility", ranking: "rank", sentiment: "sentiment" };
     function fireSort(){
       var outField = SORT_OUT_FIELD[sortField] || sortField;

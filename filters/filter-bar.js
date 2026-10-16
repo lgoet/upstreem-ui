@@ -1164,7 +1164,18 @@
               UC.icon("x", 2.6) + '</button>' +
           '</span>');
         }
-        elChips.innerHTML = teile.join("");
+        /* NUR SCHREIBEN, WENN SICH ETWAS AENDERT (17.10., FLT-08). Ein Klick im Filter laesst den
+           Trigger mehrfach mutieren (Beschriftung, Punkt, Zaehler, Klasse) und feuert dazu das
+           Ereignis des Filters; jedes Mal lief render() und schrieb die Chips neu (gemessen: 7
+           Neuschreibungen je Klick, mit Verlust von Hover und Fokus am Chip). Gleiches Markup, gleiche
+           Knoten: stehen lassen. Der Knoten dient als Gegenprobe, falls jemand die Chips von aussen
+           anfasst. */
+        var html = teile.join("");
+        if (elChips.__ufbHtml !== html || elChips.__ufbErster !== elChips.firstChild) {
+          elChips.innerHTML = html;
+          elChips.__ufbHtml = html;
+          elChips.__ufbErster = elChips.firstChild;
+        }
         chipZustand();
       }
 
@@ -1189,14 +1200,74 @@
          setzt jeden Filter ueber seinen eigenen Weg: still setzen, dann dasselbe Ereignis, das ein
          Klick im Filter ausloest (Vorbild ads.js topicWaehlen) -- Intent und die Filter der
          Prompt-Tabelle melden sich beim Setzen selbst. Die Seite laedt danach einmal (sie buendelt). */
-      var GESP_KEY = UC.prefKey ? UC.prefKey("ufb_gespeichert__" + instanceId) : "ufb_gespeichert__" + instanceId;
+      /* TEAMBEZOGEN (17.10., FLT-01). Gespeichert werden Ids: Topics, Marken, Werbetreibende ... und
+         jede gehoert genau einem Team. Der Schluessel lief bis hier ueber prefKey, also ohne Team:
+         der Eintrag aus Team A stand im Team B zur Wahl, und eine fremde Id liess die Seite mit
+         "Could not load prompts" stehen, auch nach dem Neuladen (die Ursache war der Filter). Wie
+         die Pins der Seitenleiste: der Schluessel traegt das Team, und solange keins bekannt ist,
+         wird weder gelesen noch geschrieben -- ein Schluessel "@_" beim Lesen und "@<team>" beim
+         Schreiben waeren zwei verschiedene (core, Kommentar bei prefKey). Berechnet wird er bei
+         JEDEM Zugriff und nicht einmal beim Aufbau: beim Aufbau ist das Team oft noch nicht da. */
+      var GESP_BASIS = "ufb_gespeichert__" + instanceId;
       var GESP_MAX = 20;
+      function gespKey() {
+        var tm = "";
+        try { tm = UC.getTeam ? String(UC.getTeam() || "") : ""; } catch (e) { tm = ""; }
+        return tm && UC.storeKey ? UC.storeKey(GESP_BASIS) : null;
+      }
+      /* Die alten Eintraege ohne Team-Suffix sind genau das Leck: einmal je Seitenleben verwerfen,
+         nicht in ein Team uebernehmen (niemand weiss, aus welchem sie stammen). */
+      function gespAltWeg() {
+        if (window.__ufbGespAltWeg) return;
+        window.__ufbGespAltWeg = true;
+        try {
+          var ls = window.localStorage;
+          for (var i = ls.length - 1; i >= 0; i--) {
+            var n = ls.key(i);
+            if (n && n.indexOf("ufb_gespeichert__") === 0 && n.indexOf("@") < 0) ls.removeItem(n);
+          }
+        } catch (e) {}
+      }
       function gespLesen() {
-        var roh = UC.prefGet ? UC.prefGet(GESP_KEY) : null, l = null;
+        gespAltWeg();
+        var k = gespKey(), roh = null, l = null;
+        if (!k) return [];
+        try { roh = window.localStorage.getItem(k); } catch (e) { roh = null; }
         try { l = JSON.parse(roh || "[]"); } catch (e) { l = []; }
         return Array.isArray(l) ? l.filter(function (x) { return x && typeof x.name === "string" && x.werte && typeof x.werte === "object"; }) : [];
       }
-      function gespSchreiben(l) { if (UC.prefSet) UC.prefSet(GESP_KEY, JSON.stringify(l)); }
+      function gespSchreiben(l) {
+        var k = gespKey();
+        if (!k) return;
+        try { window.localStorage.setItem(k, JSON.stringify(l)); } catch (e) {}
+      }
+      /* Beim Laden jede gespeicherte Id gegen die LISTE des Filters pruefen: ein Topic oder eine
+         Marke, die es nicht mehr gibt (geloescht, Team gewechselt), darf nie als Filter an die DB
+         gehen -- _pi_filters_v1 lehnt sie ab (prompts_invalid_param), und die Tabelle zeigte dann
+         den Lesefehler (FLT-01/02). Topics gegen UC.getTopics (die Liste im Menue ist durch die
+         Suche gefiltert, taugt hier nicht), die Filter der einen Leiste (.up-ff, Marken,
+         Werbetreibende ...) gegen ihre gezeichneten Zeilen (alle da, die Suche blendet nur aus).
+         Ist die Liste noch nicht da (leer), laesst sich nichts pruefen: dann bleibt es, wie es ist.
+         Regler (Rank, Sentiment) haben keine Liste und tragen keine Ids. */
+      function gueltigeWerte(f, csv) {
+        var teile = String(csv || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean);
+        if (!teile.length) return { csv: "", weg: 0 };
+        var bekannt = null, w = eingezogen[f.key];
+        if (f.key === "topics") {
+          var tl = UC.getTopics ? UC.getTopics() : [];
+          if (Array.isArray(tl) && tl.length) { bekannt = {}; tl.forEach(function (x) { if (x && x.id != null) bekannt[String(x.id)] = 1; }); }
+        } else if (f.rootSel === ".up-ff" || String(f.rootSel).indexOf(".up-ff-") === 0) {
+          if (w && !w.querySelector(".up-ff-panel")) {
+            var zeilen = w.querySelectorAll(f.opt), n = 0;
+            bekannt = {};
+            [].forEach.call(zeilen, function (o) { var k = o.getAttribute(f.keyAttr); if (k) { bekannt[k] = 1; n++; } });
+            if (!n) bekannt = null;
+          }
+        }
+        if (!bekannt) return { csv: teile.join(","), weg: 0 };
+        var ok = teile.filter(function (k) { return bekannt[k]; });
+        return { csv: ok.join(","), weg: teile.length - ok.length };
+      }
       function normCsv(v) { return String(v || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean).sort().join(","); }
       function topicsModus() {
         var w = eingezogen.topics, c = w && w.__utfCtrl, sel = null;
@@ -1227,10 +1298,12 @@
         try { w.dispatchEvent(new CustomEvent(f.evt, { bubbles: true, detail: d })); } catch (e) {}
       }
       function gespLaden(i) {
-        var e = gespLesen()[i];
+        var e = gespLesen()[i], verworfen = 0;
         if (!e) return;
         liste.forEach(function (f) {
-          var soll = String(e.werte[f.key] || "");
+          var gv = gueltigeWerte(f, String(e.werte[f.key] || ""));
+          var soll = gv.csv;
+          verworfen += gv.weg;
           var modus = f.key === "topics" ? (e.werte.topics_mode === "and" ? "and" : "or") : null;
           var gleich = normCsv(soll) === normCsv(auswahl(f).join(","));
           if (gleich && (f.key !== "topics" || !soll || modus === topicsModus())) return;
@@ -1238,6 +1311,7 @@
         });
         spiegelnAlle();
         render();
+        if (verworfen && UC.toast) { try { UC.toast(tr("Some filters no longer exist"), { kind: "neutral" }); } catch (e2) {} }
       }
       function gespWeg(i) {
         var l = gespLesen();
@@ -1269,7 +1343,7 @@
         if (!box) return;
         var l = gespLesen(), an = aktiv().length > 0;
         var el = box.querySelector(".ufb-gesp-liste");
-        el.innerHTML = l.map(function (x, i) {
+        var html = l.map(function (x, i) {
           var akt = gespGleich(x.werte);
           return '<div class="ufb-gesp-zeile' + (akt ? " is-aktiv" : "") + '">' +
             '<button class="up-optrow ufb-gesp-laden" type="button" data-gesp-laden="' + i + '">' +
@@ -1279,6 +1353,10 @@
               esc(tr("Delete {name}").split("{name}").join(x.name)) + '">' + UC.icon("x", 2.6) + '</button>' +
           '</div>';
         }).join("");
+        /* Wie die Chips (FLT-08): nur schreiben, wenn sich das Markup geaendert hat. */
+        if (el.__ufbHtml !== html || el.__ufbErster !== el.firstChild) {
+          el.innerHTML = html; el.__ufbHtml = html; el.__ufbErster = el.firstChild;
+        }
         /* Speichern nur, wenn etwas gesetzt ist; der ganze Abschnitt nur, wenn es etwas zu zeigen gibt. */
         var neu = box.querySelector(".ufb-gesp-neu"), feld = box.querySelector(".ufb-gesp-feld");
         if (neu && feld && feld.hidden) neu.hidden = !an;
@@ -1574,6 +1652,12 @@
         spiegelnAlle();
         render();
       }
+      /* Ein anderes Team (17.10., FLT-01): alle Filter zurueck auf leer. In der App ist ein
+         Teamwechsel ein Neuladen, dort steht ohnehin alles leer; das hier ist das Netz fuer den Weg
+         ohne Neuladen (setUpstreemTeam), damit nie Ids des alten Teams weiterfiltern. */
+      if (UC.onTeamChange) {
+        try { UC.onTeamChange(function (neu, alt) { if (alt && alt !== neu) { alleLeeren(); gespZeichnen(); } }, root); } catch (e) {}
+      }
       root.addEventListener("click", function (e) {
         if (!e.target.closest) return;
         if (e.target.closest("[data-ufb-reset]")) { e.stopPropagation(); alleLeeren(); pop.close(true); return; }
@@ -1860,7 +1944,10 @@
        dazukommt (UC.watchRoots hat im Gegentest nicht angeschlagen, siehe die Runde davor).
        initAll richtet nur ein, was noch keinen Controller hat -- der Lauf kostet ein
        querySelectorAll. */
-    setInterval(function () {
+    function waechterLauf() {
+      /* Im Hintergrund-Tab nichts tun (QS-14): dort sieht niemand eine Leiste, und der Wechsel
+         zurueck holt den Lauf unten nach. */
+      if (document.hidden) return;
       waechter(); initAll();
       /* Und einmal je Leiste die Sichtbarkeitsfrage: kostet drei getAttribute und faengt den Fall,
          den kein Beobachter sehen kann -- eine von Bubble neu gerenderte Wurzel. */
@@ -1868,7 +1955,9 @@
         var c = WURZELN[i].__ufbCtrl;
         if (c && c.pruefeSicht) c.pruefeSicht();
       }
-    }, WAECHTER_MS);
+    }
+    setInterval(waechterLauf, WAECHTER_MS);
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) waechterLauf(); });
     /* Eigenes Netz fuer eine Leiste, die SPAETER erscheint. UC.watchRoots ist dafuer gedacht, hat
        im Gegentest aber nicht angeschlagen (eine frisch eingehaengte Wurzel blieb 2,2s
        uneingerichtet, Zaehler 0). Die Zeitstaffel oben faengt den Normalfall -- Bubble baut das

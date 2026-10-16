@@ -773,7 +773,7 @@
     "Track important changes and understand how AI performance develops around them.":
       "Halte wichtige Änderungen fest und sieh, wie sich die AI Performance um sie herum entwickelt.",
     "Create event": "Event anlegen", "Search events…": "Events durchsuchen…", "Search events": "Events durchsuchen",
-    "Event type": "Event-Typ", "Event types": "Event-Typen", "Search types…": "Typen durchsuchen…",
+    "Event type": "Event-Typ", "Search types…": "Typen durchsuchen…",
     "No events yet": "Noch keine Events",
     "Add important launches, content changes, campaigns or other changes to understand how your AI performance develops around them.":
       "Lege wichtige Launches, Content-Änderungen, Kampagnen oder andere Änderungen an, um zu sehen, wie sich deine AI Performance um sie herum entwickelt.",
@@ -833,15 +833,16 @@
     "This event could not be loaded.": "Dieses Event konnte nicht geladen werden.",
     "Back to overview": "Zurück zur Übersicht",
     "Delete event": "Event löschen", "Delete this event?": "Dieses Event löschen?",
+    "Discard this event?": "Dieses Event verwerfen?", "Discard changes?": "Änderungen verwerfen?",
+    "Everything you entered will be lost.": "Alles, was du eingegeben hast, geht verloren.",
+    "Your changes won't be saved.": "Deine Änderungen werden nicht gespeichert.", "Keep editing": "Weiter bearbeiten",
     "The event, its scope and its URL list are removed. Prompt history, citations and responses stay untouched.":
       "Das Event, sein Umfang und seine URL-Liste werden entfernt. Prompt-Verlauf, Zitate und Responses bleiben unberührt.",
     "Remove URL": "URL entfernen", "Remove this URL from the event?": "Diese URL aus dem Event entfernen?",
     "Only the link to this event is removed. The URL and its citations stay untouched.":
       "Nur die Zuordnung zu diesem Event wird entfernt. Die URL und ihre Zitate bleiben unberührt.",
-    "Please sign in again.": "Bitte neu anmelden.",
     "You don't have permission to do that.": "Dafür fehlt dir die Berechtigung.",
     "Too many requests. Please wait a moment and try again.": "Zu viele Anfragen. Bitte kurz warten und erneut versuchen.",
-    "Please enter a name.": "Bitte einen Namen eingeben.",
     "The date must be within the last 6 months.": "Das Datum muss in den letzten 6 Monaten liegen.",
     "Please select at least one topic.": "Bitte mindestens ein Topic wählen.",
     "One of the topics is no longer available.": "Ein Topic ist nicht mehr verfügbar.",
@@ -925,6 +926,13 @@
     "Enter a domain like example.com.": "Gib eine Domain wie example.com ein.",
     "Please add a path, e.g. example.com/blog.": "Gib bitte einen Pfad an, z. B. example.com/blog.",
     "Please enter a valid domain.": "Gib bitte eine gültige Domain ein.",
+    "The comparison uses different models": "Der Vergleich nutzt andere Modelle",
+    "Based on {n} of {m} affected prompts": "Basiert auf {n} von {m} betroffenen Prompts",
+    "Comparison based on {n} of {m} prompts": "Vergleich basiert auf {n} von {m} Prompts",
+    "Only prompts with data both before and after the event count in these numbers.": "In diese Zahlen gehen nur Prompts mit Daten vor und nach dem Event ein.",
+    "The affected prompts are measured on {a}, the comparison group on {b}.": "Die betroffenen Prompts werden mit {a} gemessen, die Vergleichsgruppe mit {b}.",
+    "{ziel}: Please add a path, e.g. example.com/blog.": "{ziel}: Gib bitte einen Pfad an, z. B. example.com/blog.",
+    "{ziel}: Enter a domain like example.com.": "{ziel}: Gib eine Domain wie example.com ein.",
     "This can't be used: {wert}": "Das lässt sich nicht verwenden: {wert}",
     "{ziel} is already in the list.": "{ziel} steht schon in der Liste.",
     "{ziel} is also covered by {regel} and gets its own row.": "{ziel} ist auch in {regel} enthalten und bekommt eine eigene Zeile.",
@@ -1324,7 +1332,18 @@
      am Ende weg. Die SCHREIBWEISE (lee-up.de/blog/*) steht immer sichtbar: sie ist das, was die
      Regel trifft, in einer Zeile. */
   var ZIEL_MAX = 50;
-  function hostOk(h) { return /^(?=.{3,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(String(h || "")); }
+  /* Die Endung darf auch eine Punycode-Endung sein (xn--...): ".中国" wird zu "xn--fiqs8s". */
+  function hostOk(h) { return /^(?=.{3,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:[a-z]{2,63}|xn--[a-z0-9-]{1,59})$/.test(String(h || "")); }
+  /* Ein Host mit Umlaut (muller.de mit u-Umlaut, EV-14) wird in Punycode umgewandelt, so wie ihn die
+     Zitate der Datenbank tragen (xn--mller-kva.de; gemessen: 17 Domains xn-- in 30 Tagen, 0 mit
+     Umlaut). Das Wandeln macht der Browser selbst (URL, IDNA): kein eigener Umwandler, der bei
+     einer Sonderregel falsch rechnet. Reines ASCII bleibt unberuehrt; was sich nicht wandeln laesst,
+     bleibt stehen und faellt dann an hostOk durch. */
+  function hostAscii(h) {
+    h = String(h == null ? "" : h);
+    if (!/[^\x00-\x7f]/.test(h)) return h;
+    try { return new URL("http://" + h).hostname || h; } catch (e) { return h; }
+  }
   function zerlegen(s) {
     s = String(s == null ? "" : s).trim();
     if (!s || /\s/.test(s)) return null;
@@ -1333,12 +1352,22 @@
     rest = rest.replace(/^\*\./, "");
     var m = /^([^\/?#]+)([^?#]*)(\?[^#]*)?(#.*)?$/.exec(rest);
     if (!m) return null;
-    var host = m[1].toLowerCase().replace(/^www\./, ""), pfad = m[2] || "";
+    /* anzeige: der Host so, wie er eingegeben wurde (klein, ohne www); host: derselbe in Punycode,
+       der Wert, mit dem verglichen, gesendet und gesucht wird. hostTyp/hostTypAscii: mit www, fuer
+       das url-Ziel, das die Schreibweise behaelt. */
+    /* Zugangsdaten und Port gehoeren nicht zum Host (url_norm_v1 streicht beides in der Host-Regel):
+       "lee-up.de:443/solar" ist der Host lee-up.de, nicht ein ungueltiger Host (EV-07). */
+    var anzeige = m[1].toLowerCase().replace(/^[^@]*@/, "").replace(/^www\./, ""), pfad = m[2] || "", port = "";
+    var pm = /^(.*):(\d{1,5})$/.exec(anzeige);
+    if (pm && parseInt(pm[2], 10) <= 65535) { anzeige = pm[1]; port = pm[2]; }
+    /* anzeige: der Host so, wie er eingegeben wurde; host: derselbe in Punycode (EV-14), der Wert,
+       mit dem verglichen, gesendet und gesucht wird. */
+    var host = hostAscii(anzeige);
     var stern = /\*$/.test(pfad);
     pfad = pfad.replace(/\/?\*$/, "");
     var schraeg = /\/$/.test(pfad);
     pfad = pfad.replace(/\/+$/, "");
-    return { schema: schema, host: host, pfad: pfad, stern: stern, schraeg: schraeg, alle: alle, query: m[3] || "", roh: s };
+    return { schema: schema, host: host, anzeige: anzeige, hostTyp: m[1], hostTypAscii: hostAscii(m[1].toLowerCase()), port: port, pfad: pfad, stern: stern, schraeg: schraeg, alle: alle, query: m[3] || "", roh: s };
   }
   /* Mehrere Eintraege: je Zeile (oder durch Leerzeichen bzw. Komma getrennt) -- eine Adresse
      enthaelt keines davon. */
@@ -1362,35 +1391,78 @@
     if (z.schema || z.query) return "url";
     return "path";
   }
-  /* Der Schluessel einer URL wie url_norm_v1 der Datenbank (Rueckmeldung 15.10., Abschnitt 1):
-     Host klein, Fragment und "/" am Ende weg -- www und Schema BLEIBEN. Ein url-Ziel trifft nur
-     genau seine Schreibweise; https://lee-up.de/solar und https://www.lee-up.de/solar sind zwei
-     Ziele (gemessen von der Datenbank: 0 gegen 210 Zitate). Bis 15.10. strich die Oberflaeche www
-     und Schema und hielt beide fuer dasselbe -- die zweite liess sich dann nicht hinzufuegen. */
+  /* Der Schluessel einer URL wie url_norm_v1 der Datenbank (Rueckmeldung 15.10., Abschnitt 1; Audit
+     EV-07 17.10.): Schema und Host klein, Standard-Port (80 bei http, 443 bei https) weg, Fragment weg,
+     Punkt-Segmente aufgeloest, "/" am Ende des Pfads weg, Tracking-Parameter (utm_*, gclid, fbclid, ref,
+     igshid, mc_cid, mc_eid, t, si, feature, pp, list) weg -- www und Schema BLEIBEN. Ein url-Ziel trifft nur
+     genau seine Schreibweise; https://lee-up.de/solar und https://www.lee-up.de/solar sind zwei Ziele
+     (gemessen von der Datenbank: 0 gegen 210 Zitate). Bis 17.10. kannte der Schluessel weder Port noch
+     Tracking-Parameter: die Oberflaeche zaehlte vier Ziele, wo die Datenbank drei anlegte (die utm-Fassung
+     wird dort zur selben Adresse), und eine URL mit :443 galt als ungueltig. Der Pfad bleibt gross/klein,
+     wie die Datenbank ihn laesst; Sonderzeichen kodiert sie wie URL.search (urlKodieren). */
+  var URL_TRACK = { gclid: 1, fbclid: 1, ref: 1, igshid: 1, mc_cid: 1, mc_eid: 1, t: 1, si: 1, feature: 1, pp: 1, list: 1 };
+  function urlKodieren(s, menge) {
+    return Array.from(String(s)).map(function (ch) {
+      var cp = ch.codePointAt(0);
+      if (cp > 126 || cp <= 32 || menge.indexOf(ch) >= 0) return ch === "'" ? "%27" : encodeURIComponent(ch);
+      return ch;
+    }).join("");
+  }
   function urlSchluessel(s) {
-    s = String(s == null ? "" : s).trim().replace(/#.*$/, "");
-    var m = /^(https?:\/\/)?([^\/?#]*)(.*)$/i.exec(s);
-    return (m[1] || "https://").toLowerCase() + m[2].toLowerCase() + m[3].replace(/\/+$/, "");
+    s = String(s == null ? "" : s).replace(/[\x01-\x1F\x7F\u200B-\u200D\uFEFF]/g, "").trim().replace(/#.*$/, "");
+    var m = /^(https?):\/*/i.exec(s), sch = "https";
+    if (m) { sch = m[1].toLowerCase(); s = s.slice(m[0].length); }
+    s = s.replace(/^[\/\\]*/, "");
+    var a = /^([^\/\\?]*)([\s\S]*)$/.exec(s), auth = a[1].replace(/^.*@/, ""), rest = a[2];
+    var ci = auth.indexOf(":"), host = (ci < 0 ? auth : auth.slice(0, ci)).toLowerCase(), port = ci < 0 ? "" : auth.slice(ci + 1);
+    if (/^\d+$/.test(port)) {
+      port = String(parseInt(port, 10));
+      if ((sch === "http" && port === "80") || (sch === "https" && port === "443")) port = "";
+    }
+    var qi = rest.indexOf("?"), query = qi < 0 ? "" : rest.slice(qi + 1), pfad = (qi < 0 ? rest : rest.slice(0, qi)).replace(/\\/g, "/");
+    if (pfad === "") pfad = "/";
+    var segs = pfad.slice(1).split("/"), aus = [];
+    segs.forEach(function (sg, i) {
+      var l = sg.toLowerCase(), letztes = i === segs.length - 1;
+      if (l === ".." || l === ".%2e" || l === "%2e." || l === "%2e%2e") { aus.pop(); if (letztes) aus.push(""); }
+      else if (l === "." || l === "%2e") { if (letztes) aus.push(""); }
+      else aus.push(sg);
+    });
+    pfad = urlKodieren("/" + aus.join("/"), '"<>`{}');
+    if (pfad !== "/") { pfad = pfad.replace(/\/+$/, ""); if (pfad === "") pfad = "/"; }
+    var behalten = [];
+    if (query) urlKodieren(query, "\"<>'").split("&").forEach(function (teil) {
+      if (teil === "") return;
+      var k = teil.indexOf("=") >= 0 ? teil.slice(0, teil.indexOf("=")) : teil, d;
+      try { d = decodeURIComponent(k.replace(/\+/g, "%20")); } catch (e) { d = k; }
+      d = d.toLowerCase();
+      if (d.indexOf("utm_") === 0 || URL_TRACK[d] === 1) return;
+      behalten.push(teil);
+    });
+    return sch + "://" + host + (port ? ":" + port : "") + pfad + (behalten.length ? "?" + behalten.join("&") : "");
   }
   /* So steht ein url-Ziel da: ohne "https://" (der Normalfall), aber MIT www und mit "http://" --
-     genau das unterscheidet zwei Schreibweisen, und nur die eine trifft. */
-  function urlZeigen(s) { return urlSchluessel(s).replace(/^https:\/\//, ""); }
+     genau das unterscheidet zwei Schreibweisen, und nur die eine trifft. Der Schraegstrich einer
+     reinen Domain bleibt weg (lee-up.de, nicht lee-up.de/). */
+  function urlZeigen(s) { return urlSchluessel(s).replace(/^https:\/\//, "").replace(/^((?:http:\/\/)?[^\/]*)\/$/, "$1"); }
   /* Ein Eintrag als Ziel der gewaehlten Art. { kind, input, key, zeigen } oder { fehler }. */
   function zielBauen(text, art) {
     var z = zerlegen(text);
     if (!z || !hostOk(z.host)) return { fehler: "host", roh: String(text || "").trim() };
     if (art === "url") {
-      var u = (z.schema ? z.roh : "https://" + z.roh).replace(/#.*$/, "");
+      var u0 = (z.schema ? z.roh : "https://" + z.roh).replace(/#.*$/, "");
+      /* Gesendet wird der Host in Punycode, gezeigt die Eingabe */
+      var u = z.hostTypAscii !== z.hostTyp.toLowerCase() ? u0.replace(z.hostTyp, z.hostTypAscii) : u0;
       if (u.length > 2048) return { fehler: "host", roh: z.roh };
-      return { kind: "url", input: u, key: "url|" + urlSchluessel(u), zeigen: urlZeigen(u) };
+      return { kind: "url", input: u, key: "url|" + urlSchluessel(u), zeigen: urlZeigen(u0) };
     }
     if (art === "path") {
       if (!z.pfad) return { fehler: "pfad", roh: z.roh };
       var v = z.host + z.pfad;
-      return { kind: "path", input: v, key: "path|" + v.toLowerCase(), zeigen: v + "/*" };
+      return { kind: "path", input: v, key: "path|" + v.toLowerCase(), zeigen: z.anzeige + z.pfad + "/*" };
     }
-    if (art === "host_all") return { kind: "host_all", input: z.host, key: "host_all|" + z.host, zeigen: "*." + z.host + "/*" };
-    return { kind: "host", input: z.host, key: "host|" + z.host, zeigen: z.host + "/*" };
+    if (art === "host_all") return { kind: "host_all", input: z.host, key: "host_all|" + z.host, zeigen: "*." + z.anzeige + "/*" };
+    return { kind: "host", input: z.host, key: "host|" + z.host, zeigen: z.anzeige + "/*" };
   }
   /* Ein Ziel aus der Datenbank (targets[] von get_impact_event_v3) in derselben Form. value ist
      normalisiert, input die Eingabe des Nutzers -- gezeigt wird value. */
@@ -1636,6 +1708,7 @@
     function fehlerKam(kanal, f, kx) {
       var code = String(f.message || ""), hint = String(f.hint || ""), txt = fehlerText(code, hint);
       if (kanal === "uevDetail") {
+        if (planOffenNach === kx.eventId) planOffenNach = null;
         if (state.ansicht === "detail" && kx.eventId === state.eventId) ctrl.setFehler(code, "lesen", hint);
         return;
       }
@@ -2034,7 +2107,7 @@
       if (stand.fehler && !(UC.getEvents && UC.getEvents().length)) {
         zahlSetzen(null);
         elListe.className = "uev-liste";
-        elListe.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("events") : "";
+        elListe.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("the event list") : "";
         return;
       }
       if (!stand.geladen) {
@@ -2277,7 +2350,7 @@
       var d = dieDetail() || mitZielen(listeEvent(state.eventId));
       if (!d) {
         el.innerHTML = state.detailFehler
-          ? '<div class="uev-fehlerkopf">' + (UC.leseFehlerHtml ? UC.leseFehlerHtml("event") : esc(t("This event could not be loaded."))) +
+          ? '<div class="uev-fehlerkopf">' + (UC.leseFehlerHtml ? UC.leseFehlerHtml("the event") : esc(t("This event could not be loaded."))) +
               '<button type="button" class="up-btn-sec uev-zurueck">' + esc(t("Back to overview")) + '</button></div>'
           : '<div class="up-box uev-hero is-sk"><div class="uev-hero-band uev-sk-band"></div><div class="uev-hero-body">' +
               '<span class="uev-avatar is-gross uev-sk-avatar"></span><span class="uev-sk uev-sk-titel" style="width:36%"></span>' +
@@ -2492,8 +2565,29 @@
       if (w.mode !== "campaign" && w.after_complete === false && nach != null && nachSoll != null && nach < nachSoll)
         h.push(angabe("info", ersetze(t("{n} of {m} days after the event observed so far"), { n: zahl(nach), m: zahl(nachSoll) }),
           t("The numbers after the event only use the days that have data so far.")));
+      /* Auf wie vielen Prompts die Kacheln beruhen (Audit EV-02, zweite Haelfte): "Affected prompts 11" im
+         Umfang, aber nur 6 haben vorher UND nachher Laeufe -- die Zahlen daneben stammen aus diesen 6.
+         Ohne die Zeile widersprechen sich zwei Zahlen derselben Seite. Nur bei einer Abweichung; bei
+         Prompts, die es erst nach dem Event gab, sagt es zusaetzlich der Satz im Umfang. */
+      var co = a.cohort || {}, cn = num(co.comparable_prompt_count), ca = num(co.affected_in_filter_count != null ? co.affected_in_filter_count : co.affected_prompt_count);
+      if (cn != null && ca != null && cn > 0 && cn < ca)
+        h.push(angabe("info", ersetze(t("Based on {n} of {m} affected prompts"), { n: zahl(cn), m: zahl(ca) }),
+          t("Only prompts with data both before and after the event count in these numbers.")));
+      var vn = num(co.comparison_comparable_prompt_count), va = num(co.comparison_prompt_count);
+      if (vn != null && va != null && vn > 0 && vn < va)
+        h.push(angabe("info", ersetze(t("Comparison based on {n} of {m} prompts"), { n: zahl(vn), m: zahl(va) }),
+          t("Only prompts with data both before and after the event count in these numbers.")));
       if (w.limited_baseline === true) h.push(angabe("info", ersetze(t("Limited baseline ({n} days)"), { n: zahl(w.before_observed_days) }),
         t("Less historical data is available before this event for the selected period.")));
+      /* EV-15 (Audit 17.10., Verdacht): "vs. comparison" ist die Differenz zweier Deltas, jedes auf den
+         Modellen gerechnet, die auf SEINER Seite vorher UND nachher Daten haben (cohort.comparable_models
+         gegen cohort.comparison_comparable_models). Sind die Mengen verschieden, vergleicht die Zahl
+         Aepfel mit Birnen -- ohne Hinweis sah sie aus wie ein gleicher Massstab. Die Datenbank soll
+         auf der Schnittmenge rechnen (Bericht, "Fuer den DB-Chat"); bis dahin sagt es die Zeile. */
+      var cm = a.cohort && a.cohort.comparable_models, cv = a.cohort && a.cohort.comparison_comparable_models;
+      if (isArr(cm) && isArr(cv) && cm.length && cv.length && (cm.length !== cv.length || cm.some(function (x) { return cv.indexOf(x) < 0; })))
+        h.push(angabe("info", t("The comparison uses different models"), ersetze(t("The affected prompts are measured on {a}, the comparison group on {b}."),
+          { a: cm.map(modellName).join(", "), b: cv.map(modellName).join(", ") })));
       var ov = isArr(a.overlaps) ? a.overlaps.length : 0;
       if (ov) h.push(angabe("tickets", ersetze(t(ov === 1 ? "{n} other event in this period" : "{n} other events in this period"), { n: ov })));
       el.innerHTML = h.join("");
@@ -2523,7 +2617,7 @@
       var el = elMain.querySelector('[data-sek="kpis"]'), a = dieAnalyse();
       if (!a) {
         el.innerHTML = state.analyseFehler && !state.analyseLaden
-          ? '<div class="uev-kpifehler">' + (UC.leseFehlerHtml ? UC.leseFehlerHtml("analysis") : "") + '</div>'
+          ? '<div class="uev-kpifehler">' + (UC.leseFehlerHtml ? UC.leseFehlerHtml("the analysis") : "") + '</div>'
           : [0, 1, 2].map(function () { return UC.kpiKarteSkelett("uev-kpi"); }).join("");
         return;
       }
@@ -3795,6 +3889,38 @@
         api.fehler(t("This is taking longer than expected. Please try again."));
       }, 25000);
     }
+    /* EV-09 (Audit 17.10.): Escape, X und ein Klick auf den Schleier verwarfen den Assistenten samt Namen,
+       Zielen und Sitemap-Auswahl ohne Nachfrage. Wie in gaengigen Apps (Linear, Notion, Vercel) fragt
+       das Popup jetzt nach -- aber nur, wenn etwas eingegeben wurde; ein leeres Formular schliesst sofort.
+       "Etwas eingegeben" heisst: anders als beim Oeffnen (p.start), nicht "irgendwann etwas angefasst",
+       damit ein Event, das nur geoeffnet und wieder zugemacht wird, nie fragt. */
+    function popupStand(p) {
+      var e = p.e;
+      if (p.art === "ziel") return JSON.stringify([e.ziele.map(function (z) { return z.key; }), String(e.eingabe || "").trim()]);
+      if (p.art === "bearbeiten") return JSON.stringify([e.name, e.typ, e.text, e.icon || null, e.farbe || null, e.cover || null, e.ende || null]);
+      return JSON.stringify([e.name.trim(), e.text.trim(), e.typ, e.icon || null, e.farbe || null, e.cover || null, e.datum, e.ende || null, !!e.bereich,
+        e.modus, e.topics, e.tagModus, e.ziele.map(function (z) { return z.key; }), String(e.eingabe || "").trim()]);
+    }
+    function popupGeaendert(p) { return !!p && p.start != null && popupStand(p) !== p.start; }
+    /* Das Popup fragt vor dem Schliessen (cfg.vorSchliessen in makeModal). true: es darf zu; false: es
+       bleibt, und die Rueckfrage steht davor. Die Rueckfrage selbst schliesst Escape als "Weiter
+       bearbeiten"; der Escape des Popups darunter laeuft zuerst (aelterer Zuhoerer), sieht sie offen
+       und tut nichts -- sonst stuenden zwei Fragen uebereinander. */
+    function popupDarfZu() {
+      var p = popup;
+      if (!p || !popupGeaendert(p)) return true;
+      if (p.verwerfenFrage) return false;
+      var neuesEvent = p.art === "anlegen" && !p.planEventId;
+      var m = UC.makeModal({
+        titel: neuesEvent ? "Discard this event?" : "Discard changes?", isDark: isDark,
+        inhaltHtml: '<p class="uev-popup-text">' + esc(t(neuesEvent ? "Everything you entered will be lost." : "Your changes won't be saved.")) + '</p>',
+        knoepfe: [{ id: "behalten", text: "Keep editing", art: "sec" },
+                  { id: "weg", text: "Discard", art: "gefahr", aktion: function () { p.start = null; p.api.schliessen(); } }],
+        onClose: function () { p.verwerfenFrage = null; var f = p.api.el.querySelector("input:not([type=hidden]), textarea"); try { if (f && popup === p) f.focus(); } catch (e0) {} }
+      });
+      p.verwerfenFrage = m;
+      return false;
+    }
     function loeschenFragen(eid) {
       var ev = (state.detail[eid]) || listeEvent(eid);
       if (!ev || ev.can_delete !== true) return;
@@ -3868,8 +3994,10 @@
     var WARTE_MS = 25000;       /* wie die Warte-Uhren der Drawer: laenger braucht keine RPC hier */
     var MONATE = ["January", "February", "March", "April", "May", "June", "July", "August",
                   "September", "October", "November", "December"];
-    /* Wie im Kalender von date-range.js und ebenso unuebersetzt: dieselben Zellen, dieselben Koepfe. */
+    /* Die Kopfzeile des Kalenders in der Sprache der App, wie in date-range.js (UC.kalenderNamen);
+       ohne die Funktion das Englische. */
     var WOCHENTAGE = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+    function kalNamen() { return UC.kalenderNamen ? UC.kalenderNamen() : { mon: MONATE.map(function (m) { return t(m); }), dow: WOCHENTAGE }; }
     /* Die erste Reihe der Topic-Palette: die kraeftigen Toene. Eine Event-Farbe ist auch die Farbe
        des Markers in jedem Diagramm, eine 1,5px-Linie auf hellem UND dunklem Grund -- die blassen
        und die tiefen Reihen verschwinden dort auf je einem der beiden (Spezifikation 50). */
@@ -4069,10 +4197,10 @@
       return '<div class="udr-month">' +
         '<div class="udr-month-head">' +
           '<button type="button" class="udr-nav udr-prev" data-monat="-1" aria-label="' + esc(t("Previous month")) + '"' + (vor ? "" : " disabled") + '>' + UC.icon("chevronLeft", 1.8) + '</button>' +
-          '<span class="udr-month-title">' + esc(t(MONATE[monat.getMonth()])) + ' ' + monat.getFullYear() + '</span>' +
+          '<span class="udr-month-title">' + esc(kalNamen().mon[monat.getMonth()]) + ' ' + monat.getFullYear() + '</span>' +
           '<button type="button" class="udr-nav udr-next" data-monat="1" aria-label="' + esc(t("Next month")) + '"' + (nach ? "" : " disabled") + '>' + UC.icon("chevronRight", 1.8) + '</button>' +
         '</div>' +
-        '<div class="udr-dows">' + WOCHENTAGE.map(function (w) { return '<span class="udr-dow">' + w + '</span>'; }).join("") + '</div>' +
+        '<div class="udr-dows">' + kalNamen().dow.map(function (w) { return '<span class="udr-dow">' + w + '</span>'; }).join("") + '</div>' +
         '<div class="udr-grid">' + zellen + '</div></div>';
     }
     /* Der Text im Wahlknopf: ein Tag, ein Zeitraum oder die halbe Wahl ("1 Sep – End date"). */
@@ -4638,6 +4766,14 @@
       if (z.fehler === "pfad") return t("Please add a path, e.g. example.com/blog.");
       return z.roh ? ersetze(t("This can't be used: {wert}"), { wert: z.roh }) : t("Please enter a valid domain.");
     }
+    /* Der Satz am Feld, wenn Eintraege der Eingabe nicht gehen (EV-07): er NENNT sie. Bis 17.10. stand
+       dort "Enter a domain like example.com." ohne zu sagen, welche Zeile gemeint war, und ein einziger
+       Eintrag sperrte "Add" fuer alle uebrigen. */
+    function schlechteNennen(schlecht) {
+      var z = schlecht[0], satz = z.fehler === "pfad" ? ersetze(t("{ziel}: Please add a path, e.g. example.com/blog."), { ziel: z.roh })
+        : ersetze(t("{ziel}: Enter a domain like example.com."), { ziel: z.roh });
+      return schlecht.length > 1 ? satz + " " + ersetze(t("and {n} more"), { n: schlecht.length - 1 }) : satz;
+    }
     /* Die Eingabe in die Liste uebernehmen (Knopf "Add", Enter, "Continue"). false: es gab einen
        Grund, nichts zu uebernehmen -- er steht am Feld, die Eingabe bleibt stehen. */
     function eingabeUebernehmen(p) {
@@ -4648,7 +4784,9 @@
         feldFehler("ziele", t("This looks like a sitemap. Please add the pages or the domain instead."));
         return false;
       }
-      if (r.schlecht.length) { feldFehler("ziele", schlechtText(r.schlecht[0])); return false; }
+      /* Nur der betroffene Eintrag bekommt den Fehler (EV-07): die uebrigen gueltigen kommen in die Liste,
+         der ungueltige bleibt im Feld stehen, mit Namen. Gar nichts Gueltiges: der Fehler allein. */
+      if (r.schlecht.length && !r.gut.length) { feldFehler("ziele", r.schlecht.length > 1 ? schlechteNennen(r.schlecht) : schlechtText(r.schlecht[0])); return false; }
       /* EIN DOPPEL SPERRT NICHTS MEHR (16.10. spaet, Nutzer: nach Back aus Schritt 4 dieselbe URL
          noch einmal eingegeben -> "Dieses Ziel steht schon in der Liste.", und Continue ging erst
          nach dem Leeren des Feldes weiter). Was GENAU so schon in der Liste steht, faellt still
@@ -4679,15 +4817,17 @@
       if (neu.length > zielFrei(p)) { p.schreibNotiz = null; feldFehler("ziele", zuVielText(p)); return false; }
       neu.forEach(function (z) { p.e.ziele.push(z); });
       if (neu.length) artNachZiel(p, neu[0]);
-      p.e.eingabe = ""; p.e.artVonHand = false;
+      /* Ungueltige Eintraege bleiben im Feld (je Zeile), damit sie sich korrigieren lassen. */
+      p.e.eingabe = r.schlecht.map(function (z) { return z.roh; }).join("\n"); p.e.artVonHand = false;
       var inp = im(".uev-zielein");
-      if (inp) { inp.value = ""; feldHoehe(inp); }
+      if (inp) { inp.value = p.e.eingabe; feldHoehe(inp); }
       p.such.frage = ""; p.such.treffer = null; p.such.laedt = false; p.such.fehler = "";
       if (p.maschine) p.maschine.abbrechen();
-      feldFehler("ziele", "");
       p.api.fehler("");
       zieleZeigen(p);
       if (!neu.length && schon.length) zielBlitz(p, schon);
+      if (r.schlecht.length) { feldFehler("ziele", schlechteNennen(r.schlecht)); return false; }
+      feldFehler("ziele", "");
       return true;
     }
     /* Die vorhandenen Zeilen kurz hervorheben und ins Bild holen (nearest: wer zu sehen ist,
@@ -4831,19 +4971,25 @@
       } else if (r.vorschlag === "sitemap") {
         html = '<span class="uev-schreib-satz">' + esc(t("This looks like a sitemap.")) + '</span>' +
           (sitemapDa() ? '<button type="button" class="up-quietbtn uev-sm-auf" data-sm-url="' + esc(r.teile[0]) + '">' + UC.icon("folderTree", 2) + '<span>' + esc(t("Load from sitemap")) + '</span></button>' : '');
-      } else if (r.schlecht.length) {
-        html = '<span class="uev-schreib-satz">' + esc(r.schlecht[0].fehler === "pfad" ? t("Please add a path, e.g. example.com/blog.") : t("Enter a domain like example.com.")) + '</span>';
+      } else if (r.schlecht.length && !r.gut.length) {
+        html = '<span class="uev-schreib-satz">' + esc(r.schlecht.length === 1 && r.teile.length === 1 ? (r.schlecht[0].fehler === "pfad" ? t("Please add a path, e.g. example.com/blog.") : t("Enter a domain like example.com.")) : schlechteNennen(r.schlecht)) + '</span>';
       } else {
-        html = '<span class="up-marke is-leise">' + esc(r.gut.length > 1 ? ersetze(t("{n} URLs"), { n: zahl(r.gut.length) }) : t(ART_NAME[r.gut[0].kind])) + '</span>' +
-          r.gut.slice(0, 3).map(function (z) { return '<span class="uev-notation">' + esc(z.zeigen) + '</span>'; }).join("") +
-          (r.gut.length > 3 ? '<span class="uev-schreib-satz">' + esc(ersetze(t("and {n} more"), { n: r.gut.length - 3 })) + '</span>' : '');
+        /* Gezaehlt wird, was in die Liste kaeme: gleiche Schluessel nur einmal (fuenf Schreibweisen derselben
+           Adresse sind ein Ziel, wie in der Datenbank; EV-07). */
+        var da = {}, eig = r.gut.filter(function (z) { if (da[z.key]) return false; da[z.key] = 1; return true; });
+        html = '<span class="up-marke is-leise">' + esc(eig.length > 1 ? ersetze(t("{n} URLs"), { n: zahl(eig.length) }) : t(ART_NAME[eig[0].kind])) + '</span>' +
+          eig.slice(0, 3).map(function (z) { return '<span class="uev-notation">' + esc(z.zeigen) + '</span>'; }).join("") +
+          (eig.length > 3 ? '<span class="uev-schreib-satz">' + esc(ersetze(t("and {n} more"), { n: eig.length - 3 })) + '</span>' : '');
+        /* Ein ungueltiger Eintrag neben gueltigen sperrt "Add" nicht: "Add" nimmt die gueltigen, der
+           ungueltige bleibt im Feld und steht hier mit Namen (EV-07). */
+        if (r.schlecht.length) html += '<span class="uev-ziel-fehler">' + esc(schlechteNennen(r.schlecht)) + '</span>';
         /* Mehr eingefuegt, als frei ist (16.10.): der Grund steht SOFORT da, "Add" ist aus -- bis
            16.10. kam er erst nach dem Klick. */
         zuViel = eingabeNeu(p, r) > zielFrei(p);
         if (zuViel) html += '<span class="uev-ziel-fehler">' + esc(zuVielText(p)) + '</span>';
       }
       el.innerHTML = html;
-      if (knopf) knopf.disabled = !r.teile.length || !!r.schlecht.length || r.vorschlag === "sitemap" || zuViel;
+      if (knopf) knopf.disabled = !r.gut.length || r.vorschlag === "sitemap" || zuViel;
     }
     function zielListeZeigen(p) {
       var el = im(".uev-zielliste");
@@ -4883,7 +5029,7 @@
       var r = eingabeLesen(p), l = e.ziele.slice(), da = {};
       /* Eine Eingabe, die nicht mehr hineinpasst, fragt die Vorschau nicht an: sie kaeme nie in die
          Liste, und die Funktion lehnt ueber 200 Eintraege ohnehin ab. */
-      if (!r.schlecht.length && r.vorschlag !== "sitemap" && eingabeNeu(p, r) <= zielFrei(p)) r.gut.forEach(function (z) { l.push(z); });
+      if (r.vorschlag !== "sitemap" && eingabeNeu(p, r) <= zielFrei(p)) r.gut.forEach(function (z) { l.push(z); });
       return l.filter(function (z) { if (da[z.key]) return false; da[z.key] = 1; return true; });
     }
     function vzErgebnis(p) { return p.zv && p.zv.akt ? p.zv.ergebnisse[p.zv.akt] || null : null; }
@@ -5950,7 +6096,7 @@
       if (!zieleDa() && e.ziele.some(function (z) { return z.kind !== "url"; })) return false;
       if (e.ziele.length) return true;
       var r = eingabeLesen(p);
-      return r.gut.length > 0 && !r.schlecht.length && r.vorschlag !== "sitemap" && r.gut.length <= zielFrei(p);
+      return r.gut.length > 0 && r.vorschlag !== "sitemap" && r.gut.length <= zielFrei(p);
     }
     function schrittOk(p) {
       var e = p.e;
@@ -6477,7 +6623,7 @@
           '<div class="uev-schritt" data-schritt="4" hidden></div>',
         knoepfe: [{ id: "zurueck", text: "Back", art: "sec", aktion: function () { schritt(popup.schritt - 1); return false; } },
                   { id: "weiter", text: "Continue", art: "pri", aktion: function () { weiterImPopup(); return false; } }],
-        onClose: popupZu
+        onClose: popupZu, vorSchliessen: popupDarfZu
       });
       api.body.querySelector('.uev-schritt[data-schritt="1"]').__uevGebaut = 1;
       var p = { art: "anlegen", api: api, e: e, schritt: 1, knopf: "weiter", pops: {}, vorschauen: {}, topicSuche: "" };
@@ -6488,6 +6634,7 @@
       sucheBauen(p);
       popupAufbauen(p);
       schritt(1);
+      p.start = popupStand(p);
       verfuegbarkeitHolen(function () {
         var b3 = p.api.body.querySelector('.uev-schritt[data-schritt="3"]');
         if (popup === p && b3 && b3.__uevGebaut) zieleNeuBauen(p);
@@ -6520,12 +6667,22 @@
       if (p.sm && p.sm.offen) smZeichnen(p);
       zieleZeigen(p, false);
     }
+    /* Das geplante Event, dessen Assistent wartet, bis sein Detail da ist (planAssistent). */
+    var planOffenNach = null;
     function popupBearbeiten(eid) {
       if (popup) return;
       var ev = state.detail[eid] || listeEvent(eid);
       if (!ev) return;
       /* Geplant (17.10.): der volle Assistent, alles aenderbar bis zum Start. */
-      if (kampagneDa() && istGeplant(ev)) { popupAnlegen(eid); return; }
+      if (kampagneDa() && istGeplant(ev)) {
+        /* Die Zeile der Uebersicht (list_impact_events_v3) kennt weder Topics noch Ziele, nur deren Zahl.
+           Der Assistent aus so einer Zeile zeigte keine Ziele ("Brand metrics only") und keine Topics --
+           und "Save" schickte p_targets: [] und ueberschrieb die gespeicherten (Audit 17.10., im
+           Pruefstand gemessen: 3 Ziele vorher, p_targets leer im Aufruf). Darum erst das Detail lesen
+           (das Event oeffnet sich, wie bei einem Klick auf die Karte), dann der Assistent. */
+        if (!(state.detail[eid] && isArr(state.detail[eid].targets) && isArr(state.detail[eid].topics))) { planOffenNach = String(eid); oeffnen(eid); return; }
+        popupAnlegen(eid); return;
+      }
       var e = { name: String(ev.name || ""), typ: typ(ev).key, text: String(ev.description || ""),
                 icon: iconAusDb(ev.icon), farbe: farbe(ev) || null, cover: coverVon(ev) ? ev.cover : null, offen: null, urls: [] };
       /* Eine laufende Kampagne: das Ende laesst sich verlaengern oder auf heute verkuerzen
@@ -6540,9 +6697,11 @@
           gesperrtHinweis(endeFrei ? "Start date and scope can't be changed" : "Date and scope can't be changed") + '</div>',
         knoepfe: [{ id: "abbrechen", text: "Cancel", art: "sec" },
                   { id: "speichern", text: "Save", art: "pri", aktion: function () { if (schrittOk(popup)) speichern(); return false; } }],
-        onClose: popupZu
+        onClose: popupZu, vorSchliessen: popupDarfZu
       });
-      popupAufbauen({ art: "bearbeiten", api: api, e: e, alt: alt, eventId: String(ev.id), knopf: "speichern", pops: {} });
+      var pb = { art: "bearbeiten", api: api, e: e, alt: alt, eventId: String(ev.id), knopf: "speichern", pops: {} };
+      pb.start = popupStand(pb);
+      popupAufbauen(pb);
     }
     /* ADD (15.10., vorher "Add URL"): dieselben Ziel-Arten wie Schritt 3, ohne "Brand metrics
        only", mit Sitemap-Waehler. Ohne Ziele in der Datenbank genau der alte Dialog: eine URL.
@@ -6560,10 +6719,11 @@
         inhaltHtml: '<div class="uev-schritt">' + zielFelder(p) + '</div>',
         knoepfe: [{ id: "abbrechen", text: "Cancel", art: "sec" },
                   { id: "hinzu", text: regeln ? "Add" : "Add URL", art: "pri", aktion: function () { zielSenden(); return false; } }],
-        onClose: popupZu
+        onClose: popupZu, vorSchliessen: popupDarfZu
       });
       p.api = api;
       sucheBauen(p);
+      p.start = popupStand(p);
       popupAufbauen(p);
       zieleZeigen(p, false);
       verfuegbarkeitHolen(function () { if (popup === p && zieleDa() !== regeln) zieleNeuBauen(p); });
@@ -7202,6 +7362,8 @@
         state.detail[id] = d;
         state.detailLaden = false; state.detailFehler = false;
         persist();
+        var planAuf = lesen && planOffenNach === id && isArr(d.targets) && isArr(d.topics);
+        if (planAuf) planOffenNach = null;
         /* Ein Detail-Objekt ist auch die Antwort auf Anlegen, Bearbeiten, URL hinzufuegen und
            entfernen -- also schliesst es ein wartendes Popup dieser Art. */
         if (!lesen && wartend.urlWeg && wartend.urlWeg.eventId === id) { var api1 = wartend.urlWeg.api; clearTimeout(wartend.urlWeg.uhr); wartend.urlWeg = null; api1.busy("ok", false); api1.schliessen(); listeNeu(); }
@@ -7212,6 +7374,7 @@
           renderDetail();
           if (!urlsNeu && isArr(d.urls) && d.urls.length) responsesAnfordern();
         }
+        if (planAuf && state.ansicht === "detail" && state.eventId === id) popupAnlegen(id);
         return true;
       },
       setAnalysis: function (raw, bestellt) {

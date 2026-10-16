@@ -564,7 +564,7 @@
     /* ---------------- table rows ---------------- */
     function rowHtml(r){
       var promptText = String(r.prompt_text == null ? "" : r.prompt_text);
-      return '<div class="up-row" data-run="' + esc(String(r.prompt_run_id || "")) + '" tabindex="0" role="button">' +
+      return '<div class="up-row" data-run="' + esc(String(r.prompt_run_id || "")) + '" tabindex="0">' +
         '<div class="up-td urt-td-prompt"><span class="urt-prompt-text">' + highlight(promptText, state.query) + '</span></div>' +
         '<div class="up-td urt-td-mentioned">' + mentCell(r.has_user_brand) + '</div>' +
         '<div class="up-td urt-td-sentiment">' + sentCell(r.user_sentiment) + '</div>' +
@@ -677,7 +677,7 @@
       }
       /* Der Lesefehler kommt VOR dem Leerzustand. Andersherum liest sich ein zerrissener
          Payload als leeres Ergebnis, und der Nutzer sucht den Fehler in seinen Filtern. */
-      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; container.innerHTML = UC.leseFehlerHtml("responses"); return; }
+      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; container.innerHTML = UC.leseFehlerHtml("the response list"); return; }
       if (!state.rows.length){
         if (anyFilterActive()){ clearEmptyGrace(); letztesBody = null; container.innerHTML = emptyHtml(true); return; }
         /* LEER HEISST SOFORT LEER (07.10. angefordert: "wenn leere Daten reinkommen, sofort den
@@ -747,7 +747,7 @@
       }).join("");
       html += '<div class="up-pop-div"></div>' +
         '<div class="up-pop-row"><span class="up-pop-label">Descending</span>' +
-          '<span class="up-switch' + (state.sortDir === "desc" ? " is-on" : "") + '" role="switch" data-sortdir></span></div>';
+          '<span class="up-switch' + (state.sortDir === "desc" ? " is-on" : "") + '" role="switch" aria-label="Descending" aria-checked="' + (state.sortDir === "desc" ? "true" : "false") + '" data-sortdir></span></div>';
       elSortMenu.innerHTML = html;
     }
 
@@ -815,6 +815,7 @@
       root: root, state: state,
       pageSizes: function(){ return state.view === "cards" ? CARD_PAGE_SIZES : TABLE_PAGE_SIZES; },
       onClamp: function(){ persist(); },
+      neuLaden: true,   /* Server-Tabelle: eine geklemmte Seite wird neu geholt (TAB-02) */
       onChange: function(){
         if (state.view === "cards"){ state.cardPage = state.page; state.cardPageSize = state.pageSize; }
         else { state.tablePage = state.page; state.tablePageSize = state.pageSize; }

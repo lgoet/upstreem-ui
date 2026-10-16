@@ -87,8 +87,16 @@
     var MONTHS_LONG  = ["January","February","March","April","May","June","July","August",
                         "September","October","November","December"];
     var DOWS = ["Mo","Tu","We","Th","Fr","Sa","Su"];
+    /* Monats- und Wochentagsnamen in der Sprache der App (QS-08): aus core (UC.kalenderNamen,
+       Intl, ohne Katalog); ohne die Funktion (aelteres core) bleibt das Englische. */
+    function intlNamen() {
+      var k = UC && UC.kalenderNamen ? UC.kalenderNamen() : null;
+      return k || { mon: MONTHS_LONG, dow: DOWS };
+    }
     function displayDate(d) {
-      return String(d.getDate()).padStart(2, "0") + ". " + MONTHS_SHORT[d.getMonth()] + " " + d.getFullYear();
+      /* Kurzer Monat ueber den Katalog wie fmtDate in core ("Oct" -> "Okt") */
+      var kurz = UC && UC.t ? UC.t(MONTHS_SHORT[d.getMonth()]) : MONTHS_SHORT[d.getMonth()];
+      return String(d.getDate()).padStart(2, "0") + ". " + kurz + " " + d.getFullYear();
     }
     function rangeLabel(a, b) { return displayDate(a) + " – " + displayDate(b); }
 
@@ -520,11 +528,11 @@
             '<div class="udr-month-head">' +
               '<button type="button" class="udr-nav udr-prev" aria-label="Previous month"' +
                 (canPrev ? "" : " disabled") + ">" + navIcon("left") + "</button>" +
-              '<span class="udr-month-title">' + MONTHS_LONG[ms.getMonth()] + " " + ms.getFullYear() + "</span>" +
+              '<span class="udr-month-title">' + intlNamen().mon[ms.getMonth()] + " " + ms.getFullYear() + "</span>" +
               '<button type="button" class="udr-nav udr-next" aria-label="Next month"' +
                 (canNext ? "" : " disabled") + ">" + navIcon("right") + "</button>" +
             "</div>" +
-            '<div class="udr-dows">' + DOWS.map(function (d) { return '<span class="udr-dow">' + d + "</span>"; }).join("") + "</div>" +
+            '<div class="udr-dows">' + intlNamen().dow.map(function (d) { return '<span class="udr-dow">' + d + "</span>"; }).join("") + "</div>" +
             '<div class="udr-grid">' + (function(){
             var zellen = gridCells(ms);
             /* ERST alle gefaerbten Zellen bestimmen, DANN die Ecken. Eine Ecke ist nur sichtbar,

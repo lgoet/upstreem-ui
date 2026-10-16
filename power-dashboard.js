@@ -792,7 +792,7 @@
     function ersetze(s, o){ return String(s).replace(/\{(\w+)\}/g, function(_, k){ return o[k] != null ? o[k] : ""; }); }
     function renderKpis(){
       if (state.loading || !state.overview){ elKpis.innerHTML = kpiSkelett(); return; }
-      if (state.fehler.overview){ elKpis.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("overview") : ""; return; }
+      if (state.fehler.overview){ elKpis.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("the overview") : ""; return; }
       var o = state.overview;
       var vis = num(o.visibility_pct), rank = num(o.avg_rank), sent = num(o.sentiment);
       /* Position und Feldgroesse: aus dem Payload -- und wenn er sie nicht traegt, aus
@@ -904,7 +904,7 @@
         : '<div class="upw-li-empty" data-i18n="No data">' + esc(t("No data")) + '</div>';
     }
     function renderBrands(){
-      if (state.fehler.brands){ elBrands.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("brands") : ""; return; }
+      if (state.fehler.brands){ elBrands.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("the brand list") : ""; return; }
       if (state.loading || !state.brands){ elBrands.innerHTML = listenSkelett(LISTE_MAX); return; }
       var rows = state.brands;
       if (!rows.length){ elBrands.innerHTML = listeLeer("squareStack"); return; }
@@ -937,7 +937,7 @@
       var url = state.cmode === "url";
       var rows = url ? state.urls : state.domains;
       var fehler = url ? state.fehler.urls : state.fehler.domains;
-      if (fehler){ elCites.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("citations") : ""; return; }
+      if (fehler){ elCites.innerHTML = UC.leseFehlerHtml ? UC.leseFehlerHtml("the citation list") : ""; return; }
       if (state.loading || !rows){ elCites.innerHTML = listenSkelett(LISTE_MAX); return; }
       if (!rows.length){ elCites.innerHTML = listeLeer("domain"); return; }
       elCites.innerHTML = rows.slice(0, LISTE_MAX).map(function(r, i){
@@ -1153,13 +1153,10 @@
       (function schauen(){
         _bedarfUhr = null;
         if (datenBedarfMelden()) return;                /* gemeldet oder nichts zu melden */
-        if (jetztMs() >= _bedarfBis){
-          if (window.console) console.warn("[power-dashboard] Dieses Dashboard wurde 15 Sekunden " +
-            "lang nicht gezeichnet (versteckte Gruppe oder Standard-Modus), also ging KEINE " +
-            "Bedarfsmeldung raus. Wird es spaeter sichtbar, fragt es beim Modus- oder " +
-            "Ansichtswechsel erneut nach.");
-          return;
-        }
+        /* Aufgeben ohne Meldung: ein Dashboard, das 15 Sekunden verdeckt bleibt (anderer Modus,
+           andere Seite), ist kein Fehlerfall. Es fragt beim Modus- oder Ansichtswechsel erneut
+           nach; die Konsole bekam die Zeile vorher bei jedem Start (QS-06). */
+        if (jetztMs() >= _bedarfBis) return;
         _bedarfUhr = setTimeout(schauen, 250);
       })();
     }

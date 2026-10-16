@@ -97,7 +97,7 @@
       "This product": "Dieses Produkt",
       "Restore filters": "Filter wiederherstellen",
       "Without filters, every row in the date range is exported.": "Ohne Filter geht jede Zeile im Zeitraum in die Datei.",
-      "Your session has expired": "Deine Sitzung ist abgelaufen", "Please sign in again.": "Bitte melde dich neu an.",
+      "Your session has expired": "Deine Sitzung ist abgelaufen", 
       "Please wait {n} seconds and try again.": "Warte {n} Sekunden und versuch es noch einmal.",
       "Please wait 1 second and try again.": "Warte eine Sekunde und versuch es noch einmal.",
       "The file couldn't be created": "Die Datei konnte nicht erstellt werden",
@@ -1085,8 +1085,10 @@
       text(q(".uex-datei-meta"), (E.spalten === 1 ? tr("{groesse}, 1 column, CSV") : tr("{groesse}, {n} columns, CSV").replace("{n}", zahl(E.spalten)))
         .replace("{groesse}", groesse(E.groesse)));
       var s = q(".uex-gekappt");
-      s.hidden = !E.gekappt;
-      text(s, E.gekappt ? tr("The export was cut at {n} rows. Choose a shorter range for the rest.").replace("{n}", zahl(E.n)) : "");
+      s.hidden = !E.gekappt && !E.abweichung;
+      text(s, E.gekappt ? tr("The export was cut at {n} rows. Choose a shorter range for the rest.").replace("{n}", zahl(E.n))
+        : E.abweichung ? tr("The file has {n} rows, but {gesamt} were expected. It may be incomplete. Export again to be sure.").replace("{n}", zahl(E.n)).replace("{gesamt}", zahl(E.erwartet))
+        : "");
     }
 
     function fussZeichnen(art){
@@ -1830,7 +1832,15 @@
           var blob = new Blob([csvBauen(g, zeilen)], { type: "text/csv;charset=utf-8" });
           herunterladen(blob, name);
           if (laufAbbruch === ac) laufAbbruch = null;
-          state.ergebnis = { n: zeilen.length, name: name, groesse: blob.size, spalten: g.length, gekappt: m.has_more === true };
+          /* VOLLSTAENDIGKEIT NICHT NUR AM has_more MESSEN (17.10., EXP-09/EXP-10): fehlt has_more oder
+             stimmt es nicht, galt jede Datei als komplett (Stub: 5.000 von 12.001 Zeilen, kein Hinweis).
+             total_count der letzten Seite gegen die Zeilen der Datei: weicht es ab (zu wenige: Seiten
+             fehlen; zu viele oder gleich viele mit Doppeln: waehrend des Laufs kamen Zeilen hinzu, das
+             Blaettern per Offset hat keinen Schnappschuss), sagt der Abschluss es. Nie still. */
+          var gekappt = m.has_more === true;
+          var abweichung = !gekappt && isFinite(gesamt) && zeilen.length !== gesamt;
+          state.ergebnis = { n: zeilen.length, name: name, groesse: blob.size, spalten: g.length, gekappt: gekappt,
+                             abweichung: abweichung, erwartet: isFinite(gesamt) ? gesamt : null };
           state.lauf = null; state.phase = "fertig";
           renderAll(); fokusFuss();
         }, scheitern).catch(dateiFehler);
@@ -2347,7 +2357,9 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initAll);
   else initAll();
   [30, 100, 250, 500, 1000, 1800].forEach(function(ms){ setTimeout(initAll, ms); });
-  setInterval(initAll, 1500);   // cheap no-op once initialised; catches late Bubble rebuilds
+  /* Nicht im Hintergrund-Tab (QS-14); der Wechsel zurueck holt einen Lauf nach. */
+  setInterval(function(){ if (!document.hidden) initAll(); }, 1500);   // cheap no-op once initialised; catches late Bubble rebuilds
+  document.addEventListener("visibilitychange", function(){ if (!document.hidden) initAll(); });
   /* Gebuendelt auf einen Lauf je 250ms und danach takeRecords -- derselbe Umbau, den der
      Icon-Stempel in core schon hinter sich hat. Ungebuendelt lief initAll() (mit einem
      dokumentweiten querySelectorAll) bei JEDER Mutation irgendwo auf der Seite: die

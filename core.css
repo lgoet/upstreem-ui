@@ -4565,6 +4565,13 @@
     .up-root.is-resizing { cursor: col-resize; user-select: none; }
     .up-root.is-resizing .up-row { cursor: col-resize; }
     .up-th.is-sortable:hover { color: var(--vc-text); }
+    /* Tastaturfokus an Sortierkopf und Zeile (17.10.): Hausregel der Knoepfe, 2px Linie in
+       --up-focus. Der Abstand liegt INNEN (-2px): Kopf und Zeilen stossen Kante an Kante aneinander
+       und an den Rand des Kastens, ein Ring mit 2px Luft ausserhalb wuerde dort abgeschnitten
+       bzw. auf die Nachbarzeile gemalt. Ohne Regel zeichnete der Browser sein eigenes Blau (auto 1px). */
+    .up-th.is-sortable:focus-visible,
+    .up-row:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: calc(var(--up-focus-w) * -1); }
+    .up-th.is-sortable:focus-visible { color: var(--vc-text); }
 
     /* Kopf-Sortierer: zwei Chevrons uebereinander, je 2px zusammengezogen. Die Geometrie ist
        Lucide chevron-up / chevron-down. Der aktive zeigt in die Sortierrichtung. 15 statt 14 seit
@@ -5445,6 +5452,13 @@
        drei stehende Toasts mit Adressen verschiedener Laenge sprangen sonst als Treppe. 380 liegt
        unter dem Deckel von 420 und laesst an Host und Pfad genug stehen. */
     .up-toast.is-reich { width: min(380px, calc(100vw - 32px)); }
+    /* AM TELEFON NIE UEBER EINEM OFFENEN DIALOG (Audit EV-03, Rest): die stehenden Meldungen liegen im Top
+       Layer ueber jedem Dialog und deckten bei 375 Breite Felder des "Create event"-Dialogs (Datum, Typ).
+       Solange ein Dialog offen ist, sind sie unsichtbar, aber nicht geschlossen: danach stehen sie wieder
+       da, und gelesen ist nichts. Ab 500 Breite ist daneben Platz, dort bleibt alles wie es war. */
+    @media (max-width: 499px) {
+      html:has(.up-modal-backdrop.is-shown) .up-toast.is-bleibt { visibility: hidden; }
+    }
     .up-toast.is-klick { cursor: pointer; }
     .up-toast.is-klick:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
     /* Die Adressen: eine Zeile je Seite, Favicon 14 vor dem gekuerzten Text, leiser als der Satz
@@ -9045,6 +9059,10 @@ html[data-usn-modus="hint"] .up-ph-heading.is-knapp > .up-ph-crumb:first-child:n
 /* Ein fehlender Wert ist "–" in der Farbe jeder leeren Zelle (.up-num.is-empty) und nie 0: eine
    Null in der Primaerfarbe waere eine Aussage, die niemand gemacht hat. */
 .up-sumwert.is-leer { color: var(--vc-fourth); }
+/* Eine Berechnung, die nicht geholt werden konnte (sumFehlerHtml, 17.10.): ein eigener Zustand und
+   nicht der Strich fuer "kein Wert". 13 statt 16, damit der Satz in eine schmale Zelle passt und
+   nicht wie eine Zahl aussieht; Fehlerfarbe wie jeder Fehlersatz der App (.up-fehlerzeile). */
+.up-sumwert.is-fehler { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vt-down); }
 .up-sumlabel {
   min-width: 0; overflow: hidden; text-overflow: ellipsis;
   font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-fourth);

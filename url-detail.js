@@ -1236,10 +1236,13 @@
   }
 
   /* ---- Die Seite ---- */
+  function duIntent() { return UC.intentFilterParams ? UC.intentFilterParams() : {}; }
   function duLaden(frisch) {
     var c = DU.root ? initRoot(DU.root) : null;
     if (!c || !DU.url) return;
-    var z = duZeitraum(), sig = DU.url + "|" + z.von + "|" + z.bis;
+    /* Der Intent-Filter der App gehoert in die Signatur: der Speicher hielte sonst die Zahlen der
+       vorigen Wahl (VTR-02, 17.10.). */
+    var iv = duIntent(), z = duZeitraum(), sig = DU.url + "|" + z.von + "|" + z.bis + "|" + JSON.stringify(iv);
     if (!frisch && DU.speicher[sig]) {
       var e = DU.speicher[sig];
       if (DU.gezeigt !== sig) { DU.zeile = e.row; DU.zeileFuer = DU.url; c.setV1(e.row); DU.gezeigt = sig; duKopf(e.row); }
@@ -1260,8 +1263,14 @@
     (UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(UC.getTeam ? UC.getTeam() : "")).then(function (team) {
       if (nr !== DU.nr) return null;
       if (!team) return { ok: false, status: 0, fehler: { message: "not authenticated" } };
-      return UC.rpc(DU.FN.detail, { p_team: team, p_url: url, p_date_from: z.von, p_date_to: z.bis },
-        { timeoutMs: 60000, signal: ab ? ab.signal : undefined });
+      /* Dieselbe Grundmenge wie Tabelle, Domain-Drawer und die Antworten darunter: Intent-Filter und
+         Branded-Vorgabe der App (p_branded "non_branded"). Ohne sie rechnete die DB mit "all", und
+         die Zitatzahl hier passte nicht zur Zeile, die man angeklickt hat (VTR-02, 17.10.). Die
+         Seitenfilter (Modelle, Maerkte, Topics) gelten im Drawer bewusst nicht, wie im
+         Domain-Drawer: er hat seine eigene Leiste, der Zeitraum ist der des Drawers. */
+      var p = { p_team: team, p_url: url, p_date_from: z.von, p_date_to: z.bis };
+      for (var ik in iv) if (Object.prototype.hasOwnProperty.call(iv, ik)) p[ik] = iv[ik];
+      return UC.rpc(DU.FN.detail, p, { timeoutMs: 60000, signal: ab ? ab.signal : undefined });
     }).then(function (erg) {
       if (!erg || nr !== DU.nr) return;
       if (DU.ab === ab) DU.ab = null;
@@ -1274,13 +1283,10 @@
       if (ok) {
         var e = { row: d, meta: meta };
         duMerken(sig, e); DU.zeile = d; DU.zeileFuer = url; c.setV1(d); DU.gezeigt = sig; duKopf(d);
-        duAngenommen(e);
+        duAngenommen(e, frisch);
         return;
       }
       var code = erg.ok ? "" : duStr((erg.fehler && (erg.fehler.message || erg.fehler.code)) || "");
-      /* url_not_found ist seit 15.10. nachts ein Leerzustand, kein Fehler -- keine Warnung dafuer. */
-      if (code !== "url_not_found" && window.console) console.warn("[url-detail] " + DU.FN.detail + " fuer " + url + ": " +
-        (code || "Antwort nicht lesbar") + (erg.status ? " (HTTP " + erg.status + ")" : ""));
       DU.zeile = null; DU.kanon = "";
       c.setFehlerCode(code);
       duKopf(false);
@@ -1292,11 +1298,11 @@
     });
   }
   /* Die Seite ist da: ihre Schreibweise merken und die Tabelle damit laden. */
-  function duAngenommen(e) {
+  function duAngenommen(e, frisch) {
     DU.kanon = duStr((e.meta && e.meta.url) || (e.row && e.row.url) || DU.url);
     DU.inRange = !(e.row && e.row.in_range === false);
     if (DU.slot) DU.slot.querySelector(".uud-dw").classList.remove("is-fehler");
-    duRespLaden();
+    duRespLaden(frisch);
   }
   /* "Zeitraum anpassen": die 30 Tage bis zum letzten Zitat (Vorschlag des DB-Chats). Der Kalender
      meldet die Aenderung selbst ("change"), und die laedt Seite und Tabelle neu. */
@@ -1341,7 +1347,7 @@
   }
 
   /* ---- Die Antworten (wie dashboard-page / prompts-page, eingeschraenkt auf p_url) ---- */
-  function duRespLaden() {
+  function duRespLaden(frisch) {
     var DDx = window.UpstreemDashboardDaten;
     if (!DU.kanon) return;
     if (!DU.inRange) {
@@ -1358,27 +1364,32 @@
       duSetter("renderResponsesTable")({ instanceId: DU.ids.urt, __parseError: true });
       return;
     }
-    duSetter("setResponsesTableLoading")(DU.ids.urt, "yes");
-    if (DU.rab) { try { DU.rab.abort(); } catch (e) {} }
-    var ab = typeof AbortController !== "undefined" ? new AbortController() : null;
-    DU.rab = ab;
+    /* Der Speicher des Dashboards (makeLader), wie bei Prompt, Brand und Domain: dieselben
+       Parameter (Adresse, Zeitraum, Tabellenzustand, Team) kommen beim Wiederoeffnen aus dem
+       Speicher statt neu aus der Datenbank (QS-02: ab dem zweiten Oeffnen ein Abruf je Runde).
+       Die Signatur nimmt jeden Parameter mit, ein anderer Zeitraum oder eine andere Seite der
+       Tabelle holt also von selbst neu; "frisch" (Nochmal-Knopf) umgeht den Speicher. */
+    if (!DU.lader) DU.lader = DDx.makeLader({ rufen: function (fn, params, o) { return UC.rpc(fn, params, { signal: o && o.signal, timeoutMs: 60000 }); } });
     var nr = ++DU.rnr, url = DU.kanon, z = duZeitraum(), reqId = DU.resp.requestId;
     (UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(UC.getTeam ? UC.getTeam() : "")).then(function (team) {
       if (nr !== DU.rnr) return null;
-      var teile = DDx.responsesTeile({ team: team, von: z.von, bis: z.bis }, DU.resp);
-      return Promise.all(teile.map(function (a) {
+      var teile = DDx.responsesTeile({ team: team, von: z.von, bis: z.bis }, DU.resp).map(function (a) {
         var params = {}, k;
         for (k in a.params) params[k] = a.params[k];
         params.p_url = url;
-        return UC.rpc(a.fn, params, { timeoutMs: 60000, signal: ab ? ab.signal : undefined });
-      }));
+        return { fn: a.fn, params: params, sig: a.fn + "|" + JSON.stringify(params) };
+      });
+      var imSpeicher = !frisch && teile.every(function (a) { return DU.lader.ausSpeicher(a) !== undefined; });
+      if (!imSpeicher) duSetter("setResponsesTableLoading")(DU.ids.urt, "yes");
+      return Promise.all(teile.map(function (a, i) { return DU.lader.laden("resp_" + i, a, { frisch: !!frisch }); }));
     }).then(function (es) {
       if (!es || nr !== DU.rnr) return;
+      if (es.some(function (x) { return x && x.ueberholt; })) return;
       var ok = es.every(function (x) { return x && x.ok; });
       var p = ok ? DDx.zuResponses(es.map(function (x) { return x.daten; })) : null;
       if (!p) {
-        if (window.console) console.warn("[url-detail] Antworten fuer " + url + ": " +
-          es.map(function (x) { return x && !x.ok ? duStr(x.fehler && x.fehler.message) : "ok"; }).join(", "));
+        if (window.console) console.warn("[url-detail] Antworten: " +
+          es.map(function (x) { return x && !x.ok ? duStr(x.fehler && x.fehler.message) || "Antwort nicht lesbar" : "ok"; }).join(", "));
         duSetter("renderResponsesTable")({ instanceId: DU.ids.urt, __parseError: true });
       } else {
         var mk = duEigeneMarke();
@@ -1413,6 +1424,16 @@
       /* VOR initRoot: der erste render() muss schon wissen, dass er im Drawer steht. */
       r.__uudKopf = ctx;
       r.__uudNeuLaden = function () { duLaden(true); };
+      /* Intent oder Branded geaendert, waehrend der Drawer offen ist: Seite und Antworten neu, wie im
+         Domain-Drawer. Einmal je Fenster. */
+      if (!DU.__intentHoerer) {
+        DU.__intentHoerer = function () {
+          if (!DU.root || !document.contains(DU.root) || !DU.url) return;
+          DU.resp.offset = 0;
+          duLaden(false);
+        };
+        window.addEventListener("up-intentfilter", DU.__intentHoerer);
+      }
       r.__uudZeitraum = duZeitraumAufZitat;
       DU.root = r;
       initRoot(r);

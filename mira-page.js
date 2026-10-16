@@ -147,6 +147,14 @@
 
     /* ---- Chatliste ---------------------------------------------------------------------- */
     function sichtbarTest(el) { return el.isConnected !== false && (!UC.istSichtbar || UC.istSichtbar(el)); }
+    /* Der rote Satz gehoert in die Mira-Ansicht, nicht auf eine fremde Seite, die Mira nur mitfuehrt. */
+    function miraOffen() {
+      try {
+        /* Beim ersten Aufruf der Adresse kennt core die Ansicht noch nicht (""): dann zaehlt die Adresse. */
+        var v = UC.currentView ? UC.currentView() : "";
+        return v ? v === "mira" : /[?&]view=mira(&|$)/.test(window.location.search);
+      } catch (e) { return true; }
+    }
     function listeLaden(frisch, leise) {
       var tm = team();
       if (!tm) return Promise.resolve(null);
@@ -154,8 +162,17 @@
         if (erg.ueberholt || tm !== team()) return null;
         var z = erg.ok ? D.zuChats(erg.daten, true) : null;
         /* leise: das Nachfassen im Hintergrund -- scheitert es, bleibt die Liste, die schon da steht,
-           und es kommt kein roter Satz aus dem Nichts. */
-        if (!z) { if (!leise) satz("Couldn't load your chats", "error", "Reload the page to try again."); return null; }
+           und es kommt kein roter Satz aus dem Nichts.
+           LEER IST NICHT KAPUTT (17.10., QS-04): die Liste bekommt den Fehlerzustand mit "Try again"
+           (sonst stand "No recent chats"). Der rote Satz hoechstens einmal je Ausfall und nur, wo man
+           die Liste sieht (Mira-Ansicht): auf dem Dashboard kam er schon beim Start, in 4 von 6 Laeufen
+           doppelt (onTeamChange und beiSicht fragen beide). */
+        if (!z) {
+          am("askMiraSetChatsError", true);
+          if (!leise && !gem.chatsFehlerGezeigt && miraOffen()) { gem.chatsFehlerGezeigt = true; satz("Couldn't load your chats", "error", "Try again."); }
+          return null;
+        }
+        gem.chatsFehlerGezeigt = false;
         gem.offset = z.zeilen; gem.mehr = z.mehr; gem.listeFuer = tm;
         am("askMiraSetProjects", z.projekte);
         am("askMiraSetPreviousChats", z.chats);

@@ -687,7 +687,7 @@
       elTotal.classList.remove('is-sk'); elTotal.textContent = '';
       var UCf = window.UpstreemCore;
       root.querySelector('.uo-stage').innerHTML = (UCf && UCf.leseFehlerHtml)
-        ? UCf.leseFehlerHtml("opportunities") : '<div class="uo-col-empty">The data could not be read.</div>';
+        ? UCf.leseFehlerHtml("the opportunity list") : '<div class="uo-col-empty">The data could not be read.</div>';
       return;
     }
     /* LEER HEISST SOFORT LEER (07.10. angefordert: "wenn leere Daten reinkommen, sofort den

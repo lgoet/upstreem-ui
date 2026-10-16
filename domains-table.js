@@ -405,7 +405,7 @@
             CHEV_SVG +
           '</button>'
         : '<span class="up-pages">' + fmtTotal(pages || 0) + " pages" + '</span>';
-      return '<div class="up-row' + (isOpen ? " is-expanded" : "") + '" data-domain="' + esc(dom) + '" tabindex="0" role="button">' +
+      return '<div class="up-row' + (isOpen ? " is-expanded" : "") + '" data-domain="' + esc(dom) + '" tabindex="0">' +
         '<div class="up-td up-td-domain">' +
           '<span class="udt-logo-box up-fav' + (fav ? " has-img" : "") + '">' +
             '<span class="udt-logo-ltr">' + esc(initial) + '</span>' +
@@ -616,7 +616,7 @@
         if (p === "gap") return '<span class="up-page-gap">…</span>';
         return '<button class="up-page' + (p === cur ? " is-active" : "") + '" type="button" data-subpage="' + p + '">' + p + '</button>';
       }).join("");
-      var info = total ? '<span class="up-pager-info">' + fmtInt(from + 1) + '–' + fmtInt(from + shown) + ' of ' + fmtTotal(total) + '</span>' : "";
+      var info = total ? '<span class="up-pager-info">' + fmtInt(from + 1) + '–' + fmtInt(from + shown) + ' of ' + fmtInt(total) + '</span>' : "";
       return '<div class="udt-sub-foot">' +
         '<div class="up-pagesize"><span class="up-pagesize-lbl">Rows</span>' +
           '<div class="up-pagesize-seg" role="group" aria-label="Rows per page">' + sizes + '</div></div>' +
@@ -879,7 +879,7 @@
       if (isBusy() || !state.hasData){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = skeletonRows(state.pageSize); return; }
       /* Der Lesefehler kommt VOR dem Leerzustand. Andersherum liest sich ein zerrissener
          Payload als leeres Ergebnis, und der Nutzer sucht den Fehler in seinen Filtern. */
-      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = UC.leseFehlerHtml("domains"); return; }
+      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = UC.leseFehlerHtml("the domain list", state.leseFehlerArt); return; }
       if (!state.rows.length){
         var filtered = !!state.query ||
           Object.keys(state.appliedSel).some(function(k){ return state.appliedSel[k]; }) ||
@@ -1056,6 +1056,7 @@
     var pagerKit = UC.makePager({
       root: root, state: state,
       onClamp: function(){ persist(); },
+      neuLaden: true,   /* Server-Tabelle: eine geklemmte Seite wird neu geholt (TAB-02) */
       onChange: function(){ closeDrilldown(); persist(); renderTable(); firePage(); }
     });
     var pageCount = pagerKit.pageCount, offset = pagerKit.offset;
@@ -1279,8 +1280,10 @@
        (setDomainsTableSummenQuelle), ohne sie steht bei einer gewaehlten Berechnung "–" (core). */
     var SUM_RECHNEN = {
       share: [
-        { key: "eigen",   label: "Your domains",       kurz: "yours",   feld: "own_share_pct",            art: "pct" },
-        { key: "top10",   label: "Top 10 share",       kurz: "top 10",  feld: "top10_share_pct",          art: "pct" }
+        /* Die Bezeichnung nennt die Grundlage (17.10., SUM-04): beide Werte sind Anteile an allen ZITATEN
+           (Used), nicht am Anteil der Antworten, den die Spalte Share darueber zeigt. Die Zahlen bleiben. */
+        { key: "eigen",   label: "Your share of citations",  kurz: "yours",   feld: "own_share_pct",            art: "pct" },
+        { key: "top10",   label: "Top 10 share of citations", kurz: "top 10",  feld: "top10_share_pct",          art: "pct" }
       ],
       used: [
         { key: "summe",   label: "Total citations",    kurz: "total",   feld: "citations_total",          art: "anzahl" },
@@ -2010,7 +2013,7 @@
            und das Skelett laeuft endlos weiter. Genau so gemessen am 24.08. mit einem
            abgeschnittenen Payload. Ein Ladezustand muss IMMER enden (CLAUDE.md §2). */
         if (params.__parseError){
-          state.leseFehler = true; state.rows = []; state.hasData = true;
+          state.leseFehler = true; state.leseFehlerArt = typeof params.__parseError === "string" ? params.__parseError : ""; state.rows = []; state.hasData = true;
           state.loading = false; state.softReload = false; dim.end(); state.extLoading = false;
           persist(); render(); return;
         }

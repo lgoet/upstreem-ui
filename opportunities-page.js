@@ -85,7 +85,10 @@
         /* Derselbe Knopf wie im bisherigen Kopf (opportunities-page-header.js): Zeichen
            searchVisual, kurz "Look for", breit "Look for new Opportunities". */
         '<button class="up-ph-addbtn up-export uop-suche" type="button">' + (UC.icon ? UC.icon("searchVisual", 2) : "") +
-          '<span>' + esc(t("Look for")) + '<span class="up-ph-addbtn-full"> ' + esc(t("new Opportunities")) + '</span></span></button>' +
+          /* Englisch im Markup, wie bei Prompts und Brand: core (knopfEtikett) baut das Etikett als
+             ganzen Satz aus dem Katalog neu. Stueck fuer Stueck uebersetzt stand hier in DE
+             "Suchen new Opportunities". */
+          '<span>Look for <span class="up-ph-addbtn-full">new Opportunities</span></span></button>' +
       '</div>' +
       '<div class="uop-main">' + brett + '</div>';
     if (UC.makePageCrumbs) UC.makePageCrumbs(root, { icon: "listTodo", name: "Opportunities", komponente: true });

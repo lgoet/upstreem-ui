@@ -203,7 +203,7 @@
     function renderChips(){
       if (!elGrid) return;
       /* Der Lesefehler kommt VOR dem Skelett -- sonst sieht endloses Laden aus wie "gleich da". */
-      if (state.leseFehler){ elGrid.innerHTML = UC.leseFehlerHtml("topics"); return; }
+      if (state.leseFehler){ elGrid.innerHTML = UC.leseFehlerHtml("the topic list"); return; }
       if (isBusy() || !state.hasData){ elGrid.innerHTML = skeletonChipsHtml(); return; }
       var shown = topicsShown();
       if (!shown.length){

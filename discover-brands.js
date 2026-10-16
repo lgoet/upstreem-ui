@@ -519,7 +519,7 @@
              wie UC.leseFehlerHtml, damit ueberall dasselbe dasteht": genau das haelt jetzt der
              Baustein selbst, statt es in dieser Datei nachzupflegen. */
           if (state.parseError){
-            elTable.innerHTML = head + UC.leseFehlerHtml("brands");
+            elTable.innerHTML = head + UC.leseFehlerHtml("the brand list");
             applyCols(); syncColsBadge();
             return;
           }

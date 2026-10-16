@@ -180,7 +180,6 @@
     "The date range is not valid.": "Der Zeitraum ist ungültig.",
     "Too many requests. Please wait a moment.": "Zu viele Anfragen. Bitte warte einen Moment.",
     "This is taking longer than expected. Please try again.": "Das dauert länger als erwartet. Bitte erneut versuchen.",
-    "Try again": "Erneut versuchen",
     "No matching topics": "Keine passenden Topics",
     "View Response": "Antwort ansehen",
     /* Die Berechnungen der Gesamtzeilen (15.10. spaet). "Average", "Total", "Median", "avg",
