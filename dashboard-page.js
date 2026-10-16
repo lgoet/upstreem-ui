@@ -450,8 +450,30 @@
       teil.setAttribute("data-export-instance", k);
       var typ = teil.classList.contains("vot-root") ? "brands" : teil.classList.contains("urt-root") ? "prompt_runs"
         : (state.top.modus === "url" ? "urls" : "domains");
-      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: typ }); } catch (err) {}
+      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, exportKontext(typ)); } catch (err) {}
     }, true);
+    /* WAS DER EXPORT MITNIMMT (16.10., wie prompts-page.js): Zeitraum und Filter der Ansicht als
+       Chips im Dialog, jeder abwaehlbar. Die Leiste gilt fuer alle vier Datensaetze, die Filter
+       eines Bausteins fuer seinen (Top Citations: Brand und Typen fuer Domains und URLs, URL-Typen
+       nur im URL-Modus; Responses: Suche, Brand, Brands, Rank, Sentiment) -- alle Bausteine stehen
+       zugleich da. Agentic zeigt immer die letzten 30 Tage ohne Filter (agenticStand), dann auch
+       der Export. */
+    function exportKontext(typ) {
+      var f = state.modus === "power" ? agenticStand() : filterStand(), r = null;
+      if (state.modus !== "power") { var c = kalender(); try { r = c && c.getRange ? c.getRange() : null; } catch (e) { r = null; } }
+      var tp = state.top, cit = { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen };
+      var url = { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen, urlTypen: tp.modus === "url" ? tp.urlTypen : null };
+      return {
+        export_type: typ,
+        date_from: r && r.from ? r.from : f.von, date_to: r && r.to ? r.to : f.bis, preset: r && r.preset ? r.preset : (state.modus === "power" ? "last30" : ""),
+        params: {
+          brands: D.overview(f, { order: state.vis.order }).params,
+          domains: D.topListe(f, "domain", cit).params,
+          urls: D.topListe(f, "url", url).params,
+          prompt_runs: D.responses(f, state.resp).params
+        }
+      };
+    }
 
     /* ---- Laden ---------------------------------------------------------------------------------
        Ohne Team, ohne Sicht und (Analytic) ohne Kalender gibt es keine Anfrage: die Zahlen muessen

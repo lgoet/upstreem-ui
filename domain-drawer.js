@@ -813,8 +813,25 @@
       }
       teil.setAttribute("data-export-instance", k);
       var typ = teil.classList.contains("urt-root") ? "prompt_runs" : "urls";
-      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: typ, domain: S.domain }); } catch (err) {}
+      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, exportKontext(typ)); } catch (err) {}
     }, true);
+  }
+  /* WAS DER EXPORT MITNIMMT (16.10., wie die Seiten, export-data.js KENNT): die Domain als Filter
+     des Drawers, dazu Zeitraum und Filter des Drawers als Chips, jeder abwaehlbar. Die Leiste gilt
+     fuer URLs und Responses, die Filter einer Tabelle (Suche, Typen, Brand, Brands, Rank,
+     Sentiment) nur fuer die des offenen Reiters. Dieselben Bauer wie beim Laden. */
+  function exportKontext(typ) {
+    var r = null, c = kalender(), f = filterStand(), u = S.urls, aufUrls = typ === "urls";
+    try { r = c && c.getRange ? c.getRange() : null; } catch (e) { r = null; }
+    var cf = { team: f.team, von: f.von, bis: f.bis, modelle: f.modelle, maerkte: f.maerkte, topics: f.topics, tagmode: f.tagmode,
+               erwaehnt: aufUrls ? u.erwaehnt : "all", marken: aufUrls ? u.marken : null, citationTypen: aufUrls ? u.citationTypen : null, urlTypen: null };
+    var urls = C.domainUrls(cf, S.domain, aufUrls ? { suche: u.suche, order: u.order, urlTypen: u.urlTypen } : { order: u.order });
+    var resp = D.responsesTeile(f, aufUrls ? { order: S.resp.order } : S.resp)[0];
+    return {
+      export_type: typ, domain: S.domain,
+      date_from: r && r.from ? r.from : S.f.von, date_to: r && r.to ? r.to : S.f.bis, preset: r && r.preset ? r.preset : "",
+      params: { urls: urls.params, prompt_runs: resp ? resp.params : {} }
+    };
   }
 
   UC.kernDrawer("domain", {

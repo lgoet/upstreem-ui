@@ -367,8 +367,23 @@
         return;
       }
       tab.setAttribute("data-export-instance", k);
-      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: "urls" }); } catch (err) {}
+      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, exportKontext()); } catch (err) {}
     }, true);
+    /* WAS DER EXPORT MITNIMMT (16.10., wie prompts-page.js): die URLs der offenen Zelle, also
+       genau die Parameter der Tabelle darunter -- die Marke der Zelle (Brands), ihr Topic, die
+       Filter der Tabelle und ihre Suche, dazu der Zeitraum des Radars. Im Dialog als Chips, jeder
+       abwaehlbar. */
+    function exportKontext() {
+      var z = state.zeitraum || {}, r = null, c = kalender();
+      try { r = c && c.getRange ? c.getRange() : null; } catch (e) { r = null; }
+      /* Das Preset des Kalenders nur, wenn der Radar genau dessen Zeitraum zeigt -- sonst ist es ein
+         freier Zeitraum (der Dialog sagt dann "Custom range"). */
+      var preset = r && r.preset && r.from === z.von && r.to === z.bis ? r.preset : "";
+      return {
+        export_type: "urls", date_from: z.von || "", date_to: z.bis || "", preset: preset,
+        params: { urls: C.urls(D.urlFilter(zelle(), state.zeitraum, state.uf), state.url).params }
+      };
+    }
 
     /* ---- Laden ---------------------------------------------------------------------------------
        Nur solange die Seite zu sehen ist und ein Team bekannt ist (wie Citations). */

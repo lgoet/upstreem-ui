@@ -428,8 +428,26 @@
         return;
       }
       tab.setAttribute("data-export-instance", k);
-      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, { export_type: tab.classList.contains("uut-root") ? "urls" : "domains" }); } catch (err) {}
+      try { if (window.upstreemExportSetContext) window.upstreemExportSetContext(k, exportKontext(tab.classList.contains("uut-root") ? "urls" : "domains")); } catch (err) {}
     }, true);
+    /* WAS DER EXPORT MITNIMMT (16.10., wie prompts-page.js): Zeitraum und Filter der Ansicht als
+       Chips im Dialog, jeder abwaehlbar. Die Filter dieser Seite (Leiste und Typen, Brand,
+       Brands) gelten fuer Domains und URLs, die Suche nur fuer die Tabelle des offenen Reiters --
+       die andere sieht man gerade nicht. Die Sortierung je Tabelle geht als Reihenfolge mit. */
+    function exportKontext(typ) {
+      var r = null, c = kalender();
+      try { r = c && c.getRange ? c.getRange() : null; } catch (e) { r = null; }
+      var f = filterStand();
+      function ohneSuche(t) { return { order: t.order, suche: "" }; }
+      return {
+        export_type: typ,
+        date_from: r && r.from ? r.from : state.f.von, date_to: r && r.to ? r.to : state.f.bis, preset: r && r.preset ? r.preset : "",
+        params: {
+          domains: D.domains(f, typ === "domains" ? state.dom : ohneSuche(state.dom)).params,
+          urls: D.urls(f, typ === "urls" ? state.url : ohneSuche(state.url)).params
+        }
+      };
+    }
     if (elRefresh) elRefresh.addEventListener("click", function () {
       if (UC.spinOnce) UC.spinOnce(elRefresh);
       aktualisieren();
