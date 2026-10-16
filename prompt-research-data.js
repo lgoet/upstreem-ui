@@ -111,11 +111,15 @@
        Tracken (prompts_daily_limit_reached): hint = heute noch moegliche Prompts. */
     if (/_daily_limit_reached$/.test(m)) return "tag";
     if (/_rate_limited$/.test(m) || c === "PT429" || s === 429) return "rate";
+    /* "zugang" (16.10.): team_access_* -- der Zugang des Teams (Tarif, Abo), nicht die
+       Mitgliedschaft. Bis befunde_db_v1.sql P0403 = HTTP 500 (ueber den Code bei "rechte"),
+       danach PT402 = 402 (ohne diese Zeile "sonst"). start-job reicht beides durch. */
+    if (/^team_access_/.test(m) || c === "PT402" || s === 402) return "zugang";
     if (m === "prompt_research_limit_reached" || (c === "PT409" && /limit/.test(m))) return "limit";
     if (m === "prompt_research_not_found" || c === "PT404" || (s === 404 && /not_found/.test(m))) return "weg";
     if (m === "edge_not_configured" || m === "edge_not_implemented" || s === 503 || s === 501) return "nichtDa";
     if (m === "prompt_research_invalid_param" || m === "edge_invalid_body") return "eingabe";
-    if (c === "42501" || c === "P0403" || s === 403) return "rechte";
+    if (c === "42501" || s === 403) return "rechte";
     return "sonst";
   }
   /* hint bei limit_reached: freie Plaetze als Zahl im Text, bei rate_limited: Sekunden. */

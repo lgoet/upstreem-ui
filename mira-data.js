@@ -127,14 +127,20 @@
     return { chatId: str(o.chat_id), userId: str(o.user_message_id), amid: str(o.assistant_message_id), neu: o.is_new_session === true };
   }
 
+  /* "zugang" (16.10.): team_access_* heisst, der Zugang des Teams ist weg (Tarif, Abo) -- etwas
+     anderes als "rechte" (kein Mitglied, 42501). Erkannt an message: require_team_access kam bis
+     befunde_db_v1.sql als P0403 = HTTP 500 und landete hier ueber den Code in "rechte"; danach
+     PT402 = 402 und waere ohne diese Zeile in "sonst" gefallen. mira-send und mira-export-pdf
+     reichen beide Fassungen unveraendert durch. */
   function fehlerArt(erg) {
     var f = (erg && erg.fehler) || {}, m = str(f.message), c = str(f.code), s = erg ? erg.status : 0;
     if (/_rate_limited$/.test(m) || c === "PT429" || s === 429) return "rate";
+    if (/^team_access_/.test(m) || c === "PT402" || s === 402) return "zugang";
     if (m === "mira_turn_running" || s === 409) return "laeuft";
     if (m === "mira_not_found" || c === "PT404" || s === 404) return "weg";
     if (m === "mira_invalid_param" || m === "edge_invalid_body" || s === 400) return "eingabe";
     if (s === 502 || m === "mira_start_failed" || m === "edge_upstream_failed") return "start";
-    if (c === "42501" || c === "P0403" || s === 403) return "rechte";
+    if (c === "42501" || s === 403) return "rechte";
     /* Status 0: die Anfrage kam nie an. Fuer die Seite sieht ein vom Browser geblockter Aufruf
        (CORS: die Function kennt die Adresse der App nicht, 13.10. auf localhost gemessen) genauso
        aus wie ein Netzausfall -- und in den Logs der Function steht dann NICHTS. */

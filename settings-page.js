@@ -80,6 +80,14 @@
     if (/invite_pending/.test(m) && h === "other_invite") return { text: t("A newer invite for this address is pending"), desc: t("Use Resend on that invite.") };
     if (/cannot_change_self/.test(m)) return { text: t("You can't change your own role"), desc: "" };
     if (/billing_portal_failed/.test(m)) return { text: t("Billing could not be opened"), desc: t("Please try again in a moment.") };
+    /* create-team-checkout v6 (16.10.): ausser den App-Codes (team_access_*, billing_*) kommt jeder
+       Fehler nur noch als checkout_failed -- mit dem HTTP-Status aus dem SQLSTATE, also auch als
+       403 oder 500. Darum vor den Regeln, die am Status entscheiden: es ist ein allgemeiner Fehler
+       der Kasse, kein Rechte- und kein Ratenfall. Dasselbe fuer die aelteren Sammelcodes
+       (billing_checkout_failed 502, billing_prepare_failed, billing_no_checkout_url). */
+    if (/^(billing_)?checkout_failed$|^billing_prepare_failed$|^billing_no_checkout_url$/.test(m)) {
+      return { text: wobei || t("Checkout could not be opened"), desc: t("Please try again in a moment. If it keeps failing, contact support.") };
+    }
     if (/team_deleted/.test(m)) return { text: t("This team has been deleted"), desc: t("Switch to another team to continue.") };
     if (/cannot_remove_self|cannot kick self/.test(m)) return { text: t("You can't remove yourself"), desc: t("Use Leave team instead.") };
     if (/invite_send_unknown/.test(m)) return { text: t("We couldn't confirm that the email went out"), desc: t("Check the pending invites and resend if needed.") };
@@ -115,7 +123,8 @@
     if (/protected|support_member/.test(m)) return { text: t("This member can't be changed"), desc: "" };
     if (/_forbidden$|^forbidden_role/.test(m) || (erg && erg.fehler && erg.fehler.code === "PT403")) return { text: t("Your role doesn't allow this"), desc: t("Ask an owner of this team.") };
     if (/forbidden/.test(m) || (erg && erg.status === 403)) return { text: t("You don't have permission for this"), desc: t("Refresh the page and try again.") };
-    if (/rate_limited/.test(m) || (erg && erg.status === 429)) return { text: t("Too many requests"), desc: t("Please wait a moment and try again.") };
+    /* Ratengrenze an message (Status nur zusaetzlich), die Wartezeit aus hint in Sekunden (core). */
+    if (/rate_limited/.test(m) || (erg && erg.status === 429)) return { text: t("Too many requests"), desc: UC.warteSatz ? UC.warteSatz(erg, t("Please wait a moment and try again.")) : t("Please wait a moment and try again.") };
     if (/not_found/.test(m)) return { text: t("This no longer exists"), desc: t("Refresh the page to see the current state.") };
     if (/timeout|network/.test(m)) return { text: wobei || t("That didn't work"), desc: t("Check your connection and try again.") };
     return { text: wobei || t("That didn't work"), desc: t("Please try again.") };
