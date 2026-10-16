@@ -2530,7 +2530,8 @@
             '<span class="upt-prompt-text">' + highlight(text, state.query) + '</span>' +
           '</span>' +
           promptMarkeHtml(r) +
-          '<span class="up-row-goto">' + GOTO_SVG + '</span>' +
+          /* Kein Zeilenpfeil mehr (16.10., .up-row-goto in core): er belegte 16px plus Abstand
+             auch unsichtbar, die bekommt jetzt der Prompt-Text. */
         '</div>' +
         '<div class="up-td upt-td-visibility">' + visCell(r.visibility_pct) + '</div>' +
         '<div class="up-td upt-td-rank">' + rankCell(r.avg_rank) + '</div>' +
@@ -3816,28 +3817,43 @@
         }
         return;
       }
-      /* Switching straight from one open group to another: close the old one instantly. */
-      if (state.expandedGroup){
-        var oldId = state.expandedGroup;
-        var oldSec = elTbody.querySelector('[data-grp-sec="' + cssEsc(oldId) + '"]');
-        var oldHead = elTbody.querySelector('[data-grp="' + cssEsc(oldId) + '"]');
-        var oldBlock = oldSec && oldSec.querySelector('[data-grp-for]');
-        if (oldBlock && oldBlock.parentNode) oldBlock.parentNode.removeChild(oldBlock);
-        if (oldHead){ oldHead.classList.remove("is-open"); oldHead.setAttribute("aria-expanded", "false"); }
-        state.expandedGroup = id;   // reassigned BEFORE the sync below, so oldId's own checkbox reads "closed"
-        syncGroupHeadCheckbox(oldId);
-      } else {
-        state.expandedGroup = id;
+      function oeffnen(){
+        /* Switching straight from one open group to another: close the old one instantly. */
+        if (state.expandedGroup){
+          var oldId = state.expandedGroup;
+          var oldSec = elTbody.querySelector('[data-grp-sec="' + cssEsc(oldId) + '"]');
+          var oldHead = elTbody.querySelector('[data-grp="' + cssEsc(oldId) + '"]');
+          var oldBlock = oldSec && oldSec.querySelector('[data-grp-for]');
+          if (oldBlock && oldBlock.parentNode) oldBlock.parentNode.removeChild(oldBlock);
+          if (oldHead){ oldHead.classList.remove("is-open"); oldHead.setAttribute("aria-expanded", "false"); }
+          state.expandedGroup = id;   // reassigned BEFORE the sync below, so oldId's own checkbox reads "closed"
+          syncGroupHeadCheckbox(oldId);
+        } else {
+          state.expandedGroup = id;
+        }
+        /* Eine Gruppe, die gerade noch zuklappt (Klick auf ihren Kopf, dann binnen GRP_ANIM_MS
+           auf einen anderen), geht jetzt sofort -- wie beim direkten Wechsel oben. Liefe ihre
+           Bewegung weiter, schrumpfte sie ueber der neuen Gruppe und zoege deren Kopf Bild fuer
+           Bild nach oben; das Halten unten gilt nur fuer diesen einen Zug. */
+        Array.prototype.forEach.call(elTbody.querySelectorAll(".upt-grp-rows.is-closing"), function(b){
+          if (b.parentNode) b.parentNode.removeChild(b);
+        });
+        state.gRows = []; state.gTotal = null; state.gReqId = null; state.gPage = 1;
+        if (head){ head.classList.add("is-open"); head.setAttribute("aria-expanded", "true"); }
+        /* reveal=true: this is the actual open, so the checkbox waits GRP_ANIM_MS then fades in over
+           its own 200ms ease, rather than just appearing the instant the row-block starts opening. */
+        syncGroupHeadCheckbox(id, true);
+        /* Small delay before firing, exactly as domains-table does: the open animation and a
+           synchronous re-render in the same frame read as a stutter. */
+        fetchGroupPage(GRP_ANIM_MS + 40);
+        renderGroupBlockOnly(id, true);
       }
-      state.gRows = []; state.gTotal = null; state.gReqId = null; state.gPage = 1;
-      if (head){ head.classList.add("is-open"); head.setAttribute("aria-expanded", "true"); }
-      /* reveal=true: this is the actual open, so the checkbox waits GRP_ANIM_MS then fades in over
-         its own 200ms ease, rather than just appearing the instant the row-block starts opening. */
-      syncGroupHeadCheckbox(id, true);
-      /* Small delay before firing, exactly as domains-table does: the open animation and a
-         synchronous re-render in the same frame read as a stutter. */
-      fetchGroupPage(GRP_ANIM_MS + 40);
-      renderGroupBlockOnly(id, true);
+      /* Die angeklickte Gruppe bleibt stehen, auch wenn die vorige UEBER ihr zuklappt (16.10.,
+         dieselbe Meldung wie im Drilldown der Domains-Tabelle; Begruendung bei UC.zeileHalten).
+         Gehalten wird der Abschnitt, nicht der Kopf: der offene Kopf klebt, und ein klebendes
+         Element meldet die Lage, an der es klebt. */
+      var secNeu = elTbody.querySelector('[data-grp-sec="' + cssEsc(id) + '"]');
+      if (UC.zeileHalten && secNeu) UC.zeileHalten(secNeu, oeffnen, { dauer: GRP_ANIM_MS }); else oeffnen();
     }
 
     /* Header data. Fired on: the "Group by topics" toggle, the "Only show custom groupings"

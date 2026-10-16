@@ -343,12 +343,11 @@
     .uut-logo-ltr { font-size: 11px; font-weight: 600; color: var(--vt-logo-ink, var(--vc-muted)); line-height: 1; text-transform: uppercase; }
     .uut-logo-box.has-img .uut-logo-ltr { display: none; }
 
-    /* go-to arrow, revealed on row hover with a delay — same behaviour as the other tables */
-    .uut-row-goto { margin-left: auto; width: 16px; height: 16px; flex: 0 0 auto; color: var(--vc-third);
-      opacity: 0; transform: translateX(-3px); transition: opacity .18s ease, transform .18s ease; transition-delay: 0ms; }
-    .uut-row-goto svg { width: 16px; height: 16px; display: block; }
-    .up-row:hover .uut-row-goto { opacity: 1; transform: translateX(0); transition-delay: 220ms; }
-    .up-root.is-vnarrow .uut-row-goto { display: none; }
+    /* Zeilenpfeil: STILLGELEGT seit 16.10., wie .up-row-goto in core (dort die Begruendung) -- kein
+       hereingleitendes Zeichen mehr in Tabellen. urls-table.js erzeugt ihn nicht mehr; die Zelle
+       gibt Titel und Adresse die 26px (16 Pfeil + 10 Abstand), die er auch unsichtbar belegte. Die
+       Regel bleibt, weil der Vertrag die Klasse fuehrt. */
+    .uut-row-goto { display: none; }
     /* URL cell: title on top, url underneath — same treatment as the Quick Actions result rows */
     .uut-url-wrap { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
     .uut-url-title { font-size: 13.5px; font-weight: 500; color: var(--vc-text); letter-spacing: -0.01em;

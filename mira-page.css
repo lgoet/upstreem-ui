@@ -4,3 +4,15 @@
    als Block hing height: 100% an deren Hoehe, und Mira wuchs mit ihrer Chatliste (10.10. gemeldet).
    mira-page.js setzt denselben Wert zusaetzlich inline. */
 .umi-root { display: contents; }
+
+/* DER UMSCHALTER DER SEITENLEISTE IN MIRAS KOPF (16.10., mira-page.js setzt ihn, core.css zeigt ihn
+   nur im hint-Zustand). Zwei Abweichungen vom Seitenkopf, beide aus Miras Kopf:
+   - Farbe wie "Chats" gegenueber (--am-muted-2, also --vc-third): zwei Zeichen fuer die zwei
+     Seitenleisten am linken und rechten Rand desselben Kopfs sollen gleich aussehen -- dieselbe
+     Begruendung wie an .am-prev-btn in ask-mira.css.
+   - Fokusring INNEN: .am-hero-inner kappt auf dem Telefon seitlich (overflow-x: hidden, damit
+     nichts quer scrollt), und der Ring aussen (box-shadow von .up-ph-iconbtn) laege links, oben
+     und unten ausserhalb -- gemessen 32 hoch in einer 32 hohen Zeile. */
+#ask-mira .am-hero-inner > .up-ph-seitenleiste { color: var(--am-muted-2); }
+#ask-mira .am-hero-inner > .up-ph-seitenleiste:hover { color: var(--vc-text); }
+#ask-mira .am-hero-inner > .up-ph-seitenleiste:focus-visible { box-shadow: inset 0 0 0 var(--up-focus-w) var(--up-focus-ring); }

@@ -2980,6 +2980,21 @@
   .am-set-backdrop[data-theme="dark"] .ums-aside .ums-nav.is-on,
   .am-set-backdrop[data-theme="dark"] .ums-aside .ums-nav.is-on:hover {
     background: var(--up-sel-bg); }
+  /* SPALTE, GEWAEHLT UND HOVER IM GRAUEN HELL UND IM DUNKEL NACH GEIST (16.10.) -- Zeile fuer Zeile
+     die Regeln aus preferences.css, mit derselben Spezifitaet und denselben Werten (Begruendung und
+     Messwerte dort). Liegt jene Datei auf der Seite, gelten ihre Regeln hier ohnehin mit, denn dieses
+     Fenster traegt .ums-backdrop; diese Zeilen halten das Fenster gleich, wenn sie fehlt. Bis heute
+     fehlten hier die Wahl nach Geist (Grund plus 3 %-Rand) und der Seitengrund der Spalte: ohne
+     preferences.css stand die Spalte im Dunkeln #1f1f1f, die Wahl #242424 ohne Rand. */
+  html[data-up-hell="grau"] .am-set-backdrop:not([data-theme="dark"]) .ums-aside { background: var(--up-seite-grau); }
+  html[data-up-dunkel="geist"] .am-set-backdrop[data-theme="dark"] .ums-aside { background: var(--up-seite-dunkel); }
+  html[data-up-hell="grau"] .am-set-backdrop:not([data-theme="dark"]) .ums-aside .ums-nav.is-on,
+  html[data-up-hell="grau"] .am-set-backdrop:not([data-theme="dark"]) .ums-aside .ums-nav.is-on:hover,
+  html[data-up-dunkel="geist"] .am-set-backdrop[data-theme="dark"] .ums-aside .ums-nav.is-on,
+  html[data-up-dunkel="geist"] .am-set-backdrop[data-theme="dark"] .ums-aside .ums-nav.is-on:hover {
+    background: var(--up-wahl-bg); box-shadow: inset 0 0 0 1px var(--up-wahl-rand); }
+  html[data-up-dunkel="geist"] .am-set-backdrop[data-theme="dark"] .ums-aside .ums-nav:hover {
+    background: color-mix(in srgb, var(--vc-text) 3.5%, transparent); }
   .am-set-backdrop .ums-main, .am-set-backdrop .am-set-main { flex: 1 1 auto; min-width: 0; height: 100%; overflow-y: auto;
     padding: 24px 28px 28px; }
   /* ===== SCHMALER SCHIRM: die Navigation nur so hoch wie ihr Inhalt (12.09. gemeldet) =====

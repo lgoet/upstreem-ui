@@ -28,10 +28,15 @@
    Posten: jeder kostet einen vollen Durchlauf ueber das Dokument je Style-Neuberechnung,
    gemessen am 03.09. rund 8ms pro Regel, unabhaengig von den Treffern. */
 
-/* Abstand zwischen den drei Abschnitten: 40, wie in settings-brand. KEINE max-width hier -- die
-   Tabellen zeigen fuenf Spalten und sollen die Seite nutzen; settings-brand kappt bei 720, weil
-   dort Zeilen mit Text und einem Schalter stehen. */
-.uto-body { display: flex; flex-direction: column; gap: 40px; }
+/* Abstand zwischen den drei Abschnitten: 40, wie in settings-brand. Breite 720 wie Your Brand und
+   Billing (16.10.): "die Tabellen wie in den Drawern, nicht full width gestreckt". Vorher lief der
+   Bereich ohne Grenze ueber die ganze Inhaltsspalte (1158 bei 1440) -- jetzt endet er an derselben
+   Kante wie die beiden anderen Reiter, und die Tabellen sind so breit wie die im Marken-Editor
+   (Drawer 720). Fuenf Spalten passen dort (gemessen: Name 199, E-Mail 217 bei 720); darum
+   schaltet team-orga.js erst unter 720 auf drei (narrowAt). Der Preis steht bei den Einladungen:
+   lange Adressen kuerzen sich (gemessen englisch E-Mail 166 und Invited by 118, deutsch 124 und 88
+   neben den 268 breiten Knoepfen). */
+.uto-body { display: flex; flex-direction: column; gap: 40px; max-width: 720px; }
 .uto-body[hidden] { display: none; }
 .uto-loaderr[hidden] { display: none; }
 
@@ -70,7 +75,8 @@
    aber zusaetzlich cursor: pointer, die Hoverflaeche (.up-row:hover) UND eine eigene Trennlinie
    mit -- und .up-th hat seine Trennlinie schon selbst. Ergebnis: die Kopfzeile reagierte auf die
    Maus und hatte eine DOPPELTE Linie darunter. Ohne .up-row ist beides weg, das Raster bleibt.
-   Kopf 45px, Datenzeile 52px -- die Masse der App. */
+   Kopf 45px, Datenzeile 52px -- die Masse der App. In der Settings-Seite gilt seit dem 16.10. der
+   Kopf der Drawer-Tabellen aus core (48, im Hellen ohne Grund, "DIE TABELLENKOEPFE IM DRAWER"). */
 .uto-table .up-thead { height: 45px; flex: 0 0 45px; }
 /* Die Zellen. WORTGLEICH aus brand-editor.css (.ube-table .up-td) -- core setzt an .up-td keine
    Schriftgroesse, die Zelle erbt also die der Wurzel, und das sind 16px. Genau daran lagen die
@@ -85,6 +91,8 @@
 .uto-table > *:last-child { border-bottom-left-radius: calc(var(--up-r-2xl) - 1px); border-bottom-right-radius: calc(var(--up-r-2xl) - 1px); }
 
 /* DIE FLACHE TABELLE (core, data-flach="yes", 15.10.; team-orga.js gibt den Schalen dann .up-box).
+   Die Settings-Seite setzt das Attribut seit dem 16.10. NICHT mehr (Kasten wie im Drawer, siehe
+   settings-page.js); die Fassung bleibt fuer einen Einbau, der es setzt.
    Kopf 48 mit 13/500, die Linie darunter, Rahmen nur oben und unten, kein Grund und das Polster
    der Zeilen kommen aus core. Hier stehen nur die zwei Dinge, die diese Schalen anders haben:
    - KEIN overflow: hidden an Mitgliedern und Einladungen, auch nicht von .up-box -- die
