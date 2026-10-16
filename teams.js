@@ -200,6 +200,7 @@
         /* Der Lesefehler mit: sonst hiesse ein Neuaufbau nach einem kaputten Payload "hasData,
            keine Zeilen" -- und das ist der Leerzustand, also der stille Ausfall (CLAUDE.md §2). */
         parseError: !!saved.parseError,
+        parseErrorArt: String(saved.parseErrorArt || ""),
         loading: false,
         cols: {}, widths: {}
       };
@@ -210,7 +211,7 @@
         if (!root.isConnected) return;
         STORE[instanceId] = {
           rows: state.rows, serverTotal: state.serverTotal, currentTeamId: state.currentTeamId,
-          hasData: state.hasData, parseError: state.parseError, busy: state.busy,
+          hasData: state.hasData, parseError: state.parseError, parseErrorArt: state.parseErrorArt, busy: state.busy,
           query: state.query, page: state.page, pageSize: state.pageSize
         };
       }
@@ -618,7 +619,10 @@
         rechnen: RECHNEN,
         spalten: function () { return COLUMNS.map(function (c) { return c.key; }); },
         anzahl: function () { return state.parseError ? null : (state.hasData ? gefiltert().length : null); },
-        laedt: function () { return !!state.busy || !state.hasData; },
+        /* Ein Lesefehler ist KEIN Laden (17.10., SUM-02): ohne die Bedingung blieb die Zaehlzelle
+           der Gesamtzeile bei einem Ladefehler ewig im Skelett, obwohl darueber schon der Fehler
+           stand. Wie Brands (leseFehler gibt dort false): die Anzahl ist dann "–". */
+        laedt: function () { return !!state.busy || (!state.hasData && !state.parseError); },
         onUmschalten: function () { festPlanen(); }
       }) : null;
 
@@ -803,7 +807,7 @@
            wichtigste ist der letzte: solange NIE Daten ankamen, darf hier keine Aussage ueber
            das Ergebnis stehen -- ein ausgefallener Aufruf sah sonst genauso aus wie eine
            Antwort ohne Teams. */
-        if (state.parseError) return UC.leseFehlerHtml("the team list");
+        if (state.parseError) return UC.leseFehlerHtml("the team list", state.parseErrorArt);
         var suche = !!String(state.query || "").trim();
         /* Symbol und Markup aus dem Baustein; die Wortwahl bleibt, weil sie hier drei Faelle
            unterscheidet, die nur diese Liste kennt. Kein Raeum-Knopf -- die Suche steht ueber
@@ -932,6 +936,7 @@
              Liste UND ein __parseError-Vermerk. Ohne den sah ein zerrissener Payload genauso aus
              wie ein sauberes leeres Ergebnis. */
           state.parseError = !!p.__parseError;
+          state.parseErrorArt = typeof p.__parseError === "string" ? p.__parseError : "";
           if (state.parseError) {
             state.rows = [];
             state.busy = false;

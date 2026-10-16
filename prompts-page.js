@@ -680,6 +680,53 @@
         try { setter("setPromptsTableSumme")(ids.upt, d ? { daten: d } : { fehler: true }); } catch (e) {}
       });
     }
+    /* EIN TOPIC ODER EINE MARKE IM FILTER, DIE ES NICHT MEHR GIBT (17.10., FLT-02). _pi_filters_v1
+       lehnt jede Id ab, die nicht zum Team gehoert (prompts_invalid_param, 22023) -- und die Tabelle
+       zeigte dann "Could not load prompts", bis die neue Topic-Liste da war (gemessen 0,9 s, bei
+       ausbleibender Liste dauerhaft). Zwei Wege: das Loeschen raeumt den Filter VOR jeder
+       Anfrage (topicAusFilterNehmen), und kommt der Fehler trotzdem (ein Kollege hat das Topic
+       geloescht), raeumt filterBereinigen gegen die Listen des Teams und laedt einmal neu. */
+    function topicsImFilterSetzen(rest) {
+      setzen("topics", rest.length ? rest : null);
+      var tp = el(".utf-root"), c = tp && tp.__utfCtrl;
+      if (c && typeof c.setSelected === "function") { try { c.setSelected(rest.join(",")); } catch (e) {} }
+    }
+    function topicAusFilterNehmen(id) {
+      var l = isArr(state.f.topics) ? state.f.topics : [];
+      if (l.indexOf(id) < 0) return;
+      topicsImFilterSetzen(l.filter(function (x) { return x !== id; }));
+    }
+    function filterBereinigen(erg) {
+      var f = erg && erg.fehler;
+      if (!f || (str(f.code) !== "22023" && !/prompts_invalid_param/.test(str(f.message)))) return false;
+      var geaendert = false, bekannt;
+      var tl = UC.getTopics ? UC.getTopics() : [];
+      if (isArr(tl) && tl.length && isArr(state.f.topics)) {
+        bekannt = {}; tl.forEach(function (x) { if (x && x.id != null) bekannt[String(x.id)] = 1; });
+        var rest = state.f.topics.filter(function (x) { return bekannt[x]; });
+        if (rest.length !== state.f.topics.length) { topicsImFilterSetzen(rest); geaendert = true; }
+      }
+      var bl = UC.getBrands ? UC.getBrands() : [];
+      if (isArr(bl) && bl.length && isArr(state.p.firmen)) {
+        bekannt = {}; bl.forEach(function (x) { var k = x && (x.company_id || x.id); if (k != null) bekannt[String(k)] = 1; });
+        var fr = state.p.firmen.filter(function (x) { return bekannt[x]; });
+        var bw = el(".up-ff-brands"), bc = bw && bw.__upffCtrl;
+        if (fr.length !== state.p.firmen.length && bc && typeof bc.setSelected === "function") {
+          try { bc.setSelected(fr.join(",")); geaendert = true; } catch (e) {}
+        }
+      }
+      if (geaendert) { filterGeaendert(); return true; }
+      /* Nichts zu raeumen, weil unsere Listen veraltet sind (ein Kollege hat das Topic geloescht):
+         die Liste des Teams neu holen. Kommt sie ohne das Topic, raeumt der Topic-Filter sich selbst
+         (setTopics meldet die Aenderung) und die Tabelle laedt neu. Hoechstens alle 15 s, damit ein
+         dauerhafter Fehler keine Schleife aus Abrufen wird. */
+      if (Date.now() - listeHolt > 15000) {
+        listeHolt = Date.now();
+        try { if (UC.topicsChanged) UC.topicsChanged(); } catch (e) {}
+      }
+      return false;
+    }
+    var listeHolt = 0;
     function listeAuftrag() {
       var a = D.liste(filterStand(), state.p), reqId = state.p.requestId, status = state.p.status;
       return {
@@ -692,6 +739,9 @@
             if (erg.ueberholt) return null;
             return function () {
               var z = erg.ok ? D.zuListe(erg.daten, status) : null;
+              /* Ein Filter mit Ids, die es nicht gibt: geraeumt, die Tabelle laedt gleich neu. Kein
+                 Lesefehler dazwischen, und das Skelett bleibt stehen. */
+              if (!z && filterBereinigen(erg)) return;
               if (!z) {
                 try { setter("renderPromptsTable")({ instanceId: ids.upt, __parseError: true }); } catch (e) {}
               } else {
@@ -719,9 +769,12 @@
             if (erg.ueberholt) return null;
             return function () {
               var g = erg.ok ? D.zuGruppen(erg.daten) : null;
-              if (!g) { fehlerToast(erg, t("The groups could not be loaded")); g = []; }
+              /* Gescheitert ist nicht leer: die Tabelle bekommt den Fehler als dritten Wert und zeigt
+                 ihren Lesefehler statt "No groups" (der Toast allein verschwand nach Sekunden). */
+              var fehler = !g;
+              if (fehler) { fehlerToast(erg, t("The groups could not be loaded")); g = []; }
               eigeneAufraeumen(erg.ok ? D.abgelegteTopics(erg.daten) : []);
-              try { setter("setPromptsTableGroups")(ids.upt, g); } catch (e) {}
+              try { setter("setPromptsTableGroups")(ids.upt, g, fehler ? "error" : "ok"); } catch (e) {}
             };
           });
         }
@@ -1077,6 +1130,8 @@
       schreiben(D.topicLoeschen(team(), id)).then(function (erg) {
         if (!erg.ok) { fehlerToast(erg, t("The topic could not be deleted")); return; }
         toast(t("Topic deleted"), "success");
+        /* Zuerst aus dem Filter (FLT-02): sonst geht die Liste mit der geloeschten Id hinaus. */
+        topicAusFilterNehmen(id);
         try { if (UC.topicsChanged) UC.topicsChanged(); } catch (e) {}
         nachAenderung();
       }, function () { fehlerToast(null, t("The topic could not be deleted")); });

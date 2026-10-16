@@ -449,7 +449,7 @@
        gegenseitig ueberholen koennen (neue Granularitaet, dann schnell sortiert). */
     function trackedAuftrag(leise) {
       var f = filterStand();
-      var vis = D.chart(f, state.gran, state.firmen), erste = D.tabelle(f, state.order, 0);
+      var vis = D.chart(f, state.gran, state.firmen), erste = D.tabelle(f, state.order, 0, state.firmen);
       return {
         kanal: "tracked", imSpeicher: imSpeicher([vis, erste]),
         ladenAn: function () { if (!leise) { try { setter("setBrandsOverviewLoading")(ids.ubo, "yes"); } catch (e) {} } },
@@ -458,7 +458,7 @@
           return Promise.all([lader.laden("ubr_chart", vis, o), lader.laden("ubr_tabelle", erste, o)]).then(function (e) {
             if (e[0].ueberholt || e[1].ueberholt) return null;
             var mehr = e[1].ok ? D.weitereSeiten(e[1].daten) : 0, folge = [];
-            for (var i = 1; i <= mehr; i++) folge.push(lader.laden("ubr_tabelle_" + i, D.tabelle(f, state.order, i * D.GRENZE.tabelle), o));
+            for (var i = 1; i <= mehr; i++) folge.push(lader.laden("ubr_tabelle_" + i, D.tabelle(f, state.order, i * D.GRENZE.tabelle, state.firmen), o));
             return Promise.all(folge).then(function (rest) {
               if (rest.some(function (x) { return x.ueberholt; })) return null;
               var seiten = [e[1]].concat(rest);

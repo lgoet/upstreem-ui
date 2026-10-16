@@ -646,7 +646,7 @@
         ys.setAttribute("role", "tablist");
         ys.setAttribute("aria-label", "Y axis");
         ys.innerHTML = '<button class="ubo-yaxis-btn is-active" data-yaxis="sentiment" type="button" role="tab">Sentiment</button>' +
-                       '<button class="ubo-yaxis-btn" data-yaxis="ranking" type="button" role="tab">Ranking</button>';
+                       '<button class="ubo-yaxis-btn" data-yaxis="ranking" type="button" role="tab">Rank</button>';
       }
       /* Order, not just presence: the Y-axis switch sits LEFT of the Linechart|Landscape switch.
          Moving it here (rather than only inserting it when missing) means a placement that still
@@ -785,7 +785,7 @@
        Sentiment, dann Ranking; Visibility faellt der Breite wegen nie. Deactivated ist ein Datum. */
     var COLS_ALL = [
       { key: "visibility", label: "Visibility", w: "minmax(129px, 1fr)", min: 129, art: "anteil" },
-      { key: "ranking",    label: "Ranking",    w: "minmax(127px, 1fr)", min: 127, art: "rang" },
+      { key: "ranking",    label: "Rank",       w: "minmax(127px, 1fr)", min: 127, art: "rang" },
       { key: "sentiment",  label: "Sentiment",  w: "minmax(141px, 1fr)", min: 141, art: "sentiment" },
       /* Inactive-only, and the inverse of the three above — see cfg.isHidden below. */
       { key: "deactivated", label: "Deactivated", w: "minmax(140px, 0.8fr)", min: 140, art: "datum" }
@@ -925,7 +925,7 @@
         b.classList.toggle("is-active", b.getAttribute("data-yaxis") === yAxis);
       });
       var cap = root.querySelector(".ubo-mx-legend-y span");
-      if (cap) cap.textContent = (yAxis === "ranking") ? "Ranking" : "Sentiment";
+      if (cap) cap.textContent = (yAxis === "ranking") ? "Rank" : "Sentiment";
     }
     function syncChartMode(){
       root.classList.toggle("is-landscape", chartMode === "landscape");
@@ -1078,10 +1078,11 @@
         '<div class="up-th up-th-idx">' + HASH_ICON + '</div>' +
         brandHeadHtml();
       var sortAttr = function(col){
-        return ' aria-sort="' + (sortField === col ? (sortDir === "asc" ? "ascending" : "descending") : "none") + '"';
+        /* aria-sort nur an der sortierten Spalte (WAI-ARIA); "none" an jeder anderen waere Laerm. */
+        return sortField === col ? ' aria-sort="' + (sortDir === "asc" ? "ascending" : "descending") + '"' : "";
       };
       if (colOn("visibility")) h += '<div class="up-th up-th-visibility is-sortable" data-sortcol="visibility"' + sortAttr("visibility") + '>Visibility' + sortChevronHtml("visibility") + infoIcon("visibility") + '</div>';
-      if (colOn("ranking"))    h += '<div class="up-th up-th-ranking is-sortable" data-sortcol="ranking"' + sortAttr("ranking") + '>Ranking' + sortChevronHtml("ranking") + infoIcon("ranking") + '</div>';
+      if (colOn("ranking"))    h += '<div class="up-th up-th-ranking is-sortable" data-sortcol="ranking"' + sortAttr("ranking") + '>Rank' + sortChevronHtml("ranking") + infoIcon("ranking") + '</div>';
       if (colOn("sentiment"))  h += '<div class="up-th up-th-sentiment is-sortable" data-sortcol="sentiment"' + sortAttr("sentiment") + '>Sentiment' + sortChevronHtml("sentiment") + infoIcon("sentiment") + '</div>';
       h += '<div class="up-th up-th-act"></div></div>';
       return h;
@@ -1111,7 +1112,7 @@
       var visNull = (r.visibility_pct == null || r.visibility_pct === "");
       var vis = '<span class="up-num' + (visNull ? " is-empty" : "") + '">' +
         (visNull ? "–" : UC.fmtPct(r.visibility_pct, 1)) + '</span>' +
-        UC.trendChip(r.visibility_delta_pct, { decimals: false, inverted: false, suffix: "%" });
+        UC.trendChip(r.visibility_delta_pct, { decimals: true, inverted: false, suffix: "%" });   /* 1 Stelle wie die Rank- und Sentiment-Trends daneben (§2b, 17.10.) */
       var rank = '<span class="up-rank-group">' + HASH_ICON + '<span class="up-num">' + fmt1(r.avg_rank) + '</span></span>' +
         UC.trendChip(r.avg_rank_delta, { decimals: true, inverted: true });
       var sent = UC.sentHtml(r.sentiment) + UC.trendChip(r.sentiment_delta, { decimals: true, inverted: false });
@@ -1367,14 +1368,14 @@
     /* ---------- column explainers ---------- */
     var EXPLAIN_FALLBACK = {
       visibility: { h: "Visibility", t: "How often the brand appears in AI answers for the tracked prompts, plus the change against the previous period." },
-      ranking:    { h: "Ranking", t: "The brand's average position among all brands mentioned, plus the change against the previous period. A lower number is better." },
+      ranking:    { h: "Rank", t: "The brand's average position among all brands mentioned, plus the change against the previous period. A lower number is better." },
       sentiment:  { h: "Sentiment", t: "How positively the brand is described when it's mentioned, plus the change against the previous period." }
     };
     function explainInfo(kind){
       if (UC.explainCopy){
         var trend = ", plus the change against the previous period";
         if (kind === "visibility") return UC.explainCopy("visibility", { scope: " for the tracked prompts", trend: trend });
-        if (kind === "ranking"){ var r = UC.explainCopy("rank", { trend: trend }); return r ? { h: "Ranking", t: r.t } : null; }
+        if (kind === "ranking"){ var r = UC.explainCopy("rank", { trend: trend }); return r ? { h: "Rank", t: r.t } : null; }
         if (kind === "sentiment") return UC.explainCopy("sentiment", { trend: trend });
       }
       return EXPLAIN_FALLBACK[kind] || null;
@@ -1515,7 +1516,7 @@
     }
 
     /* ---- sort ---- */
-    var SORT_LABELS = [["visibility","Visibility"],["ranking","Ranking"],["sentiment","Sentiment"]];
+    var SORT_LABELS = [["visibility","Visibility"],["ranking","Rank"],["sentiment","Sentiment"]];
     var SORT_OUT = { visibility: "visibility", ranking: "rank", sentiment: "sentiment" };
     /* beginSortDim() sits inside fireSort() rather than at the three call sites (header click,
        sort-menu option, direction switch) so no future one can forget it. */
