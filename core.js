@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261164;
+  var BUILD = 20261165;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -19141,6 +19141,16 @@
     var isDark = cfg.isDark || function(){ return false; };
     var isOwner = cfg.isOwner || function(){ return true; };
     var chart = null, legendCompanies = [], verifyT = null, sizeIv = null, lastBuilt = null, lastSig = null;
+    /* DIE INSTANZ BLEIBT (17.10.). Vorher baute JEDER Filterwechsel den Chart neu: skeleton() zerstoerte
+       ihn, render() legte danach eine neue Chart.js-Instanz an -- je Klick ein neuer MutationObserver
+       und ResizeObserver aus chart.umd.js, ein neues Layout aller Skalen. Jetzt versteckt skeleton()
+       den stehenden Chart nur (ruht), und build() setzt die neuen Daten in ihn ein.
+       ruht: der Chart lebt, steht aber unter dem Skelett und ist nicht zu sehen.
+       frisch: der naechste Datensatz soll EINFAHREN wie ein neu gebauter Chart (nach dem Skelett),
+       nicht von der alten Linie aus hinueberwandern -- Bewegung wie bisher.
+       akt: was die Optionen-Rueckrufe (Achse, oberes Polster) lesen. Sie entstehen einmal je
+       Instanz, die Daten wechseln -- deshalb ein Fach statt der Variablen aus build(). */
+    var ruht = false, frisch = false, akt = { labels: [], single: false };
     /* Event-Marker (siehe evmX darueber). Gruppen und Ebene leben je Diagramm. */
     function markerDaten(){
       if (cfg.markers === false) return [];
@@ -19351,7 +19361,7 @@
        component does, same as the resize/click listeners the color-scale dropdown binds below. */
     window.addEventListener("up-linewidth-change", function(){
       if (!isOwner() || !chart || !lastBuilt) return;
-      build(lastBuilt);
+      neuBauen();
     });
     /* Und dasselbe beim Wechsel von Zahlen- oder Datumsformat: Achsenbeschriftung und Tooltip
        entstehen in build() aus chartDateFmt und fmtNum, also aus den Einstellungen des Nutzers.
@@ -19362,7 +19372,7 @@
        Fenster. Die Sprache steht ausdruecklich mit drin, weil die Monatsnamen daran haengen. */
     window.addEventListener("up-prefs-change", function(){
       if (!isOwner() || !chart || !lastBuilt) return;
-      build(lastBuilt);
+      neuBauen();
     });
     /* Die Legende braucht KEIN Neuzeichnen des Charts -- sie ist ein eigenes Element unter dem
        Canvas. legendLayout() reicht: es blendet aus oder rechnet die Zeilen neu. */
@@ -19379,7 +19389,7 @@
        data-isdark nicht einmal im Filter. */
     onTheme(function(){
       if (!isOwner() || !chart || !lastBuilt) return;
-      build(lastBuilt);
+      neuBauen();
     });
 
     /* Zwei verschiedene Toene, und das ist der Kern der Meldung "die Rasterfarbe gegen die neuen
@@ -19407,6 +19417,14 @@
            sein als sie (siehe oben) -- vorher 14 Stufen darunter, jetzt 5, wie im Hellen (4). */
         : { text:"#1f1f1b", muted:"#6b6f78", border:"#e4e2e4", bg:"#ffffff", grid:"rgba(0,0,0,0.09)" };
     }
+    /* Thema, Zahlen-/Datumsformat und Strichstaerke bauen den Chart NEU wie bisher: Farben von
+       Achse und Raster und die Formatierer stecken in den Optionen. Ruht der Chart unter dem
+       Skelett, wird er nur verworfen -- sonst zeichnete er den alten Datensatz ueber das Skelett
+       (vor dem 17.10. gab es in dem Moment keinen Chart, also auch nichts zu zeichnen). */
+    function neuBauen(){
+      if (ruht){ destroy(); return; }
+      build(lastBuilt, true);
+    }
     function clearExtras(){
       var sk = wrap.querySelector(".up-line-sk"); if (sk) sk.remove();
       var em = wrap.querySelector(".up-line-empty"); if (em) em.remove();
@@ -19416,6 +19434,8 @@
       if (sizeIv){ clearInterval(sizeIv); sizeIv = null; }
       clearTimeout(verifyT);
       if (chart){ try { chart.destroy(); } catch(e){} chart = null; }
+      ruht = false; frisch = false;
+      if (canvas && canvas.style) canvas.style.visibility = "";
       lastSig = null;   // nothing is drawn any more, so the next render must actually build
       if (window.Chart && window.Chart.getChart){ var ex = window.Chart.getChart(canvas); if (ex) try { ex.destroy(); } catch(e){} }
       /* The external tooltip is a plain DOM element outside Chart.js's lifecycle — destroying the
@@ -19497,9 +19517,25 @@
       legendEl.addEventListener("mouseleave", function(){ applyHighlight(null); });
     }
 
+    /* Der Chart geht unter das Skelett, statt zerstoert zu werden (siehe ruht oben). Alles, was
+       destroy() sonst noch erledigt, passiert hier genauso: Uhren aus, Signatur weg (der naechste
+       render() muss zeichnen), Tooltip und Event-Pins weg. visibility statt display: der Kasten
+       behaelt seine Groesse, Chart.js misst nichts neu. Ein verdeckter Canvas bekommt auch keine
+       Zeigerereignisse, also kein Tooltip aus dem alten Stand. */
+    function ruhen(){
+      if (!chart || !canvasHasLiveChart() || chart.canvas !== canvas){ destroy(); return; }
+      if (sizeIv){ clearInterval(sizeIv); sizeIv = null; }
+      clearTimeout(verifyT);
+      lastSig = null;
+      ruht = true; frisch = true;
+      canvas.style.visibility = "hidden";
+      var tt = wrap.querySelector(".up-line-tt");
+      if (tt) tt.style.opacity = "0";
+      evmEbeneWeg();
+    }
     function skeleton(){
       stand++;
-      destroy(); clearExtras(); clearLegend();
+      ruhen(); clearExtras(); clearLegend();
       wrap.insertAdjacentHTML("beforeend", lineSkeletonHtml());
       if (cfg.watermark !== false) injectWatermark(wrap);
     }
@@ -19559,8 +19595,15 @@
       }
       nachUhr = window.setTimeout(pruef, 60);
     }
-    function build(built){
-      destroy();
+    /* neu = true: ausdruecklich neu bauen (Thema, Formate, Strichstaerke, siehe neuBauen). Sonst
+       bekommt ein stehender Chart auf DIESEM Canvas nur die neuen Daten (einsetzen, unten). */
+    function build(built, neu){
+      /* $upDunkel: Achsen- und Rasterfarben stecken in den Optionen. Hat das Thema seit dem Bau
+         gewechselt (die Komponente meldet es oft erst mit ihrem naechsten render(), nach onTheme),
+         wird neu gebaut wie bisher -- sonst stuende ein heller Rahmen im dunklen Chart. */
+      var stehtNoch = !neu && !!chart && chart.canvas === canvas && !!canvas.isConnected && canvasHasLiveChart() &&
+        chart.$upDunkel === !!isDark();
+      if (!stehtNoch) destroy();
       lastSig = builtSig(built);   // after destroy(), which clears it
       var tc = themeColors();
       var ctx = canvas.getContext("2d");
@@ -19609,6 +19652,9 @@
          wie bisher. */
       var ganz = typeof cfg.yGanz === "function" ? !!cfg.yGanz() : !!cfg.yGanz;
       if (ganz) yMax = Math.max(RASTER_N, Math.ceil(yMax / RASTER_N) * RASTER_N);
+      var umgekehrt = !!(typeof cfg.reverse === "function" ? cfg.reverse() : cfg.reverse);
+      akt.labels = labels; akt.single = single;
+      if (stehtNoch){ einsetzen(ds, labels, single, yMax, umgekehrt); return; }
       try {
         chart = new window.Chart(ctx, {
           type: "line",
@@ -19645,8 +19691,8 @@
               /* Oben Platz fuer die Event-Pins, aber nur, wenn einer im Bild steht -- sonst bleibt
                  jedes Diagramm genau so hoch, wie es war. 30 = 17 (Pin-Mitte ueber der Linie) + 10
                  (halber Pin) + 1,5 (Ring im Stapel), aufgerundet. */
-              var oben = evmImZeitraum(labels, markerDaten()) ? 30 : 8;
-              return { top: oben, right: single ? 2 : xRandRechts((cfg.gran && cfg.gran()) || "day"), bottom: 0, left: 0 };
+              var oben = evmImZeitraum(akt.labels, markerDaten()) ? 30 : 8;
+              return { top: oben, right: akt.single ? 2 : xRandRechts((cfg.gran && cfg.gran()) || "day"), bottom: 0, left: 0 };
             } },
             plugins: { legend: { display: false }, tooltip: { enabled: false, external: makeLineTooltip(wrap, isDark, cfg.gran, einheit, cfg.tipLabel, cfg.decimals) } },
             scales: {
@@ -19674,6 +19720,7 @@
                               /* this ist die Skala -- ihre Breite ist der Platz, den die
                                  Beschriftungen teilen muessen. */
                               var gr = (cfg.gran && cfg.gran()) || "day";
+                              var labels = akt.labels;   // der aktuelle Datensatz, nicht der beim Bau
                               if (!xTickZeigen(i, labels.length, this && this.width, gr)) return "";
                               /* dayKey ZUERST. Der Rohwert ist nicht immer ISO: ein Bubble-Ausdruck
                                  schickt auch "Aug 6, 2026 12:00 am", und slice(5) machte daraus
@@ -19698,7 +19745,7 @@
                               return lab.slice(5);   // day / week → "MM-DD"
                             } } },
               /* reverse: beim Rang ist kleiner besser -- oben steht dann der bessere Wert. */
-              y: { min:0, max:yMax, beginAtZero:true, reverse: !!(typeof cfg.reverse === "function" ? cfg.reverse() : cfg.reverse),
+              y: { min:0, max:yMax, beginAtZero:true, reverse: umgekehrt,
                    /* RASTER_N + 1 Ticks: die Null und dann jeder Bruchteil bis zum Maximum. Vorher
                       drei Schritte (0, m/3, 2m/3, m), jetzt vier -- die "zusaetzliche waagerechte
                       Linie" der Meldung ist genau dieser Schritt, und weil die Beschriftungen
@@ -19718,6 +19765,7 @@
           }
         });
         chart.$upGridColor = tc.grid;      /* schwaecher als die Achse, siehe themeColors */
+        chart.$upDunkel = !!isDark();       /* gegen das Thema beim naechsten build(), siehe stehtNoch */
         chart.$upHoverLineColor = tc.border;
         /* Und die Nachkontrolle anwerfen: setzt sich die Breite erst NACH dem Zeichnen (ein View,
            der gerade eingeblendet wird), wird einmal still nachgerechnet. Siehe oben. */
@@ -19725,6 +19773,43 @@
         /* Wartet der Teil noch auf seinen Auftritt, faehrt die Linie dann erst sichtbar ein. */
         fahrtBeimAuftritt(wrap, function(){ return chart; });
       } catch(err){}
+    }
+
+    /* Die neuen Daten in den stehenden Chart (17.10.). Was build() bisher in die Optionen eines
+       neuen Charts schrieb und vom Datensatz abhaengt, wird hier gesetzt: Versatz der x-Achse
+       (ein einzelner Tag), Obergrenze und Richtung der y-Achse. Achsenbeschriftung und oberes
+       Polster lesen akt. Alles Uebrige (Farben, Formatierer) haengt am Thema und an den
+       Einstellungen -- die bauen ueber neuBauen() weiterhin neu.
+       Die Bewegung: nach dem Skelett (frisch) bekommen die Reihen NEUE Objekte. Chart.js legt fuer
+       ein unbekanntes Datensatzobjekt einen neuen Controller an und laesst ihn von der Grundlinie
+       einfahren -- genau die Einfahrt eines neu gebauten Charts. Ohne Skelett dazwischen (eine
+       Reihe aus- oder eingeblendet, leises Nachladen) wandern die Linien gleicher __id von ihrem
+       alten Verlauf zum neuen: dazu bleibt das alte Objekt und bekommt die neuen Felder. */
+    function einsetzen(ds, labels, single, yMax, umgekehrt){
+      canvas.style.visibility = "";
+      if (!frisch){
+        var alt = {}, i;
+        (chart.data.datasets || []).forEach(function(d){ if (d && d.__id != null && !alt[String(d.__id)]) alt[String(d.__id)] = d; });
+        ds = ds.map(function(n){
+          var a = n.__id != null ? alt[String(n.__id)] : null;
+          if (!a) return n;
+          delete alt[String(n.__id)];   // jedes alte Objekt hoechstens einmal
+          var k;
+          for (k in a) if (Object.prototype.hasOwnProperty.call(a, k) && !Object.prototype.hasOwnProperty.call(n, k)) delete a[k];
+          for (k in n) if (Object.prototype.hasOwnProperty.call(n, k)) a[k] = n[k];
+          return a;
+        });
+      }
+      ruht = false; frisch = false;
+      chart.__activeId = undefined;   // die Legenden-Hervorhebung gilt dem alten Stand
+      chart.data.labels = labels;
+      chart.data.datasets = ds;
+      var o = chart.options, sc = o && o.scales;
+      if (sc && sc.x) sc.x.offset = single;
+      if (sc && sc.y){ sc.y.max = yMax; sc.y.reverse = umgekehrt; }
+      try { chart.update(); } catch(e){}
+      nachkontrolle();
+      fahrtBeimAuftritt(wrap, function(){ return chart; });
     }
 
     /* Chart.js reads the canvas's live layout to compute where the entrance animation starts, so
@@ -19835,7 +19920,7 @@
        eine Reihe hinzu und entfernt nie eine. Dieselbe Bauart wie updateColors an makeTypeChart. */
     function updateColors(built){
       if (!built || !built.datasets) return;
-      if (!chart || !canvasHasLiveChart()){ render(built); return; }
+      if (!chart || ruht || !canvasHasLiveChart()){ render(built); return; }
       var alt = chart.data.datasets || [], neu = built.datasets;
       if (alt.length !== neu.length){ render(built); return; }
       /* Nur die Farben duerfen sich unterscheiden. Weicht irgendetwas anderes ab, ist es keine
@@ -19880,7 +19965,7 @@
          Pass null to clear. */
       highlight: applyHighlight,
       resize: function(){ try { if (chart) chart.resize(); } catch(e){} },
-      chart: function(){ return chart; }
+      chart: function(){ return ruht ? null : chart; }
     };
   }
 
@@ -20193,7 +20278,7 @@
     var letzteZeichnung = null;
     onTheme(function(){
       if (!isOwner() || !letzteZeichnung) return;
-      if (letzteZeichnung.art === "donut") renderDonut(letzteZeichnung.daten);
+      if (letzteZeichnung.art === "donut") renderDonut(letzteZeichnung.daten, { neu: true });
       else renderBars(letzteZeichnung.daten);
     });
     function keysOf(d){ return (d || []).map(function(it){ return it.key; }).join(""); }
@@ -20244,23 +20329,27 @@
        aeltere baute seinen Ring, der neuere scheiterte still an "Canvas is already in use" (im
        try). Gemessen: der zweite Auftrag kam ohne Einblendung, gezeichnet wurde der erste mit. */
     var donutZug = 0;
-    function renderDonut(d, opts){
-      if (!isOwner()) return;
-      var ohneFahrt = !!(opts && opts.ohneFahrt);
-      var zug = ++donutZug;
-      destroy();
-      d = d || [];
-      letzteZeichnung = { art: "donut", daten: d };
-      lastKeys = keysOf(d); lastMode = "donut";
-      if (isEmpty(d)){ empty({ icon: "donut" }); return; }
-      body.innerHTML =
-        '<div class="up-donut-layout">' +
-          '<div class="up-donut-wrap"><canvas></canvas>' +
-            '<div class="up-donut-center"><span class="n">' + esc(fmtTotal(total())) + '</span><span class="lbl">' + esc(cfg.centerLabel || "Citations") + '</span></div>' +
-          '</div><div class="up-donut-legend"></div>' +
-        '</div>';
+    /* DER RING BLEIBT STEHEN (17.10.). renderDonut lief bei jedem render() der Komponente -- auch
+       wenn sich nur der Ladezustand umlegte -- und baute jedes Mal Canvas und Chart.js-Instanz neu
+       (gemessen auf der Citations-Seite: je Filterwechsel ein neuer Chart, ein MutationObserver und
+       ein ResizeObserver aus chart.umd.js, auch bei unveraenderten Zahlen). Jetzt:
+         dieselben Zahlen auf einem stehenden Ring   -> nichts tun
+         andere Zahlen auf einem stehenden Ring      -> Legende und Mitte neu, Ring per update()
+         kein Ring (Skelett, Leerzustand, Balken)    -> neu bauen wie bisher
+       donutDaten statt d in den Klick-Rueckrufen: die entstehen einmal je Ring, die Daten wechseln. */
+    var donutSig = null, donutDaten = [], donutNull = false;
+    function donutSigOf(d){
+      try {
+        return [isDark() ? "d" : "l", total(), cfg.centerLabel || ""].concat(d.map(function(x){
+          return [x.key, x.name, x.share, x.color, x.__dimmed ? 1 : 0, x.__realColor || "", x.logo || "",
+                  cfg.legendPrefix ? String(cfg.legendPrefix(x) || "") : ""].join("|");
+        })).join(";");
+      } catch(e){ return null; }
+    }
+    function donutLegende(d){
       var clickable = !!cfg.onSliceClick;
       var legendeEl = body.querySelector(".up-donut-legend");
+      if (!legendeEl) return;
       legendeEl.innerHTML = d.map(function(it){
         /* Bringt ein Eintrag ein Logo mit (it.logo), steht es zwischen Farbfleck und Name:
            Fleck, Luecke, Logo, Luecke, Name. Gebraucht vom Model Breakdown -- ein Modell erkennt
@@ -20286,17 +20375,62 @@
           row.addEventListener("click", function(){ cfg.onSliceClick(row.getAttribute("data-type-key")); });
         });
       }
+    }
+    function donutWerte(d){
+      var origData = d.map(function(x){ return x.share; });
+      return { orig: origData, allZero: origData.every(function(v){ return v <= 0; }),
+               /* floor the drawn value so a near-zero slice still gets a visible sliver; the
+                  tooltip reads originalData so the number stays truthful */
+               display: origData.map(function(v){ return Math.max(v, 1.0); }) };
+    }
+    function renderDonut(d, opts){
+      if (!isOwner()) return;
+      var ohneFahrt = !!(opts && opts.ohneFahrt);
+      d = d || [];
+      var sig = donutSigOf(d);
+      var cv0 = chart && chart.canvas;
+      var stehtNoch = !(opts && opts.neu) && lastMode === "donut" && !!cv0 && !!cv0.isConnected && body.contains(cv0) &&
+        !!(window.Chart && window.Chart.getChart && window.Chart.getChart(cv0) === chart) && !isEmpty(d) &&
+        !donutNull && !donutWerte(d).allZero;
+      letzteZeichnung = { art: "donut", daten: d };
+      lastKeys = keysOf(d); lastMode = "donut";
+      if (stehtNoch){
+        donutZug++;   // ein noch wartender Bau (Chart.js laedt) ist damit ueberholt
+        if (sig && sig === donutSig) return;
+        donutSig = sig; donutDaten = d;
+        var cn = body.querySelector(".up-donut-center .n");
+        if (cn) cn.textContent = fmtTotal(total());
+        donutLegende(d);
+        applyCollapse();
+        var w = donutWerte(d), ds0 = chart.data.datasets[0];
+        chart.data.labels = d.map(function(x){ return x.name; });
+        ds0.data = w.display; ds0.originalData = w.orig;
+        ds0.backgroundColor = d.map(function(x){ return x.color; });
+        ds0.hoverBackgroundColor = d.map(function(x){ return x.__dimmed ? darken(x.color, 0.08) : brighten(x.color, 0.15); });
+        ds0.__realColors = d.map(function(x){ return x.__realColor || x.color; });
+        /* Ohne Fahrt wie beim Bau; sonst wandern die Segmente vom alten Anteil zum neuen. */
+        try { chart.update(ohneFahrt || weicheBewegung() ? "none" : undefined); } catch(e){}
+        return;
+      }
+      var zug = ++donutZug;
+      destroy();
+      donutSig = null; donutDaten = d;
+      if (isEmpty(d)){ empty({ icon: "donut" }); return; }
+      body.innerHTML =
+        '<div class="up-donut-layout">' +
+          '<div class="up-donut-wrap"><canvas></canvas>' +
+            '<div class="up-donut-center"><span class="n">' + esc(fmtTotal(total())) + '</span><span class="lbl">' + esc(cfg.centerLabel || "Citations") + '</span></div>' +
+          '</div><div class="up-donut-legend"></div>' +
+        '</div>';
+      var clickable = !!cfg.onSliceClick;
+      donutLegende(d);
       applyCollapse();
       loadChartJs().then(function(){
         if (!isOwner() || zug !== donutZug) return;
         var canvas = body.querySelector("canvas");
         if (!canvas) return;
         var ctx = canvas.getContext("2d");
-        var origData = d.map(function(x){ return x.share; });
-        /* floor the drawn value so a near-zero slice still gets a visible sliver; the tooltip
-           reads originalData so the number stays truthful */
-        var display = origData.map(function(v){ return Math.max(v, 1.0); });
-        var allZero = origData.every(function(v){ return v <= 0; });
+        var werte = donutWerte(d), origData = werte.orig, display = werte.display, allZero = werte.allZero;
         window.Chart.defaults.color = isDark() ? "#a0a0a0" : "#6b6f78";
         window.Chart.defaults.font = { family: "Geist, system-ui, -apple-system, Segoe UI, Roboto, Arial", size: 12 };
         try {
@@ -20340,13 +20474,14 @@
               plugins: { legend: { display:false }, tooltip: { enabled:false, external: donutTooltip } },
               onClick: (clickable && !allZero) ? function(evt, elements){
                 if (!elements || !elements.length) return;
-                var it = d[elements[0].index];
+                var it = donutDaten[elements[0].index];
                 if (it && it.key && it.key !== "other") cfg.onSliceClick(it.key);
               } : undefined,
               onHover: (clickable && !allZero) ? function(evt, elements){
                 evt.native.target.style.cursor = (elements && elements.length) ? "pointer" : "default";
               } : undefined }
           });
+          donutSig = donutSigOf(d); donutNull = allZero;
           /* Wartet der Teil noch auf seinen Auftritt, faehrt der Ring erst dann sichtbar auf
              (11.10.: vorher war er beim Erscheinen schon fast fertig). */
           if (!ohneFahrt) fahrtBeimAuftritt(body, function(){ return chart; });
