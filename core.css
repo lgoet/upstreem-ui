@@ -9162,6 +9162,14 @@ span.up-sumadd { height: var(--up-h-seg); cursor: default; }
 .up-explain.up-anleitung[data-seite="mitte"]::before, .up-explain.up-anleitung[data-seite="dock"]::before { display: none; }
 .up-anleitung[data-seite="dock"] .up-anl-vis { display: none; }
 .up-explain.up-anleitung[data-seite="dock"] { box-shadow: var(--up-e-3); }
+/* Zuruecktreten im Dock, solange ein Menue offen steht (makeAnleitung, zuruecktreten): nur die
+   Deckkraft, die Karte bleibt an ihrer Stelle. visibility folgt erst nach der Ausblendung, damit
+   sie dann auch fuer Tab und Vorleser weg ist; beim Wiederkommen gilt sofort die Regel darueber
+   (ohne Verzoegerung), die Karte blendet von dort aus ein. */
+.up-explain.up-anleitung.is-on.is-zurueck {
+  opacity: 0; pointer-events: none; visibility: hidden;
+  transition: opacity var(--up-t-1) var(--up-ease), visibility 0s linear var(--up-t-1);
+}
 @media (prefers-reduced-motion: reduce) { .up-anl-btn, .up-anl-skip { transition: none; } }
 
 /* EIN ZEICHENKNOPF IM SEITENKOPF, DER EINEN ZUSTAND HAT (15.10., "Guide" der Events): gedrueckt
