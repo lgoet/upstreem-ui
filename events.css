@@ -675,6 +675,10 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-sm-ic svg { width: 16px; height: 16px; }
 .uev-sm-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); color: var(--vc-text); }
 .uev-sm-angaben { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 12px; font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* "In lee-up.de/*" (17.10.): die Regel, unter der eine waehlbare Seite schon mitzaehlt -- leise
+   wie das Datum daneben. Gekappt, damit ein langer Pfad dem Namen nicht den Platz nimmt; den
+   ganzen Satz traegt der Tooltip der Zeile. */
+.uev-sm-in { min-width: 0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
 .uev-sm-reihe .uev-sm-alle { display: none; height: var(--up-h-chip); border-radius: var(--up-r-s); font-size: var(--up-fs-s); }
 /* Getauscht wird nur, wo etwas zum Tauschen steht (:has, 16.10.): ein gewaehlter, gesperrter
    oder voller Ordner behaelt beim Ueberfahren Zahl und Datum, statt eine leere Stelle zu zeigen. */
@@ -696,11 +700,14 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
   .uev-sm-alle-reihe { display: inline-flex; }
 }
 /* Telefon: das Datum weicht, die Zahl der Seiten bleibt -- der Name braucht den Platz. */
-@media (max-width: 520px) { .uev-sm-reihe .uev-sm-datum { display: none; } }
+@media (max-width: 520px) { .uev-sm-reihe .uev-sm-datum { display: none; } .uev-sm-in { max-width: 96px; } }
 /* In einem gewaehlten Ordner (oder schon getrackt): gewaehlt, aber nicht einzeln zu aendern.
    Voll (16.10.): passt nicht mehr hinein -- ebenso gedaempft, aber ohne Haken; der Grund steht im
    Tooltip und im Satz ueber dem Baum. */
-.uev-sm-reihe.is-gedeckt, .uev-sm-reihe.is-voll { opacity: .55; cursor: default; }
+/* Gedaempft wird je Kind, nicht die Zeile (17.10.): ein Ordner, der schon drin ist, traegt beim
+   Ueberfahren "Select all in folder" fuer seine Seiten -- der Knopf bleibt voll lesbar. */
+.uev-sm-reihe.is-gedeckt > :not(.uev-sm-alle), .uev-sm-reihe.is-voll { opacity: .55; }
+.uev-sm-reihe.is-gedeckt, .uev-sm-reihe.is-voll { cursor: default; }
 .uev-sm-reihe.is-gedeckt:hover, .uev-sm-reihe.is-voll:hover { background: transparent; }
 .uev-sm-mehr { align-self: flex-start; margin-left: calc(var(--uev-tiefe, 0) * 16px + 32px); height: var(--up-h-seg); font-size: var(--up-fs-s); }
 .uev-sm-fuss { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

@@ -720,7 +720,6 @@
     "Please enter a valid domain.": "Gib bitte eine gültige Domain ein.",
     "This can't be used: {wert}": "Das lässt sich nicht verwenden: {wert}",
     "{ziel} is already in the list.": "{ziel} steht schon in der Liste.",
-    "{ziel} is already covered by {regel}.": "{ziel} ist schon in {regel} enthalten.",
     "{ziel} is also covered by {regel} and gets its own row.": "{ziel} ist auch in {regel} enthalten und bekommt eine eigene Zeile.",
     "Add one URL at a time.": "Füg eine URL nach der anderen hinzu.",
     "This looks like a sitemap.": "Das sieht nach einer Sitemap aus.",
@@ -787,6 +786,9 @@
     "Too many sitemap requests. Please try again in {n} minutes.": "Zu viele Sitemap-Abrufe. Versuch es bitte in {n} Minuten noch einmal.",
     "Newest change": "Jüngste Änderung", "Select all in folder": "Alle im Ordner auswählen",
     "Track everything under {path}": "Alles unter {path} tracken", "Included in the folder": "Im Ordner enthalten",
+    /* 17.10.: eine Seite unter einer Regel bleibt waehlbar und sagt leise, wo sie schon mitzaehlt (smZustand) */
+    "In {regel}": "In {regel}",
+    "Also covered by {regel}. Adding it gives it its own row.": "Auch in {regel} enthalten. Hinzugefügt bekommt es eine eigene Zeile.",
     "Show {n} more": "{n} weitere zeigen", "No matching pages": "Keine passenden Seiten", "Add selection": "Auswahl übernehmen",
     /* 17.10.: nichts mehr zu waehlen, weil alles schon getrackt ist (smHoechstens) */
     "Everything in this sitemap is already added.": "Alles aus dieser Sitemap ist bereits hinzugefügt.",
@@ -3582,14 +3584,7 @@
       return z.kind === "url" && isArr(d.urls) && d.urls.some(function (u) { return "url|" + urlSchluessel(u.url) === z.key; });
     }
     /* Faellt dieses Ziel (im Add-Dialog) unter eine Regel, die das Event schon hat? Gibt die Regel
-       zurueck, sonst null. ES SPERRT NICHT (17.10., Nutzer: "already covered ... korrekt und
-       konsistent?"): das Detail wertet JEDES Ziel fuer sich aus -- ein url-Ziel bekommt seine Zeile
-       in "Affected URLs" mit Global share vorher, nachher und Change, ein Pfad seinen eigenen
-       Abschnitt mit Kennzahlen und Verlauf (get_impact_event_v3 targets[], analysis_v3 je Ziel,
-       Responses je p_event_target_id). Die Domain-Regel zeigt dieselbe Seite nur, sobald sie
-       zitiert ist, und ohne den Anteil vorher. Eine Seite unter einer Domain-Regel ist also keine
-       Wiederholung, sondern eine eigene Zeile -- sie kommt dazu, und am Feld steht leise, unter
-       welcher Regel sie schon mitzaehlt. Genau gleiche Ziele bleiben Doppel (zielImEvent). */
+       zurueck, sonst null -- nur fuer den leisen Satz am Feld, es sperrt nicht (warum: deckendeRegel). */
     function zielInEventRegel(p, z) {
       if (p.art !== "ziel") return null;
       var d = state.detail[p.eventId];
@@ -3605,25 +3600,35 @@
       var da = {};
       return r.gut.filter(function (z) { if (da[z.key] || zielInListe(p, z) || zielImEvent(p, z)) return false; da[z.key] = 1; return true; }).length;
     }
-    /* Steht das Ziel schon in der Liste -- genau so, oder unter einer Regel der Liste (eine URL unter
-       lee-up.de/*, ein Pfad unter einer Domain)? Gibt den Eintrag der Liste zurueck, sonst null.
-       Dieselbe Pfadgrenze wie die Datenbank und der Sitemap-Waehler (smVorhanden, Vertrag
-       Abschnitt 1): /blog deckt /blog und /blog/..., nicht /blogger; die Query zaehlt nicht;
-       host_all deckt jede Unterdomain, host nur genau diesen Host. Ein gedecktes Ziel waere doppelt
-       getrackt und zaehlte gegen den Deckel -- im Waehler steht dieselbe Seite darum "Included in
-       the folder" und gesperrt. */
+    /* Steht GENAU dieses Ziel schon in der Liste? Gibt den Eintrag zurueck, sonst null. Genau heisst
+       derselbe Schluessel (zielBauen): Gross/Klein am Host, Schraegstrich am Ende, Fragment und
+       Sternchen zaehlen nicht, www und Schema bei einer URL schon (url_norm_v1) -- das sind zwei
+       Ziele. Ein Ziel UNTER einer Regel der Liste ist seit 17.10. kein Doppel mehr (deckendeRegel). */
     function zielInListe(p, z) {
       var l = p.e.ziele, i;
       for (i = 0; i < l.length; i++) if (l[i].key === z.key) return l[i];
-      return deckendeRegel(l, z);
+      return null;
     }
-    /* Die Regel einer Liste, unter die z faellt (ohne genau gleiche Eintraege) -- geteilt von der
-       Liste des Dialogs (zielInListe) und den Regeln, die das Event schon hat (zielInEventRegel). */
+    /* Die Regel der Liste oder des Events, unter die z schon faellt -- fuer den leisen Satz. */
+    function zielUnterRegel(p, z) { return deckendeRegel(p.e.ziele, z) || zielInEventRegel(p, z); }
+    /* Die Regel einer Liste, unter die z faellt (ohne genau gleiche Eintraege), sonst null. Dieselbe
+       Pfadgrenze wie die Datenbank und der Sitemap-Waehler (smVorhanden, Vertrag Abschnitt 1):
+       /blog deckt /blog und /blog/..., nicht /blogger; die Query zaehlt nicht; host_all deckt jede
+       Unterdomain, host nur genau diesen Host.
+       GEDECKT IST KEIN DOPPEL (17.10., Nutzer: "Bitte ja, alles konsistent machen."): das Detail
+       wertet JEDES Ziel fuer sich aus -- ein url-Ziel bekommt seine eigene Zeile in "Affected URLs"
+       mit First cited, Global share vorher und nachher und Change (auch ungezitiert), ein Pfad
+       seinen eigenen Abschnitt mit Kennzahlen und Verlauf (get_impact_event_v3 targets[],
+       analysis_v3 je Ziel, Responses je p_event_target_id). Die Domain-Regel zeigt dieselbe Seite
+       erst, sobald sie zitiert ist, und ohne eigenen Vorher-Wert. Eine Seite unter einer Regel ist
+       also eine eigene Zeile mit eigenem Vorher-Wert: sie kommt dazu -- am Feld, im Assistenten wie
+       im Add-Dialog, und im Sitemap-Waehler --, und es steht nur leise da, unter welcher Regel sie
+       schon mitzaehlt. Doppel sind allein genau gleiche Ziele (zielInListe, zielImEvent). */
     function deckendeRegel(l, z) {
       var i, a = zerlegen(z.input);
       if (!a || !a.host) return null;
       for (i = 0; i < l.length; i++) {
-        var x = l[i], r = x.kind === "url" ? null : zerlegen(x.input);
+        var x = l[i], r = x.kind === "url" || x.key === z.key ? null : zerlegen(x.input);
         if (!r || !r.host) continue;
         if (x.kind === "host_all" ? !(a.host === r.host || a.host.slice(-r.host.length - 1) === "." + r.host) : a.host !== r.host) continue;
         if (x.kind === "path") {
@@ -3652,12 +3657,13 @@
       if (r.schlecht.length) { feldFehler("ziele", schlechtText(r.schlecht[0])); return false; }
       /* EIN DOPPEL SPERRT NICHTS MEHR (16.10. spaet, Nutzer: nach Back aus Schritt 4 dieselbe URL
          noch einmal eingegeben -> "Dieses Ziel steht schon in der Liste.", und Continue ging erst
-         nach dem Leeren des Feldes weiter). Was schon in der Liste steht oder von einer Regel darin
-         gedeckt ist, faellt still heraus: das Feld wird leer, die vorhandene Zeile leuchtet kurz
-         auf und kommt ins Bild, und am Feld steht leise, wo es schon ist -- kein Fehler, denn das
-         Ziel ist ja getrackt. Ebenso im Add-Dialog ein Ziel, das das Event schon hat; nur wenn dort
-         NICHTS Neues bleibt und die Liste leer ist, sagt der Fehler, dass es nichts hinzuzufuegen
-         gibt (sonst schlosse "Add" den Dialog, ohne etwas zu tun). */
+         nach dem Leeren des Feldes weiter). Was GENAU so schon in der Liste steht, faellt still
+         heraus: das Feld wird leer, die vorhandene Zeile leuchtet kurz auf und kommt ins Bild, und
+         am Feld steht leise, wo es schon ist -- kein Fehler, denn das Ziel ist ja getrackt. Ebenso
+         im Add-Dialog ein Ziel, das das Event schon hat; nur wenn dort NICHTS Neues bleibt und die
+         Liste leer ist, sagt der Fehler, dass es nichts hinzuzufuegen gibt (sonst schlosse "Add"
+         den Dialog, ohne etwas zu tun). Ein Ziel unter einer Regel der Liste oder des Events kommt
+         seit 17.10. dazu (deckendeRegel), mit leisem Satz. */
       var neu = [], schon = [], imEvent = 0, da = {}, regelNotiz = null;
       p.schreibNotiz = null;
       r.gut.forEach(function (z) {
@@ -3668,12 +3674,12 @@
         else if (zielImEvent(p, z)) { imEvent++; if (!p.schreibNotiz) p.schreibNotiz = { z: z }; }
         else {
           neu.push(z);
-          var rg = zielInEventRegel(p, z);
+          var rg = zielUnterRegel(p, z);
           if (rg && !regelNotiz) regelNotiz = { z: z, x: rg, eigen: true };
         }
       });
       /* Die Notiz zum Doppel geht vor (sie erklaert, warum etwas NICHT dazukam); sonst die zur
-         eigenen Zeile unter einer Regel des Events. */
+         eigenen Zeile unter einer Regel der Liste oder des Events. */
       if (!p.schreibNotiz) p.schreibNotiz = regelNotiz;
       if (!neu.length && imEvent && !p.e.ziele.length) { p.schreibNotiz = null; feldFehler("ziele", fehlerText(zieleDa() ? "impact_event_target_duplicate" : "impact_event_url_duplicate")); return false; }
       if (neu.length > zielFrei(p)) { p.schreibNotiz = null; feldFehler("ziele", zuVielText(p)); return false; }
@@ -3817,13 +3823,14 @@
       if (!el) return;
       var e = p.e, r = eingabeLesen(p), html = "", zuViel = false;
       var nz = p.schreibNotiz;
-      if (!r.teile.length && nz && (nz.eigen ? zielGewaehlt(p, nz.z) : nz.x ? e.ziele.indexOf(nz.x) >= 0 : true) && e.zielArt !== "marke") {
+      /* Der Satz zur eigenen Zeile gilt, solange Ziel UND Regel noch da sind -- eine entfernte
+         Regel der Liste nimmt ihn mit. */
+      if (!r.teile.length && nz && (nz.eigen ? zielGewaehlt(p, nz.z) && (zielGewaehlt(p, nz.x) || !!zielInEventRegel(p, nz.z)) : nz.x ? e.ziele.indexOf(nz.x) >= 0 : true) && e.zielArt !== "marke") {
         /* Das eben Eingegebene stand schon da (eingabeUebernehmen): leise sagen, wo -- bis zur
            naechsten Eingabe, und nur, solange der Eintrag noch in der Liste steht. */
         html = '<span class="uev-schreib-satz">' + esc(!nz.x ? fehlerText(zieleDa() ? "impact_event_target_duplicate" : "impact_event_url_duplicate")
           : nz.eigen ? ersetze(t("{ziel} is also covered by {regel} and gets its own row."), { ziel: nz.z.zeigen, regel: nz.x.zeigen })
-          : nz.x.key === nz.z.key ? ersetze(t("{ziel} is already in the list."), { ziel: nz.z.zeigen })
-          : ersetze(t("{ziel} is already covered by {regel}."), { ziel: nz.z.zeigen, regel: nz.x.zeigen })) + '</span>';
+          : ersetze(t("{ziel} is already in the list."), { ziel: nz.z.zeigen })) + '</span>';
       } else if (!r.teile.length) {
         var a = ARTEN.filter(function (x) { return x.k === e.zielArt; })[0];
         html = a && a.bsp ? '<span class="uev-schreib-lbl">' + esc(t("e.g.")) + '</span><span class="uev-notation is-leise">' + esc(e.zielArt === "host" && e.unterdomains ? a.bspAlle : a.bsp) + '</span>' : "";
@@ -4388,26 +4395,42 @@
       function zaehlt(k) { return p.sm.knoten[k] && !v.an[k] && !smGedeckt(p, p.sm.knoten[k]); }
       return { ordner: Object.keys(p.sm.wahl.ordner).filter(zaehlt), urls: Object.keys(p.sm.wahl.urls).filter(zaehlt) };
     }
+    /* Das Ziel, das ein Knoten beim Uebernehmen wird: Host -> ganze Domain, Ordner -> Pfad, Seite -> URL. */
+    function smZielVon(k) {
+      return k.art === "seite" ? zielBauen(k.loc, "url") : k.art === "host" ? zielBauen(k.host, "host") : zielBauen(k.host + k.pfad, "path");
+    }
     /* Was schon getrackt wird -- die Liste dieses Dialogs und im Add-Dialog die Ziele des Events
-       (16.10.). Ein Knoten, den eines davon trifft (genau dieselbe URL, oder eine Regel, unter die
-       er faellt), steht gewaehlt und gesperrt da und zaehlt nicht gegen den Deckel: bis 16.10.
-       zaehlte die Auswahl ihn mit, und smUebernehmen liess ihn dann still fallen. Gerechnet einmal
-       je Stand der Liste (sig) und je geladener Sitemap, nicht bei jedem Zeichnen -- eine Sitemap
-       darf 50 000 Seiten haben. an[key]: der Knoten selbst; n[key]: getrackte Seiten darunter. */
+       (16.10.). Ein Knoten, der GENAU so schon drin ist (derselbe Schluessel wie smZielVon),
+       steht gewaehlt und gesperrt da ("Already added") und zaehlt nicht gegen den Deckel: bis
+       16.10. zaehlte die Auswahl ihn mit, und smUebernehmen liess ihn dann still fallen. Ein
+       Knoten UNTER einer Regel davon bleibt seit 17.10. waehlbar -- er wird eine eigene Zeile mit
+       eigenem Vorher-Wert (deckendeRegel); er traegt nur leise, unter welcher Regel er schon
+       mitzaehlt. Bis dahin stand bei einem Event mit ganzer Domain jede Seite gesperrt da und der
+       Satz "Everything in this sitemap is already added.". Gerechnet einmal je Stand der Liste
+       (sig) und je geladener Sitemap, nicht bei jedem Zeichnen -- eine Sitemap darf 50 000 Seiten
+       haben. an[key]: der Knoten selbst; n[key]: getrackte Seiten darunter; regel[key]: die Regel,
+       unter die er faellt (nur, wenn er nicht selbst drin ist). */
     function smVorhanden(p) {
       var l = p.e.ziele.slice(), d = p.art === "ziel" ? state.detail[p.eventId] : null;
       if (d && isArr(d.targets)) d.targets.forEach(function (x) { var y = zielAusDb(x); if (y) l.push(y); });
       else if (d && isArr(d.urls)) d.urls.forEach(function (u) { var y = zielBauen(u && u.url, "url"); if (!y.fehler) l.push(y); });
       var sig = l.map(function (z) { return z.key; }).join("\n");
       if (p.sm.vorh && p.sm.vorh.sig === sig && p.sm.vorh.knoten === p.sm.knoten) return p.sm.vorh;
-      var v = p.sm.vorh = { sig: sig, knoten: p.sm.knoten, an: {}, n: {} };
+      var v = p.sm.vorh = { sig: sig, knoten: p.sm.knoten, an: {}, n: {}, regel: {} };
       if (!l.length) return v;
-      var urls = {}, mitUrls = false, regeln = [];
+      /* Je Art die Schluessel: smZielVon laeuft nur fuer Knoten, deren Art ueberhaupt drin ist --
+         bei 50 000 Seiten und keinem url-Ziel also kein zielBauen je Seite. */
+      var schl = { seite: {}, ordner: {}, host: {} }, mit = {}, regeln = [];
       l.forEach(function (z) {
-        if (z.kind === "url") { urls[z.key] = 1; mitUrls = true; return; }
+        var art = z.kind === "url" ? "seite" : z.kind === "path" ? "ordner" : z.kind === "host" ? "host" : "";
+        if (art) { schl[art][z.key] = 1; mit[art] = true; }
+        if (z.kind === "url") return;
         var x = zerlegen(z.input);
-        if (x && x.host) regeln.push({ kind: z.kind, host: x.host, pfad: z.kind === "path" ? x.pfad : "" });
+        if (x && x.host) regeln.push({ z: z, kind: z.kind, host: x.host, pfad: z.kind === "path" ? x.pfad : "" });
       });
+      /* Genannt wird die engste Regel: ein Pfad vor der Domain, ein laengerer Pfad vor einem kuerzeren. */
+      var RANG = { path: 0, host: 1, host_all: 2 };
+      regeln.sort(function (a, b) { return RANG[a.kind] - RANG[b.kind] || b.pfad.length - a.pfad.length; });
       /* Dieselbe Pfadgrenze wie die Datenbank (Vertrag Abschnitt 1): /blog trifft /blog und
          /blog/..., nicht /blogger; die Query zaehlt nicht. */
       function deckt(k) {
@@ -4415,15 +4438,19 @@
         for (var i = 0; i < regeln.length; i++) {
           var r = regeln[i];
           if (r.kind === "host_all" ? (k.host === r.host || k.host.slice(-r.host.length - 1) === "." + r.host)
-              : k.host === r.host && (r.kind === "host" || (k.art !== "host" && (pfad === r.pfad || pfad.indexOf(r.pfad + "/") === 0)))) return true;
+              : k.host === r.host && (r.kind === "host" || (k.art !== "host" && (pfad === r.pfad || pfad.indexOf(r.pfad + "/") === 0)))) return r.z;
         }
-        return false;
+        return null;
       }
       Object.keys(p.sm.knoten).forEach(function (key) {
-        var k = p.sm.knoten[key];
-        if (!deckt(k) && !(mitUrls && k.art === "seite" && urls[zielBauen(k.loc, "url").key])) return;
-        v.an[key] = true;
-        if (k.art === "seite") for (var e = k.eltern; e; e = e.eltern) v.n[e.key] = (v.n[e.key] || 0) + 1;
+        var k = p.sm.knoten[key], art = k.art === "seite" || k.art === "host" ? k.art : "ordner";
+        if (mit[art] && schl[art][smZielVon(k).key]) {
+          v.an[key] = true;
+          if (k.art === "seite") for (var e = k.eltern; e; e = e.eltern) v.n[e.key] = (v.n[e.key] || 0) + 1;
+          return;
+        }
+        var r = deckt(k);
+        if (r) v.regel[key] = r;
       });
       return v;
     }
@@ -4454,17 +4481,18 @@
        (Nutzer: "wirkt verwirrend") -- der Nenner war der freie Platz im Event, nicht das, was
        hier ueberhaupt waehlbar ist. Gezaehlt wie die Auswahl selbst: ein Ordner zaehlt eins,
        seine Seiten einzeln zaehlen mehr, beides zugleich geht nicht (smGedeckt) -- je Ordner
-       also das Groessere. Ein getrackter Knoten gibt nichts her, und was darunter liegt, deckt
-       dieselbe Regel. Ein Ordner, dessen Seiten alle schon als URL drin sind, bleibt waehlbar:
-       seine Regel zaehlt auch Seiten, die erst spaeter dazukommen. Einmal je v (smVorhanden). */
+       also das Groessere. Ein getrackter Knoten gibt selbst nichts her, was darunter liegt aber
+       schon (seit 17.10.: eine Seite unter einer Regel ist eine eigene Zeile, deckendeRegel) --
+       bei einem Event mit ganzer Domain also jede Seite. Ein Ordner, dessen Seiten alle schon als
+       URL drin sind, bleibt waehlbar: seine Regel zaehlt auch Seiten, die erst spaeter dazukommen.
+       Einmal je v (smVorhanden). */
     function smHoechstens(p, v) {
       if (v.max != null) return v.max;
       function geh(k) {
-        if (v.an[k.key]) return 0;
         var s = 0;
         k.seiten.forEach(function (x) { if (!v.an[x.key]) s++; });
         k.kinder.forEach(function (c) { s += geh(c); });
-        return Math.max(1, s);
+        return v.an[k.key] ? s : Math.max(1, s);
       }
       var n = 0;
       (p.sm.hosts || []).forEach(function (h) { n += geh(h); });
@@ -4482,13 +4510,21 @@
     function smOrdnerName(k) { return k.art === "host" ? k.host : k.pfad.slice(k.pfad.lastIndexOf("/")) ; }
     /* Der Zustand einer Zeile (16.10.): getrackt ("Already added", aus core), im gewaehlten Ordner
        enthalten, gewaehlt -- oder VOLL: nicht gewaehlt und passt nicht mehr hinein. Voll ist
-       gesperrt wie gedeckt, aber ohne Haken, und sagt im Tooltip warum. */
+       gesperrt wie gedeckt, aber ohne Haken, und sagt im Tooltip warum. Seit 17.10. dazu REGEL:
+       faellt unter eine Regel der Liste oder des Events, bleibt aber waehlbar (eigene Zeile,
+       deckendeRegel) -- der Tooltip sagt es, und in der Zeile steht leise "In {regel}". */
     function smZustand(p, dk, k) {
       var vorh = !!dk.v.an[k.key], gedeckt = !vorh && smGedeckt(p, k), gesperrt = vorh || gedeckt;
       var an = gesperrt || !!(k.art === "seite" ? p.sm.wahl.urls[k.key] : p.sm.wahl.ordner[k.key]);
-      var voll = !an && !smPasst(dk, k);
-      return { an: an, gesperrt: gesperrt, voll: voll,
-        tip: vorh ? t("Already added") : gedeckt ? t("Included in the folder") : voll ? t("No more targets fit into this event.") : "" };
+      var voll = !an && !smPasst(dk, k), regel = gesperrt ? null : dk.v.regel[k.key] || null;
+      return { an: an, gesperrt: gesperrt, vorh: vorh, voll: voll, regel: regel,
+        tip: vorh ? t("Already added") : gedeckt ? t("Included in the folder") : voll ? t("No more targets fit into this event.")
+          : regel ? ersetze(t("Also covered by {regel}. Adding it gives it its own row."), { regel: regel.zeigen }) : "" };
+    }
+    /* Der leise Hinweis in der Zeile, unter welcher Regel sie schon mitzaehlt (wie das Datum: Text
+       in --vc-third, kein Kasten, keine Pille). Steht auch fuer Touch da, wo kein Tooltip kommt. */
+    function smRegelText(z) {
+      return z.regel ? '<span class="uev-sm-in">' + esc(ersetze(t("In {regel}"), { regel: z.regel.zeigen })) + '</span>' : '';
     }
     function smReihe(p, k, flach, dk) {
       var z = smZustand(p, dk, k), tiefe = flach ? 0 : k.tiefe;
@@ -4502,7 +4538,7 @@
           '<span class="uev-sm-auf-platz" aria-hidden="true"></span>' +
           '<span class="up-filter-check">' + UC.icon("check", 3) + '</span>' +
           '<span class="uev-sm-name" title="' + esc(k.loc) + '">' + esc(name) + '</span>' +
-          (k.lastmod ? '<span class="uev-sm-angaben"><span class="uev-sm-datum">' + esc(datum(k.lastmod)) + '</span></span>' : '') +
+          (k.lastmod || z.regel ? '<span class="uev-sm-angaben">' + smRegelText(z) + (k.lastmod ? '<span class="uev-sm-datum">' + esc(datum(k.lastmod)) + '</span>' : '') + '</span>' : '') +
         '</div>';
       }
       var offen = !!p.sm.auf[k.key] && !flach;
@@ -4515,7 +4551,7 @@
         '<span class="up-filter-check">' + UC.icon("check", 3) + '</span>' +
         '<span class="uev-sm-ic">' + (k.art === "host" ? zielFavKlein(k.host, UC.icon("globe", 2)) : UC.icon(offen ? "folderOpen" : "folder", 2)) + '</span>' +
         '<span class="uev-sm-name">' + esc(titel) + '</span>' +
-        '<span class="uev-sm-angaben"><span class="uev-sm-n">' + esc(ersetze(t(k.n === 1 ? "{n} page" : "{n} pages"), { n: zahl(k.n) })) + '</span>' +
+        '<span class="uev-sm-angaben">' + smRegelText(z) + '<span class="uev-sm-n">' + esc(ersetze(t(k.n === 1 ? "{n} page" : "{n} pages"), { n: zahl(k.n) })) + '</span>' +
           (k.neu ? '<span class="uev-sm-datum" data-tip="' + esc(t("Newest change")) + '">' + esc(datum(k.neu)) + '</span>' : '') + '</span>' +
         smAlleHtml(dk, k, z, "uev-sm-alle", ' tabindex="-1"') +
       '</div>';
@@ -4523,11 +4559,16 @@
     /* "Select all in folder" -- oder, wenn die Seiten darin nicht mehr hineinpassen, der Hinweis,
        den Ordner (beim Host die Domain) selbst zu waehlen: eine Regel, die jede Seite darin
        deckt. Nichts, wenn der Ordner gewaehlt, gesperrt oder voll ist oder nichts mehr zu waehlen
-       hat. In der Zeile (Hover-Tausch) und fuer Touch als eigene Zeile darunter. */
+       hat. In der Zeile (Hover-Tausch) und fuer Touch als eigene Zeile darunter.
+       Ausnahme seit 17.10.: ein Ordner, der selbst schon drin ist ("Already added", z.vorh) --
+       seine Seiten sind waehlbar (eigene Zeilen, deckendeRegel), bei einem Event mit ganzer Domain
+       sonst nur Stueck fuer Stueck. Passen sie nicht, steht dort nichts: den Ordner noch einmal zu
+       waehlen, waere ein Doppel. */
     function smAlleHtml(dk, k, z, klasse, extra) {
       /* Kaeme nichts dazu (jede Seite darin schon gewaehlt oder getrackt), steht nichts da. */
       var dazu = smAlleNeu(dk, k) - ((dk.unter[k.key] || 0) - (dk.unterOrdner[k.key] || 0));
-      if (z.an || z.gesperrt || z.voll || dazu <= 0) return "";
+      if ((z.an && !z.vorh) || z.voll || dazu <= 0) return "";
+      if (z.vorh && !smAllePasst(dk, k)) return "";
       if (smAllePasst(dk, k)) return '<button type="button" class="up-quietbtn ' + klasse + '" data-sm-alle="' + esc(k.key) + '"' + extra + '>' + esc(t("Select all in folder")) + '</button>';
       return '<span class="' + klasse + ' is-nein"' + extra.replace(/ tabindex="-1"/, "") + '>' + esc(t(k.art === "host" ? "Too many pages, select the domain instead" : "Too many pages, select the folder instead")) + '</span>';
     }
@@ -4679,7 +4720,7 @@
          Unterordner bleiben, wie sie sind. */
       if (!k || !smAllePasst(dk, k)) return;
       var z = smZustand(p, dk, k);
-      if (z.an || z.gesperrt || z.voll) return;
+      if ((z.an && !z.vorh) || z.voll) return;
       (function geh(n) {
         if (n !== k && p.sm.wahl.ordner[n.key]) return;
         n.seiten.forEach(function (s) { if (!dk.v.an[s.key]) p.sm.wahl.urls[s.key] = true; });
@@ -4699,19 +4740,22 @@
         if (an) { try { l[i].focus({ preventScroll: false }); } catch (e) {} }
       }
     }
-    /* Die Auswahl als Ziele in die Liste -- Host -> ganze Domain, Ordner -> Pfad, Seite -> URL. */
+    /* Die Auswahl als Ziele in die Liste (smZielVon). */
     function smUebernehmen(p) {
       var gew = smGewaehlt(p), neu = [];
-      gew.ordner.forEach(function (key) {
-        var k = p.sm.knoten[key];
-        var z = k.art === "host" ? zielBauen(k.host, "host") : zielBauen(k.host + k.pfad, "path");
-        if (!z.fehler) neu.push(z);
-      });
-      gew.urls.forEach(function (key) { var z = zielBauen(p.sm.knoten[key].loc, "url"); if (!z.fehler) neu.push(z); });
+      gew.ordner.concat(gew.urls).forEach(function (key) { var z = smZielVon(p.sm.knoten[key]); if (!z.fehler) neu.push(z); });
       neu = neu.filter(function (z) { return !zielGewaehlt(p, z) && !zielImEvent(p, z); });
+      /* Kam etwas unter einer Regel dazu, steht am Feld derselbe leise Satz wie nach der Eingabe
+         (eingabeUebernehmen) -- gefragt VOR dem Hinzufuegen, sonst deckte die Auswahl sich selbst. */
+      p.schreibNotiz = null;
+      for (var i = 0; i < neu.length && !p.schreibNotiz; i++) {
+        var rg = zielUnterRegel(p, neu[i]);
+        if (rg) p.schreibNotiz = { z: neu[i], x: rg, eigen: true };
+      }
       /* Die letzte Wache: die Auswahl ist schon gedeckelt (smDeckel), aber uebernommen wird nie
          mehr, als in diesem Event noch frei ist -- auch nicht aus einem aelteren Bild. */
       if (neu.length > zielFrei(p)) {
+        p.schreibNotiz = null;
         p.sm.fehler = zuVielText(p);
         smZeichnen(p);
         return;
