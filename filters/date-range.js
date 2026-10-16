@@ -2260,13 +2260,23 @@
       setTimeout(function(){ los("Zeitraum gegeben"); }, 120);
     })();
   }
+  /* OHNE BUBBLE KEIN TOR (16.10., gemeldet aus der Next.js-App): das Tor haelt den Ruf an einen
+     Bubble-Workflow, bis dessen Boot-Kanal die States hat. In der App gibt es weder Workflow noch
+     Boot-Kanal -- bubble_fn_drawer_<art> ist dort der leere Empfaenger aus core (__upKern), und
+     die Drawer-Kalender sind lokal (data-local) und lesen den geteilten Zeitraum selbst.
+     Gemessen im Pruefstand (h, last3 mit Apply to all): Domain- und Brand-Kalender zeigten last3
+     auch ohne Tor, das Tor wartete 757/761ms auf nichts und schrieb dann die Bubble-Anleitung in
+     die Konsole. Darum: ohne Bubble gar nicht wickeln, und ein leerer core-Empfaenger geht auch
+     auf einer Bubble-Seite sofort durch -- es gibt keinen Workflow, der States lesen koennte. */
   function drawerTorWickeln(art){
     art = String(art || "").trim();
     if (!art || !/^[\w-]+$/.test(art)) return;
+    if (UC.ohneBubble && UC.ohneBubble()) return;
     var name = "bubble_fn_drawer_" + art;
     if (amFensterWickeln(name, function(original){
       return function(){
         var args = arguments, self = this;
+        if (original && original.__upKern) return original.apply(self, args);
         spur(art, "Ruf der Host-App gehalten");
         drawerTor(art, function(){ return original.apply(self, args); });
       };
