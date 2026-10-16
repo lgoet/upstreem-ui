@@ -1077,8 +1077,9 @@
                     .map(function (t) {
                       /* .up-topicchip aus core -- derselbe Chip, den die Prompts-Tabelle und die
                          Themenverwaltung zeichnen. is-static, weil er hier nur anzeigt. */
+                      /* Rueckfall ohne Themenpalette: das Token aus core (17.10.), kein Hex hier. */
                       return '<span class="up-topicchip is-static" style="--ust-tag-color:' +
-                             esc(farbeVon(t) || "#6b7280") + '">' +
+                             esc(farbeVon(t) || "var(--vc-ob-thema-rueckfall)") + '">' +
                         '<span class="up-topicchip-lbl">' + esc(t.name) + '</span></span>';
                     }).join("") +
                 '</div>'
@@ -3038,7 +3039,8 @@
       state.eigene.push({
         id: "eigen-" + i + "-" + state.eigene.length,
         name: "",
-        farbe: pal.length ? pal[i % pal.length] : "#6b7280"
+        /* Ohne Palette das Token aus core (17.10.) -- die Farbe geht nur in --uob-sw, nie an den Server. */
+        farbe: pal.length ? pal[i % pal.length] : "var(--vc-ob-thema-rueckfall)"
       });
       var idx = state.eigene.length - 1;
       var frisch = document.createElement("div");

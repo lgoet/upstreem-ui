@@ -381,6 +381,74 @@
          wo es deklariert ist -- stuende es nur hier, erbte ein dunkles Portal den hellen Glanz. */
       --up-sk-glanz: rgba(0,0,0,.03);
       --up-sk-verlauf: linear-gradient(90deg, rgba(0,0,0,0) 0%, var(--up-sk-glanz) 50%, rgba(0,0,0,0) 100%) 0 0 / 150% 100% repeat-x;
+      /* ---- Komponentenfarben: Quick Actions, Anmeldung, Onboarding (17.10.) ---- */
+      /* Bis zum 17.10. standen diese Werte als Literal in quick-actions.css, auth-page.css/.js und
+         onboarding-page.css/.js ("alles, was wir an Farben nutzen, nach core"). Wert fuer Wert
+         uebernommen, nichts nachgestellt: dieselbe Zeichenkette, damit auch die aufgeloesten
+         Variablen der Komponenten (--am-*, --uau-*) gleich bleiben. An :root, weil die Palette der
+         Quick Actions am <body> haengt.
+         QUICK ACTIONS (Palette --am-* in quick-actions.css). Hell eigene, etwas blaustichige Graue;
+         im Dunkeln zeigt die Palette auf die Menue-Token -- die dunklen Werte unten sind genau diese
+         Verweise, wie sie quick-actions.css im dunklen Block weiterhin selbst setzt. */
+      --vc-qa-rand: #e5e7eb;                 /* --am-border */
+      --vc-qa-rand-stark: #d9dde3;           /* --am-border-strong: Hover-Kante des Knopfes, Rollbalken */
+      --vc-qa-weich: #f7f8fa;                /* --am-soft: Grund des Knopfes beim Ueberfahren */
+      --vc-qa-weich-2: #f3f4f6;              /* --am-soft-2: Chips, Avatare, Tastenkuerzel */
+      --vc-qa-karte: #ffffff;                /* --am-card: die offene Palette, voll deckend */
+      --vc-qa-knopf: rgba(255,255,255,0.60); /* --am-trigger-bg: nur der geschlossene Knopf, 60 % Weiss */
+      --vc-qa-hover: #eef0f3;                /* --am-hover-bg: Zeichenknoepfe (Chip-x, Leeren, Stern) */
+      /* Der Schleier hinter der Palette: hell der Grund der Karte zu 80 % (Geist), dunkel Schwarz. */
+      --vc-qa-schleier: color-mix(in srgb, var(--vc-qa-karte) 80%, transparent);
+      /* Beschriftungs-Chip der zwei Knoepfe im Eingabefeld (.mqa-btip): wie .up-tip in BEIDEN
+         Themen die dunkle Karte -- deshalb nicht --vc-inverse-*, das sich im Dunkeln dreht. */
+      --vc-qa-tip-bg: #1f1f1b;
+      --vc-qa-tip-ink: #ffffff;
+      /* Die Taste "/" in der Erklaerkarte der Filter (.mqa-tip-key): hell eine helle Taste auf der
+         dunklen Karte; dunkel Grund und Rand der Palette. */
+      --vc-qa-taste-bg: #f4f4f5;
+      --vc-qa-taste-rand: #e4e2e4;
+      /* Ueberschrift des Fehlerzustands (.mqa-error .mqa-empty-title), in beiden Themen derselbe Ton. */
+      --vc-qa-fehler: #b4451f;
+      /* ANMELDUNG (auth-page). Der Hover des Google-Knopfes und des Themenschalters; dunkel die
+         Kopfflaeche, wie auth-page.css sie im dunklen Zweig selbst setzt. */
+      --vc-auth-hover: #f7f8fa;
+      /* Passwortstaerke: Stufe 2 ("Fair") und 3 ("Good"). 1 und 4 sind --vc-neg und --vc-pos. */
+      --vc-auth-staerke-mittel: #d98324;
+      --vc-auth-staerke-gut: #b8a02a;
+      /* Der Haken im gewaehlten Kaestchen (.uau-check): weiss auf der dunklen Akzentflaeche. */
+      --vc-auth-haken: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+      /* Die rechte Spalte: der graue Verlauf der Landingpage (wortgleich .ulh-bg-foto in
+         landing-hero.css -- wer eine Seite aendert, aendert die andere mit), die Lichter unten
+         (.ulh-bg-foto::after; im Dunkeln dimmt auth-page.css sie auf ein Viertel) und das
+         Linienmuster (.ulh-bg-grid). Begruendung der dunklen Fassungen im dunklen Block. */
+      --vc-auth-panel-verlauf: linear-gradient(to bottom,
+              rgba(246, 247, 248, 0) 16%, #f6f7f8 34%, #e8eaec 60%, #dbdde1 100%);
+      --vc-auth-panel-lichter:
+    radial-gradient(58% 72% at 44% 100%,
+      rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .24) 28%,
+      rgba(255, 255, 255, .1) 62%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(34% 52% at 61% 97%,
+      rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, .09) 40%,
+      rgba(255, 255, 255, .03) 72%, rgba(255, 255, 255, 0) 100%),
+    linear-gradient(to right,
+      rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .02) 18%, rgba(255, 255, 255, .06) 32%,
+      rgba(255, 255, 255, .09) 44%, rgba(255, 255, 255, .1) 50%, rgba(255, 255, 255, .09) 56%,
+      rgba(255, 255, 255, .06) 68%, rgba(255, 255, 255, .02) 82%, rgba(255, 255, 255, 0) 100%);
+      --vc-auth-panel-raster: repeating-linear-gradient(to right,
+              rgba(255, 255, 255, .55) 0, rgba(255, 255, 255, .55) 1px,
+              transparent 1px, transparent 8px);
+      /* Fremdmarke: das Google-Zeichen im Anmeldeknopf, Googles vier Farben, in jedem Thema gleich. */
+      --vc-marke-google-blau: #4285F4;
+      --vc-marke-google-gruen: #34A853;
+      --vc-marke-google-gelb: #FBBC05;
+      --vc-marke-google-rot: #EA4335;
+      /* ONBOARDING. Schrift in den Logokacheln (.uob-ident-logo, .uob-item-logo): die Kachel ist in
+         BEIDEN Themen hell, also traegt sie in beiden die hellen Schriftfarben (Begruendung in
+         onboarding-page.css). */
+      --vc-ob-kachel-text: #1f1f1b;
+      --vc-ob-kachel-muted: #6b6f78;
+      /* Themenfarbe, wenn die Themenpalette aus core fehlt (onboarding-page.js). */
+      --vc-ob-thema-rueckfall: #6b7280;
 }
 [data-theme="dark"], .up-root[data-theme="dark"] {
       /* Die Tiefen im dunklen Thema, wie Geist sie an .dark-theme fuehrt (15.10.): auf dunklem
@@ -433,6 +501,59 @@
       /* Der Glanz des Skeletts im Dunkeln: Weiss statt Schwarz (Begruendung im hellen Block). */
       --up-sk-glanz: rgba(255,255,255,.025);
       --up-sk-verlauf: linear-gradient(90deg, rgba(255,255,255,0) 0%, var(--up-sk-glanz) 50%, rgba(255,255,255,0) 100%) 0 0 / 150% 100% repeat-x;
+      /* ---- Komponentenfarben: Quick Actions, Anmeldung, Onboarding (17.10.) ---- */
+      /* Quick Actions im Dunkeln: die Menue-Token, auf die die Palette schon seit dem 07.09. zeigt
+         (Zuordnung im Kopf von quick-actions.css). Ein var() hier wird am Element mit
+         data-theme="dark" aufgeloest -- Palette und Overlay tragen das Attribut selbst. */
+      --vc-qa-rand: var(--up-menu-border);
+      --vc-qa-rand-stark: var(--vc-border);
+      --vc-qa-weich: var(--up-sel-bg);
+      /* Halbdurchsichtig (Linears --color-bg-translucent): liegt mal auf der Karte, mal auf der
+         aktiven Zeile und bleibt auf beiden eine leise Stufe darueber. */
+      --vc-qa-weich-2: #ffffff0d;
+      --vc-qa-karte: var(--up-menu-bg);
+      --vc-qa-knopf: var(--vc-field);
+      --vc-qa-hover: var(--up-sel-bg);
+      --vc-qa-schleier: rgba(0,0,0,0.55);
+      --vc-qa-tip-bg: #1f1f1b;
+      --vc-qa-tip-ink: #ffffff;
+      --vc-qa-taste-bg: var(--vc-qa-karte);
+      --vc-qa-taste-rand: var(--vc-qa-rand);
+      --vc-qa-fehler: #b4451f;
+      --vc-auth-hover: var(--vc-heading-bg);
+      --vc-auth-staerke-mittel: #d98324;
+      --vc-auth-staerke-gut: #b8a02a;
+      /* Im Dunkeln ist die Akzentflaeche hell, der Haken also dunkel (#1b1b1b). */
+      --vc-auth-haken: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231b1b1b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+      /* Die rechte Spalte der Anmeldung im Dunkeln: dasselbe Grau, gegenlaeufig. Im Hellen wird es
+         nach unten DUNKLER (Weiss -11/-28/-43), hier nach unten HELLER, vom alten Seitengrund
+         #1c1c1f aus um +5/+13/+21, der Blauanteil waechst mit der Tiefe wie dort. Das Linienmuster
+         dunkel statt hell (21.09.: "die line pattern rechts dunkler machen"): weisse Striche
+         leuchteten auf dem dunklen Grau als Gitter VOR der Flaeche; Schwarz mit .30 graebt sie ein.
+         Die Lichter bleiben dieselben, auth-page.css nimmt sie im Dunkeln auf ein Viertel. */
+      --vc-auth-panel-verlauf: linear-gradient(to bottom,
+              rgba(28, 28, 31, 0) 16%, #212224 34%, #2a2b2e 60%, #323336 100%);
+      --vc-auth-panel-lichter:
+    radial-gradient(58% 72% at 44% 100%,
+      rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .24) 28%,
+      rgba(255, 255, 255, .1) 62%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(34% 52% at 61% 97%,
+      rgba(255, 255, 255, .16) 0%, rgba(255, 255, 255, .09) 40%,
+      rgba(255, 255, 255, .03) 72%, rgba(255, 255, 255, 0) 100%),
+    linear-gradient(to right,
+      rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, .02) 18%, rgba(255, 255, 255, .06) 32%,
+      rgba(255, 255, 255, .09) 44%, rgba(255, 255, 255, .1) 50%, rgba(255, 255, 255, .09) 56%,
+      rgba(255, 255, 255, .06) 68%, rgba(255, 255, 255, .02) 82%, rgba(255, 255, 255, 0) 100%);
+      --vc-auth-panel-raster: repeating-linear-gradient(to right,
+              rgba(0, 0, 0, .30) 0, rgba(0, 0, 0, .30) 1px,
+              transparent 1px, transparent 8px);
+      --vc-marke-google-blau: #4285F4;
+      --vc-marke-google-gruen: #34A853;
+      --vc-marke-google-gelb: #FBBC05;
+      --vc-marke-google-rot: #EA4335;
+      --vc-ob-kachel-text: #1f1f1b;
+      --vc-ob-kachel-muted: #6b6f78;
+      --vc-ob-thema-rueckfall: #6b7280;
 }
 .up-root {
       /* --vc-muted ist um vier Einheiten dunkler als vorher (#6f737c), und das ist KEINE neue

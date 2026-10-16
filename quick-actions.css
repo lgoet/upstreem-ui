@@ -9,7 +9,10 @@
    Deliberately self-contained, not built on core.css's --vc-* tokens or .up-root: this is a
    page-level singleton (one #mira-quick-actions, not a per-instance .up-root component), and it
    already carried its own complete token set before the migration. Keeping its own --am-* scope
-   means it never needs core.css loaded at all. */
+   means it never needs core.css loaded at all.
+   SEIT DEM 17.10. GILT DAS FUER DIE FARBEN NICHT MEHR: jeder Wert der Palette kommt aus core.css
+   (Block "Komponentenfarben: Quick Actions, Anmeldung, Onboarding"), ohne Rueckfall. Die Namen
+   --am-* bleiben; die App laedt core.css ohnehin vor dieser Datei. */
 /* ---- DAS COMMAND MENU VON GEIST (15.10., angefordert: "nutze da bitte das Command Menu von Geist,
    bzw. passe Quick Actions so an") ------------------------------------------------------------
    Gelesen an vercel.com/geist/command-menu, an den berechneten Stilen des geoeffneten Beispiels
@@ -34,29 +37,33 @@
      es gar nicht bekommen. */
   --am-text: var(--vc-text); --am-muted: var(--vc-muted); --am-muted-2: var(--vc-third);
   --am-muted-3: var(--vc-fourth);
-  --am-up: #297a3a; --am-down: #cb2a2f;
-  --am-border: #e5e7eb; --am-border-strong: #d9dde3;
-  --am-soft: #f7f8fa; --am-soft-2: #f3f4f6;
+  /* Seit dem 17.10. auch alle Flaechen und Raender aus core (Block "Komponentenfarben: Quick
+     Actions, Anmeldung, Onboarding"): dieselben Werte, nur nicht mehr hier. Steigen und Fallen sind
+     die Zustandsfarben --vt-up/--vt-down, die hier schon Wert fuer Wert standen. */
+  --am-up: var(--vt-up); --am-down: var(--vt-down);
+  --am-border: var(--vc-qa-rand); --am-border-strong: var(--vc-qa-rand-stark);
+  --am-soft: var(--vc-qa-weich); --am-soft-2: var(--vc-qa-weich-2);
   /* --am-card is the PANEL surface and stays fully opaque -- the open panel has to be readable
      over whatever the page puts behind it. The 60% white belongs to the closed trigger button
      alone (--am-trigger-bg below); an earlier round put it on --am-card, which feeds both the
      button AND the panel, so the whole popup went translucent. Keep the two separate. */
-  --am-card: #ffffff;
-  --am-trigger-bg: rgba(255,255,255,0.60);
+  --am-card: var(--vc-qa-karte);
+  --am-trigger-bg: var(--vc-qa-knopf);
   /* Der Schleier nach Geist: der Grund zu 80 %, die Seite tritt zurueck statt dunkel zu werden.
      Aus --am-card gemischt (weiss), damit hier keine neue Farbe steht. Dunkel bleibt der bisherige
      Wert -- dort IST der Seitengrund fast schwarz, und 55 % Schwarz kommt Geists 80 % #0a0a0a nahe. */
   --am-overlay: color-mix(in srgb, var(--am-card) 80%, transparent);
   /* Die Palette liegt ueber einem Schleier, also die vierte Tiefe aus core (28.09.; vorher ein
-     eigener Zweilagen-Wert). Ohne core.css auf der Seite gilt der bisherige Wert als Rueckfall. */
-  --am-shadow: var(--up-e-4, 0 24px 64px rgba(17,18,20,0.18), 0 6px 16px rgba(17,18,20,0.07));
+     eigener Zweilagen-Wert). Ohne Rueckfallwert (17.10.): das Token steht in beiden Themen an
+     :root, ein Rueckfall hielte nur die alte Fassung fest. */
+  --am-shadow: var(--up-e-4);
   /* Grund und Tinte der Erklaerkarte (.up-explain, siehe "filter tooltip" weiter unten): die
-     umgekehrten Token aus core, und wo core fehlt, die Werte, die die Karte bisher hatte. */
-  --am-inv-bg: var(--vc-inverse-bg, #1f1f1b); --am-inv-ink: var(--vc-inverse-ink, #ffffff);
+     umgekehrten Token aus core. */
+  --am-inv-bg: var(--vc-inverse-bg); --am-inv-ink: var(--vc-inverse-ink);
   /* Was referenced by three hover states (.mqa-chip-x, .mqa-clear, .mqa-recent-x) but never
      defined in the original file — those hovers silently painted no background at all. Value
      matches the icon-button hover tone used across the rest of the app (e.g. --vc-switch-bg). */
-  --am-hover-bg: #eef0f3;
+  --am-hover-bg: var(--vc-qa-hover);
   --mqa-font: 'Geist','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
 }
 /* DIE DUNKLEN WERTE SIND JETZT DIE DER DROPDOWNS (07.09. angefordert: "mach den Quick-Actions-
@@ -95,12 +102,12 @@
 #mira-quick-actions[data-theme="dark"], .mqa-overlay[data-theme="dark"] {
   --am-text: var(--vc-text); --am-muted: var(--vc-muted); --am-muted-2: var(--vc-third);
   --am-muted-3: var(--vc-fourth);
-  --am-up: #62c073; --am-down: #ff6166;
+  --am-up: var(--vt-up); --am-down: var(--vt-down);
   --am-border: var(--up-menu-border); --am-border-strong: var(--vc-border);
-  --am-soft: var(--up-sel-bg); --am-soft-2: #ffffff0d; --am-card: var(--up-menu-bg); --am-trigger-bg: var(--vc-field);
-  --am-overlay: rgba(0,0,0,0.55);
-  --am-shadow: var(--up-e-4, 0 24px 64px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.4));
-  --am-inv-bg: var(--vc-inverse-bg, #eeedef); --am-inv-ink: var(--vc-inverse-ink, #1f1f1b);
+  --am-soft: var(--up-sel-bg); --am-soft-2: var(--vc-qa-weich-2); --am-card: var(--up-menu-bg); --am-trigger-bg: var(--vc-field);
+  --am-overlay: var(--vc-qa-schleier);
+  --am-shadow: var(--up-e-4);
+  --am-inv-bg: var(--vc-inverse-bg); --am-inv-ink: var(--vc-inverse-ink);
   --am-hover-bg: var(--up-sel-bg);
 }
 #mira-quick-actions, #mira-quick-actions *, #mira-quick-actions *::before, #mira-quick-actions *::after,
@@ -260,16 +267,14 @@
    Im Dunkeln beide kraeftiger (24 und 16%), weil ein Schatten auf dunklem Grund weniger hergibt.
    Alle vier Deckkraefte am 09.09. um 40 Prozent zurueck (22/12 und 40/26 mal 0.6).
    DER SCHATTEN IST SEIT DEM 28.09. DAS TOKEN --up-e-chip AUS CORE -- dieselben Zahlen, an einer
-   Stelle statt an acht. Diese Datei ist trotzdem eigenstaendig: ihr Bubble-Loader zieht nur
-   quick-actions.css/.js, und wo core nicht im Baum ist, gelten die Werte hier als Rueckfall
-   der var(). */
+   Stelle statt an acht. Seit dem 17.10. ohne Rueckfallwert (die Farben kommen alle aus core). */
 .mqa-chip {
   display: inline-flex; align-items: center; gap: 6.5px; height: 26px; padding: 0 6.5px 0 9.75px;
   border-radius: var(--up-r-m, 6px); border: 1px solid var(--am-border);
   background: color-mix(in srgb, var(--am-soft-2) 50%, transparent);
   /* Die weiche Lage zwei Pixel weiter (Streuung 2 -> 4, Versatz 1 -> 2). Die dichte Lage an der
      Kante bleibt: sie zeichnet die Kante, sie traegt nicht den Schatten. */
-  box-shadow: var(--up-e-chip, 0 1px 1px rgba(0,0,0,0.13), 0 2px 4px rgba(0,0,0,0.07));
+  box-shadow: var(--up-e-chip);
   /* 17.09.: SCHRIFT IN DER PRIMAERFARBE. Angefordert -- ein Chip, der im Suchfeld steht, ist eine
      Auswahl des Nutzers und keine Beschriftung. Der Unterschied zwischen Dimension und Wert
      bleibt am Gewicht (500 gegen 400). */
@@ -277,7 +282,7 @@
 }
 /* [data-theme="dark"] als Vorfahre, wie die Nachbarregeln dieser Datei. */
 [data-theme="dark"] .mqa-chip {
-  box-shadow: var(--up-e-chip, 0 1px 1px rgba(0,0,0,0.24), 0 2px 4px rgba(0,0,0,0.16)); }
+  box-shadow: var(--up-e-chip); }
 .mqa-chip b { font-weight: 400; color: var(--am-text); }   /* nur der Wert: -100 Gewicht, gleiche Farbe */
 .mqa-chip-x {
   width: 16px; height: 16px; border: 0; border-radius: var(--up-r-xs, 4px); background: transparent; cursor: pointer;
@@ -352,11 +357,11 @@
 .mqa-btip {
   position: fixed; left: 0; top: 0; z-index: 2147483001; box-sizing: border-box;
   height: 24px; display: inline-flex; align-items: center; padding: 0 9px;
-  border-radius: var(--up-r-m, 6px); background: #1f1f1b; color: #ffffff;
+  border-radius: var(--up-r-m, 6px); background: var(--vc-qa-tip-bg); color: var(--vc-qa-tip-ink);
   font-family: var(--mqa-font); font-size: 12px; font-weight: 500; line-height: 1;
   white-space: nowrap; pointer-events: none;
-  /* e-2 wie .up-tip in core (28.09.); ohne core der bisherige Wert. */
-  box-shadow: var(--up-e-2, 0 4px 14px rgba(0,0,0,0.18));
+  /* e-2 wie .up-tip in core (28.09.). */
+  box-shadow: var(--up-e-2);
   opacity: 0; transform: translateY(4px);
   transition: opacity .14s ease, transform .14s ease;
 }
@@ -491,7 +496,7 @@
   position: fixed; z-index: 2147483601; min-width: 180px; padding: 5px;
   border-radius: var(--up-r-2xl, 12px); background: var(--am-card); border: 1px solid var(--am-border);
   /* Ein Menue: e-2, dieselbe Tiefe wie jedes Dropdown der App (28.09.; vorher 0 10px 30px). */
-  box-shadow: var(--up-e-2, 0 10px 30px rgba(17,18,20,.14));
+  box-shadow: var(--up-e-2);
   opacity: 0; pointer-events: none; transform: translateY(4px);
   transition: opacity .12s ease, transform .12s ease;
 }
@@ -560,13 +565,12 @@
   flex: 0 0 auto; display: inline-flex; align-items: center; height: 22px; padding: 0 5.5px 0 8.25px;
   border-radius: var(--up-r-s, 4px); border: 1px solid var(--am-border);
   background: color-mix(in srgb, var(--am-soft-2) 50%, transparent);
-  /* Mit core derselbe Schatten wie der grosse Chip (--up-e-chip, Begruendung dort). Der Rueckfall
-     ohne core behaelt die alte, einen Pixel engere Fassung. */
-  box-shadow: var(--up-e-chip, 0 1px 1px rgba(0,0,0,0.13), 0 1px 3px rgba(0,0,0,0.07));
+  /* Derselbe Schatten wie der grosse Chip (--up-e-chip, Begruendung dort). */
+  box-shadow: var(--up-e-chip);
   color: var(--am-muted); font-size: 11px; font-weight: 500; white-space: nowrap; gap: 5.5px;
 }
 [data-theme="dark"] .mqa-mini {
-  box-shadow: var(--up-e-chip, 0 1px 1px rgba(0,0,0,0.24), 0 1px 3px rgba(0,0,0,0.16)); }
+  box-shadow: var(--up-e-chip); }
 /* Nur der Wert: eine Stufe leichter und gedaempft, genau wie in .mqa-chip b. */
 .mqa-mini b { font-weight: 400; color: var(--am-muted-2); }
 .mqa-recent-q { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -611,12 +615,11 @@
    keine einzige Regel. Dafuer steht darunter derselbe Satz noch einmal, in :where() -- also mit
    Spezifitaet 0: er verliert gegen jede Regel aus core, egal in welcher Reihenfolge die Dateien
    laden, und traegt nur dort, wo core fehlt. Grund und Tinte kommen aus --am-inv-bg/-ink (oben in
-   der Palette: das Token aus core, sonst der bisherige Wert); darum braucht auch der Rueckfall
-   keine eigene Dunkel-Regel. */
+   der Palette: das Token aus core); darum braucht auch der Rueckfall keine eigene Dunkel-Regel. */
 :where(.mqa-tip) {
   position: fixed; z-index: 2147483001; width: 248px; padding: 8px; border: 0;
   border-radius: var(--up-r-2xl, 12px); background: var(--am-inv-bg); color: var(--am-inv-ink);
-  box-shadow: var(--up-e-2, 0 12px 32px rgba(0,0,0,.28));
+  box-shadow: var(--up-e-2);
   font-family: var(--mqa-font); text-align: left; box-sizing: border-box;
   opacity: 0; pointer-events: none; transform: translateY(-4px);
   transition: opacity .14s ease, transform .14s ease;
@@ -648,7 +651,7 @@
 .mqa-tip-flow { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
 .mqa-tip-key {
   display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 20px; padding: 0 5px;
-  border-radius: var(--up-r-xs, 4px); border: 1px solid #e4e2e4; background: #f4f4f5;
+  border-radius: var(--up-r-xs, 4px); border: 1px solid var(--vc-qa-taste-rand); background: var(--vc-qa-taste-bg);
   color: var(--am-inv-bg); font-size: 11px; font-weight: 600;
 }
 .mqa-tip-arrow { color: var(--vc-fourth); font-size: 11px; }
@@ -663,16 +666,16 @@
 /* ---------- skeleton ----------
    Das Skelett aus core nach Geist (15.10.): Glanz (--up-sk-verlauf) und Bewegung (--up-sk-bewegung)
    von dort. Nur der Grund ist eigen: --vc-sk loest am <body> nicht auf (es steht an .up-root), also
-   6 % Schriftfarbe auf der Karte -- hell gerechnet #f1f1f1, Geists gray-100 ist #f2f2f2. Ohne
-   core.css auf der Seite tragen die Rueckfaelle dasselbe Bild (Glanz aus der Schriftfarbe,
-   mqaSkel faehrt dieselbe Strecke). Zeilen in der Geometrie der Eintraege oben (24er-Kachel). */
+   6 % Schriftfarbe auf der Karte -- hell gerechnet #f1f1f1, Geists gray-100 ist #f2f2f2. Der
+   Glanz seit dem 17.10. ohne Rueckfall (eine Farbe gehoert nach core); die Bewegung behaelt ihren
+   (mqaSkel faehrt dieselbe Strecke). Zeilen in der Geometrie der Eintraege oben (24er-Kachel). */
 .mqa-skel-row { display: flex; align-items: center; gap: 12px; min-height: 36px; padding: 4px 8px; }
 .mqa-skel-av { width: 24px; height: 24px; border-radius: var(--up-r-m, 6px); flex: 0 0 auto; }
 .mqa-skel-lines { flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px; }
 .mqa-skel-line { height: 9px; border-radius: var(--up-sk-r, 5px); }
 .mqa-skel-av, .mqa-skel-line {
   background: color-mix(in srgb, var(--am-text) 6%, var(--am-card))
-    var(--up-sk-verlauf, linear-gradient(90deg, rgba(0,0,0,0) 0%, color-mix(in srgb, var(--am-text) 3%, transparent) 50%, rgba(0,0,0,0) 100%) 0 0 / 150% 100% repeat-x);
+    var(--up-sk-verlauf);
   animation: var(--up-sk-bewegung, mqaSkel 1.5s ease-in-out infinite);
 }
 @keyframes mqaSkel { from { background-position: 300% 0; } to { background-position: 0 0; } }
@@ -683,7 +686,7 @@
 .mqa-empty { padding: 30px 16px; text-align: center; color: var(--am-muted); font-size: var(--up-fs-l, 14px); line-height: 20px; }
 .mqa-empty-title { font-size: var(--up-fs-l, 14px); font-weight: 500; color: var(--am-text); }
 .mqa-empty-sub { margin-top: 4px; font-size: var(--up-fs-l, 14px); color: var(--am-muted); }
-.mqa-error .mqa-empty-title { color: #b4451f; }
+.mqa-error .mqa-empty-title { color: var(--vc-qa-fehler); }
 
 @media (max-width: 560px) {
   .mqa-overlay { padding: 8vh 10px 12px; }
