@@ -19006,6 +19006,26 @@
   }
   /* Die Farbe der Hilfslinie fuer die Leinwand: aus der Marke --up-evm-linie, die hell und dunkel
      je ihren Wert traegt. */
+  /* Ein Tag als x, an die Zeichenflaeche gekappt (Band einer Kampagne, 17.10.): vor der ersten
+     Beschriftung der linke Rand, hinter der letzten der rechte. null, wenn der Tag kein Datum ist
+     oder das Diagramm keine Tage traegt. */
+  function evmXGekappt(chart, datum){
+    var labels = (chart.data && chart.data.labels) || [], ca = chart.chartArea, n = labels.length;
+    var d = evmTag(datum);
+    if (!ca || !n || isNaN(d)) return null;
+    var a = evmTag(dayKey(labels[0])), z = evmTag(dayKey(labels[n - 1]));
+    if (isNaN(a) || isNaN(z)) return null;
+    if (d < a) return ca.left;
+    if (d > z) return ca.right;
+    var x = evmX(chart, datum);
+    return x == null ? ca.right : Math.max(ca.left, Math.min(ca.right, x));
+  }
+  function evmBandFarbe(wrap){
+    var c = "";
+    try { c = getComputedStyle(wrap).getPropertyValue("--vc-kalender-band").trim(); } catch(e){}
+    /* Ohne Token kein Band: eine geratene Farbe waere ausserhalb der Themen. */
+    return c;
+  }
   function evmLinienFarbe(wrap){
     var c = "";
     try { c = getComputedStyle(wrap).getPropertyValue("--up-evm-linie").trim(); } catch(e){}
@@ -19162,8 +19182,10 @@
         return Array.isArray(l) ? l : [];
       }
       if (getPref("event_markers") !== "on") return [];
-      return getEvents().map(function(e){
-        return { id: e.id, date: e.event_date, name: e.name, type: e.event_type, color: e.color };
+      /* Kampagnen (17.10.): ende fuer das Band; geplante (status "planned", Start in der Zukunft)
+         gar nicht -- es ist noch nichts passiert, auf das sich ein Verlauf beziehen koennte. */
+      return getEvents().filter(function(e){ return e.status !== "planned"; }).map(function(e){
+        return { id: e.id, date: e.event_date, ende: e.end_date || null, name: e.name, type: e.event_type, color: e.color };
       });
     }
     var evmEbene = null, evmSig = "", evmZeiger = "", evmDraussen = null;
@@ -19297,7 +19319,24 @@
       beforeDatasetsDraw: function(c){
         var ca = c.chartArea, ctx = c.ctx;
         if (!ca) return;
-        var gruppen = evmGruppen(c, markerDaten());
+        var liste = markerDaten();
+        /* DAS BAND EINER KAMPAGNE (17.10.): vom Start bis zum Ende (m.ende) eine leise Flaeche
+           ueber die volle Hoehe, hinter Linien und Hilfslinien -- dieselbe Farbe wie das Band im
+           Kalender (--vc-kalender-band), damit "Zeitraum" in der App ein Bild hat. Ein Start vor
+           dem Bild beginnt am linken Rand, ein Ende danach endet am rechten; liegt beides
+           daneben, kein Band. Der Pin steht weiter am Start. */
+        var baender = liste.filter(function(m){ return m && m.ende; }), bandFarbe = baender.length ? evmBandFarbe(wrap) : "";
+        if (bandFarbe){
+          ctx.save();
+          ctx.fillStyle = bandFarbe;
+          baender.forEach(function(m){
+            var a = evmXGekappt(c, m.date), b = evmXGekappt(c, m.ende);
+            if (a == null || b == null || b < a) return;
+            ctx.fillRect(Math.round(a), ca.top, Math.max(1, Math.round(b - a)), ca.bottom - ca.top);
+          });
+          ctx.restore();
+        }
+        var gruppen = evmGruppen(c, liste);
         if (!gruppen.length) return;
         ctx.save();
         ctx.strokeStyle = evmLinienFarbe(wrap);

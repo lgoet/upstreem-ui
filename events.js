@@ -246,10 +246,14 @@
      Kalender-Zeichen (03.10.), der Typ OHNE Zeichen in einer leisen Marke aus core (03.10.: "den
      Typ ohne Icon davor in einem kleinen Chip"); sein Zeichen steht ohnehin gross im Profilbild. */
   function angabenHtml(ev, klasse) {
-    var tp = typ(ev);
+    var tp = typ(ev), st = statusInfo(ev);
+    /* Kampagnen (17.10.): der Zeitraum statt des Tages, dahinter der Status als dritte Angabe --
+       in der Karte und im Kopf des Details derselbe. Laufend in der Akzent-Tinte (is-laeuft):
+       das Einzige, was sich gerade bewegt; geplant und abgeschlossen bleiben leise. */
     return '<div class="uev-angaben' + (klasse ? " " + klasse : "") + '">' +
-      '<span class="uev-angabe uev-angabe-datum">' + UC.icon("calendar", 2) + '<span>' + esc(datum(ev.event_date)) + '</span></span>' +
+      '<span class="uev-angabe uev-angabe-datum">' + UC.icon("calendar", 2) + '<span>' + esc(mitEnde(ev) ? zeitraum(ev.event_date, ev.end_date) : datum(ev.event_date)) + '</span></span>' +
       '<span class="up-marke is-leise" data-i18n="' + esc(tp.label) + '">' + esc(t(tp.label)) + '</span>' +
+      (st ? '<span class="uev-angabe uev-status is-' + st.s + '">' + UC.icon(st.ic, 2) + '<span>' + esc(st.text) + '</span></span>' : '') +
     '</div>';
   }
   /* Der Umfang als Kennzahlen-Raster (Vorlage des Nutzers vom 03.10.: Bezeichnung ueber dem Wert).
@@ -391,7 +395,12 @@
     "impact_event_too_many_targets": "An event can track at most 50 targets.",
     "impact_event_target_duplicate": "This target is already part of the event.",
     "impact_event_target_not_found": "This target is no longer part of the event.",
-    "impact_event_targets_unavailable": "Rules aren't available yet. Please use specific URLs instead."
+    "impact_event_targets_unavailable": "Rules aren't available yet. Please use specific URLs instead.",
+    /* Kampagnen (17.10., Vertrag B.3). impact_event_invalid_end_date sagt den Grund im hint
+       (ENDE_HINT); campaigns_unavailable ist wieder unserer: v4 war da und ist es nicht mehr. */
+    "impact_event_invalid_end_date": "Please check the end date.",
+    "impact_event_end_date_frozen": "This campaign has ended. Its end date can't be changed anymore.",
+    "impact_event_campaigns_unavailable": "Date ranges aren't available right now. Please try again later."
   };
   /* impact_event_invalid_param nennt das Feld in hint -- je Feld ein eigener Satz, damit am Feld
      steht, WAS nicht passt. */
@@ -541,6 +550,9 @@
     /* Jedes Ratenlimit (<bereich>_rate_limited, 429) sagt dasselbe -- der Bereich ist intern. */
     if (/_rate_limited$/.test(c)) return t(FEHLER.impact_event_rate_limited);
     if (c === "impact_event_invalid_param") return t(FEHLER_PARAM[h] || "Please check your input and try again.");
+    /* Mit Kampagnen darf der Start bis zu 12 Monate in der Zukunft liegen (Vertrag B.3). */
+    if (c === "impact_event_invalid_date" && kampagneDa()) return t("The start date must be within the last 6 months or the next 12 months.");
+    if (c === "impact_event_invalid_end_date") return t(ENDE_HINT[h] || FEHLER.impact_event_invalid_end_date);
     /* E1b: beim Anlegen steht in hint die URL selbst, die nicht ging -- bei mehreren ist das die
        einzige Stelle, die sagt, welche. Es ist die Eingabe des Nutzers; gezeigt wird sie als Text. */
     if (c === "impact_event_invalid_url" && h && !/^p_/.test(h)) return ersetze(t("This URL can't be used: {url}"), { url: h });
@@ -553,9 +565,10 @@
   /* Welches Feld eines Popups einen Fehler beheben kann: zuerst nach hint (dem Feld, das der
      Server nennt), sonst nach dem Code. */
   var FELD_VON_HINT = { p_name: "name", p_description: "text", p_event_type: "typ", p_icon: "aussehen", p_color: "aussehen",
-    p_cover: "cover", p_event_date: "datum", p_tag_ids: "topics", p_tagmode: "topics", p_scope_mode: "topics", p_urls: "ziele", p_url: "ziele", p_targets: "ziele" };
+    p_cover: "cover", p_event_date: "datum", p_end_date: "datum", p_tag_ids: "topics", p_tagmode: "topics", p_scope_mode: "topics", p_urls: "ziele", p_url: "ziele", p_targets: "ziele" };
   /* "ziele" (15.10.): URLs und Regeln stehen in EINEM Feld, Schritt 3 bzw. im Add-Dialog. */
   var FELD_VON_CODE = { impact_event_name_required: "name", impact_event_invalid_date: "datum",
+    impact_event_invalid_end_date: "datum", impact_event_end_date_frozen: "datum",
     impact_event_topics_required: "topics", impact_event_invalid_topics: "topics", impact_event_tagmode_unavailable: "topics", impact_event_no_active_prompts: "topics",
     impact_event_invalid_url: "ziele", impact_event_url_duplicate: "ziele", impact_event_too_many_urls: "ziele",
     impact_event_invalid_target: "ziele", impact_event_too_many_targets: "ziele", impact_event_target_duplicate: "ziele", impact_event_targets_unavailable: "ziele" };
@@ -564,6 +577,32 @@
     if (c === "impact_event_invalid_param" || FELD_VON_CODE[c]) return FELD_VON_HINT[h] || FELD_VON_CODE[c] || "";
     return "";
   }
+
+  /* Kampagnen (17.10.). "Date", "Date range", "Running", "Save", "Edit event" und "Tracking"
+     stehen schon in core bzw. oben -- nicht noch einmal (Katalog-Kollision). */
+  if (UC.addMessages) UC.addMessages("de", {
+    "Planned": "Geplant", "Completed": "Abgeschlossen", "Running, day {n} of {m}": "Läuft, Tag {n} von {m}", "Day {n}": "Tag {n}",
+    "Single day": "Einzelner Tag", "Select dates": "Zeitraum wählen", "End date": "Enddatum", "Since event": "Seit Event",
+    "Planned events can be fully edited until they start.": "Geplante Events kannst du bis zum Start komplett ändern.",
+    "We compare the campaign with the same number of days before it, and show what happens after it ends.":
+      "Wir vergleichen die Kampagne mit gleich vielen Tagen davor und zeigen, was nach ihrem Ende passiert.",
+    "We compare the days after this date with the days before it.": "Wir vergleichen die Tage nach diesem Datum mit den Tagen davor.",
+    "Starts on {date}": "Startet am {date}", "Results appear from then on.": "Ab dann erscheinen hier die Ergebnisse.",
+    "Campaign report, {range}": "Abschlussbericht, {range}",
+    "So far, compared with the {n} days before the start": "Bisher, verglichen mit den {n} Tagen vor dem Start",
+    "Compared with the {n} days before the event": "Verglichen mit den {n} Tagen vor dem Event",
+    "During": "Während", "Follow-up period, until {date}": "Nachlauf, bis {date}",
+    "Starts after the campaign ends": "Beginnt nach dem Ende der Kampagne",
+    "Start date and scope can't be changed": "Startdatum und Umfang lassen sich nicht ändern",
+    "Only the creator of this event or a team admin can change the end date.": "Nur wer das Event angelegt hat oder ein Team-Admin kann das Enddatum ändern.",
+    "The start date must be within the last 6 months or the next 12 months.": "Der Start muss in den letzten 6 oder den nächsten 12 Monaten liegen.",
+    "Please check the end date.": "Bitte prüf das Enddatum.",
+    "The end date can't be before the start date.": "Das Enddatum kann nicht vor dem Start liegen.",
+    "A campaign can run for at most 183 days.": "Eine Kampagne kann höchstens 183 Tage laufen.",
+    "The end date can't be in the past.": "Das Enddatum kann nicht in der Vergangenheit liegen.",
+    "This campaign has ended. Its end date can't be changed anymore.": "Diese Kampagne ist beendet. Ihr Enddatum lässt sich nicht mehr ändern.",
+    "Date ranges aren't available right now. Please try again later.": "Zeiträume sind gerade nicht verfügbar. Bitte versuch es später noch einmal."
+  });
 
   /* DER KATALOG IST EINER FUER DIE GANZE APP. Ein Schluessel, den core schon kennt, steht hier
      NICHT noch einmal: addMessages ueberschreibt ihn ueberall. So hatte Teil 2 "Brand" zu "Marke",
@@ -958,6 +997,77 @@
   }
   function unbekannt(erg) { return !erg || erg.status === 0 || erg.status === 401; }
 
+  /* ---- KAMPAGNEN MIT ZEITRAUM (17.10., bubble/events_ausbau_db_auftrag_17_10.md Teil B und
+     Nachtrag) -------------------------------------------------------------------------------
+     Ein Event bekommt optional ein Ende (end_date) und darf bis heute + 365 in der Zukunft
+     beginnen. Status, Tag x von y und der Abschlussbericht kommen von der Datenbank (status,
+     day_number, day_count, report_final_on, report_final) -- gebaut GEGEN den Vertrag, bevor
+     die DB ihn liefert. Darum wie ZIELE_DA ein Schalter: KAMPAGNE_DA.stand wird true, sobald
+     cached_impact_event_analysis_v4 antwortet (Pruefaufruf mit der Null-Kennung, aendert nichts)
+     oder eine Zeile des Speichers status traegt; false bei PGRST202. Bis dahin bleibt alles beim
+     heutigen Stand: kein Zeitraum im Anlegen, kein Status, Analyse v3 -- nie ein Fehler, nie
+     halb. */
+  var KAMPAGNE_DA = { stand: null, laeuft: null };
+  var KAMPAGNE_FN = { uevAnalysis: "cached_impact_event_analysis_v4", uevCreate: "create_impact_event_v4", uevUpdate: "update_impact_event_v3" };
+  /* Vertrag B.1: Laenge hoechstens 183 Tage (Start und Ende zaehlen mit), Start bis heute + 365. */
+  var KAMPAGNE_TAGE = 183, ZUKUNFT_TAGE = 365;
+  var NULL_ID = "00000000-0000-0000-0000-000000000000";
+  function kampagneDa() { return KAMPAGNE_DA.stand === true; }
+  /* Eine Zeile mit status kann es nur geben, wenn Teil B eingespielt ist -- dann ist die Frage
+     beantwortet, ohne einen Aufruf. */
+  function kampagneMerken(ev) {
+    if (KAMPAGNE_DA.stand == null && ev && typeof ev.status === "string" && ev.status) KAMPAGNE_DA.stand = true;
+  }
+  /* Der Status NUR, wenn die Datenbank ihn liefert. Hier abgeleitet waere er eine Angabe, die die
+     Datenbank nicht kennt -- ein "Day 45" auf jedem alten Event, bevor es Teil B gibt. */
+  function statusVon(ev) {
+    var s = ev && typeof ev.status === "string" ? ev.status : "";
+    return s === "planned" || s === "running" || s === "completed" ? s : "";
+  }
+  function mitEnde(ev) { return !!(ev && ev.end_date && !isNaN(tagMs(ev.end_date))); }
+  /* Abgeschlossen gibt es nur MIT Ende (Entscheidung des Nutzers 4): ein Tages-Event laeuft offen,
+     auch wenn eine Antwort etwas anderes sagte. */
+  function istFertig(ev) { return statusVon(ev) === "completed" && mitEnde(ev); }
+  function istGeplant(ev) { return statusVon(ev) === "planned"; }
+  /* Tag x seit dem Start (Start = 1): day_number der Datenbank, fehlt er, aus dem Datum. */
+  function tagNummer(ev) {
+    var n = num(ev.day_number);
+    if (n != null) return n;
+    var a = tagMs(ev.event_date);
+    return isNaN(a) ? null : Math.floor((tagMs(heuteIso()) - a) / 864e5) + 1;
+  }
+  function tagAnzahl(ev) {
+    var n = num(ev.day_count);
+    if (n != null) return n;
+    var a = tagMs(ev.event_date), b = tagMs(ev.end_date);
+    return isNaN(a) || isNaN(b) ? null : Math.round((b - a) / 864e5) + 1;
+  }
+  /* Der Status als Angabe mit Zeichen, wie Datum und Typ -- keine Pille mit Punkt. Wenige
+     Woerter, ohne Fachsprache: "Planned", "Running, day 5 of 21", "Completed"; ein offenes
+     Tages-Event zaehlt nur seine Tage ("Day 45" -- das Datum steht schon daneben). */
+  function statusInfo(ev) {
+    var s = statusVon(ev);
+    if (!s) return null;
+    if (s === "planned") return { s: s, ic: "clock", text: t("Planned") };
+    if (istFertig(ev)) return { s: "completed", ic: "checkCircle", text: t("Completed") };
+    var n = tagNummer(ev), m = mitEnde(ev) ? tagAnzahl(ev) : null;
+    if (n == null || n < 1) return { s: "running", ic: "timer", text: t("Running") };
+    if (m != null) return { s: "running", ic: "timer", text: ersetze(t("Running, day {n} of {m}"), { n: zahl(Math.min(n, m)), m: zahl(m) }) };
+    return { s: "running", ic: "timer", text: ersetze(t("Day {n}"), { n: zahl(n) }) };
+  }
+  /* Ein Zeitraum in einer Zeile: im selben Jahr steht das Jahr nur am Ende. */
+  function zeitraum(a, b) {
+    var x = datum(a), y = datum(b), jx = /(\d{4})\s*$/.exec(x), jy = /(\d{4})\s*$/.exec(y);
+    if (jx && jy && jx[1] === jy[1]) x = x.replace(/[\s,.]*\d{4}\s*$/, "");
+    return x + " – " + y;
+  }
+  /* Der Text eines Fehlers am Enddatum (Vertrag B.3, hint). */
+  var ENDE_HINT = {
+    "p_end_date: >= p_event_date": "The end date can't be before the start date.",
+    "p_end_date: max 183 days": "A campaign can run for at most 183 days.",
+    "p_end_date: >= today": "The end date can't be in the past."
+  };
+
   /* ---- ZIELE AUS EINER EINGABE (15.10., Vertrag Abschnitt 1) --------------------------------
      Ein Ziel ist eine Regel: url (genau diese Adresse), path (alles unter host/pfad, Pfadgrenze
      an "/"), host (genau dieser Host), host_all (Host und alle Unterdomains). Die Datenbank
@@ -1192,13 +1302,27 @@
         return;
       }
       var tm = team();
+      /* Kampagnen (17.10.): mit Teil B gehen Analyse, Anlegen und Bearbeiten an die neuen
+         Fassungen -- v4 ist fuer ein Tages-Event gleich v3 (Vertrag B.2), also immer. */
+      var fn4 = kampagneDa() && KAMPAGNE_FN[kanal] ? KAMPAGNE_FN[kanal] : "";
       (tm ? Promise.resolve(tm) : (UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(""))).then(function (tm2) {
         /* Kein Team nach 10 s: kein Aufruf ohne p_team (der Server antwortete mit forbidden) --
            die Stelle, die wartet, bekommt den allgemeinen Fehler statt ewig zu laden. */
         if (!tm2) return { ok: false, status: 0, fehler: { code: "", message: "", hint: "", details: "" } };
-        return UC.rpc(k.fn, mitTeam(o, tm2), { timeoutMs: k.ms });
+        return UC.rpc(fn4 || k.fn, mitTeam(o, tm2), { timeoutMs: k.ms });
       }).then(function (erg) {
         erg = erg || { ok: false, status: 0, fehler: {} };
+        /* v4 fehlt doch (Rueckweg der DB): fuer den Rest der Seite der heutige Stand. Ein Aufruf,
+           der nur mit v4 Sinn hat (Zeitraum, Fenster "Since event", Umfang eines geplanten
+           Events), endet mit einem Satz statt still ohne diese Teile zu speichern. */
+        if (fn4 && !erg.ok && fehltFn(erg)) {
+          KAMPAGNE_DA.stand = false;
+          var nurV4 = o && (o.p_end_date != null || o.p_window != null || (kanal === "uevUpdate" && (o.p_event_date != null || o.p_scope_mode != null)));
+          /* p_notify (Teil A) kennt nur v4: ohne ihn noch einmal, der Schalter kommt dann nicht an. */
+          if (!nurV4) { var o3 = {}; for (var q in o) if (q !== "p_notify") o3[q] = o[q]; rufen(kanal, o3, kx, spaet); return; }
+          kam(kanal, { ok: false, status: 400, fehler: { code: "", message: "impact_event_campaigns_unavailable", hint: "", details: "" } }, kx);
+          return;
+        }
         /* "And" (p_tagmode) und die Funktion kennt den Parameter noch nicht: PostgREST meldet das
            als fehlende Funktion (PGRST202), obwohl es sie gibt. Das ist KEIN Grund fuer den
            Rueckweg zu Bubble -- der wuerde den Kanal fuer die ganze Sitzung umstellen, und Bubble
@@ -1238,7 +1362,7 @@
       }
       /* Eine Analyse fuer Fenster oder Filter von vorhin: setAnalysis legt unter den AKTUELLEN
          Filtern ab -- eine spaete Antwort waere dort falsch einsortiert. Die aktuelle kommt noch. */
-      if (kanal === "uevAnalysis") { if (kx.sig === analyseSig()) ctrl.setAnalysis(d); return; }
+      if (kanal === "uevAnalysis") { if (kx.sig === analyseSig()) ctrl.setAnalysis(d, kx.sig); return; }
       if (kanal === "uevScopePreview") { if (popup && popup === kx.popup) ctrl.setVorschau(d); return; }
       if (kanal === "uevDelete") { ctrl.setGeloescht(d); return; }
       /* Anlegen, Bearbeiten, URL hinzufuegen und entfernen antworten mit dem Detail (Vertrag 1,
@@ -1329,14 +1453,14 @@
       suche: gemerkt("suche", ""), typen: gemerkt("typen", []),
       detail: gemerkt("detail", {}), detailLaden: false, detailFehler: false,
       analyse: gemerkt("analyse", {}), analyseLaden: false, analyseFehler: false,
-      fenster: gemerkt("fenster", 30), metrik: gemerkt("metrik", "visibility"),
+      fenster: gemerkt("fenster", 30), seit: gemerkt("seit", false), metrik: gemerkt("metrik", "visibility"),
       modelle: gemerkt("modelle", null), maerkte: gemerkt("maerkte", null),
       respUrl: "", geloescht: {}
     };
     function persist() {
       if (root.isConnected === false) return;
       STORE[instanceId] = { suche: state.suche, typen: state.typen, detail: state.detail, analyse: state.analyse,
-        fenster: state.fenster, metrik: state.metrik, modelle: state.modelle, maerkte: state.maerkte };
+        fenster: state.fenster, seit: state.seit, metrik: state.metrik, modelle: state.modelle, maerkte: state.maerkte };
     }
     function dieDetail() { return state.eventId ? state.detail[state.eventId] || null : null; }
     /* Der Intent-Filter der App gehoert in die Signatur (13.10.): sonst zeigte ein Wechsel die
@@ -1347,10 +1471,22 @@
        an, wurde nie gefunden, und das Detail blieb im Skelett (gemeldet: "Responses kommen an, aber
        es bleibt im Skeleton"). id und fen sind die der Antwort, ohne sie die aktuellen. */
     function analyseSig(id, fen) {
-      return [id != null ? id : state.eventId, fen != null ? fen : state.fenster, (state.modelle || []).join(","),
+      return [id != null ? id : state.eventId, fen != null ? fen : fensterSig(id), (state.modelle || []).join(","),
               (state.maerkte || []).join(","), JSON.stringify(intentP())].join("|");
     }
     function dieAnalyse() { return state.analyse[analyseSig()] || null; }
+    /* Das Fenster einer Anfrage (17.10.): eine Kampagne kennt keins ("k", feste Abschnitte
+       Vorher/Waehrend/Danach), ein offenes Event zusaetzlich "Since event" ("seit"). */
+    function dasEvent(id) { id = id != null ? id : state.eventId; return state.detail[id] || listeEvent(id); }
+    function fensterSig(id) {
+      var ev = dasEvent(id);
+      if (kampagneDa() && mitEnde(ev)) return "k";
+      return seitAktiv(ev) ? "seit" : state.fenster;
+    }
+    /* "Since event" (Nachtrag 17.10., Abschnitt 2): nur bei einem offenen, schon laufenden Event
+       und nur mit v4 -- bei Kampagnen gelten die Abschnitte, ein geplantes hat noch kein Danach. */
+    function seitMoeglich(ev) { return kampagneDa() && !!ev && !mitEnde(ev) && !istGeplant(ev); }
+    function seitAktiv(ev) { return !!state.seit && seitMoeglich(ev); }
     function listeEvent(id) {
       var l = UC.getEvents ? UC.getEvents() : [];
       for (var i = 0; i < l.length; i++) if (String(l[i].id) === String(id)) return l[i];
@@ -1685,6 +1821,8 @@
       elMain.innerHTML =
         '<div class="uev-detail">' +
           '<div class="uev-dkopf" data-sek="kopf"></div>' +
+          /* Ein geplantes Event (17.10.): statt Skelett fuer immer ein klarer Zustand. */
+          '<section class="uev-geplant" data-sek="geplant"></section>' +
           /* Steuerzeile und Kennzahlen als EINE Gruppe (04.10.): Zeitraum und Filter gehoeren zu den
              Zahlen darunter, mit 16px wie zwischen den Karten -- nicht mit den 40 zwischen den
              Abschnitten, mit denen die Zeile vorher zwischen Kopf und Zahlen schwebte. */
@@ -1696,6 +1834,8 @@
                 FENSTER.map(function (f) {
                   return '<button class="up-seg-btn" type="button" data-fenster="' + f + '">' + esc(ersetze(t("{n} days"), { n: f })) + '</button>';
                 }).join("") +
+                /* "Since event" (17.10.): nur bei offenen Events mit v4, sonst verborgen (segSetzen). */
+                '<button class="up-seg-btn uev-fenster-seit" type="button" data-fenster="seit" hidden>' + esc(t("Since event")) + '</button>' +
               '</div>' +
               /* Models und Markets in der Filterleiste der App (filters/filter-bar.js, "Filters") --
                  dieselbe wie auf jeder Seite (03.10. angefordert). Die Leiste zieht die zwei lokalen
@@ -1712,6 +1852,9 @@
           '</div>' +
           /* Ohne Aussenrahmen wie in Shopping und Ads (07.10. angefordert): .up-kpiband.is-offen. */
           '<div class="up-kpiband is-offen uev-kpis" data-sek="kpis"></div>' +
+          /* Der Abschlussbericht einer Kampagne (17.10.): Vorher, Waehrend, Danach an der Stelle
+             der Kennzahlen -- dieselben drei Kennzahlen je Abschnitt. */
+          '<div class="uev-bericht" data-sek="bericht"></div>' +
           '</div>' +
           '<section class="uev-sek uev-sek-chart">' +
             sekKopf("Performance around event", "How your brand developed in the affected prompts before and after the event.",
@@ -1754,9 +1897,9 @@
       elMain.querySelector(".uev-fenster").addEventListener("click", function (e) {
         var b = e.target.closest("[data-fenster]");
         if (!b) return;
-        var f = parseInt(b.getAttribute("data-fenster"), 10);
-        if (f === state.fenster) return;
-        state.fenster = f; persist();
+        var seit = b.getAttribute("data-fenster") === "seit", f = seit ? state.fenster : parseInt(b.getAttribute("data-fenster"), 10);
+        if (f === state.fenster && seit === seitAktiv(dasEvent())) return;
+        state.fenster = f; state.seit = seit; persist();
         analyseAnfordern(); responsesAnfordern(); renderDetail();
       });
       elMain.querySelector(".uev-metrik").addEventListener("click", function (e) {
@@ -1803,8 +1946,12 @@
         : !!((state.modelle && state.modelle.length) || (state.maerkte && state.maerkte.length));
     }
     function segSetzen() {
-      var fb = elMain.querySelectorAll(".uev-fenster [data-fenster]");
-      for (var i = 0; i < fb.length; i++) fb[i].classList.toggle("is-active", parseInt(fb[i].getAttribute("data-fenster"), 10) === state.fenster);
+      var fb = elMain.querySelectorAll(".uev-fenster [data-fenster]"), ev = dasEvent(), seit = seitAktiv(ev);
+      for (var i = 0; i < fb.length; i++) {
+        var istSeit = fb[i].getAttribute("data-fenster") === "seit";
+        if (istSeit) fb[i].hidden = !seitMoeglich(ev);
+        fb[i].classList.toggle("is-active", istSeit ? seit : !seit && parseInt(fb[i].getAttribute("data-fenster"), 10) === state.fenster);
+      }
       var mb = elMain.querySelectorAll(".uev-metrik [data-metrik]");
       for (var j = 0; j < mb.length; j++) mb[j].classList.toggle("is-active", mb[j].getAttribute("data-metrik") === state.metrik);
       if (UC.segJetzt) { try { UC.segJetzt(elMain.querySelector(".uev-fenster")); UC.segJetzt(elMain.querySelector(".uev-metrik")); } catch (e) {} }
@@ -1816,10 +1963,20 @@
     function chartMarker() {
       var d = dieDetail() || listeEvent(state.eventId), a = dieAnalyse();
       if (!d) return [];
-      var l = [{ id: d.id, date: d.event_date, name: d.name, type: d.event_type, color: d.color, fokus: true }];
+      /* Eine Kampagne als Band (17.10.): von ihrem ersten bis zum letzten Tag mit phase "during"
+         im Verlauf (Vertrag B.2), sonst aus windows, zuletzt aus end_date -- core zeichnet es
+         hinter die Linien und kappt es an den Raendern. */
+      var ende = null;
+      if (mitEnde(d) && kampagneDa()) {
+        var tr = a && isArr(a.trend) ? a.trend : [];
+        tr.forEach(function (p) { if (p && p.phase === "during") ende = String(p.day).slice(0, 10); });
+        if (!ende && a && a.windows) ende = a.windows.effective_during_to || a.windows.during_to || null;
+        if (!ende) ende = d.end_date;
+      }
+      var l = [{ id: d.id, date: d.event_date, ende: ende, name: d.name, type: d.event_type, color: d.color, fokus: true }];
       if (a && isArr(a.overlaps) && (!UC.getPref || UC.getPref("event_markers") !== "off")) {
         a.overlaps.forEach(function (o) {
-          l.push({ id: o.event_id, date: o.event_date, name: o.name, type: o.event_type, color: o.color });
+          l.push({ id: o.event_id, date: o.event_date, ende: o.end_date || null, name: o.name, type: o.event_type, color: o.color });
         });
       }
       return l;
@@ -1956,12 +2113,21 @@
     function renderHinweise() {
       var el = elMain.querySelector('[data-sek="hinweise"]'), a = dieAnalyse();
       if (!a) { el.innerHTML = ""; return; }
-      var w = a.windows || {}, h = [];
+      var w = a.windows || {}, h = [], ev = dasEvent();
       /* Angaben wie Datum und Typ im Kopf: Zeichen + Text, leise (03.10.: "warum ist jede
          Information in diesen kleinen Chips mit den Punkten davor? Die habe ich sonst nirgendwo"). */
       function angabe(ic, text, tip) {
         return '<span class="uev-angabe"' + (tip ? ' data-tip="' + esc(tip) + '"' : "") + '>' + UC.icon(ic, 2) + '<span>' + esc(text) + '</span></span>';
       }
+      /* WOMIT VERGLICHEN WIRD (17.10.), dort, wo sonst der Fenster-Umschalter steht: eine laufende
+         Kampagne "bisher" gegen gleich viele Tage davor, die abgeschlossene als Bericht ueber ihren
+         Zeitraum, "Since event" mit der Laenge davor, wenn sie gedeckelt ist (Nachtrag 2). */
+      if (kampagneDa() && mitEnde(ev) && !istGeplant(ev)) {
+        var lk = num(w.campaign_days) || tagAnzahl(ev);
+        if (istFertig(ev)) h.push(angabe("checkCircle", ersetze(t("Campaign report, {range}"), { range: zeitraum(ev.event_date, ev.end_date) })));
+        else if (lk) h.push(angabe("timer", ersetze(t("So far, compared with the {n} days before the start"), { n: zahl(lk) })));
+      }
+      if (seitAktiv(ev) && w.before_capped === true) h.push(angabe("info", ersetze(t("Compared with the {n} days before the event"), { n: zahl(num(w.before_days) || KAMPAGNE_TAGE) })));
       if (w.limited_baseline === true) h.push(angabe("info", ersetze(t("Limited baseline ({n} days)"), { n: zahl(w.before_observed_days) }),
         t("Less historical data is available before this event for the selected period.")));
       var ov = isArr(a.overlaps) ? a.overlaps.length : 0;
@@ -2013,6 +2179,64 @@
       /* Je Event gemerkt: dasselbe Event noch einmal gezeichnet zaehlt nicht von vorn, ein anderes
          schon. */
       if (UC.hochzaehlen) UC.hochzaehlen(el, "events|" + instanceId + "|" + state.eventId);
+    }
+
+    /* ---- GEPLANT UND ABGESCHLOSSEN (17.10., Kampagnen) ---------------------------------------
+       Ein geplantes Event hat noch keine Ergebnisse: statt eines Skeletts, das nie endet, der
+       Leerzustand aus core mit dem Starttag und dem Weg zum Bearbeiten (geplant ist alles
+       aenderbar). Umfang und Ziele stehen darunter im Abschnitt "Event scope". */
+    function renderGeplant() {
+      var el = elMain.querySelector('[data-sek="geplant"]'), ev = dasEvent();
+      if (!el) return;
+      if (!istGeplant(ev)) { el.innerHTML = ""; return; }
+      el.innerHTML = '<div class="up-box uev-geplant-box">' + UC.leerHtml({ icon: "clock",
+        titel: ersetze(t("Starts on {date}"), { date: datum(ev.event_date) }), text: t("Results appear from then on."),
+        knopf: t("Edit event"), knopfAttr: 'data-aktion="edit" data-event-id="' + esc(ev.id) + '"' }) + '</div>';
+    }
+    /* Der Abschlussbericht: drei Abschnitte nebeneinander (am Telefon untereinander), je Abschnitt
+       sein Zeitraum und die drei Kennzahlen. "During" und "After" mit dem Trend gegen "Before"
+       (delta bzw. delta_post, Vertrag B.2) -- dieselben Chips wie in den Kacheln. Solange der
+       Nachlauf laeuft (report_final false), sagt "After" das in einer Zeile. */
+    var PHASEN = [
+      { key: "before", titel: "Before", wert: "before", delta: "" },
+      { key: "during", titel: "During", wert: "after", delta: "delta" },
+      { key: "post", titel: "After", wert: "post", delta: "delta_post" }
+    ];
+    function phasenZeiten(ev, w) {
+      var L = num(w.campaign_days) || tagAnzahl(ev) || 0, start = tagMs(w.during_from || ev.event_date);
+      var vorL = Math.min(L, 180);
+      return {
+        before: [w.before_from || (isNaN(start) ? null : isoAus(start - vorL * 864e5)), w.before_to || (isNaN(start) ? null : isoAus(start - 864e5))],
+        during: [w.during_from || ev.event_date, w.effective_during_to || w.during_to || ev.end_date],
+        post: [w.post_from, w.effective_post_to || w.post_to]
+      };
+    }
+    function renderBericht() {
+      var el = elMain.querySelector('[data-sek="bericht"]'), kp = elMain.querySelector('[data-sek="kpis"]');
+      var ev = dasEvent(), a = dieAnalyse();
+      if (!el) return;
+      var an = kampagneDa() && istFertig(ev) && !!a;
+      if (kp) kp.hidden = an;
+      if (!an) { el.innerHTML = ""; return; }
+      var w = a.windows || {}, z = phasenZeiten(ev, w), final = w.report_final === true || ev.report_final === true;
+      var leer = !(a.cohort && num(a.cohort.comparable_prompt_count) > 0);
+      el.innerHTML = PHASEN.map(function (ph) {
+        var von = z[ph.key][0], bis = z[ph.key][1];
+        var zeilen = METRIKEN.map(function (m) {
+          var b = a.affected && a.affected[m.key] ? a.affected[m.key] : {};
+          var v = leer ? null : b[ph.wert], d = leer || !ph.delta ? null : num(b[ph.delta]);
+          return '<div class="uev-phase-zeile"><dt>' + esc(t(m.label)) + '</dt><dd>' + wertHtml(m.key, v) + (d != null ? trendHtml(m.key, d) : '') + '</dd></div>';
+        }).join("");
+        var fuss = "";
+        if (ph.key === "post" && !final && bis) fuss = ersetze(t("Follow-up period, until {date}"), { date: datum(bis) });
+        if (ph.key === "post" && !von) fuss = t("Starts after the campaign ends");
+        return '<div class="uev-phase is-' + ph.key + '">' +
+          '<div class="uev-phase-kopf"><span class="uev-phase-titel">' + esc(t(ph.titel)) + '</span>' +
+            (von && bis ? '<span class="uev-phase-zeit">' + esc(zeitraum(von, bis)) + '</span>' : '') + '</div>' +
+          '<dl class="uev-phase-werte">' + zeilen + '</dl>' +
+          (fuss ? '<p class="uev-phase-fuss">' + esc(fuss) + '</p>' : '') +
+        '</div>';
+      }).join("");
     }
 
     /* Ein Farbwert aus den Marken des Themas -- die Kurve braucht ihn als Zeichenkette. */
@@ -2576,6 +2800,14 @@
           (modus === "and" && topics.length > 1 ? '<span class="uev-scope-modus">' + esc(t("Only prompts in all of these topics")) + '</span>' : '') + '</div>'));
       }
       zeilen.push(zeile("Affected prompts", '<span class="uev-scope-wert">' + esc(prompts(d.affected_prompt_count)) + '</span>'));
+      /* Geplant (17.10.): die Ziele hier, weil die Abschnitte mit ihren Kennzahlen erst ab dem
+         Start erscheinen -- sonst sagte die Seite nicht, was getrackt werden wird. */
+      if (istGeplant(d) && isArr(d.targets) && d.targets.length) {
+        zeilen.push(zeile("Tracking", '<div class="uev-scope-chips">' + d.targets.map(function (x) {
+          var z = zielAusDb(x);
+          return z ? '<span class="up-marke is-leise">' + esc(z.zeigen) + '</span>' : '';
+        }).join("") + '</div>'));
+      }
       var vgl = num(d.comparison_prompt_count);
       zeilen.push(zeile("Comparison group", '<span class="uev-scope-wert">' + esc(vgl ? prompts(vgl) : t("No comparison group")) + '</span>', vgl ? "vergleich" : ""));
       /* Was nicht in die Vorher/Nachher-Zahlen eingeht, in ganzen Saetzen: Prompts, die es vor dem
@@ -2660,9 +2892,17 @@
     }
 
     function renderDetail() {
-      if (!elMain.querySelector(".uev-detail")) return;
+      var box = elMain.querySelector(".uev-detail");
+      if (!box) return;
+      /* Die Gestalt nach dem Status (17.10.): geplant ohne Steuerung, Chart und Ergebnisse (es gibt
+         noch keine), eine Kampagne ohne Fenster-Umschalter (ihre Abschnitte stehen fest), die
+         abgeschlossene als Bericht. Ohne Teil B traegt kein Event einen Status -- alles wie bisher. */
+      var ev = dasEvent();
+      box.classList.toggle("is-geplant", istGeplant(ev));
+      box.classList.toggle("is-kampagne", kampagneDa() && mitEnde(ev) && !istGeplant(ev));
+      box.classList.toggle("is-bericht", istFertig(ev));
       krumenNeu();
-      renderKopf(); renderHinweise(); renderKpis(); renderChart(); renderMarkt(); renderZiele(); renderUrls(); renderScope(); renderResp();
+      renderKopf(); renderGeplant(); renderHinweise(); renderKpis(); renderBericht(); renderChart(); renderMarkt(); renderZiele(); renderUrls(); renderScope(); renderResp();
       if (anleitung && anleitung.laeuft()) anleitung.neu();
     }
 
@@ -2708,7 +2948,12 @@
          Die Kohorte bleibt die beim Anlegen eingefrorene -- gefiltert wird innerhalb. */
       var ip = intentP();
       for (var k in ip) if (Object.prototype.hasOwnProperty.call(ip, k)) body[k] = ip[k];
-      rufen("uevAnalysis", body, { sig: analyseSig() }, spaet);
+      /* "Since event" (Nachtrag 17.10.): die Form waehlt die DB, Vorschlag p_window = "since"
+         ohne Fensterlaenge. Bei einer Kampagne ignoriert v4 p_window_days (Vertrag B.2). */
+      kampagneMerken(dasEvent());
+      if (seitAktiv(dasEvent())) { body.p_window_days = null; body.p_window = "since"; }
+      state.analyseSigLief = analyseSig();
+      rufen("uevAnalysis", body, { sig: state.analyseSigLief }, spaet);
     }
     /* Das Fenster der Responses: ab dem Event-Tag bis zum Ende des Analysefensters, hoechstens
        heute (Vertrag 3.10: "das gewaehlte Analyse-Fenster uebergeben"). Ab dem Event-Tag und nicht
@@ -2974,9 +3219,18 @@
       return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
     }
     function tagIso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
-    function grenzen() {
-      var hi = tagAus(heuteIso());
-      return { lo: new Date(hi.getFullYear(), hi.getMonth(), hi.getDate() - DATUM_TAGE), hi: hi };
+    function grenzen(e) {
+      var heute = tagAus(heuteIso());
+      /* Mit Kampagnen (17.10., Vertrag B.1) darf der Start bis heute + 365 liegen. Beim Waehlen des
+         Endes: ab dem Start, hoechstens 183 Tage lang (Start und Ende zaehlen mit). */
+      var hi = kampagneDa() ? new Date(heute.getFullYear(), heute.getMonth(), heute.getDate() + ZUKUNFT_TAGE) : heute;
+      var lo = new Date(heute.getFullYear(), heute.getMonth(), heute.getDate() - DATUM_TAGE);
+      if (e && e.endeAb) lo = tagAus(e.endeAb);
+      if (e && e.bereich && e.wahlEnde && e.datum) {
+        var s = tagAus(e.datum);
+        return { lo: lo, hi: new Date(s.getFullYear(), s.getMonth(), s.getDate() + KAMPAGNE_TAGE - 1), heute: heute, start: s };
+      }
+      return { lo: lo, hi: hi, heute: heute };
     }
     /* Ob eine Eingabe eine Adresse ist und welche Art Ziel, sagen seit 15.10. zerlegen,
        artVorschlag und zielBauen (oben, ausserhalb der Wurzel). */
@@ -3126,19 +3380,29 @@
        Regeln stehen ohne Elternklasse in date-range.css, die Zellen sehen also genau so aus. Der
        gewaehlte Tag ist Anfang und Ende zugleich, mit beiden Ecken: ein Band aus einer Zelle. */
     function kalender(e) {
-      var g = grenzen(), m = e.monat || tagAus(e.datum) || g.hi;
+      var g = grenzen(e), m = e.monat || tagAus(e.datum) || g.heute;
       var monat = new Date(m.getFullYear(), m.getMonth(), 1);
       var boden = new Date(g.lo.getFullYear(), g.lo.getMonth(), 1), decke = new Date(g.hi.getFullYear(), g.hi.getMonth(), 1);
       var vor = new Date(monat.getFullYear(), monat.getMonth() - 1, 1) >= boden;
       var nach = new Date(monat.getFullYear(), monat.getMonth() + 1, 1) <= decke;
       var start = new Date(monat.getFullYear(), monat.getMonth(), 1 - (monat.getDay() + 6) % 7);
-      var heute = tagIso(g.hi), zellen = "";
+      var heute = tagIso(g.heute), zellen = "";
+      /* Ein Zeitraum (17.10.) wie im Kalender aus date-range.js: Anfang und Ende gefuellt, die Tage
+         dazwischen im Band (is-in), die Ecken je Wochenzeile (is-edge-l/-r). Ohne Ende ist der
+         Anfang eine Zelle mit beiden Ecken -- wie der einzelne Tag. */
+      var bis = e.bereich && e.ende ? e.ende : e.datum;
       for (var i = 0; i < 42; i++) {
         var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
         if (d.getMonth() !== monat.getMonth()) { zellen += '<span class="udr-day is-out" aria-hidden="true"></span>'; continue; }
-        var iso = tagIso(d), aus = d < g.lo || d > g.hi;
-        zellen += '<button type="button" class="udr-day' + (iso === heute ? " is-today" : "") +
-          (iso === e.datum ? " is-start is-end is-edge-l is-edge-r" : "") + '" data-tag="' + iso + '"' + (aus ? " disabled" : "") + '>' + d.getDate() + '</button>';
+        var iso = tagIso(d), aus = d < g.lo || d > g.hi, drin = !!e.datum && iso >= e.datum && iso <= bis;
+        var spalte = i % 7, kl = "";
+        if (drin) {
+          kl = iso === e.datum ? " is-start" : iso === bis ? " is-end" : " is-in";
+          if (iso === e.datum && iso === bis) kl = " is-start is-end";
+          if (spalte === 0 || iso === e.datum || d.getDate() === 1) kl += " is-edge-l";
+          if (spalte === 6 || iso === bis || new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getMonth() !== d.getMonth()) kl += " is-edge-r";
+        }
+        zellen += '<button type="button" class="udr-day' + (iso === heute ? " is-today" : "") + kl + '" data-tag="' + iso + '"' + (aus ? " disabled" : "") + '>' + d.getDate() + '</button>';
       }
       return '<div class="udr-month">' +
         '<div class="udr-month-head">' +
@@ -3149,9 +3413,47 @@
         '<div class="udr-dows">' + WOCHENTAGE.map(function (w) { return '<span class="udr-dow">' + w + '</span>'; }).join("") + '</div>' +
         '<div class="udr-grid">' + zellen + '</div></div>';
     }
+    /* Der Text im Wahlknopf: ein Tag, ein Zeitraum oder die halbe Wahl ("1 Sep – End date"). */
+    function datumText(e) {
+      if (!e.datum) return t(e.bereich ? "Select dates" : "Select a date");
+      if (!e.bereich) return datum(e.datum);
+      return e.ende ? zeitraum(e.datum, e.ende) : datum(e.datum) + " – " + t("End date");
+    }
     function datumFeld(e) {
-      return '<div class="up-filter uev-wahl" data-wahlwrap="datum">' + wahlKnopf("datum", "calendar", e.datum ? datum(e.datum) : t("Select a date"), !e.datum) +
-        '<div class="up-menu uev-wahlmenu uev-datumwahl" aria-hidden="true">' + kalender(e) + '</div></div>';
+      /* "Single day | Date range" (17.10.) nur mit Kampagnen in der Datenbank; das Segment aus core
+         (.up-seg) wie der Umschalter Or/And der Topics. Ein geplantes Event, das schon begonnen
+         haette, gibt es nicht -- im Bearbeiten geplanter Events ist beides frei. */
+      var seg = kampagneDa() ? '<div class="up-seg uev-datummodus" role="group" aria-label="' + esc(t("Date")) + '">' +
+          '<button class="up-seg-btn' + (!e.bereich ? " is-active" : "") + '" type="button" data-datummodus="tag" aria-pressed="' + !e.bereich + '">' + esc(t("Single day")) + '</button>' +
+          '<button class="up-seg-btn' + (e.bereich ? " is-active" : "") + '" type="button" data-datummodus="bereich" aria-pressed="' + !!e.bereich + '">' + esc(t("Date range")) + '</button>' +
+        '</div>' : '';
+      return '<div class="uev-datumfeld">' + seg +
+        '<div class="up-filter uev-wahl" data-wahlwrap="datum">' + wahlKnopf("datum", "calendar", datumText(e), !e.datum || (e.bereich && !e.ende)) +
+        '<div class="up-menu uev-wahlmenu uev-datumwahl" aria-hidden="true">' + kalender(e) + '</div></div>' +
+        (kampagneDa() ? '<span class="uev-datumhilfe">' + esc(datumHilfe(e)) + '</span>' : '') + '</div>';
+    }
+    /* Das Ende einer LAUFENDEN Kampagne (17.10., Vertrag B.3): ab heute, hoechstens 183 Tage nach
+       dem Start. Derselbe Kalender, der Zeitraum Start bis Ende als Band. */
+    function endeKalender(e) {
+      return kalender({ bereich: true, wahlEnde: true, datum: e.start, ende: e.ende, monat: e.endeMonat || tagAus(e.ende), endeAb: heuteIso() });
+    }
+    function endeFeld(e) {
+      return '<div class="up-filter uev-wahl" data-wahlwrap="ende">' + wahlKnopf("ende", "calendar", e.ende ? datum(e.ende) : t("End date"), !e.ende) +
+        '<div class="up-menu uev-wahlmenu uev-endewahl" aria-hidden="true">' + endeKalender(e) + '</div></div>';
+    }
+    function endeNeu() {
+      var p = popup, b = im('[data-wahl="ende"]');
+      if (!p) return;
+      if (b) b.querySelector(".up-modal-wahl-txt").textContent = p.e.ende ? datum(p.e.ende) : t("End date");
+      var m = im(".uev-endewahl");
+      if (m) m.innerHTML = endeKalender(p.e);
+    }
+    /* Ein Satz unter dem Feld: was der Zeitraum bewirkt bzw. was ein Start in der Zukunft heisst --
+       ohne Fachwort, damit niemand raten muss, was "Date range" aendert. */
+    function datumHilfe(e) {
+      if (e.datum && e.datum > heuteIso()) return t("Planned events can be fully edited until they start.");
+      return t(e.bereich ? "We compare the campaign with the same number of days before it, and show what happens after it ends."
+        : "We compare the days after this date with the days before it.");
     }
     /* Zeichen und Farbe wie Emoji und Farbe im Topic-Dialog: zwei Knoepfe, darunter das Raster des
        offenen. Ohne eigene Wahl folgt das Zeichen dem Typ und die Farbe bleibt leer (Vertrag:
@@ -4789,13 +5091,34 @@
     }
     function datumNeu() {
       var p = popup, b = im('[data-wahl="datum"]');
+      if (!p) return;
+      /* Kampagnen kamen erst nach dem Aufbau (Pruefaufruf): das Feld einmal ganz neu, mit
+         Umschalter und Satz. Das Menue ist dann zu -- geoeffnet wird es erst nach dem Aufbau. */
+      var fd = im(".uev-datumfeld");
+      if (fd && kampagneDa() !== !!fd.querySelector(".uev-datummodus")) {
+        var tmp = document.createElement("div");
+        tmp.innerHTML = datumFeld(p.e);
+        fd.parentNode.replaceChild(tmp.firstChild, fd);
+        return;
+      }
       if (b) {
         var tx = b.querySelector(".up-modal-wahl-txt");
-        tx.textContent = p.e.datum ? datum(p.e.datum) : t("Select a date");
-        tx.classList.toggle("is-leer", !p.e.datum);
+        tx.textContent = datumText(p.e);
+        tx.classList.toggle("is-leer", !p.e.datum || (!!p.e.bereich && !p.e.ende));
       }
       var m = im(".uev-datumwahl");
       if (m) m.innerHTML = kalender(p.e);
+      var sg = im(".uev-datummodus");
+      if (sg) {
+        var sb = sg.querySelectorAll("[data-datummodus]");
+        for (var i = 0; i < sb.length; i++) {
+          var an = (sb[i].getAttribute("data-datummodus") === "bereich") === !!p.e.bereich;
+          sb[i].classList.toggle("is-active", an); sb[i].setAttribute("aria-pressed", String(an));
+        }
+        if (UC.segJetzt) { try { UC.segJetzt(sg); } catch (e) {} }
+      }
+      var hf = im(".uev-datumhilfe");
+      if (hf) hf.textContent = datumHilfe(p.e);
     }
     function aussehenNeu() { var el = im(".uev-aussehen"); if (el) el.innerHTML = aussehen(popup.e); }
     function menueZu(art) {
@@ -4933,7 +5256,7 @@
       var e = p.e;
       if (p.art === "ziel") return zieleOk(p);
       if (p.art === "bearbeiten") return !!e.name.trim() && laenge(e.text.trim()) <= TEXT_MAX;
-      if (p.schritt === 1) return !!e.name.trim() && !!e.datum && !!e.typ && laenge(e.text.trim()) <= TEXT_MAX;
+      if (p.schritt === 1) return !!e.name.trim() && !!e.datum && (!e.bereich || !!e.ende) && !!e.typ && laenge(e.text.trim()) <= TEXT_MAX;
       if (p.schritt === 2) {
         if (e.modus === "topics" && !e.topics.length) return false;
         var v = dieVorschau(p);
@@ -4955,7 +5278,7 @@
         if (z) z.hidden = p.schritt === 1;
         /* "Create without URLs?" (03.10.) ist seit 15.10. die ausdrueckliche Wahl "Brand metrics
            only" in Schritt 3 -- ein Event ohne Ziele entsteht nie mehr aus Versehen. */
-        var lbl = p.schritt === 4 ? "Create event" : "Continue", tx = b && b.querySelector(".up-modal-knopftxt");
+        var lbl = p.schritt === 4 ? (p.planEventId ? "Save" : "Create event") : "Continue", tx = b && b.querySelector(".up-modal-knopftxt");
         if (tx) { tx.textContent = t(lbl); tx.setAttribute("data-i18n", lbl); }
       }
       if (anleitung && anleitung.laeuft()) anleitung.neu();
@@ -5149,7 +5472,25 @@
       p.zielFehler = null; p.gesendet = null;
       if (mit.length && zieleDa()) { delete b.p_urls; b.p_targets = mit.map(function (z) { return { kind: z.kind, input: z.input }; }); p.gesendet = mit.slice(); }
       else if (mit.length) { p.gesendet = mit.filter(function (z) { return z.kind === "url"; }); b.p_urls = p.gesendet.map(function (z) { return z.input; }); }
+      /* Der Zeitraum (17.10.): p_end_date an create_impact_event_v4 -- ohne Ende steht der
+         Parameter gar nicht im Body, v4 setzt null (Vertrag B.3). */
+      if (kampagneDa() && e.bereich && e.ende) b.p_end_date = e.ende;
       if (!vorabPruefen(p, b)) return;
+      /* Ein GEPLANTES Event bearbeiten (17.10.): derselbe Assistent, derselbe Body, dazu die
+         Kennung -- an update_impact_event_v3 (Vertrag B.3: Umfangs-Parameter wie create v4).
+         p_targets ist die VOLLE neue Liste (auch leer = "Brand metrics only"), nicht ein Zusatz.
+         Aus einer Kampagne wird ein Tag: p_clear_end_date (Vertrag B.3 nennt ihn als Option;
+         Rueckfrage an den DB-Chat, ob er fuer planned kommt). */
+      if (p.planEventId) {
+        b.p_event_id = p.planEventId;
+        delete b.p_urls;
+        b.p_targets = mit.map(function (z) { return { kind: z.kind, input: z.input }; });
+        p.gesendet = mit.slice();
+        if (!(e.bereich && e.ende) && p.alt && p.alt.ende) b.p_clear_end_date = true;
+        warten(p, "bearbeiten");
+        rufen("uevUpdate", b, { popup: p });
+        return;
+      }
       warten(p, "anlegen");
       rufen("uevCreate", b, { popup: p });
     }
@@ -5171,7 +5512,11 @@
       /* Wie Zeichen und Farbe (Vertrag 3.5): "" nimmt das Titelbild ab. Unveraendert steht p_cover
          gar nicht im Body -- aus demselben Grund wie beim Anlegen (unbekannter Parameter). */
       if (e.cover !== a.cover) b.p_cover = e.cover || "";
-      if (b.p_name == null && b.p_description == null && b.p_event_type == null && b.p_icon == null && b.p_color == null && !("p_cover" in b)) { p.api.schliessen(); return; }
+      /* Das Ende einer laufenden Kampagne (17.10.) nur, wenn es sich geaendert hat -- dann an
+         update_impact_event_v3; p.endeGesendet sagt dem Fehler, dass forbidden das Ende meint. */
+      p.endeGesendet = !!(e.ende && e.ende !== a.ende);
+      if (p.endeGesendet) b.p_end_date = e.ende;
+      if (b.p_name == null && b.p_description == null && b.p_event_type == null && b.p_icon == null && b.p_color == null && !("p_cover" in b) && !p.endeGesendet) { p.api.schliessen(); return; }
       if (!vorabPruefen(p, b)) return;
       warten(p, "bearbeiten");
       rufen("uevUpdate", b, { popup: p });
@@ -5294,7 +5639,7 @@
     }
     /* Welcher Schritt einen Fehler beheben kann -- dorthin springt das Popup, die Meldung bleibt. */
     var FEHLER_SCHRITT = {
-      impact_event_name_required: 1, impact_event_invalid_date: 1,
+      impact_event_name_required: 1, impact_event_invalid_date: 1, impact_event_invalid_end_date: 1, impact_event_end_date_frozen: 1,
       impact_event_topics_required: 2, impact_event_invalid_topics: 2, impact_event_no_active_prompts: 2,
       impact_event_invalid_url: 3, impact_event_too_many_urls: 3,
       impact_event_invalid_target: 3, impact_event_too_many_targets: 3, impact_event_target_duplicate: 3, impact_event_targets_unavailable: 3
@@ -5332,6 +5677,10 @@
         clearTimeout(p.warteUhr);
         p.warte = null;
         p.api.busy(p.knopf, false);
+        /* Das Ende darf nur, wer auch loeschen darf (Vertrag B.3) -- am Feld des Endes, mit Grund. */
+        if (p.endeGesendet && (code === "forbidden" || code === "impact_event_forbidden")) {
+          txt = t("Only the creator of this event or a team admin can change the end date."); code = "impact_event_invalid_end_date"; hint = "";
+        }
         feldFehlerZeigen(p, code, hint, txt);
         knoepfeSync();
         return true;
@@ -5375,16 +5724,33 @@
        schon bei 200, sagt es der Knopf, bevor jemand drei Schritte ausfuellt. Entscheidend bleibt
        der Server -- die Liste kann einen Takt alt sein. */
     var EVENTS_MAX = 200;
-    function popupAnlegen() {
+    /* planEid (17.10.): ein GEPLANTES Event im vollen Assistenten bearbeiten -- vorbelegt aus dem
+       Detail (Name, Typ, Datum bzw. Zeitraum, Umfang, Ziele, Aussehen), gespeichert ueber
+       update_impact_event_v3 (anlegenSenden). Bis zum Starttag ist alles frei (Entscheidung des
+       Nutzers 17.10.). */
+    function planVorlage(ev) {
+      var zl = (isArr(ev.targets) ? ev.targets : []).map(zielAusDb).filter(Boolean);
+      var tps = (isArr(ev.topics) ? ev.topics : []).map(function (x) { return x && x.id != null ? String(x.id) : null; }).filter(Boolean);
+      var kinds = zl.map(function (z) { return z.kind === "host_all" ? "host" : z.kind; });
+      return { name: String(ev.name || ""), datum: String(ev.event_date || "").slice(0, 10) || heuteIso(), ende: mitEnde(ev) ? String(ev.end_date).slice(0, 10) : null,
+               bereich: mitEnde(ev), wahlEnde: false, monat: null, typ: typ(ev).key, text: String(ev.description || ""),
+               icon: iconAusDb(ev.icon), farbe: farbe(ev) || null, cover: coverVon(ev) ? ev.cover : null, coverEntschieden: true, offen: null,
+               modus: ev.scope_mode === "all" ? "all" : "topics", topics: tps, tagModus: String(ev.tag_mode || "or").toLowerCase() === "and" ? "and" : "or",
+               zielArt: zl.length ? (kinds.every(function (k) { return k === kinds[0]; }) ? kinds[0] : "url") : "marke",
+               unterdomains: zl.some(function (z) { return z.kind === "host_all"; }), ziele: zl, eingabe: "", artVonHand: true };
+    }
+    function popupAnlegen(planEid) {
       if (popup) return;
-      if (!demo && listeGeladen() && (UC.getEvents ? UC.getEvents() : []).filter(function (x) { return !state.geloescht[x.id]; }).length >= EVENTS_MAX) {
+      var planEv = planEid != null ? (state.detail[planEid] || listeEvent(planEid)) : null;
+      if (planEid != null && !planEv) return;
+      if (!planEv && !demo && listeGeladen() && (UC.getEvents ? UC.getEvents() : []).filter(function (x) { return !state.geloescht[x.id]; }).length >= EVENTS_MAX) {
         if (UC.toast) UC.toast(fehlerText("impact_event_limit_reached"), { kind: "error" });
         return;
       }
-      var e = { name: "", datum: heuteIso(), monat: null, typ: "", text: "", icon: null, farbe: null, cover: null, offen: null,
+      var e = planEv ? planVorlage(planEv) : { name: "", datum: heuteIso(), ende: null, bereich: false, wahlEnde: false, monat: null, typ: "", text: "", icon: null, farbe: null, cover: null, offen: null,
                 modus: "topics", topics: [], tagModus: "or", zielArt: null, unterdomains: false, ziele: [], eingabe: "", artVonHand: false };
       var api = UC.makeModal({
-        titel: "Create event", unter: schrittText(1), breit: true, isDark: isDark,
+        titel: planEv ? "Edit event" : "Create event", unter: schrittText(1), breit: true, isDark: isDark,
         inhaltHtml: '<div class="uev-schritt" data-schritt="1">' + detailFelder(e, true) + '</div>' +
           '<div class="uev-schritt" data-schritt="2" hidden></div>' +
           '<div class="uev-schritt" data-schritt="3" hidden></div>' +
@@ -5395,6 +5761,7 @@
       });
       api.body.querySelector('.uev-schritt[data-schritt="1"]').__uevGebaut = 1;
       var p = { art: "anlegen", api: api, e: e, schritt: 1, knopf: "weiter", pops: {}, vorschauen: {}, topicSuche: "" };
+      if (planEv) { p.planEventId = String(planEv.id); p.eventId = p.planEventId; p.alt = { ende: e.ende }; }
       /* Das Titelbild fuer Schritt 4 (coverZufall) jetzt schon waehlen und vorladen. */
       p.zufallsCover = COVERS[Math.floor(Math.random() * COVERS.length)].key;
       coverLaden(coverVon({ cover: p.zufallsCover }));
@@ -5407,7 +5774,7 @@
       });
       /* Beim ERSTEN Anlegen laeuft die Anleitung von selbst mit (gemerkt je Nutzer), ohne den
          Fokus aus dem Namensfeld zu nehmen. */
-      if (!demo && !anleitungGesehen() && !(anleitung && anleitung.laeuft())) { anleitungMerken(); anleitungStarten("w1", false); }
+      if (!planEv && !demo && !anleitungGesehen() && !(anleitung && anleitung.laeuft())) { anleitungMerken(); anleitungStarten("w1", false); }
     }
     /* "Continue" (und Next der Anleitung): im Schritt der Ziele zuerst die Eingabe uebernehmen --
        was im Feld steht, geht nicht verloren. */
@@ -5437,13 +5804,20 @@
       if (popup) return;
       var ev = state.detail[eid] || listeEvent(eid);
       if (!ev) return;
+      /* Geplant (17.10.): der volle Assistent, alles aenderbar bis zum Start. */
+      if (kampagneDa() && istGeplant(ev)) { popupAnlegen(eid); return; }
       var e = { name: String(ev.name || ""), typ: typ(ev).key, text: String(ev.description || ""),
                 icon: iconAusDb(ev.icon), farbe: farbe(ev) || null, cover: coverVon(ev) ? ev.cover : null, offen: null, urls: [] };
-      var alt = { name: e.name, typ: e.typ, text: e.text, icon: e.icon, farbe: e.farbe, cover: e.cover };
+      /* Eine laufende Kampagne: das Ende laesst sich verlaengern oder auf heute verkuerzen
+         (Vertrag B.3); eine abgeschlossene nicht mehr. Ob man es darf (Ersteller, owner, admin),
+         sagt erst die Datenbank -- forbidden steht dann am Feld (popupFehlerKam). */
+      var endeFrei = kampagneDa() && mitEnde(ev) && statusVon(ev) === "running";
+      if (endeFrei) { e.ende = String(ev.end_date).slice(0, 10); e.start = String(ev.event_date).slice(0, 10); e.endeMonat = null; }
+      var alt = { name: e.name, typ: e.typ, text: e.text, icon: e.icon, farbe: e.farbe, cover: e.cover, ende: e.ende || null };
       var api = UC.makeModal({
         titel: "Edit event", breit: true, isDark: isDark,
-        inhaltHtml: '<div class="uev-schritt">' + detailFelder(e, false) + coverFeld(e) +
-          gesperrtHinweis("Date and scope can't be changed") + '</div>',
+        inhaltHtml: '<div class="uev-schritt">' + detailFelder(e, false) + (endeFrei ? feld("End date", endeFeld(e), false, "datum") : '') + coverFeld(e) +
+          gesperrtHinweis(endeFrei ? "Start date and scope can't be changed" : "Date and scope can't be changed") + '</div>',
         knoepfe: [{ id: "abbrechen", text: "Cancel", art: "sec" },
                   { id: "speichern", text: "Save", art: "pri", aktion: function () { if (schrittOk(popup)) speichern(); return false; } }],
         onClose: popupZu
@@ -5513,6 +5887,19 @@
       }
       if (x.closest(".uev-typeigen-add")) { typEigenNehmen(); return; }
       var mo = x.closest("[data-monat]");
+      /* Das Ende einer laufenden Kampagne (17.10.): eigener Kalender im Bearbeiten-Popup. */
+      if (mo && x.closest(".uev-endewahl")) {
+        if (mo.disabled) return;
+        var ak2 = p.e.endeMonat || tagAus(p.e.ende) || grenzen().heute;
+        p.e.endeMonat = new Date(ak2.getFullYear(), ak2.getMonth() + parseInt(mo.getAttribute("data-monat"), 10), 1);
+        endeNeu();
+        return;
+      }
+      var te = x.closest(".uev-endewahl [data-tag]");
+      if (te) {
+        if (te.disabled) return;
+        p.e.ende = te.getAttribute("data-tag"); feldFehler("datum", ""); menueZu("ende"); endeNeu(); knoepfeSync(); return;
+      }
       if (mo) {
         if (mo.disabled) return;
         var akt = p.e.monat || tagAus(p.e.datum) || grenzen().hi;
@@ -5522,7 +5909,26 @@
         return;
       }
       var tg = x.closest(".uev-datumwahl [data-tag]");
-      if (tg) { if (tg.disabled) return; p.e.datum = tg.getAttribute("data-tag"); menueZu("datum"); datumNeu(); knoepfeSync(); return; }
+      if (tg) {
+        if (tg.disabled) return;
+        var tag = tg.getAttribute("data-tag");
+        feldFehler("datum", "");
+        /* Zeitraum (17.10.): erst der Anfang, das Menue bleibt offen, dann das Ende. Ein Tag vor
+           dem Anfang ist ein neuer Anfang -- so wie im Kalender der Filterleiste. */
+        if (p.e.bereich && !(p.e.wahlEnde && p.e.datum && tag >= p.e.datum)) {
+          p.e.datum = tag; p.e.ende = null; p.e.wahlEnde = true; datumNeu(); knoepfeSync(); return;
+        }
+        if (p.e.bereich) { p.e.ende = tag; p.e.wahlEnde = false; }
+        else p.e.datum = tag;
+        menueZu("datum"); datumNeu(); knoepfeSync(); return;
+      }
+      var dmo = x.closest("[data-datummodus]");
+      if (dmo) {
+        var ber = dmo.getAttribute("data-datummodus") === "bereich";
+        if (ber === !!p.e.bereich) return;
+        p.e.bereich = ber; p.e.ende = null; p.e.wahlEnde = ber && !!p.e.datum; p.e.monat = null;
+        feldFehler("datum", ""); datumNeu(); knoepfeSync(); return;
+      }
       var cvk = x.closest("[data-cover]");
       if (cvk) { var ck = cvk.getAttribute("data-cover"); p.e.cover = p.e.cover === ck ? null : ck; p.e.coverEntschieden = true; feldFehler("cover", ""); coverNeu(); pruefenZeigen(); knoepfeSync(); return; }
       if (x.closest(".uev-cover-weg")) {
@@ -5745,6 +6151,7 @@
        danach -- auch dann, wenn schon alles bekannt war. */
     function verfuegbarkeitHolen(fertig) {
       if (demo || !UC.rpc) return;
+      (UC.getEvents ? UC.getEvents() : []).forEach(kampagneMerken);
       teamHolen().then(function (tm) {
         if (!tm) return null;
         var a = ZIELE_DA.stand != null ? null : (ZIELE_DA.laeuft || (ZIELE_DA.laeuft =
@@ -5763,9 +6170,21 @@
                zeigen, was nicht funktioniert". */
             if (edgeFehlt(erg)) SITEMAP_DA.stand = false; else if (!unbekannt(erg) && !(erg.status >= 500)) SITEMAP_DA.stand = true;
           })));
-        return Promise.all([a, b]);
+        /* Kampagnen (17.10.): die Analyse v4 mit der Null-Kennung -- liest nur, aendert nichts;
+           impact_event_not_found heisst "da", PGRST202 "fehlt". */
+        var c = KAMPAGNE_DA.stand != null ? null : (KAMPAGNE_DA.laeuft || (KAMPAGNE_DA.laeuft =
+          UC.rpc(KAMPAGNE_FN.uevAnalysis, { p_team: tm, p_event_id: NULL_ID, p_window_days: 30, p_models: null, p_markets: null, p_intents: null, p_branded: null }, { timeoutMs: 15000 }).then(function (erg) {
+            KAMPAGNE_DA.laeuft = null;
+            if (fehltFn(erg)) KAMPAGNE_DA.stand = false; else if (!unbekannt(erg)) KAMPAGNE_DA.stand = true;
+          })));
+        return Promise.all([a, b, c]);
       }).then(function () {
         if (root.isConnected === false) return;
+        /* Hat die Antwort das Fenster des offenen Events veraendert (Kampagne, "Since event"),
+           gehoert die laufende Analyse nicht mehr dazu -- neu anfordern statt im Skelett zu
+           warten. Ebenso Schritt 1 eines offenen Anlegen-Popups: erst jetzt gibt es den Zeitraum. */
+        if (state.ansicht === "detail" && state.eventId && !dieAnalyse() && state.analyseSigLief && state.analyseSigLief !== analyseSig()) { analyseAnfordern(); renderDetail(); }
+        if (popup && popup.art === "anlegen" && !popup.planEventId) datumNeu();
         /* Der Kopf des Details sagt "Add" erst, wenn der Dialog mehr als eine URL kann. */
         var tx = elAktion.querySelector(".uev-addurl-txt");
         if (tx) tx.textContent = t(zieleDa() ? "Add" : "Add URL");
@@ -6023,7 +6442,7 @@
         }
         return true;
       },
-      setAnalysis: function (raw) {
+      setAnalysis: function (raw, bestellt) {
         var a = objekt(raw);
         state.analyseLaden = false;
         if (!a || (a.event_id == null && !a.windows)) {
@@ -6037,7 +6456,9 @@
         /* Unter dem Schluessel ablegen, fuer den sie bestellt war: Event, Fenster, Filter. Eine
            Antwort fuer ein anderes Fenster (spaete Antwort nach schnellem Umschalten) ueberschreibt
            so nicht die aktuelle. */
-        var sig = analyseSig(id, fen);
+        /* bestellt (17.10.): die Signatur der eigenen Anfrage -- eine Kampagne und das Fenster
+           "Since event" tragen keine Fensterlaenge, an der sich die Antwort einsortieren liesse. */
+        var sig = typeof bestellt === "string" && bestellt ? bestellt : analyseSig(id, fen);
         state.analyse[sig] = a;
         persist();
         if (state.ansicht === "detail" && state.eventId === id) renderDetail();
