@@ -4864,14 +4864,15 @@
     }
     .up-root[data-kleb-fuss="yes"].is-fuss-still .up-box .up-sumrow,
     .up-root[data-kleb-fuss="yes"].is-fuss-still > .up-foot { transition: none; }
-    /* Der Schatten: Geists "small" (--up-e-1, 2px), nach OBEN -- die Ebene liegt deckungsgleich auf
-       dem Teil und ist gespiegelt (scaleY(-1)), so wirft derselbe Wert nach oben statt nach unten,
-       ohne eine zweite Zahl. Nur Deckkraft blendet. Bis 17.10. war es --up-e-3 (Geists "modal", bis
-       32px weit): dem Nutzer "zu dolle" -- die Linie traegt die Kante, der Schatten nur einen Hauch. */
+    /* Der Schatten: --up-e-2 (Geists "menu"), nach OBEN -- die Ebene liegt deckungsgleich auf dem Teil
+       und ist gespiegelt (scaleY(-1)), so wirft derselbe Wert nach oben statt nach unten, ohne eine
+       zweite Zahl. Nur Deckkraft blendet. Verlauf: bis 17.10. --up-e-3 (Geists "modal", bis 32px weit),
+       dem Nutzer "zu dolle"; dann --up-e-1 (2px); am 17.10. auf Wunsch "eine kleine Stufe kraeftiger"
+       genau eine Stufe hoch auf --up-e-2. Die Linie traegt die Kante, der Schatten bleibt leise. */
     .up-root[data-kleb-fuss="yes"] .up-box .up-sumrow::before,
     .up-root[data-kleb-fuss="yes"] > .up-foot::before {
       content: ""; position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none;
-      box-shadow: var(--up-e-1); transform: scaleY(-1); opacity: 0;
+      box-shadow: var(--up-e-2); transform: scaleY(-1); opacity: 0;
       transition: opacity var(--up-t-2) var(--up-ease-expo);
     }
     .up-root[data-kleb-fuss="yes"].is-fuss-klebt .up-box .up-sumrow::before,

@@ -4234,10 +4234,20 @@ eine Zeile des Speichers trägt `status`). Fehlt v4 (PGRST202): heutiger Stand, 
   dritte Angabe neben Datum und Typ (Zeichen + Text, keine Pille): „Planned“ (Uhr), „Running, day 5
   of 21“ (Zeitschaltuhr, Akzent-Tinte), „Completed“ (Haken im Kreis, nur mit Ende), offenes Tages-Event
   „Day 45“. Kampagnen zeigen den Zeitraum statt des Tages („1 Sep – 30 Sep 2026“, Jahr nur am Ende).
-- **Anlegen, Schritt 1:** Segment „Single day | Date range“ (`.up-seg`) über dem Wahlknopf, darunter
-  ein Satz, was die Wahl bewirkt. Kalender wie date-range (`.udr-day` mit `is-start/is-in/is-end`,
-  Ecken je Wochenzeile). Start bis heute + 365, Länge höchstens 183 Tage; erster Klick Anfang, zweiter
-  Ende, ein Tag vor dem Anfang ist ein neuer Anfang.
+- **Anlegen, Schritt 1:** Segment „Start date | Date range“ (`.up-seg`) über dem Datum, darunter
+  ein Satz, was die Wahl bewirkt. Einzeln ein Wahlfeld; mit Zeitraum zwei Felder nebeneinander
+  (`.uev-datumpaar`), „Start date“ und „End date“, je mit leiser Unterschrift. Beide öffnen einen
+  Kalender wie date-range (`.udr-day` mit `is-start/is-in/is-end`, Ecken je Wochenzeile) mit demselben
+  Band; die Wahl im Start geht nach dem Klick gleich zum Ende auf, wenn es noch fehlt, ein Ende, das
+  nicht mehr passt (davor, über 183 Tage), fällt weg. Im Ende sind Tage vor dem Start gesperrt.
+  Start bis heute + 365, Länge höchstens 183 Tage.
+- **Sitemap-Wähler:** ein Ordner ist EINE Regel (Pfad), der Host die ganze Domain, eine Seite eine URL.
+  Es gibt kein „Select all in folder“ (17.10.): der Ordner hatte danach keinen Auswahlzustand, und
+  jede Seite einzeln wäre an den Deckel von 50 Zielen gestoßen. Seiten unter einem gewählten Ordner
+  stehen gewählt und gedämpft da; warum sie sich nicht ändern lassen, steht erst nach einem KLICK als
+  Satz unter dem Baum (`.uev-sm-sperre`), nie als Tooltip beim Ueberfahren. Der Wähler folgt der
+  Eingabe: ändert sich die Eingabe zwischen zwei Öffnungen, beginnt er von vorn (`smOeffnen`,
+  `p.sm.vorschlag`). Kein Pruefaufruf der Edge Function: der Knopf steht mit den Zielen da.
 - **Bearbeiten:** geplant = der volle Assistent vorbelegt („Edit event“, letzter Knopf „Save“,
   `update_impact_event_v3` mit dem vollen Stand). Laufende Kampagne = das bisherige Popup plus Feld
   „End date“ (ab heute, höchstens 183 Tage ab Start); `forbidden` steht am Feld mit Grund.
