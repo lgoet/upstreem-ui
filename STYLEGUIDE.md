@@ -314,6 +314,25 @@ Themenblock (an `:root`, weil die Quick Actions am `<body>` hängen). Werte unve
 - Nicht ersetzt, mit Absicht: die Blenden in `mask-image` (`#000`, `rgba(0,0,0,.18/.62)`) sind
   Deckkraft, keine Themenfarbe.
 
+### Komponentenfarben: Mira (seit 17.10.)
+`ask-mira.css`/`.js` tragen keinen Farbwert mehr; alles steht als `--vc-mira-*` in `core.css`
+(Block „Komponentenfarben: Mira“ am Ende der Themenblöcke `:root, .up-root, [data-theme="light"]`
+und `[data-theme="dark"], .up-root[data-theme="dark"]`, damit es auch Chat-Menü und
+Einstellungsfenster am `<body>` erreicht). Werte unverändert, die `--am-*`-Namen bleiben und lesen
+die Tokens.
+- **In allen Themen gleich:** `status`, `status-puls`, `status-puls-an`/`-aus`, `status-laden`
+  (Punkt „Ready“), `opp-offen`/`-laeuft`/`-erledigt`/`-ignoriert` (Opportunity-Status, aus
+  `ask-mira.js` als `var()` gesetzt), `thema-rueckfall` `#6b7280`, `logo-rueckfall` `#9ca3af`,
+  `auf-farbe` (Weiß auf Farbflächen), `lauf-glanz`, `signal`/`-hover`/`-schein` (Blau „neue
+  Nachricht“), `regler-punkt`, `regler-daumen`, `haken-rand`, `aufnahme-punkt`, `speichern`,
+  `loeschen`.
+- **Je Thema (hell / dunkel):** `akzent`, `akzent-2`, `akzent-soft`, `blase-bg`/`-ink` (Blase des
+  Nutzers, dunkel `#2f2f2f`/`#ececec`), `raster`, `positiv-`/`negativ-`/`quelle-`/`unklar-bg`/`-ink`
+  (Markierungen im Antworttext), `tabelle-streifen`, `composer-schale`, `gewaehlt`,
+  `entfernen-hover`, `picker-schatten`, `aufnahme-weg-hover`/`-ok-hover`/`-fehler`, `schleier`,
+  `haken-an`, `skelett-blase-a`/`-b`. Grau-hell = hell, Geist-dunkel = dunkel. Wo die Komponente
+  hell und dunkel je ein Literal hatte, wechselt das Token, und ihre Dunkel-Regel ist entfallen.
+
 ---
 
 ## 1a. Citation-Type-Farben (Stand 15.10.)
