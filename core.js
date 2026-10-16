@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261158;
+  var BUILD = 20261159;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -12426,6 +12426,17 @@
     /* vibrant */ "#d75551", "#ca6800", "#a28300", "#349f40", "#009a9a", "#3586e6", "#976ad9", "#cc5594", "#868686", "#9e9e9e",
     /* muted   */ "#c68e88", "#c19375", "#ae9e6c", "#83aa84", "#67acac", "#81a1ca", "#a595c4", "#c18da5", "#9e9e9e", "#b7b7b7",
     /* deep    */ "#a23d3a", "#974c00", "#786000", "#23762c", "#007272", "#2463ae", "#704ea4", "#993d6e", "#636363", "#7a7a7a"
+  ];
+  /* DIE ALTE PALETTE DES INLINE-ERSTELLERS (17.10., aus prompts-table.js hierher geholt, Werte
+     unveraendert). Die Zeile "keine Treffer, anlegen" in der Topic-Auswahl der Massenleiste fuehrt
+     noch die dreissig handgesuchten Werte von VOR dem OKLCh-Umbau darueber -- und schickt den
+     gewaehlten Wert als hex_light/hex_dark des neuen Topics mit. Hier steht sie nur, damit keine
+     Komponente mehr eigene Farbwerte traegt ("alles an Farben nach core"); ob der Ersteller auf
+     TOPIC_COLOR_PALETTE umzieht, ist eine eigene Entscheidung, denn das aendert, was er anbietet. */
+  var TOPIC_COLOR_PALETTE_INLINE = [
+    /* vibrant */ "#de1b22", "#b65616", "#8d6a11", "#108440", "#107c84", "#1b6eda", "#9145e8", "#d51a8b", "#666666", "#7d7d7d",
+    /* muted   */ "#b47476", "#a87b5d", "#988552", "#4f926b", "#509195", "#6a88af", "#977ab8", "#b27098", "#787878", "#949494",
+    /* deep    */ "#ab2b2f", "#8b4c23", "#725a1d", "#1b6a3c", "#1b656a", "#295ea3", "#7a33cc", "#a32972", "#575757", "#6f6f6f"
   ];
   /* Ein Thema, das VOR diesem Umbau angelegt wurde, traegt einen Hex, den es in der Palette nicht
      mehr gibt -- und weil der Haken ueber "ist gleich" gesetzt wird, sah die Farbwahl dann so aus,
@@ -28780,6 +28791,7 @@
     unclipAncestors: unclipAncestors,
     watchRoots: watchRoots,
     TOPIC_COLOR_PALETTE: TOPIC_COLOR_PALETTE,
+    TOPIC_COLOR_PALETTE_INLINE: TOPIC_COLOR_PALETTE_INLINE,
     swatchInk: swatchInk,
     ensureEmojiLib: ensureEmojiLib, emojiQuelleAttr: emojiQuelleAttr, fremd: fremd,
     makeTopicModal: makeTopicModal,

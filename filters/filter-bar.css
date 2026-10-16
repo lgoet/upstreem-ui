@@ -176,7 +176,8 @@
   transition: color 120ms ease, background-color 120ms ease;
 }
 .ufb-chip-x svg { width: 11px; height: 11px; display: block; }
-.ufb-chip-x:hover { color: var(--vc-text); background: var(--vt-row-hover-solid, rgba(0,0,0,.06)); }
+/* Ohne Rueckfall (17.10.): die Leiste steht immer in einer .up-root, dort ist --vt-row-hover-solid gesetzt. */
+.ufb-chip-x:hover { color: var(--vc-text); background: var(--vt-row-hover-solid); }
 .ufb-chip-x:focus-visible { box-shadow: 0 0 0 var(--up-focus-w) var(--up-focus-ring); }
 
 /* ---------- Clear All ----------

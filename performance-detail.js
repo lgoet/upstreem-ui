@@ -137,7 +137,7 @@
   /* Topic-Chip in derselben Form wie im Radar und in der Prompts-Table. */
   function topicChipHtml(topic){
     if (!topic) return "";
-    var hex = topic.color || topic.hex || "#6b7280";
+    var hex = topic.color || topic.hex || "var(--vc-thema-ersatz)";
     return '<span class="up-topicchip is-static" style="--ust-tag-color:' + esc(hex) + '">' +
       (topic.emoji ? '<span class="up-topicchip-e">' + esc(topic.emoji) + '</span>' : "") +
       '<span class="up-topicchip-lbl">' + esc(topic.name == null ? "" : topic.name) + '</span>' +
@@ -576,7 +576,7 @@
          Heatmap-Zelle bei 65 Prozent; die Begruendung dafuer war, dass die Kurve sichtbar zum
          Radar darueber gehoert. Das gilt weiter, nur folgt die Matrix jetzt selbst der
          Akzentfarbe -- beide kommen also nach wie vor aus einer Quelle. */
-      var linie = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : "#1f1f1b";
+      var linie = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : getComputedStyle(root).getPropertyValue("--vc-text").trim();
       var comp = state.company ? [{
         company_id: cid, name: state.company.name, color: linie,
         favicon_url: state.company.favicon_url || state.company.logo_url || state.company.logo || ""

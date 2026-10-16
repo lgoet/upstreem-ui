@@ -338,7 +338,7 @@
       if (h) return h;
     }
     var hex = isDark ? (topic.hexDark || topic.hexLight) : (topic.hexLight || topic.hexDark);
-    return '<span class="up-topicchip is-static" style="--ust-tag-color:' + esc(hex || "#6b7280") + '">' +
+    return '<span class="up-topicchip is-static" style="--ust-tag-color:' + esc(hex || "var(--vc-thema-ersatz)") + '">' +
       (topic.emoji ? '<span class="up-topicchip-e">' + esc(topic.emoji) + '</span>' : "") +
       '<span class="up-topicchip-lbl">' + esc(topic.name == null ? "" : topic.name) + '</span>' +
     '</span>';
@@ -835,7 +835,7 @@
         var t = topicById(el.getAttribute("data-topic"));
         if (!t) return;
         var chip = el.querySelector(".up-topicchip");
-        if (chip) chip.style.setProperty("--ust-tag-color", (state.isDark ? (t.hexDark || t.hexLight) : (t.hexLight || t.hexDark)) || "#6b7280");
+        if (chip) chip.style.setProperty("--ust-tag-color", (state.isDark ? (t.hexDark || t.hexLight) : (t.hexLight || t.hexDark)) || "var(--vc-thema-ersatz)");
       });
     }
 
@@ -1453,7 +1453,8 @@
       var co = companyById(companyId), tp = topicById(topicId);
       if (!co || !tp) return;
       var cell = state.cellMap[topicId + "|" + companyId] || null;
-      var hex = (state.isDark ? (tp.hexDark || tp.hexLight) : (tp.hexLight || tp.hexDark)) || "#6b7280";
+      /* Geht als topic.color in den Detailbereich, also gelesen statt var() (17.10.). */
+      var hex = (state.isDark ? (tp.hexDark || tp.hexLight) : (tp.hexLight || tp.hexDark)) || getComputedStyle(document.documentElement).getPropertyValue("--vc-thema-ersatz").trim();
 
       /* Spalte: alle Marken auf DIESEM Topic. Zeile: diese Marke ueber alle Topics. Beide nur aus
          dem, was gerade sichtbar ist -- was der Picker ausgeblendet hat, gehoert auch nicht in den

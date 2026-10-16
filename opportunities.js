@@ -208,12 +208,13 @@
   var COL_ORDER = ['ignored', 'pending', 'in_progress', 'done'];
 
   /* Column identity colours: status semantics, not the app's up/down or citation palettes, so they
-     stay as they were. */
+     stay as they were. Seit dem 17.10. als Marken aus core (--vc-status-*), inline als var() -- sie
+     loesen am Punkt auf, dieselben Werte wie vorher. */
   var COLUMNS = [
-    { key: 'pending',     label: 'Pending',     status: 'Created',     dot: '#9ca3af' },
-    { key: 'in_progress', label: 'In Progress', status: 'In Progress', dot: '#2384E2' },
-    { key: 'done',        label: 'Done',        status: 'Done',        dot: '#15803d' },
-    { key: 'ignored',     label: 'Ignored',     status: 'Ignored',     dot: '#b4451f' }
+    { key: 'pending',     label: 'Pending',     status: 'Created',     dot: 'var(--vc-status-offen)' },
+    { key: 'in_progress', label: 'In Progress', status: 'In Progress', dot: 'var(--vc-status-in-arbeit)' },
+    { key: 'done',        label: 'Done',        status: 'Done',        dot: 'var(--vc-status-erledigt)' },
+    { key: 'ignored',     label: 'Ignored',     status: 'Ignored',     dot: 'var(--vc-status-ignoriert)' }
   ];
   var REC_ICON = {
     create_matching_content: '<polyline points="16 3 21 3 21 8"/><line x1="10" y1="14" x2="21" y2="3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/>',
@@ -291,7 +292,8 @@
     var shown = (limit ? list.slice(0, limit) : list);
     var hidden = list.length - shown.length;
     var html = shown.map(function(t){
-      var color = t.hex_light || t.hex_dark || '#6b7280';
+      /* Topic ohne Farbe: der Ersatz aus core (--vc-thema-ersatz), aufgeloest am Chip. */
+      var color = t.hex_light || t.hex_dark || 'var(--vc-thema-ersatz)';
       /* is-static (06.10.): reine Anzeige -- ohne die Klasse bekam der Chip den Hover eines Schalters. */
       return '<span class="up-topicchip is-static" style="--ust-tag-color:'+esc(color)+';">'+
         (t.emoji?'<span class="up-topicchip-e">'+esc(t.emoji)+'</span>':'')+

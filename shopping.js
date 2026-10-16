@@ -427,7 +427,9 @@
         cache: state.cache, reihe: state.reihe };
     }
     function isDark() { return (UC.themeParam && UC.themeParam(root.getAttribute("data-isdark"))) || root.getAttribute("data-theme") === "dark"; }
-    function grau(i) { return UC.balkenGrau ? UC.balkenGrau(i, isDark()) : (isDark() ? "#e0e0e0" : "#1f1f1b"); }
+    /* Ohne balkenGrau (nur ein aelteres core; das heutige fuehrt es immer) die Schrift der Wurzel aus
+       core statt eines festen Werts (17.10.). */
+    function grau(i) { return UC.balkenGrau ? UC.balkenGrau(i, isDark()) : getComputedStyle(root).getPropertyValue("--vc-text").trim(); }
     if (isDark()) root.setAttribute("data-theme", "dark"); else root.removeAttribute("data-theme");
     if (UC.makeTooltips) UC.makeTooltips(root, isDark);
 
@@ -2723,8 +2725,8 @@
       if (!tr.length) { linie.empty(); return; }
       var p = d.product || {}, b = p.brand && typeof p.brand === "object" ? p.brand : { type: "other" };
       var feld = state.dMetrik;
-      var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : token("--vc-text", "#1f1f1b");
-      var grau = token("--vc-fourth", "#80858e");
+      var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : token("--vc-text");
+      var grau = token("--vc-fourth");
       /* Ein Tag ohne Wert steht auf 0 wie in jedem Chart der App -- ausser der Position, dort
          laeuft die Linie ueber den Tag (siehe zeichneChart). */
       function wert(f, x) { var v = metrikWert(f, x[f]); return v == null && !/position/.test(f) ? 0 : v; }

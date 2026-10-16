@@ -59,12 +59,11 @@
 .udb-explain-logo {
   width: 18px; height: 18px; flex: 0 0 18px; border-radius: var(--up-r-xs);
   display: inline-flex; align-items: center; justify-content: center;
-  background: #f0f0ef; color: var(--vc-third);
+  background: var(--vc-erklaer-logo-platte); color: var(--vc-third);
 }
 /* Auch diese Karte haengt am body und wird im Dark Mode dunkel. Ein hellgrauer Kasten mit
    hellgrauem Zeichen darauf ist dort das hellste Element der Platte. */
-.up-explain[data-theme="dark"] .udb-explain-logo { background: #303030; color: var(--vc-third);
-}
+/* Dunkel #303030: seit dem 17.10. dreht die Marke --vc-erklaer-logo-platte selbst (core). */
 .udb-explain-logo svg { width: 12px; height: 12px; display: block; }
 
 /* ---------- Tabellenkasten ----------
