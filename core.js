@@ -876,13 +876,10 @@
     /* Das Urteil unter einer Kennzahl der Events (EXPLAIN_TEXT effekt_*, 17.10.). */
     "Clear effect": "Klarer Effekt",
     "Within normal range": "Im normalen Rahmen",
-    "Not enough data yet": "Noch zu wenig Daten",
     "AI answers vary from day to day. This change is more than twice as large as the usual ups and downs, so it is very likely caused by the event.":
       "KI-Antworten schwanken von Tag zu Tag. Diese Veränderung ist mehr als doppelt so groß wie die üblichen Schwankungen, geht also sehr wahrscheinlich auf das Event zurück.",
     "AI answers vary from day to day. This change is within the usual ups and downs, so it may be chance.":
       "KI-Antworten schwanken von Tag zu Tag. Diese Veränderung liegt im Rahmen der üblichen Schwankungen, kann also Zufall sein.",
-    "Too few answers so far to tell. Check back in a few days.":
-      "Bisher gibt es zu wenige Antworten, um das zu sagen. Schau in ein paar Tagen wieder rein.",
     "domain": "Domain",
     "URL": "URL",
 
@@ -4848,7 +4845,6 @@
        Schwelle der DB ist das Zweifache (Auftrag D.2) -- darum "mehr als doppelt so gross". */
     effekt_klar:    { h: "Clear effect", t: "AI answers vary from day to day. This change is more than twice as large as the usual ups and downs, so it is very likely caused by the event." },
     effekt_rauschen:{ h: "Within normal range", t: "AI answers vary from day to day. This change is within the usual ups and downs, so it may be chance." },
-    effekt_wenig:   { h: "Not enough data yet", t: "Too few answers so far to tell. Check back in a few days." },
     /* Die Zeile "Brand Colors" in der Farbauswahl. Sie steht hier und nicht im Einstellungsfenster,
        weil die Auswahl aus core kommt (colorScaleOptionsHtml) und der Erklaerkasten derselbe ist,
        den die Spaltenkoepfe benutzen -- eine Quelle fuer beide. */
@@ -19649,6 +19645,29 @@
       });
     }
     var evmEbene = null, evmSig = "", evmZeiger = "", evmDraussen = null;
+    /* DIE ANDEREN EVENTS LEISER (17.10., cfg.markerDimmen; Event-Detail: "die anderen Events sind zu
+       dominant"): Pins, Hilfslinien und Baender aller Events ausser dem Fokus-Event stehen mit
+       --up-evm-dim gedeckt, beim Hover, Fokus oder nach einem Tipp mit voller Staerke. Die Pins
+       tut die CSS (:hover); die Leinwand kennt den Hover nicht, deshalb merkt sich evmHell die Ids
+       der gerade gezeigten Gruppe und zeichnet neu. Ohne cfg.markerDimmen aendert sich nichts. */
+    var evmHell = [];
+    function evmDim(){
+      if (!cfg.markerDimmen) return 1;
+      var v = NaN;
+      try { v = parseFloat(getComputedStyle(wrap).getPropertyValue("--up-evm-dim")); } catch(e){}
+      return isFinite(v) ? Math.max(0, Math.min(1, v)) : 0.45;
+    }
+    function evmHellSetzen(ort){
+      if (!cfg.markerDimmen) return;
+      var ids = [];
+      if (ort){
+        var k = ort.querySelectorAll("[data-event-id]");
+        for (var i = 0; i < k.length; i++){ var d = k[i].getAttribute("data-event-id"); if (ids.indexOf(d) < 0) ids.push(d); }
+      }
+      if (ids.join("|") === evmHell.join("|")) return;
+      evmHell = ids;
+      try { if (chart) chart.draw(); } catch(e){}
+    }
     function evmEbeneWeg(){
       if (evmEbene && evmEbene.parentNode) evmEbene.parentNode.removeChild(evmEbene);
       if (evmDraussen){ document.removeEventListener("pointerdown", evmDraussen, true); evmDraussen = null; }
@@ -19662,6 +19681,7 @@
         var s1 = o[i].querySelector(".up-evm-stapel");
         if (s1) s1.setAttribute("aria-expanded", "false");
       }
+      if (!ausser) evmHellSetzen(null);
     }
     /* Tooltip und Karte bleiben im Diagramm (Vorgabe: "an Chart-Raendern spiegeln", "nicht
        abschneiden"): gemessen, sobald sie gezeigt werden -- visibility:hidden laesst die Breite
@@ -19723,7 +19743,7 @@
       if (!gruppen.length){ evmEbeneWeg(); return; }
       if (!evmEbene || !evmEbene.isConnected){
         evmEbene = document.createElement("div");
-        evmEbene.className = "up-evm-layer";
+        evmEbene.className = "up-evm-layer" + (cfg.markerDimmen ? " is-gedimmt" : "");
         wrap.appendChild(evmEbene);
         evmSig = "";
         /* Touch: der erste Tipp zeigt Tooltip bzw. Karte (Vorgabe: "Touch: Tap"), erst der
@@ -19732,11 +19752,23 @@
         evmEbene.addEventListener("pointerdown", function(e){ evmZeiger = e.pointerType || ""; });
         evmEbene.addEventListener("mouseover", function(e){
           var o = e.target && e.target.closest ? e.target.closest(".up-evm-ort") : null;
-          if (o) evmPlatzieren(o);
+          if (o){ evmPlatzieren(o); evmHellSetzen(o); }
+        });
+        /* Zeiger weg: zurueck in die Dimmung, es sei denn, eine Karte ist per Tipp offen geblieben. */
+        evmEbene.addEventListener("mouseout", function(e){
+          var o = e.target && e.target.closest ? e.target.closest(".up-evm-ort") : null;
+          if (!o || (e.relatedTarget && o.contains(e.relatedTarget))) return;
+          var offen = evmEbene.querySelector(".up-evm-ort.is-offen");
+          evmHellSetzen(offen);
         });
         evmEbene.addEventListener("focusin", function(e){
           var o = e.target && e.target.closest ? e.target.closest(".up-evm-ort") : null;
-          if (o) evmPlatzieren(o);
+          if (o){ evmPlatzieren(o); evmHellSetzen(o); }
+        });
+        evmEbene.addEventListener("focusout", function(e){
+          var o = e.target && e.target.closest ? e.target.closest(".up-evm-ort") : null;
+          if (!o || (e.relatedTarget && o.contains(e.relatedTarget))) return;
+          evmHellSetzen(evmEbene.querySelector(".up-evm-ort.is-offen"));
         });
         evmEbene.addEventListener("click", function(e){
           var z = e.target && e.target.closest ? e.target.closest(".up-evm-zeile") : null;
@@ -19749,6 +19781,7 @@
             ort.classList.toggle("is-offen", !offen);
             if (k.classList.contains("up-evm-stapel")) k.setAttribute("aria-expanded", String(!offen));
             evmPlatzieren(ort);
+            evmHellSetzen(offen ? null : ort);
             return;
           }
           evmZu(null);
@@ -19786,12 +19819,14 @@
            dem Bild beginnt am linken Rand, ein Ende danach endet am rechten; liegt beides
            daneben, kein Band. Der Pin steht weiter am Start. */
         var baender = liste.filter(function(m){ return m && m.ende; }), bandFarbe = baender.length ? evmBandFarbe(wrap) : "";
+        var dim = evmDim();
         if (bandFarbe){
           ctx.save();
           ctx.fillStyle = bandFarbe;
           baender.forEach(function(m){
             var a = evmXGekappt(c, m.date), b = evmXGekappt(c, m.ende);
             if (a == null || b == null || b < a) return;
+            ctx.globalAlpha = m.fokus || evmHell.indexOf(m.id) >= 0 ? 1 : dim;
             ctx.fillRect(Math.round(a), ca.top, Math.max(1, Math.round(b - a)), ca.bottom - ca.top);
           });
           ctx.restore();
@@ -19804,6 +19839,7 @@
         ctx.lineCap = "round";
         gruppen.forEach(function(g){
           var x = Math.round(g.x) + 0.5;
+          ctx.globalAlpha = g.fokus || g.items.some(function(m){ return evmHell.indexOf(m.id) >= 0; }) ? 1 : dim;
           ctx.setLineDash(g.fokus ? [] : [1, 3]);
           ctx.beginPath(); ctx.moveTo(x, ca.top - EVM_UEBER + EVM_PIN / 2 - 1); ctx.lineTo(x, ca.bottom);
           ctx.stroke();

@@ -5575,6 +5575,16 @@
      Pins und eine offene Karte tun es. */
   z-index: 10000; }
 .up-evm-ort { position: absolute; width: 0; height: 0; }
+/* Die anderen Events leiser (cfg.markerDimmen, Event-Detail): nur die Deckkraft, keine neue Farbe.
+   Der Wert gilt auch fuer Hilfslinien und Baender auf der Leinwand (makeLine liest ihn). Hover,
+   Tastaturfokus und eine per Tipp geoeffnete Karte (.is-offen) zeigen den Pin wieder voll; das
+   Fokus-Event bleibt immer voll. */
+.up-chart-kasten { --up-evm-dim: .45; }
+.up-evm-layer.is-gedimmt .up-evm-ort:not(.is-fokus) { opacity: var(--up-evm-dim); transition: opacity var(--up-t-1) var(--up-ease); }
+.up-evm-layer.is-gedimmt .up-evm-ort:not(.is-fokus):hover,
+.up-evm-layer.is-gedimmt .up-evm-ort:not(.is-fokus):focus-within,
+.up-evm-layer.is-gedimmt .up-evm-ort:not(.is-fokus).is-offen { opacity: 1; }
+@media (prefers-reduced-motion: reduce){ .up-evm-layer.is-gedimmt .up-evm-ort { transition: none; } }
 /* Der Knopf traegt seine Pins: einer beim einzelnen Event, bis zu drei im Stapel, je 14px versetzt
    (Vorgabe), der vorderste oben. --n und --i setzt makeLine. */
 .up-evm-knopf { position: absolute; left: -10px; top: -10px; height: 20px; width: calc(20px + (var(--n, 1) - 1) * 16px);
