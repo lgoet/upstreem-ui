@@ -364,6 +364,20 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-anheften { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; margin-top: 16px; padding: 0;
   border: 0; background: transparent; font: inherit; font-size: var(--up-fs-m); color: var(--vc-text); text-align: left; cursor: pointer; }
 .uev-anheften:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); border-radius: var(--up-r-s); }
+/* "Notify me" (17.10., Meldungen je Event): dieselbe Zeile, 12 unter "Pin to sidebar" (zwei
+   Schalter gehoeren zusammen), dazu ein Satz in der Nebenschrift unter der Beschriftung. */
+.uev-anheften + .uev-notify { margin-top: 12px; }
+.uev-notify-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.uev-notify-satz { font-size: var(--up-fs-s); line-height: 16px; color: var(--vc-muted); font-weight: var(--up-fw-n); white-space: normal; }
+/* Im Menue "..." des Details: Zeichen, Beschriftung mit Satz, Schalter rechts. Das Menue wird dafuer
+   breiter (180 reicht fuer "Notify me" und den Schalter, nicht fuer den Satz), die Zeile waechst
+   mit dem Satz statt der 34 aus core. */
+.uev-mehrmenu:has(.uev-mehr-notify) { width: 260px; }
+.up-aktionsmenue .up-optrow.uev-mehr-notify { align-items: flex-start; gap: 8px; padding-top: 8px; padding-bottom: 8px; text-align: left; }
+.up-aktionsmenue .up-optrow.uev-mehr-notify > svg { margin-top: 2px; }
+.uev-mehr-notify .uev-notify-txt { flex: 1 1 auto; }
+.uev-mehr-notify .up-aktionsmenue-lbl { line-height: 18px; }
+.uev-mehr-notify .up-switch { margin-top: 1px; }
 
 /* AUF- UND ZUKLAPPEN (03.10.): 200ms in der Kurve der App. Die Zeile waechst von 0fr auf 1fr --
    die Hoehe folgt dem Inhalt, ohne gemessen zu werden. Zugeklappt unsichtbar UND ohne Fokus
