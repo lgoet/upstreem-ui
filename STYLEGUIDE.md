@@ -86,6 +86,12 @@ sie auch Flächen mit eigener Palette erreicht. Die Dialogkarte aller core-Dialo
 Schließen-Hover, gesperrte Knöpfe und Flaggen ohne Bild `#f2f2f2` statt `#f9f8f9` (auf der weißen
 Karte 13 statt 6 Stufen). Im Dunkeln bleibt die Karte bei `#1f1f1f`.
 
+**Das Grundgrau am `<html>` (seit 17.10.):** `html[data-up-hell="grau"]` setzt `--vc-heading-bg`
+selbst auf `--up-leise-grau`. Vorher stand an `:root` noch `#f9f8f9`, und jede Fläche am `<body>`
+ohne eigene Palette (helles `[data-theme]`, keine `.up-root`) trug im grauen Light die alte leise
+Fläche und den alten Knopf-Hover (`--up-knopf-hover` rechnet aus ihr). Wurzeln, eigene Paletten und
+dunkle Elemente setzen die Marke weiter selbst; ohne das Attribut (Landingpage, Dunkel) bleibt es.
+
 **Innerhalb einer weißen Fläche ist der Grund weiß:** Drawer (`.up-kdr`, `[id^="drawer-"]`),
 Portale (`.up-portal`), `.up-band`, `.up-box`, die flache Tabelle und ihr Band setzen
 `--up-surface` wieder auf `--vc-bg`. Was dort „Seitenfarbe“ sagt (klebender Kopf, Gesamtzeile),
@@ -332,6 +338,40 @@ die Tokens.
   `entfernen-hover`, `picker-schatten`, `aufnahme-weg-hover`/`-ok-hover`/`-fehler`, `schleier`,
   `haken-an`, `skelett-blase-a`/`-b`. Grau-hell = hell, Geist-dunkel = dunkel. Wo die Komponente
   hell und dunkel je ein Literal hatte, wechselt das Token, und ihre Dunkel-Regel ist entfallen.
+
+### Komponentenfarben aus core: übrige Bereiche (seit 17.10.)
+
+Keine Komponente trägt mehr eigene Farbwerte; was bisher als Literal in Settings › Your Brand,
+Prompt Research, Performance Radar, Kalender, Opportunities, Create with AI, Combo-Chart, Add Brand,
+Brand Editor, URL-Drawer, Seitenleiste, Preferences, Discover Brands, Team, Filterleiste und Export
+stand, steht als Marke in core.css (Block „Komponentenfarben: übrige Bereiche“ am Ende der beiden
+Themenblöcke, an `:root` und `[data-theme]`, also auch für Flächen am `<body>`). Die Werte sind
+unverändert. Eine Spalte „Dark“ heißt: die Marke dreht mit dem Thema; ohne steht sie in beiden gleich.
+
+| Rolle | Marke | Light | Dark |
+|---|---|---|---|
+| Schrift/Zeichen auf kräftiger Fläche, leise, Hover darauf | `--vc-ink-auf-farbe` / `-leise` / `--vc-hover-auf-farbe` | `#fff` / Weiß 82 % / Weiß 16 % | |
+| Mischpartner zum Abdunkeln (color-mix) | `--vc-abdunkeln` | `#000` | |
+| Kante um Flaggen; Rand Farbfeld, Hover | `--vc-flagge-rand`; `--vc-farbfeld-rand` / `-hover` | Schwarz 8 %; 14 % / 28 % | |
+| Überblendung Profilbild; Schleier Seitenleiste | `--vc-bild-ueberblendung`; `--vc-seitenleiste-schleier` | Schwarz 45 %; 30 % | |
+| Fehlerring Team (fest); Fokus Export-Knopf | `--vc-fehler-ring-fest`; `--vc-fokus-schatten-leise` | `rgba(176,32,12,.16)`; `rgba(31,31,27,.12)` | |
+| Matrix: Ziffer dunkel/hell, Glanz, Tiefe | `--vc-matrix-ink` / `-ink-hell` / `-glanz` / `-tiefe` | Weiß 94 % / Schwarz 78 % / Weiß 30 % / Schwarz 7 % | |
+| Volumen-Leiter (Prompt Research) | `--vc-volumen-1..4` | `#d2865d` `#d9b85d` `#9fd25d` `#60d25d` | |
+| Spaltenpunkte Opportunities | `--vc-status-offen` / `-in-arbeit` / `-erledigt` / `-ignoriert` | `#9ca3af` / `#2384E2` / `#15803d` / `#b4451f` | |
+| Topic ohne Farbe (JS liest sie) | `--vc-thema-ersatz` / `-vorschlag` / `-lader` / `-filter`, `--vc-logo-ersatz` | `#6b7280` / `#6b6f78` / `#9ca3af` / `#808080`, `#9e9e9e` | |
+| Dialog-Schleier | `--vc-dialog-schleier` | Schwarz 30 % | 35 % |
+| Schicht am `<body>` mit eigener Leiter (Gefahrendialog, Matrix-Tooltip): Text, 2., 3. Stufe | `--vc-schicht-text` / `-muted` / `-third` | `#1f1f1b` / `#6b6f78` / `#9e9e9e` | `#ededed` / `#a1a1a1` / `#808080` |
+| … Rand, Fläche, leise Fläche, Hover-Rand | `--vc-schicht-border` / `-flaeche` / `-leise` / `-hover-rand` | `#dcdbdd` / `#fff` / `#f9f8f9` / `#6f6f6f` | Menürand / Menügrund / leise Fläche / `#707070` |
+| … Fokus, Fokusring, Logoplatte | `--vc-schicht-fokus` / `-fokus-ring` / `-logo-platte` | `#4A9EFF` / Blau 20 % / `#fff` | `#6DB2FF` / Blau 28 % / `#e0e0e0` |
+| Leere Matrix-Zelle | `--vc-matrix-leer` | `#f9f8f9` (auch im grauen Light) | leise Fläche |
+| Volumen-Spur; Millimeterpapier | `--vc-volumen-spur`; `--vc-raster-linie` | `#e8eaee`; Schrift 2,5 % | `#303030`; Weiß 3,5 % |
+| Kalender: Hover, Wahl, Band, Endpunkt | `--vc-kalender-hover` / `-wahl` / `-band` / `-ende` | `#eaeaea` / `#e2e2e1` / `#ededed` / (Schrift) | `#2d2d2d` / `#383838` / `#313131` / `#e0e0e0` |
+| Karte Opportunities; Anfang Potenzial-Verlauf | `--vc-flaeche-durchscheinend`; `--vc-potenzial-anfang` | `#00000005`; `#c4c9d0` | `#ffffff0d`; `#4a4f56` |
+| Erklärkarte: Potenzial leer/Verlauf, Logo-Platte | `--vc-erklaer-potenzial-leer` / `-a` / `-b`, `--vc-erklaer-logo-platte` | `#e4e2e4` / `#c4c9d0` / `#1f1f1b`, `#f0f0ef` | `#23252a` / `#4a4a4a` / `#e0e0e0`, `#303030` |
+| Syntax der Formatvorschau (Create with AI) | `--vc-syntax-auszeichnung` / `-attribut` / `-zeichenkette` | `#7c3aed` / `#b45309` / `#15803d` | `#c4b5fd` / `#fcd34d` / `#86efac` |
+| Schleier Create with AI | `--vc-ki-schleier` | `rgba(17,18,20,.34)` | Schwarz 60 % |
+| Fehler im Feld (Add Brand): Ring, Fläche | `--vc-fehler-ring` / `--vc-fehler-flaeche` | `rgba(176,32,12,.16)` / `.06` | `rgba(210,93,93,.24)` / `.10` |
+| Punkt der Akzentwahl (Preferences) | `--vc-akzent-punkt-standard` / `-blau` / `-azur` / `-indigo` / `-terrakotta` | `#1f1f1b` / `#3f66b0` / `#0075DE` / `#5E6AD2` / `#BD5836` | `#e0e0e0` / `#83abf4` / `#3D97F0` / `#7C8AF0` / `#D97757` |
 
 ---
 

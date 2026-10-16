@@ -37,7 +37,7 @@
     transition: opacity var(--uex-t) var(--uex-ease);
   }
   .uex-btn:hover { opacity: .9; }
-  .uex-btn:focus-visible { box-shadow: 0 0 0 2px rgba(31,31,27,0.12); }
+  .uex-btn:focus-visible { box-shadow: 0 0 0 2px var(--vc-fokus-schatten-leise); }
   .uex-btn-ic {
     width: 16px; height: 16px; flex: 0 0 16px;
     fill: none; stroke: currentColor; stroke-width: 1.8;

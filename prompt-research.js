@@ -546,7 +546,11 @@
       return Array.isArray(parsed) ? parsed : fallback;
     } catch(e){ return fallback; }
   }
-  function makeColor(value, fallback){ var raw = String(value || fallback || '#6b7280').trim(); return raw.charAt(0) === '#' ? raw : '#' + raw; }
+  /* Die Ersatzfarben einer Topic ohne eigene Farbe stehen seit dem 17.10. in core (--vc-thema-ersatz*).
+     GELESEN und nicht als var() eingesetzt: der Wert geht hier in Daten ein (hex_light der Zeilen,
+     data-color des Editors, das ueber makeColor wieder hereinkommt) und muss eine Farbe bleiben. */
+  function farbMarke(name){ try { return String(getComputedStyle(document.documentElement).getPropertyValue(name) || '').trim(); } catch (e) { return ''; } }
+  function makeColor(value, fallback){ var raw = String(value || fallback || farbMarke('--vc-thema-ersatz')).trim(); if (!raw) return raw; return raw.charAt(0) === '#' ? raw : '#' + raw; }
   function getMarkets(){ return readJsonScript('upr-markets-json', fallbackMarkets); }
   /* fremdUrl: in der App ueber die eigene Adresse (core, Datenschutz 14.10.) -- auch fuer flag_url
      aus den Daten, denn die Rueckfall-Maerkte oben tragen flagcdn fest im Code. */
@@ -586,13 +590,13 @@
     var src = _uprSrcTags();
     return kws.map(function(k){
       var f = src.find(function(t){ return String(t.name).toLowerCase() === String(k).toLowerCase(); });
-      return f ? { name: k, color: makeColor(f.hex_light, '#6b6f78'), emoji: f.emoji } : { name: k, color: 'var(--vc-third)', emoji: '' };
+      return f ? { name: k, color: makeColor(f.hex_light, farbMarke('--vc-thema-ersatz-vorschlag')), emoji: f.emoji } : { name: k, color: 'var(--vc-third)', emoji: '' };
     });
   }
   function _uprPoolTags(){
     var src = _uprSrcTags();
     if (!src.length) src = ['Discovery','Comparison','Buying intent','How-to','Reviews','Alternatives','Pricing','Best-of'].map(function(n){ return { name: n, hex_light: '', emoji: '' }; });
-    return src.map(function(t){ return { name: t.name, color: makeColor(t.hex_light, '#9ca3af'), emoji: t.emoji }; });
+    return src.map(function(t){ return { name: t.name, color: makeColor(t.hex_light, farbMarke('--vc-thema-ersatz-lader')), emoji: t.emoji }; });
   }
   /* Der Chip der Ladeanimation ist seit dem 06.10. der Topic-Chip aus core ("Dot", Topic-Handoff) --
      hier stand eine eigene Pille mit eigenem Punkt, die dem neuen Chip schon fast glich. Die Farbe
@@ -724,7 +728,7 @@
       estimated_volume: clampVolume(item.estimated_volume),
       tags: tags.map(function(t){
         return { tag_id: t.tag_id || t.id || null, name: t.name || t.tag_name || '', emoji: t.emoji || '',
-                 hex_light: t.hex_light || t.hex_dark || '#6b7280', hex_dark: t.hex_dark || '' };
+                 hex_light: t.hex_light || t.hex_dark || farbMarke('--vc-thema-ersatz'), hex_dark: t.hex_dark || '' };
       }).filter(function(t){ return t.name; }),
       /* Intent und Branded des Vorschlags (14.10.), roh durchgereicht -- core liest die Felder
          (intent, intent_status, intent_source, branded, branded_source, branded_brands). */
@@ -755,7 +759,7 @@
   function renderTags(tags){
     if (!Array.isArray(tags) || !tags.length) return '<span class="upr-cell-empty">–</span>';
     return '<div class="upr-tags-list">' + tags.map(function(tag){
-      return '<span class="up-topicchip is-static" style="--ust-tag-color:' + esc(makeColor(tag.hex_light, '#6b7280')) + ';">' +
+      return '<span class="up-topicchip is-static" style="--ust-tag-color:' + esc(makeColor(tag.hex_light, farbMarke('--vc-thema-ersatz'))) + ';">' +
         (tag.emoji ? '<span class="up-topicchip-e">' + esc(tag.emoji) + '</span>' : '') +
         '<span class="up-topicchip-lbl">' + esc(tag.name) + '</span></span>';
     }).join('') + '</div>';
@@ -1052,11 +1056,11 @@
   function updateComposerValueState(){ if (!composerEl || !textarea) return; composerEl.classList.toggle('has-value', textarea.value.trim().length > 0); }
   function autoResizeTextarea(){ if (!textarea) return; textarea.style.height = 'auto'; textarea.style.height = Math.min(textarea.scrollHeight, 180) + 'px'; updateComposerValueState(); }
   function normalizeSuggestionTag(input){
-    if (typeof input === 'string'){ var n = input.trim(); return n ? { id: null, name: n, emoji: '', hex_light: '#6b6f78' } : null; }
+    if (typeof input === 'string'){ var n = input.trim(); return n ? { id: null, name: n, emoji: '', hex_light: farbMarke('--vc-thema-ersatz-vorschlag') } : null; }
     if (!input || typeof input !== 'object') return null;
     var name = String(input.name || input.tag_name || input.label || '').trim();
     if (!name) return null;
-    return { id: input.id || input.tag_id || null, name: name, emoji: input.emoji || '', hex_light: input.hex_light || input.hex_dark || '#6b6f78' };
+    return { id: input.id || input.tag_id || null, name: name, emoji: input.emoji || '', hex_light: input.hex_light || input.hex_dark || farbMarke('--vc-thema-ersatz-vorschlag') };
   }
   function renderSuggestions(sourceTags){
     var isFirstCall = Array.isArray(sourceTags);
@@ -1074,7 +1078,7 @@
     }
     suggestionsEl.innerHTML = visibleTags.map(function(tag){
       return '<button class="up-topicchip upr-chip" type="button" data-chip="' + esc(tag.name) + '" data-tag-id="' + esc(tag.id || '') +
-        '" data-color="' + esc(makeColor(tag.hex_light, '#6b6f78')) + '" data-emoji="' + esc(tag.emoji || '') + '" style="--ust-tag-color:' + esc(makeColor(tag.hex_light, '#6b6f78')) + ';">' +
+        '" data-color="' + esc(makeColor(tag.hex_light, farbMarke('--vc-thema-ersatz-vorschlag'))) + '" data-emoji="' + esc(tag.emoji || '') + '" style="--ust-tag-color:' + esc(makeColor(tag.hex_light, farbMarke('--vc-thema-ersatz-vorschlag'))) + ';">' +
         (tag.emoji ? '<span class="up-topicchip-e">' + esc(tag.emoji) + '</span>' : '') +
         '<span class="up-topicchip-lbl">' + esc(tag.name) + '</span></button>';
     }).join('') +
@@ -1658,7 +1662,7 @@
       } else if (meta.emoji){
         kachel = '<span class="up-feldchip-av"><span class="up-topicchip-e">' + esc(meta.emoji) + '</span></span>';
       } else {
-        kachel = '<span class="up-feldchip-av is-strich" style="--ust-tag-color:' + esc(makeColor(meta.color, '#6b6f78')) + ';"></span>';
+        kachel = '<span class="up-feldchip-av is-strich" style="--ust-tag-color:' + esc(makeColor(meta.color, farbMarke('--vc-thema-ersatz-vorschlag'))) + ';"></span>';
       }
       span.innerHTML = '<span class="upr-inline-tag-body up-entchip is-lifted is-static up-feldchip">' + kachel +
         '<span class="upr-inline-tag-label up-feldchip-lbl">' + esc(label) + '</span>' +

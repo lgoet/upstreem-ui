@@ -178,18 +178,23 @@
        mit. Im Dunkeln stand dort ein schwarzer Punkt (18.09. gemeldet) -- richtig ist der helle.
        Die drei anderen tragen in beiden Themen denselben Ton, das ist im Farbblock von core
        begruendet. */
+    /* Seit dem 17.10. stehen die Punkte als Marken in core (--vc-akzent-punkt-*), je mit hellem und
+       dunklem Wert; inline als var() loesen sie im Fenster auf, das sein Thema als Attribut traegt --
+       also genau der Wert, den farbpunkt() vorher selbst gewaehlt hat. Hell/dunkel bisher:
+       Standard #1f1f1b/#e0e0e0, Blau #3f66b0/#83abf4, Azure #0075DE/#3D97F0,
+       Indigo #5E6AD2/#7C8AF0, Terracotta #BD5836/#D97757. */
     var AKZENTE = [
-      { wert: "default",    name: "Default", farbe: "#1f1f1b", farbeDunkel: "#e0e0e0" },
+      { wert: "default",    name: "Default", farbe: "var(--vc-akzent-punkt-standard)" },
       /* Direkt unter dem Standard (06.10. angefordert): alles wie dort, nur die Charts im ruhigen
          Blau. Der Punkt ist halb und halb -- links die Farbe der Oberflaeche, rechts die der Charts. */
-      { wert: "standard-blau", name: "Default + Blue", farbe: "#1f1f1b", farbeDunkel: "#e0e0e0", farbe2: "#3f66b0", farbe2Dunkel: "#83abf4" },
+      { wert: "standard-blau", name: "Default + Blue", farbe: "var(--vc-akzent-punkt-standard)", farbe2: "var(--vc-akzent-punkt-blau)" },
       /* Der Punkt zeigt die TINTE, also den Ton, den man im gewaehlten Thema wirklich zu
          sehen bekommt -- nicht die Flaechenfarbe. Die Werte stehen neben ihrer Begruendung in
          core.css beim Token --up-accent-ink. */
       /* Reihenfolge auf Wunsch (19.09.): Standard, Azure, Indigo, Terracotta. */
-      { wert: "azur",       name: "Azure",      farbe: "#0075DE", farbeDunkel: "#3D97F0" },
-      { wert: "indigo",     name: "Indigo",     farbe: "#5E6AD2", farbeDunkel: "#7C8AF0" },
-      { wert: "terrakotta", name: "Terracotta", farbe: "#BD5836", farbeDunkel: "#D97757" }
+      { wert: "azur",       name: "Azure",      farbe: "var(--vc-akzent-punkt-azur)" },
+      { wert: "indigo",     name: "Indigo",     farbe: "var(--vc-akzent-punkt-indigo)" },
+      { wert: "terrakotta", name: "Terracotta", farbe: "var(--vc-akzent-punkt-terrakotta)" }
     ];
     var DATEN = [
       { wert: "d-mon-y", name: "12. Dec 2025" },
