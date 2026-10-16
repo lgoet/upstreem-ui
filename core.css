@@ -3441,6 +3441,12 @@
       display: flex; flex-direction: column; gap: 4px;
     }
     .up-scale-menu.is-shown { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    /* Im grauen Hell die leise Flaeche der App (17.10.), nach dem Muster der core-Dialoge
+       (.up-topicmodal-card): die Grundregel setzt --vc-heading-bg selbst (#f9f8f9) und erreicht die
+       Marke --up-leise-grau (#f2f2f2) sonst nicht. Das Menue traegt data-theme selbst, also zieht
+       --up-knopf-hover hier mit. --vc-switch-bg bleibt: auch an der Wurzel aendert das graue Hell
+       ihn nicht. Nur mit dem Marker am <html>, nur im Hellen; (0,3,1) gegen (0,1,0). */
+    html[data-up-hell="grau"] .up-scale-menu:not([data-theme="dark"]) { --vc-heading-bg: var(--up-leise-grau); }
     /* Same brightened dark border as every other dropdown menu in the app — a plain --vc-border
        black-ish tone reads as blurry/edgeless against a dark surface. */
     .up-scale-menu[data-theme="dark"] {
