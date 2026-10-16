@@ -299,7 +299,8 @@
 
   /* ---------- Fertig ----------
      Haken 28 in --vt-up, Ueberschrift und Satz, die Datei als Kachel (Rahmen 1, Radius 8 nach Rolle
-     einer Kachel, Polster 12/12/12/14) mit "Download again". */
+     einer Kachel, Polster 12/12/12/14). Ohne "Download again" (17.10.): der Abschluss kommt nur,
+     wenn gerade heruntergeladen wurde; schliessen ueber Done, weiter ueber "Export another". */
   .uex-fertig-ic { display: inline-flex; color: var(--vt-up); }
   .uex-fertig-ic svg { width: 28px; height: 28px; display: block; }
   .uex-datei {
@@ -311,13 +312,12 @@
   .uex-datei-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
   /* Dieselbe Mono-Familie wie .up-log-mono in core: ui-monospace ist ueberall da (Mac: SF Mono),
      Geist Mono wird in der App nicht geladen. */
-  .uex-datei-name, .uex-foot-name {
+  .uex-datei-name {
     min-width: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: var(--up-fs-s); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .uex-datei-name { color: var(--vc-text); }
   .uex-datei-meta { font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; }
-  .uex-datei .uex-nochmal { flex: 0 0 auto; white-space: nowrap; }
 
   /* ---------- Fuss ----------
      Links der Dateiname (Zeichen 14, Mono 12, dritte Textfarbe) oder an seiner Stelle der rote
@@ -330,6 +330,56 @@
   .uex-foot-info { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; color: var(--vc-third); }
   .uex-foot-ic { display: inline-flex; flex: 0 0 14px; }
   .uex-foot-ic svg { width: 14px; height: 14px; display: block; }
+  /* Der Dateiname zum Umbenennen (17.10.). Knopf und Feld haben DIESELBE Box: Hoehe 24
+     (--up-h-chip), Rand 1, Polster 5, Radius 4 nach Rolle (bis 24 hoch) -- der Text steht in
+     beiden 6px vom Rand, beim Umschalten springt nichts, es kommen nur Rand und Grund dazu. Der
+     Knopf traegt den Rand unsichtbar. -2px links: die Hover-Flaeche haelt 4px Abstand zum Zeichen
+     statt 6, der Name rueckt nur um 4px gegen frueher. Hover wie ein Textknopf (nur die Flaeche,
+     Schrift in Textfarbe), Fokus wie jeder Knopf. Gesperrt (Lauf, fertig) ist er nur Text. */
+  .uex-foot-name, .uex-foot-feld {
+    display: inline-flex; align-items: center; flex: 0 1 auto; min-width: 0; max-width: 100%;
+    height: var(--up-h-chip); margin: 0 0 0 -2px; padding: 0 5px; box-sizing: border-box;
+    border-width: 1px; border-style: solid; border-radius: var(--up-r-s);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: var(--up-fs-s);
+    color: var(--vc-third);
+  }
+  .uex-foot-name {
+    border-color: transparent; background: transparent; cursor: pointer; text-align: left;
+    transition: background-color var(--up-t-1) var(--up-ease), color var(--up-t-1) var(--up-ease);
+  }
+  .uex-foot-name:hover:not(:disabled) { background: var(--up-knopf-hover); color: var(--vc-text); }
+  .uex-foot-name:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
+  .uex-foot-name:disabled { cursor: default; }
+  .uex-foot-name[hidden], .uex-foot-feld[hidden] { display: none; }
+  .uex-foot-stamm { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .uex-foot-endung { flex: 0 0 auto; white-space: nowrap; }
+  /* Das Feld: Rand und Grund wie jedes Eingabefeld (Hover und Fokusring aus core, .up-fieldwrap
+     traegt sie fuer den Kasten). Die Endung steht im Kasten in dritter Textfarbe, der Stamm in
+     Textfarbe -- man sieht, was man tippt und was fest ist. Eine Klasse (0,1,0): Hover und
+     Fokus aus core (0,2,0) liegen darueber. */
+  .uex-foot-feld { border-color: var(--vc-border); background: var(--up-surface); cursor: text; }
+  /* Das Feld waechst mit dem Text: die unsichtbare Kopie im selben Rasterfeld gibt die Breite vor
+     (white-space: pre, damit auch Leerzeichen zaehlen), das Feld fuellt sie. Breiter als der Fuss
+     wird es nicht (min-width: 0), dann rollt der Text im Feld. Die Spalte minmax(0, 1fr) statt
+     auto: sonst ist sie so breit wie die Kopie, das Feld laeuft unter dem Rand weiter und die
+     Schreibmarke am Ende des Namens verschwindet (am Telefon gemessen 621 in 265). 1ch
+     Mindestbreite fuer die Schreibmarke eines leeren Feldes. */
+  .uex-foot-mass { display: inline-grid; grid-template-columns: minmax(0, 1fr); flex: 0 1 auto; min-width: 1ch; overflow: hidden; }
+  .uex-foot-mass::after {
+    content: attr(data-wert); grid-area: 1 / 1; visibility: hidden; white-space: pre; height: 0;
+    font: inherit;
+  }
+  .uex-foot-in {
+    grid-area: 1 / 1; width: 100%; min-width: 1ch; margin: 0; padding: 0; border: 0; outline: 0;
+    background: transparent; color: var(--vc-text); font: inherit; line-height: 22px;
+  }
+  /* Auf Touch-Geraeten setzt core JEDES Feld auf 16 (sonst zoomt iOS beim Antippen hinein, core.css
+     "pointer: coarse"). Die Kopie, die die Breite misst, muss mitziehen -- sonst misst sie 12er
+     Schrift und das Feld schneidet das Ende des Namens ab (gemessen am Telefon: "Bericht Q3"
+     stand als "Bericht" da). */
+  @media (hover: none) and (pointer: coarse) {
+    .uex-foot-mass { font-size: var(--up-fs-xl); }
+  }
   .uex-foot > .uex-fehler { flex: 1 1 auto; min-width: 0; }
   .uex-foot > .uex-fehler:not(.is-on) { display: none; }
   .uex-foot > .uex-fehler > span { padding-top: 0; }
@@ -384,6 +434,4 @@
     .uex-foot-info, .uex-foot > .uex-fehler { flex-basis: 100%; }
     .uex-foot-knoepfe { width: 100%; margin-left: 0; }
     .uex-foot-knoepfe > .up-btn-pri, .uex-foot-knoepfe > .up-btn-sec { flex: 1 1 0; min-width: 0; }
-    .uex-datei { flex-wrap: wrap; }
-    .uex-datei .uex-nochmal { flex: 1 1 100%; }
   }

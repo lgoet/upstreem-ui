@@ -114,9 +114,10 @@
       "Fetching rows": "Zeilen werden abgerufen", "Building the file": "Datei wird erstellt",
       "Page {k} of {n}": "Seite {k} von {n}", "Page {k}": "Seite {k}",
       "Cancel export": "Export abbrechen", "Export another": "Weiterer Export",
-      "Download again": "Erneut herunterladen",
-      "The download started on its own. If nothing arrived, download the file again.":
-        "Der Download startet von selbst. Kam nichts an, lad die Datei erneut herunter.",
+      /* Der Abschluss (17.10.): ein schlichter Erfolgssatz statt "Download again" -- der Screen
+         kommt nur, wenn gerade heruntergeladen wurde. */
+      "Your file has been downloaded.": "Deine Datei wurde heruntergeladen.",
+      "Rename file": "Datei umbenennen",
       "{groesse}, {n} columns, CSV": "{groesse}, {n} Spalten, CSV",
       "{groesse}, 1 column, CSV": "{groesse}, 1 Spalte, CSV",
       /* Die Saetze unter der Ueberschrift (TYPES.beschr). Brand, Prompt, Topic, Visibility, Rank
@@ -148,6 +149,36 @@
     });
   }
   function tr(x){ var C = window.UpstreemCore; return C && C.t ? C.t(x) : x; }
+  /* ---- Dateinamen (17.10.) ----
+     STAMM_MAX: der ganze Name ohne .csv. Windows und macOS erlauben 255, aber ein Name, der im
+     Download-Ordner nicht mehr in eine Zeile passt, hilft niemandem; der Vorschlag (Team 40 +
+     Datensatz + zwei Daten) bleibt mit 72 sicher darunter. */
+  var STAMM_MAX = 100, TEAM_MAX = 40;
+  /* Der Teamname als Teil des Vorschlags: klein, Umlaute ausgeschrieben (ein "a" fuer "ä" liest
+     sich falsch), andere Akzente ohne Zeichen (NFD trennt sie ab), alles uebrige -- Leerzeichen,
+     Schraegstrich, Emoji -- wird zu einem "-". Gekuerzt wird VOR dem Abschneiden der Striche,
+     sonst endete ein langer Name auf "-". Leer, wenn nichts Lesbares uebrig bleibt. */
+  function namensTeil(s, max){
+    var t = String(s == null ? "" : s).toLowerCase()
+      .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss");
+    try { t = t.normalize("NFD"); } catch(e){}
+    t = t.replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+/, "");
+    if (max && t.length > max) t = t.slice(0, max);
+    return t.replace(/-+$/, "");
+  }
+  /* Was der Nutzer als Namen tippt, bleibt seins (Grossbuchstaben, Leerzeichen, Umlaute). Weg
+     muss nur, was eine Datei nicht tragen kann oder taeuscht: die Zeichen, die Windows verbietet
+     (/ \ : * ? " < > |), Steuerzeichen und die unsichtbaren Richtungszeichen, mit denen
+     "abc.exe" als "exe.cba" erscheinen kann. Am Ende (fertig): keine Punkte und Leerzeichen am
+     Rand (Windows schneidet sie, ein fuehrender Punkt versteckt die Datei auf dem Mac) und kein
+     getipptes ".csv" -- das steht schon fest dahinter. */
+  var VERBOTEN = /[\/\\:*?"<>|\u0000-\u001f\u007f-\u009f‎‏‪-‮⁦-⁩]/g;
+  function stammSaeubern(s, fertig){
+    var t = String(s == null ? "" : s).replace(VERBOTEN, "");
+    if (!fertig) return t;
+    t = t.replace(/\s+/g, " ").trim().replace(/\.csv$/i, "").replace(/^[.\s]+|[.\s]+$/g, "");
+    return t.length > STAMM_MAX ? t.slice(0, STAMM_MAX).replace(/[.\s]+$/, "") : t;
+  }
   /* Der Bereich der App, zu dem ein Datensatz gehoert: die Ueberschriften der Liste links, in der
      Reihenfolge der Seitenleiste. Ads traegt dort "Beta" (sidebar.js), Shopping seit dem 05.10. nicht. */
   var QUELLE = { prompts: "Prompt Insights", prompt_runs: "Prompt Insights", domains: "Citations",
@@ -398,12 +429,16 @@
          "fertig" (Datei heruntergeladen). schritt: am Telefon die Haelfte, die zu sehen ist
          ("liste" links oder "einst" rechts; breit ohne Wirkung). offen: "zeit", solange die
          Ersatzliste der Zeitraeume aufgeklappt ist (nur ohne Kalender). lauf: Zaehler des laufenden
-         Exports, ergebnis: die fertige Datei fuer "Download again". fehler: der rote Satz im Fuss,
+         Exports, ergebnis: was der Abschluss ueber die Datei sagt (Zeilen, Name, Groesse, Spalten;
+         die Datei selbst wird nicht gehalten, seit es "Download again" nicht mehr gibt, 17.10.).
+         eigenName: der Dateiname ohne .csv, wenn der Nutzer ihn im Fuss geaendert hat, sonst null
+         (der Vorschlag gilt); namenEdit: solange das Feld dafuer offen ist. fehler: der rote Satz im Fuss,
          zeitFehler: der am Feld Date range (ein Zeitraum, den die Datenbank ablehnt -- wie auf der
          Leinwand am Feld, nicht im Fuss). filterLabel: der Name zum Filter eines Drawers (Brand,
          Prompt) fuer den Chip. ohne: je Spaltensatz die abgewaehlten Spalten -- eine Einstellung,
          also im Speicher. */
       phase: "wahl", schritt: "einst", offen: "", lauf: null, ergebnis: null, fehler: "", zeitFehler: "", filterLabel: "",
+      eigenName: null, namenEdit: false,
       ohne: (saved.ohne && typeof saved.ohne === "object") ? saved.ohne : {}
     };
     if (gruppeVon(state.type)) state.type = TYPES[0].value;
@@ -411,6 +446,10 @@
     /* Jeder Typwechsel hierueber: ein Typ der Grundgruppe wird der, zu dem der Dialog nach einem
        Shopping- oder Ads-Export zurueckkehrt. */
     function typSetzen(v){
+      /* Ein eigener Dateiname gilt nur fuer den Datensatz, fuer den er getippt wurde: "Brands"
+         hiesse nach dem Wechsel sonst weiter "prompts-q3". Mit dem Wechsel gilt wieder der
+         Vorschlag, ein offenes Feld schliesst ohne Uebernahme. */
+      if (v !== state.type){ state.eigenName = null; state.namenEdit = false; }
       state.type = v;
       if (!gruppeVon(v)) state.stammTyp = v;
     }
@@ -556,7 +595,6 @@
               '<div class="uex-datei">' +
                 '<span class="uex-datei-ic">' + ic("fileText") + '</span>' +
                 '<span class="uex-datei-text"><span class="uex-datei-name"></span><span class="uex-datei-meta"></span></span>' +
-                '<button class="up-btn-sec uex-nochmal" type="button">' + ic("download") + '<span class="uex-nochmal-text"></span></button>' +
               '</div>' +
               '<p class="uex-beschr uex-gekappt" hidden></p>' +
             '</div>' +
@@ -566,7 +604,20 @@
           /* Links der Dateiname als Vorschau -- oder, wenn etwas schiefging, der rote Satz an
              seiner Stelle: dort steht er neben dem Knopf, der es erneut versucht, und rollt nie
              aus dem Bild. */
-          '<div class="uex-foot-info"><span class="uex-foot-ic">' + ic("fileText") + '</span><span class="uex-foot-name"></span></div>' +
+          /* DER NAME IST ZUGLEICH SEIN UMBENENNEN (17.10.): ein Klick macht aus dem Knopf das Feld
+             daneben, in derselben Box (Hoehe 24, Rand 1, Polster 5) -- der Text bleibt an seiner
+             Stelle, nur Rand und Grund kommen dazu. Bearbeitet wird nur der Stamm; ".csv" steht
+             in beiden fest dahinter, damit niemand die Endung verliert oder doppelt tippt. Das
+             Feld waechst mit dem Text (uex-foot-mass, unsichtbare Kopie im selben Rasterfeld);
+             size="1", weil ein Feld sonst rund 20 Zeichen breit in die Messung eingeht. */
+          '<div class="uex-foot-info"><span class="uex-foot-ic">' + ic("fileText") + '</span>' +
+            '<button class="uex-foot-name" type="button"><span class="uex-foot-stamm"></span><span class="uex-foot-endung">.csv</span></button>' +
+            '<label class="up-fieldwrap uex-foot-feld" hidden>' +
+              '<span class="uex-foot-mass"><input class="uex-foot-in" type="text" size="1" maxlength="' + STAMM_MAX + '" ' +
+                'autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done"></span>' +
+              '<span class="uex-foot-endung">.csv</span>' +
+            '</label>' +
+          '</div>' +
           '<div class="up-fehlerzeile uex-fehler" role="alert"><span></span></div>' +
           '<div class="uex-foot-knoepfe">' +
             '<button class="up-btn-sec uex-zweit" type="button"><span class="uex-zweit-text"></span></button>' +
@@ -604,6 +655,15 @@
     var elCalSlot = q(".uex-cal-slot");
     var elFoot    = q(".uex-foot");
     var elFootInfo = q(".uex-foot-info");
+    var elFootName = q(".uex-foot-name");
+    var elFootStamm = q(".uex-foot-stamm");
+    var elFootFeld = q(".uex-foot-feld");
+    var elFootMass = q(".uex-foot-mass");
+    var elFootIn  = q(".uex-foot-in");
+    /* Der Screenreader hoert "Rename file" als Namen des Knopfs und den Dateinamen als
+       Beschreibung -- ein aria-label allein haette den Namen verschluckt. */
+    elFootStamm.id = titelId + "-dn";
+    elFootName.setAttribute("aria-describedby", elFootStamm.id);
     var elZweit   = q(".uex-zweit");
     var elSubmit  = q(".uex-submit");
     var elSubmitIcon = q(".uex-submit-icon");
@@ -668,11 +728,20 @@
     function kurzUrl(u){ return String(u).replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/$/, ""); }
     /* Der Dateiname, wie exportSelbst ihn vergibt -- im Fuss als Vorschau, im Fertig-Zustand der
        echte. Eine Quelle fuer beide, damit die Vorschau nie etwas anderes verspricht. */
-    function dateiName(art){
-      var cfg = EXPORTE[art];
+    /* Vorne das aktive Team statt der Marke (17.10., "den Teamnamen statt upstreem"): wer mehrere
+       Teams exportiert, sieht im Download-Ordner, welche Datei wem gehoert. Der Name kommt
+       von dort, wo auch der Reitertitel ihn hat (UC.teamName, gesetzt beim App-Start und nach
+       einer Umbenennung) -- bei jedem Zeichnen frisch gelesen, ein spaeteres Oeffnen traegt also
+       den neuen Namen. Ohne Team (Bubble, noch nicht geladen, nur Sonderzeichen) die Marke. */
+    function namenVorschlag(art){
+      var cfg = EXPORTE[art], C = window.UpstreemCore;
       var typName = (cfg && cfg.datei) || (typVon(art) || { label: art }).label;
-      return "upstreem-" + typName.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + isoDate(state.from) + "-" + isoDate(state.to) + ".csv";
+      var team = "";
+      try { team = namensTeil(C && C.teamName ? C.teamName() : "", TEAM_MAX); } catch(e){ team = ""; }
+      return (team || "upstreem") + "-" + typName.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + isoDate(state.from) + "-" + isoDate(state.to);
     }
+    function dateiStamm(art){ return state.eigenName || namenVorschlag(art); }
+    function dateiName(art){ return dateiStamm(art) + ".csv"; }
 
     /* ---- Kontext: welche Filter gelten fuer diesen Datensatz? ----
        Die Drawer-Filter nur im Scope (FILTER oben), die Seitenfilter nur fuer die Datensaetze, fuer
@@ -973,14 +1042,13 @@
       var E = state.ergebnis;
       if (!E) return;
       text(q(".uex-fertig-titel"), E.n === 1 ? tr("1 row exported") : tr("{n} rows exported").replace("{n}", zahl(E.n)));
-      text(q(".uex-fertig-satz"), tr("The download started on its own. If nothing arrived, download the file again."));
+      text(q(".uex-fertig-satz"), tr("Your file has been downloaded."));
       var nm = q(".uex-datei-name");
       text(nm, E.name); nm.title = E.name;
       /* Die Groesse ist die der Datei, die der Browser gerade gebaut hat (Blob.size) -- gemessen,
          nicht geschaetzt; die Datenbank liefert keine. */
       text(q(".uex-datei-meta"), (E.spalten === 1 ? tr("{groesse}, 1 column, CSV") : tr("{groesse}, {n} columns, CSV").replace("{n}", zahl(E.spalten)))
         .replace("{groesse}", groesse(E.groesse)));
-      text(q(".uex-nochmal-text"), tr("Download again"));
       var s = q(".uex-gekappt");
       s.hidden = !E.gekappt;
       text(s, E.gekappt ? tr("The export was cut at {n} rows. Choose a shorter range for the rest.").replace("{n}", zahl(E.n)) : "");
@@ -996,8 +1064,17 @@
       elFehler.classList.toggle("is-on", !!fehler);
       text(elFehler.querySelector("span"), fehler || "");
       elFootInfo.hidden = !!fehler || !name;
-      var nm = q(".uex-foot-name");
-      text(nm, name); nm.title = name;
+      /* Umbenennen nur in der Wahl: im Lauf steht der Name schon fest, fertig ist die Datei schon
+         unterwegs. Dort ist der Knopf gesperrt und sieht aus wie Text (CSS). */
+      var umbenennbar = ph === "wahl" && !state.processing && !!name;
+      if (!umbenennbar) state.namenEdit = false;
+      text(elFootStamm, name.replace(/\.csv$/i, ""));
+      elFootName.disabled = !umbenennbar;
+      if (umbenennbar){ elFootName.setAttribute("aria-label", tr("Rename file")); elFootName.title = tr("Rename file"); }
+      else { elFootName.removeAttribute("aria-label"); elFootName.title = name; }
+      elFootName.hidden = state.namenEdit;
+      elFootFeld.hidden = !state.namenEdit;
+      elFootIn.setAttribute("aria-label", tr("Rename file"));
       text(q(".uex-zweit-text"), ph === "laeuft" ? tr("Cancel export") : (ph === "fertig" ? tr("Export another") : tr("Cancel")));
       /* Der Bubble-Weg wartet auf upstreemExportResolve: schliessen kann ihn dann nur Bubble. */
       elZweit.disabled = !!state.processing;
@@ -1351,6 +1428,8 @@
       /* Ebenso der Kontext der Seite und die Gruppe von Shopping und Ads: danach gilt wieder die
          Grundgruppe, und ein spaeteres Oeffnen ohne Kontext (Cmd+K) traegt keinen Filter mit. */
       state.params = {}; state.namen = {}; state.weg = {}; state.zeitVonSeite = false;
+      /* Der eigene Dateiname ebenso: das naechste Oeffnen beginnt mit dem Vorschlag. */
+      state.eigenName = null; state.namenEdit = false;
       if (gruppeVon(state.type)) state.type = state.stammTyp;
       /* Schliessen bricht einen laufenden Export ab (das sagt der Satz unter dem Balken): die
          naechste Seite wird nicht mehr geholt, nichts heruntergeladen. */
@@ -1573,8 +1652,9 @@
       /* BOM: ohne ihn liest Excel die Datei als Windows-1252, und jeder Umlaut zerfaellt. */
       return "﻿" + [kopf].concat(rumpf).join("\r\n");
     }
-    /* Die Datei als Blob -- er bleibt fuer "Download again" stehen, bis der Dialog schliesst. Je
-       Herunterladen eine eigene Objekt-Adresse, nach 4 s wieder freigegeben. */
+    /* Die Datei als Blob mit eigener Objekt-Adresse, nach 4 s wieder freigegeben. Gehalten wird
+       er danach nicht mehr: "Download again" gibt es seit dem 17.10. nicht (der Abschluss kommt
+       nur, wenn gerade heruntergeladen wurde), mit der Adresse geht also auch die Datei. */
     function herunterladen(blob, name){
       var url = URL.createObjectURL(blob);
       var a = document.createElement("a");
@@ -1689,7 +1769,7 @@
           var g = gewaehlt();
           var blob = new Blob([csvBauen(g, zeilen)], { type: "text/csv;charset=utf-8" });
           herunterladen(blob, name);
-          state.ergebnis = { n: zeilen.length, name: name, blob: blob, groesse: blob.size, spalten: g.length, gekappt: m.has_more === true };
+          state.ergebnis = { n: zeilen.length, name: name, groesse: blob.size, spalten: g.length, gekappt: m.has_more === true };
           state.lauf = null; state.phase = "fertig";
           renderAll(); fokusFuss();
         }, scheitern);
@@ -1702,16 +1782,59 @@
       renderAll(); fokusFuss();
     }
     /* "Export another" (fertig): zurueck zu den Einstellungen, Datensatz und Wahl bleiben -- links
-       ist die Liste wieder frei. Die fertige Datei verfaellt damit. */
+       ist die Liste wieder frei. Ein eigener Dateiname bleibt (derselbe Datensatz). */
     function nochEinExport(){
       if (state.phase !== "fertig") return;
       state.ergebnis = null; state.phase = "wahl";
       renderAll(); fokusFuss();
     }
-    function nochmal(){
-      var E = state.ergebnis;
-      if (E && E.blob) herunterladen(E.blob, E.name);
+    /* ---- Dateiname umbenennen (17.10.) ----
+       Lebensdauer: der eigene Name gilt, bis links ein anderer Datensatz gewaehlt (typSetzen) oder
+       der Dialog geschlossen wird (closePopup); danach wieder der Vorschlag. Ein zweiter Export
+       desselben Datensatzes ("Export another") behaelt ihn. */
+    function namenMass(){ elFootMass.setAttribute("data-wert", elFootIn.value); }
+    function namenBeginnen(){
+      if (state.phase !== "wahl" || state.processing || elFootName.disabled) return;
+      state.namenEdit = true;
+      elFootIn.value = dateiStamm(state.type);
+      namenMass();
+      renderAll();
+      fokus(elFootIn);
+      try { elFootIn.select(); } catch(e){}
     }
+    /* Uebernehmen (Enter, Fokus geht woanders hin): leer oder gleich dem Vorschlag heisst "kein
+       eigener Name" -- dann folgt der Name weiter dem Zeitraum, statt ein altes Datum festzuhalten. */
+    function namenUebernehmen(zurueckFokus){
+      if (!state.namenEdit) return;
+      var s = stammSaeubern(elFootIn.value, true);
+      state.eigenName = s && s !== namenVorschlag(state.type) ? s : null;
+      state.namenEdit = false;
+      renderAll();
+      if (zurueckFokus) fokus(elFootName);
+    }
+    function namenVerwerfen(){
+      if (!state.namenEdit) return;
+      state.namenEdit = false;
+      renderAll();
+      fokus(elFootName);
+    }
+    /* Verbotene Zeichen fallen schon beim Tippen weg (auch beim Einfuegen), nicht erst beim
+       Uebernehmen -- sonst stuende ein "/" im Feld, das dann still verschwindet. Die Schreibmarke
+       bleibt dort, wo sie war, abzueglich der entfernten Zeichen davor. */
+    elFootIn.addEventListener("input", function(){
+      var v = elFootIn.value, s = stammSaeubern(v, false);
+      if (s !== v){
+        var pos = elFootIn.selectionStart == null ? s.length : elFootIn.selectionStart;
+        var vorher = stammSaeubern(v.slice(0, pos), false).length;
+        elFootIn.value = s;
+        try { elFootIn.setSelectionRange(vorher, vorher); } catch(e){}
+      }
+      namenMass();
+    });
+    elFootIn.addEventListener("keydown", function(e){
+      if (e.key === "Enter" && !e.isComposing){ e.preventDefault(); namenUebernehmen(true); }
+    });
+    elFootIn.addEventListener("blur", function(){ namenUebernehmen(false); });
     function fireExport(){
       if (state.processing || state.phase !== "wahl") return;   // already sent, ignore a repeat click
       if (gesperrt(state.type) || keineSpalten()) return;
@@ -1880,7 +2003,7 @@
         fokus(q(".uex-spalten [data-spalte]"));
         return;
       }
-      if (t.closest(".uex-nochmal")){ nochmal(); return; }
+      if (t.closest(".uex-foot-name")){ namenBeginnen(); return; }
       if (t.closest(".uex-zweit")){
         if (state.phase === "laeuft") abbrechen();
         else if (state.phase === "fertig") nochEinExport();
@@ -1928,6 +2051,13 @@
            immer ins Leere und Escape schloss den Dialog samt offenem Kalender. */
         var calPanel = document.querySelector(".udr-menu.is-shown, .udr-wrap.is-open");
         if (calPanel) return;
+        /* Das erste Escape gehoert dem Feld des Dateinamens: es verwirft die Eingabe, der Dialog
+           bleibt offen. Hier in der Einfangphase, weil dieser Waechter vor dem Feld selbst laeuft. */
+        if (state.namenEdit){
+          e.preventDefault(); e.stopPropagation();
+          namenVerwerfen();
+          return;
+        }
         /* Ebenso die Ersatzliste der Zeitraeume (ohne Kalender): erst sie, dann der Dialog. */
         if (state.offen === "zeit"){
           e.preventDefault(); e.stopPropagation();
