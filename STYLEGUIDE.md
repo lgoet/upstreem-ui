@@ -828,6 +828,15 @@ leichtes Scale, kein `display:none`-Hard-Toggle):
 ```
 Wichtig: das Menü bleibt IMMER im DOM/Layout (`display` wird nie umgeschaltet) — nur `opacity`/`transform`/`pointer-events`. Nur **ein** Dropdown gleichzeitig offen (beim Öffnen eines anderen wird das erste geschlossen).
 
+**Ruhelage geschlossener Menüs (16.10.).** Weil das unsichtbare Menü im Layout bleibt, zählt es
+beim Scrollen mit: ein links verankertes (`left: 0`) Menü, das über die rechte Kante von `#main`
+reicht, macht `#main` seitlich scrollbar, auch zugeklappt (gemessen: Kalender auf All Prompts bei
+1100 bis 1216, `#main` 116px verschiebbar). Was **links** hinausragt, zählt nicht. Darum ruht jedes
+links verankerte Menü geschlossen **rechtsbündig** am Auslöser; die Lage, die das Öffnen misst,
+gilt bis zum Ende des Ausblendens und wird erst danach zurückgestellt (sonst springt das Panel beim
+Zugehen). Vorbilder: `filter-bar.css` (`.ufb-more:not(.is-open) > .ufb-menu`, `lageSpaeterLoesen`)
+und `date-range.js` (`is-right` im Markup, `ruheSpaeter`). `#main` wird dafür nie beschnitten.
+
 **Rollt eine Liste im Menü** (`max-height` + `overflow-y: auto`), gehört ihre Klasse in die Liste
 der Rollflächen in `core.css` (§27, „Scrollen in Popups"). Sonst gibt sie das Rad an ihrem Ende an
 `#main` weiter, und die Seite rollt unter dem offenen Menü weg. `.up-filter-list` steht schon drin.
