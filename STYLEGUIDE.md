@@ -4139,3 +4139,31 @@ zum nächsten Datensatz im alten Thema.
 nicht passt, kürzt mit Auslassung.
 
 `data-logo` wird weiter angenommen (Vertrag), aber nicht mehr gezeichnet.
+
+## 50. Der stehende Toast und die Meldungen je Event (`UC.toast`, seit 17.10.)
+
+`UC.toast` kann seit dem 17.10. auch eine Meldung tragen, die **stehen bleibt, bis man sie
+wegklickt** – gebaut für die Meldungen je Event, nutzbar für alles, was nicht verpasst werden darf.
+Kein eigener Baustein: dieselbe Karte, dieselbe Lage (unten mittig im Inhaltsbereich), dieselbe
+Bewegung (nur opacity/transform), Tiefe `--up-e-4`, Radius `--up-r-2xl`.
+
+| Option | Wirkung |
+|---|---|
+| `bleibt: true` | keine Uhr, immer mit X; der Deckel von drei zählt nur die flüchtigen Toasts |
+| `zeichen`, `zeichenFarbe` | eigenes Zeichen (`UC.icon`, Strich) in einer Farbe `#rrggbb` statt des Zeichens der Art |
+| `inhalt` | HTML unter Titel und `desc` (escaped vom Aufrufer); der Toast wird dann 380 breit (`is-reich`), damit der Stapel nicht als Treppe springt |
+| `roh: true` | der Titel geht nicht durch den Katalog (vom Nutzer vergebene Namen) |
+| `onClick` | der ganze Toast ist ein Knopf (Enter/Leertaste), schließt danach |
+| `onClose(grund)` | `"x"`, `"escape"` oder `"klick"`, nur auf eine Handlung hin |
+| `schluessel` | ein zweiter Aufruf mit demselben Schlüssel ändert den Titel des stehenden; `UC.toastZu(schluessel)` schließt still |
+| `unten: true` | bleibt am unteren Ende des Stapels (der Hinweis „N more events have updates“) |
+
+**Meldungen je Event** (core, `eventMeldungenStart`): einmal nach dem App-Start
+`list_impact_event_notices_v1`; je Event ein stehender Toast, höchstens drei, darunter der Hinweis
+auf den Rest mit „View events“. Inhalt: Zeichen in der Event-Farbe, Name, ein Satz („4 pages cited
+for the first time“, bei einer Seite „/blog/solar cited for the first time“), bis zu drei Adressen
+(Favicon 14, Host + Pfad, mit Auslassung gekürzt, 12 in der Nebenschrift), „+N more“, bei
+abgeschlossenen Kampagnen „Campaign completed, your report is ready“ mit Bericht-Zeichen. X oder
+Klick schreiben „gelesen“ (`mark_impact_event_notices_read_v1`), der nächste rückt nach. Fehlt die
+Funktion (PGRST202), gibt es weder Toasts noch die Schalter „Notify me“; jeder andere Fehler beim
+Holen bleibt still (nur `console.error`).

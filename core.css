@@ -5441,6 +5441,22 @@
     .up-toast-x svg { width: 13px; height: 13px; display: block; }
     .up-toast-x:hover { color: var(--vc-toast-ink); background: var(--vc-toast-flaeche); }
     .up-toast-act:focus-visible, .up-toast-x:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: 1px; }
+    /* DIE MELDUNG MIT INHALT (17.10., Meldungen je Event): eine feste Breite statt fit-content --
+       drei stehende Toasts mit Adressen verschiedener Laenge sprangen sonst als Treppe. 380 liegt
+       unter dem Deckel von 420 und laesst an Host und Pfad genug stehen. */
+    .up-toast.is-reich { width: min(380px, calc(100vw - 32px)); }
+    .up-toast.is-klick { cursor: pointer; }
+    .up-toast.is-klick:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: var(--up-knopf-fokus-abstand); }
+    /* Die Adressen: eine Zeile je Seite, Favicon 14 vor dem gekuerzten Text, leiser als der Satz
+       darueber (12 in der Nebenschrift). "+1 more" steht buendig unter dem Text der Zeilen
+       (14 Bild + 8 Abstand). */
+    .up-toast-liste { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; min-width: 0; }
+    .up-toast-zeile { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: var(--up-fs-s); line-height: 16px; color: var(--vc-toast-sub); }
+    .up-toast-fav { flex: 0 0 14px; width: 14px; height: 14px; border-radius: calc(var(--up-r-xs) - 1px); }
+    .up-toast-url { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .up-toast-mehr { margin-top: 4px; padding-left: 22px; font-size: var(--up-fs-s); line-height: 16px; color: var(--vc-toast-sub); }
+    .up-toast-d.up-toast-fertig { display: flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--vc-toast-ink); }
+    .up-toast-fertig svg { flex: 0 0 14px; width: 14px; height: 14px; }
     @media (prefers-reduced-motion: reduce){
       .up-toast, .up-toast.is-on, .up-toast.is-weg { transform: none; }
       .up-toasts { transition: none; }

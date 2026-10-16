@@ -13756,6 +13756,22 @@
      ist, weil die Massenleiste beim Aufklappen der Themenauswahl waechst.
      Zeiger darauf haelt die Uhr an; danach laeuft der Rest weiter (mindestens 400 ms).
 
+     DIE MELDUNG, DIE STEHEN BLEIBT (17.10., Meldungen je Event, eventMeldungenStart unten):
+       bleibt     true: keine Uhr, immer mit X, und der Deckel von drei verdraengt ihn nicht --
+                  er zaehlt nur die fluechtigen. Weg ist er erst, wenn jemand ihn wegklickt.
+       zeichen    HTML eines Zeichens (UC.icon) statt des Zeichens der Art; zeichenFarbe dazu
+                  (nur #rrggbb, sonst die Farbe der Art)
+       inhalt     HTML unter Titel und desc (der Aufrufer escaped); macht den Toast gleich breit
+                  wie seine Nachbarn (is-reich), sonst springt der Stapel mit jeder Adresse
+       roh        true: der Titel geht NICHT durch den Katalog -- ein Name, den jemand vergeben
+                  hat ("Events"), ist kein Schluessel
+       onClick    der ganze Toast ist ein Knopf (Enter/Leertaste); danach schliesst er
+       onClose    function(grund): "x" | "escape" | "klick" -- nur auf eine Handlung, nie beim
+                  Verdraengen oder ueber toastZu
+       schluessel steht schon ein Toast mit diesem Schluessel, bekommt DER den neuen Titel
+                  (kein zweiter); UC.toastZu(schluessel) schliesst ihn still
+       unten      true: bleibt am unteren Ende des Stapels -- spaetere Toasts kommen darueber
+
      window.showMacToast bleibt als NAME bestehen und zeigt hierher: Run-JS-Schritte in Bubble
      wie showMacToast('Invite could not be resend!', { icon: 'alert', timeout: 4000 }) laufen
      unveraendert weiter, im neuen Aussehen. Setzt der Seitenkopf seine alte Fassung danach noch
@@ -13785,8 +13801,9 @@
     h.setAttribute("aria-live", "polite");
     h.addEventListener("keydown", function(e){
       if (e.key !== "Escape") return;
-      var neu = TOAST.liste[TOAST.liste.length - 1];
-      if (neu && neu.el.contains(e.target)){ e.stopPropagation(); toastWeg(neu); }
+      var neu = null;
+      for (var i = TOAST.liste.length - 1; i >= 0; i--) if (TOAST.liste[i].el.contains(e.target)){ neu = TOAST.liste[i]; break; }
+      if (neu){ e.stopPropagation(); toastWeg(neu, "escape"); }
     });
     /* TOP LAYER (wie .uca-portal): der Opportunity-Drawer, Create with AI und Quick Actions
        liegen per popover im Top Layer, und gegen den gewinnt keine z-index-Zahl -- ein Toast aus
@@ -13833,9 +13850,12 @@
       toastPlatz();
     }, 250);
   }
-  function toastWeg(e){
+  function toastWeg(e, grund){
     if (!e || e.weg) return;
     e.weg = true;
+    if (grund && typeof e.onClose === "function"){
+      try { e.onClose(grund); } catch(err){ if (window.console) console.warn("[toast] onClose hat geworfen:", err); }
+    }
     if (e.uhr){ clearTimeout(e.uhr); e.uhr = null; }
     var i = TOAST.liste.indexOf(e);
     if (i >= 0) TOAST.liste.splice(i, 1);
@@ -13864,21 +13884,53 @@
       var art = toastArt(opts);
       var aktion = opts.action && typeof opts.action === "object" && String(opts.action.label || "").trim() ? opts.action : null;
       var desc = String(opts.desc == null ? "" : opts.desc).trim();
-      var ms = Number(opts.timeout);
-      if (!(ms > 0)) ms = aktion ? Math.max(6000, TOAST_DAUER[art] || 0) : (TOAST_DAUER[art] || 4000);
+      var bleibt = opts.bleibt === true;
+      var schl = String(opts.schluessel == null ? "" : opts.schluessel);
+      var titel = opts.roh === true ? t : t_(t);
+      if (schl){
+        for (var s0 = 0; s0 < TOAST.liste.length; s0++){
+          if (TOAST.liste[s0].schluessel !== schl) continue;
+          TOAST.liste[s0].el.querySelector(".up-toast-t").textContent = titel;
+          return true;
+        }
+      }
+      var ms = bleibt ? 0 : Number(opts.timeout);
+      if (!bleibt && !(ms > 0)) ms = aktion ? Math.max(6000, TOAST_DAUER[art] || 0) : (TOAST_DAUER[art] || 4000);
+      var inhalt = typeof opts.inhalt === "string" ? opts.inhalt : "";
+      var klick = typeof opts.onClick === "function" ? opts.onClick : null;
+      var zFarbe = /^#[0-9a-f]{6}$/i.test(String(opts.zeichenFarbe || "")) ? String(opts.zeichenFarbe) : "";
       var el = document.createElement("div");
-      el.className = "up-toast is-" + art;
+      el.className = "up-toast is-" + art + (bleibt ? " is-bleibt" : "") + (inhalt ? " is-reich" : "") + (klick ? " is-klick" : "");
       el.setAttribute("role", art === "error" ? "alert" : "status");
       el.innerHTML =
-        '<span class="up-toast-ic" aria-hidden="true">' + icon(TOAST_ZEICHEN[art], 2) + '</span>' +
-        '<span class="up-toast-txt"><span class="up-toast-t"></span>' + (desc ? '<span class="up-toast-d"></span>' : '') + '</span>' +
+        '<span class="up-toast-ic" aria-hidden="true"' + (zFarbe ? ' style="color:' + zFarbe + '"' : '') + '>' +
+          (typeof opts.zeichen === "string" && opts.zeichen ? opts.zeichen : icon(TOAST_ZEICHEN[art], 2)) + '</span>' +
+        '<span class="up-toast-txt"><span class="up-toast-t"></span>' + (desc ? '<span class="up-toast-d"></span>' : '') + inhalt + '</span>' +
         (aktion ? '<button type="button" class="up-toast-act"></button>' : '') +
-        (art === "error" ? '<button type="button" class="up-toast-x" aria-label="' + esc(t_("Close")) + '">' + icon("x", 2.2) + '</button>' : '');
+        (art === "error" || bleibt ? '<button type="button" class="up-toast-x" aria-label="' + esc(t_("Close")) + '">' + icon("x", 2.2) + '</button>' : '');
       /* Durch den Katalog (12.10.): Bausteine, die englischen Text direkt uebergeben, standen im
          deutschen UI englisch da. Ein schon uebersetzter Text ist kein Schluessel und bleibt. */
-      el.querySelector(".up-toast-t").textContent = t_(t);
+      el.querySelector(".up-toast-t").textContent = titel;
       if (desc) el.querySelector(".up-toast-d").textContent = t_(desc);
-      var e = { el: el, art: art, ms: ms, uhr: null, weg: false, id: ++TOAST.seq };
+      var e = { el: el, art: art, ms: ms, uhr: null, weg: false, id: ++TOAST.seq, bleibt: bleibt,
+                schluessel: schl, unten: opts.unten === true, onClose: typeof opts.onClose === "function" ? opts.onClose : null };
+      /* Der ganze Toast als Knopf: ein Klick irgendwo ausser auf X oder die Aktion. Mit Tabulator
+         erreichbar und mit Enter/Leertaste ausloesbar wie ein echter Knopf. */
+      if (klick){
+        el.setAttribute("tabindex", "0");
+        var ausloesen = function(){
+          try { klick(); } catch(err){ if (window.console) console.warn("[toast] onClick hat geworfen:", err); }
+          toastWeg(e, "klick");
+        };
+        el.addEventListener("click", function(ev){
+          if (ev.target && ev.target.closest && ev.target.closest(".up-toast-x, .up-toast-act")) return;
+          ausloesen();
+        });
+        el.addEventListener("keydown", function(ev){
+          if (ev.target !== el || (ev.key !== "Enter" && ev.key !== " ")) return;
+          ev.preventDefault(); ausloesen();
+        });
+      }
       if (aktion){
         var b = el.querySelector(".up-toast-act");
         b.textContent = String(aktion.label);
@@ -13888,7 +13940,7 @@
         });
       }
       var x = el.querySelector(".up-toast-x");
-      if (x) x.addEventListener("click", function(){ toastWeg(e); });
+      if (x) x.addEventListener("click", function(){ toastWeg(e, "x"); });
       /* Zeiger darauf haelt die Uhr an, danach der Rest -- mindestens 400 ms, sonst verschwaende
          der Toast im Moment des Wegziehens. */
       el.addEventListener("mouseenter", function(){
@@ -13900,10 +13952,17 @@
         if (!e.pause || e.weg) return;
         e.pause = false; toastUhr(e, Math.max(400, e.rest));
       });
-      h.appendChild(el);
+      /* Unter einem Toast, der unten bleiben soll (der Hinweis auf weitere Meldungen), kommt
+         nichts -- der neue steht direkt darueber. */
+      var anker = null;
+      for (var a0 = 0; a0 < TOAST.liste.length; a0++) if (TOAST.liste[a0].unten && !e.unten){ anker = TOAST.liste[a0].el; break; }
+      if (anker && anker.parentNode === h) h.insertBefore(el, anker); else h.appendChild(el);
       toastNachOben(h);
       TOAST.liste.push(e);
-      while (TOAST.liste.length > TOAST_MAX) toastWeg(TOAST.liste[0]);
+      /* Der Deckel zaehlt nur die fluechtigen: eine stehende Meldung verschwindet nicht, weil
+         jemand dreimal "Saved" gesehen hat. */
+      var flucht = TOAST.liste.filter(function(x){ return !x.bleibt; });
+      while (flucht.length > TOAST_MAX) toastWeg(flucht.shift());
       toastPlatz();
       toastWacheAn();
       /* Eingeblendet erst im naechsten Bild -- sonst laeuft keine Bewegung. */
@@ -13915,6 +13974,12 @@
       if (window.console) console.warn("[toast] konnte nicht gezeigt werden:", err);
       return false;
     }
+  }
+  function toastZu(schluessel){
+    var schl = String(schluessel == null ? "" : schluessel);
+    if (!schl) return false;
+    for (var i = 0; i < TOAST.liste.length; i++) if (TOAST.liste[i].schluessel === schl){ toastWeg(TOAST.liste[i]); return true; }
+    return false;
   }
   /* Der alte Name fuer die Run-JS-Schritte in Bubble: showMacToast(text, { icon, timeout }). */
   function showMacToastNeu(text, opts){ return toast(text, opts); }
@@ -19051,6 +19116,148 @@
     } catch(e){}
     return true;
   }
+  /* ── MELDUNGEN JE EVENT (17.10., DB-Auftrag events_ausbau_db_auftrag_17_10.md Teil A) ─────────
+     Einmal nach dem App-Start (appStart, nicht bei jedem Seitenwechsel -- die Seiten der App
+     wechseln ohne Neuladen): list_impact_event_notices_v1 holt die ungelesenen Meldungen,
+     gebuendelt je Event. Je Event EIN Toast, der stehen bleibt, bis man ihn wegklickt; hoechstens
+     drei auf einmal, darunter ein Hinweis auf den Rest. Schliesst einer, rueckt der naechste nach.
+       X / Escape  -> mark_impact_event_notices_read_v1 (gilt auf allen Geraeten)
+       Klick       -> UC.eventOeffnen und ebenfalls gelesen
+     Hier in core und nicht in events.js: events.js laedt nur mit der Events-Ansicht, die
+     Meldungen gehoeren aber auf jede Seite.
+     LEISE: Fehlt die Funktion (PGRST202), ist das Feature einfach nicht da -- kein Toast, und die
+     Schalter "Notify me" in events.js bleiben weg (eventMeldungenDa). Scheitert das Holen sonst,
+     meckert die App beim Start nicht: nur console.error. Scheitert "gelesen", bleibt der Toast
+     trotzdem zu; der naechste Start zeigt ihn wieder. */
+  var EVM = (window.__upEventMeldungen = window.__upEventMeldungen || { stand: null, lauf: null, schlange: [], mehr: 0, offen: 0 });
+  var EVM_SICHTBAR = 3;
+  addMessages("de", {
+    "{n} pages cited for the first time": "{n} Seiten zum ersten Mal zitiert",
+    "{url} cited for the first time": "{url} zum ersten Mal zitiert",
+    "Campaign completed, your report is ready": "Kampagne abgeschlossen, dein Bericht ist fertig",
+    "1 more event has updates": "1 weiteres Event hat Neuigkeiten",
+    "{n} more events have updates": "{n} weitere Events haben Neuigkeiten",
+    "View events": "Events ansehen"
+  });
+  /* Die Adresse kurz: Host ohne www, dazu der Pfad. Ganz kurz (nur fuer den Satz bei EINER Seite):
+     der Pfad allein, die Domain kennt man aus dem Event -- an der Wurzel der Host. */
+  function evmKurz(u, nurPfad){
+    var s = String(u == null ? "" : u).trim(), host = "", pfad = "";
+    try { var x = new URL(s.indexOf("//") >= 0 ? s : "https://" + s); host = x.hostname.replace(/^www\./i, ""); pfad = x.pathname + x.search; }
+    catch(e){ return s; }
+    if (pfad === "/" || !pfad) return host;
+    pfad = pfad.replace(/\/$/, "");
+    return nurPfad ? pfad : host + pfad;
+  }
+  /* Das Zeichen wie in events.js (zeichen()): das gewaehlte, wenn core es kennt (die DB speichert
+     file-text, aeltere Events fileText), sonst das des Typs. Nie ein Emoji aus dem Feld icon. */
+  function evmZeichen(ev){
+    var v = String(ev.icon || "");
+    var c = v.replace(/-([a-z0-9])/g, function(_, z){ return z.toUpperCase(); });
+    if (c && ICON_PATHS[c]) return c;
+    return eventTyp(ev.event_type).icon;
+  }
+  function evmInhalt(ev){
+    var n = toNum(ev.new_cited_count) || 0, urls = isArr(ev.new_cited_urls) ? ev.new_cited_urls.filter(function(u){ return typeof u === "string" && u; }) : [];
+    var h = "";
+    if (n === 1 && urls.length){
+      h += '<span class="up-toast-d">' + esc(t_("{url} cited for the first time").replace("{url}", evmKurz(urls[0], true))) + '</span>';
+    } else if (n > 0){
+      h += '<span class="up-toast-d">' + esc(t_("{n} pages cited for the first time").replace("{n}", String(n))) + '</span>';
+      var zeigen = urls.slice(0, 3);
+      if (zeigen.length){
+        h += '<span class="up-toast-liste">' + zeigen.map(function(u){
+          var f = faviconUrl(u, 32);
+          return '<span class="up-toast-zeile">' +
+            (f ? '<img class="up-toast-fav" src="' + esc(f) + '" width="14" height="14" alt="" loading="lazy" referrerpolicy="no-referrer"/>' : '<span class="up-toast-fav up-globus-frei"></span>') +
+            '<span class="up-toast-url">' + esc(evmKurz(u)) + '</span></span>';
+        }).join("") + '</span>';
+        if (n > zeigen.length) h += '<span class="up-toast-mehr">' + esc(t_("+{n} more").replace("{n}", String(n - zeigen.length))) + '</span>';
+      }
+    }
+    if (ev.completed === true){
+      h += '<span class="up-toast-d up-toast-fertig">' + icon("fileText", 2) + '<span>' + esc(t_("Campaign completed, your report is ready")) + '</span></span>';
+    }
+    return h;
+  }
+  function evmGelesen(id){
+    return rpc("mark_impact_event_notices_read_v1", { p_team: APP.team, p_event_id: id }, { timeoutMs: 15000 }).then(function(erg){
+      if (!erg || !erg.ok) console.error("[events] notice could not be marked as read:", id, erg && erg.fehler ? erg.fehler.message : "");
+    });
+  }
+  function eventMeldungenAnsicht(){
+    try {
+      if (typeof window.usnNavigieren === "function") window.usnNavigieren("events");
+      else if (typeof window.showView === "function"){ window.showView("events"); ansichtHalten("events"); }
+    } catch(e){}
+  }
+  /* Der Hinweis unter den drei: wie viele noch warten (Schlange + was die Datenbank ueber 20 hinaus
+     zaehlt). Wegklicken laesst den Rest fuer diese Sitzung ruhen -- ungelesen, der naechste Start
+     zeigt ihn wieder. */
+  function evmHinweis(){
+    var n = EVM.schlange.length + EVM.mehr;
+    if (!n){ toastZu("evm-mehr"); return; }
+    var text = n === 1 ? t_("1 more event has updates") : t_("{n} more events have updates").replace("{n}", String(n));
+    toast(text, { kind: "neutral", bleibt: true, unten: true, roh: true, schluessel: "evm-mehr",
+      action: { label: t_("View events"), onClick: eventMeldungenAnsicht },
+      onClose: function(){ EVM.schlange = []; EVM.mehr = 0; } });
+  }
+  function evmZeigen(ev){
+    var id = String(ev.event_id);
+    EVM.offen++;
+    toast(String(ev.name || ""), {
+      kind: "neutral", bleibt: true, roh: true, schluessel: "evm-" + id,
+      zeichen: icon(evmZeichen(ev), 2), zeichenFarbe: ev.color,
+      inhalt: evmInhalt(ev),
+      onClick: function(){ eventOeffnen(id); },
+      onClose: function(){
+        evmGelesen(id);
+        EVM.offen = Math.max(0, EVM.offen - 1);
+        /* Der naechste rueckt nach -- erst, wenn der alte weg ist (Abgang 120 ms), sonst stehen
+           fuer einen Moment vier da. */
+        setTimeout(function(){
+          if (EVM.schlange.length && EVM.offen < EVM_SICHTBAR) evmZeigen(EVM.schlange.shift());
+          evmHinweis();
+        }, 140);
+      }
+    });
+  }
+  function eventMeldungenStart(){
+    if (EVM.lauf) return EVM.lauf;
+    if (!APP.team) return Promise.resolve(false);
+    EVM.lauf = rpc("list_impact_event_notices_v1", { p_team: APP.team }, { timeoutMs: 15000 }).then(function(erg){
+      var f = (erg && erg.fehler) || {};
+      if (erg && !erg.ok && (/PGRST202/.test(String(f.code || "")) || (erg.status === 404 && /could not find the function/i.test(String(f.message || "") + " " + String(f.details || ""))))){
+        EVM.stand = false;
+        return false;
+      }
+      if (!erg || !erg.ok){
+        /* Hat der Server geantwortet, gibt es die Funktion (Ratengrenze, Zugriff ...); ohne
+           Antwort (Netz, Zeit) bleibt es offen -- die Schalter bleiben dann sicherheitshalber weg. */
+        EVM.stand = erg && erg.status > 0 ? true : null;
+        console.error("[events] notices could not be loaded:", f.message || "");
+        return false;
+      }
+      EVM.stand = true;
+      var d = erg.daten && typeof erg.daten === "object" ? erg.daten : null;
+      var liste = d && isArr(d.events) ? d.events.filter(function(ev){
+        return ev && typeof ev === "object" && ev.event_id != null && String(ev.event_id) &&
+          ((toNum(ev.new_cited_count) || 0) > 0 || ev.completed === true);
+      }) : null;
+      if (!liste){ console.error("[events] notices could not be read"); return false; }
+      EVM.mehr = Math.max(0, toNum(d.more_events) || 0);
+      liste.slice(0, EVM_SICHTBAR).forEach(evmZeigen);
+      EVM.schlange = liste.slice(EVM_SICHTBAR);
+      evmHinweis();
+      return true;
+    }, function(err){ console.error("[events] notices could not be loaded:", err); return false; });
+    return EVM.lauf;
+  }
+  /* Fuer die Schalter in events.js: gibt es die Meldungen? true | false. Wartet auf den Start. */
+  function eventMeldungenDa(){
+    if (EVM.lauf) return EVM.lauf.then(function(){ return EVM.stand === true; });
+    return Promise.resolve(APP.start).then(function(){ return eventMeldungenStart(); }).then(function(){ return EVM.stand === true; });
+  }
   /* DIE ANSICHT HALTEN (05.10.). Gemeldet: der Klick in die Leiste setzt ?view=..., aber eine
      Ansicht, die seit dem Seitenaufbau noch nie offen war, bleibt unsichtbar; nach einem Aufruf
      direkt auf sie geht es danach immer. Die Reihenfolge im Workflow ist: showView, DANN der
@@ -22541,7 +22748,7 @@
       if (!r){ window.location.assign(appPfad("/onboarding")); return null; }
       if (!(r.access && r.access.has_access === false)){
         return Promise.all([appTeile(APP.team, null), appBenachrichtigung(APP.team), appAlleMaerkte()])
-          .then(function(){ appFertig(r); return r; }, function(){ appFertig(r); return r; });
+          .then(function(){ appFertig(r); evmNachStart(); return r; }, function(){ appFertig(r); evmNachStart(); return r; });
       }
       appFertig(r);
       return r;
@@ -22583,6 +22790,9 @@
     return true;
   }
   function appStartAktiv(){ return !!APP.aktiv; }
+  /* Die Meldungen je Event erst, wenn die Seite steht -- sie sind kein Teil des ersten Bildes.
+     EVM.lauf haelt sie bei einem zweiten Start (appZugangWeg) bei einem Mal. */
+  function evmNachStart(){ setTimeout(function(){ try { eventMeldungenStart(); } catch(e){} }, 800); }
   /* 402 aus irgendeinem RPC: der Zugang ist weg (Abo beendet, Team geloescht). Der Start laeuft
      einmal neu und zeigt das Gate -- hoechstens alle 30 s, damit eine Seite voller Aufrufe nicht
      dreissig Starts ausloest. */
@@ -25418,6 +25628,9 @@
     /* Flag02Icon -- Der unbekannte Treffertyp in Miras Quellenliste: eine Fahne als Platzhalter */
     flag: '<path d="M4 7L4 21"/>' +
           '<path d="M11.7576 3.90865C8.45236 2.22497 5.85125 3.21144 4.55426 4.2192C4.32048 4.40085 4.20358 4.49167 4.10179 4.69967C4 4.90767 4 5.10138 4 5.4888V14.7319C4.9697 13.6342 7.87879 11.9328 11.7576 13.9086C15.224 15.6744 18.1741 14.9424 19.5697 14.1795C19.7633 14.0737 19.8601 14.0207 19.9301 13.9028C20 13.7849 20 13.6569 20 13.4009V5.87389C20 5.04538 20 4.63113 19.8027 4.48106C19.6053 4.33099 19.1436 4.459 18.2202 4.71504C16.64 5.15319 14.3423 5.22532 11.7576 3.90865Z"/>',
+    /* Notification03Icon -- Glocke: "Notify me" im Menue eines Events (Meldungen je Event, 17.10.) */
+    bell: '<path d="M15.5 18C15.5 19.933 13.933 21.5 12 21.5C10.067 21.5 8.5 19.933 8.5 18"/>' +
+          '<path d="M19.2311 18H4.76887C3.79195 18 3 17.208 3 16.2311C3 15.762 3.18636 15.3121 3.51809 14.9803L4.12132 14.3771C4.68393 13.8145 5 13.0514 5 12.2558V9.5C5 5.63401 8.13401 2.5 12 2.5C15.866 2.5 19 5.634 19 9.5V12.2558C19 13.0514 19.3161 13.8145 19.8787 14.3771L20.4819 14.9803C20.8136 15.3121 21 15.762 21 16.2311C21 17.208 20.208 18 19.2311 18Z"/>',
     /* Hash (Lucide) -- Rank: dasselbe Zeichen wie vor jeder Rang-Zahl (HASH_ICON), seit dem 15.10.
        auch als Zeile "Rank" im Menue "Filters" der Responses-Tabelle. */
     hash: '<line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/>',
@@ -28825,7 +29038,7 @@
     setModels: setModels,
     onModels: onModels,
     getEvents: getEvents, setEvents: setEvents, onEvents: onEvents, eventsStand: eventsStand, eventsChanged: eventsChanged,
-    EVENT_TYPEN: EVENT_TYPEN, eventTyp: eventTyp, eventOeffnen: eventOeffnen,
+    EVENT_TYPEN: EVENT_TYPEN, eventTyp: eventTyp, eventOeffnen: eventOeffnen, eventMeldungenDa: eventMeldungenDa,
     kpiKarte: kpiKarte, kpiKarteSkelett: kpiKarteSkelett, makeModal: makeModal,
     seitenSperreAbgleichen: seitenSperreAbgleichen,
     sparkHtml: sparkHtml, zahlZaehlen: zahlZaehlen, zaehlHtml: zaehlHtml, hochzaehlen: hochzaehlen,
@@ -28968,7 +29181,7 @@
     makeClipTip: makeClipTip,
     SLIDERS_ICON: SLIDERS_ICON,
     makeFire: makeFire,
-    toast: toast,
+    toast: toast, toastZu: toastZu,
     upstreemSignal: upstreemSignal,
     makePortal: makePortal,
     placeMenu: placeMenu,
