@@ -3474,6 +3474,7 @@
   .am-prev-proj-body { display: flex; flex-direction: column; gap: 2px; padding: 2px 0 4px 12px; }
   .am-prev-project.is-collapsed .am-prev-proj-body { display: none; }
   .am-prev-proj-empty { font-size: 12px; color: var(--am-muted-2); padding: 3px 8px; }
+  .am-prev-proj-empty.am-prev-fehler { color: var(--vt-down); }
 
   /* ---- compact chat item ---- */
   .am-prev-item {

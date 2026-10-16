@@ -289,10 +289,17 @@
         : (UC.getAllMarkets ? toArr(UC.getAllMarkets()) : []).map(function (m) { return str(m.alpha2 || m.alpha3 || m.code || m.market).toUpperCase(); });
       return alle.filter(function (k) { return k && gew.indexOf(k) < 0; });
     }
-    /* Neue Filter sind ein neuer Ergebnissatz: beide Tabellen zurueck auf die erste Seite. */
+    /* Neue Filter sind ein neuer Ergebnissatz: beide Tabellen zurueck auf die erste Seite.
+       GEBUENDELT (17.10., FLT-04, wie dashboard-page.js): Clear All und "Saved filters" feuern je
+       Filter ein eigenes Ereignis, und ohne Warten ging jeder Zwischenstand an die DB (gemessen:
+       Topic + Model + Market, Clear All = 4 Aufrufe mit Zwischenstaenden, die DB kennt fuer
+       Citations eine Ratengrenze). Wer in 120ms mehrmals waehlt, bekommt EINE Ladung. */
+    var filterUhr = null;
     function filterGeaendert() {
       state.dom.offset = 0; state.url.offset = 0;
-      persist(); bedarf();
+      persist();
+      clearTimeout(filterUhr);
+      filterUhr = setTimeout(function () { filterUhr = null; bedarf(); }, 120);
     }
     root.addEventListener("umf-models", function (e) { if (setzen("modelle", auswahl("modelle", e.detail, "model_keys"))) filterGeaendert(); });
     /* Intent-Filter der App (13.10.): gemeinsamer Stand in core, Ereignis am window. */
@@ -588,7 +595,9 @@
               var p = erg.ok ? (art === "urls" ? D.zuUrls(erg.daten) : D.zuDomains(erg.daten)) : null;
               if (!p) {
                 state.fehler[art] = erg.ok ? "x" : D.fehlerArt(erg);
-                try { window[render]({ instanceId: id, __parseError: true }); } catch (e) {}
+                /* Die Ursache an die Tabelle (17.10., QS-13): Serverfehler, nicht gefunden, Ratenlimit oder
+                   unlesbar bekommen je ihren Satz. */
+                try { window[render]({ instanceId: id, __parseError: (!erg.ok && UC.fehlerSatzArt && UC.fehlerSatzArt(erg)) || true }); } catch (e) {}
                 return;
               }
               state.fehler[art] = null;

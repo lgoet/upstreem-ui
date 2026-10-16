@@ -1236,10 +1236,13 @@
   }
 
   /* ---- Die Seite ---- */
+  function duIntent() { return UC.intentFilterParams ? UC.intentFilterParams() : {}; }
   function duLaden(frisch) {
     var c = DU.root ? initRoot(DU.root) : null;
     if (!c || !DU.url) return;
-    var z = duZeitraum(), sig = DU.url + "|" + z.von + "|" + z.bis;
+    /* Der Intent-Filter der App gehoert in die Signatur: der Speicher hielte sonst die Zahlen der
+       vorigen Wahl (VTR-02, 17.10.). */
+    var iv = duIntent(), z = duZeitraum(), sig = DU.url + "|" + z.von + "|" + z.bis + "|" + JSON.stringify(iv);
     if (!frisch && DU.speicher[sig]) {
       var e = DU.speicher[sig];
       if (DU.gezeigt !== sig) { DU.zeile = e.row; DU.zeileFuer = DU.url; c.setV1(e.row); DU.gezeigt = sig; duKopf(e.row); }
@@ -1260,8 +1263,14 @@
     (UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(UC.getTeam ? UC.getTeam() : "")).then(function (team) {
       if (nr !== DU.nr) return null;
       if (!team) return { ok: false, status: 0, fehler: { message: "not authenticated" } };
-      return UC.rpc(DU.FN.detail, { p_team: team, p_url: url, p_date_from: z.von, p_date_to: z.bis },
-        { timeoutMs: 60000, signal: ab ? ab.signal : undefined });
+      /* Dieselbe Grundmenge wie Tabelle, Domain-Drawer und die Antworten darunter: Intent-Filter und
+         Branded-Vorgabe der App (p_branded "non_branded"). Ohne sie rechnete die DB mit "all", und
+         die Zitatzahl hier passte nicht zur Zeile, die man angeklickt hat (VTR-02, 17.10.). Die
+         Seitenfilter (Modelle, Maerkte, Topics) gelten im Drawer bewusst nicht, wie im
+         Domain-Drawer: er hat seine eigene Leiste, der Zeitraum ist der des Drawers. */
+      var p = { p_team: team, p_url: url, p_date_from: z.von, p_date_to: z.bis };
+      for (var ik in iv) if (Object.prototype.hasOwnProperty.call(iv, ik)) p[ik] = iv[ik];
+      return UC.rpc(DU.FN.detail, p, { timeoutMs: 60000, signal: ab ? ab.signal : undefined });
     }).then(function (erg) {
       if (!erg || nr !== DU.nr) return;
       if (DU.ab === ab) DU.ab = null;
@@ -1413,6 +1422,16 @@
       /* VOR initRoot: der erste render() muss schon wissen, dass er im Drawer steht. */
       r.__uudKopf = ctx;
       r.__uudNeuLaden = function () { duLaden(true); };
+      /* Intent oder Branded geaendert, waehrend der Drawer offen ist: Seite und Antworten neu, wie im
+         Domain-Drawer. Einmal je Fenster. */
+      if (!DU.__intentHoerer) {
+        DU.__intentHoerer = function () {
+          if (!DU.root || !document.contains(DU.root) || !DU.url) return;
+          DU.resp.offset = 0;
+          duLaden(false);
+        };
+        window.addEventListener("up-intentfilter", DU.__intentHoerer);
+      }
       r.__uudZeitraum = duZeitraumAufZitat;
       DU.root = r;
       initRoot(r);

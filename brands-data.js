@@ -85,8 +85,12 @@
   /* ---- Tracked (live, Dashboard v1) ----------------------------------------------------------- */
   /* Chart: ohne eigene Auswahl die Top 7 (eigene Marke immer dabei), mit Auswahl hoechstens 10. */
   function chart(f, gran, firmen) { return DD().visibility(f, { gran: gran, firmen: firmen }); }
-  /* Tabelle: alle aktiven Marken, Seite fuer Seite zu je 100 (offset). */
-  function tabelle(f, order, offset) { return DD().overview(f, { order: order, limit: GRENZE.tabelle, offset: offset || 0 }); }
+  /* Tabelle: alle aktiven Marken, Seite fuer Seite zu je 100 (offset). Mit eigener Auswahl im Fader
+     (firmen, hoechstens 10) nur diese Marken -- wie auf dem Dashboard (17.10., FLT-06): nur die
+     Auswahl im Chart schraenkt Chart UND Tabelle ein, ohne sie sortiert die Tabelle ueber alle. */
+  function tabelle(f, order, offset, firmen) {
+    return DD().overview(f, { order: order, limit: GRENZE.tabelle, offset: offset || 0, firmen: firmen });
+  }
   /* Die Form von renderBrandsOverview: series/companies aus visibility_v1, table aus overview_v1.
      Mehrere Seiten der Tabelle werden VOR der Umformung zusammengelegt. */
   function zuTracked(vis, seiten) {

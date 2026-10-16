@@ -4565,6 +4565,13 @@
     .up-root.is-resizing { cursor: col-resize; user-select: none; }
     .up-root.is-resizing .up-row { cursor: col-resize; }
     .up-th.is-sortable:hover { color: var(--vc-text); }
+    /* Tastaturfokus an Sortierkopf und Zeile (17.10.): Hausregel der Knoepfe, 2px Linie in
+       --up-focus. Der Abstand liegt INNEN (-2px): Kopf und Zeilen stossen Kante an Kante aneinander
+       und an den Rand des Kastens, ein Ring mit 2px Luft ausserhalb wuerde dort abgeschnitten
+       bzw. auf die Nachbarzeile gemalt. Ohne Regel zeichnete der Browser sein eigenes Blau (auto 1px). */
+    .up-th.is-sortable:focus-visible,
+    .up-row:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: calc(var(--up-focus-w) * -1); }
+    .up-th.is-sortable:focus-visible { color: var(--vc-text); }
 
     /* Kopf-Sortierer: zwei Chevrons uebereinander, je 2px zusammengezogen. Die Geometrie ist
        Lucide chevron-up / chevron-down. Der aktive zeigt in die Sortierrichtung. 15 statt 14 seit
@@ -9052,6 +9059,10 @@ html[data-usn-modus="hint"] .up-ph-heading.is-knapp > .up-ph-crumb:first-child:n
 /* Ein fehlender Wert ist "–" in der Farbe jeder leeren Zelle (.up-num.is-empty) und nie 0: eine
    Null in der Primaerfarbe waere eine Aussage, die niemand gemacht hat. */
 .up-sumwert.is-leer { color: var(--vc-fourth); }
+/* Eine Berechnung, die nicht geholt werden konnte (sumFehlerHtml, 17.10.): ein eigener Zustand und
+   nicht der Strich fuer "kein Wert". 13 statt 16, damit der Satz in eine schmale Zelle passt und
+   nicht wie eine Zahl aussieht; Fehlerfarbe wie jeder Fehlersatz der App (.up-fehlerzeile). */
+.up-sumwert.is-fehler { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vt-down); }
 .up-sumlabel {
   min-width: 0; overflow: hidden; text-overflow: ellipsis;
   font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-fourth);

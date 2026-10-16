@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261170;
+  var BUILD = 20261171;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -728,6 +728,9 @@
     "Sort by": "Sortieren nach",
     /* Lesefehler. {was} ist der Name dessen, was nicht geladen werden konnte. */
     "Could not load {was}": "{was} konnte nicht geladen werden",
+    "Not found": "Nicht gefunden",
+    "This data could not be found.": "Diese Daten wurden nicht gefunden.",
+    "Something went wrong on our side. Try again in a moment.": "Auf unserer Seite ist etwas schiefgelaufen. Versuch es gleich noch einmal.",
     "The data could not be read. Please reload the page.":
       "Die Daten konnten nicht gelesen werden. Bitte lade die Seite neu.",
     "data": "Die Daten",
@@ -1760,6 +1763,7 @@
     "Adding brands isn't available on this page": "Brands hinzufügen ist auf dieser Seite nicht möglich",
     "Brand activated again": "Brand wieder aktiviert",
     "Your workspace could not be loaded. Please reload the page.": "Dein Arbeitsbereich konnte nicht geladen werden. Lade die Seite bitte neu.",
+    "Your workspace could not be loaded.": "Dein Arbeitsbereich konnte nicht geladen werden.",
     "Too many team switches. Please wait a moment.": "Zu viele Teamwechsel. Warte bitte einen Moment.",
     "You no longer have access to this team.": "Du hast keinen Zugriff mehr auf dieses Team.",
     "The team could not be switched. Please try again.": "Das Team konnte nicht gewechselt werden. Versuch es noch einmal.",
@@ -1971,6 +1975,7 @@
     "Search is not available right now. Please try again.": "Die Suche ist gerade nicht verfügbar. Versuch es noch einmal.",
     "{n} rows exported": "{n} Zeilen exportiert",
     "The export was cut at {n} rows. Choose a shorter range for the rest.": "Der Export endet nach {n} Zeilen. Wähl für den Rest einen kürzeren Zeitraum.",
+    "The file has {n} rows, but {gesamt} were expected. It may be incomplete. Export again to be sure.": "Die Datei hat {n} Zeilen, erwartet wurden {gesamt}. Sie ist möglicherweise unvollständig. Exportiere noch einmal, um sicherzugehen.",
     "Too many exports in a short time": "Zu viele Exporte in kurzer Zeit",
     "Please wait a minute and try again.": "Warte eine Minute und versuch es noch einmal.",
     "Exports are not available for this team": "Für dieses Team sind keine Exporte möglich",
@@ -2785,6 +2790,7 @@
     "Save current filters": "Aktuelle Filter speichern",
     "Name for these filters": "Name für diese Filter",
     "Delete {name}": "{name} löschen",
+    "Some filters no longer exist": "Einige Filter gibt es nicht mehr",
     /* Das Konto-Menue der Seitenleiste (07.09. ausdruecklich angefordert). */
     "Account Settings": "Kontoeinstellungen",
     "System": "System",
@@ -6637,27 +6643,35 @@
     try { window.dispatchEvent(new CustomEvent("up-intentfilter", { detail: neu })); } catch(e){}
     return true;
   }
+  /* EIN AUFRUF MIT DEM INTENT-FILTER (14.10., Rueckfall am 17.10. entfernt, VTR-05).
+     Fuer brand_detail_v1 und domain_detail_v1, die den Filter seit audit_14_10 kennen. Bis hierher
+     wiederholte die Funktion bei 404 PGRST202 denselben Aufruf OHNE p_intents/p_branded: kam je
+     ein PGRST202 (Schema-Cache, Signaturaenderung), zeigte der Drawer still ungefilterte Werte, als
+     waeren sie gefiltert -- leer und kaputt sahen gleich aus. Jetzt geht der Fehler an den Aufrufer
+     und steht als Fehlerzustand im Drawer. */
+  function rpcMitIntent(fn, params, opts){
+    var x = intentFilterParams(), mit = {}, k;
+    for (k in params) if (Object.prototype.hasOwnProperty.call(params, k)) mit[k] = params[k];
+    for (k in x) if (Object.prototype.hasOwnProperty.call(x, k)) mit[k] = x[k];
+    return rpc(fn, mit, opts);
+  }
+  /* WIRKSAM GEFILTERT? Alle vier wahlbaren Intents sind NICHT "kein Filter" fuer die Datenbank:
+     ein Prompt ohne Intent (jeder neue, bis er eingestuft ist: "Classifying", NULL) faellt aus
+     jeder Teilmenge heraus, und die vier Haken decken ihn nicht ab (FLT-03, 17.10.). Wer alle vier
+     waehlt, will alle sehen: dann geht kein p_intents hinaus, wie bei gar keiner Wahl. Die Haken
+     bleiben, wie sie sind (die Auswahl ist nicht unsere zu aendern), nur die Anfrage wird eine
+     ungefilterte. */
+  function intentWirksam(l){
+    l = Array.isArray(l) ? l : [];
+    if (!l.length) return false;
+    return !INTENTE.every(function(a){ return l.indexOf(a.key) >= 0; });
+  }
   /* Die Parameter fuer einen Aufruf. opts.branded === false: ohne p_branded (Prompts-Tabelle).
      Nicht freigegeben: leer -- dann geht kein einziger neuer Parameter hinaus. */
-  /* EIN AUFRUF MIT DEM INTENT-FILTER, DER NICHT AN EINEM FEHLENDEN PARAMETER STIRBT (14.10.).
-     Fuer Funktionen, die den Filter erst mit einem DB-Stand kennen (domain_detail_v1 und
-     brand_detail_v1 ab audit_14_10): ohne ihn antwortet PostgREST mit 404 PGRST202, und der
-     Drawer-Kopf waere leer. Dann einmal ohne die Filterparameter -- dasselbe wie vorher. */
-  function rpcMitIntent(fn, params, opts){
-    var x = intentFilterParams(), mit = {}, k, hat = false;
-    for (k in params) if (Object.prototype.hasOwnProperty.call(params, k)) mit[k] = params[k];
-    for (k in x) if (Object.prototype.hasOwnProperty.call(x, k)){ mit[k] = x[k]; hat = true; }
-    if (!hat) return rpc(fn, params, opts);
-    return rpc(fn, mit, opts).then(function(erg){
-      var code = erg && erg.fehler ? String(erg.fehler.code || "") : "";
-      if (erg && !erg.ok && erg.status === 404 && code === "PGRST202") return rpc(fn, params, opts);
-      return erg;
-    });
-  }
   function intentFilterParams(opts){
     if (!intentsLive()) return {};
     var f = intentFilterGet(), p = {};
-    if (f.intents.length) p.p_intents = f.intents.slice();
+    if (intentWirksam(f.intents)) p.p_intents = f.intents.slice();
     if (!opts || opts.branded !== false) p.p_branded = f.branded;
     return p;
   }
@@ -6670,7 +6684,7 @@
     f = f || {};
     function voll(x){ return !!(x && x.length); }
     if (voll(f.modelle) || voll(f.maerkte) || voll(f.topics)) return true;
-    return intentsLive() && intentFilterGet().intents.length > 0;
+    return intentsLive() && intentWirksam(intentFilterGet().intents);
   }
 
   /* Loading skeleton rows for a grid table.
@@ -7444,6 +7458,13 @@
     function prioOf(c){
       var r = vorrangRang(c.key);
       if (r >= 0) return 1e6 + r;
+      /* Die Spalte, nach der GERADE sortiert wird, faellt der Breite wegen nie vor den anderen
+         (17.10., Audit TAB-09): in den Responses sortiert die Standardwahl nach Datum, und die
+         Datumsspalte fiel als erste weg -- die Tabelle war nach etwas geordnet, das nirgends zu
+         sehen war, und kein Kopf trug den Pfeil. Wie eine angeklickte Spalte, nur unter dem
+         ausdruecklichen Wunsch im Menue (1e6). Spaltenschluessel und Sortierfeld heissen in allen
+         Tabellen gleich (date, created, rank, ...); wo eines fehlt, aendert sich nichts. */
+      if (state.sortField != null && state.sortField === c.key) return 5e5;
       var unter = c.prio != null ? c.prio : (COLUMNS.length - COLUMNS.indexOf(c));
       var a = (c.art && SPALTEN_ART[c.art] != null) ? SPALTEN_ART[c.art] : null;
       return a != null ? a * 1000 + unter : unter;
@@ -7732,6 +7753,7 @@
     ensureFirstGrip();
 
     var lastTpl = null, lastSigCols = null;
+    var spaltenHoerer = [], lastSichtSig = null;
     function applyCols(){
       /* Tables that render their own <thead> markup (brands-overview swaps between two different
          head layouts) throw the grip away on every render, so re-ensure it here instead of only
@@ -7859,11 +7881,20 @@
          Rasterzeile um (im Skelett davor waren sie ausgeblendet). Also traegt der Kopf den Stempel
          genauso wie jede Zeile. */
       var rowsStale = !!root.querySelector('.up-row:not([data-up-colsig="' + sigCols + '"]), .up-thead:not([data-up-colsig="' + sigCols + '"])');
-      if (sigCols === lastSigCols && !rowsStale) return;
+      /* Die Gesamtzeile zeigt unter is-vnarrow gar keine Kennzahlzellen (CSS), auch wenn die Spaltenmenge
+         dieselbe bleibt: der Wechsel zaehlt deshalb mit in die Signatur fuer die Hoerer. */
+      var sichtSig = sigCols + (root.classList.contains("is-vnarrow") ? "|v" : "");
+      var sichtNeu = lastSichtSig !== null && sichtSig !== lastSichtSig;
+      lastSichtSig = sichtSig;
+      if (sigCols === lastSigCols && !rowsStale){
+        if (sichtNeu) spaltenHoerer.forEach(function(fn){ try { fn(); } catch(e){} });
+        return;
+      }
       /* Aendert die Breite, welche Spalten Platz haben, muss das Menue es mitsagen -- auch wenn
          es gerade offen ist, waehrend jemand das Fenster zieht. Nur beim Wechsel der Menge,
          nicht bei jedem Bild. */
-      if (lastSigCols !== null && sigCols !== lastSigCols) populateCols();
+      var spaltenNeu = lastSigCols !== null && sigCols !== lastSigCols;
+      if (spaltenNeu) populateCols();
       lastSigCols = sigCols;
       COLUMNS.forEach(function(c){
         var sel = [];
@@ -7877,6 +7908,9 @@
       Array.prototype.forEach.call(root.querySelectorAll(".up-row, .up-thead"), function(r){
         r.setAttribute("data-up-colsig", sigCols);
       });
+      /* Erst nach dem Umstellen der Zellen: die Gesamtzeile holt, was eine jetzt sichtbare Spalte
+         braucht (17.10., SUM-03: vorher holte sie auch fuer ausgeblendete und danach nie nach). */
+      if (spaltenNeu || sichtNeu) spaltenHoerer.forEach(function(fn){ try { fn(); } catch(e){} });
     }
     /* drag the lead column's right edge; everything else keeps its responsive track */
     function startResize(e){
@@ -7966,7 +8000,7 @@
                  '<span class="up-pop-label">' + esc(t_(c.label)) +
                    (platzlos ? '<span class="up-pop-hint">' + esc(t_("No space")) + '</span>' : "") +
                  '</span>' +
-                 '<span class="up-switch' + (on ? " is-on" : "") + '" role="switch" aria-checked="' + (on ? "true" : "false") + '"></span>' +
+                 '<span class="up-switch' + (on ? " is-on" : "") + '" role="switch" aria-label="' + esc(t_(c.label)) + '" aria-checked="' + (on ? "true" : "false") + '"></span>' +
                '</div>';
       }).join("");
       var densePart = cfg.dense
@@ -8068,7 +8102,10 @@
       readCols: readCols, writeCols: writeCols, readWidths: readWidths, writeWidths: writeWidths,
       visibleCols: visibleCols, effectiveCols: effectiveCols, layoutKeys: layoutKeys, colMin: colMin,
       applyCols: applyCols, startResize: startResize, populateCols: populateCols,
-      toggleCol: toggleCol, selectAllCols: selectAllCols, syncColsBadge: syncColsBadge
+      toggleCol: toggleCol, selectAllCols: selectAllCols, syncColsBadge: syncColsBadge,
+      /* fn() laeuft, wenn sich die Menge der gezeigten Spalten durch die Breite aendert (nicht beim
+         ersten Aufbau). Fuer alles, was nur fuer sichtbare Spalten arbeiten soll (Summenzeile). */
+      beiSpalten: function(fn){ if (typeof fn === "function" && spaltenHoerer.indexOf(fn) < 0) spaltenHoerer.push(fn); }
     };
   }
 
@@ -8165,8 +8202,23 @@
       if (!el) return;
       var total = pageCount();
       var cur = Math.min(state.page, total);
-      if (cur !== state.page){ state.page = cur; if (cfg.onClamp) cfg.onClamp(); }
       var t = totalOf();
+      if (cur !== state.page){
+        state.page = cur;
+        if (cfg.onClamp) cfg.onClamp();
+        /* Schrumpft die Liste unter die aktuelle Seite (Refresh nach dem Loeschen, ein anderer
+           Zeitraum-Stand), zeigte der Zaehler "1-20 of 20" ueber einer Tabelle ohne Zeilen: die
+           Seite wurde nur umgeschrieben, die Zeilen der letzten Seite (leer) blieben stehen und
+           nichts holte Seite 1 (17.10. gemessen, Prompts: 1 Anfrage mit Offset 25, danach
+           Leerzustand). cfg.neuLaden = der Server liefert die Zeilen: dann wird die geklemmte
+           Seite geholt wie nach einem Klick auf sie. Nur bei bekannter, positiver Gesamtzahl und
+           ohne laufende Anfrage: waehrend einer kann die Zahl noch die des alten Stands sein.
+           Das Skelett (loading) deckt die leeren Zeilen, bis die Antwort kommt. */
+        if (cfg.neuLaden && cfg.onChange && t != null && t > 0 && !state.loading){
+          state.loading = true;
+          cfg.onChange("klemme");
+        }
+      }
       var info = "";
       if (t != null && t > 0){
         var from = offset() + 1;
@@ -8176,7 +8228,7 @@
         info = '<span class="up-pager-info">' +
           esc(t_("{from}–{to} of {total}")
                 .replace("{from}", fmtInt(from)).replace("{to}", fmtInt(to))
-                .replace("{total}", fmtTotal(t))) + '</span>';
+                .replace("{total}", fmtInt(t))) + '</span>';
       }
       var pages = pageWindow(cur, total).map(function(p){
         if (p === "gap") return '<span class="up-page-gap">…</span>';
@@ -8208,7 +8260,7 @@
       if (!el) return;
       el.innerHTML = sizesOf().map(function(n){
         return '<button class="up-pagesize-btn' + (n === state.pageSize ? " is-active" : "") +
-               '" type="button" data-pagesize="' + n + '">' + n + '</button>';
+               '" type="button" aria-pressed="' + (n === state.pageSize ? "true" : "false") + '" data-pagesize="' + n + '">' + n + '</button>';
       }).join("");
       syncFootWrap();
     }
@@ -8317,8 +8369,83 @@
      Original dort -- es gehoert jetzt an die Huelle, sonst fuehrt kein Weg zurueck auf Englisch. */
   var KOPF_KLASSEN = ["up-th", "vt-th", "tct-th"];
   var KOPF_SEL = ".up-th, .vt-th, .tct-th";
+  /* ---------- Tabellen fuer Tastatur und Vorleser (17.10., Audit TAB-04/05/06/12) ----------
+     DER BEFUND: ein Sortierkopf war ein div mit click -- ohne Tabulatorstopp, ohne Taste, ohne
+     Rolle. Wer ohne Maus arbeitet, kam an keine Sortierung heran, und ein Vorleser las keine
+     Tabelle, sondern lose Texte (kein einziges role auf der Prompt-Seite).
+     Die Rollen setzt EINMAL dieser Lauf (dort, wo schon jeder frische Ast vorbeikommt), nicht je
+     Datei: Koepfe und Zeilen bauen ein Dutzend Dateien aus handgemachtem Markup, und eine
+     Komponente, die ihre Zeilen neu schreibt, faellt sonst wieder aus der Semantik.
+     TABELLE und nicht GRID (WAI-ARIA): ein grid verlangt ein Tastaturmodell (ein Tabulatorstopp,
+     Pfeiltasten von Zelle zu Zelle) und taugt fuer Tabellen, die man wie eine Tabellenkalkulation
+     bedient. Diese hier sind Listen, deren Zeile eine Handlung ausloest (oeffnet das Detail): jede
+     Zeile bleibt ein Tabulatorstopp mit Enter, ihre Knoepfe und Haken sind echte Bedienelemente
+     darin. Ein role=grid ohne Pfeiltasten waere ein Versprechen, das die Tabelle nicht haelt.
+     Und die Zeile ist KEIN role=button mehr (das war sie bis dahin): ein Knopf darf keine Knoepfe
+     enthalten, und genau das tut sie (Haken, Seitenknopf, Menue).
+     Sortierkopf: role=columnheader, focusierbar, Enter und Leertaste sortieren (document-weit,
+     weiter unten). aria-sort steht nur an der sortierten Spalte (makeHeadSort). */
+  function kopfBedienen(th){
+    if (th.closest(".ulh-root")) return;
+    var tr = th.parentElement;
+    /* columnheader gehoert in eine Zeile in einer Tabelle: nur der Kopf der .up-table-Tabellen */
+    if (tr && tr.classList.contains("up-thead") && th.classList.contains("up-th")){
+      if (!tr.hasAttribute("role")) tr.setAttribute("role", "row");
+      if (!th.hasAttribute("role")) th.setAttribute("role", "columnheader");
+      var tab = tr.parentElement;
+      if (tab && tab.classList.contains("up-table") && !tab.hasAttribute("role")) tab.setAttribute("role", "table");
+    }
+    if (th.classList.contains("is-sortable") && !th.hasAttribute("tabindex")) th.setAttribute("tabindex", "0");
+  }
+  function zeileBedienen(r){
+    var rl = r.getAttribute("role");
+    if (rl === "button" && r.hasAttribute("aria-expanded")) return;   /* eine aufklappende Zeile (Ads) hat ihre eigene Rolle */
+    if (rl && rl !== "button" && rl !== "row") return;
+    if (rl !== "row") r.setAttribute("role", "row");
+    for (var c = r.firstElementChild; c; c = c.nextElementSibling){
+      if (c.classList.contains("up-td") && !c.hasAttribute("role")) c.setAttribute("role", "cell");
+    }
+  }
+  function tabelleBedienen(start){
+    var tab = start.closest(".up-table");
+    var ziele = [];
+    if (tab) ziele.push([tab, start]);
+    else {
+      var l = start.getElementsByClassName("up-table");
+      for (var i = 0; i < l.length; i++) ziele.push([l[i], l[i]]);
+    }
+    for (var z = 0; z < ziele.length; z++){
+      var t = ziele[z][0], bereich = ziele[z][1];
+      if (t.closest(".ulh-root")) continue;
+      if (!t.hasAttribute("role")) t.setAttribute("role", "table");
+      var tb = t.getElementsByClassName("up-tbody");
+      for (var b = 0; b < tb.length; b++) if (!tb[b].hasAttribute("role")) tb[b].setAttribute("role", "rowgroup");
+      /* Ein frischer Ast kann die Zeile selbst sein, in einer Zeile liegen (eine Zelle, die sich
+         neu zeichnet) oder viele Zeilen tragen (der ganze Rumpf). */
+      var eigene = bereich.closest ? bereich.closest(".up-row") : null;
+      if (eigene && t.contains(eigene)) zeileBedienen(eigene);
+      var zl = bereich.getElementsByClassName("up-row");
+      for (var k = 0; k < zl.length; k++) zeileBedienen(zl[k]);
+    }
+  }
+  /* Enter und Leertaste an einem fokussierten Sortierkopf = Klick darauf. Der Klick ist der eine
+     Weg, den jede Tabelle schon behandelt (headSortClick hinter .up-th.is-sortable); ein zweiter
+     Weg je Datei waere ein Dutzend Kopien. Nur wenn der Kopf SELBST den Fokus hat: der Haken
+     "Alle waehlen" im Kopf der Prompt-Tabelle und das Info-Zeichen haben ihre eigene Taste. */
+  if (!window.__upKopfTaste){
+    window.__upKopfTaste = true;
+    document.addEventListener("keydown", function(e){
+      if (e.key !== "Enter" && e.key !== " ") return;
+      var th = e.target;
+      if (!th || th.nodeType !== 1 || !th.classList || !th.classList.contains("is-sortable") || !th.classList.contains("up-th")) return;
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+      e.preventDefault();      /* die Leertaste scrollt sonst die Seite */
+      th.click();
+    });
+  }
   function kopfTextEinpacken(th){
     if (!th || th.nodeType !== 1) return null;
+    kopfBedienen(th);
     if (th.classList.contains("up-th-mentioned") || th.classList.contains("up-th-ment")) return null;
     if (th.closest(".ulh-root")) return null;
     var erste = null;
@@ -8350,6 +8477,7 @@
       var l = start.getElementsByClassName(KOPF_KLASSEN[i]);
       for (var j = 0; j < l.length; j++) kopfTextEinpacken(l[j]);
     }
+    tabelleBedienen(start);
   }
   /* DER VOLLE WORTLAUT EINES GEKUERZTEN KOPFS OHNE INFO-ZEICHEN. Mit Info-Zeichen nennt ihn die
      Erklaerkarte (Titel = Etikett), ein zweiter Tooltip daneben waere doppelt. Ohne -- "Zuletzt
@@ -8413,7 +8541,12 @@
           : (state.sortField === col);
         if (owns) el.classList.add(state.sortDir === "asc" ? "is-asc" : "is-desc");
         var th = el.closest(".up-th");
-        if (th) th.setAttribute("aria-sort", owns ? (state.sortDir === "asc" ? "ascending" : "descending") : "none");
+        /* Nur die sortierte Spalte traegt aria-sort (WAI-ARIA, Sortable Table): "none" an jeder
+           anderen liest ein Vorleser als lauter Sortierzustaende, obwohl nur einer gilt. */
+        if (th){
+          if (owns) th.setAttribute("aria-sort", state.sortDir === "asc" ? "ascending" : "descending");
+          else th.removeAttribute("aria-sort");
+        }
       });
       if (!TREND) return;
       /* show "Trend" next to the Share label while the trend key is the active sort */
@@ -12883,7 +13016,7 @@
     }).join("");
     html += '<div class="up-pop-div"></div>' +
       '<div class="up-pop-row"><span class="up-pop-label">Descending</span>' +
-        '<span class="up-switch' + (sortDir === "desc" ? " is-on" : "") + '" role="switch" data-sortdir></span>' +
+        '<span class="up-switch' + (sortDir === "desc" ? " is-on" : "") + '" role="switch" aria-label="' + esc(t_("Descending")) + '" aria-checked="' + (sortDir === "desc" ? "true" : "false") + '" data-sortdir></span>' +
       '</div>';
     return html;
   }
@@ -22818,10 +22951,17 @@
         APP.laeuft = false;
         /* Gibt es app_start_v1 noch nicht (SQL nicht eingespielt: 404 / PGRST202), bleibt alles beim
            Bubble-Weg -- Teamwechsel, Nachladen und Wegklicken gehen dann weiter an Bubble, statt an
-           Funktionen, die es nicht gibt. Kein Satz im Bild: der Bubble-Seitenaufbau laeuft ja. */
-        var fehlt = erg && (erg.status === 404 || /PGRST202|Could not find the function/.test(String(erg.fehler && (erg.fehler.code + " " + erg.fehler.message))));
+           Funktionen, die es nicht gibt. Kein Satz im Bild: der Bubble-Seitenaufbau laeuft ja.
+           NUR AUSSERHALB DER APP (17.10., VTR-03): ohne Bubble (ohneBubble(), die App) gibt es diesen
+           Seitenaufbau nicht, und der stille Abbruch liess die Seiten ohne Team, ohne Satz und ohne
+           appFertig() stehen. Dort zaehlt ein 404 wie jeder andere Fehler. */
+        var fehlt = !ohneBubble() && erg && (erg.status === 404 || /PGRST202|Could not find the function/.test(String(erg.fehler && (erg.fehler.code + " " + erg.fehler.message))));
         if (fehlt){ APP.aktiv = false; return null; }
-        if (typeof toast === "function") toast(t_("Your workspace could not be loaded. Please reload the page."), { kind: "error" });
+        /* Bleibt stehen und bietet den neuen Versuch an (der Start laeuft dann von vorn): ein Satz, der
+           nach vier Sekunden verschwindet, liesse eine leere App zurueck. Ein Schluessel, damit ein
+           zweiter Fehlschlag den Toast nicht verdoppelt. */
+        if (typeof toast === "function") toast(t_("Your workspace could not be loaded."), { kind: "error", bleibt: true, schluessel: "app-start",
+          desc: "Check your connection and try again.", action: { label: t_("Try again"), onClick: function(){ appStart(); } } });
         appFertig();
         return null;
       }
@@ -26652,11 +26792,31 @@
      nennt bewusst KEIN Substantiv, damit er zu jedem passt, und er sagt, was der Nutzer tun
      kann. Keine Diagnose, keine internen Namen, kein Verweis auf die Konsole -- das liest hier
      niemand, den es angeht. */
-  function leseFehlerHtml(was){
+  /* NACH URSACHE (17.10., QS-13): "could not be read" stimmt nur fuer eine Antwort, die ankam und
+     nicht lesbar war. Bei einem Serverfehler (5xx, Zeitueberschreitung, Netz) hilft Neuladen nicht
+     als Erstes, bei 404 ist nichts unlesbar, sondern nichts da, beim Ratenlimit hilft Warten.
+     art: "" (Vorgabe: unlesbar), "server", "rate", "weg". Die Seite, die den Fehler kennt, nennt
+     sie (fehlerSatzArt(erg)) und reicht sie als __parseError: "<art>" an die Komponente weiter;
+     ein wahrer Wert wie bisher bleibt "unlesbar". */
+  function fehlerSatzArt(erg){
+    if (!erg || erg.ok) return "";
+    var f = erg.fehler || {}, m = String(f.message || "").toLowerCase(), c = String(f.code || ""), s = erg.status | 0;
+    if (m === "aborted" || m === "unreadable_response") return "";
+    if (s === 429|| /rate_?limit/.test(m) || c === "PT429") return "rate";
+    if (s === 404 || c === "PGRST202" || /not.?found/.test(m)) return "weg";
+    return "server";
+  }
+  function leseFehlerHtml(was, art){
+    art = typeof art === "string" ? art : "";
+    var titel = art === "weg" ? "Not found" : t_("Could not load {was}").replace("{was}", t_(was || "data"));
+    var satz = art === "server" ? "Something went wrong on our side. Try again in a moment."
+             : art === "rate" ? "Too many requests in a short time. Please wait a moment."
+             : art === "weg" ? "This data could not be found."
+             : "The data could not be read. Please reload the page.";
     return '<div class="up-empty">' +
       '<div class="up-empty-ic">' + icon("info", 1.6) + '</div>' +
-      '<div class="up-empty-h">' + esc(t_("Could not load {was}").replace("{was}", t_(was || "data"))) + '</div>' +
-      '<div class="up-empty-t">' + esc(t_("The data could not be read. Please reload the page.")) + '</div>' +
+      '<div class="up-empty-h">' + esc(t_(titel)) + '</div>' +
+      '<div class="up-empty-t">' + esc(t_(satz)) + '</div>' +
     '</div>';
   }
 
@@ -28610,7 +28770,10 @@
     "lowest": "niedrigster",
     "newest": "neuester",
     "most common": "am häufigsten",
-    "Summary row": "Summenzeile"
+    "Summary row": "Summenzeile",
+    /* Der Fehlerzustand einer Berechnung (17.10.): "–" heisst "kein Wert", das hier "ging schief". */
+    "Couldn't load": "Nicht geladen",
+    "Couldn't load. Choose Try again.": "Nicht geladen. Wähle „Noch einmal versuchen“."
   });
   /* Ein Wert der Zeile als Text, nach den Formaten von CLAUDE.md 2b. art: "anzahl" (ganze Zahl,
      dieselbe Form wie der Zaehler im Tabellenkopf), "pct" (Visibility, eine Stelle), "rang" (immer
@@ -28640,6 +28803,15 @@
     else if (label) lab = '<span class="up-sumlabel">' + esc(t_(label)) + '</span>';
     return '<span class="up-sumpaar"><span class="up-sumwert' + (txt == null ? " is-leer" : "") + (istText ? " is-text" : "") + '">' +
       esc(txt == null ? "–" : txt) + '</span>' + lab + '</span>';
+  }
+  /* Eine Berechnung, die NICHT geholt werden konnte (17.10.): ein eigener Zustand und nicht "–".
+     Ein Strich heisst "es gibt keinen Wert" (null, kein Treffer); hier gab es einen Fehler (429,
+     Zeitueberschreitung, 5xx), und der soll nicht wie "kein Wert" aussehen (CLAUDE.md 2: leer und
+     kaputt nie gleich). Kleiner als ein Wert (13, nicht 16) und in der Fehlerfarbe, damit er in
+     eine schmale Zelle passt und nicht mit einer Zahl verwechselt wird. Der Weg zurueck steht im
+     Menue der Zelle (SUM_NEU, "Try again"). */
+  function sumFehlerHtml(){
+    return '<span class="up-sumpaar"><span class="up-sumwert is-text is-fehler">' + esc(t_("Couldn't load")) + '</span></span>';
   }
   /* cfg: { root, nach (das Element, hinter dem die Zeile steht, ueblich .up-tbody), group (die
      Popover-Gruppe der Tabelle), onWahl(spalte, modus) }.
@@ -28689,6 +28861,9 @@
       var z = zelleVon(key), m = z && z.menu;
       if (!m || !isArr(m.optionen) || !m.optionen.length) return false;
       menu.innerHTML = m.optionen.map(function(o){
+        /* Eine Aktion ("Try again") ist keine Wahl: kein Haken, ein Trenner dahinter. */
+        if (o.aktion) return '<div class="up-pop-opt" role="menuitem" data-sum-wahl="' + esc(o.key) + '">' +
+          '<span>' + esc(t_(o.label)) + '</span></div><div class="up-pop-div"></div>';
         var an = o.key === m.wahl;
         return '<div class="up-pop-opt' + (an ? " is-active" : "") + '" role="menuitemradio" aria-checked="' +
                  (an ? "true" : "false") + '" data-sum-wahl="' + esc(o.key) + '">' +
@@ -28816,11 +28991,23 @@
          dann; getrennt von der Tabelle (die Zeilen warten nie darauf, "nicht die gesamte Tabelle
          im Skeleton, wenn man unten eine groessere Berechnung baut"), mit eigenem Skelett in der
          Zelle; je Filterstand einmal, Blaettern und Sortieren aendern sig nicht und holen nichts.
-         Scheitert es, steht "–" (sumPaarHtml), und die naechste Aenderung versucht es neu.
+         Scheitert es, steht "Couldn't load" (sumFehlerHtml, NICHT "–": ein Strich heisst "kein Wert"),
+         und das Menue der Zelle bietet "Try again" an. Ein neuer Versuch kommt von selbst bei einer
+         neuen Wahl und, hoechstens alle 20 Sekunden, beim naechsten Zeichnen der Tabelle (17.10.: vorher
+         blieb der Fehler fuer den Filterstand fuer immer stehen, auch ein einzelnes 429).
+         Geholt wird nur, was eine SICHTBARE Spalte braucht (ausgeblendete: mobil, Display-Menue);
+         wird sie eingeblendet, holt das naechste Zeichnen nach.
      Die Anzahl kommt von der Tabelle (cfg.anzahl, die Gesamtzahl ihres Servers, nicht die
      Zeilen der Seite); null wird "–", nie 0 (sumPaarHtml).
      cfg.onUmschalten(an): danach z. B. die feste Hoehe neu planen. */
   var SUM_AUS = "aus";
+  /* Die Aktion "Try again" im Menue einer Zelle, deren Berechnung nicht geholt werden konnte. Ein
+     eigener Schluessel, der mit keiner Berechnung (z. B. "neu" in Domains) kollidiert. */
+  var SUM_NEU = "__neu";
+  /* So lange gilt ein gescheiterter Abruf als gescheitert, bevor ein Zeichnen ihn wiederholt: kurz
+     genug, dass ein einzelnes 429 oder ein Timeout nicht haengen bleibt, lang genug, dass eine
+     fehlende Funktion keine Anfrage je Zeichnen ausloest. */
+  var SUM_SPERRE_MS = 20000;
   function makeZaehlZeile(cfg){
     cfg = cfg || {};
     var key = prefKey((cfg.praefix || "up") + "_summe__" + (cfg.instanceId || ""));
@@ -28849,10 +29036,14 @@
     }
     var kit = makeSumZeile({ root: cfg.root, nach: cfg.nach, group: cfg.group || null,
       onWahl: function(spalte, modus){
+        if (modus === SUM_NEU){ vergessen(spalte); zeichnen(); return; }
         if (modus === SUM_AUS) delete wahl[spalte];
         else if (optionVon(spalte, modus)) wahl[spalte] = modus;
         else return;
         merken();
+        /* Eine neue Wahl ist ein neuer Versuch (so stand es immer im Kommentar): ein frueherer
+           Fehlschlag dieser Spalte gilt nicht mehr. */
+        vergessen(spalte);
         zeichnen();
       } });
     if (!kit.el) return { zeichnen: function(){}, schalter: function(){ return null; }, an: function(){ return false; }, setzen: function(){} };
@@ -28881,7 +29072,7 @@
         schalterEl.className = "up-zaehl-schalter";
         schalterEl.innerHTML = '<div class="up-pop-div"></div>' +
           '<div class="up-pop-row" data-sum-schalter><span class="up-pop-label">' + esc(t("Summary row")) + '</span>' +
-          '<span class="up-switch" role="switch" aria-checked="false"></span></div>';
+          '<span class="up-switch" role="switch" aria-label="' + esc(t("Summary row")) + '" aria-checked="false"></span></div>';
         schalterEl.addEventListener("click", function(e){
           if (!e.target.closest || !e.target.closest("[data-sum-schalter]")) return;
           e.stopPropagation();
@@ -28904,16 +29095,47 @@
       }
       return vorrat[sig];
     }
+    /* Die Felder einer Spalte, die der Server liefern muss (lokal gerechnete: keine). */
+    function felderVon(sp){
+      var o = optionVon(sp, wahl[sp]), f = [];
+      if (!o || typeof o.lokal === "function") return f;
+      [o.feld, o.anteil].concat(isArr(o.felder) ? o.felder : []).forEach(function(x){
+        if (x && f.indexOf(x) < 0) f.push(x);
+      });
+      return f;
+    }
+    /* Welche Spalten gerade im Bild stehen (null: unbekannt, dann zaehlen alle). Eine ausgeblendete
+       Spalte (Telefon, Display-Menue) zeigt ihren Wert niemandem, die Abfrage zaehlt aber gegen das
+       Ratenlimit der Summen (SUM-03). */
+    function sichtbareSpalten(){
+      var c = typeof cfg.cols === "function" ? cfg.cols() : null, s = {};
+      if (!c || typeof c.effectiveCols !== "function") return null;
+      /* Telefon (is-vnarrow): die Zeile zeigt nur die Anzahl (CSS), keine Kennzahlzelle. */
+      if (cfg.root && cfg.root.classList && cfg.root.classList.contains("is-vnarrow")) return s;
+      try { c.effectiveCols().forEach(function(x){ s[x.key] = true; }); } catch(err){ return null; }
+      return s;
+    }
     function serverFelder(){
-      var f = [];
+      var f = [], sicht = sichtbareSpalten();
       Object.keys(wahl).forEach(function(sp){
-        var o = optionVon(sp, wahl[sp]);
-        if (!o || typeof o.lokal === "function") return;
-        [o.feld, o.anteil].concat(isArr(o.felder) ? o.felder : []).forEach(function(x){
-          if (x && f.indexOf(x) < 0) f.push(x);
-        });
+        if (sicht && !sicht[sp]) return;
+        felderVon(sp).forEach(function(x){ if (f.indexOf(x) < 0) f.push(x); });
       });
       return f.sort();
+    }
+    /* Ein frueherer Fehlschlag dieser Spalte gilt nicht mehr: neue Wahl oder "Try again". */
+    function vergessen(sp){
+      var e = quelle ? vorrat[sigJetzt()] : null;
+      if (!e) return;
+      felderVon(sp).forEach(function(f){ delete e.gescheitert[f]; });
+    }
+    /* Ein Fehlschlag, der aelter ist als die Sperre, wird beim naechsten Zeichnen neu versucht. */
+    function abgelaufenVergessen(){
+      var e = quelle ? vorrat[sigJetzt()] : null, jetzt = Date.now();
+      if (!e) return;
+      Object.keys(e.gescheitert).forEach(function(f){
+        if (jetzt - e.gescheitert[f] > SUM_SPERRE_MS) delete e.gescheitert[f];
+      });
     }
     function holenWennNoetig(){
       if (!quelle) return;
@@ -28928,22 +29150,32 @@
         fehlt.forEach(function(f){
           delete unterwegs[sig + "|" + f];
           if (!ziel) return;
-          /* Ein gescheiterter Abruf gilt fuer DIESEN Filterstand als gescheitert ("–") und wird
-             nicht bei jedem Zeichnen der Tabelle wiederholt -- die Tabelle zeichnet oft, und eine
-             fehlende Funktion waere sonst eine Anfrage je Zeichnen. Ein neuer Filterstand oder
-             eine neue Wahl versucht es wieder. */
-          if (d && typeof d === "object"){ ziel.hat[f] = true; ziel.daten[f] = d[f]; }
-          else ziel.gescheitert[f] = true;
+          /* Ein gescheiterter Abruf gilt fuer DIESEN Filterstand als gescheitert (Zelle: "Couldn't
+             load") und wird nicht bei jedem Zeichnen der Tabelle wiederholt -- die Tabelle zeichnet
+             oft, und eine fehlende Funktion waere sonst eine Anfrage je Zeichnen. Er wird aber mit
+             Uhrzeit gemerkt und nicht fuer immer: eine neue Wahl, "Try again" und ein Zeichnen nach
+             SUM_SPERRE_MS versuchen es wieder (vorher blieb ein einzelnes 429 stehen). */
+          if (d && typeof d === "object"){ ziel.hat[f] = true; ziel.daten[f] = d[f]; delete ziel.gescheitert[f]; }
+          else ziel.gescheitert[f] = Date.now();
         });
         zeichnen(true);
       }, function(){
         var ziel = vorrat[sig];
-        fehlt.forEach(function(f){ delete unterwegs[sig + "|" + f]; if (ziel) ziel.gescheitert[f] = true; });
+        fehlt.forEach(function(f){ delete unterwegs[sig + "|" + f]; if (ziel) ziel.gescheitert[f] = Date.now(); });
         zeichnen(true);
       });
     }
+    var spaltenAngemeldet = false;
     function zeichnen(ausAntwort){
+      /* Vor dem Zeichnen, damit die Zelle gleich das Skelett zeigt und nicht erst "Couldn't load". */
+      if (!ausAntwort && an) abgelaufenVergessen();
       var sicht = {}, kitCols = typeof cfg.cols === "function" ? cfg.cols() : null;
+      /* Die Spaltenmenge aendert sich mit der Breite, ohne dass die Tabelle neu zeichnet (applyCols
+         allein): dann soll die Zeile mitziehen. Einmal anmelden, sobald das Kit da ist. */
+      if (!spaltenAngemeldet && kitCols && typeof kitCols.beiSpalten === "function"){
+        spaltenAngemeldet = true;
+        kitCols.beiSpalten(function(){ zeichnen(false); });
+      }
       if (kitCols && typeof kitCols.effectiveCols === "function"){
         try { kitCols.effectiveCols().forEach(function(c){ sicht[c.key] = true; }); } catch(e){}
       }
@@ -28953,22 +29185,29 @@
         var z = { key: k }, l = rechnen[k];
         if (!isArr(l) || !l.length) return z;
         var o = optionVon(k, wahl[k]);
-        z.menu = { wahl: o ? o.key : SUM_AUS,
-          optionen: [{ key: SUM_AUS, label: "None" }].concat(l.map(function(x){ return { key: x.key, label: x.label }; })) };
+        var optionen = [{ key: SUM_AUS, label: "None" }].concat(l.map(function(x){ return { key: x.key, label: x.label }; }));
+        z.menu = { wahl: o ? o.key : SUM_AUS, optionen: optionen };
         if (!o) return z;
-        var v = null, kurz = o.kurz;
+        var v = null, kurz = o.kurz, fehler = false;
         if (typeof o.lokal === "function"){ try { v = o.lokal(); } catch(err){ v = null; } }
         else if (e){
           var noetig = [o.feld].concat(isArr(o.felder) ? o.felder : []).filter(Boolean);
           var offenF = noetig.filter(function(f){ return !e.hat[f] && !e.gescheitert[f]; });
           if (offenF.length){ z.laedt = true; z.sk = 56; }
+          else if (noetig.some(function(f){ return !!e.gescheitert[f]; })) fehler = true;
           else if (typeof o.wert === "function"){ try { v = o.wert(e.daten); } catch(err){ v = null; } }
           else v = e.daten[o.feld];
           if (v != null && typeof o.name === "function"){ try { v = o.name(v); } catch(err){} }
           if (v != null && o.anteil){ var an_ = toNum(e.daten[o.anteil]); if (an_ != null) kurz = fmtPct(an_, 0); }
         }
-        z.html = sumPaarHtml(v, kurz, o.art);
-        z.tip = o.label;
+        if (fehler){
+          z.html = sumFehlerHtml();
+          z.menu.optionen = [{ key: SUM_NEU, label: "Try again", aktion: true }].concat(optionen);
+          z.tip = "Couldn't load. Choose Try again.";
+        } else {
+          z.html = sumPaarHtml(v, kurz, o.art);
+          z.tip = o.label;
+        }
         z.sk = z.sk || 56;
         return z;
       });
@@ -29068,7 +29307,7 @@
     parseLoose: parseLoose,
     normParams: normParams,
     makeToolGroup: makeToolGroup,
-    leseFehlerHtml: leseFehlerHtml,
+    leseFehlerHtml: leseFehlerHtml, fehlerSatzArt: fehlerSatzArt,
     leerHtml: leerHtml,
     /* Der Leerzustand eines Charts (15.10.): fuer Flaechen, die keinen der Chart-Bausteine
        benutzen (Landschaft in brands-overview, Heatmap des Performance Radar). */
@@ -29381,7 +29620,7 @@
     lineWidthSwitchHtml: lineWidthSwitchHtml, colorScaleOptionsHtml: colorScaleOptionsHtml,
     flagHtml: flagHtml, flagUrl: flagUrl, wireFlags: wireFlags,
     /* Die Gesamtzeile einer Tabelle (15.10., siehe makeSumZeile). */
-    makeSumZeile: makeSumZeile, sumPaarHtml: sumPaarHtml, makeZaehlZeile: makeZaehlZeile
+    makeSumZeile: makeSumZeile, sumPaarHtml: sumPaarHtml, sumFehlerHtml: sumFehlerHtml, SUM_NEU: SUM_NEU, makeZaehlZeile: makeZaehlZeile
   };
 
   /* ---- Verdraengungssperre -------------------------------------------------------------------
