@@ -8456,6 +8456,87 @@
       for (var k = 0; k < zl.length; k++) zeileBedienen(zl[k]);
     }
   }
+  /* ---------- zahlSpalten: welcher Kopf gehoert zu einer Zahlenspalte (17.10.) ----------
+     "Bei Zahlenspalten steht auch die Ueberschrift rechtsbuendig, das Sortier-Icon links neben dem
+     Text. Textspalten wie Brand bleiben links." CSS kann vom Kopf aus nicht in die Zeilen darunter
+     sehen, also sieht dieser Lauf nach und setzt .up-th-zahl (core.css, "DER KOPF EINER
+     ZAHLENSPALTE"). Er lauft dort, wo schon jeder frische Ast vorbeikommt (kopfTexte), nicht je
+     Komponente: Koepfe und Zeilen bauen ein Dutzend Dateien.
+     ERKANNT NACH DEM INHALT, nicht nach einer Liste von Spaltennamen: eine Spalte ist Zahlenspalte,
+     wenn irgendeine Zeile in ihr eine Zahl, einen Rang oder Sentiment als DIREKTES Kind der Zelle
+     traegt UND die Zelle diesen Wert tatsaechlich rechts setzt (justify-content: flex-end, gelesen
+     aus der berechneten Fassung). Die zweite Bedingung nimmt die Ausnahmen mit, die core.css
+     selbst vorsieht -- eine Datumsspalte, die ihre Ziffern als .up-num setzt (Shopping, Ads), die
+     zentrierte Indexspalte -- ohne dass sie hier namentlich stehen: ihr Kopf folgt ihren Zellen.
+     Gelesen wird je Spalte, bis eine Zelle gefunden ist, also hoechstens eine berechnete Fassung je
+     Spalte und Lauf. Nur HINZUFUEGEN, nie wegnehmen: ein Kopf, der neu entsteht, hat die Klasse
+     nicht mehr und bekommt sie vom naechsten Lauf wieder; eine Spalte, die einmal Zahlen trug,
+     springt nicht zurueck nach links, nur weil eine Seite gerade leer ist.
+     ZEILEN: Geschwister des Kopfs (und alles darin) mit gleich vielen Zellen. Die Gesamtzeile
+     (.up-sumrow) zaehlt nicht -- sie ist keine Zeile der Daten. */
+  var ZAHL_KOPF_SEL = ".up-thead, .vt-thead, .tct-thead";
+  var ZAHL_ZEILE_SEL = ".up-row, .vt-row, .tct-row";
+  var ZAHL_ZEILEN_MAX = 60;
+  function istZahlWert(c){
+    var cl = c.classList;
+    /* Der Strich fuer "kein Wert" (.is-empty) ist keine Zahl: in Teams steht er als .up-num in der
+       Plan-Spalte, deren Pillen Text sind -- ein Strich allein machte den Kopf zur Zahlenspalte. */
+    if (cl.contains("is-empty")) return false;
+    return cl.contains("up-num") || cl.contains("up-rank-group") || cl.contains("tct-num") || cl.contains("tct-used") ||
+      (cl.contains("up-sent") && !cl.contains("up-pille"));
+  }
+  function zahlSpaltenKopf(kopf){
+    var n = kopf.children.length;
+    if (!n || kopf.closest(".ulh-root")) return;
+    var cont = kopf.parentElement;
+    if (!cont) return;
+    var offen = 0, gesetzt = [], spurGeprueft = [];
+    for (var i = 0; i < n; i++){
+      var th = kopf.children[i];
+      if (th.classList.contains("up-th-zahl") || !(th.classList.contains("up-th") || th.classList.contains("vt-th") || th.classList.contains("tct-th"))) gesetzt[i] = true;
+      else offen++;
+    }
+    if (!offen) return;
+    var zl = cont.querySelectorAll(ZAHL_ZEILE_SEL), gelesen = 0;
+    for (var z = 0; z < zl.length && offen && gelesen < ZAHL_ZEILEN_MAX; z++){
+      var r = zl[z];
+      if (r === kopf || r.children.length !== n || r.classList.contains("up-sumrow") || r.classList.contains("up-tsk")) continue;
+      gelesen++;
+      for (var k = 0; k < n; k++){
+        if (gesetzt[k]) continue;
+        var td = r.children[k];
+        var hat = false;
+        for (var c = td.firstElementChild; c; c = c.nextElementSibling){ if (istZahlWert(c)){ hat = true; break; } }
+        var cs = null;
+        /* Die Spalte hat keine Zahl als direktes Kind, ihre Komponente hat sie aber als Zahlenspalte
+           ausgewiesen: --up-spur (die Spur ihres Formats, core.css "DIE FESTE SPUR") steht an der
+           Zelle. So die Kontingente in Teams ("12 / 50": die Zahl steht in einer Huelle). Je Spalte
+           einmal gelesen -- die Spur haengt an der Spaltenklasse, nicht an der Zeile. */
+        if (!hat && !spurGeprueft[k]){
+          spurGeprueft[k] = true;
+          cs = getComputedStyle(td);
+          hat = cs.getPropertyValue("--up-spur").trim() !== "";
+        }
+        if (!hat) continue;
+        if ((cs || getComputedStyle(td)).justifyContent !== "flex-end") continue;
+        kopf.children[k].classList.add("up-th-zahl");
+        gesetzt[k] = true; offen--;
+      }
+    }
+  }
+  function zahlSpalten(start){
+    if (!start || start.nodeType !== 1) return;
+    var l = start.querySelectorAll(ZAHL_KOPF_SEL);
+    for (var i = 0; i < l.length; i++) zahlSpaltenKopf(l[i]);
+    /* Ein frischer Ast IN einer Tabelle (neue Zeilen, naechste Seite): der Kopf steht darueber. */
+    for (var p = start, tiefe = 0; p && p.nodeType === 1 && tiefe < 6; p = p.parentElement, tiefe++){
+      var kinder = p.children;
+      for (var j = 0; j < kinder.length; j++){
+        var cl = kinder[j].classList;
+        if (cl.contains("up-thead") || cl.contains("vt-thead") || cl.contains("tct-thead")){ zahlSpaltenKopf(kinder[j]); tiefe = 99; break; }
+      }
+    }
+  }
   /* Enter und Leertaste an einem fokussierten Sortierkopf = Klick darauf. Der Klick ist der eine
      Weg, den jede Tabelle schon behandelt (headSortClick hinter .up-th.is-sortable); ein zweiter
      Weg je Datei waere ein Dutzend Kopien. Nur wenn der Kopf SELBST den Fokus hat: der Haken
@@ -8506,6 +8587,7 @@
       for (var j = 0; j < l.length; j++) kopfTextEinpacken(l[j]);
     }
     tabelleBedienen(start);
+    zahlSpalten(start);
   }
   /* DER VOLLE WORTLAUT EINES GEKUERZTEN KOPFS OHNE INFO-ZEICHEN. Mit Info-Zeichen nennt ihn die
      Erklaerkarte (Titel = Etikett), ein zweiter Tooltip daneben waere doppelt. Ohne -- "Zuletzt

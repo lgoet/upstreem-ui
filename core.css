@@ -156,6 +156,11 @@
   /* Abstand zwischen Trend und Zahl (15.10. spaet: "etwas mehr gap, minimal mehr"): 12 statt der
      10, die jede Zelle zwischen ihren Teilen laesst. */
   --up-spur-abstand: 12px;
+  /* Der feste Platz des Trends vor dem Wert (17.10.): Pfeil 16 + Abstand 4 + "100.0%" in 13/600 mit
+     Tabellenziffern, gemessen 66.0 -- der breiteste Chip, den trendChip nach CLAUDE.md 2b bauen kann
+     (Prozent mit einer Stelle; Rang-Deltas "0.3" sind schmaler). Siehe "RECHTSBUENDIG, DER TREND
+     DIREKT VOR DEM WERT". */
+  --up-spur-trend: 66px;
   /* Luft zwischen der Unterkante eines offenen Bandes und der Zeile darunter (15.10., Vorbild
      Prompt Insights: Linie der Navigation bis zur Leiste 16, Leiste bis zum Tabellenkopf 16).
      Regel "DIE ZEILE UNTER DEM BAND". */
@@ -6157,25 +6162,60 @@
    weg (gemessen "# 1": 24 statt 4, Balken bis "83": 15 statt 6; "das bitte wieder so wie vorher").
    Seit die Zahl an der rechten Zellkante steht, braucht es dort keine Spur mehr: die Kante ist fuer
    alle Zeilen dieselbe, und Zeichen und Zahl bleiben ein Stueck. */
-/* RECHTSBUENDIG, DER TREND LINKS (15.10. spaet: "Zahlen rechtsbuendig auf einer Spur"; danach
-   "die Trends bitte ueberall links, statt nur mit gap rechts"). Eine Zahlzelle -- direktes Kind
-   ist eine Zahl (.up-num), ein Rang (.up-rank-group) oder Sentiment (.up-sent) -- stellt ihren Wert
-   an die rechte Kante, der Trend steht per order VOR ihm und per margin-right:auto an der LINKEN
-   Kante der Zelle: in jeder Zeile beginnt er auf demselben Pixel, egal wie breit Zahl oder Trend
-   sind. Die 12 (--up-spur-abstand) sind der kleinste Abstand, wenn es eng wird. Die rechte Kante
-   ist dieselbe wie die der Gesamtzeile darunter (.up-sumzelle, rechtsbuendig, Polster 16).
+/* RECHTSBUENDIG, DER TREND DIREKT VOR DEM WERT (17.10.; davor 15.10. spaet "Trend links an der
+   Zellkante", jetzt ausdruecklich geaendert: "Der Trend steht nicht mehr ganz links in der Zelle,
+   sondern direkt vor dem Wert. Trend und Wert sitzen zusammen rechtsbuendig, der Wert ganz rechts").
+   Eine Zahlzelle -- direktes Kind ist eine Zahl (.up-num), ein Rang (.up-rank-group) oder
+   Sentiment (.up-sent) -- stellt ihren Wert an die rechte Kante, der Trend steht per order DAVOR,
+   durch --up-spur-abstand (12) vom Wert getrennt. Die rechte Kante ist dieselbe wie die der
+   Gesamtzeile darunter (.up-sumzelle, rechtsbuendig, Polster 16) und die des Kopftextes darueber
+   (.up-th-zahl, siehe unten).
+   DER FESTE PLATZ DES TRENDS (--up-spur-trend, gemessen am breitesten Chip "100.0%"): damit die
+   Trends in jeder Zeile gleich weit vom Wert stehen und rechts untereinander enden, sitzt der
+   Chip rechtsbuendig in einem Platz fester Breite. Eine Zeile OHNE Trend hat diesen Platz einfach
+   leer: der Wert steht am rechten Rand und damit auf demselben Pixel, ob der Platz gefuellt ist
+   oder nicht -- ein unsichtbarer Platzhalter wuerde daran nichts aendern und nur das Kuerzen
+   ungleich machen (eine Zeile ohne Trend liesse ihrer Zahl dann mehr Raum als die Nachbarin).
+   Der Platz ist ein Basiswert (flex: 0 1), kein Zwang: wird die Spalte enger als Platz + Abstand
+   + Wert, gibt er bis auf die Breite des Chips nach, der Chip selbst wird nie gekuerzt.
+   DIE SPUR DES WERTES haelt die linke Kante des Platzes fest: eine Zahl direkt in der Zelle hat
+   ihre Spur (--up-spur, oben), Rang und Sentiment sind Huellen und bekommen sie als Breite der
+   ganzen Huelle (Zeichen 12 + 4 bzw. Balken 3 + 6 plus die Spur der Zahl), ihr Inhalt steht
+   darin rechts. Ohne --up-spur gilt das Format der Huelle (Rang "10.0", Sentiment "100"): eine
+   Rang- oder Sentiment-Spalte steht damit auch dann in einer Flucht, wenn die Komponente ihr
+   keine Spur zugewiesen hat. Zahl in einer Huelle ("102 / 150") rueckt die Komponente selbst nach rechts.
    Am Inhalt erkannt (:has) und nicht an der Spaltenklasse: die Spur ordnet jede Komponente selbst
    zu, die Ausrichtung soll ueberall dieselbe sein. Ohne .up-pille: Plan- und Status-Pillen bauen
-   auf .up-sent auf (Teams, gemessen), sind aber Text. Eine Zahl in einer Huelle ("102 / 150")
-   rueckt die Komponente selbst nach rechts. Wird es zu eng, laeuft der Trend links aus dem Bild
-   und nicht die Zahl. :where haelt die Regel auf der Spezifitaet von .up-td: jede Ausnahme --
-   die zentrierte Indexspalte (.up-td-idx), eine Datumsspalte, die ihre Ziffern als .up-num
-   setzt (Shopping, Ads) -- gewinnt mit einer Klasse mehr, ohne Reihenfolge. */
-.up-td:has(> :where(.up-num, .up-rank-group, .up-sent:not(.up-pille))) { justify-content: flex-end; }
+   auf .up-sent auf (Teams, gemessen), sind aber Text. :where haelt die Regel auf der Spezifitaet
+   von .up-td: jede Ausnahme -- die zentrierte Indexspalte (.up-td-idx), eine Datumsspalte, die
+   ihre Ziffern als .up-num setzt (Shopping, Ads) -- gewinnt mit einer Klasse mehr, ohne Reihenfolge.
+   Dieselben Regeln gelten fuer die Zellen von Top Brands (.vt-td) und Top Citations (.tct-td) und
+   die Wertspalte der Listen der Power-Uebersicht (.upw-li-val): sie sind keine .up-td, zeigen aber
+   dieselben Zahlen. */
+:is(.up-td, .vt-td, .tct-td):has(> :where(.up-num, .up-rank-group, .up-sent:not(.up-pille), .tct-num, .tct-used)) { justify-content: flex-end; }
 /* Der Abstand 12 nur zwischen Zeiger und Zahl -- Trend oder der Ring der Variationen
    (.up-varring) --, nicht zwischen einer Zahl und ihrem Zusatz ("of 120", .up-var-cnt: 6). */
-.up-td.up-td:has(> :where(.up-trend, .up-varring)) { column-gap: var(--up-spur-abstand); }
-.up-td > :where(.up-trend, .up-varring) { order: -1; margin-right: auto; }
+:is(.up-td, .vt-td, .tct-td):is(.up-td, .vt-td, .tct-td):has(> :where(.up-trend, .up-varring)) { column-gap: var(--up-spur-abstand); }
+:is(.up-td, .vt-td, .tct-td, .upw-li-val) > :where(.up-trend, .up-varring) { order: -1; }
+:is(.up-td, .vt-td, .tct-td):has(> :where(.up-num, .up-rank-group, .up-sent:not(.up-pille), .tct-num, .tct-used)) > .up-trend,
+.upw-li-val > .up-trend { flex: 0 1 var(--up-spur-trend); justify-content: flex-end; }
+:is(.up-td, .vt-td) > .up-rank-group { min-width: calc(var(--up-spur, var(--up-spur-rang)) + 16px); justify-content: flex-end; }
+:is(.up-td, .vt-td) > .up-sent:not(.up-pille) { min-width: calc(var(--up-spur, var(--up-spur-note)) + 9px); justify-content: flex-end; }
+/* DER KOPF EINER ZAHLENSPALTE (17.10.): "Bei Zahlenspalten steht auch die Ueberschrift rechtsbuendig,
+   das Sortier-Icon links neben dem Text. Textspalten wie Brand bleiben links." Der Text endet
+   auf demselben Pixel wie die Werte darunter (beide Polster rechts 16, siehe .up-th und .up-td).
+   Das Sortierzeichen steht LINKS neben dem Text, das Info-Zeichen noch weiter links: es erscheint
+   nur beim Ueberfahren (opacity, belegt seinen Platz also auch unsichtbar) und stuende es rechts
+   vom Text, endete der Text nicht mehr an der Kante der Werte. Der Platz des Sortierzeichens
+   ist fest (zwei Chevrons, aktiv nur eingefaerbt), die Lage des Textes springt beim Wechsel der
+   Sortierung also nicht. Das Zeichen vor dem Wort (.up-th-ic) bleibt vor dem Wort.
+   WER ZAHLENSPALTE IST, entscheidet core.js nach dem Inhalt (zahlSpalten): jede Spalte, in der
+   eine Zeile eine Zahl, einen Rang oder Sentiment als direktes Kind der Zelle hat. Keine Liste
+   von Spaltennamen je Seite. Zwei Klassen gegen .up-th (und die Kopfzellen von Top Brands und Top
+   Citations): entschieden ueber die Spezifitaet, nicht die Ladereihenfolge. */
+:is(.up-th, .vt-th, .tct-th).up-th-zahl { justify-content: flex-end; }
+:is(.up-th, .vt-th, .tct-th).up-th-zahl > .up-th-info { order: -3; margin-left: 0; }
+:is(.up-th, .vt-th, .tct-th).up-th-zahl > .up-thsort { order: -2; }
 .up-rank-group { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 .up-hash { width: 12px; height: 12px; color: var(--vc-third); flex: 0 0 auto; display: block; }
 /* ---------- SENTIMENT OHNE KASTEN (29.09. angefordert) ----------
