@@ -1233,20 +1233,22 @@
    Aus demselben Grund draussen (17.10.): die Themenliste im Fenster "New Grouping"
    (.up-cgm-list/.upt-gm-list, UC.makeGroupingModal), ausgeklappt 240 hoch in einer Karte, die im
    kurzen Fenster selbst rollt (1024x560: 69 zu rollen, die Karte stand ueber der Liste still).
-   Geprueft und BLEIBEN: .uap-list (die Karte von Add Prompts rollt nie, overflow: visible, die
-   Liste schrumpft statt der Karte), .uap-list-opts (Menue am Ausloeser), .uca-bld-list (einzige
+   Ebenso draussen seit dem 17.10.: .uap-list (Add Prompts). Die Liste schrumpfte statt der Karte
+   und stand bei 1024x440 auf 4px; jetzt rollt der Rumpf (.uap-rumpf, hier eingetragen) zwischen
+   Kopf und Fuss -- die Karte selbst nicht, sie behaelt overflow: visible fuer die Menues im Fuss.
+   Geprueft und BLEIBEN: .uap-list-opts (Menue am Ausloeser), .uca-bld-list (einzige
    Rollflaeche des Link-Builders, die Karte hat overflow: hidden),
    .upt-topiclist (Auswahlleiste, kein Dialog; ihr Feld hat overflow: hidden). Die uebrigen sind
    selbst Koerper oder Spalte ihrer Karte. */
 .up-root.up-root, .up-root.up-root *:not(:where(
   .up-topicmodal-card, .uex-body, .uex-nav, .uca-body, .uca-bld-list, .uca-how, .ums-aside, .ums-main,
-  .am-set-aside, .am-set-main, .uap-list, .uap-list-opts, .upt-topiclist,
+  .am-set-aside, .am-set-main, .uap-rumpf, .uap-list-opts, .upt-topiclist,
   .up-kdr-koerper, .up-sdrawer-body, .uo-m-body,
   .up-filter-list, .utf-list, .umf-list, .umk-list, .upr-dd-list, .combo-filter-menu,
   .am-rep-range-menu, .am-pick-scroll, .up-cols-menu, .usn-menu, .usn-teamlist, .uob-help-body)) { overscroll-behavior: auto !important; }
 :where(
   .up-topicmodal-card, .uex-body, .uex-nav, .uca-body, .uca-bld-list, .uca-how, .ums-aside, .ums-main,
-  .am-set-aside, .am-set-main, .uap-list, .uap-list-opts, .upt-topiclist,
+  .am-set-aside, .am-set-main, .uap-rumpf, .uap-list-opts, .upt-topiclist,
   .up-kdr-koerper, .up-sdrawer-body, .uo-m-body,
   .up-filter-list, .utf-list, .umf-list, .umk-list, .upr-dd-list, .combo-filter-menu,
   .am-rep-range-menu, .am-pick-scroll, .up-cols-menu, .usn-menu, .usn-teamlist, .uob-help-body) { overscroll-behavior: contain; }

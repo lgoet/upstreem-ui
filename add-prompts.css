@@ -29,12 +29,19 @@
    420px, which is right for a topic form and far too narrow here, and a single-class rule only
    beats it as long as this file happens to be the later stylesheet — a loader that dedupes by URL
    or a page that pulls core again puts that in question. One extra class removes the question. */
+/* Hoehe (17.10.) wie der Export-Dialog: die Karte endet 24 vor jedem Fensterrand, dvh statt vh,
+   damit auf dem Telefon die eingeblendete Adressleiste mitzaehlt. Die Karte selbst rollt NICHT
+   (overflow: visible): die Menues fuer Market und Topics haengen im Fuss und oeffnen nach oben
+   ueber den Rumpf -- eine rollende Karte schnitte sie an ihrer Oberkante ab. Rollen tut der
+   Rumpf darunter, Kopf und Fuss bleiben stehen. */
 .uap-backdrop .uap-card {
   width: 100%; max-width: 640px; box-sizing: border-box;
+  max-height: calc(100dvh - 48px);
   padding: 16px;
   display: flex; flex-direction: column; gap: 32px;
   overflow: visible;
 }
+.uap-head, .uap-foot { flex: 0 0 auto; }
 .uap-card.is-saving { pointer-events: none; opacity: .6; }
 
 /* ---- head ---- */
@@ -53,9 +60,24 @@
 .uap-close svg { width: 16px; height: 16px; display: block; fill: none; stroke: currentColor;
   stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-/* ---- body: switcher, input, staged list ----
-   One flex column so the list can take the leftover height and scroll on its own. Everything
-   above it keeps its natural height, so a long list never pushes the input off the card. */
+/* ---- Rumpf: Umschalter, Eingabe, Liste ----
+   Die EINE Rollflaeche des Dialogs (17.10.). Bis dahin lagen die drei direkt in der Karte, die
+   nie rollt, und die Liste war das einzige Kind, das nachgeben konnte (overflow-y: auto, also
+   Mindesthoehe 0): bei 1024x440 mit 15 Prompts stand sie auf 4px, keine Zeile sichtbar. Jetzt
+   behaelt die Liste ihre Hoehe und der Rumpf rollt, sobald Kopf, Rumpf und Fuss nicht mehr ins
+   Fenster passen -- wie der Export-Dialog (export-data.css, .uex-rumpf).
+   flex 0 1 auto: so hoch wie sein Inhalt, nur unter der max-height der Karte kleiner.
+   Rand -4/-8 und Polster 4/8 heben sich auf, damit sich am Bild nichts verschiebt: die Liste
+   laeuft 8px in das Polster der Karte hinaus (siehe .uap-list), und der Fokusring des Umschalters
+   und des Felds steht 4px vor ihrer Kante. Ohne den Ausgleich schnitte die Rollflaeche beides
+   ab, und die Liste allein machte einen waagerechten Rollbalken auf.
+   Steht in core in der Liste der Rollflaechen von Popups (contain, Seitensperre). */
+.uap-rumpf {
+  flex: 0 1 auto; min-height: 0;
+  margin: -4px -8px; padding: 4px 8px;
+  display: flex; flex-direction: column; gap: 32px;
+  overflow-x: hidden; overflow-y: auto;
+}
 /* Der Umschalter IST seit dem 27.09. .up-seg.is-lg aus core (Klassen im Markup, add-prompts.js).
    Hier stand ein Nachbau in eigener Bauart -- eingerueckte Reiter in einer umrandeten Schiene,
    Pille aus --vc-bg mit Schatten, 12.5px -- und die Pille war im Dunkeln die Farbe der Karte,
@@ -149,7 +171,7 @@
    aus dem Fluss und der Dialog ist so hoch wie Eingabefeld plus Fusszeile.
    overflow und height setzt JS waehrend der Bewegung; hier steht nur der Uebergang, damit die
    Kurve an einer Stelle definiert ist. */
-.uap-listwrap { display: flex; flex-direction: column; min-height: 0; }
+.uap-listwrap { display: flex; flex-direction: column; flex: 0 0 auto; }
 .uap-listwrap.is-empty { display: none; }
 /* Waehrend der Hoehenbewegung ist der Kasten kuerzer als sein Inhalt. Die Liste ist ein
    Flex-Kind mit dem voreingestellten flex-shrink:1, wird also mitgestaucht -- und weil sie
@@ -171,7 +193,10 @@
 }
 .uap-clearall:hover { color: var(--vc-text); }
 
-/* 232px ist die Grenze, ab der die Liste selbst scrollt statt den Dialog weiter wachsen zu
+/* Die Liste reicht das Rad an ihrem Ende an den Rumpf weiter (17.10.): sie steht im Fluss des
+   Rumpfs und deshalb nicht mehr in der contain-Liste von core -- mit contain blieb der Rumpf
+   stehen, solange der Zeiger ueber der Liste war (core.css, Regel an der Liste, Sitemap-Baum).
+   232px ist die Grenze, ab der die Liste selbst scrollt statt den Dialog weiter wachsen zu
    lassen. Die Hoehenanimation laeuft deshalb von selbst aus: sobald der Inhalt hier anschlaegt,
    aendert sich die gemessene Zielhoehe nicht mehr und es gibt nichts mehr zu bewegen. Bei 40er
    Zeilen schneidet die Kante die sechste an -- dass es weitergeht, sieht man, ohne zu scrollen.
@@ -185,7 +210,7 @@
   list-style: none; margin: 0 -8px; padding: 0;
   display: flex; flex-direction: column;
   border-top: 1px solid var(--vc-border); border-bottom: 1px solid var(--vc-border);
-  max-height: 232px; overflow-y: auto; overscroll-behavior: contain;
+  max-height: 232px; overflow-y: auto;
 }
 
 .uap-capnote {
@@ -389,7 +414,12 @@
    primary action squeezed to three characters is worse than one on its own line. */
 @media (max-width: 560px) {
   .uap-backdrop { padding: 12px; align-items: flex-end; }
-  .uap-card { max-height: calc(100vh - 24px); gap: 24px; border-radius: var(--up-r-2xl); }
+  .uap-card { gap: 24px; border-radius: var(--up-r-2xl); }
+  /* Zwei Klassen, weil die Hoehe oben ebenfalls auf zwei Klassen steht; eine Klasse verlore.
+     Das gap: 24px in der Zeile darueber verliert aus genau diesem Grund schon laenger gegen die
+     32 oben (gemessen 17.10.: am Telefon 32) -- bewusst nicht mitgezogen, das waere eine
+     Aenderung am Bild, die hier keiner bestellt hat. */
+  .uap-backdrop .uap-card { max-height: calc(100dvh - 24px); }
   .uap-title { font-size: 19px; }
   .uap-sub { font-size: 14px; }
   .uap-foot { flex-direction: column; align-items: stretch; gap: 10px; }
@@ -397,6 +427,11 @@
   .uap-actions { margin-left: 0; }
   .uap-cancel { flex: 0 0 auto; }
   .uap-save { flex: 1 1 auto; }
-  .uap-pickmenu { width: min(264px, calc(100vw - 48px)); }
+  /* Die Menues haengen hier an der ganzen Fusszeile (.uap-meta, position: relative), nicht am
+     Ausloeser: der zweite Ausloeser (Topics) steht so weit rechts, dass ein 296er-Menue an ihm
+     bei 375 Breite 47px aus dem Fenster lief (gemessen 17.10.). Hier stand .uap-pickmenu --
+     eine Klasse, die das Markup nicht (mehr) traegt. */
+  .uap-pickwrap { position: static; }
+  .uap-menu { width: min(296px, 100%); max-width: none; }
   .uap-list { max-height: 180px; }
 }
