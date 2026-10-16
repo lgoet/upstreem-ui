@@ -693,8 +693,9 @@
           state.parseError = !!p.__parseError;
           if (state.parseError){
             state.rows = [];
-            if (window.console) console.error("discover-brands: die Zeilen liessen sich nicht lesen. " +
-              "Die Konsolenwarnung darueber zeigt, an welcher Stelle das JSON gerissen ist.");
+            /* Knapp und ohne Verweis auf eine "Warnung darueber": die gab es nur, solange Bubble
+               den Text lieferte und normParams ihn selbst las (wie in teams.js, 17.10.). */
+            if (window.console) console.error("[discover-brands] Zeilen nicht lesbar");
             setLoading(false);
             merken();
             render();
