@@ -22101,7 +22101,33 @@
     if (aktivId) teams = teams.filter(function(t){ return String(t.id) === aktivId; })
       .concat(teams.filter(function(t){ return String(t.id) !== aktivId; }));
     appSidebars(function(id){ if (appRuf("setSidebarTeams")) window.setSidebarTeams(id, teams); });
+    /* Der Reiter traegt das aktive Team (17.10.). Hier, weil jede Teamliste mit aktivem Team durch
+       diese Funktion geht: der Start (appAnwenden) und das Nachladen nach einer Umbenennung
+       (account_updated, Teil "teams"). Ein Teamwechsel laedt die Seite mit ?teamid= neu und kommt
+       mit dem naechsten Start hier an; bis dahin steht dort nur die Marke aus dem Seitenkopf.
+       Nur die App kommt hierher: appStart laeuft nur mit der Seitenleiste der App, nicht in der
+       Vorfuehrung der Landingpage und nicht auf den festen Seiten. Fehlt das aktive Team in der
+       Liste, bleibt der Titel, wie er ist -- lieber der alte Name als gar keiner. */
+    if (aktivId && teams.length && String(teams[0].id) === aktivId) seitenTitel(teams[0].name);
     return teams;
+  }
+  /* DER TITEL IM BROWSER-REITER (17.10., gewuenscht: "upstreem | <Team>" auf der Hauptseite,
+     "upstreem | Sign in" usw. auf den festen Seiten). EIN Ort fuer die Form; die festen Seiten der
+     Next-App schreiben dieselbe ueber ihre Metadaten (title.template im Root-Layout). Ohne Teil nur
+     die Marke. Der Name kommt ungeprueft aus der Datenbank: Steuerzeichen und Zeilentrenner
+     werden zu einem Leerzeichen (ein Umbruch
+     trennt Woerter); die unsichtbaren Richtungszeichen (U+202A-202E, U+2066-2069, mit denen ein
+     Name die Marke davor optisch umdrehen koennte) fallen ganz weg -- als Leerzeichen rissen sie
+     ein Wort auseinander (gemessen: "Mercedes -Benz"). document.title ist Text, kein HTML --
+     also nichts zu maskieren. */
+  function seitenTitel(teil){
+    var t = String(teil == null ? "" : teil)
+      .replace(/[\u202a-\u202e\u2066-\u2069]+/g, "")
+      .replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]+/g, " ")
+      .replace(/\s+/g, " ").trim();
+    var neu = t ? "upstreem | " + t : "upstreem";
+    try { if (document.title !== neu) document.title = neu; } catch(e){}
+    return neu;
   }
   /* Aktive Prompts des Teams, die Zahl neben "Prompt Insights". null/undefined: nichts setzen -- die
      Leiste zeigt dann ihr Skelett weiter, statt einer falschen 0. */
@@ -28755,6 +28781,7 @@
     openDrawers: openDrawers, closeAllDrawers: closeAllDrawers, drawerOeffnen: drawerOeffnen,
     kernDrawer: kernDrawer, kernDrawerAktiv: kernDrawerAktiv, teamWarten: teamWarten, markenNachladen: markenNachladen,
     appStart: appStart, appStartAktiv: appStartAktiv, appTeamWechseln: appTeamWechseln, appTeilNachladen: appTeilNachladen,
+    seitenTitel: seitenTitel,
     anMira: anMira, miraBezug: miraBezug,
     onPrefs: onPrefs, getUpstreemThemeChoice: getUpstreemThemeChoice,
     getUpstreemThemeOption: getUpstreemThemeOption, setUpstreemThemeOption: setUpstreemThemeOption,

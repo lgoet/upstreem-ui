@@ -659,7 +659,14 @@
       if (soll !== state.mode){ state.mode = soll; state.errs = {}; state.formErr = ""; render(); }
     }
 
-    function render(){ renderTexte(); zeigeFehler(); renderStaerke(); renderMailFest(); renderCode(); }
+    /* Der Reiter nennt, was zu sehen ist (17.10.): /signup ist ohne Einladung der Login (setMode),
+       also "Sign in", mit Einladung "Sign up". Der Seitenkopf der Next-App liefert "Sign in" vorab;
+       hier zieht er mit jedem Wechsel nach -- Klick, Zurueck-Knopf, spaetes Token. Englisch wie die
+       Metadaten der uebrigen festen Seiten. */
+    function render(){
+      renderTexte(); zeigeFehler(); renderStaerke(); renderMailFest(); renderCode();
+      if (typeof UC.seitenTitel === "function") UC.seitenTitel(state.mode === "signup" ? "Sign up" : "Sign in");
+    }
 
     /* ---------------- Pruefen ---------------- */
     function pruefe(){
