@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261160;
+  var BUILD = 20261161;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -14397,9 +14397,14 @@
       var row = zeileVon(key);
       if (!row) return;
       clearTimeout(zugUhr);
-      var altH = SHELL.offsetHeight;
+      /* Die alte Hoehe NUR lesen, wenn sie gebraucht wird: im Hineingehen gibt es keinen Zug. Der
+         Aufrufer hat kurz vorher geschrieben (Klassen am Panel), das Lesen erzwang also ein ganzes
+         Layout der Seite -- beim Oeffnen eines Filter-Chips die Haelfte der Wartezeit vor dem
+         Aufgehen (16.10. gemessen, filter-bar oeffnen). */
+      var tief = drill();
+      var altH = tief ? 0 : SHELL.offsetHeight;
       huellen().forEach(function(h){ h.classList.toggle("is-on", h.getAttribute(HOST_ATTR) === key); });
-      if (drill()){ SHELL.style.top = ""; SHELL.style.height = ""; return; }
+      if (tief){ SHELL.style.top = ""; SHELL.style.height = ""; return; }
       /* OHNE Zug: den Platz SOFORT einnehmen, ohne Uebergang. Das ist der gemeldete Fall --
          Markets oeffnen, weghovern, dann Topics: die Schale stand noch unten (die letzte
          Position bleibt beim Zugehen stehen, damit der Inhalt nicht vorher leer wird), und beim
