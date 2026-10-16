@@ -1523,7 +1523,7 @@ Grund          deckend: Gesamtzeile wie bisher, Pagination --up-surface; sie lä
 Schatten       NUR wenn er wirklich klebt (.is-fuss-klebt; die Marke .up-fuss-marke, ein Kind
                der Wurzel direkt vor der Pagination, liest den natürlichen Platz – vor der
                Pagination und nicht hinter dem Kasten, weil der in der Gruppenspalte von
-               All Prompts in einer Zeile neben der Gruppenliste steht): --up-e-3 nach oben
+               All Prompts in einer Zeile neben der Gruppenliste steht): --up-e-1 (Geist small, seit 17.10.; vorher --up-e-3, zu kräftig) nach oben
                gespiegelt, auf dem obersten Teil (ohne Gesamtzeile die Pagination,
                .is-fuss-ohne-summe)
 Gruppenspalte  All Prompts mit is-groups-wide: die Gruppenliste steht im Fluss neben dem Kasten
