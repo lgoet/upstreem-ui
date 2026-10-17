@@ -4788,6 +4788,20 @@
        Untermenues der Leiste (.uif-opt, .umf-opt: 34). Das Panel stellt filter-bar.css in den
        Fluss. Eigener Inhalt (Regler, .up-ff-panel) bekommt das Polster eines Menues; die
        unsichtbare Liste darunter traegt dann nur den Namen der Wahl fuer den Chip. */
+    /* Die Standalone-Wurzeln der drei Filter (Topics, Models, Markets) stehen auf jeder Seite mit
+       Filterleiste als Geschwister der Leiste in der Zeile und werden erst von filter-bar.js in ihr
+       Untermenue "Filters" geholt (initAll, Timer, Waechter). Bis dahin baute ihr eigenes Skript
+       den Knopf in die Zeile: 270 bis 440 ms sichtbar nach einem Seitenwechsel, je belegter der
+       Hauptthread, desto laenger. Hier ab dem ersten Bild weg, ohne Platz, solange die Wurzel NEBEN
+       der Leiste steht. In .ufb-sub ist sie kein Geschwister mehr, die Regel trifft dort nicht (die
+       Selektorform statt einer Reihenfolge; filter-bar.css stylt sie dort weiter). Eine Wurzel
+       ohne Leiste daneben (Mira-Bericht) bleibt, wie sie ist. */
+    :has(> .ufb-root) > .utf-root,
+    :has(> .ufb-root) > .umf-root,
+    :has(> .ufb-root) > .umk-root {
+      position: absolute; width: 0; height: 0; margin: 0; overflow: hidden;
+      visibility: hidden; pointer-events: none;
+    }
     .up-ff-heim { display: none; }
     .up-ff-trigger { display: none; }
     .up-ff-opt { min-height: 34px; }
