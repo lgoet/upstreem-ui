@@ -121,6 +121,41 @@
        90ms). STORE[instanceId] taugt dafuer nicht, persist() ersetzt es bei jeder Aenderung. */
     var LADER = window.__udsLader || (window.__udsLader = {});
     var lader = LADER[instanceId] || (LADER[instanceId] = D.makeLader({ rufen: function (fn, params, o) { return UC.rpc(fn, params, { signal: o && o.signal, timeoutMs: 30000 }); } }));
+    /* TOPICS UND MARKEN, DIE ES NICHT MEHR GIBT (17.10., 22023): core (UC.filterBereinigen) liest die
+       Ids aus der Antwort, hier steht nur, wo die Seite sie haelt. Topics im Topic-Filter und in
+       state.f, die Marken-Auswahl des Charts (p_companies) in state.vis, die der Responses
+       (p_company_ids) im Markenfilter der Tabelle -- dessen Controller meldet die Aenderung selbst
+       und die Seite laedt ueber ihren Handler neu. Der Lader haengt am Fenster: jede neue Seite
+       ersetzt die Bereinigung der alten. */
+    lader.bereinigenMit(function (erg) {
+      if (!UC.filterBereinigen) return false;
+      return UC.filterBereinigen(erg, {
+        schluessel: "uds|" + instanceId, wurzel: root,
+        topics: {
+          lesen: function () { return isArr(state.f.topics) ? state.f.topics : []; },
+          setzen: function (rest) {
+            setzen("topics", rest.length ? rest : null);
+            var tp = root.querySelector(".utf-root"), c = tp && tp.__utfCtrl;
+            if (c && typeof c.setSelected === "function") { try { c.setSelected(rest.join(",")); } catch (e) {} }
+          }
+        },
+        felder: {
+          p_companies: {
+            lesen: function () { return isArr(state.vis.firmen) ? state.vis.firmen : []; },
+            setzen: function (rest) { state.vis.firmen = rest.length ? rest : null; }
+          },
+          p_company_ids: {
+            lesen: function () { return isArr(state.resp.firmen) ? state.resp.firmen : []; },
+            setzen: function (rest) {
+              state.resp.firmen = rest.length ? rest : null; state.resp.offset = 0;
+              var bw = root.querySelector(".urt-root .up-ff-brands"), bc = bw && bw.__upffCtrl;
+              if (bc && typeof bc.setSelected === "function") { try { bc.setSelected(rest.join(",")); } catch (e) {} }
+            }
+          }
+        },
+        danach: function () { filterGeaendert(); }
+      });
+    });
 
     /* ---- Aufbau ------------------------------------------------------------------------------- */
     function isDark() { return (UC.themeParam && UC.themeParam(root.getAttribute("data-isdark"))) || root.getAttribute("data-theme") === "dark"; }
@@ -528,6 +563,12 @@
     }
     function imSpeicher(anfragen) { return anfragen.every(function (a) { return lader.ausSpeicher(a) !== undefined; }); }
     function setter(name) { return typeof window[name] === "function" ? window[name] : function () {}; }
+    /* Die Art des ersten gescheiterten Aufrufs (Ratengrenze, Filter, Zeitraum, Server) fuer den
+       Fehlerzustand der Bausteine: "could not be read" stimmt nur fuer eine unlesbare Antwort. */
+    function fehlerArtVon(liste) {
+      var x = (isArr(liste) ? liste : [liste]).filter(function (r) { return r && !r.ok; })[0];
+      return (x && UC.fehlerSatzArt && UC.fehlerSatzArt(x)) || true;
+    }
 
     /* DIE EIGENE MARKE (09.10. gemeldet: in Top Citations und Responses fehlte der Schalter
        "<Marke> mentioned?"). Die Seite kannte sie nur aus dem Marken-Store (role "own") -- die
@@ -672,7 +713,7 @@
               var p = e[0].ok && e[1].ok ? D.zuVisibility(e[0].daten, e[1].daten, { nurImChart: !!manuell }) : null;
               if (e[1].ok) eigeneMerken(e[1].daten);
               if (!p) {
-                try { setter("renderVisibilityChart")({ instanceId: ids.vot, __parseError: true }); } catch (err) {}
+                try { setter("renderVisibilityChart")({ instanceId: ids.vot, __parseError: fehlerArtVon(e) }); } catch (err) {}
               } else {
                 if (!state.vis.firmen) { state.autoFirmen = p.companies.map(function (c) { return c.company_id; }); persist(); }
                 p.instanceId = ids.vot; p.isDark = isDark();
@@ -701,7 +742,7 @@
             return function () {
               var p = e[0].ok && e[1].ok ? D.zuTop(e[0].daten, e[1].daten, m) : null;
               if (!p) {
-                try { setter("renderTopCitations")({ instanceId: ids.tcd, __parseError: true }); } catch (err) {}
+                try { setter("renderTopCitations")({ instanceId: ids.tcd, __parseError: fehlerArtVon(e) }); } catch (err) {}
               } else {
                 var mk = marke();
                 p.instanceId = ids.tcd; p.isDark = isDark();
@@ -727,7 +768,7 @@
               var ok = e.every(function (x) { return x.ok; });
               var p = ok ? D.zuResponses(e.map(function (x) { return x.daten; })) : null;
               if (!p) {
-                try { setter("renderResponsesTable")({ instanceId: ids.urt, __parseError: true }); } catch (err) {}
+                try { setter("renderResponsesTable")({ instanceId: ids.urt, __parseError: fehlerArtVon(e) }); } catch (err) {}
               } else {
                 var mk = marke();
                 p.instanceId = ids.urt; p.isDark = isDark();

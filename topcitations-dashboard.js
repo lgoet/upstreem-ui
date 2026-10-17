@@ -439,7 +439,7 @@
          die Lieferung ist schon da und war unlesbar. */
       if (state.listenFehler){
         if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
-        tableEl.innerHTML = head + UC.leseFehlerHtml("the citation list");
+        tableEl.innerHTML = head + UC.leseFehlerHtml("the citation list", state.listenFehlerArt);
         return;
       }
       if (!rows.length){
@@ -1031,7 +1031,7 @@
            Schluessel, das Skelett laeuft weiter, und es sieht aus wie "gleich da".
            fail() gibt es hier schon -- es fehlte nur der Weg dorthin fuer den haeufigsten Fall:
            der Payload zerreisst, statt dass update() wirft. */
-        if (params.__parseError){ this.fail("The data could not be read."); return; }
+        if (params.__parseError){ state.listenFehlerArt = typeof params.__parseError === "string" ? params.__parseError : ""; this.fail("The data could not be read."); return; }
         if (params.mode != null && !state.userPickedMode){ state.mode = params.mode === "url" ? "url" : "domain"; syncModeActive(); }
         if (params.chartMode != null){ state.chartMode = params.chartMode === "bar" ? "bar" : "doughnut"; }
         if (params.totalCountDomain != null) state.totalCountDomain = params.totalCountDomain;

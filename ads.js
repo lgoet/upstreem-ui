@@ -228,7 +228,9 @@
   var FEHLER = {
     ads_invalid_date: "The date range is not valid.",
     rate_limited: "Too many requests. Please wait a moment.",
-    zeit: "This is taking longer than expected. Please try again."
+    zeit: "This is taking longer than expected. Please try again.",
+    range_13m: "The date range is too long. Choose a range of up to 13 months.",
+    filter_gone: "A selected filter no longer exists. Clear the filters and try again."
   };
   /* Der Fehler des direkten Wegs (13.10.) als Code, wie ihn fehlerText und fehlerKasten lesen.
      message ist der Code (Vertrag: "message = Code, hint = Feld"). Das Ratenlimit (30/min je
@@ -238,6 +240,14 @@
   function rpcFehlerCode(erg) {
     var f = (erg && erg.fehler) || {}, m = str(f.message).trim();
     if ((erg && erg.status === 429) || str(f.code) === "PT429" || /rate.?limit/i.test(m)) return "rate_limited";
+    /* 22023 (17.10., a_ads_shopping_v1): Zeitraum ueber 13 Monate und eine Id oder ein Name, den es
+       nicht gibt (p_tag_ids, p_advertisers, p_company_id), sind Fehler, die der Nutzer beheben kann --
+       nicht "could not be read". message ist bei 22023 der Code der Komponente (ads_invalid_param),
+       der Grund steht im hint. <bereich>_busy (PT429, schwere Abfragen belegt) ist eine Ratengrenze. */
+    var fh = str(erg && erg.fehler && erg.fehler.hint), fc = str(erg && erg.fehler && erg.fehler.code);
+    if (fc === "22023" && /13 months/i.test(fh)) return "range_13m";
+    if (fc === "22023" && /^\s*p_(tag_ids|advertisers|company_id|company_ids)\b/i.test(fh)) return "filter_gone";
+    if (str(f.code) === "PT429" && /_busy$/.test(m)) return "rate_limited";
     if (m === "timeout") return "zeit";
     if (m === "unreadable_response") return "x";
     return m || ("http_" + (erg ? erg.status : 0));

@@ -278,11 +278,18 @@
     var art = fehlerArt(erg);
     if (art === "rate" || art === "zugang") return false;
     if (m === "aborted" || m === "timeout") return false;
+    /* core.rpc hat diesen Aufruf schon ein zweites Mal gestellt (Abbruch nach 30 s, volle
+       Warteschlange): ein dritter und vierter Versuch hier machten aus 30 s zwei Minuten. */
+    if (erg.wiederholt) return false;
     return c === "XX000" || erg.status >= 500 || m === "network";
   }
   function makeLader(o) {
     o = o || {};
     var rufen = o.rufen, MAX = o.max || 60, wieder = o.wiederholen || WIEDERHOLEN;
+    /* o.bereinigen(erg, a) -> true: die Seite hat einen Filter mit unbekannten Ids geraeumt und laedt
+       selbst neu (UC.filterBereinigen, 22023). Diese Antwort ist dann ueberholt, kein Fehler und
+       nichts zum Zeichnen: das Skelett bleibt bis zur neuen Antwort. */
+    var bereinigen = typeof o.bereinigen === "function" ? o.bereinigen : null;
     var cache = {}, reihe = [], laufend = {}, zaehler = 0;
     /* stand zaehlt das Leeren (15.10. spaet). Die Gesamtzeilen merken ihre Summen selbst je
        Filterstand (core, makeZaehlZeile); nach einem Aktualisieren ist der Filterstand derselbe, die
@@ -324,6 +331,11 @@
             });
           }
           laufend[kanal] = null;
+          if (!erg.ok && bereinigen) {
+            var bereinigt = false;
+            try { bereinigt = !!bereinigen(erg, a); } catch (e) { bereinigt = false; }
+            if (bereinigt) return { ok: false, ueberholt: true, bereinigt: true };
+          }
           if (erg.ok && a.sig) merken(a.sig, erg.daten);
           return erg;
         }, function () {
@@ -344,6 +356,9 @@
     }
     return {
       laden: laden, abbrechen: abbrechen,
+      /* Der Lader lebt am Fenster, die Seite kann neu gebaut werden (Themenwechsel): jede neue Seite
+         haengt ihre Bereinigung hier ein und ersetzt die der alten. */
+      bereinigenMit: function (fn) { bereinigen = typeof fn === "function" ? fn : null; },
       laeuft: function (kanal) { return !!laufend[kanal]; },
       leeren: function () { cache = {}; reihe = []; stand++; },
       stand: function () { return stand; },

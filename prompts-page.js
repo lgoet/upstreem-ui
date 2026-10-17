@@ -696,30 +696,44 @@
       if (l.indexOf(id) < 0) return;
       topicsImFilterSetzen(l.filter(function (x) { return x !== id; }));
     }
+    /* Wo die Seite Topics und Marken haelt, fuer UC.filterBereinigen (core, 17.10.): die Ids aus der
+       Antwort der Datenbank (22023, details), nicht mehr ein Abgleich gegen die eigenen Listen. Die
+       Listen bleiben nur der Rueckfall fuer eine Antwort ohne details (bekannt). Die Marken gehoeren
+       je nach Reiter der Prompt-Tabelle (state.p) oder den Responses (state.resp); ihr Filter meldet
+       die Aenderung selbst und laedt ueber den eigenen Handler neu. */
+    function markenCtrl() {
+      var w = el(state.tab === "responses" ? '[data-upi-tab="responses"] .up-ff-brands' : '[data-upi-tab="allprompts"] .up-ff-brands');
+      return w && w.__upffCtrl;
+    }
+    var bereinigenSpec = {
+      schluessel: "upi|" + instanceId, wurzel: root,
+      topics: {
+        lesen: function () { return isArr(state.f.topics) ? state.f.topics : []; },
+        setzen: function (rest) { topicsImFilterSetzen(rest); },
+        bekannt: function () { return (UC.getTopics ? UC.getTopics() : []).map(function (x) { return x && x.id != null ? String(x.id) : ""; }).filter(Boolean); }
+      },
+      marken: {
+        lesen: function () { var f = state.tab === "responses" ? state.resp.firmen : state.p.firmen; return isArr(f) ? f : []; },
+        setzen: function (rest) {
+          var f = rest.length ? rest : null;
+          if (state.tab === "responses") { state.resp.firmen = f; state.resp.offset = 0; } else { state.p.firmen = f; state.p.offset = 0; }
+          var bc = markenCtrl();
+          if (bc && typeof bc.setSelected === "function") { try { bc.setSelected(rest.join(",")); } catch (e) {} }
+        },
+        bekannt: function () { return (UC.getBrands ? UC.getBrands() : []).map(function (x) { var k = x && (x.company_id || x.id); return k != null ? String(k) : ""; }).filter(Boolean); }
+      },
+      danach: function () { filterGeaendert(); }
+    };
+    lader.bereinigenMit(function (erg) { return UC.filterBereinigen ? UC.filterBereinigen(erg, bereinigenSpec) : false; });
+    /* Der Rest: die Antwort nannte etwas, das unser Filter gar nicht haelt (ein Kollege hat das Topic
+       geloescht, unsere Liste ist veraltet). Dann die Liste des Teams neu holen -- kommt sie ohne das
+       Topic, raeumt der Topic-Filter sich selbst (setTopics meldet die Aenderung) und die Tabelle
+       laedt neu. Hoechstens alle 15 s, damit ein dauerhafter Fehler keine Schleife aus Abrufen wird.
+       false: die Tabelle zeigt ihren Fehlerzustand (Art "filter"), nie ein leeres Ergebnis. */
     function filterBereinigen(erg) {
       var f = erg && erg.fehler;
       if (!f || (str(f.code) !== "22023" && !/prompts_invalid_param/.test(str(f.message)))) return false;
-      var geaendert = false, bekannt;
-      var tl = UC.getTopics ? UC.getTopics() : [];
-      if (isArr(tl) && tl.length && isArr(state.f.topics)) {
-        bekannt = {}; tl.forEach(function (x) { if (x && x.id != null) bekannt[String(x.id)] = 1; });
-        var rest = state.f.topics.filter(function (x) { return bekannt[x]; });
-        if (rest.length !== state.f.topics.length) { topicsImFilterSetzen(rest); geaendert = true; }
-      }
-      var bl = UC.getBrands ? UC.getBrands() : [];
-      if (isArr(bl) && bl.length && isArr(state.p.firmen)) {
-        bekannt = {}; bl.forEach(function (x) { var k = x && (x.company_id || x.id); if (k != null) bekannt[String(k)] = 1; });
-        var fr = state.p.firmen.filter(function (x) { return bekannt[x]; });
-        var bw = el(".up-ff-brands"), bc = bw && bw.__upffCtrl;
-        if (fr.length !== state.p.firmen.length && bc && typeof bc.setSelected === "function") {
-          try { bc.setSelected(fr.join(",")); geaendert = true; } catch (e) {}
-        }
-      }
-      if (geaendert) { filterGeaendert(); return true; }
-      /* Nichts zu raeumen, weil unsere Listen veraltet sind (ein Kollege hat das Topic geloescht):
-         die Liste des Teams neu holen. Kommt sie ohne das Topic, raeumt der Topic-Filter sich selbst
-         (setTopics meldet die Aenderung) und die Tabelle laedt neu. Hoechstens alle 15 s, damit ein
-         dauerhafter Fehler keine Schleife aus Abrufen wird. */
+      if (UC.filterBereinigen && UC.filterBereinigen(erg, bereinigenSpec)) return true;
       if (Date.now() - listeHolt > 15000) {
         listeHolt = Date.now();
         try { if (UC.topicsChanged) UC.topicsChanged(); } catch (e) {}
@@ -743,7 +757,7 @@
                  Lesefehler dazwischen, und das Skelett bleibt stehen. */
               if (!z && filterBereinigen(erg)) return;
               if (!z) {
-                try { setter("renderPromptsTable")({ instanceId: ids.upt, __parseError: true }); } catch (e) {}
+                try { setter("renderPromptsTable")({ instanceId: ids.upt, __parseError: (!erg.ok && UC.fehlerSatzArt && UC.fehlerSatzArt(erg)) || true }); } catch (e) {}
               } else {
                 var p = { instanceId: ids.upt, rows: z.rows, isDark: isDark(), view_active: "yes" };
                 if (z.totalCount != null) p.totalCount = z.totalCount;
@@ -828,7 +842,7 @@
               var ok = e.every(function (x) { return x.ok; });
               var p = ok ? D.zuResponses(e.map(function (x) { return x.daten; })) : null;
               if (!p) {
-                try { setter("renderResponsesTable")({ instanceId: ids.urt, __parseError: true }); } catch (err) {}
+                try { setter("renderResponsesTable")({ instanceId: ids.urt, __parseError: (e.filter(function (x) { return !x.ok; }).map(function (x) { return UC.fehlerSatzArt && UC.fehlerSatzArt(x); })[0]) || true }); } catch (err) {}
               } else {
                 var mk = eigeneMarke();
                 p.instanceId = ids.urt; p.isDark = isDark();

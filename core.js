@@ -1881,6 +1881,9 @@
     "Please try again in {n} minutes.": "Versuch es in {n} Minuten noch einmal.",
     "Please try again in {n} seconds.": "Versuch es in {n} Sekunden noch einmal.",
     "Please try again in 1 second.": "Versuch es in einer Sekunde noch einmal.",
+    "Some filters were removed because they no longer exist.": "Einige Filter gibt es nicht mehr und wurden entfernt.",
+    "A selected filter no longer exists. Clear the filters and try again.": "Ein gewählter Filter existiert nicht mehr. Setz die Filter zurück und versuch es noch einmal.",
+    "The date range is too long. Choose a range of up to 13 months.": "Der Zeitraum ist zu lang. Wähle höchstens 13 Monate.",
     "Refresh the page to see the current plans.": "Lade die Seite neu, um die aktuellen Tarife zu sehen.",
     "Revoke invites that are no longer needed, then try again.": "Zieh Einladungen zurück, die du nicht mehr brauchst, und versuch es dann noch einmal.",
     "Switch to another team to continue.": "Wechsle in ein anderes Team, um weiterzumachen.",
@@ -25047,6 +25050,42 @@
     var b = fremdBasis();
     return b && typeof t === "string" ? t.replace(FREMD_BILD, b + "$1") : t;
   }
+  /* ══ EIN ZWEITER VERSUCH, WENN DIE DATENBANK NUR KURZ NICHT KONNTE (17.10., Fix-Runde DB) ═══════
+     Zwei Antworten der Datenbank sind keine Fehler der Anfrage, sondern der Lage: der Abbruch nach
+     30 s (HTTP 500, Code 57014, "canceling statement due to statement timeout") und die volle
+     Warteschlange schwerer Abfragen (PT429 <bereich>_busy, hint = Sekunden, l_ratengrenzen_v1).
+     Beide gehen beim zweiten Versuch meist durch: der Cache ist dann warm, der Platz frei. EIN
+     zweiter Versuch, nie mehr -- danach gilt der Fehler, wie er ist (bei busy mit warteSatz).
+     NUR LESENDE Aufrufe: ein Schreiben wird nie von selbst wiederholt, auch wenn ein Abbruch es
+     zurueckgerollt hat (der Nutzer entscheidet). Gelesen wird nach dem Namen (Vorsilbe cached_,
+     list_, get_, export_, preview_, performance_, dashboard_ oder *_detail_v1); opts.wiederholen =
+     true/false uebersteuert. Ein vom Nutzer abgebrochener Aufruf (opts.signal) wird nie
+     wiederholt, auch nicht mitten in der Wartezeit. */
+  var RPC_LESEND = /^(cached_|list_|get_|export_|preview_|performance_|dashboard_)|_detail(_stats)?_v\d+$/;
+  function wartenBis(ms, signal){
+    return new Promise(function(weiter){
+      var uhr = setTimeout(function(){ weiter(true); }, ms);
+      if (signal) signal.addEventListener("abort", function(){ clearTimeout(uhr); weiter(false); }, { once: true });
+    });
+  }
+  function nochmalNach(erg){
+    if (!erg || erg.ok) return 0;
+    var f = erg.fehler || {}, m = String(f.message || "");
+    if (erg.status === 500 && (String(f.code) === "57014" || /statement timeout/i.test(m))) return 600;
+    if (String(f.code) === "PT429" && /_busy$/.test(m)){
+      var n = Number(String(f.hint == null ? "" : f.hint).trim());
+      if (isFinite(n) && n >= 1 && n <= 15) return Math.ceil(n) * 1000 + 150;
+    }
+    return 0;
+  }
+  function nochmalVersuchen(erg, einmal, lesend, opts){
+    var ms = lesend ? nochmalNach(erg) : 0;
+    if (!ms || (opts.signal && opts.signal.aborted)) return Promise.resolve(erg);
+    return wartenBis(ms, opts.signal).then(function(ok){
+      if (!ok) return erg;
+      return einmal().then(function(z){ z.wiederholt = true; return z; });
+    });
+  }
   function rpc(name, params, opts){
     opts = opts || {};
     name = String(name == null ? "" : name);
@@ -25122,6 +25161,8 @@
         return new Promise(function(w){ setTimeout(w, 1500); }).then(einmal);
       }
       return erg;
+    }).then(function(erg){
+      return nochmalVersuchen(erg, einmal, opts.wiederholen === true || (opts.wiederholen !== false && RPC_LESEND.test(name)), opts);
     });
   }
   /* ══ EDGE FUNCTIONS (09.10., Vertrag Fuenf Ansichten Fassung 2, Abschnitt 3) ═════════════════
@@ -25211,6 +25252,9 @@
         return new Promise(function(w){ setTimeout(w, 1500); }).then(einmal);
       }
       return erg;
+    }).then(function(erg){
+      /* Edge Functions starten oft Laeufe (start-job, mira-send): nie von selbst wiederholen, nur auf Wunsch. */
+      return nochmalVersuchen(erg, einmal, opts.wiederholen === true, opts);
     });
   }
 
@@ -25240,6 +25284,87 @@
        Sekunden waere ungenauer als die Zahl selbst. */
     if (n < 90) return t("Please try again in {n} seconds.").replace("{n}", String(n));
     return t("Please try again in {n} minutes.").replace("{n}", String(Math.ceil(n / 60)));
+  }
+
+  /* ══ UNBEKANNTE IDS IM FILTER (17.10., c_cache_filter_v1: 22023) ═════════════════════════════════
+     Eine Topic- oder Marken-Id, die es im Team nicht gibt (geloescht, von einem Kollegen entfernt,
+     aus einem anderen Team in den gemerkten Filter geraten), gab bis hierher still ein leeres oder
+     ungefiltertes Ergebnis; jetzt antwortet die Datenbank 22023, hint = Name des Parameters,
+     details = JSON-Array der unbekannten Ids. EIN Baustein fuer alle Seiten: er liest die Ids aus
+     der Antwort, nimmt sie aus dem Filter, den die Seite haelt, und laesst EINMAL neu laden. Die
+     Seite sagt nur, wie sie ihre Auswahl liest und setzt (spec); Chips, Auswahl und Speicher stimmen
+     danach, weil spec.setzen dieselben Wege geht wie ein Klick des Nutzers.
+     unbekannteIds(erg): { param, ids } oder null, wenn die Antwort kein 22023 mit Parametername ist.
+     filterBereinigen(erg, spec): true, wenn etwas aus dem Filter genommen und neu geladen wird (die
+     Seite zeigt dann KEINEN Fehler, ihr Skelett bleibt bis zur neuen Antwort); false, wenn nichts zu
+     raeumen war oder die Grenze erreicht ist -- dann zeigt die Seite ihren Fehlerzustand
+     (fehlerSatzArt liefert "filter"), nie ein leeres Ergebnis.
+     spec: { schluessel (je Seite und Instanz), wurzel (Element oder Funktion: die Seite, deren Filterleiste
+       neu zeichnet), topics, marken, felder, danach, hinweis }
+       topics/marken/felder[param]: { lesen() -> [ids], setzen(rest), bekannt()? -> [ids] }
+       topics gilt fuer p_tag_ids und p_topics, marken fuer p_companies, p_company_ids, p_brand,
+       p_mentioned_brands; felder[<param>] uebersteuert (zwei Marken-Auswahlen auf einer Seite).
+       bekannt(): nur fuer eine Antwort OHNE details (die alte Fassung der Datenbank): die Seite nennt,
+       was sie als gueltig kennt. danach(): der Neuladen der Seite (entfaellt, wenn setzen selbst eine
+       Aenderung meldet). hinweis: false schaltet die Meldung ab.
+     SCHLEIFENGRENZE: jede Bereinigung nimmt mindestens eine Id weg, also endet die Folge von selbst;
+     dazu hoechstens 4 je Schluessel und 30 s -- eine Datenbank, die dieselben Ids immer wieder
+     meldet, fuehrt so zum ruhigen Fehlerzustand statt zu einer Kette von Abrufen. */
+  var IDS_TOPIC = { p_tag_ids: 1, p_topics: 1 };
+  var IDS_MARKEN = { p_companies: 1, p_company_ids: 1, p_brand: 1, p_mentioned_brands: 1 };
+  var BEREINIGT = {};
+  function unbekannteIds(erg){
+    if (!erg || erg.ok) return null;
+    var f = erg.fehler || {};
+    if (String(f.code) !== "22023") return null;
+    var h = String(f.hint == null ? "" : f.hint).match(/^\s*(p_[a-z0-9_]+)/i);
+    if (!h) return null;
+    var ids = [], d = String(f.details == null ? "" : f.details).trim();
+    if (d){
+      try {
+        var j = JSON.parse(d);
+        if (isArr(j)) ids = j.map(function(x){ return String(x); });
+        else if (j != null && typeof j !== "object") ids = [String(j)];
+      } catch(e){ ids = d.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi) || []; }
+    }
+    return { param: h[1].toLowerCase(), ids: ids };
+  }
+  function filterBereinigen(erg, spec){
+    spec = spec || {};
+    var u = unbekannteIds(erg);
+    if (!u) return false;
+    var feld = (spec.felder && spec.felder[u.param]) || (IDS_TOPIC[u.param] ? spec.topics : (IDS_MARKEN[u.param] ? spec.marken : null));
+    if (!feld || typeof feld.lesen !== "function" || typeof feld.setzen !== "function") return false;
+    var key = String(spec.schluessel || "seite"), jetzt = Date.now();
+    var frist = (BEREINIGT[key] || []).filter(function(z){ return jetzt - z < 30000; });
+    BEREINIGT[key] = frist;
+    if (frist.length >= 4) return false;
+    var aktuell = feld.lesen();
+    if (!isArr(aktuell) || !aktuell.length) return false;
+    var rest, k = {};
+    if (u.ids.length){
+      u.ids.forEach(function(x){ k[x.toLowerCase()] = 1; });
+      rest = aktuell.filter(function(x){ return !k[String(x).toLowerCase()]; });
+    } else {
+      var ok = typeof feld.bekannt === "function" ? feld.bekannt() : null;
+      if (!isArr(ok) || !ok.length) return false;
+      ok.forEach(function(x){ k[String(x).toLowerCase()] = 1; });
+      rest = aktuell.filter(function(x){ return k[String(x).toLowerCase()]; });
+    }
+    if (rest.length === aktuell.length) return false;
+    frist.push(jetzt);
+    try { feld.setzen(rest); } catch(e){ return false; }
+    /* Die Filterleiste spiegelt die Auswahl der Filter (Chips); setSelected der Filter ist still
+       (gemessen: Trigger "Topics2", Chip noch "Topic: SUV, Luxury, +1"). Sie muss neu zeichnen. */
+    var wz = typeof spec.wurzel === "function" ? spec.wurzel() : spec.wurzel;
+    if (wz && wz.querySelectorAll){
+      Array.prototype.forEach.call(wz.querySelectorAll(".ufb-root"), function(b){
+        try { if (b.__ufbCtrl && typeof b.__ufbCtrl.render === "function") b.__ufbCtrl.render(); } catch(e){}
+      });
+    }
+    if (typeof spec.danach === "function"){ try { spec.danach(); } catch(e){} }
+    if (spec.hinweis !== false) toast("Some filters were removed because they no longer exist.", { kind: "neutral", schluessel: "filter-bereinigt" });
+    return true;
   }
 
   /* ══ REALTIME: OEFFENTLICHE BROADCAST-KANAELE (10.10.) ═══════════════════════════════════════
@@ -27079,14 +27204,20 @@
   /* NACH URSACHE (17.10., QS-13): "could not be read" stimmt nur fuer eine Antwort, die ankam und
      nicht lesbar war. Bei einem Serverfehler (5xx, Zeitueberschreitung, Netz) hilft Neuladen nicht
      als Erstes, bei 404 ist nichts unlesbar, sondern nichts da, beim Ratenlimit hilft Warten.
-     art: "" (Vorgabe: unlesbar), "server", "rate", "weg". Die Seite, die den Fehler kennt, nennt
+     art: "" (Vorgabe: unlesbar), "server", "rate", "weg", "filter", "zeitraum". Die Seite, die den Fehler kennt, nennt
      sie (fehlerSatzArt(erg)) und reicht sie als __parseError: "<art>" an die Komponente weiter;
      ein wahrer Wert wie bisher bleibt "unlesbar". */
   function fehlerSatzArt(erg){
     if (!erg || erg.ok) return "";
     var f = erg.fehler || {}, m = String(f.message || "").toLowerCase(), c = String(f.code || ""), s = erg.status | 0;
     if (m === "aborted" || m === "unreadable_response") return "";
-    if (s === 429|| /rate_?limit/.test(m) || c === "PT429") return "rate";
+    /* 22023 (17.10.): Zeitraum ueber 13 Monate oder eine Id, die es nicht mehr gibt -- der Nutzer kann
+       etwas tun, also nicht "Serverfehler". */
+    if (c === "22023"){
+      if (/13 months/i.test(String(f.hint || ""))) return "zeitraum";
+      if (/^\s*p_(tag_ids|topics|companies|company_ids|company|brand|mentioned_brands|advertisers|prompt_id)\b/i.test(String(f.hint || ""))) return "filter";
+    }
+    if (s === 429|| /rate_?limit/.test(m) || /_busy$/.test(m) || c === "PT429") return "rate";
     if (s === 404 || c === "PGRST202" || /not.?found/.test(m)) return "weg";
     return "server";
   }
@@ -27096,6 +27227,8 @@
     var satz = art === "server" ? "Something went wrong on our side. Try again in a moment."
              : art === "rate" ? "Too many requests in a short time. Please wait a moment."
              : art === "weg" ? "This data could not be found."
+             : art === "filter" ? "A selected filter no longer exists. Clear the filters and try again."
+             : art === "zeitraum" ? "The date range is too long. Choose a range of up to 13 months."
              : "The data could not be read. Please reload the page.";
     return '<div class="up-empty">' +
       '<div class="up-empty-ic">' + icon("info", 1.6) + '</div>' +
@@ -29527,6 +29660,7 @@
     granFuerZeitraum: granFuerZeitraum,
     rpc: rpc, edge: edge, kanal: kanal, nutzerId: nutzerId,
     warteSekunden: warteSekunden, warteSatz: warteSatz,
+    unbekannteIds: unbekannteIds, filterBereinigen: filterBereinigen,
     rpcBereit: rpcBereit,
     /* Die upstreem-Wortmarke, EINE Quelle (08.10.): Seiten ohne eigenes data-logo nehmen sie von
        hier, statt die Adresse in jedes Element zu schreiben. */

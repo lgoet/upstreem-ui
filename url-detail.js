@@ -1370,6 +1370,26 @@
        Die Signatur nimmt jeden Parameter mit, ein anderer Zeitraum oder eine andere Seite der
        Tabelle holt also von selbst neu; "frisch" (Nochmal-Knopf) umgeht den Speicher. */
     if (!DU.lader) DU.lader = DDx.makeLader({ rufen: function (fn, params, o) { return UC.rpc(fn, params, { signal: o && o.signal, timeoutMs: 60000 }); } });
+    /* MARKEN, DIE ES NICHT MEHR GIBT (17.10., 22023): der URL-Drawer hat keinen Topic-Filter, nur die
+       Markenauswahl der Responses (p_company_ids). core (UC.filterBereinigen) liest die Ids aus der
+       Antwort; der Filter der Tabelle meldet die Aenderung selbst und laedt ueber seinen Handler neu. */
+    DU.lader.bereinigenMit(function (erg) {
+      if (!UC.filterBereinigen) return false;
+      return UC.filterBereinigen(erg, {
+        schluessel: "uud|" + DU.url, wurzel: function () { return DU.root; },
+        felder: {
+          p_company_ids: {
+            lesen: function () { return isArr(DU.resp.firmen) ? DU.resp.firmen : []; },
+            setzen: function (rest) {
+              DU.resp.firmen = rest.length ? rest : null; DU.resp.offset = 0;
+              var bw = DU.root && DU.root.querySelector(".urt-root .up-ff-brands"), bc = bw && bw.__upffCtrl;
+              if (bc && typeof bc.setSelected === "function") { try { bc.setSelected(rest.join(",")); } catch (e) {} }
+            }
+          }
+        },
+        danach: function () { duRespLaden(false); }
+      });
+    });
     var nr = ++DU.rnr, url = DU.kanon, z = duZeitraum(), reqId = DU.resp.requestId;
     (UC.teamWarten ? UC.teamWarten(10000) : Promise.resolve(UC.getTeam ? UC.getTeam() : "")).then(function (team) {
       if (nr !== DU.rnr) return null;

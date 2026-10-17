@@ -209,7 +209,7 @@
       /* Der Lesefehler kommt VOR dem Skelett -- sonst sieht endloses Laden aus wie "gleich da". */
       if (state.leseFehler){
         if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
-        tableEl.innerHTML = UC.leseFehlerHtml("the brand list");
+        tableEl.innerHTML = UC.leseFehlerHtml("the brand list", state.leseFehlerArt);
       }
       else if (state.loading || !state.hasTable){
         if (tableEmptyGraceTimer){ clearTimeout(tableEmptyGraceTimer); tableEmptyGraceTimer = null; }
@@ -957,7 +957,7 @@
            ein zerrissener Payload sieht aus wie "gleich da". Beide Seiten bekommen den
            Lesefehler, damit nicht eine davon weiterlaedt. */
         if (params.__parseError){
-          state.leseFehler = true;
+          state.leseFehler = true; state.leseFehlerArt = typeof params.__parseError === "string" ? params.__parseError : "";
           state.loading = false; state.linePending = false;
           state.hasTable = true; state.tableRows = [];
           state.hasLine = true; state.series = []; state.noDataConfirmed = true;

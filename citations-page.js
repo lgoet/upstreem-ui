@@ -110,6 +110,29 @@
        90ms). STORE[instanceId] taugt dafuer nicht, persist() ersetzt es bei jeder Aenderung. */
     var LADER = window.__ucsLader || (window.__ucsLader = {});
     var lader = LADER[instanceId] || (LADER[instanceId] = D.makeLader({ rufen: function (fn, params, o) { return UC.rpc(fn, params, { signal: o && o.signal, timeoutMs: 30000 }); } }));
+    /* TOPICS UND MARKEN, DIE ES NICHT MEHR GIBT (17.10., 22023): core (UC.filterBereinigen) liest die
+       Ids aus der Antwort, hier steht nur, wo die Seite sie haelt: Topics im Topic-Filter und in
+       state.f, die Marken ("Mentioned brands", p_mentioned_brands) in state.f.marken samt der Anzeige
+       beider Tabellen-Menues. Der Lader haengt am Fenster, jede neue Seite ersetzt die alte Bereinigung. */
+    lader.bereinigenMit(function (erg) {
+      if (!UC.filterBereinigen) return false;
+      return UC.filterBereinigen(erg, {
+        schluessel: "ucs|" + instanceId, wurzel: root,
+        topics: {
+          lesen: function () { return isArr(state.f.topics) ? state.f.topics : []; },
+          setzen: function (rest) {
+            setzen("topics", rest.length ? rest : null);
+            var tp = root.querySelector(".utf-root"), c = tp && tp.__utfCtrl;
+            if (c && typeof c.setSelected === "function") { try { c.setSelected(rest.join(",")); } catch (e) {} }
+          }
+        },
+        marken: {
+          lesen: function () { return isArr(state.f.marken) ? state.f.marken : []; },
+          setzen: function (rest) { setzen("marken", rest.length ? rest : null); menuesAngleichen(); }
+        },
+        danach: function () { filterGeaendert(); }
+      });
+    });
 
     /* ---- Aufbau ------------------------------------------------------------------------------- */
     function isDark() { return (UC.themeParam && UC.themeParam(root.getAttribute("data-isdark"))) || root.getAttribute("data-theme") === "dark"; }

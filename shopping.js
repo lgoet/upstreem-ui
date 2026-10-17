@@ -342,7 +342,9 @@
     shopping_invalid_date: "The date range is not valid.",
     shopping_product_not_found: "This product was not found.",
     shopping_rate_limited: "Too many requests. Please wait a moment.",
-    zeit: "This is taking longer than expected. Please try again."
+    zeit: "This is taking longer than expected. Please try again.",
+    range_13m: "The date range is too long. Choose a range of up to 13 months.",
+    filter_gone: "A selected filter no longer exists. Clear the filters and try again."
   };
   function fehlerText(code) {
     var c = str(code).trim();
@@ -952,6 +954,14 @@
        Zustaende von UC.rpc selbst werden zu denen, die der Fehlerzustand schon kennt. */
     function rpcFehlerCode(erg) {
       var m = str(erg.fehler && erg.fehler.message).trim();
+      /* 22023 (17.10., a_ads_shopping_v1): Zeitraum ueber 13 Monate und eine Id oder ein Name, den es
+         nicht gibt (p_tag_ids, p_advertisers, p_company_id), sind Fehler, die der Nutzer beheben kann --
+         nicht "could not be read". message ist bei 22023 der Code der Komponente (ads_invalid_param),
+         der Grund steht im hint. <bereich>_busy (PT429, schwere Abfragen belegt) ist eine Ratengrenze. */
+      var fh = str(erg.fehler && erg.fehler.hint), fc = str(erg.fehler && erg.fehler.code);
+      if (fc === "22023" && /13 months/i.test(fh)) return "range_13m";
+      if (fc === "22023" && /^\s*p_(tag_ids|advertisers|company_id|company_ids)\b/i.test(fh)) return "filter_gone";
+      if (str(erg.fehler && erg.fehler.code) === "PT429" && /_busy$/.test(m)) return "shopping_rate_limited";
       if (m === "timeout") return "zeit";
       if (m === "unreadable_response") return "x";
       if (erg.status === 429 && !/rate_limited/.test(m)) return "shopping_rate_limited";

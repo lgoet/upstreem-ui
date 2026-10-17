@@ -1780,7 +1780,31 @@
       function aktiv(){ return state.open && state.phase === "laeuft" && !!state.lauf && state.lauf.nr === nr; }
       /* Zurueck zur Wahl; steht der Fehler am Zeitraum, steht der Fokus dort. */
       function zurueck(){ state.lauf = null; state.phase = "wahl"; renderAll(); if (!(state.zeitFehler && fokus(elZeitfeld))) fokusFuss(); }
-      function scheitern(erg){ if (!aktiv()) return; fehlerSetzen(exportSatz(erg)); zurueck(); }
+      function scheitern(erg){
+        if (!aktiv()) return;
+        var f = (erg && erg.fehler) || {};
+        /* STUNDENGRENZE DER EXPORTE (17.10., l_ratengrenzen_v1): exports_rate_limited mit detail
+           hour_user/hour_team (hint = Sekunden bis zur Freigabe). Ein Zustand, den der Nutzer abwartet,
+           kein Fehler der Anfrage: eine ruhige Meldung mit der Wartezeit statt eines roten Satzes im
+           Dialog; der Dialog bleibt offen, die Wahl steht noch da. */
+        if (String(f.message || "") === "exports_rate_limited" && /^hour_(user|team)$/.test(String(f.details || "").trim()) && k && k.toast){
+          k.toast("Export limit reached", { kind: "neutral", desc: k.warteSatz ? k.warteSatz(erg) : "" });
+          zurueck(); return;
+        }
+        /* TOPICS UND MARKEN, DIE ES NICHT MEHR GIBT (22023): die Ids stehen in den Parametern, die die
+           Seite gemeldet hat (state.params). Weg damit, die Chips des Dialogs zeigen den neuen Stand,
+           und der Lauf beginnt EINMAL neu (Grenze: k.filterBereinigen). */
+        var u = k && k.unbekannteIds ? k.unbekannteIds(erg) : null, ref = u ? state.params[art] : null;
+        if (u && ref && Object.prototype.hasOwnProperty.call(ref, u.param) && k.filterBereinigen) {
+          var feld = {
+            lesen: function(){ var v = ref[u.param]; return Array.isArray(v) ? v : (typeof v === "string" && v ? v.split(",") : []); },
+            setzen: function(rest){ ref[u.param] = Array.isArray(ref[u.param]) ? rest : rest.join(","); }
+          };
+          var felder = {}; felder[u.param] = feld;
+          if (k.filterBereinigen(erg, { schluessel: "export|" + art, felder: felder, danach: function(){ renderAll(); exportSelbst(); } })) return;
+        }
+        fehlerSetzen(exportSatz(erg)); zurueck();
+      }
       /* Eine Ausnahme im Erfolgszweig (die Datei ist zu gross fuer einen String oder Blob, der Speicher
          reicht nicht): das Promise wuerde sie still verwerfen, und der Dialog bliebe fuer immer auf
          "Exporting..." (Audit EXP-03, gemessen 17.10.). Jetzt ein Satz, und der Dialog ist wieder

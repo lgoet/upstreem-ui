@@ -915,7 +915,7 @@
          Gefiltert ist, was auch die Werkzeugleiste gefiltert nennt (auswahlEingeschraenkt), oder
          was die Seite mit ihrer Filterleiste geladen hat (state.gefiltert). */
       elGrid.innerHTML = state.leseFehler
-        ? UC.leseFehlerHtml("the radar")
+        ? UC.leseFehlerHtml("the radar", state.leseFehlerArt)
         : '<div class="uhm-empty up-chart-leer-wirt">' + (UC.chartLeerHtml
             ? UC.chartLeerHtml({ icon: "dashboardSquare", gefiltert: auswahlEingeschraenkt() || !!state.gefiltert })
             : UC.esc(UC.t ? UC.t("No data") : "No data")) + '</div>';
@@ -1596,7 +1596,7 @@
            __parseError an (§46). Ohne diesen Zweig traegt der Aufruf keine cells: das Raster
            bleibt im Skelett stehen und sagt nichts. */
         if (params.__parseError){
-          state.leseFehler = true; state.loading = false; state.hasData = false;
+          state.leseFehler = true; state.leseFehlerArt = typeof params.__parseError === "string" ? params.__parseError : ""; state.loading = false; state.hasData = false;
           root.classList.remove("is-loading");
           /* Auch der Fehler wird gemerkt: sonst zeigte ein Neuaufbau danach wieder das Raster
              von vorher, als waere nichts gewesen. */

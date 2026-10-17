@@ -4044,7 +4044,7 @@
       }
       /* Der Lesefehler kommt VOR dem Leerzustand. Andersherum liest sich ein zerrissener
          Payload als leeres Ergebnis, und der Nutzer sucht den Fehler in seinen Filtern. */
-      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = UC.leseFehlerHtml("the prompt list"); applyCols(); return; }
+      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; elTbody.innerHTML = UC.leseFehlerHtml("the prompt list", state.leseFehlerArt); applyCols(); return; }
       if (!state.rows.length){
         var filtered = !!state.query || !!state.brandMentioned;
         if (filtered){ clearEmptyGrace(); renderEmptyState(true); return; }
@@ -6285,7 +6285,7 @@
            und das Skelett laeuft endlos weiter. Genau so gemessen am 24.08. mit einem
            abgeschnittenen Payload. Ein Ladezustand muss IMMER enden (CLAUDE.md §2). */
         if (params.__parseError){
-          state.leseFehler = true; state.rows = []; state.hasData = true; state.summe = null;
+          state.leseFehler = true; state.leseFehlerArt = typeof params.__parseError === "string" ? params.__parseError : ""; state.rows = []; state.hasData = true; state.summe = null;
           state.loading = false; state.softReload = false; endSoftReload();
           state.extLoading = false;
           state.letzteNutzlast = null;   /* Objekt je Schluesselsatz */

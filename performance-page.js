@@ -105,6 +105,37 @@
     var lader = gem.lader || (gem.lader = C.makeLader({
       rufen: function (fn, params, o) { return UC.rpc(fn, params, { signal: o && o.signal, timeoutMs: 30000 }); }
     }));
+    /* TOPICS UND MARKEN, DIE ES NICHT MEHR GIBT (17.10., 22023): core (UC.filterBereinigen) liest die
+       Ids aus der Antwort, hier steht nur, wo die Seite sie haelt. p_tag_ids kommt aus dem Topic-Filter
+       (state.f), p_topics und p_companies aus der Auswahl im Radar (state.auswahl): faellt davon etwas
+       weg, bleibt die Auswahl nicht halb, sondern der Radar geht auf seine Vorgabe zurueck (12 und 12).
+       Der Lader haengt am Fenster, jede neue Seite ersetzt die alte Bereinigung. */
+    function auswahlRaeumen(feld) {
+      return {
+        lesen: function () { return isArr(state.auswahl[feld]) ? state.auswahl[feld] : []; },
+        setzen: function (rest) {
+          state.auswahl = { firmen: null, topics: null };
+          try { window.resetPerformanceRadar(ids.uhm); } catch (e) {}
+          detailZu(); persist();
+        }
+      };
+    }
+    lader.bereinigenMit(function (erg) {
+      if (!UC.filterBereinigen) return false;
+      return UC.filterBereinigen(erg, {
+        schluessel: "upf|" + instanceId, wurzel: root,
+        topics: {
+          lesen: function () { return isArr(state.f.topics) ? state.f.topics : []; },
+          setzen: function (rest) {
+            fSetzen("topics", rest.length ? rest : null);
+            var tp = root.querySelector(".utf-root"), c = tp && tp.__utfCtrl;
+            if (c && typeof c.setSelected === "function") { try { c.setSelected(rest.join(",")); } catch (e) {} }
+          }
+        },
+        felder: { p_topics: auswahlRaeumen("topics"), p_companies: auswahlRaeumen("firmen") },
+        danach: function () { filterGeaendert(); }
+      });
+    });
 
     /* ---- Aufbau ------------------------------------------------------------------------------- */
     function isDark() { return (UC.themeParam && UC.themeParam(root.getAttribute("data-isdark"))) || root.getAttribute("data-theme") === "dark"; }
@@ -441,7 +472,7 @@
             return function () {
               if (!r.p) {
                 state.fehler.radar = r.fehler;
-                try { window.renderPerformanceRadar({ instanceId: ids.uhm, __parseError: true }); } catch (e) {}
+                try { window.renderPerformanceRadar({ instanceId: ids.uhm, __parseError: (!erg.ok && UC.fehlerSatzArt && UC.fehlerSatzArt(erg)) || true }); } catch (e) {}
                 /* Ohne Raster hat eine offene Zelle nichts mehr, woran sie haengt. */
                 if (o.zelleNeu && state.detail) detailZu();
                 return;

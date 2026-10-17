@@ -677,7 +677,7 @@
       }
       /* Der Lesefehler kommt VOR dem Leerzustand. Andersherum liest sich ein zerrissener
          Payload als leeres Ergebnis, und der Nutzer sucht den Fehler in seinen Filtern. */
-      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; container.innerHTML = UC.leseFehlerHtml("the response list"); return; }
+      if (state.leseFehler){ clearEmptyGrace(); letztesBody = null; container.innerHTML = UC.leseFehlerHtml("the response list", state.leseFehlerArt); return; }
       if (!state.rows.length){
         if (anyFilterActive()){ clearEmptyGrace(); letztesBody = null; container.innerHTML = emptyHtml(true); return; }
         /* LEER HEISST SOFORT LEER (07.10. angefordert: "wenn leere Daten reinkommen, sofort den
@@ -1846,7 +1846,7 @@
            und das Skelett laeuft endlos weiter. Genau so gemessen am 24.08. mit einem
            abgeschnittenen Payload. Ein Ladezustand muss IMMER enden (CLAUDE.md §2). */
         if (params.__parseError){
-          state.leseFehler = true; state.rows = []; state.hasData = true;
+          state.leseFehler = true; state.leseFehlerArt = typeof params.__parseError === "string" ? params.__parseError : ""; state.rows = []; state.hasData = true;
           state.loading = false; state.softReload = false; dim.end(); state.extLoading = false;
           persist(); render(); return;
         }

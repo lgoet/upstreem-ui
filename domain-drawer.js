@@ -90,6 +90,43 @@
   }
   S.urls = urlsStart(); S.resp = respStart();
 
+  /* TOPICS UND MARKEN, DIE ES NICHT MEHR GIBT (17.10., 22023): core (UC.filterBereinigen) liest die Ids
+     aus der Antwort, hier steht nur, wo der Drawer sie haelt. Der Drawer hat einen eigenen Topic-Filter
+     (S.f, Instanz IDS.topics) und je Tabelle eine Markenauswahl (URLs: p_mentioned_brands, Responses:
+     p_company_ids); die Anzeige wird wie bei einer Wahl des Nutzers nachgezogen. */
+  S.lader.bereinigenMit(function (erg) {
+    if (!UC.filterBereinigen) return false;
+    return UC.filterBereinigen(erg, {
+      schluessel: "udd|" + S.domain, wurzel: function () { return S.slot; },
+      topics: {
+        lesen: function () { return isArr(S.f.topics) ? S.f.topics : []; },
+        setzen: function (rest) {
+          setzen("topics", rest.length ? rest : null);
+          var tp = S.slot && S.slot.querySelector(".utf-root"), c = tp && tp.__utfCtrl;
+          if (c && typeof c.setSelected === "function") { try { c.setSelected(rest.join(",")); } catch (e) {} }
+        }
+      },
+      felder: {
+        p_mentioned_brands: {
+          lesen: function () { return isArr(S.urls.marken) ? S.urls.marken : []; },
+          setzen: function (rest) {
+            S.urls.marken = rest.length ? rest : null; S.urls.offset = 0;
+            try { setter("setUrlsTableFilters")(IDS.uut, { brands: rest, brand_mentioned: S.urls.erwaehnt === "yes" || S.urls.erwaehnt === "no" ? S.urls.erwaehnt : "" }); } catch (e) {}
+          }
+        },
+        p_company_ids: {
+          lesen: function () { return isArr(S.resp.firmen) ? S.resp.firmen : []; },
+          setzen: function (rest) {
+            S.resp.firmen = rest.length ? rest : null; S.resp.offset = 0;
+            var bw = S.root && S.root.querySelector(".urt-root .up-ff-brands"), bc = bw && bw.__upffCtrl;
+            if (bc && typeof bc.setSelected === "function") { try { bc.setSelected(rest.join(",")); } catch (e) {} }
+          }
+        }
+      },
+      danach: function () { filterGeaendert(); }
+    });
+  });
+
   function filterStand() {
     return { team: UC.getTeam ? UC.getTeam() : "", von: S.f.von, bis: S.f.bis, modelle: S.f.modelle,
              maerkte: S.f.maerkte, topics: S.f.topics, tagmode: S.f.tagmode };
