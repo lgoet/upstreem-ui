@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261176;
+  var BUILD = 20261177;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -16843,7 +16843,7 @@
         : a.optionen();
       var sel = a.auswahl();
       var liste = w.querySelector(".up-ff-list");
-      var sig = opts.map(function(o){ return o.key + "|" + o.name; }).join(",");
+      var sig = opts.map(function(o){ return o.key + "|" + o.name + (o.chipHtml ? "|" + o.chipHtml : ""); }).join(",");
       if (liste.getAttribute("data-sig") !== sig){
         liste.setAttribute("data-sig", sig);
         liste.innerHTML = opts.map(function(o){
@@ -16851,7 +16851,10 @@
               (a.suche ? ' data-brand="' + esc(o.key) + '" data-name="' + esc(String(o.name).toLowerCase()) + '"' : "") + '>' +
             '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
             (a.suche ? '<span class="up-ment-logo">' + (o.logo ? '<img src="' + esc(o.logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/>' : "") + '</span>' : "") +
-            '<span class="up-ff-name' + (a.suche ? " up-ment-name" : "") + '">' + esc(o.name) + '</span>' +
+            /* o.chipHtml (17.10.): ein Typ steht im Dropdown als derselbe Chip wie in der Tabelle, nicht als
+               Text ("bitte die Eintraege so stylen, wie die Type Chips in den Tabellen"). Der Name bleibt
+               der Text darin, die Zeile der Leiste liest ihn weiter aus .up-ff-name. */
+            '<span class="up-ff-name' + (a.suche ? " up-ment-name" : "") + (o.chipHtml ? " up-ff-chip" : "") + '">' + (o.chipHtml || esc(o.name)) + '</span>' +
           '</div>';
         }).join("") + (a.suche ? '<div class="up-ment-noresult" style="display:none">' + esc(tt("No matches")) + '</div>' : "");
         if (a.suche) mentFilter(w, "");

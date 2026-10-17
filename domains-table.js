@@ -331,6 +331,11 @@
     function chipStil(st){
       return "color:" + st.ink + ";background:" + st.bg + ";border-color:" + st.bd;
     }
+    /* Derselbe Chip wie im Dropdown der Tabelle (populateFilter) und in der Zelle, fuer die Typ-Filter der Leiste. */
+    function filterChipHtml(k){
+      return '<span class="up-filter-tag" style="' + chipStil(UC.typeStyle("citation", k, isDark)) + '">' +
+               '<span class="up-filter-tag-lbl">' + esc(UC.typLabel(k, "citation")) + '</span></span>';
+    }
     function tagHtml(raw){
       if (!raw) return "";
       /* Farbe aus typeStyle (uebersetzt den Rohschluessel selbst), Beschriftung uebersetzt. */
@@ -1251,7 +1256,7 @@
       },
       dtypes: {
         label: function(){ return ffT("Citation type"); }, chip: function(){ return ffT("Citation type"); }, leer: "All",
-        optionen: function(){ return ALL_CITATION_TYPES.map(function(k){ return { key: k, name: UC.typLabel(k, "citation") }; }); },
+        optionen: function(){ return ALL_CITATION_TYPES.map(function(k){ return { key: k, name: UC.typLabel(k, "citation"), chipHtml: filterChipHtml(k) }; }); },
         auswahl: function(){ return gewaehlt(state.appliedSel); },
         setzen: function(l){ state.filterSel = satzVon(l); submitFilter(); }
       }

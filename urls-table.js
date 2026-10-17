@@ -360,6 +360,14 @@
     function chipStil(st){
       return "color:" + st.ink + ";background:" + st.bg + ";border-color:" + st.bd;
     }
+    /* Derselbe Chip wie im Dropdown der Tabelle (populateFilter) und in der Zelle, fuer die Typ-Filter der Leiste;
+       URL-Typen tragen den Punkt davor, Citation-Typen nie. */
+    function filterChipHtml(dim, k){
+      var url = dim === "url", st = url ? urlTypeInfo(k).stil : UC.typeStyle("citation", k, isDark);
+      return '<span class="up-filter-tag" style="' + chipStil(st) + '">' +
+               (url ? '<span class="uut-tag-dot" style="background:' + st.dot + '"></span>' : "") +
+               '<span class="up-filter-tag-lbl">' + esc(url ? urlTypeInfo(k).label : UC.typLabel(k, "citation")) + '</span></span>';
+    }
     function tagHtml(raw){
       var ti = urlTypeInfo(raw);
       /* URL types always carry a leading dot; citation types never do. That is what keeps the two
@@ -988,13 +996,13 @@
       },
       ucittypes: {
         label: function(){ return ffT("Citation type"); }, chip: function(){ return ffT("Citation type"); }, leer: "All",
-        optionen: function(){ return ALL_CITATION_TYPES.map(function(k){ return { key: k, name: UC.typLabel(k, "citation") }; }); },
+        optionen: function(){ return ALL_CITATION_TYPES.map(function(k){ return { key: k, name: UC.typLabel(k, "citation"), chipHtml: filterChipHtml("citation", k) }; }); },
         auswahl: function(){ return gewaehlt(state.appliedSel); },
         setzen: function(l){ typenSetzen("citation", l); }
       },
       uurltypes: {
         label: function(){ return ffT("URL type"); }, chip: function(){ return ffT("URL type"); }, leer: "All",
-        optionen: function(){ return ALL_URL_TYPES.map(function(k){ return { key: k, name: urlTypeInfo(k).label }; }); },
+        optionen: function(){ return ALL_URL_TYPES.map(function(k){ return { key: k, name: urlTypeInfo(k).label, chipHtml: filterChipHtml("url", k) }; }); },
         auswahl: function(){ return gewaehlt(state.appliedUrlSel); },
         setzen: function(l){ typenSetzen("url", l); }
       }

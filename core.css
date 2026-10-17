@@ -4792,6 +4792,8 @@
     .up-ff-trigger { display: none; }
     .up-ff-opt { min-height: 34px; }
     .up-ff-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
+    /* Ein Typ als Chip (o.chipHtml): der Chip bringt Schrift, Farbe und Hoehe selbst mit (.up-filter-tag). */
+    .up-ff-name.up-ff-chip { display: inline-flex; align-items: center; overflow: visible; }
     .up-ff-panel { padding: 12px 10px 14px; min-width: 240px; }
     /* Zu ist das Panel NIE treffbar -- wie die Panels der anderen Filter (.uif-menu usw.), die das
        in ihrer eigenen CSS tun. filter-bar.css gibt ihm auto nur, solange Menue UND Untermenue
