@@ -361,12 +361,13 @@
    Seite liess sich seitlich wischen (17.10. gemessen, Prompts und Brands). Geschlossen haengt es
    deshalb an der RECHTEN Kante des Panels und ragt nach links (das erzeugt in LTR nie einen
    scrollbaren Ueberhang); die Lage wechselt erst NACH dem Ausblenden (Verzoegerung = Dauer des
-   Ausblendens, --up-t-1), beim Oeffnen sofort -- dort gilt die Regel nicht mehr, und die Bewegung bleibt
+   Ausblendens, --up-t-1; allow-discrete ist noetig: von calc() auf auto gibt es keine Zwischenwerte, ohne das Schluesselwort
+   greift die Verzoegerung nicht und die Lage springt beim Zugehen sofort, 18.10. gemessen), beim Oeffnen sofort -- dort gilt die Regel nicht mehr, und die Bewegung bleibt
    die von core. is-flipleft liegt ohnehin links und braucht sie nicht. */
 .ufb-sub:not(.is-shown):not(.is-flipleft) {
   left: auto; right: 0;
   transition: opacity var(--up-t-1) ease, transform var(--up-t-1) ease, top var(--up-t-1) ease, height var(--up-t-1) ease,
-              left 0s linear var(--up-t-1), right 0s linear var(--up-t-1);
+              left 0s linear var(--up-t-1) allow-discrete, right 0s linear var(--up-t-1) allow-discrete;
 }
 .ufb-menu.is-shown .ufb-sub.is-shown .up-subhost.is-on .up-ff-panel { visibility: visible; }
 /* Die Huelle traegt keine eigene Geometrie -- sie ist nur der Schalter zwischen den drei
@@ -574,6 +575,9 @@
 .ufb-gesp-neu[hidden], .ufb-gesp-feld[hidden] { display: none; }
 .ufb-gesp-ic { flex: 0 0 16px; width: 16px; height: 16px; display: inline-flex; color: var(--vc-muted); }
 .ufb-gesp-ic svg { width: 16px; height: 16px; display: block; }
+/* Der Name steht am Anfang der Zeile wie in jedem Menue der App (18.10.: "vorn ein leerer Icon-Platz"). Der Haken des
+   gewaehlten Eintrags sitzt wie in core (.up-optrow-check) ganz rechts und ist nur an der aktiven Zeile zu sehen. */
+.ufb-gesp-zeile.is-aktiv .up-optrow-check { opacity: 1; }
 .ufb-gesp-nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ufb-gesp-zeile .ufb-gesp-weg { flex: 0 0 24px; width: 24px; height: 24px; margin-right: 5px; }
 .ufb-gesp-feld { display: flex; align-items: center; gap: 6px; padding: 4px 9px 2px; }

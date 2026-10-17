@@ -173,7 +173,9 @@
    .up-tbody > .up-row:last-child in core: die letzte Zeile schliesst der Kasten, nicht sie selbst.
    Gilt auch fuer die abgesetzte Zeile der eigenen Marke (.vt-gap, 7 + 1): sie endet 1px ueber der
    Innenkante, ihre Linie stand dort mit einem Spalt ueber dem Rahmen. */
-.tct-tbody > .tct-row:last-child > .tct-td { border-bottom: 0; }
+/* NUR WENN DER KASTEN GEFUELLT IST (18.10.): mit weniger als acht Zeilen bleibt unter der letzten Zeile Platz im Kasten,
+   und dort fehlte ihr die Linie. Ab der achten Zeile (auch die abgesetzte der eigenen Marke) schliesst der Rahmen des Kastens. */
+.tct-tbody > .tct-row:last-child:nth-child(n+8) > .tct-td { border-bottom: 0; }
 .tct-td-idx { justify-content: center; padding: 0; gap: 0; font-size: 13px; font-weight: 500; color: var(--vc-third); }
 .tct-name { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .tct-num { font-size: 14px; font-weight: 500; color: var(--vc-text); white-space: nowrap; flex: 0 0 auto; }

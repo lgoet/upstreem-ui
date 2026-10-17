@@ -343,6 +343,9 @@
       --vc-toast-flaeche: rgba(255,255,255,.10);
       --vc-toast-flaeche-hover: rgba(255,255,255,.18);
       --vc-toast-zu: #6c717a;
+      /* Hervorgehobener Teil im Toast (UC.toast opts.hervor): die Akzentfarbe des ANDEREN Themas, wie
+         die Schrift des Toasts. Standard ist dort die Schrift selbst (#e0e0e0, hier heller als der Untertitel). */
+      --vc-toast-akzent: #e0e0e0;
       /* ---- DIE ZUSTANDSFARBEN NACH GEIST (15.10.) -------------------------------------------
          "Chartfarben, Trend Chips, das Gruen vom Prompt Quota etc.: Nimm fuer das alles bitte das
          Geist Design System, das ist das neue System fuer diese Sachen." Die Werte sind Vercels
@@ -780,6 +783,7 @@
       --vc-toast-flaeche: rgba(31,31,27,.08);
       --vc-toast-flaeche-hover: rgba(31,31,27,.14);
       --vc-toast-zu: #80858e;
+      --vc-toast-akzent: #1f1f1b;
       /* Die Zustandsfarben nach Geist, dunkle Skala (Begruendung im hellen Block). Gemessen auf der
          Karte #1c1c1f: --vt-up Green 900 7.53, --vt-down Red 900 5.79, --vc-warn Amber 900 8.05
          (vorher #60d25d und #d25d5d). Die Flaechen 700/800 sind bei Geist in beiden Themen dieselben
@@ -1518,6 +1522,14 @@
     html[data-accent="azur"] .up-root[data-theme="dark"] { --up-accent-ink: #3D97F0; }
     html[data-accent="terrakotta"] .up-root { --up-accent: #BD5836; --up-accent-fg: #ffffff; --up-accent-ink: #BD5836; }
     html[data-accent="terrakotta"] .up-root[data-theme="dark"] { --up-accent: #D97757; --up-accent-fg: #1f1f1b; --up-accent-ink: #D97757; }
+    /* Der Toast liegt am body (kein .up-root) und hat die Farben des ANDEREN Themas: im Hellen die Tinte des
+       dunklen, im Dunklen die des hellen Themas (Werte oben bei --up-accent-ink). */
+    html[data-accent="indigo"] .up-toasts { --vc-toast-akzent: #7C8AF0; }
+    html[data-accent="indigo"] .up-toasts[data-theme="dark"] { --vc-toast-akzent: #5E6AD2; }
+    html[data-accent="azur"] .up-toasts { --vc-toast-akzent: #3D97F0; }
+    html[data-accent="azur"] .up-toasts[data-theme="dark"] { --vc-toast-akzent: #0075DE; }
+    html[data-accent="terrakotta"] .up-toasts { --vc-toast-akzent: #D97757; }
+    html[data-accent="terrakotta"] .up-toasts[data-theme="dark"] { --vc-toast-akzent: #BD5836; }
 
     /* ================= DAS GRAUE HELL ("Light", 15.10.) ===========================================
        DAS EINZIGE HELL DER APP (15.10. abends: "Das Hell klassisch faellt weg als Design"). Die Wahl
@@ -5439,6 +5451,7 @@
        und im schmalen Inhaltsbereich brach der Text Zeichen fuer Zeichen um (10.10. gemessen bei
        180px neben der Leiste). So bleibt das laengste Wort die kleinste Breite. */
     .up-toast-t { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 20px; overflow-wrap: break-word; }
+    .up-toast-hv { color: var(--vc-toast-akzent); overflow-wrap: anywhere; }
     .up-toast-d { font-size: var(--up-fs-m); font-weight: var(--up-fw-n); line-height: 18px; color: var(--vc-toast-sub); overflow-wrap: break-word; }
     .up-toast-act {
       flex: 0 0 auto; height: 24px; margin-top: -2px; padding: 0 8px; border: 0; border-radius: var(--up-r-s);

@@ -14221,6 +14221,20 @@
          deutschen UI englisch da. Ein schon uebersetzter Text ist kein Schluessel und bleibt. */
       el.querySelector(".up-toast-t").textContent = titel;
       if (desc) el.querySelector(".up-toast-d").textContent = t_(desc);
+      /* Ein Teil des Textes in der Primaerfarbe (opts.hervor, z. B. eine URL): als Textknoten
+         und ein span, nie als HTML, damit ein Wert aus Nutzereingabe nichts einschleppen kann. */
+      var hervor = String(opts.hervor == null ? "" : opts.hervor);
+      if (hervor){
+        [".up-toast-t", ".up-toast-d"].forEach(function(sel){
+          var z = el.querySelector(sel); if (!z) return;
+          var tx = z.textContent, i0 = tx.indexOf(hervor);
+          if (i0 < 0) return;
+          var sp = document.createElement("span"); sp.className = "up-toast-hv"; sp.textContent = hervor;
+          z.textContent = "";
+          z.appendChild(document.createTextNode(tx.slice(0, i0))); z.appendChild(sp);
+          z.appendChild(document.createTextNode(tx.slice(i0 + hervor.length)));
+        });
+      }
       var e = { el: el, art: art, ms: ms, uhr: null, weg: false, id: ++TOAST.seq, bleibt: bleibt,
                 schluessel: schl, unten: opts.unten === true, onClose: typeof opts.onClose === "function" ? opts.onClose : null };
       /* Der ganze Toast als Knopf: ein Klick irgendwo ausser auf X oder die Aktion. Mit Tabulator
