@@ -2334,9 +2334,9 @@
     function skeletonRows(n){
       return UC.skeletonRows({ count: n, cols: [
         { w:180, jitter:40, cls:"upt-td-prompt" },
-        { w:56,  cls:"upt-td-visibility" },
-        { w:44,  cls:"upt-td-rank" },
-        { w:56,  cls:"upt-td-sentiment" },
+        { w:56,  cls:"upt-td-visibility", zahl:true },
+        { w:44,  cls:"upt-td-rank", zahl:true },
+        { w:56,  cls:"upt-td-sentiment", zahl:true },
         { logo:true, logoStyle:"border-radius:999px", cls:"upt-td-brands" },
         { w:90,  cls:"upt-td-topics" },
         { w:96,  cls:"upt-td-intent" },

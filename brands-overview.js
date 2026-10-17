@@ -1091,9 +1091,9 @@
       var cols = (state.status === "inactive")
         ? [{ w:70, jitter:18, logo:true }, 64, { w:20, cls:"up-td-act" }]
         : [{ w:12, cls:"up-td-idx" }, { w:70, jitter:18, logo:true }]
-            .concat(colOn("visibility") ? [46] : [])
-            .concat(colOn("ranking")    ? [52] : [])
-            .concat(colOn("sentiment")  ? [56] : [])
+            .concat(colOn("visibility") ? [{ w:46, zahl:true }] : [])
+            .concat(colOn("ranking")    ? [{ w:52, zahl:true }] : [])
+            .concat(colOn("sentiment")  ? [{ w:56, zahl:true }] : [])
             .concat([{ w:20, cls:"up-td-act" }]);
       return headHtml() + '<div class="up-tbody">' +
         UC.skeletonRows({ count: 7, rowClass: "up-row", cellClass: "up-td", cols: cols }) + '</div>';

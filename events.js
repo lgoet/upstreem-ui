@@ -834,12 +834,12 @@
     "URLs, paths or domains": "URLs, Pfade oder Domains", "Add to tracking": "Zum Tracking hinzufügen",
     "Brand metrics only": "Nur Markenwerte", "Visibility, rank and sentiment": "Visibility, Rank und Sentiment",
     "Specific URLs": "Bestimmte URLs", "Everything under a path": "Alles unter einem Pfad",
-    "Whole domain or subdomain": "Ganze Domain oder Subdomain", "Include all subdomains": "Alle Subdomains einbeziehen",
+    "Whole domain": "Ganze Domain", "Include all subdomains": "Alle Subdomains einbeziehen",
     "Path": "Pfad", "Domain and subdomains": "Domain und Subdomains", "e.g.": "z. B.", "and {n} more": "und {n} weitere",
     "Search your URLs or paste links": "Eigene URLs durchsuchen oder Links einfügen",
-    "Paste a URL, a path or a domain": "URL, Pfad oder Domain einfügen",
-    "Paste a path, e.g. example.com/blog": "Pfad einfügen, z. B. example.com/blog",
-    "Paste a domain, e.g. blog.example.com": "Domain einfügen, z. B. blog.example.com",
+    "Search or paste a URL, a path or a domain": "URL, Pfad oder Domain suchen oder einfügen",
+    "Search or paste a path, e.g. example.com/blog": "Pfad suchen oder einfügen, z. B. example.com/blog",
+    "Search or paste a domain, e.g. example.com": "Domain suchen oder einfügen, z. B. example.com",
     "Enter a domain like example.com.": "Gib eine Domain wie example.com ein.",
     "Please add a path, e.g. example.com/blog.": "Gib bitte einen Pfad an, z. B. example.com/blog.",
     "Please enter a valid domain.": "Gib bitte eine gültige Domain ein.",
@@ -996,6 +996,27 @@
       "Wettbewerber, die du trackst, erscheinen hier mit ihrer Visibility vor und nach dem Event.",
     "Not cited yet": "Noch nicht zitiert",
     "No AI answer has mentioned this page so far. As soon as one does, you can open its details here.": "Bisher hat keine KI-Antwort diese Seite erwähnt. Sobald eine das tut, kannst du hier ihre Details öffnen."
+  });
+  /* 17.10.: Domain mit allen Subdomains als Standard, Suche am Feld, Zahlen in der Vorschau des
+     Assistenten. Jeder Schluessel gegen alle Dateien geprueft (Katalog-Kollision): keiner steht in
+     core oder einer anderen Komponente; "{n} citation(s)" und "{n} URL(s)" stehen oben und werden
+     nur benutzt. */
+  if (UC.addMessages) UC.addMessages("de", {
+    "{host} and every subdomain, including pages added later.": "{host} und jede Subdomain, auch Seiten, die später dazukommen.",
+    "Only {host}. Its subdomains are not counted.": "Nur {host}. Seine Subdomains zählen nicht mit.",
+    "Include all of {domain}": "Ganz {domain} einbeziehen",
+    "Your domain: {domain}": "Deine Domain: {domain}",
+    "Add {ziel}": "{ziel} hinzufügen",
+    "on {n} page": "auf {n} Seite", "on {n} pages": "auf {n} Seiten",
+    "across {n} hosts": "verteilt auf {n} Hosts",
+    "in the last {n} days": "in den letzten {n} Tagen",
+    "Show hosts": "Hosts anzeigen", "Show fewer hosts": "Weniger Hosts anzeigen",
+    "No citations on {host} itself.": "Auf {host} selbst gibt es keine Zitate.",
+    "{n} citation sits on its subdomains.": "{n} Zitat liegt auf den Subdomains.",
+    "{n} citations sit on its subdomains.": "{n} Zitate liegen auf den Subdomains.",
+    "Include subdomains": "Subdomains einbeziehen", "Keep typing to narrow it down": "Tipp weiter, um die Treffer einzugrenzen",
+    "No citations yet for {ziel}. Counting starts with this event.": "Noch keine Zitate für {ziel}. Das Zählen beginnt mit diesem Event.",
+    "No citations yet for these targets. Counting starts with this event.": "Noch keine Zitate für diese Ziele. Das Zählen beginnt mit diesem Event."
   });
   /* 17.10.: Seitenabdeckung je Regel (Teil C) und Fallzahl je Kennzahl. Gegen alle Kataloge geprueft;
      "Refresh" und "Show {n} more" stehen schon (core bzw. oben) und werden nur benutzt. */
@@ -1302,6 +1323,17 @@
      Host + Pfad -> Pfad, mehrere Eintraege -> URLs. Eine volle Adresse MIT Schema und einem
      Pfad ohne Schraegstrich am Ende ist eine Seite ("https://lee-up.de/blog/artikel-1"), keine
      Abteilung -- das ist, was jemand aus der Adresszeile kopiert. Eine .xml ist eine Sitemap. */
+  /* DIE HAUPTDOMAIN EINES HOSTS (17.10., Beschluss: eine Domain ohne Pfad heisst Domain mit allen
+     Subdomains): help.de.example.com -> example.com, blog.example.co.uk -> example.co.uk. Dieselbe
+     Regel wie die Datenbank in der Vorschau (letzte zwei Teile, bei co.uk und Verwandten drei: Teil
+     vor einer zweibuchstabigen Endung ist co, com, org, net, gov, ac, edu, or, ne oder gv) -- eine
+     Unterdomain erkennt die Oberflaeche so an derselben Stelle wie die Datenbank. */
+  function hauptDomain(h) {
+    var l = String(h || "").toLowerCase().split(".");
+    if (l.length <= 2) return l.join(".");
+    var drei = /^(co|com|org|net|gov|ac|edu|or|ne|gv)$/.test(l[l.length - 2]) && l[l.length - 1].length === 2;
+    return l.slice(drei ? -3 : -2).join(".");
+  }
   function artVorschlag(text) {
     var teile = eingabeTeile(text);
     if (!teile.length) return null;
@@ -1310,7 +1342,9 @@
     if (!z || !z.host) return null;
     if (/\.xml(\.gz)?$/i.test(z.pfad)) return "sitemap";
     if (z.alle) return "host_all";
-    if (!z.pfad) return "host";
+    /* Ohne Pfad: die Hauptdomain meint sie samt Unterdomains, ein Host darunter (help.de.example.com)
+       nur sich selbst -- mit dem Angebot, die ganze Hauptdomain zu nehmen (schreibweiseZeigen). */
+    if (!z.pfad) return z.host === hauptDomain(z.host) || !hostOk(z.host) ? "host_all" : "host";
     if (z.stern || z.schraeg) return "path";
     if (z.schema || z.query) return "url";
     return "path";
@@ -2836,7 +2870,7 @@
            letzten Zeile die Unterkante (sonst doppelt mit dem Rahmen, 03.10. gemeldet). */
         platz.innerHTML = sekKopf(titel, desc) + '<div class="up-vartable uev-markt">' + kopf + '<div class="up-tbody up-vbody">' +
           (UC.skeletonRows ? UC.skeletonRows({ count: 3, rowClass: "up-row up-vrow", cellClass: "up-td",
-            cols: [{ w: 110, jitter: 30, logo: true, cls: "up-var-name uev-td-marke" }, { w: 44, cls: "uev-td-zahl" }, { w: 44, cls: "uev-td-zahl" }, { w: 40, cls: "uev-td-zahl" }] }) : "") +
+            cols: [{ w: 110, jitter: 30, logo: true, cls: "up-var-name uev-td-marke" }, { w: 44, cls: "uev-td-zahl", zahl: true }, { w: 44, cls: "uev-td-zahl", zahl: true }, { w: 40, cls: "uev-td-zahl", zahl: true }] }) : "") +
           '</div></div>';
         seitenStand("markt", null);
         sortSync("markt");
@@ -3180,7 +3214,7 @@
         if (linie2) { if (fehler) linie2.meldung(t("This event could not be loaded.")); else linie2.skeleton(); }
         platz.innerHTML = fehler ? "" : '<div class="up-vartable uev-zielurls">' + kopf + '<div class="up-tbody up-vbody">' +
           (UC.skeletonRows ? UC.skeletonRows({ count: 3, rowClass: "up-row up-vrow", cellClass: "up-td",
-            cols: [{ w: 160, jitter: 40, logo: true, cls: "up-var-name uev-td-url" }, { w: 80, cls: "uev-td-zahl uev-td-beob" }, { w: 40, cls: "uev-td-zahl" }, { w: 30, cls: "uev-td-zahl" }, { w: 30, cls: "uev-td-zahl" }] }) : "") +
+            cols: [{ w: 160, jitter: 40, logo: true, cls: "up-var-name uev-td-url" }, { w: 80, cls: "uev-td-zahl uev-td-beob" }, { w: 40, cls: "uev-td-zahl", zahl: true }, { w: 30, cls: "uev-td-zahl", zahl: true }, { w: 30, cls: "uev-td-zahl", zahl: true }] }) : "") +
           '</div></div>';
         seitenStand(n, null);
         sortSync(n);
@@ -4636,6 +4670,25 @@
       if (l) l.innerHTML = topicZeilen(p);
       if (f) f.innerHTML = topicsFuss(p);
     }
+    /* DIE TOPICS KOMMEN SPAETER ALS DER SCHRITT (17.10., Nutzer: nach einem Besuch auf Brands stand
+       Schritt 2 ohne Liste da). Schritt 2 zeichnet die Liste einmal beim ersten Zeigen; ist der
+       Speicher der Seite dann noch leer (frisch geladen, gerade neu befuellt), stand dort fuer immer
+       "No topics found", auch wenn die Topics eine Sekunde spaeter eintrafen -- gemessen: Speicher
+       13, Zeilen 0. Darum haengt das Popup am Speicher (UC.onTopics) und zeichnet nach, sobald er
+       sich aendert. Hat sich dabei geaendert, ob das Suchfeld ueber der Liste steht (ab sieben), wird
+       der Block neu gebaut: er entscheidet das nur beim Bau. Bereits Gewaehltes bleibt gewaehlt. */
+    function topicsNeu(p) {
+      if (!p || popup !== p || p.art !== "anlegen") return;
+      var box = p.api.body.querySelector('.uev-schritt[data-schritt="2"]');
+      if (!box || !box.__uevGebaut) return;
+      var hatSuche = !!box.querySelector(".uev-topicsuche");
+      if (hatSuche !== (topicsAlle().length > 6)) {
+        box.innerHTML = umfangFelder(p.e);
+        var ts = box.querySelector(".uev-topicsuche");
+        if (ts) ts.value = p.topicSuche || "";
+      }
+      topicsZeigen(); umfangNeu(); vorschauAnfordern(); knoepfeSync();
+    }
     function topicUmschalten(id) {
       var p = popup;
       if (!p || id == null) return;
@@ -4651,6 +4704,10 @@
     }
     function umfangFelder(e) {
       var viele = topicsAlle().length > 6;
+      /* Immer genau EINE Stufe gewaehlt: ein Wert ausserhalb von topics/all (aus einem alten Stand)
+         liesse beide Knoepfe ohne Streifen stehen und die Liste zu (17.10., Nutzer: "keine der beiden
+         Optionen ausgewaehlt"). Topics ist der Vorgang des Anlegens. */
+      if (e.modus !== "all") e.modus = "topics";
       return feld("Affected scope",
         '<div class="uev-umfang">' +
           '<div class="up-seg uev-umfangseg" role="group">' +
@@ -4683,12 +4740,12 @@
     var ARTEN = [
       { k: "url", titel: "Specific URLs", ic: "link", bsp: "example.com/blog/launch" },
       { k: "path", titel: "Everything under a path", ic: "folder", bsp: "example.com/blog/*" },
-      { k: "host", titel: "Whole domain or subdomain", ic: "globe", bsp: "blog.example.com/*", bspAlle: "*.example.com/*" },
+      { k: "host", titel: "Whole domain", ic: "globe", bsp: "blog.example.com/*", bspAlle: "*.example.com/*" },
       { k: "marke", titel: "Brand metrics only", ic: "chartSpline", satz: "Visibility, rank and sentiment" }
     ];
     var ART_NAME = { url: "URL", path: "Path", host: "Domain", host_all: "Domain and subdomains" };
-    var ART_PLATZHALTER = { url: "Search your URLs or paste links", path: "Paste a path, e.g. example.com/blog",
-      host: "Paste a domain, e.g. blog.example.com", "": "Paste a URL, a path or a domain" };
+    var ART_PLATZHALTER = { url: "Search your URLs or paste links", path: "Search or paste a path, e.g. example.com/blog",
+      host: "Search or paste a domain, e.g. example.com", "": "Search or paste a URL, a path or a domain" };
     function zieleDa() { return !demo && ZIELE_DA.stand === true; }
     /* Ohne Regeln in der Datenbank gibt es nur URLs -- dann darf das Feld auch nicht "a path or a
        domain" anbieten (gemessen 15.10. spaet im Rueckfall: der Platzhalter versprach Pfad und
@@ -4740,6 +4797,16 @@
       if (!frei) return fehlerText("impact_event_too_many_targets");
       return frei === 1 ? t("You can add 1 more target to this event.") : ersetze(t("You can add {n} more targets to this event."), { n: zahl(frei) });
     }
+    /* Der Satz unter dem Schalter sagt, was er bewirkt -- mit dem Host aus dem Feld, solange einer
+       dasteht (17.10., Beschluss: eine Domain ohne Pfad heisst mit allen Subdomains). */
+    function unterSatz(e) {
+      var tl = eingabeTeile(e.eingabe), z = tl.length === 1 ? zerlegen(tl[0]) : null, h = z && hostOk(z.host) ? z.anzeige : "example.com";
+      return ersetze(t(e.unterdomains ? "{host} and every subdomain, including pages added later." : "Only {host}. Its subdomains are not counted."), { host: h });
+    }
+    function unterSatzNeu(p) {
+      var el = im(".uev-unter-satz");
+      if (el) el.textContent = unterSatz(p.e);
+    }
     function artenHtml(p) {
       var l = artenFuer(p), e = p.e;
       /* Im Add-Dialog ohne Regeln bleibt nur "Specific URLs" -- eine Wahl mit einer Moeglichkeit
@@ -4749,7 +4816,8 @@
       return '<div class="uev-arten" role="radiogroup" aria-label="' + esc(t("What should we track?")) + '">' + l.map(function (a) {
         var an = a.k === e.zielArt;
         var unter = a.k === "host" ? klapp(an, '<div class="uev-unter"><span class="uev-unter-lbl" id="uev-unter-' + instanceId + '">' + esc(t("Include all subdomains")) + '</span>' +
-          '<span class="up-switch' + (e.unterdomains ? " is-on" : "") + '" role="switch" tabindex="0" aria-checked="' + !!e.unterdomains + '" aria-labelledby="uev-unter-' + instanceId + '" data-unterdomains></span></div>', "uev-unter-klapp") : "";
+          '<span class="up-switch' + (e.unterdomains ? " is-on" : "") + '" role="switch" tabindex="0" aria-checked="' + !!e.unterdomains + '" aria-labelledby="uev-unter-' + instanceId + '" data-unterdomains></span></div>' +
+          '<p class="uev-unter-satz" aria-live="polite">' + esc(unterSatz(e)) + '</p>', "uev-unter-klapp") : "";
         return '<div class="uev-art-w' + (an ? " is-on" : "") + '" data-art-w="' + a.k + '">' +
           '<button type="button" class="uev-art' + (an ? " is-on" : "") + '" role="radio" aria-checked="' + an + '" tabindex="' + (a.k === fokusbar ? 0 : -1) + '" data-art="' + a.k + '">' +
             '<span class="uev-art-punkt" aria-hidden="true"></span>' +
@@ -4777,14 +4845,14 @@
             '<div class="uev-feldspalte">' +
               '<div class="uev-urlsuche"><span class="uev-urlsuche-ic">' + UC.icon(ART_ZEICHEN[art] || "link", 2) + '</span>' +
                 '<textarea class="up-topicmodal-name uev-urlein uev-zielein" rows="1" placeholder="' + esc(platzhalter(art)) + '" autocomplete="off" spellcheck="false" inputmode="url"' +
-                  ' aria-label="' + esc(platzhalter(art)) + '">' + esc(e.eingabe || "") + '</textarea></div>' +
+                  ' aria-label="' + esc(platzhalter(art)) + '" role="combobox" aria-expanded="false" aria-autocomplete="list" aria-haspopup="listbox">' + esc(e.eingabe || "") + '</textarea></div>' +
+              klapp(false, '<div class="uev-urltreffer" role="listbox"></div>', "uev-treffer-klapp") +
               klapp(false, '<div class="uev-vorschlaege" aria-live="polite"></div>', "uev-vorschlag-klapp") +
             '</div>' +
             '<button type="button" class="up-btn-sec is-lg uev-zielhinzu" disabled>' + esc(t("Add")) + '</button>' +
           '</div>' +
           '<div class="uev-schreibweise" aria-live="polite"></div>' +
           feldFehlerHtml("ziele") +
-          klapp(false, '<div class="uev-urltreffer" role="listbox"></div>', "uev-treffer-klapp") +
         '</div>';
     }
     /* Der Kopf des Feldes: links das Etikett, rechts "Load from sitemap" als leiser Knopf -- ein
@@ -5054,7 +5122,7 @@
       p.e.eingabe = r.schlecht.map(function (z) { return z.roh; }).join("\n"); p.e.artVonHand = false;
       var inp = im(".uev-zielein");
       if (inp) { inp.value = p.e.eingabe; feldHoehe(inp); }
-      p.such.frage = ""; p.such.treffer = null; p.such.laedt = false; p.such.fehler = "";
+      p.such.frage = ""; p.such.treffer = null; p.such.laedt = false; p.such.fehler = ""; p.such.fuer = ""; p.such.aktiv = -1;
       if (p.maschine) p.maschine.abbrechen();
       p.api.fehler("");
       zieleZeigen(p);
@@ -5194,6 +5262,8 @@
         if (w) w.classList.toggle("is-on", an);
       }
       klappen(im(".uev-unter-klapp"), k === "host");
+      /* Die Suche folgt der Art: dieselbe Eingabe, anderer Bereich. */
+      if (String(p.e.eingabe || "").trim()) sucheStarten(p);
       zieleZeigen(p);
     }
     /* Die Schreibweise der Eingabe, immer sichtbar: leer das Beispiel der gewaehlten Art, sonst
@@ -5203,6 +5273,7 @@
       if (!el) return;
       var e = p.e, r = eingabeLesen(p), html = "", zuViel = false;
       var nz = p.schreibNotiz;
+      unterSatzNeu(p);
       /* Der Satz zur eigenen Zeile gilt, solange Ziel UND Regel noch da sind -- eine entfernte
          Regel der Liste nimmt ihn mit. */
       if (!r.teile.length && nz && (nz.eigen ? zielGewaehlt(p, nz.z) && (zielGewaehlt(p, nz.x) || !!zielInEventRegel(p, nz.z)) : nz.x ? e.ziele.indexOf(nz.x) >= 0 : true) && e.zielArt !== "marke") {
@@ -5214,6 +5285,14 @@
       } else if (!r.teile.length) {
         var a = ARTEN.filter(function (x) { return x.k === e.zielArt; })[0];
         html = a && a.bsp ? '<span class="uev-schreib-lbl">' + esc(t("e.g.")) + '</span><span class="uev-notation is-leise">' + esc(e.zielArt === "host" && e.unterdomains ? a.bspAlle : a.bsp) + '</span>' : "";
+        /* Die eigene Domain als ein Klick, solange sie noch nicht dabei ist. */
+        var ed = e.zielArt !== "marke" && zieleDa() && artenFuer(p).some(function (x) { return x.k === "host"; }) ? eigeneDomain() : "";
+        if (ed) {
+          var edz = [zielBauen(ed, "host_all"), zielBauen(ed, "host")];
+          if (!edz.some(function (z) { return !z.fehler && (zielGewaehlt(p, z) || zielImEvent(p, z)); }))
+            html += '<button type="button" class="up-quietbtn uev-eigen-chip" data-eigene-domain="' + esc(ed) + '">' +
+              '<span class="uev-ziel-ic">' + zielFavKlein(ed, UC.icon("globe", 2)) + '</span><span>' + esc(ersetze(t("Your domain: {domain}"), { domain: ed })) + '</span></button>';
+        }
       } else if (r.vorschlag === "sitemap") {
         html = '<span class="uev-schreib-satz">' + esc(t("This looks like a sitemap.")) + '</span>' +
           (sitemapDa() ? '<button type="button" class="up-quietbtn uev-sm-auf" data-sm-url="' + esc(r.teile[0]) + '">' + UC.icon("folderTree", 2) + '<span>' + esc(t("Load from sitemap")) + '</span></button>' : '');
@@ -5229,6 +5308,12 @@
         /* Ein ungueltiger Eintrag neben gueltigen sperrt "Add" nicht: "Add" nimmt die gueltigen, der
            ungueltige bleibt im Feld und steht hier mit Namen (EV-07). */
         if (r.schlecht.length) html += '<span class="uev-ziel-fehler">' + esc(schlechteNennen(r.schlecht)) + '</span>';
+        /* Ein Host unter einer Hauptdomain (help.de.example.com) gilt nur fuer sich -- mit dem Angebot,
+           die ganze Hauptdomain zu nehmen. */
+        if (eig.length === 1 && eig[0].kind === "host") {
+          var hz = zerlegen(eingabeTeile(e.eingabe)[0]), hd = hz ? hauptDomain(hz.host) : "";
+          if (hd && hd !== hz.host && hostOk(hd)) html += '<button type="button" class="up-quietbtn" data-haupt="' + esc(hd) + '"><span>' + esc(ersetze(t("Include all of {domain}"), { domain: hd })) + '</span></button>';
+        }
         /* Mehr eingefuegt, als frei ist (16.10.): der Grund steht SOFORT da, "Add" ist aus -- bis
            16.10. kam er erst nach dem Klick. */
         zuViel = eingabeNeu(p, r) > zielFrei(p);
@@ -5278,6 +5363,18 @@
       if (r.vorschlag !== "sitemap" && eingabeNeu(p, r) <= zielFrei(p)) r.gut.forEach(function (z) { l.push(z); });
       return l.filter(function (z) { if (da[z.key]) return false; da[z.key] = 1; return true; });
     }
+    /* DER ENGE UMFANG FRAGT DEN WEITEN MIT (17.10.): steht genau EIN Ziel in der Vorschau und es ist ein
+       einzelner Host, geht dieselbe Domain mit allen Subdomains im selben Aufruf mit (preview_impact_
+       event_targets_v1 nimmt bis 200 Ziele, per_target[] liefert je Ziel Seiten und Zitate). Hat der
+       Host keine Treffer, die Unterdomains aber, sagt die Vorschau das und bietet den weiten Umfang an
+       -- ohne zweiten Aufruf und ohne Liste. Bei mehreren Zielen gaebe es kein sauberes Mass fuer die
+       Summe (die Gesamtzahlen der Antwort zaehlen die Begleiter mit), darum dann nicht. */
+    function vzBegleiter(l) {
+      return l.length === 1 && l[0].kind === "host" ? [{ kind: "host_all", input: l[0].input }] : [];
+    }
+    /* Wie ein Ziel in einem Satz heisst: der Host bzw. Pfad ohne die Schreibweise der Regel
+       (*.example.com/*), die URL wie gezeigt. */
+    function zielName(z) { return z.kind === "url" ? z.zeigen : String(z.zeigen || "").replace(/^\*\./, "").replace(/\/\*$/, ""); }
     function vzErgebnis(p) { return p.zv && p.zv.akt ? p.zv.ergebnisse[p.zv.akt] || null : null; }
     function vzAnfordern(p, sofort) {
       if (!p) return;
@@ -5285,7 +5382,7 @@
       var l = vzListe(p);
       clearTimeout(p.zv.uhr);
       if (!l.length) { p.zv.soll = null; p.zv.akt = null; vzZeigen(p); return; }
-      var liste = l.map(function (z) { return { kind: z.kind, input: z.input }; });
+      var liste = l.concat(vzBegleiter(l)).map(function (z) { return { kind: z.kind, input: z.input }; });
       var sig = JSON.stringify(liste);
       p.zv.soll = sig;
       if (p.zv.ergebnisse[sig]) { p.zv.akt = sig; vzZeigen(p); return; }
@@ -5329,24 +5426,63 @@
         el.innerHTML = '<div class="up-fehlerzeile is-on"><span>' + esc(t("The preview could not be loaded.")) + '</span></div>';
         return;
       }
-      var d = res.d, n = num(d.matched_url_count) || 0, c = num(d.citation_count) || 0, pr = num(d.prompt_count) || 0, tage = num(d.days) || VZ_TAGE;
+      var d = res.d, tage = num(d.days) || VZ_TAGE, pts = isArr(d.per_target) ? d.per_target.filter(Boolean) : [];
+      var bg = vzBegleiter(l), n = num(d.matched_url_count) || 0, c = num(d.citation_count) || 0, nBreit = 0, cBreit = 0;
+      /* Mit Begleiter zaehlen die Gesamtzahlen der Antwort ihn mit: dann gelten die Zahlen des einen
+         echten Ziels (per_target), und der Begleiter liefert nur den weiten Umfang. */
+      if (bg.length) {
+        var ptR = null, ptB = null;
+        pts.forEach(function (pt) {
+          if (String(pt.input) !== l[0].input) return;
+          if (pt.kind === l[0].kind) ptR = pt; else if (pt.kind === bg[0].kind) ptB = pt;
+        });
+        n = ptR ? num(ptR.matched_url_count) || 0 : 0; c = ptR ? num(ptR.citation_count) || 0 : 0;
+        nBreit = ptB ? num(ptB.matched_url_count) || 0 : 0; cBreit = ptB ? num(ptB.citation_count) || 0 : 0;
+      }
       function mitZahl(schl, v) { return esc(t(schl)).replace("{n}", '<span class="uev-vz-n">' + esc(zahl(v)) + '</span>'); }
-      var html = '<p class="uev-vz-kopf"><span class="uev-vz-zeit">' + esc(ersetze(t("Last {n} days:"), { n: tage })) + '</span> ' +
-        mitZahl(n === 1 ? "{n} URL matches" : "{n} URLs match", n) +
-        (n ? ', ' + mitZahl(c === 1 ? "{n} citation" : "{n} citations", c) + ' ' + mitZahl(pr === 1 ? "in {n} prompt" : "in {n} prompts", pr) : '') + '</p>';
-      var bsp = isArr(d.examples) ? d.examples.slice(0, 5) : [];
-      if (n && bsp.length) {
-        html += '<div class="uev-vz-liste">' + bsp.map(function (x) {
-          var hp = hostPfad(x.url), ci = num(x.citations);
-          return '<div class="uev-vz-reihe"><span class="uev-vz-url" title="' + esc(x.url || "") + '">' + esc(hp.host + (hp.start ? "" : hp.pfad)) + '</span>' +
-            (ci != null ? '<span class="uev-vz-wert">' + esc(ersetze(t(ci === 1 ? "{n} citation" : "{n} citations"), { n: zahl(ci) })) + '</span>' : '') + '</div>';
-        }).join("") + '</div>';
+      /* DIE HOSTS: die Datenbank liefert (sobald sie es tut) hosts[] mit Seiten und Zitaten je Host und
+         host_count; bis dahin nur dort, wo die Beispiele alle getroffenen Seiten tragen (hoechstens
+         fuenf) oder genau ein Host gemeint ist. Sonst steht keine Hostzahl da -- geraten wird nicht. */
+      var hostListe = null, hostZahl = null;
+      if (isArr(d.hosts) && d.hosts.length) {
+        hostListe = d.hosts.filter(function (x) { return x && x.host; }).map(function (x) {
+          return { host: String(x.host), c: num(x.citation_count != null ? x.citation_count : x.citations), n: num(x.matched_url_count != null ? x.matched_url_count : x.url_count) };
+        });
+        hostZahl = num(d.host_count) != null ? num(d.host_count) : hostListe.length;
+      } else if (n && bg.length) {
+        hostListe = [{ host: zielHost(l[0]), c: c, n: n }]; hostZahl = 1;
+      } else if (n && !bg.length && isArr(d.examples) && d.examples.length >= n) {
+        var je = {}, reihe = [];
+        d.examples.forEach(function (x) {
+          var h = hostPfad(x.url).host;
+          if (!je[h]) { je[h] = { host: h, c: 0, n: 0 }; reihe.push(h); }
+          je[h].c += num(x.citations) || 0; je[h].n++;
+        });
+        hostListe = reihe.map(function (h) { return je[h]; }).sort(function (x, y) { return y.c - x.c; });
+        hostZahl = hostListe.length;
+      }
+      var html = "";
+      if (n) {
+        html += '<p class="uev-vz-kopf">' + mitZahl(c === 1 ? "{n} citation" : "{n} citations", c) + ' ' + mitZahl(n === 1 ? "on {n} page" : "on {n} pages", n) +
+          (hostZahl > 1 ? ' ' + mitZahl("across {n} hosts", hostZahl) : '') +
+          ' <span class="uev-vz-zeit">' + esc(ersetze(t("in the last {n} days"), { n: zahl(tage) })) + '</span></p>';
+        /* Die Hosts, hoechstens drei, je Zeile ein Host mit seinen Zitaten rechts; "Show hosts" nur,
+           wenn es mehr gibt. */
+        if (hostListe && hostListe.length > 1) {
+          var sichtbar = p.vzHostsAlle ? hostListe : hostListe.slice(0, 3);
+          html += '<div class="uev-vz-liste">' + sichtbar.map(function (x) {
+            return '<div class="uev-vz-reihe"><span class="uev-ziel-ic">' + zielFavKlein(x.host, UC.icon("globe", 2)) + '</span>' +
+              '<span class="uev-vz-url" title="' + esc(x.host) + '">' + esc(x.host) + '</span>' +
+              (x.c != null ? '<span class="uev-vz-wert" title="' + esc(ersetze(t(x.c === 1 ? "{n} citation" : "{n} citations"), { n: zahl(x.c) })) + '">' + esc(zahl(x.c)) + '</span>' : '') + '</div>';
+          }).join("") + '</div>';
+          if (hostListe.length > 3) html += '<div><button type="button" class="up-quietbtn uev-vz-hosts-mehr" data-vz-hosts>' +
+            '<span>' + esc(t(p.vzHostsAlle ? "Show fewer hosts" : "Show hosts")) + '</span></button></div>';
+        }
       }
       /* similar_host (v2) zeigt auf eine DOMAIN: dort darf url fehlen (die Datenbank nimmt die
          meistzitierte URL der Domain, sonst die zuletzt zitierte -- und fuehrt den Eintrag ueber
          die Domain weiter, wenn es keine gibt). */
       var nahAlle = isArr(d.near_misses) ? d.near_misses.filter(function (x) { return x && (x.url || (x.reason === "similar_host" && x.host)); }) : [];
-      var pts = isArr(d.per_target) ? d.per_target.filter(Boolean) : [];
       var hosts = {};
       l.forEach(function (z) { var h = zielHost(z); if (h) hosts[h] = 1; });
       var hl = Object.keys(hosts), h1 = hl.length === 1 ? hl[0] : "";
@@ -5387,17 +5523,19 @@
          (Nutzer: entfernen) -- er stand unter jedem Null-Treffer und sagte nichts, was man tun kann. */
       vorschlaegeZeigen(p, l, vorschlaege);
       if (!n && !vorschlaege.length) {
-        /* Null Treffer: je Fall ein eigener Satz (Entscheidung des Nutzers 15.10.). "Diese Domain
-           wurde noch nicht zitiert" nur bei EINEM Host und nach per_target -- das oberste
-           host_known gilt nur fuer das erste gueltige Ziel (Nachtrag 4.2); bei mehreren Hosts
-           stand dort bis 15.10. "This domain", obwohl nur der erste gemeint war. */
-        var jeH1 = h1 ? pts.filter(function (pt) { return pt.host && String(pt.host) === h1 && !pt.error; }) : [];
-        var h1Neu = !!h1 && (jeH1.length ? jeH1.some(function (pt) { return pt.host_known === false; }) : d.host_known === false);
-        var satz;
-        if (h1Neu && h1.split(".").length > 2) satz = esc(t("This subdomain hasn't been cited yet. It will be counted from its first citation."));
-        else if (h1Neu) satz = esc(t("This domain hasn't been cited yet. It will be counted from its first citation."));
-        else satz = esc(t("No cited page matches yet. Matching pages count from their first citation."));
-        html += '<p class="uev-vz-satz">' + satz + '</p>';
+        /* Null Treffer (17.10.): ein ruhiger Satz, kein Fehler -- gezaehlt wird ab dem Event. Hat nur der
+           enge Umfang keine Treffer und der weite schon (Host ohne Seiten, Unterdomains mit), sagt der
+           Satz das und bietet den weiten Umfang an, ohne Liste. Nur bei gueltigen Zielen: ein
+           ungueltiges steht mit seinem Grund an der Zeile. */
+        var ungueltig = pts.some(function (pt) { return pt.error || pt.valid === false; });
+        if (!ungueltig && bg.length && cBreit > 0) {
+          html += '<p class="uev-vz-satz"><span>' + esc(ersetze(t("No citations on {host} itself."), { host: zielName(l[0]) })) + ' ' +
+            esc(ersetze(t(cBreit === 1 ? "{n} citation sits on its subdomains." : "{n} citations sit on its subdomains."), { n: zahl(cBreit) })) + '</span>' +
+            '<button type="button" class="up-quietbtn" data-weiten="' + esc(zielHost(l[0])) + '"><span>' + esc(t("Include subdomains")) + '</span></button></p>';
+        } else if (!ungueltig) {
+          html += '<p class="uev-vz-satz">' + esc(l.length === 1 ? ersetze(t("No citations yet for {ziel}. Counting starts with this event."), { ziel: zielName(l[0]) })
+            : t("No citations yet for these targets. Counting starts with this event.")) + '</p>';
+        }
       }
       /* "SIMILAR, BUT NOT MATCHING" IST WEG (16.10. spaet, Nutzer: "Die Plakette unten bringt nichts,
          weil man nichts damit machen kann"). Die Beinahe-Treffer, mit denen man etwas tun kann,
@@ -5470,6 +5608,22 @@
         }).join("");
       }
       klappen(kl, !!liste.length);
+    }
+    /* "Include subdomains" (Vorschau eines einzelnen Hosts ohne Treffer, dessen Unterdomains zitiert
+       sind): das Ziel mit diesem Host wird zur Domain mit allen Subdomains -- in der Liste und, wenn
+       er noch im Feld steht, ueber den Schalter. */
+    function umfangWeiten(p, host) {
+      if (!p || !host) return;
+      var da = {};
+      p.e.ziele = p.e.ziele.map(function (z) {
+        if (z.kind !== "host" || zielHost(z) !== host) return z;
+        var x = zielBauen(z.input, "host_all");
+        return x.fehler ? z : x;
+      }).filter(function (z) { if (da[z.key]) return false; da[z.key] = 1; return true; });
+      var tl = eingabeTeile(p.e.eingabe), fz = tl.length === 1 ? zerlegen(tl[0]) : null;
+      /* Steht derselbe Host noch im Feld, folgt der Schalter, sonst wuerde "Add" ihn wieder eng lesen. */
+      if (fz && fz.host === host && p.e.zielArt === "host" && !p.e.unterdomains) { p.e.unterVonHand = true; unterdomainsUmschalten(p); return; }
+      zieleZeigen(p);
     }
     /* Einen Host als eigene Domain zaehlen: derselbe Weg wie "Count as: Your own site" im
        Domain-Drawer (domain_classify_v1, p_role "own"). Die Datenbank leert ihre Caches selbst;
@@ -6250,64 +6404,160 @@
       var p = popup, seg = im(".uev-umfangseg");
       if (seg) {
         var bs = seg.querySelectorAll("[data-modus]");
-        for (var i = 0; i < bs.length; i++) bs[i].classList.toggle("is-active", bs[i].getAttribute("data-modus") === p.e.modus);
-        if (UC.segJetzt) { try { UC.segJetzt(seg); } catch (e) {} }
+        for (var i = 0; i < bs.length; i++) {
+          var an = bs[i].getAttribute("data-modus") === p.e.modus;
+          bs[i].classList.toggle("is-active", an); bs[i].setAttribute("aria-pressed", String(an));
+        }
+        if (UC.segJetzt) {
+          try { UC.segJetzt(seg); } catch (e) {}
+          /* Der Streifen misst nur, was sichtbar ist. Steht der Schritt gerade erst auf (das Popup
+             blendet noch ein, ein Neuaufbau der Seite dahinter), kann das erste Messen ins Leere
+             gehen -- der Streifen bliebe weg, bis etwas anderes ihn anstoesst. Darum ein zweites
+             Mal, nachdem die Bewegung steht. */
+          setTimeout(function () { if (popup === p && seg.isConnected) { try { UC.segJetzt(seg); } catch (e2) {} } }, 320);
+        }
       }
       klappen(im(".uev-umfang-klapp"), p.e.modus === "topics");
       zahlZeigen();
     }
-    /* Die Suche nach bekannten URLs (search_quick_actions, wie bisher) nur bei "Specific URLs" und
-       einem einzelnen Eintrag -- bei einer Regel oder einer Liste gibt es nichts nachzuschlagen.
-       "Add as new target" ist seit 15.10. der Knopf "Add" neben dem Feld. */
+    /* ---- DIE SUCHE AM FELD (17.10., Nutzer: "mit einem Dropdown zur Suche ... mach wie die anderen
+       Tools") ------------------------------------------------------------------------------------
+       KEIN neuer Umschalter: die Wahl der Art in Schritt 3 (Specific URLs, Path, Domain) bestimmt,
+       WAS gesucht wird. Domain (host und host_all) sucht Domains (quick_search_v1, scope domain), URL
+       sucht URLs (scope url), Pfad sucht URLs und fasst die Treffer zu ihren Ordnern zusammen -- ein
+       Pfad-Ziel ist ein Ordner, kein Dokument. Die Maschine ist dieselbe wie in Palette und Mira
+       (UC.makeEntitySearch, Zeilen UC.entityRow); ab zwei Zeichen, ein Eintrag im Feld.
+       Das Dropdown steht in der Spalte des Feldes direkt darunter: oben die Zeile "Add ..." mit dem
+       erkannten Umfang rechts (Enter fuegt hinzu), darunter die Treffer. Bei null Treffern bleibt
+       es still bei der Zeile "Add ..."; kein Ladebalken, keine "No results"-Wand.
+       Die Treffer tragen EINE Gruppe (je Art ein Bereich), also gibt es keine Ueberschriften. */
+    function sucheBereich(e) { var a = leseArt(e); return a === "url" || a === "path" ? "url" : "domain"; }
+    /* Was gesucht wird: bei einer Domain der Host (ohne Schema, www, Pfad), bei einem Pfad Host und
+       Pfad, bei einer URL die Eingabe. Mehrere Eintraege und eine Sitemap suchen nichts. */
+    function sucheFrage(e) {
+      var tl = eingabeTeile(e.eingabe);
+      if (tl.length !== 1 || artVorschlag(e.eingabe) === "sitemap") return "";
+      var a = leseArt(e), z = zerlegen(tl[0]);
+      if (!z) return a === "url" ? tl[0] : "";
+      if (a === "url") return tl[0];
+      if (a === "path") return z.anzeige + z.pfad;
+      return z.anzeige;
+    }
+    /* Die Suche neu anstossen, auch nach einem Wechsel der Art (anderer Bereich, gleiche Eingabe).
+       Alte Treffer fallen sofort weg: sie gehoeren zur anderen Art. */
+    function sucheStarten(p) {
+      var q = sucheFrage(p.e), fuer = sucheBereich(p.e) + "|" + q;
+      p.such.frage = q; p.such.zu = false; p.such.aktiv = -1;
+      if (p.such.fuer !== fuer && p.such.fuerBereich !== sucheBereich(p.e)) { p.such.treffer = null; p.such.fehler = ""; }
+      p.such.fuer = fuer; p.such.fuerBereich = sucheBereich(p.e);
+      if (p.maschine) p.maschine.tippen(q);
+    }
+    /* Die Zeilen des Dropdowns: { item, text, art, rechts } -- text geht an zielBauen, art ist die
+       Art des Ziels. */
+    function sucheZeilen(p) {
+      var art = leseArt(p.e), raw = p.such.treffer || [], aus = [];
+      if (art === "host" || art === "host_all") {
+        raw.forEach(function (it) { if (it && it.type === "domain" && it.domain) aus.push({ item: it, text: String(it.domain), art: art, rechts: "" }); });
+      } else if (art === "url") {
+        raw.forEach(function (it) { if (it && it.type === "url" && it.url) aus.push({ item: it, text: String(it.url), art: "url", rechts: "" }); });
+      } else {
+        /* Pfad: je URL der Ordner davor (alles bis auf das letzte Stueck), je Ordner einmal, die
+           haeufigsten zuerst. Eine URL direkt unter der Domain hat keinen Ordner. Keine Zahl dahinter:
+           die Antwort ist begrenzt, eine Zaehlung daraus waere irrefuehrend. */
+        var je = {}, reihe = [];
+        raw.forEach(function (it) {
+          if (!it || it.type !== "url" || !it.url) return;
+          var z = zerlegen(it.url);
+          if (!z) return;
+          var teile = z.pfad.split("/").filter(Boolean);
+          if (teile.length < 2) return;
+          var ordner = z.anzeige + "/" + teile.slice(0, -1).join("/");
+          if (!je[ordner]) { je[ordner] = { n: 0, host: z.host }; reihe.push(ordner); }
+          je[ordner].n++;
+        });
+        reihe.sort(function (a, b) { return je[b].n - je[a].n; }).forEach(function (o) {
+          aus.push({ item: { type: "domain", domain: o, favicon: zielFavUrl(je[o].host) }, text: o, art: "path",
+            rechts: "" });
+        });
+      }
+      return aus;
+    }
+    function zeilenKnoepfe() {
+      var el = im(".uev-urltreffer");
+      return el ? [].slice.call(el.querySelectorAll("[data-neu-url], [data-ziel-text]")) : [];
+    }
+    function trefferAktiv(p, i) {
+      var l = zeilenKnoepfe();
+      p.such.aktiv = Math.max(-1, Math.min(l.length - 1, i));
+      l.forEach(function (b, k) { b.classList.toggle("is-active", k === p.such.aktiv); b.setAttribute("aria-selected", String(k === p.such.aktiv)); });
+      var a = l[p.such.aktiv];
+      var inp = im(".uev-zielein");
+      if (inp) { if (a) inp.setAttribute("aria-activedescendant", a.id); else inp.removeAttribute("aria-activedescendant"); }
+      try { if (a) a.scrollIntoView({ block: "nearest" }); } catch (e) {}
+    }
+    /* "Add {ziel}" mit gekuerztem Ziel: Verb und Ziel stehen in eigenen Teilen, damit bei wenig Platz
+       (375 breit, lange URL) das Ziel mit "..." endet und das Verb bleibt -- im Deutschen steht es
+       hinter dem Ziel ("{ziel} hinzufuegen"). */
+    function addSatz(ziel) {
+      var tl = t("Add {ziel}").split("{ziel}");
+      return '<span class="uev-neuziel-teil">' + esc(tl[0] || "") + '</span><span class="uev-neuziel-ziel">' + esc(ziel) + '</span><span class="uev-neuziel-teil">' + esc(tl[1] || "") + '</span>';
+    }
     function trefferZeigen() {
       var p = popup, el = im(".uev-urltreffer");
       if (!el) return;
       var s = p.such, q = String(s.frage || "").trim(), html = "";
       var kl = el.closest(".uev-klapp");
+      var art = leseArt(p.e), inp = im(".uev-zielein");
       /* Beim Zuklappen bleibt der Inhalt stehen, bis der Behaelter zu ist -- sonst faellt die Hoehe
          sofort auf 0 und es gibt nichts zu animieren. */
-      if (!q || leseArt(p.e) !== "url" || eingabeTeile(q).length > 1) { klappen(kl, false); return; }
+      if (!q || q.length < 2 || s.zu || p.e.zielArt === "marke" || eingabeTeile(p.e.eingabe).length !== 1) {
+        klappen(kl, false);
+        if (inp) { inp.setAttribute("aria-expanded", "false"); inp.removeAttribute("aria-activedescendant"); }
+        return;
+      }
       var voll = !zielFrei(p);
-      var treffer = s.treffer || [];
-      function zustand(url) {
-        var z = zielBauen(url, "url");
+      var zeilen = sucheZeilen(p);
+      function zustand(text, kind) {
+        var z = zielBauen(text, kind);
         if (!z.fehler && zielImEvent(p, z)) return { txt: t("Already in this event"), klasse: "is-taken" };
         if (!z.fehler && zielGewaehlt(p, z)) return { txt: t("Added"), klasse: "is-taken" };
         return { txt: "", klasse: voll ? "is-taken" : "" };
       }
-      /* Eine getippte Adresse, die kein Treffer ist, wird als neues Ziel angeboten (Spezifikation
-         60) -- OBEN, weil sie genau das ist, was jemand gerade eingefuegt hat. Dasselbe wie der
-         Knopf "Add" daneben, an der Stelle, an der man nach der Suche hinsieht. */
-      var neuZ = zielBauen(q, "url"), neu = neuZ.fehler || !/\./.test(q) ? "" : neuZ.input;
-      if (neu && !treffer.some(function (it) { return "url|" + urlSchluessel(it.url) === neuZ.key; })) {
-        var zn = zustand(neu);
-        html += '<button type="button" class="up-es-row uev-neuziel' + (zn.klasse ? " " + zn.klasse : "") + '" data-neu-url="' + esc(neu) + '">' +
-          /* Das Favicon der getippten Domain (16.10.); scheitert es, das "+" wie bisher. */
+      /* Ganz oben, was eingegeben ist -- mit dem erkannten Umfang rechts: dasselbe wie "Add" neben
+         dem Feld, an der Stelle, an der man nach dem Tippen hinsieht (wie "Create ..." im Command
+         Menu). Nur fuer eine Eingabe, die ein Ziel dieser Art ergibt. */
+      var tipp = eingabeTeile(p.e.eingabe)[0], neuZ = zielBauen(tipp, art), idn = "uev-tr-" + instanceId + "-";
+      var zeile = 0;
+      if (!neuZ.fehler && (art === "url" || /\./.test(q))) {
+        var zn = zustand(neuZ.input, neuZ.kind);
+        html += '<button type="button" id="' + idn + (zeile++) + '" role="option" aria-label="' + esc(ersetze(t("Add {ziel}"), { ziel: tipp })) + '" class="up-es-row uev-neuziel' + (zn.klasse ? " " + zn.klasse : "") + '" data-neu-url="' + esc(tipp) + '">' +
+          /* Das Favicon der getippten Domain; scheitert es, das "+". */
           zielKachel(neuZ, UC.icon("plus", 2)) +
-          '<span class="up-es-main"><span class="up-es-primary">' + esc(neu) + '</span></span>' +
-          '<span class="up-es-type">' + esc(zn.txt || t("Add as new target")) + '</span></button>';
+          '<span class="up-es-main"><span class="up-es-primary">' + addSatz(tipp) + '</span></span>' +
+          '<span class="up-es-type">' + esc(zn.txt || t(ART_NAME[neuZ.kind])) + '</span></button>';
       }
-      if (s.laedt) {
-        html += [0, 1].map(function () {
-          return '<div class="uev-urlsk"><span class="uev-sk uev-urlsk-av"></span><span class="uev-urlsk-txt"><span class="uev-sk"></span><span class="uev-sk"></span></span></div>';
-        }).join("");
-      } else if (s.fehler) {
+      /* Treffer, die genau das Eingegebene sind, nicht doppelt: die Zeile "Add" ist schon diese. */
+      var vorhanden = zeilen.filter(function (zl) { var z2 = zielBauen(zl.text, zl.art); return neuZ.fehler || z2.fehler || z2.key !== neuZ.key; });
+      if (s.fehler && !vorhanden.length) {
         html += '<p class="up-modal-hinweis uev-urlnote">' + esc(s.fehler) + '</p>';
-      } else if (s.treffer && treffer.length) {
-        html += treffer.map(function (it, i) {
-          var z = zustand(it.url);
-          /* Rechts steht nur, was die Zeile von den anderen unterscheidet ("Already in this event",
-             "Added"). "Previously observed" stand an JEDEM Treffer (04.10.: "natuerlich gibt's die
-             schon, das ist unnoetig") -- die Suche findet ohnehin nur beobachtete URLs. */
-          /* Bringt die Suche kein Favicon mit, holt es die Zeile wie jedes Ziel ueber Google S2
-             (16.10.) -- sonst stand dort nur der Globus aus entityRow. */
+      } else {
+        s.zeilen = vorhanden;
+        html += vorhanden.map(function (zl, zi) {
+          var z = zustand(zl.text, zl.art), it = zl.item;
+          /* Bringt die Suche kein Favicon mit, holt es die Zeile wie jedes Ziel ueber Google S2. */
           var mitBild = it;
-          if (it && !it.favicon && it.url) { mitBild = {}; for (var kk in it) mitBild[kk] = it[kk]; mitBild.favicon = zielFavUrl(it.url); }
-          return UC.entityRow(mitBild, { prefix: "up-es", query: q, index: i, rechts: z.txt || "", typLabel: false, klasse: z.klasse });
+          if (it && !it.favicon && (it.url || it.domain)) { mitBild = {}; for (var kk in it) mitBild[kk] = it[kk]; mitBild.favicon = zielFavUrl(it.url || it.domain); }
+          return UC.entityRow(mitBild, { prefix: "up-es", query: q, index: zi, rechts: z.txt || zl.rechts, typLabel: false, klasse: z.klasse })
+            .replace(/^<button/, '<button id="' + idn + (zeile++) + '" data-ziel-text="' + esc(zl.text) + '" data-ziel-art="' + esc(zl.art) + '"');
         }).join("");
       }
+      /* Ist die Antwort voll (so viele Treffer wie das Limit), gibt es vermutlich mehr: eine ruhige Zeile
+         statt Scrollen oder "Mehr laden". */
+      if (!s.fehler && (s.treffer || []).length >= SUCHE_LIMIT) html += '<p class="uev-urlnote uev-urlmehr">' + esc(t("Keep typing to narrow it down")) + '</p>';
       if (html) el.innerHTML = html;
       klappen(kl, !!html);
+      if (inp) inp.setAttribute("aria-expanded", String(!!html));
+      if (s.aktiv != null && s.aktiv >= 0) trefferAktiv(p, s.aktiv);
     }
     /* DIE VORSCHAU (03.10. angefordert): im letzten Schritt die Karte, wie sie danach in der
        Uebersicht steht -- dieselbe karteHtml, gefuellt aus dem Entwurf, ohne Menue und ohne Klick.
@@ -6453,6 +6703,7 @@
        UC.makeEntitySearch schickt ueber bubble_fn_quick_actions_search, denselben Workflow wie
        Palette und Mira (search_quick_actions_v2 zeigt nur URLs des eigenen Teams, Vertrag 3.6) --
        in Bubble ist dafuer nichts Neues zu bauen. */
+    var SUCHE_LIMIT = 8;
     function sucheBauen(p) {
       p.such = { frage: "", treffer: null, laedt: false, fehler: "" };
       /* Im Klick-Dummy sucht die Datei: dieselben Zeitpunkte wie die Maschine aus core (ab zwei
@@ -6480,10 +6731,16 @@
       }
       if (!UC.makeEntitySearch) return;
       p.maschine = UC.makeEntitySearch({
-        prefix: "uev", limit: 8,
-        filters: function () { return { scope: "url" }; },
-        onLoading: function () { if (popup !== p) return; p.such.laedt = true; p.such.fehler = ""; trefferZeigen(); },
-        onResults: function (items) { if (popup !== p) return; p.such.laedt = false; p.such.treffer = items || []; trefferZeigen(); },
+        prefix: "uev", limit: SUCHE_LIMIT,
+        filters: function () { return { scope: popup === p ? sucheBereich(p.e) : "url" }; },
+        onLoading: function () { if (popup !== p) return; p.such.laedt = true; p.such.fehler = ""; },
+        /* Eine Antwort auf eine andere Frage (weitergetippt waehrend der Anfrage) wird nicht gezeigt;
+           eine fuer den anderen Bereich (Art gewechselt) faengt sucheZeilen am Typ der Treffer ab. */
+        onResults: function (items, meta) {
+          if (popup !== p) return;
+          if (meta && String(meta.query || "") !== String(p.such.frage || "")) return;
+          p.such.laedt = false; p.such.treffer = items || []; trefferZeigen();
+        },
         onError: function () {
           if (popup !== p) return;
           p.such.laedt = false; p.such.treffer = null;
@@ -6493,14 +6750,14 @@
         onIdle: function () { if (popup !== p) return; p.such.laedt = false; p.such.treffer = null; p.such.fehler = ""; trefferZeigen(); }
       });
     }
-    /* Ein Treffer der Suche als URL-Ziel. */
-    function urlNehmen(url) {
+    /* Ein Treffer der Suche (oder die Zeile "Add ...") als Ziel der Art, in der gesucht wurde. */
+    function zielNehmen(text, art) {
       var p = popup;
-      if (!p || !url) return;
-      var z = zielBauen(url, "url");
+      if (!p || !text) return;
+      var z = zielBauen(text, art || "url");
       /* Nur http(s), hoechstens 2048 Zeichen (13.10., wie der Server: impact_event_invalid_url) --
          die Meldung am Feld, statt erst beim Anlegen. */
-      if (z.fehler || !urlOk(z.input)) { feldFehler("ziele", fehlerText("impact_event_invalid_url")); return; }
+      if (z.fehler || (z.kind === "url" && !urlOk(z.input))) { feldFehler("ziele", z.fehler === "pfad" ? t("Please add a path, e.g. example.com/blog.") : fehlerText("impact_event_invalid_url")); return; }
       if (zielGewaehlt(p, z) || zielImEvent(p, z)) return;
       if (!zielFrei(p)) { feldFehler("ziele", zuVielText(p)); return; }
       p.e.ziele.push(z);
@@ -6508,12 +6765,42 @@
       p.e.eingabe = ""; p.e.artVonHand = false;
       var inp = im(".uev-zielein");
       if (inp) { inp.value = ""; feldHoehe(inp); }
-      p.such.frage = ""; p.such.treffer = null; p.such.laedt = false; p.such.fehler = "";
+      p.such.frage = ""; p.such.treffer = null; p.such.laedt = false; p.such.fehler = ""; p.such.fuer = ""; p.such.aktiv = -1;
       if (p.maschine) p.maschine.abbrechen();
       try { if (inp) inp.focus(); } catch (e) {}
       feldFehler("ziele", "");
       p.api.fehler("");
       zieleZeigen(p);
+    }
+    function urlNehmen(url) { zielNehmen(url, "url"); }
+    /* Eine Eingabe von aussen ins Feld legen und so behandeln, als waere sie getippt (Art, Schalter,
+       Suche, Vorschau folgen ihr). */
+    function eingabeSetzen(p, text) {
+      var inp = im(".uev-zielein");
+      if (!p || !inp) return;
+      p.e.unterVonHand = false;
+      if (!p.e.unterdomains) unterdomainsUmschalten(p);
+      inp.value = text;
+      inp.dispatchEvent(new Event("input", { bubbles: true }));
+      try { inp.focus(); } catch (e) {}
+    }
+    /* DIE EIGENE DOMAIN ALS EIN KLICK (17.10.): bei leerem Feld steht "Your domain: <domain>" da,
+       aus den Marken der Seite (Rolle own, Feld domain) -- ohne Abruf beim Oeffnen. Ein Klick legt
+       sie als Domain mit allen Subdomains an (oder nur als Host, wenn der Schalter aus ist). */
+    function eigeneDomain() {
+      var l = UC.getBrands ? UC.getBrands() : [];
+      for (var i = 0; i < l.length; i++) {
+        var b = l[i];
+        if (!b || b.role !== "own" || !b.domain) continue;
+        var z = zerlegen(String(b.domain));
+        if (z && hostOk(z.host)) return z.anzeige;
+      }
+      return "";
+    }
+    function eigeneDomainNehmen(p, domain) {
+      if (!p || !domain) return;
+      if (p.e.zielArt !== "host") artWaehlen(p, "host", false);
+      zielNehmen(domain, p.e.unterdomains ? "host_all" : "host");
     }
 
     /* ---- Senden und Antworten -------------------------------------------------------------- */
@@ -6815,6 +7102,8 @@
       if (p.sm && p.sm.lb) { try { p.sm.lb.stop(); } catch (e) {} }
       if (p.sm) clearTimeout(p.sm.sperreUhr);
       if (p.maschine) p.maschine.abbrechen();
+      if (p.topicAbo) { try { p.topicAbo(); } catch (e1) {} p.topicAbo = null; }
+      if (p.escAbo) { window.removeEventListener("keydown", p.escAbo, true); p.escAbo = null; }
       popup = null;
       /* Die Anleitung steht noch in einem Schritt des Popups (nicht auf dem Weg ins Detail):
          mit dem Popup ist sie zu Ende. */
@@ -6828,12 +7117,35 @@
       el.addEventListener("input", popupEingabe);
       el.addEventListener("keydown", popupTaste);
       el.addEventListener("focusout", popupFokusWeg);
+      if (UC.onTopics && p.art === "anlegen") p.topicAbo = UC.onTopics(function () { topicsNeu(p); }, el);
+      /* Escape im Feld schliesst zuerst das Dropdown der Treffer, erst das zweite das Popup. Der
+         Zuhoerer des Popups (core, Einfangphase am Dokument) laeuft vor jedem am Element, darum steht
+         dieser am Fenster, noch davor. */
+      p.escAbo = function (ev) {
+        if (ev.key !== "Escape" || popup !== p || p.verwerfenFrage) return;
+        var kl = im(".uev-treffer-klapp"), fa = document.activeElement;
+        if (kl && kl.classList.contains("is-offen") && fa && fa.closest && fa.closest(".uev-feldspalte")) {
+          ev.stopPropagation(); ev.preventDefault();
+          p.such.zu = true; trefferZeigen();
+        }
+      };
+      window.addEventListener("keydown", p.escAbo, true);
+      /* Mit der Maus auf eine Trefferzeile: der Fokus bleibt im Feld (sonst schlosse das Verlassen
+         des Feldes das Dropdown vor dem Klick). */
+      el.addEventListener("mousedown", function (ev) { if (ev.target.closest && ev.target.closest(".uev-urltreffer .up-es-row")) ev.preventDefault(); });
+      el.addEventListener("focusin", function (ev) {
+        var x = ev.target;
+        if (popup === p && x && x.matches && x.matches(".uev-zielein") && p.such.zu && String(p.e.eingabe || "").trim()) { p.such.zu = false; trefferZeigen(); }
+      });
       knoepfeSync();
     }
     /* Das Namensfeld wird mit Inhalt verlassen: von hier an zeigt die Anleitung auf den Typ
        (anlW1Feld). Nur im Anlegen; einmal gesetzt, bleibt es -- ein leerer Name geht ohnehin vor. */
     function popupFokusWeg(ev) {
       var p = popup, x = ev.target;
+      if (p && x && x.matches && x.matches(".uev-zielein") && !(ev.relatedTarget && ev.relatedTarget.closest && ev.relatedTarget.closest(".uev-feldspalte"))) {
+        p.such.zu = true; trefferZeigen();
+      }
       if (!p || p.art !== "anlegen" || p.anlNameFertig || !x || !x.matches || !x.matches('[data-feld="name"]') || !p.e.name.trim()) return;
       p.anlNameFertig = true;
       anlW1Folgen();
@@ -6855,7 +7167,7 @@
                icon: iconAusDb(ev.icon), farbe: farbe(ev) || null, cover: coverVon(ev) ? ev.cover : null, coverEntschieden: true, offen: null,
                modus: ev.scope_mode === "all" ? "all" : "topics", topics: tps, tagModus: String(ev.tag_mode || "or").toLowerCase() === "and" ? "and" : "or",
                zielArt: zl.length ? (kinds.every(function (k) { return k === kinds[0]; }) ? kinds[0] : "url") : "marke",
-               unterdomains: zl.some(function (z) { return z.kind === "host_all"; }), ziele: zl, eingabe: "", artVonHand: true };
+               unterdomains: zl.some(function (z) { return z.kind === "host_all"; }) || !zl.some(function (z) { return z.kind === "host"; }), ziele: zl, eingabe: "", artVonHand: true };
     }
     function popupAnlegen(planEid) {
       if (popup) return;
@@ -6866,7 +7178,7 @@
         return;
       }
       var e = planEv ? planVorlage(planEv) : { name: "", datum: heuteIso(), ende: null, bereich: false, wahlEnde: false, monat: null, typ: "", text: "", icon: null, farbe: null, cover: null, offen: null,
-                modus: "topics", topics: [], tagModus: "or", zielArt: null, unterdomains: false, ziele: [], eingabe: "", artVonHand: false };
+                modus: "topics", topics: [], tagModus: "or", zielArt: null, unterdomains: true, ziele: [], eingabe: "", artVonHand: false };
       var api = UC.makeModal({
         titel: planEv ? "Edit event" : "Create event", unter: schrittText(1), breit: true, isDark: isDark,
         inhaltHtml: '<div class="uev-schritt" data-schritt="1">' + detailFelder(e, true) + '</div>' +
@@ -6966,7 +7278,7 @@
       var d = dieDetail();
       if (!d) return;
       var regeln = zieleDa();
-      var e = { zielArt: "url", unterdomains: false, ziele: [], eingabe: typeof vorgabe === "string" ? vorgabe : "", artVonHand: false };
+      var e = { zielArt: "url", unterdomains: true, ziele: [], eingabe: typeof vorgabe === "string" ? vorgabe : "", artVonHand: false };
       var p = { art: "ziel", e: e, eventId: String(d.id), knopf: "hinzu", pops: {} };
       var api = UC.makeModal({
         titel: regeln ? "Add to tracking" : "Add URL", breit: true, isDark: isDark,
@@ -7128,9 +7440,23 @@
         return;
       }
       var nz = x.closest("[data-neu-url]");
-      if (nz) { if (!nz.classList.contains("is-taken")) urlNehmen(nz.getAttribute("data-neu-url")); return; }
-      var hit = x.closest(".uev-urltreffer [data-esi]");
-      if (hit) { var it = (p.such.treffer || [])[parseInt(hit.getAttribute("data-esi"), 10)]; if (it) urlNehmen(it.url); return; }
+      /* Die Zeile "Add ...": dasselbe wie "Add" neben dem Feld (die Eingabe als Ziel der gewaehlten Art). */
+      /* Die Zeile gehoert zu dem, was im Feld steht (eine Zeile, die einen Takt alt ist, tut nichts). */
+      if (nz) { if (!nz.classList.contains("is-taken") && nz.getAttribute("data-neu-url") === eingabeTeile(p.e.eingabe)[0] && eingabeUebernehmen(p)) { var fz = im(".uev-zielein"); try { if (fz) fz.focus(); } catch (e0) {} } return; }
+      var hit = x.closest(".uev-urltreffer [data-ziel-text]");
+      if (hit) {
+        var zl = (p.such.zeilen || [])[parseInt(hit.getAttribute("data-esi"), 10)];
+        if (zl && !hit.classList.contains("is-taken")) zielNehmen(zl.text, zl.art);
+        return;
+      }
+      var wt = x.closest("[data-weiten]");
+      if (wt) { umfangWeiten(p, wt.getAttribute("data-weiten")); return; }
+      var vh = x.closest("[data-vz-hosts]");
+      if (vh) { p.vzHostsAlle = !p.vzHostsAlle; vzZeigen(p); return; }
+      var hd = x.closest("[data-haupt]");
+      if (hd) { eingabeSetzen(p, hd.getAttribute("data-haupt")); return; }
+      var ed = x.closest("[data-eigene-domain]");
+      if (ed) { eigeneDomainNehmen(p, ed.getAttribute("data-eigene-domain")); return; }
       /* ---- Ziele (15.10.) ---- */
       var art = x.closest("[data-art]");
       if (art) { artWaehlen(p, art.getAttribute("data-art"), true); return; }
@@ -7180,6 +7506,7 @@
       if (sw) { sw.classList.toggle("is-on", p.e.unterdomains); sw.setAttribute("aria-checked", String(p.e.unterdomains)); }
       var bsp = im('[data-art="host"] .uev-art-bsp');
       if (bsp) bsp.textContent = p.e.unterdomains ? "*.example.com/*" : "blog.example.com/*";
+      unterSatzNeu(p);
       zieleZeigen(p);
     }
     function popupEingabe(ev) {
@@ -7203,7 +7530,13 @@
         p.e.eingabe = x.value;
         /* Die passende Art vorschlagen, solange niemand selbst eine gewaehlt hat (15.10.). Leer
            gibt die Wahl wieder frei. */
-        if (!String(x.value).trim()) { p.e.artVonHand = false; p.e.unterVonHand = false; }
+        if (!String(x.value).trim()) {
+          /* Ein leeres Feld stellt auch den Standard der Domain wieder her (alle Subdomains), wenn ihn
+             nur ein Host unter einer Hauptdomain ausgeschaltet hatte -- nicht, wenn jemand den
+             Schalter selbst bedient hat. */
+          if (!p.e.unterVonHand && !p.e.unterdomains) unterdomainsUmschalten(p);
+          p.e.artVonHand = false; p.e.unterVonHand = false;
+        }
         var vs = artVorschlag(x.value);
         if (!p.e.artVonHand && vs && vs !== "sitemap") {
           var k = vs === "host_all" ? "host" : vs;
@@ -7214,8 +7547,7 @@
             if (k !== p.e.zielArt) artWaehlen(p, k, false);
           }
         }
-        p.such.frage = leseArt(p.e) === "url" && eingabeTeile(x.value).length === 1 ? x.value : "";
-        if (p.maschine) p.maschine.tippen(p.such.frage);
+        sucheStarten(p);
         schreibweiseZeigen(p);
         trefferZeigen();
         vzAnfordern(p);
@@ -7233,6 +7565,23 @@
       var p = popup, x = ev.target;
       if (p && ev.key === " " && x && x.matches && x.matches(".uev-topicitem")) { ev.preventDefault(); topicUmschalten(x.getAttribute("data-topic-id")); return; }
       if (p && x && x.matches && zieleTaste(p, ev, x)) return;
+      /* Die Treffer am Feld: Pfeile gehen durch die Zeilen (die erste ist "Add ..."), Enter nimmt die
+         aktive, ohne aktive die Eingabe. */
+      if (p && x && x.matches && x.matches(".uev-zielein") && (ev.key === "ArrowDown" || ev.key === "ArrowUp")) {
+        var zk = zeilenKnoepfe(), offen = !!zk.length && !!im(".uev-treffer-klapp.is-offen");
+        if (offen) {
+          ev.preventDefault();
+          var nx = p.such.aktiv + (ev.key === "ArrowDown" ? 1 : -1);
+          trefferAktiv(p, ev.key === "ArrowDown" ? Math.min(nx, zk.length - 1) : Math.max(nx, -1));
+          return;
+        }
+        if (ev.key === "ArrowDown" && String(p.e.eingabe || "").trim()) { p.such.zu = false; trefferZeigen(); }
+        return;
+      }
+      if (p && x && x.matches && x.matches(".uev-zielein") && ev.key === "Enter" && !ev.shiftKey && p.such.aktiv >= 0 && im(".uev-treffer-klapp.is-offen")) {
+        var ak = zeilenKnoepfe()[p.such.aktiv];
+        if (ak && !ak.classList.contains("is-taken")) { ev.preventDefault(); ak.click(); return; }
+      }
       if (!p || ev.key !== "Enter" || !x || !x.matches) return;
       if (x.matches(".uev-typeigen")) { ev.preventDefault(); typEigenNehmen(); return; }
       if (x.matches(".uev-typitem")) { ev.preventDefault(); x.click(); return; }

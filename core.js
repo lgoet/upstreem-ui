@@ -18,7 +18,7 @@
      Genau das Bild: die Karte wechselt, das Chart darin nicht. Dasselbe gilt fuer den
      Marken-Store, die Toast-Bruecke und jeden Beobachter, den core installiert.
      Ab hier: ist schon eine Fassung da, die nicht aelter ist, tut diese hier gar nichts. */
-  var BUILD = 20261175;
+  var BUILD = 20261177;
   try {
     var schonDa = window.UpstreemCore;
     if (schonDa && typeof schonDa.BUILD === "number" && schonDa.BUILD >= BUILD) return;
@@ -6706,7 +6706,10 @@
      A number is a bar width in px. `cls` is appended to the cell — the tables need it because
      their column show/hide toggles target per-column classes, and the skeleton has to hide the
      same columns as the real rows. `logo` prepends the square placeholder, `logoStyle` lets the
-     brand-stack column make it round instead. */
+     brand-stack column make it round instead.
+     `zahl: true` (17.10.) kennzeichnet eine Zahlenspalte: die Zelle bekommt .up-tsk-zahl (der Balken steht
+     rechts, wo die Zahl spaeter steht) und zahlSpaltenKopf liest daran, dass auch der KOPF dieser Spalte
+     schon im Skelett rechts steht -- bis dahin sprang er erst mit den ersten Zeilen von links nach rechts. */
   function skeletonRows(spec){
     spec = spec || {};
     var count = spec.count || 7;
@@ -6726,7 +6729,7 @@
           ? '<span class="up-tsk-logo"' + (col.logoStyle ? ' style="' + col.logoStyle + '"' : "") + '></span>'
           : "";
         var bar = w ? '<span class="up-tsk-bar" style="width:' + w + 'px"></span>' : "";
-        cells += '<div class="' + cellClass + (isObj && col.cls ? " " + col.cls : "") + '">' + logo + bar + '</div>';
+        cells += '<div class="' + cellClass + (isObj && col.cls ? " " + col.cls : "") + (isObj && col.zahl ? " up-tsk-zahl" : "") + '">' + logo + bar + '</div>';
       }
       out += '<div class="' + rowClass + ' up-tsk">' + cells + '</div>';
     }
@@ -8486,7 +8489,17 @@
     var zl = cont.querySelectorAll(ZAHL_ZEILE_SEL), gelesen = 0;
     for (var z = 0; z < zl.length && offen && gelesen < ZAHL_ZEILEN_MAX; z++){
       var r = zl[z];
-      if (r === kopf || r.children.length !== n || r.classList.contains("up-sumrow") || r.classList.contains("up-tsk")) continue;
+      if (r === kopf || r.children.length !== n || r.classList.contains("up-sumrow")) continue;
+      /* Eine Skelettzeile kennt ihre Zahlenspalten aus dem Aufruf (skeletonRows, zahl: true): der Kopf steht
+         damit schon beim Laden rechts. Gelesen wird nur das Flag, keine berechnete Fassung. */
+      if (r.classList.contains("up-tsk")){
+        for (var s = 0; s < n; s++){
+          if (gesetzt[s] || !r.children[s].classList.contains("up-tsk-zahl")) continue;
+          kopf.children[s].classList.add("up-th-zahl");
+          gesetzt[s] = true; offen--;
+        }
+        continue;
+      }
       gelesen++;
       for (var k = 0; k < n; k++){
         if (gesetzt[k]) continue;
@@ -16816,7 +16829,7 @@
         : a.optionen();
       var sel = a.auswahl();
       var liste = w.querySelector(".up-ff-list");
-      var sig = opts.map(function(o){ return o.key + "|" + o.name; }).join(",");
+      var sig = opts.map(function(o){ return o.key + "|" + o.name + (o.chipHtml ? "|" + o.chipHtml : ""); }).join(",");
       if (liste.getAttribute("data-sig") !== sig){
         liste.setAttribute("data-sig", sig);
         liste.innerHTML = opts.map(function(o){
@@ -16824,7 +16837,10 @@
               (a.suche ? ' data-brand="' + esc(o.key) + '" data-name="' + esc(String(o.name).toLowerCase()) + '"' : "") + '>' +
             '<span class="up-filter-check">' + CHECK_SVG + '</span>' +
             (a.suche ? '<span class="up-ment-logo">' + (o.logo ? '<img src="' + esc(o.logo) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/>' : "") + '</span>' : "") +
-            '<span class="up-ff-name' + (a.suche ? " up-ment-name" : "") + '">' + esc(o.name) + '</span>' +
+            /* o.chipHtml (17.10.): ein Typ steht im Dropdown als derselbe Chip wie in der Tabelle, nicht als
+               Text ("bitte die Eintraege so stylen, wie die Type Chips in den Tabellen"). Der Name bleibt
+               der Text darin, die Zeile der Leiste liest ihn weiter aus .up-ff-name. */
+            '<span class="up-ff-name' + (a.suche ? " up-ment-name" : "") + (o.chipHtml ? " up-ff-chip" : "") + '">' + (o.chipHtml || esc(o.name)) + '</span>' +
           '</div>';
         }).join("") + (a.suche ? '<div class="up-ment-noresult" style="display:none">' + esc(tt("No matches")) + '</div>' : "");
         if (a.suche) mentFilter(w, "");
@@ -26713,8 +26729,8 @@
          Zahlen spaeter stehen. */
       return skeletonRows({ count: 6, rowClass: rowCls, cellClass: "up-td",
                             cols: [{ w: 120, jitter: 40, cls: "up-var-name" },
-                                   { w: 44,  cls: "up-var-sov" },
-                                   { w: 28,  cls: "up-var-cnt" }] });
+                                   { w: 44,  cls: "up-var-sov", zahl: true },
+                                   { w: 28,  cls: "up-var-cnt", zahl: true }] });
     }
     if (!rows.length){
       /* Der Leerzustand der Charts (15.10., tabelleLeerHtml): die Variantentabelle steht an der

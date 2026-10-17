@@ -314,8 +314,8 @@
     function skeletonRows(n){
       return UC.skeletonRows({ count: n, cols: [
         { w:110, jitter:30, logo:true, cls:"up-td-domain" },
-        { w:70,  cls:"up-td-share" },
-        { w:56,  cls:"up-td-used" },
+        { w:70,  cls:"up-td-share", zahl:true },
+        { w:56,  cls:"up-td-used", zahl:true },
         { w:82,  cls:"up-td-type" },
         { w:88,  cls:"up-td-lastseen" },
         { w:56,  cls:"udt-td-actions" }
@@ -330,6 +330,11 @@
        border-box) steht in der CSS. Eine Quelle fuer jeden Typ-Chip der App. */
     function chipStil(st){
       return "color:" + st.ink + ";background:" + st.bg + ";border-color:" + st.bd;
+    }
+    /* Derselbe Chip wie im Dropdown der Tabelle (populateFilter) und in der Zelle, fuer die Typ-Filter der Leiste. */
+    function filterChipHtml(k){
+      return '<span class="up-filter-tag" style="' + chipStil(UC.typeStyle("citation", k, isDark)) + '">' +
+               '<span class="up-filter-tag-lbl">' + esc(UC.typLabel(k, "citation")) + '</span></span>';
     }
     function tagHtml(raw){
       if (!raw) return "";
@@ -1251,7 +1256,7 @@
       },
       dtypes: {
         label: function(){ return ffT("Citation type"); }, chip: function(){ return ffT("Citation type"); }, leer: "All",
-        optionen: function(){ return ALL_CITATION_TYPES.map(function(k){ return { key: k, name: UC.typLabel(k, "citation") }; }); },
+        optionen: function(){ return ALL_CITATION_TYPES.map(function(k){ return { key: k, name: UC.typLabel(k, "citation"), chipHtml: filterChipHtml(k) }; }); },
         auswahl: function(){ return gewaehlt(state.appliedSel); },
         setzen: function(l){ state.filterSel = satzVon(l); submitFilter(); }
       }
