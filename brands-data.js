@@ -93,14 +93,14 @@
   }
   /* Die Form von renderBrandsOverview: series/companies aus visibility_v1, table aus overview_v1.
      Mehrere Seiten der Tabelle werden VOR der Umformung zusammengelegt. */
-  function zuTracked(vis, seiten) {
+  function zuTracked(vis, seiten, o) {
     if (!isArr(seiten) || !seiten.length || !istObjekt(seiten[0])) return null;
     var alle = { meta: meta(seiten[0]), rows: [] };
     for (var i = 0; i < seiten.length; i++) {
       if (!istObjekt(seiten[i]) || !isArr(seiten[i].rows)) return null;
       alle.rows = alle.rows.concat(seiten[i].rows);
     }
-    return DD().zuVisibility(vis, alle);
+    return DD().zuVisibility(vis, alle, o);
   }
   /* Wie viele Seiten die Tabelle braucht -- aus total_count der ersten. */
   function weitereSeiten(erste) {

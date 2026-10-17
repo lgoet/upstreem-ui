@@ -465,7 +465,7 @@
               var alleOk = seiten.every(function (x) { return x.ok; });
               return function () {
                 var daten = seiten.map(function (x) { return x.daten; });
-                var p = alleOk && e[0].ok ? D.zuTracked(e[0].daten, daten) : null;
+                var p = alleOk && e[0].ok ? D.zuTracked(e[0].daten, daten, { platzInMenge: !!state.firmen }) : null;
                 if (!p) {
                   try { setter("renderBrandsOverview")({ instanceId: ids.ubo, __parseError: true }); } catch (err) {}
                 } else {
