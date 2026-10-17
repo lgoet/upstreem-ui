@@ -722,7 +722,7 @@
             return function () {
               /* Nur mit eigener Auswahl auf die Marken im Chart gekuerzt (dieselbe Menge wie
                  p_companies); ohne Auswahl gilt die Antwort, wie sie kommt. */
-              var p = e[0].ok && e[1].ok ? D.zuVisibility(e[0].daten, e[1].daten, { nurImChart: !!manuell }) : null;
+              var p = e[0].ok && e[1].ok ? D.zuVisibility(e[0].daten, e[1].daten, { nurImChart: !!manuell, platzInMenge: !!manuell }) : null;
               if (e[1].ok) eigeneMerken(e[1].daten);
               if (!p) {
                 try { setter("renderVisibilityChart")({ instanceId: ids.vot, __parseError: fehlerArtVon(e) }); } catch (err) {}

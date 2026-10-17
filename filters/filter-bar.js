@@ -1347,8 +1347,8 @@
           var akt = gespGleich(x.werte);
           return '<div class="ufb-gesp-zeile' + (akt ? " is-aktiv" : "") + '">' +
             '<button class="up-optrow ufb-gesp-laden" type="button" data-gesp-laden="' + i + '">' +
-              '<span class="ufb-gesp-ic">' + (akt ? UC.icon("check", 2.4) : "") + '</span>' +
-              '<span class="ufb-gesp-nm">' + esc(x.name) + '</span></button>' +
+              '<span class="ufb-gesp-nm">' + esc(x.name) + '</span>' +
+              '<span class="up-optrow-check" aria-hidden="true">' + UC.icon("check", 2.2) + '</span></button>' +
             '<button class="ufb-chip-x ufb-gesp-weg" type="button" data-gesp-weg="' + i + '" aria-label="' +
               esc(tr("Delete {name}").split("{name}").join(x.name)) + '">' + UC.icon("x", 2.6) + '</button>' +
           '</div>';

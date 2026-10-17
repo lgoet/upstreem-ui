@@ -4893,6 +4893,9 @@
       }
       var S = state.summe || {};
       var summeLaedt = !!state.summeLaedt;
+      /* Je Feld (18.10.): wer eine Berechnung wechselt, laedt nur DIESE Zelle; die Werte der anderen stehen
+         weiter im Speicher der Seite und kommen mit der Meldung mit (summeSetzen, Form { daten, ladend, fehlerFelder }). */
+      var ladend = state.summeLadend || {}, fehlerFelder = state.summeFehlerFelder || {};
       var n;
       if (g){
         laedt = !!state.groupsLoading || !state.groupsHasData;
@@ -4927,10 +4930,10 @@
             else if (g) v = m.gruppe ? g[m.gruppe] : null;
             else if (state.leseFehler) v = null;
             /* Eigenes Skelett, solange die Summe unterwegs ist -- die Zeilen warten nicht darauf. */
-            else if (summeLaedt && !Object.prototype.hasOwnProperty.call(S, m.feld)) z.laedt = true;
+            else if ((summeLaedt && !Object.prototype.hasOwnProperty.call(S, m.feld)) || ladend[m.feld] || (m.anteil && ladend[m.anteil])) z.laedt = true;
             /* Die Abfrage ist gescheitert (429, Zeitueberschreitung, 5xx, unlesbar): eigener Zustand,
                nicht "–" (= kein Wert). Das Menue der Zelle bietet "Try again" an. */
-            else if (state.summeFehler) fehler = true;
+            else if ((state.summeFehler && !Object.prototype.hasOwnProperty.call(S, m.feld)) || fehlerFelder[m.feld] || (m.anteil && fehlerFelder[m.anteil])) fehler = true;
             else {
               v = S[m.feld];
               if (m.name) v = m.name(v);
@@ -4959,6 +4962,18 @@
        { daten: {...} } -- da; { fehler: true } -- gescheitert, die Zellen zeigen "–". */
     function summeSetzen(d){
       d = d || {};
+      /* Die Form je Feld (18.10.): alles, was fuer den Filterstand da ist, dazu welche Felder noch laden oder
+         gescheitert sind. Die anderen Zellen behalten ihren Wert, statt mit der neuen Wahl mitzuladen. */
+      if (Array.isArray(d.ladend) || Array.isArray(d.fehlerFelder)){
+        state.summe = (d.daten && typeof d.daten === "object") ? d.daten : {};
+        state.summeLadend = {}; state.summeFehlerFelder = {};
+        (d.ladend || []).forEach(function(f){ state.summeLadend[f] = true; });
+        (d.fehlerFelder || []).forEach(function(f){ state.summeFehlerFelder[f] = true; });
+        state.summeLaedt = false; state.summeFehler = false;
+        renderSumme();
+        return;
+      }
+      state.summeLadend = {}; state.summeFehlerFelder = {};
       if (d.laedt){ state.summeLaedt = true; state.summeFehler = false; state.summe = {}; }
       else if (d.daten && typeof d.daten === "object"){ state.summeLaedt = false; state.summeFehler = false; state.summe = d.daten; }
       else { state.summeLaedt = false; state.summeFehler = !!d.fehler; state.summe = {}; }
