@@ -569,6 +569,45 @@
       ffSync();
     }
 
+    /* TOPICS, ADVERTISER, DIE ES NICHT MEHR GIBT (17.10., 22023): core (UC.filterBereinigen) liest die
+       Ids aus der Antwort, hier steht nur, wo die Seite sie haelt: p_tag_ids im Topic-Filter und in
+       state.filter, p_advertisers in state.adFilter (die Namen im Wortlaut der Datenbank). Aufgerufen
+       aus der Fehlerantwort des direkten Wegs, VOR dem Fehlerzustand. Geht die Bereinigung auf, gilt die
+       laufende Anfrage als erledigt und alle uebrigen mit dem alten Filter fallen weg (ihre Antwort
+       gehoerte zu einem Filter, den es nicht mehr gibt); danach laedt filterGeaendert einmal neu. Geht sie
+       nicht auf (der Wert steht gar nicht im Seitenfilter, oder die Grenze ist erreicht), bleibt der
+       Fehlerzustand mit dem Knopf "Clear filters". */
+    function filterRaeumen(erg) {
+      if (!UC.filterBereinigen) return false;
+      return UC.filterBereinigen(erg, {
+        schluessel: "uad|" + instanceId, wurzel: root,
+        topics: {
+          lesen: function () { return isArr(state.filter.topics) ? state.filter.topics : []; },
+          setzen: function (rest) {
+            filterSetzen("topics", rest.length ? rest : null);
+            var tp = root.querySelector(".utf-root"), c = tp && tp.__utfCtrl;
+            if (c && typeof c.setSelected === "function") { try { c.setSelected(rest.join(",")); } catch (e) {} }
+          }
+        },
+        felder: {
+          p_advertisers: {
+            lesen: function () { return isArr(state.adFilter.advertisers) ? state.adFilter.advertisers : []; },
+            setzen: function (rest) { state.adFilter.advertisers = rest.slice(); ffSync(); }
+          }
+        },
+        danach: function () {
+          KANAELE.forEach(function (k) {
+            var w = unterwegs[k];
+            if (!w) return;
+            clearTimeout(w.uhr);
+            if (w.ab) { try { w.ab.abort(); } catch (e) {} }
+            unterwegs[k] = null;
+          });
+          filterGeaendert();
+        }
+      });
+    }
+
     /* ---- Advertisers und Ad Format in der Filterzeile (15.10.) ---------------------------------
        Bauart wie responses-table.js ("die Filter der einen Leiste"): core baut je Filter die Wurzel,
        die filter-bar einzieht (UC.makeLeistenFilter), der ZUSTAND bleibt in state.adFilter --
@@ -862,6 +901,7 @@
           return;
         }
         if (erg && erg.ok) antwort(a.kanal, erg.daten, "", u);
+        else if (filterRaeumen(erg)) return;
         else antwort(a.kanal, null, rpcFehlerCode(erg), u);
       }, function () {
         if (unterwegs[a.kanal] === u) antwort(a.kanal, null, "network", u);
@@ -1499,6 +1539,8 @@
       var code = fehlerVon(a);
       var titel = was === "detail" ? "This advertiser could not be loaded" : "Ads data could not be loaded";
       var text = code === "leer" || code === "x" ? "The data could not be read. Please reload the page." : fehlerText(code);
+      /* Ein Filter, den es nicht mehr gibt: erneut laden aendert nichts, also der Knopf, der ihn raeumt. */
+      if (code === "filter_gone") return UC.leerHtml({ icon: "info", titel: titel, text: text, knopf: "Clear filters", knopfAttr: "data-uad-filterweg" });
       return UC.leerHtml({ icon: "info", titel: titel, text: text, knopf: "Try again", knopfAttr: 'data-uad-nochmal="' + esc(a.kanal) + '"' });
     }
     function kpiHtml(o) {
@@ -2490,6 +2532,15 @@
       if (z.closest(".uad-filterzeile, .up-ph-nav, .up-ph-top")) return;
       var nm = z.closest("[data-uad-nochmal]");
       if (nm) { nochmal(nm.getAttribute("data-uad-nochmal")); return; }
+      if (z.closest("[data-uad-filterweg]")) {
+        /* Wie "Clear All" der Leiste (raeumt dabei auch die Suchfelder der Tabellen). Der Fehlerzustand haengt
+           an der alten Signatur und wird ausdruecklich verworfen, falls die neue gleich bleibt (Wert stand
+           nur im Speicher): sonst bliebe der Kasten ohne neue Anfrage stehen. */
+        alleFilterZuruecksetzen();
+        Object.keys(state.fehler).forEach(function (k) { if (state.fehler[k] === "filter_gone") delete state.fehler[k]; });
+        state.advertisers.page = 1; state.library.page = 1; state.prompts.page = 1; state.offen = {};
+        persist(); geruest = null; zeichnen(); bedarf(); return;
+      }
       if (z.closest("[data-uad-alleweg], [data-clearall]")) {
         var inp = elMain.querySelector(".uad-suche .up-search-input"); if (inp) inp.value = "";
         alleFilterZuruecksetzen(); geruest = null; zeichnen(); bedarf(); return;

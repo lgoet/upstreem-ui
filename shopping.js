@@ -656,6 +656,48 @@
       ffSync();
     }
 
+    /* TOPICS UND MARKE, DIE ES NICHT MEHR GIBT (17.10., 22023): core (UC.filterBereinigen) liest die Ids
+       aus der Antwort, hier steht nur, wo die Seite sie haelt: p_tag_ids im Topic-Filter und in
+       state.filter, p_company_id als Marke der Produkttabelle (state.products.marke, Chip in der
+       Filterzeile). Aufgerufen aus der Fehlerantwort des direkten Wegs VOR dem Fehlerzustand. Geht sie auf,
+       fallen alle uebrigen Anfragen mit dem alten Filter weg, danach laedt filterGeaendert einmal neu.
+       Geht sie nicht auf (Wert nicht im Seitenfilter, Grenze erreicht), bleibt der Fehlerzustand mit
+       dem Knopf "Clear filters". */
+    function filterRaeumen(erg) {
+      if (!UC.filterBereinigen) return false;
+      return UC.filterBereinigen(erg, {
+        schluessel: "ush|" + instanceId, wurzel: root,
+        topics: {
+          lesen: function () { return isArr(state.filter.topics) ? state.filter.topics : []; },
+          setzen: function (rest) {
+            filterSetzen("topics", rest.length ? rest : null);
+            var tp = root.querySelector(".utf-root"), c = tp && tp.__utfCtrl;
+            if (c && typeof c.setSelected === "function") { try { c.setSelected(rest.join(",")); } catch (e) {} }
+          }
+        },
+        felder: {
+          p_company_id: {
+            lesen: function () { var m = state.products.marke; return m && m.id ? [str(m.id)] : []; },
+            setzen: function (rest) {
+              state.products.marke = null;
+              if (pager.products) pager.products.st.page = 1;
+              ffSync();
+            }
+          }
+        },
+        danach: function () {
+          Object.keys(unterwegs).forEach(function (k) {
+            var w = unterwegs[k];
+            if (!w) return;
+            clearTimeout(w.uhr);
+            if (w.ctrl) { try { w.ctrl.abort(); } catch (e) {} }
+            unterwegs[k] = null;
+          });
+          filterGeaendert();
+        }
+      });
+    }
+
     /* ---- Die Filter der Produkttabelle in der Filterzeile (15.10.) -----------------------------
        Bauart wie responses-table.js ("die Filter der einen Leiste"): core baut je Filter die Wurzel,
        die filter-bar einzieht (UC.makeLeistenFilter), der ZUSTAND bleibt hier in state.products --
@@ -943,6 +985,7 @@
            Weg wie den Setter-Text -- eine Liste mit einem Element wird ihr erstes, alles andere als
            ein Objekt ist unlesbar ("x"). */
         if (erg.ok) ablegen(a.kanal, a.sig, objekt(erg.daten), "x");
+        else if (filterRaeumen(erg)) return;
         else ablegen(a.kanal, a.sig, null, rpcFehlerCode(erg));
       });
     }
@@ -1727,6 +1770,8 @@
       var code = fehlerVon(a);
       var titel = was === "detail" ? "This product could not be loaded" : "Shopping data could not be loaded";
       var text = code === "leer" || code === "x" ? "The data could not be read. Please reload the page." : fehlerText(code);
+      /* Ein Filter, den es nicht mehr gibt: erneut laden aendert nichts, also der Knopf, der ihn raeumt. */
+      if (code === "filter_gone") return UC.leerHtml({ icon: "info", titel: titel, text: text, knopf: "Clear filters", knopfAttr: "data-ush-filterweg" });
       return UC.leerHtml({ icon: "info", titel: titel, text: text, knopf: "Try again", knopfAttr: 'data-ush-nochmal="' + esc(a.kanal) + '"' });
     }
     function kpiHtml(o) {
@@ -2964,6 +3009,14 @@
       if (z.closest(".ush-filterzeile, .up-ph-nav, .up-ph-top")) return;
       var nm = z.closest("[data-ush-nochmal]");
       if (nm) { nochmal(nm.getAttribute("data-ush-nochmal")); return; }
+      if (z.closest("[data-ush-filterweg]")) {
+        /* Wie "Clear All" der Leiste, dazu der Fehlerzustand ausdruecklich verworfen: bleibt die Signatur gleich
+           (Wert stand nur im Speicher), laedt sonst nichts neu und der Kasten bliebe stehen. */
+        alleFilterZuruecksetzen();
+        Object.keys(state.fehler).forEach(function (k) { if (state.fehler[k] === "filter_gone") delete state.fehler[k]; });
+        state.products.page = 1; state.brands.page = 1; state.merchants.page = 1; state.auftritte.page = 1;
+        persist(); geruest = null; zeichnen(); bedarf(); return;
+      }
       if (z.closest("[data-ush-alleweg]")) { alleFilterZuruecksetzen(); return; }
       if (z.closest("[data-ush-prodweg]")) {
         state.products.suche = ""; state.products.seg = "all"; state.products.marke = null; state.products.haendler = null; state.products.page = 1;
