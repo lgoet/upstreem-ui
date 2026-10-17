@@ -108,7 +108,6 @@
       "All columns": "Alle Spalten", "{n} columns": "{n} Spalten",
       "{k} of {n} columns": "{k} von {n} Spalten",
       "Choose at least one column.": "Wähl mindestens eine Spalte.",
-      "Safe to open in Excel and Sheets. Up to {n} rows.": "Sicher in Excel und Sheets zu öffnen. Bis zu {n} Zeilen.",
       "{k} of {n} rows": "{k} von {n} Zeilen", "{n} rows": "{n} Zeilen",
       "Export progress": "Fortschritt des Exports",
       "Closing this window stops the export.": "Wenn du das Fenster schließt, bricht der Export ab.",
@@ -828,11 +827,18 @@
       }
       return liste(null);
     }
+    /* Der Prompt-Filter gilt nur an dem Datensatz, auf dessen Knopf im Drawer geklickt wurde (18.10.,
+       Nutzer: "unintuitiv", alle vier standen vorbelegt). Die anderen Datensaetze im Dialog starten
+       ohne ihn, wie ueberall in der App. Ohne Angabe des Typs (alter Aufruf) gilt er wie bisher im Scope. */
+    function filterGilt(f, art){
+      if (f.typen.indexOf(art) < 0) return false;
+      return f.feld !== "promptId" || !state.promptTyp || state.promptTyp === art;
+    }
     function filterFuer(art, mitWeg){
       var out = [];
       FILTER.forEach(function(f){
         var v = state[f.feld];
-        if (!v || f.typen.indexOf(art) < 0) return;
+        if (!v || !filterGilt(f, art)) return;
         if (state.weg[f.feld] && !mitWeg) return;
         var l = f.feld === "url" ? kurzUrl(v) : (f.feld === "domain" ? String(v) : (state.filterLabel || tr(f.ersatz)));
         out.push({ feld: f.feld, icon: f.icon, label: l, title: l, weg: !!state.weg[f.feld] });
@@ -1003,18 +1009,6 @@
       setzen(satz, '<span>' + esc(tr("All columns")) + '</span>');
     }
 
-    function hinweisZeichnen(art){
-      var cfg = EXPORTE[art];
-      if (cfg && selbstMoeglich(art)){
-        /* Die Grenze vorab (Ahrefs): so viele Zeilen passen in einen Lauf -- Seitengroesse mal die
-           60 Seiten, die die Datenbank je Minute erlaubt. Formelschutz macht die Datenbank
-           (csv_safe_v1); beides gilt nur fuer den Weg ueber die App, nicht fuer Bubble. */
-        setzen(elHinweis, ic("shieldCheck") + '<span>' + esc(tr("Safe to open in Excel and Sheets. Up to {n} rows.").replace("{n}", zahl(cfg.seite * MAX_SEITEN))) + '</span>');
-        elHinweis.hidden = false; return;
-      }
-      setzen(elHinweis, ""); elHinweis.hidden = true;
-    }
-
     function wahlZeichnen(art){
       var label = typVon(art);
       text(q(".uex-wahl .uex-h3"), label ? tr(label.label) : art);
@@ -1033,7 +1027,8 @@
         elHinweis.hidden = false;
       } else {
         elHinweis.classList.remove("is-bald");
-        hinweisZeichnen(art);
+        /* Ohne "bald" gibt es keinen Dauer-Hinweis (Nutzerwunsch 18.10.): die Zeilengrenze meldet erst der Abschluss (uex-gekappt). */
+        setzen(elHinweis, ""); elHinweis.hidden = true;
       }
     }
 
@@ -1464,7 +1459,7 @@
     function closePopup(){
       if (!state.open) return;
       /* Der Filter des Drawers gilt nur fuer DIESEN Export (siehe setContext). */
-      state.url = ""; state.domain = ""; state.promptId = ""; state.brandId = ""; state.filterLabel = "";
+      state.url = ""; state.domain = ""; state.promptId = ""; state.promptTyp = ""; state.brandId = ""; state.filterLabel = "";
       /* Ebenso der Kontext der Seite und die Gruppe von Shopping und Ads: danach gilt wieder die
          Grundgruppe, und ein spaeteres Oeffnen ohne Kontext (Cmd+K) traegt keinen Filter mit. */
       state.params = {}; state.namen = {}; state.weg = {}; state.zeitVonSeite = false; state.ohneBrille = false;
@@ -1641,7 +1636,7 @@
       var p = { p_team: team, p_date_from: isoDate(state.from), p_date_to: isoDate(state.to), p_offset: offset, p_limit: limit };
       /* Die Filter des Drawers (setContext) -- nur im Scope (FILTER) und nur, solange ihr Chip steht. */
       FILTER.forEach(function(f){
-        if (state[f.feld] && f.typen.indexOf(art) >= 0 && !state.weg[f.feld]) p[f.param] = String(state[f.feld]);
+        if (state[f.feld] && filterGilt(f, art) && !state.weg[f.feld]) p[f.param] = String(state[f.feld]);
       });
       /* Die Parameter der Seite (setContext params), in den Namen ihrer Liste -- nur die, die die
          Funktion kennt (KENNT). Team, Zeitraum, Seite und ein Filter des Drawers werden nie
@@ -2248,6 +2243,7 @@
         state.url = opts.url != null ? String(opts.url) : "";
         state.domain = opts.domain != null ? String(opts.domain) : "";
         state.promptId = opts.prompt_id != null ? String(opts.prompt_id) : "";
+        state.promptTyp = state.promptId && t ? t : "";
         state.brandId = opts.brand_id != null ? String(opts.brand_id) : "";
         /* filter_label (16.10.): der lesbare Name zu prompt_id bzw. brand_id fuer den Chip im Feld
            Filters und das Filterzeichen links ("Filtered to VW"). Ohne ihn steht dort "This brand" /
