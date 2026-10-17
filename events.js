@@ -4992,10 +4992,21 @@
       } else el.innerHTML = '<span class="uev-pruefmarke">' + UC.icon("chartSpline", 2) + '<span>' + esc(t("Brand metrics only")) + '</span></span>';
     }
 
+    /* Ein Eintrag als Ziel der Art, in der er gelesen wird. Eine Domain hat keinen Pfad: unter "Whole
+       domain" gaebe zielBauen sonst still nur den Host zurueck und liesse den Pfad weg -- jetzt gilt der
+       Eintrag als nicht passend, und die Zeile unter dem Feld sagt (vorhandener Text), was erwartet
+       wird. */
+    function zielLesen(text, art) {
+      if (art === "host" || art === "host_all") {
+        var z = zerlegen(text);
+        if (z && z.pfad) return { fehler: "host", roh: String(text || "").trim() };
+      }
+      return zielBauen(text, art);
+    }
     /* Die Eingabe lesen: jeder Eintrag als Ziel der gewaehlten Art. */
     function eingabeLesen(p) {
       var e = p.e, art = leseArt(e), teile = eingabeTeile(e.eingabe), gut = [], schlecht = [];
-      teile.forEach(function (x) { var z = zielBauen(x, art); if (z.fehler) schlecht.push(z); else gut.push(z); });
+      teile.forEach(function (x) { var z = zielLesen(x, art); if (z.fehler) schlecht.push(z); else gut.push(z); });
       return { teile: teile, gut: gut, schlecht: schlecht, vorschlag: artVorschlag(e.eingabe) };
     }
     /* Steht dieses Ziel schon in der Liste oder (im Add-Dialog) schon im Event? */
@@ -5119,7 +5130,7 @@
       neu.forEach(function (z) { p.e.ziele.push(z); });
       if (neu.length) artNachZiel(p, neu[0]);
       /* Ungueltige Eintraege bleiben im Feld (je Zeile), damit sie sich korrigieren lassen. */
-      p.e.eingabe = r.schlecht.map(function (z) { return z.roh; }).join("\n"); p.e.artVonHand = false;
+      p.e.eingabe = r.schlecht.map(function (z) { return z.roh; }).join("\n");
       var inp = im(".uev-zielein");
       if (inp) { inp.value = p.e.eingabe; feldHoehe(inp); }
       p.such.frage = ""; p.such.treffer = null; p.such.laedt = false; p.such.fehler = ""; p.such.fuer = ""; p.such.aktiv = -1;
@@ -5250,9 +5261,15 @@
       }, FELD_FAV_MS);
     }
     function artWaehlen(p, k, vonHand) {
-      if (!p || k === p.e.zielArt) return;
+      if (!p) return;
+      /* EINE AUSDRUECKLICH GEWAEHLTE ART HAELT (17.10., Nutzer: "wie unglaublich unintuitiv waere es,
+         wenn er dann wieder auf Domain umspringt"): ein Klick auf ein Radio setzt "von Hand" unabhaengig
+         vom Feldinhalt, auch auf die schon gewaehlte, und es bleibt bis das Popup zu ist -- leeres Feld,
+         Add und neue Eingabe aendern daran nichts. Nur wer nie gewaehlt hat, bekommt die Art aus der
+         Eingabe vorgeschlagen (artVorschlag). */
+      if (vonHand) p.e.artVonHand = true;
+      if (k === p.e.zielArt) return;
       p.e.zielArt = k;
-      if (vonHand) p.e.artVonHand = !!String(p.e.eingabe || "").trim();
       feldFehler("ziele", "");
       var ws = p.api.el.querySelectorAll("[data-art]");
       for (var i = 0; i < ws.length; i++) {
@@ -6526,7 +6543,7 @@
       /* Ganz oben, was eingegeben ist -- mit dem erkannten Umfang rechts: dasselbe wie "Add" neben
          dem Feld, an der Stelle, an der man nach dem Tippen hinsieht (wie "Create ..." im Command
          Menu). Nur fuer eine Eingabe, die ein Ziel dieser Art ergibt. */
-      var tipp = eingabeTeile(p.e.eingabe)[0], neuZ = zielBauen(tipp, art), idn = "uev-tr-" + instanceId + "-";
+      var tipp = eingabeTeile(p.e.eingabe)[0], neuZ = zielLesen(tipp, art), idn = "uev-tr-" + instanceId + "-";
       var zeile = 0;
       if (!neuZ.fehler && (art === "url" || /\./.test(q))) {
         var zn = zustand(neuZ.input, neuZ.kind);
@@ -6754,7 +6771,7 @@
     function zielNehmen(text, art) {
       var p = popup;
       if (!p || !text) return;
-      var z = zielBauen(text, art || "url");
+      var z = zielLesen(text, art || "url");
       /* Nur http(s), hoechstens 2048 Zeichen (13.10., wie der Server: impact_event_invalid_url) --
          die Meldung am Feld, statt erst beim Anlegen. */
       if (z.fehler || (z.kind === "url" && !urlOk(z.input))) { feldFehler("ziele", z.fehler === "pfad" ? t("Please add a path, e.g. example.com/blog.") : fehlerText("impact_event_invalid_url")); return; }
@@ -6762,7 +6779,7 @@
       if (!zielFrei(p)) { feldFehler("ziele", zuVielText(p)); return; }
       p.e.ziele.push(z);
       artNachZiel(p, z);
-      p.e.eingabe = ""; p.e.artVonHand = false;
+      p.e.eingabe = "";
       var inp = im(".uev-zielein");
       if (inp) { inp.value = ""; feldHoehe(inp); }
       p.such.frage = ""; p.such.treffer = null; p.such.laedt = false; p.such.fehler = ""; p.such.fuer = ""; p.such.aktiv = -1;
@@ -7535,7 +7552,7 @@
              nur ein Host unter einer Hauptdomain ausgeschaltet hatte -- nicht, wenn jemand den
              Schalter selbst bedient hat. */
           if (!p.e.unterVonHand && !p.e.unterdomains) unterdomainsUmschalten(p);
-          p.e.artVonHand = false; p.e.unterVonHand = false;
+          p.e.unterVonHand = false;
         }
         var vs = artVorschlag(x.value);
         if (!p.e.artVonHand && vs && vs !== "sitemap") {
