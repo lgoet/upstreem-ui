@@ -60,13 +60,12 @@
 
   /* ---- Zeitraum ---------------------------------------------------------------------------------
      Das Agentic-Dashboard zeigt immer die letzten 30 Tage (wie bisher: range last_30_days, "Last
-     30 days"). Gerechnet als BERLINER Kalendertag, wie die DB rechnet -- sonst bekommt jemand
-     zwischen Mitternacht Berlin und Mitternacht UTC einen Tag zu wenig. */
+     30 days"). "Heute" ist der Kalendertag des BROWSERS, wie in allen Kalendern der App
+     (filters/date-range.js); der Name berlinHeute bleibt, weil Seiten ihn im Vertrag lesen. */
   function berlinHeute(jetzt) {
     var d = jetzt || new Date();
-    try {
-      return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
-    } catch (e) { return d.toISOString().slice(0, 10); }
+    function z(n) { return (n < 10 ? "0" : "") + n; }
+    return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate());
   }
   function tageZurueck(iso, n) {
     var t = Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) - n * 86400000;

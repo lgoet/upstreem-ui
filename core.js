@@ -9542,7 +9542,7 @@
     var team = getTeam();
     if (!team) return false;
     var reqId = detail.requestId;
-    rpc("quick_search_v1", suchParameter(detail), { timeoutMs: 15000 }).then(function(erg){
+    rpc("quick_search_v1", suchParameter(detail), { timeoutMs: 15000, wiederholen: true }).then(function(erg){
       /* Ueber den Verteiler (esBruecke): er stellt an die Entitaets-Suchen (ES_KUNDEN) UND an die
          Palette zu, auch auf einer Seite ohne Palette -- window.MiraQuickActions gibt es dort nicht. */
       var qa = esBruecke();

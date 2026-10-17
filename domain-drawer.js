@@ -73,7 +73,7 @@
 
   var S = {
     slot: null, root: null, kopf: null, domain: "", zeile: null, nr: 0, ab: null, fehler: "", fehlerWiederholbar: false,
-    lader: D.makeLader({ rufen: function (fn, params, o) { return UC.rpc(fn, params, { signal: o && o.signal, timeoutMs: 60000 }); } }),
+    lader: D.makeLader({ rufen: function (fn, params, o) { return UC.rpc(fn, params, { signal: o && o.signal, timeoutMs: 60000, wiederholen: true }); } }),
     f: { von: "", bis: "", modelle: null, maerkte: null, topics: null, tagmode: "or" },
     udd: { modus: "citation", gran: "day" },
     /* Welche Tabelle der Umschalter zeigt: "pages" (URLs) oder "responses". */
