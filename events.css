@@ -439,18 +439,29 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-urlsuche-ic svg { width: 15px; height: 15px; }
 .uev-urlsuche .uev-urlein { padding-left: 34px; }
 .uev-urltreffer { display: flex; flex-direction: column; gap: 2px; }
-/* Der negative Rand sitzt am Klapp-Behaelter, nicht an der Liste -- dessen overflow: hidden
-   schnitte ihn sonst ab. Oben derselbe Kniff wie bei den Topics: der Abstand zum Feld (gap 8 des
-   Feldes) liegt im Behaelter, zugeklappt steht keiner zu viel. */
-.uev-treffer-klapp { margin: -8px -10px 0; }
-/* Hoechstens fuenfeinhalb Treffer, der Rest scrollt (04.10.) -- die halbe Zeile zeigt, dass es
-   weitergeht, wie .up-vbody in core (412.5 = 7.5 Zeilen). Gemessen: Zeile 51, Abstand 2, oben 8
-   -> 8 + 5 x (51 + 2) + 51 / 2 = 298.5. */
-/* overscroll-behavior auto (17.10.): die Liste steht IM FLUSS der Dialogkarte und reicht das Rad
-   an ihrem Ende an die Karte weiter, wie jede Liste in einer Seite; die Karte selbst haelt mit
-   contain die Seite dahinter still. Mit contain blieb die Karte unter dem Zeiger stehen, auch
-   ohne Ueberlauf (siehe .uev-sm-baum). */
-.uev-treffer-klapp .uev-urltreffer { padding-top: 8px; max-height: 298.5px; overflow-y: auto; overscroll-behavior: auto; }
+/* DAS DROPDOWN DER SUCHE (17.10.): in der Spalte des Feldes direkt unter ihm, so breit wie das Feld, als
+   Karte mit Rand (Rahmen 1, Polster 4, Radius 8 nach Hoehe -> die Zeilen darin konzentrisch 4). Der
+   Abstand zum Feld liegt im Klapp-Behaelter, zugeklappt steht keiner zu viel. Hoechstens fuenfeinhalb
+   Zeilen, der Rest scrollt (die halbe Zeile zeigt, dass es weitergeht): 1 + 4 + 5 x (32 + 2) + 16 = 191. */
+.uev-feldspalte .uev-treffer-klapp { margin: 0; }
+.uev-treffer-klapp .uev-urltreffer { margin-top: 4px; padding: 4px; border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
+  background: var(--vc-bg); max-height: 191px; overflow-y: auto; overscroll-behavior: auto; }
+/* Kompakte Zeilen wie im Command Menu: Kachel 20, Titel und gedaempfter Pfad nebeneinander, rechts der
+   Umfang bzw. die Zahl. Die Zeile selbst aus core (UC.entityRow), nur enger. */
+.uev-urltreffer .up-es-row { padding: 6px 8px; gap: 10px; border-radius: var(--up-r-s); }
+.uev-urltreffer .up-es-av { width: 20px; height: 20px; border-radius: var(--up-r-s); }
+.uev-urltreffer .up-es-av-fb svg, .uev-urltreffer .up-es-av > svg { width: 13px; height: 13px; }
+.uev-urltreffer .up-es-main { flex-direction: row; align-items: baseline; gap: 8px; }
+.uev-urltreffer .up-es-primary { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); }
+.uev-urltreffer .up-es-secondary { flex: 1 1 0; min-width: 0; }
+.uev-urltreffer .up-es-type { font-size: var(--up-fs-s); font-variant-numeric: tabular-nums; }
+/* Die Zeile "Add ...": Verb fest, Ziel kuerzt sich (Teile mit Leerraum behalten ihn). */
+.uev-neuziel .up-es-primary { display: flex; min-width: 0; }
+.uev-neuziel-teil { flex: 0 0 auto; white-space: pre; }
+.uev-neuziel-ziel { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* Schmal (das Feld teilt sich die Zeile mit "Add"): das Verb entfaellt, das Ziel behaelt den Platz; das
+   Plus-Zeichen der Kachel und der Umfang rechts sagen, was die Zeile tut (aria-label traegt den Satz). */
+@media (max-width: 480px) { .uev-neuziel-teil { display: none; } }
 .uev-urltreffer .uev-urlnote { padding: 8px 10px; }
 .uev-urlsk { display: flex; align-items: center; gap: 11px; padding: 8px 10px; }
 .uev-urlsk .uev-urlsk-av { width: 30px; height: 30px; border-radius: var(--up-r-m); flex: 0 0 auto; }
@@ -559,6 +570,8 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-unter { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 10px 6px 62px; }
 .uev-unter-lbl { font-size: var(--up-fs-m); color: var(--vc-muted); }
 .uev-unter .up-switch:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: 2px; }
+/* Der Satz unter dem Schalter sagt, was er bewirkt, bundig mit der Beschriftung darueber. */
+.uev-unter-satz { margin: 0; padding: 0 10px 6px 62px; font-size: var(--up-fs-s); line-height: 16px; color: var(--vc-third); }
 .uev-arthinweis[hidden] { display: none; }
 
 /* Das Eingabefeld: die primaere Eingabe des Schritts, darum in der grossen Stufe der Hoehenskala
@@ -606,6 +619,8 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-schreibweise .uev-ziel-fehler { flex-basis: 100%; }
 /* 24 hoch -> Radius 4 (Rolle nach Hoehe, Geist): der leise Knopf aus core ist fuer 32 gerundet. */
 .uev-schreibweise .up-quietbtn { height: var(--up-h-chip); border-radius: var(--up-r-s); }
+/* Die eigene Domain als ein Klick bei leerem Feld: Favicon vor dem Satz. */
+.uev-schreibweise .uev-eigen-chip { gap: 6px; padding: 0 6px; }
 /* Die Fehlerzeile unter dem Feld: zu ist sie 0 hoch. core gibt ihrem Text 5 Polster, die eine
    zugeklappte 0fr-Zeile nicht wegnimmt -- ohne jeden Fehler standen so in Schritt 3 5px, in
    Schritt 2 mit dem gap 13px unter dem Feld (gemessen 15.10. spaet). Das Polster kommt erst mit .is-on, wie bei
@@ -638,11 +653,11 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-vz-zeit { color: var(--vc-third); }
 .uev-vz-n { color: var(--vc-text); font-weight: var(--up-fw-m); font-variant-numeric: tabular-nums; }
 .uev-vz-liste { display: flex; flex-direction: column; gap: 2px; }
-.uev-vz-reihe { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; min-width: 0; font-size: var(--up-fs-s); line-height: 1.5; }
-.uev-vz-url { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--vc-muted); }
+.uev-vz-reihe { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; font-size: var(--up-fs-s); line-height: 1.5; }
+.uev-vz-url { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--vc-muted); }
 .uev-vz-wert { flex: 0 0 auto; color: var(--vc-third); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .uev-vz-satz { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; line-height: 1.45; color: var(--vc-muted); }
-.uev-vz-satz .up-quietbtn { height: var(--up-h-chip); border-radius: var(--up-r-s); }
+.uev-vz-satz .up-quietbtn, .uev-vz-hosts-mehr { height: var(--up-h-chip); border-radius: var(--up-r-s); }
 .uev-vz-eigen { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding-top: 12px;
   border-top: 1px solid var(--vc-border); color: var(--vc-muted); }
 .uev-vz-eigenbtn .up-modal-spin { display: inline-block; }
