@@ -995,6 +995,7 @@
     "Competitors you track appear here with their visibility before and after the event.":
       "Wettbewerber, die du trackst, erscheinen hier mit ihrer Visibility vor und nach dem Event.",
     "Not cited yet": "Noch nicht zitiert",
+    "No AI answer has mentioned {url} so far. As soon as one does, you can open its details here.": "Bisher hat keine KI-Antwort {url} erwähnt. Sobald eine das tut, kannst du hier ihre Details öffnen.",
     "No AI answer has mentioned this page so far. As soon as one does, you can open its details here.": "Bisher hat keine KI-Antwort diese Seite erwähnt. Sobald eine das tut, kannst du hier ihre Details öffnen."
   });
   /* 17.10.: Domain mit allen Subdomains als Standard, Suche am Feld, Zahlen in der Vorschau des
@@ -2954,9 +2955,12 @@
     /* Der Hinweis auf den Klick einer Seite ohne Zitat (Nutzer 17.10.: "Zeile nicht oeffenbar" las sich
        wie ein Fehler). Er sagt, WARUM es noch nichts zu sehen gibt und WANN es etwas gibt: Titel
        "Not cited yet", darunter der Satz. Ein stehender Toast unten, kein Tooltip am Zeiger. */
-    function nichtZitiertHinweis() {
-      if (UC.toast) UC.toast(t("Not cited yet"), { kind: "neutral",
-        desc: t("No AI answer has mentioned this page so far. As soon as one does, you can open its details here.") });
+    function nichtZitiertHinweis(url) {
+      /* Die Seite steht mit im Satz, in der Primaerfarbe (Nutzer 18.10.): sonst bleibt offen, WELCHE Zeile gemeint war. */
+      var z = url ? urlZeigen(url) : "";
+      if (UC.toast) UC.toast(t("Not cited yet"), z
+        ? { kind: "neutral", hervor: z, desc: ersetze(t("No AI answer has mentioned {url} so far. As soon as one does, you can open its details here."), { url: z }) }
+        : { kind: "neutral", desc: t("No AI answer has mentioned this page so far. As soon as one does, you can open its details here.") });
     }
     function urlZitiert(u, an) {
       if (u && u.team_kannte_url === true) return true;
@@ -3532,7 +3536,7 @@
          Tabelle sie kennt. Eine nicht zitierte oeffnet nichts: der Hinweis kommt erst beim KLICK auf die Zeile
          (17.10.), nicht mehr bei jedem Ueberfahren: data-abd-seite, events.js Klickweg. */
       var offen = zit ? ' is-zitiert" role="link" tabindex="0" data-url="' + esc(treffer && treffer.url ? treffer.url : p.url || "") : "";
-      return '<div class="uev-abd-seite' + (weg ? " is-weg" : "") + offen + '"' + (zit ? "" : ' data-abd-seite="1"') + (opt.tiefe ? ' style="--uev-tiefe:' + opt.tiefe + '"' : '') + '>' +
+      return '<div class="uev-abd-seite' + (weg ? " is-weg" : "") + offen + '"' + (zit ? "" : ' data-abd-seite="1" data-url="' + esc(p.url || "") + '"') + (opt.tiefe ? ' style="--uev-tiefe:' + opt.tiefe + '"' : '') + '>' +
         zielFavKlein(p.url || "", '<span class="uev-abd-fav0">' + UC.icon("globe", 2) + '</span>') +
         '<span class="uev-abd-pfad" title="' + esc(p.url || "") + '">' + esc(pfad) + '</span>' +
         (p.is_new === true ? '<span class="up-marke is-leise uev-abd-marke">' + esc(t("New since event")) + '</span>' : '') +
@@ -4090,12 +4094,13 @@
          sich nicht: das sagt die Zeile erst auf den Klick. */
       var azl = e.target.closest(".uev-abd-seite.is-zitiert[data-url]");
       if (azl) { if (UC.drawerOeffnen) UC.drawerOeffnen("url", azl.getAttribute("data-url"), "events"); return; }
-      if (e.target.closest("[data-abd-seite]")) { nichtZitiertHinweis(); return; }
+      var aas = e.target.closest("[data-abd-seite]");
+      if (aas) { nichtZitiertHinweis(aas.getAttribute("data-url")); return; }
       var aah = e.target.closest("[data-abd-addhost]");
       if (aah) { popupZiel(aah.getAttribute("data-abd-addhost")); return; }
       /* Dasselbe fuer eine stille Zeile der Tabelle "URLs" (uev-urlstill): erst der Klick
          sagt es, nicht der Zeiger. "Remove" in der Zeile behaelt seinen eigenen Weg. */
-      if (e.target.closest(".uev-urlstill") && !e.target.closest(".uev-urlweg")) { nichtZitiertHinweis(); return; }
+      if (e.target.closest(".uev-urlstill") && !e.target.closest(".uev-urlweg")) { nichtZitiertHinweis(e.target.closest(".uev-urlstill").getAttribute("data-url")); return; }
       if (e.target.closest(".uev-anl-toggle")) { anleitungUmschalten(); return; }
       /* Zitierte URL einer Regel: die Antwort, in der sie zuerst zitiert wurde (15.10.). */
       var zz = e.target.closest(".uev-zitzeile[data-url]");
@@ -8062,7 +8067,9 @@
           renderDetail();
           if (!weg && txt === fehlerText("")) return true;
         }
-        if (UC.toast) UC.toast(txt, { kind: "error" });
+        /* Nennt der Satz eine URL (impact_event_invalid_url, hint = die Eingabe), steht sie in der Primaerfarbe. */
+        var urlHv = String(code) === "impact_event_invalid_url" && hint && !/^p_/.test(String(hint)) ? String(hint) : "";
+        if (UC.toast) UC.toast(txt, urlHv ? { kind: "error", hervor: urlHv } : { kind: "error" });
         return true;
       },
       /* Die Responses-Tabelle gehoert nicht dieser Komponente: bei Erfolg geht der Text unveraendert
