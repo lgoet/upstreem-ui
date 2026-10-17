@@ -4,8 +4,156 @@
     {
       "name": "static",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-I", "-c", "import functools,http.server,socketserver;R=functools.partial(http.server.SimpleHTTPRequestHandler,directory='/Users/lukasgotzkes/Documents/GitHub/upstreem-ui');socketserver.TCPServer.allow_reuse_address=True;socketserver.ThreadingTCPServer(('127.0.0.1',8099),R).serve_forever()"],
+      "runtimeArgs": [
+        "-I",
+        "-c",
+        "import functools,http.server,socketserver;R=functools.partial(http.server.SimpleHTTPRequestHandler,directory='/Users/lukasgotzkes/Documents/GitHub/upstreem-ui');socketserver.TCPServer.allow_reuse_address=True;socketserver.ThreadingTCPServer(('127.0.0.1',8099),R).serve_forever()"
+      ],
       "port": 8099
+    },
+    {
+      "name": "PRUEFSTAND-testanmeldung-3003",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/app && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3003"
+      ],
+      "port": 3003
+    },
+    {
+      "name": "PRUEFSTAND-summe-3013",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/app_sum && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3013"
+      ],
+      "port": 3013
+    },
+    {
+      "name": "PRUEFSTAND-b-3023",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/app_b && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3023"
+      ],
+      "port": 3023
+    },
+    {
+      "name": "PRUEFSTAND-c-3033",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/app_c && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3033"
+      ],
+      "port": 3033
+    },
+    {
+      "name": "PRUEFSTAND-d-3043",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/app_d && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3043"
+      ],
+      "port": 3043
+    },
+    {
+      "name": "PRUEFSTAND-f-3063",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/app_f && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3063"
+      ],
+      "port": 3063
+    },
+    {
+      "name": "PRUEFSTAND-e-3053",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/app_e && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3053"
+      ],
+      "port": 3053
+    },
+    {
+      "name": "PRUEFSTAND-g-3073",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/app_g && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3073"
+      ],
+      "port": 3073
+    },
+    {
+      "name": "PRUEFSTAND-testanmeldung-prod-3001",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/app && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next start -p 3001"
+      ],
+      "port": 3001
+    },
+    {
+      "name": "PRUEFSTAND-echte-supabase-3002",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/echt && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3002"
+      ],
+      "port": 3002
+    },
+    {
+      "name": "PRUEFSTAND-prod-3011",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/prod && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next start -p 3011"
+      ],
+      "port": 3011
+    },
+    {
+      "name": "PRUEFSTAND-web-3101",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/web && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3101"
+      ],
+      "port": 3101
+    },
+    {
+      "name": "PRUEFSTAND-selbst-3041",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/selbst && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next start -p 3041"
+      ],
+      "port": 3041
+    },
+    {
+      "name": "PRUEFSTAND-h-3083",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/app_h && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3083"
+      ],
+      "port": 3083
+    },
+    {
+      "name": "PRUEFSTAND-i-3093",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/app_i && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3093"
+      ],
+      "port": 3093
+    },
+    {
+      "name": "PRUEFSTAND-applh-3113",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "cd /private/tmp/uprt/nx/app_lh && PATH=/private/tmp/uprt/nx/node/bin:$PATH NEXT_TELEMETRY_DISABLED=1 HOME=/private/tmp/uprt/nx exec /private/tmp/uprt/nx/node/bin/node node_modules/next/dist/bin/next dev -p 3113"
+      ],
+      "port": 3113
     }
   ]
 }
