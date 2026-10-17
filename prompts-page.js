@@ -724,6 +724,18 @@
       },
       danach: function () { filterGeaendert(); }
     };
+    /* DATENSTAND BEIM BLAETTERN GEWECHSELT (18.10., Versionsbindung der DB): der Lader meldet es, wenn
+       generated_at oder total_count einer Seite hinter Seite 1 vom gemerkten Stand abweichen. Dann
+       Seite 1: Tabelle zuruecksetzen (ohne Ereignis), Hinweis, neu laden. Der Lader hat den neuen Stand
+       schon gemerkt, Seite 1 trifft auf denselben Wert: einmal je Wechsel, keine Schleife. */
+    lader.versionMit(function (a) {
+      if (!a || a.art !== "responses") return false;
+      state.resp.offset = 0; persist();
+      try { setter("renderResponsesTable")({ instanceId: ids.urt, seiteEins: true }); } catch (e) {}
+      if (UC.listeAktualisiert) UC.listeAktualisiert();
+      teilLaden("resp");
+      return true;
+    });
     lader.bereinigenMit(function (erg) { return UC.filterBereinigen ? UC.filterBereinigen(erg, bereinigenSpec) : false; });
     /* Der Rest: die Antwort nannte etwas, das unser Filter gar nicht haelt (ein Kollege hat das Topic
        geloescht, unsere Liste ist veraltet). Dann die Liste des Teams neu holen -- kommt sie ohne das

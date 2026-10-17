@@ -1868,6 +1868,10 @@
            stille Ausfall waere zurueck, nur eine Stufe spaeter. */
         if (params.rows != null){ state.rows = Array.isArray(params.rows) ? params.rows : []; state.hasData = true; state.leseFehler = false;
           if (state.rows.length) state.jeZeilen = true;   /* Merker fuer das Gnadenfenster */ }
+        /* Datenstand beim Blaettern gewechselt (18.10., Versionsbindung): die Seite schickt diesen Wert
+           ohne Zeilen und holt danach Seite 1 neu. Die Tabelle fuehrt die Seitenzahl selbst, also muss
+           sie sie auch selbst zuruecksetzen -- sie feuert dabei kein Page-Ereignis. */
+        if (params.seiteEins){ state.tablePage = 1; state.cardPage = 1; state.page = 1; }
         if (params.totalCount != null) state.totalCount = toNum(params.totalCount);
         else if (state.rows.length && state.rows[0].total_count != null){
           /* The RPC carries the result-set total on every row (same shape prompts-table uses).

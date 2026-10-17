@@ -94,6 +94,14 @@
      aus der Antwort, hier steht nur, wo der Drawer sie haelt. Der Drawer hat einen eigenen Topic-Filter
      (S.f, Instanz IDS.topics) und je Tabelle eine Markenauswahl (URLs: p_mentioned_brands, Responses:
      p_company_ids); die Anzeige wird wie bei einer Wahl des Nutzers nachgezogen. */
+  S.lader.versionMit(function (a) {
+    if (!a || a.art !== "responses") return false;
+    S.resp.offset = 0;
+    try { setter("renderResponsesTable")({ instanceId: IDS.urt, seiteEins: true }); } catch (e) {}
+    if (UC.listeAktualisiert) UC.listeAktualisiert();
+    teilLaden("resp");
+    return true;
+  });
   S.lader.bereinigenMit(function (erg) {
     if (!UC.filterBereinigen) return false;
     return UC.filterBereinigen(erg, {
@@ -137,7 +145,9 @@
     var p = {}, k;
     for (k in a.params) p[k] = a.params[k];
     for (k in zusatz) p[k] = zusatz[k];
-    return { art: a.art, fn: a.fn, params: p, sig: a.fn + "|" + JSON.stringify(p) };
+    var neu = { art: a.art, fn: a.fn, params: p, sig: a.fn + "|" + JSON.stringify(p) };
+    if (a.bindung && C.bindung) neu.bindung = C.bindung(neu.fn, p);   /* mit p_domain: eine andere Domain ist ein anderer Stand */
+    return neu;
   }
   /* Intent-Filter der App (13.10., core: UC.intentFilterParams). Leer, solange die Intents nicht
      freigegeben sind -- dann geht kein neuer Parameter hinaus. */

@@ -119,13 +119,17 @@
     if (rMin != null) rMin = Math.max(1, Math.round(rMin));
     if (rMax != null) rMax = Math.max(1, Math.round(rMax));
     if (rMin != null && rMax != null && rMin > rMax) { var x = rMin; rMin = rMax; rMax = x; }
-    return anfrage("responses", mit(basis(f), {
+    var ra = anfrage("responses", mit(basis(f), {
       p_order: orderVon("responses", r.order), p_limit: ganz(r.limit, 15, 1, RESPONSES_MAX), p_offset: ganz(r.offset, 0, 0, 1e9),
       p_search: sucheVon(r.suche),
       p_mentioned: r.erwaehnt === "yes" || r.erwaehnt === "no" ? r.erwaehnt : "all",
       p_company_ids: uuids(r.firmen, 100),
       p_sentiment_min: sMin, p_sentiment_max: sMax, p_rank_min: rMin, p_rank_max: rMax
     }));
+    /* Datenstand der Liste (Versionsbindung der DB hinter Offset 100): derselbe Schluessel-Bau wie
+       bei Domains und URLs, ein Ort in citations-data.js. */
+    if (C() && C().bindung) ra.bindung = C().bindung(ra.fn, ra.params);
+    return ra;
   }
   /* Mehr als 50 Zeilen (die Tabelle bietet 100 an): in Teilen zu 50, die Seite legt sie zusammen. */
   function responsesTeile(f, r) {

@@ -2084,6 +2084,7 @@
     "Mentioned brands": "Erwähnte Brands",
     "No brands available": "Keine Brands vorhanden",
     "Clear filters": "Reset Filters",
+    "The list was updated. Showing the first page.": "Die Liste wurde aktualisiert. Du siehst jetzt die erste Seite.",
 
     /* Leerzustaende der Tabelle */
     "No matching prompts": "Keine passenden Prompts",
@@ -14180,6 +14181,11 @@
     if (e.uhr) clearTimeout(e.uhr);
     e.start = Date.now(); e.rest = ms;
     e.uhr = setTimeout(function(){ toastWeg(e); }, ms);
+  }
+  /* Der Datenstand einer Liste wechselte beim Blaettern (Versionsbindung der DB): die Tabelle springt auf
+     Seite 1. Ein Schluessel, damit mehrere Listen auf einer Seite nicht mehrere Hinweise stapeln. */
+  function listeAktualisiert(){
+    return toast("The list was updated. Showing the first page.", { kind: "neutral", schluessel: "liste-aktualisiert" });
   }
   function toast(text, opts){
     opts = opts || {};
@@ -29939,7 +29945,7 @@
     makeClipTip: makeClipTip,
     SLIDERS_ICON: SLIDERS_ICON,
     makeFire: makeFire,
-    toast: toast, toastZu: toastZu,
+    toast: toast, toastZu: toastZu, listeAktualisiert: listeAktualisiert,
     upstreemSignal: upstreemSignal,
     makePortal: makePortal,
     placeMenu: placeMenu,
