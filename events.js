@@ -1159,7 +1159,7 @@
     "No citations on {host} itself.": "Auf {host} selbst gibt es keine Zitate.",
     "{n} citation sits on its subdomains.": "{n} Zitat liegt auf den Subdomains.",
     "{n} citations sit on its subdomains.": "{n} Zitate liegen auf den Subdomains.",
-    "Include subdomains": "Subdomains einbeziehen",
+    "Include subdomains": "Subdomains einbeziehen", "Keep typing to narrow it down": "Tipp weiter, um die Treffer einzugrenzen",
     "No citations yet for {ziel}. Counting starts with this event.": "Noch keine Zitate für {ziel}. Das Zählen beginnt mit diesem Event.",
     "No citations yet for these targets. Counting starts with this event.": "Noch keine Zitate für diese Ziele. Das Zählen beginnt mit diesem Event."
   });
@@ -6499,17 +6499,14 @@
        Art des Ziels. */
     function sucheZeilen(p) {
       var art = leseArt(p.e), raw = p.such.treffer || [], aus = [];
-      function zit(it) {
-        var c = num(it.citations != null ? it.citations : it.citation_count != null ? it.citation_count : it.used_total);
-        return c != null ? ersetze(t(c === 1 ? "{n} citation" : "{n} citations"), { n: zahl(c) }) : "";
-      }
       if (art === "host" || art === "host_all") {
-        raw.forEach(function (it) { if (it && it.type === "domain" && it.domain) aus.push({ item: it, text: String(it.domain), art: art, rechts: zit(it) }); });
+        raw.forEach(function (it) { if (it && it.type === "domain" && it.domain) aus.push({ item: it, text: String(it.domain), art: art, rechts: "" }); });
       } else if (art === "url") {
-        raw.forEach(function (it) { if (it && it.type === "url" && it.url) aus.push({ item: it, text: String(it.url), art: "url", rechts: zit(it) }); });
+        raw.forEach(function (it) { if (it && it.type === "url" && it.url) aus.push({ item: it, text: String(it.url), art: "url", rechts: "" }); });
       } else {
-        /* Pfad: je URL der Ordner davor (alles bis auf das letzte Stueck), je Ordner einmal mit der
-           Zahl seiner Treffer. Eine URL direkt unter der Domain hat keinen Ordner. */
+        /* Pfad: je URL der Ordner davor (alles bis auf das letzte Stueck), je Ordner einmal, die
+           haeufigsten zuerst. Eine URL direkt unter der Domain hat keinen Ordner. Keine Zahl dahinter:
+           die Antwort ist begrenzt, eine Zaehlung daraus waere irrefuehrend. */
         var je = {}, reihe = [];
         raw.forEach(function (it) {
           if (!it || it.type !== "url" || !it.url) return;
@@ -6523,7 +6520,7 @@
         });
         reihe.sort(function (a, b) { return je[b].n - je[a].n; }).forEach(function (o) {
           aus.push({ item: { type: "domain", domain: o, favicon: zielFavUrl(je[o].host) }, text: o, art: "path",
-            rechts: ersetze(t(je[o].n === 1 ? "{n} URL" : "{n} URLs"), { n: zahl(je[o].n) }) });
+            rechts: "" });
         });
       }
       return aus;
@@ -6597,6 +6594,9 @@
             .replace(/^<button/, '<button id="' + idn + (zeile++) + '" data-ziel-text="' + esc(zl.text) + '" data-ziel-art="' + esc(zl.art) + '"');
         }).join("");
       }
+      /* Ist die Antwort voll (so viele Treffer wie das Limit), gibt es vermutlich mehr: eine ruhige Zeile
+         statt Scrollen oder "Mehr laden". */
+      if (!s.fehler && (s.treffer || []).length >= SUCHE_LIMIT) html += '<p class="uev-urlnote uev-urlmehr">' + esc(t("Keep typing to narrow it down")) + '</p>';
       if (html) el.innerHTML = html;
       klappen(kl, !!html);
       if (inp) inp.setAttribute("aria-expanded", String(!!html));
@@ -6746,6 +6746,7 @@
        UC.makeEntitySearch schickt ueber bubble_fn_quick_actions_search, denselben Workflow wie
        Palette und Mira (search_quick_actions_v2 zeigt nur URLs des eigenen Teams, Vertrag 3.6) --
        in Bubble ist dafuer nichts Neues zu bauen. */
+    var SUCHE_LIMIT = 8;
     function sucheBauen(p) {
       p.such = { frage: "", treffer: null, laedt: false, fehler: "" };
       /* Im Klick-Dummy sucht die Datei: dieselben Zeitpunkte wie die Maschine aus core (ab zwei
@@ -6773,7 +6774,7 @@
       }
       if (!UC.makeEntitySearch) return;
       p.maschine = UC.makeEntitySearch({
-        prefix: "uev", limit: 8,
+        prefix: "uev", limit: SUCHE_LIMIT,
         filters: function () { return { scope: popup === p ? sucheBereich(p.e) : "url" }; },
         onLoading: function () { if (popup !== p) return; p.such.laedt = true; p.such.fehler = ""; },
         /* Eine Antwort auf eine andere Frage (weitergetippt waehrend der Anfrage) wird nicht gezeigt;

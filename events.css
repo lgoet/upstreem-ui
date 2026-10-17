@@ -441,11 +441,13 @@ body:has(.uev-root[data-uev-resp="aus"]) .urt-root[data-instance="responses_even
 .uev-urltreffer { display: flex; flex-direction: column; gap: 2px; }
 /* DAS DROPDOWN DER SUCHE (17.10.): in der Spalte des Feldes direkt unter ihm, so breit wie das Feld, als
    Karte mit Rand (Rahmen 1, Polster 4, Radius 8 nach Hoehe -> die Zeilen darin konzentrisch 4). Der
-   Abstand zum Feld liegt im Klapp-Behaelter, zugeklappt steht keiner zu viel. Hoechstens fuenfeinhalb
-   Zeilen, der Rest scrollt (die halbe Zeile zeigt, dass es weitergeht): 1 + 4 + 5 x (32 + 2) + 16 = 191. */
+   Abstand zum Feld liegt im Klapp-Behaelter, zugeklappt steht keiner zu viel. Hoechstens acht Treffer
+   (das Limit der Suche) plus die Zeile "Add ...", ohne Scrollen: ist die Antwort voll, steht darunter
+   ein ruhiger Satz. */
 .uev-feldspalte .uev-treffer-klapp { margin: 0; }
 .uev-treffer-klapp .uev-urltreffer { margin-top: 4px; padding: 4px; border: 1px solid var(--vc-border); border-radius: var(--up-r-l);
-  background: var(--vc-bg); max-height: 191px; overflow-y: auto; overscroll-behavior: auto; }
+  background: var(--vc-bg); }
+.uev-urltreffer .uev-urlnote.uev-urlmehr { margin: 0; padding: 6px 8px 4px; font-size: var(--up-fs-s); color: var(--vc-third); }
 /* Kompakte Zeilen wie im Command Menu: Kachel 20, Titel und gedaempfter Pfad nebeneinander, rechts der
    Umfang bzw. die Zahl. Die Zeile selbst aus core (UC.entityRow), nur enger. */
 .uev-urltreffer .up-es-row { padding: 6px 8px; gap: 10px; border-radius: var(--up-r-s); }
