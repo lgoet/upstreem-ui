@@ -19613,6 +19613,9 @@
     if (EVM.lauf) return EVM.lauf;
     if (!APP.team) return Promise.resolve(false);
     if (evmFehltGemerkt()){ EVM.stand = false; EVM.lauf = Promise.resolve(false); return EVM.lauf; }
+    /* Sagt meta.features, dass es die Meldungen nicht gibt, fragen wir gar nicht erst. */
+    var ft = window.__upApp && window.__upApp.features;
+    if (ft && ft.notices === false){ EVM.stand = false; EVM.lauf = Promise.resolve(false); return EVM.lauf; }
     EVM.lauf = rpc("list_impact_event_notices_v1", { p_team: APP.team }, { timeoutMs: 15000 }).then(function(erg){
       var f = (erg && erg.fehler) || {};
       if (erg && !erg.ok && (/PGRST202/.test(String(f.code || "")) || (erg.status === 404 && /could not find the function/i.test(String(f.message || "") + " " + String(f.details || ""))))){
@@ -23071,10 +23074,19 @@
     });
   }
   function appRuf(name){ var f = window[name]; return typeof f === "function" ? f : null; }
+  /* Was die Datenbank kann (meta.features, 18.10.: {targets, sitemap, campaigns, notices, coverage}):
+     die Events fragen damit nicht mehr probeweise. Nur ein Objekt zaehlt; fehlt es (team_switch_v1
+     liefert es noch nicht, ein aelterer Stand der DB), bleibt der letzte bekannte Stand stehen -- aus
+     einem FEHLENDEN features wird nie "aus". */
+  function appFeatures(m){
+    var f = m && m.features;
+    if (f && typeof f === "object" && !isArr(f)) APP.features = f;
+  }
   /* Alle Teile auf einmal oder einzeln (nach einer eigenen Aenderung). */
   function appTeile(team, teile){
     return rpc("team_context_v1", { p_team: team, p_parts: teile || null }, { timeoutMs: 30000 }).then(function(erg){
       var d = erg && erg.ok ? erg.daten : null;
+      if (d) appFeatures(d.meta);
       var r = d && d.row && typeof d.row === "object" ? d.row : null;
       if (!r) return false;
       if (isArr(r.brands) && r.brands.length && appRuf("setUpstreemBrands")) window.setUpstreemBrands(r.brands);
@@ -23162,6 +23174,7 @@
   function appAnwenden(d){
     var m = d && d.meta && typeof d.meta === "object" ? d.meta : {};
     var r = d && d.row && typeof d.row === "object" ? d.row : null;
+    appFeatures(m);
     if (m.settings) vorliebenAusStart(m.settings);
     if (m.settings && m.settings.theme){
       APP.themaVonStart = true;
@@ -25057,6 +25070,8 @@
      "" solange unbekannt. Die Datenbank prueft jedes Recht selbst -- das hier entscheidet nur, was
      die Oberflaeche anbietet. */
   function teamRolle(){ return (window.__upApp && window.__upApp.rolle) || ""; }
+  /* meta.features des letzten Starts bzw. der letzten Teamantwort, sonst null (unbekannt). */
+  function eventFeatures(){ var f = window.__upApp && window.__upApp.features; return f && typeof f === "object" ? f : null; }
   /* Der Name des aktiven Teams, roh wie aus team_context_v1 (appTeamsSetzen); leer heisst
      unbekannt. Wer ihn in eine Datei oder Adresse schreibt, saeubert ihn selbst. */
   function teamName(){ return (window.__upApp && window.__upApp.teamName) || ""; }
@@ -29841,7 +29856,7 @@
     parseLinkedinUrl: parseLinkedinUrl,
     esc: esc,
     parseBubbleJson: parseBubbleJson, PASSWORT: PASSWORT, rechtLinksHtml: rechtLinksHtml,
-    pwZeichen: pwZeichen, pwZuLang: pwZuLang, ohneBubble: ohneBubble, teamRolle: teamRolle, teamName: teamName, fremdUrl: fremdUrl,
+    pwZeichen: pwZeichen, pwZuLang: pwZuLang, ohneBubble: ohneBubble, teamRolle: teamRolle, eventFeatures: eventFeatures, teamName: teamName, fremdUrl: fremdUrl,
     readBubble: readBubble, bubbleObjekt: bubbleObjekt, bubbleFehler: bubbleFehler,
     wennBody: wennBody,
     citeName: citeName,

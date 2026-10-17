@@ -1067,6 +1067,26 @@
     "In sitemap since {date}": "Seit {date} in der Sitemap",
     "Every page from your sitemap is cited.": "Jede Seite deiner Sitemap wird zitiert."
   });
+  /* 18.10.: Sperre je Quelle (Runde 3), Modellbasis, gedeckeltes Nachher. Gegen alle Kataloge geprueft. */
+  if (UC.addMessages) UC.addMessages("de", {
+    "This sitemap is being read right now.": "Diese Sitemap wird gerade gelesen.",
+    "Your team has reached its hourly limit for reading sitemaps.": "Dein Team hat die Stundengrenze für das Lesen von Sitemaps erreicht.",
+    "We couldn't finish reading this sitemap.": "Diese Sitemap ließ sich nicht fertig lesen.",
+    "Your sitemap hasn't been read yet.": "Deine Sitemap wurde noch nicht gelesen.",
+    "{host} is already tracked in this event.": "{host} wird in diesem Event schon getrackt.",
+    "Based on {models}": "Basiert auf {models}",
+    "The before and after numbers and the comparison use the models that both groups have data for.": "Die Zahlen vorher und nachher und der Vergleich nutzen die Modelle, zu denen beide Gruppen Daten haben.",
+    "{a} and {b}": "{a} und {b}",
+    "Last 12 months": "Letzte 12 Monate",
+    "Last {n} days": "Letzte {n} Tage",
+    "Since event covers at most the last 12 months. Older days are left out of the numbers after the event.": "Seit Event reicht höchstens 12 Monate zurück. Ältere Tage fehlen in den Zahlen nach dem Event.",
+    "Reliable from {date}": "Verlässlich ab {date}",
+    "The first day with data after the event.": "Der erste Tag mit Daten nach dem Event.",
+    "{n} prompt has no data after the event. It is not part of the before and after numbers.": "{n} Prompt hat keine Daten nach dem Event. Er zählt nicht in die Zahlen vorher und nachher.",
+    "{n} prompts have no data after the event. They are not part of the before and after numbers.": "{n} Prompts haben keine Daten nach dem Event. Sie zählen nicht in die Zahlen vorher und nachher.",
+    "{n} prompt was measured on different models before and after the event. It is not part of the before and after numbers.": "{n} Prompt wurde vor und nach dem Event mit verschiedenen Modellen gemessen. Er zählt nicht in die Zahlen vorher und nachher.",
+    "{n} prompts were measured on different models before and after the event. They are not part of the before and after numbers.": "{n} Prompts wurden vor und nach dem Event mit verschiedenen Modellen gemessen. Sie zählen nicht in die Zahlen vorher und nachher."
+  });
 
   /* Spaltenzahl der Karten: nach dem PLATZ (wie response-detail.spalten -- dieselben Schwellen,
      dieselbe Begruendung: ein springendes Raster ist schlimmer als eine kurze letzte Reihe). */
@@ -2513,6 +2533,23 @@
         '</div>' + (rechts || '') + '</div>';
     }
 
+    /* DIE MODELLBASIS (18.10., Runde 3): Kacheln, Wettbewerber, Vergleich und Verlauf rechnen auf den Modellen, zu
+       denen die betroffenen Prompts UND die Vergleichsgruppe Daten haben (cohort.shared_models, models_basis
+       "shared"). Die Prompts, die auf dieser Menge vergleichbar sind, zaehlt shared_comparable_prompt_count
+       (Vergleichsgruppe: comparison_shared_...); ohne die Felder (aeltere Antwort) die bisherigen Zaehler. */
+    function kohorteN(c, vergleich) {
+      c = c || {};
+      var geteilt = c.models_basis === "shared", v = vergleich
+        ? (geteilt && num(c.comparison_shared_comparable_prompt_count) != null ? c.comparison_shared_comparable_prompt_count : c.comparison_comparable_prompt_count)
+        : (geteilt && num(c.shared_comparable_prompt_count) != null ? c.shared_comparable_prompt_count : c.comparable_prompt_count);
+      return num(v);
+    }
+    /* "ChatGPT, Gemini and Perplexity" */
+    function modellSatz(l) {
+      var n = l.map(modellName);
+      if (n.length < 2) return n.join("");
+      return ersetze(t("{a} and {b}"), { a: n.slice(0, -1).join(", "), b: n[n.length - 1] });
+    }
     function renderHinweise() {
       var el = elMain.querySelector('[data-sek="hinweise"]'), a = dieAnalyse();
       if (!a) { el.innerHTML = ""; return; }
@@ -2546,11 +2583,11 @@
          Umfang, aber nur 6 haben vorher UND nachher Laeufe -- die Zahlen daneben stammen aus diesen 6.
          Ohne die Zeile widersprechen sich zwei Zahlen derselben Seite. Nur bei einer Abweichung; bei
          Prompts, die es erst nach dem Event gab, sagt es zusaetzlich der Satz im Umfang. */
-      var co = a.cohort || {}, cn = num(co.comparable_prompt_count), ca = num(co.affected_in_filter_count != null ? co.affected_in_filter_count : co.affected_prompt_count);
+      var co = a.cohort || {}, cn = kohorteN(co, false), ca = num(co.affected_in_filter_count != null ? co.affected_in_filter_count : co.affected_prompt_count);
       if (cn != null && ca != null && cn > 0 && cn < ca)
         h.push(angabe("info", ersetze(t("Based on {n} of {m} affected prompts"), { n: zahl(cn), m: zahl(ca) }),
           t("Only prompts with data both before and after the event count in these numbers.")));
-      var vn = num(co.comparison_comparable_prompt_count), va = num(co.comparison_prompt_count);
+      var vn = kohorteN(co, true), va = num(co.comparison_prompt_count);
       if (vn != null && va != null && vn > 0 && vn < va)
         h.push(angabe("info", ersetze(t("Comparison based on {n} of {m} prompts"), { n: zahl(vn), m: zahl(va) }),
           t("Only prompts with data both before and after the event count in these numbers.")));
@@ -2562,9 +2599,31 @@
          Aepfel mit Birnen -- ohne Hinweis sah sie aus wie ein gleicher Massstab. Die Datenbank soll
          auf der Schnittmenge rechnen (Bericht, "Fuer den DB-Chat"); bis dahin sagt es die Zeile. */
       var cm = a.cohort && a.cohort.comparable_models, cv = a.cohort && a.cohort.comparison_comparable_models;
-      if (isArr(cm) && isArr(cv) && cm.length && cv.length && (cm.length !== cv.length || cm.some(function (x) { return cv.indexOf(x) < 0; })))
+      /* Seit Runde 3 rechnet die DB selbst auf der Schnittmenge (models_basis): dann gibt es keinen Apfel-Birne-
+         Vergleich mehr, und die Zeile "verschiedene Modelle" entfaellt. An ihre Stelle tritt, nur wenn die Basis
+         kleiner ist als die Modelle des Teams, EINE leise Angabe "Based on ChatGPT and Gemini" -- ohne Urteil,
+         die Erklaerung am Zeiger. Ohne models_basis (aeltere Antwort) bleibt die alte Zeile. */
+      var basis = a.cohort && a.cohort.models_basis;
+      if (basis === "shared" || basis === "no_shared_models" || basis === "affected") {
+        var sm = isArr(a.cohort.shared_models) ? a.cohort.shared_models.filter(Boolean) : [];
+        var alle = UC.getModels ? UC.getModels().length : 0;
+        if (basis === "shared" && sm.length && (!alle || sm.length < alle))
+          h.push(angabe("info", ersetze(t("Based on {models}"), { models: modellSatz(sm) }),
+            t("The before and after numbers and the comparison use the models that both groups have data for.")));
+      } else if (isArr(cm) && isArr(cv) && cm.length && cv.length && (cm.length !== cv.length || cm.some(function (x) { return cv.indexOf(x) < 0; })))
         h.push(angabe("info", t("The comparison uses different models"), ersetze(t("The affected prompts are measured on {a}, the comparison group on {b}."),
           { a: cm.map(modellName).join(", "), b: cv.map(modellName).join(", ") })));
+      /* "Since event" ist seit Runde 3 hoechstens 366 Tage lang (windows.after_capped, after_days): dann steht
+         dort die Laenge, nicht ein Datum. ready_from (erster Tag mit Daten nach dem Event) nennt nur der noch
+         nicht erreichte Tag: ein Event von heute hat ab morgen Zahlen, ein aelterer hat sie ja schon. */
+      if (w.window === "since" && w.after_capped === true) {
+        var ad = num(w.after_days);
+        h.push(angabe("info", ad != null && ad >= 360 && ad <= 366 ? t("Last 12 months") : ad != null ? ersetze(t("Last {n} days"), { n: zahl(ad) }) : t("Last 12 months"),
+          t("Since event covers at most the last 12 months. Older days are left out of the numbers after the event.")));
+      }
+      var rf = w.ready_from ? tagMs(w.ready_from) : NaN;
+      if (isFinite(rf) && rf > tagMs(heuteIso()))
+        h.push(angabe("clock", ersetze(t("Reliable from {date}"), { date: datum(String(w.ready_from).slice(0, 10)) }), t("The first day with data after the event.")));
       var ov = isArr(a.overlaps) ? a.overlaps.length : 0;
       if (ov) h.push(angabe("tickets", ersetze(t(ov === 1 ? "{n} other event in this period" : "{n} other events in this period"), { n: ov })));
       el.innerHTML = h.join("");
@@ -2598,7 +2657,7 @@
           : [0, 1, 2].map(function () { return UC.kpiKarteSkelett("uev-kpi"); }).join("");
         return;
       }
-      var leer = !(a.cohort && num(a.cohort.comparable_prompt_count) > 0);
+      var leer = !(a.cohort && kohorteN(a.cohort, false) > 0);
       el.innerHTML = METRIKEN.map(function (m) {
         var teile = leer ? { wertHtml: '<span class="up-num is-empty">–</span>' } : kpiTeile(m.key, a);
         /* Der Satz unter JEDER Kachel (15.10. nachts): bis dahin stand er nur unter Visibility, und
@@ -2655,7 +2714,7 @@
       if (kp) kp.hidden = an;
       if (!an) { el.innerHTML = ""; return; }
       var w = a.windows || {}, z = phasenZeiten(ev, w), final = w.report_final === true || ev.report_final === true;
-      var leer = !(a.cohort && num(a.cohort.comparable_prompt_count) > 0);
+      var leer = !(a.cohort && kohorteN(a.cohort, false) > 0);
       el.innerHTML = PHASEN.map(function (ph) {
         var von = z[ph.key][0], bis = z[ph.key][1];
         var zeilen = METRIKEN.map(function (m) {
@@ -2702,12 +2761,16 @@
          Event-Farbe fuer Reihen (Spezifikation 29). */
       var tinte = UC.chartInk ? UC.chartInk(root) : UC.accentInk ? UC.accentInk(root) : token("--vc-text");
       var grau = token("--vc-fourth");
-      var ds = [{ label: aName, __id: "affected", __baseColor: tinte, borderColor: tinte,
+      /* Tage ausserhalb des Beobachtungszeitraums der Marke (trend[].tracked false, 18.10.): kein Wert, keine
+         Linie, keine Punkte -- eine Luecke, die Linie bricht ab (__luecken aus core), statt sie zu ueberbruecken
+         oder auf 0 zu setzen. Ohne solche Tage bleibt es beim bisherigen Verhalten. */
+      var luecken = tr.some(function (p) { return p && p.tracked === false; });
+      var ds = [{ label: aName, __id: "affected", __baseColor: tinte, borderColor: tinte, __luecken: luecken,
                   __favicon: a.affected && a.affected.logo_url ? a.affected.logo_url : undefined,
-                  data: tr.map(function (p) { return num(p["affected_" + feld]); }) }];
+                  data: tr.map(function (p) { return p.tracked === false ? null : num(p["affected_" + feld]); }) }];
       if (a.comparison) {
         ds.push({ label: t("Comparison"), __id: "comparison", __baseColor: grau, borderColor: grau,
-                  __dash: true, data: tr.map(function (p) { return num(p["comparison_" + feld]); }) });
+                  __dash: true, __luecken: luecken, data: tr.map(function (p) { return p.tracked === false ? null : num(p["comparison_" + feld]); }) });
       }
       /* Tage ohne einen einzigen Wert (alle Laeufe 0, oder die Marke hat in der gewaehlten Kennzahl
          nie einen -- Rank ohne Erwaehnung): sonst ein leeres Achsenkreuz mit dem Pin, eine leere
@@ -3350,8 +3413,8 @@
         return UC.rpc(fn, mitTeam(o, tm2), { timeoutMs: 20000 });
       }).then(function (erg) { return erg || { ok: false, status: 0, fehler: {} }; });
     }
-    function abdAnfordern(eid) {
-      if (demo || ABD_DA.stand === false || !UC.rpc || !eid) return;
+    function abdAnfordern(eid, danach) {
+      if (demo || ABD_DA.stand === false || !UC.rpc || !eid) { if (danach) danach(); return; }
       var e = state.abd[eid] || (state.abd[eid] = { daten: null, fehler: false, mehr: {} });
       e.laedt = true;
       abdRpc("get_impact_event_coverage_v1", { p_event_id: eid, p_target_id: null, p_filter: "all", p_limit: ABD_LIMIT, p_offset: 0 }).then(function (erg) {
@@ -3362,6 +3425,7 @@
            ja nicht falsch), ohne einen steht der Satz statt der Zeile -- nie ein endloses Skelett. */
         else e.fehler = !e.daten;
         persist();
+        if (danach) danach();
         if (root.isConnected !== false && state.ansicht === "detail" && state.eventId === eid) abdAlle();
       });
     }
@@ -3374,7 +3438,9 @@
     function abdAutoPruefen(eid) {
       var e = state.abd[eid], d = e && e.daten;
       if (!d || abdAuto[eid] || e.neuLaeuft || !UC.edge || d.can_refresh !== true) return;
-      if (!(isArr(d.targets) && d.targets.some(function (x) { return x && String(x.status || "") === "pending"; }))) return;
+      /* Nur wenn ein Ziel noch nie gelesen wurde UND selbst lesbar ist: ein erstes Lesen, das gerade laeuft
+         (busy) oder an der Teamgrenze steht, loest keinen zweiten Abruf aus. */
+      if (!(isArr(d.targets) && d.targets.some(function (x) { return x && String(x.status || "") === "pending" && abdSperre(e, d, x).art === ""; }))) return;
       abdAuto[eid] = 1;
       abdAktualisieren(true);
     }
@@ -3388,18 +3454,47 @@
         if (sek) abdFuellen(sek, zt);
       });
     }
-    /* Die Sperr-Uhr: solange "Refresh" gesperrt ist, jede Minute die Wartezeit neu, am Ende frei. */
+    /* Die Sperr-Uhr: solange irgendein "Refresh" gesperrt ist, hoechstens eine Minute bis zum Neuzeichnen, am Ende
+       frei. Jedes Ziel meldet seine Wartezeit; der fruehere Zeitpunkt gewinnt (vorher stellte das letzte Ziel
+       die Uhr, und ein Ziel mit kuerzerer Sperre wartete auf das mit der laengeren). */
+    var abdUhrBis = 0;
     function abdUhr(warteMs) {
-      if (abdUhrId) { clearTimeout(abdUhrId); abdUhrId = null; }
       if (!(warteMs > 0)) return;
+      var bis = Date.now() + Math.min(warteMs, 60000) + 50;
+      if (abdUhrId && abdUhrBis <= bis) return;
+      if (abdUhrId) clearTimeout(abdUhrId);
+      abdUhrBis = bis;
       abdUhrId = setTimeout(function () {
-        abdUhrId = null;
+        abdUhrId = null; abdUhrBis = 0;
         if (root.isConnected !== false && state.ansicht === "detail") abdAlle();
-      }, Math.min(warteMs, 60000) + 50);
+      }, bis - Date.now());
     }
     function abdWarteMs(d) {
       var nr = d && d.next_refresh_at ? Date.parse(d.next_refresh_at) : NaN;
       return isFinite(nr) ? nr - Date.now() : 0;
+    }
+    /* DIE SPERRE JE QUELLE (18.10., Runde 3): die Datenbank sperrt nicht mehr das Event, sondern jede Quelle fuer
+       sich -- je Ziel refresh_status (read | locked | skipped), refresh_code (first_read, due | recent | busy,
+       team_limit) und next_refresh_at. Neu angelegte Quellen werden sofort gelesen, auch wenn eine andere im
+       selben Event gerade gelesen wurde (de.holy.com sofort, weareholy.com bis +1 h).
+       Gibt { art, bis }: art "" = lesbar, "recent" (in der letzten Stunde gelesen), "busy" (wird gerade gelesen),
+       "team" (Stundengrenze des Teams), "pause" (Wartezeit nach einer 429, fuer das ganze Event). Ist der
+       Zeitpunkt vorbei, ist die Quelle frei, auch wenn die Antwort noch das Alte sagt. Ohne die Felder (aeltere
+       Fassung der DB) sperrt wie bisher das Event (next_refresh_at oben). */
+    function abdSperre(e, d, z) {
+      var jetzt = Date.now(), pb = e && e.pauseBis > jetzt ? e.pauseBis : 0;
+      var nr = z && z.next_refresh_at ? Date.parse(z.next_refresh_at) : NaN;
+      if (z && z.refresh_status != null) {
+        var st = String(z.refresh_status), code = String(z.refresh_code || "");
+        if ((st === "locked" || st === "skipped") && !(isFinite(nr) && nr <= jetzt)) {
+          var zb = code === "busy" && e && e.zeitBudget && z.target_id != null && !!e.zeitBudget[String(z.target_id)];
+          return { art: code === "busy" ? "busy" : code === "team_limit" ? "team" : "recent", bis: isFinite(nr) ? nr : (pb || 0), zb: zb };
+        }
+        return pb ? { art: "pause", bis: pb } : { art: "", bis: 0 };
+      }
+      var w = d && d.can_refresh === true ? 0 : abdWarteMs(d);
+      if ("next_refresh_at" in (d || {}) && w > 0) return { art: "recent", bis: jetzt + w };
+      return pb ? { art: "pause", bis: pb } : { art: "", bis: 0 };
     }
     /* "plus 3 cited pages not in your sitemap": mit plus hinter der Zahl der zitierten Seiten, ohne
        plus als eigener Satz (keine Seite der Sitemap trifft die Regel). html mit der Zahl betont. */
@@ -3461,9 +3556,12 @@
     /* Ein Host wie in der Regel: ohne www, klein. */
     function abdHostNorm(h) { return String(h || "").toLowerCase().replace(/^www\./, ""); }
     /* Der Satz im Kopf: Zahl der zitierten Seiten, dazu wann zuletzt gelesen wurde. */
-    function abdSubSatz(d, z) {
+    function abdSubSatz(d, z, sp, laeuft) {
       var st = String(z.status || ""), pc = num(z.page_count), cc = num(z.cited_count), aussen = num(z.cited_outside_sitemap), teile = [];
-      if (st === "pending") teile.push(t("We're reading your sitemap for the first time."));
+      /* Noch nie gelesen: "wir lesen" nur, wenn es auch geschieht. Steht das Ziel an der Teamgrenze, wird nichts
+         gelesen -- dann sagt der Satz darunter wann wieder. Dasselbe, wenn die Sperre eines laufenden Lesens
+         (busy) abgelaufen ist und noch nichts da ist: dann liest niemand mehr, der Knopf ist frei. */
+      if (st === "pending") teile.push(t(laeuft || (sp && sp.art === "busy" && !sp.zb) ? "We're reading your sitemap for the first time." : "Your sitemap hasn't been read yet."));
       else if (pc > 0 && cc != null) {
         teile.push(ersetze(t(pc === 1 ? "{a} of {b} page cited" : "{a} of {b} pages cited"), { a: zahl(cc), b: zahl(pc) }) + (aussen > 0 ? ", " + abdPlusSatz(aussen, true).text : ""));
       }
@@ -3475,20 +3573,30 @@
        (.up-btn-spin) und "Refreshing", in der Pause gesperrt (der Satz darunter sagt wann wieder), nach einem
        Fehler "Try again". Ohne next_refresh_at im Vertrag gibt es keinen Knopf: ohne die Sperre gaebe es keinen
        Weg, "gesperrt" ehrlich zu zeigen. */
-    function abdKnopfHtml(e, d) {
-      if (!("next_refresh_at" in d)) return "";
-      var warte = abdWarteMs(d), laeuft = !!e.neuLaeuft, zu = warte > 0 || laeuft, fs = abdFehlerSt[state.eventId] || null;
+    function abdKnopfHtml(e, d, z) {
+      if (!("next_refresh_at" in d) && !(z && z.refresh_status != null)) return "";
+      var sp = abdSperre(e, d, z), laeuft = !!e.neuLaeuft, zu = sp.art !== "" || laeuft, fs = abdFehlerSt[state.eventId] || null;
       var retry = !zu && fs && fs.art === "fehler";
-      abdUhr(warte);
+      if (sp.bis) abdUhr(sp.bis - Date.now());
       return '<button type="button" class="up-btn-sec uev-abd-neu' + (laeuft ? " is-busy" : "") + '"' + (zu ? " disabled" : "") + (laeuft ? ' aria-busy="true"' : "") + '>' +
         (laeuft ? '<span class="up-btn-spin" aria-hidden="true"></span>' : UC.icon("refreshCw", 2)) +
         '<span>' + esc(t(laeuft ? "Refreshing" : retry ? "Try again" : "Refresh")) + '</span></button>';
     }
     /* Die Saetze unter dem Kopf: Pause, Fehler, Kuerzung -- je eine Zeile, nur wenn es sie gibt. */
-    function abdMeldungenHtml(e, d, z) {
+    function abdMeldungenHtml(e, d, z, sp) {
       var eid = state.eventId, st = String(z.status || ""), fs = abdFehlerSt[eid] || null, aus = "";
-      var warte = abdWarteMs(d);
-      if ("next_refresh_at" in d && warte > 0 && !e.neuLaeuft) aus += '<span class="uev-abd-leise">' + esc(ersetze(t("You can refresh again at {time}."), { time: abdUm(Date.now() + warte) })) + '</span>';
+      /* Je Quelle EIN ruhiger Satz, nie ein Code: gesperrt bis wann (recent, pause), wird gerade gelesen (busy),
+         Teamgrenze (team); ein Lesen, das das Zeitbudget der Function sprengte (time_budget), sagt es als
+         "nicht fertig gelesen". Ein noch nie gelesenes Ziel, das gerade gelesen wird, sagt es schon im Kopf. */
+      var sperrZeit = sp && sp.bis ? ersetze(t("You can refresh again at {time}."), { time: abdUm(sp.bis) }) : "";
+      var satz = "";
+      if (sp && !e.neuLaeuft) {
+        var zb = sp.zb;
+        if (sp.art === "recent" || sp.art === "pause") satz = sperrZeit;
+        else if (sp.art === "busy") satz = zb ? t("We couldn't finish reading this sitemap.") + (sperrZeit ? " " + sperrZeit : "") : (st === "pending" ? "" : t("This sitemap is being read right now."));
+        else if (sp.art === "team") satz = t("Your team has reached its hourly limit for reading sitemaps.") + (sperrZeit ? " " + sperrZeit : "");
+      }
+      if (satz) aus += '<span class="uev-abd-leise">' + esc(satz) + '</span>';
       if (z.truncated === true && num(z.page_limit) > 0) {
         /* Die DB behaelt die zuletzt geaenderten Seiten (lastmod, neueste zuerst), nicht die ersten
            der Datei; matched_total sagt, wie viele die Regel in der Sitemap trifft. */
@@ -3525,7 +3633,9 @@
           : p.first_seen_at ? ersetze(t("In sitemap since {date}"), { date: datum(p.first_seen_at) }) : "";
         if (wann) rechts = '<span class="uev-abd-datum">' + esc(wann) + '</span>';
       } else if (zit) {
-        var c = treffer ? num(treffer.c) : null;
+        /* Die Zahl der Seite selbst (citations_after, 18.10.) gilt auch jenseits der 200 neuesten URLs der Tabelle
+           darueber; ohne sie (aeltere DB) die der Tabelle. 0 sagt nichts ueber "zitiert": dann das Wort. */
+        var c = num(p.citations_after) > 0 ? num(p.citations_after) : treffer && num(treffer.c) > 0 ? num(treffer.c) : null;
         rechts = '<span class="uev-abd-datum uev-abd-zitate">' + esc(c != null ? ersetze(t(c === 1 ? "{n} citation" : "{n} citations"), { n: zahl(c) }) : t("Cited")) + '</span>';
       }
       /* Eine zitierte Seite oeffnet das URL-Detail (Beschluss 2), mit der Schreibweise des Zitats, wenn die
@@ -3587,6 +3697,28 @@
       var P = { sm: {} }, nachLoc = {};
       seiten.forEach(function (p) { if (p && p.url) nachLoc[p.url] = p; });
       smBaum(P, seiten.filter(function (p) { return p && p.url; }).map(function (p) { return { loc: p.url, lastmod: String(p.lastmod || p.first_seen_at || "").slice(0, 10) }; }));
+      /* DIE REIHENFOLGE KOMMT AUS DER DB (18.10.): bei "all" nach Pfadteilen des Seitenschluessels (ein Ordner direkt
+         vor seinen Unterseiten), sonst wie die Liste sie liefert. smBaum sortiert fuer den Waehler anders (Ordner nach
+         Name, Seiten nach lastmod): hier nicht -- sonst ruecken beim Nachladen von "Show more" neu geladene Seiten
+         nach vorn und die sichtbaren Zeilen springen. Darum nach dem Rang der ersten Seite in der Antwort: eine
+         Seite hat ihren Rang, ein Ordner den seiner ersten Seite. */
+      var rang = {};
+      seiten.forEach(function (pg, i) { if (pg && pg.url && rang[pg.url] == null) rang[pg.url] = i; });
+      function rangVon(k) {
+        if (k.art === "seite") return rang[k.loc] == null ? 1e9 : rang[k.loc];
+        var r = 1e9;
+        k.kinder.forEach(function (c) { r = Math.min(r, rangVon(c)); });
+        k.seiten.forEach(function (c) { r = Math.min(r, rangVon(c)); });
+        return (k.__r = r);
+      }
+      function nachRang(k) {
+        k.kinder.sort(function (a, b) { return a.__r - b.__r; });
+        k.seiten.sort(function (a, b) { return rangVon(a) - rangVon(b); });
+        k.kinder.forEach(nachRang);
+      }
+      (P.sm.hosts || []).forEach(rangVon);
+      (P.sm.hosts || []).forEach(nachRang);
+      (P.sm.hosts || []).sort(function (a, b) { return a.__r - b.__r; });
       var hosts = P.sm.hosts || [], mitOrdnern = hosts.length > 1 || hosts.some(function (h) { return h.kinder.length > 0; });
       /* Die Zahl an einem Ordner nur, wenn alle Seiten geladen sind: sonst stuende dort die Zahl der
          bisher geladenen, und "Show more" machte aus ihr eine andere. */
@@ -3616,9 +3748,16 @@
         var alle = hosts.length === 1 || (hosts[0].n != null && hosts[0].n >= total);
         var wohin = alle ? ersetze(t("all on {hosts}"), { hosts: top }) : ersetze(t("mostly on {hosts}"), { hosts: hosts.map(function (h) { return h.host; }).join(", ") });
         if (!gleich) {
+          /* Ist dieser Host schon ein Ziel des Events (de.holy.com neben weareholy.com), gibt es nichts hinzuzufuegen:
+             der Satz sagt es, der Knopf entfaellt (er liefe im Dialog auf "Already in this event"). */
+          var schon = regelZiele(dieDetail()).some(function (x) {
+            var h2 = abdHostNorm(zielHost(zielAusDb(x)));
+            return h2 === top || (x.kind === "host_all" && top.slice(-(h2.length + 1)) === "." + h2);
+          });
           return UC.leerHtml({ icon: "globe", titel: "Your sitemap lists another domain.",
-            text: ersetze(t("We read {n} pages, {where}. None is on {domain}."), { n: zahl(total), where: wohin, domain: eigen || ziel }) + plus,
-            knopf: ersetze(t("Add {host}"), { host: top }), knopfAttr: 'data-abd-addhost="' + esc(top) + '"' });
+            text: ersetze(t("We read {n} pages, {where}. None is on {domain}."), { n: zahl(total), where: wohin, domain: eigen || ziel }) + plus +
+              (schon ? " " + ersetze(t("{host} is already tracked in this event."), { host: top }) : ""),
+            knopf: schon ? "" : ersetze(t("Add {host}"), { host: top }), knopfAttr: schon ? "" : 'data-abd-addhost="' + esc(top) + '"' });
         }
         return UC.leerHtml({ icon: "globe", titel: "No pages match this rule",
           text: ersetze(t("We read {n} pages. None of them is under {path}."), { n: zahl(total), path: ziel }) + plus });
@@ -3642,8 +3781,9 @@
         nurKopf(sekKopf("Sitemap", ""), e.fehler ? '<div class="up-fehlerzeile is-on"><span>' + esc(t("Page coverage couldn't be loaded.")) + '</span></div>' : '<span class="uev-sk uev-abd-sk"></span>');
         return;
       }
-      kopf.innerHTML = sekKopf("Sitemap", abdSubSatz(d, z), abdKnopfHtml(e, d));
-      var m = abdMeldungenHtml(e, d, z);
+      var sperre = abdSperre(e, d, z);
+      kopf.innerHTML = sekKopf("Sitemap", abdSubSatz(d, z, sperre, !!e.neuLaeuft), abdKnopfHtml(e, d, z));
+      var m = abdMeldungenHtml(e, d, z, sperre);
       meld.innerHTML = m; meld.hidden = !m;
       var pc = num(z.page_count), cc = num(z.cited_count), st = String(z.status || "");
       var laeuft = !!e.neuLaeuft, keineSeiten = !(pc > 0) || cc == null;
@@ -3731,8 +3871,9 @@
        Toast mitten in der Seite; derselbe Weg gilt fuer den Knopf. */
     function abdAktualisieren(auto) {
       var eid = state.eventId, e = eid ? state.abd[eid] : null, d = e && e.daten;
-      if (!d || e.neuLaeuft || abdWarteMs(d) > 0) return;
+      if (!d || e.neuLaeuft || (d.can_refresh === true ? 0 : abdWarteMs(d)) > 0 || e.pauseBis > Date.now()) return;
       delete abdFehlerSt[eid];
+      e.zeitBudget = {};
       e.neuLaeuft = true; abdAlle();
       function fertig(fehler) {
         e.neuLaeuft = false;
@@ -3747,18 +3888,32 @@
       }).then(function (erg) {
         erg = erg || { ok: false, status: 0, fehler: {} };
         var f = erg.fehler || {}, dd = erg.daten && erg.daten.ok === false ? erg.daten : null;
-        if (erg.ok && erg.daten && erg.daten.ok !== false && abdLesbar(erg.daten)) { e.daten = erg.daten; e.mehr = {}; e.filt = {}; e.filtFehler = {}; abdBaumZ = {}; fertig(null); return; }
+        if (erg.ok && erg.daten && erg.daten.ok !== false && abdLesbar(erg.daten)) {
+          /* Quellen, die die Function nicht mehr schaffte (refresh.sources[].code time_budget): je Ziel gemerkt,
+             damit der Satz es sagt statt "wird gerade gelesen". */
+          var rq = erg.daten.refresh && isArr(erg.daten.refresh.sources) ? erg.daten.refresh.sources : [];
+          rq.forEach(function (q) {
+            if (q && q.code === "time_budget" && isArr(q.target_ids)) q.target_ids.forEach(function (tid) { e.zeitBudget[String(tid)] = true; });
+          });
+          e.pauseBis = 0;
+          e.daten = erg.daten; e.mehr = {}; e.filt = {}; e.filtFehler = {}; abdBaumZ = {}; fertig(null); return;
+        }
         /* Zu frueh (Refresh 1 je Stunde und Event) oder zu viele Abrufe (10 je Minute und Nutzer): kein
            Fehler und kein Wiederholen, nur die Zeit, ab der es wieder geht. */
         var code = dd ? String(dd.error || "") : String(f.message || "");
-        if (zuFrueh(f) || code === "impact_event_sitemap_refresh_too_soon" || code === "rate_limited" || code === "impact_event_rate_limited" || erg.status === 429) {
+        var sperrCode = code === "impact_event_sitemap_refresh_too_soon" || code === "impact_event_sitemap_rate_limited";
+        if (zuFrueh(f) || sperrCode || code === "rate_limited" || code === "impact_event_rate_limited" || erg.status === 429) {
           var sek = num(f.retry_after) || num(dd && dd.retry_after);
           if (!(sek > 0) && /^\d+$/.test(String(f.hint || (dd && dd.hint) || ""))) sek = parseInt(f.hint || dd.hint, 10);
           var nr = (dd && dd.next_refresh_at) || (f.details && f.details.next_refresh_at) || "";
           if (nr && isFinite(Date.parse(nr))) d.next_refresh_at = nr;
           else abdZuFrueh(d, { retry_after: sek > 0 ? sek : 0, hint: "" });
-          fertig({ art: "zeit" });
-          if (state.eventId === eid && zuFrueh(f)) abdAnfordern(eid);
+          /* Die Wartezeit gilt fuer das ganze Event, bis die Abdeckung den Zustand je Quelle neu nennt. */
+          e.pauseBis = Date.parse(d.next_refresh_at) || (Date.now() + (sek > 0 ? sek : 3600) * 1000);
+          /* 429 nur, wenn keine Quelle lesbar ist (zu frueh oder Teamgrenze): der Zustand je Quelle steht in der
+             Abdeckung -- einmal neu holen, der Knopf bleibt bis dahin im Lauf (kein Aufblitzen "Refresh"). */
+          if (state.eventId === eid && (zuFrueh(f) || sperrCode)) abdAnfordern(eid, function () { fertig({ art: "zeit" }); });
+          else fertig({ art: "zeit" });
           return;
         }
         fertig({ art: "fehler" });
@@ -3830,6 +3985,16 @@
       if (num(c.post_only_prompt_count) > 0) neben.push(ersetze(t(num(c.post_only_prompt_count) === 1
         ? "{n} prompt was added after the event. It appears in the chart, but not in the before and after numbers."
         : "{n} prompts were added after the event. They appear in the chart, but not in the before and after numbers."), { n: zahl(c.post_only_prompt_count) }));
+      /* Prompts, die zwar vor dem Event Daten haben, aber danach (noch) keine, und solche, die vor und nach dem Event
+         auf verschiedenen Modellen liefen (cohort.pre_only_prompt_count, mixed_models_prompt_count, 18.10.): sie
+         schliessen die Rechnung "vergleichbar + nur danach + nur davor + gemischt + ohne Daten = betroffene Prompts"
+         und erklaeren, warum die Kacheln auf weniger Prompts beruhen, als der Umfang nennt. */
+      if (num(c.pre_only_prompt_count) > 0) neben.push(ersetze(t(num(c.pre_only_prompt_count) === 1
+        ? "{n} prompt has no data after the event. It is not part of the before and after numbers."
+        : "{n} prompts have no data after the event. They are not part of the before and after numbers."), { n: zahl(c.pre_only_prompt_count) }));
+      if (num(c.mixed_models_prompt_count) > 0) neben.push(ersetze(t(num(c.mixed_models_prompt_count) === 1
+        ? "{n} prompt was measured on different models before and after the event. It is not part of the before and after numbers."
+        : "{n} prompts were measured on different models before and after the event. They are not part of the before and after numbers."), { n: zahl(c.mixed_models_prompt_count) }));
       /* Geloeschte Prompts zaehlen in der eingefrorenen Kohorte weiter als betroffen (Vertrag, cohort.
          deleted_prompt_count): ohne den Satz wuerde die Zahl der betroffenen Prompts groesser
          wirken als das, was heute in der Liste steht. Nur bei > 0, leise wie die Saetze darueber. */
@@ -5457,14 +5622,43 @@
         nBreit = ptB ? num(ptB.matched_url_count) || 0 : 0; cBreit = ptB ? num(ptB.citation_count) || 0 : 0;
       }
       function mitZahl(schl, v) { return esc(t(schl)).replace("{n}", '<span class="uev-vz-n">' + esc(zahl(v)) + '</span>'); }
-      /* DIE HOSTS: die Datenbank liefert (sobald sie es tut) hosts[] mit Seiten und Zitaten je Host und
-         host_count; bis dahin nur dort, wo die Beispiele alle getroffenen Seiten tragen (hoechstens
-         fuenf) oder genau ein Host gemeint ist. Sonst steht keine Hostzahl da -- geraten wird nicht. */
+      /* DIE HOSTS (18.10., w3_wizard): die Datenbank liefert sie je Ziel -- per_target[].hosts =
+         [{ host, matched_url_count, citation_count }], nach Zitaten absteigend, hoechstens 10, dazu
+         host_count (alle Hosts des Ziels). Ein ungueltiges Ziel hat null, eines ohne Treffer []/0.
+         - Mit Begleiter oder bei genau einem Ziel gelten die Hosts dieses einen Ziels.
+         - Bei mehreren Zielen werden die Listen nur zusammengelegt, wenn jede vollstaendig ist (host_count
+           nicht groesser als die Liste): sonst laesse sich die Zahl der Hosts nicht ehrlich nennen, und
+           geraten wird nicht. Ein Host, den zwei Ziele treffen, zaehlt einmal, mit dem groesseren Wert
+           (eine Regel kann die andere ganz enthalten, www.adac.de und adac.de).
+         Frueherer Weg bleibt als Rueckfall: ein hosts[] ganz oben (altere Fassung), und dort, wo die
+         Beispiele alle getroffenen Seiten tragen (hoechstens fuenf), diese. */
       var hostListe = null, hostZahl = null;
-      if (isArr(d.hosts) && d.hosts.length) {
-        hostListe = d.hosts.filter(function (x) { return x && x.host; }).map(function (x) {
+      function hostEintraege(l2) {
+        return l2.filter(function (x) { return x && x.host; }).map(function (x) {
           return { host: String(x.host), c: num(x.citation_count != null ? x.citation_count : x.citations), n: num(x.matched_url_count != null ? x.matched_url_count : x.url_count) };
         });
+      }
+      var ptEins = null;
+      if (bg.length) { pts.forEach(function (pt) { if (String(pt.input) === l[0].input && pt.kind === l[0].kind) ptEins = pt; }); }
+      else if (pts.length === 1) ptEins = pts[0];
+      var gueltigeHosts = pts.filter(function (pt) { return pt && !pt.error && pt.valid !== false && isArr(pt.hosts); });
+      if (ptEins && isArr(ptEins.hosts)) {
+        hostListe = hostEintraege(ptEins.hosts);
+        hostZahl = Math.max(hostListe.length, num(ptEins.host_count) || 0);
+      } else if (!ptEins && !bg.length && gueltigeHosts.length > 1 && gueltigeHosts.every(function (pt) { return (num(pt.host_count) || 0) <= pt.hosts.length; })) {
+        var gem = {}, reihe0 = [];
+        gueltigeHosts.forEach(function (pt) {
+          hostEintraege(pt.hosts).forEach(function (x) {
+            var v = gem[x.host];
+            if (!v) { gem[x.host] = v = { host: x.host, c: x.c, n: x.n }; reihe0.push(x.host); return; }
+            if ((x.c || 0) > (v.c || 0)) v.c = x.c;
+            if ((x.n || 0) > (v.n || 0)) v.n = x.n;
+          });
+        });
+        hostListe = reihe0.map(function (h) { return gem[h]; }).sort(function (x, y) { return (y.c || 0) - (x.c || 0); });
+        hostZahl = hostListe.length;
+      } else if (isArr(d.hosts) && d.hosts.length) {
+        hostListe = hostEintraege(d.hosts);
         hostZahl = num(d.host_count) != null ? num(d.host_count) : hostListe.length;
       } else if (n && bg.length) {
         hostListe = [{ host: zielHost(l[0]), c: c, n: n }]; hostZahl = 1;
@@ -6449,16 +6643,16 @@
        es still bei der Zeile "Add ..."; kein Ladebalken, keine "No results"-Wand.
        Die Treffer tragen EINE Gruppe (je Art ein Bereich), also gibt es keine Ueberschriften. */
     function sucheBereich(e) { var a = leseArt(e); return a === "url" || a === "path" ? "url" : "domain"; }
-    /* Was gesucht wird: bei einer Domain der Host (ohne Schema, www, Pfad), bei einem Pfad Host und
-       Pfad, bei einer URL die Eingabe. Mehrere Eintraege und eine Sitemap suchen nichts. */
+    /* Was gesucht wird: die Eingabe WIE GETIPPT. Seit dem 18.10. findet quick_search_v1 auch Eingaben mit www.,
+       Schema und Umlaut-Label (www.adac.de: 0 auf 5 Treffer), die Normalisierung macht die Datenbank in einer
+       Hand -- die Oberflaeche schneidet vorher nichts mehr ab (sonst gaebe es zwei Regeln fuer dieselbe
+       Eingabe). Nur was gar keine Adresse ergibt, sucht nichts. Mehrere Eintraege und eine Sitemap suchen nichts. */
     function sucheFrage(e) {
       var tl = eingabeTeile(e.eingabe);
       if (tl.length !== 1 || artVorschlag(e.eingabe) === "sitemap") return "";
       var a = leseArt(e), z = zerlegen(tl[0]);
       if (!z) return a === "url" ? tl[0] : "";
-      if (a === "url") return tl[0];
-      if (a === "path") return z.anzeige + z.pfad;
-      return z.anzeige;
+      return tl[0];
     }
     /* Die Suche neu anstossen, auch nach einem Wechsel der Art (anderer Bereich, gleiche Eingabe).
        Alte Treffer fallen sofort weg: sie gehoeren zur anderen Art. */
@@ -7668,8 +7862,20 @@
        Zeile, die es nicht gibt, kann nicht von einer Datenbank ohne diese Felder kommen. */
     function flagsAusListe() {
       var l = UC.getEvents ? UC.getEvents() : [];
+      featuresAnwenden();
       kampagneAbleiten(l, listeGeladen());
       if (ZIELE_DA.stand == null && l.some(function (ev) { return ev && (ev.target_count != null || isArr(ev.target_kinds)); })) ZIELE_DA.stand = true;
+    }
+    /* meta.features aus app_start_v1/team_context_v1 (18.10., {targets, sitemap, campaigns, notices, coverage}):
+       die Datenbank sagt selbst, was sie kann -- das ersetzt die Probe (Vorschau mit leerer Zielliste, erster
+       echter Abruf der Abdeckung). Ein Wert true oder false zaehlt; fehlt er (aelterer Stand der DB, Antwort
+       eines Teamwechsels), bleibt es beim Alten: aus einem fehlenden features wird nie "aus". false darf einen
+       frueheren Schluss "da" ueberstimmen (Recht entzogen), true setzt nur, was noch unbekannt ist. */
+    function featuresAnwenden() {
+      var f = UC.eventFeatures ? UC.eventFeatures() : null;
+      if (!f) return;
+      function setz(st, v) { if (typeof v === "boolean" && (st.stand == null || v === false)) st.stand = v; }
+      setz(ZIELE_DA, f.targets); setz(SITEMAP_DA, f.sitemap); setz(KAMPAGNE_DA, f.campaigns); setz(ABD_DA, f.coverage);
     }
     /* Was eine Probe festgestellt hat, gilt fuer die Sitzung des Tabs (sessionStorage, je Team): ein
        Neuladen fragt nicht noch einmal. Nur eindeutige Antworten (true/false), nie "unbekannt" --
