@@ -200,7 +200,7 @@
          left-aligned padding instead of the real idx column's centered one. */
       return tableHeadHtml() + '<div class="vt-tbody">' + UC.skeletonRows({
         count: UC.MAX_LINE_SERIES || 8, rowClass: "vt-row", cellClass: "vt-td",
-        cols: [{ w:12, cls:"vt-td-idx" }, { w:70, jitter:18, logo:true }, 46, 52, 56]
+        cols: [{ w:12, cls:"vt-td-idx" }, { w:70, jitter:18, logo:true }, { w:46, zahl:true }, { w:52, zahl:true }, { w:56, zahl:true }]
       }) + '</div>';
     }
     var tableEmptyGraceTimer = null;

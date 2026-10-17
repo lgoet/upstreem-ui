@@ -4792,6 +4792,8 @@
     .up-ff-trigger { display: none; }
     .up-ff-opt { min-height: 34px; }
     .up-ff-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); }
+    /* Ein Typ als Chip (o.chipHtml): der Chip bringt Schrift, Farbe und Hoehe selbst mit (.up-filter-tag). */
+    .up-ff-name.up-ff-chip { display: inline-flex; align-items: center; overflow: visible; }
     .up-ff-panel { padding: 12px 10px 14px; min-width: 240px; }
     /* Zu ist das Panel NIE treffbar -- wie die Panels der anderen Filter (.uif-menu usw.), die das
        in ihrer eigenen CSS tun. filter-bar.css gibt ihm auto nur, solange Menue UND Untermenue
@@ -6216,6 +6218,14 @@
 :is(.up-th, .vt-th, .tct-th).up-th-zahl { justify-content: flex-end; }
 :is(.up-th, .vt-th, .tct-th).up-th-zahl > .up-th-info { order: -3; margin-left: 0; }
 :is(.up-th, .vt-th, .tct-th).up-th-zahl > .up-thsort { order: -2; }
+/* Ohne Sortierzeichen (Top Brands, Top Citations, nicht sortierbare Spalten) klebte das Info-Zeichen am Wort:
+   .vt-th und .tct-th haben keinen Spaltenabstand, .up-th nur 6. Gemeldet 17.10. ("zu nah am Text"): hier 8,
+   nur wo kein Sortierzeichen dazwischen steht (dort stimmt der Abstand schon). */
+:is(.up-th, .vt-th, .tct-th).up-th-zahl:not(:has(> .up-thsort)) { column-gap: 8px; }
+/* DAS SKELETT EINER ZAHLENSPALTE (17.10.): der Balken steht rechts, wo die Zahl spaeter steht -- vorher links
+   unter einem linken Kopf ("alle Skeleton Loader sind noch falsch"). Gesetzt von skeletonRows (zahl: true);
+   der Kopf folgt ueber zahlSpaltenKopf. */
+:is(.up-td, .vt-td, .tct-td).up-tsk-zahl { justify-content: flex-end; }
 .up-rank-group { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
 .up-hash { width: 12px; height: 12px; color: var(--vc-third); flex: 0 0 auto; display: block; }
 /* ---------- SENTIMENT OHNE KASTEN (29.09. angefordert) ----------

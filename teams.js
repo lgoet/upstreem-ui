@@ -794,8 +794,8 @@
       function skelett(n) {
         return UC.skeletonRows({ count: n, cols: [
           { w: 120, jitter: 26, logo: true, cls: "up-td-team" },
-          { w: 64,  cls: "up-td-prompts" },
-          { w: 58,  cls: "up-td-brands" },
+          { w: 64,  cls: "up-td-prompts", zahl: true },
+          { w: 58,  cls: "up-td-brands", zahl: true },
           { w: 86,  cls: "up-td-plan" },
           { w: 78,  cls: "up-td-created" },
           { w: 84,  cls: "up-td-act" }
