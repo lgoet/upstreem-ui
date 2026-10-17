@@ -1610,11 +1610,20 @@
     }
     /* Die Skelettzellen tragen dieselben Spaltenklassen -- sonst blendet das Kit sie nicht aus,
        und eine Zeile mit mehr Zellen als Spuren bricht in eine zweite Rasterzeile um. */
+    /* Die Zahlenspalten je Tabelle, gemessen am geladenen Kopf (.up-th-zahl, 17.10.): ihr Skelettbalken
+       steht rechts und ihr Kopf schon beim Laden (skeletonRows, zahl: true). "change" (nur Trend), Daten,
+       Marken und Haendlernamen sind keine. */
+    var ZAHL_SPALTEN = {
+      landscape: " share presence products pos first ", topprodukte: " vis pos obs first rating price ",
+      products: " vis obs pos first price rating ", brands: " share presence products obs pos first ",
+      merchants: " share products obs pos ", dhaendler: " share obs price ", detail: " position price "
+    };
     function skelettAus(name, n) {
       var d = TABELLEN[name];
       return skelettZeilen(n, [d.erste.sk].concat(d.spalten.map(function (c) {
         var o = c.sk && typeof c.sk === "object" ? mit({}, c.sk) : { w: c.sk };
         o.cls = "up-td-" + c.key;
+        if ((ZAHL_SPALTEN[name] || "").indexOf(" " + c.key + " ") >= 0) o.zahl = true;
         return o;
       }), d.aktion ? [{ w: 90, cls: "ush-td-aktion" }] : []));
     }

@@ -64,7 +64,7 @@
        centered one. */
     return tableHeadHtml(mode) + '<div class="tct-tbody">' + UC.skeletonRows({
       count: 8, rowClass: "tct-row", cellClass: "tct-td",
-      cols: [{ w:12, cls:"tct-td-idx" }, { w:60, jitter:18, logo:true }, 46, 40, 36]
+      cols: [{ w:12, cls:"tct-td-idx" }, { w:60, jitter:18, logo:true }, 46, { w:40, zahl:true }, { w:36, zahl:true }]
     }) + '</div>';
   }
   /* DAS ZEICHEN VOR "Type" (15.10. angefordert: "die Icons, wenn vorhanden, im Tabellenheader

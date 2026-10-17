@@ -304,7 +304,7 @@
     function skeletonRows(n){
       return UC.skeletonRows({ count: n, cols: [
         { w:110, jitter:30, logo:true, cls:"uut-td-domain" },
-        { w:70,  cls:"uut-td-share" },
+        { w:70,  cls:"uut-td-share", zahl:true },
         { w:82,  cls:"uut-td-type" },
         { w:48,  cls:"uut-td-ment" },
         { logo:true, logoStyle:"border-radius:999px", cls:"uut-td-brands" },

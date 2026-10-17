@@ -314,8 +314,8 @@
     function skeletonRows(n){
       return UC.skeletonRows({ count: n, cols: [
         { w:110, jitter:30, logo:true, cls:"up-td-domain" },
-        { w:70,  cls:"up-td-share" },
-        { w:56,  cls:"up-td-used" },
+        { w:70,  cls:"up-td-share", zahl:true },
+        { w:56,  cls:"up-td-used", zahl:true },
         { w:82,  cls:"up-td-type" },
         { w:88,  cls:"up-td-lastseen" },
         { w:56,  cls:"udt-td-actions" }

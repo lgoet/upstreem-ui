@@ -2969,7 +2969,7 @@
            letzten Zeile die Unterkante (sonst doppelt mit dem Rahmen, 03.10. gemeldet). */
         platz.innerHTML = sekKopf(titel, desc) + '<div class="up-vartable uev-markt">' + kopf + '<div class="up-tbody up-vbody">' +
           (UC.skeletonRows ? UC.skeletonRows({ count: 3, rowClass: "up-row up-vrow", cellClass: "up-td",
-            cols: [{ w: 110, jitter: 30, logo: true, cls: "up-var-name uev-td-marke" }, { w: 44, cls: "uev-td-zahl" }, { w: 44, cls: "uev-td-zahl" }, { w: 40, cls: "uev-td-zahl" }] }) : "") +
+            cols: [{ w: 110, jitter: 30, logo: true, cls: "up-var-name uev-td-marke" }, { w: 44, cls: "uev-td-zahl", zahl: true }, { w: 44, cls: "uev-td-zahl", zahl: true }, { w: 40, cls: "uev-td-zahl", zahl: true }] }) : "") +
           '</div></div>';
         seitenStand("markt", null);
         return;
@@ -3287,7 +3287,7 @@
         if (linie2) { if (fehler) linie2.meldung(t("This event could not be loaded.")); else linie2.skeleton(); }
         platz.innerHTML = fehler ? "" : '<div class="up-vartable uev-zielurls">' + kopf + '<div class="up-tbody up-vbody">' +
           (UC.skeletonRows ? UC.skeletonRows({ count: 3, rowClass: "up-row up-vrow", cellClass: "up-td",
-            cols: [{ w: 160, jitter: 40, logo: true, cls: "up-var-name uev-td-url" }, { w: 80, cls: "uev-td-zahl uev-td-beob" }, { w: 40, cls: "uev-td-zahl" }, { w: 30, cls: "uev-td-zahl" }, { w: 30, cls: "uev-td-zahl" }] }) : "") +
+            cols: [{ w: 160, jitter: 40, logo: true, cls: "up-var-name uev-td-url" }, { w: 80, cls: "uev-td-zahl uev-td-beob" }, { w: 40, cls: "uev-td-zahl", zahl: true }, { w: 30, cls: "uev-td-zahl", zahl: true }, { w: 30, cls: "uev-td-zahl", zahl: true }] }) : "") +
           '</div></div>';
         seitenStand(n, null);
         return;

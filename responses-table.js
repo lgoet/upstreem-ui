@@ -435,8 +435,8 @@
       return UC.skeletonRows({ count: n, cols: [
         { w:220, jitter:40, cls:"urt-td-prompt" },
         { w:70,  cls:"urt-td-mentioned" },
-        { w:56,  cls:"urt-td-sentiment" },
-        { w:44,  cls:"urt-td-rank" },
+        { w:56,  cls:"urt-td-sentiment", zahl:true },
+        { w:44,  cls:"urt-td-rank", zahl:true },
         { logo:true, logoStyle:"border-radius:999px", cls:"urt-td-brands" },
         { logo:true, logoStyle:"border-radius:999px", cls:"urt-td-citations" },
         { w:110, cls:"urt-td-model" },

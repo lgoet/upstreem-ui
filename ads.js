@@ -1406,11 +1406,15 @@
           '<div class="up-thead">' + kopfAus(name) + '</div></div></div>' +
         UC.tabelleLeerHtml({ icon: o.icon, text: o.text, gefiltert: filterAktiv(), zeilen: n }) + '</div>';
     }
+    /* Die Zahlenspalten der Tabellen (gemessen am geladenen Kopf, .up-th-zahl, 17.10.): ihr Skelettbalken
+       steht rechts und ihr Kopf schon beim Laden (skeletonRows, zahl: true). */
+    var ZAHL_SCHLUESSEL = " share n prompts topics cov advs ";
     function skelettAus(name, n) {
       var d = TABELLEN[name];
       return skelettZeilen(n, [d.erste.sk].concat(d.spalten.map(function (c) {
         var o = c.sk && typeof c.sk === "object" ? mit({}, c.sk) : { w: c.sk };
         o.cls = "up-td-" + c.key;
+        if (ZAHL_SCHLUESSEL.indexOf(" " + c.key + " ") >= 0) o.zahl = true;
         return o;
       })));
     }
