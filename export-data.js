@@ -209,7 +209,9 @@
   var FILTER = [
     { feld: "url",      param: "p_url",       typen: ["prompt_runs"],                    icon: "link" },
     { feld: "domain",   param: "p_domain",    typen: ["prompt_runs", "urls"],            icon: "domain" },
-    { feld: "promptId", param: "p_prompt_id", typen: ["prompt_runs"],                    icon: "zap",         ersatz: "This prompt" },
+    /* Seit exporte_fix_v1 (17.10., EXP-01) kennen auch Brands, Domains und URLs p_prompt_id: der Prompt-Drawer
+       zeigt sie alle drei auf diesen Prompt beschraenkt, die Datei muss es auch sein. */
+    { feld: "promptId", param: "p_prompt_id", typen: ["prompt_runs", "brands", "domains", "urls"], icon: "zap", ersatz: "This prompt" },
     { feld: "brandId",  param: "p_brand",     typen: ["prompt_runs", "domains", "urls"], icon: "squareStack", ersatz: "This brand" }
   ];
   /* DIE FILTER DER SEITE GEHEN MIT, SICHTBAR UND ABWAEHLBAR (16.10., Frage des Nutzers "wirklich
@@ -234,9 +236,10 @@
     prompts:          GRUND_P.concat(["p_tagmode", "p_untagged", "p_search", "p_mentioned", "p_company_ids", "p_status", "p_order"]),
     prompt_runs:      GRUND_P.concat(["p_tagmode", "p_order", "p_mentioned", "p_company_ids", "p_sentiment_min", "p_sentiment_max",
                                       "p_rank_min", "p_rank_max", "p_search", "p_url", "p_domain", "p_prompt_id", "p_brand"]),
-    domains:          GRUND_P.concat(["p_tagmode", "p_mentioned", "p_mentioned_brands", "p_citation_types", "p_url_types", "p_search", "p_order", "p_brand"]),
-    urls:             GRUND_P.concat(["p_tagmode", "p_domain", "p_mentioned", "p_mentioned_brands", "p_citation_types", "p_url_types", "p_search", "p_order", "p_brand"]),
-    brands:           GRUND_P.concat(["p_tagmode", "p_search", "p_order"]),
+    domains:          GRUND_P.concat(["p_tagmode", "p_mentioned", "p_mentioned_brands", "p_citation_types", "p_url_types", "p_search", "p_order", "p_brand", "p_prompt_id"]),
+    urls:             GRUND_P.concat(["p_tagmode", "p_domain", "p_mentioned", "p_mentioned_brands", "p_citation_types", "p_url_types", "p_search", "p_order", "p_brand", "p_prompt_id"]),
+    /* p_companies (exporte_fix_v1): die Fader-Auswahl der Brands-Tabelle, dieselbe Menge wie in der Liste. */
+    brands:           GRUND_P.concat(["p_tagmode", "p_search", "p_order", "p_companies", "p_prompt_id"]),
     /* Shopping und Ads nach bubble/exporte_16_10/exporte_shopping_ads_v1.sql. Ads kennt kein p_tagmode. */
     shop_products:    GRUND_P.concat(["p_tagmode", "p_segment", "p_search", "p_merchant", "p_company_id", "p_order"]),
     shop_brands:      GRUND_P.concat(["p_tagmode", "p_search", "p_order"]),
@@ -306,7 +309,7 @@
        weist jeden anderen Wert mit 400 ab -- ein Chip dafuer haette nichts mehr zu waehlen. */
     { key: "mentioned", params: ["p_mentioned"],        icon: "megaphone",   name: "Brand",
       aktiv: function(v){ return v === "yes" || v === "no"; } },
-    { key: "brands",    params: ["p_company_ids", "p_mentioned_brands"], icon: "squareStack", name: "Brands" },
+    { key: "brands",    params: ["p_company_ids", "p_mentioned_brands", "p_companies"], icon: "squareStack", name: "Brands" },
     { key: "rank",      params: ["p_rank_min", "p_rank_max"], icon: "hash",  name: "Rank" },
     { key: "sentiment", params: ["p_sentiment_min", "p_sentiment_max"], icon: "smile", name: "Sentiment" },
     { key: "citation_types", params: ["p_citation_types"], icon: "newspaper", name: "Citation type" },
@@ -1755,6 +1758,11 @@
       var art = state.type, cfg = EXPORTE[art], k = kern();
       if (!cfg || !k || (!cfg.neu && BUBBLE_TYP[art])) return false;
       var team = k.getTeam(), zeilen = [], seiten = 0, spalten = null;
+      /* Der Schnappschuss der Responses (exporte_fix_v1, EXP-10): die erste Seite meldet meta.as_of, jede
+         Folgeseite schickt es als p_as_of zurueck, sonst verschiebt ein waehrend des Laufs eingetroffener
+         Lauf die Seiten (Doppel und Luecken beim Blaettern per Offset). Seite 1 sendet nichts, und eine
+         Datenbank ohne die Neuerung liefert kein as_of: dann geht auch nie ein unbekannter Parameter hinaus. */
+      var asOf = null;
       /* neu (Shopping, Ads): was pruefen schon weiss, gilt; fehlt der Export, steht der Satz im
          Dialog statt eines Fehlers. Einen Bubble-Weg gibt es fuer diese Typen nicht. */
       var da = daVon(art), sp = spaltenVon(art);
@@ -1835,6 +1843,7 @@
         if (!aktiv()) return;            /* abgebrochen oder Dialog geschlossen */
         var p = {}; Object.keys(basis).forEach(function(n){ p[n] = basis[n]; });
         p.p_offset = offset;
+        if (asOf) p.p_as_of = asOf;
         k.rpc(cfg.fn, p, rpcOpts({ timeoutMs: 120000 })).then(function(erg){
           if (!aktiv()) return;
           if (da && exportFehlt(erg)) { fehlt(); return; }
@@ -1844,6 +1853,7 @@
           zeilen = zeilen.concat(d.rows);
           seiten++;
           var m = d.meta || {};
+          if (!asOf && art === "prompt_runs" && typeof m.as_of === "string" && m.as_of) asOf = m.as_of;
           var gesamt = m.total_count == null || m.total_count === "" ? NaN : Number(m.total_count);
           state.lauf.zeilen = zeilen.length; state.lauf.seiten = seiten;
           if (isFinite(gesamt)) state.lauf.gesamt = gesamt;

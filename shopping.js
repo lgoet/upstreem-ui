@@ -760,6 +760,10 @@
     function offsetOf(tb) { return Math.max(0, ((num(tb.page) || 1) - 1) * limitOf(tb)); }
     function orderOf(name, tb) { return ORDER[name].indexOf(tb.order) >= 0 ? tb.order : ORDER_VORGABE[name]; }
     function suchText(s) { s = str(s).trim(); return s ? s.slice(0, 200) : null; }
+    /* p_company_id geht nur als Id hinaus (DB seit a_ads_shopping_v1: unbekannt oder fremd ist 22023, und ein
+       leerer oder kaputter Wert ist es erst recht): fehlt die Id oder ist sie keine, bleibt es "kein Filter". */
+    var UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    function markeId(tb) { var v = tb && tb.marke && tb.marke.id ? str(tb.marke.id).trim() : ""; return UUID_RE.test(v) ? v : null; }
     /* Die Anfragen, die eine Seite braucht -- je { kanal, sig, body }. */
     var OV_VORGABE = { suche: "", order: "share_of_shelf_desc", page: 1, pageSize: 25 };
     function ovAnfrage(tb) {
@@ -771,7 +775,7 @@
       var tb = state.products;
       var b = mit(grundBody(), { p_segment: { all: 1, you: 1, competition: 1, other: 1 }[tb.seg] ? tb.seg : "all",
         p_search: suchText(tb.suche), p_merchant: tb.haendler ? str(tb.haendler) : null,
-        p_company_id: tb.marke && tb.marke.id ? str(tb.marke.id) : null,
+        p_company_id: markeId(tb),
         p_order: orderOf("products", tb), p_limit: limitOf(tb), p_offset: offsetOf(tb) });
       return { kanal: "products", body: b, sig: sigVon(b) };
     }
@@ -2231,10 +2235,10 @@
     function preisText(v, c) { return geld(v, c) || null; }
     var SUM_RECHNEN = {
       products: {
-        vis: [{ key: "avg", label: "Average", kurz: "avg", feld: "avg_visibility_pct", art: "pct" }],
+        vis: [{ key: "avg", label: "Overall average", kurz: "avg", feld: "avg_visibility_pct", art: "pct" }],
         obs: [{ key: "summe", label: "Total", kurz: "total", feld: "observations_total", art: "anzahl" }],
-        pos: [{ key: "avg", label: "Average", kurz: "avg", feld: "avg_position", art: "rang" }],
-        first: [{ key: "avg", label: "Average", kurz: "avg", feld: "avg_first_position_rate_pct", art: "pct" }],
+        pos: [{ key: "avg", label: "Overall average", kurz: "avg", feld: "avg_position", art: "rang" }],
+        first: [{ key: "avg", label: "Overall average", kurz: "avg", feld: "avg_first_position_rate_pct", art: "pct" }],
         price: [
           { key: "median", label: "Median", kurz: "median", feld: "price_median", felder: ["price_currency"], art: "text",
             wert: function (d) { return preisText(d.price_median, d.price_currency); } },
@@ -2245,7 +2249,7 @@
               return a + "–" + b;
             } }
         ],
-        rating: [{ key: "avg", label: "Average", kurz: "avg", feld: "avg_rating", art: "rang" }],
+        rating: [{ key: "avg", label: "Overall average", kurz: "avg", feld: "avg_rating", art: "rang" }],
         merchants: [{ key: "genutzt", label: "Merchants used", kurz: "merchants", feld: "merchants_used", art: "anzahl" }]
       },
       brands: {
@@ -2255,7 +2259,7 @@
         ],
         products: [{ key: "summe", label: "Total", kurz: "total", feld: "products_total", art: "anzahl" }],
         obs: [{ key: "summe", label: "Total", kurz: "total", feld: "observations_total", art: "anzahl" }],
-        pos: [{ key: "avg", label: "Average", kurz: "avg", feld: "avg_position", art: "rang" }],
+        pos: [{ key: "avg", label: "Overall average", kurz: "avg", feld: "avg_position", art: "rang" }],
         /* "4 / 2": Marken mit steigendem und mit fallendem Share gegenueber dem Vorzeitraum. */
         change: [{ key: "richtung", label: "Rising / falling", kurz: "rising / falling", felder: ["rising_count", "falling_count"], art: "text",
           wert: function (d) {
@@ -2267,7 +2271,7 @@
         share: [{ key: "top3", label: "Top 3 share", kurz: "top 3", feld: "top3_share_pct", art: "pct" }],
         products: [{ key: "summe", label: "Total", kurz: "total", feld: "products_total", art: "anzahl" }],
         obs: [{ key: "summe", label: "Total", kurz: "total", feld: "observations_total", art: "anzahl" }],
-        pos: [{ key: "avg", label: "Average", kurz: "avg", feld: "avg_position", art: "rang" }]
+        pos: [{ key: "avg", label: "Overall average", kurz: "avg", feld: "avg_position", art: "rang" }]
       }
     };
     var zaehl = null, zaehlStand = null;
@@ -2920,7 +2924,7 @@
       var prod = aufProd ? {
         p_segment: { you: 1, competition: 1, other: 1 }[tb.seg] ? tb.seg : null,
         p_search: suchText(tb.suche), p_merchant: tb.haendler ? str(tb.haendler) : null,
-        p_company_id: tb.marke && tb.marke.id ? str(tb.marke.id) : null } : {};
+        p_company_id: markeId(tb) } : {};
       var detail = s === "detail" && state.produktId;
       /* Die lesbaren Werte, die der Dialog nicht selbst findet (16.10.): der Titel des Produkts
          (wie in den Krumen) und der Name der Marke, auf die die Produkttabelle gefiltert ist. Jeder

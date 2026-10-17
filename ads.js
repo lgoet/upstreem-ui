@@ -182,7 +182,7 @@
     "This is taking longer than expected. Please try again.": "Das dauert länger als erwartet. Bitte erneut versuchen.",
     "No matching topics": "Keine passenden Topics",
     "View Response": "Antwort ansehen",
-    /* Die Berechnungen der Gesamtzeilen (15.10. spaet). "Average", "Total", "Median", "avg",
+    /* Die Berechnungen der Gesamtzeilen (15.10. spaet). "Total", "Median", "avg", seit e2 (17.10.) heisst die Berechnung "Overall average" (in core) statt "Average": Summe durch Summe, "avg" (das Zeichen) bleibt,
        "total", "median", "most common", "topics", "markets" stehen in core. Gleichlautend: "Top 3
        share"/"top 3" in shopping.js, "Models used"/"models" in responses-table.js, "Topics used" und
        "Markets used" in prompts-table.js -- die laden in anderen Ansichten, ohne diese Datei;
@@ -585,7 +585,7 @@
       ladeUhr = setTimeout(function () { ladeUhr = null; bedarf(); }, 0);
     }
     function adFilterSetzen(feld, keys) {
-      var neu = (keys || []).map(str).filter(Boolean);
+      var neu = (keys || []).map(str).filter(function (x) { return x.trim(); });
       if (JSON.stringify(state.adFilter[feld] || []) === JSON.stringify(neu)) { ffSync(); return; }
       state.adFilter[feld] = neu;
       state.advertisers.page = 1; state.library.page = 1; state.prompts.page = 1; state.offen = {};
@@ -650,13 +650,20 @@
     /* Der Body steht in den NEUEN Namen (p_team, p_tag_ids, 13.10.); nur der Rueckweg ueber Bubble
        uebersetzt ihn in die alten (v1Body), denn der eingebaute Workflow reicht ihn unveraendert an
        die v1 weiter, und die kennt nur p_team_id und p_topic_ids. */
+    /* p_advertisers: der EXAKTE Name, wie die Datenbank ihn liefert (get_ads_filter_options_v2 value, nie das
+       Etikett, nie in anderer Schreibweise, nie getrimmt) -- seit a_ads_shopping_v1 ist ein unbekannter Name
+       oder [""] ein 22023 statt einer leeren Liste. Leere und reine Leerraum-Eintraege fallen weg. */
+    function advertiserListe(l) {
+      var out = (l || []).filter(function (x) { return typeof x === "string" && x.trim(); });
+      return out.length ? out : null;
+    }
     function grundBody() {
       var f = state.filter, a = state.adFilter;
       return intentDazu({ p_team: team(), p_date_from: f.von || null, p_date_to: f.bis || null,
                p_models: f.modelle && f.modelle.length ? f.modelle.slice() : null,
                p_markets: f.maerkte && f.maerkte.length ? f.maerkte.slice() : null,
                p_tag_ids: f.topics && f.topics.length ? f.topics.slice() : null,
-               p_advertisers: a.advertisers && a.advertisers.length ? a.advertisers.slice() : null,
+               p_advertisers: advertiserListe(a.advertisers),
                p_ad_formats: a.formate && a.formate.length ? a.formate.slice() : null });
     }
     function mit(o, extra) { for (var k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) o[k] = extra[k]; return o; }
@@ -1875,7 +1882,7 @@
         model: [{ key: "genutzt", label: "Models used", kurz: "models", feld: "models_used", art: "anzahl" }]
       },
       lprompts: {
-        cov: [{ key: "avg", label: "Average", kurz: "avg", feld: "avg_coverage_pct", art: "pct" }],
+        cov: [{ key: "avg", label: "Overall average", kurz: "avg", feld: "avg_coverage_pct", art: "pct" }],
         advs: [{ key: "summe", label: "Total", kurz: "total", feld: "advertisers_total", art: "anzahl" }]
       }
     };
@@ -2017,8 +2024,10 @@
       var d = daten(optAnfrage()) || letzteOptionen(), l = d && isArr(d[feld]) ? d[feld] : [], out = [], da = {};
       l.forEach(function (o) {
         if (!o || typeof o !== "object") return;
-        var v = str(o.value).trim();
-        if (!v || da[v]) return;
+        /* Der Schluessel ist der Wert der Datenbank, unveraendert (er geht als p_advertisers zurueck und wird
+           dort exakt verglichen): nur auf Leere pruefen, nicht trimmen. */
+        var v = str(o.value);
+        if (!v.trim() || da[v]) return;
         da[v] = 1;
         var item = { key: v, label: str(o.label).trim() || v, zahl: anzahlWert(o.count) != null ? ganz(o.count) : null };
         if (feld === "advertisers") { item.logo = advInfo(v, null).logo || ""; item.zeichen = ADV_ZEICHEN; }
