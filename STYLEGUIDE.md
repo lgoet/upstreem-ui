@@ -2076,38 +2076,42 @@ offener Wahl und ohne Zeiger immer; „Change cover“ bzw. ohne Bild „Add cov
 Kacheln unter der Vorschau auf (12 Abstand), dort „Remove cover“. Der Bearbeiten-Dialog behält das
 offene Raster: er hat keine Vorschau.
 
-### Events: Konfidenz und Seitenabdeckung (seit 17.10., UI vor der DB)
+### Events: Fallzahl, URL-Tabellen und Sitemap (Beschluss 17.10.)
 
-Gebaut gegen `bubble/events_ausbau_db_auftrag_17_10.md` (Teile C und D). Beides ist ein
-Feature-Schalter: ohne das Feld bzw. die Funktion sieht das Detail genau aus wie vorher – kein
-Fehler, keine halbe Zeile.
+Gebaut gegen `bubble/events_ausbau_db_auftrag_17_10.md` (Teile C und D). Ohne das Feld bzw. die
+Funktion sieht das Detail aus wie vorher – kein Fehler, keine halbe Zeile.
 
 ```
-Konfidenz     Je Kachel (Visibility, Rank, Sentiment, Share of all citations einer Regel) eine
-(Teil D)      eigene Reihe im Fuss (.uev-konf, flex: 1 0 100% – der Fuss aus core ist flex mit
-              Umbruch): "Based on 3,120 answers" leise (11, --vc-third; Tooltip "1,840 before the
-              event, 1,795 after"), daneben das Urteil als Angabe mit Zeichen, keine Pille:
-                clear_effect     checkCircle  "Clear effect" (Text --vc-muted, nur das Zeichen
-                                              in --vt-up/--vt-down nach gut/schlecht, Rang umgekehrt)
-                within_noise     activity     "Within normal range"
-                too_little_data  clock        "Not enough data yet"
-              Erklärkarte am Urteil: Platte = dieselbe Reihe, Titel = Wort des Urteils, Satz aus
-              UC.explainCopy("effekt_klar" | "effekt_rauschen" | "effekt_wenig") – ohne
-              Statistik-Worte. Je Abschnitt einer Kachel (Kampagne: Nachlauf) konfVon(a, feld,
-              "post") statt konfVon(a, feld). Die Seitenerklärung nennt die Reihe erst, wenn eine
-              Analyse confidence geliefert hat.
-Abdeckung     Im Kopf jedes Regel-Abschnitts unter dem Untertitel (.uev-abd): "12 of 43 pages
-(Teil C)      cited" (Zahlen in --vc-text), Balken 96 x 4 voll rund (Spur --up-sel-bg, Füllung
-              --up-accent, Vorbild .uex-balken), "Last checked 3 hours ago" (UC.relativeTime),
-              "Refresh" als .up-quietbtn auf 28/12. Gesperrt über aria-disabled (Tooltip "You can
-              refresh again in 40 min" braucht Zeigerereignisse), die Uhr zählt je Minute.
-              Lesefehler der Sitemap: EIN roter Satz (.up-fehlerzeile) über den alten Seiten.
-              Darunter, über der Tabelle, .up-seg "Cited (12) | Not cited yet (31)"; Not cited yet
-              ersetzt die Tabelle durch eine leise Liste (Zeile 40, Haarlinie, kein Hover, Favicon
-              16, Pfad 13, Datum 12 "Updated 12. Oct" bzw. "In sitemap since …", unter 520 weg),
-              Marken .up-marke.is-leise "New since event" / "No longer in sitemap" (Pfad dann
-              zurückgenommen, nie versteckt), "Show 50 more" wie im Sitemap-Wähler. Im Leerzustand
-              des Ziels steht die Liste statt "No cited pages yet".
+Kacheln       Wert, Änderung, "vs. comparison" und leise "From 3,120 answers" (11, --vc-third,
+              .uev-konf im Fuss, eigene Reihe) – KEIN Urteil: kein Wort, kein Zeichen, keine
+              Hinweiszeile unter den Kacheln, keine Erklärkarte dazu (Beschluss 8: Code gelöscht,
+              nicht versteckt; verdict und reasons der DB werden nicht gelesen). Die Zahl kommt aus
+              confidence.<feld>.affected.runs_before + runs_after (fallzahlHtml).
+URL-Tabellen  "URLs" (Ziele vom Typ URL, steht ÜBER den Regel-Abschnitten), "Cited URLs" je Regel
+              und "Market movement": im Browser sortiert (UC.makeHeadSort, Köpfe mit .up-thsort),
+              Standard Global share after bzw. Citations after bzw. After absteigend (Market
+              movement: die eigene Marke im Standard zuerst), kein Wert steht in jeder Richtung am
+              Ende. Seiten statt Scrollen: 5 Zeilen, Größen 5 / 15 / 25 / 50 (cfg.pageSizes, nicht
+              PAGE_SIZES aus core). Wechsel von Sortierung, Größe oder Event: Seite 1; Sortierung und
+              Größe bleiben je Tabelle. Jede URL-Zeile öffnet das URL-Detail (drawerOeffnen("url")),
+              eine nicht zitierte zeigt erst beim Klick den Toast "Not cited yet". Es gibt im
+              Event-Detail keine Responses-Anzeige mehr (MIT_RESPONSES bleibt false für den Vertrag).
+Sitemap       Eigener Abschnitt direkt unter der URL-Tabelle jeder Regel (.uev-abd-sek, 40 Abstand):
+              sekKopf "Sitemap" mit dem Satz als Untertitel ("12 of 43 pages cited, plus 3 cited
+              pages not in your sitemap. Last checked 5 minutes ago."; die Zahl ist die der
+              Sitemap, dieselbe wie am Reiter), "Refresh" rechts als .up-btn-sec mit Zeichen
+              (Laden: .up-btn-spin und "Refreshing", Pause: gesperrt und der Satz "You can refresh
+              again at 14:20.", Fehler: "Try again" und ein roter Satz ohne Kasten). Darunter
+              .up-seg "All | Cited | Not cited yet" mit Zahl, All ist der Standard. Alle drei
+              zeigen den Ordnerbaum (smBaum, 10 Einträge je Ebene, "Show 10 more"); in All und
+              Cited steht bei zitierten Seiten rechts die Zahl der Zitate und die Zeile öffnet
+              das URL-Detail, in Not cited yet das Datum der letzten Änderung. All kommt mit der
+              Abdeckung (p_filter "all"), Cited und Not cited yet holt der erste Klick.
+              Keine passende Seite trotz gelesener Sitemap: der Satz nennt den Grund; liefert die
+              Abdeckung source_total und source_hosts, steht "We read 387 pages, all on de.holy.com.
+              None is on weareholy.com." mit dem Knopf "Add de.holy.com" (öffnet "Add to tracking"
+              mit der Domain im Feld). Band: das Zeitraum-Band der Charts nur mit cfg.markerBand
+              (events.js, beide Charts des Details); in allen anderen Charts bleibt der Pin.
 ```
 
 ### Sticky Table-Header (nur wenn die Komponente direkt injiziert ist)

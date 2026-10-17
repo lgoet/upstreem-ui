@@ -873,13 +873,6 @@
     " in AI answers for this prompt": " in KI-Antworten auf diesen Prompt",
     " for this domain": " für diese Domain",
     " for this URL": " für diese URL",
-    /* Das Urteil unter einer Kennzahl der Events (EXPLAIN_TEXT effekt_*, 17.10.). */
-    "Clear effect": "Klarer Effekt",
-    "Within normal range": "Im normalen Rahmen",
-    "AI answers vary from day to day. This change is more than twice as large as the usual ups and downs, so it is very likely caused by the event.":
-      "KI-Antworten schwanken von Tag zu Tag. Diese Veränderung ist mehr als doppelt so groß wie die üblichen Schwankungen, geht also sehr wahrscheinlich auf das Event zurück.",
-    "AI answers vary from day to day. This change is within the usual ups and downs, so it may be chance.":
-      "KI-Antworten schwanken von Tag zu Tag. Diese Veränderung liegt im Rahmen der üblichen Schwankungen, kann also Zufall sein.",
     "domain": "Domain",
     "URL": "URL",
 
@@ -4838,13 +4831,6 @@
        fallen aus den Kennzahlen. */
     branded:    { h: "Branded", t: "The prompt names your brand or a tracked competitor. Branded prompts are left out of the metrics, because they say little about how visible you are on open questions. Detected automatically, and you can change it." },
     share:      { h: "Share", t: "How much of all citations in the period went to this {subject}, plus the change against the previous period." },
-    /* DAS URTEIL UNTER EINER KENNZAHL DER EVENTS (17.10., Teil D des Events-Ausbaus: confidence
-       aus cached_impact_event_analysis_v4). Hier und nicht in events.js, weil jede Erklaerkarte
-       ihren Satz aus EINER Quelle nimmt. Ohne Statistik-Worte (kein p-Wert, kein Fehlerbalken):
-       "die ueblichen Schwankungen" ist die Schwankung der eigenen Prompts in den Wochen davor, die
-       Schwelle der DB ist das Zweifache (Auftrag D.2) -- darum "mehr als doppelt so gross". */
-    effekt_klar:    { h: "Clear effect", t: "AI answers vary from day to day. This change is more than twice as large as the usual ups and downs, so it is very likely caused by the event." },
-    effekt_rauschen:{ h: "Within normal range", t: "AI answers vary from day to day. This change is within the usual ups and downs, so it may be chance." },
     /* Die Zeile "Brand Colors" in der Farbauswahl. Sie steht hier und nicht im Einstellungsfenster,
        weil die Auswahl aus core kommt (colorScaleOptionsHtml) und der Erklaerkasten derselbe ist,
        den die Spaltenkoepfe benutzen -- eine Quelle fuer beide. */
@@ -19936,7 +19922,10 @@
            Kalender (--vc-kalender-band), damit "Zeitraum" in der App ein Bild hat. Ein Start vor
            dem Bild beginnt am linken Rand, ein Ende danach endet am rechten; liegt beides
            daneben, kein Band. Der Pin steht weiter am Start. */
-        var baender = liste.filter(function(m){ return m && m.ende; }), bandFarbe = baender.length ? evmBandFarbe(wrap) : "";
+        /* Nur auf Wunsch (cfg.markerBand, 17.10.): das Band gehoert in den Verlauf des Event-Details, wo der
+           Zeitraum der Gegenstand ist. In jedem anderen Chart (Dashboard, Brands, Citations, Drawer) bleibt
+           der Pin, das Band verschwindet -- es lag dort als graue Flaeche hinter beliebigen Linien. */
+        var baender = cfg.markerBand === true ? liste.filter(function(m){ return m && m.ende; }) : [], bandFarbe = baender.length ? evmBandFarbe(wrap) : "";
         var dim = evmDim();
         if (bandFarbe){
           ctx.save();
