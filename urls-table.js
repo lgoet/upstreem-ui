@@ -1751,6 +1751,10 @@
              Ausfall waere zurueck, nur eine Stufe spaeter. */
           state.leseFehler = false;
         }
+        /* Datenstand beim Blaettern gewechselt (18.10., Versionsbindung): die Seite schickt diesen Wert
+           ohne Zeilen und holt danach Seite 1 neu. Die Tabelle fuehrt die Seitenzahl selbst, also muss
+           sie sie auch selbst zuruecksetzen -- sie feuert dabei kein Page-Ereignis. */
+        if (params.seiteEins) state.page = 1;
         if (params.totalCount != null) state.totalCount = toNum(params.totalCount);
         if (params.brands != null){
           var _b = Array.isArray(params.brands) ? params.brands : [];

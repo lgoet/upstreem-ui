@@ -668,16 +668,44 @@
       var t = el(".upt-root"), c = t && t.__uptController;
       try { return c && c.summeFelder ? c.summeFelder() : []; } catch (e) { return []; }
     }
+    /* DER VORRAT JE FILTERSTAND (18.10.: "waehlt man fuer EINE Spalte eine andere Berechnung, laden ALLE Werte").
+       Vorher bestellte jede Wahl alle gewaehlten Felder neu und setzte die Zellen ALLER Spalten auf Skelett. Jetzt
+       merkt die Seite, was fuer den Filterstand schon da ist (daten), was unterwegs ist (ladend) und was
+       gescheitert ist (fehlerFelder); bestellt wird nur, was fehlt, und die Tabelle bekommt immer den ganzen
+       Stand: nur die Zelle mit der neuen Wahl laedt. Ein anderer Filterstand (sig ohne Felder) oder "frisch"
+       beginnt von vorn. */
+    var summeVorrat = { sig: "", daten: {}, ladend: {}, fehler: {} };
+    function summeAnTabelle(v) {
+      try {
+        setter("setPromptsTableSumme")(ids.upt, { daten: Object.assign({}, v.daten), ladend: Object.keys(v.ladend), fehlerFelder: Object.keys(v.fehler) });
+      } catch (e) {}
+    }
     function summeLaden(frisch) {
       if (state.tab !== "allprompts" || state.p.status === "inactive" || !bereit()) return;
       var f = summeFelder();
       if (!f.length) return;
-      var a = D.summe(filterStand(), state.p, f);
-      if (lader.ausSpeicher(a) === undefined || frisch) { try { setter("setPromptsTableSumme")(ids.upt, { laedt: true }); } catch (e) {} }
-      lader.laden("summe", a, { frisch: !!frisch }).then(function (erg) {
-        if (erg.ueberholt) return;
+      var sig = D.summe(filterStand(), state.p, []).sig;
+      if (frisch || sig !== summeVorrat.sig) summeVorrat = { sig: sig, daten: {}, ladend: {}, fehler: {} };
+      var v = summeVorrat;
+      /* Ein frueherer Fehlschlag gilt nicht mehr: eine neue Wahl und "Try again" kommen hierher und holen neu. */
+      var fehlt = f.filter(function (x) { return !Object.prototype.hasOwnProperty.call(v.daten, x) && !v.ladend[x]; });
+      if (!fehlt.length) { summeAnTabelle(v); return; }
+      var a = D.summe(filterStand(), state.p, fehlt);
+      fehlt.forEach(function (x) { delete v.fehler[x]; });
+      /* Aus dem Speicher des Laders kommt die Antwort ohne Umweg: dann kein Skelett. */
+      if (lader.ausSpeicher(a) === undefined || frisch) fehlt.forEach(function (x) { v.ladend[x] = true; });
+      summeAnTabelle(v);
+      /* Der Kanal je Signatur MIT Feldern (wie Responses und Citations): zwei kurz nacheinander gewaehlte
+         Berechnungen brechen sich nicht ab. */
+      lader.laden("summe|" + a.sig, a, { frisch: !!frisch }).then(function (erg) {
+        if (erg.ueberholt || v !== summeVorrat) return;
         var d = erg.ok ? D.zuSumme(erg.daten) : null;
-        try { setter("setPromptsTableSumme")(ids.upt, d ? { daten: d } : { fehler: true }); } catch (e) {}
+        fehlt.forEach(function (x) {
+          delete v.ladend[x];
+          if (d) { v.daten[x] = Object.prototype.hasOwnProperty.call(d, x) ? d[x] : null; delete v.fehler[x]; } else v.fehler[x] = true;
+        });
+        if (d) Object.keys(d).forEach(function (k) { if (!Object.prototype.hasOwnProperty.call(v.daten, k)) v.daten[k] = d[k]; });
+        summeAnTabelle(v);
       });
     }
     /* EIN TOPIC ODER EINE MARKE IM FILTER, DIE ES NICHT MEHR GIBT (17.10., FLT-02). _pi_filters_v1
@@ -724,6 +752,18 @@
       },
       danach: function () { filterGeaendert(); }
     };
+    /* DATENSTAND BEIM BLAETTERN GEWECHSELT (18.10., Versionsbindung der DB): der Lader meldet es, wenn
+       generated_at oder total_count einer Seite hinter Seite 1 vom gemerkten Stand abweichen. Dann
+       Seite 1: Tabelle zuruecksetzen (ohne Ereignis), Hinweis, neu laden. Der Lader hat den neuen Stand
+       schon gemerkt, Seite 1 trifft auf denselben Wert: einmal je Wechsel, keine Schleife. */
+    lader.versionMit(function (a) {
+      if (!a || a.art !== "responses") return false;
+      state.resp.offset = 0; persist();
+      try { setter("renderResponsesTable")({ instanceId: ids.urt, seiteEins: true }); } catch (e) {}
+      if (UC.listeAktualisiert) UC.listeAktualisiert();
+      teilLaden("resp");
+      return true;
+    });
     lader.bereinigenMit(function (erg) { return UC.filterBereinigen ? UC.filterBereinigen(erg, bereinigenSpec) : false; });
     /* Der Rest: die Antwort nannte etwas, das unser Filter gar nicht haelt (ein Kollege hat das Topic
        geloescht, unsere Liste ist veraltet). Dann die Liste des Teams neu holen -- kommt sie ohne das

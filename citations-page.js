@@ -114,6 +114,19 @@
        Ids aus der Antwort, hier steht nur, wo die Seite sie haelt: Topics im Topic-Filter und in
        state.f, die Marken ("Mentioned brands", p_mentioned_brands) in state.f.marken samt der Anzeige
        beider Tabellen-Menues. Der Lader haengt am Fenster, jede neue Seite ersetzt die alte Bereinigung. */
+    /* DATENSTAND BEIM BLAETTERN GEWECHSELT (18.10., Versionsbindung der DB): der Lader meldet es, wenn
+       generated_at oder total_count einer Seite hinter Seite 1 vom gemerkten Stand abweichen. Dann
+       Seite 1: Tabelle zuruecksetzen (ohne Ereignis), Hinweis, neu laden. Der Lader hat den neuen Stand
+       schon gemerkt, Seite 1 trifft auf denselben Wert: einmal je Wechsel, keine Schleife. */
+    lader.versionMit(function (a) {
+      var art = a && a.art === "urls" ? "urls" : (a && a.art === "domains" ? "domains" : null);
+      if (!art) return false;
+      tabStand(art).offset = 0; persist();
+      try { window[art === "urls" ? "renderUrlsTable" : "renderDomainsTable"]({ instanceId: art === "urls" ? ids.uut : ids.udt, seiteEins: true }); } catch (e) {}
+      if (UC.listeAktualisiert) UC.listeAktualisiert();
+      tabelleLaden(art);
+      return true;
+    });
     lader.bereinigenMit(function (erg) {
       if (!UC.filterBereinigen) return false;
       return UC.filterBereinigen(erg, {

@@ -553,6 +553,7 @@
   try {
     window.addEventListener("up-prefs-change", function(e){
       if (e && e.detail && e.detail.name !== "locale") return;
+      _spracheBewegt = true;
       try { spracheLauf(); } catch(err){}
     });
   } catch(e){}
@@ -2084,6 +2085,7 @@
     "Mentioned brands": "Erwähnte Brands",
     "No brands available": "Keine Brands vorhanden",
     "Clear filters": "Reset Filters",
+    "The list was updated. Showing the first page.": "Die Liste wurde aktualisiert. Du siehst jetzt die erste Seite.",
 
     /* Leerzustaende der Tabelle */
     "No matching prompts": "Keine passenden Prompts",
@@ -4811,6 +4813,31 @@
   var SCALE_CHECK = CHECK_SVG.replace('<svg ', '<svg class="up-check" ');
   var COPY_SVG = '<svg class="up-ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /> <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>';
   var GOTO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10" /> <path d="M7 17 17 7" /></svg>';
+  /* DIE NUMMER "#" IN DER MARKENTABELLE (18.10.): die DB vergibt position als Platz nach Visibility
+     unter ALLEN Marken, bevor p_companies/p_search greifen. Waehlt der Nutzer im Fader einige ab,
+     stuende dort 1, 3, 5, 6 ... -- Luecken, die zur gezeigten Liste nicht passen. Bei einer
+     Auswahl (und bei der Suche im Browser) zaehlt der Platz darum innerhalb der gezeigten Menge,
+     nach derselben Regel wie die DB (Visibility absteigend, ohne Wert zuletzt, dann Name, dann Id).
+     Unabhaengig von der Spaltensortierung: die Zeilen behalten ihre Reihenfolge, nur die Nummer
+     wandert mit der Kennzahl. Ohne Auswahl bleibt die Nummer der DB (Platz im ganzen Feld). Geteilt, weil Dashboard, Brands und
+     die Suche in brands-overview dieselbe Regel brauchen. */
+  function platzInMenge(liste) {
+    if (!Array.isArray(liste)) return liste;
+    var nach = liste.slice().sort(function (a, b) {
+      var x = a.visibility_pct, y = b.visibility_pct;
+      if ((x == null) !== (y == null)) return x == null ? 1 : -1;
+      if (x !== y && x != null) return y - x;
+      var n = String(a.name || "").localeCompare(String(b.name || ""));
+      return n || String(a.company_id).localeCompare(String(b.company_id));
+    });
+    var platz = {};
+    nach.forEach(function (r, i) { platz[r.company_id] = i + 1; });
+    return liste.map(function (r) {
+      var c = {}; for (var k in r) c[k] = r[k];
+      c.position = platz[r.company_id];
+      return c;
+    });
+  }
   var HASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9" /> <line x1="4" x2="20" y1="15" y2="15" /> <line x1="10" x2="8" y1="3" y2="21" /> <line x1="16" x2="14" y1="3" y2="21" /></svg>';
 
   /* Column-header explainer copy (the popover UC.makeExplain opens from a .up-th-info icon) — ONE
@@ -11858,8 +11885,33 @@
      Darum: Kinder ueberspringen, die ihrer Art nach nicht gerendert werden, und bis zu vier
      echte Kinder fragen -- eine geparkte Ansicht hat keins davon messbar, eine offene das erste. */
   var PROBE_AUS = { SCRIPT:1, STYLE:1, LINK:1, META:1, TEMPLATE:1, HEAD:1, TITLE:1, NOSCRIPT:1 };
+  /* ---- EIN MERKER JE LAUF (18.10.) -------------------------------------------------------------
+     Gemessen (Seitenwechsel Citations, Brands, Ads, Performance): der Beobachter unten brauchte
+     2,5 bis 3,5 s, davon rund drei Viertel in dieser Frage. checkVisibility zwingt nach jeder
+     Schreibung, die Stile entwertet (siehe das Schreiben von lang/data-up-locale in spracheLauf,
+     die Hauptursache), eine neue Stilberechnung ueber das ganze Dokument, und ein Lauf stellt
+     sie fuer dieselbe Komponente mehrfach. Innerhalb EINES Laufs
+     (mitSichtMerker) aendert sich die Antwort nicht -- unsere eigenen Schreibungen verstecken
+     nichts --, also genuegt sie einmal je Element. Ausserhalb eines Laufs ist der Merker aus und
+     jede Frage geht wie bisher an den Browser. */
+  var _sichtMerker = null;
+  function mitSichtMerker(fn){
+    if (_sichtMerker) return fn();
+    _sichtMerker = new Map();
+    try { return fn(); } finally { _sichtMerker = null; }
+  }
   function astSichtbar(el){
     if (!el || el.nodeType !== 1) return true;
+    if (_sichtMerker){
+      var m = _sichtMerker.get(el);
+      if (m !== undefined) return m;
+      m = astSichtbarFrage(el);
+      _sichtMerker.set(el, m);
+      return m;
+    }
+    return astSichtbarFrage(el);
+  }
+  function astSichtbarFrage(el){
     var k = el.firstElementChild, gefragt = 0;
     while (k && gefragt < 4){
       if (!PROBE_AUS[k.tagName]){
@@ -11935,16 +11987,48 @@
      eingehaengten Teilbaum -- und Bubble haengt ganze Seitenbereiche auf einmal ein, geparkte
      Ansichten mittendrin. Im Prueftand war die geparkte Ansicht danach vollstaendig uebersetzt:
      240 von 240 Texten, also gar keine Ersparnis. */
+  /* ---- ENGLISCH OHNE VORGESCHICHTE: NICHTS ZU UEBERSETZEN (18.10.) ------------------------------
+     Gemessen: der Sprachlauf kostete auch in "en" 2,5 s bei vier Seitenwechseln, obwohl er dort
+     nichts aendert. t() gibt in "en" jeden Text unveraendert zurueck, und data-i18n steht nur
+     dort, wo schon einmal uebersetzt wurde. Solange die Seite nie in einer anderen Sprache war,
+     ist jeder Schritt unten (Katalogfelder, data-i18n, breiter Lauf, Sichtbarkeit) ein Lauf ohne
+     Wirkung. Sobald irgendein Aufruf eine andere Sprache sieht -- oder der Sprachwechsel
+     ausgeloest wird (siehe up-prefs-change oben) --, bleibt _spracheBewegt fuer die Lebensdauer
+     der Seite an: dann gilt der Rueckweg nach "en" wie bisher (data-i18n zurueckschreiben).
+     Uebrig bleiben die Attribute (siehe unten) und das Etikett der Hinzufuegen-Knoepfe: es baut auch in "en" die kurze Fassung
+     (.up-ph-addbtn-kurz), die die schmale Ansicht braucht. */
+  var _spracheBewegt = false;
+  function spracheRuht(){
+    if (getPref("locale") !== "en"){ _spracheBewegt = true; return false; }
+    return !_spracheBewegt;
+  }
   function spracheLauf(scope){
     var start = (scope && scope.querySelectorAll) ? scope : document.body;
     try {
-      document.documentElement.setAttribute("data-up-locale", getPref("locale") || "en");
+      /* NUR bei Aenderung schreiben (18.10.): ein Schreiben mit gleichem Wert entwertet trotzdem
+         die Stile des ganzen Dokuments (html[data-up-locale], :lang), und jede Sichtbarkeitsfrage
+         danach bezahlt eine neue Berechnung. Gemessen: 12 ms je Aufruf, 160 Aufrufe je Messung. */
+      var _sprHtml = document.documentElement, _sprLoc = getPref("locale") || "en";
+      if (_sprHtml.getAttribute("data-up-locale") !== _sprLoc) _sprHtml.setAttribute("data-up-locale", _sprLoc);
       /* lang mit der Sprache der App (QS-12): Bildschirmleser sprechen sonst Deutsch mit
          englischer Stimme, und die Silbentrennung greift nicht. Die Host-App setzt es vor dem
          ersten Bild schon aus dem Speicher; hier der Rueckhalt fuer jeden anderen Wirt. */
-      document.documentElement.setAttribute("lang", getPref("locale") === "de" ? "de" : "en");
+      var _sprLang = getPref("locale") === "de" ? "de" : "en";
+      if (_sprHtml.getAttribute("lang") !== _sprLang) _sprHtml.setAttribute("lang", _sprLang);
     } catch(e){}
-    var bereiche = sichtbareBereiche(start);
+    if (spracheRuht()){
+      /* Zwei Dinge laufen auch hier, weil sie in "en" etwas aendern: das Etikett der
+         Hinzufuegen-Knoepfe, und die ATTRIBUTE. Der umgekehrte Katalogindex (englischVon) macht aus
+         einem Attributwert, der zufaellig die deutsche Fassung eines Schluessels ist, den
+         englischen Schluessel: "Filter" am Citations-Knopf (TOOLBAR_TIPS) wird so in "en" zu
+         "Filters". Gemessen im Vergleich alt/neu; ohne diese Zeilen stuende dort "Filter". Die
+         Attribute kosten wenig (24 ms auf 137 Laeufe), teuer waren Sichtbarkeitsfrage und
+         Abstieg. */
+      try { knopfEtikett(start); } catch(e){}
+      try { einAttribut(start); attributeStellen(start === document ? document.body || document : start); } catch(e){}
+      return;
+    }
+    var bereiche = mitSichtMerker(function(){ return sichtbareBereiche(start); });
     /* ---- DIE ELEMENTE AUF DEM WEG (24.09. gefunden) ----------------------------------------
        sichtbareBereiche STEIGT AB, solange ein Element Kinder hat, und gibt am Ende nur die
        Blaetter dieses Abstiegs heraus. Wer unterwegs durchlaufen wurde, ist nie Wurzel eines
@@ -12169,7 +12253,7 @@
       /* Auch hier die sichtbaren Aeste statt des ganzen Dokuments (Begruendung bei
          sichtbareBereiche). Die vier Laeufe nehmen alle eine Wurzel entgegen -- der Zweig
          darunter benutzt genau diese Form seit langem. */
-      var bereiche = sichtbareBereiche();
+      var bereiche = mitSichtMerker(function(){ return sichtbareBereiche(); });
       /* spracheLauf STAND HIER AUSSERHALB DER SCHLEIFE, ohne Wurzel -- also dokumentweit, waehrend
          seine drei Nachbarn laengst je Bereich liefen (21.09. in einer Messung des Nutzers
          aufgefallen: spracheLauf 1,01s Gesamtzeit, davon 0,59s querySelectorAll, periodisch von
@@ -12350,6 +12434,9 @@
       }
     }
     function laufUeber(ziele){
+      mitSichtMerker(function(){ laufUeberRoh(ziele); });
+    }
+    function laufUeberRoh(ziele){
       for (var t3 = 0; t3 < ziele.length; t3++){
         (function(el){
           sicher("stampGran", function(){ stampGran(el); });
@@ -14181,6 +14268,11 @@
     e.start = Date.now(); e.rest = ms;
     e.uhr = setTimeout(function(){ toastWeg(e); }, ms);
   }
+  /* Der Datenstand einer Liste wechselte beim Blaettern (Versionsbindung der DB): die Tabelle springt auf
+     Seite 1. Ein Schluessel, damit mehrere Listen auf einer Seite nicht mehrere Hinweise stapeln. */
+  function listeAktualisiert(){
+    return toast("The list was updated. Showing the first page.", { kind: "neutral", schluessel: "liste-aktualisiert" });
+  }
   function toast(text, opts){
     opts = opts || {};
     var t = String(text == null ? "" : text).trim();
@@ -14221,6 +14313,20 @@
          deutschen UI englisch da. Ein schon uebersetzter Text ist kein Schluessel und bleibt. */
       el.querySelector(".up-toast-t").textContent = titel;
       if (desc) el.querySelector(".up-toast-d").textContent = t_(desc);
+      /* Ein Teil des Textes in der Primaerfarbe (opts.hervor, z. B. eine URL): als Textknoten
+         und ein span, nie als HTML, damit ein Wert aus Nutzereingabe nichts einschleppen kann. */
+      var hervor = String(opts.hervor == null ? "" : opts.hervor);
+      if (hervor){
+        [".up-toast-t", ".up-toast-d"].forEach(function(sel){
+          var z = el.querySelector(sel); if (!z) return;
+          var tx = z.textContent, i0 = tx.indexOf(hervor);
+          if (i0 < 0) return;
+          var sp = document.createElement("span"); sp.className = "up-toast-hv"; sp.textContent = hervor;
+          z.textContent = "";
+          z.appendChild(document.createTextNode(tx.slice(0, i0))); z.appendChild(sp);
+          z.appendChild(document.createTextNode(tx.slice(i0 + hervor.length)));
+        });
+      }
       var e = { el: el, art: art, ms: ms, uhr: null, weg: false, id: ++TOAST.seq, bleibt: bleibt,
                 schluessel: schl, unten: opts.unten === true, onClose: typeof opts.onClose === "function" ? opts.onClose : null };
       /* Der ganze Toast als Knopf: ein Klick irgendwo ausser auf X oder die Aktion. Mit Tabulator
@@ -29889,6 +29995,7 @@
     COPY_SVG: COPY_SVG,
     GOTO_SVG: GOTO_SVG,
     HASH_ICON: HASH_ICON,
+    platzInMenge: platzInMenge,
     EXPLAIN_TEXT: EXPLAIN_TEXT,
     explainCopy: explainCopy,
     mentCell: mentCell,
@@ -29954,7 +30061,7 @@
     makeClipTip: makeClipTip,
     SLIDERS_ICON: SLIDERS_ICON,
     makeFire: makeFire,
-    toast: toast, toastZu: toastZu,
+    toast: toast, toastZu: toastZu, listeAktualisiert: listeAktualisiert,
     upstreemSignal: upstreemSignal,
     makePortal: makePortal,
     placeMenu: placeMenu,
