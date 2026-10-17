@@ -198,9 +198,9 @@
    Zahlen stehen fest. Zahlen tabellarisch, aber NICHT rechtsbuendig (abgelehnt, siehe Notiz). */
 .uev-td-marke, .uev-td-url { gap: 10px; }
 .uev-markt .uev-td-zahl, .uev-markt .uev-th-zahl { flex: 0 0 140px; min-width: 0; }
-/* 160 statt 140 (15.10. spaet): mit der Kopfschrift 14/500 braucht "Global share before" samt
-   Polster und Zellrand gemessen 156.7 -- bei 140 stand es gekuerzt. */
-.uev-urls .uev-td-zahl, .uev-urls .uev-th-zahl { flex: 0 0 160px; min-width: 0; }
+/* 184 statt 160 (17.10.): mit dem Sortierzeichen im Kopf (15 breit, Abstand 6) braucht "Global share before"
+   samt Polster und Zellrand gemessen 178 -- bei 160 stand es gekuerzt. */
+.uev-urls .uev-td-zahl, .uev-urls .uev-th-zahl { flex: 0 0 184px; min-width: 0; }
 .uev-urls .uev-td-beob, .uev-urls .uev-th-beob { flex: 0 0 210px; }
 /* DIE FESTE SPUR der Zahlen (core.css, --up-spur, 15.10.): Before und After (Visibility bzw. Global
    share) stehen als Prozent mit einer Stelle (wertHtml, UC.fmtPct(v, 1)) -- die Zahl steht in
@@ -227,8 +227,8 @@
 .uev-markt .up-vbody, .uev-urls .up-vbody { max-height: none; overflow-y: visible; }
 /* hidden muss gegen display: flex der Fusszeile aus core gewinnen -- wie in ads.css. */
 .uev-root .uev-foot[hidden] { display: none; }
-/* 920 = 220 URL + 210 First cited + 3 x 160 + 10, wie vorher 860 mit 3 x 140. */
-.uev-urls > .up-thead, .uev-urls > .up-tbody { min-width: 920px; }
+/* 992 = 220 URL + 210 First cited + 3 x 184 + 10, wie vorher 920 mit 3 x 160. */
+.uev-urls > .up-thead, .uev-urls > .up-tbody { min-width: 992px; }
 .uev-markt > .up-thead, .uev-markt > .up-tbody { min-width: 600px; }
 .uev-url-txt { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
 .uev-url-host { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -733,14 +733,15 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-zielsek .uev-zielweg { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
 .uev-zielsek .uev-zielweg svg { width: 14px; height: 14px; }
 .uev-linewrap.uev-ziel-linie { height: 220px; }
-.uev-zielurls .uev-td-zahl, .uev-zielurls .uev-th-zahl { flex: 0 0 120px; min-width: 0; }
+/* 148 statt 120 (17.10.): "Citations after" mit Sortierzeichen braucht gemessen 144. */
+.uev-zielurls .uev-td-zahl, .uev-zielurls .uev-th-zahl { flex: 0 0 148px; min-width: 0; }
 .uev-zielurls .uev-td-beob, .uev-zielurls .uev-th-beob { flex: 0 0 150px; }
 .uev-zielurls .uev-td-zahl { --up-spur: var(--up-spur-anzahl); }
 .uev-zielurls .up-var-name, .uev-zielurls .up-th-vname { min-width: 220px; }
 .up-vartable.uev-zielurls { overflow-x: auto; }
 .uev-zielurls .up-vbody { max-height: none; overflow-y: visible; }
-/* 750 = 220 URL + 150 First cited + 3 x 120 + 20. */
-.uev-zielurls > .up-thead, .uev-zielurls > .up-tbody { min-width: 750px; }
+/* 834 = 220 URL + 150 First cited + 3 x 148 + 20. */
+.uev-zielurls > .up-thead, .uev-zielurls > .up-tbody { min-width: 834px; }
 .uev-zielurls .up-row.uev-zitzeile { cursor: pointer; }
 /* Ein Ziel ohne Zitat (is-leer, events.js zielFuellen): nur der Leerzustand, Kennzahlen, Verlauf,
    Hinweis und Tabelle verborgen (sie bleiben im Dokument, das Diagramm ueberlebt so). Ohne is-leer
@@ -749,89 +750,44 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-ziel-block:not(.is-leer) > .uev-zielleer { display: none; }
 .uev-root.is-narrow .uev-zielsek .uev-sec-head { flex-wrap: wrap; }
 
-/* ---- KONFIDENZ JE KENNZAHL (17.10., Auftrag Teil D, events.js konfidenzHtml) -----------------
-   Unter der Zahl im Fuss der Kachel (.up-kpi-foot, 11 in --vc-third) eine eigene Zeile: die
-   Fallzahl leise, daneben das Urteil als Angabe mit Zeichen -- keine Pille, keine Flaeche. Die Zeile
-   ist eine eigene Reihe im Fuss (der ist in core flex mit Umbruch, Reihenabstand 4): volle Breite,
-   sonst rutschte sie schmal neben "vs. comparison" -- am Telefon gemessen. Der Vergleich darueber
-   bleibt, wie er war. Farbe nur am Zeichen eines klaren Effekts (gut --vt-up, schlecht --vt-down);
-   der Text bleibt in der Schrift des Fusses, bei "Clear effect" eine Stufe kraeftiger. */
+/* ---- FALLZAHL JE KENNZAHL (events.js fallzahlHtml) -----------------------------------------
+   Unter der Zahl im Fuss der Kachel (.up-kpi-foot, 11 in --vc-third) eine eigene Zeile: die Fallzahl
+   leise, ohne Urteil. Eine eigene Reihe im Fuss (der ist in core flex mit Umbruch, Reihenabstand 4):
+   volle Breite, sonst rutschte sie schmal neben "vs. comparison" -- am Telefon gemessen. */
 .uev-konf { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 12px; font-size: var(--up-fs-xs); color: var(--vc-third); }
 .up-kpi-foot > .uev-konf { flex: 1 0 100%; }
 .uev-konf-n { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.uev-konf-urteil { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; border-radius: var(--up-r-xs); outline: 0; }
-.uev-konf-urteil.uev-erklaer { cursor: help; }
-.uev-konf-urteil:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: 2px; }
-.uev-konf-urteil svg { width: 12px; height: 12px; flex: 0 0 auto; }
-.uev-konf-urteil.is-klar { color: var(--vc-muted); }
-.uev-konf-urteil.is-gut svg { color: var(--vt-up); }
-.uev-konf-urteil.is-schlecht svg { color: var(--vt-down); }
-/* In der Erklaerkarte: die Platte haengt am <body>, ausserhalb von .up-root -- --vc-third und
-   --vc-muted loesen dort nicht auf. Also die Schrift der Platte (erbt) und zwei Drittel davon fuer
-   die Fallzahl, wie der Satz unter der Platte. Die Trendfarben stehen an :root und gehen. */
-.uev-explain-konf .uev-konf { margin-top: 0; font-size: var(--up-fs-s); color: inherit; }
-.uev-explain-konf .uev-konf-n { color: color-mix(in srgb, currentColor 68%, transparent); }
-.uev-explain-konf .uev-konf-urteil { color: inherit; }
-.uev-explain-konf .uev-konf-urteil svg { width: 14px; height: 14px; }
-/* Die Gruende der DB unter dem Satz des Urteils "Not enough data yet": je eine Zeile, Abstand wie
-   zwischen zwei Saetzen der breiten Erklaerkarte (.uev-explain-breit). */
-.up-explain-t.uev-explain-grund { margin-top: 8px; }
 
-/* Die eine Zeile unter den Kacheln, wenn ein Urteil fehlt (events.js konfHinweisHtml): dieselbe Schrift
-   wie die Hinweise oben (.uev-hinweise), kein Kasten, keine Farbe. Das Zeichen steht an der ersten
-   Zeile, falls der Satz umbricht. hidden gewinnt gegen das display der Angabe nicht von selbst. */
-.uev-konfnote { color: var(--vc-third); font-size: var(--up-fs-m); min-width: 0; }
-.uev-konfnote[hidden] { display: none; }
-.uev-konfnote .uev-angabe { align-items: flex-start; max-width: 100%; }
-.uev-konfnote .uev-angabe svg { margin-top: 3px; }
-
-/* ---- SEITENABDECKUNG JE REGEL (17.10., Auftrag Teil C, events.js abdFuellen) -----------------
-   Im Kopf des Regel-Abschnitts unter dem Untertitel EINE Zeile: links die Zahl als Text ("12 of 43
-   pages cited"), rechts leise der Stand ("Last checked 5 min ago") und der ruhige Knopf "Refresh".
-   KEIN Balken (17.10.: der Nutzer lehnt Fortschrittsbalken ab, der Satz sagt es). Darunter nur,
-   wenn es etwas zu sagen gibt, ein Satz: die Zeit bis zum naechsten Refresh, oder der Fehler. */
-.uev-abd { display: flex; flex-direction: column; margin-top: 8px; min-width: 0; }
-.uev-abd[hidden] { display: none; }
-.uev-abd-zeile1 { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px; min-height: var(--up-h-seg); font-size: var(--up-fs-s); color: var(--vc-third); }
-.uev-abd-links, .uev-abd-rechts { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px; min-width: 0; }
-.uev-abd-rechts { margin-left: auto; }
-.uev-abd-zeile2 { display: flex; justify-content: flex-end; font-size: var(--up-fs-s); color: var(--vc-third); }
-.uev-abd-satz { color: var(--vc-muted); }
-.uev-abd-z { color: var(--vc-text); font-weight: var(--up-fw-m); font-variant-numeric: tabular-nums; }
-.uev-abd-leise { white-space: nowrap; }
-.uev-abd-sk { width: 220px; }
-/* "Refresh" leise wie "Show N more" im Sitemap-Waehler (.uev-sm-mehr: Hoehe 28, Schrift 12). */
-.uev-abd-neu { height: var(--up-h-seg); font-size: var(--up-fs-s); color: var(--vc-muted); }
-.uev-abd-neu svg { width: 14px; height: 14px; flex: 0 0 14px; }
-.uev-abd-neu:hover { color: var(--vc-text); }
-.uev-abd-neu.is-aus { opacity: .45; cursor: default; }
-.uev-abd-neu.is-aus:hover { background: transparent; color: var(--vc-muted); }
+/* ---- DER ABSCHNITT "SITEMAP" (17.10., Beschluss 10, events.js abdFuellen) ------------------
+   Ein eigener Abschnitt direkt unter der URL-Tabelle einer Regel, 40 Abstand wie zwischen den
+   Abschnitten der Seite. Der Kopf ist der aus core (.up-sec-head, 14 nach unten): links "Sitemap" mit dem
+   Satz als Untertitel ("12 of 43 pages cited. Last checked 5 minutes ago." -- KEIN Balken), rechts
+   "Refresh" als .up-btn-sec wie "Remove" oben im Kopf der Regel. Darunter nur, wenn es etwas zu sagen
+   gibt, ein Satz (Pause, Kuerzung, Fehler), dann die Reiter und die Liste. */
+.uev-abd-sek { display: flex; flex-direction: column; margin-top: 40px; min-width: 0; }
+.uev-abd-sek[hidden] { display: none; }
+.uev-abd-satz { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: -2px 0 14px; font-size: var(--up-fs-s); color: var(--vc-third); }
+.uev-abd-satz[hidden] { display: none; }
+.uev-abd-leise { }
+.uev-abd-sk { display: block; width: 220px; }
+.uev-abd-neu { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.uev-abd-neu svg, .uev-abd-neu .up-btn-spin { width: 14px; height: 14px; flex: 0 0 14px; }
 .uev-abd-fehler > span { padding-top: 2px; }
-
-/* Umschalter und Liste: nur mit .has-abd am Block (events.js), sonst ist der Block wie bisher.
-   Die Liste ersetzt die Tabelle der zitierten URLs (.zeigt-offen) -- auch im Leerzustand des
-   Ziels, dort steht dann statt "No cited pages yet" die Liste der Seiten, die es gibt. Die
-   Selektoren tragen eine Klasse mehr als die Leerzustands-Regel darueber (is-leer). */
-.uev-ziel-block > .uev-abd-seg, .uev-ziel-block > .uev-abd-liste { display: none; }
-.uev-ziel-block.has-abd > .uev-abd-seg { display: flex; }
-.uev-ziel-block.has-abd.zeigt-offen > .uev-abd-liste { display: flex; }
-.uev-ziel-block.has-abd.zeigt-offen > .uev-ziel-tab,
-.uev-ziel-block.has-abd.zeigt-offen > .uev-ziel-hinweis { display: none; }
-.uev-ziel-block.is-leer.has-abd > .uev-abd-seg { display: flex; }
-.uev-ziel-block.is-leer.has-abd.zeigt-offen > .uev-abd-liste { display: flex; }
-.uev-ziel-block.is-leer.has-abd.zeigt-offen > .uev-zielleer { display: none; }
-/* Beim Aktualisieren steht der Lader der App (makeLadebild kompakt) an der Stelle der Liste. */
-.uev-ziel-block.has-abd.zeigt-lade > .uev-abd-liste { display: flex; align-self: stretch; align-items: center; }
-.uev-ziel-block.has-abd.zeigt-lade > .uev-ziel-tab,
-.uev-ziel-block.has-abd.zeigt-lade > .uev-ziel-hinweis,
-.uev-ziel-block.is-leer.has-abd.zeigt-lade > .uev-zielleer { display: none; }
+.uev-abd-seg:empty, .uev-abd-liste:empty { display: none; }
+.uev-abd-seg { display: flex; margin-bottom: 12px; }
+/* Waehrend eines Refreshs bleiben die gelesenen Seiten stehen, nur leiser (dimmen statt Skelett). */
+.uev-abd-liste.is-laedt { opacity: .55; pointer-events: none; }
 .uev-abd-lb { width: 100%; padding: 24px 0; }
-.uev-abd-liste { flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+.uev-abd-liste { display: flex; flex-direction: column; align-items: stretch; gap: 8px; min-width: 0; }
 /* Die leise Liste: Zeilen 40 hoch (--up-h-gross), Haarlinie dazwischen, kein Kasten, kein Hover --
    die Seite oeffnet nichts, der Tooltip sagt warum. Favicon 16, Pfad 13, Datum 12 wie die Reihen
    des Sitemap-Waehlers. */
 .uev-abd-seiten { display: flex; flex-direction: column; align-self: stretch; min-width: 0; }
 .uev-abd-seite { display: flex; align-items: center; gap: 10px; min-height: var(--up-h-gross); min-width: 0; border-bottom: 1px solid var(--vc-border); font-size: var(--up-fs-m); color: var(--vc-text); cursor: default; }
+/* Eine zitierte Seite oeffnet das URL-Detail: Zeiger und Hover wie die Zeilen der Tabellen. */
+.uev-abd-seite.is-zitiert { cursor: pointer; }
+.uev-abd-seite.is-zitiert:hover { background: var(--up-sel-bg); }
+.uev-abd-seite.is-zitiert:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: -2px; }
 .uev-abd-seite:first-child { border-top: 1px solid var(--vc-border); }
 .uev-abd-fav0 { display: inline-flex; color: var(--vc-third); }
 .uev-abd-fav0 svg { width: 16px; height: 16px; }
@@ -855,8 +811,8 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-abd-mehr-baum { height: var(--up-h-seg); font-size: var(--up-fs-s); margin: 6px 0 6px calc(var(--uev-tiefe, 0) * 20px); }
 .uev-abd-mehr { height: var(--up-h-seg); font-size: var(--up-fs-s); }
 .uev-abd-mehr svg { width: 14px; height: 14px; flex: 0 0 14px; }
-/* Telefon: das Datum weicht, Pfad und Marken bleiben -- wie im Sitemap-Waehler (.uev-sm-datum). */
-.uev-root.is-vnarrow .uev-abd-datum { display: none; }
+/* Telefon: das Datum weicht, Pfad, Marken und die Zahl der Zitate bleiben -- wie im Sitemap-Waehler (.uev-sm-datum). */
+.uev-root.is-vnarrow .uev-abd-datum:not(.uev-abd-zitate) { display: none; }
 .uev-root.is-vnarrow .uev-abd-satz, .uev-root.is-vnarrow .uev-abd-leise { white-space: normal; }
 /* EV-10: die leise Zeile unter "Affected URLs" (nur mit gesetztem Filter); die Zeile mit gleichem Hinweis in den
    Regel-Abschnitten steht in .uev-ziel-hinweis. Der Text darf umbrechen. */
@@ -918,7 +874,3 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-datumfach { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .uev-datum-lbl { font-size: var(--up-fs-s); line-height: 1.4; color: var(--vc-third); }
 .uev-datumhilfe { font-size: var(--up-fs-s); line-height: 1.5; color: var(--vc-third); }
-/* Das Urteil als Zeichen allein (17.10., Teil D, konfZeichenHtml): in den Zeilen des
-   Abschlussberichts hinter dem Trend, 14 wie die Zeichen der Angaben. */
-.uev-konf-urteil.is-zeichen { color: var(--vc-third); }
-.uev-konf-urteil.is-zeichen svg { width: 14px; height: 14px; }
