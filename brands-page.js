@@ -703,7 +703,7 @@
     function exportKontext() {
       var r = null, c = kalender();
       try { r = c && c.getRange ? c.getRange() : null; } catch (e) { r = null; }
-      var p = D.tabelle(filterStand(), state.order, 0).params, ansicht = (window.__uboView || {})[ids.ubo] || {};
+      var p = D.tabelle(filterStand(), state.order, 0, state.firmen).params, ansicht = (window.__uboView || {})[ids.ubo] || {};
       var q = typeof ansicht.query === "string" ? ansicht.query.trim() : "";
       if (q) p.p_search = q.slice(0, 200);
       return {

@@ -1279,8 +1279,9 @@
         { key: "zahl",    label: "Mentioned",         kurz: "mentioned",    feld: "mentioned_count",    art: "anzahl" }
       ],
       sentiment: [
-        { key: "avg",     label: "Average Sentiment", kurz: "avg",          feld: "avg_sentiment",      art: "note" },
-        { key: "unter50", label: "Below 50",          kurz: "below 50",     feld: "sentiment_below_50", art: "anzahl" }
+        /* Seit k2 (17.10.) aus den letzten 30 Tagen des Zeitraums, wie auf dem Dashboard: das Etikett sagt es. */
+        { key: "avg",     label: "Average Sentiment (last 30 days)", kurz: "avg", feld: "avg_sentiment", art: "note" },
+        { key: "unter50", label: "Below 50 (last 30 days)", kurz: "below 50", feld: "sentiment_below_50", art: "anzahl" }
       ],
       rank: [
         { key: "avg",     label: "Average Rank",      kurz: "avg",          feld: "avg_rank",           art: "rang" },
@@ -1511,7 +1512,7 @@
     function explainInfo(kind){
       if (EXPLAIN_LOCAL[kind]) return EXPLAIN_LOCAL[kind];
       if (UC.explainCopy){
-        if (kind === "sentiment") return UC.explainCopy("sentiment", { scope: " for this response" });
+        if (kind === "sentiment") return UC.explainCopy("sentiment_antwort", { scope: " for this response" });
         if (kind === "brands") return UC.explainCopy("brands", { scope: " in this response" });
       }
       /* Fallback for a page where an older core.js (no explainCopy yet) won the mixed-pin race —

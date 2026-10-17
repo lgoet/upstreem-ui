@@ -467,7 +467,7 @@
         export_type: typ,
         date_from: r && r.from ? r.from : f.von, date_to: r && r.to ? r.to : f.bis, preset: r && r.preset ? r.preset : (state.modus === "power" ? "last30" : ""),
         params: {
-          brands: D.overview(f, { order: state.vis.order }).params,
+          brands: D.overview(f, { order: state.vis.order, firmen: state.vis.firmen }).params,
           domains: D.topListe(f, "domain", cit).params,
           urls: D.topListe(f, "url", url).params,
           prompt_runs: D.responses(f, state.resp).params

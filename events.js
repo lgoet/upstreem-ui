@@ -2607,7 +2607,7 @@
         if (leer) teile.fussHtml = esc(t("No comparable data yet"));
         /* Die Fallzahl als zweite Zeile im Fuss: ohne confidence leer. */
         else teile.fussHtml = (teile.fussHtml || "") + fallzahlHtml(fallBlock(a, m.key), m.key);
-        teile.label = m.label;
+        teile.label = m.key === "sentiment" ? "Sentiment (last 30 days)" : m.label;
         /* Die drei Kennzahlen in EINEM Kasten: das Kennzahlen-Band aus core (.up-kpiband am
            Behaelter, 04.10.), senkrechte Linien ueber die volle Hoehe. */
         teile.klasse = "uev-kpi";

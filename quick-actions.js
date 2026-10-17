@@ -452,7 +452,7 @@
       id: "rank",
       label: "Rank",
       hint: "lower is better",
-      body: "Rank is the average position your brand takes within an answer that mentions it. Position 1 " +
+      body: "Rank is the average of your brand's best position in each answer that mentions it. If the brand is named more than once in an answer, its best position counts. Position 1 " +
             "is the first brand named. Lower is better, so the trend chip is inverted: a falling rank " +
             "number is displayed as a positive move. Values are shown to one decimal because typical " +
             "changes are smaller than a full position."
@@ -463,7 +463,7 @@
       hint: "0 – 100",
       body: "Sentiment scores how positively your brand is described, on a scale from 0 to 100, where 50 " +
             "is neutral. It is measured only in answers that mention your brand, so it carries no " +
-            "information about how often that happens. Read it alongside Visibility, not instead of it. "
+            "information about how often that happens. Read it alongside Visibility, not instead of it. It is calculated over the last 30 days of the selected period. "
     },
     {
       id: "visibility",
