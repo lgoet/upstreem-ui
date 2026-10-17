@@ -343,6 +343,9 @@
       --vc-toast-flaeche: rgba(255,255,255,.10);
       --vc-toast-flaeche-hover: rgba(255,255,255,.18);
       --vc-toast-zu: #6c717a;
+      /* Hervorgehobener Teil im Toast (UC.toast opts.hervor): die Hauptschrift des Toasts, nie die
+         Akzentfarbe (Nutzer 18.10.); heller als der Rest der Nachricht. */
+      --vc-toast-akzent: #e0e0e0;
       /* ---- DIE ZUSTANDSFARBEN NACH GEIST (15.10.) -------------------------------------------
          "Chartfarben, Trend Chips, das Gruen vom Prompt Quota etc.: Nimm fuer das alles bitte das
          Geist Design System, das ist das neue System fuer diese Sachen." Die Werte sind Vercels
@@ -780,6 +783,7 @@
       --vc-toast-flaeche: rgba(31,31,27,.08);
       --vc-toast-flaeche-hover: rgba(31,31,27,.14);
       --vc-toast-zu: #80858e;
+      --vc-toast-akzent: #1f1f1b;
       /* Die Zustandsfarben nach Geist, dunkle Skala (Begruendung im hellen Block). Gemessen auf der
          Karte #1c1c1f: --vt-up Green 900 7.53, --vt-down Red 900 5.79, --vc-warn Amber 900 8.05
          (vorher #60d25d und #d25d5d). Die Flaechen 700/800 sind bei Geist in beiden Themen dieselben
@@ -4788,6 +4792,20 @@
        Untermenues der Leiste (.uif-opt, .umf-opt: 34). Das Panel stellt filter-bar.css in den
        Fluss. Eigener Inhalt (Regler, .up-ff-panel) bekommt das Polster eines Menues; die
        unsichtbare Liste darunter traegt dann nur den Namen der Wahl fuer den Chip. */
+    /* Die Standalone-Wurzeln der drei Filter (Topics, Models, Markets) stehen auf jeder Seite mit
+       Filterleiste als Geschwister der Leiste in der Zeile und werden erst von filter-bar.js in ihr
+       Untermenue "Filters" geholt (initAll, Timer, Waechter). Bis dahin baute ihr eigenes Skript
+       den Knopf in die Zeile: 270 bis 440 ms sichtbar nach einem Seitenwechsel, je belegter der
+       Hauptthread, desto laenger. Hier ab dem ersten Bild weg, ohne Platz, solange die Wurzel NEBEN
+       der Leiste steht. In .ufb-sub ist sie kein Geschwister mehr, die Regel trifft dort nicht (die
+       Selektorform statt einer Reihenfolge; filter-bar.css stylt sie dort weiter). Eine Wurzel
+       ohne Leiste daneben (Mira-Bericht) bleibt, wie sie ist. */
+    :has(> .ufb-root) > .utf-root,
+    :has(> .ufb-root) > .umf-root,
+    :has(> .ufb-root) > .umk-root {
+      position: absolute; width: 0; height: 0; margin: 0; overflow: hidden;
+      visibility: hidden; pointer-events: none;
+    }
     .up-ff-heim { display: none; }
     .up-ff-trigger { display: none; }
     .up-ff-opt { min-height: 34px; }
@@ -5439,6 +5457,7 @@
        und im schmalen Inhaltsbereich brach der Text Zeichen fuer Zeichen um (10.10. gemessen bei
        180px neben der Leiste). So bleibt das laengste Wort die kleinste Breite. */
     .up-toast-t { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); line-height: 20px; overflow-wrap: break-word; }
+    .up-toast-hv { color: var(--vc-toast-akzent); overflow-wrap: anywhere; }
     .up-toast-d { font-size: var(--up-fs-m); font-weight: var(--up-fw-n); line-height: 18px; color: var(--vc-toast-sub); overflow-wrap: break-word; }
     .up-toast-act {
       flex: 0 0 auto; height: 24px; margin-top: -2px; padding: 0 8px; border: 0; border-radius: var(--up-r-s);

@@ -1215,6 +1215,8 @@
         return;
       }
       if (emptyGraceTimer){ clearTimeout(emptyGraceTimer); emptyGraceTimer = null; }
+      /* Suche: die Nummer zaehlt unter den Treffern (UC.platzInMenge), nicht im ganzen Feld. */
+      if (!inactive && q && UC.platzInMenge) rows = UC.platzInMenge(rows);
       var body = rows.map(inactive ? inactiveRowHtml : activeRowHtml).join("");
       tableEl.innerHTML = headHtml() + '<div class="up-tbody">' + body + '</div>';
       applyCols();

@@ -81,6 +81,18 @@
   }
   function mit(o, x) { for (var k in x) if (Object.prototype.hasOwnProperty.call(x, k)) o[k] = x[k]; return o; }
   function anfrage(art, params) { return { art: art, fn: FN[art], params: params, sig: FN[art] + "|" + JSON.stringify(params) }; }
+  /* DATENSTAND EINER TABELLE (18.10., Versionsbindung der DB, g3_features_cache): hinter Offset 100
+     rechnet die DB den Listeneintrag neu, wenn er veraltet ist; meta.generated_at und total_count
+     kommen immer aus dem Eintrag. Aendert sich beides beim Blaettern, zeigt Seite 8 einen anderen
+     Stand als Seite 1 (Dublette, Luecke). Der Schluessel ist die Anfrage OHNE Seite, Seitengroesse
+     und Sortierung: dort ist ein neuer Stand normal, ein Filter oder eine Suche ist ein anderer
+     Schluessel. Eigene Funktion, damit auch dashboard-data.js (Responses) dieselbe Regel nimmt. */
+  function bindung(fn, params) {
+    var rest = {}, k;
+    for (k in params) if (Object.prototype.hasOwnProperty.call(params, k) && k !== "p_offset" && k !== "p_limit" && k !== "p_order") rest[k] = params[k];
+    return { schluessel: fn + "|" + JSON.stringify(rest), seite: (params.p_offset || 0) > 0 };
+  }
+  function listenAnfrage(art, params) { var a = anfrage(art, params); a.bindung = bindung(a.fn, params); return a; }
 
   function overview(f, o) {
     o = o || {};
@@ -95,7 +107,7 @@
   }
   function tabelle(art, f, t) {
     t = t || {};
-    return anfrage(art, mit(basis(f, art), {
+    return listenAnfrage(art, mit(basis(f, art), {
       p_search: sucheVon(t.suche), p_order: orderVon(art, t.order),
       p_limit: ganz(t.limit, 25, 1, 100), p_offset: ganz(t.offset, 0, 0, 1e9)
     }));
@@ -296,12 +308,49 @@
        Zahlen sind es nicht. Die Seiten nehmen stand in die Signatur ihrer Summe -- ein Leeren ist so
        auch fuer die Gesamtzeile ein neuer Stand, und sie holt frisch. */
     var stand = 0;
+    /* Datenstand je Tabelle und Filter (a.bindung.schluessel): "generated_at|total_count" der zuletzt
+       gezeigten Seite. versionFn legt die Seite fest (versionMit); ohne sie prueft der Lader nichts. */
+    var datenstand = {}, sigSchluessel = {}, versionFn = null;
+    function standVon(d) {
+      var m = meta(d), ga = str(m.generated_at), tc = num(m.total_count);
+      return ga ? ga + "|" + (tc == null ? "" : tc) : null;
+    }
+    function schluesselLeeren(schl) {
+      Object.keys(sigSchluessel).forEach(function (s) {
+        if (sigSchluessel[s] === schl) { delete cache[s]; delete sigSchluessel[s]; var i = reihe.indexOf(s); if (i >= 0) reihe.splice(i, 1); }
+      });
+    }
+    /* "ok", "veraltet" (Seite 1: Eintrag verwerfen, neu holen, ohne Hinweis) oder "gewechselt"
+       (Seite hinter 1: die Seite springt auf 1). Der neue Stand wird SOFORT gemerkt: das Neuladen
+       von Seite 1 trifft dann auf denselben Wert, es gibt keine Schleife. */
+    function standPruefen(a, d) {
+      var b = a && a.bindung;
+      if (!b || !versionFn || !b.schluessel) return "ok";
+      var neu = standVon(d);
+      if (neu == null) return "ok";
+      var alt = datenstand[b.schluessel];
+      if (alt == null || alt === neu) { datenstand[b.schluessel] = neu; return "ok"; }
+      if (!b.seite) return "veraltet";
+      datenstand[b.schluessel] = neu;
+      schluesselLeeren(b.schluessel);
+      return "gewechselt";
+    }
+    function gewechselt(a, erg) {
+      var ok = false;
+      try { ok = !!versionFn(a, erg); } catch (e) { ok = false; }
+      return ok;
+    }
     function merken(sig, d) {
       cache[sig] = d;
       var i = reihe.indexOf(sig);
       if (i >= 0) reihe.splice(i, 1);
       reihe.push(sig);
       while (reihe.length > MAX) delete cache[reihe.shift()];
+    }
+    /* Eine Antwort aus dem Speicher ist jetzt die gezeigte Seite: ihr Stand ist der gemerkte. */
+    function datenstandSetzen(a, d) {
+      var n = standVon(d);
+      if (a && a.bindung && n != null && versionFn) datenstand[a.bindung.schluessel] = n;
     }
     function abbrechen(kanal) {
       var l = laufend[kanal];
@@ -310,8 +359,10 @@
     function laden(kanal, a, opts) {
       opts = opts || {};
       if (!opts.frisch && a.sig && Object.prototype.hasOwnProperty.call(cache, a.sig)) {
-        abbrechen(kanal);
-        return Promise.resolve({ ok: true, daten: cache[a.sig], ausSpeicher: true });
+        var sp = standPruefen(a, cache[a.sig]);
+        if (sp === "veraltet") { delete cache[a.sig]; var iv = reihe.indexOf(a.sig); if (iv >= 0) reihe.splice(iv, 1); }
+        else if (sp === "gewechselt" && gewechselt(a, null)) { abbrechen(kanal); return Promise.resolve({ ok: false, ueberholt: true, versionGewechselt: true }); }
+        else { abbrechen(kanal); datenstandSetzen(a, cache[a.sig]); return Promise.resolve({ ok: true, daten: cache[a.sig], ausSpeicher: true }); }
       }
       var l = laufend[kanal];
       if (l && l.sig === a.sig && !opts.frisch) return l.promise;
@@ -336,7 +387,12 @@
             try { bereinigt = !!bereinigen(erg, a); } catch (e) { bereinigt = false; }
             if (bereinigt) return { ok: false, ueberholt: true, bereinigt: true };
           }
-          if (erg.ok && a.sig) merken(a.sig, erg.daten);
+          if (erg.ok) {
+            var st = standPruefen(a, erg.daten);
+            if (st === "gewechselt" && gewechselt(a, erg)) return { ok: false, ueberholt: true, versionGewechselt: true };
+            if (st === "veraltet" && a.bindung) datenstand[a.bindung.schluessel] = standVon(erg.daten);
+          }
+          if (erg.ok && a.sig) { merken(a.sig, erg.daten); if (a.bindung) sigSchluessel[a.sig] = a.bindung.schluessel; }
           return erg;
         }, function () {
           /* Abgebrochen, weil eine neuere Anfrage desselben Kanals kam: ueberholt, kein Fehler. */
@@ -360,7 +416,9 @@
          haengt ihre Bereinigung hier ein und ersetzt die der alten. */
       bereinigenMit: function (fn) { bereinigen = typeof fn === "function" ? fn : null; },
       laeuft: function (kanal) { return !!laufend[kanal]; },
-      leeren: function () { cache = {}; reihe = []; stand++; },
+      /* fn(a, erg) -> true: die Seite springt selbst auf Seite 1 (Stand wechselte beim Blaettern). */
+      versionMit: function (fn) { versionFn = typeof fn === "function" ? fn : null; },
+      leeren: function () { cache = {}; reihe = []; sigSchluessel = {}; datenstand = {}; stand++; },
       stand: function () { return stand; },
       ausSpeicher: function (a) { return a && a.sig && Object.prototype.hasOwnProperty.call(cache, a.sig) ? cache[a.sig] : undefined; }
     };
@@ -371,6 +429,6 @@
     overview: overview, domains: domains, urls: urls, domainUrls: domainUrls, clear: clear,
     summe: summe, zuSumme: zuSumme, summeFelder: summeFelder, summeLesen: summeLesen,
     zuCombo: zuCombo, zuDomains: zuDomains, zuUrls: zuUrls, zuDrilldown: zuDrilldown,
-    fehlerArt: fehlerArt, makeLader: makeLader
+    fehlerArt: fehlerArt, makeLader: makeLader, listenAnfrage: listenAnfrage, bindung: bindung
   };
 })();

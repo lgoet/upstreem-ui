@@ -2085,6 +2085,7 @@
     "Mentioned brands": "Erwähnte Brands",
     "No brands available": "Keine Brands vorhanden",
     "Clear filters": "Reset Filters",
+    "The list was updated. Showing the first page.": "Die Liste wurde aktualisiert. Du siehst jetzt die erste Seite.",
 
     /* Leerzustaende der Tabelle */
     "No matching prompts": "Keine passenden Prompts",
@@ -4812,6 +4813,31 @@
   var SCALE_CHECK = CHECK_SVG.replace('<svg ', '<svg class="up-check" ');
   var COPY_SVG = '<svg class="up-ic-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /> <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></svg>';
   var GOTO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10" /> <path d="M7 17 17 7" /></svg>';
+  /* DIE NUMMER "#" IN DER MARKENTABELLE (18.10.): die DB vergibt position als Platz nach Visibility
+     unter ALLEN Marken, bevor p_companies/p_search greifen. Waehlt der Nutzer im Fader einige ab,
+     stuende dort 1, 3, 5, 6 ... -- Luecken, die zur gezeigten Liste nicht passen. Bei einer
+     Auswahl (und bei der Suche im Browser) zaehlt der Platz darum innerhalb der gezeigten Menge,
+     nach derselben Regel wie die DB (Visibility absteigend, ohne Wert zuletzt, dann Name, dann Id).
+     Unabhaengig von der Spaltensortierung: die Zeilen behalten ihre Reihenfolge, nur die Nummer
+     wandert mit der Kennzahl. Ohne Auswahl bleibt die Nummer der DB (Platz im ganzen Feld). Geteilt, weil Dashboard, Brands und
+     die Suche in brands-overview dieselbe Regel brauchen. */
+  function platzInMenge(liste) {
+    if (!Array.isArray(liste)) return liste;
+    var nach = liste.slice().sort(function (a, b) {
+      var x = a.visibility_pct, y = b.visibility_pct;
+      if ((x == null) !== (y == null)) return x == null ? 1 : -1;
+      if (x !== y && x != null) return y - x;
+      var n = String(a.name || "").localeCompare(String(b.name || ""));
+      return n || String(a.company_id).localeCompare(String(b.company_id));
+    });
+    var platz = {};
+    nach.forEach(function (r, i) { platz[r.company_id] = i + 1; });
+    return liste.map(function (r) {
+      var c = {}; for (var k in r) c[k] = r[k];
+      c.position = platz[r.company_id];
+      return c;
+    });
+  }
   var HASH_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9" /> <line x1="4" x2="20" y1="15" y2="15" /> <line x1="10" x2="8" y1="3" y2="21" /> <line x1="16" x2="14" y1="3" y2="21" /></svg>';
 
   /* Column-header explainer copy (the popover UC.makeExplain opens from a .up-th-info icon) — ONE
@@ -14242,6 +14268,11 @@
     e.start = Date.now(); e.rest = ms;
     e.uhr = setTimeout(function(){ toastWeg(e); }, ms);
   }
+  /* Der Datenstand einer Liste wechselte beim Blaettern (Versionsbindung der DB): die Tabelle springt auf
+     Seite 1. Ein Schluessel, damit mehrere Listen auf einer Seite nicht mehrere Hinweise stapeln. */
+  function listeAktualisiert(){
+    return toast("The list was updated. Showing the first page.", { kind: "neutral", schluessel: "liste-aktualisiert" });
+  }
   function toast(text, opts){
     opts = opts || {};
     var t = String(text == null ? "" : text).trim();
@@ -14282,6 +14313,20 @@
          deutschen UI englisch da. Ein schon uebersetzter Text ist kein Schluessel und bleibt. */
       el.querySelector(".up-toast-t").textContent = titel;
       if (desc) el.querySelector(".up-toast-d").textContent = t_(desc);
+      /* Ein Teil des Textes in der Primaerfarbe (opts.hervor, z. B. eine URL): als Textknoten
+         und ein span, nie als HTML, damit ein Wert aus Nutzereingabe nichts einschleppen kann. */
+      var hervor = String(opts.hervor == null ? "" : opts.hervor);
+      if (hervor){
+        [".up-toast-t", ".up-toast-d"].forEach(function(sel){
+          var z = el.querySelector(sel); if (!z) return;
+          var tx = z.textContent, i0 = tx.indexOf(hervor);
+          if (i0 < 0) return;
+          var sp = document.createElement("span"); sp.className = "up-toast-hv"; sp.textContent = hervor;
+          z.textContent = "";
+          z.appendChild(document.createTextNode(tx.slice(0, i0))); z.appendChild(sp);
+          z.appendChild(document.createTextNode(tx.slice(i0 + hervor.length)));
+        });
+      }
       var e = { el: el, art: art, ms: ms, uhr: null, weg: false, id: ++TOAST.seq, bleibt: bleibt,
                 schluessel: schl, unten: opts.unten === true, onClose: typeof opts.onClose === "function" ? opts.onClose : null };
       /* Der ganze Toast als Knopf: ein Klick irgendwo ausser auf X oder die Aktion. Mit Tabulator
@@ -29935,6 +29980,7 @@
     COPY_SVG: COPY_SVG,
     GOTO_SVG: GOTO_SVG,
     HASH_ICON: HASH_ICON,
+    platzInMenge: platzInMenge,
     EXPLAIN_TEXT: EXPLAIN_TEXT,
     explainCopy: explainCopy,
     mentCell: mentCell,
@@ -30000,7 +30046,7 @@
     makeClipTip: makeClipTip,
     SLIDERS_ICON: SLIDERS_ICON,
     makeFire: makeFire,
-    toast: toast, toastZu: toastZu,
+    toast: toast, toastZu: toastZu, listeAktualisiert: listeAktualisiert,
     upstreemSignal: upstreemSignal,
     makePortal: makePortal,
     placeMenu: placeMenu,

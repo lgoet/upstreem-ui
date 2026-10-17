@@ -119,13 +119,17 @@
     if (rMin != null) rMin = Math.max(1, Math.round(rMin));
     if (rMax != null) rMax = Math.max(1, Math.round(rMax));
     if (rMin != null && rMax != null && rMin > rMax) { var x = rMin; rMin = rMax; rMax = x; }
-    return anfrage("responses", mit(basis(f), {
+    var ra = anfrage("responses", mit(basis(f), {
       p_order: orderVon("responses", r.order), p_limit: ganz(r.limit, 15, 1, RESPONSES_MAX), p_offset: ganz(r.offset, 0, 0, 1e9),
       p_search: sucheVon(r.suche),
       p_mentioned: r.erwaehnt === "yes" || r.erwaehnt === "no" ? r.erwaehnt : "all",
       p_company_ids: uuids(r.firmen, 100),
       p_sentiment_min: sMin, p_sentiment_max: sMax, p_rank_min: rMin, p_rank_max: rMax
     }));
+    /* Datenstand der Liste (Versionsbindung der DB hinter Offset 100): derselbe Schluessel-Bau wie
+       bei Domains und URLs, ein Ort in citations-data.js. */
+    if (C() && C().bindung) ra.bindung = C().bindung(ra.fn, ra.params);
+    return ra;
   }
   /* Mehr als 50 Zeilen (die Tabelle bietet 100 an): in Teilen zu 50, die Seite legt sie zusammen. */
   function responsesTeile(f, r) {
@@ -207,6 +211,8 @@
   /* o.nurImChart: die Tabelle zeigt nur die Marken, die auch im Chart stehen -- die Seite setzt das
      nur bei einer eigenen Auswahl im Fader (dieselbe Menge wie p_companies). Ohne Auswahl sortiert
      die Tabelle ueber alle Marken (dashboard-page.js, visAuftrag). */
+  /* Die Nummer "#" bei Auswahl im Fader: Platz innerhalb der gezeigten Menge, siehe UC.platzInMenge. */
+  function platzInMenge(liste) { return window.UpstreemCore && window.UpstreemCore.platzInMenge ? window.UpstreemCore.platzInMenge(liste) : liste; }
   function zuVisibility(vis, ov, o) {
     o = o || {};
     if (!istObjekt(vis) || !isArr(vis.series) || !isArr(vis.companies)) return null;
@@ -226,16 +232,16 @@
     }
     return {
       series: series, companies: companies,
-      table: tabelle.map(marke),
+      table: o.platzInMenge ? platzInMenge(tabelle.map(marke)) : tabelle.map(marke),
       totalCount: num(m.total_count) == null ? zeilen(ov).length : num(m.total_count),
       granularity: str(meta(vis).granularity) || "day"
     };
   }
   /* Nur die Tabelle (Sortierung): dieselbe Form, ohne Kurve. */
-  function zuMarkentabelle(ov) {
+  function zuMarkentabelle(ov, o) {
     if (!istObjekt(ov) || !isArr(ov.rows)) return null;
-    var m = meta(ov);
-    return { table: zeilen(ov).map(marke), totalCount: num(m.total_count) == null ? zeilen(ov).length : num(m.total_count) };
+    var m = meta(ov), t = zeilen(ov).map(marke);
+    return { table: o && o.platzInMenge ? platzInMenge(t) : t, totalCount: num(m.total_count) == null ? zeilen(ov).length : num(m.total_count) };
   }
 
   /* Top Citations (renderTopCitations). types_breakdown traegt im Domain-Modus die Citation Types,
@@ -361,7 +367,7 @@
     responsesSumme: responsesSumme, zuResponsesSumme: zuResponsesSumme,
     chats: chats, opportunities: opportunities, zuChats: zuChats, zuOpportunities: zuOpportunities,
     topTypen: topTypen, topListe: topListe,
-    zuVisibility: zuVisibility, zuMarkentabelle: zuMarkentabelle, zuTop: zuTop,
+    zuVisibility: zuVisibility, platzInMenge: platzInMenge, zuMarkentabelle: zuMarkentabelle, zuTop: zuTop,
     zuPowerUeberblick: zuPowerUeberblick, zuPowerDomains: zuPowerDomains, zuPowerUrls: zuPowerUrls,
     zuResponses: zuResponses, fehlerArt: fehlerArt, makeLader: makeLader
   };

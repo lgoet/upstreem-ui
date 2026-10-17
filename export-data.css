@@ -269,7 +269,7 @@
   .uex-feld.uex-feld-format { flex-direction: row; align-items: center; justify-content: space-between; gap: 16px; }
   .uex-format-wert { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-muted); }
 
-  /* Der Hinweis unter den Feldern (Grenze vorab, "kommt bald"). */
+  /* Der Hinweis unter den Feldern (nur noch "kommt bald"). */
   .uex-hinweis {
     display: flex; align-items: center; gap: 6px;
     font-size: var(--up-fs-s); line-height: 16px; color: var(--vc-third);
