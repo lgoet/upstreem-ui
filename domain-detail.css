@@ -336,6 +336,12 @@
    Abschnittstitel 18 -> 16 und Unterzeile 14 -> 13 (beides der Abschnittskopf aus core),
    Etiketten 14 (--up-fs-l), Radius des Trichters 14 -> 12 (--up-r-xl). */
 .udd-root.is-abschnitte { grid-template-columns: 1fr; row-gap: 64px; }
+/* KURVE UND TRICHTER NEBENEINANDER, wenn die Breite reicht (18.10.): dieselbe Schwelle und dieselbe Form wie die Zeile
+   darunter (Typ-Split und Model Breakdown, unten bei .udd-row2): zwei Haelften, 24px Luft je Seite und EIN senkrechter
+   Strich dazwischen. Unter 780 (is-stack) und im schmalen Kopf (is-narrow) bleibt es bei einer Spalte mit 64px Abstand. */
+.udd-root.is-abschnitte:not(.is-narrow):not(.is-stack) { grid-template-columns: 1fr 1fr; column-gap: 0; }
+.udd-root.is-abschnitte:not(.is-narrow):not(.is-stack) > .udd-chartcard { padding-right: 24px; min-width: 0; }
+.udd-root.is-abschnitte:not(.is-narrow):not(.is-stack) > .udd-funnelcard { padding-left: 24px; border-left: 1px solid var(--vc-border); min-width: 0; }
 /* Chart- und Trichterkarte ohne Rahmen: die Abschnittsform aus core (data-form="abschnitte"). */
 
 /* Etikett ueber der grossen Zahl, Zahl und Veraenderung auf einer Grundlinie. 20 oben wie in der
