@@ -248,6 +248,22 @@
   [id^="view-"].view-on:not(:has(.up-seite, .uvb-root, [data-up-vorab-seit], .uds-root, .ucs-root, .upi-root, .upf-root, .uop-root, .urs-root, .utp-root, .ubr-root, .uss-root)) [id^="viewbody-"] { animation: none; }
 }
 
+/* ================= KEINE ROHE TABELLE (18.10.) ===============================================
+   Eine Tabelle, die eine Seite fertig als Markup mitbringt (Prompt Insights: Prompts, Responses,
+   Topics), steht vom ersten Bild an im Dokument, richtet sich aber erst ein, wenn ihr Baustein
+   gemountet ist (makeMount, Wurzelbeobachter). Wird der Inhalt der Seite vorher freigegeben, sieht
+   man den Kopf ohne Raster: Sortierzeichen untereinander, ohne Spalten. Nachgestellt: kamen die
+   Stylesheets spaet (700ms), stand die Seite 190ms mit rohem Kopf da (Deckkraft 1, 6512 von 6512
+   Bildern), weil Auftritt und Einrichtung nicht aufeinander warten.
+   Das Merkmal einer fertigen Tabelle ist data-up-colsig, das makeColumns an Kopf UND Zeilen setzt.
+   Solange der Kopf es nicht hat, wird der Kasten weggeschnitten, nicht versteckt: clip-path laesst
+   Layout, Messen (istSichtbar, messbar) und Fokus unberuehrt, ein visibility:hidden haette das
+   Einrichten selbst aufgehalten. Die Regel braucht kein JS und gilt ab dem ersten Bild.
+   FRIST: kommt die Struktur nie (Baustein fehlt, Fehler beim Einrichten), gibt die Animation den
+   Kasten nach 1,5 s frei. Leer und kaputt duerfen nicht gleich aussehen, also lieber roh als nie. */
+.up-seite .up-box:has(.up-thead:not([data-up-colsig])) { clip-path: inset(100% 0 0 0); animation: up-roh-frist 0s linear 1500ms forwards; }
+@keyframes up-roh-frist { to { clip-path: none; } }
+
 /* ================= TIEFEN UND UMGEKEHRTE KARTE, AUCH AUSSERHALB EINER WURZEL ================
    (28.09.) Die Tiefen standen bis heute nur an .up-root. Was am <body> haengt -- Erklaerkarte,
    Tooltip, die Menues und Leisten mit eigener Palette --, erreichte sie nicht: dort loeste
