@@ -71,8 +71,8 @@
   var REFRESH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /> <path d="M8 16H3v5" /></svg>';
   var PLUS_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14" /> <path d="M12 5v14" /></svg>';
   /* Sortierschluessel von brands-overview (Feld + Richtung) -> p_order des Overview-Vertrags. */
-  var SORT_OUT = { visibility: "visibility", ranking: "rank", sentiment: "sentiment" };
-  var ORDER_OK = ["visibility_desc", "visibility_asc", "rank_asc", "rank_desc", "sentiment_desc", "sentiment_asc"];
+  var SORT_OUT = { visibility: "visibility", visibility_trend: "visibility_delta", ranking: "rank", sentiment: "sentiment" };
+  var ORDER_OK = ["visibility_desc", "visibility_asc", "visibility_delta_desc", "visibility_delta_asc", "rank_asc", "rank_desc", "sentiment_desc", "sentiment_asc"];
 
   /* ---- Fehler als Satz fuer den Nutzer ----------------------------------------------------------
      Je stabiler message des Vorschlags ein Satz, der sagt, was passiert ist und was man tun kann.

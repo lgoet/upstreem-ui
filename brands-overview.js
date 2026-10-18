@@ -1079,9 +1079,9 @@
         brandHeadHtml();
       var sortAttr = function(col){
         /* aria-sort nur an der sortierten Spalte (WAI-ARIA); "none" an jeder anderen waere Laerm. */
-        return sortField === col ? ' aria-sort="' + (sortDir === "asc" ? "ascending" : "descending") + '"' : "";
+        return (sortField === col || (col === "visibility" && sortField === "visibility_trend")) ? ' aria-sort="' + (sortDir === "asc" ? "ascending" : "descending") + '"' : "";
       };
-      if (colOn("visibility")) h += '<div class="up-th up-th-visibility is-sortable" data-sortcol="visibility"' + sortAttr("visibility") + '>Visibility' + sortChevronHtml("visibility") + infoIcon("visibility") + '</div>';
+      if (colOn("visibility")) h += '<div class="up-th up-th-visibility is-sortable" data-sortcol="visibility"' + sortAttr("visibility") + '>Visibility' + (sortField === "visibility_trend" ? '<span class="up-th-sub">Trend</span>' : '') + sortChevronHtml("visibility") + infoIcon("visibility") + '</div>';
       if (colOn("ranking"))    h += '<div class="up-th up-th-ranking is-sortable" data-sortcol="ranking"' + sortAttr("ranking") + '>Rank' + sortChevronHtml("ranking") + infoIcon("ranking") + '</div>';
       if (colOn("sentiment"))  h += '<div class="up-th up-th-sentiment is-sortable" data-sortcol="sentiment"' + sortAttr("sentiment") + '>Sentiment' + sortChevronHtml("sentiment") + infoIcon("sentiment") + '</div>';
       h += '<div class="up-th up-th-act"></div></div>';
@@ -1518,8 +1518,8 @@
     }
 
     /* ---- sort ---- */
-    var SORT_LABELS = [["visibility","Visibility"],["ranking","Rank"],["sentiment","Sentiment"]];
-    var SORT_OUT = { visibility: "visibility", ranking: "rank", sentiment: "sentiment" };
+    var SORT_LABELS = [["visibility","Visibility"],["visibility_trend","Visibility Trend"],["ranking","Rank"],["sentiment","Sentiment"]];
+    var SORT_OUT = { visibility: "visibility", visibility_trend: "visibility_delta", ranking: "rank", sentiment: "sentiment" };
     /* beginSortDim() sits inside fireSort() rather than at the three call sites (header click,
        sort-menu option, direction switch) so no future one can forget it. */
     function fireSort(){ beginSortDim(); fireRaw("data-sort-fn", "uboSortTable", (SORT_OUT[sortField] || sortField) + "_" + sortDir); }
@@ -1531,22 +1531,31 @@
        hand-rolled rather than routed through the kit because headHtml() already rebuilds the whole
        thead from scratch on every render (see renderTable()), so there is no separate DOM node to
        patch afterwards the way the kit's syncHeadSorters() assumes. */
-    var SORT_CYCLE = { visibility: ["desc", "asc"], ranking: ["asc", "desc"], sentiment: ["desc", "asc"] };
-    function headSortClick(col){
-      var cyc = SORT_CYCLE[col];
-      if (!cyc) return;
-      var idx = (sortField === col) ? cyc.indexOf(sortDir) : -1;
-      var pos = idx + 1;
-      if (pos >= cyc.length){ sortField = "visibility"; sortDir = "desc"; }
-      else { sortField = col; sortDir = cyc[pos]; }
-      SORT_STORE[instanceId] = { field: sortField, dir: sortDir };
-      populateSort(); fireSort(); renderTable();
-    }
+    /* Seit 18.10. derselbe Klickweg wie in jeder Tabelle (UC.makeHeadSort): Visibility absteigend, aufsteigend, Trend
+       absteigend, aufsteigend, dann zurueck zur Vorgabe; Rang kleinster zuerst, Sentiment groesster zuerst, dann die
+       andere Richtung. Der Kopf wird bei jedem Zeichnen neu gebaut (headHtml), der Kit bekommt den Zustand per Getter. */
+    var HEAD_CYCLE = {
+      visibility: ["visibility:desc", "visibility:asc", "visibility_trend:desc", "visibility_trend:asc"],
+      ranking:    ["ranking:asc", "ranking:desc"],
+      sentiment:  ["sentiment:desc", "sentiment:asc"]
+    };
+    var sortKit = UC.makeHeadSort({
+      root: root,
+      state: { get sortField(){ return sortField; }, get sortDir(){ return sortDir; } },
+      cycles: HEAD_CYCLE, defaultSort: { field: "visibility", dir: "desc" },
+      trendField: "visibility_trend", trendCol: "visibility",
+      onSort: function(f, d){
+        sortField = f; sortDir = d;
+        SORT_STORE[instanceId] = { field: sortField, dir: sortDir };
+        populateSort(); fireSort(); renderTable();
+      }
+    });
+    function headSortClick(col){ sortKit.headSortClick(col); }
     /* Zwei Chevrons uebereinander, Lucide-Geometrie. */
     var THSORT_UP = '<svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15"/></svg>';
     var THSORT_DOWN = '<svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/></svg>';
     function sortChevronHtml(col){
-      var on = sortField === col;
+      var on = sortField === col || (col === "visibility" && sortField === "visibility_trend");
       return '<span class="up-thsort' + (on ? (sortDir === "asc" ? " is-asc" : " is-desc") : "") +
         '" data-for="' + col + '">' + THSORT_UP + THSORT_DOWN + '</span>';
     }
