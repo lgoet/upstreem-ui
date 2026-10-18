@@ -264,14 +264,14 @@
         tc(zahl(k.visibility_delta_pct), { decimals: true, suffix: "%" })) +
       kachel("Avg. Rank", "rank", wert("rank", zahl(k.avg_rank)),
         tc(zahl(k.avg_rank_delta), { decimals: true, inverted: true })) +
-      kachel("Sentiment (last 30 days)", "sentiment", wert("sentiment", zahl(k.sentiment)), tc(zahl(k.sentiment_delta), {})) +
+      kachel("Sentiment", "sentiment", wert("sentiment", zahl(k.sentiment)), tc(zahl(k.sentiment_delta), {})) +
       '</div>';
     if (UC.hochzaehlen) UC.hochzaehlen(el, "uprd|" + P.id + "|" + P.f.von + "|" + P.f.bis + "|" + JSON.stringify(P.f.modelle));
   }
   /* Die Erklaerkarten im Format der App (helle Platte, Titel = Label, Satz aus UC.explainCopy mit
      Trend-Zusatz, weil die Kachel einen Trend zeigt) -- wie performance-detail. */
   var TREND_SATZ = ", plus the change against the previous period";
-  var KPI_ERKLAER = { visibility: "Visibility", rank: "Avg. Rank", sentiment: "Sentiment (last 30 days)" };
+  var KPI_ERKLAER = { visibility: "Visibility", rank: "Avg. Rank", sentiment: "Sentiment" };
   function kpiPlatte(key) {
     var hoch = '<span class="up-explain-up">' + (UC.TREND_UP || "") + '</span>';
     if (key === "rank") return '<span class="up-explain-row">' + (UC.HASH_ICON || "") + '<span>2.3</span></span>';

@@ -861,10 +861,8 @@
     /* {scope} steht im Deutschen VOR dem Verb -- "wenn sie für diesen Prompt erwähnt wird" und
        nicht "wenn sie erwähnt wird für diesen Prompt". Genau dafuer wird das Muster uebersetzt und
        nicht der fertige Satz. Mit leerem scope liest es sich unveraendert richtig. */
-    "How positively the brand is described when it's mentioned{scope}, based on the last 30 days of the period{trend}.":
-      "Wie positiv über die Brand gesprochen wird, wenn sie{scope} erwähnt wird, gerechnet über die letzten 30 Tage des Zeitraums{trend}.",
-    "How positively the brand is described when it's mentioned{scope}.":
-      "Wie positiv über die Brand gesprochen wird, wenn sie{scope} erwähnt wird.",
+    "How positively the brand is described when it's mentioned{scope}{trend}.":
+      "Wie positiv über die Brand gesprochen wird, wenn sie{scope} erwähnt wird{trend}.",
     "The average of the brand's best position per answer{scope}{trend}. Position 1 is the first brand named. A lower number is better.":
       "Der Durchschnitt der besten Position der Brand je Antwort{scope}{trend}. Position 1 ist die zuerst genannte Brand. Kleiner ist besser.",
     "How often the brand appears in AI answers{scope}{trend}.":
@@ -2557,11 +2555,11 @@
     "own vs competitor": "eigene gegen Wettbewerb",
     "Or / And": "Oder / Und",
     "Single / Multi": "Einzeln / Mehrfach",
-    "Sentiment scores how positively your brand is described, on a scale from 0 to 100, where 50 is neutral. It is measured only in answers that mention your brand, so it carries no information about how often that happens. Read it alongside Visibility, not instead of it. It is calculated over the last 30 days of the selected period. ":
+    "Sentiment scores how positively your brand is described, on a scale from 0 to 100, where 50 is neutral. It is measured only in answers that mention your brand, so it carries no information about how often that happens. Read it alongside Visibility, not instead of it. ":
       "Sentiment bewertet, wie positiv deine Brand beschrieben wird, auf einer Skala von 0 bis " +
       "100, wobei 50 neutral ist. Gemessen wird es nur in Antworten, die deine Brand erwähnen -- " +
       "es sagt also nichts darüber, wie oft das passiert. Lies es neben Visibility, nicht " +
-      "statt ihr. Es wird über die letzten 30 Tage des gewählten Zeitraums gerechnet. ",
+      "statt ihr. ",
 
     /* ══ RESPONSE DETAIL (08.09.: "bei DE Settings sind noch einige Texte auf Englisch") ══════ */
     "just now": "gerade eben",
@@ -2948,8 +2946,8 @@
        einem Muster mit {scope} baut. Beide Wege fuehren zu demselben deutschen Satz. */
     "How often the brand appears in AI answers for this prompt.":
       "Wie oft die Brand für diesen Prompt in KI-Antworten vorkommt.",
-    "How positively the brand is described when it's mentioned for this prompt, based on the last 30 days of the period.":
-      "Wie positiv über die Brand gesprochen wird, wenn sie für diesen Prompt erwähnt wird, gerechnet über die letzten 30 Tage des Zeitraums.",
+    "How positively the brand is described when it's mentioned for this prompt.":
+      "Wie positiv über die Brand gesprochen wird, wenn sie für diesen Prompt erwähnt wird.",
     "The average of the brand's best position per answer for this prompt. Position 1 is the first brand named. A lower number is better.":
       "Der Durchschnitt der besten Position der Brand je Antwort für diesen Prompt. Position 1 ist die zuerst genannte Brand. Kleiner ist besser.",
 
@@ -2986,8 +2984,8 @@
       "Trend vergleicht den gewählten Zeitraum mit dem gleich langen Zeitraum davor. Ein Bereich von 30 Tagen wird mit den 30 Tagen vor ihm verglichen. Die Werte sind Prozentpunkte, nicht Prozent des vorigen Werts: aus 6% auf 8% wird +2, niemals +33%. Rundet die Änderung auf null, wird kein Chip gezeigt.",
     "Rank is the average of your brand's best position in each answer that mentions it. If the brand is named more than once in an answer, its best position counts. Position 1 is the first brand named. Lower is better, so the trend chip is inverted: a falling rank number is displayed as a positive move. Values are shown to one decimal because typical changes are smaller than a full position.":
       "Rank ist der Durchschnitt der besten Position deiner Brand in jeder Antwort, die sie erwähnt. Wird die Brand in einer Antwort mehrfach genannt, zählt ihre beste Position. Position 1 ist die erste genannte Brand. Kleiner ist besser, deshalb ist der Trend-Chip umgekehrt: eine fallende Rangzahl wird als positive Bewegung gezeigt. Die Werte haben eine Nachkommastelle, weil übliche Änderungen kleiner als eine ganze Position sind.",
-    "Sentiment scores how positively your brand is described, on a scale from 0 to 100, where 50 is neutral. It is measured only in answers that mention your brand, so it carries no information about how often that happens. Read it alongside Visibility, not instead of it. It is calculated over the last 30 days of the selected period.":
-      "Sentiment bewertet, wie positiv über deine Brand gesprochen wird, auf einer Skala von 0 bis 100, wobei 50 neutral ist. Gemessen wird nur in Antworten, die deine Brand erwähnen — der Wert sagt also nichts darüber, wie oft das passiert. Lies ihn neben Visibility, nicht anstelle davon. Er wird über die letzten 30 Tage des gewählten Zeitraums gerechnet.",
+    "Sentiment scores how positively your brand is described, on a scale from 0 to 100, where 50 is neutral. It is measured only in answers that mention your brand, so it carries no information about how often that happens. Read it alongside Visibility, not instead of it.":
+      "Sentiment bewertet, wie positiv über deine Brand gesprochen wird, auf einer Skala von 0 bis 100, wobei 50 neutral ist. Gemessen wird nur in Antworten, die deine Brand erwähnen — der Wert sagt also nichts darüber, wie oft das passiert. Lies ihn neben Visibility, nicht anstelle davon.",
     "Visibility is the percentage of runs for a prompt in which your brand was mentioned at all. 20% means one answer in five named you. Visibility measures reach. Rank and Sentiment describe what happened inside the answers that did mention you.":
       "Visibility ist der Anteil der Durchläufe eines Prompts, in denen deine Brand überhaupt erwähnt wurde. 20% heißt, jede fünfte Antwort hat dich genannt. Visibility misst die Reichweite. Rank und Sentiment beschreiben, was innerhalb der Antworten passiert ist, die dich erwähnt haben.",
     "A Prompt is the question you track. A Response is one model's answer to that prompt at one point in time. Each prompt collects one response per model per run, so the relationship is one to many. All aggregates in the app are computed across responses and displayed against the prompt. This is why a prompt's numbers change without the prompt itself being edited.":
@@ -3514,8 +3512,8 @@
       "Wie oft die Brand in KI-Antworten auf die beobachteten Prompts vorkommt, plus die Änderung gegenüber dem vorigen Zeitraum.",
     "The average of the brand's best position per answer, plus the change against the previous period. Position 1 is the first brand named. A lower number is better.":
       "Der Durchschnitt der besten Position der Brand je Antwort, plus die Änderung gegenüber dem vorigen Zeitraum. Position 1 ist die zuerst genannte Brand. Kleiner ist besser.",
-    "How positively the brand is described when it's mentioned, based on the last 30 days of the period, plus the change against the previous period.":
-      "Wie positiv über die Brand gesprochen wird, wenn sie erwähnt wird, gerechnet über die letzten 30 Tage des Zeitraums, plus die Änderung gegenüber dem vorigen Zeitraum.",
+    "How positively the brand is described when it's mentioned, plus the change against the previous period.":
+      "Wie positiv über die Brand gesprochen wird, wenn sie erwähnt wird, plus die Änderung gegenüber dem vorigen Zeitraum.",
     /* Die Bausteine, aus denen core den Erklaersatz mit {scope} und {trend} zusammensetzt. */
     " for the tracked prompts": " auf die beobachteten Prompts",
     ", plus the change against the previous period": ", plus die Änderung gegenüber dem vorigen Zeitraum",
@@ -4849,11 +4847,8 @@
      differ per caller (what to call the row, whether a trend clause applies) via explainCopy();
      the sentence structure and the concept it explains stay identical everywhere. */
   var EXPLAIN_TEXT = {
-    /* Sentiment und Rank nach den Regeln der DB seit k1/k2 (17.10.): Sentiment ueberall aus den letzten 30
-       Tagen des Zeitraums, Rank = beste Position je Antwort, gemittelt. Eine einzelne Antwort (Responses-
-       Tabelle) hat kein 30-Tage-Fenster: sie bekommt sentiment_antwort. */
-    sentiment:  { h: "Sentiment", t: "How positively the brand is described when it's mentioned{scope}, based on the last 30 days of the period{trend}." },
-    sentiment_antwort: { h: "Sentiment", t: "How positively the brand is described when it's mentioned{scope}." },
+    /* Rank nach den Regeln der DB seit k1/k2 (17.10.): beste Position je Antwort, gemittelt. */
+    sentiment:  { h: "Sentiment", t: "How positively the brand is described when it's mentioned{scope}{trend}." },
     rank:       { h: "Rank", t: "The average of the brand's best position per answer{scope}{trend}. Position 1 is the first brand named. A lower number is better." },
     visibility: { h: "Visibility", t: "How often the brand appears in AI answers{scope}{trend}." },
     brands:     { h: "Brand Mentions", t: "Which of your tracked brands are mentioned{scope}. Hover a logo to see its name." },
@@ -29317,10 +29312,6 @@
     "Average Visibility": "Durchschnittliche Visibility",
     "Average Rank": "Durchschnittlicher Rank",
     "Average Sentiment": "Durchschnittliches Sentiment",
-    /* Sentiment aus den letzten 30 Tagen des Zeitraums (DB k1/k2, 17.10.): Etiketten der Kacheln und der Gesamtzeile. */
-    "Sentiment (last 30 days)": "Sentiment (letzte 30 Tage)",
-    "Average Sentiment (last 30 days)": "Durchschnittliches Sentiment (letzte 30 Tage)",
-    "Below 50 (last 30 days)": "Unter 50 (letzte 30 Tage)",
     /* Ads und Shopping: die Gesamtzeile rechnet Summe durch Summe, nicht den Schnitt der Zeilen (DB e2, 17.10.). */
     "Overall average": "Ø gesamt",
     "total": "Summe",
