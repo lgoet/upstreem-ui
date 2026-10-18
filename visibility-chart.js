@@ -187,13 +187,24 @@
        Spalte, dasselbe Zeichen (UC.kopfZeichenHtml, .up-th-ic aus core). Visibility, Ranking und
        Sentiment tragen dort keins, also auch hier keins. Als Zeichenkette, weil der Kopf mit jedem
        Zeichnen neu entsteht. */
+    /* Sortierbare Koepfe (18.10.): derselbe Klickweg wie in jeder Tabelle (UC.makeHeadSort), Zeichen aus core
+       (UC.thSortHtml). Das Sortier-Menue bleibt daneben und teilt sich den Zustand (sortField, sortDir). */
+    var INFO_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V12"/><path d="M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z"/></svg>';
+    function sortTh(col, label, info){
+      var on = sortField === col || (col === "visibility" && sortField === "visibility_trend");
+      return '<div class="vt-th vt-th-' + col + ' is-sortable" data-sortcol="' + col + '" tabindex="0"' +
+        (on ? ' aria-sort="' + (sortDir === "asc" ? "ascending" : "descending") + '"' : '') + '>' + label +
+        (col === "visibility" && sortField === "visibility_trend" ? '<span class="up-th-sub">Trend</span>' : '') +
+        (UC.thSortHtml ? UC.thSortHtml(col, on, sortDir) : '') +
+        '<span class="up-th-info" data-explain="' + info + '">' + INFO_SVG + '</span></div>';
+    }
     function tableHeadHtml(){
       return '<div class="vt-thead">' +
         '<div class="vt-th vt-th-idx">' + UC.HASH_ICON + '</div>' +
         '<div class="vt-th vt-th-brand">' + (UC.kopfZeichenHtml ? UC.kopfZeichenHtml("squareStack") : "") + 'Brand</div>' +
-        '<div class="vt-th vt-th-visibility">Visibility<span class="up-th-info" data-explain="visibility"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V12"/><path d="M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z"/></svg></span></div>' +
-        '<div class="vt-th vt-th-ranking">Rank<span class="up-th-info" data-explain="ranking"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V12"/><path d="M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z"/></svg></span></div>' +
-        '<div class="vt-th vt-th-sentiment">Sentiment<span class="up-th-info" data-explain="sentiment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16V12"/><path d="M12.125 8.25H12M12.25 8.25C12.25 8.11193 12.1381 8 12 8C11.8619 8 11.75 8.11193 11.75 8.25C11.75 8.38807 11.8619 8.5 12 8.5C12.1381 8.5 12.25 8.38807 12.25 8.25Z"/></svg></span></div></div>';
+        sortTh("visibility", "Visibility", "visibility") +
+        sortTh("ranking", "Rank", "ranking") +
+        sortTh("sentiment", "Sentiment", "sentiment") + '</div>';
     }
     function tableSkeletonHtml(){
       /* idx needs its own cls (vt-td-idx) — without it the bar falls back to the generic cell's
@@ -693,12 +704,34 @@
     seedFilterSelection(); populateFilter();
 
     /* ---- sort dropdown (Visibility default | Ranking | Sentiment) → fires sort_table (new RPC) ---- */
-    var SORT_LABELS = [["visibility","Visibility"],["ranking","Rank"],["sentiment","Sentiment"]];
-    var SORT_OUT_FIELD = { visibility: "visibility", ranking: "rank", sentiment: "sentiment" };
+    var SORT_LABELS = [["visibility","Visibility"],["visibility_trend","Visibility Trend"],["ranking","Rank"],["sentiment","Sentiment"]];
+    var SORT_OUT_FIELD = { visibility: "visibility", visibility_trend: "visibility_delta", ranking: "rank", sentiment: "sentiment" };
+    /* Nur die Tabelle laedt neu: sie wird gedimmt (UC.makeSoftReload, wie Brands Overview), die Kurve daneben bleibt
+       stehen -- eine Sortierung aendert an ihr nichts. Das Dimmen endet mit der naechsten Lieferung der Tabelle. */
+    var sortDim = UC.makeSoftReload(root);
     function fireSort(){
+      sortDim.begin(Array.isArray(state.tableRows) && state.tableRows.length > 0);
       var outField = SORT_OUT_FIELD[sortField] || sortField;
       votFire(root, "data-sort-fn", "bubble_fn_votSortTable", outField + "_" + sortDir);
     }
+    /* Die Klickfolge je Spaltenkopf: Visibility absteigend, aufsteigend, Trend absteigend, aufsteigend, dann zurueck zur
+       Vorgabe; Rang kleinster zuerst, Sentiment groesster zuerst, dann die andere Richtung. */
+    var HEAD_CYCLE = {
+      visibility: ["visibility:desc", "visibility:asc", "visibility_trend:desc", "visibility_trend:asc"],
+      ranking:    ["ranking:asc", "ranking:desc"],
+      sentiment:  ["sentiment:desc", "sentiment:asc"]
+    };
+    var sortKit = UC.makeHeadSort({
+      root: root,
+      state: { get sortField(){ return sortField; }, get sortDir(){ return sortDir; } },
+      cycles: HEAD_CYCLE, defaultSort: { field: "visibility", dir: "desc" },
+      trendField: "visibility_trend", trendCol: "visibility",
+      onSort: function(f, d){
+        sortField = f; sortDir = d;
+        SORT_STORE[instanceId] = { field: sortField, dir: sortDir };
+        populateSort(); fireSort(); renderTable();
+      }
+    });
 
     /* Oeffnet den Export-Dialog. Dieselbe Mechanik wie in responses-table, urls-table,
        domains-table und prompts-table: der Dialog ist eine eigene Komponente auf der Seite, und
@@ -747,6 +780,8 @@
     if (!root.__votDelegated){
       root.__votDelegated = true;
       root.addEventListener("click", function(e){
+        var sortTh_ = e.target.closest(".vt-th.is-sortable");
+        if (sortTh_ && !e.target.closest(".up-th-info")){ sortKit.headSortClick(sortTh_.getAttribute("data-sortcol")); return; }
         var granBtn = e.target.closest(".vc-gran-btn");
         if (granBtn){
           if (granBtn.classList.contains("is-disabled")) return;
@@ -989,6 +1024,7 @@
         /* Nur eine echte Lieferung loescht den Vermerk -- ein reiner Theme-Render darf ihn
            nicht wegraeumen, sonst stuende danach "No data" statt des Fehlers. */
         if (params.table != null || params.rows != null || params.series != null) state.leseFehler = false;
+        if (params.table != null || params.brands != null || params.rows != null) sortDim.end();   /* die Tabelle ist da: das Dimmen der Sortierung endet */
         if (params.gefiltert != null) state.gefiltert = isYes(params.gefiltert);
         var __tbl = (params.table != null) ? params.table : (params.brands != null) ? params.brands : params.rows;
         if (__tbl != null){ state.tableRows = Array.isArray(__tbl) ? __tbl : []; state.hasTable = true; }

@@ -8584,7 +8584,7 @@
     document.addEventListener("keydown", function(e){
       if (e.key !== "Enter" && e.key !== " ") return;
       var th = e.target;
-      if (!th || th.nodeType !== 1 || !th.classList || !th.classList.contains("is-sortable") || !th.classList.contains("up-th")) return;
+      if (!th || th.nodeType !== 1 || !th.classList || !th.classList.contains("is-sortable") || !(th.classList.contains("up-th") || th.classList.contains("vt-th") || th.classList.contains("tct-th"))) return;
       if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
       e.preventDefault();      /* die Leertaste scrollt sonst die Seite */
       th.click();
@@ -8672,6 +8672,15 @@
     return el;
   }
 
+  /* Das Sortierzeichen eines Kopfes (zwei Chevrons uebereinander, .up-thsort), als Zeichenkette fuer Koepfe, die ihr
+     Markup selbst bauen (Visibility Chart, Top Citations, Brands Overview). on: ist diese Spalte die sortierte,
+     dir: "asc" oder "desc". Dieselben Pfade wie in Domains und URLs. */
+  var THSORT_UP_SVG = '<svg class="up-thsort-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15C18 15 13.5811 9.00001 12 9C10.4188 8.99999 6 15 6 15"/></svg>';
+  var THSORT_DOWN_SVG = '<svg class="up-thsort-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"/></svg>';
+  function thSortHtml(col, on, dir){
+    return '<span class="up-thsort' + (on ? (dir === "asc" ? " is-asc" : " is-desc") : "") + '" data-for="' + esc(String(col)) + '">' + THSORT_UP_SVG + THSORT_DOWN_SVG + '</span>';
+  }
+
   /* ---------- makeHeadSort ----------
      Clicking a column header walks that column's cycle (e.g. share:desc -> share:asc ->
      share_trend:desc …) and falls back to the table's default once the cycle is exhausted.
@@ -8679,16 +8688,21 @@
   function makeHeadSort(cfg){
     var root = cfg.root, state = cfg.state;
     var TREND = cfg.trendField || null;   // a second sort key that shares the Share column
+    /* cfg.trendCol (18.10.): die Spalte, der der Trendschluessel gehoert. Vorgabe "share" (Domains, URLs); die
+       Visibility-Tabelle des Dashboards und Brands Overview nehmen "visibility". Kopfzellen der Top-Tabellen
+       (.vt-th, .tct-th) zaehlen wie .up-th. */
+    var TCOL = cfg.trendCol || "share";
+    var TH_SEL = ".up-th, .vt-th, .tct-th";
     function syncHeadSorters(){
       Array.prototype.forEach.call(root.querySelectorAll(".up-thsort"), function(el){
         var col = el.getAttribute("data-for");
         el.classList.remove("is-asc","is-desc");
         /* the Share header lights up for its trend key too — they share one column */
-        var owns = (TREND && col === "share")
-          ? (state.sortField === "share" || state.sortField === TREND)
+        var owns = (TREND && col === TCOL)
+          ? (state.sortField === TCOL || state.sortField === TREND)
           : (state.sortField === col);
         if (owns) el.classList.add(state.sortDir === "asc" ? "is-asc" : "is-desc");
-        var th = el.closest(".up-th");
+        var th = el.closest(TH_SEL);
         /* Nur die sortierte Spalte traegt aria-sort (WAI-ARIA, Sortable Table): "none" an jeder
            anderen liest ein Vorleser als lauter Sortierzustaende, obwohl nur einer gilt. */
         if (th){
@@ -8698,7 +8712,7 @@
       });
       if (!TREND) return;
       /* show "Trend" next to the Share label while the trend key is the active sort */
-      var shareTh = root.querySelector(".up-th-share");
+      var shareTh = root.querySelector(".up-th-" + TCOL + ", .vt-th-" + TCOL + ", .tct-th-" + TCOL);
       if (!shareTh) return;
       var sub = shareTh.querySelector(".up-th-sub");
       if (state.sortField === TREND){
@@ -30090,7 +30104,7 @@
     bandUnterLeiste: bandUnterLeiste, klebFuss: klebFuss,
     /* Aufklapper in Tabellen (Drilldown, Gruppe): die angeklickte Zeile bleibt stehen. */
     zeileHalten: zeileHalten,
-    bandSchalterHtml: bandSchalterHtml,
+    bandSchalterHtml: bandSchalterHtml, thSortHtml: thSortHtml,
     rafThrottle: rafThrottle,
     einmalProBild: einmalProBild,
     onResize: onResize,

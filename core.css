@@ -4568,7 +4568,7 @@
        columns drop out". Anchoring on :first-child is immune to that, because the lead column is
        the one column that never hides. Same set of separators either way. */
     .up-th:first-child { border-left: none; }
-    .up-th.is-sortable { cursor: pointer; user-select: none; }
+    :is(.up-th, .vt-th, .tct-th).is-sortable { cursor: pointer; user-select: none; }
     /* Der Kopftext muss SCHRUMPFEN duerfen. Fuer .up-th-txt gab es keine einzige Regel: der Text
        war damit unschrumpfbar, der ganze Inhalt lief bei enger Spalte ueber, und weil overflow
        an der POLSTERKANTE schneidet und nicht an der Inhaltskante, rutschte der Sortierchevron in
@@ -4577,7 +4577,7 @@
        Der Chevron und das Info-Zeichen bleiben feste Breite, also verliert der TEXT die Pixel und
        nicht das Bedienelement. */
     .up-th-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .up-th > .up-thsort, .up-th > .up-th-info { flex: 0 0 auto; }
+    :is(.up-th, .vt-th, .tct-th) > .up-thsort, :is(.up-th, .vt-th, .tct-th) > .up-th-info { flex: 0 0 auto; }
     /* ---------- column resizing ---------- */
     .up-th { position: relative; }
     .up-grip {
@@ -4593,14 +4593,14 @@
     .up-th:last-child .up-grip { display: none; }
     .up-root.is-resizing { cursor: col-resize; user-select: none; }
     .up-root.is-resizing .up-row { cursor: col-resize; }
-    .up-th.is-sortable:hover { color: var(--vc-text); }
+    :is(.up-th, .vt-th, .tct-th).is-sortable:hover { color: var(--vc-text); }
     /* Tastaturfokus an Sortierkopf und Zeile (17.10.): Hausregel der Knoepfe, 2px Linie in
        --up-focus. Der Abstand liegt INNEN (-2px): Kopf und Zeilen stossen Kante an Kante aneinander
        und an den Rand des Kastens, ein Ring mit 2px Luft ausserhalb wuerde dort abgeschnitten
        bzw. auf die Nachbarzeile gemalt. Ohne Regel zeichnete der Browser sein eigenes Blau (auto 1px). */
-    .up-th.is-sortable:focus-visible,
+    :is(.up-th, .vt-th, .tct-th).is-sortable:focus-visible,
     .up-row:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: calc(var(--up-focus-w) * -1); }
-    .up-th.is-sortable:focus-visible { color: var(--vc-text); }
+    :is(.up-th, .vt-th, .tct-th).is-sortable:focus-visible { color: var(--vc-text); }
 
     /* Kopf-Sortierer: zwei Chevrons uebereinander, je 2px zusammengezogen. Die Geometrie ist
        Lucide chevron-up / chevron-down. Der aktive zeigt in die Sortierrichtung. 15 statt 14 seit
@@ -4624,7 +4624,7 @@
     /* .uto-table: die Tabellen der Team-Verwaltung (12.10.) -- waehrend Resend, Revoke, Remove
        oder ein Rollenwechsel laeuft, dimmen sie genauso; vorher gab es bis zur Antwort gar keine
        Rueckmeldung. */
-    .up-root.is-reloading :is(.up-tbody, .uto-table) { opacity: .42; transition: opacity 140ms ease; pointer-events: none; }
+    .up-root.is-reloading :is(.up-tbody, .uto-table, .vt-tbody, .tct-tbody) { opacity: .42; transition: opacity 140ms ease; pointer-events: none; }
     @media (prefers-reduced-motion: reduce){
       .up-root.is-reloading :is(.up-tbody, .uto-table) { transition: none; }
     }

@@ -111,6 +111,14 @@
       eigene: gem.eigene || null,
       kalenderDa: false
     };
+    /* Die gemerkte Sortierung der Tabelle (state.vis.order) gilt auch fuer den Kopf der Komponente: sie liest ihren Stand aus
+       window.__votSort (visibility-chart.js), und ohne diese Zeile stuende dort nach dem Neuladen "Visibility absteigend". */
+    (function () {
+      var m = /^(visibility_delta|visibility|rank|sentiment)_(asc|desc)$/.exec(str(state.vis && state.vis.order));
+      if (!m) return;
+      window.__votSort = window.__votSort || {};
+      window.__votSort[ids.vot] = { field: { visibility: "visibility", visibility_delta: "visibility_trend", rank: "ranking", sentiment: "sentiment" }[m[1]], dir: m[2] };
+    })();
     function persist() {
       STORE[instanceId] = { f: state.f, gran: state.gran, vis: state.vis, top: state.top, resp: state.resp, autoFirmen: state.autoFirmen, eigene: state.eigene };
     }
@@ -393,7 +401,7 @@
     an("vot-votSortTable", function (d) {
       var o = str(wert(d));
       if (D.ORDER.overview.indexOf(o) < 0 || o === state.vis.order) return;
-      state.vis.order = o; persist(); teilLaden("vis");
+      state.vis.order = o; persist(); teilLaden("visSort");
     });
     /* Die Auswahl entspricht den Top 7 von selbst (das "Reset" im Menue schickt genau sie): dann
        wieder automatisch, statt dieselben Marken als Handauswahl zu fuehren -- die DB vergibt die
@@ -741,6 +749,30 @@
         }
       };
     }
+    /* NUR DIE TABELLE (18.10.): eine Sortierung ueber den Spaltenkopf oder das Menue aendert an der Kurve nichts. Sie holt allein die
+       Marken-Tabelle (eigener Kanal, damit ein laufender Gesamtauftrag nicht ueberholt wird) und ersetzt nur die Tabelle -- ohne Skelett,
+       die Tabelle dimmt selbst (visibility-chart.js, fireSort). */
+    function visTabelleAuftrag() {
+      var f = filterStand(), manuell = state.vis.firmen;
+      var ov = D.overview(f, manuell ? { order: state.vis.order, limit: 10, firmen: manuell } : { order: state.vis.order, limit: 8 });
+      return {
+        kanal: "vis_sort", imSpeicher: imSpeicher([ov]),
+        ladenAn: function () {},
+        laden: function (frisch) {
+          return alleLaden([["vis_sort", ov]], frisch).then(function (e) {
+            if (e.some(function (x) { return x.ueberholt; })) return null;
+            return function () {
+              var p = e[0].ok ? D.zuMarkentabelle(e[0].daten, { platzInMenge: !!manuell }) : null;
+              if (e[0].ok) eigeneMerken(e[0].daten);
+              try {
+                if (!p) setter("renderVisibilityChart")({ instanceId: ids.vot, __parseError: fehlerArtVon(e) });
+                else setter("renderVisibilityChart")({ instanceId: ids.vot, table: p.table, totalCount: p.totalCount });
+              } catch (err) {}
+            };
+          });
+        }
+      };
+    }
     function topAuftrag() {
       var f = filterStand(), m = state.top.modus, tp = state.top;
       var typen = D.topTypen(f, m, { erwaehnt: tp.erwaehnt });
@@ -796,7 +828,7 @@
         }
       };
     }
-    var AUFTRAG = { vis: visAuftrag, top: topAuftrag, resp: respAuftrag };
+    var AUFTRAG = { vis: visAuftrag, visSort: visTabelleAuftrag, top: topAuftrag, resp: respAuftrag };
     function bedarf(o) {
       if (!bereit()) return null;
       if (state.modus === "power") return gemeinsam(agenticAuftraege(o && o.frisch), o);
