@@ -18312,6 +18312,7 @@
      Beschriftung am rechten Rand (der neueste Punkt) bekommt deshalb keine Linie. Waagerecht
      bleibt es bei RASTER_N -- dort traegt jede Linie eine Beschriftung, auch die oberste. */
   var RASTER_N = 4;
+  var Y_LUFT_UNTEN = 0.03;   /* Anteil des Hoechstwerts, den der Boden der y-Achse unter der Null liegt (makeLine) */
   var dashedGridPlugin = {
     id: "upDashedGrid",
     beforeDatasetsDraw: function(chart){
@@ -20426,8 +20427,14 @@
       var ganz = typeof cfg.yGanz === "function" ? !!cfg.yGanz() : !!cfg.yGanz;
       if (ganz) yMax = Math.max(RASTER_N, Math.ceil(yMax / RASTER_N) * RASTER_N);
       var umgekehrt = !!(typeof cfg.reverse === "function" ? cfg.reverse() : cfg.reverse);
+      /* LUFT UNTER DER NULL (18.10.): eine Reihe, die bei 0 liegt (die eigene Marke im Visibility Chart, wenn sie
+         keine Erwaehnung hat), lag genau auf der Achse und war dort nicht zu sehen -- das Chart zeigte sieben
+         Linien und eine Legende mit acht Namen. Der Boden der Achse liegt jetzt 3 Prozent des Hoechstwerts unter
+         der Null; die Beschriftung "0" bleibt an der Null, die Linie schwebt darueber. Nicht bei umgekehrter
+         Achse (Rang): dort ist 0 nie ein Wert und unten steht der schlechte Rang. */
+      var yMin = umgekehrt ? 0 : -yMax * Y_LUFT_UNTEN;
       akt.labels = labels; akt.single = single;
-      if (stehtNoch){ einsetzen(ds, labels, single, yMax, umgekehrt); return; }
+      if (stehtNoch){ einsetzen(ds, labels, single, yMax, umgekehrt, yMin); return; }
       try {
         chart = new window.Chart(ctx, {
           type: "line",
@@ -20518,7 +20525,7 @@
                               return lab.slice(5);   // day / week → "MM-DD"
                             } } },
               /* reverse: beim Rang ist kleiner besser -- oben steht dann der bessere Wert. */
-              y: { min:0, max:yMax, beginAtZero:true, reverse: umgekehrt,
+              y: { min:yMin, max:yMax, beginAtZero:true, reverse: umgekehrt,
                    /* RASTER_N + 1 Ticks: die Null und dann jeder Bruchteil bis zum Maximum. Vorher
                       drei Schritte (0, m/3, 2m/3, m), jetzt vier -- die "zusaetzliche waagerechte
                       Linie" der Meldung ist genau dieser Schritt, und weil die Beschriftungen
@@ -20558,7 +20565,7 @@
        einfahren -- genau die Einfahrt eines neu gebauten Charts. Ohne Skelett dazwischen (eine
        Reihe aus- oder eingeblendet, leises Nachladen) wandern die Linien gleicher __id von ihrem
        alten Verlauf zum neuen: dazu bleibt das alte Objekt und bekommt die neuen Felder. */
-    function einsetzen(ds, labels, single, yMax, umgekehrt){
+    function einsetzen(ds, labels, single, yMax, umgekehrt, yMin){
       canvas.style.visibility = "";
       if (!frisch){
         var alt = {}, i;
@@ -20579,7 +20586,7 @@
       chart.data.datasets = ds;
       var o = chart.options, sc = o && o.scales;
       if (sc && sc.x) sc.x.offset = single;
-      if (sc && sc.y){ sc.y.max = yMax; sc.y.reverse = umgekehrt; }
+      if (sc && sc.y){ sc.y.max = yMax; sc.y.min = yMin; sc.y.reverse = umgekehrt; }
       try { chart.update(); } catch(e){}
       nachkontrolle();
       fahrtBeimAuftritt(wrap, function(){ return chart; });
