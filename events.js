@@ -920,8 +920,13 @@
     "Included in {ordner}. Clear that folder to choose this page on its own.": "Schon in {ordner} enthalten. Nimm den Ordner ab, um diese Seite einzeln zu wählen.",
     "Track everything under {path}": "Alles unter {path} tracken",
     /* 17.10.: eine Seite unter einer Regel bleibt waehlbar und sagt leise, wo sie schon mitzaehlt (smZustand) */
-    "In {regel}": "In {regel}",
-    "Also covered by {regel}. Adding it gives it its own row.": "Auch in {regel} enthalten. Hinzugefügt bekommt es eine eigene Zeile.",
+    "You're tracking the whole domain, so individual pages can't be excluded. To pick specific pages, switch to \u201cEverything under a path\u201d or \u201cSpecific URLs\u201d.":
+      "Du trackst die ganze Domain, einzelne Seiten lassen sich daher nicht ausnehmen. Um bestimmte Seiten zu wählen, wechsle zu \u201eAlles unter einem Pfad\u201c oder \u201eBestimmte URLs\u201c.",
+    "You're tracking everything under {ziel}, so individual pages can't be excluded. To pick specific pages, switch to \u201cSpecific URLs\u201d.":
+      "Du trackst alles unter {ziel}, einzelne Seiten lassen sich daher nicht ausnehmen. Um bestimmte Seiten zu wählen, wechsle zu \u201eBestimmte URLs\u201c.",
+    "All {n} pages are covered by {ziel}.": "Alle {n} Seiten sind durch {ziel} abgedeckt.",
+    "The page is covered by {ziel}.": "Die Seite ist durch {ziel} abgedeckt.",
+    "your targets": "deine Ziele",
     "Show {n} more": "{n} weitere zeigen", "No matching pages": "Keine passenden Seiten", "Add selection": "Auswahl übernehmen",
     /* 17.10.: nichts mehr zu waehlen, weil alles schon getrackt ist (smHoechstens) */
     "Everything in this sitemap is already added.": "Alles aus dieser Sitemap ist bereits hinzugefügt.",
@@ -1003,8 +1008,8 @@
      core oder einer anderen Komponente; "{n} citation(s)" und "{n} URL(s)" stehen oben und werden
      nur benutzt. */
   if (UC.addMessages) UC.addMessages("de", {
-    "{host} and every subdomain, including pages added later.": "{host} und jede Subdomain, auch Seiten, die später dazukommen.",
-    "Only {host}. Its subdomains are not counted.": "Nur {host}. Seine Subdomains zählen nicht mit.",
+    "Counts {host} and every subdomain, such as {sub}, including pages added later.": "Zählt {host} und jede Subdomain mit, etwa {sub}, auch Seiten, die später dazukommen.",
+    "Only {host} itself. Pages on {sub} are not counted.": "Nur {host} selbst. Seiten auf {sub} zählen nicht mit.",
     "Include all of {domain}": "Ganz {domain} einbeziehen",
     "Your domain: {domain}": "Deine Domain: {domain}",
     "Add {ziel}": "{ziel} hinzufügen",
@@ -1062,7 +1067,8 @@
     "None of the pages we read from your sitemap is on {where}.": "Keine der Seiten, die wir aus deiner Sitemap gelesen haben, liegt auf {where}.",
     "None of the pages we read from your sitemap is under {where}.": "Keine der Seiten, die wir aus deiner Sitemap gelesen haben, liegt unter {where}.",
     "Not cited yet ({n})": "Noch nicht zitiert ({n})",
-    "New since event": "Neu seit dem Event",
+    "Event date": "Eventdatum",
+    "New or updated": "Neu oder aktualisiert", "New in the sitemap or updated since the event": "Neu in der Sitemap oder aktualisiert seit dem Event",
     "No longer in sitemap": "Nicht mehr in der Sitemap",
     "Updated {date}": "Aktualisiert am {date}",
     "In sitemap since {date}": "Seit {date} in der Sitemap",
@@ -1778,6 +1784,7 @@
     var state = {
       ansicht: "uebersicht", eventId: null,
       suche: gemerkt("suche", ""), typen: gemerkt("typen", []),
+      sortFeld: gemerkt("sortFeld", "created"), sortRicht: gemerkt("sortRicht", "desc"),
       detail: gemerkt("detail", {}), detailLaden: false, detailFehler: false,
       analyse: gemerkt("analyse", {}), analyseLaden: false, analyseFehler: false,
       fenster: gemerkt("fenster", 30), seit: gemerkt("seit", false), metrik: gemerkt("metrik", "visibility"),
@@ -1789,7 +1796,7 @@
     };
     function persist() {
       if (root.isConnected === false) return;
-      STORE[instanceId] = { suche: state.suche, typen: state.typen, detail: state.detail, analyse: state.analyse,
+      STORE[instanceId] = { suche: state.suche, typen: state.typen, sortFeld: state.sortFeld, sortRicht: state.sortRicht, detail: state.detail, analyse: state.analyse,
         fenster: state.fenster, seit: state.seit, metrik: state.metrik, modelle: state.modelle, maerkte: state.maerkte,
         abd: state.abd, abdSeg: state.abdSeg };
     }
@@ -1884,6 +1891,10 @@
           '<span class="up-heading"><span class="up-head-label">' + esc(t("Events")) + '</span>' +
             '<span class="up-head-sep"></span><span class="up-head-count uev-zahl"></span></span>' +
           '<div class="up-head-tools">' +
+            /* Sortieren wie in den Tabellen: Knopf mit Sortierzeichen, davor die Suche (Reihenfolge der Leiste der anderen
+               Seiten), Menue aus UC.sortMenuHtml mit Feldern und Schalter "Descending". */
+            '<div class="up-sort uev-sort"><button class="up-sort-btn up-iconbtn" type="button" data-tip="' + esc(t("Sort")) + '" aria-label="' + esc(t("Sort")) + '">' + UC.icon("arrowUpDown", 2) + '</button>' +
+              '<div class="up-sort-menu" role="menu" aria-hidden="true"></div></div>' +
             '<div class="up-search uev-suche">' +
               '<button type="button" class="up-iconbtn up-search-btn" aria-label="' + esc(t("Search")) + '" data-tip="' + esc(t("Search")) + '">' + UC.icon("search", 2) + '</button>' +
               '<div class="up-search-box">' +
@@ -1928,7 +1939,44 @@
         onChange: function (keys) { state.typen = keys; persist(); renderListe(); }
       }) : null;
       if (typFilter) elMain.querySelector(".up-head-tools").appendChild(typFilter.el);
+      sortBauen();
       renderListe();
+    }
+    /* ---- SORTIERUNG DER LISTE (18.10.): Felder, die die Liste schon hat, keine neue Abfrage. Standard: zuletzt
+       erstellt zuerst. Der Stand lebt in state (persist), also ueber Seitenwechsel und Event-Wechsel hinweg. */
+    var SORT_FELDER = [{ key: "created", label: "Created" }, { key: "date", label: "Event date" }, { key: "name", label: "Name" }];
+    var sortPop = null;
+    function sortMenuFuellen() {
+      var m = elMain && elMain.querySelector(".uev-sort .up-sort-menu");
+      if (m && UC.sortMenuHtml) m.innerHTML = UC.sortMenuHtml(SORT_FELDER, state.sortFeld, state.sortRicht);
+    }
+    /* Das Menue haengt mit right: 0 am Knopf (core) und ragt nach links. Steht der Knopf am Telefon weniger als die Menuebreite
+       vom linken Rand, schnitte es dort ab (gemessen 375 breit: 11px): dann um genau den Fehlbetrag plus 8px Rand nach rechts. */
+    function sortLage(wrap) {
+      var m = wrap.querySelector(".up-sort-menu");
+      if (!m) return;
+      m.style.right = "";
+      var l = m.getBoundingClientRect().left;
+      if (l < 8) m.style.right = (l - 8) + "px";
+    }
+    function sortBauen() {
+      var wrap = elMain.querySelector(".uev-sort");
+      if (!wrap) return;
+      sortMenuFuellen();
+      if (UC.makePopover) sortPop = UC.makePopover({ wrap: wrap, menu: wrap.querySelector(".up-sort-menu"), opener: wrap.querySelector(".up-sort-btn") });
+      wrap.querySelector(".up-sort-btn").addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (!sortPop) return;
+        if (wrap.classList.contains("is-open")) sortPop.close(false); else { sortMenuFuellen(); sortPop.open(); sortLage(wrap); }
+      });
+      wrap.querySelector(".up-sort-menu").addEventListener("click", function (e) {
+        e.stopPropagation();
+        var f = e.target.closest("[data-sortfield]"), r = e.target.closest("[data-sortdir]");
+        if (f) state.sortFeld = f.getAttribute("data-sortfield");
+        else if (r) state.sortRicht = state.sortRicht === "desc" ? "asc" : "desc";
+        else return;
+        persist(); sortMenuFuellen(); renderListe();
+      });
     }
     function filterTypen() {
       var da = {};
@@ -1946,11 +1994,17 @@
         if (!q) return true;
         return (String(ev.name || "") + " " + String(ev.description || "")).toLowerCase().indexOf(q) >= 0;
       });
-      /* Vertrag 3.1 sortiert schon so -- hier trotzdem: event_date absteigend, bei gleichem Tag die
-         zuletzt angelegten zuerst. Ein rueckdatiertes Event steht damit an seinem echten Tag. */
+      /* Standard (18.10., Nutzer): zuletzt erstellt zuerst. Dazu Eventdatum und Name, jeweils mit Richtung; bei
+         Gleichstand entscheidet die Anlage, zuletzt die Kennung, damit die Reihenfolge nie flackert. */
+      function anlage(a, b) { return String(a.created_at || "").localeCompare(String(b.created_at || "")); }
+      var feld = state.sortFeld, mal = state.sortRicht === "asc" ? 1 : -1;
       l.sort(function (a, b) {
-        var d = tagMs(b.event_date) - tagMs(a.event_date);
-        return d || String(b.created_at || "").localeCompare(String(a.created_at || ""));
+        var d = 0;
+        if (feld === "date") d = tagMs(a.event_date) - tagMs(b.event_date);
+        else if (feld === "name") d = String(a.name || "").localeCompare(String(b.name || ""), undefined, { sensitivity: "base", numeric: true });
+        if (!d) d = anlage(a, b);
+        if (!d) d = String(a.id || "").localeCompare(String(b.id || ""));
+        return d * mal;
       });
       return l;
     }
@@ -2667,7 +2721,9 @@
         if (leer) teile.fussHtml = esc(t("No comparable data yet"));
         /* Die Fallzahl als zweite Zeile im Fuss: ohne confidence leer. */
         else teile.fussHtml = (teile.fussHtml || "") + fallzahlHtml(fallBlock(a, m.key), m.key);
-        teile.label = m.key === "sentiment" ? "Sentiment (last 30 days)" : m.label;
+        /* Nur der Name der Kennzahl (18.10., Nutzer): der Zusatz "(last 30 days)" stand nur hier und passt nicht zum Fenster des
+           Events; die Erklaerkarte traegt dann auch den Namen, nicht den Zusatz. */
+        teile.label = m.label;
         /* Die drei Kennzahlen in EINEM Kasten: das Kennzahlen-Band aus core (.up-kpiband am
            Behaelter, 04.10.), senkrechte Linien ueber die volle Hoehe. */
         teile.klasse = "uev-kpi";
@@ -3103,8 +3159,8 @@
                  Bauteil .up-btn-sec.up-rowbtn aus core, wie "Edit" in brands-overview. Nur "Remove":
                  der Knopf "Responses" filterte die Tabelle darunter und war unverstaendlich (03.10.). */
               '<div class="up-td up-var-name uev-td-url"><span class="up-fav up-logo-box has-img"><img src="' + esc(favicon(u.url)) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>' +
-                '<span class="uev-url-txt"><span class="uev-url-host">' + esc(hostTxt) + '</span>' +
-                '<span class="uev-url-pfad" title="' + esc(u.url) + '">' + esc(pfadText(hp)) + '</span></span>' +
+                '<span class="uev-url-txt"><span class="uev-url-haupt" title="' + esc(u.url) + '">' + esc(pfadText(hp)) + '</span>' +
+                '<span class="uev-url-host">' + esc(hostTxt) + '</span></span>' +
                 '<button type="button" class="up-btn-sec up-rowbtn uev-urlweg" data-url-id="' + esc(u.id) + '" aria-label="' + esc(t("Remove")) + '">' + UC.icon("trash", 2) + '<span>' + esc(t("Remove")) + '</span></button>' +
               '</div>' +
               '<div class="up-td uev-td-zahl uev-td-beob">' + beob + '</div>' +
@@ -3373,8 +3429,8 @@
              das Event-Detail gar nicht mehr: sie steht im Drawer der URL. */
           return '<div class="up-row up-vrow uev-zitzeile" role="link" tabindex="0" data-url="' + esc(u.url || "") + '">' +
             '<div class="up-td up-var-name uev-td-url"><span class="up-fav up-logo-box has-img"><img src="' + esc(favicon(u.url)) + '" alt="" loading="lazy" referrerpolicy="no-referrer"/></span>' +
-              '<span class="uev-url-txt"><span class="uev-url-host">' + esc(hp.host) + '</span>' +
-              '<span class="uev-url-pfad" title="' + esc(u.url || "") + '">' + esc(pfadText(hp)) + '</span></span></div>' +
+              '<span class="uev-url-txt"><span class="uev-url-haupt" title="' + esc(u.url || "") + '">' + esc(pfadText(hp)) + '</span>' +
+              '<span class="uev-url-host">' + esc(hp.host) + '</span></span></div>' +
             '<div class="up-td uev-td-zahl uev-td-beob">' + (tag ? '<span class="up-marke is-leise uev-beob' + (neu ? " is-ja" : "") + '">' + esc(datum(tag)) + '</span>' : '<span class="up-num is-empty">\u2013</span>') + '</div>' +
             '<div class="up-td uev-td-zahl">' + zahlWert(u.citations_after) + '</div>' +
             '<div class="up-td uev-td-zahl">' + zahlWert(u.prompts_after) + '</div>' +
@@ -3623,6 +3679,14 @@
     function abdUrlSchluessel(u) {
       try { var x = new URL(String(u)); return x.hostname.toLowerCase().replace(/^www\./, "") + (x.pathname || "/").replace(/\/+$/, "").toLowerCase(); } catch (er) { return String(u || ""); }
     }
+    /* Der Link einer Seite der Sitemap (18.10.): die echte Adresse in einem neuen Tab, Unterstreichen beim Ueberfahren
+       (events.css). Ohne Schema wird https ergaenzt; ohne Adresse gibt es keinen Link, nur den Text. */
+    function abdLinkHtml(url, text) {
+      var u = String(url || "").trim();
+      if (!u) return esc(text);
+      if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(u)) u = "https://" + u.replace(/^\/+/, "");
+      return '<a class="uev-abd-link" href="' + esc(u) + '" target="_blank" rel="noopener noreferrer">' + esc(text) + '</a>';
+    }
     /* opt.tiefe/opt.name: im Baum steht die Seite eingerueckt und mit dem Teil des Pfads nach dem Ordner.
        opt.spur: "zitat" (Reiter All und Cited: bei einer zitierten Seite rechts die Zahl der Zitate, bei einer
        nicht zitierten nichts) oder "datum" (Reiter Not cited yet: das Datum der letzten Aenderung). */
@@ -3645,11 +3709,18 @@
       /* Eine zitierte Seite oeffnet das URL-Detail (Beschluss 2), mit der Schreibweise des Zitats, wenn die
          Tabelle sie kennt. Eine nicht zitierte oeffnet nichts: der Hinweis kommt erst beim KLICK auf die Zeile
          (17.10.), nicht mehr bei jedem Ueberfahren: data-abd-seite, events.js Klickweg. */
+      /* DIE MARKE (18.10., Nutzer: "Neu seit dem Event" las sich, als sei die Seite schon aufgetaucht): is_new der DB
+         heisst nur, dass die Sitemap die Seite nach dem Eventtag neu fuehrt oder ihr lastmod darauf liegt, NICHT dass
+         sie zitiert wurde. Eine nicht zitierte Seite sagt darum "Not cited yet" (im Reiter Not cited yet steht das
+         schon im Reiter: keine Wiederholung); eine zitierte, neue sagt, was die DB wirklich weiss. */
+      var marke = "";
+      if (!zit) { if (opt.tab !== "offen") marke = '<span class="up-marke is-leise uev-abd-marke">' + esc(t("Not cited yet")) + '</span>'; }
+      else if (p.is_new === true) marke = '<span class="up-marke is-leise uev-abd-marke" data-tip="' + esc(t("New in the sitemap or updated since the event")) + '">' + esc(t("New or updated")) + '</span>';
       var offen = zit ? ' is-zitiert" role="link" tabindex="0" data-url="' + esc(treffer && treffer.url ? treffer.url : p.url || "") : "";
       return '<div class="uev-abd-seite' + (weg ? " is-weg" : "") + offen + '"' + (zit ? "" : ' data-abd-seite="1" data-url="' + esc(p.url || "") + '"') + (opt.tiefe ? ' style="--uev-tiefe:' + opt.tiefe + '"' : '') + '>' +
         zielFavKlein(p.url || "", '<span class="uev-abd-fav0">' + UC.icon("globe", 2) + '</span>') +
-        '<span class="uev-abd-pfad" title="' + esc(p.url || "") + '">' + esc(pfad) + '</span>' +
-        (p.is_new === true ? '<span class="up-marke is-leise uev-abd-marke">' + esc(t("New since event")) + '</span>' : '') +
+        '<span class="uev-abd-pfad" title="' + esc(p.url || "") + '">' + abdLinkHtml(p.url, pfad) + '</span>' +
+        marke +
         (weg ? '<span class="up-marke is-leise uev-abd-marke">' + esc(t("No longer in sitemap")) + '</span>' : '') +
         rechts +
       '</div>';
@@ -3675,7 +3746,7 @@
       eintraege.slice(0, sicht).forEach(function (x) {
         if (x.art === "seite") {
           var name = eltern === undefined ? null : (x.pfad === "/" ? t("Homepage") : x.pfad.slice((eltern && eltern.pfad || "").length) || x.pfad);
-          aus += abdSeiteHtml(zt, nachLoc[x.loc] || { url: x.loc }, { tiefe: tiefe, name: name, spur: opt.spur, zitate: opt.zitate });
+          aus += abdSeiteHtml(zt, nachLoc[x.loc] || { url: x.loc }, { tiefe: tiefe, name: name, spur: opt.spur, zitate: opt.zitate, tab: opt.tab });
           return;
         }
         var offen = !!st.auf[x.key];
@@ -3731,7 +3802,7 @@
       else if (hosts.length === 1) { wurzel = hosts[0].kinder.concat(hosts[0].seiten); eltern = hosts[0]; }
       else { wurzel = hosts; eltern = null; }
       var sichtbar = ABD_SICHT + (st.mehr.wurzel || 0);
-      var opt = { spur: tab === "offen" ? "datum" : "zitat", zitate: zitate };
+      var opt = { spur: tab === "offen" ? "datum" : "zitat", zitate: zitate, tab: tab };
       return '<div class="uev-abd-seiten">' + abdEintraege(zt, wurzel, "wurzel", st, 0, nachLoc, mitZahl, eltern, opt) + '</div>' +
         (rest > 0 && wurzel.length <= sichtbar ? '<button type="button" class="up-quietbtn uev-abd-mehr" data-ziel-id="' + esc(zt.id) + '"' + (mm && mm.laedt ? ' disabled' : '') + '>' +
           (mm && mm.laedt ? UC.icon("loader", 2) : '') + '<span>' + esc(ersetze(t("Show {n} more"), { n: zahl(Math.min(ABD_MEHR, rest)) })) + '</span></button>' : '');
@@ -4248,6 +4319,9 @@
       var amh = e.target.closest(".uev-abd-mehr");
       if (amh) { abdMehr(amh.getAttribute("data-ziel-id")); return; }
       /* Der Baum der Seiten (17.10.): Ordner auf und zu, "Show more" je Ebene. */
+      /* Der Link einer Seite der Sitemap oeffnet die Seite im neuen Tab (Browser); die Zeilenaktion (URL-Detail bzw.
+         Hinweis) bleibt der Zeile ausserhalb des Textes. */
+      if (e.target.closest("a.uev-abd-link")) return;
       var akl = e.target.closest("[data-abd-klapp]");
       if (akl) {
         var asek = akl.closest(".uev-zielsek"), ast = abdBaumSt(asek ? asek.getAttribute("data-ziel-id") : ""), ak = akl.getAttribute("data-abd-klapp");
@@ -4910,7 +4984,7 @@
     var ARTEN = [
       { k: "url", titel: "Specific URLs", ic: "link", bsp: "example.com/blog/launch" },
       { k: "path", titel: "Everything under a path", ic: "folder", bsp: "example.com/blog/*" },
-      { k: "host", titel: "Whole domain", ic: "globe", bsp: "blog.example.com/*", bspAlle: "*.example.com/*" },
+      { k: "host", titel: "Whole domain", ic: "globe", bsp: "example.com/*" },
       { k: "marke", titel: "Brand metrics only", ic: "chartSpline", satz: "Visibility, rank and sentiment" }
     ];
     var ART_NAME = { url: "URL", path: "Path", host: "Domain", host_all: "Domain and subdomains" };
@@ -4971,7 +5045,9 @@
        dasteht (17.10., Beschluss: eine Domain ohne Pfad heisst mit allen Subdomains). */
     function unterSatz(e) {
       var tl = eingabeTeile(e.eingabe), z = tl.length === 1 ? zerlegen(tl[0]) : null, h = z && hostOk(z.host) ? z.anzeige : "example.com";
-      return ersetze(t(e.unterdomains ? "{host} and every subdomain, including pages added later." : "Only {host}. Its subdomains are not counted."), { host: h });
+      /* Das Beispiel nennt die Unterdomain, die mitzaehlt oder nicht (18.10., Nutzer: die alte Fassung zeigte blog.example.com/*
+         als Beispiel der GANZEN Domain und die Domain ohne Sub als Ergebnis des Schalters, also verkehrt herum). */
+      return ersetze(t(e.unterdomains ? "Counts {host} and every subdomain, such as {sub}, including pages added later." : "Only {host} itself. Pages on {sub} are not counted."), { host: h, sub: "blog." + h });
     }
     function unterSatzNeu(p) {
       var el = im(".uev-unter-satz");
@@ -4994,7 +5070,7 @@
             '<span class="uev-art-ic" aria-hidden="true">' + UC.icon(a.ic, 2) + '</span>' +
             '<span class="uev-art-txt"><span class="uev-art-t">' + esc(t(a.titel)) + '</span>' +
               (a.satz ? '<span class="uev-art-s">' + esc(t(a.satz)) + '</span>'
-                      : '<span class="uev-notation is-leise uev-art-bsp">' + esc(a.k === "host" && e.unterdomains ? a.bspAlle : a.bsp) + '</span>') +
+                      : '<span class="uev-notation is-leise uev-art-bsp">' + esc(a.bsp) + '</span>') +
             '</span>' +
           '</button>' + unter +
         '</div>';
@@ -5107,6 +5183,18 @@
        und ein bewusst entferntes Bild bleibt weg. Das Motiv steht schon beim Oeffnen des Popups
        fest (popupAnlegen) und laedt dort vor, damit die Vorschau es ohne Skelett zeigt. Nur im
        Anlegen: ein bestehendes Event bekommt nie ein Bild aus dem Zufall. */
+    /* Welches Motiv (18.10., Nutzer): erst eins, das kein Event des Teams schon traegt; sind alle vergeben, das am
+       seltensten vergebene. Unter gleich seltenen entscheidet der Zufall wie bisher. Gezaehlt wird die schon geladene
+       Liste, keine neue Abfrage. */
+    function coverWahl() {
+      var n = {};
+      COVERS.forEach(function (c) { n[c.key] = 0; });
+      (UC.getEvents ? UC.getEvents() : []).forEach(function (ev) { if (ev && !state.geloescht[ev.id] && n[ev.cover] != null) n[ev.cover]++; });
+      var min = Infinity;
+      COVERS.forEach(function (c) { if (n[c.key] < min) min = n[c.key]; });
+      var frei = COVERS.filter(function (c) { return n[c.key] === min; });
+      return frei[Math.floor(Math.random() * frei.length)].key;
+    }
     function coverZufall(p) {
       if (p.art !== "anlegen" || p.e.coverEntschieden) return;
       p.e.coverEntschieden = true;
@@ -5471,7 +5559,7 @@
           : ersetze(t("{ziel} is already in the list."), { ziel: nz.z.zeigen })) + '</span>';
       } else if (!r.teile.length) {
         var a = ARTEN.filter(function (x) { return x.k === e.zielArt; })[0];
-        html = a && a.bsp ? '<span class="uev-schreib-lbl">' + esc(t("e.g.")) + '</span><span class="uev-notation is-leise">' + esc(e.zielArt === "host" && e.unterdomains ? a.bspAlle : a.bsp) + '</span>' : "";
+        html = a && a.bsp ? '<span class="uev-schreib-lbl">' + esc(t("e.g.")) + '</span><span class="uev-notation is-leise">' + esc(a.bsp) + '</span>' : "";
         /* Die eigene Domain als ein Klick, solange sie noch nicht dabei ist. */
         var ed = e.zielArt !== "marke" && zieleDa() && artenFuer(p).some(function (x) { return x.k === "host"; }) ? eigeneDomain() : "";
         if (ed) {
@@ -5518,14 +5606,17 @@
          nicht da und gehen nicht hinaus -- gezeigt wird, was gilt. */
       if (!e.ziele.length || e.zielArt === "marke") { el.innerHTML = ""; return; }
       el.innerHTML = '<div class="uev-urlwahl-liste">' + e.ziele.map(function (z, i) {
-        var pt = je[z.kind + "|" + z.input], n = pt ? num(pt.matched_url_count) : null;
+        var pt = je[z.kind + "|" + z.input];
+        /* Keine "N URLs" am Ziel mehr (18.10., Nutzer: "0 URLs" bei einer Domain verwirrt): die Zahl zaehlt nur URLs, die schon
+           zitiert wurden, und eine Regel zaehlt auch kuenftige; sie sagte "0" und meinte "noch nichts gesehen". Die Zeile der
+           Vorschau (Zitate, Seiten, Hosts) sagt, was gilt. */
         /* Der Grund steht am Ziel selbst (15.10.): aus der Antwort des Servers (p.zielFehler, hint
            "p_targets[i]: <grund>") oder aus der Vorschau (per_target[].error, dieselben Gruende). */
         var sf = p.zielFehler && p.zielFehler.key === z.key ? p.zielFehler.satz : "";
         var zahlTxt = z.kind !== "url" && !zieleDa() ? '<span class="uev-ziel-fehler">' + esc(fehlerText("impact_event_targets_unavailable")) + '</span>'
           : sf ? '<span class="uev-ziel-fehler">' + esc(sf) + '</span>'
           : pt && pt.error ? '<span class="uev-ziel-fehler">' + esc(t(ZIEL_GRUND[pt.error] || FEHLER.impact_event_invalid_target)) + '</span>'
-          : n != null ? '<span class="uev-ziel-n">' + esc(ersetze(t(n === 1 ? "{n} URL" : "{n} URLs"), { n: zahl(n) })) + '</span>' : '';
+          : '';
         return '<div class="uev-urlwahl">' +
           zielKachel(z) +
           '<span class="uev-url-txt"><span class="uev-notation">' + esc(z.zeigen) + '</span>' +
@@ -6172,7 +6263,7 @@
     /* Gewaehlt und zaehlt: nicht in einem gewaehlten Ordner und nicht schon getrackt. */
     function smGewaehlt(p) {
       var v = smVorhanden(p);
-      function zaehlt(k) { return p.sm.knoten[k] && !v.an[k] && !smGedeckt(p, p.sm.knoten[k]); }
+      function zaehlt(k) { return p.sm.knoten[k] && !v.an[k] && !v.regel[k] && !smGedeckt(p, p.sm.knoten[k]); }
       return { ordner: Object.keys(p.sm.wahl.ordner).filter(zaehlt), urls: Object.keys(p.sm.wahl.urls).filter(zaehlt) };
     }
     /* Das Ziel, das ein Knoten beim Uebernehmen wird: Host -> ganze Domain, Ordner -> Pfad, Seite -> URL. */
@@ -6262,9 +6353,9 @@
       if (v.max != null) return v.max;
       function geh(k) {
         var s = 0;
-        k.seiten.forEach(function (x) { if (!v.an[x.key]) s++; });
+        k.seiten.forEach(function (x) { if (!v.an[x.key] && !v.regel[x.key]) s++; });
         k.kinder.forEach(function (c) { s += geh(c); });
-        return v.an[k.key] ? s : Math.max(1, s);
+        return v.an[k.key] || v.regel[k.key] ? s : Math.max(1, s);
       }
       var n = 0;
       (p.sm.hosts || []).forEach(function (h) { n += geh(h); });
@@ -6279,23 +6370,30 @@
        faellt unter eine Regel der Liste oder des Events, bleibt aber waehlbar (eigene Zeile,
        deckendeRegel) -- der Tooltip sagt es, und in der Zeile steht leise "In {regel}". */
     function smZustand(p, dk, k) {
-      var vorh = !!dk.v.an[k.key], gedeckt = !vorh && smGedeckt(p, k), gesperrt = vorh || gedeckt;
+      /* UNTER EINER REGEL (18.10., Nutzer): steht die ganze Domain (oder ein Pfad) schon als Ziel da, ist alles darunter
+         enthalten -- die Zeile steht gewaehlt UND gesperrt, wie eine im gewaehlten Ordner. Bis 17.10. blieb sie waehlbar
+         ("eigene Zeile"), stand aber ungewaehlt unter einer gewaehlten Domain, und der Fuss sagte "0 of 9 selected". */
+      var vorh = !!dk.v.an[k.key], gedeckt = !vorh && smGedeckt(p, k), regel = !vorh && !gedeckt ? dk.v.regel[k.key] || null : null;
+      var gesperrt = vorh || gedeckt || !!regel;
       var an = gesperrt || !!(k.art === "seite" ? p.sm.wahl.urls[k.key] : p.sm.wahl.ordner[k.key]);
-      var voll = !an && !smPasst(dk, k), regel = gesperrt ? null : dk.v.regel[k.key] || null;
+      var voll = !an && !smPasst(dk, k);
       /* tip: der Tooltip der Zeile, NUR fuer eine waehlbare Seite unter einer Regel (sie bleibt bedienbar).
          hinweis: warum eine gesperrte Zeile sich nicht aendern laesst -- er steht erst nach einem KLICK
          darauf (smSperre), nie beim Ueberfahren: Zeilen unter einem gewaehlten Ordner stehen gewaehlt und
          gedaempft da, und ein Tooltip auf jeder davon deckte beim Hinunterfahren die naechsten zu. */
       var ord = gedeckt ? smGedecktDurch(p, k) : null;
-      return { an: an, gesperrt: gesperrt, vorh: vorh, voll: voll, regel: regel,
-        tip: regel ? ersetze(t("Also covered by {regel}. Adding it gives it its own row."), { regel: regel.zeigen }) : "",
-        hinweis: vorh ? t("Already added") : gedeckt ? ersetze(t("Included in {ordner}. Clear that folder to choose this page on its own."), { ordner: ord ? ord.host + (ord.pfad || "") : "" })
+      /* Kein Tooltip an der Zeile: die gesperrte, gewaehlte Zeile sagt es selbst, der Satz kommt auf den Klick. */
+      return { an: an, gesperrt: gesperrt, vorh: vorh, voll: voll, regel: regel, tip: "",
+        hinweis: vorh ? t("Already added") : regel ? smRegelHinweis(regel) : gedeckt ? ersetze(t("Included in {ordner}. Clear that folder to choose this page on its own."), { ordner: ord ? ord.host + (ord.pfad || "") : "" })
           : voll ? t("No more targets fit into this event.") : "" };
     }
-    /* Der leise Hinweis in der Zeile, unter welcher Regel sie schon mitzaehlt (wie das Datum: Text
-       in --vc-third, kein Kasten, keine Pille). Steht auch fuer Touch da, wo kein Tooltip kommt. */
-    function smRegelText(z) {
-      return z.regel ? '<span class="uev-sm-in">' + esc(ersetze(t("In {regel}"), { regel: z.regel.zeigen })) + '</span>' : '';
+    /* Der Name eines Ziels in einem Satz: ratgeber.lee-up.de oder lee-up.de/blog, ohne Schema, Stern und "/*" der Schreibweise. */
+    function smZielName(z) {
+      return String(z && (z.input || z.zeigen) || "").replace(/^https?:\/\//i, "").replace(/^\*\./, "").replace(/\/\*$/, "");
+    }
+    function smRegelHinweis(r) {
+      if (r.kind === "path") return ersetze(t("You're tracking everything under {ziel}, so individual pages can't be excluded. To pick specific pages, switch to \u201cSpecific URLs\u201d."), { ziel: smZielName(r) });
+      return t("You're tracking the whole domain, so individual pages can't be excluded. To pick specific pages, switch to \u201cEverything under a path\u201d or \u201cSpecific URLs\u201d.");
     }
     function smReihe(p, k, flach, dk) {
       var z = smZustand(p, dk, k), tiefe = flach ? 0 : k.tiefe;
@@ -6309,7 +6407,7 @@
           '<span class="uev-sm-auf-platz" aria-hidden="true"></span>' +
           '<span class="up-filter-check">' + UC.icon("check", 3) + '</span>' +
           '<span class="uev-sm-name" title="' + esc(k.loc) + '">' + esc(name) + '</span>' +
-          (k.lastmod || z.regel ? '<span class="uev-sm-angaben">' + smRegelText(z) + (k.lastmod ? '<span class="uev-sm-datum">' + esc(datum(k.lastmod)) + '</span>' : '') + '</span>' : '') +
+          (k.lastmod ? '<span class="uev-sm-angaben"><span class="uev-sm-datum">' + esc(datum(k.lastmod)) + '</span></span>' : '') +
         '</div>';
       }
       var offen = !!p.sm.auf[k.key] && !flach;
@@ -6322,7 +6420,7 @@
         '<span class="up-filter-check">' + UC.icon("check", 3) + '</span>' +
         '<span class="uev-sm-ic">' + (k.art === "host" ? zielFavKlein(k.host, UC.icon("globe", 2)) : UC.icon(offen ? "folderOpen" : "folder", 2)) + '</span>' +
         '<span class="uev-sm-name">' + esc(titel) + '</span>' +
-        '<span class="uev-sm-angaben">' + smRegelText(z) + '<span class="uev-sm-n">' + esc(ersetze(t(k.n === 1 ? "{n} page" : "{n} pages"), { n: zahl(k.n) })) + '</span>' +
+        '<span class="uev-sm-angaben"><span class="uev-sm-n">' + esc(ersetze(t(k.n === 1 ? "{n} page" : "{n} pages"), { n: zahl(k.n) })) + '</span>' +
           (k.neu ? '<span class="uev-sm-datum" data-tip="' + esc(t("Newest change")) + '">' + esc(datum(k.neu)) + '</span>' : '') + '</span>' +
       '</div>';
     }
@@ -6434,7 +6532,10 @@
          targets" neben "0 of 3 selected". */
       var hoechst = smHoechstens(p, dk.v), nenner = Math.min(dk.frei, hoechst);
       var rest = dk.frei - anzahl, dl = inh.querySelector(".uev-sm-deckel");
-      dl.textContent = !d.urls.length ? "" : !hoechst ? t("Everything in this sitemap is already added.")
+      /* Alles unter einer Regel des Events oder der Liste (18.10.): der Fuss sagt es ruhig statt "0 of 9 selected", ohne
+         Knopf (es gibt nichts zu waehlen). Gemischt mit einzeln getrackten Seiten: der allgemeine Satz. */
+      var gedeckt = smGedecktText(p, dk.v);
+      dl.textContent = !d.urls.length ? "" : !hoechst ? (gedeckt ? "" : t("Everything in this sitemap is already added."))
         : !dk.frei ? fehlerText("impact_event_too_many_targets")
         : hoechst <= dk.frei ? ""
         : rest <= 0 ? t("That's the most you can add. To cover more pages, select a folder instead.")
@@ -6442,8 +6543,27 @@
         : ersetze(t("You can add {n} more targets. A folder counts as one and covers every page in it."), { n: zahl(rest) });
       dl.hidden = !dl.textContent;
       fuss.hidden = !d.urls.length || !nenner;
+      var nimm = inh.querySelector(".uev-sm-nehmen");
+      if (d.urls.length && !hoechst && gedeckt) { fuss.hidden = false; nimm.hidden = true; inh.querySelector(".uev-sm-zahl").textContent = gedeckt; nimm.disabled = true; return; }
+      nimm.hidden = false;
       inh.querySelector(".uev-sm-zahl").textContent = nenner ? ersetze(t("{n} of {total} selected"), { n: zahl(anzahl), total: zahl(nenner) }) : "";
-      inh.querySelector(".uev-sm-nehmen").disabled = !anzahl || anzahl > dk.frei;
+      nimm.disabled = !anzahl || anzahl > dk.frei;
+    }
+    /* "All 9 pages are covered by ratgeber.lee-up.de": alle Seiten der Sitemap liegen unter Regeln (Domain, Pfad), keine ist
+       frei. Eine Regel: ihr Name; mehrere: "your targets". Gibt es auch nur eine einzeln getrackte Seite, bleibt es beim
+       allgemeinen Satz (leer hier). */
+    function smGedecktText(p, v) {
+      var n = 0, namen = {}, anz = 0;
+      Object.keys(p.sm.knoten).forEach(function (key) {
+        var k = p.sm.knoten[key];
+        if (k.art !== "seite") return;
+        n++;
+        if (v.regel[key]) { namen[smZielName(v.regel[key])] = 1; anz++; }
+        else if (!v.an[key]) anz = -1e9;
+      });
+      if (!n || anz !== n) return "";
+      var l = Object.keys(namen);
+      return ersetze(t(n === 1 ? "The page is covered by {ziel}." : "All {n} pages are covered by {ziel}."), { n: zahl(n), ziel: l.length === 1 ? l[0] : t("your targets") });
     }
     /* Der Grund, warum eine Zeile gesperrt ist: ein Satz unter dem Baum, nach einem Klick darauf, vier Sekunden. */
     function smSperre(p, text) {
@@ -7409,7 +7529,7 @@
       var p = { art: "anlegen", api: api, e: e, schritt: 1, knopf: "weiter", pops: {}, vorschauen: {}, topicSuche: "" };
       if (planEv) { p.planEventId = String(planEv.id); p.eventId = p.planEventId; p.alt = { ende: e.ende }; }
       /* Das Titelbild fuer Schritt 4 (coverZufall) jetzt schon waehlen und vorladen. */
-      p.zufallsCover = COVERS[Math.floor(Math.random() * COVERS.length)].key;
+      p.zufallsCover = coverWahl();
       coverLaden(coverVon({ cover: p.zufallsCover }));
       sucheBauen(p);
       popupAufbauen(p);
@@ -7720,8 +7840,6 @@
       p.e.unterdomains = !p.e.unterdomains;
       var sw = im("[data-unterdomains]");
       if (sw) { sw.classList.toggle("is-on", p.e.unterdomains); sw.setAttribute("aria-checked", String(p.e.unterdomains)); }
-      var bsp = im('[data-art="host"] .uev-art-bsp');
-      if (bsp) bsp.textContent = p.e.unterdomains ? "*.example.com/*" : "blog.example.com/*";
       unterSatzNeu(p);
       zieleZeigen(p);
     }
@@ -8028,7 +8146,7 @@
           /* Wie in w2: gesperrt steht dabei, womit es weitergeht. */
           return popup && !schrittOk(popup) ? t(s) + " " + t("Add a URL, a path or a domain, or choose Brand metrics only.") : s;
         },
-        vis: function () { return zieleDa() ? anlZeile("folder", "example.com/blog/*") + anlZeile("globe", "*.example.com/*") : anlZeile("link", "example.com/blog/launch"); } }, anlImPopup("w3")),
+        vis: function () { return zieleDa() ? anlZeile("folder", "example.com/blog/*") + anlZeile("globe", "example.com/*") : anlZeile("link", "example.com/blog/launch"); } }, anlImPopup("w3")),
       anlSchritt({ id: "w4", ziel: function () { return im(".uev-vorschau") || im(".uev-pruef"); },
         titel: "Check and create",
         text: function () {

@@ -231,7 +231,9 @@
 .uev-urls > .up-thead, .uev-urls > .up-tbody { min-width: 992px; }
 .uev-markt > .up-thead, .uev-markt > .up-tbody { min-width: 600px; }
 .uev-url-txt { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
-.uev-url-host { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Der Pfad steht oben und traegt die Zeile (18.10., Nutzer: "Pfad oben, Domain darunter"); der Host ist die leise zweite Zeile. */
+.uev-url-haupt { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); color: var(--vc-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uev-url-host { font-size: var(--up-fs-s); color: var(--vc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .uev-url-pfad { font-size: var(--up-fs-s); color: var(--vc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Die Zeilenknoepfe (.up-btn-sec.up-rowbtn aus core) stehen hintereinander; nur der erste schiebt
    sich nach rechts (margin-left: auto aus core). */
@@ -639,7 +641,6 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
    16 hoch -> Radius 4 (Rolle nach Hoehe). */
 .uev-fav { display: block; flex: 0 0 auto; width: 16px; height: 16px; border-radius: var(--up-r-xs); }
 .uev-urlwahl .uev-notation { font-size: var(--up-fs-m); font-weight: var(--up-fw-m); }
-.uev-ziel-n { flex: 0 0 auto; font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; }
 .uev-ziel-fehler { flex: 0 1 auto; min-width: 0; font-size: var(--up-fs-s); color: var(--vt-down); }
 .uev-zielliste:empty { display: none; }
 
@@ -715,9 +716,8 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 /* "In lee-up.de/*" (17.10.): die Regel, unter der eine waehlbare Seite schon mitzaehlt -- leise
    wie das Datum daneben. Gekappt, damit ein langer Pfad dem Namen nicht den Platz nimmt; den
    ganzen Satz traegt der Tooltip der Zeile. */
-.uev-sm-in { min-width: 0; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
 /* Telefon: das Datum weicht, die Zahl der Seiten bleibt -- der Name braucht den Platz. */
-@media (max-width: 520px) { .uev-sm-reihe .uev-sm-datum { display: none; } .uev-sm-in { max-width: 96px; } }
+@media (max-width: 520px) { .uev-sm-reihe .uev-sm-datum { display: none; } }
 /* In einem gewaehlten Ordner (oder schon getrackt): gewaehlt, aber nicht einzeln zu aendern.
    Voll (16.10.): passt nicht mehr hinein -- ebenso gedaempft, aber ohne Haken. Der Grund steht erst nach
    einem Klick auf die Zeile da (.uev-sm-sperre), nie als Tooltip beim Ueberfahren. */
@@ -810,6 +810,10 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-abd-fav0 svg { width: 16px; height: 16px; }
 .uev-abd-pfad { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .uev-abd-marke { flex: 0 0 auto; }
+/* Der Link einer Seite: Text wie die Zeile, erst beim Ueberfahren oder Fokus unterstrichen. */
+.uev-abd-link { color: inherit; text-decoration: none; }
+.uev-abd-link:hover, .uev-abd-link:focus-visible { text-decoration: underline; }
+.uev-abd-link:focus-visible { outline: var(--up-focus-w) solid var(--up-focus); outline-offset: 2px; border-radius: var(--up-r-xs); }
 .uev-abd-datum { flex: 0 0 auto; font-size: var(--up-fs-s); color: var(--vc-third); font-variant-numeric: tabular-nums; white-space: nowrap; }
 /* Aus der Sitemap verschwunden: markiert, nicht versteckt -- Pfad und Bild zurueckgenommen, die
    Marke bleibt voll lesbar. */
