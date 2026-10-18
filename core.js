@@ -17049,9 +17049,16 @@
   function bandSchalterHtml(opts){
     opts = opts || {};
     var aus = !!opts.aus;
+    /* opts.wahlen (18.10.): eigene Etiketten fuer dieselben zwei Stellungen, [an, aus] mit je
+       { label, zeichen? } -- der Schalter bleibt dieser eine Baustein (Event-Detail: "Full Event
+       Overview" / "Citation Tracking only"). Ohne Angabe die Wahlen von Citations und Brands. */
+    var wahlen = BAND_WAHLEN.map(function(w, i){
+      var o = opts.wahlen && opts.wahlen[i];
+      return { key: w.key, label: (o && o.label) || w.label, zeichen: (o && o.zeichen) || w.zeichen };
+    });
     return '<div class="up-seg up-bandsw' + (opts.klein ? " is-klein" : "") + '" role="radiogroup" aria-label="' + esc(t_("Layout")) + '"' +
       (opts.id != null ? ' data-band="' + esc(String(opts.id)) + '"' : "") + '>' +
-      BAND_WAHLEN.map(function(w){
+      wahlen.map(function(w){
         var an = (w.key === "aus") === aus, name = t_(w.label);
         return '<button type="button" class="up-seg-btn' + (an ? " is-active" : "") + '" role="radio" aria-checked="' + (an ? "true" : "false") + '"' +
           ' data-up-bandwahl="' + w.key + '" aria-label="' + esc(name) + '" data-tip="' + esc(name) + '">' +
@@ -17082,7 +17089,8 @@
      Funktion nichts und meldet false -- die Komponente klappt wie bisher mit ihrem Auge zusammen.
        o.id      Kennung des Bandes (mehrere Baender auf einer Seite)
        o.setzen  Rueckruf des Umschalters mit dem gewuenschten Zustand (true = aus)
-       o.zeigen  der Rueckruf von bisher (nur Einblenden), gilt, solange o.setzen fehlt */
+       o.zeigen  der Rueckruf von bisher (nur Einblenden), gilt, solange o.setzen fehlt
+       o.wahlen  eigene Etiketten [an, aus] (siehe bandSchalterHtml), wirkt beim Anlegen des Schalters */
   function bandAus(band, aus, o){
     o = o || {};
     if (!band || !band.parentElement) return false;
@@ -17103,7 +17111,7 @@
     band.classList.add("is-band-schalter");
     if (!sw){
       var huelle = document.createElement("div");
-      huelle.innerHTML = bandSchalterHtml({ id: id, aus: !!aus });
+      huelle.innerHTML = bandSchalterHtml({ id: id, aus: !!aus, wahlen: o.wahlen });
       sw = huelle.firstChild;
       sw.addEventListener("click", function(e){
         var b = e.target && e.target.closest ? e.target.closest("[data-up-bandwahl]") : null;

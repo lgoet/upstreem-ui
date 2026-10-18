@@ -895,3 +895,9 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .uev-art.is-on:hover { 
 .uev-datumfach { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .uev-datum-lbl { font-size: var(--up-fs-s); line-height: 1.4; color: var(--vc-third); }
 .uev-datumhilfe { font-size: var(--up-fs-s); line-height: 1.5; color: var(--vc-third); }
+
+/* Modus "Citation Tracking only" (18.10.): UC.bandAus setzt .is-band-aus am Detail. Aus sind alles, was der Marke
+   gilt: Kennzahlen, Bericht, Chart und Marktbewegung. display:none, damit auch der Platz der 40er-Abstaende geht. */
+.uev-detail.is-band-aus :is([data-sek="kpis"], [data-sek="bericht"], .uev-sek-chart, [data-sek="markt"]) { display: none; }
+/* Wie core fuer .up-ph-addbtn (core.css, :has(.up-bandsw)): schmal gibt der Hinzufuegen-Knopf sein Wort her, das Zeichen bleibt. */
+.uev-root.is-vnarrow .uev-kopfaktion:has(.up-bandsw) .uev-addurl-txt { display: none; }

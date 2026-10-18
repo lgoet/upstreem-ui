@@ -891,7 +891,9 @@
     "Count as your domain": "Als deine Domain zählen",
     "The preview could not be loaded.": "Die Vorschau konnte nicht geladen werden.",
     /* Sitemap */
-    "Load from sitemap": "Aus Sitemap laden", "Sitemap link or domain": "Sitemap-Link oder Domain", "Load": "Laden",
+    "Full Event Overview": "Komplette Event-Übersicht", "Citation Tracking only": "Nur Citation-Tracking",
+    "{n} of {m} cited": "{n} von {m} zitiert",
+        "Load from sitemap": "Aus Sitemap laden", "Sitemap link or domain": "Sitemap-Link oder Domain", "Load": "Laden",
     "Reading your sitemap": "Deine Sitemap wird gelesen", "Looking for your sitemap…": "Sitemap wird gesucht…",
     "Reading pages…": "Seiten werden gelesen…", "Sorting pages into folders…": "Seiten werden nach Ordnern sortiert…",
     /* 16.10.: je nach Eingabe (Domain oder Datei) ein eigener Satz, jeder sagt, was stattdessen geht */
@@ -3733,12 +3735,20 @@
       var k = String(state.eventId) + "|" + zid + "|" + abdTab(zid);
       return abdBaumZ[k] || (abdBaumZ[k] = { auf: {}, mehr: {} });
     }
-    function abdOrdnerHtml(x, offen, tiefe, mitZahl) {
+    /* Zitierte Seiten unter einem Ordner (18.10.): die Marke cited der Seite, dieselbe, die den Reiter "Cited" zaehlt. */
+    function abdOrdnerZitiert(x, nachLoc) {
+      var n = 0;
+      x.seiten.forEach(function (sp) { var pg = nachLoc[sp.loc]; if (pg && pg.cited === true) n++; });
+      x.kinder.forEach(function (k) { n += abdOrdnerZitiert(k, nachLoc); });
+      return n;
+    }
+    function abdOrdnerHtml(x, offen, tiefe, mitZahl, zitiert) {
       var name = x.art === "host" ? x.host : smOrdnerName(x);
       return '<button type="button" class="uev-abd-ordner" data-abd-klapp="' + esc(x.key) + '" aria-expanded="' + offen + '" style="--uev-tiefe:' + tiefe + '">' +
         UC.icon(offen ? "chevronDown" : "chevronRight", 2) + '<span class="uev-abd-ic">' + UC.icon(offen ? "folderOpen" : "folder", 2) + '</span>' +
         '<span class="uev-abd-pfad">' + esc(name) + '</span>' +
-        (mitZahl ? '<span class="uev-abd-datum">' + esc(ersetze(t(x.n === 1 ? "{n} page" : "{n} pages"), { n: zahl(x.n) })) + '</span>' : '') +
+        (mitZahl ? '<span class="uev-abd-datum">' + esc(zitiert != null ? ersetze(t("{n} of {m} cited"), { n: zahl(zitiert), m: zahl(x.n) })
+          : ersetze(t(x.n === 1 ? "{n} page" : "{n} pages"), { n: zahl(x.n) })) + '</span>' : '') +
       '</button>';
     }
     function abdEintraege(zt, eintraege, key, st, tiefe, nachLoc, mitZahl, eltern, opt) {
@@ -3750,7 +3760,7 @@
           return;
         }
         var offen = !!st.auf[x.key];
-        aus += abdOrdnerHtml(x, offen, tiefe, mitZahl);
+        aus += abdOrdnerHtml(x, offen, tiefe, mitZahl, mitZahl && opt.tab === "alle" ? abdOrdnerZitiert(x, nachLoc) : null);
         if (offen) aus += abdEintraege(zt, x.kinder.concat(x.seiten), x.key, st, tiefe + 1, nachLoc, mitZahl, x, opt);
       });
       if (eintraege.length > sicht) {
@@ -4115,6 +4125,30 @@
       if (r.getAttribute("data-sticky") !== "no") { r.setAttribute("data-sticky", "no"); r.classList.remove("up-sticky"); }
     }
 
+    /* DER MODUS "Citation Tracking only" (18.10.): ein Schalter im Seitenkopf (UC.bandAus, derselbe wie in
+       Citations und Brands, nur mit eigenen Etiketten). Aus sind Kennzahlen, Bericht, Chart und
+       Marktbewegung (.is-band-aus am Detail, die Regeln in events.css); die Seite beginnt dann bei den
+       Zielen. Gemerkt je Event im Browser, nicht in der Datenbank: ein anderes Event darf anders stehen. */
+    function modusId(id) { return "events_detail_" + id; }
+    function modusStellen() {
+      var box = elMain.querySelector(".uev-detail");
+      if (!box || !UC.bandAus || state.ansicht !== "detail" || !state.eventId) return;
+      var id = state.eventId, aus = !!(UC.bandAusGemerkt && UC.bandAusGemerkt(modusId(id)));
+      var war = box.classList.contains("is-band-aus");
+      UC.bandAus(box, aus, { id: "events_detail", wahlen: [{ label: "Full Event Overview" }, { label: "Citation Tracking only" }],
+        setzen: function (neu) {
+          if (UC.bandAusMerken) UC.bandAusMerken(modusId(state.eventId), !!neu);
+          modusStellen();
+        } });
+      var sw = root.querySelector(".up-bandsw[data-band=\"events_detail\"]");
+      if (sw && elAktion && sw.parentNode !== elAktion) elAktion.insertBefore(sw, elAktion.firstChild);
+      /* Wieder eingeblendet: ein Canvas, das ausgeblendet gemessen wurde, hat Breite 0. */
+      if (war && !aus && linie && linie.resize) setTimeout(function () { try { linie.resize(); linie.relayoutLegend && linie.relayoutLegend(); } catch (e) {} }, 60);
+    }
+    function modusWeg() {
+      var sw = root.querySelector(".up-bandsw[data-band=\"events_detail\"]");
+      if (sw && sw.parentNode) sw.parentNode.removeChild(sw);
+    }
     function renderDetail() {
       var box = elMain.querySelector(".uev-detail");
       if (!box) return;
@@ -4126,6 +4160,7 @@
       box.classList.toggle("is-kampagne", kampagneDa() && mitEnde(ev) && !istGeplant(ev));
       box.classList.toggle("is-bericht", istFertig(ev));
       krumenNeu();
+      modusStellen();
       renderKopf(); renderGeplant(); renderHinweise(); renderKpis(); renderBericht(); renderChart(); renderMarkt(); renderZiele(); renderUrls(); renderScope(); renderResp();
       if (anleitung && anleitung.laeuft()) anleitung.neu();
     }
@@ -4222,6 +4257,7 @@
       adresseSetzen("", neuerEintrag);
       respSichtbar(false);
       if (linie) { try { linie.destroy(); } catch (e) {} linie = null; }
+      modusWeg();
       baueUebersicht(); krumenNeu();
     }
     /* frisch: das Detail-Objekt ist gerade erst gekommen (die Antwort auf Anlegen IST das Detail,
