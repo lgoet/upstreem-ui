@@ -973,8 +973,12 @@
          traegt nur, was man ueberlesen darf. Was Inhalt ist, steht auf Stufe drei oder hoeher.
          ZWEITE ACHSE, noch offen: der Schnitt. Linear unterscheidet 12px/510 in der zweiten von
          12px/400 in der dritten Stufe -- dieselbe Groesse, zwei Ebenen. Die Schnittskala
-         (400-700) gibt es hier auch, sie ist nur noch nicht an die Farbe gekoppelt. */
-      --vc-text: #1f1f1b; --vc-muted: #3e4146; --vc-border: #e4e2e4;
+         (400-700) gibt es hier auch, sie ist nur noch nicht an die Farbe gekoppelt.
+         STAND 18.10. (Hell): die Werte sind seitdem Geists (am Vercel-Dashboard gemessen, reines Grau):
+         gray-1000 #171717, gray-900 #4d4d4d, gray-800 #7d7d7d, gray-700 #8f8f8f. Kontrast gegen Weiss
+         jetzt 17.93 / 8.45 / 4.12 / 3.23. Die Zahlen darueber sind die der alten Werte. Die dritte Stufe
+         liegt damit unter 4.5 (vorher 5.04): Hilfstext in 12px dort ist knapp. Dunkel noch unveraendert. */
+      --vc-text: #171717; --vc-muted: #4d4d4d; --vc-border: #e4e2e4;
       /* Die Primaerfarbe des ANDEREN Themas -- also genau der Wert, der zwei Bloecke weiter unten
          als --vc-text steht. Gebraucht fuer Zeichen AUF einer Flaeche in der Primaerfarbe: die
          16px-Plaettchen der Mira-Chips (16.09. angefordert). Kein Weiss und kein --vc-bg: auf
@@ -1061,7 +1065,7 @@
          Bis zum 15.10. stand hier dieselbe Zahl noch einmal als Literal -- zwei Orte fuer einen
          Wert, die beim naechsten Umbau auseinandergelaufen waeren. */
       --up-dd-shadow: var(--up-e-2);
-      --vc-switch-bg: #f9f8f9; --vc-switch-border: #e4e2e4; --vc-third: #6b6f78; --vc-fourth: #80858e;
+      --vc-switch-bg: #f9f8f9; --vc-switch-border: #e4e2e4; --vc-third: #7d7d7d; --vc-fourth: #8f8f8f;
       /* Die PILLE auf der Schiene -- das Gegenstueck zu --vc-switch-rail. Sie stand als
          Literal an sieben Stellen, jede mit einer eigenen Dunkel-Regel daneben (#ffffff und
          #28282c). Eine Marke statt vierzehn Werten; der Rahmen kam schon immer aus
@@ -3165,7 +3169,7 @@
      in einer Erklaerkarte, und die haengt am <body> -- ohne den Token hatte sie keinen Grund
      (gemessen: rgba(0,0,0,0)). Dieselben Werte wie an .up-root. */
   :root {
-    --vc-text: #1f1f1b; --vc-muted: #3e4146; --vc-third: #6b6f78; --vc-fourth: #80858e;
+    --vc-text: #171717; --vc-muted: #4d4d4d; --vc-third: #7d7d7d; --vc-fourth: #8f8f8f;
     --vc-text-invert: #e0e0e0; --up-sel-bg: #f4f2f4;
     /* Die Chip-Stufen auch hier: Topic-Chips stehen in Flaechen am body (Topic-Modal, Bulk-Leiste). */
     --vc-border: #e4e2e4; --vc-heading-bg: #f9f8f9;
@@ -3969,7 +3973,7 @@
     }
 
     .up-scale-menu {
-      --vc-text: #1f1f1b; --vc-muted: #3e4146; --vc-third: #6b6f78; --vc-fourth: #80858e; --vc-border: #dcdbdd;
+      --vc-text: #171717; --vc-muted: #4d4d4d; --vc-third: #7d7d7d; --vc-fourth: #8f8f8f; --vc-border: #dcdbdd;
       --vc-heading-bg: #f9f8f9; --vc-hover-border: #6f6f6f; --vc-bg: #ffffff;
       --vc-switch-bg: #f9f8f9; --vc-switch-border: #e4e2e4; --vc-switch-pill: #ffffff;
       --vc-switch-rail: #f2f2f2;   /* fehlte -- siehe die dunkle Fassung darunter */
@@ -7438,7 +7442,7 @@
 .up-topicmodal-backdrop[data-theme="dark"] { background: rgba(0,0,0,.35); }
 
 .up-topicmodal-card {
-  --vc-text: #1f1f1b; --vc-muted: #3e4146; --vc-third: #6b6f78; --vc-fourth: #80858e; --vc-border: #dcdbdd;
+  --vc-text: #171717; --vc-muted: #4d4d4d; --vc-third: #7d7d7d; --vc-fourth: #8f8f8f; --vc-border: #dcdbdd;
   --vc-heading-bg: #f9f8f9; --vc-hover-border: #6f6f6f; --up-surface: #ffffff; --vc-sk: #eeedef;
   /* Die Fokus-Tokens MUESSEN hier mit rein. Diese Karte haengt am body, nicht unter .up-root, wo
      die Tokens definiert sind -- ohne sie ist var(--up-focus) leer, und eine Deklaration mit einer
