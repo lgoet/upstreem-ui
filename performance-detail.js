@@ -446,7 +446,7 @@
         /* Rank ist invertiert: die kleinere Zahl ist die bessere, also ist ein negatives Delta gruen. */
         kpiTile("Avg. Rank", kpiWert("rank", num(k.avg_rank)),
                 tc ? tc(num(k.avg_rank_delta), { decimals: true, inverted: true }) : "") +
-        kpiTile("Sentiment (last 30 days)", kpiWert("sentiment", num(k.sentiment)),
+        kpiTile("Sentiment", kpiWert("sentiment", num(k.sentiment)),
                 tc ? tc(num(k.sentiment_delta), {}) : "") +
         /* Mentions OHNE Trend (09.10. angefordert): die Zahl sagt, auf wie vielen Nennungen die
            anderen drei beruhen -- ihr Zuwachs ist keine Wertung der Marke. */
@@ -817,7 +817,7 @@
     var KPI_ERKLAER = {
       kVis:  { key: "visibility", h: "Visibility", trend: true },
       kRank: { key: "rank", h: "Avg. Rank", trend: true },
-      kSent: { key: "sentiment", h: "Sentiment (last 30 days)", trend: true },
+      kSent: { key: "sentiment", h: "Sentiment", trend: true },
       kMent: { key: "mentions", h: "Mentions", trend: false }
     };
     function kpiPlatte(key){

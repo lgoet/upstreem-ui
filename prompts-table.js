@@ -4634,7 +4634,7 @@
     var EXPLAIN_FALLBACK = {
       visibility: { h: "Visibility", t: "How often the brand appears in AI answers for this prompt." },
       rank:       { h: "Rank", t: "The average of the brand's best position per answer for this prompt. Position 1 is the first brand named. A lower number is better." },
-      sentiment:  { h: "Sentiment", t: "How positively the brand is described when it's mentioned for this prompt, based on the last 30 days of the period." },
+      sentiment:  { h: "Sentiment", t: "How positively the brand is described when it's mentioned for this prompt." },
       brands:     { h: "Brand Mentions", t: "Which of your tracked brands are mentioned in AI answers for this prompt. Hover a logo to see its name." }
     };
     function explainInfo(kind){

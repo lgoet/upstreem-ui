@@ -463,7 +463,7 @@
       hint: "0 – 100",
       body: "Sentiment scores how positively your brand is described, on a scale from 0 to 100, where 50 " +
             "is neutral. It is measured only in answers that mention your brand, so it carries no " +
-            "information about how often that happens. Read it alongside Visibility, not instead of it. It is calculated over the last 30 days of the selected period. "
+            "information about how often that happens. Read it alongside Visibility, not instead of it."
     },
     {
       id: "visibility",
