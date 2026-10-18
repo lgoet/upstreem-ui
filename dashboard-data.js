@@ -51,6 +51,7 @@
   var ORDER = {
     overview: ["visibility_desc", "visibility_asc", "visibility_delta_desc", "visibility_delta_asc", "rank_asc", "rank_desc",
                "sentiment_desc", "sentiment_asc", "mentions_desc", "mentions_asc", "name_asc", "name_desc"],
+    top: ["share_desc", "share_asc", "share_delta_desc", "share_delta_asc"],
     responses: ["run_at_desc", "run_at_asc", "rank_asc", "rank_desc", "sentiment_asc", "sentiment_desc"]
   };
   function orderVon(art, o) { o = str(o); return ORDER[art].indexOf(o) >= 0 ? o : ORDER[art][0]; }
@@ -183,7 +184,7 @@
   }
   function topListe(f, modus, t) {
     t = t || {};
-    var cf = citFilter(f, t), tab = { order: t.order || "share_desc", limit: t.limit || 8, offset: 0, suche: "" };
+    var cf = citFilter(f, t), tab = { order: orderVon("top", t.order), limit: t.limit || 8, offset: 0, suche: "" };
     return modus === "url" ? C().urls(cf, tab) : C().domains(cf, tab);
   }
 
@@ -258,17 +259,11 @@
 
   /* Top Citations (renderTopCitations). types_breakdown traegt im Domain-Modus die Citation Types,
      im URL-Modus die URL Types -- genau das liefert cached_citations_overview_v1 mit p_mode. */
-  function zuTop(typen, list, modus) {
-    if (!istObjekt(typen) || !isArr(typen.types)) return null;
+  /* Nur die Liste (Sortierung ueber den Kopf, 18.10.): top_domains bzw. top_urls mit ihrer Gesamtzahl, ohne Ring. */
+  function zuTopListe(list, modus) {
     var r = zeilen(list);
     if (!r) return null;
-    var url = modus === "url", total = num(meta(list).total_count);
-    var aus = {
-      mode: url ? "url" : "domain",
-      citations_total: typen.kpis && num(typen.kpis.citations_total) != null ? num(typen.kpis.citations_total) : 0,
-      types_breakdown: typen.types.filter(function (x) { return x && x.type != null; })
-        .map(function (x) { return { type: str(x.type), share_pct: num(x.share_pct) == null ? 0 : num(x.share_pct) }; })
-    };
+    var url = modus === "url", total = num(meta(list).total_count), aus = {};
     if (url) {
       aus.top_urls = r.map(function (x) {
         return { url: str(x.url), title: str(x.title), favicon: absolut(x.favicon), url_type: str(x.url_type),
@@ -282,6 +277,19 @@
       });
       aus.totalCountDomain = total == null ? r.length : total;
     }
+    return aus;
+  }
+  function zuTop(typen, list, modus) {
+    if (!istObjekt(typen) || !isArr(typen.types)) return null;
+    var liste = zuTopListe(list, modus);
+    if (!liste) return null;
+    var aus = {
+      mode: modus === "url" ? "url" : "domain",
+      citations_total: typen.kpis && num(typen.kpis.citations_total) != null ? num(typen.kpis.citations_total) : 0,
+      types_breakdown: typen.types.filter(function (x) { return x && x.type != null; })
+        .map(function (x) { return { type: str(x.type), share_pct: num(x.share_pct) == null ? 0 : num(x.share_pct) }; })
+    };
+    for (var k in liste) if (Object.prototype.hasOwnProperty.call(liste, k)) aus[k] = liste[k];
     return aus;
   }
 
@@ -379,7 +387,7 @@
     responsesSumme: responsesSumme, zuResponsesSumme: zuResponsesSumme,
     chats: chats, opportunities: opportunities, zuChats: zuChats, zuOpportunities: zuOpportunities,
     topTypen: topTypen, topListe: topListe,
-    zuVisibility: zuVisibility, platzInMenge: platzInMenge, zuMarkentabelle: zuMarkentabelle, zuTop: zuTop,
+    zuVisibility: zuVisibility, platzInMenge: platzInMenge, zuMarkentabelle: zuMarkentabelle, zuTop: zuTop, zuTopListe: zuTopListe,
     zuPowerUeberblick: zuPowerUeberblick, zuPowerDomains: zuPowerDomains, zuPowerUrls: zuPowerUrls,
     zuResponses: zuResponses, fehlerArt: fehlerArt, makeLader: makeLader
   };

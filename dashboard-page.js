@@ -119,6 +119,13 @@
       window.__votSort = window.__votSort || {};
       window.__votSort[ids.vot] = { field: { visibility: "visibility", visibility_delta: "visibility_trend", rank: "ranking", sentiment: "sentiment" }[m[1]], dir: m[2] };
     })();
+    /* Dasselbe fuer Top Citations: die gemerkte Sortierung (state.top.order) in den Speicher des Bausteins (window.__tcdSort). */
+    (function () {
+      var m = /^(share_delta|share)_(asc|desc)$/.exec(str(state.top && state.top.order));
+      if (!m) return;
+      window.__tcdSort = window.__tcdSort || {};
+      window.__tcdSort[ids.tcd] = { field: m[1] === "share_delta" ? "share_trend" : "share", dir: m[2] };
+    })();
     function persist() {
       STORE[instanceId] = { f: state.f, gran: state.gran, vis: state.vis, top: state.top, resp: state.resp, autoFirmen: state.autoFirmen, eigene: state.eigene };
     }
@@ -431,6 +438,11 @@
       var v = str(wert(d));
       state.top.erwaehnt = v === "yes" || v === "no" ? v : "all";
       persist(); teilLaden("top");
+    });
+    an("tcd-tcdSortTable", function (d) {
+      var o = str(wert(d));
+      if (D.ORDER.top.indexOf(o) < 0 || o === state.top.order) return;
+      state.top.order = o; persist(); teilLaden("topSort");
     });
     an("tcd-tcdRowClick", function (d) {
       var id = str(wert(d)).trim();
@@ -776,7 +788,7 @@
     function topAuftrag() {
       var f = filterStand(), m = state.top.modus, tp = state.top;
       var typen = D.topTypen(f, m, { erwaehnt: tp.erwaehnt });
-      var list = D.topListe(f, m, { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen, urlTypen: m === "url" ? tp.urlTypen : null, limit: 8 });
+      var list = D.topListe(f, m, { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen, urlTypen: m === "url" ? tp.urlTypen : null, limit: 8, order: tp.order });
       return {
         kanal: "top", imSpeicher: imSpeicher([typen, list]),
         ladenAn: function () { try { setter("setTopCitationsLoading")(ids.tcd, "yes"); } catch (e) {} },
@@ -795,6 +807,27 @@
                 try { setter("renderTopCitations")(p); } catch (err) {}
               }
               try { setter("setTopCitationsLoading")(ids.tcd, "no"); } catch (err) {}
+            };
+          });
+        }
+      };
+    }
+    /* NUR DIE TABELLE (18.10.): Sortierung ueber den Kopf von "Share". Eigener Kanal, nur die Liste, der Ring bleibt (wie visTabelleAuftrag). */
+    function topTabelleAuftrag() {
+      var f = filterStand(), m = state.top.modus, tp = state.top;
+      var list = D.topListe(f, m, { erwaehnt: tp.erwaehnt, citationTypen: tp.citationTypen, urlTypen: m === "url" ? tp.urlTypen : null, limit: 8, order: tp.order });
+      return {
+        kanal: "top_sort", imSpeicher: imSpeicher([list]),
+        ladenAn: function () {},
+        laden: function (frisch) {
+          return alleLaden([["top_sort", list]], frisch).then(function (e) {
+            if (e.some(function (x) { return x.ueberholt; })) return null;
+            return function () {
+              var p = e[0].ok ? D.zuTopListe(e[0].daten, m) : null;
+              try {
+                if (!p) setter("renderTopCitations")({ instanceId: ids.tcd, __parseError: fehlerArtVon(e) });
+                else { p.instanceId = ids.tcd; setter("renderTopCitations")(p); }
+              } catch (err) {}
             };
           });
         }
@@ -828,7 +861,7 @@
         }
       };
     }
-    var AUFTRAG = { vis: visAuftrag, visSort: visTabelleAuftrag, top: topAuftrag, resp: respAuftrag };
+    var AUFTRAG = { vis: visAuftrag, visSort: visTabelleAuftrag, top: topAuftrag, topSort: topTabelleAuftrag, resp: respAuftrag };
     function bedarf(o) {
       if (!bereit()) return null;
       if (state.modus === "power") return gemeinsam(agenticAuftraege(o && o.frisch), o);

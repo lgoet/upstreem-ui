@@ -72,12 +72,19 @@
      dieselbe Spalte, dasselbe Zeichen (UC.kopfZeichenHtml, .up-th-ic aus core). Domain, URL, Share
      und Used tragen dort keins, also auch hier keins. Als Zeichenkette, weil der Kopf mit jedem
      Zeichnen (und jedem Wechsel Domains/URLs) neu entsteht. */
-  function tableHeadHtml(mode){
+  /* sort: { field, dir } der Tabelle (18.10.): mit Angabe ist "Share" ein Sortierkopf (UC.makeHeadSort, Folge Share absteigend,
+     aufsteigend, Share Trend absteigend, aufsteigend); im Skelett (ohne Angabe) steht nur das Zeichen. */
+  function tableHeadHtml(mode, sort){
+    var on = !!sort && (sort.field === "share" || sort.field === "share_trend");
+    var shareTh = sort
+      ? '<div class="tct-th tct-th-share is-sortable" data-sortcol="share" tabindex="0"' + (on ? ' aria-sort="' + (sort.dir === "asc" ? "ascending" : "descending") + '"' : '') + '>Share' +
+        (sort.field === "share_trend" ? '<span class="up-th-sub">Trend</span>' : '') + (UC.thSortHtml ? UC.thSortHtml("share", on, sort.dir) : '') + '</div>'
+      : '<div class="tct-th tct-th-share">Share' + (UC.thSortHtml ? UC.thSortHtml("share", false, "desc") : '') + '</div>';
     return '<div class="tct-thead">' +
       '<div class="tct-th tct-th-idx">' + UC.HASH_ICON + '</div>' +
       '<div class="tct-th">' + (mode === "url" ? "URL" : "Domain") + '</div>' +
       '<div class="tct-th tct-th-type">' + (UC.kopfZeichenHtml ? UC.kopfZeichenHtml("dropdownFieldType") : "") + 'Type</div>' +
-      '<div class="tct-th">Share</div>' +
+      shareTh +
       '<div class="tct-th tct-th-used">Used</div></div>';
   }
 
@@ -175,7 +182,10 @@
       brand: saved.brand || null,
       filterTypeSel: saved.filterTypeSel || {}, filterUrlTypeSel: saved.filterUrlTypeSel || {},
       appliedTypeSel: saved.appliedTypeSel || {}, appliedUrlTypeSel: saved.appliedUrlTypeSel || {},
-      filterDimension: saved.filterDimension || defaultDim(saved.mode || "domain"), brandMentioned: saved.brandMentioned || ""
+      filterDimension: saved.filterDimension || defaultDim(saved.mode || "domain"), brandMentioned: saved.brandMentioned || "",
+      /* Sortierung der Tabelle (18.10.): die Seite merkt sie (window.__tcdSort, aus state.top.order) und die Instanz mit. */
+      sortField: (saved.sortField || ((window.__tcdSort || {})[instanceId] || {}).field) === "share_trend" ? "share_trend" : "share",
+      sortDir: (saved.sortDir || ((window.__tcdSort || {})[instanceId] || {}).dir) === "asc" ? "asc" : "desc"
     };
     function persistState(){
       INSTANCE_STORE[instanceId] = {
@@ -185,6 +195,7 @@
         filterTypeSel: state.filterTypeSel, filterUrlTypeSel: state.filterUrlTypeSel,
         appliedTypeSel: state.appliedTypeSel, appliedUrlTypeSel: state.appliedUrlTypeSel,
         filterDimension: state.filterDimension, brandMentioned: state.brandMentioned,
+        sortField: state.sortField, sortDir: state.sortDir,
         loading: state.loading,
         /* Fuer einen Neuaufbau des Elements -- siehe den Kommentar ueber state. */
         hasChart: state.hasChart, hasTable: state.hasTable,
@@ -431,9 +442,24 @@
         " kam als leere Liste an. Der Bubble-Workflow fuellt den Zaehler, aber nicht die Liste.");
       return "The rows could not be loaded.";
     }
+    /* Sortierung ueber den Kopf: nur die Tabelle laedt neu und dimmt (UC.makeSoftReload), der Ring daneben bleibt stehen. */
+    var sortDim = UC.makeSoftReload(root);
+    var sortKit = UC.makeHeadSort({
+      root: root,
+      state: { get sortField(){ return state.sortField; }, get sortDir(){ return state.sortDir; } },
+      cycles: { share: ["share:desc", "share:asc", "share_trend:desc", "share_trend:asc"] },
+      defaultSort: { field: "share", dir: "desc" }, trendField: "share_trend", trendCol: "share",
+      onSort: function(f, d){
+        state.sortField = f; state.sortDir = d; persistState();
+        var rows = activeRows();
+        sortDim.begin(rows.length > 0);
+        renderTableSide();
+        tcdFire("data-sort-fn", "bubble_fn_tcdSortTable", [(f === "share_trend" ? "share_delta" : "share") + "_" + d, instanceId]);
+      }
+    });
     function renderTable(){
       var rows = activeRows();
-      var head = tableHeadHtml(state.mode);
+      var head = tableHeadHtml(state.mode, { field: state.sortField, dir: state.sortDir });
       /* Der Lesefehler steht SOFORT da, nicht erst nach der Nachfrist: die Nachfrist gibt es
          fuer den Fall "gleich kommt die echte Lieferung nach", und den gibt es hier nicht --
          die Lieferung ist schon da und war unlesbar. */
@@ -842,6 +868,8 @@
     if (!root.__tcdDelegated){
       root.__tcdDelegated = true;
       root.addEventListener("click", function(e){
+        var sortTh = e.target.closest(".tct-th.is-sortable");
+        if (sortTh){ sortKit.headSortClick(sortTh.getAttribute("data-sortcol")); return; }
         var modeBtn = e.target.closest(".tcd-mode-btn");
         if (modeBtn){
           var m = modeBtn.getAttribute("data-mode");
@@ -1094,6 +1122,13 @@
         if (params.top_domains != null || params.top_urls != null ||
             params.types_breakdown != null || params.url_types_breakdown != null){
           state.optimisticLoading = false;
+          sortDim.end();   /* die Tabelle ist da: das Dimmen der Sortierung endet */
+        }
+        /* Kam nur eine Liste (die sortierte Tabelle), bleibt der Ring unberuehrt: render() zeichnete ihn sonst neu. */
+        if ((neueDomains || neueUrls) && params.types_breakdown == null && params.url_types_breakdown == null && params.isDark == null){
+          if (!LOADING_EXPLICIT[instanceId]) state.loading = readProcessing();
+          renderTableSide(); applyResponsive();
+          return;
         }
         if (!LOADING_EXPLICIT[instanceId]) state.loading = readProcessing();
         render();
