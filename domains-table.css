@@ -327,7 +327,7 @@
    Zwei Klassen: die Aliasregeln in core haben eine, gewonnen wird ueber die Spezifitaet.
    Die gleitende Pille (::before, core) zieht die Rundung jetzt mit. Sie stand auf den 8px aus
    core, waehrend Schiene und Knoepfe 6 hatten -- eine 8er-Pille in einer 6er-Schiene. */
-.udt-sub-tools .udt-sub-dispseg { height: 24px; border-radius: var(--up-r-s); }
+.udt-sub-tools .udt-sub-dispseg { height: 24px; border-radius: var(--up-r-s); --up-sw-r: var(--up-r-s); }
 .udt-sub-tools .udt-sub-dispseg::before { border-radius: var(--up-r-s); }
 .udt-sub-tools .udt-sub-disp-btn { height: 24px; min-width: 34px; border-radius: var(--up-r-s); }
 .udt-sub-closebtn { margin-left: auto; flex: 0 0 auto; }

@@ -584,7 +584,7 @@
    EINE Regel fuer beide und nicht zweimal dieselben Zahlen: zwei 24px-Umschalter auf derselben
    Seite, die sich in Polster oder Schriftgrad unterscheiden, sind genau der Fall, den
    .check_reinvention.py sucht. */
-.upw-cmode.up-seg, .upw-modes.up-seg { height: 24px; }
+.upw-cmode.up-seg, .upw-modes.up-seg { height: 24px; --up-sw-r: var(--up-r-s); }
 .upw-cmode .up-seg-btn, .upw-modes .up-seg-btn { height: 24px; padding: 0 7px; font-size: 11.5px; }
 
 /* ---------- schmal ----------

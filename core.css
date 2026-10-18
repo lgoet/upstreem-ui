@@ -6915,17 +6915,17 @@
    Form, die auseinanderlaufen koennen, waeren ein Nachbau (CLAUDE.md 1). :is() mit zwei Klassen
    haelt die Spezifitaet bei einer Klasse, also genau dort, wo sie vorher stand. 32 hoch wie die
    Knoepfe des Seitenkopfs (.up-ph-iconbtn, .up-ph-addbtn). */
-.up-root .up-seg:is(.up-themesw, .up-bandsw) { height: var(--up-h-btn); padding: 0; gap: 0; border-radius: var(--up-r-voll);
+.up-root .up-seg:is(.up-themesw, .up-bandsw) { height: var(--up-h-btn); padding: 0; gap: 0; border-radius: var(--up-sw-r, var(--up-r-m));
   background: transparent; box-shadow: 0 0 0 1px var(--vc-switch-border); }
 .up-root .up-seg:is(.up-themesw, .up-bandsw).is-klein { height: var(--up-h-chip); }
-.up-root .up-seg:is(.up-themesw, .up-bandsw)::before { border: 0; border-radius: var(--up-r-voll);
+.up-root .up-seg:is(.up-themesw, .up-bandsw)::before { border: 0; border-radius: var(--up-sw-r, var(--up-r-m));
   box-shadow: 0 0 0 1px var(--vc-switch-border), var(--up-e-1); }
 /* MEHR LUFT IN DEN DREI FELDERN (15.10. spaet: "den Theme Switcher besser stylen, mehr Padding in den
    3 Bereichen"): die Knoepfe sind nicht mehr rund (Breite = Hoehe), sondern Kapseln mit Polster
    12 bzw. 8 neben dem 16er-Zeichen -- 40 x 32 und 32 x 24. Die gleitende Flaeche misst den Knopf
    (segLauf) und wird damit von selbst zur Kapsel. */
 .up-root .up-seg:is(.up-themesw, .up-bandsw) .up-seg-btn { width: auto; height: var(--up-h-btn); padding: 0 12px;
-  border: 0; border-radius: var(--up-r-voll); color: var(--vc-third); }
+  border: 0; border-radius: var(--up-sw-r, var(--up-r-m)); color: var(--vc-third); }
 .up-root .up-seg:is(.up-themesw, .up-bandsw).is-klein .up-seg-btn { width: auto; height: var(--up-h-chip); padding: 0 8px; }
 .up-root .up-seg:is(.up-themesw, .up-bandsw) .up-seg-btn svg { width: 16px; height: 16px; color: inherit; }
 .up-root .up-seg:is(.up-themesw, .up-bandsw) .up-seg-btn:hover,
@@ -9364,3 +9364,25 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up
 .up-root.up-root.is-vnarrow :is(.up-seg, .cc-seg, .ubo-seg, .tcl-seg, .ubo-yaxis, .tcd-mode, .upt-status, .udt-sub-dispseg, .vc-gran, .cc-gran):not(.up-themesw):not(.up-bandsw) :is(.up-seg-btn, .cc-seg-btn, .ubo-seg-btn, .tcl-seg-btn, .ubo-yaxis-btn, .tcd-mode-btn, .upt-status-btn, .udt-sub-disp-btn, .vc-gran-btn, .cc-gran-btn) {
   height: 32px; border-radius: var(--up-r-m);
 }
+
+/* ============ EINE FORM FUER ALLE UMSCHALTER (18.10., Nutzer: "kuenftig sind alle Switcher so wie die neuen aus den Topbars") ============
+   Die Form der Kopf-Umschalter (.up-themesw, .up-bandsw): keine graue Schiene, ein 1px-Ring aussen (--vc-switch-border), der gleitende
+   Streifen in --vc-switch-pill mit Ring und --up-e-1, Text tertiaer und beim Ueberfahren und aktiv primaer. EINE Regel statt je
+   Komponente: Hoehe, Polster und Schrift bleiben bei jedem Umschalter, wie sie sind (24/26/28/32) -- hier steht nur das Aussehen.
+   Der Radius folgt der Rolle nach Hoehe wie bei jedem Knopf: 6 fuer 25 bis 36, 4 fuer 24. Wer 24 hoch ist, setzt --up-sw-r: var(--up-r-s)
+   an seinem Umschalter (domain-detail, domains-table, power-dashboard, die kleine Form der Kopf-Umschalter).
+   .up-root doppelt, damit die Regel die Grundformen der Bauteile (0,2,0) und die dunklen (0,3,1) auch ohne die Ladereihenfolge schlaegt. */
+.up-root.up-root :is(.up-seg, .cc-seg, .ubo-seg, .tcl-seg, .vc-gran, .cc-gran, .up-pagesize-seg, .up-filter-dim, .up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis, .upt-status, .udt-sub-dispseg, .uap-tabs) {
+  background: transparent; box-shadow: 0 0 0 1px var(--vc-switch-border); border-radius: var(--up-sw-r, var(--up-r-m)); }
+.up-root.up-root :is(.up-seg, .cc-seg, .ubo-seg, .tcl-seg, .vc-gran, .cc-gran, .up-pagesize-seg, .up-filter-dim, .up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis, .upt-status, .udt-sub-dispseg, .uap-tabs)::before {
+  border: 0; border-radius: var(--up-sw-r, var(--up-r-m)); background: var(--vc-switch-pill);
+  box-shadow: 0 0 0 1px var(--vc-switch-border), var(--up-e-1); }
+.up-root.up-root :is(.up-seg, .cc-seg, .ubo-seg, .tcl-seg, .vc-gran, .cc-gran, .up-pagesize-seg, .up-filter-dim, .up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis, .upt-status, .udt-sub-dispseg, .uap-tabs) > :is(.up-seg-btn, .cc-seg-btn, .ubo-seg-btn, .tcl-seg-btn, .vc-gran-btn, .cc-gran-btn, .up-pagesize-btn, .up-filter-dim-btn, .up-dense-btn, .tcd-mode-btn, .ubo-yaxis-btn, .upt-status-btn, .udt-sub-disp-btn, .uca-format-btn, .uap-tab) {
+  color: var(--vc-third); border-radius: var(--up-sw-r, var(--up-r-m)); }
+.up-root.up-root :is(.up-seg, .cc-seg, .ubo-seg, .tcl-seg, .vc-gran, .cc-gran, .up-pagesize-seg, .up-filter-dim, .up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis, .upt-status, .udt-sub-dispseg, .uap-tabs) > :is(.up-seg-btn, .cc-seg-btn, .ubo-seg-btn, .tcl-seg-btn, .vc-gran-btn, .cc-gran-btn, .up-pagesize-btn, .up-filter-dim-btn, .up-dense-btn, .tcd-mode-btn, .ubo-yaxis-btn, .upt-status-btn, .udt-sub-disp-btn, .uca-format-btn, .uap-tab):hover,
+.up-root.up-root :is(.up-seg, .cc-seg, .ubo-seg, .tcl-seg, .vc-gran, .cc-gran, .up-pagesize-seg, .up-filter-dim, .up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis, .upt-status, .udt-sub-dispseg, .uap-tabs) > :is(.up-seg-btn, .cc-seg-btn, .ubo-seg-btn, .tcl-seg-btn, .vc-gran-btn, .cc-gran-btn, .up-pagesize-btn, .up-filter-dim-btn, .up-dense-btn, .tcd-mode-btn, .ubo-yaxis-btn, .upt-status-btn, .udt-sub-disp-btn, .uca-format-btn, .uap-tab).is-active { color: var(--vc-text); }
+.up-root.up-root :is(.up-seg, .cc-seg, .ubo-seg, .tcl-seg, .vc-gran, .cc-gran, .up-pagesize-seg, .up-filter-dim, .up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis, .upt-status, .udt-sub-dispseg, .uap-tabs) > :is(.up-seg-btn, .cc-seg-btn, .ubo-seg-btn, .tcl-seg-btn, .vc-gran-btn, .cc-gran-btn, .up-pagesize-btn, .up-filter-dim-btn, .up-dense-btn, .tcd-mode-btn, .ubo-yaxis-btn, .upt-status-btn, .udt-sub-disp-btn, .uca-format-btn, .uap-tab) svg { color: inherit; }
+/* Bevor core gemessen hat (oder wo der Streifen abgeschaltet ist), traegt der gewaehlte Knopf die Flaeche selbst. */
+.up-root.up-root :is(.up-seg, .cc-seg, .ubo-seg, .tcl-seg, .vc-gran, .cc-gran, .up-pagesize-seg, .up-filter-dim, .up-dense, .tcd-mode, .uca-format-seg, .ubo-yaxis, .upt-status, .udt-sub-dispseg, .uap-tabs):not(.is-gleitend) > :is(.up-seg-btn, .cc-seg-btn, .ubo-seg-btn, .tcl-seg-btn, .vc-gran-btn, .cc-gran-btn, .up-pagesize-btn, .up-filter-dim-btn, .up-dense-btn, .tcd-mode-btn, .ubo-yaxis-btn, .upt-status-btn, .udt-sub-disp-btn, .uca-format-btn, .uap-tab).is-active {
+  background: var(--vc-switch-pill); box-shadow: 0 0 0 1px var(--vc-switch-border), var(--up-e-1); }
+.up-root .up-seg:is(.up-themesw, .up-bandsw).is-klein { --up-sw-r: var(--up-r-s); }

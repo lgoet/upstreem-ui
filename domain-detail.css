@@ -45,6 +45,7 @@
    hinaus; der gleitende Streifen misst den Knopf und folgt von selbst. (0,4,0) gegen
    .up-seg.is-lg (0,2,0). */
 .udd-root .up-seg.is-lg.udd-seg, .udd-root .up-seg.is-lg.udd-seg .up-seg-btn { height: 24px; }
+.udd-root .up-seg.is-lg.udd-seg { --up-sw-r: var(--up-r-s); }   /* 24 hoch: Radius 4 nach Rolle */
 .udd-seg[hidden] { display: none; }
 /* Die oberste Zeile mit Umschalter und Zahnrad gibt es nicht mehr. */
 
