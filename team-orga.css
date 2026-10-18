@@ -37,7 +37,7 @@
    daneben lange Adressen (englisch E-Mail 166 und Invited by 118, deutsch 124 und 88 neben 268
    breiten Knoepfen mit Wort); seit dem 17.10. sind die Knoepfe nur Zeichen, Spur 99 in beiden
    Sprachen, und E-Mail und Invited by bekommen 200 und 181 (gemessen bei 1440). */
-.uto-body { display: flex; flex-direction: column; gap: 40px; max-width: 720px; }
+.uto-body { display: flex; flex-direction: column; gap: 40px; max-width: var(--uss-breite, 720px); }
 .uto-body[hidden] { display: none; }
 .uto-loaderr[hidden] { display: none; }
 

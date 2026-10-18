@@ -4758,7 +4758,9 @@
       margin-top: 0; min-height: var(--up-flach-h);
       margin-left: calc(-1 * var(--up-flach-aus)); padding-left: 12px;
     }
-    .up-root.up-root[data-flach="yes"] .up-foot.is-wrapped { margin-left: 0; padding-left: 0; }
+    /* Umgebrochen (Telefon) stehen zwei Zeilen im Fuss, hoeher als die 48: ohne Polster klebte die Seitengroesse an der
+       Linie der Gesamtzeile. 10 oben und unten, wie bei der einzeiligen Form. */
+    .up-root.up-root[data-flach="yes"] .up-foot.is-wrapped { margin-left: 0; padding: 10px 0; }
     .up-root.up-root[data-flach="yes"] .up-foot .up-pagesize-seg { height: var(--up-h-seg); }
     .up-root.up-root[data-flach="yes"] .up-foot .up-pagesize-btn { height: var(--up-h-seg); min-width: 30px; padding: 0 8px; }
     .up-root.up-root[data-flach="yes"] .up-foot .up-page { height: var(--up-h-seg); min-width: var(--up-h-seg); }
@@ -9344,4 +9346,15 @@ html[data-up-dunkel="geist"] .up-root[data-theme="dark"] :is(.up-ph-iconbtn, .up
 [data-theme="dark"], .up-root[data-theme="dark"] {
   --vc-inverse-sub: #5f636b;
   --vc-inverse-glanz: rgba(255,255,255,.75);
+}
+
+/* DIE KLEINEN UMSCHALTER AM TELEFON 32 HOCH (18.10., Nutzer): unter 500 (is-vnarrow) sind sie mit 24 bis 26 zu klein fuer
+   den Finger. Eine Regel fuer alle, statt je Komponente (domain-detail, domains-table, power-dashboard trugen eigene 24).
+   Ausgenommen: der Themen- und Bandschalter im Kopf (eigene Form), die Seitengroesse der Pagination (steht neben
+   den 28er Seitenknoepfen). Radius 6 wie jede 32er Form (Rolle nach Hoehe). */
+.up-root.up-root.is-vnarrow :is(.up-seg, .cc-seg, .ubo-seg, .tcl-seg, .ubo-yaxis, .tcd-mode, .upt-status, .udt-sub-dispseg, .vc-gran, .cc-gran):not(.up-themesw):not(.up-bandsw) {
+  height: 32px; border-radius: var(--up-r-m);
+}
+.up-root.up-root.is-vnarrow :is(.up-seg, .cc-seg, .ubo-seg, .tcl-seg, .ubo-yaxis, .tcd-mode, .upt-status, .udt-sub-dispseg, .vc-gran, .cc-gran):not(.up-themesw):not(.up-bandsw) :is(.up-seg-btn, .cc-seg-btn, .ubo-seg-btn, .tcl-seg-btn, .ubo-yaxis-btn, .tcd-mode-btn, .upt-status-btn, .udt-sub-disp-btn, .vc-gran-btn, .cc-gran-btn) {
+  height: 32px; border-radius: var(--up-r-m);
 }

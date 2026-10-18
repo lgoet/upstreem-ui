@@ -2630,7 +2630,7 @@
     "This isn't a valid domain.": "Das ist keine gültige Domain.",
     "This domain could not be loaded. Please try again.": "Diese Domain konnte nicht geladen werden. Versuch es noch einmal.",
     "Last cited on {date}": "Zuletzt zitiert am {date}",
-    "Your team has never cited this domain.": "Dein Team hat diese Domain noch nie zitiert.",
+    "Not cited in the selected period.": "Im gewählten Zeitraum nicht zitiert.",
     "Current citation type": "Aktueller Citation Type",
     "Set by your team": "Von deinem Team festgelegt",
     "Count this domain as": "Diese Domain zählt als",

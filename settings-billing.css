@@ -33,7 +33,7 @@
 
 /* 720px Lesebreite wie settings-brand: eine Tabelle aus zwei Spalten, die bis zur Fensterkante
    laeuft, stellt den Wert einen halben Meter neben seine Bezeichnung. */
-.ubl-body { display: flex; flex-direction: column; gap: 40px; max-width: 720px; }
+.ubl-body { display: flex; flex-direction: column; gap: 40px; max-width: var(--uss-breite, 720px); }
 
 /* ---------- Abschnitt ---------- */
 .ubl-sec { display: flex; flex-direction: column; gap: 12px; }

@@ -245,7 +245,7 @@
     var teile = [], c = d.company && typeof d.company === "object" ? d.company : null;
     if (c && c.name) teile.push('<button type="button" class="up-dk-held-link" data-uddr-marke="' + esc(str(c.company_id)) + '">' + esc(str(c.name)) + '</button>');
     if (d.last_seen) teile.push('<span class="uddr-zuletzt">' + esc(t("Last cited on {date}").replace("{date}", UC.fmtDate(str(d.last_seen)))) + '</span>');
-    else teile.push('<span class="uddr-zuletzt">' + esc(t("Your team has never cited this domain.")) + '</span>');
+    else teile.push('<span class="uddr-zuletzt">' + esc(t("Not cited in the selected period.")) + '</span>');
     elSub.innerHTML = teile.join('<span class="up-dk-sep" aria-hidden="true"></span>');
     if (S.kopf) {
       S.kopf.name(dom);

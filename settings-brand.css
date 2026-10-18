@@ -18,7 +18,7 @@
 /* 720px ist die Lesebreite: ohne Deckel laeuft eine Formularseite bis zur Fensterbreite
    auseinander und das Bedienelement steht einen halben Meter rechts von seiner Beschriftung.
    Linksbuendig, nicht zentriert -- die Seite steht in derselben Spalte wie jede andere. */
-.usb-body { display: flex; flex-direction: column; gap: 40px; max-width: 720px; }
+.usb-body { display: flex; flex-direction: column; gap: 40px; max-width: var(--uss-breite, 720px); }
 /* display:flex schlaegt das eingebaute [hidden] des Browsers -- ohne diese Zeile bleibt das
    Formular sichtbar, waehrend der Lesefehler daneben steht. Gleiches gilt fuer den Kasten. */
 .usb-body[hidden] { display: none; }

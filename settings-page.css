@@ -6,6 +6,9 @@
    hier steht nur, wie sie in der Seite stehen. */
 
 .uss-root { display: block; }
+/* Die Breite der drei Reiter an EINER Stelle (18.10.): 720 war auf 13 bis 15 Zoll in Team Organisation zu eng
+   (Namen und E-Mails gekuerzt). Die Reiter lesen sie mit 720 als Rueckfall, falls sie ohne die Seite stehen. */
+.uss-root { --uss-breite: 960px; }
 .uss-root .uss-pagehead { padding: 8px 0; }
 /* Unter den Reitern 16 bis zum ersten Abschnitt, unten 64 -- wie auf jeder Seite (core, "DIE
    LUFT UNTER DEM SEITENKOPF"; bis 15.10. 24). */

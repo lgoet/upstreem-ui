@@ -869,7 +869,7 @@ html[data-up-dunkel="geist"] .usn-scrim[data-theme="dark"] {
   height: 36px; padding: 0 8px;
   /* 8 statt 12 (15.10. verlangt, mit dem Knopf Quick Actions darueber). */
   border: 0; border-radius: var(--up-r-m); background: transparent;
-  font: inherit; font-size: 14px; font-weight: 500; color: var(--vc-text);
+  font: inherit; font-size: 14px; font-weight: 500; color: var(--vc-muted);
   cursor: pointer; text-align: left;
   transition: background var(--usn-t) var(--usn-ease), color var(--usn-t) var(--usn-ease),
               padding-left var(--usn-fahrt) var(--usn-fahrt-kurve);
@@ -895,7 +895,7 @@ html[data-up-dunkel="geist"] .usn-scrim[data-theme="dark"] {
    getragen: die aktive Zeile hat einen eigenen Hintergrund, und der ist von Farbsehen unabhaengig.
    Das Gewicht kam obendrauf und liess die Zeile beim Wechsel um wenige Pixel breiter werden.
    Ausdruecklich so angefordert am 07.09.: "nicht mehr Weight als im nicht selected Mode". */
-.usn-item.is-active { background: var(--usn-akt); }
+.usn-item.is-active { background: var(--usn-akt); color: var(--vc-text); }
 /* Die Icon-Spalte ist 22px breit, das Symbol darin bleibt 17px und sitzt mittig. 22, weil in
    derselben Spalte auch die Marken-Logos der angehefteten Zeilen stehen -- und die brauchen die
    Platte und den Rand aus den Tabellen, sonst sehen sie anders aus als dort. Eine gemeinsame
