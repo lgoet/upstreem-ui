@@ -120,7 +120,7 @@
     s = s || {};
     var b = basis(f, "domainUrls");
     b.p_url_types = liste(s.urlTypen);
-    return anfrage("domainUrls", mit(b, {
+    return listenAnfrage("domainUrls", mit(b, {
       p_domain: str(domain).trim(), p_search: sucheVon(s.suche), p_order: orderVon("domainUrls", s.order),
       p_limit: ganz(s.limit, 10, 1, 100), p_offset: ganz(s.offset, 0, 0, 1e9)
     }));

@@ -1373,6 +1373,16 @@
     /* MARKEN, DIE ES NICHT MEHR GIBT (17.10., 22023): der URL-Drawer hat keinen Topic-Filter, nur die
        Markenauswahl der Responses (p_company_ids). core (UC.filterBereinigen) liest die Ids aus der
        Antwort; der Filter der Tabelle meldet die Aenderung selbst und laedt ueber seinen Handler neu. */
+    /* DATENSTAND BEIM BLAETTERN GEWECHSELT (18.10., Versionsbindung der DB): die Responses springen einmal
+       auf Seite 1 (Tabelle ohne Ereignis zuruecksetzen, Hinweis, neu laden), keine Schleife. */
+    DU.lader.versionMit(function (a) {
+      if (!a || a.art !== "responses") return false;
+      DU.resp.offset = 0;
+      duSetter("renderResponsesTable")({ instanceId: DU.ids.urt, seiteEins: true });
+      if (UC.listeAktualisiert) UC.listeAktualisiert();
+      duRespLaden(false);
+      return true;
+    });
     DU.lader.bereinigenMit(function (erg) {
       if (!UC.filterBereinigen) return false;
       return UC.filterBereinigen(erg, {
@@ -1397,7 +1407,10 @@
         var params = {}, k;
         for (k in a.params) params[k] = a.params[k];
         params.p_url = url;
-        return { fn: a.fn, params: params, sig: a.fn + "|" + JSON.stringify(params) };
+        var neu = { art: a.art, fn: a.fn, params: params, sig: a.fn + "|" + JSON.stringify(params) };
+        /* Datenstand der Liste je Adresse (Versionsbindung der DB): eine andere URL ist ein anderer Stand. */
+        if (a.bindung && window.UpstreemCitationsDaten && window.UpstreemCitationsDaten.bindung) neu.bindung = window.UpstreemCitationsDaten.bindung(neu.fn, params);
+        return neu;
       });
       var imSpeicher = !frisch && teile.every(function (a) { return DU.lader.ausSpeicher(a) !== undefined; });
       if (!imSpeicher) duSetter("setResponsesTableLoading")(DU.ids.urt, "yes");

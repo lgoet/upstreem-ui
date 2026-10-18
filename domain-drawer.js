@@ -95,7 +95,16 @@
      (S.f, Instanz IDS.topics) und je Tabelle eine Markenauswahl (URLs: p_mentioned_brands, Responses:
      p_company_ids); die Anzeige wird wie bei einer Wahl des Nutzers nachgezogen. */
   S.lader.versionMit(function (a) {
-    if (!a || a.art !== "responses") return false;
+    if (!a) return false;
+    if (a.art === "domainUrls") {
+      /* cached_citations_domain_urls_v1 traegt dieselbe Versionsbindung wie die Responses (g3_features_cache). */
+      S.urls.offset = 0;
+      try { setter("renderUrlsTable")({ instanceId: IDS.uut, seiteEins: true }); } catch (e) {}
+      if (UC.listeAktualisiert) UC.listeAktualisiert();
+      teilLaden("urls");
+      return true;
+    }
+    if (a.art !== "responses") return false;
     S.resp.offset = 0;
     try { setter("renderResponsesTable")({ instanceId: IDS.urt, seiteEins: true }); } catch (e) {}
     if (UC.listeAktualisiert) UC.listeAktualisiert();
