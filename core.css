@@ -1695,7 +1695,7 @@
        Bis zum 15.10. abends stand hier ein Fleck aus 8 % der Schrift OHNE Rahmen -- zurueckgenommen:
        "weiterhin eine Border". Die Breite (1px) kommt aus der Grundregel von .up-ph-navpille. */
     html[data-up-hell="grau"] .up-root:not([data-theme="dark"]) .up-ph-navpille {
-      background: var(--up-wahl-bg); border-color: var(--up-wahl-rand);
+      background: var(--up-wahl-bg);   /* 18.10.: ohne Rand (border: 0 in der Grundregel) */
     }
 
     /* ================= DAS DUNKEL NACH GEIST: SEITE UND INHALT (15.10.) ===========================
@@ -1783,7 +1783,7 @@
     /* Der gewaehlte Reiter der Seitennavigation: Gray Alpha 100 mit dem Hauch Rand, wie im Licht.
        Vorher #232326 mit dem vollen Rahmen #34343a -- der kraeftigste Kasten der ganzen Kopfzeile. */
     html[data-up-dunkel="geist"] .up-root[data-theme="dark"] .up-ph-navpille {
-      background: var(--up-wahl-bg); border-color: var(--up-wahl-rand);
+      background: var(--up-wahl-bg);   /* 18.10.: ohne Rand */
     }
 
     /* ---------- Fokus-Ring fuer Eingabefelder ----------
@@ -4906,7 +4906,9 @@
     }
     .up-root[data-kleb-fuss="yes"].is-fuss-still .up-box .up-sumrow,
     .up-root[data-kleb-fuss="yes"].is-fuss-still > .up-foot { transition: none; }
-    /* Der Schatten: --up-e-2 (Geists "menu"), nach OBEN -- die Ebene liegt deckungsgleich auf dem Teil
+    /* 18.10.: wieder --up-e-1 (Geists "small"), auf Wunsch "deutlich kleiner, das muss riechen" -- e-2 war zu kraeftig.
+       Der Text darunter beschreibt den Stand vom 17.10. (e-2).
+       Der Schatten: --up-e-2 (Geists "menu"), nach OBEN -- die Ebene liegt deckungsgleich auf dem Teil
        und ist gespiegelt (scaleY(-1)), so wirft derselbe Wert nach oben statt nach unten, ohne eine
        zweite Zahl. Nur Deckkraft blendet. Verlauf: bis 17.10. --up-e-3 (Geists "modal", bis 32px weit),
        dem Nutzer "zu dolle"; dann --up-e-1 (2px); am 17.10. auf Wunsch "eine kleine Stufe kraeftiger"
@@ -4914,7 +4916,7 @@
     .up-root[data-kleb-fuss="yes"] .up-box .up-sumrow::before,
     .up-root[data-kleb-fuss="yes"] > .up-foot::before {
       content: ""; position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none;
-      box-shadow: var(--up-e-2); transform: scaleY(-1); opacity: 0;
+      box-shadow: var(--up-e-1); transform: scaleY(-1); opacity: 0;
       transition: opacity var(--up-t-2) var(--up-ease-expo);
     }
     .up-root[data-kleb-fuss="yes"].is-fuss-klebt .up-box .up-sumrow::before,
@@ -8000,7 +8002,7 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
    z-index:1 -- without it this paints BEHIND .up-ph-nav::after: a ::after's generated box is
    always painted after all of its element's real children, regardless of DOM/append order, so the
    grey 1px separator would silently cover the bottom half of this 2px indicator. */
-.up-ph-navunderline { position: absolute; bottom: 0; left: 0; width: 0; height: 2px; background: var(--up-accent-ink);
+.up-ph-navunderline { position: absolute; bottom: 0; left: 0; width: 0; height: 1px; background: var(--up-accent-ink);   /* 1 statt 2 (18.10.) */
   z-index: 1; transition: left 200ms ease, width 200ms ease; }
 /* DER GEWAEHLTE REITER IN EINEM BEHAELTER (13.10. angefordert: "leichter Field-Background und
    Border, eher kleines Padding"; Rundung zweite Runde 8 statt 12). Er fuellt den Reiter in der
@@ -8012,7 +8014,7 @@ html[data-up-hell="grau"] .up-topicmodal-backdrop:not([data-theme="dark"]) .up-t
    Umschalter (.is-gleitend, 200ms ease). Die Reiter liegen darueber (z-index 1). */
 .up-ph-navitem { position: relative; z-index: 1; }
 .up-ph-navpille { position: absolute; top: 0; bottom: 0; left: 0; width: 0; z-index: 0; pointer-events: none;
-  background: var(--vc-heading-bg); border: 1px solid var(--vc-border); border-radius: var(--up-r-m);
+  background: var(--vc-heading-bg); border: 0; border-radius: var(--up-r-l);   /* 18.10.: ohne Rahmen, Radius eine Stufe hoeher (6 -> 8) */
   transition: left 200ms ease, width 200ms ease; }
 
 /* ---------- DER KOMPAKTE SEITENKOPF MIT BROTKRUMEN (29.09. angefordert) ----------

@@ -213,6 +213,8 @@
      die Tabelle ueber alle Marken (dashboard-page.js, visAuftrag). */
   /* Die Nummer "#" bei Auswahl im Fader: Platz innerhalb der gezeigten Menge, siehe UC.platzInMenge. */
   function platzInMenge(liste) { return window.UpstreemCore && window.UpstreemCore.platzInMenge ? window.UpstreemCore.platzInMenge(liste) : liste; }
+  /* So viele Zeilen zeigt die Tabelle neben dem Chart (UC.MAX_LINE_SERIES, hier fest, weil core hier nicht sicher da ist). */
+  var UC_MAX_ZEILEN = 8;
   function zuVisibility(vis, ov, o) {
     o = o || {};
     if (!istObjekt(vis) || !isArr(vis.series) || !isArr(vis.companies)) return null;
@@ -229,6 +231,14 @@
       var imChart = {};
       companies.forEach(function (c) { imChart[c.company_id] = true; });
       tabelle = tabelle.filter(function (r) { return imChart[str(r.company_id)]; });
+    }
+    /* DIE EIGENE MARKE STEHT IMMER IN DER TABELLE (18.10.): liegt sie nicht unter den gezeigten Zeilen (die DB liefert 8
+       und die eigene getrennt in own), rueckt sie an die achte Stelle, die siebte Zeile weicht. Die Spalte "#" zeigt
+       weiter ihre echte Position (1 bis 7, dann 11). Nicht bei einer eigenen Auswahl im Fader: dort gilt genau diese. */
+    var own = istObjekt(ov.own) && ov.own.company_id != null ? ov.own : null;
+    if (own && !o.nurImChart && !o.platzInMenge && !tabelle.some(function (r) { return str(r.company_id) === str(own.company_id); })) {
+      var feld = UC_MAX_ZEILEN;
+      tabelle = (tabelle.length >= feld ? tabelle.slice(0, feld - 1) : tabelle).concat([own]);
     }
     return {
       series: series, companies: companies,
